@@ -1,0 +1,299 @@
+//This is an older script and may have some bad conventions as a result.
+
+#scope server
+
+{ [shared]
+	setvar AS_SUMMON_TELE_CHECK 1
+
+	setvar ANIM_IDLE idle1
+	setvar ANIM_WALK idle1
+	setvar ANIM_RUN idle1
+	setvard ANIM_ATTACK attack1
+	setvard ANIM_FLINCH flinch
+	setvard ANIM_DEATH die1
+
+	const ANIM_TOCHARGE tocharge
+	const ANIM_CHARGEIDLE charging
+	const ANIM_FROMCHARGE fromcharge
+
+	const ANIM_FIRE_BALL fireball
+	const ANIM_SWIPE attack1
+
+	const ANIM_ALERT yes
+	const ANIM_GLOAT no
+	const ANIM_SEARCH dunno
+}
+
+{
+	//used by base
+	setvard NPC_GIVE_EXP 200
+
+	setvard CAN_FLINCH 1
+	setvard FLINCH_CHANCE 10
+	setvard FLINCH_ANIM flinch
+	setvard FLINCH_DELAY 1
+	setvard FLINCH_DMG_REQ 30
+
+	setvard ATTACK_RANGE 100
+	setvard ATTACK_HITRANGE 150
+	setvard ATTACK_MOVERANGE 65
+
+	const MOVE_FAST 200
+	const MOVE_NORMAL 100
+	setvard NPC_HACKED_MOVE_SPEED MOVE_NORMAL
+
+	//local
+	const SWIPE_MOVERANGE 65
+	const RAND_IDLE_ANIMS "idle1;idle2;dunno"
+	const LIGHT_RAD 196
+	const CIRCLE_RANGE 128
+	const FREQ_CIRCLE 15.0
+	const CIRCLE_DURATION 8.0
+
+	setvard ATTACK_HITCHANCE 80%
+
+	const PROJ_SCRIPT proj_fire_ball
+	const FIRE_BALL_RANGE 2000
+	const FULL_FIRE_BALL_AMMO 3
+	const AIM_RATIO 50
+    const ATTACK_CONE_OF_FIRE 2
+    const ATTACK_SPEED 500
+
+	const DOT_FIRE $rand(10,30)
+	const DMG_SEAL 200 //spell fire damage
+	const DMG_FIRE_BALL $rand(50,100) //fire ball impact damage
+	const DMG_SWIPE $rand(20,50)
+
+	const FREQ_FIRE_BALL 0.5
+
+	//sounds
+	const SOUND_ALERT agrunt/ag_alert5.wav
+	const SOUND_IDLE1 agrunt/ag_alert1.wav
+	const SOUND_IDLE2 agrunt/ag_die1.wav
+	const SOUND_IDLE3 agrunt/ag_idle1.wav
+	const SOUND_SWIPE weapons/debris1.wav
+	const SOUND_SWIPEHIT ambience/steamburst1.wav
+	const SOUND_DEATH garg/gar_die1.wav
+	const SOUND_PAIN0 debris/bustflesh2.wav		//most common
+	const SOUND_PAIN1 agrunt/ag_pain1.wav	//rare > 50%
+	const SOUND_PAIN2 agrunt/ag_pain4.wav	//rare < 50%
+	const SOUND_GLOAT x/x_laugh1.wav
+	const SOUND_FIRECHARGE magic/fireball_powerup.wav
+	const SOUND_FIRESHOOT magic/fireball_strike.wav
+	const SOUND_CIRCLE_READY debris/beamstart1.wav
+	const SOUND_HOVER fans/fan4on.wav
+}
+
+#include monsters/base_monster_new
+#include monsters/base_propelled
+
+{ [shared] npc_spawn
+
+	name a|Fire Elemental
+	setmodel monsters/elementals_lesser.mdl
+	hp 500
+	width 32
+	height 48
+	race demon
+	takedmg holy 2.0
+	takedmg fire 0.0
+	takedmg cold 1.5
+	takedmg ice 1.5
+	takedmg poison 0.0
+	//ov 80
+	roam 1
+	setidleanim ANIM_IDLE
+	setmoveanim ANIM_WALK
+	hearingsensitivity 5
+
+	setvard FIRE_BALL_AMMO FULL_FIRE_BALL_AMMO
+	blood none
+
+	setvard IMMUNE_VAMPIRE 1
+	setvard IS_UNHOLY 1
+
+	setvard MY_HURT_STAGE $get(ent_me,maxhp)
+	multiply MY_HURT_STAGE 0.5
+
+	clientevent new all effects/sfx_follow_glow_cl $get(ent_me,index) (255,128,64) LIGHT_RAD 15.0
+}
+
+//========== Hunt Cycle
+{ cycle_up
+	playsound 0 10 SOUND_ALERT
+	playanim once ANIM_ALERT
+
+	setvard NEXT_CIRCLE game.time
+	add NEXT_CIRCLE FREQ_CIRCLE
+}
+
+{ npc_targetsighted
+	if $get(NPCATK_TARGET,range) > ATTACK_RANGE
+	if FIRE_BALL_AMMO > 0
+	if ( !FIREBALL_PREPPED ) playsound 0 10 SOUND_FIRECHARGE
+	setvard FIREBALL_PREPPED 1
+	playanim once ANIM_FIRE_BALL
+}
+
+{ npcatk_hunt
+	if ( FIRE_BALL_AMMO > 0 )
+	{
+		setvard ATTACK_MOVERANGE 512
+	}
+	else
+	{
+		setvard ATTACK_MOVERANGE SWIPE_MOVERANGE
+	}
+
+	if NPCATK_TARGET isnot unset
+
+	if ( game.time > NEXT_CIRCLE )
+	{
+		setvard ATTACK_MOVERANGE SWIPE_MOVERANGE
+		if $get(NPCATK_TARGET,range) < CIRCLE_RANGE
+		setvard NEXT_CIRCLE game.time
+		add NEXT_CIRCLE FREQ_CIRCLE
+		callevent do_cof
+	}
+}
+
+//========== Anim Events
+{ throw_fireball //anim event
+	setvard FIREBALL_PREPPED 0
+	subtract FIRE_BALL_AMMO 1
+	playsound 0 10 SOUND_FIRESHOOT
+
+	local AIM_ANGLE $get(NPCATK_TARGET,dist)		//Aim up a bit
+	dbg throw_fireball AIM_ANGLE
+	divide AIM_ANGLE AIM_RATIO				//
+	setangle add_view.x AIM_ANGLE			//
+	
+	tossprojectile view ATTACK_SPEED DMG_FIRE_BALL ATTACK_CONE_OF_FIRE PROJ_SCRIPT (0,48,48)
+	callexternal $get(ent_lastprojectile,id) lighten DOT_FIRE
+
+	setvard NEXT_FIRE_BALL game.time
+	add NEXT_FIRE_BALL FREQ_FIRE_BALL
+}
+
+{ attack1_strike
+	setvard SWIPE_ATTACK 1
+	dodamage NPCATK_TARGET ATTACK_HITRANGE DMG_SWIPE 90% blunt
+}
+
+//========== Struck
+{ npc_struck //called from base_npc_attack - param1 damage taken as of 22/Aug/2006 14:50
+
+	local MY_HEALTH $get(ent_me,hp)
+
+	if ( MY_HEALTH >= MY_HURT_STAGE ) playrandomsound 0 10 SOUND_PAIN0 SOUND_PAIN0 SOUND_PAIN1
+	if ( MY_HEALTH <= MY_HURT_STAGE ) playrandomsound 0 10 SOUND_PAIN0 SOUND_PAIN0 SOUND_PAIN2
+
+	//If enemy that hit me is close, he will be set on fire
+
+	if ( PARAM1 > 20 )
+	{
+		if MY_HEALTH > 0
+		addvelocity ent_me $relpos($vec(0,game.monster.angles.yaw,0),$vec($randf(-100,100),-500,0))
+	}
+
+	//people who touch me get burned
+	if $get(ent_laststruck,range) < MOVE_RANGE
+	applyeffect ent_laststruck effects/effect_burn 2 $get(ent_me,id) DOT_FIRE
+}
+
+//========== DOT
+{ game_dodamage //1: Attack Hit (1/0)  2: Entity Attack hit  3:  Start Position  4:  End Position
+
+	if ( PARAM1 )
+	{
+		if SWIPE_ATTACK
+		applyeffect PARAM2 effects/effect_burn 5 $get(ent_me,id) DOT_FIRE
+		if ( USE_SWIPE_SOUND ) playsound 0 10 SOUND_SWIPEHIT
+	}
+	setvard SWIPE_ATTACK 0
+}
+
+//========== Cyclers
+{ [server]
+repeatdelay $randf(5,15)
+	if $get(ent_me,isalive)
+	playrandomsound 0 10 SOUND_IDLE1 SOUND_IDLE2 SOUND_IDLE3
+	if NPCATK_TARGET contains unset
+	local RND_PICK $rand(0,2)
+	local RND_ANIM $get_token(RAND_IDLE_ANIMS,RND_PICK)
+	playanim critical RND_ANIM
+}
+
+
+{
+repeatdelay 15.1
+	if $get(ent_me,isalive)
+	clientevent new all effects/sfx_follow_glow_cl $get(ent_me,index) (255,128,64) LIGHT_RAD 15.0
+}
+
+{ repeatdelay 3.0
+	if $get(ent_me,isalive)
+	svplaysound 1 8 SOUND_HOVER
+}
+
+//========== Summoned
+{ game_dynamically_created
+	setvard MY_OWNER $get(PARAM1,id)
+	if $get(MY_OWNER,isalive)
+	race $get(MY_OWNER,race)
+	setvard AM_SUMMONED 1
+	callevent 0.1 summoned_sound
+	setvard NO_SPAWN_STUCK_CHECK 1
+}
+
+{ summoned_sound
+	playsound 0 10 ambience/alien_humongo.wav
+}
+
+{ game_death
+
+	svplaysound 1 0 SOUND_HOVER
+	svplaysound 2 0 weapons/egon_run3.wav
+
+	if AM_SUMMONED
+	callexternal MY_OWNER elemental_died
+}
+
+//========== Circle o Fire
+{ do_cof
+	if $get(ent_me,isalive)
+
+	if NPCATK_TARGET isnot unset
+	if $get(NPCATK_TARGET,range) <= CIRCLE_RANGE
+
+	callevent npcatk_suspend_ai
+	callevent game_stopmoving
+	playanim critical ANIM_TOCHARGE
+	playsound 0 10 SOUND_CIRCLE_READY
+	callevent 0.5 do_cof2
+}
+
+{ do_cof2
+	callevent npcatk_suspend_movement ANIM_CHARGEIDLE
+	clientevent new all effects/sfx_circle_of_fire $get(ent_me,origin) 64 1 CIRCLE_DURATION
+	svplaysound 2 10 weapons/egon_run3.wav
+	setvard COF_ACTIVE 1
+	callevent CIRCLE_DURATION cof_end
+	callevent do_cof_loop
+}
+
+{ cof_end
+	callevent npcatk_resume_ai
+	callevent npcatk_resume_movement
+	playsound 3 10 weapons/egon_off1.wav
+	svplaysound 2 0 weapons/egon_run3.wav
+	setvard COF_ACTIVE 0
+	setvard FIRE_BALL_AMMO FULL_FIRE_BALL_AMMO
+}
+
+{ do_cof_loop
+	if COF_ACTIVE
+	if $get(ent_me,isalive)
+	xdodamage $relpos(0,0,0) 128 DMG_SEAL 0 ent_me ent_me none fire_effect
+	callevent 1.0 do_cof_loop
+}

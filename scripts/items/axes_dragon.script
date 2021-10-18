@@ -1,0 +1,236 @@
+//Dragon axe from axes_vaxe by Thothie
+//- Fire elements - fire breath on right click
+{
+	const BASE_LEVEL_REQ 20
+	const BURN_LEVEL_REQ 20
+	const MP_DRAIN_RATE -2
+	const MODEL_VIEW viewmodels/v_2haxesgreat.mdl
+	const MODEL_VIEW_IDX 4
+	const MODEL_HANDS weapons/p_weapons3.mdl
+	const MODEL_WORLD weapons/p_weapons3.mdl
+	const ANIM_PREFIX standard
+
+	const MODEL_BODY_OFS 34
+
+	const MELEE_RANGE  100
+	const MELEE_DMG_DELAY  0.6
+	const MELEE_ATK_DURATION 1.5
+	const MELEE_ENERGY  2
+	const MELEE_DMG  550
+	const MELEE_DMG_RANGE      100
+	const MELEE_DMG_TYPE  fire
+	const MELEE_ACCURACY  50
+	const MELEE_STAT  axehandling
+
+	const MELEE_SOUND      SOUND_SWIPE
+	const MELEE_SOUND_DELAY      MELEE_DMG_DELAY
+	const MELEE_PARRY_CHANCE      25
+
+	const SOUND_FLAME_ON monsters/goblin/sps_fogfire.wav
+
+	const CL_SCRIPT items/axes_dragon_cl
+
+	//why are these not working :/
+	const SOUND_SWIPE weapons/swingsmall.wav
+	const SOUND_HITWALL1 weapons/axemetal1.wav
+	const SOUND_HITWALL2 weapons/axemetal2.wav
+
+	const MELEE_SOUND_DELAY 0.6
+
+	const OVERRIDE_HITWALL 1
+}
+
+{ game_precache //items may not use this, test
+	precachefile CL_SCRIPT
+}
+
+#include items/axes_greataxe
+
+{ weapon_spawn
+
+   name  a|Dragon Axe
+   desc An axe enchanted with fire
+   weight  90
+   size  25
+   value        2500
+   sethudsprite hand 133
+   sethudsprite trade 133
+
+	//setvard SPLIT_CHECK 1
+	//callevent 1.0 split_check_loop
+
+}
+
+{ [server] game_deploy
+
+	setvard GAME_PVP game.pvp
+	if ( $get(ent_owner,skill.spellcasting.fire) >= BURN_LEVEL_REQ ) setvard CAN_BURN 1
+	setvard BURN_DAMAGE $get(ent_owner,skill.spellcasting.fire)
+	divide BURN_DAMAGE 2
+}
+
+{ [server] game_dodamage
+
+	if PARAM1
+
+	if $get(PARAM2,relationship,ent_owner) equals enemy
+
+	if ( $get(PARAM2,isplayer) )
+	{
+		if !GAME_PVP
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	applyeffect PARAM2 effects/effect_burn 5 $get(ent_owner,id) BURN_DAMAGE 1  0 spellcasting.fire
+}
+
+{ [server] game_putinpack
+	if CL_IDX isnot 'CL_IDX'
+	clientevent update all CL_IDX end_fx
+	svplaysound 1 0 SOUND_FLAME_ON
+}
+
+{ [server] game_+attack2
+
+	//me thinks this is called every frame, so provide a delay to prevent server flood
+	if game.serverside
+	if game.time > NEXT_FLAME
+
+	if ( !$get(ent_owner,canattack) )
+	{
+		local EXIT_SUB 1
+		if game.time > NEXT_MSG
+		dplayermessage ent_owner Fire Breath: Can't attack now.
+		setvard NEXT_MSG game.time
+		add NEXT_MSG 1.0
+	}
+	if !EXIT_SUB
+
+	if ( $get(ent_owner,mp) <= $neg(MP_DRAIN_RATE) )
+	{
+		dplayermessage ent_owner "Dragon Axe - Fire Breath: Not enough mana."
+		local EXIT_SUB 1
+		setvard NEXT_FLAME game.time
+		add NEXT_FLAME 1.0
+	}
+	if !EXIT_SUB
+
+	if ( !CAN_BURN )
+	{
+		dplayermessage ent_owner "Dragon Axe - Fire Breath: Insufficient fire skill."
+		local EXIT_SUB 1
+		setvard NEXT_FLAME game.time
+		add NEXT_FLAME 1.0
+	}
+	if !EXIT_SUB
+
+	setvard NEXT_FLAME game.time
+	add NEXT_FLAME 0.1
+
+	setvard OWNER_ANG $get(ent_owner,angles)
+
+	if ( CL_IDX equals 'CL_IDX' )
+	{
+		clientevent new all CL_SCRIPT $get(ent_owner,index)
+		setvard CL_IDX game.script.last_sent_id
+		svplaysound 1 10 SOUND_FLAME_ON
+	}
+	else
+	{
+		local CLOUD_START $get(ent_owner,svbonepos,15)
+		vectoradd CLOUD_START $relpos(OWNER_ANG,$vec(0,32,-30)) //a little in front of face (and now down, due to change in player model, I guess)
+		local CLOUD_ANG OWNER_ANG
+		vectorset CLOUD_ANG x $neg($vec.pitch(OWNER_ANG))
+		vectoradd CLOUD_START z 24
+		clientevent update all CL_IDX make_clouds CLOUD_START CLOUD_ANG
+	}
+
+	setvard OWNER_ORG $get(ent_owner,origin)
+
+	givemp ent_owner MP_DRAIN_RATE
+
+	if game.time > NEXT_SCAN
+
+	setvard NEXT_SCAN game.time
+	add NEXT_SCAN 0.5
+
+	setvard BURN_DAMAGE $get(ent_owner,skill.spellcasting.fire)
+	divide BURN_DAMAGE 2
+
+	local SCAN_POS $get(ent_owner,origin)
+	//setvard OWNER_YAW $get(ent_owner,angles.yaw)
+	vectoradd SCAN_POS $relpos(OWNER_ANG,$vec(0,128,0))
+
+//	if ( G_DEVELOPER_MODE )
+//	{
+//		local BEAM_END SCAN_POS	
+//		vectoradd BEAM_END z 64
+//		effect beam point lgtning.spr 30 SCAN_POS BEAM_END (255,0,255) 200 0 0.5
+//	}
+
+	callexternal ent_owner ext_box_token enemy 96 SCAN_POS
+	setvard BURN_LIST $get(ent_owner,scriptvar,'PLR_SCAN_TOKEN')
+	if BURN_LIST isnot none
+	setvard TRACE_START $get(ent_owner,svbonepos,15)
+	calleventloop $get_token_amt(BURN_LIST) burn_targets
+}
+
+{ burn_targets
+	local CUR_TARGET $get_token(BURN_LIST,game.script.iteration)
+
+	//dont burn players outside of PVP
+	if ( $get(CUR_TARGET,isplayer) )
+	{
+		if !GAME_PVP
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	//within the cone
+	if $get(CUR_TARGET,isalive)
+	local TARG_ORG $get(CUR_TARGET,origin)
+	if $within_cone2D(TARG_ORG,OWNER_ORG,OWNER_ANG,30)
+	if $get(CUR_TARGET,range) < 256
+
+	//make sure I'm not trying to burn through a wall
+	local TRACE_END $get(CUR_TARGET,origin)
+	if ( !$get(CUR_TARGET,isplayer) )
+	{
+		//adjust for origin center
+		local HALF_MON_HEIGHT $get(CUR_TARGET,height)
+		divide HALF_MON_HEIGHT 2
+		vectoradd TRACE_END z HALF_MON_HEIGHT
+	}
+	local TRACE_CHECK $get_traceline(TRACE_START,TRACE_END,worldonly)
+	if TRACE_CHECK equals TRACE_END
+
+	//burn em
+	applyeffect CUR_TARGET effects/effect_burn 5.0 $get(ent_owner,id) BURN_DAMAGE 1 0 spellcasting.fire
+	if $get(CUR_TARGET,maxhp) < 10000
+	if $get(CUR_TARGET,height) < 120
+	if !$get(CUR_TARG,scriptvar,'NPC_OVERSIZED')
+	local PUSH_VEL $relvel(0,300,120)
+	callexternal ent_owner ext_push_targ CUR_TARGET PUSH_VEL
+}
+
+{ [server] game_-attack2
+	clientevent remove all CL_IDX
+	setvard CL_IDX 'CL_IDX'
+	svplaysound 1 0 SOUND_FLAME_ON
+}
+
+//Weird ass shit
+{ [override] hitwall
+	playrandomsound 0 10 SOUND_HITWALL1 SOUND_HITWALL2
+}
+
+{ [override] melee_playsound
+	dbg melee_playsound
+	playsound 0 10 SOUND_SWIPE
+}
+
+//{ split_check_loop
+//	callevent 1.0 split_check_loop
+//	dbg split_check SPLIT_CHECK
+//}

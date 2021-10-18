@@ -1,0 +1,300 @@
+{
+	const SOUND_MANIFEST weapons/egon_windup2.wav
+	const SOUND_PULSE magic/egon_run3_noloop.wav
+	const PULSE_PLAYTIME 2.1
+	const SOUND_FADE weapons/egon_off1.wav
+	const SEAL_MODEL weapons/magic/seals.mdl
+	const SEAL_OFS 1
+	const FX_SPRITE Fire2.spr
+	const CIRCLE_RADIUS 128
+	const APPLY_EFFECT effects/effect_burn
+}	
+
+{ eventname game_dynamically_created //PARAM1 = owner PARAM2 = Duration PARAM3 = Damage
+
+	setvard MY_OWNER PARAM1
+	setvard MY_DURATION PARAM2
+	setvard MY_BASE_DAMAGE PARAM3
+
+	setvard OWNER_ISPLAYER $get(PARAM1,isplayer)
+	setvard GAME_PVP game.pvp
+
+	callevent MY_DURATION circle_end
+
+	//dbg Circle got: Owner MY_OWNER Dur MY_DURATION Dmg MY_BASE_DAMAGE
+
+     //tempent trail <modelname/spritename> <start> <dest> <count> <life> <scale> <speed> <randomness>
+	//effect tempent trail SEAL_MODEL $relpos(0,0,96) $get(ent_me,origin) 1 MY_DURATION 1 1 0
+	//effect tempent spray <modelname/spritename> <position> <direction> <count> <speed> <noise>
+	//effect tempent trail <modelname/spritename> <start> <dest> <count> <life> <scale> <speed> <randomness>
+	//effect tempent gibs <modelname/spritename> <position> <size> <velocity> <randomness> <amount> <duration>
+	//effect tempent gibs SEAL_MODEL $relpos(0,0,0) 1.0 1 0 1 MY_DURATION
+}
+
+{ npc_spawn
+
+	name a|Circle of Fire
+	hp 1
+	fov 359 //poison cloud dont have this
+	invincible 1
+	race beloved
+	height 2
+	width 2
+	fly 1
+	gravity 0.0
+	blood none
+	setmodel none //SEAL_MODEL
+	//setidleanim idle
+	setsolid none
+	//drop_to_floor 
+
+	add FX_SPAMMERS 1
+	add N_CIRCLES_FIRE 1
+
+	setvard CIRCLE_ON 1
+
+	callevent 0.1 make_seal
+
+     //tempent trail <modelname/spritename> <start> <dest> <count> <life> <scale> <speed> <randomness>
+
+	callevent 1.0 circle_go
+
+	callevent 0.1 circle_hum
+}
+
+{ make_seal
+
+	local SEAL_POS $get(ent_me,origin)
+	local GROUND_Z $get_ground_height(SEAL_POS)
+	local SEAL_Z $vec.z(SEAL_POS)
+	local GROUND_DIST GROUND_Z
+	subtract GROUND_DIST SEAL_Z
+	////dbg MyBasePos SEAL_POS GroundZ GROUND_Z
+	subract GROUND_DIST 2
+	vectoradd SEAL_POS $relpos($vec(0,0,0),$vec(0,0,GROUND_DIST)) 
+	////dbg MyGroundPos SEAL_POS Ground GROUND_DIST
+	createnpc monsters/summon/seal_maker SEAL_POS SEAL_MODEL MY_DURATION SEAL_OFS
+}
+
+{ circle_hum
+
+	//drop_to_floor ent_me
+
+	//playanim once idle
+
+   	if ( !CIRCLE_UP )
+	{
+		//clientevent persist all $currentscript effect.duration $get(ent_me,index) PARAM2 GLOW_COLOR
+		local CLIENT_DURATION MY_DURATION
+		subtract CLIENT_DURATION 0.2 //effort to prevent client side fx from sticking
+		clientevent new all_in_sight $currentscript CLIENT_DURATION $get(ent_me,index) 128
+		setvard THIS_SCRIPT_CLIENT_ID game.script.last_sent_id
+		//dbg StickyClientDebug game.script.last_sent_id
+
+		setvard CIRCLE_UP 1
+	}
+
+	if ( DID_WINDUP ) playsound 0 5 SOUND_PULSE
+	if ( !DID_WINDUP )
+	{
+		playsound 0 10 SOUND_MANIFEST
+		setvard DID_WINDUP 1
+	}
+
+	if CIRCLE_ON
+	callevent PULSE_PLAYTIME circle_hum
+}
+
+{ circle_go
+
+	if CIRCLE_ON
+
+	callevent 0.25 circle_go
+
+	setvard SCAN_TARGS $get_tsphere(any,CIRCLE_RADIUS)
+
+	if SCAN_TARGS isnot 'none'
+	local N_TARGS $get_token_amt(SCAN_TARGS)
+	if N_TARGS > 0
+
+	calleventloop N_TARGS zap_targets
+
+	dodamage $relpos(0,0,0) CIRCLE_RADIUS 0 100% 0 reflective
+
+	if $cansee(ally)
+	if $get(ent_lastseen,range) <= CIRCLE_RADIUS
+	if $get(ent_lastseen,relationship,MY_OWNER) equals enemy
+	////dbg Saw $get(ent_lastseen,name)
+	local DMG_SOURCE MY_OWNER
+	//if ( $get(MY_OWNER,isplayer) == 0 ) local DMG_SOURCE $get(ent_me,id)
+	if !$get(ent_lastseen,haseffect,DOT_fire)
+	applyeffect ent_lastseen APPLY_EFFECT 1 DMG_SOURCE MY_BASE_DAMAGE
+}
+
+{ zap_targs
+	local CUR_TARG $get_token(SCAN_TARGS,game.script.iteration)
+	if $get(CUR_TARG,isalive)
+	if $get(CUR_TARG,relationship,MY_OWNER) equals enemy
+	local DMG_SOURCE MY_OWNER
+	if ( OWNER_ISPLAYER )
+	{
+		if !GAME_PVP
+		if $get(CUR_TARG,isplayer)
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+	if !$get(CUR_TARG,haseffect,DOT_fire)
+	applyeffect CUR_TARG APPLY_EFFECT 1 DMG_SOURCE MY_BASE_DAMAGE
+}
+
+{ circle_end
+
+	//dbg Spam FX_SPAMMERS Circs N_CIRCLES_FIRE
+
+	subtract FX_SPAMMERS 1
+	subtract N_CIRCLES_FIRE 1
+	setvard CIRCLE_ON 0
+
+	//effort to prevent client side fx from sticking
+	if ( N_CIRCLES_FIRE == 0 ) clientevent remove all $currentscript
+
+	clientevent remove all THIS_SCRIPT_CLIENT_ID
+	playsound 0 10 SOUND_FADE
+	callevent 0.5 circle_remove
+}
+
+{ circle_remove
+
+	deleteent ent_me
+}
+
+// ===========
+// Client Side
+// ===========
+
+{ [client]
+
+	const OFS_POS			72
+	const OFS_NEG			-72
+	const OFSZ_POS			256
+	const OFSZ_NEG			-10
+	
+	const LIGHT_PLAYER_SCALE	0.3
+	const LIGHT_DROPPED_SCALE	0.5
+}
+
+{ [client] client_activate
+
+	setvard sfx.npcid PARAM2
+	setvard sfx.radius PARAM3
+	setvard sfx.duration PARAM1
+
+	setcallback render enable
+
+	setvard RAIN_SPRITES 1
+
+	setvard SEAL_DROP_COUNTER 0
+
+	setvard ROT_COUNT 0
+	
+	callevent 0.1 rain_go
+
+	callevent PARAM1 effect_die
+}
+
+//Sprite
+
+{ [client] rain_go
+	//repeatdelay 0.1
+
+	if RAIN_SPRITES
+	callevent createsprite
+	callevent 0.1 rain_go
+}
+
+{ [client] createsprite
+
+	local l.pos $getcl(sfx.npcid,origin)
+
+	//add SEAL_DROP_COUNTER 1
+
+	//if ( SEAL_DROP_COUNTER == 4 )
+	//{
+	//	local g.pos $getcl(sfx.npcid,origin)
+	//	vectoradd g.pos $vec(0,0,50)
+	//	cleffect tempent model SEAL_MODEL g.pos setup_pulse_model
+	//	setvard SEAL_DROP_COUNTER 0
+	//}
+
+	if ( !MAIN_SEAL )
+	{
+		local g.pos $getcl(sfx.npcid,origin)
+		local GROUND_Z $get_ground_height(g.pos)
+		local THIS_Z $vec.z(g.pos)
+		local GROUND_DIST GROUND_Z
+		subtract GROUND_DIST THIS_Z
+		//divide GROUND_DIST 2
+		vectoradd g.pos $relpos($vec(0,0,0),$vec(0,0,GROUND_DIST))
+		cleffect tempent model SEAL_MODEL g.pos setup_main_model
+		vectoradd g.pos $relpos($vec(0,0,0),$vec(0,0,100))
+		cleffect tempent model SEAL_MODEL g.pos setup_main_model
+		setvard MAIN_SEAL 1
+	}
+
+	//vectoradd l.pos $vec($randf(OFS_NEG,OFS_POS),$randf(OFS_NEG,OFS_POS),$randf(OFSZ_POS,OFSZ_NEG))
+
+	if ROT_COUNT <= 360
+
+	local GROUND_Z $get_ground_height(l.pos)
+	local THIS_Z $vec.z(l.pos)
+	local GROUND_DIST GROUND_Z
+	subtract GROUND_DIST THIS_Z
+	divide GROUND_DIST 2
+
+	vectoradd l.pos $relpos($vec(0,ROT_COUNT,0),$vec(0,72,GROUND_DIST))
+
+	//cleffect tempent sprite SPRITE_1 l.pos setup_sprite1_sparkle
+	//   cleffect tempent sprite SNOWFLAKE_MODEL END_POS setup_blizzardflake
+	add ROT_COUNT 40
+
+	cleffect tempent sprite FX_SPRITE l.pos setup_flame
+
+	if !MAIN_MODEL
+
+}
+
+{ [client] setup_flame
+
+	cleffect tempent set_current_prop death_delay 	sfx.duration
+    cleffect tempent set_current_prop bouncefactor 	0
+	cleffect tempent set_current_prop scale 	1.0
+	cleffect tempent set_current_prop framerate	30
+	cleffect tempent set_current_prop frames	8
+	cleffect tempent set_current_prop gravity 	0
+	cleffect tempent set_current_prop collide 	none
+    cleffect tempent set_current_prop velocity 	(0,0,0)
+}
+
+//{ [client] setup_pulse_model
+//
+//	cleffect tempent set_current_prop death_delay 1.0
+//}
+
+{ [client] setup_main_model
+
+	//cleffect tempent set_current_prop death_delay 	1000
+    cleffect tempent set_current_prop bouncefactor 	0
+	cleffect tempent set_current_prop framerate	1
+	cleffect tempent set_current_prop scale 	2.0
+	cleffect tempent set_current_prop gravity 	0.0
+	cleffect tempent set_current_prop rendermode normal
+	cleffect tempent set_current_prop collide none
+    cleffect tempent set_current_prop velocity 	(0,0,0)
+	cleffect tempent set_current_prop body SEAL_OFS
+}
+
+{ [client] effect_die
+
+	setvard RAIN_SPRITES 0
+	removescript
+}

@@ -1,0 +1,1062 @@
+//Undamael 3.0 :D
+#scope server
+{
+	setvard NPC_IS_BOSS 1
+
+	const DMG_NUKE 800
+	const DOT_BREATH 40
+	setvard DOT_NUKE 80
+
+	const DMG_BEAM1 1000
+	const DMG_BEAM2 100
+	const DMG_BITE 80
+
+	const SPEED_NORMAL 10
+
+	setvard FREQ_SPECIAL 20.0
+
+	const SMOKE_SPRITE bigsmoke.spr
+
+	const ANIM_BREATH Floor_Fidget_Pissed
+
+	const DETECT_RANGE 1024 //how close an nme has to be for me to turn towards it
+	setvard ATTACK_RANGE 360
+	const ATTACK_ZRANGE 80 //must be in this vertical range of target to strike
+	setvard ATTACK_HITRANGE 390
+	setvard MOVE_RANGE 300
+	setvard ANIM_ATTACK Floor_Strike
+
+	//this sound set may vary with location
+	setvard SOUND_HITEDGE1 doors/doorstop5.wav //slam door, creek, and env_shake fx for main room
+	setvard SOUND_HITEDGE2 doors/doorstop5.wav
+	setvard SOUND_HITEDGE3 doors/doorstop5.wav
+	setvard SOUND_BITE_HIT1 tentacle/te_strike1.wav
+	setvard SOUND_BITE_HIT2 tentacle/te_strike2.wav
+
+	const SOUND_BEAM1_WARMUP ambience/alienfazzle1.wav
+	const SOUND_BEAM2_WARMUP x/x_teleattack1.wav
+	const SOUND_PRE_BITE1 x/x_recharge1.wav
+	const SOUND_PRE_BITE2 x/x_recharge2.wav
+	const SOUND_IDLE1 tentacle/te_move1.wav
+	const SOUND_IDLE2 tentacle/te_move2.wav
+	const SOUND_BEAM1_FIRE x/x_ballattack1.wav
+	const SOUND_BEAM2_FIRE debris/beamstart1.wav
+	const SOUND_NUKE_WARMUP magic/spookie1.wav
+	const SOUND_BREATH_LOOP magic/flame_loop.wav
+	const SOUND_BREATH_START magic/flame_loop_start.wav
+
+	//dynamic sounds must be precached
+	precache debris/pushbox1.wav
+	precache debris/pushbox2.wav
+	precache debris/pushbox3.wav
+	precache doors/doorstop5.wav
+	precache tentacle/te_strike1.wav
+	precache tentacle/te_strike2.wav
+
+	setvard NPC_CAN_ATTACK 0
+	setvard UNDI_MAX_HEIGHT 600 //may vary with area
+	setvard NPC_HACKED_MOVE_SPEED 50
+}
+
+{ [shared] game_precache
+	precachefile sfor/undamael_head
+	precachefile monsters/horror_fire
+}
+
+{ [shared] game_spawn
+
+	name_unique undamael
+	
+	name Undamael
+	race undead
+	hp 20000
+	setmodel monsters/undamael.mdl
+	setidleanim Pit_Idle
+	hearingsensitivity 11
+	width 64
+	height 64
+	setturnrate 0.01
+	setbbox animsize
+	setsolid trigger
+	roam 0
+	fly 1
+	invincible 1
+	nopush 1
+
+	takedmg fire 0.0
+	takedmg poison 0.0
+	takedmg holy 3.0
+
+	setvard HORRORS_UP 0
+
+	callevent 0.1 init_beams
+
+	clientevent new all $currentscript //CL effects
+	setvard MY_CL_IDX game.script.last_sent_id
+
+	setvard UNDI_ATTACK_TARGET unset
+	setvard UNDI_MOVE_DEST unset
+	setvard CUR_SPEED SPEED_NORMAL
+	callevent 0.1 npc_post_spawn
+}
+
+{ npc_post_spawn
+	//adjust footprint
+	callevent adjust_footprint
+	callexternal all undamael_spawn
+}
+
+{ adjust_footprint //needs to be called whenever he changes areas
+	local START_LOC game.monster.origin
+	vectoradd START_LOC z 96
+	setorigin ent_me START_LOC
+	setvard NPC_HOME_LOC START_LOC
+	setvard NPC_START_Z $vec.z(NPC_HOME_LOC)
+	add UNDI_MAX_HEIGHT NPC_START_Z
+}
+
+{ game_heardsound
+
+	if ( UNDI_ATTACK_TARGET equals unset )
+	{
+		local LAST_HEARD $get(ent_lastheard,id)
+		if ( !$get(UNDI_ATTACK_TARGET,isalive) )
+		{
+			callevent npcatk_settarget $get(LAST_HEARD,id) "heard"
+		}
+	}
+	if RAISED_LEVEL == 0
+	setvard RAISED_LEVEL 1
+	callevent 2.0 raise_to_one
+}
+
+{ raise_to_one
+	playanim critical rise_to_Temp1
+}
+
+{ mdl_rising
+	if RAISED_LEVEL == 1
+	playanim critical Temp1_to_Floor
+	setidleanim Floor_Idle
+}
+
+//====================================================================== MAIN CYCLE [ BEGIN ]
+{
+repeatdelay 0.1
+
+	if !NO_TURN
+
+	if ( BEAM_WARM_UP == 1 )
+	{
+		clientevent update all MY_CL_IDX eye_beam_prep_cl $get(ent_me,attachpos,1) $get(ent_me,attachpos,2)
+	}
+
+	if ( BEAM_WARM_UP == 2 )
+	{
+		clientevent update all MY_CL_IDX eye_beam_prep_cl2 $get(ent_me,attachpos,1) $get(ent_me,attachpos,2)
+	}
+
+	//debug
+	if ( BEAM_ENT isnot 'BEAM_ENT' ) effect beam update BEAM_ENT color $vec($rand(0,255),$rand(0,255),$rand(0,255))
+
+	//find a target
+	if ( UNDI_ATTACK_TARGET equals unset )
+	{
+		if !BEAM2_ON
+		local BOX_SCAN $get_tbox(enemy,1024,game.monster.origin)
+		dbg scan_targets: BOX_SCAN
+		if ( BOX_SCAN isnot none )
+		{
+			local BOX_SCAN $sort_entlist(BOX_SCAN,range)
+			callevent npcatk_settarget $get_token(BOX_SCAN,0) "scanned"
+		}
+		if UNDI_ATTACK_TARGET equals unset
+		//still no target, try players only method
+		getplayersnb PLAYER_LIST
+		token.scramble PLAYER_LIST
+		local TARG_ID $get_token(PLAYER_LIST,0)
+		local TARG_ORG $get(TARG_ID,origin)
+		local TRACE_START $get(ent_me,attachpos,0)
+		local TRACE_ORG $get_traceline(TRACE_START,TARG_ORG,worldonly)
+		if TRACE_ORG equals TARG_ORG
+		callevent npcatk_settarget TARG_ID "scanned"
+	}
+
+
+	if UNDI_ATTACK_TARGET isnot unset
+
+	//check target alive
+	if ( !$get(UNDI_ATTACK_TARGET,isalive) )
+	{
+		callevent my_target_died
+	}
+
+	local TARG_RANGE $get(UNDI_ATTACK_TARGET,range)
+
+	if ( TARG_RANGE > DETECT_RANGE )
+	{
+		callevent my_target_died
+	}
+
+	local CAN_SEE_TARG $cansee(UNDI_ATTACK_TARGET,1024)
+
+	if ( CAN_SET_TARG )
+	{
+		//has trouble "seeing" targets - this is to prevent premature switching
+		setvard LAST_SAW_TARGET game.time
+		add LAST_SAW_TARGET 10.0
+	}
+
+	if ( !CAN_SEE_TARG )
+	{
+		//favor target you can see, over target you cant
+		if !BEAM2_ON
+		local BOX_SCAN $get_tbox(enemy,1024)
+		if BOX_SCAN isnot none
+		token.scramble BOX_SCAN
+		//dbg Can't see targ: BOX_SCAN
+		callevent npcatk_settarget $get_token(BOX_SCAN,0) "cant see"
+	}
+
+	if UNDI_ATTACK_TARGET isnot unset
+
+	//face target
+	local MY_ORG game.monster.origin
+	if ( UNDI_MOVE_DEST equals unset )
+	{
+		local TARGET_ORG $get(UNDI_ATTACK_TARGET,origin)
+	}
+	else
+	{
+		local TARGET_ORG UNDI_MOVE_DEST
+	}
+
+	local ANGLE_TO $angles(MY_ORG,TARGET_ORG)	
+	if ( UNDI_MOVE_DEST equals unset )
+	{
+		setangle face $vec(0,ANGLE_TO,0)
+	}
+	else
+	{
+		//keep facing target, even when moving away
+		if !BEAM2_ON
+		local ATKTARGET_ORG $get(UNDI_ATTACK_TARGET,origin)
+		local F_ANGLE $angles(MY_ORG,ATKTARGET_ORG)
+		setangle face $vec(0,F_ANGLE,0)
+	}
+
+	//move towards target
+	local DEST_DIR $dir(MY_ORG,TARGET_ORG)
+	local V_SPEED $vec.z(DEST_DIR)
+	multiply V_SPEED 8
+	if ( BEAM2_ON ) local V_SPEED 0
+
+
+	local DEST_LOC MY_ORG
+
+	//find base foot org
+	local MY_FOOT_ORG MY_ORG
+	vectorset MY_FOOT_ORG z $vec.z(NPC_HOME_LOC)
+	local MY_DIST_2D $dist(MY_FOOT_ORG,NPC_HOME_LOC)
+
+	local MY_YAW game.monster.angles.yaw
+
+	if ( $vec.z(MY_ORG) > UNDI_MAX_HEIGHT )
+	{
+		if V_SPEED > 0
+		dbg Too high!
+		local V_SPEED -1
+	}
+
+	if ( !IN_PIT_EDGE )
+	{
+		vectoradd DEST_LOC $relpos($vec(0,ANGLE_TO,0),$vec(0,NPC_FWD_SPEED,V_SPEED))
+	}
+	if ( IN_PIT_EDGE )
+	{
+		//bounce back
+		local ANGLE_TO $angles(MY_FOOT_ORG,NPC_HOME_LOC)
+		vectoradd DEST_LOC $relpos($vec(0,ANGLE_TO,0),$vec(0,5,V_SPEED))
+	}
+
+
+	//figure forward speed
+	//- if beyond pit radius, only move forward if it puts me closer to center of pit
+
+	//if ( MY_DIST_2D <= PIT_RADIUS ) setvard NPC_FWD_SPEED 10 //I'm within my pit, move forward
+
+
+	//within pit, move forward, if target not within attack range
+	local TARGET_ORG_XY TARGET_ORG
+	vectorset TARGET_ORG_XY z $vec.z(NPC_HOME_LOC)
+	local TARG_DIST $dist(MY_FOOT_ORG,TARGET_ORG_XY)
+	if ( TARG_DIST > MOVE_RANGE )
+	{
+		setvard NPC_FWD_SPEED CUR_SPEED
+	}
+	else
+	{
+		setvard NPC_FWD_SPEED -1
+	}
+
+
+	//but only to the outside of pit, if outside, move only if moving closer to pit center
+
+	if ( game.time > LAST_TOUCHED_EDGE ) setvard IN_PIT_EDGE 0
+
+	//if ( TOO_CLOSE ) setvard IN_PIT_EDGE 1
+
+	setorigin ent_me DEST_LOC
+
+	if NPC_CAN_ATTACK
+
+	if ( $get(UNDI_ATTACK_TARGET,range) < ATTACK_RANGE )
+	{
+		if UNDI_MOVE_DEST equals unset
+		local Z_DIFF game.monster.origin.z
+		local TARG_Z $get(UNDI_ATTACK_TARGET,origin.z)
+		subtract TARG_Z 38 //player centerpoint weirdness
+		if Z_DIFF >= TARG_Z
+		subtract Z_DIFF TARG_Z
+		if Z_DIFF < ATTACK_ZRANGE
+		//if $cansee(UNDI_ATTACK_TARGET,ATTACK_RANGE)
+		playanim once ANIM_ATTACK
+	}
+}
+//====================================================================== MAIN CYCLE [ END ]
+
+{ my_target_died
+	playsound 0 10 x/x_attack1.wav
+	setvard UNDI_ATTACK_TARGET unset
+}
+
+{ mdl_pre_attack
+	playrandomsound 0 10 SOUND_PRE_BITE1 SOUND_PRE_BITE2
+}
+
+{ mdl_attack
+	if ( $get(UNDI_ATTACK_TARGET,range) < ATTACK_HITRANGE )
+	{
+		local TARG_ORG $get(UNDI_ATTACK_TARGET,origin)
+		if ( $get(UNDI_ATTACK_TARGET,isplayer) ) vectoradd TARG_ORG z -30 //aim at feet
+		local TRACE_START $get(ent_me,attachpos,0)
+		local TRACE_TARG $get_traceline(TRACE_START,TARG_ORG,worldonly)
+
+		dodamage TRACE_TARG 384 DMG_BITE 90% 0.5 reflective pierce
+	}
+	effect screenshake $get(ent_me,origin) 256 10 1 384
+	playrandomsound 0 10 SOUND_BITE_HIT1 SOUND_BITE_HIT2 SOUND_BITE_HIT2 SOUND_BITE_HIT2 SOUND_BITE_HIT2
+	callexternal HEAD_ID ext_unsolid 1.0
+
+	if EAT_ENABLED
+	if game.time > NEXT_EAT
+	callevent do_eat
+}
+
+{ ext_pitedge_touch //called from other/undamael_pitedge - alerts undmael he's reached edge
+	setvard LAST_TOUCHED_EDGE game.time
+	add LAST_TOUCHED_EDGE 1
+	if ( !IN_PIT_EDGE ) playrandomsound 0 10 SOUND_HITEDGE1 SOUND_HITEDGE2 SOUND_HITEDGE3
+	setvard IN_PIT_EDGE 1
+	dbg pitedge_set_topuch game.time 
+}
+
+{ mdl_raise_done
+	setvard NPC_CAN_ATTACK 1
+}
+
+{ npcatk_settarget //<target> [reason]
+
+	dbg npcatk_settarget $get(PARAM1,name) PARAM2
+
+	if ( !$get(HEAD_ID,exists) )
+	{
+		createnpc sfor/undamael_head $relpos(0,0,64) $get(ent_me,id)
+		setvard HEAD_ID $get(ent_lastcreated,id)
+		callevent start_cycles
+	}
+
+	//don't pick a new target if I saw my current target in the last 10 seconds, and he's not dead, unless retaliating
+	if ( $get(UNDI_ATTACK_TARGET,isalive) )
+	{
+		if PARAM2 isnot 'struck'
+		if game.time < LAST_SAW_TARGET
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+	
+	//undi is slow to switch targets
+	if ( UNDI_ATTACK_TARGET isnot unset )
+	{
+		local EXIT_SUB 1
+		if game.time > LAST_TARGET_SWITCH
+		setvard LAST_TARGET_SWITCH game.time
+		add LAST_TARGET_SWITCH 10.0
+		local EXIT_SUB 0
+	}
+	if !EXIT_SUB
+
+	//validation
+	if !$get(PARAM1,scriptvar,PLAYING_DEAD)
+	if $get(PARAM1,relationship,ent_me) isnot ally
+	if $get(PARAM1,isalive)
+	if $get(PARAM1,relationship,ent_me) equals enemy
+	if $get(PARAM1,id) isnot $get(ent_me,id)
+	if $get(PARAM1,id) isnot HEAD_ID
+
+	//anything below my spawn point is invalid
+	if $get(PARAM1,origin.z) > $vec.z(NPC_HOME_LOC)
+
+
+	setvard UNDI_ATTACK_TARGET PARAM1
+	//debug
+//	if ( !$get(BEAM_ENT,exists) )
+//	{
+//		effect beam ents blueflare1.spr 10 UNDI_ATTACK_TARGET 0 $get(ent_me,id) 2 (0,0,255) 200 0 1000
+//		setvard BEAM_ENT $get(ent_lastcreated,id)
+//	}
+//	else
+//	{
+//		effect beam update BEAM_ENT start_target UNDI_ATTACK_TARGET 0
+//	}
+}
+
+//==== DEGUGARRY
+{ [server] bd_debug  //<print_var> <property_printvar> <extra> <extra> <caller_id>
+	saytextrange 2048
+	saytext var PARAM1 prop PARAM2 = $get(PARAM1,PARAM2)
+	consolemsg PARAM5 $get(ent_me,name) reports: var PARAM1 pvar $get(PARAM1,PARAM2)
+	dbg PARAM5 $get(ent_me,name) reports: var PARAM1 pvar $get(PARAM1,PARAM2)
+}
+
+{ ext_playanim
+	playanim critical PARAM1
+	setidleanim PARAM1
+}
+
+{ ext_noturn
+	dbg no_turn_set
+	if ( !NO_TURN )
+	{
+		setvard NO_TURN 1
+	}
+	else
+	{
+		setvard NO_TURN 0
+	}
+}
+
+{ ext_test
+	local Z_DIFF game.monster.origin.z
+	subtract Z_DIFF $get(UNDI_ATTACK_TARGET,origin.z)
+
+	dbg targz $get(UNDI_ATTACK_TARGET,origin.z) vs. game.monster.origin.z = Z_DIFF
+
+	local Z_LEVEL NPC_HOME_LOC
+	local Z_DIFF NPC_HOME_LOC
+	vectorset Z_DIFF z $vec.z(game.monster.origin)
+
+	dbg ver_height_from_home $dist(Z_LEVEL,Z_DIFF)
+}
+
+{ ext_beam_relink
+	local NEAR_FOLK $get_tsphere(enemy,2048,game.monster.origin)
+	local N_FOLK $get_token_amt(NEAR_FOLK)
+	subtract N_FOLK 1
+	local RND_TARG $rand(0,N_FOLK)
+	local NEW_TARG $get_token(NEAR_FOLK,RND_TARG)
+	effect beam update BEAM_ENT start_target NEW_TARG
+}
+
+{ ext_beam_att
+	setvard BEAM_TARGET PARAM1
+	setvard BEAM_ATT1 $rand(1,3)
+	effect beam update BEAM_EYE1 brightness 200
+	effect beam update BEAM_EYE1 start_target ent_me BEAM_ATT1
+	effect beam update BEAM_EYE1 end_target BEAM_TARGET 0
+	callevent 0.1 ext_beam_att2
+}
+
+{ ext_beam_att2
+	local BEAM_ATT2 $rand(1,3)
+	consolemsg BEAM_TARGET ext_beam_att BEAM_ATT1 BEAM_ATT2
+	effect beam update BEAM_EYE2 brightness 200
+	effect beam update BEAM_EYE2 start_target ent_me BEAM_ATT2
+	effect beam update BEAM_EYE2 end_target BEAM_TARGET 0
+
+}
+
+{ ext_beam_remove
+	effect beam update BEAM_ENT remove 0
+}
+
+{ ext_beam_new
+	effect beam ents blueflare1.spr 10 UNDI_ATTACK_TARGET 0 $get(ent_me,id) 2 (0,0,255) 200 0 1000
+	setvard BEAM_ENT $get(ent_lastcreated,id)
+}
+//============================================================= END DEBUGGARY
+
+{ start_cycles
+	if !CYCLES_STARTED
+	setvard CYCLES_STARTED 1
+	callevent FREQ_SPECIAL do_special
+}
+
+{ do_beam1
+
+	//one strong beam, vs a single player
+
+	//if too close to target, move away before beaming
+	if ( $get(UNDI_ATTACK_TARGET,range) < ATTACK_HITRANGE )
+	{
+		local TARGET_ORG $get(UNDI_ATTACK_TARGET,origin)
+		setvard UNDI_MOVE_DEST $relpos($vec(0,TARG_ANG,0),$vec(0,1000,0))
+		callevent 5.0 do_beam1_2
+	}
+	else
+	{
+		callevent do_beam1_2
+	}
+}
+
+{ do_beam1_2 //warn em it's coming so they can hide/block
+	//callevent FREQ_BEAM1 do_beam
+	setvard UNDI_MOVE_DEST unset
+	setvard CUR_SPEED 1
+
+	//effect beam ents blueflare1.spr 100 ent_me 2 ent_me 2 (255,255,255) 0 60 -1
+	effect beam update BEAM_EYE1 noise 60
+	effect beam update BEAM_EYE1 color (255,255,255)
+	effect beam update BEAM_EYE2 noise 60
+	effect beam update BEAM_EYE2 color (255,255,255)
+
+
+	playanim critical Floor_Fidget_SmallRise
+
+	setvard BEAM_WARM_UP 1
+	setvard BEAM_SOUND_ON 1
+	playsound 1 10 SOUND_BEAM1_WARMUP
+
+	callevent 2.0 do_beam1_3
+}
+
+{ do_beam1_3
+
+	setvard BEAM_WARM_UP 0
+	setvard BEAM_VOL 10
+	callevent beam_sound_fade
+	//playsound 1 0 SOUND_BEAM1_WARMUP
+
+	//$cansee wont cut it, since I "see" from my neck
+	//trace from left eye to target instead
+	local TARG_ORG $get(UNDI_ATTACK_TARGET,origin)
+	local EYE_POS1 $get(ent_me,attachpos,1)
+	local TRACE_TARG $get_traceline(EYE_POS1,TARG_ORG,worldonly)
+
+	if ( TRACE_TARG equals TARG_ORG )
+	{
+		playsound 0 10 SOUND_BEAM1_FIRE
+
+		effect beam update BEAM_EYE1 end_target UNDI_ATTACK_TARGET 0
+		effect beam update BEAM_EYE2 end_target UNDI_ATTACK_TARGET 0
+		effect beam update BEAM_EYE1 brightness 200
+		effect beam update BEAM_EYE2 brightness 200
+
+		dodamage UNDI_ATTACK_TARGET direct DMG_BEAM1 100% ent_me dark
+		addvelocity UNDI_ATTACK_TARGET $relvel(-20,800,150)
+
+		callevent 2.0 beams_off
+	}
+	setvard CUR_SPEED SPEED_NORMAL
+}
+
+{ beam_sound_fade
+	subtract BEAM_VOL 1
+	if ( BEAM_VOL == 0 ) setvard BEAM_SOUND_ON 0
+	playsound 1 BEAM_VOL SOUND_BEAM1_WARMUP
+	if ( BEAM_VOL > 0 ) callevent 0.2 beam_sound_fade
+}
+
+{ beams_off
+	effect beam update BEAM_EYE1 brightness 0
+	effect beam update BEAM_EYE2 brightness 0
+}
+
+{ init_beams
+	effect beam ents blueflare1.spr 100 ent_me 2 ent_me 2 (255,255,255) 0 60 -1
+	setvard BEAM_EYE1 $get(ent_lastcreated,id)
+	callevent 1.0 init_beam2
+}
+
+{ init_beam2
+	effect beam ents blueflare1.spr 100 ent_me 3 ent_me 3 (255,255,255) 0 60 -1
+	setvard BEAM_EYE2 $get(ent_lastcreated,id)
+	callevent 1.0 init_beam3
+}
+
+{ init_beam3
+	effect beam vector laserbeam.spr 30 $get(ent_me,origin) $get(ent_me,origin) (255,0,255) 0 10 -1
+	setvard BEAM_EYE1_SEC $get(ent_lastcreated,id)
+	callevent 1.0 init_beam4
+}
+
+{ init_beam4
+	effect beam vector laserbeam.spr 30 $get(ent_me,origin) $get(ent_me,origin) (255,0,255) 0 10 -1
+	setvard BEAM_EYE2_SEC $get(ent_lastcreated,id)
+}
+
+
+{ [server]
+repeatdelay $randf(1,2)
+	if !BEAM_SOUND_ON
+	playrandomsound 2 10 SOUND_IDLE1 SOUND_IDLE2
+}
+
+
+//============================= CLIENT [BEGIN] ============================
+{ [client] client_activate
+
+	local DO_NADDA 1
+}
+
+{ [client] eye_beam_prep_cl
+	cleffect tempent sprite 3dmflaora.spr PARAM1 setup_eye_sprite
+	cleffect tempent sprite 3dmflaora.spr PARAM2 setup_eye_sprite
+}
+
+{ [client] eye_beam_prep_cl2
+	cleffect tempent sprite 3dmflaora.spr PARAM1 setup_eye_sprite2
+	cleffect tempent sprite 3dmflaora.spr PARAM2 setup_eye_sprite2
+}
+
+{ [client] eye_beam_fire
+	cleffect tempent sprite 3dmflaora.spr PARAM1 setup_eye_fire
+	cleffect tempent sprite 3dmflaora.spr PARAM2 setup_eye_fire
+}
+
+{ [client] eye_beam_green
+	cleffect tempent sprite 3dmflaora.spr PARAM1 setup_eye_green
+	cleffect tempent sprite 3dmflaora.spr PARAM2 setup_eye_green
+}
+
+{ [client] eye_breath_fire
+	setvard FIRE_ANG PARAM2
+	cleffect tempent sprite 3dmflaora.spr PARAM1 setup_fire_breath
+	cleffect tempent sprite 3dmflaora.spr PARAM1 setup_fire_breath
+	cleffect tempent sprite 3dmflaora.spr PARAM1 setup_fire_breath
+	cleffect tempent sprite 3dmflaora.spr PARAM1 setup_fire_breath
+}
+
+
+{ [client] setup_eye_sprite
+
+
+   cleffect tempent set_current_prop death_delay 	3
+   cleffect tempent set_current_prop bouncefactor 	0.1
+   cleffect tempent set_current_prop scale 		0.5
+   cleffect tempent set_current_prop rendercolor (255,255,255)
+   cleffect tempent set_current_prop gravity 		$randf(0.2,0.1)
+   cleffect tempent set_current_prop collide 		world|die
+}
+
+{ [client] setup_eye_sprite2
+
+
+   cleffect tempent set_current_prop death_delay 	3
+   cleffect tempent set_current_prop bouncefactor 	0.1
+   cleffect tempent set_current_prop scale 		0.5
+   cleffect tempent set_current_prop rendercolor (255,0,255)
+   cleffect tempent set_current_prop gravity 		$randf(0.2,0.1)
+   cleffect tempent set_current_prop collide 		world|die
+}
+
+{ [client] setup_eye_fire
+
+
+   cleffect tempent set_current_prop death_delay 	1
+	cleffect tempent set_current_prop fadeout		lifetime
+   cleffect tempent set_current_prop bouncefactor 	0.1
+   cleffect tempent set_current_prop scale 			3
+   cleffect tempent set_current_prop rendercolor	(255,0,0)
+   cleffect tempent set_current_prop gravity 		0.01
+   cleffect tempent set_current_prop collide 		world|die
+}
+
+{ [client] setup_eye_green
+
+
+   cleffect tempent set_current_prop death_delay 	1
+	cleffect tempent set_current_prop fadeout		lifetime
+   cleffect tempent set_current_prop bouncefactor 	0.1
+   cleffect tempent set_current_prop scale 			3
+   cleffect tempent set_current_prop rendercolor	(0,255,0)
+   cleffect tempent set_current_prop gravity 		0.01
+   cleffect tempent set_current_prop collide 		world|die
+}
+
+{ [client] setup_fire_breath
+
+	setvard FIRE_VEL $randf(100,500)
+	if ( FIRE_ANG < 0 )
+	{
+		if FIRE_VEL > -179
+		setvard FIRE_VEL $randf(-500,-100)
+	}
+
+	cleffect tempent set_current_prop death_delay 	2
+	cleffect tempent set_current_prop angles		$vec(0,FIRE_ANG,0) //not working
+	cleffect tempent set_current_prop velocity 		$vec($randf(-100,100),FIRE_VEL,$randf(-200,200)) //$vec($randf(-100,100),$randf(100,500),$randf(-200,200))
+	cleffect tempent set_current_prop fadeout		lifetime
+	cleffect tempent set_current_prop bouncefactor 	0.1
+	cleffect tempent set_current_prop scale 		3
+	//cleffect tempent set_current_prop rendercolor	(255,0,0)
+	cleffect tempent set_current_prop gravity 		0.01
+	cleffect tempent set_current_prop collide 		world|die
+}
+//============================= CLIENT [END] ==============================
+
+
+{ do_special
+
+	local RND_SPECIAL $rand(2,6)
+
+	if ( UNDI_ATTACK_TARGET equals unset )
+	{
+		local RND_SPECIAL 0 //dont waste edicts casting spells with no targets
+		setvard FREQ_SPECIAL 10.0
+	}
+
+	//local RND_SPECIAL 4 //developer xxx
+	if ( AM_EATING )
+	{
+		local RND_SPECIAL 1
+		setvard FREQ_SPECIAL 40.0 //this may take awhile and is initated elsewhere
+	}
+	if ( RND_SPECIAL == 2 )
+	{
+		if ( HORRORS_UP >= 4 )
+		{
+			setvard FREQ_SPECIAL 1.0
+		}
+		if HORRORS_UP < 4
+		add HORRORS_UP 2 //maybe better to delete existing horrors instead
+		setvard FREQ_SPECIAL 20.0
+		callevent do_horrors
+	}
+	if ( RND_SPECIAL == 3 )
+	{
+		callevent do_beam1
+		setvard FREQ_SPECIAL 20.0
+	}
+	if ( RND_SPECIAL == 4 )
+	{
+		callevent do_beam2
+		setvard FREQ_SPECIAL 40.0 //this one takes longer than most
+	}
+	if ( RND_SPECIAL == 5 )
+	{
+		callevent do_nuke
+		setvard FREQ_SPECIAL 20.0
+	}
+	if ( RND_SPECIAL == 6 )
+	{
+		callevent do_breath_fire
+		setvard FREQ_SPECIAL 20.0
+	}
+
+
+	callevent FREQ_SPECIAL do_special
+}
+
+{ do_beam2
+
+	//a set of beams, strafeing against a wall
+
+	//if too close to target, move away before beaming
+	if ( $get(UNDI_ATTACK_TARGET,range) < 512 )
+	{
+		local TARGET_ORG $get(UNDI_ATTACK_TARGET,origin)
+		local TARG_ANG $angles(game.monster.origin,TARGET_ORG)
+		setvard UNDI_MOVE_DEST $relpos($vec(0,TARG_ANG,0),$vec(0,-1000,-256))
+		callevent 5.0 do_beam2_2
+	}
+	else
+	{
+		callevent do_beam2_2
+	}
+}
+
+{ do_beam2_2 //warn em it's coming so they can hide/block
+	//callevent FREQ_BEAM1 do_beam
+	setvard UNDI_MOVE_DEST $get(ent_me,origin)
+	setvard CUR_SPEED 1
+//
+//	effect beam update BEAM_EYE1_SEC noise 10
+//	effect beam update BEAM_EYE1_SEC color (255,0,255)
+//	effect beam update BEAM_EYE2_SEC noise 10
+//	effect beam update BEAM_EYE2_SEC color (255,0,255)
+
+	playanim critical Floor_Fidget_SmallRise
+
+	setvard BEAM_WARM_UP 2
+	setvard BEAM_SOUND_ON 1
+	svplaysound 1 10 SOUND_BEAM2_WARMUP
+
+	callevent 2.0 do_beam2_init
+}
+
+{ do_beam2_init
+	//setvard NO_TURN 1 //undamael equivalent of SUSPEND_AI
+	setvard BEAM_WARM_UP 0
+	setvard BEAM_COUNT 0
+	playsound 0 10 SOUND_BEAM2_FIRE
+	effect beam update BEAM_EYE1_SEC brightness 128
+	effect beam update BEAM_EYE2_SEC brightness 128
+
+	local MY_YAW $get(ent_me,angles.yaw)
+	subtract MY_YAW 35
+	if ( MY_YAW < 0 ) add MY_YAW 359.99
+	setangle face $vec(0,MY_YAW,0)
+
+	setvard BEAM2_ON 1
+
+	callevent 0.01 do_beam2_cycle
+}
+
+{ do_beam2_cycle
+
+	local MY_YAW $get(ent_me,angles.yaw)
+	add MY_YAW 0.5
+	if ( MY_YAW > 359.99 ) subtract MY_YAW 359.99
+	setangle face $vec(0,MY_YAW,0)
+
+	local MY_Z $get(ent_me,origin.z)
+	add MY_Z 64
+	local HIS_Z $get(UNDI_ATTACK_TARGET,origin.z)
+	local MY_ORG $get(ent_me,origin)
+	if ( MY_Z >= HIS_Z )
+	{
+		//dbg do_beam2_cycle sink
+		vectoradd MY_ORG z -1
+		setorigin ent_me MY_ORG
+	}
+	else
+	{
+		//dbg do_beam2_cycle raise
+		if $vec.z(MY_ORG) < UNDI_MAX_HEIGHT
+		vectoradd MY_ORG z 2
+		setorigin ent_me MY_ORG 
+	}
+
+	local BEAM1_START $get(ent_me,attachpos,1)
+	local BEAM2_START $get(ent_me,attachpos,2)
+
+	local BEAM1_END BEAM1_START
+	local BEAM2_END BEAM2_START
+
+	vectoradd BEAM1_END $relpos($vec(0,MY_YAW,0),$vec(0,1000,0))
+	vectoradd BEAM2_END $relpos($vec(0,MY_YAW,0),$vec(0,1000,0))
+
+	local BEAM1_END $get_traceline(BEAM1_START,BEAM1_END,worldonly)
+	local BEAM2_END $get_traceline(BEAM2_START,BEAM2_END,worldonly)
+
+	effect beam update BEAM_EYE1_SEC points BEAM1_START BEAM1_END
+	effect beam update BEAM_EYE2_SEC points BEAM2_START BEAM2_END
+
+	xdodamage BEAM1_START BEAM1_END DMG_BEAM2 100% ent_me ent_me none dark
+	xdodamage BEAM2_START BEAM2_END DMG_BEAM2 100% ent_me ent_me none dark
+
+	add BEAM_COUNT 1
+	if ( BEAM_COUNT == 120 )
+	{
+		callevent do_beam2_end
+	}
+	else
+	{
+		callevent 0.1 do_beam2_cycle
+	}
+}
+
+{ do_beam2_end
+	setvard BEAM2_ON 0
+	setvard UNDI_MOVE_DEST unset
+	setvard CUR_SPEED SPEED_NORMAL
+	//setvard NO_TURN 0
+	effect beam update BEAM_EYE1_SEC brightness 0
+	effect beam update BEAM_EYE2_SEC brightness 0
+	svplaysound 1 0 SOUND_BEAM2_WARMUP
+}
+
+
+{ do_nuke
+	if ( $get(UNDI_ATTACK_TARGET,range) < 512 )
+	{
+		local TARGET_ORG $get(UNDI_ATTACK_TARGET,origin)
+		local TARG_ANG $angles(game.monster.origin,TARGET_ORG)
+		setvard UNDI_MOVE_DEST $relpos($vec(0,TARG_ANG,0),$vec(0,-1000,-256))
+		callevent 5.0 do_nuke_warmup
+		playsound 0 10 SOUND_NUKE_WARMUP
+	}
+	else
+	{
+		callevent do_nuke_warmup
+	}
+}
+
+{ do_nuke_warmup
+	setvard UNDI_MOVE_DEST $get(ent_me,origin)
+
+	playanim critical Floor_Fidget_SmallRise
+
+	clientevent update all MY_CL_IDX eye_beam_fire $get(ent_me,attachpos,1) $get(ent_me,attachpos,2)
+
+	playsound 0 10 SOUND_NUKE_WARMUP
+	callevent 2.0 do_nuke_fire	
+}
+
+{ do_nuke_fire
+
+	setvard UNDI_MOVE_DEST unset
+
+	callexternal $get_by_name(head_undi) do_nuke UNDI_ATTACK_TARGET DMG_NUKE
+}
+
+{ do_breath_fire
+	setvard UNDI_MOVE_DEST $get(ent_me,origin)
+	playanim critical ANIM_BREATH
+	setvard FB_COUNT 0
+	callevent 0.1 do_breath_fire_loop
+	setvard BREATH_VOL 10
+	playsound 1 10 SOUND_BREATH_LOOP
+	playsound 0 10 SOUND_BREATH_START
+}
+
+{ do_breath_fire_loop
+	add FB_COUNT 1
+	if ( FB_COUNT == 60 )
+	{
+		callevent breath_sound_fade
+		setvard UNDI_MOVE_DEST unset
+	}
+	if FB_COUNT < 60
+	callevent 0.1 do_breath_fire_loop
+
+	playanim once ANIM_BREATH		
+	setvard BREATH_ORG $get(ent_me,attachpos,0)
+	clientevent update all MY_CL_IDX eye_breath_fire BREATH_ORG $get(ent_me,angles.yaw)
+
+	if ( FB_COUNT == 5 ) callevent burn_inbox
+	if ( FB_COUNT == 25 ) callevent burn_inbox
+	if ( FB_COUNT == 45 ) callevent burn_inbox
+	if ( FB_COUNT == 55 ) callevent burn_inbox
+}
+
+{ burn_inbox
+	setvard BURN_BOX $get_tbox(enemy,512,BREATH_ORG)
+	dbg burn_inbox BURN_BOX
+	if BURN_BOX isnot none
+	calleventloop $get_token_amt(BURN_BOX) burn_targets_in_cone
+}
+
+{ burn_targets_in_cone
+	local BURN_TARG $get_token(BURN_BOX,game.script.iteration)
+	local TARG_ORG $get(BURN_TARG,origin)
+	local MY_ANG $get(ent_me,angles)
+	local IN_CONE $within_cone(TARG_ORG,BREATH_ORG,MY_ANG,45)
+	if IN_CONE //is in cone
+	if $dist(BREATH_ORG,TARG_ORG) < 512
+	if $get_traceline(BREATH_ORG,TARG_ORG,worldonly) equals TARG_ORG
+	applyeffect BURN_TARG effects/effect_burn 10 $get(ent_me,id) DOT_BREATH 1 1
+}
+
+{ breath_sound_fade
+	subtract BREATH_VOL 1
+	playsound 1 BREATH_VOL SOUND_BREATH_LOOP
+	if ( BREATH_VOL > 0 ) callevent 0.2 breath_sound_fade
+}
+
+{ horror_died
+	subtract HORRORS_UP 1
+	dbg horror_died HORRORS_UP
+}
+
+{ do_horrors
+
+	if ( $get(UNDI_ATTACK_TARGET,range) < 512 )
+	{
+		local TARGET_ORG $get(UNDI_ATTACK_TARGET,origin)
+		local TARG_ANG $angles(game.monster.origin,TARGET_ORG)
+		setvard UNDI_MOVE_DEST $relpos($vec(0,TARG_ANG,0),$vec(0,-1000,-256))
+		callevent 5.0 do_horrors_summon
+	}
+	else
+	{
+		callevent do_horrors_summon
+	}
+}
+
+{ do_horrors_summon
+
+	playanim critical Engine_Idle //Floor_Fidget_SmallRise
+	playsound 0 10 SOUND_PRE_SUMMON
+	clientevent update all MY_CL_IDX eye_beam_green $get(ent_me,attachpos,1) $get(ent_me,attachpos,2)
+	callevent 1.0 make_horror1
+	callevent 1.1 make_horror2
+}
+
+{ make_horror1
+	createnpc monsters/horror_fire $relpos(-100,0,64) $get(ent_me,id)
+}
+
+{ make_horror2
+	setvard UNDI_MOVE_DEST unset
+	createnpc monsters/horror_fire $relpos(100,0,64) $get(ent_me,id)
+}
+
+{ do_eat
+	setvard UNDI_MOVE_DEST START_LOC
+	playanim critical tentacle_grab
+	setvard EAT_TARGET UNDI_ATTACK_TARGET
+	setvard AM_EATING 1
+	playsound 0 10 barnacle/bcl_chew1.wav
+	callevent 0.1 eat_loop
+	callevent 3.0 eat_sound
+	callevent 6.0 eat_done
+}
+
+{ eat_sound
+	playsound 0 10 barnacle/bcl_chew2.wav
+}
+
+{ eat_loop
+	if AM_EATING
+	setorigin EAT_TARGET $get(ent_me,attachpos,0)
+	playanim once tentacle_grab
+	callevent 0.1 eat_loop
+}
+
+{ eat_done
+	setvard UNDI_MOVE_DEST unset
+	setvard AM_EATING 0
+	playanim critical rise_to_Temp1
+}
+
+{ death_sequence //called from undamael_head
+	setidleanim Engine_death2
+	playanim critical Engine_death2
+	playsound 0 10 SOUND_DEATH
+	effect screenshake $get(ent_me,origin) 256 10 20.0 1024
+	callevent 1.0 reward_victor
+	callevent 5.0 remove_me
+}
+
+{ reward_victor
+	if $lcase(game.map.name) equals sfor
+	local SWORD_ORIGIN $get(ent_me,origin)
+	vectoradd z SWORD_ORIGIN 256
+	callexternal GAME_MASTER undamael_reward_victor SWORD_ORIGIN
+}
+
+{ remove_me
+	deleteent ent_me fade
+}

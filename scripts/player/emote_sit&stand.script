@@ -1,0 +1,295 @@
+//Thothie - Raising sit mana regen to 5, and sit health regen to 3 (total) due to mass complaints
+//- What I really want is to heal by a % of maximum health/manna, attempting
+//Sit down, Stand up
+
+#scope server
+
+{ [shared]
+
+	const VIEW_LOWERTIME 1
+	const VIEW_RAISETIME 1
+	setvard FULL_ALERT 0
+
+	setvard PLR_SPEED_SPEED_RATIO 1.0
+}
+
+{
+	const EFFECT_REMOVE_ON_DEATH 0
+
+	const TEXT_SIT 		#ACTION_SIT
+	const TEXT_STAND 	#ACTION_STAND
+	const EFFECT_ID		player_sitstand
+	const EFFECT_ACTIONTYPE	player_action
+	const EFFECT_SCRIPT	$currentscript
+
+	setvard game.effect.id		EFFECT_ID
+	setvard game.effect.displayname	TEXT_SIT
+	setvard game.effect.type	EFFECT_ACTIONTYPE
+	setvard game.effect.removeondeath 0
+
+	setvard local.sit.active 0
+}
+
+#include [server] effects/effect_base	allowduplicate
+
+{	game_activate
+		
+		//quest set ent_me emote_sitting 0//Start off
+		callevent 0.5 send_emote	//I need this delay
+}
+{	send_emote
+
+		clientevent new ent_me $currentscript
+		setvard SCRIPT_ID game.script.last_sent_id
+}
+
+{	game_player_activate
+
+	if ( !$get(ent_me,canattack) )
+	{
+		if !local.sit.active
+		dplayermessage ent_me Can't use this emote while unable to attack.
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+
+	if( !local.sit.active )
+	{
+		callexternal ent_me emote_stop	//Stop other emotes
+		playanim hold sitdown
+		callexternal $get(ent_me,scriptvar,'PLR_ACTIVE_WEAPON') ext_player_sit //tell weapon I'm sitting
+		setvard game.effect.canmove 0
+		setvard game.effect.canattack 0
+		setvard game.effect.canrun 0
+		setvard game.effect.canjump 0
+		setvard game.effect.canduck 0
+		//quest set ent_me emote_sitting 1
+		setstatus add sitting
+
+		setvard local.sit.active 1
+		setvard game.effect.displayname TEXT_STAND
+		clientevent update ent_me SCRIPT_ID view_change 1
+		setvard game.effect.updateplayer 1
+	}
+	else
+	{
+		clientevent update ent_me SCRIPT_ID view_change 0
+		callevent VIEW_RAISETIME player_sit_freedom
+		setstatus remove sitting
+	}
+}
+
+{
+	repeatdelay 5		//Gain health
+
+	//good spot for constant debug reports
+	////dbg tempSpawn $get_lastmap(ent_me) game.localplayer.lastlevel game.player.lastmap game.localplayer.index
+
+	if ( STRUCK_TIME > 0 ) subtract STRUCK_TIME 1
+
+	if ( STRUCK_TIME equals 'STRUCK_TIME' ) setvard STRUCK_TIME 1
+
+	if ( STRUCK_TIME <= 1 ) {
+
+		if( local.sit.active )
+		{
+			local DEMON_ON $get(ent_me,scriptvar,DEMON_BLOOD)
+			if !DEMON_ON
+			setvard MAX_HEALTH $get(ent_me,maxhp)
+			setvard REGEN_RATE 0.05
+			multiply REGEN_RATE MAX_HEALTH
+			setvard REGEN_INT $int(REGEN_RATE)
+			if ( REGEN_INT < 2 ) setvard REGEN_INT 2
+			add regen.hp.amt REGEN_INT
+			givehp ent_me regen.hp.amt
+			drainstamina ent_me -1000
+
+			local SHOWIT_ON $get(ent_me,scriptvar,SHOW_HEALTH)
+			if SHOWIT_ON
+			local MY_HP $get(ent_me,hp) 
+			local MY_MAXHP $get(ent_me,maxhp)
+			local MY_HP $int(MY_HP)
+			local MY_MAXHP $int(MY_MAXHP)
+		}
+		else	setvard regen.hp.amt 1
+
+
+		if( local.sit.active ) //Gain mana
+		{
+			setvard MAX_MANA $get(ent_me,maxmp)
+			setvard MANA_RATE 0.20
+			multiply MANA_RATE MAX_MANA
+			setvard MANA_INT $int(MANA_RATE)
+			if ( MANA_INT < 4 ) setvard MANA_INT 4
+			add regen.mp.amt MANA_INT
+			givemp ent_me regen.mp.amt
+
+			if SHOWIT_ON
+			local MY_MP $get(ent_me,mp) 
+			local MY_MAXMP $get(ent_me,maxmp)
+			local MY_MP $int(MY_MP)
+			local MY_MAXMP $int(MY_MAXMP)
+
+			add FULL_ALERT 1
+			if ( $get(ent_me,mp)  == $get(ent_me,maxmp) ) local MY_MP "MAX"
+			if ( $get(ent_me,hp) == $get(ent_me,maxhp) ) local MY_HP "MAX"
+			if ( $get(ent_me,mp) < $get(ent_me,maxmp) ) setvard FULL_ALERT 0
+			if ( $get(ent_me,hp) < $get(ent_me,maxhp) ) setvard FULL_ALERT 0
+			if ( FULL_ALERT == 1 ) gplayermessage ent_me You are fully rested.
+			if ( FULL_ALERT == 0 ) gplayermessage ent_me Resting... HP: ( MY_HP / MY_MAXHP ) MANA: ( MY_MP / MY_MAXMP )
+		}
+		else	setvard regen.mp.amt 1
+	}
+}
+
+{ game_struck
+
+	setvard STRUCK_TIME 5	//Do not allow heal 5 cycles after being struck
+	setvard regen.hp.amt 0
+}
+
+{	player_sit_freedom
+
+		playanim break
+		setvard game.effect.canmove 1
+		setvard game.effect.canattack 1
+		setvard game.effect.canrun 1
+		setvard game.effect.canjump 1
+		setvard game.effect.canduck 1
+		//quest set ent_me emote_sitting 0
+
+		setvard local.sit.active 0
+		setvard game.effect.displayname TEXT_SIT
+		setvard game.effect.updateplayer 1
+}
+
+//Client view lower
+//=================
+
+{ [client] view_change
+
+	const VIEW_LOWERHEIGHT -28
+
+	setvard VIEW_DIRECTION PARAM1
+	setvard VIEW_STARTTIME game.time
+	callevent view_update
+}
+
+{  [client] view_update
+
+	local L_TIMEDELTA game.time
+	decvar L_TIMEDELTA VIEW_STARTTIME
+
+	local L_RATIO L_TIMEDELTA
+	divide L_RATIO VIEW_LOWERTIME
+	capvar L_RATIO 0 1
+
+	local L_HEIGHTOFS L_RATIO
+	if( !VIEW_DIRECTION )
+	{
+		local L_RATIO_OLD L_RATIO	//1-ratio
+		setvard L_HEIGHTOFS 1
+		decvar L_HEIGHTOFS L_RATIO_OLD
+	}
+	multiply L_HEIGHTOFS VIEW_LOWERHEIGHT
+	
+	setvard game.cleffect.view_ofs.z L_HEIGHTOFS	
+	setvard game.cleffect.viewmodel_ofs.z L_HEIGHTOFS
+
+	if L_RATIO < 1
+	callevent 0.01 view_update
+}
+
+//============ new speed system
+
+{ [server] plr_change_speed //<duration [-1 for until removed]|normal> <speed_ratio> <tag>
+	dbg $currentscript plr_change_speed PARAM1 PARAM2 PARAM3
+
+	if ( PARAM1 equals normal )
+	{
+		setvard PLR_SPEED_SPEED_RATIO 1.0
+		clientevent update ent_me SCRIPT_ID ext_update_player_speed_client PLR_SPEED_SPEED_RATIO
+		setvard game.effect.movespeed $math(multiply,PLR_SPEED_SPEED_RATIO,100)
+		setvard game.effect.anim.framerate PLR_SPEED_SPEED_RATIO
+		exitevent
+	}
+
+	local L_ESPEED_DURATION PARAM1
+	local L_ESPEED_SPEED_RATIO PARAM2
+	local L_ESPEED_TAG PARAM3
+
+	local L_ACTION add
+	if ( $get_scriptflag(ent_me,ESPEED_TAG,name_exists) ) local L_ACTION edit
+	scriptflags ent_me L_ACTION L_ESPEED_TAG speed L_ESPEED_SPEED_RATIO L_ESPEED_DURATION
+
+	callevent plr_get_total_speed
+
+	callevent plr_apply_speed
+}
+
+{ [server] plr_update_speed_effects //<update|remove> [tag]
+
+	dbg plr_update_speed_effects PARAM1 PARAM2
+
+	if ( PARAM1 equals update )
+	{
+		callevent plr_get_total_speed
+	}
+
+	if ( PARAM1 equals remove )
+	{
+		dbg $currentscript - plr_update_speed_effects remove PARAM2
+		scriptflags ent_me remove PARAM2
+		if ( !$get_scriptflag(ent_me,speed,type_exists) )
+		{
+			callevent plr_change_speed normal
+		}
+	}
+}
+
+{ [server] ext_scriptflag_expired
+	if PLR_SPEED_SPEED_RATIO != 1.0
+	callevent 0.1 plr_get_total_speed
+}
+
+{ [client] plr_update_speed_client
+	setvard game.cleffect.move_scale.forward 	PARAM1
+	setvard game.cleffect.move_scale.right 		PARAM1
+}
+
+{ [server] plr_get_total_speed
+	if ( !$get_scriptflag(ent_me,speed,type_exists) )
+	{
+		callevent plr_change_speed normal
+		exitevent
+	}
+
+	local L_SPEED_FLAG_TOTAL $get_scriptflag(ent_me,speed,type_value)
+	local L_SPEED_FLAG_COUNT $get_scriptflag(ent_me,speed,type_count)
+
+	local L_NEW_SPEED $math(divide,L_SPEED_FLAG_TOTAL,L_SPEED_FLAG_COUNT)
+
+	setvard PLR_SPEED_SPEED_RATIO L_NEW_SPEED
+
+	callevent plr_apply_speed
+
+	dbg $currentscript plr_get_total_speed - tot L_SPEED_FLAG_TOTAL count L_SPEED_FLAG_COUNT new PLR_SPEED_SPEED_RATIO / $math(multiply,PLR_SPEED_SPEED_RATIO,100)
+}
+
+{ [server] plr_apply_speed
+
+	if ( SCRIPT_ID equals 'SCRIPT_ID' )
+	{
+		clientevent new ent_me $currentscript 
+		setvard SCRIPT_ID game.script.last_sent_id
+		clientevent update ent_me SCRIPT_ID plr_update_speed_client PLR_SPEED_SPEED_RATIO
+	}
+	else
+	{
+		clientevent update ent_me SCRIPT_ID plr_update_speed_client PLR_SPEED_SPEED_RATIO
+	}
+
+	setvard game.effect.anim.framerate PLR_SPEED_SPEED_RATIO
+	setvard game.effect.movespeed $math(multiply,PLR_SPEED_SPEED_RATIO,100)
+}

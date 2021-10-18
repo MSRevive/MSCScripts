@@ -1,0 +1,518 @@
+//This is an older script and may have some bad conventions as a result.
+
+//Lesser Fire Elemental by Thothie (From Screatch)
+//- Throws three fire balls, approaches player, uses Circle of Fire spell, repeats
+{
+	setvar AS_SUMMON_TELE_CHECK 1
+
+	setvar IS_UNHOLY 1
+	setvard IMMUNE_VAMPIRE 1
+
+	setvard CAN_ATTACK 1
+	setvard CAN_HUNT 1
+	setvard HUNT_AGRO 1
+	setvard CAN_FLY 0
+	setvard CAN_HEAR 1
+	setvard CAN_WANDER 1
+
+	setvard CAN_RETALIATE 1
+	const RETALIATE_CHANGETARGET_CHANCE 100
+
+	//Use flinch anim if available in model
+	setvard CAN_FLINCH 1
+	setvard FLINCH_CHANCE 10
+	setvard FLINCH_ANIM flinch
+	setvard FLINCH_DELAY 1
+	setvard FLINCH_DMG_REQ 30 //minimum damage required to make flinch check, not applied
+	setvard FLEE_DISTANCE 4096
+
+	setvard ATTACK_RANGE 100
+	setvard ATTACK_HITRANGE 150
+	setvard MOVE_RANGE 65
+	const ATTACK_HITCHANCE 0.8
+	const SWIPE_MOVERANGE 65
+	const SWIPE_RANGE 100
+	const SWIPE_HITRANGE 150
+	const FIRE_BALL_RANGE 2000
+
+	const ATTACK_ACCURACY 80%
+	const ATTACK_DAMAGE '$rand(50,100)'
+	const CIRCLE_RANGE 256
+    const AIM_RATIO 50
+
+    const ATTACK_CONE_OF_FIRE 2
+    const ATTACK_SPEED 500
+
+	const FIRE_DAMAGE '$rand(20,50)' //fire damage when striking
+	const AMB_FIRE_DAMAGE '$rand(10,30)' //fire damage inflicted when struck @ close range
+	const FIRESEAL_DAMAGE 200 //spell fire damage
+	const FIRE_BALL_DAMAGE '$rand(50,100)' //fire ball impact damage
+	const FULL_FIRE_BALL_AMMO 3
+
+	//model will need editing
+	//import gelemental.mdl animations into lelemental
+	setvar ANIM_IDLE idle1
+	setvar ANIM_WALK idle1
+	setvar ANIM_RUN idle1
+	setvard ANIM_ATTACK attack1
+	setvard ANIM_FLINCH flinch
+	setvard ANIM_DEATH die1
+
+	const ANIM_BASEIDLE idle1
+	const ANIM_FLOAT idle1
+	const ANIM_BUGIDLE_A idle1	//letters here as weird behavior I am the gettingz
+	const ANIM_BUGIDLE_B idle2
+	const ANIM_BUGIDLE_C dunno
+	const ANIM_CHARGE float
+
+	const ANIM_FIRE_BALL fireball
+	const ANIM_SWIPE attack1
+	const ANIM_PARRY block
+
+	const ANIM_ALERT yes
+	const ANIM_GLOAT no
+	const ANIM_SEARCH dunno
+
+	const ANIM_TOCHARGE tocharge
+	const ANIM_CHARGEIDLE charging
+	const ANIM_FROMCHARGE fromcharge
+
+	//Use different sound set
+	//prob alien grunt
+	const SOUND_ALERT agrunt/ag_alert5.wav
+
+	const SOUND_IDLE1 agrunt/ag_alert1.wav
+	const SOUND_IDLE2 agrunt/ag_die1.wav
+	const SOUND_IDLE3 agrunt/ag_idle1.wav
+
+	const SOUND_SWIPE weapons/debris1.wav
+	const SOUND_SWIPEHIT ambience/steamburst1.wav
+
+	const SOUND_DEATH garg/gar_die1.wav
+
+	const HURT_THRESHOLD 0.5
+	const SOUND_PAIN0 debris/bustflesh2.wav		//most common
+	const SOUND_PAIN1 agrunt/ag_pain1.wav	//rare > 50%
+	const SOUND_PAIN2 agrunt/ag_pain4.wav	//rare < 50%
+
+	const SOUND_GLOAT x/x_laugh1.wav
+
+	const SOUND_FIRECHARGE magic/fireball_powerup.wav
+	const SOUND_FIRESHOOT magic/fireball_strike.wav
+	const SOUND_CIRCLE_READY debris/beamstart1.wav
+
+	const SOUND_HOVER fans/fan4on.wav
+	const PLAYTIME_HOVER 3.0
+
+	const CIRCLE_INTERVAL 10.0
+
+	precache CIRCLE_SCRIPT
+
+	//shouldn't have to do this crap, but it's refusing to precache externally! ><
+	const CIRCLE_SCRIPT monsters/summon/circle_of_fire
+	const XSOUND_MANIFEST weapons/egon_windup2.wav
+	const XSOUND_PULSE magic/egon_run3_noloop.wav
+	const XSOUND_FADE weapons/egon_off1.wav
+	const XSEAL_MODEL weapons/magic/seals.mdl
+	const XFX_SPRITE Fire2.spr
+	precache XSOUND_MANIFEST
+	precache XSOUND_PULSE
+	precache XSOUND_FADE
+	precache XSEAL_MODEL
+	precache XFX_SPRITE
+
+	//ditto
+	const PROJ_SCRIPT proj_fire_ball
+
+	setvard DROP_GOLD 1
+	setvard DROP_GOLD_MIN 10
+	setvard DROP_GOLD_MAX 40
+
+	const I_AM_TURNABLE 0
+
+	setvard MONSTER_WIDTH 32	//for anti-stuck
+	const MOVE_FAST 200
+	const MOVE_NORMAL 100
+	setvard NPC_HACKED_MOVE_SPEED MOVE_NORMAL //for basepropelled
+
+	//Immunities: 1 = Immune, <>1 = Multiply Damage (1.5=take 150%, 0.5=take 50%)
+	//Only affects Effect damage (not weapon damage)
+	setvard IMMUNE_FIRE 1
+	setvard IMMUNE_POISON 1
+	setvard IMMUNE_COLD 1.5
+
+	//not used on this elemental
+	const BLOCK_AMT 0.2	//amount damage takes when in blocking mode
+	cosnt BLOCK_INTERVAL 20.0 //time between block sessions
+
+	precache monsters/elementals_lesser.mdl	//for older SC.DLL users
+}
+
+#include monsters/base_monster
+//As hostile extraplanear's - fire elementals are considered Infernal - but can't be turned
+#include monsters/base_turn_undead
+//apparently this model has no movement anim (gonna have to ask about that)
+//include monsters/base_propelled - had to port to allow tweakage
+
+{ npc_spawn
+
+	name a|Fire Elemental
+	hp 500
+	width 32
+	height 48
+	race demon
+	takedmg holy 2.0
+	takedmg fire 0.0
+	takedmg cold 1.5
+	takedmg ice 1.5
+	takedmg poison 0.0
+	//ov 80
+	roam 1
+	setidleanim ANIM_IDLE
+	setmoveanim ANIM_WALK
+	hearingsensitivity 5
+	setmodel monsters/elementals_lesser.mdl //??? expar
+	setvard NPC_GIVE_EXP 120
+	callevent 1.0 idle_sounds
+	setvard FIRE_BALL_AMMO FULL_FIRE_BALL_AMMO
+	setvard I_JUST_SPAWNED 1
+   	setstat parry 40
+	blood none
+
+	setvard MY_HURT_STAGE $get(ent_me,maxhp)
+	multiply MY_HURT_STAGE HURT_THRESHOLD
+
+	callevent 1.0 light_me
+}
+
+{ npc_struck //called from base_npc_attack - param1 damage taken as of 22/Aug/2006 14:50
+
+	local MY_HEALTH $get(ent_me,hp)
+
+	if ( MY_HEALTH >= MY_HURT_STAGE ) playrandomsound 0 10 SOUND_PAIN0 SOUND_PAIN0 SOUND_PAIN1
+	if ( MY_HEALTH <= MY_HURT_STAGE ) playrandomsound 0 10 SOUND_PAIN0 SOUND_PAIN0 SOUND_PAIN2
+
+	//If enemy that hit me is close, he will be set on fire
+
+	if ( PARAM1 > 20 ) addvelocity ent_me $relpos(1,-10,1) //float around when struck hard
+
+	//people who touch me get burned
+	if $get(ent_laststruck,range) < MOVE_RANGE
+	applyeffect ent_laststruck effects/effect_burn 1 $get(ent_me,id) AMB_FIRE_DAMAGE
+}
+
+{ idle_sounds
+
+	local NEXT_SOUND $randf(5,15)
+
+	callevent NEXT_SOUND idle_sounds
+
+	if HUNT_LASTTARGET equals ¯NONE¯
+	local RAND_ANIM $rand(1,3)
+	if ( RAND_ANIM == 1 ) playanim once ANIM_BUGIDLE_A	//was having some odd bug with idle anims, hence odd names
+	if ( RAND_ANIM == 2 ) playanim once ANIM_BUGIDLE_B
+	if ( RAND_ANIM == 3 ) playanim once ANIM_BUGIDLE_C
+
+	playrandomsound 0 10 SOUND_IDLE1 SOUND_IDLE2 SOUND_IDLE3
+}
+
+{ game_dodamage //1: Attack Hit (1/0)  2: Entity Attack hit  3:  Start Position  4:  End Position
+
+	if PARAM1
+	applyeffect ent_laststruckbyme effects/effect_burn 5 $get(ent_me,id) FIRE_DAMAGE
+
+	if ( USE_SWIPE_SOUND )
+	{
+		playsound 0 10 SOUND_SWIPEHIT
+		setvard USE_SWIPE_SOUND 0
+	}
+}
+
+{ npc_targetsighted //called each hunt cycle enemy is sighted
+
+	if !IS_FLEEING
+	if !THROWING_FIRE_BALL
+	if !RUNNING_CIRCLE
+
+	if ( FIRE_BALL_AMMO > 0 ) callevent check_fire_ball
+}
+
+{ check_fire_ball
+
+	if !RUNNING_CIRCLE
+	if !THROWING_FIRE_BALL
+
+	////dbg FirBalCheck See $cansee(enemy) rng $get(ent_lastseen,range) vs ATTACK_RANGE
+
+	if $cansee(enemy)
+	if $get(ent_lastseen,range) > ATTACK_RANGE
+
+	setmovedest ent_lastseen FIRE_BALL_RANGE
+
+	playsound 0 10 SOUND_FIRECHARGE
+
+	playanim critical ANIM_FIRE_BALL
+	setvard THROWING_FIRE_BALL 1
+}
+
+
+{ throw_fireball //called from anim fireball @ frame #16
+
+	subtract FIRE_BALL_AMMO 1
+
+	//dbg Ammo FIRE_BALL_AMMO
+	
+	playsound 0 10 SOUND_FIRESHOOT
+
+	look 4000 //hope this is equivalent of using $cansee and registers to ent_lastseen
+
+	local AIM_ANGLE $get(ent_lastseen,dist)		//Aim up a bit
+	divide AIM_ANGLE AIM_RATIO				//
+	setangle add_view.x AIM_ANGLE			//
+	
+	tossprojectile view ATTACK_SPEED FIRE_BALL_DAMAGE ATTACK_CONE_OF_FIRE PROJ_SCRIPT (0,48,48)
+	callexternal $get(ent_lastprojectile,id) lighten AMB_FIRE_DAMAGE
+
+	callevent 0.5 reset_fire_ball //delay before tossinganother fireball
+}
+
+{ reset_fire_ball
+
+	setvard THROWING_FIRE_BALL 0
+}
+
+{ npc_selectattack
+
+	//this bit maybe redundant (think event only goes off if nme in range)
+	//- if removed, elemntal will need to get about 150 units closer before CoF attack
+
+	//if out of fireball ammo, use circle
+	if FIRE_BALL_AMMO <= 0
+	if !RUNNING_CIRCLE
+	if !CIRCLE_DELAY
+	if $cansee(enemy)
+	if $get(ent_lastseen,range) < CIRCLE_RANGE
+	effect glow ent_me (255,75,0) 50 5 5
+	playsound 0 10 SOUND_CIRCLE_READY
+	callevent circle_of_fire_init
+}
+
+{ circle_of_fire_init
+
+	//	<"new"/id> <origin> <radius> <(color)> <death delay> <flags>
+	//cleffect light new $relpos(0,0,48) 256 (255,64,128) 4
+	setvard NO_STUCK_CHECKS 1
+
+	setvard RUNNING_CIRCLE 1
+	setanim.movespeed 0
+	movespeed 0
+
+	//playsound 0 10 SOUND_CHARGEUP
+	playanim critical ANIM_TOCHARGE
+
+	//disable attacks without ruining system
+	setvard IS_FLEEING 1
+	setvard PURE_FLEE 1
+	setidleanim ANIM_CHARGEIDLE
+	setactionanim ANIM_CHARGEIDLE
+	setmoveanim ANIM_CHARGEIDLE
+}
+
+{ tocharge_done //called from model at end of tocharge
+
+	if !SWITCHED_TO_CHARGEIDLE
+	setvard SWITCHED_TO_CHARGEIDLE 1
+	playanim critical ANIM_CHARGEIDLE
+	callevent 0.2 circle_go
+}
+
+{ circle_go
+
+	//circle_of_fire pos owner dmg
+	local SEAL_POS $get(ent_me,origin)
+	local GROUND_Z $get_ground_height(SEAL_POS)
+	local SEAL_Z $vec.z(SEAL_POS)
+	local GROUND_DIST GROUND_Z
+	subtract GROUND_DIST SEAL_Z
+	subract GROUND_DIST 2
+	vectoradd SEAL_POS $relpos($vec(0,0,0),$vec(0,0,GROUND_DIST))
+ 	createnpc CIRCLE_SCRIPT SEAL_POS $get(ent_me,id) 10.0 FIRESEAL_DAMAGE //$relpos(0,0,0) works *okay*
+	callevent 5.1 circle_done
+}
+
+{ circle_done
+
+	setvard RUNNING_CIRCLE 0
+
+	playanim critical fromcharge
+	setvard SWITCHED_TO_CHARGEIDLE 0
+
+	//restore attacks
+	setvard IS_FLEEING 0
+	setvard PURE_FLEE 0
+	setidleanim ANIM_IDLE
+	setactionanim ANIM_ATTACK
+	setmoveanim ANIM_WALK
+
+	//flee a bit before resuming FIRE_BALLs
+	setvard NPC_HACKED_MOVE_SPEED MOVE_FAST
+	setvard NO_STUCK_CHECKS 0
+    setanim.movespeed NPC_HACKED_MOVE_SPEED
+	movespeed 1.0
+	if ( $cansee(enemy) ) 
+	{
+		setvard PURE_FLEE 1 //no fighting retreat
+		callevent npcatk_flee ent_lastseen FLEE_DISTANCE 5.0 //move away from circle to force enemy to follow through
+	}
+	setvard CIRCLE_DELAY 1
+	callevent 5.0 slow_down
+	callevent 4.0 ammo_up
+	callevent CIRCLE_INTERVAL reset_circle_delay
+	
+}
+
+{ reset_circle_delay
+
+	setvard CIRCLE_DELAY 0
+}
+
+{ slow_down
+
+	//setvard CAN_ATTACK 1
+	setvard NPC_HACKED_MOVE_SPEED MOVE_NORMAL
+}
+
+{ ammo_up
+
+	setvard FIRE_BALL_AMMO FULL_FIRE_BALL_AMMO
+}
+
+{ moveto_last_known
+
+	if !$cansee(enemy)
+
+	if !DID_SHRUG
+	setvard DID_SHRUG 1
+
+	playanim critical ANIM_SEARCH
+	playsound 0 10 SOUND_IDLE3
+
+
+}
+
+{ my_target_died //called from base_npc_attack
+
+	//this goes off falsely at first spawn, ignore (thought i fixed this) :\
+	if ( I_JUST_SPAWNED == 1 )
+	{
+		local EXIT_SUB 1
+		setvard I_JUST_SPAWNED 0
+	}
+	if !EXIT_SUB
+
+	if ( !GLOAT_DELAY )
+	{
+		playanim critical ANIM_GLOAT
+		playsound 0 10 SOUND_GLOAT
+		setvard GLOAT_DELAY 1
+		callevent 10.0 reset_gloat
+	}
+
+	if ( !$cansee(enemy) ) 
+	{
+		setvard DID_WARCRY 0
+		setvard DID_SHRUG 0
+		setvard FIRE_BALL_AMMO FULL_FIRE_BALL_AMMO
+	}
+}
+
+{ reset_gloat
+
+	setvard GLOAT_DELAY 0 //this prevents sploiting with icewall/pets
+}
+
+{ cycle_up //called from base_npc_attack when first spotting player
+
+	if $get(ent_lastseen,isplayer)
+	setmovedest ent_lastseen ATTACK_RANGE
+	if !DID_WARCRY
+
+	setvard DID_WARCRY 1
+	playanim critical ANIM_ALERT
+	playsound 0 10 SOUND_ALERT
+}
+
+{ attack1_strike //called from anim attack1 @ frame12
+
+	//this ensures he will use circle after a certain number of mele strikes
+	if ( FIRE_BALL_AMMO >= 0 ) subtract FIRE_BALL_AMMO 0.5
+	setvard USE_SWIPE_SOUND 1
+
+	dodamage ent_lastseen ATTACK_HITRANGE FIRE_DAMAGE ATTACK_ACCURACY
+}
+
+{  [server] 	game_movingto_dest		//Hack in movement because the model anims are missing it
+
+	if !RUNNING_CIRCLE
+   setanim.movespeed NPC_HACKED_MOVE_SPEED	//Force move, since the animation doesn't have the required movement
+
+	if !HOVER_LOOP_DELAY
+	playsound CHAN_BODY 8 SOUND_HOVER
+	setvard HOVER_LOOP_DELAY 1
+	callevent PLAYTIME_HOVER hover_loop_reset
+}
+
+{ hover_loop_reset
+
+	setvard HOVER_LOOP_DELAY 0
+}
+
+{  [server] 	game_stopmoving
+
+   setanim.movespeed 0				//Force Stop
+}
+
+{ light_me
+	clientevent persist all $currentscript $get(ent_me,index)
+	setvard MY_LIGHT_SCRIPT game.script.last_sent_id
+}
+
+{ [client]
+
+	const GLOW_COLOR (255,0,0) //this can be overridden from the monster
+	const GLOW_RAD 128
+}
+
+{ [client] client_activate
+
+	setvard SKEL_ID PARAM1
+	if SKEL_LIGHT_ID equals 'SKEL_LIGHT_ID'
+	cleffect light new $getcl(SKEL_ID,origin) GLOW_RAD GLOW_COLOR 5.0
+	setvard SKEL_LIGHT_ID game.script.last_light_id
+	setcallback render enable
+}
+
+{ [client] game_prerender
+
+	local L_POS $getcl(SKEL_ID,origin)
+	cleffect light SKEL_LIGHT_ID L_POS GLOW_RAD GLOW_COLOR 1.0
+}
+
+{ [server] game_death
+
+	clientevent remove all MY_LIGHT_SCRIPT
+	if AM_SUMMONED
+	callexternal MY_OWNER elemental_died
+}
+
+{ game_dynamically_created
+	setvard MY_OWNER $get(PARAM1,id)
+	race $get(MY_OWNER,race)
+	setvard AM_SUMMONED 1
+	callevent 0.1 summoned_sound
+	setvard NO_SPAWN_STUCK_CHECK 1
+}
+
+{ summoned_sound
+	playsound 0 10 ambience/alien_humongo.wav
+}

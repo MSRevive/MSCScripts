@@ -1,0 +1,141 @@
+//Base for spell makers
+//
+
+//PARAMS
+//PARAM1 = Who to center FX around / give spell
+//PARAM2 = script name of spell to give owner
+//PARAM3 = scroll to return to owner after giving spell
+//PARAM4 = Height to spawn spellmaker at (this is no longer used, but kept for client<->server compatiblity)
+//PARAM5 = Index of item to remove (remote removal)
+
+///onst to set
+///onst FX_SCRIPT monsters/companion/spell_maker_summoning //script to dosplay fx
+///onst SHOW_FX 1 //weather to display fx
+///etvar ANIM_IDLE 	'' //idle anim
+///onst SPAWNER_MODEL	none //spawner model
+///onst MODEL_OFSET	0 //model body offset of spawner model
+///onst SOUND_SPAWN 	magic/heal_powerup.wav //spawn sound
+///onst REMOVE_DELAY 10.0 //delay before script is removed
+///onst SPELL_MAKER_HEIGHT xx //required for scripts with models
+///onst NO_FADE 1 //do not fade on delete (unused, changed fade method)
+
+#scope server
+
+{
+	//defaults
+	const SPELL_MAKER_HEIGHT 64
+	const GLOW_AMT 50
+}
+
+{ game_spawn
+
+	name a|Spell Spawner
+	race beloved
+	invincible	1
+	fly 1
+	gravity 0
+	setmodel	SPAWNER_MODEL
+	setsolid	none
+	setidleanim	ANIM_IDLE
+	setmoveanim	ANIM_IDLE
+
+	if ( MODEL_OFSET isnot 'MODEL_OFSET' ) setmodelbody 0 MODEL_OFSET
+
+	if ( ANIM_IDLE isnot '' ) playanim loop ANIM_IDLE
+
+	if ( SOUND_SPAWN isnot 'SOUND_SPAWN' ) playsound 0 10 SOUND_SPAWN
+
+	if ( FX_GLOW ) effect glow ent_me GLOW_COLOR GLOW_AMT REMOVE_DELAY REMOVE_DELAY
+}
+
+{ eventname game_dynamically_created
+
+   setvard MY_OWNER $get(PARAM1,id) //interesting this causes crash when used for client events, if not pulled with $get(,id)
+   setvard SPELL_TO_GRANT PARAM2
+
+	if ( SPELL_TO_GRANT isnot 'none' )
+	{
+		setvard ITEM_CREATED_ME PARAM3
+		setvard MY_SPAWN_HEIGHT PARAM4
+		setvard ITEM_TO_REMOVE PARAM5
+		
+		eventname game_dynamically_created
+		
+		setangle face.y $get(MY_OWNER,angles.yaw)
+	}
+
+	if ( SPAWNER_MODEL isnot 'none' )
+	{
+		setvard FADE_LEVEL 255
+		setvard FADE_RATE REMOVE_DELAY
+		mulitiply FADE_RATE 0.1
+		
+		callevent stick_to_owner
+	}
+
+	if ( SHOW_FX ) callevent 0.1 show_fx
+	if ( SPELL_TO_GRANT isnot 'none' ) callevent 0.1 remove_scroll //issue comes up if spell is granted before book is deleted
+
+	callevent REMOVE_DELAY me_vanish
+}
+
+{ show_fx
+	clientevent new all FX_SCRIPT $get(ent_me,index) $get(MY_OWNER,index) EXTRA_PARAM1 EXTRA_PARAM2 EXTRA_PARAM3
+}
+
+{ remove_scroll
+
+	callexternal ITEM_TO_REMOVE clear_hands //deleteent ITEM_TO_REMOVE
+	callevent 0.1 grant_spell
+}
+
+{ grant_spell
+
+	if ( SPELL_TO_GRANT isnot 'none' ) offer MY_OWNER SPELL_TO_GRANT
+	callevent 0.1 restore_scroll
+}
+
+{ restore_scroll
+
+	if ( ITEM_CREATED_ME isnot 'none' ) offer MY_OWNER ITEM_CREATED_ME
+}
+
+{ me_vanish
+
+	setalive 0
+	deleteent ent_me 
+}
+
+{ stick_to_owner
+
+	subtract FADE_LEVEL FADE_RATE
+
+	if FADE_LEVEL > 0
+	callevent 0.1 stick_to_owner
+
+	////dbg fading $int(FADE_LEVEL)
+
+	setprop ent_me rendermode 1
+	setprop ent_me renderamt $int(FADE_LEVEL)
+
+   	setangle face.yaw $get(MY_OWNER,angles.yaw)
+
+	local OWNER_POS $get(MY_OWNER,origin)
+	local OWNER_X $vec.x(OWNER_POS)
+	local OWNER_Y $vec.y(OWNER_POS)
+	local Z_POS $get_ground_height(OWNER_POS)
+	add Z_POS SPELL_MAKER_HEIGHT
+	
+	setorigin ent_me (OWNER_X,OWNER_Y,Z_POS)
+}
+
+//{ [client]
+//	if game.debug > 4
+//	//dbg //dbg_level game.debug
+//	callevent still_here_loop
+//}
+
+//{ [client] still_here_loop
+//	//dbg spell maker still here
+//	callevent 2.0 still_here_loop
+//}

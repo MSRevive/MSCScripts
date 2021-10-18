@@ -1,0 +1,378 @@
+// Mayor of Gate City
+#include monsters/base_chat
+{ game_spawn
+
+	name_unique dwarf_mayor
+
+   hp 30/30    //Start with 30 out of 30 max hit points
+   gold 50    
+   name	       |Mayor Vilhelm
+   fov 120
+   width 32
+   height 72
+   race human
+   roam 0      //Don't go roaming around
+   setmodel	dwarf/male1.mdl
+   setmodelbody 0 0	//0-Elder 1-Youngin 2-Zombie
+   setmodelbody 1 0 //0-Unarmed 1-smallaxe 2-battleaxe 3-bastardsword
+   invincible  1
+   setvard      QUEST_GOBLINCHIEF 0
+	setvard ZOMBIE_COUNT 0
+	setvard REQ_ZOMBIES 150
+	setvard ZOMBIE_QUEST_STARTER 0
+
+	hearingsensitivity 10
+
+	setmodelbody 2 0
+
+	setmoveanim idle
+
+	catchspeech say_hi hi hello hail greet hey
+	catchspeech say_job job work money gold
+	catchspeech say_rumor rumour news happenings rumor
+	catchspeech zombie_countup zombie 200 count undead
+	catchspeech say_axe axe golden broken
+	catchspeech say_roland roland where
+}
+
+{ say_hi
+
+	saytext Welcome to Gate City, Adventurer!
+	calleventtimed 3 say_hi2
+}
+
+{ say_hi2
+
+	if( QUEST_GOBLINCHIEF == 0 )
+	{
+		saytext I may have a [job] for you. 
+	}
+
+}
+
+{ say_rumor
+
+	saytext I've heard Helena has fended off an orc invasion.
+}
+
+{ say_job
+
+	if ( ZOMBIE_QUEST_COMPLETE )
+	{
+		saytext Nah, I canna possibly ask you to do anymore. Ya've earned yer rest laddie.
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+	if ( L_ZOMBIE_QUEST_DONE )
+	{
+		saytext Nah, I canna possibly ask you to do anymore. Ya've earned yer rest laddie.
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	if ( ZOMBIE_QUEST )
+	{
+		callevent zombie_countup
+	}
+
+	if !ZOMBIE_QUEST
+
+	if( QUEST_GOBLINCHIEF == 0 )
+	{
+		saytext Yes, lately, the city has been bothered by goblins.
+		calleventtimed 3 say_job2
+	}
+
+	if( QUEST_GOBLINCHIEF == 1 )
+	{
+		saytext Well, there is ONE other thing I can have ya do.
+		callevent 4.0 zombie_quest_desc
+	}
+}
+
+{ say_job2
+
+	saytext If the goblin chief is killed, the goblins in the area should leave.
+	calleventtimed 3 say_job3
+}
+
+{ say_job3
+
+	saytext Bring to me the head of the goblin chief and I'll reward you.
+}
+
+{ game_menu_getoptions
+
+	//dbg got +use
+
+	setvard USED_ME PARAM1
+
+	if ( ZOMBIE_QUEST )
+	{
+		if ZOMBIE_COUNT < REQ_ZOMBIES
+		local reg.mitem.title 	"How many more Zombies!?"
+		local reg.mitem.type 	callback
+		local reg.mitem.data 	zombie_countup
+		local reg.mitem.callback zombie_countup
+		menuitem.register
+	}
+
+	if ( $item_exists(PARAM1,item_gaxe_handle) )
+	{
+		local reg.mitem.title 	"Ask about broken axe"
+		local reg.mitem.type 	callback
+		local reg.mitem.data 	say_axe
+		local reg.mitem.callback say_axe
+		menuitem.register
+	}
+
+	if( !QUEST_GOBLINCHIEF )
+	{
+		if $item_exists(PARAM1,item_goblinhead)
+		setvar QUESTER_HEAD PARAM1
+		local reg.mitem.title 	"Give Goblin Head"
+		local reg.mitem.type 	payment
+		local reg.mitem.data 	item_goblinhead
+		local reg.mitem.callback say_ending
+		menuitem.register
+	}
+
+	if ( ZOMBIE_COUNT >= REQ_ZOMBIES )
+	{
+		setvarg ZOMBIE_QUEST_COMPLETE 1
+		setvard L_ZOMBIE_QUEST_DONE 1 //werid stuff going on with the varg
+	}
+	
+	if ( L_ZOMBIE_QUEST_DONE )
+	{
+		//if !G_GAVE_AXE
+		if !ALREADY_GAVE_AXE
+		//only give to quest starter
+		//unless he's not around no more
+		if ( !$get(ZOMBIE_QUEST_STARTER,exists) )
+		{
+			setvard ZOMBIE_QUEST_STARTER 0
+			setvard USED_ME 0
+		}
+		if USED_ME equals ZOMBIE_QUEST_STARTER
+		if ( !GAVE_HEAVY_WARN )
+		{
+			setvard GAVE_HEAVY_WARN 1
+			saytext I be warnin' ya - it's a REAL heavy key. Be sure you pack light!
+		}
+		local reg.mitem.title 	"Collect Zombie Reward"
+		local reg.mitem.type 	callback
+		local reg.mitem.data 	axe_em
+		local reg.mitem.callback axe_em
+		menuitem.register
+	}
+}
+
+{ say_ending
+
+	setvard QUEST_GOBLINCHIEF 1
+	saytext Very good Adventurer! You have proven your worth!
+	calleventtimed 3 say_ending2
+}
+
+{ say_ending2
+
+	saytext Take this gold as a reward! You will always be welcome in Gate City!
+	offer QUESTER_HEAD gold $rand(50,60)
+	callexternal all goblin_remove
+	setvarg G_NO_GLOBINS 1
+}	
+
+{ zombie_quest_desc
+
+	saytext Ya see we dwarves, being made of the stuff of Urdual and all, are particularly sensitive to imbalance.
+	callevent 4.0 zombie_quest_desc2
+}
+
+{ zombie_quest_desc2
+
+	saytext Even, as luck would have it, from beyond the grave.
+	callevent 4.0 zombie_quest_desc3
+}
+
+{ zombie_quest_desc3
+
+	saytext There's some mighty strange goins on these days, for I swear by the black and white seal more than half the dead are awake.
+	callevent 4.0 zombie_quest_desc4
+}
+
+{ zombie_quest_desc4
+
+	saytext There's just too many dwarves wandering the catacombs, making it impossible to get to the better mining areas.
+	callevent 4.0 zombie_quest_desc5
+}
+
+{ zombie_quest_desc5
+
+	saytext And Underkeep's cut off too, which does us no bit of good, not at all.
+	callevent 4.0 zombie_quest_desc6
+}
+
+{ zombie_quest_desc6
+
+	saytext Kill me REQ_ZOMBIES zombies - and I'll reward you with the key to the city!
+	callevent 4.0 zombie_quest_desc7
+}
+
+{ zombie_quest_desc7
+
+	saytext Or well, something shaped vaguely like it, and a mite sharper too!
+	callevent 4.0 zombie_quest_desc8
+}
+
+{ zombie_quest_desc8
+
+	saytext Gotta get it all done today though, or there'll just be so many it won't be worth doin' no more!
+	setvard ZOMBIE_QUEST 1
+	if ZOMBIE_QUEST_STARTER equals 0
+	setvard ZOMBIE_QUEST_STARTER QUESTER_HEAD
+}
+
+
+{ zombie_countup
+
+	if ( !QUEST_GOBLINCHIEF )
+	{
+		saytext Yes, we have a bit of a problem with the Undead. But one thing at a time, young lad: The goblins first!
+		calleventtimed 3 say_job2
+	}
+
+	if ZOMBIE_QUEST
+
+	if ( ZOMBIE_COUNT < REQ_ZOMBIES )
+	{
+		local Z_COUNT $int(ZOMBIE_COUNT)
+		local Z_TO_GO REQ_ZOMBIES
+		subtract Z_TO_GO ZOMBIE_COUNT
+		local Z_TO_GO $int(Z_TO_GO)
+	
+		saytext Well, countin' by the screams from down there, I think ya've killed about Z_COUNT of em.
+		saytext I guess that leaves ya about Z_TO_GO left to kill. Keep at it!
+		playanim once nod
+	}
+
+	if ( ZOMBIE_COUNT >= REQ_ZOMBIES )
+	{
+		if ( !L_ZOMBIE_QUEST_DONE )
+		{
+			if ( $get(ZOMBIE_QUEST_STARTER,isalive) )
+			{
+				//dont talk about the axe lest the quest starter is nearby
+				//assuming said quest starter is still on the server
+				if !QUEST_STARTER_LEFT //id's mix
+				local STARTER_ORIGIN $get(ZOMBIE_QUEST_STARTER,origin)
+				if $dist(ZOMBIE_QUEST_STARTER,game.monster.origin) > 512
+				local EXIT_SUB 1
+			}
+			if !EXIT_SUB
+			saytext I see you've come to collect yer reward?
+			infomsg ent_lastspoke "NPC Interaction Menu" "Use the +use key to to activate this NPC's interaction menu"
+		}
+
+		setvard L_ZOMBIE_QUEST_DONE 1 //seems to be some strange issue going on with the varg
+		setvarg ZOMBIE_QUEST_COMPLETE 1
+
+		if ( !REMOVED_SPAWNS ) callevent remove_spawns
+	}
+}
+
+{ axe_em
+
+	if !ALREADY_GAVE_AXE
+	setvard QUEST_WINNER PARAM1
+	saytext Wow, you really did it. Ya must be about as restless as the undead themselves!
+	callevent 4.0 axe_em2
+}
+
+{ axe_em2
+
+	if !ALREADY_GAVE_AXE
+	setvard ALREADY_GAVE_AXE 1
+	offer QUEST_WINNER axes_golden
+	saytext Well, here ya go, you've earned it. It's forged with my family's special recipe for undead slayin' axe!
+}
+
+{ [server] zombie_died
+
+	if ZOMBIE_QUEST
+	add ZOMBIE_COUNT 1
+	if ZOMBIE_COUNT >= REQ_ZOMBIES
+	callevent remove_spawns
+	infomsg all "You have killed a lotta zombies!" "You should speak with the mayor again..."
+}
+
+{ game_heardsound
+
+	if $get(ent_lastheard,range) < 200
+	setmovedest ent_lastheard 9999
+}
+
+{ [server] z_cheat
+
+	setvard ZOMBIE_COUNT PARAM1
+	//dbg order recieved, set zombiecount ( PARAM1 )
+}
+
+{ say_axe
+
+	if ( PARAM1 equals 'PARAM1' )
+	{
+		//callled from chat, not from menu, make sure he has axe
+		local SPEAKER_ID $get(ent_lastspoke,id)
+		if !$item_exists(SPEAKER_ID,item_gaxe_handle)
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	saytext Oh, my, I see ya broke it...
+	callevent 4.0 say_axe2
+}
+
+{ say_axe2
+	saytext Now don't get angry! Truth be told it be my great, great, great grandfather's recipe for golden axe.
+	callevent 4.0 say_axe3
+}
+
+{ say_axe3
+	saytext ...He never wrote it down, so I be goin off memory when I make these.
+	callevent 4.0 say_axe4
+}
+
+{ say_axe4
+	saytext But eh... Talk Roland, in Deralia. He's a real smith, that one.
+}
+
+{ say_roland
+	saytext The armorer? He's off the main road in Deralia. Head left as you go into town.
+	callevent 4.0 say_axe5
+}
+
+{ game_playerleave
+	if PARAM1 equals ZOMBIE_QUEST_STARTER
+	dbg zombie quest starter disconect
+	setvard QUEST_STARTER_LEFT 1
+}
+
+{ remove_spawns
+	setvard REMOVED_SPAWNS 1
+	setvard SPAWN_LIST "spawners6;spawners7;spawners8;spawners9;spawners10"
+	setvard RSPAWN_COUNT 0
+	callevent remove_spawns_loop //spooling this out a bit slowly, in case buggers
+}
+
+{ remove_spawns_loop
+	local L_CUR_SPAWN $get_token(SPAWN_LIST,RSPAWN_COUNT)
+	local L_KILL_SPAWN $get_by_name(L_CUR_SPAWN)
+	deleteent L_KILL_SPAWN remove
+
+	local L_NSPAWNS $get_token_amt(SPAWN_LIST)
+	subtract L_NSPAWNS 1
+	if RSPAWN_COUNT < L_NSPAWNS
+	add RSPAWN_COUNT 1
+	callevent 1.0 remove_spawns_loop
+}

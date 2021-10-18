@@ -1,0 +1,103 @@
+//Fire Reaver client side volcano effect
+
+{ reset_volc_sound_delay
+	setvard VOLC_SOUND_DELAY 0
+}
+
+//Client Volcano Bits
+{  [client]
+  	const MODEL_WORLD      	weapons/projectiles.mdl
+  	const SPRITE_BURN 	fire1_fixed.spr
+	const LIGHT_RADIUS	64
+	const LIGHT_COLOR	(255,0,0)
+	const LIGHT_DURATION	0.8
+
+	setcallback render enable
+}
+
+{ game_prerender
+	if !$getcl(MY_OWNER,exists)
+	callevent volcano_die
+}
+
+{  [client] client_activate //Origin Owner Duration
+
+	setvard local.cl.origin PARAM1
+	setvard MY_OWNER PARAM2
+	setvard FX_DURATION PARAM3
+	setvard FX_ACTIVE 1
+	vectoradd local.cl.origin z ROCK_START_HEIGHT
+
+	callevent FX_DURATION end_fx
+
+	//local DIE_TIME PARAM2
+	//incvar DIE_TIME 10	//Die 10 seconds late, so all rocks have chance to fall
+	//callevent DIE_TIME volcano_die
+}
+
+{ end_fx
+	setvard FX_ACTIVE 0
+	callevent 2.0 volcano_die
+}
+
+{  [client] volcano_die
+
+	//playsound CHAN_BODY game.sound.silentvol SOUND_LOOP
+   	removescript
+}
+
+{  [client] volcono_shoot_rock
+
+	if FX_ACTIVE
+
+	setvard local.cl.velocity PARAM1
+	setvard local.cl.gravity PARAM2
+	local MY_ORIGIN PARAM3
+	cleffect tempent model MODEL_WORLD MY_ORIGIN volcano_rock_create volcano_rock_update volcano_rock_collide
+	calleventloop 4 makefire_loop MY_ORIGIN
+}
+
+{  [client] volcano_rock_create
+
+	cleffect tempent set_current_prop death_delay 	10
+	cleffect tempent set_current_prop velocity 	local.cl.velocity
+	cleffect tempent set_current_prop bouncefactor 	0
+	cleffect tempent set_current_prop gravity 	local.cl.gravity
+	cleffect tempent set_current_prop collide 	all
+	cleffect tempent set_current_prop renderfx 	glow
+	cleffect tempent set_current_prop renderamt 	100
+	cleffect tempent set_current_prop rendercolor 	(255,0,0)
+    cleffect light new game.tempent.origin LIGHT_RADIUS LIGHT_COLOR LIGHT_DURATION
+	cleffect tempent set_current_prop iuser1 	game.script.last_light_id
+}
+{  [client] volcano_rock_update
+
+	cleffect light game.tempent.iuser1 game.tempent.origin LIGHT_RADIUS LIGHT_COLOR LIGHT_DURATION
+}
+{  [client] volcano_rock_collide
+
+	cleffect tempent set_current_prop sprite 	SPRITE_BURN
+	cleffect tempent set_current_prop rendermode 	add
+	cleffect tempent set_current_prop renderamt 	255
+	cleffect tempent set_current_prop death_delay 	1
+	cleffect tempent set_current_prop scale 	0.5
+	cleffect tempent set_current_prop collide 	all
+	cleffect tempent set_current_prop framerate	30
+	cleffect tempent set_current_prop frames	23
+}
+
+{  [client] makefire_loop
+
+	cleffect tempent sprite SPRITE_BURN PARAM1 volcano_fire_create
+}
+{  [client] volcano_fire_create
+
+	cleffect tempent set_current_prop death_delay 	2
+	cleffect tempent set_current_prop velocity 	$vec($randf(-200,200),$randf(-200,200),$randf(-200,200))
+	cleffect tempent set_current_prop bouncefactor 	5
+	cleffect tempent set_current_prop scale 	0.5
+	cleffect tempent set_current_prop gravity 	$randf(0.6,1.0)
+	cleffect tempent set_current_prop collide 	all;die
+	cleffect tempent set_current_prop framerate	30
+	cleffect tempent set_current_prop frames	23
+}

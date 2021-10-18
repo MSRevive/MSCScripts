@@ -1,0 +1,123 @@
+//Volcano projectile
+
+#scope server
+
+{
+	const MODEL_HANDS      		none
+	const MODEL_WORLD      		weapons/projectiles.mdl
+	const SOUND_HITWALL1	weapons/bow/arrowhit1.wav
+	const SOUND_HITWALL2	weapons/bow/arrowhit1.wav
+	const SOUND_BURN	items/torch1.wav
+	const ITEM_NAME		firemana
+	const PROJ_ANIM_IDLE idle_standard
+	const PROJ_DAMAGE		0
+	const PROJ_AOE_FALLOFF 		0
+	const PROJ_STICK_DURATION	0  //Don't stick in enemies
+	const PROJ_DAMAGESTAT		spellcasting.fire
+	const PROJ_DAMAGE_TYPE		fire
+	const PROJ_MOTIONBLUR		0
+	const PROJ_AOE_RANGE 128
+}
+
+#include [server] items/proj_base
+
+{ projectile_spawn
+
+	name 	a|Volcanic fireball
+	gravity	$randf(0.3,0.6)
+	useable	0
+	width 32
+	height 32
+  
+	setmodel none
+  //setmodel weapons/magic/magicblast.mdl //Uncomment to verify the server projectile against the client
+}
+
+{ projectile_landed
+
+	setangle face (0,0,0)
+	effect screenshake $relpos(0,0,0) 50 20 DURATION 256
+}
+
+{ game_dodamage
+
+	if !PARAM1
+	//effect glow ent_laststruckbyme (255,75,0) 128 1 1
+
+	local MY_TARGET PARAM2
+	if ( G_DEVELOPER_MODE ) messageall green proj_volcano struck $get(ent_laststruckbyme,name)
+
+	local F_MY_OWNER $get(ent_expowner,id)
+	local OWNER_ISPLAYER $get(F_MY_OWNER,isplayer)  
+
+	if ( $get(MY_TARGET,isplayer) )
+	{
+		if OWNER_ISPLAYER
+		if !game.pvp
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	if ( OWNER_ISPLAYER )
+	{
+		local DMG_FIRE $get(F_MY_OWNER,skill.spellcasting.fire)
+		multiply DMG_FIRE 2.0
+		applyeffect MY_TARGET effects/effect_burn 5 F_MY_OWNER DMG_FIRE 1 0 spellcasting.fire
+	}
+	if ( !OWNER_ISPLAYER )
+	{
+		local DMG_FIRE $get(F_MY_OWNER,scriptvar,DMG_VOLCANO)
+		local USE_DOT $get(F_MY_OWNER,scriptvar,DMG_VOLCANO_DOT)
+		if ( DMG_FIRE equals 'DMG_VOLCANO' ) local DMG_FIRE 50
+
+		if ( $get(MY_TARGET,name) contains Garonhroth ) local DMG_FIRE 500 //more likely to finish Lord BS off with volcano
+		if ( !USE_DOT )
+		{
+			callexternal MY_OWNER send_damage MY_TARGET direct DMG_FIRE 100% F_MY_OWNER fire
+		}
+		else
+		{
+			applyeffect MY_TARGET effects/effect_burn 10 F_MY_OWNER DMG_FIRE 1 0
+		}
+	}
+	//callexternal $get(ent_expowner,id) set_fire_to "exp_owner" 5 F_MY_OWNER DMG_FIRE
+ 
+
+	clientevent remove all MY_LIGHT_IDX
+}
+
+{
+	const LIGHT_RADIUS	64
+	const LIGHT_COLOR	(255,0,0)
+	const LIGHT_DURATION	0.8
+}
+
+{ projectile_spawn
+
+    clientevent new all $currentscript $get(ent_me,origin) LIGHT_RADIUS LIGHT_COLOR LIGHT_DURATION
+	setvard MY_LIGHT_IDX game.script.last_sent_id
+}
+
+{ [client] client_activate
+	local L_POS PARAM1
+	local L_RAD PARAM2
+	local L_COL PARAM3
+	local L_DUR PARAM4
+	cleffect light new L_POS L_RAD L_COL L_DUR
+	add L_DUR 0.1
+	callevent L_DUR remove_me
+}
+
+{ [client] remove_me
+	removescript
+}
+
+{ game_removed
+	if ( G_DEVELOPER_MODE ) messageall green proj_volcano_svr game_removed
+	clientevent remove all MY_LIGHT_IDX
+}
+
+{ game_removefromowner
+	if ( G_DEVELOPER_MODE ) messageall green proj_volcano_svr game_removefromowner
+	clientevent remove all MY_LIGHT_IDX
+}

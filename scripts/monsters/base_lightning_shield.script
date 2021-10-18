@@ -1,0 +1,159 @@
+//Lightning Shield Base by Thothie
+//Usage (see init area for constants)
+//- By default this shield activates whenever a player gets close to the monster
+//- If you set LSHIELD_PASSIVE to 0 you can, instead, manually activate the shield for a specific duration via callevent lshield_activate <time>
+//- It is suggested that you suspend the AI, and play a looping animation during this time
+//- You can toggle the default (passive) shield by setvard LSHIELD_PASSIVE 0 
+//- If you are using the passive variety (activates only when near) there is no need to use the lshield_activate event
+
+#scope server
+{
+	setvard LSHIELD_PASSIVE_ENABLE 1 //you can toggle the passive lightning shield with this setvard
+	const LSHIELD_PASSIVE 1 //set to zero when using active shield
+	const LSHIELD_RADIUS 96 //radius of the shield
+	const DMG_LSHIELD 100 //lightning dmg when touched
+	const LSHIELD_REPELL_STRENGTH 1000  //strength of repulse when struck
+	const LSHIELD_V_CENTER 36 //vertical adjustment to center shield (should be half monster height)
+
+	//you can change the channels if your monster already is using a looping sound
+	const CHANNEL_ZAP_START 3
+	const CHANNEL_ZAP_LOOP 1
+
+	//if you want some other effect, you can change this to your own cl script
+	const LSHIELD_CLFX_SCRIPT effects/sfx_lightning_shield
+
+	//other effect may involve other element...
+	const LSHIELD_DMG_TYPE lightning_effect //_effect suffix prevents parry spam
+
+	const LSHIELD_FREQ_UPDATE 0.5
+
+	const SOUND_ZAP_LOOP magic/bolt_loop.wav
+	const SOUND_ZAP_START magic/bolt_end.wav
+}
+
+{ npcatk_hunt
+
+	if LSHIELD_PASSIVE
+	if LSHIELD_PASSIVE_ENABLE
+	if !LSHIELD_ACTIVE //just in case some silly scripter tries to combine the two types
+
+	if ( NPCATK_TARGET isnot unset )
+	{
+		if ( game.time > LSHIELD_NEXT_SCAN ) callevent lshield_scan
+	}
+
+	if ( !$get(LSHIELD_TARGET,isalive) )
+	{
+		callevent lshield_passive_fx_off
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	if ( $get(LSHIELD_TARGET,range) <= LSHIELD_RADIUS )
+	{
+		callevent lshield_passive_zap_target
+	}
+	else
+	{
+		callevent lshield_passive_fx_off
+	}
+}
+
+{ lshield_passive_zap_target
+	if ( !LSHIELD_FX_ON ) callevent lshield_passive_fx_start
+	if ( game.time > LSHIELD_NEXT_UPDATE )
+	{
+		setvard LSHIELD_NEXT_UPDATE game.time
+		add LSHIELD_NEXT_UPDATE LSHIELD_FREQ_UPDATE
+		clientevent update all LSHIELD_CL_IDX lshield_on 0.5
+	}
+	dodamage LSHIELD_TARGET direct DMG_LSHIELD 100% ent_me LSHIELD_DMG_TYPE
+	local ZAP_TARG_RESIST $get_takedmg(LSHIELD_TARGET,lightning)
+	local ZAP_ROLL $randf(0.0,2.0)
+	//dbg targresist ZAP_TARG_RESIST vs. ZAP_ROLL
+	if ZAP_ROLL < ZAP_TARG_RESIST
+	local TARG_ORG $get(LSHIELD_TARGET,origin)
+	local TARG_ANG $angles(game.monster.origin,TARG_ORG)
+	setvelocity LSHIELD_TARGET $relvel($vec(0,TARG_ANG,0),$vec(10,LSHIELD_REPELL_STRENGTH,10))
+}
+
+{ lshield_passive_fx_start
+	setvard LSHIELD_FX_ON 1
+	playsound CHANNEL_ZAP_LOOP 10 SOUND_ZAP_LOOP
+	playsound CHANNEL_ZAP_START 10 SOUND_ZAP_START
+	if ( LSHIELD_CL_IDX == 0 ) callevent lshield_start_cl_fx 10.1
+}
+
+{ lshield_passive_fx_off
+	if LSHIELD_FX_ON
+	setvard LSHIELD_FX_ON 0
+	playsound CHANNEL_ZAP_LOOP 0 SOUND_ZAP_LOOP
+	//clientevent update all LSHIELD_CL_IDX lshield_off //FEB2010_28 - turns itself off after 0.5 secs
+}
+
+{ lshield_scan
+	setvard LSHIELD_NEXT_SCAN game.time
+	add LSHIELD_NEXT_SCAN 1.0 //scan once a second
+
+	local LSHIELD_LIST $get_tsphere(enemy,LSHIELD_RADIUS)
+	if LSHIELD_LIST isnot none
+	if ( $get_token_amt(LSHIELD_LIST) > 1 ) token.scramble LSHIELD_LIST
+	setvard LSHIELD_TARGET $get_token(LSHIELD_LIST,0)
+}
+
+{ lshield_start_cl_fx
+	clientevent new all LSHIELD_CLFX_SCRIPT $get(ent_me,index) LSHIELD_RADIUS 10.0 LSHIELD_V_CENTER 1
+	setvard LSHIELD_CL_IDX game.script.last_sent_id
+	callevent PARAM1 lshield_reset_fx
+}
+
+{ lshield_reset_fx
+	setvard LSHIELD_CL_IDX 0
+}
+
+// ======================================================================== Activated Variant
+{ lshield_activate //<duration>
+	setvard LSHIELD_ACTIVE 1
+	setvard LSHIELD_DURATION PARAM1
+	callevent lshield_loop
+	callevent LSHIELD_DURATION lshield_toggle_off
+
+	setvard LSHIELD_FX_ON 1
+	playsound CHANNEL_ZAP_LOOP 10 SOUND_ZAP_LOOP
+	playsound CHANNEL_ZAP_START 10 SOUND_ZAP_START
+	if ( LSHIELD_CL_IDX == 0 ) callevent lshield_start_active_cl_fx LSHIELD_DURATION
+}
+
+{ lshield_start_active_cl_fx //<duration>
+	clientevent new all LSHIELD_CLFX_SCRIPT $get(ent_me,index) LSHIELD_RADIUS LSHIELD_DURATION LSHIELD_V_CENTER 0
+}
+
+{ lshield_toggle_off
+	setvard LSHIELD_ACTIVE 0
+	setvard LSHIELD_FX_ON 0
+	playsound CHANNEL_ZAP_LOOP 0 SOUND_ZAP_LOOP
+	dbg lshield_toggle_off
+}
+
+{ lshield_loop
+	if LSHIELD_ACTIVE
+	callevent 0.1 lshield_loop
+	if ( game.time > LSHIELD_NEXT_SCAN ) callevent lshield_scan
+	if $get(LSHIELD_TARGET,isalive)
+	if $get(LSHIELD_TARGET,range) <= LSHIELD_RADIUS
+
+	dodamage LSHIELD_TARGET direct DMG_LSHIELD 100% ent_me LSHIELD_DMG_TYPE
+	local ZAP_TARG_RESIST $get_takedmg(LSHIELD_TARGET,lightning)
+	local ZAP_ROLL $randf(0.0,2.0)
+	dbg lshield_loop ZAP_ROLL vs ZAP_TARG_RESIST
+	if ZAP_ROLL < ZAP_TARG_RESIST
+	local TARG_ORG $get(LSHIELD_TARGET,origin)
+	local TARG_ANG $angles(game.monster.origin,TARG_ORG)
+	setvelocity LSHIELD_TARGET $relvel($vec(0,TARG_ANG,0),$vec(10,LSHIELD_REPELL_STRENGTH,10))
+}
+
+// ======================================================================== Clear FX on death
+{ game_death
+	//client fx will expire by itself
+	if ( LSHIELD_FX_ON ) playsound CHANNEL_ZAP_LOOP 0 SOUND_ZAP_LOOP
+}

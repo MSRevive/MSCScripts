@@ -1,0 +1,301 @@
+{
+	const CHAT_USE_CONV_ANIMS 0
+	const CHAT_NO_CLOSE_MOUTH 1
+
+	const ANIM_NO neigh
+	const ANIM_YES nod_yes
+}
+
+#include monsters/base_chat_array
+
+#scope server
+{ [shared] game_spawn
+
+	name a|Shadahar Guard
+	setmodel monsters/sorc.mdl
+	hp 2000
+	takedmg all 0.7
+	setstat parry 110
+	invincible 1
+	race beloved	
+	nopush 1
+
+	width 32
+	height 96
+
+	setidleanim idle1
+	setmoveanim idle1
+	playanim once idle1
+
+	setmodelbody 0 2 //body: 0=bare 1=bloody_shirt 2=gold_armor 3=archer
+	setmodelbody 1 2 //head: 0=hat_horns 1=hat_spiked 2=lizardskin_horned 3=gold_Chieftain 4=lizard_cap
+	setmodelbody 2 7 //weapon: 0=unarmed 1=axe 2=bow 3=steel_bow 4=sword 5=great_axe 6=sword_sheild 8=yellow_axe 9=blooddrinker
+
+	saytextrange 1024
+
+	catchspeech say_hi hail hi greet gweet j0 up
+	menu.autoopen 1
+
+	if game.serverside
+	setvarg G_GAVE_DIRECTIONS 0
+}
+
+{ game_postspawn
+	setvard NPC_DO_EVENTS PARAM4
+	if PARAM4 isnot 'none'
+	calleventloop $get_token_amt(NPC_DO_EVENTS) npcatk_do_events
+}
+
+{ npcatk_do_events //run param events
+	local N_EVENT game.script.iteration
+	local EVENT_NAME $get_token(NPC_DO_EVENTS,N_EVENT)
+	add N_EVENT 1
+	if ( N_EVENT <= $get_token_amt(NPC_DO_EVENTS) )	local NEXT_EVENT $get_token(NPC_DO_EVENTS,N_EVENT)
+	dbg doing token event EVENT_NAME
+	callevent EVENT_NAME NEXT_EVENT
+}
+
+{ check_face
+	if ( $get(PARAM1,isalive) )
+	{
+		setmovedest PARAM1 9999
+		setvard CUR_SPEAKER PARAM1
+	}
+	else
+	{
+		if $get(ent_lastspoke,isalive)
+		setmovedest ent_lastspoke 9999
+		setvard CUR_SPEAKER $get(ent_lastspoke,id)
+	}
+}
+
+{ say_hi
+	callevent check_face $get(PARAM1,id)
+
+	if ( SORC_TYPE equals firstguard )
+	{
+		saytext "You be guests of the Warchief, but don't overstay your welcome."
+	}
+
+	if ( SORC_TYPE equals caveguard )
+	{
+		saytext "Move along. This cave is closed, for the moment."
+	}
+
+	if ( SORC_TYPE equals archer )
+	{
+		if $get(CUR_SPEAKER,isalive)
+		if $get(CUR_SPEAKER,range) < 256
+		saytext "Please don't be up heres. As a guest of the Warchief, I'm not supposeds to shoots yous, but it makes it looks like meez not doing meez job."
+	}
+
+	if ( SORC_TYPE equals guard2 )
+	{
+		saytext "Nuttin to see up here, move along."
+	}
+
+	if ( SORC_TYPE equals troll1 )
+	{
+		saytext "Hiyaz, humans who be guests of Runegahr who me no supposed to kills."
+		playanim critical idle3
+	}
+}
+
+{ say_town
+	callevent check_face $get(PARAM1,id)
+	callevent chat_start_sequence guard_direct
+	setvarg G_GAVE_DIRECTIONS 1
+}
+
+{ say_well
+	callevent chat_start_sequence guard_well
+}
+
+{ say_apple
+	saytext "No thanks. Not while I'm on duty."
+}
+
+{ game_menu_getoptions
+
+	local reg.mitem.title 	"Hail"
+	local reg.mitem.type 	callback
+	local reg.mitem.callback say_hi
+	if ( SORC_TYPE equals well ) local reg.mitem.callback say_well
+	menuitem.register
+
+	if ( SORC_TYPE equals firstguard )
+	{
+		local reg.mitem.title 	"Directions"
+		local reg.mitem.type 	callback
+		local reg.mitem.callback say_town
+		menuitem.register
+	}
+
+	if ( SORC_TYPE equals well )
+	{
+		local reg.mitem.title 	"About the well"
+		local reg.mitem.type 	callback
+		local reg.mitem.callback say_well
+		menuitem.register
+	}
+
+	if ( SORC_TYPE equals troll1 )
+	{
+		if !GOT_RING
+		local reg.mitem.title 	"Ask About Rumors"
+		local reg.mitem.type 	callback
+		local reg.mitem.callback say_troll_rumors
+		menuitem.register
+
+		if $item_exists(PARAM1,item_bulge)
+		callevent chat_now "You have Bulge's ring?"
+		local reg.mitem.title "Give Ring"
+		local reg.mitem.type payment
+		local reg.mitem.data item_bulge
+		local reg.mitem.callback troll_got_ring
+		menuitem.register
+		
+	}
+}
+
+{ scan_players
+	if !SPOTTED_PLAYER
+	callevent 1.0 scan_players
+	if $cansee(player,256)
+	setvard SPOTTED_PLAYER 1
+	playanim once nod_yes
+	saytext SCAN_COMMENT
+}
+
+{ player_ogre_hole
+
+	if ( SORC_TYPE equals firstguard ) local WELL_COMMENT 1
+	if ( SORC_TYPE equals caveguard ) local WELL_COMMENT 1
+
+	if ( WELL_COMMENT )
+	{
+		setvard SPOTTED_PLAYER 0
+		setvard SCAN_COMMENT "Silly human jumped down the ogre well, did he? Hahahaha!"
+
+		callevent 0.1 scan_players
+	}
+}
+
+{ set_first_guard
+	callevent chat_add_text guard_direct "Huh? Umm... Most of the shops are downstairs. Smith is at the front of town - opposite of here." 4.0 nod_yes
+	callevent chat_add_text guard_direct "Alchemist has a shop near the exit to the desert... There's an... Elf... Out there too. He's with Galat." 5.0
+	callevent chat_add_text guard_direct "We, tollerate, having him there - but not in town." 3.0
+	callevent chat_add_text guard_direct "Oh yeah, speaking of tollerate... Above and across from the Alchemist there's a human..." 4.0
+	callevent chat_add_text guard_direct "He's here a lot - sells yummy apples. You might wanna meet him. He's very... Nervous... *chuckle*" 4.0
+
+	catchspeech say_apple apple
+
+	setvard SCAN_COMMENT "Stay out of trouble and we'll have no problems..."
+	setvard SORC_TYPE firstguard
+	callevent 0.1 scan_players
+}
+
+{ set_cave_guard
+	setvard SORC_TYPE caveguard
+}
+
+{ set_archer_roam
+
+	name a|Shadahar Archer
+	setmodelbody 0 3 //body: 0=bare 1=bloody_shirt 2=gold_armor 3=archer
+	setmodelbody 1 2 //head: 0=hat_horns 1=hat_spiked 2=lizardskin_horned 3=gold_Chieftain 4=lizard_cap
+	setmodelbody 2 2 //weapon: 0=unarmed 1=axe 2=bow_noarrow 3=bow_witharrow 4=sword 5=great_axe 6=sword_sheild 8=yellow_axe 9=blooddrinker
+	setvard SORC_TYPE archer
+	roam 1
+	setmoveanim walk
+	stepsize 1
+
+	name_unique roof_archer
+}
+
+{ set_well_guard1
+
+	callevent chat_add_text guard_well "I knows how yous humans likes to explore, but don't be thinking about going down this well." 4.0 ANIM_NO
+	callevent chat_add_text guard_well "We keeps the ogre-djinn down there, until they be old enough to train. Eat yous alive, they will." 4.0
+	catchspeech say_well well
+
+	setmodelbody 1 1 //head: 0=hat_horns 1=hat_spiked 2=lizardskin_horned 3=gold_Chieftain 4=lizard_cap
+	setmodelbody 2 6 //weapon: 0=unarmed 1=axe 2=bow 3=steel_bow 4=sword 5=great_axe 6=sword_sheild 8=yellow_axe 9=blooddrinker
+	setvard SORC_TYPE well
+}
+
+{ set_guard2
+	setvard SORC_TYPE guard2
+}
+
+{ ext_under_attack1
+	saytextrange 1024
+	setmoveanim run
+	setvard VENDOR_ALERT 1
+	setvard VEND_ID PARAM1
+	setmovedest VEND_ID 768
+	playsound 0 10 monsters/orc/attack3.wav
+	playsound 1 10 voices/sorc_villa/archer_response1.wav
+	saytext "Those are Runegahr's guests, you stupid human, remember!?"
+}
+
+{ game_reached_destination
+	if VENDOR_ALERT
+	dbg game_reached_destination
+	setvard VENDOR_ALERT 0
+	setmovedest VEND_ID 9999
+	roam 0
+	setmoveanim walk
+	playanim critical warcry
+}
+
+{ ext_under_attack2
+	playanim critical ANIM_NO
+	setmovedest PARAM1 9999
+	setmoveanim walk
+	roam 1
+	playsound 0 10 voices/sorc_villa/archer_response2.wav
+	saytext "Stupid... Cowardly... Son of a boar..."
+}
+
+{ set_troll1
+	name a|Shadahar Lightning Djinn
+	setmodel monsters/troll_shad.mdl
+	width 36
+	height 92
+	setbbox npcsize
+	setvard SORC_TYPE troll1
+	setidleanim idle0
+	setmoveanim idle0
+	roam 0
+	setvard ANIM_RAND_IDLE idle1
+	callevent $randf(20.0,30.0) rand_idle
+}
+
+{ rand_idle
+	callevent $randf(20.0,30.0) rand_idle
+	playanim once ANIM_RAND_IDLE
+}
+
+{ say_troll_rumors
+	if !CHAT_BUSY
+	name Lighting Bulge
+	callevent chat_now "Hmmm... Maybe yoos humans can helps me with somethings..." 4.0 idle1 add_to_que
+	callevent chat_now "The call me Bulge - Lighting Bulge... Or at least meez friends do." add_to_que
+	callevent chat_now "Some mean orcees, who are not friends, stole Bulge's ring." 5.0 idle3 add_to_que
+	callevent chat_now "Buldge get ring for pretty girl - who live in that Sun place..." add_to_que
+	callevent chat_now "But mean orcees throw down well." add_to_que
+	callevent chat_now "Bulge too big to go in well... Maybe you help Bulge get ring? Maybe Bulge gives you somethings he finds." add_to_que
+}
+
+{ troll_got_ring
+	setvard GOT_RING 1
+	callevent chat_now "Yes! You got me ring back! Haha! Stupid mean orcees no count on skinny humans helpings meez!" 4.0 idle2 clear_que
+	callevent chat_now "Okies, me give you somethings me find. Weird green-skull thingie. Me no knows what is." 4.0 idle1 give_skull add_to_que
+	callevent chat_now "Kinda purty, but too spooky for girl. You take, maybe find use for." add_to_que
+	setvard QUEST_WINNER PARAM1
+}
+
+{ give_skull
+	offer QUEST_WINNER item_js
+}

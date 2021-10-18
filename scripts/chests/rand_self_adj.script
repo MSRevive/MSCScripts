@@ -1,0 +1,110 @@
+//Randomized individualized chest intended for use with self-adjusting maps
+//Provides random items/ammo/pots, the number items increases for each self-adjusting tier and number of players present, plus gold and random resup based on user's damage points and total players present. (Items/ammo range from good to epic.)
+//- Items require >25% dmgpoint average (ie. if 4 players, must be among the top 3)
+//- Takes addparam: set_num_chests. If used, chest will spawn another set of items for each subsequent chest of this type found.
+//- Otherwise, provides one set of items per self-adjusting tier, quality/chance based on self adjust average.
+
+#scope server
+{
+	const CHEST_SELF_ADJ 1
+}
+
+#include chests/base_treasurechest_array
+
+{ chest_additems
+	if ( BC_USE_TRACKER )
+	{
+		if ( !CHEST_FOUND )
+		{
+			setvard CHEST_FOUND 1
+			add G_CHEST_TRACKER 1
+		}
+		local L_GMULTI $math(multiply,G_CHEST_TRACKER,2)
+	}
+	else
+	{
+		local L_GMULTI CHEST_AVG_LEVELS
+	}
+	local L_GOLD_TO_ADD $get(CHEST_USER,scriptvar,'PLR_TOTAL_DMG')
+	multiply L_GOLD_TO_ADD L_GMULTI
+	if ( game.central ) multiply L_GOLD_TO_ADD game.playersnb
+	dbg rand_self_adj gold: $int(L_GOLD_TO_ADD)
+	callevent add_gold $int(L_GOLD_TO_ADD)
+}
+
+{ chest_add_quality_items
+	if ( BC_USE_TRACKER )
+	{
+		calleventloop G_CHEST_TRACKER add_items_self_adj
+	}
+	else
+	{
+		calleventloop $int(CHEST_AVG_LEVELS) add_items_self_adj
+	}
+}
+
+{ add_items_self_adj
+
+	dbg add_items_self_adj CHEST_AVG_LEVELS
+
+	if ( CHEST_AVG_LEVELS < 2 )
+	{
+		local L_TYPE $func(get_type,30,30,30)
+		if ( L_TYPE == 1 )	callevent add_great_item 100%
+		else if ( L_TYPE == 2 ) callevent add_good_pot 100%
+		else if ( L_TYPE == 3 )  callevent add_good_arrows 100%
+	}
+	if ( CHEST_AVG_LEVELS >= 2 )
+	{
+		if CHEST_AVG_LEVELS < 3
+		local L_TYPE $func(get_type,10,25,65)
+		if ( L_TYPE == 1 )	callevent add_good_pot 100%
+		else if ( L_TYPE == 2 ) callevent add_epic_item 100%
+		else if ( L_TYPE == 3 )  callevent add_great_arrows 100%
+	}
+	if ( CHEST_AVG_LEVELS >= 3 )
+	{
+		if CHEST_AVG_LEVELS < 4
+		local L_TYPE $func(get_type,10,35,55)
+		if ( L_TYPE == 1 )	callevent add_great_pot 100%
+		else if ( L_TYPE == 2 ) callevent add_epic_item 100%
+		else if ( L_TYPE == 3 )  callevent add_epic_arrows 100%
+	}
+	if ( CHEST_AVG_LEVELS >= 4 )
+	{
+		if CHEST_AVG_LEVELS < 5
+		local L_TYPE $func(get_type,5,40,55)
+		if ( L_TYPE == 1 )	callevent add_epic_pot 100%
+		else if ( L_TYPE == 2 ) callevent add_epic_item 100%
+		else if ( L_TYPE == 3 )  callevent add_epic_arrows 100%
+	}
+	if ( CHEST_AVG_LEVELS >= 5 )
+	{
+		local L_TYPE $func(get_type,10,40,50)
+		if ( L_TYPE == 1 )	callevent add_epic_pot 100%
+		else if ( L_TYPE == 2 ) callevent add_epic_item 100%
+		else if ( L_TYPE == 3 )  callevent add_epic_arrows 100%
+	}
+}
+
+{ get_type //<chance1> <chance2> <chance3>
+	//returns 1-3 based on provided chances
+	local L_ROLL $rand(1,100)
+	if ( L_ROLL <= PARAM1 )
+	{
+		return 1
+		dbg get_type [ PARAM1 PARAM2 PARAM3 ] L_ROLL = 1
+		exitevent
+	}
+	if ( L_ROLL > PARAM1 )
+	{
+		if L_ROLL <= PARAM2
+		dbg get_type [ PARAM1 PARAM2 PARAM3 ] L_ROLL = 2
+		return 2
+		exitevent
+	}
+
+	dbg get_type [ PARAM1 PARAM2 PARAM3 ] L_ROLL = 3
+
+	return 3
+}

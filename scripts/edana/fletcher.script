@@ -1,0 +1,150 @@
+//Thothie - Arrows in wrong quantities make so can't be purchased sometimes, fixed
+//- Do not use random numbers for arrow lots lest they are divisible by 15 (multiply)
+//Fletcher - sells weak arrows
+
+{
+	const SOUND_DEATH none			//base_npc
+
+	//base_vendor
+   	const STORE_NAME edana_fletcher
+   	setvar STORE_TRIGGERTEXT "store trade buy sell purchase sale offer"
+	const STORE_SELLMENU 1
+	const NO_HAIL 1
+
+	const ANIM_CHAT pondering
+	const ANIM_YES yes
+	const ANIM_NO no
+
+	setvard VEND_NEWBIE 1
+	const VEND_WEAPONS 1
+	const VEND_CONTAINERS 1
+}
+
+#include monsters/base_npc
+#include monsters/base_chat
+#include monsters/base_npc_vendor
+#include monsters/base_npc_vendor_confirm
+#include helena/helena_npc
+//fail
+//include NPCs/base_arrow_storage
+//include NPCs/base_fletcher
+
+// Spawn properties
+{  npc_spawn
+
+   hp 25
+   gold 25
+   name Bertold the Fletcher
+   //ov 30
+   width 32
+   height 72
+   race human
+   roam 0      //Don't go roaming around
+   setmodel    npc/human1.mdl
+   invincible  1
+   setvar      CANCHAT 1
+
+
+   setvard THIS_MAP $lcase(game.map.name)
+
+	setvard NO_HAIL 1
+	setvard NO_JOB 1
+	setvard NO_RUMOR 1
+
+
+	if ( THIS_MAP equals helena )
+	{
+		name Hendlekemp, master fletcher of Helena
+		setvard HELENA_MODE 1
+	}
+
+	if ( THIS_MAP equals gatecity ) name Soltov, the traveling fletcher
+	if ( !HELENA_MODE ) setangle face $vec(0,90,0)
+
+	if THIS_MAP equals edana
+
+	setvard NO_JOB 0
+	setvard NO_RUMOR 0
+
+	catchspeech say_job		job work money gold
+	catchspeech say_rumor	rumour news happenings rumor
+}
+
+{
+   eventname vendor_addstoreitems
+
+   //           |Store name|  |Item name|  		|Quantity|	|cost%|	|buyratio| |Stacksof|	
+   addstoreitem  STORE_NAME     proj_arrow_fire  	600		100 0 60
+   addstoreitem  STORE_NAME     proj_arrow_wooden  	600 		100 0 60
+   addstoreitem  STORE_NAME     proj_arrow_broadhead	600    		100 0 60
+
+   //addstoreitem  STORE_NAME     proj_bolt_wooden  	600 		100 0 100
+   //addstoreitem  STORE_NAME     proj_bolt_fire	  	600	100 0 100
+   //addstoreitem  STORE_NAME     proj_bolt_iron	300		100 0 100
+   //addstoreitem  STORE_NAME     proj_bolt_steel	100		100 0 100
+   addstoreitem  STORE_NAME     pack_quiver	   	3		100 SELL_RATIO
+   //addstoreitem  STORE_NAME     pack_xbowquiver	   	3		100 SELL_RATIO
+   addstoreitem  STORE_NAME     bows_orcbow	   	1		100 SELL_RATIO
+   addstoreitem  STORE_NAME     bows_treebow	   	2		100 SELL_RATIO
+   addstoreitem  STORE_NAME     bows_shortbow	   	1		100 SELL_RATIO
+   addstoreitem  STORE_NAME     item_feather		0		150 SELL_RATIO
+	addstoreitem STORE_NAME		proj_bolt_wooden	100		100 SELL_RATIO
+	if ( $rand(1,5) == 1 ) addstoreitem STORE_NAME		proj_bolt_iron	200		100 SELL_RATIO
+   
+   if( $rand(1,12) == 1 )
+   {
+	setvar ARROW_AMT $rand(1,3)
+	multiply ARROW_AMT 30
+	addstoreitem	STORE_NAME	proj_arrow_jagged	ARROW_AMT	500 0.1 30
+	addstoreitem  STORE_NAME     proj_arrow_broadhead	ARROW_AMT    	500 0.1 30
+   }
+//   if( $rand(1,10) == 1 ) 
+//   {
+//	addstoreitem	STORE_NAME	pack_archersquiver	1		200
+//   }
+   if( $rand(1,10) == 1 )
+   {
+	addstoreitem  STORE_NAME     proj_arrow_silvertipped	300		200 0 60
+   }
+
+	if ( THIS_MAP equals gatecity ) 
+	{
+	   addstoreitem STORE_NAME proj_arrow_holy 60 200 0.1 30
+	   if ( $rand(1,2) == 1 ) addstoreitem STORE_NAME proj_bolt_fire 25 200 0 25
+	}
+}
+
+{
+   eventname trade_success
+
+   if CANCHAT == 1
+
+   say goods[.34] [.24] [.35] [.40]
+   setvar CANCHAT 0
+   callevent 10 resetchat
+}
+
+{
+  eventname resetchat
+  setvar CANCHAT 1
+}
+
+
+// CHIT CHAT
+
+{ say_job
+	if !HELENA_MODE
+	saytext Sorry lad I do all my work at home and have no need for an aide, maybe the armourer could find a place for you?
+}
+
+//Rumours
+{ say_rumor
+	if !HELENA_MODE
+
+	playanim once pondering
+	callevent say_rumour2
+}
+{ say_rumour2
+
+	saytext Krythos lacks some confidence in himself and his goods, and he keeps high prices.
+}

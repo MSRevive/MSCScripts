@@ -1,0 +1,164 @@
+//Winter Cleaver
+//(Cold Dmg, balanced, 100% cold DOT, freeze burst)
+//Great Axe
+
+{
+	const ACTIVE_SKILL spellcasting.ice //greatguys1@September2016
+	const BASE_LEVEL_REQ     30
+
+	const FAURA_MP 50
+	const FAURA_RADIUS 256
+
+	const VANIM_WARCRY 9
+
+	const FREEZE_ATTACK_DELAY 0.4
+
+	const ANIM_LIFT1         0
+	const ANIM_IDLE1         1
+	const ANIM_ATTACK1       2
+	const ANIM_ATTACK2       3
+	const ANIM_ATTACK3       4
+	const ANIM_SHEATH       5
+	const MELEE_VIEWANIM_ATK ANIM_ATTACK1
+	const MODEL_VIEW viewmodels/v_2haxesgreat.mdl
+	const MODEL_VIEW_IDX 6
+	const MODEL_HANDS weapons/p_weapons3.mdl
+	const MODEL_WORLD weapons/p_weapons3.mdl
+	const SOUND_SWIPE       weapons/swingsmall.wav
+
+	const MODEL_BODY_OFS 77
+	const ANIM_PREFIX  standard
+
+	//Used in base_melee
+	//------------------
+	const MELEE_RANGE  100
+	const MELEE_DMG_DELAY  0.6
+	const MELEE_ATK_DURATION 1.5
+	const MELEE_ENERGY  2
+	const MELEE_DMG  600
+	const MELEE_DMG_RANGE      150
+	const MELEE_DMG_TYPE  cold
+	const MELEE_ACCURACY  60%
+	const MELEE_STAT  axehandling
+
+	const MELEE_SOUND      SOUND_SWIPE
+	const MELEE_SOUND_DELAY      MELEE_DMG_DELAY
+	const MELEE_PARRY_CHANCE      25%
+}
+
+#include items/axes_base_twohanded
+
+{  weapon_spawn
+
+   name  a|Wintercleaver
+   desc  A gigantic axe of elemental ice
+   weight  90
+   size  25
+   value        5000
+   sethudsprite hand axe
+   sethudsprite trade 146
+
+	setvard FREEZE_COUNT 0
+}
+
+{ game_deploy
+	setvard GAME_PVP game.pvp
+}
+
+{ game_dodamage
+	if PARAM1
+	if ( $get(PARAM2,isplayer) )
+	{
+		if !GAME_PVP
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	setvard REPEAT_TARGET PARAM2
+	if ( OLD_REPEAT_TARGET equals REPEAT_TARGET )
+	{
+		add FREEZE_COUNT 1
+	}
+	else
+	{
+		setvard FREEZE_COUNT 0
+	}
+	setvard OLD_REPEAT_TARGET PARAM2
+
+	local DOT_BURN $get(ent_owner,skill.spellcasting.ice)
+
+	if ( FREEZE_COUNT < 4 )
+	{
+		applyeffect PARAM2 effects/effect_frostbite_dmg 5.0 $get(ent_owner,id) DOT_BURN ACTIVE_SKILL //greatguys1@September2016 Changed spellcasting.ice to ACTIVE_SKILL
+	}
+	else
+	{
+		setvard FREEZE_COUNT 0
+		multiply DOT_BURN 0.25
+		if $get(PARAM2,hp) < 2000
+		applyeffect PARAM2 effects/freeze_solid 5.0 $get(ent_owner,id) DOT_BURN ACTIVE_SKILL 2000 //greatguys1@September2016 Changed spellcasting.ice to ACTIVE_SKILL
+	}
+}
+
+{ game_+attack2
+
+	if game.serverside
+	if !game.item.attacking
+	if $get(ent_owner,canattack)
+
+	if game.time > NEXT_FREEZE_ATTEMPT
+	setvard NEXT_FREEZE_ATTEMPT game.time
+	add NEXT_FREEZE_ATTEMPT 1.0
+
+	if ( $get(ent_owner,mp) < FAURA_MP )
+	{
+		dplayermessage ent_owner Wintercleaver: Insufficient mana for Freezing Burst.
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	if ( $get(ent_owner,skill.spellcasting.ice) < 25 )
+	{
+		dplayermessage ent_owner Wintercleaver: Insufficient ice skill for Freezing Burst.
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	splayviewanim ent_me VANIM_WARCRY
+
+	givemp ent_owner $neg(FAURA_MP)
+
+	callevent FREEZE_ATTACK_DELAY do_faura
+
+	svplaysound 0 10 $get(ent_owner,scriptvar,'PLR_SOUND_SHOUT1')
+}
+
+
+{ do_faura
+
+	setvard FAURA_START $get(ent_owner,origin)
+	vectorset FAURA_START z $get_ground_height(FAURA_START)
+
+	clientevent new all effects/sfx_ice_burst FAURA_START FAURA_RADIUS 1 (64,64,255)
+
+	callexternal ent_owner ext_sphere_token_x enemy 256
+
+	setvard FREEZE_TARGS $get(ent_owner,scriptvar,'PLR_SCAN_TOKEN')
+	dbg do_faura FREEZE_TARGS
+	if FREEZE_TARGS isnot none
+	calleventloop $get_token_amt(FREEZE_TARGS) faura_affect_targets
+}
+
+{ faura_affect_targets
+	local CUR_TARG $get_token(FREEZE_TARGS,game.script.iteration)
+	if ( $get(CUR_TARG,isplayer) )
+	{
+		if !GAME_PVP
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	if $get(CUR_TARG,hp) < 2000
+	dbg faura_affect_targets $get(CUR_TARG,name)
+	applyeffect CUR_TARG effects/freeze_solid $randf(5.0,8.0) $get(ent_owner,id) 0 none 2000
+}

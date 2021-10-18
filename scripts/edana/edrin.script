@@ -1,0 +1,343 @@
+//Edrin, captain of the guard
+{
+	setvar	ANIM_WALK walk
+	setvar	ANIM_RUN run
+	setvard	ANIM_ATTACK swordswing1_L //future use
+	const NO_RUMOR 1
+	const NO_HAIL 1 //handled internal
+	const CHAT_DELAY 6.0
+
+	const XMASS_OLD_GUY 1
+}
+
+#include monsters/base_chat
+#include monsters/base_npc
+#include monsters/base_xmass
+
+{  npc_spawn
+
+   hp		700/700  //Guards are strong
+   gold		50
+   name		Edrin, Captain of the Guard
+   //ov		359
+   width	32
+   height	72
+   race		human
+   roam		0
+   setmodel	npc/guard1.mdl
+   setmoveanim	walk
+   invincible	1
+
+   setvar THIEF_1 2
+   setvar QUEST_1 0
+   setvar QUEST_1_ASKEDMAYOR 0
+   setvard REQ_QUEST_NOTDONE 1
+
+   catchspeech say_hi hi hello hail greet
+   catchspeech say_mayor mayor why
+   catchspeech say_ok aye alright sure done yes accept "of course"
+   catchspeech say_job job work money gold sewer
+   catchspeech say_pretend pretend
+   catchspeech say_thief cutpurse thieves bandit thief poacher
+   catchspeech say_rumour rumour news happenings rumor
+	catchspeech say_xmass christmas xmas holidays hogswatch x-mas
+	callevent 1.0 set_home_loc
+}
+
+{ set_home_loc
+	setvard HOME_LOC game.monster.origin
+	setvard HOME_YAW $vec.yaw(game.monster.angles)
+}
+
+{ say_rumor
+	callevent say_rumour //spellinx
+}
+
+{ say_hi
+
+	playsound game.sound.voice game.sound.maxvol npc/edrin1.wav
+	saytext Hail, traveller.
+	callevent 2 say_hi_2
+}
+{ say_hi_2
+
+	if QUEST_1 < 2
+
+	saytext ...damn that [mayor]!
+	setvard QUEST_1_ASKEDMAYOR 1
+	callevent 20 reset_askedmayor
+}
+{ reset_askedmayor
+	setvard QUEST_1_ASKEDMAYOR 0
+}
+
+
+{ say_mayor
+
+	if QUEST_1 < 2
+  
+	playsound game.sound.voice game.sound.maxvol npc/edrin2.wav
+	saytext  I suspect the mayor is a traitor, working with the Orcs.
+	setvard script.targetplayer $get(ent_lastspoke,id)
+	callevent 5 say_mayor_2
+}
+
+{ say_mayor_2
+
+	saytext If you find evidence of this, you will be well rewarded. I will brief you through it. Is that all right?
+	setvard QUEST_1 1
+	menu.open script.targetplayer
+}
+{ say_ok
+
+	if QUEST_1 < 2
+
+	setvard QUEST_1_ACCEPTED 1
+	saytext Recently, there has been a courier passing in and out Edana, only delivering a letter to the mayor.
+	callevent 4 say_brief
+}
+
+{ say_brief
+
+	saytext You'll have to pretend to be him. I've found out his name is Suliban, so that should be your answer should the mayor ask who you are.
+}
+
+{ game_recvoffer_item
+
+  if( PARAM1 equals 'item_letter_mayor' )
+  {
+	if QUEST_1 equals 1
+
+	recvoffer accept
+	callevent mayorq_done $get(ent_lastgave,id)
+  }
+  else if( PARAM1 equals 'item_thiefmap' )
+  {
+	if THIEF_1 equals 4
+
+	recvoffer accept
+	playanim once return_needle  
+	saytext Ah, what's this? A map of the thieves whereabouts? You have done well, my friend.
+	callevent 4 say_thiefloc
+  }
+}
+
+{ mayorq_done
+	
+	saytext Ahh!  That will certainly be enough evidence... Thank you traveller..
+	playsound CHAN_VOICE 10 npc/edrin3.wav
+	callexternal all worldevent_evidence_found
+	setvard QUEST_1 2
+	setvard REQ_QUEST_NOTDONE 0
+	setvard QUEST_1_WINNER PARAM1
+	callevent 6 recvletter_2	
+}
+{ mayorq_badevidence
+
+	saytext You'll need to return with solid evidence, worthy of a swift conviction.
+	playanim once no
+}
+
+{ recvletter_2
+
+	saytext And please, take this gift.
+	offer QUEST_1_WINNER gold $rand(12,15)
+	usetrigger evidence_found
+	callexternal all global_mayorquest_done
+}
+
+{ trig_flowercompliant
+
+	saytext Hey! Stay out of there!
+	playanim once wave
+	callevent 1.5 flowers_2
+}
+
+//As of JUN2007b, Edrin picked up a bug where he refuses to walk home after his flowers are trampled
+//This forces him to do so, but it worries me that this has happened, as nothing in the script has changed
+//(the removal of the base AI was made after this started)
+{ flowers_2
+
+	//Stop waving
+	playanim critical idle7
+	callevent 0.2 go_home
+}
+
+{ go_home
+	setvard GOT_HOME 0
+	setmovedest HOME_LOC 5
+	setmoveanim ANIM_WALK
+	callevent 1.0 check_home_loop
+}
+
+{ check_home_loop
+	if !GOT_HOME
+	callevent 1.0 check_home_loop
+	if ( $dist(game.monster.origin,HOME_LOC) <= 5 )
+	{
+		setmovedest none
+		setangle face $vec(0,HOME_YAW,0)
+		setvard GOT_HOME 1
+		setmoveanim ANIM_IDLE
+	}
+
+	if $dist(game.monster.origin,HOME_LOC) > 5
+	setmoveanim ANIM_WALK
+	setmovedest HOME_LOC 1
+}
+
+  
+{ say_job
+	saytext The sewers has been off limits to civilians for quite some time now, due to the aggressive bats that swarmed the place as of late...
+	callevent 8 say_job2
+}
+
+{ say_job2
+	saytext ... and seeing as we're rather short on guards, perhaps you could help us out and clear the place?
+	callevent 7 say_job3
+}
+
+{ say_job3
+	saytext Be sure to gear up with some proper weapons, though. Those bats rarely sleep alone...
+	callevent 6 say_job4
+}
+
+{ say_job4
+	playanim once talkright
+	saytext You'll find the entrance to the sewers by the prison, down to the right, by the armorsmith.
+	callevent 5 say_job5 
+}
+
+{ say_job5
+	saytext Just move the hay we used to block the hatch.
+	callevent 4 say_job6
+}
+
+{ say_job6
+	saytext Of course, we can't pay you, at the moment, but it is good training.
+}
+
+//Rumours
+{ say_rumour
+
+	playanim once pondering3
+	saytext Do I look like a gossiping mongrel? Be off!
+}
+
+
+//Thief Quest, part 2
+{
+  eventname say_thief
+
+  if THIEF_1 equals 2 
+  setvard THIEF_1 3
+  say suspicious
+  saytext If you see anything suspicious around here, you let me know.
+}
+//After telling him about thieves one second time
+{
+  eventname say_thief
+
+  if THIEF_1 equals 3
+  setvard THIEF_1 4
+  saytext If you see any thieves, try bribing them for information, or give threats that I will lock them up for good.
+  calleventtimed 4 say_thief2
+}
+{
+  eventname say_thief2
+  saytext Aye, I will have them thieves locked up, if not killed should I get my hands on them.
+}
+//After getting map
+
+{
+  eventname say_thiefloc
+  saytext Hmmmm... this map shows bandits in a few of the local areas, one being in the Thornlands.
+  calleventtimed 4 say_thiefloc2
+}
+{
+  eventname say_thiefloc2
+  saytext There will probably be thieves around the area. If not, look in the caves near the road to Edana.
+  callevent 4 say_thiefloc3
+}
+{
+  eventname say_thiefloc3
+  saytext Bring me proof that you've killed them and I'll reward you, if not killing them is reward enough.
+  callevent 4 say_thiefloc4
+}
+{
+  eventname say_thiefloc4
+  volume 8
+  say guardwarn
+  saytext Be wary, it is dangerous outside.
+} 
+
+{ game_playerused
+
+	if( QUEST_1 < 2 ) menu.open $get(ent_lastused,id)
+}
+
+{ game_menu_getoptions
+
+	if( QUEST_1 == 0 )
+	{
+		if( !QUEST_1_ASKEDMAYOR )
+		{
+			local reg.mitem.title	"Say Hello"
+			local reg.mitem.type	say
+		
+			local rnd $rand(0,3)
+			if( rnd == 0 ) 		local reg.mitem.data	'Hail!'
+			else if( rnd == 1 )	local reg.mitem.data	'Hello'
+			else if( rnd == 2 )	local reg.mitem.data	'Greetings'
+			else if( rnd == 3 )	local reg.mitem.data	'Hi'
+	
+			menuitem.register
+		}
+		else
+		{
+			local reg.mitem.title	"Inquire About Mayor"
+			local reg.mitem.type	say
+		
+			local rnd $rand(0,2)
+			if( rnd == 0 ) 		local reg.mitem.data	'Mayor?'
+			else if( rnd == 1 )	local reg.mitem.data	"What's the mayor done this time?"
+			else if( rnd == 2 )	local reg.mitem.data	"Damn the mayor?"
+	
+			menuitem.register			
+		}
+	}
+	else if( QUEST_1 == 1 )
+	{
+		if( !QUEST_1_ACCEPTED ) 
+		{
+			local reg.mitem.title	"Accept"
+
+			local rnd $rand(0,3)
+			if( rnd == 0 ) 		local reg.mitem.data	'Aye!'
+			else if( rnd == 1 )	local reg.mitem.data	'Alright'
+			else if( rnd == 2 )	local reg.mitem.data	'Yes'
+			else if( rnd == 3 )	local reg.mitem.data	"Of course"
+		}
+		else
+		{
+			local reg.mitem.title	"Ask About quest"
+			local reg.mitem.data	"What should I do?"
+			local reg.mitem.callback say_ok
+			
+		}
+
+		local reg.mitem.type	say
+		menuitem.register
+
+		if( QUEST_1_ACCEPTED )
+		{
+			if $item_exists(PARAM1,item_letter_mayor)
+			local reg.mitem.title	"Present Evidence"
+			local reg.mitem.type	payment		//_silent means don't say what's missing - (also crashes)
+			local reg.mitem.data	item_letter_mayor
+			local reg.mitem.callback mayorq_done
+			menuitem.register			
+		}
+	}
+}
+

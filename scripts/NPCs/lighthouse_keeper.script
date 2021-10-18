@@ -1,0 +1,673 @@
+//Lighthouse keeper NPC for Dridge's Gwhatzitz map
+
+#scope server
+
+{ 
+	const TEND_ANIMS "console;dryhands;writeboard;studycart;lean;pondering;pondering2;pondering3;buysoda;console;console;console;console;console;"
+
+	const BASIC_REWARDS "smallarms_huggerdagger3;smallarms_craftedknife3;smallarms_stiletto;swords_katana;axes_scythe;axes_doubleaxe;blunt_greatmaul;blunt_mace;bows_longbow;scroll_summon_rat;armor_leather_studded;armor_helm_knight;"
+
+	//spider quest gives one basic reward plus:
+	//scroll2_ice_shield_lesser or
+	//scroll_ice_shield_lesser
+
+	const NO_HAIL 1 //handle internally
+	const NO_JOB 1 //handle internally
+	const NO_RUMOR 1
+	const CHAT_DELAY 4.5
+
+	const ANIM_IDLE_CHAT idle1
+}
+
+#include monsters/base_chat
+
+{ game_spawn
+
+	name_unique lkeeper
+
+	name Hyehold, the Lighthouse Keep
+	hp 1
+	invincible 1
+	width 32
+	height 72
+	race beloved
+	setmodel npc/human1.mdl
+	setmodelbody 0 3 //apron
+	setmodelbody 1 5 //baldie
+	roam 0
+	setmoveanim idle1
+	hearingsensitivity 10
+	saytextrange 1024
+
+	setvard TENDING_HOUSE 1
+	callevent 0.1 get_yaw //yaw is grabbed post spawn, so he knows where to face back to
+	setvard MENU_MODE normal
+
+	catchspeech say_hi hail yo j0 hi hello wassup greet
+
+	catchspeech say_food food
+	catchspeech say_crystal crystal
+	catchspeech say_grave grave
+	catchspeech say_spider spider
+}
+
+{ get_yaw
+	setvard MY_YAW game.monster.angles.yaw
+}
+
+{ say_hi
+	
+	if ( !$get(PARAM1,isplayer)	) local FACE_TARG $get(ent_lastspoke,id)
+	if ( $get(PARAM1,isplayer) ) local FACE_TARG $get(PARAM1,id)
+	callevent face_speaker FACE_TARG
+
+	callevent say_intro	
+}
+
+{ face_speaker
+	setvard TENDING_HOUSE 0 //stop tending
+	setidleanim ANIM_IDLE_CHAT
+	setmoveanim ANIM_IDLE_CHAT
+}
+
+{ say_intro
+
+	if !BUSY_CHATTING
+	if ( !WAS_STARTLED )
+	{
+		setvard WAS_STARTLED 1
+		playanim critical eye_wipe
+		setvard CHAT_STEPS 2
+		setvard CHAT_STEP 0
+		setvard BUSY_CHATTING 1
+		setvard CHAT_STEP1 "Oh! Hello there!"
+		setvard CHAT_STEP2 "Sorry for being so startled. It’s not very often I get visitors way up here."
+		callevent chat_loop
+
+		local NEXT_CHAT CHAT_DELAY
+		multiply NEXT_CHAT CHAT_STEPS
+		add NEXT_CHAT 0.5
+		callevent NEXT_CHAT say_jobs
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+	if WAS_STARTLED
+	playanim critical ANIM_IDLE_CHAT
+	callevent say_jobs
+}
+
+{ say_jobs
+
+	if !BUSY_CHATTING
+
+	setvard CHAT_STEPS 2
+	setvard CHAT_STEP 0
+	setvard BUSY_CHATTING 1
+	setvard CHAT_STEP1 "It’s just me up here, and I’m getting on in years, so I often neglect many tasks..."
+	callevent build_task_string
+	setvard CHAT_STEP2 TASK_STRING
+	callevent chat_loop
+	callevent 2.0 convo_anim
+	setvard MENU_MODE pick_quest
+}
+
+{ build_task_string
+	setvard TASK_STRING "For instance, "
+	if ( !DONE_SPIDER )
+	{
+		stradd TASK_STRING "killing those darn [spiders], "
+		local QUESTS_LEFT 1
+	}
+	if ( !DONE_GRAVE )
+	{
+		stradd TASK_STRING "tending Feldar’s [grave], "
+		local QUESTS_LEFT 1
+	}
+	if ( !DONE_CRYSTAL )
+	{
+		stradd TASK_STRING "gathering lighthouse [crystals], "
+		local QUESTS_LEFT 1
+	}
+	if ( !DONE_FOOD )
+	{
+		stradd TASK_STRING "not to mention simply getting some [food]!"
+		local QUESTS_LEFT 1
+	}
+	if ( !QUESTS_LEFT )
+	{
+		setvard TASK_STRING "But good young lads like yourself come and fix me up from time to time - so - I’ve nothing that needs doing just now."
+		callevent 2.0 resume_tending
+	}
+}
+
+{ say_spider
+
+	if !BUSY_CHATTING
+
+	if ( DONE_SPIDER )
+	{
+		playanim critical wave
+		saytext Oh, someone already got rid of those for me. Thank you anyways.
+		local EXIT_SUB 1		
+	}
+	if !EXIT_SUB
+
+	if ( !$get(PARAM1,isplayer)	) local FACE_TARG $get(ent_lastspoke,id)
+	if ( $get(PARAM1,isplayer) ) local FACE_TARG $get(PARAM1,id)
+	callevent face_speaker FACE_TARG
+
+
+	if ( $get_quest_data(FACE_TARG,l) isnot 0 )
+	{ 
+		callevent target_busy FACE_TARG
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	if ( $get(HIRED_SPIDER,isalive) )
+	{ 
+		saytext $get(HIRED_SPIDER,name) is already working on that for me.
+		local EXIT_SUB 1
+		setvard TENDING_HOUSE 1
+		callevent bchat_mouth_move
+	}
+	if !EXIT_SUB
+	
+	setvard MENU_TARGET FACE_TARG
+	setvard CHAT_STEPS 4
+	setvard CHAT_STEP 0
+	setvard BUSY_CHATTING 1
+	setvard CHAT_STEP1 "Well, there’s a spider infestation in the caves below. I’ve put it off for far too long, so..."
+	setvard CHAT_STEP2 "...I figure by now there’s got to be a nest and some very sizable eggs."
+	setvard CHAT_STEP3 "If those hatch I could be in for more than a little trouble!"
+	setvard CHAT_STEP4 "Think you could go down there and take care of that for me? I’d be ever so grateful."
+	setvard MENU_MODE confirm
+	setvard MENU_QUEST spider
+	setvard CONFIRM_STEP 4
+	callevent chat_loop
+	callevent 2.0 convo_anim
+	callevent 6.0 convo_anim
+}
+
+{ say_grave
+
+	if !BUSY_CHATTING
+
+	if ( DONE_GRAVE )
+	{ 
+		playanim critical wave
+		saytext Oh, someone already delivered that for me, thanks.
+		callevent bchat_mouth_move
+		local EXIT_SUB 1		
+	}
+	if !EXIT_SUB
+
+	if ( !$get(PARAM1,isplayer)	) local FACE_TARG $get(ent_lastspoke,id)
+	if ( $get(PARAM1,isplayer) ) local FACE_TARG $get(PARAM1,id)
+	callevent face_speaker FACE_TARG
+
+
+	if ( $get_quest_data(FACE_TARG,l) isnot 0 )
+	{ 
+		callevent target_busy FACE_TARG
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	if ( $get(HIRED_GRAVE,isalive) )
+	{ 
+		saytext $get(HIRED_GRAVE,name) is already working on that for me.
+		local EXIT_SUB 1
+		callevent bchat_mouth_move
+		setvard TENDING_HOUSE 1
+	}
+	if !EXIT_SUB
+	
+	setvard MENU_TARGET FACE_TARG
+	setvard CHAT_STEPS 6
+	setvard CHAT_STEP 0
+	setvard BUSY_CHATTING 1
+	setvard CHAT_STEP1 "Well, my old friend Feldar, always the good samaritan, was out escorting some fresh adventurers around the Thornlands."
+	setvard CHAT_STEP2 "Near as the constable could tell, it turns out they were actually bandits, and they assasinated the kindhearted old fool."
+	setvard CHAT_STEP3 "He loved this old place, so we made his grave just around the back, ... I used to visit it quite often, but lately it's been... Strange."
+	setvard CHAT_STEP4 "He had a favorite figurine of The Goddess Felewyn, you see. His widow brought it to me recently. I think he wanted it buried with him..."
+	setvard CHAT_STEP5 "Or at least that would explain the... Unrest... Outside."
+	setvard CHAT_STEP6 "You look like you might be able to brave the denizens around there. If you could bring this statuette there, I’m sure it’d all quiet down." 
+	setvard MENU_MODE confirm
+	setvard MENU_QUEST grave
+	setvard CONFIRM_STEP 6
+	callevent chat_loop
+}
+
+{ say_crystal
+
+	if !BUSY_CHATTING
+
+	if ( DONE_CRYSTAL )
+	{ 
+		playanim critical wave
+		saytext Oh, someone already got those for me, thanks.
+		local EXIT_SUB 1		
+	}
+	if !EXIT_SUB
+
+	if ( !$get(PARAM1,isplayer)	) local FACE_TARG $get(ent_lastspoke,id)
+	if ( $get(PARAM1,isplayer) ) local FACE_TARG $get(PARAM1,id)
+	callevent face_speaker FACE_TARG
+
+	if ( $get_quest_data(FACE_TARG,l) isnot 0 )
+	{ 
+		callevent target_busy FACE_TARG
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	if ( $get(HIRED_CRYSTAL,isalive) )
+	{ 
+		saytext $get(HIRED_CRYSTAL,name) is already working on that for me.
+		local EXIT_SUB 1
+		callevent bchat_mouth_move
+		setvard TENDING_HOUSE 1
+	}
+	if !EXIT_SUB
+		
+	setvard MENU_TARGET FACE_TARG
+	setvard CHAT_STEPS 5
+	setvard CHAT_STEP 0
+	setvard BUSY_CHATTING 1
+	setvard CHAT_STEP1 "Ah, well... The lighthouse here’s been a bit flickery as of late - I think she needs some new crystals."
+	setvard CHAT_STEP2 "The light crystals that power the magic core are fairly common in these parts..."
+	setvard CHAT_STEP3 "But with all the things I’ve seen crawling about lately, I just don’t feel up to grabbing them myself!"
+	setvard CHAT_STEP4 "If you could find me a good set, I’ll reward ye handsomely."
+	setvard CHAT_STEP5 "Otherwise we could wind up with a boat smashed up on the rocks, and that’d be bad for business!"
+	setvard MENU_MODE confirm
+	setvard MENU_QUEST crystal
+	setvard CONFIRM_STEP 4
+	callevent chat_loop
+}
+
+{ say_food
+
+	if !BUSY_CHATTING
+
+	if ( DONE_FOOD )
+	{ 
+		playanim critical wave
+		saytext Oh, someone already got me some - I’m quite sated, thanks.
+		local EXIT_SUB 1		
+	}
+	if !EXIT_SUB
+
+	if ( !$get(PARAM1,isplayer)	) local FACE_TARG $get(ent_lastspoke,id)
+	if ( $get(PARAM1,isplayer) ) local FACE_TARG $get(PARAM1,id)
+	callevent face_speaker FACE_TARG
+
+	if ( $get_quest_data(FACE_TARG,l) isnot 0 )
+	{ 
+		callevent target_busy FACE_TARG
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	if ( $get(HIRED_FOOD,isalive) )
+	{ 
+		saytext $get(HIRED_FOOD,name) is already working on that for me.
+		local EXIT_SUB 1
+		callevent bchat_mouth_move
+	}
+	if !EXIT_SUB
+	
+	setvard MENU_TARGET FACE_TARG
+	setvard CHAT_STEPS 3
+	setvard CHAT_STEP 0
+	setvard BUSY_CHATTING 1
+	setvard CHAT_STEP1 "I... I don’t think I’ve actually eaten a thing in a week, now that I think of it..."
+	setvard CHAT_STEP2 "...and I really try not to, believe me. Too busy for food and all..."
+	setvard CHAT_STEP3 "If you could just bring me an apple or two, anything really, I’d be so very grateful."
+	setvard MENU_MODE confirm
+	setvard MENU_QUEST food
+	setvard CONFIRM_STEP 3
+	callevent chat_loop
+}
+
+{ accept_quest //menu response
+
+	local TRIG_STR quest_
+	stradd TRIG_STR MENU_QUEST
+	usetrigger TRIG_STR
+
+	quest set PARAM1 l MENU_QUEST
+	setvard MENU_MODE normal
+	callevent convo_anim
+
+	if ( MENU_QUEST equals spider )
+	{ 
+		setvard HIRED_SPIDER PARAM1
+		saytext Thank you, oh so much. Come back here when ya clear out those pests.
+	}
+
+	if ( MENU_QUEST equals grave )
+	{ 
+		setvard HIRED_GRAVE PARAM1
+		saytext Thank you, oh so much. Come back here when you’ve done the deed and I’ll reward you.
+		offer PARAM1 item_fstatue
+	}
+
+	if ( MENU_QUEST equals crystal )
+	{ 
+		setvard HIRED_CRYSTAL PARAM1
+		saytext Thank you, oh so much. Be careful with those crystals by the way - they are quite fragile!
+	}
+
+	if ( MENU_QUEST equals food )
+	{ 
+		setvard HIRED_FOOD PARAM1
+		saytext Oh yes, please bring me something, I’d be grateful beyond words.
+		setvard APPLE_QUEST_ACTIVE 1
+	}
+
+	setvard TENDING_HOUSE 1	
+}
+
+{ chat_loop
+
+	setvard WAS_STARTLED 1 //damn thing wont stick
+
+	if ( MENU_MODE equals confirm )
+	{ 
+		if ( CHAT_STEP == CONFIRM_STEP ) menu.open MENU_TARGET
+	}
+
+	if ( CHAT_STEP == 2 ) callevent convo_anim
+	if ( CHAT_STEP == 4 ) callevent convo_anim
+	if ( CHAT_STEP == 6 ) callevent convo_anim
+	if ( CHAT_STEP == 8 ) callevent convo_anim
+	if ( CHAT_STEP == 10 ) callevent convo_anim
+}
+
+{ decline_quest //menu response
+	setvard MENU_MODE normal
+	quest set PARAM1 l 0
+	playanim critical no
+	saytext Well... That’s alright. At least you’re some company... I guess.
+	callevent bchat_mouth_move
+	setvard TENDING_HOUSE 1
+}
+
+{ game_menu_getoptions
+
+	//cancel quest option
+	local CUR_QUEST $get_quest_data(PARAM1,l)
+
+	if ( MENU_MODE isnot confirm )
+	{ 
+
+		if ( $item_exists(PARAM1,item_light_crystal) )
+		{ 
+			if !DONE_CRYSTAL
+			local reg.mitem.title 	"Offer Light Crystal"
+			local reg.mitem.type 	payment
+			local reg.mitem.data	item_light_crystal
+			local reg.mitem.callback reward_crystal
+			menuitem.register
+		}
+
+		if ( $item_exists(PARAM1,health_apple) )
+		{ 
+			if APPLE_QUEST_ACTIVE
+			if !DONE_FOOD
+			local reg.mitem.title 	"Offer Apple"
+			local reg.mitem.type 	payment
+			local reg.mitem.data	health_apple
+			local reg.mitem.callback reward_food
+			menuitem.register
+		}
+
+		if CUR_QUEST equals 0
+
+		local reg.mitem.title 	"Hail"
+		local reg.mitem.type 	callback
+		local reg.mitem.callback say_hi
+		menuitem.register
+
+		if ( WAS_STARTLED )
+		{ 
+			if ( !DONE_SPIDER )
+			{ 
+				local reg.mitem.title 	"Ask about spiders"
+				local reg.mitem.type 	callback
+				local reg.mitem.callback say_spider
+				menuitem.register
+			}
+
+			if ( !DONE_GRAVE )
+			{ 
+				local reg.mitem.title 	"Ask about Feldar’s Grave"
+				local reg.mitem.type 	callback
+				local reg.mitem.callback say_grave
+				menuitem.register
+			}
+
+			if ( !DONE_CRYSTAL )
+			{ 
+				local reg.mitem.title 	"Ask about crystals"
+				local reg.mitem.type 	callback
+				local reg.mitem.callback say_crystal
+				menuitem.register
+			}
+
+			if ( !DONE_FOOD )
+			{ 
+				local reg.mitem.title 	"Ask about food"
+				local reg.mitem.type 	callback
+				local reg.mitem.callback say_food
+				menuitem.register
+			}
+
+			local reg.mitem.title 	"Ask about forest"
+			local reg.mitem.type 	callback
+			local reg.mitem.callback say_forest
+			menuitem.register
+		}
+	}
+
+	//confirm quests
+	if ( MENU_MODE equals confirm )
+	{ 
+		if ( MENU_QUEST equals spider ) local reg.mitem.title  "I’ll clear the eggs."
+		if ( MENU_QUEST equals grave ) local reg.mitem.title  "I’ll visit the grave."
+		if ( MENU_QUEST equals crystal ) local reg.mitem.title  "I’ll get the crystals."
+		if ( MENU_QUEST equals food ) local reg.mitem.title  "I’ll bring some apples."
+
+		local reg.mitem.type 	callback
+		local reg.mitem.callback accept_quest
+		menuitem.register
+
+		local reg.mitem.title "Sorry. I’m busy."
+		local reg.mitem.type callback
+		local reg.mitem.callback decline_quest
+		menuitem.register
+
+	}
+
+	if ( DONE_SPIDER )
+	{ 
+		if PARAM1 equals HIRED_SPIDER
+		if CUR_QUEST equals spider
+		local reg.mitem.title "Collect Spider Quest Reward"
+		local reg.mitem.type callback
+		local reg.mitem.callback reward_spider
+		menuitem.register
+	}
+
+	if ( DONE_GRAVE )
+	{ 
+		if PARAM1 equals HIRED_GRAVE
+		if CUR_QUEST equals grave
+		local reg.mitem.title "Collect Grave Quest Reward"
+		local reg.mitem.type callback
+		local reg.mitem.callback reward_grave
+		menuitem.register
+	}
+
+	if ( CUR_QUEST isnot 0 )
+	{ 
+		local REMIND_STR "Cancel "
+		stradd REMIND_STR CUR_QUEST
+		stradd REMIND_STR " quest"
+
+		local reg.mitem.title REMIND_STR
+		local reg.mitem.type callback
+		local reg.mitem.callback clear_quest
+		menuitem.register
+	}
+}
+
+{ reward_spider
+	callevent face_speaker PARAM1
+	callevent convo_anim
+	offer PARAM1 gold $rand(10,20)
+	local BASIC_WINNER PARAM1
+	callevent offer_basic_reward BASIC_WINNER
+	local SCROLL_CHANCE $rand(1,2)
+	if ( SCROLL_CHANCE == 1 )
+	{
+		local SCROLL_TOME $rand(1,2)
+		if ( SCROLL_TOME == 1 ) offer PARAM1 scroll2_ice_shield_lesser
+		if ( SCROLL_TOME == 2 ) offer PARAM1 scroll_ice_shield_lesser
+	}
+	if ( SCROLL_CHANCE == 2 ) callevent offer_basic_reward BASIC_WINNER
+	saytext "Thank you so very much. I’d hate to have a swarm of eight leggeds creeping up here."
+	quest set PARAM1 l 0
+	callevent 2.0 resume_tending
+}
+
+{ reward_grave
+	local BASIC_WINNER PARAM1
+	callevent offer_basic_reward BASIC_WINNER
+
+	callevent face_speaker PARAM1
+	callevent convo_anim
+	offer PARAM1 gold $rand(10,15)
+	saytext "Thank you so very much. I’m sure he’ll rest easier now."
+	quest set PARAM1 l 0
+	callevent 2.0 resume_tending
+}
+
+{ reward_crystal
+	local BASIC_WINNER PARAM1
+	callevent offer_basic_reward BASIC_WINNER
+
+	setvard DONE_CRYSTAL 1
+	callevent face_speaker PARAM1
+	callevent convo_anim
+	offer PARAM1 gold $rand(10,20)
+	saytext "A crystal! Thank goodness! I’m sure they’d hang me if we had another... Accident."
+	quest set PARAM1 l 0
+	callevent 2.0 resume_tending
+}
+
+{ reward_food
+	local BASIC_WINNER PARAM1
+	callevent offer_basic_reward BASIC_WINNER
+
+	setvard DONE_FOOD 1
+	callevent face_speaker PARAM1
+	callevent convo_anim
+	offer PARAM1 gold 5
+	saytext "I thank ye! My stomach, doubly so!"
+	quest set PARAM1 l 0
+	callevent 2.0 resume_tending
+}
+
+{ resume_tending //for delay
+	setvard TENDING_HOUSE 1
+}
+
+{ clear_quest //menu response
+
+	local CUR_QUEST $get_quest_data(PARAM1,l)
+	if ( CUR_QUEST equals spider ) setvard HIRED_SPIDER 0
+	if ( CUR_QUEST equals grave )
+	{ 
+		setvard HIRED_GRAVE 0
+		local METHOD_HACK $item_exists(PARAM1,item_fstatue,remove)
+	}
+	if ( CUR_QUEST equals crystal ) setvard HIRED_CRYSTAL 0
+	if ( CUR_QUEST equals food ) setvard HIRED_FOOD 0
+	setvard MENU_MODE normal
+	quest set PARAM1 l 0
+	saytext That’s alright. There’s plenty else to do around here too, if you’re interested.
+	callevent bchat_mouth_move
+	setvard TENDING_HOUSE 1
+}
+
+{ 
+repeatdelay $randf(3,5)
+
+	//random anims while tending lighthouse
+
+	if TENDING_HOUSE
+	setangle face $vec(0,MY_YAW,0)
+
+	local N_IDLES $get_token_amt(TEND_ANIMS)
+	local RND_IDLE $rand(1,N_IDLES)
+	subtract RND_IDLE 1 //token arrays index on 0
+	local IDLE_ANIM $get_token(TEND_ANIMS,RND_IDLE)
+	setidleanim IDLE_ANIM
+	setmoveanim IDLE_ANIM
+}
+
+{ target_busy
+	//player is already on a quest for me
+	playanim critical pondering3
+	local CUR_QUEST $get_quest_data(PARAM1,l)
+	if ( CUR_QUEST equals spider ) saytext Didn’t you say you were going to kill some spiders for me?
+	if ( CUR_QUEST equals grave ) saytext Didn’t you say you were going to tend Feldar’s grave for me?
+	if ( CUR_QUEST equals crystal ) saytext Didn’t you say you were going to get some crystals for me?
+	if ( CUR_QUEST equals food ) saytext Didn’t you say you were going to get me some food?
+	setvard MENU_MODE confirm
+	setvard MENU_QUEST CUR_QUEST
+	menu.open PARAM1
+}
+
+{ quest_done_spider //external map event
+	setvard DONE_SPIDER 1
+}
+
+{ quest_done_grave //external from other/grave_watcher
+	setvard DONE_GRAVE 1
+}
+
+{ [server] bd_debug  //<print_var> <property_printvar> <extra> <extra> <caller_id>
+	saytextrange 2048
+	saytext var PARAM1 prop PARAM2 = $get(PARAM1,PARAM2)
+	consolemsg PARAM5 $get(ent_me,name) reports: var PARAM1 pvar $get(PARAM1,PARAM2)
+	dbg PARAM5 $get(ent_me,name) reports: var PARAM1 pvar $get(PARAM1,PARAM2)
+}
+
+{ offer_basic_reward
+
+	local N_REWARDS $get_token_amt(BASIC_REWARDS)
+	local RND_REWARD $rand(0,N_REWARDS)
+	offer PARAM1 $get_token(BASIC_REWARDS,RND_REWARD)
+}
+
+{ say_forest
+
+	if !BUSY_CHATTING
+
+	if ( !$get(PARAM1,isplayer)	) local FACE_TARG $get(ent_lastspoke,id)
+	if ( $get(PARAM1,isplayer) ) local FACE_TARG $get(PARAM1,id)
+	callevent face_speaker FACE_TARG
+
+	setvard CHAT_STEPS 4
+	setvard CHAT_STEP 0
+	setvard BUSY_CHATTING 1
+	setvard CHAT_STEP1 "Oh, that forest over there. Lots of wolves in that forest. Nasty place."
+	setvard CHAT_STEP2 "A young adventurer wandered into there the other day. He looked a bit green around the ears, if you catch my meaning."
+	setvard CHAT_STEP3 "I tried to stop him, but he wouldn't listen."
+	if ( game.players == 1 ) setvard CHAT_STEP4 "You look like a strapping young lad. You might want to go in there and check on him."
+	if ( game.players > 1 )  setvard CHAT_STEP4 "You look like strapping young lads. You might want to go in there and check on him."
+	callevent chat_loop
+}

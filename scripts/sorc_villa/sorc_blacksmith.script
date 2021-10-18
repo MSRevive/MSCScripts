@@ -1,0 +1,708 @@
+//probably best to make hostile a seperate script, use a manager script to deal with the monster spawns accross the villa
+
+//forge ideas:
+//(polearms)
+//(some helms, some armor mods)
+
+//(store items)
+
+#scope server
+{ [shared]
+	const ANIM_HAMMER hammering
+	const ANIM_YES nod_yes
+	setvar ANIM_IDLE idle1
+}
+
+{ [server]
+
+	const SMITH_GOLD_REQ 50000 //this is the base amount for special smithing jobs
+
+	const VENDOR_MENU_OFF 1 //handled locally
+
+	const VENDOR_NOT_ON_USE 1 //shop is not primary function
+									//various jobs are adjusted via ratio
+	const NO_JOB 1 //internal
+	const NO_HAIL 1 //internal
+	const NO_RUMOR 1 //internal
+
+	setvard STORE_NAME sorc_blacksmith
+
+	const CHAT_USE_CONV_ANIMS 0
+	const NO_CLOSE_MOUTH 1
+	const BUSY_COMMENT "Patients little pink one... Busy with this other wee one right now."
+}
+
+#include monsters/base_npc
+#include monsters/base_npc_vendor
+#include monsters/base_chat
+
+{ npc_spawn
+
+	name Irunthar
+	setmodel monsters/sorc.mdl
+	hp 8000
+	takedmg all 0.5
+	setstat parry 110
+	race beloved
+	invincible 1
+	setvard PLAYING_DEAD 1
+
+	nopush 1	
+
+	width 32
+	height 96
+
+	setmodelbody 0 4 //body: 0=bare 1=bloody_shirt 2=gold_armor 3=archer 4=Rust(%%add)
+	setmodelbody 1 0 //head: 0=hat_horns 1=hat_spiked 2=lizardskin_horned 3=gold_Chieftain 4=lizard_cap
+	setmodelbody 2 10 //weapon: 0=unarmed 1=axe 2=bow 3=steel_bow 4=sword 5=great_axe 6=sword_sheild 8=yellow_axe 9=blooddrinker 10=meat 11=hammah 12=drink
+
+	catchspeech say_forge forg
+	catchspeech say_shop shop wares
+
+	setvard AM_HAMMERING 1
+	setvard MENU_TYPE normal
+	setidleanim ANIM_HAMMER
+	setmoveanim ANIM_HAMMER
+
+	menu.autoopen 1
+
+	callevent 0.1 get_yaw
+
+	callevent npcatk_suspend_ai
+}
+
+{ get_yaw
+	setvard HAMMER_YAW $get(ent_me,angles.yaw)
+}
+
+
+{ say_shop
+	if MENU_TYPE equals normal
+	callevent vendor_offerstore $get(ent_lastspoke,id)
+}
+
+{ game_menu_getoptions
+
+	if !G_SORCS_HOSTILE
+
+	if ( MENU_TYPE equals normal )
+	{
+		local reg.mitem.title 	"Hail"
+		local reg.mitem.type 	callback
+		local reg.mitem.callback say_hi
+		menuitem.register
+
+		local reg.mitem.title 	"Browse Wares"
+		local reg.mitem.type 	callback
+		local reg.mitem.callback vendor_offerstore
+		menuitem.register
+
+		local reg.mitem.title 	"Forge Item"
+		local reg.mitem.type 	callback
+		local reg.mitem.callback say_forge
+		menuitem.register
+
+		local reg.mitem.title 	"Ask about Rumors"
+		local reg.mitem.type 	callback
+		local reg.mitem.callback say_rumor
+		menuitem.register
+
+		if $item_exists(PARAM1,smallarms_rd)
+
+		local reg.mitem.title 	"Ask about rusty dagger"
+		local reg.mitem.type 	callback
+		local reg.mitem.callback say_rdagger_excuse
+		menuitem.register
+	}
+
+	if ( MENU_TYPE equals forge_type )
+	{
+		local reg.mitem.title 	"Weapons"
+		local reg.mitem.type 	callback
+		local reg.mitem.callback say_forge_weapons
+		menuitem.register
+
+//Pending
+//		local reg.mitem.title 	"Armor"
+//		local reg.mitem.type 	callback
+//		local reg.mitem.callback say_forge_armor
+//		menuitem.register
+//
+//		local reg.mitem.title 	"Other"
+//		local reg.mitem.type 	callback
+//		local reg.mitem.callback say_forge_other
+//		menuitem.register
+	}
+
+	if ( MENU_TYPE equals forge_weapon )
+	{
+		local reg.mitem.title 	"Shadowfire Blade"
+		local reg.mitem.type 	callback
+		local reg.mitem.callback say_swords_sf
+		menuitem.register
+
+//axed this axe
+//		local reg.mitem.title 	"Shadowfire Axe"
+//		local reg.mitem.type 	callback
+//		local reg.mitem.callback say_axes_sf
+//		menuitem.register
+
+		local reg.mitem.title 	"Winter Cleaver"
+		local reg.mitem.type 	callback
+		local reg.mitem.callback say_axes_df
+		menuitem.register
+
+		local reg.mitem.title 	"Unholy Blade"
+		local reg.mitem.type 	callback
+		local reg.mitem.callback say_swords_ub
+		menuitem.register
+
+		local reg.mitem.title 	"Skull Scythe"
+		local reg.mitem.type 	callback
+		local reg.mitem.callback say_axes_ss
+		menuitem.register
+
+		local reg.mitem.title 	"Vorpal Tongue"
+		local reg.mitem.type 	callback
+		local reg.mitem.callback say_smallarms_vt
+		menuitem.register
+
+		local reg.mitem.title 	"Demon Bludgeon Hammer"
+		local reg.mitem.type 	callback
+		local reg.mitem.callback say_blunt_db
+		menuitem.register
+
+		local reg.mitem.title 	"Infernal Claws"
+		local reg.mitem.type 	callback
+		local reg.mitem.callback say_blunt_gauntlet_ic
+		menuitem.register
+
+		//local reg.mitem.title 	"Shaddahar Prong"
+		//local reg.mitem.type 	callback
+		//local reg.mitem.callback say_pole_sp
+		//menuitem.register
+
+		//(ten max, can add one more)
+	}
+
+	if ( MENU_TYPE equals smith_confirm )
+	{
+		local reg.mitem.title 	"Yes"
+		local reg.mitem.type 	payment
+		local reg.mitem.data	SMITH_REQ
+		local reg.mitem.callback do_smithing
+		local reg.mitem.cb_failed smithing_fail_payment
+		menuitem.register
+
+		local reg.mitem.title 	"No"
+		local reg.mitem.type 	callback
+		local reg.mitem.callback smithing_cancel
+		menuitem.register
+	}
+}
+
+{ smithing_cancel
+	setvard MENU_TYPE normal
+	menu.autoopen 1
+	saytext "Very well then, perhaps meez can interest you in something else?"
+	callevent 1.0 start_hammering
+}
+
+{ smithing_fail_payment
+	setvard MENU_TYPE normal
+	menu.autoopen 1
+	saytext "Bah, come back when yoos has the gold and ingredients I need."
+	callevent 1.0 start_hammering
+}
+
+{ game_menu_cancel
+	setvard MENU_TYPE normal
+	menu.autoopen 1
+}
+
+{ say_hi
+	if !BUSY_CHATTING
+	callevent stop_hammering
+
+	if ( $get(PARAM1,isplayer) )
+	{
+		local CURRENT_SPEAKER $get(PARAM1,id)
+	}
+	else
+	{
+		local CURRENT_SPEAKER $get(ent_lastspoke,id)
+	}
+	callevent face_speaker CURRENT_SPEAKER
+	
+	if ( !DID_INTRO )
+	{
+		setvard DID_INTRO 1
+		setvard CHAT_STEP1 "Hail! If it isn't our honored guests!"
+		setvard CHAT_STEP2 "And what pretty shinies they bring!"
+		setvard CHAT_STEP3 "We don't often see humans with pretty shinies in the villa - not breathing humans, anyways."
+		setvard CHAT_STEP4 "And meez must say, not often with so many pretty shinies either!"
+		setvard ANIM_STEP4 ANIM_YES
+		setvard CHAT_STEP5 "Come, take a look at my wares. Maybe we can also work out a deal for use of the services of meez [forge]!"
+		setvard CHAT_STEPS 5
+		callevent chat_loop
+	}
+	else
+	{
+		saytext "Back again? Perhaps yoos want more of my wares, or perhaps meez [forging] something new for yas."
+		playanim critical ANIM_YES
+	}
+}
+
+{ stop_hammering
+	setvard AM_HAMMERING 0
+	setvard RESUME_HAMMERING game.time
+	add RESUME_HAMMERING 50.0
+	playanim break
+	playanim critical ANIM_IDLE
+	setidleanim ANIM_IDLE
+	setmoveanim ANIM_IDLE
+}
+
+{ start_hammering
+	setvard AM_HAMMERING 1
+	setangle face $vec(0,HAMMER_YAW,0)
+	
+	setidleanim ANIM_HAMMER
+	setmoveanim ANIM_HAMMER
+	playanim critical ANIM_HAMMER
+}
+
+{ say_forge
+
+	if !BUSY_CHATTING
+
+	if ( AM_HAMMERING ) callevent stop_hammering
+
+	if ( $get(PARAM1,isplayer) )
+	{
+		local CURRENT_SPEAKER $get(PARAM1,id)
+	}
+	else
+	{
+		local CURRENT_SPEAKER $get(ent_lastspoke,id)
+	}
+	callevent face_speaker CURRENT_SPEAKER
+
+	setvard FORGE_MENU_TARGET CURRENT_SPEAKER
+
+	setvard CHAT_STEP1 "Well, well, well... My forging services are not for the faint of heart, nor the faint of coin..."
+	if ( LAST_PLAYER_FORGE_ID isnot CURRENT_SPEAKER )
+	{
+		setvard CHAT_STEP2 "But fear not, I'll not beez chargein yas anymores than I charges anyones elses."
+		setvard CHAT_STEP3 "Unlike some of my brothers, I care not of the color of my customer's skin - only of that of their coin! Hahaha!"
+		setvard ANIM_STEP3 ANIM_YES
+		setvard CHAT_STEP4 "What mighty smithing feat doos yous wants to sees meez performs?"
+		setvard CHAT_EVENT_STEP4 give_forge_menu
+		setvard MENU_TYPE forge_type
+		setvard CHAT_STEPS 4
+		callevent chat_loop
+	}
+	else
+	{
+		setvard CHAT_STEP2 "What mighty smithing feat doos yous wants to sees meez performs?"
+		setvard CHAT_EVENT_STEP2 give_forge_menu
+		setvard MENU_TYPE forge_type
+		setvard CHAT_STEPS 2
+		callevent chat_loop
+	}
+
+	setvard LAST_PLAYER_FORGE_ID CURRENT_SPEAKER
+}
+
+{ give_forge_menu
+	menu.open FORGE_MENU_TARGET
+}
+
+{ say_forge_weapons
+	saytext "And which of my mighty shinies might yeez beez wanting to knows of?"
+	setvard FORGE_MENU_TARGET PARAM1
+	setvard MENU_TYPE forge_weapon
+	callevent 0.1 give_forge_menu
+}
+
+{ smith_confirm
+	setvard MENU_TYPE smith_confirm
+	menu.open SMITH_CUSTOMER
+}
+
+{ do_smithing
+	setvard MENU_TYPE suspend
+	callevent start_hammering
+	setvard CHAT_STEP1 "Alright then! Just a moment while I put da magic hammer to works..."
+	setvard CHAT_STEP2 "Here we go..."
+	setvard CHAT_STEP3 "There, alls done."
+	setvard CHAT_STEPS 3
+	callevent chat_loop
+
+	savenow SMITH_CUSTOMER
+
+	callevent 2.0 smithing_cl_effects	
+	callevent 8.0 smith_finalize
+}
+
+{ smith_finalize
+	setvard MENU_TYPE normal
+	callevent face_speaker SMITH_CUSTOMER
+	offer SMITH_CUSTOMER SMITH_TYPE
+	if ( SMITH_TYPE equals swords_ub )
+	{
+		local QUEST_IDX $get_find_token(QUEST_CAT_DATA,sym1)
+		if ( QUEST_IDX > -1 ) token.del QUEST_CAT_DATA QUEST_IDX
+		local QUEST_IDX $get_find_token(QUEST_CAT_DATA,sym2)
+		if ( QUEST_IDX > -1 ) token.del QUEST_CAT_DATA QUEST_IDX
+		local QUEST_IDX $get_find_token(QUEST_CAT_DATA,sym3)
+		if ( QUEST_IDX > -1 ) token.del QUEST_CAT_DATA QUEST_IDX
+		local QUEST_IDX $get_find_token(QUEST_CAT_DATA,sym4)
+		if ( QUEST_IDX > -1 ) token.del QUEST_CAT_DATA QUEST_IDX
+		local QUEST_IDX $get_find_token(QUEST_CAT_DATA,sym5)
+		if ( QUEST_IDX > -1 ) token.del QUEST_CAT_DATA QUEST_IDX
+		quest set SMITH_CUSTOMER f QUEST_CAT_DATA
+	}
+	menu.autoopen 1
+}
+
+{ say_swords_sf
+
+	setvard FINAL_GOLD_REQ SMITH_GOLD_REQ
+	local SMITH_RATIO 1.0
+	multiply FINAL_GOLD_REQ SMITH_RATIO
+	setvard FINAL_GOLD_REQ $int(FINAL_GOLD_REQ)
+
+	setvard CHAT_STEP1 "The Shadowfire Blade has the dark energy of the Blood Drinker, and new enhanced fire storms and stuffs."
+	setvard CHAT_STEP2 "To forge it, I needs a Blood Drinker, a Nova Blade, and three Fire Tomahawks."
+	setvard CHAT_STEP3 "I also charge a workmanship fee of "
+	stradd CHAT_STEP3 FINAL_GOLD_REQ
+	stradd CHAT_STEP3 " gold."
+	setvard CHAT_STEP4 "Do you wish meez to attempt this smithing feat for yoos?"
+	setvard CHAT_EVENT_STEP4 say_smith_confirm
+	setvard CHAT_STEPS 4
+	menu.autoopen 0 //lock menu until after confirm
+
+	setvard SMITH_CUSTOMER PARAM1
+
+	setvard SMITH_TYPE swords_sf
+	setvard SMITH_CL_TYPE "dark;fire"
+	setvard SMITH_REQ "swords_blood_drinker;swords_novablade12;axes_tf:3;gold:"
+	stradd SMITH_REQ FINAL_GOLD_REQ
+
+	callevent chat_loop
+
+	local MENU_DELAY CHAT_STEPS
+	multiply MENU_DELAY CHAT_DELAY
+	callevent MENU_DELAY smith_confirm	
+}
+
+//{ say_axes_sf
+//
+//	setvard FINAL_GOLD_REQ SMITH_GOLD_REQ
+//	local SMITH_RATIO 0.75
+//	multiply FINAL_GOLD_REQ SMITH_RATIO
+//	setvard FINAL_GOLD_REQ $int(FINAL_GOLD_REQ)
+//
+//	setvard CHAT_STEP1 "For the Shadowfire Axe, We takes the light folded steel of the Torkalath for balance, and the fire-forge metals of the Tomahawks, coupled with some dark magics..."
+//	setvard CHAT_STEP2 "So, I needs three good fire Tomahawks and two Torkalath Shortswords to whip one up."
+//	setvard CHAT_STEP3 "I also charge a workmanship fee of "
+//	stradd CHAT_STEP3 FINAL_GOLD_REQ
+//	stradd CHAT_STEP3 " gold."
+//	setvard CHAT_STEP4 "Do you wish meez to attempt this smithing feat for yoos?"
+//	setvard CHAT_EVENT_STEP4 say_smith_confirm
+//	setvard CHAT_STEPS 4
+//	menu.autoopen 0 //lock menu until after confirm
+//
+//	setvard SMITH_CUSTOMER PARAM1
+//
+//	setvard SMITH_TYPE axes_sf
+//	setvard SMITH_CL_TYPE "dark;fire"
+//	setvard SMITH_REQ "swords_katana4:2;axes_tf:3;gold:"
+//	stradd SMITH_REQ FINAL_GOLD_REQ
+//
+//	callevent chat_loop
+//
+//	local MENU_DELAY CHAT_STEPS
+//	multiply MENU_DELAY CHAT_DELAY
+//	callevent MENU_DELAY smith_confirm	
+//}
+
+{ say_axes_df
+
+	//2xColdTomahawk + 2xTorkalathBlade = Winter Cleaver (Cold Dmg, balanced, 100% cold DOT, freeze burst)
+
+	setvard FINAL_GOLD_REQ SMITH_GOLD_REQ
+	local SMITH_RATIO 1.0
+	multiply FINAL_GOLD_REQ SMITH_RATIO
+	setvard FINAL_GOLD_REQ $int(FINAL_GOLD_REQ)
+
+	setvard CHAT_STEP1 "For the Wintercleaver axe, we take the ice-metal of the Tomahawks and balance the beast with the Torkalath steel."
+	setvard CHAT_STEP2 "This makes for a beast of an axe that can create icy storms, yet is still light enough for humans to easily land blows with."
+	setvard CHAT_STEP3 "So, I needs two ice Tomahawks and two Torkalath Shortswords to slam one together."
+	setvard CHAT_STEP4 "I also charge a workmanship fee of "
+	stradd CHAT_STEP4 FINAL_GOLD_REQ
+	stradd CHAT_STEP4 " gold."
+	setvard CHAT_STEP5 "Do you wish meez to attempt this smithing feat for yoos?"
+	setvard CHAT_EVENT_STEP5 say_smith_confirm
+	setvard CHAT_STEPS 5
+	menu.autoopen 0 //lock menu until after confirm
+
+	setvard SMITH_CUSTOMER PARAM1
+
+	setvard SMITH_TYPE axes_df
+	setvard SMITH_CL_TYPE "ice"
+	setvard SMITH_REQ "swords_katana4:2;axes_ti:2;gold:"
+	stradd SMITH_REQ FINAL_GOLD_REQ
+
+	callevent chat_loop
+
+	local MENU_DELAY CHAT_STEPS
+	multiply MENU_DELAY CHAT_DELAY
+	callevent MENU_DELAY smith_confirm
+}
+
+{ say_swords_ub
+
+	//5xFelewynBlade + 2xBlood Drinker = Unholy Blade (Dark dmg, vampyric, repell aura)
+
+	setvard FINAL_GOLD_REQ SMITH_GOLD_REQ
+	local SMITH_RATIO 2.0
+	multiply FINAL_GOLD_REQ SMITH_RATIO
+	setvard FINAL_GOLD_REQ $int(FINAL_GOLD_REQ)
+
+	setvard CHAT_STEP1 "Ah, the Unholy Blade... I've been wanting to make one of these for a long time now!"
+	setvard CHAT_STEP2 "Sadly, no one seems to be able to bring me the materials I need. Namely, five seperate shards of the legendary Felewyn Blade."
+	setvard CHAT_STEP3 "On top of that, I'll need two Blood Drinkers. Oh, but what a beast this sword will be..."
+	setvard CHAT_STEP4 "I also charge a workmanship fee of "
+	stradd CHAT_STEP4 FINAL_GOLD_REQ
+	stradd CHAT_STEP4 " gold."
+	setvard CHAT_STEP5 "Do you wish meez to attempt this smithing feat for yoos?"
+	setvard CHAT_EVENT_STEP5 say_smith_confirm
+	setvard CHAT_STEPS 5
+	menu.autoopen 0 //lock menu until after confirm
+
+	setvard SMITH_CUSTOMER PARAM1
+
+	setvard SMITH_TYPE swords_ub
+	setvard SMITH_CL_TYPE "dark"
+	setvard SMITH_REQ "swords_fshard1;swords_fshard2;swords_fshard3;swords_fshard4;swords_fshard5;swords_blood_drinker:2;gold:"
+	stradd SMITH_REQ FINAL_GOLD_REQ
+
+	callevent chat_loop
+
+	local MENU_DELAY CHAT_STEPS
+	multiply MENU_DELAY CHAT_DELAY
+	callevent MENU_DELAY smith_confirm
+}
+
+{ say_blunt_db
+
+	//Bludgeon Hammer + TorkalathBlade + 2xFire Tomahawk = Demon Bludgeon Hammer (Bludgeon Hammer + FireDOT 100%, +Accuracy%)
+	//special event: Bludgeon summons forth - must be defeated before he'll give you the weapon
+
+	setvard FINAL_GOLD_REQ SMITH_GOLD_REQ
+	local SMITH_RATIO 0.5
+	multiply FINAL_GOLD_REQ SMITH_RATIO
+	setvard FINAL_GOLD_REQ $int(FINAL_GOLD_REQ)
+
+	setvard CHAT_STEP1 "Ah, now this be pretty simple: we take the fire magic from two Tomahawks, two dark Tomahawks,"
+	setvard CHAT_STEP2 "and two shortswords worth of Torkalath steel to hold it all together with. We work this all into your Bludgeon Hammer."
+	setvard CHAT_STEP3 "Only sticky bit is keeping the Bludgeon soul locked in there during the whole process."
+	setvard CHAT_STEP4 "I also charge a workmanship fee of "
+	stradd CHAT_STEP4 FINAL_GOLD_REQ
+	stradd CHAT_STEP4 " gold."
+	setvard CHAT_STEP5 "Do you wish meez to attempt this smithing feat for yoos?"
+	setvard CHAT_EVENT_STEP5 say_smith_confirm
+	setvard CHAT_STEPS 5
+	menu.autoopen 0 //lock menu until after confirm
+
+	setvard SMITH_CUSTOMER PARAM1
+
+	setvard SMITH_TYPE blunt_db
+	setvard SMITH_CL_TYPE "fire"
+	setvard SMITH_REQ "axes_tf:2;axes_td:2;swords_katana4:2;blunt_mithral;gold:"
+	stradd SMITH_REQ FINAL_GOLD_REQ
+
+	callevent chat_loop
+
+	local MENU_DELAY CHAT_STEPS
+	multiply MENU_DELAY CHAT_DELAY
+	callevent MENU_DELAY smith_confirm
+}
+
+{ say_axes_ss
+
+	//2xDarkTomahawk + 2xBloodAxe + x2TorkalathBlade = Skull Scythe (Vampyric + Dark + Range + Balance + Throw)
+
+	setvard FINAL_GOLD_REQ SMITH_GOLD_REQ
+	local SMITH_RATIO 2.0
+	multiply FINAL_GOLD_REQ SMITH_RATIO
+	setvard FINAL_GOLD_REQ $int(FINAL_GOLD_REQ)
+
+	setvard CHAT_STEP1 "The Skull Scythe. Inspired by the Torkalath Scythe. It may even make a worthy sacrifice to the Father of Chaos himself!"
+	setvard CHAT_STEP2 "This sweeping axe blade can lop off heads at a fair distance, drink the blood of your enemies, yet is light enough to throw."
+	setvard CHAT_STEP3 "To forge one, I need two dark tomahawks, two balanced axes, and two Torkalath short swords.... And one petrified human head."
+	setvard CHAT_STEP4 "Eh... Don't worry about the head... I got one... or three... I'll throw one in free of charge."
+	setvard CHAT_STEP5 "The workmanship fee comes to "
+	stradd CHAT_STEP5 FINAL_GOLD_REQ
+	stradd CHAT_STEP5 " gold."
+	setvard CHAT_STEP6 "Do you wish meez to attempt this smithing feat for yoos?"
+	setvard CHAT_EVENT_STEP6 say_smith_confirm
+	setvard CHAT_STEPS 6
+	menu.autoopen 0 //lock menu until after confirm
+
+	setvard SMITH_CUSTOMER PARAM1
+
+	setvard SMITH_TYPE axes_ss
+	setvard SMITH_CL_TYPE "dark"
+	setvard SMITH_REQ "axes_b:2;swords_katana4:2;axes_td:2;gold:"
+	stradd SMITH_REQ FINAL_GOLD_REQ
+
+	callevent chat_loop
+
+	local MENU_DELAY CHAT_STEPS
+	multiply MENU_DELAY CHAT_DELAY
+	callevent MENU_DELAY smith_confirm
+}
+
+{ say_smallarms_vt
+	setvard FINAL_GOLD_REQ SMITH_GOLD_REQ
+	local SMITH_RATIO 2.0
+	multiply FINAL_GOLD_REQ SMITH_RATIO
+	setvard FINAL_GOLD_REQ $int(FINAL_GOLD_REQ)
+
+	setvard CHAT_STEP1 "Ah, the Vorpal Tongue, not had a chance to make one of these in a long time."
+	setvard CHAT_STEP2 "I'd need an ethereal dagger, two actually, and really no one knows how to properly forge those anymore."
+	setvard CHAT_STEP3 "Then two Efreeti hearts, and Efreeti are very rare, for there aren't many wizards left who know how to make those either."
+	setvard CHAT_STEP4 "Combine all that with a pair of litchtounges, and we have a rare weapon indeed."
+	setvard CHAT_STEP5 "One capable of holding the magic of two elements: fire and ice, in one blade, thanks to the ethereal metal."
+	setvard CHAT_STEP6 "Price comes to "
+	stradd CHAT_STEP6 FINAL_GOLD_REQ
+	stradd CHAT_STEP6 " gold. I'll I have a go at it, should you have the ingredients."
+	setvard CHAT_EVENT_STEP6 say_smith_confirm
+	setvard CHAT_STEPS 6
+	menu.autoopen 0 //lock menu until after confirm
+
+	setvard SMITH_CUSTOMER PARAM1
+
+	setvard SMITH_TYPE smallarms_vt
+	setvard SMITH_CL_TYPE "fire;ice"
+	setvard SMITH_REQ "item_eh:2;smallarms_eth:2;smallarms_frozentongueonflagpole:2;gold:"
+	stradd SMITH_REQ FINAL_GOLD_REQ
+
+	callevent chat_loop
+
+	local MENU_DELAY CHAT_STEPS
+	multiply MENU_DELAY CHAT_DELAY
+	callevent MENU_DELAY smith_confirm
+}
+
+{ say_blunt_gauntlet_ic
+	setvard FINAL_GOLD_REQ SMITH_GOLD_REQ
+	local SMITH_RATIO 1.0
+	multiply FINAL_GOLD_REQ SMITH_RATIO
+	setvard FINAL_GOLD_REQ $int(FINAL_GOLD_REQ)
+
+	setvard CHAT_STEP1 "Infernal claws. Vicious little things. A bit delicate for orc hands, but fine for the likes of yoos."
+	setvard CHAT_STEP2 "Pretty simple formula. Three fire Tomahawks, and two pair demon claws."
+	setvard CHAT_STEP3 "Final result is a set of claws coupled with various fire enchantments."
+	setvard CHAT_STEP4 "Price comes to "
+	stradd CHAT_STEP4 FINAL_GOLD_REQ
+	stradd CHAT_STEP4 " gold. I'll I have a go at it, should you have the ingredients."
+	setvard CHAT_EVENT_STEP6 say_smith_confirm
+	setvard CHAT_STEPS 4
+	menu.autoopen 0 //lock menu until after confirm
+
+	setvard SMITH_CUSTOMER PARAM1
+
+	setvard SMITH_TYPE blunt_gauntlets_ic
+	setvard SMITH_CL_TYPE "fire"
+	setvard SMITH_REQ "blunt_gauntlets_demon:2;axes_tf:3;gold:"
+	stradd SMITH_REQ FINAL_GOLD_REQ
+
+	callevent chat_loop
+
+	local MENU_DELAY CHAT_STEPS
+	multiply MENU_DELAY CHAT_DELAY
+	callevent MENU_DELAY smith_confirm
+}
+
+{ vendor_addstoreitems
+				//	<store_n>	<item_script>			<#toadd>	<pri%>	[sellr]	[bndl]
+	addstoreitem	STORE_NAME	armor_dark				$rand(0,2)	400		0
+	addstoreitem	STORE_NAME	armor_helm_dark			$rand(0,2)	400		0
+	addstoreitem	STORE_NAME	armor_helm_golden		$rand(0,2)	400		0
+	addstoreitem	STORE_NAME	axes_thunder11			5			600		0
+	addstoreitem	STORE_NAME	smallarms_k_fire		1			400		0
+	addstoreitem	STORE_NAME	blunt_gauntlets_fire	1			600		0
+	addstoreitem	STORE_NAME	blunt_darkmaul			5			600		0
+	addstoreitem	STORE_NAME	smallarms_craftedknife4 5			200		0
+	addstoreitem	STORE_NAME	smallarms_fangstooth	5			200		0
+	addstoreitem	STORE_NAME	blunt_granitemace		5			200		0
+	addstoreitem	STORE_NAME	blunt_granitemaul		5			200		0
+	addstoreitem	STORE_NAME	shields_lironshield		5			100		0
+	addstoreitem STORE_NAME axes_gthunder11 1 3000% 0
+	addstoreitem STORE_NAME axes_greataxe 1 300% 0
+	addstoreitem STORE_NAME axes_scythe 1 300% 0
+	addstoreitem STORE_NAME armor_helm_dark 1 300% 0
+
+	if ( $rand(1,40) < game.playersbn )
+	{
+		//%% pending items
+		addstoreitem STORE_NAME shields_rf 1 500 0
+		addstoreitem STORE_NAME shields_rl 1 500 0
+	}
+}
+
+{ say_rdagger_excuse
+	if !BUSY_CHATTING
+	setvard CHAT_STEP1 "Oh wow... I knows what this is! That's an ethereal blade under all that rust!"
+	setvard CHAT_STEP2 "Ones this old tend to get rusties - hides the blade, but restoring it is... Very delicate work."
+	setvard CHAT_STEP3 "I'm afraid meez hands are just too rough for that kind of jeweler's task."
+	setvard CHAT_STEP4 "Probably needs a human or elf smith. I know not where you'd find one who could handle that these days though."
+	setvard CHAT_STEPS 4
+	callevent chat_loop
+}
+
+{ say_rumor
+	if !BUSY_CHATTING
+	setvard CHAT_STEP1 "I hear that Runegahr and Thuldahr have been going at it again..."
+	setvard CHAT_STEP2 "Thuldahr doesn't likes Runegahr's plans, being nice to the humans and all. Letting em keeps a village so close."
+	setvard CHAT_STEP3 "I tries not to thinks about politics much though. Too much smithings to doos."
+	setvard CHAT_STEPS 3
+	callevent chat_loop
+}
+
+{
+repeatdelay 10.0
+	//hammah loop
+	if game.time > RESUME_HAMMERING
+	setangle face $vec(0,HAMMER_YAW,0)
+	if !AM_HAMMERING
+	callevent start_hammering
+}
+
+{ frame_hammer
+	if ( !$get(BLACKSMITH_FX_ID,isalive) )
+	{
+		callevent get_blacksmith_fx_id
+	}
+	else
+	{
+		callexternal BLACKSMITH_FX_ID do_spark
+	}
+}
+
+{ get_blacksmith_fx_id
+	setvard BLACKSMITH_FX_ID $get_by_name(sfx_blacksmith)
+}
+
+{ smithing_cl_effects
+	//call cl effects based on SMITH_CL_TYPE here (pass to cleffect script)
+	if ( !$get(BLACKSMITH_FX_ID,isalive) )
+	{
+		callevent get_blacksmith_fx_id
+	}
+	callexternal BLACKSMITH_FX_ID do_forge_fx SMITH_CL_TYPE SMITH_TYPE
+}

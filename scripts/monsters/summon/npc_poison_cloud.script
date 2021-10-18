@@ -1,0 +1,123 @@
+//Poison Cloud by Thothie (from scratch, save smokes, from monsters/summon/summon_lightning_storm)
+//- This script removes all occurances of itself at end, therefor, "there can be only one"
+//- If you want an NPC to use this, copy to poison_cloud_noc - so player can't 'steal' his cloud
+
+{
+	const SMOKE_SPRITE poison_cloud.spr
+	const SPAWN_SOUND ambience/steamburst1.wav
+	const EFFECT_SCRIPT effects/effect_poison
+
+	const AOE_RADIUS 128
+	const AOE_SCAN_TYPE tsphere
+
+	const SPRITE_COLOR (0,0,0)
+	const CHECK_EFFECT DOT_poison
+}
+
+#include monsters/summon/base_aoe2
+
+{ game_dynamically_created //PARAM1=Owner PARAM2=Angles* PARAM3=Damage PARAM4=Duration [* unused, here for compatability]
+	setvard MY_OWNER PARAM1
+	setvard MY_BASE_DAMAGE PARAM3
+	setvard MY_DURATION PARAM4
+
+	setvard AOE_OWNER MY_OWNER
+	setvard AOE_DURATION MY_DURATION
+
+	local MY_ORG $get(ent_me,origin)
+	local MY_GROUND $get_ground_height(MY_ORG)
+
+	if ( $vec.z(MY_ORG) != MY_GROUND )
+	{
+		add MY_GROUND 20
+		vectoradd MY_ORG z -40
+		if $vec.z(MY_ORG) > MY_GROUND
+		dbg game_dynamically_created adjusting height
+		setorigin ent_me MY_ORG
+	}
+
+   	if FX_SPAMMERS < MAX_FX_SPAMMERS
+	local CL_DURATION MY_DURATION
+	subtract CL_DURATION 2.5
+	clientevent new all $currentscript $get(ent_me,origin) SPRITE_COLOR CL_DURATION //self removing
+}
+
+{ game_spawn
+	name a|Poison Cloud
+	callevent 0.1 spawn_sound
+}
+
+{ spawn_sound
+	playsound 0 10 SPAWN_SOUND
+}
+
+{ aoe_affect_target
+
+	if !$get(PARAM1,haseffect,CHECK_EFFECT)
+	applyeffect PARAM1 EFFECT_SCRIPT 5.0 MY_OWNER MY_BASE_DAMAGE
+}
+
+{ aoe_end
+	deleteent ent_me
+}
+
+//Client
+//======
+
+{ [client]
+	const CLOUD_HEIGHT 40
+	const CLOUD_WIDTH 96
+	const CLOUD_NEGWIDTH -96
+}
+
+{ [client] client_activate
+
+	setvard FX_ORIGIN PARAM1
+	setvard FX_ACTIVE 1
+	setvard FX_SPRITE_COLOR PARAM2
+	callevent fx_loop
+	callevent PARAM3 poison_end_cl 	//Die after a delay   
+}
+
+{ [client] poison_end_cl
+	setvard FX_ACTIVE 0
+  	removescript
+}
+
+// Random lightning bolt
+{ [client] fx_loop
+	if FX_ACTIVE
+	callevent 0.25 fx_loop
+	callevent smokes_shoot
+}
+
+{ [client] smokes_shoot
+
+	local x $randf(CLOUD_NEGWIDTH,CLOUD_WIDTH)
+	local y $randf(CLOUD_NEGWIDTH,CLOUD_WIDTH)
+	local SPR_POS $relpos($vec(0,0,0),$vec(x,y,0))
+	local SPR_GROUND $get_ground_height(SPR_POS)
+
+   local L_POS $relpos($vec(0,0,0),$vec(x,y,32))
+   vectoradd L_POS FX_ORIGIN
+
+	if $get_contents(L_POS) equals empty //maybe causing crashes in water
+
+   cleffect tempent sprite poison_cloud.spr L_POS setup_smokes
+}
+
+{  [client] setup_smokes
+
+
+   cleffect tempent set_current_prop death_delay 	2.5
+   cleffect tempent set_current_prop framerate		10
+   cleffect tempent set_current_prop frames		17
+   cleffect tempent set_current_prop bouncefactor 	0
+   cleffect tempent set_current_prop scale 		$randf(0.5,1.0)
+   cleffect tempent set_current_prop rendermode		add
+   cleffect tempent set_current_prop renderamt		200
+   cleffect tempent set_current_prop rendercolor	FX_SPRITE_COLOR
+   cleffect tempent set_current_prop gravity 		.005
+   cleffect tempent set_current_prop collide 		none
+}
+

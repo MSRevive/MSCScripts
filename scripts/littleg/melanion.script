@@ -1,0 +1,173 @@
+{
+	const NO_JOB 1
+	const NO_RUMOR 1
+	setvard B_QUEST_DONE 0
+	setvard TALKED_SALANDRIA 0
+}
+#include monsters/base_chat
+{ spawn
+
+	name_unique melanion
+	hp	30
+	gold	50    
+	name	Ambassador Melanion Belore
+	//ov	30
+	width	32
+	height	72
+	race	elf
+	roam	0
+	setmodel	npc/elf_f.mdl
+	invincible	1
+	setmodelbody	0
+
+	catchspeech  say_hi hi hail hello greet
+
+	catchspeech  say_job  documents
+}
+
+{ askbook
+
+	setvard TALKED_SALANDRIA 1
+	//dbg temp Got Salandria askdocuments ( Taked TALKED_SALANDRIA ) ( Done B_QUEST_DONE )
+
+}
+
+{ say_hi
+
+	//try to avoid the whole bar responding to the same statement
+	if ( PARAM1 equals 'PARAM1' )
+	{
+		if $get(ent_lastspoke,range) > 128
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+
+	if ( !B_QUEST_DONE )
+	{
+		playanim once no
+		saytext I will loose my job...and the whole transaction will fail...please leave me alone.
+	}
+	
+	if ( B_QUEST_DONE )
+	{
+		local WINNER_NAME $get(QUEST_COMPLETER,name)
+		saytext Hello! I'm so happy now that WINNER_NAME has returned my documents!
+	}
+}
+
+{ say_job
+
+	//try to avoid the whole bar responding to the same statement
+	if ( PARAM1 equals 'PARAM1' )
+	{
+		if $get(ent_lastspoke,range) > 128
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	if TALKED_SALANDRIA
+	if !B_QUEST_DONE
+
+    saytext You know about the documents? You must have learned of it from Salandria.
+    calleventtimed 4 say_bothered1a
+}
+
+{ say_bothered1a
+  
+	playanim once no
+	saytext ..I am a diplomat from Kray Eldorad, i had some documents.. 
+	calleventtimed 4 story
+}
+
+{ story
+  
+	playanim once converse1
+	saytext We were planning a diplomatic meeting. I came all the way from Kray Eldorad.
+	calleventtimed 5 say_story2
+}
+
+{ say_story2
+
+	playanim critial talkright
+	saytext I was walking in the garden, when a man came by, he stole my documents!.
+	calleventtimed 5 say_story3
+}
+
+{ say_story3
+
+	playanim critial converse1
+	saytext Thoose Documents had very important information, i chased him all the way to Thornlands, to a place called the Spider Cavern.
+	calleventtimed 7 say_story4
+}
+
+{ say_story4
+
+	playanim once converse1
+	saytext I was then startled by many spiders, and had to flee, thoose documents MUST be back before the meeting, please help me. 
+	calleventtimed 6 say_story5
+}
+
+{ say_story5
+
+	playanim once converse1
+	saytext He is in there somewhere, please find him...it is so important for me...
+	calleventtimed 5 say_story6
+}
+
+{ say_story6
+
+	playanim once converse1
+	saytext I tried talking to Edrin but he said his guards were far too busy and that he could not spare one.
+	calleventtimed 5 say_story7
+}
+
+{ say_story7
+
+	playanim once yes
+	saytext If you can return my documents, i will make sure you will be rewarded.
+	setvar TOLD_STORY 1
+}
+
+{ give_book
+
+	recvoffer accept
+	playanim once eye_wipe
+	saytext The Documents! By Felewyn Bless you!  !
+	say [.10] [.20] [.20] [.10] [.10] [.10] [.25] [.20] [.10] [.30] [.20] [.40]
+	
+	setvar QUEST_COMPLETER PARAM1
+	setvar B_QUEST_DONE 1
+	callevent 2 recvdocuments_2
+}
+
+{ recvbook_2
+
+	setvar B_QUEST_DONE 1
+	callexternal $get_by_name(salandria) documentsfound
+	saytext Here, some coins, and a gift from Salandria. 
+	offer QUEST_COMPLETER gold $rand(13,16)
+offer QUEST_COMPLETE  item_bracelet
+}
+
+{ game_menu_getoptions
+
+
+	if ( $item_exists(PARAM1,item_documents) )
+	{
+		local reg.mitem.title 	"Return documents"
+		local reg.mitem.type 	payment
+		local reg.mitem.data 	item_documents
+		local reg.mitem.callback give_documents
+		menuitem.register
+	}
+
+	if ( TALKED_SALANDRIA )
+	{
+		if !B_QUEST_DONE
+		local reg.mitem.title 	"Ask about Documents"
+		local reg.mitem.type 	callback
+		local reg.mitem.callback say_job
+		menuitem.register
+	}
+}

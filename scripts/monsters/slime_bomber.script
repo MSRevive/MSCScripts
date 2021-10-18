@@ -1,0 +1,75 @@
+//Slime Suicide Bomber by MiB
+//Slime that gets in the player's face, then explodes into a nasty poison cloud.
+
+{
+   setvard ANIM_ATTACK attack
+   setvar ANIM_RUN run
+   setvar ANIM_IDLE idle1
+   setvar ANIM_WALK walk
+   setvar ANIM_DEATH die
+
+   setvard MOVE_RANGE 64
+   setvard ATTACK_RANGE 64
+   setvard ATTACK_HITRANGE 64
+
+   setvard NPC_GIVE_EXP 200
+
+   const SOUND_DEATH monsters/sludge/bio.wav
+   precache SOUND_DEATH
+
+   const POISON_CLOUD monsters/summon/npc_poison_cloud2
+}
+
+#include monsters/base_monster_new
+
+{ npc_spawn
+   name a|Plague Spreader
+   race demon
+   hp 100
+   width 40
+   height 44
+   setmodel monsters/slime_large.mdl
+   setmodelbody 0 0
+
+   takedmg pierce 1.5
+   takedmg blunt .75
+   takedmg poison .25
+   takedmg acid .25
+   takedmg fire 1.5
+}
+
+{ npc_post_spawn
+   setmoveanim ANIM_RUN
+   setidleanim ANIM_IDLE
+
+}
+
+{ bite1
+   callevent explode
+}
+
+{ npc_death
+   callevent explode
+}
+
+{ explode
+   if !EXPLODED
+   setvard EXPLODED 1
+
+	setvard SLIME_TARGETS $get_tsphere(ent_me,96)
+	if ( SLIME_TARGETS isnot none ) calleventloop $get_token_amt(SLIME_TARGETS) slime_affect_targs
+
+
+   local CLOUD_POS $get(ent_me,origin)
+   local GRND_CLOUD $get_ground_height(CLOUD_POS)
+   add GRND_CLOUD 24
+   vectorset CLOUD_POS z GRND_CLOUD
+   createnpc monsters/summon/npc_poison_cloud2 CLOUD_POS $get(ent_me,id) $rand(100,200) 60.0 1
+   setorigin ent_me (20000,20000,20000)
+   callevent 60.0 npc_suicide
+}
+
+{ slime_affect_targs
+	local CUR_TARG $get_token(SLIME_TARGETS,game.script.iteration)
+	applyeffect CUR_TARG effects/effect_poison_blinding 10.0 $get(ent_me,id) 25
+}

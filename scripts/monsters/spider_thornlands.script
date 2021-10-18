@@ -1,0 +1,81 @@
+//Giant Spider
+
+{
+   const SOUND_PAIN 	monsters/spider/spiderhiss.wav
+   const SOUND_IDLE1 	monsters/spider/spideridle.wav
+   const SOUND_DEATH 	monsters/spider/spiderdie.wav
+   const SND_STRUCK1 	body/flesh1.wav
+   const SND_STRUCK2 	body/flesh2.wav
+   const SND_STRUCK3 	body/flesh3.wav
+   const SND_STRUCK4 	SOUND_PAIN
+   const SND_STRUCK5 	SOUND_PAIN
+   const SOUND_ATTACK1	zombie/claw_miss1.wav
+   const SOUND_ATTACK2	zombie/claw_miss2.wav
+
+   setvar ANIM_IDLE 	idle
+   setvar ANIM_WALK 	walk
+   setvar ANIM_RUN 	run
+   setvard ANIM_ATTACK 	attack
+   const ANIM_DODGE 	dodge
+   setvard ANIM_DEATH 	die
+
+   setvard MOVE_RANGE 	50
+   setvard ATTACK_RANGE 	200
+   setvard ATTACK_HITRANGE 250
+   const ATTACK_DAMAGE_LOW  9.0
+   const ATTACK_DAMAGE_HIGH 12.0
+   const ATTACK_ACCURACY 85%
+   setvard NPC_GIVE_EXP 	100
+
+	setvard NPC_MUST_SEE_TARGET 0 //so big I can't see through myself?
+
+   const SPIDER_IDLE_VOL   4
+   const SPIDER_IDLE_DELAY 3.6
+   const SPIDER_VOLUME  10
+}
+
+#include monsters/spider_base_new
+
+{ npc_spawn
+
+   hp 500
+   width 120
+   height 64
+   name the|Gigantic Cave Spider
+   hearingsensitivity 6
+   setmodel monsters/giant_spider.mdl
+   setvard NPC_GIVE_EXP 100 //doesn't seem to be coming accross in base_monster
+   takedmg all .85
+
+	catchspeech debug_props debug
+}
+
+{ debug_props
+	saytextrange 1024
+
+	if ( $cansee(enemy) ) saytext I see enemy. ( $get(ent_lastseen,name) )
+	if ( IS_HUNTING ) saytext I am hunting: $get(HUNT_LASTTARGET,name)
+	if ( HUNTING_PLAYER ) saytext I am hunting a player.
+
+	if ( !$cansee(enemy) ) saytext I see NO enemy.
+	if ( !IS_HUNTING ) saytext I am NOT hunting.
+	if ( !HUNTING_PLAYER ) saytext I am NOT hunting a player.
+
+	saytext My cycle time is CYCLE_TIME
+}
+
+   // Deal damage
+{ [override] bite1
+
+   if( $rand(0,1) == 0 ) playrandomsound CHAN_VOICE SPIDER_VOLUME SOUND_ATTACK1 SOUND_ATTACK2
+   setvar PUSH_VEL $relvel(0,100,0)
+   callevent npcatk_dodamage NPCATK_TARGET ATTACK_HITRANGE $randf(ATTACK_DAMAGE_LOW,ATTACK_DAMAGE_HIGH) 85%
+}
+
+{  game_damaged_other
+
+   if PUSH_VEL isnot 'PUSH_VEL'
+
+   addvelocity ent_laststruckbyme PUSH_VEL//Push the player a bit
+
+}

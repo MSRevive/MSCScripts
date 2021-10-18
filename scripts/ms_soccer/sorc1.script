@@ -1,0 +1,111 @@
+#scope server
+{ [shared]
+	setvar ANIM_IDLE idle1
+	setvar ANIM_WALK walk
+	setvard ANIM_RUN run
+	const ANIM_JUMP jump_hop //jump_start jump_boost jump_land
+	const ANIM_KICK kick //kick_land
+	setvard ANIM_ATTACK kick
+
+	const ANIM_ROUND_WIN1 warcry
+	const ANIM_ROUND_WIN2 nod_yes
+	const ANIM_ROUND_LOST1 neigh
+	const ANIM_ROUND_LOST2 kneel
+}
+
+{
+	setvard ATTACK_MOVERANGE 20
+	setvard MOVE_RANGE 20
+	setvard ATTACK_RANGE 30
+	setvard ATTACK_HITRANGE 48
+
+//	const SOUND_STRUCK weapons/cbar_hitbod1.wav
+//	const SOUND_HIT voices/orc/hit.wav
+//	const SOUND_HIT2 voices/orc/hit2.wav
+//	const SOUND_HIT3 voices/orc/hit3.wav
+//	const SOUND_PAIN monsters/orc/pain.wav
+//	const SOUND_WARCRY1 monsters/orc/battlecry.wav
+//	const SOUND_ATTACK1 voices/orc/attack.wav
+//	const SOUND_ATTACK2 voices/orc/attack2.wav
+//	const SOUND_ATTACK3 voices/orc/attack3.wav
+//	const SOUND_ATTACK1 voices/orc/attack.wav
+
+	const SOUND_DEATH voices/orc/die.wav
+
+	const NPC_FIGHTS_NPCS 1
+}
+
+#include ms_soccer/base_soccer
+#include monsters/base_monster_new
+
+{ [shared] npc_spawn
+	name a|Soccer Sorc
+	setmodel soccer/sorc_soccer1.mdl
+	width 32
+	height 72
+	hp 400
+	race human
+	roam 0
+	hearingsensitivity 0	
+
+	setmodelbody 0 3 //body - 0=bare 1=shirts 2=armor 3=archer
+	setmodelbody 1 1 //head - 0=horns 1=spikes 2=bear 3=chief 4=lizard
+	setmodelbody 2 0 //weapon - 0=empty 1=beer
+}
+
+{ setsoc_leader
+	setmodelbody 0 0 //body - 0=bare 1=shirts 2=armor 3=archer
+	setmodelbody 1 2 //head - 0=horns 1=spikes 2=bear 3=chief 4=lizard
+	hp 800
+	setvard AM_LEADER 1 //kicks harder
+}
+
+{ setsoc_def
+	setmodelbody 1 4 //head - 0=horns 1=spikes 2=bear 3=chief 4=lizard
+}
+
+{ jump_start
+	//playsound 0 10 SOUND_JUMP
+}
+
+{ jump_boost
+	addvelocity ent_me $relvel(0,200,400)
+	setvard DOING_JUMP 1
+	callevent 0.2 check_boost2
+	callevent 0.4 check_boost2
+	callevent 0.6 check_boost2
+	callevent 0.8 check_boost2
+}
+
+{ check_boost2
+	if DOING_JUMP
+	local BALL_ORG $get(BALL_ID,origin)
+	local MY_ORG $get(ent_me,origin)
+	local BALL_FROM_GOAL $dist(BALL_ORG,NME_GOAL_LOC)
+	local KEEP_GOING 0
+	local MY_FROM_GOAL $dist(MY_ORG,NME_GOAL_LOC)
+	if ( MY_FROM_GOAL < BALL_FROM_GOAL )
+	{
+		local KEEP_GOING 1 //still too close
+	}
+
+	if ( $get(BALL_ID,range2D) < 30 ) local KEEP_GOING 1 //on top of ball
+
+	if ( KEEP_GOING )
+	{
+		addvelocity ent_me $relvel(0,100,0)
+	}
+	else
+	{
+		setvelocity ent_me $relvel(0,0,0)
+	}
+}
+
+{ jump_land
+	setvard DOING_JUMP 0
+	callevent npcatk_resume_ai
+}
+
+{ kick_land
+	callevent soc_kickball
+}

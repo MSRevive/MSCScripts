@@ -1,0 +1,146 @@
+//Aura for Fire Aura Armor by Thothie
+
+#scope client
+
+{
+	const GLOW_RAD 128
+	const GLOW_COLOR (255,128,64)
+
+	const V_OFS -26
+	const FOOT_BONE 4
+}
+
+{ client_activate //<owner> <rad> <duration> <is_npc:0|1>
+
+	setcallback render enable
+
+	setvard MY_OWNER PARAM1
+	setvard FX_RADIUS PARAM2
+	setvard FX_DURATION PARAM3
+	setvard OWNER_NPC PARAM4
+
+	subtract FX_RADIUS 24 //make up for sprite size
+
+	dbg ***** Owner MY_OWNER rad FX_RADIUS dur FX_DURATION
+	//setvard CYCLE_ANGLE 0
+	//calleventloop 18 make_fire_sprites
+	callevent FX_DURATION remove_fx //renew on server side
+
+	setvard OWNER_FEET $getcl(MY_OWNER,bonepos,FOOT_BONE)
+	setvard FX_ACTIVE 1
+	cleffect tempent sprite weapons/projectiles.mdl OWNER_FEET setup_flame_circle update_flame_circle
+
+	cleffect light new $getcl(MY_OWNER,origin) GLOW_RAD GLOW_COLOR 1.0
+	setvard LIGHT_ID game.script.last_light_id
+}
+
+{ game_prerender
+
+	//if ( !$getcl(MY_OWNER,exists) ) callevent remove_fx
+	if $getcl(MY_OWNER,exists)
+	cleffect light LIGHT_ID $getcl(MY_OWNER,origin) GLOW_RAD GLOW_COLOR 1.0
+}
+
+{ remove_fx
+	setvard FX_ACTIVE 0
+	callevent 0.1 remove_fx2
+}
+
+{ remove_fx2
+	removescript
+}
+
+//{ make_fire_sprites
+//	local SPRITE_POS $getcl(MY_OWNER,origin)
+//	vectoradd SPRITE_POS $relpos($vec(0,CYCLE_ANGLE,0),$vec(0,FX_RADIUS,V_OFS))
+//	cleffect tempent sprite SPRITE_NAME SPRITE_POS setup_flame_sprite update_flame_sprite
+//	add CYCLE_ANGLE 20
+//}
+//
+//{ update_flame_sprite
+//	local MY_ANGLE game.tempent.fuser1
+//	local SPRITE_POS $getcl(MY_OWNER,origin)
+//	vectoradd SPRITE_POS $relpos($vec(0,MY_ANGLE,0),$vec(0,FX_RADIUS,V_OFS))
+//	cleffect tempent set_current_prop origin SPRITE_POS
+//}
+//
+//{ setup_flame_sprite
+//	cleffect tempent set_current_prop death_delay FX_DURATION
+//	cleffect tempent set_current_prop frames SPRITE_NFRAMES
+//	cleffect tempent set_current_prop framerate 30
+//	cleffect tempent set_current_prop scale 0.15
+//	cleffect tempent set_current_prop gravity 0
+//	cleffect tempent set_current_prop collide none
+//	cleffect tempent set_current_prop fuser1 CYCLE_ANGLE
+//	//cleffect tempent set_current_prop update 1
+//}
+//
+
+//{
+//repeatdelay 0.1
+//	//compensates for ducking
+//	setvard OWNER_FEET $getcl(MY_OWNER,origin)
+//	if ( $getcl(MY_OWNER,ducking) ) vectoradd OWNER_FEET z 24
+//	vectoradd OWNER_FEET z V_OFS
+//	//setvard GROUND_LEVEL $get_ground_height(OWNER_FEET)
+//	//dbg *** GROUND_LEVEL
+//	//vectorset OWNER_FEET z
+//}
+
+{ update_flame_circle
+	if ( FX_ACTIVE )
+	{
+		//local OWNER_FEET $getcl(MY_OWNER,origin)
+		//vectorset OWNER_FEET z GROUND_LEVEL
+		//vectoradd OWNER_FEET z V_OFS
+	
+		//dbg *** $getcl(MY_OWNER,ducking)
+
+		setvard OWNER_FEET $getcl(MY_OWNER,origin)
+		if ( !OWNER_NPC )
+		{
+			if ( $getcl(MY_OWNER,ducking) ) vectoradd OWNER_FEET z 21
+			vectoradd OWNER_FEET z V_OFS
+		}
+		else
+		{
+			vectoradd OWNER_FEET z 16
+		}
+
+		//$get_ground_height is returning origin inside update, but works fine outside
+		//local GROUND_LEVEL $get_ground_height(OWNER_FEET)
+		//dbg *** GROUND_LEVEL
+		//vectorset OWNER_FEET z GROUND_LEVEL
+		//vectoradd OWNER_FEET z 24
+
+		cleffect tempent set_current_prop origin OWNER_FEET
+	}
+	else
+	{
+		cleffect tempent set_current_prop rendermode 5
+		cleffect tempent set_current_prop renderamt 0
+		cleffect tempent set_current_prop death_delay $neg(FX_DURATION)
+		cleffect tempent set_current_prop fadeout 0
+		cleffect tempent set_current_prop origin $vec(10000,10000,10000)
+	}
+}
+
+{ setup_flame_circle
+	cleffect tempent set_current_prop death_delay FX_DURATION
+	cleffect tempent set_current_prop body 51
+	cleffect tempent set_current_prop framerate 0.5
+	cleffect tempent set_current_prop sequence 8
+	cleffect tempent set_current_prop rendermode add
+	cleffect tempent set_current_prop renderamt 100
+	cleffect tempent set_current_prop scale 2.5
+	cleffect tempent set_current_prop gravity 0
+	cleffect tempent set_current_prop collide none
+
+	cleffect tempent set_current_prop frames 11
+	//cleffect tempent set_current_prop fadeout 999
+	cleffect tempent set_current_prop angles $vec(0,90,0)
+	cleffect tempent set_current_prop velocity $vec(0,0,0)
+	cleffect tempent set_current_prop movetype 0
+	//cleffect tempent set_current_prop skin 0
+	//cleffect tempent set_current_prop follow none
+}

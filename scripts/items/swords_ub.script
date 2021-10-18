@@ -1,0 +1,352 @@
+{
+	const SOUND_MODE_SWITCH magic/energy1_loud.wav
+
+	const HP_RETURN_RATIO 0.02
+	const DARK_SHIELD_MP 75
+	const DARK_SHIELD_DURATION 20.0
+
+	//ranged stuff
+	const RANGED_MP 30
+	const RANGED_ATK_DURATION	0.3
+	const RANGED_AIMANGLE		(0,0,0)
+	const RANGED_STARTPOS		(4,0,-3)
+
+	const BASE_LEVEL_REQ 30
+	const ANIM_LIFT 0
+	const ANIM_IDLE1 1
+	const ANIM_ATTACK1 2
+	const ANIM_ATTACK2 2
+	const ANIM_ATTACK3 2
+	const ATTACK_ANIMS 1
+	const ANIM_LUNGE 3
+	const ANIM_PARRY1 4
+	const ANIM_PARRY1_RETRACT 5
+	const ANIM_UNSHEATH 6
+	const ANIM_SHEATH 7
+
+	const MODEL_VIEW viewmodels/v_2hswords.mdl
+	const MODEL_VIEW_IDX 11
+	const MODEL_HANDS weapons/p_weapons3.mdl
+
+	const MODEL_WORLD weapons/p_weapons3.mdl
+	const MODEL_BODY_OFS 63
+
+	const SOUND_SWIPE       weapons/swingsmall.wav
+	const SOUND_HITWALL1       weapons/cbar_hit1.wav
+	const SOUND_HITWALL2       weapons/cbar_hit2.wav
+	const SOUND_DRAW       weapons/swords/sworddraw.wav
+	const SOUND_SHOUT  $get(ent_owner,scriptvar,'PLR_SOUND_SHOUT1')
+
+	const SOUND_DEPLOY magic/chant_loop.wav
+
+	const SOUND_BLOCK weapons/axemetal1.wav
+
+	const ANIM_PREFIX  standard //was longsword
+
+	//Used in base_melee
+	//------------------
+	const MELEE_RANGE  80
+	const MELEE_DMG_DELAY  0.6
+	const MELEE_ATK_DURATION 1.1
+	const MELEE_ENERGY  1
+	const MELEE_DMG  550
+	const MELEE_DMG_RANGE      80
+	const MELEE_DMG_TYPE  dark
+	const MELEE_ACCURACY  65%
+	const MELEE_STAT  swordsmanship
+	const MELEE_ALIGN_BASE 3,10 
+	const MELEE_ALIGN_TIP  0,-10
+	const MELEE_VIEWANIM_ATK      ANIM_ATTACK1
+
+	const MELEE_SOUND      SOUND_SWIPE
+	const MELEE_SOUND_DELAY      MELEE_DMG_DELAY
+	const MELEE_PARRY_CHANCE      30%
+	const MELEE_NEW_PARRY_CHANCE  30
+
+	const PLAYERANIM_AIM  sword_double_idle
+	const PLAYERANIM_SWING sword_double_swing
+}
+
+#include items/swords_base_twohanded
+
+{ weapon_spawn
+
+	name  the|Unholy Blade
+	desc  A corrupted blade of Felewyn
+	weight  100
+	size  10
+	value 7000
+	sethudsprite trade 140
+
+	sethand both
+	callevent custom_register
+}
+
+{ game_deploy
+	if game.serverside
+	//if CHANT_VOL == 0
+	playsound 3 10 SOUND_DEPLOY
+	setvard CHANT_VOL 10
+	//callevent cl_cycle_sound_down
+	callevent 1.0 cycle_sound_down
+}
+
+{ cycle_sound_down
+	if CHANT_VOL > 0
+	callevent 0.5 cycle_sound_down
+	subtract CHANT_VOL 1
+	playsound 3 CHANT_VOL SOUND_DEPLOY
+}
+
+//doesn't follow player on either channel 1 or 3
+//{ cl_cycle_sound_down
+//	if CHANT_VOL > 0
+//	callevent 0.1 cl_cycle_sound_down
+//	subtract CHANT_VOL 0.1
+//	sound.setvolume 3 SOUND_DEPLOY CHANT_VOL
+//}
+
+{ custom_register
+
+	//shadow
+	local reg.attack.mpdrain RANGED_MP
+	local reg.attack.ammodrain 0
+	local reg.attack.type		charge-throw-projectile
+	local reg.attack.hold_min&max	"1;1"
+	local reg.attack.dmg.type		dark
+	local reg.attack.range			100
+	local reg.attack.energydrain	MELEE_ENERGY
+	local reg.attack.stat			MELEE_STAT
+	local reg.attack.COF			0
+	local reg.attack.projectile		proj_ub
+	local reg.attack.priority		2
+	local reg.attack.delay.strike	0.1
+	local reg.attack.chargeamt	200%
+	local reg.attack.delay.end		0.1
+	local reg.attack.ofs.startpos	RANGED_STARTPOS
+	local reg.attack.ofs.aimang		RANGED_AIMANGLE
+	local reg.attack.noise		RANGED_NOISE
+	local reg.attack.callback		dark_shard
+	local reg.attack.reqskill	34
+
+	local reg.attack.keys	-attack1
+
+	registerattack
+}
+
+{ dark_shard_start
+	if ( game.serverside ) callevent end_parry shard_fire
+	playviewanim  ANIM_ATTACK1
+	playowneranim once axe_twohand_swing
+	callevent 0.3 vanish_sword
+}
+
+{ vanish_sword
+	setviewmodelprop ent_me rendermode 1
+	setviewmodelprop ent_me renderamt 0
+	setvard SWORD_FLYING 1
+}
+
+{ melee_start
+	if ( game.serverside ) callevent end_parry melee_start
+}
+
+{ dark_shard_end
+	if !game.item.attacking
+	playviewanim ANIM_IDLE1
+}
+
+{ [override] special_01_start
+
+	if ( game.serverside ) callevent end_parry special_01_start
+	playviewanim  ANIM_LUNGE
+	playowneranim once axe_twohand_swing
+	playsound const.snd.weapon const.snd.maxvol SPECIAL01_SND
+}
+
+{ ext_register_projectile
+	setvard SHADOW_PROJ_ID PARAM1
+	dbg ext_register_projectile SHADOW_PROJ_ID
+}
+
+{ ext_projectile_landed
+	dbg ext_projectile_landed
+	if ( PARAM1 isnot remote ) splayviewanim ent_me ANIM_IDLE1
+	setviewmodelprop ent_me rendermode 1
+	setviewmodelprop ent_me renderamt 255
+	setvard SWORD_FLYING 0
+}
+
+{ end_parry //<source>
+	if ( $get(SHADOW_PROJ_ID,exists) )
+	{
+		setvard SWORD_FLYING 0
+		if PARAM1 isnot shard_fire
+		dbg remove SHADOW_PROJ_ID
+		callexternal SHADOW_PROJ_ID remove_me remote
+		callevent ext_projectile_landed remote
+	}
+
+	if PARRY_ON
+	setvard PARRY_ON 0
+	setvard NEXT_PARRY game.time
+	add NEXT_PARRY 2.0
+}
+
+{ game_+attack2
+	if game.serverside
+	if !game.item.attacking
+	if $get(ent_owner,canattack)
+
+	if ( !PARRY_ON )
+	{
+		if $get(ent_owner,skill.swordsmanship) >= BASE_LEVEL_REQ
+		if game.time > NEXT_PARRY
+		setvard PARRY_ON 1
+		splayviewanim ent_me ANIM_PARRY1
+		if ( $get(SHADOW_PROJ_ID,exists) )
+		{
+			dbg remove SHADOW_PROJ_ID
+			callexternal SHADOW_PROJ_ID remove_me remote
+			callevent ext_projectile_landed remote
+		}
+	}
+
+	if $get(ent_owner,skill.swordsmanship) > 34
+
+	if !DARK_SHIELD_ON
+
+	if ( DS_START_TIME equals 'DS_START_TIME' )
+	{
+		setvard DS_START_TIME game.time
+		add DS_START_TIME 5.0
+	}
+
+	if game.time > DS_START_TIME
+
+	if ( game.time < NEXT_DARK_SHIELD_ATTEMPT )
+	{
+		setvard DS_START_TIME 'DS_START_TIME'
+		dplayermessage  ent_owner "Unholy Blade: Shield of Darkness not ready"
+	}
+
+	if game.time > NEXT_DARK_SHIELD_ATTEMPT
+	setvard NEXT_DARK_SHIELD_ATTEMPT game.time
+	add NEXT_DARK_SHIELD_ATTEMPT 3.0
+
+	if ( $get(ent_owner,mp) < DARK_SHIELD_MP )
+	{
+		dplayermessage ent_owner "Unholy Blade: Not enough mana for Shield of Darkness"
+	}
+
+	if $get(ent_owner,mp) >= DARK_SHIELD_MP
+
+	callevent do_dark_shield
+}
+
+{ game_-attack2
+	if game.serverside
+	if PARRY_ON
+	if ( !game.item.attacking ) splayviewanim ent_me ANIM_PARRY1_RETRACT
+	setvard PARRY_ON 0
+	setvard DS_START_TIME 'DS_START_TIME' //also set this at shield end
+}
+
+{ game_dodamage
+
+	if PARAM1
+	if $can_damage(ent_owner,PARAM2)
+	if $get(PARAM2,race) isnot undead
+	if !$get(PARAM2,scriptvar,'IMMUNE_VAMPIRE')
+
+	if $get(ent_owner,hp) <  $get(ent_owner,maxhp)
+
+	local HP_TO_GIVE $get(ent_owner,maxhp)
+	multiply HP_TO_GIVE HP_RETURN_RATIO
+
+	givehp ent_owner HP_TO_GIVE
+}
+
+{ game_takedamage //1: Attacker  2: Inflictor  3: dmg  4: dmg type
+	if ( PARRY_ON )
+	{
+		if ( PARAM4 contains effect ) local EXIT_SUB 1
+		if ( PARAM4 contains target ) local EXIT_SUB 1
+		if !EXIT_SUB
+
+		local PROJECTILE_FIRED $get(PARAM2,is_projectile)
+		if ( PROJECTILE_FIRED )
+		{
+			local BLOCK_TARG PARAM1
+		}
+		else
+		{
+			local BLOCK_TARG PARAM2
+		}
+
+
+		local OWNER_ORG $get(ent_owner,origin)
+		local OWNER_ANG $get(ent_owner,angles)
+		local ATTACK_ORG $get(BLOCK_TARG,origin)
+
+		if $within_cone2D(ATTACK_ORG,OWNER_ORG,OWNER_ANG,100)	//Attack must come from in front of player
+
+		local DMG_TAKEN PARAM3
+		local ORIG_DMG PARAM3
+		multiply DMG_TAKEN 0.5
+
+		setdmg dmg DMG_TAKEN
+		subtract ORIG_DMG DMG_TAKEN
+
+		playermessage Unholy Blade absorbed ORIG_DMG damage
+
+		playsound 3 5 SOUND_BLOCK
+	}
+}
+
+
+{ do_dark_shield
+	//dbg do_dark_shield
+
+	setvard NEXT_DARK_SHIELD_ATTEMPT game.time
+	add NEXT_DARK_SHIELD_ATTEMPT 30.0
+
+	setvard DARK_SHIELD_ON 1
+
+//	clientevent new all effects/sfx_raura $get(ent_owner,index) DARK_SHIELD_DURATION
+//	setvard DAURA_CL_SCRIPT game.script.last_sent_id
+
+	callexternal ent_owner ext_repel_shield 20.0 128 "darkfire"
+
+	callevent DARK_SHIELD_DURATION dark_shield_end
+}
+
+{ bweapon_effect_remove
+	dbg bweapon_effect_remove [ DARK_SHIELD_ON ]
+	callevent end_parry bweapon_effect_remove
+	if DARK_SHIELD_ON
+	callevent dark_shield_abort
+}
+
+{ dark_shield_end
+	setvard DARK_SHIELD_ON 0
+	setvard DS_START_TIME 'DS_START_TIME'
+
+	setvard DS_STILL_IN_RECHARGE game.time
+	add DS_STILL_IN_RECHARGE 10.0
+}
+
+{ dark_shield_abort
+	dbg dark_shield_abort
+	callevent dark_shield_end
+	callexternal ent_owner ext_end_repel_shield
+}
+
+{ game_damaged_other
+	dbg PARAM1 PARAM2 PARAM3 PARAM4
+}
+
+{ ext_player_sit
+	dbg ext_player_sit
+	if ( DARK_SHIELD_ON ) callevent dark_shield_abort
+}

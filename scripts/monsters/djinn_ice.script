@@ -1,0 +1,409 @@
+//This is an older script and may have some bad conventions as a result.
+
+//Djinn Ji-ax by Father Brandon
+//- Mass mods by Thothie
+{
+	const TOO_CLOSE 100
+
+	if ( $lcase(game.map.name) startswith keledrosprelude )
+	{
+		setvard NPC_IS_BOSS 1
+		setvard NPC_GIVE_EXP 1000
+		if ( G_DEVELOPER_MODE ) chatlog Djinn Ji-ax set BOSS MODE
+	}
+	else
+	{
+		setvard NPC_GIVE_EXP 500
+	}
+
+	const NPC_BOSS_REGEN_RATE 0.1
+	const NPC_BOSS_RESTORATION 1.0
+
+	const SOUND_STRUCK1	weapons/cbar_hitbod1.wav
+	const SOUND_STRUCK2	monsters/troll/trollpain.wav
+	const SOUND_ATTACK1	monsters/troll/trollattack.wav
+	const SOUND_ATTACK2	monsters/troll/trollattack.wav
+	const SOUND_DEATH	monsters/troll/trolldeath.wav
+	const SOUND_WALK	monsters/troll/walk.wav
+	const SOUND_SUMMON	ambience/particle_suck2.wav
+	const SOUND_ROAR	monsters/troll/trollidle2.wav
+
+	//sounds aren't playing
+	precache SOUND_STRUCK1
+	precache SOUND_STRUCK2
+	precache SOUND_ATTACK1
+	precache SOUND_ATTACK2
+	precache SOUND_WALK
+	precache SOUND_DEATH
+	precache SOUND_SUMMON
+	precache SOUND_ROAR
+
+	const ANIM_SUMMON throw_rock
+	setvar ANIM_IDLE	idle0
+	setvar ANIM_RUN	run
+	setvar ANIM_WALK	walk
+	setvard ANIM_ATTACK	double_punch
+	setvard ANIM_DEATH	die_fall
+	setvard ATTACK_RANGE	90
+	setvard ATTACK_HITRANGE	200
+	setvard CAN_FLINCH	0
+	setvard MOVE_RANGE	70
+	//setvard CAN_HUNT 1
+	//setvard CAN_ATTACK 1
+	//setvard HUNT_AGRO	1
+	setvard CAN_FLEE 1	//hoping this gets him to avoid firewalls/volcanos
+	const FLEE_HEALTH 1
+
+	setvar NO_STEP_ADJ 1
+
+	const TORCH_LIGHT_SCRIPT	items/item_djinn_light
+
+	precachefile TORCH_LIGHT_SCRIPT
+
+	setvard IMMUNE_COLD 1
+	setvard IMMUNE_FIRE 1.5
+
+	//monsters/troll_ice
+	//be effing nice if xrecachefile worked here!
+	precache weapons/cbar_hitbod1.wav
+	precache monsters/troll/trollpain.wav
+	precache monsters/troll/trollpain.wav
+	precache monsters/troll/trollpain.wav
+	precache monsters/troll/trollattack.wav
+	precache monsters/troll/trollattack.wav
+	precache monsters/troll/trolldeath.wav
+	precache monsters/troll/trollidle.wav
+	precache monsters/troll/step1.wav
+	precache monsters/troll/step2.wav
+	precache monsters/troll/trollidle.wav
+	precache monsters/icetroll.mdl
+
+	//barrier
+	precache doors/aliendoor3.wav
+}
+
+#include monsters/base_monster
+
+{ npc_spawn
+
+	hp 3000
+	//ov 359
+	width 60
+	height 100
+	race orc
+	name an|Ice Djinn
+	roam 1
+	takedmg all 0.7
+	takedmg fire 1.5
+	takedmg lightning 1.5
+	takedmg ice 0.0
+	takedmg cold 0.0
+	takedmg holy 0.2 //just possessed
+	setmodel monsters/troll.mdl
+	setidleanim idle1
+	setmoveanim ANIM_WALK
+	setactionanim ANIM_ATTACK
+
+	callevent 20 summon_icetroll
+
+	hearingsensitivity 10
+
+	setvarg ICE_TROLL_DEAD 1
+
+	precachefile monsters/troll_ice
+
+	if ( $rand(1,8) == 1 ) 
+	{
+		setvard WIN_PRIZE 1
+		//giveitem scroll2_blizzard
+	}
+
+	callevent troll_spawn
+                     clientevent persist all TORCH_LIGHT_SCRIPT $get(ent_me,index) 1
+                     effect glow ent_me (4,50,128) 64 -1 0
+}
+
+{ attack_1
+
+	setvard I_ATTACKED 1
+
+	setvar PUSH_VEL $relvel(10,30,10)
+	dodamage ENTITY_ENEMY ATTACK_HITRANGE $randf(25,35) 75%
+	
+	if( $rand(1,4) == 1 ) setvard ANIM_ATTACK hit_down
+
+   //if( $rand(1,10) == 1 ) applyeffect $get(ent_laststruckbyme,id) effects/effect_push 3 $relvel(0,200,200) 0
+
+	callevent attack_sound
+}
+
+{
+   // Deal damage
+   eventname attack_1
+
+   //why are we doing this twice? :)
+   //local random $rand(1,5)
+   //if( random equals 1 ) applyeffect ent_laststruckbyme effects/effect_frost 5 ent_me $rand(13,25)
+
+   dodamage ent_lastseen ATTACK_RANGE $randf(4.5,6.0) ATTACK_HITCHANCE
+
+}
+
+{ attack_2
+
+	setvard I_ATTACKED 1
+
+	dodamage ENTITY_ENEMY ATTACK_HITRANGE $randf(40,70) 75%
+	setvard ANIM_ATTACK double_punch
+
+   if( $rand(1,10) == 1 )
+   {
+
+	callevent 0.1 rawr
+	if $get(ent_laststruckbyme,id) isnot $get(ent_me,id) //reports of this guy throwing himself somehow?
+	if $get(ENTITY_ENEMY,range) < ATTACK_HITRANGE
+	applyeffect ENTITY_ENEMY effects/effect_push 3 $relvel(0,400,400) 0
+
+   }
+
+	callevent attack_sound
+}
+
+{
+   // Deal damage - this used?
+   eventname bite1
+
+	setvard I_ATTACKED 1
+
+   dodamage ent_lastseen ATTACK_RANGE $randf(4.5,6.0) ATTACK_HITCHANCE
+
+}
+
+{ struck
+   
+	volume 10
+	playrandomsound game.sound.voice SOUND_STRUCK1 SOUND_STRUCK2 SOUND_STRUCK2
+}
+
+{ attack_sound
+
+	volume 10
+	playsound game.sound.voice SOUND_ATTACK1
+}
+
+{ npc_death
+	
+	//if ( WIN_PRIZE == 1 ) infomsg all Key_Item_Dropped "Jin-ax has left a Blizzard Scroll Page!"
+
+	if ( MY_ICE_TROLL isnot 'MY_ICE_TROLL' ) deleteent MY_ICE_TROLL fade
+
+	clientevent remove all SCRIPT_ID
+
+	callevent bm_gold_spew 10 4 100 1 20
+}
+
+{ summon_icetroll
+
+	callevent 15 summon_icetroll
+
+	if !$get(MY_ICE_TROLL,isalive)
+
+	local EXIT_SUB 0
+
+	if ( !SUMMON_NEXT_CHECK ) 
+	{
+		setvard SUMMON_NEXT_CHECK 1
+		local EXIT_SUB 1
+	}
+
+	if !EXIT_SUB
+
+	if $cansee(player)
+
+	if ( MY_ICE_TROLL isnot 'MY_ICE_TROLL' ) deleteent MY_ICE_TROLL fade
+
+	volume 10
+	playsound 2 SOUND_SUMMON
+
+	callevent npcatk_suspend_ai 1.0
+	playanim break
+	playanim critical ANIM_SUMMON
+
+	setsolid none
+
+	callevent find_summon_pos
+	createnpc monsters/summon/ibarrier SUMMON_POS $get(ent_me,id) 96 1
+	createnpc monsters/summon/ibarrier game.monster.origin $get(ent_me,id) 60 1
+	callevent 0.25 act_make_summon
+
+	callevent 1 solidify_djinn	//stops me from getting stuck inside my pet
+
+	setvard SUMMON_NEXT_CHECK 0
+
+	//run away for a second to get outside of my summoned
+	if ( !IS_FLEEING ) 
+	{
+		if SUMMON_POS equals game.monster.origin
+		callevent npcatk_flee MY_ICE_TROLL 275 3
+	}
+}
+
+{ eventname solidify_djinn
+
+	//check if pet is clear, if so, go back to solid, if not, try again 5 secs
+	local MY_LOC $get(ent_me,origin)
+	local MY_PET_LOC $get(MY_ICE_TROLL,origin)
+	local PET_DISTANCE $dist(MY_LOC,MY_PET_LOC)
+	if ( PET_DISTANCE > 80 ) 
+	{
+		//dbg Going Solid
+		setsolid box
+	}
+	if ( PET_DISTANCE <= 80 ) 
+	{
+		//if ( !IS_FLEEING ) callevent npcatk_flee MY_ICE_TROLL 512 2
+ 		callevent 0.25 solidify_djinn
+	}
+}
+
+{ npc_targetsighted
+
+	if !DID_ROAR_INTRO
+
+	volume 10
+	playsound game.sound.voice SOUND_ROAR
+	
+	setvard DID_ROAR_INTRO 1
+	
+	callevent 0.5 walker_go
+}
+
+{ eventname walker_go
+
+ repeatdelay 2.0
+
+	local DID_ATTACK 0
+
+	if ( I_ATTACKED ) local DID_ATTACK 1
+
+	if ( DID_ATTACK ) setvard I_ATTACKED 0
+
+	setvard MY_PET_CLOC_NEW $get(MY_ICE_TROLL,origin)
+
+	if !DID_ATTACK
+
+	if HUNT_LASTTARGET isnot ¯NONE¯
+   	if( $get(HUNT_LASTTARGET,dist) > MOVE_RANGE )
+   	{
+		volume 10
+		playsound game.sound.voice SOUND_WALK
+   	}
+}
+
+{ eventname rawr
+
+	volume 10
+	playsound game.sound.voice SOUND_ROAR
+}
+
+{ game_dodamage //1: Attack Hit (1/0)  2: Entity Attack hit  3:  Start Position  4:  End Position
+
+	if PARAM1
+
+	if( $rand(1,4) == 1 ) applyeffectstack $get(ent_laststruckbyme,id) effects/effect_frost 5 ent_me $rand(13,25)
+}
+
+{ my_pet_stuck
+
+	//called by Troll Ice when Stuck Count == 2
+	//dbg my pet says he's stuck, resummoning
+
+    deleteent MY_ICE_TROLL fade
+
+	volume 10
+	playsound 2 SOUND_SUMMON
+
+	callevent npcatk_suspend_ai 1.0
+	playanim break
+	playanim critical ANIM_SUMMON
+
+	setsolid none
+
+	setorigin MY_ICE_TROLL game.monster.origin
+
+	addvelocity MY_ICE_TROLL $relpos(0,800,10)
+
+	createnpc monsters/summon/ibarrier game.monster.origin $get(ent_me,id) 60 1
+	callexternal MY_ICE_TROLL npcatk_flee $get(ent_me,id) 100 10.0 "master_told_me_to"
+
+	callevent 1 solidify_djinn	//stops me from getting stuck inside my pet
+
+	setvard SUMMON_NEXT_CHECK 0
+
+	//run away for a second to get outside of my summoned
+	//if ( !IS_FLEEING ) callevent npcatk_flee MY_ICE_TROLL 275 3
+}
+
+//summon position finder
+{
+	setvard CUR_SUMMON_POS 0
+	setvard N_SUMMON_POS 0
+}
+
+{
+repeatdelay 10.0
+	if CYCLED_UP
+	
+	//mark potential summon positions periodically
+	if STUCK_COUNT == 0	//position not valid if I am stuck
+	add CUR_SUMMON_POS 1
+	if ( CUR_SUMMON_POS > 5 ) setvard CUR_SUMMON_POS 0
+	if ( CUR_SUMMON_POS == 1 ) setvard SUMMON_POS1 game.monster.origin
+	if ( CUR_SUMMON_POS == 2 ) setvard SUMMON_POS2 game.monster.origin
+	if ( CUR_SUMMON_POS == 3 ) setvard SUMMON_POS3 game.monster.origin
+	if ( CUR_SUMMON_POS == 4 ) setvard SUMMON_POS4 game.monster.origin
+	if ( CUR_SUMMON_POS == 5 ) setvard SUMMON_POS5 game.monster.origin
+
+	if ( CUR_SUMMON_POS > N_SUMMON_POS ) add N_SUMMON_POS 1
+}
+
+{
+repeatdelay 1.0
+	if $get(MY_ICE_TROLL,isalive)
+	if ( $dist(MY_ICE_TROLL,game.monster.origin) < TOO_CLOSE )
+	{
+		//game.monster.moveprox
+		//dbg troll closer than TOO_CLOSE ( movprox game.monster.moveprox ) moving
+		addvelocity MY_ICE_TROLL $relvel(0,800,10)
+	}
+
+	if ( $dist(MY_ICE_TROLL,game.monster.origin) > TOO_CLOSE )
+	{
+		if $get(HUNT_LASTTARGET,isalive)
+		callexternal MY_ICE_TROLL ext_attack_master_target HUNT_LASTTARGET
+	}
+}
+
+{ find_summon_pos //returns SUMMON_POS
+	setvard LOOP_COUNT 0
+	setvard SUMMON_POS game.monster.origin //if cant find pos
+	calleventloop N_SUMMON_POS find_summon_pos_loop
+}
+
+{ find_summon_pos_loop
+	add LOOP_COUNT 1
+	if ( LOOP_COUNT == 1 ) local CHECK_POS SUMMON_POS1
+	if ( LOOP_COUNT == 2 ) local CHECK_POS SUMMON_POS2
+	if ( LOOP_COUNT == 3 ) local CHECK_POS SUMMON_POS3
+	if ( LOOP_COUNT == 4 ) local CHECK_POS SUMMON_POS4
+	if ( LOOP_COUNT == 5 ) local CHECK_POS SUMMON_POS5
+
+	if ( $dist(game.monster.origin,CHECK_POS) > TOO_CLOSE ) setvard SUMMON_POS CHECK_POS
+	if ( $dist(game.monster.origin,CHECK_POS) > $dist(game.monster.origin,SUMMON_POS) ) setvard SUMMON_POS CHECK_POS
+}
+
+{ act_make_summon
+	
+	createnpc monsters/troll_ice SUMMON_POS $get(ent_me,id)
+	setvard MY_ICE_TROLL $get(ent_lastcreated,id)
+}

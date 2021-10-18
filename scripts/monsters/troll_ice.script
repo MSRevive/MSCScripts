@@ -1,0 +1,191 @@
+//This is an older script and may have some bad conventions as a result.
+
+//Thothie - include override not working, so copying from original Troll (monsters/troll)
+//- Changed model accordingly, increased fire sensitivity / HP
+//- Adjusted Anims for Model
+//- %chance of applying frostbite effect
+#scope server
+
+{
+	const TOO_CLOSE 100
+
+	const SOUND_STRUCK1	weapons/cbar_hitbod1.wav
+	const SOUND_STRUCK2	monsters/troll/trollpain.wav
+	const SOUND_STRUCK3	monsters/troll/trollpain.wav
+	const SOUND_PAIN	monsters/troll/trollpain.wav
+	const SOUND_ATTACK1	monsters/troll/trollattack.wav
+	const SOUND_ATTACK2	monsters/troll/trollattack.wav
+	const SOUND_DEATH	monsters/troll/trolldeath.wav
+	const SOUND_WALK	monsters/troll/trollidle.wav
+	const SOUND_WALK1	monsters/troll/step1.wav
+	const SOUND_WALK2	monsters/troll/step2.wav
+	const SOUND_IDLE	monsters/troll/trollidle.wav
+	setvard DROP_GOLD 		1
+	setvard DROP_GOLD_MIN		10
+	setvard DROP_GOLD_MAX		35
+	setvar ANIM_RUN	walk
+	setvar ANIM_WALK	walk
+	setvar ANIM_IDLE	idle1
+	setvard ANIM_ATTACK	attack1
+	setvard ANIM_DEATH	dieheadshot2
+	setvard ATTACK_RANGE	150
+	setvard ATTACK_HITRANGE	200
+	setvard CAN_FLINCH	0
+	setvard MOVE_RANGE	100
+	setvard CAN_HUNT	1
+	setvard HUNT_AGRO	1
+	setvard IMMUNE_COLD 1
+	setvard IMMUNE_FIRE 1.5
+
+	setvard NPC_MUST_SEE_TARGET 0
+	//sometimes these sounds wont play, attempting precache
+	//precache SOUND_STRUCK1
+	//precache SOUND_STRUCK2
+	//precache SOUND_STRUCK3
+	//precache SOUND_PAIN
+	//precache SOUND_ATTACK1
+	//precache SOUND_ATTACK2
+	//precache SOUND_DEATH
+	//precache SOUND_WALK
+	//precache SOUND_IDLE
+
+	//Precacheing all includes instead
+	//precachefile monsters/base_monster
+	//precachefile monsters/base_npc_attack
+	//precachefile monsters/base_npc
+}
+
+#include monsters/base_monster_new
+
+{ npc_spawn
+
+	//ov 359
+	width 50
+	height 100
+	race orc
+	setidleanim idle1
+	setmoveanim ANIM_WALK
+	hp 600
+	name an|Ice Troll
+	roam 1
+	setvard NPC_GIVE_EXP 200
+	takedmg all 1.0
+	takedmg cold 0.0
+	takedmg fire 4.0
+	hearingsensitivity 8
+	setmodel monsters/icetroll.mdl
+
+	effect glow ent_me (128,128,255) 512 3 3
+
+	setvard IMMUNE_COLD	1	//passvar experiment
+
+	callevent troll_spawn		//holdover from troll - not what it's here for
+}
+
+{ attack_1
+
+	setvar PUSH_VEL $relvel(10,200,10)
+	if ( $get(NPCATK_TARGET,range) < ATTACK_HITRANGE )
+	{
+		if ( $rand(1,8) = 1 ) applyeffect ent_laststruck effects/effect_frostbite 10
+		callevent npcatk_dodamage NPCATK_TARGET direct $randf(20,30) 75% $get(ent_me,id) blunt
+	}
+	
+	if( $rand(0,3) == 0 ) setvard ANIM_ATTACK attack2
+
+	if ( $rand(1,20) = 1 ) 
+	{
+		volume 10
+		playsound 1 SOUND_IDLE
+	}
+	volume 8
+	playsound 2 SOUND_ATTACK1
+}
+
+{ attack_2
+
+	if( $rand(0,3) == 0 ) setvard ANIM_ATTACK attack1
+
+	if ( $get(NPCATK_TARGET,range) < ATTACK_HITRANGE )
+	{
+		if ( $rand(1,4) = 1 ) applyeffect NPCATK_TARGET effects/effect_frostbite 5
+		callevent npcatk_dodamage NPCATK_TARGET direct $randf(35,45) 75% $get(ent_me,id) blunt
+	}
+
+	playrandomsound 2 SOUND_ATTACK1
+}
+
+{ npc_struck
+   
+	volume 5
+	playrandomsound game.sound.voice SOUND_PAIN SOUND_PAIN SOUND_STRUCK2 SOUND_STRUCK1 SOUND_STRUCK3
+}
+
+{ eventname game_dynamically_created
+
+	//setsolid none
+	callevent 1 ice_solidify
+
+	setvard I_R_SUMMONED 1
+
+	setvard MY_MASTER PARAM1
+ 	local MY_MASTER_LIVES $get(MY_MASTER,isalive)
+	//dbg Mastah Alive MY_MASTER_LIVES 
+	if MY_MASTER_LIVES
+	setvard NO_SPAWN_STUCK_CHECK 1
+	callevent 0.1 check_dist
+}
+
+{ check_dist
+
+	if ( $dist(MY_MASTER,game.monster.origin) < TOO_CLOSE )
+	{
+		setsolid none
+		callevent 0.1 repeat_addvel
+		callevent npcatk_flee MY_MASTER 275 3
+	}
+}
+
+{ repeat_addvel
+	addvelocity ent_me $relvel(0,800,5)
+}
+
+{ eventname ice_solidify
+
+	//check if pet is clear, if so, go back to solid, if not, try again 5 secs
+	local MY_LOC $get(ent_me,origin)
+	local MY_MASTER_LOC $get(MY_MASTER,origin)
+	local MASTER_DISTANCE $dist(MY_LOC,MY_MASTER_LOC)
+	//dbg Master Distance MASTER_DISTANCE
+	if ( MASTER_DISTANCE > 80 ) 
+	{
+		//dbg Ice Troll Going Solid
+		setsolid box
+	}
+	if ( MASTER_DISTANCE <= 80 ) 
+	{
+		if ( !IS_FLEEING ) callevent npcatk_flee $get(MY_MASTER,id) 512 3
+ 		callevent 0.25 ice_solidify
+	}
+}
+
+{ npc_monster_stuck
+	
+	//zomg master I r stuck! plz be re-summingz me!
+	if STUCK_COUNT > 3
+	if ( I_R_SUMMONED ) callexternal $get(MY_MASTER,id) my_pet_stuck
+}
+
+{ npcatk_hunt
+
+	if I_R_SUMMONED
+	local MASTER_TARGET $get(MY_MASTER,scriptvar,NPCATK_TARGET)
+	if MASTER_TARGET isnot unset
+	if NPCATK_TARGET isnot MASTER_TARGET
+	callevent npcatk_settarget MASTER_TARGET
+}
+
+{ ext_attack_master_target
+	if NPCATK_TARGET equals unset
+	callevent npcatk_settarget PARAM1
+}

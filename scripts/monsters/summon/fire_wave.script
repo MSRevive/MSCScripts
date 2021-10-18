@@ -1,0 +1,189 @@
+{
+	const FWD_SPEED 10
+	const MY_RADIUS 76 //actually a box
+	const SOUND_BURN ambience/burning2.wav
+}
+
+{ game_dynamically_created //<owner> <dmg> <dot> <duration>
+
+	setvard MY_OWNER PARAM1
+	setvard MY_DAMAGE PARAM2
+	setvard MY_DOT PARAM3
+	setvard MY_DURATION PARAM4
+
+	race $get(MY_OWNER,race)
+
+	local OWNER_YAW $get(MY_OWNER,angles.yaw)
+	setvard NPC_NOCLIP_DEST game.monster.origin
+	vectoradd NPC_NOCLIP_DEST $relpos($vec(0,OWNER_YAW,0),$vec(0,9999,0))
+
+	clientevent new all $currentscript $get(ent_me,index) OWNER_YAW
+	setvard MY_CL_IDX game.script.last_sent_id
+
+	setvard IS_ACTIVE 1
+	callevent 0.1 active_loop
+	callevent MY_DURATION remove_me
+}
+
+{ remove_me
+	setvard IS_ACTIVE 0
+	playsound CHAN_ITEM 0 SOUND_BURN
+	clientevent remove all MY_CL_IDX
+	callevent 0.1 remove_me2
+}
+
+{ remove_me2
+	deleteent ent_me
+}
+
+{ game_spawn
+	name a|Wave of Fire
+	width 32
+	height 32
+	setmodel none
+	setsolid none
+	setvard PLAYING_DEAD 1
+	invincible 1
+
+	playsound CHAN_ITEM 7 SOUND_BURN
+}
+
+{ [override] active_loop
+
+	if IS_ACTIVE
+
+	callevent 0.1 active_loop
+
+	//setvelocity ent_me $revel(0,50,0)
+
+	//dmg	
+	//dbg rad MY_RADIUS dmg MY_DAMAGE $get(MY_OWNER,name)
+	//xdodamage $relpos(0,0,0) MY_RADIUS MY_DAMAGE 1.0 MY_OWNER MY_OWNER spellcasting.fire fire
+	//dodamage $relpos(0,0,0) MY_RADIUS MY_DAMAGE 100% 0.0 reflective fire
+	//"flight"
+	local MY_ORG game.monster.origin
+	vectoradd MY_ORG $relvel(0,FWD_SPEED,0)
+	vectorset MY_ORG z $get_ground_height(MY_ORG)
+	vectoradd MY_ORG z 10
+	setorigin ent_me MY_ORG
+
+	setmovedest NPC_NOCLIP_DEST 9999
+}
+
+{
+repeatdelay 0.5
+	if IS_ACTIVE
+
+	//xdodamage $relpos(0,0,0) MY_RADIUS MY_DAMAGE 1 MY_OWNER MY_OWNER spellcasting.fire fire
+	setvard HIT_TARGS $get_tbox(enemy,MY_RADIUS)
+	if HIT_TARGS isnot none
+	calleventloop $get_token_amt(HIT_TARGS) burn_targets
+	//dbg HIT_TARGS
+}
+
+{ burn_targets
+	local CUR_TARGET $get_token(HIT_TARGS,game.script.iteration)
+	//dbg burn_targets target $get(CUR_TARGET,name) [ 
+	//if $get(CUR_TARGET,isalive)
+	if ( !$get(CUR_TARGET,haseffect,DOT_fire) )	applyeffect CUR_TARGET effects/effect_burn 10 MY_OWNER MY_DOT 1 1 fire
+	addvelocity CUR_TARGET $relvel(-20,600,30)
+}
+
+//Client
+//======================================
+
+{ [client]
+	const WALL_HEIGHT 32
+	const WALL_WIDTH 2
+	const CL_FLAME_SPRITE fire1_fixed.spr
+}
+
+{ [client] client_activate
+
+   setvard FLAME_OWNER PARAM1
+   setvard FLAME_ANGLE $vec(0,PARAM2,0)
+   callevent flames_start
+}
+
+{ [client] flames_start  // Start shooting
+
+   setvard FLAMING 1
+}
+
+{ [client]
+   repeatdelay 0.1
+   if FLAMING
+   callevent flames_shoot
+}
+
+{ [client] flames_shoot
+	setvard FLAME_POSITION $getcl(FLAME_OWNER,origin)
+
+	local L_POS $relpos(FLAME_ANGLE,$vec(40,0,WALL_HEIGHT))
+	vectoradd L_POS FLAME_POSITION
+	cleffect tempent sprite CL_FLAME_SPRITE L_POS setup_flames
+
+	local L_POS $relpos(FLAME_ANGLE,$vec(25,0,WALL_HEIGHT))
+	vectoradd L_POS FLAME_POSITION
+	cleffect tempent sprite CL_FLAME_SPRITE L_POS setup_flames
+
+	local L_POS $relpos(FLAME_ANGLE,$vec(10,0,WALL_HEIGHT))
+	vectoradd L_POS FLAME_POSITION
+	cleffect tempent sprite CL_FLAME_SPRITE L_POS setup_flames
+
+	local L_POS $relpos(FLAME_ANGLE,$vec(0,0,WALL_HEIGHT))
+	vectoradd L_POS FLAME_POSITION
+	cleffect tempent sprite CL_FLAME_SPRITE L_POS setup_flames
+
+	local L_POS $relpos(FLAME_ANGLE,$vec(-10,0,WALL_HEIGHT))
+	vectoradd L_POS FLAME_POSITION
+	cleffect tempent sprite CL_FLAME_SPRITE L_POS setup_flames
+
+	local L_POS $relpos(FLAME_ANGLE,$vec(-25,0,WALL_HEIGHT))
+	vectoradd L_POS FLAME_POSITION
+	cleffect tempent sprite CL_FLAME_SPRITE L_POS setup_flames
+
+	local L_POS $relpos(FLAME_ANGLE,$vec(-40,0,WALL_HEIGHT))
+	vectoradd L_POS FLAME_POSITION
+	cleffect tempent sprite CL_FLAME_SPRITE L_POS setup_flames
+
+
+//   local NEGWIDTH WIDTH
+//   multiply NEGWIDTH -1
+//
+//   local x $rand(-30,30)
+//   local y $rand(NEGWIDTH,WIDTH)
+//   local L_POS $relpos(FLAME_ANGLE,$vec(x,y,HEIGHT))
+//   vectoradd L_POS FLAME_POSITION
+//
+//   local yar $rand(1,0)
+//   if( yar ) cleffect tempent sprite fire1_fixed.spr L_POS setup_flames
+//
+//   local x $rand(-96,96)
+//   local y $rand(NEGWIDTH,WIDTH)
+//   local L_POS $relpos(FLAME_ANGLE,$vec(x,y,HEIGHT))
+//   vectoradd L_POS FLAME_POSITION
+//   local yar $rand(1,0)
+//   if( yar ) cleffect tempent sprite fire1_fixed.spr L_POS setup_flames
+//
+//   local x $rand(-192,192)
+//   local y $rand(NEGWIDTH,WIDTH)
+//   local L_POS $relpos(FLAME_ANGLE,$vec(x,y,HEIGHT))
+//   vectoradd L_POS FLAME_POSITION
+//   local yar $rand(1,0)
+//   if( yar ) cleffect tempent sprite fire1_fixed.spr L_POS setup_flames
+}
+
+{  [client] setup_flames
+
+
+   cleffect tempent set_current_prop death_delay 	0.2
+   cleffect tempent set_current_prop framerate		30
+   cleffect tempent set_current_prop frames		23
+   cleffect tempent set_current_prop bouncefactor 	0
+   cleffect tempent set_current_prop rendercolor 	(255,0,0)
+	
+   cleffect tempent set_current_prop scale 		1.5 //3
+   cleffect tempent set_current_prop gravity 	0
+   cleffect tempent set_current_prop collide 		all
+}

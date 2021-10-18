@@ -1,0 +1,54 @@
+//weekest of the giant beetles
+
+{
+	setvard NPC_GIVE_EXP 600
+	const BBET_SIZE 2
+	const BBET_CAN_FLY 0
+	const BBET_CAN_LEAP 0
+	const BBET_CAN_SLAM 1
+	const BBET_GORE_PUSH_STR 800
+	const BBET_FAKE_DEATH 0
+
+	const DMG_SLASH 80
+	const DMG_GORE 100
+	const DMG_SLAM 300
+
+	setvard NPC_MUST_SEE_TARGET 0 //likely fighting through minions
+
+	const SOUND_ATTACK1 monsters/beetle/attack_double1.wav
+	const SOUND_ATTACK2 monsters/beetle/attack_double2.wav
+	const SOUND_ATTACK3 monsters/beetle/attack_double3.wav
+}
+
+{ game_precache
+	precache monsters/beetles_giant.mdl
+	precache magic/boom.wav
+}
+
+#include monsters/beetle_base
+
+{ beetle_spawn
+	name a|Giant Horned Beetle
+	hp 2000
+	takedmg all 0.75
+	setmodelbody 0 0 //0=Horned 1=Venom 2=Fire
+}
+
+{ beetle_slam
+	setvard SLAM_POS $get(ent_me,attachpos,1)
+	vectorset SLAM_POS z $get_ground_height(SLAM_POS)
+	dodamage SLAM_POS BBET_SLAM_RADIUS DMG_SLAM 100% 0 reflective blunt
+	clientevent new all effects/sfx_stun_burst SLAM_POS 256 0
+	setvard STUN_TARGS $get_tsphere(enemy,256,SLAM_POS)
+	if STUN_TARGS isnot none
+	calleventloop $get_token_amt(STUN_TARGS) affect_targets
+}
+
+{ affect_targets
+	local CUR_TARG $get_token(STUN_TARGS,game.script.iteration)
+	if $get(CUR_TARG,onground)
+	applyeffect CUR_TARG effects/effect_stun 8.0 0 1
+	local TARG_ORG $get(CUR_TARG,origin)
+	local TARG_ANG $angles(SLAM_POS,TARG_ORG)
+	setvelocity CUR_TARG $relvel($vec(0,TARG_ANG,0),$vec(10,1000,0))
+}

@@ -1,0 +1,93 @@
+//Telf bows by Thothie, from Phoenix Bow by CMD
+
+{
+	const BASE_LEVEL_REQ	30
+	const MODEL_VIEW_IDX	9
+	const MODEL_VIEW       	viewmodels/v_bows.mdl
+	const MODEL_HANDS      	weapons/p_weapons3.mdl
+	const MODEL_WORLD      	weapons/p_weapons3.mdl
+	const MODEL_WEAR	weapons/p_weapons3.mdl
+	const SOUND_SHOOT      	weapons/bow/bow.wav
+	const ITEM_NAME		longbow
+	const ANIM_PREFIX	standard
+	const MODEL_BODY_OFS	54
+	const RANGED_POSTFIRE_DELAY	1.0
+	const RANGED_ATK_DURATION 1.0
+	const RANGED_AIMANGLE	(0,0,0)
+
+	const CUSTOM_ATTACK	1
+
+	const DAMAGE_TYPE fire_effect
+
+	const RANGED_HOLD_MINMAX 1.1;1.3 //Min;Max
+	const RANGED_STAT archery
+	const RANGED_PULLTIME 1.0
+
+	const DMG_ADJ 0.65
+}
+
+#include items/bows_base
+
+{ bow_spawn
+
+	name 			a|Torkalath Fire Bow
+	desc 			Spiral flames are engraved along the shaft of this ornate bow.
+	weight 			100
+	value			1500
+	sethudsprite trade	166
+
+	callevent custom_register
+}
+
+{ game_deploy
+	if game.serverside
+	callevent set_bow_type
+}
+
+{ set_bow_type
+	local DMG_AMT $get(ent_owner,skill.spellcasting.fire)
+	multiply DMG_AMT DMG_ADJ
+	if ( UNDER_SKILLED ) multiply DMG_AMT 0.1
+	setvard TORKIE_BOW_TYPE fire
+	callexternal ent_owner ext_set_spiral TORKIE_BOW_TYPE DMG_AMT
+}
+
+{ custom_register
+
+	local reg.attack.type charge-throw-projectile
+	local reg.attack.keys +attack1
+	local reg.attack.hold_min&max RANGED_HOLD_MINMAX
+	local reg.attack.dmg.type DAMAGE_TYPE
+	local reg.attack.dmg.multi 1.0
+	local reg.attack.range 512
+	local reg.attack.energydrain 1
+	local reg.attack.stat archery
+	local reg.attack.COF "0.1;0.1"
+	local reg.attack.projectile	proj_arrow_spiral
+	local reg.attack.priority 0
+	local reg.attack.delay.strike RANGED_DMG_DELAY
+	local reg.attack.delay.end RANGED_ATK_DURATION
+	local reg.attack.ofs.startpos (0,0,10)
+	local reg.attack.ofs.aimang RANGED_AIMANGLE
+	local reg.attack.ammodrain 0
+	local reg.attack.callback ranged
+	local reg.attack.noise 1000
+
+	registerattack
+}
+
+{ ranged_start
+	if game.serverside
+	local OWNER_SKILL $get(ent_owner,skill.spellcasting.fire)
+	if OWNER_SKILL < 15
+	dplayermessage ent_owner You lack the fire affinity to activate this bow's magic.
+	cancelattack
+}
+
+{ bow_underskilled
+	callevent set_bow_type
+}
+
+{ bow_underskilled_restore
+	callevent set_bow_type
+}

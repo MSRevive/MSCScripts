@@ -1,0 +1,375 @@
+#scope client
+{
+	const ATTACH_HAND attachment0
+	const ATTACH_STAFF attachment1
+	const ATTACH_EYE attachment2
+
+	const EYE_SPRITE red_aura_8bit.spr
+	const STAFF_SPRITE firemagic_8bit.spr
+	const CONTACT_SPRITE 3dmflaora.spr
+
+	const FUNNEL_SPRITE_START_DIST 250
+}
+
+{ client_activate //<owner> <eye_on>
+
+	setcallback render enable
+
+	setvard FX_OWNER PARAM1
+	setvard EYEBEAM_ON PARAM2
+	setvard FIREBREATH_ON PARAM3
+
+	//dbg *** PHLAME_CL client_activate FX_OWNER EYEBEAM_ON FIREBREATH_ON
+
+	if ( EYEBEAM_ON ) callevent eye_beam_on
+	if ( FIREBREATH_ON ) callevent fire_breath_on
+
+	setvard LIGHT_R 128
+	setvard LIGHT_G 16
+	setvard LIGHT_B 0
+
+	cleffect light new $getcl(FX_OWNER,origin) 128 $vec(LIGHT_R,LIGHT_G,LIGHT_B) 5.0
+	setvard SKEL_LIGHT_ID game.script.last_light_id
+
+	setvard FX_ACTIVE 1
+	callevent 0.1 start_staff_sprite
+	callevent 30.0 end_fx
+}
+
+{ start_staff_sprite
+	cleffect tempent sprite STAFF_SPRITE $getcl(FX_OWNER,attachment1) setup_staff_sprite update_staff_sprite
+}
+
+{ end_fx
+	if ( FX_DELAY_REMOVE )
+	{
+		//delay removal if we have to end in the middle of transform sequence
+		setvard FX_DELAY_REMOVE 0
+		callevent 10.0 end_fx
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	setvard FX_ACTIVE 0
+	callevent 2.0 remove_fx
+}
+
+{ remove_fx
+	removescript
+}
+
+{ game_prerender
+
+	//light shifts colors
+	if FX_ACTIVE
+	local L_POS $getcl(FX_OWNER,origin)
+	local INT_LIGHT_B $int(LIGHT_B) //blue is raised in fractions, which colors might not take
+	cleffect light SKEL_LIGHT_ID L_POS 128 $vec(LIGHT_R,LIGHT_G,INT_LIGHT_B) 1.0
+
+	add LIGHT_R 1
+	add LIGHT_G 1
+	add LIGHT_B 0.25
+	if ( LIGHT_R > 255 ) setvard LIGHT_R 255
+	if ( LIGHT_G > 128 )
+	{
+		setvard LIGHT_R 128
+		setvard LIGHT_G 16
+		setvard LIGHT_B 0
+	}
+}
+
+{ eye_beam_on
+	if FX_ACTIVE
+	setvard EYEBEAM_ON 1
+	local ATTACH_EYE_ORG EYE_POS //$getcl(FX_OWNER,ATTACH_EYE)
+	cleffect tempent sprite EYE_SPRITE ATTACH_EYE_ORG setup_eye_sprite update_eye_sprite
+}
+
+{ eye_beam_off
+	setvard EYEBEAM_ON 0
+}
+
+{ update_eye_sprite
+
+	local ATTACH_EYE_ORG EYE_POS
+	cleffect tempent set_current_prop origin ATTACH_EYE_ORG
+
+	if ( EYEBEAM_ON )
+	{
+		local CUR_SIZE game.tempent.fuser1
+		add CUR_SIZE 0.01
+		if CUR_SIZE < 0.20
+		cleffect tempent set_current_prop fuser1 CUR_SIZE
+		cleffect tempent set_current_prop scale CUR_SIZE
+	}
+
+
+	if ( !EYEBEAM_ON )
+	{
+//think this is causing crazyness (eye explodes)
+//maybe fuser2 is used by something else on this sprite? :\
+//		local CUR_RENDERAMT game.tempent.fuser2
+//		subtract CUR_RENDERAMT 0.25
+//		if ( CUR_RENDERAMT > 0 )
+//		{
+//			local INT_CUR_RENDERAMT $int(CUR_RENDERAMT) //not sure if renderamt will take fractions
+//			cleffect tempent set_current_prop fuser1 CUR_RENDERAMT
+//			cleffect tempent set_current_prop renderamt INT_CUR_RENDERAMT
+//		}
+
+		local CUR_SIZE game.tempent.fuser1
+		subtract CUR_SIZE 0.01
+		if ( CUR_SIZE > 0.01 )
+		{
+			cleffect tempent set_current_prop fuser1 CUR_SIZE
+			cleffect tempent set_current_prop scale CUR_SIZE
+		}
+	}
+}
+
+{ eye_beam_contact
+	local SPAWN_POS PARAM1
+	cleffect tempent sprite 3dmflaora.spr SPAWN_POS setup_beam_contact
+}
+
+{ fire_breath_on
+	if FX_ACTIVE
+	setvard FIREBREATH_ON 1
+	callevent fire_breath_loop
+}
+
+{ fire_breath_off
+	setvard FIREBREATH_ON 0
+}
+
+{ fire_breath_loop
+	if FIREBREATH_ON
+	callevent 0.2 fire_breath_loop
+	setvard CLOUD_YAW $getcl(FX_OWNER,angles.yaw)
+	cleffect tempent sprite explode1.spr STAFF_POS setup_fire_cloud update_fire_cloud
+	cleffect tempent sprite explode1.spr STAFF_POS setup_fire_cloud update_fire_cloud
+	cleffect tempent sprite explode1.spr STAFF_POS setup_fire_cloud update_fire_cloud
+}
+
+{ repulse_attack
+	local FX_CENTER $getcl(FX_OWNER,origin)
+	cleffect light new FX_CENTER 768 (255,128,64) 1.0
+	cleffect tempent sprite weapons/projectiles.mdl FX_CENTER setup_repulse_burst update_repulse_burst
+	sound.play3d magic/boom.wav 10 FX_CENTER
+}
+
+{ do_transform
+	setvard FX_DELAY_REMOVE 1
+	setvard TRANSFORM_CENTER PARAM1
+	setvard FUNNEL_ON 1
+	callevent transform_funnel_loop
+}
+
+{ transform_funnel_loop
+	if FUNNEL_ON
+	callevent 0.2 transform_funnel_loop
+	setvard ROT_POINT 0
+	calleventloop 12 transform_funnel_make_sprite
+}
+
+{ transform_funnel_make_sprite
+
+	local SPR_POS TRANSFORM_CENTER
+	vectoradd SPR_POS $relpos($vec(0,ROT_POINT,0),$vec(0,FUNNEL_SPRITE_START_DIST,0))
+	cleffect tempent sprite calflame.spr SPR_POS setup_funnel_sprite update_funnel_sprite
+	add ROT_POINT 30
+}
+
+{ transform_finalize
+	//make big splodie at center point z-200 (+sound)
+	setvard FX_DELAY_REMOVE 0
+	setvard FUNNEL_ON 0
+	local BIRD_POS PARAM1
+	cleffect tempent sprite c-tele1.spr BIRD_POS setup_bird_sprite
+	sound.play3d monsters/demonwing/demonwing_huge.wav 10 BIRD_POS	
+}
+
+
+{ transform_return //<point1> <point2>
+	setvard FX_DELAY_REMOVE 0
+	setvard FUNNEL_ON 0
+	local SPRITE_POS1 PARAM1
+	local SPRITE_POS2 PARAM2
+	cleffect tempent sprite c-tele1.spr SPRITE_POS1 setup_bird_sprite
+	cleffect tempent sprite c-tele1.spr SPRITE_POS2 setup_bird_sprite
+	sound.play3d magic/spawn_loud.wav 10 SPRITE_POS2	
+}
+
+//======================= Sprite Handling
+
+{ setup_bird_sprite
+	cleffect tempent set_current_prop death_delay last_frame
+	cleffect tempent set_current_prop renderamt	255
+	cleffect tempent set_current_prop rendermode add
+	cleffect tempent set_current_prop rendercolor (200,0,0)
+	cleffect tempent set_current_prop framerate	20
+	cleffect tempent set_current_prop frames 25
+	cleffect tempent set_current_prop scale 6.0
+	cleffect tempent set_current_prop gravity 0
+	cleffect tempent set_current_prop collide none
+}
+
+{ update_funnel_sprite
+	local CUR_ROT game.tempent.fuser1
+	local CUR_DIST game.tempent.fuser2
+
+	add CUR_ROT 1
+	subtract CUR_DIST 2
+
+	if ( CUR_ROT > 359.99) local CUR_ROT 0
+	if ( CUR_DIST <= 5 ) local CUR_DIST 5
+
+	cleffect tempent set_current_prop fuser1 CUR_ROT
+	cleffect tempent set_current_prop fuser2 CUR_DIST
+
+	local CUR_ORG game.tempent.origin
+	local CUR_Z $vec.z(CUR_ORG)
+
+	local NEW_ORG TRANSFORM_CENTER
+	vectorset NEW_ORG z CUR_Z
+	vectoradd NEW_ORG $relpos($vec(0,CUR_ROT,0),$vec(0,CUR_DIST,0))
+
+	cleffect tempent set_current_prop origin NEW_ORG
+}
+
+{ setup_funnel_sprite
+	cleffect tempent set_current_prop death_delay 10.0
+	cleffect tempent set_current_prop renderamt	200
+	cleffect tempent set_current_prop rendermode add
+	cleffect tempent set_current_prop framerate	30
+	cleffect tempent set_current_prop frames 16
+	cleffect tempent set_current_prop scale 1.5
+	cleffect tempent set_current_prop gravity -2.0
+	cleffect tempent set_current_prop collide none
+	cleffect tempent set_current_prop fuser1 ROT_POINT
+	cleffect tempent set_current_prop fuser2 FUNNEL_SPRITE_START_DIST
+	cleffect tempent set_current_prop update 1
+}
+
+{ update_repulse_burst
+	local CUR_SCALE game.tempent.fuser1
+	if CUR_SCALE < 30
+	add CUR_SCALE 0.5
+	cleffect tempent set_current_prop fuser1 CUR_SCALE
+	cleffect tempent set_current_prop scale CUR_SCALE 
+}
+
+{ setup_repulse_burst
+	cleffect tempent set_current_prop death_delay 1.5
+	cleffect tempent set_current_prop body 51
+	cleffect tempent set_current_prop framerate 1.0
+	cleffect tempent set_current_prop sequence 8
+	cleffect tempent set_current_prop rendermode add
+	cleffect tempent set_current_prop renderamt 255
+	cleffect tempent set_current_prop scale 1.0
+	cleffect tempent set_current_prop gravity 0
+	cleffect tempent set_current_prop collide none
+
+	cleffect tempent set_current_prop frames 11
+	cleffect tempent set_current_prop fadeout lifetime
+	cleffect tempent set_current_prop angles $vec(0,90,0)
+	cleffect tempent set_current_prop velocity $vec(0,0,0)
+	cleffect tempent set_current_prop movetype 0
+	cleffect tempent set_current_prop fuser1 0.1
+}
+
+
+{ update_staff_sprite
+	//dbg *** update_staff_sprite STAFF_POS
+	local ATTACH_STAFF_ORG STAFF_POS //$getcl(FX_OWNER,ATTACH_STAFF)
+	cleffect tempent set_current_prop origin ATTACH_STAFF_ORG
+	//dbg *** update_staff_sprite exit
+}
+
+{ setup_staff_sprite
+	cleffect tempent set_current_prop death_delay 10.0
+	cleffect tempent set_current_prop renderamt	255
+	cleffect tempent set_current_prop rendermode add
+	cleffect tempent set_current_prop framerate	10
+	cleffect tempent set_current_prop frames 8
+	cleffect tempent set_current_prop scale 0.25
+	cleffect tempent set_current_prop gravity 0
+	cleffect tempent set_current_prop collide none
+	cleffect tempent set_current_prop update 1
+}
+
+{ setup_eye_sprite
+	cleffect tempent set_current_prop death_delay 10.0
+	cleffect tempent set_current_prop renderamt	255
+	cleffect tempent set_current_prop rendermode add
+	cleffect tempent set_current_prop framerate	20
+	cleffect tempent set_current_prop frames 8
+	cleffect tempent set_current_prop scale 0.1
+	cleffect tempent set_current_prop fuser1 0.1
+	cleffect tempent set_current_prop fuser2 255
+	cleffect tempent set_current_prop gravity 0
+	cleffect tempent set_current_prop collide none
+	cleffect tempent set_current_prop update 1
+}
+
+{ setup_beam_contact
+	cleffect tempent set_current_prop death_delay 1.0
+	//cleffect tempent set_current_prop renderamt	255
+	//cleffect tempent set_current_prop rendermode add
+	cleffect tempent set_current_prop rendercolor (128,0,255)
+	//cleffect tempent set_current_prop framerate	20
+	//cleffect tempent set_current_prop frames 1
+	cleffect tempent set_current_prop scale $randf(1.0,3.0)
+	cleffect tempent set_current_prop gravity 1
+	local RND_ROT $randf(0,359.99)
+	local RND_FWD $randf(0,100.0)
+	local RND_UD $randf(0,600)
+	cleffect tempent set_current_prop velocity $relvel($vec(0,RND_ROT,0),$vec(0,RND_FWD,RND_UD))
+	cleffect tempent set_current_prop collide none
+}
+
+
+{ update_fire_cloud
+	local CUR_SCALE game.tempent.fuser1
+	if CUR_SCALE < 2
+	add CUR_SCALE 0.05
+	cleffect tempent set_current_prop fuser1 CUR_SCALE
+	cleffect tempent set_current_prop scale CUR_SCALE 
+}
+
+{ setup_fire_cloud
+
+	local START_SCALE $randf(0.25,0.5)
+	cleffect tempent set_current_prop death_delay 1.0
+	cleffect tempent set_current_prop framerate 10
+	cleffect tempent set_current_prop frames 9
+	cleffect tempent set_current_prop bouncefactor 0
+	cleffect tempent set_current_prop scale  START_SCALE
+	cleffect tempent set_current_prop rendermode add
+	cleffect tempent set_current_prop renderamt 200
+	cleffect tempent set_current_prop rendercolor (0,0,0)
+	if ( $rand(1,3) == 1 ) cleffect tempent set_current_prop rendercolor (255,255,0)
+	cleffect tempent set_current_prop gravity .005
+	cleffect tempent set_current_prop collide none
+	cleffect tempent set_current_prop fuser1 START_SCALE
+
+	local RND_RL $randf(-20,20)
+	local RND_UD $randf(-50,-100)
+	local CLOUD_VEL $relvel($vec(20,CLOUD_YAW,0),$vec(RND_RL,$randf(300,400),RND_UD))
+	cleffect tempent set_current_prop velocity CLOUD_VEL
+}
+
+//======================= Cycles
+
+{
+repeatdelay 0.01
+	setvard STAFF_POS $getcl(FX_OWNER,attachment1)
+	setvard EYE_POS $getcl(FX_OWNER,attachment2)
+}
+
+{
+repeatdelay 10.0
+	if FX_ACTIVE
+	cleffect tempent sprite STAFF_SPRITE $getcl(FX_OWNER,attachment1) setup_staff_sprite update_staff_sprite
+}
+

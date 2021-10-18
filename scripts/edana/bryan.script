@@ -1,0 +1,279 @@
+// Town rattler
+{
+   const SOUND_IDLE voices/human/male_idle4.wav
+   const SOUND_IDLE2 voices/human/male_idle5.wav
+   const SOUND_IDLE3 voices/human/male_idle6.wav
+   const SOUND_DEATH none
+
+   const STORE_NAME edana_merchant_3		//base_vendor
+   setvar STORE_TRIGGERTEXT store trade apple	//base_vendor
+	const NO_JOB 1
+}
+
+#include monsters/base_npc
+#include monsters/base_chat
+#include monsters/base_npc_vendor
+#include monsters/base_npc_vendor_confirm
+#include monsters/base_xmass
+
+{  npc_spawn
+
+	name_unique bryan
+	hp 25
+	gold 30
+	name Bryan the grocer
+	//ov 180
+	width 32
+	height 72
+	race beloved
+	roam 0      	//Don't go roaming around
+	setmodel    	npc/human1.mdl
+	invincible  	1
+	setvar      	EVIDENCE_FOUND 0
+	setvar      	SAY_MAYOR_SENTENCE 0
+	setvar      	RATTING 0
+	setvar      	ASKED_APPLE 0
+	setvar	ATTACK_RANGE 90
+	setvar	ATTACK1_DAMAGE 5
+	setvar	ATTACK_PERCENTAGE 60%
+	setvar 	CIDER 0
+
+	if ( G_CHRISTMAS_MODE ) setmodelbody 2 1
+	callevent 3.0 check_hat
+
+	catchspeech say_hi hi hello hail greet
+	catchspeech respond_yes yes sure try give have buy
+	catchspeech respond_no no
+	catchspeech say_apple apple
+
+	catchspeech say_job job work money gold
+	catchspeech say_cider cider
+
+	catchspeech say_mayor mayor know heard rumor
+	catchspeech say_rumor quest news happenings
+
+	precache SOUND_IDLE
+}
+
+{ check_hat
+	if ( G_CHRISTMAS_MODE ) setmodelbody 2 1
+}
+
+   //Idling
+{
+   repeatdelay 35
+
+   playrandomsound const.snd.voice const.snd.maxvol SOUND_IDLE SOUND_IDLE2 SOUND_IDLE3 none
+}
+
+{ say_hi
+
+	saytext 'Ello there. Care for one of me delicious [apples]?
+	callevent 2 say_hi2
+	setvar ASKED_APPLE 1
+}
+
+{ say_hi2
+	if WEATHER isnot 'clear'
+	saytext It'll keep you going in this poor weather we are having.
+}
+
+{ say_apple
+	saytext Guards just love me [apples].  Keeps 'em strong.  Care to try one, mate?
+	callexternal $get_by_name(mayorguard) bryan_said_so
+}
+
+{
+	//Advertise my apples
+	repeatdelay 60
+
+	if $cansee(player,128)
+	if RATTING == 0
+
+	setvar SPEECH_LINE $rand(1,2)
+	if( SPEECH_LINE == 1 )
+	{
+		saytext Guards just love me [apples].  Keeps 'em strong.  Care to try one, mate?
+		callexternal $get_by_name(mayorguard) bryan_said_so
+	}
+	else if( SPEECH_LINE == 2 )
+		saytext Care to try an apple, mate?
+
+	setvar ASKED_APPLE 1
+}
+{  say_mayor
+
+	setvar RATTING 1
+	callevent 1 say_mayor_delayed	//Delay my response by a second, for realism
+}
+
+{ say_mayor_delayed
+
+	if( EVIDENCE_FOUND == 0 )
+	{
+		setvar GOSSIP_LINE $rand(1,3)
+
+		if( GOSSIP_LINE == 1 ) saytext Word is, the mayor ain't such a good fella.
+		else if( GOSSIP_LINE == 2 ) saytext I hear Edrin's got a pretty colourful past.
+		else if( GOSSIP_LINE == 3 ) saytext Maybe... with the proper incentive... I'd tell ya more.
+	}
+	else
+	{
+		saytext I heard the mayor's been caught, and will be spendin a good amount of time locked up.
+		playanim once yes
+  	}
+
+	setvar RATTING 0
+}
+
+
+{ worldevent_evidence_found
+
+	setvar EVIDENCE_FOUND 1
+}
+{ respond_yes
+
+	if ASKED_APPLE equals 1
+
+	callevent say_apple
+	setvar ASKED_APPLE 0
+}
+{ respond_no
+
+	if ASKED_APPLE equals 1
+
+	saytext But have ya tried one traveler?  They're great apples!
+	setvar ASKED_APPLE 0
+}
+////////////// Accept Bribe for info /////////////
+
+{ game_recvoffer_gold
+
+	if EVIDENCE_FOUND equals 0
+
+	if( game.offer.gold >= 15 )
+	{
+		recvoffer accept
+		saytext Tat's a good lad.  And here is what I know...
+		playanim once quicklook
+		setvar RATTING 1
+
+		callevent 3 give_mayor_info_1
+	}
+	else
+	{
+		recvoffer reject
+		saytext A lowly begger wouldn't take that offer.
+		playanim once no
+	}
+}
+
+{ give_mayor_info_1
+
+	saytext Good, no one's around.
+	callevent 2 give_mayor_info_2
+}
+{ give_mayor_info_2
+
+	saytext I been seeing some unusual mail coming in to the mayor.
+	playanim once pondering3
+	callevent 4 give_mayor_info_3
+}
+{ give_mayor_info_3
+
+	saytext I been thinkin maybe him and the Orcs communicatin by letter.
+	playanim once converse2
+	callevent 3 give_mayor_info_4
+}
+{ give_mayor_info_4
+
+	saytext But I never had the gall to go check it out.
+	callevent 4 give_mayor_info_5
+}
+{ give_mayor_info_5
+
+	saytext The mayor is clever, if he's suspicious of you, he'll hide the evidence.
+	callevent 3 give_mayor_info_6
+}
+{ give_mayor_info_6
+
+	saytext So don't let 'em know you're lookin for it mate.
+	callevent 3 give_mayor_info_7
+}
+
+{ give_mayor_info_7
+
+	saytext Him and his guard's are so corrupt, it makes me sick...they'll do anythin' for money.
+	callevent 3 give_mayor_info_8
+}
+
+{ give_mayor_info_8
+
+	saytext I'm sure Edrin, the guard over there, will help us. Show him any evidence you find.
+	setvar RATTING 0
+}
+
+////////////// Shop //////////////////
+{
+   eventname trade_done
+
+   saytext Have a nice day.
+   say [.3] [.3] [.3] [.5]
+}
+
+
+{
+   eventname vendor_addstoreitems
+
+   //           |Store name|  |Item name|  |Quantity| |cost%|	
+   addstoreitem  STORE_NAME     health_apple 30	       100
+}
+
+
+//////cider quest
+{ cider
+	setvar CIDER 1
+}
+
+{ say_cider
+	if CIDER equals 1
+  
+ 
+	saytext Oh! Sylphiel's cider? Well I had thought she'd gotten it already! Tell her the [cider] is on it's way.
+	say [.6] [.24] [.35] [.4] [.34] [.24] [.35] [.4]
+	playanim once converse1
+	callexternal $get_by_name(wench) cider2
+	callevent 1 say_cider_2
+}
+{ say_cider_2
+	setvar CIDER 3
+}
+
+{ cider3
+	setvar CIDER 2
+}
+
+{ say_cider
+
+	if CIDER equals 2
+	saytext Oh! She still hasn't gotten it? Well then you must head over to Krythos in the Merchant's Square immediately!
+	callexternal $get_by_name(krythos) cider4
+	callevent 1 say_cider_2
+}
+
+{ say_cider
+
+	if CIDER equals 3
+	saytext Well? You should get going!  
+}
+
+//Rumours
+{ say_rumor
+
+	playanim once pondering
+	saytext An old friend of mine, a hermit living in the Thornlands is looking for something precious.
+}
+{ worldevent_weather
+
+   setvar WEATHER PARAM1
+}

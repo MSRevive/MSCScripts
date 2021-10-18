@@ -1,0 +1,218 @@
+//Fire Shield
+
+{
+	const NOPUSH_CHANCE 100%
+
+	const MP_DRAIN_RATE 4
+
+	const PARRY_MULTI 1.5
+	const SHIELD_BASE_PARRY 10
+
+	const MODEL_VIEW       	viewmodels/v_shields.mdl
+	const MODEL_VIEW_IDX	4
+
+	const MODEL_WORLD weapons/p_weapons4.mdl
+	const MODEL_HANDS weapons/p_weapons4.mdl
+  	const MODEL_WEAR weapons/p_weapons4.mdl
+	const MODEL_BODY_OFS 46
+	const MELEE_ENERGY		15
+	const MELEE_ACCURACY   	90%
+	const BLOCK_CHANCE_UP		100	//Chance of blocking damage while up
+	const DMG_BLOCK_UP		0.5	//Damage ratio player takes when blocks (0.0=none 1.0=all)
+	const BLOCK_CHANCE_DOWN	10	//Chance of blocking all damage while down
+	const SHIELD_IMMORTAL		1
+	const SOUND_BLOCK      	debris/metal3.wav
+
+	const ANIM_PREFIX  standard
+
+	const SHIELD_PRE_BLOCK_EFFECT 1
+
+	const SOUND_BREATH_LOOP monsters/goblin/sps_fogfire.wav
+}
+
+#include items/shields_base
+
+{  shield_spawn
+
+   name 	a|Demon Shield
+   desc 	For when it's time to get out of the kitchen
+   weight 	200
+   size 	45
+   value	5000
+   quality      2000
+   //sethudsprite hand 191
+   sethudsprite trade 191
+}
+
+{ game_deploy
+	setvard GAME_PVP game.pvp
+}
+
+{ game_wear
+
+	playermessage You sling a demon shield shield over your shoulder. 
+}
+
+{ bweapon_effect_activate
+	if !SCAN_KEYS
+	setvard SCAN_KEYS 1
+	callevent scan_keys
+}
+
+{ bweapon_effect_remove
+	setvard SCAN_KEYS 0
+	if BREATH_ON
+	callevent end_breath
+}
+
+{ scan_keys
+	if SCAN_KEYS
+	if ( $get(ent_me,id) equals $get(ent_owner,scriptvar,'PLR_LEFT_HAND') ) local BEW_IS_WEILDED 1
+	if ( $get(ent_me,id) equals $get(ent_owner,scriptvar,'PLR_RIGHT_HAND') ) local BEW_IS_WEILDED 1
+	if BEW_IS_WEILDED
+	callevent 0.25 scan_keys
+	//dbg scan_keys use $get(ent_owner,keydown,use) atk game.item.attacking
+	local DO_BREATH 0
+	if ( $get(ent_owner,keydown,use) ) add DO_BREATH 1
+	if ( game.item.attacking ) add DO_BREATH 1
+	if ( $get(ent_owner,mp) > MP_DRAIN_RATE )
+	{
+		add DO_BREATH 1
+	}
+	else
+	{
+		if game.time > NEXT_MP_WARN
+		setvard NEXT_MP_WARN game.time
+		add NEXT_MP_WARN 10.0
+		dplayermessage ent_owner Demonshield: Insufficient mana for fire breath
+	}
+	if ( DO_BREATH == 3 )
+	{
+		if !BREATH_ON
+		callevent start_breath
+	}
+	else
+	{
+		if BREATH_ON
+		callevent end_breath
+	}
+}
+
+{ melee_end
+	if BREATH_ON
+	callevent end_breath
+}
+
+
+{ end_breath
+	setvard BREATH_ON 0
+	clientevent update all CL_SCRIPT_DX end_fx
+	setvard CL_SCRIPT_DX 'CL_SCRIPT_DX'
+	svplaysound 2 0 SOUND_BREATH_LOOP
+}
+
+{ start_breath
+	dbg start_breath
+	if $get(ent_owner,skill.spellcasting.fire) >= 30
+
+	if ( CL_SCRIPT_DX equals 'CL_SCRIPT_DX' )
+	{
+		clientevent new all items/axes_dragon_cl $get(ent_owner,index)
+		setvard CL_SCRIPT_DX game.script.last_sent_id
+		svplaysound 1 10 SOUND_BREATH_LOOP
+	}
+	setvard BREATH_ON 1
+	callevent 0.1 breath_loop
+}
+
+{ breath_loop
+
+	if BREATH_ON
+	callevent 0.1 breath_loop
+
+	givemp ent_owner $neg(MP_DRAIN_RATE)
+
+	setvard OWNER_ANG $get(ent_owner,angles)
+	setvard OWNER_ORG $get(ent_owner,origin)
+
+	local CLOUD_START $get(ent_owner,svbonepos,15)
+	vectoradd CLOUD_START $relpos(OWNER_ANG,$vec(0,32,-30)) //a little in front of face (and now down, due to change in player model, I guess)
+	local CLOUD_ANG OWNER_ANG
+	vectorset CLOUD_ANG x $neg($vec.pitch(OWNER_ANG))
+
+	//offset right or left, based on hand shield is in (only slightly, shield is near center when blocking)
+	if ( game.item.hand_index == 0 )
+	{
+		vectoradd CLOUD_START $relpos($vec(0,0,0),$vec(-10,0,0))
+	}
+	else
+	{
+		vectoradd CLOUD_START $relpos($vec(0,0,0),$vec(10,0,0))
+	}
+
+
+	clientevent update all CL_SCRIPT_DX make_clouds CLOUD_START CLOUD_ANG
+
+	if game.time > NEXT_SCAN
+
+	setvard NEXT_SCAN game.time
+	add NEXT_SCAN 0.5
+
+	setvard BURN_DAMAGE $get(ent_owner,skill.spellcasting.fire)
+	divide BURN_DAMAGE 2
+
+	local SCAN_POS CLOUD_START
+	vectoradd SCAN_POS $relpos(OWNER_ANG,$vec(0,128,0))
+
+	callexternal ent_owner ext_box_token enemy 96 SCAN_POS
+	setvard BURN_LIST $get(ent_owner,scriptvar,'PLR_SCAN_TOKEN')
+	if BURN_LIST isnot none
+	setvard TRACE_START CLOUD_START
+	calleventloop $get_token_amt(BURN_LIST) burn_targets
+}
+
+{ burn_targets
+	local CUR_TARG $get_token(BURN_LIST,game.script.iteration)
+
+	//dont burn players outside of PVP
+	if ( $get(CUR_TARG,isplayer) )
+	{
+		if !GAME_PVP
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	//within the cone
+	if $get(CUR_TARG,isalive)
+	local TARG_ORG $get(CUR_TARG,origin)
+	if $within_cone2D(TARG_ORG,OWNER_ORG,OWNER_ANG,30)
+	if $get(CUR_TARG,range) < 256
+
+	//make sure I'm not trying to burn through a wall
+	local TRACE_END $get(CUR_TARG,origin)
+	if ( !$get(CUR_TARG,isplayer) )
+	{
+		//adjust for origin center
+		local HALF_MON_HEIGHT $get(CUR_TARG,height)
+		multiply HALF_MON_HEIGHT 0.5
+		vectoradd TRACE_END z HALF_MON_HEIGHT
+	}
+	local TRACE_CHECK $get_traceline(TRACE_START,TRACE_END,worldonly)
+	if TRACE_CHECK equals TRACE_END
+
+	//burn em
+	applyeffect CUR_TARG effects/effect_burn 5.0 $get(ent_owner,id) BURN_DAMAGE 1 0 spellcasting.fire
+	if $get(CUR_TARG,maxhp) < 10000
+	if $get(CUR_TARG,height) < 120
+	if !$get(CUR_TARG,scriptvar,'NPC_OVERSIZED')
+	local PUSH_VEL $relvel(0,200,110)
+	callexternal ent_owner ext_push_targ CUR_TARG PUSH_VEL
+}
+
+{ shield_pre_block_effect //1: Attacker  2: Inflictor  3: dmg  4: dmg type
+
+	if game.item.attacking
+	if PARAM4 contains fire
+	setdmg dmg 0
+	setvard EXIT_BLOCK 1
+}

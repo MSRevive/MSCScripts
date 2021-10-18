@@ -1,0 +1,361 @@
+#scope server
+{ [shared]
+	dbg share_test - Shared
+
+	//sprites used by spiral arrow
+	precache xfireball3.spr
+	precache char_breath.spr //techinically part of standard precache, but just in case that changes...
+	precache firemagic.spr
+}
+
+{
+	dbg share_test - Server
+
+	const ARROW_CL_SPEED 200
+	const ARROW_SV_SPEED 42.5
+
+	setvard NPC_GIVE_EXP 2500 //bit less threatening / more exploitable than the rest
+	setvard DROP_GOLD 1
+	setvard DROP_GOLD_AMT 500
+
+	setvard NPC_RANGED 1 //me thinketh we have used wrong convention in many places (NPC_IS_RANGED) - will fix :(
+	const AM_ARCHER 1
+
+	const ATTACK_STANCE bow
+
+	const CAN_KICK 1
+	const FREQ_KICK 8.0
+	const LEAP_AFTER_KICK 1
+
+	const SOUND_BOW_STRETCH monsters/archer/stretch.wav
+	const SOUND_BOW_SHOOT monsters/archer/bow.wav
+
+	const ARROW_CL_SCRIPT_FIRE effects/sfx_fire_burst
+	const ARROW_CL_SCRIPT_COLD effects/sfx_ice_burst
+
+	const ARROW_OFS (10,0,68)
+}
+
+{ game_precache
+	precachefile ARROW_CL_SCRIPT_FIRE
+	precachefile ARROW_CL_SCRIPT_COLD
+}
+
+#include monsters/elf_warrior_base
+
+{ elf_spawn
+	name a|Torkalath Shadowarcher
+	hp 3500
+	takedmg all 0.5
+	race torkie
+
+	setmodelbody 1 5 //0=Unarmed 1=Dagger 2=Mace 3=Axe 4=Sword 5=Bow 6=Litchtounge
+
+	setvard MISS_COUNT 0
+}
+
+{ frame_stretch_bow
+	playsound 0 10 SOUND_BOW_STRETCH
+}
+
+{ frame_shoot_bow
+	playsound 0 10 SOUND_BOW_SHOOT
+	add MISS_COUNT 1
+
+	local N_PROJECTILES 3 //constant this
+
+	local RND_PROJECTILE $rand(3,5) //override
+
+	//we're not actually going to use the first two, as there's already plenty of skeles doing this in The_Wall
+	//however, we'll keep them around, so she can easily be adjusted to do otherwise on other maps
+
+	if ( RND_PROJECTILE == 1 )
+	{
+		setvard PROJ_TYPE fire_aoe //this var isn't actually used, but may help for reference
+		local ARROW_SPEED 500
+		local ARROW_SCRIPT proj_arrow_npc_dyn
+		local ARROW_GLOW 1
+		local ARROW_GLOW_COLOR (255,0,0)
+		setvard AOE_ARROW 1
+		setvard ARROW_KNOCKBACK 800
+		setvard ARROW_AOE 128
+		setvard ARROW_EFFECT effects/effect_burn
+		setvard ARROW_DOT_DMG 150
+		setvard ARROW_DOT_DUR 5.0
+		setvard ARROW_CL_SCRIPT ARROW_CL_SCRIPT_FIRE
+		setvard ARROW_DMG_AOE 200
+		setvard ARROW_DMG_TYPE fire_effect
+	}
+
+	if ( RND_PROJECTILE == 2 )
+	{
+		setvard PROJ_TYPE ice_aoe
+		local ARROW_SPEED 500
+		local ARROW_SCRIPT proj_arrow_npc_dyn
+		local ARROW_GLOW 1
+		local ARROW_GLOW_COLOR (128,128,255)
+		setvard AOE_ARROW 1
+		setvard ARROW_KNOCKBACK 800
+		setvard ARROW_AOE 128
+		setvard ARROW_EFFECT effects/effect_frostbite_dmg
+		setvard ARROW_DOT_DMG 50
+		setvard ARROW_DOT_DUR 5.0
+		setvard ARROW_CL_SCRIPT ARROW_CL_SCRIPT_COLD
+		setvard ARROW_DMG_AOE 150
+		setvard ARROW_DMG_TYPE cold_effect
+	}
+
+	if ( RND_PROJECTILE == 3 )
+	{
+		setvard PROJ_TYPE spiral_fire
+		local ARROW_SCRIPT proj_arrow_spiral
+		local ARROW_SPEED 200
+		setvard AOE_ARROW 0
+		setvard ARROW_KNOCKBACK 0
+		setvard SPIRAL_DMG_TYPE fire_effect
+		setvard SPIRAL_DMG 150
+		setvard SPIRAL_SPIRTE_FILE xfireball3.spr
+		setvard SPIRAL_SPRITE_FRAMES 19
+		setvard SPIRAL_SPRITE_SCALE 1.0
+		setvard SPIRAL_SPRITE_COLOR (255,255,255)
+		setvard SPIRAL_GLOW_COLOR (255,0,0)
+		setvard SPIRAL_ON 1
+		local SPIRAL_ARROW 1
+	}
+
+	if ( RND_PROJECTILE == 4 )
+	{
+		setvard PROJ_TYPE spiral_cold
+		local ARROW_SCRIPT proj_arrow_spiral
+		local ARROW_SPEED 200
+		setvard AOE_ARROW 0
+		setvard ARROW_KNOCKBACK 0
+		setvard SPIRAL_DMG_TYPE cold_effect
+		setvard SPIRAL_DMG 150
+		setvard SPIRAL_SPIRTE_FILE char_breath.spr
+		setvard SPIRAL_SPRITE_FRAMES 1
+		setvard SPIRAL_SPRITE_SCALE 2.5
+		setvard SPIRAL_SPRITE_COLOR (255,255,255)
+		setvard SPIRAL_GLOW_COLOR (128,128,255)
+		setvard SPIRAL_ON 1
+		local SPIRAL_ARROW 1
+	}
+
+	if ( RND_PROJECTILE == 5 )
+	{
+		setvard PROJ_TYPE spiral_lightning
+		local ARROW_SCRIPT proj_arrow_spiral
+		local ARROW_SPEED 200
+		setvard AOE_ARROW 0
+		setvard ARROW_KNOCKBACK 0
+		setvard SPIRAL_DMG_TYPE lightning_effect
+		setvard SPIRAL_DMG 150
+		setvard SPIRAL_SPIRTE_FILE firemagic.spr
+		setvard SPIRAL_SPRITE_FRAMES 8
+		setvard SPIRAL_SPRITE_SCALE 0.5
+		setvard SPIRAL_SPRITE_COLOR (255,255,255)
+		setvard SPIRAL_GLOW_COLOR (255,255,0)
+		setvard SPIRAL_ON 1
+		local SPIRAL_ARROW 1
+	}
+
+	if ( !AOE_ARROW )
+	{
+
+	//IT WOULD BE REALLY NICE IF SHOOTING AN ARROW AT AN ORIGIN ACTUALLY WORKED! ><
+//		if ( SPIRAL_ARROW )
+//		{
+//			if ( $get(NPCATK_TARGET,range) < 256 )
+//			{
+//				//he's near me - shoot straight, instead of angling into the floor
+//				local SHOOT_ORG $get(ent_me,origin)
+//				vectoradd SHOOT_ORG $relpos($vec(0,game.monster.angles.yaw.0),$vec(0,128,$vec.z(ARROW_OFS)))
+//				//setangle view_origin SHOOT_ORG
+//				dbg adjust SHOOT_ORG
+//				tossprojectile SHOOT_ORG ARROW_SPEED DMG_ARROW 0 ARROW_SCRIPT ARROW_OFS
+//			}
+//			else
+//			{
+//				tossprojectile NPCATK_TARGET ARROW_SPEED DMG_ARROW 0 ARROW_SCRIPT ARROW_OFS
+//			}
+//		}
+//		else
+//		{
+//			tossprojectile NPCATK_TARGET ARROW_SPEED DMG_ARROW 0 ARROW_SCRIPT ARROW_OFS
+//			callexternal ent_lastprojectile ext_lighten 0 ARROW_GLOW ARROW_GLOW_COLOR
+//		}
+
+		//old sppiral arrow system
+		//tossprojectile NPCATK_TARGET ARROW_SPEED DMG_ARROW 0 ARROW_SCRIPT ARROW_OFS
+		//callexternal ent_lastprojectile ext_lighten 0 ARROW_GLOW ARROW_GLOW_COLOR
+
+		//CL spiral arrow system
+		//one major downside is that this arrow is silent
+		local TRACE_START $get(ent_me,origin)
+		vectoradd TRACE_START $relpos($vec(0,game.monster.angles.yaw,0),$vec(0,0,64)) //eye level
+		local TARG_ORG $get(NPCATK_TARGET,origin)
+		local TRACE_END TARG_ORG
+
+		local ANG_TO_TARG $angles3d(TRACE_START,TRACE_END)
+		vectorset ANG_TO_TARG x $neg($vec.x(ANG_TO_TARG))
+
+		//continue trace beyond target
+		vectoradd TRACE_END $relpos(ANG_TO_TARG,$vec(0,4096,0))
+
+		local TRACE_LINE $get_traceline(TRACE_START,TRACE_END,worldonly)
+
+		//recalc ang
+		//local ANG_TO_TARG $angles3d(TRACE_START,TRACE_LINE)
+		//vectorset ANG_TO_TARG x $neg($vec.x(ANG_TO_TARG))
+
+		setvard TRACK_SPIRAL_ANG ANG_TO_TARG
+		setvard TRACK_SPIRAL_ORG TRACE_START
+		setvard TRACK_SPIRAL_DEST TRACE_LINE
+
+		clientevent new all monsters/telf_warrior_bow_cl TRACK_SPIRAL_ORG SPIRAL_SPIRTE_FILE SPIRAL_SPRITE_FRAMES SPIRAL_SPRITE_SCALE SPIRAL_SPRITE_COLOR SPIRAL_GLOW_COLOR ANG_TO_TARG ARROW_CL_SPEED
+
+		//wait a few seconds before firing again, baed on range, to give arrow chance to complete flight
+		//as we can only track one arrow at a time under this system
+		setvard MAXRANGE_RATIO $get(NPCATK_TARGET,range)
+		divide MAXRANGE_RATIO ATTACK_RANGE
+		setvard FIRE_DELAY $get_skill_ratio(MAXRANGE_RATIO,0.25,3.25)
+		dbg fire_delay: FIRE_DELAY
+		setvard NEXT_FIRE game.time
+		add NEXT_FIRE FIRE_DELAY
+
+		if !TRACK_ARROW_ACTIVE
+		setvard TRACK_ARROW_ACTIVE 1
+		callevent 0.1 track_spiral_arrow
+	}
+	else
+	{
+		local TARG_ORG $get(NPCATK_TARGET,origin)
+		//for AOE arrows, shoot around the target randomly
+		local HALF_AOE ARROW_AOE
+		divide HALF_AOE 2
+		vectoradd TARG_ORG $relpos($vec(0,$randf(0,359.99),0),$vec(0,HALF_AOE,0))
+		if ( !$get(TARG_ORG,isplayer) ) vectoradd TARG_ORG z $get(NPCATK_TARGET,height)
+		local TARG_DIST $dist(TARG_ORG,game.monster.origin)
+		divide TARG_DIST 25
+		setangle add_view.pitch TARG_DIST
+		tossprojectile view ARROW_SPEED DMG_ARROW 1 ARROW_SCRIPT ARROW_OFS
+		local GRAV_ADJ 0.4
+		//don't think this is working (also logic is likely plain wrong)
+		if ( $vec.z(TARG_ORG) < game.monster.origin.z )
+		{
+			local ADJ_RATIO $vec.z(TARG_ORG)
+			divide ADJ_RATIO game.monster.origin.z
+			local GRAV_ADJ $get_skill_ratio(ADJ_RATIO,0.4,2.0)
+			dbg adjusting down GRAV_ADJ ( ADJ_RATIO )
+		}
+		callexternal ent_lastprojectile ext_lighten GRAV_ADJ ARROW_GLOW ARROW_GLOW_COLOR
+	}
+
+	if ( MISS_COUNT > 4 )
+	{
+		//if you miss a bunch, twitch a bit in hopes for a better angle
+		setvard MISS_COUNT 2
+		playanim break
+		callevent chicken_run 1.5
+	}
+}
+
+{ ext_arrow_hit //PARAM1=hit:0|1 PARAM2=ent_hit PARAM3=(start) PARAM4=(end) - called from proj_arrow_npc_dyn
+	local TARG_ALIVE $get(PARAM2,isalive)
+	if ( $get(PARAM2,relationship,ent_me) equals enemy )
+	{
+		if TARG_ALIVE
+		local HIT_ENEMY 1
+	}
+
+	if ( ARROW_KNOCKBACK > 0 )
+	{
+		if HIT_ENEMY
+		addvelocity PARAM2 $relvel(0,ARROW_KNOCKBACK,110)
+	}
+
+	if ( ARROW_EFFECT isnot 'ARROW_EFFECT' )
+	{
+		if HIT_ENEMY
+		applyeffect PARAM2 ARROW_EFFECT ARROW_DOT_DUR $get(ent_me,id) ARROW_DOT_DMG
+	}
+
+	if ( AOE_ARROW )
+	{
+		local ARROW_POS PARAM3
+		if ( HIT_ENEMY ) local ARROW_POS $get(PARAM2,origin)
+		vectorset ARROW_POS z $get_ground_height(ARROW_POS)
+
+		clientevent new all ARROW_CL_SCRIPT ARROW_POS 128 1 (255,0,0)
+		xdodamage ARROW_POS ARROW_AOE ARROW_DMG_AOE 0 ent_me ent_me none ARROW_DMG_TYPE
+
+		setvard ARROW_TARGET_LIST $get_tsphere(enemy,ARROW_AOE,ARROW_POS)
+		if ARROW_TARGET_LIST isnot none
+		calleventloop $get_token_amt(ARROW_TARGET_LIST) arrow_affect_targets
+	}
+}
+
+
+{ arrow_affect_targets
+	local CUR_TARG $get_token(ARROW_TARGET_LIST,game.script.iteration)
+	applyeffect CUR_TARG ARROW_EFFECT ARROW_DOT_DUR $get(ent_me,id) ARROW_DOT_DMG 
+	setvard MISS_COUNT 0
+}
+
+{ game_dodamage
+
+	if ( $get(PARAM2,isalive) ) 
+	{
+		if $get(PARAM2,relationship,ent_me) equals enemy
+		setvard MISS_COUNT 0
+	}
+
+	if ( SPIRAL_ON )
+	{
+		if PARAM1
+		if $get(PARAM2,relationship,ent_me) equals enemy
+		addvelocity PARAM2 $relvel(0,200,110)
+	}
+}
+
+{ spiral_done
+	setvard TRACK_ARROW_ACTIVE 0
+	setvard SPIRAL_ON 0
+}
+
+{ track_spiral_arrow
+	//setvard TRACK_SPIRAL_ANG ANG_TO_TARG
+	//setvard TRACK_SPIRAL_ORG TRACE_START
+	if TRACK_ARROW_ACTIVE
+	callevent 0.2 track_spiral_arrow
+	vectoradd TRACK_SPIRAL_ORG $relpos(TRACK_SPIRAL_ANG,$vec(0,ARROW_SV_SPEED,0))
+	xdodamage TRACK_SPIRAL_ORG 128 SPIRAL_DMG 0 ent_me ent_me none SPIRAL_DMG_TYPE
+//	if ( $dist(TRACK_SPIRAL_ORG,TRACK_SPIRAL_DEST) < 32 )
+//	{
+//		setvard TRACK_ARROW_ACTIVE 0
+//		callevent ext_spiral_done
+//	}
+
+	if ( G_DEVELOPER_MODE )
+	{
+		local BEAM_START TRACK_SPIRAL_ORG
+		local BEAM_END BEAM_START
+		vectoradd BEAM_END $relpos($vec(0,0,0),$vec(0,0,32))
+		effect beam point lgtning.spr 100 BEAM_START BEAM_END (255,0,255) 200 0 0.2
+	}
+}
+
+{ npc_selectattack
+
+	if ( game.time < NEXT_FIRE ) local HOLD_ATTACK 1
+
+	if ( HOLD_ATTACK )
+	{
+		setvard ANIM_ATTACK ANIM_IDLE
+		setvard AS_ATTACKING game.time
+	}
+	else
+	{
+		setvard ANIM_ATTACK shootbow
+	}
+}

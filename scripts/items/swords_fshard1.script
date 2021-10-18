@@ -1,0 +1,284 @@
+{
+	const SOUND_MODE_SWITCH magic/energy1_loud.wav
+
+	//const QUEST_ITEM_CAT f
+	//const QUEST_ITEM_ID sha1
+
+	const CUSTOM_REGISTER_CHARGE1 1
+
+	const MP_HOLY_WAVE 20
+
+	const BASE_LEVEL_REQ 30
+	const ANIM_LIFT 0
+	const ANIM_IDLE1 1
+	const ANIM_ATTACK1 2
+	const ANIM_ATTACK2 2
+	const ANIM_ATTACK3 2
+	const ATTACK_ANIMS 1
+	const ANIM_LUNGE 3
+	const ANIM_PARRY1 4
+	const ANIM_PARRY1_RETRACT 5
+	const ANIM_UNSHEATH 6
+	const ANIM_SHEATH 7
+
+	const MODEL_VIEW viewmodels/v_2hswords.mdl
+	const MODEL_VIEW_IDX 8
+	const HOLY_VIEW_IDX 9
+
+	const MODEL_HANDS weapons/p_weapons4.mdl
+	const MODEL_WORLD weapons/p_weapons4.mdl
+	const MODEL_BODY_OFS 50
+
+	const MODEL_HOLY_OFS 53
+
+	const SOUND_SWIPE       weapons/swingsmall.wav
+	const SOUND_HITWALL1       weapons/cbar_hit1.wav
+	const SOUND_HITWALL2       weapons/cbar_hit2.wav
+	const SOUND_DRAW       weapons/swords/sworddraw.wav
+	const SOUND_SHOUT  $get(ent_owner,scriptvar,'PLR_SOUND_SHOUT1')
+
+	const ANIM_PREFIX  standard //was longsword
+
+	//Used in base_melee
+	//------------------
+	const MELEE_RANGE  80
+	const MELEE_DMG_DELAY  0.6
+	const MELEE_ATK_DURATION 1.1
+	const MELEE_ENERGY  1
+	const MELEE_DMG  450 //boosted FEB2015
+	const MELEE_DMG_RANGE      80
+	const MELEE_DMG_TYPE  slash
+	const MELEE_ACCURACY  75%
+	const MELEE_STAT  swordsmanship
+	const MELEE_ALIGN_BASE 3,10 
+	const MELEE_ALIGN_TIP  0,-10
+	const MELEE_VIEWANIM_ATK      ANIM_ATTACK1
+
+	const MELEE_SOUND      SOUND_SWIPE
+	const MELEE_SOUND_DELAY      MELEE_DMG_DELAY
+	const MELEE_PARRY_CHANCE      30%
+	const MELEE_NEW_PARRY_CHANCE  30
+
+	const PLAYERANIM_AIM  sword_double_idle
+	const PLAYERANIM_SWING sword_double_swing
+}
+
+#include items/swords_base_twohanded
+
+{ weapon_spawn
+
+	name  the|Felewyn Shard I
+	desc  A shard of the legendary Felewyn Blade
+	weight  100
+	size  10
+	value 5000
+	sethudsprite trade 132
+
+	sethand both
+}
+
+{ game_deploy
+	if game.serverside
+
+	if !REGEN_LOOP
+	callevent 0.1 regen_loop
+
+	callevent 0.1 render_props
+}
+
+{ [server] render_props
+	if ( !HOLY_MODE )
+	{
+		setmodelbody 0 MODEL_BODY_OFS
+		setviewmodelprop ent_me submodel $get(ent_owner,scriptvar,'PLR_HAND_SET') MODEL_VIEW_IDX
+	}
+	else
+	{
+		setmodelbody 0 MODEL_HOLY_OFS
+		setviewmodelprop ent_me submodel $get(ent_owner,scriptvar,'PLR_HAND_SET') HOLY_VIEW_IDX
+	}
+}
+
+{ register_charge1
+
+	//stabby
+   local reg.attack.type		strike-land
+   local reg.attack.range		MELEE_RANGE
+   local reg.attack.dmg			MELEE_DMG
+   local reg.attack.dmg.range		MELEE_DMG_RANGE
+   local reg.attack.dmg.type		MELEE_DMG_TYPE
+   local reg.attack.energydrain		MELEE_ENERGY
+   local reg.attack.stat		MELEE_STAT
+   local reg.attack.hitchance		MELEE_ACCURACY
+   local reg.attack.delay.strike	MELEE_DMG_DELAY
+	add reg.attack.delay.strike 0.5
+   local reg.attack.delay.end		MELEE_ATK_DURATION
+	add reg.attack.delay.end 0.5
+   local reg.attack.ofs.startpos	MELEE_STARTPOS
+   local reg.attack.ofs.aimang		MELEE_AIMANGLE
+   local reg.attack.noise		MELEE_NOISE
+
+   local reg.attack.priority	1
+   local reg.attack.keys	-attack1
+   local reg.attack.callback	special_01
+   multiply reg.attack.dmg	2
+   local reg.attack.chargeamt	100%
+   local reg.attack.reqskill	32
+   registerattack
+
+	//shield
+	local reg.attack.type		strike-land
+	local reg.attack.noautoaim		1
+	local reg.attack.keys		-attack1
+	local reg.attack.range		0
+	local reg.attack.dmg			0
+	local reg.attack.dmg.range		0
+	local reg.attack.dmg.type		slash
+	local reg.attack.energydrain		2
+	local reg.attack.stat		swordsmanship
+	local reg.attack.hitchance		100%
+	local reg.attack.priority		2
+	local reg.attack.delay.strike	0.1
+	local reg.attack.delay.end		0.2
+	local reg.attack.ofs.startpos	MELEE_STARTPOS
+	local reg.attack.ofs.aimang		MELEE_AIMANGLE
+	local reg.attack.callback		shield
+	local reg.attack.noise		MELEE_NOISE
+	local reg.attack.mpdrain	SHIELD_MP
+	local reg.attack.chargeamt	200%
+	local reg.attack.reqskill	34
+	registerattack
+}
+
+{ [override] special_01_start
+
+	playviewanim  ANIM_LUNGE
+	playowneranim once axe_twohand_swing
+	playsound const.snd.weapon const.snd.maxvol SPECIAL01_SND
+}
+
+//Shield system moved to secondary attack
+{ [server] shield_start
+
+	dbg shield_start $get(ent_owner,keydown,use)
+
+	if ( !$get(ent_owner,keydown,use) )
+	{
+		if ( $get(ent_owner,skill.spellcasting.divination) < 10 )
+		{
+			local L_FAIL 1
+			dplayermessage ent_owner Felewyn Shard: Insufficient skill for Holy Wave (Divination 10)
+			dplayermessage ent_owner Hold +Use to use Holy Shield instead.
+		}
+		if ( $get(ent_owner,mp) < MP_HOLY_WAVE )
+		{
+			local L_FAIL 1
+			dplayermessage ent_owner Felewyn Shard: Insufficient mana for Holy Wave (20)
+			dplayermessage ent_owner Hold +Use to use Holy Shield instead.
+		}
+		if !L_FAIL
+		callevent do_holy_wave
+	}
+
+	if !PARRY_MODE
+	if $get(ent_owner,keydown,use)
+	if ( game.time <= NEXT_ALLOWED_PARRY )
+	{
+		if game.time > NEXT_WARN_MSG
+		setvard NEXT_WARN_MSG game.time
+		add NEXT_WARN_MSG 1.0
+		dplayermessage ent_owner Felewyn Shard: Shield needs time to recharge
+	}
+	if game.time > NEXT_ALLOWED_PARRY
+	setvard NEXT_ALLOWED_PARRY game.time
+	add NEXT_ALLOWED_PARRY 20.0
+	splayviewanim ent_me ANIM_PARRY1
+	applyeffect ent_owner effects/effect_shardshield 10.0 0.1
+	setvard SHARD_SHIELD_ON 1
+	callevent 10.0 end_parry
+}
+
+{ game_takedamage
+
+	if SHARD_SHIELD_ON
+	if HOLY_MODE
+	local MAX_HP_REPEL $get(ent_owner,maxhp)
+	multiply MAX_HP_REPEL 2
+	if $get(PARAM1,maxhp) < MAX_HP_REPEL
+	local REPEL_VEL $get(PARAM1,angles.yaw)
+	addvelocity PARAM1 $relvel($vec(0,REPEL_VEL,0),$vec(0,-400,200))
+}
+
+{ end_parry
+	setvard SHARD_SHIELD_ON 0
+	splayviewanim ent_me ANIM_PARRY1_RETRACT
+}
+
+{ [server] regen_loop
+	if ( $get(ent_owner,scriptvar,'PLR_LEFT_HAND') isnot $get(ent_me,id) ) setvard REGEN_LOOP 0
+	if $get(ent_owner,scriptvar,'PLR_LEFT_HAND') equals $get(ent_me,id)
+	callevent 1.0 regen_loop
+	setvard REGEN_LOOP 1
+	if $get(ent_owner,hp) < $get(ent_owner,maxhp)
+	if ( !HOLY_MODE )
+	{
+		givehp ent_owner 1
+	}
+	else
+	{
+		givehp ent_owner 2
+	}
+}
+
+{ game_+attack2
+	if game.time > ALLOW_MODE_SWITCH
+	setvard ALLOW_MODE_SWITCH game.time
+	add ALLOW_MODE_SWITCH 1.0
+	playsound 0 10 SOUND_MODE_SWITCH
+
+	if ( HOLY_MODE )
+	{
+		setvard HOLY_MODE 0
+		attackprop ent_me 0 dmg.type slash
+		attackprop ent_me 1 dmg.type pierce
+		//phayle
+		//setprop ent_me rendermode 0
+		//setprop ent_me renderamt 255
+		setmodelbody 0 MODEL_BODY_OFS
+		setviewmodelprop ent_me submodel $get(ent_owner,scriptvar,'PLR_HAND_SET') MODEL_VIEW_IDX
+	}
+	else
+	{
+		setvard HOLY_MODE 1
+		attackprop ent_me 0 dmg.type holy
+		attackprop ent_me 1 dmg.type holy
+		//phayle
+		//setprop ent_me rendermode 5
+		//setprop ent_me renderamt 255
+		setmodelbody 0 MODEL_HOLY_OFS
+		setviewmodelprop ent_me submodel $get(ent_owner,scriptvar,'PLR_HAND_SET') HOLY_VIEW_IDX
+	}
+}
+
+{ game_show
+	callevent render_props
+}
+
+{ ext_activate_items
+	dbg $currentscript ext_activate_items
+	if $get(ent_me,wielded)
+	if PARAM1 equals $get(ent_owner,id)
+	callevent render_props
+}
+
+{ do_holy_wave
+	givemp ent_owner $neg(MP_HOLY_WAVE)
+	splayviewanim ent_me 3
+	local L_OWNER_YAW $get(ent_owner,viewangles)
+	local L_OWNER_YAW $vec.yaw(L_OWNER_YAW)
+	local L_PROJ_START $get(ent_owner,origin)
+	vectorset L_PROJ_START z $get_ground_height(L_PROJ_START)
+	//createnpc monsters/summon/wave L_PROJ_START $get(ent_owner,id) L_OWNER_YAW holy
+	playsound 2 10 magic/hburst_sco_lgrinholy01.wav
+	clientevent new all effects/sfx_wave $get(ent_owner,index) L_PROJ_START L_OWNER_YAW 150 holy
+}

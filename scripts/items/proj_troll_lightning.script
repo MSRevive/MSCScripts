@@ -1,0 +1,59 @@
+//Thothie - Troll Rock from proj_catapult
+//- monsters/summon/rock_storm also uses this projectile
+//- When Rock Storm becomes a player spell, you'll have to zero the damage on this and
+//- create an AOE damage that grabs the XP owner via the scriptvar ROCK_OWNER on the caster
+{
+  	const MODEL_WORLD	weapons/projectiles.mdl
+	const ARROW_BODY_OFS		20
+	const MODEL_BODY_OFS		20
+	const PROJ_ANIM_IDLE idle_standard
+	const PROJ_STICK_DURATION	0	//How long to stick in enemies
+	const ARROW_SOLIDIFY_ON_WALL	0  	//base_arrow: Turns solid when a wall is hit
+	const ARROW_BREAK_CHANCE	100%	//base_arrow: Chance of breaking upon hit
+	const PROJ_MOTIONBLUR	0
+
+
+	const PROJ_DAMAGE_TYPE		lightning
+	const PROJ_DAMAGE		$rand(200,300)
+	const PROJ_AOE_RANGE		200
+	const PROJ_AOE_FALLOFF		0
+	const PROJ_IGNORENPC 1
+}
+
+{ game_precache
+	precachefile effects/sfx_shock_burst
+}
+
+#include items/proj_arrow_base
+
+{ arrow_spawn
+
+	name 		a|Big Ball o Lightning
+	desc 		Big zappy thang
+	weight 		0.1
+	size 		1
+	value		0
+	gravity		0.4
+	groupable    	25
+//	setprop ent_me rendermode 5
+//	setprop ent_me renderamt 200
+}
+
+{ game_projectile_hitwall
+
+	local MY_ORG $get(ent_me,origin)
+	effect screenshake $relpos(0,0,0) 100 5 3 500
+	clientevent new all effects/sfx_shock_burst MY_ORG 256 1 (255,255,0)
+	local MY_DMG $get(ent_expowner,scriptvar,'PROJ_SHOCK_DMG')
+	xdodamage MY_ORG 256 MY_DMG 0 ent_expowner ent_expowner none lightning
+	setvard SHOCK_TARGETS $get_tsphere(any,256,MY_ORG)
+	dbg game_projectile_hitwall MY_DMG SHOCK_TARGETS
+	if SHOCK_TARGETS isnot none
+	calleventloop $get_token_amt(SHOCK_TARGETS) apply_effect
+}
+
+{ apply_effect
+	local CUR_TARG $get_token(SHOCK_TARGETS,game.script.iteration)
+	if $get(ent_expowner,relationship,CUR_TARG) equals enemy
+	applyeffect CUR_TARG effects/effect_shock_dmg 8.0 $get(ent_expowner,id) $get(ent_expowner,scriptvar,'PROJ_SHOCK_DOT')
+}

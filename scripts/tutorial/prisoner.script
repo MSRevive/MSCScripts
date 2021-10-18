@@ -1,0 +1,211 @@
+// Cell Mate for Dridje's Tutorial Map by CrazyMonkeyDude/The Magical Bong
+#scope server
+{ [shared]
+	const NPC_MODEL npc/femhuman2.mdl
+
+	//recache NPC_MODEL
+	//Thothie: The reason some native models are precached, is because, back in the day, we allowed server updates without client updates
+	//- thus, on some scripts, the model would need to be precached to download to clients who did not have it
+}
+
+{ [server]
+	setvard NO_JOB 1
+	setvard NO_RUMOR 1
+	setvard NO_HAIL 1
+
+	const SOUND_BECKON npc/vs_nwncomf4_say.wav
+	const SOUND_HI npc/vs_nwncomf4_hi.wav
+}
+
+#include monsters/base_npc
+#include monsters/base_chat
+
+{ [shared] npc_spawn
+	
+	name Kyra
+	hp 1
+	invincible 1
+	nopush 1
+
+	race human //Thothie: for scans (see end of script)
+	setvard PLAYING_DEAD 1 //Thothie: So doesn't register as a valid target
+	setmodel NPC_MODEL
+	setmodelbody 0 0
+	setidleanim idle1
+
+	width 30
+	height 96
+	saytextrange 1024
+	catchspeech say_hi hail hello y0 j0 wassup greet gweets hi
+
+	menu.autopen 1
+
+	if game.serverside
+
+	//Thothie: no point in having two loops here.
+	callevent 0.1 face_player
+	//callevent 0.1 player_greeting
+}
+
+{ face_player
+
+	//Thothie: If the server starts before the player joins up, this loop will not find a living player, and thus, will not loop the way you had it before
+	callevent 1.0 face_player
+
+	getplayersnb TOKEN_LIST 
+	setvard PLAYER_ID $get_token(TOKEN_LIST,0) 
+	if ( $get(PLAYER_ID,isalive) ) callevent face_speaker PLAYER_ID
+
+	//merging player_greeting loop into this loop
+	if ( $get(PLAYER_ID,range) < 96 ) //Thothie: 256 is all the way accross the room
+	{
+		if !SAID_GREETING
+		callevent player_greeting
+	}
+}
+
+{ game_menu_getoptions
+	
+	if !BUSY_CHATTING
+	if GET_YE_TORCH
+	if !GOT_YE_TORCH
+	local reg.mitem.title "Ask for torch"
+	local reg.mitem.type callback
+	local reg.mitem.callback say_torch
+	menuitem.register
+
+	callevent face_speaker $get(PARAM1,id) 
+
+	//Thothie: Only players can activate the game menu
+	//- There's simply no way you can get here without having PARAM1 be a player
+
+	//if ( $get(PARAM1,isplayer) ) callevent face_speaker $get(PARAM1,id) 
+	//if ( $get(ent_lastspoke,isplayer) ) callevent face_speaker $get(ent_lastspoke,id)     
+}
+
+{ say_torch
+	local TORCH_RECIPIENT PARAM1
+	//Thothie: This giving torch thing won't work if the player says 'torch' so...
+	if ( !$get(PARAM1,isplayer) ) local PARAM1 $get(ent_lastspoke,id)
+
+	playanim critical give_shot
+	offer TORCH_RECIPIENT item_torch
+	setvard GOT_YE_TORCH 1 //Thothie: Ye forgot a flag for this, or she just keeps passing out torches
+	setvard CHAT_STEPS 5
+	setvard CHAT_STEP 0
+	setvard CHAT_STEP1 "Here, you can have it. Maybe you can light it."
+	setvard CHAT_STEP2 "Great! That's better."
+	setvard CHAT_STEP3 "I was feeling around the walls here"
+	setvard CHAT_STEP4 "One area was missing a stone, and made a hollow noise when I knocked on it."
+	setvard CHAT_STEP5 "Find it, and give it a whack with that torch!"
+	callevent chat_loop
+	setvard NO_HAIL 0
+}
+
+{ say_hi
+
+	if ( !WALL_BROKEN )
+	{
+		//callevent face_speaker //Thothie: requires a param, but pointless due to the face_player loop
+		saytext You have the torch, Adventurer. Find the weak spot.
+	}
+	else
+	{
+		//callevent face_speaker //Thothie: requires a param, but pointless due to the face_player loop
+		saytext Hurry! They will notice soon!
+		//Thothie: Didn't the orcs kill them by now?
+	}
+}
+
+{ player_greeting
+	setvard CHAT_STEPS 9
+	setvard CHAT_STEP 0
+	setvard CHAT_STEP1 "Hello, Adventurer!"
+	setvard CHAT_STEP2 "You've been out for quite a while."
+	setvard CHAT_STEP3 "I woke up a few minutes ago, with you on the other side of the cell."
+	setvard CHAT_STEP4 "We're in a holding cell, as you can see."
+	setvard CHAT_STEP5 "Last I saw were bandits before I was clocked on the head."
+	setvard CHAT_STEP6 "I overheard the guards speaking about an Orc invasion."
+	setvard CHAT_STEP7 "It's the perfect time to escape!"
+	setvard CHAT_STEP8 "It's so dark in here!"
+	setvard CHAT_STEP9 "I found this torch in a corner, but I can't seem to light it!"
+	callevent chat_loop
+	catchspeech say_torch torch
+	setvard GET_YE_TORCH 1
+	setvard SAID_GREETING 1
+
+	playsound 0 10 SOUND_HI
+}
+
+{ chat_loop
+	callevent convo_anim
+
+	if ( CHAT_STEP == 9 )
+	{
+		infomsg all "Communication" "Press the use key (Default e) on Kyra to bring up her chat menu."
+		callevent 10.0 summon_orcs //Thothie: let script bring in at dramatically appropriate moment
+	}
+}
+
+
+{ summon_orcs
+	usetrigger orc_attack
+	callevent 1.0 orc_reaction
+}
+
+{ wall_broken
+
+	setvard WALL_BROKEN 1 //Thothie: think you skipped this flag
+
+	if ( BUSY_CHATTING ) callevent 5.0 wall_broken //Thothie: come back to this later if saying something else (prevent doubling up)
+
+	if !BUSY_CHATTING
+
+	if !SAID_WALL
+	setvard CHAT_STEPS 4
+	setvard CHAT_STEP 0
+	setvard CHAT_STEP1 "Great job! Now we can get out of here."
+	setvard CHAT_STEP2 "Though I think I'll hold back for now"
+	setvard CHAT_STEP3 "I'll distract them so you can escape."
+	setvard CHAT_STEP4 "Go on! I'll be fine!"
+	callevent chat_loop
+	setvard SAID_WALL 1
+}
+
+//Thothie: My own orc_reaction event
+{ orc_reaction
+
+	if ( BUSY_CHATTING ) callevent 5.0 orc_reaction //Thothie: come back to this later if saying something else
+	if !BUSY_CHATTING
+
+	if !DID_ORC_REACTION
+	setvard DID_ORC_REACTION 1
+
+	local MY_Z $get(ent_me,origin.z)
+	setmovedest $vec(2300,3360,MY_Z) 9999 //Thothie: Roughly the center of the adjacent room
+	
+	playanim critical fear1
+
+	saytext By the gods! The orcs are attacking!
+}
+
+{
+repeatdelay $randf(5.0,10.0)
+
+	if ( !SAID_GREETING )
+	{
+		playsound 0 10 SOUND_BECKON
+		callevent bchat_mouth_move
+	}
+
+	//Thothie: trying to make her look a bit more worried
+
+	if !BUSY_CHATTING
+	local CHECK_ORCS $get_tsphere(enemy,256)
+	if CHECK_ORCS isnot none
+	local NEAREST_NME $get_token(CHECK_ORCS,0)
+	if $get(NEAREST_NME,race) equals orc
+	setmovedest NEAREST_NME 9999
+	//playanim critical fear1 //overkill
+
+}

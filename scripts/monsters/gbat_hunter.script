@@ -1,0 +1,221 @@
+//Thothie - trying desperately to fix the giant bat
+//Giant Bat
+
+#scope server
+
+{  [shared]
+   setvar ANIM_RUN fly
+   setvar ANIM_WALK fly
+   setvard ANIM_ATTACK attack2
+   setvar ANIM_IDLE_HANG idlehang
+   setvar ANIM_IDLE_FLY idle
+   const ANIM_DROP hangtofly
+   setvard ANIM_DEATH die
+
+   setvard MOVE_RANGE 70
+   const ATTACK_DAMAGE 15
+   setvard ATTACK_RANGE 120
+   setvard ATTACK_HITRANGE 180
+   const ATTACK_HITCHANCE 85%
+   setvard NPC_GIVE_EXP 150
+
+   const SOUND_STRUCK1 weapons/cbar_hitbod1.wav
+   const SOUND_STRUCK2 weapons/cbar_hitbod2.wav
+   const SOUND_STRUCK3 weapons/cbar_hitbod3.wav
+   const SOUND_PAIN1 monsters/bat/pain1.wav
+   const SOUND_PAIN2 monsters/bat/pain2.wav
+   const SOUND_ATTACK1 monsters/skeleton/claw_miss1.wav
+   const SOUND_ATTACK2 monsters/skeleton/claw_miss2.wav
+   const SOUND_ATTACK3 monsters/orc/attack3.wav
+   const SOUND_ALERT monsters/bat/alert.wav
+   const SOUND_FLAP1 monsters/bat/flap_big1.wav
+   const SOUND_FLAP2 monsters/bat/flap_big2.wav
+   const SOUND_DEATH monsters/bat/death.wav
+
+   precache monsters/bat.mdl
+}
+
+#include monsters/bat_base
+
+{  [server] 	bat_spawn
+
+   name a|Giant Bat
+   hp 500
+   //ov 359
+   width 50
+   height 60
+   hearingsensitivity 10
+   setmodel monsters/giant_bat.mdl
+   volume 10
+   setsolid none //one of many whacky tries
+
+   setvard CAN_STTACK 0
+}
+
+
+{  [server]	bat_drop_down		// Drop down from the ceiling
+
+   playanim once ANIM_DROP
+   setvard BAT_STATUS BAT_DROPPING
+   setvard CAN_ATTACK 0
+   setvard CAN_HUNT 0
+   playsound CHAN_VOICE SOUND_ALERT
+}
+
+  
+{  [server] 	frame_hangdone		//Finished dropping
+
+   setvard BAT_STATUS BAT_FLYING
+   setvard CAN_ATTACK 1
+   setvard CAN_HUNT 1
+   setidleanim ANIM_IDLE_FLY
+   roam 1
+}
+ 
+{  [server] 	frame_attack1	// Deal damage
+
+   callevent attack_yell
+   dodamage ent_lastseen ATTACK_HITRANGE ATTACK_DAMAGE ATTACK_HITCHANCE
+}
+
+{  [server] 	frame_attack2	// Deal damage
+
+   callevent attack_yell
+   dodamage ent_lastseen ATTACK_HITRANGE ATTACK_DAMAGE ATTACK_HITCHANCE
+}
+
+   
+{  [server] 	attack_yell	//Attack grunts
+   
+   if( $rand(0,1) == 0 )
+   	playrandomsound CHAN_VOICE SOUND_ATTACK1 SOUND_ATTACK2
+}
+
+  
+{  [server] 	npc_struck//Hit by someone
+   
+   playrandomsound CHAN_BODY SOUND_PAIN1 SOUND_PAIN2 SOUND_STRUCK1 SOUND_STRUCK2 none
+}
+
+
+// Spawn some friends
+// ==================
+{
+   const BAT_SUMMON_SCRIPT	monsters/bat_summon
+   const BAT_SUMMON_AMT		5	//Number of mini-bats
+   const BAT_SUMMON_LIFETIME	15	//Mini-bat lifetime
+   const BAT_SUMMON_DMG		4	//Damage mini-bat does
+   const BAT_SUMMON_HEIGHT	300
+   const BAT_SUMMON_CHANCE	60%
+   const BAT_SUMMON_SND_RETREAT	monsters/bat/pain1.wav
+   const BAT_SUMMON_SND_SUMMON	monsters/bat/death.wav
+
+   precachefile monsters/bat_summon
+}
+
+{
+   repeatdelay 3
+
+   	if IS_HUNTING
+   	if game.monster.last_seen.distance < 128
+   	if !BAT_SUMMONING
+  	if !BAT_SUMMON_BLOCKED
+   	if $rand(0,99) < BAT_SUMMON_CHANCE
+   	if $get(ent_me,alive)
+
+   	local L_TARGETPOS $get(ent_me,origin)
+	vectoradd L_TARGETPOS $relvel(0,-128,0)
+	
+	roam 0
+   	setmovedest L_TARGETPOS 64
+	setvard BAT_SUMMONING	1
+  	setvard BAT_SUMMON_BLOCKED 1
+   	setvard CAN_ATTACK 0
+   	setvard NPC_MOVE_TARGET ¯NONE¯
+   	setvard CAN_RETALIATE 0
+   	setvard CAN_HEAR 0
+	playsound game.sound.voice game.sound.maxvol BAT_SUMMON_SND_RETREAT
+	callevent 0.75 bat_summon_flyup
+}
+
+{  bat_summon_flyup
+	
+  	local L_TARGETPOS $get(ent_me,origin)
+	local L_RAY_UP (0,0,
+	stradd L_RAY_UP BAT_SUMMON_HEIGHT
+	stradd L_RAY_UP )
+	vectoradd L_TARGETPOS L_RAY_UP
+	setvard BAT_SUMMON_RISING 1
+  	setmovedest L_TARGETPOS 64
+}
+
+{  game_stopmoving
+
+	if BAT_SUMMON_RISING
+	setvard BAT_SUMMON_RISING 0
+	//setangle face HUNT_LASTTARGET
+
+	callevent 0.75 bat_summon_all
+}
+{  bat_summon_all
+
+	playsound game.sound.voice game.sound.maxvol BAT_SUMMON_SND_SUMMON
+	playanim once attack2
+	setvard BAT_SUMMON_NUM BAT_SUMMON_AMT
+	callevent 0.5 bat_summon_loop
+	callevent 1 bat_summon_done
+}
+
+{  bat_summon_loop
+
+	if BAT_SUMMON_NUM
+	decvar BAT_SUMMON_NUM 1
+   	local L_TARGETPOS $get(ent_me,origin)
+	local L_OFS_X $rand(-100,100)
+	local L_OFS_Y $rand(-100,100)
+   	vectoradd L_TARGETPOS (L_OFS_X,L_OFS_Y,-64)
+ 	createnpc BAT_SUMMON_SCRIPT L_TARGETPOS BAT_SUMMON_LIFETIME BAT_SUMMON_DMG HUNT_LASTTARGET
+	callevent 0.001 bat_summon_loop
+}
+
+{  bat_summon_done
+	
+	//setangle face HUNT_LASTTARGET
+	//setangle face.x 0
+	setvard BAT_SUMMONING	0
+	setvard BAT_SUMMON_RISING 0
+   	setvard CAN_ATTACK 1
+   	setvard NPC_MOVE_TARGET enemy
+   	setvard CAN_RETALIATE 1
+	setvard CAN_HEAR 1
+	callevent BAT_SUMMON_LIFETIME bat_summon_reset
+}
+
+{ bat_summon_reset
+	setvard BAT_SUMMON_BLOCKED 0
+}
+
+{ npc_death
+
+	callexternal $get_by_name(spawner) makechest
+}
+
+// Client-side
+//=============
+
+   
+{  [client] 	cl_frame_flap	//Flapping (Client-side)
+
+   volume 10
+   if( !CL_FLAP_SND )
+   {
+   	playsound CHAN_ITEM SOUND_FLAP1
+	setvard CL_FLAP_SND 1
+   }
+   else
+   {
+   	playsound CHAN_ITEM SOUND_FLAP2
+	setvard CL_FLAP_SND 0
+   }
+
+}

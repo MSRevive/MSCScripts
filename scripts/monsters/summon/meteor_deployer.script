@@ -1,0 +1,128 @@
+#scope server
+{ game_spawn
+	name a|Meteor Deployer
+	dbg game_spawn
+	setmodel weapons/projectiles.mdl //prob could use null, but not sure if can set view angles on it
+	setmodelbody 0 22
+	//setprop ent_me rendermode 5
+	//setprop ent_me renderamt 0
+	width 2
+	height 2
+	setsolid none
+	setbbox none
+	gravity 0
+	race beloved
+	invincible 1
+	nopush 1
+	setvard PLAYING_DEAD 1
+	setvard GAME_PVP game.pvp
+
+	callevent 0.1 nuke_it
+	callevent 3.0 remove_me
+}
+
+//{ check_pos
+//
+//	local L_POS $get(ent_me,origin)
+//	vectoradd L_POS z -16
+//	local reg.npcmove.endpos	L_POS
+//	local reg.npcmove.testonly	1
+//	npcmove ent_me TEST_PLAYER
+//
+//	//10 seconds, and still couldn't find a spawn spot
+//	if ( game.time > AUTO_DESTRUCT )
+//	{
+//		callevent remove_me
+//		local EXIT_SUB 1
+//	}
+//	if !EXIT_SUB
+//
+//	if ( game.ret.npcmove.dist <= 0 )
+//	{
+//		dbg failed, moving down $vec.z(L_POS)
+//		setorigin ent_me L_POS
+//		callevent 0.01 check_pos
+//	}
+//	else
+//	{
+//		dbg fire!
+//		callevent nuke_it
+//	}
+//}
+
+{ game_dynamically_created
+	setvard MY_OWNER PARAM1
+	setvard OWNER_WEAPON PARAM2
+	setvard AUTO_DESTRUCT game.time
+	add AUTO_DESTRUCT 10.0
+	dbg game_dynamically_created $get(MY_OWNER,name)
+	//getplayersnb TEMP_PLAYER
+	//setvard TEST_PLAYER $get_token(TEMP_PLAYER,0)
+	//callevent 0.01 check_pos
+}
+
+{ nuke_it
+	dbg nuke_it
+	local MY_DEST $get(ent_me,origin)
+	vectorset MY_DEST z $get_ground_height(MY_DEST)
+	setmovedest MY_DEST 99999
+	//setangle view.pitch 90
+	tossprojectile view 300 0 0 proj_staff_fire_bomb (0,0,-16)
+	clientevent new all effects/sfx_seal MY_DEST 256 2 2.0
+	clientevent new all effects/sfx_sprite_in $get(ent_me,origin) xflare1.spr 20 4.0
+}
+
+{ ext_fire_bomb //<origin>
+	dbg ext_fire_bomb
+
+	if ( $get(MY_OWNER,isplayer) )
+	{
+		local L_DMG $get(MY_OWNER,skill.spellcasting.fire)
+		multiply L_DMG 4.5
+		local FALL_OFF 0.1
+	}
+	else
+	{
+		local L_DMG $get(MY_OWNER,scriptvar,'DMG_METEOR')
+		local FALL_OFF 0.2
+	}
+	//callexternal OWNER_WEAPON ext_set_fire_bomb
+	if ( $get(MY_OWNER,isplayer) )
+	{
+		xdodamage PARAM1 350 L_DMG FALL_OFF MY_OWNER OWNER_WEAPON spellcasting.fire fire_effect
+	}
+	else
+	{
+		xdodamage PARAM1 350 L_DMG FALL_OFF MY_OWNER MY_OWNER none fire_effect
+	}
+	callevent 2.0 remove_me
+}
+
+{ remove_me
+	deleteent ent_me
+}
+
+{ game_dodamage
+	dbg game_dodamage PARAM1 $get(PARAM2,name)
+
+	if !$get(PARAM2,haseffect,DOT_fire)
+	//if PARAM1
+	if ( !GAME_PVP )
+	{
+		if $get(PARAM2,isplayer)
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+	if $get(PARAM2,relationship,MY_OWNER) equals enemy
+
+	if ( $get(MY_OWNER,isplayer) )
+	{
+		local DOT_FIRE $get(MY_OWNER,skill.spellcasting.fire)
+		multiply DOT_FIRE 0.75
+	}
+	else
+	{
+		local DOT_FIRE $get(MY_OWNER,scriptvar,'DOT_METEOR')
+	}
+	applyeffect PARAM2 effects/effect_burn 5.0 MY_OWNER DOT_FIRE
+}

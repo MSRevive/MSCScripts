@@ -1,0 +1,236 @@
+//Raven Mace, by Thothie - from Dark Maul
+//- Haste Effects (Cross Fingers) <<damage >speed <weight nofirebase
+//- WAAAAY too many backwards includes causing way too many issues - integrating all of them to figure what the deal
+{
+  const BASE_LEVEL_REQ     15
+ const ANIM_LIFT1         0
+ const ANIM_IDLE1         1
+ const ANIM_IDLE_TOTAL       1
+ const ANIM_ATTACK1       2
+ const ANIM_ATTACK2       3
+ const ANIM_ATTACK3       4
+ const ANIM_ATTACK4       5
+ const FIRST_ATK_ANIM  2
+ const LAST_ATK_ANIM   5
+ const ANIM_CHARGE  6
+ const ANIM_SHEATH  7 //to be added
+
+
+   const MELEE_STAT   bluntarms
+   const MELEE_DMG_TYPE  blunt
+   const MELEE_SOUND       SOUND_SWIPE
+   const SOUND_SWIPE        weapons/swingsmall.wav
+ 
+ setvard MELEE_VIEWANIM_ATK  ANIM_ATTACK1
+
+ //from base_blunt_twohanded
+ const PLAYERANIM_AIM  bluntdouble
+   const PLAYERANIM_SWING  swing_bluntdouble
+ //removed for item limit
+ //const SOUND_HITWALL1 debris/concrete1.wav
+ //const SOUND_HITWALL2 debris/concrete3.wav
+
+  const MELEE_DMG   140
+  const MELEE_DMG_RANGE  140
+  const MELEE_ENERGY  1
+
+  const MELEE_RANGE  70
+  const MELEE_DMG_DELAY  0.8
+  const MELEE_SOUND_DELAY   MELEE_DMG_DELAY
+  const MELEE_ATK_DURATION 1.1
+  const MELEE_ACCURACY  60%
+  const MELEE_PARRY_AUGMENT 0%
+  const EFFECT_SCRIPT  effects/effect_stun
+
+	const MODEL_VIEW viewmodels/v_2hblunts.mdl
+	const MODEL_VIEW_IDX 3
+
+const MODEL_WORLD weapons/p_weapons1.mdl
+const MODEL_HANDS weapons/p_weapons1.mdl
+const MODEL_BODY_OFS 74
+  const ANIM_PREFIX  ravenmace
+
+  const SOUND_HEARTBEAT amb/wind.wav //moved from amb/cavewind.wav for item limit
+
+  //for older SC.DLL users
+  precache MODEL_VIEW
+  precache MODEL_WORLD
+  precache MODEL_HANDS
+  precache SOUND_HEARTBEAT
+
+}
+
+#include items/base_melee
+
+{  weapon_spawn
+
+    name  a|Raven Mace
+    desc  An ornate maul hasted by infernal magics
+    weight  100
+    size  15
+    value 1100
+ sethand both
+    sethudsprite hand 101
+    sethudsprite trade 101 //needs hud sprite
+}
+
+{ weapon_deploy
+
+ if !RAVEN_IS_DEPLOYED
+ setgaitspeed 3.0
+ setvard RAVEN_IS_DEPLOYED 1
+ callevent haste_go
+ callevent 0.5 heartbeat_go
+}
+
+{ game_wear
+ callevent end_raven_effect
+}
+{ game_putinpack
+ callevent end_raven_effect
+}
+{ game_drop
+ callevent end_raven_effect
+}
+{ game_removefromowner
+ callevent end_raven_effect
+}
+{ game_removed
+ callevent end_raven_effect
+}
+{ game_fall
+ callevent end_raven_effect
+}
+{ game_sheath
+ callevent end_raven_effect
+}
+
+{ [override] special_01_start
+
+ playviewanim  ANIM_CHARGE
+   playowneranim once swing_bluntdouble
+  playsound const.snd.weapon const.snd.maxvol SPECIAL01_SND
+}
+
+{ [override] melee_start
+
+ setvard MELEE_VIEWANIM_ATK $rand(FIRST_ATK_ANIM,LAST_ATK_ANIM)
+ 
+ playviewanim  MELEE_VIEWANIM_ATK
+ playowneranim once PLAYERANIM_SWING global.anim.combatwalk 3
+ callevent MELEE_SOUND_DELAY melee_playsound
+}
+
+{ [override] bash
+
+ playviewanim  ANIM_CHARGE
+ playowneranim once PLAYERANIM_SWING global.anim.combatwalk 3
+ callevent MELEE_SOUND_DELAY melee_playsound
+}
+
+//{ haste_go
+//
+// if RAVEN_IS_DEPLOYED
+//  clientevent new all_in_sight effects/sfx_motionblur $get(ent_owner,index) 4.9
+//
+// applyeffect ent_owner effects/speed 4.9
+// callevent 5.0 haste_go
+//}
+
+{ heartbeat_go
+
+ if RAVEN_IS_DEPLOYED
+	callexternal ent_owner ext_ravenmace_sound
+ callevent 13.0 heartbeat_go
+}
+
+{ end_raven_effect
+
+ setvard RAVEN_IS_DEPLOYED 0
+}
+
+{ game_dodamage
+
+ setvard MELEE_VIEWANIM_ATK $rand(FIRST_ATK_ANIM,LAST_ATK_ANIM) //attempting to vary attack anim
+}
+
+//======base_blunt_one-handed
+{ weapon_spawn
+
+    //Blunt bash attack (200%) - Normal damage, but stun for several seconds
+    //======================================================================
+
+ local reg.attack.type  strike-land
+ local reg.attack.keys  -attack1
+ local reg.attack.range  MELEE_RANGE
+ local reg.attack.dmg  MELEE_DMG
+ local reg.attack.dmg.range MELEE_DMG_RANGE
+ local reg.attack.dmg.type MELEE_DMG_TYPE
+ //local reg.attack.aoe.range 100
+ //local reg.attack.aoe.falloff 1.5
+ local reg.attack.energydrain MELEE_ENERGY
+ multiply reg.attack.energydrain 2
+ local reg.attack.stat  MELEE_STAT
+ local reg.attack.hitchance MELEE_ACCURACY
+ add reg.attack.hitchance  10%
+ local reg.attack.priority 2
+ local reg.attack.delay.strike 1.5
+ local reg.attack.delay.end 2.0
+ local reg.attack.ofs.startpos MELEE_STARTPOS
+ local reg.attack.ofs.aimang MELEE_AIMANGLE
+ local reg.attack.callback special_02
+ local reg.attack.noise  1000
+   local reg.attack.chargeamt 200%
+   local reg.attack.reqskill 4
+ 
+ registerattack
+}
+
+{ special_02_start
+	playviewanim  ANIM_CHARGE
+	playowneranim once swing_bluntdouble
+	//applyeffect ent_owner effects/specialattack_bash
+	callevent 0.9 bash
+
+	if game.serverside
+	svplaysound 2 10 $get(ent_owner,scriptvar,'PLR_SOUND_SWORDREADY')
+}
+
+{ special_02_damaged_other //PARAM1 - Entity Damaged
+
+ local maxstun $get(ent_owner,skill.bluntarms.prof)
+ add maxstun 1
+ capvar maxstun 1 35
+ local stuntime $randf(1,$get(ent_owner,skill.bluntarms.prof))
+ applyeffect PARAM1 EFFECT_SCRIPT stuntime 0 0 $get(ent_owner,id)
+}
+
+{ bweapon_effect_remove
+	setvard RAVEN_IS_DEPLOYED 0
+	callevent speed_remove
+}
+
+{ speed_remove
+	setgaitspeed 1.0
+	local L_SCRIPTFLAG $get(ent_me,itemname)
+	//callexternal ent_owner ext_effect_speed remove L_SCRIPTFLAG
+	callexternal ent_owner plr_update_speed_effects remove L_SCRIPTFLAG
+	clientevent update all HASTE_FX_ID effect_die
+}
+
+{ speed_add
+	if game.item.wielded
+	if $get(ent_owner,scriptvar,'PLR_IN_WORLD')
+	local L_SCRIPTFLAG $get(ent_me,itemname)
+	if !$get_scriptflag(ent_owner,L_SCRIPTFLAG,name_exists)
+	//applyeffectstack ent_owner effects/speed_stacks -1 5.0 L_SCRIPTFLAG
+	callexternal ent_owner plr_change_speed -1 5.0 L_SCRIPTFLAG
+	clientevent new all effects/sfx_motionblur_perm $get(ent_owner,index)
+	setvard HASTE_FX_ID game.script.last_sent_id
+	//applyeffect ent_owner effects/speed 4.9
+	//callevent 5.0 haste_go
+}
+
+{ haste_go
+	callevent speed_add
+}

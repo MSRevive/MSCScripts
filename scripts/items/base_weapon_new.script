@@ -1,0 +1,359 @@
+//Base Weapon New by Thothie for more dynamic weapons
+
+{
+//REQUIRED (examples for polearm - but please use polearms_base for polearms
+
+//	const BWEAPON_NAME "a|Quarterstaff"
+//	const BWEAPON_DESC "A heavy staff reinforced with iron"
+//	const BWEAPON_WEIGHT 3
+//	const BWEAPON_VALUE 25
+//	const BWEAPON_INV_SPRITE_IDX 139
+//	const BWEAPON_HANDS both //both|right|undroppable
+
+//	const BASE_LEVEL_REQ 5
+
+//	const VMODEL_FILE viewmodels/v_polearms.mdl
+//	const VMODEL_IDX 1 //viewmodel offset (-1 from JHLMV index)
+//	const PMODEL_FILE weapons/p_weapons3.mdl //p_model (world/player model file)
+//	const PMODEL_IDX_FLOOR 61 //p_model floor offset (-1 from JHLMV index)
+//	const PMODEL_IDX_HAND_RIGHT 62 //p_model hands offset (-1 from JHLMV index)
+//	const PMODEL_IDX_HAND_LEFT 62 //p_model hands offset (-1 from JHLMV index)
+
+//	const PANIM_IDLE aim_pole
+//	const PANIM_EXT pole //extention for automatic player anims
+
+//	const VANIM_IDLE 0
+//	const VANIM_DRAW 3
+//
+//	const WANIM_FLOOR standard_floor_idle
+//	const WANIM_HAND standard_idle
+
+	const BWEAPON_DBL_CHARGE_ADJ 2.0
+
+	const ATK1_TYPE strike-land //strike-land|target|charge-throw-projectile|hold-strike
+	const ATK1_KEYS +attack1
+	const ATK1_RANGE 90 //max reach
+	const ATK1_DMG 120 //max damage
+	const ATK1_DMG_RANGE 10 //damage +/-
+	const ATK1_DMG_TYPE blunt //damage type
+	const ATK1_STAMINA 1 //stamina drain
+	const ATK1_SKILL polearms //skill to use for dmg and xp
+	const ATK1_ACCURACY 85 //base chance to hit (raises slightly with skill)
+	const ATK1_DELAY_STRIKE 0.6 //delay before attack strikes (to match viewmodel anim)
+	const ATK1_DURATION 1.1 //total delay before attack completes
+	const ATK1_OFS 0 //should control ofset of attack, but not seen used
+	const ATK1_ANG 0 //should control angle of attack, but not seen used
+	const ATK1_CALLBACK atk1 //callback prefix (atk1_start atk1_strike atk1_dodamage etc.)
+	const ATK1_NOISE 650 //radius of noise that attacks alert monsters that can hear
+	const ATK1_SKILL_LEVEL BASE_LEVEL_REQ //base weapon requirements
+	const ATK1_MPDRAIN 0 //mana drain
+	const ATK1_DMG_MULTI 0 //multiply dmg
+	const ATK1_NO_AUTOAIM 0 //don't use auto aim
+	const ATK1_PANIM pole_swing //player anim for this atk
+	const ATK1_VANIM 4 //viewmodel anim for this atk
+	const SOUND_ATK1 weapons/cbar_miss1.wav //sound to play when attack starts
+	const PITCH_ATK1 100 //pitch for attack sound (can be set random)
+
+	const ATK1_IS_PROJECTILE 0 //use flag if projectile
+	const ATK1_PROJECTILE arrow //base projectile script
+	const ATK1_AMMODRAIN 1 //amount of ammo to drain
+	const ATK1_COF 0 //cone of fire
+
+	//attack2 defaults to double damage strike
+	const ATK2_TYPE ATK1_TYPE
+	const ATK2_KEYS -attack1 //charged attacks must be -attack
+	const ATK2_RANGE ATK1_RANGE
+	const ATK2_DMG ATK1_DMG
+	const ATK2_DMG_RANGE ATK1_DMG_RANGE
+	const ATK2_DMG_TYPE AT1_DMG_TYPE
+	const ATK2_STAMINA ATK1_STAMINA
+	const ATK2_SKILL ATK1_SKILL
+	const ATK2_ACCURACY ATK1_ACCURACY
+	const ATK2_DELAY_STRIKE ATK1_DELAY_STRIKE
+	const ATK2_DURATION ATK1_DURATION
+	const ATK2_OFS 0 ATK1_OFS
+	const ATK2_ANG 0 ATK1_ANG
+	const ATK2_CALLBACK atk2
+	const ATK2_NOISE ATK1_NOISE
+	const ATK2_SKILL_LEVEL BASE_LEVEL_REQ
+	const ATK2_ADD_SKILL_REQ 2
+	const ATK2_MPDRAIN 0
+	const ATK2_DMG_MULTI 2
+	const ATK2_NO_AUTOAIM 0
+	const ATK2_PANIM pole_swing 
+	const ATK2_VANIM 5 
+	const ATK2_IS_PROJECTILE 0
+	const ATK2_PROJECTILE arrow
+	const ATK2_AMMODRAIN 1
+	const ATK2_COF 0
+	const SOUND_ATK2 zombie/claw_miss2.wav
+	const PITCH_ATK2 100
+
+	const SOUND_HITWALL1 weapons/bullet_hit1.wav
+	const SOUND_HITWALL2 weapons/bullet_hit2.wav
+}
+
+#include items/base_hide_stuff
+#include items/base_item_extras
+
+{ game_spawn
+	name  BWEAPON_NAME
+	desc  BWEAPON_DESC
+	weight  BWEAPON_WEIGHT
+	size  1 //unused, but set here, just in case
+	value BWEAPON_VALUE
+	sethudsprite trade BWEAPON_INV_SPRITE_IDX
+
+	setmodel PMODEL_FILE
+	setworldmodel PMODEL_FILE
+	sethand BWEAPON_HANDS
+
+	callevent bitem_register_attacks
+}
+
+{ game_deploy
+
+	callevent bitem_draw
+
+	if game.serverside
+	setvard GAME_PVP game.pvp
+	callevent bitem_check_skill
+	callevent 0.01 bitem_setup_model
+}
+
+{ game_show
+
+	callevent bweapon_show
+}
+
+{ bweapon_show
+	setviewmodel VMODEL_FILE
+	//setworldmodel PMODEL_FILE
+	setmodel PMODEL_FILE
+	if ( game.item.hand_index == 0 )
+	{
+		setmodelbody 0 PMODEL_IDX_HAND_LEFT
+	}
+	else
+	{
+		setmodelbody 0 PMODEL_IDX_HAND_RIGHT
+	}
+}
+
+{ game_switchhands
+	if !BWEAPON_CUSTOM_SWITCHHANDS
+	playviewanim VANIM_IDLE
+}
+
+{ game_pickup
+	callevent bitem_draw
+}
+
+{ game_fall
+ 	setmodelbody 0 PMODEL_IDX_FLOOR
+	playanim WANIM_FLOOR
+}
+
+{ game_drop
+	local RL_HAND game.item.hand_index
+	callexternal ent_owner ext_set_hand_id RL_HAND 0
+}
+
+{ bitem_draw
+	if !BWEAPON_CUSTOM_DRAW
+	playviewanim break
+	playanim break
+
+	callevent bweapon_show
+
+	setanimext PANIM_EXT
+
+	if game.clientside
+	playviewanim VANIM_DRAW
+	playanim WANIM_HAND
+	//if setting up idle anims, call cl event
+}
+
+{ bitem_setup_model
+	if $get(ent_me,wielded)
+	setviewmodelprop ent_me submodel $get(ent_owner,scriptvar,'PLR_HAND_SET') VMODEL_IDX
+	callevent 1.0 bitem_setup_model2
+}
+
+{ bitem_setup_model2
+	if $get(ent_me,wielded)
+	dbg bi_setup_model2
+	setviewmodelprop ent_me submodel $get(ent_owner,scriptvar,'PLR_HAND_SET') VMODEL_IDX
+}
+
+{ bitem_register_attacks
+
+	//yet to be tested:
+	//reg.attack.aoe.range
+	//reg.attack.aoe.falloff
+	//reg.attack.dmg.ignore //no damage?
+
+	if ( !BITEM_CUSTOM_ATK1_REGISTER )
+	{
+		local reg.attack.priority 0
+		local reg.attack.type ATK1_TYPE
+		local reg.attack.keys ATK1_KEYS
+		local reg.attack.range ATK1_RANGE
+		local reg.attack.dmg ATK1_DMG
+		local reg.attack.dmg.range ATK1_DMG_RANGE
+		local reg.attack.dmg.type ATK1_DMG_TYPE
+		local reg.attack.energydrain ATK1_STAMINA
+		local reg.attack.stat ATK1_SKILL
+		local reg.attack.hitchance ATK1_ACCURACY
+		local reg.attack.delay.strike ATK1_DELAY_STRIKE
+		local reg.attack.delay.end ATK1_DURATION
+		local reg.attack.ofs.startpos ATK1_OFS
+		local reg.attack.ofs.aimang ATK1_ANG
+		local reg.attack.callback ATK1_CALLBACK
+		local reg.attack.noise ATK1_NOISE
+		local reg.attack.mpdrain ATK1_MPDRAIN
+		local reg.attack.dmg.multi ATK1_DMG_MULTI
+		local reg.attack.noautoaim ATK1_NO_AUTOAIM
+		local reg.attack.reqskill ATK1_SKILL_LEVEL
+
+		setvard WEAPON_PRIMARY_SKILL reg.attack.stat
+
+		if ( ATK1_IS_PROJECTILE )
+		{
+			local reg.attack.ammodrain ATK1_AMMODRAIN
+			local reg.attack.projectile ATK1_PROJECTILE
+			local reg.attack.COF ATK1_COF
+		}
+
+		registerattack
+	}
+
+	if ( !BITEM_CUSTOM_ATK2_REGISTER )
+	{
+		local reg.attack.priority 1
+		local reg.attack.chargeamt	100
+		local reg.attack.type ATK2_TYPE
+		local reg.attack.keys ATK2_KEYS
+		local reg.attack.range ATK2_RANGE
+		local reg.attack.dmg ATK2_DMG
+		local reg.attack.dmg.range ATK2_DMG_RANGE
+		local reg.attack.dmg.type ATK2_DMG_TYPE
+		local reg.attack.energydrain ATK2_STAMINA
+		local reg.attack.stat ATK2_SKILL
+		local reg.attack.hitchance ATK2_ACCURACY
+		local reg.attack.delay.strike ATK2_DELAY_STRIKE
+		local reg.attack.delay.end ATK2_DURATION
+		local reg.attack.ofs.startpos ATK2_OFS
+		local reg.attack.ofs.aimang ATK2_ANG
+		local reg.attack.callback ATK2_CALLBACK
+		local reg.attack.noise ATK2_NOISE
+		local reg.attack.mpdrain ATK2_MPDRAIN
+		local reg.attack.dmg.multi ATK2_DMG_MULTI
+		dbg $get(ent_me,name) multi ATK2_DMG_MULTI
+		if ( ATK2_DMG_MULTI != 0 ) multiply reg.attack.dmg ATK2_DMG_MULTI
+		local reg.attack.noautoaim ATK2_NO_AUTOAIM
+		local reg.attack.reqskill ATK2_SKILL_LEVEL
+		add reg.attack.reqskill ATK2_ADD_SKILL_REQ
+
+		if ( ATK2_IS_PROJECTILE )
+		{
+			local reg.attack.ammodrain ATK2_AMMODRAIN
+			local reg.attack.projectile ATK2_PROJECTILE
+			local reg.attack.COF ATK2_COF
+		}
+
+		registerattack
+	}
+
+	//atk3 should be priority 2 and 200%, -attack, etc.
+}
+
+{ game_attack_cancel
+	playowneranim once PANIM_IDLE global.anim.combatwalk 3
+}
+
+{ game_hitworld
+	//dbg game_hitworld
+	if !BWEAPON_CUSTOM_HITWALL
+	playrandomsound 2 10 SOUND_HITWALL1 SOUND_HITWALL2
+}
+
+{ atk1_start
+	if !BITEM_CUSTOM_ATK1_EVENT
+	playviewanim ATK1_VANIM
+	playowneranim critical ATK1_PANIM global.anim.combatwalk 3
+	playsound 1 10 SOUND_ATK1 0.8 PITCH_ATK1
+}
+
+{ atk2_start
+	if !BITEM_CUSTOM_ATK2_EVENT
+	playviewanim ATK2_VANIM
+	playowneranim critical ATK2_PANIM global.anim.combatwalk 3
+	playsound 1 10 SOUND_ATK2 0.8 PITCH_ATK2
+}
+
+{ bitem_check_skill
+	if $get(ent_owner,scriptvar,'PLR_IN_WORLD')
+
+	local FIND_MELEE_STAT "skill."
+	stradd FIND_MELEE_STAT ATK1_SKILL
+
+	local L_OWNER_SKILL $get(ent_owner,FIND_MELEE_STAT)
+
+	dbg bitem_check_skill FIND_MELEE_STAT L_OWNER_SKILL
+
+	if ( L_OWNER_SKILL < BASE_LEVEL_REQ )
+	{
+		dplayermessage ent_owner You lack the skill to properly wield this weapon!
+		local OUT_STR "You lack the proficiency to wield this weapon properly. ( requires: "
+		stradd OUT_STR ATK1_SKILL
+		stradd OUT_STR " proficiency "
+		stradd OUT_STR BASE_LEVEL_REQ
+		stradd OUT_STR " )"
+		infomsg ent_owner "Insufficient Skill" OUT_STR
+		setvard BITEM_UNDERSKILLED 1
+		setvard BITEM_WAS_UNDERSKILLED 1
+		attackprop ent_me 0 dmg.multi 0.1
+	}
+	else
+	{
+		setvard BITEM_UNDERSKILLED 0
+		if BITEM_WAS_UNDERSKILLED
+		attackprop ent_me 0 dmg.multi 1.0
+		setvard BITEM_WAS_UNDERSKILLED 0
+	}
+}
+
+{ game_setchargepercent
+	//dbg game_setchargepercent PARAM1
+	setvard BWEAPON_CHARGE_PERCENT PARAM1
+}
+
+{ atk1_damaged_other
+	if ( BWEAPON_CHARGE_PERCENT > 0.25 )
+	{
+		subtract BWEAPON_CHARGE_PERCENT 0.25
+
+		local L_CHARGE_RATIO $ratio(BWEAPON_CHARGE_PERCENT,1.25,BWEAPON_DBL_CHARGE_ADJ)
+
+		local NEW_DMG PARAM2
+		multiply NEW_DMG L_CHARGE_RATIO
+		setdmg dmg NEW_DMG
+		returndata L_CHARGE_RATIO
+		dbg Adjusted dmg x L_CHARGE_RATIO
+		setvard BWEAPON_CHARGE_PERCENT 0
+
+		local CUR_DRAIN MELEE_ENERGY
+		multiply CUR_DRAIN BWEAPON_CHARGE_PERCENT
+		drainstamina ent_owner CUR_DRAIN
+	}
+}
+
+
+//{ game_attack1_down
+//	dbg game_attack1_down
+//}
+//
+//{ game_+attack2
+//	dbg game_+attack2
+//}

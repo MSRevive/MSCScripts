@@ -1,0 +1,214 @@
+//Guided Sphere form client_side_fireball by Thothie
+// - same principle as fire ball, but passes through targets, affecting them
+#scope client
+{ [client]
+	const FIREBALL_SPEED 120
+	const FIREBALL_SPRITE 3dmflaora.spr
+	const EMITTER_SPRITE 3dmflaora.spr
+	//const SOUND_KABOOM weapons/explode3.wav
+	setvard IS_COLORED 0
+	setvard NEW_COLOR (255,255,255)
+	const SPRITE_FRAMES_SMALL 1
+	const SPRITE_FRAMES_LARGE 1
+	const SPRITE_SCALE_SMALL 0.5
+	const SPRITE_SCALE_LARGE 2.0
+	const SPRITE_SCALE_KABOOM 3.0
+	const SOUND_UPDATE1 debris/zap1.wav
+	const SOUND_UPDATE2 debris/zap3.wav
+	const SOUND_UPDATE3 debris/zap3.wav
+	const SPHERE_RADIUS 64
+}
+
+{ [client] client_activate //<spawn_pos> <startang> <type(unused)> <owner> <hand_idx> <target>
+
+	local MY_ORG PARAM1
+	setvard VEL_ANGLES PARAM2
+	setvard SPHERE_TYPE PARAM3
+	setvard MY_OWNER PARAM4
+	setvard OWNER_HAND_IDX attachment
+	stradd OWNER_HAND_IDX PARAM5
+	setvard MY_TARGET PARAM6
+
+	dbg **** MY_ORG VEL_ANGLES SPHERE_TYPE
+
+	setvard IS_ACTIVE 1
+	setvard FB_SERVER_ORG MY_ORG
+	cleffect tempent sprite FIREBALL_SPRITE MY_ORG setup_fireball update_fireball
+	sound.play3d magic/alien_beacon_noloop.wav 10 FB_ORG
+
+	callevent 21.0 fireball_end //case I don't get called for some reason
+}
+
+{
+repeatdelay 3.0
+	if IS_ACTIVE
+	cleffect tempent sprite FIREBALL_SPRITE FB_ORG setup_fireball update_fireball
+	setvard OWNER_HANDPOS $getcl(MY_OWNER,OWNER_HAND_IDX)
+	cleffect beam_points OWNER_HANDPOS FB_ORG lgtning.spr 0.5 3.0 0.5 255 50 30 (255,255,0)
+
+	local RND_SOUND $rand(1,3)
+	if ( RND_SOUND == 1 ) sound.play3d SOUND_UPDATE1 10 FB_ORG
+	if ( RND_SOUND == 2 ) sound.play3d SOUND_UPDATE2 10 FB_ORG
+	if ( RND_SOUND == 3 ) sound.play3d SOUND_UPDATE3 10 FB_ORG
+}
+
+{
+repeatdelay 0.30
+	setvard OWNER_HANDPOS $getcl(MY_OWNER,OWNER_HAND_IDX)
+	cleffect beam_points OWNER_HANDPOS FB_ORG lgtning.spr 0.25 1.0 0.25 255 50 30 (255,255,0)
+}
+
+{ [client] update_fireball //<veladj:0|1> <angles>
+
+	if ( !IS_ACTIVE )
+	{
+		if !IS_DESTROYED
+		cleffect tempent set_current_prop death_delay 0.1
+		setvard IS_DESTROYED 1 
+	}
+
+	if IS_ACTIVE
+
+	local F_FIREBALL_SPEED FIREBALL_SPEED
+
+	setvard FB_ORG game.tempent.origin
+
+
+
+	local FB_ANGLES game.tempent.angles
+	local SERVER_CLIENT_DIFFERENCE $dist(FB_ORG,FB_SERVER_ORG)
+	if ( SERVER_CLIENT_DIFFERENCE > 128 )
+	{
+		cleffect tempent set_current_prop origin FB_SERVER_ORG
+		cleffect beam_points OWNER_HANDPOS FB_ORG lgtning.spr 0.25 1.0 0.25 255 50 30 (255,255,0)
+		sound.play3d SOUND_UPDATE 10 FB_ORG
+		cleffect tempent sprite EMITTER_SPRITE FB_ORG spit_flames
+		cleffect tempent sprite EMITTER_SPRITE FB_ORG spit_flames
+		cleffect tempent sprite EMITTER_SPRITE FB_ORG spit_flames
+	}
+	else
+	{
+		local IN_CONE $within_cone(FB_SERVER_ORG,FB_ORG,FB_ANGLES,10)
+		//dbg *** incone SERVER_CLIENT_DIFFERENCE
+		if ( IN_CONE )
+		{
+			multiply F_FIREBALL_SPEED 1.5
+		}
+		else
+		{
+			multiply F_FIREBALL_SPEED 0.75
+		}
+	}
+
+	cleffect tempent set_current_prop angles VEL_ANGLES
+	cleffect tempent set_current_prop velocity $relvel(VEL_ANGLES,$vec(0,F_FIREBALL_SPEED,0))
+}
+
+//{ [client]
+//repeatdelay $randf(0.01,0.05)
+//	if IS_ACTIVE
+//	cleffect tempent sprite EMITTER_SPRITE FB_ORG spit_flames
+//	cleffect tempent sprite EMITTER_SPRITE FB_ORG spit_flames
+//	cleffect tempent sprite EMITTER_SPRITE FB_ORG spit_flames
+//}
+
+{ [client] svr_update_fireball_vec //<angs> <where_server_thinks_I_am> <target_idx>
+	setvard VEL_ANGLES PARAM1
+	setvard FB_SERVER_ORG PARAM2
+	setvard MY_TARGET PARAM3
+	setvard OWNER_HANDPOS $getcl(MY_OWNER,OWNER_HAND_IDX)
+}
+
+{ [client] setup_fireball
+	cleffect tempent set_current_prop death_delay    3.0
+	cleffect tempent set_current_prop renderamt   255
+	cleffect tempent set_current_prop rendermode add
+	cleffect tempent set_current_prop scale SPRITE_SCALE_LARGE
+	cleffect tempent set_current_prop gravity    0
+	cleffect tempent set_current_prop velocity $relvel(VEL_ANGLES,$vec(0,FIREBALL_SPEED,0))
+	cleffect tempent set_current_prop collide    none
+	cleffect tempent set_current_prop framerate	30
+	cleffect tempent set_current_prop frames	SPRITE_FRAMES_LARGE
+	cleffect tempent set_current_prop update 1
+	if ( IS_COLORED ) cleffect tempent set_current_prop rendercolor NEW_COLOR 
+}
+
+{ [client] spit_flames
+
+	cleffect tempent set_current_prop death_delay 	0.5
+	cleffect tempent set_current_prop fadeout 	0.5
+	cleffect tempent set_current_prop velocity 	 $relvel(VEL_ANGLES,$vec($randf(-120,120),$neg(FIREBALL_SPEED),$rand(0,120)))
+	cleffect tempent set_current_prop bouncefactor 	5
+	cleffect tempent set_current_prop scale 	SPRITE_SCALE_SMALL
+	cleffect tempent set_current_prop renderamt	180
+	cleffect tempent set_current_prop rendermode add
+	cleffect tempent set_current_prop gravity 	1.0
+	cleffect tempent set_current_prop collide 	all;die
+	cleffect tempent set_current_prop framerate	30
+	cleffect tempent set_current_prop frames	SPRITE_SCALE_SMALL
+	if ( IS_COLORED ) cleffect tempent set_current_prop rendercolor NEW_COLOR
+}
+
+{ [client] setup_kaboom
+
+	local RND_YAW $randf(0,359)
+	local RND_PITCH $randf(0,359)
+
+	cleffect tempent set_current_prop death_delay 	0.5
+	cleffect tempent set_current_prop fadeout 	0.5
+	cleffect tempent set_current_prop velocity 	 $relvel($vec(RND_PITCH,RND_YAW,0),$vec(0,RND_FB,0))
+	cleffect tempent set_current_prop bouncefactor 	0
+	cleffect tempent set_current_prop scale 	SPRITE_SCALE_KABOOM
+	cleffect tempent set_current_prop renderamt	180
+	cleffect tempent set_current_prop rendermode add
+	cleffect tempent set_current_prop gravity 	0
+	cleffect tempent set_current_prop collide 	none
+	cleffect tempent set_current_prop framerate	30
+	cleffect tempent set_current_prop frames	SPRITE_FRAMES_LARGE
+	if ( IS_COLORED ) cleffect tempent set_current_prop rendercolor NEW_COLOR
+}
+
+//{ [client] fireball_explode
+//	setvard IS_ACTIVE 0
+//
+//	setvard RND_FB 1000
+//	cleffect tempent sprite FIREBALL_SPRITE FB_ORG setup_kaboom
+//	setvard RND_FB -1000
+//	cleffect tempent sprite FIREBALL_SPRITE FB_ORG setup_kaboom
+//	setvard RND_FB 1000
+//	cleffect tempent sprite FIREBALL_SPRITE FB_ORG setup_kaboom
+//	setvard RND_FB -1000
+//	cleffect tempent sprite FIREBALL_SPRITE FB_ORG setup_kaboom
+//
+//	callevent fireball_end
+//	sound.play3d SOUND_KABOOM 10 FB_ORG
+//}
+
+
+{ [client] fireball_end
+	setvard IS_ACTIVE 0
+	callevent 1.0 end_effect //give a sec for tempents to disipate
+}
+
+{ [client] end_effect
+	removescript
+}
+
+{
+repeatdelay 0.5
+	if IS_ACTIVE
+
+	local TARG_ORG $getcl(MY_TARGET,origin)
+	local TARG_DIST $dist(FB_ORG,TARG_ORG)
+	if TARG_DIST > 0
+	if TARG_DIST < SPHERE_RADIUS
+
+
+	sound.play3d magic/alien_frantic_1sec_noloop.wav 10 FB_ORG
+}
+
+{
+repeatdelay 1.0
+	if IS_ACTIVE
+	sound.play3d magic/alien_beacon_1sec_noloop.wav 10 FB_ORG
+}

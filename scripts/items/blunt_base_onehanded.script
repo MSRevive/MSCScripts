@@ -1,0 +1,107 @@
+//Blunt weapon (one-handed)
+//
+
+{
+	const ANIM_LIFT1        	0
+	const ANIM_IDLE1        	1
+	const ANIM_IDLE_TOTAL        	1
+	const ANIM_ATTACK1      	2
+	const ANIM_ATTACK2      	3
+	const ANIM_ATTACK3      	4
+	const ANIM_SHEATH      		5
+	const MELEE_VIEWANIM_ATK 	ANIM_ATTACK1
+
+  	const MELEE_STAT		bluntarms
+  	const MELEE_DMG_TYPE		blunt
+  	const MELEE_SOUND     		SOUND_SWIPE
+  	const SOUND_SWIPE      		weapons/swingsmall.wav
+  	const PLAYERANIM_AIM		blunt
+  	const PLAYERANIM_SWING		swing_blunt
+  	const MELEE_SOUND_DELAY     	MELEE_DMG_DELAY
+  	const MELEE_PARRY_AUGMENT    	0%
+  	const ANIM_PREFIX		rustedaxe
+
+  	const MODEL_WORLD      		weapons/p_weapons1.mdl
+  	const MODEL_HANDS      		MODEL_WORLD
+
+	const EFFECT_SCRIPT		effects/effect_stun
+
+	const SPECIAL_02_CALLBACK special_02
+	const SPECIAL_02_DELAY_STRIKE 1.5
+	const SPECIAL_02_DELAY_END 2.0
+
+	const SPECIAL_02_RANGE MELEE_RANGE
+
+	const SOUND_HITWALL1 weapons/xbow_hitbod1.wav
+	const SOUND_HITWALL2 weapons/cbar_hitbod2.wav
+}
+
+#include items/base_melee
+
+{ weapon_spawn
+
+    	sethand right
+
+
+	if !CUSTOM_REGISTER_BLUNT
+
+   	//Blunt bash attack (200%) - Normal damage, but stun for several seconds
+   	//======================================================================
+
+	if ( SECONDARY_DMG equals 'SECONDARY_DMG' ) local SECONDARY_DMG MELEE_DMG
+
+	local reg.attack.type		strike-land
+	local reg.attack.keys		-attack1
+	local reg.attack.range		SPECIAL_02_RANGE
+	local reg.attack.dmg		SECONDARY_DMG
+	local reg.attack.dmg.range	MELEE_DMG_RANGE
+	local reg.attack.dmg.type	MELEE_DMG_TYPE
+	//local reg.attack.aoe.range	100
+	//local reg.attack.aoe.falloff	1.5
+	local reg.attack.energydrain	MELEE_ENERGY
+	multiply reg.attack.energydrain	2
+	local reg.attack.stat		MELEE_STAT
+	local reg.attack.hitchance	MELEE_ACCURACY
+	add reg.attack.hitchance 	10%
+	local reg.attack.priority	2
+	local reg.attack.delay.strike	SPECIAL_02_DELAY_STRIKE
+	local reg.attack.delay.end	SPECIAL_02_DELAY_END
+	local reg.attack.ofs.startpos	MELEE_STARTPOS
+	local reg.attack.ofs.aimang	MELEE_AIMANGLE
+	local reg.attack.callback	SPECIAL_02_CALLBACK
+	local reg.attack.noise		1000
+  	local reg.attack.chargeamt	200%
+  	local reg.attack.reqskill	4
+	if ( SPECIAL_02_MP isnot 'SPECIAL_02_MP' ) local reg.attack.mpdrain SPECIAL_02_MP
+	if ( BASE_LEVEL_REQ > reg.attack.reqskill ) add reg.attack.reqskill BASE_LEVEL_REQ
+	
+	registerattack
+}
+
+{  special_02_start
+
+	callevent 0.9 bash
+
+	if game.serverside
+	svplaysound 2 10 $get(ent_owner,scriptvar,'PLR_SOUND_SWORDREADY')
+
+}
+
+{  bash
+
+	if game.item.attacking		//Just in case player dies
+	playviewanim	 MELEE_VIEWANIM_ATK
+	playowneranim once PLAYERANIM_SWING global.anim.combatwalk 3
+	if game.serverside
+	svplaysound 2 10 $get(ent_owner,scriptvar,'PLR_SOUND_SHOUT1')
+}
+
+{  special_02_damaged_other //PARAM1 - Entity Damaged
+
+	if !BLUNT_NO_STUN
+	local maxstun $get(ent_owner,skill.bluntarms.prof)
+	add maxstun 1
+	capvar maxstun 1 45
+	local stuntime $randf(1,maxstun)
+	applyeffect PARAM1 EFFECT_SCRIPT stuntime 0 0 $get(ent_owner,id)
+}

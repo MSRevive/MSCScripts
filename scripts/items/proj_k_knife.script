@@ -1,0 +1,115 @@
+//Kharaztorant knife, (from catapult, don't ask), by Thothie
+//- This knife's damage type and appearance is determined by its owner
+
+{
+  	const MODEL_WORLD	weapons/projectiles.mdl
+	setvar ARROW_BODY_OFS		26
+	setvar MODEL_BODY_OFS		26
+	const PROJ_ANIM_IDLE idle_standard
+	const ARROW_EXPIRE_DELAY 1
+	const PROJ_DAMAGE		$rand(60,90)
+	const PROJ_STICK_DURATION	2	//How long to stick in enemies
+	const ARROW_SOLIDIFY_ON_WALL	1  	//base_arrow: Turns solid when a wall is hit
+	const ARROW_BREAK_CHANCE	100%	//base_arrow: Chance of breaking upon hit
+
+	const SOUND_HITWALL1 weapons/dagger/daggermetal1.wav
+	const SOUND_HITWALL2 weapons/dagger/daggermetal2.wav
+
+	const PROJ_DAMAGE_TYPE		pierce
+	//const PROJ_DAMAGE		$rand(200,300)
+//	const PROJ_AOE_RANGE		0
+//	const PROJ_AOE_FALLOFF		0
+	//recache rockgibs.mdl
+}
+
+#include items/proj_arrow_base
+
+{ arrow_spawn
+
+	name 		a|Kharaztorant Knife
+	desc 		An evil magical knife
+	weight 		0.1
+	size 		1
+	value		0
+	gravity		0
+	groupable    	25
+	//dbg spawned
+}
+
+{ game_tossprojectile
+	gravity 0
+	setvard MY_OWNER $get(ent_expowner,id)
+	setvard MY_WEAPON $get(MY_OWNER,active_item)
+	setvard OWNER_TYPE $get(MY_OWNER,scriptvar,ALCO_TYPE)
+	setvard OWNER_ISPLAYER $get(MY_OWNER,isplayer)
+
+	if ( OWNER_ISPLAYER )
+	{
+		setvard SPAWN_ITEM $get(MY_OWNER,scriptvar,ALCO_SPAWN_ITEM)
+	}
+
+	if ( OWNER_TYPE equals ninja )
+	{
+		setvar ARROW_BODY_OFS 26
+	}
+	if ( OWNER_TYPE equals fire )
+	{
+		setvar ARROW_BODY_OFS 27
+		setvard EFFECT_SCRIPT effects/effect_burn
+		setvard EFFECT_DUR 5.0
+		setvard EFFECT_DMG 30
+	}
+	if ( OWNER_TYPE equals poison )
+	{
+		setvar ARROW_BODY_OFS 28
+		setvard EFFECT_SCRIPT effects/effect_poison
+		setvard EFFECT_DUR 15.0
+		setvard EFFECT_DMG 8
+	}
+	if ( OWNER_TYPE equals cold )
+	{
+		setvar ARROW_BODY_OFS 29
+		setvard EFFECT_SCRIPT effects/effect_frostbite_dmg
+		setvard EFFECT_DUR 5.0
+		setvard EFFECT_DMG 10
+	}
+
+	setmodelbody 0 ARROW_BODY_OFS
+
+	//dbg temp OWNER_TYPE
+}
+
+{ game_dodamage
+
+	if PARAM1
+
+	if ( OWNER_ISPLAYER ) callexternal MY_OWNER knife_return
+
+	if OWNER_TYPE isnot ninja
+	if $get(PARAM2,relationship,MY_OWNER) equals enemy
+
+	if game.serverside
+	if ( OWNER_ISPLAYER )
+	{
+		if $get(PARAM2,isplayer)
+		local PVP_SET game.pvp
+		if PVP_SET equals 0
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	if EFFECT_SCRIPT isnot 'EFFECT_SCRIPT'
+	applyeffect PARAM2 EFFECT_SCRIPT EFFECT_DUR MY_OWNER EFFECT_DMG 1 1
+}
+
+{ hitwall
+
+	if ( OWNER_ISPLAYER ) callexternal MY_WEAPON knife_return
+	solidifyprojectile
+	deleteent ent_me fade
+}
+
+{ game_hitnpc
+	if ( OWNER_ISPLAYER ) callexternal MY_WEAPON knife_return
+	deleteent ent_me fade
+}

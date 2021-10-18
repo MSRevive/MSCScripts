@@ -1,0 +1,143 @@
+#scope server
+{
+	const NPC_BASE_EXP 200
+
+	const SOUND_ATTACK1 monsters/goblin/c_gargoyle_atk1.wav
+	const SOUND_ATTACK2 monsters/goblin/c_gargoyle_atk2.wav
+	const SOUND_ATTACK3 monsters/goblin/c_gargoyle_atk3.wav
+	const SOUND_BREATH monsters/goblin/sps_fogfire.wav
+	const STEP_SIZE_NORM 36
+
+	const CAN_STUN 1
+
+	setvard DROP_GOLD 1
+	setvard DROP_GOLD_AMT $rand(20,40)
+
+	setvard ANIM_ATTACK swordswing1_L
+
+	const DMG_AXE $rand(40,75)
+	const DMG_CHARGE 50
+
+	setvard ATTACK_HITCHANCE 80%
+
+	//has to be redefined here - doesn't seem to precache in base
+	const SOUND_DEATH monsters/goblin/c_goblin_dead.wav
+	precache SOUND_DEATH
+}
+
+#include monsters/bgoblin
+
+{ [override] [shared] goblin_spawn
+
+	name a|Hobgoblin Berserker
+	race goblin
+	blood red
+	hp 1500
+	roam 1
+
+	setanim.framerate 2.0
+
+	hearingsensitivity 4
+
+	setmodel monsters/goblin_new_boss.mdl
+	width 32
+	height 72
+
+	setmodelbody 0 0 //body: 0-Bare 1-Quiver&Strap
+	setmodelbody 1 2 //head: 0-Bare 1-Horns 2-Animal 3-Chief 4-Rag
+	setmodelbody 2 6 //weapon: 0-Unarmed 1-SkullClub 2-DragonAxe 3-Knife 4-Bow 5-Raxe 6-SW&SH
+	setmodelbody 3 0 //arrow: On/off
+
+	setprop ent_me skin 0 //0-norm 1-blood 2-vile 3-shadow
+
+	setidleanim ANIM_IDLE
+	setmoveanim ANIM_WALK
+
+	takedmg all 0.7
+	setstat parry 120
+}
+
+//less likey to jump, but jumps higher, if needed to reach target
+{ [override] gob_jump_check
+
+	if GOB_JUMPER
+	if GOB_JUMP_SCANNING
+
+	local GOB_HOP_DELAY $randf(2,4)
+
+	callevent GOB_HOP_DELAY gob_jump_check
+
+	if NPCATK_TARGET isnot unset
+	if !IS_FLEEING
+	if !SUSPEND_AI
+	if $get(NPCATK_TARGET,range) < GOBLIN_JUMPRANGE
+
+	//jump at target if he's higher than I am
+	local ME_Z game.monster.origin.z
+	local TARG_Z $get(NPCATK_TARGET,origin.z)
+	if ( $get(NPCATK_TARGET,isplayer) ) subtract TARG_Z 38 //player center compensation
+
+	if ( ME_Z > TARG_Z )
+	{
+		local Z_DIFF ME_Z
+		subtract ME_Z TARG_Z
+	}
+	else
+	{
+		local Z_DIFF TARG_Z
+		subtract Z_DIFF ME_Z
+	}
+
+	if ( Z_DIFF > ATTACK_RANGE )
+	{
+		playanim critical ANIM_SMASH
+		callevent 0.1 do_jump //bludgeon style
+	}
+}
+
+{ do_jump
+	stepsize 1000
+	addvelocity ent_me $relvel(0,-200,800)
+	callevent 0.5 push_forward
+	callevent 1.0 jump_done
+}
+
+{ push_forward
+	addvelocity ent_me $relvel(0,400,100)
+}
+
+{ jump_done
+	stepsize STEP_SIZE_NORM
+	setmoveanim ANIM_RUN
+}
+
+{ my_target_died
+	callevent 1.0 npcatk_go_home
+}
+
+{ game_parry
+	playanim critical ANIM_PARRY
+	playrandomsound 0 10 SOUND_PARRY1 SOUND_PARRY2 SOUND_PARRY3
+	callevent 0.75 swing_sword //counter
+}
+
+
+{ [override] swing_axe //ANIM_SMASH
+
+	dodamage NPCATK_TARGET ATTACK_HITRANGE DMG_AXE ATTACK_HITCHANCE slash
+	setvard ANIM_ATTACK ANIM_SWIPE
+}
+
+{ [override] swing_sword //ANIM_SWIPE
+
+	playrandomsound 0 10 SOUND_ATTACK1 SOUND_ATTACK2 SOUND_ATTACK3
+	dodamage NPCATK_TARGET ATTACK_HITRANGE DMG_SWORD ATTACK_HITCHANCE slash
+	if ( $rand(1,3) == 1 ) setvard ANIM_ATTACK ANIM_SMASH
+}
+
+{ goblin_pre_spawn
+	setvard ATTACK_RANGE 96
+	setvard ATTACK_HITRANGE 128
+	setvard ATTACK_MOVERANGE 58
+	setvard MOVE_RANGE 58
+}

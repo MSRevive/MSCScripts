@@ -1,0 +1,223 @@
+#scope server
+{
+	setvar STORE_NAME finven
+   	setvar STORE_TRIGGERTEXT "store trade buy sell purchase sale offer"
+
+	const CHAT_AUTO_HAIL 1
+
+	setvar NPC_CHECK_LEVEL 1
+
+	const CHAT_NEVER_INTERRUPT 1
+}
+
+#include monsters/base_npc_vendor
+#include monsters/base_chat_array
+
+{ [shared] game_spawn
+	name Finven
+	name_unique human_vendor
+	hp 1
+	invincible 1
+	width 32
+	height 72
+	race beloved
+	setmodel npc/human1.mdl
+	setmodelbody 0 3
+	nopush 1
+
+	setidleanim idle1
+	setmoveanim idle1
+
+	saytextrange 768
+
+	setvard VENDOR_MENU_OFF 1
+	setvard VENDOR_NOT_ON_USE 1
+	
+	if game.serverside
+	callevent scan_for_players
+
+	callevent chat_add_text the_elf "Oh, the elf, just outside the villa, his name's Varondo... He's with Galat." 6.2 none !voice_galat1
+	callevent chat_add_text the_elf "They won't let him in, but seem fine with setting up shop there. They haven't killed him yet, at least." 6.4 talkleft !voice_galat2
+	callevent chat_add_text the_elf "Leave it to Galat to have a representative, even way out here in this gods foresaken place, eh?" 5.2 none !voice_galat3
+
+	callevent chat_add_text say_hi "Hi there, I'm the merchant. The only one in town - or at least, the only one without tusks." 5.9 none !voice_hail1
+	callevent chat_add_text say_hi "The orcs used to raid our village all the time, but then Chief Runegahr got it into his head we'd be more useful alive than dead." 7.5 none !voice_hail2
+	callevent chat_add_text say_hi "So here I am, selling stuff in a town... Full of orcs... Heh... It's a funny thing, really..." 7.1 panic !voice_hail3
+
+	callevent chat_add_text intro_talk "*cough* Sorry... We don't get many humans in these parts..." 4.3 none !voice_intro1
+	callevent chat_add_text intro_talk "Especially not ones carrying swords... It's just, me, really." 3.8 none !voice_intro2
+	callevent chat_add_text intro_talk "I'm Finven, the merchant. The orcs they, umm... Let me sell my wares here, at a discount..." 7.1 none !voice_intro3
+	callevent chat_add_text intro_talk "Our village, Sunden-dal, lies deep in the desert. We produce several, commodities, there, that the orcs cannot." 6.9 none !voice_intro4
+	callevent chat_add_text intro_talk "So, in exchange for my services, they allow the village to survive. They even help us out from time to time." 6.5 none !voice_intro5
+	callevent chat_add_text intro_talk "It's hard, maintaining such a small community in such a dangerous place, you see..." 4.4 none !voice_intro6
+	callevent chat_add_text intro_talk "Now, let's see what I can do for you." 1.8 none !voice_intro7
+
+	catchspeech say_hi hi hail greet gweet j0 up
+	catchspeech say_elf elf galat varon rumor rumour
+}
+
+{ game_menu_getoptions
+	if ( !G_GAVE_DIRECTIONS )
+	{
+		local reg.mitem.title 	"Rumors"
+	}
+	else
+	{
+		local reg.mitem.title 	"About the Elf"
+	}
+	local reg.mitem.type 	callback
+	local reg.mitem.callback say_elf
+	menuitem.register
+}
+
+{ say_hi
+	if DID_INTRO
+	callevent chat_start_sequence say_hi
+	//playsound 0 10 scientist/greetings2.wav
+}
+
+{ say_elf
+	if DID_INTRO
+	callevent chat_start_sequence the_elf
+}
+
+{ scan_for_players
+	if !DID_INTRO
+	callevent 1.0 scan_for_players
+	if $cansee(player,128)
+	setvard DID_INTRO 1
+	setvard PLAYER_ID $get(ent_lastseen,id)
+	callevent do_intro
+}
+
+{ do_intro
+	playanim critical fear1
+	setidleanim crouch_idle
+	callevent chat_now "By the gods, HUMANS! WE'RE UNDER ATTACK!!!" 3.0 fear1 clear_que
+	playsound 0 10 voices/sorc_villa/finven_startle1.wav
+	callevent 3.3 do_intro2
+}
+
+{ do_intro2
+	setvard ARCHER_ID $get_by_name(roof_archer)
+	callexternal ARCHER_ID ext_under_attack1 $get(ent_me,id)
+	callevent 4.0 do_intro3
+}
+
+{ do_intro3
+	playsound 0 10 voices/sorc_villa/finven_startle2.wav
+	callevent chat_now "Oh... Yes... Silly me... Eh, greetings, great travelers." add_to_que
+	//playsound 0 10 scientist/greetings.wav
+	setidleanim idle1
+	playanim critical crouch_idle2
+	callevent 4.3 do_intro4
+}
+
+{ do_intro4
+	callexternal ARCHER_ID ext_under_attack2
+	callevent 2.0 do_intro5
+}
+
+{ do_intro5
+	callevent open_store
+	callevent chat_start_sequence intro_talk prioritize add_to_que
+}
+
+{ open_store
+	setvard VENDOR_MENU_OFF 0
+	setvard VENDOR_NOT_ON_USE 0
+}
+
+{ vendor_addstoreitems
+	addstoreitem STORE_NAME health_apple 15 50%
+	addstoreitem STORE_NAME health_mpotion 4 50%
+	addstoreitem STORE_NAME health_spotion 4 50%
+	addstoreitem STORE_NAME mana_mpotion 4 50%
+	addstoreitem STORE_NAME drink_mead 20 50%
+	addstoreitem STORE_NAME drink_ale 20 50%
+	addstoreitem STORE_NAME scroll2_summon_rat 2 50%
+	addstoreitem STORE_NAME scroll2_rejuvenate 2 50%
+	addstoreitem STORE_NAME scroll2_glow 5 50%
+	addstoreitem STORE_NAME scroll2_fire_ball 1 50%
+	addstoreitem STORE_NAME scroll2_poison 1 50%
+	addstoreitem STORE_NAME armor_mongol 1 50%
+	addstoreitem STORE_NAME armor_helm_golden 1 300%
+	addstoreitem STORE_NAME armor_salamander 1 3000%
+	addstoreitem STORE_NAME shields_lironshield 3 50%
+	addstoreitem STORE_NAME pack_heavybackpack 5 50%
+	addstoreitem STORE_NAME pack_archersquiver 5 100%
+	addstoreitem STORE_NAME sheath_back_holster 1 50%
+	addstoreitem STORE_NAME sheath_spellbook 3 50%
+	addstoreitem STORE_NAME swords_iceblade 1 50%
+	addstoreitem STORE_NAME axes_poison1 1 100%
+	addstoreitem STORE_NAME smallarms_huggerdagger4 1 50%
+	addstoreitem STORE_NAME smallarms_craftedknife4 1 50%
+	addstoreitem STORE_NAME blunt_granitemace 1 100%
+	addstoreitem STORE_NAME blunt_granitemaul 1 100%
+	addstoreitem STORE_NAME bows_swiftbow 1 50%
+	addstoreitem STORE_NAME item_light_crystal 10 100%
+	addstoreitem STORE_NAME item_charm_w1 1 300%
+	addstoreitem STORE_NAME polearms_qs 5 100%
+	addstoreitem STORE_NAME polearms_sp 2 100%
+	addstoreitem STORE_NAME polearms_tri 1 100%
+	if ( $rand(1,16) == 16 ) addstoreitem STORE_NAME polearms_nag 1 500%
+}
+
+{ ext_player_got_item //item_id owner_id
+	local L_INAME $get(PARAM1,name)
+	local L_INAME $lcase(L_INAME)
+	if L_INAME contains ice
+	callevent chat_now "Those are good for keeping you cool, if you are, ummm, very, careful with them." 4.0 add_to_que
+}
+
+{ voice_galat1
+	playsound 0 10 voices/sorc_villa/finven_galat1.wav
+}
+
+{ voice_galat2
+	playsound 0 10 voices/sorc_villa/finven_galat2.wav
+}
+
+{ voice_galat3
+	playsound 0 10 voices/sorc_villa/finven_galat3.wav
+}
+
+{ voice_hail1
+	playsound 0 10 voices/sorc_villa/finven_hail1.wav
+}
+
+{ voice_hail2
+	playsound 0 10 voices/sorc_villa/finven_hail2.wav
+}
+
+{ voice_hail3
+	playsound 0 10 voices/sorc_villa/finven_hail3.wav
+}
+
+{ voice_intro1
+	playsound 0 10 voices/sorc_villa/finven_intro1.wav
+}
+
+{ voice_intro2
+	playsound 0 10 voices/sorc_villa/finven_intro2.wav
+}
+
+{ voice_intro3
+	playsound 0 10 voices/sorc_villa/finven_intro3.wav
+}
+
+{ voice_intro4
+	playsound 0 10 voices/sorc_villa/finven_intro4.wav
+}
+
+{ voice_intro5
+	playsound 0 10 voices/sorc_villa/finven_intro5.wav
+}
+
+{ voice_intro6
+	playsound 0 10 voices/sorc_villa/finven_intro6.wav
+}
+
+{ voice_intro7
+	playsound 0 10 voices/sorc_villa/finven_intro7.wav
+}

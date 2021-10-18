@@ -1,0 +1,528 @@
+//Thothie - Do not use random ammounts of arrows for stores, you will get them buggard
+//- Recommend using arrow amounts of 60+ per stack (must be divisible by 15) - this will cut down on character deletions due to too many items
+//- Orochi: "And I don't know about Olaf, but he doesn't give you anything for the golden ring" - debugging
+//Olof Odlaren
+
+{
+	const SOUND_DEATH none			//base_npc
+
+	//base_vendor
+   	const STORE_NAME olofs_shop
+   	setvard STORE_TRIGGERTEXT "store trade buy sell purchase sale offer"
+	const STORE_SELLMENU 1
+
+	const SND_SCREAM1 	scientist/scream7.wav 
+	const SND_SCREAM2	scientist/scream17.wav
+	const SND_SCREAM3 	scientist/scream07.wav
+
+	const QUEST_RING	quest_ring
+	const NO_RUMOR 1
+	const NO_HAIL 1
+}
+
+#include monsters/base_npc_vendor
+#include monsters/base_react
+
+{  npc_spawn
+
+   hp 30
+   gold 2 
+   invincible  1   
+   name	       Olof Odlaren
+   width 32
+   height 72
+   race human
+   roam 0      //Don't go roaming around
+   setmodel    npc/human1.mdl
+   setidleanim idle1
+   setvar      STORENAME olofs_shop
+
+   callevent   createmystore
+
+	setmodelbody 0 4
+
+   catchspeech say_y yes yep yeah jawoll
+   catchspeech say_n no not stop nope nah calm nein
+   catchspeech say_hi hi hello hail greet
+   catchspeech say_job curse people town help
+
+   setvard 	NO_CHAT 0
+   setvard 	IS_SCREAMING 0
+   setvard 	ASKED_UNDEAD 0
+   setvard 	ASKED_RING 0
+   setvard 	PLAYER_STATUS unknown
+}
+
+/////////////////////////////////////////////////////////////////////////////
+
+{ npcreact_targetsighted		//Respond to seeing player
+  	callevent saw_newplayer PARAM1
+}
+
+{ saw_newplayer  			//Saw player in unknown status
+
+	if ( $item_exists(PARAM1,swords_skullblade4) )
+	{
+		if $item_exists(PARAM1,item_ring)
+		setvard RING_BOY PARAM1
+		callevent not_my_ring
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+ 
+  setvard LOST_PLAYER 0
+
+  if PLAYER_STATUS equals 'unknown'
+  if ASKED_UNDEAD < 2
+
+  local l.quest $get_quest_data(PARAM1,QUEST_RING)
+  if( !l.quest )
+  {
+	if !ASKED_UNDEAD
+  	saytext Halt!  Are you one of the undead monsters?
+  	say [.5] [.2] [.1] [.1] [.1] [.1] [.1]
+  	playanim once panic
+  	setvard ASKED_UNDEAD 1
+	menu.open PARAM1
+  }
+  else if( l.quest == 1 )
+  {
+	if !ASKED_RING
+  	local l.name $get(PARAM1,name)
+  	stradd l.name ,
+
+  	saytext  l.name have you found the ring yet?
+  	say [.5] [.1] [.1] [.1] [.1] [.1] [.2]
+  	playanim once pondering3
+  	setvard ASKED_RING 1
+	callevent player_is_safe
+  }
+  else if( l.quest == 2 )
+  {
+  	local l.name $get(PARAM1,name)
+  	stradd l.name .
+
+  	saytext  Ah, l.name Thank you for the nice ring.
+  	say [.5] [.1] [.1] [.1] [.1] [.1] [.2]
+  	playanim once yes
+	callevent player_is_safe	
+  }
+}
+
+{ saw_newplayer				//Saw player in evil status
+ 
+  if PLAYER_STATUS equals 'evil'
+
+  saytext Get away from me you evil monster from hell!
+  say [.5] [.2] [.1] [.1] [.1] [.1] [.1]
+
+  callevent start_scream
+}
+
+{ npc_react_sightlost
+  if PLAYER_STATUS equals 'evil'
+  setvard LOST_PLAYER 1
+  callevent 5 stop_scream
+}
+
+{  start_scream
+
+   local l.anim fear1
+   if( $rand(0,1) ) setvard l.anim fear2
+   playanim once l.anim
+
+
+   if !IS_SCREAMING
+
+   playrandomsound game.sound.voice 8 SND_SCREAM1 SND_SCREAM2 SND_SCREAM3
+   setidleanim crouch_idle
+
+   setvard IS_SCREAMING 1
+   callevent $rand(5,10) keep_screaming
+}
+
+{  keep_screaming
+
+   if IS_SCREAMING
+   playrandomsound game.sound.voice 8 SND_SCREAM1 SND_SCREAM2 SND_SCREAM3
+   say [2]
+
+   local l.anim panic
+   if( $rand(0,1) ) setvard l.anim crouch_idle2
+   playanim once l.anim
+   callevent $rand(5,10) keep_screaming
+}
+
+{  player_is_safe
+   setvard PLAYER_STATUS 'good'
+}
+
+{  stop_scream				//back to normal from screaming
+   if LOST_PLAYER
+
+   setvard PLAYER_STATUS 'unknown'
+   setvard IS_SCREAMING 0
+   setvard ASKED_UNDEAD 0
+   playanim once crouchstand
+   setidleanim idle1
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+
+{ say_y
+
+  if ASKED_UNDEAD
+  if PLAYER_STATUS equals 'unknown'
+
+  setvard ASKED_UNDEAD 2	//stop asking
+  setvard PLAYER_STATUS 'evil'
+
+  saytext AAAAAAAAAAAAAAAAAAAAHHHHHHHHHHHHHHHHHHH!!!!!!!!
+  playanim once fear2
+  say [2]
+
+  callevent start_scream
+}
+
+{ say_n
+
+  if ASKED_UNDEAD
+  if PLAYER_STATUS equals 'unknown'
+
+  setvard ASKED_UNDEAD 2
+  setvard PLAYER_STATUS 'good'
+
+  playanim once lean
+  callevent 3 say_n2
+}
+{ say_n2
+
+  saytext ...Ok, I believe you... for now...
+  say [.2] [.2] [.1] [.2] [.1] [.1]
+  callevent player_is_safe
+}
+
+/////////////////////////////////////////////////////////////////////////////
+
+{ say_hi
+
+  if( PLAYER_STATUS equals 'unknown' )
+  {
+  	saytext Stay away from me! You look like evil! Are you evil?!?
+	say [.2] [.1] [.05] [.05] [.05] [.05] [.05] [.1]
+  	playanim once panic
+  }
+  else if( PLAYER_STATUS equals 'evil' )
+  {
+  	saytext The evil fiend tried to talk to me!!! No, my ears have been cursed!
+  	saytext (looks like he's trying to bite his own ears off!)
+	say [.2] [.1] [.1] [.1] [.1] [.1] [.1] [.1]
+
+  	playanim once fear1
+  }
+  else if( PLAYER_STATUS equals 'good' )
+  {
+  	saytext ..Are you really sure you are no monster? 
+  	playanim once pondering3
+	say [.3] [.1] [.1] [.1] [.1] [.1] [.1]
+	callevent 3 say_himore
+  }
+}
+
+{ say_himore
+
+  playanim once c1a0_catwalkidle
+  saytext There is too much evil these days..
+  say [.2] [.1] [.1] [.1] [.1] [.1] [.1] [.1]
+  callevent 2 say_himore2
+}
+{ say_himore2
+
+  saytext If you really are a shining light, maybe you could help me?
+  say [.2] [.1] [.1] [.1] [.1] [.1] [.1] [.1]
+  callevent 4 say_himore3
+}
+
+{ say_himore3
+  playanim once startle
+  saytext All of the people in this town have been [cursed]!
+  saytext (points around his cabin)
+  say [.2] [.1] [.1] [.1] [.1] [.1] [.05] [.1]
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+
+{ say_job
+
+  if PLAYER_STATUS equals 'good'
+  //if $get_quest_data(ent_lastspoke,QUEST_RING) < 2
+
+  playanim once eye_wipe
+
+  saytext Yeah, horrible isn't it?
+  say [.1] [.05] [.05] [.05] [.2] [.1]
+
+  //quest set ent_lastspoke QUEST_RING 1
+
+  callevent 2 say_curse2
+}
+{ say_curse2
+
+  saytext The evil necromancer Lord Undamael has turned all the people in my town into books!
+  say [.05] [.05] [.05] [.05] [.05] [.05] [.05] [.05] [.05] [.05]
+  callevent 4 say_curse3
+}
+{ say_curse3
+
+  saytext I will need my ring to turn them back to normal again.
+  playanim once yes
+  say [.03] [.05] [.05] [.05] [.2] [.1]
+  callevent 3 say_curse4
+}
+{ say_curse4
+  saytext I will reward you if you find it, but you won't.. because I lost it in the..
+  playanim once no
+  callevent 3 say_curse5
+}
+{ say_curse5
+  playanim once fear1
+  callevent 1 say_curse6
+}
+{ say_curse6
+  saytext ..H-A-U-N-T-E-D forest!
+  say [1] [.2] [1] [.2]
+}
+
+{ give_ring
+
+  //local l.quest $get_quest_data(PARAM1,QUEST_RING)
+
+	if ( $item_exists(PARAM1,swords_skullblade4) )
+	{
+	  	recvoffer reject
+		setvard HAVE_RING 1
+		saytext Another... Ring? So...
+		playanim once dryhands
+		say [1]
+		callevent 1.5 secondring_1
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	if ( HAVE_RING )
+	{
+	  	recvoffer reject
+
+		saytext So....	
+		playanim once dryhands
+		say [1]
+		callevent 1.5 secondring_1
+	}
+
+	if !HAVE_RING
+
+	recvoffer accept
+
+	saytext What's that? Ohh, nice ring! 
+  	playanim once return_needle
+  	say [.2] [.2] [.05] [.05] [.05] [.05]
+
+  	setvard RING_TARGET PARAM1
+  	callevent 2 got_ring2
+
+	setvard HAVE_RING 1
+
+
+//	if( l.quest == 1 )
+//	{
+//			recvoffer accept
+//
+//  		saytext What's that? Ohh, nice ring! 
+//  		playanim once return_needle
+//  		say [.2] [.2] [.05] [.05] [.05] [.05]
+//
+//  		quest set ent_lastgave QUEST_RING 2
+//  		setvard RING_TARGET PARAM1
+//	  		callevent 2 got_ring2
+// 	}
+// 	else if( l.quest == 2 )
+//  {
+//  	recvoffer reject
+//
+//		saytext So....	
+//		playanim once dryhands
+//		say [1]
+//		callevent 1.5 secondring_1
+// 	}
+}
+{ got_ring2
+
+  saytext Don't know who it belongs to, but I'll trade it for one of my swords!
+  playanim once pull_needle
+  say [.2 [.2] [.1] [.1] [.1] [.2] [.2] [.2] 
+  callevent 2 give_sword
+}
+
+{ give_sword
+  //dbg Got here
+  offer RING_TARGET swords_skullblade4
+}
+
+{ secondring_1
+
+	saytext pretty....
+	say [1]
+	callevent 2 secondring_2
+}
+
+{ secondring_2
+
+	saytext No! I musn't be tempted!
+	say [.2] [.2] [.2] [.2]
+	playanim once rflinch1
+}
+/////////////////////////////////////////////////////////////////////////////////////////////////
+
+{ recvoffer_gold
+
+	saytext What are these? Cursed coins? *tosses the coins on the floor*
+	playanim once no
+}
+
+///////////////////////////////////////////////////////////////////////////////////7
+
+{  vendor_addstoreitems
+   
+   //		 |Store name|  |Item name|  		|Quantity|	|cost%|		|Sell ratio|	|Bundle amt|
+   addstoreitem  STORE_NAME     health_mpotion		$rand(10,20)	105
+   addstoreitem  STORE_NAME     health_apple		$rand(15,25)	100
+   addstoreitem  STORE_NAME     proj_arrow_wooden	120		100 		0		60
+   addstoreitem  STORE_NAME     proj_arrow_poison	120		75 		0		30
+   addstoreitem  STORE_NAME     proj_arrow_broadhead	120		100 		0		60
+   addstoreitem  STORE_NAME     proj_arrow_silvertipped	120		100 		0		60
+   addstoreitem  STORE_NAME     pack_heavybackpack	$rand(0,1)	110
+   addstoreitem  STORE_NAME     item_torch		$rand(10,20)	75
+
+   addstoreitem  STORE_NAME     axes_scythe		$rand(0,1)	90
+   addstoreitem  STORE_NAME     scroll2_glow		$rand(0,1)	100
+   addstoreitem  STORE_NAME     scroll_glow		$rand(0,1)	100
+   addstoreitem  STORE_NAME     scroll2_fire_dart	$rand(0,1)	120
+   addstoreitem  STORE_NAME     sheath_spellbook	2		80
+
+   addstoreitem  STORE_NAME     skin_boar 0 150 1.5
+   addstoreitem  STORE_NAME     skin_ratpelt 0 250 2.5
+   addstoreitem  STORE_NAME     skin_bear 0 150 1.5
+   addstoreitem  STORE_NAME     skin_boar_heavy	0 150 1.5
+
+	if $rand(1,3) == 1
+	addstoreitem STORE_NAME sheath_axe_snakeskin 1 100 SELL_RATIO
+	addstoreitem STORE_NAME sheath_blunt_snakeskin 1 100 SELL_RATIO
+	addstoreitem STORE_NAME sheath_back_holster 1 100 SELL_RATIO
+
+}
+
+{ [override] vendor_offerstore
+
+   //Give different stores buy setting STORE_NAME
+   if PLAYER_STATUS equals 'good'
+
+   setvard STORE.TARGET PARAM1
+
+   if( !NO_CHAT )
+   {
+   	local l.text $rand(1,5)
+   	if( l.text == 1 ) saytext Demons leave the most interesting stuff lying around...
+   	if( l.text == 2 ) saytext Don't tell anyone, but there's more downstairs...
+   	if( l.text == 3 ) saytext All this stuff is cursed, you know...
+   	if( l.text == 4 ) saytext I don't sell to demons, but I suppose you're ok.
+   	if( l.text == 5 ) saytext I'll buy skins if ya have em, they keeps the demons away.
+	setvard NO_CHAT 1
+	callevent 6 reset_chat
+   	callevent 2 open_store
+   }
+   else callevent open_store
+  
+}
+
+{  open_store
+   callevent basevendor_offerstore STORE.TARGET
+}
+
+{ reset_chat
+  setvard NO_CHAT 0
+}
+
+
+{ game_menu_getoptions
+
+	if( ASKED_UNDEAD == 1 )
+	{
+		local reg.mitem.id	askevil
+		local reg.mitem.access	all
+		local reg.mitem.title	"Say Yes"
+		local reg.mitem.type	say
+		local reg.mitem.data	'yes'
+	
+		menuitem.register
+
+		local reg.mitem.title	"Say No"
+		local reg.mitem.data	'no'
+
+		menuitem.register
+
+		menuitem.remove genericstore
+	}
+	if( $item_exists(PARAM1,item_ring) )
+	{
+		local reg.mitem.title 	"Return ring"
+		local reg.mitem.type 	payment
+		local reg.mitem.data 	item_ring
+		local reg.mitem.callback give_ring
+		menuitem.register
+	}
+}
+
+{ closetskel //called from ms_npcscript on map
+
+	invincible 0
+	setmoveanim run
+}
+
+{ game_struck
+
+	setidleanim walK_scared
+	roam 1	
+	menu.autoopen 0
+	setmovedest ent_laststruck 9999 flee
+	playrandomsound 0 10 SND_SCREAM1 SND_SCREAM2 SND_SCREAM3
+}
+
+{ not_my_ring
+	saytext "Hey, that rr.r....ring you have there..."
+	setmovedest RING_BOY 9999
+	playanim critical eye_wipe
+	callevent 2.0 not_my_ring2
+}
+
+{ not_my_ring2
+	saytext "That one's not mine!"
+	callevent 2.0 not_my_ring3
+}
+
+{ not_my_ring3
+	saytext "But I bet I know who would know whose it is!"
+	callevent 2.0 not_my_ring4
+}
+
+{ not_my_ring4
+	saytext "Galan! In Gatecity..."
+	callevent 2.0 not_my_ring5
+}
+
+{ not_my_ring5
+	saytext "He and I were friends... Before... You know... The b..books...."
+	quest set RING_BOY r 1
+	//see base_chat for the details of this insane quest
+}

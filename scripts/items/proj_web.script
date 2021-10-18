@@ -1,0 +1,70 @@
+
+
+{ game_spawn
+	name a|Web
+	desc Ew, it's sticky
+
+	setmodel weapons/projectiles.mdl
+	setmodelbody 0 62
+	playanim axis_spin
+	setidleanim axis_spin
+
+	projectilesize 32 //not helping
+
+	if game.serverside
+	local reg.proj.dmg 0
+	local reg.proj.dmgtype none
+	local reg.proj.aoe.range 0
+	local reg.proj.aoe.falloff 0
+	local reg.proj.stick.duration 0
+	local reg.proj.collidehitbox 1 //not helping
+	local reg.proj.ignorenpc 0
+	registerprojectile
+	setmonsterclip 0
+
+	gravity 0
+	setvard SCALE_SIZE 0.1
+	setprop ent_me scale 0.1
+}
+
+{ game_tossprojectile
+	setvard IS_ACTIVE 1
+	callevent expand_loop
+}
+
+{ expand_loop
+	if IS_ACTIVE
+	if SCALE_SIZE < 1
+	add SCALE_SIZE 0.01
+	setprop ent_me scale SCALE_SIZE
+	callevent 0.1 expand_loop
+}
+
+{ game_projectile_hitwall
+	setvard IS_ACTIVE 0
+}
+
+{ game_projectile_hitnpc
+	if $get(ent_expowner,relationship,PARAM1) equals enemy
+	if !$get(PARAM1,scriptvar,'COCOON_ATTACHED')
+	local L_DOT -1
+	local L_DUR -1
+	local L_WEB_STR $get(ent_expowner,scriptvar,'WEB_STRENGTH')
+	if ( $get(ent_expowner,isplayer) )
+	{
+		local L_DOT $get(ent_expowner,skill.spellcasting.affliction)
+		multiply L_DOT 0.1
+		local L_DUR 20.0
+		local L_WEB_STR 1
+	}
+	callexternal PARAM1 ext_webbed $get(ent_expowner,id)
+	applyeffect PARAM1 effects/effect_webbed $get(ent_expowner,maxhp) L_WEB_STR $get(ent_expowner,id) L_DUR L_DOT
+}
+
+{ game_projectile_landed
+
+	setvard IS_ACTIVE 0
+	movetype	none	//Back to normal movement
+	expiretime 	0
+	deleteent ent_me
+}

@@ -1,0 +1,143 @@
+// Projectile for Phoenix Bow. CrazyMonkeyDude Oct 2009
+// Checks for distance from owner and adjusts blast radius and damage accordingly
+// Fire DOT increases fire skill
+
+{
+	const	MODEL_WORLD		weapons/projectiles.mdl
+	const	MODEL_HANDS      	weapons/projectiles.mdl
+	const	MODEL_BODY_OFS		48
+	const	ARROW_BODY_OFS		48
+
+	const	PROJ_IGNORENPC		1 //Thothie: We're switching events so we can use this again
+								  //- Otherwise the arrow will only splodie when hitting an NPC			
+	const	PROJ_ANIM_IDLE		idle_standard
+
+	//Thothie: I switched this up for longer range, however...
+	//- I think it maybe a bad idea - there are almost no maps with a high enough ceiling
+	//- to manage to launch this projectile 2048 units
+	const MAX_DIST 1024
+	const MIN_RADIUS 32
+	const MAX_RADIUS 256
+
+	const PROJ_DAMAGE 1 //Thothie: Paranoia - afraid something jinxes with a 0 dmg arrow
+
+	//Thothie: Switched to default settings when trying to fix weird error I was getting
+	//- (before I realized I was editing the wrong script)
+	//- Thus this is likely redundant
+	//const ARROW_EXPIRE_DELAY 	5	//How long to stick in the world
+	//const ARROW_STICK_DURATION	10	//How long to stick in enemies
+	//const ARROW_SOLIDIFY_ON_WALL	0  	//base_arrow: Turns solid when a wall is hit
+	//const ARROW_BREAK_CHANCE	100%	//base_arrow: Chance of breaking upon hit
+
+	//Thothie: Sound
+	const SOUND_PHOENIX monsters/birds/hawkcaw.wav
+
+	//Thothie: Precache for CL effects
+	precache ambience/steamburst1.wav
+}
+
+#include items/proj_arrow_base
+
+{  game_spawn
+
+	name 		a|Phoenix Arrow
+	//weight 		500
+	//size 		3
+	//value		5
+   	setmonsterclip	0
+
+	sethudsprite	hand arrows
+	sethudsprite	trade ITEM_NAME
+	sethand		any
+
+	//playanim once PROJ_ANIM_IDLE
+	//setidleanim PROJ_ANIM_IDLE
+	//dbg spawn
+
+	setvard		GAME_PVP game.pvp
+	gravity		1
+}
+
+{ [server] game_tossprojectile
+	//Thothie: Sound on launch - follows arrow
+	svplaysound 0 5 SOUND_PHOENIX
+}
+
+//Thothie: Switch from _landed to _hitwall - for some stupid reason _landed is only going off when it strikes an NPC
+{ [server] game_projectile_hitwall
+
+	//Thothie: comment this out - we are using client effect that makes visual radius (below)
+	//effect tempent trail rjet1.spr $relpos(0,0,0) $relpos(0,0,10) 10 2 5 10 20
+
+	local USER_ORG $get(ent_expowner,origin) 
+	local MY_ORG $get(ent_me,origin) 
+	vectorset MY_ORG z $get_ground_height(MY_ORG)
+	local DISTANCE_TRAVELED $dist(USER_ORG,MY_ORG)
+	local DISTANCE_RATIO DISTANCE_TRAVELED
+
+	//Damage
+	local OWNER_SKILL $get(ent_expowner,skill.archery.power) 
+	local MIN_DMG OWNER_SKILL 
+	local MAX_DMG OWNER_SKILL
+	multiply MAX_DMG 2.0
+
+
+	//Thothie: Optimization, merge these two conditionals
+	if ( DISTANCE_TRAVELED >= MAX_DIST ) 
+	{ 
+		local MY_DAMAGE MAX_DMG 
+		local MY_RADIUS MAX_RADIUS 
+	} 
+	else 
+	{ 
+		divide DISTANCE_RATIO MAX_DIST
+		setvard MY_DAMAGE $get_skill_ratio(DISTANCE_RATIO,MIN_DMG,MAX_DMG) 
+		setvard MY_RADIUS $get_skill_ratio(DISTANCE_RATIO,MIN_RADIUS,MAX_RADIUS) 
+	}
+
+	if ( $get(ent_expowner,isplayer) )
+	{
+		if $get(ent_expowner,skill.archery) < 30
+		setvard IS_UNDERSKILLED 1
+		multiply MY_DAMAGE 0.1
+		multiply MY_RADIUS 0.5
+	}
+
+	//Thothie: Client fx, self-removing (see items/proj_arrow_phx_cl)
+	//- note you do NOT need to add proj_arrow_phx_cl to the items list - as it is not an item
+	//- The paramaters after the script name pass to the client script's "client_activate" event
+	clientevent new all items/proj_arrow_phx_cl MY_ORG MY_RADIUS
+
+	//Thothie: This report is for balancing purposes
+	dbg game_projectile_hitwall dmg MY_DAMAGE rad MY_RADIUS
+
+	xdodamage MY_ORG MY_RADIUS MY_DAMAGE 0 ent_expowner ent_expowner archery fire
+
+	setvard TARGET_LIST $get_tsphere(any,MY_RADIUS)
+
+	//Burn
+	if TARGET_LIST isnot 'none'
+
+	//Thothie: Optimization, as discussed, only need to check skill once
+	setvard BURN_DMG $get(ent_expowner,skill.spellcasting.fire)
+	multiply BURN_DMG 0.5
+
+	if ( IS_UNDERSKILLED ) multiply BURN_DMG 0.1
+
+	calleventloop $get_token_amt(TARGET_LIST) burn_them
+}
+
+{ burn_them
+	local CUR_TARGET $get_token(TARGET_LIST,game.script.iteration)
+	if $get(ent_expowner,relationship,CUR_TARGET) equals enemy
+	if ( $get(ent_expowner,isplayer) )
+	{
+		if GAME_PVP == 0
+		if $get(CUR_TARGET,isplayer)
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	//Thothie: Pass parameter fixed, as discussed ( ent_expowner to $get(ent_expowner,id) )
+	applyeffect CUR_TARGET effects/effect_burn 5 $get(ent_expowner,id) BURN_DMG 1 0 spellcasting.fire
+}

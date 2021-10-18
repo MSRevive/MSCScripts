@@ -1,0 +1,158 @@
+//NPC to scan for chain bolts by Thothie from scratch
+#scope server
+{
+	const SOUND_ZAP1 debris/beamstart14.wav
+	const SOUND_ZAP2 debris/beamstart15.wav
+	const SOUND_ZAP3 debris/zap1.wav
+
+	const SCAN_RANGE 400
+	const DAMAGE_ADJ 0.75 //balance here
+
+	const LIGHTNING_SPRITE lgtning.spr
+
+	const AOE_RADIUS 400
+}
+
+#include monsters/summon/base_aoe
+
+{ game_dynamically_created //PARAM1 = owner PARAM2 = Owner's lightning skill
+
+	////dbg temp Got $get(PARAM1,name) PARAM2
+
+	setvard MY_OWNER PARAM1
+	setvard OWNER_ISPLAYER $get(MY_OWNER,isplayer)
+	setvard MY_BASE_DAMAGE PARAM2
+	multiply MY_BASE_DAMAGE DAMAGE_ADJ //balancing
+	setvard DEATH_DELAY 0
+
+	//one would think this would always be spellcasting.lightning
+	//but it's nice to have other options in case this is created by another item in the future
+	setvard ACTIVE_SKILL spellcasting.lightning
+	if ( PARAM3 isnot 'PARAM3' ) setvard ACTIVE_SKILL PARAM3
+
+	callevent death_count
+}
+
+{ fire_bolts
+
+	//dbg temp firing bolts (DAMAGE_DELAY)
+
+	if !DAMAGE_DELAY
+	setvard DAMAGE_DELAY 1
+	callevent 0.2 reset_damage_delay
+
+//old method
+//   	dodamage $relpos(0,0,-32) SCAN_RANGE 0.0 100% 0 reflective target
+//	getents any SCAN_RANGE //getents is being less dependable than dodamage here :\
+//	if GET_COUNT > 0
+//	setvard LOOP_COUNT 0
+//	calleventloop GET_COUNT zap_buggers_loop
+
+	callevent aoe_applyeffect_rad
+}
+
+//old old method
+//{ zap_buggers_loop
+//
+//	add LOOP_COUNT 1
+//	if ( LOOP_COUNT == 1 ) local CHECK_ENT GET_ENT1
+//	if ( LOOP_COUNT == 2 ) local CHECK_ENT GET_ENT2
+//	if ( LOOP_COUNT == 3 ) local CHECK_ENT GET_ENT3
+//	if ( LOOP_COUNT == 4 ) local CHECK_ENT GET_ENT4
+//	if ( LOOP_COUNT == 5 ) local CHECK_ENT GET_ENT5
+//	if ( LOOP_COUNT == 6 ) local CHECK_ENT GET_ENT6
+//	if ( LOOP_COUNT == 7 ) local CHECK_ENT GET_ENT7
+//	if ( LOOP_COUNT == 8 ) local CHECK_ENT GET_ENT8
+//	if ( LOOP_COUNT == 9 ) local CHECK_ENT GET_ENT9
+//
+//	if $get(CHECK_ENT,relationship,MY_OWNER) equals enemy
+//	
+//	if ( OWNER_ISPLAYER )
+//	{
+//		if game.pvp == 0
+//		if $get(CHECK_ENT,isplayer)
+//		local EXIT_SUB 1
+//	}
+//	if !EXIT_SUB
+//
+//	clientevent new all_in_sight monsters/summon/chain_scanner_cl $get(MY_OWNER,index) $get(CHECK_ENT,index)
+//	callexternal MY_OWNER send_damage $get(CHECK_ENT,id) "direct" MY_BASE_DAMAGE 100% MY_OWNER lightning
+//}
+
+{ reset_damage_delay
+
+	setvard DAMAGE_DELAY 0
+}
+
+//old method
+//{ game_dodamage //1: Attack Hit (1/0)  2: Entity Attack hit  3:  Start Origin  4:  End Origin
+//
+//	if PARAM1
+//	if $get(PARAM2,relationship,MY_OWNER) equals enemy
+//
+//	if ( OWNER_ISPLAYER )
+//	{
+//		if game.pvp < 1
+//		if $get(PARAM2,isplayer)
+//		local EXIT_SUB 1
+//	}
+//	if !EXIT_SUB
+//
+//	//effect beam point LIGHTNING_SPRITE 60 BEAM_START BEAM_END (96,96,255) 150 50 1.0
+//	//clientevent new all_in_sight monsters/summon/chain_scanner_cl effects/sfx_lightning $get(PARAM2,origin) 0.5 1.0 $get(MY_OWNER,index) $get(PARAM2,index)
+//	clientevent new all_in_sight monsters/summon/chain_scanner_cl $get(MY_OWNER,index) $get(PARAM2,index)
+//	local MY_FINAL_DAMAGE MY_BASE_DAMAGE
+//	multiply MY_FINAL_DAMAGE DAMAGE_ADJ //balancing
+//	//callexternal MY_OWNER send_damage $get(PARAM2,id) "direct" MY_BASE_DAMAGE 100% MY_OWNER lightning
+//	xdodamage $get(PARAM2,id) direct MY_BASE_DAMAGE 100 MY_OWNER MY_OWNER ACTIVE_SKILL lightning
+//	//applyeffect PARAM2 effects/generic_damage MY_FINAL_DAMAGE MY_OWNER 0 lightning
+//}
+
+//new method via base_aoe
+
+
+{ apply_aoe_effect //PARAM1 = target
+
+	local TARG_ORG $get(PARAM1,origin)
+	local MY_ORG $get(MY_OWNER,origin)
+	local TRACE_LINE $get_traceline(MY_ORG,TARG_ORG,worldonly)
+	if TRACE_LINE equals TARG_ORG
+
+	if ( !ZAP_SOUND_DELAY )
+	{
+		setvard ZAP_SOUND_DELAY 1
+		playrandomsound 0 10 SOUND_ZAP1 SOUND_ZAP2 SOUND_ZAP3
+		callevent 0.25 zap_sound_reset
+	}
+
+	clientevent new all_in_sight monsters/summon/chain_scanner_cl $get(MY_OWNER,index) $get(PARAM1,index)
+	local MY_FINAL_DAMAGE MY_BASE_DAMAGE
+	multiply MY_FINAL_DAMAGE DAMAGE_ADJ //balancing - that shoulda been done magic hand side
+	xdodamage $get(PARAM1,id) direct MY_BASE_DAMAGE 100 MY_OWNER MY_OWNER ACTIVE_SKILL lightning
+}
+
+{ zap_sound_reset
+
+	setvard ZAP_SOUND_DELAY 0
+}
+
+{ heart_beat
+
+	setorigin ent_me $get(MY_OWNER,origin)
+
+	////dbg temp got heartbeat ( DEATH_DELAY )
+
+	setvard DEATH_DELAY 0
+}
+
+{ death_count
+	
+	callevent 1.0 death_count
+
+	//dbg temp death beat ( DEATH_DELAY )
+
+	add DEATH_DELAY 1
+	if DEATH_DELAY > 10
+	//dbg temp Removing due to death delay
+	deleteent ent_me
+}

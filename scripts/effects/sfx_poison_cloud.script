@@ -1,0 +1,130 @@
+//meh, didn't notice we already have sfx_cloud
+//well, this is a bit fancier, representing more of a steaming pool of poison
+{
+	const SPRITE_NAME poison_cloud.spr
+//	const SPRITE_COLOR (0,255,0)
+//	const SPRITE_RENDERAMT 200
+//	const SPRITE_RENDERMODE add
+//	const SPRITE_FRAMERATE 30
+//	const SPRITE_NFRAMES 17	
+
+	const SOUND_BURST ambience/steamburst1.wav
+}
+
+{ client_activate //<loc> <aoe> <duration>
+
+	setvard FX_ORIGIN PARAM1
+	setvard FX_AOE PARAM2
+	setvard FX_DURATION PARAM3
+	setvard FX_ACTIVE 1
+
+	local L_LIGHT_RAD FX_AOE
+	multiply L_LIGHT_RAD 1.5
+	cleffect light new FX_ORIGIN L_LIGHT_RAD (0,255,0) FX_DURATION
+	
+	//dbg *** sfx_poison_cloud ground $get_ground_height(FX_ORIGIN) //not sure if $get_ground_height() works on client, may need to trace
+
+	local L_AOE_RATIO FX_AOE
+	if ( L_AOE_RATIO > 256 ) local L_AOE_RATIO 256
+	divide L_AOE_RATIO 256
+	setvard SPRITE_SCALE_MIN 5
+	setvard SPRITE_SCALE_MAX 5
+	multiply SPRITE_SCALE_MIN L_AOE_RATIO
+	multiply SPRITE_SCALE_MAX L_AOE_RATIO
+	setvard DBG_AOE_RATIO L_AOE_RATIO
+
+
+	callevent do_smokes
+	callevent FX_DURATION end_fx
+
+	sound.play3d SOUND_BURST 10 FX_ORIGIN
+}
+
+{ end_fx
+	setvard FX_ACTIVE 0
+	callevent 3.0 remove_fx
+}
+
+{ remove_fx
+	removescript
+}
+
+{ do_smokes
+	if FX_ACTIVE
+	callevent 0.25 do_smokes
+
+	local RND_DIST $randf(0,FX_AOE)
+	local RND_ANG $randf(0,359.99)
+	local L_OFS_Z 0
+	//local L_HALF_AOE FX_AOE
+	//multiply L_HALF_AOE 0.4
+	//subtract L_OFS_Z L_HALF_AOE
+
+	local L_POS FX_ORIGIN
+	vectoradd L_POS $relpos($vec(0,RND_ANG,0),$vec(0,RND_DIST,L_OFS_Z))
+
+	//scale down based on distance from center
+	setvard SPRITE_SCALE $randf(SPRITE_SCALE_MIN,SPRITE_SCALE_MAX)
+	local L_PILLAR_SCALE SPRITE_SCALE
+	multiply L_PILLAR_SCALE 1.5
+
+	local L_DIST_RATIO RND_DIST 
+	divide L_DIST_RATIO FX_AOE
+	local L_DIST_RATIO $ratio(L_DIST_RATIO,0,1.2) 
+	local L_FRATIO 1.3
+	subtract L_FRATIO L_DIST_RATIO 
+
+	setvard SPITE_GRAVITY -0.03
+	multiply SPRITE_SCALE L_FRATIO
+	cleffect tempent sprite SPRITE_NAME L_POS setup_smoke update_smoke
+
+
+	if ( DBG_SPRITE_COUNT equals 'DBG_SPRITE_COUNT' ) setvard DBG_SPRITE_COUNT 1
+	//big one in the center
+	setvard SPITE_GRAVITY -0.05
+	setvard SPRITE_SCALE L_PILLAR_SCALE
+	cleffect tempent sprite SPRITE_NAME FX_ORIGIN setup_smoke update_smoke
+	setvard DBG_SPRITE_COUNT 0
+}
+
+{ update_smoke
+
+	local CUR_SCALE game.tempent.fuser1HD
+	if ( CUR_SCALE > 0.02 )
+	{
+		multiply CUR_SCALE 0.99
+		cleffect tempent set_current_prop scaleHD CUR_SCALE
+		cleffect tempent set_current_prop fuser1HD CUR_SCALE
+//		local L_SPAWN_TIME game.tempent.fuser2
+//		local L_DIE_TIME L_SPAWN_TIME 
+//		add L_DIE_TIME 2.5
+//		local L_RENDER_RATIO L_SPAWN_TIME
+//		divide L_RENDER_RATIO L_DIE_TIME
+//		if (  game.tempent.iuser1 == 1 ) dbg *** sfx_poison_cloud update_smoke CUR_SCALE
+//		local L_RENDER_FRATIO 200
+//		subtract L_RENDER_FRATIO $ratio(L_RENDER_RATIO,0,200)
+//		cleffect tempent set_current_prop renderamt L_RENDER_FRATIO
+	}
+	else
+	{
+		cleffect tempent set_current_prop origin $vec(6000,6000,6000)
+	}
+
+}
+
+{ setup_smoke
+	cleffect tempent set_current_prop death_delay 2.5
+	cleffect tempent set_current_prop fadeout lifetime
+	cleffect tempent set_current_prop framerate 15
+	cleffect tempent set_current_prop frames 17
+	cleffect tempent set_current_prop bouncefactor 0
+	cleffect tempent set_current_prop scale SPRITE_SCALE
+	cleffect tempent set_current_prop rendermode add
+	cleffect tempent set_current_prop renderamt 150
+	cleffect tempent set_current_prop rendercolor (0,255,0)
+	cleffect tempent set_current_prop gravity SPITE_GRAVITY
+	cleffect tempent set_current_prop collide none
+	cleffect tempent set_current_prop fuser1 SPRITE_SCALE
+	cleffect tempent set_current_prop fuser2 game.time
+	cleffect tempent set_current_prop iuser1 DBG_SPRITE_COUNT
+}

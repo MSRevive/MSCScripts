@@ -1,0 +1,86 @@
+//CL effects for phx bow projectile by Thothie
+
+#scope client
+
+{
+	const SOUND_BURST ambience/steamburst1.wav
+	precache SOUND_BURST
+}
+
+{ client_activate
+
+	setvard FX_CENTER PARAM1
+	setvard FX_RADIUS PARAM2
+
+	//reduce radius slightly to make up for size of sprites
+	//subtract FX_RADIUS 32
+
+	//dbg *** client_activate FX_CENTER FX_RADIUS
+
+	setvard CYCLE_ANGLE 0
+
+	//vectorset FX_CENTER z $get_ground_height(FX_CENTER)
+
+	local FX_RADIUS_RATIO FX_RADIUS
+	divide FX_RADIUS_RATIO 256
+	setvard SCALE_RATIO $ratio(FX_RADIUS_RATIO,1.0,10.0)
+
+	//Thothie: Make circle o flames, 20 degrees apart
+	//calleventloop 18 make_flames
+	local L_FX_CENTER FX_CENTER
+	local Z_ADJ $ratio(FX_RADIUS_RATIO,8.0,30.0)
+	vectoradd L_FX_CENTER z Z_ADJ //adjust up a bit based on scale
+
+	dbg *** phx FX_RADIUS_RATIO SCALE_RATIO $get_ground_height(FX_CENTER) Z_ADJ
+
+	cleffect tempent sprite weapons/projectiles.mdl L_FX_CENTER setup_flame_burst update_flame_burst
+	
+
+	//Thothie: Remove script in 2.1 seconds to give 2.0 second sprite time to expire
+	callevent 2.1 remove_fx
+
+	//Thothie: Glowie fx
+	//- light radius fades quickly, so we need to increase radius to more closely match AOE size
+	local LIGHT_RAD FX_RADIUS
+	multiply LIGHT_RAD 1.5
+	cleffect light new FX_CENTER LIGHT_RAD (255,128,64) 2.0
+
+	//Thothie: Client side sounds allow playing of sounds at specific locations
+	sound.play3d SOUND_BURST 5 FX_CENTER
+}
+
+{ remove_fx
+	removescript
+}
+
+//{ make_flames
+//	local SPRITE_POS FX_CENTER
+//	vectoradd SPRITE_POS $relpos($vec(0,CYCLE_ANGLE,0),$vec(0,FX_RADIUS,32)) //Thothie: raising sprite 32 units off ground cuz it's kinda low centered
+//	add CYCLE_ANGLE 20
+//	cleffect tempent sprite SPRITE_NAME SPRITE_POS setup_flame_sprite
+//}
+
+{ update_flame_burst
+	//this is just here in effort to fix vanishing bug
+	//dbg *** game.tempent.origin
+}
+
+{ setup_flame_burst
+	cleffect tempent set_current_prop death_delay 2.0
+	cleffect tempent set_current_prop body 51
+	cleffect tempent set_current_prop framerate 1.0
+	cleffect tempent set_current_prop sequence 8
+	cleffect tempent set_current_prop rendermode add
+	cleffect tempent set_current_prop renderamt 255
+	cleffect tempent set_current_prop scale SCALE_RATIO
+	cleffect tempent set_current_prop gravity 0
+	cleffect tempent set_current_prop collide none
+
+	cleffect tempent set_current_prop frames 11
+	cleffect tempent set_current_prop fadeout lifetime
+	cleffect tempent set_current_prop angles $vec(0,90,0)
+	cleffect tempent set_current_prop velocity $vec(0,0,0)
+	cleffect tempent set_current_prop movetype 0
+	//cleffect tempent set_current_prop skin 0
+	//cleffect tempent set_current_prop follow none
+}

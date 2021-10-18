@@ -1,0 +1,135 @@
+#scope server
+
+{
+	const CHAT_USE_CONV_ANIMS 0
+	const CHAT_NO_CLOSE_MOUTH 1
+	const CHAT_AUTO_FACE 0
+}
+
+#include helena/orcwarrior_hard
+#include monsters/base_chat_array
+
+{ orc_spawn
+	name a|Blackhand Warrior
+	saytextrange 1024
+	name_unique orc_chatter2
+	roam 0
+	hearingsensitivity 0
+	callevent npcatk_suspend_ai
+}
+
+{ start_combat
+
+}
+
+{ ext_do_chat_step
+	if !IN_COMBAT
+	add RESPONSE_INDEX 1
+	if ( RESPONSE_INDEX == 1 )
+	{
+		callevent chat_now "Relax! We don't have to fight them - we just have to warn the others and get out through the tunnels." 5.5 neigh none add_to_que clear_que
+		callevent chat_now "It's a maze down there, they'll never catch us!" 2.5 neigh request_response add_to_que
+	}
+	if ( RESPONSE_INDEX == 2 )
+	{
+		callevent chat_now "You mean those big guys with the red scales and fire in their eyes?" 4.5 nod_yes request_response add_to_que
+	}
+	if ( RESPONSE_INDEX == 3 )
+	{
+		callevent chat_now "I don't know... I think I'd look good in red!" 4.0 nod_yes request_response add_to_que
+	}
+	if ( RESPONSE_INDEX == 4 )
+	{
+		callevent chat_now "You worry too much my friend!" 2.5 neigh none add_to_que
+		callevent chat_now "But we should go check on the other side - there's way too many ways into this place." 4.5 none request_response add_to_que
+	}
+}
+
+{ request_response
+	if !IN_COMBAT
+	if ( ORC_BUDDY_ID equals 'ORC_BUDDY_ID' ) setvard ORC_BUDDY_ID $get_by_name(orc_chatter1)
+	callexternal ORC_BUDDY_ID ext_do_chat_step 
+	if ( RESPONSE_INDEX == 4 ) callevent start_wander
+}
+
+{ start_wander
+	if !IN_COMBAT
+	callexternal ORC_BUDDY_ID turn_mclip_on
+	roam 1
+	playanim break
+	callevent npcatk_resume_ai
+	hearingsensitivity 2
+	callevent npcatk_setmovedest $vec(2320,-688,-528) 32
+}
+
+{ game_damaged
+	if !IN_COMBAT
+	callevent start_combat
+}
+
+{ npcatk_hunt
+	if !IN_COMBAT
+	if $cansee(enemy)
+	callevent start_combat
+}
+
+{ start_combat
+	if !IN_COMBAT
+	setvard IN_COMBAT 1
+	callevent chat_clear_que
+	callevent 3.0 start_combat2
+	callevent npcatk_resume_ai
+	hearingsensitivity 4
+	if ( PARAM1 equals game_damaged )
+	{
+		callevent npcatk_settarget $get(ent_laststruck,id)
+	}
+	else
+	{
+		if ( $get(PARAM1,isalive) )
+		{
+			callevent npcatk_settarget $get(PARAM1,id)
+		}
+		else
+		{
+			callevent npcatk_settarget $get(ent_lastseen,id)
+		}
+	}
+
+	if ( !$get(ORC_BUDDY_ID,scriptvar,'IN_COMBAT') ) callexternal ORC_BUDDY_ID start_combat NPCATK_TARGET
+}
+
+{ start_combat2
+	callexternal ORC_BUDDY_ID turn_mclip_on //case he didn't do this, or died
+
+	if ( game.players > 1 )
+	{
+		saytext I don't know, but we better make short work of them and warn the others!
+	}
+	else
+	{
+		saytext I don't know, but we better make short work of him and warn the others!
+	}
+	playsound 0 10 voices/orc/help.wav
+}
+
+{ ext_gender_gag1
+	saytext How can you tell!?
+}
+
+{ ext_gender_gag2
+	saytext That's... Nice... But maybe we ask her for a date AFTER we kill her!
+}
+
+{ ext_gender_gag3
+	saytext Just shut up and fight!
+}
+
+{ npcatk_hunt
+	if ( ORC_BUDDY_ID equals 'ORC_BUDDY_ID' ) setvard ORC_BUDDY_ID $get_by_name(orc_chatter1)
+}
+
+{ game_death
+	//one last time, just in case
+	callexternal ORC_BUDDY_ID turn_mclip_on
+}

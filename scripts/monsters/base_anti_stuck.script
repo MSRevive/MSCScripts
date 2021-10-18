@@ -1,0 +1,671 @@
+#scope server
+//anti-stuck 2.0
+//handles:
+//- monsters stuck inside monsters on spawn
+//- monsters stuck on walls during navigation
+//-
+//- On long animations, set AS_ATTACKING to game.time + anim duration to prevent stuck checking
+{
+	const AS_MAX_ATTACK_TIME 3.0	//increase if monster has an attack lasting more than 3 seconds
+									//reduce if monster attacks very quickly
+	const AS_STUCK_FREQ 0.25		//how often to check if stuck (although limited by think freq)
+	const AS_WIGGLE_DURATION 2.0	//how long to run when "wiggling free" - use higher values for slow mons
+	const AS_TELE_THRESH 10			//STUCK_COUNT this high means teleport in and out
+	const AS_CRITICAL_THRESH 40		//STUCK_COUNT thigh high means teleport home
+
+	const AS_DIST_THRESH 1			//units of distance monster must move between each anti-stuck check (thothie JAN2009)
+
+	//opt vars:
+	//setvard NO_SPAWN_STUCK_CHECK - dont do spawn scan if set
+	//setvard NO_STUCK_CHECKS - suspend navigation stuck checks if set
+	//setvard AS_ATTACKING - suspend stuck checking until game.time > AS_ATTACKING + AS_MAX_ATTACK_TIME (manually set for animations not executed through ANIM_ATTACK)
+	//setvard AS_CUSTOM_UNSTUCK - if set, doesn't do normal unstuck procedure, but calls npc_stuck
+
+	//return vars:
+	//STUCK_COUNT - number of consecutive script think cycles the monster has been  stuck
+}
+
+//============================================== STUCK INSIDE ALLY ON SPAWN
+{ npc_spawn
+
+	setvard STUCK_COUNT 0
+	setvard AS_HITBACK_FRUST 0
+	setvard AS_UNSTUCK_ANG 0
+	setvard AS_IN_RANGE_CLICKS 0
+	setvard AS_MISS_COUNT 0
+	if ( I_R_PET ) setvard NO_SPAWN_STUCK_CHECK 1
+	//if ( game.map.name equals skycastle ) setvard NO_SPAWN_STUCK_CHECK 1
+	if !NO_SPAWN_STUCK_CHECK
+	setvard AS_SPAWN_POINT game.monster.origin
+	callevent 1.0 as_check_spawn_stuck
+}
+
+{ as_check_spawn_stuck
+
+	setvard AS_MOVEPROX game.monster.moveprox
+
+
+	//if $get(ent_me,movetype) == 4 //can't do fake moves on other movetypes
+
+	//Thothie FEB2009 - allow spawn stuck check to be aborted by summons and the like
+	if !NO_SPAWN_STUCK_CHECK
+
+//	local AM_TOUCHING $get(ent_me,touching)
+//	dbg as_check_spawn_stuck $get(AM_TOUCHING,name)
+//	
+//	if ( $get(AM_TOUCHING,isalive) )
+//	{
+//		setvard AS_ALLY_LIST $get_tsphere(any,128)
+//		if ( AS_ALLY_LIST isnot none )
+//		{
+//			calleventloop $get_token_amt(AS_ALLY_LIST) as_tell_allies_move
+//			if AS_TELE_OUT
+//			setvard AS_TELE_OUT 0
+//		}
+//		callevent as_tele_out 4.0 $get(ent_me,origin)
+//	}
+
+
+	//scan for nearby allies
+	//JAN2010_29 - reducing scan range
+	//local SCAN_RANGE AS_MOVEPROX
+	//divide SCAN_RANGE 3
+
+	//No good, monsters that spawn in illusionaries (grass, webs, etc) fail stuck move check
+	//as do fliers
+//event as_check_can_move
+//	if !AS_CAN_MOVE
+//
+//	setvard AS_ALLY_LIST $get_tsphere(any,128,AS_SPAWN_POINT)
+//	if ( AS_ALLY_LIST isnot none )
+//	{
+//		calleventloop $get_token_amt(AS_ALLY_LIST) as_tell_allies_move
+//		if AS_TELE_OUT
+//		setvard AS_TELE_OUT 0
+//	}
+//
+//	callevent as_tele_out 4.0 AS_SPAWN_POINT
+}
+
+{ as_tell_allies_move
+	//dbg as_tell_allies_move
+
+	local CUR_TARG $get_token(AS_ALLY_LIST,game.script.iteration)
+
+	if ( $get(ent_me,relationship,CUR_TARG) equals ally )
+	{
+		local L_AS_MOVEPROX AS_MOVEPROX
+		divide L_AS_MOVEPROX 3
+		if $get(CUR_TARG,range) < L_AS_MOVEPROX
+		setvard AS_TELE_OUT 1
+		//I've spawned inside an ally, tell him to move and blink out
+		callexternal CUR_TARG as_ally_stuck_so_move AS_SPAWN_POINT
+	}
+
+	if ( !NPC_NO_AUTO_ACTIVATE )
+	{
+		if $get(CUR_TARG,isplayer)
+		//spawned near a player, cycle up immediately
+		callevent cycle_up "spawned_near_player"
+	}
+}
+
+{ as_tele_out //<seconds> [(return_point)] teleport off map and return in PARAM1 secs
+   if ( PARAM2 startswith PARAM )
+   {
+      //no return origin provided, use current origin
+      setvard AS_TELE_POINT $get(ent_me,origin)
+   }
+   else
+   {
+      setvard AS_TELE_POINT PARAM2
+   }
+   //Tell nearby mobs to GTFO of my way, and hope they're gone by the time I get back
+   local L_SCAN_RANGE AS_MOVEPROX
+   multiply L_SCAN_RANGE 2 //double my standard model reach
+   //danger sound scares mobs away
+   emitsound ent_me $get(ent_me,origin) AS_MOVEPROX PARAM1 danger L_SCAN_RANGE 
+   setorigin ent_me (20000,10000,-10000) //waaaay off the map
+   callevent PARAM1 as_tele_return
+}
+
+{ as_tele_return
+	dbg as_tele_return AS_TELE_POINT
+	setorigin ent_me AS_TELE_POINT
+	callevent 0.5 as_check_spawn_stuck //repeat, if needed
+}
+
+{ as_ally_stuck_so_move
+	//dbg as_ally_stuck_so_move
+	if ( !SUSPEND_AI ) callevent npcatk_suspend_ai 3.0 allystuck
+	setvard NPC_FORCED_MOVEDEST 1
+	local TARGET_ORG $vec(AS_FLEE_POINT)
+	local TARG_ANG $angles(game.monster.origin,TARGET_ORG)
+	local NEW_YAW TARG_ANG
+	callevent npcatk_setmovedest $relvel($vec(0,NEW_YAW,0),$vec(0,1000,0)) 1
+	setvard AS_FLEE_POINT PARAM1
+	callevent 0.1 as_flee_nudge
+}
+
+
+{ as_flee_nudge
+	//dbg as_flee_nudge AS_FLEE_POINT
+	local TARGET_ORG $vec(AS_FLEE_POINT)
+	local TARG_ANG $angles(game.monster.origin,TARGET_ORG)
+	local NEW_YAW TARG_ANG
+	setvelocity ent_me $relvel($vec(0,NEW_YAW,0),$vec(0,200,0))
+}
+
+//============================================== STUCK WHILE NAVIGATING
+{ npcatk_hunt
+	if ( !AS_STARTED )
+	{
+		//dont spawn check until at least 5 seconds post spawn
+		local L_SPAWN_TIME NPC_SPAWN_TIME
+		add L_SPAWN_TIME 5.0
+		if game.time > L_SPAWN_TIME
+		setvard AS_STARTED 1
+	}
+	else
+	{
+		callevent npcatk_anti_stuck
+	}
+}
+
+//this will have to be called from the main think cycle
+{ npcatk_anti_stuck
+	local GAME_TIME game.time
+	//only stuck check so often
+	if GAME_TIME > AS_NEXT_CHECK
+
+	if ( NO_STUCK_CHECKS )
+	{
+		setvard AS_LAST_POS_SET 0
+		setvard AS_NEXT_CHECK GAME_TIME
+		add AS_NEXT_CHECK 3.0
+	}
+
+	if !NO_STUCK_CHECKS
+
+	//set next stuck check time
+	setvard AS_NEXT_CHECK GAME_TIME
+	add AS_NEXT_CHECK AS_STUCK_FREQ
+
+	if ( !NEW_AI )
+	{
+		local TARG_CHECK HUNT_LASTTARGET
+	}
+	else
+	{	
+		local TARG_CHECK NPCATK_TARGET
+	}
+	if $get(TARG_CHECK,isalive)
+	local TARG_RANGE $get(NPCATK_TARGET,range)
+
+	//have I attacked within the last 3 seconds
+	local LAST_ATK AS_ATTACKING
+	add LAST_ATK AS_MAX_ATTACK_TIME
+
+	if ( TARG_RANGE < ATTACK_HITRANGE )
+	{
+		local IN_RANGE 1
+		add AS_IN_RANGE_CLICKS 1
+	}
+	else
+	{
+		setvard AS_IN_RANGE_CLICKS 0
+	}
+
+	//FEB2010_13 - In range, attacking, but can't reach, wiggle a bit
+	if ( AS_MISS_COUNT > 3 )
+	{
+		if !NPC_RANGED //archers usually have internal meathod for this
+		if IN_RANGE
+		if GAME_TIME < LAST_ATK
+
+		dbg anti-stuck (can't reach)
+
+		callevent chicken_run 1.0
+		setvard AS_MISS_COUNT 0
+	}
+
+	//otherwise, dont stuck check if doing attack anim
+	if GAME_TIME > LAST_ATK	
+
+	//dont stuck check if frozen, or under slowing influence
+	if !I_R_FROZEN
+	if !I_R_SLOWED //add to effects_stun and frostbite
+
+	//no stuck checking while fleeing or while AI suspended
+	if !IS_FLEEING
+	if !SUSPEND_AI
+
+	//dont stuck check if teled out
+	if !NPC_WINKED_OUT
+
+	//dont stuck check if dead
+	if $get(ent_me,isalive)
+
+	//dont stuck check if in attack range or move range (thothie JAN2009)
+	if ( !NPC_RANGED ) //Thothie FEB2009 - unless you are an archer, and thus have a huge move range
+	{
+		if ( $get(NPCATK_TARGET,isalive) )
+		{
+			if ( TARG_RANGE < ATTACK_RANGE ) local EXIT_SUB 1
+			if ( TARG_RANGE < ATTACK_MOVERANGE ) local EXIT_SUB 1
+		}
+		if !EXIT_SUB
+	}
+	else
+	{
+		//FEB2009_16 - ranged folks don't anti-stuck if they can see their target
+		if NPC_CANSEE_TARGET
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+	
+	local MY_ORG $get(ent_me,origin)
+
+	//dont stuck check if I am within my movedest's range
+	if $dist(MY_ORG,game.monster.movedest.origin) >= game.monster.movedest.prox
+
+	if ( $dist(AS_LAST_POS,MY_ORG) < AS_DIST_THRESH )
+	{
+		//Stuck, add to stuck count and do wiggle
+		if AS_LAST_POS_SET
+		dbg anti-stuck (no progress)
+		add STUCK_COUNT 1
+		if STUCK_COUNT >= 1
+		if ( AS_CUSTOM_UNSTUCK )
+		{
+			callevent npc_stuck
+		}
+		else
+		{
+			callevent chicken_run $randf(0.5,1.0)
+//			if ( !SUSPEND_AI ) callevent npcatk_suspend_ai AS_WIGGLE_DURATION wiggle
+//			setvard NPC_FORCED_MOVEDEST 1
+//			local MOVE_DEST MY_ORG
+//			add AS_UNSTUCK_ANG 36
+//			if ( AS_UNSTUCK_ANG > 359 ) subtract AS_UNSTUCK_ANG 359
+//			//dbg npcatk_anti_stuck stuck_count STUCK_COUNT ang AS_UNSTUCK_ANG
+//			vectoradd MOVE_DEST $relpos($vec(0,AS_UNSTUCK_ANG,0),$vec(0,1000,0))
+//			callevent npcatk_setmovedest MOVE_DEST AS_MOVEPROX //I'd love to have them trace along a wall, but I can't figure how to pull that.
+//			playanim once ANIM_RUN
+		}
+	}
+	else
+	{
+		//Not stuck, reset stuck counter
+		setvard STUCK_COUNT 0
+	}
+
+	setvard AS_LAST_POS MY_ORG //store position for next check
+	setvard AS_LAST_POS_SET 1
+
+	//second to last resort, wink out and hope whatever's blocking me is gone when I get back
+	if ( STUCK_COUNT == AS_TELE_THRESH )
+	{
+		dbg anti-stuck (tele)
+		if ( !I_R_PET ) callevent ext_wink_out MY_ORG $randf(4,5)
+		add STUCK_COUNT 1
+	}
+
+	//last resort, tele home
+	if STUCK_COUNT >= AS_CRITICAL_THRESH
+	dbg anti-stuck (critical!) tele home
+	if ( !I_R_PET ) callevent ext_wink_out NPC_SPAWN_LOC $randf(4,5)
+	setvard STUCK_COUNT 0
+}
+
+//{ npcatk_suspend_ai
+//	setvard AS_LAST_POS_SET 0
+//	setvard AS_RESUSPEND 1
+//}
+//
+//{ npcatk_resume_ai
+//	setvard AS_LAST_POS_SET 0
+//	setvard AS_RESUSPEND 0
+//}
+//
+////JAN2011_13 Seperate Suspend AI routine to avoid conflicts
+//{ as_npcatk_suspend_ai
+//	if !SUSPEND_AI
+//	setvard SUSPEND_AI 1
+//	callevent PARAM1 as_npcatk_resume_ai
+//}
+//
+//{ as_npcatk_resume_ai
+//
+//	//if ( !AS_RESUSPEND )
+//	//{
+//	if game.time > NPC_RESUME_AI_TIME
+//	setvard SUSPEND_AI 0
+//	//}
+//}
+
+{ npc_selectattack
+	setvard AS_ATTACKING game.time
+	//dbg anim_end game.monster.anim_end game.monster.movedest.origin game.monster.movedest.prox
+}
+
+//SEP2009_23 - Thothie - Adding this to prevent summons from spawn stuck checking against nearby masters
+{ game_dynamically_created
+	setvard NO_SPAWN_STUCK_CHECK 1
+}
+
+{ game_damaged_other
+	setvard AS_LAST_HIT game.time
+	setvard AS_MISS_COUNT 0
+}
+
+{ game_dodamage
+	if !NO_STUCK_CHECKS
+	if !SUSPEND_AI
+	if ( !PARAM1 )
+	{
+		add AS_MISS_COUNT 1
+	}
+	else
+	{
+		setvard AS_MISS_COUNT 0
+		setvard AS_HITBACK_FRUST 0
+		setvard AS_HITBACK_FRUST_RUNS 0
+	}
+	setvard AS_LAST_STRIKE game.time
+}
+
+{ game_damaged
+	if !NO_STUCK_CHECKS
+	if !SUSPEND_AI
+	if ( game.time > AS_ATTACKING )
+	{
+		if game.time > NEXT_HITFRUST_RECORD
+		setvard NEXT_HITFRUST_RECORD game.time
+		add NEXT_HITFRUST_RECORD 1.0 //max 1/second
+		add AS_HITBACK_FRUST 1
+	}
+
+	if ( AS_HITBACK_FRUST >= 7 )
+	{
+		local LS_PLUS5 AS_LAST_STRIKE
+		add LS_PLUS5 5.0
+		if game.time > AS_LAST_STRIKE
+		setvard AS_HITBACK_FRUST 0
+		add AS_HITBACK_FRUST_RUNS 1
+		local MAX_RUN_TIME 3.0
+		multiply MAX_RUN_TIME AS_HITBACK_FRUST_RUNS
+		callevent chicken_run $randf(1.0,MAX_RUN_TIME)
+		dbg anti-stuck (hitback frust)
+	}
+}
+
+{ game_stuck
+	dbg game_stuck
+	if G_DEVELOPER_MODE
+	playsound 0 10 amb/quest1.wav
+}
+
+{ npcatk_setmovedest
+	if NPC_NO_AI
+	setmovedest PARAM1 PARAM2
+}
+
+{ as_check_can_move
+	setvard AS_CAN_MOVE 0
+	
+	local reg.npcmove.endpos $get(ent_me,origin)
+	vectoradd reg.npcmove.endpos $relpos($vec(0,0,0),$vec(0,0,2))
+	local reg.npcmove.testonly	1
+	npcmove ent_me NPCATK_TARGET //be nice if I actually knew what this second param was supposed to be
+	if ( game.ret.npcmove.dist > 0 )
+	{
+		setvard AS_CAN_MOVE 1
+	}
+	if !AS_CAN_MOVE
+	//try another direction
+	local reg.npcmove.endpos $get(ent_me,origin)
+	vectoradd reg.npcmove.endpos $relpos($vec(0,0,0),$vec(0,2,0))
+	local reg.npcmove.testonly	1
+	npcmove ent_me NPCATK_TARGET //be nice if I actually knew what this second param was supposed to be
+	if ( game.ret.npcmove.dist > 0 )
+	{
+		setvard AS_CAN_MOVE 1
+	}
+	if !AS_CAN_MOVE
+	//try another direction
+	local reg.npcmove.endpos $get(ent_me,origin)
+	vectoradd reg.npcmove.endpos $relpos($vec(0,0,0),$vec(0,0,2))
+	local reg.npcmove.testonly	1
+	npcmove ent_me NPCATK_TARGET //be nice if I actually knew what this second param was supposed to be
+	if ( game.ret.npcmove.dist > 0 )
+	{
+		setvard AS_CAN_MOVE 1
+	}
+	if !AS_CAN_MOVE
+	//try another direction
+	local reg.npcmove.endpos $get(ent_me,origin)
+	vectoradd reg.npcmove.endpos $relpos($vec(0,0,0),$vec(0,0,-2))
+	local reg.npcmove.testonly	1
+	npcmove ent_me NPCATK_TARGET //be nice if I actually knew what this second param was supposed to be
+	if ( game.ret.npcmove.dist > 0 )
+	{
+		setvard AS_CAN_MOVE 1
+	}
+	if !AS_CAN_MOVE
+	//try another direction
+	local reg.npcmove.endpos $get(ent_me,origin)
+	vectoradd reg.npcmove.endpos $relpos($vec(0,0,0),$vec(0,-2,0))
+	local reg.npcmove.testonly	1
+	npcmove ent_me NPCATK_TARGET //be nice if I actually knew what this second param was supposed to be
+	if ( game.ret.npcmove.dist > 0 )
+	{
+		setvard AS_CAN_MOVE 1
+	}
+	if !AS_CAN_MOVE
+}
+
+//============================================== Teleporting Stuck Check
+//dynamic unstuckary for summoned mobs who might end up in walls (call from game_dynamically_created, if needed)
+//keeps spinning otuward, until a position where the critter is not stuck is found
+{ game_dynamically_created
+	if AS_SUMMON_TELE_CHECK
+	callevent as_tele_stuck_check
+}
+
+{ as_tele_stuck_check
+	if ( !BAST_STUCK_DID_INIT )
+	{
+		setvard BAST_STUCK_DID_INIT 1
+		setvard BAST_FIRST_TEST 1
+		setvard BAST_ROT 0
+		setvard BAST_FWD 0
+		setvard BAST_VFLOAT 0
+		setvard BAST_SPAWN_POS $get(ent_me,origin)
+
+		if ( $get(ent_me,fly) )
+		{
+			//fliers measure from center
+			setvard BAST_MOB_HEIGHT_ADJ $get(ent_me,height)
+			multiply BAST_MOB_HEIGHT_ADJ 1.1
+		}
+	}
+	local L_TESTPOS BAST_SPAWN_POS
+	local L_VADJ BAST_MOB_HEIGHT_ADJ
+	add L_VADJ BAST_VFLOAT
+	vectoradd L_TESTPOS $relpos($vec(0,BAST_ROT,0),$vec(0,BAST_FWD,BAST_VFLOAT))
+	if ( G_DEVELOPER_MODE )
+	{
+		local L_TESTPOS_ADJ L_TESTPOS
+		vectoradd L_TESTPOS_ADJ z 32
+		effect beam point lgtning.spr 20 L_TESTPOS L_TESTPOS_ADJ (255,0,255) 200 0 0.1
+	}
+	setorigin ent_me L_TESTPOS
+	local reg.npcmove.endpos L_TESTPOS
+	vectoradd reg.npcmove.endpos $relpos($vec(0,0,0),$vec(0,16,0))
+	local reg.npcmove.testonly 1
+	npcmove ent_me
+	if ( game.ret.npcmove.dist == 0 )
+	{
+//		if ( $get(ent_me,fly) )
+//		{
+//			setvard BAST_WAS_FLIER 1
+//			fly 0 //this check cannot be performed on fliers
+//		}
+
+		dbg as_tele_stuck_check stuck @ BAST_FWD BAST_MOB_HEIGHT_ADJ L_TESTPOS
+		add BAST_ROT 15
+		add BAST_FWD 4
+		add BAST_VFLOAT 2
+		if ( BAST_VFLOAT > 64 ) setvard BAST_VFLOAT -64
+		if ( BAST_ROT > 359 ) setvard BAST_ROT 0
+		setorigin ent_me BAST_SPAWN_POS
+		if ( BAST_FWD < 640 )
+		{
+			setvard BAST_FIRST_TEST 0
+			callevent 0.1 as_tele_stuck_check
+		}
+		else
+		{
+			//fuck this shit, try method 2
+			setvard BAST_STUCK_DID_INIT 0
+			setvard BAST_PLAYER_LIST 'BAST_PLAYER_LIST' //clear player list, case new ones show up, been a bit
+			callevent as_tele_to_player_loop
+		}
+	}
+	else
+	{
+		//if ( BAST_WAS_FLIER ) fly 1
+		setvard BAST_STUCK_DID_INIT 0
+		if !BAST_FIRST_TEST //wasn't stuck to begin with
+		setorigin ent_me L_TESTPOS
+	}
+}
+
+{ as_tele_to_player_loop
+	//should method 1 fail, teleport near player - also general function for teleport hunters
+	setvard BAST_TELEPORTING 1
+	if ( game.players == 0 )
+	{
+		//well shit, I'm boned, wait for a player to show up, I guess
+		dbg as_tele_to_player_loop noplayers
+		callevent 20.0 as_tele_to_player_loop
+		setvard BAST_DID_INIT 0
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+	if ( !BAST_DID_INIT )
+	{
+		dbg as_tele_to_player_loop init
+		setvard BAST_DID_INIT 1
+		setvard BAST_SPAWN_POS $get(ent_me,origin)
+		if ( PARAM1 startswith PARAM )
+		{
+			getplayers BAST_PLAYER_LIST
+			setvard BAST_PLAYER_LIST $sort_entlist(BAST_PLAYER_LIST,range)
+			setvard BAST_TEST_PLAYER $get_token(BAST_PLAYER_LIST,0)
+		}
+		else
+		{
+			setvard BAST_TEST_PLAYER PARAM1
+		}
+
+		if ( $get(ent_me,fly) )
+		{
+			//fliers measure from center
+			setvard BAST_MOB_HEIGHT_ADJ $get(ent_me,height)
+			multiply BAST_MOB_HEIGHT_ADJ 1.1
+		}
+
+		dbg as_tele_to_player_loop init selecttarget $get(PARAM1,name)
+	}
+
+	//pick area randomly around target
+	add BAST_ROT 5
+	if ( BAST_ROT > 359 ) setvard BAST_ROT 0
+	if ( NPC_TELEHUNT ) setvard BAST_ROT $randf(0,359.99)
+	local L_DIST $get(ent_me,width)
+	multiply L_DIST 2
+	if ( L_DIST < 48 ) local L_DIST 48 //at least be sure we cleared plr bounding box, if we're very small
+	if ( NPC_TELEHUNT )
+	{
+		if NPC_RANGED
+		dbg as_tele_to_player_loop ranged
+		local L_DIST $randf(384,768) //wanna be pretty far
+	}
+	local L_TELE_POINT $get(BAST_TEST_PLAYER,origin)
+	vectoradd L_TELE_POINT $relpos($vec(0,BAST_ROT,0),$vec(0,L_DIST,BAST_MOB_HEIGHT_ADJ))
+	if ( G_DEVELOPER_MODE )
+	{
+		local L_TELE_POINT_ADJ L_TELE_POINT
+		vectoradd L_TEST_POS_ADJ z 64
+		effect beam point lgtning.spr 20 L_TELE_POINT L_TELE_POINT_ADJ (255,0,255) 200 0 0.1
+	}
+	setorigin ent_me L_TELE_POINT
+	local reg.npcmove.endpos L_TELE_POINT
+	local L_MY_ANG $get(ent_me,angles.yaw)
+	vectoradd reg.npcmove.endpos $relpos($vec(0,L_MY_ANG,0),$vec(-16,0,0))
+	local reg.npcmove.testonly	1
+	npcmove ent_me
+	if ( game.ret.npcmove.dist == 0 )
+	{
+		//position failed, go back to where I was, try again next think
+		dbg as_tele_to_player_loop stuck @ $get(BAST_TEST_PLAYER,name) L_DIST BAST_MOB_HEIGHT_ADJ L_TELE_POINT
+		setorigin ent_me BAST_SPAWN_POS
+
+		if ( !$get(BAST_TEST_PLAYER,isalive) )
+		{
+			setvard BAST_DID_INIT 0
+			if ( NPC_TELEHUNT )
+			{
+				setvard BAST_TELEPORTING 0
+				local EXIT_SUB 1 //target's no longer valid, quit trying
+			}
+		}
+		if !EXIT_SUB
+
+		callevent 0.1 as_tele_to_player_loop
+	}
+	else
+	{
+		//if ( BAST_WAS_FLIER ) fly 1
+		dbg as_tele_to_player_loop success, exiting
+		setvard BAST_DID_INIT 0
+		setvard BAST_TELEPORTING 0
+		setorigin ent_me L_TELE_POINT
+		if ( NPC_TELEHUNTER_FX )
+		{
+			if ( NPC_TELEHUNTER_FX == 1 )
+			{
+				local L_SCALE1 $get(ent_me,height)
+				if ( L_SCALE1 > 256 ) local L_SCALE1 256
+				local L_SCALE_RATIO L_SCALE1
+				divide L_SCALE_RATIO 256
+				local L_SCALE1 $ratio(L_SCALE_RATIO,0.5,3.0)
+				local L_SCALE2 $ratio(L_SCALE_RATIO,1.0,6.0)
+				local L_LIGHT_RAD1 $ratio(L_SCALE_RATIO,64,256)
+				local L_LIGHT_RAD2 $ratio(L_SCALE_RATIO,128,512)
+
+				dbg as_tele_to_player_loop L_SCALE_RATIO
+
+				clientevent new all effects/sfx_sprite_in_fancy BAST_SPAWN_POS xflare1.spr 20 L_SCALE1 (255,255,255) L_LIGHT_RAD1 magic/teleport.wav
+				clientevent new all effects/sfx_sprite_in_fancy $get(ent_me,origin) xflare1.spr 20 L_SCALE2 (255,255,255) L_LIGHT_RAD2 magic/spawn.wav
+			}
+			else if ( NPC_TELEHUNTER_FX == 2 )
+			{
+				//sorc effect (todo)
+			}
+			else if ( NPC_TELEHUNTER_FX > 2 )
+			{
+				//custom effect
+				callevent npc_teleport_fx BAST_SPAWN_POS $get(ent_me,origin)
+			}
+		}
+		else
+		{
+			playsound 0 10 magic/spawn.wav
+		}
+		callevent npcatk_settarget BAST_TEST_PLAYER
+		callevent npc_teleported
+	}
+}

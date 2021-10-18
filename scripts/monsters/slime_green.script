@@ -1,0 +1,114 @@
+#scope server
+{
+	const SOUND_DEATH monsters/sludge/bio.wav
+	const SOUND_STRUCK1 barnacle/bcl_bite3.wav
+	const SOUND_STRUCK2 barnacle/bcl_die3.wav
+	const SOUND_IDLE barnacle/bcl_alert2.wav
+	const SOUND_ATTACK1 barnacle/bcl_tongue1.wav
+	const SOUND_ATTACK2 barnacle/bcl_chew3.wav
+	precache SOUND_DEATH
+	
+	setvar ANIM_IDLE walk
+	setvar ANIM_RUN run
+	setvar ANIM_WALK	walk
+	setvard MOVE_RANGE 256
+	setvard ATTACK_MOVERANGE 256
+	setvard MOVE_RANGE 256
+	setvard ANIM_ATTACK attack
+	setvard ANIM_DEATH die
+	setvard ATTACK_RANGE 40
+	setvard ATTACK_HITRANGE 120
+	const ATTACK_HITCHANCE	75%
+	const ATTACK_DAMAGE $randf(5,15)
+	const POISON_DAMAGE $randf(1,5)
+
+	const FREQ_SPIT 2.0
+	const SPIT_DAMAGE $rand(5,20)
+
+	setvard IMMUNE_POISON 1
+}
+
+#include monsters/base_monster_new
+
+{ [shared] npc_spawn
+	
+	name a|Lesser Green Slime
+	hp 200
+	width 32
+	height 32
+	setmodel monsters/slime.mdl
+	//setsolid trigger
+	setmodelbody 0 0
+	race demon
+	blood green
+	roam 1
+	setvard NPC_GIVE_EXP 80
+
+	hearingsensitivity 10
+
+	takedmg pierce 0.25
+	takedmg slash 0.75
+	takedmg blunt 1.0
+	takedmg fire 1.5
+
+	setvard NPC_RANGED 0 //don't reset move range if can't see nme
+}
+
+{ bite1 //called from model
+
+	playrandomsound 0 10 SOUND_ATTACK2
+	dodamage NPCATK_TARGET ATTACK_HITRANGE ATTACK_DAMAGE ATTACK_HITCHANCE acid
+}
+
+
+{ game_heardsound
+	local SLIME_HEARD $get(ent_lastheard,id)
+	if ( $get(SLIME_HEARD,relationship,ent_me) equals enemy )
+	{
+		setvard SPIT_TARGET SLIME_HEARD
+	}
+}
+
+{ npc_targetsighted
+	if $get(NPCATK_TARGET,range) < ATTACK_MOVERANGE
+	if $rand(1,5) == 1
+	if !IS_FLEEING
+	setvard SPIT_TARGET NPCATK_TARGET
+	callevent npcatk_flee NPCATK_TARGET 512 2.0
+}
+
+{ spit_delay_reset
+
+	setvard SPIT_DELAY 0
+}
+
+{ game_damaged_other
+
+	if $rand(1,10) == 1
+	if $get(ent_laststruck,range) < ATTACK_HITRANGE
+	applyeffect ent_laststruck effects/greater_poison $randf(3,5) $get(ent_me,id) POISON_DAMAGE
+}
+
+{ game_struck
+	setvard SPIT_TARGET $get(ent_laststruck,id)
+	playrandomsound 0 10 SOUND_STRUCK1 SOUND_STRUCK2
+	callevent npcatk_flee $get(ent_laststruck,id) 512 1.0
+}
+
+{
+repeatdelay $randf(3,10)
+	if NPCATK_TARGET equals unset
+	playsound 0 10 SOUND_IDLE
+}
+
+{ [server]
+repeatdelay FREQ_SPIT
+	if $get(SPIT_TARGET,isalive)
+	local TARG_ORG $get(SPIT_TARGET,origin)
+	local TARG_TRACE $get_traceline(game.monster.origin,TARG_ORG,worldonly)
+	//dbg spit_loop TARG_TRACE vs TARG_ORG
+	if TARG_TRACE equals TARG_ORG
+
+	playsound 0 10 SOUND_ATTACK1
+	tossprojectile SPIT_TARGET 300 SPIT_DAMAGE 2 proj_poison (0,0,8)
+}

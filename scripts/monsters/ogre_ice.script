@@ -1,0 +1,76 @@
+//Even meaner ogre/troll
+{
+	const NPC_BASE_EXP 450
+
+	const SOUND_DEATH bullchicken/bc_die1.wav
+	precache SOUND_DEATH
+
+	const WEAK_THRESHOLD 1500
+	const SWIPE_DAMAGE '$rand(50,90)'
+	const HEADBUTT_DAMAGE '$rand(50,90)'
+	const LEAP_DAMAGE '$rand(20,40)'
+	const CHANCE_FREEZE 25%
+	const DOT_FREEZE 30
+
+	setvard DROP_GOLD 1
+	setvard DROP_GOLD_MIN 40
+	setvard DROP_GOLD_MAX 60
+
+	setvar FLINCH_HEALTH 2000
+
+	const SOUND_FREEZE "magic/frost_reverse.wav"
+}
+
+#include monsters/swamp_ogre
+#include monsters/base_ice_race
+
+{ npc_spawn
+
+	name an|Marogar Ogre
+	hp 2500
+	takedmg all 0.5
+	race demon //easier placement
+	roam 1
+	setmodel MONSTER_MODEL
+	setmoveanim ANIM_WALK
+	height 64
+	width 32
+	hearingsensitivity 2
+	blood green //check in code
+	setidleanim ANIM_IDLE
+
+	setvard RUN_STEP 0
+
+	setprop ent_me skin 1
+
+	callevent 1.0 idle_sounds
+}
+
+
+{ [override] game_dodamage //1: Attack Hit (1/0)  2: Entity Attack hit  3:  Start Position  4:  End Position
+
+	if ( HEADBUTT_ON )
+	{
+		if ( PARAM1 )
+		{
+			playsound 0 10 SOUND_HEADBUTT
+			applyeffect NPCATK_TARGET effects/heavy_stun 5 1
+		}
+		if ( !PARAM1 ) playrandomsound 0 10 SOUND_SWIPEMISS1 SOUND_SWIPEMISS2
+		setvard ANIM_ATTACK ANIM_SWIPE
+		setvard HEADBUTT_ON 0
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	//assumes swipe
+	if ( PARAM1 )
+	{
+		playrandomsound 0 10 SOUND_SWIPEHIT1 SOUND_SWIPEHIT2
+		addvelocity ent_laststruckbyme $relvel(-100,130,120)
+		if $rand(1,100) < CHANCE_FREEZE
+		applyeffect PARAM2 effects/effect_frostbite_dmg 5.0 $get(ent_me,id) DOT_FREEZE
+		playsound 0 10 SOUND_FREEZE
+	}
+	if ( !PARAM1 ) playrandomsound 0 10 SOUND_SWIPEMISS1 SOUND_SWIPEMISS2
+}

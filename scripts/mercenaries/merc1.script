@@ -1,0 +1,260 @@
+//Mercenary
+#scope server
+{
+   const SUM_SAY_COME "Comin' right to ya sir."
+   const SUM_SAY_ATTACK "Yes sir, that thing's gonna die right quick!"
+   const SUM_SAY_HUNT "Gotta be somethin to smack around here somewhere..."
+   const SUM_SAY_DEFEND "Watchin' yer back, sir."
+   const SUM_SAY_DEATH "Mom alway said I'd end up this way."
+   const SUM_REPORT_SUFFIX ", sir."
+
+   const ANIM_SITIDLE sitidle
+   setvar ANIM_IDLE idle1
+   setvar ANIM_WALK walk
+   setvar ANIM_RUN run
+   setvard ANIM_ATTACK swordswing1_L
+   setvard MOVE_RANGE 64
+   setvard ATTACK_RANGE 72
+   setvard ATTACK_HITRANGE 120
+   const DMG_MIN 5
+   const DMG_MAX 12
+   const ATTACK_HITCHANCE 80%
+
+   const SOUND_ALERT1 npc/prepdie.wav
+   const SOUND_ATTACK1 weapons/swingsmall.wav
+   const SOUND_ATTACK2 weapons/swingsmall.wav
+   const SOUND_STRUCK1 weapons/cbar_hitbod1.wav
+   const SOUND_STRUCK2 weapons/cbar_hitbod2.wav
+   const SOUND_STRUCK3 weapons/cbar_hitbod3.wav
+   const SOUND_PAIN player/chesthit1.wav
+   const SOUND_PAIN2 player/armhit1.wav
+   const VOLUME 5
+
+   setvard CAN_RETALIATE 1
+   setvard CAN_ATTACK 0
+   const RETALIATE_CHANGETARGET_CHANCE 75%  //base_npc_attack - Automatically switch targets to the last damaging player
+   setvard CAN_FLEE 0		//base_npc_attack - Whether I run away at low health
+   setvard CAN_HUNT 0
+   setvard CAN_HEAR 1
+   setvard CAN_FLINCH 1
+   setvard FLINCH_ANIM raflinch
+   setvard FLINCH_CHANCE 10%
+   const SUMMON_VICINITY 360
+}
+
+#include monsters/summon/base_summon
+#include help/first_hireling
+
+{  summon_spawn
+
+   	hp 150
+   	name Mercenary
+   	//ov 359
+   	width 32
+   	height 64
+   	roam 0
+   	hearingsensitivity 3
+   	skilllevel 0
+   	race neutral
+   	setmodel npc/guard1.mdl
+   	setmodelbody	1 0
+   	setidleanim ANIM_SITIDLE
+   	setmoveanim ANIM_WALK
+
+   	setvard IS_HIRED 0
+   	setvard CONVERSE_PLAYER 0
+   	setvard SEE_PLAYER_NOW 0
+   	setvard SEE_ENEMY 0
+
+   	setstat parry 10 10 10
+	takedmg all 0.8
+
+   	setvard HIRE_PRICE $rand(30,50)
+	local reg.mitem.id		hire
+	local reg.mitem.access		all
+	local reg.mitem.title		"Hire for "
+	stradd reg.mitem.title		HIRE_PRICE
+	stradd reg.mitem.title		" gold"
+	local reg.mitem.type		payment
+	local reg.mitem.data		'gold:'
+	stradd reg.mitem.data		HIRE_PRICE
+	local reg.mitem.callback	hired_by_player
+	
+	menuitem.register
+	
+
+	givehp -3
+   	callevent basesummon_attackall //Premptive attack   
+}
+
+{ hired_by_player	//PARAM1 - player
+
+	menuitem.remove hire
+	setvard IS_HIRED 1
+	setvar ANIM_IDLE idle1
+  	setvard SUMMON_MASTER PARAM1
+    	setvard MASTER_NAME $get(SUMMON_MASTER,name)
+     	stradd MASTER_NAME !
+  	setvard CAN_HUNT 1
+  	setvard CAN_ATTACK 1
+  	race human
+     	saytext Lead on, MASTER_NAME
+	setidleanim ANIM_IDLE
+  	playanim once yes
+}
+
+
+
+   // See Enemy
+{  npc_targetsighted
+	
+
+	if( HUNT_LASTTARGET equals SUMMON_MASTER )
+	{
+		if $get(HUNT_LASTTARGET,dist) < 256
+		setmoveanim ANIM_WALK	
+	}
+	else if( $get(ent_lastseen,id) isnot HUNT_LASTTARGET )
+	{
+		playrandomsound game.sound.voice VOLUME SOUND_ALERT1 none none none
+	}
+}
+
+   // Deal damage
+{  attack_1
+
+   	playsound game.sound.weapon VOLUME SOUND_ATTACK1 SOUND_ATTACK2
+
+   	dodamage ent_lastseen ATTACK_HITRANGE $randf(DMG_MIN,DMG_MAX) ATTACK_HITCHANCE
+}
+
+   //Hit by someone
+{  npc_struck
+   
+   	playrandomsound game.sound.body VOLUME SOUND_PAIN SOUND_PAIN SOUND_STRUCK1 SOUND_STRUCK2 SOUND_STRUCK3
+	if( IS_HIRED ) callevent rest_getup	
+}
+
+//See player, get up and offer services
+{
+   repeatdelay 2
+  
+   	if IS_HIRED equals 0
+   
+   	race human
+   	if $cansee(ally)
+   	callevent standandtalk
+}
+{ standandtalk
+
+   	if CONVERSE_PLAYER equals 0
+   	if $cansee(ally,90)
+   
+   	setvard CONVERSE_PLAYER 1
+   	playanim once sitstand
+   	setidleanim idle1
+
+   	callevent 5 offer_1
+}
+{  offer_1
+  
+   	saytext You shouldn't be alone here.
+  	say [30] [30] [30] [30] [20] [20] [30]
+  	callevent 2 offer_2
+}
+{  offer_2
+  
+  	saytext I'll show you around these plains, if you pay me $int(HIRE_PRICE) gold
+   	say [30] [30] [30] [30] [30] [30] [30] [30] [30]
+   	playanim once yes
+   	callevent 5 sitdown
+}
+
+{  sitdown
+
+   	if IS_HIRED equals 0
+   	setvard SEE_PLAYER_NOW 0
+   	callevent sitdownlater
+   	callevent sitdownnow
+}
+
+{  sitdownlater
+
+   	race human
+   	look 256
+   	callevent sitdownlater2
+}
+{  sitdownlater2
+
+   	look 256
+   	if $cansee(player,128)
+   	setvard SEE_PLAYER_NOW 1
+
+   	callevent 5 sitdown
+}
+{  sitdownnow
+
+   	if SEE_PLAYER_NOW equals 0
+   
+   	setvar CONVERSE_PLAYER 0
+   	setidleanim ANIM_IDLE
+}
+
+//Regen
+{  npcatk_target_lost
+
+	if !MERC_RESTING
+   	callevent $rand(2,5) rest_checksit
+}
+{  game_movingto_dest
+
+	if MERC_RESTING
+	callevent rest_getup	
+}
+
+{	rest_checksit
+
+	if !IS_HUNTING
+	if !IS_ATTACKING
+	if !SUMMON_RETURNING
+	if game.monster.hp < game.monster.maxhp
+
+	setvard MERC_RESTING 1
+   	setidleanim ANIM_SITIDLE
+	givehp 1
+	callevent 5 rest_checksit
+
+	if game.monster.hp >= game.monster.maxhp
+	callevent 3 rest_getup
+	
+}
+{	rest_getup
+
+   	setidleanim ANIM_IDLE
+	setvard MERC_RESTING 0
+}
+
+//Get hired
+{  game_recvoffer_gold
+
+  	if CONVERSE_PLAYER equals 1
+  	if( game.offer.gold == HIRE_PRICE )
+  	{
+		recvoffer accept
+		callevent hired_by_player  $get(ent_lastgave,id)
+  	}
+	else if( game.offer.gold > HIRE_PRICE )
+	{
+	   recvoffer reject
+	   saytext It's okay, really. $int(HIRE_PRICE) is all I need.
+  	   say [10] [10] [10] [10] [10] [10] [4]
+	   playanim once no
+	}
+	else if( game.offer.gold < HIRE_PRICE )
+	{
+	   recvoffer reject
+	   saytext I will not be persuaded for a lower price! $int(HIRE_PRICE). Nothing more, nothing less.
+  	   say [10] [10] [10] [6] [12] [4] [20] [10] [10]
+	   playanim once no
+	}
+}

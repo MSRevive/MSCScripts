@@ -1,0 +1,893 @@
+#scope server
+{ [shared]
+
+	//base anims
+	setvar ANIM_WALK walk2
+	setvar ANIM_IDLE deep_idle
+
+	setvard ANIM_RUN run
+	setvard ANIM_ATTACK swordswing1_R
+
+	//custom anims
+	const ANIM_MOVE_FAST run
+	const ANIM_MOVE_CAUTIOUS run_squatwalk1_R
+	const ANIM_IDLE_CAUTIOUS stand_squatwalk1_R
+	const ANIM_IDLE_NORMAL deep_idle
+
+	const ANIM_LOOK look_idle
+	const ANIM_GUARD_IDLE stand
+	const ANIM_DUCK_MOVE crawl //needs vadj
+	const ANIM_DUCK_IDLE crouch_idle
+	const ANIM_JUMP jump
+	const ANIM_LONG_JUMP long_jump
+
+	const ANIM_AURA prepare_fireball
+
+	const ANIM_DEATH1 die_simple
+	const ANIM_DEATH2 die_backwards1
+	const ANIM_DEATH3 die_backwards
+	const ANIM_DEATH4 die_forwards
+	const ANIM_DEATH5 headshot
+	const ANIM_DEATH6 die_spin
+	const ANIM_DEATH7 gutshot
+	
+	const ANIM_ATTACK_1H swordswing1_R //frame_melee_1h
+	const ANIM_ATTACK_2H longsword_swipe_L //frame_melee_2h
+	const ANIM_ATTACK_JAB swordjab1_R //frame_jab
+	const ANIM_ATTACK_1H_READY swordready1_R
+	const ANIM_ATTACK_GAXE battleaxe_swing1_L //frame_axe2
+
+	const ANIM_SPELL_PREP prepare_fireball //frame_spell_hands_join frame_spell_release
+	const ANIM_SPELL_CUDDLE aim_fireball_R
+	const ANIM_SPELL_FIRE throw_fireball_R //fame_spell_toss - so fast maybe don't use event though (3 frames)
+
+	const ANIM_DRAW_SWORD swordready1_R
+	
+	const ANIM_MA_IDLE aim_fists
+	const ANIM_ATTACK_MA aim_punch1
+	const ANIM_KICK stance_normal_highkick_r1
+	const ANIM_SWEEP stance_normal_lowkick_r1
+
+	const ANIM_PARRY longsword_parry
+	const ANIM_BLOCK aim_block1_L
+
+	const ANIM_HOLD_AURA aim_sword1_R
+
+	//other shared data
+	const ELF_MODEL npc/elf_f_warrior.mdl
+}
+
+{ [server]
+
+	//base stats
+	setvard ATTACK_MOVERANGE 48
+	setvard ATTACK_RANGE 80
+	setvard ATTACK_HITRANGE 120
+
+	//custom stats
+	const WALK_RANGE 200
+
+	const DMG_MELEE 300
+	const DMG_TYPE slash
+	const DMG_KICK 400
+	const DOT_SCRIPT effects/effect_burn
+	const DOT_AMT 50
+	const DOT_DURATION 5.0
+	const ATTACK_HITCHANCE 90%
+	const CHANCE_STUN 0%
+	const CHANCE_DOT 0%
+	const STUN_DURATION 10.0
+
+	const FREQ_LOOK 5.0 //just an animation effect
+
+	const CAN_THROW 0
+	const DMG_THROW 600
+	const THROW_SPEED 600
+	const THROW_RANGE 512
+	const FREQ_THROW 6.0
+	const KNIFE_TYPE poison
+	const KNIFE_THROW_ITEM proj_k_knife
+
+	const CAN_KICK 0
+	const FREQ_KICK $randf(10.0,25.0)
+	const KICK_RANGE 90
+	const LEAP_AFTER_KICK 0
+
+	const CAN_JUMP 1
+	const FREQ_JUMP 5.0
+	const MAX_JUMP_RANGE 600
+
+	const CAN_FREEZE_AURA 0
+	const FREEZE_AURA_RADIUS 128
+	const FREEZE_AURA_DURATION 10.0
+	const FREEZE_AURA_CL_SCRIPT effects/sfx_ice_burst
+	const FREQ_FREEZE_AURA $randf(10.0,20.0)
+
+	const WEAPON_AURA 0
+	const WAURA_TYPE lightning
+	const WAURA_EFFECT_SCRIPT effects/effect_shock_dmg
+	const WAURA_RANGE 128
+	const WEAPON_AURA_CL_SCRIPT monsters/telf_warrior_laxe_cl
+	const DMG_WAURA 300
+	const DOT_WAURA 100
+	const WAURA_DMG_TYPE lightning_effect
+	const FREQ_WAURA $randf(20.0,30.0)
+	const WAURA_DURATION 5.0
+	const SOUND_WAURA_START magic/bolt_end.wav
+	const SOUND_WAURA_LOOP magic/bolt_loop.wav
+	
+	const CAN_BLOCK 0
+	const FREQ_BLOCK $randf(20.0,30.0)
+	const BLOCK_DURATION 5.0
+
+	//sounds
+	const SOUND_STRUCK1 weapons/cbar_hitbod1.wav
+	const SOUND_STRUCK2 weapons/cbar_hitbod2.wav
+	const SOUND_STRUCK3 weapons/cbar_hitbod3.wav
+
+	const SOUND_SHIELD1 weapons/axemetal1.wav
+	const SOUND_SHIELD2 weapons/axemetal2.wav
+	const SOUND_SHIELD3 doors/doorstop5.wav
+
+	const SOUND_ATTACK1 zombie/claw_miss1.wav
+	const SOUND_ATTACK2 zombie/claw_miss2.wav
+	const SOUND_ATTACK_CRY1 npc/elvenfemale/ElfF_Attack1.wav
+	const SOUND_ATTACK_CRY2 npc/elvenfemale/ElfF_Attack2.wav
+	const SOUND_ATTACK_CRY3 npc/elvenfemale/ElfF_Attack3.wav
+	
+	const SOUND_PAIN1 npc/elvenfemale/ElfF_Criticalhit.wav
+	const SOUND_PAIN2 npc/elvenfemale/ElfF_Pain1.wav
+	const SOUND_PAIN3 npc/elvenfemale/ElfF_Pain2.wav
+	const SOUND_PAIN4 npc/elvenfemale/ElfF_Pain3.wav
+
+	const SOUND_DEATH npc/elvenfemale/ElfF_Die.wav
+
+	const SOUND_THROW zombie/claw_miss1.wav
+	const SOUND_DRAW weapons/dagger/dagger2.wav
+
+	precache SOUND_DEATH
+}
+
+#include monsters/base_monster_new
+
+//==================================== Init
+{ npc_spawn
+
+	setmodel ELF_MODEL
+	width 24
+	height 80
+	roam 1
+
+	hearingsensitivity 10
+
+	setmoveanim ANIM_WALK
+	setidleanim ANIM_IDLE
+
+	//general elemental resistance
+	takedmg cold 0.5
+	takedmg fire 0.5
+	takedmg poison 0.5
+	takedmg lightning 0.5
+
+	takedmg holy 0.0 //native to plane
+
+	callevent elf_spawn
+
+	setvard ELF_HALF_HEALTH $get(ent_me,maxhp)
+	multiply ELF_HALF_HEALTH 0.5
+
+	setvard DEF_ANIM_WALK ANIM_WALK
+	setvard DEF_ANIM_RUN ANIM_RUN
+	setvard DEF_ANIM_IDLE ANIM_IDLE
+	callevent 3.0 mark_def_anims
+
+	setvard FIRST_CYCLE game.time
+	add FIRST_CYCLE 10.0
+}
+
+{ npc_post_spawn
+	callevent close_mouth
+
+	if AM_ARCHER
+	setvard ANIM_ATTACK shootbow
+	setvard ATTACK_RANGE 800
+	setvard ATTACK_HITRANGE 800
+}
+
+{ mark_def_anims //give time for the top script to redefine
+
+	setvard DEF_ANIM_WALK ANIM_WALK
+	setvard DEF_ANIM_RUN ANIM_RUN
+	setvard DEF_ANIM_IDLE ANIM_IDLE
+}
+
+//==================================== Movement Suspend
+//- This shouldn't be needed, but something in the base AI or code is causing creatuers to move when when the AI is suspended
+{ suspend_movement
+	setvard ANIM_WALK PARAM1
+	setvard ANIM_RUN PARAM1
+	setvard ANIM_IDLE PARAM1
+	setmoveanim PARAM1
+	setidleanim PARAM1
+	roam 0
+}
+
+{ resume_movement
+	setvard ANIM_WALK DEF_ANIM_WALK
+	setvard ANIM_RUN DEF_ANIM_RUN
+	setvard ANIM_IDLE DEF_ANIM_IDLE
+	setmoveanim ANIM_RUN
+	setidleanim ANIM_IDLE
+	roam 1
+}
+
+//==================================== Alerts / Releases
+{ cycle_npc
+	if ( PARAM1 equals test )
+	{
+		//debug
+		saytextrange 1024
+		saytext Is that... An orc?
+		local NEAR_ALLY $get_tsphere(ally,1024)
+		if NEAR_ALLY isnot none
+		callexternal $get_token(NEAR_ALLY,0) ext_say_orc
+	}
+	if $lcase(game.map.name) equals the_wall
+	if G_ORC_ALERT
+	setvarg G_ORC_ALERT 0
+	saytextrange 1024
+	saytext Is that... An Orc?
+	local NEAR_ALLY $get_tsphere(ally,1024)
+	if NEAR_ALLY isnot none
+	callexternal $get_token(NEAR_ALLY,0) ext_say_orc
+}
+
+{ npc_targetsighted
+	if $get(NPCATK_TARGET,isplayer)
+	if G_ESCORT_ALERT_SAYTEXT isnot 'G_ESCORT_ALERT_SAYTEXT' //in case escort alert text not yet set due to spawn order
+	if ( AM_ESCORT )
+	{
+		if !G_DID_ESCORT_ALERT //reset by each leader
+		saytextrange 1024
+		saytext G_ESCORT_ALERT_SAYTEXT
+		setvarg G_DID_ESCORT_ALERT 1
+	}
+}
+
+{ cycle_up
+
+	if ( ATTACK_STANCE equals 1h )
+	{
+		playanim critical ANIM_ATTACK_1H_READY
+		callevent move_type 1
+	}
+
+	if ( CAN_KICK )
+	{
+		setvard NEXT_KICK game.time
+		add NEXT_KICK FREQ_KICK
+	}
+}
+
+{ cycle_down
+	if ( ATTACK_STANCE equals 1h ) callevent move_type 0
+}
+
+{ my_target_died
+	if ( ATTACK_STANCE equals 1h ) callevent move_type 0
+}
+
+{ heard_cycle_down
+	if ( ATTACK_STANCE equals 1h ) callevent move_type 0
+}
+
+{ npc_heard_player
+	if ( ATTACK_STANCE equals 1h )	callevent move_type 1
+}
+
+//==================================== Main Cycle
+{ npcatk_hunt
+
+	if ( SUSPEND_AI )
+	{
+		if game.time > MAX_SUSPEND
+		callevent npcatk_resume_ai
+	}
+
+	local GAME_TIME game.time //we're checking game.time a lot in this sub, so store it here
+
+	if GAME_TIME > FIRST_CYCLE //suspend cycles until we're sure we're fully initialized
+
+	if NPCATK_TARGET isnot unset
+
+	if !SUSPEND_AI
+
+	if ( ATTACK_STANCE equals 1h )
+	{
+		//walk calmly up to opponent if not struck within last 5 secs
+		if ( GAME_TIME > NEXT_CALM_TIME )
+		{
+			if ( $get(NPCATK_TARGET,range) < WALK_RANGE )
+			{
+				if ( $cansee(NPCATK_TARGET) )
+				{
+					callevent move_type 1
+				}
+				else
+				{
+					callevent move_type 0
+				}
+			}
+			else
+			{
+				callevent move_type 0
+			}
+		}
+		else
+		{
+			callevent move_type 0
+		}
+	} //endif ATTACK_STANCE equals 1h
+
+	if ( CAN_THROW )
+	{
+		if GAME_TIME > NEXT_THROW
+		if !DOING_LEAP
+		if $cansee(NPCATK_TARGET)
+		if ( $get(NPCATK_TARGET,range) > ATTACK_RANGE )
+		{
+			if $get(NPCATK_TARGET,range) < THROW_RANGE
+			setvard NEXT_THROW GAME_TIME
+			add NEXT_THROW FREQ_THROW
+			callevent throw_knife NPCATK_TARGET
+			local EXIT_SUB 1
+		}
+	}
+	if !EXIT_SUB
+
+	if ( CAN_KICK )
+	{
+		if GAME_TIME > NEXT_KICK
+		setvard NEXT_KICK GAME_TIME
+		if $get(NPCATK_TARGET,range) < KICK_RANGE
+		add NEXT_KICK FREQ_KICK
+		callevent do_kick
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	//jump at targets too high
+	if ( CAN_JUMP )
+	{
+		if GAME_TIME > NEXT_JUMP
+
+		if $get(NPCATK_TARGET,range) < MAX_JUMP_RANGE
+
+		local MY_Z $get(ent_me,origin.z)
+		local TARG_Z $get(NPCATK_TARGET,origin.z)
+		if ( $get(NPCATK_TARGET,isplayer) ) subtract TARG_Z 38 //compensate for origin center
+
+		local Z_DIFF TARG_Z
+		subtract Z_DIFF MY_Z
+
+		if ( Z_DIFF > ATTACK_RANGE )
+		{
+			callevent do_hop Z_DIFF
+			local EXIT_SUB 1
+			setvard NEXT_JUMP GAME_TIME
+			add NEXT_JUMP FREQ_JUMP
+		}
+	}
+	if !EXIT_SUB
+
+
+	if ( CAN_FREEZE_AURA )
+	{
+		if $get(NPCATK_TARGET,range) < FREEZE_AURA_RADIUS
+		if GAME_TIME > NEXT_FREEZE_AURA
+		setvard NEXT_FREEZE_AURA GAME_TIME
+		add NEXT_FREEZE_AURA FREQ_FREEZE_AURA
+		callevent do_freeze_aura
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	local L_CAN_SEE $cansee(NPCATK_TARGET)
+
+	if ( WEAPON_AURA )
+	{
+		if L_CAN_SEE
+		if $get(NPCATK_TARGET,range) < WAURA_RANGE
+		if GAME_TIME > NEXT_WAURA
+		setvard NEXT_WAURA GAME_TIME
+		add NEXT_WAURA FREQ_WAURA
+		callevent do_waura
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+
+	if ( CAN_BLOCK )
+	{
+		if L_CAN_SEE
+		if GAME_TIME > NEXT_BLOCK
+		setvard NEXT_BLOCK GAME_TIME
+		add NEXT_BLOCK FREQ_BLOCK
+		callevent do_block
+	}
+}
+
+//==================================== Attack switches
+{ npc_selectattack
+	if ( ATTACK_STANCE equals assasin )
+	{
+		local RND_ATK $rand(1,2)
+		if ( RND_ATK == 1 )
+		{
+			setvard ANIM_ATTACK ANIM_ATTACK_1H
+		}
+		else
+		{
+			setvard ANIM_ATTACK ANIM_ATTACK_JAB
+		}
+	}
+
+	if ( ATTACK_STANCE equals 2hsword )
+	{
+
+		local RND_ATK $rand(1,2)
+		if ( RND_ATK == 1 )
+		{
+			setvard ANIM_ATTACK ANIM_ATTACK_2H
+		}
+		else
+		{
+			setvard ANIM_ATTACK ANIM_ATTACK_GAXE
+		}
+	}
+}
+
+
+//==================================== Calm approach
+{ move_type //1=Cautious 0=Combat
+	if ATTACK_STANCE equals 1h
+	if !SUSPEND_AI
+
+	//dbg move_type PARAM1 CAUTIOUS_MOVE
+
+	if ( PARAM1 == 1 )
+	{
+		if !CAUTIOUS_MOVE
+		setvard CAUTIOUS_MOVE 1
+		setmoveanim ANIM_MOVE_CAUTIOUS
+		setidleanim ANIM_IDLE_CAUTIOUS
+	}
+	else
+	{
+		if CAUTIOUS_MOVE
+		setvard CAUTIOUS_MOVE 0
+		setmoveanim ANIM_MOVE_FAST
+		setidleanim ANIM_IDLE_NORMAL
+	}
+}
+
+{ combat_move
+	setvard CAUTIOUS_MOVE 0
+	setmoveanim ANIM_MOVE_FAST
+	setidleanim ANIM_IDLE_NORMAL
+}
+
+//==================================== Anim Events
+{ frame_melee_1h
+	//<target> <range> <dmg> <cth> [type]
+
+	if ( THROWING_KNIFE )
+	{
+		setvard THROWING_KNIFE 0
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	callevent melee_attack
+}
+
+{ frame_jab
+	callevent melee_attack
+}
+
+{ frame_axe2
+	callevent melee_attack
+}
+
+{ frame_melee_2h
+	callevent melee_attack
+}
+
+{ frame_kick_high
+	dodamage NPCATK_TARGET ATTACK_HITRANGE DMG_KICK ATTACK_HITCHANCE DMG_TYPE
+	if $get(NPCATK_TARGET,range) < KICK_RANGE
+	applyeffect NPCATK_TARGET effects/heavy_stun 10.0 $get(ent_me,id) 1
+
+	if LEAP_AFTER_KICK
+	callevent 0.2 leap_away
+}
+
+{ melee_attack
+	setvard MELEE_ATTACK 1
+	dodamage NPCATK_TARGET ATTACK_HITRANGE DMG_MELEE ATTACK_HITCHANCE DMG_TYPE
+	playrandomsound 1 10 SOUND_ATTACK1 SOUND_ATTACK2
+	if $rand(1,5) == 1
+	playrandomsound 0 10 SOUND_ATTACK_CRY1 SOUND_ATTACK_CRY2 SOUND_ATTACK_CRY3
+	callevent move_mouth
+}
+
+{ frame_jump_land
+	callevent force_leap_end
+}
+
+{ frame_hop_land
+	callevent npcatk_resume_ai
+}
+
+//==================================== Struck
+{ game_struck
+	setvard LAST_HIT_FOR PARAM1
+
+	//be agitated for at least 5 seconds after being struck
+	setvard NEXT_CALM_TIME game.time
+	add NEXT_CALM_TIME 5.0
+
+	if !AM_BLOCKING
+
+	if ( ATTACK_STANCE equals 1h ) callevent move_type 0
+
+	playrandomsound 1 10 SOUND_STRUCK1 SOUND_STRUCK2 SOUND_STRUCK3
+	if ( PARAM1 > 100 )
+	{
+		callevent sound_pain
+	}
+	else
+	{
+		if $get(ent_me,hp) < ELF_HALF_HEALTH
+		if $rand(1,5) == 1
+		callevent sound_pain
+	}
+}
+
+{ game_damaged //PARAM1=attacker PARAM2=dmg PARAM3=dmg_type
+	if AM_BLOCKING
+	local ATTACKER_ID $get(PARAM1,id)
+	local ATTACKER_ORG $get(PARAM1,origin)
+	if $within_cone2D(ATTACKER_ORG,game.monster.origin,game.monster.angles,1)
+	if ( PARAM3 contains effect ) local EXIT_SUB 1
+	if !EXIT_SUB
+	setdmg dmg 0.1
+	returndata 0.1
+	local NEG_DMG $neg(PARAM2)
+	dbg game_damaged NEG_DMG
+	addvelocity ent_me $relvel(0,NEG_DMG,110)
+	playrandomsound 0 10 SOUND_SHIELD1 SOUND_SHIELD2 SOUND_SHIELD3
+}
+
+//==================================== Damage specials
+{ game_dodamage //PARAM1=hit:0|1 PARAM2=ent_hit PARAM3=(start) PARAM4=(end)
+	if ( MELEE_ATTACK )
+	{
+		if PARAM1
+		if ( CHANCE_STUN > 0 )
+		{
+			if $rand(1,100) <= CHANCE_STUN
+			applyeffect PARAM2 effects/heavy_stun STUN_DURATION $get(ent_me,id) 1
+		}
+
+		if ( CHANCE_DOT > 0 )
+		{
+			if $rand(1,100) <= CHANCE_DOT
+			applyeffect PARAM2 DOT_SCRIPT DOT_DURATION $get(ent_me,id) DOT_AMT
+		}
+	}
+	setvard MELEE_ATTACK 0
+}
+
+//==================================== Handle Death
+{ npc_death
+	local RND_DEATH $rand(1,7)
+	if ( RND_DEATH == 1 ) setvard ANIM_DEATH ANIM_DEATH1
+	if ( RND_DEATH == 2 ) setvard ANIM_DEATH ANIM_DEATH2
+	if ( RND_DEATH == 3 ) setvard ANIM_DEATH ANIM_DEATH3
+	if ( RND_DEATH == 4 ) setvard ANIM_DEATH ANIM_DEATH4
+	if ( RND_DEATH == 5 ) setvard ANIM_DEATH ANIM_DEATH5
+	if ( RND_DEATH == 6 ) setvard ANIM_DEATH ANIM_DEATH6
+	if ( RND_DEATH == 7 ) setvard ANIM_DEATH ANIM_DEATH7
+	if ( LAST_HIT_FOR > 100 ) setvard ANIM_DEATH ANIM_DEATH6 //spin out from heavy killing blows
+	callevent close_mouth
+
+	if ( G_TELF_ESCORTS > 0 )
+	{
+		if AM_ESCORT
+		subtract G_TELF_ESCORTS 1  //The_Wall escort tracker
+	}
+}
+
+//==================================== Throw Knife
+{ throw_knife //<PARAM1> target
+	playrandomsound 1 10 SOUND_ATTACK_CRY1 SOUND_ATTACK_CRY2 SOUND_ATTACK_CRY3
+	setvard THROWING_KNIFE 1
+	setvard KNIFE_TARGET PARAM1
+	setvard AS_ATTACKING game.time
+	add AS_ATTAKCING 5.0
+	callevent npcatk_suspend_ai
+	setmodelbody 1 0
+	roam 0
+	setidleanim ANIM_ATTACK_1H
+	setmoveanim ANIM_ATTACK_1H
+	setmovedest KNIFE_TARGET 9999
+	playanim critical ANIM_ATTACK_1H
+	playsound 0 10 SOUND_THROW
+	callevent 0.25 throw_knife2
+	callevent 0.75 throw_knife_done
+}
+
+{ throw_knife2
+	setvard ALCO_TYPE KNIFE_TYPE
+	tossprojectile KNIFE_TARGET THROW_SPEED DMG_THROW 0.2 KNIFE_THROW_ITEM (0,38,62)
+}
+
+{ throw_knife_done
+	playsound 0 10 SOUND_DRAW
+	setmodelbody 1 1
+	roam 1
+	setidleanim ANIM_IDLE
+	setmoveanim ANIM_RUN
+	callevent npcatk_resume_ai
+}
+
+//==================================== Kick
+{ do_kick
+	setvard AS_ATTACKING game.time
+	add AS_ATTACKING 5.0
+	playanim critical ANIM_KICK
+	playrandomsound 1 10 SOUND_ATTACK1 SOUND_ATTACK2
+	playrandomsound 0 10 SOUND_ATTACK_CRY1 SOUND_ATTACK_CRY2 SOUND_ATTACK_CRY3
+}
+
+//==================================== Leap Away
+{ leap_away
+	callevent npcatk_suspend_ai
+	setvard DOING_LEAP 1
+	setvard LEAP_TARGET PARAM1
+	if ( !$get(LEAP_TARGET,isalive) ) setvard LEAP_TARGET NPCATK_TARGET
+	setmovedest LEAP_TARGET 1024 flee
+	setvard NPC_FORCED_MOVEDEST 1
+	playanim critical ANIM_LONG_JUMP
+	setmoveanim ANIM_LONG_JUMP
+	callevent sound_pain
+	callevent repulse_area $get(ent_me,origin)
+	callevent 0.1 leap_away_boost
+	callevent 2.0 force_leap_end
+}
+
+{ leap_away_boost
+	//addvelocity ent_me $relvel(0,1000,400)
+	local LEAP_TARG_ORG $get(LEAP_TARGET,origin)
+	local TARG_ANG $angles(LEAP_TARG_ORG,game.monster.origin)
+	setvelocity ent_me $relvel($vec(0,TARG_ANG,0),$vec(10,800,120))
+}
+
+{ force_leap_end
+	if DOING_LEAP
+	setvard DOING_LEAP 0
+	setmoveanim ANIM_RUN
+	callevent npcatk_resume_ai
+}
+
+{ repulse_area
+	playsound 0 10 magic/boom.wav
+	clientevent new all monsters/cold_one_cl repulse $get(ent_me,origin) 128 1 
+	setvard REPULSE_LIST $get_tsphere(enemy,128)
+	if REPULSE_LIST isnot none
+	calleventloop $get_token_amt(REPULSE_LIST) repulse_targets
+}
+
+{ repulse_targets
+	local CUR_TARG $get_token(REPULSE_LIST,game.script.iteration)
+	local TARG_ORG $get(CUR_TARG,origin)
+	local TARG_ANG $angles(game.monster.origin,TARG_ORG)
+	setvelocity CUR_TARG $relvel($vec(0,TARG_ANG,0),$vec(10,1000,10))
+}
+
+//==================================== Hop up at targets out of reach
+{ do_hop //<vertical_difference> - determines jump strength
+	playrandomsound 0 10 SOUND_ATTACK_CRY1 SOUND_ATTACK_CRY2 SOUND_ATTACK_CRY3
+	setvard UP_JUMP_STR PARAM1
+	multiply UP_JUMP_STR 5
+	callevent npcatk_suspend_ai 1.0
+	setvard FWD_JUMP_STR $get(NPCATK_TARGET,range)
+	dbg do_hop UP_JUMP_STR FWD_JUMP_STR
+	playanim critical ANIM_JUMP
+	callevent 0.1 do_jump_boost
+}
+
+{ do_jump_boost
+	addvelocity ent_me $relvel(0,FWD_JUMP_STR,UP_JUMP_STR)
+}
+
+//==================================== Litch Tounge Freeze Aura
+{ do_freeze_aura
+	clientevent new all FREEZE_AURA_CL_SCRIPT $get(ent_me,origin) FREEZE_AURA_RADIUS 1 (128,128,255)
+	playanim critical ANIM_AURA
+	setvard AS_ATTACKING game.time
+	add AS_ATTACKING 3.0
+	callevent 0.25 do_freeze_aura2
+}
+
+{ do_freeze_aura2
+	setvard FREEZE_TARGS $get_tsphere(enemy,FREEZE_AURA_RADIUS)
+	if FREEZE_TARGS isnot none
+	calleventloop $get_token_amt(FREEZE_TARGS) feeze_targets
+}
+
+{ feeze_targets
+	local CUR_TARG $get_token(FREEZE_TARGS,game.script.iteration)
+	if $get(CUR_TARG,isalive)
+	if $get(CUR_TARG,onground)
+	applyeffect CUR_TARG effects/freeze_solid FREEZE_AURA_DURATION $get(ent_me,id) DOT_AMT
+}
+
+{ sound_pain
+	playrandomsound 0 10 SOUND_PAIN1 SOUND_PAIN2 SOUND_PAIN3 SOUND_PAIN4
+	callevent move_mouth
+}
+
+//can't seem to figure a way to garuntee the gals mouth will move without being left open
+//so we do random, and figure it'll close at least half the time
+{ move_mouth
+	local RND_SAY1 "["
+	stradd RND_SAY1 $randf(0.5,1.0)
+	stradd RND_SAY1 "]"
+	say RND_SAY1
+}
+
+//==================================== Weapon Aura (made after the litchtoungue, or we woulda dealt with that here too)
+{ do_waura
+	setprop ent_me controller0 150 //model weridness - straighten back
+	//leaning to side too, may need to fix that controller as well
+	callevent npcatk_suspend_ai
+	playanim hold ANIM_HOLD_AURA
+	callevent suspend_movement ANIM_HOLD_AURA
+	clientevent new all WEAPON_AURA_CL_SCRIPT $get(ent_me,index) WAURA_DURATION
+	playsound 0 10 SOUND_WAURA_START
+	setvard WAURA_ON 1
+	callevent 0.5 do_waura_loop
+	callevent WAURA_DURATION end_waura
+	setvard AS_ATTACKING game.time
+	add AS_ATTACKING 5.0
+	add AS_ATTACKING WAURA_DURATION
+}
+
+{ do_waura_loop
+	if WAURA_ON
+	callevent 1.0 do_waura_loop
+	if ( SOUND_WAURA_LOOP isnot 'none' ) svplaysound 1 10 SOUND_WAURA_LOOP
+	//xdodamage $get(ent_me,origin) WAURA_RANGE DMG_WAURA 0 ent_me ent_me none WAURA_DMG_TYPE
+	setvard WAURA_TARGETS $get_tsphere(enemy,WAURA_RANGE)
+	if WAURA_TARGETS isnot none
+	calleventloop $get_token_amt(WAURA_TARGETS) do_waura_affect_targs
+}
+
+{ do_waura_affect_targs
+	local CUR_TARG $get_token(WAURA_TARGETS,game.script.iteration)
+	if $get(CUR_TARG,height) > 36
+	applyeffect CUR_TARGET WAURA_EFFECT_SCRIPT 5.0 $get(ent_me,id) DOT_WAURA
+	dodamage CUR_TARG direct DMG_WAURA 100% ent_me WAURA_DMG_TYPE
+	if ( WAURA_TYPE equals lightning )
+	{
+		local TARG_RESIST $get_takedmg(CUR_TARG,lightning)
+		local RND_ROLL $randf(0.0,1.0)
+		dbg RND_ROLL vs TARG_RESIST
+		if ( RND_ROLL <= TARG_RESIST ) effect screenfade CUR_TARG 3 1 (255,255,255) 255 fadein
+	}
+}
+
+{ end_waura
+	dbg end_waura SOUND_WAURA_LOOP
+	setprop ent_me controller0 -1 //model weridness - straighten back
+	playanim break
+	setvard WAURA_ON 0
+	if ( SOUND_WAURA_LOOP isnot 'none' ) svplaysound 1 0 SOUND_WAURA_LOOP
+	callevent npcatk_resume_ai
+	callevent resume_movement
+
+	if ( CAN_BLOCK )
+	{
+		//delay next block so we don't do one vulnerable moment after another
+		setvard NEXT_BLOCK game.time
+		add NEXT_BLOCK FREQ_BLOCK
+	}
+}
+
+//==================================== Shield Block
+{ do_block
+	dbg do_block
+	setprop ent_me controller0 60
+	setvard BLOCK_TARGET NPCATK_TARGET
+	callevent npcatk_suspend_ai
+	playanim break
+	playanim hold ANIM_BLOCK
+	callevent suspend_movement ANIM_BLOCK
+	setvard AM_BLOCKING 1
+	callevent do_block_loop
+	callevent BLOCK_DURATION end_block
+
+	setvard AS_ATTACKING game.time
+	add AS_ATTACKING 2.0
+	add AS_ATTACKING BLOCK_DURATION
+}
+
+{ do_block_loop
+	dbg do_block_loop
+	if AM_BLOCKING
+	//dbg Blocking...
+	if ( $get(BLOCK_TARGET,isalive) )
+	{
+		callevent 0.1 do_block_loop
+		setmovedest BLOCK_TARGET 9999
+	}
+	else
+	{
+		callevent end_block
+	}
+}
+
+{ end_block
+	dbg end_block
+	if AM_BLOCKING
+	playanim break
+	setprop ent_me controller0 -1
+	setvard AM_BLOCKING 0
+	callevent npcatk_resume_ai
+	callevent resume_movement
+}
+
+//==================================== Lost target emote
+{ npcatk_lost_sight
+	if game.time > NEXT_LOOK
+	setvard NEXT_LOOK game.time
+	add NEXT_LOOK FREQ_LOOK
+	playanim critical ANIM_LOOK
+}
+
+//==================================== BD Prevention
+{ npcatk_suspend_ai
+	setvard MAX_SUSPEND game.time
+	add MAX_SUSPEND 10.0
+}
+
+//==================================== Debugarry
+{ ext_con
+	if ( PARAM1 == 0 ) setprop ent_me controller0 PARAM2
+	if ( PARAM1 == 1 ) setprop ent_me controller1 PARAM2
+	if ( PARAM1 == 2 ) setprop ent_me controller2 PARAM2
+	if ( PARAM1 == 3 ) setprop ent_me controller3 PARAM2
+}
+
+//==================================== External for The_Wall
+{ set_escort
+	add G_TELF_ESCORTS 1
+	setvard AM_ESCORT 1
+}
+
+{ close_mouth
+	setprop ent_me controller1 0
+}
+
+{ ext_say_orc
+	saytextrange 2048
+	saytext It's an undead orc. Some luckless fool of a Marogar trying to plunder the fortresses, no doubt.
+	callevent 3.0 ext_say_orc2
+}
+
+{ ext_say_orc2
+	saytextrange 2048
+	saytext Wait... He was looking at something before he came at us...
+}

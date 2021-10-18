@@ -1,0 +1,167 @@
+//Ice Bone Skeleton (Decayed) by Thothie from mscave/Shaddar
+
+{
+
+   const SKEL_HP		1000
+   const ATTACK_HITCHANCE 	85%
+   setvard ATTACK_DAMAGE_LOW 	20.5
+   setvard ATTACK_DAMAGE_HIGH 	30.5
+   setvard NPC_GIVE_EXP 		120
+
+	const SMASH_DAMAGE '$rand(50,100)'
+
+	setvard ANIM_ATTACK attack1
+
+	const ANIM_SWIPE attack1
+	const ANIM_SMASH attack2
+
+   setvard DROP_GOLD 		1
+   setvard DROP_GOLD_MIN		20
+   setvard DROP_GOLD_MAX		35
+
+   const SKEL_RESPAWN_CHANCE	50%
+   const SKEL_RESPAWN_LIVES	1
+
+   const ANIM_BLAST		rlflinch
+   const SOUND_BOLT		magic/ice_strike.wav
+
+	setvard IMMUNE_COLD 1
+	setvard IMMUNE_FIRE 1.2
+	
+	const BOLT_FREQUENCY 10.0
+	const BOLT_DAMAGE 30
+	
+	const FREEZE_CHANCE 50%
+
+	setvard DROP_ITEM1 swords_liceblade
+	setvard DROP_ITEM1_CHANCE 10% 
+
+   precache items/proj_ice_bolt
+}
+
+#include monsters/skeleton_base
+
+{ skeleton_spawn
+
+   	name a|Ice Bone Warrior
+   	race undead
+   	roam 1
+   	takedmg all .7
+   	takedmg fire 1.2
+   	takedmg lightning .5
+   	takedmg cold 0.0
+	takedmg ice 0.0
+   	setmodel monsters/skeleton.mdl
+   	hearingsensitivity 5
+   	setmodelbody	0 7
+   	setmodelbody	1 4 //0=Unarmed 1=BoneBlade 2=DblAxe 3=DblShield 4=sword
+   	setstat concentration 30
+   	setstat spellcasting 30 30 30	//not sure if this'll work
+
+   	//ov 360
+
+	//See abou using this to fix Circle_of_fire
+   	//local l.sky origin
+   	//vectoradd l.sky (0,0,4096)
+   	//local origin $get(ent_me,origin)
+   	//vectoradd origin $vec(0,0,-48)
+   	//clientevent new all_in_sight effects/sfx_lightning origin l.sky 1 1
+	
+   	////dbg Yes, I did indeed spawn.
+}
+
+{ cast_bolts
+
+	if $get(ent_me,isalive)
+
+	callevent BOLT_FREQUENCY cast_bolts
+
+	if $cansee(player)
+
+	if !ICE_BLASTING
+	if !PLAYING_DEAD
+
+	//dbg Checking for Boltables
+
+	setvard ICE_BLASTING 1
+
+	callevent 0.1 end_blast
+
+	playanim critcal ANIM_BLAST
+
+	dodamage $relpos(0,0,0) 2048 0 100% 0 reflective
+
+	//callevent 5 make_skullcrab //summon via projectile
+
+}
+
+{ end_blast
+
+	setvard ICE_BLASTING 0
+}
+
+{ game_dodamage //1: Attack Hit (1/0)  2: Entity Attack hit  3:  Start Position  4:  End Position
+
+	if ( !ICE_BLASTING )
+	{
+		if ( !FREEZE_ATTACK )
+		{
+			if( $rand(1,4) == 1 ) applyeffectstack $get(ent_laststruckbyme,id) effects/effect_frost 5 ent_me $rand(3,5)
+		}
+	}
+
+
+	if ( FREEZE_ATTACK )
+	{
+		local FREEZE_ROLL $rand(1,100)
+		if ( FREEZE_ROLL <= FREEZE_CHANCE ) applyeffect $get(ent_laststruckbyme,id) effects/freeze_solid 10 $get(ent_me,id)
+		if ( FREEZE_ROLL > FREEZE_CHANCE )
+		{
+			if ( PARAM1 ) playermessage PARAM2 Ice Bone Warrior attempts to freeze you!
+		}
+		setvard FREEZE_ATTACK 0
+	}
+
+	if ICE_BLASTING
+
+	if PARAM1
+
+	if $get(PARAM2,relationship,ent_me) equals enemy
+
+	//dbg Casting Bolt
+
+	playsound game.sound.voice 10 SOUND_BOLT
+
+	setmovedest PARAM2 9999
+
+	tossprojectile PARAM2 500 BOLT_DAMAGE 1 proj_ice_bolt (0,5,50)
+}
+
+{ npcatk_targetvalidate
+
+	if !BOLT_CHECKING
+	setvard BOLT_CHECKING 1
+
+   callevent 4.0 cast_bolts
+}
+
+{ [override] attack_1	// Deal damage
+
+   	callevent attack_snd
+   	dodamage ent_lastseen ATTACK_RANGE $randf(ATTACK_DAMAGE_LOW,ATTACK_DAMAGE_HIGH) ATTACK_HITCHANCE
+
+	if ( $rand(1,20) == 1 ) setvard ANIM_ATTACK attack2
+}
+
+{ attack_2
+
+		effect glow ent_me (128,128,255) 80 2 2
+		playsound 0 10 magic/spawn.wav
+
+   	dodamage ent_lastseen ATTACK_RANGE SMASH_DAMAGE ATTACK_HITCHANCE
+
+	setvard FREEZE_ATTACK 1
+
+	setvard ANIM_ATTACK attack1
+   	callevent attack_snd
+}

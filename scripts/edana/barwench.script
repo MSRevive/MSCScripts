@@ -1,0 +1,286 @@
+//Bar Wench - sells...erm....'beer'
+
+{
+	setvard GAVE_SOUP_LIST ''
+	setvard GAVE_SOUP_LIST2 ''
+
+	const SOUND_DEATH none			//base_npc
+
+	const VENDOR_DELAY 0.5
+
+	//base_vendor
+   	setvar STORE_NAME edana_barwench
+	setvar STORE_SOUND voices/female_vendor2
+   	setvar STORE_TRIGGERTEXT "store trade buy sell purchase sale offer"
+	const NO_HAIL 1
+	const VEND_INDIVIDUAL 1
+	setvard VENDOR_NOT_ON_USE 1
+}
+
+#include monsters/base_npc
+#include monsters/base_chat
+#include monsters/base_npc_vendor
+#include monsters/base_npc_vendor_confirm
+
+// Spawn properties
+{
+   eventname npc_spawn
+
+   name_unique wench
+   hp 25
+   gold 25
+   name Sylphiel, the waitress
+   //ov 30
+   width 32
+   height 72
+   race human
+   roam 0      //Don't go roaming around
+   setmodel    npc/human2.mdl
+   invincible  1
+   setvar	ATTACK_RANGE 90
+   setvar	ATTACK1_DAMAGE 5
+   setvar	ATTACK_PERCENTAGE 60%
+   setvar 	cider_1 0
+   setvar	cider_2 0
+   setvar       cider_3 0
+
+   catchspeech say_job job work money gold
+   catchspeech say_wench wench beer ale wine mead woman drink
+   catchspeech say_cider cider shipment
+   catchspeech say_reward cider reward money pay done
+   catchspeech say_rumor rumours news happenings rumor
+}
+
+// Greet player and other NPCs
+{
+  repeatdelay $randf(30,45)
+
+  if $cansee(player,128)
+
+  saytext Hello there.
+  say [.2] [.2] [.1]
+	setmovedest ent_lastseen 9999
+	callevent convo_anim
+}
+
+//{  say_store
+//
+//   if $cansee(player,90)
+//   saytext I'm no vendor, fool!
+//}
+//yes you are, bitch
+
+{  vendor_used
+
+	playsound 0 10 voices/human/female_vendor2.wav
+   	saytext What brings you here today? Business or pleasure?
+  	say [.3] [.3] [.3] [.2] [.1] [.3] [.1]
+	callevent convo_anim
+	setmovedest PARAM1 9999
+
+	local L_GOT_SOUP $get_quest_data(VENDOR_TARGET,sy)
+	if L_GOT_SOUP > 0
+	if ( $get_find_token(GAVE_SOUP_LIST,L_PLR_STEAMID) > -1 ) local EXIT_SUB 1 //just so we don't spam it
+	if !EXIT_SUB
+	token.add GAVE_SOUP_LIST L_PLR_STEAMID
+	callevent bchat_mouth_move 4.0
+	saytext Oh hi there. I remember you. Come for some of Sylphee's soup? It's not cheap - no more free samples!
+}
+
+{
+   eventname vendor_addstoreitems
+
+   //           |Store name|  |Item name|  	|Quantity| |cost%|   |Sell ratio|
+   addstoreitem  STORE_NAME     drink_mead           20  	100
+   addstoreitem  STORE_NAME     drink_ale            20  	100
+   addstoreitem  STORE_NAME     drink_wine           20  	100
+
+
+	local L_PLR_STEAMID $get(VENDOR_TARGET,steamid)
+
+	//if ( $get_find_token(GAVE_SOUP_LIST2,L_PLR_STEAMID) > -1 ) exitevent
+
+	local L_GOT_SOUP $get_quest_data(VENDOR_TARGET,sy)
+	if L_GOT_SOUP > 0
+	if ( L_GOT_SOUP > 5 ) local L_GOT_SOUP 5
+	addstoreitem STORE_NAME mana_soup L_GOT_SOUP 100
+
+	//token.add GAVE_SOUP_LIST2 L_PLR_STEAMID
+}
+
+{
+   eventname trade_success
+
+   if CANCHAT == 1
+
+   say goods[.34] [.24] [.35] [.40]
+   setvar CANCHAT 0
+   callevent 10 resetchat
+}
+
+{ resetchat
+  	setvar CANCHAT 1
+}
+
+
+{ say_job
+  if cider_1 equals 0
+  if $cansee(player,128)
+
+  setmovedest ent_lastseen 9999
+  saytext I have a task for you, now that you ask. Head across the way to Bryan and check on my cider shipment.
+  playanim once pondering3
+  callexternal $get_by_name(bryan) cider
+  callevent stoproam
+  calleventtimed 4 reset
+
+}
+
+{ reset
+  setvar cider_1 1
+}
+
+{ say_job
+  if cider_1 equals 1
+  saytext Didn't I ask you to check with Bryan on that cider shipment? Get on with it then!  
+  setmovedest ent_lastspoke 9999
+  playanim once converse1
+  callevent stoproam
+  calleventtimed 2 stop_converse_anim
+}
+
+{ say_cider
+  if cider_1 equals 1
+  saytext Didn't I ask you to check with Bryan on that cider shipment? Get on with it then!
+  setmovedest ent_lastspoke 9999
+  playanim once converse1
+  callevent stoproam
+  callevent 2 stop_converse_anim
+}
+{  stop_converse_anim
+	playanim critical idle1
+}
+
+{
+  eventname cider2
+  setvar cider_1 2 
+  setvar cider_2 1 
+}
+{
+  eventname cider3
+  setvar cider_1 3 
+}
+
+{
+  eventname say_cider
+
+  if cider_1 equals 3
+  setmovedest ent_lastspoke 9999
+  playanim once converse1
+  saytext Look, I still haven't gotten that cider shipment, maybe you should check with Bryan again.
+  setvar cider_1 1
+  callexternal $get_by_name(bryan) cider3
+  callevent stoproam
+}
+{
+  //Called after player talks to Bryan the 2nd time
+  eventname say_cider
+  callevent say_reward
+}
+
+{
+  //Called after player talks to Krythos
+  eventname ciderreward
+
+  setvar cider_2 3
+  setvar cider_1 4
+}
+
+{
+  eventname say_reward
+  if cider_2 equals 1
+  saytext Thanks for the help.
+  roam 0
+  setmovedest ent_lastspoke 9999
+  playanim once converse1
+  calleventtimed 2 say_reward2
+  callevent stoproam
+}
+{
+  eventname say_reward2
+  saytext Come back in a bit and I'll have some cider for ya.  Just ask when you come in next.
+  callevent 3 say_reward3
+}
+{
+  eventname say_reward3
+	if !CIDER_DONE
+	setvard CIDER_DONE 1
+
+  saytext Here's something for helpin' out.
+  callevent 2 cider3
+  offer ent_lastspoke gold 5
+  setvar cider_1 99
+  setvar cider_2 2
+  playanim critical pull_needle
+}
+
+{
+  eventname say_reward
+  if cider_2 equals 3
+  if cider_3 equals 0
+  setvar cider_3 1
+  saytext Well, you've done more than your share. Seeing as how I don't have any cider to give you...
+  roam 0
+  setmovedest ent_lastspoke 9999
+  playanim once converse1
+  callevent stoproam
+  callevent 3 say_reward2_1
+}
+
+
+{ say_reward2_1
+  	saytext ...this'll have to do.  Take this with my thanks.
+  	playanim critical pull_needle
+  	callevent 2 say_reward2_2
+}
+{ say_reward2_2
+
+	if !CIDER_FINISHED
+	setvard CIDER_FINISHED 1
+  	setvar cider_1 99
+  	setvar cider_2 99
+  	offer ent_lastspoke gold 7
+}
+//Rumours
+{ say_rumor
+
+	//try to avoid the whole bar responding to the same statement
+	if ( PARAM1 equals 'PARAM1' )
+	{
+		if $get(ent_lastspoke,range) > 128
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+  	playanim once pondering
+  	saytext I've heard from travelers coming to this tavern, telling about places outside of this village.
+  	callevent 3 say_rumour2
+}
+{ say_rumour2
+  	saytext This knight came here the other day, and he spoke of the path to Gatecity being cut off.
+  	callevent 3 say_rumour3
+}
+{ say_rumour3
+
+	saytext If that's true, we can't go and see the dwarves or elves anymore.
+}
+
+{ game_gave_player //<player> <item>
+	if $get(PARAM2,itemname) contains soup
+	if game.time > NEXT_THANK_YOU
+	setvard NEXT_THANK_YOU game.time
+	add NEXT_THANK_YOU 60.0
+	saytext Thanks again for helping out with those goblins at gran's old place. Come by again sometime!
+	say [.3] [.3] [.3] [.2] [.1] [.3] [.1]
+	callevent convo_anim
+}

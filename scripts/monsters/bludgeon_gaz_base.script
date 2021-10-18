@@ -1,0 +1,530 @@
+#scope server
+{ [shared]
+
+	//anims used by base
+	setvar ANIM_IDLE idle
+	setvar ANIM_WALK walk
+	setvar ANIM_RUN	run
+	setvard ANIM_ATTACK m_attack1
+	setvard ANIM_FLINCH flinch2
+	setvard ANIM_DEATH death
+}
+
+
+{
+	const GOLD_BAGS 1
+	const GOLD_BAGS_PPLAYER 1
+	const GOLD_PER_BAG 50
+	const GOLD_RADIUS 128
+	const GOLD_MAX_BAGS 8
+
+	//custom anims
+	const ANIM_TRICK idle2
+	const ANIM_JUMP jump
+	const ANIM_LEAP longjump
+	const ANIM_THROW m_attack1
+	const ANIM_THROW_HOLD m_attack1 //may need new anim here
+	const ANIM_HAMMER m_attack2
+	const ANIM_WARCRY warcry
+
+	//stats used by base
+	setvard ATTACK_MOVERANGE 48
+	setvard ATTACK_RANGE 110
+	setvard ATTACK_HITRANGE 180
+	setvard CAN_FLINCH 1
+
+	//custom stats
+	const LEAP_RANGE 220
+	setvard ATTACK_HITCHANCE 80
+	const STEP_SIZE_NORM 48
+
+	const FREQ_IDLE $randf(5,10)
+	const FREQ_LEAP 10.0
+	const FREQ_THROW $randf(5,20)
+	const FREQ_JUMP $randf(2,5)
+	const FREQ_STOMP $randf(10,20)
+	const FREQ_CHARGE $randf(10,20)
+
+	const DMG_SWING $rand(50,100) //prob $rand(50,100)
+	const DMG_STUN	$rand(25,50) //prob $rand(25,50)
+	const DOT_BURN $rand(100,200)
+	const DOT_POISON $rand(25,75)
+	const DMG_CHARGE $rand(50,75)
+	const DMG_THROW 80
+	const CHANCE_STUN 10%
+
+	//sounds
+	const SOUND_LEAP monsters/bludgeon/bludgeonattack2.wav
+	const SOUND_WARCRY monsters/bludgeon/bludgeon_gaz_bat2.wav
+	const SOUND_ALERT monsters/bludgeon/bludgeon_gaz_bat1.wav
+	const SOUND_SWING_MISS zombie/claw_miss2.wav
+	const SOUND_SWING_HIT zombie/claw_strike1.wav
+	const SOUND_ATTACK1 monsters/bludgeon/bludgeon_gaz_atk1.wav
+	const SOUND_ATTACK2 monsters/bludgeon/bludgeon_gaz_atk2.wav
+	const SOUND_ATTACK3 monsters/bludgeon/bludgeon_gaz_atk3.wav
+	const SOUND_THROW monsters/bludgeon/bludgeon_gaz_snort.wav
+	const SOUND_DEATH monsters/bludgeon/bludgeon_gaz_death.wav
+	const SOUND_IDLE1 monsters/bludgeon/bludgeon_gaz_ask.wav
+	const SOUND_IDLE2 monsters/bludgeon/bludgeon_gaz_answer.wav
+	const SOUND_STRUCK1 weapons/cbar_hitbod1.wav
+	const SOUND_STRUCK2 weapons/cbar_hitbod2.wav
+	const SOUND_PAIN monsters/bludgeon/bludgeon_gaz_pain.wav
+	const SOUND_SPELL monsters/bludgeon/bludgeon_gaz_spell.wav
+	const SOUND_SNORT monsters/bludgeon/bludgeon_gaz_snort.wav
+
+	const SOUND_STEP1 gonarch/gon_step1.wav
+	const SOUND_STEP2 gonarch/gon_step2.wav
+	const SOUND_LAND garg/gar_step2.wav
+
+	const SOUND_CHARGE_START monsters/bludgeon/bludgeon_gaz_snort.wav
+	const SOUND_CHARGE_GO monsters/bludgeon/bludgeondeath2.wav
+	const SOUND_BURN ambience/steamburst1.wav
+
+	//stun_burst
+	precache magic/boom.wav
+
+	//poison aura
+	precache poison_cloud.spr
+
+	const MONSTER_MODEL monsters/bludgeon_gaz.mdl
+
+	//must be precached as used by base_npc
+	precache SOUND_DEATH 
+	precache MONSTER_MODEL
+}
+
+#include monsters/base_monster_new
+
+{ [shared] npc_spawn
+
+	setmodel MONSTER_MODEL
+	width 32
+	height 96
+
+	if game.serverside
+	if ( !AM_MINI ) name a|Bludgeon
+	if ( AM_MINI ) name a|Young Bludgeon
+	if ( !AM_HAMMER ) callevent axe_mode
+	if ( AM_HAMMER ) callevent hammer_mode
+	takedmg all 0.6
+	race demon
+	roam 1
+	hearingsensitivity 4
+	setvard SWING_STEP 0
+
+	if ( AM_DEMON ) callevent demon_mode
+	if ( AM_CORRUPT ) callevent corrupt_mode
+}
+
+{ axe_mode
+	hp 2000
+	dbg Axer
+	setvard NPC_GIVE_EXP 450
+	setmodelbody 4 1
+}
+
+{ hammer_mode
+	hp 3000
+	dbg Hammah
+	setvard NPC_GIVE_EXP 550
+	setmodelbody 4 2
+}
+
+{ demon_mode
+	if ( !NPC_CUSTOM_NAME )
+	{
+		if ( !AM_MINI ) name a|Demon Bludgeon
+		if ( AM_MINI ) name a|Young Demon Bludgeon
+	}
+	setprop ent_me skin 1
+	setvard IS_UNHOLY 1
+	takedmg all 0.4
+	takedmg fire 0.0
+	takedmg holy 0.25
+	multiply NPC_GIVE_EXP 3.0
+}
+
+{ corrupt_mode
+	if ( !NPC_CUSTOM_NAME )
+	{
+		if ( !AM_MINI ) name a|Corrupted Bludgeon
+		if ( AM_MINI ) name a|Young Corrupted Bludgeon
+	}
+	setprop ent_me skin 2
+	setvard IS_UNHOLY 1
+	takedmg all 0.4
+	takedmg poison 0.0
+	takedmg holy 0.25
+	multiply NPC_GIVE_EXP 3.0	
+	callevent 0.1 poison_aura
+	callevent 0.1 poison_aura_scan
+}
+
+{ npc_post_spawn
+	setmoveanim ANIM_WALK
+	setidleanim ANIM_IDLE
+	if ( AM_HAMMER ) setvard ANIM_ATTACK ANIM_HAMMER
+}
+
+{ npc_targetsighted
+
+	if !I_R_FROZEN
+
+	if ( !DID_WARCRY )
+	{
+		setvard DID_WARCRY 1
+		local WARCRY_TYPE $rand(1,2)
+		if ( WARCRY_TYPE == 1 )
+		{
+			playanim critical warcry
+			playsound 0 10 SOUND_WARCRY
+		}
+		if ( WARCRY_TYPE == 2 ) playsound 0 10 SOUND_ALERT
+
+		if !AM_HAMMER
+		//axers don't open with charge, since they can throw
+		setvard CHARGE_DELAY 1
+		callevent FREQ_CHARGE reset_charge_delay
+	}
+
+	local TARGET_RANGE $get(NPCATK_TARGET,range)
+
+	if TARGET_RANGE > ATTACK_RANGE
+
+	if ( !CHARGE_DELAY )
+	{
+		if !I_R_FROZEN
+		setvard CHARGE_TARGET NPCATK_TARGET
+		setvard AS_ATTACKING game.time
+		add AS_ATTACKING 20.0
+		setvard CHARGE_DELAY 1
+		callevent FREQ_CHARGE reset_charge_delay
+		callevent npcatk_suspend_ai
+		setmoveanim charge_start
+		setidleanim charge_start
+		playanim critical charge_start
+		callevent 1.0 do_charge
+		playsound 0 10 SOUND_CHARGE_START
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	if ( TARGET_RANGE < LEAP_RANGE )
+	{
+		if !THROWING_AXE
+		if !LEAP_DELAY
+		if !AM_CHARGING
+		setvard LEAP_DELAY 1
+		callevent FREQ_LEAP reset_leap_delay
+		setvard AS_ATTACKING game.time
+		add AS_ATTACKING 20.0
+		playsound 0 10 SOUND_LEAP
+		setmoveanim ANIM_LEAP
+		playanim critical ANIM_LEAP
+	}
+
+	if ( TARGET_RANGE > LEAP_RANGE )
+	{
+		if !AM_HAMMER
+		if !THROW_DELAY
+		setvard THROW_DELAY 1
+		setvard AS_ATTACKING game.time
+		add AS_ATTACKING 20.0
+		setvard THROWING_AXE 1
+		playsound 0 10 SOUND_THROW
+		callevent npcatk_suspend_ai
+		setidleanim ANIM_THROW_HOLD
+		setmoveanim ANIM_THROW_HOLD
+		roam 0
+		playanim break
+		playanim hold ANIM_THROW
+		callevent 0.5 throw_axe
+	}
+}
+
+{ throw_axe
+
+	setmodelbody 4 0
+	local TARG_DEST $get(NPCATK_TARGET,origin)
+	vectoradd TARG_DEST $relpos($vec(0,game.monster.angles.yaw,0),$vec(0,ATTACK_RANGE,0))
+	local TRACE_START game.monster.origin
+	vectoradd TRACE_START z 32
+	local TRACE_TARG $get_traceline(TRACE_START,TARGET_DEST,worldonly)
+	local TRACE_DEST TRACE_TARG
+	if ( !$get(NPCATK_TARGET,isplayer) ) vectoradd TARG_DEST z $get(NPCATK_TARGET,height)
+	createnpc monsters/summon/bludgeon_axe $relpos(0,40,48) $get(ent_me,id) TARG_DEST DMG_THROW
+	setvard MY_AXE ent_lastcreated
+	callevent throw_axe_loop
+}
+
+{ throw_axe_loop
+	if THROWING_AXE
+	setmovedest MY_AXE 9999
+	callevent 0.1 throw_axe_loop
+}
+
+{ reset_throw_delay
+	setvard THROW_DELAY 0
+}
+
+{ do_charge
+	movespeed 3.0
+	setvard CHARGE_DEST $get(CHARGE_TARGET,origin)
+	vectoradd CHARGE_DEST $relpos($vec(0,game.monster.angles.yaw,0),$vec(0,256,0))
+	setmoveanim charge
+	setidleanim charge
+	setvard CHARGE_COUNT 0
+	setvard AM_CHARGING 1
+	playsound 0 10 SOUND_CHARGE_GO
+	callevent charge_loop
+}
+
+{ charge_loop
+	add CHARGE_COUNT 1
+	setmovedest CHARGE_DEST 20
+	if ( CHARGE_COUNT == 30 ) callevent end_charge
+	
+	if ( $dist(CHARGE_DEST,game.monster.origin) < ATTACK_MOVERANGE ) callevent end_charge
+
+	if AM_CHARGING
+	//dodamage $relpos(0,32,0) 96 0 100% 0.0 reflective target
+	callevent 0.1 charge_loop
+
+	local SCAN_LOC $relpos(0,32,0)
+	setvard CHARGE_LIST $get_tsphere(enemy,96,SCAN_LOC)
+	if ( CHARGE_LIST isnot none )
+	{
+		playsound 0 10 SOUND_STRUCK1
+		calleventloop $get_token_amt(CHARGE_LIST) charge_affect_targets
+	}
+
+}
+
+{ charge_affect_targets
+	local CUR_TARG $get_token(CHARGE_LIST,game.script.iteration)
+	local LR_RAND $randf(-200,200)
+	addvelocity CUR_TARG $relvel(LR_RAND,600,110)
+	//applyeffect CUR_TARG effects/generic_damage DMG_CHARGE $get(ent_me,id) 0 blunt
+	dodamage CUR_TARG direct DMG_CHARGE 100% ent_me blunt
+}
+
+{ end_charge
+	setvard AM_CHARGING 0
+	setmoveanim ANIM_RUN
+	setidleanim ANIM_IDLE
+	movespeed 1.0
+	callevent npcatk_resume_ai
+}
+
+{ game_dodamage
+
+	if ( AM_DEMON ) applyeffect PARAM2 effects/effect_burn 3 $get(ent_me,id) DOT_BURN
+
+	if ( AM_CORRUPT ) applyeffect PARAM2 effects/effect_poison 10.0 $get(ent_me,id) DOT_POISON
+
+	if ( SWING_ATTACK )
+	{
+		if ( !PARAM1 ) playsound 0 10 SOUND_SWING_MISS
+		if PARAM1
+		playsound 0 10 SOUND_SWING_HIT
+		if ( !$get(PARAM2,scriptvar,IMMUNE_PUSH) ) addvelocity PARAM2 $relvel(-100,130,120)
+		setvard SWING_ATTACK 0
+	}
+
+	if ( AM_HAMMER )
+	{
+		if PARAM1
+		if $rand(1,100) < CHANCE_STUN
+		if $get(PARAM2,range) < ATTACK_HITRANGE
+		applyeffect PARAM2 effects/heavy_stun 5 $get(ent_me,id) 1
+		playsound 0 10 SOUND_SNORT
+	}
+}
+
+{ reset_charge_delay
+	setvard CHARGE_DELAY 0
+}
+
+{ reset_leap_delay
+	setvard LEAP_DELAY 0
+}
+
+{ game_struck
+	playrandomsound 0 10 SOUND_STRUCK1 SOUND_STRUCK2 SOUND_STRUCK1 SOUND_STRUCK2 SOUND_PAIN
+}
+
+{
+repeatdelay FREQ_IDLE
+
+	if NPCATK_TARGET equals unset
+
+	local RND_IDLE $rand(1,2)
+	if ( RND_IDLE == 1 )
+	{
+		playsound 0 10 SOUND_IDLE1
+		playanim critical ANIM_TRICK
+	}
+
+	if ( RND_IDLE == 2 )
+	{
+		playsound 0 10 SOUND_IDLE2
+		playanim critical ANIM_WARCRY
+	}
+}
+
+//model debugarry
+{ ext_bd_toggle
+	if ( SUSPEND_AI )
+	{
+		roam 1
+		callevent npcatk_resume_ai
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+	if ( !SUSPEND_AI )
+	{
+		roam 0
+		callevent npcatk_suspend_ai
+	}
+}
+
+{ ext_follow
+	setmovedest PARAM1 ATTACK_MOVERANGE
+}
+
+{ ext_playanim
+	playanim critical PARAM1
+}
+
+{ ext_demon
+	setvard AM_DEMON 1
+	setprop ent_me skin PARAM1
+}
+
+{ ext_hammer
+	setvard AM_HAMMER 1
+	setmodelbody 4 2
+}
+
+{ ext_axe
+	setvard AM_HAMMER 0
+	setmodelbody 4 1
+}
+
+{ cycle_up
+	if !CYCLES_STARTED
+	setvard CYCLES_STARTED 1
+	callevent jump_check
+}
+
+//jump at target if way above me
+{ jump_check
+	callevent FREQ_JUMP jump_check
+
+	if NPCATK_TARGET isnot unset
+
+	local TARG_Z $get(NPCATK_TARGET,origin.z)
+	local MY_Z $vec.z(game.monster.origin)
+	local Z_DIFF TARG_Z
+	subtract Z_DIFF MY_Z
+	//dbg temp z_targ TARG_Z z_me MY_Z z_diff Z_DIFF 
+	if Z_DIFF > ATTACK_RANGE
+	callevent npcatk_faceattacker NPCATK_TARGET
+	callevent 0.1 do_jump
+	playsound 0 10 SOUND_LEAP
+}
+
+{ do_jump
+	stepsize 1000
+	setmoveanim ANIM_JUMP
+	addvelocity ent_me $relvel(0,-200,800)
+	callevent 0.5 push_forward
+	callevent 1.0 jump_done
+}
+
+{ push_forward
+	addvelocity ent_me $relvel(0,400,100)
+}
+
+{ jump_done
+	stepsize STEP_SIZE_NORM
+	setmoveanim ANIM_RUN
+}
+
+//anim events
+{ leap_land
+	setmoveanim ANIM_RUN
+	playsound 0 10 SOUND_LAND
+	createnpc monsters/summon/stun_burst $relpos(0,0,0) $get(ent_me,id) 128 0 DMG_STUN
+}
+
+{ attack1
+	setvard SWING_ATTACK 1
+	callevent npcatk_dodamage NPCATK_TARGET ATTACK_HITRANGE DMG_SWING ATTACK_HITCHANCE slash
+	if ( THROWING_AXE ) setanim.framerate 0.0001
+}
+
+{ attack2
+	callevent attack1
+}
+
+{ walk_step
+	//playsound 0 4 SOUND_STEP1 SOUND_STEP2
+}
+
+{ run_step
+	playsound 0 10 SOUND_STEP1 SOUND_STEP2
+}
+
+{ swing_start
+	add SWING_STEP 1
+	if SWING_STEP > 2
+	setvard SWING_STEP 0
+	playrandomsound 0 10 SOUND_ATTACK1 SOUND_ATTACK2 SOUND_ATTACK3
+}
+
+{ my_target_died
+	playanim once warcry
+	playsound 0 10 SOUND_SPELL
+}
+
+{ catch_axe //called extermally from bludgeon_axe upon return
+	callevent npcatk_resume_ai
+	playanim break
+	roam 1
+	setvard THROWING_AXE 0
+	setmodelbody 4 1
+	setidleanim ANIM_IDLE
+	setmoveanim ANIM_RUN
+	callevent FREQ_THROW reset_throw_delay
+	setanim.framerate 1.0
+}
+
+{ chest_b_castle_bonus //external param
+	setvard DROPS_CONTAINER 1
+	setvard CONTAINER_DROP_CHANCE 100%
+	setvard CONTAINER_SCRIPT chests/lostcaverns2	
+}
+
+{ poison_aura
+	if $get(ent_me,isalive)
+	clientevent new all effects/sfx_poison_aura $get(ent_me,index) 96 19.0
+	callevent 20.0 poison_aura
+}
+
+{ poison_aura_scan
+	if $get(ent_me,isalive)
+	callevent 0.5 poison_aura_scan
+	if NPCATK_TARGET isnot unset
+	if !AM_CHARGING
+	setvard POISON_TARGETS $get_tsphere(enemy,96)
+	if POISON_TARGETS isnot none
+	calleventloop $get_token_amt(POISON_TARGETS) poison_aura_affect
+}
+
+{ poison_aura_affect
+	local CUR_TARG $get_token(POISON_TARGETS,game.script.iteration)
+	applyeffect CUR_TARG effects/effect_poison 5.0 $get(ent_me,id) DOT_POISON
+}
+
+//poison aura armor

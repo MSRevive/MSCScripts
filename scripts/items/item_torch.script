@@ -1,0 +1,125 @@
+{ [shared]
+  const ANIM_IDLE1        	0
+  const ANIM_THRUST        	1
+  const MODEL_VIEW       	misc/item_torch_rview.mdl
+  const MODEL_HANDS      	misc/p_misc.mdl
+  const MODEL_WORLD      	misc/p_misc.mdl
+  const LOOPSND_NAME		items/torch1.wav
+  const LOOPSND_LENGTH		6
+  const SOUND_HITWALL		debris/wood2.wav
+  const SOUND_SWIPE      	weapons/swingsmall.wav
+  const ITEM_NAME		torch
+  const SPRITE_FIRE		fire1_fixed.spr
+  const SPRITE_FIRE_FIXED	fire1_fixed.spr
+
+  const MODEL_BODY_OFS		37
+  const ANIM_PREFIX		torch
+
+  //Used in base_melee
+  //------------------
+  const MELEE_RANGE		60
+  const MELEE_DMG_DELAY		0.6
+  const MELEE_ATK_DURATION	1.2
+  const MELEE_ENERGY		1
+  const MELEE_DMG		60
+  const MELEE_DMG_RANGE     	60
+  const MELEE_DMG_TYPE		fire
+  const MELEE_ACCURACY		30%
+  const MELEE_STAT		bluntarms
+  const MELEE_ALIGN_BASE	4,-6 
+  const MELEE_ALIGN_TIP		0,6
+  const MELEE_VIEWANIM_ATK     	ANIM_THRUST
+
+  const MELEE_SOUND     	SOUND_SWIPE
+  const MELEE_SOUND_DELAY     	MELEE_DMG_DELAY
+  const MELEE_PARRY_CHANCE     	0%
+
+  const PLAYERANIM_AIM		axe_onehand
+  const PLAYERANIM_SWING	axe_onehand_swing
+
+  const TORCH_LIGHT_SCRIPT	items/item_torch_light
+}
+
+#include items/base_melee
+#include items/base_loopsnd
+
+{  weapon_spawn
+
+   name 	a|Torch
+   desc 	A Torch
+   weight 	1
+   size 	2
+   value	1
+   sethand	left
+
+   sethudsprite hand ITEM_NAME
+   sethudsprite trade ITEM_NAME
+}
+
+{ [override] game_deploy
+
+	setviewmodel  	MODEL_VIEW
+	setmodel	MODEL_HANDS
+	local L_SUBMODEL MODEL_BODY_OFS
+	subtract L_SUBMODEL game.item.hand_index
+ 	setmodelbody 	0 L_SUBMODEL
+  	playviewanim  	ANIM_IDLE1
+  	playanim 	idle
+
+	setvard START_BURNING game.time
+	callevent torch_start_burn
+	callevent loopsnd_start
+	callevent weapon_deploy
+}
+
+
+#scope server
+
+{ melee_strike
+
+	if PARAM1 equals 'npc'
+	if PARAM4
+
+	local L_DMG 30
+	multiply L_DMG $get(ent_owner,skill.bluntarms.damage.ratio)
+	applyeffect PARAM3 effects/effect_burn 3 $get(ent_owner,id) L_DMG  0
+}
+
+{ game_pickup
+   	clientevent remove all TEMP_LIGHT_ID
+}
+
+{ game_drop
+	if $get(ent_owner,name) contains 'Fire'
+   	clientevent remove all SCRIPT_ID
+	deleteent ent_me
+}
+
+{ game_putinpack
+
+   	clientevent remove all SCRIPT_ID
+}
+{ game_removefromowner
+   	clientevent remove all SCRIPT_ID
+}
+{ game_newowner
+   	clientevent remove all SCRIPT_ID
+	local L_BODY game.item.hand_index
+	add L_BODY 1
+   	clientevent persist all TORCH_LIGHT_SCRIPT $get(ent_owner,index) L_BODY
+   	setvard SCRIPT_ID game.script.last_sent_id
+}
+{ [override] game_fall
+
+   	clientevent persist all TORCH_LIGHT_SCRIPT $get(ent_me,index) 1
+    setvard SCRIPT_ID game.script.last_sent_id
+	setvarg TEMP_LIGHT_ID game.script.last_sent_id
+
+ 	setvard		BURNING 1
+	callevent	torch_start_burn
+   	playanim	torch_floor_idle
+	local 		L_SUBMODEL MODEL_BODY_OFS
+	add		L_SUBMODEL 1
+ 	setmodelbody	0 L_SUBMODEL
+  	expiretime	600
+}

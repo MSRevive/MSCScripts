@@ -1,0 +1,1106 @@
+//Polearms base JUL2010_27 by Thothie
+//- Concept: Optimal damage when in optimal range
+//- block on right click (for most, throw for some)
+//- block + forward repels (for some)
+//- holding block long enough does spin-block (for some) [make repel projectiles?]
+//- double dmg attack spins
+//- some can be thrown
+//- some can slice for "standard" damage (no optimal) [when holding left/right]
+//- others do the same thing with a slower backhand poke [when attack and +back +use]
+
+//REQUIRES: (example values from polearms_qs)
+//const BASE_LEVEL_REQ 0 //min skill requirement
+//const PMODEL_FILE weapons/p_weapons3.mdl //p_weapons group model
+//const PMODEL_IDX_FLOOR 61 //body offset (for floor) [all body offsets are JHLMV value -1]
+//const PMODEL_IDX_HANDS 62 //body offset (for hands)
+//const VMODEL_IDX 0 //body offset in the viewmodel
+
+//const MELEE_DMG 120 //max damage
+//const MELEE_RANGE 90 //max reach
+//const MELEE_DMG_TYPE blunt //damage type
+
+//const POLE_MIN_RANGE 60 //closer than this leads to min damage (max reach == max damage)
+//const POLE_MIN_DMG_MULTI 0.5 //min damage multiplier
+//const POLE_MAX_DMG_MULTI 1.5 //max damage multiplier
+//final damage will be ( MELEE_DMG x SkillRatio ) * ( $ratio([range_ratio],POLE_MIN_DMG_MULTI,POLE_MAX_DMG_MULTI) )
+
+{
+	const VMODEL_FILE viewmodels/v_polearms.mdl
+
+	const BWEAPON_DBL_CHARGE_ADJ 2.0
+
+	const VANIM_IDLE1 0
+	const VANIM_IDLE2 1
+	const VANIM_IDLE3 2
+	const VANIM_DRAW 3
+	const VANIM_POKE1 4
+	const VANIM_POKE2 5
+	const VANIM_POKE_BACK 6
+	const VANIM_SWIPE1 7
+	const VANIM_SWIPE2 8
+	const VANIM_WIDE 9 //looks same from view :(
+	const VANIM_SPIN_START 10
+	const VANIM_SPIN_HOLD 11
+	const VANIM_SPIN_END 12
+	const VANIM_REPEL 13
+	const VANIM_BLOCK_START 14
+	const VANIM_BLOCK_HOLD 15
+	const VANIM_BLOCK_END 16
+	const VANIM_THROW_POWER 17
+	const VANIM_THROW_PREP 18
+	const VANIM_THROW_PREPED_THROW 19
+	const VANIM_THROW_IDLE 20
+
+	const WANIM_FLOOR standard_floor_idle
+	const WANIM_HAND standard_idle
+	
+	const PANIM_IDLE aim_pole
+	const PANIM_POKE pole_swing
+	const PANIM_POKE_BACK Pattack2
+	const PANIM_SWIPE1 Pattack2
+	const PANIM_SWIPE2 Pattack3
+	const PANIM_SPIN_START Spin_start
+	const PANIM_SPIN_HOLD Spin
+	const PANIM_SPIN_END Spin_end
+	const PANIM_REPEL repel
+	const PANIM_BLOCK_START block_start
+	const PANIM_BLOCK_HOLD block
+	const PANIM_BLOCK_END block_end
+	const PANIM_THROW throw1
+	const PANIM_THROW_PREP throw2_start
+	const PANIM_THROW_IDLE throw2_aim
+	const PANIM_THROW_PREPED_THROW throw2_end
+	
+	const SOUND_HITWALL1 weapons/bullet_hit1.wav //sound when striking wall
+	const SOUND_HITWALL2 weapons/bullet_hit2.wav //sound when striking wall (random between these two)
+
+	const SOUND_THRUST weapons/cbar_miss1.wav //sound when using standard thrust
+	const SOUND_SWIPE zombie/claw_miss2.wav //sound when using swipe
+	const SOUND_BACKHAND weapons/swingsmall.wav //sound when using backhand attack
+	const SOUND_BLOCK body/armour1.wav
+	const SOUND_READY $get(ent_owner,scriptvar,'PLR_SOUND_SWORDREADY')
+	const SOUND_CHARGE $get(ent_owner,scriptvar,'PLR_SOUND_JAB2') //sound for chargeup (poke2) [varies with character gender]
+	const SOUND_SHOUT $get(ent_owner,scriptvar,'PLR_SOUND_SHOUT1')
+	const SOUND_SPIN_LOOP weapons/polearm_spin.wav
+	const SOUND_THROW zombie/claw_miss1.wav
+
+	//default values match quarterstaff (polearms_qs)
+	const MELEE_DMG 120 //max damage
+	const MELEE_RANGE 90 //max reach (also optimum range)
+	const MELEE_DMG_TYPE blunt //damage type
+	const MELEE_DMG_RANGE 0 //+/- random damage adjust for primary attack (leaving flat due to range adjustment)
+
+	const POLE_MIN_RANGE 60 //closer than this leads to min damage (max reach == max damage)
+	const POLE_MIN_DMG_MULTI 0.5 //min damage multiplier
+	const POLE_MAX_DMG_MULTI 1.5 //max damage multiplier
+
+	const MELEE_DMG_DELAY 0.6 //delay before applying damage (to give view anim chance to play) [also affects when attack sound is played]
+	const MELEE_ATK_DURATION 1.1 //how long before player can attack again (length of attack anim)
+	const MELEE_ENERGY 0.5 //how much Stamina attacks drain
+	const MELEE_ACCURACY 90% //base accuracy for thrusts (we're going with a high accuracy, more of a manual aim with these things [getting the range just right])
+	const MELEE_STAT polearms //skill to give XP to and calc damage with
+
+	const MELEE_STARTPOS 0 //not certain if actually used, not set in any weapon
+	const MELEE_AIMANGLE 0 //same here
+	
+	const MELEE_NOISE 650 //radius of noise that attacks alert monsters that can hear
+
+	const POLE_CAN_POKE1 1 //basic forward thrust attack
+	const POLE_CAN_POKE2 1 //charged attack (spin thrust) - dbl damage, requires +2 skill levels above base
+	const POLE_POKE2_ATK_DURATION 1.5 //spin thrust anim is a bit longer
+	const POLE_CAN_SWIPE 1 //swipe attack (when strafing - doesn't use fall-off system)
+	const POLE_CAN_BLOCK 1 //blocks on right click
+	const POLE_CAN_SPIN 1 //spins when right click + backpeddle after 2 seconds [must be able to block to spin]
+	const POLE_CAN_REPEL 1 //pushes monsters away when blocking + forward, but aborts spin [must be able to block]
+	const POLE_CAN_BACKHAND 1 //attacks with back end of stick when backpeddling (shorter range, no fall off, similar to swipe, but slower)
+	const POLE_CAN_THROW 0 //throws on right click - can't block
+	const POLE_CAN_POWER_THROW 0 //throws on 200% charge
+
+	const POLE_BLOCK_PROT_RATIO 0.3 //damage taken when block mode (def 70%), protection doubles in spin mode
+	const POLE_BLOCK_DELAY 3.0 //delay between blocks
+	const POLE_REPEL_STRENGTH 600 //strength of push from repel move
+
+	const POLE_SWIPE_DMG 60 //swipe damage
+	const POLE_SWIPE_DMG_RANGE 20 //+/- random damage adjust for swipes
+	const POLE_SWIPE_DMG_TYPE blunt //swipe attack may do slash instead of pierce, etc
+	const POLE_SWIPE_RANGE 60 //range for swipes (usually shorter)
+	const POLE_SWIPE_ACCURACY 60% //accuracy for swipes (doesn't use fall-off system, so isn't 100%)
+	const POLE_SWIPE_DMG_DELAY 0.5 //swipe anim is a bit quicker
+	const POLE_SWIPE_ATK_DURATION 0.9 //swipe anim is a bit quicker
+
+	const POLE_BACKHAND_DMG 100 //backhand damage
+	const POLE_BACKHAND_DMG_RANGE 10 //+/- random damage adjust for backhand attack
+	const POLE_BACKHAND_DMG_TYPE blunt //backhand attack may do slash instead of pierce, etc
+	const POLE_BACKHAND_RANGE 40 //range for backhand (usually shorter)
+	const POLE_BACKHAND_ACCURACY 70% //accuracy for backhand (doesn't use fall-off system, so isn't 100%)
+	const POLE_BACKHAND_DMG_DELAY 0.8 //backhand anim is a bit slower
+	const POLE_BACKHAND_ATK_DURATION 1.2 //backhand anim is a bit slower
+	const POLE_BACKHAND_STUN 0
+	const POLE_BACKHAND_STUN_CHANCE 0%
+	const POLE_BACKHAND_REPEL 0
+
+	const POLE_THROW_PREPED_ATKDELAY 0.1 //time from prepped throw anim to actual throw
+	const POLE_THROW_PREP_DELAY 0.3 //time to go from idle to prepared to throw
+	const POLE_THROW_POWER 600 //force of throw (damage is handled projectile side)
+	const POLE_THOW_PROJECTILE proj_pole_spear //throw projectile scriptname
+	const POLE_THROW_RECHARGE_TIME 1.0 //seconds between throws
+	const POLE_THROW_MAX_CHARGE_TIME 3.0 //time to maximum damage
+	const POLE_THROW_COF 1.0
+	const POLE_THROW_MP 0
+	const POLE_THROW_STAT polearms //only applies to power throw
+}
+
+#include items/base_hide_stuff
+#include items/base_item_extras
+
+{ game_spawn
+
+	setmodel PMODEL_FILE
+	setworldmodel PMODEL_FILE
+	sethand both
+
+	callevent item_spawn //compatibility
+	callevent weapon_spawn //compatibility
+	callevent polearm_spawn
+
+	callevent polearm_register_attacks
+}
+
+{ game_deploy
+
+	callevent pole_draw
+
+//	callevent item_deploy //compatibility
+//	callevent weapon_deploy //compatibility
+//	callevent weapon_equip //compatibility
+
+	if game.serverside
+	setvard GAME_PVP game.pvp
+	callevent pole_check_skill
+	callevent 0.01 polearm_setup_model
+}
+
+{ game_show
+	setmodel PMODEL_FILE
+	setworldmodel PMODEL_FILE
+	setmodelbody 0 PMODEL_IDX_HANDS
+}
+
+{ game_drop
+
+	callevent item_drop //compatibility
+}
+
+{ game_switchhands
+
+	playviewanim  VANIM_IDLE1
+	setvard POLE_IDLE_ANIM_COUNT_CL 0
+
+	callevent item_switchhands //compatibility
+}
+
+{ game_pickup
+	callevent pole_draw
+}
+
+{ game_fall
+
+ 	setmodelbody 0 PMODEL_IDX_FLOOR
+	playanim WANIM_FLOOR
+
+	callevent weapon_fall //compatibility
+}
+
+{ pole_draw
+	dbg pole_draw
+
+	playviewanim break
+	playanim break
+
+	setviewmodel VMODEL_FILE
+	setmodel PMODEL_FILE
+	setworldmodel PMODEL_FILE
+	setmodelbody 0 PMODEL_IDX_HANDS
+
+	setanimext pole
+
+	setvard POLE_IDLE_ANIM_COUNT_CL 0
+
+	if game.clientside
+	playviewanim break
+	playanim break
+
+	playviewanim VANIM_DRAW
+	playanim WANIM_HAND
+	if !POLE_IDLE_ACTIVE_CL
+	setvard POLE_IDLE_ACTIVE_CL 1
+	callevent 4.0 pole_idle_anim_cl
+}
+
+{ polearm_setup_model
+	setviewmodelprop ent_me submodel $get(ent_owner,scriptvar,'PLR_HAND_SET') VMODEL_IDX
+}
+
+{ polearm_register_attacks
+
+	//basic thrust
+	//(or swipe if POLE_PRIMARY_SWIPE)
+	local reg.attack.type strike-land
+	local reg.attack.keys +attack1
+	local reg.attack.range MELEE_RANGE
+	local reg.attack.dmg MELEE_DMG
+	local reg.attack.dmg.range MELEE_DMG_RANGE
+	local reg.attack.dmg.type MELEE_DMG_TYPE
+	local reg.attack.energydrain MELEE_ENERGY
+	local reg.attack.stat MELEE_STAT
+	local reg.attack.hitchance MELEE_ACCURACY
+	local reg.attack.priority 0
+	local reg.attack.delay.strike MELEE_DMG_DELAY
+	local reg.attack.delay.end MELEE_ATK_DURATION
+	local reg.attack.ofs.startpos MELEE_STARTPOS
+	local reg.attack.ofs.aimang MELEE_AIMANGLE
+	local reg.attack.callback attack_poke1
+	local reg.attack.noise MELEE_NOISE
+	local reg.attack.reqskill BASE_LEVEL_REQ
+	registerattack
+
+	setvard WEAPON_PRIMARY_SKILL reg.attack.stat
+
+	//dbl damage spin thrust
+	if ( POLE_CAN_POKE2 )
+	{
+		local reg.attack.type strike-land
+		local reg.attack.range MELEE_RANGE
+		local reg.attack.dmg MELEE_DMG
+		local reg.attack.dmg.range MELEE_DMG_RANGE
+		local reg.attack.dmg.type MELEE_DMG_TYPE
+		local reg.attack.energydrain MELEE_ENERGY
+		local reg.attack.stat MELEE_STAT
+		local reg.attack.hitchance MELEE_ACCURACY
+		local reg.attack.priority 1
+		local reg.attack.delay.strike MELEE_DMG_DELAY
+		local reg.attack.delay.end POLE_POKE2_ATK_DURATION
+		local reg.attack.ofs.startpos MELEE_STARTPOS
+		local reg.attack.ofs.aimang MELEE_AIMANGLE
+		local reg.attack.noise MELEE_NOISE
+
+		local reg.attack.keys -attack1
+		local reg.attack.callback attack_poke2
+		multiply reg.attack.dmg BWEAPON_DBL_CHARGE_ADJ
+		multiply reg.attack.energydrain BWEAPON_DBL_CHARGE_ADJ
+		setvard POLE_POKE2_DMG reg.attack.dmg
+		local reg.attack.chargeamt	100%
+		local reg.attack.reqskill BASE_LEVEL_REQ
+		add reg.attack.reqskill 2
+		registerattack
+	}
+
+	if ( POLE_CAN_POWER_THROW )
+	{
+		local reg.attack.mpdrain POLE_THROW_MP
+		local reg.attack.ammodrain 0
+		local reg.attack.type		charge-throw-projectile
+		local reg.attack.hold_min&max	"1;1"
+		local reg.attack.dmg.type		pierce
+		local reg.attack.range			POLE_THROW_POWER
+		local reg.attack.energydrain	MELEE_ENERGY
+		local reg.attack.stat			POLE_THROW_STAT
+		local reg.attack.COF			1
+		local reg.attack.projectile		POLE_THOW_PROJECTILE
+		local reg.attack.priority		2
+		local reg.attack.delay.strike	0.01
+		local reg.attack.chargeamt	200%
+		local reg.attack.delay.end		0.2
+		local reg.attack.ofs.startpos	(5,0,4)
+		local reg.attack.ofs.aimang		(0,0,0)
+		local reg.attack.noise			MELEE_NOISE
+		local reg.attack.callback		pole_powerthrow
+		local reg.attack.reqskill		BASE_LEVEL_REQ
+		local reg.attack.keys	-attack1
+		registerattack
+	}
+
+//weapon registration system fail, we'll handle this attack side now
+//	if ( POLE_CAN_SWIPE )
+//	{
+//		local reg.attack.type strike-land
+//		local reg.attack.keys +moveleft;+attack1
+//		local reg.attack.range POLE_SWIPE_RANGE
+//		local reg.attack.dmg POLE_SWIPE_DMG
+//		local reg.attack.dmg.range POLE_SWIPE_DMG_RANGE
+//		local reg.attack.dmg.type POLE_SWIPE_DMG_TYPE
+//		local reg.attack.energydrain MELEE_ENERGY
+//		local reg.attack.stat MELEE_STAT
+//		local reg.attack.hitchance POLE_SWIPE_ACCURACY
+//		local reg.attack.priority 2
+//		local reg.attack.delay.strike POLE_SWIPE_DMG_DELAY
+//		local reg.attack.delay.end POLE_SWIPE_ATK_DURATION
+//		local reg.attack.ofs.startpos MELEE_STARTPOS
+//		local reg.attack.ofs.aimang MELEE_AIMANGLE
+//		local reg.attack.callback attack_swipe
+//		local reg.attack.noise MELEE_NOISE
+//		local reg.attack.reqskill BASE_LEVEL_REQ
+//		registerattack
+//
+//		local reg.attack.priority 2
+//		local reg.attack.keys +moveright;+attack1
+//		registerattack
+//	}
+//
+//	if ( POLE_CAN_BACKHAND )
+//	{
+//		local reg.attack.type strike-land
+//		local reg.attack.keys +back;+attack1
+//		local reg.attack.range POLE_BACKHAND_RANGE
+//		local reg.attack.dmg POLE_BACKHAND_DMG
+//		local reg.attack.dmg.range POLE_BACKHAND_DMG_RANGE
+//		local reg.attack.dmg.type POLE_BACKHAND_RANGE
+//		local reg.attack.energydrain MELEE_ENERGY
+//		local reg.attack.stat MELEE_STAT
+//		local reg.attack.hitchance POLE_BACKHAND_ACCURACY
+//		local reg.attack.priority 2
+//		local reg.attack.delay.strike POLE_BACKHAND_DMG_DELAY
+//		local reg.attack.delay.end POLE_BACKHAND_ATK_DURATION
+//		local reg.attack.ofs.startpos MELEE_STARTPOS
+//		local reg.attack.ofs.aimang MELEE_AIMANGLE
+//		local reg.attack.callback attack_backhand
+//		local reg.attack.noise MELEE_NOISE
+//		local reg.attack.reqskill BASE_LEVEL_REQ
+//		registerattack
+//	}
+}
+
+{ pole_powerthrow_start
+	playviewanim VANIM_THROW_POWER
+	playowneranim once PANIM_THROW global.anim.combatwalk 1
+	if game.serverside
+	playsound 0 10 SOUND_SHOUT
+	callevent 0.5 pole_powerthrow_sound
+}
+
+{ pole_powerthrow_sound
+	playsound 0 10 SOUND_THROW
+}
+
+{ attack_poke1_start
+	if game.serverside
+	if ( !POLE_PRIMARY_SWIPE )
+	{
+		callevent pole_attack poke1
+	}
+	else
+	{
+		callevent pole_attack priswipe
+	}
+
+	if ( POLE_THROW_PREPING ) local ABORT_THROW 1
+	if ( POLE_THROW_PREPPED ) local ABORT_THROW 1
+	if ( ABORT_THROW ) callevent pole_abort_throw pole_attack
+}
+
+{ attack_poke2_start
+	playsound 1 10 SOUND_CHARGE
+	if game.serverside
+	callevent pole_attack poke2
+
+	if ( POLE_THROW_PREPING ) local ABORT_THROW 1
+	if ( POLE_THROW_PREPPED ) local ABORT_THROW 1
+	if ( ABORT_THROW ) callevent pole_abort_throw pole_attack
+}
+
+{ pole_attack
+
+	local NORMAL_ATTACK 1
+
+	setvard POLE_BACKHAND_ATTACK 0
+	setvard POLE_SWIPE_ATTACK 0
+
+	if ( POLE_CAN_SWIPE )
+	{
+		if PARAM1 isnot poke2
+		if ( $get(ent_owner,keydown,moveright) )
+		{
+			setvard POLE_SWIPE_ATTACK 1
+			local L_SWIPE 1
+			local VIEW_ANIM VANIM_SWIPE1
+			local OWNER_ANIM PANIM_SWIPE2
+			local NORMAL_ATTACK 0
+		}
+		if ( $get(ent_owner,keydown,moveleft) )
+		{
+			setvard POLE_SWIPE_ATTACK 1
+			local L_SWIPE 1
+			local VIEW_ANIM VANIM_SWIPE2
+			local OWNER_ANIM PANIM_SWIPE1
+			local NORMAL_ATTACK 0
+		}
+
+		if ( L_SWIPE )
+		{
+			attackprop ent_me 0 dmg POLE_SWIPE_DMG
+			attackprop ent_me 0 dmg.range POLE_SWIPE_DMG_RANGE
+			attackprop ent_me 0 dmg.type POLE_SWIPE_DMG_TYPE
+			attackprop ent_me 0 range POLE_SWIPE_RANGE
+			attackprop ent_me 0 hitchance POLE_SWIPE_ACCURACY
+			callevent POLE_SWIPE_DMG_DELAY attack_swipe_strike
+		}
+	}
+
+	if ( POLE_CAN_BACKHAND )
+	{
+		if PARAM1 isnot poke2
+		if ( $get(ent_owner,keydown,back) )
+		{
+			if $get(ent_owner,keydown,use)
+			setvard POLE_BACKHAND_ATTACK 1
+			local VIEW_ANIM VANIM_POKE_BACK
+			local OWNER_ANIM PANIM_POKE_BACK
+			local NORMAL_ATTACK 0
+			attackprop ent_me 0 dmg POLE_BACKHAND_DMG
+			attackprop ent_me 0 hitchance POLE_BACKHAND_DMG
+			attackprop ent_me 0 dmg.range POLE_BACKHAND_DMG_RANGE
+			attackprop ent_me 0 dmg.type POLE_BACKHAND_DMG_TYPE
+			attackprop ent_me 0 range POLE_BACKHAND_RANGE
+			attackprop ent_me 0 hitchance POLE_BACKHAND_ACCURACY
+			callevent POLE_BACKHAND_DMG_DELAY attack_backhand_strike
+		}
+	}
+
+	if ( NORMAL_ATTACK )
+	{
+		if ( PARAM1 equals poke1 )
+		{
+			attackprop ent_me 0 dmg MELEE_DMG
+			attackprop ent_me 0 dmg.range MELEE_DMG_RANGE
+			attackprop ent_me 0 dmg.type MELEE_DMG_TYPE
+			attackprop ent_me 0 range MELEE_RANGE
+			attackprop ent_me 0 hitchance MELEE_ACCURACY
+
+			local VIEW_ANIM VANIM_POKE1
+			local OWNER_ANIM PANIM_POKE
+		}
+
+		if ( PARAM1 equals poke2 )
+		{
+			local VIEW_ANIM VANIM_POKE2
+			local OWNER_ANIM PANIM_POKE
+		}
+
+		if ( PARAM1 equals priswipe )
+		{
+			dbg pole_attack priswipe
+
+			attackprop ent_me 0 dmg MELEE_DMG
+			attackprop ent_me 0 dmg.range L_MELEE_DMG_RANGE
+			attackprop ent_me 0 dmg.type MELEE_DMG_TYPE
+			attackprop ent_me 0 range MELEE_RANGE
+			attackprop ent_me 0 hitchance MELEE_ACCURACY
+
+			if ( $get(ent_owner,keydown,moveleft) ) local SIDE_SWIPE 1
+			if ( $get(ent_owner,keydown,moveright) ) local SIDE_SWIPE 1
+
+
+			if ( !SIDE_SWIPE )
+			{
+				local VIEW_ANIM VANIM_SWIPE1
+				local OWNER_ANIM PANIM_SWIPE1
+			}
+			else
+			{
+				local VIEW_ANIM VANIM_SWIPE2
+				local OWNER_ANIM PANIM_SWIPE2
+			}
+		}
+	}
+
+	if ( WEAPON_UNDERSKILLED )
+	{
+		setvard WAS_UNDERSKILLED 1
+		attackprop ent_me 0 dmg.multi 0.1
+	}
+	else
+	{
+		if WAS_UNDERSKILLED
+		attackprop ent_me 0 dmg.multi 1.0
+		setvard WAS_UNDERSKILLED 0
+	}
+
+
+	playowneranim critical OWNER_ANIM global.anim.combatwalk 3
+	splayviewanim ent_me VIEW_ANIM
+}
+
+{ attack_poke1_strike
+	playsound 1 10 SOUND_THRUST
+}
+
+{ attack_poke2_strike
+	playsound 1 10 SOUND_THRUST
+}
+
+{ attack_swipe_strike
+	playsound 1 10 SOUND_SWIPE
+}
+
+{ attack_backhand_strike
+	playsound 1 10 SOUND_BACKHAND
+}
+
+{ attack_poke1_damaged_other //PARAM1=target_hit PARAM2=dmg
+
+	if game.serverside //this event may always be server side, so mayhaps redundant.
+
+	local TARGET_HIT PARAM1
+	local DMG_DONE PARAM2
+
+	callevent pole_adjust_damage TARGET_HIT DMG_DONE
+}
+
+{ attack_poke2_damaged_other //PARAM1=target_hit PARAM2=dmg
+	local TARGET_HIT PARAM1
+	local DMG_DONE PARAM2
+
+	callevent pole_adjust_damage TARGET_HIT DMG_DONE
+}
+
+{ pole_adjust_damage //PARAM1=target_hit PARAM2=dmg
+
+	//these attacks do not adjust damage
+	local TARGET_HIT PARAM1
+
+	if ( POLE_SWIPE_ATTACK )
+	{
+		setvard POLE_SWIPE_ATTACK 0
+		local EXIT_SUB 1
+	}
+	if ( POLE_BACKHAND_ATTACK )
+	{
+		setvard POLE_BACKHAND_ATTACK 0
+		if ( POLE_BACKHAND_STUN )
+		{
+			local TARGET_HIT PARAM1
+			if ( $get(TARGET_HIT,isplayer) )
+			{
+				if !GAME_PVP
+				local EXIT_SUB1 1
+			}
+			if !EXIT_SUB1
+			if ( POLE_BACKHAND_SPECIAL ) callevent pole_backhand_special TARGET_HIT
+			if $rand(1,100) < POLE_BACKHAND_STUN_CHANCE
+			applyeffect TARGET_HIT effects/effect_stun 5.0 0 1
+		}
+		if ( POLE_BACKHAND_REPEL > 0 )
+		{
+			if $get(TARGET_HIT,relationship,ent_owner) equals enemy
+			addvelocity TARGET_HIT $relvel(0,POLE_BACKHAND_REPEL,110)
+		}
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	local DMG_DONE PARAM2	
+	if DMG_DONE > 0
+	if $get(TARGET_HIT,isalive)
+
+	local TARGET_RANGE $get(TARGET_HIT,range)
+
+	//only called for damage adjusted events (thurst and power thrust)
+	if ( POLE_POKE1_ENHANCED ) callevent pole_poke_enhance TARGET_HIT DMG_DONE
+
+	if ( TARGET_RANGE < POLE_MIN_RANGE )
+	{
+		multiply DMG_DONE POLE_MIN_DMG_MULTI
+		setdmg dmg DMG_DONE
+		returndata POLE_MIN_DMG_MULTI
+		dbg pole_adjust_damage short
+	}
+	else
+	{
+		local RANGE_RATIO TARGET_RANGE
+		divide RANGE_RATIO MELEE_RANGE
+
+		local ADJUST_RATIO $ratio(RANGE_RATIO,POLE_MIN_DMG_MULTI,POLE_MAX_DMG_MULTI)
+		
+		multiply DMG_DONE ADJUST_RATIO
+		setdmg dmg DMG_DONE
+		returndata ADJUST_RATIO
+		dbg pole_adjust_damage ADJUST_RATIO ( TARGET_RANGE vs MELEE_RANGE )
+	}
+}
+
+{ game_attack_cancel
+	//dbg game_attack_cancel
+ 	playowneranim once PANIM_IDLE global.anim.combatwalk 3
+}
+
+{ game_viewanimdone  //this is in code, but never seems to go off
+	dbg game_viewanimdone PARAM1
+}
+
+{ pole_idle_anim_cl
+
+	if game.clientside
+
+	if !POLE_NO_IDLE //set this flag to disallow viewmodel idle anims (shared/client)
+
+	if ( !game.item.inhand ) setvard POLE_IDLE_ACTIVE_CL 0
+
+	if game.item.inhand
+	callevent $randf(2.0,4.0) pole_idle_anim_cl
+
+	if !POLE_HOLD_IDLE_CL //use this flag to temporarily disable idle anims (client)
+
+	if ( game.item.attacking )
+	{
+		setvard POLE_IDLE_ANIM_COUNT_CL 0
+		setvard POLE_NEXT_IDLE_CL game.time
+		add POLE_NEXT_IDLE_CL 3.0
+	}
+	if game.time > POLE_NEXT_IDLE_CL
+
+	if !game.item.attacking
+
+	if ( POLE_IDLE_ANIM_COUNT_CL == 0 ) playviewanim VANIM_IDLE1
+	if ( POLE_IDLE_ANIM_COUNT_CL == 1 ) playviewanim VANIM_IDLE1
+	if ( POLE_IDLE_ANIM_COUNT_CL == 2 ) playviewanim VANIM_IDLE1
+	if ( POLE_IDLE_ANIM_COUNT_CL == 3 ) playviewanim VANIM_IDLE1
+	if ( POLE_IDLE_ANIM_COUNT_CL == 4 ) playviewanim VANIM_IDLE2
+	if ( POLE_IDLE_ANIM_COUNT_CL == 5 ) playviewanim VANIM_IDLE3
+
+	add POLE_IDLE_ANIM_COUNT_CL 1
+	if POLE_IDLE_ANIM_COUNT_CL > 5
+	setvard POLE_IDLE_ANIM_COUNT_CL 0
+}
+
+{ game_attack1
+	if WEAPON_UNDERSKILLED
+	if game.time > WEAPON_NEXT_SKILL_WARN
+	setvard WEAPON_NEXT_SKILL_WARN game.time
+	add WEAPON_NEXT_SKILL_WARN 15.0
+	callevent pole_check_skill
+}
+
+{ pole_check_skill
+	if $get(ent_owner,scriptvar,'PLR_IN_WORLD')
+
+	local FIND_MELEE_STAT "skill."
+	stradd FIND_MELEE_STAT MELEE_STAT
+	if ( $get(ent_owner,FIND_MELEE_STAT) < BASE_LEVEL_REQ )
+	{
+		dplayermessage ent_owner You lack the skill to properly wield this weapon!
+		local OUT_STR "You lack the proficiency to wield this weapon properly. ( requires: "
+		stradd OUT_STR MELEE_STAT
+		stradd OUT_STR " proficiency "
+		stradd OUT_STR BASE_LEVEL_REQ
+		stradd OUT_STR " )"
+		infomsg ent_owner "Insufficient Skill" OUT_STR
+		setvard WEAPON_UNDERSKILLED 1
+		setvard WAS_UNDERSKILLED 1
+	}
+	else
+	{
+		setvard WEAPON_UNDERSKILLED 0
+	}
+}
+
+{ game_+attack2
+	if game.serverside
+
+	if $get(ent_owner,canattack)
+
+	if ( POLE_CAN_THROW )
+	{
+		if !game.item.attacking
+		if !POLE_THROW_PREPING
+		if !POLE_THROW_PREPPED
+		if game.time > POLE_NEXT_THROW
+		setvard POLE_NEXT_THROW game.time
+		add POLE_NEXT_THROW 1.0
+		setvard POLE_THROW_PREPING 1
+		splayviewanim ent_me VANIM_THROW_PREP
+		playowneranim once PANIM_THROW_PREP global.anim.combatwalk 1.0
+		callclitemevent ent_me pole_toggle_idle_cl 1
+		callevent POLE_THROW_PREP_DELAY pole_throw_ready
+	}
+
+	if ( POLE_CAN_BLOCK )
+	{
+		if !POLE_IN_BLOCK
+		if !POLE_IN_SPIN
+		if game.time > NEXT_BLOCK
+		if !game.item.attacking
+		setvard NEXT_BLOCK game.time
+		add NEXT_BLOCK POLE_BLOCK_DELAY
+
+		if ( POLE_CAN_REPEL )
+		{
+			if ( !$get(ent_owner,keydown,forward) )
+			{
+				callevent pole_block_start
+			}
+			else
+			{
+				callevent pole_repel
+			}
+		}
+		else
+		{
+			callevent pole_block_start
+		}
+	}
+}
+
+{ pole_throw_ready
+	setvard POLE_THROW_PREPING 0
+	setvard POLE_THROW_PREPPED 1
+	setvard POLE_THROW_START_CHARGE_TIME game.time
+	playowneranim once PANIM_THROW_IDLE global.anim.combatwalk 10.0
+}
+
+{ game_-attack2
+
+	if game.serverside
+
+	if ( POLE_THROW_PREPPING )
+	{
+		if !game.item.attacking
+		splayviewanim ent_me VANIM_IDLE
+		playowneranim once PANIM_IDLE global.anim.combatwalk 1.0
+	}
+
+	if ( POLE_THROW_PREPPED )
+	{
+		if !game.item.attacking
+		callevent pole_do_throw
+	}
+
+	if ( POLE_IN_BLOCK )
+	{
+		if ( POLE_IN_SPIN )
+		{
+			callevent pole_spin_end
+		}
+		else
+		{
+			callevent pole_block_end
+		}
+	}
+}
+
+{ pole_block_start
+	playowneranim critical PANIM_BLOCK_START global.anim.combatwalk 3
+	splayviewanim ent_me VANIM_BLOCK_START
+	//setplayerflags ent_owner canattack 0
+	//dbg pole_block_start canattack $get(ent_owner,canattack)
+	
+	callexternal ent_owner ext_removed_effects lock
+	applyeffect ent_owner effects/effect_templock $get(ent_owner,id)
+
+	callclitemevent ent_me pole_toggle_idle_cl 1
+
+	callevent 1.0 pole_block_hold
+
+	if POLE_CAN_SPIN
+	if $get(ent_owner,keydown,back) 
+	callevent 5.0 pole_spin_start
+}
+
+{ [client] pole_toggle_idle_cl //<1|0> suspends client side idle anims (toggle)
+	setvard POLE_HOLD_IDLE_CL PARAM1
+}
+
+{ [client] pole_suspend_idle_cl //<time> suspends client side idle anims for x seconds
+	setvard POLE_IDLE_ANIM_COUNT_CL 0
+	setvard POLE_NEXT_IDLE_CL game.time
+	add POLE_NEXT_IDLE_CL PARAM1
+}
+
+{ pole_block_hold
+	dbg pole_block_start canattack $get(ent_owner,canattack)
+	playowneranim hold PANIM_BLOCK_HOLD global.anim.combatwalk 99
+	splayviewanim ent_me VANIM_BLOCK_HOLD
+
+	setvard POLE_IN_BLOCK 1
+}
+
+{ pole_block_end
+	dbg pole_block_end
+
+	setvard POLE_IN_BLOCK 0
+	setvard NEXT_BLOCK game.time
+	add NEXT_BLOCK 3.0
+
+	callexternal ent_owner ext_remove_lock
+	//setplayerflags ent_owner canattack 1
+	playowneranim break
+	playowneranim critical PANIM_BLOCK_END global.anim.combatwalk 3
+	callclitemevent ent_me pole_block_end_cl
+}
+
+{ [client] pole_block_end_cl
+	playviewanim VANIM_BLOCK_END
+	setvard POLE_HOLD_IDLE_CL 0
+
+	setvard POLE_IDLE_ANIM_COUNT_CL 0
+	setvard POLE_NEXT_IDLE_CL game.time
+	add POLE_NEXT_IDLE_CL 3.0
+}
+
+{ pole_spin_start
+	if POLE_IN_BLOCK
+	dbg pole_spin_start
+	//setplayerflags ent_owner canrun 0
+	splayviewanim ent_me VANIM_SPIN_START
+	playowneranim break
+	playowneranim once PANIM_SPIN_START global.anim.combatwalk 3
+	svplaysound 2 10 SOUND_SPIN_LOOP
+	callevent 0.5 pole_spin_hold
+	callevent 30.0 pole_spin_end //max 30 seconds
+}
+
+{ pole_spin_hold
+	dbg pole_spin_hold canattack $get(ent_owner,canattack)
+	setvard POLE_IN_SPIN 1
+	splayviewanim ent_me VANIM_SPIN_HOLD
+	playowneranim hold PANIM_SPIN_HOLD global.anim.combatwalk 99
+}
+
+{ pole_spin_end
+	if POLE_IN_SPIN
+	dbg pole_spin_end
+
+	setvard NEXT_BLOCK game.time
+	add NEXT_BLOCK 3.0
+
+	//setplayerflags ent_owner canattack 1
+	//setplayerflags ent_owner canrun 1
+
+	callexternal ent_owner ext_remove_lock
+
+	setvard POLE_IN_SPIN 0
+	setvard POLE_IN_BLOCK 0
+	svplaysound 2 0 SOUND_SPIN_LOOP
+	playowneranim break
+	playowneranim critical PANIM_SPIN_END global.anim.combatwalk 3
+
+	callclitemevent ent_me pole_spin_end_cl
+}
+
+{ [client] pole_spin_end_cl
+	playviewanim VANIM_SPIN_END
+	setvard POLE_HOLD_IDLE_CL 0
+	setvard POLE_IDLE_ANIM_COUNT_CL 0
+	setvard POLE_NEXT_IDLE_CL game.time
+	add POLE_NEXT_IDLE_CL 3.0
+}
+
+{ bs_global_command
+	if PARAM1 equals $get(ent_owner,id)
+	if ( POLE_IN_SPIN ) callevent pole_spin_end
+	if ( POLE_IN_BLOCK ) callevent pole_block_end
+}
+
+{ bweapon_effect_remove
+	if ( POLE_IN_SPIN ) callevent pole_spin_end
+	if ( POLE_IN_BLOCK ) callevent pole_block_end
+}
+
+{ game_takedamage //1: Attacker  2: Inflictor  3: dmg  4: dmg type
+	if ( POLE_IN_BLOCK )
+	{
+
+		//stops you blocking when hit, hrmm...
+//		if ( !$get(ent_owner,canattack) )
+//		{
+//			callevent pole_block_end
+//			local EXIT_SUB 1
+//		}
+//		if !EXIT_SUB
+
+		if ( PARAM4 contains effect ) local EXIT_SUB 1
+		if ( PARAM4 contains target ) local EXIT_SUB 1
+		if !EXIT_SUB
+
+		local PROJECTILE_FIRED $get(PARAM2,is_projectile)
+		if ( PROJECTILE_FIRED )
+		{
+			local BLOCK_TARG PARAM1
+		}
+		else
+		{
+			local BLOCK_TARG PARAM2
+		}
+
+
+		local OWNER_ORG $get(ent_owner,origin)
+		local OWNER_ANG $get(ent_owner,angles)
+		local ATTACK_ORG $get(BLOCK_TARG,origin)
+
+		if $within_cone2D(ATTACK_ORG,OWNER_ORG,OWNER_ANG,100)	//Attack must come from in front of player
+
+		local DMG_TAKEN PARAM3
+		local ORIG_DMG PARAM3
+		multiply DMG_TAKEN POLE_BLOCK_PROT_RATIO
+
+		if ( POLE_IN_SPIN )
+		{
+			multiply DMG_TAKEN POLE_BLOCK_PROT_RATIO
+			if ( PROJECTILE_FIRED ) local PROJECTILE_BLOCKED 1
+		}
+
+		if ( !PROJECTILE_BLOCKED )
+		{
+			setdmg dmg DMG_TAKEN
+			subtract ORIG_DMG DMG_TAKEN
+			playermessage Polearm blocked ORIG_DMG damage
+		}
+		else
+		{
+			setdmg hit 0
+			setdmg dmg 0
+			playermessage Polearm deflected $get(PARAM2,name)
+		}
+		if ( !POLE_IN_SPIN ) splayviewanim ent_me VANIM_BLOCK_HOLD //twich a bit
+		playsound 1 10 SOUND_BLOCK
+	}
+}
+
+{ game_hitworld
+	//dbg game_hitworld
+	playrandomsound 2 10 SOUND_HITWALL1 SOUND_HITWALL2
+	//clientevent update all const.localplayer.scriptID cl_playsound SOUND_HITWALL1 10 $get(ent_owner,origin)
+}
+
+{ pole_repel
+	playsound 1 10 SOUND_READY
+	splayviewanim ent_me VANIM_REPEL
+	playowneranim critical PANIM_REPEL global.anim.combatwalk 3
+	callclitemevent ent_me pole_suspend_idle_cl 3.0
+	local SCAN_LOC $get(ent_owner,origin)
+	setvard OWNER_YAW $get(ent_owner,angles.yaw)
+	vectoradd SCAN_LOC $relpos($vec(0,OWNER_YAW,0),$vec(0,32,0))
+	callexternal ent_owner ext_sphere_token enemy 64 SCAN_LOC
+	setvard PUSH_TARGETS $get(ent_owner,scriptvar,'PLR_SCAN_TOKEN')
+	if PUSH_TARGETS isnot none
+	calleventloop $get_token_amt(PUSH_TARGETS) pole_repel_affect_targets
+}
+
+{ pole_repel_affect_targets
+	local CUR_TARGET $get_token(PUSH_TARGETS,game.script.iteration)
+	if ( !GAME_PVP )
+	{
+		if $get(CUR_TARGET,isplayer)
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	local MAX_HP_PUSH $get(ent_owner,maxhp)
+	multiply MAX_HP_PUSH 2
+	if ( MAX_HP_PUSH < 1500 ) local MAX_HP_PUSH 1500
+
+	if $get(CUR_TARGET,maxhp) < MAX_HP_PUSH
+	addvelocity CUR_TARGET $relpos($vec(0,OWNER_YAW,0),$vec(0,POLE_REPEL_STRENGTH,10))
+}
+
+{ pole_do_throw
+	dbg pole_do_throw
+	setvard POLE_THROW_PREPPED 0
+	splayviewanim ent_me VANIM_THROW_PREPED_THROW
+	playowneranim once PANIM_THROW_PREPED_THROW global.anim.combatwalk 1.0
+	callevent POLE_THROW_PREPED_ATKDELAY pole_do_throw2
+}
+
+{ pole_do_throw2
+
+	playsound 1 10 SOUND_THROW
+
+	local CHARGE_RATIO game.time
+	subtract CHARGE_RATIO POLE_THROW_START_CHARGE_TIME
+
+	if ( CHARGE_RATIO >= POLE_THROW_MAX_CHARGE_TIME )
+	{
+		local CHARGE_RATIO 1.0
+	}
+	else
+	{
+		divide CHARGE_RATIO POLE_THROW_MAX_CHARGE_TIME
+		local CHARGE_RATIO $ratio(CHARGE_RATIO,0.01,1.0)
+	}
+
+	dbg pole_do_throw2 CHARGE_RATIO
+
+	local L_THROW_POWER POLE_THROW_POWER
+	local L_COF POLE_THROW_COF
+	if ( WEAPON_UNDERSKILLED )
+	{
+		local SKILL_DIFF 1.0
+		local SKILL_RATIO $get(ent_owner,skill.polearms)
+		divide SKILL_RATIO BASE_LEVEL_REQ
+		subtract SKILL_DIFF SKILL_RATIO
+		add L_COF SKILL_DIFF
+		multiply L_THROW_POWER SKILL_RATIO
+		if ( CHARGE_RATIO > 0.1 ) local CHARGE_RATIO 0.1
+
+		dbg skildiff SKILL_DIFF cof L_COF thr L_THROW_POWER rat SKILL_RATIO
+	}
+	else
+	{
+		//increase range with hold time
+		local CR_PLUS_ONE CHARGE_RATIO
+		add CHARGE_RATIO 1
+		multiply L_THROW_POWER CHARGE_RATIO
+	}
+
+	callexternal ent_owner ext_toss_spear CHARGE_RATIO view L_THROW_POWER 0 L_COF POLE_THOW_PROJECTILE (10,0,30)
+	callclitemevent ent_me pole_toggle_idle_cl 0
+	setvard POLE_NEXT_THROW game.time
+	add POLE_NEXT_THROW POLE_THROW_RECHARGE_TIME
+}
+
+{ pole_abort_throw
+	setvard POLE_THROW_PREPPED 0
+	setvard POLE_THROW_PREPPING 0
+}
+
+{ game_drop
+
+	local RL_HAND game.item.hand_index
+	callexternal ent_owner ext_set_hand_id RL_HAND 0
+}
+
+//{ game_deploy
+//
+//	local RL_HAND game.item.hand_index
+//	callexternal ent_owner ext_set_hand_id RL_HAND $get(ent_me,id)
+//}
+
+{ ext_player_sit
+	dbg ext_player_sit
+	if ( POLE_IN_SPIN ) callevent pole_spin_end
+	if ( POLE_IN_BLOCK ) callevent pole_block_end
+}
+
+{ game_setchargepercent
+	//dbg game_setchargepercent PARAM1
+	setvard BWEAPON_CHARGE_PERCENT PARAM1
+}
+
+{ attack_poke1_damaged_other
+	if ( BWEAPON_CHARGE_PERCENT > 0.25 )
+	{
+		subtract BWEAPON_CHARGE_PERCENT 0.25
+
+		local L_CHARGE_RATIO $ratio(BWEAPON_CHARGE_PERCENT,1.25,BWEAPON_DBL_CHARGE_ADJ)
+
+		local NEW_DMG PARAM2
+		multiply NEW_DMG L_CHARGE_RATIO
+		setdmg dmg NEW_DMG
+		returndata L_CHARGE_RATIO
+		dbg Adjusted dmg x L_CHARGE_RATIO
+		setvard BWEAPON_CHARGE_PERCENT 0
+
+		local CUR_DRAIN MELEE_ENERGY
+		multiply CUR_DRAIN BWEAPON_CHARGE_PERCENT
+		drainstamina ent_owner CUR_DRAIN
+	}
+}

@@ -1,0 +1,229 @@
+#scope server
+
+{ [shared]
+	setvard ANIM_KNEEL kneel //this has to be a vard as the base script uses it too
+	const ANIM_SWING gglowswing
+	const ANIM_KICK kick
+	setvard ANIM_ATTACK gglowswing
+
+	precache weather/lightning.wav //sfx_multi_lighting
+}
+
+{ [server]
+
+	const ATTACH_IDX_AXE 2
+
+	const FREQ_SPECIAL $randf(10.0,20.0)
+	const N_SPECIALS 3
+
+	const FREQ_KICK $randf(10.0,20.0)
+
+	const DMG_SWING 400
+
+	const DMG_ZAP 300
+	const DOT_ZAP 100
+
+	if ( $lcase(game.map.name) equals shad_palace )
+	{
+		setvard NPC_IS_BOSS 1
+		setvard NPC_GIVE_EXP 10000
+		giveitem axes_gthunder11
+	}
+	else
+	{
+		setvard NPC_GIVE_EXP 1000
+	}
+	
+	setvard SORC_NO_TELE 1
+	const SOUND_DRAW_WEAPON weapons/swords/sworddraw.wav
+	const SOUND_SWING weapons/swinghuge.wav
+}
+
+#include monsters/orc_base_melee
+#include monsters/sorc_base
+
+{ [shared] orc_spawn
+	setmodel monsters/thuldahr.mdl
+	setmodelbody 2 1 //0=unarmed 1=hugeaxe 2=greataxe 3=beef 4=smith 5=mug
+
+	name Thuldahr
+	hp 15000
+	race orc
+	takedmg all 0.5
+	takedmg lightning 0.0
+	takedmg poison 1.2
+	takedmg acid 1.5
+
+	width 48
+	height 128
+
+	if game.serverside
+
+	if ( G_SORC_CHIEF_PRESENT )
+	{
+		setvard KNEEL_MODE 1
+		setidleanim ANIM_KNEEL
+		setmoveanim ANIM_KNEEL
+		callevent npcatk_suspend_ai
+		roam 0
+		invincible 2
+	
+		setvard CHIEF_ID $get_by_name(the_warchief)
+	}
+	else
+	{
+		roam 1
+		setmoveanim ANIM_WALK
+		setidleanim ANIM_IDLE
+	}
+}
+
+{ npc_post_spawn
+	setvard ATTACK_MOVERANGE 96
+	setvard ATTACK_RANGE 128
+	setvard ATTACK_HITRANGE 200
+}
+
+{ game_damaged
+
+	if KNEEL_MODE
+	setdmg dmg 0
+	setdmg hit 0
+	returndata 0
+}
+
+{ ext_chief_orders_attack	
+	saytextrange 1024
+	setmodelbody 2 0
+	setmoveanim ANIM_WALK
+	setidleanim ANIM_IDLE
+	saytext Yes, warchief! They shall die like dogs!
+	say [.16] [.32] [.32] [.16]
+	playanim critical nod_yes
+	callevent $randf(1.0,2.0) combat_mode_go //delay randomized to desync the various orcs in the area
+}
+
+{ combat_mode_go
+	setvard KNEEL_MODE 0
+	callevent npcatk_resume_ai
+	roam 1
+	setmodelbody 2 1
+	playsound 0 10 SOUND_DRAW_WEAPON
+	invincible 0
+	if !CYCLES_ON
+	setvard CYCLES_ON 1
+	callevent FREQ_SPECIAL do_special
+}
+
+{ do_special
+	local RND_SPECIAL $rand(1,N_SPECIALS)
+
+	if ( RND_SPECIAL == 1 )
+	{
+		callevent lstrikes_go
+		setvard SPECIAL_DURATION 5.0
+	}
+
+	if ( RND_SPECIAL == 2 )
+	{
+		callevent repulse_go
+		setvard SPECIAL_DURATION 5.0
+	}
+
+	local SPECIAL_DELAY FREQ_SPECIAL
+	add SPECIAL_DELAY SPECIAL_DURATION
+	callevent SPECIAL_DELAY do_special
+}
+
+{ lstrikes_go
+	playanim critical warcry
+	callevent npcatk_suspend_ai
+	callevent 3.0 npcatk_resume_ai
+	setvard ZAP_TARGETS $get_tsphere(enemy,1024)
+	if ZAP_TARGETS isnot none
+	setvard ZAP_INDEXES ''
+	local N_ZAP_TARGETS $get_token_amt(ZAP_TARGETS)
+	calleventloop N_ZAP_TARGETS lstrikes_affect_targets
+	clientevent new all effects/sfx_multi_lightning ZAP_INDEXES
+}
+
+{ lstrikes_affect_targets
+	local CUR_TARG $get_token(ZAP_TARGETS,game.script.iteration)
+	token.add ZAP_INDEXES $get(CUR_TARG,index)
+	dodamage CUR_TARG direct DMG_ZAP 100% ent_me lightning
+	applyeffect CUR_TARG effects/effect_shock_dmg 5.0 $get(ent_me,id) DOT_ZAP
+}
+
+{ repulse_go
+	playanim critical warcry
+	callevent npcatk_suspend_ai
+	callevent 3.0 npcatk_resume_ai
+	clientevent new all effects/sfx_shock_burst $get(ent_me,origin) 256 1 (255,255,0)
+	setvard REPULSE_TARGETS $get_tsphere(enemy,512)
+	if REPULSE_TARGETS isnot none
+	calleventloop $get_token_amt(REPULSE_TARGETS) repulse_affect_targets
+}
+
+{ repulse_affect_targets
+	local CUR_TARG $get_token(REPULSE_TARGETS,game.script.iteration)
+	applyeffect CUR_TARG effects/effect_shock_dmg 5.0 $get(ent_me,id) DOT_ZAP
+	local TARG_ORG $get(CUR_TARG,origin)
+	local TARG_ANG $angles(game.monster.origin,TARG_ORG)
+	setvelocity CUR_TARG $relvel($vec(0,TARG_ANG,0),$vec(10,2000,110))
+}
+
+{ frame_swing //add event
+	playsound 0 10 SOUND_SWING
+	local AXE_POS $get(ent_me,attachpos,ATTACH_IDX_AXE)	
+	xdodamage AXE_POS 200 DMG_SWING 0 ent_me ent_me none slash
+	if game.time > NEXT_KICK
+	setvard ANIM_ATTACK ANIM_KICK
+}
+
+{ frame_kick_start //add event
+	callevent baseorc_yell
+}
+
+{ frame_kick_land //add event
+	playsound 0 10 SOUND_KICK
+	setvard KICK_ATTACK 1
+	dodamage NPCATK_TARGET ATTACK_HITRANGE DMG_KICK 100% blunt
+	setvard ANIM_ATTACK ANIM_SWING
+	setvard NEXT_KICK game.time
+	add NEXT_KICK FREQ_KICK
+
+}
+
+{ game_dodamage
+	if ( KICK_ATTACK )
+	{
+		if PARAM1
+		applyeffect PARAM2 effects/heavy_stun 8.0 $get(ent_me,id) 1
+	}
+	setvard KICK_ATTACK 0
+}
+
+{ game_death
+	callexternal CHIEF_ID thuld_died
+}
+
+////debug, remove
+//{ npcatk_hunt
+//
+//	local BEAM_START $get(ent_me,attachpos,0)
+//	local BEAM_END $get(ent_me,attachpos,ATTACH_IDX_AXE)
+//	effect beam point lgtning.spr 100 BEAM_START BEAM_END (255,0,255) 255 0 CYCLE_TIME
+//}
+
+{ sorcs_confirm_order
+	if !CONFIRMED_ORDER
+	setvard CONFIRMED_ORDER 1
+	callevent 1.0 thuld_confirm //thuldahr confirms last
+}
+
+{ thuld_confirm
+	if !DOUBLE_REDUNDANT
+	setvard DOUBLE_REDUNDANT 1 //weird ass shit going on here, suspect menu related, like captain ron
+	saytext Yes, warchief.
+	say [.16] [.32] [.32] [.16]
+}

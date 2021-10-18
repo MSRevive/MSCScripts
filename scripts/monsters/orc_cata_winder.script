@@ -1,0 +1,205 @@
+//Orc catapult winder just winds catapults, firing them if uninterupted for long enough
+//- hope is to set it up to fire map event by the name of the params passed to it, so mappers can setup multiples of them
+//- it does not have the full AI, as it only responds to being struck by turning and kicking players once in awhile
+
+{
+	const ANIM_IDLE idle1
+	const ANIM_ATTACK kick
+	const ANIM_WIND turn_valve
+	setvard ANIM_FLINCH flinch
+	setvard ANIM_DEATH die_fallback
+
+	const FLINCH_CHANCE 50
+
+	const KICK_RANGE 180
+	const DMG_KICK 80
+	const ATTACK_HITCHANCE 90
+	const FREQ_KICK 7.0
+
+	//from base orc, not all used
+	const SOUND_ATTACK1 voices/orc/attack.wav
+	const SOUND_ATTACK2 voices/orc/attack2.wav
+	const SOUND_ATTACK3 voices/orc/attack3.wav
+	const SOUND_HIT voices/orc/hit.wav
+	const SOUND_HIT2 voices/orc/hit2.wav
+	const SOUND_HIT3 voices/orc/hit3.wav
+	const SOUND_PAIN monsters/orc/pain.wav
+	const SOUND_WARCRY1 monsters/orc/battlecry.wav
+	const SOUND_DEATH voices/orc/die.wav
+	const SOUND_HELP voices/orc/help.wav
+	const SOUND_STRUCK1 body/armour1.wav
+	const SOUND_STRUCK2 body/armour2.wav
+	const SOUND_STRUCK3 body/armour3.wav
+}
+
+#include monsters/base_npc
+
+{ npc_spawn
+
+	name an|Orc Catapult Winder
+	race orc
+
+	setmodel monsters/orc_big.mdl
+	width 38
+	height 72
+	setidleanim ANIM_IDLE
+	setmoveanim ANIM_IDLE
+   	setmodelbody	0 2		//Body 0=naked 1=leather 2=plate 3=green-hide
+   	setmodelbody	1 2		//Head 0=cap_shorthorn 1=cap_nohorn 2=buffo_skin 3=cheif_ramhorns 4=green_hood
+   	setmodelbody	2 0		//Weapon 0=fist 1=axe 2=bow_weak 3=bow_strng 4=sword 5=bloodyaxe 6=sword&sheild
+
+	skilllevel 80
+	gold $rand(10,30)
+	hp 2000
+	takedmg all 0.5
+	setstat parry 40
+
+	setvard IMMUNE_PUSH 1
+
+	setvard WIND_ON 0
+
+	callevent 1.0 get_yaw
+}
+
+{ get_yaw
+
+	setvard MY_YAW game.monster.angles.yaw
+	add MY_YAW -90
+	setangle face $vec(0,MY_YAW,0)
+	setorigin $relpos(0,-18,0)
+}
+
+{ game_postspawn //PARAM1 = (name|default), PARAM2 = DmgMulti, PARAM3 = HPMulti, PARAM4 = params string
+
+	setvard NEW_NAME PARAM1
+	if ( NEW_NAME isnot 'default' ) name NEW_NAME
+	setvard NPC_DMG_MULTI 1
+	if ( PARAM2 > 1 )
+	{
+		add NPC_DMG_MULTI PARAM2
+		dmgmulti PARAM2
+	}
+
+	setvard NPC_HP_MULTI 1
+	if ( PARAM3 > 1 )
+	{
+		local MY_HP $get(ent_me,maxhp)
+		multiply MY_HP PARAM3
+		hp MY_HP
+	}
+
+	setvard TRIG_PREFIX PARAM4
+}
+
+{ game_struck //PARAM1 = damage
+
+	if $get(ent_me,isalive)
+
+	if ( PARAM1 > 20 )
+	{
+		if $rand(1,100) < FLINCH_CHANCE
+		playanim critical ANIM_FLINCH
+	}
+
+	if !KICK_DELAY
+	setvard KICK_DELAY 1
+	callevent FREQ_KICK reset_kick_delay
+
+	playrandomsound game.sound.voice game.sound.maxvol SOUND_PAIN SOUND_STRUCK2 SOUND_PAIN none none
+	
+	if PARAM1 > 20
+	local KICK_TARG $get(ent_laststruck,id)
+	if $get(KICK_TARG,range) < KICK_RANGE
+
+
+	setmovedest KICK_TARG 9999
+	setvard FINAL_KICK_TARG KICK_TARG
+	playanim critical ANIM_ATTACK
+	callevent 2.0 face_cata
+}
+
+{ face_cata
+	//resume winding
+	setangle face $vec(0,MY_YAW,0)
+}
+
+{ reset_kick_delay
+
+	setvard KICK_DELAY 0 
+}
+
+{ kick_land
+
+	dbg kick_landed: $get(FINAL_KICK_TARG,name) $get(FINAL_KICK_TARG,range) 
+	callevent baseorc_yell
+	//if $get(FINAL_KICK_TARG,range) < KICK_RANGE
+	dodamage FINAL_KICK_TARG KICK_RANGE DMG_KICK 100% blunt //<target> <range> <dmg> <cth> [type]
+}
+
+{  baseorc_yell
+	
+	playrandomsound game.sound.weapon game.sound.maxvol SOUND_ATTACK1 SOUND_ATTACK2 SOUND_ATTACK3
+}
+
+{ game_dodamage
+	
+	if PARAM1
+
+	effect glow ent_me (255,255,255) 64 1 1
+
+	local TARG_ORG $get(PARAM2,origin)
+	local MY_ORG $get(ent_me,origin)
+	local TARG_ANG $angles(MY_ORG,TARG_ORG)
+	local NEW_YAW TARG_ANG
+
+	setvelocity PARAM2 $relvel($vec(0,NEW_YAW,0),$vec(0,800,800))
+}
+
+{
+repeatdelay 7.0
+
+	if $get(ent_me,isalive)
+
+	if ( !WIND_ON ) callevent wind_toggle
+	callevent face_cata
+	playanim once ANIM_WIND
+	setidleanim ANIM_WIND
+}
+
+{ fire_cata //model event
+
+	if $get(ent_me,isalive)
+
+	local TRIG_STRING TRIG_PREFIX
+	stradd TRIG_STRING _fire
+	usetrigger TRIG_STRING
+	setidleanim ANIM_IDLE
+
+	if ( WIND_ON ) callevent 2.0 wind_toggle
+}
+
+{ wind_toggle
+
+	if ( !WIND_ON )
+	{
+		setvard WIND_ON 1
+	}
+	else
+	{
+		setvard WIND_ON 0
+	}
+
+	local TRIG_STRING TRIG_PREFIX
+	stradd TRIG_STRING _wind
+	usetrigger TRIG_STRING
+}
+
+{ game_death
+
+	local TRIG_STRING TRIG_PREFIX
+	stradd TRIG_STRING _died
+	usetrigger TRIG_STRING
+
+	if ( WIND_ON ) callevent wind_toggle
+	
+}

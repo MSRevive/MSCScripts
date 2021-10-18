@@ -1,0 +1,166 @@
+{	
+  const BASE_LEVEL_REQ     15	
+  const ANIM_LIFT        	0
+  const ANIM_IDLE1        	1
+  const ANIM_ATTACK1      	2
+  const ANIM_ATTACK2      	3
+  const ANIM_PARRY1      	4
+  const ANIM_PARRY1_RETRACT   	5
+  const ANIM_UNSHEATH      	6
+  const ANIM_SHEATH      	7
+  const MODEL_VIEW       	weapons/swords/highsword_rview.mdl
+  const MODEL_HANDS      	weapons/swords/p_swords.mdl
+  const MODEL_WORLD      	weapons/swords/p_swords.mdl
+  const MODEL_BLOCK      	armor/shields/p_shields.mdl
+  const SOUND_SWIPE      	weapons/swingsmall.wav
+  const SOUND_HITWALL1      	weapons/cbar_hit1.wav
+  const SOUND_HITWALL2      	weapons/cbar_hit1.wav
+  const SOUND_DRAW      	weapons/swords/sworddraw.wav
+	const SOUND_SHOUT $get(ent_owner,scriptvar,'PLR_SOUND_SHOUT1')
+  const SWING_DELAY		1.1
+  const SWING_ENERGY		1.5
+  const SWING_ACCURACY		80%
+  const SWING_DAMAGE		300
+  const SWING_DAMAGE_RANGE     180
+  const ITEM_NAME		longsword
+
+  const MODEL_BODY_OFS		4
+  const ANIM_PREFIX		highsword
+}
+
+#include items/base_weapon
+
+{
+   eventname weapon_spawn
+
+   name 	a|Mithril Sword
+   desc 	A heavy, two-handed Mithril sword
+   weight 	110
+   size 	9
+   value	1000
+   setworldmodel MODEL_WORLD
+   setpmodel	MODEL_HANDS
+   setviewmodel MODEL_VIEW
+   sethudsprite hand sword
+   sethudsprite trade ITEM_NAME
+   sethand	both
+
+   callevent 	registerattack_swingside
+   callevent	registerattack_swingoverhead
+   callevent	registerattack_parryside
+}
+
+// Attacking
+
+//Overhead swing
+{
+  eventname registerattack_swingoverhead
+
+  setvar ATTACK_TYPE		strike-land
+  setvar ATTACK_DAMAGE_TYPE	slash
+  setvar ATTACK_KEYS		+back+attack1
+  setvar ATTACK_PRIORITY	1
+  setvar ATTACK_DURATION	1.3
+  setvar ATTACK_LAND_DELAY	0.3
+  setvar ATTACK_EVENT		swingoverhead
+  setvar ATTACK_LAND_EVENT	swingoverhead_land
+  setvar ATTACK_DONE_EVENT	0
+
+  //default values
+  setvard ATTACK_RANGE		80
+  setvar ATTACK_DAMAGE		SWING_DAMAGE
+  setvar ATTACK_DAMAGE_RANGE	SWING_DAMAGE_RANGE
+  setvar ATTACK_ENERGY		SWING_ENERGY
+  setvar ATTACK_ACCURACYSTAT	swordsmanship
+  setvar ATTACK_ACCURACYDEFAULT	SWING_ACCURACY//% chance of hitting
+  setvar ATTACK_ALIGN_BASE	3,10 
+  setvar ATTACK_ALIGN_TIP	0,-10 
+
+  registerattack
+}
+
+
+{
+  eventname swingoverhead
+
+  playviewanim  ANIM_ATTACK2
+  playowneranim once longsword_swipe squatwalk1 3
+
+  callownerevent commenceattack
+}
+{
+  eventname swingoverhead_land
+
+  callownerevent attackstrike
+}
+
+//Swing from side
+{
+  eventname registerattack_swingside
+
+  setvar ATTACK_TYPE		strike-land
+  setvar ATTACK_DAMAGE_TYPE	slash
+  setvar ATTACK_KEYS		+attack1
+  setvar ATTACK_PRIORITY	0
+  setvar ATTACK_DURATION	1.3
+  setvar ATTACK_LAND_DELAY	0.3
+  setvar ATTACK_EVENT		swingside
+  setvar ATTACK_LAND_EVENT	swingside_land
+  setvar ATTACK_DONE_EVENT	0
+
+  //default values
+  setvard ATTACK_RANGE		70
+  setvar ATTACK_DAMAGE		SWING_DAMAGE
+  setvar ATTACK_DAMAGE_RANGE	SWING_DAMAGE_RANGE
+  setvar ATTACK_ENERGY		SWING_ENERGY
+  setvar ATTACK_ACCURACYSTAT	swordsmanship
+  setvar ATTACK_ACCURACYDEFAULT	SWING_ACCURACY//% chance of hitting
+  setvar ATTACK_ALIGN_BASE	-20,-3
+  setvar ATTACK_ALIGN_TIP	20,-3
+
+  registerattack
+}
+
+
+{
+  eventname swingside
+
+  playviewanim  ANIM_ATTACK1
+  playowneranim once longsword_swipe squatwalk1 3
+  volume 10
+  playrandomsoundcl 0 SOUND_SWIPE
+  callownerevent commenceattack
+}
+{
+  eventname swingside_land
+
+  callownerevent attackstrike
+}
+
+//Parry
+{
+  eventname registerattack_parryside
+
+  setvar ATTACK_TYPE		strike-hold
+  setvar ATTACK_DAMAGE_TYPE	slash
+  setvar ATTACK_PRIORITY	0
+  setvar ATTACK_LAND_DELAY	0
+  setvar ATTACK_EVENT		parryside
+  setvar ATTACK_LAND_EVENT	parryside_block
+  setvar ATTACK_DONE_EVENT	parryside_retract
+
+  //default values
+  setvard ATTACK_RANGE		20
+  setvar ATTACK_ENERGY		0.5
+  setvar ATTACK_ACCURACYSTAT	parry
+  setvar ATTACK_ACCURACYDEFAULT	65%//chance of automatically blocking
+
+  registerattack
+}
+
+{
+  eventname parryside_retract
+
+  playviewanim ANIM_PARRY1_RETRACT
+  playowneranim break
+}

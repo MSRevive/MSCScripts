@@ -1,0 +1,204 @@
+//base ally system
+//- for allies that follow players about and operate as combatants
+//- ALLY_FOLLOW_ON to toggle follow mode
+
+#scope server
+{
+	setvard NPC_NO_PLAYER_DMG 1
+	setvard NPC_BATTLE_ALLY 1
+	const NPC_FIGHTS_NPCS 1
+
+	saytextrange 2048
+
+	setvard NO_STUCK_CHECKS 1
+
+	const AI_NO_TARGET_STRING unset //use ¯NONE¯ for old ai
+
+	setvard NPC_ALLY_RESPONSE_RANGE 4096 //maximize ally alert range (keeps multiple allies in sync on targets)
+
+	const ALLY_MIN_DISTANCE 42 //if player closer than this, ally will move back some to give him room
+	const ALLY_FOLLOW_CLOSE_DIST 60 //follow close distance
+	const ALLY_FOLLOW_NORM_DIST 128 //default follow distance
+	const ALLY_MOVE_AWAY_DIST 64 //distance to flee to make room
+	setvard ALLY_FOLLOW_PLR_DIST 128 
+
+	const ALLY_REGEN_RATIO 0.1 //regenerate 10% hp/sec when not in combat
+
+	const ALLY_MAX_JUMP_RANGE 600 //max disance to attempt to jump at allies out of reach
+	const FREQ_ALLYJUMP $randf(4.0,5.0) //how often to attempt such jumps
+
+
+	//seperate stuck system for following players
+	setvard ALLY_STUCK_COUNT 0
+	setvard ALLY_AS_UNSTUCK_ANG 0
+
+	const ANIM_ALLY_JUMP jump
+	const SOUND_ALLY_JUMP monsters/orc/attack1.wav
+	const ALLY_JUMP_THRESHOLD 150 //vertical difference required to trigger a jump at allies above
+}
+
+{ npcatk_hunt
+	if !SUSPEND_AI
+	if ALLY_FOLLOW_ON
+	//dbg ALLY_FOLLOW_ON - $get(ALLY_FOLLOW_PLR_ID,name)
+	local GAME_TIME game.time
+	setvard CYCLE_TIME 0.1
+
+	//follow players while target unset
+	if NPCATK_TARGET equals AI_NO_TARGET_STRING
+
+	if ( GAME_TIME > ALLY_NEXT_FAS_CHECK )
+	{
+		setvard ALLY_NEXT_FAS_CHECK GAME_TIME
+		add ALLY_NEXT_FAS_CHECK 0.5
+		callevent ally_stuck_check
+	}
+	if !SUSPEND_AI //incase AS triggered AI suspend
+
+	//ally auto-regen
+	if ( GAME_TIME > ALLY_NEXT_REGEN )
+	{
+		if $get(ent_me,hp) < $get(ent_me,maxhp)
+		local ALLY_REGEN_AMT $get(ent_me,maxhp)
+		multiply ALLY_REGEN_AMT ALLY_REGEN_RATIO
+		givehp ent_me ALLY_REGEN_AMT
+		setvard ALLY_NEXT_REGEN GAME_TIME
+		add ALLY_NEXT_REGEN 1.0
+	}
+
+	//jump to players if need be
+	if ( GAME_TIME > NEXT_ALLYJUMP )
+	{
+		if $get(ALLY_FOLLOW_PLR_ID,isalive)
+		if $get(ALLY_FOLLOW_PLR_ID,range) < ALLY_MAX_JUMP_RANGE
+
+		local MY_Z $get(ent_me,origin.z)
+		local TARG_Z $get(ALLY_FOLLOW_PLR_ID,origin.z)
+		subtract TARG_Z 38 //compensate for origin center
+
+		local Z_DIFF TARG_Z
+		subtract Z_DIFF MY_Z
+
+		//dbg jump_check alv $get(ALLY_FOLLOW_PLR_ID,isalive) rng $get(ALLY_FOLLOW_PLR_ID,range) zdf Z_DIFF
+
+		if ( Z_DIFF > ALLY_JUMP_THRESHOLD )
+		{
+			callevent ally_hop Z_DIFF
+			setvard NEXT_ALLYJUMP GAME_TIME
+			add NEXT_ALLYJUMP FREQ_ALLYJUMP
+		}
+	}
+
+	//pick player to follow
+	if game.players > 0
+
+	if ( GAME_TIME > ALLY_NEXT_FOLLOW_CHECK ) local FIND_NEW_FOLLOW 1
+	if ( !$get(ALLY_FOLLOW_PLR_ID,isalive) ) local FIND_NEW_FOLLOW 1
+
+	if ( FIND_NEW_FOLLOW )
+	{
+		setvard ALLY_NEXT_FOLLOW_CHECK GAME_TIME
+		add ALLY_NEXT_FOLLOW_CHECK 10.0
+		setvard ALLY_FPLAYER_LIST 0
+		getplayersnb ALLY_FPLAYER_LIST
+		setvard ALLY_FPLAYER_LIST $sort_entlist(ALLY_FPLAYER_LIST,range)
+		setvard ALLY_FOLLOW_PLR_ID $get_token(ALLY_FPLAYER_LIST,0)
+	}
+
+	if ( $get(ALLY_FOLLOW_PLR_ID,range) > 200 )
+	{
+		setmoveanim ANIM_RUN
+	}
+	else
+	{
+		setmoveanim ANIM_WALK
+	}
+
+	if ( $get(ALLY_FOLLOW_PLR_ID,range) > ALLY_MIN_DISTANCE )
+	{
+		setmovedest ALLY_FOLLOW_PLR_ID ALLY_FOLLOW_PLR_DIST
+	}
+	else
+	{
+		//give him some room
+		setmovedest ALLY_FOLLOW_PLR_ID ALLY_MOVE_AWAY_DIST flee
+	}
+}
+
+{ game_damaged
+	if $get(PARAM1,relationship,ent_me) equals enemy
+	setvard ALLY_NEXT_REGEN game.time
+	add ALLY_NEXT_REGEN 20.0
+}
+
+{ ally_follow_close
+	setvard ALLY_FOLLOW_PLR_DIST ALLY_FOLLOW_CLOSE_DIST
+}
+
+{ ally_follow_normal
+	setvard ALLY_FOLLOW_PLR_DIST ALLY_FOLLOW_NORM_DIST
+}
+
+{ ally_hop //<vertical_difference> - determines jump strength
+	dbg ally_hop
+	playsound 0 10 SOUND_ALLY_JUMP
+	setvard ALLY_JUMP_STR PARAM1
+	if ( ALLY_JUMP_STR > 100 ) callevent 0.5 ally_push_forward
+	multiply ALLY_JUMP_STR 5
+	callevent npcatk_suspend_ai 1.0
+	setvard ALLY_FWD_JUMP_STR $get(ALLY_FOLLOW_PLR_ID,range)
+	playanim critical ANIM_ALLY_JUMP
+	callevent 0.1 ally_jump_boost
+}
+
+{ ally_jump_boost
+	addvelocity ent_me $relvel(0,ALLY_FWD_JUMP_STR,ALLY_JUMP_STR)
+}
+
+{ ally_push_forward
+	setmovedest ALLY_FOLLOW_PLR_ID 9999
+	addvelocity ent_me $relvel(0,110,0)
+	local MY_Z $get(ent_me,origin.z)
+	local GROUND_POS $get_ground_height(game.monster.origin)
+	subtract MY_Z GROUND_POS
+	if MY_Z > 20
+	callevent 0.1 ally_push_forward
+}
+
+{ ally_stuck_check
+	//for navigating towards wait targets / players
+	local MY_ORG $get(ent_me,origin)
+	local MY_DEST game.monster.movedest.origin
+	local CUR_DIST $dist(MY_ORG,MY_DEST)
+	if CUR_DIST >= game.monster.movedest.prox
+	if ( CUR_DIST >= ALLY_OLD_DIST )
+	{
+		if ALLY_OLD_DIST != 0
+		add ALLY_STUCK_COUNT 1
+	}
+	else
+	{
+		setvard ALLY_STUCK_COUNT 0
+		setvard ALLY_AS_UNSTUCK_ANG $randf(-15.0,15.0)
+		setvard ALLY_OLD_DIST 0
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+	setvard ALLY_OLD_DIST CUR_DIST
+
+	if ( ALLY_STUCK_COUNT > 1 )
+	{
+		dbg fsorc_friendly_stuck_check (no_progress)
+		local MOVE_DEST MY_ORG
+		callevent npcatk_suspend_ai $randf(0.5,1.0)
+		add ALLY_AS_UNSTUCK_ANG 36
+		if ( ALLY_AS_UNSTUCK_ANG > 359 ) setvard ALLY_AS_UNSTUCK_ANG 0
+		local MY_YAW $get(ent_me,angles.yaw)
+		add MY_YAW ALLY_AS_UNSTUCK_ANG
+		if ( MY_YAW > 359 ) setvard MY_YAW 0
+		vectoradd MOVE_DEST $relpos($vec(0,MY_YAW,0),$vec(0,200,0))
+		setmovedest MOVE_DEST 1
+		setvard ALLY_STUCK_COUNT 0
+		//playanim once ANIM_RUN
+	}
+}

@@ -1,0 +1,86 @@
+//Thothie - Fire Aura Armor from Venom Armor / Phoenix armor
+{
+	const ARMOR_MODEL      	armor/p_armorvest2.mdl
+	const ARMOR_GROUP 4
+	const ARMOR_BODY 6	//JHLMV index -2
+	const ARMOR_TEXT		"You assemble the the fire aura."
+	const BARMOR_TYPE		platemail
+	const BARMOR_PROTECTION	55%
+	//chest|arms|legs
+	const BARMOR_PROTECTION_AREA	"chest;arms;legs"
+	const BARMOR_REPLACE_BODYPARTS BARMOR_PROTECTION_AREA
+
+	const ELM_NAME "farmr"
+	const ELM_TYPE "fire"
+	const ELM_AMT 30
+
+	const ARMOR_STR_REQ 30
+
+	const LOOPSND_NAME items/torch1.wav
+	const LOOPSND_LENGTH 6
+	const LOOPSND_VOLUME 5
+
+	const NEW_ARMOR_OFS 16
+}
+
+
+#include items/armor_base
+#include [server] items/base_elemental_resist
+#include items/base_loopsnd
+
+{  game_spawn
+
+   name 	Aura of Fire
+   desc 	Enchanted mail that protects the user with a ring of fire
+   weight 	180
+   size 	60
+   wearable     1 "chest;arms;legs"
+   value	750
+   
+   sethudsprite trade 153
+
+	setvard IS_WORN 1
+}
+
+{ [override] elm_activate_effect
+	local OWNER_SKILL $get(ent_owner,skill.spellcasting.fire)
+	if ( OWNER_SKILL < 20 ) dplayermessage ent_owner You lack the fire skill to activate this armor's magic.
+	if OWNER_SKILL >= 20
+	setvard PHOENIX_ACTIVE 1
+	callevent elm_get_resist
+	callexternal ent_owner ext_register_element ELM_NAME ELM_TYPE ELM_AMT
+	callevent 0.1 secondary_element_activate
+}
+
+{ secondary_element_activate
+	callexternal ent_owner ext_register_element "carmr" "cold" "25"
+	callevent 0.1 activate_aura
+}
+
+{ activate_aura
+	//init sound
+	local AURA_DOT $get(ent_owner,skill.spellcasting.fire)
+	multiply AURA_DOT 0.25
+	callexternal ent_owner ext_fire_aura_activate AURA_DOT 48
+	callevent loopsnd_start
+}
+
+{ [override] elm_remove_effect
+	if PHOENIX_ACTIVE
+	setvard PHOENIX_ACTIVE 0
+	if $get(ent_owner,skill.spellcasting.fire) >= 20
+	setvard PHOENIX_ACTIVE 0
+	callexternal ent_owner ext_register_element ELM_NAME remove
+	callevent 0.1 secondary_element_remove
+}
+
+{ secondary_element_remove
+	callexternal ent_owner ext_register_element "carmr" remove
+	callevent 0.1 remove_aura
+}
+
+{ remove_aura
+	//remove sound
+	callexternal ent_owner ext_fire_aura_remove
+	callevent loopsnd_end
+}

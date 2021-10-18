@@ -1,0 +1,155 @@
+//Base Arrow
+//
+//Req. Variables
+//ARROW_BODY_OFS
+//ARROW_EXPIRE_DELAY
+//ARROW_SOLIDIFY_ON_WALL
+//ARROW_BREAK_CHANCE
+
+#scope server
+
+#include items/proj_arrow_base
+
+{
+	const ARROW_BODY_OFS		0
+	const SPRITE_ARROW_TRADE	woodenarrow
+	const PROJ_DAMAGE		$rand(30,60)
+	const ARROW_STICK_DURATION	10	//How long to stick in enemies
+	const ARROW_SOLIDIFY_ON_WALL	0  	//base_arrow: Turns solid when a wall is hit
+	const ARROW_BREAK_CHANCE	20%	//base_arrow: Chance of breaking upon hit
+
+	const	PROJ_MOTIONBLUR	1
+
+  const MODEL_HANDS      	weapons/bows/arrows.mdl
+  const MODEL_WORLD      	weapons/bows/arrows.mdl
+  const SOUND_HITWALL1		weapons/bow/arrowhit1.wav
+  const SOUND_HITWALL2		weapons/bow/arrowhit1.wav
+  const SPRITE_ARROW_TRADE	woodenarrow
+  const SPRITE_ARROW_HAND	arrows
+  const ANIM_DEPLOY		idle2
+  const ANIM_DROPPED		idle1
+  const ARROW_EXPIRE_DELAY 	10
+  const PROJ_DAMAGETYPE		pierce
+  const PROJ_COLLIDEHITBOX	1	//Only hit monster hitboxes, not bounding boxes
+}
+
+#include items/proj_base
+
+{  game_spawn
+
+	movetype	projectile	//Causes the orientation to change based on velocity
+
+	setworldmodel	MODEL_WORLD
+	callevent 	projectile_spawn
+
+	local reg.proj.dmg 		PROJ_DAMAGE
+	local reg.proj.dmgtype 		PROJ_DAMAGE_TYPE
+	local reg.proj.aoe.range 	PROJ_AOE_RANGE
+	local reg.proj.aoe.falloff 	PROJ_AOE_FALLOFF
+	local reg.proj.stick.duration 	PROJ_STICK_DURATION
+	local reg.proj.collidehitbox 	PROJ_COLLIDEHITBOX
+
+	registerprojectile
+}
+
+{ game_tossprojectile
+
+	useable		0//Can't be picked up after it's shot/tossed
+	if( PROJ_MOTIONBLUR ) clientevent new all_in_sight effects/sfx_motionblur $get(ent_me,index)
+	callevent game_fall
+}
+
+{ game_projectile_landed
+
+	movetype	none	//Back to normal movement
+	expiretime 	0
+	callevent 	projectile_landed
+}
+
+{  arrow_spawn
+
+	name 		a|Server Arrow
+	desc 		For testing server side projectiles
+	weight 		0.1
+	size 		1
+	value		0
+	gravity		0.75
+	//Thothie - Removing these two properties, as the arrows that work do not have them
+	//groupable	25
+	//useable	0
+}
+
+{  projectile_spawn
+
+	groupable    	25
+ 
+	setworldmodel	MODEL_WORLD
+	sethudsprite 	hand SPRITE_ARROW_HAND
+	sethudsprite 	trade SPRITE_ARROW_TRADE
+	sethand 	left
+
+	callevent 	arrow_spawn
+}
+
+
+{ game_deploy
+
+	setmodel 	MODEL_HANDS
+	playanim 	ANIM_DEPLOY
+
+	local 		MB_TEMP game.item.hand_index
+	add		MB_TEMP 1
+	add	 	MB_TEMP ARROW_BODY_OFS
+	setmodelbody 	0 MB_TEMP
+	callevent 	arrow_deploy
+}
+
+{ game_tossprojectile
+
+	//clientevent new all_in_sight effects/sfx_motionblur $get(ent_me,index)
+	callevent game_fall
+}
+{ game_fall
+
+	setmodelbody 	0 ARROW_BODY_OFS
+	playanim	ANIM_DROPPED
+}
+
+
+{ game_projectile_hitwall
+
+	playrandomsound 4 5 SOUND_HITWALL1 SOUND_HITWALL2
+	//if( ARROW_SOLIDIFY_ON_WALL == 1 ) solidifyprojectile
+
+	//callevent arrow_hitwall
+}
+
+{ game_projectile_hitnpc
+
+	if( ARROW_STICK_DURATION > 0 )
+	{
+		setfollow ent_laststruckbyme normal//align_bottom
+		
+		expiretime ARROW_STICK_DURATION
+		callevent ARROW_STICK_DURATION arrow_unstick
+	}
+
+	expiretime 0
+}
+
+{ arrow_unstick
+
+	setfollow none
+}
+
+{ projectile_landed
+
+	expiretime ARROW_EXPIRE_DELAY	//Let the fired arrows stay around for a bit
+}
+{ arrow_breakchance
+
+	if $rand(0,99) < ARROW_BREAK_CHANCE
+
+	callevent projectile_broke
+	//deleteme
+}

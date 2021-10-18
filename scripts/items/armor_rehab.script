@@ -1,0 +1,128 @@
+//https://www.youtube.com/watch?v=UzdHSqkzgdM
+{
+  const ARMOR_MODEL      	armor/p_armorvest.mdl
+  const ARMOR_BODY		5
+  const ARMOR_TEXT		"You work your way into the visual nightmare."
+  const BARMOR_TYPE		leather
+  const BARMOR_PROTECTION	40%
+  const BARMOR_PROTECTION_AREA	chest
+  const BARMOR_REPLACE_BODYPARTS chest
+
+	const FREQ_CHANGE 90.0
+
+
+	const NEW_ARMOR_OFS 19
+
+	const ELM_NAME "rehab"
+	const ELM_AMT 100
+}
+
+#include items/armor_base
+
+
+{  game_spawn
+
+   name 	a|Chromatic Vest
+   desc 	This magic vest makes your eyes swim
+   weight 	12
+   size 	30
+   wearable     1 chest;arms
+   value	3000
+   
+   sethudsprite trade 12
+}
+
+//track last element used/time left player or game_master side to avoid sploitz
+//shifts random element every 10 mins
+//scratch that, Rehab wanted every 90 seconds - going with 120, likely not worth reconnecting for
+
+//we'll have to do this manually, copying from base_elemental_resist
+
+{ game_putinpack
+	callevent elm_remove_effect
+}
+{ game_drop
+	callevent elm_remove_effect
+}
+{ game_remove
+	callevent elm_remove_effect
+}
+{ game_fall
+	callevent elm_remove_effect
+}
+{ game_sheath
+	callevent elm_remove_effect
+}
+{ game_deploy
+	if !ELM_WEAPON
+	callevent elm_remove_effect
+}
+
+{ game_wear
+	callevent 0.1 elm_activate_effect
+}
+
+{ ext_activate_items
+	dbg $currentscript ext_activate_items
+	if PARAM1 equals $get(ent_owner,id)
+
+	if ( !$get(ent_me,is_worn) ) local EXIT_SUB 1
+	if !EXIT_SUB
+
+	setvard RND_ELE $rand(1,4)
+
+	callevent 0.1 elm_activate_effect
+}
+
+{ elm_get_resist
+
+	if ( !DID_INIT )
+	{
+		setvard DID_INIT 1
+		setvard RND_ELE $rand(0,3)
+	}
+
+	if ( !IS_ACTIVE )
+	{
+		add RND_ELE 1
+		if ( RND_ELE > 4 ) setvard RND_ELE 1
+		if ( RND_ELE == 1 )	setvard ELM_TYPE "fire"
+		if ( RND_ELE == 2 )	setvard ELM_TYPE "lightning"
+		if ( RND_ELE == 3 )	setvard ELM_TYPE "cold"
+		if ( RND_ELE == 4 )	setvard ELM_TYPE "poison"
+
+		local ICON_NAME alpha_
+		stradd ICON_NAME ELM_TYPE
+		stradd ICON_NAME _immune
+
+		hud.addstatusicon ent_owner ICON_NAME rehab FREQ_CHANGE
+		clientevent new all items/armor_rehab_cl $get(ent_owner,index) RND_ELE
+		gplayermessage ent_owner Chromatic vest has chosen to protect you from ELM_TYPE
+		svplaysound 2 10 magic/energy1.wav
+	}
+
+}
+
+{ elm_activate_effect
+	callevent elm_get_resist
+	callexternal ent_owner ext_register_element ELM_NAME ELM_TYPE ELM_AMT $get(ent_me,scriptname)
+	if !IS_ACTIVE
+	setvard IS_ACTIVE 1
+	callevent FREQ_CHANGE change_element
+}
+
+{ elm_remove_effect
+	callexternal ent_owner ext_register_element ELM_NAME remove 0 $get(ent_me,scriptname)
+	if ( IS_ACTIVE ) hud.killimgicon ent_owner rehab //no workie
+	//setvard IS_ACTIVE 0
+}
+
+{ change_element
+	if IS_ACTIVE
+	setvard IS_ACTIVE 0
+	if $get(ent_me,is_worn)
+	callevent elm_remove_effect
+	callevent elm_activate_effect
+}
+
+

@@ -1,0 +1,228 @@
+{
+	const NO_IDLE 1
+	const CUSTOM_REGISTER_CHARGE1 1
+	const SPECIAL_OVERRIDE 1
+
+	const SWORD_MANUAL_PARRY 1
+
+	const HP_RETURN_RATIO 0.01 //likely as low as you can set it
+
+	const THROW_MP 40
+
+	const BASE_LEVEL_REQ 30
+	const ANIM_LIFT 0
+	const ANIM_IDLE1 1
+	const ANIM_ATTACK1 2
+	const ANIM_ATTACK2 2
+	const ANIM_ATTACK3 2
+	const ATTACK_ANIMS 1
+	const ANIM_LUNGE 3
+	const ANIM_PARRY1 4
+	const ANIM_PARRY1_RETRACT 5
+	const ANIM_UNSHEATH 6
+	const ANIM_SHEATH 7
+
+
+	const MODEL_VIEW viewmodels/v_2hswords.mdl
+	const MODEL_VIEW_IDX 6
+	const MODEL_HANDS weapons/p_weapons1.mdl
+
+	const MODEL_WORLD weapons/p_weapons1.mdl
+	const MODEL_BODY_OFS 114
+
+	const SOUND_SWIPE       weapons/swingsmall.wav
+	const SOUND_HITWALL1       weapons/cbar_hit1.wav
+	const SOUND_HITWALL2       weapons/cbar_hit2.wav
+	const SOUND_DRAW       weapons/swords/sworddraw.wav
+	const SOUND_SHOUT  $get(ent_owner,scriptvar,'PLR_SOUND_SHOUT1')
+
+	const ANIM_PREFIX  longsword
+
+	//Used in base_melee
+	//------------------
+	const MELEE_RANGE  80
+	const MELEE_DMG_DELAY  0.6
+	const MELEE_ATK_DURATION 1.1
+	const MELEE_ENERGY  1
+	const MELEE_DMG  425 //(last:JAN2011_02)
+	const MELEE_DMG_RANGE      80
+	const MELEE_DMG_TYPE  dark
+	const MELEE_ACCURACY  65%
+	const MELEE_STAT  swordsmanship
+	const MELEE_ALIGN_BASE 3,10 
+	const MELEE_ALIGN_TIP  0,-10
+	const MELEE_VIEWANIM_ATK      ANIM_ATTACK1
+
+	const MELEE_SOUND      SOUND_SWIPE
+	const MELEE_SOUND_DELAY      MELEE_DMG_DELAY
+	const MELEE_PARRY_CHANCE      30%
+	const MELEE_NEW_PARRY_CHANCE  30
+
+	const PLAYERANIM_AIM  sword_double_idle
+	const PLAYERANIM_SWING sword_double_swing
+}
+
+#include items/swords_base_twohanded
+
+{ weapon_spawn
+
+	name  a|Blood Drinker
+	desc  A gigantic dancing blade with a thirst for blood
+	weight  100
+	size  10
+	value 4000
+	sethudsprite trade 105
+
+	sethand both
+
+	setvard FIST_MODE 0
+	setvard SWORD_CAN_PARRY 1
+}
+
+{ game_dodamage
+
+	if !FIST_MODE
+	if PARAM1
+	if $can_damage(ent_owner,PARAM2)
+	if $get(PARAM2,race) isnot undead
+	if !$get(PARAM2,scriptvar,'IMMUNE_VAMPIRE')
+
+	local HP_TO_GIVE $get(ent_owner,maxhp)
+	multiply HP_TO_GIVE HP_RETURN_RATIO
+
+	dbg draining HP_TO_GIVE
+
+	givehp ent_owner HP_TO_GIVE
+}
+
+{ register_charge1
+
+	//stabby
+	local reg.attack.type strike-land
+	local reg.attack.range MELEE_RANGE
+	local reg.attack.dmg  MELEE_DMG
+	local reg.attack.dmg.range MELEE_DMG_RANGE
+	local reg.attack.dmg.type MELEE_DMG_TYPE
+	local reg.attack.energydrain MELEE_ENERGY
+	local reg.attack.stat MELEE_STAT
+	local reg.attack.hitchance MELEE_ACCURACY
+	local reg.attack.delay.strike MELEE_DMG_DELAY
+	add reg.attack.delay.strike 0.5
+	local reg.attack.delay.end MELEE_ATK_DURATION
+	add reg.attack.delay.end 0.5
+	local reg.attack.ofs.startpos MELEE_STARTPOS
+	local reg.attack.ofs.aimang MELEE_AIMANGLE
+	local reg.attack.noise MELEE_NOISE
+	local reg.attack.priority 1
+	local reg.attack.keys -attack1
+	local reg.attack.callback special_01
+	multiply reg.attack.dmg 2
+	local reg.attack.chargeamt 100%
+	local reg.attack.reqskill 32
+	registerattack
+
+	//toss sword
+	local reg.attack.type strike-land
+	local reg.attack.noautoaim 1
+	local reg.attack.keys -attack1
+	local reg.attack.range 0
+	local reg.attack.dmg  0
+	local reg.attack.dmg.range 0
+	local reg.attack.dmg.type slash
+	local reg.attack.energydrain 2
+	local reg.attack.stat swordsmanship
+	local reg.attack.hitchance 100%
+	local reg.attack.priority 2
+	local reg.attack.delay.strike 0.1
+	local reg.attack.delay.end 0.2
+	local reg.attack.ofs.startpos MELEE_STARTPOS
+	local reg.attack.ofs.aimang MELEE_AIMANGLE
+	local reg.attack.callback throwsword
+	local reg.attack.noise MELEE_NOISE
+	local reg.attack.mpdrain THROW_MP
+	local reg.attack.chargeamt 200%
+	local reg.attack.reqskill 34
+	registerattack
+}
+
+{ throwsword_start
+	//setviewmodel viewmodels/v_martialarts.mdl
+	//setviewmodelprop ent_me submodel 0
+	setviewmodel none
+	playowneranim critical bow_release
+	setmodel none
+	setworldmodel none
+	sethand	undroppable
+	playviewanim 4
+	setvard FIST_MODE 1
+	setvard SWORD_CAN_PARRY 0
+
+	if game.serverside
+
+	if $get(ent_owner,mp) < THROW_MP
+	setvard FIST_MODE 0
+	setvard SWORD_CAN_PARRY 1
+	callevent sword_return
+	dplayermessage ent_owner Blood Drinker: Insufficient mana for Blood Dance
+}
+
+{ throwsword_strike
+
+	playowneranim critical bow_release
+	if game.serverside
+	if FIST_MODE
+	setvard SENT_RETURN_REQ 0
+	local DMG_BASE $get(ent_owner,skill.spellcasting)
+	divide DMG_BASE 2
+	createnpc monsters/summon/blood_drinker $get(ent_owner,origin) $get(ent_owner,id) $get(ent_owner,target) DMG_BASE DMG_BASE $get(ent_me,id)
+	setvard SWORD_ID $get(ent_lastcreated,id)
+
+	callexternal ent_owner ext_removed_effects lock
+	applyeffect ent_owner effects/effect_templock $get(ent_owner,id)
+	setvard game.effect.canattack 0
+}
+
+{ restore_sword_cl
+	setviewmodel MODEL_VIEW
+	setmodel MODEL_WORLD
+	setworldmodel MODEL_WORLD
+	setvard FIST_MODE 0
+	setvard SWORD_CAN_PARRY 1
+}
+
+{ melee_start
+	setviewmodel MODEL_VIEW
+	setmodel MODEL_WORLD
+	setworldmodel MODEL_WORLD
+	setvard FIST_MODE 0
+	setvard SWORD_CAN_PARRY 1
+	callevent bw_setup_model
+}
+
+{ sword_return //called by monsters/summon/blood_drinker or when insufficient mana
+	callexternal ent_owner ext_remove_lock
+	setviewmodelprop ent_me model MODEL_VIEW
+	if ( FIST_MODE ) gplayermessage ent_owner Blood Drinker returns.
+	setvard FIST_MODE 0
+	setvard SWORD_CAN_PARRY 1
+	setviewmodel MODEL_VIEW
+	sethand	both
+	callevent bw_setup_model
+}
+
+{ special_01_start
+
+	playviewanim  ANIM_LUNGE
+	playowneranim once axe_twohand_swing
+	playsound const.snd.weapon const.snd.maxvol SPECIAL01_SND
+}
+
+{ game_+attack2
+	if game.serverside
+
+	if FIST_MODE
+	if !SENT_RETURN_REQ
+	playermessage Sent return request to $get(SWORD_ID,name) //remove
+	setvard SENT_RETURN_REQ 1
+	callexternal SWORD_ID return_to_owner
+}

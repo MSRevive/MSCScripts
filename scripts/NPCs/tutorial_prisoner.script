@@ -1,0 +1,190 @@
+// Cell Mate for Dridje's Tutorial Map by CrazyMonkeyDude/The Magical Bong
+{
+	const NPC_MODEL npc/femhuman2.mdl
+	const ANIM_IDLE idle1
+	const ANIM_WALK idle1
+
+	precache NPC_MODEL
+
+	setvard NO_JOB 1
+	setvard NO_RUMOR 1
+	setvard GOT_YE_TORCH 0
+}
+
+#include monsters/base_npc
+#include monsters/base_chat
+
+{ npc_spawn
+	
+	name Kyra
+	hp 1
+	invincible 1
+	nopush 1
+
+	race beloved
+	setmodel NPC_MODEL
+	setmodelbody 0 0
+
+	width 30
+	height 96
+	saytextrange 1024
+	hearingsensitivity 10
+	catchspeech say_hi hail hello y0 j0 wassup greet gweets 
+
+	menu.autopen 1
+	callevent 0.1 face_player
+}
+
+{ face_player  
+     getplayersnb TOKEN_LIST 
+     local PLAYER_ID $get_token(TOKEN_LIST,0) 
+     if $get(PLAYER_ID,isalive)
+     callevent face_speaker PLAYER_ID
+
+     callevent 0.5 face_player
+}
+
+{ game_menu_getoptions
+	
+	if ( !GOT_YE_TORCH )
+	{
+	  if GET_YE_TORCH
+	  local reg.mitem.title "Ask for torch"
+	  local reg.mitem.type callback
+	  local reg.mitem.callback say_torch
+	  menuitem.register
+	}
+
+	if ( $get(PARAM1,isplayer) ) callevent face_speaker $get(PARAM1,id) 
+	if ( $get(ent_lastspoke,isplayer) ) callevent face_speaker $get(ent_lastspoke,id)     
+}
+
+{ say_torch
+	callevent convo_anim
+	local TORCH_RECIPIENT PARAM1
+	saytext Here, you can have it.
+	saytext Maybe you'll have better luck lighting it.
+	playanim once give_shot
+	offer TORCH_RECIPIENT item_torch
+	setvard GOT_YE_TORCH 1
+	callevent 1 say_torch2
+}
+
+{ say_torch2
+	callevent convo_anim
+	saytext Great! That's better.
+	callevent 4 say_torch3
+}
+
+{ say_torch3
+	callevent convo_anim
+	saytext I was feeling around the walls here
+	callevent 2 say_torch4
+}
+
+{ say_torch4
+	callevent convo_anim
+	saytext One area felt cracked, and made a hollow noise when I knocked on it.
+	callevent 3 say_torch5
+}
+
+{ say_torch5
+	callevent convo_anim
+	saytext Find it, and give it a whack with that torch!
+}
+
+{ say_hi
+
+	if ( !SAID_GREETING )
+	{
+	  callevent player_greeting
+	}
+	else
+	{
+	  if ( !WALL_BROKEN )
+		{
+		  callevent face_speaker
+		  saytext You have the torch, Adventurer. Find the weak spot.
+		}
+		else
+		{
+		  callevent face_speaker
+		  saytext Hurry! The guards will be along soon!
+		  messageall green "(She shoos you towards the hole in the wall)"
+		}
+	}
+}
+
+{ player_spawned
+	callevent 5 player_greeting
+}
+
+{ player_greeting
+ 
+	callevent convo_anim
+	if !SAID_GREETING
+	saytext Hello, Adventurer!
+	setvard SAID_GREETING 1
+	setvard GET_YE_TORCH 1
+	callevent 2 player_greeting2
+}
+
+{ player_greeting2
+	callevent convo_anim
+	saytext I woke up a few minutes ago, with you on the other side of the cell.
+	callevent 2 player_greeting3
+}
+
+{ player_greeting3
+	callevent convo_anim
+	saytext You've been out for quite a while.
+	callevent 5 player_greeting4
+}
+
+{ player_greeting4
+	callevent convo_anim
+	saytext We're in a holding cell, as you can see.
+	callevent 5 player_greeting5
+}
+
+{ player_greeting5
+	callevent convo_anim
+	saytext Last I saw were bandits before I was clocked on the head.
+	callevent 10 player_greeting6
+}
+
+{ player_greeting6
+	saytext It's so dark in here!
+	playanim once pondering2
+	callevent 4 player_greeting7
+}
+
+{ player_greeting7
+	callevent convo_anim
+	saytext I found this [torch] in a corner, but I can't seem to light it!
+	messageall green "Press the use key (Default 'e') on Kyra to bring up her chat menu"
+}
+
+{ wall_broken
+	callevent convo_anim
+	saytext Great job! Now we can get out of here.
+	callevent 2 wall_broken2
+	setvard WALL_BROKEN 1
+}
+
+{ wall_broken2
+	callevent convo_anim
+	saytext Though I think I'll hold back for now
+	callevent 2 wall_broken3
+}
+
+{ wall_broken3
+	callevent convo_anim
+	saytext I'll distract the guards should they return.
+	callevent 4 wall_broken4
+}
+
+{ wall_broken4
+	callevent convo_anim
+	saytext Go on! I'll be fine!
+}

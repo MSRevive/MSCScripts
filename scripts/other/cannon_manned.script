@@ -1,0 +1,139 @@
+//attach to func_rotating by adding scriptname parameter and this scriptfile
+{
+	const SPRITE_EXPLODE bigsmoke.spr
+	const SOUND_CANNON weapons/explode3.wav
+	const FREQ_FIRE 30.0
+	const DMG_CANNON 1000
+}
+
+{ game_spawn
+
+	name a|Cannon
+	setmodel props/cannon.mdl
+	blood none
+	width 32
+	height 48
+	hp 20
+	race human
+	roam 0
+	menu.autoopen 1
+	setvard IMMUNE_STUN 1
+	takedmg poison 0.0
+	takedmg cold 0.0
+	takedmg lightning 0.5
+	nopush 1
+
+//	if ( $lcase(game.map.name) equals oceancrossing )
+//	{
+//		setvard SRC_YAW 90
+//	}
+//	else
+//	{
+		callevent 0.1 get_src_yaw
+//	}
+}
+
+{ get_src_yaw
+	setvard SRC_YAW $get(ent_me,angles.yaw)
+}
+
+{ game_menu_getoptions
+
+	if $get(ent_me,isalive)
+	setvard SRC_YAW $get(ent_me,angles.yaw)
+
+	if ( !FIRE_DELAY )
+	{
+		if ( !AM_AIMING )
+		{
+			setvard AM_AIMING 1
+			callevent aim_loop
+			setvard AIMER_ID PARAM1
+		}
+		local reg.mitem.title 	"Fire!"
+		local reg.mitem.type 	callback
+		local reg.mitem.callback fire_cannon
+		menuitem.register
+
+		local reg.mitem.title 	"Aim"
+		local reg.mitem.type 	callback
+		local reg.mitem.callback aim_cannon
+		menuitem.register
+	}
+
+	if ( FIRE_DELAY )
+	{
+		local reg.mitem.title 	"Reloading..."
+		local reg.mitem.type 	disabled
+		local reg.mitem.callback none
+		menuitem.register
+	}
+}
+
+{ game_menu_cancel
+	setvard AM_AIMING 0
+}
+
+{ aim_cannon
+	setvard AM_AIMING 1
+	setvard AIMER_ID PARAM1
+	callevent aim_loop
+}
+
+{ aim_loop
+	if AM_AIMING
+	if ( $get(AIMER_ID,range) > 64 )
+	{
+		local EXIT_SUB 1
+		setvard AM_AIMING 0
+	}
+	if !EXIT_LOOP
+	callevent 0.1 aim_loop
+	local AIMER_YAW $get(AIMER_ID,angles.yaw)
+	local ANG_DIFF $anglediff(AIMER_YAW,SRC_YAW)
+	dbg aim_loop ANG_DIFF
+	local AIM_OKAY 0
+	if ( ANG_DIFF >= -45 )
+	{
+		if ANG_DIFF <= 45
+		local AIM_OKAY 1
+	}
+	if AIM_OKAY
+	setangle face $vec(0,AIMER_YAW,0)
+}
+
+{ fire_cannon
+	setvard AM_AIMING 0
+	playsound 0 10 SOUND_CANNON
+
+	if ( $lcase(game.map.name) isnot oceancrossing )
+	{
+		setangle add_view.x 20
+		tossprojectile view 400 DMG_CANNON 0 proj_cannon_ball (0,16,34)
+	}
+	else
+	{
+		tossprojectile view 400 DMG_CANNON 0 proj_cannon_ball (0,16,48)
+	}
+
+	effect tempent spray SPRITE_EXPLODE $relpos(0,0,0) 0 1 0 0
+	effect screenshake $relpos(0,0,0) 380 20 1 512
+	setvard FIRE_DELAY 1
+	callevent FREQ_FIRE reset_fire_delay
+	usetrigger cannon_fired
+	playanim critical shoot
+}
+
+{ reset_fire_delay
+	setvard FIRE_DELAY 0
+}
+
+{ game_death
+	menu.autoopen 0
+	playsound 0 10 debris/bustcrate3.wav
+	playanim critical die
+}
+
+{ game_struck
+	playrandomsound 0 10 debris/wood1.wav debris/wood2.wav
+}

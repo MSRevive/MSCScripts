@@ -1,0 +1,199 @@
+//These birds usually hover in the air, well above their targets, raining down various sorts of terror
+//Maybe I'll try to work out a dive attack
+
+{
+	const NPC_NO_END_FLY 1 //do not reset move type on death
+
+	//standard anims
+	setvard ANIM_IDLE flapping
+	setvard ANIM_ATTACK attack
+	setvard ANIM_DEATH crash
+	setvard ANIM_WALK flapping
+	setvard ANIM_RUN flapping
+	
+	//standard stats
+	setvard MOVE_RANGE 20
+	setvard ATTACK_RANGE 64
+	setvard ATTACK_HITRANGE 72
+	setvard NPC_HACKED_MOVE_SPEED 200
+	//const NPC_BASE_EXP 100
+	//setvard NPC_GIVE_EXP NPC_BASE_EXP
+
+	//custom anims
+	const ANIM_PERCH1 idle
+	const ANIM_FIGIT idle2
+	const ANIM_IDLE_FLIGHT flapping
+
+	//custom stats
+	const DMG_ATTACK $randf(15,40)
+	const DMG_DIVE $rand(30,100)
+	const FREQ_DIVE $rand(20,30)
+	const SPEED_STANDARD 200
+	const SPEED_DIVE 400
+	const FLEE_COUNT 10
+	const ATTACK_RANGE_STANDARD 64
+
+	const FLY_VSPEED_UP 25	//up speed
+	const FLY_VSPEED_DOWN -25 //down speed
+	const FLY_VRANGE 50 //consider self on same plane if in this z range
+
+
+	//sounds
+	const SOUND_FLAP1 monsters/bat/flap_big1.wav
+	const SOUND_FLAP2 monsters/bat/flap_big2.wav
+	const SOUND_WARCRY monsters/birds/bird.wav
+	const SOUND_DEATH monsters/birds/hawk.wav
+	const SOUND_ATTACK monsters/birds/flutter.wav
+	const SOUND_STRUCK debris/flesh2.wav
+	const SOUND_PAIN monsters/birds/vulture.wav
+	const SOUND_PAIN2 monsters/birds/cry.wav
+	const SOUND_VICTORY monsters/birds/hawkcaw.wav
+
+	precache SOUND_DEATH
+}
+
+#include monsters/base_propelled
+#include monsters/base_monster
+
+{ npc_spawn
+
+	name an|Giant Eagle
+	race wildanimal
+	hp 1000
+	width 64
+	height 64
+	setmodel monsters/eagle_large.mdl
+	setidleanim flapping
+	setmoveanim flapping
+	hearingsensitivity 8
+	roam 1
+	gravity 0
+	takedmg poison 2.0
+
+	setvard COUNT_ATK 0
+}
+
+{ npc_targetsighted
+
+	//eagle cannot hit NPC's taller than 64 units without this bit
+	if ( !$get(HUNT_LASTTARGET,isplayer) )
+	{
+		setvard ATTACK_RANGE $get(HUNT_LASTTARGET,height)
+		if ( !CYCLED_UP ) callevent cycle_up
+	}
+	else
+	{
+		setvard ATTACK_RANGE ATTACK_RANGE_STANDARD
+	}
+	
+}
+
+{ start_perched //additional param
+	setidleanim idle
+	setmoveanim idle
+	roam 0
+	setvard AM_PERCHED 1
+
+	hearingsensitivity 0
+
+	callevent npcatk_suspend_ai
+
+	setvard NPC_PROX_ACTIVATE 1
+	setvard NPC_PROXACT_RANGE 384
+	setvard NPC_PROXACT_EVENT un_perch
+	setvard NPC_PROXACT_FOV 1
+	setvard NPC_PROXACT_CONE 90
+	callevent 0.1 npcatk_proxact_scan
+}
+
+{ un_perch
+	hearingsensitivity 8
+	setvard AM_PERCHED 0
+
+	setidleanim ANIM_WALK
+	setmoveanim ANIM_WALK
+	callevent npcatk_suspend_ai
+	setvard NPC_HACKED_MOVE_SPEED SPEED_STANDARD
+	playanim critical divestart
+	setvelocity ent_me $relvel(0,0,100) //pop up
+	setmovedest DIVE_START 0
+	callevent 1.0 npcatk_resume_ai
+	callevent 1.1 target_invader
+}
+
+{ target_invader
+	callevent npcatk_target NPC_PROXACT_PLAYERID
+}
+
+{ cycle_up
+	playsound 0 10 SOUND_WARCRY
+}
+
+{ game_struck
+	if ( AM_PERCHED )
+	{
+		setvard NPC_PROXACT_PLAYERID $get(ent_laststruck,id)
+		setvard NPC_PROXACT_TRIPPED 1
+		callevent un_perch
+	}
+}
+
+{ attack1 //anim event from attack
+	playsound 0 5 SOUND_ATTACK
+	dodamage HUNT_LASTTARGET ATTACK_HITRANGE DMG_ATTACK 90% slash
+}
+
+{ attack2 //anim event from attack
+	playsound 0 5 SOUND_ATTACK
+	dodamage HUNT_LASTTARGET ATTACK_HITRANGE DMG_ATTACK 90% slash
+	add COUNT_ATK 1
+
+	if ( COUNT_ATK > FLEE_COUNT )
+	{
+		setvard COUNT_ATK 0
+		callevent npcatk_suspend_ai 3.0
+		setmovedest HUNT_LASTTARGET 1000 flee
+	}
+}
+
+{ flap_sound //anim event from flapping
+	playrandomsound 0 5 SOUND_FLAP1 SOUND_FLAP2
+}
+
+{ game_death
+
+	//addvelocity ent_me $relvel(0,0,-200)
+	gravity 1.0
+}
+
+{ my_target_died
+	playsound 0 10 SOUND_VICTORY
+}
+
+{ npcatk_hunt
+
+	if !I_R_FROZEN
+
+	if $get(ent_me,isalive)
+
+	local MOVE_DEST_Z $get_ground_height(game.monster.movedest.origin)
+	add MOVE_DEST_Z 256
+
+	local MY_Z $get(ent_me,origin.z)
+
+	if ( MOVE_DEST_Z > MY_Z )
+	{
+		local Z_DIFF MOVE_DEST_Z
+		subtract Z_DIFF MY_Z
+		if Z_DIFF > FLY_VRANGE
+		addvelocity ent_me $relvel(0,0,FLY_VSPEED_UP)
+	}
+
+	if ( MOVE_DEST_Z < MY_Z )
+	{
+		local Z_DIFF MY_Z
+		subtract Z_DIFF MOVE_DEST_Z
+		if Z_DIFF > FLY_VRANGE
+		addvelocity ent_me $relvel(0,0,FLY_VSPEED_DOWN)
+	}
+}

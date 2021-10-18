@@ -1,0 +1,82 @@
+//Thothie - Acid Plate Armor from armor_faura
+{
+	const ARMOR_MODEL      	armor/p_armorvest2.mdl
+	const ARMOR_GROUP 4
+	const ARMOR_BODY 7	//JHLMV index -2
+	const ARMOR_TEXT		"You assemble the the acid plate armor."
+	const BARMOR_TYPE		platemail
+	const BARMOR_PROTECTION	50%
+	//chest|arms|legs
+	const BARMOR_PROTECTION_AREA	"chest;arms;legs"
+	const BARMOR_REPLACE_BODYPARTS BARMOR_PROTECTION_AREA
+
+	const ELM_NAME "aarmr"
+	const ELM_TYPE "poison"
+	const ELM_AMT 50
+
+	const ARMOR_STR_REQ 30
+
+	const SOUND_GAS_ON ambience/steamburst1.wav
+
+	const NEW_ARMOR_OFS 17
+
+	precache poison_cloud.spr
+}
+
+#include items/armor_base
+#include [server] items/base_elemental_resist
+
+{  game_spawn
+
+   name 	Acid Plate
+   desc 	Enchanted plate mail scorched by acid
+   weight 	180
+   size 	60
+   wearable     1 "chest;arms;legs"
+   value	1000
+   
+   sethudsprite trade 154
+
+	setvard IS_WORN 1
+}
+
+{ [override] elm_activate_effect
+	local OWNER_SKILL $get(ent_owner,skill.spellcasting.affliction)
+	if ( OWNER_SKILL < 20 ) dplayermessage ent_owner You lack the affliction skill to activate this armor's magic.
+	if OWNER_SKILL >= 20
+	setvard PHOENIX_ACTIVE 1
+	callevent elm_get_resist
+	callexternal ent_owner ext_register_element ELM_NAME ELM_TYPE ELM_AMT
+	callevent 0.1 secondary_element_activate
+}
+
+{ secondary_element_activate
+	callexternal ent_owner ext_register_element "aarmb" "acid" "80"
+	callevent 0.1 activate_aura
+}
+
+{ activate_aura
+	local AURA_DOT $get(ent_owner,skill.spellcasting.affliction)
+	multiply AURA_DOT 0.3
+	callexternal ent_owner ext_poison_aura_activate AURA_DOT 64
+	playsound 3 10 SOUND_GAS_ON
+}
+
+{ [override] elm_remove_effect
+	if PHOENIX_ACTIVE
+	setvard PHOENIX_ACTIVE 0
+	if $get(ent_owner,skill.spellcasting.affliction) >= 20
+	setvard PHOENIX_ACTIVE 0
+	callexternal ent_owner ext_register_element ELM_NAME remove
+	callevent 0.1 secondary_element_remove
+}
+
+{ secondary_element_remove
+	callexternal ent_owner ext_register_element "aarmb" remove
+	callevent 0.1 remove_aura
+}
+
+{ remove_aura
+	//remove sound
+	callexternal ent_owner ext_poison_aura_remove
+}

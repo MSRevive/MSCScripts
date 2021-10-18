@@ -1,0 +1,110 @@
+//Bog Creature by Shurik3n
+{ 
+   const HUNT_AGRO 1 
+
+   setvard ANIM_DEATH diebackward
+   setvar ANIM_RUN walk 
+   setvar ANIM_WALK walk 
+   setvar ANIM_ATTACK attack1 
+   const ANIM_ATTACK_SLASH attack1 
+   const ANIM_ATTACK_CRUSH attack2 
+   const DMG_SLASH $rand(50,100) 
+   const DMG_CRUSH $rand(170,400) 
+   const ATTACK_RANGE 80 
+   const ATTACK_HITRANGE 220 
+   const ATTACK_HITCHANCE_SLASH 70% 
+   const ATTACK_HITCHANCE_CRUSH 40% 
+   const SOUND_STRUCK1 weapons/cbar_hitbod1.wav 
+   const SOUND_STRUCK2 agrunt/ag_attack1.wav
+   const SOUND_PAIN agrunt/ag_attack3.wav
+   const SOUND_ATTACK1 ichy/ichy_bite1.wav 
+   const SOUND_ATTACK2 zombie/claw_miss2.wav 
+   const SOUND_IDLE1 garg/gar_breathe3.wav 
+   const SOUND_DEATH bullchicken/bc_die3.wav 
+   const CAN_HUNT 1 
+   const HUNT_AGRO 1 
+   const RETALIATE_CHANCE 75% 
+   setvar CAN_FLEE 0
+
+	const SOUND_STEP1 debris/flesh1.wav
+	const SOUND_STEP2 debris/flesh2.wav
+	const SOUND_STEP3 debris/flesh3.wav
+	const SOUND_STEP4 debris/flesh7.wav //very odd this, but there is no debris/flesh4.wav 
+	const SOUND_STEP5 debris/flesh5.wav
+	const SOUND_STEP6 debris/flesh6.wav
+	const SOUND_STEP7 debris/flesh7.wav
+
+	const GOLD_BAGS 1
+	const GOLD_BAGS_PPLAYER 2
+	const GOLD_PER_BAG 25
+	const GOLD_RADIUS 64
+	const GOLD_MAX_BAGS 32
+
+	const CHANCE_STUN 50
+   precache SOUND_DEATH 
+} 
+
+#include monsters/base_monster_new 
+
+{ 
+   eventname npc_spawn 
+
+   hp 4000 
+   width 50 
+   height 150 
+   name a|Greater Shambler
+   roam 1 
+	blood green
+   hearingsensitivity 6 
+   setvard NPC_GIVE_EXP 200
+   race demon 
+   setmodel monsters/shambler.mdl 
+   setmodelbody 0 0 
+   setidleanim idle1 
+   setmoveanim ANIM_WALK
+	setanim.framerate 0.75
+	setanim.movespeed 0.75
+
+} 
+
+{ attack_1
+
+	setvard ATTACK_TYPE slash
+	if ( $get(NPCATK_TARGET,range) < ATTACK_HITRANGE ) callevent npcatk_dodamage NPCATK_TARGET direct DMG_SLASH ATTACK_HITCHANCE_SLASH $get(ent_me,id) slash 
+    
+   if ( $rand(1,4) == 3 ) setvar ANIM_ATTACK ANIM_ATTACK_CRUSH 
+   addvelocity ent_laststruckbyme $relvel(0,35,70) 
+   playsound 2 10 SOUND_ATTACK1 
+} 
+
+{ attack_2
+	setvard ATTACK_TYPE crush
+	if ( $get(NPCATK_TARGET,range) < ATTACK_HITRANGE ) callevent npcatk_dodamage NPCATK_TARGET direct DMG_CRUSH ATTACK_HITCHANCE_CRUSH $get(ent_me,id) blunt 
+    
+   setvar ANIM_ATTACK ANIM_ATTACK_SLASH 
+   addvelocity ent_laststruckbyme $relvel(0,300,200) 
+   playsound 2 10 SOUND_ATTACK2 
+} 
+
+{ npc_struck 
+    
+   playrandomsound 2 10 SOUND_PAIN SOUND_STRUCK2 SOUND_STRUCK1 SOUND_PAIN 
+} 
+
+{ game_dodamage	 //PARAM1=hit:0|1 PARAM2=ent_hit PARAM3=(start) PARAM4=(end)
+	if ATTACK_TYPE equals crush
+	if PARAM1
+	if $rand(1,100) < CHANCE_STUN
+	applyeffect PARAM2 effects/effect_stun 5 1 1 
+}
+
+{
+repeatdelay $randf(5,8)
+	playsound 0 10 SOUND_IDLE1
+	if !CYCLED_UP
+	playanim once llflinch
+}
+
+{ walk_step
+	playrandomsound 0 8 SOUND_STEP1 SOUND_STEP2 SOUND_STEP3 SOUND_STEP4 SOUND_STEP5 SOUND_STEP6 SOUND_STEP7
+}

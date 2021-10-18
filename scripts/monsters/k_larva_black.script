@@ -1,0 +1,101 @@
+{
+	const NPC_BASE_EXP 400
+
+	const DMG_LICK $rand(40,80)
+	const DMG_CLAW1 $rand(60,120)
+	const DMG_CLAW2	$rand(60,120)
+
+	const FREQ_BARF $randf(10,20)
+	const BARF_BONE 25
+	const BARF_DUR 10
+	const DOT_BARF 50
+
+	const ANIM_BARF idle2
+	const SOUND_BARF monsters/gonome/gonome_eat.wav
+
+	const CL_SCRIPT monsters/k_larva_black_cl
+}
+
+{ game_precache
+	precachefile CL_SCRIPT
+}
+
+#include monsters/k_larva
+
+{ [override] larva_spawn
+
+	name a|Black Kharaztorant Larva
+	setmodel monsters/k_larva_black.mdl
+	hp 1600
+	race demon
+	width 32
+	height 48
+	roam 1
+	hearingsensitivity 6
+}
+
+{ npc_post_spawn
+	takedmg holy 1.0
+	takedmg poison 0.5
+	takedmg cold 0.5
+	takedmg fire 1.0
+	takedmg lightning 2.0
+	setmoveanim ANIM_WALK
+	setidleanim ANIM_IDLE
+}
+
+{ [override] npc_targetsighted
+	setmoveanim ANIM_RUN
+	setidleanim ANIM_IDLE
+	setvard AM_EATING 0
+
+	if !DID_WARCRY
+	setvard DID_WARCRY 1
+	playsound 0 10 SOUND_WARCRY
+	playanim critical ANIM_IDLE2
+	setvard AS_ATTACKING game.time
+
+	if !STARTED_CYCLES
+	setvard STARTED_CYCLES 1
+	callevent FREQ_BARF do_barf
+}
+
+{ do_barf
+	if $get(ent_me,isalive)
+	callevent FREQ_BARF do_barf
+	if $get(NPCATK_TARGET,isalive)
+	callevent npcatk_suspend_ai
+	roam 0
+	setidleanim ANIM_BARF
+	setmoveanim ANIM_BARF
+	playsound 0 10 SOUND_BARF
+	clientevent new all CL_SCRIPT $get(ent_me,index) BARF_BONE
+	setvard AM_BARFING 1
+	callevent barf_scan
+	callevent 4.0 stop_barfing
+}
+
+{ stop_barfing
+	setvard AM_BARFING 0
+	setidleanim ANIM_IDLE
+	setmoveanim ANIM_WALK
+	roam 1
+	callevent npcatk_resume_ai
+}
+
+{ barf_scan
+	if AM_BARFING
+	callevent 0.5 barf_scan
+	local BARF_CENTER $get(ent_me,svbonepos,BARF_BONE)
+	vectoradd BARF_CENTER $relpos($vec(0,game.monster.angles.yaw,0),$vec(0,64,0))
+	setvard BARF_TARGETS $get_tsphere(enemy,96,BARF_CENTER)
+	if BARF_TARGETS isnot 'none'
+	calleventloop $get_token_amt(BARF_TARGETS) zap_targs
+}
+
+{ zap_targs
+
+	local CUR_TARG $get_token(BARF_TARGETS,game.script.iteration)
+	if $get(CUR_TARG,range) < 96
+	applyeffect CUR_TARG effects/effect_poison_blinding BARF_DUR $get(ent_me,id) DOT_BARF
+}

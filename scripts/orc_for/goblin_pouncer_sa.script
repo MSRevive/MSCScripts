@@ -1,0 +1,344 @@
+//HP(-50%)/XP(-20%) reduce MAY2011_30, due to people having issues hitting it.
+#scope server
+{ [shared]
+	const ANIM_LEAP_READY pounce_ready
+	const ANIM_LEAP pounce_fly
+	const ANIM_LEAP_RIDE pounce_latch
+	setvard ANIM_ATTACK swordswing1_L
+	const AS_CUSTOM_UNSTUCK 1
+}
+
+{
+	setvar NPC_SELF_ADJUST 1
+	const NPC_ADJ_TIERS "0;750;1500;2000;3000;5000"
+	const NPC_ADJ_DMG_MUTLI_TOKENS "1.0;1.5;2.0;5.0;7.5;10.0;"
+	const NPC_ADJ_HP_MUTLI_TOKENS "1.0;2.0;3.0;5.0;7.5;10.0;"
+	const NPC_BASE_EXP 200
+	setvard ATTACK_HITCHANCE 90%
+
+	const LEAP_RANGE 500
+	const FREQ_LEAP 15.0
+
+ 	const DMG_SWORD 15
+	const DMG_POUND 5
+
+	const FREQ_LAUGH $randf(5.0,10.0)
+
+	const SOUND_LEAP_READY monsters/goblin/c_gargoyle_bat1.wav
+	const SOUND_LEAP_GO monsters/goblin/c_gargoyle_atk3.wav
+	const SOUND_LAUGH monsters/goblin/c_gargoyle_bat2.wav
+}
+
+#include orc_for/goblin_base
+
+{ [shared] goblin_spawn
+	name a|Goblin Pouncer
+	setmodel monsters/goblin_new.mdl
+	hp 50
+	width 24
+	height 50
+	race goblin
+	blood red
+	roam 1
+	hearingsensitivity 2
+	setmodelbody 0 0 //body: 0-Bare 1-Quiver&Strap
+	setmodelbody 1 0 //head: 0-Bare 1-Horns 2-Animal 3-Chief 4-Rag
+	setmodelbody 2 0 //weapon: 0-Unarmed 1-Axe 2-wbow 3-sbow 4-sword 5-rAxe 6-sword&shield 7-club 8-knife
+	setmodelbody 3 0 //arrow: On/off
+
+	setprop ent_me skin 3
+
+	setidleanim ANIM_IDLE
+	setmoveanim ANIM_WALK
+}
+
+{ npc_targetsighted
+	if !LEAP_MODE
+	if game.time > NEXT_LATCH_ATTEMPT
+	if $get(NPCATK_TARGET,range) < LEAP_RANGE
+	if !$get(NPCATK_TARGET,scriptvar,'I_R_GOBLIN_LATCHED') //cant latch if target already has a rider
+	setvard LEAP_MODE 1
+	setvard NEXT_LATCH_ATTEMPT game.time
+	add NEXT_LATCH_ATTEMPT FREQ_LEAP
+	callevent leap_ready	
+}
+
+{ leap_ready
+	playsound 0 10 SOUND_LEAP_READY
+	setvard LEAP_TARGET NPCATK_TARGET
+	if ( !DID_WARNING )
+	{
+		setvard DID_WARNING 1
+		infomsg LEAP_TARGET "Beware the Goblin Pouncer" "If he pounces you, you'll have to be rescued by another player!"
+	}
+	callevent ready_leap_mode
+	callevent leap_target_loop
+	callevent 3.0 do_leap
+}
+
+{ leap_target_loop
+	dbg leap_target_loop
+	if LEAP_MODE
+	if !IN_LEAP
+	setmovedest LEAP_TARGET 9999
+	callevent 0.1 leap_target_loop
+}
+
+{ do_leap
+	dbg do_leap
+	if ( $cansee(LEAP_TARGET) )
+	{
+		if ( $get(LEAP_TARGET,scriptvar,'PLAYING_DEAD') )
+		{
+			//target invalidated
+			callevent exit_leap_mode
+			setvard NEXT_LATCH_ATTEMPT game.time
+			add NEXT_LATCH_ATTEMPT 2.0
+			setvard LEAP_MODE 0
+			local EXIT_SUB 1
+		}
+		if !EXIT_SUB
+
+		if ( $get(LEAP_TARGET,range) < LEAP_RANGE )
+		{
+			playsound 0 10 SOUND_LEAP_GO
+			playanim hold ANIM_LEAP
+			if ( !I_R_FROZEN ) addvelocity ent_me $relvel(0,1000,200)
+			setvard IN_LEAP 1
+			callevent 1.0 end_leap_scan
+			callevent leap_scan
+		}
+		else
+		{
+			//targe out of range
+			callevent exit_leap_mode
+			setvard NEXT_LATCH_ATTEMPT game.time
+			add NEXT_LATCH_ATTEMPT 2.0
+			setvard LEAP_MODE 0
+		}
+	}
+	else
+	{
+		//aborted, can't see target
+		callevent exit_leap_mode
+		setvard NEXT_LATCH_ATTEMPT game.time
+		add NEXT_LATCH_ATTEMPT 5.0
+		setvard LEAP_MODE 0
+	}
+}
+
+{ leap_scan
+	if IN_LEAP
+	dbg leap_scan
+	if ( $get(LEAP_TARGET,range) < 64 )
+	{
+		if !I_R_FROZEN
+		if !I_R_HELD
+		callevent latch_target LEAP_TARGET
+	}
+	else
+	{
+		local SCAN_TOKENS $get_tsphere(enemy,64)
+		if SCAN_TOKENS isnot none
+		local SCAN_NME $get_token(SCAN_TOKENS,0)
+		if $get(SCAN_NME,isalive)
+		setvard LEAP_TARGET SCAN_NME
+		callevent latch_target LEAP_TARGET
+	}
+	if !AM_LATCHED
+	if IN_LEAP
+	callevent 0.1 leap_scan
+}
+
+{ end_leap_scan
+	dbg end_leap_scan
+	setvard IN_LEAP 0
+	if !AM_LATCHED
+	setvard LEAP_MODE 0
+	callevent exit_leap_mode
+	setvard NEXT_LATCH_ATTEMPT game.time
+	add NEXT_LATCH_ATTEMPT FREQ_LEAP
+}
+
+{ latch_target //<target>
+	dbg latch_target
+	setvard AM_LATCHED 1
+	setvard LATCH_TARGET PARAM1
+	playanim break
+	callevent ride_mode
+	local LATCH_POS $get(LATCH_TARGET,origin)
+	local TARG_YAW $get(LATCH_TARGET,angles.yaw)
+	vectoradd LATCH_POS $relpos($vec(0,TARG_YAW,0),$vec(0,-16,32))
+	setorigin ent_me LATCH_POS
+	setangle face $vec(0,TARG_YAW,0)
+	setfollow LATCH_TARGET align_bottom
+	callevent latch_think
+	//setvard LATCH_END game.time
+	//add LATCH_END 20.0
+	applyeffect LATCH_TARGET effects/goblin_latch $get(ent_me,id)
+	if $get(LATCH_TARGET,isplayer)
+	local OUT_TITLE $get(LATCH_TARGET,name)
+	local OUT_MSG "Has been pounced!"
+	infomsg all OUT_TITLE OUT_MSG
+}
+
+{ player_left
+	if AM_LATCHED
+	if PARAM1 equals LATCH_TARGET
+	callevent end_latch
+}
+
+{ latch_think
+	dbg latch_think
+	if AM_LATCHED
+	callevent 0.25 latch_think
+	//not letting go unless either I or the player dies
+	if ( !$get(LATCH_TARGET,isalive) ) callevent end_latch
+	//if AM_LATCHED
+	//if ( game.time > LATCH_END ) callevent end_latch
+}
+
+{ end_latch
+	dbg end_latch
+	setvard WAS_LATCHED 1
+	setvard PICKED_RANDOM 0
+	setvard AM_LATCHED 0
+	setvard LEAP_MODE 0
+	setvard IN_LEAP 0
+	setfollow none
+	setvard NEXT_LATCH_ATTEMPT game.time
+	add NEXT_LATCH_ATTEMPT FREQ_LEAP
+	callevent exit_ride_mode
+	playsound 0 10 SOUND_LAUGH
+//	if ( $get(LATCH_TARGET,isalive) )
+//	{
+//		callevent npcatk_flee LATCH_TARGET 1024 3.0
+//		addvelocity ent_me $relvel(0,-600,110)
+//	}
+}
+
+{ bs_global_command
+	if AM_LATCHED
+	if PARAM1 equals LATCH_TARGET
+	callevent end_latch
+}
+
+{ game_damaged
+	if AM_LATCHED
+	dbg game_damaged AM_LATCHED by $get(PARAM1,name) vs $get(LATCH_TARGET,name)
+	if $get(LATCH_TARGET,isalive) //probably redundant, but odd reports
+	if PARAM1 equals LATCH_TARGET
+	setdmg hit 0
+	setdmg dmg 0
+	returndata 0
+}
+
+{ game_death
+	if ( AM_LATCHED )
+	{
+		setfollow none
+		if $get(ent_laststruck,isplayer)
+		if $get(LATCH_TARGET,isplayer)
+		local BONUS_MSG "for rescuing "
+		stradd BONUS_MSG $get(LATCH_TARGET,name)
+		callexternal ent_laststruck ext_dmgpoint_bonus 1000 BONUS_MSG
+	}
+}
+
+{ ride_mode
+	setvard ANIM_RUN ANIM_LEAP_RIDE
+	setvard ANIM_WALK ANIM_LEAP_RIDE
+	setvard ANIM_IDLE ANIM_LEAP_RIDE
+	setmoveanim ANIM_RUN
+	setidleanim ANIM_IDLE
+	playanim critical ANIM_LEAP_RIDE
+	callevent npcatk_suspend_ai
+}
+
+{ ready_leap_mode
+	setvard ANIM_RUN ANIM_LEAP_READY
+	setvard ANIM_WALK ANIM_LEAP_READY
+	setvard ANIM_IDLE ANIM_LEAP_READY
+	setmoveanim ANIM_RUN
+	setidleanim ANIM_IDLE
+	playanim hold ANIM_LEAP_READY
+	callevent npcatk_suspend_ai
+}
+
+{ exit_leap_mode
+	setvard ANIM_RUN run
+	setvard ANIM_WALK walk
+	setvard ANIM_IDLE idle1
+	setmoveanim ANIM_RUN
+	setidleanim ANIM_IDLE
+	playanim break
+	playanim critical ANIM_RUN
+	callevent npcatk_resume_ai
+}
+
+
+{ exit_ride_mode
+	setvard ANIM_RUN run
+	setvard ANIM_WALK walk
+	setvard ANIM_IDLE idle1
+	setmoveanim ANIM_RUN
+	setidleanim ANIM_IDLE
+	playanim break
+	playanim critical ANIM_RUN
+	callevent npcatk_resume_ai
+}
+
+{ frame_pounce_pound
+	if AM_LATCHED
+	if $get(LATCH_TARGET,isalive)
+	dodamage LATCH_TARGET direct DMG_POUND 100% ent_me blunt_effect
+	if ( game.time > NEXT_LAUGH )
+	{
+		setvard NEXT_LAUGH game.time
+		add NEXT_LAUGH FREQ_LAUGH
+		local DO_LAUGH 1
+	}
+
+	if ( !DO_LAUGH )
+	{
+		callexternal LATCH_TARGET ext_playrandomsound 2 5 SOUND_STRUCK1 SOUND_STRUCK2 SOUND_STRUCK3
+	}
+	else
+	{
+		callexternal LATCH_TARGET ext_playsound_kiss 1 10 SOUND_LAUGH
+	}
+}
+
+{ npc_stuck
+	if ( !SUSPEND_AI ) callevent as_npcatk_suspend_ai AS_WIGGLE_DURATION
+	setvard NPC_FORCED_MOVEDEST 1
+	local MOVE_DEST MY_ORG
+	add AS_UNSTUCK_ANG 36
+	if ( AS_UNSTUCK_ANG > 359 ) subtract AS_UNSTUCK_ANG 359
+	//dbg npcatk_anti_stuck stuck_count STUCK_COUNT ang AS_UNSTUCK_ANG
+	vectoradd MOVE_DEST $relpos($vec(0,AS_UNSTUCK_ANG,0),$vec(0,1000,0))
+	setmovedest MOVE_DEST AS_MOVEPROX //I'd love to have them trace along a wall, but I can't figure how to pull that.
+	playanim once ANIM_RUN
+
+	//I may have fallen off the map when unlatching
+	dbg npc_stuck STUCK_COUNT
+	if WAS_LATCHED
+	if STUCK_COUNT > 3
+	callevent ext_wink_out NPC_SPAWN_LOC 1.0
+	setvard WAS_LATCHED 0
+}
+
+{ npcatk_hunt
+	if NPCATK_TARGET equals unset
+	if !PICKED_RANDOM
+	if WAS_LATCHED
+	if !HUNTING_PLAYER
+	getplayersnb TARG_LIST
+	token.scramble TARG_LIST
+	local RND_PLR $get_token(TARG_LIST,0)
+	if $get(RND_PLR,isalive)
+	setvard PICKED_RANDOM 1
+	//pick a random player target to ensure anti-stuck keeps pulsing after a ride
+	//in case I fell off map
+	callevent npcatk_settarget RND_PLR "random_select"
+}

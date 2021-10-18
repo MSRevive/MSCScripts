@@ -1,0 +1,223 @@
+//Marogar (Polar) Chief, from Orc Warrior, by Thothie
+
+{
+
+	if ( $lcase(game.map.name) equals ms_snow ) setvard NPC_IS_BOSS 1
+
+	const NPC_BOSS_REGEN_RATE 0.1
+	const NPC_BOSS_RESTORATION 0.5
+
+
+	const GOLD_BAGS 1
+	const GOLD_BAGS_PPLAYER 5
+	const GOLD_PER_BAG 50
+	const GOLD_RADIUS 64
+	const GOLD_MAX_BAGS 32
+
+   	setvard NPC_GIVE_EXP 500 //no multiplier because of parry
+
+	setvard ATTACK_RANGE 104
+    setvard ATTACK_HITRANGE 138    
+    setvard MOVE_RANGE 84
+
+   	setvard ANIM_ATTACK battleaxe_swing1_L
+   	setvard ANIM_AXE battleaxe_swing1_L
+   	setvard ANIM_SWAT swordswing1_L
+   	setvard ANIM_KICK kick
+	const SPEC_ATK_FREQ 3
+	setvard SPEC_ATK_CNT 1
+	setvard ICE_SELECT_ATK 0
+
+	const BLIZARD_FREQ 50.0
+
+   	const ATTACK_ACCURACY 85%
+   	const ATTACK_DMG_LOW 400
+   	const ATTACK_DMG_HIGH 800
+	const ATTACK_SPECRANGE 160
+
+   	const SOUND_SWAT monsters/orc/battlecry.wav
+   	const SOUND_KICK monsters/orc/attack3.wav
+   	const SOUND_WARCRY monsters/troll/trollidle.wav
+   	const SOUND_UPSWING monsters/orc/attack1.wav
+   	const SOUND_SWINGHIT monsters/orc/pain.wav
+    const SOUND_SWINGMISS debris/bustmetal2.wav
+	const SOUND_SWIPEMISS zombie/claw_miss2.wav
+    const SOUND_BOOM monsters/bear/giantbearstep2.wav
+
+	setvard IMMUNE_COLD 1
+	setvard IMMUNE_FIRE 1.5
+
+	setvard STUCK_CHECK_FREQUENCY 4.1 //I take a LONG time to swing, dun want anti-stuck to think I'm stuck
+	setvard MONSTER_WIDTH 48
+
+    precachefile monsters/summon/summon_blizzard
+
+	precache monsters/morc_big.mdl //precache for old those who do not have the model
+}
+
+#include monsters/orc_base_melee
+#include monsters/orc_base
+
+{  orc_spawn
+
+   	hp 5000
+   	//ov 359
+   	name Talnorgah, Chief of Clan Marogar
+	if ( $lcase(game.map.name) isnot ms_snow ) name a|Marogar Giant
+   	hearingsensitivity 10
+	setstat spellcasting 30 30 30
+	takedmg all .8
+    takedmg fire 2.0
+    takedmg cold 0.0
+	setstat parry 90
+	width 48
+	height 96
+	roam 0
+
+	precache monsters/morc_big.mdl //precache for those who do not have the model
+	setmodel monsters/morc_big.mdl //overscale, make swing slow
+
+   	setmodelbody	0 2		//Body 0=topless+skirt 1=topless+pants 2=brestplate 3=whitefurhide
+   	setmodelbody	1 3		//Head 0=cap_shorthorn 1=cap_spike 2=wbuffo_skin 3=cheif_ramhorns 4=wletherhood
+	setmodelbody	2 5		//Weapon 0=fist 1=axe 2=wood_bow 3=icebow 4=icesword 5=iceaxe
+}
+
+{ npc_selectattack
+
+
+	//only use kick/swat attack once / 5 secs
+
+	if ( SPEC_ATK_CNT < SPEC_ATK_FREQ )	setvard ANIM_ATTACK ANIM_AXE
+
+	////dbg SpecAtkCounter SPEC_ATK_CNT
+
+	if SPEC_ATK_CNT >= SPEC_ATK_FREQ
+
+	if !DOING_SPEC_ATK
+
+	add ICE_SELECT_ATK 1
+
+	if ( ICE_SELECT_ATK == 1 ) setvard ANIM_ATTACK ANIM_KICK
+	if ( ICE_SELECT_ATK == 2 ) 
+	{
+		setvard ANIM_ATTACK ANIM_SWAT
+		setvard ICE_SELECT_ATK 0
+	}
+
+	setvard DOING_SPEC_ATK 1
+}
+
+{ game_dodamage //1: Attack Hit (1/0)  2: Entity Attack hit  3:  Start Position  4:  End Position
+
+	if ( !PARAM1 )
+	{
+		if ( ANIM_ATTACK equals ANIM_SWAT ) playsound CHAN_ITEM 10 SOUND_SWIPEMISS
+		if ( ANIM_ATTACK equals ANIM_KICK ) playsound CHAN_ITEM 10 SOUND_SWIPEMISS
+		setvard ICECHIEF_AXING 0
+	}
+
+	if PARAM1
+
+	if ( ICECHIEF_AXING ) playsound CHAN_ITEM 10 SOUND_SWINGHIT
+	if ( ANIM_ATTACK equals ANIM_SWAT ) playsound CHAN_ITEM 10 SOUND_SWINGHIT
+	setvard ICECHIEF_AXING 0
+
+	if $get(PARAM2,range) <= ATTACK_HITRANGE
+
+	if $rand(1,2) == 1
+
+	applyeffect PARAM2 effects/effect_frostbite_dmg $rand(5,10) ent_me $rand(40,80)
+}
+
+{ npcatk_targetvalidate
+
+	if !ICECHIEF_GO
+
+	roam 1
+
+	callevent BLIZARD_FREQ throw_blizzard
+
+	setvard ICECHIEF_GO 1
+}
+
+{ throw_blizzard
+
+	callevent BLIZARD_FREQ throw_blizzard
+
+	if $cansee(enemy)
+
+	callevent npcatk_faceattacker NPCATK_TARGET
+
+	playanim critical warcry
+
+	playsound CHAN_VOICE 10 SOUND_WARCRY
+
+	callevent 1.5 create_blizzard
+}
+
+{ power_kick
+
+	setvard SPEC_ATK_CNT 1
+	setvard DOING_SPEC_ATK 0
+
+	if $cansee(enemy)
+
+	callevent npcatk_faceattacker NPCATK_TARGET
+
+	playsound CHAN_VOICE 10 SOUND_KICK
+	if $get(ent_laststruckbyme,range) < ATTACK_SPECRANGE
+	applyeffect $get(ent_laststruckbyme,id) effects/effect_push 3 $relvel(0,400,400) 0
+}
+
+{ [override] swing_sword
+
+	setvard SPEC_ATK_CNT 1
+	setvard DOING_SPEC_ATK 0
+
+	if $cansee(enemy)
+
+	callevent npcatk_faceattacker NPCATK_TARGET
+
+	playsound CHAN_VOICE 10 SOUND_SWAT
+	if $get(ent_laststruckbyme,range) < ATTACK_SPECRANGE
+	applyeffect $get(ent_laststruckbyme,id) effects/heavy_stun 10
+}
+
+{ swing_start
+
+	playsound CHAN_VOICE 10 SOUND_UPSWING
+}
+
+{ swing_axe
+
+	add SPEC_ATK_CNT 1
+	setvard ICECHIEF_AXING 1
+	playsound CHAN_BODY 10 SOUND_SWINGMISS
+}
+
+{ create_blizzard
+
+	local EFFECT_SCRIPT monsters/summon/summon_blizzard
+	local SET_DAMAGE 50
+	local SET_DURATION 20
+
+	//dbg Creating Blizzard
+
+    createnpc EFFECT_SCRIPT $get(ent_lastseen,origin) $get(ent_me,id) $get(ent_me,angles.y) SET_DAMAGE SET_DURATION 
+}
+
+{ [override] baseorc_yell
+	//sounds handled in dodamage on this one
+}
+
+{ npc_death
+
+	local VER_NAME $get_by_name(morc_boss_death)
+	local VER_ID $get(VER_NAME,id)
+	if ( !$get(VER_ID,exists) ) createnpc chests/ver_morc_boss_chest $relpos(0,0,-2000)
+
+   effect screenshake $relpos(0,0,0) 190 20 1 0
+   playsound CHAN_ITEM 10 SOUND_BOOM
+
+	//callevent bm_gold_spew 20 3 4 30
+}

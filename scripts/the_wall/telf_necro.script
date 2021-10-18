@@ -1,0 +1,180 @@
+//Intended to be escorted by a messload of nasty undead
+#scope server
+{
+	const FREQ_BARRIER 30.0
+	const DMG_BARRIER 200
+	const BARRIER_RAD 96
+
+	const FREQ_BEAM_CHANGE $randf(10.0,20.0)
+	const ELF_BEAM_RANGE 1024
+
+	setvard RETALIATE_CHANCE 10%
+
+	if ( $lcase(game.map.name) equals the_wall ) 
+	{
+		setvard NPC_GIVE_EXP 15000
+		setvard NPC_IS_BOSS 1
+	}
+	else
+	{
+		setvard NPC_GIVE_EXP 5000
+	}
+
+	setvard NPC_RETURN_HOME 1
+
+	const SOUND_BEAM_LOOP_HOLD ambience/dronemachine1.wav
+	const SOUND_BEAM_LOOP_LIGHTNING magic/bolt_loop.wav 
+	const SOUND_BEAM_LOOP_FROST magic/freezeray_loop.wav 
+	const SOUND_BARRIER_RAISE magic/spawn.wav
+	const SOUND_BARRIER_REPELL doors/aliendoor3.wav
+}
+
+{ game_precache
+	precache SOUND_BEAM_LOOP_HOLD
+	precache SOUND_BEAM_LOOP_LIGHTNING
+	precache SOUND_BEAM_LOOP_FROST
+}
+
+#include monsters/elf_wizard_base
+
+{ [shared] elf_spawn
+
+	name Ihotohr
+	hp 10000
+	race necro
+
+	takedmg all 0.5
+	takedmg holy 1.0
+
+	saytextrange 2048
+
+	setmodelbody 1 1 //0=Unarmed 1=Dark_Staff 2=Dragon_Staff 3=H4xbow
+	setprop ent_me skin 5 //0=Young_Black_Robe 1=Elder_Black_Robe 2=Young_Green_Robe 3=Elder_Green_Robe 4=Young_Puce_Robe 5=Elder_Puce_Robe 6=Good_Pale 7=Good_Pink
+}
+
+{ npc_post_spawn
+	setvard ELF_BEAM_DMG 300
+	setvard ELF_BEAM_DOT 100
+	setvard ELF_BEAM_DMG_TYPE lightning
+	setvard ELF_BEAM_PUSH_VEL $relvel(0,300,110)
+	setvard ELF_BEAM_DUR 5.0
+	setvard ELF_BEAM_ATTACK 1
+	setvard ELF_BEAM_COLOR (255,255,0)
+	setvard ELF_BEAM_EFFECT effects/effect_shock_dmg
+
+	setvard ANIM_ATTACK ref_shoot_crowbar
+	setvard ATTACK_RANGE 64
+	setvard ATTACK_HITRANGE 120
+	setvard ATTACK_MOVERANGE 512
+}
+
+{ cycle_up
+	if !CYCLES_ON
+	setvard CYCLES_ON 1
+	saytext Ah, fresh corpses...
+
+	playanim critical ref_shoot_trip
+	usetrigger spawn_aod
+	setvard AS_ATTACKING game.time
+
+
+	local GAME_TIME game.time
+	setvard NEXT_BARRIER GAME_TIME
+	add NEXT_BARRIER FREQ_BARRIER
+	setvard NExT_BEAM_CHANGE GAME_TIME
+	add NEXT_BEAM_CHANGE FREQ_BEAM_CHANGE
+}
+
+{ npcatk_hunt
+	local GAME_TIME game.time
+	if ( GAME_TIME > NEXT_BEAM_CHANGE )
+	{
+		if !ELF_BEAM_ON
+		//local RND_BEAM $rand(1,3) //fuck random
+		add RND_BEAM 1
+		if ( RND_BEAM > 3 ) setvard RND_BEAM 1
+		if ( RND_BEAM == 1 )
+		{
+			setvard ELF_BEAM_COLOR (255,255,0)
+			setvard ELF_BEAM_SPECIAL none
+			setvard ELF_BEAM_DMG_TYPE lightning
+			setvard ELF_BEAM_EFFECT effects/effect_shock_dmg
+			setvard ELF_BEAM_PUSH_VEL $relvel(0,400,110)
+			setvard ELF_BEAM_DMG 300
+			setvard ELF_BEAM_DOT 100
+			setvard SOUND_ELF_BEAM_LOOP SOUND_BEAM_LOOP_LIGHTNING
+		}
+		if ( RND_BEAM == 2 )
+		{
+			setvard ELF_BEAM_COLOR (128,128,255)
+			setvard ELF_BEAM_SPECIAL none
+			setvard ELF_BEAM_DMG_TYPE cold
+			setvard ELF_BEAM_EFFECT effects/effect_frostbite_dmg
+			setvard ELF_BEAM_PUSH_VEL $relvel(0,400,110)
+			setvard ELF_BEAM_DMG 100
+			setvard ELF_BEAM_DOT 50
+			setvard SOUND_ELF_BEAM_LOOP SOUND_BEAM_LOOP_FROST
+		}
+		if ( RND_BEAM == 3 )
+		{
+			setvard ELF_BEAM_COLOR (255,0,0)
+			setvard ELF_BEAM_SPECIAL hold_person
+			setvard ELF_BEAM_DMG_TYPE magic
+			setvard ELF_BEAM_EFFECT effects/hold_person
+			setvard ELF_BEAM_PUSH_VEL $relvel(0,0,0)
+			setvard ELF_BEAM_DMG 50
+			setvard ELF_BEAM_DOT 0
+			setvard SOUND_ELF_BEAM_LOOP SOUND_BEAM_LOOP_HOLD
+		}
+	}
+
+	if NPCATK_TARGET isnot unset
+
+	if GAME_TIME > NEXT_BARRIER
+	setvard NEXT_BARRIER GAME_TIME
+	add NEXT_BARRIER FREQ_BARRIER
+	callevent do_barrier
+}
+
+{ elf_beam_special //<target>
+	applyeffect PARAM1 effects/hold_person 10.0 $get(ent_me,id)
+}
+
+{ do_barrier
+	playsound 0 10 SOUND_BARRIER_RAISE
+	//clientevent new all effects/sfx_barrier $get(ent_me,index) BARRIER_RAD (255,0,0) 20.0 1 1
+	setmodelbody 2 1
+	setvard BARRIER_ON 1
+	callevent 20.0 end_barrier
+	callevent barrier_loop
+}
+
+{ end_barrier
+	setvard BARRIER_ON 0
+	setmodelbody 2 0
+	playsound 0 10 SOUND_BARRIER_RAISE
+}
+
+{ barrier_loop
+	if BARRIER_ON
+	callevent 0.5 barrier_loop
+	setvard BARRIER_TARGS $get_tsphere(enemy,BARRIER_RAD)
+	if BARRIER_TARGS isnot none
+	playsound 0 10 SOUND_BARRIER_REPELL
+	calleventloop $get_token_amt(BARRIER_TARGS) barrier_affect_targets
+}
+
+{ barrier_affect_targets
+	local CUR_TARG $get_token(BARRIER_TARGS,game.script.iteration)
+	local TARG_ORG $get(CUR_TARG,origin)
+	local TARG_ANG $angles(game.monster.origin,TARG_ORG)
+	setvelocity CUR_TARG $relvel($vec(0,TARG_ANG,0),$vec(10,1000,0))
+	dodamage CUR_TARG direct DMG_BARRIER 100% ent_me magic
+}
+
+{ game_death
+	saytext Death... Awaits you... Beyond the door...
+	setmodelbody 2 0
+	if ( $get(GAME_MASTER,scriptvar,'N_TELFL_DEAD') >= 3 ) giveitem item_telfh4
+	writeline trans.dat te
+}

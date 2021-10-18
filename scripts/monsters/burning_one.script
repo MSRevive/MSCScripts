@@ -1,0 +1,689 @@
+//Nasty undead ice thing (kind of a variant on The Hollow One, for more general [non-K-Cult] usage)
+//- *Guided Ice ball
+//- *Ice Breath (duckable)
+//- *Hold Person Spell
+//- *Palpatine Attack
+//- Ice spikes in cone
+//- *Weak (white) lightning shield
+//- *Dodge
+//- At 50% health, hood comes off - no more ice breath
+//- At 20% health, robe comes off in flames - less magic attacks - goes instead for agro melee/jumpies
+//- Maybe flight (check for headroom)
+#scope server
+{ [shared]
+	//base anims
+	setvar ANIM_WALK walk
+	setvar ANIM_RUN walk
+	setvar ANIM_IDLE idle
+	setvard ANIM_DEATH die_forwards2
+
+	//custom anims
+	const ANIM_RUN_SKELE_MODE run
+	const ANIM_JUMP jump
+	const ANIM_LONG_JUMP long_jump
+	const ANIM_THROW ref_shoot_crowbar //frame_castspell
+	const ANIM_SHOOT ref_shoot_smartgun //frame_castspell
+	const ANIM_DEPLOY ref_shoot_grenade //<no event - may need one>
+
+	const ANIM_SKELE_SWIPE ref_shoot_crowbar
+	const ANIM_SKELE_DUCK_SWIPE crouch_shoot_crowbar
+
+	const ANIM_LIMP_WRIST ref_aim_crowbar
+	const ANIM_PREP_DEPLOY ref_aim_trip
+	const ANIM_RELEASE_DEPLOY ref_shoot_trip
+	const ANIM_MIRROR_PREP ref_aim_grenade
+	const ANIM_ICE_SPIRAL ref_shoot_smartgun
+	const ANIM_ICE_BREATH float
+
+	const ANIM_DUCK_IDLE crouch_idle
+	const ANIM_DUCK_MOVE crawl
+	const ANIM_DUCK_BEAM crouch_shoot_smartgun //<no event - may need one>
+	const ANIM_DUCK_THROW crouch_shoot_grenade //<no event - may need one>
+	const ANIM_DUCK_ATTACK crouch_shoot_crowbar //frame_crouch_slap
+	const ANIM_DUCK_RPG crouch_shoot_rpg //frame_crouch_shoot
+	const ANIM_DUCK_SPELL crouch_shoot_trip //frame_crouch_spell
+}
+
+{ [server]
+
+	//base stats
+	setvar IS_UNHOLY 1
+	setvard ATTACK_RANGE 256
+	setvard ATTACK_MOVERANGE 256
+	setvard ATTACK_HITRANGE 256
+	setvard NPC_NO_ATTACK 1
+	setvard NPC_GIVE_EXP 8000
+
+	const LSHIELD_CLFX_SCRIPT monsters/burning_one_lshield_cl
+	const LSHIELD_RADIUS 64
+
+	//custom stats
+	setvard SPECIAL_CYCLE 0
+	const N_SPECIALS 4
+
+	setvard PROJ_HOLD_DURATION 20.0 //used by proj_hold_person
+
+	const CL_PRIMARY_SCRIPT monsters/burning_one_cl
+
+	const ATTACK_RANGE_MELEE 96
+	const ATTACK_HITRANGE_MELEE 160
+	const ATTACK_MOVERANGE_MELEE 64	
+	const ATTACK_MOVERANGE_LONG 256
+
+	const LHAND_ATCH 1
+	const RHAND_ATCH 2
+	const MOUTH_ATCH 3
+
+	const FREQ_DODGE 4.0
+
+	const DOT_ICE_BALL 200
+	const DMG_ICE_BALL 800
+	const DOT_ICE_CAGE 200
+	const DMG_PALPATINE 75
+	const DMG_SWIPE 200
+	const DOT_FROST 200
+
+	const FREQ_JUMP $randf(5.0,15.0)
+	const FREQ_DUCK_SWITCH $randf(10.0,20.0)
+
+	//sounds
+	const SOUND_ICEBALL_RELEASE ambience/alienflyby1.wav
+	const SOUND_ICE_PREP magic/spookie1.wav
+	const SOUND_DODGE magic/frost_reverse.wav
+	const SOUND_BREATH monsters/goblin/sps_fogfire.wav
+	const SOUND_ZAP_LOOP magic/bolt_loop.wav
+	const SOUND_ZAP_START magic/bolt_end.wav
+	const SOUND_SCREAM monsters/spooky_scream.wav
+	const SOUND_SWIPE1 zombie/claw_miss1.wav
+	const SOUND_SWIPE2 zombie/claw_miss2.wav
+	const SOUND_SWIPE3 monsters/goblin/c_gargoyle_atk1.wav
+	const SOUND_SWIPE4 monsters/goblin/c_gargoyle_atk2.wav
+	const SOUND_DEATH monsters/goblin/c_gargoyle_dead.wav
+	const SOUND_PAIN1 monsters/goblin/c_gargoyle_hit1.wav
+	const SOUND_PAIN2 monsters/goblin/c_gargoyle_hit2.wav
+	const SOUND_SKELE_LAUGH1 monsters/goblin/c_gargoyle_bat1.wav
+	const SOUND_SKELE_LAUGH2 monsters/goblin/c_gargoyle_bat2.wav
+	const SOUND_FREEZE_SLAP monsters/goblin/c_gargoyle_atk3.wav
+
+	setcallback touch enable
+}
+
+{ game_precache
+	precachefile monsters/summon/client_side_fireball
+	precachefile effects/sfx_motionblur_perm
+	precachefile monsters/burning_one_cl
+}
+
+#include monsters/base_monster_new
+#include monsters/base_lightning_shield
+
+//==================================== Init
+
+{ npc_spawn
+	name a|Burning One
+	race demon //ease of placement
+	width 32
+	height 80
+	setmodel monsters/hollow_one.mdl
+	roam 0
+	hp 9000
+	takedmg all 0.5
+	takedmg fire 0.0
+	takedmg cold 1.25
+	takedmg poison 0.0
+	takedmg holy 1.0
+	setprop ent_me skin 0
+	setmodelbody 0 2
+	setmodelbody 1 3
+	hearingsensitivity 10
+
+	setmoveanim ANIM_WALK
+	setidleanim ANIM_IDLE
+
+	roam 1
+
+	setvard DEF_ANIM_WALK ANIM_WALK
+	setvard DEF_ANIM_RUN ANIM_RUN
+	setvard DEF_ANIM_IDLE ANIM_IDLE
+}
+
+//==================================== Hunt Cycle
+{ cycle_up
+	if ( !DID_INTRO )
+	{
+		setvard DID_INTRO 1
+		if $lcase(game.map.name) equals shender_east
+		setvard SHENDER_MAP 1
+		setvard HALF_HP $get(ent_me,maxhp)
+		multiply HALF_HP 0.5
+		usetrigger spawn_ruins_escort
+		//callexternal players ext_play_music_me 1.5 insanity.mp3
+		clientevent new all effects/sfx_follow_glow_cl $get(ent_me,index) (255,128,0) 256 20.0
+	}
+}
+
+{ npcatk_hunt
+
+	if NPCATK_TARGET isnot unset
+
+	if ( game.time > NEXT_SPECIAL ) callevent do_special //special frequency varies with type
+
+	if ( game.time > NEXT_DODGE )
+	{
+		if $get(NPCATK_TARGET,range) < 96
+		callevent shadow_shift
+	}
+}
+
+{ resume_movement
+	if ( !FLIGHT_MODE )
+	{
+		setvard ANIM_WALK DEF_ANIM_WALK
+		setvard ANIM_RUN DEF_ANIM_RUN
+		setvard ANIM_IDLE DEF_ANIM_IDLE
+		setmoveanim ANIM_RUN
+		setidleanim ANIM_IDLE
+		roam 1
+	}
+	else
+	{
+		setmoveanim ANIM_FLOAT
+		setidleanim ANIM_FLOAT
+	}
+}
+
+{ suspend_movement //<hold_animation>
+	if ( !FLIGHT_MODE )
+	{
+		setvard ANIM_WALK PARAM1
+		setvard ANIM_RUN PARAM1
+		setvard ANIM_IDLE PARAM1
+		setmoveanim PARAM1
+		setidleanim PARAM1
+		roam 0
+	}
+}
+
+//==================================== Spellz Cycle
+{ do_special
+	if $get(ent_me,isalive)
+
+	add SPECIAL_CYCLE 1
+	if ( SPECIAL_CYCLE > N_SPECIALS ) setvard SPECIAL_CYCLE 1
+
+	if ( G_DEVELOPER_MODE )
+	{
+		if SPECIAL_OVERRIDE > 0
+		setvard SPECIAL_CYCLE SPECIAL_OVERRIDE
+	}
+
+	if ( SPECIAL_CYCLE == 1 )
+	{
+		dbg do_special: iceball
+
+		callevent prep_iceball
+		setvard NEXT_SPECIAL game.time
+		add NEXT_SPECIAL 25.0 //will be reset when fireball expires/explodes
+	}
+
+	if ( SPECIAL_CYCLE == 2 )
+	{
+		callevent do_ice_breath
+		setvard NEXT_SPECIAL game.time
+		add NEXT_SPECIAL 10.0
+	}
+
+	if ( SPECIAL_CYCLE == 3 )
+	{
+		callevent prep_hold_person
+		setvard NEXT_SPECIAL game.time
+		add NEXT_SPECIAL 5.0
+	}
+
+	if ( SPECIAL_CYCLE == 4 )
+	{
+		if !DUCK_MODE
+		callevent do_palpatine
+		setvard NEXT_SPECIAL game.time
+		add NEXT_SPECIAL 10.0
+	}
+}
+
+//==================================== Iceball Handling
+{ prep_iceball
+
+	callevent 2.0 prep_iceball2
+
+	callevent npcatk_suspend_ai
+	playanim critical ANIM_PREP_DEPLOY
+	setidleanim ANIM_PREP_DEPLOY
+	setmoveanim ANIM_PREP_DEPLOY
+	
+	effect beam ents lgtning.spr 30 ent_me LHAND_ATCH ent_me RHAND_ATCH (255,128,0) 200 200 2.0
+	playsound 0 10 SOUND_ICE_PREP
+}
+
+
+{ prep_iceball2
+	playanim critical ANIM_RELEASE_DEPLOY
+	playsound 0 10 SOUND_ICEBALL_RELEASE
+	callevent npcatk_resume_ai
+	callevent resume_movement
+	setvard BALL_TYPE ice
+	callevent start_ball
+}
+
+{ start_ball
+	if !CFB_FIREBALL_ACTIVE //one at a time
+	setvard CFB_FIREBALL_ACTIVE 1
+	setvard CFB_FIRST_TARGET_FOUND 0
+	setvard CFB_EST_ORG $relpos(0,32,0)
+	local START_ANGS $get(ent_me,angles)
+	setvard CFB_EST_ANG START_ANGS
+	clientevent new all monsters/summon/client_side_fireball CFB_EST_ORG START_ANGS
+	setvard CFB_FIREBALL_IDX game.script.last_sent_id
+	callevent 0.1 cfb_fireball_loop
+	setvard CFB_FORCE_END game.time
+	add CFB_FORCE_END 20.0
+}
+
+{ cfb_fireball_loop
+	if CFB_FIREBALL_ACTIVE
+	callevent 0.5 cfb_fireball_loop
+	if ( game.time > CFB_NEXT_SCAN )
+	{
+		setvard CFB_NEXT_SCAN game.time
+		add CFB_NEXT_SCAN 2.0
+		if ( !$get(CFB_TARGET,isalive) )
+		{
+			local OWNER_ORG $get(ent_me,origin)
+			local TARGET_TOKENS $get_tsphere(enemy,512,CFB_EST_ORG) 	//try and see if $get_sphere is fixed - can't remember
+			if TARGET_TOKENS isnot none
+			if ( $get_token_amt(TARGET_TOKENS) > 1 ) token.scramble TARGET_TOKENS //not important when player is owner, but may prevent targeting same player every time
+			local TEST_TARG $get_token(TARGET_TOKENS,0)
+			if $get(TEST_TARG,isalive)
+			if !$get(TEST_TARG,scriptvar,'PLAYING_DEAD')
+			setvard CFB_TARGET TEST_TARG
+			if !CFB_FIRST_TARGET_FOUND
+			setvard CFB_FIRST_TARGET_FOUND 1
+			local ANG_TO_TARG $angles3d(CFB_EST_ORG,TARG_ORG)
+		}
+		else
+		{
+			local SCAN_DOWN CFB_EST_ORG
+			local TARGET_TOKENS $get_tsphere(enemy,96,SCAN_DOWN)
+			if TARGET_TOKENS isnot none
+			callevent cfb_explode "hit_nme"
+		}
+	}
+
+	if CFB_FIREBALL_ACTIVE //case exploded
+
+	if ( $get(CFB_TARGET,isalive) )
+	{
+		local TARG_ORG $get(CFB_TARGET,origin)
+		if ( !$get(CFB_TARGET,isplayer) ) vectoradd TARG_ORG z $get(CFB_TARGET,height) //aim for the heads of monsters
+		local ANG_TO_TARG $angles3d(CFB_EST_ORG,TARG_ORG)
+		vectorset ANG_TO_TARG x $neg($vec.x(ANG_TO_TARG))
+		clientevent update all CFB_FIREBALL_IDX svr_update_fireball_vec ANG_TO_TARG CFB_EST_ORG
+		setvard CFB_EST_ANG ANG_TO_TARG
+		vectoradd CFB_EST_ORG $relvel(ANG_TO_TARG,$vec(0,60,0))
+	}
+	else
+	{
+		vectoradd CFB_EST_ORG $relvel(CFB_EST_ANG,$vec(0,60,0))
+	}
+
+	local TRACE_DEST CFB_EST_ORG
+	vectoradd TRACE_DEST $relvel(CFB_EST_ANG,$vec(0,60,0))
+	local TRACE_RESULT $get_traceline(CFB_EST_ORG,TRACE_DEST,worldonly)
+	if ( TRACE_RESULT isnot TRACE_DEST ) callevent cfb_explode "hitwall"
+
+//	if ( G_DEVELOPER_MODE )
+//	{
+//		//show where I *think* the fireball is
+//		local BEAM_START CFB_EST_ORG
+//		local BEAM_END TRACE_DEST
+//		effect beam point lgtning.spr 100 BEAM_START BEAM_END (255,0,255) 200 16 3
+//	}
+
+	if CFB_FIREBALL_ACTIVE //case sploded
+	if game.time > CFB_FORCE_END
+	callevent cfb_explode "time_out"
+}
+
+{ cfb_explode
+
+	//do next special sooner
+	setvard NEXT_SPECIAL game.time
+	add NEXT_SPECIAL 1.0
+
+	setvard CFB_FIREBALL_ACTIVE 0
+	//if ( G_DEVELOPER_MODE ) gplayermessage ent_me Fireball Explode: PARAM1
+	clientevent update all CFB_FIREBALL_IDX fireball_explode
+	callevent 0.1 cfb_fireball_release
+	//scan/dodamage aoe here
+	setvard CFB_LIST $get_tsphere(enemy,128,CFB_EST_ORG)
+	if CFB_LIST isnot none
+	if $get_token_amt(CFB_LIST) > 0
+	xdodamage CFB_EST_ORG 128 DMG_ICE_BALL 0 ent_me ent_me none fire_effect
+	calleventloop $get_token_amt(CFB_LIST) cfb_affect_targets
+}
+
+{ cfb_affect_targets
+	local CHECK_ENT $get_token(CFB_LIST,game.script.iteration)
+	local TARGET_ORG $get(CHECK_ENT,origin)
+	local TARG_ANG $angles(CFB_EST_ORG,TARGET_ORG)
+	local NEW_YAW TARG_ANG
+	setvelocity CHECK_ENT $relvel($vec(0,NEW_YAW,0),$vec(0,1000,0))
+	applyeffect CHECK_ENT effects/effect_burn 5.0 $get(ent_me,id) DOT_ICE_BALL
+}
+
+{ cfb_fireball_end
+	dbg cfb_fireball_end
+	clientevent update all CFB_FIREBALL_IDX fireball_end
+	callevent 0.1 cfb_fireball_release
+}
+
+{ cfb_fireball_release
+	dbg cfb_fireball_release
+	setvard CFB_FIREBALL_ACTIVE 0
+}
+
+//==================================== Hold Person Spell
+{ prep_hold_person
+
+	callevent 2.0 prep_hold_person2
+
+	callevent npcatk_suspend_ai
+	playanim critical ANIM_PREP_DEPLOY
+	setidleanim ANIM_PREP_DEPLOY
+	setmoveanim ANIM_PREP_DEPLOY
+		
+	clientevent new all CL_PRIMARY_SCRIPT hand_sprites $get(ent_me,index) 2.0 (64,64,255)
+	playsound 0 10 SOUND_ICE_PREP
+}
+
+
+{ prep_hold_person2
+
+	playanim critical ANIM_RELEASE_DEPLOY
+	playsound 0 10 SOUND_ICEBALL_RELEASE
+	callevent npcatk_resume_ai
+	callevent resume_movement
+	tossprojectile NPCATK_TARGET 50 0 0 proj_hold_person (0,0,64)
+}
+
+//==================================== Shadow Shift (Dodge)
+{ shadow_shift
+	if game.time > NEXT_DODGE
+	setvard NEXT_DODGE game.time
+	add NEXT_DODGE FREQ_DODGE
+
+	clientevent persist all effects/sfx_motionblur_temp $get(ent_me,index) 0 1 3.0
+	local RND_ANG $randf(0,359)
+	addvelocity ent_me $relvel($vec(0,RND_ANG,0),$vec(0,1000,0))
+	playsound 0 10 SOUND_DODGE
+	callevent 0.25 stop_shadow_shift
+}
+
+{ stop_shadow_shift
+	setvelocity ent_me $relvel(0,0,0)
+}
+
+{ game_damaged //PARAM1=attacker PARAM2=dmg PARAM3=dmg_type
+
+	//dbg game_damaged stg1 STAGE_ONE_DONE stg2 STAGE_TWO_DONE hp $get(ent_me,hp) vs STAGE_TWO_THRESH
+
+	if ( SHENDER_MAP )
+	{
+		if $get(ent_me,hp) < HALF_HP
+		if !DID_SUMMONS
+		setvard DID_SUMMONS 1
+		usetrigger spawn_ruins_summons
+	}
+
+	if ( PALPATINE_ON )
+	{
+		if $get(PARAM1,range) < 256
+		setmovedest PARAM1 9999
+	}
+
+	if !PALPATINE_ON
+	if $get(PARAM1,range) > 128
+	if PARAM2 > 75
+	callevent shadow_shift
+}
+
+//==================================== Lightning Shield Extras
+{ game_touch
+	if LSHIELD_PASSIVE_ENABLE
+	if game.time > NEXT_TOUCH_ZAP
+	setvard NEXT_TOUCH_ZAP game.time
+	add NEXT_TOUCH_ZAP 0.1 //careful not to overload - touch goes off every server think
+	if $get(ent_me,relationship,PARAM1) equals enemy
+	setvard LSHIELD_TARGET PARAM1
+	callevent lshield_passive_zap_target
+}
+
+//==================================== Ice Breath
+{ do_ice_breath
+	callevent npcatk_suspend_ai
+	callevent suspend_movement ANIM_ICE_BREATH
+	playanim critical ANIM_ICE_BREATH
+	setvard SPIN_ANG $get(ent_me,angles.yaw)
+	setvard SPIN_ON 1
+	subtract SPIN_ANG 45
+	if ( SPIN_ANG < 0 ) add SPIN_ANG 359
+	svplaysound 1 10 SOUND_BREATH
+	clientevent new all CL_PRIMARY_SCRIPT ice_breath $get(ent_me,index) 8.0 //kh_fire_breath_on
+	setvard FREEZE_SCRIPT_IDX game.script.last_sent_id
+	callevent ice_breath_spin
+	callevent 8.0 stop_ice_breath_spin
+	setvard ICE_BREATH_ON 1
+}
+
+{ stop_ice_breath_spin
+	svplaysound 1 0 SOUND_BREATH
+	clientevent update all FREEZE_SCRIPT_IDX ice_breath_off
+	setvard SPIN_ON 0
+	callevent resume_movement
+	callevent npcatk_resume_ai
+	setvard NEXT_SPECIAL game.time
+	add NEXT_SPECIAL 1.0
+	setvard ICE_BREATH_ON 0
+}
+
+{ ice_breath_spin
+	if SPIN_ON
+	callevent 0.05 ice_breath_spin
+	local FACE_POS $get(ent_me,origin)
+	vectoradd FACE_POS $relpos($vec(0,SPIN_ANG,0),$vec(0,100,0))
+	setmovedest FACE_POS 9999
+	//clientevent update all CL_IDX kh_fire_breath $get(ent_me,angles.yaw)
+	if ( game.time > NEXT_FREEZE )
+	{
+		setvard NEXT_FREEZE game.time
+		add NEXT_FREEZE 0.5
+
+		setvard FREEZE_LIST $get_tsphere(enemy,512)
+		if FREEZE_LIST isnot none
+		calleventloop $get_token_amt(FREEZE_LIST) freeze_targets
+	}
+
+	add SPIN_ANG 10
+	if ( SPIN_ANG > 359 ) subtract SPIN_ANG 359
+}
+
+{ freeze_targets
+	local CUR_TARGET $get_token(FREEZE_LIST,game.script.iteration)
+	if $get(CUR_TARGET,isalive)
+	local TARG_ORG $get(CUR_TARGET,origin)
+	if $within_cone2D(TARG_ORG,game.monster.origin,game.monster.angles,10)
+	if $get(CUR_TARGET,range) < 256
+	if $get(CUR_TARGET,height) > 36 //duckable
+	dbg freeze_targets $get(CUR_TARGET,name)
+	applyeffect CUR_TARGET effects/effect_burn 10.0 $get(ent_me,id) DOT_ICE_CAGE
+
+	local MY_ORG $get(ent_me,origin)
+	local TARG_ANG $angles(MY_ORG,TARG_ORG)
+	setvelocity CUR_TARGET $relvel($vec(0,TARG_ANG,0),$vec(0,500,0))
+}
+
+//==================================== Palpatine
+{ do_palpatine
+	setvard ATTACK_MOVERANGE ATTACK_MOVERANGE_LONG
+	setmovedest NPCATK_TARGET 9999
+	setvard NPC_FORCED_MOVEDEST 1
+	callevent npcatk_suspend_ai
+	callevent suspend_movement ANIM_PREP_DEPLOY //ANIM_LIMP_WRIST
+
+	clientevent new all CL_PRIMARY_SCRIPT palpatine $get(ent_me,index) 8.0
+	playsound 0 10 SOUND_ZAP_START
+	svplaysound 1 10 SOUND_ZAP_LOOP
+	setvard PALPATINE_ON 1
+	callevent 8.0 palpatine_end
+	callevent palpatine_loop
+}
+
+{ palpatine_end
+	setvard PALPATINE_ON 0
+	callevent npcatk_resume_ai
+	callevent resume_movement
+	svplaysound 1 0 SOUND_ZAP_LOOP 
+}
+
+{ palpatine_loop
+	if PALPATINE_ON
+	callevent 0.1 palpatine_loop
+	//setangle face $vec(0,PALPATINE_YAW,0)
+	setvard PALPATINE_TARGETS $get_tsphere(enemy,256)
+	if PALPATINE_TARGETS isnot none
+	//dbg palpatine_loop PALPATINE_TARGETS
+	calleventloop $get_token_amt(PALPATINE_TARGETS) palpatine_shock_targs
+}
+
+{ palpatine_shock_targs
+	local CUR_TARG $get_token(PALPATINE_TARGETS,game.script.iteration)
+	if $get(CUR_TARG,isalive)
+	local TARG_ORG $get(CUR_TARG,origin)
+	if $within_cone2D(TARG_ORG,game.monster.origin,game.monster.angles,0.75)
+	//kinda wish we had a cone damage function - but I suspect it wouldn't be all that more efficient
+	if $get(CUR_TARG,height) > 36
+	dodamage CUR_TARG direct DMG_PALPATINE 100% ent_me lightning_effect
+	addvelocity CUR_TARG $relvel(0,200,110)
+}
+
+//==================================== Debugary
+{ game_dynamically_created
+	if PARAM1 > 0
+	setvard SPECIAL_OVERRIDE PARAM1
+}
+
+//==================================== Duck
+{ toggle_duck_mode
+	if ( DUCK_MODE )
+	{
+		setvard DUCK_MODE 1
+		setvard ANIM_ATTACK ANIM_SKELE_DUCK_SWIPE
+		setvard ANIM_WALK ANIM_DUCK_MOVE
+		setvard ANIM_RUN ANIM_DUCK_MOVE
+		setvard ANIM_IDLE ANIM_DUCK_IDLE
+		setvard DEF_ANIM_WALK ANIM_WALK
+		setvard DEF_ANIM_RUN ANIM_RUN
+		setvard DEF_ANIM_IDLE ANIM_IDLE
+		setmoveanim ANIM_RUN
+		setidleanim ANIM_IDLE
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	if ( !DUCK_MODE )
+	{
+		setvard DUCK_MODE 0
+		setvard ANIM_ATTACK ANIM_SKELE_SWIPE
+		setvard ANIM_WALK walk
+		setvard ANIM_RUN run
+		setvard ANIM_IDLE idle
+		setvard DEF_ANIM_WALK ANIM_WALK
+		setvard DEF_ANIM_RUN ANIM_RUN
+		setvard DEF_ANIM_IDLE ANIM_IDLE
+		setmoveanim ANIM_RUN
+		setidleanim ANIM_IDLE
+	}
+}
+
+//==================================== Leap Away
+{ leap_away
+	callevent npcatk_suspend_ai 2.0
+	callevent 2.0 force_leap_end
+	callevent suspend_movement ANIM_LONG_JUMP
+	setvard AS_ATTACKING game.time
+	add AS_ATTACKING 5.0
+	if ( !$get(PARAM1,isalive) )
+	{
+		setmovedest NPCATK_TARGET 1024 flee
+	}
+	else
+	{
+		setmovedest PARAM1 1024 flee
+	}
+	
+	setvard NPC_FORCED_MOVEDEST 1
+	playanim critical ANIM_LONG_JUMP
+	callevent repulse_area $get(ent_me,origin)
+	callevent 0.1 leap_away_boost
+}
+
+{ leap_away_boost
+	addvelocity ent_me $relvel(0,1000,800)
+}
+
+{ frame_long_jump_land
+	callevent npcatk_resume_ai
+	callevent resume_movement
+}
+
+{ force_leap_end
+	callevent npcatk_resume_ai
+	callevent resume_movement
+}
+
+{ repulse_area
+	playsound 0 10 magic/boom.wav
+	clientevent new all CL_PRIMARY_SCRIPT repulse $get(ent_me,origin) 128
+	setvard REPULSE_LIST $get_tsphere(any,128)
+	if REPULSE_LIST isnot none
+	calleventloop $get_token_amt(REPULSE_LIST) repulse_targets
+}
+
+{ repulse_targets
+	local CUR_TARG $get_token(REPULSE_LIST,game.script.iteration)
+	local TARG_ORG $get(CUR_TARG,origin)
+	local TARG_ANG $angles(game.monster.origin,TARG_ORG)
+	setvelocity CUR_TARG $relvel($vec(0,TARG_ANG,0),$vec(10,1000,10))
+}
+
+//==================================== Melee (skele mode)
+{ my_target_died
+	playrandomsound 0 10 SOUND_SKELE_LAUGH1 SOUND_SKELE_LAUGH2
+}
+
+{ game_dodamage //PARAM1=hit:0|1 PARAM2=ent_hit PARAM3=(start) PARAM4=(end)
+	if ( SWIPE_ATTACK )
+	{
+		if $rand(1,3) == 1
+		if PARAM1
+		if $get(PARAM2,relationship,ent_me) equals enemy
+		playrandomsound 2 10 SOUND_FREEZE_SLAP
+		applyeffect PARAM2 effects/effect_burn 5.0 $get(ent_me,id) DOT_FROST
+	}
+	setvard SWIPE_ATTACK 0
+}
+
+{
+repeatdelay 20.0
+
+	if $get(ent_me,isalive)
+	clientevent new all effects/sfx_follow_glow_cl $get(ent_me,index) (255,128,0) 256 20.0
+}

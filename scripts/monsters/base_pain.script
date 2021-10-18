@@ -1,0 +1,84 @@
+#scope server
+//got sick of doing this for every mob, but didn't want to increase the size of base_monster
+//toggle flinching with BPAIN_CAN_FLINCH
+{
+	const BPAIN_USE_PAIN 1 //use differing pain sounds when <50% health
+	const BPAIN_USE_FLINCH 1 //alt flinch system
+
+	const BPAIN_FREQ_FLINCH $randf(10.0,20.0)
+
+	const BPAIN_FLINCH_HEALTH 0.75 //ratio health must be below before uses flinch
+	const BPAIN_PAIN_HEALTH 0.5 //ratio health must be below before uses pain sounds
+
+	const BPAIN_FLINCH_TOKENS "flinchsmall;flinch;bigflinch;laflinch;raflinch;llflinch;rlflinch"
+
+	const SOUND_STRUCK1 weapons/cbar_hitbod1.wav
+	const SOUND_STRUCK2 weapons/cbar_hitbod2.wav
+	const SOUND_STRUCK3 weapons/cbar_hitbod3.wav
+	const SOUND_PAIN1 garg/gar_pain1.wav
+	const SOUND_PAIN2 garg/gar_pain2.wav
+}
+
+{ game_spawn
+	if ( BPAIN_USE_FLINCH )
+	{
+		setvard BPAIN_CAN_FLINCH 1
+	}
+	callevent 2.0 bpain_finalize
+}
+
+{ bpain_finalize
+	setvard BPAIN_PAIN_HP $get(ent_me,maxhp)
+	setvard BPAIN_FLINCH_HP BPAIN_PAIN_HP //slightly faster to pull the var again than to run another $get
+
+	multiply BPAIN_PAIN_HP BPAIN_PAIN_HEALTH
+	multiply BPAIN_FLINCH_HP BPAIN_FLINCH_HEALTH
+}
+
+{ game_struck
+	if ( BPAIN_USE_PAIN )
+	{
+		if ( BPAIN_USE_FLINCH )
+		{
+			if BPAIN_CAN_FLINCH
+			if $get(ent_me,hp) < BPAIN_FLINCH_HP
+			if game.time > BPAIN_NEXT_FLINCH
+			setvard BPAIN_NEXT_FLINCH game.time
+			add BPAIN_NEXT_FLINCH BPAIN_FREQ_FLINCH
+			callevent npc_flinch
+			local L_NFLINCH_ANIMS $get_token_amt(BPAIN_FLINCH_TOKENS)
+			subtract L_NFLINCH_ANIMS 1
+			local L_RND_FLINCH $rand(0,L_NFLINCH_ANIMS)
+			playanim critical $get_token(BPAIN_FLINCH_TOKENS,L_NFLINCH_ANIMS)
+			playrandomsound 0 10 SOUND_PAIN1 SOUND_PAIN2
+			local EXIT_SUB 1
+		}
+		if !EXIT_SUB
+
+
+		if ( $get(ent_me,hp) < BPAIN_PAIN_HP )
+		{
+			playrandomsound 0 10 SOUND_STRUCK1 SOUND_STRUCK2 SOUND_STRUCK3 SOUND_PAIN1 SOUND_PAIN2
+		}
+		else
+		{
+			playrandomsound 0 10 SOUND_STRUCK1 SOUND_STRUCK2 SOUND_STRUCK3
+		}
+	}
+	else
+	{
+		playrandomsound 0 10 SOUND_STRUCK1 SOUND_STRUCK2 SOUND_STRUCK3
+	}
+}
+
+{ bflinch_suspend_flinch //[time]
+	if BPAIN_CAN_FLINCH
+	setvard BPAIN_CAN_FLINCH 0
+	if PARAM1 !startswith PARAM
+	callevent PARAM1 bflinch_restore_flinch
+}
+
+{ bflinch_restore_flinch
+	if !BPAIN_CAN_FLINCH
+	setvard BPAIN_CAN_FLINCH 1
+}

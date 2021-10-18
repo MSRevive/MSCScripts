@@ -1,0 +1,169 @@
+//second weakest of the Shadahar Orc series
+{
+	setvard DROP_GOLD 1	//Gold Drops
+	setvard DROP_GOLD_AMT $rand(20,46)	//
+	const DMG_THROW 25 //inflated due to pass xp
+	setvard NPC_GIVE_EXP 175
+
+	setvard ANIM_SWORD swordswing1_L //Attack animation 1
+	setvard ANIM_AXE battleaxe_swing1_L //Attack animation 2
+	setvard FLINCH_CHANCE 25%
+
+	setvard ANIM_ATTACK battleaxe_swing1_L
+
+	const ATTACK_ACCURACY 80%
+	const DMG_SWORD $rand(50,100)
+	const DOT_THROW_SHOCK 40.0 //inflated due to pass xp
+	const DOT_SHOCK 15.0
+	const DMG_KICK $rand(20,50)
+
+	const ANIM_KICK kick
+
+	const SOUND_SHOCK1 debris/zap8.wav
+	const SOUND_SHOCK2 debris/zap3.wav
+	const SOUND_SHOCK3 debris/zap4.wav
+
+	setvard ORC_JUMPER 1
+
+	const CHANCE_SHOCK 10%
+	const CHANCE_KICK 30%
+
+	const FREQ_KICK $randf(5,15)
+	const FREQ_THROW $randf(7,15)
+
+	const SORC_LRESIST 0.85
+	const SORC_PRESIST 1.1
+}
+
+#include monsters/orc_base_melee
+#include monsters/sorc_base
+
+{ orc_spawn
+
+	name a|Shadahar Warrior
+	setmodel monsters/sorc.mdl
+	hp 1000
+	takedmg all 0.7
+	setstat parry 110
+	
+	width 32
+	height 96
+
+	setmodelbody 0 2 //body: 0=bare 1=bloody_shirt 2=gold_armor 3=archer
+	setmodelbody 1 2 //head: 0=hat_horns 1=hat_spiked 2=lizardskin_horned 3=gold_Chieftain 4=lizard_cap
+	setmodelbody 2 7 //weapon: 0=unarmed 1=axe 2=bow 3=steel_bow 4=sword 5=great_axe 6=sword_sheild 8=yellow_axe 9=blooddrinker
+}
+
+{ [override] swing_axe //model event (base also calls this from model event swing_sword)
+
+	callevent baseorc_yell
+
+	callevent npcatk_dodamage ent_lastseen ATTACK_HITRANGE DMG_SWORD ATTACK_ACCURACY slash
+
+	if ( $rand(1,100) < CHANCE_SHOCK )
+	{
+		if !THROWING_AXE
+		applyeffect NPCATK_TARGET effects/effect_shock_dmg 3 $get(ent_me,id) DOT_SHOCK
+		playrandomsound 0 10 SOUND_SHOCK1 SOUND_SHOCK2 SOUND_SHOCK3
+		dbg temp me glow
+		effect glow ent_me (255,255,0) 128 1 1
+	}
+
+	if ( $rand(1,100) < CHANCE_KICK )
+	{
+		if !THROWING_AXE
+		if !KICK_DELAY
+		setvard KICK_DELAY 1
+		callevent FREQ_KICK reset_kick_delay
+		setvard ANIM_ATTACK ANIM_KICK
+	}
+
+	if THROWING_AXE
+	setanim.framerate 0.00001
+}
+
+{ reset_kick_delay
+	setvard KICK_DELAY 0
+}
+
+{ kick_land //model vent
+	callevent npcatk_dodamage NPCATK_TARGET ATTACK_HITRANGE DMG_KICK ATTACK_ACCURACY blunt
+	setvard KICK_ATTACK 1
+	setvard ANIM_ATTACK ANIM_AXE
+}
+
+{ npc_targetsighted
+
+	if !I_R_FROZEN
+	if !THROW_DELAY
+	if $get(NPCATK_TARGET,range) > ATTACK_RANGE
+
+	setvard THROW_DELAY 1
+	callevent throw_axe NPCATK_TARGET
+}
+
+{ reset_throw_delay
+	setvard THROW_DELAY 0
+}
+
+{ throw_axe
+
+	setvard AS_ATTACKING game.time
+	setvard THROWING_AXE 1
+	callevent npcatk_suspend_ai
+	setidleanim ANIM_SWORD
+	setmoveanim ANIM_SWORD
+	roam 0
+	playanim break
+	playanim hold ANIM_SWORD
+	callevent 0.5 throw_axe2
+}
+
+{ throw_axe2
+	setmodelbody 2 0
+	local TARG_DEST $get(NPCATK_TARGET,origin)
+	vectoradd TARG_DEST $relpos($vec(0,game.monster.angles.yaw,0),$vec(0,128,0))
+	if ( !$get(NPCATK_TARGET,isplayer) ) vectoradd TARG_DEST z $get(NPCATK_TARGET,height)
+	createnpc monsters/summon/sorc_axe $relpos(0,40,5) $get(ent_me,id) TARG_DEST DMG_THROW
+	setvard MY_AXE $get(ent_lastcreated,id)
+	callevent throw_axe_loop
+}
+
+{ throw_axe_loop
+	if THROWING_AXE
+	setmovedest MY_AXE 9999
+	callevent 0.1 throw_axe_loop
+}
+
+{ catch_axe //called extermally from bludgeon_axe upon return
+	callevent npcatk_resume_ai
+	playanim break
+	roam 1
+	setvard THROWING_AXE 0
+	setmodelbody 2 7
+	setidleanim ANIM_IDLE
+	setmoveanim ANIM_RUN
+	callevent FREQ_THROW reset_throw_delay
+	setanim.framerate 1.0
+}
+
+{ game_dodamage
+	
+	if ( KICK_ATTACK )
+	{
+		setvard KICK_ATTACK 0
+		if PARAM1
+		dbg temp pushimmune $get(PARAM2,scriptvar,IMMUNE_PUSH)
+		if ( !$get(PARAM2,scriptvar,IMMUNE_PUSH) ) addvelocity PARAM2 $relvel(0,200,30)
+		local NO_ATK $rand(0,1)
+		applyeffect PARAM2 effects/heavy_stun $rand(2,5)
+	}
+
+	if THROWING_AXE
+	local HIT_TARG PARAM2
+	callexternal MY_AXE do_shock HIT_TARG DOT_THROW_SHOCK
+//	local BEAM_START $get(MY_AXE,origin)
+//	effect beam end lgtning.spr 30 BEAM_START PARAM2 0 (255,255,0) 255 30 0.5
+//	applyeffect PARAM2 effects/effect_shock_dmg 3 $get(ent_me,id) DOT_SHOCK
+//	callexternal MY_AXE do_sound
+}

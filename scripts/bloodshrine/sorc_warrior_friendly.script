@@ -1,0 +1,135 @@
+#scope server
+{
+	const DMG_SWORD $rand(200,300)
+	const DOT_THROW_SHOCK 120.0
+	const DOT_SHOCK 60.0
+	const DMG_KICK $rand(40,100)
+
+	const CHAT_USE_CONV_ANIMS 0
+	const CHAT_NO_CLOSE_MOUTH 1
+	const CHAT_NEVER_INTERRUPT 1
+
+	const NPC_EXTRA_VALIDATIONS 1
+}
+
+#include monsters/sorc_warrior
+#include bloodshrine/base_sorc_friendly
+#include monsters/base_chat_array
+
+{ orc_spawn
+
+	name Brindahr, the Warleader
+	name_unique fsorc_leader
+	setmodel monsters/sorc.mdl
+	hp 8000
+	takedmg all 0.5
+	setstat parry 110
+	race human
+	roam 0
+	
+	width 32
+	height 96
+
+	setmodelbody 0 2 //body: 0=bare 1=bloody_shirt 2=gold_armor 3=archer
+	setmodelbody 1 2 //head: 0=hat_horns 1=hat_spiked 2=lizardskin_horned 3=gold_Chieftain 4=lizard_cap
+	setmodelbody 2 7 //weapon: 0=unarmed 1=axe 2=bow 3=steel_bow 4=sword 5=great_axe 6=sword_sheild 8=yellow_axe 9=blooddrinker
+}
+
+{ ext_do_leader_intro
+	//<text> [time] [anim|"none"] [event|"none"] ["clear_que"] ["add_to_que"]
+	callevent chat_now "Wait!" 3.0 neigh bfsorc_follow_close add_to_que
+	callevent chat_now "I know you... You are of the humans who fought beside Chief Runegahr!" 5.0 none face_second add_to_que
+	callevent chat_now "Surely they will help us escape this accursed place!" 3.0 none add_to_que
+	callevent chat_now "We were exploring, outside these ruins, when a great shadow fell upon us." 4.0 add_to_que
+	callevent chat_now "When we awoke, we found ourselves imprisoned here..." 4.0 none call_shaman_lines add_to_que
+
+}
+
+{ face_second
+	setvard SECOND_ID $get_by_name(fsorc_second)
+	setvard CHAT_TEMP_NO_AUTO_FACE 1
+	setmovedest SECOND_ID 9999
+	callevent npcatk_suspend_ai
+	callevent 0.1 shew_second
+	callevent 2.0 resume_faceing_speaker
+	callevent 2.5 chat_face_speaker
+	callevent bfsorc_follow_normal
+}
+
+{ resume_faceing_speaker
+	setvard CHAT_TEMP_NO_AUTO_FACE 0
+}
+
+{ shew_second
+	setmovedest SECOND_ID 9999
+	playanim critical swordswing1_L
+}
+
+{ call_shaman_lines
+	callevent 1.0 call_shaman_lines2
+}
+
+{ call_shaman_lines2
+	setvard SHAMAN_ID $get_by_name(fsorc_shaman)
+	setmovedest SHAMAN_ID 9999
+	callevent 2.5 chat_face_speaker
+	callexternal SHAMAN_ID ext_shaman_lines
+}
+
+{ fsorc_zombie_alert
+	callevent npcatk_resume_ai
+	callevent 3.0 ash_comment
+	setmoveanim ANIM_RUN
+	setvard ZOMBIE_ID PARAM1
+	callevent npcatk_settarget ZOMBIE_ID
+	setvard NPCATK_TARGET ZOMBIE_ID
+	setmovedest ZOMBIE_ID 64
+}
+
+{ ash_comment
+	callevent chat_now "To battle! Rend his cursed corpse until it ceases to move!" 3.0 warcry add_to_que
+}
+
+{ ext_leader_ash
+	if !DID_ASHINKAHR
+	setvard DID_ASHINKAHR 1
+	callevent 3.0 ext_leader_ash2
+}
+
+{ ext_leader_ash2
+	callevent chat_now "Yes... Lead on, we shall follow." 3.0 add_to_que
+	callevent 3.0 sham_comment
+}
+
+{ sham_comment
+	callexternal SHAMAN_ID ext_return_comment
+}
+
+{ npc_targetvalidate
+	if ( NPCATK_TARGET equals SBOSS_ID ) setvard NPCATK_TARGET unset
+}
+
+{ fsorc_wait
+	if !DID_WAIT_COMMENT
+	setvard DID_WAIT_COMMENT 1
+	callevent 1.0 fsorc_wait_comment
+}
+
+{ fsorc_wait_comment
+	callevent chat_now "Very well. We trust in your judgement, elder." 3.0 nod_yes
+}
+
+{ give_reward_options
+	if !GAVE_REWARD
+	local reg.mitem.title 	"Gather Reward"
+	local reg.mitem.type 	callback
+	local reg.mitem.callback give_reward
+	menuitem.register
+}
+
+{ give_reward
+	setvard GAVE_REWARD 1
+	offer PARAM1 axes_gthunder11
+	callevent chat_now "It's a meager reward, for such a warrior, but I'm sure you'll make good use of it." 3.0 nod_yes
+	callevent 6.0 ready_to_go
+}

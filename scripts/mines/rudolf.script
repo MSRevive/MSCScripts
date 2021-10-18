@@ -1,0 +1,224 @@
+//Thothie - plays Hi text after he gets his mace (minor asthetic complaint), fixed, untested
+{
+	setvard CAN_ATTACK 0
+	setvard CAN_FLEE 1
+	const FLEE_HEALTH 34
+	const FLEE_CHANCE 100%
+	setvard FLEE_DISTANCE 1000
+	setvard CAN_RETALIATE 0
+	setvard CAN_FLINCH 1
+	setvard FLINCH_ANIM llflinch
+	setvard FLINCH_CHANCE 50%
+	setvard FLINCH_DELAY 1
+	setvard ANIM_DEATH dieforward
+	const SOUND_DEATH player/stomachhit1.wav
+	setvar ANIM_WALK run
+	const NO_RUMOR 1
+	const NO_JOB 1
+}
+
+#include monsters/base_npc
+#include monsters/base_chat
+
+{ npc_spawn
+
+	setvard REQ_QUEST_NOTDONE 1
+
+	hp	35
+	name	Scared Rudolf
+	width	32
+	height	72
+	race	beloved
+	roam	0
+	setmodel	npc/human1.mdl
+	invincible	1
+	setmodelbody	5 3
+
+	setangle face $vec(0,180,0)
+
+	setvar recievedit 0
+
+	catchspeech say_hi hi hello hail greet hey
+
+	catchspeech say_what hammer maul mace
+
+	catchspeech say_where where
+
+	catchspeech say_thank thank thanks
+
+	catchspeech say_reward gold reward money
+
+	catchspeech say_thing things thing
+}
+
+{ say_hi
+	if !IS_FLEEING
+	if !I_GOT_MY_MACE
+
+	saytext Please help me, I lost my very valuable mace! Please recover it!
+	calleventtimed 3 say_hi2
+
+	setvar SPOKE 1
+}
+
+{ say_hi2
+
+	saytext .....I was venturing in the caves...I think I remember where...
+	calleventtimed 4 say_hi3
+	playanim once panic
+}
+{ say_hi3
+
+	saytext All of a sudden, a bunch of things attacked me! I ran out as fast as I could...
+	calleventtimed 4 say_hi4
+	playanim once panic
+}
+{ say_hi4
+
+	saytext When I came back out, I realized my mace was gone!
+	playanim once beatdoor
+	calleventtimed 4 say_hi5
+}
+{ say_hi5
+
+	saytext It was a family heirloom...!
+	playanim once crouch_idle
+}
+
+{ say_where
+
+	saytext Well, you enter in here, then go across the bridge, then a right...
+	calleventtimed 3 say_where2
+}
+
+{ say_where
+	if !recievedit
+
+	saytext There'll will be those things... I hope you're strong enough... here, take these.
+	offer ent_lastspoke health_mpotion
+	offer ent_lastspoke item_torch
+	setvar recievedit 1
+}
+
+{ say_thank
+	saytext Good luck!
+}
+
+
+{ say_what
+	saytext Yes, I lost my mace, please help me find it. I think I remember where..
+	calleventtimed 3 say_what2
+	playanim once eye_wipe
+}
+{ say_what2
+	saytext I'll be happy to reward you!
+	playanim once idle2
+}
+{ say_reward
+	saytext I'll give you gold! Please, no more talking, find my mace!
+	playanim once llflinch
+}
+{ say_thing
+	saytext There were about 4 things that attacked me!
+	playanim once fear
+	calleventtimed 2 say_thing2
+}
+
+{ say_thing2
+	saytext You'll probably have to kill them all to find my mace
+	playanim once fear
+}
+
+{ give_mace
+	recvoffer accept
+	playanim once eye_wipe
+	saytext THANK YOU!!!
+
+	setvar QUEST_WINNER PARAM1
+
+	calleventtimed 2 recvmace_2
+}
+
+{ recvmace_2
+	setvard I_GOT_MY_MACE 1
+	saytext As I promised you...
+	offer QUEST_WINNER bows_crossbow_light
+	calleventtimed 3 recvmace_3
+
+	if $item_exists(QUEST_WINNER,item_ring)
+	local RQUEST_STAGE $get_quest_data(QUEST_WINNER,r) 
+	if RQUEST_STAGE equals 4
+	callevent 0.1 ring_comment
+}
+
+{ ring_comment
+	saytext Nice ring by the way! You know, I think Vadrel used to have one just like it!
+	quest set QUEST_WINNER r 5
+	setvard REQ_QUEST_NOTDONE 0
+}
+
+{ recvmace_3
+	saytext Goodbye now! I must hurry!
+	setmovedest (-3101,351,64) 0
+
+	callevent 5 rudolfdelete
+}
+
+{ rudolfdelete
+
+	deleteent ent_me fade
+}
+
+{ game_menu_getoptions
+
+	if( SAY_SPOKE equals 1 )
+	{
+		local reg.mitem.title	"Mace?"
+		local reg.mitem.type	say
+		local reg.mitem.data 'Mace?'
+		menuitem.register
+
+		local reg.mitem.title	"Where?"
+		local reg.mitem.type	say
+		local reg.mitem.data 'Where?'
+		menuitem.register
+
+		local reg.mitem.title	"Say thanks"
+		local reg.mitem.type	say
+		local reg.mitem.data 'Thank you!'
+		menuitem.register
+
+		local reg.mitem.title	"Reward?"
+		local reg.mitem.type	say
+		local reg.mitem.data 'What do I get out of it?'
+		menuitem.register
+
+		local reg.mitem.title	"Things?"
+		local reg.mitem.type	say
+		local reg.mitem.data 'What about those things?'
+		menuitem.register
+	}
+
+	if( $item_exists(PARAM1,blunt_rudolfsmace) )
+	{
+		local reg.mitem.title 	"Return mace"
+		local reg.mitem.type 	payment
+		local reg.mitem.data 	blunt_rudolfsmace
+		local reg.mitem.callback give_mace
+		menuitem.register
+	}
+
+	if ( $item_exists(PARAM1,item_ring) )
+	{
+		local RQUEST_STAGE $get_quest_data(PARAM1,r)
+		if ( RQUEST_STAGE == 5 )
+		{
+			//in case they need to ask again
+			local reg.mitem.title 	"Ask about the ring"
+			local reg.mitem.type 	callback
+			local reg.mitem.data 	RQUEST_STAGE
+			local reg.mitem.callback ring_comment
+			menuitem.register
+		}
+	}
+}

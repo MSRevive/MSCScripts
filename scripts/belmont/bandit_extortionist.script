@@ -1,0 +1,85 @@
+{
+	name_unique extorter
+	saytextrange 1024
+}
+
+#include monsters/bandit_elite_dagger
+
+{ npc_post_spawn
+
+	roam 0
+	callevent npcatk_suspend_ai
+	callevent 1.0 get_bar_id
+}
+
+{ game_struck
+	if ( SUSPEND_AI ) callevent npcatk_resume_ai
+}
+
+{ get_bar_id
+	setvard BAR_ID $get_by_name(bartender)
+	callevent scan_for_players
+}
+
+{ scan_for_players
+	if ( $cansee(enemy) )
+	{
+		if $get(ent_lastseen,isplayer)
+		setvard STARTED_SCENE 1
+		callevent start_scene
+	}
+
+	if !STARTED_SCENE
+	callevent 1.0 scan_for_players
+}
+
+{ start_scene
+	setmovedest BAR_ID 32
+	saytext Helga, your payment is late, again. I warned you this this would be the last time.
+	callevent 3.0 helga_respond1
+}
+
+{ helga_respond1
+	callexternal BAR_ID ext_harass1
+	callevent 3.0 me_harass2
+}
+
+{ me_harass2
+	saytext Come now, you surely have made enough for the payment by now.
+	callevent 3.0 helga_respond2
+}
+
+{ helga_respond2
+	callexternal BAR_ID ext_harass2
+	callevent 3.0 me_harass3
+}
+
+{ me_harass3
+	saytext We have to keep the riff-raff, in line... We have to set... An example.
+	playanim hold stand_squatwalk1_L
+	callevent 3.0 helga_respond3
+}
+
+{ helga_respond3
+	callexternal BAR_ID ext_harass3
+	callevent 6.0 me_kill_da_bitch
+}
+
+{ me_kill_da_bitch
+	playanim critical ANIM_ATTACK
+	setidleanim ANIM_IDLE
+	setmoveanim ANIM_WALK
+	callexternal BAR_ID npc_suicide
+	callevent 2.0 warn_all
+}
+
+{ warn_all
+	saytext Let that be a lesson to the rest of you. Do not defy the [insert name of bandit mafia here]!
+	playanim critical aim_punch1
+	roam 1
+}
+
+{ game_death
+	if $get(BAR_ID,isalive)
+	callexternal BAR_ID extorter_slain $get(ent_laststruck,id)
+}

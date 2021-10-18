@@ -1,0 +1,138 @@
+//Thothie
+//dynamically place magic seals with various extra fx by type
+#scope client
+{
+	const SEAL_MODEL weapons/magic/seals.mdl
+
+	const SNOW_SPRITE firemagic_8bit.spr
+}
+
+{ client_activate //<origin> <radius> <seal_ofs> <duration> [type]
+
+	setvard FX_ORIGIN PARAM1
+	setvard FX_RAD PARAM2
+	setvard SEAL_OFS PARAM3
+	setvard FX_DURATION PARAM4
+	setvard FX_EXTRAS_TYPE PARAM5
+
+	callevent FX_DURATION end_fx
+
+	if ( FX_EXTRAS_TYPE isnot spider )
+	{
+		cleffect tempent model SEAL_MODEL FX_ORIGIN setup_seal1
+		cleffect tempent model SEAL_MODEL FX_ORIGIN setup_seal2
+	}
+	else
+	{
+		cleffect tempent model SEAL_MODEL FX_ORIGIN setup_spider_seal update_spider_seal
+	}
+
+	if ( FX_EXTRAS_TYPE equals freeze_solid )
+	{
+		setvard CYCLE_ANGLE 0
+		setvard FREQ_SOUND 1.0
+		sound.play3d magic/spawn_loud.wav 10 FX_ORIGIN
+		cleffect light new FX_ORIGIN FX_RAD (128,128,255) FX_DURATION
+		callevent 0.1 make_snow
+	}
+
+	setvard FX_ACTIVE 1
+}
+
+{ end_fx
+	setvard FX_ACTIVE 0
+	callevent 2.0 remove_fx
+}
+
+{ remove_fx
+	removescript
+}
+
+{ make_snow
+	if FX_ACTIVE
+	callevent 0.1 make_snow
+
+	if ( game.time > NEXT_SOUND )
+	{
+		setvard NEXT_SOUND game.time
+		add NEXT_SOUND FREQ_SOUND
+		sound.play3d magic/frost_forward.wav 10 FX_ORIGIN
+	}
+
+	local SPR_POS FX_ORIGIN
+	vectoradd SPR_POS $relpos($vec(0,CYCLE_ANGLE,0),$vec(0,FX_RAD,256))
+	cleffect tempent sprite SNOW_SPRITE SPR_POS setup_snow
+
+	add CYCLE_ANGLE 40
+	if ( CYCLE_ANGLE >= 359.99 ) setvard CYCLE_ANGLE 0
+}
+
+{ update_spider_seal
+
+	cleffect tempent set_current_prop rendermode add
+	cleffect tempent set_current_prop renderamt RENDER_AMT
+	subtract RENDER_AMT 2
+
+	if ( RENDER_AMT < 100 )
+	{
+		if ( FX_ACTIVE )
+		{
+			setvard RENDER_AMT 100
+		}
+		else
+		{
+			if RENDER_AMT < 0
+			setvard RENDER_AMT 0
+		}
+	}
+}
+
+{ ext_spider_pulse
+	setvard RENDER_AMT 255
+}
+
+{ setup_spider_seal
+
+	local L_FX_DURATION FX_DURATION
+	add L_FX_DURATION 1
+	cleffect tempent set_current_prop death_delay L_FX_DURATION
+	cleffect tempent set_current_prop fade none
+	cleffect tempent set_current_prop framerate	0
+	cleffect tempent set_current_prop gravity 0.0
+	cleffect tempent set_current_prop rendermode add
+	cleffect tempent set_current_prop renderamt 255
+	cleffect tempent set_current_prop collide none
+	cleffect tempent set_current_prop body SEAL_OFS
+	cleffect tempent set_current_prop frames 39
+}
+
+{ setup_seal1
+
+	cleffect tempent set_current_prop death_delay FX_DURATION
+	cleffect tempent set_current_prop fade none
+	cleffect tempent set_current_prop framerate	1.0
+	cleffect tempent set_current_prop gravity 0.0
+	cleffect tempent set_current_prop rendermode normal
+	cleffect tempent set_current_prop collide none
+	cleffect tempent set_current_prop body SEAL_OFS
+	cleffect tempent set_current_prop frames 39
+}
+
+{ setup_seal2
+
+	cleffect tempent set_current_prop death_delay 3.0
+	cleffect tempent set_current_prop fade lifetime
+	cleffect tempent set_current_prop framerate	1.0
+	cleffect tempent set_current_prop gravity -1.0
+	cleffect tempent set_current_prop rendermode normal
+	cleffect tempent set_current_prop collide none
+	cleffect tempent set_current_prop body SEAL_OFS
+	cleffect tempent set_current_prop frames 39
+}
+
+{ [client] setup_snow
+
+	cleffect tempent set_current_prop death_delay 	1.0
+	cleffect tempent set_current_prop scale 0.75
+	cleffect tempent set_current_prop rendercolor 	(64,64,255)
+}

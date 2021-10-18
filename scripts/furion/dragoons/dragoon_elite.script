@@ -1,0 +1,888 @@
+// *** Random bandit script ***
+//
+// Elite Dragoon Variant
+//
+
+{
+	//external media precache
+	//stun_burst
+	precache magic/boom.wav
+
+	setvard CONTAINER_DROP_CHANCE 10% 
+	setvard CONTAINER_SCRIPT chests/quiver_of_frost_arrows
+
+	const MONSTER_MODEL fur/npcs/dragoon_elite.mdl
+	precache MONSTER_MODEL
+
+	const ANIM_HOP long_jump
+
+	const FREQ_BOW $randf(15,30) 
+	const FREQ_DAGGER $randf(20,30)
+	const FREQ_MA $randf(10,15)
+	const FREQ_SWORD $randf(15,30)
+	const FREQ_AXE $randf(15,30)
+	const FREQ_MACE $randf(15,30)
+	const FREQ_SPEAR $randf(15,30)
+
+	const DMG_DAGGER $randf(20,30)
+	const DMG_MA 25
+	const DMG_SWORD $randf(20,30)
+	const DMG_AXE $randf(30,60)
+	const DMG_MACE $randf(60,75)
+	const DMG_SPEAR $randf(30,60)
+
+	const SOUND_PAIN		player/chesthit1.wav
+	const SOUND_PAIN2		player/armhit1.wav
+	const SOUND_BOW weapons/bow/bow.wav
+	setvar ANIM_IDLE		idle
+	setvar ANIM_RUN		run
+	setvar ANIM_WALK		walk2
+	setvard ANIM_DEATH		die_simple
+	setvard CAN_HUNT		1
+	setvard HUNT_AGRO		1
+	setvard CAN_ATTACK		1
+	setvard CAN_RETALIATE		1
+	const RETALIATE_CHANGETARGET_CHANCE	75%
+	setvard CAN_HEAR		1
+	setvard NPC_GIVE_EXP		400
+
+	//attempts to improve bandit aim by Thothie
+	const AIM_RATIO 50
+	const ARROW_DAMAGE '$rand(50,120)'
+
+	callevent bowey
+	callevent fistey
+	callevent daggerey
+	callevent swordey
+	callevent axey
+	callevent macey
+	callevent speary
+
+	callevent icey
+	callevent poisoney
+	callevent firey
+	callevent zappy
+}
+
+#include monsters/base_monster
+#include monsters/base_aim_proj
+
+// Spawn properties
+{
+   eventname npc_spawn
+
+
+	if ( WEAPON equals 'WEAPON' ) setvard WEAPON $rand(0,6)
+	if ( ELEMENT equals 'ELEMENT' ) setvard ELEMENT $rand(0,3)
+   gold			$rand(70,100)
+   //fov			220
+   width		32
+   height		92
+   race			rogue
+   hearingsensitivity	3
+   roam			1
+   setmodel		MONSTER_MODEL
+   setidleanim		ANIM_IDLE
+   setmoveanim		ANIM_WALK
+}
+{
+	eventname bowey
+	if WEAPON == 0
+	name an|Elite Dragoon Archer
+	hp 800
+	setvar ATTACK_SPEED 1200
+	setvard MOVE_RANGE ATTACK_SPEED
+	setvard ATTACK_RANGE ATTACK_SPEED
+	setvar ATTACK_COF 0
+	setvard ANIM_ATTACK shootbow
+	setactionanim ANIM_ATTACK
+	setmodelbody 1 5
+	setvard TOO_CLOSE 0
+	setvard DROPS_CONTAINER 1
+	setvard NO_STUCK_CHECKS 1
+
+	setvar BANDIT_TYPE bow
+}
+{
+	eventname daggerey
+	if WEAPON == 1
+	name an|Elite Dragoon Rogue
+	hp 800
+	setvard MOVE_RANGE 30
+	setvard ATTACK_RANGE 90
+	setvar ATTACK1_DAMAGE DMG_DAGGER
+	setvar ATTACK_PERCENTAGE 80%
+	setvard ANIM_ATTACK swordjab1_R
+	setvar ORIG_ATTACK ANIM_ATTACK
+	setactionanim ANIM_ATTACK
+	setmodelbody 1 1
+	setvard DROP_ITEM1 smallarms_fangstooth //Used by base_monster
+   	setvard DROP_ITEM1_CHANCE 5%		//Used by base_monster
+
+	setvar BANDIT_TYPE dagger
+}
+{
+	eventname fistey
+	if WEAPON == 2
+	name an|Elite Dragoon Martial Artist
+	hp 1000
+
+	movespeed 1.5
+	setanim.movespeed 1.5
+
+	setvar BASE_FRAMERATE 1.5
+	setvar BASE_MOVESPEED 1.5
+
+	setvard MOVE_RANGE 30
+	setvard ATTACK_RANGE 80
+	setvar ATTACK1_DAMAGE DMG_MA
+	setvar ATTACK_PERCENTAGE 80%
+	setvard ANIM_ATTACK aim_punch1
+	setvar ORIG_ATTACK ANIM_ATTACK
+	setactionanim ANIM_ATTACK
+	setmodelbody 1 0
+
+	setvar BANDIT_TYPE ma
+}
+{
+	eventname swordey
+	if WEAPON == 3
+	name an|Elite Dragoon Swordsman
+	hp 1000
+	setvard MOVE_RANGE 60
+	setvard ATTACK_RANGE 100
+	setvar ATTACK1_DAMAGE $randf(20,30)
+	setvar ATTACK_PERCENTAGE 85%
+	setvard ANIM_ATTACK swordswing2_R
+	setvar ORIG_ATTACK ANIM_ATTACK
+	setactionanim ANIM_ATTACK
+	setmodelbody 1 4
+
+	setvar BANDIT_TYPE sword
+}
+{
+	eventname axey
+	if WEAPON == 4
+	name an|Elite Dragoon Axeman
+	hp 1500
+	setvard MOVE_RANGE 80
+	setvard ATTACK_RANGE 100
+	setvar ATTACK1_DAMAGE $randf(30,60)
+	setvar ATTACK_PERCENTAGE 85%
+	setvard ANIM_ATTACK battleaxe_swing1_R
+	setvar ORIG_ATTACK ANIM_ATTACK
+	setactionanim ANIM_ATTACK
+	setmodelbody 1 3
+
+	setvar BANDIT_TYPE axe
+}
+{
+	eventname macey
+	if WEAPON == 5
+	name an|Elite Dragoon Berserker
+	hp 1750
+	setvard MOVE_RANGE 80
+	setvard ATTACK_RANGE 100
+	setvar ATTACK1_DAMAGE $randf(30,60)
+	setvar ATTACK_PERCENTAGE 85%
+	setvard ANIM_ATTACK battleaxe_swing1_R
+	setvar ORIG_ATTACK ANIM_ATTACK
+	setactionanim ANIM_ATTACK
+	setmodelbody 1 2
+
+	setvar BANDIT_TYPE mace
+}
+{
+	eventname speary
+	if WEAPON == 6
+	name an|Elite Dragoon Lancer
+	hp 1200
+	setvard MOVE_RANGE 120
+	setvard ATTACK_RANGE 140
+	setvar ATTACK1_DAMAGE $randf(30,60)
+	setvar ATTACK_PERCENTAGE 85%
+	setvard ANIM_ATTACK spearjab
+	setvar ORIG_ATTACK ANIM_ATTACK
+	setactionanim ANIM_ATTACK
+	setmodelbody 1 6
+
+	setvar BANDIT_TYPE spear
+}
+{
+	eventname icey
+	if ELEMENT == 0
+	takedmg slash 0.8
+	takedmg pierce 0.8
+	takedmg blunt 0.8
+	takedmg fire 1.3
+	takedmg cold 0.1
+	takedmg poison 0.8
+	takedmg lightning 0.8
+	takedmg holy 0.0
+	setmodelbody 0 0  
+}
+{
+	eventname poisoney
+	if ELEMENT == 1
+	takedmg slash 0.8
+	takedmg pierce 0.8
+	takedmg blunt 0.8
+	takedmg fire 0.8
+	takedmg cold 0.8
+	takedmg poison 0.1
+	takedmg lightning 1.3
+	takedmg holy 0.0
+	setmodelbody 0 1  
+
+}
+{
+	eventname firey
+	if ELEMENT == 2
+	takedmg slash 0.8
+	takedmg pierce 0.8
+	takedmg blunt 0.8
+	takedmg fire 0.1
+	takedmg cold 1.3
+	takedmg poison 0.8
+	takedmg lightning 0.8
+	takedmg holy 0.0
+	setmodelbody 0 2  
+
+}
+{
+	eventname zappy
+	if ELEMENT == 3
+	takedmg slash 0.8
+	takedmg pierce 0.8
+	takedmg blunt 0.8
+	takedmg fire 0.8
+	takedmg cold 0.8
+	takedmg poison 1.3
+	takedmg lightning 0.1
+	takedmg holy 0.0
+	setmodelbody 0 3  
+
+}
+
+{ check_attack
+
+	//trained archers move away from melee - thothie
+	if WEAPON == 0
+
+	if !IS_FLEEING
+
+	////dbg ChangPos CHANGE_POSITION
+
+	if ( CHANGE_POSITION > 3 )
+	{
+		setvard CHANGE_POSITION 0
+		playanim break
+		playanim critical ANIM_RUN
+		//setvard PURE_FLEE 1
+		//callevent npcatk_flee ent_lastseen 1000 5
+		callevent chicken_run 3
+	}
+
+	if $cansee(enemy)
+
+	if ( $get(ent_lastseen,range) < 100 ) add TOO_CLOSE 0.1
+
+	if ( TOO_CLOSE > 5 )
+	{
+		//dbg Too close for too long, backing off
+		setvard TOO_CLOSE 0
+		setvard PURE_FLEE 1
+		callevent npcatk_flee ent_lastseen 600 5
+	}
+}
+
+{ npc_struck
+   
+	volume 5
+	playrandomsound 2 SOUND_PAIN SOUND_PAIN2 none none
+}
+
+{ npc_death
+   
+	local L_DEATHANIM $rand(0,6)
+	if( L_DEATHANIM equals 0 )	setvard ANIM_DEATH die_simple
+	if( L_DEATHANIM equals 1 )	setvard ANIM_DEATH die_backwards1
+	if( L_DEATHANIM equals 2 )	setvard ANIM_DEATH die_backwards
+	if( L_DEATHANIM equals 3 )	setvard ANIM_DEATH die_forwards
+	if( L_DEATHANIM equals 4 )	setvard ANIM_DEATH headshot
+	if( L_DEATHANIM equals 5 )	setvard ANIM_DEATH die_spin
+	if( L_DEATHANIM equals 6 )	setvard ANIM_DEATH gutshot
+}
+
+{ npc_struck
+
+	//trained archers move if hit
+	if WEAPON == 0
+	if $get(ent_laststruck,isplayer) add CHANGE_POSITION 1
+}
+
+{ npc_targetsighted
+	//archer
+	if ( WEAPON == 0 )
+	{
+		if !IS_FLEEING
+		if $cansee(PARAM1)
+		setvard AS_ATTACKING game.time
+		playanim once ANIM_ATTACK
+	}
+}
+
+{ cycle_up
+
+	if !SPEC_LOOP
+	setvard SPEC_LOOP 1
+
+	if ( BANDIT_TYPE equals bow ) setvard FREQ_SPEC_ATTACK FREQ_BOW
+	if ( BANDIT_TYPE equals dagger ) setvard FREQ_SPEC_ATTACK FREQ_DAGGER
+	if ( BANDIT_TYPE equals ma ) setvard FREQ_SPEC_ATTACK FREQ_MA
+	if ( BANDIT_TYPE equals sword ) setvard FREQ_SPEC_ATTACK FREQ_SWORD
+	if ( BANDIT_TYPE equals axe ) setvard FREQ_SPEC_ATTACK FREQ_AXE
+	if ( BANDIT_TYPE equals mace ) setvard FREQ_SPEC_ATTACK FREQ_MACE
+	if ( BANDIT_TYPE equals spear ) setvard FREQ_SPEC_ATTACK FREQ_SPEAR
+
+	//dbg temp Special attack in FREQ_SPEC_ATTACK
+
+	callevent FREQ_SPEC_ATTACK special_attack	
+}
+
+{ special_attack
+
+	if ( BANDIT_TYPE equals bow ) setvard FREQ_SPEC_ATTACK FREQ_BOW
+	if ( BANDIT_TYPE equals dagger ) setvard FREQ_SPEC_ATTACK FREQ_DAGGER
+	if ( BANDIT_TYPE equals ma ) setvard FREQ_SPEC_ATTACK FREQ_MA
+	if ( BANDIT_TYPE equals sword ) setvard FREQ_SPEC_ATTACK FREQ_SWORD
+	if ( BANDIT_TYPE equals axe ) setvard FREQ_SPEC_ATTACK FREQ_AXE
+	if ( BANDIT_TYPE equals mace ) setvard FREQ_SPEC_ATTACK FREQ_MACE
+	if ( BANDIT_TYPE equals spear ) setvard FREQ_SPEC_ATTACK FREQ_SPEAR
+
+	callevent FREQ_SPEC_ATTACK special_attack	
+
+	if ( I_R_FROZEN ) callevent 10.0 freeze_solid_end
+
+	if !I_R_FROZEN
+
+	if $cansee(enemy)
+
+	playsound 0 10 player/swordready.wav
+
+	if ( BANDIT_TYPE isnot dagger ) effect glow ent_me (255,255,255) 64 1 1
+
+	callevent 0.75 special_attack2
+}
+
+{ special_attack2
+
+	//dbg special_attack2 ( BANDIT_TYPE )
+
+	if ( BANDIT_TYPE equals bow )
+	{
+		//toss four arrows ^_^
+		if ( $cansee(enemy) )
+		{
+			setangle add_view.pitch 10
+			playsound 0 10 player/shout1.wav
+			callevent 0.1 bow_sound
+			callevent 0.2 bow_sound
+			callevent 0.3 bow_sound
+			callevent 0.4 bow_sound
+			callevent 0.5 bow_sound
+			callevent 0.6 bow_sound
+	      	tossprojectile view ATTACK_SPEED FINAL_DAMAGE 10 proj_arrow_npc (0,0,48)
+	      	tossprojectile view ATTACK_SPEED FINAL_DAMAGE 10 proj_arrow_npc (0,0,48)
+	      	tossprojectile view ATTACK_SPEED FINAL_DAMAGE 10 proj_arrow_npc (0,0,48)
+	      	tossprojectile view ATTACK_SPEED FINAL_DAMAGE 10 proj_arrow_npc (0,0,48)
+		tossprojectile view ATTACK_SPEED FINAL_DAMAGE 10 proj_arrow_npc (0,0,48)
+		tossprojectile view ATTACK_SPEED FINAL_DAMAGE 10 proj_arrow_npc (0,0,48)
+		}
+	}
+
+	if ( BANDIT_TYPE equals dagger )
+	{
+		//turbo attack
+		playsound 0 10 player/shout1.wav
+		callevent turbo_attack
+	}
+
+	if ( BANDIT_TYPE equals ma )
+	{
+		setvard POWER_ATTACK 1
+		playanim break
+	}
+
+	if ( BANDIT_TYPE equals sword )
+	{
+		//next attack will be power attack (freeze effect + dbl dam)
+		playanim break
+		setvard POWER_ATTACK 1
+	}
+
+	if ( BANDIT_TYPE equals axe )
+	{
+		//AOE damage and throw after leap
+		if ( $cansee(enemy) )
+		{
+			playanim break
+			setvard LEAP_TARGET $get(ent_lastseen,id)
+			setvard POWER_ATTACK 1 //callevent leap_at LEAP_TARGET
+			if ( $get(LEAP_TARGET,range) < 200 )
+			{
+				setvard PURE_FLEE 1
+				callevent npcatk_flee LEAP_TARGET 300 2.0
+			}
+			callevent 0.1 leap_scan
+		}
+	}
+
+	if ( BANDIT_TYPE equals mace )
+	{
+		//AOE stun + fire
+		playanim break
+		setvard POWER_ATTACK 1
+	}
+	if ( BANDIT_TYPE equals spear )
+	{
+		//AOE damage and throw after leap
+		if ( $cansee(enemy) )
+		{
+			playanim break
+			setvard LEAP_TARGET $get(ent_lastseen,id)
+			setvard POWER_ATTACK 1 //callevent leap_at LEAP_TARGET
+			if ( $get(LEAP_TARGET,range) < 200 )
+			{
+				setvard PURE_FLEE 1
+				callevent npcatk_flee LEAP_TARGET 300 2.0
+			}
+			callevent 0.1 leap_scan
+		}
+	}
+}
+
+{ turbo_attack
+
+	playanim critical ANIM_ATTACK //stops from getting stuck
+
+	effect glow ent_me (255,255,255) 64 10 10
+
+	movespeed 2.0
+	setanim.movespeed 2.0
+	setanim.framerate 3.0
+
+	setvar BASE_FRAMERATE 3.0
+	setvar BASE_MOVESPEED 3.0
+
+	callevent 10.0 end_turbo
+}
+
+{ end_turbo
+
+	movespeed 1.0
+	setanim.movespeed 1.0
+	setanim.framerate 1.0
+
+	setvar BASE_FRAMERATE 1.0
+	setvar BASE_MOVESPEED 1.0
+}
+
+{ npc_selectattack
+
+	if ( BANDIT_TYPE equals ma )
+	{
+		setvard ATK_TYPE $rand(1,3)
+		if ( POWER_ATTACK ) setvard ATK_TYPE 2
+		if ( ATK_TYPE == 1 ) setvard ANIM_ATTACK aim_punch1
+		if ( ATK_TYPE == 2 ) setvard ANIM_ATTACK stance_normal_highkick_r1
+		if ( ATK_TYPE == 3 ) setvard ANIM_ATTACK stance_normal_lowkick_r1
+	}
+
+	if ( POWER_ATTACK )
+	{
+		if ( BANDIT_TYPE equals sword )
+		{
+			setmoveanim walk_squatwalk1_R
+			setvard ANIM_ATTACK swordjab1_R
+		}
+		if ( BANDIT_TYPE equals axe )
+		{
+			if !IS_FLEEING
+			if ( !$get(LEAP_TARGET,isalive) ) setvard LEAP_TARGET HUNT_LASTTARGET //original target no good - switch to current targ
+		}
+		if ( BANDIT_TYPE equals mace )
+		{
+			setmoveanim walk_squatwalk1_R
+			setvard ANIM_ATTACK battleaxe_swing1_R
+		}
+		if ( BANDIT_TYPE equals spear )
+		{
+			if !IS_FLEEING
+			if ( !$get(LEAP_TARGET,isalive) ) setvard LEAP_TARGET HUNT_LASTTARGET //original target no good - switch to current targ
+		}
+	}
+}
+
+{ leap_at //<target>
+
+	if !AM_LEAPING
+	setvard AM_LEAPING 1
+	setvard NPC_FORCED_MOVEDEST 1
+	callevent npcatk_suspend_ai 1.0
+	setvard POWER_ATTACK 0
+	setmovedest PARAM1 MOVE_RANGE
+	callevent 0.1 leap_at2
+}
+
+{ leap_at2
+
+	playsound 0 10 player/shout1.wav
+	playanim critical ANIM_HOP
+	setvard AS_ATTACKING game.time
+	callevent 0.1 bandit_charge
+	callevent 1.0 reset_leaping
+	setvard OLD_Z $vec.z(game.monster.origin)
+	setvard DO_STUN 1
+	callevent 0.5 ground_scan
+}
+
+{ leap_away //<target>
+	//dbg leap_away PARAM2
+	setvard AM_LEAPING 1
+	setvard NPC_FORCED_MOVEDEST 1
+	callevent npcatk_suspend_ai 1.0
+	setmovedest PARAM1 800 flee
+	callevent 0.1 leap_away2
+}
+
+{ leap_away2
+	playsound 0 10 player/shout1.wav
+	playanim critical ANIM_HOP
+	setvard AS_ATTACKING game.time
+	callevent 0.1 bandit_hop
+	callevent 1.0 reset_leaping
+}
+
+{ bandit_charge
+
+	addvelocity ent_me $relvel(0,400,100)
+}
+
+{ bandit_hop
+
+	local JUMP_HEIGHT $rand(350,450)
+	addvelocity ent_me $relvel(0,250,JUMP_HEIGHT)
+}
+
+{ reset_leaping
+	setvard AM_LEAPING 0
+}
+
+{ ground_scan
+
+	if DO_STUN
+	callevent 0.2 ground_scan
+
+	local MY_GROUND $get_ground_height(game.monster.origin)
+	local MY_Z $vec.z(game.monster.origin)
+	local DIFF MY_Z
+	subtract DIFF MY_GROUND
+	if ( DIFF < 5 ) setvard DO_STUN 0
+
+	if !DO_STUN
+	createnpc monsters/summon/stun_burst $relpos(0,60,0) $get(ent_me,id) 128 1 100 //<owner> <range> [toss1|0] [damage]
+}
+
+{ attack //called from model
+
+	setvard AS_ATTACKING game.time
+
+	if !IS_FLEEING
+
+   if( WEAPON == 0 )
+   {
+		setangle add_view.pitch 5 //fires in such a shallow arc, no need to adj based on distance
+		setvard FINAL_DAMAGE ARROW_DAMAGE
+		callevent npcatk_adj_attack
+		setvard AS_ATTACKING game.time
+      	tossprojectile view ATTACK_SPEED FINAL_DAMAGE ATTACK_COF proj_arrow_npc (0,0,48)
+	  	callexternal $get(ent_lastprojectile,id) ext_lighten 0.4
+		callevent bow_sound
+   }
+
+	//hit range adj
+	if ( WEAPON != 0 )
+	{
+		setvard ADJ_RANGE ATTACK_RANGE
+		callevent npcatk_range_adj
+	}
+
+	if ( BANDIT_TYPE equals dagger )
+	{
+		callevent smallswing_sound
+		local FINAL_DAMAGE DMG_DAGGER
+		if ( TURBO_ON ) multiply FINAL_DAMAGE 2
+		callevent npcatk_adj_attack
+		dodamage HUNT_LASTTARGET ADJ_RANGE FINAL_DAMAGE ATTACK_PERCENTAGE
+	}
+
+	if ( BANDIT_TYPE equals ma )
+	{
+		callevent ma_sound
+		local FINAL_DAMAGE DMG_MA
+		local HIT_CHANCE ATTACK_PERCENTAGE
+		if ( POWER_ATTACK )
+		{
+			multiply FINAL_DAMAGE 2
+			local HIT_CHANCE 100%
+		}
+		callevent npcatk_adj_attack
+		dodamage HUNT_LASTTARGET ADJ_RANGE FINAL_DAMAGE HIT_CHANCE
+	}
+
+	if ( BANDIT_TYPE equals sword )
+	{
+		callevent bigswing_sound
+		local FINAL_DAMAGE DMG_SWORD
+		if ( POWER_ATTACK )
+		{
+			multiply FINAL_DAMAGE 2
+		}
+		callevent npcatk_adj_attack
+		dodamage HUNT_LASTTARGET ADJ_RANGE FINAL_DAMAGE ATTACK_PERCENTAGE
+	}
+
+	if ( BANDIT_TYPE equals axe )
+	{
+		callevent bigswing_sound
+		local FINAL_DAMAGE DMG_AXE
+		if ( POWER_ATTACK )
+		{
+			multiply FINAL_DAMAGE 2
+		}
+		callevent npcatk_adj_attack
+		dodamage HUNT_LASTTARGET ADJ_RANGE FINAL_DAMAGE ATTACK_PERCENTAGE
+	}
+
+	if ( BANDIT_TYPE equals mace )
+	{
+		callevent bigswing_sound
+		local FINAL_DAMAGE DMG_MACE
+		if ( POWER_ATTACK ) multiply FINAL_DAMAGE 2
+		callevent npcatk_adj_attack
+		if ( POWER_ATTACK )
+		{
+			multiply FINAL_DAMAGE 2
+		}
+		dodamage HUNT_LASTTARGET ADJ_RANGE FINAL_DAMAGE ATTACK_PERCENTAGE
+
+		//elite bandit uses dark maul
+		if( $rand(1,3) == 1 ) applyeffect HUNT_LASTTARGET effects/effect_burn 5 $get(ent_me,id) $rand(10,20)
+	}
+	if ( BANDIT_TYPE equals spear )
+	{
+		callevent bigswing_sound
+		local FINAL_DAMAGE DMG_SPEAR
+		if ( POWER_ATTACK )
+		{
+			multiply FINAL_DAMAGE 2
+		}
+		callevent npcatk_adj_attack
+		dodamage HUNT_LASTTARGET ADJ_RANGE FINAL_DAMAGE ATTACK_PERCENTAGE
+	}
+}
+
+{ reset_power_attack
+
+	setvard POWER_ATTACK 0
+	setvard ANIM_ATTACK ORIG_ATTACK
+	setmoveanim ANIM_RUN
+}
+
+{ game_dodamage //1: Attack Hit (1/0)  2: Entity Attack hit  3:  Start Position  4:  End Position
+
+	//trained archers move if can't hit - thothie
+	if ( WEAPON == 0 )
+	{
+		if ( !PARAM1 ) add CHANGE_POSITION 1
+
+		if ( PARAM1 )
+		{
+			if ( $get(PARAM2,isplayer) == 1 ) setvard CHANGE_POSITION -2
+			if ( CHANGE_POSITION < -5 ) setvard CHANGE_POSITION 0
+		}
+	}
+
+	if ( BANDIT_TYPE equals ma )
+	{
+		if PARAM1
+		if !POWER_ATTACK
+		if ATK_TYPE > 1
+		addvelocity PARAM2 $relvel(10,200,10)
+	}
+
+	if ( POWER_ATTACK )
+	{
+		if ( BANDIT_TYPE equals ma )
+		{
+			playsound 0 10 player/shout1.wav
+			callevent reset_power_attack
+			if PARAM1
+			addvelocity PARAM2 $relvel(0,200,200)
+			applyeffect PARAM2 effects/effect_stun 10 0 1
+		}
+
+		if ( BANDIT_TYPE equals sword )
+		{
+			playsound 0 10 player/shout1.wav
+			callevent reset_power_attack
+			if PARAM1
+			applyeffect PARAM2 effects/freeze_solid $randf(5,10) $get(ent_me,id)
+		}
+
+		if ( BANDIT_TYPE equals mace )
+		{
+			playsound 0 10 player/shout1.wav
+			callevent reset_power_attack
+			//applyeffect PARAM2 effects/effect_stun 10 0 1 //double stun
+			createnpc monsters/summon/stun_burst $get(PARAM2,origin) $get(ent_me,id) 128 //<owner> <range> [toss1|0] [damage]
+		}
+	}
+
+   if PARAM1
+   setvard SPECIAL_EFFECT_CHANCE $rand(0,100)
+   if ( SPECIAL_EFFECT_CHANCE < 30 ) 
+   //Crude chance of effect snippet, If player is resistant to element, it runs this and their resistence checks
+   //30% of doing effect, subject to increase if players escape it too frequently.
+   {
+   if ( BANDIT_TYPE isnot bow )
+   {
+	if ( ELEMENT == 0 ) //set in spawn
+	{
+	applyeffect PARAM2 effects/effect_frostbite_dmg 10.0 $get(ent_me,id) $rand(1.0,5.0)
+	//10 seconds of the player moving as slow as a snail.
+	}
+	if ( ELEMENT == 1 ) //set in spawn
+	{
+	applyeffect PARAM2 effects/effect_poison_dmg 4.0 $get(ent_me,id) $rand(25.0,40.0)
+	//Short lived but deadly poison
+	} 
+	if ( ELEMENT == 2 ) //set in spawn
+	{
+	applyeffect PARAM2 effects/effect_burn 15.0 $get(ent_me,id) $rand(5.0,15.0) 1 1
+	//players on fire are on fire for a quite a while but the fire damage is weak.
+	} 
+	if ( ELEMENT == 3 ) //set in spawn
+	{
+	applyeffect PARAM2 effects/effect_shock_dmg 2.0 $get(ent_me,id) $rand(1.0,100.0)
+	//Lightning can either do no damage to target or lethal
+	}
+    }
+    }
+
+}
+
+{ bow_sound
+   	playsound 0 10 SOUND_BOW
+}
+
+{ bigswing_sound
+	playsound 0 8 weapons/swingsmall.wav
+}
+
+{ smallswing_sound
+	playsound 0 8 weapons/swingsmall.wav
+}
+
+{ ma_sound
+	playrandomsound 0 8 player/jab1.wav player/jab2.wav
+}
+
+{ attack_jab
+	callevent attack
+}
+
+{ kick_high
+	callevent attack
+}
+
+{ kick_low
+	callevent attack
+}
+
+{ game_struck
+	//martial art bandit leaps away when struck, sometimes
+	if BANDIT_TYPE equals ma
+	if !I_R_FROZEN
+	local LEAP_CHANCE $rand(1,10)
+	if ( PARAM1 > 100 ) local LEAP_CHANCE 1
+	if ( PARAM1 > 20 )
+	{
+		if LEAP_CHANCE == 1
+		callevent leap_away $get(ent_laststruck,id)
+	}
+}
+
+{ npc_targetsighted
+	if BANDIT_TYPE isnot bow
+
+	if !LEAP_UP_DELAY
+	setvard LEAP_UP_DELAY 1
+	callevent 2.0 reset_leap_up_delay
+
+	local TARG_POS $get(HUNT_LASTTARGET,origin)
+	local MY_Z $vec.z(game.monster.origin)
+	local TARG_Z $vec.z(TARG_POS)
+	local Z_DIFF TARG_Z
+	add MY_Z PLAYER_HALFHEIGHT
+	subtract Z_DIFF MY_Z
+	if ( Z_DIFF < 0 ) local Z_DIFF $neg(Z_DIFF)
+	if ( Z_DIFF > 96 )
+	{
+		if ( Z_DIFF < 300 )
+		{
+			callevent leap_at $get(HUNT_LASTTARGET,id)
+		}
+	}
+}
+
+{ reset_leap_up_delay
+	setvard LEAP_UP_DELAY 0
+}
+
+{ game_damaged_other //P1 = target P2= damage
+
+	//elite dagger using bone blade
+	if BANDIT_TYPE equals dagger
+	local HP_TO_GIVE PARAM2
+	local MAX_CHECK game.monster.hp
+	add MAX_CHECK HP_TO_GIVE
+	//dbg temp MyHP game.monster.hp vs MAX_CHECK
+	if MAX_CHECK < game.monster.maxhp
+	givehp HP_TO_GIVE
+	effect glow ent_me (0,255,0) 80 0.5 0.5
+	playsound 0 10 player/heartbeat_noloop.wav
+}
+
+{ leap_scan
+
+	if POWER_ATTACK
+
+	callevent 0.25 leap_scan
+
+	if !IS_FLEEING
+	if ( $get(LEAP_TARGET,isalive) )
+	{
+		callevent leap_at LEAP_TARGET
+	}
+
+	if ( !$get(LEAP_TARGET,isalive) )
+	{
+		setvard LEAP_TARGET NPCATK_TARGET
+		if ( NPCATK_TARGET equals unset )
+		{
+			callevent leap_at LEAP_TARGET //just do a leap at 0x0x0 to reset
+		}
+	}
+}

@@ -1,0 +1,672 @@
+//Titan (for J's Olympus)
+//Placement Requirements:
+//- There can be only one (effects through central system)
+//- Summons appear above creature's spawn point, so players should be sealed in that area
+
+//Spells:
+//-Guided Lightning Balls (1 per player)
+//-Summon birds
+//-Summon Scorpions (2 huge or 1 giant)
+//-smash attack if player in proper position
+//-kick atk
+//-grab & throw atk
+//-stomp attack (stun burst)
+//-meteror storm (drops boulders from sky in radius - use tossprojectile)
+//-v.big, v.slow
+#scope server
+
+{
+	const CANT_FLEE 1 //not fraid of anythin
+
+	//base anims
+	setvar ANIM_WALK walk
+	setvar ANIM_IDLE idle
+	setvard ANIM_RUN walk //doesn't run
+	setvard ANIM_ATTACK swipe2
+	setvard ANIM_DEATH death
+	setvard FLINCH_ANIM flinchheavy
+	setvard FLINCH_HEALTH 2000
+	const FLINCH_DAMAGE_THRESHOLD 50
+	const FLINCH_DELAY 20.0
+	setvard NPC_MUST_SEE_TARGET 0 //cuz very big
+
+	//custom anims
+	const ANIM_SWIPE swipe2
+	const ANIM_METEOR roar2
+	const ANIM_STOMP stomp
+	const ANIM_SNAP bitehead
+	const ANIM_GRAB throw1
+	const ANIM_SQUEEZE throw2
+	const ANIM_THROW throw3
+	const ANIM_SMASH punch //smash
+	const ANIM_KICK kick
+	const ANIM_CAST summon
+
+	//base stats
+	setvar IS_UNHOLY 1
+	setvar NO_STEP_ADJ 1 //monster is so tall, he might climb up just about anything
+	setvard ATTACK_RANGE 300
+	setvard ATTACK_HITRANGE 350
+	setvard ATTACK_MOVERANGE 250
+	setvard MOVE_RANGE 250
+	setvard CAN_RETALIATE 0 //kinda single minded
+	setvard IMMUNE_VAMPIRE 1
+	setvard IMMUNE_STUN 100
+
+	//custom stats
+	const MONSTER_MODEL monsters/titan.mdl //model pending
+	const SCORP_SPAWN_VADJ 650 //this guy needs a lot of head room, 650 + Scorp Height (196)
+	const SCORP_RAD 300 //lot of horizontal room too (600+300)
+	const SCORP_SCRIPT1 monsters/scorpion5_stone
+	const SCORP_SCRIPT2 monsters/scorpion6_stone
+	const CHANCE_KICK 25 //10
+	const FREQ_GRAB 60.0 //min time between grabs
+	const DMG_THROW 800 //damage from being thrown
+
+	const SUM_RAD 300
+	const SUM_VADJ 650
+
+	const DMG_SWIPE 150
+	const DMG_METEOR 300
+	const DMG_KICK 250
+	const DMG_STOMP 100
+	const DMG_BALL 200
+	const DMG_SQUEEZE 30
+	const BIRD_SCRIPT monsters/eagle_stone
+	const SMASH_OFS $relpos(0,230,-300) //point to scan for smashable players
+	const SMASH_RANGE 128 //how close player needs to be to smash point to trigger smash attack
+	const SWIPE_OFS $relpos(0,230,-280) //point AOE burst starts in standard attack
+	const SWIPE_RAD 200 //aoe of swipe attack
+
+	const R_ARM_ATT_IDX 2
+	const L_ARM_ATT_IDX 3
+
+	//min times for next
+	const FREQ_KICK 10.0
+	const FREQ_STOMP 10.0
+	const FREQ_SMASH 5.0
+
+	//sounds
+	const SOUND_SUMMON debris/beamstart1.wav
+	const SOUND_YAWN1 garg/gar_breathe1.wav //opted not to use, but here for ref
+	const SOUND_YAWN2 garg/gar_breathe2.wav
+	const SOUND_YAWN3 garg/gar_breathe3.wav
+	const SOUND_RAWR garg/gar_alert2.wav
+	const SOUND_STEP1 garg/gar_step1.wav
+	const SOUND_STEP2 garg/gar_step2.wav
+	const SOUND_SWIPE weapons/swinghuge.wav
+	const SOUND_KICK weapons/swinghuge.wav
+	const SOUND_THROW weapons/swinghuge.wav
+	const SOUND_DEATH garg/gar_die1.wav
+	const SOUND_GRAB garg/gar_attack2.wav
+	const SOUND_SQUEEZE garg/gar_alert1.wav
+	precache SOUND_DEATH //handled external
+
+	const CL_GLOW_SPR 3dmflaora.spr
+	const CL_TELE_SPR c-tele1.spr
+
+	precache CL_GLOW_SPR //prob already precached
+	precache CL_TELE_SPR
+
+	if game.serverside
+	if ( $lcase(game.map.name) contains thanatos )
+	{
+		setvard NPC_IS_BOSS 1
+		setvard NPC_GIVE_EXP 16000 //raised another 1000xp for fire resist MAY2010_24
+	}
+	else
+	{
+		setvard NPC_GIVE_EXP 1000
+	}
+}
+
+{ game_precache
+	precachefile SCORP_SCRIPT1
+	precachefile SCORP_SCRIPT2
+	precachefile monsters/summon/lightning_ball_guided
+	precachefile BIRD_SCRIPT
+	precachefile chests/olympus
+}
+
+#include monsters/base_monster_new
+
+{ [shared] npc_spawn
+
+	if ( $lcase(game.map.name) equals thanatos )
+	{
+		name a|Titan
+	}
+	else
+	{
+		name an|Elder Earth Elemental
+	}
+
+	setmodel MONSTER_MODEL
+	hp 10000
+	width 200
+	height 600
+	race demon
+	roam 0
+	hearingsensitivity 11
+	takedmg all 0.5	
+	takedmg holy 0.5
+	takedmg fire 0.5 //compensate for not being fraid nothin
+	takedmg poison 0.0 //if we go with stone titan
+
+	blood none
+
+	stepsize 32
+
+	setidleanim bust
+	setmoveanim bust
+	playanim critical bust
+
+	if game.serverside
+	setvard TITAN_RNDAMT 0
+	setprop ent_me rendermode 2
+	setprop ent_me renderamt 0
+	callevent titan_fade_in
+
+	callevent npcatk_suspend_ai
+
+	callevent 5.0 do_special
+	callevent 0.1 smash_scanner
+	setvard N_SCORPS 0
+	setvard T_SUM_ANG 0
+	setvard WALK_COUNT 0
+	setvard DO_GRAB 0
+
+	setvard CL_IDX const.localplayer.scriptID
+	clientevent update all CL_IDX titan_setup $get(ent_me,index) CL_TELE_SPR CL_GLOW_SPR
+}
+
+{ frame_spawn_done
+	callevent npcatk_resume_ai
+	setidleanim ANIM_IDLE
+	setmoveanim ANIM_WALK
+}
+
+{ do_special
+
+	if $get(ent_me,isalive)
+
+	if ( SUSPEND_AI )
+	{
+		//busy with somethin else, come back soon
+		local NEXT_SPECIAL 1.0
+		callevent NEXT_SPECIAL do_special
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	local NEXT_SPECIAL 20.0 //default freq, some specials take longer than others
+
+	if ( $get(NPCATK_TARGET,isalive) )
+	{
+		local N_SPECIALS 4 //constant this when finished
+
+		local RND_SPECIAL $rand(1,N_SPECIALS)
+
+		if ( RND_SPECIAL == 1 )
+		{
+			if ( N_SCORPS < 2 )
+			{ 
+				callevent do_scorps //(these need to spawn in a radius from his spawn pos to prevent stuckage)
+				local NEXT_SPECIAL 20.0
+			}
+			else
+			{
+				local RND_SPECIAL $rand(2,N_SPECIALS)
+			}
+		}
+		if ( RND_SPECIAL == 2 )
+		{
+			callevent do_birds
+		}
+		if ( RND_SPECIAL == 3 )
+		{
+			local NEXT_SPECIAL 20.0
+			callevent do_meteors
+		}
+		if ( RND_SPECIAL == 4 )
+		{
+			setvard N_BALLS 0
+			callevent do_lballs
+		}
+	}
+
+	callevent NEXT_SPECIAL do_special
+}
+
+{ do_scorps
+
+	playanim critical ANIM_CAST
+	callevent 1.0 do_scorps2
+}
+
+{ do_scorps2
+
+	setvard SCORP_SCRIPT SCORP_SCRIPT1
+	if ( game.players.totalhp > 4000 ) setvard SCORP_SCRIPT SCORP_SCRIPT2
+	
+	add N_SCORPS 1
+	callevent get_summon_point
+	createnpc SCORP_SCRIPT SUM_POINT $get(ent_me,id)
+	if N_SCORPS < 2
+	if ( game.players.totalhp <= 4000 )
+	callevent 0.1 do_scorps3 //delay for t3h l4g
+}
+
+{ do_scorps3
+	add N_SCORPS 1
+	callevent get_summon_point
+	createnpc SCORP_SCRIPT SUM_POINT $get(ent_me,id)
+}
+
+{ scorpion_died
+	subtract N_SCORPS 1
+}
+
+{ do_meteors
+
+	callevent npcatk_suspend_ai
+	setmoveanim ANIM_METEOR
+	setidleanim ANIM_METEOR
+	playanim once ANIM_METEOR
+	setvard ROT_ANG game.monster.angles.yaw
+	setvard METEOR_COUNT 0
+	playsound 0 10 SOUND_RAWR
+	callevent do_meteors_loop	
+}
+
+{ do_meteors_loop
+
+	if ( METEOR_COUNT < 18 )
+	{
+		add ROT_ANG 20
+		if ( ROT_ANG > 359 ) subtract ROT_ANG 359
+		local MOVE_DEST game.monster.origin
+		vectoradd MOVE_DEST $relpos($vec(0,ROT_ANG,0),$vec(0,1000,0))
+		setmovedest MOVE_DEST 9999
+		tossprojectile $vec(-90,0,0) 200 DMG_METEOR 0 proj_catapaultball (0,400,650)
+
+		add METEOR_COUNT 1
+		callevent 0.1 do_meteors_loop
+	}
+	else
+	{
+		callevent npcatk_resume_ai
+		setmoveanim ANIM_WALK
+		setidleanim ANIM_IDLE
+		playanim break
+	}
+}
+
+{ frame_kick
+	setvard ANIM_ATTACK ANIM_SWIPE
+	setvard NEXT_KICK game.time
+	add NEXT_KICK FREQ_KICK
+	playsound 0 10 SOUND_KICK
+	if $get(NPCATK_TARGET,range) < ATTACK_HITRANGE
+	//applyeffect NPCATK_TARGET effects/effect_knockback 5.0 $get(ent_me,id) $relvel(0,-500,20)
+	addvelocity NPCATK_TARGET $relvel(0,1000,200)
+	applyeffect NPCATK_TARGET effects/heavy_stun 2.0 $get(ent_me,id)
+	dodamage NPCATK_TARGET "direct" DMG_KICK 100% ent_me blunt
+}
+
+{ frame_stomp
+	setvard ANIM_ATTACK ANIM_SWIPE
+	////createnpc monsters/summon/stun_burst $relpos(50,50,0) $get(ent_me,id) 512 1 DMG_STOMP
+	local BURST_POS $relpos(50,50,0)
+	local GRND_BURST $get_ground_height(BURST_POS)
+	vectorset BURST_POS z GRND_BURST
+	callevent stunburst_go BURST_POS 512 1 DMG_STOMP
+
+	setvard NEXT_STOMP game.time
+	add NEXT_STOMP FREQ_STOMP
+}
+
+{ frame_swipe
+	playsound 0 10 SOUND_SWIPE
+	local SWIPE_POINT SWIPE_OFS
+	//dodamage SWIPE_POINT 256 DMG_SWIPE 100% 0.0 normal blunt	
+
+	//using xdodamage instead of dodamage, as dodamage AOE requires monster can "see" initial dmg point - and his model is too large for him to see through
+	xdodamage SWIPE_POINT SWIPE_RAD DMG_SWIPE 0.0 ent_me ent_me none blunt
+
+	//debugarry
+//	if ( G_DEVELOPER_MODE )
+//	{
+//		local BEAM_END SWIPE_POINT
+//		vectoradd BEAM_END z 64
+//		effect beam point lgtning.spr 30 SWIPE_POINT BEAM_END (255,255,0) 200 0 0.4
+//	}
+
+	if ( $rand(1,100) < CHANCE_KICK )
+	{
+		if game.time > NEXT_KICK
+		setvard ANIM_ATTACK ANIM_KICK
+	}
+
+	//check players nearby
+	//if several nearby, next attack more likely to be stomp
+	setvard CHANCE_STOMP 10
+	getplayersnb PLAYER_LIST
+	calleventloop $get_token_amt(PLAYER_LIST) stomp_check
+	if ( CHANCE_STOMP > 50 ) setvard CHANCE_STOMP 50 //cap at 50
+	if $rand(1,100) < CHANCE_STOMP
+	if game.time > NEXT_STOMP
+	setvard ANIM_ATTACK ANIM_STOMP
+}
+
+{ stomp_check
+	local CUR_PLAYER $get_token(PLAYER_LIST,game.script.iteration)
+	if $get(CUR_PLAYER,range) < ATTACK_HITRANGE
+	add CHANCE_STOMP 10
+}
+
+{ do_lballs
+
+	if ( N_BALLS == 0 ) playanim critical ANIM_CAST
+
+	setvard BALL_TARGETS $get_tsphere(enemy,2048,game.monster.origin)
+	token.scramble BALL_TARGETS
+	callevent get_summon_point
+
+	createnpc monsters/summon/lightning_ball_guided SUM_POINT $get(ent_me,id) DMG_BALL 30.0 192 $get_token(BALL_TARGETS,0)
+	add N_BALLS 1
+
+	local N_BALL_TARGS $get_token_amt(BALL_TARGETS)
+
+	if N_BALLS < 2
+	callevent 0.1 do_lballs //at least 2
+
+	if N_BALL_TARGS > 1 //+1 per player, max 8 (stagger creation to prevent lag)
+
+	local N_BALLS_SANS2 N_BALLS
+	subtract N_BALLS_SANS2 2
+	if ( N_BALLS_SANS2 < N_BALL_TARGS )
+	{
+		local N_BALLS_F10 N_BALLS
+		multiply N_BALLS_F10 0.1
+		callevent N_BALLS_F10 do_lballs
+	}
+}
+
+{ do_birds
+	playanim critical ANIM_CAST
+	callexternal all summon_eagle_vanish
+	setvard N_BIRDS 0
+	callevent do_birds_loop
+}
+
+{ do_birds_loop //2 per player, max 12
+	callevent get_summon_point
+	createnpc BIRD_SCRIPT SUM_POINT
+	add N_BIRDS 1
+
+	if N_BIRDS < 12
+	local DBL_NPLAYERS game.players
+	multiply DBL_NPLAYERS 2
+	if N_BIRDS < DBL_NPLAYERS
+	callevent 0.1 do_birds_loop
+}
+
+{ [server] game_death
+
+	//go out with bang
+	local STUN_POS $relpos(0,400,0)
+	callexternal GAME_MASTER gm_titan_death $get(ent_me,id) NPC_HOME_LOC STUN_POS
+}
+
+{ smash_scanner
+
+	if $get(ent_me,isalive)
+	callevent 0.5 smash_scanner
+
+	if game.time > NEXT_SMASH
+
+	setvard SMASH_SCAN_POINT SMASH_OFS
+
+	//debugarry
+//	if ( G_DEVELOPER_MODE )
+//	{
+//		local BEAM_END SMASH_SCAN_POINT
+//		vectoradd BEAM_END z 256
+//		effect beam point lgtning.spr 30 SMASH_SCAN_POINT BEAM_END (255,0,255) 200 0 0.4
+//	}
+
+	//I *think* this is faster than doing an AOE scan
+	setvard SMASH_TARGET unset
+	getplayersnb SMASH_PLAYER_LIST
+	calleventloop $get_token_amt(SMASH_PLAYER_LIST) check_for_smash
+
+	if SMASH_TARGET isnot unset
+	setvard ANIM_ATTACK ANIM_SMASH
+	setvard DO_GRAB 0
+	if game.time > NEXT_GRAB
+	if $rand(1,2) == 1
+	setvard DO_GRAB 1 //do grab instead
+	setvard ANIM_ATTACK ANIM_GRAB
+}
+
+{ check_for_smash
+	local CUR_PLAYER $get_token(SMASH_PLAYER_LIST,game.script.iteration)
+	local CUR_PLAYER_ORG $get(CUR_PLAYER,origin)
+	if ( $dist(CUR_PLAYER_ORG,SMASH_SCAN_POINT) < SMASH_RANGE )
+	{
+		setvard SMASH_TARGET CUR_PLAYER
+	}
+}
+
+{ frame_smash
+	setvard NEXT_SMASH game.time
+	add NEXT_SMASH FREQ_SMASH
+	setvard ANIM_ATTACK ANIM_SWIPE
+	local SMASH_POINT SMASH_OFS
+	vectoradd SMASH_POINT z 64 //little above in case player is on a lip
+	////createnpc monsters/summon/stun_burst SMASH_POINT $get(ent_me,id) 128 0 DMG_STOMP
+	local BURST_POS SMASH_POINT
+	callevent stunburst_go BURST_POS 128 0 DMG_STOMP
+}
+
+{ get_summon_point
+
+	//alternate summon points to opposite ends of arena from one another for maximum coverage
+	if ( ALTERNATE_SUM_POINT == 0 )
+	{
+		add T_SUM_ANG 20
+		if ( T_SUM_ANG > 359 ) subtract T_SUM_ANG 359
+		setvard SUM_ANG T_SUM_ANG
+		setvard ALTERNATE_SUM_POINT 1
+	}
+	else
+	{
+		setvard SUM_ANG T_SUM_ANG
+		add SUM_ANG 180
+		if ( SUM_ANG > 359 ) subtract SUM_ANG 359
+		setvard ALTERNATE_SUM_POINT 0
+	}
+
+	setvard SUM_POINT NPC_HOME_LOC
+	vectoradd SUM_POINT $relpos($vec(0,SUM_ANG,0),$vec(0,SUM_RAD,SUM_VADJ))
+
+	if ( ALTERNATE_SUM_POINT )
+	{
+		effect beam end lgtning.spr 120 SUM_POINT ent_me R_ARM_ATT_IDX (64,64,255) 200 30 1.0
+		clientevent update all CL_IDX titan_summon_sprite SUM_POINT
+	}
+	else
+	{
+		effect beam end lgtning.spr 120 SUM_POINT ent_me L_ARM_ATT_IDX (64,64,255) 200 30 1.0
+		clientevent update all CL_IDX titan_summon_sprite SUM_POINT
+	}
+
+	playsound 2 10 SOUND_SUMMON
+}
+
+{ frame_walk_step1
+	playsound 0 5 SOUND_STEP1
+}
+
+{ frame_walk_step2
+	playsound 0 5 SOUND_STEP2
+}
+
+{ frame_idle_breath
+	playrandomsound 2 10 SOUND_YAWN1 SOUND_YAWN2 SOUND_YAWN3
+}
+
+{ frame_idle_yawn
+	playrandomsound 2 10 SOUND_YAWN1 SOUND_YAWN2 SOUND_YAWN3
+}
+
+{ frame_grab_player //animation: throw1
+
+	setvard GRAB_TARG 0
+	if ( $get(SMASH_TARGET,isalive) )
+	{
+		playsound 0 10 SOUND_GRAB
+		local GRAB_TARG_ORG $get(SMASH_TARGET,origin)
+		local FIST_ORG $get(ent_me,attachpos,R_ARM_ATT_IDX)
+		dbg frame_grab_body FIST_ORG vs GRAB_TARG_ORG
+		if ( $dist(FIST_ORG,GRAB_TARG_ORG) < 128 )
+		{
+			setvard GRAB_TARG SMASH_TARGET
+			setvard GRAB_MODE 1
+			callevent 0.01 lock_player_to_hand
+			//callexternal ext_setfollow $get(ent_me,id) none
+			callevent npcatk_suspend_ai
+			callevent 0.5 face_home
+		}
+		else
+		{
+			setvard NEXT_GRAB game.time
+			add NEXT_GRAB FREQ_GRAB
+			setvard ANIM_ATTACK ANIM_SWIPE
+		}
+	}
+	else
+	{
+		setvard NEXT_GRAB game.time
+		add NEXT_GRAB 10.0
+		setvard ANIM_ATTACK ANIM_SWIPE
+	}
+}
+
+{ frame_start_squeeze
+	if $get(GRAB_TARG,isalive)
+	playanim critical ANIM_SQUEEZE
+}
+
+{ frame_squeeze_player
+	playsound 0 10 SOUND_SQUEEZE
+	setvard END_SQEEEZE_DMG_LOOP game.time
+	add END_SQEEEZE_DMG_LOOP 2.0
+	callevent squeeze_dmg_loop
+	effect screenshake $get(GRAB_TARG,org) 190 20 3 32
+}
+
+{ squeeze_dmg_loop
+	if game.time < END_SQEEEZE_DMG_LOOP
+	if ( !$get(GRAB_TARG,isalive) ) setvard GRAB_MODE 0
+	if $get(GRAB_TARG,isalive)
+	if $get(GRAB_TARG,range) < 1024 //case dies and respawns
+
+	callevent 0.1 squeeze_dmg_loop
+
+	dodamage GRAB_TARG direct DMG_SQUEEZE 100% ent_me blunt
+}
+
+{ frame_squeeze_done
+	if ( !$get(GRAB_TARG,isalive) )
+	{
+		callevent npcatk_resume_ai
+		setvard GRAB_MODE 0
+	}
+	else
+	{
+		playanim critical ANIM_THROW
+	}
+}
+
+
+{ face_home
+	setmovedest NPC_HOME_LOC 9999
+}
+
+{ lock_player_to_hand
+	if GRAB_MODE
+	callevent 0.01 lock_player_to_hand
+	setorigin GRAB_TARG $get(ent_me,attachpos,R_ARM_ATT_IDX)
+}
+
+{ frame_toss_player //anim: throw3
+
+	callevent npcatk_resume_ai
+	setvard GRAB_MODE 0
+	setvard NEXT_GRAB game.time
+	add NEXT_GRAB FREQ_GRAB
+	local SHIFT_ORG $get(ent_me,attachpos,L_ARM_ATT_IDX)
+	vectoradd SHIFT_ORG z 580
+	setorigin GRAB_TARG SHIFT_ORG
+	setprop GRAB_TARG movetype const.movetype.bouncemissle
+	addvelocity GRAB_TARG $relvel(0,2000,200)
+	dodamage GRAB_TARG direct DMG_THROW 100% blunt
+	applyeffect GRAB_TARG effects/heavy_stun 10.0 $get(ent_me,id)
+	playsound 0 10 SOUND_THROW
+}
+
+{ ext_popup //debuggary
+	local MY_Z game.monster.origin
+	vectoradd MY_Z z 96
+	setorigin ent_me MY_Z
+}
+
+{ titan_fade_in
+	if ( TITAN_RNDAMT == 255 )
+	{
+		setprop ent_me rendermode 0
+		roam 1
+	}
+	if TITAN_RNDAMT < 255
+	add TITAN_RNDAMT 5
+	setprop ent_me renderamt TITAN_RNDAMT
+	callevent 0.1 titan_fade_in
+}
+
+{ stunburst_go //<pos> <radius> <repel:0|1> <dmg>
+	setvard STUN_BURST_POS PARAM1
+	setvard STUN_BURST_RAD PARAM2
+	setvard STUN_BURST_REPEL PARAM3
+	setvard STUN_BURST_DMG PARAM4
+	dbg stunburst_go pos: STUN_BURST_POS rad: STUN_BURST_RAD repel: STUN_BURST_REPEL dmg: STUN_BURST_DMG
+
+	clientevent update all CL_IDX fx_stunburst_go_cl STUN_BURST_POS STUN_BURST_RAD
+	callevent 0.25 stun_targets
+}
+
+{ stun_targets
+	setvard STUN_LIST $get_tsphere(enemy,STUN_BURST_RAD,STUN_BURST_POS)
+	dbg stun_targets STUN_LIST
+	if STUN_LIST isnot none
+	if $get_token_amt(STUN_LIST) > 0
+	calleventloop $get_token_amt(STUN_LIST) stunburst_affect_targets
+}
+
+{ stunburst_affect_targets
+
+	local CHECK_ENT $get_token(STUN_LIST,game.script.iteration)
+
+	if $get(CHECK_ENT,onground)
+
+	applyeffect CHECK_ENT effects/effect_stun 5.0 0 1
+
+	if ( STUN_BURST_DMG > 0 ) dodamage CHECK_ENT direct STUN_BURST_DMG 100% ent_me magic
+
+	if STUN_BURST_REPEL
+	local TARGET_ORG $get(CHECK_ENT,origin)
+	local TARG_ANG $angles(STUN_BURST_POS,TARGET_ORG)
+	local NEW_YAW TARG_ANG
+	setvelocity CHECK_ENT $relvel($vec(0,NEW_YAW,0),$vec(0,1000,0))
+}

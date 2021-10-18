@@ -1,0 +1,164 @@
+//circle trap requires addparams:
+//dps;duration
+//if dps is auto, 10% of avghp
+//if duration <= 0, infinite until spawner removed
+//duration should be divisible by 20
+
+#scope server
+
+{
+	const CIRCLE_RAD 90 //90 180 ???
+	const CL_BODY 3
+	const CL_RAD 98
+
+	const CIRCLE_DMG_TYPE dark_effect
+	const SOUND_LOOP ambience/pulsemachine.wav
+}
+
+{ game_spawn
+	name a|Circle of Death
+	invincible 1
+	nopush 1
+	setsolid none
+	setbbox none
+	race undead
+	setvard PLAYING_DEAD 1
+	setvar IS_ACTIVE 1
+	callevent 0.5 circle_loop
+}
+
+{ game_postspawn //PARAM1 = (name|default), PARAM2 = DmgMulti, PARAM3 = HPMulti, PARAM4 = pass_params
+	if ( $len(PARAM4) < 2 ) local L_AUTO_SET 1
+	if ( PARAM4 equals 'PARAM4' ) local L_AUTO_SET 1
+
+
+	//variables not set, default to 10 seconds and auto damage
+	if ( L_AUTO_SET )
+	{
+		setvard DMG_PULSE auto
+		setvard	CIRCLE_END 10.0
+	}
+	else
+	{
+		setvard DMG_PULSE $get_token(PARAM4,0)
+		setvard CIRCLE_END $get_token(PARAM4,1)
+	}
+
+	dbg game_postspawn L_AUTO_SET DMG_PULSE CIRCLE_END
+
+	if ( CIRCLE_END <= 0 ) setvard CIRCLE_END 9999
+	setvard CL_DUR CIRCLE_END
+	add CIRCLE_END game.time 
+	setvard NPC_DIE_ON_SPAWN_REMOVAL 1
+}
+
+{ game_dynamically_created
+
+	setvard DMG_PULSE auto
+	setvard	CIRCLE_END 10.0
+	setvard CL_DUR CIRCLE_END
+	add CIRCLE_END game.time
+}
+
+{ circle_loop
+	if ( IS_ACTIVE ) callevent 1.0 circle_loop
+	if $get(ent_me,isalive)
+
+	local L_DMG_PULSE DMG_PULSE
+	if ( DMG_PULSE equals auto )
+	{
+		local L_DMG_PULSE game.players.totalhp
+		divide L_DMG_PULSE game.players
+		multiply L_DMG_PULSE 0.1
+		dbg circle_loop auto L_DMG_PULSE CIRCLE_POS
+	}
+
+	local L_DMG_POINT CIRCLE_POS
+	vectoradd L_DMG_POINT z 32
+	
+	xdodamage L_DMG_POINT CIRCLE_RAD L_DMG_PULSE 0 ent_me ent_me none CIRCLE_DMG_TYPE
+
+	if ( game.time > CIRCLE_END )
+	{
+		callevent npc_suicide
+	}
+	else
+	{
+		if ( game.time > NEXT_CL_UPDATE )
+		{
+			svplaysound 1 10 SOUND_LOOP
+			setvard CIRCLE_POS $get(ent_me,origin)
+			vectorset CIRCLE_POS z $get_ground_height(CIRCLE_POS)
+			clientevent persist all effects/sfx_cod CIRCLE_POS CL_DUR CL_BODY CL_RAD
+			setvard CL_IDX game.script.last_sent_id
+			setvard NEXT_CL_UPDATE game.time
+			add NEXT_CL_UPDATE CL_DUR
+		}
+	}
+}
+
+{ game_death
+	setvard IS_ACTIVE 0
+	clientevent update all CL_IDX end_fx
+	svplaysound 1 0 SOUND_LOOP
+}
+
+//from monsters/externals
+{ npc_suicide
+
+	if $get(ent_me,isalive)
+
+	if !I_R_COMPANION //never, ever, slay companions (if you need to, make new external)
+
+	local SINCE_SPAWN game.time
+	subtract SINCE_SPAWN NPC_SPAWN_TIME
+
+	//if ( NPC_QUED_FOR_DEATH ) local PARAM1 dienow
+
+	if ( SINCE_SPAWN < 2.0 )
+	{
+		if ( PARAM1	equals dienow )
+		{
+			setanim.framerate 0
+			setanim.movespeed 0
+			setvard NPC_OVERRIDE_DEATH 1
+			deleteent ent_me fade
+			local EXIT_SUB 1
+		}
+		else
+		{
+			setvard NPC_QUED_FOR_DEATH 1
+			callevent 2.1 npc_suicide
+			dbg npc_suicide - not_ready_to_die - qued for death
+			local EXIT_SUB 1
+		}
+	}
+	if !EXIT_SUB
+
+	if ( PARAM1 equals no_pets )
+	{
+		if I_R_PET
+		local EXIT_SUB 1
+	}
+
+	if ( PARAM1 equals only_bad )
+	{
+		if ( $get(ent_me,race) equals human ) local EXIT_SUB 1
+		if ( $get(ent_me,race) equals hguard ) local EXIT_SUB 1
+		if ( $get(ent_me,race) equals beloved ) local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	invincible 0
+	race hated
+	setvard SKEL_RESPAWN_TIMES 99
+	dodamage ent_me direct 99999 100 GAME_MASTER target
+}
+
+{ [server] bd_debug  //<print_var> <property_printvar> <extra> <extra> <caller_id>
+	//tdebug/tdebugt
+	saytextrange 2048
+	saytext var PARAM1 prop PARAM2 = $get(PARAM1,PARAM2)
+	consolemsg PARAM5 $get(ent_me,name) reports: var PARAM1 pvar $get(PARAM1,PARAM2)
+	dbg PARAM5 $get(ent_me,name) reports: var PARAM1 pvar $get(PARAM1,PARAM2)
+}

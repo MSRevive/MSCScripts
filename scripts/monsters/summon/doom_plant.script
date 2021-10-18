@@ -1,0 +1,502 @@
+{
+
+	const PLANT_HITCHANCE 95
+
+	const SHRUB_IDLE_ANIMS "thornplant2_idle1_1;thornplant2_idle1_2;thornplant2_idle3_1;thornplant2_idle3_2;"
+	const BUSH_IDLE_ANIMS "thornplant2_2_idle1;thornplant2_2_idle2;thornplant2_2_idle3;thornplant2_2_idle4_1;thornplant2_2_idle4_2;"
+	const TREE_IDLE_ANIMS "thornplant2_3_idle1;thornplant2_3_idle2;thornplant2_3_idle3;thornplant2_3_idle4;thornplant2_3_idle5;"
+
+	const MELE_RANGE 96
+
+	const FREQ_GROW 40.0 //time between growth spirts
+	const FREQ_SHOOT 1.0 //cool down time between fireing
+	const FREQ_SPORE 10.0 //cool down time between spores (level 3)
+
+	//media
+	const MODEL_LEVEL1 monsters/dewm_shrub.mdl
+	const MODEL_LEVEL2 monsters/dewm_bush.mdl
+	const MODEL_LEVEL3 monsters/dewm_tree.mdl
+	const GIB_MODEL cactusgibs.mdl
+	const SOUND_GIB "debris/bustflesh1.wav"
+	const SOUND_SLASH "zombie/claw_miss1.wav"
+	const SOUND_SCRATCH "headcrab/hc_attack1.wav"
+	const SOUND_SPORE "weapons/bow/crossbow.wav"
+	const SOUND_GROW "weapons/bow/stretch.wav"
+	const SOUND_STRUCK1 "weapons/xbow_hitbod1.wav"
+	const SOUND_STRUCK2 "weapons/xbow_hitbod2.wav"
+
+	setvard IMMUNE_PUSH 1
+}
+
+
+{ game_dynamically_created //<owner> <base_dmg> [duration]
+
+
+	if ( !$get(PARAM1,isalive) )
+	{
+		//assume spanwed for testing
+		setvard MY_OWNER $get(ent_me,id)
+		setvard MY_DMG 20
+		setvard MY_DURATION 'PARAM3'
+		setvard OWNER_ISPLAYER 0
+		setvard GAME_PVP game.pvp
+		race demon
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+
+	setvard IAM_SUMMONED 1
+
+
+	setvard MY_OWNER PARAM1
+	setvard MY_DMG PARAM2
+	setvard MY_DURATION PARAM3
+
+	setvard OWNER_ISPLAYER $get(PARAM1,id)
+	setvard GAME_PVP game.pvp
+
+	race $get(PARAM1,race)
+
+
+	if ( MY_DURATION isnot 'PARAM3' ) callevent MY_DURATION plant_die
+}
+
+{ game_spawn
+
+	blood green
+
+	if ( !START_STAGE ) callevent setup_plant_level1
+	if ( START_STAGE == 2 ) callevent setup_plant_level2
+	if ( START_STAGE == 3 ) callevent setup_plant_level3
+
+	takedmg poison 0.0
+	takedmg fire 1.5
+
+	width 40
+	height 96
+
+	invincible 1
+
+	hearingsensitivity 11
+
+	setvard GROWING 1
+	setsolid none
+	setbbox none
+	playsound 0 10 SOUND_GROW
+	if ( !START_STAGE ) playanim critical thornplant2_grow
+	if ( START_STAGE == 2 ) playanim critical thornplant2_2_grow
+	if ( START_STAGE == 3 ) playanim critical thornplant2_3_grow
+	setvard FIRST_SET_DONE 0
+	callevent 5.0 undo_invinc
+	setvard REPULSE 1
+	callevent repulse_loop
+	callevent set_next_grow
+
+	blood green
+
+	createnpc monsters/summon/ibarrier game.monster.origin $get(ent_me,id) 60 1 1 1 0 1
+}
+
+{ game_postspawn
+	if !IAM_SUMMONED
+	setvard MY_OWNER $get(ent_me,id)
+	setvard MY_DMG 20
+	setvard MY_DURATION 'PARAM3'
+	setvard OWNER_ISPLAYER 0
+	setvard GAME_PVP game.pvp
+	race demon
+	local EXIT_SUB 1
+}
+
+{ game_precache
+	precache cactusgibs.mdl
+}
+
+#include monsters/base_npc
+
+{ undo_invinc
+	callevent end_repulse
+	invincible 0
+	setsolid box
+	setbbox npcsize
+	setvard FIRST_SET_DONE 1
+}
+
+{ repulse_loop
+	if REPULSE
+	callevent 0.1 repulse_loop
+	dodamage $relpos(0,0,0) 96 0.0 100% 0.0 reflective target
+}
+
+{ end_repulse
+	setvard REPULSE 0
+}
+
+{ game_dodamage
+	if REPULSE
+	if $get(PARAM2,id) isnot $get(ent_me,id)
+
+	if $get(PARAM2,range) < 128
+	setangle face PARAM2
+	local MY_YAW $vec.yaw(game.monster.angles)
+	setangle face $vec(0,MY_YAW,0)
+	addvelocity PARAM2 $relvel(0,1000,100)
+}
+
+{ setup_plant_level1
+
+	name a|Doom Shrub
+	local F_HP MY_DMG
+	if ( MY_DMG equals 'MY_DMG' ) callevent 0.1 setup_plant_level1 //MY_DMG hadn't parsed yet
+	multiply F_HP 2
+	if ( NPC_HP_MULTI > 1 ) multiply F_HP NPC_HP_MULTI
+	hp F_HP
+	setmodel MODEL_LEVEL1
+	if ( FIRST_SET_DONE )
+	{
+		setsolid box
+		setbbox npcsize
+		dbg set solid
+	}
+	setvard SCAN_RANGE 96
+	setvard PLANT_LEVEL 1
+	setvard ANIM_ATTACK thornplant2_attack
+	setvard ANIM_DEATH thornplant2_harvest
+ 	callevent select_idle_anim
+	setidleanim ANIM_IDLE
+}
+
+{ setup_plant_level2
+
+	name a|Doom Bush
+	local F_HP MY_DMG
+	multiply F_HP 10
+	if ( NPC_HP_MULTI > 1 ) multiply F_HP NPC_HP_MULTI
+	hp F_HP
+	setmodel MODEL_LEVEL2
+	setsolid box
+	setbbox npcsize
+	setvard SCAN_RANGE 512
+	setvard PLANT_LEVEL 2
+	setvard ANIM_ATTACK thornplant2_2_attack
+	setvard ANIM_DEATH thornplant2_2_harvest
+ 	callevent select_idle_anim
+	setidleanim ANIM_IDLE
+}
+
+{ setup_plant_level3
+
+	name a|Doom Tree
+	local F_HP MY_DMG
+	multiply F_HP 50
+	if ( NPC_HP_MULTI > 1 ) multiply F_HP NPC_HP_MULTI
+	hp F_HP
+	setmodel MODEL_LEVEL3
+	setsolid box
+	setbbox npcsize
+	setvard SCAN_RANGE 1024
+	setvard PLANT_LEVEL 3
+	setvard ANIM_ATTACK thornplant2_3_attack
+	setvard ANIM_DEATH thornplant2_3_harvest
+ 	callevent select_idle_anim
+	setidleanim ANIM_IDLE
+}
+
+{ grow_done
+
+	setvard GROWING 0
+	setvard SHOOTING 0
+	setvard SHOOT_DELAY 0
+	setvard SPORE_DELAY 0
+	setsolid box
+	setbbox npcsize
+}
+
+{ grow_next_level
+	if !GROWING
+
+	if game.time > NEXT_GROW
+	callevent set_next_grow
+
+	if ( PLANT_LEVEL == 2 ) callevent 0.2 grow_level3
+	if ( PLANT_LEVEL == 1 ) callevent 0.2 grow_level2
+	setvard REPULSE 1
+	callevent repulse_loop
+	callevent 1.0 end_repulse
+}
+
+{ grow_level2
+	setvard SHOOTING 0
+	callevent setup_plant_level2
+	setvard GROWING 1
+	playsound 0 10 SOUND_GROW
+	playanim critical thornplant2_2_grow
+}
+
+{ grow_level3
+	setvard SHOOTING 0
+	callevent setup_plant_level3
+	setvard GROWING 1
+	playsound 0 10 SOUND_GROW
+	playanim critical thornplant2_3_grow
+}
+
+{ attack_done //called from model
+	setvard SHOOTING 0
+	if ( PLANT_LEVEL == 1 ) setvard SHOOT_DELAY 0
+	if ( PLANT_LEVEL > 1 ) callevent FREQ_SHOOT reset_shoot_delay
+}
+
+{
+repeatdelay 1.0
+	//scan for enemies
+
+	if !SHOOTING
+	if !GROWING
+	if !SHOOT_DELAY
+
+	local TARGET_ENT 0
+
+	if ( $cansee(enemy) )
+	{
+		if $get(ent_lastseen,range) < SCAN_RANGE
+		if !$get(ent_lastseen,scriptvar,PLAYING_DEAD)
+		local TARGET_ENT $get(ent_lastseen,id)
+	}
+
+	if ( TARGET_ENT isnot 0 )
+	{
+		if ( OWNER_ISPLAYER )
+		{
+			if $get(TARGET_ENT,isplayer)
+			if GAME_PVP == 0
+			local EXIT_SUB 1
+		}
+		if !EXIT_SUB
+		callevent attack_target TARGET_ENT
+	}
+}
+
+{ attack_target
+	if !SHOOT_DELAY
+	if !SHOOTING
+	if !I_R_FROZEN
+	setvard SHOOT_DELAY 1
+	setvard ATTACK_TARGET PARAM1
+	setmovedest ATTACK_TARGET 9999
+	playanim critical ANIM_ATTACK
+	setvard SHOOTING 1
+	callevent attack_loop
+	if PLANT_LEVEL == 3
+	if !SPORE_DELAY
+	setvard SPORE_DELAY 1
+	callevent FREQ_SPORE reset_spore_delay
+	callevent fire_spore ATTACK_TARGET
+}
+
+{ attack_loop
+
+	if SHOOTING
+	callevent 0.5 attack_loop
+
+	setmovedest ATTACK_TARGET 9999
+
+	if $get(ATTACK_TARGET,range) < SCAN_RANGE
+
+	if ( PLANT_LEVEL == 1 )
+	{
+		playsound 0 10 SOUND_SLASH
+		dodamage ATTACK_TARGET SCAN_RANGE MY_DMG PLANT_HITCHANCE slash
+	}
+	if ( PLANT_LEVEL == 2 )
+	{
+		playsound 0 10 SOUND_SLASH
+		dodamage ATTACK_TARGET MELE_RANGE MY_DMG PLANT_HITCHANCE slash
+		tossprojectile ATTACK_TARGET 1000 MY_DMG 0.1 proj_thorn (0,32,32)
+	}
+	if ( PLANT_LEVEL == 3 )
+	{
+		playsound 0 10 SOUND_SLASH
+		dodamage ATTACK_TARGET MELE_RANGE MY_DMG PLANT_HITCHANCE slash
+		tossprojectile ATTACK_TARGET 1000 MY_DMG 0.1 proj_thorn (0,32,64)
+		tossprojectile ATTACK_TARGET 800 MY_DMG 1 proj_thorn (0,32,64)
+		if ( $get(ATTACK_TARGET,range) < MELE_RANGE )
+		{
+			if $rand(1,10) == 1
+			applyeffect ATTACK_TARGET effects/effect_stun 3.0 0 1
+		}
+	}
+}
+
+{ fire_spore
+
+	playsound 0 10 SOUND_SPORE
+	local SPORE_DAMAGE MY_DMG
+	multiply SPORE_DAMAGE 4
+	setvard SPORE_POISON_DMG MY_DMG //read by proj_spore
+	tossprojectile ATTACK_TARGET 500 SPORE_DAMAGE 0.1 proj_spore (0,32,64)
+}
+
+{ game_dodamage
+	if ( PLANT_LEVEL == 1 )
+	{
+		if PARAM1
+		playsound 0 10 SOUND_SCRATCH
+	}
+
+	if ( PLANT_LEVEL == 2 )
+	{
+		if PARAM1
+		if SHOOTING
+		if $get(ATTACK_TARGET,range) < MELE_RANGE
+		playsound 0 10 SOUND_SCRATCH
+	}
+
+	if ( PLANT_LEVEL == 3 )
+	{
+		if PARAM1
+		if SHOOTING
+		if $get(ATTACK_TARGET,range) < MELE_RANGE
+		playsound 0 10 SOUND_SCRATCH
+	}
+}
+
+{ reset_spore_delay
+	setvard SPORE_DELAY 0
+}
+
+{ reset_shoot_delay
+	setvard SHOOT_DELAY 0
+}
+
+{
+repeatdelay 3.0
+	//idle anims
+
+	if !SHOOTING
+	if !GROWING
+	callevent select_idle_anim
+	playanim once ANIM_IDLE
+}
+
+{ select_idle_anim
+	if ( PLANT_LEVEL == 1 ) local IDLE_ANIMS SHRUB_IDLE_ANIMS
+	if ( PLANT_LEVEL == 2 ) local IDLE_ANIMS BUSH_IDLE_ANIMS
+	if ( PLANT_LEVEL == 3 ) local IDLE_ANIMS TREE_IDLE_ANIMS
+
+	local NIDLE_ANIMS $get_token_amt(IDLE_ANIMS)
+	subtract NIDLE_ANIMS 1
+	local RND_IDLE $rand(0,NIDLE_ANIMS)
+	setvard ANIM_IDLE $get_token(IDLE_ANIMS,RND_IDLE)
+	//dbg temp Selected Idle Anim: ANIM_IDLE
+}
+
+{ game_death
+
+	setalive 1
+	setvard GROWING 1
+	invincible 1
+	playanim critical ANIM_DEATH
+	//stop instantly re-growing
+	callevent set_next_grow
+}
+
+{ shrink_done //called from model
+
+	setvard GROWING 0
+	setvard SHOOTING 0
+	setvard SHOOT_DELAY 0
+	setvard SPORE_DELAY 0
+	invincible 0
+	setvard REPULSE 1
+	callevent repulse_loop
+	callevent 1.0 end_repulse
+
+	subtract PLANT_LEVEL 1
+
+	if ( PLANT_LEVEL == 2 )
+	{
+		callevent 0.1 setup_plant_level2
+		//if ( !OWNER_ISPLAYER ) callevent FREQ_GROW grow_next_level
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	if ( PLANT_LEVEL == 1 )
+	{
+		callevent 0.1 setup_plant_level1
+		//if ( !OWNER_ISPLAYER ) callevent FREQ_GROW grow_next_level
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	if ( PLANT_LEVEL == 0 )
+	{
+		playsound 0 10 SOUND_GIB
+		effect tempent gibs GIB_MODEL $relpos(0,0,0) 1.0 100 30 20 4.0
+		callexternal MY_OWNER plant_died
+		dbg died
+		setsolid none
+		setbbox none
+		setprop ent_me rendermode 5
+		setprop ent_me renderamt 0
+		setmodel none
+		deleteent ent_me
+		//idea: you can make this a generic monster, that works with monster spawns
+		//- by making a monster that spawns this
+		//- and suicides when it recieves the event plant_died
+	}
+}
+
+{ game_struck
+	playrandomsound 0 8 SOUND_STRUCK1 SOUND_STRUCK2
+}
+
+{ game_damaged
+	//dbg temp game.monster.hp / game.monster.maxhp
+
+	setvard ATTACK_TARGET $get(ent_laststruck,id) //100% retaliate
+	setmovedest $get(ent_laststruck,id) 9999
+	if !SHOOTING
+	if ( PLANT_LEVEL > 1 ) callevent attack_target ATTACK_TARGET
+}
+
+{ game_heardsound
+
+	if !SHOOTING
+	if !GROWING
+	local LAST_HEARD $get(ent_lastheard,id)
+
+	if $get(LAST_HEARD,relationship,MY_OWNER) equals enemy
+	setmovedest LAST_HEARD 9999
+	if ( PLANT_LEVEL > 1 ) callevent attack_target LAST_HEARD
+	if ( PLANT_LEVEL == 1 )
+	{
+		if $get(LAST_HEARD,range) < MELE_RANGE
+		callevent attack_target LAST_HEARD
+	}
+}
+
+{
+repeatdelay 5.0
+	//check if can grow
+	if PLANT_LEVEL < 3
+	callevent grow_next_level
+}
+
+{ master_stuck
+	if $get(MY_MASTER,range) < 256
+	setsolid none
+	addvelocity MY_OWNER $relvel(0,1000,100)
+	callevent 0.2 resume_solid
+}
+
+{ resume_solid
+	setsolid box
+}
+
+{ set_next_grow
+	setvard NEXT_GROW game.time
+	add NEXT_GROW FREQ_GROW
+}

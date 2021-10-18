@@ -1,0 +1,91 @@
+//Thothie - Troll Rock from proj_catapult
+//- monsters/summon/rock_storm also uses this projectile
+//- When Rock Storm becomes a player spell, you'll have to zero the damage on this and
+//- create an AOE damage that grabs the XP owner via the scriptvar ROCK_OWNER on the caster
+#scope server
+
+{
+  	const MODEL_WORLD	weapons/projectiles.mdl
+	const ARROW_BODY_OFS		67
+	const MODEL_BODY_OFS		67
+	const PROJ_ANIM_IDLE idle_standard
+	const PROJ_DAMAGE		$rand(60,90)
+	const PROJ_STICK_DURATION	1	//How long to stick in enemies
+	const ARROW_SOLIDIFY_ON_WALL	0  	//base_arrow: Turns solid when a wall is hit
+	const ARROW_BREAK_CHANCE	100%	//base_arrow: Chance of breaking upon hit
+
+	const SOUND_HITWALL1 fire.wav
+	const SOUND_HITWALL2 fire.wav
+
+	const PROJ_DAMAGE_TYPE		siege
+	const PROJ_DAMAGE		$rand(200,300)
+	const PROJ_AOE_RANGE		200
+	const PROJ_AOE_FALLOFF		1
+	precache rockgibs.mdl
+}
+
+#include items/proj_arrow_base
+
+{ arrow_spawn
+
+	name 		a|Molten Boulder
+	desc 		A giant ball of lava
+	weight 		0.1
+	size 		1
+	value		0
+	gravity		0.4
+	groupable    	25
+
+	effect glow ent_me (255,0,0) 64 -1 -1
+}
+
+{ game_tossprojectile
+	setvard FINAL_OWNER $get(ent_expowner,scriptvar,'ROCK_OWNER')
+	setvard FINAL_DOT $get(ent_expowner,scriptvar,'ROCK_DAMAGE')
+	multiply FINAL_DOT 0.25
+}
+
+{ projectile_landed
+	if game.serverside
+	callevent go_splodie
+}
+
+{ go_splodie
+	if !DID_SPLODIE
+	setvard DID_SPLODIE 1
+	effect screenshake $relpos(0,0,0) 100 5 3 500
+	//trail looks best, but gives non-sprite set to glow error
+	//effect tempent trail rockgibs.mdl $relpos(0,0,0) $relpos(0,0,10) 10 2 5 10 20
+	//if ( FX_SPAMMERS < MAX_FX_SPAMMERS ) effect tempent gibs rockgibs.mdl $relpos(0,0,0) 1.0 $relvel(0,0,10) 20 10 1
+	clientevent new all effects/sfx_fire_burst $get(ent_me,origin) 200 1 (255,0,0)
+
+	callevent 0.1 vanish
+}
+
+{ game_projectile_hitnpc
+	if game.serverside
+	callevent go_splodie
+}
+
+{ vanish
+	deleteme
+}
+
+{ [override] hitwall
+
+	playsound const.snd.body const.snd.fullvol fire.wav
+}
+
+{ game_dodamage //1: Attack Hit (1/0)  2: Entity Attack hit  3:  Start Position  4:  End Position
+
+	dbg game_dodamage $get(PARAM2,name) $get(FINAL_OWNER,name)
+
+	playsound const.snd.body const.snd.fullvol fire.wav
+
+	if $get(PARAM2,relationship,FINAL_OWNER) equals enemy
+	applyeffect PARAM2 effects/effect_burn 5.0 FINAL_OWNER FINAL_DOT
+
+	//if PARAM1
+	
+	//callexternal PARAM2 hit_by_siege
+}

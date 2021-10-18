@@ -1,0 +1,266 @@
+//This is an older script and may have some bad conventions as a result.
+
+{
+	setvar AS_SUMMON_TELE_CHECK 1
+
+	//base anims
+	setvar ANIM_IDLE idle1
+	setvar ANIM_WALK idle1
+	setvar ANIM_RUN idle1
+	setvard ANIM_ATTACK attack1
+	setvard ANIM_FLINCH flinch
+	setvard ANIM_DEATH die1
+	setvard CAN_FLINCH 1
+	setvard FLINCH_CHANCE 10
+	setvard FLINCH_ANIM flinch
+	setvard ANIM_ATTACK attack1
+
+	//custom anims
+	const ANIM_PROJECTILE fireball
+
+	//base stats
+	setvar IS_UNHOLY 1
+	setvard ATTACK_RANGE 100
+	setvard ATTACK_HITRANGE 150
+	setvard MOVE_RANGE 65
+	setvard NPC_HACKED_MOVE_SPEED 100
+
+	//custom stats
+	const MOVESPEED_SLOW 100
+	const MOVESPEED_FAST 200
+	const DMG_STRIKE $rand(175,250)
+	const DOT_STRIKE $rand(60,80)
+	const ACCURACY_STRIKE 80%
+	const DMG_AMB_BURN $rand(30,60)
+	setvard FREQ_SPECIAL 5.0
+	const DMG_FIRE_BALL 100
+	const DMG_FIRE_BOLT 20
+	setvard IMMUNE_VAMPIRE 1
+
+	//sounds
+	const SOUND_FIRECHARGE magic/fireball_powerup.wav
+	const SOUND_FIRESHOOT magic/fireball_strike.wav
+	const SOUND_IDLE1 agrunt/ag_alert1.wav
+	const SOUND_IDLE2 agrunt/ag_die1.wav
+	const SOUND_IDLE3 agrunt/ag_idle1.wav
+	const SOUND_SWIPE weapons/debris1.wav
+	const SOUND_SWIPEHIT ambience/steamburst1.wav
+	const SOUND_DEATH garg/gar_die1.wav
+	const SOUND_PAIN0 debris/bustflesh2.wav		//most common
+	const SOUND_PAIN1 agrunt/ag_pain1.wav	//rare > 50%
+	const SOUND_PAIN2 agrunt/ag_pain4.wav	//rare < 50%
+	const SOUND_GLOAT x/x_laugh1.wav
+	const SOUND_HOVER fans/fan4on.wav
+
+	//sound related vars
+	const HURT_THRESHOLD 0.5
+	const PLAYTIME_HOVER 3.0
+}
+
+{ game_precache
+	precachefile monsters/summon/fire_ball_guided
+	precachefile monsters/summon/fire_wave
+}
+
+#include monsters/base_monster_new
+#include monsters/base_propelled
+
+{ npc_spawn
+
+	name a|Greater Fire Elemental
+	hp 2500
+	width 48
+	height 80
+	race demon
+	takedmg holy 2.0
+	takedmg cold 0.0
+	takedmg fire 0.0
+
+	roam 0
+	setidleanim ANIM_IDLE
+	setmoveanim ANIM_WALK
+	hearingsensitivity 5
+	setmodel monsters/elementals_greater.mdl
+	setmodelbody 0 0
+	setvard NPC_GIVE_EXP 500
+	callevent 1.0 idle_sounds
+	blood none
+
+	setvard MY_HURT_STAGE $get(ent_me,maxhp)
+	multiply MY_HURT_STAGE HURT_THRESHOLD
+
+	clientevent new all effects/sfx_follow_glow_cl $get(ent_me,index) (255,0,0) 196 15.0
+
+	setvard CUR_SPELL 0
+}
+
+{ my_target_died
+	setvard NPC_MOVE_DEST unset
+
+	if game.time > NEXT_GLOAT
+	setvard NEXT_GLOAT game.time
+	add NEXT_GLOAT FREQ_GLOAT
+	playanim critical idle2
+}
+
+{ [server] game_movingto_dest		//Hack in movement because the model anims are missing it
+
+	if game.time > HOVER_LOOP_DELAY
+	playsound CHAN_BODY 8 SOUND_HOVER
+	setvard HOVER_LOOP_DELAY game.time
+	add HOVER_LOOP_DELAY 3.0
+}
+
+{ npc_struck //called from base_npc_attack - param1 damage taken as of 22/Aug/2006 14:50
+
+	local MY_HEALTH $get(ent_me,hp)
+
+	if ( MY_HEALTH >= MY_HURT_STAGE ) playrandomsound 0 10 SOUND_PAIN0 SOUND_PAIN0 SOUND_PAIN1
+	if ( MY_HEALTH <= MY_HURT_STAGE ) playrandomsound 0 10 SOUND_PAIN0 SOUND_PAIN0 SOUND_PAIN2
+
+	if ( PARAM1 > 40 )
+	{
+		local LR_FLING 200
+		if ( $rand(1,2) == 1 ) local LR_FLING $neg(LR_FLING)
+		addvelocity ent_me $relvel(LR_FLING,0,0) //float around when struck hard
+	}
+}
+
+{ attack1_strike //called from anim attack1 @ frame12
+
+	setvard STRIKE_ATTACK 1
+	callevent npcatk_dodamage NPCATK_TARGET ATTACK_HITRANGE DMG_STRIKE ACCURACY_STRIKE
+}
+
+{ game_dodamage
+	if ( PARAM1 )
+	{
+		if STRIKE_ATTACK
+		setvard STRIKE_ATTACK 0
+		applyeffect PARAM2 effects/effect_burn 3 $get(ent_me,id) DOT_STRIKE
+	}
+}
+
+{ game_damaged	//PARAM1=attacker PARAM2=dmg PARAM3=dmg_type
+	if $get(PARAM1,range) < ATTACK_RANGE
+	applyeffect PARAM1 effects/effect_burn 2 $get(ent_me,id) DOT_AMB_BURN
+}
+
+{ cycle_up
+	if !CYCLES_ON
+	setvard CYCLES_ON 1
+	callevent FREQ_SPECIAL pick_spell
+}
+
+{ do_fire_ball
+
+	if $cansee(NPCATK_TARGET)
+	setvard AS_ATTACKING game.time
+	playanim critical ANIM_PROJECTILE
+	callevent 0.5 do_fire_ball1
+	callevent 0.7 do_fire_ball2
+}
+
+{ do_fire_ball1
+	createnpc monsters/summon/fire_ball_guided $relpos(-32,0,64) $get(ent_me,id) DMG_FIRE_BALL 10.0 200
+}
+
+{ do_fire_ball2
+	createnpc monsters/summon/fire_ball_guided $relpos(32,0,64) $get(ent_me,id) DMG_FIRE_BALL 10.0 200
+}
+
+{ do_fire_wave
+	if CYCLED_UP
+	setmovedest NPCATK_TARGET 9999
+	callevent npcatk_suspend_ai 1.0
+	playanim critical block
+	callevent 0.5 do_fire_wave2
+}
+
+{ do_fire_wave2
+	createnpc monsters/summon/fire_wave $relpos(0,0,0) $get(ent_me,id) 100 100 5
+}
+
+
+{ idle_sounds
+
+	local NEXT_SOUND $randf(5,15)
+
+	callevent NEXT_SOUND idle_sounds
+
+	if NPCATK_TARGET equals unset
+//	local RAND_ANIM $rand(1,3)
+//	if ( RAND_ANIM == 1 ) playanim once ANIM_BUGIDLE_A	//was having some odd bug with idle anims, hence odd names
+//	if ( RAND_ANIM == 2 ) playanim once ANIM_BUGIDLE_B
+//	if ( RAND_ANIM == 3 ) playanim once ANIM_BUGIDLE_C
+
+	playrandomsound 0 10 SOUND_IDLE1 SOUND_IDLE2 SOUND_IDLE3
+}
+
+{ do_fire_breath //not what I originally had in mind
+
+	if $get(NPCATK_TARGET,isalive)
+
+	callevent npcatk_suspend_ai
+	setmoveanim charging
+	setidleanim charging
+	playanim critical charging
+	setvard BREATH_COUNT 0
+	callevent do_fire_breath_loop
+}
+
+{ do_fire_breath_loop
+	add BREATH_COUNT 1
+	if ( BREATH_COUNT < 30 )
+	{
+		callevent 0.1 do_fire_breath_loop
+		setmovedest NPCATK_TARGET 9999
+		tossprojectile view 300 DMG_FIRE_BOLT 30 proj_fire_bolt (0,0,64) 
+	}
+	else
+	{
+		callevent npcatk_resume_ai
+		setmoveanim ANIM_WALK
+		setidleanim ANIM_IDLE
+	}
+}
+
+{ pick_spell
+	add CUR_SPELL 1
+	if ( CUR_SPELL > 4 ) setvard CUR_SPELL 1
+
+	if ( CUR_SPELL == 1 )
+	{
+		callevent do_fire_ball
+		setvard FREQ_SPECIAL 10.0
+	}
+	if ( CUR_SPELL == 2 )
+	{
+		callevent do_fire_wave
+		setvard FREQ_SPECIAL 10.0
+	}
+	if ( CUR_SPELL == 3 )
+	{
+		if ( $get(NPCATK_TARGET,range) < 768 )
+		{
+			callevent do_fire_breath
+			setvard FREQ_SPECIAL 5.0
+		}
+		else
+		{
+			callevent do_fire_ball
+			setvard FREQ_SPECIAL 10.0
+		}
+	}
+	callevent FREQ_SPECIAL pick_spell
+}
+
+{ game_dynamically_created
+	setvard NO_SPAWN_STUCK_CHECK 1
+}
+
+{
+repeatdelay 15.1
+	if $get(ent_me,isalive)
+	clientevent new all effects/sfx_follow_glow_cl $get(ent_me,index) (255,0,0) 196 15.0
+}

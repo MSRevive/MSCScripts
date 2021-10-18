@@ -1,0 +1,107 @@
+{
+  setvard STRETCHED 0
+
+	setvar IS_BOW 1
+
+  const ANIM_IDLE1        	0
+  const ANIM_DEPLOY       	1
+  const ANIM_STRETCH      	2
+  const ANIM_FIRE      		3
+
+  const ANIM_PREFIX		bow
+  //const MODEL_BODY_OFS		1
+
+  //Used in base_ranged
+  //------------------
+  const RANGED_HOLD_MINMAX	1.1;1.3 //Min;Max
+  const RANGED_ATK_DURATION	RANGED_POSTFIRE_DELAY
+  const RANGED_DMG_TYPE		pierce
+  const RANGED_STAT		archery
+  const RANGED_PROJECTILE	arrow
+  const RANGED_AIMANGLE		(0,9,0)
+  const RANGED_PULLTIME		0.8
+}
+
+#include items/base_ranged
+
+{  weapon_spawn
+
+   	if ( !NOT_WEARABLE ) wearable     1 bow
+   	setanimext   bow
+   	sethand	both
+   	sethudsprite hand bow
+   	sethudsprite trade ITEM_NAME
+   	registerattack
+   	callevent	bow_spawn
+}
+
+{ ranged_start	//Call from dll
+
+	setvar STRETCHED 0
+  	playviewanim  ANIM_STRETCH
+  	playowneranim critical bow_pull global.anim.combatwalk
+  	callevent RANGED_PULLTIME ranged_stretchbow
+}
+{ ranged_stretchbow
+  	setvar STRETCHED 1
+	playowneranim critical bow_hold global.anim.combatwalk
+	callevent basebow_stretchbow
+}
+{ //Stretched animation loop
+	repeatdelay 3.35
+
+	if STRETCHED equals 1
+	playowneranim critical bow_hold global.anim.combatwalk
+}
+{ ranged_toss	//Called from dll
+
+  	playsound game.sound.weapon game.sound.maxvol SOUND_SHOOT
+  	playviewanim  ANIM_FIRE
+	//playowneranim break
+	playowneranim critical bow_release global.anim.combatwalk
+	setvar STRETCHED 0
+	callevent 0.4 shoot_returnstanding
+}
+{ ranged_end	//Called from dll
+
+  	playviewanim  ANIM_IDLE1
+}
+{ shoot_returnstanding
+  	if !game.item.attacking
+  	playowneranim critical bow_aim_to_stand global.anim.combatwalk
+}
+
+{ game_wear
+
+	setmodel	MODEL_WEAR
+	local		L_SUBMODEL MODEL_BODY_OFS
+	add		L_SUBMODEL 3
+	//add		L_SUBMODEL 1 //for new p_body
+	setmodelbody 	0 L_SUBMODEL
+}
+
+{ game_show
+	setmodel	MODEL_WEAR
+	local		L_SUBMODEL MODEL_BODY_OFS
+	add		L_SUBMODEL 3
+	setmodelbody 	0 L_SUBMODEL
+}
+
+//{ [override] game_wear
+//
+//  	setviewmodel none
+//  	setmodel MODEL_WEAR
+//  	setmodelbody 0 3
+//  	playermessagecl You strap the bow to your back
+//}
+
+//{ [override] game_fall
+//
+//	local		L_ANIM ANIM_PREFIX
+//	stradd		L_ANIM _floor_idle
+//
+// 	setmodelbody 	0 2
+// 	playanim 	L_ANIM
+//
+//	callevent weapon_fall
+//}

@@ -1,0 +1,120 @@
+{
+	const ANIM_LIFT1 19
+	const ANIM_IDLE1 19
+	const MODEL_VIEW viewmodels/v_martialarts.mdl
+	const ITEM_MODEL_VIEW_IDX 8
+	const MODEL_HANDS misc/p_misc.mdl
+	const MODEL_WORLD misc/p_misc.mdl
+	const MODEL_BODY_OFS 69
+	const MODEL_BODY_FLOOR 71
+	const ANIM_WORLD_IDLE apple_floor_idle
+	const ANIM_HAND_IDLE idle
+	const OWNER_ANIM_IDLE aim_soup
+	const OWNER_ANIM_USE aim_soup
+
+	const ANIM_USE 18
+	const USE_DELAY 2.0
+
+	const SOUND_USE magic/slurp.wav
+
+	const NO_IDLE 1
+
+}
+
+#include items/base_item
+
+{ game_spawn
+
+	name a|Sylphiel's Soup
+	desc Sylphiel's Applemead Soup provides temporary health and mana regen
+	weight 1
+	size 1
+	value 200
+	sethand both
+	sethudsprite hand 88
+	sethudsprite trade 88
+
+	setmodel MODEL_WORLD
+	setworldmodel MODEL_WORLD
+ 	setmodelbody 0 MODEL_BODY_OFS
+}
+
+{ game_fall
+ 	setmodelbody 0 MODEL_BODY_FLOOR
+	playanim WANIM_FLOOR
+	playanim ANIM_WORLD_IDLE
+}
+
+{ game_deploy
+	setanimext	soup
+
+	setviewmodel  	MODEL_VIEW
+	setmodel	MODEL_HANDS
+	playanim ANIM_HAND_IDLE
+ 	setmodelbody 	0 MODEL_BODY_OFS
+
+	if game.serverside
+	playowneranim once OWNER_ANIM_IDLE global.anim.combatwalk 3
+	setvard NEXT_USE game.time
+	add NEXT_USE 1.0
+
+	setvard DO_OWNER_IDLES 1
+	callevent 2.0 item_idle
+}
+
+{ game_attack1
+	if game.serverside
+	if !ITEM_USED
+	if game.time > NEXT_USE
+	setvard ITEM_USED 1
+	splayviewanim ent_me ANIM_USE
+	callevent USE_DELAY use_item 
+}
+
+{ use_item
+	callexternal ent_owner ext_svplaysound_kiss 1 10 SOUND_USE 0.8 100
+	playowneranim once OWNER_ANIM_USE global.anim.combatwalk 3
+	callevent use_effect	
+}
+
+{ use_effect
+	callevent 2.0 use_complete
+	callexternal ent_owner ext_set_status_flag mana_soup mana_regen 1 180 "Ah, that soup was good while it lasted..."
+	gplayermessage ent_owner Sylphiel's Soup: All your health has been restored.
+	gplayermessage ent_owner Sylphiel's Soup: Three minutes of rapid magic regen.
+
+	local L_OWNER_HP $get(ent_owner,hp)
+	local L_OWNER_MAXHP $get(ent_owner,maxhp)
+	if ( L_OWNER_HP < L_OWNER_MAXHP )
+	{
+		subtract L_OWNER_MAXHP L_OWNER_HP
+		givehp ent_owner L_OWNER_MAXHP
+	}
+}
+
+{ use_complete
+	removescript
+	deleteent ent_me
+}
+
+{ fake_precache
+	svplaysound 0 0 SOUND_USE
+}
+
+{ bweapon_effect_remove
+	setvard DO_OWNER_IDLES 0
+}
+
+{ item_idle
+	if DO_OWNER_IDLES
+	if ( !game.item.inhand )
+	{
+		setvard DO_OWNER_IDLES 0
+	}
+	else
+	{
+		playowneranim once OWNER_ANIM_IDLE global.anim.combatwalk 3
+		callevent 1.0 item_idle
+	}
+	
+}

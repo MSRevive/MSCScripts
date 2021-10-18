@@ -1,0 +1,602 @@
+#scope server
+{
+	const FREQ_GLOAM 120.0 //max time Agrath can be left alone before a gloam jumps down from the trees to get him
+
+	const CONV_ANIMS "converse2;talkleft;talkright;lean;pondering2;pondering3;yes;c1a0_catwalkidle;quicklook"
+
+	const MAGIC_LIST "fire;ice;lightning;earth;poison;acid;magic;"
+	const FREQ_FF_WARN 10.0
+
+	const CHAT_DELAY 5.5
+
+	const REWARD_LIST "scroll2_lightning_storm;blunt_granitemace;blunt_darkmaul;blunt_gauntlets_serpant;mana_leadfoot;armor_helm_golden;item_charm_w3;"
+	const REWARD_NAMES "a Lightning Storm Scroll;a Granite Mace;a Dark Maul;Serpant Gauntlets;a Potion of Stability;a Golden Helm;a Shadow Wolf Charm;"
+	setvard N_REWARDS_GIVEN 0 //maxes at whatever game.players was at battle_over
+	setvard MAX_REWARDS_TOGIVE 0
+
+	const SOUND_STRUCK body/flesh1.wav
+	const SOUND_DEATH voices/human/male_die.wav
+
+	setvar ANIM_IDLE idle1
+	setvar ANIM_RUN run
+	setvar ANIM_WALK walk
+	setvard ANIM_DEATH diebackward
+	setvard ANIM_ATTACK swordswing1_l
+
+	setvard MOVE_RANGE 32
+	setvard ATTACK_RANGE 96
+	setvard ATTACK_HITRANGE 120
+	const ATTACK_HITCHANCE 85%
+	const ATTACK_DAMAGE '$randf(50,200)'
+
+	setvard NPC_GIVE_EXP 0
+
+	const NO_JOB 1
+	const NO_RUMOR 1
+	setvard NO_HAIL 1
+
+	const ANIM_SPELL_SELF return_needle
+	const ANIM_SPELL_OTHER give_shot
+
+	const FREQ_ICE_SHIELD 60.0
+}
+
+#include monsters/base_monster_new
+#include monsters/base_chat
+
+{ game_precache
+	precachefile monsters/gloam1
+}
+
+{ [shared] npc_spawn
+	name_unique agrath
+	name Agrath the Gloam Hunter
+	invincible 1 //toggle off when battle begins
+	roam 0
+	blood red
+	setvard NO_STUCK_CHECKS 1
+	race human
+	width 32
+	height 96
+	hp 1000
+	saytextrange 1024
+	hearingsensitivity 8
+	//setmonsterclip 0
+	setmodel npc/royal_guard2.mdl
+	setidleanim idle1
+	setmoveanim walk
+
+	callevent 1.0 set_critical
+
+	setanim.movespeed 2.0
+	movespeed 2.0
+
+	callevent 2.0 light_up
+
+	catchspeech say_hi hi hail j0 jo yo waddup wassup hello greet
+	catchspeech say_gloam gloam
+	catchspeech say_yes yes help accept
+}
+
+{ set_critical
+	if !NPC_CRITICAL
+	callevent critical_npc
+}
+
+{ game_damaged			//PARAM1=attacker PARAM2=dmg PARAM3=dmg_type
+
+	//cant get him to stay invulnerable pre and post battle for some reason
+	//not sure if this fixes it, but something did
+	if ( BATTLE_OVER )
+	{
+		setdmg dmg 0
+		setdmg hit 0
+		returndata 0
+		local EXIT_SUB 1
+	}
+
+	if ( !IN_BATTLE )
+	{
+		setdmg dmg 0
+		setdmg hit 0
+		returndata 0
+		local EXIT_SUB 1
+	}
+
+	if !EXIT_SUB
+
+	playsound 0 5 SOUND_STRUCK
+
+	if ( !$get(PARAM1,isplayer) ) setvard LAST_DAMAGED game.time
+
+	if $get(PARAM1,isplayer)
+
+	if game.time > NEXT_FF_WARNING
+
+	setvard NEXT_FF_WARNING game.time
+	add NEXT_FF_WARNING FREQ_FF_WARN
+
+	if ( PARAM3 contains effect ) local IS_SPELL 1
+	if ( $get_find_token(MAGIC_LIST,PARAM3) > -1 ) local IS_SPELL 1
+
+	if ( IS_SPELL )
+	{
+		if ( $get(PARAM1,range) > 256 )
+		{
+			saytext Watch where you cast those things!
+		}
+		else
+		{
+			local NAME_PRE $get(PARAM1,name)
+			stradd NAME_PRE "!"
+			saytext NAME_PRE Check your targets!
+		}
+	}
+
+	if ( !IS_SPELL )
+	{
+		if ( $get(PARAM1,range) < 256 )
+		{
+			saytext Careful where you swing that!
+		}
+		else
+		{
+			saytext $get(PARAM1,name) , watch your targets!
+		}
+	}
+}
+
+{ say_hi
+
+	if !IN_BATTLE
+	if !BUSY_CHATTING
+
+	if ( $get(PARAM1,isplayer) )
+	{
+		setvard CURRENT_SPEAKER $get(PARAM1,id)
+		callevent face_speaker CURRENT_SPEAKER
+	}
+	if ( $get(ent_lastspoke,isplayer) )
+	{
+		setvard CURRENT_SPEAKER $get(ent_lastspoke,id)
+		callevent face_speaker CURRENT_SPEAKER
+	}
+
+	if ( !BATTLE_OVER )
+	{
+		setvard DID_INTRO 1
+		playanim critical idle4
+		callevent 2.0 fix_anims
+		setvard CONVO_TYPE intro
+		setvard CHAT_STEPS 4
+		setvard CHAT_STEP 0
+		setvard CHAT_STEP1 "Bah! Hail there. I am known as Agrath of the Royal Guard. The King sent me here to clear this isle of gloams that we may begin logging the forest safely."
+		setvard CHAT_STEP2 "But I never imagined there would be so many such beasts in this jungle, and this sad contigent I brought with me would be mere fodder for them."
+		if ( game.players > 1 ) setvard CHAT_STEP3 "You lads look a bit more up to a battle, more so than this sad lot anyways."
+		if ( game.players == 1 ) setvard CHAT_STEP3 "You may yet make better escort than all this sad lot combined."
+		setvard CHAT_STEP4 "If you will serve as my escort and ferret these beasts out, you will be well rewarded for your efforts."
+		setvard BUSY_CHATTING 1
+		callevent chat_loop
+	}
+
+	if ( BATTLE_OVER )
+	{
+		playanim critical yes
+		callevent 2.0 fix_anims
+		saytext Thanks again for your assistance.
+	}
+}
+
+{ open_menu
+	menu.open CURRENT_SPEAKER
+}
+
+{ chat_loop
+
+	if CHAT_STEP > 1
+	callevent 1.0 convo_anim
+
+	if ( CHAT_STEP == 4 )
+	{
+		if CONVO_TYPE equals intro
+		setmovedest CURRENT_SPEAKER 9999
+		//playanim critical converse2
+		callevent 2.0 open_menu
+	}
+
+	if ( CHAT_STEP == 8 )
+	{
+		if CONVO_TYPE equals info_talk
+		setmovedest CURRENT_SPEAKER 9999
+		//playanim critical converse2
+		setvard CONVO_TYPE intro
+		callevent 2.0 open_menu
+	}
+
+	if ( CHAT_STEP == 3 )
+	{
+		if CONVO_TYPE equals pep_talk
+		setvard DONE_WARNING 1
+	}
+}
+
+{ game_menu_getoptions
+
+	dbg game_menu_getoptions
+
+	if ( BUSY_CHATTING )
+	{
+		local reg.mitem.title 	"(Busy Chatting)"
+		local reg.mitem.type 	disabled
+		local reg.mitem.callback none
+		menuitem.register
+	}
+
+	if ( IN_BATTLE )
+	{
+		local HP_TITLE "HP ("
+		stradd HP_TITLE $int($get(ent_me,hp))
+		stradd HP_TITLE "/"
+		stradd HP_TITLE $int($get(ent_me,maxhp))
+		stradd HP_TITLE ")"
+
+		local reg.mitem.title 	HP_TITLE
+		local reg.mitem.type 	disabled
+		local reg.mitem.callback none
+		menuitem.register
+	}
+
+	if !BUSY_CHATTING
+
+	if ( CONVO_TYPE isnot intro )
+	{
+		if !IN_BATTLE
+		if CONVO_TYPE isnot give_list
+		local reg.mitem.title 	"Hail"
+		local reg.mitem.type 	callback
+		local reg.mitem.callback say_hi
+		menuitem.register
+	}
+
+	if ( CONVO_TYPE equals intro )
+	{
+		local reg.mitem.title 	"Yes, I'll help."
+		local reg.mitem.type 	callback
+		local reg.mitem.callback dude_said_yes
+		menuitem.register
+
+		local reg.mitem.title 	"What are Gloams?"
+		local reg.mitem.type 	callback
+		local reg.mitem.callback say_gloam
+		menuitem.register
+
+		local reg.mitem.title 	"Sorry, busy."
+		local reg.mitem.type 	callback
+		local reg.mitem.callback player_deny
+		menuitem.register
+	}
+
+	if ( BATTLE_OVER )
+	{
+		if CONVO_TYPE isnot give_list
+		if !$get(PARAM1,scriptvar,PLR_GOT_REWARD)
+		local reg.mitem.title 	"Collect reward"
+		local reg.mitem.type 	callback
+		local reg.mitem.callback give_reward
+		menuitem.register
+	}
+
+	if ( CONVO_TYPE equals 'give_list' )
+	{
+		if !$get(PARAM1,scriptvar,PLR_GOT_REWARD)
+		setvard OFFERING_REWARD PARAM1
+		calleventloop $get_token_amt(REWARD_LIST) add_rewards
+		setvard CONVO_TYPE none
+	}
+}
+
+{ add_rewards
+
+	if $rand(1,100) <= 75
+
+	add N_REWARDS 1
+	local CUR_IDX game.script.iteration
+	local CUR_REWARD $get_token(REWARD_LIST,CUR_IDX)
+	local CUR_NAME $get_token(REWARD_NAMES,CUR_IDX)
+
+	local reg.mitem.title	CUR_NAME
+	local reg.mitem.type 	callback
+	local reg.mitem.data 	CUR_IDX
+	local reg.mitem.cb_failed no_want
+	local reg.mitem.callback 	give_selected_reward
+
+	dbg add_rewards reg.mitem.title reg.mitem.callback
+
+	menuitem.register
+}
+
+{ game_menu_cancel
+	dbg game_menu_cancel CONVO_TYPE $get(PARAM1,name)
+	//dont let them recycle the reward list
+	if OFFERING_REWARD equals PARAM1
+	saytext I see. A noble warrior for whom the battle is reward enough. Good show.
+	callexternal OFFERING_REWARD ext_set_reward 1
+}
+
+{ give_selected_reward
+	dbg give_selected_reward $get(PARAM1,name) PARAM2
+	add N_REWARDS_GIVEN 1
+	offer PARAM1 $get_token(REWARD_LIST,PARAM2)
+	callexternal PARAM1 ext_set_reward 1
+}
+
+{ say_yes
+	if CONVO_TYPE equals intro
+	callevent dude_said_yes $get(ent_lastspoke,id)
+}
+
+{ [server] dude_said_yes
+
+	//There's some weird shit going on here, he always does this conversation twice and I can't figure why
+
+	if game.serverside
+
+	if !MISSION_ACCEPTED
+	if !DONE_WARNING
+	if $get(PARAM1,isalive)
+	setvard MISSION_ACCEPTED 1
+
+	setvard ESCORT_TARGET PARAM1
+
+	callevent cycle_up "manual_override"
+	setvard CONVO_TYPE none
+	setvard QUEST_WINNER PARAM1
+	playanim critical yes
+	setvard IN_BATTLE 1
+	setvard NO_STUCK_CHECKS 1
+
+	setvard DONE_WARNING 0
+	setvard CONVO_TYPE pep_talk
+	setvard SCHAT_STEPS 3
+	setvard SCHAT_STEP 0
+	setvard SCHAT_STEP1 "Alright, the forest beyond that barricade is completely infested with [Gloams]. Nasty work, Gloams are..."
+	setvard SCHAT_STEP2 "If we can slay all the elder, Ether Gloams, the rest shouldnt give us any trouble, and most likely will flee."
+	setvard SCHAT_STEP3 "Be ready for a good fight. Ill follow you in, but these novices will have to stay behind. No point in leading them to a slaughter."
+	setvard BUSY_CHATTING 1
+	callevent 1.0 special_chat_loop //this insanity fixes the double text mystery
+
+	invincible 0
+	usetrigger ether_gloams_go
+	callevent FREQ_ICE_SHIELD do_ice_shield
+}
+
+{ special_chat_loop
+
+	add SCHAT_STEP 1
+	if ( SCHAT_STEP == SCHAT_STEPS ) setvard BUSY_CHATTING 0
+	if ( SCHAT_STEP > SCHAT_STEPS )
+	{
+		setvard BUSY_CHATTING 0
+		setvard SCHAT_STEP 0
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+	if SCHAT_STEP <= SCHAT_STEPS
+	callevent CHAT_DELAY special_chat_loop
+	if ( SCHAT_STEP ==  1 ) saytext SCHAT_STEP1
+	if ( SCHAT_STEP ==  2 ) saytext SCHAT_STEP2
+	if ( SCHAT_STEP ==  3 )
+	{
+		saytext SCHAT_STEP3
+		setvard DONE_WARNING 1
+	}
+}
+
+
+{ player_deny
+
+	setvard CONVO_TYPE none
+	playanim critical no
+
+	setvard CONVO_TYPE angry
+	setvard CHAT_STEPS 2
+	setvard CHAT_STEP 0
+	setvard CHAT_STEP1 "Bah, coward! I suppose I could order you in the name of the king..."
+	setvard CHAT_STEP2 "but I'd rather beat these swine into shape than have an escort who'll run at the first sign of danger!"
+	setvard BUSY_CHATTING 1
+	callevent chat_loop
+}
+
+{ say_gloam
+
+	if ( !IN_BATTLE )
+	{
+		callevent 2.0 fix_anims
+		setvard CONVO_TYPE info_talk
+		setvard CHAT_STEPS 8
+		setvard CHAT_STEP 0
+		setvard CHAT_STEP1 "I've seen all sorts of gloams: gloams of stone, of ice, and of fire. Tis why they've sent me, I suppose."
+		setvard CHAT_STEP2 "These gloams here are the more common, tropical variety. Slimy beasts tend to show up in abandoned wetlands such as this jungle."
+		setvard CHAT_STEP3 "They move fast, are tough, and in addition to the usual motivation of hunger, are likely also defending their nests."
+		setvard CHAT_STEP4 "The ether gloams are the elder ones. It seems a good gloam never dies, it just fades away. Sadly, this means the creatures can turn invisible."
+		setvard CHAT_STEP5 "While they are invisible they are neigh impossible to hit, and if they touches you while in their ethereal state, it'll give you a nasty wallup."
+		setvard CHAT_STEP6 "The ether gloams are vulnerable to holy weapons due to their unnatural state, so if you have any, have them at the ready..."
+		setvard CHAT_STEP7 "But beware that the same does not apply to the younger ones. For, as the wizards tell me, they are beastly, but still of this world."
+		setvard CHAT_STEP8 "Beyond that all I can say is keep a sharp eye and a steady hand, and ye may yet survive with all your limbs uneaten."
+		setvard BUSY_CHATTING 1
+		callevent chat_loop
+	}
+	else
+	{
+		saytext Oh NOW you want to hear about the gloams!? A bit busy at the moment! You'll learn anything I could have taught you the hard way soon enough!
+	}
+}
+
+{ gloam_raid_over //external via ms_npcscript
+
+	setvard NO_STUCK_CHECKS 0
+	setvard MAX_REWARDS_TOGIVE game.players
+	setvard BATTLE_OVER 1
+	callevent npcatk_walk
+	callevent npcatk_clear_targets
+	setvard BATTLLE_OVER 1
+	setvard IN_BATTLE 0
+	setvard FORCED_MOVE_DEST 1
+	setmovedest QUEST_WINNER 32
+	invincible 1
+	callevent 1.0 hunt_quest_winner_loop
+}
+
+{ npcatk_hunt
+
+	//if IN_BATTLE
+	if DONE_WARNING
+
+	//if ( NPCATK_TARGET isnot unset ) setanim.movespeed 1.0
+
+	if NPCATK_TARGET equals unset
+	//setanim.movespeed 2.0
+	if $get(ESCORT_TARGET,isalive)
+	local ESCORT_DIST $get(ESCORT_TARGET,range)
+	if ( ESCORT_DIST > 128 )
+	{
+		setvard NPC_STUCK_CHECKS 0
+		callevent npcatk_setmovedest ESCORT_TARGET 128
+		if ( ESCORT_DIST > 384 )
+		{
+			setmoveanim ANIM_RUN
+		}
+		else
+		{
+			setmoveanim ANIM_WALK
+		}
+	}
+	else
+	{
+		setvard NPC_STUCK_CHECKS 0
+		setmovedest none
+		//dbg facing escort angs
+		local ESCORT_FACE $get(ESCORT_TARGET,angles.yaw)
+		setangle face $vec(0,ESCORT_FACE,0)
+	}
+}
+
+{ give_reward
+	if ( N_REWARDS_GIVEN >= MAX_REWARDS_TOGIVE )
+	{
+		saytext Sorry, I've nothing left to offer.
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	setvard NPC_FORCED_MOVEDEST 1
+	playanim critical yes
+	if ( $get(PARAM1,isalive) ) setmovedest PARAM1 9999
+	callevent 2.0 fix_anims
+
+	if !$get(PARAM1,scriptvar,PLR_GOT_REWARD)
+	saytext Thank you for your fine aid in battle! Please select a reward, courtesy of the king...
+	setvard CONVO_TYPE "give_list"
+	if ( $get(PARAM1,isalive) ) setvard MENU_TARGET PARAM1
+	if ( !$get(PARAM1,isalive) ) setvard MENU_TARGET QUEST_WINNER
+	callevent 0.1 send_menu
+}
+
+{ send_menu
+	menu.open MENU_TARGET
+}
+
+{ fix_anims
+	//ms_npcscript seems to be fubar'ing my anims, reset after call
+	setmoveanim walk
+	setidleanim idle1
+	playanim once idle1
+}
+
+{ game_menu_cancel
+	setvard CONVO_TYPE none
+}
+
+{ attack_1
+	callevent npcatk_dodamage NPCATK_TARGET ATTACK_HITRANGE ATTACK_DAMAGE ATTACK_HITCHANCE
+}
+
+{ do_ice_shield
+
+	if IN_BATTLE
+	callevent FREQ_ICE_SHIELD do_ice_shield
+
+	if ( $cansee(ally) )
+	{
+		if $get(ent_lastseen,isplayer)
+		local CANT_SHIELD_TARGET 0
+		if ( $get(ent_lastseen,scriptvar,'ICE_SHIELDED') ) local CANT_SHIELD_TARGET 1
+		if ( $get(ent_lastseen,scriptvar,'PLAYING_DEAD') ) local CANT_SHIELD_TARGET 1
+
+		if ( !CANT_SHIELD_TARGET )
+		{
+			setmovedest ent_lastseen 9999
+			playanim critical ANIM_SPELL_OTHER
+			applyeffect ent_lastseen effects/effect_iceshield 45 0.5
+			gplayermessage ent_lastseen Agrath casts Ice Shield upon you.
+		}
+		else
+		{
+			playanim critical ANIM_SPELL_SELF
+			applyeffect ent_me effects/effect_iceshield 45 0.5
+		}
+	}
+	else
+	{
+		playanim critical ANIM_SPELL_SELF
+		applyeffect ent_me effects/effect_iceshield 45 0.5
+	}
+	playsound 0 10 magic/cast.wav
+}
+
+{ [override] cycle_npc
+	callevent cycle_up "forced"
+}
+
+{ my_target_died
+	callevent npcatk_walk
+}
+
+
+//glow
+{
+repeatdelay 30.1
+	clientevent new all effects/sfx_follow_glow_cl $get(ent_me,index) (255,255,255) 96 30.0
+}
+
+{ [server] game_death
+	if ( !NPC_CRITICAL ) infomsg all "CRITICAL NPC DIED" "Agrath the Gloam Hunter has died."
+}
+
+{
+repeatdelay 20.0
+	if IN_BATTLE
+
+	local TIME_DIFF game.time
+	subtract TIME_DIFF LAST_DAMAGED
+
+	if ( TIME_DIFF > FREQ_GLOAM )
+	{
+		//it's been at least a minute since anything struck me, perhaps I am lost or exploited
+		//summon a gloam from the trees above
+		dbg ******* SPAWNING GLOAM *******
+
+		local SUMMON_POS $get(ent_me,origin)
+		vectoradd SUMMON_POS z 256
+		createnpc monsters/gloam1 SUMMON_POS
+		setvard LAST_DAMAGED game.time
+	}
+}
+
+{ ext_freeze //debuggary
+	movespeed 0.0
+}
+
+{ [override] npc_suicide
+	//keep accidentally slaying him in tests
+}

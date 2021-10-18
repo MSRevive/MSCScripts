@@ -1,0 +1,170 @@
+{
+	//max line width is at about 280 chars
+	const ARROW_NAMES "proj_arrow_bluntwooden;proj_arrow_broadhead;proj_arrow_fire;proj_arrow_frost;proj_arrow_gholy;proj_arrow_holy;proj_arrow_jagged;proj_arrow_poison;proj_arrow_silvertipped;proj_arrow_wooden;"
+	const BOLT_NAMES "proj_bolt_fire;proj_bolt_iron;proj_bolt_silver;proj_bolt_steel;proj_bolt_wooden"
+
+	const SAYTEXT_GIVE_TICKET "There you go. You can redeem that ticket with most any fletcher in the land."
+	const SAYTEXT_REDEEMTICKET "Okay, here's your ammo."
+	const SAYTEXT_NOT_ENOUGH "Sorry, you don't have enough of those for me to sell you the ticket."
+	const SAYTEXT_NOTICKET "Sorry, I did not recieve the ticket."
+
+	const ANIM_CHAT none
+	const ANIM_YES none
+	const ANIM_NO none
+}
+
+{ game_menu_getoptions
+
+	setvard CUSTOMER_ID PARAM1
+
+	callevent check_for_item proj_arrow_bluntwooden 1
+	callevent check_for_item proj_arrow_broadhead 1
+	callevent check_for_item proj_arrow_fire 2
+	callevent check_for_item proj_arrow_frost 10
+	callevent check_for_item proj_arrow_gholy 20
+	callevent check_for_item proj_arrow_holy 5
+	callevent check_for_item proj_arrow_jagged 5
+	callevent check_for_item proj_arrow_poison 5
+	callevent check_for_item proj_arrow_silvertipped 1
+ 	callevent check_for_item proj_arrow_wooden 1
+	callevent check_for_item proj_bolt_fire 30
+	callevent check_for_item proj_bolt_iron 10
+	callevent check_for_item proj_bolt_silver 20
+	callevent check_for_item proj_bolt_steel 10
+	callevent check_for_item proj_bolt_wooden 1
+
+	if $item_exists(PARAM1,"item_tk_proj",partialname)
+
+	setvard CHECK_LOOP 0
+	local N_NAMES $get_token_amt(ARROW_NAMES)
+	calleventloop N_NAMES list_tickets ARROW_NAMES
+
+	setvard CHECK_LOOP 0
+	local N_NAMES $get_token_amt(BOLT_NAMES)
+	calleventloop N_NAMES list_tickets BOLT_NAMES
+}
+
+{ gticket_proj_bolt_fire
+	callevent give_ticket proj_bolt_fire
+}
+{ gticket_proj_bolt_iron
+	callevent give_ticket proj_bolt_iron
+}
+{ gticket_proj_bolt_silver
+	callevent give_ticket proj_bolt_silver
+}
+{ gticket_proj_bolt_steel
+	callevent give_ticket proj_bolt_steel
+}
+{ gticket_proj_bolt_wooden
+	callevent give_ticket proj_bolt_wooden
+}
+{ gticket_proj_arrow_bluntwooden
+	callevent give_ticket proj_arrow_bluntwooden
+}
+{ gticket_proj_arrow_broadhead
+	callevent give_ticket proj_arrow_broadhead
+}
+{ gticket_proj_arrow_fire
+	callevent give_ticket proj_arrow_fire
+}
+{ gticket_proj_arrow_frost
+	callevent give_ticket proj_arrow_frost
+}
+{ gticket_proj_arrow_gholy
+	callevent give_ticket proj_arrow_gholy
+}
+{ gticket_proj_arrow_holy
+	callevent give_ticket proj_arrow_holy
+}
+{ gticket_proj_arrow_jagged
+	callevent give_ticket proj_arrow_jagged
+}
+{ gticket_proj_arrow_poison
+	callevent give_ticket proj_arrow_poison
+}
+{ gticket_proj_arrow_silvertipped
+	callevent give_ticket proj_arrow_silvertipped
+}
+{ gticket_proj_arrow_wooden
+	callevent give_ticket proj_arrow_wooden
+}
+
+{ give_ticket //param1 item_type
+
+	local ITEM_TYPE PARAM1
+	local TICKET_NAME "item_tk_"
+	addstr TICKET_NAME ITEM_TYPE
+
+	offer CUSTOMER_ID TICKET_NAME
+
+	playanim critical ANIM_YES
+	saytext SAYTEXT_GIVE_TICKET
+}
+
+{ list_tickets //PARAM1 string to use
+
+	local CHECK_STRING PARAM2
+	local SEARCH_ITEM $get_token(CHECK_STRING,CHECK_LOOP)
+
+	local SEARCH_TICKET "item_tk_"
+	stradd SEARCH_TICKET SEARCH_ITEM
+	if $item_exists(CUSTOMER_ID,SEARCH_TICKET)
+
+	local TICKET_NAME $item_exists(CUSTOMER_ID,SEARCH_TICKET,name)
+	local reg.mitem.title "Redeem " TICKET_NAME
+	local reg.mitem.type callback
+	local reg.mitem.data SEARCH_ITEM
+	local reg.mitem.callback redeem_ticket
+	menuitem.register
+}
+
+{ redeem_ticket //PARAM1=customer_id PARAM2=item to return
+
+	//dbg temp RedeemTicket got $get(PARAM1,name) PARAM2 PARAM3 PARAM4
+	local ITEM_IN PARAM2
+
+	local TICKET_NAME "item_tk_"
+	stradd TICKET_NAME ITEM_IN
+
+	if ( $item_exists(PARAM1,TICKET_NAME) )
+	{
+		playanim critical ANIM_STORE
+
+		//dbg temp attempting to remove TICKET_NAME in exchange for ITEM_IN
+		local METHOD_HACK $item_exists(PARAM1,TICKET_NAME,remove)
+		offer PARAM1 ITEM_IN:150 //check code, see if you can offer batches of items
+		//other issue is can't control bundle based on item type easily
+ 		//maybe get that $contain(<string>,<look_for_string>) if ( $contain(ITEM_IN,"bolt") local BUNDLE 100
+		playanim critical ANIM_YES
+		saytext SAYTEXT_REDEEMTICKET
+	}
+	else
+	{
+		saytext SAYTEXT_NOTICKET
+		playanim critical ANIM_NO
+	}
+}
+
+{ not_enough_arrows
+
+	playanim critical ANIM_NO
+	saytext SAYTEXT_NOT_ENOUGH
+}
+
+{ check_for_item //PARAM1=item //PARAM2=fee
+
+	local SEARCH_ITEM PARAM1
+	local STORAGE_FEE PARAM
+	if $item_exists(PARAM1,SEARCH_ITEM)
+
+	local CALLBACK "gticket_"
+	stradd CALLBACK SEARCH_ITEM
+	local ITEM_NAME $item_exists(PARAM1,SEARCH_NAME,name)
+	local reg.mitem.title	"Store: 150 " ITEM_NAME "s (" STORAGE_FEE "gp )"
+	local reg.mitem.type	payment
+	local reg.mitem.data	"gold:" STORAGE_FEE " " SEARCH_ITEM ":150"
+	local reg.mitem.callback  CALLBACK
+	local reg.mitem.cb_failed not_enough_arrows
+	menuitem.register
+}

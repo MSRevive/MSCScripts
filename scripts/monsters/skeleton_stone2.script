@@ -1,0 +1,165 @@
+{
+	setvar ANIM_RUN run
+   const SKEL_HP		1000
+   const ATTACK_HITCHANCE 	85%
+   const ATTACK_DAMAGE_LOW 	16
+   const ATTACK_DAMAGE_HIGH 	26
+   setvard NPC_GIVE_EXP 		150
+
+   setvard DROP_GOLD 		1
+   setvard DROP_GOLD_MIN		25
+   setvard DROP_GOLD_MAX		55
+
+   const SKEL_RESPAWN_CHANCE	0%
+   const SKEL_RESPAWN_LIVES	0
+
+   const SOUND_STRUCK1 	weapons/axemetal1.wav
+   const SOUND_STRUCK2 	weapons/axemetal2.wav
+   const SOUND_STRUCK3 	debris/concrete1.wav
+
+	const SOUND_STUN zombie/claw_strike2.wav
+
+	const SOUND_SUMMON monsters/skeleton/calrain3.wav
+
+	const ROCK_DAMAGE '$rand(200,400)'
+
+	const STUN_ATK_CHANCE 10
+
+	const STONE_SKELETON 1
+
+	const ROCK_FREQ 15.0
+
+	precache monsters/skeleton_boss1.mdl //precache model for older clients
+}
+
+#include monsters/skeleton_base
+
+{ skeleton_spawn
+
+    setmodel monsters/skeleton_boss1.mdl
+	setmodelbody	0 7 //0=standard 1=ash 2=green 3=bloody 4=decayed 5=ice 6=gold 7=stone 8=crystal 9=weirdgel
+	setmodelbody	1 3 //0=Unarmed 1=darkmace 2=sword 3=hammahs 4=bigsword+shield 5=iceclubs 6=fireclubs 7=highsword 8=wand
+   	width 32
+   	height 80
+	if ( !SLEEPER ) callevent animate_stone
+	if ( SLEEPER )
+	{
+		invincible 1
+		setvard WAS_SLEEPING 1
+		callevent npcatk_suspend_ai
+		setidleanim ANIM_IDLE
+		setmoveanim ANIM_IDLE
+		setanim.framerate 0.0
+	}
+
+	if ( $lcase(game.map.name) equals thanatos ) setvard SET_GREEK 1
+	if ( SET_GREEK ) setmodelbody 0 10
+}
+
+{ animate_stone
+
+	name a|Lesser Stone Mason
+   roam 1
+
+	blood none
+
+   takedmg all .6
+
+   hearingsensitivity 3
+
+	if ( WAS_SLEEPING )
+	{
+		setmoveanim ANIM_WALK
+		setanim.framerate 1.0
+		callevent npcatk_resume_ai
+	}
+}
+
+
+{ attack_1
+
+	setvard STUN_ATTACK 0
+
+	if $rand(1,100) < STUN_ATK_CHANCE
+	setvard ANIM_ATTACK attack2	
+}
+
+{ npc_targetsighted
+
+	if !IS_FLEEING
+	
+	if ( ROCK_ON )
+	{
+		if !ROCK_DELAY
+		setvard ROCK_DELAY 1
+		callevent ROCK_FREQ rock_delay_reset
+		playanim break
+		callevent 0.1 summon_rock
+	}
+}
+
+{ rock_delay_reset
+
+	setvard ROCK_DELAY 0
+}
+
+{ attack_2
+
+	setvard STUN_ATTACK 1
+   	callevent attack_snd
+   	dodamage ENTITY_ENEMY ATTACK_HITRANGE $randf(ATTACK_DAMAGE_LOW,ATTACK_DAMAGE_HIGH) ATTACK_HITCHANCE
+	setvard ANIM_ATTACK attack1
+}
+
+{ game_dodamage //1:AttackHit(1/0)  2:EntityHit  3:StartOrigin  4:EndOrigin
+
+	if PARAM1
+	if STUN_ATTACK
+	playsound 0 10 SOUND_STUN
+	applyeffect PARAM2 effects/effect_stun $randf(5,10) 1 1
+	setvard STUN_ATTACK 0
+}
+
+{ cycle_up
+	setvard ROCK_ON 1
+}
+
+{ summon_rock
+	setvard AS_ATTACKING game.time //tells anti-stuck he's attacking
+	add AS_ATTACKING 20.0
+	playsound 0 10 SOUND_SUMMON
+	setvard ROCK_TARGET HUNT_LASTTARGET
+	callevent npcatk_suspend_ai
+	playanim critical castspell
+	createnpc monsters/summon/rock $relpos(0,30,-64) $get(ent_me,id)
+	setvard MY_ROCK ent_lastcreated
+	setvard ROCK_POS $get(MY_ROCK,origin)
+	setvard ROCK_X $vec.x(ROCK_POS)
+	setvard ROCK_Y $vec.y(ROCK_POS)
+	setvard ROCK_Z $vec.z(ROCK_POS)
+	setvard ROCK_RAISE_COUNT 0
+	setmovedest ROCK_TARGET 999
+	callevent 0.1 raise_rock
+}
+
+{ raise_rock
+
+	add ROCK_RAISE_COUNT 1
+	add ROCK_Z 4
+	setorigin MY_ROCK (ROCK_X,ROCK_Y,ROCK_Z)
+	if ( ROCK_RAISE_COUNT >= 15 ) callevent throw_rock
+	if ROCK_RAISE_COUNT < 15
+	callevent 0.1 raise_rock
+}
+
+{ throw_rock
+
+	deleteent MY_ROCK
+	tossprojectile view 800 ROCK_DAMAGE 0.75 proj_troll_rock (0,30,48)
+	callexternal ent_lastprojectile ext_lighten 0
+	callevent 0.1 npcatk_resume_ai
+}
+
+{ game_death
+	if ( $get(MY_ROCK,exists) ) callexternal MY_ROCK toss_rock $get(ent_laststruck,id) ROCK_DAMAGE
+}

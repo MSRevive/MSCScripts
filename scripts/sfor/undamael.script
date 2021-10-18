@@ -1,0 +1,193 @@
+//Thothie - Atholo is not working, remaking based on Blacksmith
+//-Atttempt to keep lighting effect and HP - add fire damage effect
+//-Removing goofy sound references in BS
+//-IMO he drops too much stuff, although I dunno how you kill him, reducing none the less
+//-(Orignally droppped: swords_lostblade, swords_skullblade4, bows_swiftbow, smallarms_huggerdagger4, armor_knight, axes_greataxe)
+//-(Now just lostblade) 
+//-Noteable Differences from Blacksmith: Sounds, <Attack Damge, >Reach, <hp, >hitchance, Glows, Taunt(?), Invulnerable, burn effect damage
+//-I *think* whoever did this was trying to use the nihilanth sounds
+//-They can be replaced in the MSC folder without need to alter the script, if we get some unique sounds for him
+//-Can be made vulnerable via sending ms_npcscript event 'vulnerable'
+
+
+//Altholo (from Blacksmith)
+
+{
+   const SOUND_STRUCK1 weapons/cbar_hitbod1.wav
+   const SOUND_STRUCK2 weapons/cbar_hitbod2.wav
+   const SOUND_STRUCK3 weapons/cbar_hitbod3.wav
+   const SOUND_PAIN controller/con_pain2.wav
+   const SOUND_ATTACK1 zombie/claw_miss1.wav
+   const SOUND_ATTACK2 zombie/claw_miss2.wav
+   const SOUND_TAUNT nihilanth/nil_die.wav
+   const SOUND_IDLE garg/gar_idle2.wav //was atholo/idle.wav
+   const SOUND_DEATH nihilanth/nil_done.wav //was atholo/done.wav
+   setvar ANIM_RUN run
+   setvar ANIM_IDLE idle1
+   setvar ANIM_WALK walk
+   setvard ATTACK_HITRANGE 600
+   setvard ATTACK_RANGE 120
+	setvard ANIM_ATTACK
+	
+   setvar ATTACK_HITCHANCE 90%
+	const DAMAGE_ATTACK1 $rand(40,60)
+	const DAMAGE_ATTACK2 $rand(60,100)
+   setvard MOVE_RANGE 100
+   setvar SEE_ENEMY 0
+   setvar IGNORE_ENEMY 0
+   setvard CAN_FLINCH 0
+   setvard FLINCH_DELAY 12
+   setvard NPC_MOVE_TARGET enemy
+   giveitem ring_light2		//makes him glow
+
+    //Precache
+   precache SOUND_DEATH //This sound must be explicitly precached since
+			//the play command for it isn't in this file (it's
+			//in base_monster.script)
+
+   setvar SOUND_PISSED garg/gar_die1.wav //added for invul script
+   precache SOUND_PISSED
+   precache SOUND_IDLE
+
+
+	const MONSTER_MODEL monsters/skeleton_boss2.mdl
+	precache MONSTER_MODEL //upload new model
+
+   precache lgtning.spr
+}
+
+#include monsters/base_monster
+
+{ npc_spawn
+
+	name_unique boss_atholo
+
+   name |Atholo
+   invincible 1
+   hp 2200
+   gold 250
+
+	takedmg all 0.5
+	takedmg holy 2.0
+	takedmg fire 0.0
+	setvard IMMUNE_FIRE 1
+	takedmg ice 0.1
+	takedmg cold 0.1
+	takedmg lightning 0.5
+
+   //ov 359
+   width 40
+   height 128
+   race undead
+   roam 0
+   hearingsensitivity 6
+   setvard NPC_GIVE_EXP 400
+	setmodelbody 1 4
+   setmodel MONSTER_MODEL
+   setmodelbody	0 0
+   setidleanim ANIM_IDLE
+   setmoveanim ANIM_WALK
+   setvard ANIM_ATTACK attack1
+
+   volume 10
+   playsound 2 SOUND_TAUNT
+
+	setvard SWIPES 0
+}
+
+{ attack_1
+
+   dodamage ent_lastseen 600 DAMAGE_ATTACK1 75%
+
+   //burn effect 100%
+   applyeffect ent_laststruckbyme effects/effect_burn 5 $get(ent_me,id) $rand(50,100)
+	add SWIPES 1
+	if SWIPES > 10
+	setvard SWIPES 0
+	setvard ANIM_ATTACK attack2
+
+}
+
+{ attack_2
+
+   dodamage ent_lastseen ATTACK2_RANGE DAMAGE_ATTACK2 100%
+
+   applyeffect ent_laststruckbyme effects/freeze_solid 5 $get(ent_me,id) $rand(25,50)
+	setvard ANIM_ATTACK attack1
+}
+
+   //Hit by someone
+{ npc_struck
+   
+   volume 5
+   playrandomsound 2 SOUND_STRUCK1 SOUND_STRUCK2
+}
+
+{ npcatk_targetvalidate
+
+	if !DID_WARCRY
+	setvard DID_WARCRY 1
+	roam 1
+}
+
+//ported from original,edited
+
+{
+   eventname death
+   //Only ONE perfect or unique item per Boss PLEASE! :D 
+
+   volume 10
+   playsound 2 SOUND_DEATH
+   
+   //giveitem swords_lostblade
+}
+
+{
+   eventname taunt
+
+   repeatdelay 15
+
+   volume 10
+   playsound 2 SOUND_TAUNT
+   eventname wander
+   setmoveanim ANIM_WALK
+   setvar SEE_ENEMY 0
+}
+
+//attempt to make vulnerable via msnpc_script
+
+{ vulnerable
+	invincible 0
+	volume 10
+	playsound 2 SOUND_PISSED
+	saytextrange 1024
+	setanim.movespeed 2.0
+	setanim.framerate 1.5
+	setvard CAN_FLINCH 1
+	saytext Fools! I shall destroy you all!
+}
+
+{ turn_undead
+
+	//Can be damaged by Holy Light, but not turned
+ 
+	//PARAM1 - incoming Holy damage
+	//PARAM2 - exorcist
+
+	local INC_HOLY_DMG PARAM1
+	local THE_EXCORCIST PARAM2
+	local ME_ME $get(ent_me,id)
+
+	dodamage ME_ME direct INC_HOLY_DMG 100 THE_EXCORCIST
+
+	effect glow ent_me (255,255,0) 512 1 1
+}
+
+{ my_target_died
+	playsound 0 10 SOUND_TAUNT
+}
+
+{ game_death
+
+	usertrigger atholo_died
+}

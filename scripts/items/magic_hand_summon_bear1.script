@@ -1,0 +1,59 @@
+{
+	const SUMMON_UNQIUE 1 //despite convention, this is not handled by the base
+	const SUMMON_UNIQUE_TAG bear1
+	const SUMMON_UNIQUE_NAME "Bear Guardian"
+
+  const SPELL_NAME		"Summon Bear"
+  const SPELL_DESC		"Summons a Bear Guardian"
+
+  const MELEE_ATK_DURATION 	1
+
+  setvar SPELL_SKILL_REQUIRED	20
+  const SPELL_FIZZLE_TIME	10
+  const SPELL_CAST_SUCCESS	65%
+  const SPELL_PREPARE_TIME	2
+  const SPELL_DAMAGE_TYPE	summon
+  const SPELL_ENERGYDRAIN	20
+  const SPELL_MPDRAIN		30
+
+  const EFFECT_MAXDURATION 	180
+  const EFFECT_MINDURATION 	10
+  const EFFECT_DURATION_STAT	$get(ent_owner,stat.concentration.ratio)
+  const EFFECT_DURATION 	$get_skill_ratio(EFFECT_DURATION_STAT,EFFECT_MINDURATION,EFFECT_MAXDURATION)
+  const EFFECT_MAX_DMG 		10
+  const EFFECT_MIN_DMG 		0.1
+  const EFFECT_DMG		$get(ent_owner,skill.spellcasting.summoning.ratio)
+
+  const EFFECT_SCRIPT		monsters/summon/bear1
+
+  precachefile EFFECT_SCRIPT
+}
+
+#include items/magic_hand_summon_base
+
+{  [override] spell_casted	//PARAM1: "none"/"npc"/"world"   2: Attack end Position   3: Entity hit (if any)
+
+  	if ( CURRENT_SUMMONS >= MAX_SUMMONS ) playermessage "Too many summoned monsters present, cannot create more."
+
+	if CURRENT_SUMMONS < MAX_SUMMONS
+
+	if ( SUMMON_UNQIUE )
+	{
+		if $get(ent_owner,scriptvar,'PLR_UNIQUE_SUMMONS') contains SUMMON_UNIQUE_TAG
+		dplayermessage ent_owner You may only summon one SUMMON_UNIQUE_NAME at a time.
+		givemp ent_owner SPELL_MPDRAIN
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+
+	local SUM_DURATION EFFECT_DURATION 
+	multiply SUM_DURATION 2.0
+
+	local SPAWN_ORG PARAM2
+	vectorset SPAWN_ORG z $get_ground_height(SPAWN_ORG)
+	vectoradd SPAWN_ORG z 5
+	createnpc EFFECT_SCRIPT SPAWN_ORG $get(ent_owner,id) SUM_DURATION
+
+	callevent summon_check SPAWN_ORG
+}

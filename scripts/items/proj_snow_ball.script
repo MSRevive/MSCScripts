@@ -1,0 +1,85 @@
+//Thothie - Blizzard from Fireball
+//- To prevent blizzard storm from crashing the server when it strikes func_breakables
+//- Generic_AOE's freeze effect doesnt seem to be working constantly, hence we have this.
+//- This projectile does no damage in itself
+//- Designate dam via tossprojectile
+//- example: tossprojectile view 1000 MY_BASE_DMG 30 proj_generic_aoe $vec(z,x,y)
+
+{
+	const MODEL_HANDS      		none
+	//may make own over-sized model via scale QC
+	const MODEL_WORLD      		weapons/projectiles.mdl
+	const MODEL_BODY_OFS 2
+	const PROJ_ANIM_IDLE	idle_iceball
+	const ITEM_NAME			firemana
+	const PROJ_DAMAGE_TYPE		cold
+
+	const PROJ_DAMAGE			100
+	const PROJ_AOE_RANGE		256
+	const PROJ_AOE_FALLOFF		0
+	const PROJ_STICK_DURATION	0  //Don't stick in enemies
+	const PROJ_SOLIDIFY_ON_WALL	0  //Don't go solid on wall hit
+	const PROJ_COLLIDEHITBOX	16 //entirely experimental
+	const SOUND_WOOSH doors/aliendoor3.wav
+	const SOUND_SMOOSH debris/beamstart14.wav
+	precache xflare1.spr
+}
+
+#include items/proj_base
+
+{  projectile_spawn
+
+	name 		a|Snow Ball of Dewm
+	weight 		500
+	size 		10
+	value		5
+	gravity		0.05
+	groupable	25
+   
+	sethudsprite hand arrows
+	sethudsprite trade ITEM_NAME
+	sethand any
+
+	setprop ent_me rendermode 5
+	setprop ent_me renderamt 255
+}
+
+
+{  game_tossprojectile
+
+	svplaysound 0 10 SOUND_WOOSH
+}
+
+{  projectile_landed
+	//splodie
+	//tempent trail <modelname/spritename> <start> <dest> <count> <life> <scale> <speed> <randomness>
+
+	playsound 0 10 SOUND_SMOOSH
+	effect tempent trail xflare1.spr $relpos(0,0,0) $relpos(0,1,1) 1 1.0 15.0 1.0 0
+
+}
+
+{  game_hitnpc
+	
+	if ( $get(ent_expowner,isplayer) ) local OUT_DAMAGE $get(ent_owner,skill.spellcasting.ice)
+	if ( !$get(ent_expowner,isplayer) ) local OUT_DAMAGE 20.0
+	applyeffect ent_laststruckbyme effects/effect_frostbite_dmg 10.0 $get(ent_owner,id) OUT_DAMAGE spellcasting.ice
+}
+
+{ game_dodamage //1: Attack Hit (1/0)  2: Entity Attack hit  3:  Start Position  4:  End Position
+
+	if PARAM1
+
+	local MY_OWNER $get(ent_expowner,id)
+	local MY_OWNER_PLAYER $get(ent_expowner,isplayer)
+	local ENT_HIT $get(PARAM2,id)
+
+	local EFFECT_DURATION $get(MY_OWNER,skill.spellcasting.ice)
+	multiply EFFECT_DURATION 0.5
+
+	if ( !MY_OWNER_PLAYER ) local EFFECT_DURATION $get(MY_OWNER,scriptvar,SNOWBALL_DURATION)
+	
+	if ( EFFECT_DURATION < 3 ) setvard EFFECT_DURATION 3
+
+	applyeffect ENT_HIT effects/effect_frostbite EFFECT_DURATION MY_OWNER spellcasting.ice
+}

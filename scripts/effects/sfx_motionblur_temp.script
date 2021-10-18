@@ -1,0 +1,76 @@
+//Updated version of sfx_motionblur by Thothie
+//
+//Motion Blur (client sfx script)
+//
+//PARAM1 - ID of entity
+//PARAM2 - Body Offset of entity
+//PARAM3 - Skin Index
+//PARAM4 - Duration (or will remove when entity stops moving)
+// ===========
+// Client Side
+// ===========
+
+#scope client
+
+{  client_activate //<model> <body> <skin> <duration>
+
+	setvard MODEL_IDX PARAM1
+	setvard MODEL_BODY_OFS PARAM2
+	setvard MODEL_SKIN PARAM3
+	setvard FX_DURATION PARAM4
+
+	setcallback render enable
+
+	setvard BLUR_ON 1
+	callevent FX_DURATION end_fx
+}
+
+{ end_fx
+	setvard BLUR_ON 0
+	callevent 1.0 remove_me
+}
+
+{ remove_me
+	removescript
+}
+
+{  game_prerender
+
+	if BLUR_ON
+
+	local CUR_POS $getcl(MODEL_IDX,origin)
+
+	if( OLD_POS isnot CUR_POS )
+	{
+
+		setvard PASS_ANG OLD_ANG
+
+		callevent create_model OLD_POS
+		setvard OLD_POS CUR_POS
+		setvard OLD_ANG $getcl(MODEL_IDX,angles)
+	}
+	else
+	{
+		callevent end_fx
+	}
+}
+
+
+{  create_model
+
+	cleffect tempent model $getcl(MODEL_IDX,model) PARAM1 setup_model //update_model
+}
+
+{  setup_model
+
+	cleffect tempent set_current_prop death_delay 	0.15
+	cleffect tempent set_current_prop angles 	PASS_ANG
+	cleffect tempent set_current_prop gravity 	0
+	cleffect tempent set_current_prop rendermode 	alpha
+	cleffect tempent set_current_prop renderamt 	50
+	cleffect tempent set_current_prop collide 	none
+	cleffect tempent set_current_prop body MODEL_BODY_OFS
+	cleffect tempent set_current_prop skin MODEL_SKIN
+	cleffect tempent set_current_prop sequence $getcl(MODEL_IDX,sequence)
+	cleffect tempent set_current_prop frame $getcl(MODEL_IDX,frame)
+}

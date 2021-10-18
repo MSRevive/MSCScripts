@@ -1,0 +1,62 @@
+{
+	const SKILL_LEVEL_REQ 0
+	const SKILL_TYPE skill.spellcasting
+
+	const PET_TYPE wolf //type of pet owner must not have
+	const PET_SEARCH wolf //NPC_PET_TYPE crystal can convert
+	const PET_MAXHP 100 //maxhp this crystal can charm (stronger creatuers will need to be weakend)
+	const PET_FAIL_MESSAGE "No wolves in range."
+	const PET_YAY_MESSAGE "You now have a new pet wolf!"
+}
+
+#include items/base_crystal
+
+{ crystal_spawn
+
+	name a|Wolf Charm
+	desc This crystal can be used to tame one wolf
+	weight 5
+	size 5
+	value 500
+	sethand both
+}
+
+{ check_use
+
+	local OWNER_PETS $get_quest_data(ent_owner,pets)
+
+	if ( OWNER_PETS contains PET_TYPE )
+	{
+		setvard CRYSTAL_ABORT_USE 1
+		dplayermessage ent_owner You can only have one of this type of pet.
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	callexternal ent_owner ext_scan_pet PET_SEARCH
+	local FOUND_PET $get(ent_owner,scriptvar,'PLR_FOUND_PET')
+	if ( $get(FOUND_PET,isalive) )
+	{
+		if ( $get(FOUND_PET,hp) > PET_MAXHP )
+		{
+			setvard CRYSTAL_ABORT_USE 1
+			dplayermessage ent_owner $get(FOUND_PET,name) is too strong to be charmed! It must be weakened first!
+			local EXIT_SUB 1
+		}
+		if !EXIT_SUB
+		callexternal FOUND_PET ext_makepet $get(ent_owner,id)
+	}
+	else
+	{
+		setvard CRYSTAL_ABORT_USE 1
+		dplayermessage ent_owner PET_FAIL_MESSAGE
+	}
+}
+
+{ activate_crystal //from base_crystal
+
+	callexternal $get(ent_owner,id) set_spawn_point NEW_SPAWN_POS
+	effect screenfade ent_owner 0.5 1 (255,255,255) 255 fadein
+	infomsg ent_owner PET PET_YAY_MESSAGE
+	playsound 0 10 magic/spawn.wav
+}

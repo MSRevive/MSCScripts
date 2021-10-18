@@ -1,0 +1,254 @@
+//Thothie - added bar (barkeep script unused in map)
+//- Removing asking for innkeeper cash, since it doesn't work
+//- Different greet sound
+// Innkeeper
+{
+	const SOUND_HELLO npc/hello1.wav
+}
+
+#include monsters/base_chat
+
+{
+   //eventname MUST be the first field!
+   eventname spawn
+
+   hp 25/25
+   gold 26	
+   name		Gerald the Inn Keeper
+   //fov 60
+   width 32
+   height 72
+   race		human
+   roam 0	//Don't go roaming around
+   setmodel	npc/human1.mdl
+   invincible	1
+   setmodelbody 1 1
+   setvar	ATTACK_RANGE 90
+   setvar	ATTACK1_DAMAGE 5
+   setvar	ATTACK_PERCENTAGE 60% 
+
+   callevent resetchat
+
+   catchspeech say_hi hi hello hail greet
+   
+   catchspeech say_job job work money gold
+
+   catchspeech say_rumour news happenings rumor
+
+	catchspeech say_sewer sewer
+}
+
+{ say_rumor
+
+	callevent say_rumour //spellinks
+}
+
+{
+  eventname chatreset
+  
+  setvar CANCHAT 1
+}
+
+{
+  repeatdelay 2
+  if CANCHAT isnot 0
+  see player 180
+
+
+  callevent say_hi
+  calleventtimed 20 chatreset  
+}
+
+{
+  eventname say_hi
+  if !SAID_WELCOME
+  playanim once studycart
+  saytext Welcome to Deralia Inn!
+  calleventtimed 2 say_hi_2
+  setvar CANCHAT 0
+}
+{
+  eventname say_hi_2
+  saytext Finest booze and most comfortable lodging this side of Daragoth!
+  setvard SAID_WELCOME 1
+}
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////
+
+{
+  eventname game_recvoffer_gold
+
+  callevent recv_moregold
+  callevent recv_enoughgold
+  callevent recv_notenoughgold
+}
+{
+  eventname recv_moregold
+
+  if OFFER_AMT > 5
+
+  recvoffer accept
+  saytext That be some good gold there.
+  usetrigger door01
+  playanim once yes
+}
+{
+  eventname recv_enoughgold
+
+  if OFFER_AMT equals 5
+
+  recvoffer accept
+  saytext Best be quick, the doors open and there's lots of people wanting a room.
+  usetrigger door01
+  playanim once yes
+}
+{
+  eventname recv_notenoughgold
+
+  if OFFER_AMT < 5
+
+  recvoffer reject
+  saytext This isn't charity boy, it's an Inn.
+  playanim once no
+}
+
+// -- Attack thieves --
+
+{
+  eventname robbed
+
+  saytext Bastard! Thief!
+  playanim once beatdoor
+}
+
+{
+   // Deal damage
+   eventname attack_1
+
+   dodamage ent_laststole ATTACK_RANGE ATTACK1_DAMAGE ATTACK_PERCENTAGE
+}
+
+{
+  eventname say_job
+  saytext I've got Bob the door guard, but he's a little afraid of rats. And my basement is full of them.
+  saytext If you could clear the place up, it would be greatly appreciated and you can stay the night.
+}
+
+//Rumours
+{
+  eventname say_rumour
+  playanim once pondering
+  saytext Rumour has it that this place has rooms real cheap, get my drift?
+}
+
+//Thothie - Adding bar, since barkeep actually not in map, damnitall! Where's the booze!
+{
+	//base_vendor
+   	setvar STORE_NAME deralia_bar
+   	setvar STORE_TRIGGERTEXT "store trade buy sell purchase sale offer" beer ale wine mead drink
+}
+
+#include monsters/base_npc
+#include monsters/base_chat
+#include monsters/base_npc_vendor
+#include monsters/base_npc_vendor_confirm
+
+{
+   eventname vendor_used
+
+   saytext Careful! This isn't that watered down stuff you boys drink in Edana!
+   volume 10
+   playsound 2 SOUND_HELLO
+}
+
+{
+   eventname vendor_addstoreitems
+
+   //           |Store name|  |Item name|  	|Quantity| |cost%|   |Sell ratio|
+   addstoreitem  STORE_NAME     drink_mead           20  	100
+   addstoreitem  STORE_NAME     drink_ale            20  	100
+   addstoreitem  STORE_NAME     drink_wine           20  	100
+}
+
+{
+   eventname trade_success
+
+   if CANCHAT == 1
+
+   say goods[34] *[24] *[35] *[40]
+   setvar CANCHAT 0
+   callevent 10 resetchat
+}
+
+{
+  eventname resetchat
+  setvar CANCHAT 1
+}
+
+{ say_sewer
+	if ( $get(PARAM1,isalive) )
+	{
+		setvard TALK_TARGET PARAM1
+	}
+	else
+	{
+		setvard TALK_TARGET $get(ent_lastspoke,id)	
+	}
+
+	callevent convo_anim
+	saytext Well, if hunting rats is beneath you...
+	callevent 3.0 say_job2
+}
+
+{ say_job2
+
+	callevent convo_anim
+	saytext "I heard Cathain, the quartermaster, lost a sewer crew a little while ago."
+	callevent 5.0 say_job3
+}
+
+{ say_job3
+	callevent convo_anim
+	saytext "Usually when that happens, they send militiamen to find them, or at least clean up the mess."
+	callevent 5.0 say_job4
+}
+
+{ say_job4
+	callevent convo_anim
+	if ( $get(TALK_TARGET,gender) equals male )
+	{
+		saytext "A big strapping lad like yourself might fit the bill."
+	}
+	else
+	{
+		saytext "A brave heroine like yourself might just fit the bill."
+	}
+	callevent 5.0 say_job5
+}
+
+{ say_job5
+	playanim critical give_shot
+	saytext "You can find Cathain inside the barracks - just left of the castle. Usually pacing a wear in the floor."
+}
+
+//Rumours
+{
+  eventname say_rumour
+  playanim once pondering
+  saytext I've heard from travelers coming to this tavern, telling about places outside of this village.
+  calleventtimed 3 say_rumour2
+}
+
+{
+  eventname say_rumour2
+  saytext This knight came here the other day, and he spoke of the path to Gatecity being cut off. If that's true, we can't visit the dwarves and elves anymore.
+}
+
+{ bchat_after_menus
+
+	local reg.mitem.title 	"Sewer Job"
+	local reg.mitem.type 	callback
+	local reg.mitem.callback say_sewer
+	menuitem.register
+}

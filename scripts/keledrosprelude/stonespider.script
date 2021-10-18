@@ -1,0 +1,98 @@
+//This is an older script and may have some bad conventions as a result.
+
+//Thothie - This bugger wasn't working
+//- For simplicity's sake, I'm using the spiders/thornlands, which does work, and matching up the stats
+//- Differences: >range <accuracy >damage
+//- Just to make it intersting, adding a 1 in 10 chance per hit for major knock back or stun
+//- Maybe he'll knock you into that pit yer next to. ^_^
+
+//Stone Spider (from Thornlands Spider)
+
+{
+   const SOUND_PAIN 	monsters/spider/spiderhiss.wav
+   const SOUND_IDLE1 	monsters/spider/spideridle.wav
+   const SOUND_DEATH 	monsters/spider/spiderdie.wav
+   const SND_STRUCK1 	weapons/axemetal1.wav
+   const SND_STRUCK2 	weapons/axemetal2.wav
+   const SND_STRUCK3 	debris/concrete1.wav
+   const SND_STRUCK4 	SOUND_PAIN
+   const SND_STRUCK5 	SOUND_PAIN
+   const SOUND_ATTACK1	zombie/claw_miss1.wav
+   const SOUND_ATTACK2	zombie/claw_miss2.wav
+
+   setvar ANIM_IDLE 	idle
+   setvar ANIM_WALK 	walk
+   setvar ANIM_RUN 	run
+   setvard ANIM_ATTACK 	attack
+   const ANIM_DODGE 	dodge
+   setvard ANIM_DEATH 	die
+
+   setvard MOVE_RANGE 	100
+   setvard ATTACK_RANGE 	250
+   setvard ATTACK_HITRANGE 300
+   const ATTACK_DAMAGE_LOW	14.0
+   const ATTACK_DAMAGE_HIGH	20.0
+   const ATTACK_ACCURACY	60%
+   setvard NPC_GIVE_EXP 	100
+	const NPC_BASE_EXP 100
+
+   const SPIDER_IDLE_VOL   4
+   const SPIDER_IDLE_DELAY 3.6
+   const SPIDER_VOLUME  10
+
+	setvard IMMUNE_VAMPIRE 1
+
+   //setvard NPC_MOVE_TARGET enemy	//base_npc_attack - Premptive attack
+   //setvard RETALIATE_CHANCE 75%   //base_npc_attack - Automatically switch targets to the last damaging player
+}
+
+#include monsters/spider_base
+
+{ npc_spawn
+
+   hp 500
+   width 120
+   height 64
+   name a|Spider made of stone
+   hearingsensitivity 6
+   setmodel monsters/fer_spider_giant.mdl
+   setmodelbody	0 3
+
+   takedmg all .85
+	takedmg poison 0.0
+}
+
+{ npc_post_spawn
+	takedmg holy 2.0	
+}
+
+
+   // Deal damage
+{ [override] bite1
+
+   if( $rand(0,1) == 0 ) playrandomsound CHAN_VOICE SPIDER_VOLUME SOUND_ATTACK1 SOUND_ATTACK2
+   setvar PUSH_VEL $relvel(0,100,0)
+   if( $rand(1,10) == 1 ) applyeffect ent_laststruckbyme effects/effect_push 3 $relvel(0,200,200) 0
+   if( $rand(1,10) == 1 ) applyeffect ent_laststruckbyme effects/effect_stun 3 0
+   dodamage ent_lastseen ATTACK_HITRANGE $randf(ATTACK_DAMAGE_LOW,ATTACK_DAMAGE_HIGH) 85%
+}
+
+{  game_damaged_other
+
+   if PUSH_VEL isnot 'PUSH_VEL'
+
+   addvelocity ent_laststruckbyme PUSH_VEL//Push the player a bit
+
+}
+
+{ [override] check_attack
+
+   if !IS_FLEEING
+
+	if $get(HUNT_LASTTARGET,isalive)
+
+   if( $get(HUNT_LASTTARGET,range) <= ATTACK_RANGE ) local L_ATTACK 1
+
+   if L_ATTACK
+   callevent npcatk_attackenemy
+}

@@ -1,0 +1,66 @@
+#scope server
+
+{
+	const CUSTOM_DEATH 1
+	const SOUND_HATCH debris/bustflesh1.wav
+}
+
+#include traps/splodie_skull
+
+{ [override] [shared] skull_spawn
+
+	name an|Icey Skull
+	if ( MONSTER_HP equals 'MONSTER_HP' )
+	{
+		hp 50
+	}
+	else
+	{
+		hp MONSTER_HP
+	}
+	race demon
+	setmodel monsters/skull.mdl
+	setprop ent_me skin 1
+	blood none
+	width 16
+	height 16
+	setmodelbody 0 1
+
+	blood none
+	setvard IMMUNE_VAMPIRE 1
+
+	setbbox npcsize
+
+	setprop ent_me movetype const.movetype.bounce
+
+	effect glow ent_me (128,128,255) 128 -1 0
+
+	setvard IMMUNE_VAMPIRE 1
+
+	callevent 0.1 scan_bounce
+
+	callevent $randf(10.0,20.0) self_destruct
+	callevent 0.01 bounce_about
+}
+
+{ game_death
+	if ( $get(MY_OWNER,isalive) ) callexternal MY_OWNER skull_died
+	callevent xp_send
+
+	setvard DEATH_TIME game.time
+	add DEATH_TIME 0.2
+
+	playsound 0 10 SOUND_HATCH
+	setprop ent_me rendermode 5
+	setprop ent_me renderamt 0
+	local SPLODE_POS $relpos(0,0,0)
+	clientevent new all effects/sfx_splodie SPLODE_POS (128,128,255)
+	xdodamage SPLODE_POS 128 DMG_SPLODE 0 ent_me ent_me none blunt
+}
+
+{ game_dodamage
+	if PARAM1
+	if $get(PARAM2,isalive)
+	if $get(PARAM2,relationship,ent_me) equals enemy
+	applyeffect PARAM2 effects/effect_frostbite_dmg 5.0 $get(ent_me,id) DOT_COLD
+}

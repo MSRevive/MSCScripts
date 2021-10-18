@@ -1,0 +1,1097 @@
+//optimized version of maldora fragment for use in sets of 2-4
+//only summons 2 images, 1 minion, most fx are client side
+//uses flag to make sure no two fragments are spell spamming at the same time
+{
+	const CHAIN_COUNT_LIMIT 20
+
+	const AXESKIN_WHITE 6
+	const AXESKIN_NULL 5
+	const AXESKIN_LIGHTNING 4
+	const AXESKIN_POISON 3
+	const AXESKIN_COLD 2
+	const AXESKIN_DARK 1
+	const AXESKIN_FIRE 0
+
+
+	const WAND_LIGHTNING_EFFECT effects/effect_lightning_dmg
+	const WAND_COLD_EFFECT effects/effect_cold_dmg
+	const WAND_POISON_EFFECT effects/effect_poison_dmg
+	const WAND_FIRE_EFFECT effects/effect_fire_dmg
+	const WAND_DARK_EFFECT effects/effect_stun
+
+	const NME_LIST "human;hguard;wildanimal;"
+
+	const FREQ_SPAM 10
+
+	const NO_INTRO 1
+
+	setvar IS_UNHOLY 1
+
+	const NUM_SPELLS 6
+	const MINION_LIMIT 1
+	const FINGER_ADJ '$relpos($vec(0,MY_YAW,0),$vec(0,30,54))'
+	const SHADOW_SCRIPT ms_wicardoven/maldora_image
+	const MINION_SCRIPT monsters/maldora_minion_random
+	const FIN_EXP 2000
+
+	setvar ANIM_IDLE idle
+	const ANIM_LOOK look_idle
+	setvar ANIM_RUN_NORM run2
+	setvar ANIM_WALK_NORM walk2handed
+	const ANIM_JUMP jump
+	const ANIM_LEAP long_jump	
+	setvard ANIM_DEATH look_idle
+	setvar ANIM_RUN run2
+	setvar ANIM_WALK walk2handed
+
+	const ANIM_CAST ref_shoot_trip
+	const ANIM_ROCK ref_shoot_squeak
+	const ANIM_BOLT shoot_1
+	const ANIM_WAND ref_shoot_crowbar
+
+	const LAVA_FREQ $randf(20.0,40.0)
+
+	const SPELL_FREQ 9.0
+
+	const BARRIER_FREQ 30.0
+
+	const DMG_PUSH_BEAM $randf(2,6)
+	const DMG_CHAIN $randf(15,25)
+	const DMG_SHOCK 10.0 //effect_shock_dmg
+	const DMG_ROCKS $rand(50,200)
+	const DMG_WAND $randf(10,20)
+	
+	const SOUND_SHOCK1 debris/zap8.wav
+	const SOUND_SHOCK2 debris/zap3.wav
+	const SOUND_SHOCK3 debris/zap4.wav
+
+	const SOUND_BEAM weather/Storm_exclamation.wav
+
+	const SOUND_STRUCK1	voices/human/male_hit2.wav
+	const SOUND_STRUCK2	voices/human/male_hit1.wav
+	const SOUND_STRUCK3	voices/human/male_hit3.wav
+	const SOUND_STRUCK4	weapons/cbar_hitbod2.wav
+	const SOUND_STRUCK5	weapons/cbar_hitbod1.wav
+
+	setvard NO_SPAWN_STUCK_CHECK 1
+
+	setvard IMMUNE_VAMPIRE 1
+
+	//precaches ======================================
+
+	//media - monster model
+	const MONSTER_MODEL monsters/maldora.mdl
+	precache MONSTER_MODEL
+
+	//image minion media
+	precache ambience/the_horror1.wav
+	precache ambience/the_horror2.wav
+	precache ambience/the_horror3.wav
+	precache ambience/the_horror4.wav
+
+	//skeleton minion media
+	precache monsters/skeleton_boss1.mdl
+	precache weapons/cbar_hitbod1.wav
+	precache weapons/cbar_hitbod2.wav
+	precache weapons/cbar_hitbod3.wav
+	precache zombie/zo_pain2.wav
+	precache zombie/zo_pain2.wav
+	precache zombie/claw_miss1.wav
+	precache zombie/claw_miss2.wav
+	precache null.wav
+	precache zombie/zo_pain1.wav
+	precache doors/aliendoor1.wav
+	precache debris/bustconcrete1.wav
+	precache debris/bustconcrete2.wav
+	precache debris/concrete3.wav	
+	precache rockgibs.mdl
+
+	//barrier media
+	//precache doors/aliendoor3.wav
+	//precache magic/spawn.wav
+
+	//rock_storm media
+	const XSOUND_LEVITATE fans/fan4on.wav //about 4 seconds
+	const XSOUND_SPIN magic/fan4_noloop.wav
+	const XSOUND_SUMMON magic/volcano_start.wav
+	precache XSOUND_LEVITATE
+	precache XSOUND_SPIN
+	precache XSOUND_SUMMON
+
+	//uber me
+	precache ambience/alienvoices1.wav
+
+	const BARRIER_COLOR (255,0,0)
+	setvard DMG_BARRIER 400
+}
+
+
+{ game_precache
+	//man I wish I knew this worked when I wrote the base script ^_^
+
+	precachefile monsters/maldora_minion_random
+	precachefile ms_wicardoven/maldora_image
+	if ( AM_UBER ) precachefile monsters/maldora_gminion_random
+}
+
+#include monsters/base_monster_new
+
+{ npc_spawn
+
+	if !AM_UBER
+
+	name a|Fragment of Maldora
+	hp 5000
+	race demon
+	width 32
+	height 86
+
+	blood none
+
+	setvard NPC_GIVE_EXP FIN_EXP
+
+	roam 0
+
+	setvard WAND_TARGET unset
+
+	hearingsensitivity 11
+
+	invincible 1
+
+	setidleanim ANIM_IDLE
+	setmoveanim ANIM_IDLE //remember to set back on resume
+	playanim once ANIM_IDLE
+	
+	takedmg all 0.5
+
+	takedmg fire 0.0
+	takedmg poison 0.0
+	takedmg cold 0.0
+	takedmg ice 0.0
+	takedmg earth 0.0
+	takedmg magic 0.0
+	takedmg lightning 0.0
+	takedmg acid 0.0
+
+	setvard IMMUNE_FIRE 1
+	setvard IMMUNE_COLD 1
+	setvard IMMUNE_LIGHTNING 1
+	setvard IMMUNE_POISON 1
+	setvard IMMUNE_ACID 1
+	setvard IMMUNE_PUSH 1
+	setvard IMMUNE_STUN 100
+
+	takedmg holy 0.25 //evil, but well shielded
+
+	setmodel MONSTER_MODEL
+	setprop ent_me rendermode 5
+	setprop ent_me renderamt 255
+
+	callevent npcatk_suspend_ai
+
+	setvard IMAGES_ALIVE 0
+	setvard MINIONS_ALIVE 0
+
+	saytextrange 2048
+
+	//need to re-write the NPC activation sequence, or something, this doesn't work, and fux the whole system somehow
+	if ( $lcase(game.map.name) contains lodagond )
+	{
+		if !G_MALDORA_PRESENT //remember to stick this on the final maldora
+		setvard NPC_PROX_ACTIVATE 1
+		setvard NPC_PROXACT_RANGE 768
+		setvard NPC_PROXACT_IFSEEN 1
+		setvard NPC_PROXACT_EVENT start_convo
+	}
+
+	if ( !NPC_PROX_ACTIVATE ) callevent combat_go
+
+	if ( !AM_UBER ) setprop ent_me skin AXESKIN_NULL
+}
+
+{ npc_post_spawn
+
+	//get beams ready
+	callevent 0.1 init_beam_push
+	callevent 0.2 init_beam_chain
+
+	setvard DEBUG_DID_POSTSPAWN 1
+	callexternal GAME_MASTER gm_add_maldora_fragment $get(ent_me,id) //write this in after ye get back home
+	callevent 0.1 get_index
+}
+
+{ [override] npcatk_proxact_scan
+
+	if READY_TO_WAIT
+
+	if !NPC_PROXACT_TRIPPED
+	getplayersnb LPLAYERS
+	setvard NPC_PROX_LOOP 0
+	setvard NPC_PROXACT_INRANGE 0
+	calleventloop $get_token_amt(LPLAYERS) npcatk_proxact_lplayers
+	if ( NPC_PROXACT_INRANGE ) callevent npcatk_prox_activated NPC_PROXACT_SCANID "player_scan"
+
+	if !NPC_PROXACT_TRIPPED //might get reset above
+	callevent 1.0 npcatk_proxact_scan
+}
+
+{ [override] npcatk_prox_activated //PARAM1 = activating player PARAM2 debug
+
+	if READY_TO_WAIT
+
+	if ( NPC_PROXACT_FOV )
+	{
+		local TEST_ORIG $get(PARAM1,origin)
+		if !$within_cone2D(TEST_ORIG,game.monster.origin,game.monster.angles,NPC_PROXACT_CONE)
+		if ( G_DEVELOPER_MODE ) messageall green $get(ent_me,name) npcatk_prox_activated $get(PARAM1,name) NPC_PROXACT_CONE $within_cone2D(TEST_ORIG,game.monster.origin,game.monster.angles,NPC_PROXACT_CONE)
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	setvard NPC_PROXACT_PLAYERID PARAM1
+	dbg $get(NPC_PROXACT_PLAYERID,name) activated me by PARAM1 PARAM2
+	if !NPC_PROXACT_TRIPPED
+	setvard NPC_PROXACT_TRIPPED 1
+	callevent NPC_PROXACT_EVENT
+}
+
+{ get_index
+	if ( NPC_PROX_ACTIVATE ) callevent 1.0 npcatk_proxact_scan
+	
+
+	setvard MALDORA_IDX $get(GAME_MASTER,scriptvar,'N_MALDORAS')
+	setvard NPC_PROXACT_TRIPPED 0
+	if ( MALDORA_IDX > 0 )
+	{
+		setvard READY_TO_WAIT 1
+	}
+	if ( MALDORA_IDX <= 0 )
+	{
+		callevent 0.1 get_index
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+}
+
+{ start_convo
+
+	setvard DEBUG_START_CONVO 1
+
+	if ( MALDORA_IDX == 1 )
+	{
+		saytext Shall we?
+		playsound 0 10 voices/lodagond-4/fragment_shallwe.wav
+		setvard DEBUG_CALLED_COMBAT 1
+		callevent 2.5 combat_go
+	}
+	if ( MALDORA_IDX == 2 )
+	{
+		setvard DEBUG_CALLED_COMBAT 2
+		callevent 1.33 start_convo2
+		callevent 2.5 combat_go  
+	}
+}
+
+{ start_convo2
+	saytext Lets!
+	playsound 0 10 voices/lodagond-4/fragment_lets.wav
+}
+
+{ game_heardsound //PARAM1=type:combat|move|danger PARAM2=(origin) PARAM3=danger_radius
+
+	if ( PARAM1 equals danger )
+	{
+		if !SUSPEND_AI
+		local I_HEARD $get(ent_lastheard,id)
+		local DANGER_RADIUS PARAM3
+		if ( HEARD_RANGE <= DANGER_RADIUS )
+		{
+			if I_HEARD isnot $get(ent_me,id)
+			setvard I_WILL_FLEE 1
+			callevent npcatk_check_if_scared_of I_HEARD //this is to allows those immune to fire to ignore volcano and such, but not implemented
+			if ( I_WILL_FLEE )
+			{
+				//////dbg NpcAtk I HEARD SOMETHING SCAREY!
+				callevent npcatk_flee I_HEARD DANGER_RADIUS 5.0
+			}
+		}
+	}
+
+	if ( COMBAT_ON )
+	{
+		if $get(ent_lastheard,isplayer)
+		setvard SPELL_TARGET $get(ent_lastheard,id)
+	}
+}
+
+{ shock_ambience
+
+	playsound 0 10 magic/shock_noloop.wav
+}
+
+{ combat_go
+
+	//clientevent new all effects/dynamic_beam_cl $get(ent_me,index) (255,0,0) 100 26
+	setvard CL_BEAM_IDX game.script.last_sent_id
+
+	invincible 0
+	setmoveanim ANIM_RUN
+	setvard COMBAT_ON 1
+
+	callevent cycle_up
+
+	//setvard BARRIER_DELAY 1
+	//callevent BARRIER_FREQ reset_barrier_delay
+
+	callevent pick_spell
+	callevent 1.0 movement_cycle
+	//callevent LAVA_FREQ raise_lava
+
+	//callevent 0.1 npcatk_resume_ai
+}
+
+{ reset_barrier_delay
+
+	setvard BARRIER_DELAY 0
+}
+
+{ npcatk_hunt
+
+	if COMBAT_ON
+
+	if $cansee(enemy)
+	setvard SPELL_TARGET $get(ent_lastseen,id)
+}
+
+{ movement_cycle
+
+	callevent 0.5 movement_cycle
+	if !NO_MOVE
+	if ( SUSPEND_AI ) callevent npcatk_go_movedest
+	if ( !$cansee(enemy) ) setmoveanim ANIM_WALK
+	if ( $cansee(enemy) ) setmoveanim ANIM_RUN
+
+	if ( $get(WAND_TARGET,isalive) )
+	{
+		if $get(WAND_TARGET,range) < 1024
+		callevent npcatk_setmovedest WAND_TARGET MOVE_RANGE
+		if $get(WAND_TARGET,range) < ATTACK_RANGE
+		callevent swing_fist WAND_TARGET
+	}
+
+	if ( $get(WAND_TARGET,isalive) )
+	{
+		if $get(WAND_TARGET,range) >= 1024
+		setvard WAND_TARGET unset
+	}
+
+	if ( WAND_TARGET equals unset )
+	{
+		if ( $rand(1,20) == 1 )
+		{
+			local NEW_WAND SPELL_TARGET
+			if ( $get(SPELL_TARGET,range) > 640 )
+			{
+				if $cansee(enemy)
+				local NEW_WAND $get(ent_lastseen,id)
+			}
+			if ( !$get(SPELL_TARGET,isalive) )
+			{
+				if $cansee(enemy)
+				local NEW_WAND $get(ent_lastseen,id)
+			}
+			callevent swing_fist NEW_WAND
+		}
+	}
+
+	if ( WAND_TARGET isnot unset )
+	{
+		local DISENGAGE $rand(1,10)
+		if ( DISENGAGE == 1 )
+		{
+			callevent leap_away WAND_TARGET
+			setvard WAND_TARGET unset
+		}
+		if ( DISENGAGE > 1 ) callevent npcatk_setmovedest WAND_TARGET MOVE_RANGE
+	}
+	
+	if ( !$get(WAND_TARGET,isalive) )
+	{
+		//no target, restricted wander
+		if $rand(1,5) == 1
+		local RAND_ANG $rand(0,359)
+		local TRACE_START game.monster.origin
+		local TRACE_END TRACE_START
+		vectoradd TRACE_END $relpos($vec(0,RAND_ANG,0),$vec(0,1000,0))
+		local TRACE_LINE $get_traceline(TRACE_START,TRACE_END,worldonly)
+		callevent npcatk_setmovedest TRACE_LINE MOVE_RANGE
+	}
+}
+
+{ reset_props
+	repeatdelay 10.0
+
+	//ocasionally turns invisible when added with glow shells
+	setprop ent_me rendermode 5
+	setprop ent_me renderamt 255
+}
+
+{ thrash_strike //called from model
+	callevent npcatk_dodamage NPCATK_TARGET ATTACK_HITRANGE 80%
+}
+
+
+{ pick_spell
+
+	setvard SPELL_CHOICE $rand(1,NUM_SPELLS)
+
+	if ( G_MALDORA_SPELLING )
+	{
+		//another fragment cast a spell within the last FREQ_SPAM seconds, try again later
+		//dbg other maldora is spelling
+		local RND_DELAY $randf(1,5)
+		callevent RND_DELAY pick_spell
+		local EXIT_SUB 1
+
+		local TIME_DIFF G_MALDORA_SPELLTIME
+		add TIME_DIFF 30.0
+		if ( game.time > TIME_DIFF )
+		{
+			setvard BEAM_COUNT 0
+			setvard BEAM_ON 1
+			setvard CHAIN_COUNT 0
+			setvard CHAIN_ON 0
+			dbg wtf, no spells for 30 seconds? spell flag must be jammed (happens, dunno why)
+			setvarg G_MALDORA_SPELLING 0
+		}
+	}
+	if !EXIT_SUB
+
+	if ( BEAM_ON ) local EXIT_SUB 1
+	if ( CHAIN_ON ) local EXIT_SUB 1
+	if ( EXIT_SUB ) callevent 0.5 pick_spell
+	if !EXIT_SUB
+
+	if ( G_DEVELOPER > 0 )
+	{
+		setvard SPELL_CHOICE G_DEVELOPER
+		setvard G_DEVELOPER 0
+	}
+
+	if ( $get(SPELL_TARGET,range) > 2048 ) setvard SPELL_CHOICE 0
+	if ( !$get(SPELL_TARGET,isalive) ) setvard SPELL_CHOICE 0
+	if ( $get(SPELL_TARGET,relationship,ent_me) equals ally ) setvard SPELL_CHOICE 0
+
+	if ( SPELL_CHOICE == 0 )
+	{
+		if !BARRIER_ON
+		if ( NO_MOVE ) callevent resume_moving
+	}
+
+	if ( SPELL_CHOICE == 1 )
+	{
+		if ( BARRIER_DELAY )
+		{
+			setvard SPELL_CHOICE $rand(2,NUM_SPELLS)
+			dbg barrier_no_go - barrier delay
+		}
+		if !BARRIER_DELAY
+
+		//fragments must be sure not to start barriers within one another
+
+		setvard MALDORA_LIST $get(GAME_MASTER,scriptvar,GM_MALDORA_LIST)
+
+		dbg maldist MALDORA_LIST
+
+		setvard FELLOW_FRAG_NEARBY 0
+		calleventloop $get_token_amt(MALDORA_LIST) check_nearby
+		if ( FELLOW_FRAG_NEARBY )
+		{
+			dbg barrier_no_go - fellow maldora nearby
+			setvard SPELL_CHOICE $rand(2,NUM_SPELLS)
+		}
+		if !FELLOW_FRAG_NEARBY
+	
+		setvard BARRIER_DELAY 1
+		callevent BARRIER_FREQ reset_barrier_delay
+
+		callevent 0.1 raise_barrier
+	}
+
+	if ( SPELL_CHOICE == 2 )
+	{
+		setvarg G_MALDORA_SPELLING 1
+		setvard G_MALDORA_SPELLTIME game.time
+		setvard BEAM_ON 1
+		callevent face_target SPELL_TARGET
+		playanim critical ANIM_BOLT
+		setvard BEAM_COUNT 0
+		setvard APPLIED_BEAM 0
+		setvard BEAM_TARGET SPELL_TARGET
+		//clientevent update all CL_BEAM_IDX dbeam_color (1,1,0) 20
+		
+		callevent 0.1 beam_push
+	}
+
+	if ( SPELL_CHOICE == 3 )
+	{
+		setvarg G_MALDORA_SPELLING 1
+		setvard G_MALDORA_SPELLTIME game.time
+		setvard CHAIN_ON 1
+		setvard CUR_CHAIN_TARGET 0
+		callevent face_target SPELL_TARGET
+		playanim critical ANIM_CAST
+		setvard CHAIN_COUNT 0
+		//clientevent update all CL_BEAM_IDX dbeam_color (1,1,1) 10
+		callevent 0.1 chain_lightning
+	}
+
+	if ( SPELL_CHOICE == 4 )
+	{
+		if ( G_MAL_ROCK_STORMS )
+		{
+			//dbg MALDORA: Can't summon rock storm, still exists
+			callevent 0.2 pick_spell
+			local EXIT_SUB 1
+		}
+		if !EXIT_SUB
+		setvarg G_MAL_ROCK_STORMS 1
+
+		playanim critical ANIM_CAST
+		local NUM_ROCKS game.players
+		if ( NUM_ROCKS > 4 ) local NUM_RUCKS 4
+		createnpc monsters/summon/rock_storm $relpos(0,0,0) $get(ent_me,id) NUM_ROCKS DMG_ROCKS 64 90 //<Owner> <#Rocks> <Dmg> <FX_Radius> <Letivtate_Height>
+		//setvard ROCK_STORM_ID $get(ent_lastcreated,id)
+	}
+	if !EXIT_SUB
+
+	if ( SPELL_CHOICE == 5 )
+	{
+		if ( BARRIER_ON )
+		{
+			//no summoning inside barriers as it means you have to leap out of them
+			callevent 0.2 pick_spell
+			local EXIT_SUB 1
+		}
+		if !BARRIER_ON
+		if ( IMAGES_ALIVE >= 1 ) setvard SPELL_CHOICE $rand(6,NUM_SPELLS)
+		if IMAGES_ALIVE == 0
+		if ( $rand(1,3) == 1 )
+		{
+			if !AM_UBER
+			saytext Shadows, of shadows, of shadows...
+		}
+		callevent 0.1 laugh_it_up
+		callevent stop_moving
+		playanim critical ANIM_CAST
+		playsound 0 10 magic/spawn.wav
+		effect glow ent_me (255,255,255) 128 2 2
+		//setsolid none
+		createnpc SHADOW_SCRIPT $relpos(0,64,-35) $get(ent_me,id) SPELL_TARGET 45 AM_UBER
+		callevent 0.1 make_shadow2
+		if ( AM_UBER )
+		{
+			callevent 0.2 make_shadow3
+			callevent 0.4 make_shadow4
+		}
+
+		setvard IMAGES_ALIVE 2
+		//callevent repulse_blast //stop players from getting stuck inside of me
+		callevent 1.0 resume_solid
+		callevent 3.0 resume_moving		
+	}
+
+	if ( SPELL_CHOICE == 6 )
+	{
+		if ( BARRIER_ON )
+		{
+			//no summoning inside barriers as it means you have to leap out of them
+			callevent 0.2 pick_spell
+			local EXIT_SUB 1
+		}
+		if ( MINIONS_ALIVE >= MINION_LIMIT ) setvard SPELL_CHOICE $rand(7,NUM_SPELLS)
+
+		if ( game.time <= NEXT_MINION ) setvard SPELL_CHOICE $rand(7,NUM_SPELLS)
+
+		if game.time > NEXT_MINION
+		setvard NEXT_MINION game.time
+		add NEXT_MINION 5.0
+
+		if MINIONS_ALIVE < MINION_LIMIT
+		add MINIONS_ALIVE 1
+
+
+		playanim critical ANIM_CAST
+		playsound 0 10 monsters/skeleton/calrain3.wav
+		effect glow ent_me (255,255,255) 128 2 2
+		createnpc MINION_SCRIPT $relpos(0,0,-64) $get(ent_me,id) SPELL_TARGET
+		callevent stop_moving 0.9
+		callevent 1.0 leap_away
+	}
+
+	if ( SPELL_CHOICE == 1 )
+	{
+		callevent 2.0 pick_spell
+		local EXIT_SUB 1
+	}
+	if ( SPELL_CHOICE == 7 ) //REMOVE THIS WHEN YOU HAVE SPELL #7!!!
+	{
+		callevent 0.2 pick_spell
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	callevent SPELL_FREQ pick_spell
+}
+
+{ make_shadow2
+	createnpc SHADOW_SCRIPT $relpos(0,-64,-35) $get(ent_me,id) SPELL_TARGET 135 AM_UBER
+}
+
+{ make_shadow3
+	createnpc SHADOW_SCRIPT $relpos(64,-64,-35) $get(ent_me,id) SPELL_TARGET 225 AM_UBER
+}
+
+{ make_shadow4
+	createnpc SHADOW_SCRIPT $relpos(-64,64,-35) $get(ent_me,id) SPELL_TARGET 315 AM_UBER
+}
+
+//{ repulse_blast
+//	setvard REPULSE_ON 1
+//	callevent 1.0 reset_repulse
+//	dodamage $relpos(0,0,0) 96 0.0 100% 0.0 reflective target
+//}
+
+{ reset_repulse
+	setvard REPULSE_ON 0
+}
+
+{ laugh_it_up
+	playsound 0 10 voices/ms_wicardoven/fmaldora_exit4.wav
+}
+
+{ image_died
+	subtract IMAGES_ALIVE 1
+}
+
+{ game_struck
+
+	////dbg temp health game.monster.hp
+	if ( !NO_MOVE )
+	{
+		if $get(ent_laststruck,range) < ATTACK_RANGE
+		callevent swing_fist $get(ent_laststruck,id)
+	}
+
+	if ( $get(ent_laststruck,isplayer) )
+	{
+		if $rand(1,2) == 1
+		setvard SPELL_TARGET $get(ent_laststruck,id)
+	}
+
+	if PARAM1 > 20
+	playrandomsound 0 10 SOUND_STRUCK1 SOUND_STRUCK2 SOUND_STRUCK3 SOUND_STRUCK4 SOUND_STRUCK5
+
+	if PARAM1 > 50
+	callevent leap_away $get(ent_laststruck,id)
+}
+
+{ leap_away //PARAM1 = dude to flee
+
+	if !CHAIN_ON
+	if !BEAM_ON
+	if !BARRIER_ON
+	if !NO_MOVE
+
+	setvard NPC_FORCED_MOVEDEST 1
+	setmovedest PARAM1 800 flee
+	callevent 0.1 leap_away2
+}
+
+{ leap_away2
+	playanim critical ANIM_LEAP
+	callevent 0.1 leap_boost
+}
+
+{ leap_boost
+
+	if !BARRIER_ON
+	addvelocity ent_me $relvel(0,400,50)
+}
+
+{ swing_fist //PARAM1 = swing targ
+
+	if !CHAIN_ON
+	if !BEAM_ON
+	if !BARRIER_ON
+	if !NO_MOVE
+	setvard WAND_TARGET PARAM1
+	callevent npcatk_setmovedest WAND_TARGET MOVE_RANGE
+	if $get(WAND_TARGET,range) < ATTACK_RANGE
+	playanim once ANIM_WAND
+}
+
+{ stop_moving
+
+	roam 0
+	setvard NO_STUCK_CHECKS 1
+	setvard NO_MOVE 1
+	setmoveanim ANIM_IDLE
+	setvar ANIM_RUN ANIM_IDLE
+	setvar ANIM_WALK ANIM_IDLE
+	callevent face_target SPELL_TARGET
+	callevent PARAM1 resume_moving
+}
+
+{ resume_solid
+	setsolid box
+}
+
+{ resume_moving
+
+	roam 1
+	setvard NO_STUCK_CHECKS 0
+	setvard NO_MOVE 0
+	setmoveanim ANIM_RUN
+	setvar ANIM_RUN ANIM_RUN_NORM
+	setvar ANIM_WALK ANIM_WALK_NORM
+}
+
+{ raise_barrier
+
+	dbg raise_barrier BARRIER_COLOR DMG_BARRIER
+	callevent stop_moving
+	setvard BARRIER_ON 1
+	playanim critical ANIM_CAST
+	//createnpc monsters/summon/barrier $relpos(0,0,0) $get(ent_me,id) 128 0 0 1
+	//setvard BARRIER_ID $get(ent_lastcreated,id)
+	clientevent new all effects/sfx_barrier $get(ent_me,index) 128 BARRIER_COLOR 10.0 1 1
+	playsound 0 10 magic/spawn_loud.wav
+	callevent barrier_loop
+	callevent 10.0 lower_barrier
+}
+
+{ barrier_loop
+	if BARRIER_ON
+	callevent 0.5 barrier_loop
+	local SCAN_POINT $get(ent_me,origin)
+	vectoradd SCAN_POINT z 32
+	setvard BARRIER_TARGS $get_tsphere(enemy,128,SCAN_POINT)
+	if BARRIER_TARGS isnot none
+	playsound 0 10 doors/aliendoor1.wav
+	calleventloop $get_token_amt(BARRIER_TARGS) barrier_affect_targets
+}
+
+{ barrier_affect_targets
+	local CUR_TARG $get_token(BARRIER_TARGS,game.script.iteration)
+	//dbg barrier_affect_targets BARRIER_TARGS DMG_BARRIER
+
+	if ( DMG_BARRIER > 0 ) xdodamage CUR_TARG direct DMG_BARRIER 100% ent_me ent_me none magic
+	local TARG_ORG $get(CUR_TARG,origin)
+	local MY_ORG $get(ent_me,origin)
+	local TARG_ANG $angles(MY_ORG,TARG_ORG)
+	setvelocity CUR_TARG $relvel($vec(0,TARG_ANG,0),$vec(0,1000,110))
+}
+
+{ lower_barrier
+
+	setvard BARRIER_ON 0
+	callevent resume_moving
+	callexternal BARRIER_ID remove_barrier
+}
+
+{ beam_push
+
+	add BEAM_COUNT 1
+	if ( BEAM_COUNT == 1 )
+	{
+		callevent init_beam_push
+		effect beam update PUSH_BEAM_ID brightness 255
+	}
+	if ( BEAM_COUNT < 30 )
+	{
+		setidleanim ANIM_BOLT
+		setmoveanim ANIM_WALK
+	}
+	if ( BEAM_COUNT == 30 )
+	{
+		setidleanim ANIM_IDLE
+		setmoveanim ANIM_RUN
+		//clientevent update all CL_BEAM_IDX dbeam_off
+		
+		callevent swing_fist $get(ent_laststruck,id)
+		setvard BEAM_ON 0
+		setvarg G_MALDORA_SPELLING 0
+		effect beam update PUSH_BEAM_ID brightness 0
+	}
+	if BEAM_COUNT < 30
+	callevent 0.1 beam_push
+	if $get(BEAM_TARGET,isalive)
+	callevent face_target BEAM_TARGET
+	local BEAM_START game.monster.origin
+	local SEE_BTARGET $cansee(BEAM_TARGET) 
+
+	if ( !SEE_BTARGET )
+	{
+		setvard PUSH_BEAM_VISIBLE 0
+		effect beam update PUSH_BEAM_ID brightness 0
+		//clientevent update all CL_BEAM_IDX dbeam_off
+	}
+	if SEE_BTARGET
+
+	if ( !PUSH_BEAM_VISIBLE ) effect beam update PUSH_BEAM_ID brightness 255
+	setvard PUSH_BEAM_VISIBLE 1
+	playanim once ANIM_BOLT
+	playsound 0 10 SOUND_BEAM
+
+	//effect beam point lgtning.spr 200 BEAM_START BEAM_END (255,255,0) 255 20 0.2
+	//clientevent update all CL_BEAM_IDX dbeam_target $get(BEAM_TARGET,index)
+
+	effect beam update PUSH_BEAM_ID end_target BEAM_TARGET 0
+
+	local MY_YAW $vec.yaw(game.monster.angles)
+
+	//these two lines maybe screwy
+	add MY_YAW BEAM_COUNT
+	if ( MY_YAW > 359 ) subtract MY_YAW 359
+
+	local VEL_SET $relpos($vec(0,MY_YAW,0),$vec(500,1000,30))
+
+	setvelocity BEAM_TARGET VEL_SET
+
+	dodamage BEAM_TARGET direct DMG_PUSH_BEAM 100% $get(ent_me,id) lightning
+
+	if ( !APPLIED_BEAM )
+	{
+		if !$get(BEAM_TARGET,scriptvar,'IMMUNE_PUSH')
+		applyeffect BEAM_TARGET effects/effect_shock_dmg 5.0 $get(ent_me,id) DMG_SHOCK
+		setvard APPLIED_BEAM 1
+	}
+}
+
+{ my_target_died
+
+	if ( PARAM1 equals WAND_TARGET ) setvard WAND_TARGET unset
+
+	setvard SPELL_TARGET unset
+
+	if !GAVE_WARNING
+	setvard GAVE_WARNING 1
+	infomsg PARAM1 "Beware!" "The Fragment of Malodra is immune to magic!"
+}
+
+{ chain_lightning
+
+	add CHAIN_COUNT 1
+	if ( CHAIN_COUNT == 1 )
+	{
+		local SCAN_POINT $get(ent_me,origin)
+		vectoradd SCAN_POINT z 32
+		setvard CHAIN_LIST $get_tsphere(enemy,1024,SCAN_POINT)
+	}
+	if ( CHAIN_COUNT < CHAIN_COUNT_LIMIT )
+	{
+		setidleanim ANIM_CAST
+		setmoveanim ANIM_WALK
+		callevent face_target SPELL_TARGET
+	}
+	if ( CHAIN_COUNT == CHAIN_COUNT_LIMIT )
+	{
+		//clientevent update all CL_BEAM_IDX dbeam_off
+		setidleanim ANIM_IDLE
+		setmoveanim ANIM_RUN
+		callevent npcatk_flee $get(ent_laststruck,id) 800 3.0
+		setvard CHAIN_ON 0
+		setvarg G_MALDORA_SPELLING 0
+		//effect beam update CHAIN_BEAM_ID brightness 0
+	}
+	if CHAIN_COUNT < CHAIN_COUNT_LIMIT
+	callevent 0.25 chain_lightning
+	if CHAIN_LIST isnot none
+	playanim once ANIM_CAST
+	calleventloop $get_token_amt(CHAIN_LIST) chain_affect_targets
+}
+
+{ chain_affect_targets
+	local CUR_TARG $get_token(CHAIN_LIST,game.script.iteration)
+	local TARG_RANGE $get(CUR_TARG,range)
+	multiply TARG_RANGE 1.5
+	dodamage CUR_TARG TARG_RANGE DMG_CHAIN 100% ent_me lightning
+}
+	
+//old chain lightning
+//	playanim once ANIM_CAST
+//	setvard CHAIN_LIST ''
+//	//dodamage $relpos(0,0,0) 1024 DMG_CHAIN 100% 0.0 reflective lightning
+//	setvard ENEMY_LIST $get_tsphere(enemy,1024,game.monster.origin)
+//	local N_CTARGS $get_token_amt(ENEMY_LIST)
+//	//dbg detedted N_CTARGS enemies
+//	if N_CTARGS > 0
+//	add CUR_CHAIN_TARGET 1
+//	//dbg zapping $get_token(ENEMY_LIST,CUR_CHAIN_TARGET) CUR_CHAIN_TARGET of N_CTARGS
+//	if ( CUR_CHAIN_TARGET >= N_CTARGS ) setvard CUR_CHAIN_TARGET 0
+//	local L_CHAIN_TARGET $get_token(ENEMY_LIST,CUR_CHAIN_TARGET)
+//
+//	local CT_ORG $get(L_CHAIN_TARGET,origin)
+//	local CAN_HIT $get_traceline(game.monster.origin,CT_ORG,worldonly)
+//
+//	
+//	if ( CAN_HIT equals CT_ORG ) local CHAIN_HIT 1
+//
+//	if ( !CHAIN_HIT ) effect beam update CHAIN_BEAM_ID brightness 0
+//	if ( CHAIN_HIT ) effect beam update CHAIN_BEAM_ID brightness 255
+//
+//	if CHAIN_HIT
+//
+//	//clientevent update all CL_BEAM_IDX dbeam_target $get(L_CHAIN_TARGET,index)
+//	effect beam update CHAIN_BEAM_ID end_target L_CHAIN_TARGET 0
+//	//add some damage if I have multiple targets, as I wont hit them as often as I'd hit one
+//	local DMG_MULTI 0.25
+//	multiply DMG_MULTI N_CTARGS
+//	add DMG_MULTI 1
+//	local F_DMG_CHAIN DMG_CHAIN
+//	multiply F_DMG_CHAIN DMG_MULTI
+//
+//	dodamage L_CHAIN_TARGET direct F_DMG_CHAIN 100% $get(ent_me,id) lightning
+//	applyeffect L_CHAIN_TARGET effects/effect_shock_dmg 3.0 $get(ent_me,id) DMG_SHOCK
+//	if ( !$get(L_CHAIN_TARGET,scriptvar,'IMMUNE_PUSH') )
+//	{
+//		local TARGET_ORG $get(L_CHAIN_TARGET,origin)
+//		local TARG_ANG $angles(game.monster.origin,TARGET_ORG)
+//		local NEW_YAW TARG_ANG
+//		//add NEW_YAW 180
+//		//if ( NEW_YAW > 359 ) subtract NEW_YAW 359
+//		setvelocity L_CHAIN_TARGET $relvel($vec(0,NEW_YAW,0),$vec(0,110,0))
+//		//addvelocity L_CHAIN_TARGET $relvel(0,110,0)
+//	}
+//	playrandomsound 0 10 SOUND_SHOCK1 SOUND_SHOCK2 SOUND_SHOCK3
+//	//clientevent update all CL_BEAM_IDX dbeam_target_multi CHAIN_LIST
+//}
+
+{ game_dodamage
+
+	if ( !PARAM1 ) setvard WAND_ATK 0
+
+	if ( REPULSE_ON )
+	{
+		//dun think this is actually used anymore
+		if ( $get(PARAM2,range) < 128 )
+		{
+			if !$get(PARAM2,scriptvar,IMMUNE_PUSH)
+			local INC_VEL $vec.yaw($get(PARAM2,angles))
+			subtract INC_VEL 180
+			if ( INC_VEL < 0 ) add INC_VEL 359
+			local OUT_VEL $relvel($vec(0,INC_VEL,0),$vec(0,2000,0))
+			addvelocity $get(PARAM2,id) OUT_VEL
+		}
+	}
+
+
+	if PARAM1
+	if ( CHAIN_ON )
+	{
+		if ( game.time > NEXT_CHAIN_SOUND )
+		{
+			setvard NEXT_CHAIN_SOUND game.time
+			add NEXT_CHAIN_SOUND 0.5
+			playrandomsound 0 10 SOUND_SHOCK1 SOUND_SHOCK2 SOUND_SHOCK3
+		}
+		local TARG_ORG $get(PARAM2,origin)
+		local MY_ORG $get(ent_me,origin)
+		local TARG_ANG $angles(MY_ORG,TARG_ORG)
+		setvelocity PARAM2 $relvel($vec(0,TARG_ANG,0),$vec(0,300,0))
+		effect beam ents lgtning.spr 30 ent_me 2 PARAM2 1 (255,255,255) 255 10 1.0
+		if ( game.time > NEXT_CHAIN_SHOCK )
+		{
+			setvard NEXT_CHAIN_SHOCK game.time
+			add NEXT_CHAIN_SHOCK 1.0
+			applyeffect PARAM2 effects/effect_shock_dmg 3.0 $get(ent_me,id) DMG_SHOCK
+		}
+
+	}
+
+	if ( WAND_ATK )
+	{
+		callevent wand_strike_dmg $get(PARAM2,id)
+	}
+
+}
+
+{ wand_strike_dmg //param1 = target struck
+	setvard WAND_ATK 0
+	if $rand(1,5) == 1
+	applyeffect PARAM1 effects/heavy_stun 3.0 $get(ent_me,id)
+}
+
+{ strike_wand
+	setvard AS_ATTACKING game.time
+
+	if $get(WAND_TARGET,range) < ATTACK_HITRANGE
+	setvard WAND_ATK 1
+	dodamage WAND_TARGET ATTACK_HITRANGE DMG_WAND 80% blunt
+}
+
+{ quick_spell
+	setvard AS_ATTACKING game.time
+}
+
+{ quick_bolt
+	setvard AS_ATTACKING game.time
+}
+
+//wicard oven variant only
+//{ raise_lava
+//	playanim critical ANIM_CAST
+//	usetrigger multilava
+//	callevent LAVA_FREQ raise_lava
+//}
+
+{ face_target //npcatk_faceattacker does not work with AI suspended
+
+	setvard NPC_FORCED_MOVEDEST 1
+	setmovedest PARAM1 9999
+}
+
+{ skele_died
+	subtract MINIONS_ALIVE 1
+}
+
+{ game_death
+
+	setvard G_MALDORA_SPELLING 0
+
+	//clientevent remove all CL_BEAM_IDX
+	effect beam update CHAIN_BEAM_ID remove 0
+	effect beam update PUSH_BEAM_ID remove 0
+
+	if ( !AM_UBER ) callexternal all maldoraf_died $get(ent_me,id)
+	if ( AM_UBER ) callexternal all maldora_final_died $get(ent_me,id)
+	setprop ent_me renderamt 0
+	createnpc ms_wicardoven/maldora_dead $relpos(0,0,0) crow
+	setsolid none
+	setorigin ent_me (20000,20000,20000)
+}
+
+//this loops through to make sure the fragment does not raise a barrier while another is near
+{ check_nearby
+	local CUR_MAL $get_token(MALDORA_LIST,game.script.iteration)
+	if CUR_MAL isnot $get(ent_me,id)
+	if $get(CUR_MAL,isalive)
+	if ( $get(CUR_MAL,range) < 256 ) setvard FELLOW_FRAG_NEARBY 1
+}
+
+{ ext_rock_storm_end
+	setvarg G_MAL_ROCK_STORMS 0
+}
+
+{ init_beam_push
+	effect beam ents lgtning.spr 200 $get(ent_me,id) 2 $get(ent_me,id) 0 (255,255,0) 0 20 30.0 //try -1
+	setvard PUSH_BEAM_ID $get(ent_lastcreated,id)
+	//push beam: effect beam point lgtning.spr 200 BEAM_START BEAM_END (255,255,0) 255 20 0.2
+}
+
+//{ init_beam_chain
+//	effect beam ents lgtning.spr 30 $get(ent_me,id) 2 $get(ent_me,id) 0 (255,255,255) 0 10 99999 //try -1
+//	setvard CHAIN_BEAM_ID $get(ent_lastcreated,id)
+//	//chain beam: effect beam point lgtning.spr 30 BEAM_START BEAM_END (255,255,255) 255 10 0.2
+//}

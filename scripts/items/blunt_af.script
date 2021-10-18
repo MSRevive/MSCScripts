@@ -1,0 +1,110 @@
+//Bludgeon Bludgeon ^_^
+//- Hammer typically used by the Bludgeon tribes
+
+{
+	const MANA_SKULL 50 //per skull
+	const MANA_STUN 20 //per stun burst
+	const FREQ_SKULL 5.0
+
+	const ANIM_LIFT1      	5
+	const ANIM_IDLE1       	0
+	const ANIM_IDLE2		6
+	const ANIM_IDLE_TOTAL	2
+	const ANIM_ATTACK1     	1
+	const ANIM_ATTACK2     	1
+
+	const BASE_LEVEL_REQ 20
+	const AOE_STUN_REQ 25
+	const SKULL_REQ 20 //affliction
+
+	const MODEL_VIEW viewmodels/v_2hblunts.mdl
+
+	const MODEL_WORLD weapons/p_weapons3.mdl
+
+	const MODEL_BODY_OFS 10 //XXX
+	const ANIM_PREFIX  standard
+
+	//Used in base_melee
+	//------------------
+	const MELEE_RANGE 80
+	const MELEE_DMG_DELAY  0.5
+	const MELEE_ATK_DURATION 1.1
+	const DEMON_DMG_DELAY  0.25
+	const DEMON_ATK_DURATION 0.7
+	const MELEE_ENERGY 2
+	const MELEE_DMG 400
+	const MELEE_DMG_RANGE 40
+	const MELEE_ACCURACY 75%
+	const MELEE_PARRY_AUGMENT 20%
+
+	const MELEE_DMG_TYPE blunt
+}
+
+#include items/blunt_base_twohanded
+
+{  weapon_spawn
+
+   name  a|Mace of Affliction
+   desc  A skull encrusted club forged by goblin shamans 
+   weight  80
+   size  10
+   value 3000
+   sethudsprite hand hammer
+   sethudsprite trade maul
+}
+
+//AOE Stun
+{ [override] bash
+
+	if game.item.attacking		//Just in case player dies
+	playviewanim	 MELEE_VIEWANIM_ATK
+	playowneranim once PLAYERANIM_SWING global.anim.combatwalk 3
+	if game.serverside
+	svplaysound 2 10 $get(ent_owner,scriptvar,'PLR_SOUND_SHOUT1')
+
+}
+
+{ [override] special_02_strike
+
+	if ( $get(ent_owner,mp) >= MANA_STUN ) dplayermessage ent_owner Stun Burst: Insufficient Mana
+
+	if $get(ent_owner,mp) >= MANA_STUN
+	givemp ent_owner $neg(MANA_STUN)
+
+	local SPAWN_POINT $get(ent_owner,origin)
+	local MY_ANGLES $get(ent_owner,angles)
+	local MY_YAW $vec.yaw(MY_ANGLES)
+	vectoradd SPAWN_POINT $relpos($vec(0,MY_YAW,0),$vec(0,64,0))
+	local DMG_STUN $get(ent_owner,skill.bluntarms)
+	multiply DMG_STUN 2
+	createnpc SPAWN_POINT monsters/summon/stun_burst $get(ent_owner,id) 128 1 DMG_STUN bluntarms
+}
+
+//mouse2 for skullz
+{ game_+attack2
+
+	if game.serverside
+	if $get(ent_owner,canattack)
+
+	if game.time > NEXT_SKULL
+
+	setvard NEXT_SKULL game.time
+	add NEXT_SKULL FREQ_SKULL
+
+	if ( $get(ent_owner,mp) < MANA_SKULL ) dplayermessage ent_owner Venom Skull: Insufficient Mana
+	if $get(ent_owner,mp) >= MANA_SKULL
+
+	givemp ent_owner $neg(MANA_SKULL)
+
+	local SPAWN_POINT $get(ent_owner,origin)
+	local MY_ANGLES $get(ent_owner,angles)
+	local MY_YAW $vec.yaw(MY_ANGLES)
+	vectoradd SPAWN_POINT $relpos($vec(0,MY_YAW,0),$vec(0,64,0))
+	local DMG_STUN $get(ent_owner,skill.bluntarms)
+	multiply DMG_STUN 2
+
+	//going to need custom variants of these two skulls:
+	//const CHEW_SKULL_SCRIPT monsters/lost_soul //use eagle, strip anims/sounds, splode on death
+	//const SPLODIE_SKULL_SCRIPT traps/splodie_skull //use horror egg + more rand bounce, splode on death
+	//createnpc SPAWN_POINT monsters/summon/stun_burst $get(ent_owner,id) 128 1 DMG_STUN bluntarms
+}

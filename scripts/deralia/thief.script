@@ -1,0 +1,201 @@
+// Thothie - this effectively becomes a walking bag of cash anyone can nail for free
+// - Attempting to allow him to fight back when attacked
+// - Buggar had no animations
+// - Success! Except - there's no attack event in the model animation
+// - I'll fix in model, or see if I can get attack hack from Lord K
+// Thief
+{
+   setvard CAN_STTACK 0 //vared so can change modes
+   setvard CAN_FLEE 1
+   const FLEE_HEALTH 34
+   const FLEE_CHANCE 100%
+   setvard FLEE_DISTANCE 1000
+   setvard CAN_RETALIATE 0  //vared so can change modes
+   setvard CAN_FLINCH 1
+   setvard FLINCH_ANIM llflinch
+   setvard FLINCH_CHANCE 50%
+   setvard FLINCH_DELAY 1
+   setvard ANIM_DEATH dieforward
+   const SOUND_DEATH player/stomachhit1.wav
+   setvard ANIM_WALK walk
+   setvar GOLD 10
+
+   //attack vars
+   setvar ATTACK_DAMAGE 7
+   setvard ATTACK_RANGE 80
+   setvard ATTACK_HITRANGE 150
+   setvar ATTACK_HITCHANCE 70%
+   setvar ATTACK_FREQUENCY 10 //for attack_hack
+
+   setvard ANIM_WALK walk
+   setvard ANIM_RUN run
+   setvard ANIM_ATTACK franticbutton
+
+   setvard FOLLOWING 0
+}
+
+#include monsters/base_npc_attack
+#include monsters/attack_hack      //This allows model to attack
+
+{ spawn
+
+   name_unique thief
+
+   hp   45
+   gold   GOLD
+   //fov   180
+   width   32
+   height   72
+   race   human
+   name   Commoner
+   roam   1
+   setmodel   npc/human1.mdl
+   setmodelbody   0 1
+   setmodelbody   1 5
+   setmoveanim   walk
+
+   setvar   THIEF 0
+   setvard   STEAL 0
+}
+
+{
+   repeatdelay 1
+   if !STEAL
+   if $cansee(player,256)
+   setmovedest ent_lastseen 64
+   if STEAL equals 0
+   setvar STEALING $rand(-15,-5)
+   offer $get(ent_lastseen,id) gold STEALING
+   subtract GOLD STEALING
+   playanim once return_needle
+   roam 0
+   calleventtimed 1 resumeroam
+   calleventtimed 5 resumesteal
+   gold GOLD
+}
+
+{
+   if STEAL equals 1
+   volume 8
+   say hello1[.83] [.33] [.91] [.91] [.38] [.36]
+   roam 0
+   calleventtimed 4 resumeroam
+}
+
+{ resumeroam
+
+   roam 1
+}
+
+{ resumesteal
+
+   setvard STEAL 1
+}
+
+{ say_accept
+   setvard OFFER_GIVEN 1
+   if ( REWARD_NAO_PLZ != 1 )
+   {
+      saytext Thank you good Sir! I shall follow you to the Lord of the Land.
+      setvarg APPREHENDER PARAM1
+      race beloved
+      setmoveanim ANIM_RUN
+      setvard FOLLOWING 1
+   }
+}
+
+{ quest_done
+   deleteent $get(ent_me,id) fade
+}
+
+{
+   repeatdelay 1
+   if ( FOLLOWING == 1 )
+   {
+      if ( $cansee($get_by_name(knight_lord),256) == 1 )
+      {   
+         setmovedest $get_by_name(knight_lord) ATTACK_RANGE
+         callevent 3 turn_in_now
+         setvard FOLLOWING 0
+      }
+      else 
+      {
+         setmovedest APPREHENDER 100
+      }
+   }
+}
+
+{ turn_in_now
+   setmovedest $get_by_name(knight_lord) ATTACK_RANGE
+   saytext Sir, I am turning myself in for I have commited crime.
+   saytext I have stolen from people.
+   callexternal $get_by_name(knight_lord) 2 say_jail
+   playanim once kneel
+}
+
+{ turned_in
+   setvard REWARD_NAO_PLZ 1
+   menu.open APPREHENDER
+   setvard QUEST_DONE 1
+}
+
+{ game_menu_cancel
+
+
+   if ( REWARD_NAO_PLZ != 1 )
+   {
+      saytext Then I shall fight you!
+      
+      race orc
+      name A Thief!
+      setvar ANIM_RUN run
+      setvard CAN_RETALIATE 1
+      setvard CAN_ATTACK 1
+      setvard CAN_HUNT 1
+      race orc
+      roam 1
+      callevent npcatk_target $get(ent_laststruck,id)
+   }
+}
+
+{ game_menu_getoptions
+
+   local reg.mitem.title "Accept"
+   local reg.mitem.type callback
+   local reg.mitem.callback say_accept
+   menuitem.register
+
+}
+
+{ npc_struck
+   
+   if ( OFFER_GIVEN == 0 )
+   {
+      name a|Thief
+      saytext Please spare me, good Sir, for I am but a petty thief.
+      saytext I shall turn myself in if you would be so kind as to let me live.
+      playanim critical crouch
+      menu.open $get(ent_laststruck,id)
+      setvard STEAL 1
+      roam 0
+   }
+
+
+}
+
+{ eventname attack
+   dodamage ent_lastseen ATTACK_RANGE ATTACK1_DAMAGE ATTACK_PERCENTAGE
+}
+
+{ my_target_died
+   race human
+   name a|Commoner
+   STEAL 0
+   roam 1
+}
+
+{ dbg_find_thief
+	saytextrange 4096
+	saytext OVER HERE!
+	dbg thief present
+}

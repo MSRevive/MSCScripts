@@ -1,0 +1,139 @@
+//Generic Calruin for maps that need a monster of similar power
+
+{
+   setvar ANIM_RUN walk
+   setvar ANIM_WALK walk
+   setvard ANIM_ATTACK attack1
+   const ATTACK_DAMAGE 30
+   setvard ATTACK_RANGE 150
+   setvard MOVE_RANGE 125
+   setvard ATTACK_HITRANGE 175
+   const ATTACK_HITCHANCE 85%
+   const SOUND_STRUCK1 controller/con_pain3.wav
+   const SOUND_STRUCK2 controller/con_pain3.wav
+   const SOUND_STRUCK3 none
+   const SOUND_PAIN zombie/zo_pain2.wav
+   const SOUND_ATTACK1 controller/con_attack1.wav
+   const SOUND_HEAL monsters/skeleton/calrian2.wav
+   const SOUND_ATTACK2 controller/con_attack2.wav
+   const SOUND_DEATH controller/con_die1.wav
+   const SOUND_IDLE1 controller/con_attack3.wav
+   const SOUND_SPAWN monsters/skeleton/calrian2.wav //Naming convention error (was SND_SPAWN)
+   const SOUND_PUSH monsters/skeleton/calrain3.wav
+   setvar MY_ENEMY enemy	//base_npc_attack - Premptive attack
+   setvard RETALIATE_CHANCE 75%  //base_npc_attack - Automatically switch targets to the last damaging player
+   setvard CAN_FLEE 0		//base_npc_attack - Whether I run away at low health
+
+	precache SOUND_DEATH //handled externally
+
+	setvard IMMUNE_STUN 1
+}
+
+#include monsters/base_monster
+#include monsters/base_turn_undead
+
+{
+   eventname npc_spawn
+
+   hp 1500
+   //ov 359
+   width 32
+   height 80
+   name a|Soul Eater
+   roam 1
+   hearingsensitivity 8
+   setvard NPC_GIVE_EXP 200
+   race undead
+   setmodel monsters/skeleton2.mdl
+   setmodelbody	1 0
+   takedmg all 0.65
+	takedmg holy 2.0
+	takedmg fire 0.25
+	takedmg cold 0.25
+   setidleanim idle1
+   setmoveanim ANIM_WALK
+
+   local MAP_NAME game.map.name
+   setvard LEGIT_MAP 0
+
+   setvard LAST_STOLE_HP 10 //no soul stealing for first 10 atks
+}
+
+{ attack_1
+
+   dodamage ent_lastseen ATTACK_HITRANGE ATTACK_DAMAGE ATTACK_HITCHANCE
+
+   local ENEMY_HP $get(ent_laststruckbyme,hp)
+   local DIV_ATTACK_DAMAGE ATTACK_DAMAGE
+   multiply DIV_ATTACK_DAMAGE 0.6
+
+   if ( LAST_STOLE_HP > 0 ) subtract LAST_STOLE_HP 1
+
+   if ( ENEMY_HP <= DIV_ATTACK_DAMAGE )
+   {
+	if ( LAST_STOLE_HP < 1 )
+	{
+		if $get(ent_laststruckbyme,relationship,ent_me) equals enemy
+        local ENEMY_MAXHP $get(ent_laststruckbyme,maxhp)
+		local ICE_CREAM_NAME "Ice Wall"
+		local NME_NAME $get(ent_laststruckbyme,name)
+		infomsg ent_laststruckbyme SOUL_EATER Beware, soul eaters gain double their victim's health when they slay a living opponent.
+		saytextrange 1024
+		if ( NME_NAME equals ICE_CREAM_NAME ) saytext Mmmmmmm... Ice cream!
+		if ( NME_NAME isnot ICE_CREAM_NAME ) saytext I'll swallow your soul!
+		volume 10
+		playsound 2 SOUND_HEAL
+		//dbg HPBefore $get(ent_me,hp)
+		multiply ENEMY_MAXHP 2.0
+		givehp ENEMY_MAXHP 
+		//dbg HPAfter $get(ent_me,hp)
+		effect glow ent_me (0,255,0) 255 2 2
+		setvard LAST_STOLE_HP 10	//can't aborb again for 10 atks
+	}
+   }
+
+
+   local I_DID_PUSH 0
+   if ( DID_PUSH == 1 ) 
+   {
+		setvard DID_PUSH 0
+		local I_DID_PUSH 1
+   }
+
+   if !I_DID_PUSH
+
+   if( $rand(0,1) == 0 )
+   {
+   	volume 5
+	if  ( LAST_STOLE_HP < 3 ) playrandomsound 2 SOUND_ATTACK1 SOUND_ATTACK2
+   }
+}
+
+   //Hit by someone
+{ npc_struck
+   
+   volume 5
+   playrandomsound 2 SOUND_PAIN SOUND_PAIN SOUND_STRUCK1 SOUND_STRUCK2 SOUND_STRUCK3
+}
+
+{ game_dodamage //1: Attack Hit (1/0)  2: Entity Attack hit  3:  Start Position  4:  End Position
+
+	if PARAM1
+
+	if ( $rand(1,30) == 1 )
+   	{
+		//push to cut down on shielders
+		playanim critical attack2
+		volume 10
+		playsound 2 SOUND_PUSH
+		local MY_LOC $get(ent_me,origin)
+		local NME_LOC $get(ent_laststruckbyme,origin)
+		local NME_DISTANCE $dist(MY_LOC,NME_LOC)
+		if ( NME_DISTANCE < ATTACK_HITRANGE ) applyeffect $get(ent_laststruckbyme,id) effects/effect_push 3 $relvel(0,400,400) 0
+		setvard DID_PUSH 1
+	}
+}
+
+{ game_death
+	callevent bm_gold_spew 25 1 50  4 8
+}

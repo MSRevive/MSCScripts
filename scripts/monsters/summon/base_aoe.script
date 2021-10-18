@@ -1,0 +1,98 @@
+//About 80% of the summon spells just apply an affect to an area, half do it badly, thus this base
+//- assumes MY_OWNER is person to credit damage with
+//- hope to have everything on this system, eventually, for no concentrating on player events
+{
+	//shared
+	const AOE_RADIUS 256 //can also replace with var, eg. MY_RADIUS
+
+	//dmg radius
+	const AOE_DMG_FREQ 0 //if > 0, damage this area this often
+	const AOE_DMG 10 //can also replace with var, eg. MY_BASE_DMG
+	const AOE_DMG_TYPE fire
+
+	//call apply_effect_rad each scan cycle
+	const AOE_FREQ 0 //if set to > 0, scan this often (.1 sec given so definitions can be made)
+	const AOE_FRIEND_FOE enemy //set ally to affect allies instead of enemies
+	//apply_aoe_effect
+}
+
+{ game_spawn
+	//dbg aoe:game_spawn
+
+	setvard GAME_PVP game.pvp
+	setvard IS_ACTIVE 1 //some use this, make sure it does no conflict with function to set it here
+	if ( AOE_FREQ > 0 ) callevent 0.1 aoe_scan_loop
+	if ( AOE_DMG_FREQ > 0 ) callevent 0.1 aoe_dmg_loop
+	callevent 0.1 get_skill
+}
+
+{ get_skill
+	setvard AOE_ISPLAYER $get(MY_OWNER,isplayer)
+	//dbg aoe:get_skill
+	//if active skill still not defined this far in, assume the active item summoned me
+	if ACTIVE_SKILL equals 'ACTIVE_SKILL'
+	setvard ACTIVE_SKILL $get(MY_OWNER,scriptvar,PL_ACTIVE_SKILL)
+}
+
+{ aoe_scan_loop
+	//dbg aoe:aoe_scan_loop IS_ACTIVE AOE_FREQ
+	if IS_ACTIVE
+	callevent AOE_FREQ aoe_scan_loop
+	callevent aoe_applyeffect_rad
+}
+
+{ aoe_dmg_loop
+	if IS_ACTIVE
+	callevent AOE_DMG_FREQ aoe_dmg_loop
+	callevent aoe_dodamage_rad
+}
+
+{ aoe_applyeffect_rad
+	setvard AOE_TOKENS ''
+	local AOE_SCAN_POS $get(ent_me,origin)
+	vectoradd AOE_SCAN_POS z 32
+	setvard AOE_TOKENS $get_tsphere(any,AOE_RADIUS,AOE_SCAN_POS)
+	if AOE_TOKENS isnot none
+	local N_TOKENS $get_token_amt(AOE_TOKENS)
+	//dbg aoe:aoe_applyeffect_rad ( N_TOKENS ) AOE_TOKENS
+	if N_TOKENS > 0
+	if ( AOE_FRIEND_FOE equals enemy ) calleventloop N_TOKENS aoe_apply_loop
+	if ( AOE_FRIEND_FOE equals ally ) calleventloop N_TOKENS aoe_applyeffect_rad_check_friendly
+}
+
+{ aoe_apply_loop
+	local CUR_TARGET $get_token(AOE_TOKENS,game.script.iteration)
+//	if $get(MY_OWNER,relationship,CUR_TARGET) equals enemy
+//	if ( AOE_ISPLAYER )
+//	{
+//		if !GAME_PVP
+//		if $get(CUR_TARGET,isplayer)
+//		local EXIT_SUB 1
+//	}
+//	if !EXIT_SUB
+	if $get(CUR_TARGET,isalive)
+	if $can_damage(CUR_TARGET,MY_OWNER)
+	callevent apply_aoe_effect CUR_TARGET
+}
+
+{ aoe_applyeffect_rad_check_friendly
+	local CUR_TARGET $get_token(AOE_TOKENS,game.script.iteration)
+	if ( $get(MY_OWNER,relationship,CUR_TARGET) equals ally ) local DO_EFFECT 1
+	if ( AOE_ISPLAYER )
+	{
+		if ( $get(CUR_TARGET,isplayer) ) local DO_EFFECT 1
+	}
+	if DO_EFFECT
+	callevent apply_aoe_effect CUR_TARGET
+}
+
+{ aoe_dodamage_rad
+	xdodamage $relpos(0,0,0) AOE_RADIUS AOE_DMG 0 MY_OWNER MY_OWNER ACTIVE_SKILL AOE_DMG_TYPE
+}
+
+{ aoe_end
+	setvard IS_ACTIVE 0
+	if ( MY_SCRIPT_IDX > 0 ) cleffect remove all MY_SCRIPT_IDX
+	removescript
+	deleteent ent_me
+}

@@ -1,0 +1,100 @@
+//Thothie - Seems to me its light effect should apply even if it doesnt hit a creature, not sure how to make it do this
+//Fire Arrow
+
+{
+	const SPRITE_ARROW_TRADE	firearrow
+	const ARROW_BODY_OFS		0
+
+	const PROJ_DAMAGE		$rand(100,150)
+	const PROJ_DAMAGETYPE		fire
+	const ARROW_STICK_DURATION	25 	//How long to stick in enemies
+	const PROJ_STICK_DURATION	25
+	const ARROW_SOLIDIFY_ON_WALL	0 	//base_arrow: Turns solid when a wall is hit
+	const ARROW_BREAK_CHANCE	0%	//base_arrow: Chance of breaking upon hit
+  	const ARROW_EXPIRE_DELAY 	100 //300
+
+	const SFX_SCRIPT		items/proj_arrow_fire_cl
+	precachefile 			SFX_SCRIPT
+
+	const LOOPSND_NAME		items/torch1.wav
+	const LOOPSND_LENGTH		6
+	const LOOPSND_VOLUME		5
+}
+
+#include items/proj_arrow_base
+#include items/base_loopsnd
+
+{  arrow_spawn
+
+	name 		Fire Arrow
+	desc 		This kind of arrow is merely used for lighting up dark areas
+	weight 		0.2
+	size 		1
+	value		10
+	gravity		0.8
+	groupable	15
+}
+
+{ game_putinpack
+
+  	callevent loopsnd_end	//base_loopsnd
+}
+{ game_fall
+
+  	callevent loopsnd_start	//base_loopsnd
+}
+
+{ arrow_hitwall
+
+  	callevent loopsnd_start	//base_loopsnd
+}
+
+{  game_tossprojectile
+
+	//Called here because the origin isn't set in spawn
+
+
+	clientevent new all SFX_SCRIPT $get(ent_me,index)
+   setvard SCRIPT_1_ID game.script.last_sent_id
+}
+
+{ hitwall
+	local TRACE_START $get(ent_me,origin)
+	local TRACE_END TRACE_START
+	vectoradd TRACE_END $relpos(0,100,0)
+	effect decal TRACE_END 46
+}
+
+{  projectile_landed
+
+	//clientevent new all effects/make_light $get(ent_me,origin) 256 (255,255,128) 60
+	//clientevent remove all SCRIPT_1_ID
+	//clientevent update all SCRIPT_1_ID make_light $get(ent_me,index)
+	setsolid none
+	callevent loopsnd_end
+	clientevent update all SCRIPT_1_ID loop_sound
+	callevent 10.0 projectile_expire
+}
+
+{ game_dodamage
+
+	if PARAM1
+
+	local MY_OWNER $get(ent_expowner,id)
+	applyeffect PARAM2 effects/effect_burn 5 MY_OWNER 1 1 1 archery
+}
+
+{ game_projectile_hitnpc
+	if $get(PARAM1,isalive)
+	clientevent update all SCRIPT_1_ID transfer_owner $get(PARAM1,index)
+}
+
+{ projectile_broke
+
+	callevent loopsnd_end //base_loopsnd
+}
+
+{ projectile_expire
+	deleteent ent_me
+}
+

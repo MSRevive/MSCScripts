@@ -1,0 +1,111 @@
+//These lines are executed before spawn
+//Since they appear before the #include, constants defined here override those in the included scripts
+{
+	setvar ANIM_IDLE idle1
+
+	const ANIM_OPEN_DOOR gluonshow
+}
+
+//When you have a monster that can't attack or hunt, use monsters/base_npc instead of monsters/base_monster, this saves resources by not loading the AI
+#include monsters/base_npc
+
+{ npc_spawn //called from base_npc at game_spawn - all scripts fire game_spawn just before the NPC is put in the world
+
+	name an|Old Hag
+	setmodel npc/human2.mdl //female human model
+	hp 1 //she's going to be unkillable, but give her 1hp for internal handeling
+
+	//standard human dimensions
+	width 32
+	height 96
+
+	invincible 1 //can't be killed
+
+	nopush 1 //can't be pushed
+
+	race beloved //won't be attacked by other NPC's (see /races.script)
+	
+	setmodelbody 0 0 //standard clothes
+	setmodelbody 1 1 //sets the older face
+	//View the model in Jed's HLMV - note that Jed's numbers submodels from 1, while the scripts number from 0
+
+	setidleanim ANIM_IDLE
+	setmoveanim ANIM_IDLE //since she doesn't move, we're going to set the move anim to idle as well
+
+	saytextrange 1024 //how distant her saytext commands will be "heard"
+
+	menu.autoopen 1 //makes it so she'll give her menu to any player that clicks "+use" on her
+
+	catchspeech say_hail hail hello y0 j0 wassup greet gweets //will fire the event "say_hail" if any of these text strings appear in player's local chat
+	catchspeech say_pretty pretty skull rat //will fire the event "say_pretty" if any player uses the word "pretty", "skull", or "rat", in local chat
+}
+
+{ game_menu_getoptions //PARAM1 = player recieving the menu
+
+	if !GOT_RAT_SKULL
+
+	if ( $item_exists(PARAM1,item_ratskull) )
+	{
+		saytext My my, what a pretty skull you've found there...
+		callevent move_mouth
+		local reg.mitem.title "Offer Golden Rat Skull" //menu option to add
+		local reg.mitem.type payment //requires an item to activate
+		local reg.mitem.data item_ratskull //item required
+		local reg.mitem.callback got_rat_skull //event to call upon recieving item
+		menuitem.register //registers the menu option based on the above vars
+	}
+	else
+	{
+		saytext No one gets by this door until I get my [pretty]!
+		callevent move_mouth
+		local reg.mitem.title "Your pretty?"
+		local reg.mitem.type callback //
+		local reg.mitem.callback say_pretty //event to call when menu option is selected
+		menuitem.register
+	}
+}
+
+{ say_hail
+	if ( !GOT_RAT_SKULL )
+	{
+		saytext No one gets by this door until I get my [pretty]!
+		callevent move_mouth
+	}
+	else
+	{
+		saytext Thank you for returning my pretty... I'll be sure to keep it safe, this time.
+	}
+}
+
+{ say_pretty
+	if ( !GOT_RAT_SKULL )
+	{
+		saytext Yes! My golden rat skull. Bloody thing grew legs and wandered off... Again!
+		saytext Find it for me, and I'll open this door - but not before!
+		callevent move_mouth
+	}
+	else
+	{
+		saytext Thank you. I've got my good eye on it now... It'll not wander off again.
+	}
+}
+
+{ move_mouth
+	//this makes her mouth move a bit when she talks
+	say [0.2] [0.2] [0.3] [0.1] [0.1] [0.2] [0.1] [0.1]
+	//if we were using base_chat, we would do this with - callevent bchat_mouth_move - which provides more complex and random mouth movement
+}
+
+{ got_rat_skull
+	setvard GOT_RAT_SKULL 1
+	saytext Finally! My pretty rat skull is returned to me! Alright... Here we go...
+	callevent move_mouth
+	playanim critical ANIM_OPEN_DOOR
+	callevent 0.25 open_door //delays the event 0.25 seconds to sync with the animation
+	menu.autoopen 0 //she no longer needs the menu, so disable it
+}
+
+{ open_door
+	//this fires a map event, presuming there is a func_door with the targetname "hag_door", it will open
+	usetrigger hag_door
+}

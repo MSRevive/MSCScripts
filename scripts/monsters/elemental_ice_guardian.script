@@ -1,0 +1,1212 @@
+//Ice Guardian, based on new model
+//- when close to the ground, throw feeze sphere straight yaw, otherwise throw direct
+//- Boss version has lightning attacks and summons
+
+//other ice god names: Qailertetang (weather, animal), Tekkeitsertok (caribou), Sila (air), Sedna (sea - aliases: Nerrivik, Arnapkapfaaluk, Arnakuagsak, and Nuliajuk)
+
+//boss tricks
+//* ice circle (freeze circle centered on NPCATK_TARGET)
+//* freezing sphere
+//* ice projectile storm (client side fast ice spikes ala hoarfrost, pierce + cold_dot) [not quite the storm I envsioned, but works]
+
+//- lightning staff (charges staff with lightning)
+//- lightning beam (shock all nearby enemies)
+//- guided lightning balls
+//- ice spikes ala troll ball (pierce damage + cold dot)
+
+
+#scope server
+{ [shared]
+
+	const ICE_GUARD_NAME "a|Lesser Ice Guardian"
+	const ICE_GUARD_HP 3000 //8000
+	const ICE_GUARD_FIRE_VULN 1.5 //0.5 or 0
+	const ICE_GUARD_LEVEL 1
+	const ICE_GUARD_MODEL monsters/ice_guardian.mdl
+	const ICE_GUARD_WIDTH 32
+	const ICE_GUARD_HEIGHT 96
+	const ICE_GUARD_ICE_VULN 0.0
+
+	const GUARD_ELEMENT ice
+
+	const ICE_GUARD_DOT_EFFECT effects/effect_frostbite_dmg
+
+	setvar ANIM_IDLE idle_ready
+	setvar ANIM_WALK walk
+	setvard ANIM_RUN run
+	setvard ANIM_ATTACK attack1
+
+	setvard ANIM_DEATH explode //long_death works, but this is niftier
+
+	const ANIM_ATTACK1 attack1 //frame_attack
+	const ANIM_ATTACK2 attack2 //frame_attack
+	const ANIM_STUN_BURST attack_smash //frame_smash
+	const ANIM_THROW attack_throw //frame_attack_throw
+	const ANIM_PUSH attack_push //frame_attack_push
+	const ANIM_LUNGE attack_long //frame_long_attack
+	const ANIM_ICE_BALL release_spell //frame_spell
+	const ANIM_SPELL_LOOP spell_loop
+	const ANIM_SUMMON summon //frame_summon (*maybe* boss only, will mess with)
+	const ANIM_ALERT alert //frame_alert
+	const ANIM_FLINCH_CUSTOM flinch //custom flinch
+	const ANIM_TAUNT taunt //frame_taunt
+	const ANIM_PROJECTILE projectile //frame_projectile
+	const ANIM_MULTI_PROJECTILE multi_projectile //frame_multi_projectile_start frame_multi_projectile_end
+
+	const ANIM_DODGE attack_pushr //frame_attack_pushr
+
+	//may not be using
+	const ANIM_PUSHL attack_pushl //frame_attack_pushl
+	const ANIM_BREATH_START ccastout //frame_breath_go
+	const ANIM_BREATH_LOOP ccastoutlp
+	const ANIM_FAKE_DEATH long_death
+	const ANIM_RESSURECT ressurect
+	const ANIM_FAKE_DEATH_IDLE dead_idle
+}
+
+
+{
+	setvard VEL_PUSH_ATK_F 400
+	setvard VEL_THROW_ATK_L -400
+	setvard VEL_THROW_ATK_F 400
+	setvard VEL_BURST_F 500
+	setvard VEL_FBURST_F 800
+	setvard VEL_BURST_U 100
+	setvard VEL_LONG_F 300
+	setvard VEL_DODGE_F 300
+	setvard VEL_DODGE_L 300
+	setvard VEL_SHOCK_F 600
+
+	if ( $lcase(game.map.name) isnot shender_east )
+	{
+		multiply VEL_PUSH_ATK_F 1.25
+		setvard VEL_THROW_ATK_L -600
+		multiply VEL_THROW_ATK_F 1.25
+		multiply VEL_BURST_F 1.25
+		multiply VEL_FBURST_F 1.25
+		multiply VEL_BURST_U 1.25
+		multiply VEL_LONG_F 1.25
+		multiply VEL_DODGE_F 1.25
+		multiply VEL_DODGE_L 1.25
+		multiply VEL_SHOCK_F 1.25
+	}
+
+	setvar IS_UNHOLY 1
+	setvar NPC_HACKED_MOVE_SPEED 100
+	setvar IMMUNE_VAMPIRE 1
+
+	const SPEED_SLOW 100
+	const SPEED_FAST 200
+
+	const BFLY_VSPEED_UP 5
+	const BFLY_VSPEED_DOWN -50
+
+	setvard MOVE_RANGE 50
+	setvard ATTACK_MOVERANGE 50
+	const ATTACK_MOVERANGE_DEF 50
+
+	setvard ATTACK_RANGE 60
+	setvard ATTACK_HITRANGE 75
+	const ATTACK_RANGE_DEF 60
+	const ATTACK_HITRANGE_DEF 75
+	const ATTACK_MOVERANGE_AGRO 60 //levels 2+ favor ranged attacks
+
+	const LUNGE_RANGE_MIN 75
+	const LUNGE_RANGE_MAX 175
+	const LUNGE_RANGE_MAX_HITRANGE 125 //175 was way too far
+
+	const STAFF_BEAM_COLOR (128,128,255)
+
+	const STAFF_ALT_EFFECT effects/effect_shock_dmg
+
+	const OFS_ICE_BALL (0,16,64)
+
+	setvard NPC_GIVE_EXP 1000
+
+	//these three need to reset themselves slightly after each other
+	const FREQ_STUN_BURST $randf(20.0,30.0)
+	const FREQ_ICE_BALL $randf(20.0,30.0)
+	const FREQ_ICE_CIRCLE $randf(20.0,30.0)
+	const FREQ_THROW $randf(10.0,20.0) //push attack is every nth regular attack
+
+	const FREQ_STAFF_MODE_CHANGE 20.0
+
+	const FREQ_LUNGE 5.0 
+	const FREQ_DODGE $randf(8.0,12.0)
+	const FREQ_FLINCH 20.0
+	const FREQ_CHANGE_STANCE 20.0
+	const FREQ_TAUNT 20.0 //bosses only
+	const FREQ_CHARGE 20.0 //level 1 only
+	const FREQ_PROJECTILE 3.0 //level 2+ only (level 3 uses multi-projectile, less frequent)
+	const FREQ_SHOCK_STORM 30.0 //level 3 only
+
+	const DMG_BURST 100 //300
+	const DMG_LUNGE 200 //300
+	const DMG_STAFF 100 //200
+	const DOT_FROST 30 //100
+	const DOT_SHOCK 60 //200
+
+	const ICE_CIRCLE_RAD 172
+	const ICE_CIRCLE_FXRAD 172
+
+	const CL_FX_SCRIPT monsters/elemental_ice_guardian_cl
+
+	const SOUND_PROJECTILE magic/ice_strike.wav
+
+	const SOUND_STAFF_ON magic/elecidle.wav
+
+	const SOUND_SHOCK_LOOP magic/bolt_loop.wav
+	const SOUND_SHOCK_START magic/bolt_start.wav
+	const SOUND_SHOCK_HIT magic/bolt_end.wav
+
+	const SOUND_STRUCK1 debris/glass1.wav
+	const SOUND_STRUCK2 debris/glass2.wav
+	const SOUND_STRUCK3 debris/glass3.wav
+
+	const SOUND_SWIPE1 "zombie/claw_miss1.wav"
+	const SOUND_SWIPE2 "zombie/claw_miss2.wav"
+
+	const SOUND_SWIPE_STRONG1 "zombie/claw_strike1.wav"
+	const SOUND_SWIPE_STRONG2 "zombie/claw_strike2.wav"
+	const SOUND_SWIPE_STRONG3 "zombie/claw_strike3.wav"
+
+	const SOUND_ATTACK1 "monsters/ice_guardian/c_elemwatr_atk1.wav"
+	const SOUND_ATTACK2 "monsters/ice_guardian/c_elemwatr_atk2.wav"
+	const SOUND_ATTACK3 "monsters/ice_guardian/c_elemwatr_atk3.wav"
+	const SOUND_TAUNT "monsters/ice_guardian/c_elemwatr_bat1.wav"
+	const SOUND_ALERT "monsters/ice_guardian/c_elemwatr_slct.wav"
+	const SOUND_SUMMON "monsters/ice_guardian/c_elemwatr_bat2.wav"
+	const SOUND_DODGE "monsters/ice_guardian/c_elemwatr_slct.wav"
+	const SOUND_PAIN1 "monsters/ice_guardian/c_elemwatr_hit1.wav"
+	const SOUND_PAIN2 "monsters/ice_guardian/c_elemwatr_hit2.wav"
+	const SOUND_DEATH "monsters/ice_guardian/c_elemwatr_dead.wav"
+}
+
+#include monsters/base_monster_new
+#include monsters/base_flyer_grav
+#include monsters/base_propelled
+
+{ [shared] npc_spawn
+	name ICE_GUARD_NAME
+	hp ICE_GUARD_HP
+	race demon
+	setmodel ICE_GUARD_MODEL
+	width ICE_GUARD_WIDTH
+	height ICE_GUARD_HEIGHT
+
+	roam 1
+
+	setmoveanim ANIM_WALK
+	setidleanim ANIM_IDLE
+
+	takedmg all 0.5
+	takedmg ice ICE_GUARD_ICE_VULN
+	takedmg cold ICE_GUARD_ICE_VULN
+	takedmg fire ICE_GUARD_FIRE_VULN
+	takedmg holy 1.5
+
+	blood none
+
+	hearingsensitivity 6
+
+	playanim once ANIM_IDLE
+
+	if game.serverside
+
+	setvard ATTACK_COUNT 0
+	setvard STAFF_ON 0
+
+	setvard IN_STANCE 0
+	setvard NEXT_STANCE_CHANGE game.time
+	add NEXT_STANCE_CHANGE 20.0
+
+	callevent 0.1 refresh_client_fx
+	callevent 2.0 finalize_npc
+}
+
+{ finalize_npc
+	setvard HALF_HP $get(ent_me,maxhp)
+	multiply HALF_HP 0.5
+	setvard ATTACK_MOVERANGE ATTACK_MOVERANGE_DEF
+	setvard ATTACK_RANGE ATTACK_RANGE_DEF
+	setvard ATTACK_HITRANGE ATTACK_HITRANGE_DEF
+}
+
+{ refresh_client_fx
+	if ICE_GUARD_LEVEL > 1
+	if $get(ent_me,isalive)
+	if ( CL_FX_INDEX isnot 'CL_FX_INDEX' ) clientevent update all CL_FX_INDEX end_fx
+	clientevent new all CL_FX_SCRIPT $get(ent_me,index) STAFF_ON
+	setvard CL_FX_INDEX game.script.last_sent_id
+	setvard NEXT_CL_REFRESH game.time
+	add NEXT_CL_REFRESH 45.0
+}
+
+{ game_death
+	setvelocity ent_me $relvel($vec(0,0,0),$vec(0,0,0)) //meh, no workie
+	gravity 1
+	//clientevent update all CL_FX_INDEX guardian_died //ends fx with delay for body decompose
+	clientevent update all CL_FX_INDEX guardian_death //ends fx asap
+	callexternal GAME_MASTER gm_vanish_que $get(ent_me,id) 3.0
+
+	if ( SHOCK_STORM_ON )
+	{
+		svplaysound 3 0 SOUND_SHOCK_LOOP
+		effect beam update SHOCK_STORM_BEAM_ID brightness 0
+	}
+}
+
+{ game_stopmoving
+	setvelocity ent_me (0,0,0)
+}
+
+{ npc_targetsighted
+	if !DID_WARCRY
+	setvard DID_WARCRY 1
+
+	callevent refresh_client_fx
+
+	local GAME_TIME game.time
+
+	local RND_WARCRY $rand(1,2)
+	setvard AS_ATTACKING GAME_TIME
+	add AS_ATTACKING 5.0
+	roam 0
+	callevent 2.0 restore_roam
+	setmovedest NPCATK_TARGET 9999
+	if ( RND_WARCRY == 1 ) playanim critical ANIM_ALERT
+	if ( RND_WARCRY == 2 ) playanim critical ANIM_TAUNT
+
+	setvard NEXT_STUN_BURST GAME_TIME
+	add NEXT_STUN_BURST FREQ_STUN_BURST
+
+	setvard NEXT_LUNGE GAME_TIME
+	add NEXT_LUNGE 1.0
+
+	//level 1 only
+	setvard NEXT_CHARGE GAME_TIME
+	add NEXT_CHARGE FREQ_CHARGE
+
+
+	//level 2+
+	setvard NEXT_ICE_BALL GAME_TIME
+	add NEXT_ICE_BALL FREQ_ICE_BALL
+
+	setvard NEXT_ICE_CIRCLE GAME_TIME
+	add NEXT_ICE_CIRCLE FREQ_ICE_CIRCLE
+
+	//level 3
+	setvard NEXT_STAFF_MODE_CHANGE GAME_TIME
+	add NEXT_STAFF_MODE_CHANGE FREQ_STAFF_MODE_CHANGE
+
+	//fire level 3 only
+	setvard NEXT_METEOR GAME_TIME
+	add NEXT_METEOR FREQ_METEOR
+}
+
+{ restore_roam
+	roam 1
+}
+
+{ frame_alert
+	playsound 0 10 SOUND_ALERT
+}
+
+{ frame_taunt
+	playsound 0 10 SOUND_TAUNT
+}
+
+{ cycle_down
+	setvard DID_WARCRY 0
+}
+
+//========================================================== MAIN CYCLE
+
+{ npcatk_hunt
+
+	local GAME_TIME game.time
+
+	if ( NPCATK_TARGET equals unset )
+	{
+		if GAME_TIME > NEXT_TARG_CHECK
+		setvard NEXT_TARG_CHECK GAME_TIME
+		add NEXT_TARG_CHECK $randf(5.0,20.0)
+		if $lcase(game.map.name) equals shender_east
+		local CHECK_POINT $vec(0,0,-3760)
+		local CHECK_TARGS $get_tsphere(player,1024,CHECK_POINT)
+		if CHECK_TARGS isnot none
+		local CHECK_TARGS $sort_entlist(CHECK_TARGS,range)
+		local NEW_TARGET $get_token(CHECK_TARGS,0)
+		callevent npcatk_settarget NEW_TARGET
+	}
+
+	if ( ICE_GUARD_LEVEL > 1 )
+	{
+		if GAME_TIME > NEXT_CL_REFRESH
+		callevent refresh_client_fx
+	}
+
+	if ( GAME_TIME > NEXT_STANCE_CHANGE )
+	{
+		setvard NEXT_STANCE_CHANGE GAME_TIME
+		add NEXT_STANCE_CHANGE FREQ_STANCE_CHANGE
+
+		add IN_STANCE 1
+		if ( IN_STANCE == 1 )
+		{
+			setvard ANIM_WALK run
+			setvard ANIM_RUN walk
+			setvard NPC_HACKED_MOVE_SPEED SPEED_SLOW
+		}
+		else
+		{
+			setvard ANIM_WALK walk
+			setvard ANIM_RUN run
+			setvard NPC_HACKED_MOVE_SPEED SPEED_FAST 
+			setvard IN_STANCE 0
+		}
+	}
+
+	if !SUSPEND_AI
+
+	if NPCATK_TARGET isnot unset
+	
+	local TARG_RANGE $get(NPCATK_TARGET,range)
+
+	if ( TARG_RANGE < ATTACK_HITRANGE )
+	{
+		//TARG_RANGE is 2D, so in case I'm right over his head
+		local L_TARG_ORG $get(NPCATK_TARGET,origin)
+		local L_MY_ORG $get(ent_me,origin)
+		local L_Z_DIFF $vec.z(L_MY_ORG)
+		subtract L_Z_DIFF $vec.z(L_TARG_ORG)
+		if ( L_Z_DIFF > ATTACK_RANGE )
+		{
+			addvelocity ent_me $relvel(0,0,-100)
+			gravity 1
+		}
+		else
+		{
+			if L_Z_DIFF > 0
+			gravity 0.5
+		}
+	}
+
+	//track distance from ground (since $dist doesn't handle Z coords)
+	local MY_POS $get(ent_me,origin)
+	local GROUND_HEIGHT $get_ground_height(MY_POS)
+	setvard FLIGHT_HEIGHT $vec.z(MY_POS)
+	if ( FLIGHT_HEIGHT > GROUND_HEIGHT )
+	{
+		subtract FLIGHT_HEIGHT GROUND_HEIGHT
+	}
+	else
+	{
+		subtract GROUND_HEIGHT FLIGHT_HEIGHT
+		setvard FLIGHT_HEIGHT GROUND_HEIGHT
+	}
+
+	if ( ICE_GUARD_LEVEL >= 2 )
+	{
+		if ( GAME_TIME > NEXT_CALM )
+		{
+			if ( BE_AGGRESSIVE )
+			{
+				setvard ATTACK_MOVERANGE ATTACK_MOVERANGE_AGRO
+				setvard NPC_HACKED_MOVE_SPEED SPEED_FAST 
+			}
+			else
+			{
+				setvard ATTACK_MOVERANGE ATTACK_MOVERANGE_DEF
+			}
+		}
+		else
+		{
+			setvard ATTACK_MOVERANGE ATTACK_MOVERANGE_AGRO
+			setvard NPC_HACKED_MOVE_SPEED SPEED_FAST 
+		}
+	}
+
+	if ( TARG_RANGE > LUNGE_RANGE_MIN )
+	{
+		if TARG_RANGE < LUNGE_RANGE_MAX
+		if GAME_TIME > NEXT_LUNGE
+		setvard ATTACK_HITRANGE LUNGE_RANGE_MAX_HITRANGE
+		setvard ATTACK_RANGE LUNGE_RANGE_MAX
+		setvard ANIM_ATTACK ANIM_LUNGE
+	}
+
+	if ( GAME_TIME > NEXT_STUN_BURST )
+	{
+		if FLIGHT_HEIGHT < 30
+		setvard ANIM_ATTACK ANIM_STUN_BURST
+		//setvard ATTACK_MOVERANGE 200
+	}
+
+	if ( GAME_TIME > NEXT_CHARGE )
+	{
+		//level 1 ice guard attacks are all melee
+		//flight model may result in her getting stuck at a distance, this compensates
+		if ICE_GUARD_LEVEL == 1
+		if TARG_RANGE > 300
+		setvard NEXT_CHARGE GAME_TIME
+		add NEXT_CHARGE FREQ_CHARGE
+		playanim critical ANIM_LUNGE
+		setvard PROJECTILE_LOOP_ON 0
+		addvelocity ent_me $relvel(0,800,0)
+	}
+
+	if ICE_GUARD_LEVEL >= 2
+
+	if ( ICE_GUARD_LEVEL == 3 )
+	{
+		if GAME_TIME > NEXT_STAFF_MODE_CHANGE
+		setvard NEXT_STAFF_MODE_CHANGE GAME_TIME
+		add NEXT_STAFF_MODE_CHANGE FREQ_STAFF_MODE_CHANGE
+		callevent staff_mode_switch
+	}
+
+
+	if ( GAME_TIME > NEXT_ICE_BALL )
+	{
+		if ( TARG_RANGE < 300 ) addvelocity ent_me $relvel(0,-200,110)
+		setvard ATTACK_RANGE 2048
+		setvard ATTACK_HITRANGE 2048
+		if ( BE_AGGRESSIVE )
+		{
+			setvard ATTACK_RANGE 768
+			setvard ATTACK_HITRANGE 768
+		}
+		setvard ANIM_ATTACK ANIM_ICE_BALL
+		//used by fire type only (so it can miss)
+		if ( !CIRCLE_POS_SET )
+		{
+			setvard FIRE_CIRCLE_POS NPC_LASTSEEN_POS
+			setvard CIRCLE_POS_SET 1
+		}
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	if ( GAME_TIME > NEXT_ICE_CIRCLE )
+	{
+		if ( GUARD_TYPE equals ice )
+		{
+			if $cansee(NPCATK_TARGET)
+			if !ICE_CIRCLE_ACTIVE
+			setvard ATTACK_RANGE 2048
+			setvard ATTACK_HITRANGE 2048
+			if ( BE_AGGRESSIVE ) setvard ATTACK_RANGE 768
+			setvard ANIM_ATTACK ANIM_SUMMON
+			setvard SUMMON_TYPE circle
+			local EXIT_SUB 1
+		}
+	}
+	if !EXIT_SUB
+
+	if ( ICE_GUARD_LEVEL == 2 )
+	{
+		if GAME_TIME > NEXT_PROJECTILE
+		if $cansee(NPCATK_TARGET)
+		if TARG_RANGE > LUNGE_RANGE_MAX
+		if ( TARG_RANGE < 300 ) addvelocity ent_me $relvel(0,-200,110)
+		setvard ATTACK_RANGE 2048
+		setvard ATTACK_HITRANGE 2048
+		setvard ANIM_ATTACK ANIM_PROJECTILE
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	if ( ICE_GUARD_LEVEL == 3 )
+	{
+		if ( GUARD_ELEMENT equals ice )
+		{
+			if GAME_TIME > NEXT_PROJECTILE
+			if $cansee(NPCATK_TARGET)
+			//m-m-m-m-multi spike
+			if TARG_RANGE > LUNGE_RANGE_MAX
+			if ( TARG_RANGE < 300 ) addvelocity ent_me $relvel(0,-200,110)
+			setvard ATTACK_RANGE 2048
+			setvard ATTACK_HITRANGE 2048
+			setvard ANIM_ATTACK ANIM_MULTI_PROJECTILE
+			local EXIT_SUB 1
+		}
+	}
+	if !EXIT_SUB
+
+	if ( GAME_TIME > NEXT_METEOR )
+	{
+		if ( GUARD_ELEMENT equals fire )
+		{
+			//m-m-m-meteor
+			setvard NEXT_METEOR GAME_TIME
+			add NEXT_METEOR FREQ_METEOR
+			if ( TARG_RANGE < 300 ) addvelocity ent_me $relvel(0,-200,110)
+			setvard ATTACK_RANGE 2048
+			setvard ATTACK_HITRANGE 2048
+			setvard METEOR_MODE 1
+			setvard ANIM_ATTACK ANIM_ICE_BALL
+			local EXIT_SUB 1
+			callevent delay_specials
+		}
+		if !EXIT_SUB
+	}
+
+	if ( ICE_GUARD_LEVEL == 3 )
+	{
+		if GAME_TIME > NEXT_SHOCK_STORM
+		setvard NEXT_SHOCK_STORM GAME_TIME
+		add NEXT_SHOCK_STORM FREQ_SHOCK_STORM
+		if SHOCK_MODE
+		if ( TARG_RANGE < 300 )
+		{
+			if GUARD_ELEMENT equals ice
+			addvelocity ent_me $relvel(0,-200,110)
+		}
+		setvard PROJECTILE_LOOP_ON 0
+		playanim critical ANIM_SPELL_LOOP
+		callevent npcatk_suspend_ai 10.0
+		callevent npcatk_suspend_movement ANIM_SPELL_LOOP 10.0
+		callevent do_shock_storm
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+}
+
+{ frame_multi_projectile_start
+	setvard NEXT_PROJECTILE game.time
+	add NEXT_PROJECTILE FREQ_PROJECTILE
+
+	setvard ANIM_ATTACK attack1
+	setvard ATTACK_RANGE ATTACK_RANGE_DEF
+	setvard ATTACK_HITRANGE ATTACK_HITRANGE_DEF
+	callevent delay_specials
+
+	setvard PROJ_SPEED 1500
+	setvard HIT_DELAY 0.2
+
+	setvard PROJECTILE_LOOP_ON 1
+	callevent 5.0 frame_multi_projectile_end //in case anim doesn't catch
+	callevent projectile_loop
+}
+
+{ frame_multi_projectile_end
+	if PROJECTILE_LOOP_ON
+	setvard PROJECTILE_LOOP_ON 0
+}
+
+{ projectile_loop
+	if PROJECTILE_LOOP_ON
+	callevent do_projectile
+	callevent 0.3 projectile_loop
+}
+
+{ frame_projectile
+	setvard NEXT_PROJECTILE game.time
+	add NEXT_PROJECTILE FREQ_PROJECTILE
+
+	setvard PROJ_SPEED 800
+	setvard HIT_DELAY 0.5
+
+	setvard ANIM_ATTACK attack1
+	setvard ATTACK_RANGE ATTACK_RANGE_DEF
+	setvard ATTACK_HITRANGE ATTACK_HITRANGE_DEF
+	callevent delay_specials
+
+	playrandomsound 1 10 SOUND_ATTACK1 SOUND_ATTACK2 SOUND_ATTACK3
+	callevent do_projectile
+}
+
+{ do_projectile
+
+	if ( GUARD_ELEMENT equals ice )
+	{
+		playsound 0 10 SOUND_PROJECTILE
+
+		local TRACE_START $get(ent_me,attachpos,1)
+		local TRACE_END $get(NPCATK_TARGET,origin)
+		local TRACE_LINE $get_traceline(TRACE_START,TRACE_END,worldonly)
+		local TARG_ANG $angles3d(TRACE_START,TRACE_LINE)
+		vectorset TARG_ANG x $neg($vec.x(TARG_ANG))
+		
+		if ( $get(NPCATK_TARGET,range) < 300 ) addvelocity ent_me $relvel(0,-200,110)
+
+		//local TARG_ANG $get(ent_me,viewangles) //test
+		//dbg frame_projectile $get(ent_me,viewangles)
+		//vectorset TARG_ANG x $neg($vec.x(TARG_ANG))
+
+		if ( TRACE_LINE equals TRACE_END ) local HIT_TARGET 1
+
+		clientevent update all CL_FX_INDEX fire_projectile TARG_ANG TRACE_END HIT_TARGET PROJ_SPEED
+
+		if HIT_TARGET
+		callevent HIT_DELAY projectile_strike
+	}
+
+	if ( GUARD_ELEMENT equals fire )
+	{
+		tossprojectile NPCATK_TARGET 300 DMG_SPIT 2 proj_flame_jet2 (0,16,64)
+		clientevent update all CL_FX_INDEX staff_glow
+	}
+
+}
+
+{ projectile_strike
+	dodamage NPCATK_TARGET direct DMG_STAFF 100% ent_me pierce
+
+	if ( ICE_GUARD_LEVEL == 2 )
+	{
+		if ( $rand(1,3) == 1 )
+		{
+			applyeffect NPCATK_TARGET ICE_GUARD_DOT_EFFECT 5.0 $get(ent_me,id) DOT_FROST
+		}
+	}
+	
+	if ( GUARD_ELEMENT equals ice )
+	{
+		if ( ICE_GUARD_LEVEL == 3 )
+		{
+			if ( $rand(1,5) == 1 )
+			{
+				applyeffect NPCATK_TARGET effects/freeze_solid 5.0 $get(ent_me,id) DOT_FROST
+			}
+			else
+			{
+				applyeffect NPCATK_TARGET effects/effect_frostbite_dmg 5.0 $get(ent_me,id) DOT_FROST
+			}
+		}
+	}
+}
+
+{ frame_summon
+	setvard NEXT_ICE_CIRCLE game.time
+	add NEXT_ICE_CIRCLE FREQ_ICE_CIRCLE
+
+	setvard ANIM_ATTACK attack1
+	setvard ATTACK_RANGE ATTACK_RANGE_DEF
+	setvard ATTACK_HITRANGE ATTACK_HITRANGE_DEF
+
+	if ( SUMMON_TYPE equals circle )
+	{
+		if $get(NPCATK_TARGET,isalive)
+		if $cansee(NPCATK_TARGET)
+		callevent do_ice_circle $get(NPCATK_TARGET,origin)
+		callevent delay_specials
+	}
+}
+
+{ frame_spell
+	//freezing sphere
+	setvard NEXT_ICE_BALL game.time
+	add NEXT_ICE_BALL FREQ_ICE_BALL
+	playrandomsound 1 10 SOUND_ATTACK1 SOUND_ATTACK2 SOUND_ATTACK3
+
+	if ( METEOR_MODE )
+	{
+		setvard METEOR_MODE 0
+		local EXIT_SUB 1
+
+		local SPELL_POS $get(NPCATK_TARGET,origin)
+		local TRACE_START SPELL_POS
+		local TRACE_END SPELL_POS
+		vectoradd TRACE_END z 768
+		local TRACE_LINE $get_traceline(TRACE_START,TRACE_END,worldonly)
+		local METEOR_SPAWN TRACE_LINE
+		vectoradd METEOR_SPAWN z -100
+
+		createnpc monsters/summon/meteor_deployer METEOR_SPAWN $get(ent_me,id) $get(ent_me,id)
+
+		setvard ANIM_ATTACK attack1
+		setvard ATTACK_RANGE ATTACK_RANGE_DEF
+		setvard ATTACK_HITRANGE ATTACK_HITRANGE_DEF
+		callevent delay_specials
+	}
+	if !EXIT_SUB
+
+	if ( GUARD_ELEMENT equals ice )
+	{
+		if ( FLIGHT_HEIGHT > 100 )
+		{
+			tossprojectile NPCATK_TARGET 100 0 0 proj_freezing_sphere OFS_ICE_BALL
+		}
+		else
+		{
+			setvard PASS_FREEZE_DMG DOT_FROST
+			setvard PASS_FREEZE_DUR 8.0
+			setmovedest NPCATK_TARGET 9999
+			setangle view.pitch 0
+			setangle view.roll 0
+			setangle view.yaw $get(ent_me,angles.yaw)
+			tossprojectile view 100 0 0 proj_freezing_sphere OFS_ICE_BALL
+		}
+		setvard ANIM_ATTACK attack1
+		setvard ATTACK_RANGE ATTACK_RANGE_DEF
+		setvard ATTACK_HITRANGE ATTACK_HITRANGE_DEF
+		callevent delay_specials
+	}
+
+	if ( GUARD_ELEMENT equals fire )
+	{
+		if ( FIRE_CIRCLE_POS equals unset )
+		{
+			//can't see target, skip for now
+			setvard CIRCLE_POS_SET 0
+			setvard ANIM_ATTACK attack1
+			setvard ATTACK_RANGE ATTACK_RANGE_DEF
+			setvard ATTACK_HITRANGE ATTACK_HITRANGE_DEF
+			callevent delay_specials
+		}
+		else
+		{
+			//circle of fire at last seen nme loc
+			setvard BURST_POS FIRE_CIRCLE_POS
+			vectorset BURST_POS z $get_ground_height(NPC_LASTSEEN_POS)
+			clientevent new all effects/sfx_fire_staff BURST_POS
+			vectoradd BURST_POS z 32 //adjust up a bit for uneven terrain
+			xdodamage BURST_POS 96 DMG_FIRE_BURST 0.01 ent_me ent_me none fire_effect dmgevent:burst
+
+			setvard CIRCLE_POS_SET 0
+			setvard ANIM_ATTACK attack1
+			setvard ATTACK_RANGE ATTACK_RANGE_DEF
+			setvard ATTACK_HITRANGE ATTACK_HITRANGE_DEF
+			callevent delay_specials
+		}
+	}
+}
+
+//fire variant only
+{ burst_dodamage
+	if PARAM1
+	if $get(PARAM2,relationship,ent_me) equals enemy
+	applyeffect PARAM2 ICE_GUARD_DOT_EFFECT 5.0 $get(ent_me,id) DOT_FROST
+	local TARG_ORG $get(PARAM2,origin)
+	local MY_ORG BURST_POS
+	local TARG_ANG $angles(MY_ORG,TARG_ORG)
+	local NEW_YAW TARG_ANG
+	setvelocity PARAM2 $relvel($vec(0,NEW_YAW,0),$vec(0,VEL_FBURST_F,110))
+}
+
+//fire variant only
+{ flamejet_dodamage
+	applyeffect PARAM2 ICE_GUARD_DOT_EFFECT 5.0 $get(ent_me,id) DOT_FROST
+}
+
+{ frame_attack
+	playrandomsound 2 5 SOUND_SWIPE1 SOUND_SWIPE2
+
+	setvard MELEE_ATTACK 1
+	dodamage NPCATK_TARGET ATTACK_HITRANGE DMG_STAFF 90% slash
+
+	add ATTACK_COUNT 1
+	local DIV_ATTACK_COUNT ATTACK_COUNT
+	divide DIV_ATTACK_COUNT 2
+	//alternate attacks every other frame
+	dbg DIV_ATTACK_COUNT vs. $int(DIV_ATTACK_COUNT) [ FLIGHT_HEIGHT ]
+	if ( DIV_ATTACK_COUNT == $int(DIV_ATTACK_COUNT) )
+	{
+		setvard ANIM_ATTACK ANIM_ATTACK1
+	}
+	else
+	{
+		setvard ANIM_ATTACK ANIM_ATTACK2
+	}
+
+	//push every 5th attack, throw every 10th
+	if ( ATTACK_COUNT == 5 )
+	{
+		add ATTACK_COUNT 1
+		setvard ANIM_ATTACK ANIM_PUSH
+	}
+
+	if ( ATTACK_COUNT >= 10 )
+	{
+		setvard ATTACK_COUNT 0
+		setvard ANIM_ATTACK ANIM_THROW
+	}
+}
+
+{ frame_attack_push
+	playrandomsound 1 10 SOUND_ATTACK1 SOUND_ATTACK2 SOUND_ATTACK3
+	playrandomsound 2 5 SOUND_SWIPE1 SOUND_SWIPE2
+	setvard ANIM_ATTACK attack1
+
+	setvard MELEE_ATTACK 1
+	//dodamage NPCATK_TARGET ATTACK_HITRANGE DMG_LUNGE 100% blunt dmgevent:pushatk
+	xdodamage NPCATK_TARGET ATTACK_HITRANGE DMG_LUNGE 100% ent_me ent_me blunt none dmgevent:pushatk
+}
+
+{ pushatk_dodamage
+	if ( MELEE_ATTACK )
+	{
+		if PARAM1
+		if ( !SHOCK_MODE )
+		{
+			applyeffect PARAM2 ICE_GUARD_DOT_EFFECT 5.0 $get(ent_me,id) DOT_FROST
+		}
+		else
+		{
+			applyeffect PARAM2 STAFF_ALT_EFFECT 5.0 $get(ent_me,id) DOT_SHOCK
+		}
+	}
+	setvard MELEE_ATTACK 0
+	if PARAM1
+	addvelocity NPCATK_TARGET $relvel(0,VEL_PUSH_ATK_F,110)
+}
+
+{ frame_attack_throw
+	playrandomsound 1 10 SOUND_ATTACK1 SOUND_ATTACK2 SOUND_ATTACK3
+	playrandomsound 2 5 SOUND_SWIPE_STRONG1 SOUND_SWIPE_STRONG2 SOUND_SWIPE_STRONG3
+	setvard ANIM_ATTACK attack1
+	add ATTACK_COUNT 1
+
+	setvard MELEE_ATTACK 1
+	//dodamage NPCATK_TARGET ATTACK_HITRANGE DMG_LUNGE 100% blunt dmgevent:throwatk
+	xdodamage NPCATK_TARGET ATTACK_HITRANGE DMG_LUNGE 100% ent_me ent_me blunt none dmgevent:throwatk
+}
+
+{ throwatk_dodamage
+	if ( MELEE_ATTACK )
+	{
+		if PARAM1
+		if ( !SHOCK_MODE )
+		{
+			applyeffect PARAM2 ICE_GUARD_DOT_EFFECT 5.0 $get(ent_me,id) DOT_FROST
+		}
+		else
+		{
+			applyeffect PARAM2 STAFF_ALT_EFFECT 5.0 $get(ent_me,id) DOT_SHOCK
+		}
+	}
+	setvard MELEE_ATTACK 0
+	if PARAM1
+	addvelocity NPCATK_TARGET $relvel(VEL_THROW_ATK_L,VEL_THROW_ATK_F,200)
+	applyeffect CUR_TARG effects/effect_stun 5.0 1 1
+}
+
+{ frame_smash
+	setvard NEXT_STUN_BURST game.time
+	add NEXT_STUN_BURST FREQ_STUN_BURST
+	callevent delay_specials
+
+	playrandomsound 1 10 SOUND_ATTACK1 SOUND_ATTACK2 SOUND_ATTACK3
+	setvard ANIM_ATTACK attack1
+	
+	setvard BURST_START $relpos(0,64,0)
+	clientevent new all effects/sfx_stun_burst BURST_START 256 0
+	setvard BURST_TARGS $get_tsphere(enemy,256,BURST_START)
+	if BURST_TARGS isnot none
+	calleventloop $get_token_amt(BURST_TARGS) burst_affect_targets
+}
+
+{ burst_affect_targets
+	local CUR_TARG $get_token(BURST_TARGS,game.script.iteration)
+	applyeffect CUR_TARG effects/effect_stun 8.0 1 1
+	local TARG_ORG $get(CUR_TARG,origin)
+	local MY_ORG BURST_START
+	local NEW_YAW $angles(MY_ORG,TARG_ORG)
+	xdodamage CUR_TARG direct DMG_BURST 100% ent_me ent_me none blunt
+	addvelocity CUR_TARG $relvel($vec(0,NEW_YAW,0),$vec(0,VEL_BURST_F,VEL_BURST_U))
+}
+
+{ frame_long_attack
+	setvard NEXT_LUNGE game.time
+	add NEXT_LUNGE FREQ_LUNGE
+
+	playrandomsound 1 10 SOUND_ATTACK1 SOUND_ATTACK2 SOUND_ATTACK3
+	playrandomsound 2 10 SOUND_SWIPE1 SOUND_SWIPE2
+	setvard ATTACK_HITRANGE ATTACK_HITRANGE_DEF
+	setvard ATTACK_RANGE ATTACK_RANGE_DEF
+	setvard ANIM_ATTACK attack1
+	setvard MELEE_ATTACK 1
+	//dodamage NPCATK_TARGET LUNGE_RANGE_MAX DMG_LUNGE 90% slash dmgevent:longatk
+	xdodamage NPCATK_TARGET LUNGE_RANGE_MAX DMG_LUNGE 90% ent_me ent_me slash none dmgevent:longatk
+}
+
+{ longatk_dodamage
+	if ( MELEE_ATTACK )
+	{
+		if PARAM1
+		if ( !SHOCK_MODE )
+		{
+			applyeffect PARAM2 ICE_GUARD_DOT_EFFECT 5.0 $get(ent_me,id) DOT_FROST
+		}
+		else
+		{
+			applyeffect PARAM2 STAFF_ALT_EFFECT 5.0 $get(ent_me,id) DOT_SHOCK
+		}
+	}
+	setvard MELEE_ATTACK 0
+	if PARAM1
+	local RND_RL $randf(-200.0,100.0)
+	addvelocity NPCATK_TARGET $relvel(RND_RL,VEL_LONG_F,110)
+}
+
+
+{ game_dodamage
+	if ( MELEE_ATTACK )
+	{
+		if PARAM1
+		if ( !SHOCK_MODE )
+		{
+			applyeffect PARAM2 ICE_GUARD_DOT_EFFECT 5.0 $get(ent_me,id) DOT_FROST
+		}
+		else
+		{
+			applyeffect PARAM2 STAFF_ALT_EFFECT 5.0 $get(ent_me,id) DOT_SHOCK
+		}
+	}
+	setvard MELEE_ATTACK 0
+}
+
+{ delay_specials
+	//call after each special time reset, to make sure there's some delay between specials
+
+	local GAME_TIME game.time
+	local TIME_PLUS5 GAME_TIME
+	add TIME_PLUS5 5.0
+
+	if ( TIME_PLUS5 > NEXT_STUN_BURST )
+	{
+		setvard NEXT_STUN_BURST GAME_TIME
+		add NEXT_STUN_BURST $randf(1.0,5.0)
+	}
+
+	if ( TIME_PLUS5 > NEXT_CHARGE )
+	{
+		setvard NEXT_CHARGE GAME_TIME
+		add NEXT_CHARGE $randf(1.0,5.0)
+	}
+
+	if ( TIME_PLUS5 > NEXT_ICE_BALL )
+	{
+		setvard NEXT_ICE_BALL GAME_TIME
+		add NEXT_ICE_BALL $randf(1.0,5.0)
+	}
+
+	if ( TIME_PLUS5 > NEXT_ICE_CIRCLE )
+	{
+		setvard NEXT_ICE_CIRCLE GAME_TIME
+		add NEXT_ICE_CIRCLE $randf(1.0,5.0)
+	}
+
+	if ( TIME_PLUS5 > NEXT_PROJECTILE )
+	{
+		setvard NEXT_PROJECTILE GAME_TIME
+		add NEXT_PROJECTILE $randf(1.0,5.0)
+	}
+
+	if ( TIME_PLUS5 > NEXT_METEOR )
+	{
+		setvard NEXT_METEOR GAME_TIME
+		add NEXT_METEOR $randf(1.0,5.0)
+	}
+}
+
+{ game_damaged
+
+	playrandomsound 1 10 SOUND_STRUCK1 SOUND_STRUCK2 SOUND_STRUCK3
+
+	setvard NEXT_CALM game.time
+	add NEXT_CALM 5.0
+
+	if ( game.time > NEXT_DODGE )
+	{
+		setvard NEXT_DODGE game.time
+		add NEXT_DODGE FREQ_DODGE
+		playanim critical ANIM_DODGE
+		setvard PROJECTILE_LOOP_ON 0
+		setvard DODGE_TARGET PARAM1
+	}
+
+	if ( $get(ent_me,hp) < HALF_HP )
+	{
+		if game.time > NEXT_FLINCH
+		setvard NEXT_FLINCH game.time
+		playrandomsound 2 10 SOUND_PAIN1 SOUND_PAIN2
+		add NEXT_FLINCH FREQ_FLINCH
+		setvard ANIM_IDLE idle_scared
+		setidleanim idle_scared
+		playanim critical ANIM_FLINCH_CUSTOM
+		setvard PROJECTILE_LOOP_ON 0
+		if ( !BE_AGGRESSIVE ) setvelocity ent_me $relvel(0,-600,150)
+	}
+}
+
+{ frame_attack_pushr
+
+	addvelocity ent_me $relvel(-300,-100,0)
+	playsound 0 10 SOUND_DODGE
+	if $get(DODGE_TARGET,isalive)
+	if ( $get(DODGE_TARGET,range) < 200 ) addvelocity DODGE_TARGET $relvel(VEL_DODGE_L,VEL_DODGE_F,110)
+}
+
+{ my_target_died
+	if game.time > NEXT_TAUNT
+	setvard NEXT_TAUNT game.time
+	add NEXT_TAUNT FREQ_TAUNT
+	playanim critical ANIM_TAUNT
+	setvard PROJECTILE_LOOP_ON 0
+}
+
+{ do_ice_circle //<origin>
+	playsound 0 10 SOUND_SUMMON
+	setvard ICE_CIRCLE_ACTIVE 1
+	setvard ICE_CIRCLE_ORIGIN PARAM1
+	vectorset ICE_CIRCLE_ORIGIN z $get_ground_height(ICE_CIRCLE_ORIGIN)
+	clientevent new all effects/sfx_seal ICE_CIRCLE_ORIGIN ICE_CIRCLE_FXRAD 8 15.0 freeze_solid
+	callevent 1.0 ice_circle_loop
+	callevent 15.0 ice_circle_end
+}
+
+{ ice_circle_end
+	setvard ICE_CIRCLE_ACTIVE 0
+}
+
+{ ice_circle_loop
+	if ICE_CIRCLE_ACTIVE
+	callevent 0.5 ice_circle_loop
+
+	setvard CIRCLE_TARGS $get_tsphere(enemy,ICE_CIRCLE_RAD,ICE_CIRCLE_ORIGIN)
+	if CIRCLE_TARGS isnot none
+	calleventloop $get_token_amt(CIRCLE_TARGS) circle_affect_targets
+}
+
+{ circle_affect_targets
+	local CUR_TARG $get_token(CIRCLE_TARGS,game.script.iteration)
+	applyeffect CUR_TARG effects/freeze_solid 8.0 $get(ent_me,id) DOT_FROST
+}
+
+{ staff_mode_switch
+
+	if ( !SHOCK_MODE )
+	{
+		setvard SHOCK_MODE 1
+		playsound 0 10 SOUND_STAFF_ON
+		effect beam ents lgtning.spr 30 ent_me 2 ent_me 3 STAFF_BEAM_COLOR 200 10 FREQ_STAFF_MODE_CHANGE
+	}
+	else
+	{
+		setvard SHOCK_MODE 0
+	}
+}
+
+{ do_shock_storm
+	//shock storm
+	callevent delay_specials
+	setvard SHOCK_STORM_ON 1
+
+	if ( GUARD_ELEMENT equals ice )
+	{
+		clientevent update all CL_FX_INDEX shock_storm_on
+		callevent shock_storm_loop
+		callevent 10.0 shock_storm_end //in case frame doesn't kick in
+
+		effect beam ents lgtning.spr 60 ent_me 2 ent_me 4 (128,128,255) 200 60 10.0
+		setvard SHOCK_STORM_BEAM_ID $get(ent_lastcreated,id)
+		setvard SHOCK_TARGS $get_tsphere(enemy,1024)
+
+		playsound 1 10 SOUND_SHOCK_START
+		svplaysound 3 10 SOUND_SHOCK_LOOP
+
+		setvard CUR_SHOCK_TARG_IDX 0
+	}
+
+	if ( GUARD_ELEMENT equals fire )
+	{
+		callevent npcatk_suspend_roam 10.0
+		nopush 1
+
+		//finding ground pos in funky way due to some sloppy mapping on Phobia
+		local TRACE_START $get(ent_me,origin)
+		local TRACE_END TRACE_START
+		vectoradd TRACE_END z -1024
+		local TRACE_LINE $get_traceline(TRACE_START,TRACE_END,worldonly)
+
+		clientevent update all CL_FX_INDEX poison_storm_on $vec.z(TRACE_LINE)
+		callevent poison_storm_loop
+		callevent 10.0 poison_storm_end //in case frame doesn't kick in
+
+		effect beam ents lgtning.spr 60 ent_me 2 ent_me 4 STAFF_BEAM_COLOR 200 60 10.0
+		setvard SHOCK_STORM_BEAM_ID $get(ent_lastcreated,id)
+
+		playsound 1 10 SOUND_SHOCK_START
+
+		setvard CUR_SHOCK_TARG_IDX 0
+	}
+}
+
+{ poison_storm_loop
+	if SHOCK_STORM_ON
+	callevent 0.5 poison_storm_loop
+	setvard STORM_TARGS $get_tsphere(enemy,768)
+	if STORM_TARGS isnot none
+	calleventloop $get_token_amt(STORM_TARGS) poison_storm_affect_targets
+}
+
+{ poison_storm_affect_targets
+	local CUR_TARG $get_token(STORM_TARGS,game.script.iteration)
+	applyeffect CUR_TARG effects/effect_poison 10.0 $get(ent_me,id) FLAME_JET_DOT
+}
+
+{ poison_storm_end
+	nopush 0
+	setvard SHOCK_STORM_ON 0
+	svplaysound 3 0 SOUND_SHOCK_LOOP
+	clientevent update all CL_FX_INDEX poison_storm_end
+	callevent delay_specials
+}
+
+{ shock_storm_loop
+	if SHOCK_STORM_ON
+
+	callevent 0.5 shock_storm_loop
+
+	if SHOCK_TARGS isnot none
+
+	local N_SHOCK_TARGS_M1 $get_token_amt(SHOCK_TARGS)
+	subtract N_SHOCK_TARGS_M1 1
+
+	if ( CUR_SHOCK_TARG_IDX > N_SHOCK_TARGS_M1 ) setvard CUR_SHOCK_TARG_IDX 0
+
+	local CUR_TARG $get_token(SHOCK_TARGS,CUR_SHOCK_TARG_IDX)
+
+	local TRACE_START $get(ent_me,attachpos,1)
+	local TRACE_END $get(CUR_TARG,origin)
+	local TRACE_LINE $get_traceline(TRACE_START,TRACE_END,worldonly)
+	if ( TRACE_LINE equals TRACE_END )
+	{
+		playsound 0 10 SOUND_SHOCK_HIT
+		local L_DOT_SHOCK DOT_SHOCK
+		multiply L_DOT_SHOCK 2
+		xdodamage CUR_TARG direct L_DOT_SHOCK 100% ent_me ent_me none lightning
+		applyeffect CUR_TARG effects/effect_shock_dmg 5.0 $get(ent_me,id) DOT_SHOCK
+		local TARG_ORG $get(CUR_TARG,origin)
+		local MY_ORG $get(ent_me,origin)
+		local NEW_YAW $angles(MY_ORG,TARG_ORG)
+		addvelocity CUR_TARG $relvel($vec(0,NEW_YAW,0),$vec(0,VEL_SHOCK_F,110))
+		effect beam update SHOCK_STORM_BEAM_ID end_target CUR_TARG
+		effect beam update SHOCK_STORM_BEAM_ID brightness 200
+	}
+	else
+	{
+		effect beam update SHOCK_STORM_BEAM_ID end_target ent_me
+		effect beam update SHOCK_STORM_BEAM_ID brightness 0
+	}
+
+	add CUR_SHOCK_TARG_IDX 1
+}
+
+{ shock_storm_end
+	setvard SHOCK_STORM_ON 0
+	svplaysound 3 0 SOUND_SHOCK_LOOP
+	clientevent update all CL_FX_INDEX shock_storm_end
+	callevent delay_specials
+}
+
+{ ext_shender_fail
+	deleteent ent_me fade
+}
+
+{ set_agro
+	setvard BE_AGGRESSIVE 1
+}

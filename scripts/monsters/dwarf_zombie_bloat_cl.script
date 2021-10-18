@@ -1,0 +1,65 @@
+//monsters/dwarf_zombie_bloat - puke effect
+#scope client
+
+{
+	const PUKE_SPRITE bloodspray.spr
+	const PUKE_SPRITE_FRAMES 10
+	precache PUKE_SPRITE
+}
+
+{ client_activate //<caster_model_idx>
+	setvard MY_OWNER PARAM1
+	setvard DO_PUKE 1
+	callevent puke_loop
+	callevent 15.0 end_puke //max duration
+}
+
+{ end_puke
+	setvard DO_PUKE 0
+	callevent 1.0 remove_me
+}
+
+{ remove_me
+	removescript
+}
+
+{ puke_loop
+	if DO_PUKE
+	callevent 0.1 puke_loop
+
+	local OWNER_HEAD $getcl(MY_OWNER,attachment0)
+	local OWNER_PUKE $getcl(MY_OWNER,attachment1)
+	setvard CLOUD_ANG $angles(OWNER_HEAD,OWNER_PUKE)
+	setvard CLOUD_ANG $vec.yaw(CLOUD_ANG)
+
+	cleffect tempent sprite PUKE_SPRITE $getcl(MY_OWNER,attachment0) setup_puke update_puke
+}
+
+{ update_puke
+	local L_CUR_SCALE game.tempent.fuser1
+	add L_CUR_SCALE 0.1
+	cleffect tempent set_current_prop scale L_CUR_SCALE
+	cleffect tempent set_current_prop fuser1 L_CUR_SCALE
+}
+
+{ setup_puke
+
+   cleffect tempent set_current_prop death_delay 	0.5
+   cleffect tempent set_current_prop framerate		10
+   cleffect tempent set_current_prop frames			PUKE_SPRITE_FRAMES
+   cleffect tempent set_current_prop bouncefactor 	0
+	local L_START_SCALE $randf(0.25,1.0)
+   cleffect tempent set_current_prop scale 			L_START_SCALE
+   cleffect tempent set_current_prop rendermode		texture
+   cleffect tempent set_current_prop renderamt		255
+   cleffect tempent set_current_prop rendercolor	(0,255,0)
+   cleffect tempent set_current_prop gravity 		$randf(2,4)
+   cleffect tempent set_current_prop collide 		world;die
+	cleffect tempent set_current_prop fuser1		L_START_SCALE
+
+	//local CLOUD_ANG $getcl(MY_OWNER,angles.yaw)
+	local RND_RL $randf(-10,10)
+	local RND_UD $randf(-220,-180)
+	local CLOUD_VEL $relvel($vec(-75,CLOUD_ANG,0),$vec(RND_RL,400,RND_UD))
+	cleffect tempent set_current_prop velocity CLOUD_VEL
+}

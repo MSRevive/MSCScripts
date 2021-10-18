@@ -1,0 +1,121 @@
+#scope server
+{
+	const EFFECT_ID			DOT_quake
+	const EFFECT_NAME		"Quake"
+	const EFFECT_ACTIONTYPE		nostack
+	const EFFECT_SCRIPT		$currentscript
+
+	setvard game.effect.id		EFFECT_ID
+	setvard game.effect.displayname	EFFECT_NAME
+	setvard game.effect.type	EFFECT_ACTIONTYPE
+}
+
+//doing this without effects/effect_base - look mah, no hands!
+
+{ game_activate //<origin|src> <afflicter> <aoe> <dmg> <endtime> <falloff:0|1>
+	setvard QUAKE_ORIGIN PARAM1
+	setvard QUAKE_DMGSRC PARAM2
+	if ( $get(QUAKE_ORIGIN,isalive) ) setvard QUAKE_MOBILE 1
+	setvard QUAKE_SKILL none
+	if ( $get(QUAKE_ORIGIN,isplayer) ) setvard QUAKE_SKILL spellcasting.earth
+	setvard QUAKE_AOE PARAM3
+	setvard QUAKE_DMG PARAM4
+	setvard QUAKE_ENDTIME PARAM5
+	setvard QUAKE_FALLOFF PARAM6
+
+	dbg $currentscript got PARAM1 PARAM2 PARAM3 PARAM4 PARAM5 PARAM6
+
+	local L_TOT_DUR $math(subtract,QUAKE_ENDTIME,game.time)
+	//dbg $currentscript totaldur QUAKE_ENDTIME - game.time = L_TOT_DUR
+	callevent L_TOT_DUR effect_die
+
+	setvard game.effect.canjump 0
+	//setting now, in case we can't adjust dynamically based on distance from source
+	setvard game.effect.movespeed 0.1
+	setvard game.effect.anim.framerate 0.1
+
+	callexternal $get(ent_me,id) ext_set_slowed 1
+
+	//be nice to rig up a function to screenshake individual players based on distance from src, or do it client side
+
+	local L_SHAKE_AOE QUAKE_AOE
+	multiply L_SHAKE_AOE 1.5
+
+	if ( $get(ent_me,isplayer) ) playermessage You are caught in a quake!
+
+	setvard QUAKE_ACTIVE 1
+	callevent quake_loop
+}
+
+{ quake_loop
+	if QUAKE_ACTIVE
+	callevent 0.5 quake_loop
+
+	if ( QUAKE_MOBILE )
+	{
+		local L_QPOS $get(QUAKE_ORIGIN,origin)
+	}
+	else
+	{
+		local L_QPOS QUAKE_ORIGIN
+	}
+	
+	local L_MY_POS $get(ent_me,origin)
+	local L_QUAKE_DIST $dist(L_QPOS,L_MY_POS)
+	if ( QUAKE_FALLOFF )
+	{
+		local L_DIST_RATIO 1
+		subtract L_DIST_RATIO $math(divide,L_QUAKE_DIST,QUAKE_AOE)
+		//dbg quake distratio L_DIST_RATIO
+	}
+
+	if ( L_QUAKE_DIST <= QUAKE_AOE )
+	{
+		if ( QUAKE_DMG > 0 )
+		{
+			local L_DMG QUAKE_DMG
+			if ( QUAKE_FALLOFF )
+			{
+				local L_DMG $ratio(L_DIST_RATIO,1,QUAKE_DMG)
+				multiply L_DMG 2
+
+				if ( $get(ent_me,isplayer) )
+				{
+					if $get(ent_me,nopush)
+					multiply L_DMG 5
+				}
+			}
+
+			xdodamage ent_me direct L_DMG 100% QUAKE_DMGSRC QUAKE_DMGSRC QUAKE_SKILL blunt_effect
+		}
+
+		local L_SLOW 0.3
+		if ( QUAKE_FALLOFF )
+		{
+			local L_SLOW $ratio(L_DIST_RATIO,0.9,0.1)
+		}
+
+		//dbg quake_loop rat L_DIST_RATIO slw L_SLOW dmg L_DMG
+
+		setvard game.effect.movespeed $math(multiply,100,L_SLOW)
+		setvard game.effect.anim.framerate L_SLOW
+	}
+	else
+	{
+		setvard game.effect.movespeed 100
+		setvard game.effect.anim.framerate 1.0
+	}
+}
+
+{ game_death
+	callevent effect_die
+}
+
+{ effect_die
+	//dbg $currentscript effect_die
+	setvard game.effect.movespeed 100%
+	setvard game.effect.canjump 1
+	setvard game.effect.anim.framerate 1.0
+	callexternal $get(ent_me,id) ext_set_slowed 0
+	removescript
+}

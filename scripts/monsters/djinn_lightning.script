@@ -1,0 +1,277 @@
+//BOSS MONSTER
+{
+	if ( $lcase(game.map.name) equals cleicert )
+	{
+		setvard NPC_IS_BOSS 1
+		setvard NPC_BASE_EXP 4000
+	}
+	else
+	{
+		setvard NPC_BASE_EXP 1000
+	}
+
+	const NPC_BOSS_REGEN_RATE 0.05
+	const NPC_BOSS_RESTORATION 0.25
+
+	setvar IS_UNHOLY 1
+	const FREQ_CRAZY $randf(20,30)
+	const FREQ_CHAIN $randf(10,20)
+	const FREQ_BIGJUMP $randf(10,20)
+	const CHANCE_SHOCK 30
+	const DMG_CHAIN $randf(2,6)
+	const FINGER_ADJ '$relpos($vec(0,MY_YAW,0),$vec(0,30,54))'
+
+	const SOUND_BCHARGE magic/bolt_start.wav
+	const SOUND_LOOP magic/bolt_loop.wav
+	const SOUND_BFIRE magic/bolt_end.wav
+
+	const SOUND_SHOCK1 debris/zap8.wav
+	const SOUND_SHOCK2 debris/zap3.wav
+	const SOUND_SHOCK3 debris/zap4.wav
+
+	const HEADBUTT_FREQ 20.0
+
+	const GOLD_BAGS 1
+	const GOLD_BAGS_PPLAYER 3
+	const GOLD_PER_BAG 25
+	const GOLD_RADIUS 128
+	const GOLD_MAX_BAGS 20
+}
+
+#include monsters/swamp_ogre
+
+{ npc_spawn
+
+	if ( $lcase(game.map.name) equals cleicert ) name the|Lightning Djinn Ji'Azolt
+	if ( $lcase(game.map.name) isnot cleicert ) name a|Lightning Djinn
+	hp 3000
+	race demon
+	roam 1
+	gold 0
+	setmodel MONSTER_MODEL
+	setmoveanim ANIM_WALK
+	height 64
+	width 32
+	hearingsensitivity 8
+	blood green //check in code
+	setidleanim ANIM_IDLE
+
+	setprop ent_me skin 4
+
+	setvard RUN_STEP 0
+
+	callevent 1.0 idle_sounds
+
+
+	setvard CUR_BEAM 0
+	setvard BEAM_LIST ''
+	callevent 0.1 init_beam1
+}
+
+{ npc_post_spawn
+	takedmg all 0.7
+	takedmg lightning 0.0
+	takedmg holy 0.25
+}
+
+{ cycle_up
+	if !CYCLES_ON
+	setvard CYCLES_ON 1
+	callevent FREQ_CHAIN do_lightning
+	callevent FREQ_CRAZY go_crazy
+	callevent FREQ_BIGJUMP do_big_jump
+}
+
+//====== BOUNCIE
+{ go_crazy
+	callevent npcatk_suspend_ai
+	playanim critical idle2
+	setidleanim idle2
+	setmoveanim idle2
+	playsound 0 10 SOUND_BCHARGE
+	effect glow ent_me (255,255,0) 128 0.9 0.9
+	callevent 1.1 go_crazy2
+}
+
+{ go_crazy2
+	playsound 0 10 SOUND_BFIRE
+	setprop ent_me rendermode 5
+	setprop ent_me renderamt 255
+	setprop ent_me movetype const.movetype.bounce
+	setvard AM_BOUNCING 1
+	setvard BOUNCE_COUNT 0
+	callevent bounce_loop
+	callevent 1.0 resume_attack
+}
+
+{ resume_attack
+	callevent npcatk_resume_ai
+	setidleanim ANIM_IDLE
+	setmoveanim ANIM_RUN
+}
+
+{ bounce_loop
+	add BOUNCE_COUNT 1
+	if ( BOUNCE_COUNT == 20 )
+	{
+		setprop ent_me movetype const.movetype.step
+		setprop ent_me rendermode 0
+		setprop ent_me renderamt 255
+		callevent FREQ_CRAZY go_crazy
+	}
+	if BOUNCE_COUNT < 20
+	callevent 0.5 bounce_loop
+	local TOSS_DIR $rand(-600,600)
+	local TOSS_HOR $rand(-600,600)
+	local TOSS_VER $rand(-600,800)
+	setvelocity ent_me $relvel(TOSS_DIR,TOSS_HOR,TOSS_VER)
+}
+
+//====== DELUXE SHOCKIE
+{ do_lightning
+	setvard CHAIN_ON 1
+	setvard CHAIN_COUNT 0
+	callevent npcatk_suspend_ai
+	effect glow ent_me (255,255,0) 128 3 1
+	setvard CUR_BEAM 0
+	setvard BEAM_TARGET_LIST $get_tsphere(enemy,1024,game.monster.origin)
+	dbg BEAM_TARGET_LIST
+	calleventloop $get_token_amt(BEAM_TARGET_LIST) set_beam
+	callevent 0.1 chain_lightning
+}
+
+{ chain_lightning
+
+	add CHAIN_COUNT 1
+	if ( CHAIN_COUNT < 30 )
+	{
+		setidleanim idle2
+		setmoveanim idle2
+	}
+	if ( CHAIN_COUNT == 30 )
+	{
+		setvard CHAIN_ON 0
+		calleventloop $get_token_amt(BEAM_LIST) beams_off
+		callevent 1.0 resume_attack
+		callevent FREQ_CHAIN do_lightning
+	}
+	if CHAIN_COUNT < 30
+	callevent 0.1 chain_lightning
+	//dodamage $relpos(0,0,0) 1024 DMG_CHAIN 100% 0.0 reflective lightning
+	playrandomsound 0 10 SOUND_SHOCK1 SOUND_SHOCK2 SOUND_SHOCK3
+	calleventloop $get_token_amt(BEAM_TARGET_LIST) push_targets
+}
+
+{ push_targets
+	local CUR_TARGET $get_token(BEAM_TARGET_LIST,game.script.iteration)
+	local TARG_ORG $get(BEAM_TARGET_LIST,origin)
+	local TRACE_LINE $get_traceline(game.monster.origin,TARG_ORG,worldonly)
+	if TRACE_LINE equals TARG_ORG
+	local FIN_DMG DMG_CHAIN
+	local RESIST_FLOAT $get(CUR_TARGET,scriptvar,'IMMUNE_LIGHTNING')
+	if ( RESIST_FLOAT > 1 ) multiply FIN_DMG RESIST_FLOAT
+	if ( RESIST_FLOAT == 1 ) local FIN_DMG 0
+	drainhp CUR_TARGET ent_me FIN_DMG
+	addvelocity CUR_TARGET $vec(0,-110,130) //$vec(0,-110,130)
+}
+
+{ game_dodamage
+
+	if PARAM1
+
+	if ( SWIPE_ATTACK )
+	{
+		setvard SWIPE_ATTACK 0
+		if $rand(1,100) < CHANCE_SHOCK
+		playsound 0 10 SOUND_BFIRE
+		effect glow ent_me (255,255,0) 64 1 1
+		applyeffect PARAM2 effects/effect_shock_dmg $rand(2,5) $get(ent_me,id) 10
+	}
+
+	if ( CHAIN_ON )
+	{
+		//effect beam point lgtning.spr 30 BEAM_START BEAM_END (255,255,255) 255 10 0.2
+		//effect beam end lgtning.spr 30 BEAM_START PARAM2 0 (200,255,50) 200 10 0.2
+		//callevent set_beam $get(PARAM2,id)
+		if ( !$get(PARAM2,scriptvar,IMMUNE_PUSH) )
+		{
+			addvelocity PARAM2 $vec(0,-50,50) //$vec(0,-110,130)
+		}
+	}
+}
+
+{ set_beam
+	local CUR_BEAM_ID $get_token(BEAM_LIST,CUR_BEAM)
+	local CUR_TARGET $get_token(BEAM_TARGET_LIST,game.script.iteration)
+
+	if CUR_BEAM_ID isnot 0
+
+	dbg beam CUR_BEAM_ID to $get(CUR_TARGET,name)
+	effect beam update CUR_BEAM_ID brightness 200
+	effect beam update CUR_BEAM_ID end_target CUR_TARGET 0
+	add CUR_BEAM 1
+
+	//applyeffect CUR_TARGET effects/effect_shock_dmg 3.0 $get(ent_me,id) DMG_SHOCK
+
+	if CUR_BEAM > $get_token_amt(BEAM_LIST)
+	setvard CUR_BEAM 0
+}
+
+{ beams_off
+	effect beam update $get_token(BEAM_LIST,game.script.iteration) brightness 0
+}
+
+{ beams_remove
+	effect beam update $get_token(BEAM_LIST,game.script.iteration) remove 0
+}
+
+{ do_big_jump
+
+	callevent FREQ_BIGJUMP do_big_jump
+	if NPCATK_TARGET isnot unset
+	setvard NPC_FORCED_MOVEDEST 1 
+	setmovedest NPCATK_TARGET 1
+	playanim critical ANIM_LEAP
+	playsound 0 10 SOUND_LEAP
+	local JUMP_HEIGHT $rand(550,650)
+	local JUMP_DIST $rand(800,900)
+	callevent 0.1 big_jump_boost
+}
+
+{ big_jump_boost
+
+	addvelocity ent_me $relvel(0,JUMP_DIST,JUMP_HEIGHT)
+}
+
+{ game_death
+	callexternal GAME_MASTER gm_verify_map cleicert
+	calleventloop $get_token_amt(BEAM_LIST) beams_remove
+}
+
+{ init_beam1
+	effect beam ents lgtning.spr 30 ent_me 1 ent_me 0 (200,255,50) 0 10 -1
+	token.add BEAM_LIST	$get(ent_lastcreated,id)
+	setvard BEAM_ID $get(ent_lastcreated,id)
+	dbg init_beam1 BEAM_ID
+	callevent 0.1 init_beam2
+}
+
+{ init_beam2
+	effect beam ents lgtning.spr 30 ent_me 2 ent_me 0 (200,255,50) 0 10 -1
+	token.add BEAM_LIST	$get(ent_lastcreated,id)
+	dbg init_beam2 BEAM_LIST $get(ent_lastcreated,id)
+	callevent 0.1 init_beam3
+}
+
+{ init_beam3
+	effect beam ents lgtning.spr 30 ent_me 1 ent_me 0 (200,255,50) 0 10 -1
+	token.add BEAM_LIST	$get(ent_lastcreated,id)
+	dbg init_beam3 BEAM_LIST $get(ent_lastcreated,id)
+	callevent 0.1 init_beam4
+}
+
+{ init_beam4
+	effect beam ents lgtning.spr 30 ent_me 2 ent_me 0 (200,255,50) 0 10 -1
+	token.add BEAM_LIST	$get(ent_lastcreated,id)
+	dbg init_beam4 BEAM_LIST $get(ent_lastcreated,id)
+}

@@ -1,0 +1,175 @@
+//guided dynamic elemental cloud o sprites
+
+//requires set on creator:
+//setvard PROJ_ELEMENT_TYPE <fire|cold|lightning|poison>
+//setvard PROJ_ELEMENT_TARGET <target>
+
+
+//the following sounds must be fake pre-cached:
+//magic/sps_fogfire.wav
+//magic/cold_breath.wav
+//magic/bolt_loop.wav
+//magic/flame_loop.wav
+
+//the following sprite must be fake pre-cached:
+//3dmflagry.spr
+//^ Though we should really replace 3dmflaorg.spr with that, and tweak all the scripts that use it
+//(But by the gods, that's a lotta scripts)
+
+{
+	const MODEL_HANDS      		none
+	const MODEL_WORLD      		weapons/projectiles.mdl
+
+	const PROJ_DAMAGE			0
+	const PROJ_AOE_RANGE		128
+	const PROJ_AOE_FALLOFF		0
+	const PROJ_STICK_DURATION	0  //Don't stick in enemies
+	const PROJ_SOLIDIFY_ON_WALL	0  //Don't go solid on wall hit
+	const PROJ_COLLIDEHITBOX	1
+	const PROJ_MOTIONBLUR	0
+	const FWD_SPEED 200
+
+	const MAX_DURAION 10.0
+}
+
+#include items/proj_arrow_base
+
+{ arrow_spawn
+
+	name 		an|Elemental Cloud
+	desc 		This may explode
+	weight 		0.1
+	size 		1
+	value		0
+	gravity		0.0
+	groupable    	25
+
+	setmodel weapons/projectiles.mdl
+	setmodelbody 0 0
+	setprop ent_me rendermode 5
+	setprop ent_me renderamt 0
+}
+
+{ game_tossprojectile
+	dbg game_tossprojectile
+	setvard GAME_PVP game.pvp
+	setvard ELEMENT_TYPE $get(ent_expowner,scriptvar,'PROJ_ELEMENT_TYPE')
+	setvard NPCATK_TARGET $get(ent_expowner,scriptvar,'PROJ_ELEMENT_TARGET')
+
+	callevent MAX_DURAION end_projectile //max duration
+
+	setvard TARG_ISPLAYER $get(NPCATK_TARGET,isplayer)
+
+	setvard SOUND_VOL 5
+
+	setvard CLOUD_SPRITE 3dmflagry.spr //so we don't pre-cache without unnecesarily
+
+	setvard FREQ_UPDATE 0.5
+	setvard CL_SCRIPT items/proj_elemental_cl
+
+	if ( ELEMENT_TYPE equals fire )
+	{
+		setvard CL_COLOR (255,64,0)
+		setvard SOUND_LOOP magic/sps_fogfire.wav
+		setvard SOUND_EXPLODE weapons/explode3.wav
+	}
+	else if ( ELEMENT_TYPE equals fire_jet )
+	{
+		setvard CL_COLOR (255,128,64)
+		setvard SOUND_LOOP magic/sps_fogfire.wav
+		setvard SOUND_EXPLODE weapons/explode3.wav
+		setvard CLOUD_SPRITE xfireball3.spr
+		setvard FREQ_UPDATE 1.0
+		setvard CL_SCRIPT items/proj_flamejet_guided_cl
+	}
+	else if ( ELEMENT_TYPE equals cold )
+	{
+		setvard CL_COLOR (128,128,255)
+		setvard SOUND_LOOP magic/cold_breath.wav
+		setvard SOUND_EXPLODE magic/freeze.wav
+	}
+	else if ( ELEMENT_TYPE equals lightning )
+	{
+		setvard CL_COLOR (255,255,0)
+		setvard SOUND_LOOP magic/bolt_loop.wav
+		setvard SOUND_EXPLODE magic/lightning_strike2.wav
+		setvard SOUND_VOL 5
+	}
+	else if ( ELEMENT_TYPE equals poison )
+	{
+		setvard CL_COLOR (0,255,0)
+		setvard SOUND_LOOP magic/flame_loop.wav
+		setvard SOUND_EXPLODE ambience/steamburst1.wav
+		setvard SOUND_VOL 5
+	}
+
+	setvard IS_ACTIVE 1
+
+	setvard ACQUIRE_MODE 1 //toggles 1/0 (target/drift) each cycle
+
+	svplaysound 2 SOUND_VOL SOUND_LOOP
+
+	callevent 0.05 cl_start
+	callevent 0.1 projectile_loop
+}
+
+{ cl_start
+	setprop ent_me rendermode 5
+	setprop ent_me renderamt 0
+	clientevent new all CL_SCRIPT $get(ent_me,index) $get(ent_me,angles) $get(ent_me,velocity) CL_COLOR MAX_DURAION CLOUD_SPRITE
+	setvard CL_IDX game.script.last_sent_id
+}
+
+{ projectile_loop
+	if IS_ACTIVE
+	callevent FREQ_UPDATE projectile_loop
+
+	if ( !$get(NPCATK_TARGET,isalive) ) setvard ACQUIRE_MODE 0
+
+
+	local MY_ORG $get(ent_me,origin)
+
+	if ( !$get(NPCATK_TARGET,isalive) )
+	{
+		if ( DRIFT_DIR == 0 )
+		{
+			local L_HOFS -50
+			setvard DRIFT_DIR 1
+		}
+		else
+		{
+			local L_HOFS 50
+			setvard DRIFT_DIR 0
+		}
+		local TARG_ORG MY_ORG
+		local MY_ANG $get(ent_me,angles)
+		vectoradd TARG_ORG $relpos(MY_ANG,$vec(DRIFT_DIR,FWD_SPEED,0))
+	}
+	else
+	{
+		local TARG_ORG $get(NPCATK_TARGET,origin)
+		if ( !TARG_ISPLAYER ) vectoradd TARG_ORG z 32
+	}
+
+
+	local ANG_TO_TARG $angles3d(MY_ORG,TARG_ORG)
+	vectorset ANG_TO_TARG x $neg($vec.x(ANG_TO_TARG))
+	setprop ent_me velocity $relvel(ANG_TO_TARG,$vec(0,FWD_SPEED,0))
+	setprop ent_me movedir ANG_TO_TARG
+
+	clientevent update all CL_IDX sv_update_vel $get(ent_me,angles) $get(ent_me,velocity) $get(ent_me,origin)
+}
+
+{ game_projectile_landed
+	setvard DID_LAND 1
+	callevent end_projectile
+}
+
+{ end_projectile
+	setvard IS_ACTIVE 0
+	svplaysound 2 0 SOUND_LOOP
+	//callexternal ent_expowner ext_arrow_hit $get(ent_me,origin)
+	clientevent update all CL_IDX proj_explode
+	playsound 0 10 SOUND_EXPLODE
+	callexternal ent_expowner ext_proj_elemental_hit $get(ent_me,origin) ELEMENT_TYPE
+}

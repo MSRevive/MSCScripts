@@ -1,0 +1,166 @@
+
+{
+	setvard ANIM_ATTACK attack1
+
+	setvar ANIM_RUN run	//walk anim
+	setvar ANIM_WALK walk	//run anim
+	setvar ANIM_IDLE idle1	//idle anim
+	
+
+	setvard MOVE_RANGE 64
+	setvard ATTACK_RANGE 80
+	setvard ATTACK_HITRANGE 120
+
+	const SOUND_DEATH voices/orc/die.wav
+	precache SOUND_DEATH
+
+	const ANIM_SWING swordswing1_L
+	const ANIM_SMASH battleaxe_swing1_L
+
+	const DMG_SWING $rand(20,40)
+	const DMG_SMASH $rand(30,50)
+
+	const ATTACK_HITCHANCE 80
+
+	const SOUND_ATTACK1 "voices/orc/attack.wav"
+	const SOUND_ATTACK2 "voices/orc/attack2.wav"
+	const SOUND_ATTACK3 "voices/orc/attack3.wav"
+
+	const SOUND_STRUCK1 "body/armour1.wav"
+	const SOUND_STRUCK2 "body/armour2.wav"
+	const SOUND_STRUCK3 "body/armour3.wav"
+	const SOUND_PAIN "monsters/orc/pain.wav"
+	
+	const MONSTER_MODEL monsters/Orc.mdl
+	precache MONSTER_MODEL
+	precache nimble/crystal.mdl
+	precache npc/balancepriest1.mdl
+}
+
+#include monsters/base_monster_new
+
+{ npc_spawn
+
+	name an|Elemental Master
+
+	race evil  			
+
+
+	hp 1000				
+
+	setmodel MONSTER_MODEL	
+	width 32					
+	height 72
+	
+	saytextrange 10000
+	
+	setmoveanim ANIM_RUN
+	setidleanim ANIM_IDLE
+	
+	takedmg all 0.7				
+	takedmg fire 1.25			
+	takedmg cold 0.25
+
+	invincible 1
+	
+	setvard MAX_SPIRITS 6    //Nax number of spirits to spawn
+	setvard SUM_SPIRITS 0    //How many spirits have been summoned so far
+	setvard PHASE_NUM 1      //What phase it is
+	setvard SPIRIT_SIDE 1    //Which side to spawn the next spirit on
+	setvard BOB_UP 0         //Will help keep boss from slowly falling
+	
+	createnpc roghan/test_npc $relpos(45,-1000,0)
+	
+
+	setangle face ent_lastcreated
+	callevent npcatk_suspend_ai
+	
+
+}
+
+{ game_damaged //PARAM1=attacker PARAM2=dmg PARAM3=dmg_type   //not used yet but left for later
+ 
+	playrandomsound 0 8 SOUND_PAIN SOUND_PAIN2 none none
+}
+
+{ swing_sword    //not used but left in for later
+
+	callevent npcatk_dodamage NPCATK_TARGET ATTACK_HITRANGE DMG_SWIPE ATTACK_HITCHANCE slash
+}
+
+{ swing_axe   //not used but left in for later
+
+	callevent npcatk_dodamage NPCATK_TARGET ATTACK_HITRANGE DMG_SMASH ATTACK_HITCHANCE slash
+}
+
+{ begin_float
+		callevent npcatk_suspend_ai
+		playanim break
+		callevent npcatk_clear_targets
+		gravity 0
+		createnpc roghan/crystal $relpos(0,-150,0)
+		addvelocity ent_me $relvel(0,0,100)
+		callevent 2.0 bob_float
+		callevent 1.0 phase_choose
+}
+
+{ bob_float 
+	if ( BOB_UP == 0 ) 
+	{
+		setvelocity ent_me (0,0,5)
+		add BOB_UP 1
+	}
+	
+	else
+	{
+		setvelocity ent_me (0,0,-2.5)
+		setvard BOB_UP 0
+	}
+	if ( PHASE_NUM == 1 ) callevent 3 bob_float
+	else gravity 1     //Once phase 1 is over drop the boss to the ground
+	
+}
+
+
+{ phase_choose
+	if ( PHASE_NUM == 1 ) 
+	{
+		saytext Fools! Now feel the power of my Ice Spirits!
+		callevent spirit_summon
+		callevent ice_pulse
+	}
+}
+
+{ spirit_summon
+	if ( SUM_SPIRITS < MAX_SPIRITS )
+	{
+		if ( SPIRIT_SIDE == 1 )
+		{
+			createnpc roghan/slow_walk $relpos(150,0,0)
+			setvard SPIRIT_SIDE 0
+			add SUM_SPIRITS 1
+			callevent 5.0 spirit_summon
+			
+		}
+		else
+		{
+			createnpc roghan/slow_walk $relpos(-150,0,0)
+			setvard SPIRIT_SIDE 1
+			add SUM_SPIRITS 1
+			callevent 5.0 spirit_summon
+		}
+	}
+	else add PHASE_NUM 1  	//Phase 1 will eventually end when all spirits are dead, as of now Phase 1 ends as soon as they stop spawning
+}
+
+{ ice_pulse
+	local MY_POS $get(ent_me,origin)
+	if (PHASE_NUM == 1)
+	{
+		xdodamage MY_POS 100000 .5 0 ent_me ent_me none cold_effect 	//This is the ice pulse. When done it will do double damage after each pulse, can't do now cause it would kill
+		callevent 3.0 ice_pulse  	//Only pulse while in phase 1
+	}
+}
+
+	
+

@@ -1,0 +1,156 @@
+//Base Bat
+
+#scope server
+
+{ 
+   const BAT_FLYING 0
+   const BAT_HANGING 1
+   const BAT_DROPPING 2
+   setvard ANIM_DEATH die
+   setvard ANIM_DEATH_NEW die
+   const ANIM_DEAD deadground
+	setvar ANIM_IDLE IdleFlyNormal
+
+   setvard HUNT_AGRO 1		  //base_npc_attack - Premptive attack
+   setvard RETALIATE_CHANCE 75%     //base_npc_attack - Automatically switch targets to the last damaging player
+   setvard CAN_HEAR 1		  //base_npc_attack - Whether I hear sounds (Non-const because it changes on giantbat)
+}
+
+#include monsters/base_flyer
+#include monsters/base_monster
+
+{  npc_spawn
+
+   fly 1
+   race vermin
+
+   callevent 0.1 bat_spawn //Delay is required for overwriting some setvards. -greatguys1 SEP2021
+   callevent bat_hang
+}
+
+{ npc_post_spawn
+	local L_MAP_NAME $lcase(game.map.name)
+	if L_MAP_NAME equals sfor
+	setmonsterclip 0 //there are some stupid monsterclips on sfor, ignore them
+}
+
+{  bat_hang
+
+   setidleanim ANIM_IDLE_HANG
+   setmoveanim ANIM_WALK
+   roam 0
+   setvard BAT_STATUS BAT_HANGING	//Start hanging
+   setvard CAN_HUNT 0
+}
+
+{  npc_targetsighted			//See or hear enemy for the first time
+   callevent basebat_drop_down
+}
+
+{  npc_heardenemy
+   callevent basebat_drop_down
+}
+   
+{  basebat_drop_down			// Drop down from the ceiling
+	setvard CAN_HUNT 1
+
+   if BAT_STATUS == BAT_HANGING
+
+   callevent bat_drop_down
+}
+
+{ game_death
+
+	if !BAT_NO_FAKE_DEATH
+
+	setmovedest $relpos(0,0,2048) 1
+	//laysound 0 5 SOUND_DEATH //causing crash, let base_npc handle this
+	//desperately trying to get to fall to ground
+	setsolid none
+	fly 0
+	setidleanim ANIM_DEAD
+	setmoveanim ANIM_DEAD
+	setprop ent_me movetype const.movetype.noclip
+    playanim critical ANIM_DEATH_NEW
+	drop_to_floor $get(ent_me,id)
+	drop_to_floor
+	addvelocity ent_me $relvel(0,0,-10)
+
+	local SLAYER_LOC $get(ent_laststruck,origin)
+	local SLAYER_X $vec.x(SLAYER_LOC)
+
+	local MY_LOC $get(ent_me,origin)
+	local MY_X $vec.x(MY_LOC)
+
+	local DISTANCE_X SLAYER_X
+	subtract DISTANCE_X MY_X
+	
+	//local IN_CONE $within_cone2D(MY_SLAYER_LOC,MY_LOC,180,64)
+
+	if ( DISTANCE_X < 0 ) 
+	{
+		//find ABS
+		local HOLDER DISTANCE_X
+		multiply HOLDER 2
+		subtract DISTANCE_X HOLDER
+	}
+
+	////dbg DistanceXFinal DISTANCE_X
+
+	if ( DISTANCE_X < 12 )
+	{
+		//Im likely right above, or otherwise 2D inside the players hitbox
+		//if I fall, I will be stuck inside the player's collision box and float
+		//despite the fact my setsolid is set none :\
+		//so vanish instead
+		//(not 100% effective, but helps)
+		////dbg VANISHing
+		setmodel none
+	}
+}
+
+//custom flyer mods
+
+{
+repeatdelay 0.5
+	if IS_HUNTING
+	callevent npcatk_faceattacker
+	if ( $get(NPCATK_TARGET,range) > ATTACK_RANGE ) setvelocity ent_me $relvel(0,100,0)
+	if ( $get(NPCATK_TARGET,range) < ATTACK_RANGE ) setvelocity ent_me $vec(0,0,0)
+	if ( SPITTING ) setvelocity ent_me $vec(0,0,0)
+
+	if ( FLIGHT_STUCK > 4 )
+	{
+		//callevent chicken_run 1.0
+		callevent do_rand_tweedee //do_rand_tweedee
+		callevent npcatk_suspend_ai $randf(0.3,0.9)
+		setmovedest NEW_DEST game.monster.moveprox
+		callevent 0.1 horror_boost
+		setvard FLIGHT_STUCK 0
+	}
+
+	subtract AS_ATTACKING 2
+
+	local TARG_POS $get(NPCATK_TARGET,origin)
+	if ( !SUSPEND_AI ) setangle face_origin TARG_POS
+
+
+	if AS_ATTACKING <= 0
+	setvard AS_ATTACKING 0
+	if !IS_FLEEING
+	if !SPITTING
+	if $get(NPCATK_TARGET,range) > ATTACK_RANGE
+	local CUR_PROG $dist(game.monster.origin,TARG_POS)
+	if ( LAST_PROG >= CUR_PROG ) add FLIGHT_STUCK 1
+	setvard LAST_PROG $dist(game.monster.origin,TARG_POS)
+	setvard LAST_POS game.monster.origin
+	
+}
+
+{ chicken_run
+	callevent 0.1 horror_boost
+}
+
+{ horror_boost
+	setvelocity ent_me $relvel(0,200,0)
+}

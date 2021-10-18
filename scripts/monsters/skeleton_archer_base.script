@@ -1,0 +1,665 @@
+//Skeleton Archers by Thothie
+//Going to try avoiding using the buggy-as-hell skeleton base for this, but its gonna mean a lot more work :/
+#scope server
+
+//weird arse sh*t going on here with missing anim vars, so sharing the anims
+{ [shared]
+	//base anims
+	setvar ANIM_WALK walk
+	setvar ANIM_IDLE idle1
+	setvar ANIM_RUN run
+	setvard ANIM_ATTACK shootarrow
+	setvard ANIM_DEATH dieforward
+
+	//custom anims
+	const ANIM_ARROW shootarrow
+	const ANIM_SWIPE attack1
+	const ANIM_DEATH_IDLE dead_on_stomach
+	const ANIM_REBIRTH getup
+	const ANIM_SIT_IDLE sitidle
+	const ANIM_SIT_STAND sitstand
+}
+
+{ [server]
+
+	//base stats
+	setvard NPC_RANGED 1
+	setvard ATTACK_MOVERANGE 512
+	setvard ATTACK_RANGE 1024
+	setvard ATTACK_HITRANGE 1024
+	setvard DROP_GOLD 1
+	setvard AM_SKELETON 1
+	const CUSTOM_TURN_UNDEAD 1
+
+	//custom stats
+	const SKELE_ARROW_OFS (10,32,68)
+	const DMG_ARROW 5
+	const DMG_SWIPE 3
+	const SWIPE_RANGE 70
+	const SWIPE_HITRANGE 120
+	const SKELE_ARROW_RANGE 1024
+	const SKELE_ARROW_SCRIPT proj_arrow_npc_dyn
+	const SKELE_ARROW_SPEED 800
+	const ATTACK_HITCHANCE 70%
+	const SKELE_START_LIVES $rand(1,4)
+	const SKELE_PUSH_STRENGTH 200
+	const SKELE_HEARING 10
+	setvard SKELE_COF_A 0
+	setvard SKELE_COF_B 1
+	const MIDX_SHOW_ARROW 11
+	const MIDX_HIDE_ARROW 10
+
+	//sounds
+	const SOUND_STRETCH monsters/archer/stretch.wav //wtf_wont_play: weapons/bows/stretch.wav
+	const SOUND_SHOOT monsters/archer/bow.wav //wtf_wont_play: weapons/bows/bow.wav
+	const SOUND_SWIPE zombie/claw_miss1.wav
+
+	const SOUND_STRUCK1 weapons/cbar_hitbod1.wav
+	const SOUND_STRUCK2 weapons/cbar_hitbod2.wav
+	const SOUND_STRUCK3 weapons/cbar_hitbod3.wav
+
+	//stone variants
+	//onst SOUND_STRUCK1 weapons/axemetal1.wav
+	//onst SOUND_STRUCK2 weapons/axemetal2.wav
+	//onst SOUND_STRUCK3 debris/concrete1.wav
+
+	const SOUND_DEATH zombie/zo_pain1.wav
+
+	const SOUND_TURNED1 ambience/the_horror1.wav
+	const SOUND_TURNED2 ambience/the_horror2.wav
+	const SOUND_TURNED3 ambience/the_horror3.wav
+	const SOUND_TURNED4 ambience/the_horror4.wav
+	const SOUND_HOLY_STRIKE doors/aliendoor1.wav
+}
+
+#include monsters/base_monster_new
+
+//================================================================================ Initiate
+{ [shared] npc_spawn
+
+	callevent skeleton_attribs
+	callevent skele_spawn
+
+	roam 1
+	hearingsensitivity SKELE_HEARING
+	blood none
+	race undead
+
+	setvard SKELE_MISS_COUNT 0
+	setvard SKELE_LIVES SKELE_START_LIVES
+
+	setvard SKELE_DEFAULT_ANIM_WALK ANIM_WALK
+	setvard SKELE_DEFAULT_ANIM_RUN ANIM_RUN
+	setvard SKELE_DEFAULT_ANIM_IDLE ANIM_IDLE
+
+	setvard DROP_GOLD_AMT SKELE_GOLD
+
+	setvard SKELE_BASE_ROAM 1
+
+	setmoveanim ANIM_WALK
+	setidleanim ANIM_IDLE
+
+	local SLEEPER_TYPE $get_by_name(skels_sleep)
+	local SLEEPER_ID $get(SLEEPER_TYPE,id)
+	if ( $get(SLEEPER_ID,isalive) ) callevent make_sleeper
+
+	local SLEEPER_TYPE $get_by_name(skels_deep_sleep)
+	local SLEEPER_ID $get(SLEEPER_TYPE,id)
+	if ( $get(SLEEPER_ID,isalive) ) callevent make_deep_sleeper
+}
+
+{ skeleton_attribs
+	if ( !STONE_SKELETON )
+	{
+		takedmg slash 0.7
+		takedmg pierce 0.5
+		takedmg blunt 1.2
+		takedmg fire 1.25
+		takedmg holy 1.5
+		takedmg cold 0.1
+		takedmg poison 0.0
+	}
+	else
+	{
+		takedmg all 0.5
+		takedmg holy 1.5
+		takedmg poison 0.0
+		takedmg cold 0.1
+	}
+}
+
+//============================================================================ Attack Range
+{ npc_selectattack
+	if ( $get(NPCATK_TARGET,range) < SWIPE_RANGE )
+	{
+		setvard ANIM_ATTACK ANIM_SWIPE
+	}
+	else
+	{
+		setvard ANIM_ATTACK ANIM_ARROW
+	}
+}
+
+//======================================================================== Animation Events
+{ attack_1 //swipe attack
+   	playrandomsound 0 5 SOUND_SWIPE
+   	dodamage NPCATK_TARGET SWIPE_HITRANGE DMG_SWIPE ATTACK_HITCHANCE
+
+	if SKELE_PUSH_STRENGTH > 0
+	addvelocity NPCATK_TARGET $relvel(0,SKELE_PUSH_STRENGTH,110)
+}
+
+{ frame_grab_arrow
+	setmodelbody 1 MIDX_SHOW_ARROW
+}
+
+{ frame_draw_bow
+	playsound 0 10 SOUND_STRETCH
+}
+
+{ frame_shoot_bow
+	playsound 2 10 SOUND_SHOOT
+	setmodelbody 1 MIDX_HIDE_ARROW
+	add SKELE_MISS_COUNT 1
+
+	if ( !SKELE_ARROW_ARC )
+	{
+		tossprojectile NPCATK_TARGET SKELE_ARROW_SPEED DMG_ARROW SKELE_COF_A SKELE_ARROW_SCRIPT SKELE_ARROW_OFS
+		callexternal ent_lastprojectile ext_lighten 0 SKELE_ARROW_GLOW SKELE_ARROW_GLOW_COLOR
+	}
+	else
+	{
+		local TARG_ORG $get(NPCATK_TARGET,origin)
+		if ( SKELE_ARROW_AOE > 0 )
+		{
+			//for AOE arrows, shoot around the target randomly
+			local HALF_AOE SKELE_ARROW_AOE
+			divide HALF_AOE 2
+			vectoradd TARG_ORG $relpos($vec(0,$randf(0,359.99),0),$vec(0,HALF_AOE,0))
+		}
+		if ( !$get(TARG_ORG,isplayer) ) vectoradd TARG_ORG z $get(NPCATK_TARGET,height)
+		local TARG_DIST $dist(TARG_ORG,game.monster.origin)
+		divide TARG_DIST 25
+		setangle add_view.pitch TARG_DIST
+		tossprojectile view SKELE_ARROW_SPEED DMG_ARROW SKELE_COF_B SKELE_ARROW_SCRIPT SKELE_ARROW_OFS
+		local GRAV_ADJ 0.4
+		//don't think this is working (also logic is likely plain wrong)
+//		if ( $vec.z(TARG_ORG) < game.monster.origin.z )
+//		{
+//			local ADJ_RATIO $vec.z(TARG_ORG)
+//			divide ADJ_RATIO game.monster.origin.z
+//			local GRAV_ADJ $get_skill_ratio(ADJ_RATIO,0.4,2.0)
+//			dbg adjusting down GRAV_ADJ ( ADJ_RATIO )
+//		}
+		callexternal ent_lastprojectile ext_lighten GRAV_ADJ SKELE_ARROW_GLOW SKELE_ARROW_GLOW_COLOR
+	}
+
+	//dbg frame_shoot_bow SKELE_MISS_COUNT
+
+	if ( SKELE_MISS_COUNT > 4 )
+	{
+		//if you miss a bunch, twitch a bit in hopes for a better angle
+		if ( !AM_TURRET )
+		{
+			setvard SKELE_MISS_COUNT 2
+			playanim break
+			callevent chicken_run 1.5
+		}
+		else
+		{
+			add SKELE_COF_A 1
+			add SKELE_COF_B 2
+		}
+	}
+}
+
+//======================================================================== Damage Modifiers
+{ game_dodamage
+
+	if ( $get(PARAM2,isalive) ) 
+	{
+		if $get(PARAM2,relationship,ent_me) equals enemy
+		setvard SKELE_MISS_COUNT 0
+		if AM_TURRET
+		setvard SKELE_COF_A 0
+		setvard SKELE_COF_B 1
+	}
+}
+
+{ ext_arrow_hit //PARAM1=hit:0|1 PARAM2=ent_hit PARAM3=(start) PARAM4=(end) - called from proj_arrow_npc_dyn
+
+	//dbg ext_arrow_hit hit: PARAM1 targ: $get(PARAM2,name) start: PARAM3 end: PARAM4
+
+	local TARG_ALIVE $get(PARAM2,isalive)
+	if ( $get(PARAM2,relationship,ent_me) equals enemy )
+	{
+		if TARG_ALIVE
+		local HIT_ENEMY 1
+	}
+
+	if ( SKELE_ARROW_KNOCKBACK > 0 )
+	{
+		if !SKELE_ARROW_NOPUSHIE
+		if HIT_ENEMY
+		addvelocity PARAM2 $relvel(0,SKELE_ARROW_KNOCKBACK,110)
+	}
+
+	if ( SKELE_ARROW_EFFECT isnot 'SKELE_ARROW_EFFECT' )
+	{
+		if HIT_ENEMY
+		if PARAM1
+		if ( !SKELE_ARROW_EFFECT_HANDLED )
+		{
+			applyeffect PARAM2 SKELE_ARROW_EFFECT SKELE_DOT_DUR $get(ent_me,id) SKELE_DOT_DMG
+		}
+		else
+		{
+			local OUT_TARG PARAM2
+			callevent skele_handle_effect OUT_TARG
+		}
+	}
+
+	if ( SKELE_ARROW_AOE > 0 )
+	{
+		local ARROW_POS PARAM3
+		if ( HIT_ENEMY ) local ARROW_POS $get(PARAM2,origin)
+		vectorset ARROW_POS z $get_ground_height(ARROW_POS)
+		callevent skele_arrow_fx ARROW_POS //handle client effects in top script
+		setvard SKELE_TARGET_LIST $get_tsphere(enemy,SKELE_ARROW_AOE,ARROW_POS)
+		if SKELE_TARGET_LIST isnot none
+		calleventloop $get_token_amt(SKELE_TARGET_LIST) skele_affect_targets
+	}
+}
+
+{ skele_affect_targets
+	local CUR_TARG $get_token(SKELE_TARGET_LIST,game.script.iteration)
+	applyeffect CUR_TARG SKELE_ARROW_EFFECT SKELE_DOT_DUR $get(ent_me,id) SKELE_DOT_DMG 
+	setvard SKELE_MISS_COUNT 0
+}
+
+//============================================================================== Add Params
+{ set_turret
+	movespeed 0.0
+	setvard BASE_MOVESPEED 0.0
+	setmoveanim ANIM_IDLE
+	roam 0
+	setvard SKELE_BASE_ROAM 0
+	setvard NO_STUCK_CHECKS 1
+	setvard ANIM_RUN ANIM_IDLE
+	setvard ANIM_WALK ANIM_IDLE
+	setvard SKELE_DEFAULT_ANIM_WALK ANIM_IDLE
+	setvard SKELE_DEFAULT_ANIM_RUN ANIM_IDLE
+	setvard AM_TURRET 1
+	callevent 0.1 set_turret2
+}
+
+{ set_turret2
+	//enforcer - it's either the weirdness of xetvar or something getting reset somewhere
+	setvard ANIM_RUN ANIM_IDLE
+	setvard ANIM_WALK ANIM_IDLE
+	setmoveanim ANIM_IDLE
+}
+
+{ set_no_fake_death //additional parameter
+	setvard SKELE_LIVES 1
+}
+
+{ set_rebirths //<#lives> //additional parameter
+	setvard SKELE_LIVES PARAM1
+	add SKELE_LIVES 1
+}
+
+{ skeleton_wakeup_call //ms_npcscript event - wake up all sleeping skeles
+	callevent skeleton_wake_up
+}
+
+{ make_sleeper //additional parameter - play dead until player near
+	hearingsensitivity 0
+	roam 0
+	invincible 1
+	setmovedest none
+	callevent npcatk_suspend_ai
+	setvard NPC_PROXACT_TRIPPED 0
+	setvard NPC_PROXACT_IFSEEN 0
+	setvard NPC_PROX_ACTIVATE 1
+	setvard NPC_PROXACT_RANGE 128
+	setvard NPC_PROXACT_EVENT skeleton_wake_up
+	setvard NPC_PROXACT_FOV 0
+	setvard PLAYING_DEAD 1
+
+	if ( !STONE_SKELETON )
+	{
+		setsolid none
+		setbbox (0,0,0) (0,0,0)
+		setidleanim ANIM_DEATH_IDLE
+		setmoveanim ANIM_DEATH_IDLE
+		playanim critical ANIM_DEATH_IDLE
+	}
+	else
+	{
+		callevent skele_stone_sleep
+	}
+}
+
+{ make_sitter //additional paramter - sit until player near
+	hearingsensitivity 0
+	roam 0
+	setmovedest none
+	setvard NPC_PROXACT_TRIPPED 0
+	setvard NPC_PROXACT_IFSEEN 0
+	setvard NPC_PROX_ACTIVATE 1
+	setvard NPC_PROXACT_RANGE 128
+	setvard NPC_PROXACT_EVENT skeleton_sit_up
+	setvard NPC_PROXACT_FOV 1
+	setvard NPC_PROXACT_CONE 90
+	setidleanim ANIM_SIT_IDLE
+	setmoveanim ANIM_SIT_IDLE
+	playanim critical ANIM_SIT_IDLE
+	callevent npcatk_suspend_ai
+}
+
+{ skeleton_sit_up
+	setvard NPC_PROXACT_TRIPPED 1
+	playanim critical ANIM_SIT_STAND
+	hearingsensitivity SKELE_HEARING
+	setidleanim ANIM_IDLE
+	setmoveanim ANIM_WALK
+	callevent 1.0 npcatk_resume_ai
+	roam SKELE_BASE_ROAM
+	setvard AS_ATTACKING game.time
+
+	if $get(NPC_PROXACT_PLAYERID,isalive)
+	callevent 1.1 skele_target_disturber
+}
+
+{ skele_target_disturber
+	if $get(NPC_PROXACT_PLAYERID,isalive)
+	setidleanim ANIM_IDLE
+	setmoveanim ANIM_RUN
+	callevent npcatk_settarget NPC_PROXACT_PLAYERID
+	setvard NPC_PROXACT_PLAYERID 0
+}
+
+{ skeleton_wake_up
+	if ( !STONE_SKELETON )
+	{
+		setvard SKELE_FIRST_RAISE 1
+		callevent skele_rebirth
+	}
+	else
+	{
+		hearingsensitivity SKELE_HEARING
+		setvard ANIM_RUN SKELE_DEFAULT_ANIM_RUN
+		setvard ANIM_WALK SKELE_DEFAULT_ANIM_WALK
+		setvard ANIM_IDLE SKELE_DEFAULT_ANIM_IDLE
+		setmoveanim ANIM_IDLE
+		setidleanim ANIM_WALK
+		invincible 0
+		setvard PLAYING_DEAD 0
+		if ( BASE_FRAMERATE equals 'BASE_FRAMERATE' )
+		{
+			setanim.framerate 1.0
+		}
+		else
+		{
+			setanim.framerate BASE_FRAMERATE
+		}
+		roam SKELE_BASE_ROAM
+		callevent npcatk_resume_ai
+		callevent skele_refresh_name
+		dbg Stone Skeleton Awaken ( $get(NPC_PROXACT_PLAYERID,name) )
+
+		if $get(NPC_PROXACT_PLAYERID,isalive)
+		callevent 1.1 skele_target_disturber
+	}
+}
+
+{ skele_hide_name
+	setvard SKELE_ORG_NAME game.monster.name.full
+	race none
+	name ''
+}
+
+{ skele_refresh_name
+	if ( SKELE_ORG_NAME isnot 'SKELE_ORG_NAME' )
+	{
+		name SKELE_ORG_NAME
+		race undead
+	}
+}
+
+{ make_deep_sleeper //additional paramater - play dead until awakened via event
+	if ( !STONE_SKELETON )
+	{
+		hearingsensitivity 0
+		roam 0
+		setvard PLAYING_DEAD 1
+		setsolid none
+		setbbox (0,0,0) (0,0,0)
+		setmovedest none
+		setvard SKELE_FIRST_RAISE 1
+		setidleanim ANIM_DEATH_IDLE
+		setmoveanim ANIM_DEATH_IDLE
+		playanim critical ANIM_DEATH_IDLE
+		callevent npcatk_suspend_ai
+	}
+	else
+	{
+		callevent skele_stone_sleep
+	}
+	invincible 1
+}
+
+{ skele_stone_sleep
+	hearingsensitivity 0
+	setvard PLAYING_DEAD 1
+	callevent skele_hide_name
+	setvard ANIM_RUN ANIM_IDLE
+	setvard ANIM_WALK ANIM_IDLE
+	setmoveanim ANIM_IDLE
+	setidleanim ANIM_IDLE
+	setanim.framerate 0
+	invincible 1
+	roam 0
+	callevent npcatk_suspend_ai
+	playanim hold ANIM_IDLE
+	setmovedest none
+}
+
+//============================================================================= Turn Undead
+{ turn_undead //<dmg> <attacker>
+	if $get(ent_me,isalive)
+	if !PLAYING_DEAD
+
+	setvard SKELE_LIVES 1
+	setvard SKELE_STRUCK_BY_TURN_UNDEAD 1
+	setvard SKELE_TURN_UNDEAD_SOUND 1
+
+	local DMG_HOLY PARAM1
+	local CASTER_ID PARAM2
+
+	local CASTER_FAITH $get(CASTER_ID,skill.spellcasting.divination)
+
+	xdodamage $get(ent_me,id) direct DMG_HOLY 100 CASTER_ID CASTER_ID spellcasting.divination holy
+	effect glow ent_me (255,255,0) 512 1 1
+
+	local PERCENT_HEALTH_LEFT $get(ent_me,hp)
+	divide PERCENT_HEALTH_LEFT $get(ent_me,maxhp)
+	multiply PERCENT_HEALTH_LEFT 100
+
+	if CASTER_FAITH > PERCENT_HEALTH_LEFT
+
+	if !IS_FLEEING
+
+	//Minimum Turn Duration 5 seconds, max 20
+	local TURN_DURATION $get(THE_EXCORCIST,skill.spellcasting.divination)
+	if ( TURN_DURATION < 5 ) local TURN_DURATION 5
+	if ( TURN_DURATION > 15 ) local TURN_DURATION 15
+
+	playrandomsound 1 10 SOUND_TURNED1 SOUND_TURNED2 SOUND_TURNED3 SOUND_TURNED4
+	callevent npcatk_flee CASTER_ID 1024 TURN_DURATION	
+}
+
+{ game_struck
+	if ( SKELE_TURN_UNDEAD_SOUND )
+	{
+		setvard SKELE_TURN_UNDEAD_SOUND 0
+		playrandomsound 0 10 SOUND_HOLY_STRIKE
+	}
+	else
+	{
+		playrandomsound 0 10 SOUND_STRUCK1 SOUND_STRUCK2 SOUND_STRUCK3
+	}
+}
+
+//========================================================================= Death & Rebirth
+{ npc_death
+
+	//this has to be handled special, as otherwise he'll drop a container every time he dies, if he has multiple lives
+	if ( SKELE_LIVES <= 1 )
+	{
+		if SKELE_DROPS_CONTAINER
+		if $rand(1,100) <= SKELE_DROPS_CONTAINER_CHANCE
+		createnpc SKELE_CONTAINER_SCRIPT $relpos(0,0,0) CONTAINER_PARAM1 CONTAINER_PARAM2 CONTAINER_PARAM3 CONTAINER_PARAM4
+	}
+
+	if !SKELE_STRUCK_BY_TURN_UNDEAD
+	if SKELE_LIVES > 1
+	race undead //in case was killed by slay command (sets hated)
+	subtract SKELE_LIVES 1
+	setvard PLAYING_DEAD 1
+	hearingsensitivity 0
+	setsolid none
+	setbbox (0,0,0) (0,0,0)
+	invincible 1
+	setmovedest none
+	setvard ANIM_RUN ANIM_DEATH_IDLE
+	setvard ANIM_WALK ANIM_DEATH_IDLE
+	setvard ANIM_IDLE ANIM_DEATH_IDLE
+	setidleanim ANIM_DEATH_IDLE
+	setmoveanim ANIM_DEATH_IDLE
+	setalive 1
+	callevent npcatk_suspend_ai
+	roam 0
+	callevent $rand(5,15) skele_rebirth_check
+}
+
+{ skele_rebirth_check
+	setvard SKELE_REBIRTH_SCAN $get_tsphere(any,96)
+
+	if ( SKELE_REBIRTH_SCAN isnot none )
+	{
+		setvard SKELE_CANT_GET_UP 1
+		setvard SKELE_REALLY_CANT_GET_UP 0
+		calleventloop $get_token_amt(MUMMY_REBIRTH_SCAN) skele_rebirth_scan_loop
+		if ( MUMMY_REALLY_CANT_GET_UP ) setvard SKELE_CANT_GET_UP 1
+	}
+
+	if ( SKELE_REBIRTH_SCAN equals none ) setvard SKELE_CANT_GET_UP 0
+
+	if ( SKELE_CANT_GET_UP )
+	{
+		callevent 1.0 skele_rebirth_check
+	}
+	else
+	{
+		callevent skele_rebirth
+	}
+}
+
+{ skele_rebirth_scan_loop
+	local CUR_TARG $get_token(SKELE_REBIRTH_SCAN,game.script.iteration)
+	if ( $get(CUR_TARG,itemname) contains skeleton_archer )
+	{
+		//this maybe another arhcer also trying to get up
+		if ( $get(CUR_TARG,scriptvar,'PLAYING_DEAD') )
+		{
+			//it is, get up, but hold all other dead zombies down a bit
+			if game.time > G_SKELE_NEXT_REBIRTH
+			setvarg G_SKELE_NEXT_REBIRTH game.time
+			add G_SKELE_NEXT_REBIRTH 5.0
+			setvard SKELE_CANT_GET_UP 0
+			dbg can get up game.time vs. G_SKELE_NEXT_REBIRTH
+		}
+		else
+		{
+			setvard SKELE_CANT_GET_UP 1
+			setvard SKELE_REALLY_CANT_GET_UP 1
+			dbg can't get up - friend not playing dead
+		}
+	}
+	else
+	{
+		setvard SKELE_CANT_GET_UP 1
+		setvard SKELE_REALLY_CANT_GET_UP 1 //this is in case I see a player earlier in the scan, but a dead friend later, and think I can get up
+		dbg can't get up - non-skelearcher nearby
+	}
+}
+
+{ skele_rebirth
+	setsolid box
+	setbbox npcsize
+	hp $get(ent_me,maxhp)
+
+	if ( !SKELE_FIRST_RAISE )
+	{
+		divide NPC_GIVE_EXP 2
+		skilllevel NPC_GIVE_EXP
+	}
+
+	setvard SKELE_FIRST_RAISE 0 //in case skele playing dead on spawn
+	hearingsensitivity SKELE_HEARING
+
+	setvard PLAYING_DEAD 0
+	callevent 1.0 skele_rebirth2
+}
+
+{ skele_rebirth2
+	invincible 0
+	setvard ANIM_RUN SKELE_DEFAULT_ANIM_RUN
+	setvard ANIM_WALK SKELE_DEFAULT_ANIM_WALK
+	setvard ANIM_IDLE SKELE_DEFAULT_ANIM_IDLE
+	setmoveanim ANIM_WALK
+	setidleanim ANIM_IDLE
+	playanim critical ANIM_REBIRTH
+	callevent 1.0 npcatk_resume_ai
+	callevent 1.1 skele_rebirth3
+}
+
+{ skele_rebirth3
+	roam SKELE_BASE_ROAM
+	setvard NPC_PREV_TARGET unset //so we re-apply musak
+	callevent skele_target_disturber //in case skele playing dead on spawn
+}
+
+//=============================================================================== Debuggary
+{ ext_setmodelbody //debuggary
+	setmodelbody PARAM1 PARAM2
+}
+
+//{ game_dynamically_created //debuggary (not setup for summon)
+//	if G_DEVELOPER_MODE
+//
+//	if ( PARAM1 startswith 'PARAM' ) local EXIT_SUB 1
+//	if !EXIT_SUB
+//	setvard NPC_DO_EVENTS PARAM1
+//	calleventloop $get_token_amt(NPC_DO_EVENTS) npcatk_do_events
+//}
+
+{ set_pushamt
+	const_ovrd SKELE_ARROW_KNOCKBACK PARAM1
+	const_ovrd SKELE_PUSH_STRENGTH PARAM1
+	dbg set_pushamt PARAM1 [ SKELE_ARROW_KNOCKBACK SKELE_PUSH_STRENGTH ]
+}
+
+{ set_np
+	const_ovrd SKELE_ARROW_KNOCKBACK -1
+	const_ovrd SKELE_PUSH_STRENGTH -1
+	dbg set_np SKELE_ARROW_KNOCKBACK SKELE_PUSH_STRENGTH
+	setvard SKELE_ARROW_NOPUSHIE 1
+}
+
+{ dbg_kb
+	dbg set_np SKELE_ARROW_KNOCKBACK SKELE_PUSH_STRENGTH
+	if ( SKELE_ARROW_KNOCKBACK > 0 ) dbg WTF!!
+}

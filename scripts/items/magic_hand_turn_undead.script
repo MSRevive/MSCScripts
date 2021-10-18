@@ -1,0 +1,93 @@
+{
+  const SOUND_SHOOT      	fvox/hiss.wav
+  const MELEE_RANGE		500
+  const MELEE_HITCHANCE 	100%
+  const MELEE_ATK_DURATION 	1.5
+
+  //Only defining these because this magic does instant traceline damage
+  const MELEE_TYPE 		holy
+  const MELEE_DMG 		0
+  const MELEE_DMG_RANGE		0
+  const MELEE_NOAUTOAIM		1
+  const MELEE_DMG_DELAY		0.4
+  //-------------------------------------------------------
+
+  setvar SPELL_SKILL_REQUIRED	6
+  const SPELL_FIZZLE_TIME	35
+  const SPELL_CAST_SUCCESS	95%
+ // const SPELL_PREPARE_TIME	2
+  const SPELL_DAMAGE_TYPE	holy
+  const SPELL_ENERGYDRAIN	10
+  const SPELL_MPDRAIN 		2
+  const SPELL_STAT		spellcasting.divination
+
+  const SCRIPT_SFX_CAST		effects/sfx_lightning
+  precachefile 			SCRIPT_SFX_CAST
+  const SCRIPT_SFX_PREP		items/magic_hand_lightning_weak_cl
+  const SCRIPT_SFX_DURATION	0.5
+  const LIGHT_COLOR		(255,255,0)
+}
+
+#include items/magic_hand_base
+
+{  spell_spawn
+
+   name 		Rebuke Undead
+   desc 		Rebuke Undead - Sets the wrath of the divine upon the Unholy
+}
+
+{  spell_casted	//PARAM1: "none"/"npc"/"world"   2: Attack end Position   3: Entity hit (if any)
+
+	local DEMON_ON $get(ent_owner,scriptvar,DEMON_BLOOD)
+	if ( DEMON_ON )
+	{
+		playermessage You cannot use divine magic while under the influence of Demon Blood!
+		callevent spell_end
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	if TARGET_VALID
+	svplaysound 2 5 SOUND_SHOOT
+	setvard TARGET_VALID 0
+
+}
+
+{ game_dodamage //1: Attack Hit (1/0)  2: Entity Attack hit  3:  Start Position  4:  End Position
+
+	if PARAM1
+
+	////dbg Damge_OtherParm Par1 PARAM1 Par2 PARAM2 Par3 PARAM3 Par4 PARAM4
+
+	setvard TARGET_VALID 0
+	setvard TARGET_NPC PARAM2
+	local TARGET_RACE $get(TARGET_NPC,race)	
+	if ( TARGET_RACE equals undead ) setvard TARGET_VALID 1
+	if ( TARGET_RACE equals evil ) setvard TARGET_VALID 1
+	//if ( TARGET_RACE equals demon ) setvard TARGET_VALID 1
+	if ( $get(TARGET_NPC,scriptvar,IMMUNE_HOLY) != 1 ) setvard TARGET_VALID 1
+
+	if ( TARGET_VALID == 0 ) 
+	{
+		if ( $get(PARAM2,exists) == 1 ) playermessage Holy Light only affects the Undead and Unholy
+	}
+
+	if TARGET_VALID
+
+	//dbg valid target
+
+	setvard HOLY_DMG $get(ent_owner,skill.spellcasting.divination)
+
+	multiply HOLY_DMG 0.5
+
+	//local TARGET_ORIGIN $get(TARGET_NPC,origin)
+	//cleffect light new TARGET_ORIGIN 128 (255,255,0) 10
+
+	local MY_OWNER $get(ent_owner,id)
+
+	callexternal TARGET_NPC turn_undead HOLY_DMG MY_OWNER
+}
+
+{ fake_precache
+	svplaysound 0 0 SOUND_SHOOT
+}

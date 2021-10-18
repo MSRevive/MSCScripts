@@ -1,0 +1,114 @@
+{
+  const SOUND_SHOOT      	weather/Storm_exclamation.wav
+
+  const MELEE_RANGE		2000
+  const MELEE_HITCHANCE 	100%
+  const MELEE_ATK_DURATION 	1.0
+
+  const MELEE_TYPE 		strike-land
+  const MELEE_DMG 		0
+  const MELEE_DMG_RANGE		0
+  const MELEE_NOAUTOAIM		1
+  const MELEE_DMG_DELAY		0.4
+
+  setvar SPELL_SKILL_REQUIRED	1
+  const SPELL_FIZZLE_TIME	45
+  const SPELL_CAST_SUCCESS	90%
+  const SPELL_DAMAGE_TYPE	lightning
+  const SPELL_ENERGYDRAIN	10
+  const SPELL_MPDRAIN		5
+  const SPELL_STAT		spellcasting.lightning
+
+	const SOUND_ZAP1 debris/beamstart14.wav
+	const SOUND_ZAP2 debris/beamstart15.wav
+	const SOUND_ZAP3 debris/zap1.wav
+
+	const SCRIPT_SFX_PREP		items/magic_hand_lightning_weak_cl
+	const SCRIPT_SFX_DURATION	0.5
+	const LIGHT_COLOR		(30,30,253)
+	const SCAN_RANGE 400
+}
+
+#include items/magic_hand_base
+
+{  spell_spawn
+
+   name 		Chain Lightning
+   desc 		Fires lightning bolts at multiple targets
+}
+
+{ spell_deploy //have to use this becaue magic_hand_base overrides [game_deploy]
+
+	if game.serverside
+
+	//setup client script, send owner index
+	clientevent new all items/magic_hand_lightning_chain_cl $get(ent_owner,index)
+	setvard CLIENT_SCRIPT_IDX game.script.last_sent_id //store client script index for later removal
+
+	setvard GAME_PVP game.pvp //for player vs. player targeting
+}
+
+
+{ spell_casted	//PARAM1: "none"/"npc"/"world"   2: Attack end Position   3: Entity hit (if any)
+
+	local SCAN_ORIGIN $get(ent_owner,origin)
+	if ( $get(PARAM3,isalive) )
+	{
+		//if first target is player, and not PVP, do not use him as first target
+		if ( $get(PARAM3,relationship,ent_owner) equals enemy )
+		{
+			if ( $get(PARAM3,isplayer) )
+			{
+				if !GAME_PVP
+				local EXIT_IF 1
+			}
+		}
+		if !EXIT_IF
+
+		local FIRST_TARGET PARAM3 //if I hit a target, use it as first jump
+		local SCAN_ORIGIN $get(PARAM3,origin) //and use it as the start scan point
+		//otherwise I'll just zap everything withing SCAN_RANGE of the caster
+	}
+
+	//get targets from owner since $get_tsphere does not work from inside an item script:
+	callexternal ent_owner ext_sphere_token enemy SCAN_RANGE SCAN_ORIGIN
+	setvard TARGET_LIST $get(ent_owner,scriptvar,'PLR_SCAN_TOKEN')
+
+	//make sure first beam goes to targeted ent, if any:
+	if ( $get(FIRST_TARGET,isalive) )
+	{
+		local TEMP_LIST TARGET_LIST
+		setvard TARGET_LIST FIRST_TARGET
+		stradd TARGET_LIST ";"
+		stradd TARGET_LIST TEMP_LIST
+	}
+
+	//if no targets, stop here
+	if TARGET_LIST isnot none
+
+	//send damage in a single AOE burst:
+	local DMG_LIGHTNING $get(ent_owner,skill.spellcasting.lightning)
+	multiply DMG_LIGHTNING 0.75
+	xdodamage SCAN_ORIGIN SCAN_RANGE DMG_LIGHTNING 0 ent_owner ent_owner spellcasting.lightning lightning
+
+	//convert target list to client indexes
+	setvard IDX_LIST '' //init idx list
+	calleventloop $get_token_amt(TARGET_LIST) convert_targets_to_idxs
+
+	//send target indexes to clients and draw beams accordingly
+	clientevent update all CLIENT_SCRIPT_IDX draw_beams IDX_LIST
+
+	//zappy sound
+	playrandomsound 0 10 SOUND_ZAP1 SOUND_ZAP2 SOUND_ZAP3
+}
+
+{ convert_targets_to_idxs
+	local CUR_TARGET $get_token(TARGET_LIST,game.script.iteration)
+	token.add IDX_LIST $get(CUR_TARGET,index)
+}
+
+
+{ spell_end
+
+	clientevent remove all CLIENT_SCRIPT_IDX //remove script from clients
+}

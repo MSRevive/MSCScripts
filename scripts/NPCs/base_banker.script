@@ -1,0 +1,108 @@
+//Generic banker
+{
+   const	STORAGE_DISPLAYNAME	"Edana Bank"
+   const	STORAGE_NAME 		edanastorage
+   const	STORAGE_FEERATIO 	0.10
+   const	STORAGE_ACCOUNT_COST    20
+
+      deleteent ent_me
+}
+
+{  game_playerused
+
+	setvard CHECK_REASON 0
+
+	storage checkaccount STORAGE_NAME ent_lastused used_checkaccount
+}
+{  used_checkaccount_success
+
+	callevent bank_trade ent_lastused
+}
+{  used_checkaccount_failed
+
+   	saytext Sorry, you don't have an account with us
+	menu.open ent_lastused
+  	callevent 1 speech_makeaccount
+}
+
+{ speech_makeaccount
+
+	saytext You can create an account with this bank for STORAGE_ACCOUNT_COST gold
+}
+
+
+{ game_recvoffer_gold
+
+	storage checkaccount STORAGE_NAME ent_lastused offer_checkacct
+}
+{ offer_checkacct_success
+
+   	recvoffer reject
+   	saytext You already have an account with us.
+}
+{ offer_checkacct_failed
+
+  	if( game.offer.gold >= STORAGE_ACCOUNT_COST )
+        {
+   		recvoffer accept
+
+		callevent bank_openaccount ent_lastgave
+    	}
+   	else
+	{
+   		recvoffer reject
+
+		callevent bank_openaccount_failed ent_lastgave
+   	}	
+}
+
+
+
+{ game_menu_getoptions
+
+	storage checkaccount STORAGE_NAME PARAM1 menuitem_checkacct
+}
+{ menuitem_checkacct_failed
+
+	local reg.mitem.id	payment
+	local reg.mitem.title	"Open Account"
+	local reg.mitem.type	payment
+	local reg.mitem.data	gold: STORAGE_ACCOUNT_COST
+	local reg.mitem.callback  bank_openaccount
+	local reg.mitem.cb_failed menu_recv_payment_failed
+
+	menuitem.register
+}
+{ menuitem_checkacct_succes
+
+	local reg.mitem.id	bank
+	local reg.mitem.title	"Bank"
+	local reg.mitem.type	callback
+	local reg.mitem.data	gold: STORAGE_ACCOUNT_COST
+	local reg.mitem.callback  bank_trade
+	local reg.mitem.cb_failed ''
+
+	menuitem.register
+}
+
+
+{ bank_trade
+
+	storage trade STORAGE_NAME PARAM1 STORAGE_FEERATIO STORAGE_DISPLAYNAME
+}
+
+{ bank_openaccount
+
+  	storage openaccount STORAGE_NAME PARAM1
+
+   	saytext Thank you!  Your new account with STORAGE_DISPLAYNAME is open!
+   	playanim once yes
+
+}
+
+{ bank_openaccount_failed
+
+   	saytext I'm sorry, we have a business to run.  An Account costs STORAGE_ACCOUNT_COST gold.
+   	playanim once no
+}
+

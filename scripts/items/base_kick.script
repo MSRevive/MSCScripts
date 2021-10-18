@@ -1,0 +1,110 @@
+//Megafootz by Thothie
+//- To be added to fisted/gauntlet attacks
+//- Assumes base_mele is included with above weapon
+{
+	const ANIM_KICK 1
+	const ANIM_FOOT_IDLE idle
+	const OWNANIM_KICK stance_normal_highkick_r1
+	const KICK_VIEW weapons/martialarts/foot.mdl
+	const SOUND_KICKHIT
+}
+
+{ [override] register_charge1
+
+   //Default charge up attack - Double damage for holding to 100%
+   //============================================================
+
+   local reg.attack.type		strike-land
+   local reg.attack.keys		-attack1
+   local reg.attack.range		100
+   local reg.attack.dmg			200
+   local reg.attack.dmg.range		10
+   local reg.attack.dmg.type		blunt
+   local reg.attack.energydrain		2
+   local reg.attack.stat		martialarts
+   local reg.attack.hitchance		90%
+   local reg.attack.priority		1
+   local reg.attack.delay.strike	0.2
+   local reg.attack.delay.end		0.9
+   local reg.attack.ofs.startpos	MELEE_STARTPOS
+   local reg.attack.ofs.aimang		MELEE_AIMANGLE
+   local reg.attack.callback		kickatk
+   local reg.attack.noise		MELEE_NOISE
+   local reg.attack.chargeamt	100%
+   local reg.attack.reqskill	5
+
+   registerattack
+}
+
+{ kickatk_start
+
+	setvard DOING_KICK 1
+	setviewmodel KICK_VIEW
+	callevent 0.1 kick_go
+	if game.serverside
+	svplaysound 0 8 $get(ent_owner,scriptvar,'PLR_SOUND_JAB2')
+}
+
+{ kick_go
+	playviewanim  ANIM_KICK
+	playowneranim critical stance_normal_highkick_r1
+	callevent 0.5 restore_hands
+}
+
+
+{ game_dodamage
+
+	If PARAM1
+
+	if DOING_KICK
+
+	setvard DOING_KICK 0
+
+	playsound 0 8 weapons/cbar_hitbod1.wav
+
+	local MA_SKILL $get(ent_owner,skill.martialarts)
+	if ( MA_SKILL >= 10 )
+	{
+		if $get(ent_laststruckbyme,maxhp) < 1250
+		if $get(ent_laststruckbyme,relationship,ent_me) isnot ally
+		if $get(ent_laststruckbyme,isalive) //MAR2010_24 attempts to prevent kicking buttons off map
+		if $get(ent_laststruckbyme,race) isnot 0 //MAR2010_24 ditto
+
+		local PUSH_STR_LR MA_SKILL
+		multiply PUSH_STR_LR 15
+		local PUSH_STR_F MA_SKILL
+		multiply PUSH_STR_F 20
+		local PUSH_STR_V MA_SKILL
+		multiply PUSH_STR_V 5
+
+		//dbg temp strlr PUSH_STR_LR f PUSH_STR_F u PUSH_STR_V
+		//caps
+		if ( PUSH_STR_LR > 300 ) local PUSH_STR_LR 300
+		if ( PUSH_STR_F > 400 ) local PUSH_STR_F 400
+		if ( PUSH_STR_V > 100 ) local PUSH_STR_V 100
+		local L_R $rand(50,PUSH_STR_LR)
+		if ( $rand(1,2) == 1 ) local L_R $neg(L_R)
+
+		local PUSH_VEL $relvel(L_R,PUSH_STR_F,PUSH_STR_V)
+		callexternal $get(ent_owner,id) ext_push_targ $get(ent_laststruckbyme,id) PUSH_VEL
+	}
+	if ( MA_SKILL >= 20 )
+	{
+		local STUN_DUR MA_SKILL
+		divide STUN_DUR 3
+		if ( STUN_DUR > 20 ) local STUN_DUR 20
+		local TARG_HP  $get(ent_laststruckbyme,hp)
+		if ( TARG_HP > 1000 )
+		{
+			local FAIL_RATIO $rand(1,9999)
+			if ( FAIL_RATIO < TARG_HP ) local EXIT_SUB 1
+		}
+		if !EXIT_SUB
+		applyeffect ent_laststruckbyme effects/effect_stun STUN_DUR 0 0 $get(ent_owner,id)
+	}
+}
+
+{ restore_hands
+	setvard DOING_KICK 0
+	setviewmodel MODEL_VIEW
+}

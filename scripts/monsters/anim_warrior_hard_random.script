@@ -1,0 +1,198 @@
+//Thothie - Greater Animated Warrior - Keledros's Personal Summoned Guards
+//- In attempt to solve Keledros brain death issue
+//- Differences >HP >Damage BurnEffect FireResistant ColdVulnerable
+
+//Orc base
+
+{
+	setvar IS_UNHOLY 1
+	setvard IMMUNE_VAMPIRE 1
+
+   const SOUND_STRUCK1 body/armour1.wav
+   const SOUND_STRUCK2 body/armour2.wav
+   const SOUND_STRUCK3 body/armour3.wav
+   const SOUND_HIT body/armour3.wav
+   const SOUND_HIT2 body/armour2.wav
+   const SOUND_HIT3 body/armour1.wav
+   const SOUND_PAIN body/armour1.wav
+   const SOUND_ATTACK1 none
+   const SOUND_ATTACK2 none
+   const SOUND_ATTACK3 none
+   const SOUND_DEATH none
+   setvar ANIM_RUN run
+   setvar ANIM_IDLE idle1
+   setvar ANIM_WALK walk
+   setvard ANIM_DEATH die
+   setvar LAST_ENEMY		`NONE`
+   setvard MOVE_RANGE 44
+   setvard ATTACK_RANGE 82
+   setvard ATTACK_HITRANGE 128
+   setvard DROP_GOLD 1			//Gold Drops
+   setvard DROP_GOLD_AMT $rand(20,40)	//
+   setvard NPC_GIVE_EXP 450
+	
+	setvard FLINCH_CHANCE 10%
+	setvard FLINCH_DELAY 20.0
+	setvard CAN_FLINCH 1
+	
+   //setvard ANIM_ATTACK battleaxe_swing1_L //Attack animation
+
+   const ATTACK_ACCURACY 85%
+   const ATTACK_DMG_LOW 50
+   const ATTACK_DMG_HIGH 100
+
+	const LIGHT_RAD 64
+
+	setvard IMMUNE_VAMPIRE 1
+
+	setvard IMMUNE_POISON 1
+}
+
+#include monsters/base_monster_new
+#include monsters/base_turn_undead
+
+{ npc_spawn
+
+	setmodel monsters/animarmor.mdl
+	width 40
+	height 90
+	blood none
+
+	roam 1
+	race demon
+	hp 800
+
+	hearingsensitivity 4
+
+	takedmg poison 0.0
+	takedmg holy 1.0
+	setidleanim ANIM_IDLE
+	setmoveanim ANIM_WALK
+
+	callevent 0.1 select_armor
+}
+
+{ select_armor
+
+	if ( ARMOR_TYPE equals 'ARMOR_TYPE' ) setvard ARMOR_TYPE $rand(1,4)
+
+	if ( ARMOR_TYPE == 1 )
+	{
+		name an|Enchanted Armor of Fire
+		setvard DAMAGE_TYPE fire
+		takedmg all 0.4
+		takedmg lightning 1.5
+		takedmg fire 0.0
+		takedmg cold 2.5
+		setvard ANIM_ATTACK battleaxe_swing1_L
+		setmodelbody 0 0
+		setmodelbody 1 2	//Head: 0=CapW/horns 1=Capw/Spikes 2=Skull
+		setmodelbody 2 5	//Weapon: 0=Unarmed(Litterally!) 1=Axe 2=woodbow 3=steelbow 4=sword 5=bloodaxe
+		setvard LIGHT_COLOR (255,0,0)
+	}
+
+	if ( ARMOR_TYPE == 2 )
+	{
+		name an|Enchanted Armor of Thunder
+		setvard DAMAGE_TYPE lightning
+		takedmg all 0.4
+		takedmg lightning 0.0
+		takedmg acid 3.0
+		takedmg fire 1.0
+		takedmg cold 1.0
+		setvard ANIM_ATTACK swordswing1_L
+		setmodelbody 0 0
+		setmodelbody 1 2	//Head: 0=CapW/horns 1=Capw/Spikes 2=Skull
+		setmodelbody 2 4	//Weapon: 0=Unarmed(Litterally!) 1=Axe 2=woodbow 3=steelbow 4=sword 5=bloodaxe
+		setvard LIGHT_COLOR (255,255,0)
+	}
+
+	if ( ARMOR_TYPE == 3 )
+	{
+		name an|Enchanted Armor of Frost
+		setvard DAMAGE_TYPE cold
+		takedmg all 0.4
+		takedmg lightning 1.5
+		takedmg fire 2.5
+		takedmg cold 0.0
+		setvard ANIM_ATTACK battleaxe_swing1_L
+		setmodelbody 0 0
+		setmodelbody 1 2	//Head: 0=CapW/horns 1=Capw/Spikes 2=Skull
+		setmodelbody 2 1	//Weapon: 0=Unarmed(Litterally!) 1=Axe 2=woodbow 3=steelbow 4=sword 5=bloodaxe
+		setvard LIGHT_COLOR (200,200,255)
+	}
+
+	if ( ARMOR_TYPE == 4 )
+	{
+		name an|Enchanted Armor of Venom
+		setvard DAMAGE_TYPE poison
+		takedmg all 0.4
+		takedmg lightning 3.0
+		setvard ANIM_ATTACK swordswing1_L
+		setmodelbody 0 0
+		setmodelbody 1 2	//Head: 0=CapW/horns 1=Capw/Spikes 2=Skull
+		setmodelbody 2 4	//Weapon: 0=Unarmed(Litterally!) 1=Axe 2=woodbow 3=steelbow 4=sword 5=bloodaxe
+		setvard LIGHT_COLOR (0,255,0)
+	}
+
+	effect glow ent_me LIGHT_COLOR 64 -1 0
+}
+
+{ npc_death		//On death, don't display weapon
+
+   setmodelbody 2 0		//Hide weapon
+   setmodelbody 4 0		//Hide Shield
+}
+
+   //Hit by someone
+{ npc_struck
+
+	playrandomsound 0 10 SOUND_PAIN SOUND_STRUCK2 SOUND_PAIN none none
+}
+
+{  game_damaged_other
+
+   if ( DAMAGE_TYPE equals fire ) applyeffect PARAM1 effects/effect_burn 30 $get(ent_me,id) $rand(5,12)
+   if ( DAMAGE_TYPE equals cold ) applyeffect PARAM1 effects/effect_frostbite_dmg 10 $get(ent_me,id) $rand(5,12)
+   if ( DAMAGE_TYPE equals lightning ) applyeffect PARAM1 effects/effect_shock_dmg 10 $get(ent_me,id) $rand(5,12)
+   if ( DAMAGE_TYPE equals poison ) applyeffect PARAM1 effects/effect_poison 30 $get(ent_me,id) $rand(5,12)
+
+   if ATTACK_PUSH isnot 'ATTACK_PUSH'
+   if ATTACK_PUSH isnot 'none'
+   addvelocity ent_laststruckbyme ATTACK_PUSH	//Push the player a bit
+}
+
+{ swing_axe  //called from model
+
+   	local L_DMG $randf(ATTACK_DMG_LOW,ATTACK_DMG_HIGH)
+   	callevent npcatk_dodamage NPCATK_TARGET ATTACK_HITRANGE L_DMG ATTACK_ACCURACY DAMAGE_TYPE
+}
+
+{ swing_sword  //called from model
+
+	callevent swing_axe
+}
+
+{ npc_flinch
+
+	setvard ANIM_FLINCH flinch
+	if ( PARAM1 > 100 ) setvard ANIM_FLINCH flinch2
+	if ( PARAM1 > 200 ) setvard ANIM_FLINCH flinch3
+}
+
+//===light system
+{ [server] npc_post_spawn //call at spawn or cycle_up
+	clientevent persist all monsters/lighted_cl $get(ent_me,index) LIGHT_COLOR LIGHT_RAD
+	setvard MY_LIGHT_SCRIPT game.script.last_sent_id
+}
+
+{ [server] game_death
+
+	clientevent remove all MY_LIGHT_SCRIPT
+}
+//===end light system
+
+{
+repeatdelay 20.0
+	effect glow ent_me LIGHT_COLOR 64 -1 0
+}

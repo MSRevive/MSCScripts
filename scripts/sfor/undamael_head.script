@@ -1,0 +1,135 @@
+//This is undamael's head
+//- Rather, this is an invisible 128x128 box that tracks the position of his head
+//- This gives the illusion that he is solid and gives him the ability to be struck
+{
+	setcallback touch enable //edited to work in APR2008a
+	setvard NPC_HACKED_MOVE_SPEED 100
+	setvard NPC_GIVE_EXP 15000
+}
+
+{ game_spawn
+
+	name_unique head_undi
+
+	name Undamael
+	race undead
+	hp 20000
+	setmodel monsters/undamael_hitbox.mdl
+	blood red
+	width 128
+	height 128
+	roam 0
+	fly 1
+	setbbox npcsize //commented
+	setsolid box //slidebox
+	takedmg all 0.5
+	takedmg fire 0.0
+	takedmg poison 0.0
+	takedmg holy 2.0
+	setmodelbody 0 0
+	setprop ent_me rendermode 5
+	setprop ent_me renderamt 0
+	setvard IMMUNE_VAMPIRE 1
+	nopush 1
+	callevent npcatk_suspend_ai
+
+	callevent 1.0 check_vulnerable
+}
+
+#include monsters/base_monster_new
+#include monsters/base_propelled
+
+{ game_dynamically_created
+	setvard MY_OWNER PARAM1
+}
+
+{ game_damaged			//PARAM1=attacker PARAM2=dmg PARAM3=dmg_type
+
+	if !VULNERABLE
+
+	hp $get(ent_me,maxhp)
+	dodamage PARAM1 direct PARAM2 100% PARAM3
+	setdmg dmg 0.1
+	setdmg hit 1
+	returndata 0.0
+}
+
+{ [override] npcatk_hunt
+
+}
+
+{
+repeatdelay 0.01
+	local DEST_LOC $get(MY_OWNER,attachpos,1) //location of Undamael's head center
+	setorigin ent_me DEST_LOC
+	if ( game.time < LAST_PLR_TOUCH )
+	{
+		setsolid trigger
+	}
+	else
+	{
+		setsolid slidebox
+	}
+}
+
+{ game_struck
+	dbg head struck
+
+	if ( $get(MY_OWNER,scriptvar,'NPCATK_TARGET') equals unset )
+	{
+		callexternal MY_OWNER npcatk_settarget $get(ent_laststruck,id) "struck"
+	}
+	else
+	{
+		if $rand(1,100) < 50 //50% retaliate
+		callexternal MY_OWNER npcatk_settarget $get(ent_laststruck,id) "struck"
+	}
+}
+
+{ game_touch
+
+	if $get(PARAM1,isplayer)
+	setvard LAST_PLR_TOUCH game.time
+	add LAST_PLR_TOUCH 0.25
+
+//	dbg game_touch $get(PARAM1,name)
+//	if $get(PARAM1,isplayer)
+//	if !NO_SOLID
+//	setsolid none
+//	setvard NO_SOLID 1
+//	callevent 1.0 ext_solid_on
+}
+
+{ ext_solid_on
+	setvard NO_SOLID 0
+	setsolid slidebox
+}
+
+{ ext_show_head
+	setmodelbody 0 1
+	setprop ent_me renderamt 64
+}
+
+{ ext_unsolid //PARAM1 = time
+	setvard LAST_PLR_TOUCH game.time
+	add LAST_PLR_TOUCH PARAM1
+	setsolid trigger
+}
+
+{ ext_vulnerable
+	setvard VULNERABLE PARAM1
+}
+
+{ do_nuke
+	dbg doing nuke
+	tossprojectile PARAM1 150 PARAM2 2 proj_meteor (0,0,-72)
+}
+
+{ game_death
+	callexternal MY_OWNER death_sequence
+}
+
+{ check_vulnerable
+	if G_UNDAMAEL_VULNERABLE
+	setvard VULNERABLE 1
+}

@@ -1,0 +1,933 @@
+//Weather/TOD combo script by Thothie 10:50 AM 7/20/2010
+//do not initiate weather at hours 6, 17, or 20 due to TOD change
+
+#scope client
+{
+	//sounds and sound stuffs
+	const WEATHER_CHANNEL 5 //const.snd.stream
+	const SOUND_RAIN weather/rain_noloop.wav
+	const SOUND_RAIN_START weather/rain_start.wav
+	const SOUND_DAY amb/birds01.wav
+	const SOUND_NIGHT amb/wolf01.wav
+	const SOUND_SNOW amb/wind.wav
+	const FREQ_WEATHER_SNOW_SOUND 7.0
+	const FREQ_WEATHER_RAIN_SOUND 14.6
+
+	precache SOUND_RAIN
+
+	//sprites
+	const WEATHER_SPRITE_RAIN rain.spr
+	const WEATHER_SPRITE_RAIN_SPLASH rain_splash.spr
+	const WEATHER_SPRITE_RAIN_MIST rain_mist.spr
+	const WEATHER_SPRITE_RAIN_RIPPLE rain_ripple.spr
+	const WEATHER_SPRITE_SNOW snow1.spr
+	const WEATHER_SPRITE_BREATH char_breath.spr
+
+	//weather defaults
+	//rain
+	//(special) clear before night and dawn
+	//(special) kills snow on finalize
+	const WEATHER_RAIN_DROP_MAXRATE 8
+	const WEATHER_RAIN_MAXVOL 5
+	const WEATHER_RAIN_TINT_NIGHT (0,0,0.2,0.3)
+	const WEATHER_RAIN_TINT_DAY (0,0,1,0.15)
+	const WEATHER_RAIN_TINT_DUSK (0,0,1,0.15)
+	const WEATHER_RAIN_FOG_COLOR (0,0,0.2)
+	const WEATHER_RAIN_FOG_DENSITY 1
+	const WEATHER_RAIN_FOG_START 0
+	const WEATHER_RAIN_FOG_END 10000
+	const WEATHER_RAIN_FOG_ON 1
+	const WEATHER_RAIN_FOG_UNDERGROUND 0
+	const WEATHER_RAIN_RADIUS 1024
+
+	//storm (rain_storm)
+	//(special) clear before night and dawn
+	//(special) thunder & lightning
+	//(special) kills snow on finalize
+	const WEATHER_STORM_DROP_MAXRATE 18
+	const WEATHER_STORM_MAXVOL 10
+	const FREQ_STORM_LIGHTNING $randf(20.0,30.0)
+	//(rain_storm uses rain defaults for the rest)
+
+	//snow
+	//(special) - char breath
+	//(special) - can fog at night (overrides TOD fog)
+	//(special) kills rain on finalize
+	//(special) kills lightning on start and finalize
+	setvard WEATHER_SNOW_DROP_RATE 5
+	const WEATHER_SNOW_TINT (0,0,0,0)
+	const WEATHER_SNOW_FOG_COLOR (1,1,1)
+	setvard WEATHER_SNOW_FOG_DENSITY 0.4 //varies with bloom setting
+	setvard WEATHER_SNOW_FOG_START 64 //varies with bloom setting
+	const WEATHER_SNOW_FOG_END 2048
+	const WEATHER_SNOW_FOG_ON 1
+	const WEATHER_SNOW_FOG_COLOR_NIGHT (0.8,0.8,0.8)
+	const WEATHER_SNOW_FOG_COLOR_DUSK (0.9,0.8,0.8)
+	const WEATHER_SNOW_FOG_UNDERGROUND 0
+	const WEATHER_SNOW_RATE 4
+	const FREQ_SNOW_CHAR_BREATH $randf(10.0,30.0)
+	const WEATHER_SNOW_RADIUS 1024
+
+	//tod defaults
+	const WEATHER_TOD_DAY_TINT (0,0,0,0)
+	const WEATHER_TOD_DAY_LIGHTGAMMA 2.5
+	
+	const WEATHER_TOD_DUSK_TINT (0.8156,0.368627,0.007843,0.1)
+	const WEATHER_TOD_LIGHTGAMMA 5.0
+
+	const WEATHER_TOD_NIGHT_TINT (0.02,0.02,0.3,0.1)
+	const WEATHER_TOD_NIGHT_LIGHTGAMMA 4.0
+	const WEATHER_TOD_NIGHT_FOG_COLOR (0,0,0)
+	const WEATHER_TOD_NIGHT_FOG_DENSITY 0.05
+	const WEATHER_TOD_NIGHT_FOG_START 256
+	const WEATHER_TOD_NIGHT_FOG_END 1024
+
+	//base vars (also for reference)
+	setvard TOD_STATE day
+	setvard WEATHER_TYPE clear
+	setvard WEATHER_IN_TRANSITION
+	setvard WEATHER_TYPE clear
+	setvard WEATHER_LOOP_ON 0
+	setvard WEATHER_SNOW_ON 0
+	setvard WEATHER_RAIN_ON 0
+	setvard WEATHER_LIGHTNING_ON 0
+	setvard WEATHER_RAIN_EVENT weather_rain_makesprite //can change this for acid rain, or what not
+	setvard WEATHER_SNOW_EVENT weather_snow_makesprite
+	setvard WEATHER_SNOW_DROP_RATE 0
+	setvard WEATHER_RAIN_DROP_RATE 0
+	setvard DEST_WEATHER_SNOW_DROP_RATE 0
+	setvard DEST_WEATHER_RAIN_DROP_RATE 0
+	setvard WEATHER_RAIN_VOL 0
+	setvard DEST_WEATHER_RAIN_VOL 0
+	setvard WEATHER_TINT_ON 0
+	setvard WEATHER_TINT (0,0,0,0)
+	setvard DEST_WEATHER_TINT (0,0,0,0)
+	setvard WEATHER_FOG_ON 0
+	setvard WEATHER_FOG_COLOR (0,0,0)
+	setvard WEATHER_FOG_DENSITY 0
+	setvard WEATHER_FOG_START 0
+	setvard WEATHER_FOG_END 0
+	setvard DEST_WEATHER_FOG_COLOR (0,0,0)
+	setvard DEST_WEATHER_FOG_DENSITY 0
+	setvard DEST_WEATHER_FOG_START 0
+	setvard DEST_WEATHER_FOG_END 0
+	setvard WEATHER_FOG_NIGHT 0
+	setvard WEATHER_FOG_UNDERGROUND 0
+	setvard DEST_WEATHER_FOG_UNDERGROUND 0
+	setvard WEATHER_TINT_UNDERGROUND 0
+	setvard DEST_WEATHER_TINT_UNDERGROUND 0
+	setvard WEATHER_RAIN_MIST 0 //counter
+	//setvard WEATHER_LOCK none
+	//setvard WEATHER_TOD_LOCK none
+	setvard WEATHER_FORCE_CHANGE_TYPE none
+	setvard WEATHER_CURRENT_AMB_VOL 0
+}
+
+//{ weather_lock //<weather_type>
+//	setvard WEATHER_LOCK PARAM1
+//}
+//
+//{ tod_lock //<day|dusk|night>
+//	setvard WEATHER_TOD_LOCK PARAM1
+//}
+
+{ tod_change //<day|dusk|night>
+	//set state before changing TOD
+	//on server side, do not allow weather changes during TOD change hours
+}
+
+{ weather_force_change //<type>
+
+	//dbg weather_force_change PARAM1 PARAM2
+	if ( PARAM1 equals storm ) local PARAM1 rain_storm
+	//for instantly changing weather & TOD
+	//abort transitions, call clear, then force state
+	setvard WEATHER_IN_TRANSITION 0
+	callevent weather_clear abort
+	
+	setvard WEATHER_TO_FORCE PARAM1
+	//if ( PARAM2 equals lock ) setvard WEATHER_LOCK PARAM1
+	callevent 0.5 weather_force_change2 
+}
+
+{ weather_force_change2
+	callevent weather_finalize WEATHER_TO_FORCE
+}
+
+{ weather_change //<weather_type> [optional_param]
+
+   	//if !local.dead
+
+	//dbg weather_change PARAM1 PARAM2
+
+	if ( PARAM1 equals storm ) local PARAM1 rain_storm
+
+	setvard PREV_WEATHER WEATHER_TYPE
+	setvard WEATHER_TYPE PARAM1
+	setvard WEATHER_PARAM PARAM2
+	//if ( WEATHER_LOCK isnot none ) setvard WEATHER_TYPE WEATHER_LOCK
+
+	//dbg weather_change from PREV_WEATHER to WEATHER_TYPE
+
+	if PREV_WEATHER isnot WEATHER_TYPE
+
+	if ( WEATHER_TYPE contains fog ) callevent weather_find_dest_fog
+
+	callevent weather_start_transition
+}
+
+{ weather_find_dest_fog
+	if ( WEATHER_TYPE equals fog_white ) callevent weather_dest_fog "(1,1,1)" 1.4 32 2048 1
+	if ( WEATHER_TYPE equals fog_thick ) callevent weather_dest_fog "(0.9,0.9,0.9)" 5.4 50 500 1
+	if ( WEATHER_TYPE equals fog_green ) callevent weather_dest_fog "(0,1,0)" 1.4 32 2048 1
+	if ( WEATHER_TYPE equals fog_red ) callevent weather_dest_fog "(1,0,0)" 1.4 32 2048 1
+	if ( WEATHER_TYPE equals fog_blue ) callevent weather_dest_fog "(0.8,0.8,1.0)" 1.4 32 2048 1
+	if ( WEATHER_TYPE equals fog_brown ) callevent weather_dest_fog "(0.6,0.5,0.2)" 5.4 50 500 1
+	if ( WEATHER_TYPE equals fog_black ) callevent weather_dest_fog "(0.0,0,0.0,0.599)" 1.5 50 500 1
+	if ( WEATHER_TYPE equals fog_custom ) callevent weather_dest_fog WEATHER_PARAM 1.4 32 2048 1
+
+	if ( WEATHER_TYPE equals fog_dragon_red ) callevent weather_dest_fog "(1,0,0)" 0.4 512 2048 1
+	if ( WEATHER_TYPE equals fog_dragon_black ) callevent weather_dest_fog "(0.0,0,0.0,0.599)" 0.4 512 2048 1
+	if ( WEATHER_TYPE equals fog_dragon_white )
+	{
+		setvard WEATHER_SNOW_ON 1
+		callevent weather_dest_fog "(0.25,0.25,0.5)" 0.4 512 2048 1
+	}
+}
+
+{ weather_clear //[abort] call direct for instant clear
+
+	//clears weather, not TOD effects (unless [abort] - assumes GM call)
+//	if ( WEATHER_LOCK isnot none )
+//	{
+//		if PARAM1 isnot abort
+//		local EXIT_SUB 1
+//	}
+//	if !EXIT_SUB
+
+	setvard WEATHER_WAS_SNOW 0
+	setvard WEATHER_WAS_RAIN 0
+
+	if ( WEATHER_SNOW_ON )
+	{
+		local DO_SPIN_DOWN 1
+		setvard WEATHER_WAS_SNOW 1
+	}
+	if ( WEATHER_RAIN_ON )
+	{
+		local DO_SPIN_DOWN 1
+		setvard WEATHER_WAS_RAIN 1
+	}
+
+	if ( DO_SPIN_DOWN )
+	{
+		setvard WEATHER_VOL_SPIN_POINT WEATHER_CURRENT_AMB_VOL
+		callevent weather_spin_down_sound
+	}
+	else
+	{
+		sound.setvolume WEATHER_CHANNEL SOUND_RAIN 0.001
+	}
+
+	setvard WEATHER_CURRENT_AMB_VOL 0
+
+	setvard WEATHER_LOOP_ON 0
+	setvard WEATHER_IN_TRANSITION 0
+	setvard WEATHER_RAIN_ON 0
+	setvard WEATHER_SNOW_ON 0
+	setvard WEATHER_LIGHTNING_ON 0
+	setvard WEATHER_FOG_ON 0
+	setvard WEATHER_TINT_ON 0
+	setvard WEATHER_TINT (0,0,0,0)
+	setvard WEATHER_FOG_COLOR (0,0,0)
+	setvard WEATHER_FOG_DENSITY 0
+
+	if ( TOD_STATE isnot night ) local CLEAR_FOG 1
+	if ( PARAM1 equals abort ) local CLEAR_FOG 1
+	if ( CLEAR_FOG )
+	{
+		setenv fog.enabled	0
+		setenv fog.color	0
+		setenv fog.density	0
+		setenv fog.start	0
+		setenv fog.end		0
+		setenv fog.type		linear
+	}
+
+	if ( TOD_STATE equals day ) local CLEAR_TINT 1
+	if ( PARAM1 equals abort ) local CLEAR_TINT 1
+	if ( CLEAR_TINT ) setenv screen.tint (0,0,0,0)
+}
+
+{ weather_spin_down_sound
+
+	subtract WEATHER_VOL_SPIN_POINT 0.1
+	if ( WEATHER_VOL_SPIN_POINT == 0 )
+	{
+		if ( WEATHER_WAS_RAIN ) sound.setvolume WEATHER_CHANNEL SOUND_RAIN 0.001
+		if ( WEATHER_WAS_SNOW ) sound.setvolume WEATHER_CHANNEL SOUND_SNOW 0.001
+	}
+	if ( WEATHER_VOL_SPIN_POINT > 0 ) callevent 0.1 weather_spin_down_sound
+	if ( WEATHER_WAS_RAIN ) sound.setvolume WEATHER_CHANNEL SOUND_RAIN WEATHER_VOL_SPIN_POINT
+	if ( WEATHER_WAS_SNOW ) sound.setvolume WEATHER_CHANNEL SOUND_SNOW WEATHER_VOL_SPIN_POINT
+}
+
+{ weather_dest_fog //<color> <density> <fog_start> <fog_end> <underground>
+
+	setvard DEST_WEATHER_FOG_COLOR PARAM1
+	setvard DEST_WEATHER_FOG_DENSITY PARAM2
+	setvard DEST_WEATHER_FOG_START PARAM3
+	setvard DEST_WEATHER_FOG_END PARAM4
+	setvard WEATHER_FOG_UNDERGROUND PARAM5
+
+	//dbg weather_dest_fog col DEST_WEATHER_FOG_COLOR den DEST_WEATHER_FOG_DENSITY sta DEST_WEATHER_FOG_START end DEST_WEATHER_FOG_END under DEST_FOG_UNDERGROUND
+}
+
+{ weather_set_fog //<color> <density> <fog_start> <fog_end> <underground>
+
+	setvard WEATHER_FOG_COLOR PARAM1
+	setvard WEATHER_FOG_DENSITY PARAM2
+	setvard WEATHER_FOG_START PARAM3
+	setvard WEATHER_FOG_END PARAM4
+	setvard WEATHER_FOG_UNDERGROUND PARAM5
+
+	if ( !WEATHER_FOG_UNDERGROUND )
+	{
+		if WEATHER_PLAYER_UNDERGROUND
+		local DELAY_FOG 1
+	}
+
+	if ( !DELAY_FOG ) setenv fog.enabled 1
+	setenv fog.color WEATHER_FOG_COLOR
+	setenv fog.density WEATHER_FOG_DENSITY
+	setenv fog.start WEATHER_FOG_START
+	setenv fog.end WEATHER_FOG_END
+	setenv fog.type	linear
+
+	setvard WEATHER_FOG_ON 1
+
+	//dbg weather_set_fog WEATHER_FOG_COLOR WEATHER_FOG_DENSITY WEATHER_FOG_START WEATHER_FOG_END
+}
+
+{ weather_start_transition
+
+	if ( WEATHER_IN_TRANSITION )
+	{
+		//weather was in transition when we called this
+		//snap to new weather
+		//dbg weather_start_transition - was in weather transition, forcing WEATHER_TYPE
+		callevent weather_force_change WEATHER_TYPE
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	if ( TOD_IN_TRANSITION )
+	{
+		//TOD was in transition when we called this
+		//snap to new weather
+		//dbg weather_start_transition - was in TOD transition, forcing WEATHER_TYPE
+		callevent weather_force_change WEATHER_TYPE
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	if !WEATHER_IN_TRANSITION
+
+	setvard WEATHER_IN_TRANSITION 1
+
+	//these weather types need to fade into new ones
+	if ( WEATHER_TYPE equals clear )
+	{
+		setvard DEST_WEATHER_FOG_COLOR (0,0,0)
+		setvard DEST_WEATHER_FOG_DENSITY 0
+		setvard DEST_WEATHER_FOG_START 0
+		setvard DEST_WEATHER_FOG_END 10000
+		setvard DEST_WEATHER_SNOW_DROP_RATE 0
+		setvard DEST_WEATHER_RAIN_DROP_RATE 0
+		setvard DEST_WEATHER_RAIN_VOL 0
+		setvard DEST_WEATHER_TINT (0,0,0,0) 
+	}
+
+	if ( WEATHER_TYPE contains fog )
+	{
+		setvard DEST_WEATHER_RAIN_VOL 0
+	}
+
+	if ( WEATHER_TYPE equals rain )
+	{
+		playsound WEATHER_CHANNEL 6 SOUND_RAIN_START
+		setvard DEST_WEATHER_FOG_COLOR WEATHER_RAIN_FOG_COLOR
+		setvard DEST_WEATHER_FOG_DENSITY WEATHER_RAIN_FOG_DENSITY
+		setvard DEST_WEATHER_FOG_START WEATHER_RAIN_FOG_START
+		setvard DEST_WEATHER_FOG_END WEATHER_RAIN_FOG_END
+		setvard DEST_WEATHER_SNOW_DROP_RATE 0
+		setvard DEST_WEATHER_RAIN_DROP_RATE WEATHER_RAIN_DROP_MAXRATE
+		setvard DEST_WEATHER_RAIN_VOL WEATHER_RAIN_MAXVOL
+		setvard WEATHER_RAIN_ZVELOCITY $randf(-500,-200)
+		local DEST_FOG_ON 1
+		if ( TOD_STATE equals day ) setvard DEST_WEATHER_TINT WEATHER_RAIN_TINT_DAY
+		if ( TOD_STATE equals dusk ) setvard DEST_WEATHER_TINT WEATHER_RAIN_TINT_DUSK
+		if ( TOD_STATE equals night ) setvard DEST_WEATHER_TINT WEATHER_RAIN_TINT_NIGHT
+		if !WEATHER_LOOP_ON
+		callevent weather_loop_start
+	}
+
+	if ( WEATHER_TYPE equals rain_storm )
+	{
+		playsound WEATHER_CHANNEL 10 SOUND_RAIN_START
+		setvard DEST_WEATHER_FOG_COLOR WEATHER_RAIN_FOG_COLOR
+		setvard DEST_WEATHER_FOG_DENSITY WEATHER_RAIN_FOG_DENSITY
+		setvard DEST_WEATHER_FOG_START WEATHER_RAIN_FOG_START
+		setvard DEST_WEATHER_FOG_END WEATHER_RAIN_FOG_END
+		setvard DEST_WEATHER_SNOW_DROP_RATE 0
+		setvard DEST_WEATHER_RAIN_DROP_RATE WEATHER_STORM_DROP_MAXRATE
+		setvard DEST_WEATHER_RAIN_VOL WEATHER_STORM_MAXVOL
+		setvard WEATHER_RAIN_ZVELOCITY $randf(-1000,-900)
+		setvard WEATHER_LIGHTNING_ON 1
+		local DEST_FOG_ON 1
+		if ( TOD_STATE equals day ) setvard DEST_WEATHER_TINT WEATHER_RAIN_TINT_DAY
+		if ( TOD_STATE equals dusk ) setvard DEST_WEATHER_TINT WEATHER_RAIN_TINT_DUSK
+		if ( TOD_STATE equals night ) setvard DEST_WEATHER_TINT WEATHER_RAIN_TINT_NIGHT
+		if !WEATHER_LOOP_ON
+		callevent weather_loop_start
+	}
+
+	if ( WEATHER_TYPE equals snow )
+	{
+		setvard DEST_WEATHER_FOG_COLOR WEATHER_SNOW_FOG_COLOR
+
+		if ( game.cvar.ms_bloom_level > 0 )
+		{
+			//dbg Bloom fog adjust
+			setvard WEATHER_SNOW_FOG_DENSITY 0.1
+			setvard WEATHER_SNOW_FOG_START 512
+		}
+		else
+		{
+			setvard WEATHER_SNOW_FOG_DENSITY 0.4
+			setvard WEATHER_SNOW_FOG_START 64
+		}
+		setvard DEST_WEATHER_FOG_DENSITY WEATHER_SNOW_FOG_DENSITY
+
+		setvard DEST_WEATHER_FOG_START WEATHER_SNOW_FOG_START
+		setvard DEST_WEATHER_FOG_END WEATHER_SNOW_FOG_END
+		setvard DEST_WEATHER_SNOW_DROP_RATE WEATHER_SNOW_DROP_RATE
+		setvard DEST_WEATHER_RAIN_DROP_RATE 0
+		setvard DEST_WEATHER_RAIN_VOL 0
+		setvard DEST_WEATHER_TINT WEATHER_SNOW_TINT
+		setvard WEATHER_SNOW_ON 1
+		setvard WEATHER_LIGHTNING_ON 0
+		local DEST_FOG_ON 1
+		if !WEATHER_LOOP_ON
+		callevent weather_loop_start
+	}
+
+	if ( WEATHER_RAIN_VOL == 0 )
+	{
+		if DEST_WEATHER_RAIN_VOL > 0
+		playsound WEATHER_CHANNEL 0.001 SOUND_RAIN
+		setvard WEATHER_RAIN_ON 1
+	}
+
+	if ( DEST_FOG_ON )
+	{
+		if !WEATHER_FOG_ON
+		setenv fog.enabled	1
+		setenv fog.color	0
+		setenv fog.density	0
+		setenv fog.start	0
+		setenv fog.end		10000
+		setenv fog.type		linear
+		setvard WEATHER_FOG_ON 1
+	}
+
+	//these will change dynamically during transition
+	setvard CUR_WEATHER_SNOW_DROP_RATE WEATHER_SNOW_DROP_RATE
+	setvard CUR_WEATHER_RAIN_DROP_RATE WEATHER_RAIN_DROP_RATE
+	setvard CUR_WEATHER_RAIN_VOL WEATHER_RAIN_VOL
+
+	setvard WEATHER_SPIN_RATIO 0
+	callevent weather_transition_loop
+}
+
+{ weather_transition_loop
+
+	//dbg weather_transition_loop WEATHER_SPIN_RATIO
+
+	if WEATHER_IN_TRANSITION
+	add WEATHER_SPIN_RATIO 0.1
+	if ( WEATHER_SPIN_RATIO == 1.0 )
+	{
+		callevent weather_finalize WEATHER_TYPE
+		local EXIT_SUB 1
+	}
+	else
+	{
+		callevent 0.1 weather_transition_loop
+	}
+	if !EXIT_SUB
+
+	local W_RATIO WEATHER_SPIN_RATIO //just to shorten lines
+
+	if ( WEATHER_TINT isnot DEST_WEATHER_TINT )
+	{
+		//old tint
+		local C_R $vec.x(WEATHER_TINT)
+		local C_G $vec.z(WEATHER_TINT)
+		local C_B $vec.y(WEATHER_TINT)
+
+		//dest tint
+		local D_R $vec.x(DEST_WEATHER_TINT)
+		local D_G $vec.z(DEST_WEATHER_TINT)
+		local D_B $vec.y(DEST_WEATHER_TINT)
+
+		//transition ratio tint
+		local T_R $ratio(W_RATIO,C_R,D_R)
+		local T_G $ratio(W_RATIO,C_G,D_G)
+		local T_B $ratio(W_RATIO,C_B,D_B)
+
+		setenv screen.tint $vec(T_R,T_G,T_B)
+	}
+
+	if ( WEATHER_RAIN_ON )
+	{
+		if ( DEST_WEATHER_RAIN_DROP_RATE isnot CUR_WEATHER_RAIN_DROP_RATE )
+		{
+			setvard WEATHER_RAIN_DROP_RATE $ratio(W_RATIO,CUR_WEATHER_RAIN_DROP_RATE,DEST_WEATHER_RAIN_DROP_RATE)
+		}
+	}
+
+	if ( WEATHER_SNOW_ON )
+	{
+		if ( DEST_WEATHER_SNOW_DROP_RATE isnot CUR_WEATHER_SNOW_DROP_RATE )
+		{
+			setvard WEATHER_SNOW_DROP_RATE $ratio(W_RATIO,CUR_WEATHER_SNOW_DROP_RATE,DEST_WEATHER_SNOW_DROP_RATE)
+		}
+	}
+
+	if ( DEST_WEATHER_RAIN_VOL > 0 )
+	{
+		//dbg spin_rain_sound $ratio(W_RATIO,WEATHER_RAIN_VOL,DEST_WEATHER_RAIN_VOL)
+	  	sound.setvolume WEATHER_CHANNEL SOUND_RAIN $ratio(W_RATIO,WEATHER_RAIN_VOL,DEST_WEATHER_RAIN_VOL)
+	}
+
+	if WEATHER_FOG_ON
+
+	if ( WEATHER_FOG_COLOR isnot DEST_WEATHER_FOG_COLOR )
+	{
+		//old tint
+		local C_R $vec.x(WEATHER_FOG_COLOR)
+		local C_G $vec.z(WEATHER_FOG_COLOR)
+		local C_B $vec.y(WEATHER_FOG_COLOR)
+
+		//dest tint
+		local D_R $vec.x(DEST_WEATHER_FOG_COLOR)
+		local D_G $vec.z(DEST_WEATHER_FOG_COLOR)
+		local D_B $vec.y(DEST_WEATHER_FOG_COLOR)
+
+		//transition ratio tint
+		local T_R $ratio(W_RATIO,C_R,D_R)
+		local T_G $ratio(W_RATIO,C_G,D_G)
+		local T_B $ratio(W_RATIO,C_B,D_B)
+
+		setenv fog.color $vec(T_R,T_G,T_B)
+	}
+	
+	if ( WEATHER_FOG_DENSITY isnot DEST_WEATHER_FOG_DENSITY ) setenv fog.density $ratio(W_RATIO,WEATHER_FOG_DENSITY,DEST_WEATHER_FOG_DENSITY)
+	if ( WEATHER_FOG_START isnot DEST_WEATHER_FOG_START ) setenv fog.start $ratio(W_RATIO,WEATHER_FOG_START,DEST_WEATHER_FOG_START)
+	if ( WEATHER_FOG_END isnot DEST_WEATHER_FOG_END ) setenv fog.end $ratio(W_RATIO,WEATHER_FOG_END,DEST_WEATHER_FOG_END)
+}
+
+{ weather_finalize //<type>
+
+	setvard WEATHER_IN_TRANSITION 0
+
+	if ( PARAM1 isnot WEATHER_TYPE ) setvard WEATHER_TYPE PARAM1
+
+	//dbg weather_finalize WEATHER_TYPE
+
+	if ( WEATHER_TYPE equals clear )
+	{
+		//dbg clear_sound
+	   	//playsound WEATHER_CHANNEL 0.001 SOUND_RAIN
+	   	//sound.setvolume WEATHER_CHANNEL SOUND_RAIN 0.001
+		callevent weather_clear
+	}
+
+	if ( WEATHER_TYPE equals rain )
+	{
+		setvard WEATHER_FOG_COLOR WEATHER_RAIN_FOG_COLOR
+		setvard WEATHER_FOG_DENSITY WEATHER_RAIN_FOG_DENSITY
+		setvard WEATHER_FOG_START WEATHER_RAIN_FOG_START
+		setvard WEATHER_FOG_END WEATHER_RAIN_FOG_END
+		setvard WEATHER_SNOW_DROP_RATE 0
+		setvard WEATHER_RAIN_DROP_RATE WEATHER_RAIN_DROP_MAXRATE
+		setvard WEATHER_RAIN_VOL WEATHER_RAIN_MAXVOL
+		setvard WEATHER_FOG_ON 1
+		setvard WEATHER_FOG_UNDERGROUND 0
+		setvard WEATHER_TINT_ON 1
+		setvard WEATHER_TINT_UNDERGROUND 0
+		setvard WEATHER_WIND_STRENGTH 0
+		setvard WEATHER_RAIN_ZVELOCITY $randf(-500,-200)
+
+		setvard WEATHER_CURRENT_AMB_VOL 6
+	   	playsound WEATHER_CHANNEL WEATHER_RAIN_MAXVOL SOUND_RAIN
+	   	sound.setvolume WEATHER_CHANNEL SOUND_RAIN WEATHER_RAIN_MAXVOL
+
+		setvard WEATHER_LIGHTNING_ON 0
+		setvard WEATHER_SNOW_ON 0
+		setvard WEATHER_RAIN_ON 1
+		
+		if ( TOD_STATE equals day ) setvard WEATHER_TINT WEATHER_RAIN_TINT_DAY
+		if ( TOD_STATE equals dusk ) setvard WEATHER_TINT WEATHER_RAIN_TINT_DUSK
+		if ( TOD_STATE equals night ) setvard WEATHER_TINT WEATHER_RAIN_TINT_NIGHT
+
+		callevent weather_loop_start
+	}
+
+	if ( WEATHER_TYPE equals rain_storm )
+	{
+		setvard WEATHER_FOG_COLOR WEATHER_RAIN_FOG_COLOR
+		setvard WEATHER_FOG_DENSITY WEATHER_RAIN_FOG_DENSITY
+		setvard WEATHER_FOG_START WEATHER_RAIN_FOG_START
+		setvard WEATHER_FOG_END WEATHER_RAIN_FOG_END
+		setvard WEATHER_SNOW_DROP_RATE 0
+		setvard WEATHER_RAIN_DROP_RATE WEATHER_STORM_DROP_MAXRATE
+		setvard WEATHER_RAIN_VOL WEATHER_RAIN_MAXVOL
+		setvard WEATHER_FOG_ON 1
+		setvard WEATHER_FOG_UNDERGROUND 0
+		setvard WEATHER_TINT_ON 1
+		setvard WEATHER_TINT_UNDERGROUND 0
+		setvard WEATHER_WIND_STRENGTH $randf(0,200)
+		setvard WEATHER_RAIN_ZVELOCITY $randf(-1000,-900)
+
+
+		setvard WEATHER_CURRENT_AMB_VOL 10
+	   	playsound WEATHER_CHANNEL WEATHER_STORM_MAXVOL SOUND_RAIN
+	   	sound.setvolume WEATHER_CHANNEL SOUND_RAIN WEATHER_STORM_MAXVOL
+
+		setvard WEATHER_LIGHTNING_ON 1
+		setvard WEATHER_SNOW_ON 0
+		setvard WEATHER_RAIN_ON 1
+		
+		if ( TOD_STATE equals day ) setvard WEATHER_TINT WEATHER_RAIN_TINT_DAY
+		if ( TOD_STATE equals dusk ) setvard WEATHER_TINT WEATHER_RAIN_TINT_DUSK
+		if ( TOD_STATE equals night ) setvard WEATHER_TINT WEATHER_RAIN_TINT_NIGHT
+
+		callevent weather_loop_start
+	}
+
+	if ( WEATHER_TYPE equals snow )
+	{
+		setvard WEATHER_FOG_COLOR WEATHER_SNOW_FOG_COLOR
+		setvard WEATHER_FOG_DENSITY WEATHER_SNOW_FOG_DENSITY
+		setvard WEATHER_FOG_START WEATHER_SNOW_FOG_START
+		setvard WEATHER_FOG_END WEATHER_SNOW_FOG_END
+		setvard WEATHER_SNOW_DROP_RATE 5
+		setvard WEATHER_RAIN_DROP_RATE 0
+		setvard WEATHER_RAIN_VOL 0
+		setvard WEATHER_FOG_ON 1
+		setvard WEATHER_FOG_UNDERGROUND 0
+		setvard WEATHER_TINT_ON 0
+		setvard WEATHER_TINT (0,0,0,0)
+		setvard WEATHER_TINT_UNDERGROUND 0
+
+		setvard WEATHER_CURRENT_AMB_VOL 10
+		setvard WEATHER_SNOW_NEXT_SOUND game.time
+		add WEATHER_SNOW_NEXT_SOUND FREQ_WEATHER_SNOW_SOUND
+
+		setvard WEATHER_LIGHTNING_ON 0
+		setvard WEATHER_SNOW_ON 1
+		setvard WEATHER_RAIN_ON 0
+		callevent weather_loop_start
+
+		local WEATHER_CYCLES 1
+	}
+
+	if ( WEATHER_TYPE contains fog )
+	{
+		setvard WEATHER_FOG_ON 1
+		setvard WEATHER_FOG_UNDERGROUND 1
+		setvard WEATHER_TINT_ON 0
+		setvard WEATHER_TINT_UNDERGROUND 0
+		setvard WEATHER_FOG_ON 1
+
+		setvard WEATHER_LIGHTNING_ON 0
+		setvard WEATHER_SNOW_ON 0
+		setvard WEATHER_RAIN_ON 0
+
+		setvard WEATHER_LOOP_ON 0
+
+		//playsound WEATHER_CHANNEL 0 SOUND_RAIN
+	   	//sound.setvolume WEATHER_CHANNEL SOUND_RAIN 0
+
+		callevent weather_find_dest_fog
+
+		local DID_FOG_SETUP 1
+		callevent weather_set_fog DEST_WEATHER_FOG_COLOR DEST_WEATHER_FOG_DENSITY DEST_WEATHER_FOG_START DEST_WEATHER_FOG_END WEATHER_FOG_UNDERGROUND
+	}
+
+	if ( WEATHER_FOG_ON )
+	{
+		if !DID_FOG_SETUP
+		callevent weather_set_fog WEATHER_FOG_COLOR WEATHER_FOG_DENSITY WEATHER_FOG_START WEATHER_FOG_END WEATHER_FOG_UNDERGROUND
+	}
+
+	setenv screen.tint WEATHER_TINT
+}
+
+
+{ weather_loop_start
+	if !WEATHER_LOOP_ON
+	setvard WEATHER_LOOP_ON 1
+	//dbg weather_loop_start
+	callevent weather_loop
+}
+
+{ weather_loop
+	//handles perciptation, lightning, char breath
+	if WEATHER_LOOP_ON
+	callevent 0.1 weather_loop
+
+	//dbg weather_loop WEATHER_RAIN_ON WEATHER_RAIN_DROP_RATE
+
+	if ( WEATHER_RAIN_ON )
+	{
+		if !WEATHER_PLAYER_UNDERGROUND
+		calleventloop $int(WEATHER_RAIN_DROP_RATE) weather_make_rain
+
+		if ( game.time > NEXT_RAIN_SOUND )
+		{
+			//dbg rain_sound WEATHER_CURRENT_AMB_VOL
+			setvard NEXT_RAIN_SOUND game.time
+			add NEXT_RAIN_SOUND FREQ_WEATHER_RAIN_SOUND
+			playsound WEATHER_CHANNEL WEATHER_CURRENT_AMB_VOL SOUND_RAIN
+		}
+	}
+
+	if ( WEATHER_SNOW_ON )
+	{
+		if !WEATHER_PLAYER_UNDERGROUND
+		calleventloop WEATHER_SNOW_RATE weather_make_snow
+
+		if ( game.time > NEXT_SNOW_SOUND )
+		{
+			//dbg snow_sound
+			setvard NEXT_SNOW_SOUND game.time
+			add NEXT_SNOW_SOUND FREQ_WEATHER_SNOW_SOUND
+			playsound WEATHER_CHANNEL const.snd.maxvol SOUND_SNOW
+		}
+	}
+}
+
+{
+repeatdelay 1.0
+
+	if ( !WEATHER_FOG_UNDERGROUND )
+	{
+		if WEATHER_FOG_ON
+		callevent weather_check_sky
+		local DID_SKY_CHECK 1
+		//todo: make this fade in and out
+		if ( WEATHER_PLAYER_UNDERGROUND )
+		{
+			setenv fog.enabled 0
+		}
+		else
+		{
+			setenv fog.enabled 1
+		}
+	}
+
+
+	if ( !WEATHER_TINT_UNDERGROUND )
+	{
+		if WEATHER_TINT_ON
+		if ( !DID_SKY_CHECK ) callevent weather_check_sky
+		//todo: make this fade in and out
+		if ( WEATHER_PLAYER_UNDERGROUND )
+		{
+			setenv screen.tint (0,0,0,0)
+		}
+		else
+		{
+			setenv screen.tint WEATHER_TINT
+		}
+	}
+}
+
+//This is checking every ent on the map every frame, so let's skip this
+//{ game_render	//1: Index of entity being rendered  |  2: "1" == Rendering In Mirror
+//
+//	if WEATHER_SNOW_ON
+//
+//	//copypasta
+//
+//	if $getcl(PARAM1,isplayer)
+//	
+//	if !$rand(0,60)
+//
+//	local l.pos $getcl(PARAM1,origin)
+//	vectoradd l.pos $relpos($getcl(PARAM1,angles),$vec(0,8,32))
+//	
+//	if ( $get_local_prop(PARAM1,gender) equals female ) vectoradd l.pos z -16
+//
+//	cleffect tempent sprite WEATHER_SPRITE_BREATH l.pos weather_snow_breath
+//
+//}
+
+{ weather_make_rain
+	local DROP_POS $getcl(game.localplayer.index,origin)
+	local DROP_X_ADJ $randf($neg(WEATHER_RAIN_RADIUS),WEATHER_RAIN_RADIUS))
+	local DROP_Y_ADJ $randf($neg(WEATHER_RAIN_RADIUS),WEATHER_RAIN_RADIUS))
+	vectoradd DROP_POS x DROP_X_ADJ
+	vectoradd DROP_POS y DROP_Y_ADJ
+	vectorset DROP_POS z $get_sky_height(DROP_POS)
+	//dbg weather_make_rain DROP_POS $get_under_sky(DROP_POS)
+	if $get_under_sky(DROP_POS)
+	cleffect tempent sprite WEATHER_SPRITE_RAIN DROP_POS WEATHER_RAIN_EVENT none weather_drop_splash
+}
+
+{ weather_make_snow
+	local DROP_POS $getcl(game.localplayer.index,origin)
+	local DROP_X_ADJ $randf($neg(WEATHER_SNOW_RADIUS),WEATHER_SNOW_RADIUS))
+	local DROP_Y_ADJ $randf($neg(WEATHER_SNOW_RADIUS),WEATHER_SNOW_RADIUS))
+	vectoradd DROP_POS x DROP_X_ADJ
+	vectoradd DROP_POS y DROP_Y_ADJ
+	vectorset DROP_POS z $get_sky_height(DROP_POS)
+	//dbg weather_make_rain DROP_POS $get_under_sky(DROP_POS)
+	if $get_under_sky(DROP_POS)
+	cleffect tempent sprite WEATHER_SPRITE_SNOW DROP_POS weather_make_snowflake
+}
+
+//check if player is underground (and point is looking at is underground)
+{ weather_check_sky
+	local MY_ID game.localplayer.index
+	local MY_ORG $getcl(MY_ID,origin)
+
+	local PLAYER_UNDER_SKY 0
+	add PLAYER_UNDER_SKY $get_under_sky(MY_ORG) //player is under sky
+
+	local MY_ANG $getcl(MY_ID,viewangles)
+	vectoradd MY_ORG z 36
+	local TRACE_START MY_ORG
+	local TRACE_END MY_ORG
+	vectoradd TRACE_END $relpos(MY_ANG,$vec(0,100,0))
+
+	local TRACE_LINE $get_traceline(TRACE_START,TRACE_END,worldonly)
+
+	add PLAYER_UNDER_SKY $get_under_sky(TRACE_LINE) //point player is looking at is under sky
+
+	//dbg weather_check_sky PLAYER_UNDER_SKY
+
+	if ( PLAYER_UNDER_SKY == 0 )
+	{
+		add WEATHER_PLAYER_UNDERGROUND_COUNT 1
+		if ( WEATHER_PLAYER_UNDERGROUND_COUNT >= 10 )
+		{
+			setvard  WEATHER_PLAYER_UNDERGROUND 1
+			setvard WEATHER_PLAYER_UNDERGROUND_COUNT 10
+		}
+	}
+	else
+	{
+		setvard WEATHER_PLAYER_UNDERGROUND_COUNT 0
+		setvard WEATHER_PLAYER_UNDERGROUND 0
+	}
+}
+
+//setup sprites ====================
+{ weather_rain_makesprite
+
+   	cleffect tempent set_current_prop death_delay 	2
+   	cleffect tempent set_current_prop bouncefactor 	0
+   	cleffect tempent set_current_prop scale 	0.2
+   	cleffect tempent set_current_prop gravity 	$randf(1.0,1.5)
+   	cleffect tempent set_current_prop collide 	all;die
+   	cleffect tempent set_current_prop cb_hitwater	weather_drop_splash_Water
+   	cleffect tempent set_current_prop rendermode 	add
+   	cleffect tempent set_current_prop renderamt 	50
+
+	if ( WEATHER_TYPE equals rain_storm )
+	{
+		if WEATHER_WIND_STRENGTH > 0
+		local L_WIND_DIR WEATHER_WIND_DIR
+		vectormultiply L_WIND_DIR WEATHER_WIND_DIR $vec(WEATHER_WIND_STRENGTH,WEATHER_WIND_STRENGTH,0)
+		cleffect tempent set_current_prop velocity	L_WIND_DIR
+	}
+   	
+	cleffect tempent set_current_prop velocity.z WEATHER_RAIN_ZVELOCITY
+}
+
+
+{ weather_drop_splash_Water
+
+	//Splash in water
+
+   	cleffect tempent set_current_prop angles 	(90,0,0)
+   	cleffect tempent set_current_prop sprite 	WEATHER_SPRITE_RAIN_RIPPLE
+   	cleffect tempent set_current_prop maxs 		(0,0,128)
+   	cleffect tempent set_current_prop origin 	game.tempent.waterorigin
+   	cleffect tempent set_current_prop death_delay 	last_frame
+   	cleffect tempent set_current_prop framerate 	8
+   	cleffect tempent set_current_prop frames 	15
+   	cleffect tempent set_current_prop scale 	1
+   	cleffect tempent set_current_prop velocity	(0,0,0)
+   	cleffect tempent set_current_prop gravity 	0
+   	cleffect tempent set_current_prop collide 	none
+    	cleffect tempent set_current_prop rendermode 	add
+   	cleffect tempent set_current_prop renderamt 	50
+}
+
+{ weather_drop_splash
+
+	//Splash on ground
+   	cleffect tempent set_current_prop sprite 	SPRITE_SPLASH
+   	cleffect tempent set_current_prop death_delay 	0.8
+   	cleffect tempent set_current_prop framerate 	6
+   	cleffect tempent set_current_prop frames 	3
+   	cleffect tempent set_current_prop scale 	0.3
+   	cleffect tempent set_current_prop renderamt 	255
+
+	add WEATHER_RAIN_MIST 1
+	if WEATHER_RAIN_MIST > 4
+	setvard WEATHER_RAIN_MIST 0
+
+	local L_POS game.tempent.origin
+   	cleffect tempent sprite WEATHER_SPRITE_RAIN_MIST L_POS weather_create_drop_mist
+}
+
+{ weather_create_drop_mist
+
+   	//cleffect tempent set_current_prop sprite 	SPRITE_MIST
+   	cleffect tempent set_current_prop death_delay 	3
+   	cleffect tempent set_current_prop framerate 	10
+   	cleffect tempent set_current_prop frames 	12
+   	cleffect tempent set_current_prop scale 	10
+   	cleffect tempent set_current_prop gravity 	-0.00105
+  	cleffect tempent set_current_prop velocity	$vec($randf(-15,15),$randf(-15,15),0)
+   	cleffect tempent set_current_prop rendermode 	add
+   	cleffect tempent set_current_prop renderamt 	10
+}
+
+{ weather_make_snowflake
+
+   	cleffect tempent set_current_prop death_delay 	10
+   	cleffect tempent set_current_prop bouncefactor 	0
+   	cleffect tempent set_current_prop scale 	$randf(0.1,0.2)
+   	cleffect tempent set_current_prop velocity.z	-100
+   	cleffect tempent set_current_prop gravity 	$randf(0.1,0.3)
+   	cleffect tempent set_current_prop collide 	all;die
+}
+
+{ weather_snow_breath
+
+	cleffect tempent set_current_prop death_delay 	last_frame
+	cleffect tempent set_current_prop framerate	30
+	cleffect tempent set_current_prop frames	30
+	cleffect tempent set_current_prop scale 	0.1
+	cleffect tempent set_current_prop gravity 	-0.01
+	cleffect tempent set_current_prop collide 	none
+	cleffect tempent set_current_prop rendermode 	add
+	cleffect tempent set_current_prop renderamt 	30
+}

@@ -1,0 +1,212 @@
+#scope client
+
+{
+	const PUKE_SPRITE bloodspray.spr
+	const PUKE_SPRITE_FRAMES 10
+	precache PUKE_SPRITE
+}
+
+{ client_activate //<owner> BREATH_TYPE ERRUPT_TYPE DOING_ERRUPT DOING_BREATH
+
+	setvard FX_OWNER PARAM1
+	setvard BREATH_TYPE PARAM2
+	setvard ERRUPT_TYPE PARAM3
+	setvard DOING_ERRUPT PARAM4
+	setvard DOING_BREATH PARAM5
+	setvard FX_ACTIVE 1
+
+	if ( DOING_ERRUPT ) callevent errupt_on ERRUPT_TYPE
+	if ( DOING_BREATH ) callevent breath_on BREATH_TYPE
+
+	callevent 30.0 end_fx
+}
+
+{ end_fx
+	setvard FX_ACTIVE 0
+	callevent 2.0 remove_fx
+}
+
+{ remove_fx
+	removescript
+}
+
+{ errupt_on //<type>
+	if FX_ACTIVE
+	setvard ERRUPT_TYPE PARAM1
+
+	setvard ERRUPT_ACTIVE 1
+	setvard ERRUPT_CUR_START_ANG 0
+	callevent errupt_loop
+}
+
+{ errupt_off
+	setvard ERRUPT_ACTIVE 0
+}
+
+{ errupt_loop
+	if FX_ACTIVE
+	if ERRUPT_ACTIVE
+	callevent 0.2 errupt_loop
+
+	if ( ERRUPT_TYPE equals poison )
+	{
+		setvard ERRUPT_CUR_ANG ERRUPT_CUR_START_ANG
+		calleventloop 9 errupt_setup_puke
+	}
+	else
+	{
+		setvard ERRUPT_CUR_ANG ERRUPT_CUR_START_ANG
+		calleventloop 9 errupt_setup_fire
+	}
+
+	add ERRUPT_CUR_START_ANG 1
+	if ( ERRUPT_CUR_START_ANG > 40 ) setvard ERRUPT_CUR_START_ANG 0
+}
+
+{ errupt_setup_puke
+	cleffect tempent sprite PUKE_SPRITE $getcl(FX_OWNER,attachment0) setup_puke update_puke
+	add ERRUPT_CUR_ANG 40
+	if ( ERRUPT_CUR_ANG > 359 ) subtract ERRUPT_CUR_ANG 359
+}
+
+{ errupt_setup_fire
+	cleffect tempent sprite xfireball3.spr $getcl(FX_OWNER,attachment0) setup_fire
+	add ERRUPT_CUR_ANG 40
+	if ( ERRUPT_CUR_ANG > 359 ) subtract ERRUPT_CUR_ANG 359
+}
+
+
+{ update_puke
+	local CUR_SIZE game.tempent.fuser1
+	if CUR_SIZE < 4.0
+	add CUR_SIZE 0.05
+	cleffect tempent set_current_prop fuser1 CUR_SIZE
+	cleffect tempent set_current_prop scale CUR_SIZE
+}
+
+{ setup_puke
+
+	cleffect tempent set_current_prop death_delay 0.5
+	cleffect tempent set_current_prop fadeout lifetime
+	cleffect tempent set_current_prop framerate 10
+	cleffect tempent set_current_prop frames PUKE_SPRITE_FRAMES
+	cleffect tempent set_current_prop bouncefactor 0
+	cleffect tempent set_current_prop scale $randf(1.5,2.0)
+	cleffect tempent set_current_prop rendermode texture
+	cleffect tempent set_current_prop renderamt 200
+	cleffect tempent set_current_prop rendercolor (0,255,0)
+	cleffect tempent set_current_prop gravity $randf(3.0,5.0)
+	cleffect tempent set_current_prop collide world;die
+	cleffect tempent set_current_prop fuser1 0.1
+	
+
+	local CLOUD_VEL $relvel($vec(0,ERRUPT_CUR_ANG,0),$vec(0,400,300))
+	cleffect tempent set_current_prop velocity CLOUD_VEL
+}
+
+{ setup_fire
+
+	cleffect tempent set_current_prop death_delay last_frame
+	cleffect tempent set_current_prop framerate 30
+	cleffect tempent set_current_prop frames 19
+	cleffect tempent set_current_prop bouncefactor 0
+	cleffect tempent set_current_prop scale $randf(0.5,1.25)
+	cleffect tempent set_current_prop rendercolor (128,96,64)
+	cleffect tempent set_current_prop gravity $randf(3.0,4.0)
+	cleffect tempent set_current_prop collide world;die
+	cleffect tempent set_current_prop fuser1 0.1
+	
+
+	local CLOUD_VEL $relvel($vec(0,ERRUPT_CUR_ANG,0),$vec(0,400,300))
+	cleffect tempent set_current_prop velocity CLOUD_VEL
+}
+
+{ breath_on //<type>
+	if FX_ACTIVE
+	setvard BREATH_TYPE PARAM1
+
+	setvard BREATH_ACTIVE 1
+	callevent breath_loop
+}
+
+{ breath_off
+	setvard BREATH_ACTIVE 0
+}
+
+{ breath_loop
+	if FX_ACTIVE
+	if BREATH_ACTIVE
+	callevent 0.2 breath_loop
+	callevent make_cloud $getcl(FX_OWNER,attachment1) $getcl(FX_OWNER,angles.yaw)
+}
+
+{ make_cloud //<origin> <angles>
+
+	//dbg make_cloud PARAM1 PARAM2
+
+	local CLOUD_ORG PARAM1
+	setvard CLOUD_ANG PARAM2
+	if ( BREATH_TYPE equals poison )
+	{
+		cleffect tempent sprite poison_cloud.spr CLOUD_ORG setup_cloud update_cloud
+		cleffect tempent sprite poison_cloud.spr CLOUD_ORG setup_cloud update_cloud
+		cleffect tempent sprite poison_cloud.spr CLOUD_ORG setup_cloud update_cloud
+	}
+	else
+	{
+		cleffect tempent sprite explode1.spr CLOUD_ORG setup_fire_cloud update_cloud
+		cleffect tempent sprite explode1.spr CLOUD_ORG setup_fire_cloud update_cloud
+		cleffect tempent sprite explode1.spr CLOUD_ORG setup_fire_cloud update_cloud
+	}
+}
+
+{ update_cloud
+	local CUR_SCALE game.tempent.fuser1
+	if ( CUR_SCALE < 1.5 )
+	{
+		add CUR_SCALE 0.05
+		cleffect tempent set_current_prop fuser1 CUR_SCALE
+		cleffect tempent set_current_prop scale CUR_SCALE 
+	}
+}
+
+{ setup_cloud
+	cleffect tempent set_current_prop death_delay 1.0
+	cleffect tempent set_current_prop framerate 10
+	cleffect tempent set_current_prop frames 17
+	cleffect tempent set_current_prop bouncefactor 0
+	cleffect tempent set_current_prop scale 0.1
+	cleffect tempent set_current_prop rendermode add
+	cleffect tempent set_current_prop renderamt $rand(100,200)
+	cleffect tempent set_current_prop rendercolor (64,128,64)
+	cleffect tempent set_current_prop gravity .005
+	cleffect tempent set_current_prop collide none
+	cleffect tempent set_current_prop fuser1 0.1
+
+	local RND_RL $randf(-10,10)
+	local RND_UD $randf(-30,30)
+	local RND_FD $randf(300,400)
+	local CLOUD_VEL $relvel($vec(0,CLOUD_ANG,0),$vec(RND_RL,RND_FD,RND_UD))
+	cleffect tempent set_current_prop velocity CLOUD_VEL
+}
+
+{ setup_fire_cloud
+
+	cleffect tempent set_current_prop death_delay 1.0
+	cleffect tempent set_current_prop framerate 10
+	cleffect tempent set_current_prop frames 9
+	cleffect tempent set_current_prop bouncefactor 0
+	cleffect tempent set_current_prop scale  $randf(0.5,1.0)
+	cleffect tempent set_current_prop rendermode add
+	cleffect tempent set_current_prop renderamt 200
+	cleffect tempent set_current_prop rendercolor (0,0,0)
+	if ( $rand(1,3) == 1 ) cleffect tempent set_current_prop rendercolor (255,255,0)
+	cleffect tempent set_current_prop gravity .005
+	cleffect tempent set_current_prop collide none
+	cleffect tempent set_current_prop fuser1 0.1
+
+	local RND_RL $randf(-20,20)
+	local RND_UD $randf(-20,20)
+	local CLOUD_VEL $relvel($vec(0,CLOUD_ANG,0),$vec(RND_RL,$randf(300,400),RND_UD))
+	cleffect tempent set_current_prop velocity CLOUD_VEL
+}

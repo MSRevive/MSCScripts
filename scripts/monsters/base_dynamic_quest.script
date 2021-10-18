@@ -1,0 +1,82 @@
+//Dynamic Quest System (NPC end)
+//req:
+//const UNIQUE_ID - a name that identifies the quest giving NPC
+//const NPC_TYPE 'civlian' or 'guard' - guards offer more military oriented goals
+//also requires monsters/base_chat
+//
+//Quest Format:
+//token#:	Data
+//0			unique_id
+//1			bsp quest is on
+//2			quest_description_code (used by game master to generate quest)
+//3			type:retrieve|slay|gather
+//4			item name to retrieve gather, or monster name to slay
+//5			#items/slays required (subtracts with each sucsess)
+//6			reward type: gold|xp|item
+//7			reward data (amt|item_name)
+
+//notes: player will need a self-menu option to remove quests (deletes quest items)
+
+{
+	const UNIQUE_ID npc_id_here
+	const NPC_TYPE civilian	
+}
+
+{ game_spawn
+	setvard QUEST_MENU unset
+}
+
+{ game_menu_getoptions
+
+	if ( QUEST_MENU equals unset )
+	{
+		//check if player is doing a quest for me
+		local QUEST_TOKENS $get_quest_data(PARAM1,q1)
+
+		if ( QUEST_TOKENS isnot 0 )
+		{
+			local IS_QUESTING_FOR $get_token(QUEST_TOKENS,0)		
+			if ( IS_QUESTING_FOR equals UNIQUE_ID )
+			{
+				local reg.mitem.title 	"About that quest..."
+				local reg.mitem.type 	callback
+				local reg.mitem.callback quest_queary
+				menuitem.register
+			}
+			else
+			{
+				local reg.mitem.title 	"Ask about Quests"
+				local reg.mitem.type 	callback
+				local reg.mitem.callback quest_you_already_have
+				local reg.mitem.data IS_QUESTING_FOR
+				menuitem.register
+			}
+		}
+		else
+		{
+			if ( !QUEST_MADE )
+			{
+				local reg.mitem.title 	"Ask about Quests"
+				local reg.mitem.type 	callback
+				local reg.mitem.callback quest_generate_new
+				local reg.mitem.data IS_QUESTING_FOR
+				menuitem.register
+			}
+			else
+			{
+				local reg.mitem.title 	"Ask about Quests"
+				local reg.mitem.type 	callback
+				local reg.mitem.callback quest_display
+				local reg.mitem.data IS_QUESTING_FOR
+				menuitem.register
+			}
+		}	
+	}
+}
+
+{ quest_you_already_have
+	saytext You are already doing a quest for PARAM2
+	saytext You should help him out first.
+	callevent bchat_mouth_move
+	callevent convo_anim
+}

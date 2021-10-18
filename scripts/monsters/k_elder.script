@@ -1,0 +1,605 @@
+//Kharaztorant Elders
+//- Very difficult to solo due to repelling attacks, but easy to take as a team due to no retaliate
+//Red - Shoots guided fireball
+//Blue - Shoots freezing sphere (+dmg)
+//Green - Tri-shots of dizzying poison
+//Yellow - Repulse Lightning
+//Gray - Spinning knives force use of ranged attacks
+//- I didnt finish the gray one, decided to move on, may comeback later
+#scope server
+{
+	setvard CAN_RETALIATE 0
+	setvard NPC_RANGED 1
+
+	//custom
+	const ATTACK_RANGE_MELEE 50
+	const ATTACK_RANGE_PROJ 512
+	const CL_RESET_FREQ 5.0
+	const REPEL_BEAM_VEL $relvel(0,350,60)
+	const MAX_BEAM_RANGE 800
+	const PROJ_OFS (0,0,62)
+	const BEAM_IDLE_VOL 4
+	const DMG_FIRE_BOLT 80
+	const DMG_POISON_BOLT 50
+	const DOT_POISON 20
+	const DOT_FIRE 40
+	const DOT_COLD 20
+	const DOT_SHOCK 30
+	const DMG_KNIFE 75
+	const DMG_REPEL_BEAM 10
+	const ANIM_WALK_NORM walk2handed
+	const ANIM_RUN_NORM run2
+	const ANIM_IDLE_NORM idle
+	const ANIM_HOP jump
+	const ANIM_JUMP long_jump
+	const ANIM_CRAWL crawl
+	const ANIM_IDLE_CRAWL crouch_idle
+	const ANIM_ATTACK_NORM ref_shoot_knife //{ event 500 5 "attack_knife" } 
+	const ANIM_ATTACK_CRAWL crouch_shoot_knife //{ event 500 3 "attack_knife" } 
+	const ANIM_SEARCH look_idle
+	const ANIM_CAST_NORM ref_shoot_onehanded
+	const ANIM_CAST_CRAWL crouch_shoot_onehanded
+	const ANIM_DEATH1 die_simple
+	const ANIM_DEATH2 die_backwards1
+	const ANIM_DEATH3 die_backwards
+	const ANIM_DEATH4 die_forwards
+	const ANIM_DEATH5 headshot
+	const ANIM_DEATH6 die_spin
+	const ANIM_DEATH7 gutshot
+	const FREQ_IDLE $randf(5,10)
+
+	const ATTACK_HITCHANCE 80
+	const DMG_KNIFE 60
+
+	setvard PASS_FREEZE_DMG 50
+	setvard PASS_FREEZE_DUR 5.0
+
+	//base
+	setvard ANIM_WALK walk2handed
+	setvard ANIM_RUN run2
+	if ( !AM_TURRET )
+	{
+		setvard ANIM_IDLE idle
+	}
+	else
+	{
+		setvard ANIM_IDLE ref_aim_knife
+
+	}
+	setvard ANIM_ATTACK ref_shoot_knife //{ event 500 5 "attack_knife" } 
+	setvard ANIM_DEATH die_simple
+	setvard ATTACK_RANGE 100
+	setvard ATTACK_HITRANGE 170
+	setvard ATTACK_MOVERANGE 512
+	setvard DROP_GOLD 1
+	setvard DROP_GOLD_AMT 100
+	setvard NPC_GIVE_EXP 1000 //since they require teamwork
+
+	//sound
+	const SOUND_JUMP "voices/kcult_jump.wav"
+	const SOUND_SWING "weapons/swingsmall.wav"
+	const SOUND_THROW "zombie/claw_miss1.wav"
+	const SOUND_DRAW "weapons/dagger/dagger2.wav"
+	const SOUND_PARRY "weapons/dagger/daggermetal2.wav"
+	const SOUND_PAIN1 "voices/kcult_pain3.wav"
+	const SOUND_PAIN2 "voices/kcult_pain2.wav"
+	const SOUND_DEATH1 "voices/kcult_pain1.wav"
+	const SOUND_DEATH2 "voices/kcult_die1.wav"
+	const SOUND_ALERT1 "voices/kcult_ally_alert1.wav"
+	const SOUND_ALERT2 "voices/kcult_ally_alert2.wav"
+	const SOUND_IDLE "voices/human/male_oldidle2.wav"	//save for initiate
+	const SOUND_WARCRY1 "voices/kcult_alert1.wav"
+	const SOUND_WARCRY2 "voices/kcult_alert2.wav"
+	const SOUND_STRUCK1 "debris/flesh1.wav"
+	const SOUND_STRUCK2 "debris/flesh2.wav"
+
+	const SOUND_BURN "ambience/steamburst1.wav"
+	const SOUND_POISON "bullchicken/bc_bite2.wav"
+	const SOUND_FREEZE magic/frost_forward.wav
+	const SOUND_SHOCK debris/zap1.wav
+
+	//called through setvard's, so must be precached
+	precache SOUND_BURN
+	precache SOUND_POISON
+	precache SOUND_FREEZE
+
+	const SOUND_BEAM_LOOP magic/bolt_loop.wav
+	const SOUND_BEAM_ACTIVATE magic/bolt_start.wav
+	const SOUND_BEAM_SHOOT magic/bolt_end.wav
+
+	const SOUND_ZAP1 debris/beamstart14.wav
+	const SOUND_ZAP2 debris/beamstart14.wav
+	const SOUND_ZAP3 debris/zap1.wav
+
+	const SOUND_SPELL_POISON bullchicken/bc_attack3.wav
+	const SOUND_SPELL_COLD magic/frost_reverse.wav
+
+}
+
+#include monsters/base_monster_new
+
+{ game_precache
+	precachefile monsters/k_elder_cl
+}
+
+{ [shared] npc_spawn
+
+	name a|Kharaztorant Elder
+	setmodel monsters/k_alcolyte.mdl
+	setmodelbody 1 1
+	setmodelbody 2 4
+	hp $rand(2000,4000)
+	blood red
+
+	setidleanim idle
+	setmoveanim walk2handed
+
+	race demon
+	width 32
+	height 72
+	roam 1
+	hearingsensitivity 4
+
+	if game.serverside
+	callevent 0.01 setup_elder
+}
+
+{ game_dynamically_created //for testing, don't intend to summon
+	if ( PARAM1 startswith 'PARAM' ) local EXIT_SUB 1
+	if !EXIT_SUB
+	setvard OVERRIDE_TYPE PARAM1
+	dbg Overriding Type: OVERRIDE_TYPE
+}
+
+{ set_type //for params
+	setvard OVERRIDE_TYPE PARAM1
+}
+
+//for params
+{ type_dark
+	setvard OVERRIDE_TYPE 1
+}
+{ type_fire
+	setvard OVERRIDE_TYPE 2
+}
+{ type_poison
+	setvard OVERRIDE_TYPE 3
+}
+{ type_cold
+	setvard OVERRIDE_TYPE 4
+}
+{ type_lightning
+	setvard OVERRIDE_TYPE 5
+}
+
+{ game_death
+
+	if ( ELDER_TYPE equals lightning )
+	{
+		//clientevent update all CL_IDX end_effect //client side remove, 'sparimental
+		clientevent update all CL_IDX ke_end_effect
+	}
+
+	local RND_DEATH $rand(1,7)
+	if ( RND_DEATH == 1 ) setvard ANIM_DEATH ANIM_DEATH1
+	if ( RND_DEATH == 2 ) setvard ANIM_DEATH ANIM_DEATH2
+	if ( RND_DEATH == 3 ) setvard ANIM_DEATH ANIM_DEATH3
+	if ( RND_DEATH == 4 ) setvard ANIM_DEATH ANIM_DEATH4
+	if ( RND_DEATH == 5 ) setvard ANIM_DEATH ANIM_DEATH5
+	if ( RND_DEATH == 6 ) setvard ANIM_DEATH ANIM_DEATH6
+	if ( RND_DEATH == 7 ) setvard ANIM_DEATH ANIM_DEATH7
+
+	playrandomsound 0 10 SOUND_DEATH1 SOUND_DEATH2
+}
+
+{ setup_elder
+
+	if ( OVERRIDE_TYPE > 0 )
+	{
+		setvard RND_ELDER_TYPE OVERRIDE_TYPE
+	}
+	else
+	{
+		setvard RND_ELDER_TYPE $rand(2,5)
+	}
+
+	takedmg holy 0.5 //lil more evil than the acolyte
+
+	if ( RND_ELDER_TYPE == 1 )
+	{
+		setvard ELDER_TYPE dark
+		setvard WEAPON_IDX 0
+		setvard DRAW_ON_SIGHT 1
+		setvard JUMP_AWAY_CHANCE 20 //%chance monster will run away if struck in close combat
+		//this elder doesn't cast spells aside from the blades that hover about him
+		//he's also the only one still tossing knives
+		//setvard CL_IDX game.script.last_sent_id
+		setvard NEXT_CL_RESET game.time //reset the CL effect now and again in case it 'burns out'
+		add NEXT_CL_RESET 20.0
+	}
+	if ( RND_ELDER_TYPE == 2 )
+	{
+		setvard JUMP_AWAY_CHANCE 20
+		setvard DRAW_ON_SIGHT 0
+		setvard ELDER_TYPE fire
+		setvard WEAPON_IDX 1
+		setvard FREQ_SPELL 1.0
+		setvard EFFECT_SCRIPT effects/effect_burn
+		setvard EFFECT_DUR 5
+		setvard EFFECT_DMG DOT_FIRE
+		setvard SOUND_EFFECT SOUND_BURN
+	}
+	if ( RND_ELDER_TYPE == 3 )
+	{
+		setvard JUMP_AWAY_CHANCE 50
+		setvard DRAW_ON_SIGHT 0
+		setvard ELDER_TYPE poison
+		setvard WEAPON_IDX 2
+		setvard FREQ_SPELL 2.0
+		setvard EFFECT_SCRIPT effects/effect_poison
+		setvard EFFECT_DUR 10
+		setvard EFFECT_DMG DOT_POISON
+		setvard SOUND_EFFECT SOUND_POISON
+	}
+	if ( RND_ELDER_TYPE == 4 )
+	{
+		setvard JUMP_AWAY_CHANCE 30
+		setvard DRAW_ON_SIGHT 0
+		setvard ELDER_TYPE cold
+		setvard WEAPON_IDX 3
+		setvard FREQ_SPELL 5.1
+		setvard EFFECT_SCRIPT effects/effect_frostbite_dmg
+		setvard EFFECT_DUR 5
+		setvard EFFECT_DMG DOT_COLD
+		setvard SOUND_EFFECT SOUND_FREEZE
+	}
+	if ( RND_ELDER_TYPE == 5 )
+	{
+		setvard JUMP_AWAY_CHANCE 50
+		setvard ATTACK_MOVERANGE 200 //press up against wall
+		setvard DRAW_ON_SIGHT 1
+		setvard ELDER_TYPE lightning
+		setvard WEAPON_IDX 5 //4 is blank, this was added later
+		setvard EFFECT_SCRIPT effects/effect_shock_dmg
+		setvard EFFECT_DUR 5
+		setvard EFFECT_DMG DOT_SHOCK
+		clientevent persist all monsters/k_elder_cl $get(ent_me,index) lightning 0
+		setvard CL_IDX game.script.last_sent_id
+		//clientevent update all const.localplayer.scriptID ke_setup $get(ent_me,index) lightning 0 0 0
+		setvard SOUND_EFFECT SOUND_SHOCK
+	}
+
+	setvard ELDER_SKIN RND_ELDER_TYPE
+	subtract ELDER_SKIN 1
+	dbg setup_elder - skin ELDER_SKIN type ELDER_TYPE
+	setprop ent_me skin ELDER_SKIN
+}
+
+{ draw_blade
+	setvard BLADE_DRAWN 1
+	setvard AS_ATTACKING game.time
+	playanim critical ANIM_CAST_NORM
+	callevent 0.2 draw_blade2
+}
+
+{ draw_blade2
+	setmodelbody 2 WEAPON_IDX
+	if ( ELDER_TYPE equals lightning )
+	{
+		callevent 0.1 lknife_sound
+		//clientevent update all CL_IDX knife_sprite_on
+		clientevent update all CL_IDX ke_knife_sprite_on
+		setvard NEXT_CL_RESET game.time
+		add NEXT_CL_RESET 20.0
+	}
+	playsound 0 10 SOUND_DRAW
+}
+
+{ lknife_sound
+	playsound 0 10 SOUND_BEAM_ACTIVATE
+}
+
+{
+repeatdelay FREQ_IDLE
+	//dbg idle sound
+	if NPCATK_TARGET equals unset
+	setvard AS_ATTACKING game.time
+	playanim once ANIM_SEARCH
+	playsound 0 10 SOUND_IDLE
+}
+
+{ game_damaged
+
+	playsound 0 8 SOUND_STRUCK1 SOUND_STRUCK2 SOUND_STRUCK1 SOUND_STRUCK2 SOUND_PAIN1 SOUND_PAIN2
+
+	if $get(PARAM1,range) < 256
+
+	local RND_100 $rand(1,100)
+	dbg RND_100 vs JUMP_AWAY_CHANCE
+
+	if ( RND_100 < JUMP_AWAY_CHANCE )
+	{
+		if game.time > NEXT_LEAP
+		setvard NEXT_LEAP game.time
+		add NEXT_LEAP 10.0
+		dbg leap away!
+		callevent leap_away $get(PARAM1,id)
+	}
+}
+
+{ leap_away
+	callevent npcatk_suspend_ai 1.0
+	setmovedest PARAM1 1024 flee	
+	setvard AS_ATTACKING game.time
+	playsound 0 10 SOUND_JUMP
+	callevent 0.1 leap_boost
+}
+
+{ leap_boost
+	playanim critical ANIM_JUMP
+	addvelocity ent_me $relvel(0,600,75)
+}
+
+{ game_dodamage
+
+	if ( BLADE_ATTACK )
+	{
+		if ELDER_TYPE isnot dark
+		if $get(PARAM2,relationship,ent_me) equals enemy
+
+		if ( game.time > NEXT_APPLYEFFECT_SOUND )
+		{
+			setvard NEXT_APPLYEFFECT_SOUND game.time
+			add NEXT_APPLYEFFECT_SOUND EFFECT_DUR
+			playsound 0 10 SOUND_EFFECT
+		}
+		applyeffect PARAM2 EFFECT_SCRIPT EFFECT_DUR $get(ent_me,id) EFFECT_DMG
+		if ( ELDER_TYPE equals lightning )
+		{
+			local HIT_RESIST $get_takedmg(NPCATK_TARGET,lightning)
+			if $randf(0.01,1.0) < HIT_RESIST
+			addvelocity PARAM2 $relvel(0,250,120)
+		}
+	}
+	setvard BLADE_ATTACK 0
+}
+
+{ attack_knife //anim event
+	playsound 0 5 SOUND_SWING
+	setvard BLADE_ATTACK 1
+	callevent npcatk_dodamage NPCATK_TARGET ATTACK_HITRANGE DMG_KNIFE ATTACK_HITCHANCE ELDER_TYPE
+}
+
+{ game_parry
+	playanim critical ANIM_CAST_NORM
+	playsound 0 10 SOUND_PARRY
+}
+
+{ npc_aiding_ally
+
+	//dbg npc_aiding_ally $get(NPC_ALLY_TO_AID,name)
+	callexternal NPC_ALLY_TO_AID being_aided
+}
+
+{ being_aided
+	//dbg being_aided
+	if $cansee(NPCATK_TARGET)
+	playrandomsound 0 10 SOUND_ALERT1 SOUND_ALERT2
+	//dbg playing alert sound
+}
+
+{ npcatk_lost_sight
+	if !$cansee(enemy)
+	playsound 0 10 SOUND_IDLE
+	if game.time > NEXT_SEARCH
+	setvard NEXT_SEARCH game.time
+	add NEXT_SEARCH 3.0	
+	playanim once ANIM_SEARCH
+	setvard AS_ATTACKING game.time
+}
+
+{ npc_targetsighted //called every think frame a target is seen
+
+	if ( !DID_WARCRY )
+	{
+		setvard DID_WARCRY 1
+		playrandomsound 0 10 SOUND_WARCRY1 SOUND_WARCRY2
+		if ( DRAW_ON_SIGHT ) callevent 0.1 draw_blade
+	}
+}
+
+{ npcatk_hunt
+
+	if ( ELDER_TYPE equals lightning )
+	{
+		if ( NPCATK_TARGET isnot unset )
+		{
+			if ( $cansee(NPCATK_TARGET) )
+			{
+				local TARG_ORG $get(NPCATK_TARGET,origin)
+				if ( $within_cone2D(TARG_ORG,game.monster.origin,game.monster.angles,30) )
+				{
+					if ( !LIGHTNING_ON )
+					{
+						if !I_R_FROZEN
+						if $get(NPCATK_TARGET,range) < MAX_BEAM_RANGE
+						if $get(NPCATK_TARGET,range) >= ATTACK_RANGE 
+						callevent lightning_on
+						setvard TARG_RESIST $get_takedmg(NPCATK_TARGET,lightning)
+					}
+					else
+					{
+						if ( I_R_FROZEN )
+						{
+							callevent lightning_off
+							local EXIT_SUB 1
+						}
+						if !EXIT_SUB
+						if ( $get(NPCATK_TARGET,range) >= MAX_BEAM_RANGE ) callevent lightning_off
+						if ( $get(NPCATK_TARGET,range) < ATTACK_RANGE )
+						{
+							callevent lightning_off
+						}
+						else
+						{
+							setvard AS_ATTACKING game.time
+							dodamage NPCATK_TARGET direct DMG_REPEL_BEAM 100% lightning
+							if $randf(0.01,1.0) < TARG_RESIST
+							addvelocity NPCATK_TARGET REPEL_BEAM_VEL
+						}
+					}
+				}
+				else
+				{
+					//outside of view cone
+					if LIGHTNING_ON
+					callevent lightning_off
+				}
+			}
+			else
+			{
+				//cant see target
+				if LIGHTNING_ON
+				callevent lightning_off
+			}
+		}
+		if ( NPCATK_TARGET equals unset )
+		{
+			if LIGHTNING_ON
+			callevent lightning_off
+		}
+	}
+	else
+	{
+		if NPCATK_TARGET isnot unset
+		if NPC_CANSEE_TARGET
+
+		if ( ELDER_TYPE equals dark )
+		{
+			//setup or toss knife
+		}
+		if ( ELDER_TYPE equals fire )
+		{
+			if game.time > NEXT_SPELL
+			setvard NEXT_SPELL game.time
+			add NEXT_SPELL FREQ_SPELL
+			callevent do_spell
+		}
+		if ( ELDER_TYPE equals cold )
+		{
+			if ( $get(NPCATK_TARGET,scriptvar,'I_R_FROZEN') )
+			{
+				setvard ATTACK_MOVERANGE ATTACK_RANGE_MELEE
+			}
+			else
+			{
+				setvard ATTACK_MOVERANGE ATTACK_RANGE_PROJ
+			}
+
+			if game.time > NEXT_SPELL
+			setvard NEXT_SPELL game.time
+			add NEXT_SPELL FREQ_SPELL
+			callevent do_spell
+
+		}
+		if ( ELDER_TYPE equals poison )
+		{
+			if game.time > NEXT_SPELL
+			setvard NEXT_SPELL game.time
+			add NEXT_SPELL FREQ_SPELL
+			callevent do_spell
+		}
+	}
+}
+
+{ do_spell
+
+	if ( ELDER_TYPE equals fire )
+	{
+		playanim critical ANIM_CAST_NORM
+		tossprojectile NPCATK_TARGET 400 DMG_FIRE_BOLT 2 proj_fire_xolt PROJ_OFS
+	}
+	if ( ELDER_TYPE equals cold )
+	{
+		playsound 0 10 SOUND_SPELL_COLD
+		if !$get(NPCATK_TARGET,scriptvar,'I_R_FROZEN')
+		playanim critical ANIM_CAST_NORM
+		tossprojectile NPCATK_TARGET 100 0 0 proj_freezing_sphere (0,96,62)
+	}
+	if ( ELDER_TYPE equals poison )
+	{
+		playsound 0 10  SOUND_SPELL_POISON
+		playanim critical ANIM_CAST_NORM
+		tossprojectile NPCATK_TARGET 200 DMG_POISON_BOLT 10 proj_poison_spit2 PROJ_OFS
+		tossprojectile NPCATK_TARGET 200 DMG_POISON_BOLT 10 proj_poison_spit2 PROJ_OFS
+		tossprojectile NPCATK_TARGET 200 DMG_POISON_BOLT 10 proj_poison_spit2 PROJ_OFS
+	}
+}
+
+{ npc_selectattack //called every think cycle target is in melee range
+	if ( !BLADE_DRAWN )
+	{
+		callevent draw_blade
+	}
+
+	if !$get(NPCATK_TARGET,scriptvar,'I_R_FROZEN')
+
+//	if !FLEE_CHECK_DELAY
+//	setvard FLEE_CHECK_DELAY 1
+//	callevent 1.0 reset_flee_check_delay
+//	if $rand(1,100) < JUMP_AWAY_CHANCE
+//	callevent leap_away NPCATK_TARGET
+}
+
+{ reset_flee_check_delay
+	setvard FLEE_CHECK_DELAY 0
+}
+
+
+{ lightning_on
+	setvard LIGHTNING_ON 1
+
+	local TARG_HEIGHT $get(NPCATK_TARGET,height)
+	divide TARG_HEIGHT 2
+
+	//clientevent update all CL_IDX beam_on $get(NPCATK_TARGET,index) TARG_HEIGHT
+	clientevent update all CL_IDX ke_beam_on $get(NPCATK_TARGET,index) TARG_HEIGHT
+
+	playsound 1 10 SOUND_BEAM_LOOP
+	playsound 2 10 SOUND_BEAM_SHOOT
+}
+
+{ lightning_off
+
+
+	setvard LIGHTNING_ON 0
+	//clientevent update all CL_IDX beam_off
+	clientevent update all CL_IDX ke_beam_off
+	playsound 1 1 SOUND_BEAM_LOOP
+}
+
+//{ reset_cl
+//	//clientevent remove all CL_IDX
+//	setvard NEXT_CL_RESET game.time
+//	add NEXT_CL_RESET CL_RESET_FREQ
+//	clientevent persist all monsters/k_elder_cl $get(ent_me,index) lightning 1
+//	setvard CL_IDX game.script.last_sent_id
+//	if LIGHTNING_ON
+//	local TARG_HEIGHT $get(NPCATK_TARGET,height)
+//	divide TARG_HEIGHT 2
+//	clientevent update all CL_IDX beam_on $get(NPCATK_TARGET,index) TARG_HEIGHT
+//	dbg Reset CL CL_IDX
+//}
+//
+//{
+//repeatdelay CL_RESET_FREQ
+//	if BLADE_DRAWN
+//	clientevent update all CL_IDX end_effect
+//	callevent 0.1 reset_cl
+//}
+
+//{
+//repeatdelay CL_RESET_FREQ
+//	if BLADE_DRAWN
+//	clientevent update all 1 ke_setup $get(ent_me,index) lightning 1 LIGHTNING_ON $get(NPCATK_TARGET,index)
+//}

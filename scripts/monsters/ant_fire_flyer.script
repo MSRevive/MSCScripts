@@ -1,0 +1,268 @@
+//idea: workers non-agro, follow set_leader 
+#scope server
+{
+	setvar ANIM_IDLE idle
+	setvar ANIM_WALK walk
+	setvard ANIM_ATTACK attack //frame_attack
+	setvard ANIM_RUN walk
+	setvar ANIM_DEATH anim_hover_death
+	setvard NPC_JUMPER 1
+
+	const ANIM_HOVER anim_hover
+	const ANIM_2HOVER anim_2hover
+	const ANIM_LAND anim_land
+	const ANIM_HOVER_BREATH anim_hover_breath
+	const ANIM_HOVER_BITE anim_hover_shoot //frame_shoot
+
+	const ANIM_WALK1 walk
+	const ANIM_WALK2 walk2
+	const ANIM_ATTACK1 attack
+	const ANIM_ATTACK2 attack2 //frame_attack
+
+
+	setvard NPC_GIVE_EXP 150
+
+	setvar NPC_ALLY_RESPONSE_RANGE 1024 //larger response range than hp would suggest for better swarming
+
+	const FREQ_BREATH $randf(5.0,10.0)
+	const FREQ_BUZZ 4.45
+	const FREQ_DODGE 1.0
+
+	const DMG_BITE 50
+	const DOT_FIRE 10
+
+	setvard ATTACK_MOVERANGE 192
+	setvard MOVE_RANGE 192
+
+	setvard ATTACK_RANGE 75
+	setvard ATTACK_HITRANGE 100
+
+	const SOUND_FLY_LOOP monsters/beetle/fly1_noloop.wav
+
+	const SOUND_PAIN1 monsters/beetle/pain1.wav
+	const SOUND_PAIN2 monsters/beetle/pain2.wav
+	const SOUND_STRUCK1 monsters/beetle/shell_impact1.wav
+	const SOUND_STRUCK2 monsters/beetle/shell_impact2.wav
+	const SOUND_STRUCK3 monsters/beetle/shell_impact3.wav
+	const SOUND_STRUCK4 monsters/beetle/shell_impact4.wav
+
+	const SOUND_ATTACK1 monsters/beetle/attack_single1.wav
+	const SOUND_ATTACK2 monsters/beetle/attack_single2.wav
+	const SOUND_ATTACK3 monsters/beetle/attack_single3.wav
+
+	const SOUND_BREATH monsters/goblin/sps_fogfire.wav
+
+	const SOUND_DEATH monsters/beetle/pain2.wav
+
+	setvard NPC_HACKED_MOVE_SPEED 0
+}
+
+#include monsters/base_monster_new
+#include monsters/base_jumper
+#include monsters/base_propelled
+
+{ npc_spawn
+
+	name an|Elite Fire Ant Warrior
+	setmodel monsters/ant_size2.mdl
+	width 32
+	height 64
+	blood green
+	race ant_red
+	hp 500
+	takedmg pierce 1.25
+	roam 0
+	hearingsensitivity 5
+
+	setmodelbody 1 1	
+
+	takedmg cold 1.25
+	takedmg fire 0.5
+
+	setmoveanim ANIM_WALK
+	setidleanim ANIM_IDLE
+}
+
+{ npc_targetsighted
+	if !DID_INTRO
+	setmoveanim ANIM_HOVER
+	setidleanim ANIM_HOVER
+	setvard ANIM_WALK ANIM_HOVER
+	setvard ANIM_RUN ANIM_HOVER
+	setvard ANIM_IDLE ANIM_HOVER
+	playanim critical ANIM_2HOVER
+	setvard DID_INTRO 1
+	setvard ANT_AM_FLYING 1
+	setvard NEXT_BREATH game.time
+	add NEXT_BREATH 3.0
+	setvard NPC_PROPELL_SUSPEND 1
+	setvard NPC_HACKED_MOVE_SPEED 0
+}
+
+{ my_target_died
+	setvard ANT_AM_FLYING 0
+	setvard ANIM_WALK walk
+	setvard ANIM_RUN walk
+	setvard ANIM_IDLE idle
+
+	playanim critical ANIM_LAND
+	setvard DID_INTRO 0
+}
+
+{ npcatk_hunt
+	if NPCATK_TARGET isnot unset
+	if ( ANT_AM_FLYING )
+	{
+		setvard NPC_PROPELL_SUSPEND 0
+		if ( NPC_HACKED_MOVE_SPEED < 300 )
+		{
+			if ( $get(NPCATK_TARGET,range) > ATTACK_MOVERANGE )
+			{
+				add NPC_HACKED_MOVE_SPEED 10
+			}
+			else
+			{
+				if $get(NPCATK_TARGET,range) <= ATTACK_MOVERANGE
+				if NPC_HACKED_MOVE_SPEED > 0
+				subtract NPC_HACKED_MOVE_SPEED 1
+			}
+		}
+
+		if ( game.time > NEXT_BUZZ_SOUND )
+		{
+			setvard NEXT_BUZZ_SOUND game.time
+			add NEXT_BUZZ_SOUND FREQ_BUZZ
+			svplaysound 2 10 SOUND_FLY_LOOP
+		}
+		setvard ANIM_ATTACK ANIM_HOVER_BITE
+
+		if game.time > NEXT_BREATH
+		if $get(NPCATK_TARGET,range) < 256
+		setvard NEXT_BREATH game.time
+		add NEXT_BREATH FREQ_BREATH
+		playanim critical anim_hover_breath
+	}
+	else
+	{
+		setvard NPC_PROPELL_SUSPEND 1
+		setvard NPC_HACKED_MOVE_SPEED 0
+	}
+}
+
+{ game_stopmoving
+	setvard NPC_HACKED_MOVE_SPEED 0
+}
+
+{ game_struck
+	playsound 0 10 SOUND_STRUCK1 SOUND_STRUCK2 SOUND_STRUCK3 SOUND_STRUCK4 SOUND_PAIN1 SOUND_PAIN2
+}
+
+{ frame_breath_start
+	setanim.movespeed 0
+	setvard NPC_PROPELL_SUSPEND 1
+	setvard NPC_HACKED_MOVE_SPEED 0
+	setvard NPC_JUMPER 0
+	setmovedest BREATH_TARG 9999
+	setvard BREATH_TARG NPCATK_TARGET
+	//playanim critical ANIM_HOVER_BREATH
+	//callevent npcatk_suspend_movement ANIM_HOVER_BREATH 5.0
+	callevent npcatk_suspend_ai 3.0
+	setvard BREATH_ON 1
+	playsound 0 10 SOUND_BREATH
+	clientevent new all monsters/ant_fire_cl $get(ent_me,index) 5.0 0.5
+	setvard CL_BREATH_IDX game.script.last_sent_id
+	setvard SCAN_POINT $relpos(0,64,32)
+	callevent breath_loop
+}
+
+{ breath_loop
+	if BREATH_ON
+	setmovedest SCAN_POINT 9999
+	callevent 0.5 breath_loop
+	setvard BREATH_TARGETS $get_tsphere(enemy,196,SCAN_POINT)
+	//dbg breath_loop $get_token_amt(BREATH_TARGETS) SCAN_POINT BREATH_TARGETS
+	if BREATH_TARGETS isnot none
+	calleventloop $get_token_amt(BREATH_TARGETS) breath_affect_targets
+}
+
+{ breath_affect_targets
+	local CUR_TARG $get_token(BREATH_TARGETS,game.script.iteration)
+	local TARG_ORG $get(CUR_TARG,origin)
+	//dbg breath_affect_targets $get(CUR_TARG,name) rng $get(CUR_TARG,range) hasfire $get(CUR_TARG,haseffect,DOT_fire) incone $within_cone2D(TARG_ORG,game.monster.origin,game.monster.angles,30)
+	if $within_cone2D(TARG_ORG,game.monster.origin,game.monster.angles,1)
+	if $get(CUR_TARG,range) < 384
+
+	local TRACE_START $get(ent_me,attachpos,0)
+	local TRACE_END TARG_ORG
+	local TRACE_LINE $get_traceline(TRACE_START,TRACE_END,worldonly)
+	if TRACE_LINE equals TRACE_END
+
+	if ( !$get(CUR_TARG,haseffect,DOT_fire) ) applyeffect CUR_TARG effects/effect_burn 5.0 $get(ent_me,id) DOT_FIRE
+
+	//push closer targets harder
+	local PUSH_RATIO $get(CUR_TARG,range)
+	if ( PUSH_RATIO < 256 )
+	{
+		divide PUSH_RATIO 256
+		local PUSH_RATIO $ratio(PUSH_RATIO,2000,200)
+	}
+	else
+	{
+		local PUSH_RATIO 200
+	}
+
+	addvelocity CUR_TARG $relvel(0,PUSH_RATIO,110)
+}
+
+{ frame_breath_end
+	setvard NPC_PROPELL_SUSPEND 0
+	setvard NPC_JUMPER 1
+	setvard BREATH_ON 0
+	callevent npcatk_resume_ai
+	clientevent update all CL_BREATH_IDX end_fx
+	//callevent npcatk_resume_movement
+}
+
+{ frame_shoot //this is actually the bite attack
+	playrandomsound 0 10 SOUND_ATTACK1 SOUND_ATTACK2 SOUND_ATTACK3
+	xdodamage NPCATK_TARGET ATTACK_HITRANGE DMG_BITE 90% ent_me ent_me none pierce dmgevent:bite
+}
+
+{ bite_dodamage
+	if PARAM1
+	if $get(PARAM2,relationship,ent_me) equals enemy
+	if !$get(PARAM2,haseffect,DOT_fire)
+	applyeffect PARAM2 effects/effect_burn 5.0 $get(ent_me,id) DOT_FIRE
+}
+
+{ game_death
+	if ( BREATH_ON ) callevent frame_breath_end
+	if ( ANT_ANT_AM_FLYING )
+	{
+		svplaysound 2 0 SOUND_FLY_LOOP
+		setvard ANIM_DEATH anim_hover_death
+	}
+	else
+	{
+		setvard ANIM_DEATH die
+	}
+}
+
+{ game_damaged //PARAM1=attacker PARAM2=dmg PARAM3=dmg_type
+	if ANT_AM_FLYING
+	if PARAM2 < $get(ent_me,hp) 
+	if ( PARAM3 contains effect ) local L_IS_DOT 1
+	if !L_IS_DOT
+	if game.time > NEXT_DODGE
+	setvard NEXT_DODGE game.time
+	add NEXT_DODGE FREQ_DODGE
+	add DODGE_IDX 1
+	if ( DODGE_IDX == 1 ) local RND_LR 400
+	if ( DODGE_IDX == 2 )
+	{
+		local RND_LR -400
+		setvard DODGE_IDX 0
+	}
+
+	addvelocity ent_me $relvel(RND_LR,-200,0)
+}

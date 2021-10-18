@@ -1,0 +1,250 @@
+{
+
+	//magic circle media
+	precache magic/spawn.wav
+	precache magic/frost_forward.wav
+	precache magic/frost_reverse.wav
+
+	const MELEE_OVERRIDE 1
+	const SPECIAL_OVERRIDE 1
+	const CUSTOM_REGISTER_CHARGE1 1
+
+	const SOUND_CHARGE      	magic/ice_powerup.wav
+	const SOUND_SHOOT      	magic/ice_strike2.wav
+	const SPECIAL01_SND 	$get(ent_owner,scriptvar,'PLR_SOUND_JAB2')
+	const SOUND_PARRY weapons/parry.wav
+
+
+	const RANGED_HOLD_MINMAX	1.1;1.3 //Min;Max
+	const RANGED_ATK_DURATION	0.3
+	const RANGED_DMG_TYPE		pierce
+	const RANGED_STAT		spellcasting.ice
+	const RANGED_PROJECTILE	proj_icelance
+	const RANGED_AIMANGLE		(0,4,0)
+	const RANGED_STARTPOS		(8,0,0)
+	const RANGED_PULLTIME		0.8
+	const RANGED_MP				15
+	const CIRCLE_DRAIN 40
+
+  const ANIM_LIFT         0
+  const ANIM_IDLE1         1
+  const ANIM_ATTACK1       2
+  const ANIM_ATTACK2       2
+  const ANIM_ATTACK3  2
+  const ATTACK_ANIMS  1
+  const ANIM_LUNGE   3
+  const ANIM_PARRY1       4
+  const ANIM_PARRY1_RETRACT 5
+  const ANIM_UNSHEATH       6
+  const ANIM_SHEATH       7
+  const ANIM_PARRY_DEBUG 4
+  const ANIM_UNPARRY_DEBUG 5
+  const MODEL_VIEW viewmodels/v_2hswords.mdl
+  const MODEL_VIEW_IDX 5
+
+const MODEL_HANDS weapons/p_weapons3.mdl
+const MODEL_WORLD weapons/p_weapons3.mdl
+
+  const SOUND_SWIPE       weapons/swingsmall.wav
+  const SOUND_HITWALL1       weapons/cbar_hit1.wav
+  const SOUND_HITWALL2       weapons/cbar_hit2.wav
+  const SOUND_DRAW       weapons/swords/sworddraw.wav
+  const SOUND_SHOUT  $get(ent_owner,scriptvar,'PLR_SOUND_SHOUT1')
+
+	const BASE_LEVEL_REQ 20
+
+const MODEL_BODY_OFS 4
+  const ANIM_PREFIX  standard
+
+  //Used in base_melee
+  //------------------
+  const MELEE_RANGE  80
+  const MELEE_DMG_DELAY  0.6
+  const MELEE_ATK_DURATION 1.3
+  const MELEE_ENERGY  1
+  const MELEE_DMG  350
+  const MELEE_DMG_RANGE      75
+  const MELEE_DMG_TYPE  cold
+  const MELEE_ACCURACY  75%
+  const MELEE_STAT  swordsmanship
+  const MELEE_ALIGN_BASE 3,10 
+  const MELEE_ALIGN_TIP  0,-10
+  const MELEE_VIEWANIM_ATK      ANIM_ATTACK1
+
+  const MELEE_SOUND      SOUND_SWIPE
+  const MELEE_SOUND_DELAY      MELEE_DMG_DELAY
+  const MELEE_PARRY_CHANCE      60%
+  const MELEE_NEW_PARRY_CHANCE  50
+
+  const PLAYERANIM_AIM  sword_double_idle
+  const PLAYERANIM_SWING sword_double_swing
+}
+
+#include items/swords_base_twohanded
+
+{ weapon_spawn
+
+   name  The|Hoarfrost Shard
+   desc  A gigantic blade of pure elemental ice
+   weight  75
+   size  9
+   value 4000
+   sethudsprite trade 124
+
+   sethand both
+}
+
+{ melee_start
+
+  local SWING $rand(1,3)
+  if( SWING == 1 ) setvard SWING_ANIM ANIM_ATTACK1
+  if( SWING == 2 ) setvard SWING_ANIM ANIM_ATTACK2
+  if( SWING == 3 ) setvard SWING_ANIM ANIM_ATTACK3
+  playowneranim once sword_double_swing
+  playviewanim  SWING_ANIM
+  volume 10
+  playsound 1 SOUND_SWIPE
+}
+
+{ melee_strike //PARAM1: "none"/"npc"/"world"   2: Attack end Position   3: Entity hit (if any)
+
+	if game.serverside
+	if $rand(1,5) == 1
+	if $get(PARAM3,isalive)
+	if $get(PARAM3,relationship,ent_owner) equals enemy
+	if ( $get(PARAM3,isplayer) )
+	{
+		local PVP_SET game.pvp
+		if PVP_SET equals 0
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+	applyeffect PARAM3 effects/effect_frostbite 5 $get(ent_owner,id)
+	//playermessage ent_owner Your sword's ice magic has slowed your opponent.
+}
+
+{ ice_shard_start
+
+	playviewanim  ANIM_LUNGE
+   	playowneranim once axe_twohand_swing
+	if $get(ent_owner,mp) > RANGED_MP
+ 	playsound const.snd.weapon const.snd.maxvol SOUND_SHOOT
+}
+
+{ blockmode_start
+
+ playviewanim  ANIM_PARRY1
+ playowneranim once sword_swing
+ setvard PARRY_ON 1
+}
+
+{ blockmode_end
+
+ playviewanim  ANIM_PARRY1_RETRACT
+ setvard PARRY_ON 0
+}
+
+{ parryanim
+
+	//WTF WON'T THIS PLAY!??! - Thothie (frustrated)
+	playviewanim  ANIM_PARRY1
+	//playviewanim critical parry1
+	//playowneranim once sword_swing
+	playsound 0 10 SOUND_PARRY
+	callevent 0.75 unparryanim
+}
+
+{ unparryanim
+
+	playviewanim  ANIM_PARRY1_RETRACT
+	//playviewanim critical parry1_retract
+}
+
+{ register_charge1
+
+	local reg.attack.mpdrain RANGED_MP
+	local reg.attack.ammodrain 0
+
+	local reg.attack.type		charge-throw-projectile
+	local reg.attack.hold_min&max	"1;1"
+	local reg.attack.dmg.type		cold
+	local reg.attack.range			500
+	local reg.attack.energydrain	MELEE_ENERGY
+	local reg.attack.stat			spellcasting.ice
+	local reg.attack.COF			0
+	local reg.attack.projectile		proj_icelance
+	local reg.attack.priority		1
+	local reg.attack.delay.strike	RANGED_DMG_DELAY
+	local reg.attack.delay.end		RANGED_ATK_DURATION
+	local reg.attack.ofs.startpos	RANGED_STARTPOS
+	local reg.attack.ofs.aimang		RANGED_AIMANGLE
+	local reg.attack.noise		RANGED_NOISE
+
+	local reg.attack.keys	-attack1
+	local reg.attack.callback	ice_shard
+	local reg.attack.chargeamt	100%
+	local reg.attack.reqskill	17
+	registerattack
+}
+
+{ game_+attack2
+
+	if ( game.time > NEXT_DELAY_MSG )
+	{
+		if ATTACK_DELAY
+		dplayermessage ent_owner Hoarfrost Shard: Needs time to recharge.
+		setvard NEXT_DELAY_MSG game.time
+		add NEXT_DELAY_MSG 0.5
+	}
+
+	if !ATTACK_DELAY
+	setvard ATTACK_DELAY 1
+	callevent 10.0 attack_delay_reset
+	setvard ATTACK_ON 1
+}
+
+{ attack_delay_reset
+	setvard ATTACK_DELAY 0
+}
+
+{ game_-attack2
+
+	if ATTACK_ON
+	setvard ATTACK_ON 0
+
+	if ( game.serverside )
+	{
+		local DO_ATTACK 1
+		if ( $get(ent_owner,mp) <= CIRCLE_DRAIN )	local DO_ATTACK 0
+		if ( !DO_ATTACK ) dplayermessage ent_owner Hoarfrost Shard: Insufficient mana.
+		if ( !$get(ent_owner,canattack) )
+		{
+			dplayermessage ent_owner Can't attack now...
+			local DO_ATTACK 0
+		}
+	}
+
+	//playviewanim must be client side
+	//I can't figure a way to make the server-side DO_ATTACK var stop this from playing
+	if ( game.clientside )
+	{
+		playviewanim  5
+	}
+	
+
+	if DO_ATTACK
+
+	//playrandomsound const.sound.item 10 SOUND_SWING SOUND_CHARGE
+
+	givemp $neg(CIRCLE_DRAIN)
+	callexternal ent_owner mana_drain //update mana on player hud readout, if using hud feedback
+
+	playowneranim once throw_fireball global.anim.combatwalk 3
+
+	if game.serverside
+	local CFROST_DURATION $get(ent_owner,skill.spellcasting.ice)
+	multiply CFROST_DURATION 0.5
+	local CFROST_DAMAGE $get(ent_owner,skill.spellcasting.ice)
+	multiply CFROST_DAMAGE 1.25
+	createnpc monsters/summon/circle_of_ice_player $get(ent_owner,origin) $get(ent_owner,id) 15 5 CFROST_DAMAGE spellcasting.ice
+}

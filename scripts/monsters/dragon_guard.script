@@ -1,0 +1,1730 @@
+//Jaminporlants Dragon Guards
+//(also with skins for Kharaztorant - maybe for Rhudeanlorat later)
+//- large magic weapon array
+//- various potion options
+//- various breath weapon options
+//- armored option
+//- options adjust base XP
+//- good jumper
+//- kick attack*
+//Options:
+//dg_potd - Demon Blood Pot (+750 Base XP)
+//dg_potp - Protection Pot (+200 Base XP)
+//dg_potf - Fire Aura Pot (+100 Base XP)
+//dg_pots - Speed Pot (+500 Base XP)
+//
+//dg_bfir - Fire Breath Prefix:"Infernal" (+100 Base XP) +50% fire, -75% cold
+//dg_bice - Ice Breath Prefix:"Freezing" (+200 Base XP) +50 cold, -75% fire
+//dg_bpoi - Poison Breath Prefix:"Noxious" (+100 Base XP) +50% acid/poison, -75% lighting
+//dg_bacd - Acid Bolt Breath Prefix:"Caustic" (+100 Base XP) +50% acid, -50% lighting
+//dg_blgt - Lighting Bolt Breath "Thunderguard" (+100 Base XP) +50% lightning, -75% acid, -50% poison
+//
+//dg_wice - Greater Ice Blade "Iceblade" (+200 Base XP)
+//dg_wbow - Cross Bow "Bowman" (-250 Base XP)
+//dg_wpol - Lance "Pikeman" (+150 Base XP)
+//dg_wham - Big ol Hammer "Mauler" (+400 Base XP)
+//dg_wcre - Envenomed Crescent Blades "Ravager" (+200 Base XP)
+//dg_wdbl - Vampyric Katanas "Bladesman" (+250 Base XP)
+//dg_wfrb - Red Rune Blade + Shield  "Flameblade"  (+150 Base XP), +50% fire
+//dg_wgrb - Green Rune Blade + Shield "Plaguebringer" (+200 Base XP), +50% poison
+//
+//dg_armr - Armored (+350 Base XP) (50% damage reduct + 50% stun resist)
+//
+//dg_narm - Never armored (norm 20% chance)
+//dg_npot - Never has a potion (healing or otherwise - norm 50% for heal + 20% for special)
+//dg_nbrt - No breath attack (norm 25% chance)
+//
+//+25% elemental resisitance
+//Elemental Adjustments capped at: (Immune)/-300%
+//green:  +25% acid/poison, -25% lightning
+//red: +100% fire, -50% cold
+//black: +25% all elements, +75% stun, -200% Holy
+
+#scope server
+{ [shared]
+	const ANIM_CAUTIOUS_APPROACH cwalkf
+	const ANIM_CAUTIOUS_RETREAT cwalkb
+	setvard ANIM_DEATH death_long
+	const ANIM_KICK kick //frame_kick_strike
+	const ANIM_SHOCK spasm
+	const ANIM_THROW throwr //frame_throw
+	const ANIM_DRINK drink
+	const ANIM_WALK_HEARDSOUND cwalkf
+	const ANIM_WALK_WOUNDED walkinj
+	const ANIM_NPC_JUMP kick //frame_kick_strike
+	const ANIM_BREATH_LOOP breath_loop
+
+	setvar ANIM_WALK walk
+	setvar ANIM_IDLE deep_idle //maybe changed by weapon array
+	setvard ANIM_RUN run
+
+	const SOUND_XBOW_STRETCH weapons/bow/stretch.wav //monsters/archer/stretch.wav //faster stretch sound
+	const SOUND_XBOW_SHOOT weapons/bow/crossbow.wav
+	const SOUND_BOLT_HIT weapons/bow/bolthit1.wav //played client side- precached here
+}
+
+{
+	//const NPC_HOLD_ADDPARAMS 1
+
+	setvard TAKEDMG_ADJ_ACID 0
+	setvard TAKEDMG_ADJ_COLD 0
+	setvard TAKEDMG_ADJ_FIRE 0
+	setvard TAKEDMG_ADJ_POISON 0
+	setvard TAKEDMG_ADJ_LIGHTNING 0
+
+	setvarg DEV_STRING "Flags: "
+
+	setvard IS_GREEN 1 //default to green
+
+	setvard NPC_GIVE_EXP 1500 //adjusts based on selected options
+
+	setvard IMMUNE_STUN 25
+
+	const RANGE_MELEE_STANDARD 64
+	const MOVERANGE_MELEE_STANDARD 32
+	const HITRANGE_MELEE_STANDARD 96
+
+	const HITRANGE_POLE_SHORT 75
+
+	setvard FREQ_KICK $randf(20.0,30.0) //varies by weapon
+	const FREQ_SHIELD_BASH $randf(10.0,20.0)
+
+	const HEAL_DELAY 15.0 //delay between 50% health and drinking potion
+
+	const DMG_STUN_BURST 300
+	setvard DMG_CRESCENT 60 //used by proj_crescent
+	const DMG_KICK 100
+
+	const DG_FAURA_DOT 100
+	const DG_FAURA_AOE 64
+	const DG_FAURA_CL_RATE 15.0
+
+	const DMG_XBOW 100
+	setvard XBOW_ACCURACY 75
+
+	const SOUND_HEARD_ALERT1 monsters/dg/c_lizardm_bat1.wav
+	const SOUND_HEARD_ALERT2 monsters/dg/c_lizardm_bat2.wav
+	const SOUND_PAIN1 monsters/dg/c_lizardm_hit1.wav
+	const SOUND_PAIN2 monsters/dg/c_lizardm_hit2.wav
+	const SOUND_NPC_JUMP monsters/dg/c_lizardm_atk1.wav
+	const SOUND_DEATH1 monsters/dg/c_lizardm_dead.wav
+	const SOUND_DEATH2 monsters/dg/vs_nlizardm_bye.wav
+	const SOUND_INVESTIGATE monsters/dg/c_lizardmw_bat1.wav
+	const SOUND_ATTACK1 monsters/dg/c_lizardm_atk1.wav
+	const SOUND_ATTACK2 monsters/dg/c_lizardm_atk2.wav
+	const SOUND_ATTACK3 monsters/dg/c_lizardm_atk3.wav
+
+	const SOUNDA_HEARD_ALERT1 monsters/dg/c_lizardmc_bat1.wav
+	const SOUNDA_HEARD_ALERT2 monsters/dg/c_lizardmw_bat2.wav
+	const SOUNDA_PAIN1 monsters/dg/vs_nlizardm_hit1.wav
+	const SOUNDA_PAIN2 monsters/dg/vs_nlizardm_hit2.wav
+	const SOUNDA_PAIN3 monsters/dg/vs_nlizardm_hit3.wav
+	const SOUNDA_NPC_JUMP monsters/dg/vs_nlizardm_atk1.wav
+	const SOUNDA_DEATH1 monsters/dg/vs_nlizardm_dead.wav
+	const SOUNDA_DEATH2 monsters/dg/vs_nlizardm_bye.wav
+	const SOUNDA_INVESTIGATE monsters/dg/vs_nlizardm_bat2.wav
+	const SOUNDA_ATTACK1 monsters/dg/vs_nlizardm_atk1.wav
+	const SOUNDA_ATTACK2 monsters/dg/vs_nlizardm_atk2.wav
+	const SOUNDA_ATTACK3 monsters/dg/vs_nlizardm_atk3.wav
+
+	const SOUNDA_HEAL monsters/dg/vs_nlizardm_heal.wav
+
+	const SOUND_BREATH_LOOP monsters/goblin/sps_fogfire.wav
+	const SOUND_BREATH_ACID_READY bullchicken/bc_attack1.wav
+	const SOUND_BREATH_ACID_BOLT bullchicken/bc_attack2.wav
+	const SOUND_BREATH_LIGHTNING_READY debris/beamstart1.wav
+	const SOUND_BREATH_LIGHTNING debris/zap1.wav
+
+	const SOUND_MELEE1 zombie/claw_miss1.wav
+	const SOUND_MELEE2 zombie/claw_miss2.wav
+	const SOUND_MELEE_LARGE weapons/swinghuge.wav
+	const SOUND_STRUCK1	weapons/cbar_hitbod1.wav
+	const SOUND_STRUCK2	weapons/cbar_hitbod2.wav
+	const SOUND_STRUCK3	weapons/cbar_hitbod3.wav
+	const SOUND_STRUCK_ARMOR1 weapons/axemetal1.wav
+	const SOUND_STRUCK_ARMOR2 weapons/axemetal2.wav
+
+	setvard NPC_JUMPER 1
+}
+
+{ game_precache
+	precachefile monsters/dragon_guard_breath_cl
+	precachefile monsters/elf_xbow_cl
+
+	precache SOUND_DEATH1
+	precache SOUND_DEATH2
+	precache SOUNDA_DEATH1
+	precache SOUNDA_DEATH2
+
+	precache rain_mist.spr
+	precache explode1.spr
+	precache poison_cloud.spr
+}
+
+#include monsters/base_monster_new
+#include monsters/base_jumper
+
+{ [shared] npc_spawn
+	name a|Dragon Guard
+	setmodel monsters/dragon_guard.mdl
+	width 32
+	height 90
+	race demon
+	setmoveanim ANIM_WALK
+	setidleanim ANIM_IDLE
+	hp 4000
+	hearingsensitivity 6
+	roam 1
+
+	if game.serverside
+
+	setvard PLR_POT_ALERT_LIST ''
+
+	callevent 0.2 pick_specials
+	callevent 2.0 dragon_guard_finalize
+}
+
+{ npc_post_spawn
+	setvard EXT_DEMON_BLOOD_RATIO 3.0 //nerfage
+	setvard ANIM_IDLE ANIM_IDLE_DEEP
+	setmoveanim ANIM_WALK
+	setidleanim ANIM_IDLE
+
+	setvard MOVE_RANGE ATTACK_RANGE //someday I'll figure why we need this
+	setvard ANIM_ATTACK ANIM_ATTACK1
+}
+
+{ pick_specials
+
+	if ( !NO_POTION )
+	{
+		setvard POT_HEAL $rand(0,1)
+		if ( POT_HEAL )
+		{
+			if ( G_DEVELOPER_MODE ) stradd DEV_STRING "Pot_Healing "
+			add NPC_GIVE_EXP 200
+		}
+		if ( $rand(1,5) == 1 ) setvard POT_SPECIAL 1
+		if POT_SPECIAL
+		local RND_POT $rand(1,4)
+		if ( RND_POT == 1 ) callevent dg_potd
+		if ( RND_POT == 2 ) callevent dg_potp
+		if ( RND_POT == 3 ) callevent dg_potf
+		if ( RND_POT == 4 ) callevent dg_pots
+		setvard SELECTED_RND_POT 1
+	}
+
+	if ( !NO_BREATH )
+	{
+		if !BREATH_ATTACK
+		if $rand(1,4) == 1
+		local RND_BREATH $rand(1,5)
+		if ( RND_BREATH == 1 ) callevent dg_bfir
+		if ( RND_BREATH == 2 ) callevent dg_bice
+		if ( RND_BREATH == 3 ) callevent dg_bpoi
+		if ( RND_BREATH == 4 ) callevent dg_bacd
+		if ( RND_BREATH == 5 ) callevent dg_blgt
+	}
+
+	if ( !IS_ARMORED )
+	{
+		if !NO_ARMOR
+		if $rand(1,5) == 1
+		callevent dg_armr
+		setvard SELECTED_RND_ARMOR 1
+	}
+
+	if ( !WEAPON_TYPE )
+	{
+		local RND_WEP $rand(1,8)
+
+		setvard SELECTED_RND_WEP 1
+
+		if ( $lcase(game.map.name) equals nashalrath )
+		{
+			//don't randomly pick whammers on Nashalrath (sub with crescent)
+			if ( RND_WEP == 4 ) local RND_WEP 5
+		}
+
+		if ( RND_WEP == 6 )
+		{
+			//don't randomly selecte armor+speedpot+vampblades (sub with crescent)
+			local L_STRIKE_COUNT 1
+			if ( SELECTED_RND_ARMOR ) 
+			{
+				if IS_ARMORED
+				add L_STRIKE_COUNT 1
+			}
+
+			if ( SELECTED_RND_POT )
+			{
+				if RND_POT == 4
+				add L_STRIKE_COUNT 1
+			}
+
+			if ( L_STRIKE_COUNT == 3 ) local RND_WEP 5
+		}
+
+		if ( RND_WEP == 1 ) callevent dg_wice
+		if ( RND_WEP == 2 ) callevent dg_wbow
+		if ( RND_WEP == 3 ) callevent dg_wpol
+		if ( RND_WEP == 4 ) callevent dg_wham
+		if ( RND_WEP == 5 ) callevent dg_wcre
+		if ( RND_WEP == 6 ) callevent dg_wdbl
+		if ( RND_WEP == 7 ) callevent dg_wfrb
+		if ( RND_WEP == 8 ) callevent dg_wgrb
+	}
+}
+
+{ dragon_guard_finalize
+	if ( !NPC_CUSTOM_NAME )
+	{
+		if ( NAME_PREF isnot 'NAME_PREF' )
+		{
+			local L_NEW_NAME NAME_PREF
+			stradd L_NEW_NAME " "
+			stradd L_NEW_NAME NEW_NAME
+			setvard NEW_NAME L_NEW_NAME
+		}
+
+		if ( aeiou contains $left(NEW_NAME,0) ) name_prefix an
+
+		if ( BREATH_TYPE equals lightning )
+		{
+			local L_START $search_string(NEW_NAME,Guard)
+			local L_LEFT $left(NEW_NAME,L_START)
+			stradd L_LEFT Thunderguard
+			local L_LEN $len(NEW_NAME)
+			subtract L_LEN L_START
+			subtract L_LEN 5
+			local L_RIGHT $right(NEW_NAME,L_LEN)
+			setvard NEW_NAME L_LEFT
+			stradd NEW_NAME L_RIGHT
+		}
+
+		name NEW_NAME
+	}
+
+	setvard ANIM_IDLE ANIM_IDLE_DEEP
+	setmoveanim ANIM_WALK
+	setidleanim ANIM_IDLE
+	playanim once ANIM_IDLE
+
+	setvard QUARTER_HP $get(ent_me,maxhp)
+	multiply QUARTER_HP 0.25 //walk injured threshold
+
+	setvard HALF_HP $get(ent_me,maxhp)
+	multiply HALF_HP 0.5 //threshold for healing potion (20 secs later, will drink)
+
+	if ( HAS_SHIELD ) setstat parry 150
+
+	setvard ATTACK_RANGE_DEFAULT ATTACK_RANGE
+	setvard ANIM_ATTACK_DEFAULT ANIM_ATTACK
+	if ( !CAUTIOUS_APPROACH ) setvard ANIM_RUN run
+
+	//takedmg adjust (starts 25% resist to most everything)
+	local F_TAKEDMG_ADJ_ACID 0.75
+	local F_TAKEDMG_ADJ_COLD 0.75
+	local F_TAKEDMG_ADJ_FIRE 0.75
+	local F_TAKEDMG_ADJ_POISON 0.75
+	local F_TAKEDMG_ADJ_LIGHTNING 0.75
+
+	if ( IS_GREEN )
+	{
+		add F_TAKEDMG_ADJ_ACID -0.25
+		add F_TAKEDMG_ADJ_POISON -0.25
+		add F_TAKEDMG_ADJ_LIGHTNING 0.25
+	}
+
+	if ( IS_RED )
+	{
+		add F_TAKEDMG_ADJ_FIRE -1.0
+		add F_TAKEDMG_ADJ_COLD 0.5
+	}
+
+	if ( IS_BLACK )
+	{
+		add F_TAKEDMG_ADJ_ACID -0.5
+		add F_TAKEDMG_ADJ_FIRE -0.5
+		add F_TAKEDMG_ADJ_COLD -0.5
+		add F_TAKEDMG_ADJ_POISON -0.5
+		add F_TAKEDMG_ADJ_LIGHTNING -0.5
+		takedmg holy 2.0
+		setvard IMMUNE_STUN 75
+	}
+
+	if ( IS_ARMORED ) add IMMUNE_STUN 25
+
+	setvard DEFAULT_TAKDMG_ACID F_TAKEDMG_ADJ_ACID
+	setvard DEFAULT_TAKDMG_COLD F_TAKEDMG_ADJ_COLD
+	setvard DEFAULT_TAKDMG_FIRE F_TAKEDMG_ADJ_FIRE
+	setvard DEFAULT_TAKDMG_POISON F_TAKEDMG_ADJ_POISON
+	setvard DEFAULT_TAKDMG_LIGHTNING F_TAKEDMG_ADJ_LIGHTNING
+
+
+	add F_TAKEDMG_ADJ_ACID TAKEDMG_ADJ_ACID
+	add F_TAKEDMG_ADJ_COLD TAKEDMG_ADJ_COLD
+	add F_TAKEDMG_ADJ_FIRE TAKEDMG_ADJ_FIRE
+	add F_TAKEDMG_ADJ_POISON TAKEDMG_ADJ_POISON
+	add F_TAKEDMG_ADJ_LIGHTNING TAKEDMG_ADJ_LIGHTNING
+
+	if ( F_TAKEDMG_ADJ_ACID < 0 ) local F_TAKEDMG_ADJ_ACID 0
+	if ( F_TAKEDMG_ADJ_COLD < 0 ) local F_TAKEDMG_ADJ_COLD 0
+	if ( F_TAKEDMG_ADJ_FIRE < 0 ) local F_TAKEDMG_ADJ_FIRE 0
+	if ( F_TAKEDMG_ADJ_POISON < 0 ) local F_TAKEDMG_ADJ_POISON 0
+	if ( F_TAKEDMG_ADJ_LIGHTNING < 0 ) local F_TAKEDMG_ADJ_LIGHTNING 0
+
+	if ( F_TAKEDMG_ADJ_ACID > 3 ) local F_TAKEDMG_ADJ_ACID 3
+	if ( F_TAKEDMG_ADJ_COLD > 3 ) local F_TAKEDMG_ADJ_COLD 3
+	if ( F_TAKEDMG_ADJ_FIRE > 3 ) local F_TAKEDMG_ADJ_FIRE 3
+	if ( F_TAKEDMG_ADJ_POISON > 3 ) local F_TAKEDMG_ADJ_POISON 3
+	if ( F_TAKEDMG_ADJ_LIGHTNING > 3 ) local F_TAKEDMG_ADJ_LIGHTNING 3
+
+	takedmg acid F_TAKEDMG_ADJ_ACID
+	takedmg cold F_TAKEDMG_ADJ_COLD
+	takedmg fire F_TAKEDMG_ADJ_FIRE
+	takedmg poison F_TAKEDMG_ADJ_POISON
+	takedmg lightning F_TAKEDMG_ADJ_LIGHTNING
+
+	if ( G_DEVELOPER_MODE )
+	{
+		saytextrange 1024
+		callevent dev_text
+	}
+}
+
+{ dev_text
+	saytext DEV_STRING
+	saytext Takedmg: acd: $get_takedmg(ent_me,acid) cld: $get_takedmg(ent_me,cold) fir: $get_takedmg(ent_me,fire) poi: $get_takedmg(ent_me,poison) lgt: $get_takedmg(ent_me,lightning) stun: IMMUNE_STUN
+	saytext hp: $get(ent_me,maxhp) exp: NPC_GIVE_EXP
+	dbg DEV_STRING
+	dbg Takedmg: acd: $get_takedmg(ent_me,acid) cld: $get_takedmg(ent_me,cold) fir: $get_takedmg(ent_me,fire) poi: $get_takedmg(ent_me,poison) lgt: $get_takedmg(ent_me,lightning) stun: IMMUNE_STUN
+	dbg hp: $get(ent_me,maxhp) exp: NPC_GIVE_EXP
+}
+
+//{ game_dynamically_created //<type_string>
+//	dbg game_dynamically_created PARAM1
+//	if G_DEVELOPER_MODE
+//	setvard NPC_DO_EVENTS PARAM1
+//	if ( PARAM1 startswith PARAM ) local EXIT_SUB 1
+//	if !EXIT_SUB
+//	calleventloop $get_token_amt(NPC_DO_EVENTS) npcatk_do_events
+//}
+
+//================================== ADD PARAMS (can also be set through createdyn params)
+{ dg_narm
+	setvard NO_ARMOR 1
+}
+
+{ dg_armr
+	setvard IS_ARMORED 1
+	setmodelbody 0 1
+	takedmg all 0.5
+	add NPC_GIVE_EXP 350
+}
+
+{ dg_red
+	if ( SKIN_SET ) infomsg all "MAPPER ERROR" "Two skins set on Dragon Guard"
+	if !SKIN_SET
+	setvard SKIN_SET 1
+	setvard IS_RED 1
+	setvard IS_GREEN 0
+	setvard IS_BLACK 0
+	setprop ent_me skin 1
+	add NPC_GIVE_EXP 50
+}
+
+{ dg_black
+	if ( SKIN_SET ) infomsg all "MAPPER ERROR" "Two skins set on Dragon Guard"
+	if !SKIN_SET
+	setvard SKIN_SET 1
+	setvard IS_BLACK 1
+	setvard IS_GREEN 0
+	setvard IS_RED 0
+	setprop ent_me skin 2 //pending
+	add NPC_GIVE_EXP 1000
+}
+
+{ dg_wice
+	//gice blade
+	if ( WEAPON_TYPE > 0 ) infomsg all "MAP ERROR" "Dragon guard assigned more than one weapon type."
+	if !WEAPON_TYPE
+	setvard WEAPON_TYPE 1 //0-unarmed 1-iceblade 2-hxbow 3-glaive 4-hammer 5-crescents 6-swords
+	setmodelbody 1 WEAPON_TYPE
+	add NPC_GIVE_EXP 200
+
+	setvard ATTACK_REACH_RANGE 128
+	setvard ATTACK_RANGE RANGE_MELEE_STANDARD
+	setvard ATTACK_HITRANGE HITRANGE_MELEE_STANDARD
+	setvard ATTACK_MOVERANGE MOVERANGE_MELEE_STANDARD
+
+	setvard ANIM_IDLE_COMBAT combat_idle
+	setvard ANIM_IDLE_DEEP deep_idle
+	setvard ANIM_ATTACK1 1h_slash1 //frame_melee_strike
+	setvard ANIM_ATTACK2 1h_slash2 //frame_melee_strike
+	setvard ANIM_ATTACK_REACH 1h_reach //frame_reach_strike
+	setvard NPC_JUMPER 1
+
+	setvard FREQ_REACH_ATTACK 15.0
+
+	setvard CAUTIOUS_APPROACH 0
+	setvard DMG_MELEE 200
+	setvard DMG_MELEE_TYPE slash
+	setvard HAS_DOT 1
+	setvard MELEE_DOT_DUR 5
+	setvard MELEE_DOT 50
+	setvard MELEE_DOT_EFFECT effects/effect_frostbite_dmg
+	//WEAPON_TYPE 1 has a freeze_solid attack on every 5th hit
+
+	setvard NEW_NAME "Dragon Guard Iceblade"
+}
+
+{ dg_wbow
+	//xbow
+	if ( WEAPON_TYPE > 0 ) infomsg all "MAP ERROR" "Dragon guard assigned more than one weapon type."
+	if !WEAPON_TYPE
+	setvard WEAPON_TYPE 2 //0-unarmed 1-iceblade 2-hxbow 3-glaive 4-hammer 5-crescents 6-swords
+	setmodelbody 1 WEAPON_TYPE
+	subtract NPC_GIVE_EXP 200
+
+	setvard ATTACK_RANGE 1024
+	setvard ATTACK_MOVERANGE 384
+	setvard ATTACK_HITRANGE 1024
+	setvard NO_REACH_ATTACK 1
+
+	setvard NPC_NO_VADJ 1
+
+	setvard ANIM_IDLE_COMBAT xbowrdy
+	setvard ANIM_IDLE_DEEP deep_idle
+	setvard ANIM_ATTACK1 xbowshot //frame_xbow
+	setvard ANIM_ATTACK2 xbowshot //frame_xbow
+	setvard NPC_JUMPER 0
+	setvard NEVER_JUMPS 1
+
+	setvard FREQ_KICK 8.0
+	setvard EXTEND_KICK_RANGE 1
+
+	setvard RETREATS_WHEN_NEAR 1
+	setvard RETREATS_NEAR_RANGE 72
+	setvard RETREATS_NEAR_TYPE flee
+	setvard ATTACK_REACH_RANGE 128
+	setvard CAUTIOUS_APPROACH 0
+	setvard NPC_RANGED 1
+	setvard DMG_MELEE 200
+	setvard DMG_MELEE_TYPE pierce
+	setvard HAS_DOT 1
+	setvard MELEE_DOT_DUR 5
+	setvard MELEE_DOT 50
+	setvard MELEE_DOT_EFFECT effects/greater_poison
+
+	setvard NEW_NAME "Dragon Guard Bowman"
+}
+
+{ dg_wpol
+	//glaive
+	if ( WEAPON_TYPE > 0 ) infomsg all "MAP ERROR" "Dragon guard assigned more than one weapon type."
+	if !WEAPON_TYPE
+	setvard WEAPON_TYPE 3 //0-unarmed 1-iceblade 2-hxbow 3-glaive 4-hammer 5-crescents 6-swords
+	setmodelbody 1 WEAPON_TYPE
+	add NPC_GIVE_EXP 150
+
+	setvard ATTACK_REACH_RANGE 196
+	setvard ATTACK_RANGE 128
+	setvard ATTACK_HITRANGE 190
+	setvard ATTACK_MOVERANGE 96
+	setvard NPC_JUMPER 1
+
+	setvard NPC_MUST_SEE_TARGET 0
+
+	setvard ANIM_IDLE_COMBAT pole_idle2
+	setvard ANIM_IDLE_DEEP pole_idle1
+	setvard ANIM_ATTACK1 pole_close //frame_pole_close - push back
+	setvard ANIM_ATTACK2 plparryl //frame_pole_close - push back
+	setvard ANIM_ATTACK_REACH pole_reach //frame_pole_strike (some push back, but less)
+
+	setvard FREQ_REACH_ATTACK 1.0
+
+	setvard FREQ_KICK 8.0
+
+	setvard RETREATS_WHEN_NEAR 1
+	setvard RETREATS_NEAR_RANGE 96
+	setvard RETREATS_NEAR_TYPE walk
+
+	setvard CAUTIOUS_APPROACH 1
+	setvard DMG_MELEE 600 //falls off when closer
+	setvard DMG_MELEE_TYPE pierce
+	setvard HAS_DOT 0
+
+	setvard NEW_NAME "Dragon Guard Pikeman"
+}
+
+{ dg_wham
+	//hammer
+	if ( WEAPON_TYPE > 0 ) infomsg all "MAP ERROR" "Dragon guard assigned more than one weapon type."
+	if !WEAPON_TYPE
+	setvard WEAPON_TYPE 4 //0-unarmed 1-iceblade 2-hxbow 3-glaive 4-hammer 5-crescents 6-swords
+	setmodelbody 1 WEAPON_TYPE
+	add NPC_GIVE_EXP 400
+
+	setvard ATTACK_REACH_RANGE 196
+	setvard ATTACK_RANGE 64
+	setvard ATTACK_HITRANGE 110
+	setvard ATTACK_MOVERANGE 48
+	setvard NPC_JUMPER 1
+
+	setvard FREQ_KICK 9999 //never kicks (weapon too unweildy)
+
+	setvard ANIM_IDLE_COMBAT 2w_idle
+	setvard ANIM_IDLE_DEEP combat_idle
+	setvard ANIM_ATTACK1 2hclosel
+	setvard ANIM_ATTACK2 2hcloseh
+	setvard ANIM_ATTACK_REACH hammer_reach //frame_hammer_slam
+	setvard FREQ_REACH_ATTACK 15.0
+
+	setvard CAUTIOUS_APPROACH 0
+	setvard DMG_MELEE 400
+	setvard DMG_MELEE_TYPE blunt
+	setvard HAS_DOT 0
+	setvard CAN_STUN 1
+	setvard STUN_BURST 1
+	setvard STUN_CHANCE 25%
+
+	setvard NEW_NAME "Dragon Guard Mauler"
+}
+
+{ dg_wcre
+	//crescent blades
+	if ( WEAPON_TYPE > 0 ) infomsg all "MAP ERROR" "Dragon guard assigned more than one weapon type."
+	if !WEAPON_TYPE
+	setvard WEAPON_TYPE 5 //0-unarmed 1-iceblade 2-hxbow 3-glaive 4-hammer 5-crescents 6-swords
+	setmodelbody 1 WEAPON_TYPE
+	add NPC_GIVE_EXP 200
+
+	setvard ATTACK_REACH_RANGE 128
+	setvard ATTACK_RANGE 52
+	setvard ATTACK_HITRANGE 70
+	setvard ATTACK_MOVERANGE MOVERANGE_MELEE_STANDARD
+	setvard NPC_JUMPER 1
+
+	setvard FREQ_KICK $randf(10.0,15.0)
+
+	setvard ANIM_IDLE_COMBAT 2w_readyvs
+	setvard ANIM_IDLE_DEEP 2w_idle
+	setvard ANIM_ATTACK1 2wslashl
+	setvard ANIM_ATTACK2 2wcloseh
+	setvard ANIM_ATTACK_REACH 2wreach
+	setvard FREQ_REACH_ATTACK 10.0
+
+	setvard CAUTIOUS_APPROACH 1
+	setvard DMG_MELEE 100
+	setvard DMG_MELEE_TYPE slash
+	setvard HAS_DOT 1
+	setvard MELEE_DOT 50
+	setvard MELEE_DOT_DUR 5
+	setvard MELEE_DOT_EFFECT effects/effect_poison
+
+	setvard CAN_THROW 1
+	setvard PROJECTILE_THROW proj_crescent
+
+	setvard NEW_NAME "Dragon Guard Ravager"
+}
+
+{ dg_wdbl
+	//katanas
+	if ( WEAPON_TYPE > 0 ) infomsg all "MAP ERROR" "Dragon guard assigned more than one weapon type."
+	if !WEAPON_TYPE
+	setvard WEAPON_TYPE 6 //0-unarmed 1-iceblade 2-hxbow 3-glaive 4-hammer 5-crescents 6-swords
+	setmodelbody 1 WEAPON_TYPE
+	add NPC_GIVE_EXP 250
+
+	setvard ATTACK_REACH_RANGE 128
+	setvard ATTACK_RANGE RANGE_MELEE_STANDARD
+	setvard ATTACK_HITRANGE HITRANGE_MELEE_STANDARD
+	setvard ATTACK_MOVERANGE MOVERANGE_MELEE_STANDARD
+	setvard NPC_JUMPER 1
+
+	setvard ANIM_IDLE_COMBAT 2w_readyvs
+	setvard ANIM_IDLE_DEEP deep_idle
+	setvard ANIM_ATTACK1 2wslashl
+	setvard ANIM_ATTACK2 2wcloseh
+	setvard ANIM_ATTACK_REACH 2wreach
+	setvard FREQ_REACH_ATTACK 10.0
+
+	setvard CAUTIOUS_APPROACH 1
+	setvard DMG_MELEE 150
+	setvard DMG_MELEE_TYPE dark
+	setvard HAS_DOT 0
+	setvard MELEE_VAMPIRE 1
+
+	setvard NEW_NAME "Dragon Guard Bladesman"
+}
+
+{ dg_wfrb
+	//red rune blade
+	if ( WEAPON_TYPE > 0 ) infomsg all "MAP ERROR" "Dragon guard assigned more than one weapon type."
+	if !WEAPON_TYPE
+	setvard WEAPON_TYPE 7 //0-unarmed 1-iceblade 2-hxbow 3-glaive 4-hammer 5-crescents 6-swords 7-fire_runeblade+shield 8-green_runeblade+shield
+	setmodelbody 1 WEAPON_TYPE
+	add NPC_GIVE_EXP 150
+
+	add TAKEDMG_ADJ_FIRE -0.5
+
+	setvard ATTACK_REACH_RANGE 128
+	setvard ATTACK_RANGE RANGE_MELEE_STANDARD
+	setvard ATTACK_HITRANGE HITRANGE_MELEE_STANDARD
+	setvard ATTACK_MOVERANGE MOVERANGE_MELEE_STANDARD
+	setvard NPC_JUMPER 1
+	setvard FREQ_KICK 9999 //never kicks (favors sheild bash)
+
+	setvard ANIM_IDLE_COMBAT 2w_idle
+	setvard ANIM_IDLE_DEEP deep_idle
+	setvard ANIM_ATTACK1 1h_slash1
+	setvard ANIM_ATTACK2 1h_slash2
+	setvard ANIM_ATTACK_REACH 1h_reach
+	setvard FREQ_REACH_ATTACK 10.0
+
+	setvard CAUTIOUS_APPROACH 1
+	setvard HAS_SHIELD 1
+	setvard DMG_MELEE 200
+	setvard DMG_MELEE_TYPE slash
+	setvard HAS_DOT 1
+	setvard MELEE_DOT 150
+	setvard MELEE_DOT_DUR 5
+	setvard MELEE_DOT_EFFECT effects/effect_burn
+
+	setvard NEW_NAME "Dragon Guard Flameblade"
+}
+
+{ dg_wgrb
+	//green rune blade
+	if ( WEAPON_TYPE > 0 ) infomsg all "MAP ERROR" "Dragon guard assigned more than one weapon type."
+	if !WEAPON_TYPE
+	setvard WEAPON_TYPE 8 //0-unarmed 1-iceblade 2-hxbow 3-glaive 4-hammer 5-crescents 6-swords 7-fire_runeblade+shield 8-green_runeblade+shield
+	setmodelbody 1 WEAPON_TYPE
+	add NPC_GIVE_EXP 200
+
+	add TAKEDMG_ADJ_POISON -0.5
+
+	setvard ATTACK_REACH_RANGE 128
+	setvard ATTACK_RANGE RANGE_MELEE_STANDARD
+	setvard ATTACK_HITRANGE HITRANGE_MELEE_STANDARD
+	setvard ATTACK_MOVERANGE MOVERANGE_MELEE_STANDARD
+	setvard NPC_JUMPER 1
+	setvard FREQ_KICK 9999 //never kicks (favors sheild bash)
+
+	setvard ANIM_IDLE_COMBAT 2w_idle
+	setvard ANIM_IDLE_DEEP deep_idle
+	setvard ANIM_ATTACK1 1h_slash1
+	setvard ANIM_ATTACK2 1h_slash2
+	setvard ANIM_ATTACK_REACH 1h_reach
+	setvard FREQ_REACH_ATTACK 10.0
+
+	setvard CAUTIOUS_APPROACH 1
+	setvard HAS_SHIELD 1
+	setvard HAS_DOT 1
+	setvard DMG_MELEE 150
+	setvard DMG_MELEE_TYPE slash
+	setvard MELEE_DOT 50
+	setvard MELEE_DOT_DUR 10
+	setvard MELEE_DOT_EFFECT effects/effect_poison
+
+	setvard NEW_NAME "Dragon Guard Plaguebringer"
+}
+
+{ dg_bfir
+
+	if ( G_DEVELOPER_MODE ) stradd DEV_STRING "Breath_Fire "
+
+	setvard NAME_PREF Infernal
+
+	setvard BREATH_ATTACK 1
+	setvard BREATH_TYPE fire
+	add NPC_GIVE_EXP 100
+	setvard BREATH_DOT 200
+	setvard ANIM_BREATH breath_start //frame_breath_start
+	setvard BREATH_MIN_RANGE 0
+	setvard BREATH_PUSH_VEL 200
+
+	add TAKEDMG_ADJ_FIRE -0.5
+	add TAKEDMG_ADJ_COLD 0.75
+
+	setvard BREATH_RANGE 256
+	setvard FREQ_BREATH 20.0
+}
+
+{ dg_bice
+	if !IS_RED
+	if ( G_DEVELOPER_MODE ) stradd DEV_STRING "Breath_Cold "
+	setvard NAME_PREF Freezing
+	dbg dg_bice
+	setvard BREATH_ATTACK 1
+	setvard BREATH_TYPE cold
+	add NPC_GIVE_EXP 200
+	add TAKEDMG_ADJ_FIRE 0.75
+	add TAKEDMG_ADJ_COLD -0.5
+
+	setvard BREATH_DOT 50
+	setvard BREATH_MIN_RANGE 0
+	setvard BREATH_PUSH_VEL 0
+	setvard ANIM_BREATH breath_start //frame_breath_start
+
+	setvard FREQ_BREATH 20.0
+	setvard BREATH_RANGE 256
+}
+
+{ dg_bpoi
+	if ( G_DEVELOPER_MODE ) stradd DEV_STRING "Breath_Poison "
+	setvard NAME_PREF Noxious
+	setvard BREATH_ATTACK 1
+	setvard BREATH_TYPE poison
+	add NPC_GIVE_EXP 100
+
+	add TAKEDMG_ADJ_POISON -0.5
+	add TAKEDMG_ADJ_ACID -0.5
+	add TAKEDMG_ADJ_LIGHTNING 0.75
+
+	setvard BREATH_DOT 50
+	setvard ANIM_BREATH breath_start //frame_breath_start
+	setvard BREATH_MIN_RANGE 0
+	setvard BREATH_PUSH_VEL 200
+	setvard FREQ_BREATH 20.0
+	setvard BREATH_RANGE 256
+}
+
+{ dg_bacd
+	if ( G_DEVELOPER_MODE ) stradd DEV_STRING "Breath_Acid "
+	setvard NAME_PREF Caustic
+	setvard BREATH_ATTACK 1
+	setvard BREATH_TYPE acid
+	add NPC_GIVE_EXP 100
+
+	add TAKEDMG_ADJ_ACID -0.5
+	add TAKEDMG_ADJ_LIGHTNING 0.5
+
+	setvard ANIM_BREATH breath_quick //frame_breath_quick
+	setvard BREATH_QUICK 1
+
+	setvard FREQ_BREATH 6.0
+	setvard BREATH_RANGE 1024
+	setvard BREATH_MIN_RANGE 150
+}
+
+{ dg_blgt
+
+	if ( G_DEVELOPER_MODE )
+	{
+		stradd DEV_STRING "Breath_lightning "
+	}
+	//setvard NAME_PREF Thundering
+	setvard BREATH_ATTACK 1
+	setvard BREATH_TYPE lightning
+	add NPC_GIVE_EXP 100
+
+	add TAKEDMG_ADJ_ACID 0.75
+	add TAKEDMG_ADJ_POISON 0.5
+	add TAKEDMG_ADJ_LIGHTNING -0.5
+
+	setvard ANIM_BREATH breath_quick //frame_breath_quick
+	setvard BREATH_QUICK 1
+	setvard FREQ_BREATH 6.0
+	setvard BREATH_RANGE 1024
+	setvard BREATH_MIN_RANGE 0
+}
+
+{ dg_nbrt
+	setvard NO_BREATH 1
+}
+
+{ dg_npot
+	setvard NO_POTION 1
+	//subtract NPC_GIVE_EXP 100
+}
+
+{ dg_potd
+	if ( G_DEVELOPER_MODE ) stradd DEV_STRING "Pot_Demonblood "
+	setvard NO_POTION 1
+	setvard POT_SPECIAL 1
+	setvard POT_TYPE demon
+	add NPC_GIVE_EXP 750
+}
+
+{ dg_potp
+	if ( G_DEVELOPER_MODE ) stradd DEV_STRING "Pot_Protection"
+	setvard NO_POTION 1
+	setvard POT_SPECIAL 1
+	setvard POT_TYPE protection
+	add NPC_GIVE_EXP 200
+}
+
+{ dg_potf
+	if ( G_DEVELOPER_MODE ) stradd DEV_STRING "Pot_Faura "
+	setvard NO_POTION 1
+	setvard POT_SPECIAL 1
+	setvard POT_TYPE faura
+	add NPC_GIVE_EXP 100
+}
+
+{ dg_pots
+	if ( G_DEVELOPER_MODE ) stradd DEV_STRING "Pot_Speed "
+	setvard NO_POTION 1
+	setvard POT_SPECIAL 1
+	setvard POT_TYPE speed
+	add NPC_GIVE_EXP 500
+}
+
+//================================== end addparams
+
+//================================== MAIN HUNT CYCLE
+
+{ npc_targetsighted
+	if !DID_INIT
+	setvard DID_INIT 1
+
+	local GAME_TIME game.time
+
+	setvard NEXT_ALERT_SOUND GAME_TIME
+	add NEXT_ALERT_SOUND 10.0
+
+	setvard NEXT_KICK GAME_TIME
+	add NEXT_KICK FREQ_KICK
+
+	setvard NEXT_BREATH GAME_TIME
+	add NEXT_BREATH FREQ_BREATH
+
+	if ( IS_ARMORED )
+	{
+		if $rand(1,3) == 1
+		playrandomsound 0 10 SOUNDA_HEARD_ALERT1 SOUNDA_HEARD_ALERT2
+	}
+	else
+	{
+		if $rand(1,5) == 1
+		playrandomsound 0 10 SOUND_HEARD_ALERT1 SOUND_HEARD_ALERT2
+	}
+
+	if ( $lcase(game.map.name) equals nashalrath )
+	{
+//		if ( game.time < 20 )
+//		{
+		local MAH_DADDY $get_by_name(gdragon_img)
+		if !$get(MAH_DADDY,isalive) //dont fuck with daddy's musak
+		callexternal NPCATK_TARGET ext_play_music all 7.5 DemonicFlesh2.mp3			
+//		}
+//		else
+//		{
+//			callexternal NPCATK_TARGET ext_play_music NPCATK_TARGET 7.5 DemonicFlesh2.mp3
+//		}
+	}
+
+	if POT_SPECIAL
+	callevent npcatk_suspend_ai 2.0
+	playanim critical ANIM_DRINK
+}
+
+{ npcatk_hunt
+
+	//some day I'll stop writing my scripts so sloppy as to cause their AI's to stick suspended
+	if ( SUSPEND_AI )
+	{
+		local L_LAST_AI_SUSPEND_PLUS10 NPC_LAST_SUSPEND_AI 
+		add L_LAST_AI_SUSPEND_PLUS10 10.0
+		if ( game.time > L_LAST_AI_SUSPEND_PLUS10 )
+		{
+			//AI suspended more than 10 seconds, force resume
+			dbg AI SUSPENDED TOO LONG
+			callevent npcatk_resume_ai
+			setvard DG_SUSPEND 0
+		}
+	}
+
+	if !SUSPEND_AI
+
+	if ( ATTACK_HITRANGE < ATTACK_RANGE )
+	{
+		//some odd combos can cause range to excede hitrange, which causes problems
+		setvard ATTACK_HITRANGE ATTACK_RANGE
+		multiply ATTACK_HITRANGE 1.25
+	}
+
+	local GAME_TIME game.time
+
+	if NPCATK_TARGET isnot unset
+
+	if ( HEAL_READY )
+	{
+		if !ATTEMPTED_HEAL
+		if GAME_TIME > NEXT_HEAL
+		setmodelbody 1 10
+		setvard DO_HEAL 1
+		setvard ATTEMPTED_HEAL 1
+		callevent npcatk_suspend_ai 2.0
+		playanim critical ANIM_DRINK
+		if ( IS_ARMORED ) playsound 0 10 SOUNDA_HEAL
+		callevent 5.0 reset_weapon_submodel //in case stuck for some reason
+	}
+	if !SUSPEND_AI //suspend rest of think if healing
+
+	local TARG_RANGE $get(NPCATK_TARGET,range)
+
+	if ( BREATH_ATTACK )
+	{
+		if GAME_TIME > NEXT_BREATH
+		if TARG_RANGE < BREATH_RANGE
+		if TARG_RANGE > BREATH_MIN_RANGE
+		if $cansee(NPCATK_TARGET)
+		setvard NEXT_BREATH game.time
+		add NEXT_BREATH FREQ_BREATH
+		playanim critical ANIM_BREATH
+		setvard DG_SUSPEND GAME_TIME
+		if ( BREATH_QUICK )
+		{
+			add DG_SUSPEND 1.0
+		}
+		else
+		{
+			add DG_SUSPEND 2.5
+		}
+	}
+	if GAME_TIME > DG_SUSPEND //suspend the internal AI for a bit, to give breath a chance to go
+
+	if ( CAUTIOUS_APPROACH )
+	{
+		if ( TARG_RANGE < 256 )
+		{
+			if $get(ent_me,hp) > QUARTER_HP
+			if GAME_TIME > NEXT_CALM
+			setvard ANIM_RUN ANIM_CAUTIOUS_APPROACH
+			setmoveanim ANIM_RUN
+		}
+		else
+		{
+			if $get(ent_me,hp) > QUARTER_HP
+			setvard ANIM_RUN run
+			setmoveanim ANIM_RUN
+		}
+	}
+	else
+	{
+		if $get(ent_me,hp) > QUARTER_HP
+		setmoveanim ANIM_RUN
+	}
+
+	//in case this pulls the same strangeness the gpolar breath attack did
+	if ( BREATH_ON )
+	{
+		if GAME_TIME > NEXT_BREATH_REMOVE
+		setvard NEXT_BREATH_REMOVE
+		add NEXT_BREATH_REMOVE 1.0
+		setvard BREATH_ON 0
+		clientevent update all BREATH_CL_IDX end_fx
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	if ( RETREATS_WHEN_NEAR )
+	{
+		if TARG_RANGE < RETREATS_NEAR_RANGE
+		if GAME_TIME > NEXT_BACK_OFF
+
+		if ( RETREATS_NEAR_TYPE equals walk )
+		{
+			//glave bastards back off periodically, if opponent too near
+			playanim critical ANIM_CAUTIOUS_RETREAT
+			setvard NEXT_BACK_OFF GAME_TIME
+			add	NEXT_BACK_OFF 10.0
+		}
+
+		if ( RETREATS_NEAR_TYPE equals flee )
+		{
+			//xbow bastards rtf away when opponent too near
+			//reset run attribs, in case cautious approach tripped above
+			if ( $get(ent_me,hp) > QUARTER_HP )
+			{
+				setvard ANIM_RUN run
+				setmoveanim ANIM_RUN
+			}
+			else
+			{
+				setvard ANIM_RUN walkinj
+				setmoveanim ANIM_RUN walkinj
+			}
+			callevent npcatk_flee NPCATK_TARGET 512 2.0
+			setvard NEXT_BACK_OFF GAME_TIME
+			add	NEXT_BACK_OFF 20.0
+		}
+	}
+
+	if ( !NO_REACH_ATTACK )
+	{
+		if WEAPON_TYPE != 3
+		if TARG_RANGE < ATTACK_REACH_RANGE
+		if GAME_TIME > NEXT_REACH_ATTACK
+		setvard NEXT_REACH_ATTACK GAME_TIME
+		add NEXT_REACH_ATTACK FREQ_REACH_ATTACK
+		//playanim once ANIM_ATTACK_REACH
+		setvard ATTACK_RANGE ATTACK_REACH_RANGE
+		setvard ANIM_ATTACK ANIM_ATTACK_REACH
+		//setvard AS_ATTACKING GAME_TIME
+		//add AS_ATTACKING 5.0
+	}
+
+	if ( WEAPON_TYPE == 3 )
+	{
+		//polearm adjust attack on range
+		if ( TARG_RANGE < 70 )
+		{
+			local RND_ATK $rand(1,2)
+			if ( RND_ATK == 1 ) setvard ANIM_ATTACK plparryl
+			if ( RND_ATK == 2 ) setvard ANIM_ATTACK pole_close
+		}
+		else
+		{
+			setvard ANIM_ATTACK pole_reach
+		}
+	}
+
+	if ( WEAPON_TYPE == 5 )
+	{
+		if GAME_TIME > NEXT_CRE_THROW
+		if $cansee(NPCATK_TARGET)
+		setvard NEXT_CRE_THROW game.time
+		add NEXT_CRE_THROW 3.0
+		playanim critical ANIM_THROW
+		
+	}
+
+	if ( HAS_SHIELD )
+	{
+		if TARG_RANGE < 48
+		if GAME_TIME > NEXT_SHIELD_BASH
+		setvard NEXT_SHIELD_BASH GAME_TIME
+		add NEXT_SHIELD_BASH FREQ_SHIELD_BASH
+		playanim critical shieldl
+	}
+
+	if ( GAME_TIME > NEXT_KICK )
+	{
+		if !AM_WOUNDED
+		local L_KICK_RANGE MOVERANGE_MELEE_STANDARD
+		if ( EXTEND_KICK_RANGE ) local L_KICK_RANGE RANGE_MELEE_STANDARD
+		if $get(NPCATK_TARGET,range) < L_KICK_RANGE
+		setvard ANIM_ATTACK ANIM_KICK
+		setvard NEXT_KICK game.time
+		add NEXT_KICK FREQ_KICK
+		add NEXT_KICK 2.0 //compensate for melee time, cuz we moved this here
+		local EXIT_SUB 1
+	}
+	else
+	{
+		local L_KICK_RANGE MOVERANGE_MELEE_STANDARD
+		if ( EXTEND_KICK_RANGE ) local L_KICK_RANGE RANGE_MELEE_STANDARD
+		if $get(NPCATK_TARGET,range) > L_KICK_RANGE
+		if ANIM_ATTACK equals ANIM_KICK
+		setvard ANIM_ATTACK ANIM_ATTACK1
+	}
+	if !EXIT_SUB
+
+	//xbow re-orient
+	if ( MISS_COUNT > 3 )
+	{
+		setvard MISS_COUNT 0
+		callevent chicken_run 2.0
+	}
+}
+
+{ frame_kick_strike
+	if ( IS_ARMORED )
+	{
+		playsound 2 10 SOUNDA_NPC_JUMP
+	}
+	else
+	{
+		playsound 2 10 SOUND_NPC_JUMP
+	}
+	playrandomsound 0 10 SOUND_MELEE1 SOUND_MELEE2
+	xdodamage NPCATK_TARGET HITRANGE_MELEE_STANDARD DMG_KICK 90% ent_me ent_me none blunt dmgevent:kick
+	setvard ANIM_ATTACK ANIM_ATTACK1
+	//if ( G_DEVELOPER_MODE ) saytext "El Kicko!"
+}
+
+{ kick_dodamage
+	if PARAM1
+	addvelocity PARAM2 $relvel(0,300,110)
+	applyeffect PARAM2 effects/effect_stun 5.0 0 0 $get(ent_me,id)
+}
+
+{ game_damaged
+	//limp when 25% hp or less
+	local MY_HP $get(ent_me,hp)
+	if ( !IS_ARMORED )
+	{
+		if ( MY_HP > HALF_HP )
+		{
+			playrandomsound 0 10 SOUND_STRUCK1 SOUND_STRUCK2 SOUND_STRUCK3 
+		}
+		else
+		{
+			playrandomsound 0 10 SOUND_STRUCK1 SOUND_STRUCK2 SOUND_STRUCK3 SOUND_PAIN1 SOUND_PAIN2
+		}
+	}
+	else
+	{
+		if ( MY_HP > HALF_HP )
+		{
+			playrandomsound 0 10 SOUND_STRUCK1 SOUND_STRUCK2 SOUND_STRUCK3 SOUND_STRUCK_ARMOR1 SOUND_STRUCK_ARMOR2
+		}
+		else
+		{
+			playrandomsound 0 10 SOUND_STRUCK1 SOUND_STRUCK2 SOUND_STRUCK3 SOUND_STRUCK_ARMOR1 SOUND_STRUCK_ARMOR2 SOUNDA_PAIN1 SOUNDA_PAIN2 SOUNDA_PAIN3
+		}
+	}
+
+	if ( POT_HEAL )
+	{
+		if MY_HP < HALF_HP
+		setvard NEXT_HEAL GAME_TIME
+		add NEXT_HEAL HEAL_DELAY
+		setvard HEAL_READY 1
+		setvard POT_HEAL 0
+	}
+
+	setvard NEXT_CALM game.time
+	add NEXT_CALM 20.0
+	if ( MY_HP > QUARTER_HP )
+	{
+		setvard AM_WOUNDED 0
+		if ( !NEVER_JUMPS ) setvard NPC_JUMPER 1
+		setvard ANIM_RUN run
+		setmoveanim ANIM_RUN
+	}
+	else
+	{
+		setvard AM_WOUNDED 1
+		setvard NPC_JUMPER 0
+		setvard ANIM_RUN walkinj
+		setmoveanim ANIM_RUN walkinj
+	}
+}
+
+{ cycle_up
+	setvard ANIM_IDLE ANIM_IDLE_COMBAT
+	setidleanim ANIM_IDLE
+}
+
+{ cycle_down
+	setvard ANIM_IDLE ANIM_IDLE_DEEP
+	setidleanim ANIM_IDLE
+	if $get(ent_me,hp) > QUARTER_HP
+	setvard ANIM_WALK walk
+	setmoveanim ANIM_WALK
+}
+
+{ game_heardsound
+	//cautiously move towards suspicious unseen sounds
+	if NPCATK_TARGET equals unset
+	local HEARD_ID $get(ent_lastheard,id)
+	if $get(HEARD_ID,relationship,ent_me) equals enemy
+	if ( $get(ent_me,hp) > QUARTER_HP )
+	{
+		setvard ANIM_WALK ANIM_WALK_HEARDSOUND
+		setmoveanim ANIM_WALK
+	}
+	if game.time > NEXT_ALERT_SOUND
+	setvard NEXT_ALERT_SOUND game.time
+	add NEXT_ALERT_SOUND 30.0
+	if ( IS_ARMORED )
+	{
+		playsound 0 10 SOUNDA_INVESTIGATE
+	}
+	else
+	{
+		playsound 0 10 SOUND_INVESTIGATE
+	}
+}
+
+//================================== ANIM EVENTS
+
+{ frame_melee_strike
+	playrandomsound 0 10 SOUND_MELEE1 SOUND_MELEE2
+	if ( IS_ARMORED )
+	{
+		if $rand(1,5) == 1
+		playrandomsound 2 10 SOUNDA_ATTACK1 SOUNDA_ATTACK2 SOUNDA_ATTACK3
+	}
+	else
+	{
+		if $rand(1,5) == 1
+		playrandomsound 2 10 SOUND_ATTACK1 SOUND_ATTACK2 SOUND_ATTACK3
+	}
+	setvard MELEE_ATTACK 1
+	dodamage NPCATK_TARGET ATTACK_HITRANGE DMG_MELEE 90% DMG_MELEE_TYPE
+}
+
+{ frame_reach_strike
+	if ( IS_ARMORED )
+	{
+		if $rand(1,3) == 1
+		playrandomsound 2 10 SOUNDA_ATTACK1 SOUNDA_ATTACK2 SOUNDA_ATTACK3
+	}
+	else
+	{
+		if $rand(1,3) == 1
+		playrandomsound 2 10 SOUND_ATTACK1 SOUND_ATTACK2 SOUND_ATTACK3
+	}
+	playrandomsound 0 10 SOUND_MELEE1 SOUND_MELEE2
+	setvard MELEE_ATTACK 1
+	local L_HIT_RANGE ATTACK_HITRANGE
+	multiply L_HIT_RANGE 1.5
+	dodamage NPCATK_TARGET L_HIT_RANGE DMG_MELEE 90% DMG_MELEE_TYPE
+	setvard ANIM_ATTACK ANIM_ATTACK_DEFAULT
+	setvard ATTACK_RANGE ATTACK_RANGE_DEFAULT
+}
+
+{ frame_hammer_slam
+	if ( IS_ARMORED )
+	{
+		playrandomsound 2 10 SOUNDA_ATTACK1 SOUNDA_ATTACK2 SOUNDA_ATTACK3
+	}
+	else
+	{
+		playrandomsound 2 10 SOUND_ATTACK1 SOUND_ATTACK2 SOUND_ATTACK3
+	}
+	setvard ANIM_ATTACK ANIM_ATTACK_DEFAULT
+	setvard ATTACK_RANGE ATTACK_RANGE_DEFAULT
+	playsound 0 10 SOUND_MELEE_LARGE
+	setvard BURST_START $relpos(0,150,0)
+	clientevent new all effects/sfx_stun_burst BURST_START 256 0
+	vectoradd BURST_START z 32
+	setvard BURST_TARGS $get_tsphere(enemy,256,BURST_START)
+	if BURST_TARGS isnot none
+	calleventloop $get_token_amt(BURST_TARGS) stun_burst_affect_targets
+}
+
+{ stun_burst_affect_targets
+	local CUR_TARG $get_token(BURST_TARGS,game.script.iteration)
+	if $get(CUR_TARG,onground)
+	applyeffect CUR_TARG effects/effect_stun 5.0 1 1
+	local TARG_ORG $get(CUR_TARG,origin)
+	local MY_ORG BURST_START
+	local NEW_YAW $angles(MY_ORG,TARG_ORG)
+	xdodamage CUR_TARG direct DMG_STUN_BURST 100% ent_me ent_me none blunt
+	addvelocity CUR_TARG $relvel($vec(0,NEW_YAW,0),$vec(0,1000,200))
+}
+
+{ frame_pole_close
+	playrandomsound 0 10 SOUND_MELEE1 SOUND_MELEE2
+	addvelocity NPCATK_TARGET $relvel(0,300,110)
+	local L_DMG_MELEE 100
+	dodamage NPCATK_TARGET HITRANGE_POLE_SHORT L_DMG_MELEE 90% DMG_MELEE_TYPE
+}
+
+{ frame_pole_strike
+	if ( IS_ARMORED )
+	{
+		if $rand(1,3) == 1
+		playrandomsound 2 10 SOUNDA_ATTACK1 SOUNDA_ATTACK2 SOUNDA_ATTACK3
+	}
+	else
+	{
+		if $rand(1,3) == 1
+		playrandomsound 2 10 SOUND_ATTACK1 SOUND_ATTACK2 SOUND_ATTACK3
+	}
+	playrandomsound 0 10 SOUND_MELEE1 SOUND_MELEE2
+
+	if $get(NPCATK_TARGET,isalive) //in case dies/disconnects before strike, and we dun wanna divide by zero
+	local RANGE_RATIO $get(NPCATK_TARGET,range)
+	divide RANGE_RATIO ATTACK_RANGE
+	local HALF_MAX DMG_MELEE
+	multiply HALF_MAX 0.5
+	local L_DMG_MELEE $ratio(RANGE_RATIO,HALF_MAX,DMG_MELEE)
+	if ( NPC_MUST_SEE_TARGET )
+	{
+		dodamage NPCATK_TARGET ATTACK_HITRANGE L_DMG_MELEE 90% DMG_MELEE_TYPE
+	}
+	else
+	{
+		if $get(NPCATK_TARGET,range) < ATTACK_HITRANGE
+		dodamage NPCATK_TARGET direct L_DMG_MELEE 90% ent_me DMG_MELEE_TYPE
+	}
+}
+
+{ frame_shield_bash
+	if $get(NPCATK_TARGET,range) < 64
+	local L_DMG_MELEE DMG_MELEE
+	multiply L_DMG_MELEE 0.25
+	xdodamage NPCATK_TARGET ATTACK_HITRANGE L_DMG_MELEE 90% ent_me ent_me none blunt dmgevent:shieldbash
+}
+
+{ shieldbash_dodamage
+	if PARAM1
+	addvelocity NPCATK_TARGET $relvel(0,200,110)
+	applyeffect NPCATK_TARGET effects/effect_stun 5.0 1 1
+	playsound 0 10 body/armour1.wav
+}
+
+//================================== end anim events
+
+{ game_dodamage
+	if ( MELEE_ATTACK )
+	{
+		if ( MELEE_VAMPIRE )
+		{
+			local GIVE_HP $get(ent_me,maxhp)
+			if $get(ent_me,hp) < GIVE_HP
+			multiply GIVE_HP 0.01
+			givehp ent_me GIVE_HP
+		}
+
+		if ( WEAPON_TYPE == 1 )
+		{
+			if ( PARAM2 equals OLD_ATTACK_TARGET )
+			{
+				if ( !$get(PARAM2,scriptvar,'I_R_FROZEN' )
+				{
+					add FREEZE_COUNT 1
+				}
+				else
+				{
+					setvard FREEZE_COUNT 0
+				}
+				if ( FREEZE_COUNT >= 4 )
+				{
+					if PARAM1
+					setvard FREEZE_COUNT 0
+					applyeffect PARAM2 effects/freeze_solid MELEE_DOT_DUR $get(ent_me,id) 0
+				}
+			}
+			else
+			{
+				setvard OLD_ATTACK_TARGET PARAM2
+				setvard FREEZE_COUNT 0
+			}
+		}
+
+		if PARAM1
+		if HAS_DOT
+		applyeffect PARAM2 MELEE_DOT_EFFECT MELEE_DOT_DUR $get(ent_me,id) MELEE_DOT
+	}
+	setvard MELEE_ATTACK 0
+}
+
+{ frame_drink_done
+	//fumble potion if flinched in last three seconds
+	local LAST_FLINCH_P3 LAST_FLINCH
+	add LAST_FLINCH_P3 3.0
+	if ( game.time < LAST_FLINCH_P3 ) local FUMBLE_POTION 0
+
+	//healing potion
+	if ( DO_HEAL )
+	{
+		setvard DO_HEAL 0
+		setvard HEAL_READY 0
+		if ( !FUMBLE_POTION )
+		{
+			effect glow ent_me (0,255,255) 64 1.0 1.0
+			playsound 0 10 magic/cast.wav
+			local HP_TO_GIVE $get(ent_me,maxhp)
+			subtract HP_TO_GIVE $get(ent_me,hp)
+			givehp ent_me HP_TO_GIVE
+
+			setvard POT_OUT_MSG "Quaffs a potion of healing."
+			getplayersnb PLR_POT_ALERT_LIST
+			if PLR_POT_ALERT_LIST isnot none
+			calleventloop $get_token_amt(PLR_POT_ALERT_LIST) pot_message
+		}
+	}
+
+	if ( POT_SPECIAL )
+	{
+		setvard POT_SPECIAL 0
+		if !FUMBLE_POTION
+		if ( POT_TYPE equals demon )
+		{
+			setvard POT_OUT_MSG "Quaffs a potion of demon blood."
+			setvard DEMON_NOHP_LOSS 1
+			callevent demon_blood 
+		}
+		if ( POT_TYPE equals protection )
+		{
+			setvard POT_OUT_MSG "Quaffs a potion of greater protection."
+			applyeffect ent_me effects/protection 9999 0.5
+		}
+		if ( POT_TYPE equals faura )
+		{
+			setvard POT_OUT_MSG "Quaffs a potion of flame aura."
+			local CUR_COLD_DMG $get_takedmg(ent_me,cold)
+			multiply CUR_COLD_DMG 0.5
+			takedmg cold CUR_COLD_DMG
+			callevent ext_fire_aura_activate
+		}
+		if ( POT_TYPE equals speed )
+		{
+			setvard POT_OUT_MSG "Quaffs a potion of speed."
+			clientevent persist all effects/sfx_motionblur_perm $get(ent_me,index) 0
+			callevent speed_x2_5
+		}
+
+		getplayersnb PLR_POT_ALERT_LIST
+		if PLR_POT_ALERT_LIST isnot none
+		calleventloop $get_token_amt(PLR_POT_ALERT_LIST) pot_message
+	}
+
+	if ( SUSPEND_AI ) callevent npcatk_resume_ai
+
+	setmodelbody 1 WEAPON_TYPE
+}
+
+{ reset_weapon_submodel
+	setmodelbody 1 WEAPON_TYPE
+}
+
+{ pot_message
+	local CUR_PLAYER $get_token(PLR_POT_ALERT_LIST,game.script.iteration)
+	if $get(CUR_PLAYER,range) < 1024
+	infomsg CUR_PLAYER $get(ent_me,name) POT_OUT_MSG
+}
+
+//================================== Fire Aura, from player/externals
+
+{ ext_fire_aura_activate //(dot and size are fixed)
+
+	if !DG_FAURA
+	setvard DG_FAURA 1
+
+	clientevent new all items/armor_faura_cl $get(ent_me,index) DG_FAURA_AOE DG_FAURA_CL_RATE 1
+	setvard DG_FAURA_CLIDX game.script.last_sent_id
+	setvard DG_FAURA_NEXT_CL game.time
+	add DG_FAURA_NEXT_CL DG_FAURA_CL_RATE
+	callevent fire_aura_loop
+}
+
+{ fire_aura_loop
+	if DG_FAURA
+	if $get(ent_me,isalive)
+	callevent 1.0 fire_aura_loop
+
+	local GAME_TIME game.time
+
+	if ( GAME_TIME > DG_FAURA_NEXT_CL )
+	{
+		clientevent new all items/armor_faura_cl $get(ent_me,index) DG_FAURA_AOE DG_FAURA_CL_RATE 1
+		setvard DG_FAURA_CLIDX game.script.last_sent_id
+		setvard DG_FAURA_NEXT_CL GAME_TIME
+		add DG_FAURA_NEXT_CL DG_FAURA_CL_RATE
+	}
+
+	local SCAN_AOE DG_FAURA_AOE
+	multiply SCAN_AOE 1.5
+	setvard DG_FAURA_SCAN $get_tsphere(enemy,SCAN_AOE) //scan extra distance to make up for monster width
+	//dbg fire_aura_loop DG_FAURA_SCAN
+	if DG_FAURA_SCAN isnot none
+	//dbg fire_aura_loop $get_token_amt(DG_FAURA_SCAN) DG_FAURA_SCAN
+	calleventloop $get_token_amt(DG_FAURA_SCAN) fire_aura_burn
+}
+
+{ fire_aura_burn
+	local CUR_TARG $get_token(DG_FAURA_SCAN,game.script.iteration)
+
+	applyeffect CUR_TARG effects/effect_burn 5.0 $get(ent_me,id) DG_FAURA_DOT 1 1 none
+}
+
+//================================== Death Events / Cleanup
+
+{ game_death
+	if ( IS_ARMORED )
+	{
+		if ( $rand(1,2) == 1 )
+		{
+			setvard NPC_ALT_SOUND_DEATH SOUNDA_DEATH1
+		}
+		else
+		{
+			setvard NPC_ALT_SOUND_DEATH SOUNDA_DEATH2
+		}
+	}
+	else
+	{
+		if ( $rand(1,2) == 1 )
+		{
+			setvard NPC_ALT_SOUND_DEATH SOUND_DEATH1
+		}
+		else
+		{
+			setvard NPC_ALT_SOUND_DEATH SOUND_DEATH2
+		}
+	}
+
+	if ( DG_FAURA ) clientevent update all DG_FAURA_CLIDX remove_fx
+	if ( BREATH_ON ) clientevent update all BREATH_CL_IDX end_fx
+	setmodelbody 1 0 //hide weapon
+}
+
+//================================== Breath Attacks
+
+{ frame_breath_start
+	//fire, cold, and poison cones
+	if !BREATH_ON
+	roam 0
+	callevent npcatk_suspend_ai 5.0
+	callevent npcatk_suspend_movement ANIM_BREATH_LOOP 5.0
+	clientevent new all monsters/dragon_guard_breath_cl $get(ent_me,index) BREATH_TYPE
+	setvard BREATH_CL_IDX game.script.last_sent_id
+	setvard BREATH_ON 1
+	callevent breath_loop
+	svplaysound 1 10 SOUND_BREATH_LOOP
+	callevent 5.0 breath_attack_end
+
+	//redundant
+	setvard NEXT_BREATH game.time
+	add NEXT_BREATH FREQ_BREATH
+}
+
+{ breath_loop
+	if BREATH_ON
+	callevent 0.5 breath_loop
+	local L_BREATH_RANGE BREATH_RANGE
+	multiply L_BREATH_RANGE 2.0
+	setvard BREATH_TARGS $get_tsphere(enemy,L_BREATH_RANGE)
+	if BREATH_TARGS isnot none
+	calleventloop $get_token_amt(BREATH_TARGS) breath_affect_targets
+}
+
+{ breath_affect_targets
+	local CUR_TARG $get_token(BREATH_TARGS,game.script.iteration)
+	local TARG_ORG $get(CUR_TARG,origin)
+	if $within_cone2D(TARG_ORG,game.monster.origin,game.monster.angles,10)
+	local TRACE_START $get(ent_me,origin)
+	vectoradd TRACE_START $relpos(0,24,80)
+	local TRACE_END TARG_ORG
+	local TRACE_LINE $get_traceline(TRACE_START,TRACE_END,worldonly)
+	if TRACE_LINE isnot TRACE_END
+	if ( BREATH_TYPE equals cold ) applyeffect CUR_TARG effects/freeze_solid 6.0 $get(ent_me,id) BREATH_DOT
+	if ( BREATH_TYPE equals fire ) applyeffect CUR_TARG effects/effect_burn 5.0 $get(ent_me,id) BREATH_DOT
+	if ( BREATH_TYPE equals poison ) applyeffect CUR_TARG effects/effect_poison_blinding 5.0 $get(ent_me,id) BREATH_DOT
+	addvelocity CUR_TARG $relvel(0,BREATH_PUSH_VEL,0)
+}
+
+{ breath_attack_end
+	callevent npcatk_resume_ai
+	callevent npcatk_resume_movement
+	playanim break
+	roam 1
+	setvard BREATH_ON 0
+	svplaysound 1 0 SOUND_BREATH_LOOP
+	//redundant
+	setvard NEXT_BREATH game.time
+	add NEXT_BREATH FREQ_BREATH
+}
+
+{ frame_breath_quick
+	if ( BREATH_TYPE equals acid )
+	{
+		playsound 0 10 SOUND_BREATH_ACID_BOLT
+		tossprojectile NPCATK_TARGET 300 800 0.1 proj_acid_bolt (0,24,80) //<view|(origin)|id> <speed> <dmg> <cof> <projectile scriptname> [start offset]
+	}
+
+	if ( BREATH_TYPE equals lightning )
+	{
+		playsound 0 10 SOUND_BREATH_LIGHTNING
+		local BEAM_START $get(ent_me,attachpos,0)
+		local BEAM_END $get(NPCATK_TARGET,origin)
+		local BEAM_ANGS $angles3d(BEAM_START,BEAM_END)
+		vectorset BEAM_ANGS x $neg($vec.x(BEAM_ANGS))
+		vectoradd BEAM_END $relpos(BEAM_ANGS,$vec(0,1024,0))
+		effect beam end lgtning.spr 60 BEAM_END ent_me 1 (255,255,0) 200 20 1.0 
+		xdodamage BEAM_START BEAM_END 500 100% ent_me ent_me none lightning dmgevent:zapbreath
+	}
+	setvard NEXT_BREATH game.time
+	add NEXT_BREATH FREQ_BREATH
+}
+
+{ zapbreath_dodamage
+	if PARAM1
+	if $get(PARAM2,relationship,ent_me) equals enemy
+	applyeffect PARAM2 effects/effect_shock_dmg 5.0 $get(ent_me,id) 200
+}
+
+
+{ frame_throw
+	if ( WEAPON_TYPE == 5 ) tossprojectile NPCATK_TARGET 200 0 0 proj_crescent (-20,0,48)
+}
+
+//borrwing from torkie elves here (somewhat modified)
+{ frame_xbow
+
+	if ( game.time > NEXT_SPLODIE_BOLT )
+	{
+		setvard EXPLOSIVE_BOLT 1
+		setvard NEXT_SPLODIE_BOLT game.time
+		add NEXT_SPLODIE_BOLT 3.0
+	}
+	else
+	{
+		setvard EXPLOSIVE_BOLT 0
+	}
+
+	playsound 1 10 SOUND_XBOW_SHOOT
+
+	local START_LINE $get(ent_me,svbonepos,25)
+	local TARG_ORG $get(NPCATK_TARGET,origin)
+
+	if ( EXPLOSIVE_BOLT ) vectorset TARG_ORG z $get_ground_height(TARG_ORG)
+
+	if ( $rand(1,100) > XBOW_ACCURACY )
+	{
+		dbg elf_shoot_xbow miss //miss slightly
+		local RND_X $randf(-64.0,64.0)
+		local RND_Y $randf(-64.0,64.0)
+		vectoradd TARG_ORG x RND_X
+		vectoradd TARG_ORG y RND_Y
+		vectorset TARG_ORG z $get_ground_height(TARG_ORG)
+	}
+
+	setvard ELF_AIM_ANGLES $angles3d(START_LINE,TARG_ORG)
+	dbg before ELF_AIM_ANGLES
+	vectorset ELF_AIM_ANGLES x $neg($vec.x(ELF_AIM_ANGLES))
+	dbg after ELF_AIM_ANGLES
+	local END_LINE START_LINE
+	vectoradd END_LINE $relpos(ELF_AIM_ANGLES,$vec(0,2048,0))
+	setvard ELF_XBOW_SHOT 1
+	local END_LINE $get_traceline(START_LINE,END_LINE,worldonly)
+	setvard ELF_BOLT_LAND END_LINE
+
+	//if ( G_DEVELOPER_MODE ) effect beam point lgtning.spr 30 START_LINE END_LINE (255,0,0) 255 0 1.0
+	add MISS_COUNT 1
+	xdodamage START_LINE END_LINE DMG_XBOW 100% ent_me ent_me none pierce dmgevent:xbow
+	clientevent new all monsters/elf_xbow_cl START_LINE ELF_BOLT_LAND $get(ent_me,angles) EXPLOSIVE_BOLT
+	if EXPLOSIVE_BOLT
+	callevent 0.1 bolt_explode
+}
+
+{ bolt_explode
+	xdodamage ELF_BOLT_LAND 128 DMG_XBOW 0.2 ent_me ent_me none fire_effect dmgevent:exbow
+}
+
+{ xbow_dodamage
+	if PARAM1
+	setvard MISS_COUNT 0
+}
+
+{ exbow_dodamage
+
+	if PARAM1
+	setvard MISS_COUNT 0
+	local CUR_TARG PARAM2
+	local TARG_ORG $get(CUR_TARG,origin)
+	local TARG_ANG $angles(ELF_BOLT_LAND,TARG_ORG)
+	local TARG_DIST $dist(TARG_ORG,ELF_BOLT_LAND)
+	divide TARG_DIST 128
+	local PUSH_STR $get_skill_ratio(TARG_DIST,600,100)
+	dbg game_dodamage str PUSH_STR ratio TARG_DIST
+	setvelocity CUR_TARG $relvel($vec(0,TARG_ANG,0),$vec(10,PUSH_STR,120))
+}
+
+{ my_target_died
+	if IS_ARMORED
+	if game.time > NEXT_GLOAT
+	setvard NEXT_GLOAT game.time
+	add NEXT_GLOAT 20.0
+	playsound 0 10 monsters/dg/vs_nlizardm_haha.wav
+}

@@ -1,0 +1,112 @@
+//Dwarves with lanterns for Vomica by Thothie
+//- This one is designed to work with a new submodel of the dwarven model
+{
+	setvard	MOVE_RANGE	64
+	setvar	ANIM_WALK	walk
+	setvar	ANIM_RUN	run
+	//const	ANIM_ATTACK	beatdoor
+	setvard	ANIM_DEATH	diesimple
+	const	CAN_HUNT	0
+	const	HUNT_AGRO	0
+	const	CAN_ATTACK	0
+	setvard	ATTACK_RANGE	90
+	setvar	CAN_FLEE	1
+	const	FLEE_HEALTH	25
+	const	FLEE_CHANCE	100%
+	const	CAN_HEAR	1
+	const	CAN_RETALIATE	1
+	const	RETALIATE_CHANGETARGET_CHANCE 75%
+	const	CAN_FLINCH	1
+	const	FLINCH_ANIM	flinch1
+	const	FLINCH_CHANCE	50%
+	const	FLINCH_DELAY	1
+
+	const NO_JOB 1
+	const NO_HAIL 1
+	const NO_RUMOR 1
+
+    const MONSTER_MODEL npc/dwarf_lantern.mdl
+}
+
+#include monsters/base_npc_attack
+#include monsters/base_civilian
+
+{ npc_spawn
+
+   hp		25
+   //ov		120
+   width	32
+   height	72
+   race		human
+   name		a|Dwarven Miner
+   	if ( !NO_WANDER ) roam	1
+	if ( NO_WANDER ) roam 0
+   setmodel	MONSTER_MODEL
+   setmodelbody 0 $rand(0,1)	//0-Elder 1-Youngin 2-Zombie
+   setmodelbody 1 4 //0-Unarmed 1-smallaxe 2-battleaxe 3-bastardsword 4-Lantern?
+   setmoveanim	walk
+
+	if ( game.serverside ) callevent 3.0 light_on
+}
+
+{ game_struck
+	callevent npcatk_flee $get(ent_laststruck,id) 4096 20.0
+}
+
+{
+  repeatdelay 30
+
+  if $cansee(ally,180)
+
+  setmovedest ent_lastseen 128
+  playsound 0 2 npc/dwarfchitchat.wav	//was using human wav
+}
+
+{
+   eventname attack_1
+
+   dodamage ent_lastseen ATTACK_RANGE ATTACK1_DAMAGE ATTACK_PERCENTAGE
+}
+
+//===============================
+//glow system (should be an include, but making it so seems to cause issues with sticky client bits
+//glow
+{ [client]
+
+	const GLOW_COLOR (255,255,128) //this can be overridden from the monster
+	const GLOW_RAD 200
+}
+
+{ [client] client_activate
+
+	setvard SKEL_ID PARAM1
+	cleffect light new $getcl(SKEL_ID,origin) GLOW_RAD GLOW_COLOR 5.0
+	setvard SKEL_LIGHT_ID game.script.last_light_id
+	setcallback render enable
+
+	callevent light_loop
+}
+
+{ [client] light_loop
+
+	if ( game.monster.isalive ) callevent 0.2 light_loop
+
+	if ( !game.monster.isalive ) cleffect light SKEL_LIGHT_ID remove
+
+	if game.monster.isalive
+	local L_POS $getcl(SKEL_ID,origin)
+	cleffect light SKEL_LIGHT_ID L_POS GLOW_RAD GLOW_COLOR 1.0
+}
+
+{ [server] game_death
+
+	clientevent remove all MY_LIGHT_SCRIPT
+}
+
+{ light_on
+	if !I_R_GLOWING
+	setvard I_R_GLOWING 1
+	clientevent persist all $currentscript $get(ent_me,index)
+	setvard MY_LIGHT_SCRIPT game.script.last_sent_id
+}
+//=============================== End Glow System

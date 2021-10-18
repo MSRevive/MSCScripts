@@ -1,0 +1,105 @@
+#scope server
+{
+	const NPC_BASE_EXP 75
+	const NPC_CAP_EXP 750
+
+	const DMG_CLUB 20
+	const DMG_AXE 30
+	const DMG_SWORD 15
+
+}
+
+#include orc_for/tiers1
+#include orc_for/goblin_base
+
+{ [shared] goblin_spawn
+	name a|Goblin Warrior
+	setmodel monsters/goblin_new.mdl
+	hp 100
+	width 24
+	height 50
+	race goblin
+	blood red
+	roam 1
+	hearingsensitivity 2
+	setmodelbody 0 0 //body: 0-Bare 1-Quiver&Strap
+	setmodelbody 1 0 //head: 0-Bare 1-Horns 2-Animal 3-Chief 4-Rag
+	setmodelbody 2 0 //weapon: 0-Unarmed 1-Axe 2-wbow 3-sbow 4-sword 5-rAxe 6-sword&shield 7-club 8-knife
+	setmodelbody 3 0 //arrow: On/off
+
+	setidleanim ANIM_IDLE
+	setmoveanim ANIM_WALK
+	callevent 0.01 goblin_set_weapon
+}
+
+{ [override] goblin_set_weapon
+
+	if !GOB_TYPE_SET
+	setvard GOB_TYPE_SET 1
+
+	setvard F_GOB_TYPE GOB_TYPE
+
+	if ( PARAM1 startswith PARAM )
+	{
+		local DO_NADDA 1
+	}
+	else
+	{
+		setvard F_GOB_TYPE PARAM1
+	}
+
+
+	if ( F_GOB_TYPE == 1 )
+	{
+		//clubber
+		setmodelbody 2 7
+		setvard ANIM_ATTACK ANIM_SMASH
+		setvard ATTACK_HITCHANCE 70%
+		setvard STUN_CHANCE 25%
+		local MY_HP $get(ent_me,maxhp)
+		multiply MY_HP 1.5
+		hp MY_HP
+	}
+
+	if ( F_GOB_TYPE == 2 )
+	{
+		//axe
+		setmodelbody 2 1
+		setvard ANIM_ATTACK ANIM_SMASH
+		setvard ATTACK_HITCHANCE 75%
+		local MY_HP $get(ent_me,maxhp)
+		multiply MY_HP 1.25
+		hp MY_HP
+	}
+
+	if ( F_GOB_TYPE == 3 )
+	{
+		//sword
+		setmodelbody 0 0
+		setmodelbody 2 4
+		setvard ANIM_ATTACK ANIM_SWIPE
+		setvard ATTACK_HITCHANCE 80%
+	}
+}
+
+{ [override] swing_axe //ANIM_SMASH
+
+	playrandomsound 0 10 SOUND_ATTACK1 SOUND_ATTACK2 SOUND_ATTACK3
+	if ( F_GOB_TYPE == 1 )
+	{
+		setvard STUN_ATTACK 1
+		dodamage NPCATK_TARGET ATTACK_HITRANGE DMG_CLUB ATTACK_HITCHANCE blunt
+	}
+	if ( F_GOB_TYPE == 2 ) dodamage NPCATK_TARGET ATTACK_HITRANGE DMG_AXE ATTACK_HITCHANCE slash
+}
+
+{ game_dodamage
+	if ( PARAM1 )
+	{
+		if STUN_ATTACK
+		if $rand(1,100) < STUN_CHANCE
+		if ( CAN_STUN ) applyeffect PARAM2 effects/effect_stun 3.0 1 1
+		
+	}
+	setvard STUN_ATTACK 0
+}

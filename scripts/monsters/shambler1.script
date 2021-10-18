@@ -1,0 +1,107 @@
+//Bog Creature by Shurik3n
+{ 
+
+	//a lot of these are default values
+	//I STRONGLY suggest building your monsters based on newer ones, not older ones
+	//there's a lot of older methodology in this script that sometimes goes buggy
+
+   const HUNT_AGRO 1 
+
+	//these first four aims are used by the base
+	//they should be setvard so the base can alter them if need be
+	//the movement anims are pre-load as they are used in the game_spawn function (npc_spawn)
+   setvard ANIM_DEATH dieforward 
+   setvar ANIM_RUN walk 
+   setvar ANIM_WALK walk 
+   setvard ANIM_ATTACK attack1
+   const ANIM_ATTACK_SLASH attack1 
+   const ANIM_ATTACK_CRUSH attack2 
+   const DMG_SLASH $rand(35,90) 
+   const DMG_CRUSH $rand(170,300) 
+   setvard ATTACK_RANGE 68		//same with these two (used by base, adjustable)
+   setvard ATTACK_HITRANGE 140 
+   const ATTACK_HITCHANCE_SLASH 70% 
+   const ATTACK_HITCHANCE_CRUSH 40% 
+   const SOUND_STRUCK1 weapons/cbar_hitbod1.wav 
+   const SOUND_STRUCK2 bullchicken/bc_pain1.wav 
+   const SOUND_PAIN bullchicken/bc_pain1.wav 
+   const SOUND_ATTACK1 ichy/ichy_bite1.wav 
+   const SOUND_ATTACK2 zombie/claw_miss2.wav 
+   const SOUND_IDLE1 garg/gar_breathe3.wav //never used?
+   const SOUND_DEATH bullchicken/bc_die3.wav 
+   const CAN_HUNT 1 //default
+   const HUNT_AGRO 1 //defined twice (this is also default, no need to set)
+   const RETALIATE_CHANCE 75% //default
+   setvar CAN_FLEE 0 //default
+   const DROP_GOLD       $rand(0,1) 
+   const DROP_GOLD_MIN      20 
+   const DROP_GOLD_MAX      70 
+	const CHANCE_STUN 20
+   precache SOUND_DEATH 
+} 
+
+#include monsters/base_monster_new 
+
+{ npc_spawn 
+
+   hp 2000 
+   width 32 //this thing is actually about player sized, making it wider than 32 cause nav issues 
+   height 100 
+   name a|Shambler
+   roam 1
+	blood green //looks like it needs green blood
+   hearingsensitivity 6 
+   setvard NPC_GIVE_EXP 300 //no armor, no resistances, no special attacks (save pathetic chance to stun)
+   race demon 
+   setmodel monsters/bogcreature.mdl 
+   setmodelbody 0 0 
+   setidleanim idle1 
+   setmoveanim ANIM_WALK 
+} 
+
+{ attack_1
+
+	//ent_laststruckbyme here is not wise
+	//reason being is the damage isn't actually done until the next cycle
+	//thus the velocity effect may apply to a creature other than the one he hits
+	//(this method very often what causes effects to  apply to the wrong players)
+	//NPCATK_TARGET at least garuntees the effect is applied to the guy he's aiming at
+
+	setvard ATTACK_TYPE slash
+   callevent npcatk_dodamage NPCATK_TARGET ATTACK_HITRANGE DMG_SLASH ATTACK_HITCHANCE_SLASH slash 
+    
+   if ( $rand(1,4) == 3 ) setvard ANIM_ATTACK ANIM_ATTACK_CRUSH 
+  	if ( !$get(ent_laststruckbyme,scriptvar,IMMUNE_PUSH) ) addvelocity ent_laststruckbyme $relvel(0,110,105) 
+   playsound 2 10 SOUND_ATTACK1 
+} 
+
+{ attack_2
+	setvard ATTACK_TYPE crush
+   callevent npcatk_dodamage NPCATK_TARGET ATTACK_HITRANGE DMG_CRUSH ATTACK_HITCHANCE_CRUSH blunt 
+
+	//IMMUNE_PUSH - is a var used to mark lures and such unpushable
+	//- (probably also give players some ring of stability or some such later)
+	//- Unlike most resistances, it is all or nothing (1|0)
+	//- Thus check for push immunity before pushing
+    
+	setvard ANIM_ATTACK ANIM_ATTACK_SLASH 
+	if ( !$get(NPCATK_TARGET,scriptvar,IMMUNE_PUSH) ) addvelocity NPCATK_TARGET $relvel(0,300,200) 
+   playsound 2 10 SOUND_ATTACK2 
+} 
+
+{ npc_struck 
+    
+   playrandomsound 2 7 SOUND_PAIN SOUND_STRUCK2 SOUND_STRUCK1 SOUND_PAIN 
+} 
+
+{ game_dodamage	 //PARAM1=hit:0|1 PARAM2=ent_hit PARAM3=(start) PARAM4=(end)
+
+	//this way the creature can only stun you if he hits you
+	//(raised the stun% chance to compensate)
+	//I've been bitched at before for making monsters stun when missing
+
+	if ATTACK_TYPE equals crush
+	if PARAM1
+	if $rand(1,100) < CHANCE_STUN
+	applyeffect PARAM2 effects/effect_stun 5 0 1 
+}

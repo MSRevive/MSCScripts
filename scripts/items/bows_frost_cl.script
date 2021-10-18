@@ -1,0 +1,97 @@
+//CL Effects for CMD's bows_frost by Thothie
+#scope client
+
+{
+	const VOF_START -24
+	const SPRITE_NAME char_breath.spr
+
+	const RISE_RATE 0.06
+	const CONTRACT_RATE 0.015
+}
+
+{ client_activate //<owner>
+
+	setvard FX_OWNER PARAM1
+	setvard FX_RADIUS 64
+
+	setvard CYCLE_ANGLE 0
+	setvard CUR_VOF VOF_START
+	setvard SPRITE_MODE rise
+
+	calleventloop 9 make_sprites
+	callevent 3.0 rotate_mode
+	callevent 6.0 contract_mode
+	callevent 10.0 remove_sprites //maybe redundant, but debugprint tempent returns suggests sprites not removing every time
+}
+
+{ rotate_mode
+	setvard SPRITE_MODE rotate
+}
+
+{ contract_mode
+	setvard SPRITE_MODE contract
+}
+
+{ remove_sprites
+	setvard SPRITE_MODE remove
+	callevent 2.0 remove_me
+}
+
+{ remove_me
+	dbg *** bows_frost_cl_removescript
+	removescript
+}
+
+{ make_sprites
+	local SPRITE_ORG $getcl(FX_OWNER,origin)
+	vectoradd SPRITE_ORG $relpos($vec(0,CYCLE_ANGLE,0),$vec(0,FX_RADIUS,CUR_VOF))
+	cleffect tempent sprite SPRITE_NAME SPRITE_ORG setup_sprite update_sprite
+	add CYCLE_ANGLE 40
+}
+
+{ update_sprite
+
+	if ( SPRITE_MODE equals remove ) cleffect tempent set_current_prop death_delay 0.1
+
+	if SPRITE_MODE isnot remove
+
+
+	local SPRITE_ORG $getcl(FX_OWNER,origin)
+	local MY_ANGLE game.tempent.fuser1
+
+	if ( SPRITE_MODE equals rise )
+	{
+		vectoradd SPRITE_ORG $relpos($vec(0,MY_ANGLE,0),$vec(0,FX_RADIUS,CUR_VOF))
+		if ( MY_ANGLE == 0 ) add CUR_VOF RISE_RATE
+	}
+
+	if ( SPRITE_MODE equals rotate )
+	{
+		add MY_ANGLE 1
+		if ( MY_ANGLE > 359 ) local MY_ANGLE 0
+		cleffect tempent set_current_prop fuser1 MY_ANGLE
+		vectoradd SPRITE_ORG $relpos($vec(0,MY_ANGLE,0),$vec(0,FX_RADIUS,CUR_VOF))
+	}
+
+	if ( SPRITE_MODE equals contract )
+	{
+		add MY_ANGLE 1
+		if ( MY_ANGLE > 359 ) local MY_ANGLE 0
+		cleffect tempent set_current_prop fuser1 MY_ANGLE
+		subtract FX_RADIUS CONTRACT_RATE
+		vectoradd SPRITE_ORG $relpos($vec(0,MY_ANGLE,0),$vec(0,FX_RADIUS,CUR_VOF))
+	}
+
+	cleffect tempent set_current_prop origin SPRITE_ORG
+}
+
+
+{ setup_sprite
+	cleffect tempent set_current_prop death_delay 10.0
+	cleffect tempent set_current_prop framerate	30
+	cleffect tempent set_current_prop frames	1
+	cleffect tempent set_current_prop scale 	3.0
+	cleffect tempent set_current_prop gravity 	0
+	cleffect tempent set_current_prop collide 	none
+	cleffect tempent set_current_prop fuser1 CYCLE_ANGLE
+}

@@ -1,0 +1,284 @@
+{
+	setvar IS_UNHOLY 1
+	const FREQ_PICK 5.0
+	const DMG_ICE $rand(100,200)
+	const DOT_FREEZE $rand(40,80)
+
+	setvar ANIM_WALK treadwater
+	setvar ANIM_RUN swim
+	setvar ANIM_IDLE treadwater
+	setvard ANIM_ATTACK crouch_shoot_onehanded
+
+	setvard ATTACK_RANGE 128
+	setvard ATTACK_MOVERANGE 100
+	setvard ATTACK_HITRANGE 200
+
+	setvard NPC_GIVE_EXP 400
+
+	const FWD_SPEED_NORM 10
+	const FWD_SPEED_FAST 30
+	const VERT_WOBBLE_ACTIVE $randf(-128,128)
+	const VERT_WOBBLE_IDLE 0
+
+	setvar FWD_SPEED 10
+
+	const ROAM_RANGE 512
+	const MAX_ROAM_RANGE 4096
+
+	const SOUND_FREEZE debris/beamstart14.wav
+
+	const SOUND_ATTACK1 voices/icelady_giggle1.wav
+	const SOUND_ATTACK2 voices/icelady_giggle2.wav
+	const SOUND_ATTACK3 voices/icelady_giggle3.wav
+	const SOUND_ALERT voices/icelady_taunt1.wav
+	const SOUND_INTRO1 voices/icelady_taunt2.wav
+	const SOUND_INTRO2 voices/icelady_taunt2b.wav
+	const SOUND_PAIN1 voices/icelady_pain1.wav
+	const SOUND_PAIN2 voices/icelady_pain2.wav
+	const SOUND_STRUCK1 debris/glass1.wav
+	const SOUND_STRUCK2 debris/glass2.wav
+	const SOUND_DEATH voices/icelady_pain2.wav
+
+	setvard ANIM_DEATH die_simple
+}
+
+#include monsters/base_monster_new
+#include monsters/base_noclip
+
+{ npc_spawn
+
+	name a|Cold Lady
+	blood none
+	race demon
+	hp 1000
+	setmodel monsters/icelady.mdl
+	takedmg cold 0.0
+	takedmg fire 1.5
+	takedmg holy 2.0
+	fly 1
+
+	width 32
+	height 96
+
+	setmoveanim ANIM_WALK
+	setidleanim ANIM_RUN
+
+	setprop ent_me rendermode 5
+	setprop ent_me renderamt 255
+
+	setvard DEST_ROT 0
+	setvard MOVE_STEP 0
+	setvard MOVE_TARGET unset
+
+	callevent npcatk_suspend_ai
+}
+
+{ [override] npcatk_hunt
+	//no AI - kept lower includes just for operations
+}
+
+{ npc_post_spawn
+	setvard NPC_NOCLIP_DEST game.monster.origin
+	callevent npcatk_suspend_ai //redund
+}
+
+{ clear_target
+	dbg targ_reset_cuz PARAM1
+	setvard MOVE_TARGET unset
+	setvard MOVE_STEP 0
+	callevent move_away "clear_targets"
+}
+
+//{
+//repeatdelay 1.0
+//	dbg temp movin MOVING_IN dist $dist(game.monster.origin,NPC_NOCLIP_DEST) range $get(MOVE_TARGET,range) targ $get(MOVE_TARGET,name) step MOVE_STEP
+//}
+
+{ basenoclip_flight
+
+	if ( !$get(MOVE_TARGET,isalive) )
+	{
+		if MOVE_TARGET isnot unset
+		callevent clear_target "dead"
+	}
+	
+	if ( MOVE_TARGET equals unset )
+	{
+		if ( $dist(game.monster.origin,NPC_NOCLIP_DEST) < ATTACK_MOVERANGE )
+		{
+			setvard MOVE_STEP 128
+			setvard VERT_WOBBLE VERT_WOBBLE_IDLE
+			setvard NPC_NOCLIP_DEST NPC_HOME_LOC
+			callevent do_move_step
+		}
+
+		if !PICK_PLAYER_DELAY
+		setvard PICK_PLAYER_DELAY 1
+		callevent FREQ_PICK reset_pplayer
+		callevent pick_a_player
+	}
+
+	if ( !DID_INTRO )
+	{
+		if $cansee(enemy)
+		setvard DID_INTRO 1
+		playsound 0 10 SOUND_ALERT
+		callevent 4.0 do_intro
+	}
+
+	if ( MOVE_TARGET isnot unset )
+	{
+		if ( MOVING_IN )
+		{
+			if ( $get(MOVE_TARGET,range) < ATTACK_RANGE ) callevent do_attack MOVE_TARGET
+			if ( $dist(game.monster.origin,NPC_HOME_LOC) > MAX_ROAM_RANGE ) callevent clear_targets "too_far_from_home"
+			if MOVING_IN
+			setmoveanim ANIM_WALK
+			setidleanim ANIM_WALK
+			playanim once ANIM_WALK
+			if $dist(game.monster.origin,NPC_NOCLIP_DEST) < ATTACK_MOVERANGE
+			setvar FWD_SPEED FWD_SPEED_NORM
+			setvard VERT_WOBBLE VERT_WOBBLE_ACTIVE
+			if ( $get(MOVE_TARGET,range) < ATTACK_MOVERANGE )
+			{
+				callevent move_away "in_range"
+			}
+			subtract MOVE_STEP 100
+			if ( MOVE_STEP < 0 ) setvard MOVE_STEP 0
+			setvard NPC_NOCLIP_DEST $get(MOVE_TARGET,origin)
+			callevent do_move_step
+		}
+
+		if ( !MOVING_IN )
+		{
+			if $dist(game.monster.origin,NPC_NOCLIP_DEST) < ATTACK_MOVERANGE
+			setvar FWD_SPEED FWD_SPEED_FAST
+			setvard NPC_NOCLIP_DEST $get(MOVE_TARGET,origin)
+			setvard VERT_WOBBLE VERT_WOBBLE_IDLE
+			setmoveanim ANIM_RUN
+			setidleanim ANIM_RUN
+			playanim once ANIM_RUN
+			add MOVE_STEP 100
+			if ( $get(MOVE_TARGET,range) > ROAM_RANGE ) callevent move_in "too_far"
+			setvard NPC_NOCLIP_DEST $get(MOVE_TARGET,origin)
+			callevent do_move_step
+		}
+	}
+}
+
+{ do_move_step
+	add DEST_ROT 45
+	if ( DEST_ROT > 359 ) subtract DEST_ROT 359
+	vectoradd NPC_NOCLIP_DEST $relpos($vec(0,DEST_ROT,0),$vec(0,MOVE_STEP,VERT_WOBBLE))
+}
+
+{
+repeatdelay 3.0
+	setprop ent_me rendermode 5
+	setprop ent_me renderamt 255
+}
+
+{ do_intro
+	local INTRO_DIFF game.time
+	subtract INTRO_DIFF G_ICELADY_INTRO
+	if INTRO_DIFF > 10
+
+	setvarg G_ICELADY_INTRO game.time
+	playrandomsound 0 10 SOUND_INTRO1 SOUND_INTRO2
+}
+
+{ reset_pplayer
+	setvard PICK_PLAYER_DELAY 0
+}
+
+{ pick_a_player
+
+	//dbg picking player
+	getplayersnb PLAYER_LIST
+	setvard VALID_PLAYERS ''
+	setvard N_VALID 0
+	calleventloop $get_token_amt(PLAYER_LIST) pick_player_loop
+	if ( N_VALID == 1 )
+	{
+		callevent move_in "new_target"
+		setvard MOVE_TARGET $get_token(PLAYER_LIST,0)
+		//dbg Targeted $get(MOVE_TARGET,name)
+	}
+
+	if ( N_VALID == 0 )
+	{
+		setvard MOVE_TARGET unset
+	}
+
+	if N_VALID > 1
+	subtract N_VALID 1
+	local RND_VALID $rand(0,N_VALID)
+	callevent move_in "new_target_multi"
+	setvard MOVE_TARGET $get_token(PLAYER_LIST,RND_VALID)
+	//dbg Targeted $get(MOVE_TARGET,name)
+}
+
+{ pick_player_loop
+	local CUR_PLAYER $get_token(PLAYER_LIST,game.script.iteration)
+	//dbg temp $get(CUR_PLAYER,name) $get(CUR_PLAYER,range)
+	if $get(CUR_PLAYER,range) < ROAM_RANGE
+	token.add VALID_PLAYERS game.script.iteration
+	add N_VALID 1
+	//dbg player_valid N_VALID
+}
+
+{ do_attack
+	setvard BEAM_ATTACK 1
+	playanim once ANIM_ATTACK
+	dodamage MOVE_TARGET ATTACK_HITRANGE DMG_ICE 100% cold
+	callevent move_away "did_attack"
+	callevent 10.0 check_froze
+}
+
+{ check_froze
+	if ( $get(MOVE_TARGET,scriptvar,PL_I_R_FROZEN) ) callevent pick_a_player
+}
+
+{ game_dodamage
+
+	if BEAM_ATTACK
+	setvard BEAM_ATTACK 0
+	local TRACE_START $get(ent_me,origin)
+	local TRACE_END $get(MOVE_TARGET,origin)
+	local TRACE_IT $get_traceline(TRACE_START,TRACE_END,worldonly)
+	effect beam point lgtning.spr 60 TRACE_START TRACE_IT (128,128,255) 200 60 1.0
+	if PARAM1
+	if $get(PARAM2,range) <= ATTACK_HITRANGE
+	applyeffect PARAM2 effects/freeze_solid 20.0 $get(ent_me,id) DOT_FREEZE
+	playsound 0 10 SOUND_FREEZE
+	callevent 0.5 do_giggle
+}
+
+{ do_giggle
+	playrandomsound 0 10 SOUND_ATTACK1 SOUND_ATTACK2 SOUND_ATTACK3
+}
+
+{ game_struck
+	playrandomsound 0 10 SOUND_STRUCK1 SOUND_STRUCK2 SOUND_STRUCK1 SOUND_STRUCK2 SOUND_PAIN1 SOUND_PAIN2
+
+	if MOVE_TARGET equals unset
+	if $get(ent_laststruck,relationship,ent_me) equals enemy
+	setvard MOVE_TARGET $get(ent_laststruck,id)
+}
+
+{ game_death
+	fly 0
+	gravity 1.0
+	setvelocity ent_me $vec(0,0,-200)
+	setprop ent_me movetype const.movetype.noclip
+}
+
+{ move_away
+	dbg moving_away PARAM1
+	setvard MOVING_IN 0
+}
+
+{ move_in
+	dbg moving_in PARAM1
+	setvard MOVING_IN 1
+}

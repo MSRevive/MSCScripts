@@ -1,0 +1,438 @@
+//Storm of rocks with FX, by Thothie
+//PARAM1 owner
+//PARAM2 # of rocks (up to 4)
+//PARAM3 damage
+//PARAM4 radius, ie. horizontal distance from master to begin
+//PARAM5 height, ie. vertical distance to raise rocks to (if ceiling detected, should automagically lower)
+#scope server
+{
+	const ROCK_SCRIPT monsters/summon/rock
+
+	const SOUND_LEVITATE fans/fan4on.wav //about 4 seconds
+	const SOUND_SPIN magic/fan4_noloop.wav
+	const DUR_SPIN 1.74
+	const SOUND_SUMMON magic/volcano_start.wav
+
+	const ROCKA_OFS 0
+	const ROCKB_OFS 90
+	const ROCKC_OFS 180
+	const ROCKD_OFS 270	
+
+	const RAISE_MAX 20 //make limit 19 if things get stuck in low ceiling
+}
+
+{ game_spawn
+
+	//defining in hopes of fixing damage scan
+	//name a|Rock Storm
+	//blood none
+	//hp 1
+	setmodel null.mdl
+	invincible 1
+	nopush 1
+	width 1
+	height 1
+	setsolid none
+	//hearingsensitivity 10
+	setvard PLAYING_DEAD 1 //not a valid target
+}
+
+//{ game_heardsound //this not working for some reason
+//
+//	local HEARD_ID $get(ent_lastheard,id)
+//	////dbg temp heard $get(HEARD_ID,name)
+//	if $get(HEARD_ID,relationship,MY_OWNER) isnot ally
+//	setvard CURRENT_TARGET HEARD_ID
+//	////dbg temp H-Scan Acquired $get(CURRENT_TARGET,name)
+//}
+
+{ game_dynamically_created
+
+	setvard MY_OWNER PARAM1
+	setvard MY_OWNER_POS $get(MY_OWNER,origin)
+	setvard MY_OWNER_RACE $get(MY_OWNER,race)
+	setvard OWNER_ISPLAYER $get(MY_OWNER,isplayer)
+	setvard NUMBER_ROCKS PARAM2
+	setvard OWNER_GROUND $get_ground_height(MY_OWNER_POS)
+	setvard MY_BASE_DAMAGE PARAM3
+	setvard MY_DISTANCE PARAM4
+
+	setvard FIRE_ROCK 0
+	if ( PARAM6 isnot 'PARAM6' ) setvard FIRE_ROCK 1
+
+	dbg game_dynamically_created owner $get(PARAM1,name) org MY_OWNER_POS race MY_OWNER_RACE #rcks NUMBER_ROCKS dmg MY_BASE_DAMAGE dist MY_DISTANCE vert PARAM5 fire FIRE_ROCK
+
+
+	race MY_OWNER_RACE
+
+	//if ( NUMBER_ROCKS == 0 ) //dbg Umm... No rocks? WRONG PARAMETERS!
+
+	//calculate vertical line to raise to (def: 32 units above master's head)
+	local OWNER_X $vec.x(MY_OWNER_POS)
+	local OWNER_Y $vec.y(MY_OWNER_POS)
+	local OWNER_Z $vec.z(MY_OWNER_POS)
+	setvard MY_VERTICAL OWNER_GROUND
+	add MY_VERTICAL PARAM5
+	local TRACE_END $vec(OWNER_X,OWNER_Y,MY_VERTICAL)
+	local TRACE_VERT $get_traceline(MY_OWNER_POS,TRACE_END,worldonly)
+	if ( $dist(TRACE_VERT,TRACE_END) > 0 )
+	{
+		//trace hit ceiling before reached intended hover height
+		//set max hover at ceiling instead (so rocks don't spawn off map)
+		////dbg tracelin hit ceiling, lowering rock raiseto from MY_VERTICAL to $vec.z(TRACE_VERT)
+		setvard MY_VERTICAL $vec.z(TRACE_VERT)
+		local TRACE_END $vec(OWNER_X,OWNER_Y,MY_VERTICAL)
+	}
+
+	//calculate distance from ground to hover plane, and thus size of jumps to make to reach during 20 step raising
+	local MY_OWNER_GPOS $vec(OWNER_X,OWNER_Y,OWNER_GROUND)
+	local DIST_TO_HOVER $dist(MY_OWNER_GPOS,TRACE_END)
+	setvard MY_JUMP_SIZE DIST_TO_HOVER
+	divide MY_JUMP_SIZE 20
+
+	setvard ROCKS_CENTER MY_OWNER_GPOS
+
+	////dbg temp got Owner $get(MY_OWNER,name) nRocks NUMBER_ROCKS dmg MY_BASE_DAMAGE startdist MY_DISTANCE raiseto MY_VERTICAL ground OWNER_GROUND inc MY_JUMP_SIZE axis ROCKS_CENTER headdist DIST_TO_HOVER
+
+	callevent 0.1 rocks_begin
+
+	//callevent debug_loop //temporary
+}
+
+{ rocks_begin
+
+	//summon rocks at feet
+
+	if ( NUMBER_ROCKS >= 1 )
+	{
+		setvard ROCKA_START ROCKS_CENTER
+		vectoradd ROCKA_START $relpos($vec(0,ROCKA_OFS,0),$vec(0,MY_DISTANCE,0))
+		createnpc ROCK_SCRIPT ROCKA_START MY_OWNER FIRE_ROCK
+		setvard ROCKA_ID $get(ent_lastcreated,id)
+	}
+
+	if ( NUMBER_ROCKS >= 2 ) callevent 0.1 setup_rockb
+	if ( NUMBER_ROCKS >= 3 ) callevent 0.2 setup_rockc
+	if ( NUMBER_ROCKS >= 4 ) callevent 0.25 setup_rockd
+
+	playsound 0 10 SOUND_SUMMON
+	effect screenshake $relpos(0,0,0) 255 20 3.0 256 //<position> <amplitude> <frequency> <duration> <radius>
+
+	callevent 0.2 levitate_noise
+
+	setvard RAISE_COUNT 0
+	////dbg temp raising rocks
+	callevent 0.3 rocks_raise
+}
+
+{ setup_rockb
+	setvard ROCKB_START ROCKS_CENTER
+	vectoradd ROCKB_START $relpos($vec(0,ROCKB_OFS,0),$vec(0,MY_DISTANCE,0))
+	createnpc ROCK_SCRIPT ROCKB_START MY_OWNER FIRE_ROCK
+	setvard ROCKB_ID $get(ent_lastcreated,id)
+}
+
+{ setup_rockc
+	setvard ROCKC_START ROCKS_CENTER
+	vectoradd ROCKC_START $relpos($vec(0,ROCKC_OFS,0),$vec(0,MY_DISTANCE,0))
+	createnpc ROCK_SCRIPT ROCKC_START MY_OWNER FIRE_ROCK
+	setvard ROCKC_ID $get(ent_lastcreated,id)
+}
+
+{ setup_rockd
+	setvard ROCKD_START ROCKS_CENTER
+	vectoradd ROCKD_START $relpos($vec(0,ROCKD_OFS,0),$vec(0,MY_DISTANCE,0))
+	createnpc ROCK_SCRIPT ROCKD_START MY_OWNER FIRE_ROCK
+	setvard ROCKD_ID $get(ent_lastcreated,id)
+}
+
+{ levitate_noise
+
+	playsound 0 10 SOUND_LEVITATE
+}
+
+{ rocks_raise
+
+	add RAISE_COUNT 1
+
+	if ( RAISE_COUNT == RAISE_MAX ) 
+	{
+		setvard SPIN_COUNT ROT_ADJ
+		setvard ROCKS_THROWN 0
+		callevent rocks_spin
+		callevent spin_noise
+		setvard CURRENT_TARGET unset
+		if ( NUMBER_ROCKS >= 1 ) callevent 4.5 find_targets
+		if ( NUMBER_ROCKS >= 1 ) callevent 5.0 rocka_throw
+		setvard CURRENT_TARGET unset
+		if ( NUMBER_ROCKS >= 2 ) callevent 5.5 find_targets
+		if ( NUMBER_ROCKS >= 2 ) callevent 6.0 rockb_throw
+		setvard CURRENT_TARGET unset
+		if ( NUMBER_ROCKS >= 3 ) callevent 6.5 find_targets
+		if ( NUMBER_ROCKS >= 3 ) callevent 7.0 rockc_throw
+		setvard CURRENT_TARGET unset
+		if ( NUMBER_ROCKS >= 4 ) callevent 7.5 find_targets
+		if ( NUMBER_ROCKS >= 4 ) callevent 8.0 rockd_throw
+		callevent 9.5 find_targets
+		callevent 10.0 force_all_rock_throw
+		////dbg temp spinning rocks
+	}
+	
+	if RAISE_COUNT < RAISE_MAX
+	callevent 0.1 rocks_raise
+
+	setvard ROT_ADJ RAISE_COUNT
+	multiply ROT_ADJ 10
+
+	setvard ROCKS_CV RAISE_COUNT
+	multiply ROCKS_CV MY_JUMP_SIZE
+	//add ROCKS_CV $vec.z(OWNER_GROUND)
+
+	if ( NUMBER_ROCKS >= 1 )
+	{
+		local ROCKA_POS ROCKS_CENTER
+		local ANG_ADJ ROCKA_OFS
+		add ANG_ADJ ROT_ADJ
+		if ( ANG_ADJ > 359 ) subtract ANG_ADJ 359
+		vectoradd ROCKA_POS $relpos($vec(0,ANG_ADJ,0),$vec(0,MY_DISTANCE,ROCKS_CV))
+		setorigin ROCKA_ID ROCKA_POS
+		////dbg temp ROCKApos ROCKA_POS raisecnt ( RAISE_COUNT * MY_JUMP_SIZE ) rockvert ROCKS_CV numrocks NUMBER_ROCKS
+	}
+
+	if ( NUMBER_ROCKS >= 2 )
+	{
+		local ROCKB_POS ROCKS_CENTER
+		local ANG_ADJ ROCKB_OFS
+		add ANG_ADJ ROT_ADJ
+		if ( ANG_ADJ > 359 ) subtract ANG_ADJ 359
+		vectoradd ROCKB_POS $relpos($vec(0,ANG_ADJ,0),$vec(0,MY_DISTANCE,ROCKS_CV))
+		setorigin ROCKB_ID ROCKB_POS
+	}
+
+	if ( NUMBER_ROCKS >= 3 )
+	{
+		local ROCKC_POS ROCKS_CENTER
+		local ANG_ADJ ROCKC_OFS
+		add ANG_ADJ ROT_ADJ
+		if ( ANG_ADJ > 359 ) subtract ANG_ADJ 359
+		vectoradd ROCKC_POS $relpos($vec(0,ANG_ADJ,0),$vec(0,MY_DISTANCE,ROCKS_CV))
+		setorigin ROCKC_ID ROCKC_POS
+	}
+
+	if ( NUMBER_ROCKS >= 4 )
+	{
+		local ROCKD_POS ROCKS_CENTER
+		local ANG_ADJ ROCKD_OFS
+		add ANG_ADJ ROT_ADJ
+		if ( ANG_ADJ > 359 ) subtract ANG_ADJ 359
+		vectoradd ROCKD_POS $relpos($vec(0,ANG_ADJ,0),$vec(0,MY_DISTANCE,ROCKS_CV))
+		setorigin ROCKD_ID ROCKD_POS
+	}
+
+}
+
+{ spin_noise
+
+	playsound 0 10 SOUND_SPIN
+	if ROCKS_THROWN < NUMBER_ROCKS
+	callevent DUR_SPIN spin_noise
+}
+
+{ rocks_spin
+
+	add	SPIN_COUNT 10
+	if ( SPIN_COUNT > 359 ) setvard SPIN_COUNT 0
+
+	if ( ROCKS_THROWN == NUMBER_ROCKS ) callevent remove_me
+
+	if ROCKS_THROWN < NUMBER_ROCKS
+	callevent 0.1 rocks_spin
+
+	if ( $get(ROCKA_ID,exists) )
+	{
+		local ROCKA_POS ROCKS_CENTER
+		local ANG_ADJ ROCKA_OFS
+		add ANG_ADJ SPIN_COUNT
+		if ( ANG_ADJ > 359 ) subtract ANG_ADJ 359
+		vectoradd ROCKA_POS $relpos($vec(0,ANG_ADJ,0),$vec(0,MY_DISTANCE,ROCKS_CV))
+		setorigin ROCKA_ID ROCKA_POS
+	}
+
+	if ( $get(ROCKB_ID,exists) )
+	{
+		local ROCKB_POS ROCKS_CENTER
+		local ANG_ADJ ROCKB_OFS
+		add ANG_ADJ SPIN_COUNT
+		if ( ANG_ADJ > 359 ) subtract ANG_ADJ 359
+		vectoradd ROCKB_POS $relpos($vec(0,ANG_ADJ,0),$vec(0,MY_DISTANCE,ROCKS_CV))
+		setorigin ROCKB_ID ROCKB_POS
+	}
+
+	if ( $get(ROCKC_ID,exists) )
+	{
+		local ROCKC_POS ROCKS_CENTER
+		local ANG_ADJ ROCKC_OFS
+		add ANG_ADJ SPIN_COUNT
+		if ( ANG_ADJ > 359 ) subtract ANG_ADJ 359
+		vectoradd ROCKC_POS $relpos($vec(0,ANG_ADJ,0),$vec(0,MY_DISTANCE,ROCKS_CV))
+		setorigin ROCKC_ID ROCKC_POS
+	}
+
+	if ( $get(ROCKD_ID,exists) )
+	{
+		local ROCKD_POS ROCKS_CENTER
+		local ANG_ADJ ROCKD_OFS
+		add ANG_ADJ SPIN_COUNT
+		if ( ANG_ADJ > 359 ) subtract ANG_ADJ 359
+		vectoradd ROCKD_POS $relpos($vec(0,ANG_ADJ,0),$vec(0,MY_DISTANCE,ROCKS_CV))
+		setorigin ROCKD_ID ROCKD_POS
+	}
+}
+
+{ find_targets
+	if !$get(CURRENT_TARGET,isalive)
+	setvard CURRENT_TARGET unset
+	setvard ROCK_TARGETS $get_tsphere(enemy,1024,ROCKS_CENTER)
+	token.scramble ROCK_TARGETS
+	calleventloop $get_token_amt(ROCK_TARGETS) pick_target
+}
+
+{ pick_target
+	local CUR_ENT $get_token(ROCK_TARGETS,game.script.iteration)
+	if $get(CUR_ENT,isalive)
+	if $get(CUR_ENT,relationship,MY_OWNER) equals enemy
+	setvard CURRENT_TARGET CUR_ENT
+	dbg Selected_Target $get(CURRENT_TARGET,name)
+}
+
+{ rocka_throw
+
+	setvard CURRENT_TARGET unset
+	callevent find_targets
+	callevent check_targ
+	////dbg temp Target is $get(CURRENT_TARGET,name)
+
+	local TARGET_POS $get(CURRENT_TARGET,origin)
+	local ROCKA_POS $get(ROCKA_ID,origin)
+	local TRACE_FIRE $get_traceline(ROCKA_POS,TARGET_POS,worldonly)
+	if ( TRACE_FIRE isnot TARGET_POS  )
+	{
+		//dbg temp ROCKA Unable to fire, trace made no line ( TRACE_FIRE vs TARGET_POS $dist(TARGET_POS,TRACE_FIRE) )
+		callevent 0.5 rocka_throw //try again in a bit
+	}
+	else
+	{
+		add ROCKS_THROWN 1
+		////dbg temp throwing ROCKA ( ROCKS_THROWN / NUMBER_ROCKS )
+		callexternal ROCKA_ID toss_rock CURRENT_TARGET MY_BASE_DAMAGE
+	}
+}
+
+{ rockb_throw
+
+	setvard CURRENT_TARGET unset
+	callevent find_targets
+	callevent check_targ
+
+	local TARGET_POS $get(CURRENT_TARGET,origin)
+	local ROCKB_POS $get(ROCKB_ID,origin)
+	local TRACE_FIRE $get_traceline(ROCKB_POS,TARGET_POS,worldonly)
+	if ( TRACE_FIRE isnot TARGET_POS  )
+	{
+		////dbg temp ROCKB Unable to fire, trace made no line ( $dist(TARGET_POS,TRACE_FIRE) )
+		setvard CURRENT_TARGET unset
+		callevent find_targets		
+		callevent 0.5 rockb_throw //try again in a bit
+	}
+	else
+	{
+		add ROCKS_THROWN 1
+		////dbg temp throwing ROCKB ( ROCKS_THROWN / NUMBER_ROCKS )
+		callexternal ROCKB_ID toss_rock CURRENT_TARGET MY_BASE_DAMAGE
+	}
+}
+
+{ rockc_throw
+	
+	setvard CURRENT_TARGET unset
+	callevent find_targets
+	callevent check_targ
+
+	local TARGET_POS $get(CURRENT_TARGET,origin)
+	local ROCKC_POS $get(ROCKC_ID,origin)
+	local TRACE_FIRE $get_traceline(ROCKC_POS,TARGET_POS,worldonly)
+	if ( TRACE_FIRE isnot TARGET_POS  )
+	{
+		////dbg temp ROCKC Unable to fire, trace made no line ( $dist(TARGET_POS,TRACE_FIRE) )
+		setvard CURRENT_TARGET unset
+		callevent find_targets	
+		callevent 0.5 rockc_throw //try again in a bit
+	}
+	else
+	{
+		add ROCKS_THROWN 1
+		////dbg temp throwing ROCKC ( ROCKS_THROWN / NUMBER_ROCKS )
+		callexternal ROCKC_ID toss_rock CURRENT_TARGET MY_BASE_DAMAGE
+	}
+}
+
+{ rockd_throw
+
+	setvard CURRENT_TARGET unset
+	callevent find_targets
+	callevent check_targ
+
+	local TARGET_POS $get(CURRENT_TARGET,origin)
+	local ROCKD_POS $get(ROCKD_ID,origin)
+	local TRACE_FIRE $get_traceline(ROCKD_POS,TARGET_POS,worldonly)
+	if ( TRACE_FIRE isnot TARGET_POS  )
+	{
+		////dbg temp ROCKD Unable to fire, trace made no line ( $dist(TARGET_POS,TRACE_FIRE) )
+		setvard CURRENT_TARGET unset
+		callevent find_targets	
+		callevent 0.5 rockd_throw //try again in a bit
+	}
+	else
+	{
+		add ROCKS_THROWN 1
+		////dbg temp throwing ROCKD ( ROCKS_THROWN / NUMBER_ROCKS )
+		callexternal ROCKD_ID toss_rock CURRENT_TARGET MY_BASE_DAMAGE
+	}
+}
+
+{ force_all_rock_throw
+	//times up, toss all the rocks, regardless of available line of fire
+	callevent check_targ
+	if ( $get(ROCKA_ID,exists) ) callexternal ROCKA_ID toss_rock CURRENT_TARGET MY_BASE_DAMAGE
+	if ( $get(ROCKB_ID,exists) ) callexternal ROCKB_ID toss_rock CURRENT_TARGET MY_BASE_DAMAGE
+	if ( $get(ROCKC_ID,exists) ) callexternal ROCKC_ID toss_rock CURRENT_TARGET MY_BASE_DAMAGE
+	if ( $get(ROCKD_ID,exists) ) callexternal ROCKD_ID toss_rock CURRENT_TARGET MY_BASE_DAMAGE
+	setvard ROCKS_THROWN NUMBER_ROCKS
+	////dbg temp Threw all rocks ( ROCKS_THROWN / NUMBER_ROCKS )
+}
+
+{ remove_me
+
+	callexternal MY_OWNER ext_rock_storm_end
+	callevent 0.1 remove_me2
+}
+
+{ remove_me2
+	deleteent ent_me
+}
+
+{ check_targ
+
+	if !$get(CURRENT_TARGET,isalive)
+	dbg rock_storm check_targ $get(CURRENT_TARGET,name) is invalid, using alternate
+	//scan found no targets, setup based on master's
+	if ( OWNER_ISPLAYER ) setvard CURRENT_TARGET $get(MY_OWNER,target)
+	if ( !OWNER_ISPLAYER ) setvard CURRENT_TARGET $get(MY_OWNER,scriptvar,NPCATK_TARGET)
+	if ( !$get(CURRENT_TARGET,isalive) )
+	{
+		//STILL not valid, try old style
+		setvard CURRENT_TARGET $get(MY_OWNER,scriptvar,HUNT_LASTTARGET)
+	}
+
+	////dbg temp Scan found no target, using $get(CURRENT_TARGET,name) ( owner targ mon $get(MY_OWNER,scriptvar,NPCATK_TARGET) / plyr $get(MY_OWNER,target) / old $get(MY_OWNER,scriptvar,HUNT_LASTTARGET) )
+}

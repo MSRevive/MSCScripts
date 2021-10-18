@@ -1,0 +1,204 @@
+//larger ice wolf with uber blizzard and charge/knockback attack
+{
+	if ( $lcase(game.map.name) startswith lodagond )
+	{
+		setvard NPC_IS_BOSS 1
+		setvard NPC_GIVE_EXP 8000
+	}
+	else
+	{
+		setvard NPC_GIVE_EXP 2000
+	}
+
+	const NPC_BOSS_REGEN_RATE 0.05
+	const NPC_BOSS_RESTORATION 0.25
+
+
+	const CUSTOM_WOLF 1
+	const AM_ALPHA 1
+	const DOT_BURN 70
+
+	const DMG_BITE $rand(50,200)
+	const DMG_CLAW $rand(50,75)
+
+	const FREQ_COMBAT_HOWL 30.0
+
+	const CHANCE_BURN 30%
+
+	const SOUND_BURN magic/frost_reverse.wav
+
+	const CHANCE_CLAW 5
+
+	const MONSTER_MODEL monsters/wolf_huge.mdl
+
+	const FREQ_LEAP 15.0
+
+	setvard ATTACK_RANGE 92
+	setvard ATTACK_HITRANGE 128
+	setvard ATTACK_MOVERANGE 72
+
+	const DMG_STORM 20.0
+	const STORM_DUR 20.0
+	const STORM_RAD 800
+}
+
+{ game_precache
+
+	precachefile monsters/summon/uber_blizzard
+}
+
+#include [server] monsters/wolf_base
+
+{ [shared] npc_spawn
+
+	name a|Winter Alpha Wolf
+	race demon
+	setmodel MONSTER_MODEL
+	width 48
+	height 72
+	roam 1
+	hp 9000
+	takedmg fire 1.25
+	takedmg cold 0.0
+	setmodelbody 0 1
+	hearingsensitivity 8
+
+	setvard NEXT_HOWL 0
+	setvarg G_ALPHA $get(ent_me,id) //lesser wolves consider me alpha
+}
+
+{ do_combat_howl
+
+	//ice blast howl
+	if ( CYCLED_UP )
+	{
+		setvard DOING_HOWL 1
+		playanim critical ANIM_HOWL
+		playrandomsound 0 10 SOUND_HOWL1 SOUND_HOWL2
+		callevent ice_storm
+		dodamage $relpos(0,0,0) 512 0 100% 0.0 reflective target
+		applyeffect ent_me effects/effect_iceshield 20 0.4
+	}
+	callevent 0.1 end_combat_howl
+}
+
+{ end_combat_howl
+	playsound 0 10 magic/cast.wav //ice shield init sound
+	setvard DOING_HOWL 0
+	callevent FREQ_COMBAT_HOWL do_combat_howl
+}
+
+{ game_dodamage
+
+	if ( PARAM1 )
+	{
+		if !DOING_HOWL
+		if !CHARGE_ATTACK
+		if $rand(1,100) < CHANCE_BURN
+		if $get(PARAM2,relationship,ent_me) equals enemy
+		applyeffect PARAM2 effects/effect_frostbite_dmg 10 $get(ent_me,id) DOT_BURN
+		playsound 0 10 SOUND_BURN
+		effect glow ent_me (0,75,255) 128 1 1
+	}
+
+	if DOING_HOWL
+	if $get(PARAM2,relationship,ent_me) equals enemy
+	applyeffect PARAM2 effects/freeze_solid 5 1 1
+}
+
+{ cycle_up
+
+	if !CYCLES_STARTED
+	setvard CYCLES_STARTED 1
+	callevent FREQ_COMBAT_HOWL do_combat_howl
+}
+
+
+{ [override] bite1
+
+	setvard ATTACK_TYPE bite
+	callevent npcatk_dodamage NPCATK_TARGET ATTACK_HITRANGE DMG_BITE ATTACK_HITCHANCE slash
+	callevent atk_sound
+	if $rand(1,100) < CHANCE_CLAW
+	if !LEAP_DELAY
+	setvard LEAP_DELAY 1
+	callevent FREQ_LEAP reset_leap_delay
+	setvard ANIM_ATTACK ANIM_CLAW
+	
+}
+
+{ reset_leap_delay
+
+	setvard LEAP_DELAY 0
+}
+
+{ npcatk_attack
+
+	if ( ANIM_ATTACK equals 'attack2' )
+	{
+		if !DID_BOOST
+		setvard DID_BOOST 1
+		addvelocity ent_me $relvel(0,400,50)
+		setvard CHARGE_ATTACK 1
+		callevent 1.0 reset_charge_attack
+		callevent charge_loop
+	}
+
+	if ( ANIM_ATTACK isnot 'attack2' ) setvard DID_BOOST 0
+}
+
+{ reset_charge_attack
+
+	setvard CHARGE_ATTACK 0
+}
+
+{ charge_loop
+	
+	if CHARGE_ATTACK
+	callevent 0.1 charge_loop
+	//dodamage $relpos(0,32,0) 96 20 100% 0.0 reflective target
+
+	xdodamage $relpos(0,32,0) 96 20 100% ent_me ent_me none target dmgevent:push
+}
+
+{ push_dodamage
+
+	if $get(PARAM2,relationship,ent_me) equals enemy
+	addvelocity PARAM2 $relvel(0,1000,0)	
+}
+
+
+{ ice_storm
+
+	//dbg ice storm
+	local BLIZ_LOC $relpos(0,0,0)
+	local SUMMON_POINT1 $get_by_name(summon_point1)
+	if ( $get(SUMMON_POINT1,exists) ) local BLIZ_LOC $get(SUMMON_POINT1,origin)
+
+	createnpc monsters/summon/uber_blizzard BLIZ_LOC $get(ent_me,id) DMG_STORM STORM_DUR STORM_RAD 30%
+
+	getplayersnb PLAYER_LIST 
+   
+	calleventloop $get_token_amt(PLAYER_LIST) fade_blue  
+}  
+  
+{ fade_blue  
+  
+     local CHECK_ENT $get_token(PLAYER_LIST,game.script.iteration) 
+ 
+     if $get(CHECK_ENT,range) < STORM_RAD 
+   
+     effect screenfade CHECK_ENT 5 0 (0,0,192) 128 fadein  
+} 
+
+{ [override] npcatk_set_skill
+	local L_MAP_NAME $lcase(game.map.name)
+
+	if ( NPC_IS_BOSS ) setvard NPC_GIVE_EXP 4000
+	if ( !NPC_IS_BOSS ) setvard NPC_GIVE_EXP 1000
+
+	if ( L_MAP_NAME contains lodagond )	multiply NPC_GIVE_EXP 1.75
+	if ( L_MAP_NAME contains old_helena ) multiply NPC_GIVE_EXP 0.5
+	if ( NPC_EXP_MULTI ) multiply NPC_GIVE_EXP NPC_EXP_MULTI
+	if ( NPC_GIVE_EXP != 0 ) skilllevel NPC_GIVE_EXP
+}

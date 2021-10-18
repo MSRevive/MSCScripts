@@ -1,0 +1,165 @@
+//Ice Blast by Thothie, from scratch (this is Freezing Sphere)
+//Now that we have xdodamage and $get_tsphere - this should probably be turned into a projectile
+
+{
+	const SOUND_HUM magic/pulsemachine_noloop.wav	//make pulsemachine_noloop.wav if needed
+	const HUM_LENGTH 1.7
+	const STUCKCHECK_FREQ 0.5
+	const BLAST_MODEL weapons/projectiles.mdl
+	const MODEL_BODY_OFS 1
+	const PROJ_ANIM_IDLE idle_iceball
+	const SOUND_ZAP1 debris/beamstart14.wav
+	const SOUND_ZAP2 debris/beamstart14.wav
+	const SOUND_ZAP3 debris/zap1.wav
+	const BALL_SPEED 100
+	const LIGHTNING_SPRITE lgtning.spr
+	const ATTACK_RADIUS 196
+
+	const FWD_SPEED 10
+}
+
+#include monsters/base_noclip
+
+{ eventname game_dynamically_created //PARAM1 = owner PARAM2 = Freeze Duration PARAM3 = dest
+
+	//setvard MY_OWNER PARAM1
+	//setvard FREEZE_DURATION PARAM2
+	//setvard FINAL_DEST PARAM3
+
+	//setprop		ent_me movetype const.movetype.noclip
+	//setprop		ent_me solid 0
+
+	////dbg MyOwnerAngles OWNER_ANGLES dest FINAL_DEST 
+	//setmovedest FINAL_DEST 10
+   	//setanim.movespeed BALL_SPEED
+
+	 setvard MY_OWNER PARAM1
+	 setvard FREEZE_DURATION PARAM2
+
+	////dbg temp got duration PARAM2
+
+	setvard PLAYER_SPAWNED $get(PARAM1,isplayer)
+	 
+	setprop	ent_me movetype const.movetype.noclip
+	setprop		ent_me solid 0
+	 
+	 setvard OWNER_ANGLES $get(MY_OWNER,angles)
+
+	 
+	 setangle face OWNER_ANGLES
+	 
+	 setvard FINAL_DEST $relpos(0,20000,0)
+	 //vectoradd FINAL_DEST $relpos(OWNER_ANGLES,$vec(0,8000,0))
+	
+	 if ( PARAM3 isnot 'PARAM3' ) setvard FINAL_DEST PARAM3
+	
+	 //dbg Dest FINAL_DEST
+
+	 setvard NPC_NOCLIP_DEST FINAL_DEST
+	 //setanim.movespeed BALL_SPEED
+}
+
+{ game_spawn
+
+	name a|Freezing Sphere
+	hp 1
+	invincible 1
+	fly		1
+	gravity 0.0
+	fov 359
+	race beloved
+	width 1
+	height 1
+	setmonsterclip 0
+	setmodel BLAST_MODEL
+	setmodelbody 0 MODEL_BODY_OFS
+	setsolid not
+	setbbox none
+	setidleanim PROJ_ANIM_IDLE
+	setmoveanim PROJ_ANIM_IDLE
+	setanim.framerate 2
+	playanim	idle
+
+	setvard FREEZING 1
+
+	setvard ICE_OLD_POS $get(ent_me,origin)
+
+	callevent 0.1 freeze_loop
+	callevent 0.5 hum_loop
+
+	//local MY_OWNER $get(ent_creationowner,id)
+	//local FINAL_DEST $get(MY_OWNER,origin)
+	//local FINAL_DEST $relpos($vec(0,0,0),$vec(0,800,0))
+
+	setprop	ent_me movetype const.movetype.noclip
+	setprop		ent_me solid 0
+
+	callevent 10.0 remove_me
+}
+
+//{ stuck_loop
+//
+//	if FREEZING
+//	callevent STUCKCHECK_FREQ stuck_loop
+//
+//	local MY_POS $get(ent_me,origin)
+//	if ( $dist(MY_POS,ICE_OLD_POS) == 0 ) callevent game_reached_dest
+//	setvard ICE_OLD_POS MY_POS
+//}
+
+{ hum_loop
+
+	if FREEZING
+	callevent HUM_LENGTH hum_loop
+
+	playsound CHAN_BODY 10 SOUND_HUM
+}
+
+{ freeze_loop
+
+	if FREEZING
+
+//	local MY_YAW $vec.yaw(game.monster.angles)
+//	vectoradd FINAL_DEST $relpos($vec(0,MY_YAW,0),$vec(0,1000,0))
+//	setangle face_origin FINAL_DEST
+//	setorigin ent_me $relpos(0,2,0)
+
+	//setmovedest FINAL_DEST 10
+
+	callevent 0.1 freeze_loop
+
+	if $cansee(ally)
+	if $get(ent_lastseen,id) isnot IGNORE_TARGET
+	if $get(MY_OWNER,relationship,ent_lastseen) equals enemy
+	if $get(ent_lastseen,range) < ATTACK_RADIUS
+	if ( FX_SPAMMERS < MAX_FX_SPAMMERS ) 
+	{
+		local TARGET_ORG $get(ent_lastseen,origin)
+		//ents no workie, stickin to points
+		//effect beam ents <spritename> <width> <target> <attachment index> <(r,g,b)> <brightness> <noise> <duration>
+		//effect beam ents LIGHTNING_SPRITE $get(ent_lastseen,id) $get(ent_me,id) (200,200,255) 150 50 1.0
+		effect beam point LIGHTNING_SPRITE 60 $relpos(0,0,0) TARGET_ORG (200,200,255) 150 50 1.0
+		playrandomsound 0 10 SOUND_ZAP1 SOUND_ZAP2 SOUND_ZAP3
+	}
+	if ( $get(ent_lastseen,hp) <= 1500 )
+	{
+		if ( $get(ent_lastseen,isplayer) )
+		{
+			if !PLAYER_SPAWNED
+			applyeffect ent_lastseen effects/freeze_solid FREEZE_DURATION MY_OWNER
+		}
+		if ( !$get(ent_lastseen,isplayer) ) callexternal $get(ent_lastseen,id) freeze_solid FREEZE_DURATION MY_OWNER
+	}
+	if ( $get(ent_lastseen,hp) >= 1500 )
+	{
+		if PLAYER_SPAWNED
+		local TARG_NAME $get(ent_lastseen,name)
+		playermessage MY_OWNER TARG_NAME is too strong to be affected.
+	}
+	setvard IGNORE_TARGET $get(ent_lastseen,id)
+}
+
+{ remove_me
+	setvard FREEZING 0
+	deleteent ent_me
+}

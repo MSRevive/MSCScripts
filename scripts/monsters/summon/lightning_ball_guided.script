@@ -1,0 +1,61 @@
+{
+	const SOUND_SPAWN debris/beamstart4.wav
+	const SOUND_EXPLODE ambience/alienlaser1.wav
+	const SPRITE_EXPLODE xfire2.spr
+
+	const MY_SPEED 100
+
+	const AM_LIGHTNING 1
+}
+
+#include monsters/summon/fire_ball_guided
+
+{ [override] game_spawn
+	name a|ball lightning
+	hp 30 //may make this adjustable
+	fly 1
+	width 32
+	height 32
+	setmodel weapons/projectiles.mdl
+	setmodelbody 0 15
+	invincible 2 //weird gibbing happening, just gonna make invuln
+	setvard PLAYING_DEAD 1
+
+	setmonsterclip 0
+
+	setprop ent_me rendermode 5
+	setprop ent_me renderamt 255
+	
+	//check attatchsprite/light commands here
+
+	playsound 0 10 SOUND_SPAWN
+
+	setidleanim spin_horizontal_norm
+	setsolid none
+
+	clientevent new all monsters/summon/guided_ball_cl $get(ent_me,index) (255,255,0)
+	setvard MY_LIGHT_SCRIPT game.script.last_sent_id
+}
+
+{ [override] go_splodie
+	callevent 0.1 remove_me
+	clientevent remove all MY_LIGHT_SCRIPT
+	//effect tempent spray SPRITE_EXPLODE game.monster.origin 0 1 0 0
+	setmodel none
+	xdodamage game.monster.origin MY_AOE MY_BASE_DMG 0.1 MY_OWNER MY_OWNER spellcasting.lightning lightning
+	setvard PUSH_LIST $get_tsphere(enemy,MY_AOE,game.monster.origin)
+	if ( PUSH_LIST isnot none ) calleventloop $get_token_amt(PUSH_LIST) push_loop
+	//attachsprite SPRITE_EXPLODE trans 20 1.0
+	playrandomsound 0 10 SOUND_EXPLODE
+	//drop splodie sprite here
+	setvard IS_ACTIVE 0
+}
+
+{ [override] push_loop
+	local CUR_TARGET $get_token(PUSH_LIST,game.script.iteration)
+	dbg push_loop $get(CUR_TARGET,name) of PUSH_LIST
+	local TARGET_ORG $get(CUR_TARGET,origin)
+	local TARG_ANG $angles(game.monster.origin,TARGET_ORG)
+	setvelocity CUR_TARGET $relvel($vec(0,TARG_ANG,0),$vec(10,500,0)) //a little to the left too, in case he's stuck up against a wall
+	effect screenfade CUR_TARGET 3 1 (255,255,255) 255 fadein
+}

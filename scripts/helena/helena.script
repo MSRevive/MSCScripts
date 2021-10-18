@@ -1,0 +1,98 @@
+#scope server
+{
+	const FREQ_CHECK $rand(540,1020)
+	const HPREQ_MEDIUM_WAVE 500
+	const HPREQ_STRONG_WAVE 1250
+
+}
+
+{ [server] game_spawn
+
+	name_unique script_helena
+	// Check for attack every CheckDelay seconds
+	name _
+	calleventtimed FREQ_CHECK check_for_raid
+	invincible 1
+	fly 1
+	setvard PLAYING_DEAD 1
+	setalive 1
+	race beloved
+
+	dbg helena NPC spawned
+}
+
+{ [server] check_for_raid
+
+	local RND_CHANCE $rand(1,5)
+	dbg check_for_raid ( RND_CHANCE / 5 )
+	if ( RND_CHANCE != 1 ) calleventtimed FREQ_CHECK check_for_raid
+
+	if RND_CHANCE == 1
+
+	callevent start_raid 
+}
+
+{ [server] start_raid
+
+	local TOTAL_HP game.players.totalhp
+	dbg start_raid TOTAL_HP
+	if ( TOTAL_HP < HPREQ_MEDIUM_WAVE ) usetrigger spawn_orcs_weak del_stuff
+
+
+	if ( TOTAL_HP >= HPREQ_MEDIUM_WAVE )
+	{
+		if TOTAL_HP < HPREQ_STRONG_WAVE
+		usetrigger spawn_orcs_medium cata_chance_50 del_stuff
+	}
+
+	if ( TOTAL_HP >= HPREQ_STRONG_WAVE ) usetrigger spawn_orcs_strong cata_chance_75 del_stuff
+
+	infomsg all "HELENA IS UNDER ATTACK!" "The Blackhand Orcs are raiding Helena!"
+	callexternal all helena_raid_go
+
+	callevent 1.0 music_orcs
+}
+
+{ [server] bandit_raid
+
+	dbg bandit_raid
+	callevent 1.0 bandit_raid2
+	usetrigger del_stuff //removes monsterclip from Dorfgan
+}
+
+{ [server] bandit_raid2
+
+	infomsg all "HELENA IS UNDER ATTACK" "Bandits are raiding Helena!"
+	callexternal all helena_raid_go
+	callevent 1.0 music_bandits
+}
+
+//Playmp3 seems to be generating some sort of client side error, stopping the script, hence these are seperate after a delay
+{ [server] music_orcs
+	playmp3 all 3.0 media/Half-Life11.mp3 //mschalls.mp3
+}
+
+{ [server] music_bandits
+	playmp3 all 3.0 barbarian_gladiator.mp3
+}
+
+{ [server] music_raid_end
+	playmp3 all 3.0 mshelena.mp3
+}
+
+
+{ [server] raid_done
+
+	dbg raid_done
+	callexternal all helena_raid_end
+	calleventtimed FREQ_CHECK check_for_raid
+	callevent 2.0 music_raid_end
+}
+
+
+{ [server] manual_start
+
+	//if Attacking equals 0
+	dbg manual_start
+	callevent start_raid PARAM1
+}

@@ -1,0 +1,79 @@
+//Stun burst, from Flame Burst
+{ game_dynamically_created //PARAM1 Owner, PARAM2 ScanRange, PARAM3 = throw if set 1, PARAM4 damage if set > 0, PARAM5 = passskill
+
+	storeentity ent_expowner PARAM1
+
+	setvard MY_OWNER PARAM1
+	setvard OWNER_ISPLAYER $get(PARAM1,isplayer)
+	setvard SCAN_RANGE PARAM2
+	setvard MY_BASE_DAMAGE 0
+	setvard SKILL_TYPE none
+	if ( PARAM5 isnot 'PARAM5' ) setvard SKILL_TYPE PARAM5
+	race $get(MY_OWNER,race)
+
+	if ( SCAN_RANGE == 0 ) setvard SCAN_RANGE 96
+
+	//make sure starts on ground
+	local TRACE_ORG game.monster.origin
+	local TRACE_END TRACE_ORG
+	vectoradd TRACE_END $relpos($vec(0,0,0),$vec(0,0,-1000))
+	local TRACE_LINE $get_traceline(TRACE_ORG,TRACE_END,worldonly)
+
+	if ( PARAM3 isnot 'PARAM3' ) setvard THROW_TARGETS PARAM3
+	if ( PARAM4 isnot 'PARAM4' ) setvard MY_BASE_DAMAGE PARAM4
+
+	////dbg temp got Rng SCAN_RANGE Throw THROW_TARGETS Dmg MY_BASE_DAMAGE
+
+	setorigin ent_me TRACE_LINE
+
+	setangle face $get(MY_OWNER,angles)
+
+	clientevent new all_in_sight monsters/summon/stun_burst_cl TRACE_LINE SCAN_RANGE
+	setvard BURST_SCRIPT_IDX game.script.last_sent_id
+
+	callevent 0.25 big_boom
+
+	callevent 3.0 effect_die
+}
+
+{ effect_die
+
+	clientevent remove all BURST_SCRIPT_IDX
+	deleteent ent_me
+}
+
+{ big_boom
+
+	playsound 0 10 magic/boom.wav
+	
+	setvard TARG_LIST $get_tsphere(enemy,SCAN_RANGE,game.monster.origin)
+	if TARG_LIST isnot none
+	calleventloop $get_token_amt(TARG_LIST) affect_targets
+}
+
+{ affect_targets
+
+	local CHECK_ENT $get_token(TARG_LIST,game.script.iteration)
+
+	if $get(CHECK_ENT,onground)
+	
+	if ( OWNER_ISPLAYER )
+	{
+		if game.pvp == 0
+		if $get(CHECK_ENT,isplayer)
+		local EXIT_SUB 1
+		//dbg aborted, players do not stun players in non-pvp ( game.pvp )
+	}
+	if !EXIT_SUB
+
+	applyeffect CHECK_ENT effects/effect_stun 5.0 0 1
+
+	if ( MY_BASE_DAMAGE > 0 ) xdodamage CHECK_ENT direct MY_BASE_DAMAGE 0 MY_OWNER MY_OWNER SKILL_TYPE magic
+
+	if THROW_TARGETS
+	local TARGET_ORG $get(CHECK_ENT,origin)
+	local TARG_ANG $angles(game.monster.origin,TARGET_ORG)
+	local NEW_YAW TARG_ANG
+	setvelocity CHECK_ENT $relvel($vec(0,NEW_YAW,0),$vec(0,1000,0))
+}
+

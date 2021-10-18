@@ -1,0 +1,351 @@
+//Manages the game world on the client
+//
+//Useful for handling global events clientside
+
+
+//Day/Night
+//==========
+
+{
+	const DAY_SKYNAME 	game.map.skyname
+	const DAY_SOUND		amb/birds01.wav
+	const DAY_START_HOUR	6
+	const DAY_STATE		day
+	const AFT_SKYNAME 	DAY_SKYNAME
+	const AFT_SOUND		none
+	const AFT_START_HOUR	17
+	const AFT_STATE		aft
+	const NIGHT_SKYNAME 	space
+	const NIGHT_SOUND	amb/wolf01.wav
+	const NIGHT_START_HOUR	20
+	const NIGHT_STATE	night
+
+	setvarg clglobal.daystate DAY_STATE
+}
+
+#include player/player_cl_effects_special
+
+{ recv_time_initial
+
+	if( clglobal.time.hour >= NIGHT_START_HOUR )
+		setvarg clglobal.daystate NIGHT_STATE
+	
+}
+
+{ recv_time
+
+	CheatEngineCheck
+
+	local l.olddaytime clglobal.daystate
+	setvarg clglobal.time.hour PARAM1
+	setvarg clglobal.time.min  PARAM2
+	setvarg clglobal.time.text PARAM3
+
+	setvard PREV_STATE clglobal.daystate
+
+	if( clglobal.time.hour < NIGHT_START_HOUR )
+	{
+		if( clglobal.time.hour >= AFT_START_HOUR )
+		{
+			callevent change_to_aft
+		}
+		else if( clglobal.time.hour >= DAY_START_HOUR )
+		{
+			callexternal all environment_change DAY_STATE
+		}
+		else
+		{
+			callevent change_to_night
+		}
+	}
+	else
+	{
+		callevent change_to_night
+	}
+
+	callevent time_change l.olddaytime clglobal.daystate
+}
+
+{ change_to_night
+
+	if( !global.map.allownight ) callexternal all environment_change DAY_STATE
+	else callexternal all environment_change NIGHT_STATE
+}
+
+{ change_to_aft
+
+	if( !global.map.allownight ) callexternal environment_change DAY_STATE
+	else callexternal all environment_change AFT_STATE
+}
+
+{ environment_change //PARAM1 == new environment state
+
+	if ( CL_TOD_LOCK isnot none )
+	{
+		if PARAM1 isnot CL_TOD_LOCK
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	setvard CURRENT_TOD_STATE PARAM1
+
+	if( PARAM1 equals DAY_STATE )
+	{
+		if ( AM_FADING ) callevent finalize_state DAY_STATE
+		if !AM_FADING
+		if ( PREV_STATE equals NIGHT_STATE )
+		{
+			if !AM_FADING
+			setvard AM_FADING 1
+			//setvarg clglobal.daystate DAY_STATE
+			setvard FADE_COUNT 1000
+			callevent fade_to_day
+		}
+		else
+		{
+			callevent finalize_state DAY_STATE
+		}
+	}
+	else if( PARAM1 equals AFT_STATE )
+	{
+		if ( AM_FADING ) callevent finalize_state AFT_STATE
+		if !AM_FADING
+
+		if ( PREV_STATE equals DAY_STATE )
+		{
+			//setvarg clglobal.daystate DAY_STATE
+			if !AM_FADING
+			setvard AM_FADING 1
+			setvard DUSK_FADE_COUNT 1000
+			callevent fade_to_dusk
+		}
+		else
+		{
+			setvarg clglobal.daystate AFT_STATE
+			setenv sky.texture 	AFT_SKYNAME
+			setenv lightgamma 	5
+			setenv fog.enabled	0
+			setenv screen.tint	(0.8156,0.368627,0.007843,0.1)
+		}
+	}
+	else if( PARAM1 equals NIGHT_STATE )
+	{
+		if ( AM_FADING ) callevent finalize_state NIGHT_STATE
+		if !AM_FADING
+		if ( PREV_STATE equals AFT_STATE )
+		{
+			if !AM_FADING
+			setvard AM_FADING 1
+			setenv fog.density	0.05
+			setenv fog.color	(0,0,0)
+			setenv fog.start	4096
+			setenv fog.end		4864
+			setenv fog.type		linear
+			setenv fog.enabled	1
+			setvard NIGHT_FADE_COUNT 1000
+			callevent fade_to_night
+		}
+		else
+		{
+			callevent finalize_state NIGHT_STATE
+		}
+	}
+}
+
+{ finalize_state //<tod>
+
+	dbg **** finalize_state PARAM1
+
+	setvard AM_FADING 0
+	setvard NIGHT_FADE_COUNT -1
+	setvard FADE_COUNT -1
+	setvard DUSK_FADE_COUNT -1
+	setvard CLPLR_TOD_STATE PARAM1
+
+	if( PARAM1 equals DAY_STATE )
+	{
+		setvarg clglobal.daystate DAY_STATE
+		setenv sky.texture 	DAY_SKYNAME
+		setenv lightgamma 	2.5
+		setenv fog.enabled	0
+		setenv screen.tint	(0,0,0,0)
+	}
+	else if( PARAM1 equals AFT_STATE )
+	{
+		setvarg clglobal.daystate AFT_STATE
+		setenv sky.texture 	AFT_SKYNAME
+		setenv lightgamma 	5
+		setenv fog.enabled	0
+		setenv screen.tint	(0.8156,0.368627,0.007843,0.1)
+	}
+	else if( PARAM1 equals NIGHT_STATE )
+	{
+		setvarg clglobal.daystate NIGHT_STATE
+		setenv fog.enabled	1
+		setenv fog.density	0.05
+		setenv fog.start	256
+		setenv fog.end		1024
+		setenv fog.type		linear
+		setenv fog.color	(0,0,0)
+		setenv screen.tint	(0.0200,0.020000,0.300000,0.1)
+		//setenv screen.tint	(0,0,0,0.65) //this is what darkens the wrong lights ><
+		setenv lightgamma 	4
+	}
+
+}
+
+{ fade_to_night
+
+	if ( NIGHT_FADE_COUNT == 0 )
+	{
+		callevent finalize_state NIGHT_STATE
+		playsound const.snd.static const.snd.maxvol NIGHT_SOUND
+	}
+
+	if NIGHT_FADE_COUNT > 0
+	callevent 0.01 fade_to_night
+
+	subtract NIGHT_FADE_COUNT 1 
+
+	local PROGRESS_RATIO NIGHT_FADE_COUNT
+	divide PROGRESS_RATIO 1000 //$get_skill_ratio(PROGRESS_RATIO,<targ>,<start>)
+
+	//local LIGHT_GAMMA $get_skill_ratio(PROGRESS_RATIO,4.0,5.0)
+	//local FOG_DENSI $get_skill_ratio(PROGRESS_RATIO,0.5,0.0001)
+	local FOG_START $get_skill_ratio(PROGRESS_RATIO,256,4096)
+	local FOG_END 768
+	add FOG_END FOG_START
+	local TINT_R $get_skill_ratio(PROGRESS_RATIO,0.02,0.8156)
+	local TINT_G $get_skill_ratio(PROGRESS_RATIO,0.02,0.368627)
+	local TINT_B $get_skill_ratio(PROGRESS_RATIO,0.3,0.007843)
+	//bleh, neither strconc nor $stradd() will handle this
+	local TINT_STR '('
+	stradd TINT_STR TINT_R
+	stradd TINT_STR ','
+	stradd TINT_STR TINT_B
+	stradd TINT_STR ','
+	stradd TINT_STR TINT_G
+	stradd TINT_STR ',0.1)'
+
+	//dbg **** fade_to_night [ NIGHT_FADE_COUNT ] PROGRESS_RATIO lg LIGHT_GAMMA fd FOG_DENSI fs FOG_START ts TINT_STR
+	//dbg **** fade_to_night [ NIGHT_FADE_COUNT ] PROGRESS_RATIO fs FOG_START - FOG_END ts TINT_STR
+	//setenv fog.density	FOG_DENSI
+	setenv fog.start	FOG_START
+	setenv fog.end	FOG_END
+	lightgamma LIGHT_GAMMA
+	setenv screen.tint TINT_STR
+}
+
+{ fade_to_dusk
+
+	setvard DUSK_FADE_COUNT 0 //changes to render causes DUSK fade effect to crash, just go straight to finalize
+
+	if ( DUSK_FADE_COUNT == 0 )
+	{
+		callevent finalize_state AFT_STATE
+	}
+
+	if DUSK_FADE_COUNT > 0
+	callevent 0.01 fade_to_dusk
+
+	subtract DUSK_FADE_COUNT 1 
+
+	local PROGRESS_RATIO DUSK_FADE_COUNT
+	divide PROGRESS_RATIO 1000
+	local LIGHT_GAMMA $get_skill_ratio(PROGRESS_RATIO,4.0,2.5)
+	local TINT_ALPHA  $get_skill_ratio(PROGRESS_RATIO,0.1,0)
+	setenv lightgamma 	LIGHT_GAMMA
+
+	local SCREEN_STR "(0.8156,0.368627,0.007843,"
+	stradd SCREEN_STR TINT_ALPHA
+	stradd SCREEN_STR ")"
+	//dbg **** fade_to_dusk [ DUSK_FADE_COUNT ] PROGRESS_RATIO ta TINT_ALPHA lg SCREEN_STR
+	setenv screen.tint	SCREEN_STR
+
+	lightgamma LIGHT_GAMMA
+}
+
+{ fade_to_day
+
+	if ( FADE_COUNT == 0 )
+	{
+		callevent finalize_state DAY_STATE
+		playsound const.snd.static const.snd.maxvol DAY_SOUND
+	}
+
+	if FADE_COUNT > 0
+	callevent 0.01 fade_to_day
+
+	subtract FADE_COUNT 1 
+
+	local PROGRESS_RATIO FADE_COUNT
+	divide PROGRESS_RATIO 1000
+	local LIGHT_GAMMA $get_skill_ratio(PROGRESS_RATIO,2.5,4.0)
+	local FOG_DENSI $get_skill_ratio(PROGRESS_RATIO,0.0,0.1)
+	local FOG_START $get_skill_ratio(PROGRESS_RATIO,4096,256)
+	local TINT_ALPHA  $get_skill_ratio(PROGRESS_RATIO,0,0.1)
+	local SCREEN_STR "(0.0200,0.020000,0.300000,"
+	stradd SCREEN_STR TINT_ALPHA
+	stradd SCREEN_STR ")"
+	local FOG_END 1024
+	add FOG_END FOG_START
+
+	//dbg **** fade_to_day [ FADE_COUNT ] PROGRESS_RATIO lg LIGHT_GAMMA fd FOG_DENSI fs FOG_START TINT_ALPHA
+
+	//setenv fog.color	(FOG_COLOR,FOG_COLOR,FOG_COLOR)
+
+	setenv fog.density	FOG_DENSI
+	setenv fog.start	FOG_START
+	setenv fog.end	FOG_END
+	setenv screen.tint	SCREEN_STR
+	lightgamma LIGHT_GAMMA
+}
+
+{ time_change 
+
+	//1: prev daytime  2: New daytime
+	//Detect a change in the daytime and start a transition of
+	//special effects to the new time
+
+	if PARAM1 isnot PARAM2
+
+	local l.daytime PARAM2
+	if( l.daytime equals DAY_STATE )
+	{
+		playsound const.snd.static const.snd.maxvol DAY_SOUND
+	}
+	else if( l.daytime equals AFT_STATE )
+	{
+		
+	}
+	else if( l.daytime equals NIGHT_STATE )
+	{
+		playsound const.snd.static const.snd.maxvol NIGHT_SOUND
+	}
+}
+
+{ lock_tod //<time_to_lock> //update event
+	setvard CL_TOD_LOCK PARAM1
+}
+
+{ reset_tod
+
+	setenv sky.texture 	DAY_SKYNAME
+	setenv lightgamma 	2.5
+	setenv fog.enabled	0
+	setenv fog.density	0
+	setenv screen.tint	(0,0,0,0)
+
+	local L_CURRENT_TOD_STATE CURRENT_TOD_STATE
+	if  ( L_CURRENT_TOD_STATE equals 'CURRENT_TOD_STATE' ) local L_CURRENT_TOD_STATE day
+	callevent finalize_state L_CURRENT_TOD_STATE
+}
+
+//FEB2010_13 - clear weather client event
+{ clear_weather
+	setenv sky.texture 	DAY_SKYNAME
+	setenv lightgamma 	2.5
+	setenv fog.enabled	0
+	setenv screen.tint	(0,0,0,0)
+	callevent finalize_state CLPLR_TOD_STATE
+}

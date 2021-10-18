@@ -1,0 +1,257 @@
+//Bludgeon Bludgeon ^_^
+//- Hammer typically used by the Bludgeon tribes
+
+{
+	const DEMON_CHARGES 4 //-1 (so actually, 3)
+
+	const VAMPIRE_RATIO 0.75
+
+//	const ANIM_LIFT1      	5
+//	const ANIM_IDLE1       	0
+//	const ANIM_IDLE2		6
+//	const ANIM_IDLE_TOTAL	2
+//	const ANIM_ATTACK1     	1
+//	const ANIM_ATTACK2     	1
+
+	const ANIM_LIFT1      	15
+	const ANIM_IDLE1       	16
+	const ANIM_IDLE2		17
+	const ANIM_IDLE_TOTAL	2
+	const ANIM_ATTACK1     	18
+	const ANIM_ATTACK2     	19
+	const ANIM_ATTACK3     	20
+	const ANIM_RAGE 21
+
+	const BASE_LEVEL_REQ 20
+
+	const MODEL_VIEW viewmodels/v_2hblunts.mdl
+	const MODEL_VIEW_IDX 6
+
+	const MODEL_WORLD weapons/p_weapons3.mdl
+
+	const MODEL_BODY_OFS 10 //add
+	const ANIM_PREFIX  standard
+
+	//Used in base_melee
+	//------------------
+	const MELEE_RANGE 80
+	const MELEE_DMG_DELAY  0.5
+	const MELEE_ATK_DURATION 1.1
+	const DEMON_DMG_DELAY  0.25
+	const DEMON_ATK_DURATION 0.7
+	const MELEE_ENERGY 2
+	const MELEE_DMG 400
+	const DEMON_DMG 750
+	const MELEE_DMG_RANGE 40
+	const MELEE_ACCURACY 75%
+	const MELEE_PARRY_AUGMENT 20%
+
+	const SOUND_RAGE monsters/bludgeon/bludgeon_gaz_bat2.wav
+	const SOUND_RAGE1 monsters/bludgeon/bludgeon_gaz_bat1.wav
+	const SOUND_RAGE2 monsters/bludgeon/bludgeon_gaz_answer.wav
+	const SOUND_RAGE3 monsters/bludgeon/bludgeon_gaz_spell.wav
+	const SOUND_RAGE4 monsters/bludgeon/bludgeon_gaz_pain.wav
+	const SOUND_DEATH monsters/bludgeon/bludgeon_gaz_death.wav
+
+	const DEMON_DURATION 20.0 //20
+
+	const RAGE_DELAY 40.0 //40
+
+	const MELEE_DMG_TYPE blunt
+}
+
+#include items/blunt_base_twohanded
+
+{  weapon_spawn
+
+   name  a|Bludgeon Hammer
+   desc  A massive Bludgeon hammer, its former owner's soul is imprisoned within
+   weight  80
+   size  10
+   value 3750
+   sethudsprite hand 126
+   sethudsprite trade 126
+
+	setvard M_ATTACK 1
+}
+
+//mouse2 for rage
+{ game_+attack2
+
+	if game.serverside
+	if $get(ent_owner,canattack)
+
+	if !DEMON_RAGE_ON
+
+	if ( $get(ent_owner,skill.spellcasting) < 12 )
+	{
+		dplayermessage ent_owner Bludgeon Hammer: Insufficient magic skill for demonic rage.
+	}
+	if $get(ent_owner,skill.spellcasting) >= 12
+
+	dbg rage game.time vs LAST_RAGE
+	if ( game.time < LAST_RAGE )
+	{
+		local EXIT_SUB 1
+		if game.time > LAST_ERR
+		if ( !OUT_O_CHARGES ) dplayermessage ent_owner Bludgeon Rage: You've not yet recovered from the previous bludgeon rage
+		if ( OUT_O_CHARGES ) dplayermessage ent_owner Bludgeon Rage: Out of charges
+		setvard LAST_ERR game.time
+		add LAST_ERR 2.0
+	}
+	if !EXIT_SUB
+	setvard LAST_RAGE game.time
+	add LAST_RAGE RAGE_DELAY
+
+	//here the game master stores the owner's STEAM_ID in a token string
+	//and the number of times he has used the charge in another token string
+	//if he's used the charge less than three times, it calls the demon_rage event on this item
+	//otherwise it calls demon_rage_maxed
+	callexternal GAME_MASTER item_demon_rage $get(ent_me,id) $get(ent_owner,id) DEMON_CHARGES
+}
+
+{ demon_rage
+
+	playermessage Bludgeon rage: $int(PARAM1) charges remaining
+
+	splayviewanim ent_me ANIM_RAGE
+	playsound 0 10 SOUND_RAGE
+	//applyeffect ent_owner effects/demon_rage DEMON_DURATION 150 2.0 //duration speed_multi dmg_multi
+
+	attackprop ent_me 0 delay.strike DEMON_DMG_DELAY
+	attackprop ent_me 0 delay.end DEMON_ATK_DURATION
+	attackprop ent_me 0 dmg DEMON_DMG
+	local L_DEMON_DMG DEMON_DMG
+	multiply L_DEMON_DMG 2.0
+	attackprop ent_me 1 dmg L_DEMON_DMG
+	//setvard BWEAPON_NO_PERCENT_CHARGE 1
+	setvard DEMON_RAGE_ON 1
+	callevent DEMON_DURATION demon_rage_end
+	callevent demon_rage_loop
+	effect glow ent_owner (255,0,0) 64 DEMON_DURATION DEMON_DURATION
+}
+
+{ demon_rage_loop
+	if DEMON_RAGE_ON
+	effect screenfade ent_owner 2.0 1.0 (255,0,0) $rand(64,128) fadin
+	if ( $rand(1,10) == 1 ) playrandomsound 0 10 SOUND_RAGE1 SOUND_RAGE2 SOUND_RAGE3 SOUND_RAGE4
+	callevent 1.0 demon_rage_loop
+}
+
+{ demon_rage_end
+
+	setvard DEMON_RAGE_ON 0
+	//setvard BWEAPON_NO_PERCENT_CHARGE 0
+	attackprop ent_me 0 delay.strike MELEE_DMG_DELAY
+	attackprop ent_me 0 delay.end MELEE_ATK_DURATION
+	attackprop ent_me 0 dmg MELEE_DMG
+	local L_MELEE_DMG MELEE_DMG
+	multiply L_MELEE_DMG 2.0
+	attackprop ent_me 1 dmg L_MELEE_DMG
+	
+}
+
+{ demon_rage_maxed
+	setvard OUT_O_CHARGES 1
+	dplayermessage ent_owner Bludgeon Rage: Out of charges
+}
+
+{ game_dodamage //PARAM1=hit:0|1 PARAM2=ent_hit PARAM3=(start) PARAM4=(end) PARAM5=DmgType PARAM6=DmgAmt
+
+	if DEMON_RAGE_ON
+
+	if PARAM1
+
+	if $get(PARAM2,relationship,ent_owner) equals enemy
+
+	if ( $get(PARAM2,race) equals undead ) local IS_IMMUNE 1
+
+	if ( !IS_IMMUNE ) local IS_IMMUNE $get(PARAM2,scriptvar,'IMMUNE_VAMPIRE')
+	if ( IS_IMMUNE ) dplayermessage ent_owner Bludgeon Hammer: $get(PARAM2,name) is immune to vampyric effects.
+	if !IS_IMMUNE
+
+	local HEAL_AMT $get(PARAM2,scriptvar,'LAST_STRUCK_FOR')
+
+	multiply HEAL_AMT VAMPIRE_RATIO
+
+	local OWNER_HP_AFTER_HEAL $get(ent_owner,hp)
+	add OWNER_HP_AFTER_HEAL HEAL_AMT
+
+	if ( OWNER_HP_AFTER_HEAL > $get(ent_owner,maxhp) )
+	{
+		local HEAL_AMT $math(subtract,$get(ent_owner,maxhp),$get(ent_owner,hp))
+	}
+
+	effect glow ent_owner (255,0,0) 60 1 1
+	playsound 0 10 player/heartbeat_noloop.wav
+
+	givehp ent_owner HEAL_AMT
+}
+
+{ melee_strike //PARAM1: "none"/"npc"/"world"   2: Attack end Position   3: Entity hit (if any)
+
+	if DEMON_RAGE_ON
+
+	if $get(PARAM3,isalive)
+
+	if ( $get(PARAM3,maxhp) < 3000 )
+	{
+		local L_R $rand(50,200)
+		if ( $rand(1,2) == 1 ) local L_R $neg(L_R)
+
+		local PUSH_VEL $relvel(L_R,300,10)
+		callexternal ent_owner ext_push_targ $get(PARAM3,id) PUSH_VEL
+	}
+}
+
+{ [override] melee_start
+
+	if ( !DEMON_RAGE_ON )
+	{
+		splayviewanim ent_me MELEE_VIEWANIM_ATK
+		if( PLAYERANIM_SWING isnot 'PLAYERANIM_SWING' ) playowneranim once PLAYERANIM_SWING global.anim.combatwalk 3
+		callevent	 MELEE_SOUND_DELAY melee_playsound
+	}
+
+	if DEMON_RAGE_ON
+	if ( M_ATTACK == 1 ) splayviewanim ent_me ANIM_ATTACK1
+	if ( M_ATTACK == 2 ) splayviewanim ent_me ANIM_ATTACK2
+	if ( M_ATTACK == 3 )
+	{
+		splayviewanim ent_me ANIM_ATTACK3
+		setvard M_ATTACK 1
+	}
+	add M_ATTACK 1
+}
+
+{ [override] item_idle
+
+	if !DEMON_RAGE_ON
+
+	if !game.item.attacking
+	if game.item.wielded
+	if baseitem.canidle
+
+	local l.anim $rand(1,ANIM_IDLE_TOTAL)
+	if( l.anim == 1 ) playviewanim ANIM_IDLE1
+	else if( l.anim == 2 ) playviewanim ANIM_IDLE2
+	else if( l.anim == 3 ) playviewanim ANIM_IDLE3
+	else if( l.anim == 4 ) playviewanim ANIM_IDLE4
+	else if( l.anim == 5 ) playviewanim ANIM_IDLE5
+}
+
+{ bs_global_command
+	if PARAM1 equals $get(ent_owner,id)
+	if PARAM2 equals death
+	if PARAM3 isnot summon
+	setvard DEMON_RAGE_ON 0
+	playsound 0 10 monsters/bludgeon/bludgeon_gaz_death.wav
+}
+
+{ game_removefromowner
+	if ( DEMON_RAGE_ON ) callevent demon_rage_end
+}
+
+{ game_putinpack
+	if ( DEMON_RAGE_ON ) callevent demon_rage_end
+}

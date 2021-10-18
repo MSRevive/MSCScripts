@@ -1,0 +1,182 @@
+//This is an older script and may have some bad conventions as a result.
+
+//Thothie - include override not working, so copying from original Troll (monsters/troll)
+//- Changed model accordingly, increased fire sensitivity / HP
+//- Adjusted Anims for Model
+//- %chance of applying frostbite effect
+//Standard Troll
+{
+	const SOUND_STRUCK1	weapons/cbar_hitbod1.wav
+	const SOUND_STRUCK2	monsters/troll/trollpain.wav
+	const SOUND_STRUCK3	monsters/troll/trollpain.wav
+	const SOUND_PAIN	monsters/troll/trollpain.wav
+	const SOUND_ATTACK1	monsters/troll/trollattack.wav
+	const SOUND_ATTACK2	monsters/troll/trollattack.wav
+	const SOUND_DEATH	monsters/troll/trolldeath.wav
+	const SOUND_WALK	monsters/troll/trollidle.wav
+	const SOUND_WALK1	monsters/troll/step1.wav
+	const SOUND_WALK2	monsters/troll/step2.wav
+	const SOUND_IDLE	monsters/troll/trollidle.wav
+	setvard DROP_GOLD 		1
+	setvard DROP_GOLD_MIN		10
+	setvard DROP_GOLD_MAX		35
+	setvar ANIM_RUN	walk
+	setvar ANIM_WALK	walk
+	setvar ANIM_IDLE	idle1
+	setvard ANIM_ATTACK	attack1
+	setvard ANIM_DEATH	dieheadshot2
+	setvard ATTACK_RANGE	125
+	setvard ATTACK_HITRANGE	200
+	setvard CAN_FLINCH	0
+	setvard MOVE_RANGE	100
+	setvard CAN_HUNT	1
+	setvard HUNT_AGRO	1
+	const FIRE_DAMAGE '$rand(20,100)'
+	const ATTACK1_DAMAGE '$randf(30,80)'
+	const ATTACK2_DAMAGE '$randf(100,300)'
+	setvard IMMUNE_FIRE 1
+	setvard IMMUNE_COLD 1.75
+}
+
+#include monsters/base_monster
+#include monsters/base_turn_undead
+
+{ npc_spawn
+
+
+	setvard I_AM_TURNABLE 0
+
+	//ov 359
+	width 72
+	height 135
+	race demon
+	setidleanim idle1
+	setmoveanim ANIM_WALK
+	setactionanim ANIM_ATTACK
+	hp 1000
+	name an|Efreeti
+	roam 1
+	setvard NPC_GIVE_EXP 200
+	takedmg all 1.0
+	takedmg holy 1.0
+	takedmg cold 1.75
+	takedmg fire 0.0
+	hearingsensitivity 8
+	setmodel monsters/firetroll.mdl
+
+	if ( $rand(1,32) < game.playersnb )
+	{
+		setvard DROP_ITEM1 item_eh
+		setvard DROP_ITEM1_CHANCE 100
+	}
+	else
+	{
+		if $lcase(game.map.name) equals phlames
+		setvard DROP_ITEM1 item_eh
+		setvard DROP_ITEM1_CHANCE 100
+	}
+
+	effect glow ent_me (255,64,48) 512 3 3
+
+	setvard IMMUNE_COLD	1	//passvar experiment
+
+	callevent troll_spawn		//holdover from troll - not what it's here for
+//attempts to deal with faulty boss chamber
+//	local L_MAP_NAME $lcase(game.map.name)
+//	if ( L_MAP_NAME contains demontemple ) stepsize 134
+}
+
+{ attack_1
+
+	setvar PUSH_VEL $relvel(10,200,10)
+	dodamage ENTITY_ENEMY ATTACK_HITRANGE ATTACK1_DAMAGE 75%
+	
+	if( $rand(0,3) == 0 ) setvard ANIM_ATTACK attack2
+
+	if ( $rand(1,8) = 1 ) applyeffect ent_laststruckbyme effects/effect_burn 10 $get(ent_me,id) FIRE_DAMAGE
+
+	if ( $rand(1,20) = 1 ) 
+	{
+		volume 10
+		playsound 1 SOUND_IDLE
+	}
+	volume 8
+	playsound 2 SOUND_ATTACK1
+}
+
+{ attack_2
+
+	setvard ANIM_ATTACK attack1
+
+	applyeffect ent_laststruckbyme effects/effect_burn 5 $get(ent_me,id) FIRE_DAMAGE
+
+	dodamage ENTITY_ENEMY ATTACK_HITRANGE ATTACK2_DAMAGE 75%
+
+	playrandomsound 2 SOUND_ATTACK1
+}
+
+{ npc_struck
+   
+	volume 5
+	playrandomsound game.sound.voice SOUND_PAIN SOUND_PAIN SOUND_STRUCK2 SOUND_STRUCK1 SOUND_STRUCK3
+}
+
+{ game_hearsound
+
+   volume 10
+   playsound game.sound.voice SOUND_IDLE
+}
+
+{ eventname game_dynamically_created
+
+	setsolid none
+	callevent 1 ice_solidify
+
+	setvard I_R_SUMMONED 1
+
+	setvard MY_MASTER $get(ent_creationowner,id)
+ 	local MY_MASTER_LIVES $get(ent_creationowner,isalive)
+	//dbg Mastah Alive MY_MASTER_LIVES 
+	if MY_MASTER_LIVES
+	callevent 2 npcatk_flee MY_MASTER 275 3
+	callevent anti_stuck_checks	//liable to be stuck on spawn, so start anti-stuck checks immediately
+}
+
+{ eventname ice_solidify
+
+	//check if pet is clear, if so, go back to solid, if not, try again 5 secs
+	local MY_LOC $get(ent_me,origin)
+	local MY_MASTER_LOC $get(ent_creationowner,origin)
+	local MASTER_DISTANCE $dist(MY_LOC,MY_MASTER_LOC)
+	//dbg Master Distance MASTER_DISTANCE
+	if ( MASTER_DISTANCE > 80 ) 
+	{
+		//dbg Ice Troll Going Solid
+		setsolid box
+	}
+	if ( MASTER_DISTANCE <= 80 ) 
+	{
+		if ( !IS_FLEEING ) callevent npcatk_flee $get(ent_creationowner,id) 512 3
+ 		callevent 0.25 ice_solidify
+	}
+}
+
+{ anti_stuck_checks
+
+	if I_R_SUMMONED
+	if STUCK_COUNT == 2
+	//dbg Mastah - I am stuck - Resummon me!
+	callexternal $get(ent_creationowner,id) my_pet_stuck
+}
+
+
+{ walk_step	//fired by model anim: walk @ frames 2 12 22 31 41 51
+
+	add STEP_COUNT 1
+	if ( STEP_COUNT == 1 ) playsound 0 10 SOUND_WALK1
+	if ( STEP_COUNT == 2 ) 
+	{
+		playsound 0 10 SOUND_WALK2
+		setvard STEP_COUNT 0
+	}
+}

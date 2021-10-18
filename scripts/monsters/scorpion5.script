@@ -1,0 +1,133 @@
+//Thothie - no death anim
+//- Hit range was smaller than width
+//- added poison% - it's a pretty dynamic model, should make use of it
+//Large Scorpian
+
+{
+   const DELETE_ON_DEATH 1
+	setvar ANIM_IDLE idle_a
+   const SOUND_STRUCK1 body/flesh1.wav
+   const SOUND_STRUCK2 body/flesh2.wav
+   const SOUND_STRUCK3 body/flesh3.wav
+   const SOUND_PAIN monsters/spider/spiderhiss.wav
+   const SOUND_IDLE1 monsters/spider/spideridle.wav
+   const SOUND_DEATH monsters/spider/spiderdie.wav
+   setvar ANIM_IDLE idle_b
+   setvar ANIM_RUN run
+   setvar ANIM_WALK walk
+   setvard ANIM_ATTACK attackb
+   setvard ANIM_DEATH die
+   setvar ANIM_POISON attacka
+   setvard ATTACK_RANGE 75
+   setvard ATTACK_HITRANGE 100
+   setvar ATTACK_HITCHANCE 60%
+   setvar ATTACK_DAMAGE 30
+   setvard CAN_FLEE 0		//Used by base_monster
+   setvar FLEE_HEALTH 0		//Used by base_monster
+   setvar FLEE_CHANCE 100%	//Used by base_monster
+   setvard CAN_HUNT 1
+   setvard HUNT_AGRO 1
+   setvard NPC_MOVE_TARGET enemy
+
+	const SOUND_SWING zombie/claw_miss1.wav
+	const SOUND_BIGSWING zombie/claw_miss2.wav
+
+   //Precache
+   precache SOUND_DEATH //This sound must be explicitly precached since
+			//the play command for it isn't in this file (it's
+			//in base_monster.script)
+   //something is generating SOUND_IDLE1 not precached error in daragoth
+   precache SOUND_IDLE1
+}
+
+#include monsters/base_monster
+
+{ npc_spawn
+
+	callevent scorpion_spawn
+}
+
+{ scorpion_spawn
+   hp 1000
+   //ov 360
+   width 40
+   height 50
+   race spider
+   name a|Gigantic Venomous Scorpion
+   roam 1
+   hearingsensitivity 3
+   setvard NPC_GIVE_EXP 200
+
+   setmodel monsters/scorp5.mdl
+   setmodelbody	1 0
+   setidleanim idle_a
+   setmoveanim walk
+   setactionanim attackb
+
+	setanim.framerate 0.5
+	setanim.movespeed 0.25
+	setvard BASE_FRAMERATE 0.5
+	setvard BASE_MOVESPEED 0.25
+
+   //make absolutely sure SOUND_IDLE1 is loading
+	playrandomsound 2 SOUND_IDLE1
+}
+
+   //Idling
+{
+   repeatdelay 10
+   volume 10
+   playrandomsound 2  SOUND_IDLE1
+}
+
+{ game_death	
+   playrandomsound 2 0 SOUND_IDLE1
+
+	if AM_SUMMONED
+	callexternal MY_OWNER scorpion_died
+}
+
+
+{
+   // Deal damage
+   eventname strike
+
+   dodamage ent_lastseen ATTACK_RANGE ATTACK_DAMAGE ATTACK_HITCHANCE
+
+	if ( $rand(1,10) == 1 )
+	{
+		playsound 0 10 SOUND_BIGSWING
+		playanim critical ANIM_POISON
+		if $get(HUNT_LASTTARGET,range) < ATTACK_RANGE
+		applyeffect HUNT_LASTTARGET effects/greater_poison 10 $get(ent_me,id) $randf(12,20)
+	}
+	else
+	{
+		playsound 0 10 SOUND_SWING
+		if $get(HUNT_LASTTARGET,range) < ATTACK_RANGE
+		local RND_LR $randf(-100,100)
+		local RND_FB $randf(-200,200)
+		addvelocity HUNT_LASTTARGET $relvel(RND_LR,RND_FB,10)
+	}
+
+}
+
+
+   //Hit by someone
+{
+   eventname npc_struck
+   
+   volume 5
+   playrandomsound 2 SOUND_PAIN SOUND_STRUCK2 SOUND_STRUCK1
+}
+
+{ game_dynamically_created
+	setvard MY_OWNER $get(PARAM1,id)
+	race $get(MY_OWNER,race)
+	setvard AM_SUMMONED 1
+	callevent 0.1 summoned_sound
+}
+
+{ summoned_sound
+	playsound 0 10 ambience/alien_humongo.wav
+}

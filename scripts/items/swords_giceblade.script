@@ -1,0 +1,155 @@
+//Iceblade by Thothie (from Skull Blade)
+
+{
+	const BASE_LEVEL_REQ 15
+	const FREEZE_CHANCE 65
+	const FREEZE_MP 5
+
+  const ANIM_LIFT1         0
+  const ANIM_IDLE1         1
+  const ANIM_IDLE_TOTAL         1
+  const ANIM_IDLE_DELAY_LOW 1
+  const ANIM_IDLE_DELAY_HIGH    3
+  const ANIM_ATTACK1       2
+  const ANIM_ATTACK2       3
+  const ANIM_ATTACK3       4
+  const ANIM_ATTACK4       5
+  const ANIM_ATTACK5       6
+  const ANIM_LUNGE       6
+  const ATTACK_ANIMS  4
+  const ANIM_SHEATH       7
+  const MODEL_VIEW        viewmodels/v_1hswordssb.mdl
+	const MODEL_VIEW_IDX 3 
+const MODEL_HANDS weapons/p_weapons1.mdl
+const MODEL_WORLD weapons/p_weapons1.mdl
+  const SOUND_SWIPE       weapons/swingsmall.wav
+  const SOUND_SHOUT $get(ent_owner,scriptvar,'PLR_SOUND_SHOUT1')
+
+
+const MODEL_BODY_OFS 52
+  const ANIM_PREFIX  skullblade
+
+  //Used in base_melee
+  //------------------
+  const MELEE_RANGE  64
+  const MELEE_DMG_DELAY  0.6
+  const MELEE_ATK_DURATION 1.4
+  const MELEE_ENERGY  5
+  const MELEE_DMG  320
+  const MELEE_DMG_RANGE      30
+  const MELEE_DMG_TYPE  cold
+  const MELEE_ACCURACY  72%
+  const MELEE_STAT  swordsmanship
+  const MELEE_ALIGN_BASE 4,-6 
+  const MELEE_ALIGN_TIP  0,6
+  const MELEE_VIEWANIM_ATK      ANIM_ATTACK1
+
+  const MELEE_SOUND      SOUND_SWIPE
+  const MELEE_SOUND_DELAY      MELEE_DMG_DELAY
+  const MELEE_PARRY_CHANCE      5%
+
+  const SOUND_HITWALL1 debris/glass1.wav
+  const SOUND_HITWALL2 debris/glass2.wav
+}
+
+#include items/swords_base_onehanded
+#include [server] items/base_varied_attacks
+
+{ weapon_spawn
+
+   name  a|Greater Ice Blade
+   desc  An ancient blade of enchanted crystal
+   weight  80
+   size  7
+   value 3500
+   sethudsprite trade 96
+}
+
+{ game_deploy
+	if game.serverside
+	setvard GAME_PVP game.pvp
+}
+
+{ [override] melee_start
+
+//  local SWING $rand(1,ATTACK_ANIMS)
+//  local SWING_ANIM ANIM_ATTACK1
+//  if( SWING == 2 ) setvard SWING_ANIM ANIM_ATTACK2
+//  else if( SWING == 3 ) setvard SWING_ANIM ANIM_ATTACK3
+//  else if( SWING == 4 ) setvard SWING_ANIM ANIM_ATTACK4
+//  else if( SWING == 5 ) setvard SWING_ANIM ANIM_ATTACK5
+
+	playsound 1 10 SOUND_SWIPE
+
+
+	if game.serverside
+	playowneranim once sword_swing //global.anim.combatwalk 3
+	callevent check_attack_anim
+	setvard SWING_ANIM CUR_ATTACK_ANIM
+	splayviewanim ent_me SWING_ANIM
+}
+
+{ [override] special_01_start
+
+	playowneranim once axe_twohand_swing
+	setvard SPEC_ATTACK 1
+	playviewanim  ANIM_LUNGE
+	playsound const.snd.weapon const.snd.maxvol SPECIAL01_SND
+}
+
+{ special_01_damaged_other //PARAM1=target_hit PARAM2=dmg
+	if $get(ent_owner,mp) >= 10
+	givemp ent_owner $neg(FREEZE_MP)
+
+	if ( $rand(1,100) > FREEZE_CHANCE )
+	{
+		playermessage Freeze attack failed.
+		playsound 2 10 debris/zap1.wav
+	}
+	else
+	{
+		if ( $get(PARAM1,isplayer) )
+		{
+			if ( !GAME_PVP ) local EXIT_SUB 1
+			if GAME_PVP
+			applyeffect PARAM1 effects/freeze_solid $randf(5,7) $get(ent_owner,id)
+		}
+		else
+		{
+			local MON_HP $get(PARAM1,hp)
+			if ( MON_HP > 1500 ) playermessage $get(PARAM1,name) is too strong to be affected!
+			if MON_HP <= 1500
+
+			if ( $get(PARAM1,scriptvar,IMMUNE_COLD) != 1 )
+			{
+				playermessage Your sword's magic has encased your enemy in ice!
+				callexternal PARAM1 freeze_solid $randf(5,7) $get(ent_me,id)
+				playsound 2 10 debris/beamstart14.wav
+			}
+			else
+			{
+				playermessage $get(PARAM1,name) is immune to ice magic!
+			}
+		}
+	}
+}
+
+{ melee_damaged_other //PARAM1=target_hit PARAM2=dmg
+
+	if ( $get(PARAM1,isplayer) )
+	{
+		if !GAME_PVP
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+
+	local RND_FREEZE $rand(1,3)
+	if ( RND_FREEZE == 1 )
+	{
+		local FREEZE_DMG $get(ent_owner,skill.spellcasting.ice)
+		multiply FREEZE_DMG 0.25
+		applyeffect PARAM1 effects/effect_frostbite_dmg 5.0 $get(ent_owner,id) FREEZE_DMG spellcasting.ice
+	}
+}
+

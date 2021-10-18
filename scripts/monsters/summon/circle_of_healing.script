@@ -1,0 +1,98 @@
+#scope server
+{
+	const SEAL_MODEL weapons/magic/seals.mdl
+	const SEAL_OFS 26
+	const SOUND_PULSE ambience/alien_zonerator.wav //add loop sound
+	const CIRCLE_RADIUS 172
+	const PULSE_PLAYTIME 10.0
+
+	const AOE_RADIUS 132 //can also replace with var, eg. MY_RADIUS
+
+	const AOE_FREQ 1.0
+	const AOE_FRIEND_FOE ally //set ally to affect allies instead of enemies
+}
+
+#include monsters/summon/base_aoe
+
+{ eventname game_dynamically_created //PARAM1 = owner PARAM2 = CircleDuration PARAM3 = FreezeDuration
+
+	setvard MY_OWNER PARAM1
+	setvard MY_DURATION PARAM2
+	setvard HEAL_AMT PARAM3
+
+	setvard DIV_SKILL $get(MY_OWNER,skill.spellcasting.divination)
+
+	setvard OWNER_ISPLAYER $get(PARAM1,isplayer)
+
+	callevent MY_DURATION aoe_end
+}
+
+{ game_spawn
+
+	name a|Circle of Healing
+	hp 1
+	fov 359
+	invincible 1
+	race beloved
+	gravity 0.0
+	blood none
+	setmodel SEAL_MODEL
+	setmodelbody 0 SEAL_OFS
+	setsolid none
+	drop_to_floor
+
+	nopush 1
+
+	setvard PLAYING_DEAD 1
+	setvard IMMUNE_PUSH 1
+
+	callevent 0.1 make_seal
+	svplaysound 2 10 SOUND_PULSE
+
+	scriptflags $get(ent_me,id) add "hc" "hc" //Flag this as an hc, so magic hands can check for hc later.
+}
+
+{ make_seal
+	
+	setvard NEAR_SEAL $get_tsphere(ally,AOE_RADIUS,game.monster.origin)
+	calleventloop $get_token_amt(NEAR_SEAL) check_if_near
+}
+
+{ check_if_near
+	local CUR_ENT $get_token(NEAR_SEAL,game.script.iteration)
+	if $get(NEAR_SEAL,name) contains Healing
+	if !SET_DELETE
+	setvard SET_DELETE 1
+	dplayermessage MY_OWNER Healing Circle: Cannot create one healing circle within another. 
+}
+
+{ circle_hum
+	repeatdelay PULSE_PLAYTIME
+	svplaysound 2 10 SOUND_PULSE
+}
+
+{ apply_aoe_effect
+	if ( $get(PARAM1,name) contains Spell ) local EXIT_SUB 1 //thing keeps trying to heal the spell maker ;)
+	if !EXIT_SUB
+	if ( $get(PARAM1,itemname) contains circle_of_heal ) callevent aoe_end
+	if $get(PARAM1,hp) < $get(PARAM1,maxhp)
+
+	if !$get(PARAM1,scriptvar,'PLAYING_DEAD')
+	applyeffect PARAM1 effects/effect_rejuv2 HEAL_AMT DIV_SKILL MY_OWNER
+
+	if ( $get(PARAM1,isplayer) ) local L_ADD_POINTS 1
+	if ( $get(PARAM1,scriptvar,NPC_CRITICAL) ) local L_ADD_POINTS 1
+	if ( L_ADD_POINTS )
+	{
+		if PARAM1 isnot MY_OWNER
+		callexternal MY_OWNER add_damage_points HEAL_AMT
+	}
+}
+
+{ aoe_end
+	svplaysound 2 0 SOUND_PULSE
+	setvard IS_ACTIVE 0
+	if ( MY_SCRIPT_IDX > 0 ) cleffect remove all MY_SCRIPT_IDX
+	removescript
+	deleteent ent_me
+}

@@ -1,0 +1,132 @@
+//Base drink
+//
+//REQ:
+//	ANIM_DRINK
+//	SOUND_DRINK
+//	
+//	
+{
+	const MODEL_BODY_OFS		21
+	const ANIM_PREFIX		mhealth
+	const DRINK_WORD swig
+	const DONE_PHRASE "You drink the last drop of the"
+}
+
+#include items/base_item
+
+{ game_spawn
+
+   	sethand any
+   	setanimext	holditem
+
+  	callevent drink_spawn
+  	registerdrink
+}
+
+
+{ game_start_drink
+
+  	playviewanim ANIM_DRINK
+
+	callevent drink_start
+}
+
+{ game_drink
+
+  	if( DRINK_TYPE equals 'givehealth' ) 
+	{
+		local OUT_AMT $get(ent_owner,maxhp)
+		multiply OUT_AMT RESTORE_PERCENT
+		if ( OUT_AMT < DRINK_EFFECTAMT ) local OUT_AMT DRINK_EFFECTAMT
+		//dbg Healing OUT_AMT Percent RESTORE_PERCENT
+		givehp ent_owner OUT_AMT
+	}
+	if( DRINK_TYPE equals 'givemana' ) 
+	{
+		local OUT_AMT $get(ent_owner,maxmp)
+		multiply OUT_AMT RESTORE_PERCENT
+		if ( OUT_AMT < DRINK_EFFECTAMT ) local OUT_AMT DRINK_EFFECTAMT
+		//dbg Restoring OUT_AMT Percent RESTORE_PERCENT
+		givemp ent_owner OUT_AMT
+	}
+	if( SOUND_DRINK isnot 'SOUND_DRINK' ) playsound game.sound.voice game.sound.maxvol SOUND_DRINK
+  	if( DRINK_TYPE equals 'effect' ) 
+	{
+		callevent drink_effect
+	}
+
+	callevent drink_now
+}
+
+{ game_drink_done
+
+	playviewanim ANIM_IDLE
+}
+
+{ [override] game_deploy
+
+	if ( $get(ent_me,drink_amt) == 0 ) callevent drink_remove
+
+	setviewmodel	MODEL_VIEW
+	setmodel	MODEL_HANDS
+	local		L_SUBMODEL MODEL_BODY_OFS
+	add		L_SUBMODEL game.item.hand_index
+	setmodelbody	0 L_SUBMODEL
+
+	callevent drink_deploy
+}
+
+{ game_fall
+
+	if ( $get(ent_me,drink_amt) == 0 ) callevent drink_remove
+
+	local		L_SUBMODEL MODEL_BODY_OFS
+	add		L_SUBMODEL 2
+	setmodelbody	0 L_SUBMODEL
+
+	local		L_ANIM ANIM_PREFIX
+	stradd		L_ANIM _floor_idle
+	playanim	L_ANIM
+}
+
+{ drink_now
+	callevent 0.25 report_drink_amt
+}
+
+{ report_drink_amt
+
+	//Thothie attempting to fix the "undrinkable pot" bug
+
+	local DRINK_REMAIN $get(ent_me,drink_amt)
+	//subtract DRINK_REMAIN 1
+	local MY_NAME $get(ent_me,name)
+	local MY_NAME $lcase(MY_NAME)
+	local MY_NAME_P MY_NAME
+	stradd MY_NAME_P "."
+	if ( DRINK_REMAIN > 1 )
+	{
+		local L_DRINK_WORD DRINK_WORD
+		stradd L_DRINK_WORD s
+		playermessage This MY_NAME has $int(DRINK_REMAIN) L_DRINK_WORD left.
+	}
+	if ( DRINK_REMAIN == 1 )
+	{
+		playermessage This MY_NAME has one DRINK_WORD left.
+	}
+	if ( DRINK_REMAIN == 0 )
+	{
+		dplayermessage ent_owner DONE_PHRASE MY_NAME_P
+		callevent 0.1 drink_remove
+	}
+}
+
+{ drink_remove
+	removeitem
+	deleteent ent_me
+}
+
+{ drink_deploy //drinks override standard item idle, so we require more vespine gas
+	if game.serverside
+	if ITEM_MODEL_VIEW_IDX > 0
+	callevent 0.01 bi_setup_model
+}

@@ -1,0 +1,431 @@
+{
+	const BASE_LEVEL_REQ 25
+	const ICEMAN_MP 1
+
+	const DOT_RATIO 0.5
+
+	const MELEE_RANGE 80
+	const MELEE_DMG_DELAY  0.4
+	const MELEE_ATK_DURATION 0.9
+	const DEMON_DMG_DELAY  0.25
+	const DEMON_ATK_DURATION 0.7
+	const MELEE_ENERGY 2
+	const MELEE_DMG 200
+	const MELEE_DMG_RANGE 20
+	const MELEE_ACCURACY 80%
+	const MELEE_PARRY_AUGMENT 20%
+	const MELEE_DMG_TYPE cold
+	const MELEE_STAT spellcasting.ice
+
+	const MODEL_VIEW viewmodels/v_2hblunts.mdl
+	const MODEL_VIEW_IDX 11
+
+	const MODEL_WORLD weapons/p_weapons4.mdl
+	const MODEL_BODY_OFS 25
+	const ANIM_PREFIX standard
+
+	const SPECIAL_02_CALLBACK attack_lance
+	const SPECIAL_02_DELAY_STRIKE 0.4
+	const SPECIAL_02_DELAY_END 0.9
+	const SPECIAL_02_MP 30
+	const SPECIAL_02_RANGE 0
+
+	const CUSTOM_REGISTER_CHARGE1 1
+	const MELEE_CALLBACK attack_bolt
+
+	const PLAYERANIM_AIM  sword_double_idle
+	const PLAYERANIM_SWING pole_swing
+}
+
+#include items/blunt_base_twohanded
+
+{  weapon_spawn
+
+	name An|Ice Staff
+	desc A staff of elemental ice
+	weight 30
+	size 10
+	value 5000
+	sethudsprite hand hammer
+	sethudsprite trade 48
+}
+
+{ game_deploy
+	if game.serverside
+	setvard CONSEC_ATTACKS 0
+	setvard GAME_PVP game.pvp
+	setvard OWNER_SKILL $get(ent_owner,skill.spellcasting.ice)
+}
+
+{ attack_bolt_start
+	if game.serverside
+
+	playowneranim once PLAYERANIM_SWING global.anim.combatwalk 3
+
+	local OWNER_TARGET $get(ent_owner,target)
+	if ( $get(OWNER_TARGET,isalive) )
+	{
+		if $get(OWNER_TARGET,range) <= MELEE_RANGE
+		dbg attack_bolt_start $get(ent_owner,target) $get(OWNER_TARGET,range)
+		setvard MELEE_ATTACK 1
+		splayviewanim ent_me 2
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+	if ( BITEM_UNDERSKILLED )
+	{
+		setvard MELEE_ATTACK 1
+		splayviewanim ent_me 2
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+	setvard MELEE_ATTACK 0
+	splayviewanim ent_me 9
+}
+
+{ attack_bolt_strike //PARAM1: "none"/"npc"/"world"   2: Attack end Position   3: Entity hit (if any)
+
+	if OWNER_SKILL > BASE_LEVEL_REQ
+
+	if ( !MELEE_ATTACK )
+	{
+		if ( $get(PARAM3,isalive) )
+		{
+			if $get(PARAM3,range) < 150
+			local EXIT_SUB 1
+		}
+		if !EXIT_SUB
+		playsound 0 10 magic/ice_strike.wav
+		callexternal ent_owner ext_tossprojectile view 400 0 0 proj_staff_ice_bolt (12,20,15)
+	}
+	else
+	{
+		if $get(PARAM3,isalive)
+		setvard MELEE_TARG PARAM3
+		if ( $get(MELEE_TARG,isplayer) )
+		{
+			if !GAME_PVP
+			local EXIT_SUB 1
+		}
+		if !EXIT_SUB
+		if $get(MELEE_TARG,relationship,ent_owner) equals enemy
+		if ( MELEE_TARG equals OLD_MELEE_TARG )
+		{
+			add CONSEC_ATTACKS 1
+		}
+		else
+		{
+			setvard CONSEC_ATTACKS 0
+		}
+		setvard OLD_MELEE_TARG MELEE_TARG
+		if ( CONSEC_ATTACKS == 5 )
+		{
+			if ( $get(PARAM3,scriptvar,'I_R_FROZEN') )
+			{
+				setvard CONSEC_ATTACKS 0
+				local L_DOT OWNER_SKILL
+				multiply L_DOT DOT_RATIO
+				applyeffect PARAM3 effects/effect_frostbite_dmg 5.0 $get(ent_owner,id) L_DOT
+				local EXIT_SUB 1
+			}
+			if !EXIT_SUB
+
+			local L_MAX_HP $get(ent_owner,maxhp)
+			multiply L_MAX_HP 3.0
+			if ( L_MAX_HP < 2000 ) local L_MAX_HP 2000
+			if $get(PARAM3,hp) < L_MAX_HP
+			if $get(ent_owner,mp) > 30
+			givemp ent_owner -30
+			applyeffect PARAM3 effects/freeze_solid 5.0 $get(ent_owner,id) 0 spellcasting.ice L_MAX_HP
+			setvard CONSEC_ATTACKS 0
+		}
+		else
+		{
+			local L_DOT OWNER_SKILL
+			multiply L_DOT DOT_RATIO
+			applyeffect PARAM3 effects/effect_frostbite_dmg 5.0 $get(ent_owner,id) L_DOT
+			if ( $get(PARAM3,scriptvar,'I_R_FROZEN') ) setvard CONSEC_ATTACKS 0
+		}
+
+		dbg attack_bolt_strike CONSEC_ATTACKS
+	}
+	setvard MELEE_ATTACK 0
+}
+
+{ attack_lance_start
+	playviewanim 9
+	playowneranim once PLAYERANIM_SWING global.anim.combatwalk 3
+}
+
+{ attack_lance_strike //PARAM1: "none"/"npc"/"world"   2: Attack end Position   3: Entity hit (if any)
+	if ( $get(PARAM3,isalive) )
+	{
+		if $get(PARAM3,range) < 150
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+	playsound 0 10 magic/ice_strike.wav
+	callexternal ent_owner ext_tossprojectile view 400 0 0 proj_staff_icelance (12,30,15)
+}
+
+{ game_+attack2
+	if game.serverside
+	if OWNER_SKILL > BASE_LEVEL_REQ
+	if $get(ent_owner,canattack)
+	if !ICEMAN_ON
+	if game.time > NEXT_ICEMAN
+	setvard NEXT_ICEMAN game.time
+	add NEXT_ICEMAN 0.25
+	setvard ICEMAN_ON 1
+	if ( $get(ent_owner,mp) < ICEMAN_MP )
+	{
+		dplayermessage ent_owner Ice Staff: Not enough MP for Ice Slide ( ICEMAN_MP )
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	playsound 0 10 magic/frost_pulse.wav
+	callexternal ent_owner ext_ice_staff_on
+	clientevent new all items/blunt_staff_i_cl $get(ent_owner,index)
+	setvard CL_ICEMAN_FX_INDEX game.script.last_sent_id
+	setvard ICEMAN_YAW $get(ent_owner,angles.yaw)
+	callexternal ent_owner ext_removed_effects nojump
+	applyeffect ent_owner effects/effect_nojump $get(ent_owner,id)
+	playowneranim hold nod_yes 0 3
+	//callexternal ent_owner ext_leg_lock 1 //no workie
+	callevent do_iceman_loop
+}
+
+{ do_iceman_loop
+	if ICEMAN_ON
+	if ( $get(ent_owner,mp) > ICEMAN_MP )
+	{
+		callevent 0.1 do_iceman_loop
+	}
+	else
+	{
+		callevent end_iceman
+	}
+
+	if ( !$get(ent_owner,onground) )
+	{
+
+		//local CUR_VEL $get(ent_owner,velocity)
+		//vectormultiply CUR_VEL 0.5
+		//setvelocity ent_owner CUR_VEL
+		local ORG_VEL $get(ent_owner,velocity)
+		local CUR_VEL ORG_VEL
+		vectormultiply CUR_VEL 0.75
+		if ( $vec.z(ORG_VEL) < 0 ) vectorset CUR_VEL z $vec.z(ORG_VEL)
+		setvelocity ent_owner CUR_VEL
+
+	}
+	else
+	{
+
+		local L_LAST_PUSH $get(ent_owner,scriptvar,'PLR_LAST_PUSH')
+		add L_LAST_PUSH 3.0
+		dbg do_iceman_loop L_LAST_PUSH
+		if ( game.time < L_LAST_PUSH )
+		{
+			local ORG_VEL $get(ent_owner,velocity)
+			local CUR_VEL ORG_VEL
+			vectormultiply CUR_VEL 0.25
+			if ( $vec.z(ORG_VEL) < 0 ) vectorset CUR_VEL z $vec.z(ORG_VEL)
+			setvelocity ent_owner CUR_VEL
+		}
+		else
+		{
+			givemp ent_owner $neg(ICEMAN_MP)
+			addvelocity ent_owner $relvel($vec(0,ICEMAN_YAW,0),$vec(0,1000,0))
+		}
+	}
+}
+
+{ game_-attack2
+	if game.serverside
+	if ICEMAN_ON
+	callevent end_iceman
+}
+
+{ end_iceman
+	//callexternal ent_owner ext_leg_lock 0 //no workie
+	playowneranim break nod_yes global.anim.combatwalk 3
+	callexternal ent_owner ext_ice_staff_off
+	setvard ICEMAN_ON 0
+	clientevent update all CL_ICEMAN_FX_INDEX end_fx
+	callexternal ent_owner ext_remove_nojump
+	if $get(ent_owner,isalive)
+	setvard SLOW_LOOP_ACTIVE 1
+	callevent slow_down
+	callevent 1.0 end_slow_down
+}
+
+{ slow_down
+	if !ICEMAN_ON
+	if SLOW_LOOP_ACTIVE
+	callevent 0.1 slow_down
+
+	
+	local L_LAST_PUSH $get(ent_owner,scriptvar,'PLR_LAST_PUSH')
+	add L_LAST_PUSH 3.0
+	if ( game.time < L_LAST_PUSH ) local SLOW_DOWN 1
+	if ( !$get(ent_owner,onground) ) local SLOW_DOWN 1
+
+	if ( SLOW_DOWN )
+	{
+		local ORG_VEL $get(ent_owner,velocity)
+		local CUR_VEL ORG_VEL
+		vectormultiply CUR_VEL 0.75
+		if ( $vec.z(ORG_VEL) < 0 ) vectorset CUR_VEL z $vec.z(ORG_VEL)
+		setvelocity ent_owner CUR_VEL
+	}
+}
+
+{ end_slow_down
+	setvard SLOW_LOOP_ACTIVE 0
+}
+
+{ bs_global_command
+	if $get(ent_owner,id) equals PARAM1
+	if ICEMAN_ON
+	callevent end_iceman
+}
+
+{ register_charge1
+
+	//thothie made seperate so can override
+
+   //Default charge up attack - Double damage for holding to 100%
+   //============================================================
+
+   local reg.attack.type		strike-land
+   local reg.attack.keys		+attack1
+   local reg.attack.range		MELEE_RANGE
+   local reg.attack.dmg			MELEE_DMG
+   local reg.attack.dmg.range		MELEE_DMG_RANGE
+   local reg.attack.dmg.type		MELEE_DMG_TYPE
+   local reg.attack.energydrain		MELEE_ENERGY
+   local reg.attack.stat		MELEE_STAT
+   local reg.attack.hitchance		MELEE_ACCURACY
+   local reg.attack.priority		1
+   local reg.attack.delay.strike	MELEE_DMG_DELAY
+   local reg.attack.delay.end		MELEE_ATK_DURATION
+   local reg.attack.ofs.startpos	MELEE_STARTPOS
+   local reg.attack.ofs.aimang		MELEE_AIMANGLE
+   local reg.attack.callback		attack2_bolt
+   local reg.attack.noise		MELEE_NOISE
+
+   local reg.attack.priority	1
+   local reg.attack.keys	-attack1
+   multiply reg.attack.dmg	2
+   local reg.attack.chargeamt	100%
+   local reg.attack.reqskill	2
+
+	if ( BASE_LEVEL_REQ > reg.attack.reqskill ) add reg.attack.reqskill BASE_LEVEL_REQ
+
+   registerattack
+}
+
+
+{ attack2_bolt_start
+	if game.serverside
+
+	dbg attack2_bolt_start
+
+	playowneranim once PLAYERANIM_SWING global.anim.combatwalk 3
+
+	local OWNER_TARGET $get(ent_owner,target)
+	if ( $get(OWNER_TARGET,isalive) )
+	{
+		if $get(OWNER_TARGET,range) <= MELEE_RANGE
+		dbg attack_bolt_start $get(ent_owner,target) $get(OWNER_TARGET,range)
+		setvard MELEE_ATTACK 1
+		splayviewanim ent_me 2
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+	if ( BITEM_UNDERSKILLED )
+	{
+		setvard MELEE_ATTACK 1
+		splayviewanim ent_me 2
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+	setvard MELEE_ATTACK 0
+	splayviewanim ent_me 9
+}
+
+{ attack2_bolt_strike //PARAM1: "none"/"npc"/"world"   2: Attack end Position   3: Entity hit (if any)
+
+	if OWNER_SKILL > BASE_LEVEL_REQ
+
+	if ( !MELEE_ATTACK )
+	{
+		if ( $get(PARAM3,isalive) )
+		{
+			if $get(PARAM3,range) < 150
+			local EXIT_SUB 1
+		}
+		if !EXIT_SUB
+		playsound 0 10 magic/ice_strike.wav
+		callexternal ent_owner ext_tossprojectile view 400 0 0 proj_staff_ice_bolt2 (12,20,15)
+	}
+	else
+	{
+		if $get(PARAM3,isalive)
+		setvard MELEE_TARG PARAM3
+		if ( $get(MELEE_TARG,isplayer) )
+		{
+			if !GAME_PVP
+			local EXIT_SUB 1
+		}
+		if !EXIT_SUB
+		if $get(MELEE_TARG,relationship,ent_owner) equals enemy
+		if ( MELEE_TARG equals OLD_MELEE_TARG )
+		{
+			add CONSEC_ATTACKS 1
+		}
+		else
+		{
+			setvard CONSEC_ATTACKS 0
+		}
+		setvard OLD_MELEE_TARG MELEE_TARG
+		if ( CONSEC_ATTACKS == 5 )
+		{
+			if ( $get(PARAM3,scriptvar,'I_R_FROZEN') )
+			{
+				setvard CONSEC_ATTACKS 0
+				local L_DOT OWNER_SKILL
+				multiply L_DOT DOT_RATIO
+				applyeffect PARAM3 effects/effect_frostbite_dmg 5.0 $get(ent_owner,id) L_DOT
+				local EXIT_SUB 1
+			}
+			if !EXIT_SUB
+
+			local L_MAX_HP $get(ent_owner,maxhp)
+			multiply L_MAX_HP 3.0
+			if ( L_MAX_HP < 2000 ) local L_MAX_HP 2000
+			if $get(PARAM3,hp) < L_MAX_HP
+			if $get(ent_owner,mp) > 30
+			givemp ent_owner -30
+			applyeffect PARAM3 effects/freeze_solid 5.0 $get(ent_owner,id) 0 spellcasting.ice L_MAX_HP
+			setvard CONSEC_ATTACKS 0
+		}
+		else
+		{
+			local L_DOT OWNER_SKILL
+			multiply L_DOT DOT_RATIO
+			applyeffect PARAM3 effects/effect_frostbite_dmg 5.0 $get(ent_owner,id) L_DOT
+			if ( $get(PARAM3,scriptvar,'I_R_FROZEN') ) setvard CONSEC_ATTACKS 0
+		}
+
+		dbg attack_bolt_strike CONSEC_ATTACKS
+	}
+	setvard MELEE_ATTACK 0
+}
+
+{ game_putinpack
+	if ICEMAN_ON
+	callevent end_iceman
+}

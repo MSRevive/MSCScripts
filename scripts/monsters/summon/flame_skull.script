@@ -1,0 +1,172 @@
+{
+	setcallback touch enable
+
+	const SOUND_SCREAM magic/spookie1.wav
+	const SOUND_FIRE magic/fireball_strike.wav
+	const SOUND_START magic/volcano_start.wav
+	const SOUND_LOOP magic/volcano_loop.wav
+	const FREQ_SOUND 3.0
+}
+
+{ [server] game_dynamically_created
+
+	setvard MY_OWNER PARAM1
+	setvard DMG_BASE PARAM2
+	setvard MY_RADIUS PARAM3
+	setvard ACTIVE_SKILL PARAM4
+	if ( ACTIVE_SKILL equals 'PARAM4' ) setvard ACTIVE_SKILL spellcasting.fire
+
+	setvard GAME_PVP game.pvp
+
+	setvard START_POS $get(MY_OWNER,origin)
+	setvard OWNER_ISPLAYER $get(MY_OWNER,isplayer)
+	if ( !OWNER_ISPLAYER )
+	{
+		local OWNER_HEIGHT $get(MY_OWNER,height)
+		divide OWNER_HEIGHT 2
+		vectoradd START_POS $relpos($vec(0,0,0),$vec(0,0,OWNER_HEIGHT))
+	}
+
+	storeentity ent_expowner MY_OWNER
+
+	setvard FLY_COUNT 0
+	setvard ROT_COUNT 0
+	setvard IS_FLYING 1
+
+	clientevent new all $currentscript $get(ent_me,index)
+	setvard MY_SCRIPT_ID game.script.last_sent_id
+
+	callevent 0.1 skull_fly
+}
+
+{ game_spawn
+	name a|Flaming Skull
+	hp 1
+	race beloved
+	setvard PLAYING_DEAD 1 //not a valid target
+	invincible 1
+	setmodel weapons/projectiles.mdl
+	setmodelbody 0 12
+	setsolid trigger
+	width 32
+	height 32
+	gravity 0
+	fly 1
+	setprop ent_me rendermode 5
+	setprop ent_me renderamt 255
+
+	svplaysound 2 10 SOUND_LOOP
+
+	dbg Spawned Flaming Skull
+}
+
+{ [server] skull_fly
+
+	if IS_FLYING
+	callevent 0.1 skull_fly
+
+	add FLY_COUNT 1
+	add ROT_COUNT 10
+
+	if ( FLY_COUNT >= MY_RADIUS ) callevent end_flight
+	if ( ROT_COUNT > 359 ) subtract ROT_COUNT 359
+	
+	local NEW_POS START_POS
+	vectoradd NEW_POS $relpos($vec(0,ROT_COUNT,0),$vece(0,FLY_COUNT,0))
+	setorigin ent_me NEW_POS
+	setangle face $vec(0,ROT_COUNT,0)
+
+	//callevent aoe_applyeffect_rad
+
+	if !SOUND_DELAY
+	setvard SOUND_DELAY 1
+	callevent FREQ_SOUND sound_delay_reset
+	playsound 0 10 SOUND_START
+	effect screenshake $relpos(0,0,0) 200 200 2 128
+	
+}
+
+{ [server] end_flight
+	setvard IS_FLYING 0
+	setprop ent_me renderamt 0
+	//attempting to kill ambient
+	svplaysound 2 0 SOUND_LOOP
+	clientevent remove all MY_SCRIPT_ID
+	callevent 1.0 remove_me
+}
+
+{ [server] remove_me
+	deleteent ent_me
+}
+
+{ [server] sound_delay_reset
+	setvard SOUND_DELAY 1
+}
+
+{ [server] game_touch
+	//dbg game_touch PARAM1
+	if !$get(PARAM1,haseffect,DOT_fire)
+	if PARAM1 isnot LAST_BURNED
+	if $get(PARAM1,relationship,MY_OWNER) equals enemy
+	applyeffect PARAM1 effects/effect_burn 5.0 MY_OWNER DMG_BASE 0 1 ACTIVE_SKILL
+	setvard LAST_BURNED PARAM1
+}
+
+{ [server]
+	repeatdelay 4.4
+	if IS_FLYING
+	playsound 1 10 SOUND_SCREAM
+}
+
+//=================== Client fx 
+{ [client] client_activate
+	setvard SKULL_IDX PARAM1
+
+	setcallback render enable
+
+	cleffect light new $getcl(SKULL_IDX,origin) 128 (255,72,0) 5.0
+	setvard SKEL_LIGHT_ID game.script.last_light_id
+
+	callevent spit_fire
+}
+
+{ [client] game_prerender
+
+	local L_POS $getcl(SKULL_IDX,origin)
+	cleffect light SKEL_LIGHT_ID L_POS  128 (255,72,0) 1.0
+}
+
+{ [client] spit_fire
+	repeatdelay 0.25
+
+	local RAND_ANG $rand(0,359)
+
+	local SKULL_POS $getcl(SKULL_IDX,origin)
+	vectoradd SKULL_POS $relpos($vec(0,RAND_ANG,0),$vec(0,30,0))
+	cleffect tempent sprite rjet1.spr SKULL_POS spit_fire_sprites
+
+	local SKULL_POS $getcl(SKULL_IDX,origin)
+	vectoradd SKULL_POS $relpos($vec(0,RAND_ANG,0),$vec(0,30,0))
+	cleffect tempent sprite rjet1.spr SKULL_POS spit_fire_sprites
+
+
+	local SKULL_POS $getcl(SKULL_IDX,origin)
+	vectoradd SKULL_POS $relpos($vec(0,RAND_ANG,0),$vec(0,30,0))
+	cleffect tempent sprite rjet1.spr SKULL_POS spit_fire_sprites
+}
+
+{ [client] spit_fire_sprite
+
+	local RAND_VEC $vec(0,0,$randf(0,5))
+
+	cleffect tempent set_current_prop death_delay 		1
+	cleffect tempent set_current_prop rendermode 		add
+	cleffect tempent set_current_prop renderamt 		60
+	cleffect tempent set_current_prop scale 			0.5
+	cleffect tempent set_current_prop gravity 			1
+	cleffect tempent set_current_prop velocity 			RAND_VEC
+	cleffect tempent set_current_prop collide 			none
+	cleffect tempent set_current_prop rendercolor 		(255,255,255)
+	cleffect tempent set_current_prop frames 			4
+	cleffect tempent set_current_prop framerate 		30
+}

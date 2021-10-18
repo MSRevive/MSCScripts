@@ -1,0 +1,138 @@
+//Poison Cloud Projectile by Thothie (from proj_lightning_storm)
+{
+	//precache all scripts this script may be spawned here!!!
+	precachefile monsters/summon/poison_cloud
+}
+
+//This is variable now, so must be called direct (can't use #include)
+//===================================== Proj_Base Begin
+{  game_spawn
+
+	setvard MODEL_HANDS      	none
+	setvard MODEL_WORLD      	none
+
+	//Redo Sounds
+	setvard SOUND_HITWALL1		ambience/steamburst1.wav
+	setvard SOUND_HITWALL2		ambience/steamburst1.wav
+	setvard SOUND_BURN			ambience/steamburst1.wav
+
+	setvard ITEM_NAME			watermana
+	setvard PROJ_DAMAGE_TYPE	poison
+	setvard PROJ_DAMAGESTAT		spellcasting.affliction //this does not determin xp stat
+
+	setvard PROJ_DAMAGE			100
+	setvard PROJ_AOE_RANGE		256
+	setvard PROJ_AOE_FALLOFF	0
+	setvard PROJ_STICK_DURATION	0  //Don't stick in enemies
+	setvard PROJ_COLLIDEHITBOX	32 
+
+ 	//precache MODEL_WORLD
+
+	movetype	projectile	//Causes the orientation to change based on velocity
+
+	setworldmodel	MODEL_WORLD
+	callevent 	projectile_spawn
+
+	local reg.proj.dmg 				PROJ_DAMAGE
+	local reg.proj.dmgtype 			PROJ_DAMAGE_TYPE
+	local reg.proj.aoe.range 		PROJ_AOE_RANGE
+	local reg.proj.aoe.falloff 		PROJ_AOE_FALLOFF
+	local reg.proj.stick.duration 	PROJ_STICK_DURATION
+	local reg.proj.collidehitbox 	PROJ_COLLIDEHITBOX
+
+	const SCRIPT_1			items/proj_poison_cloud_cl
+	const POISON_SPRITE		poison_cloud.spr
+	//precachefile			SCRIPT_1
+	precache POISON_SPRITE
+
+
+	registerprojectile
+} //end game_spawn
+
+{ game_tossprojectile
+
+	//Called here because the origin isn't set in spawn
+	add FIRE_BALL_SPAM 1
+
+	if ( FX_SPAMMERS < MAX_FX_SPAMMERS )
+	{
+		if ( FIRE_BALL_SPAM < MAX_FIRE_BALL_SPAM ) clientevent new all_in_sight SCRIPT_1 $get(ent_me,index)
+	}
+
+   	setvard SCRIPT_1_ID game.script.last_sent_id
+
+	useable		0	//Can't be picked up after it's shot/tossed
+	callevent game_fall
+}
+
+{ game_projectile_landed
+
+	movetype	none	//Back to normal movement
+	expiretime 	0
+	callevent 	projectile_landed
+}
+//===================================== Proj_Base End
+
+{  projectile_spawn
+
+	name 		a|Poison Cloud Spawner
+	weight 		500
+	size 		1
+	value		5
+	gravity		0.7
+	groupable	25
+   
+	sethudsprite hand arrows
+	sethudsprite trade ITEM_NAME
+	sethand any
+}
+
+{  projectile_landed
+
+	if ( FX_SPAMMERS < MAX_FX_SPAMMERS ) effect tempent trail POISON_SPRITE $relpos(0,0,0) $relpos(0,0,10) 10 2 5 10 20 //more nifty effects
+	clientevent remove all SCRIPT_1_ID
+	subtract FIRE_BALL_SPAM 1
+
+	local MY_OWNER $get(ent_expowner,id)
+
+	local pos $get(ent_me,origin)
+	local temp $get_ground_height(pos)
+	local x $vec.x(pos)
+	local y $vec.y(pos)
+	local pos $vec(x,y,temp)
+	
+	local EFFECT_DMG 			$get(MY_OWNER,skill.spellcasting.affliction)
+	multiply EFFECT_DMG 0.6
+	local EFFECT_DURATION 		$get(MY_OWNER,stat.concentration)
+	divide EFFECT_DURATION 2
+	add EFFECT_DURATION EFFECT_DMG
+	//dbg OutgoingDur EFFECT_DURATION
+
+	local EFFECT_SCRIPT 		monsters/summon/poison_cloud
+
+	if ( FX_SPAMMERS < MAX_FX_SPAMMERS ) createnpc EFFECT_SCRIPT pos MY_OWNER $get(ent_me,angles.y) EFFECT_DMG EFFECT_DURATION spellcasting.affliction
+	local LAST_ENT $get(ent_lastcreated,id)
+	//if ( FX_SPAMMERS < MAX_FX_SPAMMERS ) setexpstat LAST_ENT skill.spellcasting.affliction //doesnt work
+	if ( FX_SPAMMERS >= MAX_FX_SPAMMERS ) consolemsg all Too many fx running, cannot create spell.
+	if ( FX_SPAMMERS >= MAX_FX_SPAMMERS ) playermessage MY_OWNER Too many fx present: cannot create spell.
+}
+
+{  game_hitnpc
+
+	playrandomsound 0 game.sound.maxvol SOUND_HITWALL1 SOUND_HITWALL2
+
+	if !$get(ent_laststruckbyme,haseffect,DOT_poison)
+
+	local MY_OWNER $get(ent_expowner,id)
+	local EFFECT_DURATION_STAT $get(MY_OWNER,stat.concentration.ratio)
+	local EFFECT_DMG $get(MY_OWNER,skill.spellcasting.affliction)
+	local EFFECT_MAXDURATION 	15
+	local EFFECT_MINDURATION 	10
+	local EFFECT_DURATION $get_skill_ratio(EFFECT_DURATION_STAT,EFFECT_MINDURATION,EFFECT_MAXDURATION)
+	applyeffect ent_laststruckbyme effects/effect_poison EFFECT_DURATION MY_OWNER EFFECT_DMG 0 spellcasting.affliction
+}
+
+{ hitwall
+
+	playrandomsound game.sound.weapon game.sound.maxvol SOUND_HITWALL1 SOUND_HITWALL2
+}

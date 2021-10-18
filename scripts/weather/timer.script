@@ -1,0 +1,142 @@
+//Thothie - Long awaited event timer for general time based map events
+//- Calls map events every hour, and at dawn/dusk/eve
+//- Built from worlditems/clock_base
+//- Couldn't think of a better section to place this
+
+{  game_spawn
+
+ setvarg THIS_HOUR PARAM1 -1
+ setvarg LAST_HOUR PARAM1 0
+}
+
+{ game_playerspawn
+
+	callevent worldevent_time
+}
+
+{ worldevent_time
+
+ setvarg THIS_HOUR PARAM1
+
+ if ( THIS_HOUR != LAST_HOUR ) {
+	
+	////debugprint AlwaysDay ALWAYS_DAY
+	////debugprint AlwaysDusk ALWAYS_DUSK
+	////debugprint AlwaysNight ALWAYS_NIGHT
+
+	////debugprint Time global.mstime.secs
+
+	if ( ALWAYS_DAY == 1 ) { 
+		setvarg global.map.allownight 0
+		////debugprint Timebefore global.mstime.secs
+		setvarg global.mstime.secs 215940
+		setvarg global.mstime.updateall 0
+		//callexternal all ent_me force_time 12
+		////debugprint Timeafter global.mstime.secs
+		usetrigger hour_counter
+		setvarg LAST_HOUR THIS_HOUR
+	}
+	if ( ALWAYS_DUSK == 1 ) {
+		////debugprint Timebefore global.mstime.secs
+		setvarg global.mstime.secs 147550
+		setvarg global.mstime.updateall 0
+		//callexternal all ent_me force_time 17
+		////debugprint Timeafter global.mstime.secs
+		usetrigger hour_counter
+		setvarg LAST_HOUR THIS_HOUR
+	}
+	if ( ALWAYS_NIGHT == 1 ) {
+		////debugprint Timebefore global.mstime.secs
+		setvarg global.mstime.secs 169120
+		setvarg global.mstime.updateall 0
+		//callexternal all ent_me force_time 23
+		////debugprint Timeafter global.mstime.secs
+		usetrigger hour_counter
+		setvarg LAST_HOUR THIS_HOUR
+	}
+	if ( NO_WEATHER = 1 ) {
+		callexternal all weather/sv_weather_control global_stop_weather
+	}
+	
+ }
+
+ if ( THIS_HOUR != LAST_HOUR ) {
+ 	if ( THIS_HOUR == 0 ) usetrigger hour_0
+ 	if ( THIS_HOUR == 1 ) usetrigger hour_1
+	if ( THIS_HOUR == 2 ) usetrigger hour_2
+	if ( THIS_HOUR == 3 ) usetrigger hour_3
+	if ( THIS_HOUR == 4 ) usetrigger hour_4
+	if ( THIS_HOUR == 5 ) usetrigger hour_5
+	if ( THIS_HOUR == 6 ) usetrigger hour_6 is_dawn
+	if ( THIS_HOUR == 7 ) usetrigger hour_7
+	if ( THIS_HOUR == 8 ) usetrigger hour_8
+	if ( THIS_HOUR == 9 ) usetrigger hour_9
+	if ( THIS_HOUR == 10 ) usetrigger hour_10
+	if ( THIS_HOUR == 11 ) usetrigger hour_11
+	if ( THIS_HOUR == 12 ) usetrigger hour_12
+	if ( THIS_HOUR == 13 ) usetrigger hour_13
+	if ( THIS_HOUR == 14 ) usetrigger hour_14
+	if ( THIS_HOUR == 15 ) usetrigger hour_15
+	if ( THIS_HOUR == 16 ) usetrigger hour_16
+	if ( THIS_HOUR == 17 ) usetrigger hour_17 is_dusk
+	if ( THIS_HOUR == 18 ) usetrigger hour_18
+	if ( THIS_HOUR == 19 ) usetrigger hour_19
+	if ( THIS_HOUR == 20 ) usetrigger hour_20 is_night
+	if ( THIS_HOUR == 21 ) usetrigger hour_21
+	if ( THIS_HOUR == 22 ) usetrigger hour_22
+	if ( THIS_HOUR == 23 ) usetrigger hour_23
+	setvarg LAST_HOUR THIS_HOUR
+ } //endif ( THIS_HOUR != LAST_HOUR )
+
+}
+
+//from sv_world_commands set_time - not used, but kept here in case client side buggars
+{ event force_time //<hour> <minute>
+
+	//dbg ForcingTIME PARAM1
+
+	if game.event.params >= 2
+
+	mod PARAM1 24
+	mod PARAM2 60
+
+	callevent time_getseconds			//Get the number of seconds passed
+	local local.mstime.secs global.mstime.secs	//since the beginning of game (MS Time)
+
+	local l.secs $int(PARAM1)			//Get the desired time in seconds
+	multiply l.secs 3600
+
+	local l.mins_to_secs $int(PARAM2)
+	multiply l.mins_to_secs 60
+	
+	add l.secs l.mins_to_secs
+
+	//Get the time offset from the start of the current day
+	//Compare it to the requested time of day, to check if I should
+	//advance to the next day.
+	//--------------------------------------------------
+
+	local l.daystart.secs global.mstime.secs	//Get start of this day
+	divide l.daystart.secs 86400				
+	setvard l.daystart.secs $int(l.daystart.secs)
+	multiply l.daystart.secs 86400
+
+	local l.timefromdaystart global.mstime.secs	//Get time offset from start of day
+	subtract l.timefromdaystart l.daystart.secs
+
+	//If Requested time of day is earlier than Current time of day, fast forward a full day
+
+	if( l.secs < l.timefromdaystart ) add l.secs 86400
+
+	//Add requested time to start of day
+
+	local l.newtime l.daystart.secs
+	add l.newtime l.secs
+
+	//Store in global
+
+	setvarg global.mstime.secs l.newtime
+
+	setvarg global.mstime.updateall 0	//Force update to all
+
+}

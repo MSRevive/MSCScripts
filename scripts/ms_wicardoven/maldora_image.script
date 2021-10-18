@@ -1,0 +1,231 @@
+{
+	setvar ANIM_IDLE idle
+	setvard ANIM_ATTACK treadwater
+	const ANIM_LEAP long_jump	
+	setvar ANIM_RUN run2
+	setvar ANIM_WALK walk2handed
+	setvard ANIM_DEATH die_backwards1
+
+
+	const ANIM_WAND ref_shoot_crowbar
+	const SPELL_FREQ 7.0
+
+	const DMG_WAND $randf(10,20)
+
+	const LEAP_FREQ 2.0
+	
+   	const SOUND_DEATH null.wav
+
+	//media - monster model
+	const MONSTER_MODEL monsters/maldora.mdl
+	precache MONSTER_MODEL
+
+	setvard NO_SPAWN_STUCK_CHECK 1
+	const I_AM_TURNABLE 0
+}
+
+#include monsters/base_monster_new
+#include monsters/base_turn_undead
+
+{ npc_spawn
+
+	name an|Image of Maldora
+	hp 200
+	race demon
+	width 32
+	height 86
+
+	blood none
+
+	setvard NPC_GIVE_EXP 60
+
+	roam 1
+
+	hearingsensitivity 10
+
+	setidleanim ANIM_IDLE
+	setmoveanim ANIM_RUN
+	
+	takedmg holy 3.0
+
+	setmodel MONSTER_MODEL
+	setprop ent_me rendermode 5
+	setprop ent_me renderamt 255
+	setprop ent_me skin 5
+
+	callevent reset_props
+}
+
+
+{ game_dynamically_created //PARAM1=Owner PARAM2=Enemy PARAM3=slide PARAM4=uber
+
+	callevent npcatk_suspend_ai
+
+	setvard MY_MASTER PARAM1
+	setvard FIRST_TARGET PARAM2
+	setvard SLIDE_DIR PARAM3
+	setvard UBER_MODE PARAM4
+	setsolid none
+	
+	dbg game_dynamically_created PARAM1 PARAM2 PARAM3 PARAM4
+
+	if ( UBER_MODE == 1 )
+	{
+		multiply NPC_GIVE_EXP 10
+		hp 800
+		dmgmulti 3.0
+		dbg game_dynamically_created Uber mode activated
+	}
+
+	setvard SLIDE_COUNT 0
+	callevent 0.1 slide_in
+
+	callevent 2.0 npcatk_resume_ai
+	callevent 2.1 set_target
+
+	callevent 4.0 flank_loop
+
+	callevent 120.0 me_expire
+}
+
+{ slide_in
+
+	local LEAP_TARG $relpos($vec(0,SLIDE_DIR,0),$vec(0,1000,0))
+	callevent leap_at LEAP_TARG
+}
+
+{ set_target
+
+	setmoveanim ANIM_RUN
+	setidleanim ANIM_IDLE
+	callevent npcatk_settarget FIRST_TARGET
+}
+
+{ npc_targetsighted
+
+	if $get(PARAM1,range) > 100
+	callevent leap_at NPCATK_TARGET
+}
+
+{ leap_at //PARAM1 TARGET
+
+	if !LEAP_DELAY
+	setvard LEAP_DELAY 1
+	callevent LEAP_FREQ reset_leap_delay
+
+	setvard NPC_FORCED_MOVEDEST 1
+	setmovedest PARAM1 MOVE_RANGE
+	callevent 0.1 leap_at2
+}
+
+{ leap_at2
+
+	playanim critical ANIM_LEAP
+	callevent 0.1 leap_boost
+}
+
+{ leap_boost
+
+	addvelocity ent_me $relvel(0,400,50)
+}
+
+{ reset_leap_delay
+	setvard LEAP_DELAY 0
+}
+
+
+{ game_death
+	local RAND_DEATH $rand(1,7)
+	if ( RAND_DEATH == 1 ) setvard ANIM_DEATH die_simple
+	if ( RAND_DEATH == 2 ) setvard ANIM_DEATH die_backwards1
+	if ( RAND_DEATH == 3 ) setvard ANIM_DEATH die_backwards
+	if ( RAND_DEATH == 4 ) setvard ANIM_DEATH die_forwards
+	if ( RAND_DEATH == 5 ) setvard ANIM_DEATH headshot
+	if ( RAND_DEATH == 6 ) setvard ANIM_DEATH die_spin
+	if ( RAND_DEATH == 7 ) setvard ANIM_DEATH gutshot
+}
+
+{ npc_death
+	setprop ent_me renderamt 80
+	callexternal MY_MASTER image_died
+}
+
+{ reset_props
+	repeatdelay 5.3
+
+	if game.monster.isalive
+	setprop ent_me rendermode 5
+	setprop ent_me renderamt 255
+}
+
+{ npcatk_hunt
+	local MASTER_ORG $get(MY_MASTER,origin)
+	if $dist(game.monster.origin,MASTER_ORG) < 64
+	callevent leap_away MY_MASTER
+}
+
+{ leap_away //dude to flee
+	setvard NPC_FORCED_MOVEDEST 1
+	setmovedest PARAM1 800 flee
+	callevent 0.1 leap_away2
+}
+
+{ leap_away2
+	playanim critical ANIM_LEAP
+	callevent 0.1 leap_boost
+}
+
+{ thrash_strike
+	callevent npcatk_dodamage NPCATK_TARGET ATTACK_HITRANGE DMG_WAND 80% blunt
+}
+
+{ game_dodamage
+	if PARAM1
+	if $rand(1,5) == 1
+	applyeffect PARAM2 effects/effect_stun 3.0 0 1
+}
+
+{ flank_loop
+
+	callevent 4.0 flank_loop
+
+	if $get(NPCATK_TARGET,range) < ATTACK_RANGE
+	if $rand(1,2) == 1
+	local DEST_POS $get(NPCATK_TARGET,origin)
+	local RND_ANG $rand(0,359)
+	vectoradd DEST_POS $relpos($vec(0,RND_ANG,0),$vec(0,ATTACK_RANGE,0))
+	callevent leap_at DEST_POS
+}
+
+{ maldora_died
+	deleteent ent_me
+}
+
+{ maldoraf_died
+	callevent 1.0 check_owner
+}
+
+{ check_owner
+	if !$get(MY_MASTER,isalive)
+	deleteent ent_me
+}
+
+{ me_expire
+	setprop ent_me renderamt 0
+	callexternal MY_MASTER image_died
+	callevent 0.1 remove_me
+}
+
+{ remove_me
+	deleteent ent_me
+}
+
+{ maldoraf_died
+	if PARAM1 equals MY_MASTER
+	deleteent ent_me
+}
+
+{ maldora_final_died
+	if PARAM1 equals MY_MASTER
+	deleteent ent_me
+}

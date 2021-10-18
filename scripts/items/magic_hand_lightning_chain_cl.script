@@ -1,0 +1,61 @@
+//"true" chain lightning fx
+
+{ client_activate
+	setvard CASTER_INDEX PARAM1 //store index of caster for later use
+}
+
+{ draw_beams //<target_idx_list>
+
+	setvard IDX_LIST PARAM1
+
+	//store first target and origin
+	local FIRST_TARGET $get_token(IDX_LIST,0)
+	local FIRST_TARGET_ORG $getcl(FIRST_TARGET,origin)
+	vectoradd FIRST_TARGET_ORG z 32 //origin will be at feat on monsters, so add 32 (will wind up targeting heads of players)
+
+	if ( game.localplayer.index equals CASTER_INDEX )
+	{
+		if !game.localplayer.thirdperson
+		local USE_VIEWMODEL 1
+	}
+
+	if ( USE_VIEWMODEL )
+	{
+		//I'm currently running on the caster, and he's in first person mode
+		//so first two beams start from left and right hands of viewmodel
+		setvard CL_HAND1 $getcl(game.localplayer.viewmodel.active.id,bonepos,16)
+		setvard CL_HAND2 $getcl(game.localplayer.viewmodel.active.id,bonepos,35)
+	}
+	else
+	{
+		//this is drawing on another client, or the caster is not in first person mode
+		//thus beams start from player model hands instead of viewmodel
+		local CL_HAND1 $getcl(CASTER_INDEX,bonepos,21)
+		local CL_HAND2 $getcl(CASTER_INDEX,bonepos,38)
+	}
+
+	cleffect beam_points CL_HAND1 FIRST_TARGET_ORG lgtning.spr 0.5 5.0 0.5 255 50 30 (60,60,255)
+	cleffect beam_points CL_HAND2 FIRST_TARGET_ORG lgtning.spr 0.5 5.0 0.5 255 50 30 (60,60,255)
+
+	//from here draw rest of beams
+	calleventloop $get_token_amt(IDX_LIST) draw_beams_loop
+}
+
+{ draw_beams_loop
+
+	local CUR_LOOP game.script.iteration
+	local NEXT_LOOP CUR_LOOP
+	add NEXT_LOOP 1
+
+	if NEXT_LOOP < $get_token_amt(IDX_LIST)
+
+	local CUR_IDX $get_token(IDX_LIST,CUR_LOOP)
+	local CUR_IDX_ORG $getcl(CUR_IDX,origin)
+	vectoradd CUR_IDX_ORG z 32
+
+	local NEXT_IDX $get_token(IDX_LIST,NEXT_IDX)
+	local NEXT_IDX_ORG $getcl(NEXT_IDX,origin)
+	vectoradd NEXT_IDX_ORG z 32
+
+	cleffect beam_points CUR_IDX_ORG NEXT_IDX_ORG lgtning.spr 0.5 5.0 0.5 255 50 30 (60,60,255)
+}

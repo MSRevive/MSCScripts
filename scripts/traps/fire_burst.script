@@ -1,0 +1,83 @@
+//explodie fire trap, temporary NPC
+//takes addparam set_aoe;<radius> (default 256)
+//damage scales by % of maxhealth
+//dmgmulti can be used to increase damage
+
+#scope server
+
+{ game_spawn
+	name an|Exploding Fire Trap
+	setmodel null.mdl
+	hp 1
+	width 1
+	height 1
+	invincible 1
+	gravity 0
+	fly 1
+	blood none
+	race hated
+	setvard PLAYING_DEAD 1
+	nopush 1
+	callevent 0.1 do_explode
+}
+
+{ game_postspawn
+	if ( PARAM4 startswith set_ ) callevent set_aoe $get_token(PARAM4,1)
+
+	if PARAM2 > 1
+	dmgmulti PARAM2
+}
+
+{ do_explode
+	if ( TRAP_AOE equals 'TRAP_AOE' ) setvard TRAP_AOE 256
+	local L_BURST_POS $get(ent_me,origin)
+	vectorset L_BURST_POS z $get_ground_height(L_BURST_POS)
+	xdodamage L_BURST_POS TRAP_AOE game.players.avghp 0 ent_me ent_me none fire_effect dmgevent:explode
+	clientevent new all effects/sfx_fire_burst L_BURST_POS TRAP_AOE 1 (255,64,0)
+	callevent 6.0 npc_suicide
+}
+
+{ explode_dodamage
+	if PARAM1
+	local L_TARG_MAXHP $get(PARAM2,maxhp)
+
+	local L_BLAST_DMG L_TARG_HP
+	if ( L_TARG_HP >= 100 )
+	{
+		local L_BLAST_RATIO $math(divide,100,L_TARG_HP)
+	}
+	else
+	{
+		local L_BLAST_RATIO $math(divide,L_TARG_HP,100)
+	}
+
+	returndata L_BLAST_RATIO
+
+	local L_DOT $get(PARAM2,maxhp)
+	multiply L_DOT 0.05
+	applyeffect PARAM2 effects/effect_burn 5.0 $get(ent_me,id) L_DOT
+
+	callevent repel_target $get(PARAM2,id) 1000 $get(ent_me,origin)
+}
+
+{ repel_target //<target> <strength> <from_origin>
+	local L_TARG_ORG $get(PARAM1,origin)
+	local L_MY_ORG PARAM3
+	local L_TARG_ANG $angles(L_MY_ORG,L_TARG_ORG)
+	local L_NEW_YAW L_TARG_ANG
+	setvelocity PARAM1 $relvel($vec(0,L_NEW_YAW,0),$vec(0,PARAM2,0))
+}
+
+{ npc_suicide
+	setorigin ent_me $vec(20000,10000,30000)
+	invincible 0
+	dodamage ent_me direct 99999 100 GAME_MASTER target
+}
+
+{ game_dynamically_created //<aoe>
+	setvard TRAP_AOE PARAM1
+}
+
+{ set_aoe
+	setvard TRAP_AOE PARAM1
+}

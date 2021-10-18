@@ -1,0 +1,90 @@
+//Drunk
+
+{ 	[server]
+	const EFFECT_ID			player_drunk
+	const EFFECT_ACTIONTYPE		nostack
+	const EFFECT_SCRIPT		$currentscript
+
+	setvard game.effect.id		EFFECT_ID
+	setvard game.effect.displayname	"Drunk"
+	setvard game.effect.type	EFFECT_ACTIONTYPE
+
+	setvard local.effect.duration 	0
+}
+
+#include effects/effect_base	allowduplicate
+
+// ===========
+// Client Side
+// ===========
+{ 	[client]
+	const MIN_STUMBLEAMT 	-10
+	const MAX_STUMBLEAMT 	 10
+	const STUMBLE_RIGHT_MAX 	 80
+	const STUMBLE_LEFT_MAX 		-80
+	const STUMBLE_RIGHT_TRESHHOLD 	 30
+	const STUMBLE_LEFT_TRESHHOLD 	-30
+	const STUMBLE_FORWARD_MAX 	 40
+	const STUMBLE_BACK_MAX 		-50
+	const STUMBLE_FORWARD_T 	 20
+	const STUMBLE_BACK_T 		-20
+	const MAX_SWAY 		 20
+	const MIN_SWAY 		-20
+	const MAX_SWAY_T 	 8
+	const MIN_SWAY_T 	-8
+	const MAX_SWAY_RATE 	 10
+	const MIN_SWAY_RATE 	-10
+	const MAX_SWAY_AMT       0.5
+	const MIN_SWAY_AMT      -0.5
+}
+
+{	[client] client_activate
+
+	setvard SWAY_RATE 20
+	setvard EFFECT_DURATION PARAM1
+	dbg **** client_activate (ldrunk) EFFECT_DURATION
+	callevent PARAM1 effect_die
+}
+
+{	[client]
+	repeatdelay 0.3
+
+	if game.clientside
+
+	callevent drunk_sway
+}
+{	[client]
+	repeatdelay 0.01
+
+	if game.clientside
+
+	inc DRUNK_SWAY_FORWARD DRUNK_SWAY_RATE_F
+	capvar DRUNK_SWAY_FORWARD MIN_SWAY MAX_SWAY
+	setvard game.cleffect.view_ofs.pitch DRUNK_SWAY_FORWARD
+
+	inc DRUNK_SWAY_SIDE DRUNK_SWAY_RATE
+	capvar DRUNK_SWAY_SIDE MIN_SWAY MAX_SWAY
+	setvard game.cleffect.view_ofs.roll DRUNK_SWAY_SIDE
+
+	setvard game.cleffect.move_ofs.forward DRUNK_FORWARDMOVE
+	setvard game.cleffect.move_ofs.right DRUNK_SIDEMOVE
+}
+
+{	[client] drunk_sway
+
+	//Side Sway
+	inc DRUNK_SWAY_RATE $randf(MIN_SWAY_AMT,MAX_SWAY_AMT)
+	capvar DRUNK_SWAY_RATE MIN_SWAY_RATE MAX_SWAY_RATE
+
+	//Correction
+	if( DRUNK_SWAY_SIDE >= MAX_SWAY_T ) dec DRUNK_SWAY_RATE MAX_SWAY_AMT
+	if( DRUNK_SWAY_SIDE <= MIN_SWAY_T ) inc DRUNK_SWAY_RATE MAX_SWAY_AMT
+	
+	//Forward Sway
+	inc DRUNK_SWAY_RATE_F $randf(MIN_SWAY_AMT,MAX_SWAY_AMT)
+	capvar DRUNK_SWAY_RATE_F MIN_SWAY_RATE MAX_SWAY_RATE
+
+	//Correction
+	if( DRUNK_SWAY_FORWARD >= MAX_SWAY_T ) dec DRUNK_SWAY_RATE_F MAX_SWAY_AMT
+	if( DRUNK_SWAY_FORWARD <= MIN_SWAY_T ) inc DRUNK_SWAY_RATE_F MAX_SWAY_AMT
+}

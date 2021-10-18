@@ -1,0 +1,161 @@
+//Thothie
+//Blizzard with adjustable AOE for NPC ( monsters/uber_ice_reaver )
+
+#scope server
+
+{ game_dynamically_created
+
+	// $get(ent_me,id) DMG_STORM STORM_DUR STORM_RAD
+
+	add FX_SPAMMERS 1
+
+	setvard MY_OWNER PARAM1
+	setvard MY_BASE_DMG PARAM2
+	setvard MY_DURATION PARAM3
+	setvard MY_RADIUS PARAM4
+	setvard FREEZE_CHANCE PARAM5 //chance to freeze each 10 seconds
+
+	//dbg incpars owner $get(PARAM1,name) dmg MY_BASE_DMG dur MY_DURATION rad MY_RADIUS
+
+	setvard OWNER_ISPLAYER $get(MY_OWNER,isplayer)
+
+	clientevent new all $currentscript $get(ent_me,origin) $get_sky_height(game.monster.origin) MY_RADIUS 10
+	setvard MY_SCRIPT_IDX game.script.last_sent_id
+
+	setvard IS_ACTIVE 1
+	callevent scan_attack
+	callevent MY_DURATION end_summon
+}
+
+{ game_spawn
+	name a|Blizzard
+	race beloved
+	invincible 1
+	hp 1
+	setvard PLAYING_DEAD 1
+}
+
+{ scan_attack
+	if IS_ACTIVE
+	callevent 10.0 scan_attack
+	getents any MY_RADIUS
+
+	if GET_COUNT > 0
+	setvard LOOP_COUNT 0
+	if $get(MY_OWNER,isalive)
+	calleventloop GET_COUNT check_attack
+}
+
+{ check_attack
+	add LOOP_COUNT 1
+	if ( LOOP_COUNT == 1 ) local CHECK_ENT GET_ENT1
+	if ( LOOP_COUNT == 2 ) local CHECK_ENT GET_ENT2
+	if ( LOOP_COUNT == 3 ) local CHECK_ENT GET_ENT3
+	if ( LOOP_COUNT == 4 ) local CHECK_ENT GET_ENT4
+	if ( LOOP_COUNT == 5 ) local CHECK_ENT GET_ENT5
+	if ( LOOP_COUNT == 6 ) local CHECK_ENT GET_ENT6
+	if ( LOOP_COUNT == 7 ) local CHECK_ENT GET_ENT7
+	if ( LOOP_COUNT == 8 ) local CHECK_ENT GET_ENT8
+	if ( LOOP_COUNT == 9 ) local CHECK_ENT GET_ENT9
+
+	if $get(CHECK_ENT,relationship,MY_OWNER) equals enemy
+	
+	if ( OWNER_ISPLAYER )
+	{
+		if game.pvp == 0
+		if $get(CHECK_ENT,isplayer)
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	if $get(CHECK_ENT,range) < MY_RADIUS //shouldn't need this
+
+	if $rand(1,100) < FREEZE_CHANCE
+	applyeffect CHECK_ENT effects/effect_frostbite_dmg 9.5 MY_OWNER MY_BASE_DMG
+}
+
+{ end_summon
+	setvard IS_ACTIVE 0
+	clientevent remove all MY_SCRIPT_IDX
+	callevent 0.2 remove_me
+}
+
+{ remove_me
+	subtract FX_SPAMMERS 1
+	deleteent ent_me
+}
+
+//Client
+//======
+
+{ [client] client_activate 
+
+	//$get(ent_me,origin) $get_sky_height(game.monster.origin) MY_RADIUS 10
+	
+	setvard SNOW_CENTER PARAM1
+	setvard ROOF_HEIGHT PARAM2
+	setvard BLIZ_WIDTH PARAM3
+	setvard BLIZ_DENSITY PARAM4
+	setvard ROOF_HEIGHT $vec.z(ROOF_HEIGHT)
+	
+	setvard FLAKE_HEIGHT ROOF_HEIGHT
+	setvard SHARD_HEIGHT ROOF_HEIGHT
+	subtract SHARD_HEIGHT 64
+	
+	setvard SNOW_ON 1
+
+	////dbg params cent SNOW_CENTER height ROOF_HEIGHT width BLIZ_WIDTH dsns BLIZ_DENSITY roof ROOF_HEIGHT
+}
+
+//Snow!
+{  [client]
+   repeatdelay 0.2
+	
+	////dbg making flakes?
+
+	if SNOW_ON
+	calleventloop BLIZ_DENSITY make_flakes
+}
+
+{ [client] make_flakes
+   local NEGBLIZ_WIDTH BLIZ_WIDTH
+   multiply NEGBLIZ_WIDTH -1
+   local x $rand(NEGBLIZ_WIDTH,BLIZ_WIDTH)
+   local y $rand(NEGBLIZ_WIDTH,BLIZ_WIDTH)
+   vectoradd START_POS SNOW_CENTER $vec(x,y,FLAKE_HEIGHT)
+	////dbg flake @ START_POS
+   cleffect tempent sprite snow1.spr START_POS setup_blizzardflake
+
+   local NEGBLIZ_WIDTH BLIZ_WIDTH
+   multiply NEGBLIZ_WIDTH -1
+   local x $rand(NEGBLIZ_WIDTH,BLIZ_WIDTH)
+   local y $rand(NEGBLIZ_WIDTH,BLIZ_WIDTH)
+   vectoradd START_POS SNOW_CENTER $vec(x,y,SHARD_HEIGHT)
+   cleffect tempent sprite glassgibs.mdl START_POS setup_hailshard
+
+}
+
+{  [client] setup_blizzardflake
+   setvard vel $rand(-50,50)
+	local FLAKE_GRAv $randf(0.2,2.1)
+	local FLAKE_SCALE $randf(1,3)
+   cleffect tempent set_current_prop death_delay 	2
+   cleffect tempent set_current_prop bouncefactor 	0
+   cleffect tempent set_current_prop scale 			FLAKE_SCALE
+   cleffect tempent set_current_prop gravity 		FLAKE_GRAv
+   cleffect tempent set_current_prop collide 		none
+   cleffect tempent set_current_prop velocity 		(vel,vel,-200)
+}
+
+{  [client] setup_hailshard
+	local SHARD_SIZE $randf(1.0,5.0)
+	//local SHARD_BODY $rand(0,5)
+   cleffect tempent set_current_prop death_delay 	2
+   //cleffect tempent set_current_prop body SHARD_BODY //this works, but dun look real good on this model
+   cleffect tempent set_current_prop bouncefactor 	0
+   cleffect tempent set_current_prop scale 			SHARD_SIZE //this doesn't actuall have an effect :/
+   cleffect tempent set_current_prop angles 		(90,0,0)
+   cleffect tempent set_current_prop gravity 		3
+   cleffect tempent set_current_prop collide 		none
+   cleffect tempent set_current_prop velocity 		(-10,-10,-100)
+}

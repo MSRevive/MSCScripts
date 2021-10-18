@@ -1,0 +1,354 @@
+//Script for testing theoretical polearm idears (from novablade)
+
+{
+	const BASE_LEVEL_REQ 0
+	const RANGE_SWIPE 64
+	const POLEARM_OPTIMUM_RANGE 80 //optimum range for this polearm
+	const POLEARM_DMG_FALLOFF 0.05 //fall ratio per unit range is off
+
+
+	const SOUND_PARRY weapons/parry.wav
+
+	//change anims as needed
+	const ANIM_LIFT         1
+	const ANIM_IDLE1         0
+	const ANIM_ATTACK1       2
+	const ATTACK_ANIMS  1
+	const ANIM_UNSHEATH       1
+	const ANIM_SHEATH       1
+
+	const ANIM_SWIPE 6
+	const ANIM_SMASH 5
+	const ANIM_POKE 4
+	const ANIM_TRIP 3
+	const ANIM_PARRY 7
+
+	const MODEL_VIEW viewmodels/v_polearms.mdl //change
+	const MODEL_VIEW_IDX 4 //change
+
+	const MODEL_HANDS weapons/p_weapons2.mdl //change
+	const MODEL_WORLD weapons/p_weapons2.mdl //change
+
+	const SOUND_SWIPE       weapons/swingsmall.wav
+	const SOUND_HITWALL1       weapons/cbar_hit1.wav
+	const SOUND_HITWALL2       weapons/cbar_hit2.wav
+	const SOUND_DRAW       weapons/swords/sworddraw.wav //change
+	const SOUND_SHOUT $get(ent_owner,scriptvar,'PLR_SOUND_SHOUT1') //(used by charge)
+
+	const MODEL_BODY_OFS 104 //change
+	const ANIM_PREFIX  khopesh //change
+
+	//Used in base_melee
+	//------------------
+	const MELEE_RANGE  100
+	const MELEE_DMG_DELAY  0.4
+	const MELEE_ATK_DURATION 1.1
+	const MELEE_DMG_DELAY_LONG 1.0
+	const MELEE_ATK_DURATION_LONG 1.4
+	const MELEE_ENERGY  1
+	const MELEE_DMG  500 //very high damage, but drops of based on range
+	const MELEE_DMG_RANGE      0 //fixed damage @ range
+	const MELEE_DMG_TYPE  generic //change - probably should be pierce or slash - using generic for ease of testing
+	const MELEE_ACCURACY  75%
+	const MELEE_ACCURACY2  90%
+	const MELEE_STAT  swordsmanship //change
+	const MELEE_ALIGN_BASE 3,10  //change
+	const MELEE_ALIGN_TIP  0,-10 //change
+	const MELEE_VIEWANIM_ATK      ANIM_ATTACK1
+
+	const MELEE_SOUND      SOUND_SWIPE
+	const MELEE_SOUND_DELAY      MELEE_DMG_DELAY
+	const MELEE_PARRY_CHANCE      60%
+
+	const PLAYERANIM_AIM  sword_double_idle //change (used?)
+	const PLAYERANIM_SWING sword_double_swing //change (used?)
+}
+
+#include items/swords_base_twohanded
+//change
+
+{ weapon_spawn
+
+   name  a|Polearm (test)
+   desc  It's a polearm! Really it is!
+   weight  75
+   size  9
+   value 0 //change
+   sethudsprite trade longsword //change
+
+   sethand both
+}
+
+{ [server] game_deploy
+
+	setvard GAME_PVP game.pvp
+}
+
+
+
+//==================== THIS SHOULD BE PART OF items/base_polearm
+
+{ [override] melee_start
+
+	playowneranim once sword_double_swing //change
+	playviewanim  ANIM_ATTACK1
+	volume 10
+	playsound 1 SOUND_SWIPE
+
+	if ( PARRY_MODE ) callevent end_parry
+}
+
+{ melee_damaged_other //<target> <damage>
+	local OUT_PAR1 PARAM1
+	local OUT_PAR2 PARAM2
+	callevent adjust_dmg OUT_PAR1 OUT_PAR2
+}
+
+{ special_01_damaged_other //<target> <damage>
+	local OUT_PAR1 PARAM1
+	local OUT_PAR2 PARAM2
+	callevent adjust_dmg OUT_PAR1 OUT_PAR2
+}
+
+{ adjust_dmg
+	//if ( G_DEVELOPER_MODE ) gplayermessage ent_owner melee_damaged_other $get(PARAM1,name) $int(PARAM2) $get(PARAM1,range)
+
+	if $get(PARAM1,isalive)
+
+	local OPTIMUM_RANGE POLEARM_OPTIMUM_RANGE
+	local DMG_FALLOFF POLEARM_DMG_FALLOFF
+
+	local TARG_RANGE $get(PARAM1,range)
+
+	if TARG_RANGE != OPTIMUM_RANGE
+	//missed, adjust damage accordingly
+
+	//hack hack (can't remember if scripts have an ABS or ratio function that'd work for this)
+	if ( TARG_RANGE > OPTIMUM_RANGE )
+	{
+		local MISSED_AMT TARG_RANGE
+		subtract MISSED_AMT OPTIMUM_RANGE
+		local TOO_CLOSE 0
+	}
+	if ( TARG_RANGE < OPTIMUM_RANGE )
+	{
+		local MISSED_AMT OPTIMUM_RANGE
+		subtract MISSED_AMT TARG_RANGE
+		local TOO_CLOSE 1
+	}
+
+	local DMG_PENALTY_FACTOR DMG_FALLOFF
+	multiply DMG_PENALTY_FACTOR MISSED_AMT
+
+	if ( DMG_PENALTY_FACTOR >= 1 )
+	{
+		local DMG_PENALTY_FACTOR 0.9 //completely out of range, do min damage
+		//if ( TOO_CLOSE ) playermessage You are too close to attack with this polearm! //not intuitive
+	}
+
+	local OUT_DMG_FACTOR 1
+	subtract OUT_DMG_FACTOR DMG_PENALTY_FACTOR
+
+	local OUT_DMG PARAM2
+	multiply OUT_DMG OUT_DMG_FACTOR
+	setdmg dmg OUT_DMG
+
+	//if ( G_DEVELOPER_MODE ) gplayermessage ent_owner DEBUG: Missed by MISSED_AMT units [ ratio: OUT_DMG_FACTOR dmg: PARAM1 -> OUT_DMG ]
+
+}
+
+
+{ [override] register_charge1
+
+	//thothie made seperate so can override
+
+   //Default charge up attack - Double damage for holding to 100%
+   //============================================================
+
+   local reg.attack.type		strike-land
+   local reg.attack.keys		+attack1
+   local reg.attack.range		MELEE_RANGE
+   local reg.attack.dmg			MELEE_DMG
+   local reg.attack.dmg.range		MELEE_DMG_RANGE
+   local reg.attack.dmg.type		MELEE_DMG_TYPE
+   local reg.attack.energydrain		MELEE_ENERGY
+   local reg.attack.stat		MELEE_STAT
+   local reg.attack.hitchance		MELEE_ACCURACY2
+	
+   local reg.attack.priority		0
+   local reg.attack.delay.strike	MELEE_DMG_DELAY_LONG
+   local reg.attack.delay.end		MELEE_ATK_DURATION_LONG
+   local reg.attack.ofs.startpos	MELEE_STARTPOS
+   local reg.attack.ofs.aimang		MELEE_AIMANGLE
+   local reg.attack.callback		melee
+   local reg.attack.noise		MELEE_NOISE
+
+   local reg.attack.priority	1
+   local reg.attack.keys	-attack1
+   local reg.attack.callback	special_01
+   multiply reg.attack.dmg	2
+   local reg.attack.chargeamt	100%
+   local reg.attack.reqskill	2
+	add reg.attack.reqskill BASE_LEVEL_REQ
+
+   registerattack
+
+
+
+	//thothie made seperate so can override
+
+   //Default charge up attack - Double damage for holding to 100%
+   //============================================================
+
+   local reg.attack.type		strike-land
+   local reg.attack.keys		+attack1
+   local reg.attack.range		MELEE_RANGE
+   local reg.attack.dmg			0
+   local reg.attack.dmg.range		0
+   local reg.attack.dmg.type		generic
+   local reg.attack.energydrain		MELEE_ENERGY
+   local reg.attack.stat		MELEE_STAT
+   local reg.attack.hitchance		MELEE_ACCURACY
+   local reg.attack.priority		0
+   local reg.attack.delay.strike	MELEE_DMG_DELAY_LONG
+   local reg.attack.delay.end		MELEE_ATK_DURATION_LONG
+   local reg.attack.ofs.startpos	MELEE_STARTPOS
+   local reg.attack.ofs.aimang		MELEE_AIMANGLE
+   local reg.attack.callback		melee
+   local reg.attack.noise		MELEE_NOISE
+
+   local reg.attack.priority	2
+   local reg.attack.keys	-attack1
+   local reg.attack.callback	special_02
+   multiply reg.attack.dmg	2
+   local reg.attack.chargeamt	200%
+   local reg.attack.reqskill	5
+	add reg.attack.reqskill BASE_LEVEL_REQ
+
+   registerattack
+}
+
+{ [override] special_01_start
+	if ( PARRY_MODE ) callevent end_parry
+	playowneranim once sword_double_swing //change
+	playviewanim  ANIM_POKE
+	volume 10
+	playsound const.snd.weapon const.snd.maxvol SPECIAL01_SND
+}
+
+{ [override] special_02_start
+	if ( PARRY_MODE ) callevent end_parry
+	playowneranim once sword_double_swing //change
+	playviewanim  ANIM_SWIPE
+	if game.serverside
+	svplaysound 2 10 $get(ent_owner,scriptvar,'PLR_SOUND_SWORDREADY')
+}
+
+{ special_02_strike
+	if game.serverside
+	callexternal ent_owner ext_sphere_token enemy RANGE_SWIPE $get(ent_owner,origin)
+	setvard SWIPE_LIST $get(ent_owner,scriptvar,'PLR_SCAN_TOKEN')
+	dbg special_02_end SWIPE_LIST
+	if SWIPE_LIST isnot none
+	local N_SWIPIES $get_token_amt(SWIPE_LIST)
+	if N_SWIPIES > 0
+	setvard OWNER_ORG $get(ent_owner,origin)
+	setvard OWNER_ANG $get(ent_owner,angles)
+	calleventloop N_SWIPIES swipe_targets
+}
+
+{ swipe_targets
+	local CUR_TARGET $get_token(SWIPE_LIST,game.script.iteration)
+
+	//dont swipe players outside of PVP
+	if ( $get(CUR_TARGET,isplayer) )
+	{
+		if !GAME_PVP
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	//within the cone
+	if $get(CUR_TARGET,isalive)
+	local TARG_ORG $get(CUR_TARGET,origin)
+	if $within_cone2D(TARG_ORG,OWNER_ORG,OWNER_ANG,30)
+
+	//no swiping through walls
+	local TRACE_START OWNER_ORG
+	local TRACE_END TARG_ORG
+	if ( !$get(CUR_TARGET,isplayer) )
+	{
+		//adjust for origin center
+		local HALF_MON_HEIGHT $get(CUR_TARGET,height)
+		divide HALF_MON_HEIGHT 2
+		vectoradd TRACE_END z HALF_MON_HEIGHT
+	}
+	local TRACE_CHECK $get_traceline(TRACE_START,TRACE_END,worldonly)
+	if TRACE_CHECK equals TRACE_END
+
+	//pow
+	local STAT_STR skill.
+	stradd STAT_STR MELEE_STAT
+
+	local STAT_SKILL $get(ent_owner,STAT_STR)
+	local STAT_FLOAT STAT_SKILL
+	multiply STAT_FLOAT 0.01
+
+	local HIT_CHANCE 100
+	subtract HIT_CHANCE MELEE_ACCURACY
+	local HIT_CHANCE $get_skill_ratio(STAT_FLOAT,MELEE_ACCURACY,100) //calc
+
+	local DMG_SWIPE MELEE_DMG
+	local DMG_SWIPE $get_skill_ratio(STAT_FLOAT,0,MELEE_DMG)
+	divide DMG_SWIPE 2 //no need for optimal range
+
+	dbg swipe_targets Hitchance HIT_CHANCE dmg DMG_SWIPE
+
+	xdodamage CUR_TARGET direct DMG_SWIPE HIT_CHANCE ent_owner ent_owner STAT_STR MELEE_DMG_TYPE
+}
+
+{ game_+attack2
+
+	if !PARRY_MODE
+	if game.time > NEXT_PARRY
+	setvard PARRY_MODE 1
+	setvard game.effect.canattack 0	
+	splayviewanim ent_me ANIM_PARRY
+}
+
+{ game_-attack2
+	if PARRY_MODE
+	callevent end_parry
+}
+
+{ game_takedamage //PARAM1=attacker  PARAM2=inflictor? PARAM3=dmg PARAM4=dmg_type - use returndata to alter incoming damage
+	if PARRY_MODE
+	if ( PARAM4 contains effect ) local EXIT_SUB 1
+	if ( PARAM4 contains magic ) local EXIT_SUB 1
+	if !EXIT_SUB
+	local TARG_ORG $get(PARAM1,origin)
+	setvard OWNER_ORG $get(ent_owner,origin)
+	setvard OWNER_ANG $get(ent_owner,angles)
+	if $within_cone2D(TARG_ORG,OWNER_ORG,OWNER_ANG,30)
+	local DMG_TAKEN PARAM3
+	local DMG_BLOCKED PARAM3
+	multiply DMG_TAKEN 0.25
+	multiply DMG_BLOCKED 0.75
+	setdmg dmg DMG_TAKEN
+	if ( DMG_BLOCKED > 0 ) local DMG_BLOCKED $int(DMG_BLOCKED)
+	stradd DMG_BLOCKED pts
+	playermessage Polearm blocked DMG_BLOCKED damage.
+}
+
+//prevent idle playing while in parry
+{ [override] item_idle
+
+}
+
+{ end_parry
+	setvard NEXT_PARRY game.time
+	add NEXT_PARRY 1.0
+	setvard PARRY_MODE 0
+	setvard game.effect.canattack 1
+	splayviewanim ent_me ANIM_IDLE
+}

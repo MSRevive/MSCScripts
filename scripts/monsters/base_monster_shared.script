@@ -1,0 +1,1651 @@
+//Thothie
+//Bits shared by both the old and new AI
+//(hope maybe to congragate both AI's eventually)
+//Currently handled:
+//npcatk_get_postspawn_properties
+//- step size adjustment
+//- NPC_RANGED set to 1 if ATTACK_RANGE > 255
+//npcatk_check_if_scared_of
+//- checks if monster is scared of danger sound (so fire immune beasts are not scared of volcano, for instance)
+//game_parry
+//- parry messages
+//functions:
+//npcatk_go_home - sends monster home so long as he sees no enemy
+//npcatk_to_ground - puts monster on ground
+//npcatk_suspend_attack <DURATION> - suspend attack ability (similar to npcatk_suspend_ai)
+//npcatk_resume_attack - resumes attack ability
+//npcatk_flank - flanks random	pos around target (iffy)
+//npcatk_find_distant - find most distant player target (stores in: NPC_MOST_DISTANT)
+//bm_gold_spew //PARAM1=gold_per_bag PARAM2=bags_per_player PARAM3=dist_from_mon PARAM4=min#bags PARAM5 max#bags
+//debug_beam - simplified, point-based beam drawing for debuggary
+//npcatk_suspend_movement //<anim> [duration] suspends movement (but not AI) and loops anim until...
+//npcatk_resume_movement //...is called - useful for spell casting and the like
+
+//preset external consts
+//these apply when NPC_IS_BOSS is set to 1 at npc_post_spawn
+//NPC_BOSS_REGEN_RATE			//[0.1] ratio of health boss regains per minute
+//NPC_BOSS_REGEN_FREQ			//[60] how often regeneration pulses occur
+//NPC_BOSS_RESTORATION			//[0.75] ratio of health to restore when boss slays all players on server
+//NPC_RETURN_HOME				//return home on kill, so long as no new targets acquired (uses newer, simplified system)
+
+//unset external vars (optional)
+//NPC_IS_BOSS					//flags monster as boss
+//NPC_NEVER_UNAGRO				//never calm down from lack of seeing enemy in awhile
+
+//- Proximity activated: (new, cuz we have too many monsters that work this way and fail to respond)
+//NPC_PROX_ACTIVATE 1			//suspend AI on spawn, wait for player to come..
+//NPC_PROXACT_RANGE 512			//within this range then activate...
+//NPC_PROXACT_EVENT event_name	//this event.
+//NPC_PROXACT_DELAY 0			//delay before calling NPC_PROXACT_EVENT when activated
+//NPC_PROXACT_IFSEEN 1			//activate if a player can see me, or targets me, regardless of range
+//NPC_PROXACT_FOV 1				//Require player must be in field of vision to activate
+//NPC_PROXACT_CONE 90			//effect field of vision for FOV activation
+//>NPC_PROXACT_TRIPPED 0		//this sets to 1 after monster is activated
+//>NPC_PROXACT_PLAYERID			//player that activated me will be stored here
+
+//DROP_GOLD 		[1/0] (Whether to drop gold)
+//DROP_GOLD_MIN		(Min amount to drop)
+//DROP_GOLD_MAX		(Max amount to drop)
+//DROP_GOLD_AMT		$rand(10,20) //simpler variant of above
+//
+//DROP_ITEM[x] 		(Itemname)
+//DROP_ITEM[x]_CHANCE 	(Chance the item will drop)
+//
+//DROPS_CONTAINER		[1/0] (creates a special container on death)
+//CONTAINER_DROP_CHANCE	% chance to drop
+//CONTAINER_SCRIPT		[script name, eg chests/quiver_of_poison]
+//CONTAINER_PARAM[1-4]	extra params for container (varies with script)
+//
+//GOLD_BAGS 1|0 - used to make circles of gold bags for high end beasties
+//GOLD_BAGS_PPLAYER - number of bags to spawn per player on server
+//GOLD_PER_BAG - amount of gold in each bag
+//GOLD_RADIUS - distance to spawn bags from monster
+//GOLD_MAX_BAGS - maximum number of gold bags
+//
+//NPC_GIVE_EXP - adjustable XP amount
+//NPC_BASE_EXP - only used for monsters that are built using includes of other monsters, prevents them from having the same xp
+#scope server
+
+//{ game_precache
+//	if !I_R_PET
+//	add G_PRECACHE 1
+//}
+
+{
+	//boss regen rate and total heal ratios
+	const NPC_BOSS_REGEN_RATE 0.1
+	const NPC_BOSS_REGEN_FREQ 60.0
+	const NPC_BOSS_RESTORATION 0.5
+
+	setvard NPC_MAX_UNSEEN_TIME 120.0
+
+	//normal monsters tripple at 8 players
+	//const NPC_NORM_EXP_ADJ_NEW 0.1
+	//const NPC_NORM_EXP_ADJ_OLD 0.1 //these now match as the old AI can now multi damage as well
+	//const NPC_NORM_EXP_ADJ 0.1
+	//const NPC_NORM_HP_ADJ 0.2
+	//const NPC_NORM_DMG_ADJ 0.2
+	//const NPC_NORM_CAP 2.5
+
+	//boss monsters double at 8 players
+	//const NPC_BOSS_EXP_ADJ_NEW 0.05
+	//const NPC_BOSS_EXP_ADJ_OLD 0.05
+	//const NPC_BOSS_HP_ADJ 0.1
+	//const NPC_BOSS_DMG_ADJ 0.1
+	//const NPC_BOSS_CAP 2.0
+
+	//types of damages monsters cant parry (also anything with _effect)
+	const NPC_CANT_PARRY_TYPES "target;magic"
+
+	//const PLACE_HOLDER 0
+
+	//base_npc_attack_shared
+	const DEF_STEP_SIZE 32
+	//const NPC_MISSES_ALLOWED 4 //higher for faster attacking monsters
+	//const NPC_FLANK_TIME 1.0 //lower for faster monsters
+	const PARRY_TYPE "parried!" //change this for some crits that obviously can't parry (such as spiders = "dodged!")
+
+	//setvard NPC_ATTACK_MISS 0
+}
+
+{ game_spawn
+	setvard NPC_SPAWN_TIME game.time
+
+	if ( G_SIEGE_MAP )
+	{
+		if $get_token_amt(G_CRITICAL_NPCS) > 0
+		callevent 0.1 npcatk_setup_siege
+	}
+}
+
+{ npc_spawn
+
+	callevent npc_initialdrop
+}
+
+{ npcatk_setup_siege
+
+	//in siege maps, 1 in 3 monsters ignore players until struck, prefering to go for the critical NPCs
+	if !NPC_NO_SIEGE_HUNT //Thothie FEB2009 - give option to flag monsters not to hunt critical NPCs
+
+	if $get(ent_me,race) isnot hguard
+	if $get(ent_me,race) isnot human
+	if $rand(1,3) == 1
+
+	if ( $lcase(game.map.name) contains gertenheld_forest )
+	{
+		//Thothie FEB2009 - goblins on gertenheld_forest shouldn't hunt for Jerdid
+		if $get(ent_me,race) equals goblin
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	setvard NPC_IGNORE_PLAYERS 1
+	callevent npcatk_npc_hunter_loop
+
+	if ( G_DEVELOPER_MODE )
+	{
+		setprop ent_me rendermode 5 //for visual debug
+		setprop ent_me renderamt 255
+	}
+}
+
+{  npc_initialdrop
+
+	local ORIGIN game.monster.origin
+	vectoradd ORIGIN (0,0,5)
+	setorigin ORIGIN
+	setvard NPC_HOME_LOC $get(ent_me,origin)
+	setvard NPC_HOME_ANG $get(ent_me,angles)
+	//drop_to_floor	//Start on ground.  
+	//It's in its own event so certain monsters (flying/swimming) can ignore this
+}
+
+{ npc_post_spawn //this was setup before I realized there was a game_postspawn function - this happens 1.0 seconds after npc_spawn, so still useful
+
+	if ( NPC_NO_AGRO )
+	{
+		callevent npcatk_suspend_ai
+	}
+
+	if ( NPC_NO_ROAM ) roam 0
+	if ( NPC_FORCE_ROAM ) roam 1
+
+	if ( NPC_IS_BOSS )
+	{
+		setvard NPC_BOSS_KILLS ''
+		setvard NPC_BOSS_KNOWS ''
+		setvard NPC_BOSS_KNOWS_AMTS ''
+		//callexternal GAME_MASTER gm_clear_boss_kills //no longer in use
+		callevent 0.1 npcatk_boss_regen
+	}
+
+//only needed for older buggeir version of chapel
+//	if ( G_SETCLIP )
+//	{
+//		if ( $lcase(game.map.name) equals chapel )
+//		{
+//			local IGNORE_CLIP 0
+//			local MY_NAME $get(ent_me,name)
+//			local MY_NAME $lcase(MY_NAME)
+//			if ( MY_NAME contains archer ) local IGNORE_CLIP 1
+//			if ( MY_NAME contains ranger ) local IGNORE_CLIP 1
+//			if ( MY_NAME contains boar ) local IGNORE_CLIP 1
+//			if ( MY_NAME contains rat ) local IGNORE_CLIP 1
+//			setmonsterclip IGNORE_CLIP
+//		}
+//	}
+	//FEB2010_08 - moved setskilllevel to base_npc
+
+   if( DROP_GOLD )
+   {
+		if( DROP_GOLD_MAX != 0 ) local L_DROP_GOLD $rand(DROP_GOLD_MIN,DROP_GOLD_MAX)
+		if( DROP_GOLD_AMT != 0 )
+		{
+			//FEB2010_06 - allow override of gold amount by upper script
+			if ( OVR_DROP_GOLD_AMT equals 'OVR_DROP_GOLD_AMT' )
+			{
+				local L_DROP_GOLD DROP_GOLD_AMT
+			}
+			else
+			{
+				local L_DROP_GOLD OVR_DROP_GOLD_AMT
+			}
+		}
+		//FEB2011_27 - adjust gold drop by XP adj
+		if ( NPC_TOTAL_MULTI > 0 ) multiply L_DROP_GOLD NPC_TOTAL_MULTI
+		gold L_DROP_GOLD
+   }
+
+	if ( !OVERRIDE_NODROP )
+	{
+		if G_NO_DROP
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	if !NPC_NO_DROPS
+	if( $rand(1,100) < DROP_ITEM1_CHANCE )
+	{
+		//dbg got DROP_ITEM1
+		giveitem DROP_ITEM1
+	}
+	if( $rand(1,100) < DROP_ITEM2_CHANCE )
+	{
+		//dbg got DROP_ITEM2
+		giveitem DROP_ITEM2
+	}
+	if( $rand(1,100) < DROP_ITEM3_CHANCE )
+	{
+		giveitem DROP_ITEM3
+	}
+	if( $rand(1,100) < DROP_ITEM4_CHANCE )
+	{
+		giveitem DROP_ITEM4
+	}
+	if( $rand(1,100) < DROP_ITEM5_CHANCE )
+	{
+		giveitem DROP_ITEM5
+	}
+}
+
+#include [server] monsters/base_anti_stuck
+
+//Player first sees a monster
+
+{ game_targeted_by_player //1: Player
+
+	//dbg targeted: rng: $get(PARAM1,range) b_prxact: NPC_PROX_ACTIVATE mrng: NPC_PROXACT_RANGE ifseen: NPC_PROXACT_IFSEEN fov: NPC_PROXACT_CONE trip: NPC_PROXACT_TRIPPED
+
+	if ( NPC_CRITICAL )
+	{
+		//treat critical NPC's as players in terms of viewable health
+		callexternal PARAM1 ext_show_hbar_monster $get(ent_me,id) 1
+	}
+
+	if ( NPC_BATTLE_ALLY )
+	{
+		//treat critical NPC's as players in terms of viewable health
+		callexternal PARAM1 ext_show_hbar_monster $get(ent_me,id) 1
+	}
+
+	//FEB2009 - fixing bugs with prox activation
+	if ( NPC_PROX_ACTIVATE )
+	{
+		if !NPC_PROXACT_TRIPPED
+		if ( $get(PARAM1,range) < NPC_PROXACT_RANGE ) callevent npcatk_prox_activated $get(PARAM1,id) "spottedme_inrange"
+		if !NPC_PROXACT_TRIPPED
+		if NPC_PROXACT_IFSEEN
+		callevent npcatk_prox_activated $get(PARAM1,id) "spottedme"
+	}
+
+	//works, but annoying
+	//callexternal PARAM1 ext_show_hbar_monster $get(ent_me,id)
+
+	if !DID_HELP_TIP
+	setvard DID_HELP_TIP 1
+
+	local TEXT "You are looking at "
+	stradd TEXT game.monster.name
+	stradd TEXT ".|It's hostile! Kill it!"
+	stradd TEXT "|You gain skill this way.  Eventually gaining skill"
+	local TEXT2 "|in a weapon will earn you a title and access to"
+	stradd TEXT2 "|new abilities."
+	helptip PARAM1 help_monster "Monster" TEXT TEXT2
+}
+
+{ [server] bm_gold_spew //PARAM1=gold_per_bag PARAM2=bags_player PARAM3=dist_from_mon PARAM4=min#bags PARAM5 max#bags
+
+	local OUT_PAR1 PARAM1
+	local OUT_PAR2 PARAM2
+	local OUT_PAR3 PARAM3
+	local OUT_PAR4 PARAM4
+	local OUT_PAR5 PARAM5
+
+	//dbg bm_gold_spew ( PARAM1 PARAM2 PARAM3 PARAM4 PARAM5 ) gold_per_bag OUT_PAR1 bags_pplayer OUT_PAR2 dist OUT_PAR3 minbags OUT_PAR4 maxbags OUT_PAR5
+
+	callexternal GAME_MASTER gold_spew OUT_PAR1 OUT_PAR2 OUT_PAR3 OUT_PAR4 OUT_PAR5 $get(ent_me,origin)
+}
+
+{ [server] npcatk_get_postspawn_properties //moved from base_npc - called before npc_post_spawn
+
+	if ( !$get(GAME_MASTER,exists) ) createnpc game_master $vec(20000,-10000,-20000)
+
+	if ( NPC_RANGED equals 'NPC_RANGED' )
+	{
+		if ( ATTACK_RANGE > 255 ) setvard NPC_RANGED 1
+		if ( MOVE_RANGE > 255 ) setvard NPC_RANGED 1
+	}
+
+	setvard NPC_SPAWN_LOC game.monster.origin
+	setvard NPC_SPAWN_ANGLES game.monster.angles
+
+	//==== STEP SIZE CONTROL
+
+	
+	setvard NPC_HEIGHT game.monster.height
+	setvard NPC_HALF_HEIGHT NPC_HEIGHT
+	divide NPC_HALF_HEIGHT 2 //SEP2009 - fixed typo here
+	setvard MIN_ATTACK_RANGE NPC_HALF_HEIGHT
+	add MIN_ATTACK_RANGE 37 //half human player height
+	add MIN_ATTACK_RANGE 10
+	//if ( ATTACK_HITRANGE <= MIN_ATTACK_RANGE ) //dbg Warning: Monster's atkrng is below minimum required! ( is: ATTACK_HITRANGE min: MIN_ATTACK_RANGE )
+
+	if ( NPC_PROX_ACTIVATE )
+	{
+		if !NPC_PROXACT_TRIPPED //FEB2009 maybe tripped before postspawn props are done
+		callevent npcatk_suspend_ai "proxact:postspawn_props"
+		callevent npcatk_proxact_scan
+	}
+}
+
+{ [server] adj_step_size
+
+	if !G_NO_STEP_ADJ
+	if !NO_STEP_ADJ
+	if ( game.monster.race equals human )
+	{
+		if !NPC_BATTLE_ALLY
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	local L_MAP_NAME game.map.name
+	if ( L_MAP_NAME equals 'unrest2_beta1' ) local EXIT_SUB 1
+	if ( L_MAP_NAME equals 'unrest2' ) local EXIT_SUB 1
+	if ( EXIT_SUB )
+	{
+		//unrest2 has strange stuff
+		maxslope 90
+		stepsize 1000
+	}
+	if !EXIT_SUB
+
+	local FINAL_STEPSIZE DEF_STEP_SIZE
+	if ( game.monster.height < DEF_STEP_SIZE )
+	{
+		local FINAL_STEPSIZE game.monster.height
+		if ( game.monster.height < 18 ) local FINAL_STEPSIZE 18
+	}
+		
+	
+	stepsize FINAL_STEPSIZE //'sparimental
+	//maxslope 60 //'sparimental (causes rock climbing on many maps)
+}
+
+{ [server] npcatk_check_if_scared_of //param1=target to check
+
+	//stops monsters from fleeing from dangers they are immune to
+
+	setvard I_WILL_FLEE 1
+
+	//MAY2010_25 - Immune to player damage, and thus do not fear it
+	//- be good if we could set this for invincible's as well, but $get(<targ>,invincible) doesn't seem to work right
+	if ( NPC_NO_PLAYER_DMG )
+	{
+		if ( $get(PARAM1,isplayer) ) setvard I_WILL_FLEE 0
+	}
+
+	if ( IMMUNE_FIRE == 1 )
+	{
+		if ( $get(PARAM1,scriptvar,I_DO_FIRE_DAMAGE) == 1 ) setvard I_WILL_FLEE 0
+	}
+
+	if ( IMMUNE_COLD == 1 )
+	{
+		if ( $get(PARAM1,scriptvar,I_DO_COLD_DAMAGE) == 1 ) setvard I_WILL_FLEE 0
+	}
+
+	if ( IMMUNE_LIGHTNING == 1 )
+	{
+		if ( $get(PARAM1,scriptvar,I_DO_LIGHTNING_DAMAGE) == 1 ) setvard I_WILL_FLEE 0
+	}
+
+	if ( IMMUNE_POISON == 1 )
+	{
+		if ( $get(PARAM1,scriptvar,I_DO_POISON_DAMAGE) == 1 ) setvard I_WILL_FLEE 0
+	}
+}
+
+//{ [server] npcatk_to_ground
+//
+//	local MY_POS game.monster.origin
+//	local MY_GROUND $get_ground_height(MY_POS)
+//	add MY_GROUND 1
+//	local MY_X $vec.x(MY_POS)
+//	local MY_Y $vec.y(MY_POS)
+//	setorigin ent_me (MY_X,MY_Y,MY_GROUND)
+//}
+
+{ game_damaged_other
+
+	setvard NPC_ATTACK_MISS 0
+}
+
+{ npcatk_suspend_attack //PARAM1 = time to resume
+
+	if !NPC_NO_ATTACK
+	setvard NPC_NO_ATTACK 1
+	callevent PARAM1 npcatk_resume_attack
+}
+
+{ npcatk_resume_attack
+
+	if NPC_NO_ATTACK
+	setvard NPC_NO_ATTACK 0
+}
+
+{ npcatk_flank //<param1> flank target
+
+	local NEW_DEST $get(PARAM1,origin)
+	local R_ANG $rand(0,359)
+	vectoradd NEW_DEST $relpos($vec(0,R_ANG,0),$vec(0,MONSTER_WIDTH,0))
+	callevent npcatk_suspend_attack 2.0
+	setvard MOVE_TARGET_IS_NPC 0
+	setvard NPC_MOVEDEST_TARGET NEW_DEST
+	setmovedest NPC_MOVEDEST_TARGET MONSTER_WIDTH
+}
+
+{ flank_thrash_move_dest
+	if AM_FLANKING
+	setmovedest NPC_FLANK_REPOS 5
+	callevent 0.1 flank_thrash_move_dest
+}
+
+{ npcatk_resume_ai
+	setvard AM_FLANKING 0
+}
+
+{ game_reached_dest
+	if AM_FLANKING
+	if $dist(game.monster.origin,NPC_FLANK_REPOS) <= 2
+	//dbg temp reached flank pos
+	callevent npcatk_resume_ai
+}
+
+//{ debug_beam //<(start)> [end] [color]
+//	//if [end] not provided, draws a 64 unit beam straight up
+//	//if [color] no provided, beam is purple
+//
+//	if ( PARAM3 equals 'PARAM3' ) local BEAM_COLOR (255,0,255)
+//	if ( PARAM3 isnot 'PARAM3' ) local BEAM_COLOR PARAM3
+//	local BEAM_DURATION 1.0
+//	local BEAM_START PARAM1
+//	if ( PARAM2 equals 'PARAM2' ) local BEAM_END BEAM_START
+//	if ( PARAM2 isnot 'PARAM2' ) local BEAM_END PARAM2
+//	vectoradd BEAM_END $relpos($vec(0,0,0),$vec(0,0,64))
+//	effect beam point laserbeam.spr 20 BEAM_START BEAM_END BEAM_COLOR 255 0.7 BEAM_DURATION
+//}
+
+//{ npcatk_attackenemy //old AI
+//	callevent npcatk_check_miss
+//}
+//
+//{ npcatk_attack //new AI
+//	callevent npcatk_check_miss
+//}
+
+{ npcatk_range_adj
+
+	//doesn't adjust the hitrange directly, but returns adjusted range as ADJ_RANGE
+	//best if used just prior to dodamage in model attack event
+
+	if ( !NEW_AI ) local TARG $get(HUNT_LASTTARGET,id)
+	if ( NEW_AI ) local TARG $get(NPCATK_TARGET,id)
+
+	local TARGET_HALFHEIGHT $get(TARG,height)
+	divide TARGET_HALFHEIGHT 2
+	capvar TARGET_HALFHEIGHT 37 2000
+
+	setvard ADJ_RANGE ATTACK_RANGE
+	if ATTACK_RANGE < 256 //do not adjust ranges for archers
+
+	local TARG_POS $get(TARG,origin)
+	local MY_Z $vec.z(game.monster.origin)
+	local TARG_Z $vec.z(TARG_POS)
+	local Z_DIFF TARG_Z
+	add MY_Z TARGET_HALFHEIGHT
+	subtract Z_DIFF MY_Z
+	if ( Z_DIFF < 0 ) local Z_DIFF $neg(Z_DIFF)
+	local FINAL_ATTACK_RANGE ATTACK_RANGE
+	if ( Z_DIFF > TARGET_HALFHEIGHT ) // PLAYER_HALFHEIGHT
+	{
+		setvard ADJ_RANGE ATTACK_HITRANGE
+		////dbg temp adj hitrange ( Z_DIFF ) from ( ATTACK_RANGE ) ( ADJ_RANGE )
+	}
+}
+
+{ game_parry
+
+	playermessage $get(PARAM1,id) Your attack was PARRY_TYPE
+}
+
+
+{ npcatk_find_distant //<max_range> returns NPC_MOST_DISTANT - most distant player in range of PARAM1
+
+	setvard NPC_MOST_DISTANT unset
+	setvard FD_MAX_RANGE PARAM1
+	if ( FD_MAX_RANGE equals 'PARAM1' ) setvard FD_MAX_RANGE 1024
+	getplayersnb FD_PLIST
+	setvard FD_LOOP_COUNT 0
+	calleventloop $get_token_amt(FD_PLIST) npcatk_fd_loop rng FD_MAX_RANGE
+	//dbg npcatk_find_distant:string FD_PLIST result: $get(NPC_MOST_DISTANT,name)
+}
+
+{ npcatk_fd_loop
+
+	local CUR_PLAYER $get_token(FD_PLIST,FD_LOOP_COUNT)
+	add FD_LOOP_COUNT 1
+
+	local DO_NOT_STORE 0
+	if ( $get(CUR_PLAYER,range) > FD_MAX_RANGE ) local DO_NOT_STORE 1
+	if ( !$get(CUR_PLAYER,isalive) ) local DO_NOT_STORE 1
+	if !DO_NOT_STORE
+	if $get(CUR_PLAYER,range) > $get(NPC_MOST_DISTANT,range)
+	//dbg npcatk_fd_loop:STORED: $get(CUR_PLAYER,name)
+	setvard NPC_MOST_DISTANT CUR_PLAYER
+}
+
+{ npcatk_proxact_scan
+
+	if !NPC_PROXACT_TRIPPED
+	getplayersnb LPLAYERS
+	setvard NPC_PROX_LOOP 0
+	setvard NPC_PROXACT_INRANGE 0
+	calleventloop $get_token_amt(LPLAYERS) npcatk_proxact_lplayers
+	if ( NPC_PROXACT_INRANGE ) callevent npcatk_prox_activated NPC_PROXACT_SCANID "player_scan"
+
+	if !NPC_PROXACT_TRIPPED //might get reset above
+	callevent 1.0 npcatk_proxact_scan
+}
+
+//FEB2009 - fixed various bugs regarding proximity activation
+{ npcatk_prox_activated //PARAM1 = activating player PARAM2 = reason
+
+	dbg npcatk_prox_activated: $get(PARAM1,name) PARAM2
+
+	if ( PARAM2 isnot struck )
+	{
+		if ( NPC_PROXACT_FOV )
+		{
+			local TEST_ORIG $get(PARAM1,origin)
+			if !$within_cone2D(TEST_ORIG,game.monster.origin,game.monster.angles,NPC_PROXACT_CONE)
+			if ( G_DEVELOPER_MODE ) messageall green $get(ent_me,name) npcatk_prox_activated $get(PARAM1,name) NPC_PROXACT_CONE $within_cone2D(TEST_ORIG,game.monster.origin,game.monster.angles,NPC_PROXACT_CONE)
+			local EXIT_SUB 1
+			dbg npcatk_prox_activated: Not in FOV!
+		}
+	}
+	if !EXIT_SUB
+
+	setvard NPC_PROXACT_PLAYERID PARAM1
+	if !NPC_PROXACT_TRIPPED
+	setvard NPC_PROXACT_TRIPPED 1
+	if ( NPC_PROXACT_DELAY equals 'NPC_PROXACT_DELAY' )
+	{
+		callevent NPC_PROXACT_EVENT
+	}
+	else
+	{
+		callevent NPC_PROXACT_DELAY NPC_PROXACT_EVENT
+	}
+}
+
+{ npcatk_proxact_lplayers //get player list, set PLAYER_INRANGE
+	local CUR_PLAYER $get_token(LPLAYERS,game.script.iteration)
+	//if ( G_DEVELOPER_MODE ) messageall green nup: $get(ent_me,name) npcatk_proxact_lplayers $get(CUR_PLAYER,range) vs NPC_PROXACT_RANGE
+	if $get(CUR_PLAYER,range) < NPC_PROXACT_RANGE
+	setvard NPC_PROXACT_INRANGE 1
+	setvard NPC_PROXACT_SCANID CUR_PLAYER
+}
+
+{ game_heardsound
+
+	if !NPC_HEARDSOUND_OVERRIDE
+
+	if ( NPC_PROX_ACTIVATE )
+	{
+		if !NPC_PROXACT_TRIPPED
+		local LAST_HEARD $get(ent_lastheard,id)
+		if $get(LAST_HEARD,isplayer)
+	
+		if $get(LAST_HEARD,range) < NPC_PROXACT_RANGE
+		callevent npcatk_prox_activated LAST_HEARD LAST_HEARD "hearing"
+	}
+}
+
+//{ gen_cmd
+//	PARAM1 PARAM2 PARAM3 PARAM4 PARAM5 PARAM6
+//}
+
+//{ npcatk_get_nplayers
+//
+//	//determine party strength for monster scaling
+//
+//	local TOTAL_HP game.players.totalhp
+//	local ONE_PLAYER G_WARN_HP
+//	multiply ONE_PLAYER 2.0
+//	if ( ONE_PLAYER < 500 ) local ONE_PLAYER 500
+//	setvard NPC_PARTY_STRENGTH TOTAL_HP
+//	divide NPC_PARTY_STRENGTH ONE_PLAYER
+//	setvard NPC_PARTY_STRENGTH $int(NPC_PARTY_STRENGTH)
+//	if ( NPC_PARTY_STRENGTH < 1 ) setvard NPC_PARTY_STRENGTH 1
+//}
+
+//{ npcatk_ramp_monster
+//
+//	//ramp monters based on party strength
+//
+//	//get party strength
+//	callevent npcatk_get_nplayers
+//	local N_PLAYERS NPC_PARTY_STRENGTH
+//
+//	subtract N_PLAYERS 1
+//
+//	if N_PLAYERS > 0
+//
+//	if ( N_PLAYERS < G_CVAR_DIFF ) local N_PLAYERS G_CVAR_DIFF
+//
+//	//Old AI can't adamage adjust so less XP bonus
+//	if ( NEW_AI )
+//	{
+//		local NPC_BOSS_EXP_ADJ NPC_BOSS_EXP_ADJ_NEW
+//		local NPC_NORM_EXP_ADJ NPC_NORM_EXP_ADJ_NEW
+//	}
+//	if ( !NEW_AI )
+//	{
+//		local NPC_BOSS_EXP_ADJ NPC_BOSS_EXP_ADJ_OLD
+//		local NPC_NORM_EXP_ADJ NPC_NORM_EXP_ADJ_OLD
+//	}
+//
+//	//bosses ( >=1500hp ) ramp differently than minions
+//	if ( NPC_MAXHP < 1500 )
+//	{
+//		//normal monsters tripple at 8 players
+//		local EXP_ADJ NPC_NORM_EXP_ADJ //0.1
+//		local HP_ADJ NPC_NORM_HP_ADJ //0.25
+//		local DMG_ADJ NPC_NORM_DMG_ADJ //0.20
+//		local MAX_CAP NPC_NORM_CAP //3.0
+//	}
+//
+//	if ( NPC_MAXHP >= 1500 )
+//	{
+//		//boss monsters double at 8 players
+//		local EXP_ADJ NPC_BOSS_EXP_ADJ //0.05
+//		local HP_ADJ NPC_BOSS_HP_ADJ //0.1
+//		local DMG_ADJ NPC_BOSS_DMG_ADJ //0.1
+//		local MAX_CAP NPC_BOSS_CAP //2.0
+//	}
+//
+//	multiply EXP_ADJ N_PLAYERS
+//	multiply HP_ADJ N_PLAYERS
+//	multiply DMG_ADJ N_PLAYERS
+//
+//
+//	//increase XP by 5-10% / player
+//	if ( NPC_GIVE_EXP > 0 )
+//	{
+//		local F_CAP NPC_GIVE_EXP
+//		multiply F_CAP MAX_CAP
+//
+//		local FINAL_XP NPC_GIVE_EXP
+//		multiply FINAL_XP EXP_ADJ
+//		add FINAL_XP NPC_GIVE_EXP
+//		capvar FINAL_XP NPC_GIVE_EXP F_CAP
+//		setvard NPC_GIVE_EXP FINAL_XP
+//		skilllevel NPC_GIVE_EXP
+//	}
+//
+//	//increase HP 10-25% / player
+//	if ( NPC_MAXHP > 0 )
+//	{
+//		local F_CAP NPC_MAXHP
+//		multiply F_CAP MAX_CAP
+//		//dbg temp basehp NPC_MAXHP x cap MAX_CAP = max F_CAP
+//
+//		local FINAL_HP NPC_MAXHP
+//		multiply FINAL_HP HP_ADJ
+//		add FINAL_HP NPC_MAXHP
+//		//dbg temp basehp NPC_MAXHP x adj HP_ADJ = FINAL_HP
+//		capvar FINAL_HP NPC_MAXHP F_CAP
+//		hp FINAL_HP
+//		setvard NPC_MAXHP FINAL_HP
+//	}
+//
+//	//increase damage 10-20% / player (make this code side as only works on new AI and doesnt affect some types of damage)	
+//	capvar DMG_ADJ 0 2.0
+//	add NPC_DMG_MULTI DMG_ADJ
+//	dmgmulti NPC_DMG_MULTI
+//	//add NPC_DMG_MULTI 1
+//}
+
+{ ext_super_lure //PARAM1=id PARAM2=race PARAM3=run/walk
+
+	local LURE_ID PARAM1
+	local LURE_RACE PARAM2
+	local LURE_RUNWALK PARAM3
+
+	//super lures attract monsters that have no valid targets
+	//they can be setup to attract only monsters of a paticular race
+	//and monsters can either walk or run to the target
+
+	//dbg ext_super_lure PARAM1 PARAM2 PARAM3
+
+	if $get(ent_me,isalive)
+	if !$get(NPCATK_TARGET,isalive)
+	if !$cansee(enemy)
+	if ( LURE_RACE isnot all )
+	{
+		if $get(ent_me,race) isnot LURE_RACE
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+	if $get(ent_me,race) isnot human
+	if $get(ent_me,race) isnot hguard
+	if ( LURE_RUNWALK equals run ) callevent npcatk_run
+	callevent npcatk_setmovedest PARAM1 32 "superlure"
+	setvard NPC_FORCED_MOVEDEST 1
+	setmovedest PARAM1 32
+	//dbg moving_to_superlure @ $get(LURE_ID,range)
+}
+
+{ npcatk_run
+
+	//dbg runmode_cuz PARAM1
+	setmoveanim ANIM_RUN
+	setvard AS_ATTACKING game.time
+	add AS_ATTACKING 1.0
+	if ( $get(NPCATK_TARGET,isalive) )
+	{
+		$get(NPCATK_TARGET,range) < ATTACK_MOVERANGE
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	//playanim once ANIM_RUN
+
+}
+
+{ npcatk_walk
+
+	//dbg walkmode_cuz PARAM1
+	setmoveanim ANIM_WALK
+	playanim once ANIM_WALK
+	setvard AS_ATTACKING game.time
+}
+
+{ game_struck
+
+	if ( NPC_XPTR )
+	{
+		if $get(ent_laststruck,isplayer)
+		setvard NPC_XPTR 0 //xp ramp over time ends on first struck
+	}
+
+	if ( NPC_NO_AGRO == 1 )
+	{
+		if SUSPEND_AI
+		setvard NPC_NO_AGRO 2
+		callevent npcatk_resume_ai
+		callevent npcatk_settarget $get(ent_laststruck,id) "go_agro"
+	}
+
+	//FEB2009 - prox act should activate if struck, regardless
+	if ( NPC_PROX_ACTIVATE )
+	{
+		if !NPC_PROXACT_TRIPPED
+		callevent npcatk_prox_activated $get(ent_laststruck,id) "struck"
+	}
+
+	setvard LAST_STRUCK_FOR PARAM1
+
+	if ( NPCATK_TARGET equals unset )
+	{
+		if $get(ent_laststruck,relationship,ent_me) isnot ally
+		if !$can_damage(ent_laststruck)
+		//holy crap I was attacked by something I can't kill, run!
+		callevent npcatk_flee $get(ent_laststruck,id) 768 5.0
+	}
+
+
+//	if ( $get(ent_me,hp) <= 0 )
+//	{
+//		setalive 0
+//		skilllevel 0 //stop sploiting invuln monsters
+//	}
+
+	//siege map system
+	if $get(ent_laststruck,isplayer)
+	if ( NPC_IGNORE_PLAYERS )
+	{
+		//siege map system
+		setvard NPC_LAST_STRUCK_TIME game.time
+		callevent 10.0 npcatk_resume_civi_hunt //if not struck again within 10 seconds, resume hunting NPCs (ie. ignore players)
+	}
+	setvard NPC_IGNORE_PLAYERS 0
+}
+
+{ npcatk_resume_civi_hunt
+
+	//siege map system
+
+	if !NPC_IGNORE_PLAYERS
+
+	local TIME_SINCE_STRUCK game.time
+	subtract TIME_SINCE_STRUCK NPC_LAST_STRUCK_TIME
+	if TIME_SINCE_STRUCK > 8
+	callevent npcatk_clear_targets "not_struck"
+	setvard NPC_IGNORE_PLAYERS 1
+	callevent npcatk_npc_hunter_loop
+}
+
+{ npcatk_npc_hunter_loop
+
+	//siege map system: pick a random critical NPC to hunt, if current target invalid/dead
+
+	if NPC_IGNORE_PLAYERS
+	callevent 5.0 npcatk_npc_hunter_loop
+	local N_CRITS $get_token_amt(G_CRITICAL_NPCS)
+	local RND_CRIT $rand(0,N_CRITS)
+	if !$get(NPCATK_TARGET,isalive)
+	callevent npcatk_settarget $get_token(G_CRITICAL_NPCS,RND_CRIT)
+}
+
+{ game_damaged //PARAM1=attacker PARAM2=dmg PARAM3=dmg_type Param4=AccuracyRoll
+
+	//new internalized parry system
+
+	local SINCE_SPAWN game.time
+	subtract SINCE_SPAWN NPC_SPAWN_TIME
+	if ( SINCE_SPAWN < 2.0 )
+	{
+		if !NPC_OVERRIDE_DEATH
+		if ( $get(PARAM1,relationship,ent_me) equals enemy ) local BLOCK_PREMATURE_DAMAGE 1
+		if ( $get(PARAM1,isplayer) ) local BLOCK_PREMATURE_DAMAGE 1
+		if BLOCK_PREMATURE_DAMAGE
+		setdmg dmg 0
+		setdmg hit 0
+		returndata 0
+	}
+
+	if ( NPC_NO_PLAYER_DMG )
+	{
+		//character is immune to player damage
+		//function added DEC2008a (took us awhile to figure this out)
+		if $get(PARAM1,isplayer)
+		setdmg dmg 0
+		setdmg hit 0
+		returndata 0
+	}
+
+	if MONSTER_PARRY > 0
+
+	if ( NPC_CANT_PARRY_TYPES contains PARAM3 ) local NO_PARRY 1
+	if ( PARAM3 contains effect ) local NO_PARRY 1
+	if !NO_PARRY
+
+	local ACCU_ROLL $rand(PARAM4,100)
+	local PARRY_ROLL $rand(1,MONSTER_PARRY)
+	if ( PARRY_ROLL > 90 ) local PARRY_ROLL 90
+
+	//if ( G_DEVELOPER_MODE ) messageall green NPC_PARRY: PARRY_ROLL vs ACCU_ROLL ( PARAM3 )
+	
+	if PARRY_ROLL > ACCU_ROLL
+	local ATTACKER_ID PARAM1
+	callevent game_parry ATTACKER_ID
+	returndata 0
+}
+
+{ start_running //external/params call - start running when spawned
+	callevent 0.1 cycle_up
+	callevent 0.2 npcatk_run
+}
+
+//=============== debuggary entries - comment before distro
+//{ ext_touch_on
+//	setcallback touch enable
+//	setprop ent_me solid 1
+//}
+
+//This seems to be same as game_damaged - maybe can adjust damage here? (check code)
+//{ game_attacked
+//	dbg game_attacked PARAM1 PARAM2 PARAM3 PARAM4
+//}
+
+//This works, but is more or less useless due to all the internal anim setting
+//- This function has been axed, seek "* PLAYANIM *" ms.dll code if you want to restore it
+//{ game_anim_new
+//	//dbg game_anim_new PARAM1
+//}
+
+//
+//{ game_damaged
+//	if G_DEVELOPER_MODE
+//	gplayermessage PARAM1 PARAM3 element
+//}
+
+
+{ make_fade_in
+	setprop ent_me rendermode 5
+	setprop ent_me renderamt 2
+	setvard BMS_RENDERAMT 0
+	callevent 0.1 make_fade_in_loop
+}
+
+{ make_fade_in_loop
+	add BMS_RENDERAMT 10
+	if ( BMS_RENDERAMT < 255 )
+	{
+		setprop ent_me rendermode 2
+		setprop ent_me renderamt BMS_RENDERAMT
+		callevent 0.1 make_fade_in_loop
+	}
+	if ( BMS_RENDERAMT >= 255 )
+	{
+		setprop ent_me rendermode 0
+		setprop ent_me renderamt 255
+	} 
+}
+
+{ [server] game_killed_player //PARAM1=player - goes off whenever a monster kills a player
+
+	//last theory is that sometimes this is going off for no reason
+	//if $get(PARAM1,name) isnot 0
+
+	if $get(PARAM1,isplayer)
+
+	if ( !NPC_IS_BOSS )
+	{
+		givehp $get(PARAM1,maxhp)
+	}
+
+	if ( NPC_IS_BOSS )
+	{
+		if !$get(PARAM1,scriptvar,'PLR_BRAVERY')
+
+		//this is a separate  system
+		//if ( NPC_BOSS_RESTORATION > 0 ) callevent npcatk_add_boss_kill $get(PARAM1,id)
+		local PLAYER_ID $get(PARAM1,steamid)
+		local PLAYER_ID $right(PLAYER_ID,6)
+		//if $len(PLAYER_ID) == 6
+		//dbg adding PLAYER_ID [len $len(PLAYER_ID) ]
+		local KNOW_IDX $get_find_token(NPC_BOSS_KNOWS,PLAYER_ID)
+		if ( KNOW_IDX == -1 )
+		{
+			//player 404'd - add him
+			if $len(NPC_BOSS_KNOWS) < 210 //dont add any more ID's, token string get too long
+			token.add NPC_BOSS_KNOWS PLAYER_ID
+			token.add NPC_BOSS_KNOWS_AMTS 0.95
+			local RESIST_AMT 0.95
+		}
+		if ( KNOW_IDX > -1 )
+		{
+			//found player, dock him another 10%
+			local RESIST_AMT $get_token(NPC_BOSS_KNOWS_AMTS,KNOW_IDX)
+			if RESIST_AMT > 0
+			subtract RESIST_AMT 0.05
+			token.set NPC_BOSS_KNOWS_AMTS KNOW_IDX RESIST_AMT
+		}
+
+		if ( RESIST_AMT > 0 )
+		{
+			//warn him
+			local MSG_TITLE "Defeated by Boss "
+			stradd MSG_TITLE $get(ent_me,name)
+			local MSG_TEXT "Your weapons and spells are now only "
+			if ( RESIST_AMT == 0.95 ) helptip PARAM1 generic "Boss Monsters learn your tactics!" "Boss monsters become more effective at defending themselves against you each they defeat you.|Try to avoid being slain by them!" //first warning gets a pop-up
+			multiply RESIST_AMT 100
+			stradd MSG_TEXT $int(RESIST_AMT)
+			stradd MSG_TEXT "% effective against him."
+			infomsg PARAM1 MSG_TITLE MSG_TEXT
+		}
+		if ( RESIST_AMT <= 0 )
+		{
+			infomsg PARAM1 "Useless..." "You've been defeated so many times by this boss that your attacks are no longer effective."
+		}
+	}
+}
+
+{ npcatk_boss_regen
+	if NPC_BOSS_REGEN_RATE > 0
+	//bosses passively regen 10%[def] of their current hp/minute
+	callevent NPC_BOSS_REGEN_FREQ npcatk_boss_regen
+	if !NPC_BOSS_PAUSE_REGEN
+	if $get(ent_me,isalive)
+	if $get(ent_me,hp) > 0
+	local HP_TO_GIVE $get(ent_me,hp)
+	multiply HP_TO_GIVE NPC_BOSS_REGEN_RATE
+	givehp HP_TO_GIVE
+	//dbg regen_pulse HP_TO_GIVE
+}
+
+{ [server] game_damaged //PARAM1=attacker PARAM2=dmg PARAM3=dmg_type
+
+	if NPC_IS_BOSS
+
+	if $get(PARAM1,isplayer)
+	local PLAYER_ID $get(PARAM1,steamid)
+	local PLAYER_ID $right(PLAYER_ID,6)
+	local KNOW_IDX $get_find_token(NPC_BOSS_KNOWS,PLAYER_ID)
+
+	if ( KNOW_IDX > -1 )
+	{
+		//consistancy check
+		local N_KNOWS $get_token_amt(NPC_BOSS_KNOWS)
+		local N_KNOWS_AMTS $get_token_amt(NPC_BOSS_KNOWS_AMTS)
+		if ( N_KNOWS != N_KNOWS_AMTS )
+		{
+			//the token system is corrupt or invalid
+			//reset
+			setvard NPC_BOSS_KNOWS ''
+			setvard NPC_BOSS_KNOWS_AMTS ''
+			local EXIT_SUB 1
+		}
+		if !EXIT_SUB
+
+		//oh yeah, this guy again, resist damage by how well ye know him
+		local RESIST_AMT $get_token(NPC_BOSS_KNOWS_AMTS,KNOW_IDX)
+		local IN_DMG PARAM2
+		multiply IN_DMG RESIST_AMT
+		setdmg dmg IN_DMG
+		returndata RESIST_AMT
+		if ( RESIST_AMT <= 0 ) infomsg PARAM1 "Useless..." "Your weapons and spells no longer have any affect."
+	}
+}
+
+//Not using this
+//{ npcatk_add_boss_kill //PARAM1=playerid PARAM2=bossid PARAM3=restoration_ratio
+//	local IN_PLAYER $get(PARAM1,steamid)
+//	//dbg gm_add_boss_kill IN_PLAYER vs BOSS_KILLS
+//	if ( $get_find_token(NPC_BOSS_KILLS,PARAM1) == -1 )
+//	{
+//		token.add NPC_BOSS_KILLS $get(PARAM1,steamid)
+//	}
+//	dbg gm_add_boss_kill $get_token_amt(NPC_BOSS_KILLS) vs game.players
+//	if $get_token_amt(NPC_BOSS_KILLS) == game.players
+//	setvard NPC_BOSS_KILLS ''
+//
+//	//if a boss kills every player on the server once, restore mass hp
+//	if $get(ent_me,isalive)
+//	if $get(ent_me,hp) > 0
+//	local HP_TO_GIVE $get(ent_me,maxhp)
+//	multiply HP_TO_GIVE NPC_BOSS_RESTORATION
+//	givehp HP_TO_GIVE
+//
+//	local MSG_TITLE $get(ent_me,name)
+//	strconc MSG_TITLE " has slain all members of the party!"
+//	local MSG_TEXT "Boss regenerates "
+//	strconc MSG_TEXT $int(HP_TO_GIVE) "hit points"
+//	infomsg all MSG_TITLE MSG_TEXT
+//}
+//
+//{ game_touch
+//	dbg general game_touch
+//}
+
+//Thothie JAN2009 - centeralizing/optimizing ally alert system for less server crashes and more effectivness
+{ npcatk_settarget //<target> <debug> <debug>
+
+	if !NPC_ALERTED_ALL
+	if $get(PARAM1,isplayer)
+	local OUT_PARM1 PARAM1
+	callevent npcatk_alert_all_allies OUT_PARM1
+}
+
+{ npcatk_alert_all_allies
+
+	dbg npcatk_alert_all_allies of $get(PARAM1,name) NPC_ALLY_RESPONSE_RANGE NO_ALERT_ALLIES
+
+	if PARAM1 isnot GAME_MASTER
+	if $get(PARAM1,relationship,ent_me) equals enemy
+
+	setvard NPC_ALERTED_ALL 1
+	if !NO_ALERT_ALLIES
+	setvard NPC_ALERT_LIST $get_tsphere(ally,NPC_ALLY_RESPONSE_RANGE)
+	//dbg npcatk_alert_all_allies Alerting NPC_ALERT_LIST
+	if NPC_ALERT_LIST isnot none
+	setvard NPC_ALERT_OF PARAM1
+	calleventloop $get_token_amt(NPC_ALERT_LIST) npcatk_alert_in_range
+}
+
+{ npcatk_alert_in_range
+
+	local CUR_ALLY $get_token(NPC_ALERT_LIST,game.script.iteration)
+	//dbg npcatk_alert_in_range $get(CUR_ALLY,name)
+	callexternal CUR_ALLY npcatk_ally_alert NPC_ALERT_OF $get(ent_me,id) "alert_all_in_range"
+}
+
+{ npcatk_ally_alert //<target> <alerter> <debug>
+
+	//dbg npcatk_ally_alert - targ $get(PARAM1,name) alerter $get(PARAM2,name) reason PARAM3
+
+
+	if ( NPC_NO_AGRO )
+	{
+		if SUSPEND_AI
+		callevent npcatk_resume_ai
+		callevent npcatk_settarget $get(PARAM2,id) "go_agro_ally_alert"
+	}
+
+	if !SUSPEND_AI
+
+	if ( NEW_AI )
+	{
+		if NPCATK_TARGET equals unset //ignore if I already have target
+		if !NPC_MOVING_LAST_KNOWN //ignore if I'm moving to where I last saw a target
+		if !NPC_IGNORE_ALLIES
+		local NME_TO_TARGET PARAM1
+		setvard NPC_ALLY_TO_AID PARAM2
+		callevent npcatk_settarget NME_TO_TARGET "ally_alerted"
+		callevent npc_aiding_ally NPC_ALLY_TO_AID
+	}
+	else
+	{
+		if HUNT_LASTTARGET equals ¯NONE¯
+		if !IS_HUNTING
+		if !NPC_IGNORE_ALLIES
+		local NME_TO_TARGET PARAM1
+		setvard NPC_ALLY_TO_AID PARAM2
+		callevent npcatk_target NME_TO_TARGET "ally_alerted"
+		callevent npc_aiding_ally NPC_ALLY_TO_AID
+	}
+}
+
+
+{ cycle_down
+
+	setvard NPC_ALERTED_ALL 0
+
+	if NPC_NO_AGRO == 2
+	setvard NPC_NO_AGRO 1
+	callevent npcatk_suspend_ai
+}
+
+//This is for compatability, not really required anymore, as can be handled code-side via dmgmulti
+//be nice to have an acumulti for altering accuracy (debuff)
+{ npcatk_dodamage //lots of params (see below), prevents crash from damage stacks
+
+	//this is a bit obsolete, although it may still prevent over-lapping dodamages
+
+	//type		PARAM1		PARAM2		PARAM3	PARAM4	PARAM5		PARAM6			PARM7
+	//standard 	<target> 	<range> 	<dmg> 	<cth> 	[type]
+	//direct   	<target> 	"direct" 	<dmg> 	<cth> 	<source>	[type]
+	//AOE		<position> 	<range> 	<dmg> 	<cth> 	<attn> 		"reflective"  	[type]
+	//
+	//If attack has elemental effects (poison/fire/etc), set the NPC_DAMAGE_TYPE vard before calling this event
+
+	if !CANT_DAMAGE //suspend damaging with this
+
+	local ADJ_DAMAGE PARAM3 //param3 is always damage
+	local ADJ_HITCHANCE PARAM4 //param4 is always hitchance
+
+	multiply ADJ_DAMAGE EXT_DAMAGE_ADJUSTMENT //apply any external debilitaing effects (ie. curse, etc)
+	multiply ADJ_HITCHANCE EXT_HITCHANCE_ADJUSTMENT //apply any external debilitaing effects (ie. curse, etc)
+
+	//multiply ADJ_DAMAGE NPC_DMG_MULTI //handle via dmgmulti command
+
+	local NPC_DMG_PARAM1 PARAM1 //target (origin for AOE)
+	local NPC_DMG_PARAM2 PARAM2 //range or 'direct'
+	local NPC_DMG_PARAM5 PARAM5 //damage source for direct, fall off for ranged, not used on standard
+	local NPC_DMG_PARAM6 PARAM6 //reflective flag (AOE only)
+	local NPC_DMG_PARAM7 PARAM7
+
+	//dbg dodamage NPC_DMG_PARAM1 NPC_DMG_PARAM2 NPC_DMG_PARAM3 NPC_DMG_PARAM4 NPC_DMG_PARAM5 NPC_DMG_PARAM6 NPC_DMG_PARAM7
+
+	dodamage NPC_DMG_PARAM1 NPC_DMG_PARAM2 ADJ_DAMAGE ADJ_HITCHANCE NPC_DMG_PARAM5 NPC_DMG_PARAM6 NPC_DMG_PARAM7
+}
+
+//Thothie JAN2009 - fixed this broken function -  moved to shared
+{ npcatk_go_home //not called here, useful external - sends monster home after all clear
+
+	if ( !NPC_HOMER_FIRST_CALL )
+	{
+		setvard NPC_HOMER_FIRST_CALL 1
+		setvard NPC_MADE_IT_HOME 0
+		setvard NPC_GOING_HOME 1 //this is just an indicator for external use
+	}
+
+	if ( NPCATK_TARGET isnot unset )
+	{
+		//interrupted on way home, reset
+		setvard NPC_HOMER_FIRST_CALL 0
+		setvard NPC_MADE_IT_HOME 1
+		setvard NPC_GOING_HOME 0
+	}
+
+	if NPCATK_TARGET equals unset
+	if !NPC_MADE_IT_HOME
+
+	//dbg npcatk_go_home heading home... [ NPC_MADE_IT_HOME ]
+
+	if ( game.monster.movedest.origin isnot NPC_SPAWN_LOC )	callevent npcatk_setmovedest NPC_SPAWN_LOC 1 "going_home"
+
+	if ( $dist(game.monster.origin,NPC_SPAWN_LOC) <= MONSTER_WIDTH )
+	{
+		////dbg made it home
+		setmovedest none
+		setangle face NPC_SPAWN_ANGLES
+		setvard NPC_GOING_HOME 0
+		setvard NPC_MADE_IT_HOME 1 //Thothie JAN2009 - fubar
+		setvard NPC_HOMER_FIRST_CALL 0
+		callevent npc_made_it_home	//external - can disable movement here
+	}
+	else
+	{
+		callevent 1.0 npcatk_go_home
+	}
+}
+
+//JAN2010_26 - shared suspend movement functions
+{ npcatk_suspend_movement //<idle_anim> [duration]
+
+	setvard NPC_MOVEMENT_SUSPENDED 1
+
+	roam 0
+	setmoveanim PARAM1
+	setidleanim PARAM1
+	setvard NPC_OLD_ANIM_RUN ANIM_RUN
+	setvard NPC_OLD_ANIM_WALK ANIM_WALK
+	setvard NPC_OLD_ANIM_IDLE ANIM_IDLE
+	setvard ANIM_RUN PARAM1
+	setvard ANIM_WALK PARAM1
+	setvard ANIM_IDLE PARAM1
+	setvard OLD_NO_STUCK_CHECKS $int(NO_STUCK_CHECKS)
+	setvard NO_STUCK_CHECKS 1
+
+	if ( PARAM2 startswith PARAM ) local EXIT_SUB 1
+	if !EXIT_SUB
+	callevent PARAM2 npcatk_resume_movement
+}
+
+{ npcatk_resume_movement //<idle_anim>
+
+	if NPC_MOVEMENT_SUSPENDED
+	setvard NPC_MOVEMENT_SUSPENDED 0
+
+	dbg npcatk_resume_movement
+
+	roam 1
+	setvard ANIM_RUN NPC_OLD_ANIM_RUN
+	setvard ANIM_WALK NPC_OLD_ANIM_WALK
+	setvard ANIM_IDLE NPC_OLD_ANIM_IDLE
+	setmoveanim ANIM_RUN
+	setidleanim ANIM_IDLE
+	setvard NO_STUCK_CHECKS OLD_NO_STUCK_CHECKS
+	playanim break
+}
+
+//JAN2010_29 - shared return home functions
+{ npcatk_clear_targets
+	if NPC_RETURN_HOME
+	if !NPC_RETURNING_HOME
+	setvard NPC_RETURNING_HOME 1
+	setvard NPC_NEXT_RHOME_WIGGLE game.time
+	add NPC_NEXT_RHOME_WIGGLE $randf(10.0,20.0)
+	dbg npcatk_clear_targets returning home
+	callevent 1.0 npcatk_go_home_loop	
+}
+
+{ npcatk_go_home_loop
+	if ( NPCATK_TARGET isnot unset ) setvard NPC_RETURNING_HOME 0
+	if NPCATK_TARGET equals unset
+	if ( NPC_RETURNING_HOME )
+	{
+		local HOME_DIST $dist(NPC_HOME_LOC,game.monster.origin)
+
+		dbg npcatk_go_home_loop dist HOME_DIST getdist $get(ent_me,movedest.prox)
+
+		if ( HOME_DIST > 64 )
+		{
+			//setvard NPC_FORCED_MOVEDEST 1
+			if ( game.time > NPC_NEXT_RHOME_WIGGLE )
+			{
+				//wiggle a bit if having trouble getting home
+				callevent npcatk_setmovedest $relpos($vec(0,$randf(0.0,359.0),0),$vec(0,500,0)) 0
+				playanim once ANIM_RUN
+				setvard NPC_NEXT_RHOME_WIGGLE game.time
+				add NPC_NEXT_RHOME_WIGGLE $randf(10.0,20.0)
+			}
+			else
+			{
+				callevent npcatk_setmovedest NPC_HOME_LOC 32 "return_home"
+				//setmovedest NPC_HOME_LOC 32
+				roam 1
+			}
+			callevent $randf(0.5,1.5) npcatk_go_home_loop
+
+		}
+		else
+		{
+			setvard NPC_RETURNING_HOME 0
+			local HOME_YAW $vec.yaw(NPC_HOME_ANG)
+			setangle face $vec(0,HOME_YAW,0)
+			callevent 1.0 npcatk_return_home_pos_reset //redundant, but sometimes fubars
+			roam 0
+			dbg npcatk_clear_targets made it home
+		}
+	}
+}
+
+{ npcatk_return_home_pos_reset
+	local FACE_SPOT NPC_HOME_LOC
+	local FACE_DIR $vec.yaw(NPC_HOME_ANG)
+	vectoradd FACE_SPOT $relpos($vec(0,FACE_DIR,0),$vec(0,256,0))
+	setmovedest FACE_SPOT 9999
+}
+
+//debuggary
+//{ game_damaged
+//	if G_DEVELOPER_MODE
+//	gplayermessage G_DEV_PLAYER game_damaged PARAM1 PARAM2 PARAM3
+//}
+
+{ game_dodamage
+	if ( NPC_DOT_POISON )
+	{
+		if PARAM1
+		local L_DOT $get(PARAM2,maxhp)
+		multiply L_DOT 0.05
+		multiply L_DOT NPC_DOT_POISON_RATIO
+		applyeffect PARAM2 effects/effect_poison 10.0 $get(ent_me,id) L_DOT
+	}
+	if ( NPC_DOT_FIRE )
+	{
+		if PARAM1
+		local L_DOT $get(PARAM2,maxhp)
+		multiply L_DOT 0.15
+		multiply L_DOT NPC_DOT_FIRE_RATIO
+		applyeffect PARAM2 effects/effect_burn 5.0 $get(ent_me,id) L_DOT
+	}
+	if ( NPC_DOT_COLD )
+	{
+		if PARAM1
+		local L_DOT $get(PARAM2,maxhp)
+		multiply L_DOT 0.05
+		multiply L_DOT NPC_DOT_COLD_RATIO
+		applyeffect PARAM2 effects/effect_frostbite_dmg 5.0 $get(ent_me,id) L_DOT
+	}
+	if ( NPC_DOT_LIGHTNING )
+	{
+		if PARAM1
+		local L_DOT $get(PARAM2,maxhp)
+		multiply L_DOT 0.1
+		multiply L_DOT NPC_DOT_LIGHTNING_RATIO
+		applyeffect PARAM2 effects/effect_shock_dmg 5.0 $get(ent_me,id) L_DOT
+	}
+}
+
+{ npcatk_clear_targets
+	if NPC_NO_AGRO == 2
+	setvard NPC_NO_AGRO 1
+	callevent npcatk_suspend_ai
+}
+
+{ npcatk_suspend_roam //<delay> - assumes roam is on by default
+	roam 0
+	setvard AS_ATTACKING game.time
+	add AS_ATTACKING PARAM1
+	callevent PARAM1 npcatk_resume_roam
+}
+
+{ npcatk_resume_roam
+	roam 1
+}
+
+{ npcatk_suspend_ai
+	setvard NPC_LAST_SUSPEND_AI game.time
+	setvard NPC_RESUME_AI_TIME game.time
+	if ( PARAM1 isnot 'PARAM1' )
+	{
+		add NPC_RESUME_AI_TIME PARAM1
+	}
+	else
+	{
+		setvard NPC_NEVER_RESUME_AI 1
+		setvard NPC_RESUME_AI_TIME 999
+	}
+}
+
+{ npcatk_resume_ai
+	setvard NPC_NEVER_RESUME 0
+}
+
+//moved to player ext_targeted_by_mob
+//{ npcatk_music_check //<target> called whenever monster validates a new player for the first time
+//	dbg npcatk_music_check
+//
+//	callexternal NPCATK_TARGET ext_targeted_by_mob
+//
+//	if NPC_HAS_COMBAT_MUSIC
+//
+//	if ( !NPC_CUSTOM_COMBAT_MUSIC )
+//	{
+//		if $get(NPCATK_TARGET,scriptvar,'PLR_COMBAT_MUSIC_LENGTH') != 0
+//		setvard NPC_COMBAT_MUSIC_ON 1
+//		dbg npcatk_music_check sent
+//		callexternal PARAM1 ext_music_combat add $get(ent_me,index)
+//	}
+//	else
+//	{
+//		//if $get(NPCATK_TARGET,scriptvar,'PLR_MUSIC_FILE') isnot NPC_CMUSIC_FILE
+//		setvard NPC_COMBAT_MUSIC_ON 1
+//		dbg npcatk_music_check sent_custom [ NPC_CMUSIC_FILE ]
+//		callexternal PARAM1 ext_music_combat add $get(ent_me,index) NPC_CMUSIC_LENGTH NPC_CMUSIC_FILE
+//	}
+//}
+
+//{ npcatk_music_remove_calm
+//	if NPC_HAS_COMBAT_MUSIC
+//	if NPCATK_TARGET equals unset
+//	setvard NPC_COMBAT_MUSIC_ON 0
+//	dbg npcatk_music_remove $get(ent_me,index)
+//	callexternal players ext_music_combat remove $get(ent_me,index)
+//}
+
+
+//{ npcatk_music_remove
+//	if NPC_HAS_COMBAT_MUSIC
+//	setvard NPC_COMBAT_MUSIC_ON 0
+//	dbg npcatk_music_remove $get(ent_me,index)
+//	//callexternal players ext_music_combat remove $get(ent_me,index)
+//	if ( !NPC_CUSTOM_COMBAT_MUSIC )
+//	{
+//		callexternal players ext_music_combat_spinout $get(ent_me,index) default default
+//	}
+//	else
+//	{
+//		callexternal players ext_music_combat_spinout $get(ent_me,index) NPC_CMUSIC_LENGTH NPC_CMUSIC_FILE
+//	}
+//}
+
+{ npcatk_fx_sprite_in1 //fancier
+	if ( $get(ent_me,height) <= 64 ) local SPRITE_SCALE 1.0
+	if ( $get(ent_me,height) > 128 ) local SPRITE_SCALE 2.0
+	if ( $get(ent_me,height) > 200 ) local SPRITE_SCALE 4.0
+	local L_ORIGIN $get(ent_me,origin)
+	if ( !$get(ent_me,fly) )
+	{
+		local L_HHEIGHT $get(ent_me,height)
+		multiply L_HHEIGHT 0.5
+		vectoradd L_ORIGIN z L_HHEIGHT
+	}
+	clientevent new all effects/sfx_sprite_in L_ORIGIN c-tele1.spr 25 SPRITE_SCALE
+	if ( NPC_DO_SPAWN_SOUND ) playsound 0 10 magic/spawn_loud.wav
+}
+
+{ npcatk_fx_sprite_in2 //precache friendly
+	if ( $get(ent_me,height) <= 64 ) local SPRITE_SCALE 3.0
+	if ( $get(ent_me,height) > 128 ) local SPRITE_SCALE 5.0
+	if ( $get(ent_me,height) > 200 ) local SPRITE_SCALE 7.0
+	local L_ORIGIN $get(ent_me,origin)
+	if ( !$get(ent_me,fly) )
+	{
+		local L_HHEIGHT $get(ent_me,height)
+		multiply L_HHEIGHT 0.5
+		vectoradd L_ORIGIN z L_HHEIGHT
+	}
+	clientevent new all effects/sfx_sprite_in L_ORIGIN xflare1.spr 20 SPRITE_SCALE
+	if ( NPC_DO_SPAWN_SOUND ) playsound 0 10 magic/spawn_loud.wav
+}
+
+{ npcatk_handle_events
+	//for param triggered events that happen a split second after spawn
+	dbg npcatk_handle_events NPC_SPRITE_IN
+	if ( NPC_SPRITE_IN == 1 )
+	{
+		callevent npcatk_fx_sprite_in1
+	}
+	else if ( NPC_SPRITE_IN == 2 )
+	{
+		callevent npcatk_fx_sprite_in2
+	}
+	else
+	{
+		if ( NPC_DO_SPAWN_SOUND ) playsound 0 10 magic/spawn_loud.wav
+	}
+}
+
+{ cycle_down
+	if $get(ent_me,isalive)
+	dbg cycle_down PARAM1
+	callevent 0.5 npcatk_clear_music
+	//callevent 3.0 npcatk_music_remove_calm
+}
+
+{ npcatk_clear_music
+	if $get(ent_me,isalive)
+	dbg npcatk_clear_music
+	if NPC_WAS_IN_BATTLE 1
+	callexternal players ext_untargeted_by_mob $get(ent_me,id)
+}
+
+{ game_death
+	if ( NPC_WAS_IN_BATTLE ) callexternal players ext_untargeted_by_mob $get(ent_me,id)
+	setvard NPC_PREV_TARGET unset //in case fake death
+}
+
+//calm down if not seen or been near target for awhile
+{ npc_targetsighted
+
+	//NOV2014_12 - moved music/target events here
+	if ( NEW_AI )
+	{
+		if ( NPCATK_TARGET isnot NPC_PREV_TARGET )
+		{
+			setvard NPC_PREV_TARGET NPCATK_TARGET
+			if $get(NPCATK_TARGET,isplayer)
+			dbg npcatk_targetvalidate send_musak
+			setvard NPC_WAS_IN_BATTLE 1
+			callexternal NPCATK_TARGET ext_targeted_by_mob $get(ent_me,id)
+		}
+	}
+	else
+	{
+		if ( HUNT_LASTTARGET isnot NPC_PREV_TARGET )
+		{
+			setvard NPC_PREV_TARGET HUNT_LASTTARGET
+			if $get(HUNT_LASTTARGET,isplayer)
+			dbg npcatk_targetvalidate (old) sendmusic
+			setvard NPC_WAS_IN_BATTLE 1
+			callexternal HUNT_LASTTARGET ext_targeted_by_mob $get(ent_me,id) 
+		}
+	}
+
+	if !NPC_NEVER_UNAGRO
+	setvard NPC_LASTSEEN_ENEMY_TIME game.time
+}
+
+{ npc_targetvalidate
+	
+	//NOV2014_11 - cycle down if not seen enemy for awhile
+	if ( NPC_LASTSEEN_ENEMY_TIME > 0 )
+	{
+		if !NPC_NEVER_UNAGRO
+
+		local L_CALM_TIME NPC_LASTSEEN_ENEMY_TIME
+		add L_CALM_TIME NPC_MAX_UNSEEN_TIME
+		if ( game.time > L_CALM_TIME  )
+		{
+			dbg npc_targetvalidate (shared) LongTimeNoSee L_CALM_TIME max NPC_MAX_UNSEEN_TIME last NPC_LASTSEEN_ENEMY_TIME cur game.time to L_CALM_TIME
+
+			if ( NEW_AI )
+			{
+				local L_TARG_RANGE $get(NPCATK_TARGET,range)
+			}
+			else
+			{
+				local L_TARG_RANGE $get(HUNT_LASTTARGET,range)
+			}
+
+			if ( L_TARG_RANGE < ATTACK_HITRANGE )
+			{
+				if !NPC_RANGED
+				dbg npcatk_targetvalidate (shared) aborting calm down, near target
+				setvard NPC_LASTSEEN_ENEMY_TIME game.time
+				local EXIT_SUB 1
+			}
+			if !EXIT_SUB
+
+			setvard NPC_LASTSEEN_ENEMY_TIME 0
+			//so we can recheck for music if we re-aquire
+			if ( NEW_AI )
+			{
+				setvard NPC_PREV_TARGET unset
+			}
+			else
+			{
+				setvard NPC_PREV_TARGET ¯NONE¯
+				setvard NPC_TARGET_INVALID 1
+			}
+			callevent npcatk_clear_targets "LongTimeNoSee"
+		}
+	}
+}
+
+{ npc_selectattack
+	setvard NPC_LASTSEEN_ENEMY_TIME game.time
+}
+
+{ npcatk_tele_hunter_loop
+	dbg npcatk_tele_hunter_loop BAST_TELEPORTING
+	if NPC_TELEHUNT
+	if $get(ent_me,isalive)
+	callevent NPC_TELEHUNT_FREQ npcatk_tele_hunter_loop
+
+	if !BAST_TELEPORTING
+
+	local L_TELE_TARG none
+
+	if ( NPC_TELEHUNT_RANDOM )
+	{
+		if game.players > 0
+		getplayers TELEHUNT_PLR_LIST
+		local L_NPLAYERS $get_token_amt(TELEHUNT_PLR_LIST)
+		subtract L_NPLAYERS 1
+		local RND_PLR $rand(0,L_NPLAYERS)
+		local L_TELE_TARG $get_token(TELEHUNT_PLR_LIST,0)
+		dbg npcatk_tele_hunter_loop random $get(L_TELE_TARG,name)
+	}
+	else
+	{
+		local L_TELE_TARG NPCATK_TARGET
+	}
+
+	if L_TELE_TARG isnot none
+
+	callevent npc_telehunt_attempt L_TELE_TARG
+
+	if !NPC_TELEHUNT_ABORT //case we get a flag to stop from npc_telehunt_attempt
+
+	setvard BAST_TELEPORTING 1 //flagged off in as_tele_to_player_loop on success/surrender
+
+	if ( NPC_TELEHUNT_DELAY > 0 )
+	{
+		//case we need time to play an anim, or whatnot
+		callevent NPC_TELEHUNT_DELAY as_tele_to_player_loop L_TELE_TARG
+	}
+	else
+	{
+		dbg npcatk_tele_hunter_loop as_tele_to_player_loop $get(L_TELE_TARG,name)
+		callevent as_tele_to_player_loop L_TELE_TARG
+	}
+}

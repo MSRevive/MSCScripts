@@ -1,0 +1,184 @@
+//Thothie - Provided for backwards compatability with MS 1.35
+//- Guess who's back :D
+//- He can be given Infernal Fire Damage or Invulnerability (toggle) via ms_npcscript send:
+//- godon_warboss - invincible
+//- offgod_warboss - vulnerable
+//- infernal_warboss - fire damage +30-60
+//- normal_warboss - removes fire damage
+//- Note name changes with mode, if you want to have both modes on, consider which you'd rather have
+
+{
+	const OVERRIDE_NODROP 1
+
+	if ( $lcase(game.map.name) equals ara ) setvard NPC_IS_BOSS 1
+	if ( $lcase(game.map.name) equals old_helena ) setvard NPC_IS_BOSS 1
+	if ( $lcase(game.map.name) startswith orc_place ) setvard NPC_IS_BOSS 1
+
+	const NPC_BOSS_REGEN_RATE 0.1
+	const NPC_BOSS_RESTORATION 0.5
+
+
+   setvard ANIM_ATTACK battleaxe_swing1_L //Attack animation
+   setvard FLINCH_CHANCE 35%
+
+   setvard INFERNAL 0
+
+   const ATTACK_ACCURACY 80%
+   const ATTACK_DMG_LOW 75
+   const ATTACK_DMG_HIGH 650
+
+	//Manually porting orc_melee include for safty
+
+   setvard MOVE_RANGE 64
+	const ATTAKC_MOVERANGE 64
+   setvard ATTACK_RANGE 150
+   setvard ATTACK_HITRANGE 225
+   //const ORC_SHIELD 0
+}
+
+#include monsters/orc_base
+#include monsters/orc_base_melee
+
+{  orc_spawn
+
+   	hp 3000
+	width 38
+	height 72
+
+	local L_MAP_NAME $lcase(game.map.name)
+
+	if ( L_MAP_NAME equals foutpost )
+	{
+		setvard DROP_ITEM2 item_warbosshead
+		setvard DROP_ITEM2_CHANCE 100%
+		setvard WARBOSS_VALID_MAP 1
+	}
+
+	if ( L_MAP_NAME equals orcplace2_beta ) setvard WARBOSS_VALID_MAP 1
+	if ( L_MAP_NAME equals old_helena )
+	{
+		setvard WARBOSS_VALID_MAP 1
+		setvard IS_OLD_HELENA 1
+		setvard NPC_GIVE_EXP 10000 //to compensate for the XP nerfage
+	}
+
+	if ( !WARBOSS_VALID_MAP )
+	{
+		if ( $lcase(game.map.name) equals ara ) setvard NPC_GIVE_EXP 1000
+		if !IS_OLD_HELENA
+		setvard NPC_GIVE_EXP 500
+	}
+	if ( WARBOSS_VALID_MAP )
+	{
+		name Graznux the Warboss
+		setvard DROP_ITEM1 axes_greataxe
+		setvard DROP_ITEM1_CHANCE 50%
+		setvard NPC_GIVE_EXP 750 //raise this when we fix parry xp
+	}
+	if ( !WARBOSS_VALID_MAP ) name Orc Warlord
+   	hearingsensitivity 8
+   	setstat parry 90
+	setstat swordsmanship 10 25 20
+	takedmg all .8
+	invincible 0
+	setmodel monsters/orc_big.mdl
+
+   	setmodelbody	0 2		//Body 0=naked 1=leather 2=plate 3=green-hide
+   	setmodelbody	1 3		//Head 0=cap_shorthorn 1=cap_nohorn 2=buffo_skin 3=cheif_ramhorns 4=green_hood
+   	setmodelbody	2 5		//Weapon 0=fist 1=axe 2=bow_weak 3=bow_strng 4=sword 5=bloodyaxe 6=sword&sheild
+}
+
+{ swing_axe
+
+	if ( INFERNAL == 1 ) applyeffect ent_laststruckbyme effects/effect_burn 5 ent_me $rand(30,60)
+}
+
+
+//effects
+{ godon_warboss
+
+ name Graznux the Invincible!
+ playanim critical warcry
+ invincible 1
+ saytextrange 1024
+ saytext You fools! Now nothing can stop me!
+}
+
+{ offgod_warboss
+
+ name Graznux the Warboss
+ invincible 0
+ saytextrange 1024
+ saytext Noooo! My power!
+}
+
+{ infernal_warboss
+
+ name Graznux the Infernal
+ playanim critical warcry
+ race demon
+ setvard INFERNAL 1
+ saytextrange 1024
+ saytext Feel the fire of my rage! Muahahahaaa!
+ //hopefully this supplies burn effect with no damage
+ applyeffect ent_me effects/effect_burn 60 ent_me 0
+ applyeffect ent_me effects/effect_flames 60
+	takedmg fire 0.0
+	setvard IMMUNE_FIRE 1
+	takedmg holy 4.0
+}
+
+{ normal_warboss
+
+ name Graznux the Warboss
+ race orc
+ setvard INFERNAL 0
+ saytextrange 1024
+ saytext What? No! The hellfire has abandoned me!
+	takedmg fire 1.0
+	takedmg holy 0.0
+	setvard IMMUNE_FIRE 0
+}
+
+{ turn_undead
+
+	if INFERNAL
+
+	//Can be damaged by Holy Light when infernal
+ 
+	//PARAM1 - incoming Holy damage
+	//PARAM2 - exorcist
+
+	local INC_HOLY_DMG PARAM1
+	local THE_EXCORCIST PARAM2
+	local ME_ME $get(ent_me,id)
+
+	callevent npcatk_dodamage ME_ME direct INC_HOLY_DMG 100 THE_EXCORCIST
+
+	effect glow ent_me (255,255,0) 512 1 1
+}
+
+{ npc_death
+
+	setvarg WARBOSS_DEAD 1
+	if ( WARBOSS_VALID_MAP )
+	{
+		if !IS_OLD_HELENA 
+		callevent bm_gold_spew 25 2 64 8 24 //PARAM1=gold_per_bag PARAM2=bags_player PARAM3=dist_from_mon PARAM4=min#bags PARAM5 max#bags
+	}
+	if ( !WARBOSS_VALID_MAP ) callevent bm_gold_spew 10 3 64 4 16
+
+	if ( IS_OLD_HELENA )
+	{
+		setvarg G_WARBOSS_ORIGIN $get(ent_me,origin)
+		callexternal all old_helena_warboss_died
+	}
+
+	//final chest on Ara requires this boss be slain
+	if ( $lcase(game.map.name) equals ara ) callexternal GAME_MASTER gm_verify_map_hax
+
+	if $lcase(game.map.name) equals foutpost
+	local SUPER_NAME $get_by_name(outpost_super)
+	local SUPER_ID $get(SUPER_NAME,id)
+	callexternal SUPER_ID zap_cheaters
+}

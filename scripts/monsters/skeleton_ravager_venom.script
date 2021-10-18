@@ -1,0 +1,70 @@
+#scope server
+{
+	const NPC_BASE_EXP 600
+
+	const USES_PROJECTILE 1
+	const PROJECTILE_SCRIPT proj_glob_guided
+	const FREQ_PROJECTILE $randf(5.0,10.0)
+	const DMG_PROJECTILE 200
+	const PROJECTILE_SPEED 200
+	const SOUND_PROJECTILE bullchicken/bc_attack3.wav
+
+	setvard PASS_FREEZE_DMG 50
+	setvard PASS_FREEZE_DUR 5.0
+
+	const CLAWFX_COLOR (0,255,0)
+
+	const DMG_CLAW_EFFECT effects/effect_poison
+	const DMG_CLAW_EFFECT_DUR 10.0
+	const DMG_CLAW_EFFECT_DOT 50
+	
+	const MONSTER_MODEL monsters/skeleton_ravenous_ele.mdl
+
+	const SOUND_ALERT1 monsters/undeadz/c_skeltwar_bat1.wav
+	const SOUND_ALERT2 monsters/undeadz/c_skeltwar_bat1.wav
+}
+
+#include monsters/skeleton_ravager
+
+{ skele_spawn
+	name a|Venomboned Ravager
+	setmodelbody 0 2
+	setmodel MONSTER_MODEL
+	hp 4000
+	width 32
+	height 72
+	race undead
+	blood none
+	takedmg fire 1.0
+	takedmg poison 0.0
+	takedmg blunt 1.5
+	takedmg slash 1.0
+	takedmg pierce 0.75
+	takedmg lightning 1.5
+	takedmg cold 0.5
+	takedmg holy 2.0
+	roam 1
+	hearingsensitivity 4
+}
+
+{ ext_glob_landed //<origin> - from items/proj_glob_dynamic
+	setvard BLOB_ORG PARAM1
+	xdodamage PARAM1 96 DMG_GLOB 0.2 ent_me ent_me none acid_effect dmgevent:glob
+}
+
+{ glob_dodamage
+	if PARAM1
+	if $get(PARAM2,relationship,ent_me) equals enemy
+	local TARG_ORG $get(PARAM2,origin)
+	local BLOB_DIST $dist(BLOB_ORG,TARG_ORG)
+	divide BLOB_DIST 64
+	local BLOB_DIST_RATIO 1
+	subtract BLOB_DIST_RATIO BLOB_DIST
+	local BLIND_DURATION $ratio(BLOB_DIST_RATIO,2.0,6.0) //blind 2-6 seconds based on how direct the hit was
+	dbg glob_dodamage BLIND_DURATION
+	applyeffect PARAM2 effects/effect_poison_blinding BLIND_DURATION $get(ent_me,id) DMG_CLAW_EFFECT_DOT
+}
+
+{ npcatk_hunt
+	setvard GLOB_TARG NPCATK_TARGET
+}

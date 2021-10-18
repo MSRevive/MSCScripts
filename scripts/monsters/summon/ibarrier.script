@@ -1,0 +1,195 @@
+//Simplified version of monsters/summon/barrier, positionable
+//PARAM1 - Owner
+//PARAM2 - Radius
+//PARAM3 - Duration
+//PARAM4 - 1 for No sprites
+//PARAM5 - 1 for Sounds
+//PARAM6 - Damage when repelled (optional)
+//PARAM7 - 1 for Push allies too (ie. everyone but master)
+{
+	//non-standard media used (must be pre-cached by summoner):
+	const SOUND_PUSH doors/aliendoor3.wav
+}
+
+
+{ game_dynamically_created //<owner> <rad> <duration> [invisible:0|1] [silent:0|1] [dmg] [push_allys:0|1]
+
+	setvard MY_OWNER PARAM1
+	setvard MY_RADIUS PARAM2
+	setvard MY_DURATION PARAM3
+
+	setvard MY_BASE_DAMAGE 0
+
+	if ( PARAM4 == 1 ) setvard AM_INVISIBLE 1
+	if ( PARAM5 == 1 ) setvard NO_SOUND 1
+	if ( PARAM6 isnot 'PARAM6' ) setvard MY_BASE_DAMAGE PARAM6
+	if ( PARAM7 == 1 ) setvard ALWAYS_PUSH 1
+	
+
+	setvard MY_BASE_DAMAGE 0
+
+	race hated
+
+	if ( MY_BASE_DAMAGE == 0 ) setvard SPRITE_COLOR (0,0,255)
+	if ( MY_BASE_DAMAGE > 0 ) setvard SPRITE_COLOR (255,0,0)
+
+	if ( !AM_INVISIBLE ) clientevent new all $currentscript $get(ent_me,index) MY_RADIUS SPRITE_COLOR
+	setvard BARRIER_SCRIPT_IDX game.script.last_sent_id
+
+	callevent MY_DURATION remove_barrier
+
+	setvard AM_BLOCKING 1
+	callevent 0.1 scan_loop
+}
+
+{ game_spawn
+	name a|Magical Barrier
+	setmodel none //prevents gib error
+	hp 9000 //high HP in effort to prevent push
+	invincible 1
+	width 8
+	height 8
+	setsolid none
+	hearingsensitivity 11
+
+	setvard IMMUNE_PUSH 1
+	setvard PLAYING_DEAD 1 //not valid target
+}
+
+{ game_heardsound
+
+	if AM_BLOCKING
+	local LASTHEARD_ID $get(ent_lastheard,id)
+	if $get(LASTHEARD_ID,range) < MY_RADIUS
+	local DO_HPUSH 0
+	if ( $get(LASTHEARD_ID,relationship,MY_OWNER) equals enemy ) local DO_HPUSH 1
+	if ( ALWAYS_PUSH ) local DO_HPUSH 1
+	if ( LASTHEARD_ID equals MY_OWNER ) local DO_HPUSH 0
+	if DO_HPUSH
+	callevent push_out LASTHEARD_ID
+}
+
+{ scan_loop
+
+	if AM_BLOCKING
+	callevent 0.25 scan_loop
+	dodamage $relpos(0,0,0) MY_RADIUS 0.0 100% 0 reflective target
+}
+
+{ game_dodamage //1:AttackHit(1/0)  2:EntityHit  3:StartOrigin  4:EndOrigin
+
+	local DO_PUSH 0
+	if ( $get(PARAM2,relationship,MY_OWNER) equals enemy ) local DO_PUSH 1
+	if ( ALWAYS_PUSH ) local DO_PUSH 1
+	if PARAM2 isnot MY_OWNER
+	//iBarrier overrides IMMUNE_PUSH due to the fact it is often used to prevent stuckage
+	callevent push_out $get(PARAM2,id)
+}
+
+{ push_out //PARAM1 - guy to repulse
+
+	if ( MY_BASE_DAMAGE > 0 ) dodamage $get(PARAM1,id) direct MY_BASE_DAMAGE 100% MY_MASTER magic
+	effect glow $get(PARAM1,id) (255,255,255) 60 1.0 1.0
+
+	//setangle face PARAM1
+	//addvelocity $get(PARAM1,id) $relvel(0,1000,0)
+
+	local TARGET_ORG $get(PARAM1,origin)
+	local TARG_ANG $angles(game.monster.origin,TARGET_ORG)
+	local NEW_YAW TARG_ANG
+	//add NEW_YAW 180
+	//if ( NEW_YAW > 359 ) subtract NEW_YAW 359
+	if ( !AM_SILENT ) playsound 0 10 SOUND_PUSH
+	setvelocity PARAM1 $relvel($vec(0,NEW_YAW,0),$vec(0,1000,0))
+
+
+	//local INC_VEL $vec.yaw($get(PARAM1,angles))
+	//subtract INC_VEL 180
+	//if ( INC_VEL < 0 ) add INC_VEL 359
+	//local OUT_VEL $relvel($vec(0,INC_VEL,0),$vec(0,1000,0))
+	//addvelocity $get(PARAM1,id) OUT_VEL
+}
+
+
+{ remove_barrier
+	setvard AM_BLOCKING 0
+	clientevent update all BARRIER_SCRIPT_IDX clear_sprites
+	//if ( !SILENT_EXIT ) playsound 0 10 magic/spawn.wav
+	callevent 2.0 remove_me
+}
+
+{ remove_me
+
+	if ( AM_INVISIBLE ) clientevent remove all BARRIER_SCRIPT_IDX
+	callevent 0.1 remove_me2
+}
+
+{ remove_me2
+	deleteent ent_me
+}
+
+//========== CLIENT
+{ [client] client_activate
+
+	setvard sfx.npcid PARAM1
+
+	setvard CL_RADIUS PARAM2
+
+	setvard CL_COLOR PARAM3
+
+	callevent DEATH_DELAY remove_me
+
+	callevent 0.1 spriteify
+}
+
+//Sprite
+
+{ [client] spriteify
+
+	setvard TOTAL_OFS 64
+
+	calleventloop 36 createsprite
+}
+
+{ [client] createsprite
+
+	local l.pos $getcl(sfx.npcid,origin)
+	if ( CYCLE_ANGLE equals 'CYCLE_ANGLE' ) setvard CYCLE_ANGLE 0
+	add CYCLE_ANGLE 10
+	vectoradd l.pos $relpos($vec(0,CYCLE_ANGLE,0),$vec(0,CL_RADIUS,36))
+	cleffect tempent sprite 3dmflaora.spr l.pos setup_sprite1_sparkle sprite_update
+}
+
+{ [client] setup_sprite1_sparkle
+
+	cleffect tempent set_current_prop death_delay 	90.0
+	cleffect tempent set_current_prop framerate	30
+	cleffect tempent set_current_prop frames	1
+	cleffect tempent set_current_prop scale 	1.0
+	cleffect tempent set_current_prop rendermode add
+	cleffect tempent set_current_prop renderamt 180
+	cleffect tempent set_current_prop rendercolor CL_COLOR
+	cleffect tempent set_current_prop gravity 	0.0
+	cleffect tempent set_current_prop collide 	none
+	cleffect tempent set_current_prop fadeout lifetime
+	cleffect tempent set_current_prop update 1
+}
+
+{ [client] sprite_update
+
+	if GO_AWAY
+	cleffect tempent set_current_prop death_delay 	2.0
+	cleffect tempent set_current_prop velocity (0,0,400)
+	//cleffect tempent set_current_prop rendercolor (254,254,254)
+	cleffect tempent set_current_prop fadeout 2.0
+	cleffect tempent set_current_prop gravity 	-4.0
+}
+
+{ [client] clear_sprites
+	setvard GO_AWAY 1
+	callevent sprite_update
+}
+
+{ [client] remove_me
+	removescript
+}

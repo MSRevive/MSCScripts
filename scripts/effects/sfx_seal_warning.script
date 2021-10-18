@@ -1,0 +1,93 @@
+//seal fades in to give players a quick warning
+//effect script for exploding temporary seal
+//- this assumes using the fixed size seals, may need to adjust script for smaller seals or to make another
+#scope client
+{
+	const SEAL_MODEL weapons/magic/seals.mdl
+}
+
+{ client_activate //<origin> <type> <radius> <modelidx> <duration>
+
+	setvard FX_ORIGIN PARAM1
+	setvard SEAL_TYPE PARAM2
+	setvard SEAL_RAD PARAM3
+	setvard SEAL_BODY PARAM4
+	setvard FX_DURATION PARAM5
+	setvard SEAL_PITCH 100
+
+	setvard FX_END_TIME game.time
+	add FX_END_TIME FX_DURATION
+
+	setcallback render enable
+
+	if ( SEAL_TYPE equals fire )
+	{
+		setvard SEAL_COLOR (255,0,0)
+	}
+	else if ( SEAL_TYPE equals cold )
+	{
+		setvard SEAL_COLOR (128,128,255)
+	}
+	else if ( SEAL_TYPE equals lightning )
+	{
+		setvard SEAL_COLOR (255,255,0)
+	}
+	else if ( SEAL_TYPE equals poison )
+	{
+		setvard SEAL_COLOR (0,255,0)
+	}
+
+	callevent FX_DURATION end_fx
+
+	setvard FX_ACTIVE 1
+	sound.play3d weapons/mine_charge.wav 10 FX_ORIGIN 0.8 0 120
+	cleffect tempent model SEAL_MODEL FX_ORIGIN setup_seal_warn update_seal_warn
+	cleffect light new FX_ORIGIN 10 SEAL_COLOR 0.1
+	setvard FX_LIGHT_ID game.script.last_light_id
+}
+
+{ end_fx
+	setvard FX_ACTIVE 0
+	callevent 2.0 remove_fx
+}
+
+{ remove_fx
+	removescript
+}
+
+{ setup_seal_warn
+
+	cleffect tempent set_current_prop death_delay FX_DURATION
+	cleffect tempent set_current_prop rendermode add
+	cleffect tempent set_current_prop renderamt 10
+	cleffect tempent set_current_prop framerate 1.0
+	cleffect tempent set_current_prop frames 40
+	cleffect tempent set_current_prop gravity 0
+	cleffect tempent set_current_prop collide none
+	cleffect tempent set_current_prop fadeout lifetime
+	cleffect tempent set_current_prop body SEAL_BODY
+	cleffect tempent set_current_prop sequence 0
+}
+
+{ update_seal_warn
+	if ( FX_ACTIVE )
+	{
+		local L_RENDER_RATIO $math(subtract,FX_END_TIME,game.time)
+		local L_RENDER_RATIO $math(divide,L_RENDER_RATIO,FX_DURATION)
+		local L_RENDER_AMT $ratio(L_RENDER_RATIO,255,10)
+	}
+	else
+	{
+		local L_RENDER_AMT 0
+	}
+	cleffect tempent set_current_prop renderamt L_RENDER_AMT
+}
+
+{ game_prerender
+	local L_RENDER_RATIO $math(subtract,FX_END_TIME,game.time)
+	local L_RENDER_RATIO $math(divide,L_RENDER_RATIO,FX_DURATION)
+	local L_RENDER_RADIUS $ratio(L_RENDER_RATIO,SEAL_RAD,10)
+	local L_RENDER_RADIUS $math(multiply,L_RENDER_RADIUS,1.11)
+	//dbg L_RENDER_RADIUS
+	cleffect light FX_LIGHT_ID FX_ORIGIN L_RENDER_RADIUS SEAL_COLOR 0.1
+}

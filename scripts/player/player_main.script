@@ -1,0 +1,1943 @@
+//Player
+//1:55 PM 3/1/2005
+
+//Thothie - quests
+//m = destmap of last transition touched
+//d = destination spawn of last transition touched
+//mv = last gauntlet map I validly spawned in
+//dl = darkness contamination level
+//dp = damage points/1000
+//dm = last map on which dmg points were recorded
+//h = show_health toggle
+//p = health_bars toggle
+//r = ring quest stage (integer)
+//l = lighthouse keeper (spider,grave,crystal,food)
+//n = how many times name has been changed
+//s = pet pokéball state, 1=egged, 2=summoned
+//f = Symbol and shard info (maybe used for other unique quest items)
+//b1 = galat chest bank
+//a = achievments (token #0=sorc_villa)
+//rep = Got reporter reward
+//dhal = halo toggled off if set to 1
+//pnw = pet wolf name
+//lc = lodagond chests flag (stops repeated chest exploit)
+//sy = sylphiel's soup available
+//BODY = last submodel body layout (for char select screen)
+
+//pets = list of pet types (by script name)
+//<pet_script> = pet XP
+//<pet_script>_hp = Current Pet HP
+//<pet_script>_name = Current Name
+
+//Thothie - Dmg Point system
+//- PLR_TOTAL_DMG is pulled from the quest data dp (formally GM), each point = 1k dmg
+//- PLR_DMG is local to the player (0-999) - at 1k it resets, and updates the quest data
+//- in some commentary these are referred to as 'Whole' and 'Fraction' Damage Points, which is how chests treat it
+//- Players gain massive points for aiding one another, and lose points for death
+
+//Player Initialization
+{ [server]
+
+	const DONATOR_LIST "STEAM_0:0:4528762;STEAM_0:1:1339151;STEAM_0:0:15435276;STEAM_0:1:5168669;STEAM_0:1:4985228;STEAM_0:1:838591;STEAM_0:0:17717134;STEAM_0:1:1184501"
+
+	const KELDORN_ID "STEAM_0:0:19648837"
+	const DARK_ID "STEAM_0:1:8122893"
+
+	setvard FREQ_AFK_CHECK 60.0
+
+	setvard PLR_2H_REDUCT 1
+	const LEAP_SIDE_DRAIN 30
+	const LEAP_BACK_DRAIN 60
+
+	const HBAR_FRAMES 12
+	//set these to 0 before public releases in MAY2007 (hbar client script will crash old clients)
+	setvard DISPLAY_TARG_HP	0 //this should require item
+	setvard DISPLAY_PLAYER_HP 1 //default
+
+	const SOUND_LEVELUP1 magic/converted_EnchP01.wav
+	const LEVELUP_SCRIPT player/player_cl_effects_levelup
+
+	//Thothie AUG2010_23 Dark Energy Corruption
+	const PLR_DARK_LEVEL_LOSS_RATE 50 //amount of dark energy contamination lost per minute
+	const PLR_MAX_DARK_LEVEL 50000 //max dark level tracked
+	setvarg PLR_DARK_UNHOLY_LEVEL 20000 //this is a varg so it can be picked up by other scripts and the code
+
+	precache health_bar.spr
+	precache human/reference.mdl
+	precache magic/converted_magic13.wav //help tips
+	//recache ambience/alien_beacon.wav //dridje's thingie
+
+	//GM Countdown
+	//recache vox/ten.wav
+	//recache vox/nine.wav
+	//recache vox/eight.wav
+	//recache vox/seven.wav
+	//recache vox/six.wav
+	//recache vox/five.wav
+	//recache vox/four.wav
+	//recache vox/three.wav
+	//recache vox/two.wav
+	//recache vox/one.wav
+	//recache vox/zero.wav
+
+	const SOUND_BEAR_STRUCK1 monsters/bear/c_bear_hit1.wav
+	const SOUND_BEAR_STRUCK2 monsters/bear/c_bear_hit2.wav
+	const SOUND_BEAR_STRUCK3 monsters/bear/c_bear_no.wav
+}
+
+#include [server] player/valid_spawn
+#include [server] player/element_resist
+
+// Spawn
+{
+	eventname game_spawn //this runs twice, once during character selection (before clicking), and again when character spawns into world
+
+	dbg game_spawn $get(ent_me,hp)
+
+	if ( !PLR_STARTED_AFK_CHECKS )
+	{
+		setvard PLR_STARTED_AFK_CHECKS 1
+		callevent 60.0 afk_check
+	}
+
+	//cheat checks
+	CheatEngineCheck
+	clientevent update ent_me const.localplayer.scriptID dll_verify G_SCRIPT_VERSION
+
+	if ( game.serverside )
+	{
+		hud.killicons ent_me
+
+		if ( DEMON_BLOOD ) callevent end_demon_blood
+		setvard PLR_SPEED 100
+
+		setvard ICE_SHIELDED 0
+		setvard ICE_SHIELD_TIME 0
+		setvard PLAYING_DEAD 0 //in case died while invalidated
+
+		if ( !$get(GAME_MASTER,exists) ) createnpc game_master $vec(20000,-10000,-20000)
+
+		if $get_quest_data(ent_me,h) == 1
+		callevent console_health_toggle 1
+	}
+
+	race human
+
+	if ( !HAD_FIRST_SPAWN )
+	{
+		setvarg global.mstime.updateall 0 //update time to stop strobe effect?
+		if game.serverside
+		setvard PLR_DMG 0
+		if ( game.cvar.ms_chatlog ) chatlog $timestamp(>) PLAYER_JOIN: $get(ent_me,name) [ $get(ent_me,steamid) ] ip: $get(ent_me,ip)
+		setvard HAD_FIRST_SPAWN 1
+		setvard IS_AFK 0
+		setvard AFK_TIME 0
+		setvard MY_SPAWN_TIME game.time
+		setvard FIRST_PARTY_MSG game.time
+		setvard CVAR_HP_LIMIT game.cvar.ms_hp_limit
+		add FIRST_PARTY_MSG 60.0
+	}
+
+	callevent hide_my_stuff $get(ent_me,id)
+
+	local LAST_SPAWN $get_lastmap(ent_me)
+	local NEXT_SPAWN $get_nextmap(ent_me)
+
+	if !INVALID_SPAWN
+	if ( G_VALID_SPAWN != 1 ) callevent validate_spawn LAST_SPAWN $get_map_legit(ent_me)
+
+	//dbg Spawned from LAST_SPAWN ( legit: $get_map_legit(ent_me) validated: G_VALID_SPAWN type: $get_jointype(ent_me) ) 
+
+	volume 10
+}
+
+{ random_spawn
+	callexternal GAME_MASTER find_spawn_point $get(ent_me,id)
+}
+
+//{ reset_trans_checks
+//	setvard NO_TRANS_CHECKS 0
+//}
+
+{ activate_stuff
+
+	if ( !PLR_LIGHTS_SYNCED )
+	{
+		//send player lights to my client, if any
+		//callexternal GAME_MASTER gm_lights_sync $get(ent_me,index)
+		callexternal all player_joined $get(ent_me,id)
+		setvard PLR_LIGHTS_SYNCED 1
+		clientevent update ent_me const.localplayer.scriptID cl_check_version G_SCRIPT_VERSION G_BPATCH_MANDATORY
+		callevent 3.0 check_version
+	}
+
+	if ( !PLR_FIRST_ACTIVATE )
+	{
+		setvard PLR_FIRST_ACTIVATE 1
+		local L_MAP_NAME $lcase(game.map.name)
+		if ( $get_find_token(MAPS_GAUNTLET,L_MAP_NAME) > -1 ) local L_IS_GAUNTLET 1
+		if ( $get_find_token(MAPS_GAUNTLET_START,L_MAP_NAME) > -1 ) local L_IS_GAUNTLET 1
+
+		dbg activate_stuff dmg_points gaunt $get_find_token(MAPS_GAUNTLET_START,L_MAP_NAME) L_IS_GAUNTLET
+	
+		if ( L_IS_GAUNTLET )
+		{
+			if ( $get_find_token(MAPS_GAUNTLET_START,L_MAP_NAME) > -1 )
+			{
+				local L_START_GAUNTLET 1
+				if ( game.time < 180 )
+				{
+					if ( $get_quest_data(ent_me,dp) < 500 )
+					{
+						setvard PLR_TOTAL_DMG 500
+						gplayermessage ent_me Bonus 500,000 damage points for starting gauntlet.
+						callevent store_dmg_points start_gaunt
+					}
+					else
+					{
+						//early reconnect, or came from another server on the same map
+						if ( L_MAP_NAME equals $get_quest_data(ent_me,dm) )
+						{
+							callevent restore_dmg_points
+							callevent store_dmg_points start_gaunt_recon
+						}
+						else
+						{
+							//not a rejoin, just store 0
+							setvard PLR_TOTAL_DMG 0
+							callevent store_dmg_points start_gaunt_new
+						}
+					}
+				}
+				else
+				{
+					//joined late, but maybe a rejoin, so restore points, if on same map
+					setvard PLR_TOTAL_DMG 0
+					if ( L_MAP_NAME equals $get_quest_data(ent_me,dm) )
+					{
+						callevent restore_dmg_points
+						callevent store_dmg_points start_gaunt_late_rejoin
+					}
+					else
+					{
+						//not a rejoin, just store 0
+						setvard PLR_TOTAL_DMG 0
+						callevent store_dmg_points start_gaunt_late_new
+					}
+				}
+			}
+			if !L_START_GAUNTLET
+			//not at gauntlet start, just restore previous points
+			callevent restore_dmg_points
+			callevent store_dmg_points gaunt_non_start
+		}
+		else
+		{
+			setvard PLR_TOTAL_DMG 0
+			if ( L_MAP_NAME equals $get_quest_data(ent_me,dm) )	callevent restore_dmg_points
+			callevent store_dmg_points non_gaunt
+		}
+	}
+
+	if ( $get(ent_me,companions) > 0 ) summonpets ent_me
+
+	drainstamina ent_me -1000 //restore stamina on spawn 
+	clientcmd ent_me "room_type 0;wait;switchhand 1;wait;switchhand 1" //reset EAX and fix hand display
+
+	if ( G_DARKEN_BLOOM > 0 ) callexternal ent_me ext_darkenbloom G_DARKEN_BLOOM
+
+	//old damage point system
+	//callexternal GAME_MASTER add_player_steamid $get(ent_me,id)
+
+	//infomsg all "DEBUG" "activate_stuff"
+	dbg activate_stuff
+
+	if (  CVAR_HP_LIMIT > 0 )
+	{
+		if $get(ent_me,maxhp) >= CVAR_HP_LIMIT
+		callevent 1.0 hp_max_warn
+	}
+
+	setvard PLR_PRECHEAT_POS $get(ent_me,origin)
+	callexternal all ext_activate_items $get(ent_me,id)
+	//wish I thought of this before - use to make sure items activate post spawn
+}
+
+{ restore_dmg_points
+	setvard PLR_TOTAL_DMG 0
+	local L_CUR_DMG_POINTS $get_quest_data(ent_me,dp)
+	if L_CUR_DMG_POINTS > 0
+	setvard PLR_TOTAL_DMG L_CUR_DMG_POINTS
+	local L_OUT_MSG $int(PLR_TOTAL_DMG)
+	stradd L_OUT_MSG 000
+	gplayermessage ent_me Restored L_OUT_MSG damage points.
+}
+
+{ store_dmg_points //[debug]
+	dbg store_dmg_points ( PLR_TOTAL_DMG + PLR_DMG ) PARAM1
+	quest set ent_me dp PLR_TOTAL_DMG
+	if !PLR_DMG_POINT_SETMAP
+	setvard PLR_DMG_POINT_SETMAP 1
+	quest set ent_me dm $lcase(game.map.name)
+}
+
+{ add_dmg_points //<points>
+	add PLR_DMG PARAM1
+	if ( PLR_DMG >= 1000 )
+	{
+		subtract PLR_DMG 1000
+		add PLR_TOTAL_DMG 1
+		if game.time > PLR_NEXT_DMG_STORE //delay storage in case we get to a point where we're doing multiples of 1000 pts in seconds
+		setvard PLR_NEXT_DMG_STORE game.time
+		add PLR_NEXT_DMG_STORE 5.0
+		callevent store_dmg_points hitmob
+	}
+}
+
+//{ send_recon_line3
+//	clientcmd ent_me CLIENT_RECON_LINE3
+//}
+
+{ tele_spawn
+	//dbg temp moving to ( NEW_SPAWN_POS )
+	playsound 0 10 magic/spawn.wav
+	setorigin ent_me NEW_SPAWN_POS
+	setvard OWNER_POS NEW_SPAWN_POS
+	if FX_SPAMMERS < MAX_FX_SPAMMERS
+	calleventloop 18 beam_fx
+}
+
+{ beam_fx
+
+	local BEAM_START OWNER_POS
+	local BEAM_END OWNER_POS
+
+	vectoradd BEAM_START $relpos($vec(0,BEAM_ROT,0),$vec(0,32,-32))
+	vectoradd BEAM_END $relpos($vec(0,BEAM_ROT,0),$vec(0,32,128))
+	effect beam point lgtning.spr 100 BEAM_START BEAM_END (255,0,255) 200 16 3
+
+	add BEAM_ROT 20
+}
+
+
+// Main think... called every frame
+{
+	eventname game_think
+}
+
+
+// Player jump
+{
+	eventname game_jump
+
+	//dbg temp Jimmune IMMUNE_LIGHTNING
+
+	playanim once ANIM_JUMP
+}
+{
+	eventname game_jump_land
+
+	playanim break
+}
+
+
+// Player death
+{ game_death
+
+	clearfx //may not work on players yet
+
+	//reset to global music, if any
+	//music will actually reset on spawn (putinworld)
+	setvard PLR_COMBAT_MUSIC G_COMBAT_MUSIC
+	setvard PLR_COMBAT_MUSIC_LENGTH G_COMBAT_MUSIC_LENGTH
+	setvard PLR_IDLE_MUSIC G_IDLE_MUSIC
+	setvard PLR_IDLE_MUSIC_LENGTH G_IDLE_MUSIC_LENGTH
+	setvard PLR_CORRODE_DURATION 0
+
+	callexternal ent_me ext_darkenbloom G_DARKEN_BLOOM
+
+	setvard PLR_SWIFT_BLADE 0
+	setvard MSC_PUSH_RESIST 0
+	setvard PLR_LESSER_LEADFOOT 0
+
+	hud.killicons ent_me
+
+//	if ( $get_quest_data(ent_me,s) equals out )
+//	{
+//		if $get(ent_me,companions) > 0
+//		callevent player_unsummon_pets
+//	}
+
+	setvard PLR_BRAVERY 0 //reset bravery pot status
+	setvard PLR_DMG_ADJUST_FIRE 0 //reset damage adjust
+	setvard PLR_ADD_FIRE_DOT 0 //reset additional DOT
+
+	if ( DEMON_BLOOD ) setvard DEMON_BLOOD_END_TIME game.time
+
+	callevent ext_setbodytype normal //JAN2010 - for new ref model
+
+	if ( PLR_FAURA ) callexternal ent_me ext_fire_aura_remove //reset aura
+	if ( PLR_PAURA ) callexternal ent_me ext_poison_aura_remove //reset aura
+
+	setvard PLR_MANA_FONT 0 //disable mana font
+
+	//subtract 1000 damage points and zero out fractions
+	if ( PLR_TOTAL_DMG > 0 )
+	{
+		//callexternal GAME_MASTER add_score $get(ent_me,id) -1
+		subtract PLR_TOTAL_DMG 1
+		callevent store_dmg_points died
+	}
+	setvard PLR_DMG 0
+
+	callexternal all bs_global_command $get(ent_me,id) vanish //remove my summons
+
+	//callevent hide_my_stuff $get(ent_me,id)
+
+	//remove 2007
+
+	//callevent animate_death
+
+	//createnpc player/player_corpse $relpos(0,0,0) ARMOR_TYPE ARMOR_OFS CREST_OFS HELM_OFS
+
+	setvard IR_GLOWING 0 //toggle internal glow off
+	//remove external potion effects
+	if ( REGEN_ON ) callexternal ent_me regen_end
+	if ( VAMPIRE_ON ) callexternal ent_me vampire_off
+	if ( DEMON_BLOOD ) callexternal ent_me end_demon_blood
+	if ( PLR_FAURA ) callexternal ent_me ext_fire_aura_remove
+
+	//setvard VAMPIRE_ON 0 //vampire blood go bye bye
+    //setvard DEMON_BLOOD 0 //" "
+
+	if ( $get(ent_me,scriptvar,'PLR_SFAURA_ACTIVE') )
+	{
+		callexternal ent_me ext_sfaura_end
+	}
+
+	if ( $get(ent_me,scriptvar,'PLR_HAURA_ACTIVE') )
+	{
+		callexternal ent_me ext_end_holy_aura
+	}
+
+	if ( $get(ent_me,scriptvar,'PLR_REPEL_SHIELD_ACTIVE') )
+	{
+		callexternal ent_me ext_end_repel_shield
+	}
+	
+	if ( $get(ent_me,scriptvar,'PLR_PLSHIELD_ACTIVE') )
+	{
+		callexternal ent_me ext_pole_lshield_end
+	}
+
+	if ( $get(ent_me,scriptvar,'PLR_BEAR_MODE') )
+	{
+		//callevent ext_bear_mode_end
+		dbg player died in bear mode PLR_BEAR_IMAGE_ID
+		//playsound 0 10 monsters/bear/c_bear_dead.wav
+		callexternal PLR_BEAR_IMAGE_ID ext_bear_die from_player_main
+		callexternal ent_me ext_bear_mode_end
+//		setvard PLR_BEAR_MODE 0
+//		setprop ent_me rendermode 0
+//		setprop ent_me renderamt 255
+//		nopush OLD_NOPUSH
+		//callexternal PLR_BEAR_CLAWS_ID bear_transformation_end
+	}
+	else
+	{
+		playsound 0 10 SOUND_DEATH
+	}
+
+	//should we clear cmusak here?
+	scriptflags ent_me cleartype nopush
+	scriptflags ent_me cleartype mana_regen
+	scriptflags ent_me cleartype combat
+
+	callevent animate_death
+	usetrigger player_died //tell map a player died
+	callevent 0.1 warp_out //anti-looter measure
+}
+
+{ warp_out
+	setorigin ent_me (20000,20000,-20000) //send real body to oblivion so cant be looted
+}
+
+
+{ [shared] hide_my_stuff //param1 id
+
+	setvarg HIDE_MY_STUFF $get(ent_me,id)
+	setvarg FRESH_PLAYER 1
+	//dbg Player HIDE_MY_STUFF arrived/died - hiding his stuff for next five seconds
+	callevent 10.0 stop_hidin_stuff
+}
+
+{ [shared] stop_hidin_stuff	
+
+	//dbg Stopped hidin stuff
+	//originally had this turned off, but leaving it on, oddly, doesn't seem to damage anything
+	//setvarg FRESH_PLAYER 0
+	setvarg HIDE_MY_STUFF 'HIDE_MY_STUFF'
+}
+
+{ game_parry //PARAM1=attacker PARAM2=Damage PARAM3=Type PARAM4=Parry_Roll PARAM5=Atk_Roll PARAM6=ParrySkill
+	//dbg temp PLAYER PARRY! Atker $get(PARAM1,name) dmg PARAM2 dmgtype PARAM3 roll PARAM4 pry PARAM5 p6 PARAM6
+	local PARRY_ROLL $int(PARAM4)
+	local ACCU_ROLL $int(PARAM5)
+	dbg game_parry PARAM6
+	playermessage ent_me You parry the attack! ( PARRY_ROLL vs. ACCU_ROLL )
+	//playviewanim 4
+}
+
+{ game_damaged //PARAM1=attacker PARAM2=Damage PARAM3=Type
+
+	setvard PL_BEEN_ATTACKED 1
+
+	setvard LAST_STRUCK_FOR PARAM2 //for bone blade
+
+	//this doesn't wanna work here :\
+//	if ( $get(ent_me,scriptvar,'PLR_SPIDER_PROT') )
+//	{
+//		if $get(PARAM1,race) equals spider
+//		local DMG_RED_AMT $get(ent_me,scriptvar,'PLR_SPIDER_AMT')
+//		local OUT_DMG PARAM2
+//		multiply OUT_DMG DMG_RED_AMT
+//		setdmg hit 1
+//		setdmg dmg OUT_DMG
+//		returndata DMG_RED_AMT
+//		dbg adjusted_damage PARAM2 to OUT_DMG via DMG_RED_AMT
+//	}
+
+	if ( PLR_BEAR_MODE )
+	{
+		if ( $rand(1,3) ==  1 ) playrandomsound 0 10 SOUND_BEAR_STRUCK1 SOUND_BEAR_STRUCK2 SOUND_BEAR_STRUCK3
+	}
+
+	//dbg PlayerTakedmg P1 $get(PARAM1,name) p2 PARAM2 p3 PARAM3 p4 PARAM4
+
+	if PARAM2 > 0
+
+	callevent display_health
+
+	if ( PLR_COMBAT_MUSIC_ACTIVE )
+	{
+		if $get(PARAM1,isalive) //don't want post-mortem DOT's starting up music
+		if PLR_COMBAT_MUSIC_LENGTH != 0
+		if PLR_CURRENT_MUSIC isnot PLR_COMBAT_MUSIC
+		if !$get_scriptflag(ent_me,cmusak,type_exists)
+		if PARAM1 isnot GAME_MASTER
+		if ( !$get(PARAM1,scriptvar,'NPC_CUSTOM_COMBAT_MUSIC') )
+		{
+			callevent ext_music_combat add $get(PARAM1,index)
+		}
+		else
+		{
+			callevent ext_music_combat add $get(PARAM1,index) $get(PARAM1,scriptvar,'NPC_CMUSIC_LENGTH')  $get(PARAM1,scriptvar,'NPC_CMUSIC_FILE')
+		}
+	}
+}
+
+{ display_health
+
+	callexternal players show_hbar_player $get(ent_me,id)
+
+	if SHOW_HEALTH
+	local MY_HP $get(ent_me,hp) 
+	local MY_MAXHP $get(ent_me,maxhp)
+	local MY_HP $int(MY_HP)
+	local MY_MAXHP $int(MY_MAXHP)
+
+	local PERCENT MY_HP
+	divide PERCENT MY_MAXHP
+	multiply PERCENT 100
+	local PERCENT $int(PERCENT)
+
+	local FILL_POS PERCENT
+	divide FILL_POS 10
+	local FILL_POS $int(FILL_POS)
+
+	setvard BUILD_BAR_COUNT 0
+	setvard BAR_STRING "{"
+	calleventloop 10 build_bar FILL_POS
+	stradd BAR_STRING "}"
+
+	stradd PERCENT "%"
+
+	gplayermessage ent_me HP: BAR_STRING PERCENT ( MY_HP / MY_MAXHP )
+}
+
+{ console_health_toggle //PARAM1 = 0/1/toggle //called externally from sv_world_commands
+
+	if ( PARAM1 equals toggle )
+	{
+		if ( SHOW_HEALTH ) setvard SHOW_HEALTH 0
+		else setvard SHOW_HEALTH 1
+	}
+
+	if ( PARAM1 isnot toggle ) setvard SHOW_HEALTH PARAM1
+
+	if ( SHOW_HEALTH ) 
+	{
+		quest set ent_me h 1
+		playermessage ent_me Your health will now be displayed in the combat hud when you are struck
+		consolemsg ent_me Your health will now be displayed in the combat hud when you are struck
+	}
+	if ( !SHOW_HEALTH )
+	{
+		quest set ent_me h 0
+		 playermessage ent_me Your health will no longer be displayed in the combat hud
+		 consolemsg ent_me Your health will no longer be displayed in the combat hud
+	}
+}
+
+{ healthbar_toggle //PARAM1 = 0/1/toggle //called externally from sv_world_commands
+
+	if ( PARAM1 equals toggle )
+	{
+		if ( DISPLAY_PLAYER_HP ) setvard DISPLAY_PLAYER_HP 0
+		else setvard DISPLAY_PLAYER_HP 1
+	}
+
+	if ( PARAM1 isnot toggle ) setvard DISPLAY_PLAYER_HP PARAM1
+
+	if ( DISPLAY_PLAYER_HP ) 
+	{
+		quest set ent_me p 1
+		playermessage ent_me "Player health bars are enabled."
+		consolemsg ent_me "Player health bars are enabled."
+	}
+	if ( !DISPLAY_PLAYER_HP )
+	{
+		quest set ent_me p 0
+		playermessage ent_me "Player health bars are disabled."
+		consolemsg ent_me "Player health bars are disabled."
+	}
+}
+
+
+{ mana_drain //called externally from magic_hand_base
+
+	if SHOW_HEALTH
+	local MY_MP $get(ent_me,mp) 
+	local MY_MAXMP $get(ent_me,maxmp)
+	local MY_MP $int(MY_MP)
+	local MY_MAXMP $int(MY_MAXMP)
+
+	local PERCENT MY_MP
+	divide PERCENT MY_MAXMP
+	multiply PERCENT 100
+	local PERCENT $int(PERCENT)
+
+	local FILL_POS PERCENT
+	divide FILL_POS 10
+	local FILL_POS $int(FILL_POS)
+
+	setvard BUILD_BAR_COUNT 0
+	setvard BAR_STRING "{"
+	calleventloop 10 build_bar FILL_POS
+	stradd BAR_STRING "}"
+
+	stradd PERCENT "%"
+
+	bplayermessage ent_me MANA: BAR_STRING PERCENT ( MY_MP / MY_MAXMP )
+}
+
+{ build_bar
+	add BUILD_BAR_COUNT 1
+	if ( BUILD_BAR_COUNT <= PARAM1 ) stradd BAR_STRING "|"
+	if ( BUILD_BAR_COUNT > PARAM1 ) stradd BAR_STRING " "
+}
+
+
+//failed armor body hack
+//{ [shared] monitor_loop
+//	callevent 5.0 monitor_loop
+//
+//	if ( $get(ent_me,isalive) )
+//	{
+//		if $get(ent_me,exists)
+//		if !$item_exists(ent_me,armor_body)
+//		//dbg temp player has no body, giving body
+//		giveitem armor_body
+//	}
+//}
+
+{ game_learnskill //1: Skill name (buggy-keeps spaces)  2: Subskill name 3: Skill value (buggy-oft returns 0)
+
+	//SKILL CAPS
+//	local MAX_LEVEL $int(game.maxlevel)
+//
+//	if ( $lcase(PARAM1) contains parry )
+//	{
+//		if ( $get(ent_me,skill.parry) == MAX_LEVEL )
+//		{
+//			local OUT_MSG "You have reached Maximum Parry Skill ("
+//			stradd OUT_MSG MAX_LEVEL
+//			stradd OUT_MSG ")"
+//			
+//			infomsg ent_me OUT_MSG
+//		}
+//		if ( $get(ent_me,skill.parry) > MAX_LEVEL ) setstat parry MAX_LEVEL
+//		local EXIT_SUB 1
+//	}
+//	if !EXIT_SUB
+
+	gplayermessage ent_me PARAM1 PARAM2 PARAM3 PARAM4
+
+//	if ( $get(ent_me,isbot) )
+//	{
+//		dbg bot gaining levels?
+//	}
+//
+	if !$get(ent_me,isbot)
+
+	local SKILL_STRING 'skill.'
+	stradd SKILL_STRING PARAM1
+
+	//dbg temp $get(ent_me,name) gained skill! In PARAM1 , PARAM2 , PARAM3 , PARAM4 $get(ent_me,SKILL_STRING) ( SKILL_STRING )
+
+	local TITLE_STRING $get(ent_me,name)
+	stradd TITLE_STRING " has gained a level!"
+	local MESSAGE_STRING "has gained experience in "
+	stradd MESSAGE_STRING PARAM1
+	if ( PARAM1 startswith 'Spell' )
+	{
+		stradd MESSAGE_STRING " "
+		stradd MESSAGE_STRING PARAM2
+	}
+
+	infomsg all TITLE_STRING MESSAGE_STRING
+
+	playsound 0 10 SOUND_LEVELUP1 //SOUND_LEVELUP2
+
+	clientevent new all player/player_conartist levelup $get(ent_me,index)
+	setvard LEVEL_UP_SCRIPT game.script.last_sent_id
+	//dbg LevelupID LEVEL_UP_SCRIPT
+}
+
+{ [server] reset_send_dmg_delay
+
+	setvard SEND_DMG_DELAY 0
+}
+
+{ game_transition_entered
+	//dbg game_transition_entered(Player_Main) PARAM1 PARAM2 PARAM3 PARAM4
+	//this works, but more dependable to set on trans side
+	//if $dist(game.monster.origin,MY_HOME) > 640
+	//dbg set map to PARAM2 distance
+	//quest set $get(ent_me,id) map_trans PARAM2
+}
+
+{ game_xpgain //PARAM1=XP amt
+
+	local XP_GAIN $int(PARAM1)
+	gplayermessage ent_me * XP_GAIN XP Awarded
+	//setvard LAST_XP XP_GAIN
+}
+
+{ game_fx_spawn
+	add G_TOTAL_FX 1
+	//dbg Fx Spawned G_TOTAL_FX
+	callevent 3.0 reduce_flood
+}
+
+{ reduce_flood
+	subtract G_TOTAL_FX 1
+	if G_TOTAL_FX <= 0
+	setvarg G_TOTAL_FX 0
+	//dbg FX clear ( G_TOTAL_FX )
+}
+
+{ give_map_intro
+	infomsg ent_me G_MAP_NAME G_MAP_DESC
+	local L_PET_LIST $get_quest_data(ent_me,pets)
+	if ( L_PET_LIST isnot 0 )
+	{
+		callevent 0.1 pet_notice
+	}
+	callevent 3.0 give_map_diff
+}
+
+{ pet_notice
+	local L_PET_LIST $get_quest_data(ent_me,pets)
+	if ( L_PET_LIST isnot 0 )
+	{
+		if ( $get_token_amt(L_PET_LIST) > 1 )
+		{
+			helptip ent_me generic "You have Pets!" "You can summon your pets via the Player Menu (defaultkey: F)"
+		}
+		else
+		{
+			helptip ent_me generic "You have a Pet!" "You can summon your pet via the Player Menu (defaultkey: F)"
+		}
+	}
+}
+
+{ give_map_diff
+	//callevent 1.0 give_server_settings
+	if ( G_MAP_DIFF isnot 'G_MAP_DIFF' ) infomsg ent_me "Intended Difficulty" G_MAP_DIFF
+	if game.monster.maxhp >= 5
+	if ( game.monster.maxhp < G_WARN_HP ) infomsg ent_me "WARNING" "This area maybe too difficult at your level! - Votemap elsewhere?"
+}
+
+//{ give_server_settings
+//	if G_CVAR_DIFF > 0
+//	infomsg ent_me "Monster Ramping Active" "Server has activated monster ramping. HP and XP value of monsters will increase with player strength."
+//}
+
+{ help_toggle
+	if ( !G_HELP_ON )
+	{
+		setvarg G_HELP_ON 1
+		consolemsg ent_me Be sure to get more info at: www.msremake.com/forums
+		usetrigger help_spr
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	if ( G_HELP_ON )
+	{
+		setvarg G_HELP_ON 0
+		consolemsg ent_me Be sure to get more info at: www.msremake.com/forums
+		gplayermessage ent_me You can type “help” again to restore the help panels
+		usetrigger help_spr
+		local EXIT_SUB 1
+	}
+}
+
+{ [server] game_dodamage //1:AttackHit(1/0)  2:EntityHit  3:StartOrigin  4:EndOrigin
+	
+	//dbg Player_Attacked with PARAM5 for PARAM6
+	if ( PARAM5 equals dark )
+	{
+		//Thothie AUG2010_23 Dark Energy Corruption
+		local OLD_PLR_DARK_LEVEL PLR_DARK_LEVEL
+		add PLR_DARK_LEVEL PARAM6
+		if ( PLR_DARK_LEVEL > PLR_MAX_DARK_LEVEL )
+		{
+			setvard PLR_DARK_LEVEL PLR_MAX_DARK_LEVEL
+		}
+		if ( OLD_PLR_DARK_LEVEL < PLR_DARK_UNHOLY_LEVEL )
+		{
+			if PLR_DARK_LEVEL > PLR_DARK_UNHOLY_LEVEL
+			callevent player_calc_holy_resistance
+		}
+	}
+	
+	if ( USING_LIGHTNING )
+	{
+		if PARAM1
+		//dbg temp Lstorm effect through player_main
+		local SHOCK_DAMAGE $get(ent_me,skill.spellcasting.lightning)
+		multiply SHOCK_DAMAGE LIGHTNING_DMG_RATIO
+		applyeffect $get(PARAM2,id) effects/effect_shock_dmg 5 $get(ent_me,id) SHOCK_DAMAGE LIGHTNING_SKILL
+	}
+}
+
+{ debug_scantarg
+
+	consolemsg ent_me $get(DEBUG_CUR_TAR,name) in PARAM1 units? ( $get_insphere(DEBUG_CUR_TAR,PARAM1,$relpos(0,200,0)) )
+}
+
+{ game_helptip
+	//dbg temp got Helptip PARAM1 PARAM2
+	playsound 0 10 magic/converted_magic13.wav
+}
+
+{ [server] game_damaged_other //PARAM1=target_hit PARAM2=dmg PARAM3=type
+
+	setvard IS_AFK 0
+	setvard PLR_LAST_ATK_TIME game.time
+
+//	if ( $get(PLR_ACTIVE_WEAPON,scriptvar,'IS_POLEARM') )
+//	{
+//		if $get(PARAM1,isalive)
+//
+//		local OPTIMUM_RANGE $get(PLR_ACTIVE_WEAPON,scriptvar,'POLEARM_OPTIMUM_RANGE')
+//		local DMG_FALLOFF $get(PLR_ACTIVE_WEAPON,scriptvar,'POLEARM_DMG_FALLOFF')
+//
+//		local TARG_RANGE $get(PARAM1,range)
+//
+//		if TARG_RANGE != OPTIMUM_RANGE
+//		//missed, adjust damage accordingly
+//
+//		//hack hack (can't remember if scripts have an ABS or ratio function that'd work for this)
+//		if ( TARG_RANGE > OPTIMUM_RANGE )
+//		{
+//			local MISSED_AMT TARG_RANGE
+//			subtract MISSED_AMT OPTIMUM_RANGE
+//			local TOO_CLOSE 0
+//		}
+//		if ( TARG_RANGE < OPTIMUM_RANGE )
+//		{
+//			local MISSED_AMT OPTIMUM_RANGE
+//			subtract MISSED_AMT TARG_RANGE
+//			local TOO_CLOSE 1
+//		}
+//
+//		local DMG_PENALTY_FACTOR DMG_FALLOFF
+//		multiply DMG_PENALTY_FACTOR MISSED_AMT
+//
+//		if ( DMG_PENALTY_FACTOR >= 1 )
+//		{
+//			local DMG_PENALTY_FACTOR 0.9 //completely out of range, do min damage
+//			if ( TOO_CLOSE ) playermessage ent_owner You are too close to attack with this polearm! //not intuitive IMO
+//		}
+//
+//		local OUT_DMG_FACTOR 1
+//		subtract OUT_DMG_FACTOR DMG_PENALTY_FACTOR
+//
+//		//I always do both returndata and setdmg, as I've never figured which is used where
+//		//seems to vary with the script execution location, but only one is used each time
+//		returndata OUT_DMG_FACTOR
+//		local OUT_DMG PARAM2
+//		multiply OUT_DMG OUT_DMG_FACTOR
+//		setdmg dmg OUT_DMG
+//
+//		if ( G_DEVELOPER_MODE ) gplayermessage ent_me DEBUG: Missed by MISSED_AMT units [ adjust: OUT_DMG_FACTOR pen: DMG_PENALTY_FACTOR falloff: DMG_FALLOFF dmg: OUT_DMG ]
+//	}
+
+	if ( PLR_2H_REDUCT < 1 )
+	{
+		if ( PARAM3 contains effect ) local EXIT_SUB 1
+		if !EXIT_SUB
+		local IN_DMG PARAM2
+		multiply IN_DMG PLR_2H_REDUCT
+		set dmg IN_DMG
+		dbg 2hreduct PARAM2 to IN_DMG
+		returndata PLR_2H_REDUCT
+	}
+	
+	if ( $get(PARAM1,relationship,ent_me) equals enemy )
+	{
+		if !$get(PARAM1,scriptvar,'AM_INVISIBLE') //Thothie FEB2009
+		if !$get(PARAM1,isplayer)
+		local DMG_DONE PARAM2
+		local NME_HP $get(PARAM1,hp)
+		if ( NME_HP < DMG_DONE )
+		{
+			local DMG_DONE NME_HP //so we don't get 1000 dmg points for darksword'ing a rat
+		}
+		callevent add_dmg_points DMG_DONE
+	}
+
+	if ( $get(ent_me,scriptvar,'PLR_DMG_ADJUST_FIRE') > 0 )
+	{
+		if PARAM3 contains fire
+		local ADJ_RATIO $get(ent_me,scriptvar,'PLR_DMG_ADJUST_FIRE')
+		returndata ADJ_RATIO
+		local IN_DMG PARAM2
+		multiply IN_DMG ADJ_RATIO
+		set dmg IN_DMG
+		dbg Adjusted fire dmg PARAM2 to IN_DMG
+	}
+
+	if ( $get(ent_me,scriptvar,'PLR_ADD_FIRE_DOT') > 0 )
+	{
+		local DOT_RATIO $get(ent_me,scriptvar,'PLR_ADD_FIRE_DOT')
+		local OWNER_SKILL $get(ent_me,skill.spellcasting.fire)
+		multiply OWNER_SKILL DOT_RATIO
+		applyeffect PARAM1 effects/effect_burn 5.0 $get(ent_me,id) OWNER_SKILL
+	}
+
+	if DISPLAY_TARG_HP
+	setvard HBAR_TARGET PARAM1
+	callevent 0.1 ext_show_hbar_monster $get(PARAM1,id) //give time for health to propigate
+}
+
+{ ext_show_hbar_monster //<target_to_show> <even_if_no_bloodstone>
+	if ( !PARAM2 )
+	{
+		if !DISPLAY_TARG_HP
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+	if ( PARAM1 !startswith PARAM ) setvard HBAR_TARGET PARAM1
+//	callevent 0.1 show_hbar_monster
+//}
+//
+//{ [server] show_hbar_monster
+
+	if game.time > PLR_LAST_HBAR_SHOW
+	setvard DISPLAY_HBAR_DELAY 1
+	setvard PLR_LAST_HBAR_SHOW game.time
+	add PLR_LAST_HBAR_SHOW 0.5
+
+	//callevent 0.5 reset_hbar_delay
+
+	local TARG_HIT HBAR_TARGET
+
+	local TARG_HP $get(TARG_HIT,hp)
+	local TARG_MAXHP $get(TARG_HIT,maxhp)
+	local PERC_HP TARG_HP
+	divide PERC_HP TARG_MAXHP
+	local HBAR_FRAME HBAR_FRAMES
+	multiply HBAR_FRAME PERC_HP
+	local HBAR_FRAME $int(HBAR_FRAME)
+	local HBAR_HEIGHT $get(TARG_HIT,height)
+	capvar HBAR_HEIGHT 32 512
+	//add HBAR_HEIGHT 32
+	local HBAR_POS $get(TARG_HIT,origin)
+	vectoradd HBAR_POS z HBAR_HEIGHT
+	//dbg making health_bar HBAR_FRAME
+	local HBAR_SCALE TARG_MAXHP
+	divide HBAR_SCALE 4000
+	capvar HBAR_SCALE 0.05 0.75
+
+	if ( !$get(TARG_HIT,isalive) ) local HBAR_FRAME 0
+
+	local HBAR_ADJ_POS $get(TARG_HIT,scriptvar,'NPC_HBAR_ADJ')
+	//dbg show_hbar_monster HBAR_ADJ_POS
+	if ( HBAR_ADJ_POS isnot 'NPC_HBAR_ADJ' )
+	{
+		local TARG_YAW $get(TARG_HIT,angles.yaw)
+		vectoradd HBAR_POS $relpos($vec(0,TARG_YAW,0),HBAR_ADJ_POS)
+	}
+
+	//new HBAR_POS attempt
+	//trying to make it look like its on hud
+	//fail - rather this just kinda makes it always appear in front of you
+	//has its advantages but still no good
+	//most likely will have to make new script function to draw on hud
+	//based on stamina or weight bar
+//	local MY_VIEW $get(ent_me,viewangles)
+//	local MY_VIEW_YAW $vec.yaw(MY_VIEW)
+//	local MY_VIEW_PITCH $vec.pitch(MY_VIEW)
+//	local MY_VIEW_ROLL $vec.roll(MY_VIEW)
+//	local HBAR_POS $get(ent_me,origin)
+//	vectoradd HBAR_POS $relpos($vec(MY_VIEW_PITCH,MY_VIEW_YAW,MY_VIEW_ROLL),$vec(0,30,32))
+//	local HBAR_SCALE 0.1
+
+	local WAGARO_WTF HBAR_FRAME
+	dbg ext_show_hbar_monster HBAR_FRAME WAGARO_WTF
+	add WAGARO_WTF 22 //i've no fucking idea why, but the client does not like frame=5, so crazy fix
+
+	clientevent update ent_me const.localplayer.scriptID show_hbar HBAR_POS WAGARO_WTF HBAR_SCALE $get(TARG_HIT,index)
+	//clientevent new ent_me player/health_bar HBAR_POS HBAR_FRAME HBAR_SCALE
+}
+
+{ [server] show_hbar_player
+
+	if DISPLAY_PLAYER_HP
+
+	if !DISPLAY_PBAR_DELAY
+	setvard DISPLAY_PBAR_DELAY 1
+	callevent 0.5 reset_display_pbar_delay
+	local TARG_HIT $get(ent_me,id)
+
+	local TARG_HP $get(TARG_HIT,hp)
+	local TARG_MAXHP $get(TARG_HIT,maxhp)
+	local PERC_HP TARG_HP
+	divide PERC_HP TARG_MAXHP
+	local HBAR_FRAME HBAR_FRAMES
+	multiply HBAR_FRAME PERC_HP
+	local HBAR_FRAME $int(HBAR_FRAME)
+	local HBAR_HEIGHT $get(TARG_HIT,height)
+	subtract HBAR_HEIGHT 20 //player origin is center, compensate
+	local HBAR_POS $get(TARG_HIT,origin)
+	vectoradd HBAR_POS z HBAR_HEIGHT
+	//dbg making health_bar HBAR_FRAME
+	local HBAR_SCALE TARG_MAXHP
+
+	if ( !$get(TARG_HIT,isalive) ) local HBAR_FRAME 0
+
+
+	local WAGARO_WTF HBAR_FRAME
+	//dbg ext_show_hbar_monster HBAR_FRAME WAGARO_WTF
+	add WAGARO_WTF 22 //i've no fucking idea why, but the client does not like frame=5, so crazy fix
+
+	//if ( PARAM1 equals $get(ent_me,id) ) clientevent new all player/health_bar HBAR_POS HBAR_FRAME 0.125 $get(ent_me,index)
+	//if ( PARAM1 isnot ent_me ) clientevent new PARAM1 player/health_bar HBAR_POS HBAR_FRAME 0.125 $get(ent_me,index)
+	if ( PARAM1 equals $get(ent_me,id) ) clientevent update all const.localplayer.scriptID show_hbar HBAR_POS WAGARO_WTF 0.125 $get(ent_me,index)
+	if ( PARAM1 isnot $get(ent_me,id) ) clientevent update PARAM1 const.localplayer.scriptID show_hbar HBAR_POS WAGARO_WTF 0.125 $get(ent_me,index)
+}
+
+{ reset_display_pbar_delay
+	setvard DISPLAY_PBAR_DELAY 0
+}
+
+{ game_targeted_by_player
+	local VIEWER PARAM1
+	callevent show_hbar_player VIEWER
+}
+
+{ reset_hbar_delay
+	setvard DISPLAY_HBAR_DELAY 0
+}
+
+{ afk_check
+
+	local CUR_POS $get(ent_me,origin)
+	if ( $dist(AFK_OLD_POS,CUR_POS) <= 128 )
+	{
+		if AFK_DID_FIRST_PULSE
+		local L_LAST_ATK_TIME PLR_LAST_ATK_TIME
+		add L_LAST_ATK_TIME 60.0
+		if game.time > L_LAST_ATK_TIME //not AFK if hit something <60 seconds ago
+		setvard IS_AFK 1
+		setvard FREQ_AFK_CHECK 5.0
+		if ( G_DEVELOPER_MODE ) bplayermessage ent_me "====== FLAGGED AFK!"
+	}
+	else
+	{
+		if ( G_DEVELOPER_MODE )
+		{
+			if IS_AFK
+			bplayermessage ent_me "====== No longer afk"
+		}
+		setvard FREQ_AFK_CHECK 60.0
+		setvard IS_AFK 0
+	}
+
+	if ( IS_AFK ) add AFK_TIME 1
+
+	if ( PLR_IN_WORLD )
+	{
+		add PL_TIME 1
+		if ( PLR_DARK_LEVEL > 0 )
+		{
+			//Thothie AUG2010_23 Dark Energy Corruption
+			if !IS_AFK
+			subtract PLR_DARK_LEVEL PLR_DARK_LEVEL_LOSS_RATE
+			if ( PLR_DARK_LEVEL < 0 ) setvard PLR_DARK_LEVEL 0
+			quest set ent_me "dl" PLR_DARK_LEVEL
+			
+			//figure new holy damage ratio
+			callevent player_calc_holy_resistance
+		}
+
+		//Thothie AUG2010_23 - wtf is this about? (removing - thinking pre game_player_putinworld convention)
+//		if ( $get(ent_me,onground) )
+//		{
+//			setvard IN_WORLD 1
+//			setvard PL_TIME 0
+//		}
+	}
+	setvard AFK_OLD_POS game.monster.origin
+	setvard AFK_DID_FIRST_PULSE 1
+
+	//double check sploit spell skills reset
+	setstat spellcasting.summoning 1
+	setstat spellcasting.protection 1
+
+	callevent FREQ_AFK_CHECK afk_check
+}
+
+//test these:
+
+//does not work, at least not here
+//{ game_seen
+//	dbg game_seen $get(PARAM1,name)
+//}
+
+//These work
+//{ game_jump
+//	dbg game_jump
+//}
+//{ game_jump_land
+//	dbg game_jump_land
+//}
+{ [server] game_party_join
+	//dbg game_party_join PARAM1
+	if FIRST_PARTY_MSG > 0
+	if game.time > FIRST_PARTY_MSG
+
+	//local PARTY_REPORT_TYPE game.cvar.ms_party_report
+	//if PARTY_REPORT_TYPE > 0
+	local TITLE_STR $get(ent_me,name)
+	stradd TITLE_STR " has joined "
+	stradd TITLE_STR PARAM1 
+	local OUT_STR $get(ent_me,name)
+	stradd OUT_STR " has joined the party of "
+	stradd OUT_STR PARAM1
+	//if ( PARTY_REPORT_TYPE == 2 ) infomsg all TITLE_STR OUT_STR
+	messageall green OUT_STR
+}
+//
+{ [server] game_party_leave
+
+	//annoying - goes off every time player disconnects
+	//need method of making it detect if left due to leaveparty command or discon
+	//dbg game_party_leave PARAM1
+//	if game.time > FIRST_PARTY_MSG
+//	local TITLE_STR $get(ent_me,name)
+//	stradd TITLE_STR " has left "
+//	stradd TITLE_STR PARAM1 
+//	local OUT_STR $get(ent_me,name)
+//	stradd OUT_STR " has abandoned the party of "
+//	stradd OUT_STR PARAM1 
+//	infomsg all TITLE_STR OUT_STR
+}
+
+//Maybe useful later
+//{ [server] game_death
+//	callexternal all player_died $get(ent_me,id)
+//}
+
+//debuggary - remove
+//{
+//repeatdelay 1.0
+//	dbg can_attack $get(ent_me,canattack) 
+//}
+
+{ game_setxploss
+	//for debug & future use
+	//ran whenever noxploss is called on player
+	//if PLR_NOXPLOSS != PARAM1
+	//playermessage ent_me XP loss set to PARAM1
+	//setvard PLR_NOXPLOSS PARAM1
+}
+
+{ christmas_mode
+	callexternal ent_me ext_weather_manual_change snow
+	playmp3 all 3.0 xmass.mp3
+	setvarg global.map.weather "snow;snow;snow"
+}
+
+{ game_player_got_from_store //<item_id> <vendor_id>
+
+	dbg game_player_got_from_store PARAM1 PARAM2
+
+	if ( $get(PARAM1,itemname) startswith gold_pouch_ )
+	{
+		callexternal ent_me ext_addgold $get(PARAM1,scriptvar,'GOLD_VALUE')
+		removeitem PARAM1
+		deleteent PARAM1
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	if ( $get(PARAM2,scriptvar,'NPC_ECHO_ITEMS') ) callexternal PARAM2 ext_player_got_item $get(PARAM1,id) $get(ent_me,id)
+
+	if ( $get(PARAM1,value) > 500 )
+	{
+		if !$get(PARAM2,scriptvar,'NPC_NO_TRADE_REPORT')
+		//report to other players when grabbing items over 500gp in value
+		//- anti-ninja
+		local VENDOR_NAME $get(PARAM2,name)
+		if ( $lcase(VENDOR_NAME) contains chest ) local REPORT_ITEM 1
+		if ( $get(PARAM2,scriptvar,'NPC_REPORT_ITEMS') ) local REPORT_ITEM 1
+		if ( $get(PARAM2,scriptvar,'NPC_NO_REPORT_ITEMS') ) local REPORT_ITEM 0
+		if ( G_DEVELOPER_MODE ) gplayermessage ent_owner report_item: REPORT_ITEM [ $lcase(VENDOR_NAME) ] $get(PARAM2,scriptvar,NPC_REPORT_ITEMS)
+		if REPORT_ITEM
+		local OUT_MSG ''
+		strconc OUT_MSG $get(ent_me,name) recieved $get(PARAM1,name) from VENDOR_NAME
+		infomsg all OUT_MSG " "
+	}
+
+	if G_DEVELOPER_MODE
+	messageall green fromstore: $get(PARAM1,name) $get(PARAM1,value)
+}
+
+{ hp_max_warn
+	local MSG_TITLE "HP LIMIT is "
+	strconc MSG_TITLE $int(CVAR_HP_LIMIT) hp
+	infomsg ent_me MSG_TITLE "Your current character is too powerful for this server."
+	callevent 2.0 hp_max_warn2
+}
+
+{ hp_max_warn2
+	local MSG_TITLE "HP LIMIT is "
+	strconc MSG_TITLE $int(CVAR_HP_LIMIT) hp
+	infomsg ent_me MSG_TITLE "You will be disconnected in 10 seconds."
+	callevent 5.0 hp_max_warn3
+}
+
+{ hp_max_warn3
+	local MSG_TITLE "HP LIMIT is "
+	strconc MSG_TITLE $int(CVAR_HP_LIMIT) hp
+	infomsg ent_me MSG_TITLE "Your current character is too powerful for this server."
+	callevent 1.0 hp_max_warn4
+}
+
+{ hp_max_warn4
+	local MSG_TITLE "HP LIMIT is "
+	strconc MSG_TITLE $int(CVAR_HP_LIMIT) hp
+	infomsg ent_me MSG_TITLE "You will be disconnected in 5 seconds."
+	callevent 4.0 hp_max_warn5
+}
+
+{ hp_max_warn5
+	local CL_CMD "toggleconsole;clear;echo This server does not allow characters with more than "
+	strconc CL_CMD $int(CVAR_HP_LIMIT) "hp;echo ===;disconnect"
+	clientcmd ent_me CL_CMD
+}
+
+{ game_respawn //goes off if player spawns after death
+	dbg game_respawn
+}
+
+{ game_player_putinworld //goes off when player spawns, rather than during character selection (as with game_spawn)
+
+//	if ( !FIRST_RND_SPAWN )
+//	{
+//		settrans ent_me G_FIRST_TRANS G_FIRST_TRANS
+//		setvard FIRST_RND_SPAWN 1
+//	}
+
+	setvard PLR_IDLE_MUSIC G_IDLE_MUSIC
+	setvard PLR_IDLE_MUSIC_LENGTH G_IDLE_MUSIC_LENGTH
+	setvard PLR_COMBAT_MUSIC G_COMBAT_MUSIC
+	setvard PLR_COMBAT_MUSIC_LENGTH G_COMBAT_MUSIC_LENGTH
+
+	dbg game_player_putinworld gotmusak idl PLR_IDLE_MUSIC ln PLR_IDLE_MUSIC_LENGTH cmb PLR_COMBAT_MUSIC ln PLR_COMBAT_MUSIC_LENGTH
+
+	if ( $get_scriptflag(ent_me,type_exists,cmusak) )
+	{
+		scriptflags ent_me cleartype cmusak //should reset to global idle musak (if any)
+	}
+	else
+	{
+		if ( PLR_IDLE_MUSIC_LENGTH != 0 )
+		{
+			dbg game_player_putinworld default idle musak PLR_IDLE_MUSIC
+			callevent ext_music_idle
+		}
+	}
+
+
+	//check donator IDs
+	if ( DONATOR_LIST contains $get(ent_me,steamid) ) local L_HAS_HALO 1
+	if ( G_DEVELOPER_MODE ) local L_HAS_HALO 1
+	if ( L_HAS_HALO )
+	{
+		setvard PLR_HAS_HALO 1
+		if ( $get_quest_data(ent_me,dhal) == 1 )
+		{
+			setvard PLR_HALO_ON 0
+			clientevent update all const.localplayer.scriptID cl_set_halo 0 $get(ent_me,index)
+		}
+		else
+		{
+			setvard PLR_HALO_ON 1
+			clientevent update all const.localplayer.scriptID cl_set_halo 1 $get(ent_me,index)
+		}
+	}
+
+
+	if ( G_CHRISTMAS_MODE )
+	{
+		local L_MAP_NAME $lcase(game.map.name)
+		if ( L_MAP_NAME equals edana ) callevent 1.0 christmas_mode
+		if ( L_MAP_NAME equals deralia ) callevent 1.0 christmas_mode
+		if ( L_MAP_NAME equals helena )  callevent 1.0 christmas_mode
+	}
+
+	//move to random spawn point, if in range
+	torandomspawn ent_me
+
+	//special stats tracker
+	if ( !PLR_TRACKED_STATS )
+	{
+		setvard PLR_TRACKED_STATS 1
+		callevent 0.1 stamp_stats
+	}
+
+	//SKILL CAPS
+	//if ( $get(ent_me,skill.parry) > game.maxlevel ) setstat parry game.maxlevel
+
+	settrans ent_me $get_quest_data(ent_me,d)
+	tospawn ent_me $get_quest_data(ent_me,d)
+	
+	noxploss ent_me 0 //reset XP loss
+	//nopush 0 //reset pushable/drunkable status
+
+	setvard MY_HOME	game.monster.origin
+	//dbg temp dest map reads $get_quest_data(ent_me,m) vs. thismap game.map.name
+	if game.serverside
+
+
+	if ( !PLR_IN_WORLD ) 
+	{
+		callexternal players ext_reset_model //reinitialize models for all players so new player sees them proper
+		callevent 1.0 alert_world_new_join
+	}
+	setvard PLR_IN_WORLD 1
+
+	setvard PLR_DARK_LEVEL $get_quest_data(ent_me,dl)
+
+	setvard PLR_GENDER $get(ent_me,gender)
+
+	callexternal ent_me ext_set_gender
+
+	local MAX_VIEW_DIST game.map.maxviewdistance
+	dbg map_maxviewdistance MAX_VIEW_DIST
+	if ( MAX_VIEW_DIST > 512 )
+	{
+		clientevent update ent_me const.localplayer.scriptID set_view_dist MAX_VIEW_DIST
+	}
+	else
+	{
+		clientevent update ent_me const.localplayer.scriptID set_view_dist 16384
+	}
+
+	callevent 2.0 list_cheaters
+
+//	if ( $filesize(motd.txt) > 0 )
+//	{
+//		callevent do_motd
+//	}
+
+	if ( !GAVE_MAP_INTRO )
+	{
+		if !INVALID_SPAWN
+		setvard GAVE_MAP_INTRO 1
+		if G_MAP_NAME isnot 'G_MAP_NAME'
+		callevent 10.0 give_map_intro
+	}
+
+	if ( G_FORCE_SPAWN_WEATHER isnot 'G_FORCE_SPAWN_WEATHER' )
+	{
+		callexternal ent_me ext_weather_change G_FORCE_SPAWN_WEATHER
+	}
+//	else
+//	{
+//		//callevent 1.0 setup_weather
+//	}
+
+	//Thothie AUG2010_23 Dark Energy Corruption
+	callevent player_calc_holy_resistance
+
+	//JAN2011_28 remove negative attachments
+	setvard WEBS_ATTACHED 0
+	setvard SCARABS_ATTACHED 0
+	setvard COCOON_ATTACHED 0
+
+	callevent 1.0 activate_stuff
+
+	if ( game.monster.maxhp < 100 )
+	{
+		if game.monster.hp > 0
+		if !G_HELP_ON
+		callevent help_toggle		
+	}
+
+	if ( G_RANDOM_SPAWN )
+	{
+		callevent 0.1 random_spawn	
+	}
+
+	if ( !PLR_CATED_QUEST ) callevent 120.0 cat_quest_items
+
+	//summonpets ent_me
+
+	if ( NEW_SPAWN_POS isnot 'NEW_SPAWN_POS' ) callevent 0.1 tele_spawn
+
+	if ( $get(ent_me,maxhp) < 15 )
+	{
+		//load error message
+		infomsg ent_me WARNING! "Your character did not load properly, try exiting the game and reconnecting."
+	}
+}
+
+{ setup_weather
+	if G_CURRENT_WEATHER isnot 0
+	if $get(ent_me,scriptvar,'PLR_WEATHER') isnot G_CURRENT_WEATHER
+	callexternal ent_me ext_weather_change G_CURRENT_WEATHER
+}
+
+//{ fix_weather
+//	//clientevent remove ent_me G_WEATHER_SCRIPT_ID
+//	//clientevent ent_me update const.localplayer.scriptID reset_tod
+//	if !G_WEATHER_LOCK
+//	if ( global.map.weather contains G_CUR_WEATHER ) local VALID_WEATHER 1
+//	if ( !VALID_WEATHER ) callexternal all game_playercmd_setweather $get_token(global.map.weather,0) 1 1
+//	//applyeffect ent_me G_WEATHER_SCRIPT 1 G_CUR_WEATHER
+//}
+
+{ stamp_stats
+	if game.cvar.ms_chatlog
+
+	chatlog STAT_TRACKER: $get(ent_me,name.full) [ $get(ent_me,steamid) ] ( $timestamp() )
+
+	chatlog hp: $get(ent_me,maxhp) mana: $get(ent_me,maxmp)
+	chatlog swordsmanship: $get(ent_me,skill.swordsmanship) [ $get(ent_me,skill.swordsmanship.proficiency) $get(ent_me,skill.swordsmanship.balance) $get(ent_me,skill.swordsmanship.power) ]
+	chatlog martialarts: $get(ent_me,skill.martialarts) [ $get(ent_me,skill.martialarts.proficiency) $get(ent_me,skill.martialarts.balance) $get(ent_me,skill.martialarts.power) ]
+	chatlog smallarms: $get(ent_me,skill.smallarms) [ $get(ent_me,skill.smallarms.proficiency) $get(ent_me,skill.smallarms.balance) $get(ent_me,skill.smallarms.power) ]
+	chatlog axehandling: $get(ent_me,skill.axehandling) [ $get(ent_me,skill.axehandling.proficiency) $get(ent_me,skill.axehandling.balance) $get(ent_me,skill.axehandling.power) ]
+	chatlog bluntarms: $get(ent_me,skill.bluntarms) [ $get(ent_me,skill.bluntarms.proficiency) $get(ent_me,skill.bluntarms.balance) $get(ent_me,skill.bluntarms.power) ]
+	chatlog archery: $get(ent_me,skill.archery) [ $get(ent_me,skill.archery.proficiency) $get(ent_me,skill.archery.balance) $get(ent_me,skill.archery.power) ]
+	chatlog polearms: $get(ent_me,skill.polearms) [ $get(ent_me,skill.polearms.proficiency) $get(ent_me,skill.polearms.balance) $get(ent_me,skill.polearms.power) ]
+	chatlog spellcasting: $get(ent_me,skill.spellcasting) [ $get(ent_me,skill.spellcasting.fire) $get(ent_me,skill.spellcasting.ice) $get(ent_me,skill.spellcasting.lightning)  $get(ent_me,skill.spellcasting.divination) $get(ent_me,skill.spellcasting.affliction) $get(ent_me,skill.spellcasting.summoning) $get(ent_me,skill.spellcasting.protection) ]
+	if ( $item_exists(ent_me,'pack_boh') )
+	{
+		chatlog Item of Interest: TRUE bag of holding (CHEATER)
+		local IS_CHEATER 1
+	}
+	//this making items vanish for some reason?
+//	if ( $item_exists(ent_me,'swords_fshard1') ) chatlog Item of Interest: Shard of Felewyn 1
+//	if ( $item_exists(ent_me,'swords_fshard2') ) chatlog Item of Interest: Shard of Felewyn 2
+//	if ( $item_exists(ent_me,'swords_fshard3') ) chatlog Item of Interest: Shard of Felewyn 3
+//	if ( $item_exists(ent_me,'swords_fshard4') ) chatlog Item of Interest: Shard of Felewyn 4
+//	if ( $item_exists(ent_me,'swords_fshard5') ) chatlog Item of Interest: Shard of Felewyn 5
+//	if ( $item_exists(ent_me,'axes_golden_ref') ) chatlog Item of Interest: Unbreakable Golden Axe
+//	if ( $item_exists(ent_me,'armor_pheonix55') ) chatlog Item of Interest: Pheonix Armor
+//	if ( $item_exists(ent_me,'item_ring_percept') ) chatlog Item of Interest: Bloodstone Ring
+//	if ( $item_exists(ent_me,'swords_wolvesbane') ) chatlog Item of Interest: Wolvesbane
+//	if ( $item_exists(ent_me,'small_sack') ) chatlog Item of Interest: Small Sack
+	chatlog Quest Status - RingStage: $get_quest_data(ent_me,r) Lighthouse: $get_quest_data(ent_me,l) Namestate: $get_quest_data(ent_me,n)
+
+	if game.central
+
+	local MAX_SKILL_LEVEL G_MAX_SKILL_LEVEL
+	add MAX_SKILL_LEVEL 10 //give some leway until max level raised to 50
+
+	if ( $get(ent_me,skill.swordsmanship) > MAX_SKILL_LEVEL ) local IS_CHEATER 1
+	if ( $get(ent_me,skill.martialarts) > MAX_SKILL_LEVEL ) local IS_CHEATER 1
+	if ( $get(ent_me,skill.smallarms)  > MAX_SKILL_LEVEL ) local IS_CHEATER 1
+	if ( $get(ent_me,skill.axehandling) > MAX_SKILL_LEVEL ) local IS_CHEATER 1
+	if ( $get(ent_me,skill.bluntarms) > MAX_SKILL_LEVEL ) local IS_CHEATER 1
+	if ( $get(ent_me,skill.archery) > MAX_SKILL_LEVEL ) local IS_CHEATER 1
+	if ( $get(ent_me,skill.spellcasting.fire) > MAX_SKILL_LEVEL ) local IS_CHEATER 1
+
+	if IS_CHEATER
+	callevent cheater_kick
+}
+
+//{ check_pets
+//	if ( $get(ent_me,companions) > 0 ) summonpets ent_me
+//	callevent do_motd
+//}
+//
+//	callevent player_summon_pets
+////	if ( $get(ent_me,companions) > 0 )
+////	{
+////		local PET_STATE $get_quest_data(ent_me,s)
+////		if ( PET_STATE == 0 ) callevent player_summon_pets //only happens for people with pets under old system
+////		if ( PET_STATE == 2 ) callevent player_summon_pets
+////	}
+//	callevent do_motd
+//}
+
+{ do_motd
+		setvard MOTD_TXT1 ''
+		setvard MOTD_TXT2 ''
+		setvard MOTD_TXT3 ''
+		setvard MOTD_TXT4 ''
+		setvard MOTD_TXT5 ''
+		setvard MOTD_TXT6 ''
+		setvard MOTD_TXT7 ''
+		setvard SIZE_IDX 0
+		consolemsg ent_me game.cvar.hostname MESSAGE OF THE DAY ===========
+		callevent do_motd_loop
+}
+
+{ force_motd
+	setvard PLR_DID_MOTD 0
+	callevent do_motd
+}
+
+{ do_motd_loop
+
+	if !PLR_DID_MOTD
+	local MOTD_LINE $get_fileline(motd.txt)
+	if (  MOTD_LINE equals [EOF] )
+	{
+		setvard PLR_DID_MOTD 1
+		helptip ent_me generic "MESSAGE OF THE DAY" MOTD_TXT1 MOTD_TXT2 MOTD_TXT3 //- overflows: MOTD_TXT4 MOTD_TXT5 MOTD_TXT6 MOTD_TXT7
+	}
+	if MOTD_LINE isnot [EOF]
+	consolemsg ent_me SIZE_IDX - MOTD_LINE 
+	local NEW_LEN $len(MOTD_LINE)
+	if ( SIZE_IDX == 0 ) add NEW_LEN $len(MOTD_TXT1)
+	if ( SIZE_IDX == 1 ) add NEW_LEN $len(MOTD_TXT2)
+	if ( SIZE_IDX == 2 ) add NEW_LEN $len(MOTD_TXT3)
+	if ( SIZE_IDX == 3 ) add NEW_LEN $len(MOTD_TXT4)
+	if ( SIZE_IDX == 4 ) add NEW_LEN $len(MOTD_TXT5)
+	if ( SIZE_IDX == 5 ) add NEW_LEN $len(MOTD_TXT6)
+	if ( SIZE_IDX == 6 ) add NEW_LEN $len(MOTD_TXT7)
+	if ( NEW_LEN > 180 ) add SIZE_IDX 1
+	if ( SIZE_IDX == 0 ) strconc MOTD_TXT1 $left(MOTD_LINE,180) "|"
+	if ( SIZE_IDX == 1 ) strconc MOTD_TXT2 $left(MOTD_LINE,180) "|"
+	if ( SIZE_IDX == 2 ) strconc MOTD_TXT3 $left(MOTD_LINE,180) "|"
+	if ( SIZE_IDX == 3 ) strconc MOTD_TXT4 $left(MOTD_LINE,180) "|"
+	if ( SIZE_IDX == 4 ) strconc MOTD_TXT5 $left(MOTD_LINE,180) "|"
+	if ( SIZE_IDX == 5 ) strconc MOTD_TXT6 $left(MOTD_LINE,180) "|"
+	if ( SIZE_IDX == 6 ) strconc MOTD_TXT7 $left(MOTD_LINE,180) "|"
+	callevent 0.01 do_motd_loop
+}
+
+//test -works - returndata untested on monsters
+{ game_damaged_other //PARAM1=target_hit PARAM2=dmg //players only?
+	if PLR_SPECIAL_WEAPON
+
+	if ( $get(PLR_ACTIVE_WEAPON,scriptvar,SPECIAL_WEAPON_TYPE) equals 'wolf' )
+	{
+		local TARG_NAME $get(PARAM1,name)
+		local TARG_NAME $lcase(TARG_NAME)
+		if TARG_NAME contains 'wolf'
+		returndata 2.0
+		dbg multi x2
+	}
+}
+
+// - works - but returndata may only work for players
+//{ game_damaged
+//	returndata 0.01
+//}
+
+//does not work - maybe items only?
+//{ game_takedamage
+//	returndata 0.01
+//}
+
+
+//{ player_summon_pets
+//	quest set ent_me s out
+//	calleventloop $get_token_amt(PLR_PET_IDS) player_update_pet_states
+//}
+
+//{ player_unsummon_pets
+//	gplayermessage ent_me Pet Unsummoned: You can re-summon your pets using the player menu (default key: F11).
+//	quest set ent_me s egged
+//	calleventloop $get_token_amt(PLR_PET_IDS) player_update_pet_states
+//}
+//
+//{ player_update_pet_states
+//	local CUR_PET $get_token(PLR_PET_IDS,game.script.iteration)
+//	callexternal CUR_PET companion_check_spawn
+//}
+
+{ cheater_kick
+	if ( G_CHEATER_IDS equals 'G_CHEATER_IDS' )
+	{
+		setvarg G_CHEATER_IDS ''
+		setvarg G_CHEATER_NAMES ''
+		setvarg G_CHEATER_TYPES ''
+	}
+	token.add G_CHEATER_IDS $get(ent_me,steamid)
+	token.add G_CHEATER_NAMES $get(ent_me,name)
+	token.add G_CHEATER_TYPES 1
+
+	local MSG_TITLE $get(ent_me,name)
+	stradd MSG_TITLE " "
+	stradd MSG_TITLE STEAM_ID
+	stradd MSG_TITLE " IS A CHEATER! (Type I)"
+	infomsg all MSG_TITLE "He has been kicked from the game, and his ID logged."
+	consolemsg all MSG_TITLE
+	consolemsg ent_me You have cheated. Your Steam ID has been logged on FN. ( Type I )
+
+	chatlog $timestamp(>) CHEATER: $get(ent_me,name) $get(ent_me,steamid) (Type I) was KICKED
+	clientcmd ent_me "disconnect"
+}
+
+{ list_cheaters
+	if ( $get(ent_me,steamid) equals KELDORN_ID ) callevent 20.0 ext_keldorn_troll
+	if ( $get(ent_me,steamid) equals DARK_ID ) callevent 20.0 ext_keldorn_troll
+
+	if G_CHEATER_IDS isnot 'G_CHEATER_IDS'
+	calleventloop $get_token_amt(G_CHEATER_IDS) announce_cheaters
+}
+
+{ announce_cheaters
+	local CUR_IDX game.script.iteration
+	local CUR_CHEATER_ID $get_token(G_CHEATER_IDS,CUR_IDX)
+	local CUR_CHEATER_NAME $get_token(G_CHEATER_NAMES,CUR_IDX)
+	local CUR_CHEATER_TYPE $get_token(G_CHEATER_TYPES,CUR_IDX)
+
+	local MSG_TITLE "Let it be known that "
+	stradd MSG_TITLE CUR_CHEATER_NAME
+	stradd MSG_TITLE " was caught cheating here recently!"
+	
+	local MSG_TEXT "Please report him on the forums. His ID ("
+	stradd MSG_TEXT CUR_CHEATER_ID
+	stradd MSG_TEXT ") is available in your console."
+
+	infomsg ent_me MSG_TITLE MSG_TEXT
+
+	consolemsg ent_me "CHEATER:" CUR_CHEATER_NAME CUR_CHEATER_ID ( Type: CUR_CHEATER_TYPE )
+	consolemsg ent_me "Report cheaters at http://www.msremake/forums"
+}
+
+//debuggary
+//{ ext_add_fake_cheater
+//	if ( G_CHEATER_IDS equals 'G_CHEATER_IDS' )
+//	{
+//		setvarg G_CHEATER_IDS ''
+//		setvarg G_CHEATER_NAMES ''
+//		setvarg G_CHEATER_TYPES ''
+//	}
+//	token.add G_CHEATER_IDS $get(ent_me,steamid)
+//	token.add G_CHEATER_NAMES $get(ent_me,name)
+//	token.add G_CHEATER_TYPES 3
+//}
+
+{ delay_to_ms_player_spawn
+	callevent 0.1 delay_to_ms_player_spawn2
+}
+
+{ delay_to_ms_player_spawn
+	torandomspawn ent_me
+}
+
+{ find_ms_player_spawn
+	torandomspawn ent_me
+}
+
+{ player_calc_holy_resistance
+
+	//Thothie AUG2010_23 Dark Energy Corruption
+	//- players who use dark energy too often are vulnerable to holy magic
+	//- past a certain threshold, other side effects ensue
+
+	//dbg player_calc_holy_resistance entered
+
+	local NORM_LEVEL 100
+	local DARK_RATIO PLR_DARK_LEVEL
+	divide DARK_RATIO PLR_DARK_UNHOLY_LEVEL
+	multiply NORM_LEVEL $ratio(DARK_RATIO,1.0,0)
+	if ( PLR_DARK_LEVEL > PLR_DARK_UNHOLY_LEVEL )
+	{
+		local NORM_LEVEL 0
+		//dbg player_calc_holy_resistance ye_are_evil
+		setprop ent_me skin 2
+	}
+	else
+	{
+		setprop ent_me skin 1
+	}
+	//dbg determine_holyvuln NORM_LEVEL
+	if ( PLR_UNHOLY ) local NORM_LEVEL 0
+	setvard ELM_REGISTER_SILENT 1
+	callexternal ent_me ext_register_element playr holy NORM_LEVEL "player_main"
+}
+
+
+//optimal debuggary
+//{
+//	dbg OPT_DEBUG: player:init game.time
+//}
+//
+//{ game_spawn
+//	dbg OPT_DEBUG: player:game_spawn game.time
+//}
+//
+//{ game_postspawn
+//	dbg OPT_DEBUG: player:game_postspawn game.time
+//}
+//
+//{ game_player_putinworld
+//	dbg OPT_DEBUG: player:game_player_putinworld game.time
+//}
+
+{ game_arrowmenu //<time_last_opened|0=selected> [selected_arrow_id] - activates when player opens arrow menu
+	dbg game_arrowmenu PARAM1 PARAM2
+	setvard PLR_ARROW_MENU PARAM1
+	if ( PARAM2 )
+	{
+		setvard PLR_ARROW_ID PARAM2
+	}
+	else
+	{
+		if G_DEVELOPER_MODE
+		playermessage ent_me Selecting ammo...
+	}
+}
+
+{ cat_quest_items
+	callexternal GAME_MASTER gm_cat_quest $get(ent_me,id)
+}
+
+{ game_leapback //<stamina>
+	dbg game_leapback PARAM1 PARAM2 vs. $get(ent_me,stamina.max)
+
+	//if game.time > NEXT_DODGE //Restoring the dodge-jump "exploit"
+	if game.time > NEXT_LEAPBACK
+
+	if !$get(ent_me,scriptvar,'PLR_BEAR_MODE')
+
+	if $get(ent_me,skill.martialarts) > 15
+	if ( PARAM1 <= LEAP_BACK_DRAIN ) dplayermessage ent_me Not enough stamina remaing to dodge.
+	if PARAM1 > LEAP_BACK_DRAIN
+
+	if ( !$get(ent_me,onground) )
+	{
+		dplayermessage ent_me Can't dodge in mid-air...
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	if ( !$get(ent_me,canrun) ) local NOT_NOW 1
+	if ( !$get(ent_me,canattack) ) local NOT_NOW 1
+	if ( !$get(ent_me,canjump) ) local NOT_NOW 1
+	if ( !$get(ent_me,canmove) ) local NOT_NOW 1
+	if ( NOT_NOW )
+	{
+		dplayermessage ent_me Can't dodge now...
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	if !$get(ent_me,ducking)
+
+	////pending new status flag check
+//	if ( !$get(ent_me,canmove) )
+//	{
+//		dplayermessage ent_me Can't dodge now...
+//		local EXIT_SUB 1
+//	}
+//	if !EXIT_SUB
+
+	helptip ent_me firstleapback "Congratulations! You can dodge!" "From Martialarts 15+, you can make short backwards dodges by holding shift and the back key."
+
+	//setvard NEXT_DODGE 0.25 //Restoring the dodge-jump "exploit"
+	//add NEXT_DODGE game.time
+
+	setvard NEXT_LEAPBACK game.time
+	add NEXT_LEAPBACK 3.0
+
+	drainstamina ent_me LEAP_BACK_DRAIN
+	local VIEW_YAW $get(ent_me,viewangles)
+	local VIEW_YAW $vec.yaw(VIEW_YAW)
+	addvelocity ent_me $relpos($vec(0,VIEW_YAW,0),$vec(0,-600,150)) override
+	svplaysound 4 10 PLR_SOUND_JAB1
+}
+
+{ game_leapleft //<stamina>
+
+	//if game.time > NEXT_DODGE //Restoring the dodge-jump "exploit"
+	if game.time > NEXT_LEAPLEFT
+	if !$get(ent_me,scriptvar,'PLR_BEAR_MODE')
+
+	if $get(ent_me,skill.martialarts) > 10
+	if ( PARAM1 <= LEAP_SIDE_DRAIN ) dplayermessage ent_me Not enough stamina remaing to dodge.
+	if PARAM1 > LEAP_SIDE_DRAIN
+
+	if ( !$get(ent_me,onground) )
+	{
+		dplayermessage ent_me Can't dodge in mid-air...
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	if ( !$get(ent_me,canrun) ) local NOT_NOW 1
+	if ( !$get(ent_me,canattack) ) local NOT_NOW 1
+	if ( !$get(ent_me,canjump) ) local NOT_NOW 1
+	if ( !$get(ent_me,canmove) ) local NOT_NOW 1
+	if ( NOT_NOW )
+	{
+		dplayermessage ent_me Can't dodge now...
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	if !$get(ent_me,ducking)
+
+	helptip ent_me firstleap "Congratulations! You can dodge!" "From Martialarts 10+, you can make short dodges to the left or right by holding shift with a strafe key.|At 15, you'll be able to leap backwards."
+
+	//setvard NEXT_DODGE 0.25 //Restoring the dodge-jump "exploit"
+	//add NEXT_DODGE game.time
+
+	setvard NEXT_LEAPLEFT game.time
+	add NEXT_LEAPLEFT 3.0
+
+	drainstamina ent_me LEAP_SIDE_DRAIN
+	local VIEW_YAW $get(ent_me,viewangles)
+	local VIEW_YAW $vec.yaw(VIEW_YAW)
+	addvelocity ent_me $relpos($vec(0,VIEW_YAW,0),$vec(-600,0,180)) override
+	svplaysound 4 10 player/hitground1.wav
+}
+
+{ game_leapright //<stamina>
+
+	//if game.time > NEXT_DODGE //Restoring the dodge-jump "exploit"
+	if game.time > NEXT_LEAPRIGHT
+	if !$get(ent_me,scriptvar,'PLR_BEAR_MODE')
+
+	if $get(ent_me,skill.martialarts) > 10
+	if ( PARAM1 <= LEAP_SIDE_DRAIN ) dplayermessage ent_me Not enough stamina remaing to dodge.
+	if PARAM1 > LEAP_SIDE_DRAIN
+
+	if ( !$get(ent_me,onground) )
+	{
+		dplayermessage ent_me Can't dodge in mid-air...
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	if ( !$get(ent_me,canrun) ) local NOT_NOW 1
+	if ( !$get(ent_me,canattack) ) local NOT_NOW 1
+	if ( !$get(ent_me,canjump) ) local NOT_NOW 1
+	if ( !$get(ent_me,canmove) ) local NOT_NOW 1
+	if ( NOT_NOW )
+	{
+		dplayermessage ent_me Can't dodge now...
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	if !$get(ent_me,ducking)
+
+	helptip ent_me firstleap "Congratulations! You can dodge!" "From Martialarts 10+, you can make short dodges to the left or right by holding shift with a strafe key.|At 15, you'll be able to leap backwards."
+
+	//setvard NEXT_DODGE 0.25
+	//add NEXT_DODGE game.time
+
+	setvard NEXT_LEAPRIGHT game.time
+	add NEXT_LEAPRIGHT 3.0
+
+	drainstamina ent_me LEAP_SIDE_DRAIN
+	local VIEW_YAW $get(ent_me,viewangles)
+	local VIEW_YAW $vec.yaw(VIEW_YAW)
+	addvelocity ent_me $relpos($vec(0,VIEW_YAW,0),$vec(600,0,180)) override
+	svplaysound 4 10 player/hitground1.wav
+}
+
+{ check_version
+	dbg check_version enter
+	local L_PLR_DLL_VERSION $get(ent_me,scriptvar,'PLR_DLL_VERSION')
+	if ( G_BPATCH_MANDATORY )
+	{
+		if ( L_PLR_DLL_VERSION isnot game.cvar.ms_version ) local L_VERSION_MISMATCH 1
+	}
+	else
+	{
+		if ( $left(L_PLR_DLL_VERSION,7) isnot G_SCRIPT_VERSION ) local L_VERSION_MISMATCH 1
+	}
+	if L_VERSION_MISMATCH
+
+	//fail, but no illegal command notice, hrmm...
+	local L_SERVER_VERSION game.cvar.ms_version
+//	local CL_CMD_STR "disconnect;clear;echo Client version does not match servers! "
+//	if ( PLR_DLL_VERSION isnot 'PLR_DLL_VERSION' )
+//	{
+//		stradd CL_CMD_STR "(you:"
+//		stradd CL_CMD_STR PLR_DLL_VERSION
+//		stradd CL_CMD_STR " server:"
+//		stradd CL_CMD_STR L_SERVER_VERSION
+//	}
+//	else
+//	{
+//		stradd CL_CMD_STR "("
+//		stradd CL_CMD_STR L_SERVER_VERSION
+//	}
+//	stradd CL_CMD_STR ");echo .;echo Patch up!;echo www.msremake.com;echo ."
+//	local CL_CMD_STR $quote(CL_CMD_STR)
+	dbg check_version Version Invalid ( L_PLR_DLL_VERSION vs L_SERVER_VERSION [ bmand G_BPATCH_MANDATORY ] )
+//	dbg CL_CMD_STR
+//	clientcmd ent_me CL_CMD_STR
+
+	//nastier version instead :\
+
+	clientcmd ent_me "disconnect;clear;echo Client out of date!;echo .;echo Update www.msremake.com/download.php;echo .;"
+	local L_SVR_CMD "kick #"
+	stradd L_SVR_CMD $get(ent_me,index)
+
+	//can't do this - server doesn't realize player has left
+	//local L_MSGBOX "Client out of date - update at http://www.msremake.com/download.php"
+	//clientevent update ent_me const.localplayer.scriptID cl_error L_MSGBOX
+
+}
+
+	
+{ game_applyeffect //<applyeffect|applyeffectstack> <target> <effectscript> [params...]
+	if ( $get_scriptflag(ent_me,spider_resist,type_exists) )
+	{
+		if ( $get(PARAM5,itemname) contains spid ) local L_ABORT 1
+		if ( $get(PARAM2,itemname) contains spid ) local L_ABORT 1
+		if L_ABORT
+		//dbg game_applyeffect abort spider applyeffect [ p2 $get(PARAM2,name) p5 $get(PARAM5,itemname) ]
+		returndata abort
+		local L_DID_ABORT 1
+		//exitevent //commented out, as worried may mess with game_applyeffect handling elsewhere.
+	}
+}

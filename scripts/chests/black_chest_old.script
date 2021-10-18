@@ -1,0 +1,288 @@
+//Obsolete - kept for For reference
+//The insanely complicated artifact chest script
+{
+	const AM_BLACK_CHEST 1
+}
+
+#include items/base_treasurechest
+
+{ game_dynamically_created //<token_items> <token_chances> <token_req_players> <token_disp_names> <req_stat> <req_stat_amt>
+	setvard IBC_ITEM_LIST PARAM1
+	setvard IBC_ITEM_CHANCES PARAM2
+	setvard IBC_REQ_PLAYERS PARAM3
+	setvard IBC_ITEM_NAMES PARAM4
+	setvard IBC_REQ_STAT PARAM5
+	setvard IBC_REQ_STAT_LEVEL PARAM6
+	setvard IBC_HP_REQ	PARAM7
+
+	dbg stat PARAM5 statlvl PARAM6 hp_req PARAM7 angles PARAM8
+	setvard FACE_YAW $vec.yaw(PARAM8)
+
+	setvard N_ITEMS $get_token_amt(IBC_ITEM_LIST)
+	subtract N_ITEMS 1 //token indexes start @ 0
+	callevent pick_an_item
+	callevent 0.5 pick_a_player
+}
+
+{ [override] game_spawn
+
+	hp 1
+	invincible  2
+	name an|Artifact Chest
+	width 20
+	height 30
+	setmodel	misc/treasure.mdl
+	setmodelbody 0 1
+	callevent	treasure_spawn
+	callevent	createchest
+	setidleanim	ANIM_IDLE
+
+	setsolid none
+
+	setprop ent_me rendermode 5
+	setprop ent_me renderamt 0
+
+	setvard BC_DISCONNECTS 0
+
+	callevent 0.1 fade_me_in
+	dbg black_chest spawn
+}
+
+{ fade_me_in
+
+	//make sure there's at least 1 worthy player about
+	local HP_REQ G_WARN_HP
+	divide HP_REQ 4 //require at least 1/4th of map HP req
+	callevent get_players HP_REQ
+	if ( TC_NPLAYERS == 0 )
+	{
+		//There are no worthy, at all, delete
+		callevent insta_delete "no_worthy"
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	setvard GIFT_TARGET_IDX 0
+	callevent assemble_list //gather list of players from highest HP to lowest and store in SORTED_LIST
+}
+
+{ fade_in_done
+	setprop ent_me rendermode 0
+	setprop ent_me renderamt 255
+}
+
+{ [server] grant_item
+
+	//Need a squeak sound
+	volume		10
+	playrandomsound	2	Items/creak.wav
+	playanim		hold	ANIM_OPEN
+	callevent 1.0 close_up
+
+}
+
+{ [server] close_up
+
+	playanim	once	ANIM_CLOSE
+	setidleanim	ANIM_IDLE
+}
+
+{ pick_a_player
+
+	dbg pick_a_player for $get_token(IBC_ITEM_NAMES,CUR_ITEM) # CUR_ITEM / N_ITEMS [ playerreq $get_token(IBC_REQ_PLAYERS,CUR_ITEM) vs TC_NPLAYERS chancepp  $get_token(IBC_ITEM_CHANCES,CUR_ITEM) ]
+
+	setvard GIFT_TARGET $get_token(SORTED_LIST,GIFT_TARGET_IDX)
+
+	if ( !GOT_PLAYER_COUNT )
+	{
+		setvard GOT_PLAYER_COUNT 1
+		callevent get_players_by_stat IBC_REQ_STAT IBC_REQ_STAT_LEVEL
+		if ( TC_NPLAYERS < 1 ) setvard TC_NPLAYERS 1
+		//dbg pick_a_player players present: TC_NPLAYERS
+	}
+
+	if ( $get(GIFT_TARGET,IBC_REQ_STAT) < IBC_REQ_STAT_LEVEL )
+	{
+		dbg pick_a_player amt_player_tokens $get_token_amt(SORTED_LIST)
+		callevent pick_next_lucky_winner "not_worthy"
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	if ( !DID_FIRST_PICK )
+	{
+		setangle face $vec(0,FACE_YAW,0)
+		setvard DID_FIRST_PICK 1 
+	}
+	
+	//dbg pick_a_player 
+
+	local DO_NEXT_ITEM 0
+
+	//not enough worthy players for this item
+	if ( TC_NPLAYERS < $get_token(IBC_REQ_PLAYERS,CUR_ITEM) )
+	{
+		local FAIL_REASON "not enough worthy players"
+		local DO_NEXT_ITEM 1
+		dbg not enough players for $get_token(IBC_ITEM_NAMES,CUR_ITEM)
+	}
+
+	if ( !DO_NEXT_ITEM )
+	{
+		local ITEM_CHANCE $get_token(IBC_ITEM_CHANCES,CUR_ITEM)
+		callevent get_chance ITEM_CHANCE ITEM_CHANCE 100 IBC_HP_REQ
+		dbg chance_for_this_item ITEM_CHANCE x TC_NPLAYERS = TC_CHANCE ( GIVE_PRIZE )
+		if ( !GIVE_PRIZE ) 
+		{
+			local FAIL_REASON "rolled_over_chance:"
+			stradd FAIL_REASON ITEM_CHANCE
+			local DO_NEXT_ITEM 1
+		}
+	}
+
+	if ( DO_NEXT_ITEM )
+	{
+		dbg failed ( FAIL_REASON ) - doing next item ( CUR_ITEM / N_ITEMS )
+		callevent pick_an_item //subtract CUR_ITEM 1
+		if !AC_OUT_OF_ITEMS
+		callevent 0.1 pick_a_player
+	}
+
+	if !DO_NEXT_ITEM
+
+	dbg offering $get_token(IBC_ITEM_NAMES,CUR_ITEM) script $get_token(IBC_ITEM_LIST,CUR_ITEM) plrreq  $get_token(IBC_REQ_PLAYERS,CUR_ITEM) chancepplayer $get_token(IBC_ITEM_CHANCES,CUR_ITEM)
+
+	if ( !MADE_LIGHT ) infomsg all "ARTIFACT_CHEST" "An Artifact Chest has appeared, it will now select a player to recieve one rare item."
+
+	setvard OFFERED_ITEM 1
+	callevent 0.1 inform_worthy
+}
+
+{ inform_worthy
+	if ( !MADE_LIGHT )
+	{
+		playsound 0 10 magic/spawn.wav
+		setvard MADE_LIGHT 1
+		clientevent persist all monsters/lighted_cl $get(ent_me,index) LIGHT_COLOR LIGHT_RAD
+		setvard MY_LIGHT_SCRIPT game.script.last_sent_id
+		callexternal GAME_MASTER gm_fade_in $get(ent_me,id) 5
+	}
+	infomsg GIFT_TARGET "ARTIFACT CHEST: YOU HAVE BEEN CHOSEN!" "The Artifact chest has an item waiting for you..."
+}
+
+{ pick_any_non_bot
+	getplayersnb P_STRING
+	local LO_RAND 0
+	local HI_RAND $get_token_amt(P_STRING)
+	if $get_token_amt(P_STRING) > 0
+	setvard PICK_NUM $rand(LO_RAND,HI_RAND)
+	setworthy $get_token(P_STRING,PICK_NUM)
+}
+
+{ [override] game_playerused
+
+	if ( PARAM1 isnot GIFT_TARGET )
+	{
+		if ( CUR_ITEM == 0 ) dplayermessage PARAM1 "The Artifact Chest has nothing for you."
+		if ( CUR_ITEM > 0 )
+		{
+			if ( GIFT_TARGET isnot unset ) dplayermessage PARAM1 "The Artifact Chest is waiting for someone else..."
+			
+		}
+	}
+
+	if ( PARAM1 equals GIFT_TARGET )
+	{
+		offer GIFT_TARGET $get_token(IBC_ITEM_LIST,CUR_ITEM)
+		local RESP_STRING $get(GIFT_TARGET,name)
+		stradd RESP_STRING " has recieved a "
+		stradd RESP_STRING $get_token(IBC_ITEM_NAMES,CUR_ITEM)
+		stradd RESP_STRING " from an Artifact Chest."
+		infomsg all "ARTIFACT CHEST" RESP_STRING
+		callevent pick_an_item //subtract CUR_ITEM 1
+		callevent grant_item
+		callevent pick_next_lucky_winner "gave_item"
+	}
+}
+
+{ player_left //PARAM1 = disconnecting player
+
+	if ( PARAM1 equals GIFT_TARGET )
+	{
+		add BC_DISCONNECTS 1
+		if ( BC_DISCONNECTS < 2 )
+		{
+			callevent pick_next_lucky_winner "disconnect"
+		}
+		if BC_DISCONNECTS >= 2
+		dbg too many disconnects, removing
+		callevent fade_away "too_many_disconencts"
+	}
+}
+
+{ [server] fade_away
+
+	clientevent remove all MY_LIGHT_SCRIPT
+	if !AM_REMOVING
+	dbg fading away PARAM1 items: CUR_ITEM / N_ITEMS
+	if ( !OFFERED_ITEM ) callevent insta_delete "was fading, but didnt offer items"
+	if !AM_REMOVING
+	setvard AM_REMOVING 1
+	callevent 0.1 fade_remove	
+}
+
+{ fade_remove
+	deleteent ent_me fade
+}
+
+{ [server] insta_delete
+	if !AM_REMOVING
+	setvard AM_REMOVING 1
+	dbg insta delete PARAM1 items: CUR_ITEM / N_ITEMS
+	deleteent ent_me
+}
+
+{ pick_next_lucky_winner
+
+	dbg pick_next_lucky_winner PARAM1
+	add GIFT_TARGET_IDX 1
+	setvard GIFT_TARGET $get_token(SORTED_LIST,GIFT_TARGET_IDX)
+	if ( GIFT_TARGET_IDX > $get_token_amt(SORTED_LIST) ) callevent 0.1 out_of_players
+	if ( GIFT_TARGET_IDX <= $get_token_amt(SORTED_LIST) ) callevent 0.1 pick_a_player "new_player"
+}
+
+{ out_of_players
+	callevent fade_away "out_of_players"
+}
+
+{ pick_an_item
+
+	if ( AC_DID_FIRST_PICK )
+	{
+		dbg pick_an_item remove from que $get_token(IBC_ITEM_LIST,CUR_ITEM)
+		token.del IBC_ITEM_LIST CUR_ITEM
+		token.del IBC_ITEM_CHANCES CUR_ITEM
+		token.del IBC_ITEM_NAMES CUR_ITEM
+		token.del IBC_REQ_PLAYERS CUR_ITEM
+		dbg pick_an_item lists_now IBC_ITEM_LIST IBC_ITEM_CHANCES IBC_ITEM_NAMES
+	}
+	if ( !AC_DID_FIRST_PICK ) setvard AC_DID_FIRST_PICK 1
+	setvard N_ITEMS $get_token_amt(IBC_ITEM_LIST)
+	subtract N_ITEMS 1 //token indexes start @ 0
+	if ( N_ITEMS == 0 )
+	{
+		callevent out_of_items	
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	local RND_ITEM $rand(0,N_ITEMS)
+	//subtract RND_ITEM 1 //tokens are base 0
+	setvard CUR_ITEM RND_ITEM
+	dbg pick_an_item selected # CUR_ITEM ( $get_token(IBC_ITEM_LIST,CUR_ITEM) )
+}
+
+{ out_of_items
+	setvard OUT_OF_ITEMS 1
+	callevent fade_away "out_of_items"
+}

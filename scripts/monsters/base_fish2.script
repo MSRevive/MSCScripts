@@ -1,0 +1,59 @@
+//Uses gravity method instead of flight movement type - more predictable
+{
+	const FISH_VSPEED_UP 25	//up speed
+	const FISH_VSPEED_DOWN -25 //down speed
+	const FISH_VRANGE 50 //consider self on same plane if in this z range
+	const BF_STAY_IN_WATER 1
+	setvar NPC_IS_FISH 1
+}
+
+{ game_spawn
+	gravity 0
+}
+
+{ npcatk_hunt
+
+	if $get(ent_me,isalive)
+
+	local MOVE_DEST_Z $vec.z(game.monster.movedest.origin)
+	local MY_Z $get(ent_me,origin.z)
+
+	//dbg npcatk_hunt_fish2 movedest.id: $get(game.monster.movedest.id,name)
+
+	local L_FISH_VSPEED_UP FISH_VSPEED_UP
+	local L_FISH_VSPEED_DOWN FISH_VSPEED_DOWN
+
+
+	if ( BF_STAY_IN_WATER )
+	{
+		if ( $get(ent_me,inwater) < 1 )
+		{
+			if ( !SUSPEND_AI ) callevent npcatk_suspend_ai 2.0
+			setmovedest NPC_HOME_LOC MOVE_RANGE
+			local MOVE_DEST_Z $vec.z(NPC_HOME_LOC)
+			gravity 0.5
+			multiply L_FISH_VSPEED_UP 0.5
+			multiply L_FISH_VSPEED_DOWN 2
+		}
+		else
+		{
+			gravity 0
+		}
+	}
+
+	if ( MOVE_DEST_Z > MY_Z )
+	{
+		if $get(ent_me,inwater)
+		local Z_DIFF MOVE_DEST_Z
+		subtract Z_DIFF MY_Z
+		if Z_DIFF > FISH_VRANGE
+		addvelocity ent_me $relvel(0,0,L_FISH_VSPEED_UP)
+	}
+	if ( MOVE_DEST_Z < MY_Z )
+	{
+		local Z_DIFF MY_Z
+		subtract Z_DIFF MOVE_DEST_Z
+		if Z_DIFF > FISH_VRANGE
+		addvelocity ent_me $relvel(0,0,L_FISH_VSPEED_DOWN)
+	}
+}

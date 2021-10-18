@@ -1,0 +1,170 @@
+//hall of deralia idears
+//-
+//- daughter kidnapped by cursed jester
+//-- accepting job spawns jester and daughter in basement
+//- Maldora pays a visit
+//-- guards should be able to handle the minions he leaves behind
+//- Smith with smithing guide (tga pages)
+//-- should have some formula's he can do without new items
+//-- also should sell some spec materials for bunk prices
+//-- add said materials to the random treasure lists
+//- Brewer with some potions for sale that give short-lived bonuses such as
+//-- speed, resist fire, resist cold, fire breath
+//- Title master
+//-- atm does nothing, later offers some advanced title
+//- Noble Title Master
+//-- Same difference, more advanced titles
+//- Necromancer in basement
+//-- Appears after jester is killed, offers potions, titles, pets
+//- cover cross in chapel with portal to throne room
+//- Add portal to deralia_dungeons
+//- Add random nobles and guards
+//- add a dwarven and elven embassador with quests (letters) for gatecity and findlebind
+
+#scope server
+
+{
+	const FREQ_MOURN $randf(10,30)
+	const NO_RUMOR 1
+	const NO_HAIL 1
+	const NO_JOB 1
+	const CHAT_DELAY 5.0
+	const KING_MODEL npc/king.mdl
+}
+
+#include monsters/base_chat
+
+{ [shared] game_spawn
+
+	name_unique da_king
+
+	name The King of Deralia //bugger needs a name, check with Lanethan
+	hp 1
+	invincible 1 //it's good to be the king ^_^
+	setmodel KING_MODEL
+	width 32
+	height 96
+	saytextrange 640
+	setidleanim idle1
+	playanim once idle1
+
+	catchspeech say_hi hail j0 wassup greet hello waddup daughter princess
+
+	if game.serverside
+	callevent 5.0 get_guard_id //give time for guards to spawn
+
+	if !G_DAUGHTER_RESCUED
+	setvard IN_MOURNING 1
+	callevent FREQ_MOURN do_mourn
+}
+
+{ get_guard_id
+	setvard GUARD1_ID $get_by_name(king_guard1)
+	setvard GUARD2_ID $get_by_name(king_guard2)
+}
+
+{ do_mourn
+
+	if !G_DAUGHTER_RESCUED
+	callevent FREQ_MOURN do_mourn
+	if !BUSY_CHATTING
+
+	local RND_MOURN $rand(1,3)
+	if ( RND_MOURN == 1 )
+	{
+		saytext Oh woe is me! My princess is lost!
+		callexternal GUARD1_ID ext_comfort_king //random comfort line and anim
+	}
+
+	if ( RND_MOURN == 2 )
+	{
+		saytext My precious daughter! Where for art thou!
+		callexternal GUARD2_ID ext_comfort_king //random comfort line and anim
+	}
+
+	if ( RND_MOURN == 3 )
+	{
+		saytext Gone is my reason for living! Missing is my beloved daughter!
+	}
+}
+
+{ say_hi
+
+	if !BUSY_CHATTING
+	setvard BUSY_CHATTING 1
+	if ( $get(PARAM1,isplayer) )
+	{
+		setvard CURRENT_SPEAKER $get(PARAM1,id)
+		callevent face_speaker CURRENT_SPEAKER
+	}
+	if ( $get(ent_lastspoke,isplayer) )
+	{
+		setvard CURRENT_SPEAKER $get(ent_lastspoke,id)
+		callevent face_speaker CURRENT_SPEAKER
+	}
+
+	if !G_DAUGHTER_RESCUED
+	setvard BUSY_CHATTING 1
+	callexternal GUARD1_ID ext_warn_address CURRENT_SPEAKER //face player: "How dare you address the king directly!"
+	callevent CHAT_DELAY say_daughter1
+}
+
+{ say_daughter1
+	//make this work by gender - check gender $get lookup in MSC++
+	saytext No! No... It's alright, he looks as though he maybe able to help.
+	callevent CHAT_DELAY say_daughter2
+}
+
+{ say_daughter2
+	playanim critical fear
+	saytext The jester! You understand!? He's gone mad! He's kidnapped my beautiful young daughter!
+	callevent CHAT_DELAY say_daughter3
+}
+
+{ say_daughter3
+	saytext They say he was seen scurrying off to the dungeons! But these fools won't go after him!
+	callevent 10.0 say_daughter4	
+	callexternal GUARD1_ID ext_sworn //We are sworn to stay by your side at all times.
+}
+
+{ say_daughter4
+	saytext ...And I can't go down into the dungeons, why!?
+	playanim critical ANIM_PLEADE
+	callexternal GUARD2_ID ext_no_place_for //The dungeons are no place for a king!
+	setmovedest GUARD2_ID 9999
+	callevent 10.0 say_daughter5
+}
+
+{ say_daughter5
+	playanim critical ANIM_ANGRY
+	callevent face_speaker CURRENT_SPEAKER
+	saytext See these useless fools I am surrounded by!?
+	callevent CHAT_DELAY say_daughter6
+}
+
+{ say_daughter6
+	saytext Captain Agarath could be trusted with the job, but he's not here, and won't be back for weeks.
+	//This is in reference to the Gloam Slayer
+	callevent CHAT_DELAY say_daughter7
+}
+
+{ say_daughter7
+	playanim critical ANIM_CRY
+	saytext Please, for pity's sake, rescue my daughter from that madman!
+	callevent 10.0 resume_morning
+}
+
+{ resume_morning
+	setvard BUSY_CHATTING 0
+}
+
+{ game_menu_getoptions
+
+	if ( !G_DAUGHTER_RESCUED )
+	{
+		local reg.mitem.title 	"Hail"
+		local reg.mitem.type 	callback
+		local reg.mitem.callback say_hi
+		menuitem.register
+	}
+}

@@ -1,0 +1,79 @@
+//Thothie - burn damage increase with spell casting ability
+//fireball projectile
+
+{
+	const MODEL_HANDS      		none
+	const MODEL_WORLD      		weapons/projectiles.mdl
+	const SOUND_HITWALL1		weapons/bow/arrowhit1.wav
+	const SOUND_HITWALL2		weapons/bow/arrowhit1.wav
+	const SOUND_BURN		items/torch1.wav
+	const SPRITE_FIRE		3dmflaora.spr //fireball1.spr
+	const SPRITE_BURN 		fire1_fixed.spr //fire1.spr
+	const ITEM_NAME			firemana
+	const PROJ_DAMAGE_TYPE		fire
+	const PROJ_DAMAGESTAT		spellcasting
+
+	const PROJ_DAMAGE		$rand(55,85)
+	const PROJ_AOE_RANGE	75
+	const PROJ_AOE_FALLOFF	0
+	const PROJ_STICK_DURATION	0  //Don't stick in enemies
+	const PROJ_SOLIDIFY_ON_WALL	0  //Don't go solid on wall hit
+
+	const BURN_DAMAGE		$randf(0.5,1.5)
+	precache SPRITE_BURN
+
+	const CL_SCRIPT			items/proj_fire_dart_cl
+	precachefile			CL_SCRIPT
+}
+
+#include items/proj_base
+
+{  projectile_spawn
+
+	name 		a|Fireball
+	weight 		500
+	size 		1
+	value		5
+	gravity		0.7
+	groupable	25
+
+	setmodelbody 0 0
+   
+	sethudsprite hand arrows
+	sethudsprite trade ITEM_NAME
+	sethand any
+	if ( FX_SPAMMERS < MAX_FX_SPAMMERS ) effect glow ent_me (255,75,0) 128 1 1
+}
+
+
+{  game_tossprojectile
+
+	//Called here because the origin isn't set in spawn
+	add FIRE_BALL_SPAM 1
+
+	//client side effect making edict errors?
+	//if ( FX_SPAMMERS < MAX_FX_SPAMMERS )
+	//{
+	//	if ( FIRE_BALL_SPAM < MAX_FIRE_BALL_SPAM ) clientevent new all_in_sight CL_SCRIPT $get(ent_me,index)
+	//}
+    
+	setvard CL_SCRIPT_ID game.script.last_sent_id
+}
+
+{  projectile_landed
+
+	effect screenshake $relpos(0,0,0) 50 20 DURATION 256
+	//clientevent remove all CL_SCRIPT_ID
+	subtract FIRE_BALL_SPAM 1
+	
+  //createnpc items/effect_burn $relpos(0,0,0) $relpos(0,0,0)
+}
+
+{  game_hitnpc
+	//experimental
+	local MY_OWNER $get(ent_expowner,id)
+	//add BURN_DAMAGE $get(ent_owner,skill.spellcasting.fire)
+	//dbg Damage BURN_DAMAGE OwnerRatio $get(ent_owner,skill.spellcasting.fire.ratio)
+	if !$get(ent_laststruckbyme,haseffect,DOT_fire)
+	applyeffect ent_laststruckbyme effects/effect_burn 5 MY_OWNER BURN_DAMAGE 1 1 spellcasting.fire
+}

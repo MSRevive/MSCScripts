@@ -1,0 +1,691 @@
+//Thothie - added speech feedback, and summon spam control
+//Summoned monster
+//
+//Responds to:
+//"attack" - summon_attackall
+//"kill" - summon_attacktarget
+//"come" - summon_come
+//"vanish" - unsummons (pets only)
+//
+//Define:
+//SUMMON_VICINITY - Range monster can stray before he disengages and comes back to owner
+#scope server
+{ [server]
+	//default summon circle is human sized skeleton:
+	//other sizes of note:
+	//natural(humanoid/large/huge): 12/13/14
+	//fire(humanoid/large/huge): 0-2
+	//necro(large/huge): 3-5 (humanoid): 30
+	//lightning(humanoid/large/huge):27-29
+	const SUMMON_CIRCLE_INDEX 3
+
+	const SUMMON_RUN_DIST 256
+
+   //Default Speech 
+	const SUM_SAY_COME "Coming sir."
+	const SUM_SAY_ATTACK "Attacking target."
+	const SUM_SAY_HUNT "Hunting, sir."
+	const SUM_SAY_DEFEND "Defending you."
+	const SUM_SAY_DEATH "Arrrrrrrrgghh!"
+	const SUM_SAY_GUARD "I shall guard this position with my life."
+   const SUM_REPORT_SUFFIX ", sir."
+	//there is also: summon_acknowledge //<follow|hunt|stay|defend|attack|report>
+	//in case you have a custom soundset
+
+	const ANIM_WALK_BASE walk
+	const ANIM_RUN_BASE run
+	const DEFEND_RANGE 256
+
+	setvard CAN_RETALIATE 0 //don't retliate, instead concentrate on your master's target
+
+	const HOVER_FAR 128
+	const HOVER_CLOSE 64
+}
+
+{ [server]
+	precache xflare1.spr
+
+	//always alert
+	const CYCLE_TIME_BATTLE 0.1
+	const CYCLE_TIME_IDLE 0.1
+	const CYCLE_TIME_NPC 0.1
+
+	const SUMMON_VICINITY 400 //SUMMON_VICINITY - Range monster can stray before he disengages and comes back to owner
+}
+
+#include monsters/base_monster_new
+
+{ [server]
+	eventname npc_spawn
+
+	setmonsterclip 0
+	if ( $lcase(game.map.name) contains sfor ) setmonsterclip 1
+
+
+	catchspeech basesummon_say_come come follow return disengage
+   	catchspeech basesummon_say_defend defend
+   	catchspeech basesummon_say_attacktarget kill "attack him" "attack her" "attack it" sick
+   	catchspeech basesummon_say_attackall attack hunt fight "kill them all" "kill everything" "go away" move
+   	catchspeech basesummon_say_report status report health hp strength power
+   	catchspeech basesummon_say_dismiss dismiss unsummon vanish
+	catchspeech basesummon_say_guard guard stay stop
+
+	menu.autoopen 1
+
+	callevent summon_cycle
+
+	callevent summon_spawn
+}
+
+{ npc_post_spawn
+	setvard HOVER_DISTANCE HOVER_FAR //how close to stay to master when idle
+}
+
+{ [server]
+	eventname game_dynamically_created
+
+	setvard SUMMON_MASTER PARAM1
+
+	//callevent 0.1 bs_scan
+	if ( SUMMON_UNIQUE )
+	{
+		callexternal SUMMON_MASTER ext_summon_unique SUMMON_UNIQUE_TAG
+	}
+
+	//if ( $get_insphere(SUMMON_MASTER,game.monster.moveprox) ) callevent bs_unsolid
+
+	if ( $get(SUMMON_MASTER,isplayer) ) 
+	{
+		setvard IS_HIRED 1
+		setvard I_R_PET 1
+	}
+
+	callevent 1.0 bs_set_defend_mode
+	callevent pre_name_set
+
+	if ( !IS_COMPANION )
+	{
+		setvard ACT_NAME $get(ent_me,name)
+		setvard NAMEPREFIX $get(SUMMON_MASTER,name)
+		stradd NAMEPREFIX 's
+		stradd NAMEPREFIX " "
+		stradd NAMEPREFIX $get(ent_me,name)
+		name NAMEPREFIX
+	}
+	else
+	{
+		callevent ext_companion_update_name
+	}
+
+	callevent 0.1 summon_circle
+	callevent 0.5 basesummon_delayedspawneffect
+
+	local OUT_PAR1 PARAM1
+	local OUT_PAR2 PARAM2
+	local OUT_PAR3 PARAM3
+	local OUT_PAR4 PARAM4
+	local OUT_PAR5 PARAM5
+	local OUT_PAR6 PARAM6
+	local OUT_PAR7 PARAM7
+	local OUT_PAR8 PARAM8
+	local OUT_PAR9 PARAM9
+
+	callevent summon_summoned OUT_PAR1 OUT_PAR2 OUT_PAR3 OUT_PAR4 OUT_PAR5 OUT_PAR6 OUT_PAR7 OUT_PAR8 OUT_PAR9
+
+	setvard STUCK_CHECKING 1
+	setvard AS_LAST_ORIGIN game.monster.origin
+	//callevent 0.1 anti_stuck_checks
+}
+
+{ summon_circle
+	local CIRCLE_POS $get(ent_me,origin)
+	vectorset CIRCLE_POS z $get_ground_height(CIRCLE_POS)
+	clientevent new all effects/sfx_summon_circle CIRCLE_POS SUMMON_CIRCLE_INDEX
+}
+
+{ [server] summon_summoned
+
+	if I_R_PET
+
+	dbg summon_summoned help_summons
+
+	local TEXT "You've Summoned your first monster"
+	stradd TEXT "|You can control all your summons globally with the following say commands:"
+	stradd TEXT "|all hunt"
+	stradd TEXT "|all follow"
+	stradd TEXT "|all vanish"
+	helptip SUMMON_MASTER help_summons "Monster Summons" TEXT
+
+	//add CURRENT_SUMMONS 1 //handled in magic hand
+	//dbg CurSums CURRENT_SUMMONS max MAX_SUMMONS
+}
+
+{ basesummon_delayedspawneffect
+
+	//if ( FX_SPAMMERS < MAX_FX_SPAMMERS ) clientevent new all_in_sight $currentscript $get(ent_me,origin)
+}
+
+{ [server]  basesummon_say_come
+
+	if ( PARAM2 isnot from_menu )
+	{
+		if ( $get(ent_lastspoke,id) isnot SUMMON_MASTER ) local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	saytextrange 1024
+	if ( !SUM_NO_TALK )
+	{
+		saytext SUM_SAY_COME
+	}
+
+	if ( $get(NPCATK_TARGET,isalive) )
+	{
+		gplayermessage SUMMON_MASTER ACT_NAME disengaging battle
+	}
+	else
+	{
+		gplayermessage SUMMON_MASTER ACT_NAME following and non-agro
+	}
+	callevent summon_acknowledge follow
+
+	callevent npcatk_clear_targets
+	callevent nocatk_suspend_ai 1.0
+	setvard NPC_FORCED_MOVEDEST 1
+	setmovedest SUMMON_MASTER HOVER_CLOSE
+	callevent bs_set_follow_mode
+
+	callevent summon_come
+}
+
+{ [server]  basesummon_say_attacktarget
+
+	if ( PARAM2 isnot from_menu )
+	{
+		if ( $get(ent_lastspoke,id) isnot SUMMON_MASTER ) local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	setvard OWNER_TARGET $get(SUMMON_MASTER,target)
+	if $get(OWNER_TARGET,exists)
+
+	callevent bs_set_hunt_mode
+	setvard KILL_MODE 1
+	callevent npcatk_clear_targets
+
+	if ( OWNER_TARGET isnot ent_me ) 
+	{
+		if $get(ent_me,relationship,OWNER_TARGET) isnot ally
+		callevent npcatk_settarget OWNER_TARGET
+	}
+
+	saytextrange 1024
+	if ( !SUM_NO_TALK )
+	{
+		saytext SUM_SAY_ATTACK
+	}
+
+	gplayermessage SUMMON_MASTER ACT_NAME attacking target
+
+	callevent summon_acknowledge attack
+
+	setvard NPC_MOVE_TARGET OWNER_TARGET
+	setvard NPC_ATTACK_TARGET OWNER_TARGET
+   	setmovedest NPC_MOVE_TARGET 9999
+}
+{ [server]  basesummon_say_attackall
+
+	if ( PARAM2 isnot from_menu )
+	{
+		if ( $get(ent_lastspoke,id) isnot SUMMON_MASTER ) local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	saytextrange 1024
+	if ( !SUM_NO_TALK )
+	{
+		saytext SUM_SAY_HUNT
+	}
+	gplayermessage SUMMON_MASTER ACT_NAME seeking enemies
+
+	callevent summon_acknowledge hunt
+
+	playanim once ANIM_WALK
+	callevent bs_set_hunt_mode
+
+	if !$cansee(enemy)
+	setvard NPC_FORCED_MOVEDEST 1
+	setmovedest SUMMON_MASTER 2048 flee
+}
+
+{ [server]  basesummon_say_defend
+
+	if ( PARAM2 isnot from_menu )
+	{
+		if ( $get(ent_lastspoke,id) isnot SUMMON_MASTER ) local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	saytextrange 1024
+	if ( !SUM_NO_TALK )
+	{
+		saytext SUM_SAY_DEFEND
+	}
+	gplayermessage SUMMON_MASTER ACT_NAME set defensive mode
+
+	callevent summon_acknowledge defend
+
+	callevent bs_set_defend_mode
+}
+
+{ [server] basesummon_say_guard
+
+	if ( PARAM2 isnot from_menu )
+	{
+		if ( $get(ent_lastspoke,id) isnot SUMMON_MASTER ) local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	saytextrange 1024
+	if ( !SUM_NO_TALK )
+	{
+		saytext SUM_SAY_GUARD
+	}
+	gplayermessage SUMMON_MASTER ACT_NAME holding location
+
+	callevent summon_acknowledge stay
+
+	callevent bs_set_guard_mode
+}
+
+//main cycle ================================================================================
+{ [server] summon_cycle
+	callevent 2.0 summon_cycle
+
+
+	if IS_HIRED
+
+	////dbg temp $get(NPCATK_TARGET,name) grd GUARD_MODE flw FOLLOW_MASTER dfns DEFEND_MODE ignor IGNORE_TARGETS
+
+	////dbg temp game.monster.anim
+
+	if ( !NO_STUCK_CHECKS )
+	{
+		local MIN_RANGE game.monster.moveprox
+		add MIN_RANGE 32
+		if $get(SUMMON_MASTER,range) > MIN_RANGE
+		setvard NO_STUCK_CHECKS 1
+	}
+
+
+	if ( GUARD_MODE )
+	{
+		if $dist(game.monster.origin,GUARD_POS) > HOVER_CLOSE
+		setmoveanim ANIM_WALK
+		setvard NPC_FORCED_MOVEDEST 1
+		setmovedest GUARD_POS HOVER_CLOSE
+	}
+
+	if ( FOLLOW_MASTER )
+	{
+		if ( $get(SUMMON_MASTER,range) <= SUMMON_RUN_DIST )
+		{
+			if ( NPCATK_TARGET equals unset ) setmoveanim ANIM_WALK
+		}
+		if ( $get(SUMMON_MASTER,range) > SUMMON_RUN_DIST ) setmoveanim ANIM_RUN
+		setvard NPC_FORCED_MOVEDEST 1
+		if NPCATK_TARGET equals unset
+		setmovedest SUMMON_MASTER HOVER_DISTANCE
+		//callevent npcatk_setmovedest SUMMON_MASTER HOVER_DISTANCE //not always working
+	}
+
+}
+
+{ [server] npcatk_targetvalidate
+
+	//dont attack master
+	if ( NPCATK_TARGET equals SUMMON_MASTER ) setvard NPCATK_TARGET unset
+
+	if ( $get(NPCATK_TARGET,race) equals hguard )
+	{
+		if !KILL_MODE
+		setvard NPCATK_TARGET unset
+	}
+
+	//summons always at full cycle, since attack mostly NPCs
+	setvard CYCLE_TIME CYCLE_TIME_BATTLE
+	setvard CYCLED_UP 1
+
+	//in defense mode, only attack creatures in a certain range
+	//this is messy
+	if ( DEFEND_MODE )
+	{
+		if ( $get(PARAM1,range) > DEFEND_RANGE ) setvard NPCATK_TARGET unset
+	}
+
+	//ignore targets in follow mode
+	if ( IGNORE_TARGETS ) setvard NPCATK_TARGET unset
+}
+
+{ [server] npc_death
+
+	if ( SUMMON_UNIQUE )
+	{
+		callexternal SUMMON_MASTER ext_unsummon_unique SUMMON_UNIQUE_TAG
+	}
+
+	if ( I_R_PET == 1 ) subtract CURRENT_SUMMONS 1
+	//dbg CurSums CURRENT_SUMMONS max MAX_SUMMONS
+	saytextrange 1024
+	if ( $rand(1,2) == 1 )
+	{
+		if ( !SUM_NO_TALK )
+		{
+			if SUM_SAY_DEATH isnot none
+			saytext SUM_SAY_DEATH
+		}
+	}
+    //if ( FX_SPAMMERS < MAX_FX_SPAMMERS ) clientevent new all_in_sight $currentscript $get(ent_me,origin)
+	playermessage SUMMON_MASTER Your ACT_NAME has been slain!
+	callevent summon_death
+	deleteent ent_me fade
+}
+
+{ [server] basesummon_say_report
+
+	if ( PARAM2 isnot from_menu )
+	{
+		if ( $get(ent_lastspoke,id) isnot SUMMON_MASTER ) local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	local ME_HEALTH game.monster.hp
+	local ME_MAX_HEALTH game.monster.maxhp
+	local HEALTH_STRING ME_HEALTH
+	stradd HEALTH_STRING "/"
+	stradd HEALTH_STRING ME_MAX_HEALTH
+
+	if ( !SUM_NO_TALK )
+	{
+		if ( ATK_MIN equals 'ATK_MIN' ) local ATK_MIN DMG_MAX
+
+		local ME_STRENGTH ATK_MIN
+		stradd ME_STREGTH "/strike"
+
+		saytextrange 1024
+		saytext My health is HEALTH_STRING and my attack strength is ME_STRENGTH SUM_REPORT_SUFFIX
+	}
+	callevent summon_acknowledge report
+	gplayermessage SUMMON_MASTER $stradd(ACT_NAME,:) Health $int(HEALTH_STRING) Attack $int(SUMMON_DMG_BASE)
+	
+}
+
+{ [server] basesummon_say_dismiss
+
+	if !I_R_COMPANION
+	if I_R_PET
+	
+	if ( PARAM2 isnot from_menu )
+	{
+		if ( $get(ent_lastspoke,id) isnot SUMMON_MASTER ) local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+	
+	callevent killme
+}
+
+{ [shared] killme
+
+	if ( I_R_PET == 1 ) subtract CURRENT_SUMMONS 1
+	//dbg CurSums CURRENT_SUMMONS max MAX_SUMMONS
+	//removescript
+	callevent summon_unsummon //let top script handle particulars
+	if ( SUMMON_UNIQUE )
+	{
+		callexternal SUMMON_MASTER ext_unsummon_unique SUMMON_UNIQUE_TAG
+	}
+
+	setalive 0
+	deleteent ent_me fade
+	removescript
+	clientevent remove all $get(ent_me,index)
+}
+
+
+{ [server] bs_set_follow_mode
+
+	dbg bs_set_follow_mode
+
+	//follow master
+	if ( !I_R_COMPANION ) roam 1
+	setvard KILL_MODE 0
+	setvard NO_STUCK_CHECKS 0
+	setvar ANIM_WALK ANIM_WALK_BASE
+	setvar ANIM_RUN ANIM_RUN_BASE
+	setmoveanim ANIM_RUN
+	setvard GUARD_MODE 0
+	setvard IGNORE_TARGETS 1
+	setvard DEFEND_MODE 0
+	setvard FOLLOW_MASTER 1
+	setvard HOVER_DISTANCE HOVER_CLOSE
+}
+
+{ [server] bs_set_hunt_mode
+
+	dbg bs_set_hunt_mode
+
+	//seek prey
+	if ( !I_R_COMPANION ) roam 1
+	setvard KILL_MODE 0
+	setvard NO_STUCK_CHECKS 0
+	setvar ANIM_WALK ANIM_WALK_BASE
+	setvar ANIM_RUN ANIM_RUN_BASE
+	setmoveanim ANIM_RUN
+	setvard GUARD_MODE 0
+	setvard IGNORE_TARGETS 0
+	setvard DEFEND_MODE 0
+	setvard FOLLOW_MASTER 0
+}
+
+{ [server] bs_set_defend_mode
+
+	dbg bs_set_defend_mode
+
+	//stay near master
+	roam 0
+	setvard NO_STUCK_CHECKS 0
+	setvard KILL_MODE 0
+	setvar ANIM_WALK ANIM_WALK_BASE
+	setvar ANIM_RUN ANIM_RUN_BASE
+	setmoveanim ANIM_RUN
+	setvard GUARD_MODE 0
+	setvard IGNORE_TARGETS 0
+	setvard DEFEND_MODE 1
+	setvard FOLLOW_MASTER 1
+	setvard HOVER_DISTANCE HOVER_FAR
+}
+
+{ [server] bs_set_guard_mode
+
+	dbg bs_set_guard_mode
+
+	//stay still
+	roam 0
+	setvard KILL_MODE 0
+	setvard NO_STUCK_CHECKS 1
+	setmoveanim ANIM_IDLE
+	setvar ANIM_WALK ANIM_IDLE
+	setvar ANIM_RUN ANIM_IDLE
+	setvard GUARD_POS game.monster.origin
+	setvard GUARD_MODE 1
+	setvard IGNORE_TARGETS 0
+	setvard DEFEND_MODE 0
+	setvard FOLLOW_MASTER 0
+	setvard HOVER_DISTANCE HOVER_FAR
+}
+
+{ game_menu_getoptions
+
+	if PARAM1 equals SUMMON_MASTER
+
+	if IS_HIRED
+
+	if $get(ent_me,isalive)
+
+
+	if ( COMPANION_CONFIRM_DISMISS )
+	{
+		helptip PARAM1 generic "DISMISS PET" "Are you sure you want to abandon your pet?|Remember, you won't be able to get the pet back again."
+		gplayermessage PARAM1 Confirm release of pet...
+		
+		local reg.mitem.title 	"Yes"
+		local reg.mitem.type 	callback
+		local reg.mitem.data 	from_menu
+		local reg.mitem.callback companion_release
+		menuitem.register
+
+		local reg.mitem.title 	"No"
+		local reg.mitem.type 	callback
+		local reg.mitem.data 	from_menu
+		local reg.mitem.callback companion_release_cancel
+		menuitem.register
+
+	}
+	if !COMPANION_CONFIRM_DISMISS
+
+
+	local reg.mitem.title 	"Report Status"
+	local reg.mitem.type 	callback
+	local reg.mitem.data 	from_menu
+	local reg.mitem.callback basesummon_say_report
+	menuitem.register
+
+	if ( NPCATK_TARGET equals unset )
+	{
+		local reg.mitem.title 	"Follow (Do Not Engage)"
+	}
+	else
+	{
+		local reg.mitem.title 	"Disengage"
+	}
+	local reg.mitem.type 	callback
+	local reg.mitem.data 	from_menu
+	local reg.mitem.callback basesummon_say_come
+	menuitem.register
+
+	local reg.mitem.title 	"Defend"
+	local reg.mitem.type 	callback
+	local reg.mitem.data 	from_menu
+	local reg.mitem.callback basesummon_say_defend
+	menuitem.register
+
+
+	local reg.mitem.title 	"Hunt"
+	local reg.mitem.type 	callback
+	local reg.mitem.data 	from_menu
+	local reg.mitem.callback basesummon_say_attackall
+	menuitem.register
+
+	local reg.mitem.title 	"Stay Here"
+	local reg.mitem.type 	callback
+	local reg.mitem.data 	from_menu
+	local reg.mitem.callback basesummon_say_guard
+	menuitem.register
+
+	if I_R_PET
+	if ( !I_R_COMPANION )
+	{
+		local reg.mitem.title 	"Unsummon"
+		local reg.mitem.type 	callback
+		local reg.mitem.data 	from_menu
+		local reg.mitem.callback basesummon_say_dismiss
+		menuitem.register
+	}
+	else
+	{
+		local reg.mitem.title 	"Unsummon"
+		local reg.mitem.type 	callback
+		local reg.mitem.data 	from_menu
+		local reg.mitem.callback companion_unsummon
+		menuitem.register
+
+		local reg.mitem.title 	"Abandon Pet"
+		local reg.mitem.type 	callback
+		local reg.mitem.data 	from_menu
+		local reg.mitem.callback companion_abandon
+		menuitem.register
+	}
+}
+
+{ bs_unsolid
+	setsolid none
+	setprop ent_me rendermode 5
+	setprop ent_me renderamt 255
+	setanim.framerate 0.0
+	setanim.movespeed 0.0
+	movespeed 0.0
+}
+
+{ bs_attempt_solid
+
+	local MIN_RANGE game.monster.moveprox
+	add MIN_RANGE 15
+	if $get(SUMMON_MASTER,range) > MIN_RANGE
+	setsolid box
+	setprop ent_me rendermode 0
+	setanim.framerate 1.0
+	setanim.movespeed 1.0
+	movespeed 1.0
+}
+
+{ npc_monster_stuck
+
+	local MIN_RANGE game.monster.moveprox
+	add MIN_RANGE 15
+	if $get(SUMMON_MASTER,range) < MIN_RANGE
+	callevent bs_unsolid
+	callevent npcatk_suspend_ai 2.0
+	callevent 2.0 bs_attempt_solid
+}
+
+{ npc_found_new_target
+
+	//dbg temp newtargetrange $get(PARAM1,range)
+	local TARG_NAME $get(PARAM1,name.full)
+	local LASTN_DIFF game.time
+	subtract LASTN_DIFF SUMMON_LAST_TARG_NOTICE
+	if LASTN_DIFF > 5 //only notify of target changes every 5 seconds
+	setvard SUMMON_LAST_TARG_NOTICE game.time
+	if SUMMON_LAST_TARG isnot PARAM1 //and only if target actually changed
+	if ( I_R_PET ) playermessage SUMMON_MASTER Your ACT_NAME has targeted TARG_NAME
+	setvard SUMMON_LAST_TARG PARAM1
+}
+
+{ my_target_died
+	if ( KILL_MODE )
+	{
+		setvard KILL_MODE 0
+		callevent bs_set_defend_mode
+	}
+}
+
+{ bs_global_command //<caller_id> <command>
+
+	if PARAM1 equals SUMMON_MASTER
+
+	local CALLER_ID PARAM1
+	local IN_COMMAND PARAM2
+
+	if ( IN_COMMAND equals follow ) callevent basesummon_say_come CALLER_ID from_menu
+	if ( IN_COMMAND equals defend ) callevent basesummon_say_defend CALLER_ID from_menu
+	if ( IN_COMMAND equals kill ) callevent basesummon_say_attacktarget CALLER_ID from_menu
+	if ( IN_COMMAND equals hunt ) callevent basesummon_say_attackall CALLER_ID from_menu
+	if ( IN_COMMAND equals vanish ) callevent basesummon_say_dismiss CALLER_ID from_menu
+	if ( IN_COMMAND equals stay ) callevent basesummon_say_guard CALLER_ID from_menu
+}
+
+{ npcatk_hunt
+	if !$get(SUMMON_MASTER,exists)
+	if I_R_PET
+	callevent killme
+}

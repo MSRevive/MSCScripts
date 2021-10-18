@@ -1,0 +1,212 @@
+//Thothie - no death anim
+//- Hit range was smaller than width
+//- added poison% - it's a pretty dynamic model, should make use of it
+//Large Scorpian
+#scope server
+{
+   const FREQ_JUMP 30.0
+	setvar ANIM_IDLE idle_a
+   const SOUND_STRUCK1 body/flesh1.wav
+   const SOUND_STRUCK2 body/flesh2.wav
+   const SOUND_STRUCK3 body/flesh3.wav
+   const SOUND_PAIN monsters/spider/spiderhiss.wav
+   const SOUND_IDLE1 monsters/spider/spideridle.wav
+   const SOUND_DEATH monsters/spider/spiderdie.wav
+   setvar ANIM_IDLE idle_b
+   setvar ANIM_RUN run
+   setvar ANIM_WALK walk
+   setvard ANIM_ATTACK attackb
+   setvard ANIM_DEATH die
+   setvar ANIM_POISON attacka
+   setvard ATTACK_RANGE 165
+   setvard ATTACK_HITRANGE 180
+	const ATTACK_STINGRANGE 120
+   setvar ATTACK_HITCHANCE 70%
+   setvar ATTACK_DAMAGE 200
+
+	const DOT_EFFECT effects/effect_poison
+	const DOT_EFFECT_STING effects/greater_poison
+	const DOT_EFFECT_BURST_TYPE stun
+	const DOT_DURATION 10.0
+	const DOT_DMG 50.0
+	const BURST_SCRIPT effects/sfx_stun_burst
+	const DMG_BURST 200
+
+	const SOUND_SWING zombie/claw_miss1.wav
+	const SOUND_BIGSWING zombie/claw_miss2.wav
+
+   //Precache
+   precache SOUND_DEATH //This sound must be explicitly precached since
+			//the play command for it isn't in this file (it's
+			//in base_monster.script)
+   //something is generating SOUND_IDLE1 not precached error in daragoth
+   precache SOUND_IDLE1
+}
+
+{ game_precache
+	precachefile monsters/summon/stun_burst
+}
+
+#include monsters/base_monster_new //older AI has issues with monsters this large
+
+{ [shared] npc_spawn
+	callevent scorpion_spawn
+}
+
+{ [shared] scorpion_spawn
+   hp 5000
+   //ov 360
+   width 196
+   height 196
+	setbbox npcsize
+   race spider
+   name a|Dread Scorpion
+   roam 1
+   hearingsensitivity 3
+   setvard NPC_GIVE_EXP 800
+
+	callevent FREQ_JUMP do_jump
+
+   setmodel monsters/scorp6.mdl
+   setmodelbody	1 0
+   setidleanim idle_a
+   setmoveanim walk
+	setprop ent_me skin 1
+
+//	setanim.framerate 0.5
+	setanim.movespeed 0.5
+//	setvard BASE_FRAMERATE 0.5
+	setvard BASE_MOVESPEED 0.5
+
+   //make absolutely sure SOUND_IDLE1 is loading
+	playrandomsound 2 SOUND_IDLE1
+}
+
+   //Idling
+{
+   repeatdelay 10
+   volume 10
+   playrandomsound 2  SOUND_IDLE1
+}
+
+{ game_death
+   playrandomsound 2 0 SOUND_IDLE1
+
+	if AM_SUMMONED
+	callexternal MY_OWNER scorpion_died
+}
+
+{ npc_post_spawn
+	setvard NPC_MUST_SEE_TARGET 0 //cuz very big
+}
+
+{
+   // Deal damage
+   eventname strike
+
+	if ( $get(NPCATK_TARGET,range) < ATTACK_HITRANGE ) dodamage NPCATK_TARGET direct ATTACK_DAMAGE ATTACK_HITCHANCE ent_me
+
+	if ( $rand(1,10) == 1 )
+	{
+		playsound 0 10 SOUND_BIGSWING
+		playanim critical ANIM_POISON
+		if $get(NPCATK_TARGET,range) < ATTACK_HITRANGE
+		applyeffect NPCATK_TARGET DOT_EFFECT DOT_DURATION $get(ent_me,id) DOT_DMG
+	}
+	else
+	{
+		playsound 0 10 SOUND_SWING
+		if $get(NPCATK_TARGET,range) < ATTACK_HITRANGE
+		local RND_LR $randf(-100,100)
+		local RND_FB $randf(-350,100)
+		addvelocity NPCATK_TARGET $relvel(RND_LR,RND_FB,10)
+	}
+
+}
+
+{ poison_strike
+	dbg poison_strike $get(ent_lastseen,name) $get(HUNT_LASTTARGET,name)
+
+	if ( $get(NPCATK_TARGET,range) < ATTACK_STINGRANGE  ) dodamage NPCATK_TARGET direct ATTACK_DAMAGE 90% ent_me
+
+	playsound 0 10 SOUND_BIGSWING
+	if $get(NPCATK_TARGET,range) < ATTACK_STINGRANGE
+	applyeffect NPCATK_TARGET DOT_EFFECT_STING DOT_DURATION $get(ent_me,id) DOT_DMG
+
+	if $get(NPCATK_TARGET,range) < ATTACK_STINGRANGE
+	local RND_LR $randf(-100,100)
+	local RND_FB $randf(-300,400)
+	addvelocity NPCATK_TARGET $relvel(RND_LR,RND_FB,10)
+}
+
+
+   //Hit by someone
+{
+   eventname npc_struck
+   
+   volume 5
+   playrandomsound 2 SOUND_PAIN SOUND_STRUCK2 SOUND_STRUCK1
+}
+
+{ do_jump
+	dbg do_jump $get(NPCATK_TARGET,name)
+	callevent FREQ_JUMP do_jump
+	if NPCATK_TARGET isnot unset
+	local N_BADS $get_tbox(enemy,640)
+	if ( N_BADS equals none )
+	{
+		local DO_JUMP $rand(0,1) //less likely to do jump against single target
+	}
+	else
+	{
+		if ( $get_token_amt(N_BADS) > 1 )
+		{
+			local DO_JUMP 1 //always jump for multiple targets
+		}
+		else
+		{
+			local DO_JUMP $rand(0,1)
+		}
+	}
+	if DO_JUMP
+	dbg do_jumpb N_BADS
+	playanim critical jump
+	callevent 1.0 do_jump2
+}
+
+{ do_jump2
+	//createnpc monsters/summon/stun_burst $relpos(0,0,0) $get(ent_me,id) 640 1 200
+	dodamage $relpos(0,0,0) 640 DMG_BURST 100% 0 reflective blunt
+	local BURST_ORG $get(ent_me,origin)
+	clientevent new all BURST_SCRIPT BURST_ORG 640 0
+	setvard BURST_TARGS $get_tsphere(enemy,640)
+	dbg do_jump2 BURST_TARGS
+	if BURST_TARGS isnot none
+	calleventloop $get_token_amt(BURST_TARGS) burst_affect_targets
+}
+
+{ burst_affect_targets
+	local CUR_TARG $get_token(BURST_TARGS,game.script.iteration)
+	local TARG_ORG $get(CUR_TARG,origin)
+	local MY_ORG $get(ent_me,origin)
+	local NEW_YAW $angles(MY_ORG,TARG_ORG)
+
+	dbg burst_affect_targets $get(CUR_TARG,name)
+
+	addvelocity CUR_TARG $relvel($vec(0,NEW_YAW,0),$vec(0,1000,0))
+
+	if ( DOT_EFFECT_BURST_TYPE equals stun ) applyeffect CUR_TARG effects/effect_stun 5.0 $get(ent_me,id)
+	if ( DOT_EFFECT_BURST_TYPE equals effect ) applyeffect CUR_TARG DOT_EFFECT DOT_DURATION $get(ent_me,id) DOT_DMG
+}
+
+{ game_dynamically_created
+	if $get(MY_OWNER,isalive)
+	setvard MY_OWNER $get(PARAM1,id)
+	race $get(MY_OWNER,race)
+	setvard AM_SUMMONED 1
+	callevent 0.1 summoned_sound
+}
+
+{ summoned_sound
+	playsound 0 10 ambience/alien_humongo.wav
+}

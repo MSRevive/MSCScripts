@@ -1,0 +1,169 @@
+// Thothie - crashes when given wrong object, attempting to fix
+//- Issue: You cannot use null.mdl on an NPC like this - it causes mad animation errors.
+//- This quests requires that you kill GhorAsh in Heras (who never spawned due to bug, nor dropped his item due to another bug)
+//- Then you must take the item GhorAsh was *supposed* to drop to Sembelbinin Edana, except that, he's also bugged (won't accept it)
+//- The idea being, he would then convert it into a token for this pillar. Which even if all that went well, STILL wouldn't work, as this pillar didn't precache Shadahar
+//- As such, I feel it is time to simplify this quest, rather than fix that entire chain of scripts. Plus figure a way to make this accept random items. (which may not be possible)
+//- I may come back later and get it to work proper... Meanwhile:
+//- New quest: Kill GhorAsh (fixed), get 'Ring with Urdualian Runes XYPHEMOX'
+//- Say XYPHEMOX to edana/masterp and Sembelbinin will tell you that the ring belonged to
+//- the legendary Priest Zahlon Erste who imprisoned Shadahar in an epic battle ages ago.
+//- Speaking Zahlon's last name to the pillar releases Shadahr.
+//- New new quest: ^_^
+//- Kill GhorAsh, get ring, take to Sembelin, mention the ruins, he will charge ring and give related story, bring to pillar to use.
+//- Pillar will not accept quest if player warped to mscave (must be legit trans)
+
+// Spawn properties
+{
+	//ALL media used by spawned monster MUST be precached individually (precache file only catches non-vars/const)
+	precache monsters/skeleton.mdl
+	precachefile mscave/Shadahar
+	precache weapons/magic/seals.mdl
+	precache magic/temple.wav
+	precache magic/pulsemachine_noloop.wav
+	precache magic/frost_reverse.wav
+	precache skull.spr
+	precache monsters/skeleton/cal_laugh.wav
+	precache monsters/skeleton/calrain3.wav
+}
+
+{ spawn
+
+   hp		1
+   name		The Enchanted Pillar
+   width	32
+   height	32
+   roam		0
+   race neutral
+   setmodel	props/skullprop.mdl
+   setvar      CANCHAT 1
+   invincible	1
+   catchspeech say_release erste
+	catchspeech say_hail hail hey j0 hello hi greetings gweets waddup yo
+
+	menu.autoopen 1
+}
+
+//Hopefully this bit not neeed
+//{
+// repeatdelay 1
+//
+//	if $cansee(player,128)
+//	calleventtimed 2 say_intro
+//}
+
+{ eventname say_release
+
+	saytext The name is not what I require, but the light of the ring, this is what I desire!
+}
+
+{ say_hail
+
+	if  ( $item_exists(ent_lastspoke,item_runicsymbol2) )
+	{
+		saytext Come hither, closer to me! You have that which will set me free!
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	if  ( $item_exists(ent_lastspoke,item_runicsymbol) )
+	{
+		saytext Too soon, you have come, your journey, it is not done.
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	saytext Mortal, speak warily unto me, you have not that which sets me free.
+}
+
+{ game_menu_getoptions
+
+	if !GOT_RING
+
+	saytextrange 1024
+
+	if ( G_DEVELOPER_MODE ) callevent 5.0 gave_ring
+	if !G_DEVELOPER_MODE
+
+	local PILLAR_LEGIT 0
+	if ( $get_lastmap(PARAM1) equals thornlands ) local PILLAR_LEGIT 1
+	if ( $get_lastmap(PARAM1) equals gatecity ) local PILLAR_LEGIT 1
+	if ( $get_lastmap(PARAM1) equals goblintown ) local PILLAR_LEGIT 1
+	local L_LASTMAP $get_quest_data(PARAM1,m)
+	local L_LASTMAP $lcase(L_LASTMAP)
+	if ( L_LASTMAP isnot mscave ) 
+	{
+		dbg invalidated:last_map read L_LASTMAP
+		local PILLAR_LEGIT 0
+	}
+	if ( $get_map_legit(PARAM1) equals 0 )
+	{
+		dbg invalidated:$get_map_legit(PARAM1) returned 0
+		local PILLAR_LEGIT 0
+	}
+	if ( !PILLAR_LEGIT ) saytext Leave, fool. This quest is not for those who take shortcuts.
+	if PILLAR_LEGIT
+
+	if $get_map_legit(PARAM1) equals 1
+
+	if !EXIT_SUB
+
+	//dbg This guy get here honestly? ( LEG $get_map_legit(PARAM1) LAST $get_lastmap(PARAM1) )
+
+	if ( $item_exists(PARAM1,item_runicsymbol2) )
+	{
+		local reg.mitem.title 	"Insert the Urdualian Ring"
+		local reg.mitem.type 	payment_silent
+		local reg.mitem.data 	item_runicsymbol2
+		local reg.mitem.callback gave_ring
+		menuitem.register
+	}
+
+	if ( $item_exists(PARAM1,item_runicsymbol) )
+	{
+		local reg.mitem.title 	"Insert the Expended Ring"
+		local reg.mitem.type 	payment_silent
+		local reg.mitem.data 	item_runicsymbol
+		local reg.mitem.callback wrong_ring
+		menuitem.register
+	}
+}
+
+{ wrong_ring
+
+	saytext This ring, it shines not, therefore no evil, shall it wrought.
+	offer PARAM1 item_runicsymbol
+}
+
+{ gave_ring
+
+	setmodelbody 0 1 //eyes gow red (not that you can tell)
+	setvard GOT_RING 1
+	usetrigger mm_shad
+	calleventtimed 4 spawnage
+	saytext At last! I shall be freed! ...and upon you, first shall I feed!
+}
+
+{ eventname spawnage
+
+	if !SHAD_SPAWN
+	//Again, highly recommend calling map events to make these things more dynamic
+	//-Also more stable, as createnpc doesn't clear memory the same way msmonster does
+	usetrigger spawn_shad
+
+	//-At least switching to relitive position to make this a more dynamic
+	//-Pillar position in mscave: -549 -674 1219
+	//-original Shadahar position: (-791,-674,1232) //not working either ><
+	//- $relpos(-242,0,13) ? Not working - original pos is wrong. :/
+	//createnpc mscave/Shadahar $relpos(0,-128,0)
+
+	//Deleting instantly seems to be causing npc not to spawn/event trigger
+	calleventtimed 2 gobyebye
+	setvard SHAD_SPAWN 1
+}
+
+{ eventname gobyebye
+
+	usetrigger pillar_removed
+	deleteent ent_me fade
+}

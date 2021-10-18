@@ -1,0 +1,462 @@
+//first of the new bear models
+//base for the other greater bears using the similar model
+#scope server
+
+{ [shared]
+
+	setvar ANIM_IDLE idle
+	setvar ANIM_WALK walk
+	setvard ANIM_RUN run
+	setvard ANIM_ATTACK attack1 //frame_run_step
+	setvard ANIM_DEATH longdeath
+
+	const ANIM_RUN_NORM run
+	const ANIM_WALK_NORM walk
+	const ANIM_IDLE_NORM idle
+
+	const ANIM_ATTACK1 attack1 //frame_attack
+	const ANIM_ATTACK2 attack2 //frame_attack
+	const ANIM_ATTACK3 attack3 //frame_attack
+
+	const ANIM_LUNGE1 long_attack1 //frame_long_attack
+	const ANIM_LUNGE2 long_attack2 //frame_long_attack
+	const ANIM_LUNGE3 long_attack_throw //frame_long_attack_throw
+
+	const ANIM_BREATH_START breath_start //frame_breath_go
+	const ANIM_BREATH_LOOP breath_loop
+	
+	const ANIM_WARCRY1 warcry //frame_warcry frame_land
+	const ANIM_WARCRY2 alert //frame_alert
+
+	const ANIM_LOOK1 sniff_left
+	const ANIM_LOOK2 sniff_right
+
+	const ANIM_PUSHL attack_pushl //frame_attack_pushl
+	const ANIM_PUSHR attack_pushr //frame_attack_pushr
+
+	const ANIM_SWIM swim
+
+	setvard ANIM_FLINCH flinch //custom flinch
+
+	const SOUND_ATTACK1 monsters/bear/c_bear_atk1.wav
+	const SOUND_ATTACK2 monsters/bear/c_bear_atk2.wav
+	const SOUND_ATTACK3 monsters/bear/c_bear_atk3.wav
+	
+	const SOUND_PAIN1 monsters/bear/c_bear_hit1.wav
+	const SOUND_PAIN2 monsters/bear/c_bear_hit2.wav
+	const SOUND_PAIN3 monsters/bear/c_bear_bat1.wav
+	const SOUND_PAIN4 monsters/bear/c_bear_bat2.wav
+
+	const SOUND_DEATH monsters/bear/c_bear_dead.wav
+
+	const SOUND_STRUCK1	weapons/cbar_hitbod1.wav
+	const SOUND_STRUCK2	weapons/cbar_hitbod2.wav
+	const SOUND_STRUCK3	weapons/cbar_hitbod3.wav
+
+	const SOUND_WARCRY monsters/bear/c_beardire_bat1.wav
+	const SOUND_RUNSTEP1 monsters/bear/giantbearstep1.wav
+	const SOUND_RUNSTEP2 monsters/bear/giantbearstep2.wav
+
+	const SOUND_SWIM1 player/pl_wade1.wav
+	const SOUND_SWIM2 player/pl_wade2.wav
+	const SOUND_SWIM3 player/pl_wade3.wav
+	const SOUND_SWIM4 player/pl_wade4.wav
+	const SOUND_DIVE body/splash1.wav
+}
+
+{
+	setvard MSC_PUSH_RESIST 0.5 //"weighted"
+
+	setvard NPC_GIVE_EXP 500
+
+	setvard MOVE_RANGE 150
+	setvard ATTACK_RANGE 150
+	setvard ATTACK_HITRANGE 200
+
+	const ATTACK_RANGE_NORM 125
+	const ATTACK_HITRANGE_NORM 150
+
+	const ATTACK_HITRANGE_SWIM 300
+
+	const ATTACK_RANGE_LUNGE_MIN 175
+	const ATTACK_RANGE_LUNGE_MAX 250
+
+	const DMG_CLAW $randf(60,100)
+	const DMG_BURST 200
+
+	const BREATH_DURATION 4.0
+
+	const FREQ_LUNGE 2.0
+	const FREQ_FLINCH 20.0
+	const FREQ_STOMP $randf(30.0,45.0)
+	const FREQ_FX_REFRESH 45.0
+	const FREQ_BREATH $randf(30.0,45.0)
+	const FREQ_SWIM_SOUND 5.0
+
+	const MONSTER_MODEL monsters/bear_polar.mdl
+}
+
+#include monsters/base_monster_new
+
+{ [shared] npc_spawn
+
+	name a|Greater Polar Bear
+	setmodel MONSTER_MODEL
+	width 96
+	height 96
+	roam 1
+	hearingsensitivity 6
+	race wildanimal
+	hp 3000
+	takedmg cold 0.0
+	takedmg fire 1.25
+	setidleanim ANIM_IDLE
+	setmoveanim ANIM_WALK
+
+	setvard RUN_STEP 0
+
+	callevent 2.0 get_finals
+}
+
+{ get_finals
+	setvard NPC_HALF_HEALTH $get(ent_me,maxhp)
+	multiply NPC_HALF_HEALTH 0.5
+	if !NO_FROSTY_BREATH
+	if !NO_BREATH_ATTACK
+	callevent refresh_cl_fx
+}
+
+{ npc_targetsighted
+	if !DID_WARCRY
+	setvard DID_WARCRY 1
+
+	local RND_WARCRY $rand(1,2)
+	setvard AS_ATTACKING game.time
+	add AS_ATTACKING 5.0
+	roam 0
+	if ( RND_WARCRY == 1 ) playanim critical ANIM_WARCRY1
+	if ( RND_WARCRY == 2 ) playanim critical ANIM_WARCRY2
+
+	setvard NEXT_BREATH game.time
+	add NEXT_BREATH FREQ_BREATH
+}
+
+{ cycle_down
+	setvard DID_WARCRY 0
+}
+
+{ npcatk_hunt
+
+	if ( game.time > NEXT_BREATH_OFF_CHECK )
+	{
+		if !NO_BREATH_ATTACK
+		//suspect if bear not visible during breath off CL command it may stay on
+		//so double check here
+		setvard NEXT_BREATH_OFF_CHECK game.time
+		add NEXT_BREATH_OFF_CHECK 10.0
+		if !BREATH_ON
+		clientevent update all CLIENT_FX_ID breath_off
+	}
+
+	if ( $get(ent_me,inwater) )
+	{
+		if !SWIMMING_MODE
+		playsound 2 10 SOUND_DIVE
+		gravity 0.75
+		if ( $get(NPCATK_TARGET,range) < 200 ) gravity 0
+		setvard SWIMMING_MODE 1
+		setvard ANIM_RUN swim
+		setvard ANIM_WALK swim
+		setvard ANIM_IDLE swim
+		setmoveanim swim
+		setidleanim swim
+		setvard ATTACK_HITRANGE ATTACK_HITRANGE_SWIM
+	}
+	else
+	{
+		if SWIMMING_MODE
+		gravity 1
+		setvard SWIMMING_MODE 0
+		setvard ANIM_RUN ANIM_RUN_NORM
+		setvard ANIM_WALK ANIM_WALK_NORM
+		setvard ANIM_IDLE ANIM_IDLE_NORM
+		setmoveanim ANIM_RUN_NORM
+		setidleanim ANIM_IDLE_NORM
+		setvard ATTACK_HITRANGE ATTACK_HITRANGE_NORM
+
+		//try to make sure we've *actually* been on land a bit before we do these two
+		local TIME_PLUS5 game.time
+		add TIME_PLUS5 5.0
+		if ( TIME_PLUS5 > NEXT_STOMP )
+		{
+			setvard NEXT_STOMP TIME_PLUS5
+			add NEXT_STOMP $randf(10.0,15.0)
+		}
+		if ( TIME_PLUS5 > NEXT_BREATH )
+		{
+			setvard NEXT_BREATH TIME_PLUS5
+			add NEXT_STOMP $randf(15.0,20.0)
+		}
+	}
+
+	if NPCATK_TARGET isnot unset
+
+	if ( SWIMMING_MODE )
+	{
+		if ( $get(NPCATK_TARGET,range2d) < 200 )
+		{
+			gravity 0
+		}
+		else
+		{
+			local FWD_BOOST 100
+			gravity 0.75
+		}
+
+		if ( game.time > NEXT_SWIM_SOUND )
+		{
+			setvard NEXT_SWIM_SOUND game.time
+			add NEXT_SWIM_SOUND FREQ_SWIM_SOUND
+			playrandomsound 1 10 SOUND_SWIM1 SOUND_SWIM2 SOUND_SWIM3 SOUND_SWIM4
+		}
+
+		setvard ATTACK_HITRANGE ATTACK_HITRANGE_SWIM
+		local MOVE_DEST_Z $vec.z(game.monster.movedest.origin)
+		local MY_Z $get(ent_me,origin.z)
+		if ( MOVE_DEST_Z > MY_Z )
+		{
+			if $get(ent_me,inwater)
+			local Z_DIFF MOVE_DEST_Z
+			subtract Z_DIFF MY_Z
+			if Z_DIFF > 50
+			addvelocity ent_me $relvel(0,FWD_BOOST,5)
+		}
+		if ( MOVE_DEST_Z < MY_Z )
+		{
+			local Z_DIFF MY_Z
+			subtract Z_DIFF MOVE_DEST_Z
+			if Z_DIFF > 50
+			addvelocity ent_me $relvel(0,FWD_BOOST,-50)
+		}
+
+		setangle face $vec(0,game.monster.angles.yaw,0) //so I dont ramp up on things
+	}
+
+	if !SWIMMING_MODE
+
+	local TARG_RANGE $get(NPCATK_TARGET,range)
+
+	if ( TARG_RANGE < ATTACK_RANGE_LUNGE_MAX )
+	{
+		if TARG_RANGE > ATTACK_RANGE_LUNGE_MIN
+		if game.time > NEXT_LUNGE
+		local RND_LUNGE $rand(1,3)
+		setvard ATTACK_RANGE ATTACK_RANGE_LUNGE_MAX
+		setvard ATTACK_HITRANGE ATTACK_RANGE_LUNGE_MAX
+		if ( RND_LUNGE == 1 ) setvard ANIM_ATTACK long_attack1
+		if ( RND_LUNGE == 2 ) setvard ANIM_ATTACK long_attack2
+		if ( RND_LUNGE == 3 ) setvard ANIM_ATTACK long_attack_throw
+	}
+
+	if ( game.time > NEXT_STOMP )
+	{
+		if TARG_RANGE < ATTACK_RANGE_LUNGE_MIN
+		setvard ANIM_ATTACK ANIM_WARCRY1
+	}
+
+	if !NO_BREATH_ATTACK
+
+	if ( game.time > NEXT_BREATH )
+	{
+		if TARG_RANGE < 600
+		setvard ANIM_ATTACK breath_start
+	}
+}
+
+{ ext_bear_swim //called by map brushes near water
+	 //dont jump into water without good reason
+	if ( NPCATK_TARGET isnot unset ) local GO_SWIM 1
+	if ( HUNTING_PLAYER ) local GO_SWIM 1
+	if GO_SWIM
+	setmonsterclip 0 //ignore monsterclip and hit the water
+}
+
+{ ext_bear_unswim //further from water, resume clipping as normal
+	setmonsterclip 1
+}
+
+{ frame_attack
+	dodamage NPCATK_TARGET ATTACK_HITRANGE DMG_CLAW 90% slash
+	local RND_LR $randf(-100.0,100.0)
+	playrandomsound 0 5 SOUND_ATTACK1 SOUND_ATTACK2 SOUND_ATTACK3
+	addvelocity NPCATK_TARGET $relvel(RND_LR,110,110)
+	local RND_ATK $rand(1,3)
+	if ( RND_ATK == 1 ) setvard ANIM_ATTACK attack1
+	if ( RND_ATK == 2 ) setvard ANIM_ATTACK attack2
+	if ( RND_ATK == 3 ) setvard ANIM_ATTACK attack3
+	if !NO_FROSTY_BREATH
+	if ( $rand(1,3) == 1 ) clientevent update all CLIENT_FX_ID quick_breath
+}
+
+{ frame_long_attack
+	setvard ANIM_ATTACK attack1
+	setvard ATTACK_RANGE ATTACK_RANGE_NORM
+	setvard ATTACK_HITRANGE ATTACK_HITRANGE_NORM
+	setvard NEXT_LUNGE game.time
+	add NEXT_LUNGE FREQ_LUNGE
+	playrandomsound 0 10 SOUND_ATTACK1 SOUND_ATTACK2 SOUND_ATTACK3
+	if ( !NO_FROSTY_BREATH ) clientevent update all CLIENT_FX_ID quick_breath
+	dodamage NPCATK_TARGET ATTACK_RANGE_LUNGE_MAX DMG_CLAW 90% slash
+	local RND_LR $randf(-200.0,200.0)
+	addvelocity NPCATK_TARGET $relvel(RND_LR,300,110)
+}
+
+{ frame_long_attack_throw
+	setvard ANIM_ATTACK attack1
+	setvard ATTACK_RANGE ATTACK_RANGE_NORM
+	setvard ATTACK_HITRANGE ATTACK_HITRANGE_NORM
+	setvard NEXT_LUNGE game.time
+	add NEXT_LUNGE FREQ_LUNGE
+	playrandomsound 0 10 SOUND_ATTACK1 SOUND_ATTACK2 SOUND_ATTACK3
+	if ( !NO_FROSTY_BREATH ) clientevent update all CLIENT_FX_ID quick_breath
+	dodamage NPCATK_TARGET ATTACK_RANGE_LUNGE_MAX DMG_CLAW 90% slash
+	local RND_LR $randf(-200.0,200.0)
+	addvelocity NPCATK_TARGET $relvel(RND_LR,1000,200)
+}
+
+{ game_struck
+
+	if ( $get(ent_me,hp) < NPC_HALF_HEALTH )
+	{
+		if game.time > NEXT_FLINCH
+		setvard NEXT_FLINCH game.time
+		add NEXT_FLINCH FREQ_FLINCH
+		playanim critical ANIM_FLINCH
+		local PAIN_SOUND 1
+	}
+
+	if ( !PAIN_SOUND )
+	{
+		playrandomsound 0 10 SOUND_PAIN1 SOUND_PAIN2 SOUND_PAIN3 SOUND_PAIN4 SOUND_STRUCK1 SOUND_STRUCK2 SOUND_STRUCK3 SOUND_STRUCK1 SOUND_STRUCK2 SOUND_STRUCK3
+	}
+	else
+	{
+		playrandomsound 0 10 SOUND_PAIN1 SOUND_PAIN2 SOUND_PAIN3 SOUND_PAIN4
+		if !NO_FROSTY_BREATH
+		clientevent update all CLIENT_FX_ID quick_breath
+	}
+}
+
+{ frame_warcry
+	playsound 0 10 SOUND_WARCRY
+	if ( !NO_FROSTY_BREATH ) clientevent update all CLIENT_FX_ID quick_breath
+	setvard ANIM_ATTACK attack1
+}
+
+{ frame_land
+
+	setvard NEXT_STOMP game.time
+	add NEXT_STOMP FREQ_STOMP
+	setvard ANIM_ATTACK attack1
+	callevent 1.0 restore_roam
+	setvard BURST_START $relpos(0,150,0)
+	clientevent new all effects/sfx_stun_burst BURST_START 256 0
+	setvard BURST_TARGS $get_tsphere(enemy,256,BURST_START)
+	if BURST_TARGS isnot none
+	calleventloop $get_token_amt(BURST_TARGS) burst_affect_targets
+}
+
+{ burst_affect_targets
+	local CUR_TARG $get_token(BURST_TARGS,game.script.iteration)
+	applyeffect CUR_TARG effects/effect_stun 8.0 1 1
+	local TARG_ORG $get(CUR_TARG,origin)
+	local MY_ORG BURST_START
+	local NEW_YAW $angles(MY_ORG,TARG_ORG)
+	xdodamage CUR_TARG direct DMG_BURST 100% ent_me ent_me none blunt
+	addvelocity CUR_TARG $relvel($vec(0,NEW_YAW,0),$vec(0,1000,200))
+}
+
+{ frame_alert
+	callevent 1.0 restore_roam
+	playsound 0 10 SOUND_WARCRY
+	if !NO_FROSTY_BREATH
+	clientevent update all CLIENT_FX_ID quick_breath
+}
+
+{ restore_roam
+	roam 1
+}
+
+{ frame_run_step
+	add RUN_STEP 1
+	if ( RUN_STEP == 1 )
+	{
+		playsound 0 5 SOUND_RUNSTEP1
+	}
+	else
+	{
+		playsound 0 5 SOUND_RUNSTEP2
+		setvard RUN_STEP 0
+	}
+}
+
+{ refresh_cl_fx
+	if $get(ent_me,isalive)
+	if !NO_FROSTY_BREATH
+	if !NO_BREATH_ATTACK
+	clientevent new all monsters/gbear_polar_cl $get(ent_me,index) FREQ_FX_REFRESH BREATH_ON
+	setvard CLIENT_FX_ID game.script.last_sent_id
+	callevent FREQ_FX_REFRESH refresh_cl_fx
+}
+
+{ frame_breath_go
+	playsound 0 10 SOUND_WARCRY
+	callevent do_breath
+}
+
+{ do_breath
+
+	setvard NEXT_BREATH game.time
+	add NEXT_BREATH FREQ_BREATH
+
+	playsound 0 10 magic/cold_breath.wav
+
+	roam 0
+	callevent npcatk_suspend_ai BREATH_DURATION
+	callevent npcatk_suspend_movement ANIM_BREATH_LOOP BREATH_DURATION
+
+	clientevent update all CLIENT_FX_ID breath_on
+
+	setvard BREATH_ON 1
+	callevent breath_loop
+	callevent BREATH_DURATION breath_end
+}
+
+{ breath_loop
+	if BREATH_ON
+	callevent 0.5 breath_loop
+	setvard BREATH_TARGS $get_tsphere(enemy,768)
+	if BREATH_TARGS isnot none
+	calleventloop $get_token_amt(BREATH_TARGS) breath_affect_targets
+}
+
+{ breath_affect_targets
+	local CUR_TARG $get_token(BREATH_TARGS,game.script.iteration)
+	local TARG_ORG $get(CUR_TARG,origin)
+	if $within_cone2D(TARG_ORG,game.monster.origin,game.monster.angles,10)
+	applyeffect CUR_TARG effects/freeze_solid 6.0 $get(ent_me,id) 10.0
+	if $get(CUR_TARG,range) < 200
+	addvelocity CUR_TARG $relvel(0,800,110)
+}
+
+{ breath_end
+	setvard ANIM_ATTACK attack1
+	callevent 1.0 restore_roam
+	setvard BREATH_ON 0
+	clientevent update all CLIENT_FX_ID breath_off
+}
+
+{ game_death
+	if !NO_FROSTY_BREATH
+	clientevent update all CLIENT_FX_ID quick_breath_last
+}

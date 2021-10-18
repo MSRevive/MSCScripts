@@ -1,0 +1,410 @@
+//Poison Bones by Thothie
+//- Randomizer with 3 types
+//- 1 Envenomed Bones - mostly reliant on poison bolt attacks
+//- 2 Vampyric Poisoner - regens damage on sucseful strikes
+//- 3 Poisoned Spore - eplodes at 100hp or if struck for more than 30hp
+//- not implemented::
+//- 4 Envenomed Blade - Sword applies poison effect
+//- 5 Enraged Venom - Twin axes + crack (not quite ice enraged level though) [no roam when spawned direct]
+//- 6 Poisoned Guardian - High damage resistance, low damage output, perodic poison cloud [no roam when spawned direct]
+
+{
+
+   const SKEL_HP		350
+   const ATTACK_HITCHANCE 	85%
+   setvard ATTACK_DAMAGE_LOW 	5.5
+   setvard ATTACK_DAMAGE_HIGH 	15.5
+
+   setvard DROP_GOLD 		1
+   setvard DROP_GOLD_MIN		10
+   setvard DROP_GOLD_MAX		20
+
+   const SKEL_RESPAWN_CHANCE	0%
+   const SKEL_RESPAWN_LIVES	0
+
+	const FART_FREQ 20.0
+
+	setvard ANIM_FLINCH bigflinch
+
+	const GUARD_STRUCK1 body/armour1.wav
+	const GUARD_STRUCK2 body/armour2.wav
+	const GUARD_STRUCK3 body/armour3.wav
+
+   	const SOUND_BOLTCHARGE bullchicken/bc_attack1.wav
+	const BOLT_DAMAGE 20
+
+  	const SOUND_BOLT1      	bullchicken/bc_attack2.wav
+  	const SOUND_BOLT2      	bullchicken/bc_attack3.wav
+
+	setvard IMMUNE_FIRE 1.2
+
+	setvard ANIM_ATTACK attack1
+
+	const BOLT_FREQUENCY 5.0
+	const BOLT_DAMAGE 30
+
+   	precache poison_cloud.spr
+	precache cactusgibs.mdl
+}
+
+#include monsters/skeleton_base
+
+{ skeleton_spawn
+
+   	race undead
+   	roam 1
+   	//takedmg all .7
+   	takedmg fire 1.2
+   	takedmg cold 0.25
+   	hearingsensitivity 5
+	setvard BOLT_FREQ 3.0
+	setvard APPLY_EFFECT effects/effect_poison
+
+		setvar ANIM_WALK walk
+		setvar ANIM_RUN walk
+
+	if ( POISON_TYPE equals 'POISON_TYPE' ) setvard POISON_TYPE $rand(1,6) //developer - will be 1,6
+
+	if ( POISON_TYPE == 1 )
+	{
+	   	setmodel monsters/skeleton.mdl
+	   	setmodelbody	0 2
+		name Envenomed Bones
+		setvard IS_BOLTER 1
+		setvard NPC_GIVE_EXP 100
+	}
+
+	if ( POISON_TYPE == 2 )
+	{
+		name a|Vampyric Poisoner
+	   	setmodel monsters/skeleton.mdl
+	   	setmodelbody	0 2
+		setvard IS_VAMPIRE 1
+	   	setmodelbody	1 1
+		//setvard DROP_ITEM1 smallarms_bone_blade
+		//setvard DROP_ITEM1_CHANCE 1%
+		setvard NPC_GIVE_EXP 125
+	}
+
+	if ( POISON_TYPE == 3 )
+	{
+		name a|Poisoned Spore
+   		setmodel monsters/skeleton_enraged.mdl
+   		setmodelbody	0 2 //0=standard 1=ash 2=green 3=bloody 4=decayed 5=ice 6=gold 7=stone 8=crystal 9=weirdgel
+   		setmodelbody	1 0 //0=Unarmed 1=darkmace 2=sword 3=hammahs 4=bigsword+shield 5=iceclubs 6=fireclubs 7=highsword 8=wand
+		if ( $lcase(game.map.name) equals thanatos ) setvard SET_GREEK 1
+		if ( SET_GREEK ) setmodelbody 0 10
+
+		setvard IS_BOMBER 1
+		setvar ANIM_RUN run
+		setvar ANIM_WALK run
+		setmoveanim ANIM_RUN
+		movespeed 2.0
+		setanim.movespeed 2.0
+		//setanim.framerate 1.5
+		setvard BASE_FRAMERATE 1.5
+		setvard BASE_MOVESPEED 1.5
+		setvard NPC_GIVE_EXP 100
+	}
+
+	if ( POISON_TYPE == 4 )
+	{
+		name an|Envenomed Blade
+	   	setmodel monsters/skeleton.mdl
+	   	setmodelbody	0 2
+		setmodelbody 1 4
+		setvard POISON_BLADE 1
+		setvard NPC_GIVE_EXP 120
+	}
+
+	if ( POISON_TYPE == 5 )
+	{
+		name an|Enraged Poisoner
+   		setmodel monsters/skeleton_enraged.mdl
+   		setmodelbody	0 2 //0=standard 1=ash 2=green 3=bloody 4=decayed 5=ice 6=gold 7=stone 8=crystal 9=weirdgel
+   		setmodelbody	1 3 //0=Unarmed 1=darkmace 2=sword 3=hammahs 4=bigsword+shield 5=iceclubs 6=fireclubs 7=highsword 8=wand
+		setvar ANIM_RUN run
+		setvar ANIM_WALK run
+		setmoveanim ANIM_RUN
+		movespeed 1.5
+		setanim.movespeed 1.5
+
+		//setanim.framerate 3.0
+		//setvard BASE_FRAMERATE 3.0
+		setvard ATTACK_DAMAGE_LOW 	2.5
+		setvard ATTACK_DAMAGE_HIGH 	10.0
+		setvard POISON_BLADE 1
+		setvard ENRAGED 1
+		setvard NPC_GIVE_EXP 150
+	}
+
+	if ( POISON_TYPE == 6 )
+	{
+		name an|Poisonous Guardian
+		setmodel monsters/skeleton.mdl
+		//movespeed 0.75
+		setanim.movespeed 0.5
+		setanim.framerate 0.5
+		setmodelbody	0 2
+		setmodelbody 1 3
+		takedmg all 0.3
+   		setstat parry 40
+		setvard FARTS 1
+		setvard GUARDIAN 1
+		setvard ATTACK_DAMAGE_LOW 	0.5
+		setvard ATTACK_DAMAGE_HIGH 	5.5
+		setvard NO_STUCK_CHECKS 1
+		setvard NPC_GIVE_EXP 200
+	}
+
+
+	//body (0)
+	//0 - old default
+	//1 - bloody
+	//2 - green M
+	//3 - black armor
+	//4 - white armor
+	//5 - white brest, black hat
+	//6 - one-eye
+	//7 - frosted
+	//8 - Wassup-G
+
+	//weapons (1)
+	//0 - Unarmed
+	//1 - bone blade
+	//2 - double axes
+	//3 - double shields
+	//4 - sword
+}
+
+//Bolter & Enraged
+{ npcatk_targetvalidate
+
+	if ( ENRAGED ) 
+	{
+		//setanim.framerate 1.5
+		setvard BASE_FRAMERATE 1.5
+	}
+	if ( GUARDIAN ) 
+	{
+		//setanim.framerate 0.5
+		setvard BASE_FRAMERATE 0.5
+	}
+	if ( IS_VAMPIRE )
+	{
+		//setanim.framerate 0.75
+		setvard BASE_FRAMERATE 0.75
+	}
+	if ( FARTS )
+	{
+		if !FART_DELAY
+		callevent do_fart
+	}
+
+	if IS_BOLTER
+	if !BOLT_DELAY
+	if $cansee(enemy)
+	if $get(ent_lastseen,range) > 192
+	callevent toss_bolt
+}
+
+{ toss_bolt
+	setvard BOLT_DELAY 1
+	callevent BOLT_FREQ reset_bolt
+	playanim critical attack2
+	playsound 0 10 SOUND_BOLTCHARGE
+}
+
+{ reset_bolt
+	setvard BOLT_DELAY 0	
+}
+
+{ attack_2 //called from model anim attack2
+
+	if IS_BOLTER
+	playrandomsound 0 10 SOUND_BOLT1 SOUND_BOLT2
+	tossprojectile view 300 BOLT_DAMAGE 0.5 proj_poison_spit2 (0,15,48)
+}
+
+//Bomber
+{ npc_struck
+
+	if ( GUARDIAN ) 
+	{
+		playrandomsound 0 8 GUARD_STRUCK1 GUARD_STRUCK2 GUARD_STRUCK3
+		if ( PARAM1 > 30 )
+		{
+			//handling flinch this side due to odd behavior
+			if !FLINCH_DELAYING
+			playanim critical ANIM_FLINCH
+			setvard FLINCH_DELAYING 1
+			callevent 5.0 reset_flinch
+		}
+	}
+
+	if IS_BOMBER
+	if !SPLODIE
+
+	if ( game.monster.health < 100 ) 
+	{
+		playsound 0 10 debris/bustflesh1.wav
+		setvard SPLODIE 1
+		playanim critical ANIM_SPLODE
+		callevent 0.5 go_splodie
+	}
+
+	if !SPLODIE
+
+	if ( PARAM1 > 30 ) 
+	{
+		playsound 0 10 debris/bustflesh1.wav
+		setvard SPLODIE 1
+		playanim critical ANIM_SPLODE
+		callevent 0.5 go_splodie
+	}
+}
+
+{ reset_flinch
+	setvard FLINCH_DELAYING 0
+}
+
+{ go_splodie
+
+	//playsound 0 10 ambience/steamburst1.wav
+
+	setbbox none
+	setsolid none
+	//tempent gibs <modelname/spritename> <position> <size> <velocity> <randomness> <amount> <duration>
+	effect tempent gibs  cactusgibs.mdl $relpos(0,0,0) 1.0 50 50 15 2.0
+
+	local CLOUD_POS $get(ent_me,origin)
+	local GRND_CLOUD $get_ground_height(CLOUD_POS)
+	add GRND_CLOUD 24
+	vectorset CLOUD_POS z GRND_CLOUD
+	createnpc monsters/summon/npc_poison_cloud2 CLOUD_POS $get(ent_me,id) $rand(10,15) 30.0 1
+	setorigin ent_me (20000,20000,20000)
+	race hated
+	callevent 20.0 me_suicide
+}
+
+{ me_suicide
+
+	dodamage ent_me direct 1000 100% ent_me
+}
+
+//vampire
+{ game_damaged_other //P1 = target P2= damage
+
+	////dbg temp Damaged other got PARAM1 PARAM2 PARAM3 PARAM4 PARAM5
+	if IS_VAMPIRE
+	//dbg temp MyHP game.monster.hp
+	local HP_TO_GIVE PARAM2
+	local MAX_CHECK game.monster.hp
+	add MAX_CHECK HP_TO_GIVE
+	if MAX_CHECK < game.monster.maxhp
+	givehp HP_TO_GIVE
+	effect glow ent_me (0,255,0) 80 0.5 0.5
+	playsound 0 10 player/heartbeat_noloop.wav
+}
+
+//Envenomed Blade
+{ game_damaged_other
+
+	if POISON_BLADE
+	applyeffect $get(PARAM1,id) APPLY_EFFECT $rand(10,15) ent_me $randf(1,4)
+}
+
+{ [override] attack_1
+
+   	callevent attack_snd
+   	dodamage ent_lastseen ATTACK_RANGE $randf(ATTACK_DAMAGE_LOW,ATTACK_DAMAGE_HIGH) ATTACK_HITCHANCE
+
+	if POISON_BLADE
+	setvard APPLY_EFFECT effects/effect_poison
+	if !ENRAGED
+	if ( $rand(1,3) == 1 ) setvard ANIM_ATTACK attack2
+}
+
+{ attack_2
+
+	if POISON_BLADE
+	if !ENRAGED
+	setvard APPLY_EFFECT effects/greater_poison
+	setvard ANIM_ATTACK attack1
+	dodamage ent_lastseen ATTACK_RANGE ATTACK_DAMAGE_HIGH ATTACK_HITCHANCE
+}
+
+//guardian
+{ do_fart
+
+	setvard FART_DELAY 1
+	callevent FART_FREQ reset_fart
+	if $get(ent_lastseen,range) < 256
+	playanim critical attack2
+	playsound 0 10 ambience/steamburst1.wav
+	local SPAWN_ORIGIN $get(ent_lastseen,origin)
+	vectoradd SPAWN_ORIGIN $relpos($vec(0,0,0),$vec(0,0,32))
+	createnpc monsters/summon/npc_poison_cloud2 SPAWN_ORIGIN $get(ent_me,id) $rand(10,15) 5.0 1
+}
+
+{ reset_fart
+
+	setvard FART_DELAY 0
+}
+
+
+//summon handling
+{ game_death
+
+	//setanim.framerate 1.0
+	if I_R_SUMMONED
+	callexternal MY_MASTER skeleton_died
+}
+
+{ game_dynamically_created
+
+	////dbg temp MyMasterIs $get(ent_creationowner,name)
+	setvard I_R_SUMMONED 1
+	setvard MY_MASTER $get(ent_creationowner,id)
+	setvard SUMMON_OLD_LOC game.monster.origin
+	setvard NO_SPAWN_STUCK_CHECK 1
+	setvard SUMMON_DELAY_STUCK_CHECK 0
+	setvard CYCLE_TIME CYCLE_TIME_BATTLE
+	callevent 3.0 summon_stuck_checks
+}
+
+{ summon_stuck_checks
+
+	callevent 2.0 summon_stuck_checks
+
+	subtract SUMMON_DELAY_STUCK_CHECK 1
+	if ( SUMMON_DELAY_STUCK_CHECK < 0 ) setvard SUMMON_DELAY_STUCK_CHECK 0
+
+	if SUMMON_DELAY_STUCK_CHECK == 0
+	if ( $dist(game.monster.origin,SUMMON_OLD_LOC) == 0 ) callexternal MY_MASTER skeleton_stuck
+	setvard SUMMON_OLD_LOC game.monster.origin
+}
+
+{ npc_selectattack
+
+	if I_R_SUMMONED
+	setvard SUMMON_DELAY_STUCK_CHECK 5
+}
+
+{ game_damaged_other
+
+	if I_R_SUMMONED
+	setvard SUMMON_DELAY_STUCK_CHECK 5
+}
+
+{ [override] check_attack
+
+	if !IS_FLEEING
+	
+	if $get(HUNT_LASTTARGET,isalive)
+	
+	if( $get(HUNT_LASTTARGET,range) <= ATTACK_RANGE ) local L_ATTACK 1
+	
+	if L_ATTACK
+	callevent npcatk_attackenemy
+}

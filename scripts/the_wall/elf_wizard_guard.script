@@ -1,0 +1,713 @@
+//to do's
+//make race aware
+#Scope server
+
+{
+	//theme these by element
+
+	//one random - cold
+	setvard REWARD_LIST1 "scroll_volcano;armor_helm_gaz2;mana_immune_cold;mana_gprotection;swords_giceblade;shields_rune;scroll2_frost_xolt;scroll_ice_wall"
+
+	//one random - lightning
+	setvard REWARD_LIST2 "scroll2_lightning_chain;scroll2_lightning_storm;mana_leadfoot;mana_demon_blood;mana_immune_lightning"
+
+	//one random - fire
+	setvard REWARD_LIST3 "armor_helm_gaz1;mana_immune_fire;mana_vampire;item_gwond;axes_dragon;scroll_fire_wall;swords_novablade12;blunt_gauntlets_fire"
+
+	//one of each, awarded in order of points
+	//add a felewyn shard if players > 3
+	setvard REWARD_LIST4 "mana_leadfoot;axes_gthunder11;axes_vaxe;blunt_gauntlets_demon;mana_forget;mana_speed;mana_regen;polearms_nag"
+	setvard REWARD_NAMES4 "Leadfoot Potion;Greater Thunderaxe;Blood Axe;Demon Gauntlets;Forgetfulness Potion;Speed Potion;Regeneration Potion;Elven Glaive"
+
+	const ELF_LIGHTNING_WIZARD 1
+	const DMG_SHOCK 100
+	const DOT_SHOCK 50
+	const DMG_MELEE 300
+
+	const NO_CHAT 1 //handles chat locally
+
+	setvard NPC_NO_PLAYER_DMG 1 //don't take damage from players
+
+	setvard NPC_RETURN_HOME 1
+
+	setvard NPC_PROX_ACTIVATE 1 //suspend AI on spawn, wait for player to come..
+	setvard NPC_PROXACT_RANGE 256 //within this range then activate...
+	setvard NPC_PROXACT_EVENT do_intro //this event.
+	setvard NPC_PROXACT_IFSEEN 0 //activate if a player can see me, or targets me, regardless of range
+
+	const SOUND_ELF_BEAM_LOOP magic/bolt_loop.wav
+	const SOUND_ELF_BEAM_START magic/bolt_start.wav
+
+	const NPC_BATTLE_ALLY 1 //lets player view current health
+	const ATTACK_HITRANGE_MELEE 128
+}
+
+{ game_precache
+	precache SOUND_ELF_BEAM_LOOP
+	precache SOUND_ELF_BEAM_START
+
+	precache voices/the_wall/vv_azura_dead.wav
+	precache voices/the_wall/vv_azura1.wav
+	precache voices/the_wall/vv_azura2.wav
+	precache voices/the_wall/vv_azura3.wav
+	precache voices/the_wall/vv_givereward.wav
+	precache voices/the_wall/vv_hi1.wav
+	precache voices/the_wall/vv_hi2.wav
+	precache voices/the_wall/vv_hi3.wav
+	precache voices/the_wall/vv_holdthere1.wav
+	precache voices/the_wall/vv_holdthere2.wav
+	precache voices/the_wall/vv_holdthere3.wav
+	precache voices/the_wall/vv_ihotohr_dead1.wav
+	precache voices/the_wall/vv_ihotohr_dead2.wav
+	precache voices/the_wall/vv_ihotohr_dead2_solo.wav
+	precache voices/the_wall/vv_ihotohr_dead3.wav
+	precache voices/the_wall/vv_ihotohr_dead3_solo.wav
+	precache voices/the_wall/vv_ihotohr1.wav
+	precache voices/the_wall/vv_ihotohr2.wav
+	precache voices/the_wall/vv_ihotohr3.wav
+	precache voices/the_wall/vv_ihotohr4.wav
+	precache voices/the_wall/vv_ihotohr5.wav
+	precache voices/the_wall/vv_ivicta_dead.wav
+	precache voices/the_wall/vv_ivicta1.wav
+	precache voices/the_wall/vv_ivicta2.wav
+	precache voices/the_wall/vv_ivicta3.wav
+	precache voices/the_wall/vv_melanion.wav
+	precache voices/the_wall/vv_playersrewarded.wav
+	precache voices/the_wall/vv_thewall1-2.wav
+	precache voices/the_wall/vv_thewall3.wav
+	precache voices/the_wall/vv_thewall4.wav
+	precache voices/the_wall/vv_token.wav
+	precache voices/the_wall/vv_traitors1.wav
+	precache voices/the_wall/vv_traitors2.wav
+	precache voices/the_wall/vv_traitors3.wav
+	precache voices/the_wall/vv_traitors4.wav
+	precache voices/the_wall/vv_traitors5.wav
+	precache voices/the_wall/vv_traitors6.wav
+	precache voices/the_wall/vv_traitors7.wav
+	precache voices/the_wall/vv_traitors8.wav
+	precache voices/the_wall/vv_traitors9.wav
+	precache voices/the_wall/vv_ulectrath_dead.wav
+	precache voices/the_wall/vv_ulectrath1.wav
+}
+
+#include monsters/elf_wizard_base
+#include monsters/base_chat
+
+{ elf_spawn
+
+	name Velend Varon
+	hp 3500
+	race human
+
+	name_unique elf_leader
+
+	setmodelbody 1 2 //0=Unarmed 1=Dark_Staff 2=Dragon_Staff 3=H4xbow
+	setmodelbody 2 0
+	setprop ent_me skin 6 //0=Young_Black_Robe 1=Elder_Black_Robe 2=Young_Green_Robe 3=Elder_Green_Robe 4=Young_Puce_Robe 5=Elder_Puce_Robe 6=Good_Pale 7=Good_Pink
+
+	roam 0
+	saytextrange 1024
+	
+	catchspeech say_hi hail hi j0 waddup gweets greet salu
+	catchspeech say_the_wall wall
+	catchspeech say_traitors ram tork traitor escape
+	catchspeech say_azura azur
+	catchspeech say_ulectrath ulec
+	catchspeech say_ivicta ivict
+	catchspeech say_ihotohr iho necro
+	catchspeech say_melanion mel ruin
+
+	hearingsensitivity 10
+
+	menu.autoopen 0
+
+	callevent npcatk_suspend_ai
+}
+
+{ npc_post_spawn
+	//double check setmodel settings
+	setmodelbody 2 0
+
+	setvard ANIM_ATTACK ref_shoot_crowbar
+	setvard ATTACK_RANGE 64
+	setvard ATTACK_HITRANGE 120
+}
+
+{ do_intro
+	setvard INTRO_ID NPC_PROXACT_PLAYERID
+
+	setmodelbody 2 0 //dbl check
+
+	callevent npcatk_resume_ai
+
+	setmovedest INTRO_ID 9999
+
+	if !ON_SECOND_SPAWN
+
+	saytext Hold there!
+	playsound 2 10 voices/the_wall/vv_holdthere.wav
+
+	say [0.2] [0.4]
+
+	playanim critical look_idle
+
+	setvard CHAT_STEP1 "Several [Rammata] have escaped us by traveling into the fortresses."
+	setvard CHAT_DELAY_STEP1 3.4
+	setvard CHAT_SOUND1 voices/the_wall/vv_holdthere1.wav
+
+	setvard CHAT_STEP2 "I'm afraid we three aren't enough to dare try to flush them out."
+	setvard CHAT_DELAY_STEP2 4.0
+	setvard CHAT_SOUND2 voices/the_wall/vv_holdthere2.wav
+
+	setvard CHAT_STEP3 "There's too many powerful undead occupying [The Wall] for us to go in."
+	setvard CHAT_DELAY_STEP3 4.4
+	setvard CHAT_SOUND3 voices/the_wall/vv_holdthere3.wav
+
+	setvard CHAT_STEPS 3
+	callevent 3.0 chat_loop
+}
+
+{ say_the_wall
+	if ( BUSY_CHATTING ) callevent 5.0 say_the_wall
+	if !BUSY_CHATTING
+
+	setvard CHAT_STEP1 "The Wall is a series of elven fortresses that once stood as the last line of defense,"
+	setvard CHAT_DELAY_STEP1 4.6
+	setvard CHAT_SOUND1 voices/the_wall/vv_thewall1-2.wav
+
+	setvard CHAT_STEP2 "against Lor Malgoriand's armies during the Age of Blood."
+	setvard CHAT_DELAY_STEP2 3.2
+
+	setvard CHAT_STEP3 "The former Eswen Empire no longer has the forces to maintain the lines."
+	setvard CHAT_DELAY_STEP3 5.1
+	setvard CHAT_SOUND3 voices/the_wall/vv_thewall3.wav
+	
+	setvard CHAT_STEP4 "As a result, the remains of the dark one's armies moved into the ruins."
+	setvard CHAT_SOUND4 voices/the_wall/vv_thewall4.wav
+	setvard CHAT_DELAY_STEP4 4.5
+
+	setvard CHAT_STEPS 4
+
+
+	callevent 20.0 enable_menu
+
+	callevent chat_loop
+}
+
+{ enable_menu
+	menu.autoopen 1
+}
+
+{ say_traitors
+	if ( BUSY_CHATTING ) callevent 5.0 say_traitors
+	if !BUSY_CHATTING
+
+	setvard CHAT_STEP1 "Rammata te Mal are elven worshippers of Torkalath."
+	setvard CHAT_SOUND1 voices/the_wall/vv_traitors1.wav
+	setvard CHAT_DELAY_STEP1 3.0
+
+	setvard CHAT_STEP2 "They're insane, evil. They'll show no mercy, even to you, a legitmate child of their god."
+	setvard CHAT_SOUND2 voices/the_wall/vv_traitors2.wav
+	setvard CHAT_DELAY_STEP2 5.5
+
+	setvard CHAT_STEP3 "We cannot allow traitors of Felewyn to escape justice."
+	setvard CHAT_SOUND3 voices/the_wall/vv_traitors3.wav
+	setvard CHAT_DELAY_STEP3 4.0
+
+	setvard CHAT_STEP4 "This pack's leaders are named [Azura], [Ulectrath], and [Ivicta]."
+	setvard CHAT_SOUND4 voices/the_wall/vv_traitors4.wav
+	setvard CHAT_DELAY_STEP4 4.0
+
+	setvard CHAT_STEP5 "They've also several acolytes with them we've no records of."
+	setvard CHAT_SOUND5 voices/the_wall/vv_traitors5.wav
+	setvard CHAT_DELAY_STEP5 4.5
+
+	setvard CHAT_STEP6 "They are all likely seeking the protection of the Rammata [necromancer], Ihotohr, who dwells within."
+	setvard CHAT_SOUND6 voices/the_wall/vv_traitors6.wav
+	setvard CHAT_DELAY_STEP6 6.2
+
+	setvard CHAT_STEP7 "He's insane, and likely not be anymore pleased to see them than will the undead he masters."
+	setvard CHAT_SOUND7 voices/the_wall/vv_traitors7.wav
+	setvard CHAT_DELAY_STEP7 6.0
+
+	setvard CHAT_STEP8 "We don't have authority to enter the ruins, but if you can bring us proof of their deaths..."
+	setvard CHAT_SOUND8 voices/the_wall/vv_traitors8.wav
+	setvard CHAT_DELAY_STEP8 3.5
+
+	setvard CHAT_STEP9 "I do have the authority to reward you for each head retrieved."
+	setvard CHAT_SOUND9 voices/the_wall/vv_traitors9.wav
+	setvard CHAT_DELAY_STEP9 5.7
+
+	setvard CHAT_STEPS 9
+
+	callevent chat_loop
+}
+
+{ say_azura
+	if !BUSY_CHATTING
+
+	setvard CHAT_STEP1 "Azura is actually from north of The Wall, living among the undead around The Bleak."
+	setvard CHAT_DELAY_STEP1 4.7
+	setvard CHAT_SOUND1 voices/the_wall/vv_azura1.wav
+
+	setvard CHAT_STEP2 "She journeyed down from the frozen wastelands to join up with the other two in their effort to assassinate Magistrate Tal'san."
+	setvard CHAT_DELAY_STEP2 6.5
+	setvard CHAT_SOUND2 voices/the_wall/vv_azura2.wav
+
+	setvard CHAT_STEP3 "Apprarently, part of a vendetta, to avenge the slaughter of a coven of Rammata found hiding in [Melanion]."
+	setvard CHAT_DELAY_STEP3 7.3
+	setvard CHAT_SOUND3 voices/the_wall/vv_azura3.wav
+
+	setvard CHAT_STEPS 3
+	callevent chat_loop	
+}
+
+{ say_ulectrath
+	if !BUSY_CHATTING
+	playsound 2 10 voices/the_wall/vv_ulectrath1.wav
+	saytext "Ulectrath the Storm hails from Aluhandra where it is rumored she either bargained for or stole magical powers from the desert orc clans."
+	callevent bchat_auto_mouth_move 7.0
+}
+
+{ say_ivicta
+
+	if !BUSY_CHATTING
+
+	setvard CHAT_STEP1 "Ivicta was the sole survivor of a Melanion cult, subsequently forced into the Badlands."
+	setvard CHAT_DELAY_STEP1 6.0
+	setvard CHAT_SOUND1 voices/the_wall/vv_ivicta1.wav
+
+	setvard CHAT_STEP2 "The slaughter of the cult was ordered by Magistrate Tal'san, so it is likely she who began this mad quest to assassinate him. "
+	setvard CHAT_DELAY_STEP2 7.0
+	setvard CHAT_SOUND2 voices/the_wall/vv_ivicta2.wav
+
+	setvard CHAT_STEP3 "However, how she contacted or organized the other two women is beyond the scope of our knowledge."
+	setvard CHAT_DELAY_STEP3 5.5
+	setvard CHAT_SOUND3 voices/the_wall/vv_ivicta3.wav
+
+	setvard CHAT_STEPS 3
+	callevent chat_loop	
+}
+
+{ say_melanion
+	saytext The Melanion Ruins lie beneath and around the new elven capital of Kray Eldorad and run all the way to Blood Rose valley.
+	playsound 2 10 voices/the_wall/vv_melanion.wav
+	callevent bchat_auto_mouth_move 7.0
+}
+
+{ say_ihotohr
+	if !BUSY_CHATTING
+
+	setvard CHAT_STEP1 "Ihotohr brought an army of the undead to the elven capital of Kray Eldorad nearly a century ago."
+	setvard CHAT_DELAY_STEP1 5.2
+	setvard CHAT_SOUND1 voices/the_wall/vv_ihotohr1.wav
+
+	setvard CHAT_STEP2 "He was soundly defeated, and has been biding his time in the maze of fortresses that make up The Wall ever since."
+	setvard CHAT_DELAY_STEP2 6.7
+	setvard CHAT_SOUND2 voices/the_wall/vv_ihotohr2.wav
+
+	setvard CHAT_STEP3 "Rammata have sought him out to form alliances before, but none have returned.."
+	setvard CHAT_DELAY_STEP3 4.3
+	setvard CHAT_SOUND3 voices/the_wall/vv_ihotohr3.wav
+
+	setvard CHAT_STEP4 "I fear that desperation and fear have driven this trio and their cohorts to attempt it."
+	setvard CHAT_DELAY_STEP4 4.5
+	setvard CHAT_SOUND4 voices/the_wall/vv_ihotohr4.wav
+
+	setvard CHAT_STEP5 "We cannot depend on the necromancer to dispatch our foes for us though. Sooner or later, we must pursue them."
+	setvard CHAT_DELAY_STEP5 6.0
+	setvard CHAT_SOUND5 voices/the_wall/vv_ihotohr5.wav
+
+	setvard CHAT_STEPS 5
+	callevent chat_loop	
+}
+
+{ say_hi
+	if !BUSY_CHATTING
+
+	setvard CHAT_STEP1 "Hail, child of Torkaloth..."
+	setvard CHAT_DELAY_STEP1 1.5
+	setvard CHAT_SOUND1 voices/the_wall/vv_hi1.wav
+
+	setvard CHAT_STEP2 "As I explained, serveral [Rammata] have escaped into the fortresses."
+	setvard CHAT_DELAY_STEP2 4.5
+	setvard CHAT_SOUND2 voices/the_wall/vv_hi2.wav
+
+	setvard CHAT_STEP3 "Bring us proof of their demise, and I shall reward you."
+	setvard CHAT_DELAY_STEP3 3.0
+	setvard CHAT_SOUND3 voices/the_wall/vv_hi3.wav
+
+	setvard CHAT_STEPS 3
+	callevent chat_loop
+	  
+}
+
+{ game_menu_getoptions
+
+	setmovedest PARAM1 9999
+
+	if ( BUSY_CHATTING )
+	{
+		if CHAT_MODE isnot final_reward
+		local reg.mitem.title 	"(Talking...)"
+		local reg.mitem.type 	disabled
+		menuitem.register
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	if ( NPCATK_TARGET isnot unset )
+	{
+		local reg.mitem.title 	"(In combat...)"
+		local reg.mitem.type 	disabled
+		menuitem.register
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	setmovedest PARAM1 9999
+
+	local HAS_HEAD 0
+	if ( $item_exists(PARAM1,item_telfh1) )
+	{
+		local HAS_HEAD 1
+		local reg.mitem.title "Give Azura's Head"
+		local reg.mitem.type payment
+		local reg.mitem.data item_telfh1
+		local reg.mitem.callback got_head1
+		menuitem.register
+	}
+	if ( $item_exists(PARAM1,item_telfh2) )
+	{
+		local HAS_HEAD 1
+		local reg.mitem.title "Give Ulectrath's Head"
+		local reg.mitem.type payment
+		local reg.mitem.data item_telfh2
+		local reg.mitem.callback got_head2
+		menuitem.register
+	}
+	if ( $item_exists(PARAM1,item_telfh3) )
+	{
+		local HAS_HEAD 1
+		local reg.mitem.title "Give Ivicta's Head"
+		local reg.mitem.type payment
+		local reg.mitem.data item_telfh3
+		local reg.mitem.callback got_head3
+		menuitem.register
+	}
+	if ( $item_exists(PARAM1,item_telfh4) )
+	{
+		local HAS_HEAD 1
+		local reg.mitem.title "Give Ihotohr's Head"
+		local reg.mitem.type payment
+		local reg.mitem.data item_telfh4
+		local reg.mitem.callback got_head4
+		menuitem.register
+	}
+
+	if ( !HAS_HEAD )
+	{
+		if CHAT_MODE isnot final_reward
+
+		local reg.mitem.title 	"Hail"
+		local reg.mitem.type 	callback
+		local reg.mitem.callback say_hi
+		menuitem.register
+
+		local reg.mitem.title 	"About The Wall"
+		local reg.mitem.type 	callback
+		local reg.mitem.callback say_the_wall
+		menuitem.register
+
+		local reg.mitem.title 	"About Rammata"
+		local reg.mitem.type 	callback
+		local reg.mitem.callback say_traitors
+		menuitem.register
+
+		local reg.mitem.title 	"About Azura"
+		local reg.mitem.type 	callback
+		local reg.mitem.callback say_azura
+		menuitem.register
+
+		local reg.mitem.title 	"About Ulectrath"
+		local reg.mitem.type 	callback
+		local reg.mitem.callback say_ulectrath
+		menuitem.register
+
+		local reg.mitem.title 	"About Ivicta"
+		local reg.mitem.type 	callback
+		local reg.mitem.callback say_ivicta
+		menuitem.register
+
+		local reg.mitem.title 	"About Ihotohr"
+		local reg.mitem.type 	callback
+		local reg.mitem.callback say_ihotohr
+		menuitem.register
+	}
+
+	if CHAT_MODE equals final_reward
+
+	if ( $get(PARAM1,maxhp) < 200 )
+	{
+		saytext "Yes... You're cute, but you couldn't have possibly had anything to do with this."
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	if ( PLAYERS_TO_REWARD contains PARAM1 ) local GIVE_REWARD 1
+	if ( !GIVE_REWARD )
+	{
+		saytext "Thank you again, for all you have done for us, child of Torkalath."
+		playsound 2 10 voices/the_wall/vv_givereward.wav
+		callevent bchat_mouth_move
+	}
+
+	if GIVE_REWARD
+
+	if ( PLAYERS_REWARDED > 1 )
+	{
+		playsound 2 10 voices/the_wall/vv_playersrewarded.wav
+		saytext "Please, select a reward for the part you played in the defeat of Ihotohr."
+		callevent bchat_mouth_move
+	}
+
+	calleventloop $get_token_amt(REWARD_LIST4) build_reward_list
+
+	if ( !REWARED_SYMBOL )
+	{
+		if ( $get_quest_data(PARAM1,f) contains sym ) local NO_SYMB 1
+		if !NO_SYMB
+		setvard REWARED_SYMBOL 1
+		local CUR_ITEM_NAME "Symbol of Felewyn "
+		local CUR_ITEM item_s
+
+		local RAND_SYMB $rand(1,5)
+		if ( RAND_SYMB == 1 )
+		{
+			local NAME_ADD "I"
+			local ITEM_ADD "1"
+		}
+		if ( RAND_SYMB == 2 )
+		{
+			local NAME_ADD "II"
+			local ITEM_ADD "2"
+		}
+		if ( RAND_SYMB == 3 )
+		{
+			local NAME_ADD "III"
+			local ITEM_ADD "3"
+		}
+		if ( RAND_SYMB == 4 )
+		{
+			local NAME_ADD "IV"
+			local ITEM_ADD "4"
+		}
+		if ( RAND_SYMB == 5 )
+		{
+			local NAME_ADD "V"
+			local ITEM_ADD "5"
+		}
+
+		stradd CUR_ITEM_NAME NAME_ADD
+		stradd CUR_ITEM ITEM_ADD
+
+		//add random felewyn symbol option
+		local reg.mitem.title CUR_ITEM_NAME
+		local reg.mitem.data CUR_ITEM
+		local reg.mitem.type callback
+		local reg.mitem.callback give_reward_final
+		menuitem.register
+	}
+}
+
+{ build_reward_list
+	local CUR_IDX game.script.iteration
+	local CUR_ITEM $get_token(REWARD_LIST4,CUR_IDX)
+	local CUR_ITEM_NAME $get_token(REWARD_NAMES4,CUR_IDX)
+	local reg.mitem.title CUR_ITEM_NAME
+	local reg.mitem.data CUR_ITEM
+	local reg.mitem.type callback
+	local reg.mitem.callback give_reward_final
+	menuitem.register
+}
+
+{ give_reward_final
+	local PLR_IDX $get_find_token(PLAYERS_TO_REWARD,PARAM1)
+	token.del PLAYERS_TO_REWARD PLR_IDX
+	add PLAYERS_REWARDED 1
+	dbg give_reward_final $get(PARAM1,name) PARAM2
+	offer PARAM1 PARAM2
+}
+
+{ frame_melee
+	dodamage NPCATK_TARGET ATTACK_HITRANGE DMG_MELEE 90% blunt
+	addvelocity NPCATK_TARGET $relvel(10,800,110)
+}
+
+{ game_struck
+	if !$get(ent_laststruck,isplayer)
+	if PARAM1 > 0
+	if game.time > NEXT_DMG_ALERT
+	setvard NEXT_DMG_ALERT game.time
+	add NEXT_DMG_ALERT 10.0
+	infomsg all "CRITICAL NPC UNDER ATTACK" "Velend Varon is under attack!"
+}
+
+{ game_death
+	infomsg all "A CRITICAL NPC HAS BEEN SLAIN!" "Velend Varon is dead!"
+}
+
+//{ game_heardsound
+//	if !NPC_RETURNING_HOME
+//	if NPCATK_TARGET equals unset
+//	if $get(ent_lastheard,isplayer)
+//	setvard NPC_FORCED_MOVEDEST 1
+//	dbg heard_player
+//	setmovedest ent_lastheard 9999
+//}
+
+{ got_head1
+	dbg got_head1 step 1
+
+	if ( BUSY_CHATTING ) callevent 1.0 got_head1
+	dbg got_head1 step 2
+	if !BUSY_CHATTING
+
+	dbg got_head1 step 3
+
+	setvard CHAT_STEP1 "Ah yes, the head of Azura. Finally her cold soul can be brought to rest."
+	setvard CHAT_DELAY_STEP1 5.3
+	setvard CHAT_SOUND1 voices/the_wall/vv_azura_dead.wav
+	
+	setvard CHAT_STEP2 "Please take token of gratitude from the faithful of the Empire of Eswen."
+	setvard CHAT_DELAY_STEP2 4.3
+	setvard CHAT_SOUND2 voices/the_wall/vv_token.wav
+
+	setvard CHAT_STEPS 2
+	callevent chat_loop
+
+	dbg got_head1 step 4
+
+	setvard REWARD_LIST REWARD_LIST1
+	local QUEST_WINNER PARAM1
+	callevent reward_random_item QUEST_WINNER
+}
+
+{ got_head2
+	if ( BUSY_CHATTING ) callevent 1.0 got_head2
+	if !BUSY_CHATTING
+
+	setvard CHAT_STEP1 "Ulectrath made many shake with fear, like thunder in the night. They may sleep easy, knowing that you have defeated her at last."
+	setvard CHAT_SOUND1 voices/the_wall/vv_ulectrath_dead.wav
+	setvard CHAT_DELAY_STEP1 5.9
+
+	setvard CHAT_STEP2 "Please take token of gratitude from the faithful of the Empire of Eswen."
+	setvard CHAT_DELAY_STEP2 4.3
+	setvard CHAT_SOUND2 voices/the_wall/vv_token.wav
+
+	setvard CHAT_STEPS 2
+	callevent chat_loop
+
+	setvard REWARD_LIST REWARD_LIST2
+	local QUEST_WINNER PARAM1
+	callevent reward_random_item QUEST_WINNER
+}
+
+{ got_head3
+	if ( BUSY_CHATTING ) callevent 1.0 got_head3
+	if !BUSY_CHATTING
+
+	setvard CHAT_STEP1 "Ivicta hatred was not without reason, but it was beyond it. We can only pray that she may now finally be free of it."
+	setvard CHAT_SOUND1 voices/the_wall/vv_ivicta_dead.wav
+	setvard CHAT_DELAY_STEP1 8.5
+
+	setvard CHAT_STEP2 "Please take token of gratitude from the faithful of the Empire of Eswen."
+	setvard CHAT_DELAY_STEP2 4.3
+	setvard CHAT_SOUND2 voices/the_wall/vv_token.wav
+
+	setvard CHAT_STEPS 2
+	callevent chat_loop
+
+	setvard REWARD_LIST REWARD_LIST3
+	local QUEST_WINNER PARAM1
+	callevent reward_random_item QUEST_WINNER
+}
+
+
+{ got_head4
+	if ( BUSY_CHATTING ) callevent 1.0 got_head4
+	if !BUSY_CHATTING
+
+	local CHAT_DELAY_TOTAL 0
+	setvard CHAT_STEP1 "You... You slew Ihotohr himself!? This is more than I ever dared even hope for, let alone ask!"
+	setvard CHAT_SOUND1 voices/the_wall/vv_ihotohr_dead1.wav
+	setvard CHAT_DELAY_STEP1 8.5
+	add CHAT_DELAY_TOTAL 8.5
+
+
+	setvard ANIM_STEP1 ref_aim_squeak
+	if ( game.players > 1 )
+	{
+		setvard CHAT_STEP2 "All of you must be rewarded! Please, choose from among any of these, each of you!"
+		setvard CHAT_SOUND2 voices/the_wall/vv_ihotohr_dead2.wav
+		setvard CHAT_DELAY_STEP2 5.5
+		add CHAT_DELAY_TOTAL 5.5
+
+		setvard CHAT_STEP3 "Tell your allys to come forth! I shall reward each of them in turn."
+		setvard CHAT_SOUND3 voices/the_wall/vv_ihotohr_dead3.wav
+		setvard CHAT_DELAY_STEP3 3.5
+	}
+	else
+	{
+		setvard CHAT_STEP2 "And on your own no less? I truly underestimated you. Without doubt Felewyn walks by your side!"
+		setvard CHAT_SOUND2 voices/the_wall/vv_ihotohr_dead2_solo.wav
+		setvard CHAT_DELAY_STEP2 7.9
+		add CHAT_DELAY_TOTAL 7.9
+
+		setvard CHAT_STEP3 "Please, select from any of these items."
+		setvard CHAT_SOUND3 voices/the_wall/vv_ihotohr_dead3_solo.wav
+		setvard CHAT_DELAY_STEP3 2.3
+	}
+	setvard ANIM_STEP3 deep_idle
+	setvard CHAT_STEPS 3
+	callevent chat_loop
+
+	infomsg all "QUEST REWARD" "Velend Varon has a gift waiting for you, please see him."
+
+	setvard PLAYERS_TO_REWARD ''
+	getplayersnb PLAYERS_TO_REWARD
+
+	setvard PLAYERS_REWARDED 1
+
+	setvard QUEST_WINNER PARAM1
+	callevent CHAT_DELAY_TOTAL reward_final_items
+}
+
+{ reward_random_item
+
+	dbg reward_random_item step1
+
+	local N_REWARDS $get_token_amt(REWARD_LIST)
+	subtract N_REWARDS 1
+	local RND_REWARD $rand(0,N_REWARDS)
+
+	dbg reward_random_item step2
+
+	local RND_ITEM $get_token(REWARD_LIST,RND_REWARD)
+
+	dbg reward_random_item step3
+	offer PARAM1 RND_ITEM
+}
+
+{ reward_final_items
+	setvard CHAT_MODE final_reward
+	callevent 0.1 resend_menu
+}
+
+{ resend_menu
+	menu.open QUEST_WINNER
+}
+
+{ second_spawn
+	setvard ON_SECOND_SPAWN 1
+}

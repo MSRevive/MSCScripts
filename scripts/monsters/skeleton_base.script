@@ -1,0 +1,483 @@
+#scope server
+
+{ [shared]
+	setvar ANIM_RESPAWN_DEADIDLE dead_on_stomach
+
+	setvar ANIM_IDLE idle1
+    setvard ANIM_ATTACK attack1
+	setvard ANIM_DEATH dieheadshot
+
+	const ANIM_DEATH_FAKE diesimple
+	const ANIM_GETUP getup
+
+	const SKEL_MODEL monsters/skeleton.mdl
+}
+
+{
+	const SKEL_WIDTH 32
+	const SKEL_HEIGHT 80
+	const SKEL_MOVE_RANGE 32
+	const SKEL_ATTACK_RANGE 64
+	const SKEL_ATTACK_HITRANGE 127
+
+	setvard AM_SKELETON 1
+	const NPC_HANDLES_SUMMON_CIRCLES 1 //for monsters/exernals
+	setvard I_AM_TURNABLE 1 //for monsters/exernals turn_undead
+
+	const SOUND_STRUCK1 weapons/cbar_hitbod1.wav
+	const SOUND_STRUCK2 weapons/cbar_hitbod2.wav
+	const SOUND_STRUCK3 weapons/cbar_hitbod3.wav
+	const SOUND_STRUCK4 zombie/zo_pain2.wav
+	const SOUND_STRUCK5 zombie/zo_pain2.wav
+	const SOUND_ATTACK1 zombie/claw_miss1.wav
+	const SOUND_ATTACK2 zombie/claw_miss2.wav
+	const SOUND_DEATH zombie/zo_pain1.wav
+
+	const SOUND_TURNED1 ambience/the_horror1.wav
+	const SOUND_TURNED2 ambience/the_horror2.wav
+	const SOUND_TURNED3 ambience/the_horror3.wav
+	const SOUND_TURNED4 ambience/the_horror4.wav
+	const SOUND_HOLY_STRIKE	doors/aliendoor1.wav
+
+	precache SOUND_DEATH
+	precache SOUND_TURNED1
+	precache SOUND_TURNED2
+	precache SOUND_TURNED3
+	precache SOUND_TURNED4
+	precache SOUND_HOLY_STRIKE
+}
+
+#include monsters/base_monster
+
+{ npc_spawn
+	if ( ANIM_WALK equals 'ANIM_WALK' ) setvard ANIM_WALK walk
+	if ( ANIM_RUN equals 'ANIM_RUN' ) setvard ANIM_RUN walk
+
+   	setmodel SKEL_MODEL
+	blood none
+
+	callevent skel_get_sleeper_props
+	if ( !DEEP_SLEEPER ) hearingsensitivity 4
+
+   	callevent skeleton_spawn
+
+   	hp SKEL_HP
+
+	width SKEL_WIDTH
+	height SKEL_HEIGHT
+	setvard MOVE_RANGE SKEL_MOVE_RANGE
+	setvard ATTACK_RANGE SKEL_ATTACK_RANGE
+	setvard ATTACK_HITRANGE SKEL_ATTACK_HITRANGE
+
+   	roam 1
+	setvard STRUCK_HOLY 0
+	callevent 0.1 skel_setup_body
+
+	if ( SLEEPER )
+	{
+		callevent make_sleeper
+		if ( !DEEP_SLEEPER ) hearingsensitivity 10 //light sleepers need to be able to hear approach
+	}
+
+	if ( $lcase(game.map.name) equals the_wall ) setvard SKELE_DIRECT_DAMAGE 1 //deal with water trap on the_wall
+
+	if !SLEEPER
+   	race undead
+   	setmoveanim ANIM_WALK
+	callevent skeleton_attribs
+}
+
+{ npc_post_spawn
+	//redundancy due to getup buggerups
+	setvard SK_BASE_ANIM_RUN ANIM_RUN
+	setvard SK_BASE_ANIM_WALK ANIM_WALK
+	setvard SK_BASE_ANIM_IDLE ANIM_IDLE
+}
+
+{ go_greek
+	setmodelbody 0 10
+	setvard SET_GREEK 1
+}
+
+
+{ skel_get_sleeper_props
+	local SLEEPER_ID $get_by_name(skels_sleep)
+	if ( $get(SLEEPER_ID,isalive) )
+	{
+		setvard SLEEPER 1
+	}
+
+	local SLEEPER_TYPE_ID $get_by_name(skels_deep_sleep)
+	if ( $get(SLEEPER_TYPE_ID,isalive) )
+	{
+		setvard SLEEPER 1
+		setvard DEEP_SLEEPER 1
+	}
+}
+
+{ skeleton_attribs
+
+	if ( SET_GREEK )
+	{
+		setmodelbody 0 10
+	}
+
+	takedmg poison 0.0
+
+	if ( !STONE_SKELETON )
+	{
+		takedmg slash .7
+		takedmg pierce .5
+		takedmg blunt 1.2
+		takedmg fire 1.5
+		takedmg holy 3.0
+		takedmg cold 0.25
+	}
+
+	if ( STONE_SKELETON )
+	{
+		takedmg holy 2.0
+		takedmg cold 0.25
+	}
+}
+
+{ make_deep_sleeper
+
+	setvard SLEEPER 1
+	setvard DEEP_SLEEPER 1
+
+	setanim.framerate 0.0
+	callevent 0.2 hide_name
+	roam 0
+	setvard PLAYING_DEAD 1
+	if ( !STONE_SKELETON )
+	{
+		setmoveanim ANIM_RESPAWN_DEADIDLE
+		setidleanim ANIM_RESPAWN_DEADIDLE
+	}
+	if ( STONE_SKELETON )
+	{
+		setmoveanim ANIM_IDLE
+		setidleanim ANIM_IDLE
+	}
+	invincible 1
+	hearingsensitivity 0
+	callevent npcatk_suspend_ai
+	setvard NO_STUCK_CHECKS 1
+	if ( !DEEP_SLEEPER ) hearingsensitivity 10
+}
+
+{ set_summon_circle2 //from monsters/externals
+	if ( ANIM_RUN equals run )
+	{
+		playanim critical sitstand
+	}
+	else
+	{
+		playanim critical getup
+	}
+}
+
+{ skel_setup_body
+
+	//setmodelbody based on name (easier than going through each one, then screwing it up and having to repeat)
+	//bodies
+	//0 - old default
+	//1 - bloody
+	//2 - green M
+	//3 - black armor
+	//4 - white armor
+	//5 - white brest, black hat
+	//6 - one-eye
+	//7 - frosted
+	//8 - Wassup-G
+
+	//weapons
+	//0 - Unarmed
+	//1 - bone blade
+	//2 - double axes
+	//3 - double shields
+	//4 - sword
+
+	setvard MY_NAME $get(ent_me,name)
+	local SKEL_NAME "Skeleton Warrior"	 	//0 0	monsters/skeleton
+	if ( MY_NAME equals SKEL_NAME )
+	{
+		setmodelbody 0 0
+		setmodelbody 1 0
+	}
+	local SKEL_NAME "Walking Ashes"	 		//6 0	monsters/skeleton2
+	if ( MY_NAME equals SKEL_NAME )
+	{
+		setmodelbody 0 6
+		setmodelbody 1 0
+	}
+	local SKEL_NAME "Fragile Knight"	 	//1 4	monsters/tcadaver
+	if ( MY_NAME equals SKEL_NAME )
+	{
+		setmodelbody 0 5
+		setmodelbody 1 4
+	}
+	local SKEL_NAME "Ghastly Knight"	 	//3 4	monsters/cadaver
+	if ( MY_NAME equals SKEL_NAME )
+	{
+		setmodelbody 0 3
+		setmodelbody 1 4
+	}
+	local SKEL_NAME "Hungry Skeleton"	 	//0 1	monsters/hunger
+	if ( MY_NAME equals SKEL_NAME )
+	{
+		setmodelbody 0 0
+		setmodelbody 1 1
+	}
+	local SKEL_NAME "Enraged Skeleton"  	//1 2	calruin/corpse2
+	if ( MY_NAME equals SKEL_NAME )
+	{
+		setmodelbody 0 6
+		setmodelbody 1 2
+	}
+	local SKEL_NAME "Awakened Guardian" 	//3 3	calruin/corpse
+	if ( MY_NAME equals SKEL_NAME )
+	{
+		setmodelbody 0 3
+		setmodelbody 1 3
+	}
+	local SKEL_NAME "Living Dead"			//6 2	calruin/livingdead
+	if ( MY_NAME equals SKEL_NAME )
+	{
+		setmodelbody 0 1
+		setmodelbody 1 0
+	}
+	local SKEL_NAME "Fallen Knight"			//4 4	calruin/undeadwarrior	
+	if ( MY_NAME equals SKEL_NAME )
+	{
+		setmodelbody 0 4
+		setmodelbody 1 4
+	}
+}
+
+//== Sleeper System ===========================================================
+
+{ game_heardsound
+
+	if SLEEPER
+	if !DEEP_SLEEPER
+	if $get(ent_lastheard,isplayer)
+	if $get(ent_lastheard,range) < 128
+	callevent skeleton_wakeup_call
+}
+
+{ skeleton_wakeup_call
+
+	if SLEEPER
+	name MY_NAME
+   	race undead
+
+	local AWAKE_DELAY 1.5 //give time to play getup anim
+	if ( STONE_SKELETON )
+	{
+		setmoveanim ANIM_WALK
+		setidleanim ANIM_IDLE
+		callevent animate_stone
+		local AWAKE_DELAY 0.1 //stone skeles pose as statues and do not play getup anim
+	}
+	if ( BASE_FRAMERATE equals 'BASE_FRAMERATE' ) setanim.framerate 1.0
+	if ( BASE_FRAMERATE isnot 'BASE_FRAMERATE' ) setanim.framerate BASE_FRAMERATE
+
+
+	if ( !STONE_SKELETON )
+	{
+		setmoveanim ANIM_WALK
+		setidleanim ANIM_IDLE
+		playanim once getup
+	}
+	callevent AWAKE_DELAY skeleton_awake
+}
+
+{ skeleton_awake
+
+	invincible 0
+	roam 1
+	callevent 0.1 skeleton_attribs
+	setvard SLEEPER 0
+	setvard DEEP_SLEEPER 0
+	setvard PLAYING_DEAD 0
+	hearingsensitivity 10
+	setmoveanim ANIM_WALK
+	setidleanim ANIM_IDLE
+	setvard NO_STUCK_CHECKS 0
+	callevent npcatk_resume_ai
+}
+
+{ game_heardsound
+
+	if SLEEPER
+	if !DEEP_SLEEPER
+	if $get(ent_lastheard,isplayer)
+	if $get(ent_lastheard,range) < 128
+	callevent skeleton_wakeup_call
+}
+
+{ make_sleeper
+
+	setvard SLEEPER 1 //this is redundant unless called via params
+
+	setanim.framerate 0.0
+	callevent 0.2 hide_name
+	roam 0
+	setvard PLAYING_DEAD 1
+	if ( !STONE_SKELETON )
+	{
+		setmoveanim ANIM_RESPAWN_DEADIDLE
+		setidleanim ANIM_RESPAWN_DEADIDLE
+	}
+	if ( STONE_SKELETON )
+	{
+		setmoveanim ANIM_IDLE
+		setidleanim ANIM_IDLE
+	}
+	invincible 1
+	hearingsensitivity 0
+	callevent npcatk_suspend_ai
+	setvard NO_STUCK_CHECKS 1
+	if ( !DEEP_SLEEPER ) hearingsensitivity 10
+}
+
+{ make_deep_sleeper
+
+	setvard SLEEPER 1
+	setvard DEEP_SLEEPER 1
+
+	setanim.framerate 0.0
+	callevent 0.2 hide_name
+	roam 0
+	setvard PLAYING_DEAD 1
+	if ( !STONE_SKELETON )
+	{
+		setmoveanim ANIM_RESPAWN_DEADIDLE
+		setidleanim ANIM_RESPAWN_DEADIDLE
+	}
+	if ( STONE_SKELETON )
+	{
+		setmoveanim ANIM_IDLE
+		setidleanim ANIM_IDLE
+	}
+	invincible 1
+	hearingsensitivity 0
+	callevent npcatk_suspend_ai
+	setvard NO_STUCK_CHECKS 1
+	if ( !DEEP_SLEEPER ) hearingsensitivity 10
+}
+
+//== Turn Undead =================================================
+{ turn_undead //rest handled by monsters/externals
+
+	if game.serverside
+
+	setvard SKELE_TURNED 1
+	setvard STRUCK_HOLY 1
+	setvard SKEL_RESPAWN_TIMES 99 //can't get up after turn_undead
+}
+
+//== Death & Rebirth =============================================
+{ npc_death
+
+	if game.serverside
+
+	if !PLAYING_DEAD
+
+	if ( SKELE_TURNED )
+	{
+		local NO_REBIRTH 1
+		//be really nice to have some sort of disintegrate anim here
+		callexternal GAME_MASTER gm_fade $get(ent_me,id)
+	}
+
+	local RND_DEATH $rand(1,4)
+	if( RND_DEATH == 1 ) setvard ANIM_DEATH dieheadshot2
+	if( RND_DEATH == 2 ) setvard ANIM_DEATH diesimple
+	if( RND_DEATH == 3 ) setvard ANIM_DEATH diebackward
+	if( RND_DEATH == 4 ) setvard ANIM_DEATH dieforward
+
+	if !NO_REBIRTH
+
+	if $rand(1,100) < SKEL_RESPAWN_CHANCE
+	if SKEL_RESPAWN_TIMES < SKEL_RESPAWN_LIVES
+
+	add SKEL_RESPAWN_TIMES 1
+
+	setvard SKEL_SLAYER $get(ent_laststruck,id)
+
+	setvard ANIM_DEATH ANIM_DEATH_FAKE
+	callevent skel_fake_death
+}
+
+{ skel_fake_death
+	setalive 1
+	setsolid box
+	setbbox npcsize
+	setmovedest none
+	invincible 1
+	//in case he gets put down again before he finishes getting up
+	if ( ANIM_RUN equals ANIM_RESPAWN_DEADIDLE ) setvard ANIM_RUN SK_BASE_ANIM_RUN
+	if ( ANIM_WALK equals ANIM_RESPAWN_DEADIDLE ) setvard ANIM_WALK SK_BASE_ANIM_WALK
+	if ( ANIM_IDLE equals ANIM_RESPAWN_DEADIDLE ) setvard ANIM_IDLE SK_BASE_ANIM_IDLE
+	callevent npcatk_suspend_ai
+	callevent npcatk_suspend_movement ANIM_RESPAWN_DEADIDLE
+	setvard NO_STUCK_CHECKS 1
+	setvard PLAYING_DEAD 1
+	callevent $rand(3.0,5.0) skel_rebirth
+}
+
+{ skel_rebirth
+	callevent 1.0 skel_rebirth2
+	hp $get(ent_me,maxhp)
+
+	divide NPC_GIVE_EXP 2
+	skilllevel NPC_GIVE_EXP
+
+	setvard PLAYING_DEAD 0
+	setvard SKELE_TEMP_DEATH 0
+}
+
+{ skel_rebirth2
+	invincible 0
+	playanim critical ANIM_GETUP
+	callevent 1.0 npcatk_resume_movement
+	callevent 1.0 npcatk_resume_ai
+	callevent 1.1 skel_rebirth3
+}
+
+{ skel_rebirth3
+	playanim break
+	setmoveanim ANIM_RUN
+
+	setvard NPC_PREV_TARGET unset //so we re-apply musak
+	callevent npcatk_settarget SKEL_SLAYER
+}
+
+//== Struck =====================================================================================
+{  npc_struck	//Hit by someone
+
+   	if ( !STRUCK_HOLY ) playrandomsound 2 10 SOUND_STRUCK1 SOUND_STRUCK2 SOUND_STRUCK3 SOUND_STRUCK4 SOUND_STRUCK5
+	if ( STRUCK_HOLY ) playrandomsound 2 10 SOUND_HOLY_STRIKE
+	setvard STRUCK_HOLY 0
+}
+
+
+//== Anim Events ===============================================================================
+{  attack_1	// Deal damage
+
+   	playrandomsound 1 5 SOUND_ATTACK1 SOUND_ATTACK2 none none
+
+	if ( !SKELE_DIRECT_DAMAGE )
+	{
+   		dodamage HUNT_LASTTARGET ATTACK_HITRANGE $randf(ATTACK_DAMAGE_LOW,ATTACK_DAMAGE_HIGH) ATTACK_HITCHANCE slash
+	}
+	else
+	{
+		if $get(HUNT_LASTTARGET,range) < ATTACK_HITRANGE
+   		dodamage HUNT_LASTTARGET direct $randf(ATTACK_DAMAGE_LOW,ATTACK_DAMAGE_HIGH) ATTACK_HITCHANCE slash
+	}
+}
+

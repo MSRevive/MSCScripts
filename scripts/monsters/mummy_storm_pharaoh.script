@@ -1,0 +1,115 @@
+//Mummy with lightning shield, lightning breath, and zappy rod of dewm (pending)
+//add glow
+#scope server
+{
+	//base anims
+	setvar ANIM_WALK walk
+	setvar ANIM_RUN walk1
+	setvar ANIM_IDLE idle1
+
+	//base stats
+	setvard NPC_GIVE_EXP 4500
+	setvard ATTACK_RANGE 130
+	setvard ATTACK_HITRANGE 150
+	setvard ATTACK_MOVERANGE 100
+	setvard ANIM_ATTACK stab
+	setvard FLINCH_DAMAGE_THRESHOLD 200
+	const AS_STUCK_FREQ 0.5 //I move really slow
+
+	//base mummy anims
+	const ANIM_ATTACK_SHORT steelpipe
+	const ANIM_ATTACK_LONG stab
+
+	//base mummy stats
+	const ATTACK_TYPE long
+	const ATTACK_HITCHANCE 80
+	const DMG_STEELPIPE 300
+	const DMG_STAB 800
+	const MUMMY_STARTING_LIVES 1
+
+	const ATTACK_RANGE_SHORT 64
+	const ATTACK_HITRANGE_SHORT 96
+	const ATTACK_RANGE_LONG 130
+	const ATTACK_HITRANGE_LONG 150
+
+	const LIGHTNING_SHIELD 1
+	const LIGHTNING_SHIELD_RADIUS 96 //radius of the shield
+	const DMG_LIGHTNING_SHIELD 200 //lightning dmg when touched
+	const LIGHTNING_SHIELD_REPELL_STRENGTH 1000  //strength of repulse when struck
+	const LIGHTNING_SHIELD_V_CENTER 36 //vertical adjustment to center shield (should be half monster height)
+
+	const MUMMY_BREATH_ATTACK 1
+	const MUMMY_BREATH_ATTACK_TYPE lightning //determines effect type
+	const MUMMY_BREATH_DOT 250 //damage per second on affected targets
+	const MUMMY_BREATH_DOT_DURATION 10.0 //duration of DOT effect
+	const MUMMY_BREATH_ATTACK_RANGE 400 //max range of breath
+	const MUMMY_BREATH_ATTACK_OFS 150 //usually half of range
+	const MUMMY_BREATH_CONE 15 //cone of effect +/- degrees
+	const MUMMY_BREATH_DURATION 8.0 //how long to breath
+	const MUMMY_BREATH_ATTACK_CLSCRIPT monsters/mummy_lightning_breath_cl
+
+	const MUMMY_BEAM_ATTACK 1
+	const DMG_PUSH_BEAM 100
+
+	const MUMMY_DOUBLE_CYCLE 1
+	const MUMMY_FREQ_DOUBLE_CYCLE $randf(5.0,10.0)
+
+	if ( $lcase(game.map.name) equals umulak )
+	{
+		setvard NPC_IS_BOSS 1
+	}
+}
+
+#include monsters/mummy_base
+#include monsters/base_lightning_shield
+
+
+{ mummy_spawn
+
+	name a|Pharaoh of Storms
+	hp 8000
+
+	takedmg all 0.5
+	takedmg lightning 0.0
+	takedmg holy 0.5 //anti-foreign magix crown ^_^
+
+	setmodelbody 0 1 //0=Dark_Bandages 1=Tan_Bandages
+	setmodelbody 1 2 //0=None 1=Priest 2=Royal 3=Warrior 4=High_Peasant
+	setmodelbody 2 6 //0=None 1=Mace 2=Axe 3=Sword 4=Mace_Bigger 5=Magic_Sword 6=Pike 7=Pike_glowfx
+	setmodelbody 3 0 //0=None 1=Red_Repulse 2=Weird_Confusion(hi-poly)
+}
+
+{ npc_post_spawn
+	clientevent new all effects/sfx_follow_glow_cl $get(ent_me,index) (128,128,0) 128 10.0
+	movespeed 2.0
+	setanim.movespeed  2.0
+	setvard BASE_MOVESPEED  2.0
+}
+
+{
+repeatdelay 10.1
+	//renew light 10/secs (light is now self-removing)
+	if $get(ent_me,isalive)
+	clientevent new all effects/sfx_follow_glow_cl $get(ent_me,index) (128,128,0) 128 10.0
+}
+
+
+//debuggary
+{ ext_lshield_on //[duration]
+
+	local SHIELD_DURATION PARAM1
+	if ( SHIELD_DURATION == 0 ) local SHIELD_DURATION 10.0
+	callevent npcatk_suspend_ai SHIELD_DURATION
+	roam 0
+	callevent lshield_activate SHIELD_DURATION
+	setidleanim crazyshit
+	setmoveanim crazyshit
+	callevent SHIELD_DURATION ext_end_shield
+}
+
+{ ext_end_shield
+	setidleanim ANIM_IDLE
+	setmoveanim ANIM_RUN
+	callevent npcatk_resume_ai
+	roam 1
+}

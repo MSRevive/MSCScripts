@@ -1,0 +1,168 @@
+#scope server
+
+{
+	const CHAT_USE_CONV_ANIMS 0
+	const CHAT_NO_CLOSE_MOUTH 1
+	const CHAT_AUTO_FACE 0
+}
+
+#include monsters/orc_flayer
+#include monsters/base_chat_array
+
+{ orc_spawn
+	name a|Blackhand Flayer
+	saytextrange 1024
+	name_unique orc_chatter1
+	roam 0
+	callevent npcatk_suspend_ai
+	callevent 1.0 start_chat
+}
+
+{ start_chat
+	if !IN_COMBAT
+	setvard NEXT_RESPONSE_INDEX 1
+	callevent chat_now "This is insane... Rummaging through ruins so far inside Shadahar territory... What is Furux thinking!?" 5.0 neigh request_response clear_que add_to_que
+}
+
+{ request_response
+	if !IN_COMBAT
+	if ( ORC_BUDDY_ID equals 'ORC_BUDDY_ID' ) setvard ORC_BUDDY_ID $get_by_name(orc_chatter2)
+	callexternal ORC_BUDDY_ID ext_do_chat_step 
+}
+
+{ ext_do_chat_step
+	if !IN_COMBAT
+	add RESPONSE_INDEX 1
+	if ( RESPONSE_INDEX == 1 )
+	{
+		callevent chat_now "I still don't like it... Have you seen those guys he brought with him?" 4.5 nod_yes request_response add_to_que
+	}
+	if ( RESPONSE_INDEX == 2 )
+	{
+		callevent chat_now "Yeah... I'm sure this all has something to do with them." 4.5 nod_yes none add_to_que
+		callevent chat_now "All this damn magic stuff creeps me out..." 3.0 neigh request_response add_to_que
+	}
+	if ( RESPONSE_INDEX == 3 )
+	{
+		callevent chat_now "By Torkalath, you are an idiot!" 3.0 flinch request_response add_to_que
+	}
+	if ( RESPONSE_INDEX == 4 )
+	{
+		callevent chat_now "*sigh* Alright... My back's getting sore just standing here like this anyways." 3.0 nod_yes start_wander add_to_que
+	}
+}
+
+{ start_wander
+	if !IN_COMBAT
+	playanim break
+	roam 1
+	callevent npcatk_resume_ai
+	hearingsensitivity 2
+	callevent npcatk_setmovedest $vec(2320,-688,-528) 32
+	callevent turn_mclip_on
+}
+
+{ do_chat3
+	callexternal ORC_BUDDY_ID ext_start_chat
+}
+
+
+{ game_damaged
+	if !IN_COMBAT
+	callevent start_combat game_damaged
+}
+
+{ npcatk_hunt
+	if !IN_COMBAT
+	if $cansee(enemy)
+	callevent start_combat
+}
+
+{ start_combat
+	if !IN_COMBAT
+	setvard IN_COMBAT 1
+	callevent chat_clear_que
+	local L_SAYTEXT_STR ''
+	callevent 6.0 start_combat2
+	callevent 2.0 turn_mclip_on //you have about two seconds to boot them off the cliff should you enter combat
+	callevent npcatk_resume_ai
+	hearingsensitivity 4
+	if ( PARAM1 equals game_damaged )
+	{
+		callevent npcatk_settarget $get(ent_laststruck,id)
+		local L_SAYTEXT_STR "Ow...! "
+	}
+	else
+	{
+		if ( $get(PARAM1,isalive) )
+		{
+			callevent npcatk_settarget $get(PARAM1,id)
+		}
+		else
+		{
+			callevent npcatk_settarget $get(ent_lastseen,id)
+		}
+	}
+	if ( game.players > 1 )
+	{
+		stradd L_SAYTEXT_STR "What the... Where'd these guys come from!?"
+	}
+	else
+	{
+		stradd L_SAYTEXT_STR "What the... Where'd this guy come from!?"
+	}
+	saytext L_SAYTEXT_STR
+
+	if ( !$get(ORC_BUDDY_ID,scriptvar,'IN_COMBAT') ) callexternal ORC_BUDDY_ID start_combat NPCATK_TARGET
+}
+
+{ start_combat2
+	if game.players == 1
+	if $get(NPCATK_TARGET,gender) equals female
+	saytext I think *he* might be a *she*...
+	callevent 2.0 gender_gag
+	callevent 4.0 gender_gag2
+	callevent 6.0 gender_gag3
+	callevent 8.0 gender_gag4
+	callevent 10.0 gender_gag5
+}
+
+{ gender_gag
+	if $get(ent_me,isalive)
+	callexternal ORC_BUDDY_ID ext_gender_gag1
+}
+
+{ gender_gag2
+	if $get(ent_me,isalive)
+	saytext The human women have bumps on their chests...
+}
+
+{ gender_gag3
+	if $get(ent_me,isalive)
+	callexternal ORC_BUDDY_ID ext_gender_gag2
+}
+
+{ gender_gag4
+	if $get(ent_me,isalive)
+	saytext I'm just saying...
+}
+
+{ gender_gag5
+	if $get(ent_me,isalive)
+	callexternal ORC_BUDDY_ID ext_gender_gag3
+}
+
+{ npcatk_hunt
+	if ( ORC_BUDDY_ID equals 'ORC_BUDDY_ID' ) setvard ORC_BUDDY_ID $get_by_name(orc_chatter2)
+}
+
+{ turn_mclip_on
+	if !TURNED_MCLIP_ON
+	setvard TURNED_MCLIP_ON 1
+	usetrigger mclip_toggle
+}
+
+{ game_death
+	//one last time, just in case
+	callevent turn_mclip_on
+}

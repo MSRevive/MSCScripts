@@ -1,0 +1,119 @@
+{
+	const SOUND_DEATH monsters/sludge/bio.wav
+	const SOUND_STRUCK1 barnacle/bcl_bite3.wav
+	const SOUND_STRUCK2 barnacle/bcl_die3.wav
+	const SOUND_IDLE barnacle/bcl_alert2.wav
+	const SOUND_ATTACK1 barnacle/bcl_tongue1.wav
+	const SOUND_ATTACK2 barnacle/bcl_chew3.wav
+	precache SOUND_DEATH
+	
+	setvar ANIM_IDLE walk
+	setvar ANIM_RUN run
+	setvar ANIM_WALK	walk
+	setvard ANIM_ATTACK attack
+	setvard ANIM_DEATH die
+	setvard ATTACK_RANGE 60
+	setvard ATTACK_HITRANGE 120
+	const ATTACK_HITCHANCE	75%
+	const ATTACK_DAMAGE $randf(35,55)
+	const POISON_DAMAGE $randf(10,15)
+
+	const SPIT_RANGE 1024
+	const SPIT_ROF 2.0
+	const SPIT_DAMAGE $rand(30,50)
+
+	const CLOUD_DELAY 15.0
+	const CLOUD_DAMAGE $rand(10,30)
+	const CLOUD_DURATION 10.0
+
+	setvard IMMUNE_POISON 1
+
+	const FREQ_SPIT 1.0
+	const FREQ_SPIT_SCAN 2.0
+	const FREQ_CLOUD 30.0
+}
+
+#include monsters/base_monster_new
+
+{ npc_spawn
+	
+	name a|Large Green Slime
+	hp 800
+	width 70
+	height 64
+	setmodel monsters/slime_large.mdl
+	//setmodelbody 0 ???
+	race demon
+	roam 1
+	setvard NPC_GIVE_EXP 450
+
+	takedmg pierce 0.25
+	takedmg slash 0.75
+	takedmg blunt 1.0
+	takedmg fire 1.5
+	takedmg poison 0.0
+}
+
+{ bite1 //called from model
+
+	//damage all in area
+	callevent npcatk_dodamage $relpos(0,0,0) ATTACK_HITRANGE ATTACK_DAMAGE ATTACK_HITCHANCE 0.0 reflective acid
+}
+
+{ npc_targetsighted
+	if game.time > NEXT_SPIT_SCAN
+	setvard NEXT_SPIT_SCAN game.time
+	add NEXT_SPIT_SCAN FREQ_SPIT_SCAN
+
+	setvard SPIT_TARGETS $get_tsphere(enemy,512)
+	//calleventloop $get_token_amt(SPIT_TARGETS) filter_spit_targets
+	setvard N_SPIT_TARGETS $get_token_amt(SPIT_TARGETS)
+}
+
+{ npcatk_hunt
+	if !I_R_FROZEN
+	if NPCATK_TARGET isnot none
+	if N_SPIT_TARGETS > 0
+	if game.time > NEXT_SPIT
+	setvard NEXT_SPIT game.time
+	add NEXT_SPIT FREQ_SPIT
+	if ( N_SPIT_TARGETS > 1 )
+	{
+		//multiple targets - spit at random target
+		local N_MINUS N_SPIT_TARGETS
+		subtract N_MINUS 1
+		local RND_TARGET $rand(0,N_MINUS)
+		setvard SPIT_TARGET $get_token(SPIT_TARGETS,RND_TARGET)
+	}
+	else
+	{
+		//otherwise just the guy I'm pissed at
+		setvard SPIT_TARGET NPCATK_TARGET
+	}
+
+	tossprojectile SPIT_TARGET 300 SPIT_DAMAGE 0.1 proj_poison_spit2 (0,0,16)
+}
+
+{ game_damaged_other
+
+	playrandomsound 0 10 SOUND_ATTACK1 SOUND_ATTACK2
+	if $rand(1,10) == 1
+	if $get(ent_laststruck,range) < ATTACK_HITRANGE
+	applyeffect ent_laststruck effects/greater_poison $randf(3,5) $get(ent_me,id) POISON_DAMAGE
+}
+
+{ game_struck
+
+	playrandomsound 0 10 SOUND_STRUCK1 SOUND_STRUCK2
+
+	if game.time > NEXT_CLOUD
+	setvard NEXT_CLOUD game.time
+	add NEXT_CLOUD FREQ_CLOUD
+	createnpc monsters/summon/npc_poison_cloud2 $get(ent_me,origin) $get(ent_me,id) CLOUD_DAMAGE CLOUD_DURATION 1
+}
+
+{ repeatdelay $randf(3,10)
+
+	if NPCATK_TARGET equals unset
+	playsound 0 10 SOUND_IDLE
+}

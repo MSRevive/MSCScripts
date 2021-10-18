@@ -1,0 +1,108 @@
+//Moved from ye old mass proj-spawner
+{
+        precachefile monsters/summon/summon_blizzard
+	const MODEL_HANDS      	none
+	const MODEL_WORLD      	weapons/projectiles.mdl
+	const ARROW_BODY_OFS	2
+	const MODEL_BODY_OFS	2
+	const SOUND_HITWALL1		weapons/bow/arrowhit1.wav
+	const SOUND_HITWALL2		weapons/bow/arrowhit1.wav
+	const SOUND_BURN		items/torch1.wav
+	const ITEM_NAME		watermana
+	const PROJ_DAMAGE_TYPE		cold
+	const PROJ_DAMAGESTAT		spellcasting.ice //this does not determin xp stat
+
+
+	const PROJ_ANIM_IDLE	idle_iceball
+	const PROJ_DAMAGE		100
+	const PROJ_AOE_RANGE		256
+	const PROJ_AOE_FALLOFF	1
+	const PROJ_STICK_DURATION	0  //Don't stick in enemies
+	const PROJ_COLLIDEHITBOX	32 
+
+	//const PROJ_IGNORENPC 1
+}
+
+#include items/proj_arrow_base
+
+{  projectile_spawn
+
+
+	name 		a|Blizzard Spawner
+	weight 		500
+	size 		1
+	value		1
+	gravity		0.7
+	groupable	25
+   
+	sethudsprite hand arrows
+	sethudsprite trade ITEM_NAME
+	sethand any
+
+	setprop ent_me rendermode 5
+	setprop ent_me renderamt 255
+
+} //end game_spawn
+
+{  projectile_landed
+
+	callevent frost_landed
+}
+
+{  game_hitnpc
+
+	////dbg HitNPC p1 PARAM1 p2 PARAM2 p3 PARAM3 p4 PARAM4 - nadda
+	callevent frost_hit
+}
+
+{ frost_hit
+
+	//fear my redundant var setting (Lazy cut and paste by Thothie)
+	local MY_OWNER $get(ent_expowner,id)
+	local EFFECT_DMG $get(MY_OWNER,skill.spellcasting.ice)
+	multiply EFFECT_DMG 1.25
+	local EFFECT_MAXDURATION 	10
+	local EFFECT_MINDURATION 	10
+	local EFFECT_DURATION	$get_skill_ratio(EFFECT_DURATION_STAT,EFFECT_MINDURATION,EFFECT_MAXDURATION)
+	applyeffect ent_laststruckbyme effects/effect_frostbite_dmg EFFECT_DURATION MY_OWNER EFFECT_DMG spellcasting.ice
+	callevent frost_landed
+}
+
+{ frost_landed
+
+	local MY_OWNER $get(ent_expowner,id)
+	local OWNER_ISPLAYER $get(ent_expowner,isplayer)
+
+	local pos $get(ent_me,origin)
+	local temp $get_ground_height(pos)
+	local x $vec.x(pos)
+	local y $vec.y(pos)
+	local pos $vec(x,y,temp)
+
+	if ( OWNER_ISPLAYER )
+	{	
+		local EFFECT_DMG 		$get(MY_OWNER,skill.spellcasting.ice)
+		local EFFECT_DURATION_STAT 	$get(MY_OWNER,stat.concentration.ratio)
+		local EFFECT_MAXDURATION 	5
+		local EFFECT_MINDURATION 	15
+		local EFFECT_DURATION 		$get_skill_ratio(EFFECT_DURATION_STAT,EFFECT_MINDURATION,EFFECT_MAXDURATION)
+		
+		//dbg spam FX_SPAMMERS maxspam MAX_FX_SPAMMERS
+		
+		divide EFFECT_DMG 2.0
+		
+		createnpc monsters/summon/summon_blizzard pos MY_OWNER $get(ent_me,angles.y) EFFECT_DMG EFFECT_DURATION spellcasting.ice
+		local LAST_ENT $get(ent_lastcreated,id)
+		//if ( FX_SPAMMERS < MAX_FX_SPAMMERS ) setexpstat LAST_ENT skill.spellcasting balance //- wont work, giving up
+		//if ( FX_SPAMMERS >= MAX_FX_SPAMMERS ) consolemsg all Too many fx running, cannot create spell.
+		//if ( FX_SPAMMERS >= MAX_FX_SPAMMERS ) playermessage MY_OWNER Too many fx present: cannot create spell.
+	}
+
+	if ( !OWNER_ISPLAYER )
+	{
+		//get damage from monster vars
+		local EFFECT_DMG $get(MY_OWNER,scriptvar,BLIZZARD_DMG)
+		local EFFECT_DURATION $get(MY_OWNER,scriptvar,BLIZZARD_DUR)
+		createnpc monsters/summon/summon_blizzard pos MY_OWNER $get(ent_me,angles.y) EFFECT_DMG EFFECT_DURATION spellcasting.ice
+	}
+}

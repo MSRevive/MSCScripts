@@ -1,0 +1,169 @@
+//Smallarms base
+//
+//Uses ANIM_ATTACK1-2
+{
+	//anim set for use with viewmodels/v_smallarms.mdl FCK_set (originally weapons/smallarms/craftedknife_rview.mdl )
+
+  	const ANIM_LIFT1        	9
+  	const ANIM_IDLE1        	10
+  	const ANIM_IDLE_TOTAL        	1
+  	const ANIM_WIELD		11
+  	const ANIM_UNWIELD     	12
+  	const ANIM_WIELDEDIDLE1 	13
+  	const ANIM_ATTACK1      	14
+  	const ANIM_ATTACK2      	15
+	const ANIM_IDLE_DELAY_LOW 	0
+	const ANIM_IDLE_DELAY_HIGH 	0
+
+	const MELEE_VIEWANIM_ATK	$rand(ANIM_ATTACK1,ANIM_ATTACK2)
+
+  	const SOUND_SWIPE	weapons/swingsmall.wav
+  	const SOUND_HITWALL1    weapons/dagger/daggermetal1.wav
+  	const SOUND_HITWALL2    weapons/dagger/daggermetal2.wav
+  	const SOUND_DRAW      	weapons/dagger/dagger2.wav
+  	const SOUND_SHOUT1	$get(ent_owner,scriptvar,'PLR_SOUND_JAB1')
+  	const SOUND_SHOUT2	$get(ent_owner,scriptvar,'PLR_SOUND_JAB2')
+
+	const MELEE_DMG_TYPE	pierce
+	const MELEE_STAT	smallarms
+  	const MELEE_SOUND     	SOUND_SWIPE
+  	const MELEE_SOUND_DELAY MELEE_DMG_DELAY
+  	const MELEE_VIEWANIM_ATK ANIM_ATTACK1
+  	const PLAYERANIM_AIM	knife
+  	const PLAYERANIM_SWING	swing_knife
+
+	const MELEE_ENERGY 0.1 //added FEB2014 just in case
+}
+
+#include items/base_melee
+
+{  weapon_spawn
+
+   	sethand right
+	if ( SMALLARMS_LAST_SPEC equals 'SMALLARMS_LAST_SPEC' )
+	{
+		setvard SMALLARMS_LAST_SPEC game.time
+		subtract SMALLARMS_LAST_SPEC 60
+	}
+	callevent register_secondary //adding this so it can be changed externally
+}
+
+{ game_deploy
+	if game.serverside
+	callevent turbo_off
+}
+
+{  melee_start
+
+	if !CUSTOM_SWING
+
+   	local L_ANIM MELEE_VIEWANIM_ATK
+ 
+   	playviewanim L_ANIM
+}
+
+{  special_02_start
+
+	if game.serverside
+	svplaysound 2 10 $get(ent_owner,scriptvar,'PLR_SOUND_SWORDREADY')
+	
+}
+
+{  special_02_strike
+
+	if game.serverside
+
+	if !$get(ent_owner,haseffect,player_haste)
+
+	local TIME_DIFF game.time
+	subtract TIME_DIFF SMALLARMS_LAST_SPEC
+	if ( TIME_DIFF < 40 ) dplayermessage ent_owner Too exhausted for another speed attack
+	if TIME_DIFF >= 40
+
+	//Thothie FEB2010_01 - Urdual/smallarms haste exploit prevention
+	local URDUAL_CHECK $get(ent_owner,scriptvar,'PLR_URDUAL_RELEASE_TIME')
+	if game.time > URDUAL_CHECK
+
+	setvard SMALLARMS_LAST_SPEC game.time
+
+	local SPEC_DURATION $get_skill_ratio($get(ent_owner,skill.smallarms.prof.ratio),20,40)
+
+	callevent ent_owner ext_haste_cooldown
+	applyeffect ent_owner effects/specialattack_haste SPEC_DURATION 0 $get(ent_me,id)
+	callevent turbo_on
+	//callevent SPEC_DURATION turbo_off //called bgy effect
+}
+
+{ [server] turbo_on
+	if game.serverside
+	dbg turbo_on
+
+	if !SMALLARMS_TURBO_ON
+	setvard SMALLARMS_TURBO_ON 1
+
+	local NEW_MELEE_ATK_DURATION MELEE_ATK_DURATION
+	local NEW_MELEE_DMG_DELAY MELEE_DMG_DELAY
+	divide NEW_MELEE_ATK_DURATION 2
+	divide NEW_MELEE_DMG_DELAY 2
+	attackprop ent_me 0 delay.strike NEW_MELEE_DMG_DELAY
+	attackprop ent_me 0 delay.end NEW_MELEE_ATK_DURATION
+}
+
+{ [server] turbo_off
+
+	if game.serverside
+	dbg turbo_off
+
+	if SMALLARMS_TURBO_ON
+	setvard SMALLARMS_TURBO_ON 0
+
+	attackprop ent_me 0 delay.strike MELEE_DMG_DELAY
+	attackprop ent_me 0 delay.end MELEE_ATK_DURATION
+}
+
+{ register_secondary
+
+	if !CUSTOM_REGISTER_SECONDARY
+
+   	//Smallarms speed (200%) - No attack - short speed gain, followed by loss of all stamina
+   	//======================================================================================
+
+	local reg.attack.type		strike-land
+	local reg.attack.keys		-attack1
+	local reg.attack.range		MELEE_RANGE
+	local reg.attack.dmg		MELEE_DMG
+	local reg.attack.dmg.range	MELEE_DMG_RANGE
+	local reg.attack.dmg.type	MELEE_DMG_TYPE
+	//local reg.attack.energydrain	999999
+	local reg.attack.stat		MELEE_STAT
+	local reg.attack.hitchance	MELEE_ACCURACY
+	local reg.attack.priority	2
+	local reg.attack.delay.strike	1.0
+	local reg.attack.delay.end	1.2
+	local reg.attack.ofs.startpos	MELEE_STARTPOS
+	local reg.attack.ofs.aimang	MELEE_AIMANGLE
+	local reg.attack.callback	special_02
+	local reg.attack.noise		1000
+  	local reg.attack.chargeamt	200%
+  	local reg.attack.reqskill	4
+  	local reg.attack.dmg.ignore	1
+	if ( BASE_LEVEL_REQ > reg.attack.reqskill ) local reg.attack.reqskill BASE_LEVEL_REQ
+	
+	registerattack
+}
+
+{ [server] bs_global_command //player died
+
+	if game.serverside
+	dbg bs_global_command $get(PARAM1,name) vs $get(ent_owner,name)
+	if PARAM1 equals $get(ent_owner,id)
+	callevent 1.0 turbo_off
+}
+
+{ [server] activate_items
+
+	if game.serverside
+	dbg activate_items $get(PARAM1,name) vs $get(ent_owner,name)
+	if $get(PARAM1,name) equals $get(ent_owner,name)
+	callevent 1.0 turbo_off
+}

@@ -1,0 +1,147 @@
+#scope server
+{
+	const NPC_BASE_EXP 150
+
+	const SOUND_ATTACK1 monsters/goblin/c_gargoyle_atk1.wav
+	const SOUND_ATTACK2 monsters/goblin/c_gargoyle_atk2.wav
+	const SOUND_ATTACK3 monsters/goblin/c_gargoyle_atk3.wav
+	const SOUND_BREATH monsters/goblin/sps_fogfire.wav
+	const STEP_SIZE_NORM 36
+
+	const SOUND_BOW weapons/bow/bow.wav
+
+	const CAN_STUN 0
+	const GOB_JUMPER 0
+	const GOB_CHARGER 0
+
+	const DMG_BOW $rand(75,150)
+	const DMG_KICK $rand(10,20)
+	const KICK_RANGE 128
+	const KICK_HITCHANCE 90
+	const FREQ_KICK 10.0
+
+	setvard CAN_FIREBALL 0
+	setvard NPC_RANGED 1
+
+	setvard DROPS_CONTAINER 1
+	setvard CONTAINER_DROP_CHANCE 10% 
+	setvard CONTAINER_SCRIPT chests/quiver_of_jagged
+
+	setvard DROP_GOLD 1
+	setvard DROP_GOLD_AMT $rand(20,40)
+
+	setvard ANIM_ATTACK shootorcbow
+
+	const DMG_AXE $rand(40,75)
+	const DMG_CHARGE 50
+
+	setvard ATTACK_HITCHANCE 95%
+
+	//has to be redefined here - doesn't seem to precache in base
+	const SOUND_DEATH monsters/goblin/c_goblin_dead.wav
+	precache SOUND_DEATH
+}
+
+#include monsters/bgoblin
+
+{ [override] [shared] goblin_spawn
+
+	name a|Hobgoblin Ranger
+	race goblin
+	blood red
+	hp 500
+	roam 1
+
+	setanim.framerate 1.5
+
+	hearingsensitivity 4
+
+	setmodel monsters/goblin_new_boss.mdl
+	width 32
+	height 72
+
+	setmodelbody 0 1 //body: 0-Bare 1-Quiver&Strap
+	setmodelbody 1 1 //head: 0-Bare 1-Horns 2-Animal 3-Chief 4-Rag
+	setmodelbody 2 4 //weapon: 0-Unarmed 1-SkullClub 2-DragonAxe 3-Knife 4-Bow 5-Raxe 6-SW&SH
+	setmodelbody 3 0 //arrow: On/off
+
+	setprop ent_me skin 0 //0-norm 1-blood 2-vile
+
+	setidleanim ANIM_IDLE
+	setmoveanim ANIM_WALK
+
+	callevent 0.01 gob_extras
+}
+
+{ gob_extras
+
+	//these are not setting right for some damned reason
+	setvard MOVE_RANGE 2000
+	setvard ATTACK_RANGE 2000
+	setvard ATTACK_HITRANGE 2000
+
+	setvard DROP_GOLD_AMT $rand(30,50)
+}
+
+{ grab_arrow
+	setmodelbody 3 1
+}
+
+{ shoot_arrow
+
+	local TARGET_DIST $get(ent_lastseen,range)
+	local FINAL_TARGET $get(ent_lastseen,origin)
+	vectoradd FINAL_TARGET $relpos($vec(0,0,0),$vec(0,0,TARGET_DIST))
+	divide TARGET_DIST 100
+	setangle add_view.pitch TARGET_DIST
+
+	tossprojectile view 900 DMG_BOW 2 proj_arrow_npc (0,0,32)
+	callexternal $get(ent_lastprojectile,id) ext_lighten 0.4
+
+	setmodelbody 3 0
+
+	playsound 2 SOUND_BOW
+}
+
+{ game_death
+	setmodelbody 3 0
+}
+
+{ gob_hunt
+	if $get(NPCATK_TARGET,isalive)
+	if $get(NPCATK_TARGET,range) < KICK_RANGE
+	if game.time > NEXT_KICK
+	setvard NEXT_KICK game.time
+	playanim break
+	setmodelbody 3 0
+	add NEXT_KICK FREQ_KICK
+	setvard ANIM_ATTACK ANIM_KICK
+}
+
+{ kick_land
+	playsound 0 10 SOUND_BOW
+	setvard KICK_ATTACK 1
+	dodamage NPCATK_TARGET KICK_RANGE DMG_KICK KICK_HITCHANCE blunt
+	setvard ANIM_ATTACK ANIM_BOW
+	callevent npcatk_flee NPCATK_TARGET 1024 3.0
+}
+
+{ npcatk_flee
+	movespeed 2.0
+}
+
+{ npcatk_stopflee
+	movespeed 1.0
+}
+
+{ game_dodamage
+
+	if ( KICK_ATTACK )
+	{
+		if PARAM1
+		if $get(PARAM2,range) < KICK_RANGE
+		applyeffect PARAM2 effects/heavy_stun 5
+	}
+	setvard KICK_ATTACK 0
+}
+

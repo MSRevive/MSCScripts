@@ -1,0 +1,204 @@
+//originally, this was a rainbow blast of sorts
+//came up too gay, so this effect no longer lives up to its name
+
+{
+	const EFFECT_ELEMENTS "acid;fire;cold;poison;dark;lightning;holy"
+	const EFFECT_COLORS "(64,255,64);(255,64,0);(128,128,255);(0,255,0);(255,0,255);(255,255,0);(255,255,255)"
+}
+
+{ client_activate //<origin> <radius> <type>
+	setvard FX_ORIGIN PARAM1
+	setvard FX_AOE PARAM2
+	local L_COLOR PARAM3
+	setvard FX_ACTIVE 1
+
+	local L_IDX $get_find_token(EFFECT_ELEMENTS,PARAM3)
+	setvard FX_COLOR $get_token(EFFECT_COLORS,L_IDX)
+
+	setvard DO_LIGHT 1
+	if ( DO_LIGHT )
+	{
+		setvard FX_LIGHT_RAD $math(multiply,FX_AOE,1.5)
+		setcallback render enable
+		cleffect light new FX_ORIGIN FX_LIGHT_RAD FX_COLOR 0.5
+		setvard FX_LIGHT_ID game.script.last_light_id
+	}
+
+	sound.play3d magic/dburst_large_sdr_darkness.wav 10 FX_ORIGIN
+
+	if ( DO_SPRITES )
+	{
+		//old method was a bit too MLP (though new one was still pretty MLP - eventually I gave up on rainbows)
+		//keeping original effect in comments for reference - some bits were kinda neat
+		setvard BALL_ROT 0
+		setvard BALL_COL_IDX 0
+		setvard BALL_SPD 400
+		array.create ARRAY_SPR_COLORS
+		array.create ARRAY_SPR_POS
+		calleventloop 17 setup_bawls
+	}
+	else
+	{
+		setvard CIRCLE_RAD 0
+		local L_N_CIRCLES $get_token_amt(EFFECT_COLORS)
+		setvard CIRCLE_DIST_INC FX_AOE
+		divide CIRCLE_DIST_INC L_N_CIRCLES
+		//calleventloop $get_token_amt(EFFECT_COLORS) beam_circle
+		setvard CIRCLE_COUNT 0
+		setvard CIRCLE_COUNT_MAX L_N_CIRCLES
+		callevent do_circles
+	}
+
+	callevent 1.0 end_fx
+}
+
+{
+repeatdelay 0.01
+	if FX_ACTIVE
+	if CUR_SIZE <= 1
+	add CUR_SIZE 0.02
+	if ( CUR_SIZE > 1 ) setvard CUR_SIZE 1
+}
+
+{ game_prerender
+
+	if FX_ACTIVE
+	if DO_LIGHT
+	//rainbow light even more MLP
+	//local L_R $rand(0,128)
+	//local L_G $rand(0,128)
+	//local L_B $rand(0,128)
+	cleffect light FX_LIGHT_ID FX_ORIGIN $ratio(CUR_SIZE,0,FX_LIGHT_RAD) FX_COLOR 0.5
+	//dbg *** $currentscript update_light CUR_SIZE $ratio(CUR_SIZE,FX_LIGHT_RAD,0)
+}
+
+{ do_circles
+	if CIRCLE_COUNT < CIRCLE_COUNT_MAX
+	callevent 0.1 do_circles
+	callevent beam_circle
+	add CIRCLE_COUNT 1
+}
+
+{ beam_circle
+	add CIRCLE_RAD CIRCLE_DIST_INC
+	setvard CIRCLE_ROT 0
+	//setvard CIRCLE_COLOR $get_token(EFFECT_COLORS,CIRCLE_COUNT)
+	
+	calleventloop 16 draw_circle_loop
+}
+
+{ draw_circle_loop
+
+	local L_BEAM_START FX_ORIGIN
+	vectoradd L_BEAM_START $relpos($vec(0,CIRCLE_ROT,0),$vec(0,CIRCLE_RAD,0))
+	add CIRCLE_ROT 22.5
+
+	local L_BEAM_END FX_ORIGIN
+	vectoradd L_BEAM_END $relpos($vec(0,CIRCLE_ROT,0),$vec(0,CIRCLE_RAD,0))
+
+	//<startpos> <endpos> <spritename> <life> <width> <amplitude> <brightness> <speed> <framerate> <color>
+	cleffect beam_points L_BEAM_START L_BEAM_END 3dmflagry.spr 1.0 30 0.2 1 30 30 $clcol(FX_COLOR) //$clcol(CIRCLE_COLOR)
+}
+
+{ end_fx
+	setvard FX_ACTIVE 0
+	callevent 2.0 remove_fx
+}
+
+{ remove_fx
+	removescript
+}
+
+//old MLP method
+
+//{ setup_bawls
+//	local L_POS FX_ORIGIN
+//	
+//	setvard SPR_COLOR $get_token(EFFECT_COLORS,BALL_COL_IDX)
+//	array.add ARRAY_SPR_COLORS SPR_COLOR
+//	array.add ARRAY_SPR_POS L_POS
+//
+//	setvard SPR_IDX game.script.iteration
+//
+//	dbg *** sprite_store SPR_IDX pos $get_array(ARRAY_SPR_POS,SPR_IDX) BALL_ROT
+//	
+//	cleffect tempent sprite 3dmflagry.spr L_POS setup_prim_sprite update_prism_sprite
+//	
+//
+//	add BALL_COL_IDX 1
+//	if ( BALL_COL_IDX > $math(subtract,$get_token_amt(EFFECT_COLORS),1) ) setvard BALL_COL_IDX 0
+//	add BALL_ROT 20
+//}
+//
+//{ update_prism_sprite
+//
+//	local L_NEW_POS game.tempent.origin
+//	local L_DIST $dist(L_NEW_POS,FX_ORIGIN) 
+//	local L_SPR_IDX game.tempent.iuser1
+//
+//	//dbg *** sprdist L_SPR_IDX L_DIST vs FX_AOE
+//
+//	if L_SPR_IDX < 99
+//
+//	if ( L_DIST > FX_AOE )
+//	{
+//		cleffect tempent set_current_prop origin $vec(20000,20000,-20000)
+//		cleffect tempent set_current_prop renderamt 0
+//		//cleffect beam_update removeall
+//		//if FX_ACTIVE
+//		cleffect tempent set_current_prop iuser1 99
+//		exitevent
+//	}
+//
+//	if L_DIST < FX_AOE
+//
+//	local L_BEAM_UPDATE game.tempent.fuser1
+//	add L_BEAM_UPDATE 0.1
+//	if game.time > L_BEAM_UPDATE
+//	cleffect tempent set_current_prop fuser1 game.time
+//	local L_SPR_COLOR $get_array(ARRAY_SPR_COLORS,L_SPR_IDX)
+//	local L_OLD_POS $get_array(ARRAY_SPR_POS,L_SPR_IDX)
+//	array.set ARRAY_SPR_POS L_SPR_IDX L_NEW_POS
+//
+//	//dbg *** spridx L_SPR_IDX oldpos L_OLD_POS npos L_NEW_POS
+//	
+//	//<startpos> <endpos> <spritename> <life> <width> <amplitude> <brightness> <speed> <framerate> <color>
+//	if FX_ACTIVE
+//	cleffect beam_points L_OLD_POS L_NEW_POS 3dmflagry.spr 0.25 10 0.5 1 30 30 $clcol(L_SPR_COLOR)
+//	//setvard SPR_COLOR L_SPR_COLOR
+//	//cleffect tempent sprite 3dmflagry.spr L_NEW_POS setup_trail_sprite
+//
+//}
+//
+//{ setup_prim_sprite
+//	cleffect tempent set_current_prop death_delay 	5
+//	cleffect tempent set_current_prop fadeout 	5
+//	local L_SPR_VEL $relvel($vec(0,BALL_ROT,0),$vec(0,BALL_SPD,0))
+//	cleffect tempent set_current_prop velocity L_SPR_VEL
+//	cleffect tempent set_current_prop bouncefactor 	0
+//	cleffect tempent set_current_prop scale 	1.0
+//	cleffect tempent set_current_prop renderamt	180
+//	cleffect tempent set_current_prop rendermode add
+//	cleffect tempent set_current_prop gravity 	0
+//	cleffect tempent set_current_prop collide 	world;die
+//	cleffect tempent set_current_prop framerate	30
+//	cleffect tempent set_current_prop frames 0
+//	cleffect tempent set_current_prop rendercolor SPR_COLOR
+//	cleffect tempent set_current_prop fuser1 game.time
+//	cleffect tempent set_current_prop iuser1 SPR_IDX
+//}
+//
+//{ setup_trail_sprite
+//	cleffect tempent set_current_prop death_delay 	0.5
+//	cleffect tempent set_current_prop fadeout lifetime
+//	cleffect tempent set_current_prop velocity 0
+//	cleffect tempent set_current_prop bouncefactor 	0
+//	cleffect tempent set_current_prop scale 	0.5
+//	cleffect tempent set_current_prop renderamt	180
+//	cleffect tempent set_current_prop rendermode add
+//	cleffect tempent set_current_prop gravity 	0
+//	cleffect tempent set_current_prop collide 	none
+//	cleffect tempent set_current_prop framerate	30
+//	cleffect tempent set_current_prop frames 0
+//	cleffect tempent set_current_prop rendercolor SPR_COLOR
+//}

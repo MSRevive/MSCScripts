@@ -1,0 +1,102 @@
+//Allows NPC to leap at targets above them with a fair amount of accuracy
+
+//requires:
+//
+//ANIM_NPC_JUMP <anim> (can be setvard or const)
+//NPC_JUMPER 1 (can be setvard or const)
+//
+//optional:
+//const/setvard SOUND_NPC_JUMP <sound>
+//const/setvard BJUMPER_CUSTOM_BOOST 0 - set to 1 to not use the internal boost (good if monster has a custom jump anim event)
+//const/setvard BJUMPER_NO_FORWARD 0 - set to 1 to skip the forward momentum (good if monster has an LX jump move)
+//const BJUMPER_FACTOR 5 - ratio to multiply vertical leap distance by (adjust if monster is low grav or has internal movement in his jump anim)
+
+//returns:
+//NPC_LAST_JUMP //stores time of last jump
+//
+//calls:
+//npcatk_jump //called when jump
+//npcatk_jump_boost //called 0.1 seconds after (when velocity applied)
+//npcatk_jump_forward_adj //called 0.75 seconds after, if jump is above 300 units
+//
+//Assumes new AI - but may work with old
+//You can suspend jumping either by suspending the AI, movement, or setting NPC_NEXT_JUMP_CHECK to a game.time reflecting a future moment
+
+#scope server
+{
+	const BJUMPER_FACTOR 5
+	const FREQ_NPC_JUMP $randf(2.0,5.0) //frequency to check if I can jump at target
+	const NPC_JUMPER_MAX_RANGE 600 //must be at least this close to attempt jumping at target
+}
+
+{ npcatk_hunt
+
+	if !SUSPEND_AI
+	if !NPC_MOVEMENT_SUSPENDED
+
+	if NPCATK_TARGET isnot unset
+
+	if NPC_JUMPER
+
+	if game.time > NPC_NEXT_JUMP_CHECK
+
+	local L_NEXT_JUMP FREQ_NPC_JUMP
+
+	setvard AS_ATTACKING game.time
+	add AS_ATTACKING 3.0
+
+	if ( NPCATK_TARGET isnot unset )
+	{
+		if $get(NPCATK_TARGET,range) < NPC_JUMPER_MAX_RANGE
+
+		local MY_Z $get(ent_me,origin.z)
+		local TARG_Z $get(NPCATK_TARGET,origin.z)
+		if ( $get(NPCATK_TARGET,isplayer) ) subtract TARG_Z 38 //compensate for origin center
+
+		local Z_DIFF TARG_Z
+		subtract Z_DIFF MY_Z
+
+		if ( Z_DIFF > ATTACK_RANGE )
+		{
+			callevent npcatk_jump Z_DIFF
+		}
+		else
+		{
+			local L_NEXT_JUMP 1.0 //didn't need to jump this time, but check sooner, as have active target
+		}
+	}
+
+	setvard NPC_NEXT_JUMP_CHECK game.time
+	add NPC_NEXT_JUMP_CHECK L_NEXT_JUMP
+
+	callevent L_NEXT_JUMP npcatk_jump_cycle 
+}
+
+{ npcatk_jump //<vertical_difference> - determines jump strength
+	if ( SOUND_NPC_JUMP isnot 'SOUND_NPC_JUMP' ) playsound 0 10 SOUND_NPC_JUMP
+	setvard NPC_UP_JUMP_STR PARAM1
+	multiply NPC_UP_JUMP_STR BJUMPER_FACTOR
+	if ( NPC_UP_JUMP_STR > 300 ) callevent 0.75 npcatk_jump_forward_adj
+	callevent npcatk_suspend_ai 1.0
+	setvard FWD_NPC_JUMP_STR $get(NPCATK_TARGET,range)
+	playanim critical ANIM_NPC_JUMP
+	setvard NPC_LAST_JUMP game.time
+	if !BJUMPER_CUSTOM_BOOST
+	callevent 0.1 npcatk_jump_boost
+}
+
+{ npcatk_jump_boost
+	addvelocity ent_me $relvel(0,FWD_NPC_JUMP_STR,NPC_UP_JUMP_STR)
+}
+
+{ npcatk_jump_forward_adj
+	addvelocity ent_me $relvel(0,FWD_NPC_JUMP_STR,0)
+}
+
+{ set_no_jump
+	setvard NPC_JUMPER 0
+}
+
+{ set_jump
+	setvard NPC_JUMPER 1
+}

@@ -1,0 +1,65 @@
+//Poisonus explosion on death
+{
+	setvard NPC_GIVE_EXP 600
+	const BBET_SIZE 1
+	const BBET_CAN_FLY 1
+	const BBET_CAN_LEAP 1
+	const BBET_CAN_SLAM 0
+	const BBET_GORE_PUSH_STR 300
+	const BBET_FAKE_DEATH 1
+
+	const DMG_SLASH 40
+	const DMG_GORE 60
+	const DMG_LEAP 100
+	const DOT_POISON 50.0
+	const DMG_BURST 200
+
+	const SOUND_POISON_BURST weapons/explode3.wav
+}
+
+{ game_precache
+	precache monsters/beetles.mdl
+	precache cactusgibs.mdl
+	precache ambience/steamburst1.wav
+	precache poison_cloud.spr
+}
+
+#include monsters/beetle_base
+
+{ beetle_spawn
+	name a|Venomsack Beetle
+	hp 1000
+	setmodelbody 0 1 //0=Horned 1=Venom 2=Fire
+}
+
+{ game_death
+	setprop ent_me rendermode 5
+	setprop ent_me renderamt 0
+
+	playsound 0 10 SOUND_POISON_BURST
+	xdodamage $relpos(0,0,0) 256 DMG_BURST 0 ent_me ent_me none poison
+	clientevent new all effects/sfx_poison_explode $get(ent_me,origin) 256
+	effect tempent gibs cactusgibs.mdl $relpos(0,0,0) 1.0 50 50 15 2.0
+	setvard POISON_TARGS $get_tsphere(enemy,256)
+	playsound 0 10 SOUND_POISON_BURST
+	if POISON_TARGS isnot none
+	calleventloop $get_token_amt(POISON_TARGS) poison_affect_targets
+}
+
+{ poison_affect_targets
+	local CUR_TARG $get_token(POISON_TARGS,game.script.iteration)
+	applyeffect CUR_TARG effects/greater_poison 5.0 $get(ent_me,id) DOT_POISON
+	local TARG_ORG $get(CUR_TARG,origin)
+	local TARG_ANG $angles(game.monster.origin,TARG_ORG)
+	setvelocity CUR_TARG $relvel($vec(0,TARG_ANG,0),$vec(10,1000,0))
+}
+
+{ bbet_fly_start
+	clientevent new all monsters/beetle_venom_cl $get(ent_me,index) 10.0
+	setvard FART_CL_IDX game.script.last_sent_id
+}
+
+{ bbet_end_flight
+	if BBET_FLYING
+	clientevent update all FART_CL_IDX remove_fx
+}

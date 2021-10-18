@@ -1,0 +1,77 @@
+//Since AOE dodamage calls seem to have to be LOS from caller, trying this bit to see if can work around
+{
+	const SOUND_SHOCK debris/zap1.wav
+}
+
+{ game_dynamically_created //<owner> <dmg>
+
+	setvard CMY_OWNER PARAM1
+	setvard CMY_DMG PARAM2
+	setvard N_CREATED PARAM3
+
+	setvard PVP_MODE game.pvp
+	setvard OWNER_ISPLAYER $get(CMY_OWNER,isplayer)
+
+	local ACTIVE_DELAY 1.0
+	add ACTIVE_DELAY N_CREATED
+	
+	setvard IS_ACTIVE 1
+	callevent ACTIVE_DELAY scan_loop
+	storeentity ent_expowner CMY_OWNER
+	//dbg Lightning Blast child spawned
+}
+
+{ game_spawn
+	name a|Lightning Blast Bolt
+	race hated
+	hp 1
+	invincible 1
+	setvard PLAYING_DEAD 1
+}
+
+{ set_active
+	setvard IS_ACTIVE 1
+}
+
+{ scan_loop
+
+	if IS_ACTIVE
+	callevent 0.23 scan_loop
+
+	local HIT_TARG $get_insphere(any,64)
+
+	if $get(HIT_TARG,relationship,CMY_OWNER) equals enemy
+
+	if ( OWNER_ISPLAYER )
+	{
+		//no pvp damage outside pvp
+		if PVP_MODE == 0
+		if $get(HIT_TARG,isplayer)
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	applyeffect HIT_TARG effects/effect_shock_dmg 5 CMY_OWNER CMY_DMG
+	if !DELAY_SOUND
+	setvard DELAY_SOUND 1
+	callevent 2.0 reset_delay_sound
+	playsound 0 10 SOUND_SHOCK
+}
+
+{ reset_delay_sound
+	setvard DELAY_SOUND 0
+}
+
+{ debug_beam //<(start)> [end] [color]
+	//if [end] not provided, draws a 64 unit beam straight up
+	//if [color] no provided, beam is purple
+
+	if ( PARAM3 equals 'PARAM3' ) local BEAM_COLOR (255,0,255)
+	if ( PARAM3 isnot 'PARAM3' ) local BEAM_COLOR PARAM3
+	local BEAM_DURATION 1.0
+	local BEAM_START PARAM1
+	if ( PARAM2 equals 'PARAM2' ) local BEAM_END BEAM_START
+	if ( PARAM2 isnot 'PARAM2' ) local BEAM_END PARAM2
+	vectoradd BEAM_END $relpos($vec(0,0,0),$vec(0,0,64))
+	effect beam point laserbeam.spr 20 BEAM_START BEAM_END BEAM_COLOR 255 0.7 BEAM_DURATION
+}

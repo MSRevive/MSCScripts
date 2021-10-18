@@ -1,0 +1,431 @@
+//Crystal Phase Spider, from scratch by Thothie
+//- Crawls on ceiling
+//- Eletrical Projectile Attacks
+//- Poison
+//- Teleportation
+//- crab step sideways dodge/orientation (not work so good)
+//- leap towards/away
+
+#scope server
+
+{ [shared]
+	setvar ANIM_IDLE c_idle
+	setvar ANIM_WALK c_walk
+	setvard ANIM_RUN c_run
+	setvard ANIM_ATTACK c_project
+	setvard ANIM_PREFIX c_
+	
+	const BANIM_IDLE idle
+	const BANIM_WALK walk
+	const BANIM_RUN run
+	const BANIM_DODGEL walkl
+	const BANIM_DODGER walkr
+	const BANIM_BITE bite //frame_bite
+	const BANIM_SPELL spell //frame_spell
+	const BANIM_DOUBLEATK dblslash //frame_melee_strike x2
+	const BANIM_CLOSEATK close //frame_melee_strike
+	const BANIM_FLING fling //frame_fling
+	const BANIM_PROJ project //frame_projectile
+	const BANIM_REEL real
+	const BANIM_FLINCH flinch
+
+	const C_PREFIX c_
+	const G_PREFIX g_
+
+	const ANIM_JUMP g_jump
+	const ANIM_TOGROUND toground
+	setvard ANIM_DEATH death
+}
+
+{
+	setvard NPC_GIVE_EXP 600
+
+	setvard ATTACK_RANGE 9999
+	setvard ATTACK_HITRANGE 9999
+	setvard ATTACK_MOVERANGE 100
+	setvard MOVE_RANGE 100
+
+	setvard RANGE_NORM 150
+	setvard MOVERANGE_NORM 100
+	setvard HITRANGE_NORM 175
+
+	setvard RANGE_CLOSE 70
+	setvard HITRANGE_CLOSE 100
+
+	const RANGE_CHASE 300
+	
+	setvard RANGE_PROJ 9999
+	setvard MOVERANGE_PROJ 9999
+	setvard NPC_RANGED 1
+
+	const FREQ_BITE $randf(10.0,15.0)
+	const FREQ_TELEPORT $randf(10.0,20.0)
+	const FREQ_SIDESTEP $randf(10.0,20.0)
+
+	//***
+	const DOT_POISON 30.0
+	const DMG_SWIPE 75.0
+	const DMG_BITE 100.0
+	const DMG_PROJ 60.0
+	const DOT_SHOCK 20.0
+
+	const ATTACH_MAW 0
+	const ATTACH_CLAW1 1
+	const ATTACH_CLAW2 2
+
+	const SOUND_ALERT1 monsters/spider/c_pspidhas_bat1.wav
+	const SOUND_ALERT2 monsters/spider/c_pspidire_bat1.wav
+	const SOUND_ALERT3 monsters/spider/c_pspidr_bat1.wav
+	const SOUND_ALERT4 monsters/spider/c_pspidr_bat2.wav
+
+	const SOUND_PAIN1 monsters/spider/c_pspidr_hit1.wav
+	const SOUND_PAIN2 monsters/spider/c_pspidr_hit2.wav
+
+	const SOUND_ATTACK1 monsters/spider/c_pspidr_atk1.wav
+	const SOUND_ATTACK2 monsters/spider/c_pspidr_atk2.wav
+	const SOUND_ATTACK3 monsters/spider/c_pspidr_atk3.wav
+
+	const SOUND_MANIFEST monsters/spider/c_pspidrth_bat1.wav
+
+	const SOUND_QUICK1 monsters/spider/c_pspidr_no.wav
+	const SOUND_QUICK2 monsters/spider/c_pspidr_yes.wav
+	const SOUND_SEARCH monsters/spider/c_pspidr_slct.wav
+
+	const SOUND_DEATH monsters/spider/c_pspidr_dead.wav
+
+	setvard PROJ_SPRITE nhth1.spr
+}
+
+{ game_precache
+	precache nhth1.spr
+	precache SOUND_DEATH
+	precache debris/beamstart4.wav
+	precache c-tele1.spr
+	precache magic/teleport.wav
+}
+
+#include monsters/base_monster_new
+
+{ [shared] npc_spawn
+	name a|Crystal Phase Spider
+	setmodel monsters/spider_crystal.mdl
+	width 48
+	height 48
+	setidleanim ANIM_IDLE
+	setmoveanim ANIM_WALK
+
+	hearingsensitivity 11
+
+	race spider
+
+	roam 1
+
+	setvard IMMUNE_VAMPIRE 1
+	setvard NPC_RENDER_AMT 0
+
+	if game.serverside
+	setprop ent_me rendermode 5
+	setprop ent_me renderamt 0
+	hp 1000
+	takedmg pierce 0.5
+	takedmg slash 0.75
+	takedmg blunt 1.25
+	takedmg holy 1.0
+	takedmg poison 0.0
+}
+
+{
+repeatdelay 5.0
+	setprop ent_me rendermode 5
+	setprop ent_me renderamt NPC_RENDER_AMT
+}
+
+{ set_start_ground
+	callevent ground_mode
+}
+
+{ set_stay_ground
+	callevent set_start_ground
+	setvard STAY_ON_GROUND 1
+}
+
+{ npc_post_spawn
+	setvard NPC_RENDER_AMT 0
+	setvard NPC_RENDER_MODE 5
+	callevent spider_fade_in
+	if !GROUND_MODE
+	callevent 0.1 ceiling_mode
+}
+
+{ spider_fade_in
+	add NPC_RENDER_AMT 10
+
+	if ( NPC_RENDER_AMT < 255 )
+	{
+		setprop ent_me renderamt NPC_RENDER_AMT
+		callevent 0.1 spider_fade_in
+	}
+	else
+	{
+		setprop ent_me renderamt 255
+		setprop ent_me rendermode 5
+		setvard NPC_RENDER_AMT 255
+	}
+}
+
+{ ground_mode
+	if ( !GROUND_MODE ) playanim critical ANIM_TOGROUND
+
+	setvard ANIM_IDLE g_idle
+	setvard ANIM_WALK g_walk
+	setvard ANIM_RUN g_run
+	setvard ANIM_ATTACK g_projectile
+	setvard GROUND_MODE 1
+	setvard ANIM_PREFIX G_PREFIX
+	setvard V_ADJ 64
+
+	setidleanim ANIM_IDLE
+	setmoveanim ANIM_WALK
+}
+
+{ ceiling_mode
+
+	if ( GROUND_MODE ) playanim critical ANIM_JUMP
+
+	addvelocity ent_me $relvel(0,0,1000)
+	setvard DELAY_V_PUSH game.time
+	add DELAY_V_PUSH 1.0
+
+	setvard ANIM_IDLE c_idle
+	setvard ANIM_WALK c_walk
+	setvard ANIM_RUN c_run
+	setvard ANIM_ATTACK c_project
+	setvard GROUND_MODE 0
+	setvard ANIM_PREFIX C_PREFIX
+	setvard V_ADJ -64
+
+	setidleanim ANIM_IDLE
+	setmoveanim ANIM_WALK
+}
+
+{ npc_targetsighted
+	if !DID_INTRO
+	if game.time > NEXT_INTRO
+	setvard DID_INTRO 1
+	playrandomsound 0 10 SOUND_ALERT1 SOUND_ALERT2 SOUND_ALERT3 SOUND_ALERT4
+
+	setvard NEXT_SIDESTEP game.time
+	add NEXT_SIDESTEP $randf(30.0,40.0)
+
+	setvard NEXT_TELEPORT game.time
+	add NEXT_TELEPORT FREQ_TELEPORT
+}
+
+{ npcatk_clear_targets
+	setvard DID_INTRO 0
+	setvard NEXT_INTRO game.time
+	add NEXT_INTRO $randf(6.0,12.0)
+}
+
+{ npcatk_hunt
+
+	local GAME_TIME game.time
+
+	if ( !GROUND_MODE )
+	{
+		gravity -1.0
+		if GAME_TIME > DELAY_V_PUSH
+		setvelocity ent_me $relvel(0,0,1)
+	}
+	else
+	{
+		gravity 1.0
+	}
+
+
+	if NPCATK_TARGET isnot unset
+
+	if ( GAME_TIME > NEXT_TELEPORT )
+	{
+		if $get(NPCATK_TARGET,isplayer)
+		if $cansee(NPCATK_TARGET)
+		callevent check_teleport
+	}
+
+	local TARG_RANGE $get(NPCATK_TARGET,range)
+
+	if ( TARG_RANGE < RANGE_CHASE )
+	{
+		if TARG_RANGE > RANGE_CLOSE
+		setvard ANIM_ATTACK $stradd(ANIM_PREFIX,BANIM_DOUBLEATK)
+		setvard ATTACK_RANGE RANGE_NORM
+		setvard ATTACK_HITRANGE HITRANGE_NORM
+		setvard ATTACK_MOVERANGE MOVERANGE_NORM
+		setmoveanim ANIM_RUN
+	}
+
+	if ( TARG_RANGE < RANGE_CLOSE )
+	{
+		setvard ANIM_ATTACK $stradd(ANIM_PREFIX,BANIM_CLOSEATK)
+		setvard ATTACK_RANGE RANGE_CLOSE
+		setvard ATTACK_HITRANGE HITRANGE_CLOSE
+		setvard ATTACK_MOVERANGE MOVERANGE_NORM
+
+		if GAME_TIME > NEXT_BITE
+		setvard ANIM_ATTACK $stradd(ANIM_PREFIX,BANIM_BITE)
+	}
+
+	if ( TARG_RANGE > RANGE_CHASE )
+	{
+		setvard ANIM_ATTACK $stradd(ANIM_PREFIX,BANIM_PROJ)
+		setvard ATTACK_RANGE RANGE_PROJ
+		setvard ATTACK_HITRANGE RANGE_PROJ
+		setvard ATTACK_MOVERANGE MOVERANGE_PROJ
+	}
+
+	if ( GAME_TIME > NEXT_SIDESTEP )
+	{
+		setvard NEXT_SIDESTEP GAME_TIME
+		local L_FREQ_SIDESTEP FREQ_SIDESTEP
+		if ( TARG_RANGE > RANGE_CHASE ) multiply L_FREQ_SIDESTEP 0.5
+		add NEXT_SIDESTEP L_FREQ_SIDESTEP
+
+		local SIDESTEP_DIR $rand(1,2)
+		if ( SIDESTEP_DIR == 1 ) 
+		{
+			playanim critical $stradd(ANIM_PREFIX,BANIM_DODGEL)
+			addvelocity ent_me $relvel(-1000,0,0)
+		}
+		if ( SIDESTEP_DIR == 2 )
+		{
+			playanim critical $stradd(ANIM_PREFIX,BANIM_DODGER)
+			addvelocity ent_me $relvel(1000,0,0)
+		}
+	}
+}
+
+{ frame_projectile
+	playrandomsound 0 10 SOUND_QUICK1 SOUND_QUICK2
+	//clientevent new all effects/sfx_ball_lightning $relpos(0,32,V_ADJ) $get(NPCATK_TARGET,origin) 1
+	tossprojectile NPCATK_TARGET 300 0 0.1 proj_sprite $vec(0,32,V_ADJ)
+	//effect beam
+	effect beam ents lgtning.spr 10 ent_me 2 ent_me 3 (255,0,255) 200 90 1.0
+}
+
+{ ext_proj_land
+
+ 	local TARG_ALIVE $get(PARAM2,isalive)
+	if ( $get(PARAM2,relationship,ent_me) equals enemy )
+	{
+		if TARG_ALIVE
+		local HIT_ENEMY 1
+	}
+
+	local ARROW_POS PARAM3
+	if ( HIT_ENEMY ) local ARROW_POS $get(PARAM2,origin)
+	vectorset ARROW_POS z $get_ground_height(ARROW_POS)
+	vectoradd ARROW_POS z 32
+	clientevent new all effects/sfx_light_fade ARROW_POS (255,0,255) 190 1 debris/beamstart4.wav 5
+	xdodamage ARROW_POS 128 DMG_PROJ 0.1 ent_me ent_me none lightning_effect dmgevent:proj
+}
+
+{ proj_dodamage
+	dbg proj_dodamage PARAM1 $get(PARAM2,name) PARAM3 PARAM4
+	if PARAM1
+	applyeffect PARAM2 effects/effect_shock_dmg 5.0 $get(ent_me,id) DOT_SHOCK //* replace
+}
+
+{ frame_melee_strike
+	playrandomsound 0 10 SOUND_ATTACK1 SOUND_ATTACK2 SOUND_ATTACK3 
+	dodamage NPCATK_TARGET ATTACK_HITRANGE DMG_SWIPE 90% slash
+}
+
+{ frame_bite
+	playrandomsound 0 10 SOUND_QUICK1 SOUND_QUICK2
+	setvard BITE_ATTACK 1
+	xdodamage NPCATK_TARGET ATTACK_HITRANGE DMG_BITE 100% ent_me ent_me none pierce dmgevent:bite
+	setvard ANIM_ATTACK $stradd(ANIM_PREFIX,BANIM_CLOSEATK)
+	setvard NEXT_BITE game.time
+	add NEXT_BITE FREQ_BITE
+}
+
+{ bite_dodamage
+	if PARAM1
+	addvelocity PARAM2 $relvel(0,400,110)
+	applyeffect PARAM2 effects/greater_poison 5.0 $get(ent_me,id) DOT_POISON
+}
+
+{ check_teleport
+	//if we're close, try to teleport to last position, if far, try to teleport closer
+	local AM_CLOSE 0
+	if ( $get(NPCATK_TARGET,range) < RANGE_CHASE ) local AM_CLOSE 1
+
+	local CUR_POS $get(ent_me,origin)
+
+	if ( !AM_CLOSE )
+	{
+		//pick area randomly around target
+		local TELE_POINT $get(NPCATK_TARGET,origin)
+		local RND_ANG $randf(0,359.99)
+		vectoradd TELE_POINT $relpos($vec(0,RND_ANG,0),$vec(0,MOVERANGE_NORM,0))
+		vectorset TELE_POINT z $get_ground_height(TELE_POINT)
+		if ( !GROUND_MODE ) vectoradd TELE_POINT z 16 //correct for ground slopes, if tele to ground
+		setvard LAST_TELE_POINT $get(ent_me,origin)
+	}
+
+	if ( AM_CLOSE )
+	{
+		if ( LAST_TELE_POINT isnot 'LAST_TELE_POINT' )
+		{
+			local TELE_POINT LAST_TELE_POINT
+		}
+		else
+		{
+			local TELE_POINT NPC_HOME_LOC
+		}
+	}
+
+	//test new position
+	setorigin ent_me TELE_POINT
+	local L_POS TELE_POINT
+	local reg.npcmove.endpos L_POS
+	vectoradd reg.npcmove.endpos $relpos($vec(0,game.monster.angles.yaw,0),$vec(-16,0,0))
+	local reg.npcmove.testonly	1
+	npcmove ent_me NPCATK_TARGET
+	if ( game.ret.npcmove.dist <= 0 )
+	{
+		//position failed, go back to where I was, try again next think
+		dbg teleport failed AM_CLOSE game.ret.npcmove.dist TELE_POINT
+		setorigin ent_me CUR_POS
+	}
+	else
+	{
+		//playsound 0 10 SOUND_TELE
+		local SPR_POINT TELE_POINT
+		if ( !AM_CLOSE ) vectoradd SPR_POINT z 32 //presume teleporting to ground, adjust
+		clientevent new all effects/sfx_sprite_in_fancy SPR_POINT c-tele1.spr 25 2.0 (255,255,255) 512 magic/teleport.wav
+		clientevent new all effects/sfx_sprite_in_fancy CUR_POS c-tele1.spr 25 2.0 (255,255,255) 512 magic/teleport.wav
+		setvard NEXT_TELEPORT game.time
+		local L_FREQ_TELEPORT FREQ_TELEPORT
+		if ( !AM_CLOSE ) multiply L_FREQ_TELEPORT 0.5 //favors teleporting away
+		add NEXT_TELEPORT L_FREQ_TELEPORT
+
+		if !STAY_ON_GROUND
+
+		if ( !AM_CLOSE )
+		{
+			//we weren't close before, but should be now, set ground mode
+			//but premtively set ground mode var to prevent climb down animation
+			if ( !GROUND_MODE ) playanim break
+			setvard GROUND_MODE 1
+			callevent ground_mode
+		}
+		else
+		{
+			//otherwise, visa versa
+			if ( GROUND_MODE ) playanim break
+			setvard GROUND_MODE 0
+			callevent ceiling_mode
+		}		
+	}
+}

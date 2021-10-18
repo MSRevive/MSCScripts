@@ -1,0 +1,124 @@
+//Gate City guard
+{
+	setvard ATTACK_MOVERANGE 32
+	setvard ATTACK_RANGE 64
+	setvard ATTACK_HITRANGE 120
+	const ATTACK_HITCHANCE 85%
+	setvard ANIM_DEATH death
+
+   const	ATTACK_DAMAGE 50
+   setvar	ANIM_WALK walk
+   setvar	ANIM_RUN run
+   setvard	ANIM_ATTACK attack
+	setvar ANIM_IDLE idle
+
+	const BG_MAX_HEAR_CIV 1024
+
+	const ATTACK_HITCHANCE 85%
+}
+
+#include monsters/base_monster_new
+#include monsters/base_chat
+//include monsters/base_guard_friendly_new - not working for some damned reason
+
+{  npc_spawn
+
+   hp		700  //Guards are strong
+   gold		10
+   name		Gate City Guard
+   fov		359
+   width	32
+   height	64
+   race		hguard
+   roam		0
+	if ( $lcase(game.map.name) equals gatecity )
+	{
+		setmonsterclip 0
+		stepsize 256
+	}
+   setmodel	dwarf/male1.mdl
+   setmodelbody 0 1	//0-Elder 1-Youngin 2-Zombie
+   setmodelbody 1 3 //0-Unarmed 1-smallaxe 2-battleaxe 3-bastardsword
+   setmoveanim	walk
+
+   catchspeech say_hi hi hello hail greet
+   catchspeech say_job job work money gold
+   catchspeech say_rumour rumour news happenings rumor
+   catchspeech say_mayor mayor
+}
+
+{ say_rumor
+	callevent say_rumour
+}
+
+{ say_hi
+
+  saytext Welcome to Gate City, Adventurer!
+}
+
+{ say_job
+
+  saytext I have no work for you. However...
+  calleventtimed 3 say_rumour
+}
+
+{ say_rumour
+
+  saytext The [mayor] is looking for some help. Why not pay him a visit?
+}
+
+{ say_mayor
+
+  saytext The mayor can be found inside his office in the town hall.
+}
+
+{
+   eventname attack_1
+
+   dodamage ent_lastseen ATTACK_HITRANGE ATTACK_DAMAGE ATTACK_HITCHANCE slash
+}
+
+{ npcatk_hunt
+	if NPCATK_TARGET equals unset
+
+	if game.time > TRAVEL_HOME_TIME
+	setvard TRAVEL_HOME_TIME game.time
+	add TRAVEL_HOME_TIME 3.0
+	if ( $dist(NPC_HOME_LOC,game.monster.origin) > 32 )
+	{
+		setvard NO_STUCK_CHECKS 0
+		callevent npcatk_walk
+		callevent npcatk_setmovedest NPC_HOME_LOC 10
+	}
+	else
+	{
+		roam 0
+		setvard NO_STUCK_CHECKS 1
+		setangle face $vec(0,$vec.yaw(NPC_HOME_ANG),0)
+	}
+}
+
+{ cycle_up
+	setvard NO_STUCK_CHECKS 0
+}
+
+{ [server] civilian_attacked //PARAM1 Attacker ID PARAM2 isplayer - called from NPC's with base_civlian when attacked / killed
+
+	local OFFENDER PARAM1
+
+	if $get(OFFENDER,race) isnot hguard //don't attack friends who accidentally cause 'collateral damage'
+	if $get(OFFENDER,range) <= BG_MAX_HEAR_CIV //resond only to civilians within a certain range
+
+	if NPCATK_TARGET equals unset //do not break off current attack to save civi
+
+ 	setvard NO_STUCK_CHECKS 0
+	callevent npcatk_settarget PARAM1
+
+	if $cansee(NPCATK_TARGET)
+	saytextrange 1024
+	local RAND_HALT $rand(1,4)
+	if ( RAND_HALT == 1 ) saytext Hey you! Leave him alone!
+	if ( RAND_HALT == 2 ) saytext You there, leave him be I said!
+	if ( RAND_HALT == 3 ) saytext Stop that!
+	if ( RAND_HALT == 4 ) saytext Halt! We'll have no trouble making around here!
+}

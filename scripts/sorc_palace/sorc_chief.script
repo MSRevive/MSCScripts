@@ -1,0 +1,1199 @@
+#scope server
+
+{ [shared]
+	const ANIM_SIT on_chair
+}
+
+{
+	const NO_CLOSE_MOUTH 1
+
+	const CHAT_DELAY 6.0
+
+	setvard NPC_PROX_ACTIVATE 1 //suspend AI on spawn, wait for player to come..
+	setvard NPC_PROXACT_RANGE 256 //within this range then activate...
+	setvard NPC_PROXACT_EVENT player_nears //this event.
+	setvard NPC_PROXACT_IFSEEN 0 //activate if a player can see me, or targets me, regardless of range
+	setvard NPC_PROXACT_FOV 0 //Require player must be in field of vision to activate
+
+	const NO_CHAT 1
+
+	setvard COMBAT_MODE 0
+
+	const BARRIER_RAD 64
+	const DMG_BARRIER 100
+
+	const SOUND_DRAW_WEAPON weapons/swords/sworddraw.wav
+}
+
+//From monsters/sorc_chief1
+{
+	const MIN_TELEPORT_DELAY 15.0
+
+	const NPC_BOSS_REGEN_RATE 0
+	const NPC_BOSS_RESTORATION 0.3
+
+	const NPC_USES_LIGHTS 1
+
+	if ( $lcase(game.map.name) equals shad_palace )
+	{
+		setvard NPC_GIVE_EXP 10000
+		setvard NPC_IS_BOSS 1
+	}
+
+	const ANIM_WARCRY warcry
+	setvar ANIM_IDLE idle1
+	setvar ANIM_RUN run
+	setvar ANIM_WALK walk
+	setvard ANIM_FLINCH flinch
+	setvard ANIM_ATTACK swordswing1_L
+	const ANIM_SWIPE swordswing1_L
+	const ANIM_SMASH battleaxe_swing1_L
+	const ANIM_KICK kick
+	const ANIM_PARRY shielddeflect1
+	setvard ANIM_DEATH die_fallback
+	const ANIM_HOP battleaxe_swing1_L
+
+	setvard CAN_FLINCH 1
+
+	const ATTACK_HITCHANCE 90%
+	setvard ATTACK_MOVERANGE 32
+	setvard MOVE_RANGE 32
+	setvard ATTACK_RANGE 60
+	setvard ATTACK_HITRANGE 120
+
+	const DMG_SLASH $rand(100,200)
+	const DMG_SMACK $rand(25,50)
+	const DMG_SMASH $rand(150,400)
+	const DMG_KICK $randf(25,100)
+	const DMG_LBLAST 100
+	const DMG_LSTORM 100
+
+	const DUR_LSTORM 30
+	
+	//I've so many damn special moves, it maybe
+	//better to put them under one central script and cycle them
+	const FREQ_TORNADO $rand(15,30) //moved to FREQ_SPECIAL
+	const FREQ_LSTORM $rand(30,45) //moved to FREQ_SPECIAL
+	const FREQ_LBLAST $rand(15,30) //moved to FREQ_SPECIAL
+	const FREQ_THROW $rand(10,30) //moved to FREQ_SPECIAL
+	const FREQ_SPECIAL $rand(10,15)
+	const FREQ_TELEPORT $rand(20,140)
+	const FREQ_TELEPORT_FAST $rand(20,40)
+	const FREQ_KICK 10.0
+	setvard FREQ_LEAP 5.0
+
+	const SOUND_WARCRY "monsters/troll/trollidle.wav"
+	const SOUND_STRUCK1 "body/armour1.wav"
+	const SOUND_STRUCK2 "body/armour2.wav"
+	const SOUND_STRUCK3 "body/armour3.wav"
+	const SOUND_HIT "voices/orc/hit.wav"
+	const SOUND_HIT2 "voices/orc/hit2.wav"
+	const SOUND_HIT3 "voices/orc/hit3.wav"
+	const SOUND_PAIN "monsters/orc/pain.wav"
+	const SOUND_WARCRY1 "monsters/orc/battlecry.wav"
+	const SOUND_ATTACK1 "voices/orc/attack.wav"
+	const SOUND_ATTACK2 "voices/orc/attack2.wav"
+	const SOUND_ATTACK3 "voices/orc/attack3.wav"
+	const SOUND_DEATH "voices/orc/die.wav"
+	const SOUND_HELP "voices/orc/help.wav"
+	const SOUND_TELE "magic/teleport.wav"
+
+	const VAMPIRE_RATIO 0.1
+
+	const IMMUNE_STUN 75
+	const IMMUNE_COLD 0.25
+	const IMMUNE_FIRE 0.25
+	const IMMUNE_LIGHTNING 1
+
+	//media precache
+	precache SOUND_DEATH
+
+	//tornado
+	precache weapons/magic/tornado.mdl
+	precache magic/vent1.wav
+	precache magic/vent2.wav
+	precache magic/vent3.wav
+	precache magic/gusts1.wav
+	precache magic/gusts2.wav
+
+	//lstrike
+	precache weather/Storm_exclamation.wav
+	precache magic/lightning_strike.wav
+
+	//barrier
+	precache doors/aliendoor3.wav
+	precache magic/spawn.wav
+
+	//blood drinker
+	precache zombie/claw_miss2.wav
+}
+
+#include monsters/base_monster_new
+#include monsters/base_chat
+
+{ [shared] npc_spawn
+
+	name_unique the_warchief
+	
+	name Runegahr the Warchief
+	race orc
+
+	hp 18000 //use a map side 2.0 dmg/hp multiplier
+	takedmg all 0.5
+	takedmg fire 0.5
+	takedmg cold 0.25
+	takedmg lightning 0.0
+
+	hearingsensitivity 10
+
+	invincible 2
+
+	setmodel monsters/sorc.mdl
+	setmodelbody 0 2 //body: 0=bare 1=bloody_shirt 2=gold_armor 3=archer
+	setmodelbody 1 3 //head: 0=hat_horns 1=hat_spiked 2=lizardskin_horned 3=gold_chieften 4=lizard_cap
+	setmodelbody 2 0 //weapon: 0=unarmed 1=axe 2=bow 3=steel_bow 4=sword 5=great_axe 6=sword_sheild 8=yellow_axe 9=blooddrinker
+	setstat parry 150
+	width 32
+  	height 96
+
+	setidleanim ANIM_SIT
+	setmoveanim ANIM_SIT
+
+	menu.autoopen 0
+
+	roam 0
+
+	gravity 0
+
+	fly 1
+
+	saytextrange 4096
+
+	setvard SWORD_ATTACK 0
+	setvard JUMP_FWD_DIST 250
+	setvard CUR_SPECIAL 0
+	callevent 1.0 get_teleporters
+
+	callevent 0.1 check_for_blood
+
+	callevent npcatk_suspend_ai
+
+	if game.serverside
+	setvard CHIEF_SPAWN $get(ent_me,origin)
+}
+
+{ ext_nudge
+	setvard MOVE_TARG PARAM1
+	setmovedest PARAM1 0
+	local NEW_ORG $get(ent_me,origin)
+	vectoradd NEW_ORG $relpos($vec(0,game.monster.angles.yaw,0),$vec(0,4,0))
+	setorigin ent_me NEW_ORG
+	dbg ext_nudge $get(PARAM1,name) $get(ent_me,origin)
+}
+
+{ npc_post_spawn
+	menu.autoopen 0
+
+	local NEW_ORG $get(ent_me,origin)
+	vectoradd NEW_ORG $relpos($vec(0,game.monster.angles.yaw,0),$vec(0,4,0))
+	setmovedest NEW_ORG 0
+	setorigin ent_me NEW_ORG
+}
+
+{ check_for_blood
+	getplayersnb BD_PLAYER_LIST
+	setvard N_BLOOD_DRINKERS 0
+	calleventloop $get_token_amt(BD_PLAYER_LIST) check_inventories
+	if ( N_BLOOD_DRINKERS == 0 )
+	{
+		callevent 0.1 still_in_prison
+		usetrigger spawn_chief_out
+	}
+	else
+	{
+		setvarg G_SORC_CHIEF_PRESENT 1
+		usetrigger spawn_chief_escort
+	}
+}
+
+{ check_inventories
+	local CUR_TARG $get_token(BD_PLAYER_LIST,game.script.iteration)
+	if ( $item_exists(CUR_TARG,swords_blood_drinker) )
+	{
+		add N_BLOOD_DRINKERS 1
+		if ( N_BLOOD_DRINKERS == 1 ) setvard BLOOD_ID CUR_TARG
+	}
+	if ( $item_exists(CUR_TARG,item_tk_swords_blood_drinker) )
+	{
+		add N_BLOOD_DRINKERS 1
+		if ( N_BLOOD_DRINKERS == 1 ) setvard BLOOD_ID CUR_TARG
+	}
+
+}
+
+{ still_in_prison
+	deleteent ent_me
+}
+
+{ player_nears
+	setvard CHAT_STEP1 "I remember "
+	if ( N_BLOOD_DRINKERS > 1 ) local REF_RESCUE "some of you"
+	if ( game.players == 1 ) local REF_RESCUE "you"
+	if ( N_BLOOD_DRINKERS == 1 ) local REF_RESCUE $get(BLOOD_ID,name)
+	stradd REF_RESCUE "... Aiding... In my escape from Lodagond."
+	stradd CHAT_STEP1 REF_RESCUE
+	setvard CHAT_STEP2 "So, before I decide whether or not to slay you here and now."
+	setvard CHAT_STEP3 "I ask you, have you come as [friend] or [foe]?"
+	setvard CHAT_STEPS 3
+	callevent chat_loop
+	setvard FRIEND_FOE_ANSWERED 0
+
+	local CHAT_DELAY_TOTAL CHAT_STEPS
+	subtract CHAT_DELAY_TOTAL 1
+	multiply CHAT_DELAY_TOTAL CHAT_DELAY
+	add CHAT_DELAY_TOTAL 1.0
+	dbg player_nears cdt CHAT_DELAY_TOTAL
+	callevent CHAT_DELAY_TOTAL send_ff_menu
+
+	catchspeech say_friend friend
+	catchspeech say_foe foe
+}
+
+{ send_ff_menu
+	menu.autoopen 1
+	setvard CHAT_MODE friend_foe
+	menu.open NPC_PROXACT_PLAYERID
+}
+
+{ game_menu_getoptions
+	if ( CHAT_MODE equals friend_foe )
+	{
+		local reg.mitem.title 	"Friend"
+		local reg.mitem.type 	callback
+		local reg.mitem.callback say_friend
+		menuitem.register
+
+		local reg.mitem.title 	"Foe"
+		local reg.mitem.type 	callback
+		local reg.mitem.callback say_foe
+		menuitem.register
+	}
+}
+
+{ game_menu_cancel
+	if CHAT_MODE equals friend_foe
+	callevent 1.0 resend_menu
+}
+
+{ resend_menu
+	if !FRIEND_FOE_ANSWERED
+	menu.open NPC_PROXACT_PLAYERID
+}
+
+{ say_friend
+	if ( CHAT_MODE equals in_combat ) saytext Too late now, coward.
+
+	dbg was busy chatting BUSY_CHATTING
+
+	if ( BUSY_CHATTING ) callevent 0.1 say_friend
+	if !BUSY_CHATTING
+
+	if !FRIEND_FOE_ANSWERED
+	if CHAT_MODE equals friend_foe
+	setvard CHAT_MODE friend
+	usetrigger towndoors01 thronesecr_exit
+	setvard FRIEND_FOE_ANSWERED 1
+	setvard FF_ANSWER foe
+
+	writeline header.dat x
+
+	setvard CHAT_STEP1 "Very well then..."
+	setvard CHAT_STEP2 "I suppose I should be upset that you slaughtered the palace guard..."
+	setvard CHAT_STEP3 "But, if they couldn't stop you, I suppose they weren't up to the job."
+	setvard CHAT_STEP4 "I've some more promising recruits lined up in the villa anyways."
+	setvard CHAT_STEPS 4
+	callevent chat_loop
+
+	local CHAT_DELAY_TOTAL CHAT_STEPS
+	subtract CHAT_DELAY_TOTAL 1
+	multiply CHAT_DELAY_TOTAL CHAT_DELAY
+	add CHAT_DELAY_TOTAL 4.0
+
+	callevent CHAT_DELAY_TOTAL announce_visitors
+}
+
+{ announce_visitors
+	if ( BUSY_CHATTING ) callevent 0.1 announce_visitors
+	if !BUSY_CHATTING
+
+	playmp3 all 7 haunted_desert.mp3
+
+	callevent stand_up
+	setvard CHAT_STEP1 "Let it be known that "
+	if ( game.players > 1 )
+	{
+		stradd CHAT_STEP1 "these humans are my guests."
+		setvard CHAT_STEP2 "They are under MY protection. And you are to treat them as if they were our own."
+		setvard CHAT_STEP3 "The gates to the villa are to be opened to them..."
+		setvard CHAT_STEP4 "...and I expect them to be allowed to partake in what 'hospitality' we provide therein."
+
+	}
+	if ( game.players == 1 )
+	{
+		stradd CHAT_STEP1 $get(NPC_PROXACT_PLAYERID,name) 
+		stradd CHAT_STEP1 " is my guest."
+		setvard CHAT_STEP2 "He is under my protection. And you are to treat him as if he was one of us."
+		setvard CHAT_STEP3 "The gates to the villa are to be opened to him..."
+		setvard CHAT_STEP4 "...and I expect him to be allowed to partake in whatever 'hospitality' we provide therein."
+	}
+
+	setvard CHAT_STEPS 4
+	callevent chat_loop
+
+	local CHAT_DELAY_TOTAL CHAT_STEPS
+	subtract CHAT_DELAY_TOTAL 1
+	multiply CHAT_DELAY_TOTAL CHAT_DELAY
+	add CHAT_DELAY_TOTAL 3.0
+	callevent CHAT_DELAY_TOTAL get_reply
+}
+
+{ get_reply
+	callexternal all sorcs_confirm_order
+}
+
+{ game_damaged
+
+	if !COMBAT_MODE
+	setdmg dmg 0
+	setdmg hit 0
+	returndata 0
+}
+
+{ ext_tell_approach //called via map trigger
+	if ( game.players > 1 )
+	{
+		saytext Humans! Approach the throne of Runegahr. I wish to speak with thee.
+	}
+	else
+	{
+		saytext Human! You may approach the throne of Runegahr. I wish to speak with thee.
+	}
+}
+
+{ say_foe
+	if ( BUSY_CHATTING ) callevent 0.1 say_foe
+	if !BUSY_CHATTING
+
+	setvard CHAT_STEP1 "So be it."
+	setvard CHAT_STEP2 "Thuldahr, it is as you hoped. They are yours."
+	setvard CHAT_STEPS 2
+	callevent chat_loop
+
+	setvard ESCORT_ACTIVE 1
+
+	setvard CHAT_MODE in_combat
+	
+	local CHAT_DELAY_TOTAL CHAT_STEPS
+	//subtract CHAT_DELAY_TOTAL 1
+	multiply CHAT_DELAY_TOTAL CHAT_DELAY
+	add CHAT_DELAY_TOTAL 1.0
+	callevent CHAT_DELAY_TOTAL begin_the_attack
+
+	erasefile header.dat
+}
+
+{ begin_the_attack
+	callexternal all ext_chief_orders_attack
+	callevent shield_up
+}
+
+{ shield_up
+	setvard BARRIER_ON 1
+	setvard BARRIER_NEXT_REFRESH game.time
+	add BARRIER_NEXT_REFRESH 20.0
+	//createnpc monsters/summon/barrier $relpos(0,0,0) $get(ent_me,id) 128 1 0
+	clientevent new all sorc_palace/sorc_chief_cl $get(ent_me,index) BARRIER_RAD (255,0,0) 20.0
+	setvard BARRIER_IDX game.script.last_sent_id
+	callevent barrier_loop
+}
+
+{ barrier_loop
+
+	if BARRIER_ON
+	callevent 0.5 barrier_loop
+	if ( game.time > BARRIER_NEXT_REFRESH )
+	{
+		clientevent update all BARRIER_IDX remove_me
+		clientevent new all sorc_palace/sorc_chief_cl $get(ent_me,index) BARRIER_RAD (255,0,0) 20.0
+		setvard BARRIER_IDX game.script.last_sent_id
+		setvard BARRIER_NEXT_REFRESH game.time
+		add BARRIER_NEXT_REFRESH 20.0
+	}
+
+	callevent repell_burst $get(ent_me,origin) BARRIER_RAD 0
+}
+
+{ barrier_off
+	setvard BARRIER_ON 0
+	clientevent update all BARRIER_IDX clear_sprites
+}
+
+{ repell_burst
+	setvard BURST_ORIGIN PARAM1
+	local BURST_RAD PARAM2
+	setvard BURST_OVERRIDE PARAM3
+	setvard REPULSE_LIST $get_tsphere(enemy,BURST_RAD,BURST_ORIGIN)
+	if REPULSE_LIST isnot none
+	playsound 0 10 doors/aliendoor3.wav
+	calleventloop $get_token_amt(REPULSE_LIST) repulse_targets
+	dodamage BURST_ORIGIN BURST_RAD DMG_BARRIER 100% 0 reflective magic
+}
+
+{ repulse_targets
+	local CUR_TARG $get_token(REPULSE_LIST,game.script.iteration)
+	local TARG_ORG $get(CUR_TARG,origin)
+	local TARG_ANG $angles(BURST_ORIGIN,TARG_ORG)
+	if ( !BURST_OVERRIDE )
+	{
+		setvelocity CUR_TARG $relvel($vec(0,TARG_ANG,0),$vec(10,2000,110))
+	}
+	else
+	{
+		setvelocity CUR_TARG $relvel($vec(0,TARG_ANG,0),$vec(10,2000,110)) override
+	}
+}
+
+{ mild_repell_loop
+	//to avoid stuckage, model becomes no clip on friendly removal from throne
+	//this gentle push keeps players out of the model
+	setvard MREPELL_LIST $get_tsphere(any,64)
+	callevent 0.5 mild_repell_loop
+	if MREPELL_LIST isnot none
+	calleventloop $get_token_amt(MREPELL_LIST) mrepell_targets
+}
+
+{ mrepell_targets
+	local CUR_TARG $get_token(MREPELL_LIST,game.script.iteration)
+	local TARG_ORG $get(CUR_TARG,origin)
+	local TARG_ANG $angles(game.monster.origin,TARG_ORG)
+	setvelocity CUR_TARG $relvel($vec(0,TARG_ANG,0),$vec(0,400,110)) override
+}
+
+{ thuld_died
+	callevent combat_mode_go
+}
+
+{ combat_mode_go
+	callevent barrier_off
+	setvard COMBAT_MODE 1
+	menu.autoopen 0
+	callevent repell_burst $relpos(0,64,0) 128 1
+	callevent 0.5 stand_up
+}
+
+{ stand_up
+
+	gravity 1
+	fly 0
+	setvard AM_STANDING 1
+
+	usetrigger chief_stand
+
+	if ( !COMBAT_MODE ) callevent mild_repell_loop
+
+	setorigin ent_me $relpos(0,64,0)
+
+	setidleanim ANIM_IDLE
+	if ( COMBAT_MODE )
+	{
+		setmoveanim ANIM_WALK
+		callevent 0.1 combat_mode_go2
+	}
+	else
+	{
+		setmoveanim ANIM_IDLE
+		setsolid none
+		setvard FACE_PLAYERS 1
+	}
+}
+
+{ combat_mode_go2
+
+	setvard DEFAULT_TELE_POINT $get(ent_me,origin)
+
+	playanim critical ANIM_WARCRY
+	callevent npcatk_resume_ai
+	invincible 0
+	playsound 0 10 SOUND_WARCY
+	saytext NOW IT'S MY TURN!
+	movespeed 1.5
+	setanim.movespeed 1.5
+	setanim.framerate 1.5
+	setvard BASE_MOVESPEED 1.5
+	setvard BASE_FRAMERATE 1.5
+	usetrigger spawn_throne_escort
+}
+
+{ warcry_done
+	if !SWORD_DRAWN
+	setmodelbody 2 8
+	playsound 0 10 SOUND_DRAW_WEAPON
+
+}
+
+{ game_heardsound
+	if FACE_PLAYERS
+	local HEARD_ID $get(ent_lastheard,id)
+	if $get(HEARD_ID,isplayer)
+	if $get(HEARD_ID,range) < 128
+	setmovedest HEARD_ID 9999
+}
+
+
+
+
+//===========================================================================================
+//===========================================================================================
+//===========================================================================================
+//================== From monsters/sorc_chief1
+
+{ game_damaged_other //PARAM1=target_hit PARAM2=dmg
+
+	////dbg game_damaged_other $get(PARAM1,name) PARAM2
+
+	if ( SWORD_ATTACK )
+	{
+		setvard SWORD_ATTACK 0
+		addvelocity PARAM1 $relvel(-100,130,120)
+		if ( game.monster.hp < game.monster.maxhp )
+		{
+			local HP_TO_GIVE PARAM2
+			multiply HP_TO_GIVE VAMPIRE_RATIO
+			givehp VAMPIRE_RATIO
+			effect glow ent_me (0,255,0) 96 0.5 0.5
+			////dbg vampire_result game.monster.hp 
+			playsound 0 10 "player/heartbeat_noloop.wav"
+		}
+	}
+}
+
+{ cycle_up
+
+	if !CYCLES_STARTED
+	setvard CYCLES_STARTED 1
+	callevent FREQ_SPECIAL do_special
+	callevent 60.0 do_teleport //do first teleport 1 min in, rest are random
+	roam 1
+}
+
+{ swing_axe //ANIM_SMASH
+
+	if ( $get(NPCATK_TARGET,range) < ATTACK_RANGE ) setvard LAST_SWORD_HIT game.time
+
+	callevent sorc_yell
+	//						  <target>		<range>			<dmg>		<cth>				[type]
+	setvard SWORD_ATTACK 1
+	if ( !AM_UNARMED ) callevent npcatk_dodamage NPCATK_TARGET ATTACK_HITRANGE DMG_SMASH	ATTACK_HITCHANCE	slash
+	if ( AM_UNARMED )
+	{
+		setvard SWORD_ATTACK 0
+		callevent npcatk_dodamage NPCATK_TARGET ATTACK_HITRANGE DMG_SMACK	ATTACK_HITCHANCE	blunt
+	}
+	setvard ANIM_ATTACK ANIM_SWIPE
+	callevent check_kick
+}
+
+{ swing_sword //ANIM_SWIPE
+
+	if ( $get(NPCATK_TARGET,range) < ATTACK_RANGE ) setvard LAST_SWORD_HIT game.time
+
+	callevent sorc_yell
+	//						  <target>		<range>			<dmg>		<cth>				[type]
+	if ( !AM_UNARMED ) setvard SWORD_ATTACK 1
+	callevent npcatk_dodamage NPCATK_TARGET ATTACK_HITRANGE DMG_SLASH	ATTACK_HITCHANCE	slash
+	if ( AM_UNARMED )
+	{
+		setvard SWORD_ATTACK 0
+		callevent npcatk_dodamage NPCATK_TARGET ATTACK_HITRANGE DMG_SMACK	ATTACK_HITCHANCE	blunt
+	}
+
+	if ( $rand(1,5) == 1 ) setvard ANIM_ATTACK ANIM_SMASH
+	callevent check_kick
+}
+
+{ check_kick
+	if !KICK_DELAY
+	if ( !AM_UNARMED )
+	{
+		if $rand(1,5) != 1
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+	setvard ANIM_ATTACK ANIM_KICK
+	setvard KICK_DELAY 1
+	//dbg swing_axe - set kick mode
+	if ( !AM_UNARMED ) callevent FREQ_KICK reset_kick_delay
+	if ( AM_UNARMED ) callevent 1.0 reset_kick_delay //favor kick when unarmed
+}
+
+{ kick_land
+	//dbg kick_land PARAM1
+	if ( $get(NPCATK_TARGET,range) < ATTACK_RANGE ) setvard LAST_SWORD_HIT game.time
+	callevent npcatk_dodamage NPCATK_TARGET ATTACK_HITRANGE DMG_KICK	ATTACK_HITCHANCE	slash
+	setvard ANIM_ATTACK ANIM_SWIPE
+	if $get(NPCATK_TARGET,range) < ATTACK_HITRANGE
+	//callexternal NPCATK_TARGET ext_playsound "player/stomachhit1.wav"
+	applyeffect NPCATK_TARGET effects/effect_stun $randf(5,10) 0 1
+	addvelocity NPCATK_TARGET $relvel(-100,200,150)
+}
+
+{ reset_kick_delay
+	setvard KICK_DELAY 0
+}
+
+{ sorc_yell
+	playrandomsound 0 10 SOUND_ATTACK1 SOUND_ATTACK2 SOUND_ATTACK3
+}
+
+{ game_damaged //PARAM1=attacker PARAM2=dmg PARAM3=dmg_type
+
+	//dbg game_damaged game.monster.hp $get(PARAM1,name) PARAM2 PARAM3
+
+	if COMBAT_MODE
+
+	if ( game.monster.hp < HALF_HEALTH )
+	{
+		setvard JUMP_FWD_DIST 500
+		setvard FREQ_LEAP 0.1
+	}
+
+	local HIT_BY $get(PARAM1,id)
+	if ( PARAM2 > 30 )
+	{
+		if $get(HIT_BY,range) < ATTACK_HITRANGE
+		if $rand(1,3) == 1
+		if !LEAP_DELAY
+		setvard LEAP_DELAY 1
+		callevent FREQ_LEAP leap_delay_reset 
+		callevent leap_away HIT_BY
+	}
+}
+
+{ leap_delay_reset
+	setvard LEAP_DELAY 0
+}
+
+{ orc_hop
+
+	playsound 0 10 monsters/orc/attack1.wav
+	if ( game.monster.hp > HALF_HEALTH ) local JUMP_HEIGHT $rand(350,450)
+	if ( game.monster.hp <= HALF_HEALTH ) local JUMP_HEIGHT $rand(350,950)
+
+	local L_JUMP_FWD_DIST JUMP_FWD_DIST
+	local L_JUMP_HEIGHT JUMP_HEIGHT
+
+	if ( DOUBLE_FOR )
+	{
+		setvard DOUBLE_FOR 0
+		multiply L_JUMP_FWD_DIST 2
+	}
+
+	if ( DOUBLE_UP )
+	{
+		setvard DOUBLE_UP 0
+		multiply L_JUMP_HEIGHT 2
+	}
+
+	addvelocity ent_me $relvel(0,L_JUMP_FWD_DIST,L_JUMP_HEIGHT)
+}
+
+{ leap_away //<target>
+	
+	setvard AM_LEAPING 1
+	setvard NPC_FORCED_MOVEDEST 1
+	callevent npcatk_suspend_ai 1.0
+	setmovedest PARAM1 800 flee
+	callevent 0.1 do_leap
+}
+
+{ leap_random
+	setvard AM_LEAPING 1
+	setvard NPC_FORCED_MOVEDEST 1
+	callevent npcatk_suspend_ai 1.0
+	local RND_ROT $rand(0,359)
+	local LEAP_DEST game.monster.origin
+	vectoradd LEAP_DEST $relpos($vec(0,RND_ROT,0),$vec(0,400,0))
+	setmovedest LEAP_DEST ATTACK_MOVERANGE
+	callevent 0.1 do_leap
+}
+
+{ leap_at //<target>
+
+	if !AM_LEAPING
+	setvard AM_LEAPING 1
+	setvard NPC_FORCED_MOVEDEST 1
+
+	if ( $get(NPCATK_TARGET,isalive) )
+	{
+		local TARGET_ORG $get(NPCATK_TARGET,origin)
+		local TARGET_Z $vec.z(TARGET_ORG)
+		local MY_Z game.monster.origin.z
+		if ( TARGET_Z > MY_Z )
+		{
+			local V_DEST game.monster.origin
+			vectorset V_DEST z $vec.z(TARGET_ORG)
+			if $dist(game.monster.origin,V_DEST) > 96
+			setvard DOUBLE_UP 1
+		}
+		if ( $get(NPCATK_TARGET,range2d) > 1600 ) setvard DOUBLE_FOR 1
+	}
+
+	callevent npcatk_suspend_ai 1.0
+	setmovedest PARAM1 ATTACK_MOVERANGE
+	callevent 0.1 do_leap
+}
+
+{ do_leap
+
+	playrandomsound 0 10 SOUND_HIT SOUND_HIT2 SOUND_HIT3
+	playanim critical ANIM_HOP
+	callevent 0.1 orc_hop
+	callevent 1.0 reset_leaping
+}
+
+{ reset_leaping
+
+	setvard AM_LEAPING 0
+}
+
+{ do_lstorm
+
+//Centralized under do_special
+//	local NEXT_TRY FREQ_LSTORM
+//	if ( SUSPEND_AI )
+//	{
+//		//I'm busy doing something else
+//		//come back to this later
+//		local NEXT_TRY 10.0
+//		local ABORT_SPECIAL 1
+//	}
+//	
+//	callevent NEXT_TRY do_lstorm
+//	if !ABORT_SPECIAL
+
+	//make up to 2 lighting storms
+	setvard CAN_FLINCH 0
+	setvard AS_ATTACKING game.time
+	playanim critical ANIM_WARCRY
+	playsound 0 10 SOUND_WARCRY
+	callevent npcatk_suspend_ai 2.0
+	
+	setvard LSTORM_TARGS "placeholder"
+	getplayers LSTORM_TARGS
+	local N_LSTORM_TARGS $get_token_amt(LSTORM_TARGS)
+	setvard N_STORMS 0
+	setvard LOC_LSTORM1 0
+	setvard LOC_LSTORM2 0
+	setvard LSTORM_LOOPCOUNT 0
+	if ( N_LSTORM_TARGS > 0 ) calleventloop N_LSTORM_TARGS do_lstorm_loop
+	if N_STORMS > 0
+	callevent 0.1 do_lstorm2
+	if ( N_STORMS > 1 ) callevent 0.5 do_lstorm3
+
+}
+
+{ do_lstorm2
+
+	createnpc monsters/summon/summon_lightning_storm LOC_LSTORM1 $get(ent_me,id) $get(ent_me,angles.y) DMG_LSTORM DUR_LSTORM
+	setvard ID_LSTORM1 $get(ent_lastcreated,id)
+}
+
+{ do_lstorm3
+
+	createnpc monsters/summon/summon_lightning_storm LOC_LSTORM2 $get(ent_me,id) $get(ent_me,angles.y) DMG_LSTORM DUR_LSTORM
+	setvard ID_LSTORM2 $get(ent_lastcreated,id)
+}
+
+{ do_lstorm_loop
+
+	//dbg do_lstorm_loop
+
+	//make up to two storms, centering on players
+	//storms must be within 1024 units of me
+	//for there to be more than one, they must be more than 256 units apart
+
+	local CUR_PLAYER $get_token(LSTORM_TARGS,LSTORM_LOOPCOUNT)
+	add LSTORM_LOOPCOUNT 1
+
+	if ( $get(CUR_PLAYER,range) < 1024 )
+	{
+		if N_STORMS < 2
+		add N_STORMS 1
+		local TARG_ORG $get(CUR_PLAYER,origin)
+		if ( N_STORMS == 2 )
+		{
+			if $dist(TARG_ORG,LOC_LSTORM1) < 256
+			local EXIT_SUB 1
+		}
+		if !EXIT_SUB
+
+		local STORM_GRNDPOS $get_ground_height(TARG_ORG)
+		vectorset TARG_ORG z STORM_GRNDPOS
+		//dbg do_lstorm_loop cnt LSTORM_LOOPCOUNT name $get(CUR_PLAYER,name) org TARG_ORG grnd STORM_GRNDPOS
+		if ( N_STORMS == 1 ) setvard LOC_LSTORM1 TARG_ORG
+		if ( N_STORMS == 2 ) setvard LOC_LSTORM2 TARG_ORG
+	}
+}
+
+{ warcry_done
+
+	setvard CAN_FLINCH 1
+	if ( SUSPEND_AI ) callevent npcatk_resume_ai
+}
+
+{
+repeatdelay $randf(8,15)
+	if !SUSPEND_AI
+	if NPCATK_TARGET isnot unset
+	local LEAP_TYPE $rand(1,4)
+	if ( LEAP_TYPE < 4 ) callevent leap_at NPCATK_TARGET "random"
+	if ( LEAP_TYPE == 4 ) callevent leap_random
+}
+
+{ game_parry
+	playrandomsound 0 10 SOUND_STRUCK1 SOUND_STRUCK2 SOUND_STRUCK3
+	if !SUSPEND_AI
+	if ( $rand(1,3) == 1 ) playanim critical shielddeflect1
+}
+
+{ get_teleporters
+	setvard N_TELES 0
+
+	setvard TELE_ID1 $get_token(G_RUNE_POINTS,0)
+	setvard TELE_ID2 $get_token(G_RUNE_POINTS,1)
+	setvard TELE_ID3 $get_token(G_RUNE_POINTS,2)
+	setvard TELE_ID4 $get_token(G_RUNE_POINTS,3)
+
+	setvard N_TELES 3
+}
+
+
+{ do_teleport //PARAM1 = reason
+
+	if N_TELES > 0
+
+	//dbg do_teleport PARAM1
+
+	if ( PARAM1 isnot "stuck_count" )
+	{
+		if ( game.monster.hp > HALF_HEALTH ) local TELEPORT_FAST 0
+		if ( game.monster.hp <= HALF_HEALTH ) local TELEPORT_FAST 1
+
+		if ( !TELEPORT_FAST ) callevent FREQ_TELEPORT do_teleport
+		if ( TELEPORT_FAST ) callevent FREQ_TELEPORT_FAST do_teleport
+	}
+
+	//abort if too often
+	local LAST_TELE_DIFF game.time
+	subtract LAST_TELE_DIFF LAST_TELE
+	if LAST_TELE_DIFF > MIN_TELEPORT_DELAY
+
+	dbg game.time secs: do_teleport PARAM1 PARAM2
+
+	setvard LAST_TELE game.time //this is also set at tele_in for better accuracy
+
+	local TOTAL_TELES N_TELES
+	add TOTAL_TELES 1
+	local PICK_TELE $rand(1,TOTAL_TELES)
+
+
+	if ( PARAM2 equals "no_hits" )
+	{
+		//find if any players are near my teleport points
+		//if the are, teleport there and target them
+		if ( G_DEVELOPER_MODE ) messageall green no_hits teleport
+		getplayersnb PLAYER_LIST
+		token.scramble PLAYER_LIST //so we dont always go for the same player
+
+		setvard FOUND_NEAR_TARGET 0
+		setvard SEARCH_RAD 512
+		calleventloop $get_token_amt(PLAYER_LIST) find_near_teleporter
+		if ( FOUND_NEAR_TARGET > 0 )
+		{
+			callevent npcatk_settarget NEW_TARGET
+			if ( G_DEVELOPER_MODE ) messageall green SORC_CHIEF: found $get(NEW_TARGET,name) near FOUND_NEAR_TARGET
+			local PICK_TELE FOUND_NEAR_TARGET
+		}
+	}
+
+	if ( PICK_TELE == 1 )
+	{
+		setvard TELE_DEST TELE_ID1
+	}
+	if ( PICK_TELE == 2 )
+	{
+		setvard TELE_DEST TELE_ID2
+	}
+	if ( PICK_TELE == 3 )
+	{
+		setvard TELE_DEST TELE_ID3
+	}
+	if ( PICK_TELE == 4 )
+	{
+		setvard TELE_DEST TELE_ID4
+	}
+	if ( PICK_TELE > N_TELES ) 
+	{
+		setvard TELE_DEST DEFAULT_TELE_POINT
+		setvard TELE_ANGS NPC_SPAWN_ANGLES
+	}
+
+	createnpc monsters/summon/ibarrier TELE_DEST $get(ent_me,id) 64 2 0 0 0 1 //<owner> <rad> <duration> [invisible:0|1] [silent:0|1] [dmg] [push_allys:0|1]
+	callevent leap_tele
+}
+
+{ find_near_teleporter
+
+	//find which teleporter player is nearest to
+
+	//player to check
+	local CUR_PLAYER $get_token(PLAYER_LIST,game.script.iteration)
+	local PLAYER_ORG $get(CUR_PLAYER,origin)
+	if FOUND_NEAR_TARGET == 0
+
+	if N_TELES >= 1
+	local TEST_TELE TELE_ID1
+	vectorset TEST_TELE z $get_ground_height(TEST_TELE)
+	local TELE_DIST $dist(PLAYER_ORG,TEST_TELE)
+	if ( TELE_DIST < SEARCH_RAD )
+	{
+		setvard FOUND_NEAR_TARGET 1
+		setvard NEW_TARGET CUR_PLAYER
+	}
+
+	if N_TELES >= 2
+	local TEST_TELE TELE_ID2
+	vectorset TEST_TELE z $get_ground_height(TEST_TELE) //measure from ground
+	local OLD_TELE_DIST TELE_DIST //store last teleport distance
+	local TELE_DIST $dist(PLAYER_ORG,TEST_TELE)
+	if ( TELE_DIST < SEARCH_RAD )
+	{
+		if OLD_TELE_DIST > TELE_DIST //use only if player is closer to this than the last one
+		setvard FOUND_NEAR_TARGET 2
+		setvard NEW_TARGET CUR_PLAYER
+	}
+
+	if N_TELES >= 3
+	local TEST_TELE TELE_ID3
+	vectorset TEST_TELE z $get_ground_height(TEST_TELE)
+	local OLD_TELE_DIST TELE_DIST
+	local TELE_DIST $dist(PLAYER_ORG,TEST_TELE)
+	if ( TELE_DIST < SEARCH_RAD )
+	{
+		if OLD_TELE_DIST > TELE_DIST
+		setvard FOUND_NEAR_TARGET 3
+		setvard NEW_TARGET CUR_PLAYER
+	}
+
+	if N_TELES >= 4
+	local TEST_TELE TELE_ID4
+	vectorset TEST_TELE z $get_ground_height(TEST_TELE)
+	local OLD_TELE_DIST TELE_DIST
+	local TELE_DIST $dist(PLAYER_ORG,TEST_TELE)
+	if ( TELE_DIST < SEARCH_RAD )
+	{
+		if OLD_TELE_DIST > TELE_DIST
+		setvard FOUND_NEAR_TARGET 4
+		setvard NEW_TARGET CUR_PLAYER
+	}
+
+	local TEST_TELE NPC_SPAWN_LOC
+	vectorset TEST_TELE z $get_ground_height(TEST_TELE)
+	local OLD_TELE_DIST TELE_DIST
+	local TELE_DIST $dist(PLAYER_ORG,TEST_TELE)
+	if ( TELE_DIST < SEARCH_RAD )
+	{
+		if OLD_TELE_DIST > TELE_DIST
+		setvard FOUND_NEAR_TARGET 5
+		setvard NEW_TARGET CUR_PLAYER
+	}
+}
+
+{ leap_tele //<target>
+
+	setvard AM_LEAPING 1
+	setvard NPC_FORCED_MOVEDEST 1
+	callevent npcatk_suspend_ai 1.0
+	setmovedest $relpos(0,1000,0) ATTACK_MOVERANGE
+	callevent 0.1 do_leap
+	setvard RENDER_COUNT 255
+	callevent 0.25 flicker_out
+	callevent 0.75 tele_out
+	callevent 1.0 tele_in
+}
+
+{ flicker_out
+	subtract RENDER_COUNT 50
+	if RENDER_COUNT > 0
+	callevent 0.1 flicker_out
+	setprop ent_me rendermode 5
+	setprop ent_me renderamt RENDER_COUNT
+}
+
+{ tele_out
+	playsound 0 10 SOUND_TELE
+	setorigin ent_me (-20000,10000,-20000)
+}
+
+{ tele_in
+	setorigin ent_me TELE_DEST
+	//setangle face TELE_ANGS
+	playsound 0 10 SOUND_TELE
+	setvard RENDER_COUNT 0
+	callevent flicker_in
+	setvard LAST_TELE game.time
+}
+
+{ flicker_in
+	add RENDER_COUNT 50
+	if ( RENDER_COUNT >= 255 )
+	{
+		setprop ent_me rendermode 0
+		setprop ent_me renderamt 255
+	}
+	if RENDER_COUNT < 255
+	callevent 0.1 flicker_in
+	setprop ent_me rendermode 5
+	setprop ent_me renderamt RENDER_COUNT
+}
+
+{
+repeatdelay 1.1
+	if STUCK_COUNT > 4
+	callevent do_teleport "stuck_count"
+}
+
+{ npc_post_spawn
+	setvard HALF_HEALTH game.monster.maxhp
+	divide HALF_HEALTH 2
+
+	local L_MAP_NAME $lcase(game.map.name)
+	if L_MAP_NAME equals lodagond-1
+	setvard ON_LODAGOND 1
+}
+
+
+{ do_tornado
+	playanim critical ANIM_SWIPE
+	createnpc monsters/summon/tornado $relpos(0,72,0) $get(ent_me,id) 200 20.0
+}
+
+{ game_takedamage
+	if ( ATTACK_PARRY )
+	{
+		//dbg game_takedamage - parried PARAM3 , setting 0
+		setdmg hit 0
+		setdmg dmg 0
+	}
+}
+
+{ do_throw
+
+	if !AM_UNARMED
+
+	setvard PLAYERS_NEAR 0
+	setvard PLAYERS_INRANGE 0
+	getplayersnb SORC_LPLAYERS
+	setvard PNEAR_LOOP_COUNT 0
+	calleventloop $get_token_amt(SORC_LPLAYERS) any_players_near
+	//dbg do_throw check nplayers $get_token_amt(SORC_LPLAYERS) near PLAYERS_NEAR inrang PLAYERS_INRANGE
+	if !PLAYERS_NEAR
+	if PLAYERS_INRANGE
+	callevent do_throw2
+}
+
+{ do_throw2
+	//dbg do_throw2 throwing sword
+	setmodelbody 2 0
+	setvard AM_UNARMED 1
+	playanim critical ANIM_SWIPE
+	createnpc monsters/summon/blood_drinker $relpos(0,48,48) $get(ent_me,id) $get(ent_laststruck,id) 100 30.0
+	setvard BLOOD_DRINKER_ID $get(ent_lastcreated,id)
+}
+
+{ any_players_near
+	local CUR_PLAYER $get_token(SORC_LPLAYERS,PNEAR_LOOP_COUNT)
+	if ( $get(CUR_PLAYER,range) < ATTACK_RANGE ) setvard PLAYERS_NEAR 1
+	if ( $get(CUR_PLAYER,range) < 2048 ) setvard PLAYERS_INRANGE 1
+	add PNEAR_LOOP_COUNT 1
+}
+
+{ do_special
+
+	local NEXT_TRY FREQ_SPECIAL
+
+	if ( SUSPEND_AI )
+	{
+		//I'm busy doing something else
+		//come back to this later
+		local NEXT_TRY 5.0
+		local ABORT_SPECIAL 1
+	}
+	
+	callevent NEXT_TRY do_special
+	if !ABORT_SPECIAL
+
+	add CUR_SPECIAL 1
+
+	//setvard CUR_SPECIAL 3 //TEMP
+	if ( CUR_SPECIAL > 3 ) setvard CUR_SPECIAL 1
+
+	if ( CUR_SPECIAL == 1 ) callevent do_tornado
+	if ( CUR_SPECIAL == 2 ) callevent do_lstorm
+	if ( CUR_SPECIAL == 3 ) callevent do_throw
+}
+
+{ sword_return
+	setmodelbody 2 8
+	setvard AM_UNARMED 0
+}
+
+{
+repeatdelay 20.0
+		//if I've not thwacked anyone for a bit, teleport
+		//- but not if I can see him almost in range
+		if COMBAT_MODE
+
+		if $get(NPCATK_TARGET,range) > 256
+
+		//- or if I teleported very recently
+		local LAST_TELE_DIFF game.time
+		subtract LAST_TELE_DIFF LAST_TELE
+		if LAST_TELE_DIFF > 5.0
+
+		local LAST_HIT_DIFF game.time
+		subtract LAST_HIT_DIFF LAST_SWORD_HIT
+		if LAST_HIT_DIFF > 20.0
+		callevent do_teleport "stuck_count" "no_hits"
+}
+
+
+//====================== New Death Sequence for Sorc_Palace
+{ game_death
+
+	usetrigger towndoors01 thronesecr_exit
+
+	if ( $get(BLOOD_DRINKER_ID,exists) ) callexternal BLOOD_DRINKER_ID ext_remove
+	setmodelbody 2 0
+	callexternal GAME_MASTER gm_fade $get(ent_me,id)
+	callevent repell_burst $get(ent_me,origin) BARRIER_RAD 0
+	clientevent new all sorc_palace/sorc_chief_cl $get(ent_me,index) 128 (255,0,0) 3.0 1
+}
+
+{
+repeatdelay 1.0
+	if !AM_STANDING
+	if $get(ent_me,origin) isnot CHIEF_SPAWN
+	setorigin ent_me CHIEF_SPAWN
+	gravity 0
+}

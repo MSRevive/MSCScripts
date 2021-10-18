@@ -1,0 +1,93 @@
+//Thothie FEB2009_13 - Freezing sphere, now a projectile! :D
+//-
+//define on user:
+//PASS_FREEZE_DMG (can be 0)
+//PASS_FREEZE_DUR
+{
+	const MODEL_HANDS      		weapons/projectiles.mdl
+	const MODEL_WORLD      		weapons/projectiles.mdl
+	const ARROW_BODY_OFS		2
+	const MODEL_BODY_OFS		2
+	const PROJ_ANIM_IDLE		idle_iceball
+
+	const SOUND_ZAP1 debris/beamstart14.wav
+	const SOUND_ZAP2 debris/beamstart14.wav
+	const SOUND_ZAP3 debris/zap1.wav
+	const SOUND_LOOP ambience/pulsemachine.wav
+
+	const ARROW_SOLIDIFY_ON_WALL 0
+
+	const HITWALL_VOL 2
+
+	const PROJ_MOTIONBLUR 0
+
+	const PROJ_DAMAGE			0
+	const PROJ_STICK_DURATION	0
+	const PROJ_SOLIDIFY_ON_WALL	0  //Does not turn solid when a wall is hit
+
+	const PROJ_DAMAGE_AOE_RANGE	0
+	const PROJ_DAMAGE_AOE_FALLOFF	1
+	const PROJ_DAMAGE_TYPE		magic
+
+	const PROJ_COLLIDEHITBOX 1
+	const PROJ_ANIM_IDLE none
+
+	const SCAN_RANGE 96
+}
+
+#include items/proj_arrow_base
+
+{ arrow_spawn
+
+	name 	a|Hold Person Spell
+	desc 	A paralyzing ball of magic
+	weight 	0
+	size 	1
+	value	1
+	gravity	0.0001
+
+	setmodel weapons/projectiles.mdl
+	setmodelbody 0 2
+
+	setprop ent_me rendermode 5
+	setprop ent_me renderamt 200
+	setprop ent_me rendercolor (255,128,0)
+
+	setvard GAME_PVP game.pvp
+}
+
+{ [override] game_fall //override base_arrow.  Just do nothing
+	
+
+}
+
+{ game_projectile_hitnpc
+	applyeffect ent_laststruckbyme effects/hold_person HOLD_DURATION $get(ent_expowner,id) HOLD_DMG
+	callevent remove_me
+}
+
+{ game_tossprojectile
+	setvard HOLD_DURATION $get(ent_expowner,scriptvar,'PROJ_HOLD_DURATION')
+	setvard HOLD_DMG $get(ent_expowner,scriptvar,'PROJ_HOLD_DMG')
+	if ( HOLD_DURATION equals 'PROJ_HOLD_DURATION' ) setvard HOLD_DURATION 30.0
+	if ( HOLD_DMG equals 'PROJ_HOLD_DMG' ) setvard HOLD_DMG 0
+	svplaysound 1 10 SOUND_LOOP
+	effect beam ents lgtning.spr 10 ent_me 0 ent_expowner 1 (255,255,255) 200 100 10.0
+	setvard MY_BEAM_ID $get(ent_lastcreated,id)
+	
+}
+
+{ game_projectile_hitwall
+	callevent remove_me
+}
+
+{ game_projectile_landed
+	callevent remove_me
+}
+
+{ remove_me
+	effect beam update MY_BEAM_ID remove 0.1
+	svplaysound 1 0 SOUND_LOOP
+}
+
+

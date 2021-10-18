@@ -1,0 +1,99 @@
+//Orc summoner gets pwned
+{ client_activate //<abomination_idx>
+
+	setvard FX_OWNER PARAM1
+	setvard MAX_Z $getcl(PARAM1,origin)
+	setvard MAX_Z $vec.z(MAX_Z)
+	setvard FX_ACTIVE 1
+	setvard FX_STAGE 1
+	setvard ATTACH_POS $getcl(FX_OWNER,attachment0)
+	if ( $vec.z(ATTACH_POS) < MAX_Z ) vectorset ATTACH_POS z MAX_Z
+	cleffect tempent model monsters/Orc.mdl ATTACH_POS setup_orc_corpse update_orc_corpse
+
+	setcallback render enable
+}
+
+{ update_orc_corpse
+	if FX_ACTIVE
+	if ( FX_STAGE == 1 )
+	{
+		cleffect tempent set_current_prop origin ATTACH_POS
+	}
+	if ( FX_STAGE == 2 )
+	{
+		cleffect tempent set_current_prop collide world
+		cleffect tempent set_current_prop cb_collide collide_corpse
+
+		cleffect tempent set_current_prop velocity FLING_VEL
+		setvard FX_STAGE 3
+	}
+
+	if FINAL_ORG_SET
+	cleffect tempent set_current_prop origin FINAL_ORG
+	cleffect tempent set_current_prop velocity $vec(0,0,0)
+}
+
+{ collide_corpse
+	dbg ***** collide_corpse game.tempent.origin
+	if !FINAL_ORG_SET
+	setvard FINAL_ORG game.tempent.origin
+	vectoradd FINAL_ORG z 4
+	//cleffect tempent model monsters/Orc.mdl FINAL_ORG setup_deader_corpse
+	setvard FINAL_ORG_SET 1
+	cleffect tempent set_current_prop origin FINAL_ORG
+	cleffect tempent set_current_prop velocity $vec(0,0,0)
+}
+
+{ do_fling //vel
+	setvard FX_STAGE 2
+	setvard FLING_VEL PARAM1
+	callevent 10.0 remove_fx
+}
+
+{ remove_fx
+	removescript
+}
+
+{
+repeatdelay 0.1
+	setvard ATTACH_POS $getcl(FX_OWNER,attachment0)
+	if ( $vec.z(ATTACH_POS) < MAX_Z ) vectorset ATTACH_POS z MAX_Z
+	if ( FX_STAGE == 1 )
+	{
+		local BLOOD_POS ATTACH_POS
+		vectoradd BLOOD_POS z 10
+		cleffect tempent sprite bloodspray.spr BLOOD_POS setup_blood_spray
+	}
+}
+
+{ setup_orc_corpse
+	cleffect tempent set_current_prop death_delay 30.0
+	cleffect tempent set_current_prop body 16
+	cleffect tempent set_current_prop skin 2
+	cleffect tempent set_current_prop framerate 1
+	cleffect tempent set_current_prop frames 44
+	cleffect tempent set_current_prop sequence 6
+	cleffect tempent set_current_prop bouncefactor -20
+	cleffect tempent set_current_prop gravity 1
+	cleffect tempent set_current_prop collide none
+	cleffect tempent set_current_prop scale 1
+	cleffect tempent set_current_prop update 1
+	//cleffect tempent set_current_prop angles $vec(0,90,0)
+	//cleffect tempent set_current_prop velocity $vec(0,0,0)
+}
+
+{ setup_blood_spray
+	cleffect tempent set_current_prop death_delay $randf(1,2)
+	cleffect tempent set_current_prop framerate 30
+	cleffect tempent set_current_prop frames 10
+	cleffect tempent set_current_prop rendermode alpha
+	cleffect tempent set_current_prop rendercolor (255,0,0)
+	//cleffect tempent set_current_prop renderamt 255
+	cleffect tempent set_current_prop gravity 1
+	cleffect tempent set_current_prop collide world;die
+	cleffect tempent set_current_prop scale $randf(0.1,1.0)
+
+	local RND_UP $randf(50,100)
+	local RND_ANG $randf(0,359.99)
+	cleffect tempent set_current_prop velocity $relpos($vec(0,RND_ANG,0),$vec(0,0,RND_UP))
+}

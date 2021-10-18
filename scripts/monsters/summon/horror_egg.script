@@ -1,0 +1,225 @@
+// createnpc monsters/summon/horror_egg
+#scope server
+{
+	setvar IS_UNHOLY 1
+
+	const SCAN_SIZE 100
+
+	const GLOW_SHELL (255,0,0)
+
+	const SOUND_HATCH debris/bustflesh1.wav
+
+	const EGG_SCRIPT monsters/horror
+
+	//new model
+	precache monsters/egg.mdl
+
+	//horror media
+	precache controller/con_idle1.wav
+	precache controller/con_idle2.wav
+	precache controller/con_idle3.wav
+	precache controller/con_attack1.wav
+	precache controller/con_attack2.wav
+	precache controller/con_attack3.wav
+	precache controller/con_die1.wav
+	precache debris/bustflesh2.wav		//most common
+	precache controller/con_pain1.wav	//rare > 50%
+	precache controller/con_die2.wav	//rare < 50%
+	precache bullchicken/bc_attack3.wav
+	precache bullchicken/bc_attack2.wav
+	precache ambience/steamburst1.wav
+	precache monsters/bat/flap_big1.wav
+	precache monsters/bat/flap_big2.wav
+	precache player/pl_fallpain1.wav
+	precache monsters/edwardgorey.mdl
+
+	//base_turn_undead media (horror)
+	precache ambience/the_horror1.wav
+	precache ambience/the_horror2.wav
+	precache ambience/the_horror3.wav
+	precache ambience/the_horror4.wav
+}
+
+{ game_dynamically_created
+
+	setvard MY_OWNER PARAM1
+
+}
+
+#include monsters/externals
+
+{ game_spawn
+
+	name a|Horror Egg
+	hp 50
+	race demon
+	setmodel monsters/egg.mdl
+	blood green
+	width 64
+	height 64
+	setmodelbody 0 1
+
+	skilllevel 5 //give some bonus for hitting the sucker
+
+	setbbox npcsize
+
+	setprop ent_me movetype const.movetype.bounce
+
+	 effect glow ent_me GLOW_SHELL 128 -1 0
+
+	callevent 5.0 attempt_spawn
+
+	setvard FAILED_HATCH 0
+
+	//be nice if game_touch or SOMETHING worked
+	//imitating gib method of bounce detection
+	callevent 0.1 scan_bounce
+
+	setvard NPC_SPAWN_TIME game.time
+}
+
+{ game_damaged
+	local SINCE_SPAWN game.time
+	subtract SINCE_SPAWN NPC_SPAWN_TIME
+	if ( SINCE_SPAWN < 1.0 )
+	{
+		if ( $get(PARAM1,relationship,ent_me) equals enemy ) local BLOCK_PREMATURE_DAMAGE 1
+		if ( $get(PARAM1,isplayer) ) local BLOCK_PREMATURE_DAMAGE 1
+		if BLOCK_PREMATURE_DAMAGE
+		setdmg dmg 0
+		setdmg hit 0
+		returndata 0
+	}
+}
+
+{ attempt_spawn
+
+	//set spawn org
+	local MY_ORG game.monster.origin
+	local SPAWN_ORG MY_ORG
+	vectoradd SPAWN_ORG $relpos($vec(0,0,0),$vec(0,0,20))
+
+	//make sure there is space to spawn horror
+	local IS_ROOM 1
+	//- x
+	local TRACE_START SPAWN_ORG
+	local TRACE_END SPAWN_ORG
+	vectoradd TRACE_START $relpos($vec(0,0,0),$vec($neg(SCAN_SIZE),0,0))
+	vectoradd TRACE_END $relpos($vec(0,0,0),$vec(SCAN_SIZE,0,0))
+	local TRACE_WORLD $get_traceline(TRACE_START,TRACE_END,worldonly)
+	if ( G_DEVELOPER_MODE ) callevent debug_beam TRACE_START TRACE_END
+	////dbg TRACE_WORLD vs TRACE_END
+	if ( TRACE_END isnot TRACE_WORLD ) local IS_ROOM 0
+
+	//- y
+	local TRACE_START SPAWN_ORG
+	local TRACE_END SPAWN_ORG
+	vectoradd TRACE_START $relpos($vec(0,0,0),$vec(0,$neg(SCAN_SIZE),0))
+	vectoradd TRACE_END $relpos($vec(0,0,0),$vec(0,SCAN_SIZE,0))
+	local TRACE_WORLD $get_traceline(TRACE_START,TRACE_END,worldonly)
+	if ( G_DEVELOPER_MODE ) callevent debug_beam TRACE_START TRACE_END
+	////dbg TRACE_WORLD vs TRACE_END
+	if ( TRACE_END isnot TRACE_WORLD ) local IS_ROOM 0
+
+
+	//- z
+	local TRACE_START SPAWN_ORG
+	local TRACE_END SPAWN_ORG
+	vectoradd TRACE_START $relpos($vec(0,0,0),$vec(0,0,-10))
+	vectoradd TRACE_END $relpos($vec(0,0,0),$vec(0,0,30))
+	local TRACE_WORLD $get_traceline(TRACE_START,TRACE_END,worldonly)
+	if ( G_DEVELOPER_MODE ) callevent debug_beam TRACE_START TRACE_END
+	////dbg TRACE_WORLD vs TRACE_END
+	if ( TRACE_END isnot TRACE_WORLD ) local IS_ROOM 0
+
+
+	local IN_SPHERE $get_insphere(any,45,SPAWN_ORG)
+	if ( IN_SPHERE )
+	{
+		//dbg Sphere struck NPC
+		local IN_ROOM 0
+	}
+
+	if ( !IS_ROOM )
+	{
+		add FAILED_HATCH 1
+		//dbg failed_to_hatch(no_room) FAILED_HATCH
+		if ( FAILED_HATCH > 9 )
+		{
+			//dbg Ten failed hatch attempts, assuming off map
+			callevent game_death //assume spawned off map
+		}
+		callevent bounce_about
+		callevent 5.0 attempt_spawn
+	}
+	if IS_ROOM
+
+	callevent hatch_egg
+}
+
+{ scan_bounce
+
+	callevent 0.2 scan_bounce
+	local MY_ZVEL $vec.z(game.monster.velocity)
+	////dbg MY_ZVEL
+	if MY_ZVEL < 0
+	
+
+	local TRACE_START game.monster.origin
+	vectoradd TRACE_START $relpos($vec(0,0,0),$vec(0,0,0))
+	local TRACE_END TRACE_START
+	vectoradd TRACE_END $relpos($vec(0,0,0),$vec(0,0,-50))
+	local TRACE_LINE $get_traceline(TRACE_START,TRACE_END,worldonly)
+	if ( G_DEVELOPER_MODE ) callevent debug_beam TRACE_START TRACE_END
+	if ( TRACE_LINE isnot TRACE_END ) playsound 0 10 weapons/g_bounce1.wav
+}
+
+{ bounce_about
+	//no room, toss in random dir
+	local TOSS_DIR $rand(-200,200)
+	local TOSS_HOR $rand(-200,200)
+	local TOSS_VER $rand(-400,600)
+	setvelocity ent_me $relvel(TOSS_DIR,TOSS_HOR,TOSS_VER)
+}
+
+{ game_struck
+	callevent bounce_about
+}
+
+{ hatch_egg
+
+	//tempent gibs <modelname/spritename> <position> <size> <velocity> <randomness> <amount> <duration>
+	effect tempent gibs monsters/egg.mdl $relpos(0,0,0) 0.1 100 30 2 4
+	playsound 0 10 SOUND_HATCH
+	createnpc EGG_SCRIPT $relpos(0,0,20) MY_OWNER
+	deleteent ent_me
+}
+
+{ debug_beam //<(start)> [(end)] [color] (if no [end] given, makes beam 64 units straight up)
+
+	if ( PARAM3 equals 'PARAM3' ) local BEAM_COLOR (255,0,255)
+	if ( PARAM3 isnot 'PARAM3' ) local BEAM_COLOR PARAM3
+	local BEAM_DURATION 1.0
+	local BEAM_START PARAM1
+	if ( PARAM2 equals 'PARAM2' ) local BEAM_END BEAM_START
+	if ( PARAM2 isnot 'PARAM2' ) local BEAM_END PARAM2
+	vectoradd BEAM_END $relpos($vec(0,0,0),$vec(0,0,64))
+	effect beam point laserbeam.spr 20 BEAM_START BEAM_END BEAM_COLOR 255 0.7 BEAM_DURATION
+}
+
+{ game_death
+	callexternal MY_OWNER horror_died
+	callevent xp_send
+
+	effect tempent gibs monsters/egg.mdl $relpos(0,0,0) 0.1 100 30 2 4
+	playsound 0 10 SOUND_HATCH
+	deleteent ent_me
+}
+
+{ xp_send
+
+	local MON_FULL game.monster.name.full
+	local OUT_MSG "You've slain "
+	stradd OUT_MSG MON_FULL
+	gplayermessage $get(ent_laststruck,id) OUT_MSG
+}

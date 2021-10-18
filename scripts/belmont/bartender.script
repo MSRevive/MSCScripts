@@ -1,0 +1,138 @@
+{
+	const SOUND_DEATH xxx //need a chick dies sound
+
+	setvard NO_HAIL 1
+	setvard NO_JOB 1
+	setvard NO_RUMOR 1
+}
+
+#scope server
+
+{ [shared] game_spawn
+
+	name_unique bartender
+
+   hp 30
+   invincible  1   
+   name	       Helga, The Barkeep
+   width 32
+   height 72
+   race beloved
+   setmodel    npc/human1.mdl
+   setidleanim idle1
+	playanim once idle1
+
+	saytextrange 1024
+
+	setmodelbody 0 4
+
+   catchspeech say_yes yes yep yeah ja jes
+   catchspeech say_no no not stop nope nah nein
+   catchspeech say_hi hi hello hail greet
+
+	callevent 2.0 get_extorter_id
+}
+
+#include monsters/base_chat
+
+{ get_extorter_id
+	setvard BAR_ID $get_by_name(extorter)
+}
+
+{ say_hi
+	if QUESTS_ACTIVE
+	callevent convo_anim
+	saytext I'm glad you saved me and all, but he has a lot of nasty friends who will follow.
+	callevent 3.0 say_hi2
+}
+
+{ say_hi2
+	callevent convo_anim
+	saytext I'd just get up and leave here, but they have all my money.
+	callevent 3.0 say_hi2b
+}
+
+{ say_hi2b
+	saytext It was all sealed in a magic coffer. I doubt they'll be able to open it anytime soon. But so long as they have it, I can't go anywhere.
+	callevent 3.0 say_hi3
+}
+
+{ say_hi3
+	callevent convo_anim
+	saytext If you could get it back for me, I'd be sure to give you a handsom portion before I run off to Deralia!
+}
+
+{ ext_harass1
+	saytext For the last time, I told you, we don't have that kind of money. You already took everything we had!
+	playanim critical converse1
+}
+
+{ ext_harass2
+	saytext How could we possibly have made the money with your thugs scaring away all the customers?
+	playanim critical converse2
+}
+
+{ ext_harass3
+	saytext NO! PLEASE DON'T!!!
+	playanim critical fear
+}
+
+{ npc_suicide //just copied from externals
+
+	if ( PARAM1 equals no_pets )
+	{
+		if I_R_PET
+		local EXIT_SUB 1
+	}
+
+	if ( PARAM1 equals only_bad )
+	{
+		if ( $get(ent_me,race) equals human ) local EXIT_SUB 1
+		if ( $get(ent_me,race) equals hguard ) local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	invincible 0
+	race hated
+	setvard SKEL_RESPAWN_TIMES 99
+	dodamage ent_me direct 30000 100 GAME_MASTER target
+}
+
+{ game_death
+	playanim critical diesimple
+	playsound 0 10 SOUND_DEATH
+}
+
+{ extorter_slain
+	setvard MY_SAVIOR $get(PARAM1,id)
+	saytext Thank Felewyn! You've saved my life!
+	setvard QUESTS_ACTIVE 1
+	setvard NO_JOB 0
+}
+
+{ say_job
+	callevent say_hi
+}
+
+{ game_menu_getoptions
+
+	if $item_exists(PARAM1,item_bar_coffer)
+	local reg.mitem.title 	"Return Coffer"
+	local reg.mitem.type 	payment
+	local reg.mitem.data	item_bar_coffer
+	local reg.mitem.callback return_coffer
+	menuitem.register
+}
+
+{ return_coffer
+	saytext Thank you so very much! Now maybe I can setup some place more reputable...
+	usetrigger coffer_returned
+	offer PARAM1 gold 200
+	callevent 3.0 next_quest
+}
+
+{ next_quest
+	saytext [Insert text for next quest here].
+}
+
+	

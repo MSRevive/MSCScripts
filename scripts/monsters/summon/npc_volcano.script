@@ -1,0 +1,212 @@
+//Thothie - Reduced level of Volcano to something obtainable
+//Thothie - No parameters other than owner are passing to this monster for some reason
+//- Reducing damage as well
+//- PARAM1 = owner
+//Volcano
+#scope server
+
+{
+	const SOUND_START	magic/volcano_start.wav
+	const SOUND_LOOP	magic/volcano_loop.wav
+	const MODEL_WORLD	misc/volcano.mdl
+	setvard ANIM_DEATH down	//for base_npc
+	setvard I_DO_FIRE_DAMAGE 1
+
+
+  	precache misc/volcano.mdl
+	precache SOUND_START
+	precache SOUND_LOOP
+
+}
+
+{ [shared]
+	const ROCK_START_HEIGHT 66
+}
+
+#include monsters/base_npc
+
+{  
+   eventname npc_spawn
+
+   hp 1500
+   invincible 1 //screw it, it has 1500pts anyways - and ya don't want it to report attacks against itself
+   setsolid none //doesnt trap monsters/players inside of it
+   fov 90
+   width 32
+   height 64
+   name A Volcano
+   roam 0
+   takedmg ice 2.0
+   takedmg fire 0.0
+   skilllevel 0
+   hearingsensitivity 0
+   setmodel MODEL_WORLD
+   blood none
+   setstat spellcasting 15 15 15
+   playanim hold up
+   callevent 2 volcano_start  		//Start erupting after a delay
+   effect screenshake $relpos(0,0,0) 50 10 6 512
+   playsound 0 7 SOUND_START
+}
+
+{
+   eventname game_dynamically_created
+
+	//$get(ent_me,id) 300 SPELL_FREQ
+
+	setvard DMG_HIGH PARAM2
+	setvard TIME_LIVE PARAM3 //Seconds to live
+	setvard LOOP_DELAY 0
+
+   callevent TIME_LIVE volcano_death  	//Die after a delay
+   clientevent persist all $currentscript $get(ent_me,origin) TIME_LIVE
+   setvard VOLCANO_ID game.script.last_sent_id
+   //emitsound ent_me $get(ent_me,origin) 512 TIME_LIVE danger 512
+
+   //This seems to be giving skill points - but to no paticular skill (keep leveling up null)
+   //debugprint ParAtCreate PARAM1
+
+   add FX_SPAMMERS 2	//this counts as 2, but has priority over other spammers
+
+   //dbg Spammers FX_SPAMMERS Max MAX_FX_SPAMMERS
+   
+   storeentity ent_expowner PARAM1	//Give any gained exp to the player
+}
+
+// Start shooting
+{
+   eventname volcano_start
+   setvard ERUPTING 1
+}
+
+{
+   [client] repeatdelay 6
+
+	playsound CHAN_BODY 7 SOUND_LOOP
+}
+
+// Random shoot rock
+{
+   repeatdelay $randf(0.0,0.5)
+   
+   if ERUPTING
+   callevent volcano_shoot
+}
+{
+   repeatdelay $randf(0.0,0.5)
+   
+   if ERUPTING
+   callevent volcano_shoot
+}
+
+// Shoot rock
+{
+   eventname volcano_shoot
+
+   setvar xangle $rand(50,90)
+   setvar yangle $rand(-180,180)
+   setangle view (xangle,yangle,0)
+
+   local ATTACK_DAMAGE $randf(DMG_LOW,DMG_HIGH)
+   //dodamage $relpos(0,0,0) 128 ATTACK_DAMAGE 100% 0
+   tossprojectile view 500 ATTACK_DAMAGE 0 proj_volcano $vec(0,0,ROCK_START_HEIGHT)
+   clientevent update all_in_sight VOLCANO_ID volcono_shoot_rock $get(ent_lastprojectile,velocity) $get(ent_lastprojectile,gravity)
+}
+
+// Fade out
+{
+   eventname volcano_death
+
+   subtract FX_SPAMMERS 2
+
+   //dbg Spammers FX_SPAMMERS Max MAX_FX_SPAMMERS
+
+   setvard ERUPTING 0
+
+   playanim hold down
+   callevent 3 volcano_fadeout
+}
+
+{
+   eventname volcano_fadeout
+   playsound CHAN_BODY game.sound.silentvol SOUND_LOOP
+   deleteent ent_me fade
+}
+
+//Client-side
+//===========
+
+{  [client]
+  	const MODEL_WORLD      	weapons/projectiles.mdl
+  	const SPRITE_BURN 	fire1_fixed.spr
+	const LIGHT_RADIUS	64
+	const LIGHT_COLOR	(255,0,0)
+	const LIGHT_DURATION	0.8
+}
+
+{  [client] client_activate
+
+	setvard local.cl.origin PARAM1
+	vectoradd local.cl.origin z ROCK_START_HEIGHT
+	local DIE_TIME PARAM2
+	incvar DIE_TIME 10	//Die 10 seconds late, so all rocks have chance to fall
+	callevent DIE_TIME volcano_die
+}
+{  [client] volcano_die
+
+	playsound CHAN_BODY game.sound.silentvol SOUND_LOOP
+   	removescript
+}
+
+{  [client] volcono_shoot_rock
+
+	setvard local.cl.velocity PARAM1
+	setvard local.cl.gravity PARAM2
+	cleffect tempent model MODEL_WORLD local.cl.origin volcano_rock_create volcano_rock_update volcano_rock_collide
+	calleventloop 4 makefire_loop local.cl.origin
+}
+
+{  [client] volcano_rock_create
+
+	cleffect tempent set_current_prop death_delay 	10
+	cleffect tempent set_current_prop velocity 	local.cl.velocity
+	cleffect tempent set_current_prop bouncefactor 	0
+	cleffect tempent set_current_prop gravity 	local.cl.gravity
+	cleffect tempent set_current_prop collide 	all
+	cleffect tempent set_current_prop renderfx 	glow
+	cleffect tempent set_current_prop renderamt 	100
+	cleffect tempent set_current_prop rendercolor 	(255,0,0)
+        cleffect light new game.tempent.origin LIGHT_RADIUS LIGHT_COLOR LIGHT_DURATION
+	cleffect tempent set_current_prop iuser1 	game.script.last_light_id
+}
+{  [client] volcano_rock_update
+
+	cleffect light game.tempent.iuser1 game.tempent.origin LIGHT_RADIUS LIGHT_COLOR LIGHT_DURATION
+}
+{  [client] volcano_rock_collide
+
+	cleffect tempent set_current_prop sprite 	SPRITE_BURN
+	cleffect tempent set_current_prop rendermode 	add
+	cleffect tempent set_current_prop renderamt 	255
+	cleffect tempent set_current_prop death_delay 	1
+	cleffect tempent set_current_prop scale 	0.5
+	cleffect tempent set_current_prop collide 	all
+	cleffect tempent set_current_prop framerate	30
+	cleffect tempent set_current_prop frames	23
+}
+
+{  [client] makefire_loop
+
+	cleffect tempent sprite SPRITE_BURN PARAM1 volcano_fire_create
+}
+{  [client] volcano_fire_create
+
+	cleffect tempent set_current_prop death_delay 	2
+	cleffect tempent set_current_prop velocity 	$vec($randf(-200,200),$randf(-200,200),$randf(-200,200))
+	cleffect tempent set_current_prop bouncefactor 	5
+	cleffect tempent set_current_prop scale 	0.5
+	cleffect tempent set_current_prop gravity 	$randf(0.6,1.0)
+	cleffect tempent set_current_prop collide 	all;die
+	cleffect tempent set_current_prop framerate	30
+	cleffect tempent set_current_prop frames	23
+}

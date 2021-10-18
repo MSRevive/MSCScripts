@@ -1,0 +1,418 @@
+//Revenge of the Stuckabat
+#scope server
+{ [shared]
+
+	setvard ANIM_ATTACK Attack_claw //frame_attack_claw
+
+	const ANIM_CEILING_LAND Land_ceiling
+	const ANIM_CEILING_DETATCH ceiling_detatch
+
+	const ANIM_CEILING_IDLE1 Subtle_fidget
+	const ANIM_CEILING_IDLE2 Preen_fidget
+	const ANIM_CEILING_IDLE3 Swing_fidget
+
+	const ANIM_FLY Flying_cycler
+	const ANIM_HOVER Hover
+	const ANIM_BOOST Dive_cycler
+
+	setvard ANIM_RUN Flying_cycler
+	setvar ANIM_WALK Flying_cycler
+	setvar ANIM_IDLE Hover_slow
+
+	const FREQ_SPIT_CYCLE 30.0
+
+	setvard ANIM_DEATH Death_fall_simple
+
+	const ANIM_DEATH_FLY_MODE Death_fall_simple
+	const ANIM_DEATH_GROUND_MODE Die_on_ground
+
+	const ANIM_FLINCH1 Flinch_big
+	const ANIM_FLINCH2 Flinch_small
+
+	const AS_CUSTOM_UNSTUCK 1
+}
+
+{
+	const DOT_EFFECT effects/greater_poison
+	const SPIT_PROJECTILE proj_poison_spit2
+
+	setvard NPC_GIVE_EXP 600
+
+	setvard ATTACK_RANGE 72
+	setvard ATTACK_HITRANGE 72
+
+	const DMG_CLAW 200
+	const DOT_DMG 20
+	const FREQ_HORROR_BOOST $randf(3.0,6.0)
+	const DMG_SPIT 50
+
+	const FREQ_SWITCH_GROUND_MODE 60.0
+
+	const SOUND_FLAP1 monsters/bat/flap_big1.wav
+	const SOUND_FLAP2 monsters/bat/flap_big2.wav
+	const SOUND_HOVER monsters/bat/flap_big.wav
+	const SOUND_ATTACK1 monsters/demonwing/demonwing_atk1.wav
+	const SOUND_ATTACK2 monsters/demonwing/demonwing_atk2.wav
+	const SOUND_ATTACK3 monsters/demonwing/demonwing_atk3.wav
+	const SOUND_ALERT1 monsters/demonwing/demonwing_bat1.wav
+	const SOUND_ALERT2 monsters/demonwing/demonwing_bat2.wav
+	const SOUND_ALERT1 monsters/demonwing/demonwing_bat1.wav
+	const SOUND_STRUCK1 weapons/cbar_hitbod1.wav
+	const SOUND_STRUCK2 weapons/cbar_hitbod2.wav
+	const SOUND_STRUCK3 weapons/cbar_hitbod3.wav
+	const SOUND_PAIN1 monsters/demonwing/demonwing_hit1.wav
+	const SOUND_PAIN2 monsters/demonwing/demonwing_hit2.wav
+	const SOUND_DEATH monsters/demonwing/demonwing_dead.wav
+	const SOUND_SPIT bullchicken/bc_attack2.wav
+	precache SOUND_DEATH 
+
+	const SOUND_CIELING_FIDGET monsters/demonwing/demonwing_slct.wav
+
+	const MONSTER_NAME "a|Demonwing"
+	const MONSTER_SKIN_IDX 1
+	const MONSTER_HP 3000
+}
+
+#include monsters/base_monster_new
+#include monsters/base_flyer_grav
+#include monsters/base_propelled
+
+{ [shared] npc_spawn
+	name MONSTER_NAME
+	setmodel monsters/demonwing.mdl
+	setprop ent_me skin MONSTER_SKIN_IDX
+	hp MONSTER_HP
+	width 32
+	height 32
+	setbbox npcsize
+	roam 1
+	race demon
+	setidleanim ANIM_IDLE
+	setmoveanim ANIM_WALK
+	hearingsensitivity 4
+
+	if game.serverside
+
+	setvard FLAP_STEP 0
+
+	callevent 2.0 final_props
+
+	callevent 0.01 check_ceiling
+}
+
+{ check_ceiling
+	if ( NO_CIELING_IDLE ) hearingsensitivity 8
+
+	if !NO_CIELING_IDLE
+	callevent npcatk_suspend_ai 2.0
+	setvard CIELING_MODE 1
+	callevent 0.1 stick_ceiling
+}
+
+{ final_props
+	setvard MIN_FLINCH_DAMAGE $get(ent_me,maxhp)
+	multiply MIN_FLINCH_DAMAGE 0.05
+}
+
+{ stick_ceiling
+	if !NO_CIELING_IDLE
+	if !IS_SUMMONED
+	roam 0
+	setvard NO_STUCK_CHECKS 1
+	setvard NPC_PROPELL_SUSPEND 1
+	setvard CANT_TURN 1
+	setvard NPC_NO_MOVE 1
+	gravity 0
+	hearingsensitivity 4
+	setvelocity ent_me $relvel(0,0,800)
+	setvard BFLY_SUSPEND_FLY 1
+	setvard CIELING_MODE 1
+	setvard GROUND_MODE 0
+	playanim critical ANIM_CEILING_LAND
+	setvard ANIM_IDLE ANIM_CEILING_IDLE1
+	setvard ANIM_WALK ANIM_CEILING_IDLE1
+	setvard ANIM_RUN ANIM_CEILING_IDLE1
+	setmoveanim ANIM_IDLE
+	setidleanim ANIM_IDLE
+	setvard NEXT_CIELING_FIDGET game.time
+	add NEXT_CIELING_FIDGET $randf(3.0,6.0)
+}
+
+{ npcatk_hunt
+
+	if ( IS_SUMMONED )
+	{
+		if !$get(MY_MASTER,isalive)
+		callevent npc_suicide
+	}
+
+	if ( NPCATK_TARGET equals unset )
+	{
+		if ( CIELING_MODE )
+		{
+			gravity 0
+			setvelocity ent_me $vec(0,0,800)
+			if game.time > NEXT_CIELING_FIDGET
+			setvard NEXT_CIELING_FIDGET game.time
+			add NEXT_CIELING_FIDGET $randf(3.0,6.0)
+			local RND_IDLE $rand(1,2)
+			if ( RND_IDLE == 1 )
+			{
+				playanim once ANIM_CEILING_IDLE2
+				playsound 0 10 SOUND_CIELING_FIDGET
+			}
+			if ( RND_IDLE == 2 )
+			{
+				playanim once ANIM_CEILING_IDLE3
+			}
+		}
+
+		if ( !CIELING_MODE )
+		{
+			if !NO_CIELING_IDLE
+			if game.time > GO_TO_SLEEP
+			callevent stick_ceiling
+		}
+	}
+
+	if NPCATK_TARGET isnot unset
+
+	setvard GO_TO_SLEEP game.time
+	add GO_TO_SLEEP 10.0
+
+	if !I_R_FROZEN
+
+	if ( CIELING_MODE )
+	{
+		callevent detatch_from_cieling
+	}
+
+	if ( game.time > NEXT_SPIT_CYCLE )
+	{
+		if $cansee(NPCATK_TARGET)
+		setvard NEXT_SPIT_CYCLE game.time
+		add NEXT_SPIT_CYCLE FREQ_SPIT_CYCLE
+		callevent do_spit_cycle
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	if $get(NPCATK_TARGET,range) > ATTACK_RANGE
+
+	if !SPIT_MODE
+
+	if game.time > NEXT_HORROR_BOOST
+	setvard NEXT_HORROR_BOOST game.time
+	add NEXT_HORROR_BOOST FREQ_HORROR_BOOST
+	playrandomsound 0 10 SOUND_ALERT1 SOUND_ALERT2
+	svplaysound 2 10 SOUND_FLAP
+	playanim once ANIM_BOOST
+	addvelocity ent_me $relvel(0,800,0)
+}
+
+{ detatch_from_cieling
+	setvard NEXT_HORROR_BOOST game.time
+	add NEXT_HORROR_BOOST 6.0
+
+	setvard NEXT_SPIT_CYCLE game.time
+	add NEXT_SPIT_CYCLE FREQ_SPIT_CYCLE
+
+	hearingsensitivity 8
+
+	setvard CANT_TURN 0
+	setvard NPC_NO_MOVE 0
+	setmovedest NPCATK_TARGET 9999
+	gravity 0
+
+	callevent 3.0 frame_detatch_done //just in case the anim doesn't hit
+
+	callevent npcatk_suspend_ai 1.0
+	callevent fly_mode
+	playanim critical ANIM_CEILING_DETATCH
+	playrandomsound 0 10 SOUND_ALERT1 SOUND_ALERT2
+	setvard CIELING_MODE 0
+
+	setvard NEXT_GROUND_MODE game.time
+	add NEXT_GROUND_MODE FREQ_SWITCH_GROUND_MODE
+}
+
+{ frame_detatch_done
+	setvard BFLY_SUSPEND_FLY 0
+	setvard NO_STUCK_CHECKS 0
+	setvard NPC_PROPELL_SUSPEND 0
+	roam 1
+}
+
+{ fly_mode
+	gravity 0
+	setvard ANIM_IDLE ANIM_HOVER
+	setvard ANIM_WALK ANIM_FLY
+	setvard ANIM_RUN ANIM_FLY
+	setmoveanim ANIM_FLY
+	setidleanim ANIM_HOVER
+}
+
+{ set_no_ceiling_idle
+	setvard NO_CIELING_IDLE 1
+}
+
+{ game_struck
+	//manual flinch
+	if ( game.time > NEXT_FLINCH )
+	{
+		if PARAM1 > MIN_FLINCH_DAMAGE
+		setvard NEXT_FLINCH game.time
+		add NEXT_FLINCH $randf(10.0,20.0)
+		callevent npcatk_suspend_ai 1.0
+		setvard AS_ATTACKING game.time
+		add AS_ATTACKING 5.0
+		if ( $rand(1,2) == 1 )
+		{
+			playanim critical ANIM_FLINCH1
+		}
+		else
+		{
+			playanim critical ANIM_FLINCH2
+		}
+		addvelocity ent_me $relvel(0,-300,0)
+		local EXIT_SUB 1
+		playrandomsound 0 10 SOUND_PAIN1 SOUND_PAIN2
+	}
+	if !EXIT_SUB
+	playrandomsound 0 5 SOUND_STRUCK1 SOUND_STRUCK2 SOUND_STRUCK3 SOUND_STRUCK1 SOUND_STRUCK2 SOUND_STRUCK3 SOUND_STRUCK1 SOUND_STRUCK2 SOUND_STRUCK3 SOUND_PAIN1 SOUND_PAIN2
+}
+
+{ frame_flap
+	add FLAP_STEP 1
+	if ( FLAP_STEP == 1 )
+	{
+		svplaysound 2 5 SOUND_FLAP1
+	}
+	else
+	{
+		svplaysound 2 5 SOUND_FLAP2
+		setvard FLAP_STEP 0
+	}
+	//addvelocity ent_me $relvel(0,110,0)
+}
+
+{ frame_attack_claw
+	if !SPIT_MODE
+	playrandomsound 0 10 SOUND_ATTACK1 SOUND_ATTACK2 SOUND_ATTACK3
+	setvard CLAW_ATTACK 1
+	dodamage NPCATK_TARGET ATTACK_HITRANGE DMG_CLAW 90% slash
+}
+
+{ game_dodamage
+	if ( CLAW_ATTACK )
+	{
+		if $rand(1,4) == 1
+		applyeffect PARAM2 DOT_EFFECT 5.0 $get(ent_me,id) DOT_DMG
+	}
+	setvard CLAW_ATTACK 0
+}
+
+{ npc_stuck
+	if ( !SUSPEND_AI ) callevent as_npcatk_suspend_ai AS_WIGGLE_DURATION
+	setvard NPC_FORCED_MOVEDEST 1
+	local MOVE_DEST $get(ent_me,origin)
+	add AS_UNSTUCK_ANG 36
+	if ( AS_UNSTUCK_ANG > 359 ) subtract AS_UNSTUCK_ANG 359
+	//dbg npcatk_anti_stuck stuck_count STUCK_COUNT ang AS_UNSTUCK_ANG
+	vectoradd MOVE_DEST $relpos($vec(0,AS_UNSTUCK_ANG,0),$vec(0,1000,0))
+	setmovedest MOVE_DEST AS_MOVEPROX //I'd love to have them trace along a wall, but I can't figure how to pull that.
+	playanim once ANIM_RUN
+
+	local RND_UD $randf(-200,200)
+	addvelocity ent_me $relvel(0,0,RND_UD)
+}
+
+{ do_spit_cycle
+	callevent npcatk_suspend_ai
+	setvard NPC_PROPELL_SUSPEND 1
+	setvard ANIM_WALK ANIM_HOVER
+	setvard ANIM_RUN ANIM_HOVER
+	setvard ANIM_IDLE ANIM_HOVER
+	setmoveanim ANIM_HOVER
+	setidleanim ANIM_HOVER
+	setvard SPIT_MODE 1
+	callevent do_spit_cycle_loop
+	callevent 5.0 end_spit_cycle
+}
+
+{ do_spit_cycle_loop
+	if SPIT_MODE
+	callevent 1.0 do_spit_cycle_loop
+	setvard TARGET_LIST $get_tsphere(enemy,2048)
+	if TARGET_LIST isnot none
+	token.scramble TARGET_LIST
+	setvard SPIT_TARGET 0
+	calleventloop $get_token_amt(TARGET_LIST) pick_target
+	if $get(SPIT_TARGET,isalive)
+	setmovedest SPIT_TARGET 9999
+	svplaysound 2 10 SOUND_SPIT
+	playanim once ANIM_ATTACK
+	tossprojectile SPIT_TARGET 300 DMG_SPIT 1 SPIT_PROJECTILE (0,0,8)
+}
+
+{ pick_target
+	if !$get(SPIT_TARGET,isalive)
+	local CUR_TARG $get_token(TARGET_LIST,game.script.iteration)
+	local TRACE_START $get(ent_me,origin)
+	local TRACE_END $get(CUR_TARG,origin)
+	local TRACE_LINE $get_traceline(TRACE_START,TRACE_END,worldonly)
+	if TRACE_LINE equals TRACE_END
+	setvard SPIT_TARGET CUR_TARG
+}
+
+{ end_spit_cycle
+	callevent npcatk_resume_ai
+	setvard NPC_PROPELL_SUSPEND 0
+	setvard SPIT_MODE 0
+	setvard ANIM_IDLE ANIM_HOVER
+	setvard ANIM_WALK ANIM_FLY
+	setvard ANIM_RUN ANIM_FLY
+	setmoveanim ANIM_FLY
+	setidleanim ANIM_HOVER
+	setvard NEXT_SPIT_CYCLE game.time
+	add NEXT_SPIT_CYCLE FREQ_SPIT_CYCLE
+}
+
+{ game_dynamically_created
+	//imediately pick target
+	//remove if mum dies
+	//remove in 60 secs
+	setvard NO_CIELING_IDLE 1
+	setvard MY_MASTER PARAM1
+	setvard IS_SUMMONED 1
+	setvard NPC_USES_HANDLE_EVENTS 1
+	setvard NPC_SPRITE_IN 2
+	callevent 60.0 baby_suicide
+	callevent 0.1 instant_target
+}
+
+{ instant_target
+	local GET_TARGET $get_tsphere(enemy,1024)
+	if GET_TARGET isnot none
+	callevent cycle_up instant_target
+	local GET_TARGET $sort_entlist(GET_TARGET,range)
+	callevent npcatk_settarget $get_token(GET_TARGET,0)
+}
+
+{ baby_suicide
+	callevent npc_suicide
+}
+
+{ npc_death
+	if IS_SUMMONED
+	callevent npcatk_music_remove
+	callexternal MY_MASTER babbie_died
+	deleteent ent_me fade
+}
+
+{ fake_precache
+
+	svplaysound 0 0 monsters/bat/flap_big1.wav
+	svplaysound 0 0 monsters/bat/flap_big2.wav
+	svplaysound 0 0 monsters/bat/flap_big.wav
+}

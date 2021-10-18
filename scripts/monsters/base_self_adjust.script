@@ -1,0 +1,386 @@
+//moving self-adjustment system here so can easily be included in non-ai mobs
+//add future adaptive system here
+//also handles add params and map defined adjustments (but not externals)
+
+{
+	//default tiers for self adjusting monsters
+	const NPC_ADJ_TIERS "0;500;1000;2000;3000;5000"
+	const NPC_ADJ_DMG_MUTLI_TOKENS "1.0;2.0;3.0;3.5;4.0;5.0;"
+	const NPC_ADJ_HP_MUTLI_TOKENS "1.0;2.0;3.0;3.5;4.0;5.0;"
+}
+
+{ game_postspawn //PARAM1 = (name|default), PARAM2 = DmgMulti, PARAM3 = HPMulti, PARAM4 = pass_params
+
+	local L_IN_DMGMULTI PARAM2
+	local L_IN_HPMULTI PARAM3
+
+	dbg game_postspawn got name PARAM1 dmg PARAM2 hp PARAM3 ( PARAMS: PARAM4 )
+	setvard NEW_NAME PARAM1
+	if ( NEW_NAME isnot 'default' )
+	{
+		name NEW_NAME
+		setvard NPC_CUSTOM_NAME 1
+		setvard NPC_CUSTOM_NAME_STRING NEW_NAME
+	}
+
+	if ( NPC_DMG_MULTI equals 'NPC_DMG_MULTI' ) setvard NPC_DMG_MULTI 1
+	if ( L_IN_DMGMULTI > 1 )
+	{
+		setvard NPC_DMG_MULTI L_IN_DMGMULTI
+		if ( NPC_DMG_MULTI_ADD > 0 ) add NPC_DMG_MULTI NPC_DMG_MULTI_ADD
+		dmgmulti PARAM2
+		local CREAT_ADJ 1
+	}
+
+	setvard NPC_HP_MULTI 1
+	if ( L_IN_HPMULTI > 1 )
+	{
+		setvard NPC_HP_MULTI L_IN_HPMULTI
+		if ( NPC_HP_MULTI_ADD > 0 ) add NPC_HP_MULTI NPC_HP_MULTI_ADD
+		local CREAT_ADJ 1
+	}
+
+	if ( CREAT_ADJ ) dbg Adjusted: $get(ent_me,name) dmgmulti NPC_DMG_MULTI hpmulti NPC_HP_MULTI
+
+	setvard NPC_DO_EVENTS PARAM4
+	if ( PARAM4 isnot 'none' ) callevent 0.01 npcatk_setup_addparams
+}
+
+{ npcatk_setup_addparams
+	calleventloop $get_token_amt(NPC_DO_EVENTS) npcatk_do_events
+	if ( NPC_USES_HANDLE_EVENTS ) callevent 0.1 npcatk_handle_events
+}
+
+{ npcatk_do_events //run param events
+	local N_EVENT game.script.iteration
+	local L_EVENT_NAME $get_token(NPC_DO_EVENTS,N_EVENT)
+	local L_EVENT_NAME L_EVENT_NAME
+	add N_EVENT 1
+	if ( N_EVENT <= $get_token_amt(NPC_DO_EVENTS) )	
+	{
+		local L_NEXT_EVENT $get_token(NPC_DO_EVENTS,N_EVENT)
+	}
+	dbg doing token event L_EVENT_NAME
+	callevent L_EVENT_NAME L_NEXT_EVENT
+}
+
+{ npc_post_spawn
+	if !I_R_PET
+
+	if ( NPC_SELF_ADJUST ) callevent npcatk_self_adjust
+
+	callevent npcatk_set_skill //FEB2010_08 moved from base_monster_shared
+
+	dbg npc_post_spawn Final Adjustments - ( mdmg NPC_DMG_MULTI mhp NPC_HP_MULTI xp NPC_GIVE_EXP )
+
+	setvard NPC_MAXHP game.monster.maxhp
+	if ( NPC_HP_MULTI > 0 )
+	{
+		multiply NPC_MAXHP NPC_HP_MULTI
+		hp NPC_MAXHP
+	}
+
+	if ( BASE_FRAMERATE equals 'BASE_FRAMERATE' ) setvard BASE_FRAMERATE 1.0
+	if ( BASE_MOVESPEED equals 'BASE_MOVESPEED' ) setvard BASE_MOVESPEED 1.0
+
+	if ( NPC_CUSTOM_NAME )
+	{
+		if ( $get(ent_me,name) contains NPC_CUSTOM_NAME_STRING ) local GOT_NAME 1
+		if ( !GOT_NAME )
+		{
+			name NPC_CUSTOM_NAME_STRING
+			dbg npc_post_spawn NPC_CUSTOM_NAME_STRING
+		}
+	}
+
+	if ( NPC_ADJ_LEVEL > 0 )
+	{
+		if ( NPC_ADJ_LEVEL == 1 ) local ADD_STR " II"
+		if ( NPC_ADJ_LEVEL == 2 ) local ADD_STR " III"
+		if ( NPC_ADJ_LEVEL == 3 ) local ADD_STR " IV"
+		if ( NPC_ADJ_LEVEL == 4 ) local ADD_STR " V"
+		if ( NPC_ADJ_LEVEL == 5 ) local ADD_STR " VI"
+		local L_NEW_NAME $get(ent_me,name.prefix)
+		stradd L_NEW_NAME "|"
+		stradd L_NEW_NAME $get(ent_me,name)
+		stradd L_NEW_NAME ADD_STR
+		name L_NEW_NAME
+	}
+}
+
+{ npcatk_self_adjust
+	local L_TOTAL_HP game.players.totalhp
+
+	setvard NPC_ADJ_LEVEL 0
+	if ( L_TOTAL_HP > $get_token(NPC_ADJ_TIERS,1) ) setvard NPC_ADJ_LEVEL 1
+	if ( L_TOTAL_HP > $get_token(NPC_ADJ_TIERS,2) ) setvard NPC_ADJ_LEVEL 2
+	if ( L_TOTAL_HP > $get_token(NPC_ADJ_TIERS,3) ) setvard NPC_ADJ_LEVEL 3
+	if ( L_TOTAL_HP > $get_token(NPC_ADJ_TIERS,4) ) setvard NPC_ADJ_LEVEL 4
+	if ( L_TOTAL_HP > $get_token(NPC_ADJ_TIERS,5) ) setvard NPC_ADJ_LEVEL 5
+
+	if ( NPC_ADJ_DOWN > 0 )
+	{
+		subtract NPC_ADJ_LEVEL NPC_ADJ_DOWN
+		if ( NPC_ADJ_LEVEL < 0 ) setvard NPC_ADJ_LEVEL 0
+	}
+
+	local ADD_NPC_HP_MULTI $get_token(NPC_ADJ_HP_MUTLI_TOKENS,NPC_ADJ_LEVEL)
+	if ( NPC_HP_MULTI == 1 ) subtract ADD_NPC_HP_MULTI 1
+	add NPC_HP_MULTI ADD_NPC_HP_MULTI
+	//setvard NPC_HP_MULTI_ADD $get_token(NPC_ADJ_HP_MUTLI_TOKENS,NPC_ADJ_LEVEL)
+
+	local ADD_NPC_DMG_MULTI $get_token(NPC_ADJ_DMG_MUTLI_TOKENS,NPC_ADJ_LEVEL)
+	if ( NPC_DMG_MULTI == 1 ) subtract ADD_NPC_DMG_MULTI 1
+	add NPC_DMG_MULTI ADD_NPC_DMG_MULTI
+	//setvard NPC_DMG_MULTI_ADD $get_token(NPC_ADJ_DMG_MUTLI_TOKENS,NPC_ADJ_LEVEL)
+
+	dmgmulti NPC_DMG_MULTI //this will be readjusted (added to) if dmgmulti also set in entity
+
+	local ORG_EXP NPC_GIVE_EXP
+	if ( NPC_ADJ_EXPS isnot 'NPC_ADJ_EXPS' ) setvard NPC_GIVE_EXP $get_token(NPC_ADJ_EXPS,NPC_ADJ_LEVEL)
+	if ( NPC_GIVE_EXP == 0 )
+	{
+		if ( ORG_EXP > 0 ) setvard NPC_GIVE_EXP ORG_EXP
+	}
+
+	dbg npcatk_self_adjust NPC_ADJ_LEVEL
+}
+
+{ game_death
+
+	if ( NPC_SELF_ADJUST )
+	{
+		if !NPC_TRACKED_DEATH
+		setvard NPC_TRACKED_DEATH 1
+
+		if !NPC_SELF_ADJUST_NOAVG
+		add G_SADJ_DEATHS 1
+		local F_NPC_ADJ_LEVEL NPC_ADJ_LEVEL
+		add F_NPC_ADJ_LEVEL 1
+		if ( NPC_ADJ_DOWN > 0 )
+		{
+			add F_NPC_ADJ_LEVEL 1
+			add F_NPC_ADJ_LEVEL NPC_ADJ_DOWN
+		}
+
+		add G_SADJ_LEVELS F_NPC_ADJ_LEVEL
+
+		dbg SelfAdj_Count: kills G_SADJ_DEATHS levels G_SADJ_LEVELS
+		if ( G_DEVELOPER_MODE )
+		{
+			local TOTAL_KILLS G_SADJ_DEATHS
+			local TOTAL_LEVELS G_SADJ_LEVELS
+			local AVG_LEVELS TOTAL_LEVELS
+			divide AVG_LEVELS TOTAL_KILLS
+			local OUT_TITLE "+"
+			stradd OUT_TITLE F_NPC_ADJ_LEVEL
+			local OUT_MSG "Average="
+			stradd OUT_MSG AVG_LEVELS
+			infomsg all OUT_TITLE OUT_MSG
+		}
+	}
+
+	//just track average player HP on the server with each kill
+	if ( G_TRACK_HP > 0 )
+	{
+		if !NPC_SELF_ADJUST_NOAVG
+		if !I_R_PET
+		add G_TRACK_HP game.players.totalhp
+		add G_TRACK_KILLS 1
+	}
+
+	if G_TRACK_DEATHS > 0
+	if !AM_SUMMONED
+	if !I_R_PET
+	if ( $get(ent_me,scriptname) contains summon ) local EXIT_SUB 1
+	if ( $get(ent_me,scriptname) contains companion ) local EXIT_SUB 1
+	if !EXIT_SUB
+	add G_TRACK_DEATHS 1
+	if ( G_TRACK_DEATHS == G_TRACK_DEATHS_TRIGGER ) callexternal GAME_MASTER G_TRACK_DEATHS_EVENT
+}
+
+{ npcatk_set_skill
+	if game.serverside
+
+	//Adjust skill for multipliers and special conditions
+
+	setvard NPC_EXP_ORIGINAL NPC_GIVE_EXP
+
+	if ( NPC_BASE_EXP isnot 'NPC_BASE_EXP' ) setvard NPC_GIVE_EXP NPC_BASE_EXP //this is to deal with setvar/d conflicts
+	//if ( L_MAP_NAME contains old_helena ) multiply NPC_GIVE_EXP 0.5 //orcs only - handled in orc_base
+	if ( NPC_EXP_MULTI isnot 'NPC_EXP_MULTI' ) multiply NPC_GIVE_EXP NPC_EXP_MULTI
+
+	setvard NPC_EXP_ADJ NPC_GIVE_EXP
+
+	//FN XP multi applies even on NO_EXP_MULTI mobs - eg. rats
+	if ( game.central )
+	{
+		multiply NPC_GIVE_EXP 2.0 //+200% XP on FN
+		//+50% XP/player beyond the first
+		local L_N_PLAYER_ADJ game.playersnb.noafk
+		if L_N_PLAYER_ADJ > 1
+		subtract L_N_PLAYER_ADJ 1
+		multiply L_N_PLAYER_ADJ 0.5
+		local L_ADD_XP NPC_GIVE_EXP
+		multiply L_ADD_XP L_N_PLAYER_ADJ
+		add NPC_GIVE_EXP L_ADD_XP
+	}
+
+	if ( NO_EXP_MULTI )
+	{
+		if ( NPC_EXP_REDUCT isnot 'NPC_EXP_REDUCT' ) multiply NPC_GIVE_EXP NPC_EXP_REDUCT
+		skilllevel NPC_GIVE_EXP
+	}
+
+	if !NO_EXP_MULTI
+	//if ( game.central ) local EXIT_SUB 1 //FEB2009 - prevent hp/dmgmulti XP bonus without map authentication
+	//if ( G_DEVELOPER_MODE ) local EXIT_SUB 0 //MAR2009 - abort exit if developer mode (easier to test XP multi)
+	//if !EXIT_SUB
+	local TOTAL_MULTI 0
+	if ( NPC_DMG_MULTI > 1 )
+	{
+		add TOTAL_MULTI NPC_DMG_MULTI //add extra xp for added hp
+		subtract TOTAL_MULTI 1
+	}
+	if ( NPC_HP_MULTI > 1 )
+	{
+		add TOTAL_MULTI NPC_HP_MULTI //add extra xp for added dmg
+		subtract TOTAL_MULTI 1
+	}
+	if ( TOTAL_MULTI > 0 ) multiply TOTAL_MULTI 0.5 //divide by two
+	add TOTAL_MULTI G_EXP_MULTI //add global multiplier
+	//dbg npcatk_set_skill expmulti NPC_EXP_MULTI gbl G_EXP_MULTI tot TOTAL_MULTI
+
+	//APR2009 make sure dmgmulti/hpmulti are close to one another (anti-cheat)
+	//NPC_DMG_MULTI
+	//NPC_HP_MULTI
+	if ( NPC_DMG_MULTI >= NPC_HP_MULTI )
+	{
+		local ADJ_RATIO NPC_HP_MULTI
+		divide ADJ_RATIO NPC_DMG_MULTI
+	}
+	else
+	{
+		local ADJ_RATIO NPC_DMG_MULTI
+		divide ADJ_RATIO NPC_HP_MULTI
+	}
+	//dbg npcatk_set_skill ADJ_RATIO dmgmulti NPC_DMG_MULTI hpmulti NPC_HP_MULTI
+	if ( ADJ_RATIO < 0.25 ) local OVER_ADJUST 1
+
+	if ( OVER_ADJUST )
+	{
+		local MSG_TITLE "MAP ERROR: "
+		stradd MSG_TITLE $get(ent_me,name)
+		infomsg all MSG_TITLE "HP/DMG multipliers cannot be more than 4x one another, or XP will not be adjusted"
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	//JAN2010_28 - Adjust XP for special features
+	local L_PENALTIES 1.0
+	if ( NPC_ADJ_FLAGS isnot 'NPC_ADJ_FLAGS' )
+	{
+		if ( NPC_ADJ_FLAGS contains telehunt )
+		{
+			if ( NPC_TELEHUNT_FREQ > 30 ) add TOTAL_MULTI 0.5
+			else if ( NPC_TELEHUNT_FREQ >= 20 ) add TOTAL_MULTI 1.0
+			else if ( EXT_DEMON_BLOOD_RATIO >= 10 ) add TOTAL_MULTI 1.5
+			else if ( NPC_TELEHUNT_FREQ >= 6 ) add TOTAL_MULTI 1.75
+			else if ( NPC_TELEHUNT_FREQ >= 0 ) add TOTAL_MULTI 2.0
+		}
+		if ( NPC_ADJ_FLAGS contains speed_x2 ) add TOTAL_MULTI 1
+		if ( NPC_ADJ_FLAGS contains speed_x3 ) add TOTAL_MULTI 1.5
+		if ( NPC_ADJ_FLAGS contains speed_x4 ) add TOTAL_MULTI 2
+		if ( NPC_ADJ_FLAGS contains demon_blood )
+		{
+			if ( EXT_DEMON_BLOOD_RATIO >= 5 ) add TOTAL_MULTI 2
+			else if ( EXT_DEMON_BLOOD_RATIO >= 4 ) add TOTAL_MULTI 1.5
+			else if ( EXT_DEMON_BLOOD_RATIO >= 3 ) add TOTAL_MULTI 1.0
+			else if ( EXT_DEMON_BLOOD_RATIO >= 2 ) add TOTAL_MULTI 0.5
+		}
+		if ( NPC_ADJ_FLAGS contains mspeed )
+		{
+			if ( NPC_MOVE_SPEED_ADJ > 1 )
+			{
+				if ( NPC_MOVE_SPEED_ADJ < 5 )
+				{
+					local L_TO_ADD 0.25
+					multiply TOTAL_MULTI NPC_MOVE_SPEED_ADJ
+				}
+			}
+			if ( NPC_MOVE_SPEED_ADJ < 1 )
+			{
+				if ( NPC_MOVE_SPEED_ADJ >= 0.75 ) multiply L_PENALTIES 0.75
+				else if ( NPC_MOVE_SPEED_ADJ >= 0.5 ) multiply L_PENALTIES 0.5
+				else if ( NPC_MOVE_SPEED_ADJ >= 0.25 ) multiply L_PENALTIES 0.25
+				else if ( NPC_MOVE_SPEED_ADJ < 0.25 ) multiply L_PENALTIES 0.1
+			}
+		}
+	}
+	if ( NPC_DOT_POISON )
+	{
+		local L_TOTAL_MULTI_TO_ADD 0.25
+		multiply L_TOTAL_MULTI_TO_ADD NPC_DOT_POISON_RATIO
+		add TOTAL_MULTI L_TOTAL_MULTI_TO_ADD
+	}
+	if ( NPC_DOT_FIRE )
+	{
+		local L_TOTAL_MULTI_TO_ADD 0.25
+		multiply L_TOTAL_MULTI_TO_ADD NPC_DOT_FIRE_RATIO
+		add TOTAL_MULTI L_TOTAL_MULTI_TO_ADD
+	}
+	if ( NPC_DOT_COLD )
+	{
+		local L_TOTAL_MULTI_TO_ADD 0.25
+		multiply L_TOTAL_MULTI_TO_ADD NPC_DOT_COLD_RATIO
+		add TOTAL_MULTI L_TOTAL_MULTI_TO_ADD
+	}
+	if ( NPC_DOT_LIGHTNING )
+	{
+		local L_TOTAL_MULTI_TO_ADD 0.25
+		multiply L_TOTAL_MULTI_TO_ADD NPC_DOT_LIGHTNING_RATIO
+		add TOTAL_MULTI L_TOTAL_MULTI_TO_ADD
+	}
+
+	if ( L_PENALTIES < 1 )
+	{
+		multiply TOTAL_MULTI L_PENALTIES
+	}
+
+	//if ( TOTAL_MULTI > 1 )
+	//{
+	dbg npcatk_set_skill warning, xp penalties: TOTAL_MULTI < 1
+	multiply NPC_GIVE_EXP TOTAL_MULTI
+	setvard NPC_TOTAL_MULTI TOTAL_MULTI
+	if ( DROP_GOLD_AMT isnot 'DROP_GOLD_AMT' ) multiply DROP_GOLD_AMT TOTAL_MULTI
+	//}
+
+	if ( NPC_IS_BOSS )
+	{
+		//increase XP per player for bosses (on FN)
+		if game.central
+		local N_PLAYERS game.playersnb.noafk
+		if N_PLAYERS > 1
+		if ( N_PLAYERS > 4 ) local N_PLAYERS 4
+		multiply NPC_GIVE_EXP N_PLAYERS
+		if ( DROP_GOLD_AMT isnot 'DROP_GOLD_AMT' ) multiply DROP_GOLD_AMT N_PLAYERS
+	}
+
+	if ( NPC_GIVE_EXP != 0 )
+	{
+		if ( NPC_CAP_EXP > 0 )
+		{
+			if ( NPC_GIVE_EXP > NPC_CAP_EXP ) setvard NPC_GIVE_EXP NPC_CAP_EXP
+		}
+		if ( NPC_EXP_REDUCT isnot 'NPC_EXP_REDUCT' ) multiply NPC_GIVE_EXP NPC_EXP_REDUCT
+		skilllevel NPC_GIVE_EXP
+	}
+
+	setvard NPC_EXP_FINAL NPC_GIVE_EXP
+}
+
+{ game_dynamically_created
+	if PARAM1 equals events
+	setvard NPC_DO_EVENTS PARAM2
+	callevent npcatk_setup_addparams		
+}

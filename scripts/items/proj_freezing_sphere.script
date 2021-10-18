@@ -1,0 +1,120 @@
+//Thothie FEB2009_13 - Freezing sphere, now a projectile! :D
+//-
+//define on user:
+//PASS_FREEZE_DMG (can be 0)
+//PASS_FREEZE_DUR
+{
+	const MODEL_HANDS      		weapons/projectiles.mdl
+	const MODEL_WORLD      		weapons/projectiles.mdl
+	const ARROW_BODY_OFS		1
+	const PROJ_ANIM_IDLE		idle_iceball
+
+	const SOUND_ZAP1 debris/beamstart14.wav
+	const SOUND_ZAP2 debris/beamstart14.wav
+	const SOUND_ZAP3 debris/zap1.wav
+	const SOUND_LOOP ambience/pulsemachine.wav
+
+	const ARROW_SOLIDIFY_ON_WALL 0
+
+	const HITWALL_VOL 2
+
+	const PROJ_MOTIONBLUR 0
+
+	const MODEL_BODY_OFS		1
+	const PROJ_DAMAGE			0
+	const PROJ_STICK_DURATION	0
+	const PROJ_SOLIDIFY_ON_WALL	0  //Does not turn solid when a wall is hit
+
+	const PROJ_DAMAGE_AOE_RANGE	0
+	const PROJ_DAMAGE_AOE_FALLOFF	1
+	const PROJ_DAMAGE_TYPE		cold
+
+	const PROJ_COLLIDEHITBOX 1
+	const PROJ_IGNORENPC 1	//flies through players/NPCs
+	const PROJ_ANIM_IDLE none
+
+	const SCAN_RANGE 96
+}
+
+#include items/proj_arrow_base
+
+{ arrow_spawn
+
+	name 	a|Freezing Sphere
+	desc 	A large ball of freezing magiks
+	weight 	0
+	size 	1
+	value	1
+	gravity	0.0001
+
+	setmodel weapons/projectiles.mdl
+	setmodelbody 0 1
+
+	callevent 10.0 remove_me
+
+	setvard GAME_PVP game.pvp
+}
+
+{ [override] game_fall //override base_arrow.  Just do nothing
+}
+
+{ [override] game_projectile_hitnpc
+}
+
+{ [override] [server] game_projectile_landed
+	callevent remove_me
+}
+
+{ [server] game_projectile_hitwall
+	callevent remove_me
+}
+
+{ game_tossprojectile
+
+	callevent 10.0 remove_me //max dist
+
+	if game.serverside
+	setvard FREEZE_DMG $get(ent_expowner,scriptvar,'PASS_FREEZE_DMG')
+	setvard FREEZE_DUR $get(ent_expowner,scriptvar,'PASS_FREEZE_DUR')
+	svplaysound 2 10 SOUND_LOOP
+	setvard IS_ACTIVE 1
+	callevent 0.01 scan_targets
+}
+
+{ [override] game_projectile_hitwall
+
+	playrandomsound 0 10 SOUND_ZAP1 SOUND_ZAP2 SOUND_ZAP3
+
+	callevent remove_me
+}
+
+{ [server] scan_targets
+
+	if IS_ACTIVE
+	callevent 0.2 scan_targets
+
+	setvard TARGET_LIST $get_tsphere(any,SCAN_RANGE)
+	if TARGET_LIST isnot 'none'
+	local N_TARGETS $get_token_amt(TARGET_LIST)
+	if $get_token_amt(MY_ORG) > 0
+	if N_TARGETS > 0
+	calleventloop N_TARGETS affect_targets
+}
+
+{ [server] affect_targets
+	local CUR_TARGET $get_token(TARGET_LIST,game.script.iteration)
+	if $get(CUR_TARGET,relationship,ent_expowner) equals enemy
+	if !$get(CUR_TARGET,scriptvar,'I_R_FROZEN')
+	applyeffect CUR_TARGET effects/freeze_solid FREEZE_DUR $get(ent_expowner,id) FREEZE_DMG
+}
+
+{ remove_me
+	if ( game.serverside )
+	{
+		if ( !$get(ent_expowner,isplayer) ) callexternal ent_expowner ext_ball_done //tell monster his ball popped
+		svplaysound 2 0 SOUND_LOOP
+		setvard IS_ACTIVE 0
+		deleteent ent_me
+	}
+	removescript
+}

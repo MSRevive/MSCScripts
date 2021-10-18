@@ -1,0 +1,193 @@
+//Poison Cloud by Thothie (from scratch, save smokes, from monsters/summon/summon_lightning_storm)
+//- This script removes all occurances of itself at end, therefor, "there can be only one"
+//- If you want an NPC to use this, copy to poison_cloud_noc - so player can't 'steal' his cloud
+
+{
+	const SMOKE_SPRITE poison_cloud.spr
+	const SPAWN_SOUND ambience/steamburst1.wav
+	const DAMAGE_TYPE poison
+	const EFFECT_SCRIPT effects/effect_poison
+	precache SMOKE_SPRITE
+}
+
+{ [shared]
+
+	setvard POISONING 1
+	const HEIGHT 40
+   	const WIDTH 96
+
+	const SCAN_RANGE 128
+}
+
+{ [client]
+
+	const POISON_SPRITE poison_cloud.spr //may need to use direct name
+}
+
+{ [shared] smokes_start  // Start shooting
+   
+   setvard STORMING 1
+}
+
+{ game_dynamically_created //PARAM1=Owner PARAM2=Angles PARAM3=Damage PARAM4=Duration
+	setvard MY_OWNER PARAM1
+	setvard MY_BASE_DAMAGE PARAM3
+	setvard MY_DURATION PARAM4
+
+	setvard MY_OWNER_RACE $get(PARAM1,race)
+	race MY_OWNER_RACE
+	////dbg got own $get(MY_OWNER,name) dmg MY_BASE_DAMAGE dur MY_DURATION
+
+	callevent MY_DURATION poisoning_end
+
+   	if FX_SPAMMERS < MAX_FX_SPAMMERS
+	callevent 2 smokes_start 
+	clientevent new all $currentscript $get(ent_me,origin) PARAM2 MY_DURATION
+	//needless to say, still on workie
+    //storeentity ent_expowner PARAM1
+	//setxpstat MY_OWNER skill.spellcasting.affliction
+}
+
+{ game_spawn
+
+	setvard PLAYING_DEAD 1 //not a valid target
+
+	name a|Poison Cloud
+	hp 1
+	fov 359
+	invincible 1
+	height 32
+	width 32
+	blood none
+	setmodel none
+	setsolid none
+
+	gravity 0
+	fly 1
+	nopush 1
+
+	setangle face $vec(0,90,0)
+
+	setvard POISONING 1
+
+	callevent 0.5 poisoning_go
+	callevent 0.1 spawn_sound
+}
+
+{ poisoning_go
+
+	if POISONING
+
+	callevent 0.5 poisoning_go
+
+	setvard TARG_LIST $get_tsphere(enemy,SCAN_RANGE,game.monster.origin)
+	if TARG_LIST isnot none
+	calleventloop $get_token_amt(TARG_LIST) affect_targets
+}
+
+{ affect_targets
+
+	local CHECK_ENT $get_token(TARG_LIST,game.script.iteration)
+	
+	if ( OWNER_ISPLAYER )
+	{
+		if game.pvp == 0
+		if $get(CHECK_ENT,isplayer)
+		local EXIT_SUB 1
+		//dbg aborted, players do not stun players in non-pvp ( game.pvp )
+	}
+	if !EXIT_SUB
+
+	applyeffect CHECK_ENT EFFECT_SCRIPT 5.0 MY_OWNER MY_BASE_DAMAGE
+}
+
+{ poisoning_end
+
+	clientevent remove all $currentscript
+	setvard POISONING 0
+	setvard STORMING 0
+	callevent 0.1 remove_final
+}
+
+{ remove_final
+
+	deleteent ent_me
+}
+
+// EFFECTS STUFF from monsters/summon/summon_lightning_storm
+
+{ [server]
+  repeatdelay 1
+  if STORMING
+}
+
+//Client
+//======
+
+{ [client]
+   const HEIGHT 40
+   const WIDTH 96
+
+}
+
+{ [client] client_activate
+
+   setvard smoke_POSITION PARAM1
+   setvard smoke_ANGLE $vec(0,PARAM2,0)
+   callevent 2 smokes_start  		//Start erupting after a delay
+   callevent PARAM3 poison_end_cl 	//Die after a delay   
+}
+
+{ [client] poison_end_cl
+
+	setvard STORMING 0
+  	removescript
+}
+
+// Random lightning bolt
+{ [shared] smokes_start  // Start shooting
+   
+   setvard STORMING 1
+}
+{ [client]
+   repeatdelay 0.25
+   if STORMING
+   callevent smokes_shoot
+}
+//{ [client]
+//   repeatdelay 0.5
+//   if STORMING
+//   callevent smokes_shoot
+//}
+
+// Throw clouds
+{ [client] smokes_shoot
+   local NEGWIDTH WIDTH
+   multiply NEGWIDTH -1
+
+   local x $rand(NEGWIDTH,WIDTH)
+   local y $rand(NEGWIDTH,WIDTH)
+   local L_POS $relpos(smoke_ANGLE,$vec(x,y,HEIGHT))
+   vectoradd L_POS smoke_POSITION
+
+   cleffect tempent sprite poison_cloud.spr L_POS setup_smokes
+}
+
+{  [client] setup_smokes
+
+
+   cleffect tempent set_current_prop death_delay 	2.5
+   cleffect tempent set_current_prop framerate		10
+   cleffect tempent set_current_prop frames		17
+   cleffect tempent set_current_prop bouncefactor 	0
+   cleffect tempent set_current_prop scale 		$randf(0.5,1.0)
+   cleffect tempent set_current_prop rendermode		add
+   cleffect tempent set_current_prop renderamt		200
+   cleffect tempent set_current_prop rendercolor	(0,0,0)
+   cleffect tempent set_current_prop gravity 		.005
+   cleffect tempent set_current_prop collide 		none
+}
+
+{ spawn_sound
+	playsound 0 10 SPAWN_SOUND
+}

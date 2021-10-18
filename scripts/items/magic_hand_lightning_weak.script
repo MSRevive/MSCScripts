@@ -1,0 +1,83 @@
+//Thothie - changed so the lightning ramp limit increases with skill
+{
+  const SOUND_SHOOT      	magic/cast.wav
+
+  const MELEE_RANGE		500
+  const MELEE_HITCHANCE 	100%
+  const MELEE_ATK_DURATION 	1
+
+  //Only defining these because this magic does instant traceline damage
+  const MELEE_TYPE 		strike-land
+  const MELEE_DMG 		25
+  const MELEE_DMG_RANGE		15
+  const MELEE_NOAUTOAIM		1
+  const MELEE_DMG_DELAY		0.4
+  //-------------------------------------------------------
+
+  setvar SPELL_SKILL_REQUIRED	0
+  const SPELL_FIZZLE_TIME	45
+  const SPELL_CAST_SUCCESS	90%
+ // const SPELL_PREPARE_TIME	2
+  const SPELL_DAMAGE_TYPE	lightning
+  const SPELL_ENERGYDRAIN	10
+  const SPELL_MPDRAIN		1
+  const SPELL_STAT		spellcasting.lightning
+
+  const SCRIPT_SFX_CAST		effects/sfx_lightning
+  precachefile 			SCRIPT_SFX_CAST
+  const SCRIPT_SFX_PREP		items/magic_hand_lightning_weak_cl
+  const SCRIPT_SFX_DURATION	0.5
+  const LIGHT_COLOR		(30,30,253)
+}
+
+#include items/magic_hand_base
+
+{  spell_spawn
+
+   name 		Erratic Lightning
+   desc 		Erratic Lightning - A highly erratic lightning bolt
+}
+
+{  spell_casted	//PARAM1: "none"/"npc"/"world"   2: Attack end Position   3: Entity hit (if any)
+
+	setvard LAST_CAST game.time
+
+	local l.end PARAM2
+	vectoradd l.end (0,0,4096)
+	local l.widthratio $get(ent_owner,skill.spellcasting.lightning.ratio)
+	multiply l.widthratio 3	//help out with ratio
+	capvar l.widthratio 0 1
+
+	clientevent new all_in_sight SCRIPT_SFX_CAST PARAM2 l.end SCRIPT_SFX_DURATION l.widthratio
+  	if( PARAM1 equals 'npc' )
+	{
+  		effect glow PARAM3 LIGHT_COLOR 128 1 1 
+		setvard script.npc	PARAM3
+	}
+	else setvard script.ramp 1	 // Hit nothing - reset damage ramp
+}
+
+{  cast_damaged_other	// Ramp up damage
+
+	if $get(script.npc,alive)
+	if( script.npc isnot PARAM1 ) setvard script.ramp 1	 // Hit new npc - reset damage ramp
+
+	local 		l.dmg		PARAM2
+	multiply 	l.dmg		script.ramp
+   	setdmg		dmg 		l.dmg
+
+	local RAMP_LIMIT $get(ent_owner,skill.spellcasting.lightning)
+	divide RAMP_LIMIT 2
+	if ( RAMP_LIMIT < 3 ) local RAMP_LIMIT 3
+
+	if script.ramp <  RAMP_LIMIT
+	add 		script.ramp	0.6
+}
+
+{
+repeatdelay $randf(4.0,8.0)
+	local L_LAST_CAST LAST_CAST
+	add L_LAST_CAST 5.0
+	if game.time > L_LAST_CAST
+	splayviewanim ent_me ANIM_IDLE1
+}

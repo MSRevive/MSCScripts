@@ -1,0 +1,396 @@
+//lightning field (self-expiring client effect)
+//acid breath
+//charge attack (would, but needs anim, plus always tricky)
+//jump/stun
+#scope server
+{
+	//base anims
+	setvar ANIM_WALK crawl
+	setvar ANIM_RUN run
+	setvar ANIM_IDLE idle1
+	setvard ANIM_ATTACK attack1
+	setvard ANIM_DEATH death1_die
+
+	//custom anims
+	const ANIM_ATTACK_SHORT attack1
+	const ANIM_ATTACK_LONG attack2
+	const ANIM_CRAWL crawl
+	const ANIM_WALK_ACTIVE walk
+	const ANIM_LIGHTNING breath_fast
+	const ANIM_FLING grab_fling
+	const ANIM_JUMP jump
+	const ANIM_BREATH_ATTACK breath
+
+	const ANIM_RAWR rawr
+}
+
+{
+	setvard NPC_BASE_EXP 10000
+
+	if ( $lcase(game.map.name) equals deraliasewers ) setvard NPC_BASE_EXP 5000
+
+	const MONSTER_HP 20000
+
+	//base stats
+	setvard ATTACK_RANGE 150
+	setvard ATTACK_HITRANGE 200
+	setvar IS_UNHOLY 1
+	setvar IMMUNE_VAMPIRE 1
+
+	//custom stats
+	const ATTACK_RANGE_SHORT 100
+	const ATTACK_RANGE_LONG 150
+	const ATTACK_HITRANGE_SHORT 150
+	const ATTACK_HITRANGE_LONG 200
+	const ATTACK_HITCHANCE 80%
+
+	const DOT_BREATH 200
+	const DMG_BITE_SHORT 300
+	const DMG_BITE_LONG 600
+
+	const FREQ_SPECIAL $randf(10.0,20.0)
+	const FREQ_IDLE $randf(10.0,15.0)
+
+	//sounds
+	const SOUND_RAWR monsters/abombination/rawr.wav
+	const SOUND_ATTACK1 monsters/abombination/attack1.wav
+	const SOUND_ATTACK2 monsters/abombination/attack2.wav
+	const SOUND_IDLE1 monsters/abombination/growl1.wav
+	const SOUND_IDLE2 monsters/abombination/growl2.wav
+	const SOUND_PAIN1 monsters/abombination/pain1.wav
+	const SOUND_PAIN2 monsters/abombination/pain2.wav
+	const SOUND_DEATH monsters/abombination/die.wav
+	const SOUND_STEP1 monsters/abombination/step1.wav
+	const SOUND_STEP2 monsters/abombination/step2.wav
+
+	const SOUND_STRUCK1 weapons/bullet_hit1.wav
+	const SOUND_STRUCK2 weapons/bullet_hit2.wav
+	const SOUND_ATTACK_LONG zombie/claw_miss1.wav
+	const SOUND_ATTACK_SHORT zombie/claw_miss2.wav
+
+	const SOUND_BREATH_START ambience/steamburst1.wav
+	const SOUND_BREATH_LOOP ambience/steamjet1.wav
+
+
+	precache magic/boom.wav //effects/sfx_stun_burst
+
+	//lshield
+	const LSHIELD_PASSIVE 0
+	const LSHIELD_REPELL_STRENGTH 300
+	const LSHIELD_FREQ_UPDATE 0.25
+	const DMG_LSHIELD 300
+	const LSHIELD_RADIUS 128
+
+	const SOUND_ZAP_LOOP magic/bolt_loop.wav
+	const SOUND_ZAP_START magic/bolt_end.wav
+
+	precache SOUND_ZAP_LOOP
+	precache SOUND_ZAP_START
+}
+
+#include monsters/base_monster_new
+#include monsters/base_lightning_shield
+
+{ [shared] npc_spawn
+
+	if ( $lcase(game.map.name) equals shad_palace )
+	{
+		name a|Bone Guardian
+	}
+	else
+	{
+		name a|Bone Abomination
+	}
+
+	setmodel monsters/abomination.mdl
+
+	height 72
+	width 96
+
+	race demon
+
+	blood none
+
+	if ( !START_SUSPEND ) roam 1
+	hearingsensitivity 4
+
+	setmoveanim ANIM_WALK
+	setidleanim ANIM_IDLE
+
+	hp MONSTER_HP
+
+	takedmg all 0.5
+	takedmg holy 1.5
+	takedmg fire 1.25
+	takedmg cold 0.5
+	takedmg poison 0.0
+
+	takedmg slash 1.0
+	takedmg blunt 1.25
+	takedmg pierce 0.75
+
+	if game.serverside
+	setvard IMMUNE_STUN 50%
+	setvard CUR_SPECIAL 0
+	setvard NEXT_IDLE game.time
+	add NEXT_IDLE FREQ_IDLE
+
+	callevent 2.0 final_adj
+
+	if START_SUSPEND
+	invincible 1
+	callevent npcatk_suspend_ai
+}
+
+{ final_adj
+
+	setvard NPC_HALF_HEALTH $get(ent_me,maxhp)
+	multiply NPC_HALF_HEALTH 0.5
+
+	if START_SUSPEND
+	callevent npcatk_suspend_ai
+}
+
+{ cycle_up
+	setvard NEXT_SPECIAL game.time
+	add NEXT_SPECIAL FREQ_SPECIAL
+	setvard ATTACK_COUNTER 0
+	if !DID_WARCRY
+	playanim critical ANIM_RAWR
+	playsound 0 10 SOUND_RAWR
+	setvard DID_WARCRY 1
+}
+
+{ cycle_down
+	setvard DID_WARCRY 0
+}
+
+{ my_target_died
+	playrandomsound 0 10 SOUND_IDLE1 SOUND_IDLE2
+}
+
+{ npcatk_hunt
+
+	if ( NPCATK_TARGET equals unset )
+	{
+		if game.time > NEXT_IDLE
+		setvard NEXT_IDLE game.time
+		add NEXT_IDLE FREQ_IDLE
+		playrandomsound 0 10 SOUND_IDLE1 SOUND_IDLE2
+		playanim once breath_slow
+	}
+
+	if NPCATK_TARGET isnot unset
+
+	if ( $get(NPCATK_TARGET,range) < ATTACK_RANGE_LONG )
+	{
+		setvard ANIM_ATTACK ANIM_ATTACK_LONG
+		setvard ATTACK_RANGE ATTACK_RANGE_LONG
+		setvard ATTACK_HITRANGE ATTACK_HITRANGE_LONG
+	}
+	if ( $get(NPCATK_TARGET,range) < ATTACK_RANGE_SHORT )
+	{
+		setvard ANIM_ATTACK ANIM_ATTACK_SHORT
+		setvard ATTACK_RANGE ATTACK_RANGE_SHORT
+		setvard ATTACK_HITRANGE ATTACK_HITRANGE_SHORT
+	}
+
+	if game.time > NEXT_SPECIAL
+	setvard NEXT_SPECIAL game.time
+	add NEXT_SPECIAL FREQ_SPECIAL
+	add CUR_SPECIAL 1
+	if ( CUR_SPECIAL == 1 )
+	{
+		callevent do_lfield
+	}
+	if ( CUR_SPECIAL == 2 )
+	{
+		setvard AS_ATTACKING game.time
+		add AS_ATTACKING 3.0
+		playanim critical ANIM_JUMP
+		callevent 0.01 jump_boost
+	}
+	if ( CUR_SPECIAL == 3 )
+	{
+		callevent do_breath_attack
+		setvard CUR_SPECIAL 0
+	}
+}
+
+{ jump_boost
+	addvelocity ent_me $relvel(0,250,200)
+}
+
+{ do_lfield
+	callevent npcatk_suspend_ai
+	playanim break
+	callevent npcatk_suspend_movement ANIM_LIGHTNING
+	playanim critical ANIM_LIGHTNING
+	callevent lshield_activate 10.0
+	callevent 10.0 end_lfield
+}
+
+{ end_lfield
+	callevent npcatk_resume_ai
+	callevent npcatk_resume_movement
+	callevent lshield_toggle_off
+	setvard NEXT_SPECIAL game.time
+	add NEXT_SPECIAL FREQ_SPECIAL
+}
+
+{ do_breath_attack
+	clientevent new all monsters/abomination_cl $get(ent_me,index)
+	setvard BREATH_IDX game.script.last_sent_id
+	callevent npcatk_suspend_ai
+	callevent npcatk_suspend_movement ANIM_BREATH_ATTACK
+	playsound 1 10 SOUND_BREATH_START
+	svplaysound 2 10 SOUND_BREATH_LOOP
+	playanim break
+	playanim hold ANIM_BREATH_ATTACK
+	setmovedest NPCATK_TARGET 9999
+	setvard BREATH_ANG $get(ent_me,angles.yaw)
+	subtract BREATH_ANG 45
+	if ( BREATH_ANG < 0 ) add BREATH_ANG 359
+	setvard BREATH_COUNT 0
+	setvard BREATH_ATTACK_ON 1
+	callevent 0.01 breath_attack_loop
+}
+
+{ breath_attack_loop
+	if BREATH_ATTACK_ON
+
+	add BREATH_COUNT 1
+	if ( BREATH_COUNT == 45 ) callevent end_breath_attack
+
+	if BREATH_COUNT < 45
+	callevent 0.05 breath_attack_loop
+
+	add BREATH_ANG 1
+	if ( BREATH_ANG > 359 ) subtract BREATH_ANG 359
+
+	local FACE_POS $get(ent_me,origin)
+	vectoradd FACE_POS $relpos($vec(0,BREATH_ANG,0),$vec(0,500,0))
+	setmovedest FACE_POS 9999
+
+	if game.time > NEXT_SCAN
+	setvard NEXT_SCAN game.time
+	add NEXT_SCAN 0.25
+	local SCAN_POINT $relpos(0,128,0)
+	setvard CLOUD_TARGS $get_tsphere(enemy,256,SCAN_POINT)
+	if ( CLOUD_TARGS isnot none ) calleventloop $get_token_amt(CLOUD_TARGS) breath_affect_targets
+}
+
+{ breath_affect_targets
+	local CUR_TARGET $get_token(CLOUD_TARGS,game.script.iteration)
+	local TARG_ORG $get(CUR_TARGET,origin)
+	if $within_cone2D(TARG_ORG,game.monster.origin,game.monster.angles,30)
+	if $get(CUR_TARGET,range) < 384
+	applyeffect CUR_TARGET effects/effect_poison_blinding 5.0 $get(ent_me,id) DOT_BREATH 0 0 none
+	addvelocity CUR_TARGET $relvel(0,800,120)
+}
+
+{ end_breath_attack
+	setvard NEXT_SPECIAL game.time
+	add NEXT_SPECIAL FREQ_SPECIAL
+
+	clientevent update all BREATH_IDX end_fx
+	callevent npcatk_resume_ai
+	callevent npcatk_resume_movement
+	playanim critical ANIM_ATTACK
+	svplaysound 2 0 SOUND_BREATH_LOOP
+	setvard BREATH_ATTACK_ON 0
+}
+
+{ frame_attack_short
+	playsound 1 10 SOUND_ATTACK_SHORT
+	add ATTACK_COUNTER 1
+	if ( ATTACK_COUNTER > 4 )
+	{
+		playrandomsound 2 10 SOUND_ATTACK1 SOUND_ATTACK2
+		setvard ATTACK_COUNTER $randf(-2,1)
+	}
+	setvard MELEE_ATTACK_SHORT 1
+	dodamage NPCATK_TARGET ATTACK_HITRANGE DMG_BITE_SHORT ATTACK_HITCHANCE slash
+}
+
+{ frame_attack_long
+	playsound 1 10 SOUND_ATTACK_LONG
+	add ATTACK_COUNTER 1
+	if ( ATTACK_COUNTER > 3 )
+	{
+		playrandomsound 2 10 SOUND_ATTACK1 SOUND_ATTACK2
+		setvard ATTACK_COUNTER $randf(-2,1)
+	}
+	setvard MELEE_ATTACK_LONG 1
+	dodamage NPCATK_TARGET ATTACK_HITRANGE DMG_BITE_LONG ATTACK_HITCHANCE slash
+}
+
+{ frame_run
+	playrandomsound 0 10 SOUND_STEP1 SOUND_STEP2
+}
+
+{ frame_jump_land
+	setvard NEXT_SPECIAL game.time
+	add NEXT_SPECIAL FREQ_SPECIAL
+	local MY_GROUND $get(ent_me,origin)
+	vectorset MY_GROUND z $get_ground_height(MY_GROUND)
+	clientevent new all effects/sfx_stun_burst MY_GROUND 256 1 (64,64,255)
+	setvard STUN_TARGS $get_tsphere(enemy,256)
+	if STUN_TARGS isnot none
+	calleventloop $get_token_amt(STUN_TARGS) stun_targets
+}
+
+{ stun_targets
+	local CUR_TARG $get_token(STUN_TARGS,game.script.iteration)
+	if ( $get(CUR_TARG,isplayer) )
+	{
+		if !$get(CUR_TARG,onground)
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+	applyeffect CUR_TARG effects/heavy_stun 5.0 $get(ent_me,id) 1
+	local TARG_ORG $get(CUR_TARG,origin)
+	local TARG_ANG $angles(game.monster.origin,TARG_ORG)
+	local NEW_YAW TARG_ANG
+	addvelocity CUR_TARG $relvel($vec(0,NEW_YAW,0),$vec(0,800,110))
+}
+
+{ game_dodamage
+
+	if ( PARAM1 )
+	{
+		if ( MELEE_ATTACK_LONG ) addvelocity PARAM2 $relvel(0,400,110)
+		if ( MELEE_ATTACK_SHORT ) addvelocity PARAM2 $relvel(-150,200,110)
+	}
+	setvard MELEE_ATTACK_LONG 0
+	setvard MELEE_ATTACK_SHORT 0
+}
+
+{ game_struck
+	if ( $get(ent_me,maxhp) > NPC_HALF_HEALTH )
+	{
+		playrandomsound 0 5 SOUND_STRUCK1 SOUND_STRUCK2
+	}
+	else
+	{
+		playrandomsound 0 5 SOUND_STRUCK1 SOUND_STRUCK2 SOUND_STRUCK1 SOUND_STRUCK2 SOUND_STRUCK1 SOUND_STRUCK2 SOUND_PAIN1 SOUND_PAIN2
+	}
+}
+
+{ game_death
+	if ( DROP_HUNDERSWAMP_CHEST )
+	{
+		usetrigger mm_abom_seal
+		usetrigger brk_weed
+		createnpc chests/hunderswamp1_extra $relpos(0,0,0)
+	}
+
+	if BREATH_ATTACK_ON
+	clientevent update all BREATH_IDX end_fx
+}
+
+{ set_hunderswamp_north_spec
+	dbg set_hunderswamp_north_spec
+	race wildanimal
+	setvard DROP_HUNDERSWAMP_CHEST 1
+}

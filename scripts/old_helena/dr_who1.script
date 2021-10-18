@@ -1,0 +1,208 @@
+#scope server
+{
+	const NO_JOB 1
+	const NO_RUMOR 1
+	const CHAT_DELAY 4.0
+
+	setvar STORE_NAME tom_bakers_shop
+	const VEND_INDIVIDUAL 1
+	setvard VENDOR_NOT_ON_USE 1
+}
+
+#include monsters/base_npc_vendor
+
+{ [shared] game_spawn
+	name Torwhodoc Sa'thraz, Keeper of Time
+	hp 1
+	invincible 1
+	race human
+	roam 0
+	setmodel npc/balancepriest2.mdl //need new wizard
+	width 32
+	height 72
+	setbbox npcsize
+
+	setidleanim idle1
+
+	saytextrange 512
+
+	catchspeech say_hi hail hi howdy hello greet gweet j0 waddup wassup
+	catchspeech start_helena_vote helena back future
+
+	callevent 1.0 scan_for_ally
+}
+
+{ scan_for_ally
+
+	if !DID_INTRO
+	callevent 2.0 scan_for_ally
+	if $cansee(ally)
+	if $get(ent_lastseen,range) < 512
+	setvard DID_INTRO 1
+	callevent say_hi
+}
+
+{ say_hi
+
+	if !BUSY_CHATTING
+
+	setvard CHAT_STEPS 4
+	setvard CHAT_STEP 0
+	setvard BUSY_CHATTING 1
+	setvard CHAT_STEP1 "Excellent work! Gave those orcs what for, you did! Just like last time!"
+	setvard CHAT_STEP2 "...although, not like that one other time, but, that's no longer an issue, I suppose."
+	setvard ANIM_STEP2 lean
+	setvard CHAT_STEP3 "In anycase, I've those items I told you about, for that fee I told you about. Feel free to pick!"
+	setvard CHAT_STEP4 "When you're ready to go back to the fut... [Helena], just say so."
+	callevent chat_loop
+}
+
+{ game_menu_getoptions
+
+	if !NO_TALKIE
+
+	if ( !DOING_VOTE )
+	{
+		local reg.mitem.title 	"Return to the Future"
+		local reg.mitem.type 	callback
+		local reg.mitem.callback start_helena_vote
+		menuitem.register
+	}
+
+	if ( DOING_VOTE )
+	{
+		local reg.mitem.title 	"VOTE: Return to the Future?"
+		local reg.mitem.type 	disabled
+		menuitem.register
+
+		local reg.mitem.title 	"Yes!"
+		local reg.mitem.type 	callback
+		local reg.mitem.callback wtf_vote_yes
+		menuitem.register
+
+		local reg.mitem.title 	"No!"
+		local reg.mitem.type 	callback
+		local reg.mitem.callback wtf_vote_no
+		menuitem.register
+	}
+}
+
+{ payment_failed
+
+	playanim critical no
+	saytext Come now, the last of the time wizards deserves better food than that will buy.
+}
+
+{ vendor_addstoreitems
+
+	//dstoreitem STORE_NAME item				|#|	|cost%|	|Sellx| |Bundle amt|
+	addstoreitem STORE_NAME mana_forget			2	100		0.0
+	addstoreitem STORE_NAME mana_speed			1	100		0.0
+	addstoreitem STORE_NAME mana_gprotection	1	100		0.0
+	addstoreitem STORE_NAME mana_protection		1	100		0.0
+	addstoreitem STORE_NAME mana_resist_cold	1	100		0.0
+	addstoreitem STORE_NAME mana_immune_cold	1	100		0.0
+	addstoreitem STORE_NAME mana_resist_fire	1	100		0.0
+	addstoreitem STORE_NAME mana_immune_fire	1	100		0.0
+	addstoreitem STORE_NAME mana_immune_poison	1	100		0.0
+	addstoreitem STORE_NAME mana_demon_blood	1	100		0.0
+	addstoreitem STORE_NAME mana_vampire		1	100		0.0
+	addstoreitem STORE_NAME mana_prot_spiders	1	100		0.0
+}
+
+{ start_helena_vote
+
+	//if ( game.players == 1 ) changelevel helena
+	//if game.players > 1
+	setvard NO_HAIL 1
+	setvard VENDOR_MENU_OFF 1
+	getplayersnb PLAYER_LIST
+	setvard DOING_VOTE 1
+	saytext Just a moment, while we get a consensus amongst our heros.
+	setvard TALLY_VOTES 0
+	setvard TALLY_YES_VOTES 0
+	setvard TALLY_NO_VOTES 0
+	callevent 3.0 zomg_stupid_error
+}
+
+{ zomg_stupid_error
+
+	calleventloop $get_token_amt(PLAYER_LIST) wtf_ask_players
+	local WTF_VOTE_DELAY 10.0
+	if ( game.players > 1 ) local WTF_VOTE_DELAY 20.0
+	callevent WTF_VOTE_DELAY wtf_count_votes
+}
+
+{ wtf_ask_players
+
+	local CUR_PLAYER $get_token(PLAYER_LIST,game.script.iteration)
+	menu.open CUR_PLAYER
+}
+
+{ wtf_vote_yes
+	dbg $get(PARAM1,name) voted yes
+
+	add TALLY_YES_VOTES 1
+	add TALLY_VOTES 1
+	playanim critical yes
+	saytext $get(PARAM1,name) seems ready to go.
+}
+
+{ wtf_vote_no
+	dbg $get(PARAM1,name) voted no
+
+	add TALLY_NO_VOTES 1
+	add TALLY_VOTES 1
+	playanim critical no
+	saytext $get(PARAM1,name) seems to still be shopping, or... Looting corpses.
+}
+
+{ wtf_count_votes
+
+	if ( TALLY_NO_VOTES > 0 ) local WTF_VOTE_FAIL 1
+	if ( TALLY_VOTES == 0 ) local WTF_VOTE_FAIL 1
+	if ( WTF_VOTE_FAIL == 1 )
+	{
+		setvard NO_HAIL 0
+		setvard VENDOR_MENU_OFF 0
+		setvard DOING_VOTE 0
+
+		setvard CHAT_STEPS 3
+		setvard CHAT_STEP 0
+		setvard BUSY_CHATTING 1
+		setvard CHAT_STEP1 "Seems some people want to look around before we leave."
+		setvard CHAT_STEP2 "It's not a problem. The temporal stasus feild prevents you from interfering with events beyond this area."
+		setvard CHAT_STEP3 "So it's not as if you can get into any real trouble... This time."
+		setvard ANIM_STEP3 lean
+		callevent chat_loop
+	}
+
+	if WTF_VOTE_FAIL == 0
+	setvard STORE_CLOSED 1
+	setvard NO_HAIL 1
+	setvard VENDOR_MENU_OFF 1
+
+	saytextrange 9999
+	setvard CHAT_STEPS 3
+	setvard CHAT_STEP 0
+	setvard BUSY_CHATTING 1
+	setvard CHAT_STEP1 "Alright, get into the blue box and hold onto your hats! We're going home!"
+	setvard CHAT_STEP2 "It's an old type 40 I just borrowed... Give it a bit to warm up."
+	setvard CHAT_STEP3 "Kick that flux capacitor over there and we'll be on our way."
+	callevent chat_loop
+
+	playanim critical studycart
+	setvard NO_TALKIE 1
+	usetrigger engine_tardis
+
+	callevent 4.0 amx_mapchange
+	callevent 10.0 manual_mapchange
+}
+
+{ amx_mapchange
+	usetrigger force_map_helena
+}
+
+{ manual_mapchange
+	callexternal GAME_MASTER gm_manual_map_change helena
+}

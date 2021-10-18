@@ -1,0 +1,343 @@
+//This is an older script and may have some bad conventions as a result.
+
+//Greater minions vulnerable ONLY to their element
+#scope server
+{
+	const NPC_FADE_IN_SPEED 0.02
+
+	setvar ANIM_RUN run
+   const SKEL_HP		1000
+   const ATTACK_HITCHANCE 	85%
+   const ATTACK_DAMAGE_LOW 	30
+   const ATTACK_DAMAGE_HIGH 	40
+	if ( $lcase(game.map.name) equals 'lodagond-2' )
+	{
+		setvard NPC_GIVE_EXP 		100
+	}
+	else
+	{
+		setvard NPC_GIVE_EXP 		600
+	}
+
+   const SKEL_RESPAWN_CHANCE	0%
+   const SKEL_RESPAWN_LIVES	0
+
+	precache monsters/skeleton_boss1.mdl //precache model for older clients
+}
+
+#include monsters/skeleton_base
+
+{ [shared] skeleton_spawn
+
+    setmodel monsters/skeleton_boss1.mdl
+
+	if ( MINION_TYPE equals 'MINION_TYPE' ) setvard MINION_TYPE $rand(1,4)
+
+	if ( MINION_TYPE == 1 )
+	{
+		setvard MINION_DESC fire
+		local NAME_SUFFIX "of Fire"
+		setvard MINION_EFFECT effects/effect_burn
+		setmodelbody	0 1 //0=standard 1=ash 2=green 3=bloody 4=decayed 5=ice 6=gold 7=stone 8=crystal 9=weirdgel
+		setmodelbody	1 6 //0=Unarmed 1=darkmace 2=sword 3=hammahs 4=bigsword+shield 5=iceclubs 6=fireclubs 7=highsword 8=wand
+		setvard LIGHT_COLOR (255,0,0)
+	}
+
+	if ( MINION_TYPE == 2 )
+	{
+		setvard MINION_DESC cold
+		local NAME_SUFFIX "of Ice"
+		setvard MINION_EFFECT effects/effect_frostbite_dmg
+		setmodelbody	0 1 //0=standard 1=ash 2=green 3=bloody 4=decayed 5=ice 6=gold 7=stone 8=crystal 9=weirdgel
+		setmodelbody	1 5 //0=Unarmed 1=darkmace 2=sword 3=hammahs 4=bigsword+shield 5=iceclubs 6=fireclubs 7=highsword 8=wand
+		setvard LIGHT_COLOR (0,0,255)
+	}
+
+	if ( MINION_TYPE == 3 )
+	{
+		setvard MINION_DESC lightning
+		local NAME_SUFFIX "of Lightning"
+		setvard MINION_EFFECT effects/effect_shock_dmg
+		setmodelbody	0 1 //0=standard 1=ash 2=green 3=bloody 4=decayed 5=ice 6=gold 7=stone 8=crystal 9=weirdgel
+		setmodelbody	1 3 //0=Unarmed 1=darkmace 2=sword 3=hammahs 4=bigsword+shield 5=iceclubs 6=fireclubs 7=highsword 8=wand
+		setvard LIGHT_COLOR (255,255,0)
+	}
+	
+	if ( MINION_TYPE == 4 )
+	{
+		setvard MINION_DESC poison
+		local NAME_SUFFIX "of Venom"
+		setvard LIGHT_COLOR (0,255,0)
+		setvard MINION_EFFECT effects/effect_poison
+		setmodelbody	0 1 //0=standard 1=ash 2=green 3=bloody 4=decayed 5=ice 6=gold 7=stone 8=crystal 9=weirdgel
+		setmodelbody	1 2 //0=Unarmed 1=darkmace 2=sword 3=hammahs 4=bigsword+shield 5=iceclubs 6=fireclubs 7=highsword 8=wand
+	}
+
+	if ( $lcase(game.map.name) equals thanatos ) setvard SET_GREEK 1
+	if ( SET_GREEK ) setmodelbody 0 10
+
+	//dbg temp MinionType MINION_TYPE
+
+   	name a|Greater Maldora Minion NAME_SUFFIX
+   	width 32
+   	height 80
+	race undead
+	blood red
+
+	if ( game.serverside ) callevent 1.0 light_on
+	
+}
+
+{ npc_fadein_done
+	callevent minion_wakeup
+}
+
+{ game_dodamage
+
+	if !AM_RISING
+
+	if PARAM1
+	effect glow ent_me LIGHT_COLOR 64 1 1
+	
+	applyeffect $get(PARAM2,id) MINION_EFFECT 5.0 $get(ent_me,id) $rand(10,20)
+}
+
+{ [override] skeleton_attribs
+
+	if !ATTRIBS_SET
+	setvard ATTRIBS_SET 1
+
+	takedmg all 0.6
+	takedmg holy 0.5
+	takedmg dark 0.5
+
+	takedmg slash 0.0
+	takedmg blunt 0.0
+	takedmg pierce 0.0
+	takedmg magic 0.0
+
+	if ( MINION_DESC equals fire )
+	{
+		takedmg poison 0.0
+		takedmg cold 0.0
+		takedmg fire 1.0
+		takedmg lightning 0.0
+		takedmg acid 0.0
+	}
+
+	if ( MINION_DESC equals cold )
+	{
+		takedmg poison 0.0
+		takedmg cold 1.0
+		takedmg fire 0.0
+		takedmg lightning 0.0
+		takedmg acid 0.0
+	}
+
+
+	if ( MINION_DESC equals lightning )
+	{
+		takedmg poison 0.0
+		takedmg cold 0.0
+		takedmg fire 0.0
+		takedmg lightning 1.0
+		takedmg acid 0.0
+		takedmg poison 0.0
+	}
+
+	if ( MINION_DESC equals poison )
+	{
+		takedmg cold 0.0
+		takedmg fire 0.0
+		takedmg ice 0.0
+		takedmg lightning 0.0
+		takedmg acid 1.0
+		takedmg poison 1.0
+	}
+
+}
+
+{ pop_off_masters_head
+	local RND_ANG $randf(0,359.99)
+	addvelocity ent_me $relvel($vec(0,RND_ANG,0),$vec(0,500,0))
+}
+
+{ game_dynamically_created
+
+	local MY_ORG $get(ent_me,origin)
+	vectoradd MY_ORG z 128
+	setorigin ent_me MY_ORG
+	setprop ent_me rendermode 2
+	setprop ent_me renderamt 0
+	callevent 0.1 pop_off_masters_head
+	callevent scan_for_ground
+
+	setvard AM_RISING 1
+
+	setvard MINION_SUMMONED 1
+
+	setvard MY_MASTER PARAM1
+	setvard FIRST_TARGET PARAM2
+
+	setanim.framerate 0.0
+	roam 0
+	setvard PLAYING_DEAD 1
+	setmoveanim ANIM_RESPAWN_DEADIDLE
+ 	setidleanim ANIM_RESPAWN_DEADIDLE
+	invincible 1
+	hearingsensitivity 0
+	callevent npcatk_suspend_ai
+	setvard NO_STUCK_CHECKS 1
+
+	//find ground level - should be created below ground
+
+	setvard MASTER_ORG $get(MY_MASTER,origin)
+	setvard GROUND_LEVEL $vec.z(MASTER_ORG) //assumes master is at ground level
+
+	setvard NO_SPAWN_STUCK_CHECK 1
+
+//	setvard MY_X $vec.x(game.monster.origin)
+//	setvard MY_Y $vec.y(game.monster.origin)
+//	setvard MY_Z $vec.z(game.monster.origin)
+//
+//	setvard AM_RISING 1
+
+	//setsolid none
+
+	emitsound ent_me $get(ent_me,origin) 64 5.0 danger 128
+
+	//callevent repulse_loop
+}
+
+{ scan_for_ground
+	if !FOUND_GROUND
+	callevent 0.1 scan_for_ground
+	if $get(ent_me,origin.z) equals $get_ground_height(game.monster.origin)
+	setvard FOUND_GROUND 1
+	callevent set_fade_in
+}
+
+//{ rise_from_grave
+//
+//	if ( MY_Z > GROUND_LEVEL ) callevent minion_wakeup
+//
+//	if MY_Z <= GROUND_LEVEL
+//	callevent 0.1 rise_from_grave
+//
+//	add MY_Z 0.5
+//
+//	local MASTER_ORG $get(MY_MASTER,origin)
+//
+//	if ( $dist(game.monster.origin,MASTER_ORG) < 64 )
+//	{
+//		callexternal MY_MASTER leap_away $get(ent_me,id)
+//		subtract MY_Z 0.5
+//	}
+//	
+//
+//	local CUR_LOC $vec(MY_X,MY_Y,MY_Z)
+//	local DEST_LOC $vec(MY_X,MY_Y,GROUND_LEVEL)
+//	//dbg Rising $dist(CUR_LOC,DEST_LOC) ( CUR_LOC )
+//
+//	setorigin ent_me $vec(MY_X,MY_Y,MY_Z)
+//}
+
+//{ repulse_loop
+//
+//	if AM_RISING
+//	local ROCK_SOURCE $vec(MY_X,MY_Y,GROUND_LEVEL)
+//	//gibs <modelname/spritename> <position> <size> <velocity> <randomness> <amount> <duration>
+//	local ROCK_VEL $randf(-10,10)
+//	effect tempent gibs rockgibs.mdl ROCK_SOURCE 0.5 (ROCK_VEL,ROCK_VEL,100) 20 3 1.0
+//	playsound 0 5 debris/bustconcrete1.wav debris/bustconcrete2.wav debris/concrete3.wav
+//	//dodamage ROCK_SOURCE 48 0.0 100% 0 reflective target
+//	callevent 1.0 repulse_loop
+//}
+
+{ minion_wakeup
+
+	//setprop ent_me rendermode 0
+	//setprop ent_me renderamt 255
+
+	callevent skeleton_attribs
+
+	//setsolid box
+
+	setvard AM_RISING 0
+
+	local AWAKE_DELAY 1.5 //give time to play getup anim
+
+	if ( BASE_FRAMERATE equals 'BASE_FRAMERATE' ) setanim.framerate 1.0
+	if ( BASE_FRAMERATE isnot 'BASE_FRAMERATE' ) setanim.framerate BASE_FRAMERATE
+
+	setmoveanim ANIM_WALK
+	setidleanim ANIM_IDLE
+	playanim once getup
+
+	callevent 1.7 aid_master
+	callevent AWAKE_DELAY skeleton_awake
+}
+
+{ aid_master
+	if !$get(HUNT_LASTTARGET,isalive)
+	if $get(FIRST_TARGET,range) < 1024
+	if $get(FIRST_TARGET,isalive)
+	callevent npcatk_target FIRST_TARGET
+}
+
+{ game_death
+
+	callexternal MY_MASTER skele_died
+}
+
+//===============================
+//glow system (should be an include, but making it so seems to cause issues with sticky client bits
+//glow
+{ [client] client_activate
+
+	setvard GLOW_RAD 200
+	const NO_LOOP_DETECT 1
+
+	setvard SKEL_ID PARAM1
+	setvard GLOW_COLOR PARAM2
+
+	if SKEL_LIGHT_ID equals 'SKEL_LIGHT_ID'
+	cleffect light new $getcl(SKEL_ID,origin) GLOW_RAD GLOW_COLOR 5.0
+	setvard SKEL_LIGHT_ID game.script.last_light_id
+	setcallback render enable
+
+	//callevent light_loop
+}
+
+{ [client] game_prerender
+
+	local L_POS $getcl(SKEL_ID,origin)
+	cleffect light SKEL_LIGHT_ID L_POS GLOW_RAD GLOW_COLOR 1.0
+}
+
+{ [server] game_death
+
+	clientevent remove all MY_LIGHT_SCRIPT
+
+	if !MINION_SUMMONED
+	if !NPC_NO_DROPS
+	callevent bm_gold_spew 25 1 32 2 4
+}
+
+{ [server] light_on
+	if !I_R_GLOWING
+	setvard I_R_GLOWING 1
+	clientevent persist all $currentscript $get(ent_me,index) LIGHT_COLOR
+	setvard MY_LIGHT_SCRIPT game.script.last_sent_id
+}
+//=============================== End Glow System
+
+
+
+{ maldora_died
+	deleteent ent_me fade
+}
+
+{ maldora_final_died
+	deleteent ent_me fade
+}

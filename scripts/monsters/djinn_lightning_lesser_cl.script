@@ -1,0 +1,155 @@
+#scope client
+
+{
+	const GLOW_RAD 128
+	const GLOW_COLOR (255,255,0)
+}
+
+{ client_activate //<owner> <duration>
+
+	setvard MY_OWNER PARAM1
+	setvard FX_DURATION PARAM2
+
+	setcallback render enable
+
+	setvard IS_ACTIVE 1
+
+	cleffect light new $getcl(MY_OWNER,origin) GLOW_RAD GLOW_COLOR 5.0
+	setvard MY_LIGHT_ID game.script.last_light_id
+
+	setvard RIGHT_HAND_POS $getcl(MY_OWNER,attachment0)
+	setvard LEFT_HAND_POS $getcl(MY_OWNER,attachment1)
+
+	cleffect tempent sprite 3dmflaora.spr RIGHT_HAND_POS setup_hand_sprite update_rhand_sprite 
+	cleffect tempent sprite 3dmflaora.spr LEFT_HAND_POS setup_hand_sprite update_lhand_sprite 
+
+	callevent FX_DURATION remove_fx	
+}
+
+{ game_prerender
+
+	if IS_ACTIVE
+
+//	if ( !$getcl(MY_OWNER,exists) )
+//	{
+//		callevent remove_fx
+//	}
+//	else
+//	{
+		local L_POS $getcl(MY_OWNER,origin)
+		cleffect light MY_LIGHT_ID L_POS GLOW_RAD GLOW_COLOR 1.0
+//	}
+}
+
+{
+repeatdelay 0.01
+	setvard RIGHT_HAND_POS $getcl(MY_OWNER,attachment0)
+	setvard LEFT_HAND_POS $getcl(MY_OWNER,attachment1)
+}
+
+{ remove_fx
+	if IS_ACTIVE //in case cancled externally first
+	setvard IS_ACTIVE 0
+	callevent 0.1 remove_me
+}
+
+{ remove_me
+	removescript
+}
+
+{ hand_sprite
+
+	dbg **** hand_sprite PARAM1 PARAM2
+
+	setvard ASPRITE_ANG PARAM1
+	if ( PARAM2 == 0 ) local SPRITE_POS RIGHT_HAND_POS
+	if ( PARAM2 == 1 ) local SPRITE_POS LEFT_HAND_POS
+	
+	cleffect tempent sprite 3dmflaora.spr SPRITE_POS setup_attack_sprite
+}
+
+{ hand_powerup //<hand_index>
+	setvard HAND_POWERUP 1
+	setvard HAND_POWER_IDX PARAM1
+	setvard HAND_SCALE 0.3
+	callevent 3.0 end_hand_powerup
+}
+
+{ end_hand_powerup
+	setvard HAND_POWERUP 2
+}
+
+{ update_rhand_sprite
+	if ( IS_ACTIVE )
+	{
+		cleffect tempent set_current_prop origin RIGHT_HAND_POS
+	}
+	else
+	{
+		cleffect tempent set_current_prop origin $vec(20000,20000,20000)
+	}
+
+	if ( HAND_POWERUP == 1 )
+	{
+		if HAND_POWER_IDX == 0
+		add HAND_SCALE 0.01
+		cleffect tempent set_current_prop scale HAND_SCALE
+	}
+
+	if ( HAND_POWERUP == 2 )
+	{
+		if HAND_POWER_IDX == 0
+		cleffect tempent set_current_prop scale 0.3
+		setvard HAND_POWERUP 0
+	}
+}
+
+{ update_lhand_sprite
+	if ( IS_ACTIVE )
+	{
+		cleffect tempent set_current_prop origin LEFT_HAND_POS
+	}
+	else
+	{
+		cleffect tempent set_current_prop origin $vec(20000,20000,20000)
+	}
+
+
+	if ( HAND_POWERUP == 1 )
+	{
+		if HAND_POWER_IDX == 1
+		add HAND_SCALE 0.01
+		cleffect tempent set_current_prop scale HAND_SCALE
+	}
+
+	if ( HAND_POWERUP == 2 )
+	{
+		if HAND_POWER_IDX == 1
+		cleffect tempent set_current_prop scale 0.3
+		setvard HAND_POWERUP 0
+	}
+}
+
+{ setup_attack_sprite
+	cleffect tempent set_current_prop death_delay 1.0
+	cleffect tempent set_current_prop rendermode add
+	cleffect tempent set_current_prop rendercolor (254,254,1)
+	cleffect tempent set_current_prop scale 0.3
+	cleffect tempent set_current_prop gravity    0
+	cleffect tempent set_current_prop collide    world;die
+	cleffect tempent set_current_prop framerate	30
+	cleffect tempent set_current_prop frames	1
+	cleffect tempent set_current_prop velocity $relvel(ASPRITE_ANG,$vec(0,300,0))
+}
+
+{ setup_hand_sprite
+	cleffect tempent set_current_prop death_delay    FX_DURATION
+	cleffect tempent set_current_prop rendermode add
+	cleffect tempent set_current_prop rendercolor (254,254,1)
+	cleffect tempent set_current_prop scale 0.3
+	cleffect tempent set_current_prop gravity    0
+	cleffect tempent set_current_prop collide    none
+	cleffect tempent set_current_prop framerate	30
+	cleffect tempent set_current_prop frames	1
+	cleffect tempent set_current_prop update 1
+}

@@ -1,0 +1,1182 @@
+//Player (chat or console) votes:
+//votemap
+//votekick
+//voteban
+
+//admin commands:
+//admin_help - list commands
+//admin_listbans - list permanent bans
+//admin_unban - <steamid|playername> - removes ban line from .cfgs and banlist
+//admin_ban - <player|steamid|#statusidx> [minutes] [reason]
+//admin_kick - <player|steamid|#statusidx> [reason]
+//admin_map - changelevel (any map)
+//admin_say - speech infomsg through the Game Master
+//admin_vote - multi-purpouse vote
+//admin_votemap - Votemap (any map)
+//
+//admin SteamID's are stored in admins.txt (loaded in player/player_main)
+
+//related cvars:
+//ms_admin_contact - e-mail contact for kick/banned players
+//ms_ban_to_cfg - 1|0 - append server/listenserver.cfg with permanent bans
+//ms_chatlog - log events/chat
+//msvote_map_type - all|root|nonfn - all legit maps|root towns only|all+illegit (def: all)
+//msvote_farm_all_day - 0|1 - disable|enable voting for current map
+//msvote_pvp_enable - 1|0 - enable|disable voting for PvP
+//msvote_map_enable - 1|0 - enable|disable map votes
+//msvote_kick_enable - 1|0 - enable|disable kick votes
+//msvote_ban_enable - 1|0 - enable|disable ban votes
+//msvote_ban_time - Amount of time a voteban bans a player (def:60 minutes)
+//
+//for optimization, commands are processed in sv_world_commands
+{
+	setvard MAP_VOTE_DELAY 20
+	const HLDM_MAPS "boot_camp;bounce;crossfire;datacore;frenzy;gasworks;lambda_bunker;rapidcore;snark_pit;stalkyard;subtransit;undertow"
+}
+
+
+//Map voting (standard player option)
+{ player_votemap
+
+	if ( $get(GAME_MASTER,scriptvar,'VOTE_BUSY') )
+	{
+		consolemsg PARAM1 votemap - Vote system is busy.
+		rplayermessage PARAM1 votemap - Vote system is busy.
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	if ( $get(GAME_MASTER,scriptvar,'GM_CHANGELEVEL') )
+	{
+		consolemsg PARAM1 votemap - Map change in progress.
+		rplayermessage PARAM1 votemap - Map change in progress.
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	//redundancy
+	if ( $get(GAME_MASTER,scriptvar,'VOTE_FAILED') ) setvard VOTE_MAP_VOTE_IN_PROGRESS 0
+	if ( VOTE_MAP_VOTE_IN_PROGRESS )
+	{
+		consolemsg PARAM1 votemap - Vote already in progress.
+		rplayermessage PARAM1 votemap - Vote already in progress.
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	setvard VOTE_CALLER PARAM1
+	local MAP_TO_VOTE $lcase(PARAM2)
+	local FROM_CONSOLE PARAM3
+	local VOTE_TYPE_CVAR game.cvar.msvote_map_type
+
+
+	//MAPS_XXX token strings are set in sv_world
+
+	if ( game.time < MAP_VOTE_DELAY )
+	{
+		if $get_find_token(MAPS_UNCONNECTED1,MAP_TO_VOTE) == -1
+		if !G_DEVELOPER_MODE
+		yplayermessage VOTE_CALLER VOTE MAP SYSTEM: You cannot start a map vote for the first $int(MAP_VOTE_DELAY) seconds, except by transition.
+		consolemsg VOTE_CALLER VOTE MAP SYSTEM: You cannot start a map vote for the first MAP_VOTE_DELAY seconds, except by transition.
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	if ( HLDM_MAPS contains MAP_TO_VOTE )
+	{
+		setvard IS_HLDM_MAP 0
+		setvard TEST_MAP MAP_TO_VOTE
+		calleventloop $get_token_amt(HLDM_MAPS) check_hldm_maps
+		if IS_HLDM_MAP
+		dplayermessage VOTE_CALLER VOTE MAP SYSTEM: Cannot vote for HLDM maps (they do not work in MSC)
+		consolemsg VOTE_CALLER VOTE MAP SYSTEM: Cannot vote for HLDM maps (they do not work in MSC)
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	if ( MAP_TO_VOTE startswith 'param' )
+	{
+		if ( !FROM_CONSOLE )
+		{
+			gplayermessage VOTE_CALLER VOTE MAP SYSTEM: You can vote for specific maps by typing votemap [mapname] in main chat.
+			gplayermessage VOTE_CALLER Check your console (~) for a list of maps not connected to the world.
+		}
+
+		if ( FROM_CONSOLE )
+		{
+			consolemsg VOTE_CALLER Vote map system: You can vote for specific maps by typing votemap [mapname] in main chat.
+			consolemsg VOTE_CALLER Here's a list of maps you may vote for that are not otherwise reachable:
+		}
+		setvard CUSTOM_COUNT 0
+		//clientcmd VOTE_CALLER clear
+		consolemsg VOTE_CALLER =========== DISCONNECTED MAPS ===========
+		callevent 0.1 list_custom_maps
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	local LEGAL_FN_MAP 0
+
+	local SEARCH_SET MAPS_FN1
+	local SEARCH_IDX $get_find_token(SEARCH_SET,MAP_TO_VOTE)
+	if ( SEARCH_IDX > -1 )
+	{
+		if $get_token(SEARCH_SET,SEARCH_IDX) equals MAP_TO_VOTE
+		local LEGAL_FN_MAP 1
+	}
+	local SEARCH_SET MAPS_FN2
+	local SEARCH_IDX $get_find_token(SEARCH_SET,MAP_TO_VOTE)
+	if ( SEARCH_IDX > -1 )
+	{
+		if $get_token(SEARCH_SET,SEARCH_IDX) equals MAP_TO_VOTE
+		local LEGAL_FN_MAP 1
+	}
+	local SEARCH_SET MAPS_FN3
+	local SEARCH_IDX $get_find_token(SEARCH_SET,MAP_TO_VOTE)
+	if ( SEARCH_IDX > -1 )
+	{
+		if $get_token(SEARCH_SET,SEARCH_IDX) equals MAP_TO_VOTE
+		local LEGAL_FN_MAP 1
+	}
+	local SEARCH_SET MAPS_FN4
+	local SEARCH_IDX $get_find_token(SEARCH_SET,MAP_TO_VOTE)
+	if ( SEARCH_IDX > -1 )
+	{
+		if $get_token(SEARCH_SET,SEARCH_IDX) equals MAP_TO_VOTE
+		local LEGAL_FN_MAP 1
+	}
+
+	if ( game.central )
+	{
+		if $get_find_token(G_NOT_ON_FN,MAP_TO_VOTE) > -1
+		local LEGAL_FN_MAP 0
+		dplayermessage VOTE_CALLER VOTE MAP SYSTEM: MAP_TO_VOTE is a special utility map that cannot be used on [FN]
+		consolemsg VOTE_CALLER VOTE MAP SYSTEM: MAP_TO_VOTE is a special utility map that cannot be used on [FN]
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	if ( VOTE_TYPE_CVAR equals 'root' )
+	{
+		local ALLOW_VOTE 0
+		if ( MAP_TO_VOTE equals edana ) local ALLOW_VOTE 1
+		if ( MAP_TO_VOTE equals deralia ) local ALLOW_VOTE 1
+		if ( MAP_TO_VOTE equals helena ) local ALLOW_VOTE 1
+		if ( $get_find_token(MAPS_UNCONNECTED1,MAP_TO_VOTE) > -1 ) local ALLOW_VOTE 1
+		//add when needed:
+		//if ( $get_find_token(MAPS_UNCONNECTED2,MAP_TO_VOTE) > -1 ) local ALLOW_VOTE 1
+		if !ALLOW_VOTE
+		yplayermessage VOTE_CALLER VOTE MAP SYSTEM: You may only vote for root towns (edana, deralia, helena) and disconnected maps on this server.
+		consolemsg VOTE_CALLER You may only vote for root towns (edana, deralia, helena) and disconnected maps on this server.
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	//nixed to open map system
+//	if ( !LEGAL_FN_MAP )
+//	{
+//		if VOTE_TYPE_CVAR isnot nonfn
+//		yplayermessage VOTE_CALLER VOTE MAP SYSTEM: MAP_TO_VOTE is not recognized as a legitmate map.
+//		consolemsg VOTE_CALLER MAP_TO_VOTE is not recognized as a legitmate map.
+//		local EXIT_SUB 1
+//	}
+//	if !EXIT_SUB
+
+	if ( $get_find_token(MAPS_HIDDEN,MAP_TO_VOTE) > -1 )
+	{
+		yplayermessage VOTE_CALLER VOTE MAP SYSTEM: MAP_TO_VOTE is a hidden map, you must find the entrance.
+		consolemsg VOTE_CALLER MAP_TO_VOTE is a hidden map, you must find the entrance.
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	if ( $get_find_token(MAPS_MAZE,MAP_TO_VOTE) > -1 )
+	{
+		if ( $get_quest_data(VOTE_CALLER,m) equals MAP_TO_VOTE )
+		{
+			local L_NO_GAUNLET_MESSAGE 1
+			gplayermessage VOTE_CALLER VOTE MAP SYSTEM: You can vote for this hidden map as you still qualify.
+		}
+		else
+		{
+			yplayermessage VOTE_CALLER VOTE MAP SYSTEM: MAP_TO_VOTE is hidden within a maze, you must navigate the maze to find its entrance.
+			consolemsg VOTE_CALLER MAP_TO_VOTE is hidden within a maze, you must navigate the maze to find its entrance.
+			local EXIT_SUB 1
+		}
+	}
+	if !EXIT_SUB
+
+	if ( $get_find_token(MAPS_GAUNTLET,MAP_TO_VOTE) > -1 )
+	{
+		if ( $get_quest_data(VOTE_CALLER,m) equals MAP_TO_VOTE )
+		{
+			if !L_NO_GAUNLET_MESSAGE
+			if $get_quest_data(VOTE_CALLER,mv) equals MAP_TO_VOTE
+			//last validated map, and his destination map match gauntlet, so let him vote for it
+			gplayermessage VOTE_CALLER VOTE MAP SYSTEM: You can vote for this gauntlet map as you still qualify.
+		}
+		else
+		{
+			yplayermessage VOTE_CALLER VOTE MAP SYSTEM: MAP_TO_VOTE is part of a gauntlet series, you must begin at the start of the series.
+			consolemsg VOTE_CALLER VOTE MAP SYSTEM: MAP_TO_VOTE is part of a gauntlet series, you must begin at the start of the series.
+			local EXIT_SUB 1
+		}
+	}
+	if !EXIT_SUB
+
+	if ( !$map_exists(MAP_TO_VOTE) )
+	{
+		yplayermessage VOTE_CALLER VOTE MAP SYSTEM: MAP_TO_VOTE is not found on this server.
+		consolemsg VOTE_CALLER MAP_TO_VOTE is not found on this server.
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	if ( $lcase(game.map.name) equals MAP_TO_VOTE )
+	{
+		if !game.cvar.msvote_farm_all_day 
+		yplayermessage VOTE_CALLER VOTE MAP SYSTEM: You cannot vote for the map you are currently on.
+		consolemsg VOTE_CALLER You cannot vote for the map you are currently on.
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	if !VOTE_MAP_VOTE_IN_PROGRESS
+	setvard VOTE_MAP_VOTE_IN_PROGRESS 1
+
+	local MSG_TITLE $get(VOTE_CALLER,name)
+	stradd MSG_TITLE " has started a map vote for "
+	stradd MSG_TITLE MAP_TO_VOTE
+	infomsg all MSG_TITLE "Voting begins now!"
+
+	local VOTE_TITLE "Change to "
+	stradd VOTE_TITLE MAP_TO_VOTE
+	stradd VOTE_TITLE "?"
+
+	callexternal players ext_set_vote_delay 20.0
+	callexternal GAME_MASTER gm_map_vote VOTE_CALLER MAP_TO_VOTE VOTE_TITLE 1 1
+}
+
+{ list_custom_maps
+	local TOTAL_MAPS $get_token_amt(MAPS_UNCONNECTED1)
+	subtract TOTAL_MAPS 1
+	if ( CUSTOM_COUNT == TOTAL_MAPS )
+	{
+		if MAPS_UNCONNECTEDS > 1
+		setvard CUSTOM_COUNT 0
+		callevent 0.1 list_custom_maps2
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+	if CUSTOM_COUNT <= TOTAL_MAPS
+	local CUST_MAP $get_token(MAPS_UNCONNECTED1,CUSTOM_COUNT)
+	if ( $map_exists(CUST_MAP) ) consolemsg VOTE_CALLER CUST_MAP
+	//if ( CUSTOM_COUNT == TOTAL_MAPS ) consolemsg VOTE_CALLER ===================================
+	add CUSTOM_COUNT 1
+	callevent 0.1 list_custom_maps
+}
+
+{ list_custom_maps2
+	local TOTAL_MAPS $get_token_amt(MAPS_UNCONNECTED2)
+	subtract TOTAL_MAPS 1
+//	if ( CUSTOM_COUNT == TOTAL_MAPS )
+//	{
+//		if MAPS_UNCONNECTEDS > 2
+//		setvard CUSTOM_COUNT 0
+//		callevent 0.1 list_custom_maps3
+//		local EXIT_SUB 1
+//	}
+//	if !EXIT_SUB
+	if CUSTOM_COUNT <= TOTAL_MAPS
+	local CUST_MAP $get_token(MAPS_UNCONNECTED2,CUSTOM_COUNT)
+	if ( $map_exists(CUST_MAP) ) consolemsg VOTE_CALLER CUST_MAP
+	if ( CUSTOM_COUNT == TOTAL_MAPS )
+	{
+		consolemsg VOTE_CALLER ===================================
+		consolemsg VOTE_CALLER Or type maps * for a listing of all maps on your client
+	}
+	add CUSTOM_COUNT 1
+	callevent 0.1 list_custom_maps2
+}
+
+
+//Admin stuff START ========================================================================
+//==========================================================================================
+//==========================================================================================
+
+{ admin_kick //<user> <reason>
+
+	if ( PARAM1 startswith 'PARAM' )
+	{
+		if ( GET_TARGET_ONLY )
+		{
+			consolemsg CALLING_ADMIN USAGE: votekick [playername] or [STEAM_ID] or status [#idx]
+			gplayermessage CALLING_ADMIN USAGE: votekick [playername] or [STEAM_ID] or status [#idx]
+			local EXIT_SUB 1
+		}
+
+		if !GET_TARGET_ONLY
+		if ( !CALLED_FROM_BAN ) consolemsg CALLING_ADMIN USAGE: admin_kick <playername|STEAM_ID|#idx> ["reason"]
+		if ( !CALLED_FROM_BAN ) consolemsg CALLING_ADMIN - partial names are valid, reason should be in quotes, use status command to list players
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	local KICK_REASON PARAM2
+
+	//use status index#
+	if ( PARAM1 startswith '#' )
+	{
+		local KICK_IDX $num(PARAM1)
+		if ( G_DEVELOPER_MODE ) consolemsg CALLING_ADMIN kick index is KICK_IDX
+		getplayer FOUND_PLAYER KICK_IDX
+		if ( FOUND_PLAYER equals 0 )
+		{
+			if ( !CALLED_FROM_BAN )
+			{
+				if !GET_TARGET_ONLY
+				consolemsg CALLING_ADMIN admin_kick: No player in slot PARAM1
+			}
+			if ( GET_TARGET_ONLY )
+			{
+				consolemsg CALLING_ADMIN ACTION_TYPE No player in slot PARAM1
+				gplayermessage CALLING_ADMIN ACTION_TYPE No player in slot PARAM1
+			}
+			setvard IDX_NOT_FOUND 1
+			local EXIT_SUB 1
+		}
+		if !EXIT_SUB
+		local KICK_TARGET FOUND_PLAYER
+		if ( GET_TARGET_ONLY ) setvard GOT_KICK_TARGET KICK_TARGET
+		if ( !GET_TARGET_ONLY ) callevent admin_kick_exec KICK_TARGET KICK_REASON
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	//use STEAM_ID
+	if ( PARAM1 startswith 'STEAM' )
+	{
+		getplayers PLAYER_LIST
+		setvard STEAM_LIST ''
+		calleventloop $get_token_amt(PLAYER_LIST) admin_ent_2_steam
+		local KICK_IDX $get_find_token(STEAM_LIST,PARAM1)
+		if ( KICK_IDX == -1 )
+		{
+			if ( GET_TARGET_ONLY )
+			{
+				consolemsg CALLING_ADMIN ACTION_TYPE Steamid: PARAM1 was not found.
+				gplayermessage CALLING_ADMIN ACTION_TYPE Steamid: PARAM1 was not found.
+			}
+
+			if ( !CALLED_FROM_BAN ) 
+			{
+				if !GET_TARGET_ONLY
+				consolemsg CALLING_ADMIN admin_kick: Steamid: PARAM1 was not found.
+			}
+			setvard STEAM_ID_NOT_FOUND 1
+			local EXIT_SUB 1
+		}
+		if !EXIT_SUB
+		local KICK_TARGET $get_token(PLAYER_LIST,KICK_IDX) 
+		if ( GET_TARGET_ONLY ) setvard GOT_KICK_TARGET KICK_TARGET
+		if ( !GET_TARGET_ONLY ) callevent admin_kick_exec KICK_TARGET KICK_REASON
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	//by name
+	getplayers PLAYER_LIST
+	setvard NAME_LIST ''
+	calleventloop $get_token_amt(PLAYER_LIST) admin_ent_2_name
+	local KICK_IDX $get_find_token(NAME_LIST,PARAM1)
+	if ( KICK_IDX != -1 ) local KICK_TARGET $get_token(PLAYER_LIST,KICK_IDX) 
+	if ( KICK_IDX == -1 )
+	{
+		setvard NAME_MATCH_IDX -1
+		setvard NAME_SEARCH $lcase(PARAM1)
+		calleventloop $get_token_amt(NAME_LIST) admin_match_name
+		local KICK_IDX NAME_MATCH_IDX
+	}
+	if ( KICK_IDX == -1 )
+	{
+		if ( GET_TARGET_ONLY )
+		{
+			consolemsg CALLING_ADMIN ACTION_TYPE No match found for PARAM1
+			gplayermessage CALLING_ADMIN ACTION_TYPE No match found for PARAM1
+		}
+		if ( !CALLED_FROM_BAN )
+		{
+			if !GET_TARGET_ONLY
+			consolemsg CALLING_ADMIN admin_kick: No match found for PARAM1
+		}
+		setvard NAME_NOT_FOUND 1
+	}
+
+	local KICK_TARGET $get_token(PLAYER_LIST,KICK_IDX) 
+	if ( GET_TARGET_ONLY ) setvard GOT_KICK_TARGET KICK_TARGET
+	if ( !GET_TARGET_ONLY ) callevent admin_kick_exec KICK_TARGET KICK_REASON
+}
+
+{ admin_kick_exec //<target> <reason>
+
+	local KICK_TARGET PARAM1
+	local KICK_REASON PARAM2
+
+	if ( KICK_REASON startswith 'PARAM' ) local KICK_REASON "[unstated]"
+
+	setvard LAST_KICK_TARGET_STEAMID $get(KICK_TARGET,steamid)
+	setvard LAST_KICK_TARGET_IP $get(KICK_TARGET,ip)
+	setvard LAST_KICK_TARGET_NAME $get(KICK_TARGET,name)
+	if ( CALLED_FROM_BAN )
+	{
+		if ( D_BAN_TIME > 0 ) local CL_CMD_STR "clear;wait;echo You were TEMPORARILY BANNED from this server because "
+		if ( !D_BAN_TIME ) local CL_CMD_STR "clear;wait;echo You were PERMANENTLY BANNED from this server because "
+	}
+	if ( !CALLED_FROM_BAN )
+	{
+		local CL_CMD_STR "clear;wait;echo You were kicked from this server because "
+	}
+
+	stradd CL_CMD_STR KICK_REASON
+	stradd CL_CMD_STR ";echo Contact Info: "
+	stradd CL_CMD_STR game.cvar.ms_admin_contact
+	stradd CL_CMD_STR ";echo Forums: www.msremake.com"
+	stradd CL_CMD_STR ";disconnect"
+	if ( !$get(KICK_TARGET,isbot) )
+	{
+		clientcmd KICK_TARGET CL_CMD_STR
+		kick KICK_TARGET //phayles
+	}
+	if ( $get(KICK_TARGET,isbot) )
+	{
+		local SV_COMMAND "kick "
+		stradd SV_COMMAND $quote(LAST_KICK_TARGET_NAME)
+		servercmd SV_COMMAND
+	}
+
+	if ( !CALLED_FROM_BAN )
+	{
+		consolemsg CALLING_ADMIN admin_kick: Kicked LAST_KICK_TARGET_NAME [ LAST_KICK_TARGET_STEAMID ]
+		local WRITE_LOG $timestamp()
+		if ( KICK_REASON isnot player_vote ) stradd WRITE_LOG "> ADMIN: "
+		if ( KICK_REASON equals player_vote ) stradd WRITE_LOG "> PLAYER_VOTE_BY: "
+		stradd WRITE_LOG $get(CALLING_ADMIN,name)
+		stradd WRITE_LOG "["
+		stradd WRITE_LOG $get(CALLING_ADMIN,steamid)
+		stradd WRITE_LOG "]"
+		stradd WRITE_LOG " kicked: "
+		stradd WRITE_LOG LAST_KICK_TARGET_NAME
+		stradd WRITE_LOG "["
+		stradd WRITE_LOG LAST_KICK_TARGET_STEAMID
+		stradd WRITE_LOG "]"
+		stradd WRITE_LOG " reason: "
+		stradd WRITE_LOG KICK_REASON
+		callevent log_event WRITE_LOG
+	}
+}
+
+{ admin_ban //<user> <time> <reason>
+
+	if ( PARAM1 startswith 'PARAM' )
+	{
+		if ( !CALLED_FROM_BAN )
+		{
+			consolemsg CALLING_ADMIN USAGE: admin_ban <playername|STEAM_ID|#idx> [minutes] ["reason"]
+			consolemsg CALLING_ADMIN - partial names are valid, reason should be in quotes, use status command to list players
+			consolemsg CALLING_ADMIN - use 0 for permanent bans
+		}
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	setvard STEAM_ID_NOT_FOUND 0
+	setvard NAME_NOT_FOUND 0
+	setvard IDX_NOT_FOUND 0
+	setvard CALLED_FROM_BAN 1
+	local L_KICK_USER PARAM1
+	local L_KICK_REASON PARAM3
+	local BAN_TIME PARAM2
+
+	if ( BAN_TIME > 0 ) setvard D_BAN_TIME BAN_TIME
+
+	callevent admin_kick L_KICK_USER L_KICK_REASON
+	setvard CALLED_FROM_BAN 0
+
+	if ( NAME_NOT_FOUND )
+	{
+		consolemsg CALLING_ADMIN admin_ban: No match found for PARAM1
+		local EXIT_SUB 1
+	}
+	if ( IDX_NOT_FOUND )
+	{
+		consolemsg CALLING_ADMIN admin_kick: No player in slot PARAM1
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	if ( STEAM_ID_NOT_FOUND )
+	{
+		consolemsg CALLING_ADMIN admin_ban: Steamid: PARAM1 was not found on server... Banning anyways...
+	}
+
+	local BAN_STEAMID LAST_KICK_TARGET_STEAMID
+	local BAN_IP LAST_KICK_TARGET_IP
+	local BAN_NAME LAST_KICK_TARGET_NAME
+	if ( BAN_TIME startswith 'PARAM' ) local BAN_TIME 0
+
+	local SERVER_CMD "banid "
+	strconc SERVER_CMD BAN_TIME LAST_KICK_TARGET_STEAMID
+	servercmd SERVER_CMD
+
+	servercmd "writeid"
+
+//	if ( !STEAM_ID_NOT_FOUND )
+//	{
+//		if BAN_IP isnot loopback
+//		local SERVER_CMD "addip "
+//		local BAN_IP_PARSE $search_string(BAN_IP,":")
+//		local BAN_IP $mid(BAN_IP,BAN_IP_PARSE)
+//		strconc SERVER_CMD BAN_TIME " " $quote(BAN_IP)
+//		servercmd SERVER_CMD
+//		servercmd "writeip"
+//		local BANNED_IP 1
+//	}
+
+	if ( STEAM_ID_NOT_FOUND )
+	{
+		local BAN_NAME "[offline]"
+	}
+
+	consolemsg CALLING_ADMIN admin_ban: Banned BAN_NAME [ BAN_STEAMID ]
+	local WRITE_LOG $timestamp()
+	if ( L_KICK_REASON isnot player_vote ) stradd WRITE_LOG "> ADMIN: "
+	if ( L_KICK_REASON equals player_vote ) stradd WRITE_LOG "> PLAYER_VOTE_BY: "
+	stradd WRITE_LOG $get(CALLING_ADMIN,name)
+	stradd WRITE_LOG "["
+	stradd WRITE_LOG $get(CALLING_ADMIN,steamid)
+	stradd WRITE_LOG "]"
+	stradd WRITE_LOG " banned: "
+	stradd WRITE_LOG BAN_NAME
+	stradd WRITE_LOG "["
+	stradd WRITE_LOG BAN_STEAMID
+	stradd WRITE_LOG "]"
+	stradd WRITE_LOG " time: "
+	if ( BAN_TIME > 0 )
+	{
+		stradd WRITE_LOG BAN_TIME
+		stradd WRITE_LOG " minutes"
+	}
+	if ( BAN_TIME == 0 ) stradd WRITE_LOG "PERMANENTLY"
+	stradd WRITE_LOG " reason: "
+	if ( L_KICK_REASON startswith 'PARAM' ) local L_KICK_REASON "[unstated]"
+	stradd WRITE_LOG L_KICK_REASON
+	callevent log_event WRITE_LOG
+
+	//msc_bans.cfg for perm bans that MSC can't handle thanks to steam
+	if BAN_TIME equals 0
+
+	local WRITE_TO_CFG game.cvar.ms_ban_to_cfg
+
+	local OUT_BAN "banid 0.0 "
+	stradd OUT_BAN $quote(BAN_STEAMID)
+	stradd OUT_BAN " /"
+	stradd OUT_BAN "/"
+	stradd OUT_BAN BAN_NAME
+	stradd OUT_BAN " permanently banned for: "
+	stradd OUT_BAN L_KICK_REASON
+	writeline msc_bans.cfg " "
+	writeline msc_bans.cfg OUT_BAN
+	if ( WRITE_TO_CFG )
+	{
+		local OUT_COMMENT "/"
+		stradd OUT_COMMENT "/ msc writes perm-bans to your configs, to disable: set ms_ban_to_cfg 0 and add: exec msc_bans.cfg"
+		writeline listenserver.cfg OUT_COMMENT
+		writeline listenserver.cfg OUT_BAN
+		writeline server.cfg " "
+		writeline server.cfg OUT_BAN
+	}
+
+//	if BANNED_IP
+//	local OUT_BAN "addip 0.0 "
+//	stradd OUT_BAN BAN_IP
+//	stradd OUT_BAN " /"
+//	stradd OUT_BAN "/"
+//	stradd OUT_BAN BAN_NAME
+//	stradd OUT_BAN "["
+//	stradd OUT_BAN BAN_STEAMID
+//	stradd OUT_BAN "]"
+//	stradd OUT_BAN " permanently banned for: "
+//	stradd OUT_BAN L_KICK_REASON
+//	writeline msc_bans.cfg OUT_BAN
+//	if ( WRITE_TO_CFG )
+//	{
+//		writeline listenserver.cfg OUT_BAN
+//		writeline server.cfg " "
+//		writeline server.cfg OUT_BAN
+//	}
+}
+
+{ admin_ent_2_steam
+	local CUR_PLAYER $get_token(PLAYER_LIST,game.script.iteration)
+	token.add STEAM_LIST $get(CUR_PLAYER,steamid)
+}
+
+{ admin_ent_2_name
+	local CUR_PLAYER $get_token(PLAYER_LIST,game.script.iteration)
+	token.add NAME_LIST $get(CUR_PLAYER,name)
+}
+
+{ admin_match_name
+	if NAME_MATCH_IDX == -1
+	local CUR_NAME $get_token(NAME_LIST,game.script.iteration)
+	local CUR_NAME $lcase(CUR_NAME)
+	if ( CUR_NAME contains NAME_SEARCH ) setvard NAME_MATCH_IDX game.script.iteration
+}
+
+{ log_event
+	if game.cvar.ms_chatlog
+	chatlog PARAM1
+}
+
+{ player_votekick //<kick_name> <caller>
+
+	if ( $get(GAME_MASTER,scriptvar,'VOTE_BUSY') )
+	{
+		consolemsg PARAM1 votekick - Vote system is busy.
+		rplayermessage PARAM1 votekick - Vote system is busy.
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	setvard CALLING_ADMIN PARAM2
+
+	setvard GOT_KICK_TARGET 0
+	local KICK_NAME PARAM1
+	setvard GET_TARGET_ONLY 1
+	setvard ACTION_TYPE "VOTE_KICK:"
+	callevent admin_kick KICK_NAME "Player_Voted" 1
+	setvard GET_TARGET_ONLY 0
+	if $get(GOT_KICK_TARGET,isplayer)
+	//setvard VOTE_IN_PROGRESS 1
+	callexternal CALLING_ADMIN ext_set_vote_delay 60.0
+	callexternal GAME_MASTER gm_votekick GOT_KICK_TARGET CALLING_ADMIN
+	callevent 20.0 player_votekick2
+}
+
+{ player_votekick2
+
+	callexternal GAME_MASER gm_free_vote_system
+
+	local L_VOTE_PASSED $get(GAME_MASTER,scriptvar,VOTE_PASSED)
+	if ( L_VOTE_PASSED < 0 )
+	{
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+	if ( !L_VOTE_PASSED )
+	{
+		local MSG_TITLE "KICK_VOTE against "
+		strconc MSG_TITLE $get(GOT_KICK_TARGET,name) has failed!
+		local MSG_DESC "Voted down."
+		infomsg all MSG_TITLE MSG_DESC	
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	local MSG_TITLE "KICK_VOTE against "
+	strconc MSG_TITLE $get(GOT_KICK_TARGET,name) has passed!"
+	local MSG_DESC "The player has been kicked from the server!"
+	infomsg all MSG_TITLE MSG_DESC
+	callevent admin_kick_exec GOT_KICK_TARGET "player_vote"
+}
+
+{ player_voteban //<kick_name> <caller>
+
+	if ( $get(GAME_MASTER,scriptvar,'VOTE_BUSY') )
+	{
+		consolemsg PARAM1 voteban - Vote system is busy.
+		rplayermessage PARAM1 voteban - Vote system is busy.
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	setvard CALLING_ADMIN PARAM2
+
+	setvard GOT_KICK_TARGET 0
+	local KICK_NAME PARAM1
+	setvard GET_TARGET_ONLY 1
+	setvard ACTION_TYPE "VOTE_BAN:"
+	callevent admin_kick KICK_NAME "Player_Voted" 1 //this just grabs the id without kicking the player
+	setvard GET_TARGET_ONLY 0
+	if $get(GOT_KICK_TARGET,isplayer)
+	//setvard VOTE_IN_PROGRESS 1
+	callexternal CALLING_ADMIN ext_set_vote_delay 60.0
+	callexternal GAME_MASTER gm_voteban GOT_KICK_TARGET CALLING_ADMIN
+	callevent 20.0 player_voteban2
+}
+
+{ player_voteban2
+
+	local L_VOTE_PASSED $get(GAME_MASTER,scriptvar,VOTE_RESULT)
+	if ( L_VOTE_PASSED equals '[failed]' )
+	{
+		local MSG_TITLE "BAN_VOTE against "
+		strconc MSG_TITLE $get(GOT_KICK_TARGET,name) has failed!
+		local MSG_DESC "No one voted."
+		infomsg all MSG_TITLE MSG_DESC
+		local EXIT_SUB 1
+	}
+	if ( L_VOTE_PASSED equals 'No' )
+	{
+		local MSG_TITLE "BAN_VOTE against "
+		strconc MSG_TITLE $get(GOT_KICK_TARGET,name) has failed!
+		local MSG_DESC "Voted down."
+		infomsg all MSG_TITLE MSG_DESC	
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	local MSG_TITLE "BAN_VOTE against "
+	strconc MSG_TITLE $get(GOT_KICK_TARGET,name) has passed!"
+	local MSG_DESC "The player has been banned from the server!"
+	infomsg all MSG_TITLE MSG_DESC	
+	callevent admin_ban GOT_KICK_TARGET game.cvar.msvote_ban_time "player_vote"
+}
+
+{ admin_help
+
+	local RCON_AUTH PARAM1
+	local CVAR_AUTH PARAM2
+
+	consolemsg CALLING_ADMIN ============================
+	consolemsg CALLING_ADMIN MSC Administrative Commands:
+	consolemsg CALLING_ADMIN admin_kick <player|steamid|#statusidx> [reason]
+	consolemsg CALLING_ADMIN admin_ban <player|steamid|#statusidx> [minutes] [reason]
+	consolemsg CALLING_ADMIN admin_unban <steamid|playername>
+	consolemsg CALLING_ADMIN admin_listbans - lists permanent bans
+	consolemsg CALLING_ADMIN admin_map <mapname> - change to any map
+	consolemsg CALLING_ADMIN admin_say $quote(<message>) - global message (use quotes)
+	consolemsg CALLING_ADMIN admin_votemap <mapname> - vote for any map
+	consolemsg CALLING_ADMIN admin_vote $quote('option1;option2;option3') $quote(Vote,Title) [ $quote(Vote,Description) ]
+	if ( CVAR_AUTH ) consolemsg CALLING_ADMIN admin_cvar <variable> <setting>
+	if ( RCON_AUTH ) consolemsg CALLING_ADMIN admin_rcon $quote(<commands>) (use quotes)
+	consolemsg CALLING_ADMIN ============================
+}
+
+{ admin_listbans
+	local BAN_LINE $get_fileline(msc_bans.cfg)
+	if ( BAN_LINE equals [FILE_NOT_FOUND] )
+	{
+		consolemsg CALLING_ADMIN No permanent ban list found.
+		local EXIT_SUB 1
+	}
+	if ( BAN_LINE equals [EOF] ) local EXIT_SUB 1
+	if !EXIT_SUB
+	consolemsg CALLING_ADMIN $left(BAN_LINE,64) //displaying more than 64 chars on line may cause overflow
+	callevent 0.1 admin_listbans
+}
+
+{ admin_say
+
+	if ( PARAM1 startswith 'PARAM' )
+	{
+		consolemsg CALLING_ADMIN USAGE: admin_say $quote(<message>)
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+
+	if ( PARAM2 startswith 'PARAM' ) local LEGIT_MSG 1
+	if ( !LEGIT_MSG )
+	{
+		consolemsg CALLING_ADMIN admin_say: Please contain your message in $quote(quotes)
+	}
+	if LEGIT_MSG
+
+	consolemsg CALLING_ADMIN "Sent to all players:" PARAM1
+	infomsg all "Attention!" PARAM1
+	messageall green "Admin Message:" PARAM1
+}
+
+{ admin_votemap
+
+	if ( $get(GAME_MASTER,scriptvar,'VOTE_BUSY') )
+	{
+		consolemsg CALLING_ADMIN admin_vote - Vote system is busy.
+		rplayermessage CALLING_ADMIN admin_vote - Vote system is busy.
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	if ( PARAM1 startswith 'PARAM' )
+	{
+		consolemsg CALLING_ADMIN USAGE: admin_votemap <mapname>
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	if ( !$map_exists(PARAM1) )
+	{
+		consolemsg CALLING_ADMIN admin_votemap: map PARAM1 does not exist on this server.
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	consolemsg CALLING_ADMIN "Starting vote for:" PARAM1
+	local VOTE_TITLE "Change to "
+	stradd VOTE_TITLE PARAM1
+	stradd VOTE_TITLE "?"
+	callexternal GAME_MASTER gm_map_vote CALLING_ADMIN PARAM1 VOTE_TITLE 1 1
+}
+
+{ admin_vote //<options...;> <title> <desc>
+
+	if ( $get(GAME_MASTER,scriptvar,'VOTE_BUSY') )
+	{
+		consolemsg CALLING_ADMIN admin_vote - Vote system is busy.
+		rplayermessage CALLING_ADMIN admin_vote - Vote system is busy.
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	if ( PARAM1 startswith 'PARAM' )
+	{
+		local QUOTE1 "Vote Title"
+		local QUOTE2 "Vote Description"
+		consolemsg CALLING_ADMIN admin_vote $quote('option1;option2;option3') $quote(QUOTE1) [ $quote(QUOTE2) ]
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	local DE_OPTIONS PARAM1
+	local DE_TITLE PARAM2
+	local DE_DESC PARAM3
+	consolemsg CALLING_ADMIN admin_vote: Vote: [ DE_OPTIONS ] [ DE_TITLE ] [ DE_DESC ] has begun
+	callexternal GAME_MASTER gm_generic_vote $get(ent_currentplayer) DE_OPTIONS DE_TITLE DE_DESC
+}
+
+//-admin_help - list commands
+//-admin_listbans - list permanent bans
+//*admin_unban - <steamid|playername> - removes ban line from .cfgs and banlist
+//-admin_ban - <player|steamid|#statusidx> [minutes] [reason]
+//-admin_kick - <player|steamid|#statusidx> [reason]
+//-admin_map - changelevel (any map)
+//-admin_say - speech infomsg through the Game Master
+//-admin_vote - multi-purpouse vote
+//-admin_votemap - Votemap (any map)
+{ admin_map
+
+	if ( PARAM1 startswith 'PARAM' )
+	{
+		consolemsg CALLING_ADMIN USAGE: admin_map <mapname>
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	if ( !$map_exists(PARAM1) )
+	{
+		consolemsg CALLING_ADMIN admin_map: map PARAM1 does not exist on this server.
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	//admins can force specific spawns
+	local L_SPAWN_NAME ''
+	if ( PARAM2 !startswith PARAM )
+	{
+		local L_SPAWN_NAME " spawnarea "
+		stradd L_SPAWN_NAME PARAM2
+	}
+
+	consolemsg CALLING_ADMIN Changing level to: PARAM1 L_SPAWN_NAME
+	local L_PASS1 PARAM1
+	local L_PASS2 PARAM2
+	callexternal GAME_MASTER gm_manual_map_change L_PASS1 L_PASS2
+}
+
+{ admin_unban
+
+	if ( PARAM1 startswith 'PARAM' )
+	{
+		consolemsg CALLING_ADMIN USAGE: admin_unban <steamid|playername>
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	setvard UNBAN_SEARCH_STR PARAM1
+	setvard UNBAN_ID "not_found"
+
+	if ( SEARCH_STR startswith 'STEAM_' )
+	{
+		local STEAM_SEARCH 1
+		setvard UNBAN_ID UNBAN_SEARCH_STR
+	}
+
+	if ( !STEAM_SEARCH )
+	{
+		//convert name to steam id, if found
+		callevent find_ban_steamid UNBAN_SEARCH_STR
+	}
+
+	consolemsg CALLING_ADMIN admin_unban: Searching for id: PARAM1 (please wait)
+
+	callevent 5.0 remove_ban
+}
+
+{ remove_ban
+	if ( UNBAN_ID equals 'not_found' )
+	{
+		consolemsg CALLING_ADMIN admin_unban: UNBAN_SEARCH_STR was not found.
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	setvard FILE_LINE 0
+	setvard CUR_FILE 0
+	setvard FILE_LIST "msc_bans.cfg;server.cfg;listenserver.cfg"
+	setvard N_FILES $get_token_amt(FILE_LIST)
+	subtract N_FILES 1
+	consolemsg CALLING_ADMIN admin_unban: Removing UNBAN_ID from $get_token(FILE_LIST,0)
+	callevent remove_ban_from_cfgs
+}
+
+{ remove_ban_from_cfgs
+	local FIX_FILE $get_token(FILE_LIST,CUR_FILE)
+	local IN_LINE $get_fileline(FIX_FILE)
+	if ( IN_LINE contains UNBAN_ID )
+	{
+		local COMMENT_START "/"
+		stradd COMMENT_START "/"
+		if ( IN_LINE startswith COMMENT_START ) local SKIP_LINE 1
+		if !SKIP_LINE
+		local OUT_LINE COMMENT_START
+		strconc OUT_LINE IN_LINE
+		writeline FIX_FILE OUT_LINE FILE_LINE
+	}
+	add FILE_LINE 1
+	if ( IN_LINE equals '[EOF]' ) local NEXT_FILE 1
+	if ( IN_LINE equals '[FILE_NOT_FOUND]' ) local NEXT_FILE 1
+	if ( !NEXT_FILE ) callevent 0.1 remove_ban_from_cfgs
+
+	if NEXT_FILE
+	if CUR_FILE < N_FILES
+	add CUR_FILE 1
+	consolemsg CALLING_ADMIN admin_unban: Removing UNBAN_ID from $get_token(FILE_LIST,CUR_FILE)
+	setvard FILE_LINE 0
+	callevent 0.1 remove_ban_from_cfgs
+}
+
+{ find_ban_steamid //<search_str>
+
+	local IN_LINE $get_fileline(msc_bans.cfg)
+	if ( IN_LINE equals '[FILE_NOT_FOUND]' )
+	{
+		consolemsg CALLING_ADMIN admin_unban ERROR: No permanent ban list found.
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+	//sample line: banid 0.0 STEAM_ID_LAN //MAP_TEST_CHAR permanently banned for: [unstated]
+
+	if ( IN_LINE startswith 'banid' )
+	{
+		if UNBAN_ID equals not_found
+
+		//carve name out of string
+		local COMMENT_START "/"
+		stradd COMMENT_START "/"
+		local NAME_START $search_string(IN_LINE,COMMENT_START)
+		add NAME_START 2
+		local NAME_END $search_string(IN_LINE,permanently)
+		local NAME_LENGTH NAME_END
+		subtract NAME_LENGTH NAME_START
+		local LINE_NAME $mid(IN_LINE,NAME_START,NAME_LENGTH)
+
+		if ( G_DEVELOPER_MODE ) consolemsg CALLING_ADMIN DEBUG: name LINE_NAME
+
+		if ( LINE_NAME contains PARAM1 )
+		{
+			//carve ID out of string
+			local BAN_PREFIX "banid 0.0 "
+			local ID_START $len(BAN_PREFIX)
+			local ID_END NAME_START
+			subtract ID_END 2
+			locaL ID_LENGTH ID_END
+			subtract ID_LENGTH ID_START
+			setvard UNBAN_ID $mid(IN_LINE,ID_START,ID_LENGTH)
+			if ( G_DEVELOPER_MODE ) consolemsg CALLING_ADMIN DEBUG: id UNBAN_ID
+			consolemsg CALLING_ADMIN admin_unban: PARAM1 steam id is: UNBAN_ID
+		}
+	}
+
+	if IN_LINE isnot '[EOF]'
+	callevent 0.1 find_ban_steamid
+}
+
+{ admin_rcon
+
+	if ( PARAM1 startswith 'PARAM' )
+	{
+		consolemsg CALLING_ADMIN USAGE: admin_rcon $quote(<commands>) - (use quotes)sends command to server
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+	servercmd PARAM1		
+}
+
+{ admin_cvar
+
+	if ( PARAM1 startswith 'PARAM' )
+	{
+		consolemsg CALLING_ADMIN USAGE: admin_cvar <cvar> <value> - sets a server cvar value
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+	setcvar PARAM1 PARAM2
+}
+
+{ player_votepvp
+
+	if ( $get(GAME_MASTER,scriptvar,'VOTE_BUSY') )
+	{
+		consolemsg PARAM1 votepvp - Vote system is busy.
+		rplayermessage PARAM1 votepvp - Vote system is busy.
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	setvard VOTE_CALLER PARAM1
+	setvard GAME_PVP game.pvp //might need to change this function to pull the rule instead of the var
+	callexternal VOTE_CALLER ext_set_vote_delay
+
+	if ( GAME_PVP > 1 )
+	{
+		callexternal GAME_MASTER gm_votepvp VOTE_CALLER 0
+	}
+	else callexternal GAME_MASTER gm_votepvp VOTE_CALLER  1
+}
+
+{ admin_listadmins
+	consolemsg CALLING_ADMIN ID / AUTH
+	calleventloop $get_token_amt(G_ADMIN_LIST) list_admins
+}
+
+{ list_admins
+	local CUR_ADMIN $get_token(G_ADMIN_LIST,game.script.iteration)
+	local CUR_AUTH $get_token(G_ADMIN_AUTH,game.script.iteration)
+	consolemsg CALLING_ADMIN CUR_ADMIN / CUR_AUTH
+}
+
+{ admin_gag //<player> [duration]
+
+	if ( G_DEVELOPER_MODE ) consolemsg CALLING_ADMIN admin_gag: Debug PARAM1 PARAM2
+
+	if ( PARAM1 startswith 'PARAM' )
+	{
+		consolemsg CALLING_ADMIN USAGE: admin_gag <player|steamid|#statusidx> [minutes]
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	setvard GOT_KICK_TARGET 0
+	local KICK_NAME PARAM1
+	setvard GET_TARGET_ONLY 1
+	setvard ACTION_TYPE "admin_gag:"
+	callevent admin_kick KICK_NAME "Player_Voted" 1 //this just grabs the id without kicking the player
+	setvard GET_TARGET_ONLY 0
+	if $get(GOT_KICK_TARGET,isplayer)
+	consolemsg CALLING_ADMIN admin_ungag: $get(GOT_KICK_TARGET,name) has been muted.
+	local WRITE_LOG $timestamp()	
+	stradd WRITE_LOG "> ADMIN: "
+	stradd WRITE_LOG $get(CALLING_ADMIN,name)
+	stradd WRITE_LOG "["
+	stradd WRITE_LOG $get(CALLING_ADMIN,steamid)
+	stradd WRITE_LOG "]"
+	stradd WRITE_LOG " muted: "
+	stradd WRITE_LOG $get(GOT_KICK_TARGET,name)
+	stradd WRITE_LOG "["
+	stradd WRITE_LOG  $get(GOT_KICK_TARGET,id)
+	stradd WRITE_LOG "]"
+	callevent log_event WRITE_LOG
+	callexternal GOT_KICK_TARGET ext_player_gag PARAM2
+}
+
+{ admin_ungag //<player>
+
+	if ( PARAM1 startswith 'PARAM' )
+	{
+		consolemsg CALLING_ADMIN USAGE: admin_ungag <player|steamid|#statusidx>
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	setvard GOT_KICK_TARGET 0
+	local KICK_NAME PARAM1
+	setvard GET_TARGET_ONLY 1
+	setvard ACTION_TYPE "admin_ungag:"
+	callevent admin_kick KICK_NAME "Player_Voted" 1 //this just grabs the id without kicking the player
+	setvard GET_TARGET_ONLY 0
+	if $get(GOT_KICK_TARGET,isplayer)
+	consolemsg CALLING_ADMIN admin_ungag: $get(GOT_KICK_TARGET,name) has been un-muted.
+	local WRITE_LOG $timestamp()	
+	stradd WRITE_LOG "> ADMIN: "
+	stradd WRITE_LOG $get(CALLING_ADMIN,name)
+	stradd WRITE_LOG "["
+	stradd WRITE_LOG $get(CALLING_ADMIN,steamid)
+	stradd WRITE_LOG "]"
+	stradd WRITE_LOG " unmuted: "
+	stradd WRITE_LOG $get(GOT_KICK_TARGET,name)
+	stradd WRITE_LOG "["
+	stradd WRITE_LOG  $get(GOT_KICK_TARGET,id)
+	stradd WRITE_LOG "]"
+	callevent log_event WRITE_LOG
+	callexternal GOT_KICK_TARGET ext_player_ungag
+}
+
+{ check_hldm_maps
+	local CUR_MAP $get_token(HLDM_MAPS,game.script.iteration)
+	if ( CUR_MAP equals TEST_MAP ) setvard IS_HLDM_MAP 1 
+}
+
+{ player_votelock //<caller>
+
+	dbg player_votelock
+
+	if ( $get(GAME_MASTER,scriptvar,'VOTE_BUSY') )
+	{
+		consolemsg PARAM1 votelock - Vote system is busy.
+		rplayermessage PARAM1 votelock - Vote system is busy.
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	setvard CALLING_LOCKER PARAM1
+
+	callexternal CALLING_LOCKER ext_set_vote_delay 60.0
+	callexternal GAME_MASTER gm_votelock CALLING_LOCKER
+	callevent 20.0 player_votelock2
+}
+
+//{ player_votelock2
+//
+//	dbg player_votelock2
+//
+//	local L_VOTE_PASSED $get(GAME_MASTER,scriptvar,'VOTE_RESULT')
+//	if ( L_VOTE_PASSED equals '[failed]' )
+//	{
+//		local MSG_TITLE "Vote Lock has failed."
+//		local MSG_DESC "No one voted."
+//		infomsg all MSG_TITLE MSG_DESC
+//		local EXIT_SUB 1
+//	}
+//	if ( L_VOTE_PASSED equals 'No' )
+//	{
+//		local MSG_TITLE "Vote Lock has failed.
+//		local MSG_DESC "Voted down."
+//		infomsg all MSG_TITLE MSG_DESC	
+//		local EXIT_SUB 1
+//	}
+//	if !EXIT_SUB
+//
+//	callevent lock_server
+//}
+

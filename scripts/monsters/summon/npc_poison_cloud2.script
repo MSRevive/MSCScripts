@@ -1,0 +1,63 @@
+//As simplistic as possible NPC DOT cloud
+//poison, spore, and acid variants
+
+#scope server
+{
+	const CLOUD_RADIUS 256
+	precache poison_cloud.spr
+}
+
+{ [shared] game_spawn
+	name a|Poisonous Cloud
+	nopush 1
+	invincible 1
+	setvard PLAYING_DEAD 1
+	width 1
+	height 1
+	setmodel null.mdl
+	setsolid none
+}
+
+{ game_dynamically_created //<owner> <DPS> <duration> [variant:1=poison,2=spore,3=acid]
+	setvard MY_OWNER PARAM1
+	setvard DOT_POISON PARAM2
+	setvard MY_DURATION PARAM3
+	setvard CLOUD_TYPE PARAM4
+
+	if ( CLOUD_TYPE startswith 'PARAM' ) setvard CLOUD_TYPE 1
+	dbg game_dynamically_created Owner $get(MY_OWNER,name) dot DOT_POISON dur MY_DURATION type CLOUD_TYPE
+	race $get(MY_OWNER,race)
+	setvard CL_ID game.script.last_sent_id
+	setvard IS_ACTIVE 1
+	callevent 0.1 do_scan
+	callevent 0.1 cl_effects
+	callevent MY_DURATION remove_me
+}
+
+{ cl_effects
+	local L_POS $get(ent_me,origin)
+	vectorset L_POS z $get_ground_height(L_POS)
+	clientevent new all monsters/summon/npc_poison_cloud2_cl L_POS MY_DURATION CLOUD_TYPE
+}
+
+{ do_scan
+	if IS_ACTIVE
+	callevent 1.0 do_scan
+	local L_POS $get(ent_me,origin)
+	vectoradd L_POS z 32
+	setvard SCAN_TARGS $get_tsphere(enemy,CLOUD_RADIUS,L_POS)
+	if SCAN_TARGS isnot none
+	calleventloop $get_token_amt(SCAN_TARGS) poison_targets
+}
+
+{ poison_targets
+	local CUR_TARG $get_token(SCAN_TARGS,game.script.iteration)
+	if ( CLOUD_TYPE == 1 ) applyeffect CUR_TARG effects/effect_poison 5.0 MY_OWNER DOT_POISON
+	if ( CLOUD_TYPE == 2 ) applyeffect CUR_TARG effects/poison_spore 5.0 MY_OWNER DOT_POISON
+	if ( CLOUD_TYPE == 3 ) applyeffect CUR_TARG effects/effect_acid 5.0 MY_OWNER DOT_POISON
+}
+
+{ remove_me
+	setvard IS_ACTIVE 0
+	deleteent ent_me
+}

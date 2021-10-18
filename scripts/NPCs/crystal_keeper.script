@@ -1,0 +1,149 @@
+//Crystal Keeper from Scratch for Crow
+
+{
+	const SHARDS_REQ 10
+
+	const ANIM_MAGIC kneel
+	const ANIM_GIVE gluonshow
+
+	const DUNGEON_NAME 'Crows dungeon name'
+	
+	const MONSTER_MODEL npc/balancepriest1.mdl
+	precache MONSTER_MODEL
+
+	const CHAT_SPEED 5.0
+	const NO_RUMOR 1
+}
+
+#include monsters/base_npc
+
+{ npc_spawn
+
+	name Tal'thul, the High Priest
+	hp 100
+	race human
+	invincible 1
+	precache MONSTER_MODEL
+	setmodel MONSTER_MODEL
+	setmodelbody 1 3
+	width 32
+	height 72
+
+	giveitem ring_light2
+
+	setvard SHARDS_RECIEVED 0
+
+	catchspeech say_hi hi hail hello j0 waddup wassup greetings gweets salutations
+	catchspeech say_job	crystal key quest job
+	catchspeech say_where where
+}
+
+{ say_job
+
+	if !IN_CHAT
+	setvard IN_CHAT 1
+	callevent say_job_loop
+}
+
+{ say_job_loop
+
+	if !GAVE_KEY
+
+	add JOB_STEP 1
+	if ( JOB_STEP == 1 ) saytext The door to this temple requires a crystal key, but the key has been shattered.
+	if ( JOB_STEP == 2 ) saytext If warriors of light cannot penetrate inside, the evil therein will simply grow without end.
+	if ( JOB_STEP == 3 ) saytext I have some of the shards... I think if I had the rest I could re-forge the key.
+	if ( JOB_STEP == 4 ) saytext They are scattered throughout DUNGEON_NAME but I lack the power to gather the rest.
+	if ( JOB_STEP == 5 ) saytext If you can bring me SHARDS_REQ shards, I can re-forge magical key that opens this door. 
+	if ( JOB_STEP == 6 ) saytext Be sure to bring them to me all at once, for I must have all the pieces on hand at the same time.
+	if ( JOB_STEP < 6 ) callevent CHAT_SPEED say_job_loop
+	if ( JOB_STEP == 6 ) 
+	{
+		setvard JOB_STEP 0
+		setvard IN_CHAT 0
+	}
+}
+
+{ say_hi
+
+	if !IN_CHAT
+	if ( SHARDS_RECIEVED > 0 ) saytext I still need SHARDS_LEFT shards to re-forge the key to the temple door.
+	if SHARDS_RECIEVED == 0
+	if ( !GAVE_KEY ) saytext Greetings warrior, I am Tal'thul, priest of Felewyn.
+	if ( GAVE_KEY ) saytext Thank you for your work, now hurry, use the key to enter the temple before it's too late.
+	callevent CHAT_SPEED say_job
+}
+
+{ say_where
+
+	if !IN_CHAT
+	saytext I am uncertain as to where exactally, I only barely survived finding the first three pieces in DUNGEON_NAME.
+}
+
+{ gave_shard
+
+	setvard QUEST_WINNER $get(PARAM1,id)
+	setvard PLAYER_NAME $get(QUEST_WINNER,name)
+	stradd PLAYER_NAME ,
+	
+	add SHARDS_RECIEVED 1
+
+	setvard SHARDS_LEFT SHARDS_REQ
+	subtract SHARDS_LEFT SHARDS_RECIEVED 
+	setvard SHARDS_LEFT $int(SHARDS_LEFT)
+	setvard SHARD_SUFFIX shards.
+	if ( SHARDS_LEFT == 1 ) local SHARD_SUFFIX shard.
+
+	if ( SHARDS_LEFT == 0 ) callevent give_key
+	if SHARDS_LEFT > 0
+
+	local RANDOM_CHAT $rand(1,4)
+	if ( RANDOM_CHAT == 1 ) saytext Excellent, PLAYER_NAME I only need SHARDS_LEFT more SHARD_SUFFIX
+	if ( RANDOM_CHAT == 2 ) saytext Good work, PLAYER_NAME I only need SHARDS_LEFT more SHARD_SUFFIX
+	if ( RANDOM_CHAT == 3 ) saytext Keep them coming, PLAYER_NAME I only need SHARDS_LEFT more SHARD_SUFFIX
+	if ( RANDOM_CHAT == 4 ) saytext Alright, PLAYER_NAME I only need SHARDS_LEFT more SHARD_SUFFIX
+}
+
+{ game_menu_getoptions
+
+	if !GAVE_KEY
+
+	if ( $item_exists(PARAM1,item_crow_shard) )
+	{ 
+		local reg.mitem.id	payment
+		local reg.mitem.title 	"Give Crystal Shard"
+		local reg.mitem.type 	payment
+		local reg.mitem.data 	item_crow_shard
+		local reg.mitem.callback  gave_shard
+		menuitem.register
+	}
+}
+
+{ give_key
+
+	saytext Truly you are a warrior of the light PLAYER_NAME one moment while I perform the incantation.
+	createnpc monsters/companion/spell_maker_divination $relpos(0,0,40) $get(ent_me,id) none none 50
+	playanim once ANIM_MAGIC
+	callevent 2.0 give_key2
+}
+
+{ give_key2
+
+	playanim once ANIM_GIVE
+	saytext Here, take it quickly and use it to enter the foul temple and expunge the evil therein!
+	offer QUEST_WINNER key_crystal
+	setvard GAVE_KEY 1
+	callevent 5.0 return_home
+}
+
+{ return_home
+
+	saytext I've done all I can here, so I am using my return scroll's magic now.
+	callevent 2.0 return_home2
+}
+
+{ return_home2
+
+	saytext I wish you luck in your quest!
+	callevent 0.1 npc_fade_away
+}

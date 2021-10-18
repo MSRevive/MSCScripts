@@ -1,0 +1,80 @@
+//Brief explosion with outward rotating sprites by Thothie
+{
+	const SPRITE_NAME explode1.spr //precache in top script
+	const SPRITE_COLOR (255,128,64)
+	const SPRITE_RENDERAMT 200
+	const SPRITE_RENDERMODE add
+	const SPRITE_FRAMERATE 30
+	const SPRITE_NFRAMES 9
+	const SPRITE_SCALE 1.0
+
+	const SPRITE_VOF 32
+
+	const SOUND_BURST weapons/explode3.wav
+}
+
+{ client_activate //<origin> <radius>
+	setvard FX_CENTER PARAM1
+	setvard FX_RADIUS PARAM2
+
+	//fx duration determined by radius (gives more time for sprites to spread)
+	setvard FX_DURATION 1.0
+	if ( FX_RADIUS < 64 ) setvard FX_DURATION 0.5
+	if ( FX_RADIUS > 256 ) setvard FX_DURATION 2.0
+
+
+	local L_FX_RADIUS FX_RADIUS
+	multiply L_FX_RADIUS 2.0
+
+	cleffect light new FX_CENTER L_FX_RADIUS SPRITE_COLOR 2.0
+
+	callevent 3.0 remove_me
+	setvard CYCLE_ANGLE 0
+	calleventloop 17 create_sprites
+
+	sound.play3d SOUND_BURST 10 FX_CENTER
+}
+
+{ remove_me
+	removescript
+}
+
+{ create_sprites
+	local SPR_POS FX_CENTER
+	vectoradd SPR_POS $relpos($vec(0,CYCLE_ANGLE,0),$vec(0,1,SPRITE_VOF))
+	cleffect tempent sprite SPRITE_NAME SPR_POS setup_sprite update_sprite
+	add CYCLE_ANGLE 20
+}
+
+{ update_sprite
+
+	//dbg *** update_sprite
+	//not sure if this rotation is working :\
+
+	local SPRITE_ORG $getcl(FX_OWNER,origin)
+	local MY_ANGLE game.tempent.fuser1
+
+	add MY_ANGLE 20
+	if ( MY_ANGLE > 359 ) local MY_ANGLE 0
+	cleffect tempent set_current_prop fuser1 MY_ANGLE
+	vectoradd SPRITE_ORG $relpos($vec(0,MY_ANGLE,0),$vec(0,FX_RADIUS,SPRITE_VOF))
+}
+
+
+{ setup_sprite
+
+	cleffect tempent set_current_prop death_delay 	FX_DURATION
+	cleffect tempent set_current_prop rendercolor SPRITE_COLOR
+	cleffect tempent set_current_prop renderamt	SPRITE_RENDERAMT
+	cleffect tempent set_current_prop rendermode SPRITE_RENDERMODE
+	cleffect tempent set_current_prop framerate	SPRITE_FRAMERATE
+	cleffect tempent set_current_prop frames	SPRITE_NFRAMES
+	cleffect tempent set_current_prop scale 	SPRITE_SCALE
+	cleffect tempent set_current_prop gravity 	0
+	cleffect tempent set_current_prop collide 	none
+	cleffect tempent set_current_prop fadeout lifetime
+	cleffect tempent set_current_prop fuser1 CYCLE_ANGLE
+
+	local SPRITE_VEL $relvel($vec(0,CYCLE_ANGLE,0),$vec(0,200,0))
+	cleffect tempent set_current_prop velocity SPRITE_VEL
+}

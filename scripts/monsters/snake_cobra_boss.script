@@ -1,0 +1,376 @@
+//. tele -1568 -1776 -560
+//Gargantuan Cobra by Thothie (from Giant Cobra)
+#scope server
+{
+	const MONSTER_HP 12000
+	const SPIT_OFS (20,150,225)
+	const DMG_SPIT 400
+	const DMG_BITE $randf(100,250)
+	const DMG_POISON_DOT 25
+	const DMG_GAS_DOT 75
+	const POISON_DURATION 5.0
+	const GAS_DURATION 30.0
+	const MONSTER_MODEL monsters/gcobra_boss.mdl
+	const ANIM_SPIT spit
+	const SOUND_SPIT "agrunt/ag_attack2.wav"
+   	setvard NPC_GIVE_EXP 200
+	if ( $lcase(game.map.name) equals gertenheld_cave )
+	{
+		setvard NPC_IS_BOSS 1
+		setvard NPC_GIVE_EXP 8000
+	}
+	else
+	{
+		setvard NPC_GIVE_EXP 400
+	}
+
+	const CL_SCRIPT monsters/snake_cobra_boss_cl
+	const ANIM_BREATH breath
+	setvard CAN_RETALIATE 0 //kinda single minded
+
+	setvard ANIM_WALK walk
+	setvard ANIM_RUN walk
+	setvard ANIM_DEATH diesimple
+	setvar ANIM_IDLE ANIM_SLEEP
+	const ANIM_IDLE_NORM idle1
+	const ANIM_SLEEP idle2
+	setvard ANIM_ATTACK attack1
+	setvard ATTACK_RANGE 350
+	setvard ATTACK_HITRANGE 400
+	setvard ATTACK_MOVERANGE 300
+	const ATTACK_HITCHANCE 80%
+
+	const SOUND_ALERT monsters/gsnake_idle1.wav
+	const SOUND_IDLE monsters/gsnake_idle1.wav
+	const SOUND_ATTACK agrunt/ag_attack2.wav
+	const SOUND_POISON monsters/snakeman/sm_alert1.wav
+	const SOUND_STRUCK debris/flesh3.wav
+	const SOUND_PAIN1 agrunt/ag_attack3.wav
+	const SOUND_PAIN2 agrunt/ag_idle2.wav
+	const SOUND_DEATH agrunt/ag_die2.wav
+	precache SOUND_DEATH
+
+	const SOUND_ATTACK weapons/swinghuge.wav
+}
+
+#include monsters/base_monster_new
+
+{ [shared] npc_spawn
+
+	name a|Gargantuan Cobra
+	hp MONSTER_HP
+	takedmg all 0.95 //dridje wants 5% armor *shrug*
+	width 300
+	height 250
+	race demon	//for easier placement
+	setmodel MONSTER_MODEL
+	hearingsensitivity 0
+	callevent sleep_mode
+	callevent 0.2 post_spawn_props
+	callevent 1.0 idle_sounds
+
+	if AM_TURRET
+	setvard NO_STUCK_CHECKS 1
+	movespeed 0.0
+	setvard ANIM_WALK ANIM_IDLE_NORM
+	setvard ANIM_RUN ANIM_IDLE_NORM
+
+	if game.serverside
+	callevent 1.0 setup_client
+}
+
+{ setup_client
+	clientevent new all CL_SCRIPT
+	setvard CL_IDX game.script.last_sent_id
+}
+
+{ idle_sounds
+
+	playsound 0 10 SOUND_IDLE
+	callevent $randf(5,10) idle_sounds	
+}
+
+{ post_spawn_props
+
+	takedmg holy 0.0 //not actually a demon :)
+}
+
+{ attack1
+
+	playsound 2 10 SOUND_ATTACK
+	setvard BITE_SOUND 1
+	if $get(NPCATK_TARGET,range) < ATTACK_HITRANGE
+	callevent npcatk_dodamage NPCATK_TARGET direct DMG_BITE ATTACK_HITCHANCE ent_me pierce
+}
+
+{ game_damaged_other //PARAM1=ent hit PARAM2=damage
+
+	if BITE_SOUND
+	setvard BITE_SOUND 0
+	if $rand(1,2) == 1
+	playsound 0 10 SOUND_POISON
+	applyeffect PARAM1 effects/effect_poison POISON_DURATION $get(ent_me,id) DMG_POISON_DOT
+}
+
+{ game_struck
+
+	playrandomsound 0 10 SOUND_PAIN1 SOUND_PAIN2 SOUND_STRUCK SOUND_STRUCK
+}
+
+{ npcatk_targetvalidate
+
+	if $get(PARAM1,isalive)
+	if $get(PARAM1,relationship,ent_me) equals enemy
+
+	if !DID_ALERT
+	playsound 0 10 SOUND_ALERT
+	callevent wake_up
+	setvard DID_ALERT 1
+}
+
+{ my_target_died
+
+	setmovedest NPC_SPAWN_LOC 10
+	callevent idle_sounds
+	setvard DID_ALERT 0
+	callevent npcatk_go_home
+}
+
+{ npc_made_it_home
+
+	callevent sleep_mode
+}
+
+//{ npcatk_attack
+//
+//	setvard NPC_DELAYING_UNSTUCK NPC_UNSTUCK_DELAY //I've stopped moving to attack, I'm not stuck
+//
+//	if !ATTACK_DELAY
+//	playanim critical ANIM_ATTACK
+//	playsound 0 10 SOUND_ATTACK
+//	setvard ATTACK_DELAY 1
+//	callevent 1.0 reset_attack_delay
+//}
+//
+//{ reset_attack_delay
+//
+//	setvard ATTACK_DELAY 0
+//}
+
+{ sleep_mode
+	if ( !AM_TURRET ) setvard NO_STUCK_CHECKS 1
+	setvard SLEEP_MODE 1
+	roam 0
+	setidleanim ANIM_SLEEP
+	setmoveanim ANIM_SLEEP
+	setvard ANIM_IDLE ANIM_SLEEP
+}
+
+{ wake_up
+	if ( !AM_TURRET ) setvard NO_STUCK_CHECKS 0
+	setvard SLEEP_MODE 0
+	setidleanim ANIM_IDLE_NORM
+	setmoveanim ANIM_WALK
+	setvard ANIM_IDLE ANIM_IDLE_NORM
+	roam 1
+
+	if !CYCLE_STARTED
+	setvard CYCLE_STARTED 1
+	callevent 15.0 do_special
+}
+
+{ do_special
+
+	if $get(ent_me,isalive)
+	local NEXT_SPECIAL 20.0
+
+	if ( $get(NPCATK_TARGET,isalive) )
+	{
+		if !SUSPEND_AI
+		local RND_SPECIAL $rand(1,2)
+		if ( RND_SPECIAL == 1 )
+		{
+			local NEXT_SPECIAL 40.0
+			setvard DOING_SPECIAL 1
+			callevent do_spit
+		}
+		if ( RND_SPECIAL == 2 )	
+		{
+			local NEXT_SPECIAL 40.0
+			callevent do_cloud
+		}
+	}
+
+	callevent NEXT_SPECIAL do_special
+}
+
+{ do_spit
+
+	if !SPIT_MODE
+	add SPIT_LOOPS 1
+	if SPIT_LOOPS < 2 //weirdness going on here
+	setvard SPIT_MODE 1
+	if ( !AM_TURRET ) setvard NO_STUCK_CHECKS 1
+	callevent npcatk_suspend_ai
+	setidleanim ANIM_SPIT
+	setmoveanim ANIM_SPIT
+	playanim critical ANIM_SPIT
+	getplayersnb PLAYER_LIST
+	token.scramble PLAYER_LIST
+	callevent do_spit_loop
+	callevent 15.0 end_spit_mode
+}
+
+{ do_spit_loop
+
+	if SPIT_MODE
+	callevent 0.1 do_spit_loop
+
+	local CUR_TARGET $get_token(PLAYER_LIST,0)
+
+	//check if can hit before spitting
+	local MOUTH_POS $get(ent_me,svbonepos,6)
+	local TARG_POS $get(CUR_TARGET,origin)
+	local TRACE_IT $get_traceline(MOUTH_POS,TARG_POS,worldonly)
+	local TRACE_FAIL 1
+	if ( $get(CUR_TARGET,range) < 800 ) local TRACE_IT TARG_POS //if he's this close, try to hit him anyways
+	if ( TRACE_IT isnot TARG_POS )
+	{
+		callevent new_spit_target
+	}
+	else
+	{
+		local TRACE_FAIL 0
+	}
+	if !TRACE_FAIL
+
+	if game.time > NEXT_SPIT
+	setvard NEXT_SPIT game.time
+	add NEXT_SPIT 0.5
+
+	setmovedest CUR_TARGET 99999
+	setvard SPIT_TARGET CUR_TARGET
+
+}
+
+{ end_spit_mode
+	if ( !AM_TURRET ) setvard NO_STUCK_CHECKS 0
+	subtract SPIT_LOOPS 1
+	setvard SPIT_MODE 0
+	setvard DOING_SPECIAL 0
+	setidleanim ANIM_IDLE_NORM
+	setmoveanim ANIM_WALK
+	setvard ANIM_IDLE ANIM_IDLE_NORM
+	if ( !AM_TURRET ) roam 1
+	callevent npcatk_resume_ai
+}
+
+{ new_spit_target
+	token.scramble PLAYER_LIST
+}
+
+
+//see if I can actually reach this bastard before attacking
+{ [override] npcatk_attack
+
+	if !NPC_NO_ATTACK
+	callevent npc_selectattack //give chance for mon to chose an anim (external) (old naming convention for compatiblity)
+	if ( NPC_MOVEDEST_TARGET isnot NPCATK_TARGET ) callevent npcatk_faceattacker NPCATK_TARGET //keep moving towards him until in moverange
+
+	local MOUTH_POS $get(ent_me,svbonepos,6)
+	local TARG_POS $get(NPCATK_TARGET,origin)
+	local TRACE_IT $get_traceline(MOUTH_POS,TARG_POS,worldonly)
+	if TRACE_IT equals TARG_POS
+
+	playanim once ANIM_ATTACK
+	setvard ATTACK_ANIMINDEX $get(ent_me,anim.index)
+}
+
+{ npcatk_hunt
+
+	if AM_TURRET
+	if !SUSPEND_AI
+	if !DOING_SPECIAL
+
+	if !SPIT_MODE
+	if $get(NPCATK_TARGET,isalive)
+
+	if ( $get(NPCATK_TARGET,range) > ATTACK_RANGE )
+	{
+		if !SPIT_MODE
+		setvard SPIT_TARGET NPCATK_TARGET
+		playanim once ANIM_SPIT
+	}
+}
+
+{ frame_spit
+	tossprojectile SPIT_TARGET 300 DMG_SPIT 0.5 proj_poison_spit2 SPIT_OFS
+	playsound 0 10 SOUND_SPIT
+}
+
+{ game_death
+	clientevent remove all CL_IDX
+	svplaysound 1 0 ambience/steamjet1.wav
+}
+
+{ do_cloud
+
+	svplaysound 1 10 ambience/steamjet1.wav
+	callevent npcatk_suspend_ai
+	roam 0
+	setvard DOING_SPECIAL 1
+	playanim critical ANIM_BREATH
+	setmoveanim ANIM_BREATH
+	setidleanim ANIM_BREATH
+	setvard CUR_ANG $get(ent_me,angles.yaw)
+	setvard CLOUD_COUNT 0
+	callevent do_cloud_loop
+}
+
+{ do_cloud_loop
+
+	if $get(ent_me,isalive)
+
+	if ( CLOUD_COUNT == 180 )
+	{
+		callevent npcatk_resume_ai
+		setvard DOING_SPECIAL 0
+		setidleanim ANIM_IDLE_NORM
+		setmoveanim ANIM_WALK
+		if ( !AM_TURRET ) roam 1
+		svplaysound 1 0 ambience/steamjet1.wav
+	}
+
+	if CLOUD_COUNT < 180
+	callevent 0.1 do_cloud_loop
+
+	add CLOUD_COUNT 1
+
+	local CLOUD_START $get(ent_me,svbonepos,8)
+	clientevent update all CL_IDX make_cloud CLOUD_START $get(ent_me,angles.yaw)
+
+	add CUR_ANG 2
+	if ( CUR_ANG > 359 ) subtract CUR_ANG 359
+	local FACE_POS game.monster.origin
+	vectoradd FACE_POS $relpos($vec(0,CUR_ANG,0),$vec(0,1000,0))
+	setmovedest FACE_POS 9999
+
+	if ( CLOUD_TARGS isnot none ) calleventloop $get_token_amt(CLOUD_TARGS) poison_targets
+
+	if game.time > NEXT_SCAN
+	setvard NEXT_SCAN game.time
+	add NEXT_SCAN 1.0
+	local SCAN_POINT $relpos(0,256,-125)
+	setvard CLOUD_TARGS $get_tbox(enemy,128,SCAN_POINT)
+	svplaysound 1 10 ambience/steamjet1.wav
+}
+
+{ poison_targets
+	local CUR_TARGET $get_token(CLOUD_TARGS,game.script.iteration)
+	if $get(CUR_TARGET,isalive)
+	local TARG_ORG $get(CUR_TARGET,origin)
+	if $within_cone2D(TARG_ORG,game.monster.origin,game.monster.angles,30)
+	if $get(CUR_TARGET,range) < 600
+	applyeffect CUR_TARGET effects/effect_poison_blinding 10.0 $get(ent_me,id) DMG_POISON_DOT
+}
+

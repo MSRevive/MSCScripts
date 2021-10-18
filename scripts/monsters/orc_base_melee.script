@@ -1,0 +1,118 @@
+//Orc base melee
+
+{
+	setvard MOVE_RANGE 32
+	setvard ATTACK_RANGE 60
+	setvard ATTACK_HITRANGE 120
+
+	const ORC_JUMP_RANGE 512 //how close in 2d must be before jump
+	const ORC_JUMP_CUTOFF 400 //wont attempt to jump at anything higher up than this
+	const ORC_JUMP_POWER $rand(350,450) //how high to jump (overriden on old_helena)
+
+   //const ORC_SHIELD 0
+
+	const ORC_HOP_DELAY $rand(2,4)
+
+	//setvard ORC_JUMPER 0
+	const ORC_JUMP_THRESH 80 //how much higher the player must be for the orc to want to jump
+}
+
+{  orc_spawn
+
+	width 32
+  	height 72
+
+	hearingsensitivity 4
+}
+
+// Deal damage
+// Called from the animation on the attack frame
+{  swing_axe
+
+	callevent baseorc_yell
+
+   	local L_DMG $randf(ATTACK_DMG_LOW,ATTACK_DMG_HIGH)
+   	callevent npcatk_dodamage ent_lastseen ATTACK_HITRANGE L_DMG ATTACK_ACCURACY
+}
+
+{ swing_sword
+
+	callevent swing_axe
+}
+
+//experimental hip-hoppin orcs
+
+{ npcatk_targetvalidate
+
+	if ORC_JUMPER
+
+	//if spotted player, start jump checks
+	if !ORC_JUMPING
+	if $get(NPCATK_TARGET,isplayer)
+	setvard ORC_JUMPING 1
+	callevent 1.0 orc_jump_check
+	
+}
+
+{ orc_jump_check
+
+	if ORC_JUMPING
+	callevent ORC_HOP_DELAY orc_jump_check
+
+	if !IS_FLEEING
+	if NPCATK_TARGET isnot unset
+	if $get(NPCATK_TARGET,range) < ORC_JUMP_RANGE
+
+	//jump at player if he's higher than I am
+	local ME_POS game.monster.origin
+	local MY_Z $vec.z(ME_POS)
+	local TARGET_POS $get(NPCATK_TARGET,origin)
+	local TARGET_Z $vec.z(TARGET_POS)
+	setvard TARGET_Z_DIFFERENCE TARGET_Z
+	subtract TARGET_Z_DIFFERENCE MY_Z
+
+	if ( TARGET_Z_DIFFERENCE > ORC_JUMP_THRESH )
+	{
+		if ( !ORC_SUPERJUMPER )
+		{
+			if TARGET_Z_DIFFERENCE < ORC_JUMP_CUTOFF //not hoplessly high up
+			local EXIT_SUB 1
+		}
+		if !EXIT_SUB
+
+		playanim critical ANIM_ATTACK
+		callevent 0.1 orc_hop
+	}
+}
+
+{ orc_hop
+
+	playsound 0 10 monsters/orc/attack1.wav
+	local JUMP_HEIGHT ORC_JUMP_POWER
+	if ( game.map.name contains helena ) local JUMP_HEIGHT $rand(450,550)
+	local FWD_BOOST 250
+	if ( ORC_SUPERJUMPER )
+	{
+		local JUMP_HEIGHT TARGET_Z_DIFFERENCE
+		multiply JUMP_HEIGHT 5
+		local FWD_BOOST $get(NPCATK_TARGET,range)
+	}
+	addvelocity ent_me $relvel(0,FWD_BOOST,JUMP_HEIGHT)
+}
+
+{ my_target_died
+
+	if !$cansee(enemy)
+	//stop jumping (saves CPU when monster idle)
+	setvard ORC_JUMPING 0
+}
+
+{ make_jumper
+
+	setvard ORC_JUMPER 1
+}
+
+{ make_superjumper
+	setvard ORC_JUMPER 1
+	setvard ORC_SUPERJUMPER 1
+}

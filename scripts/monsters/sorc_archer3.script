@@ -1,0 +1,85 @@
+{
+	const ARROW_TYPE proj_arrow_npc_dyn
+	const FIN_EXP 400
+	setvard DROP_GOLD_AMT $rand(20,60)
+
+	const DROP_ITEM_BASE1 bows_swiftbow
+
+	const CONTAINER_BASE chests/quiver_of_lightning
+
+	const DMG_AOE 200
+
+   const ARROW_DAMAGE_LOW 100
+   const ARROW_DAMAGE_HIGH 200
+
+	const AM_SORC 1 //tells base to use different submodel set
+
+	precache magic/lightning_strike2.wav
+}
+
+#include monsters/orc_sniper
+
+{ orc_spawn
+
+   hp 800
+   //ov 180
+   name an|Elite Shadahar Archer
+   hearingsensitivity 10
+   setstat parry 60
+   takedmg all .7
+	race orc
+
+	setmodel monsters/sorc.mdl
+
+	setvard DOING_KICK 0
+	setvard KICK_TYPE 1
+
+	setmodelbody 0 3 //body: 0=bare 1=bloody_shirt 2=gold_armor 3=archer
+	setmodelbody 1 3 //head: 0=hat_horns 1=hat_spiked 2=lizardskin_horned 3=gold_Chieftain 4=lizard_cap
+	setmodelbody 2 2 //weapon: 0=unarmed 1=axe 2=bow_noarrow 3=bow_witharrow 4=sword 5=great_axe 6=sword_sheild 8=yellow_axe 9=blooddrinker
+}
+
+{ ext_arrow_hit //PARAM1=hit:0|1 PARAM2=ent_hit PARAM3=(start) PARAM4=(end) - called from proj_arrow_npc_dyn
+
+	local ARROW_POS PARAM3
+	local TARG_ALIVE $get(PARAM2,isalive)
+	if ( $get(PARAM2,relationship,ent_me) equals enemy )
+	{
+		if TARG_ALIVE
+		local HIT_ENEMY 1
+	}
+	if ( HIT_ENEMY ) local ARROW_POS $get(PARAM2,origin)
+	vectorset ARROW_POS z $get_ground_height(ARROW_POS)
+	//<center_point> <radius> <light:0|1> <light_color>
+	clientevent new all effects/sfx_shock_burst ARROW_POS 128 1 (255,255,0)
+	//dodamage ARROW_ORG SKELE_ARROW_AOE DMG_AOE 100% 0 reflective lightning
+	xdodamage ARROW_POS 128 DMG_AOE 0 ent_me ent_me none lightning_effect
+
+	setvard ARROW_TARGET_LIST $get_tsphere(enemy,128,ARROW_POS)
+	if ARROW_TARGET_LIST isnot none
+	calleventloop $get_token_amt(ARROW_TARGET_LIST) arrow_affect_targets
+}
+
+{ arrow_affect_targets
+	local CUR_TARG $get_token(ARROW_TARGET_LIST,game.script.iteration)
+	applyeffect CUR_TARG effects/effect_shock_dmg 5.0 $get(ent_me,id) 40 
+	setvard ARROW_MISSED 0
+}
+
+{ [override] shoot_arrow
+
+	local TARGET_DIST $get(ent_lastseen,range)
+	local FINAL_TARGET $get(ent_lastseen,origin)
+	vectoradd FINAL_TARGET $relpos($vec(0,0,0),$vec(0,0,TARGET_DIST))
+	divide TARGET_DIST 100
+	setangle add_view.pitch TARGET_DIST
+
+	setvard IS_ARROW 1
+	tossprojectile view 900 DMG_BOW ATTACK_CONE_OF_FIRE ARROW_TYPE (0,0,48)
+	callexternal $get(ent_lastprojectile,id) ext_lighten 0.4 1 (255,255,0)
+
+	setmodelbody 2 2		//Hide arrow
+	playsound 2 10 SOUND_BOW
+
+	setvard MELEE_ATK 0
+}

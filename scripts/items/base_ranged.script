@@ -1,0 +1,105 @@
+//Basic Ranged Weapon
+//REQ:
+//
+//	MODEL_VIEW
+//	MODEL_HANDS
+//
+//	RANGED_FORCE, RANGED_DMG, RANGED_DMG_RANGE, RANGED_DMG_TYPE
+//	RANGED_ENERGY, RANGED_STAT, RANGED_ACCURACY, RANGED_PROJECTILE
+//	RANGED_DMG_DELAY, RANGED_STARTPOS, RANGED_AIMANGLE, RANGED_NOISE
+
+{
+	const NO_PARRY 1
+
+	const RANGED_NOISE 650
+	const RANGED_DMG_TYPE pierce
+}
+
+#include items/base_weapon
+
+//Normal swing attack
+{  weapon_spawn
+
+	if !CUSTOM_ATTACK
+
+   local reg.attack.type		charge-throw-projectile
+   local reg.attack.keys		+attack1
+   local reg.attack.hold_min&max	RANGED_HOLD_MINMAX
+   local reg.attack.dmg.type		RANGED_DMG_TYPE
+   local reg.attack.dmg.multi		RANGED_DMG_MULTI
+   local reg.attack.range		RANGED_FORCE
+   local reg.attack.energydrain	RANGED_ENERGY
+   local reg.attack.stat		RANGED_STAT
+   local reg.attack.COF			RANGED_ACCURACY
+   local reg.attack.projectile		RANGED_PROJECTILE
+   local reg.attack.priority		0
+   local reg.attack.delay.strike	RANGED_DMG_DELAY
+   local reg.attack.delay.end		RANGED_ATK_DURATION
+   local reg.attack.ofs.startpos	RANGED_STARTPOS
+   local reg.attack.ofs.aimang		RANGED_AIMANGLE
+   local reg.attack.callback		ranged
+   local reg.attack.noise		RANGED_NOISE
+
+	setvard WEAPON_PRIMARY_SKILL reg.attack.stat
+	setvard WEAPON_DMG_MULTI RANGED_DMG_MULTI
+
+   registerattack
+}
+
+{ game_dodamage
+	//dbg temp inflicted PARAM1 $get(PARAM2,name) PARAM3 PARAM4
+}
+
+{ game_deploy
+
+	if game.serverside
+
+	if $get(ent_owner,scriptvar,'PLR_IN_WORLD')
+
+	callevent 0.1 skill_check
+}
+
+{ skill_check
+
+	local FIND_MELEE_STAT "skill."
+	stradd FIND_MELEE_STAT RANGED_STAT
+	dbg game_deploy $get(ent_owner,FIND_MELEE_STAT) FIND_MELEE_STAT BASE_LEVEL_REQ
+	if ( $get(ent_owner,FIND_MELEE_STAT) < BASE_LEVEL_REQ )
+	{
+		dplayermessage ent_owner You lack the skill to properly wield this weapon!
+		local OUT_STR "You lack the proficiency to wield this weapon properly. ( requires: "
+		stradd OUT_STR RANGED_STAT
+		stradd OUT_STR " proficiency "
+		stradd OUT_STR BASE_LEVEL_REQ
+		stradd OUT_STR " )"
+		infomsg ent_owner "Insufficient Skill" OUT_STR
+		attackprop ent_me 0 COF.l 40
+		attackprop ent_me 0 COF.r 40
+		attackprop ent_me 0 dmg.multi 0.1
+		attackprop ent_me 1 COF.l 40
+		attackprop ent_me 1 COF.r 40
+		attackprop ent_me 1 dmg.multi 0.1
+		setvard WEAPON_DMG_MULTI 0.1
+		setvard UNDER_SKILLED 1
+		dbg skill_check Underskilled
+		callevent bow_underskilled
+	}
+	else
+	{
+		if ( UNDER_SKILLED )
+		{
+			dbg skill_check ResetToNorm
+			attackprop ent_me 0 COF.l RANGED_HOLD_MINMAX
+			attackprop ent_me 0 COF.r RANGED_HOLD_MINMAX
+			attackprop ent_me 0 dmg.multi RANGED_DMG_MULTI
+			attackprop ent_me 1 COF.l RANGED_HOLD_MINMAX
+			attackprop ent_me 1 COF.r RANGED_HOLD_MINMAX
+			attackprop ent_me 1 dmg.multi RANGED_DMG_MULTI
+			setvard WEAPON_DMG_MULTI RANGED_DMG_MULTI
+			setvard UNDER_SKILLED 0
+			callevent bow_underskilled_restore
+		}
+		setvard UNDER_SKILLED 0 //redundant
+		dbg skill_check restore
+	}
+}

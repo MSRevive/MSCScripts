@@ -1,0 +1,97 @@
+//CL effects for elven bow (no-projectile variant)
+#scope client
+
+{
+	const GLOW_RAD 256
+	const MAX_DURATION 10.0
+}
+
+{ client_activate //<start_pos> <sprite> <frames> <scale> <color> <glow_color> <angles> <speed>
+
+	setcallback render enable
+
+	setvard MY_POS PARAM1
+	setvard SPRITE_NAME PARAM2
+	setvard SPRITE_FRAMES PARAM3
+	setvard SPRITE_SCALE PARAM4
+	setvard SPRITE_COLOR PARAM5
+	setvard GLOW_COLOR PARAM6
+	setvard MY_ANG PARAM7
+	setvard MY_SPEED PARAM8
+
+	dbg **** Dest MY_SPEED
+
+	cleffect tempent sprite SPRITE_NAME MY_POS setup_tracker_sprite update_tracker_sprite end_tracker_sprite
+
+	setvard FX_ACTIVE 1
+
+	cleffect light new MY_POS GLOW_RAD GLOW_COLOR 0.25
+	setvard CL_LIGHT_ID game.script.last_light_id
+
+	setvard ROT_COUNT 0
+	callevent fx_loop
+	callevent MAX_DURATION end_fx
+}
+
+{ fx_loop
+	if FX_ACTIVE
+	callevent 0.05 fx_loop
+	add ROT_COUNT 10
+	if ( ROT_COUNT > 359 ) setvard ROT_COUNT 0
+	local SPRITE_POS MY_POS
+	vectoradd SPRITE_POS $relpos($vec(ROT_COUNT,ROT_COUNT,0),$vec(0,32,0))
+	cleffect tempent sprite SPRITE_NAME SPRITE_POS setup_spiral_sprite
+
+	local SPRITE_POS MY_POS
+	vectoradd SPRITE_POS $relpos($vec($neg(ROT_COUNT),$neg(ROT_COUNT),0),$vec(0,32,0))
+	cleffect tempent sprite SPRITE_NAME SPRITE_POS setup_spiral_sprite
+}
+
+{ end_fx
+	if FX_ACTIVE
+	setvard FX_ACTIVE 0
+	callevent 2.0 remove_me
+}
+
+{ remove_me
+	removescript
+}
+
+{ game_prerender
+
+	if FX_ACTIVE
+	cleffect light CL_LIGHT_ID MY_POS GLOW_RAD GLOW_COLOR 0.25
+}
+
+{ end_tracker_sprite
+	callevent end_fx
+}
+
+{ update_tracker_sprite
+	setvard MY_POS game.tempent.origin
+}
+
+{ setup_tracker_sprite
+	cleffect tempent set_current_prop death_delay 20.0
+	cleffect tempent set_current_prop renderamt   1
+	cleffect tempent set_current_prop rendermode add
+	cleffect tempent set_current_prop scale 0.1
+	cleffect tempent set_current_prop gravity    0
+	cleffect tempent set_current_prop collide    world;die
+	cleffect tempent set_current_prop framerate	30
+	cleffect tempent set_current_prop frames	1
+	local TRACKER_VEL $relvel(MY_ANG,$vec(0,MY_SPEED,0))
+	cleffect tempent set_current_prop velocity TRACKER_VEL
+}
+
+{ setup_spiral_sprite
+	cleffect tempent set_current_prop death_delay 0.5
+	//cleffect tempent set_current_prop renderamt   255
+	//cleffect tempent set_current_prop rendermode add
+	cleffect tempent set_current_prop rendercolor SPRITE_COLOR
+	cleffect tempent set_current_prop scale SPRITE_SCALE
+	cleffect tempent set_current_prop gravity    0
+	cleffect tempent set_current_prop collide    none
+	cleffect tempent set_current_prop framerate	30
+	cleffect tempent set_current_prop frames	SPRITE_FRAMES
+}

@@ -1,0 +1,236 @@
+//Kinda decided that using the player script for CL effects isn't the best route
+//due to the fact that only one monster can share them at a time.
+//Trying to work up a system where this guy has all his temporary cl effects under one script
+#scope client
+
+{
+	const GLOW_SPRITE 3dmflaora.spr //glow01.spr is easier to color, but doesn't appear proper on some maps
+	const ICE_BREATH_SPRITE explode1.spr
+	const ICE_BREATH_COLOR (255,128,0)
+	const TOTAL_OFS 10 //start offset for burst fx
+}
+
+//==================================== Init Script
+{ client_activate //<fx_type> <params...>
+
+	setvard FX_TYPE PARAM1
+
+	dbg *** cold_one_cl: PARAM1 PARAM2 PARAM3 PARAM4
+
+	if ( FX_TYPE equals hand_sprites )
+	{
+		//PARAM2 = Model Idx
+		//PARAM3 = DURATION
+		//PARAM4 = COLOR
+		setvard MODEL_IDX PARAM2 
+		setvard FX_DURATION PARAM3
+		setvard SPR_COLOR PARAM4
+
+		setvard HAND_SPRITES_ON 1
+		setvard REMOVE_DELAY 2.1 //time required to be sure sprites burn out
+
+		callevent FX_DURATION end_fx
+		callevent hand_sprite_loop
+	}
+
+	if ( FX_TYPE equals ice_breath )
+	{
+		//PARAM2 = Model Idx
+		//PARAM3 = Duration
+		setvard MODEL_IDX PARAM2
+		setvard FX_DURATION PARAM3
+		setvard REMOVE_DELAY 2.0
+		setvard ICE_BREATH_ON 1
+		callevent ice_breath_loop
+		callevent FX_DURATION end_fx
+	}
+
+	if ( FX_TYPE equals palpatine )
+	{
+		//PARAM2 = Model Idx
+		//PARAM3 = Duration
+		setvard MODEL_IDX PARAM2
+		setvard FX_DURATION PARAM3
+		setvard PALPATINE_ON 1
+		setvard REMOVE_DELAY 1.0
+		callevent palpatine_loop
+		callevent FX_DURATION end_fx
+	}
+
+	if ( FX_TYPE equals repulse )
+	{
+		setvard FX_ORIGIN PARAM2
+		setvard FX_RADIUS PARAM3
+		setvard REMOVE_DELAY 2.0
+		local POS_GROUND $get_ground_height(FX_ORIGIN)
+		vectorset FX_ORIGIN z FX_ORIGIN
+		calleventloop 17 stun_burst_fx
+		callevent FX_DURATION end_fx
+	}
+}
+
+//==================================== End Script
+{ end_fx
+	setvard HAND_SPRITES_ON 0
+	setvard ICE_BREATH_ON 0
+	setvard PALPATINE_ON 0
+	callevent REMOVE_DELAY remove_me
+}
+
+{ remove_me
+	removescript
+}
+
+//==================================== Hand Sprites
+{ hand_sprite_loop
+
+	if HAND_SPRITES_ON
+	callevent 0.1 hand_sprite_loop
+
+	local SPAWN_POS $getcl(MODEL_IDX,bonepos,20)
+	cleffect tempent sprite GLOW_SPRITE SPAWN_POS setup_hand_sprite
+
+	local SPAWN_POS $getcl(MODEL_IDX,bonepos,16)
+	cleffect tempent sprite GLOW_SPRITE SPAWN_POS setup_hand_sprite
+}
+
+{ setup_hand_sprite
+	cleffect tempent set_current_prop death_delay 	2.0
+	cleffect tempent set_current_prop fadeout 	lifetime
+	cleffect tempent set_current_prop velocity $relvel($vec(0,0,0),$vec($randf(-20,20),0,0))
+	cleffect tempent set_current_prop bouncefactor 	0
+	cleffect tempent set_current_prop scale 	0.1
+	cleffect tempent set_current_prop renderamt	255
+	cleffect tempent set_current_prop rendermode add
+	cleffect tempent set_current_prop rendercolor SPR_COLOR
+	cleffect tempent set_current_prop gravity 	-0.5
+	cleffect tempent set_current_prop collide 	none
+	cleffect tempent set_current_prop framerate	30
+	cleffect tempent set_current_prop frames	1
+}
+
+
+//==================================== Ice Breath
+{ ice_breath_loop
+	if ICE_BREATH_ON
+	callevent 0.01 ice_breath_loop
+	local CLOUD_ORG $getcl(MODEL_IDX,attachment2) 
+	cleffect tempent sprite ICE_BREATH_SPRITE CLOUD_ORG setup_ice_breath_sprite
+	cleffect tempent sprite ICE_BREATH_SPRITE CLOUD_ORG setup_ice_breath_sprite
+}
+
+{ ice_breath_off//(external)
+	callevent end_fx
+}
+
+{ setup_ice_breath_sprite
+	cleffect tempent set_current_prop death_delay 	1.0
+	cleffect tempent set_current_prop framerate		10
+	cleffect tempent set_current_prop frames			9
+	cleffect tempent set_current_prop bouncefactor 	0
+	cleffect tempent set_current_prop scale 			$randf(0.5,1.0)
+	cleffect tempent set_current_prop rendermode		add
+	cleffect tempent set_current_prop renderamt		200
+	cleffect tempent set_current_prop rendercolor	ICE_BREATH_COLOR
+	cleffect tempent set_current_prop gravity 		.005
+	cleffect tempent set_current_prop collide 		none
+
+	local RND_RL $randf(-20,20)
+	local RND_UD $randf(-20,20)
+	local MY_ANG $getcl(MODEL_IDX,angles)
+	local CLOUD_VEL $relvel(MY_ANG,$vec(RND_RL,$randf(300,400),RND_UD))
+	cleffect tempent set_current_prop velocity CLOUD_VEL
+}
+
+//==================================== Palpatine (sheet o' lightning from da hands)
+{ palpatine_loop
+	if PALPATINE_ON
+	callevent 0.1 palpatine_loop
+
+	local OWNER_YAW $getcl(MODEL_IDX,angles.yaw)
+
+	local BEAM_START $getcl(MODEL_IDX,bonepos,20)
+	local BEAM_END BEAM_START
+	local RND_LR $randf(-128,128)
+	local RND_UD $randf(-10,10)
+	vectoradd BEAM_END $relpos($vec(0,OWNER_YAW,0),$vec(RND_LR,256,RND_UD))
+	cleffect beam_points BEAM_START BEAM_END lgtning.spr 0.25 2.5 0.5 255 50 30 (1.5,0.5,0)
+
+	local BEAM_START $getcl(MODEL_IDX,bonepos,16)
+	local BEAM_END BEAM_START
+	local RND_LR $randf(-128,128)
+	local RND_UD $randf(-10,10)
+	vectoradd BEAM_END $relpos($vec(0,OWNER_YAW,0),$vec(RND_LR,256,RND_UD))
+	cleffect beam_points BEAM_START BEAM_END lgtning.spr 0.25 2.5 0.5 255 50 30 (1.5,0.5,0)
+}
+
+//==================================== Repell Burst FX (ripped from monsters/vgoblin_chief_cl)
+{ [client] stun_burst_fx
+
+	local FLAME_POS FX_ORIGIN
+	vectoradd FLAME_POS $relpos($vec(0,CYCLE_ANGLE,0),$vec(0,TOTAL_OFS,0))
+	cleffect tempent sprite fire1_fixed.spr FLAME_POS stunburst_flame
+
+	add CYCLE_ANGLE 20
+}
+
+{ [client] stunburst_flame
+
+	local FADE_DEL 1.0
+	if ( FX_RADIUS > 128 ) local FADE_DEL 2.0
+
+	local SPRITE_SPEED 100
+	if ( FX_RADIUS > 128 ) local SPRITE_SPEED 400
+
+	cleffect tempent set_current_prop death_delay 	FADE_DEL
+	cleffect tempent set_current_prop rendercolor (0,0,255)
+	cleffect tempent set_current_prop renderamt	200
+	cleffect tempent set_current_prop rendermode add
+	cleffect tempent set_current_prop framerate	30
+	cleffect tempent set_current_prop frames	23
+	cleffect tempent set_current_prop scale 	1.0
+	cleffect tempent set_current_prop gravity 	0
+
+	local FLAME_TURN $relvel($vec(0,CYCLE_ANGLE,0),$vec(0,SPRITE_SPEED,0))
+	cleffect tempent set_current_prop velocity FLAME_TURN
+	cleffect tempent set_current_prop collide 	none
+	cleffect tempent set_current_prop fadeout lifetime
+}
+
+//==================================== Head/Body Burn
+{ head_flame
+	setvard DEATH_FLAME_SCALE 1.0
+	local FLAME_POS $getcl(MODEL_IDX,bonepos,29)
+	setvard CUR_BONE 29
+	cleffect tempent sprite fire1_fixed.spr FLAME_POS death_flame death_flame_update
+}
+
+{ body_flame
+	setvard DEATH_FLAME_SCALE 0.5
+	calleventloop 28 setup_body_flames
+}
+
+{ setup_body_flames
+	local FLAME_POS $getcl(MODEL_IDX,bonepos,game.script.iteration)
+	setvard CUR_BONE game.script.iteration
+	cleffect tempent sprite fire1_fixed.spr FLAME_POS death_flame death_flame_update
+}
+
+{ death_flame
+	cleffect tempent set_current_prop death_delay 10.0
+	cleffect tempent set_current_prop fadeout lifetime
+	cleffect tempent set_current_prop rendercolor (64,64,255)
+	cleffect tempent set_current_prop renderamt	255
+	cleffect tempent set_current_prop rendermode add
+	cleffect tempent set_current_prop framerate	30
+	cleffect tempent set_current_prop frames	23
+	cleffect tempent set_current_prop scale 	DEATH_FLAME_SCALE
+	cleffect tempent set_current_prop gravity 	0
+	cleffect tempent set_current_prop update 	1
+	cleffect tempent set_current_prop fuser2 CUR_BONE
+}
+
+{ death_flame_update
+	local MY_BONE game.tempent.fuser2
+	cleffect tempent set_current_prop origin $getcl(MODEL_IDX,bonepos,MY_BONE)
+}

@@ -1,0 +1,156 @@
+//struck/material system that really should be part of the base AI, but most mobs do this within their
+//own script and I dun wanna add more overhead globally
+//requires base_self_adjust (or manual call to set_material)
+{
+	const NPC_BASE_MATERIAL_TYPE default //default|stone|metal|glass|bloat|plant|wood|bone|bone_large|bullet|carapace - set in top script
+	const NPC_STRUCK_VOL 10	//volume for pain and struck sounds (flinch is maxvol)
+	const NPC_STRUCK_CHANNEL 2 //channel to use for struck sounds (switch if using for sustained sound)
+
+	setvard NPC_USE_PAIN 0 //0|1 - use material screaming system when <50% health [req: SOUND_PAIN1-3]
+	const NPC_FREQ_PAIN $randf(5.0,10.0) //time between screams (also trigger if >=3x vuln to element)
+
+	setvard NPC_USE_FLINCH 0 //0|1 - enable use of base_struck alterinative flinch system (requires ANIM_FLINCH, SOUND_FLINCH1-3, returns event npc_flinch)
+	const NPC_FREQ_FLINCH 30.0 //min time between flinches
+	const NPC_FLINCH_THRESH 0.1 //min ratio of current HP damage to cause flinch (will also trigger if >=2x vuln to element, but not more often than freq allows)
+
+	setvard BS_SOUND_STRUCK1 weapons/cbar_hitbod1.wav
+	setvard BS_SOUND_STRUCK2 weapons/cbar_hitbod2.wav
+	setvard BS_SOUND_STRUCK3 weapons/cbar_hitbod3.wav
+}
+
+{ npcatk_handle_events
+
+	callevent 0.1 set_material
+}
+
+{ set_material //[type] can also be changed mid combat, or set as add param
+
+	setvard NPC_BS_HALF_HEALTH $get(ent_me,maxhp)
+	multiply NPC_BS_HALF_HEALTH 0.5
+
+	setvard NPC_PAIN_LEVEL
+
+	if ( PARAM1 startswith PARAM )
+	{
+		setvard NPC_MATERIAL_TYPE NPC_BASE_MATERIAL_TYPE
+	}
+	else
+	{
+		setvard NPC_MATERIAL_TYPE PARAM1
+	}
+
+	//thanks to client side sounds, we don't have to precache all this crap now
+	if ( NPC_MATERIAL_TYPE equals default )
+	{
+		setvard BS_SOUND_STRUCK1 weapons/cbar_hitbod1.wav
+		setvard BS_SOUND_STRUCK2 weapons/cbar_hitbod2.wav
+		setvard BS_SOUND_STRUCK3 weapons/cbar_hitbod3.wav
+	}
+	else if ( NPC_MATERIAL_TYPE equals flesh )
+	{
+		setvard BS_SOUND_STRUCK1 body/flesh1.wav
+		setvard BS_SOUND_STRUCK2 body/flesh2.wav
+		setvard BS_SOUND_STRUCK3 body/flesh3.wav
+	}
+	else if ( NPC_MATERIAL_TYPE equals stone )
+	{
+	   setvard BS_SOUND_STRUCK1 weapons/axemetal1.wav
+	   setvard BS_SOUND_STRUCK2 weapons/axemetal2.wav
+	   setvard BS_SOUND_STRUCK3 debris/concrete1.wav
+	}
+	else if ( NPC_MATERIAL_TYPE equals metal )
+	{
+		setvard BS_SOUND_STRUCK1 doors/doorstop5.wav
+		setvard BS_SOUND_STRUCK2 weapons/axemetal2.wav
+		setvard BS_SOUND_STRUCK3 weapons/axemetal1.wav
+	}
+	else if ( NPC_MATERIAL_TYPE equals glass ) //also good for ice
+	{
+		const SOUND_STRUCK debris/glass1.wav
+		const SOUND_PAIN debris/glass2.wav
+		const SOUND_PAIN2 debris/glass3.wav
+	}
+	else if ( NPC_MATERIAL_TYPE equals bloat ) //for really fat, watery-ish things
+	{
+		setvard BS_SOUND_STRUCK1 debris/flesh2.wav
+		setvard BS_SOUND_STRUCK2 debris/flesh5.wav
+		setvard BS_SOUND_STRUCK3 debris/flesh7.wav
+	}
+	else if ( NPC_MATERIAL_TYPE equals plant )
+	{
+		setvard BS_SOUND_STRUCK1 weapons/xbow_hitbod1.wav
+		setvard BS_SOUND_STRUCK2 weapons/xbow_hitbod2.wav
+		setvard BS_SOUND_STRUCK3 weapons/bustflesh2.wav
+	}
+	else if ( NPC_MATERIAL_TYPE equals bullet )
+	{
+		setvard BS_SOUND_STRUCK1 weapons/ric1.wav
+		setvard BS_SOUND_STRUCK2 weapons/ric2.wav
+		setvard BS_SOUND_STRUCK3 weapons/ric3.wav
+	}
+	else if ( NPC_MATERIAL_TYPE equals carpace ) 
+	{
+		setvard BS_SOUND_STRUCK1 weapons/bustflesh1.wav
+		setvard BS_SOUND_STRUCK2 weapons/bullet_hit2.wav
+		setvard BS_SOUND_STRUCK3 weapons/cbar_hitbod1.wav
+	}
+	else if ( NPC_MATERIAL_TYPE equals wood ) //treants?
+	{
+		setvard BS_SOUND_STRUCK1 debris/wood2.wav
+		setvard BS_SOUND_STRUCK2 debris/wood3.wav
+		setvard BS_SOUND_STRUCK3 debris/wood1.wav
+	}
+	else if ( NPC_MATERIAL_TYPE equals electric ) //energy beings?
+	{
+		setvard BS_SOUND_STRUCK1 debris/zap1.wav
+		setvard BS_SOUND_STRUCK2 debris/zap3.wav
+		setvard BS_SOUND_STRUCK3 debris/zap8.wav
+	}
+	else if ( NPC_MATERIAL_TYPE equals bone ) //almost more a pain set
+	{
+		setvard BS_SOUND_STRUCK1 monsters/undeadz/c_skeleton_hit1.wav
+		setvard BS_SOUND_STRUCK2 monsters/undeadz/c_skeleton_hit2.wav
+		setvard BS_SOUND_STRUCK3 monsters/undeadz/c_hookhorr_hit1.wav
+	}
+	else if ( NPC_MATERIAL_TYPE equals bone_large ) //same issue here
+	{
+		setvard BS_SOUND_STRUCK1 monsters/undeadz/c_golmbone_hit1.wav
+		setvard BS_SOUND_STRUCK2 monsters/undeadz/c_golmbone_slct.wav
+		setvard BS_SOUND_STRUCK3 monsters/undeadz/c_shadow_hit1.wav
+	}
+}
+
+{ game_damaged //PARAM1=attacker PARAM2=dmg PARAM3=dmg_type
+
+	if ( NPC_USE_FLINCH )
+	{
+		if game.time > NPC_NEXT_FLINCH
+		local L_MIN_DMG $get(ent_me,hp)
+		multiply L_MIN_DMG NPC_FLINCH_THRESH
+		if ( PARAM2 > L_MIN_DMG ) local L_CAN_FLINCH
+		if ( $get_takedmg(ent_me,PARAM3) >= 2 ) local L_CAN_FLINCH 1
+		if L_CAN_FLINCH
+		playanim critical ANIM_FLINCH
+		playrandomsound NPC_STRUCK_CHANNEL 10 SOUND_FLINCH1 SOUND_FLINCH2 SOUND_FLINCH3
+		setvard NPC_NEXT_FLINCH game.time
+		add NPC_NEXT_FLINCH NPC_FREQ_FLINCH
+		callevent npc_flinch
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	if ( NPC_USE_PAIN )
+	{
+		if $get(ent_me,hp) < NPC_BS_HALF_HEALTH
+		if ( game.time > NPC_NEXT_PAIN ) local L_CAN_PAIN 1
+		if ( $get_takedmg(ent_me,PARAM3) >= 3 ) local L_CAN_PAIN 1
+		if L_CAN_PAIN
+		setvard NPC_NEXT_PAIN game.time
+		add NPC_NEXT_PAIN NPC_FREQ_PAIN
+		playrandomsound NPC_STRUCK_CHANNEL NPC_STRUCK_VOL SOUND_PAIN1 SOUND_PAIN2 SOUND_PAIN3
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	playrandomsound NPC_STRUCK_CHANNEL NPC_STRUCK_VOL BS_SOUND_STRUCK1 BS_SOUND_STRUCK2 BS_SOUND_STRUCK3
+}

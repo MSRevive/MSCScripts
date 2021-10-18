@@ -1,0 +1,239 @@
+// Merchant's square guard
+
+#include monsters/base_chat
+#include monsters/base_xmass
+{
+   eventname spawn
+
+   hp 100/100  //Guards are strong
+   gold 0  
+   name Tristan
+   //ov 30
+   width 32
+   height 72
+   race human
+   roam 0      //Don't go roaming around
+   setmodel    npc/guard1.mdl
+   invincible  1
+   setvar      NO_TALK 0
+   setvar      QUEST_1 0
+   setvard      THIEF_QUEST 2
+
+   setvar SOUND_HAIL voices/human/male_hail_guard.wav
+   setvar SOUND_IDLE2 voices/human/male_idle7.wav
+   setvar SOUND_IDLE3 voices/human/male_idle8.wav
+
+   catchspeech say_hi hi
+   catchspeech say_hi hello
+   catchspeech say_hi hail
+   catchspeech say_hi greet 
+
+   catchspeech say_mayor mayor
+
+   catchspeech say_job job
+   catchspeech say_job work
+   catchspeech say_job money
+   catchspeech say_job gold
+
+   catchspeech  say_thief thief
+   catchspeech  say_thief thieves
+   catchspeech  say_thief bandit
+   catchspeech  say_thief cutpurse
+   catchspeech  say_thief poacher
+
+   calleventtimed 5 idle
+}
+   //Idling
+{
+   eventname idle
+
+   repeatdelay 35
+   volume 2
+   playrandomsound 2 SOUND_IDLE2 SOUND_IDLE3
+}
+
+
+////// Greets ///////
+{
+  eventname say_hi
+
+  volume 7
+  playsound 2 SOUND_HAIL
+  saytext I'm on duty, but go ahead.
+}
+{
+  eventname say_mayor
+
+  if QUEST_1 equals 2
+
+  saytext Thanks for helping us out.
+  playanim once yes
+}
+{
+  eventname say_mayor
+
+  if QUEST_1 equals 0
+
+  saytext I know that old man is up to something...
+  playanim once no
+  calleventtimed 5 say_mayor2
+}
+{
+  eventname say_mayor2
+
+  saytext Fetch me evidence that he is a traitor, and I will give you a little something.
+  playanim once no
+}
+
+{ game_menu_getoptions
+
+	//dbg thief set THIEF_QUEST
+
+	if ( $item_exists(PARAM1,item_letter_mayor) )
+	{
+		local reg.mitem.title	"Present Evidence"
+		local reg.mitem.type	payment
+		local reg.mitem.data	item_letter_mayor
+		local reg.mitem.callback got_letter
+		menuitem.register
+	}
+
+	if ( $item_exists(PARAM1,item_thiefmap) )
+	{
+		local reg.mitem.title	"Give Thief Map"
+		local reg.mitem.type	payment
+		local reg.mitem.data	item_thiefmap
+		local reg.mitem.callback got_theif_map
+		menuitem.register
+	}
+
+	if ( THIEF_QUEST == 2 )
+	{
+		local reg.mitem.title 	"Ask about thieves"
+		local reg.mitem.type 	callback
+		local reg.mitem.callback say_thief
+		menuitem.register
+	}
+}
+
+{ got_letter
+
+	recvoffer accept
+	saytext Thank you! Thank you very much. At last we can get that scumbag out of the way.
+	usetrigger evidence_found
+	setvar QUEST_1 2
+	calleventtimed 6 recvletter_2
+}
+
+{ got_theif_map
+
+	setvard QUEST_WINNER PARAM1
+
+	setvard THIEF_QUEST_DONE 1
+	
+	recvoffer accept
+	playanim once return_needle  
+	saytext Ah, what's this? A map of the thieves whereabouts? You have done well, my friend.
+	calleventtimed 4 say_thiefloc
+}
+
+{
+  eventname recvletter_2
+
+  saytext Here, I found it on a dead body. Supposedly it's answers to some riddles. Perhaps you should keep it safe. Might be valueable to you some day.
+  offer QUEST_WINNER item_riddleanswers
+  usetrigger evidence_found
+}
+
+//////////////////////////////////////////////////
+
+{
+  repeatdelay 10
+  if NO_TALK equals 0
+  see player 150
+
+	IF !DID_TAUNT
+	setvard DID_TAUNT 1
+	callevent 120.0 taunt_reset
+  saytext Why are you sneaking around here? Go around to the entrance if you wish to enter the merchant's square.
+}
+
+{ taunt_reset
+	setvard DID_TAUNT 0
+}
+
+{
+  eventname say_nothing
+
+  setvar NO_TALK 1
+  calleventtimed 9 say_something
+}
+
+{
+  eventname say_something
+  setvar NO_TALK 0
+}
+
+///////////////////////////////////////////////////
+
+{
+  eventname game_recvoffer_gold
+
+  recvoffer reject
+  saytext A bribe??  I should expect more upstanding behavior than that, citizen.
+  playanim once no
+}
+
+{
+  eventname say_job
+  saytext Hmmmmm... I just recently got hired and I don't think they need another guard.
+  playanim once shrug
+}
+//Thief Quest, part 2
+{
+  eventname say_thief
+  if THIEF_QUEST == 2
+  setvard THIEF_QUEST 3
+  say suspicious 
+  saytext If you see anything suspicious around here, you let me know.
+}
+//After telling him about thieves one second time
+{
+  eventname say_thief
+  if THIEF_QUEST == 3
+  setvard THIEF_QUEST 6
+  saytext If you see any thieves, try bribing them for information, or give threats that I will lock them up for good.
+  calleventtimed 4 say_thief2
+}
+{
+  eventname say_thief2
+  saytext Aye, I will have them thieves locked up, if not killed should I get my hands on them.
+}
+//After getting map
+{
+  eventname say_thiefloc
+  saytext Hmmmm... this map shows bandits in a few of the local areas, one being in the Thornlands.
+  calleventtimed 4 say_thiefloc2
+}
+{
+  eventname say_thiefloc2
+  saytext There will probably be thieves around the area. If not, look in the caves near the road to Edana or Helena.
+  calleventtimed 4 say_thiefloc3
+}
+{
+  eventname say_thiefloc3
+  saytext Bring me proof that you've killed them and I'll reward you, if killing them is not reward enough.
+  calleventtimed 4 say_thiefloc4
+}
+{
+  eventname say_thiefloc4
+  volume 8
+  say guardwarn
+	local QUEST_WINNER_NAME $get(QUEST_WINNER,name)
+	stradd QUEST_WINNER_NAME ","
+  saytext Here's some incentive. Be wary, QUEST_WINNER_NAME it is dangerous outside.
+	offer QUEST_WINNER gold 30
+}  
+{ say_rumor
+	callevent say_mayor
+}

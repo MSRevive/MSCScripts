@@ -1,0 +1,251 @@
+{
+	const FX_SCRIPT monsters/companion/spell_maker_lightning
+	setvar ANIM_IDLE 	''
+	const SPAWNER_MODEL	none
+	const MODEL_OFSET	0
+	const SOUND_SPAWN 	weather/Storm_exclamation.wav
+
+	const REMOVE_DELAY 10.0
+	const SHOW_FX 1
+
+	const EFFECTS_SPRITE	lgtning.spr
+	const C_FX_SPRITE	lgtning.spr
+}
+
+#include monsters/companion/spell_maker_base
+
+{ game_spawn
+	//callevent svr_show_fx
+	//setvard EXTRA_PARAM1 game.monster.origin
+
+}
+
+
+{ [client]
+	const LIGHTING_RADIUS 32
+	const DEATH_DELAY 5.0
+	const BEAM_COLOR (20,20,255) //WHY, ffs, is color formula different for clients!?
+}
+
+{ [client] client_activate
+
+	setvard OWNER_IDX PARAM2
+
+	local C_POS $getcl(OWNER_IDX,origin)
+
+	local C_POS_X $vec.x(C_POS)
+	local C_POS_Y $vec.y(C_POS)
+	local C_POS_Z $vec.z(C_POS)
+
+	//find roof
+	local Z_END C_POS_Z
+	add Z_END 4000
+	local TRACE_END $vec(C_POS_X,C_POS_Y,Z_END)
+	setvard ROOF $get_traceline(C_POS,TRACE_END,worldonly)
+	setvard ROOF $vec.z(ROOF)
+
+	//find ground
+	setvard FLOOR $get_ground_height(C_POS)
+
+	//find middle of player
+	local MID FLOOR
+	add MID 36
+
+	setvard BEAM_ROT 0
+	setvard B_BRIGHT 1
+	setvard B_COUNT 0
+	setvard SPR_RENDER 200
+	setvard BEAMS_SETUP 1
+
+	callevent cl_make_beams
+
+	callevent DEATH_DELAY remove_me
+
+	setvard BOTTOM_MID $vec(C_POS_X,C_POS_Y,MID)
+	cleffect tempent sprite blueflare1.spr BOTTOM_MID setup_sprite1_sparkle sprite_update
+}
+
+
+{ [client] setup_sprite1_sparkle
+
+	local SPR_DEATH DEATH_DELAY
+	add SPR_DEATH 1.0
+
+	cleffect tempent set_current_prop origin BOTTOM_MID
+	cleffect tempent set_current_prop death_delay SPR_DEATH
+	cleffect tempent set_current_prop framerate	30
+	cleffect tempent set_current_prop frames 1
+	cleffect tempent set_current_prop scale 1.5
+	cleffect tempent set_current_prop gravity 	0
+	cleffect tempent set_current_prop collide none
+	cleffect tempent set_current_prop rendermode add
+	cleffect tempent set_current_prop renderamt SPR_RENDER
+	cleffect tempent set_current_prop rendercolor (254,254,254)
+	//cleffect tempent set_current_prop fadeout lifetime
+	cleffect tempent set_current_prop update 1
+}
+
+{ [client] sprite_update
+
+	cleffect tempent set_current_prop origin BOTTOM_MID
+	if ( B_COUNT > 35 )
+	{
+		subtract SPR_RENDER 1
+		////dbg B_COUNT
+		cleffect tempent set_current_prop rendermode add
+		cleffect tempent set_current_prop renderamt SPR_RENDER
+	}
+}
+
+{ [client] game_prerender
+	callevent sprite_update
+}
+
+{ [client] cl_make_beams
+
+	repeatdelay 0.1
+
+	add B_COUNT 1
+
+	if BEAMS_SETUP
+
+	local C_POS $getcl(OWNER_IDX,origin)
+
+	local C_POS_X $vec.x(C_POS)
+	local C_POS_Y $vec.y(C_POS)
+	local C_POS_Z $vec.z(C_POS)
+
+	//mark top center (beams start here)
+	local TOP_CENTER $vec(C_POS_X,C_POS_Y,ROOF)
+
+	//mark middle
+	setvard BOTTOM_MID $vec(C_POS_X,C_POS_Y,MID)
+
+	//mark bottom center (beams end at circle around this point)
+	local BOTTOM_CENTER $vec(C_POS_X,C_POS_Y,FLOOR)
+
+	//clientevent new all FX_SCRIPT $get(ent_me,index) $get(MY_OWNER,index) EXTRA_PARAM1 EXTRA_PARAM2 EXTRA_PARAM3
+
+	////dbg found_roof ROOF found_floor FLOOR ( TOP_CENTER to BOTTOM_CENTER )
+
+	if ( B_COUNT < 40 )
+	{
+		add BEAM_ROT 10
+		if ( BEAM_ROT > 359 ) setvard BEAM_ROT 0
+	
+		local BEAM_END BOTTOM_CENTER
+		vectoradd BEAM_END $relpos($vec(0,BEAM_ROT,0),$vec(0,LIGHTING_RADIUS,0))
+		cleffect beam_points TOP_CENTER BEAM_END lgtning.spr 0.2 3.0 0.2 B_BRIGHT 50 30 BEAM_COLOR
+		cleffect beam_points BEAM_END BOTTOM_MID lgtning.spr 0.2 3.0 0.2 B_BRIGHT 50 30 BEAM_COLOR
+		//<life> <width> <amplitude> <brightness> <speed> <framerate> <(r,g,b)>
+	
+		local BEAM_END BOTTOM_CENTER
+		local ANG_ADJ 120
+		add ANG_ADJ BEAM_ROT
+		if ( ANG_ADJ > 359 ) subtract ANG_ADJ 359
+		vectoradd BEAM_END $relpos($vec(0,ANG_ADJ,0),$vec(0,LIGHTING_RADIUS,0))
+		cleffect beam_points TOP_CENTER BEAM_END lgtning.spr 0.2 3.0 0.2 B_BRIGHT 50 30 BEAM_COLOR
+		cleffect beam_points BEAM_END BOTTOM_MID lgtning.spr 0.2 3.0 0.2 B_BRIGHT 50 30 BEAM_COLOR
+	
+		local BEAM_END BOTTOM_CENTER
+		local ANG_ADJ 240
+		add ANG_ADJ BEAM_ROT
+		if ( ANG_ADJ > 359 ) subtract ANG_ADJ 359
+		vectoradd BEAM_END $relpos($vec(0,ANG_ADJ,0),$vec(0,LIGHTING_RADIUS,0))
+		cleffect beam_points TOP_CENTER BEAM_END lgtning.spr 0.2 3.0 0.1 B_BRIGHT 50 30 BEAM_COLOR
+		cleffect beam_points BEAM_END BOTTOM_MID lgtning.spr 0.2 3.0 0.2 B_BRIGHT 50 30 BEAM_COLOR
+	}
+	callevent sprite_update
+
+	//cleffect tempent sprite 3dmflaora.spr BOTTOM_MID setup_sprite1_sparkle sprite_update
+}
+
+{ [client] remove_me
+	removescript
+}
+
+
+//========= OLD SERVER SIDE METHOD
+{ svr_show_fx
+
+   ////dbg LIGHTning_maker Owner MY_OWNER Spell SPELL_TO_GRANT Item ITEM_CREATED_ME Dbg Height MY_SPAWN_HEIGHT
+
+   if FX_SPAMMERS < MAX_FX_SPAMMERS
+
+   local BEAM_WIDTH $get(MY_OWNER,skill.spellcasting.lightning)
+   local BEAM_WIDTH $int(BEAM_WIDTH)
+
+	local x -64
+	local y -64
+	local z $vec.z($relpos(0,0,0))
+	local gnd $get_ground_height($relpos(x,y,250))
+	subtract gnd z
+	multiply gnd -1
+	local temp gnd
+	subtract temp 64
+	callevent beam_silent x y gnd
+
+	local x 64
+	local y 64
+	local z $vec.z($relpos(0,0,0))
+	local gnd $get_ground_height($relpos(x,y,250))
+	subtract gnd z
+	multiply gnd -1
+	local temp gnd
+	subtract temp 64
+	callevent beam_silent x y gnd
+
+	local x -64
+	local y 64
+	local z $vec.z($relpos(0,0,0))
+	local gnd $get_ground_height($relpos(x,y,250))
+	subtract gnd z
+	multiply gnd -1
+	local temp gnd
+	subtract temp 64
+	callevent beam_silent x y gnd
+
+	local x 64
+	local y -64
+	local z $vec.z($relpos(0,0,0))
+	local gnd $get_ground_height($relpos(x,y,250))
+	subtract gnd z
+	multiply gnd -1
+	local temp gnd
+	subtract temp 64
+	callevent beam_silent x y gnd
+
+	local x 0
+	local y 0
+	local z $vec.z($relpos(0,0,0))
+	local gnd $get_ground_height($relpos(x,y,250))
+	subtract gnd z
+	multiply gnd -1
+	local temp gnd
+	subtract temp 64
+	callevent center_beam x y gnd
+
+}
+
+{ beam_silent
+
+
+   local BEAM_WIDTH $get(MY_OWNER,skill.spellcasting.lightning)
+   local BEAM_WIDTH $int(BEAM_WIDTH)
+   multiply BEAM_WIDTH 8
+
+	local GROUND_LEVEL -1000
+	local HEIGHT 1000
+
+	effect beam point EFFECTS_SPRITE BEAM_WIDTH $relpos(PARAM1,PARAM2,1000) $relpos(PARAM1,PARAM2,-1000) (128,128,255) 64 64 2
+}
+
+{ center_beam
+
+ 	local BEAM_WIDTH 1600
+
+	local GROUND_LEVEL -1000
+	local HEIGHT 1000
+
+	effect beam point C_FX_SPRITE BEAM_WIDTH $relpos(PARAM1,PARAM2,1000) $relpos(PARAM1,PARAM2,-1000) (255,255,255) 64 64 2
+}

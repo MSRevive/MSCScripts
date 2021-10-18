@@ -1,0 +1,110 @@
+//barrier holds back enemies by Thothie
+//Continues doing so until told otherwise by external
+//PARAM1 - Owner
+//PARAM2 - Radius
+//PARAM3 - No sound when bounce if set to 1
+//PARAM4 - No sprites
+//PARAM5 - No exit sound when set to 1
+//PARAM6 - Damage when repelled
+//PARAM7 - set to 1 = Push allies too (ie. everyone but master)
+//PARAM8 - vanish after PARAM8 seconds
+
+#scope server
+
+{ game_dynamically_created //<owner> <rad> [nosound:0|1] [nosprites:0|1] [noexitsnd:0|1] [dmg] [pushally:0|1] [remove_delay]
+
+	setvard MY_OWNER PARAM1
+	setvard MY_RADIUS PARAM2
+	setvard MY_BASE_DAMAGE 0
+
+	if ( PARAM3 == 1 ) setvard AM_SILENT 1
+	if ( PARAM4 == 1 ) setvard AM_INVISIBLE 1
+	if ( PARAM5 == 1 ) setvard SILENT_EXIT 1
+	if ( PARAM6 isnot 'PARAM6' ) setvard MY_BASE_DAMAGE PARAM6
+	if ( PARAM7 == 1 ) setvard ALWAYS_PUSH 1
+	if ( PARAM8 isnot 'PARAM8' )
+	{
+		setvard MY_DURATION PARAM8
+		setvard CL_DURATION PARAM8
+		add CL_DURATION 2.0
+		callevent PARAM8 remove_barrier
+	}
+
+	if ( MY_BASE_DAMAGE == 0 ) setvard SPRITE_COLOR (0,0,255)
+	if ( MY_BASE_DAMAGE > 0 ) setvard SPRITE_COLOR (255,0,0)
+
+	if ( !AM_INVISIBLE )
+	{
+		clientevent new all monsters/summon/barrier_cl $get(MY_OWNER,index) MY_RADIUS SPRITE_COLOR CL_DURATION
+		setvard BARRIER_SCRIPT_IDX game.script.last_sent_id
+	}
+
+	setvard AM_BLOCKING 1
+
+	callevent 0.25 scan_loop
+}
+
+{ game_spawn
+	name a|Magical Barrier
+	setmodel null.mdl
+	setidleanim none
+	nopush 1
+	hp 9000 //high HP in effort to prevent push
+	invincible 1
+	width 8
+	height 8
+	setsolid none
+	race beloved
+
+	setvard IMMUNE_PUSH 1
+	setvard PLAYING_DEAD 1 //not valid target
+}
+
+{ scan_loop
+
+	if AM_BLOCKING
+	if $get(MY_OWNER,isalive)
+	if $get(MY_OWNER,exists)
+	callevent 0.5 scan_loop
+	local SCAN_ORG $get(ent_me,origin)
+	vectoradd SCAN_ORG z 32
+	setvard SCAN_TARGS $get_tsphere(any,MY_RADIUS,SCAN_ORG)
+	if SCAN_TARGS isnot none
+	calleventloop $get_token_amt(SCAN_TARGS) affect_targets
+}
+
+{ affect_targets
+
+	local CUR_TARG $get_token(SCAN_TARGS,game.script.iteration)
+
+	local DO_PUSH 0
+	if ( $get(CUR_TARG,relationship,MY_OWNER) equals enemy ) local DO_PUSH 1
+	if ( ALWAYS_PUSH )
+	{
+		if $get(CUR_TARG,id) isnot MY_OWNER
+		local DO_PUSH 1
+	}
+	//dbg temp isnme $get(PARAM2,relationship,MY_OWNER) always ALWAYS_PUSH
+	if DO_PUSH
+
+	if ( MY_BASE_DAMAGE > 0 ) dodamage CUR_TARGET direct MY_BASE_DAMAGE 100% MY_OWNER magic
+
+	local TARGET_ORG $get(CUR_TARGET,origin)
+	local TARG_ANG $angles(game.monster.origin,TARGET_ORG)
+	if ( !AM_SILENT ) playsound 0 10 doors/aliendoor3.wav
+	setvelocity CUR_TARGET $relvel($vec(0,TARG_ANG,0),$vec(10,1000,0)) //a little to the left too, in case he's stuck up against a wall
+}
+
+
+{ remove_barrier
+	setvard AM_BLOCKING 0
+	clientevent update all BARRIER_SCRIPT_IDX clear_sprites
+	if ( !SILENT_EXIT ) playsound 0 10 magic/spawn.wav
+	callevent 2.0 remove_me
+}
+
+{ remove_me
+
+	deleteent ent_me
+}
+

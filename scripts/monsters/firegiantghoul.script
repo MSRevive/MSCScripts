@@ -1,0 +1,230 @@
+//Undead Fire Giant, by Gurluas
+//- Thothie, adapted from one of his old scripts
+
+//Fire Giant
+
+//Hunt and See enemy are handled in base_monster
+
+{
+	const FIN_EXP 150
+	setvard NPC_GIVE_EXP FIN_EXP
+
+	//setvard ANIM_DEATH diesimple
+
+   const SOUND_STRUCK1 weapons/cbar_hitbod1.wav
+   const SOUND_STRUCK2 weapons/cbar_hitbod2.wav
+   const SOUND_STRUCK3 weapons/cbar_hitbod3.wav
+   const SOUND_PAIN zombie/zo_pain2.wav
+   const SOUND_ATTACK1 zombie/claw_miss1.wav
+   const SOUND_ATTACK2 zombie/claw_miss2.wav
+   const SOUND_DEATH zombie/zo_pain1.wav
+   const SOUND_FIREBALL magic/fireball_strike.wav
+	const ANIM_FIREBALL turnright
+	setvar ANIM_IDLE idle1
+   const ATTACK_DAMAGE 40
+   setvard MOVE_RANGE 32	//Stop approaching if already this close
+   setvard ATTACK_RANGE 90	//Start attacking at this range
+   setvard ATTACK_HITRANGE 187	//Actual attack range
+   const ATTACK_ACCURACY 45%
+
+	setvard CAN_FLINCH 1
+
+	const FIREBALL_DAMAGE 50
+	const FIREBALL_RANGE 1024
+	const FIREBALL_FREQ 5.0
+	const THROW_FREQ 5.0
+	const THROW_CHANCE 12
+
+	const AIM_RATIO 50
+
+	const MY_MAX_HP 1400
+	const MY_NAME "the|Reanimated Bones of a Fire Giant"
+	const NO_ROAM 0
+	const AM_TURRET 0
+
+	const I_GLOW 1
+
+}
+
+#include monsters/base_monster
+#include monsters/base_turn_undead
+
+{
+   eventname npc_spawn
+
+	setvard I_AM_TURNABLE 0
+
+   setvard ANIM_ATTACK attack1
+   setvar ANIM_RUN walk
+   setvar ANIM_WALK walk
+
+   hp MY_MAX_HP
+   width 64
+   height 120
+   race undead
+   name MY_NAME
+   gold $rand(25,50)
+   hearingsensitivity 10
+   if ( !NO_ROAM ) roam 1
+	if ( NO_ROAM ) roam 0
+   setmodel monsters/skeleton3.mdl
+   setmodelbody	1 0
+   setidleanim ANIM_IDLE
+   if ( !AM_TURRET ) setmoveanim ANIM_WALK
+	if ( AM_TURRET )
+	{
+		setmoveanim ANIM_IDLE
+		setvar ANIM_WALK ANIM_IDLE
+		setvar ANIM_RUN ANIM_IDLE
+		setvard NO_STUCK_CHECKS 1
+	}
+	playanim once ANIM_IDLE //stop shakes
+
+   takedmg fire 0.0
+	setvard IMMUNE_FIRE 1
+   takedmg cold 2.0
+	takedmg holy 1.5
+
+//attempts to deal with faulty boss chamber
+//	local L_MAP_NAME $lcase(game.map.name)
+//	if ( L_MAP_NAME contains demontemple ) stepsize 119
+}
+
+{ throw_delay_reset
+
+	setvard THROW_DELAY 0
+}
+
+{ attack_1
+
+
+   setvar HIT_SOMEONE 5
+
+   local DID_PUSH 0
+   
+   setvard ANIM_ATTACK attack1
+   if ( !THROW_DELAY )
+   {
+		if $rand(1,100) <= THROW_CHANCE
+		setvard THROW_DELAY 1
+		callevent THROW_FREQ throw_delay_reset
+		playanim critical bigflinch
+		playsound 0 10 garg/gar_attack3.wav
+		if $get(ent_laststruckbyme,range) <= ATTACK_HITRANGE
+		applyeffect ent_laststruckbyme effects/effect_push 3 $relvel(0,400,400) 0
+		local DID_PUSH 1
+   }
+
+   if !DID_PUSH
+
+   dodamage ent_lastseen ATTACK_HITRANGE ATTACK_DAMAGE ATTACK_ACCURACY
+   playrandomsound 0 10 SOUND_ATTACK1 SOUND_ATTACK2
+}
+
+{ throw_fireball
+
+	setvard AS_ATTACKING game.time
+
+	local AIM_ANGLE $get(ent_lastseen,dist)		//Aim up a bit
+	divide AIM_ANGLE AIM_RATIO				//
+	setangle add_view.x AIM_ANGLE			//
+
+   playanim critical turnright
+
+   volume 10
+   playrandomsound 2 SOUND_FIREBALL
+
+   if ( $get(ent_lastseen,range) <= 400 ) tossprojectile view 500 FIREBALL_DAMAGE 1 proj_fire_ball (0,10,96)
+	if ( $get(ent_lastseen,range) > 400 )
+	{
+		tossprojectile ent_lastseen 500 FIREBALL_DAMAGE 1 proj_fire_ball (0,10,96)
+		callexternal ent_lastprojectile lighten 5 0.1
+	}
+
+   setvard ANIM_ATTACK attack1
+}
+
+{ npc_targetsighted //PARAM1 = target whenever valid target spotted (called every cycle) 
+
+	////dbg temp sighted $get(PARAM1,name)
+
+	if !I_R_FROZEN
+
+	if $get(PARAM1,range) > ATTACK_RANGE
+	if !FIREBALL_DELAY
+	setvard FIREBALL_DELAY 1
+	callevent FIREBALL_FREQ reset_fireball_delay
+	setmovedest PARAM1 9999
+	callevent 0.1 throw_fireball
+}
+
+{ cycle_up
+
+	if ( NO_ROAM )
+	{
+		if !AM_TURRET
+		roam 1
+	}
+
+
+	if ( I_GLOW )
+	{
+		if !I_R_GLOWING
+		setvard I_R_GLOWING 1
+		//dbg temp settting glow
+		clientevent persist all $currentscript $get(ent_me,index)
+		setvard MY_LIGHT_SCRIPT game.script.last_sent_id
+	}
+}
+
+{ reset_fireball_delay
+
+	setvard FIREBALL_DELAY 0
+}
+
+{ npc_struck //I r hit
+
+  
+   playrandomsound 0 10 SOUND_PAIN SOUND_PAIN SOUND_STRUCK1 SOUND_STRUCK2 SOUND_STRUCK3
+
+   //flinch and retaliate are handled in base_monster
+}
+
+//glow
+{ [client]
+
+	const GLOW_COLOR (255,255,128) //this can be overridden from the monster
+	const GLOW_RAD 200
+}
+
+{ [client] client_activate
+
+	setvard SKEL_ID PARAM1
+	if SKEL_LIGHT_ID equals 'SKEL_LIGHT_ID'
+	cleffect light new $getcl(SKEL_ID,origin) GLOW_RAD GLOW_COLOR 5.0
+	setvard SKEL_LIGHT_ID game.script.last_light_id
+	setcallback render enable
+}
+
+{ [client] game_prerender
+
+	local L_POS $getcl(SKEL_ID,origin)
+	cleffect light SKEL_LIGHT_ID L_POS GLOW_RAD GLOW_COLOR 1.0
+}
+
+{ [server] game_death
+
+	clientevent remove all MY_LIGHT_SCRIPT
+}
+
+{ chest_sfor_fireloot1 
+	setvard DROPS_CONTAINER 1
+	setvard CONTAINER_DROP_CHANCE 100%
+	setvard CONTAINER_SCRIPT chests/sfor_fire1
+}
+
+{ chest_sfor_fireloot2
+	setvard DROPS_CONTAINER 1
+	setvard CONTAINER_DROP_CHANCE 100%
+	setvard CONTAINER_SCRIPT chests/sfor_fire2
+}

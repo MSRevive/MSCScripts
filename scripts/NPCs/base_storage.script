@@ -1,0 +1,627 @@
+//weapon armor storage, alternative bank system by Thothie (from scratch)
+//base to be used by NPC tellers
+{
+	const GALA_CHEST_POS $relpos(0,64,64)
+	setvar GALA_SCROLL_PRICE 5000
+	const SAYTEXT_wondrous_NOFUNDS "We're sorry, but you seem to lack the funds to purchase Galat's Wondrous Scroll."
+	const SAYTEXT_wondrous_PURCHASED "Here you go. It's only good for one use, so be sure you have room to use it."
+
+	//Old Bank System ====================
+	const	STORAGE_DISPLAYNAME	"Galat's Storage"
+	const	STORAGE_NAME 		main_bank
+	const	STORAGE_FEERATIO 	0.01
+	const	STORAGE_ACCOUNT_COST    5
+
+	const SAYTEXT_BANKOPEN "There, that should be your stuff."
+
+
+	//Ticket storage system ==============
+
+	setvard FEE_HP_RATIO 0.1
+
+	//I'm not sure why I made these vards, but I'm not changing it now
+
+	//these should probably be const, but I'm using sevard due to potential menu item registry issues
+	//add to these strings as new items are added
+	setvard AXE_STRING "axes_2haxe;axes_axe;axes_battleaxe;axes_doubleaxe;axes_greataxe;axes_rsmallaxe;axes_runeaxe;axes_scythe;axes_smallaxe;axes_golden;axes_golden_ref;"
+	setvard BLUNT_STRING "blunt_calrianmace;blunt_club;blunt_darkmaul;blunt_granitemace;blunt_granitemaul;blunt_greatmaul;blunt_hammer_dorfgan;blunt_hammer1;blunt_hammer2;blunt_hammer3;blunt_mace;blunt_maul;blunt_ravenmace;blunt_rudolfsmace;blunt_rustyhammer2;blunt_warhammer;"
+	setvard BOW_STRING "bows_crossbow_light;bows_longbow;bows_orcbow;bows_shortbow;bows_swiftbow;bows_treebow;bows_orion1;"
+	setvard GAUNTLET_STRING "blunt_gauntlets;blunt_gauntlets_fire;gauntlets_normal;blunt_snake_staff;"
+
+	//SWORD_STRING1, SMALLARM_STRING1, and ARMOR_STRING1 met the maximum char length, so we had to split it in two
+	//- if another one hits the max limit, you'll have to do the same and alter the code
+
+	setvard ARMOR_STRING1 "armor_dark;armor_golden;armor_helm_dark;armor_helm_gaz1;armor_helm_gaz2;armor_helm_golden;armor_helm_knight;armor_helm_mongol;armor_helm_plate;armor_knight;armor_leather;armor_leather_studded;armor_leather_torn;armor_mongol;armor_plate;"
+	setvard ARMOR_STRING2 "armor_helm_gray;armor_helm_bronze;" //removing shields temporarily
+	setvard SMALLARM_STRING1 "smallarms_bone_blade;smallarms_craftedknife;smallarms_craftedknife2;smallarms_craftedknife3;smallarms_craftedknife4;smallarms_dagger;smallarms_dirk;smallarms_fangstooth;smallarms_flamelick;smallarms_huggerdagger;smallarms_huggerdagger2;"
+	setvard SMALLARM_STRING2 "smallarms_huggerdagger3;smallarms_huggerdagger4;smallarms_knife;smallarms_rknife;smallarms_royaldagger;"
+	setvard SWORD_STRING1 "swords_bastardsword;swords_giceblade;swords_iceblade;swords_katana;swords_katana2;swords_katana3;swords_katana4;swords_liceblade;swords_longsword;swords_lostblade;swords_m2sword;swords_msword;swords_nkatana;swords_poison1;swords_rsword;swords_scimitar;"
+	setvard SWORD_STRING2 "swords_shortsword;swords_skullblade;swords_skullblade2;swords_skullblade3;swords_skullblade4;swords_spiderblade;swords_testskin;swords_testsub;swords_volcano;swords_rune_green;"
+
+	const N_ADDITIONAL 3
+	const ADDITIONAL_ITEMS_01 "blunt_gauntlets_serpant;blunt_gauntlets_leather;blunt_gauntlets_demon;bows_orion1;swords_novablade12;armor_pheonix55;axes_poison1;axes_vaxe;axes_thunder11;axes_gthunder11;blunt_lrod11;bows_thornbow;bows_crossbow_heavy33;armor_helm_undead;"
+	const ADDITIONAL_ITEMS_02 "blunt_northmaul972;smallarms_frozentongueonflagpole;swords_frostblade55;armor_belmont;armor_belmont;blunt_mithral;armor_salamander;armor_fireliz;swords_wolvesbane;swords_blood_drinker;armor_leather_gaz1;axes_td;axes_tf;axes_ti;axes_tp;"
+	const ADDITIONAL_ITEMS_03 "axes_dragon;smallarms_nh;bows_firebird;bows_frost;armor_faura;armor_paura;armor_venom;smallarms_k_fire;axes_tl;"
+
+	const SAYTEXT_REFUND "No pressure, here's your fee back. Come back anytime."
+	const SAYTEXT_SELECT_ITEM "Please select the specific item you would like to store."
+	const SAYTEXT_SELECT_CAT SAYTEXT_SELECT_ITEM //no longer used
+	const SAYTEXT_NOITEM "Sorry, I did not recieve the item."
+	const SAYTEXT_NOTICKET "Sorry, I did not recieve the ticket."
+	const SAYTEXT_NOSTORABLES "I'm sorry, you've no items we can store for you."
+	const SAYTEXT_GIVETICKET "Here's your ticket! Remember, you can redeem that at any Galat outlet."
+	const SAYTEXT_SELECT_TICKET "Please select which ticket you wish to redeem."
+	const SAYTEXT_HAND_WARN "Please place tickets in your hands before you attempt to redeem them."
+	const SAYTEXT_REDEEMTICKET "There ya go! Thank you for using Galat Storage, please come again!"
+	const SAYTEXT_ITEMS_HANDS "Remember, I can only store items held forth in your hands."
+	const SAYTEXT_BANK_NOTE "Ah, a you wish to cash a Galat bank note. Yes, we can do that here."
+	const ANIM_CHAT talkright
+	const ANIM_NO deskidle
+	const ANIM_STORE portal
+}
+
+{ game_spawn
+
+	callevent 1.0 create_bank //Lets the npc fall before attempting to spawn the chest. -greatguys1@SEP2021
+}
+
+{ create_bank
+
+	createnpc chests/bank1 GALA_CHEST_POS $get(ent_me,id)
+
+	callevent storage_reset
+	menu.autoopen 1
+}
+
+{ game_menu_getoptions
+
+	menuitem.remove abort_option
+
+	setvard CUSTOMER_ID $get(PARAM1,id)
+
+	if ( TICKETS_ACTIVE )
+	{
+		setvard REGISTER_ITEMS 0
+		setvard REGISTER_TICKETS 1
+	}
+
+	if ( !STORAGE_ACTIVE )
+	{
+		callevent count_items CUSTOMER_ID
+		if ( $item_exists(PARAM1,item_galat_note_100) )
+		{
+			local reg.mitem.title	"Redeem Bank Note [100]"
+			local reg.mitem.type	payment
+			local reg.mitem.data	item_galat_note_100
+			local reg.mitem.callback  note_hundred
+			menuitem.register
+		}
+
+		if ( $item_exists(PARAM1,item_galat_note_10) )
+		{
+			local reg.mitem.title	"Redeem Bank Note [10]"
+			local reg.mitem.type	payment
+			local reg.mitem.data	item_galat_note_10
+			local reg.mitem.callback  note_ten
+			menuitem.register
+		}
+
+		local reg.mitem.title	"About storage chest"
+		local reg.mitem.type	callback
+		local reg.mitem.callback say_storage_chest
+		menuitem.register
+
+		local reg.mitem.title	"Buy Wondrous Scroll ("
+		stradd reg.mitem.title GALA_SCROLL_PRICE
+		stradd reg.mitem.title "gp)"
+		local reg.mitem.type	payment
+		local reg.mitem.data	"gold:"
+		stradd reg.mitem.data GALA_SCROLL_PRICE
+		local reg.mitem.callback  buy_scroll
+		local reg.mitem.cb_failed say_wondrous_cant_afford
+		menuitem.register
+
+		local reg.mitem.title	"About Wondrous Scroll"
+		local reg.mitem.type	callback
+		local reg.mitem.callback  say_wondrous
+		menuitem.register
+
+	}
+
+	if ( !FOUND_IN_HANDS )
+	{
+		if TOTAL_COUNT > 0
+		saytext SAYTEXT_ITEMS_HANDS
+		callevent bteller_hand_warn
+	}
+
+	if ( TICKETS_ACTIVE )
+	{
+		if !GAVE_SELECT_TICKET_TEXT
+		callevent 0.5 storage_reset
+	}
+
+	if !TICKETS_ACTIVE
+
+	////dbg temp Menu Activated storageact STORAGE_ACTIVE storetype STORAGE_TYPE
+
+	if ( !STORAGE_ACTIVE )
+	{
+		setvard USE_FEE $get(PARAM1,maxhp)
+		multiply USE_FEE FEE_HP_RATIO
+		setvard USE_FEE $int(USE_FEE)
+		if ( USE_FEE < 25 ) setvard USE_FEE 25
+		local reg.mitem.id	a_storage
+		local reg.mitem.title	"Store an Item: " USE_FEE "gp"
+		local reg.mitem.type	payment
+		local reg.mitem.data	gold: USE_FEE
+		local reg.mitem.callback  activate_storage
+		if ( TOTAL_COUNT == 0 )
+		{
+			playanim critical ANIM_NO
+			saytext SAYTEXT_NOSTORABLES
+			callevent bteller_store_error
+			local reg.mitem.type disabled
+			menuitem.remove a_storage
+		}
+		if ( !FOUND_IN_HANDS ) local reg.mitem.type disabled
+		if ( FOUND_IN_HANDS ) menuitem.register
+
+		if ( TICKET_COUNT > 0 )
+		{
+			local reg.mitem.id	a_ticket
+			local reg.mitem.title	"Redeem a ticket"
+			local reg.mitem.type	callback
+			local reg.mitem.callback  activate_tickets
+			local reg.mitem.disable 0
+			menuitem.register
+		}
+	}
+
+
+	//ye beta bank of fail
+//	if ( G_DEVELOPER_MODE )
+//	{
+//			local reg.mitem.title	"Use Beta Bank"
+//			local reg.mitem.type	callback
+//			local reg.mitem.callback  open_betabank
+//			menuitem.register
+//	}
+
+
+	if STORAGE_ACTIVE
+
+	local reg.mitem.cb_failed storage_reset
+
+	setvard FOUND_IN_HANDS 0
+	setvard TOTAL_COUNT 0
+	setvard REGISTER_ITEMS 1
+	setvard REGISTER_TICKETS 0
+	callevent enum_all
+
+	if ( FOUND_IN_HANDS == 0 )
+	{
+		callevent bteller_hand_warn
+		saytext SAYTEXT_ITEMS_HANDS
+	}
+
+	callevent display_abort
+}
+
+{ count_items
+
+	//count up storable items by category, as well as tickets
+	setvard FOUND_IN_HANDS 0
+	setvard TOTAL_COUNT 0
+	setvard TICKET_COUNT 0
+	setvard REGISTER_ITEMS 0
+
+	callevent enum_all
+}
+
+{ check_inventory //PARAM1 = category //PARAM2 = passstring
+
+	local CHECK_STRING PARAM2
+
+	local SEARCH_ITEM $get_token(CHECK_STRING,CHECK_LOOP)
+
+	if ( $item_exists(CUSTOMER_ID,SEARCH_ITEM) )
+	{
+
+		if !REGISTER_TICKETS
+		local FOUND_ITEM 1
+
+		if $item_exists(CUSTOMER_ID,SEARCH_ITEM)
+		local NOT_IN_HANDS $item_exists(CUSTOMER_ID,SEARCH_ITEM,nohands)
+
+		if ( !NOT_IN_HANDS ) setvard FOUND_IN_HANDS 1
+
+		add TOTAL_COUNT 1
+		////dbg temp found PARAM1 ( SEARCH_ITEM ) on $get(CUSTOMER_ID,name) loop ( CHECK_LOOP ) in hands ( FOUND_IN_HANDS )
+
+		if ( REGISTER_ITEMS )
+		{
+			//items must be in hands
+			if !NOT_IN_HANDS
+			local ITEM_NAME $item_exists(CUSTOMER_ID,SEARCH_ITEM,name)
+			local reg.mitem.title "Store " ITEM_NAME
+			local reg.mitem.type callback
+			local reg.mitem.data SEARCH_ITEM
+			local reg.mitem.callback return_ticket
+			local reg.mitem.cb_failed storage_reset
+			menuitem.register
+		}
+	}
+
+	if ( REGISTER_TICKETS )
+	{
+		local SEARCH_TICKET "item_tk_"
+		stradd SEARCH_TICKET SEARCH_ITEM
+		if $item_exists(CUSTOMER_ID,SEARCH_TICKET)
+		////dbg temp SEARCH_TICKET exists 1 ( notinhands $item_exists(CUSTOMER_ID,SEARCH_TICKET,nohands) noinv $item_exists(CUSTOMER_ID,SEARCH_TICKET,notinpack) noworn $item_exists(CUSTOMER_ID,SEARCH_TICKET,noworn) )
+		local NOT_IN_HANDS $item_exists(CUSTOMER_ID,SEARCH_TICKET,nohands)
+		if ( NOT_IN_HANDS )
+		{
+			if !GAVE_HAND_WARNING
+			saytext SAYTEXT_HAND_WARN
+			callevent bteller_ticket_warn
+			setvard GAVE_HAND_WARNING 1
+		}
+		if !NOT_IN_HANDS
+
+		if ( !GAVE_SELECT_TICKET_TEXT )
+		{
+			saytext SAYTEXT_SELECT_TICKET
+			setvard GAVE_SELECT_TICKET_TEXT 1
+			callevent bteller_select_ticket
+		}
+
+		local TICKET_NAME $item_exists(CUSTOMER_ID,SEARCH_TICKET,name)
+		local reg.mitem.title TICKET_NAME
+		local reg.mitem.type callback
+		local reg.mitem.data SEARCH_ITEM
+		local reg.mitem.callback redeem_ticket
+		local reg.mitem.cb_failed storage_reset
+		menuitem.register
+	}
+
+	if ( !REGISTER_ITEMS )
+	{
+		local SEARCH_TICKET "item_tk_"
+		stradd SEARCH_TICKET SEARCH_ITEM
+		if ( $item_exists(CUSTOMER_ID,SEARCH_TICKET) )
+		{
+			add TICKET_COUNT 1
+			local NOT_IN_HANDS $item_exists(CUSTOMER_ID,SEARCH_ITEM,nohands)
+			if ( NOT_IN_HANDS )
+			{
+				if !GAVE_HAND_WARNING
+				saytext SAYTEXT_HAND_WARN
+				callevent bteller_ticket_warn
+				setvard GAVE_HAND_WARNING 1
+			}
+			////dbg temp Found ticket SEARCH_TICKET on $get(CUSTOMER_ID,name)
+		}
+	}
+
+	add CHECK_LOOP 1
+}
+
+{ activate_storage
+
+	saytext SAYTEXT_SELECT_CAT
+	setvard STORAGE_ACTIVE 1
+	callevent 0.5 open_menu PARAM1
+}
+
+{ activate_tickets
+
+	setvard TICKETS_ACTIVE 1
+	callevent 0.5 open_menu PARAM1
+}
+
+{ say_select_item
+
+	saytext SAYTEXT_SELECT_ITEM
+}
+
+{ return_ticket //PARAM1=user, PARAM2=item to store
+
+	////dbg temp ReturnTicket got $get(PARAM1,name) PARAM2 PARAM3 PARAM4
+
+	local ITEM_IN PARAM2
+
+	local TICKET_NAME "item_tk_"
+	stradd TICKET_NAME ITEM_IN
+
+	if ( $item_exists(PARAM1,ITEM_IN) )
+	{
+		local METHOD_HACK $item_exists(PARAM1,ITEM_IN,remove)
+		offer PARAM1 TICKET_NAME
+		callevent bteller_give_ticket
+		saytext SAYTEXT_GIVETICKET
+	}
+	else
+	{
+		saytext SAYTEXT_NOITEM
+		playanim critical ANIM_NO
+		callevent bteller_error_no_item
+	}
+
+	callevent storage_reset
+}
+
+{ open_menu
+
+	////dbg temp opening menu
+
+	menu.open CUSTOMER_ID
+}
+
+{ storage_reset
+
+	////dbg temp storage_reset 
+
+	setvard STORAGE_TYPE unset
+	setvard STORAGE_ACTIVE 0
+	setvard TICKETS_ACTIVE 0
+	setvard REGISTER_TICKETS 0
+	setvard REGISTER_ITEMS 0
+	setvard FOUND_IN_HANDS 0
+	setvard TOTAL_COUNT 0
+	setvard GAVE_SELECT_TICKET_TEXT 0
+	setvard GAVE_HAND_WARNING 0
+}
+
+{ cancel_trade
+	
+	saytext SAYTEXT_REFUND
+	offer PARAM1 gold USE_FEE
+	callevent storage_reset
+}
+
+{ display_abort
+
+	local reg.mitem.id		abort_option
+	local reg.mitem.title 	"Abort Transaction"
+	local reg.mitem.type 	callback
+	local reg.mitem.callback  cancel_trade
+	menuitem.register
+}
+
+{ redeem_ticket //PARAM1=customer_id PARAM2=item to return
+
+	////dbg temp RedeemTicket got $get(PARAM1,name) PARAM2 PARAM3 PARAM4
+	local ITEM_IN PARAM2
+
+	local TICKET_NAME "item_tk_"
+	stradd TICKET_NAME ITEM_IN
+
+	if ( $item_exists(PARAM1,TICKET_NAME) )
+	{
+		playanim critical ANIM_STORE
+
+		////dbg temp attempting to remove TICKET_NAME in exchange for ITEM_IN
+		local METHOD_HACK $item_exists(PARAM1,TICKET_NAME,remove)
+		offer PARAM1 ITEM_IN
+	
+		saytext SAYTEXT_REDEEMTICKET
+		callevent bteller_ticket_redeemed
+	}
+	else
+	{
+		saytext SAYTEXT_NOTICKET
+		playanim critical ANIM_NO
+		callevent bteller_error_no_item
+	}
+
+	callevent storage_reset
+}
+
+{ enum_all
+
+	setvard CHECK_LOOP 0
+	setvard ARMOR_TYPES $get_token_amt(ARMOR_STRING1)
+	calleventloop ARMOR_TYPES check_inventory armor ARMOR_STRING1
+	setvard CHECK_LOOP 0
+	setvard ARMOR_TYPES $get_token_amt(ARMOR_STRING2)
+	calleventloop ARMOR_TYPES check_inventory armor ARMOR_STRING2
+
+
+// enum_axe
+
+	setvard CHECK_LOOP 0
+	setvard AXE_TYPES $get_token_amt(AXE_STRING)
+	calleventloop AXE_TYPES check_inventory axe AXE_STRING
+
+	//future use
+	//setvard CHECK_LOOP 0
+	//setvard AXE_TYPES $get_token_amt(AXE_STRING2)
+	//calleventloop AXE_TYPES check_inventory axe AXE_STRING2
+
+
+// emum_blunt
+	
+	setvard CHECK_LOOP 0
+	setvard BLUNT_TYPES $get_token_amt(BLUNT_STRING)
+	calleventloop BLUNT_TYPES check_inventory blunt BLUNT_STRING
+
+	//future use
+	//setvard CHECK_LOOP 0
+	//setvard BLUNT_TYPES $get_token_amt(BLUNT_STRING2)
+	//calleventloop BLUNT_TYPES check_inventory blunt BLUNT_STRING2
+
+
+// enum_bow
+
+	setvard CHECK_LOOP 0
+	setvard BOW_TYPES $get_token_amt(BOW_STRING)
+	calleventloop BOW_TYPES check_inventory bow BOW_STRING
+
+	//future use
+	//setvard CHECK_LOOP 0
+	//setvard BOW_TYPES $get_token_amt(BOW_STRING2)
+	//calleventloop BOW_TYPES check_inventory bow BOW_STRING2
+
+
+// enum_gauntlet
+
+	setvard CHECK_LOOP 0
+	setvard GAUNTLET_TYPES $get_token_amt(GAUNTLET_STRING)
+	calleventloop GAUNTLET_TYPES check_inventory gauntlet GAUNTLET_STRING
+
+
+// enum_smallarm
+
+	setvard CHECK_LOOP 0
+	setvard SMALLARM_TYPES $get_token_amt(SMALLARM_STRING1)
+	calleventloop SMALLARM_TYPES check_inventory smallarm SMALLARM_STRING1
+
+	setvard CHECK_LOOP 0
+	setvard SMALLARM_TYPES $get_token_amt(SMALLARM_STRING2)
+	calleventloop SMALLARM_TYPES check_inventory smallarm SMALLARM_STRING2
+
+
+// enum_sword
+
+	setvard CHECK_LOOP 0
+	setvard SWORD_TYPES $get_token_amt(SWORD_STRING1)
+	calleventloop SWORD_TYPES check_inventory sword SWORD_STRING1
+
+	setvard CHECK_LOOP 0
+	setvard SWORD_TYPES $get_token_amt(SWORD_STRING2)
+	calleventloop SWORD_TYPES check_inventory sword SWORD_STRING2
+
+// enum_additional
+// The item division is a result of the original method (ie. categorize all weapons on player to avoid overflowing the 5 menu item limit)
+// We've done away with that by only allowing banking of items in the player's hands
+// Thus, all future item strings will be in ADDITIONAL_ITEMS_xx
+	if N_ADDITIONAL >= 1
+	setvard CHECK_LOOP 0
+	local NEXT_CHECK_LIST ADDITIONAL_ITEMS_01
+	local CHECK_LIST_NITEMS $get_token_amt(NEXT_CHECK_LIST)
+	calleventloop CHECK_LIST_NITEMS check_inventory other NEXT_CHECK_LIST
+
+	if N_ADDITIONAL >= 2
+	setvard CHECK_LOOP 0
+	local NEXT_CHECK_LIST ADDITIONAL_ITEMS_02
+	local CHECK_LIST_NITEMS $get_token_amt(NEXT_CHECK_LIST)
+	calleventloop CHECK_LIST_NITEMS check_inventory other NEXT_CHECK_LIST
+
+	if N_ADDITIONAL >= 3
+	setvard CHECK_LOOP 0
+	local NEXT_CHECK_LIST ADDITIONAL_ITEMS_03
+	local CHECK_LIST_NITEMS $get_token_amt(NEXT_CHECK_LIST)
+	calleventloop CHECK_LIST_NITEMS check_inventory other NEXT_CHECK_LIST
+
+	if N_ADDITIONAL >= 4
+	setvard CHECK_LOOP 0
+	local NEXT_CHECK_LIST ADDITIONAL_ITEMS_04
+	local CHECK_LIST_NITEMS $get_token_amt(NEXT_CHECK_LIST)
+	calleventloop CHECK_LIST_NITEMS check_inventory other NEXT_CHECK_LIST
+
+	if N_ADDITIONAL >= 5
+	setvard CHECK_LOOP 0
+	local NEXT_CHECK_LIST ADDITIONAL_ITEMS_05
+	local CHECK_LIST_NITEMS $get_token_amt(NEXT_CHECK_LIST)
+	calleventloop CHECK_LIST_NITEMS check_inventory other NEXT_CHECK_LIST
+}
+
+{ note_hundred
+
+	saytext SAYTEXT_BANK_NOTE
+	playanim once ANIM_CHAT
+	offer PARAM1 gold 100
+}
+
+{ note_ten
+
+	saytext SAYTEXT_BANK_NOTE
+	playanim once ANIM_CHAT
+	offer PARAM1 gold 10
+}
+
+//scripts to add (placed here by ticket maker)
+
+{ open_betabank
+	storage checkaccount STORAGE_NAME ent_lastused betabank
+	setvard BANK_USER PARAM1
+}
+
+{ betabank_success
+	saytext SAYTEXT_BANKOPEN
+	storage trade STORAGE_NAME BANK_USER STORAGE_FEERATIO STORAGE_DISPLAYNAME
+}
+
+{ betabank_failed
+
+	callevent convo_anim
+   	saytext We have this eh, mystic portal to the vaults. It seems to be working okay, but it's still a little experimental.
+	callevent 2.0 bank_intro1
+}
+
+{ bank_intro1
+	saytext You can use it for a minimal fee. Just beware that it is at the moment 'at your own risk' - at least until the wizards get the kinks worked out.
+	storage openaccount STORAGE_NAME BANK_USER
+	callevent 2.0 bank_intro2
+}
+
+{ bank_intro2
+	callevent convo_anim
+	saytext You can store more items in the betabank, and you don't have to deal with tickets. Also, usually cheaper - the cost is based on the value of the item.
+	infomsg BANK_USER "BETA BANK ACCOUNT OPEN" "Choose Open Betabank again to start using the betabank."
+}
+
+{ buy_scroll
+	saytext SAYTEXT_wondrous_PURCHASED
+	callevent lchat_mouth_move
+	offer PARAM1 item_gwond
+	playanim once return_needle
+}
+
+{ say_wondrous_cant_afford
+	saytext SAYTEXT_wondrous_NOFUNDS
+	callevent lchat_mouth_move
+	playanim once no
+}
+
+{ lchat_mouth_move
+
+	setvard BC_TOTAL_MOUTH_TIME 0
+
+	local RND_SAY1 "["
+	local M_TIME $randf(0.1,0.3)
+	add BC_TOTAL_MOUTH_TIME M_TIME
+	stradd RND_SAY1 M_TIME
+	stradd RND_SAY1 "]"
+
+	local RND_SAY2 "["
+	local M_TIME $randf(0.1,0.3)
+	add BC_TOTAL_MOUTH_TIME M_TIME
+	stradd RND_SAY2 M_TIME
+	stradd RND_SAY2 "]"
+
+
+	local RND_SAY3 "["
+	local M_TIME $randf(0.1,0.3)
+	add BC_TOTAL_MOUTH_TIME M_TIME
+	stradd RND_SAY3 M_TIME
+	stradd RND_SAY3 "]"
+
+
+	local RND_SAY4 "["
+	local M_TIME $randf(0.1,0.3)
+	add BC_TOTAL_MOUTH_TIME M_TIME
+	stradd RND_SAY4 M_TIME
+	stradd RND_SAY4 "]"
+
+	say RND_SAY1 RND_SAY2 RND_SAY3 RND_SAY4
+	add BC_TOTAL_MOUTH_TIME 1.0
+	callevent BC_TOTAL_MOUTH_TIME bchat_close_mouth
+}
+
+{ lchat_close_mouth
+	if !NO_CLOSE_MOUTH //some monsters express chat by shaking their spine controller - setting them to 0 may look odd, so use this in those cases
+	setprop ent_me controller1 0
+}
+

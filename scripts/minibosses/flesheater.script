@@ -1,0 +1,330 @@
+//This is an older script and may have some bad conventions as a result.
+
+//Thothie - for MS 1.35 compatitbility - and because mini-bosses are kewl! ;)
+//- Notable Differences from Calrian <damage <hp <gold sounds model size trigger text poison damage
+//- Weak for a Boss - but has a habit of getting back up
+//- BUG: Reports of not getting back up after death - took a stab at it on 6/Sep/2006 16:11
+
+//Flesheater (from Calrian)
+
+{
+   setvar ANIM_IDLE idle1
+   setvar ANIM_WALK walk
+   setvar ANIM_RUN walk
+   setvard ANIM_ATTACK attack1
+	const ANIM_CLOUDCAST attack2
+   const ATTACK_DAMAGE $rand(15,25)
+   setvard ATTACK_RANGE 120
+	setvard MOVE_RANGE 80
+   setvard ATTACK_HITRANGE 200
+   const ATTACK_HITCHANCE 85%
+   const SOUND_STRUCK1 controller/con_pain3.wav
+   const SOUND_STRUCK2 controller/con_pain3.wav
+   const SOUND_STRUCK3 controller/con_pain2.wav
+   const SOUND_PAIN zombie/zo_pain2.wav
+   const SOUND_ATTACK1 controller/con_attack1.wav
+   const SOUND_ATTACK2 controller/con_attack2.wav
+   const SOUND_DEATH1 zombie/zo_pain1.wav
+	const SOUND_DEATH2 monsters/troll/trolldeath.wav
+   const SOUND_IDLE controller/con_attack3.wav
+   const SOUND_SPAWN monsters/skeleton/calrian2.wav
+   setvard DROP_GOLD 		1
+   setvard DROP_GOLD_MIN		100
+   setvard DROP_GOLD_MAX		150
+   const SKEL_RESPAWN_CHANCE	100%
+   //const SKEL_RESPAWN_LIVES	1
+   const SKEL_HP 3000 //3000
+	const POISON_CLAW_DMG '$rand(13,20)'
+
+
+	const CLOUD_DURATION 10
+	const CLOUD_DAMAGE 20
+	precache poison_cloud.spr
+	const MONSTER_MODEL monsters/flesheater.mdl
+
+
+   //Precache
+ 	precache MONSTER_MODEL
+	precache ambience/steamburst1.wav //poison cloud
+   precache SOUND_DEATH //This sound must be explicitly precached since
+			//the play command for it isn't in this file (it's
+			//in base_monster.script)
+
+	const ANIM_RESPAWN_DEADIDLE	dead_on_stomach
+}
+
+#include monsters/base_monster_new
+#include monsters/base_turn_undead
+
+{
+   eventname npc_spawn
+
+	setvard I_AM_TURNABLE 0
+
+	setvard MY_SCRIPT_ID unset
+
+	hp 3000
+	local ON_UNREST 0
+	local MAP_NAME game.map.name
+	if ( MAP_NAME equals unrest2 ) local ON_UNREST 1
+	if ( MAP_NAME equals unrest2_beta1 ) local ON_UNREST 2
+
+	if ( !ON_UNREST )
+	{
+		width 50
+   		height 100
+	}
+	if ( ON_UNREST )
+	{
+		setprop ent_me rendermode 5
+		setprop ent_me renderamt 255
+		width 20
+		height 72
+		//setsolid none
+	}
+
+   name Flesh Eater
+   roam 0
+   hearingsensitivity 8
+   setvard NPC_GIVE_EXP 250
+   race undead
+	//setidleanim ANIM_IDLE
+	//setmoveanim ANIM_WALK
+ 	precache MONSTER_MODEL
+   setmodel MONSTER_MODEL
+   setmodelbody	1 0
+   takedmg all 0.65
+	takedmg poison 0.0
+	setvard IMMUNE_POISON 1
+	takedmg holy 2.0
+}
+
+{ game_postspawn
+//	setvard SCROLL_TOME $rand(1,2)
+//	if ( SCROLL_TOME == 1 )
+//	{
+//		giveitem scroll2_poison
+//	}
+//	if ( SCROLL_TOME == 2 )
+//	{
+//		giveitem scroll_poison
+//	}
+}
+
+{ attack_1
+
+   callevent npcatk_dodamage NPCATK_TARGET ATTACK_HITRANGE ATTACK_DAMAGE ATTACK_HITCHANCE slash
+
+   applyeffect ent_laststruckbyme effects/effect_poison 5 ent_me POISON_CLAW_DMG
+
+   if( $rand(0,1) == 0 )
+   {
+   	volume 5
+   	playrandomsound 2 SOUND_ATTACK1 SOUND_ATTACK2
+   }
+}
+
+{ attack_2
+
+   callevent npcatk_dodamage NPCATK_TARGET ATTACK_HITRANGE ATTACK_DAMAGE ATTACK_HITCHANCE slash
+
+   applyeffect ent_laststruckbyme effects/effect_poison 5 ent_me POISON_CLAW_DMG
+
+   if( $rand(0,1) == 0 )
+   {
+   	volume 5
+   	playrandomsound 2 SOUND_ATTACK1 SOUND_ATTACK2
+   }
+}
+
+   //Hit by someone
+{ [server] game_struck
+
+	//dbg temp MyHp game.monster.hp ( FLINCH_DMG_REQ )
+
+	if ( !GONE_ROAM )
+	{
+		roam 1
+		setvard GONE_ROAM 1
+	}
+
+	local MY_HP $get(ent_me,hp)
+	if ( MY_HP <= 500 ) 
+	{
+		if MY_HP > 1 //weird instant-fake-death going on
+		if !DIED_ONCE
+		callevent npcatk_clear_targets
+		callevent fake_death
+	}
+
+   volume 5
+   playrandomsound 2 SOUND_PAIN SOUND_PAIN SOUND_STRUCK1 SOUND_STRUCK2 SOUND_STRUCK3
+}
+
+{ fake_death
+
+	callevent npcatk_suspend_ai
+
+	playanim critical ANIM_DEATH
+
+	setvard PLAYING_DEAD 1
+
+	playsound 0 10 SOUND_DEATH1
+
+	local L_DEATHANIM $rand(0,1)
+
+	setvard ANIM_DEATH diesimple
+	if( LCL_DEATHANIM == 1 ) setvard ANIM_DEATH dieforward
+
+	setvard DIED_ONCE 1
+
+	setvard PLAYING_DEAD 1
+
+	setvard CAN_HEAR 0
+	setalive 		1
+	setsolid 		none
+	setmovedest 		none
+	setidleanim 		ANIM_RESPAWN_DEADIDLE
+	invincible		1
+	roam			0
+
+	callevent 8.0 skel_respawn
+}
+
+
+{ npc_death
+
+	usetrigger bloodreaver_died
+	//playsound 0 10 SOUND_DEATH2
+
+	//if ( MY_LIGHT_SCRIPT isnot 'MY_LIGHT_SCRIPT' ) clientevent update all MY_LIGHT_SCRIPT remove_light
+
+	local MAP_NAME $lcase(game.map.name)
+
+	if ( MAP_NAME isnot bloodrose ) saytext I shall return one day! ...and then your flesh shall adorn my bones!
+
+	if ( MAP_NAME equals bloodrose )
+	{
+		deleteent $get_by_name(slithar_caves1) remove
+		local L_SPAWN $get_by_name(slithar_caves1_tele)
+		deleteent L_SPAWN remove
+		local L_SPAWN $get_by_name(slithar_caves2)
+		deleteent L_SPAWN remove
+		local L_SPAWN $get_by_name(slithar_caves2_tele)
+		deleteent L_SPAWN remove
+		local L_SPAWN $get_by_name(slithar_caves3)
+		deleteent L_SPAWN remove
+		local L_SPAWN $get_by_name(slithar_caves3_tele)
+		deleteent L_SPAWN remove
+		local L_SPAWN $get_by_name(slithar_caves4)
+		deleteent L_SPAWN remove
+
+		local L_MASTER_ID $get_by_name(snake_lord)
+		callexternal L_MASTER_ID slithar_resume
+		if ( $get(L_MASTER_ID,isalive) )
+		{
+			if ( game.players > 1 ) saytext Slithar, I have failed! Finish them!
+			if ( game.players == 1 ) saytext Slithar, I have failed! Finish him!
+		}
+		//how would this happen?
+		if ( !$get(L_MASTER_ID,isalive) )
+		{
+			saytext For now, you have won, but you have not seen the last of me nor my master!
+		}
+
+//		if ( SCROLL_TOME == 1 )
+//		{
+//			infomsg all "CRITICAL ITEM DROPPED" "Flesheater has dropped a Scroll of Poison."
+//		}
+//		if ( SCROLL_TOME == 2 )
+//		{
+//			infomsg all "CRITICAL ITEM DROPPED" "Flesheater has dropped a Tome of Poison."
+//		}
+	}
+}
+
+{ skel_respawn
+
+	setidleanim 		ANIM_IDLE
+	playanim critical getup
+	setsolid box
+   	setbbox npcsize
+   	hp SKEL_HP
+	saytextrange 1024
+	saytext No! I shall not be defeated so easily!
+
+	callevent 2.5 skel_respawn_revived
+}
+
+{ skel_respawn_revived
+	setvard PLAYING_DEAD 0
+
+	setmovedest		HUNT_LASTTARGET 9999
+
+	callevent npcatk_resume_ai
+	setvard CAN_HEAR 1
+
+	roam 			1
+	invincible		0
+}
+
+{ npcatk_targetvalidate
+
+	if !PLAYING_DEAD
+	if !CLOUD_DELAY
+	if ( $get(NPCATK_TARGET,range) < 3000 ) createnpc monsters/summon/npc_poison_cloud2 $get(NPCATK_TARGET,origin) $get(ent_me,id) CLOUD_DAMAGE CLOUD_DURATION 1
+	playanim once ANIM_CLOUDCAST
+	setvard CLOUD_DELAY 1
+	callevent 10.0 reset_cloud_delay
+}
+
+{ reset_cloud_delay
+
+	setvard CLOUD_DELAY 0
+}
+
+{ npcatk_targetvalidate
+
+	if !GONE_ROAM
+	setvard GONE_ROAM 1
+	roam 1
+	playsound 2 10 SOUND_SPAWN
+	if ( game.serverside ) callevent light_loop
+}
+
+{ light_loop
+	if $get(ent_me,isalive)
+	callevent 10.0 light_loop
+	clientevent new all effects/sfx_follow_glow_cl $get(ent_me,index) (0,255,0) 256 10.0
+	setvard MY_LIGHT_SCRIPT game.script.last_sent_id
+}
+
+{ game_damaged_other //P1=target P2=damage
+
+	////dbg temp Damaged other got PARAM1 PARAM2 PARAM3 PARAM4 PARAM5
+	if $get(ent_me,isalive)
+	if !PLAYING_DEAD
+	if $get(ent_me,hp) > 500
+	local HP_TO_GIVE PARAM2
+	multiply HP_TO_GIVE 0.25
+	local MAX_CHECK game.monster.hp
+	add MAX_CHECK HP_TO_GIVE
+	if MAX_CHECK < game.monster.maxhp
+	givehp HP_TO_GIVE
+	effect glow ent_me (0,255,0) 80 0.25 0.25
+	playsound 0 10 player/heartbeat_noloop.wav
+}
+
+{ my_target_died
+
+	effect glow ent_me (0,255,0) 255 1.0 1.0
+	callevent 0.4 skele_laugh
+	playsound 0 10 ambience/particle_suck1.wav
+	hp game.monster.maxhp
+}
+
+{ skele_laugh
+
+	playsound 0 10 x/x_laugh1.wav
+}
+

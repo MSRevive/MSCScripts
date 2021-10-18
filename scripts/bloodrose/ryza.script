@@ -1,0 +1,422 @@
+{
+	const MONSTER_MODEL npc/femhuman2.mdl
+	const NO_RUMOR 1
+	const NO_JOB 1
+	const CHAT_DELAY 3.5
+	const EMOTE_FREQ 20.0
+	precache MONSTER_MODEL
+}
+
+#include monsters/base_chat
+
+{ game_spawn
+
+	name Ghost of Ryza, Preistess of Felewyn
+
+	name_unique ryza
+
+	hp 9999 //mass hp prevents xplode bolts
+	invincible 1
+	roam 0
+	race beloved
+	setmodel MONSTER_MODEL
+	setprop ent_me rendermode 5
+	setprop ent_me renderamt 255
+	hearingsensitivity 10
+	movespeed 0.0
+
+	setidleanim idle1
+	setmoveanim idle1
+
+	catchspeech say_hi hi hail hello greet j0 yo waddup wazzup
+	catchspeech say_atholo atholo beat defeat
+	catchspeech say_felewyn felewyn
+
+	callevent 0.1 scan_for_players
+
+	setvard EMOTE_COUNT 0
+	setvard FLICK_COUNT 0
+	setvard GAVE_CRYSTALS 0
+	setvard ASKED_ATHOLO 0
+
+	setvard TRIGGER_RANGE 128
+
+	usetrigger ryza_shield
+
+	saytextrange 1024
+}
+
+{ scan_for_players
+
+	callevent 0.7 scan_for_players
+
+	if ( $cansee(player,TRIGGER_RANGE) )
+	{
+		callevent player_spotted
+	}
+}
+
+
+{ game_heardsound
+
+	if $get(ent_lastheard,range) < TRIGGER_RANGE
+	if $get(ent_lastheard,isplayer)
+	callevent player_spotted	
+}
+
+
+{ player_spotted
+
+	if !DOING_EXIT
+
+	if ( DID_INTRO )
+	{
+		if !EMOTE_DELAY
+		setvard EMOTE_DELAY 1
+		callevent EMOTE_FREQ emote_reset
+		callevent do_emote
+	}
+
+	if ( !DID_INTRO )
+	{
+		if !ATHOLO_DEAD
+		callevent do_intro
+	}
+
+	if ( ATHOLO_DEAD )
+	{
+		////dbg spotted player, doing final exit
+		setvard DOING_EXIT 1
+		callevent 0.1 do_exit
+	}
+}
+
+{ emote_reset
+	setvard EMOTE_DELAY 0
+}
+
+{ do_intro
+
+	callevent say_hi
+}
+
+{ say_hi
+
+	if !AM_TALKING
+	setvard AM_TALKING 1
+	setvard INTRO_STEP 0
+	callevent intro_loop
+}
+
+{ intro_loop
+	
+	if !ATHOLO_DEAD
+	add INTRO_STEP 1
+	if ( INTRO_STEP == 1 )
+	{
+		playanim critical pull_needle
+		saytext Greetings, I am the priestess Ryza...
+	}
+
+	if ( INTRO_STEP == 2 )
+	{
+		saytext My soul was bound here, for we knew one day Venevus would awaken Atholo.
+	}
+
+	if ( INTRO_STEP == 3 )
+	{
+		saytext We also knew that one day heroes, who could defeat both Venvus and Atholo, would come!
+	}
+
+	if ( INTRO_STEP == 4 )
+	{
+		saytext I pray you are they, for my magic can only hold Atholo in his tomb for so long.
+	}
+
+	if ( INTRO_STEP == 5 )
+	{
+		playanim critical eye_wipe
+		saytext Use the portals quickly, for there is not much time before the magic that holds me to this mortal plane fails!
+		callevent do_flicker		
+		setvard AM_TALKING 0
+		setvard DID_INTRO 1
+		callevent 10.0 enable_emotes
+	}
+
+	if INTRO_STEP < 5
+	callevent CHAT_DELAY intro_loop
+}
+
+{ enable_emotes
+	setvard EMOTES_ENABLED 1
+}
+
+{ do_emote
+	if !AM_TALKING
+	if EMOTES_ENABLED
+	if !ATHOLO_DEAD
+
+	add EMOTE_COUNT 1
+
+	if ( EMOTE_COUNT == 1 )
+	{
+		playanim critical pondering2
+		saytext Atholo is protected by ancient magics, but this source of his power is sealed in that tomb with him!
+	}
+
+	if ( EMOTE_COUNT == 2 )
+	{
+		playanim critical retina
+		saytext You must hurry my magic cannot last forever!
+		callevent do_flicker
+	}
+
+	if ( EMOTE_COUNT == 3 )
+	{
+		playanim critical gluonshow
+		saytext Do not hesitate! Hurry through the portals!
+	}
+
+	if ( EMOTE_COUNT == 4 )
+	{
+		playanim critical fear1
+		saytext If that beast escapes, all of Daragoth is doomed!
+	}
+
+	if ( EMOTE_COUNT == 5 )
+	{
+		playanim critical checktie
+		saytext Hurry! I cannot hold on much longer!
+		callevent do_flicker
+	}
+
+	if ( EMOTE_COUNT == 6 )
+	{
+		playanim critical lean
+		saytext You CAN defeat him! It has been foretold!
+	}
+
+	if ( EMOTE_COUNT == 7 )
+	{
+		playanim critical yes
+		saytext You are amongst the chosen ones... You must not be defeated, or all is lost!
+		callevent do_flicker
+	}
+
+
+	if ( EMOTE_COUNT == 8 )
+	{
+		playanim critical quicklook
+		saytext Continue the battle! I shall hold the beast inside for as long as I can!
+	}
+
+	if ( EMOTE_COUNT == 8 )
+	{
+		if ( GAVE_CRYSTALS == 0 )
+		{
+			playanim critical pondering3
+			saytext Remember! I can use some of my magic to change your Return Crystals to Crystals of Relocation!
+		}
+		if ( GAVE_CRYSTALS > 0 )
+		{
+			playanim critical kneel
+			saytext Great Felewyn, I beseech thee, watch over these heroes who fight so valiantly!
+		}
+		setvard EMOTE_COUNT 0
+	}
+}
+
+{ game_menu_getoptions
+
+	if DID_INTRO
+	if !ATHOLO_DEAD
+	if $item_exists(PARAM1,item_crystal_return)
+	saytext I can use some of my magic to convert your Crystals of Return to those of Relocation.
+	playanim critical yes
+
+	local reg.mitem.title	"Enchant my crystal"
+	local reg.mitem.type	payment
+	local reg.mitem.data	item_crystal_return
+	local reg.mitem.callback got_crystal
+	menuitem.register
+}
+
+{ got_crystal
+
+	if ( GAVE_CRYSTALS >= 4 )
+	{
+		saytext I am sorry, the last of my magic MUST be used to maintain this barrier!
+		offer CRYSTAL_GIVER item_crystal_return
+		playanim critical no
+	}
+
+	if ( GAVE_CRYSTALS < 4 )
+	{
+		playanim critical dryhands
+		local CRYSTAL_GIVER PARAM1
+		offer CRYSTAL_GIVER item_crystal_reloc
+		saytext This will aid you in your battle, but use it wisely. I can only enchant so many.
+		add GAVE_CRYSTALS 1
+	}
+}
+
+{ atholo_done
+
+
+	////dbg GOT ATHOLO DIED
+
+	setvard TRIGGER_RANGE 64
+	setvard ATHOLO_DEAD 1
+	setvard EMOTES_ENABLED 0
+	usetrigger ryza_shield
+}
+
+{ do_flicker
+
+	add FLICK_COUNT 1
+	if ( FLICK_COUNT < 20 )
+	{
+		local FLICKER_AMT $rand(10,180)
+		setprop ent_me renderamt FLICKER_AMT
+		callevent 0.1 do_flicker
+	}
+	if FLICK_COUNT == 20
+	setvard FLICK_COUNT 0
+	setprop ent_me renderamt 255
+}
+
+{ say_atholo
+	if !AM_TALKING
+	callevent talk_atholo
+}
+
+{ say_felewyn
+	if !AM_TALKING
+	playanim critical push_button
+	saytext There is not enough time to explain the grandeur of my goddess, just know that she watches over you and your valiant battle!
+}
+
+{ talk_atholo
+
+	if !ATHOLO_DEAD
+
+	add ASKED_ATHOLO 1
+	if ( ASKED_ATHOLO == 1 )
+	{
+		saytext Atholo is the one of the great lords of darkness that fought along side Lor Malgoriand, servant of the Fallen
+		playanim critical converse2
+	}
+
+	if ( ASKED_ATHOLO == 2 )
+	{
+		saytext Atholo was sealed here at the end of the war, but Venevus made his home here, and my order could not defeat the wizard.
+		playanim critical converse2
+	}
+
+	if ( ASKED_ATHOLO == 3 )
+	{
+		saytext We knew what was to come, so my soul was bound here to prevent the release of Atholo. But both he, and his magic, remain within.
+		playanim critical converse2
+	}
+
+	if ( ASKED_ATHOLO == 4 )
+	{
+		saytext Atholo's magic, like mine, is bound up in crystals and the elements.
+		playanim critical converse2
+	}
+
+	if ( ASKED_ATHOLO == 5 )
+	{
+		saytext That is all I know of The Beast, you MUST defeat him!
+		playanim critical converse2
+		setvard ASKED_ATHOLO 4
+	}
+}
+
+{ do_exit
+
+	menu.autoopen 0
+	setvard AM_TALKING 1
+	setvard EXIT_COUNT 0
+	callevent 0.1 exit_loop
+}
+
+{ exit_loop
+
+	add EXIT_COUNT 1
+
+	if ( EXIT_COUNT == 1 )
+	{
+		playanim critical franticbutton
+		saytext I salute you all for defeating the great evil, it is indeed as foretold!
+	}
+
+	if ( EXIT_COUNT == 2 )
+	{
+		saytext I'm afraid, in my incorporeal form, there is only one reward I can grant you...
+	}
+
+	if ( EXIT_COUNT == 3 )
+	{
+		saytext ...and that is a warning...
+	}
+
+	if ( EXIT_COUNT == 4 )
+	{
+		playanim critical no
+		saytext This is but the first of the Great Evils you shall encounter in your lives.
+	}
+
+	if ( EXIT_COUNT == 5 )
+	{
+		playanim critical converse1
+		saytext It is also the least of them... All of this is written upon your destiny!
+	}
+
+	if ( EXIT_COUNT == 6 )
+	{
+		saytext One of you, perhaps more than one, WILL become an Apostle, a great messenger of The Triad!
+	}
+
+	if ( EXIT_COUNT == 7 )
+	{
+		playanim critical console
+		saytext And one of you shall become... Something... Else...
+	}
+
+	if ( EXIT_COUNT == 8 )
+	{
+		saytext But my time here has ended, and alas I can say no more...
+		callevent do_flicker
+	}
+
+	if ( EXIT_COUNT == 9 )
+	{
+		playanim hold kneel
+		saytext I will pray for you, great adventurers! Take heart, for Felewyn watches over you all!
+		callevent do_fade
+	}
+
+	if EXIT_COUNT < 9
+	callevent CHAT_DELAY exit_loop
+}
+
+{ do_fade
+	setsolid none
+	setvard FADE_COUNT 200
+	callevent fade_loop
+}
+
+{ fade_loop
+	//dbg temp FADE_COUNT
+	subtract FADE_COUNT 3
+	local L_FADE FADE_COUNT
+	if ( FADE_COUNT >= 0 ) setprop ent_me renderamt L_FADE
+	if ( FADE_COUNT <= 0 ) callevent 0.2 remove_me
+	if FADE_COUNT > 0
+	callevent 0.1 fade_loop
+}
+
+{ remove_me
+	deleteent ent_me
+}

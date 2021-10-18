@@ -1,0 +1,126 @@
+//Potion of Venom Claws (Slithar's Necrojuice) by CMD June 2010
+//Well, cleveryly diguised as a potion, anyway. Runs similar to items/base_crystal
+{
+	const ANIM_IDLE		0
+	const ANIM_DRINK		1
+	const MODEL_HANDS	     	misc/p_misc.mdl
+	const MODEL_WORLD      	misc/p_misc.mdl
+	const MODEL_VIEW		viewmodels/v_misc.mdl
+	const ITEM_MODEL_VIEW_IDX 2
+	const SOUND_DRINK		items/drink.wav
+
+	const MODEL_BODY_OFS		39
+	const ANIM_PREFIX		mana
+	const DRINK_TIME		3
+	setvard ABORT_USE	0
+	const SKILL_REQ 15
+	const AFFLIC_REQ 10
+	
+	const ITEM_TO_GIVE blunt_gauntlets_fe1
+}
+
+#include items/base_hide_stuff
+#include items/base_miscitem
+
+{ item_spawn
+
+    name    a|Venom Claw Potion
+    desc    This potion infuses you with the power of a Flesheater for a time.
+    weight    1
+    size    2
+    value   1500
+    sethudsprite hand item
+    sethudsprite trade gpot
+	sethand both
+}
+
+{ [override] game_spawn
+   	sethand any
+   	setanimext	holditem
+	setworldmodel	MODEL_WORLD
+	setviewmodel	MODEL_VIEW
+
+	callevent item_spawn
+}
+
+{ game_pickup
+   	playviewanim  ANIM_LIFT
+}
+
+
+{ game_attack1
+	
+	if game.time > ATTACK_DELAY
+	setvard ATTACK_DELAY game.time
+	add ATTACK_DELAY DRINK_TIME
+
+	local OWNER_SKILL $get(ent_owner,skill.martialarts)
+	if ( OWNER_SKILL < SKILL_REQ )
+	{
+		local S_REQ "("
+		stradd S_REQ SKILL_REQ
+		stradd S_REQ ")"
+		dplayermessage ent_owner You lack the Martial Arts skill to use the Flesheater Gauntlets. S_REQ
+		local EXIT_SUB 1
+	}
+	if ( OWNER_SKILL >= SKILL_REQ ) 
+	{
+		callevent check_use
+		if ( ABORT_USE )
+		{
+			setvard ABORT_USE 0
+			local EXIT_SUB 1
+		}
+		
+	}
+	if !EXIT_SUB
+	callevent 0.1 drink_pot
+}
+
+{ drink_pot
+	splayviewanim ent_me ANIM_DRINK
+    callevent DRINK_TIME activate_pot
+}
+
+{ activate_pot
+	callexternal GAME_MASTER give_item_delayed $get(ent_owner,id) ITEM_TO_GIVE 0.5
+	callevent 0.1 remove_pot
+}
+
+{ remove_pot
+	deleteent ent_me
+}
+
+{ check_use
+	if ( $get(ent_owner,skill.spellcasting.affliction) < AFFLIC_REQ )
+	{
+		setvard ABORT_USE 1
+		local S_REQ "("
+		stradd S_REQ AFFLIC_REQ
+		stradd S_REQ ")"
+		dplayermessage ent_owner You lack the Affliction Magic skill to use the Flesheater Gauntlets. S_REQ
+	}
+}
+
+{ [override] game_deploy
+
+	setviewmodel	MODEL_VIEW
+	setmodel	MODEL_HANDS
+	local		L_SUBMODEL MODEL_BODY_OFS
+	add		L_SUBMODEL game.item.hand_index
+	setmodelbody	0 L_SUBMODEL
+
+	setvard ATTACK_DELAY game.time
+	add ATTACK_DELAY 1.0
+}
+
+{ [override] game_fall
+
+	local		L_SUBMODEL MODEL_BODY_OFS
+	add		L_SUBMODEL 2
+	setmodelbody	0 L_SUBMODEL
+
+	local		L_ANIM ANIM_PREFIX
+	stradd		L_ANIM _floor_idle
+	playanim	L_ANIM
+}

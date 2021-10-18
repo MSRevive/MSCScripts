@@ -1,0 +1,216 @@
+#scope server
+{ [shared]
+	setvard ANIM_ATTACK bite //frame_bite x4
+	setvar ANIM_WALK walk
+	setvar ANIM_IDLE idle
+	setvard ANIM_RUN run
+
+	const ANIM_SEARCH idlelookout
+	const ANIM_ALERT1 roarangry
+	const ANIM_ALERT2 hiss
+
+	const ANIM_CUSTOM_FLINCH1 bigflinch
+	const ANIM_CUSTOM_FLINCH2 smallflinch
+
+	const ANIM_JUMP jumpscrape //frame_jump_boost
+
+	setvard ANIM_DEATH dietwitch
+}
+
+{
+	setvard NPC_GIVE_EXP 400
+
+	setvard ATTACK_MOVERANGE 40
+	setvard MOVE_RANGE 40
+	setvard ATTACK_RANGE 60
+	setvard ATTACK_HITRANGE 90
+
+	const DMG_BITE 200
+
+	const FREQ_JUMP $randf(5.0,8.0)
+
+	const SOUND_ATTACK1 monsters/beak/attack1.wav
+	const SOUND_ATTACK2 monsters/beak/attack2.wav
+
+	const SOUND_STRUCK1 monsters/tube/TubeCritter_Hit1.wav
+	const SOUND_STRUCK2 monsters/tube/TuberCritter_Hit2.wav
+	const SOUND_STRUCK3 monsters/tube/TubeCritter_Hit3.wav
+
+	const SOUND_PAIN1 monsters/beak/pain1.wav
+	const SOUND_PAIN2 monsters/beak/pain2.wav
+	const SOUND_PAIN3 monsters/beak/suffer.wav
+
+	const SOUND_IDLE monsters/beak/roar.wav
+
+	const SOUND_ALERT1 monsters/beak/screech2.wav
+	const SOUND_ALERT2 monsters/beak/screech6.wav
+	const SOUND_ALERT3 monsters/beak/beakhiss.wav
+	const SOUND_ALERT4 monsters/beak/alert1.wav
+	const SOUND_ALERT5 monsters/beak/alert2.wav
+
+	const SOUND_DEATH monsters/beak/die1.wav
+
+	const SOUND_JUMP monsters/birds/flap_small.wav //sounds more like "boing" than "flap"
+
+	const ANIM_NPC_JUMP jumpscrape
+	setvard NPC_JUMPER 1
+}
+
+#include monsters/base_monster_new
+#include monsters/base_jumper
+
+{ [shared] npc_spawn
+	name a|Trencherbeak
+	setmodel monsters/beak.mdl
+	width 32
+	height 32
+	race wildanimal
+	hp 500
+	hearingsensitivity 8
+	callevent 2.0 finalize_me
+
+	roam 1
+	setmoveanim ANIM_WALK
+	setidleanim ANIM_IDLE
+}
+
+{ finalize_me
+	setvard HALF_HP $get(ent_me,maxhp)
+	multiply HALF_HP 0.5
+}
+
+{ my_target_died
+	if game.time > NEXT_VICTORY
+	setvard NEXT_VICTORY game.time
+	add NEXT_VICTORY 15.0
+	playanim critical eating
+	callevent npcatk_suspend_roam 2.0
+	playsound 0 10 monsters/beak/eating.wav
+	setvard DID_ALERT 0
+}
+
+{ npc_targetsighted
+	if !DID_ALERT
+	callevent npcatk_suspend_roam 2.0
+	setmovedest NPCATK_TARGET 9999
+	setvard DID_ALERT 1
+
+	setvard NEXT_JUMP game.time
+	add NEXT_JUMP FREQ_JUMP
+
+	local RND_ALERT $rand(1,2)
+
+	if ( RND_ALERT == 1 )
+	{
+		playanim critical ANIM_ALERT1
+		playrandomsound 0 10 SOUND_ALERT1 SOUND_ALERT2 SOUND_ALERT3 SOUND_ALERT4 SOUND_ALERT5
+	}
+
+	if ( RND_ALERT == 2 )
+	{
+		playanim critical ANIM_ALERT2
+		playrandomsound 0 10 SOUND_ALERT1 SOUND_ALERT2 SOUND_ALERT3 SOUND_ALERT4 SOUND_ALERT5
+	}
+}
+
+{ npcatk_hunt
+	if !SUSPEND_AI
+	if !IS_FLEEING
+	if !I_R_FROZEN
+	if ( NPCATK_TARGET equals unset )
+	{
+		if game.time > NEXT_IDLE
+		setvard NEXT_IDLE game.time
+		add NEXT_IDLE $randf(5.0,15.0)
+		playsound 0 10 SOUND_IDLE
+		playanim once ANIM_SEARCH
+	}
+
+	if NPCATK_TARGET isnot unset
+	if game.time > NEXT_COMBAT_JUMP
+	setvard NEXT_COMBAT_JUMP game.time
+	add NEXT_COMBAT_JUMP FREQ_JUMP
+	setvard COMBAT_JUMP 1
+	playanim critical ANIM_JUMP
+}
+
+{ npcatk_jump
+	setvard COMBAT_JUMP 0
+	setvard NEXT_COMBAT_JUMP game.time
+	add NEXT_COMBAT_JUMP FREQ_JUMP
+}
+
+{ frame_jump_boost
+	playsound 0 10 SOUND_JUMP
+	if COMBAT_JUMP
+	local RND_LR $rand(1,2)
+	if ( RND_LR == 1 ) local RND_LR -200
+	if ( RND_LR == 2 ) local RND_LR 200
+	local RND_VADJ $randf(200.0,300.0)
+	addvelocity ent_me $relvel(RND_LR,150,RND_VADJ)
+	setvard COMBAT_JUMP 0
+}
+
+{ set_hunt_on_spawn //external
+	setvard DID_ALERT 1
+	playrandomsound 0 10 SOUND_ALERT1 SOUND_ALERT2 SOUND_ALERT3 SOUND_ALERT4 SOUND_ALERT5
+	getplayersnb PLAYER_LIST
+	local SORT_LIST $sort_entlist(PLAYER_LIST,range)
+	callevent npcatk_settarget $get_token(SORT_LIST,0)
+}
+
+{ frame_bite_start
+	playrandomsound 0 10 SOUND_ATTACK1 SOUND_ATTACK2
+}
+
+{ frame_bite
+	dodamage NPCATK_TARGET ATTACK_HITRANGE DMG_BITE 80% pierce
+}
+
+{ game_dodamage
+	if PARAM1
+	if $get(PARAM2,relationship,ent_me) equals enemy
+	local RND_RL $randf(-200,200)
+	addvelocity PARAM2 $relvel(RND_RL,110,120)
+}
+
+{ game_damaged
+	playrandomsound 1 10 SOUND_STRUCK1 SOUND_STRUCK2 SOUND_STRUCK3
+
+	if game.time > NEXT_CUST_FLINCH
+	setvard NEXT_CUST_FLINCH game.time
+	add NEXT_CUST_FLINCH 5.0
+	callevent npcatk_suspend_ai 1.5
+	playrandomsound 2 10 SOUND_PAIN1 SOUND_PAIN2 SOUND_PAIN3
+	playanim critical ANIM_CUSTOM_FLINCH
+}
+
+{ npc_heard_player
+	if NPCATK_TARGET equals unset
+	if game.time > NEXT_HEARD_ALERT
+	setvard NEXT_HEARD_ALERT game.time
+	add NEXT_HEARD_ALERT 10.0
+	playanim critical ANIM_SEARCH
+	playrandomsound 0 10 SOUND_ALERT1 SOUND_ALERT2 SOUND_ALERT3 SOUND_ALERT4 SOUND_ALERT5
+}
+
+{ ext_mommy_died
+	if MOMMY_ESCORT
+	callevent npcatk_suspend_ai
+	setvard DEATH_GOAL PARAM1
+	playanim break
+	playanim ANIM_RUN
+	setmovedest DEATH_GOAL 32
+	callevent death_goal_loop
+}
+
+{ death_goal_loop
+	roam 1
+	setvard SUSPEND_AI 1 //in case revoked
+	callevent 2.0 death_goal_loop
+	setmovedest DEATH_GOAL 32
+}
+
+{ set_mommy_escort
+	setvard MOMMY_ESCORT 1
+}

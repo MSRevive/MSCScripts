@@ -1,0 +1,255 @@
+{
+	setvard ANIM_RUN idle
+	setvard ANIM_IDLE idle
+	setvard ANIM_ATTACK attack
+	setvard ANIM_DEATH idle
+	setvard ANIM_WALK idle
+
+	setvard ATTACK_RANGE 128
+	setvard ATTACK_MOVERANGE 100
+	setvard ATTACK_HITRANGE 150
+	setvard NPC_GIVE_EXP 400
+	const BASENOCLIP_NO_SETMOVEDEST 1
+
+	const FWD_SPEED_STANDARD 20
+	setvard FWD_SPEED 20
+	setvard DMG_DRAIN 20 //for monsters
+	setvard MP_DRAIN_AMT 1 //for players
+	const CL_SCRIPT monsters/wraith_cl
+	const FREQ_ROAM $randf(5.0,10.0)
+
+	const SOUND_MOAN crow/ghostwail.wav
+	const SOUND_DEATH ichy/ichy_die2.wav
+	const SOUND_DRAIN_START crow/Triggered/tomb5.wav
+	const SOUND_DRAIN_LOOP x/x_teleattack1.wav
+	const SOUND_HOVER_LOOP ambience/labdrone2.wav
+	const SOUND_KILL houndeye/he_blast3.wav
+	const SOUND_TELE magic/teleport.wav
+
+	precache SOUND_KILL
+	precache SOUND_DEATH
+}
+
+#include monsters/base_monster_new
+#include monsters/base_noclip
+
+{ npc_spawn
+
+	name a|Wraith
+	setmodel monsters/netherspirit.mdl
+	width 20
+	height 80
+	setprop ent_me rendermode 5
+	setprop ent_me renderamt 255
+
+	hp 750
+	race undead
+	blood none
+	takedmg slash 0.0
+	takedmg pierce 0.0
+	takedmg blunt 0.0
+	takedmg fire 0.0
+	takedmg cold 0.0
+	takedmg poison 0.0
+	takedmg lightning 0.5
+	takedmg holy 1.0
+	setvard IMMUNE_STUN 100
+
+	setsolid slidebox
+
+	gravity 0
+
+	roam 1
+
+	hearingsensitivity 11
+
+	callevent 1.0 sustain_renderprops
+
+	callevent 0.5 do_manual_roam
+}
+
+{ npc_post_spawn
+	if NPC_DMG_MULTI > 1
+	multiply MP_DRAIN_AMT NPC_DMG_MULTI
+	multiply DMG_DRAIN NPC_DMG_MULTI
+}
+
+{ npcatk_hunt
+	if ( $get(NPCATK_TARGET,range) < ATTACK_MOVERANGE )
+	{
+		setvard FWD_SPEED 0
+	}
+	else
+	{
+		setvard FWD_SPEED FWD_SPEED_STANDARD
+	}
+
+	if ( IS_FLEEING ) setvard NPC_NOCLIP_DEST game.monster.movedest.origin
+
+	if ( NPCATK_TARGET isnot unset )
+	{
+		local MY_Z $get(ent_me,origin.z)
+		local TARGET_Z $get(NPCATK_TARGET,origin.z)
+		if ( $get(NPCATK_TARGET,isplayer) ) subtract TARGET_Z 46
+		local MY_ORG $get(ent_me,origin)
+		vectorset MY_ORG z TARGET_Z
+		setorigin ent_me MY_ORG
+
+		if ( $get(NPCATK_TARGET,range) < 55 )
+		{
+			//setvard IS_FLEEING 1
+			//callevent npcatk_suspend_ai 1.0
+			//setvard FWD_SPEED 50
+			//setvard NPC_NOCLIP_DEST $get(NPCATK_TARGET,origin)
+			//local RND_ANG $randf(0,359.99)
+			//teleport away from targets stuck inside you
+			local RND_ANG $randf(0,359.99)
+			vectoradd NPC_NOCLIP_DEST $relpos($vec(0,RND_ANG,0),$vec(0,80,0))
+			vectorset NPC_NOCLIP_DEST z TARGET_Z
+			setorigin ent_me NPC_NOCLIP_DEST
+			playsound 0 10 SOUND_TELE
+		}
+		else
+		{
+			setvard IS_FLEEING 0
+			setvard NPC_NOCLIP_DEST $get(NPCATK_TARGET,origin)
+			vectorset NPC_NOCLIP_DEST z TARGET_Z
+		}
+	}
+
+	if NPCATK_TARGET equals unset
+
+	callevent FREQ_ROAM do_manual_roam
+	setvard FWD_SPEED FWD_SPEED_STANDARD 
+
+	getplayersnb PLAYER_LIST
+	token.scramble PLAYER_LIST
+	calleventloop $get_token_amt(PLAYER_LIST) pick_target
+}
+
+{ pick_target
+	local CUR_TARG $get_token(PLAYER_LIST,game.script.iteration)
+	if $get(CUR_TARG,isalive)
+	if $get(CUR_TARG,range) < 1024
+	callevent npcatk_target CUR_TARG
+}
+
+{ do_manual_roam
+	if $get(ent_me,isalive)
+	callevent FREQ_ROAM do_manual_roam
+	if NPCATK_TARGET equals unset
+	setvard NPC_NOCLIP_DEST NPC_HOME_LOC
+	local RND_ANG $randf(0,359.99)
+	vectoradd NPC_NOCLIP_DEST $relpos($vec(0,RND_ANG,0),$vec(0,512,0))
+
+}
+
+{ sustain_renderprops
+	//in case a glow shell renders invisible, also handle sound loop here
+	if $get(ent_me,isalive)
+	callevent 5.0 sustain_renderprops
+	setprop ent_me rendermode 5
+	setprop ent_me renderamt 255
+	svplaysound 3 10 SOUND_HOVER_LOOP
+	if ( $rand(1,10) == 1 ) playsound 0 10 SOUND_MOAN
+}
+
+{ turn_undead
+	//turn undead is instant death for these guys
+	if !NOT_SUMMONED //unless they ain't summoned
+	local HOLY_CASTER PARAM2
+	local DMG_HOLY $get(ent_me,maxhp)
+	multiply DMG_HOLY 2.0
+	xdodamage ent_me direct 1000 100% HOLY_CASTER HOLY_CASTER spellcasting.divination holy
+}
+
+{ npc_death
+	setvard AM_DRAINING 0
+	setanim.framerate 0
+	setvard FWD_SPEED 0
+	callexternal GAME_MASTER gm_fade $get(ent_me,id) 5 128
+	playsound 1 10 SOUND_DEATH
+	svplaysound 2 0 SOUND_DRAIN_LOOP
+	svplaysound 3 0 SOUND_HOVER_LOOP
+	if ( MY_CL_IDX != 0 ) clientevent update all MY_CL_IDX end_fx
+	if $get(MY_OWNER,isalive)
+	callexternal MY_OWNER ext_wraith_died
+}
+
+{ frame_attack_start
+	svplaysound 2 10 SOUND_DRAIN_LOOP
+	callevent start_drain_attack
+}
+
+{ frame_attack_end
+	callevent end_drain_attack
+}
+
+{ end_drain_attack
+	svplaysound 2 0 SOUND_DRAIN_LOOP
+	clientevent update all MY_CL_IDX end_fx
+	setvard AM_DRAINING 0
+	setvard MY_CL_IDX 0
+}
+
+{ start_drain_attack
+	clientevent new all CL_SCRIPT $get(ent_me,index) $get(NPCATK_TARGET,index) ATTACK_HITRANGE
+	setvard MY_CL_IDX game.script.last_sent_id
+	setvard AM_DRAINING 1
+	callevent drain_attack_loop
+}
+
+{ drain_attack_loop
+	if AM_DRAINING
+	callevent 0.1 drain_attack_loop
+	if ( $get(NPCATK_TARGET,isplayer) )
+	{
+		local SEE_TARGET $cansee(NPCATK_TARGET)
+
+		if ( SEE_TARGET )
+		{
+			if $get(NPCATK_TARGET,range) < ATTACK_HITRANGE
+			givemp NPCATK_TARGET $neg(MP_DRAIN_AMT)
+			if ( game.time > LASTATK_MESSAGE )
+			{
+				setvard LASTATK_MESSAGE game.time
+				add LASTATK_MESSAGE 2.0
+				playermessage NPCATK_TARGET Your soul is being drained!
+				effect screenfade NPCATK_TARGET 2 1 (0,0,255) 180 fadein
+			}
+			if $get(NPCATK_TARGET,mp) <= 0
+			callevent slay_target
+		}
+	}
+	else
+	{
+		if $cansee(NPCATK_TARGET)
+		dodamage NPCATK_TARGET direct DMG_DRAIN 100% ent_me dark
+	}
+}
+
+{ slay_target
+	callevent end_drain_attack
+	playermessage NPCATK_TARGET Your soul has been drained.
+	//figure slay target function here (maybe new code-side function)
+	dodamage NPCATK_TARGET direct 99999 100% ent_me target
+	callexternal NPCATK_TARGET ext_playsound_kiss 1 10 SOUND_KILL
+	playsound 0 10 SOUND_MOAN
+}
+
+{ game_dynamically_created //<owner> <first_target> <start_pos>
+	setvard MY_OWNER PARAM1	
+	//setvard FIRST_TARGET PARAM2 //scratch this, better a random player
+	setvard INITIAL_ORIGIN PARAM3
+	callevent 0.1 set_first_origin
+	//callevent 1.5 set_first_target
+}
+
+{ set_first_origin
+	setorigin ent_me INITIAL_ORIGIN
+}
+
+{ ext_master_died //called by master on death
+	if PARAM1 equals MY_OWNER
+	callevent npc_suicide
+}

@@ -1,0 +1,221 @@
+//A sprite based projectile that varies with size and power by Thothie
+//- Originally for Orion Bow, but phayled
+{
+	const SOUND_SHOOT ambience/alienflyby1.wav
+	
+
+	const SOUND_ZAP1 debris/beamstart14.wav
+	const SOUND_ZAP2 debris/beamstart14.wav
+	const SOUND_ZAP3 debris/zap1.wav
+}
+
+{ game_dynamically_created
+
+	setvard MY_OWNER $get(PARAM1,id)
+	setvard PROJ_DEST PARAM2 //start angles
+	setvard PROJ_SIZE PARAM3 //size multiplier
+	//setvard PROJ_SPEED PARAM4 //units to move forward every 0.1
+	setvard PROJ_DMG PARAM5 //damage
+	setvard MY_SKILL PARAM6
+	setvard WORLD_SIZE PROJ_SIZE
+	multiply WORLD_SIZE 15
+	setvard OWNER_ISPLAYER $get(MY_OWNER,isplayer)
+
+	//calculate speed based on size
+
+	setvard PROJ_SPEED 180
+	local SPEED_ADJ PROJ_SIZE
+	multiply SPEED_ADJ 15
+	subtract PROJ_SPEED SPEED_ADJ
+	//dbg speed will be PROJ_SPEED ( size PROJ_SIZE )
+
+	//vectoradd PROJ_DEST $relpos($vec(game.monster.angles),$vec(0,1000,0))
+
+	setmovedest PROJ_DEST 1
+
+	setprop	ent_me movetype const.movetype.noclip
+	setprop	ent_me solid 0
+
+	setvard OWNER_ANGLES $get(MY_OWNER,angles)
+	setangle face OWNER_ANGLES
+	setvard FINAL_DEST $relpos(0,20000,0)
+	setmovedest FINAL_DEST 10
+	local L_PROJ_SPEED PROJ_SPEED
+	multiply L_PROJ_SPEED 10
+	setanim.movespeed L_PROJ_SPEED
+
+	//dbg got owner $get(MY_OWNER,name) dest PROJ_DEST siz PROJ_SIZE spd PROJ_SPEED dmg PROJ_DMG world WORLD_SIZE
+
+
+
+	clientevent new all monsters/summon/magic_dart_cl $get(ent_me,index) PROJ_SIZE
+	setvard MY_SCRIPT_IDX game.script.last_sent_id
+
+	callevent 0.1 setup_dart
+
+	callevent 10.0 fiz_out
+}
+
+{ game_spawn
+	name a|Mana Bolt
+	setmodel monsters/bat.mdl
+	setprop ent_me rendermode 5
+	setprop ent_me renderamt 0
+	width 32
+	height 32
+	setsolid none
+	blood none
+	invincible 1
+	race beloved
+	setmonsterclip 0
+	fly 1
+	gravity 0
+	callevent 10.0 remove_me
+}
+
+{ setup_dart
+
+	setvard DART_ON 1
+	setvard STUCK_COUNT 0
+	setvard OLD_POS game.monster.origin
+	callevent 0.1 move_dart
+	local SHOOT_VOLUME $int(PROJ_SIZE)
+	setmovedest PROJ_DEST 1
+	playsound 0 SHOOT_VOLUME SOUND_SHOOT
+}
+
+{ move_dart
+
+	if DART_ON
+
+	callevent 0.1 move_dart
+
+	//local MY_YAW $vec.yaw(game.monster.angles)
+	//local MY_PITCH $vec.pitch(game.monster.angles)
+	//local MY_ROLL $vec.roll(game.monster.angles)
+	//vectoradd FINAL_DEST $relpos($vec(MY_PITCH,MY_YAW,MY_ROLL),$vec(0,1000,0))
+	//setangle face_origin FINAL_DEST
+
+	setmovedest PROJ_DEST 1
+
+	//setorigin ent_me $relpos(0,PROJ_SPEED,0)
+	////dbg dest PROJ_DEST //
+
+	getents any WORLD_SIZE
+	if ( GET_COUNT > 0 )
+	{
+		callevent hit_target
+		callevent 0.1 fiz_out "getents"
+	}
+
+	if ( $dist(game.monster.origin,PROJ_DEST) <= PROJ_SPEED )
+	{
+		if !HIT_SOMETHING
+		local NEW_DEST PROJ_DEST
+		local MY_YAW $vec.z(game.monster.angles.yaw)
+		vectoradd NEW_DEST $relpos($vec(0,MY_YAW,0),$vec(0,1000,0))
+		setvard PROJ_DEST NEW_DEST
+		//callevent 0.1 fiz_out
+	}
+
+	if ( game.monster.origin equals OLD_POS )
+	{
+		if !HIT_SOMETHING
+		add STUCK_COUNT 1
+		if STUCK_COUNT > 3
+		callevent fiz_out "stuck"
+	}
+	setvard OLD_POS game.monster.origin
+}
+
+{ hit_target
+	setvard HIT_SOMETHING 1
+	setvard LOOP_COUNT 0
+	calleventloop GET_COUNT dmg_target
+}
+
+{ dmg_target
+	add LOOP_COUNT 1
+	if ( LOOP_COUNT == 1 ) local CHECK_ENT GET_ENT1
+	if ( LOOP_COUNT == 2 ) local CHECK_ENT GET_ENT2
+	if ( LOOP_COUNT == 3 ) local CHECK_ENT GET_ENT3
+	if ( LOOP_COUNT == 4 ) local CHECK_ENT GET_ENT4
+	if ( LOOP_COUNT == 5 ) local CHECK_ENT GET_ENT5
+	if ( LOOP_COUNT == 6 ) local CHECK_ENT GET_ENT6
+	if ( LOOP_COUNT == 7 ) local CHECK_ENT GET_ENT7
+	if ( LOOP_COUNT == 8 ) local CHECK_ENT GET_ENT8
+	if ( LOOP_COUNT == 9 ) local CHECK_ENT GET_ENT9
+
+	//dbg in sphere ( WORLD_SIZE ) $get(CHECK_ENT,name)
+
+	if $get(CHECK_ENT,relationship,MY_OWNER) equals enemy
+	if $get(CHECK_ENT,id) isnot FIRST_TARG
+
+	if ( OWNER_ISPLAYER )
+	{
+		if game.pvp == 0
+		if $get(CHECK_ENT,isplayer)
+		local EXIT_SUB 1
+		//dbg aborted, players do not atk players in non-pvp ( game.pvp )
+	}
+	if !EXIT_SUB
+
+	//callexternal MY_OWNER send_damage CHECK_ENT direct PROJ_DMG 100% MY_OWNER magic
+	//<target|(origin)> <range|aoe|direct> <damage> <cth|fall_off> <attacker> <inflciter> <skill|none> <dmg_type> [flag_string]
+	xdodamage CHECK_ENT direct PROJ_DMG 100% MY_OWNER MY_OWNER MY_SKILL magic
+	effect screenfade CHECK_ENT 3 1 (255,255,255) 255 fadein
+}
+
+{ debug_beam //<(start)> [(end)] [color] (if no [end] given, makes beam 64 units straight up)
+
+	if ( PARAM3 equals 'PARAM3' ) local BEAM_COLOR (255,0,255)
+	if ( PARAM3 isnot 'PARAM3' ) local BEAM_COLOR PARAM3
+	local BEAM_DURATION 1.0
+	local BEAM_START PARAM1
+	if ( PARAM2 equals 'PARAM2' ) local BEAM_END BEAM_START
+	if ( PARAM2 isnot 'PARAM2' ) local BEAM_END PARAM2
+	vectoradd BEAM_END $relpos($vec(0,0,0),$vec(0,0,64))
+	effect beam point laserbeam.spr 20 BEAM_START BEAM_END BEAM_COLOR 255 0.7 BEAM_DURATION
+}
+
+{ fiz_out
+	if !FIZZING_OUT
+
+	//dbg FizingOut PARAM1
+
+	setvard FIZZING_OUT 1
+	setvard DART_ON 0
+	playrandomsound 0 10 SOUND_ZAP1 SOUND_ZAP2 SOUND_ZAP3
+	clientevent update all MY_SCRIPT_IDX shrink_out
+	callevent 2.0 remove_me
+}
+
+{ remove_me
+	//clientevent remove all MY_SCRIPT_IDX
+	callevent 0.1 remove_me2
+}
+
+{ remove_me2
+	deleteent ent_me
+}
+
+
+{  game_reached_dest
+
+	//callevent fiz_out "reached_dest"
+	////dbg reached dest
+	//playsound 0 10 SOUND_HITWALL
+	//setvard FREEZING 0
+	//deleteent ent_me
+}
+
+{  [server] 	game_movingto_dest		//Hack in movement because the model anims are missing it
+
+   setanim.movespeed PROJ_SPEED	//Force move, since the animation doesn't have the required movement
+}
+
+{  [server] 	game_stopmoving
+
+   setanim.movespeed PROJ_SPEED				//Force Stop
+}
+

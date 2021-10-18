@@ -1,0 +1,680 @@
+//More dynamic, array based chat system JUL2010_11 by Thothie
+
+//callevent chat_add_text <convo_sequence_name> <sentence_string> [time] [anim|"none"] [event] [sound:<file>]
+//- <convo_sequence_name> conversation sequence to add text to
+//- <sentence_string> text of sentence to say
+//- [time] delay before speaking next line in conversation (defaults to CHAT_DELAY if ommited)
+//- [anim|"none"] play anim at beginning of this sentence (overrides random convo anims [see: chat_convo_anim])
+//- [event] fire this event on this step, with a delay equal to the time required for the sentence
+//- [sound:wavefile] plays the wave file after sound: (as per usual, ommit the sound/ root folder)
+//- if [event] begins with ! it will fire the event that follows on the instant it reaches the chat step, instead of when the chat step should end
+//- PARAMS must be in order. You cannot, for instance, use [event] without defining [time] and [anim].)
+
+//callevent chat_start_sequence <convo_sequence_name> ["clear_que"] ["prioritize"] ["add_to_que"]
+//- loads designated chat sequence into que
+//- if CHAT_RESET_ON_NEW is set 1, erases que
+//- calls npc_chat_was_busy event (see "return events" below) when attempting/succeeding in calling a new conversation with one already in progress
+//- "clear_que" flag causes the current que to be cleared and be replaced by the requested <sequence_name> even if CHAT_RESET_ON_NEW is set to 0
+//- "prioritize" flag causes NPC to ignore all other chat_start_sequence and chat_now events until chat is no longer busy, unless ["clear_que"] flag is used
+//- "add_to_que" will add the chat entry to the current quei, even if CHAT_NEVER_INTERRUPT or CHAT_IGNORE_WHILE_BUSY is set
+//- The ["clear_que"] ["prioritize"] ["add_to_que"] optional parameters can be in any order, or ommited.
+
+//callevent chat_now <text> [time] [anim|"none"] [event|"none"] ["clear_que"] ["add_to_que"] [sound:<file>]
+//- adds line to chat que and speaks line, if not busy, same formatting as chat_add_text above
+//- if the "clear_que" flag is used, the current chat que will be emptied and this entry will replace it.
+//- The "clear_que" parameter can be used in any position after <text>
+//- "add_to_que" will add the chat entry to the current quei, even if CHAT_NEVER_INTERRUPT or CHAT_IGNORE_WHILE_BUSY is set
+//- The "add_to_que" parameter can be used in any position after <text>
+//- good for one-liners (or things that may interrupt conversation if you add ["clear_que"])
+//- [time] [anim|"none"] [event|"none"] must come in order, any other conditions ( ["clear_que"] ["add_to_que"] [sound:<file>] ) can come in any order after that
+
+//callevent chat_face_speaker [target]
+//- faces speaker
+//- if param omitted, faces last ent_lastspoke or last player to use interaction menu (as determined by chat_find_speaker_id event below)
+
+//callevent chat_move_mouth <time>
+//- moves mouth for <time> seconds, as if speaking
+//- default behavior is to do this every chat step, unless const CHAT_MOVE_MOUTH is set 0
+//- does not reserve chat time in the process (see chat_reseve), has no effect on que
+//- (related events: chat_open_mouth, chat_close_mouth)
+
+//callevent chat_convo_anim
+//- plays a random animation from the CHAT_CONV_ANIMS token list
+//- default behavior is to do this every chat step, unless const CHAT_USE_CONV_ANIMS is set 0
+//- note the default CHAT_CONV_ANIMS are only good for NPCs with full scientist animations
+//- has no effect on que
+
+//callevent chat_clear_que
+//- Clears current chat que.
+
+//callevent chat_reseve <time>
+//- Retain the CHAT_BUSY flag for <x> seconds (useful for chat lines done outside of the base_chat_array system.)
+//- This is normally done automatically by chat_start_sequence and chat_now
+//- que will suspend until time expires, unless a chat_start_sequence or chat_now even is called using the 'clearque' flag
+
+//callevent chat_find_speaker_id
+//- finds the speaker's id (really guesses)
+//- Guess work favors order: last_used_menu(if within 512 units)->last_spoke(if within 512)->any player within 512->first player indexed (regardless of distance)->well f*ck there's no players ;)
+
+//callevent chat_pause
+//- pauses cycling of chat
+
+//callevent chat_resume
+//- resumes chat, if paused
+
+//out events:
+//{ npc_chat_was_busy //<action_taken:ignored|started_new>
+//- Called whenever a speech is called while another is in progress, in case the NPC needs to take some special action
+//- The returning PARAM1 indicates the action base_chat_array took in response to the attempted interruption:
+//- PARAM1 = "ignored" - request was ingored, no new conversation began (because prioritize flag was used or CHAT_IGNORE_WHILE_BUSY was otherwise set)
+//- PARAM1 = "started_new" - current speach was aborted in favor of this new conversation due to clear_que flag being used
+//- PARAM1 = "added" - new conversation was added to que, but current conversation continues
+//(This event is not called if conversation is stopped by monster death)
+
+//out flags:
+//CHAT_BUSY - busy chatting when set to 1 (ala ye old BUSY_CHATTING)
+//CHAT_END_TIME - when current chat sentence will end +0.1 seconds
+//CHAT_CURRENT_SPEAKER - ID of player last identified as the speaker
+
+//in flags and their defaults described in init area below:
+
+#scope server
+{
+	const CHAT_CONV_ANIMS "converse2;converse1;talkleft;talkright;lean;pondering;pondering2;pondering3;"
+}
+
+{
+	setvar HAS_BASE_CHAT_ARRAY_INCLUDE 1
+
+	const CHAT_NEVER_INTERRUPT 0 //treats all chat_start_sequence events as if they had the 'prioritize' flag.
+	const CHAT_USE_BUSY_MESSAGE 1 //if npc_chat_was_busy is called with 'ignored', player recieves a nag message in his HUD, telling him to wait.
+	const CHAT_USE_CONV_ANIMS 1 //the above anims are for sci-anim NPC's, disable this or replace the above token string for other models
+	const CHAT_MOVE_MOUTH 1 //disable this for NPC's without the mouth controller, or for monsters where the alt controller looks odd
+	const CHAT_NO_CLOSE_MOUTH 0 //aborts closing of mouth at end of chat sequence if set to 1 - fixes controller issues on some models
+	const CHAT_AUTO_FACE 1 //face last known speaker when conversation begins, or last person to activate NPC menu (if any) (you can suspend this, temporarily, with the servard CHAT_TEMP_NO_AUTO_FACE)
+	const CHAT_FACE_ON_USE 1 //face player when he tries to activate interaction menu (also designates him as last known speaker)
+	const CHAT_MENU_ENABLE 1 //set to 0 to disable NPC menu on use
+	const CHAT_RESET_ON_NEW 0 //whenever chat_start_sequence or chat_now is called, clear the que first
+	setvard CHAT_IGNORE_WHILE_BUSY 0	//sets to 1 if current speech has priority (is not be interrupted by another request), but resets when chat completes
+	const CHAT_PLAYANIM_STYLE critical //switch to once if anims may not complete
+
+	setvard CHAT_MENU_ON 1 //set to 0 to temporarily disable chat adding menu items below (if any set)
+	const CHAT_AUTO_HAIL 0 //adds say_hi catchspeech and menu item
+	const CHAT_AUTO_JOB 0 //adds say_job catchspeech and menu item
+	const CHAT_AUTO_RUMOR 0 //adds say_rumor catchspeech and menu item
+
+	const CHAT_MAX_LINE_LEN 192 //max length of chat string <designed to prevent crash>
+
+	const CHAT_DELAY 4.0 //default delay between chat steps
+
+	setvard CHAT_CURRENT_SPEAKER none //speaker will be stored here
+}
+
+{ game_spawn
+	menu.autoopen CHAT_MENU_ENABLE
+
+	if ( CHAT_AUTO_HAIL ) catchspeech say_hi hail hi j0 yo waddup wassup gweets greet
+	if ( CHAT_AUTO_JOB ) catchspeech say_job job work
+	if ( CHAT_AUTO_RUMOR ) catchspeech say_rumor rumour rumor
+
+	array.create CONVO_QUE_LINES
+	array.create CONVO_QUE_DELAYS
+	array.create CONVO_QUE_ANIMS
+	array.create CONVO_QUE_EVENTS
+	array.create CONVO_QUE_SOUNDS
+}
+
+{ game_menu_getoptions
+
+	//these vars are used to help chat_face_speaker determine target
+	setvard CHAT_CURRENT_SPEAKER PARAM1
+	setvard CHAT_LAST_USED_MENU PARAM1
+
+	if ( CHAT_FACE_ON_USE ) setmovedest PARAM1 9999
+
+	if CHAT_MENU_ON
+
+	//these are provided to help encourage standardization among multiple NPCs
+
+	if ( CHAT_AUTO_HAIL )
+	{
+		local reg.mitem.title 	"Hail"
+		local reg.mitem.type 	callback
+		local reg.mitem.callback say_hi
+		menuitem.register
+	}
+
+	if ( CHAT_AUTO_JOB )
+	{
+		local reg.mitem.title 	"Ask about Jobs"
+		local reg.mitem.type 	callback
+		local reg.mitem.callback say_job
+		menuitem.register
+	}
+
+	if ( CHAT_AUTO_RUMOR )
+	{
+		local reg.mitem.title 	"Ask about Rumors"
+		local reg.mitem.type 	callback
+		local reg.mitem.callback say_rumor
+		menuitem.register
+	}
+}
+
+{ chat_add_text //<sequence_name> <text_line> [time] [anim] [event]
+
+	//dbg chat_add_text PARAM1 [ $left(PARAM2,10) ] PARAM3 PARAM4 PARAM5
+	
+	local CONVO_NAME PARAM1
+
+	local CONVO_DELAYS CONVO_NAME
+	stradd CONVO_DELAYS "_DELAYS"
+
+	local CONVO_ANIMS CONVO_NAME
+	stradd CONVO_ANIMS "_ANIMS"
+
+	local CONVO_EVENTS CONVO_NAME
+	stradd CONVO_EVENTS "_EVENTS"
+
+	local CONV_ARRAY_EXISTS $get_array(PARAM1,0)
+
+	if ( CONV_ARRAY_EXISTS contains '[ERROR_NO_ARRAY]' )
+	{
+		dbg chat_add_text creating new array for CONVO_NAME
+		array.create CONVO_NAME
+		array.create CONVO_DELAYS
+		array.create CONVO_ANIMS
+		array.create CONVO_EVENTS
+		array.create CONVO_SOUNDS
+	}
+
+	local L_CHAT_TEXT PARAM2
+
+	local L_CHAT_DELAY PARAM3
+	if ( L_CHAT_DELAY startswith 'PARAM' ) local L_CHAT_DELAY CHAT_DELAY
+
+	local L_CHAT_ANIM PARAM4
+	if ( L_CHAT_ANIM startswith 'PARAM' ) local L_CHAT_ANIM 'none'
+
+	local L_CHAT_EVENT PARAM5
+	if ( L_CHAT_EVENT startswith 'PARAM' ) local L_CHAT_EVENT 'none'
+
+	local L_CHAT_SOUND none
+	if ( PARAM3 startswith 'sound:' ) local L_CHAT_SOUND PARAM3
+	if ( PARAM4 startswith 'sound:' ) local L_CHAT_SOUND PARAM4
+	if ( PARAM5 startswith 'sound:' ) local L_CHAT_SOUND PARAM5
+	if ( PARAM6 startswith 'sound:' ) local L_CHAT_SOUND PARAM6
+	if ( PARAM7 startswith 'sound:' ) local L_CHAT_SOUND PARAM7
+	if ( PARAM8 startswith 'sound:' ) local L_CHAT_SOUND PARAM8
+	if ( L_CHAT_SOUND isnot none )
+	{
+		local L_SOUND_LENGTH $len(L_CHAT_SOUND)
+		subtract L_SOUND_LENGTH 6
+		local L_CHAT_SOUND $right(L_CHAT_SOUND,L_SOUND_LENGTH)
+		dbg chat_add_text SOUND: L_CHAT_SOUND
+	}
+
+	array.add CONVO_NAME L_CHAT_TEXT
+	array.add CONVO_DELAYS L_CHAT_DELAY
+	array.add CONVO_ANIMS L_CHAT_ANIM
+	array.add CONVO_EVENTS L_CHAT_EVENT
+	array.add CONVO_SOUNDS L_CHAT_SOUND
+
+	//debugarry
+	local ARRAY_IDX $get_array_amt(CONVO_NAME)
+	subtract ARRAY_IDX 1
+	local DBG_TXT $get_array(CONVO_NAME,ARRAY_IDX)
+	dbg chat_add_text final PARAM1 step ARRAY_IDX txt[ $left(DBG_TXT,11) ] del $get_array(CONVO_DELAYS,ARRAY_IDX) anim $get_array(CONVO_ANIMS,ARRAY_IDX) event $get_array(CONVO_EVENTS,ARRAY_IDX)
+}
+
+{ chat_start_sequence //<sequence_name> ["clear_que"] ["prioritize"] ["add_to_que"]
+
+	dbg chat_start_sequence PARAM1 PARAM2
+
+	if ( PARAM2 equals clear_que ) local CLEAR_QUE 1
+	if ( PARAM3 equals clear_que ) local CLEAR_QUE 1
+	if ( PARAM4 equals clear_que ) local CLEAR_QUE 1
+
+	if ( PARAM2 equals add_to_que ) local ADD_TO_QUE 1
+	if ( PARAM3 equals add_to_que ) local ADD_TO_QUE 1
+	if ( PARAM4 equals add_to_que ) local ADD_TO_QUE 1
+
+	if ( CLEAR_QUE ) dbg clear_que set
+
+
+	if ( CHAT_RESET_ON_NEW ) local CLEAR_QUE 1
+
+	if ( CHAT_AUTO_FACE )
+	{
+		if !CHAT_TEMP_NO_AUTO_FACE
+		callevent chat_face_speaker
+	}
+
+	setvard CHAT_ABORT 0 //just in case
+	local CONVO_NAME PARAM1
+	local CONV_ARRAY_EXISTS $get_array(PARAM1,0)
+	if ( CONV_ARRAY_EXISTS contains '[ERROR_NO_ARRAY]' )
+	{
+		saytext [ERROR] conversation CONVO_NAME does not exist!
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	if ( !ADD_TO_QUE )
+	{
+		if CHAT_BUSY
+		if ( CLEAR_QUE )
+		{
+			callevent npc_chat_was_busy started_new
+		}
+		if !CLEAR_QUE
+		if ( CHAT_IGNORE_WHILE_BUSY )
+		{
+			dbg chat_start_sequence: Attempted to start new chat ( PARAM1 ) while already in conversation and ignore flag set
+			callevent npc_chat_was_busy ignored
+			local EXIT_SUB 1
+		}
+		else
+		{
+			callevent npc_chat_was_busy added
+		}
+	}
+	if !EXIT_SUB
+
+	if ( CLEAR_QUE ) callevent chat_clear_que chat_start_sequence
+
+	if ( PARAM2 equals prioritize ) setvard CHAT_IGNORE_WHILE_BUSY 1
+	if ( PARAM3 equals prioritize ) setvard CHAT_IGNORE_WHILE_BUSY 1
+	if ( PARAM4 equals prioritize ) setvard CHAT_IGNORE_WHILE_BUSY 1
+	if ( CHAT_NEVER_INTERRUPT ) setvard CHAT_IGNORE_WHILE_BUSY 1
+
+	setvard CHAT_SEQUENCE CONVO_NAME
+	setvard CHAT_LINES_ANAME CONVO_NAME
+	setvard CHAT_DELAYS_ANAME CONVO_NAME
+	stradd CHAT_DELAYS_ANAME "_DELAYS"
+	setvard CHAT_ANIMS_ANAME CONVO_NAME
+	stradd CHAT_ANIMS_ANAME "_ANIMS"
+	setvard CHAT_EVENTS_ANAME CONVO_NAME
+	stradd CHAT_EVENTS_ANAME "_EVENTS"
+	setvard CHAT_SOUNDS_ANAME CONVO_NAME
+	stradd CHAT_SOUNDS_ANAME "_SOUNDS"
+
+	dbg requesting_que $get_array_amt(CHAT_LINES_ANAME) lines
+	calleventloop $get_array_amt(CHAT_LINES_ANAME) chat_add_to_que
+
+	if ( !CHAT_QUE_ACTIVE )
+	{
+		setvard CHAT_QUE_ACTIVE 1
+		callevent chat_cycle_que
+	}
+}
+
+//{ chat_load_sequence
+//	local CUR_IDX game.script.iteration
+//	array.add ARRAY_CHAT_LINES $get_array(CHAT_LINES_ANAME,CUR_IDX)
+//	array.add ARRAY_CHAT_DELAYS $get_array(CHAT_DELAYS_ANAME,CUR_IDX)
+//	array.add ARRAY_CHAT_ANIMS $get_array(CHAT_ANIMS_ANAME,CUR_IDX)
+//	array.add ARRAY_CHAT_EVENTS $get_array(CHAT_EVENTS_ANAME,CUR_IDX)
+//
+//	//debugarry
+//	local L_TXT $get_array(CHAT_LINES_ANAME,CUR_IDX)
+//	dbg Reading In: ARRAY_CHAT_LINES # CUR_IDX - txt[ $left(L_TXT,11) ] del $get_array(CHAT_DELAYS_ANAME,CUR_IDX) anim $get_array(CHAT_ANIMS_ANAME,CUR_IDX) evt $get_array(CHAT_EVENTS_ANAME,CUR_IDX)
+//}
+
+{ chat_convo_anim
+	local N_ANIMS $get_token_amt(CHAT_CONV_ANIMS)
+	subtract N_ANIMS 1
+	local RND_ANIM $rand(0,N_ANIMS)
+	playanim CHAT_PLAYANIM_STYLE $get_token(CHAT_CONV_ANIMS,RND_ANIM)
+}
+
+{ chat_move_mouth //<time>
+	if ( PARAM1 startswith 'PARAM' )
+	{
+		local DO_NADDA 1
+	}
+	else
+	{
+		setvard CHAT_END_MOVE_MOUTH game.time
+		add CHAT_END_MOVE_MOUTH PARAM1
+		subtract CHAT_END_MOVE_MOUTH 1.0 //give sec for sentence to end
+		dbg bchat_auto_mouth_move ( PARAM1 )
+	}
+
+	if ( game.time < CHAT_END_MOVE_MOUTH )
+	{
+		local RND_SAY "["
+		local M_TIME $randf(0.1,0.3)
+		stradd RND_SAY M_TIME
+		stradd RND_SAY "]"
+		say RND_SAY
+
+		add M_TIME 0.1
+		callevent M_TIME chat_close_mouth
+		add M_TIME 0.1
+		callevent M_TIME chat_move_mouth
+	}
+}
+
+{ chat_close_mouth
+	if !CHAT_NO_CLOSE_MOUTH //some monsters express chat by shaking their spine controller - setting them to 0 may look odd, so use this in those cases
+	setprop ent_me controller1 0
+}
+
+{ chat_open_mouth //not used here in, but maybe useful externally
+	setprop ent_me controller1 -1
+}
+
+{ chat_face_speaker
+	if ( PARAM1 isnot 'PARAM1' )
+	{
+		setvard CHAT_CURRENT_SPEAKER PARAM1
+	}
+	else
+	{
+		callevent chat_find_speaker_id
+	}
+	setmovedest CHAT_CURRENT_SPEAKER 9999
+}
+
+{ chat_find_speaker_id
+	local L_LAST_SPOKE $get(ent_lastspoke,id)
+	if ( $get(L_LAST_SPOKE,isalive) )
+	{
+		if $get(L_LAST_SPOKE,range) < 512
+		setvard CHAT_CURRENT_SPEAKER L_LAST_SPOKE
+	}
+	if ( $get(CHAT_LAST_USED_MENU,isalive) )
+	{
+		if $get(CHAT_LAST_USED_MENU,range) < 512
+		setvard CHAT_CURRENT_SPEAKER CHAT_LAST_USED_MENU
+	}
+	if ( !$get(CHAT_CURRENT_SPEAKER,isalive) )
+	{
+		dbg failed to find speaker, wild guess
+		setvard CHAT_CURRENT_SPEAKER $get_insphere(player,512)
+	}
+	if ( !$get(CHAT_CURRENT_SPEAKER,isalive) )
+	{
+		//final fail safe - unlesss there are no players on the server ^_^
+		getplayersnb PLAYER_LIST
+		setvard CHAT_CURRENT_SPEAKER $get_token(PLAYER_LIST,0)
+	}
+}
+
+{ chat_now //<text> [time] [anim|"none"] [event|"none"] ["clear_que"]
+
+	if ( PARAM2 equals clear_que ) local CLEAR_QUE 1
+	if ( PARAM3 equals clear_que ) local CLEAR_QUE 1
+	if ( PARAM4 equals clear_que ) local CLEAR_QUE 1
+	if ( CHAT_RESET_ON_NEW ) local CLEAR_QUE 1
+
+	if ( PARAM2 equals 'add_to_que' ) local ADD_TO_QUE 1
+	if ( PARAM3 equals 'add_to_que' ) local ADD_TO_QUE 1
+	if ( PARAM4 equals 'add_to_que' ) local ADD_TO_QUE 1
+
+	if ( PARAM2 equals 'add_to_que' ) local PARAM2 'PARAM'
+	if ( PARAM3 equals 'add_to_que' ) local PARAM3 'PARAM'
+	if ( PARAM4 equals 'add_to_que' ) local PARAM4 'PARAM'
+	if ( PARAM2 equals 'clear_que' ) local PARAM2 'PARAM'
+	if ( PARAM3 equals 'clear_que' ) local PARAM3 'PARAM'
+	if ( PARAM4 equals 'clear_que' ) local PARAM4 'PARAM'
+
+	local L_CHAT_SOUND none
+	if ( PARAM3 startswith 'sound:' ) local L_CHAT_SOUND PARAM3
+	if ( PARAM4 startswith 'sound:' ) local L_CHAT_SOUND PARAM4
+	if ( PARAM5 startswith 'sound:' ) local L_CHAT_SOUND PARAM5
+	if ( PARAM6 startswith 'sound:' ) local L_CHAT_SOUND PARAM6
+	if ( PARAM7 startswith 'sound:' ) local L_CHAT_SOUND PARAM7
+	if ( PARAM8 startswith 'sound:' ) local L_CHAT_SOUND PARAM8
+	if ( L_CHAT_SOUND isnot none )
+	{
+		local L_SOUND_LENGTH $len(L_CHAT_SOUND)
+		subtract L_SOUND_LENGTH 6
+		local L_CHAT_SOUND $mid(L_CHAT_SOUND,6,L_SOUND_LENGTH)
+		dbg L_CHAT_SOUND
+	}
+
+	if ( CHAT_AUTO_FACE )
+	{
+		if !CHAT_TEMP_NO_AUTO_FACE
+		callevent chat_face_speaker
+	}
+
+	if ( !ADD_TO_QUE )
+	{
+		if CHAT_BUSY
+		if ( CLEAR_QUE )
+		{
+			callevent npc_chat_was_busy started_new
+		}
+		if !CLEAR_QUE
+		if ( CHAT_IGNORE_WHILE_BUSY )
+		{
+			dbg chat_now: Attempted to start new chat ( PARAM1 ) while already in conversation and Ignore flag set
+			callevent npc_chat_was_busy ignored
+			local EXIT_SUB 1
+		}
+		else
+		{
+			callevent npc_chat_was_busy added
+		}
+	}
+	if !EXIT_SUB
+
+	if ( CLEAR_QUE ) callevent chat_clear_que chat_now
+
+	local L_CHAT_TEXT PARAM1
+
+	local L_CHAT_DELAY PARAM2
+	if ( L_CHAT_DELAY startswith 'PARAM' ) local L_CHAT_DELAY CHAT_DELAY
+
+	local L_CHAT_ANIM PARAM3
+	if ( L_CHAT_ANIM startswith 'PARAM' ) local L_CHAT_ANIM 'none'
+
+	local L_CHAT_EVENT PARAM4
+	if ( L_CHAT_EVENT startswith 'PARAM' ) local L_CHAT_EVENT 'none'
+
+	array.add CONVO_QUE_LINES L_CHAT_TEXT
+	array.add CONVO_QUE_DELAYS L_CHAT_DELAY
+	array.add CONVO_QUE_ANIMS L_CHAT_ANIM
+	array.add CONVO_QUE_EVENTS L_CHAT_EVENT
+	array.add CONVO_QUE_SOUNDS L_CHAT_SOUND
+
+	if ( !CHAT_QUE_ACTIVE )
+	{
+		setvard CHAT_QUE_ACTIVE 1
+		callevent chat_cycle_que
+	}
+}
+
+{ chat_pause
+	setvard CHAT_QUE_ACTIVE 0
+}
+
+{ chat_resume
+	if ( !CHAT_QUE_ACTIVE )
+	{
+		setvard CHAT_QUE_ACTIVE 1
+		callevent chat_cycle_que
+	}
+}
+
+{ game_death
+	if CHAT_BUSY
+	callevent chat_pause
+}
+
+//debuggary
+{ ext_dump_chat //<chat sequence>
+	setvard DUMP_CONVO PARAM1
+	calleventloop $get_array_amt(DUMP_CONVO) dump_chat
+}
+
+{ dump_chat
+	local CUR_IDX game.script.iteration
+	local CUR_LINES_ANAME DUMP_CONVO
+	local CUR_DELAYS DUMP_CONVO
+	stradd CUR_DELAYS _DELAYS
+	local CUR_ANIMS DUMP_CONVO
+	stradd CUR_ANIMS '_ANIMS'
+	local CUR_EVENTS DUMP_CONVO
+	stradd CUR_EVENTS '_EVENTS'
+	local CUR_SOUNDS DUMP_CONVO
+	stradd CUR_SOUNDS '_SOUNDS'
+
+
+	local CUR_TEXT $get_array(CUR_LINES_ANAME,CUR_IDX)
+	local CUR_DELAY $get_array(CUR_DELAYS,CUR_IDX)
+	local CUR_ANIM $get_array(CUR_ANIMS,CUR_IDX)
+	local CUR_EVENT $get_array(CUR_EVENTS,CUR_IDX)
+	local CUR_SOUNDS $get_array(CUR_SOUNDS,CUR_IDX)
+
+	dbg dump DUMP_CONVO # CUR_IDX txt[ $left(CUR_TEXT,11) ] del CUR_DELAY anim CUR_ANIM evt CUR_EVENT snd CUR_SOUND
+}
+
+{ chat_add_to_que
+	local CUR_IDX game.script.iteration
+
+	local CUR_LINE $get_array(CHAT_LINES_ANAME,CUR_IDX)
+	local CUR_DELAY $get_array(CHAT_DELAYS_ANAME,CUR_IDX)
+	local CUR_ANIM $get_array(CHAT_ANIMS_ANAME,CUR_IDX)
+	local CUR_EVENT $get_array(CHAT_EVENTS_ANAME,CUR_IDX)
+	local CUR_SOUND $get_array(CHAT_SOUNDS_ANAME,CUR_IDX)
+
+	dbg chat_add_to_que: CUR_IDX [ $left(CUR_LINE,20) ... ]
+
+	array.add CONVO_QUE_LINES CUR_LINE
+	array.add CONVO_QUE_DELAYS CUR_DELAY
+	array.add CONVO_QUE_ANIMS CUR_ANIM
+	array.add CONVO_QUE_EVENTS CUR_EVENT
+	array.add CONVO_QUE_EVENTS CUR_SOUND
+}
+
+{ chat_clear_que //[calling_event]
+	dbg chat_clear_que called from PARAM1
+	//local QUE_SIZE $get_array_amt(CONVO_QUE_LINES)
+	//if QUE_SIZE > 0
+	setvard CHAT_SPOOL_OUT_ALL_COUNT $get_array_amt(CONVO_QUE_LINES)
+	callevent chat_clear_que_loop 
+}
+
+{ chat_clear_que_loop
+	setvard CHAT_SPOOL_OUT_COUNT 0
+	callevent spool_out_line
+	subtract CHAT_SPOOL_OUT_ALL_COUNT 1
+	if CHAT_SPOOL_OUT_ALL_COUNT > 0
+	callevent 0.26 chat_clear_que_loop
+}
+
+{ chat_cycle_que
+
+	if CHAT_QUE_ACTIVE
+	
+	if ( $get_array_amt(CONVO_QUE_LINES) == 0 )
+	{
+		//que is dry, exit
+		setvard CHAT_BUSY 0
+		setvard CHAT_QUE_ACTIVE 0
+		setvard CHAT_IGNORE_WHILE_BUSY 0
+		local EXIT_SUB 1
+	}
+	else
+	{
+		local CUR_DELAY $get_array(CONVO_QUE_DELAYS,0)
+		setvard CHAT_END_TIME game.time
+		add CHAT_END_TIME CUR_DELAY
+		local L_CHAT_END_PLUS CUR_DELAY
+		add L_CHAT_END_PLUS 0.1
+		if ( L_CHAT_END_PLUS < 1 ) local L_CHAT_END_PLUS 1.0 //make sure chat has time to spool
+		callevent L_CHAT_END_PLUS chat_cycle_que
+	}
+	if !EXIT_SUB
+
+	//do current line in que
+	if game.time > CHAT_END_TIME
+
+	dbg chat_cycle_que $get_array_amt(CONVO_QUE_LINES) lines in que
+
+	local CUR_LINE $get_array(CONVO_QUE_LINES,0)
+	local CUR_LEN $len(CUR_LINE)
+	add CUR_LEN $len(game.monster.name)
+	add CUR_LEN 6 //" says,"
+
+	if ( CUR_LEN < CHAT_MAX_LINE_LEN )
+	{
+		saytext CUR_LINE
+	}
+	else
+	{
+		saytext [ERROR: LINE TOO LONG!] [ CHAT_LINES_ANAME $int(CUR_LEN) / $int(CHAT_MAX_LINE_LEN) ]
+	}
+
+
+	setvard CHAT_BUSY 1
+
+	local CUR_ANIM $get_array(CONVO_QUE_ANIMS,0)
+	if ( CUR_ANIM isnot none )
+	{
+		playanim CHAT_PLAYANIM_STYLE CUR_ANIM
+	}
+	else
+	{
+		if CHAT_USE_CONV_ANIMS
+		callevent chat_convo_anim
+	}
+
+	local CUR_SOUND $get_array(CONVO_QUE_SOUNDS,0)
+	if ( CUR_SOUND isnot none )
+	{
+		playsound 2 10 CUR_SOUND
+	}
+
+	local CUR_EVENT $get_array(CONVO_QUE_EVENTS,0)
+	if ( CUR_EVENT isnot none )
+	{
+		dbg calling chat_event CUR_EVENT
+		if ( CUR_EVENT startswith '!' )
+		{
+			//do event on chat step, instead of end of chat step
+			local LEN_CUR_EVENT $len(CUR_EVENT)
+			subtract LEN_CUR_EVENT 1
+			local CUR_EVENT $right(CUR_EVENT,LEN_CUR_EVENT)
+			callevent CUR_EVENT
+		}
+		else
+		{
+			callevent CUR_DELAY CUR_EVENT
+		}
+	}
+
+	if ( CHAT_MOVE_MOUTH ) callevent chat_move_mouth CUR_DELAY
+
+	//remove line from que
+	setvard CHAT_SPOOL_OUT_COUNT 0
+	callevent spool_out_line
+}
+
+{ spool_out_line
+	add CHAT_SPOOL_OUT_COUNT 1
+	if ( CHAT_SPOOL_OUT_COUNT == 1 ) array.del CONVO_QUE_LINES 0
+	if ( CHAT_SPOOL_OUT_COUNT == 2 ) array.del CONVO_QUE_DELAYS 0
+	if ( CHAT_SPOOL_OUT_COUNT == 3 ) array.del CONVO_QUE_ANIMS 0
+	if ( CHAT_SPOOL_OUT_COUNT == 4 ) array.del CONVO_QUE_ANIMS 0
+	if ( CHAT_SPOOL_OUT_COUNT == 5 ) array.del CONVO_QUE_SOUNDS 0
+	if CHAT_SPOOL_OUT_COUNT < 5
+	callevent 0.05 spool_out_line
+}
+
+
+{ npc_chat_was_busy
+	dbg npc_chat_was_busy PARAM1
+	if CHAT_USE_BUSY_MESSAGE
+	if PARAM1 equals ignored
+	callevent chat_busy_message
+}
+
+{ chat_busy_message
+	if ( !$get(CHAT_CURRENT_SPEAKER,isalive) ) callevent chat_find_speaker_id
+	dplayermessage CHAT_CURRENT_SPEAKER "It would be polite to wait until" $get(ent_me,name) "has finished speaking."
+}

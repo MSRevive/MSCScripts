@@ -1,0 +1,48 @@
+//orbiting light effect, creates a sprite and light that orbits origin
+//with commentary
+
+#scope server //forces this script to be handled server side, so it doesn't mirror to the client
+
+//Special DLL event goes off whenever script spawns:
+{ game_spawn
+
+	//defining height and width so that it has an actual origin, sometimes NPC's with no models have issues finding their origins
+	width 1
+	height 1
+	race beloved //so no NPC's attack or damage it
+	hp 1 //so it can be removed
+	invincible 1 //so it can't be damaged by players or other effects
+	setvard PLAYING_DEAD 1 //this prevents NPC's from even acknowleging its existence
+	nopush 1 //cant be pushed
+	setsolid none //isn't clipped
+	gravity 0 //floats
+	setprop ent_me movetype 0 //prevents ths slow fall effect you sometimes get with floating npcs
+	//initialize cl effect on spawn (expires in 60 seconds):
+	clientevent new all other/sfx_orbiting_light_cl $get(ent_me,origin) 60.0 96 256 (128,128,0) 0.8
+	//initlialize server side sound:
+	//(this particular wave file has a special loop flag that causes it to auto-loop)
+	//(it's part of the base half-life materials [half-life/valve/sound])
+	svplaysound 1 10 ambience/alien_creeper.wav
+}
+
+{
+repeatdelay 60.0
+	//^ repeat this event every 60 seconds
+	//refresh the sound and CL effect:
+	callevent refresh_sound
+	clientevent new all other/sfx_orbiting_light_cl $get(ent_me,origin) 60.0 96 256 (128,128,0) 0.8
+	//note that, if the player goes under water, his client will remove this sprite, but it'll re-appear at the next refresh
+	//if a player joins late, after this has spawned, it may not appear to him until the next refresh
+	//the sound will eventually get 'drowned out' as the sound que fills, so we re-initialize that as well, below
+}
+
+{ refresh_sound
+	//turn looping sounds off by playing again at zero volume, before re-starting it
+	svplaysound 1 0 ambience/alien_creeper.wav
+	callevent 0.1 refresh_sound2
+}
+
+{ refresh_sound2
+	//and back on again
+	svplaysound 1 10 ambience/alien_creeper.wav
+}

@@ -1,0 +1,114 @@
+//old one is crashing, trying this method via re-write
+#scope server
+{
+	const SOUND_THUNDER weather/Storm_exclamation.wav
+	const BOLT_HEIGHT 512
+}
+
+{ game_dynamically_created //<owner> <dmg> <radius> <#bolts> [beam_color] [beam_width]
+
+	setvard MY_OWNER PARAM1
+	setvard MY_DMG PARAM2
+	setvard MY_RADIUS PARAM3
+	setvard NUM_BOLTS PARAM4
+	setvard BEAM_COLOR PARAM5
+	setvard BEAM_WIDTH PARAM6
+
+	setvard GAME_PVP game.pvp
+
+	if ( BEAM_COLOR equals 'PARAM5' ) setvard BEAM_COLOR (255,255,0)
+	if ( BEAM_WIDTH equals 'PARAM6' ) setvard BEAM_WIDTH 200
+
+	//dbg incvars $get(MY_OWNER,name) dmg MY_DMG rad MY_RADIUS nbolts NUM_BOLTS
+
+	setvard OWNER_ISPLAYER $get(MY_OWNER,isplayer)
+
+	storeentity ent_expowner MY_OWNER
+	race $get(MY_OWNER,race)
+
+	setvard ANG_ADJ 359
+	divide ANG_ADJ NUM_BOLTS
+
+	setvard CUR_RAD 5
+	setvard CUR_ANG 0
+	setvard BOLTS_DEFINED 0
+	
+	setvard BOLT_INC 359
+	divide BOLT_INC NUM_BOLTS
+	setvard BOLT_ANG 0
+	calleventloop NUM_BOLTS define_bolts
+
+	setvard IS_ACTIVE 1
+	callevent rotate_bolts
+
+{ game_spawn
+
+	name a|Lightning Blast
+	hp 1
+	invincible 1
+	setvard PLAYING_DEAD 1
+
+	playsound 0 10 SOUND_THUNDER
+}
+
+{ define_bolts
+	token.add BOLT_LIST BOLT_ANG
+	add BOLT_ANG BOLT_INC
+}
+
+{ rotate_bolts
+	if IS_ACTIVE
+	callevent 0.1 rotate_bolts
+	add CUR_RAD 2
+	add CUR_ANG 5
+	calleventloop NUM_BOLTS draw_bolts
+	if ( CUR_RAD >= MY_RADIUS ) callevent end_summon
+}
+
+{ draw_bolts
+	local CUR_BOLT game.script.iteration
+	local L_BOLT_ANG $get_token(BOLT_LIST,CUR_BOLT)
+	add L_BOLT_ANG CUR_ANG
+	local BOLT_START game.monster.origin
+	vectoradd BOLT_START $relpos($vec(0,L_BOLT_ANG,0),$vec(0,CUR_RAD,0))
+	local BOLT_END BOLT_START
+	vectoradd BOLT_END z BOLT_HEIGHT
+	effect beam point lgtning.spr BEAM_WIDTH BOLT_START BOLT_END BEAM_COLOR 255 100 0.1
+	setvard HIT_TARG $get_insphere(any,64,BOLT_START)
+	if $get(HIT_TARGET,isalive) callevent check_targ HIT_TARGET
+}
+
+{ end_summon
+	setvard IS_ACTIVE 0
+	callevent 0.1 remove_me
+}
+
+{ remove_me
+	deleteent ent_me
+}
+
+{ check_targ
+	if $get(MY_OWNER,relationship,HIT_TARG) equals enemy
+	if ( OWNER_ISPLAYER )
+	{
+		if $get(HIT_TARG,isplayer)
+		if GAME_PVP < 1
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	callevent shock_targ 
+}
+
+{ shock_targ
+
+	applyeffect HIT_TARG effects/effect_shock_dmg 5 MY_OWNER MY_DMG
+	if !DELAY_SOUND
+	setvard DELAY_SOUND 1
+	callevent 2.0 reset_delay_sound
+	callexternal ext_playsound SOUND_SHOCK
+}
+
+{ reset_delay_sound
+	setvard DELAY_SOUND 0
+}

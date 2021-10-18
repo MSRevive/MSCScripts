@@ -1,0 +1,442 @@
+//Supervisor, by Thothie for EvilSquirrles 'outpost' from edana/edrin
+{
+   	setvar	ANIM_WALK walk
+   	setvar	ANIM_RUN run
+	setvar 	ANIM_IDLE idle1
+   	setvard	ANIM_ATTACK swordswing1_L
+	const 	SOUND_ATTACK weapons/cbar_miss1.wav
+   	setvard 	ANIM_DEATH dieforward
+	const 	ATTACK_RANGE 85
+   	const	MOVE_RANGE 75
+	const 	ATTACK_HITRANGE 150
+	const 	ATTACK_HITCHANCE 90%
+	const 	ATTACK_DAMAGE 35
+	const 	SOUND_WARCRY scientist/cough.wav
+	const	SOUND_DEATH scientist/scream21.wav
+	const 	SOUND_PAINCRY1 scientist/sci_fear7.wav
+	const 	SOUND_PAINCRY2 scientist/sci_fear11.wav
+	const 	SOUND_PAINCRY3 scientist/sci_fear5.wav
+	const 	SOUND_PAINCRY4 scientist/scream01.wav
+	const 	SOUND_PAINCRY5 scientist/canttakemore.wav
+	const	PATROL_RANGE 384
+	const	BG_ROAM 0
+	precache SOUND_DEATH
+	const NO_RUMOR 1
+	const NO_JOB 1
+	setvard CAN_TALK 1
+	setvard GIVE_INTRO_STEP 0
+	setvard NO_STUCK_CHECKS 1
+}
+
+#include monsters/base_monster_new
+#include monsters/base_guard_friendly_new
+#include monsters/base_chat
+
+{  npc_spawn
+
+	name_unique outpost_super
+	nopush 1
+   hp		600
+   gold		10
+   name		Vadrel, the outpost supervisor
+   width	32
+   height	72
+   race		human
+   roam		0
+   setmodel	npc/guard2.mdl
+   setmodelbody 1 2
+   setmoveanim	walk
+   skilllevel 0
+	stepsize 0
+	maxslope 10
+
+	takedmg all 0.5
+   //invincible	1
+
+	setvard REQ_QUEST_NOTDONE 1
+   	setvarg WARBOSS_DEAD 0
+ 	setvard WAR_INPROGRESS 0
+
+	callevent 1.0 stay_home
+
+	invincible 1
+	setvard IMMUNE_PUSH 1
+
+   catchspeech say_hi hi hello hail greet howdy hay yo waddup wassup j0
+   catchspeech say_yes yes yah yeah sure ok yup "on it" roger rodger ja hai "right away"
+   catchspeech say_no no nah uh nein
+}
+
+{ say_job
+
+	callevent say_hi
+}
+
+{ stay_home
+
+	//this will be possible with NPC_PATROL_RANGE later
+	if ( $dist(game.monster.origin,NPC_SPAWN_LOC) > 384 )
+	{
+		callevent npcatk_clear_targets
+		if ( !GOING_HOME ) callevent force_go_home
+		setmovedest NPC_SPAWN_LOC 1
+		callevent npcatk_suspend_ai 2.0
+	}
+	callevent 1.0 stay_home
+}
+
+{ attack_1 //called from model ANIM_ATTACK (swordswing1_L) at frame 10
+
+	playsound 0 10 SOUND_ATTACK
+	callevent npcatk_dodamage NPCATK_TARGET ATTACK_HITRANGE ATTACK_DAMAGE ATTACK_HITCHANCE
+}
+
+{ say_hi
+
+	if CAN_TALK
+
+	callevent npcatk_setmovedest ent_lastspoke 9999
+
+	if ( WARBOSS_DEAD ) 
+	{
+		playanim once yes
+		saytext Thank you again for your help... Travel safely.
+	}
+
+	if !WARBOSS_DEAD
+
+	if ( WAR_INPROGRESS ) 
+	{
+		playanim once fear1
+		saytext What are you doing here? Protect the outpost!
+	}
+
+	if !WAR_INPROGRESS
+
+	if ( GIVE_INTRO_STEP == 7 ) setvard GIVE_INTRO_STEP 0
+	if GIVE_INTRO_STEP == 0
+	callevent give_intro
+	playanim once lean
+}
+
+{ give_intro
+
+	if CAN_TALK
+
+	add	GIVE_INTRO_STEP 1
+
+	if ( GIVE_INTRO_STEP == 1 )
+	{
+		setvard NO_HAIL 1
+		setvard GAVE_INTRO 1
+		//saytext Welcome to our forgotten outpost, traveller. 
+		local L_STEP_DELAY 0.1 //skipping this bit as we've no voice file
+	}
+	if ( GIVE_INTRO_STEP == 2 )
+	{
+		saytext Hail. For the longest time, we have struggled here against the Orcish invaders from the south.
+		playsound 0 10 voices/foutpost/Vadrel_1.wav
+		local L_STEP_DELAY 4.51
+	}
+	if ( GIVE_INTRO_STEP == 3 )
+	{
+		playanim once whiteboard
+		saytext King Ardelleron just recently allowed us the materials for the wall. 
+		playsound 0 10 voices/foutpost/Vadrel_2.wav
+		local L_STEP_DELAY 4.07
+	}
+	if ( GIVE_INTRO_STEP == 4 )
+	{
+		saytext However, even with the wall, our numbers are diminishing and the King has yet to send more troops. 
+		playsound 0 10 voices/foutpost/Vadrel_3.wav
+		local L_STEP_DELAY 4.7
+
+	}
+	if ( GIVE_INTRO_STEP == 5 )
+	{
+		saytext We can't hold this position any longer...or at least...not without help... 
+		playsound 0 10 voices/foutpost/Vadrel_4.wav
+		local L_STEP_DELAY 4.04
+	}
+	if ( GIVE_INTRO_STEP == 6 )
+	{
+		saytext If you help us to stop this invasion, I will reward you most graciously. 
+		playsound 0 10 voices/foutpost/Vadrel_5.wav
+		local L_STEP_DELAY 3.60
+	}
+	if ( GIVE_INTRO_STEP == 7 ) 
+	{
+		playanim critical converse2
+		saytext Do you accept?
+		playsound 0 10 voices/foutpost/Vadrel_6.wav
+	}
+
+
+	if GIVE_INTRO_STEP < 7
+
+	callevent L_STEP_DELAY give_intro
+}
+
+{ say_no
+	
+	if CAN_TALK
+	if !WAR_INPROGRESS
+	
+	playanim once pull_needle
+	saytext Then begone from our lands, as another attack is imminent!
+	playsound 0 10 voices/foutpost/Vadrel_7.wav
+
+	usetrigger player_refused
+}
+
+{ say_yes
+
+	if CAN_TALK
+	if !WAR_INPROGRESS
+
+	setvard GIVE_INTRO_STEP 8
+
+	usetrigger player_accepted
+
+	invincible 0
+
+	setvard WAR_INPROGRESS 1
+
+	callevent 10.0 i_r_super_lure
+
+	playanim once pondering2
+
+	saytext Ah! Wonderful. If you would, there is a guard tower where you can watch for them coming.
+	playsound 0 10 voices/foutpost/Vadrel_8.wav
+	//playsound 0 5 scientist/illwaithere.wav
+}
+
+{ game_menu_getoptions
+
+	if ( GAVE_INTRO )
+	{
+		if !WAR_INPROGRESS
+		local reg.mitem.title 	"Accept"
+		local reg.mitem.type 	callback
+		local reg.mitem.callback say_yes
+		menuitem.register
+	}
+
+	if WARBOSS_DEAD
+	if !RECIEVED_HEAD
+
+	if ( $item_exists(PARAM1,item_warbosshead) )
+	{
+		local reg.mitem.title	"Offer Graznux's Head"
+		local reg.mitem.type	payment		//_silent means don't say what's missing (also crashes)
+		local reg.mitem.data	item_warbosshead
+		local reg.mitem.callback gave_head
+		menuitem.register			
+	}
+}
+
+{ gave_head	//^_^
+
+	setvard REQ_QUEST_NOTDONE 0
+
+	recvoffer accept
+	setvard QUEST_WINNER PARAM1
+	setvard REWARD_STEP 0
+	if WARBOSS_DEAD
+	if !RECIEVED_HEAD
+
+	usetrigger gave_head
+
+	invincible 1
+
+	setvard REWARD_STEP 0
+	callevent 0.1 reward_intro
+}
+
+{ reward_intro
+
+	setvard RECIEVED_HEAD 1
+
+	add	REWARD_STEP 1
+
+	if ( REWARD_STEP == 1 ) 
+	{
+		playanim once dryhands
+		saytext Well done, travellers. Please, take a look around the armory and take what you wish.
+		playsound 0 10 voices/foutpost/Vadrel_9.wav
+		//offer QUEST_WINNER key_treasury
+		local L_STEP_DELAY 4.15
+	}
+
+	if ( REWARD_STEP == 2 )
+	{
+		saytext No shoving now! There's enough for everyone!
+		playsound 0 10 voices/foutpost/Vadrel_10.wav
+	}
+	//if ( REWARD_STEP == 3 ) saytext The magic in the key will cause the key to crumble after the first use.
+
+	if REWARD_STEP < 2
+
+	callevent L_STEP_DELAY reward_intro
+}
+
+{ npcatk_settarget
+
+	setvard CAN_TALK 0
+
+	if ( !DID_WARCRY )
+	{
+		playsound 0 10 SOUND_WARCRY
+		setvard DID_WARCRY 1
+	}
+}
+
+{ my_target_died
+
+	setvard CAN_TALK 1
+}
+
+{ force_go_home
+
+	if !MADE_IT_HOME
+
+	setvard GOING_HOME 1
+
+	callevent 1.0 force_go_home
+	local MY_POS $get(ent_me,origin)
+	////dbg GoingHome distance game.monster.origin vs MY_POS
+
+	if ( game.monster.movedest.origin isnot MY_GUARD_POST ) callevent npcatk_setmovedest MY_GUARD_POST 1
+
+	if ( $dist(MY_POS,MY_GUARD_POST) < 10 )
+	{
+		if !OH_IT_IS_ON
+		//dbg made it home
+		local MY_POS $get(ent_me,origin)
+		setmovedest none
+		roam BG_ROAM
+		movespeed BG_ROAM
+		setmoveanim	ANIM_IDLE
+		setactionanim ANIM_IDLE
+		setangle face MY_ORG_ANGLES
+		setvard MADE_IT_HOME 1
+		setvard GOING_HOME 0
+	}
+}
+
+{ npc_struck
+
+	local HURT_THRESHOLD game.monster.maxhp
+	multiply HURT_THRESHOLD 0.75
+
+	if ( !ATTACK_ALERT )
+	{
+		infomsg all CRITICAL_NPC The outpost supervisor is under attack! Save him!
+		setvard ATTACK_ALERT 1
+		callevent 5.0 reset_attack_alert
+	}
+
+	if game.monster.hp < HURT_THRESHOLD
+
+	if ( !DID_PAINCRY ) 
+	{
+		playrandomsound 0 10 SOUND_PAINCRY1 SOUND_PAINCRY2 SOUND_PAINCRY3 SOUND_PAINCRY4 SOUND_PAINCRY5
+		setvard DID_PAINCRY 1
+		callevent 5.0 reset_paincry
+	}
+}
+
+{ reset_attack_alert
+
+		setvard ATTACK_ALERT 0
+}
+
+
+{ reset_paincry
+
+	setvard DID_PAINCRY 0
+}
+
+{ [override] baseguard_clear_targs
+
+	setvard OH_IT_IS_ON 0
+	cancelattack
+	if ( !BG_NO_GO_HOME )
+	{
+		setangle face_origin MY_GUARD_POST
+		callevent npcatk_setmovedest MY_GUARD_POST 1
+	}
+	setvard MADE_IT_HOME 0
+	callevent going_home
+}
+
+{ game_death
+
+		infomsg all FAILURE! THE OUTPOST SUPERVISOR HAS DIED! You will not be allowed to proceed to the next area.
+}
+
+{ npcatk_clear_targets
+
+	setvard CAN_TALK 1
+}
+
+{ npcatk_targetvalidate
+	local TARGET_ORG $get(PARAM1,origin)
+
+	if $dist(TARGET_ORG,NPC_SPAWN_LOC) >= PATROL_RANGE
+
+	//dbg temp target too far ignoring
+	setvard NPCATK_TARGET unset
+}
+
+{ i_r_super_lure
+
+	callexternal all super_lure $get(ent_me,id) orc
+	callevent 5.0 i_r_super_lure
+}
+
+{ zap_cheaters
+
+	//teleport treasure ninjas to the cave
+
+	//dbg anti-ninja
+
+	getents player 768
+	setvard LOOP_COUNT 0
+	if ( GET_COUNT > 0 ) calleventloop GET_COUNT tele_cheaters
+}
+
+{ tele_cheaters
+
+	add LOOP_COUNT 1
+	if ( LOOP_COUNT == 1 ) local CHECK_ENT GET_ENT1
+	if ( LOOP_COUNT == 2 ) local CHECK_ENT GET_ENT2
+	if ( LOOP_COUNT == 3 ) local CHECK_ENT GET_ENT3
+	if ( LOOP_COUNT == 4 ) local CHECK_ENT GET_ENT4
+	if ( LOOP_COUNT == 5 ) local CHECK_ENT GET_ENT5
+	if ( LOOP_COUNT == 6 ) local CHECK_ENT GET_ENT6
+	if ( LOOP_COUNT == 7 ) local CHECK_ENT GET_ENT7
+	if ( LOOP_COUNT == 8 ) local CHECK_ENT GET_ENT8
+	if ( LOOP_COUNT == 9 ) local CHECK_ENT GET_ENT9
+
+	if $item_exists(CHECK_ENT,item_warbosshead)
+
+	//( -670 1006 -1479 
+	local BASE_X -670
+	local BASE_Y 1006 
+	local BASE_Z -1479  
+	local X_ADJ $randf(-20,20)
+	local Y_ADJ $randf(-20,20)
+	add BASE_X X_ADJ
+	add BASE_Y Y_ADJ
+	local DEST_ORG $vec(BASE_X,BASE_Y,BASE_Z)
+	setorigin CHECK_ENT DEST_ORG
+}
+
+{ game_damaged
+
+ 	if $get(PARAM1,isplayer)
+	setdmg dmg 0
+	setdmg hit 0
+	returndata 0
+}

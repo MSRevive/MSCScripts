@@ -1,0 +1,119 @@
+#scope server
+{
+
+	setvard IMMUNE_POISON 1
+
+	setvar NPC_GIVE_EXP 200
+
+	const ANIM_IDLE idle
+	const ANIM_ATTACK attack1
+	const ANIM_GROW raise
+	setvard ANIM_DEATH lower
+	const ATTACK_HITRANGE 200
+
+	const DMG_ATK 100
+	const DOT_ATK 50
+
+	const SOUND_ATTACK1 tentacle/te_roar1.wav
+	const SOUND_ATTACK2 tentacle/te_roar1.wav
+//	const SOUND_BURN ambience/burning1.wav
+	const SOUND_STRUCK1 debris/flesh1.wav
+	const SOUND_STRUCK2 debris/flesh2.wav
+	const SOUND_STRUCK3 debris/flesh3.wav
+	const SOUND_PAIN1 tentacle/te_alert1.wav
+	const SOUND_PAIN2 tentacle/te_alert2.wav
+	const SOUND_DEATH tentacle/te_move2.wav
+
+//	const FREQ_SOUND_BURN 30.0
+}
+
+#include monsters/base_stripped_ai
+
+{ game_spawn
+	name a|Poison Vine
+	setmodel monsters/deadlyvine.mdl
+	width 32
+	height 64
+	hp 1000
+	race demon
+	blood none
+	nopush 1
+	setvard IMMUNE_VAMPIRE 1 //plant blood
+	hearingsensitivity 11
+	setidleanim ANIM_GROW
+	setmoveanim ANIM_GROW
+	playanim once ANIM_IDLE
+	setvard VINE_SUSPEND 1
+	setprop ent_me rendermode 2
+	setprop ent_me renderamt 0
+	//skilllevel NPC_GIVE_EXP
+	takedmg lighting 2.0
+	callevent 2.0 grow_in
+	setmodelbody 0 1 //*** setmodelbody, not "setsubmodel" - editplus + ms.stx helps prevent typos like these
+}
+
+{ set_wallmount //*** I 'spariment here, to see if we can mount these on walls (apparently fail)
+	gravity 0
+	fly 1
+}
+
+{ grow_in
+	setprop ent_me rendermode 0
+	setprop ent_me renderamt 255
+	
+	setidleanim ANIM_IDLE
+	setmoveanim ANIM_IDLE
+	setvard VINE_SUSPEND 0
+	playanim critical ANIM_GROW
+	playsound 1 10 tentacle/te_move1.wav
+}
+
+{ game_death
+	if !QUIET_DEATH
+	playanim critical ANIM_DEATH
+//	playsound 2 0 SOUND_BURN
+	playsound 1 10 SOUND_DEATH
+	clearfx
+}
+
+
+{ game_heardsound
+	if $get(ent_me,isalive)
+	if !VINE_SUSPEND
+	local HEARD_ID $get(ent_lastheard,id)
+	//dbg game_heardsound $get(ent_lastheard,name) $get(HEARD_ID,range) $get(ent_me,relationship,HEARD_ID)
+	if $get(ent_me,relationship,HEARD_ID) equals enemy
+	setvard NPCATK_TARGET HEARD_ID
+	setmovedest NPCATK_TARGET 9999
+	if $get(HEARD_ID,range) < ATTACK_HITRANGE
+	playanim once ANIM_ATTACK
+}
+
+{ game_struck
+	if $get(ent_me,isalive)
+	playsound 0 5 SOUND_STRUCK1 SOUND_STRUCK2 SOUND_STRUCK3 SOUND_STRUCK1 SOUND_STRUCK2 SOUND_STRUCK3 SOUND_PAIN1 SOUND_PAIN2
+
+	if !VINE_SUSPEND
+	if $get(ent_laststruck,range) < ATTACK_HITRANGE
+	setvard NPCATK_TARGET $get(ent_laststruck,id)
+	setmovedest NPCATK_TARGET 9999
+	playanim once ANIM_ATTACK
+}
+
+{ frame_attack
+	setvard SWING_ATTACK 1
+	playrandomsound 0 10 SOUND_ATTACK1 SOUND_ATTACK2
+	dodamage NPCATK_TARGET ATTACK_HITRANGE DMG_ATK 100% pierce
+}
+
+{ game_dodamage
+	if PARAM1
+	if ( SWING_ATTACK )
+	{
+		applyeffect PARAM2 effects/effect_poison 5.0 $get(ent_me,id) DOT_ATK //*** switched this to effect_poison from effect_burn
+		addvelocity PARAM2 $relvel(-200,-300,110)
+	}
+	setvard SWING_ATTACK 0
+}
+
+

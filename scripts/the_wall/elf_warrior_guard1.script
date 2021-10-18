@@ -1,0 +1,108 @@
+#scope server
+{
+	setvard NPC_GIVE_EXP 0
+
+	const DMG_TYPE pierce
+	const DMG_MELEE 800
+
+	setvard NPC_NO_PLAYER_DMG 1
+
+	setvard NPC_RETURN_HOME 1
+
+	const NO_CHAT 1 //chat handled internally
+
+	const NPC_BATTLE_ALLY 1
+
+	const SOUND_HELLO npc/elvenfemale/vs_nnwnobf1_hi.wav
+	const SOUND_VELEND npc/elvenfemale/vs_nnwnobf1_warn.wav
+}
+
+#include monsters/elf_warrior_base
+#include monsters/base_chat
+
+{ elf_spawn
+	name an|Elven Warrior
+	//Torkalath Warrior - Club (stun)
+	//Torkalath Assasin - Dagger (poison - maybe throw?)
+	//Torkalath Slasher - Axe (more hp)
+	//Torkalath Blademistress - Dbl Sword (more dmg)
+	//Torkalath Shadowarcher - different base? (spiral arrows)
+	hp 2000
+	takedmg all 0.5
+	race human
+	roam 0
+
+	setprop ent_me skin 1 //0=torkie 1=elf_armored 2=elf_skimpy 3=elf_tanned
+
+	setmodelbody 1 4 //0=Unarmed 1=Dagger 2=FMace 3=LAxe 4=ESword 5=Bow_evil 6=Litchtounge 7=Spear 8=norm_axe 9=bow_orion 10=dagger 11=norm_mace  
+	setmodelbody 2 3  //0=no_shield 1=demon_shield 2=wood_shield 3=white_shield
+
+	menu.autoopen 1
+}
+
+{ npc_post_spawn
+	setvard ANIM_ATTACK swordjab1_R
+}
+
+{ game_menu_getoptions
+	if ( NPCATK_TARGET isnot unset )
+	{
+		local reg.mitem.title 	"(In combat...)"
+		local reg.mitem.type 	disabled
+		menuitem.register
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	setmovedest PARAM1 9999
+
+	if !BUSY_CHATTING
+
+	playsound 2 10 SOUND_HELLO
+
+	say [0.1] [0.3]
+	callevent 0.6 bchat_close_mouth
+
+	local reg.mitem.title 	"Hail"
+	local reg.mitem.type 	callback
+	local reg.mitem.callback say_hi
+	menuitem.register
+}
+
+{ say_hi
+	if !BUSY_CHATTING
+
+	playsound 2 10 SOUND_VELEND
+
+	local LEADER_ID $get_by_name(elf_leader)
+	if ( $get(LEADER_ID,isalive) )
+	{
+		setvard CHAT_STEP1 "Velend Varon speaks for us."
+
+		if ( $get(PARAM1,race) equals human )
+		{
+			setvard CHAT_STEP2 "Address any questions you have to him, child of Torkaloth."
+		}
+		else
+		{
+			setvard CHAT_STEP2 "Address any questions you have to him."
+		}
+		setvard CHAT_STEPS 2
+		callevent chat_loop
+	}
+	else
+	{
+		saytext Seeker Varon maybe dead, but I must still stand guard, as I await our reinforcements.
+	}
+
+}
+
+
+//{ game_heardsound
+//	if !NPC_RETURNING_HOME
+//	if NPCATK_TARGET equals unset
+//	if $get(ent_lastheard,isplayer)
+//	setvard NPC_FORCED_MOVEDEST 1
+//	dbg heard_player
+//	setmovedest ent_lastheard 9999
+//}

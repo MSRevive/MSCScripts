@@ -1,0 +1,161 @@
+//Attempts to make a pack, that removes all weight from things put into it, but can only be opened/closed...
+//- near a bank teller.
+{
+  //Used by base_pack
+  const MODEL_VIEW      	none
+  const MODEL_HANDS      	misc/p_misc.mdl
+  const MODEL_WORLD      	armor/packs/p_packs.mdl
+  const MODEL_WEAR      	armor/packs/p_packs.mdl
+
+	const BANK_NAME Edana
+
+  const CONTAINER_TYPE		generic //not used in MSC
+  const CONTAINER_SPACE	200		//not used in MSC
+  const CONTAINER_MAXITEMS	32
+  //const CONTAINER_CANCLOSE     1
+  //const CONTAINER_LOCK_STRENGTH 1000
+  const CONTAINER_ITEM_REJECT	"sheath;pack;bolt;arrow;health;mana_mpotion"
+
+  const MODEL_BODY_OFS		6
+  const	ANIM_PREFIX		none
+}
+
+
+{
+   eventname pack_spawn
+
+   name 	a|BANK_NAME Bank Signet
+   desc 	This ticket gives access to your Edana bank account.
+   weight 	0
+   size 	0
+   value	5000
+   wearable 1 leftfinger
+   sethudsprite trade ring
+}
+
+{
+  eventname pack_deploy
+
+  setviewmodel  none
+}
+{
+  eventname pack_wear
+
+  playermessage You put on your BANK_NAME bank signet ring. 
+}
+
+{ game_spawn
+
+	setworldmodel MODEL_WORLD
+	sethand any
+
+	callevent pack_spawn
+
+	setvar TRUE_ACCEPT ''
+
+	if ( CONTAINER_ITEM_ACCEPT isnot 'CONTAINER_ITEM_ACCEPT' )
+	{
+		setvard TRUE_ACCEPT CONTAINER_ITEM_ACCEPT
+	}
+	
+	if ( game.map.name equals edana ) 
+	{
+		local CONTAINER_LOCK_STRENGTH 0
+		local CONTAINER_CANCLOSE 0
+	}
+
+	if ( game.map.name isnot edana ) 
+	{
+		local CONTAINER_LOCK_STRENGTH 10000
+		local CONTAINER_CANCLOSE 1
+	}
+
+	
+
+	local reg.container.type	CONTAINER_TYPE
+	local reg.container.space	CONTAINER_SPACE
+	local reg.container.canclose	CONTAINER_CANCLOSE
+	local reg.container.lock_str	CONTAINER_LOCK_STRENGTH
+	local reg.container.accept_mask	TRUE_ACCEPT
+	local reg.container.reject_mask	CONTAINER_ITEM_REJECT
+	local reg.container.maxitem CONTAINER_MAXITEMS //maxitem singular, not plural
+	registercontainer
+}
+
+{ game_deploy
+
+	setviewmodel  	MODEL_VIEW
+	
+	callevent pack_deploy
+}
+
+{ game_fall
+
+  	local 		L_SUBMODEL MODEL_BODY_OFS
+	add		L_SUBMODEL 1
+	local		L_ANIM ANIM_PREFIX
+	stradd		L_ANIM _floor_idle
+
+ 	setmodelbody 	0 L_SUBMODEL
+  	playanim 	L_ANIM
+
+	callevent pack_fall
+}
+
+{  game_pickup
+
+	setmodel	MODEL_HANDS
+	if ( MODEL_HANDS equals 'misc/p_misc.mdl' )
+	{
+		local L_SUBMODEL 16
+	}
+	else
+	{
+		local L_SUBMODEL MODEL_BODY_OFS
+	}
+	subtract L_SUBMODEL game.item.hand_index
+	setmodelbody 0 L_SUBMODEL
+
+	playviewanim  ANIM_IDLE 
+	callevent pack_pickup
+}
+
+
+{ game_playeractivate
+
+	if( !game.item.container.open )
+	{
+		playviewanim  ANIM_OPEN
+		callevent game_opencontainer
+	}
+	else playviewanim  ANIM_CLOSE
+
+	callevent pack_playeractivate
+}
+
+{ game_opencontainer
+
+	callevent pack_opencontainer
+}
+
+{ game_wear
+
+	setmodel	MODEL_WEAR
+	setmodelbody 	0 MODEL_BODY_OFS
+
+	callevent pack_wear
+}
+
+{ game_container_addeditem
+
+	playermessage Added PARAM1 to BANK_NAME bank
+	local IN_ITEM_WEIGHT $get(PARAM1,weight)
+	weight $neg(IN_ITEM_WEIGHT)
+}
+
+{ game_container_removeditem
+
+	playermessage Removed PARAM1 from BANK_NAME bank
+	local OUT_ITEM_WEIGHT $get(PARAM1,weight)
+	weight OUT_ITEM_WEIGHT
+}

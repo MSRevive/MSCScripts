@@ -1,0 +1,90 @@
+//Thothie - attempting to see if can create better death sequence
+//Bat
+
+{
+   setvar ANIM_WALK IdleFlyNormal
+   setvar ANIM_RUN ANIM_WALK
+   setvard ANIM_ATTACK bite
+   setvar ANIM_IDLE_HANG IdleHang
+   setvar ANIM_IDLE_FLY IdleFlyNormal
+   setvard ANIM_DEATH IdleFlyNormal	//use normal flight for death anim (see end of script)
+
+   const SOUND_STRUCK1 weapons/cbar_hitbod1.wav
+   const SOUND_STRUCK2 weapons/cbar_hitbod2.wav
+   const SOUND_STRUCK3 weapons/cbar_hitbod3.wav
+   const SOUND_PAIN monsters/rat/squeak1.wav
+   const SOUND_IDLE monsters/rat/squeak2.wav
+   const SOUND_DEATH monsters/rat/squeak3.wav
+
+   setvard MOVE_RANGE 30
+   setvard ATTACK_RANGE 65
+   setvard ATTACK_HITRANGE 100
+   setvard ATTACK_HITCHANCE 60%
+	if ( $lcase(game.map.name) equals catacombs ) setvard ATTACK_HITCHANCE 80%
+   const ATTACK_DAMAGE 1
+   setvard NPC_GIVE_EXP 5
+
+   setvard CAN_FLEE 1		  //base_npc_attack - Whether I run away
+   const FLEE_HEALTH 0		  //base_npc_attack - Flee heath
+   const FLEE_CHANCE 100%	  //base_npc_attack - Flee chance
+
+   precache SOUND_IDLE		//apparently not handled elsewhere
+}
+
+
+#include monsters/bat_base
+
+{  bat_spawn
+
+   	name a|Bat
+	if ( game.serverside )
+	{
+		//game.serverside as I am not sure if $lcase or game.map.name function client side and
+		//spawn functions are always shared or the client does not receive the model
+		local L_MAP_NAME $lcase(game.map.name)
+		if ( L_MAP_NAME equals edanasewers ) local MY_HP 8
+		if ( L_MAP_NAME isnot edanasewers ) local MY_HP 20
+		if ( L_MAP_NAME equals nightmare_edana ) setmonsterclip 0
+	  	hp MY_HP
+	}
+
+  	width 16
+  	height 16
+   	hearingsensitivity 3.5
+   	volume 5
+	setvelocity ent_me $relvel(0,0,0)
+   	setmodel monsters/bat.mdl
+}
+
+{  game_postspawn
+	setbbox animsize
+}
+   
+{  bat_drop_down			// Drop down from the ceiling
+
+   	setvard CAN_HUNT 1
+   	setvard BAT_STATUS BAT_FLYING
+   	setidleanim ANIM_IDLE_FLY
+}
+
+{  bite1				// Deal damage
+
+	if $get(NPCATK_TARGET,range) < ATTACK_HITRANGE
+   	dodamage NPCATK_TARGET direct ATTACK_DAMAGE ATTACK_HITCHANCE ent_me pierce
+}
+
+
+   
+{  npc_struck				//Hit by someone
+   
+   	playrandomsound 0 10 SOUND_PAIN SOUND_STRUCK2 SOUND_PAIN
+}
+
+//Think this would screw with monster spawn counters
+//{ [override] npc_death
+//
+//	//laysound 2 5 SOUND_DEATH
+//	fly 0	//fall to ground
+//        playanim hold IdleFlyNormal
+//	//deleteent ent_me "fade"
+//}

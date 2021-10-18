@@ -1,0 +1,1182 @@
+//Top script must set initial attack animations and ranges, as they vary by type
+//- make turnable
+//- poison breath
+//- lightning
+//- undead summon
+#scope server
+
+{ [shared]
+
+	//base anims
+	setvard ANIM_DEATH dieforward
+
+	//custom anims
+	const ANIM_BREATH_START walkB //setvard NPC_NO_ATTACK 1 when breathing
+	const ANIM_BREATH_WALK walkB1 
+	const ANIM_EAT eat
+	const ANIM_SQUAT trauma
+	const ANIM_EAT_TO_STAND Egetup
+	const ANIM_SQUAT_TO_STAND Tgetup
+	const ANIM_BREATH_PREP walkB
+	const ANIM_BREATH walkB1
+	const ANIM_ATTACK_SHORT steelpipe
+	const ANIM_ATTACK_LONG longslash
+	const ANIM_HEAL stab
+	const ANIM_FLINCH1 flinch
+	const ANIM_FLINCH2 flinch1
+	const ANIM_DEATH1 dieforward
+	const ANIM_DEATH2 diebackward
+	const ANIM_DEATH1 dieforward
+	const ANIM_PRE_REBIRTH1 seizure
+	const ANIM_REBIRTH1 getupforw
+	const ANIM_DEATH_IDLE1 dieforward_idle
+	const ANIM_DEATH2 diebackward
+	const ANIM_PRE_REBIRTH2 seizure1
+	const ANIM_REBIRTH2 getupback
+	const ANIM_DEATH_IDLE2 diebackward_idle
+	const ANIM_UNARMED1 slash
+	const ANIM_UNARMED2 slash1
+	const ANIM_UNARMED3 stab1
+	const ANIM_BITE bite
+	const ANIM_STEELPIPE steelpipe
+	const ANIM_PIKE_HOLD pike_hold
+	const ANIM_SUMMON pike_hold
+}
+
+{ [server]
+	//base stats
+	const FLINCH_CHANCE 20%
+
+	//custom stats
+	setvard FLINCH_HEALTH_RATIO 0.25 //ratio of health mummy must be down to before it's possible to make them flinch
+	const MUMMY_MELEE_DMG_TYPE slash
+	const MUMMY_MUNCHES 0 //if set to 1, will bite players who rub up against him for high damage
+	const FREQ_MUMMY_BITE 10.0
+	setvard MUMMY_CLERIC_RANGE 1024
+
+	//attacks
+	const ATTACK_RANGE_SHORT 64
+	const ATTACK_HITRANGE_SHORT 96
+	const ATTACK_RANGE_LONG 140
+	const ATTACK_HITRANGE_LONG 175
+	const ATTACK_RANGE_BITE 52 //how close they can get varies with angles - they cant always get this close :/
+	const ATTACK_HITRANGE_BITE 53
+	const ATTACK_HITCHANCE 80
+	const ATTACK_TYPE short //type of attack, long alternates attack ANIM_ATTACK_SHORT/ANIM_ATTACK_LONG anims based on range (ATTACK_RANGE_SHORT/ATTACK_RANGE_LONG)
+
+	//rebirth
+	const MUMMY_STARTING_LIVES 1
+
+	//aura
+	const AURA_TYPE 0 //0=none 1=repulse 2=ice 3=necro (note: lightning shield is handled by monsters/base_lightning_shield instead of this script)
+	const AURA_RANGE 100 //range of aura
+
+	//dmg
+	const DMG_SLASH 200 //dbl slash attack (unarmed)
+	const DMG_LONGSLASH 400 //dhalsim attack
+	const DMG_STAB 400 //pike stab
+	const DMG_STEELPIPE 200 //melee weapon strike
+	const DMG_BITE 1000 //bite
+
+	//healer flag
+	const MUMMY_IS_CLERIC 0
+
+	//breath attack
+	const MUMMY_BREATH_ATTACK 0 //enable/disable
+	const MUMMY_BREATH_ATTACK_TYPE bile //determines effect type
+	const MUMMY_BREATH_DOT 50 //damage per second on affected targets
+	const MUMMY_BREATH_DOT_DURATION 10.0 //duration of DOT effect
+	const MUMMY_BREATH_ATTACK_RANGE 300 //max range of breath
+	const MUMMY_BREATH_ATTACK_OFS 150 //usually half of range
+	const MUMMY_BREATH_CONE 30 //cone of effect +/- degrees
+	const FREQ_MUMMY_BREATH_ATTACK 35.0 //how often to breath
+	const MUMMY_BREATH_DURATION 4.0 //how long to breath
+	const MUMMY_BREATH_ATTACK_CLSCRIPT monsters/mummy_bile_attack_cl //clientfx script (should be self removing)
+
+	//beam attack
+	const MUMMY_BEAM_ATTACK 0 //enable/disable
+	const FREQ_MUMMY_BEAM_ATTACK $randf(20.0,30.0) //how often (aborted by breath and vis-versa)
+	const DMG_PUSH_BEAM 50 //damage
+	const MUMMY_BEAM_DUR 5.0 //duration of beam attack
+
+	//sounds
+	const SOUND_LOOP_AURA1 magic/chant_loop.wav 
+	const SOUND_LOOP_AURA2 magic/haunted_loop.wav
+	const SOUND_STRUCK1 weapons/cbar_hitbod1.wav
+	const SOUND_STRUCK2 weapons/cbar_hitbod2.wav
+	const SOUND_STRUCK3 weapons/cbar_hitbod3.wav
+	const SOUND_ATTACK1 zombie/claw_miss1.wav
+	const SOUND_ATTACK2 zombie/claw_miss2.wav
+	const SOUND_DEATH agrunt/ag_die3.wav
+	const SOUND_BREATH_PREP monsters/mummy/c_mummycom_bat2.wav
+	const SOUND_MUMMY_BREATH monsters/mummy/c_mummycom_bat1.wav
+	const SOUND_BREATH_LOOP magic/bolt_loop.wav
+	const SOUND_BREATH_END magic/bolt_end.wav
+	const SOUND_HEALED magic/heal_strike.wav
+	const SOUND_HEAL_OTHER magic/cast.wav
+	const SOUND_BITE_START monsters/mummy/c_mummycom_bat2.wav
+	const SOUND_BITE_HIT bullchicken/bc_bite3.wav
+	const SOUND_PIKE_TOSS zombie/claw_miss2.wav
+	const SOUND_SUMMON magic/spawn_loud.wav
+	const SOUND_BEAM_START magic/bolt_end.wav
+	const SOUND_BEAM_LOOP magic/bolt_loop.wav
+}
+
+#include monsters/base_monster_new
+
+//==================================================================== Setup Spawn and Init
+
+{ npc_spawn
+
+	setmodel monsters/mummy.mdl
+	width 28
+	height 72
+	blood none
+	race undead
+
+	//These are here so they can be overriden by mummies that use random weapon types (warriors)
+	setvard MUMMY_MELEE_DMG_TYPE_FINAL MUMMY_MELEE_DMG_TYPE
+	setvard MUMMY_DMG_SLASH DMG_SLASH
+	setvard MUMMY_DMG_LONGSLASH DMG_LONGSLASH
+	setvard MUMMY_DMG_STAB DMG_STAB
+	setvard MUMMY_DMG_STEELPIPE DMG_STEELPIPE
+	
+	callevent mummy_immunes
+	callevent mummy_spawn
+
+	setvard MUMMY_NAME $get(ent_me,name.full) //for resetting after playing dead
+	setvard MUMMY_LIVES MUMMY_STARTING_LIVES
+
+
+	if ( MUMMY_START_EAT )
+	{
+		callevent mummy_force_eat_mode init
+	}
+
+	if ( MUMMY_START_SQUAT )
+	{
+		callevent mummy_force_squat_mode init
+	}
+
+	if ( AURA_TYPE == 1 )
+	{
+		setmodelbody 3 1
+		callevent mummy_aura_sound1
+		callevent mummy_repulse_aura
+		setvard NPC_PROXACT_RANGE 384
+	}
+
+	if ( AURA_TYPE == 2 )
+	{
+		setmodelbody 3 4
+		callevent mummy_aura_sound1
+		callevent mummy_ice_aura
+		setvard NPC_PROXACT_RANGE 384
+	}
+
+	if ( AURA_TYPE == 3 )
+	{
+		setmodelbody 3 4
+		callevent mummy_aura_sound2
+		callevent mummy_necro_aura
+		setvard NPC_PROXACT_RANGE 384
+	}
+
+
+	if ( !NPC_PROX_ACTIVATE )
+	{
+		setidleanim ANIM_IDLE
+		setmoveanim ANIM_WALK
+		hearingsensitivity 6
+		roam 1
+	}
+
+	if ( MUMMY_IS_CLERIC )
+	{
+		callevent 1.0 mummy_cleric_cycle
+	}
+
+	if ( MUMMY_THROWS_PIKE )
+	{
+		callevent 1.0 mummy_pike_check
+	}
+
+	if ( MUMMY_IS_NECRO )
+	{
+		callevent 1.0 mummy_necro_summon
+	}
+
+	setvard MUMMY_DEFAULT_ANIM_RUN ANIM_RUN //breathing switches runanim
+	setvard MUMMY_DEFAULT_ANIM_WALK ANIM_WALK //death switches walk anim
+	setvard MUMMY_DEFAULT_ANIM_IDLE ANIM_IDLE //death switches idle anim
+
+	//set amount of health before it's possible to make the mummy flinch
+	setvard FLINCH_HEALTH $get(ent_me,hp)
+	multiply FLINCH_HEALTH FLINCH_HEALTH_RATIO
+
+	if ( ATTACK_TYPE equals unarmed )
+	{
+		setvard ATTACK_RANGE 80
+		setvard ATTACK_HITRANGE 128
+		setvard ATTACK_MOVERANGE 48
+	}
+
+	if ( ATTACK_TYPE equals melee )
+	{
+		setvard ATTACK_RANGE 80
+		setvard ATTACK_HITRANGE 128
+		setvard ATTACK_MOVERANGE 48
+	}
+
+	if ( ATTACK_TYPE equals long )
+	{
+		setvard ATTACK_RANGE ATTACK_RANGE_LONG
+		setvard ATTACK_HITRANGE ATTACK_HITRANGE_LONG
+		//moverange to be set by top script
+	}
+}
+
+{ game_dynamically_created
+	//dev things, not setup for summon
+	//mental note in case I forget again: game_dynamically_created comes AFTER game_spawn
+	dbg game_dynamically_created PARAM1 PARAM2
+
+	if ( PARAM1 equals squat )
+	{
+		setvard MUMMY_START_SQUAT 1
+		callevent mummy_force_squat_mode init
+	}
+	if ( PARAM1 equals eat )
+	{
+		setvard MUMMY_START_EAT 1
+		callevent mummy_force_eat_mode init
+	}
+}
+
+{ mummy_immunes
+
+	takedmg holy 1.25
+	takedmg fire 1.25
+	takedmg cold 0.5
+	takedmg lightning 0.5
+	takedmg poison 0
+
+	takedmg blunt 1.0
+	takedmg slash 1.1
+	takedmg pierce 0.5
+}
+
+{ cycle_up
+	if !MUMMY_CYCLES_STARTED
+	setvard MUMMY_CYCLES_STARTED 1
+	if ( MUMMY_BREATH_ATTACK ) 
+	{
+		if !MUMMY_DOUBLE_CYCLE
+		callevent FREQ_MUMMY_BREATH_ATTACK mummy_breath_attack
+	}
+	if ( MUMMY_BEAM_ATTACK )
+	{
+		if !MUMMY_DOUBLE_CYCLE
+		callevent FREQ_MUMMY_BEAM_ATTACK mummy_beam_attack
+	}
+	if ( MUMMY_DOUBLE_CYCLE )
+	{
+		setvard MUMMY_CUR_CYCLE_ATTACK 0
+		callevent 1.0 mummy_double_cycle_event
+	}
+}
+
+//=========================================================================== Attack Damage
+{ frame_slash //short unarmed overhead attack
+	playsound 0 10 SOUND_ATTACK1
+	dbg frame_slash MUMMY_DMG_SLASH
+	dodamage NPCATK_TARGET ATTACK_HITRANGE_SHORT MUMMY_DMG_SLASH ATTACK_HITCHANCE slash
+}
+
+{ frame_slash1 //short unarmed backhand attack
+	playsound 0 10 SOUND_ATTACK1
+	dbg frame_slash MUMMY_DMG_SLASH
+	setvard MUMMY_BACKHAND 1 //pushes away a bit
+	dodamage NPCATK_TARGET ATTACK_HITRANGE_SHORT MUMMY_DMG_SLASH ATTACK_HITCHANCE slash
+}
+
+{ frame_stab1 //short unarmed double swipe
+	playsound 0 10 SOUND_ATTACK1
+	dbg frame_slash MUMMY_DMG_SLASH
+	dodamage NPCATK_TARGET ATTACK_HITRANGE_SHORT MUMMY_DMG_SLASH ATTACK_HITCHANCE slash
+}
+
+{ frame_longslash //long unarmed "Dalsim" attack
+	playsound 0 10 SOUND_ATTACK2
+	dodamage NPCATK_TARGET ATTACK_HITRANGE_LONG MUMMY_DMG_LONGSLASH ATTACK_HITCHANCE slash
+}
+
+{ frame_stab //pike attack
+	if ( MUMMY_HEAL_FLAG )
+	{
+		//we're using this anim for other things, so abort the damage in certain circumstances, such as when used as heal spell
+		setvard MUMMY_HEAL_FLAG 0
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	playsound 0 10 SOUND_ATTACK2
+	dodamage NPCATK_TARGET ATTACK_HITRANGE_LONG MUMMY_DMG_STAB ATTACK_HITCHANCE pierce
+}
+
+
+{ frame_steelpipe //short melee attack and toss pike anim
+
+	dbg frame_steelpipe MUMMY_TOSSING_PIKE
+
+	if ( MUMMY_THROWS_PIKE )
+	{
+		setvard MUMMY_PUSH_ATTACK 1 //pike barers try to knock away nearby opponents
+	}
+
+	if ( MUMMY_TOSSING_PIKE )
+	{
+		setmodelbody 2 0 //hide pike
+		setvard MUMMY_PUSH_ATTACK 0
+		tossprojectile NPCATK_TARGET MUMMY_PIKE_SPEED DMG_PIKE 0 MUMMY_PROJ_NAME (10,64,48)
+		playsound 0 10 SOUND_PIKE_TOSS
+	}
+	else
+	{
+		playsound 0 10 SOUND_ATTACK2
+		dodamage NPCATK_TARGET ATTACK_HITRANGE_SHORT MUMMY_DMG_STEELPIPE ATTACK_HITCHANCE MUMMY_MELEE_DMG_TYPE_FINAL
+
+		if ( MUMMY_STUN_CHANCE > 0 )
+		{
+			setvard MUMMY_STUN_ATTACK 1
+		}
+	}
+}
+
+{ frame_bite_start
+	playsound 0 10 SOUND_BITE_START
+	//need a new effect to ensnare the target here
+}
+
+{ frame_bite_dmg
+	playsound 0 10 SOUND_BITE_HIT
+	dodamage NPCATK_TARGET ATTACK_HITRANGE_BITE DMG_BITE 100% magic
+
+	setvard MUMMY_NEXT_BITE game.time
+	add MUMMY_NEXT_BITE FREQ_MUMMY_BITE
+}
+
+{ game_dodamage //PARAM1=hit:0|1 PARAM2=ent_hit PARAM3=(start) PARAM4=(end)
+	if ( MUMMY_STUN_ATTACK )
+	{
+		setvard MUMMY_STUN_ATTACK 0
+		if PARAM1
+		if $rand(1,100) < MUMMY_STUN_CHANCE
+		applyeffect PARAM2 effects/heavy_stun 7.0 $get(ent_me,id) 1
+	}
+
+	if ( MUMMY_BACKHAND )
+	{
+		setvard MUMMY_BACKHAND 0
+		local RND_LF $randf(-50,50)
+		addvelocity PARAM2 $relvel(RND_LF,300,110)
+	}
+
+	if ( MUMMY_PUSH_ATTACK )
+	{
+		setvard MUMMY_PUSH_ATTACK 0
+		if PARAM1
+		local RND_LF $randf(-50,50)
+		addvelocity PARAM2 $relvel(RND_LF,600,110)
+	}
+}
+
+//=============================================================  Attack Animation Selection
+{ npc_selectattack
+	if ATTACK_TYPE equals unarmed
+
+	local RND_ATTACK $rand(1,3)
+	if ( RND_ATTACK == 1 ) setvard ANIM_ATTACK ANIM_UNARMED1
+	if ( RND_ATTACK == 2 ) setvard ANIM_ATTACK ANIM_UNARMED2
+	if ( RND_ATTACK == 3 ) setvard ANIM_ATTACK ANIM_UNARMED3
+
+	if MUMMY_MUNCHES
+	if game.time > MUMMY_NEXT_BITE
+	if $get(NPCATK_TARGET,range) < ATTACK_RANGE_BITE
+	setvard ANIM_ATTACK ANIM_BITE
+}
+
+{ npcatk_hunt //has to be done in hunt instead of npc_selectattack, as changes range
+
+	if ( ATTACK_TYPE equals long )
+	{
+		if ( $get(NPCATK_TARGET,range) <= ATTACK_RANGE_SHORT )
+		{
+			setvard ANIM_ATTACK ANIM_ATTACK_SHORT
+			setvard ATTACK_RANGE ATTACK_RANGE_SHORT
+			setvard ATTACK_HITRANGE ATTACK_HITRANGE_SHORT
+			if ( MUMMY_MUNCHES )
+			{
+				if game.time > MUMMY_NEXT_BITE
+				if ( $get(NPCATK_TARGET,range) < ATTACK_RANGE_BITE )
+				{
+					setvard ANIM_ATTACK ANIM_BITE
+					setvard ATTACK_RANGE ATTACK_RANGE_BITE
+					setvard ATTACK_HITRANGE ATTACK_HITRANGE_BITE
+				}
+			}
+		}
+		else
+		{
+			setvard ANIM_ATTACK ANIM_ATTACK_LONG
+			setvard ATTACK_RANGE ATTACK_RANGE_LONG
+			setvard ATTACK_HITRANGE ATTACK_HITRANGE_LONG
+		}
+	}
+
+	if ( AURA_TYPE == 2 )
+	{
+		//ice mummies approach targets in their field to munch
+		if $get(NPCATK_TARGET,scriptvar,'I_R_FROZEN')
+
+		if ( $get(NPCATK_TARGET,range) <= AURA_RANGE )
+		{
+			setvard ATTACK_MOVERANGE 32
+			setvard ANIM_ATTACK ANIM_BITE
+			setvard ATTACK_RANGE ATTACK_RANGE_BITE
+			setvard ATTACK_HITRANGE ATTACK_HITRANGE_BITE
+		}
+		else
+		{
+			setvard ATTACK_MOVERANGE 128
+			setvard ANIM_ATTACK ANIM_ATTACK_LONG
+			setvard ATTACK_RANGE ATTACK_RANGE_LONG
+			setvard ATTACK_HITRANGE ATTACK_HITRANGE_LONG
+		}
+	}
+}
+
+//===========================================================================  Repulse Aura
+{ mummy_repulse_aura
+
+	if $get(ent_me,isalive)
+	callevent 0.5 mummy_repulse_aura
+	
+
+	setvard REPULSE_TARGETS $get_tsphere(enemy,AURA_RANGE)
+
+	dbg mummy_repulse_aura REPULSE_TARGETS
+	if REPULSE_TARGETS isnot none
+	calleventloop $get_token_amt(REPULSE_TARGETS) mummy_repulse_targets
+}
+
+{ mummy_repulse_targets
+	local CUR_TARG $get_token(REPULSE_TARGETS,game.script.iteration)
+	local TARG_ORG $get(CUR_TARG,origin)
+	local TARG_ANG $angles(game.monster.origin,TARG_ORG)
+	setvelocity CUR_TARG $relvel($vec(0,TARG_ANG,0),$vec(10,1000,0))
+}
+
+{ mummy_aura_sound1
+	if $get(ent_me,isalive)
+	svplaysound 2 0 SOUND_LOOP_AURA1
+	svplaysound 2 5 SOUND_LOOP_AURA1
+	callevent 30.0 mummy_aura_sound1
+}
+
+{ mummy_aura_sound2
+	if $get(ent_me,isalive)
+	svplaysound 2 0 SOUND_LOOP_AURA2
+	svplaysound 2 5 SOUND_LOOP_AURA2
+	callevent 30.0 mummy_aura_sound2
+}
+
+//================================================================================ Ice Aura
+{ mummy_ice_aura
+
+	if $get(ent_me,isalive)
+	callevent 1.0 mummy_ice_aura
+
+	setvard MUMMY_ICE_TARGETS $get_tsphere(enemy,AURA_RANGE)
+	if MUMMY_ICE_TARGETS isnot none
+	calleventloop $get_token_amt(MUMMY_ICE_TARGETS) mummy_ice_targets
+}
+
+{ mummy_ice_targets
+	local CUR_TARG $get_token(MUMMY_ICE_TARGETS,game.script.iteration)
+	applyeffect CUR_TARG effects/freeze_solid 5.0 $get(ent_me,id) AURA_DOT
+}
+
+//============================================================================== Necro Aura
+{ mummy_necro_aura
+
+	if $get(ent_me,isalive)
+	callevent 0.5 mummy_necro_aura
+	
+	dodamage $relpos(0,0,0) AURA_RANGE DMG_AURA 100% 0 reflective dark
+}
+
+//========================================================================  Prox Activation
+{ spawn_squatting //inteded as additional parameter - used to start mummy sitting
+	setvard MUMMY_START_SQUAT 1
+	callevent mummy_force_squat_mode init
+}
+
+{ spawn_eating //inteded as additional paramater - used to start mummy eating
+	setvard MUMMY_START_EAT 1
+	callevent mummy_force_eat_mode init
+}
+
+{ mummy_getup_now
+	setvard NPC_PROXACT_TRIPPED 1
+	if ( MUMMY_START_SQUAT ) callevent mummy_squat_to_stand
+	if ( MUMMY_START_EAT ) callevent mummy_eat_to_stand
+}
+
+{ mummy_force_eat_mode //can also be used to force mummy to resume eating after kill
+	hearingsensitivity 0
+	roam 0
+	setvard NPC_PROXACT_TRIPPED 0
+	setvard NPC_PROXACT_IFSEEN 0
+	setvard NPC_PROX_ACTIVATE 1
+	setvard NPC_PROXACT_RANGE 64
+	setvard NPC_PROXACT_EVENT mummy_eat_to_stand
+	setvard NPC_PROXACT_FOV 1
+	setvard NPC_PROXACT_CONE 90
+	setidleanim ANIM_EAT
+	setmoveanim ANIM_EAT
+	playanim critical ANIM_EAT
+	callevent npcatk_suspend_ai
+	if ( PARAM1 isnot init ) callevent npcatk_proxact_scan
+	setvard MUMMY_RESUME_MODE eat
+}
+
+{ mummy_force_squat_mode //can also be used to force mummy to resume squatting after kill
+	hearingsensitivity 0
+	roam 0
+	setvard NPC_PROXACT_TRIPPED 0
+	setvard NPC_PROXACT_IFSEEN 0
+	setvard NPC_PROX_ACTIVATE 1
+	setvard NPC_PROXACT_RANGE 96
+	setvard NPC_PROXACT_EVENT mummy_squat_to_stand
+	setvard NPC_PROXACT_FOV 1
+	setvard NPC_PROXACT_CONE 90
+	setidleanim ANIM_SQUAT
+	setmoveanim ANIM_SQUAT
+	playanim critical ANIM_SQUAT
+	callevent npcatk_suspend_ai
+	if ( PARAM1 isnot init ) callevent npcatk_proxact_scan
+	setvard MUMMY_RESUME_MODE squat
+}
+
+{ mummy_eat_to_stand
+	//setvard NPC_PROXACT_TRIPPED 1 //still seem to have one bug left with proxact - this var isn't getting set, yet it shouldn't be able to reach here if it hasn't been
+	hearingsensitivity 6
+	setidleanim ANIM_IDLE
+	setmoveanim ANIM_WALK
+	callevent 1.0 npcatk_resume_ai
+	roam 1
+	setvard AS_ATTACKING game.time
+	playanim critical ANIM_EAT_TO_STAND
+
+	if $get(NPC_PROXACT_PLAYERID,isalive)
+	callevent 1.1 mummy_target_disturber
+}
+
+{ mummy_squat_to_stand
+	//setvard NPC_PROXACT_TRIPPED 1 //still seem to have one bug left with proxact - this var isn't getting set, yet it shouldn't be able to reach here if it hasn't been
+	hearingsensitivity 6
+	setidleanim ANIM_IDLE
+	setmoveanim ANIM_WALK
+	callevent 1.0 npcatk_resume_ai
+	roam 1
+	setvard AS_ATTACKING game.time
+	playanim critical ANIM_SQUAT_TO_STAND
+
+	if $get(NPC_PROXACT_PLAYERID,isalive)
+	callevent 1.1 mummy_target_disturber
+}
+
+{ mummy_target_disturber
+	//setvard NPC_PROXACT_TRIPPED 1 //still seem to have one bug left with proxact - this var isn't getting set, yet it shouldn't be able to reach here if it hasn't been
+	if $get(NPC_PROXACT_PLAYERID,isalive)
+	setidleanim ANIM_IDLE
+	setmoveanim ANIM_RUN
+	callevent npcatk_settarget NPC_PROXACT_PLAYERID
+}
+
+{ my_target_died
+
+	callevent 1.0 mummy_return_to_proxscan
+}
+
+{ mummy_return_to_proxscan
+	if $get_tsphere(enemy,256) equals none
+	if !$cansee(enemy)
+
+	if ( MUMMY_RESUME_MODE equals squat ) callevent mummy_force_squat_mode
+	if ( MUMMY_RESUME_MODE equals eat ) callevent mummy_force_eat_mode
+}
+
+//========================================================================= Death & Rebirth
+{ game_death
+
+	//turn off any auras
+	callevent mummy_auras_off
+	if ( MUMMY_BREATH_ATTACK_TYPE equals lightning ) svplaysound 2 0 SOUND_BREATH_LOOP
+	if ( MUMMY_BREATH_ATTACK_TYPE equals ice ) svplaysound 3 0 SOUND_BREATH_LOOP
+
+	local RND_DEATH $rand(1,2)
+	if ( RND_DEATH == 1 ) setvard ANIM_DEATH ANIM_DEATH1
+	if ( RND_DEATH == 2 ) setvard ANIM_DEATH ANIM_DEATH1
+}
+
+{ npc_death
+	if !MUMMY_HIT_BY_HOLY
+	if MUMMY_LIVES > 1
+	subtract MUMMY_LIVES 1
+	setvard PLAYING_DEAD 1
+	if ( ANIM_DEATH equals ANIM_DEATH1 ) setvard ANIM_DEATH_IDLE ANIM_DEATH_IDLE1
+	if ( ANIM_DEATH equals ANIM_DEATH2 ) setvard ANIM_DEATH_IDLE ANIM_DEATH_IDLE2
+	callevent npcatk_suspend_ai
+	setvard NPC_NO_ATTACK 1
+	setvard NO_STUCK_CHECKS 1
+	setvard CAN_HEAR 0
+	setsolid none
+	setbbox (0,0,0) (0,0,0)
+	invincible 1
+	setmovedest none
+	setvard ANIM_RUN ANIM_DEATH_IDLE
+	setvard ANIM_WALK ANIM_DEATH_IDLE
+	setvard ANIM_IDLE ANIM_DEATH_IDLE
+	setidleanim ANIM_DEATH_IDLE
+	setmoveanim ANIM_DEATH_IDLE
+	setalive 1
+	roam 0
+	callevent $rand(5,15) mummy_rebirth_check
+}
+
+{ mummy_rebirth_check
+	callevent npcatk_suspend_ai //make sure AI stays off
+	setvard NPC_NO_ATTACK 1
+	setvard MUMMY_REBIRTH_SCAN $get_tsphere(any,96)
+	if ( ANIM_DEATH equals ANIM_DEATH1 ) playanim critical ANIM_PRE_REBIRTH1
+	if ( ANIM_DEATH equals ANIM_DEATH2 ) playanim critical ANIM_PRE_REBIRTH2
+
+	if ( MUMMY_REBIRTH_SCAN isnot none )
+	{
+		setvard MUMMY_CANT_GET_UP 1
+		setvard MUMMY_REALLY_CANT_GET_UP 0
+		calleventloop $get_token_amt(MUMMY_REBIRTH_SCAN) mummy_rebirth_scan_loop
+		if ( MUMMY_REALLY_CANT_GET_UP ) setvard MUMMY_CANT_GET_UP 1
+	}
+
+	if ( MUMMY_REBIRTH_SCAN equals none ) setvard MUMMY_CANT_GET_UP 0
+
+	if ( MUMMY_CANT_GET_UP )
+	{
+		callevent 1.0 mummy_rebirth_check
+	}
+	else
+	{
+		callevent mummy_rebirth
+	}
+}
+
+{ mummy_rebirth_scan_loop
+	local CUR_TARG $get_token(MUMMY_REBIRTH_SCAN,game.script.iteration)
+	if ( $get(CUR_TARG,itemname) contains mummy )
+	{
+		//this maybe a mummy trying to get up too
+		if ( $get(CUR_TARG,scriptvar,'PLAYING_DEAD') )
+		{
+			//it is, get up, but hold all other dead zombies down a bit
+			if game.time > G_MUMMY_NEXT_REBIRTH
+			setvarg G_MUMMY_NEXT_REBIRTH game.time
+			add G_MUMMY_NEXT_REBIRTH 5.0
+			setvard MUMMY_CANT_GET_UP 0
+			dbg can get up game.time vs. G_MUMMY_NEXT_REBIRTH
+		}
+		else
+		{
+			setvard MUMMY_CANT_GET_UP 1
+			setvard MUMMY_REALLY_CANT_GET_UP 1
+			dbg can't get up - friend not playing dead
+		}
+	}
+	else
+	{
+		setvard MUMMY_CANT_GET_UP 1
+		setvard MUMMY_REALLY_CANT_GET_UP 1 //this is in case I see a player earlier in the scan, but a dead friend later, and think I can get up
+		dbg can't get up - non-mummy nearby
+	}
+}
+
+{ mummy_rebirth
+	setsolid box
+	setbbox npcsize
+	race undead
+	hp $get(ent_me,maxhp)
+	divide NPC_GIVE_EXP 2
+	skilllevel NPC_GIVE_EXP
+	setvard PLAYING_DEAD 0
+	callevent 1.0 mummy_rebirth2
+}
+
+{ mummy_rebirth2
+	invincible 0
+	setvard ANIM_RUN MUMMY_DEFAULT_ANIM_RUN
+	setvard ANIM_WALK MUMMY_DEFAULT_ANIM_WALK
+	setvard ANIM_IDLE MUMMY_DEFAULT_ANIM_IDLE
+	setvard NO_STUCK_CHECKS 0
+	setvard CAN_HEAR 1
+	setmoveanim ANIM_WALK
+	setidleanim ANIM_IDLE
+	if ( ANIM_DEATH equals ANIM_DEATH1 ) playanim critical ANIM_REBIRTH1
+	if ( ANIM_DEATH equals ANIM_DEATH2 ) playanim critical ANIM_REBIRTH2
+	setvard NPC_PREV_TARGET unset //so we re-apply musak
+	callevent 1.0 npcatk_resume_ai
+	setvard NPC_NO_ATTACK 0
+	callevent 1.1 mummy_rebirth3
+}
+
+{ mummy_rebirth3
+	roam 1
+}
+
+{ game_damaged
+	//mummies struck by holy will not rise again
+	if PARAM3 equals holy
+	setvard MUMMY_HIT_BY_HOLY 1
+	setvard MUMMY_LIVES 1
+}
+
+{ mummy_auras_off
+	setmodelbody 3 0
+	if ( AURA_TYPE == 1 ) svplaysound 2 0 SOUND_LOOP_AURA1
+	if ( AURA_TYPE == 2 ) svplaysound 2 0 SOUND_LOOP_AURA2
+}
+
+{ set_no_fake_death //additional parameter
+	setvard MUMMY_LIVES 1
+}
+
+//============================================================================ Cleric Cycle
+{ mummy_cleric_cycle
+
+	if $get(ent_me,isalive)
+
+	callevent 3.0 mummy_cleric_cycle
+
+	if ( MUMMY_NO_HEALS > game.time )
+	{
+		//I've not found anyone to heal for at least 10 seconds
+		//Start moving closer to players, as it maybe there are no other mummies left
+		setvard ATTACK_MOVERANGE 48
+	}
+
+	setvard MUMMY_HEAL_LIST $get_tsphere(ally,MUMMY_CLERIC_RANGE)
+
+	if ( MUMMY_HEAL_LIST equals none )
+	{
+		setvard MUMMY_NO_HEALS game.time
+		add MUMMY_NO_HEALS 10.0
+	}
+
+	if MUMMY_HEAL_LIST isnot none
+	setvard ATTACK_MOVERANGE 1024 //dont approach targets - let the guys I heal take the front line
+
+	token.scramble MUMMY_HEAL_LIST //heal randomly
+	setvard MUMMY_HEAL_TARGET none
+	callevent mummy_find_heal_target
+
+	if MUMMY_HEAL_TARGET isnot none
+
+	callexternal MUMMY_HEAL_TARGET mummy_healed
+
+	playsound 0 10 SOUND_HEAL_OTHER
+	effect glow ent_me (0,255,0) 64 1 1
+
+	callevent npcatk_suspend_ai 1.0
+	setvard NPC_FORCED_MOVEDEST 1
+	setmovedest MUMMY_HEAL_TARGET 9999
+	callevent 0.1 mummy_cleric_heal_anim
+}
+
+{ mummy_cleric_heal_anim
+	setvard AS_ATTACKING game.time
+	playanim critical ANIM_HEAL
+	setvard MUMMY_HEAL_FLAG 1 //abort damage on this attack anim
+}
+
+{ mummy_find_heal_target
+	local CUR_TARG $get_token(MUMMY_HEAL_LIST,game.script.iteration)
+	if $get(CUR_TARG,isalive)
+	if $get(CUR_TARG,hp) < $get(CUR_TARG,maxhp)
+	if $get(CUR_TARG,itemname) contains mummy //heal mummies only, not pets
+	setvard MUMMY_HEAL_TARGET CUR_TARG
+}
+
+{ mummy_healed
+	effect glow ent_me (0,255,0) 256 1 1
+	playsound 0 10 SOUND_HEALED
+	hp game.monster.maxhp
+}
+
+{ game_struck
+	if ( MUMMY_BEAMING )
+	{
+		//if I'm beaming, redirect beam to new attacker, if I can see him
+		callevent mummy_beam_new_target $get(ent_laststruck,id)
+	}
+
+	if MUMMY_IS_CLERIC
+	if ATTACK_MOVE_RANGE == 1024
+	if $get(ent_laststruck,range) < 128
+	setvard ATTACK_MOVERANGE 48
+}
+
+//=============================================================================== Debuggary
+{ ext_setbody //debuggary
+	setmodelbody PARAM1 PARAM2
+}
+
+//================================================================================== Flinch
+{ npc_flinch
+	local RND_FLINCH $rand(1,2)
+	if ( RND_FLINCH == 1 ) setvard FLINCH_ANIM ANIM_FLINCH1
+	if ( RND_FLINCH == 1 ) setvard FLINCH_ANIM ANIM_FLINCH2
+}
+
+//=============================================================================== Pike Toss
+{ mummy_pike_check
+	callevent 1.0 mummy_pike_check
+	if $cansee(NPCATK_TARGET)
+	if $get(NPCATK_TARGET,range) > ATTACK_RANGE_LONG
+	if game.time > MUMMY_NEXT_PIKE_TOSS
+	setvard MUMMY_NEXT_PIKE_TOSS game.time
+	add MUMMY_NEXT_PIKE_TOSS FREQ_MUMMY_PIKE_TOSS
+	setvard MUMMY_TOSSING_PIKE 1
+	if ( !MUMMY_PIKE_NOGLOW ) setmodelbody 2 7 //make pike glow
+	callevent npcatk_suspend_ai
+	setmovedest NPCATK_TARGET 9999
+	setvard ANIM_RUN ANIM_PIKE_HOLD
+	setvard ANIM_IDLE ANIM_PIKE_HOLD
+	setmoveanim ANIM_PIKE_HOLD
+	setidleanim ANIM_PIKE_HOLD
+	setvard NPC_FORCED_MOVEDEST 1
+	roam 0
+	setvard AS_ATTACKING game.time
+	add AS_ATTACKING 2.0
+	playanim critical ANIM_STEELPIPE
+	callevent 1.5 mummy_pike_reload
+}
+
+{ mummy_pike_reload
+	setmodelbody 2 7
+	roam 1
+	callevent npcatk_resume_ai
+	setvard ANIM_RUN MUMMY_DEFAULT_ANIM_RUN
+	setvard ANIM_IDLE MUMMY_DEFAULT_ANIM_IDLE
+	setmoveanim ANIM_RUN
+	setidleanim ANIM_IDLE
+	setvard MUMMY_TOSSING_PIKE 0
+	callevent 0.5 mummy_pike_reload2
+}
+
+{ mummy_pike_reload2
+	setmodelbody 2 6 //stop pike glowing
+}
+
+{ ext_projectile_hit //called from items/proj_mummy_pike
+	add MUMMY_NEXT_PIKE_TOSS 10.0 //delay so we don't repeatedly freeze the same poor bastard
+}
+
+//=========================================================================== Summon Wraith
+{ mummy_necro_summon
+	if $get(ent_me,isalive)
+	callevent 1.0 mummy_necro_summon
+	if NPCATK_TARGET isnot unset
+	local MAX_SUMMONS 2
+	if ( MAX_SUMMONS < game.players ) local MAX_SUMMONS game.players
+	if MUMMY_NSUMMONS < MAX_SUMMONS
+	if game.time > MUMMY_NEXT_SUMMON
+	setvard MUMMY_NEXT_SUMMON game.time
+	add MUMMY_NEXT_SUMMON FREQ_MUMMY_SUMMON
+	callevent npcatk_suspend_ai
+	setvard ANIM_RUN ANIM_SUMMON
+	setvard ANIM_IDLE ANIM_SUMMON
+	roam 0
+	setmoveanim ANIM_SUMMON
+	setidleanim ANIM_SUMMON
+	callevent 1.0 mummy_necro_summon2
+}
+
+{ mummy_necro_summon2
+	effect glow ent_me (255,255,255) 128 1 1
+	playsound 0 10 SOUND_SUMMON
+	add MUMMY_NSUMMONS 1
+	local SUMMON_POINT $relpos(0,64,0)
+	createnpc MUMMY_SUMMON_SCRIPT SUMMON_POINT $get(ent_me,id) NPCATK_TARGET SUMMON_POINT
+	callevent 2.0 mummy_necro_summon3
+}
+
+{ mummy_necro_summon3
+	callevent npcatk_resume_ai
+	setvard ANIM_RUN MUMMY_DEFAULT_ANIM_RUN
+	setvard ANIM_IDLE MUMMY_DEFAULT_ANIM_IDLE
+	setmoveanim ANIM_RUN
+	setidleanim ANIM_IDLE
+	roam 1
+}
+
+{ ext_wraith_died //called by wraith
+	subtract MUMMY_NSUMMONS 1
+	//dont constantly refresh summons
+	setvard MUMMY_NEXT_SUMMON game.time
+	add MUMMY_NEXT_SUMMON FREQ_MUMMY_SUMMON
+}
+
+//============================================================================= Beam Attack
+{ mummy_beam_attack
+	//lightning beam plows enemies into walls
+	if $get(ent_me,isalive)
+	if ( !MUMMY_DOUBLE_CYCLE ) callevent FREQ_MUMMY_BEAM_ATTACK mummy_beam_attack
+
+	if !PLAYING_DEAD
+	if !MUMMY_BREATHING
+	if !MUMMY_BEAMING
+	//if !SUSPEND_AI
+	if $get(NPCATK_TARGET,isalive)
+
+	if $cansee(NPCATK_TARGET)
+
+	setvard MUMMY_BEAMING 1
+
+	setvard MUMMY_BEAM_TARGET NPCATK_TARGET
+
+	callevent npcatk_suspend_ai
+	setvard ANIM_RUN ANIM_PIKE_HOLD
+	setvard ANIM_IDLE ANIM_PIKE_HOLD
+	roam 0
+	setmoveanim ANIM_PIKE_HOLD
+	setidleanim ANIM_PIKE_HOLD
+
+	effect beam ents lgtning.spr 200 ent_me 2 MUMMY_BEAM_TARGET 0 (255,255,0) 255 20 MUMMY_BEAM_DUR
+	setvard MUMMY_BEAM_ID ent_lastcreated
+
+	playsound 0 10 SOUND_BEAM_START
+	svplaysound 2 10 SOUND_BEAM_LOOP
+
+	clientevent new all effects/sfx_attach_sprite "0;1.0;255;add;(255,255,0);30;1" $get(ent_me,index) 1 MUMMY_BEAM_DUR 3dmflaora.spr //should be attach #1 - but isn't working
+
+	//weird shit going on here where beam get stuck occasionally
+	setvard MUMMY_BEAM_ABORT_TIME game.time
+	add MUMMY_BEAM_ABORT_TIME MUMMY_BEAM_DUR
+	add MUMMY_BEAM_ABORT_TIME 1.0
+
+	callevent mummy_beam_attack_loop
+	callevent MUMMY_BEAM_DUR mummy_beam_attack_end
+}
+
+{ mummy_beam_attack_end
+	effect beam update MUMMY_BEAM_ID remove 0.1
+	svplaysound 2 0 SOUND_BEAM_LOOP
+	setvard MUMMY_BEAMING 0
+	callevent npcatk_resume_ai
+	setvard ANIM_RUN MUMMY_DEFAULT_ANIM_RUN
+	setvard ANIM_IDLE MUMMY_DEFAULT_ANIM_IDLE
+	setmoveanim ANIM_RUN
+	setidleanim ANIM_IDLE
+	roam 1
+}
+
+{ mummy_beam_new_target
+	if $get(PARAM1,exists)
+	if $get(PARAM1,isalive)
+
+	local MY_STAFF_ORG $get(ent_me,attachpos,1)
+	local ATTACKER_ORG $get(PARAM1,origin)
+	local TRACE_LINE $get_traceline(MY_STAFF_ORG,ATTACKER_ORG,worldonly)
+
+	if TRACE_LINE equals ATTACKER_ORG
+
+	setvard MUMMY_BEAM_TARGET PARAM1
+	effect beam update MUMMY_BEAM_ID end_target MUMMY_BEAM_TARGET 0
+}
+
+{ mummy_beam_attack_loop
+
+	//weird shit going on here where beam get stuck occasionally
+	if ( game.time > MUMMY_BEAM_ABORT_TIME ) callevent mummy_beam_attack_end
+
+	if MUMMY_BEAMING
+	callevent 0.1 mummy_beam_attack_loop
+
+	if ( !$get(MUMMY_BEAM_TARGET,isalive) )
+	{
+		//dbg error_check 1
+		effect beam update MUMMY_BEAM_ID brightness 0
+		local NEW_TARGET $get_tsphere(enemy,1024)
+		token.scramble NEW_TARGET
+		callevent mummy_beam_new_target NEW_TARGET
+	}
+	else
+	{
+		//dbg error_check 2
+		setmovedest MUMMY_BEAM_TARGET 9999
+
+		local BEAM_START $get(ent_me,attachpos,1)
+		local BEAM_END $get(MUMMY_BEAM_TARGET,origin)
+
+		local BEAM_TRACE $get_traceline(BEAM_START,BEAM_END,worldonly)
+
+		if ( BEAM_TRACE isnot BEAM_END )
+		{
+			effect beam update MUMMY_BEAM_ID brightness 0
+		}
+		else
+		{
+			effect beam update MUMMY_BEAM_ID brightness 255
+			local VEL_SET $relpos($vec(0,game.monster.angles.yaw,0),$vec(-500,1000,30))
+			setvelocity MUMMY_BEAM_TARGET VEL_SET
+			dodamage MUMMY_BEAM_TARGET direct DMG_PUSH_BEAM 100% ent_me lightning_effect
+		}
+	}
+}
+
+//=========================================================================== Breath Attack
+{ mummy_breath_attack
+
+	if ( $get(ent_me,isalive) )
+	{
+		if !PLAYING_DEAD
+		if !MUMMY_BREATHING
+		if !MUMMY_BEAMING
+		//if !SUSPEND_AI
+		if $get(NPCATK_TARGET,isalive)
+		if $cansee(NPCATK_TARGET,512)
+		local DO_BREATH_ATTACK 1
+	}
+
+	if ( DO_BREATH_ATTACK )
+	{
+		if !MUMMY_DOUBLE_CYCLE 
+		callevent FREQ_MUMMY_BREATH_ATTACK mummy_breath_attack
+	}
+	else
+	{
+		if !MUMMY_DOUBLE_CYCLE 
+		callevent 2.0 mummy_breath_attack
+	}
+	if DO_BREATH_ATTACK
+
+	setvard MUMMY_BREATHING 1
+	setvard MUMMY_DEFAULT_ANIM_RUN ANIM_RUN
+	setvard ANIM_RUN ANIM_BREATH_WALK
+	setmoveanim ANIM_RUN
+	setidleanim ANIM_BREATH_WALK
+	setvard AS_ATTACKING game.time
+	add AS_ATTACKING 5.0
+	playanim critical ANIM_BREATH_PREP
+	playsound 0 10 SOUND_BREATH_PREP
+	callevent 1.5 mummy_breath_start
+	callevent MUMMY_BREATH_DURATION mummy_breath_stop
+	setvard MUMMY_BREATH_TARGET NPCATK_TARGET
+	callevent npcatk_suspend_ai
+	setvard NPC_FORCED_MOVEDEST 1
+	setmovedest NPCATK_TARGET ATTACK_MOVERANGE
+}
+
+{ mummy_breath_start
+	if ( MUMMY_BREATH_ATTACK_TYPE equals lightning ) svplaysound 2 10 SOUND_BREATH_LOOP
+	if ( MUMMY_BREATH_ATTACK_TYPE equals ice ) svplaysound 3 10 SOUND_BREATH_LOOP
+	playsound 0 10 SOUND_MUMMY_BREATH
+	clientevent new all MUMMY_BREATH_ATTACK_CLSCRIPT $get(ent_me,index) MUMMY_BREATH_DURATION
+	callevent mummy_breath_loop
+}
+
+{ mummy_breath_loop
+	if MUMMY_BREATHING
+	callevent 0.5 mummy_breath_loop
+	setvard NPC_FORCED_MOVEDEST 1
+	setmovedest NPCATK_TARGET ATTACK_MOVERANGE
+
+	local BREATH_CENTER $get(ent_me,origin)
+	vectoradd BREATH_CENTER $relpos($vec(0,game.monster.angles.yaw,0),$vec(0,MUMMY_BREATH_ATTACK_OFS,0))
+	setvard MUMMY_BREATH_TARGETS $get_tsphere(enemy,MUMMY_BREATH_ATTACK_RANGE,BREATH_CENTER)
+	if MUMMY_BREATH_TARGETS isnot 'none'
+	calleventloop $get_token_amt(MUMMY_BREATH_TARGETS) mummy_breath_affect_targets
+}
+
+{ mummy_breath_stop
+	callevent npcatk_resume_ai
+	setvard MUMMY_BREATHING 0
+	setvard ANIM_RUN MUMMY_DEFAULT_ANIM_RUN
+	setmoveanim ANIM_RUN
+	setidleanim ANIM_IDLE
+	playanim critical ANIM_BREATH_WALK
+	if ( MUMMY_BREATH_ATTACK_TYPE equals lightning ) callevent 1.0 mummy_breath_stop_sound
+	if ( MUMMY_BREATH_ATTACK_TYPE equals ice ) svplaysound 3 0 SOUND_BREATH_LOOP
+}
+
+{ mummy_breath_stop_sound
+	playsound 0 10 SOUND_BREATH_END
+	svplaysound 2 0 SOUND_BREATH_LOOP
+}
+
+{ mummy_breath_affect_targets
+
+	local CUR_TARG $get_token(MUMMY_BREATH_TARGETS,game.script.iteration)
+	if $get(CUR_TARG,range) < MUMMY_BREATH_ATTACK_RANGE
+	local TARG_ORG $get(CUR_TARG,origin)
+	if $within_cone2D(TARG_ORG,game.monster.origin,game.monster.angles,MUMMY_BREATH_CONE)
+
+	local MY_MOUTH_ORG $get(ent_me,attachpos,0)
+	local TRACE_LINE $get_traceline(MY_MOUTH_ORG,TARG_ORG,worldonly)
+
+	if TRACE_LINE equals TARG_ORG
+
+	if ( MUMMY_BREATH_ATTACK_TYPE equals 'bile' ) applyeffect CUR_TARG effects/effect_poison_blinding MUMMY_BREATH_DOT_DURATION $get(ent_me,id) MUMMY_BREATH_DOT
+	if ( MUMMY_BREATH_ATTACK_TYPE equals lightning )
+	{
+		dodamage CUR_TARG direct MUMMY_BREATH_DOT 100% ent_me lightning
+		applyeffect CUR_TARG effects/effect_shock_dmg MUMMY_BREATH_DOT_DURATION $get(ent_me,id) MUMMY_BREATH_DOT
+		local ZAP_TARG_RESIST $get_takedmg(CUR_TARG,lightning)
+		local ZAP_ROLL $randf(0.0,2.0)
+		if ZAP_ROLL < ZAP_TARG_RESIST
+		local TARG_ORG $get(CUR_TARG,origin)
+		local TARG_ANG $angles(game.monster.origin,TARG_ORG)
+		setvelocity CUR_TARG $relvel($vec(0,TARG_ANG,0),$vec(10,1000,10))
+	}
+	if ( MUMMY_BREATH_ATTACK_TYPE equals ice )
+	{
+		applyeffect CUR_TARG effects/effect_frostbite_dmg MUMMY_BREATH_DOT_DURATION $get(ent_me,id) MUMMY_BREATH_DOT
+	}
+}
+
+//========================================================= Alternating Beam/Breath Attacks
+{ mummy_double_cycle_event
+	//alternate between beam and breath weapons
+
+	if $get(ent_me,isalive)
+	callevent MUMMY_FREQ_DOUBLE_CYCLE mummy_double_cycle_event
+	if !PLAYING_DEAD
+	if !MUMMY_BREATHING
+	if !MUMMY_BEAMING
+	//if !SUSPEND_AI
+	if $get(NPCATK_TARGET,isalive)
+
+	add MUMMY_CUR_CYCLE_ATTACK 1
+	if ( MUMMY_CUR_CYCLE_ATTACK == 1 ) callevent mummy_beam_attack
+	if ( MUMMY_CUR_CYCLE_ATTACK == 2 )
+	{
+		callevent mummy_breath_attack
+		setvard MUMMY_CUR_CYCLE_ATTACK 0
+	}
+}
+
+//========================================================= Additional Paramater
+{ set_cleric_range //let mapper set max heal range
+	setvard MUMMY_CLERIC_RANGE PARAM2
+}

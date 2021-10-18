@@ -1,0 +1,59 @@
+#scope server
+{
+	const SOUND_PULSE bullchicken/bc_acid2.wav
+	const AOE_SCAN_TYPE dodamage
+	const AOE_SCAN_FREQ 1.0
+}
+
+{ game_precache
+	precache weapons/magic/seals.mdl
+}
+
+#include monsters/summon/base_aoe2
+
+{ game_spawn
+	nopush 1
+	invincible 1
+	setvard PLAYING_DEAD 1
+	setvard COCOON_ATTACHED 1 //so webs dont try to attach to me
+}
+
+{ game_dynamically_created //PARAM1 = owner PARAM2 = duration
+	setvard MY_OWNER PARAM1
+	setvard AOE_DURATION PARAM2
+	setvard AOE_RADIUS 180
+
+	local MY_GROUND $get(ent_me,origin)
+	local CUR_GROUND_Z $get_ground_height(MY_GROUND)
+	vectorset MY_GROUND z CUR_GROUND_Z
+	setorigin ent_me MY_GROUND
+
+	if ( !$get(ent_me,isplayer) ) setvard MY_SKILL none
+	
+	clientevent new all effects/sfx_seal $get(ent_me,origin) AOE_RADIUS 36 AOE_DURATION spider
+	setvard MY_CL_IDX game.script.last_sent_id
+}
+
+{ aoe_scan_loop
+	clientevent update all MY_CL_IDX ext_spider_pulse
+}
+
+{ aoe_affect_target
+	if !$get(PARAM1,scriptvar,'COCOON_ATTACHED')
+	local L_DOT -1
+	local L_DUR -1
+	local L_WEB_STR $get(MY_OWNER,scriptvar,'WEB_STRENGTH')
+	if ( $get(MY_OWNER,isplayer) )
+	{
+		local L_DOT $get(MY_OWNER,skill.spellcasting.affliction)
+		multiply L_DOT 0.1
+		local L_DUR 20.0
+		local L_WEB_STR 1
+	}
+	callexternal PARAM1 ext_webbed MY_OWNER
+	applyeffect PARAM1 effects/effect_webbed $get(MY_OWNER,maxhp) L_WEB_STR MY_OWNER L_DUR L_DOT
+}
+
+{ aoe_end
+	deleteent ent_me
+}

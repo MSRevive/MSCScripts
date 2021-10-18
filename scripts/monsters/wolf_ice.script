@@ -1,0 +1,90 @@
+{
+	setvard NPC_PET_TYPE wolf_ice //tells charm that this can be tamed
+	const NPC_PET_SCRIPT monsters/companion/pet_wolf_ice
+
+	if ( $lcase(game.map.name) contains lodagond )
+	{
+		setvard NPC_GIVE_EXP 800 //lodagond mons have insane xp
+	}
+	else
+	{
+		setvard NPC_GIVE_EXP 400
+	}
+
+	const CUSTOM_WOLF 1
+	const AM_ALPHA 0
+	const DOT_BURN 70
+
+	const DMG_BITE $rand(50,200)
+	const DMG_CLAW $rand(50,75)
+
+	const FREQ_COMBAT_HOWL $randf(10,15)
+
+	const CHANCE_BURN 30%
+
+	const SOUND_BURN magic/frost_reverse.wav
+}
+
+#include [server] monsters/wolf_base
+
+{ [shared] npc_spawn
+
+	name a|Winter Wolf
+	race demon
+	setmodel MONSTER_MODEL
+	width 36
+	height 48
+	roam 1
+	hp 2000
+	takedmg all 0.5 //ice shield
+	takedmg fire 1.25
+	takedmg cold 0.0
+	setmodelbody 0 2
+	hearingsensitivity 8
+
+	setvard NEXT_HOWL 0
+}
+
+{ do_combat_howl
+
+	//ice blast howl
+	if ( CYCLED_UP )
+	{
+		setvard DOING_HOWL 1
+		playanim critical ANIM_HOWL
+		playrandomsound 0 10 SOUND_HOWL1 SOUND_HOWL2
+		dodamage $relpos(0,0,0) 256 0 100% 0.0 reflective target
+		effect screenshake $relpos(0,0,0) 190 20 1 384
+	}
+	callevent 0.1 end_combat_howl
+}
+
+{ end_combat_howl
+
+	setvard DOING_HOWL 0
+	callevent FREQ_COMBAT_HOWL do_combat_howl
+}
+
+{ game_dodamage
+
+	if ( PARAM1 )
+	{
+		if !DOING_HOWL
+		if $rand(1,100) < CHANCE_BURN
+		if $get(PARAM2,relationship,ent_me) equals enemy
+		applyeffect PARAM2 effects/effect_frostbite_dmg 10 $get(ent_me,id) DOT_BURN
+		playsound 0 10 SOUND_BURN
+		effect glow ent_me (0,75,255) 128 1 1
+	}
+
+	if DOING_HOWL
+	if $get(PARAM2,relationship,ent_me) equals enemy
+	applyeffect PARAM2 effects/freeze_solid 5 1 1
+}
+
+{ cycle_up
+
+	if !CYCLES_STARTED
+	setvard CYCLES_STARTED 1
+	callevent FREQ_COMBAT_HOWL do_combat_howl
+}

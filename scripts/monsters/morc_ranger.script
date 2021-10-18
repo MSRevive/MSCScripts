@@ -1,0 +1,75 @@
+//Marogar (Polar) Orc Archer, from Blackhand Archer, by Thothie
+{
+   setvard DROP_GOLD 1			//Gold Drop
+   setvard DROP_GOLD_AMT $rand(10,18)	//
+   setvard NPC_GIVE_EXP 100
+   setvard DROP_ITEM1 bows_longbow //Used by base_monster
+   setvard DROP_ITEM1_CHANCE 10%	  //Used by base_monster
+
+   setvard DROPS_CONTAINER 1
+   setvard CONTAINER_DROP_CHANCE 10% 
+   setvard CONTAINER_SCRIPT chests/quiver_of_frost_arrows
+
+	//setvard CONTAINER_SCRIPT chests/arrows
+
+   setvard ANIM_ATTACK shootorcbow	//Attack animation
+   setvard FLINCH_CHANCE 45%
+
+   const AIM_RATIO 50			//Ratio of target distance to aim-up angle up
+   const ARROW_DAMAGE_LOW 40
+   const ARROW_DAMAGE_HIGH 120
+   setvard MOVE_RANGE 5000
+   setvard ATTACK_RANGE 5500
+   const ATTACK_SPEED 900
+   const ATTACK_CONE_OF_FIRE 2//Cone of fire
+
+	setvard IMMUNE_COLD 1
+
+	precache monsters/morc.mdl //precache for those who do not have the model
+}
+
+#include monsters/orc_base_ranged
+#include monsters/orc_base
+
+{
+   eventname orc_spawn
+
+   hp 320
+   //ov 180
+   name a|Marogar Ice Archer
+   hearingsensitivity 10
+   setstat parry 30
+   setstat archery 20 20 20
+   takedmg all .8
+   takedmg fire 1.5
+   takedmg cold	0.1
+	
+	setvard ARROW_TYPE 1
+
+	precache monsters/morc.mdl //precache for those who do not have the model
+	setmodel monsters/morc.mdl
+   setmodelbody	0 3		//Body 0=topless+skirt 1=topless+pants 2=brestplate 3=whitefurhide
+   setmodelbody	1 2		//Head 0=cap_shorthorn 1=cap_spike 2=wbuffo_skin 3=cheif_ramhorns 4=wletherhood
+   setmodelbody	2 3		//Weapon 0=fist 1=axe 2=wood_bow 3=icebow 4=icesword 5=iceaxe
+}
+
+{ [override] shoot_arrow
+
+   local AIM_ANGLE $get(ent_lastseen,dist)		//Aim up a bit
+   divide AIM_ANGLE AIM_RATIO				//
+   setangle add_view.x AIM_ANGLE			//
+
+   local LCL_ATKDMG $randf(ARROW_DAMAGE_LOW,ARROW_DAMAGE_HIGH)
+
+	if ( ARROW_TYPE == 1 ) local LAUNCH_ARROW proj_arrow_frost
+	if ( ARROW_TYPE == 2 ) local LAUNCH_ARROW proj_arrow_jagged
+	
+	tossprojectile view ATTACK_SPEED LCL_ATKDMG ATTACK_CONE_OF_FIRE proj_arrow_frost (0,0,48)
+
+	add ARROW_TYPE 1
+
+	if ( ARROW_TYPE > 2 ) setvard ARROW_TYPE 1
+
+   setmodelbody 3 0		//Hide arrow
+   playsound 2 SOUND_BOW
+}

@@ -1,0 +1,146 @@
+//The original idea was to have a tornado that picked people up and carried them along
+//had to abandon this, as there's no way to make monsters pick up players
+//due to the fact that if two models overlap, one cant move
+//if I used the noclip method of movement, players would wind up appearing outside world or inside brushes
+//alternate - just damage and throw people
+
+#scope server
+{
+	setvar NPC_HACKED_MOVE_SPEED 200
+
+	//media
+	const MONSTER_MODEL "weapons/magic/tornado.mdl"
+	const SOUND_WIND1 "magic/vent1.wav"
+	const SOUND_WIND2 "magic/vent2.wav"
+	const SOUND_WIND3 "magic/vent3.wav"
+	const SOUND_ATTACK1 "magic/gusts1.wav"
+	const SOUND_ATTACK2 "magic/gusts2.wav"
+	precache MONSTER_MODEL
+}
+
+#include monsters/base_propelled
+
+{ [server] game_dynamically_created
+
+	setvard MY_OWNER PARAM1
+	setvard DMG_BASE PARAM2
+	setvard MY_DURATION PARAM3
+
+	setvard GAME_PVP game.pvp
+	setvard OWNER_ISPLAYER $get(MY_OWNER,isplayer)
+
+	race $get(MY_OWNER,race)
+
+	setvard MOVE_TARG $get(MY_OWNER,scriptvar,NPCATK_TARGET)
+
+	setvard IS_ACTIVE 1
+	callevent summon_cycle
+
+	callevent MY_DURATION end_summon
+}
+
+{ game_spawn
+
+	name a|Tornado
+
+	setmodel MONSTER_MODEL
+	invincible 1
+	hp 1
+	roam 1
+	width 64
+	height 128
+	setbbox npcsize
+	setsolid none
+
+	setmonsterclip 0 //ignores monster clips (make sure blooddrinker does too)
+
+	setvard N_VICTIMS 0
+	setvard CUR_DMGVICT 0
+
+	setprop ent_me rendermode 5
+	setprop ent_me renderamt 180
+}
+
+{ [server] summon_cycle
+
+	if IS_ACTIVE
+	callevent 0.1 summon_cycle
+
+	//dbg summon_cycle $get(MOVE_TARG,name) ( MOVE_TARG )
+
+	if ( MOVE_TARG equals unset )
+	{
+		if $cansee(enemy)
+		callevent check_vict $get(ent_lastseen,id)
+		if ( !ALREADY_MINE )
+		{
+			setvard MOVE_TARG $get(ent_lastseen,id)
+		}
+	}
+
+	dodamage $relpos(0,30,0) 128 0.0 100% 0.0 reflective target
+}
+
+{ [server] game_dodamage
+
+	if IS_ACTIVE
+
+	if $get(MY_OWNER,relationship,PARAM2) equals enemy
+	if ( OWNER_ISPLAYER )
+	{
+		if GAME_PVP == 0
+		if $get(PARAM2,isplayer)
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+	playrandomsound 0 10 SOUND_ATTACK1 SOUND_ATTACK2
+	callexternal MY_OWNER ext_dodamage PARAM2 direct DMG_BASE 100% MY_OWNER magic
+	local RND_DIR $rand(1,2)
+	if ( RND_DIR == 1 ) local RND_DIR 1000
+	if ( RND_DIR == 2 ) local RND_DIR -1000
+	local RND_FBDIR $rand(1,2)
+	if ( RND_FBDIR == 1 ) local RND_FBDIR 1000
+	if ( RND_FBDIR == 2 ) local RND_FBDIR -1000
+	local RND_LIFT $rand(300,1000)
+	dbg temp RND_DIR RND_LIFT
+
+	setvelocity PARAM2 $relvel(RND_DIR,RND_FBDIR,RND_LIFT)
+}
+
+{ [server]
+repeatdelay 0.5
+	//move towards target erratically
+	if IS_ACTIVE
+
+	local RND_MOVE $rand(1,2)
+	if ( RND_MOVE == 1 )
+	{
+		if ( MOVE_TARG isnot unset ) setmovedest MOVE_TARG 10
+		if ( MOVE_TARG equals unset ) local RND_MOVE 2
+	}
+	if ( RND_MOVE == 2 )
+	{
+		local RND_ANG $rand(0,359)
+		local MOVE_DEST game.monster.origin
+		vectoradd MOVE_DEST $relpos($vec(0,RND_ANG,0),$vec(0,1000,0))
+		setmovedest MOVE_DEST 10
+	}
+}
+
+{ [server] 
+	repeatdelay $randf(4,6)
+	if IS_ACTIVE
+	playrandomsound 0 10 SOUND_WIND1 SOUND_WIND2 SOUND_WIND3
+}
+
+
+{ [server] end_summon
+
+	setprop ent_me rendermode 2
+	setprop ent_me renderamt 0
+	callevent 1.0 remove_me
+}
+
+{ remove_me
+	deleteent ent_me
+}

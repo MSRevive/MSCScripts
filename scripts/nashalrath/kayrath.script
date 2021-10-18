@@ -1,0 +1,460 @@
+#scope server
+
+{ [shared]
+	setvar ANIM_WALK walk //frame_walkstep1 frame_walkstep2
+	setvar ANIM_IDLE idle3
+	setvard ANIM_RUN run //frame_runstep1 frame_runstep2
+	setvard ANIM_ATTACK attack //frame_swing
+	setvard ANIM_DEATH die
+	setvard ANIM_FLINCH Flinchheavy
+
+	const ANIM_SWING attack
+	const ANIM_SMASH smash //frame_smash
+	const ANIM_STOMP stomp //frame_stomp
+	const ANIM_KICK kickcar //frame_kick
+	const ANIM_PIERCE bitehead //frame_pierce - prob wont use this
+
+	const ANIM_FIRE_PREP shootflames1 //frame_fire_prep_done
+	const ANIM_FIRE_HOLD shootflames2
+
+	const ANIM_RAWR idle2
+	const ANIM_SEARCH idle4
+}
+
+{
+	setvard ATTACK_RANGE 200
+	setvard ATTACK_MOVERANGE 100
+	setvard ATTACK_HITRANGE 250
+	setvar IS_UNHOLY 1
+	setvard NPC_MUST_SEE_TARGET 0
+
+	const MOVERANGE_NORMAL 100
+
+	const SMASH_RANGE 150
+	const SWING_RANGE 200
+	const KICK_RANGE 150
+
+	const ATTACH_HORN 0
+	const ATTACH_RIGHT 1
+	const ATTACH_LEFT 2
+
+	const DMG_SWING 200
+	const DMG_SMASH 400
+	const DMG_STOMP 400
+	const DOT_FIRE 150
+	const DOT_POISON 75
+
+	const FIRE_DURATION 6.0
+
+	const CUSTOM_FLINCH_CHANCE 25%
+
+	const FREQ_STOMP $randf(20.0,30.0)
+	const FREQ_KICK $randf(20.0,30.0)
+	const FREQ_SMASH $randf(20.0,30.0)
+	const FREQ_FIRE $randf(30.0,40.0)
+	const FREQ_SEARCH 20.0
+
+	const FREQ_RANDRAWR $randf(20.0,40.0)
+
+	const BONEIDX_STOMPFOOT 6
+
+	const SOUND_YAWN1 garg/gar_breathe1.wav
+	const SOUND_YAWN2 garg/gar_breathe2.wav
+	const SOUND_YAWN3 garg/gar_breathe3.wav
+
+	const SOUND_RAWR garg/gar_alert2.wav
+
+	const SOUND_RUNSTEP1 garg/gar_step1.wav
+	const SOUND_RUNSTEP2 garg/gar_step2.wav
+	const SOUND_WALKSTEP1 player/pl_grate1.wav
+	const SOUND_WALKSTEP2 player/pl_grate2.wav
+
+	const SOUND_SWING weapons/swinghuge.wav
+	const SOUND_KICK weapons/swinghuge.wav
+	const SOUND_STOMP magic/boom.wav
+	const SOUND_DEATH garg/gar_die1.wav
+
+	const SOUND_FIRE_PREP garg/gar_flameon1.wav
+	const SOUND_FIRE_LOOP garg/gar_flamerun1.wav
+	const SOUND_FIRE_END garg/gar_flameoff1.wav
+
+	const SOUND_RANDRAWR1 garg/gar_attack1.wav
+	const SOUND_RANDRAWR2 garg/gar_attack2.wav
+	const SOUND_RANDRAWR3 garg/gar_attack3.wav
+
+	const SOUND_STRUCK1 weapons/cbar_hitbod1.wav
+	const SOUND_STRUCK2 weapons/cbar_hitbod2.wav
+	const SOUND_STRUCK3 debris/bustflesh2.wav
+	const SOUND_PAIN1 garg/gar_pain1.wav
+	const SOUND_PAIN2 garg/gar_pain2.wav
+	const SOUND_PAIN3 garg/gar_pain3.wav
+
+	const SOUND_SEARCH garg/gar_alert1.wav
+
+	const FIRE_CLSCRIPT nashalrath/kayrath_cl
+
+	if ( $lcase(game.map.name) contains nashalrath )
+	{
+		setvard NPC_IS_BOSS 1
+		setvard NPC_GIVE_EXP 8000
+	}
+	else
+	{
+		setvard NPC_GIVE_EXP 1000
+	}
+
+}
+
+{ game_precache
+	precache SOUND_STOMP //handled client side
+	precache poison_cloud.spr
+	precache explode1.spr
+	precache 3dmflaora.spr
+	precachefile FIRE_CLSCRIPT
+}
+
+#include monsters/base_monster_new
+
+{ [shared] npc_spawn
+	name Kay'rath
+	setmodel monsters/kayrath.mdl
+	width 75
+	height 200
+	hp 15000
+	takedmg all 0.5
+	takedmg cold 0.5
+	takedmg holy 1.25
+	setvard IMMUNE_STUN 100%
+	race demon
+	roam 0
+	hearingsensitivity 4
+
+	if game.serverside
+
+	setvard HALF_HEALTH $get(ent_me,maxhp)
+	multiply HALF_HEALTH 0.5
+
+	callevent npcatk_suspend_ai
+	setvard AS_ATTACKING game.time
+	add AS_ATTACKING 15.0
+
+	callevent FREQ_FIRE do_fire
+
+	callexternal GAME_MASTER gm_fade_in $get(ent_me,id) 5
+}
+
+{ fade_in_done //via game master
+	callevent npcatk_resume_ai
+	roam 1
+	setprop ent_me rendermode 0
+	setprop ent_me renderamt 255
+}
+
+{ cycle_up
+	if !CYCLES_ON
+	setvard CYCLES_ON 1
+	playanim critical ANIM_RAWR
+	setvard AS_ATTACKING game.time
+	add AS_ATTACKING 15.0
+	playsound 0 10 SOUND_RAWR
+
+	local GAME_TIME game.time
+
+	setvard NEXT_KICK GAME_TIME
+	add NEXT_KICK FREQ_KICK
+
+	setvard NEXT_SMASH GAME_TIME
+	add NEXT_SMASH FREQ_SMASH
+
+	setvard NEXT_STOMP GAME_TIME
+	add NEXT_STOMP FREQ_STOMP
+}
+
+//================================== Struck
+{ game_struck
+
+	if ( PARAM1 > 250 )
+	{
+		playrandomsound 0 10 SOUND_PAIN1 SOUND_PAIN2 SOUND_PAIN3
+		local EXIT_SUB 1
+		if !FIRE_PREPPING
+		if !FIRE_ON
+		if $rand(1,100) <= CUSTOM_FLINCH_CHANCE
+		playanim critical ANIM_FLINCH
+	}
+	if !EXIT_SUB
+
+	if ( $get(ent_me,hp) > HALF_HEALTH )
+	{
+		playrandomsound 0 10 SOUND_STRUCK1 SOUND_STRUCK2 SOUND_STRUCK3 SOUND_STRUCK1 SOUND_STRUCK2 SOUND_STRUCK3
+	}
+	else
+	{
+		playrandomsound 0 10 SOUND_STRUCK1 SOUND_STRUCK2 SOUND_STRUCK3 SOUND_STRUCK1 SOUND_STRUCK2 SOUND_STRUCK3 SOUND_PAIN1 SOUND_PAIN2 SOUND_PAIN3
+	}
+	
+}
+
+//================================== Anim Events
+
+{ frame_swing
+	playsound 0 10 SOUND_SWING
+	local LOC_DMG $get(ent_me,attachpos,ATTACH_RIGHT)
+	vectoradd LOC_DMG $relpos($vec(0,game.monster.angles.yaw,0),$vec(0,100,-32))
+	xdodamage LOC_DMG 200 DMG_SWING 0 ent_me ent_me none blunt
+
+	local GAME_TIME game.time
+
+	if ( GAME_TIME > NEXT_STOMP )
+	{
+		setvard ANIM_ATTACK ANIM_STOMP
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	if ( GAME_TIME > NEXT_SMASH )
+	{
+		setvard ANIM_ATTACK ANIM_SMASH
+		setvard ATTACK_RANGE SMASH_RANGE
+		local NEW_MOVE_RANGE SMASH_RANGE
+		divide NEW_MOVE_RANGE 2
+		setvard ATTACK_MOVERANGE NEW_MOVE_RANGE
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	if ( GAME_TIME > NEXT_KICK )
+	{
+		setvard ANIM_ATTACK ANIM_KICK
+		setvard ATTACK_RANGE KICK_RANGE
+		local NEW_MOVE_RANGE KICK_RANGE
+		divide NEW_MOVE_RANGE 2
+		setvard ATTACK_MOVERANGE NEW_MOVE_RANGE
+	}
+}
+
+{ frame_stomp
+	setvard ANIM_ATTACK ANIM_SWING
+	local BURST_POS $get(ent_me,svbonepos,BONEIDX_STOMPFOOT)
+	local GRND_BURST $get_ground_height(BURST_POS)
+	vectorset BURST_POS z GRND_BURST
+	callevent stunburst_go BURST_POS 256 1 DMG_STOMP
+	setvard NEXT_STOMP game.time
+	add NEXT_STOMP FREQ_STOMP
+}
+
+{ frame_smash
+	setvard ANIM_ATTACK ANIM_SWING
+	setvard ATTACK_RANGE SWING_RANGE
+	setvard ATTACK_MOVERANGE MOVERANGE_NORMAL
+	local BURST_POS $get(ent_me,attachpos,ATTACH_LEFT)
+	local GRND_BURST $get_ground_height(BURST_POS)
+	vectorset BURST_POS z GRND_BURST
+	callevent stunburst_go BURST_POS 128 0 DMG_SMASH
+	setvard NEXT_SMASH game.time
+	add NEXT_SMASH FREQ_SMASH
+}
+
+{ frame_kick
+	playsound 0 10 SOUND_SWING
+	setvard ANIM_ATTACK ANIM_SWING
+	setvard ATTACK_RANGE SWING_RANGE
+	setvard ATTACK_MOVERANGE MOVERANGE_NORMAL
+	dodamage NPCATK_TARGET KICK_RANGE DMG_KICK 100% blunt
+
+	setvard NEXT_KICK game.time
+	add NEXT_KICK FREQ_KICK
+
+	if $get(NPCATK_TARGET,range) < KICK_RANGE
+	applyeffect NPCATK_TARGET effects/heavy_stun 5.0 $get(ent_me,id) 1
+	addvelocity NPCATK_TARGET $relvel(0,1000,110)
+}
+
+{ frame_fire_prep_done
+	if !FIRE_ON
+	callevent fire_start
+}
+
+{ frame_walkstep1
+	playsound 0 10 SOUND_WALKSTEP1
+}
+
+{ frame_walkstep2
+	playsound 0 10 SOUND_WALKSTEP2
+}
+
+{ frame_runstep1
+	playsound 0 10 SOUND_RUNSTEP1
+}
+
+{ frame_runstep2
+	playsound 0 10 SOUND_RUNSTEP2
+}
+
+//================================== Stun Burst Handling
+
+
+{ stunburst_go //<pos> <radius> <repel:0|1> <dmg>
+	setvard STUN_BURST_POS PARAM1
+	setvard STUN_BURST_RAD PARAM2
+	setvard STUN_BURST_REPEL PARAM3
+	setvard STUN_BURST_DMG PARAM4
+	dbg stunburst_go pos: STUN_BURST_POS rad: STUN_BURST_RAD repel: STUN_BURST_REPEL dmg: STUN_BURST_DMG
+	dodamage STUN_BURST_POS STUN_BURST_RAD STUN_BURST_DMG 100% 0 reflective blunt
+
+	clientevent new all effects/sfx_stun_burst STUN_BURST_POS STUN_BURST_RAD 0 (0,0,0)
+	callevent 0.25 stun_targets
+}
+
+{ stun_targets
+	setvard STUN_LIST $get_tsphere(enemy,STUN_BURST_RAD,STUN_BURST_POS)
+	dbg stun_targets STUN_LIST
+	if STUN_LIST isnot none
+	if $get_token_amt(STUN_LIST) > 0
+	calleventloop $get_token_amt(STUN_LIST) stunburst_affect_targets
+}
+
+{ stunburst_affect_targets
+
+	local CHECK_ENT $get_token(STUN_LIST,game.script.iteration)
+	if $get(CHECK_ENT,onground)
+	applyeffect CHECK_ENT effects/effect_stun 5.0 0 1
+
+	//if ( STUN_BURST_DMG > 0 ) dodamage CHECK_ENT direct STUN_BURST_DMG 100% ent_me magic
+
+	if STUN_BURST_REPEL
+	local TARGET_ORG $get(CHECK_ENT,origin)
+	local TARG_ANG $angles(STUN_BURST_POS,TARGET_ORG)
+	local NEW_YAW TARG_ANG
+	setvelocity CHECK_ENT $relvel($vec(0,NEW_YAW,0),$vec(0,1000,0))
+}
+
+
+//================================== Fire/Poison Spray
+
+{ do_fire
+repeatdelay FREQ_FIRE
+
+//somethign funktastic going on here preventing this from repeating
+//	setvard NEXT_FIRE game.time
+//	add NEXT_FIRE FREQ_FIRE
+//
+//	dbg ^^^ do_fire NPCATK_TARGET FREQ_FIRE ( game.time vs. NEXT_FIRE )
+//
+//	callevent NEXT_FIRE do_fire
+
+	if !SUSPEND_AI
+	if NPCATK_TARGET isnot unset
+
+	setvard FIRE_PREPPING 1
+	playanim critical ANIM_FIRE_PREP
+	playsound 0 10 SOUND_FIRE_PREP
+	callevent npcatk_suspend_ai FIRE_DURATION
+	setvard AS_ATTACKING game.time
+	add AS_ATTACKING 10.0
+	setmoveanim ANIM_FIRE_HOLD
+	setidleanim ANIM_FIRE_HOLD
+	roam 0
+
+	callevent 1.0 fire_start //in case anim event fails for some reason
+}
+
+{ fire_start
+	if !FIRE_ON
+
+	svplaysound 1 10 SOUND_FIRE_LOOP
+	setvard FIRE_ON 1
+	setvard FIRE_PREPPING 0
+	callevent FIRE_DURATION fire_end
+	setvard FIRE_TYPE $rand(1,2) //fire/poison
+	setvard FIRE_ROTATE $rand(0,1) //stay straight/strafe
+	if ( FIRE_ROTATE )
+	{
+		local START_YAW $get(ent_me,angles.yaw)
+		subtract START_YAW 45
+		if ( START_YAW < 0 ) add START_YAW 359
+		setangle face $vec(0,START_YAW,0)
+		setvard FIRE_ROT START_YAW
+	}
+
+	clientevent new all FIRE_CLSCRIPT $get(ent_me,index) FIRE_TYPE FIRE_DURATION  
+
+	callevent fire_loop
+}
+
+{ fire_loop
+
+	if FIRE_ON
+	callevent 0.1 fire_loop
+
+	if ( FIRE_ROTATE )
+	{
+		local FACE_POS $get(ent_me,origin)
+		vectoradd FACE_POS $relpos($vec(0,FIRE_ROT,0),$vec(0,500,0))
+		setmovedest FACE_POS 9999
+		add FIRE_ROT 1
+		if ( FIRE_ROT > 359 ) subtract FIRE_ROT 359
+	}
+
+	if game.time > NEXT_SCAN
+	setvard NEXT_SCAN game.time
+	add NEXT_SCAN 0.5
+	setvard FIRE_TARGS $get_tbox(enemy,512)
+	if FIRE_TARGS isnot none
+	callevent $get_token_amt(FIRE_TARGS) fire_affect_targets
+}
+
+{ fire_affect_targets
+	local CUR_TARG $get_token(FIRE_TARGS,game.script.iteration)
+	if $get(CUR_TARG,isalive)
+	local TARG_ORG $get(CUR_TARG,origin)
+
+	local IN_CONE $within_cone2D(TARG_ORG,game.monster.origin,game.monster.angles,10)
+	dbg fire_affect_targets $get(CUR_TARG,name) incone IN_CONE rng $get(CUR_TARG,range)
+
+	if IN_CONE
+	if $get(CUR_TARG,range) < 512
+	if ( FIRE_TYPE == 1 ) applyeffect CUR_TARG effects/effect_burn 10.0 $get(ent_me,id) DOT_FIRE 0 0 none
+	if ( FIRE_TYPE == 2 ) applyeffect CUR_TARG effects/greater_poison 10.0 $get(ent_me,id) DOT_POISON
+}
+
+{ fire_end
+	svplaysound 1 0 SOUND_FIRE_LOOP
+	playsound 2 10 SOUND_FIRE_END
+	setvard FIRE_ON 0
+	setidleanim ANIM_IDLE
+	setmoveanim ANIM_RUN
+	roam 1
+}
+
+{ npcatk_lost_sight
+	if game.time > NEXT_SEARCH
+	if !FLAME_ON
+	if !FLAME_PREPPING
+	playsound 0 10 SOUND_SEARCH
+	playanim critical ANIM_SEARCH
+	setvard NEXT_SEARCH game.time
+	add NEXT_SEARCH FREQ_SEARCH
+}
+
+{
+repeatdelay FREQ_RANDRAWR
+	if NPCATK_TARGET isnot unset
+	if !FIRE_PREPPING
+	if !FIRE_ON
+	playrandomsound 0 10 SOUND_RANDRAWR1 SOUND_RANDRAWR2 SOUND_RANDRAWR3
+}
+
+//debug, remove
+//{
+//repeatdelay 0.1
+//	local BEAM_START $get(ent_me,attachpos,ATTACH_RIGHT)
+//	local BEAM_END BEAM_START
+//	vectoradd BEAM_END z 100
+//	effect beam point lgtning.spr 30 BEAM_START BEAM_END (255,0,0) 255 0 0.2
+//
+//	local BEAM_START $get(ent_me,attachpos,ATTACH_LEFT)
+//	local BEAM_END BEAM_START
+//	vectoradd BEAM_END z 100
+//	effect beam point lgtning.spr 30 BEAM_START BEAM_END (0,255,0) 255 0 0.2
+//}

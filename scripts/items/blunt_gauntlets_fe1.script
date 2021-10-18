@@ -1,0 +1,258 @@
+//Flesheater Gauntlets by CrazyMonkeyDude 
+//from blunt_gauntlets_demon and blunt_gauntlets_fire
+
+{
+	setvar NO_BANK 1
+
+	const CLAW_DURATION 600.0 //was 160
+
+	const BASE_LEVEL_REQ 20
+
+	const ANIM_HANDS_DOWN 20
+	const ANIM_LIFT1 12
+	const ANIM_LOWER 11
+	const ANIM_IDLE1 11
+	const ANIM_IDLE_TOTAL 12
+	const ANIM_ATTACK1 16
+	const ANIM_ATTACK2 17
+	const ANIM_ATTACK3 18
+	const ANIM_ATTACK4 19
+	const ANIM_SPEC_ATTACK 14
+	const ANIM_SHEATH 16
+
+	const MODEL_VIEW viewmodels/v_martialarts_claws.mdl
+	const MODEL_VIEW_IDX 1
+	const MODEL_HANDS weapons/p_weapons3.mdl
+	const MODEL_WORLD weapons/p_weapons3.mdl
+	const MODEL_BODY_OFS 60
+
+	const MELEE_DMG  200
+	const MELEE_DMG_RANGE      0
+	const MELEE_DMG_TYPE  acid
+	const MELEE_ACCURACY  85%
+	const MELEE_DMG_DELAY 0.3
+	const MELEE_ATK_DURATION 0.9
+	const MELEE_AFFLIC_RATIO 0.5
+	const MELEE_AFFLICDMG_MIN 10
+
+	const GOUGE_MPDRAIN 15
+	const GOUGE_MPSTEAL 10
+	const GOUGE_LIFESTEAL_RATIO 0.06
+
+	const AURA_DOT_RATIO 0.3
+	const AURA_RADIUS 64
+
+	const SOUND_SWIPE zombie/claw_miss1.wav
+	const SOUND_HITWALL1 weapons/cbar_hit1.wav
+	const SOUND_HITWALL2 weapons/cbar_hit2.wav
+	const SOUND_SWING zombie/claw_miss2.wav
+
+	const SOUND_DEPLOY monsters/skeleton/calrain3.wav
+	const SOUND_GOUGE monsters/gonome/gonome_jumpattack.wav
+
+	//old script
+	const ANIM_PREFIX gauntlets
+	const NO_WORLD_MODEL 1
+	const MELEE_RANGE 50
+	const REACH_MELEE_RANGE 100
+	const MELEE_ENERGY 1
+	const MELEE_STAT martialarts
+	const MELEE_VIEWANIM_ATK ANIM_ATTACK1
+
+	const MELEE_SOUND SOUND_SWIPE
+	const MELEE_SOUND_DELAY MELEE_DMG_DELAY
+	const MELEE_PARRY_CHANCE 5%
+
+	const PLAYERANIM_AIM		axe_onehand
+
+	const SOUND_GAS_ON ambience/steamburst1.wav
+	
+}
+
+{ game_precache
+	precache poison_cloud.spr
+}
+
+#include items/base_melee
+#include items/base_kick
+
+{  weapon_spawn
+
+   name 	Flesheater's Claws
+   desc 	Claws have burst from your hands!
+   weight 	3
+   size 	1
+   value	1500
+   sethand 	both
+   sethudsprite hand gauntlets
+   sethudsprite trade gauntlets
+
+	callevent 0.1 facid_aura
+	//callevent 0.1 timer_start
+
+	//callevent 0.1 pot_check
+}
+
+{ [override] melee_start
+
+	playrandomsound const.sound.item 10 SOUND_SWING SOUND_SWIPE
+
+	local RND_ATTACK $rand(1,4)
+	if ( RND_ATTACK == 1 ) playviewanim  ANIM_ATTACK1
+	if ( RND_ATTACK == 2 ) playviewanim  ANIM_ATTACK2
+	if ( RND_ATTACK == 3 ) playviewanim  ANIM_ATTACK3
+	if ( RND_ATTACK == 4 ) playviewanim  ANIM_ATTACK4
+
+
+  if( PUNCH_ATTACK == 0 )
+  {
+   local l.punch_anim stance_normal_lowjab_r1
+   setvard PUNCH_ATTACK 1
+  }
+  else if( PUNCH_ATTACK == 1 )
+  {
+   local l.punch_anim stance_normal_lowjab_r2
+   setvard PUNCH_ATTACK 0
+  }
+
+  playowneranim once l.punch_anim global.anim.combatwalk 3
+
+  playsound const.sound.item 5 SOUND_SWING
+}
+
+{ game_dodamage //1: Attack Hit (1/0)  2: Entity Attack hit  3:  Start Position  4:  End Position
+
+	if PARAM1
+	local HIT_TARG PARAM2
+	callevent do_special_damage HIT_TARG
+}
+
+{ [server] do_special_damage
+	if $rand(1,2) == 1
+
+	if ( $get(PARAM1,isplayer) )
+	{
+		if !GAME_PVP
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	local AFFLIC_DAMAGE $get(ent_owner,skill.spellcasting.affliction)
+	multiply AFFLIC_DAMAGE MELLEE_AFFLIC_RATIO
+	add AFFLIC_DAMAGE $randf(3,6)
+	if ( AFFLIC_DAMAGE < 10 ) local AFFLIC_DAMAGE MELEE_AFFLICDMG_MIN
+
+	applyeffect PARAM1 effects/effect_poison 5 $get(ent_owner,id) AFFLIC_DAMAGE
+}
+
+{ weapon_spawn
+   local CHARGE2_REQ BASE_LEVEL_REQ
+   add CHARGE2_REQ 2
+
+	//Gouge Attack	
+   local reg.attack.type		strike-land
+   local reg.attack.keys		-attack1
+   local reg.attack.range		REACH_MELEE_RANGE
+   local reg.attack.dmg			0
+   local reg.attack.dmg.range		0
+   local reg.attack.dmg.type		pierce
+   local reg.attack.energydrain		2
+   local reg.attack.stat		martialarts
+   local reg.attack.hitchance		85%
+   local reg.attack.priority		2
+   local reg.attack.delay.strike	0.2
+   local reg.attack.delay.end		0.9
+   local reg.attack.ofs.startpos	MELEE_STARTPOS
+   local reg.attack.ofs.aimang		MELEE_AIMANGLE
+   local reg.attack.callback		gouge
+   local reg.attack.noise		MELEE_NOISE
+   local reg.attack.mpdrain		0
+   local reg.attack.chargeamt		200%
+   local reg.attack.reqskill		CHARGE2_REQ
+
+	local reg.spell.castsuccess 100%
+	local reg.spell.preparetime 0
+	local reg.spell.fizzletime 99999
+	registerattack
+	registerspell
+}
+
+{ gouge_start
+	if ( $get(ent_owner,mp) < GOUGE_MPDRAIN )
+	{
+		dplayermessage ent_owner Flesheater Gauntlets: Insufficient mana for Gouge Attack.
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+	splayviewanim ent_me ANIM_SPEC_ATTACK
+	playsound 0 10 SOUND_GOUGE
+}
+
+{ gouge_strike
+	if ( $get(ent_owner,mp) < GOUGE_MPDRAIN ) 
+	{
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	if $get(PARAM3,isalive)
+
+	if ( game.pvp == 0 )
+	{
+		if $get(PARAM3,isplayer)
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	if $can_damage(ent_owner,PARAM3)
+	local DMG_SET $get(ent_owner,skill.martialarts.ratio)
+	multiply DMG_SET MELEE_DMG
+	multiply DMG_SET 6 // 6 = double melee damage (don't really know why, but that's how it works out)
+	local OWNER_TARG PARAM3
+	xdodamage OWNER_TARG REACH_MELEE_RANGE DMG_SET 85% $get(ent_owner,id) $get(ent_owner,id) martialarts acid
+
+	if ( $get(PARAM3,race) isnot undead )
+	{
+		if !$get(PARAM3,scriptvar,'IMMUNE_VAMPIRE')
+		local LIFE_STOLEN DMG_SET
+		multiply LIFE_STOLEN $get_takedmg(PARAM3,all)
+		multiply LIFE_STOLEN $get_takedmg(PARAM3,acid)
+		multiply LIFE_STOLEN GOUGE_LIFESTEAL_RATIO
+		givehp ent_owner LIFE_STOLEN
+		givemp ent_owner $neg(GOUGE_MPDRAIN)
+	}
+	else
+	{
+		givemp ent_owner GOUGE_MPSTEAL
+	}
+
+	callexternal ent_owner mana_drain //update mana on player hud readout, if using hud feedback
+}
+
+{ facid_aura
+	local AURA_DOT $get(ent_owner,skill.spellcasting.affliction)
+	multiply AURA_DOT AURA_DOT_RATIO
+	callexternal ent_owner ext_acid_feaura_activate AURA_DOT AURA_RADIUS
+	playsound 3 10 SOUND_GAS_ON
+}
+
+{ timer_start
+	dplayermessage ent_owner You feel the power of a Flesheater coursing through you.
+	playsound 0 10 SOUND_DEPLOY
+	callevent CLAW_DURATION timer_warning
+}
+	
+{ timer_warning
+	dplayermessage ent_owner You feel the power draining from your hands.
+	callevent 20.0 timer_up
+	playsound 0 10 monsters/zombie1/zo_pain3.wav
+}
+
+{ timer_up
+	dplayermessage ent_owner The power of a Flesheater is gone.
+	callexternal ent_owner ext_acid_feaura_remove
+}
+
+{ game_removefromowner
+	callexternal ent_owner ext_acid_feaura_remove
+}

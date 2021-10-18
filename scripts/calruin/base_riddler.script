@@ -1,0 +1,109 @@
+{ 
+	//for older sc.dll users
+	precache monsters/riddler.mdl
+}
+
+{ spawn
+
+	hp		1    
+	width	32
+	height	72
+	race		undead
+	name		Riddlemaster
+	roam		0
+	setmodel	monsters/riddler.mdl
+	setmodelbody	1 0
+	invincible	1
+
+	nopush 1
+
+	setvar		RIDDLE_ANSWERED 0
+	setvar		INTRODUCED 0
+
+	catchspeech say_riddle1 hi hail greet hello
+	catchspeech say_riddle yes aye yep yar sure "why not?"
+
+	catchspeech say_answer RIDDLE_ANSWER
+
+	setsolid none
+
+	callevent riddler_spawn
+}
+
+// Introducing riddle
+{
+  repeatdelay 1
+
+	if $cansee(player,128)
+	calleventtimed 2 say_riddle1
+}
+{ say_riddle1
+
+	if INTRODUCED equals 0
+	setvar INTRODUCED 1
+	saytext Halt! You may not proceed until you answer a riddle!
+	calleventtimed 4 say_riddle2
+}
+{ say_riddle2
+
+	saytext Take my advice and leave, for if you fail to answer, you will die!
+	calleventtimed 4 say_riddle3
+}
+{ say_riddle3
+
+	saytext Despite the risk, are you willing to try?
+}
+
+// Say the riddle after the player says yes
+{ say_riddle
+
+	if INTRODUCED equals 1
+	if RIDDLE_ANSWERED equals 0
+  
+	setvar VICTIM $get(ent_lastspoke,id)
+
+	callevent riddle_question // on monster
+
+	calleventtimed 30 kill_player
+}
+
+// If the player answered correctly
+{ say_answer
+
+	setvar RIDDLE_ANSWERED 1
+	
+	callevent riddle_correct
+
+	calleventtimed 2 death
+}
+
+{ death
+
+	deleteent ent_me fade
+}
+
+// If not...
+{ kill_player
+
+	if RIDDLE_ANSWERED equals 0
+	local MY_TARGET_POS $get(VICTIM,origin)
+	vectoradd MY_TARGET_POS $vec(0,0,16)
+
+	saytext	FAILED_MSG
+	
+	local l.sky MY_TARGET_POS
+	vectoradd l.sky (0,0,4096)
+	sound.play3d weather/Storm_exclamation.wav 10 MY_TARGET_POS
+	clientevent new all_in_sight effects/sfx_lightning MY_TARGET_POS l.sky 1 1
+
+	dodamage VICTIM "direct" 2000 100% ent_me
+	dodamage VICTIM "direct" 2000 100% ent_me
+	dodamage VICTIM "direct" 2000 100% ent_me
+	
+	calleventtimed 5 restart
+}
+
+{ restart
+
+	setvar INTRODUCED 0
+}

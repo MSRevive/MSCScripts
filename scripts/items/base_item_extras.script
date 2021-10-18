@@ -1,0 +1,350 @@
+//Need a script shared by both base_item and base_miscitem, this be it.
+//ITEM_RESERVE_FOR_STRONGEST 1 - this item can only be picked up by the player with the most damage points when it first drops into the world
+//PICKUP_ALLOW_LIST - array stores players allowed to pick up item (if this array exists, item pickup is restricted code side)
+//
+//QUEST_ITEM_CAT - quest data slot to store quest item in
+//QUEST_ITEM_ID - quest data to store
+//- if QUEST_ITEM_ID already exists in QUEST_ITEM_CAT it will not be added again
+//- You can use this quest data to determine if the player has EVER had said item
+
+//======= Reserve items for strongest player
+{
+	const BWEAPON_BASE_ANIM_SPEED 1.0
+}
+
+{ game_fall
+	if game.serverside
+	if ITEM_RESERVE_FOR_STRONGEST
+	callevent bitem_reserve_for_strongest
+}
+
+{ bitem_reserve_for_strongest
+	setvard ITEM_RESERVE_FOR_STRONGEST 1
+	array.create PICKUP_ALLOW_LIST
+	callevent 0.1 bitem_get_strongest
+}
+
+{ game_restricted //<player_who_tried_to_pick_me_up>
+	if game.serverside
+	if ITEM_RESERVE_FOR_STRONGEST
+	dbg game_restricted
+	local OUT_MSG "This trophy is reserved for "
+	local ITEM_RESERVER $get_array(PICKUP_ALLOW_LIST,0)
+	stradd OUT_MSG $get(ITEM_RESERVER,name)
+	infomsg PARAM1 "Item Damagepoint Restricted" OUT_MSG
+}
+
+{ bitem_get_strongest
+
+	if game.serverside
+
+	if ( $get(ent_owner,isalive) )
+	{
+		array.erase PICKUP_ALLOW_LIST //already owned, don't restrict anymore
+	}
+	else
+	{
+		callexternal GAME_MASTER gm_find_strongest_reset
+		local WINNING_PLAYER $get(GAME_MASTER,scriptvar,'THE_CHOSEN_ONE')
+		array.add PICKUP_ALLOW_LIST WINNING_PLAYER
+		dbg bitem_get_strongest $get(WINNING_PLAYER,name)
+	}
+}
+
+//====== Quest Flagged Items
+{ game_deploy
+
+	if game.serverside
+
+	if ( QUEST_ITEM_CAT isnot 'QUEST_ITEM_CAT' )
+	{
+		local QUEST_CAT_DATA $get_quest_data(ent_owner,QUEST_ITEM_CAT)
+
+		if ( QUEST_CAT_DATA contains QUEST_ITEM_ID ) local DO_NOT_ADD 1
+		if !DO_NOT_ADD
+
+		if ( QUEST_CAT_DATA equals 0 )
+		{
+			quest set ent_owner QUEST_ITEM_CAT QUEST_ITEM_ID
+		}
+		else
+		{
+			token.add QUEST_CAT_DATA QUEST_ITEM_ID
+			quest set ent_owner QUEST_ITEM_CAT QUEST_CAT_DATA
+		}
+	}
+
+	//Anti-Dup System
+	callevent 0.01 bitem_set_owner
+}
+
+//{ [server] list_items
+//	consolemsg G_DEV_PLAYER $get(ent_me,itemname)
+//}
+
+//============= Anti-Dup System
+{ bitem_set_owner
+	if game.serverside
+	if ( $get(ent_owner,isplayer) ) setvard ITEM_WAS_OWNED_BY_PLAYER 1
+	if ( ITEM_OWNER equals 'ITEM_OWNER' )
+	{
+		setvard ITEM_OWNER $get(ent_owner,id)
+		callevent log_item_exchange ITEM_OWNER $get(ent_owner,id)
+		setvard ITEM_PREV_OWNER ITEM_OWNER
+		setvard ITEM_EXCHANGE_CONFIRM_TIME game.time
+		add ITEM_EXCHANGE_CONFIRM_TIME 10.0
+		
+	}
+	else
+	{
+		if $get(ent_owner,id) isnot ITEM_OWNER
+		setvard NOOB_LOOP 0
+		gplayermessage ITEM_OWNER $get(ent_me,name) has been picked up by $get(ent_owner,name) - please allow at least 10 seconds for ownership transfer.
+		gplayermessage ent_owner This item is owned by $get(ITEM_OWNER,name) - please allow at least 10 seconds for ownership to be transfered to you.
+		callevent log_item_exchange ITEM_OWNER $get(ent_owner,id)
+		setvard ITEM_OWNER $get(ent_owner,id)
+		setvard ITEM_IN_EXCHANGE 1
+		callevent 5.0 clear_item_exchange
+	}
+}
+
+{ clear_item_exchange
+	setvard ITEM_IN_EXCHANGE 0
+}
+
+{ player_left
+	if ITEM_WAS_OWNED_BY_PLAYER
+	if ( ITEM_OWNER equals PARAM1 ) callevent 1.0 bitem_player_left
+
+	//delete all unowned items
+	if ( !$get(ent_owner,exists) )
+	{
+		if $get(ent_me,inworld) //not in containers
+		local ITEM_RESERVER $get_array(PICKUP_ALLOW_LIST,0)
+		if !$get(ITEM_RESERVER,exists)
+		callevent 1.0 bitem_player_left
+	}
+	//dbg *DELETE-ITEM* player_left
+	//deleteent ent_me
+
+	if ( game.time < ITEM_EXCHANGE_CONFIRM_TIME )
+	{
+		if ( !$get(ITEM_PREV_OWNER,exists) ) callevent 1.0 bitem_player_left
+	}
+}
+
+{ bitem_player_left
+	dbg *DELETE-ITEM* player_left
+	if !ITEM_NEVER_DELETE //hacks for steam bow
+	if ( game.cvar.ms_chatlog )
+	{
+		local WRITE_LOG $timestamp(>)
+		strconc WRITE_LOG ITEM_DELETE $get(ent_me,name) has no owner on server ( $get(ent_owner,name) )
+		chatlog WRITE_LOG
+	}
+
+	deleteent ent_me
+}
+
+{ log_item_exchange
+	if game.serverside
+
+	if game.cvar.ms_chatlog
+
+	local OLD_OWNER PARAM1
+	local NEW_OWNER PARAM2
+
+	if ( $get(ent_me,scriptname) contains 'magic_hand_' ) local EXIT_SUB 1
+	if !EXIT_SUB
+	
+	if OLD_OWNER isnot NEW_OWNER
+
+
+	if ( $get(OLD_OWNER,isplayer) )
+	{
+		local WRITE_LOG $timestamp(>)
+		strconc WRITE_LOG PLAYER_EXCHANGE $get(NEW_OWNER,name) [ $get(NEW_OWNER,steamid) ] received_from $get(OLD_OWNER,name) [  $get(OLD_OWNER,steamid) ] $get(ent_me,name)
+	}
+	else
+	{
+		local WRITE_LOG $timestamp(>)
+		strconc WRITE_LOG PLAYER_EXCHANGE $get(NEW_OWNER,name) [ $get(NEW_OWNER,steamid) ] received_from *WORLD* $get(ent_me,name)
+	}
+
+	chatlog WRITE_LOG
+}
+
+{ bweapon_effect_remove
+	callexternal ent_owner ext_set_hand_id $get(ent_me,hand_index) $get(ent_owner,scriptvar,'PLR_FISTS_ID')
+}
+
+//============= Wielded
+//include for weapons/items that have an effect only while weilded
+{ [server] ext_activate_items
+	if game.serverside
+	if PARAM1 equals $get(ent_owner,id)
+	if $get(ent_owner,scriptvar,'PLR_IN_WORLD')
+	if ( $get(ent_me,id) equals $get(ent_owner,scriptvar,'PLR_LEFT_HAND') ) local BEW_IS_WEILDED 1
+	if ( $get(ent_me,id) equals $get(ent_owner,scriptvar,'PLR_RIGHT_HAND') ) local BEW_IS_WEILDED 1
+	if BEW_IS_WEILDED
+	callevent bweapon_effect_activate
+}
+{ [server] game_deploy
+	if game.serverside
+
+	//dbg base_effect_wielded $get(ent_owner,scriptvar,'PLR_IN_WORLD')
+	if $get(ent_owner,scriptvar,'PLR_IN_WORLD')
+	callevent bweapon_effect_activate
+
+	callevent 0.01 bweapon_fixprops
+}
+
+{ bweapon_fixprops
+	//restore normal viewmodel props in case was set funky by last weapon
+	setviewmodelprop ent_me rendermode 0
+	setviewmodelprop ent_me renderamt 255
+}
+
+{ game_wear
+	//if ( game.clientside ) dbg *** cl_game_wear
+	if ( game.serverside ) callevent bweapon_effect_remove
+}
+{ game_putinpack //this isn't working (SEP2009 - comment only)
+	cancelattack
+	//if ( game.clientside ) dbg *** cl_game_putinpack
+	if game.serverside
+	callevent bweapon_effect_remove game_putinpack
+}
+{ game_remove
+	//if ( game.clientside ) dbg *** cl_game_remove
+	if game.serverside
+	callevent bweapon_effect_remove game_remove
+}
+{ game_sheath
+	if game.serverside
+	callevent bweapon_effect_remove game_sheath
+}
+{ game_drop
+	cancelattack
+	//if ( game.clientside ) dbg *** cl_game_drop
+	if game.serverside
+	callevent bweapon_effect_remove game_drop
+}
+
+{ game_deleted
+	dbg game_deleted
+	//fuxing the wrong way with this causes problems due to the universal item list that deletes itself
+	cancelattack
+	if game.serverside
+	if ( $get(ent_me,wielded) ) local L_REM_EFFECTS 1
+	if ( $get(ent_me,is_worn) ) local L_REM_EFFECTS 1
+	if L_REM_EFFECTS
+	callevent bweapon_effect_remove game_deleted
+}
+//============= Setrender
+{ ext_render_items //<owner> <rendermode> <renderamt>
+	if PARAM1 equals $get(ent_owner,id)
+	setprop ent_me rendermode PARAM2
+	setprop ent_me renderamt PARAM3
+}
+
+{ ext_playowneranim
+	//dbg playowneranim PARAM1 PARAM2 PARAM3 PARAM4
+	//playowneranim	//<once|hold|critical|break> <AnimName> [LegAnimName] [TimeHoldLegAnim] - Play anim on the player model
+	playowneranim PARAM1 PARAM2 PARAM3 PARAM4
+}
+
+//============= Damage adjusts
+// This works here, but also works in player_main->game_damaged_other - so moved there
+//{ game_dodamage //PARAM1=hit:0|1 PARAM2=ent_hit PARAM3=(start) PARAM4=(end) DmgType DmgAmt
+//
+//	if PARAM1
+//
+//  //This does NOT work here
+//	if ( $get(ent_owner,scriptvar,'PLR_DMG_ADJUST_FIRE') > 0 )
+//	{
+//		if PARAM5 contains fire
+//		local ADJ_RATIO $get(ent_owner,scriptvar,'PLR_DMG_ADJUST_FIRE')
+//		returndata ADJ_RATIO
+//		local IN_DMG PARAM6
+//		multiply IN_DMG ADJ_RATIO
+//		set dmg ADJ_RATIO
+//	}
+//
+//	//This does
+//	if ( $get(ent_owner,scriptvar,'PLR_ADD_FIRE_DOT') > 0 )
+//	{
+//		local DOT_RATIO $get(ent_owner,scriptvar,'PLR_ADD_FIRE_DOT')
+//		local OWNER_SKILL $get(ent_owner,skill.spellcasting.fire)
+//		multiply OWNER_SKILL DOT_RATIO
+//		applyeffect PARAM2 effects/effect_burn 5.0 $get(ent_owner,id) OWNER_SKILL
+//	}
+//}
+
+//{ game_opencontainer
+//	dbg game_opencontainer
+//}
+
+//optimal debuggary
+//{
+//	dbg OPT_DEBUG: item:init game.time
+//}
+//
+//{ game_spawn
+//	dbg OPT_DEBUG: item:game_spawn game.time
+//}
+//
+//{ game_postspawn
+//	dbg OPT_DEBUG: item:game_postspawn game.time
+//}
+//
+//{ ext_activate_items
+//	dbg OPT_DEBUG: item:ext_activate_items game.time
+//}
+
+{ item_banked
+	//dbg item_banked
+	callevent game_putinpack //Dunno what these do really
+	array.create PICKUP_ALLOW_LIST //Prevents anyone from picking this item up, should it somehow be dropped while banking.
+	array.add PICKUP_ALLOW_LIST no-one
+}
+
+{ ext_set_base_speed
+	if ( ITEM_BASE_SPEED equals 'ITEM_BASE_SPEED' ) setvard ITEM_BASE_SPEED $get_attackprop(ent_me,0,delay.end)
+	if ( ITEM_BASE_STRIKE equals 'ITEM_BASE_STRIKE' ) setvard ITEM_BASE_STRIKE $get_attackprop(ent_me,0,delay.strike)
+}
+
+{ game_deploy
+	if IS_CONTAINER
+	if !IS_RESERVED
+	setvard IS_RESERVED 1
+	array.create PICKUP_ALLOW_LIST
+	array.add PICKUP_ALLOW_LIST $get(ent_owner,id)
+}
+
+{ game_fall
+	if IS_CONTAINER
+	if !IS_RESERVED
+	setvard IS_RESERVED 1
+	array.create PICKUP_ALLOW_LIST
+	array.add PICKUP_ALLOW_LIST $get(ent_owner,id)
+}
+
+{ game_restricted
+	if IS_CONTAINER
+	if IS_RESERVED
+	local OUT_MSG "This container is reserved for "
+	local ITEM_RESERVER $get_array(PICKUP_ALLOW_LIST,0)
+	stradd OUT_MSG $get(ITEM_RESERVER,name)
+	infomsg PARAM1 "Item Restricted" OUT_MSG
+}
+
+{ bs_global_command
+	if PARAM3 isnot summon
+	if PARAM1 equals $get(ent_owner,id)
+	setorigin ent_me $vec(30000,30000,30000)
+}
+
+{ game_spawn
+	if ( FRESH_PLAYER ) setorigin ent_me (20000,20000,20000)
+}

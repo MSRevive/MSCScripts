@@ -1,0 +1,228 @@
+#scope server
+//Standard npc which will sell you items
+//
+//
+//
+//Definitions required:
+//
+//STORE_NAME 		(Default: "mystore" )
+//STORE_TRADEEXT 	(Default: "trade")
+//STORE_SELLMENU	(Default: "0")
+//(STORE_TRIGGERTEXT is no longer used, as the implementation was buggy)
+
+{
+	setvar HAS_INCLUDE_VENDOR 1
+
+	const STORE_RESTOCK 1
+	const STORE_RESTOCK_TIME_LO 300
+	const STORE_RESTOCK_TIME_HI 600
+	const BUSY_COMMENT "One at a time, please."
+}
+
+#include help/first_vendor
+
+{
+   //Defaults
+   if( STORE_TRADEEXT equals 'STORE_TRADEEXT' )		setvard STORE_TRADEEXT 	 trade
+   if( STORE_BUYMENU equals 'STORE_BUYMENU' )		setvard STORE_BUYMENU 	 1
+}
+{  game_spawn
+
+	//note: "buy" does not work here - no clue as to why
+	catchspeech npc_say_store store trade buy sell purchase sale offer
+
+	callevent 0.1 vendor_setup_store
+
+	if game.monster.race equals human
+	setmodelbody 0 3
+}
+
+{ vendor_setup_store
+	if !VEND_INDIVIDUAL
+	npcstore.create STORE_NAME
+
+	callevent 1.0 vendor_addstoreitems
+
+}
+
+{ npc_spawn
+	if game.monster.race equals human
+	setmodelbody 0 3
+}
+
+{ game_menu_getoptions
+
+	callevent vendor_addstoremenu PARAM1
+}
+
+{ vendor_addstoremenu
+
+	if !VENDOR_MENU_OFF
+
+	local reg.mitem.id	  genericstore
+	local reg.mitem.priority  -100
+	local reg.mitem.access	  all
+
+	if( !STORE_CLOSED )
+	{
+		if VEND_CHAT_MODE isnot weapons
+		local reg.mitem.title	"Shop"
+		local reg.mitem.type	callback
+		local reg.mitem.callback vendor_offerstore
+	}
+	else
+	{
+		local reg.mitem.title 	Closed
+		local reg.mitem.type 	disabled
+	}
+	
+	menuitem.register
+}
+
+  //Player pressed '+use' on me
+{  game_playerused
+   
+	callevent vendor_used
+	if !VENDOR_NOT_ON_USE
+	callevent vendor_offerstore $get(ent_lastused,id)
+}
+
+  //Player said my keyword
+{  npc_say_store
+	callevent vendor_offerstore $get(ent_lastspoke,id)
+}
+
+   //Offer store to a player
+   //Gives parent script chance to override this and cancel the tranaction
+{  vendor_offerstore		//1: Offer Target
+
+	dbg vendor_offerstore to $get(PARAM1,name)
+	if !VENDOR_STORE_ACTIVE
+
+	setvard VENDOR_STORE_ACTIVE 1
+
+	if( !STORE_CLOSED )
+	{
+		setvard VENDOR_TARGET PARAM1
+		if ( VENDOR_DELAY > 0 )
+		{
+			//for vendors that may need to adjust stores based on quest data, and such
+			callevent VENDOR_DELAY basevendor_offerstore
+		}
+		else
+		{
+			callevent basevendor_offerstore
+		}
+	}
+	else
+	{
+		callevent vendor_say_closed
+		setvard VENDOR_STORE_ACTIVE 0
+	}
+}
+
+{ vendor_fail
+	setvard VENDOR_STORE_ACTIVE 0
+}
+
+{ basevendor_offerstore	//1: Offer Target 
+
+	if ( PARAM1 isnot 'PARAM1' ) setvard VENDOR_TARGET PARAM1
+
+   local L_SERVICE 0
+   if( STORE_BUYMENU ) setvard L_SERVICE buy
+   if( STORE_SELLMENU ) stradd L_SERVICE ;sell
+
+   //Warns player about level restricted weapons 
+   if ( SELL_WEAPON_LEVEL > 0 ) gplayermessage VENDOR_TARGET This vendor's weapons require proficiency level SELL_WEAPON_LEVEL
+
+	if ( !VEND_INDIVIDUAL )
+	{
+		npcstore.offer STORE_NAME VENDOR_TARGET L_SERVICE trade
+	}
+	else
+	{
+		//check if indivual store exists, if not, build store
+		if ( VEND_PREFIX equals 'VEND_PREFIX' )
+		{
+			setvard VEND_PREFIX STORE_NAME
+			array.create ARRAY_STORES
+			dbg basevendor_offerstore initiated array
+		}
+		local L_TARGET_STORE VEND_PREFIX
+		stradd L_TARGET_STORE $get(VENDOR_TARGET,steamid)
+		if ( $get_arrayfind(ARRAY_STORES,L_TARGET_STEAM) > -1 )
+		{
+			dbg basevendor_offerstore setupstore L_TARGET_STORE
+			npcstore.offer L_TARGET_STORE VENDOR_TARGET L_SERVICE trade
+		}
+		else
+		{
+			helptip	VENDOR_TARGET generic "Individualized Store" "This merchant shows a seperate inventory for each player."
+			array.add ARRAY_STORES L_TARGET_STORE
+			setvard STORE_NAME L_TARGET_STORE
+			npcstore.create STORE_NAME
+			callevent vendor_addstoreitems
+			npcstore.offer STORE_NAME VENDOR_TARGET L_SERVICE trade
+		}
+	}
+}
+
+
+//Restock items after the level's been going a while
+//Restock means delete all store items and restock them
+//Thothie AUG2010_15 - offing this: intensive, and potentially problematic
+//{
+//	repeatdelay $randf(STORE_RESTOCK_TIME_LO,STORE_RESTOCK_TIME_HI)
+//
+//	if STORE_RESTOCK
+//   
+//	npcstore.remove STORE_NAME allitems
+//	callevent vendor_addstoreitems
+//}
+
+{ trade_busy
+
+	saytext BUSY_COMMENT
+}
+
+{ trade_done
+	setvard VENDOR_STORE_ACTIVE 0
+}
+
+{ vendor_store_reset
+	npcstore.remove STORE_NAME allitems
+	callevent 0.1 vendor_addstoreitems
+}
+
+{ vendor_clear
+	npcstore.remove STORE_NAME allitems
+}
+
+{ game_confirm_buy //<owner_id> <item_name> <scriptname> <skill_type>
+	dbg game_confirm_buy id PARAM1 script PARAM2 cost PARAM3 disp PARAM4 stat PARAM5
+
+	local PLAYER_ID PARAM1
+	local ITEM_NAME PARAM2
+	local ITEM_SCRIPT PARAM3
+	local ITEM_TYPE PARAM4
+	local ITEM_STAT skill.
+	stradd ITEM_STAT PARAM4
+
+	//local USER_SKILL $get(%VENDOR_USER%,ITEM_STAT)
+
+	saytext I do not think you yet have the skill to use a ITEM_NAME properly.
+	saytext You might consider buying one of my other ITEM_TYPE items instead.
+	setvard VEND_NO_GOODBYE 1 //Tells some older vendor scripts not to use their "please come again" line.
+
+	if ( SELL_WEAPON_LEVEL > 0 )
+	{
+		if $lcase(game.map.name) isnot edana
+		local MSG_TEXT "This vendor offers weapons requiring levels "
+		stradd MSG_TEXT SELL_WEAPON_LEVEL
+		infomsg PARAM1 "VENDOR LEVEL"
+	}
+
+	if ( HAS_BASE_CHAT_INCLUDE ) callevent bchat_mouth_move
+	if ( HAS_BASE_CHAT_ARRAY_INCLUDE ) callevent chat_mouth_move
+}

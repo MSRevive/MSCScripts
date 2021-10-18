@@ -1,0 +1,243 @@
+//Orc base
+
+{
+   const SOUND_STRUCK1 body/armour1.wav
+   const SOUND_STRUCK2 body/armour2.wav
+   const SOUND_STRUCK3 body/armour3.wav
+   const SOUND_HIT voices/orc/hit.wav
+   const SOUND_HIT2 voices/orc/hit2.wav
+   const SOUND_HIT3 voices/orc/hit3.wav
+   const SOUND_PAIN monsters/orc/pain.wav
+   const SOUND_WARCRY1 monsters/orc/battlecry.wav
+   const SOUND_ATTACK1 voices/orc/attack.wav
+   const SOUND_ATTACK2 voices/orc/attack2.wav
+   const SOUND_ATTACK3 voices/orc/attack3.wav
+	setvard NPC_SILENT_DEATH 1
+   const SOUND_HELP voices/orc/help.wav
+   setvar ANIM_RUN run
+   setvar ANIM_IDLE idle1
+   setvar ANIM_WALK walk
+   setvard ANIM_DEATH die_fallback
+   setvard HUNT_AGRO 1		//base_npc_attack - Premptive attack
+   setvard CAN_HEAR 1		//Turn to face enemies I hear
+   setvard CAN_FLEE 0		//Don't flee
+   setvard CAN_FLINCH 1		//Flinch when hit
+   setvard FLINCH_CHANCE 30%	//Chance of flinch
+   setvard ANIM_FLINCH flinch
+   setvard FLINCH_DELAY 4		//base_npc_attack - Time until next allowed flinch
+   setvard LAST_ENEMY		`NONE`
+
+	const ZORC_DMG_MULTI 5.0
+	const ZORC_HP_MULTI 6.0
+
+	const SOUND_ZOMB_STRUCK1 debris/flesh2.wav
+	const SOUND_ZOMB_STRUCK2 agrunt/ag_pain3.wav
+	const SOUND_ZOMB_STRUCK3 agrunt/ag_pain5.wav
+	const SOUND_ZOMB_ATK1 zombie/claw_miss1.wav
+	const SOUND_ZOMB_ATK2 zombie/claw_miss2.wav
+	const SOUND_ZOMB_ATK3 zombie/claw_strike1.wav
+	const SOUND_ZOMB_ALERT1 monsters/zombie1/orc_zo_alert10.wav
+	const SOUND_ZOMB_ALERT2 monsters/zombie1/orc_zo_alert20.wav
+	const SOUND_ZOMB_ALERT3 monsters/zombie1/orc_zo_alert30.wav
+}
+
+#include monsters/base_monster_new
+
+{
+   eventname npc_spawn
+
+   roam 1
+   race orc
+   setmodel monsters/orc.mdl
+   setidleanim ANIM_IDLE
+   setmoveanim ANIM_WALK
+ 
+   callevent orc_spawn
+
+	//they can't get up on the lips of the huts in daragoth DEC2007a (aka. daragoth2) for some bloody reason
+	if $lcase(game.map.name) equals daragoth
+	setvard NO_STEP_ADJ 1
+	
+}
+
+{ npc_post_spawn
+
+	if ( G_SHAD_PRESENT ) callevent bo_zombie_mode
+
+	if !G_SHAD_PRESENT
+
+
+	local L_MAP_NAME $lcase(game.map.name)
+	if ( L_MAP_NAME equals orc_arena )
+	{
+		setvard NPC_GIVE_EXP 0
+		skilllevel 0
+		divide DROP_GOLD_AMT 2
+	}
+
+	if ( L_MAP_NAME equals old_helena )
+	{
+		divide NPC_GIVE_EXP 2
+		skilllevel NPC_GIVE_EXP
+	}
+}
+
+{
+   eventname npc_death		//On death, don't display weapon
+
+   setmodelbody 2 0		//Hide weapon
+   setmodelbody 4 0		//Hide Shield
+   callevent orc_death
+}
+
+{ npcatk_targetvalidate		//Warcry
+
+   local LASTSEEN_ENEMY NPCATK_TARGET
+   if LASTSEEN_ENEMY isnot LAST_ENEMY
+
+	if ( !BO_ZOMBIE_MODE )
+	{
+		if game.time > NEXT_ORC_VALIDATE_SOUND
+		setvard NEXT_ORC_VALIDATE_SOUND game.time
+		add NEXT_ORC_VALIDATE_SOUND $randf(5.0,10.0)
+		
+		playsound game.sound.voice 5 SOUND_ATTACK2
+	}
+	else
+	{
+		if game.time > NEXT_ORC_VALIDATE_SOUND
+		setvard NEXT_ORC_VALIDATE_SOUND game.time
+		add NEXT_ORC_VALIDATE_SOUND $randf(5.0,10.0)
+		playrandomsound 0 5 SOUND_ZOMB_ALERT1 SOUND_ZOMB_ALERT2 SOUND_ZOMB_ALERT3
+	}
+   setvard LAST_ENEMY LASTSEEN_ENEMY
+}
+
+   //Hit by someone
+{ npc_struck
+	if( ORC_SHIELD equals 1 )
+	{
+		local block $rand(0,99)
+		if( block < 30 )
+		{
+			if( block < 5 )
+			{
+				playanim critical deflectcounter
+				callevent swing_axe
+			}
+			else
+			{
+				local rand $rand(0,1)
+				if( rand equals 0 )
+				{
+					playanim critical shielddeflect1
+				}
+				if( rand equals 1 )
+				{
+					playanim critical shielddeflect2
+				}
+			}
+		}
+		else
+		{
+			callevent sound_struck
+		}
+	}
+	else
+	{
+		callevent sound_struck
+	}
+	callevent orc_struck
+}
+
+{ sound_struck
+	if ( BO_ZOMBIE_MODE )
+	{
+		playrandomsound 1 10 SOUND_ZOMB_STRUCK1 SOUND_ZOMB_STRUCK2 SOUND_ZOMB_STRUCK3 none none
+	}
+	else
+	{
+		playrandomsound 1 10 SOUND_PAIN SOUND_STRUCK2 SOUND_PAIN none none
+	}
+}
+
+{  baseorc_yell
+
+	if ( BO_ZOMBIE_MODE )
+	{
+		playrandomsound 1 10 SOUND_ZOMB_ATK1 SOUND_ZOMB_ATK2 SOUND_ZOMB_ATK3
+	}
+	else
+	{
+		playrandomsound 1 10 SOUND_ATTACK1 SOUND_ATTACK2 SOUND_ATTACK3
+	}
+}
+
+{  game_damaged_other
+
+   if ATTACK_PUSH isnot 'ATTACK_PUSH'
+   if ATTACK_PUSH isnot 'none'
+
+   addvelocity ent_laststruckbyme ATTACK_PUSH	//Push the player a bit
+}
+
+{ game_parry
+	playrandomsound 0 10 SOUND_STRUCK1 SOUND_STRUCK2 SOUND_STRUCK3
+}
+
+{ npc_aiding_ally
+
+	if !CALLED_HELP
+	setvard CALLED_HELP 1
+	precache voices/orc/help.wav
+	callexternal $get(PARAM2,id) ext_mon_playsound 0 10 voices/orc/help.wav
+}
+
+{ bo_zombie_mode
+	race undead
+	takedmg poison 0.0
+	takedmg holy 1.5
+	setprop ent_me skin 1
+	setanim.framerate 0.5
+	//movespeed 0.5
+	setmodelbody 2 0
+
+	setvard MOVE_RANGE 32
+	setvard ATTACK_MOVERANGE 32
+	setvard ATTACK_RANGE 80
+	setvard ATTACK_HITRANGE 140
+	setvard IS_RANGED 0
+	setvard ORC_JUMPER 0
+	setvard ANIM_ATTACK swordswing1_L
+
+	dmgmulti ZORC_DMG_MULTI
+
+	local HP_MULTI game.monster.maxhp
+	multiply HP_MULTI ZORC_HP_MULTI
+	hp HP_MULTI
+	
+	setvard BO_ZOMBIE_MODE 1
+
+	const_ovrd ORC_SHIELD 0
+	setstat parry 0
+
+	multiply NPC_GIVE_EXP 4.0
+	skilllevel NPC_GIVE_EXP
+
+	//hacky name change prevention cuz I dun wanna redist mscave
+	local MY_NAME $get(ent_me,name)
+	if ( $lcase(MY_NAME) contains 'zombie' ) local NO_NAME_CHANGE 1
+	if !NO_NAME_CHANGE
+	name $get(ent_me,name) Zombie
+}
+
+{ game_death
+	if ( !BO_ZOMBIE_MODE )
+	{
+		playsound 0 5 voices/orc/die.wav
+	}
+	else
+	{
+		playsound 0 5 agrunt/ag_die5.wav
+	}
+}

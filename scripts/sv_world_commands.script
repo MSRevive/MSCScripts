@@ -1,0 +1,3554 @@
+//BEWARE
+//- Any parsing errors in this file or its includes will STOP MSC FROM LOADING
+//- and will not return ANY ERROR in the dll logs
+
+#include beta_date
+#include sv_admin
+
+{
+	const ALPHA_PACK 0
+	const SHOW_CONSOLE_COMMANDS 0
+	const DEV_PASSWORD dammitjm
+	const SUPER_DEV_PASSWORD wargwable
+	setvarg G_BPATCH_MANDATORY 0 //set to 1 to make b patches mandatory
+
+	//you can precache multiple monsters here (ala ms_dynamicnpc) - but be sure to comment it out before you distro
+	//otherwise clients will be precaching unessisary data, making edict crashes more likely
+	//const SCRIPT_TOKENS "monsters/zorc_warrior1;monsters/zorc_archer2;monsters/skeleton_archer_lightning2;monsters/skeleton_archer_poison2;monsters/skeleton_archer_ice1;monsters/skeleton_archer_ice2;monsters/skeleton_archer_fire2"
+	if ( game.central )
+	{
+		if ( ALPHA_PACK ) errormessage "Cannot use Alphapack on FN"
+
+		if game.cvar.maxplayers > 10
+		errormessage "10 Player Max on FN"
+	}
+
+
+	setvard TIMESET_DELAY 0
+	setvard WEATHERSET_DELAY 0
+	const FREQ_WEATHER 10.0 //time delay between allowed time changes
+
+	setvard MAP_VOTE_DELAY 20.0
+
+	setvard TOKEN_BASE "test1;test2;test3;test4;test5"
+
+	//precache
+	const WEATHER_SPRITE rain.spr
+	const SPRITE_SPLASH rain_splash.spr
+	const SPRITE_MIST rain_mist.spr
+	const SPRITE_RIPPLE rain_ripple.spr
+	const SOUND_RAIN weather/rain.wav
+  	const SCRIPT_SFX1 effects/sfx_lightning
+	const LTNG_SND weather/Storm_exclamation.wav
+	precache SCRIPT_SFX1
+	precache LTNG_SND		
+	precache WEATHER_SPRITE
+	precache SPRITE_SPLASH
+	precache SPRITE_MIST
+	precache SPRITE_RIPPLE
+	precache SOUND_RAIN
+	precache snow1.spr
+	precache amb/wind.wav
+	precache char_breath.spr
+	//recache FN2.spr //tga loader doesn't need 'recaches
+
+	//verify MS.DLL matches SC.DLL
+	local TRIM_REV $left(game.revision,7)
+	local TRIM_REV $lcase(TRIM_REV)
+	local SCRIPT_VER $lcase(G_SCRIPT_VERSION)
+	local SCRIPT_VER  $left(SCRIPT_VER,7)
+	if ( TRIM_REV isnot SCRIPT_VER )
+	{
+		//dbg Version mismatch! ( TRIM_REV vs SCRIPT_VER )
+		errormessage SC.DLL/MS.DLL version mismatch ( TRIM_REV vs SCRIPT_VER ). Cannot continue.
+		createnpc bogusscript $vec(0,0,0) //older versions of the MS.DLL have no errormessage func, so crash this way instead
+	}
+	ververify //runs MS.DLL side check, stores to DLL_VALID
+	if ( !DLL_VALID ) errormessage SC.DLL/MS.DLL version mismatch [secondary] ( TRIM_REV vs SCRIPT_VER ). Cannot continue.
+ 
+	callevent 1.0 load_globals
+}
+
+{ game_precache
+	if SCRIPT_TOKENS isnot 'SCRIPT_TOKENS'
+	calleventloop $get_token_amt(SCRIPT_TOKENS) dev_precache
+}
+
+{ dev_precache
+	local SCRIPT_FILE $get_token(SCRIPT_TOKENS,game.script.iteration)
+	precachefile SCRIPT_FILE
+}
+
+{ game_playercmd
+
+	if ( G_DEVELOPER_MODE )
+	{
+		if SHOW_CONSOLE_COMMANDS
+		if PARAM1 isnot 'atx' //don't want atk command showing up in dev vids
+
+		if !ALPHA_PACK //don't show internal console commands to alpha pack folks
+
+		if ( PARAM1 equals 'ce' )
+		{
+			if !SHOW_CE
+			local EXIT_SUB 1
+		}
+		if !EXIT_SUB
+
+		local OUT_LIST $get(ent_currentplayer,name)
+		stradd OUT_LIST ">"
+		stradd OUT_LIST PARAM1
+		stradd OUT_LIST " "
+		if ( PARAM2 isnot 'PARAM2' ) stradd OUT_LIST PARAM2
+		stradd OUT_LIST " "
+		if ( PARAM3 isnot 'PARAM3' ) stradd OUT_LIST PARAM3
+		stradd OUT_LIST " "
+		if ( PARAM4 isnot 'PARAM4' ) stradd OUT_LIST PARAM4
+		stradd OUT_LIST " "
+		if ( PARAM5 isnot 'PARAM5' ) stradd OUT_LIST PARAM5
+		stradd OUT_LIST " "
+		if ( PARAM6 isnot 'PARAM6' ) stradd OUT_LIST PARAM6
+		stradd OUT_LIST " "
+		if ( PARAM7 isnot 'PARAM7' ) stradd OUT_LIST PARAM7
+		stradd OUT_LIST " "
+		if ( PARAM8 isnot 'PARAM8' ) stradd OUT_LIST PARAM8
+		gplayermessage G_DEV_PLAYER OUT_LIST
+
+		if ( $lcase(PARAM2) equals me ) local PARAM2 $get(ent_currentplayer,id)
+		if ( $lcase(PARAM3) equals me ) local PARAM3 $get(ent_currentplayer,id)
+		if ( $lcase(PARAM4) equals me ) local PARAM4 $get(ent_currentplayer,id)
+		if ( $lcase(PARAM5) equals me ) local PARAM5 $get(ent_currentplayer,id)
+		if ( $lcase(PARAM6) equals me ) local PARAM6 $get(ent_currentplayer,id)
+		if ( $lcase(PARAM7) equals me ) local PARAM7 $get(ent_currentplayer,id)
+		if ( $lcase(PARAM8) equals me ) local PARAM8 $get(ent_currentplayer,id)
+		if ( $lcase(PARAM2) equals gm ) local PARAM2 GAME_MASTER
+		if ( $lcase(PARAM3) equals gm ) local PARAM3 GAME_MASTER
+		if ( $lcase(PARAM4) equals gm ) local PARAM4 GAME_MASTER
+		if ( $lcase(PARAM5) equals gm ) local PARAM5 GAME_MASTER
+		if ( $lcase(PARAM6) equals gm ) local PARAM6 GAME_MASTER
+		if ( $lcase(PARAM7) equals gm ) local PARAM7 GAME_MASTER
+		if ( $lcase(PARAM8) equals gm ) local PARAM8 GAME_MASTER
+	}
+
+	if ( G_SPECIAL_COMMANDS )
+	{
+		if ( $lcase(game.map.name) equals ms_soccer )
+		{
+			if ( PARAM3 startswith 'score' )
+			{
+				callexternal $get_by_name(soccer_ball) ext_say_scores
+				local EXIT_SUB 1
+			}
+			if ( PARAM3 startswith 'ball' )
+			{
+				callexternal $get_by_name(soccer_ball) ext_send_menu $get(ent_currentplayer,id)
+				local EXIT_SUB 1
+			}
+		}
+	}
+	if !EXIT_SUB
+
+	//(sv_admin)
+	if ( PARAM1 startswith 'admin_' )
+	{
+		setvard CALLING_ADMIN $get(ent_currentplayer,id)
+		local CALLING_STEAMID $get(ent_currentplayer,steamid)
+
+		//admin list is in player main
+
+		local N_ADMINS $get_token_amt(G_ADMIN_LIST)
+		local FOUND_ID $get_find_token(G_ADMIN_LIST,CALLING_STEAMID)
+
+		if ( $get(CALLING_ADMIN,ip) equals loopback )
+		{
+			//listen server host always has admin
+			local N_ADMINS 1
+			local FOUND_ID 1
+			local ADMIN_AUTH standard_rcon_cvar
+			local CAN_RCON 1
+			local CAN_CVAR 1
+		}
+
+		if ( N_ADMINS == 0 )
+		{
+			consolemsg ent_currentplayer No admins found for this server.
+			local EXIT_SUB 1
+		}
+		if !EXIT_SUB
+
+		if ( FOUND_ID == -1 )
+		{
+			consolemsg CALLING_ADMIN You have no admin auth on this server.
+			local EXIT_SUB 1
+		}
+		if !EXIT_SUB
+
+		local ADMIN_PAR1 PARAM2
+		local ADMIN_PAR2 PARAM3
+		local ADMIN_PAR3 PARAM4
+
+		if ( $get_token(G_ADMIN_AUTH,FOUND_ID) contains rcon ) local CAN_RCON 1
+		if ( $get_token(G_ADMIN_AUTH,FOUND_ID) contains cvar ) local CAN_CVAR 1
+
+		if ( PARAM1 equals 'admin_kick' ) callevent admin_kick ADMIN_PAR1 ADMIN_PAR2
+		if ( PARAM1 equals 'admin_ban' ) callevent admin_ban ADMIN_PAR1 ADMIN_PAR2 ADMIN_PAR3
+		if ( PARAM1 equals 'admin_unban' ) callevent admin_unban ADMIN_PAR1
+		if ( PARAM1 equals 'admin_listbans' ) callevent admin_listbans
+		if ( PARAM1 equals 'admin_say' ) callevent admin_say ADMIN_PAR1 ADMIN_PAR2
+		if ( PARAM1 equals 'admin_votemap' ) callevent admin_votemap ADMIN_PAR1
+		if ( PARAM1 equals 'admin_map' ) callevent admin_map ADMIN_PAR1 ADMIN_PAR2
+		if ( PARAM1 equals 'admin_vote' ) callevent admin_vote ADMIN_PAR1 ADMIN_PAR2 ADMIN_PAR3
+		if ( PARAM1 equals 'admin_help' ) callevent admin_help CAN_RCON CAN_CVAR
+		if ( PARAM1 equals 'admin_gag' ) callevent admin_gag ADMIN_PAR1 ADMIN_PAR2
+		if ( PARAM1 equals 'admin_ungag' ) callevent admin_ungag ADMIN_PAR1
+		if ( PARAM1 equals 'admin_rcon' )
+		{
+			if ( CAN_RCON ) callevent admin_rcon ADMIN_PAR1
+			if ( !CAN_RCON ) consolemsg CALLING_ADMIN You have no access to that command.
+		}
+		if ( PARAM1 equals 'admin_cvar' )
+		{
+			if ( CAN_CVAR ) callevent admin_cvar ADMIN_PAR1
+			if ( !CAN_CVAR ) consolemsg CALLING_ADMIN You have no access to that command.
+		}
+		if ( PARAM1 equals 'admin_list' )
+		{
+			if ( CAN_RCON ) callevent admin_listadmins
+			if ( !CAN_CVAR ) consolemsg CALLING_ADMIN You have no access to that command.
+		}
+
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	if ( PARAM1 startswith '/' )
+	{
+		local IS_SLASH 1
+		local SLASH_COMMAND PARAM1
+	}
+	else if ( PARAM3 startswith '/' )
+	{
+		local IS_SLASH 1
+		local SLASH_COMMAND PARAM3
+	}
+
+	if ( IS_SLASH )
+	{
+		if ( $lcase(SLASH_COMMAND) equals '/stuck' )
+		{
+			local SPAWN_POINT $get(ent_currentplayer,scriptvar,'MY_HOME')
+			local CUR_LOC $get(ent_currentplayer,origin)
+			if ( $dist(CUR_LOC,SPAWN_POINT) > 256 )
+			{
+				dplayermessage ent_currentplayer "[/STUCK]: You are too far from your spawn point to use /stuck."
+				consolemsg ent_currentplayer "[/STUCK]: You are too far from your spawn point to use /stuck."
+				callexternal ent_currentplayer ext_stuck_adj
+			}
+			else
+			{
+				local SPAWN_NAME $get_quest_data(ent_currentplayer,d)
+				tospawn ent_currentplayer SPAWN_NAME
+				playermessage ent_currentplayer "Moving you to another spawn point..."
+				consolemsg ent_currentplayer "Moving you to another spawn point..."
+				callexternal ent_currentplayer delay_to_ms_player_spawn
+			}
+		}
+
+		if ( $lcase(SLASH_COMMAND) equals '/halo' )
+		{
+			if ( $get(ent_currentplayer,scriptvar,'PLR_HAS_HALO') )
+			{
+				if ( $get(ent_currentplayer,scriptvar,'PLR_HALO_ON') ) 
+				{
+					consolemsg ent_currentplayer !Toggle Donator Halo Off
+					gplayermessage ent_currentplayer Toggle Donator Halo Off
+					quest set ent_currentplayer dhal 1
+				}
+				else
+				{
+					consolemsg ent_currentplayer !Toggle Donator Halo On
+					gplayermessage ent_currentplayer Toggle Donator Halo On
+					quest set ent_currentplayer dhal 0
+				}
+			}
+			callexternal ent_currentplayer ext_toggle_halo
+		}
+
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	if ( $lcase(PARAM1) equals 'motd' ) callexternal ent_currentplayer force_motd
+	else if ( $lcase(PARAM3) equals 'motd' ) callexternal ent_currentplayer force_motd
+
+	if ( PARAM1 startswith 'vote' )
+	{
+		local VOTE_PARAM1 PARAM1
+		local VOTE_PARAM2 PARAM2
+		local VOTE_PARAM3 PARAM3
+		local VOTE_PARAM4 PARAM4
+		local VOTE_PARAM5 PARAM5
+		local VOTE_PARAM6 PARAM6
+		local VOTE_PARAM7 PARAM6
+		setvard VOTE_FROM_CONSOLE 1
+		dbg check_vote_options VOTE_PARAM1 VOTE_PARAM2 VOTE_PARAM3 VOTE_PARAM4 VOTE_PARAM5 VOTE_PARAM6 VOTE_PARAM7
+		callevent check_vote_options VOTE_PARAM1 VOTE_PARAM2 VOTE_PARAM3 VOTE_PARAM4 VOTE_PARAM5 VOTE_PARAM6 VOTE_PARAM7
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	if ( PARAM3 startswith 'vote' )
+	{
+		local VOTE_PARAM1 PARAM3
+		local VOTE_PARAM2 PARAM4
+		local VOTE_PARAM3 PARAM5
+		local VOTE_PARAM4 PARAM6
+		local VOTE_PARAM5 PARAM7
+		local VOTE_PARAM6 PARAM8
+		local VOTE_PARAM7 PARAM9
+		setvard VOTE_FROM_CONSOLE 0
+		dbg check_vote_options VOTE_PARAM1 VOTE_PARAM2 VOTE_PARAM3 VOTE_PARAM4 VOTE_PARAM5 VOTE_PARAM6 VOTE_PARAM7
+		callevent check_vote_options VOTE_PARAM1 VOTE_PARAM2 VOTE_PARAM3 VOTE_PARAM4 VOTE_PARAM5 VOTE_PARAM6 VOTE_PARAM7
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+
+//	if ( PARAM1 equals 'I' )
+//	{
+//		if PARAM2 equals will
+//		if PARAM3 equals not
+//		if PARAM4 equals hide
+//		if PARAM5 equals shit
+//		if PARAM6 equals from
+//		if PARAM7 equals the
+//		if PARAM8 equals devs
+//		callexternal ent_currentplayer ext_trouble_off
+//		consolemsg ent_currentplayer Meh, ye can bind that to a key, if ye need it again.
+//	}
+
+	if ( PARAM1 equals 'lplayers' )
+	{
+		setvard REQ_ATTRIB PARAM2
+		setvard TEST_PLAYERS ''
+		getplayers TEST_PLAYERS
+		consolemsg ent_currentplayer players: $get_token_amt(TEST_PLAYERS) [ game.players ] [ totalhp: game.players.totalhp ] [ active: game.playersnb ]
+		setvard REQ_STRING PARAM3
+		setvard PLAYER_LISTER $get(ent_currentplayer,id)
+		setvard LOOP_COUNT 0
+		callevent 0.1 list_players
+	}
+	else if ( PARAM1 equals 'listitems' )
+	{
+		setvard ITEM_ARRAY_TARGET $get(ent_currentplayer,id)
+		callevent list_item_array
+	}
+	else if ( PARAM1 equals 'my_points' )
+	{
+		local PLAYER_STAT $get(ent_currentplayer,scriptvar,PLR_TOTAL_DMG) //newfunc in player_main/game_master +1000 for heal/iceshield -1000 for death
+		local PLAYER_SUB_STAT $get(ent_currentplayer,scriptvar,PLR_DMG) //fraction points
+		multiply PLAYER_SUB_STAT 0.001
+		add PLAYER_STAT PLAYER_SUB_STAT
+		multiply PLAYER_STAT 1000
+		local POINT_STR $int(PLAYER_STAT)	
+
+		consolemsg ent_currentplayer You have POINT_STR Damage Points.
+		gplayermessage ent_currentplayer You have POINT_STR Damage Points.
+	}
+	else if ( PARAM1 equals 'resetbank' )
+	{
+		consolemsg ent_currentplayer Reset bank command recieved...
+		callexternal ent_currentplayer ext_reset_bank
+	}
+	else if ( PARAM1 equals 'petname' )
+	{
+		local PET_TYPES $get_quest_data(ent_currentplayer,pets)
+		if ( PET_TYPES equals 0 )
+		{
+			consolemsg ent_currentplayer PETNAME: You have no pets.
+			local EXIT_SUB 1
+		}
+		if !EXIT_SUB
+
+		if ( PARAM2 startswith 'PARAM' )
+		{
+			consolemsg ent_currentplayer PETNAME: Usage1: petname <name>
+			consolemsg ent_currentplayer PETNAME: Usage2: petname <pet_type> <name>
+			consolemsg ent_currentplayer PETNAME: Available Pet Types: PET_TYPES
+			consolemsg ent_currentplayer PETNAME: - Use alphanumerics only!
+			consolemsg ent_currentplayer PETNAME: - If desired name requires spaces, use $quote(quotes)
+			local EXIT_SUB 1
+		}
+		if !EXIT_SUB
+
+		if ( PARAM3 startswith 'PARAM' )
+		{
+			local L_NEW_NAME PARAM2
+			local PET_TYPE_TO_NAME $get_token(PET_TYPES,0)
+		}
+		else
+		{
+			local PET_TYPE_TO_NAME PARAM2
+			local L_NEW_NAME PARAM3
+		}
+
+		//case player defines invalid name
+		if ( PET_TYPES contains PET_TYPE_TO_NAME ) local L_TYPE_VALID 1
+		if ( !L_TYPE_VALID )
+		{
+			consolemsg ent_currentplayer PETNAME: You have no pets of this type. ( PET_TYPE_TO_NAME )
+			consolemsg ent_currentplayer PETNAME: Available Pet Types: PET_TYPES
+			local EXIT_SUB 1
+		}
+		if !EXIT_SUB
+
+		if ( L_NEW_NAME contains % ) local L_INVALID_NAME 1
+		if ( L_NEW_NAME contains / ) local L_INVALID_NAME 1
+		if ( L_NEW_NAME contains \ ) local L_INVALID_NAME 1
+		if ( L_INVALID_NAME ) consolemsg ent_currentplayer PETNAME: Inavalid name - alphanumerics and spaces only, please
+		if !L_INVALID_NAME
+		
+		local Q_NAME PET_TYPE_TO_NAME
+		stradd Q_NAME _name
+		quest set ent_currentplayer Q_NAME L_NEW_NAME
+		consolemsg ent_currentplayer PETNAME: PET_TYPE_TO_NAME new name is: L_NEW_NAME
+		callexternal all ext_companion_update_name
+	}
+	else if ( PARAM1 equals 'listpoints' )
+	{
+		setvard CALLING_PLAYER $get(ent_currentplayer,id)
+		callevent do_list_points
+	}
+	else if ( PARAM3 equals 'listpoints' )
+	{
+		setvard CALLING_PLAYER $get(ent_currentplayer,id)
+		callevent do_list_points
+	}
+	else if ( PARAM1 equals 'listresist' )
+	{
+		setvard CALLING_PLAYER $get(ent_currentplayer,id)
+		callevent do_list_resists
+	}
+	else if ( PARAM3 equals 'listresist' )
+	{
+		setvard CALLING_PLAYER $get(ent_currentplayer,id)
+		callevent do_list_resists
+	}
+	else if ( PARAM1 equals 'fakehp' )
+	{
+		if !game.central
+		consolemsg ent_currentplayer Simulating PARAM2 hp worth of players on server
+		//fakehp PARAM2 //obsolete
+		setcvar ms_fake_hp PARAM2
+	}
+	else if ( PARAM1 equals 'flip' )
+	{
+		local MY_NAME $get(ent_currentplayer,name)
+		stradd MY_NAME " Flips a Gold Piece"
+		local DIE_ROLL $rand(1,2)
+		if ( DIE_ROLL == 1 )
+		{
+			infomsg all MY_NAME "It comes up HEADS"
+			consolemsg ent_currentplayer Your coin comes up HEADS
+		}
+		if ( DIE_ROLL == 2 )
+		{
+			infomsg all MY_NAME "It comes up TAILS"
+			consolemsg ent_currentplayer Your coin comes up TAILS
+		}
+	}
+	else if ( PARAM3 equals 'flip' )
+	{
+		local MY_NAME $get(ent_currentplayer,name)
+		stradd MY_NAME " Flips a Gold Piece"
+		local DIE_ROLL $rand(1,2)
+		if ( DIE_ROLL == 1 )
+		{
+			infomsg all MY_NAME "It comes up HEADS!"
+			consolemsg ent_currentplayer Your coin comes up HEADS
+		}
+		if ( DIE_ROLL == 2 )
+		{
+			infomsg all MY_NAME "It comes up TAILS!"
+			consolemsg ent_currentplayer Your coin comes up TAILS
+		}
+	}
+	else if ( PARAM1 equals 'roll' )
+	{
+		local D_SIDES PARAM2
+		if ( D_SIDES equals 'PARAM2' ) local D_SIDES 20
+		callevent roll_die D_SIDES
+	}
+	else if ( PARAM3 equals 'roll' )
+	{
+		local D_SIDES PARAM4
+		if ( D_SIDES equals 'PARAM4' ) local D_SIDES 20
+		callevent roll_die D_SIDES
+	}
+	else if ( PARAM1 equals 'day' )
+	{
+		//setvard PARAM1 settime
+		//setvard PARAM2 12
+		callexternal ent_currentplayer ext_tod_lock day
+		consolemsg ent_currentplayer Shifting your time of day effects to day.
+		consolemsg ent_currentplayer This does not affect world time nor other players.
+		clientevent update ent_currentplayer const.localplayer.scriptID environment_change day
+	}
+	else if ( PARAM1 equals 'help' )
+	{
+		if PARAM2 equals 'PARAM2'
+		callexternal ent_currentplayer help_toggle
+	}
+	else if ( PARAM3 equals 'help' )
+	{
+		if PARAM4 equals 'PARAM4'
+		callexternal ent_currentplayer help_toggle
+	}
+	else if( PARAM1 equals 'usetrig' )
+	{
+		setvard WEATHERSET_DELAY 0
+		setvard TIMESET_DELAY 0
+		if !game.central
+		usetrigger PARAM2
+	}
+	else if ( PARAM1 equals 'dusk' )
+	{
+		//setvard PARAM1 settime
+		//setvard PARAM2 17
+		callexternal ent_currentplayer ext_tod_lock aft
+		consolemsg ent_currentplayer Shifting your time of day effects to dusk.
+		consolemsg ent_currentplayer This does not affect world time nor other players.
+		clientevent update ent_currentplayer const.localplayer.scriptID environment_change aft
+	}
+	else if ( PARAM1 equals 'night' )
+	{
+		//setvard PARAM1 settime
+		//setvard PARAM2 17
+		callexternal ent_currentplayer ext_tod_lock night
+		consolemsg ent_currentplayer Shifting your time of day effects to night.
+		consolemsg ent_currentplayer This does not affect world time nor other players.
+		clientevent update ent_currentplayer const.localplayer.scriptID environment_change night
+	}
+	else if ( PARAM1 equals 'clearsky' )
+	{
+		//callexternal all game_playercmd_setweather clear 1 1
+		if ( G_WEATHER_LOCK isnot 0 ) consolemsg ent_currentplayer Weather is currently locked.
+		if G_WEATHER_LOCK equals 0
+		callexternal ent_currentplayer ext_weather_set_clear
+//		removeeffect ent_currentplayer weather_effect
+//		//callexternal ent_currentplayer worldevent_weather clear
+//		callexternal ent_currentplayer ext_block_weather 1
+//		clientevent update ent_currentplayer G_WEATHER_SCRIPT_ID weather_die 1
+//		clientevent update ent_currentplayer const.localplayer.scriptID clear_weather
+//		//clientevent remove ent_currentplayer G_WEATHER_SCRIPT_ID
+//		consolemsg ent_currentplayer Clearing weather effects on your client...
+//		//clientevent update ent_currentplayer const.localplayer.scriptID clear_sky
+	}
+	else if( PARAM1 equals 'setweather' )
+	{
+		if ( G_WEATHER_LOCK isnot 0 ) consolemsg ent_currentplayer Weather is currently locked.
+		if G_WEATHER_LOCK equals 0
+		callexternal ent_currentplayer ext_weather_manual_change PARAM2
+	}
+	else if( PARAM1 equals 'time' )
+	{
+		consolemsg ent_currentplayer == TIME: CURRENT_TIME == 
+		playermessage ent_currentplayer == TIME: CURRENT_TIME == 
+	}
+  	else if( PARAM1 equals 'xyz' )
+	{
+		local P_LOC $get(ent_currentplayer,origin)
+		local P_X $vec.x(P_LOC)
+		local P_Y $vec.y(P_LOC)
+		local P_TZ $vec.z(P_LOC)
+		local P_TZ $int(P_TZ)
+		local P_Z $get_ground_height(P_LOC) //$vec.z(P_LOC)
+		local P_ANG $get(ent_currentplayer,angles)
+		local P_PITCH $vec.pitch(P_ANG)	
+		local P_YAW $vec.yaw(P_ANG)
+		local P_ROLL $vec.roll(P_ANG)
+		local P_X $int(P_X)
+		local P_Y $int(P_Y)
+		local P_Z $int(P_Z)
+		local P_PITCH $int(P_PITCH)
+		local P_YAW $int(P_YAW)
+		local P_ROLL $int(P_ROLL)
+
+		consolemsg ent_currentplayer Floor: ( P_X P_Y P_Z ) Center: ( P_X P_Y P_TZ ) angles: ( P_PITCH P_YAW P_ROLL )
+		playermessage ent_currentplayer Floor: ( P_X P_Y P_Z ) Center: ( P_X P_Y P_TZ ) angles: ( P_PITCH P_YAW P_ROLL )
+	}
+  	else if ( PARAM1 equals 'beta' ) callevent give_timestamp
+  	else if ( PARAM1 equals 'date' ) callevent give_timestamp
+  	else if ( PARAM1 equals 'betadate' ) callevent give_timestamp
+  	else if( PARAM1 equals 'settime' ) 
+	{
+		//settime <hour> <minute>
+		if ( G_DEVELOPER_MODE ) setvard TIMESET_DELAY 0
+		if ( TIMESET_DELAY ) consolemsg ent_currentplayer You must wait a bit before changing the time again.
+		if !TIMESET_DELAY
+		setvard TIMESET_DELAY 1
+		callevent FREQ_WEATHER reset_timeset_delay
+		callevent set_time PARAM2 PARAM3
+		callexternal ent_currentplayer ext_tod_lock none
+	}
+	else if ( PARAM1 equals 'show_health' )
+	{
+		//let players on low end systems disable hud and still see their health
+		local TOGGLE_MODE PARAM2
+		if ( TOGGLE_MODE isnot '0' )
+		{
+			if ( TOGGLE_MODE isnot '1' ) local TOGGLE_MODE toggle
+		}
+		callexternal $get(ent_currentplayer,id) console_health_toggle TOGGLE_MODE
+	}
+	else if( PARAM1 equals 'dev1' ) setvarg G_VAR1 PARAM2 //global params for testin stuff
+	else if( PARAM1 equals 'dev2' ) setvarg G_VAR2 PARAM2 //global params for testin stuff
+	else if ( PARAM1 equals 'dev_on' )
+	{
+		//if ALPHA_PACK
+		if !game.central
+		if PARAM2 equals SUPER_DEV_PASSWORD
+		createnpc developer/dev_mode_on (20000,20000,20000) $get(ent_currentplayer,id)
+		consolemsg ent_currentplayer developer mode 
+		infomsg all "DEVELOPER MODE ON" "Developer mode active. You cannot gain XP or Items"
+		setvarg G_DEV_PLAYER $get(ent_currentplayer,id)
+	}
+	else if ( PARAM1 equals 'dev_off' )
+	{
+		createnpc developer/dev_mode_off (20000,20000,20000)
+		consolemsg ent_currentplayer developer mode
+		infomsg all "DEVELOPER MODE OFF" "Normal character saving will resume after map change"
+	}
+	else if ( PARAM1 equals 'pvp' )
+	{
+		consolemsg ent_currentplayer Player vs. Player: game.pvp
+	}
+	else if ( PARAM3 equals 'all' )
+	{
+		//Global Summon Commands
+		if ( PARAM4 equals 'follow' ) callexternal all bs_global_command $get(ent_currentplayer,id) follow
+		if ( PARAM4 equals 'defend' ) callexternal all bs_global_command $get(ent_currentplayer,id) defend
+		if ( PARAM4 equals 'kill' ) callexternal all bs_global_command $get(ent_currentplayer,id) kill
+		if ( PARAM4 equals 'hunt' ) callexternal all bs_global_command $get(ent_currentplayer,id) hunt
+		if ( PARAM4 equals 'vanish' ) callexternal all bs_global_command $get(ent_currentplayer,id) vanish
+		if ( PARAM4 equals 'stay' ) callexternal all bs_global_command $get(ent_currentplayer,id) stay
+	}
+	else if ( PARAM1 equals 'summon_help' )
+	{
+		consolemsg ent_currentplayer "SUMMON CHAT COMMANDS"
+		consolemsg ent_currentplayer "follow - disengage and follow you"
+		consolemsg ent_currentplayer "defend - stay near, engage nearby enemies"
+		consolemsg ent_currentplayer "kill - attack your current target"
+		consolemsg ent_currentplayer "hunt - roam away and attack any enemies"
+		consolemsg ent_currentplayer "vanish - unsummon"
+		consolemsg ent_currentplayer "stay - guard position"
+		consolemsg ent_currentplayer "* Prefix any of the above commands with all [command] to affect all your summons"
+	}
+	else if ( PARAM3 equals 'summon_help' )
+	{
+		gplayermessage ent_currentplayer "SUMMON COMMANDS"
+		gplayermessage ent_currentplayer "follow - disengage and follow you"
+		gplayermessage ent_currentplayer "defend - stay near, engage nearby enemies"
+		gplayermessage ent_currentplayer "kill - attack your current target"
+		gplayermessage ent_currentplayer "hunt - roam away and attack any enemies"
+		gplayermessage ent_currentplayer "vanish - unsummon"
+		gplayermessage ent_currentplayer "stay - guard position"
+		gplayermessage ent_currentplayer "* Prefix any of the above commands with all [command] to affect all your summons"
+	}
+	else if ( PARAM1 equals 'killall' )
+	{
+		if G_DEVELOPER_MODE
+		local RACE_PARAMS PARAM2
+		callexternal all npc_suicide RACE_PARAMS
+	}
+	else if ( PARAM1 equals 'wallpapercrest' )
+	{
+		if ( $get(ent_currentplayer,steamid) equals 'STEAM_0:0:15435276' )
+		{
+			local CREST_NAME crest_w_1
+			if ( $item_exists(ent_currentplayer,CREST_NAME) )
+			{
+				consolemsg ent_currentplayer You already have your wallpaper crest.
+				local EXIT_SUB 1
+			}
+			if !EXIT_SUB
+			consolemsg ent_currentplayer Granting Avocado's wallpaper crest
+			callexternal GAME_MASTER give_item $get(ent_currentplayer,id) CREST_NAME
+		}
+		if ( $get(ent_currentplayer,steamid) equals 'STEAM_0:1:7087443' )
+		{
+			local CREST_NAME crest_w_2
+			if ( $item_exists(ent_currentplayer,CREST_NAME) )
+			{
+				consolemsg ent_currentplayer You already have your wallpaper crest.
+				local EXIT_SUB 1
+			}
+			if !EXIT_SUB
+			consolemsg ent_currentplayer Granting Lockdown's wallpaper crest
+			callexternal GAME_MASTER give_item $get(ent_currentplayer,id) CREST_NAME
+		}
+
+		if G_DEVELOPER_MODE
+		if ( $get(ent_currentplayer,steamid) equals 'STEAM_ID_LAN' )
+		{
+			local CREST_NAME crest_w_1
+			if ( $item_exists(ent_currentplayer,CREST_NAME) )
+			{
+				consolemsg ent_currentplayer You already have your wallpaper crest
+				local EXIT_SUB 1
+			}
+			if !EXIT_SUB
+			consolemsg ent_currentplayer Granting Lockdown's wallpaper crest
+			callexternal GAME_MASTER give_item $get(ent_currentplayer,id) CREST_NAME
+		}
+	}
+	if ( PARAM1 equals 'lplayersf' )
+	{
+		setvard REQ_ATTRIB PARAM2
+		setvard TEST_PLAYERS ''
+		getplayers TEST_PLAYERS
+		setvard LP_COUNT $get_token_amt(TEST_PLAYERS)
+		consolemsg ent_currentplayer players: LP_COUNT [ game.players ] [ totalhp: game.players.totalhp ] [ active: game.playersnb ]
+		setvard REQ_STRING PARAM3
+		setvard PLAYER_LISTER $get(ent_currentplayer,id)
+		calleventloop $get_token_amt(TEST_PLAYERS) list_players_fast
+	}
+	else if ( PARAM1 equals 'lplayersnb' )
+	{
+		setvard REQ_ATTRIB PARAM2
+		setvard TEST_PLAYERS ''
+		getplayersnb TEST_PLAYERS
+		setvard LP_COUNT $get_token_amt(TEST_PLAYERS)
+		consolemsg ent_currentplayer players: LP_COUNT [ game.players ] [ totalhp: game.players.totalhp ] [ active: game.playersnb ]
+		setvard REQ_STRING PARAM3
+		setvard PLAYER_LISTER $get(ent_currentplayer,id)
+		setvard LOOP_COUNT 0
+		callevent 0.1 list_players
+	}
+	else if ( PARAM1 equals 'health_bars' )
+	{
+		local TOGGLE_MODE PARAM2
+		if ( TOGGLE_MODE isnot '0' )
+		{
+			if ( TOGGLE_MODE isnot '1' ) local TOGGLE_MODE toggle
+		}
+		callexternal $get(ent_currentplayer,id) healthbar_toggle TOGGLE_MODE
+	}
+	else if ( PARAM1 equals 'tdebug' )
+	{
+		local OUT_PAR1 PARAM2
+		local OUT_PAR2 PARAM3
+		local OUT_PAR3 PARAM4
+		local OUT_PAR4 PARAM5
+		local OUT_PAR5 $get(ent_currentplayer,id)
+		consolemsg ent_currentplayer "Running debug, all scripts:" OUT_PAR1 OUT_PAR2 OUT_PAR3 OUT_PAR4
+		callexternal all bd_debug OUT_PAR1 OUT_PAR2 OUT_PAR3 OUT_PAR4 OUT_PAR5
+	}
+	else if ( PARAM1 equals 'debugi' )
+	{
+		local OUT_PAR1 PARAM2
+		local OUT_PAR2 PARAM3
+		local OUT_PAR3 PARAM4
+		local OUT_PAR4 PARAM5
+		local OUT_PAR5 $get(ent_currentplayer,id)
+		consolemsg ent_currentplayer "Running debug, all scripts:" OUT_PAR1 OUT_PAR2 OUT_PAR3 OUT_PAR4
+		callexternal all item_debug OUT_PAR1 OUT_PAR2 OUT_PAR3 OUT_PAR4 OUT_PAR5
+	}
+	else if ( PARAM1 equals 'tdebugci' )
+	{
+		local OUT_PAR1 PARAM2
+		local OUT_PAR2 PARAM3
+		local OUT_PAR3 PARAM4
+		local OUT_PAR4 PARAM5
+		local OUT_PAR5 $get(ent_currentplayer,id)
+		local L_ACTIVE_ITEM $get(ent_currentplayer,active_item)
+		consolemsg ent_currentplayer "Running debug on curret item:" OUT_PAR1 OUT_PAR2 OUT_PAR3 OUT_PAR4
+		callexternal L_ACTIVE_ITEM item_debug OUT_PAR1 OUT_PAR2 OUT_PAR3 OUT_PAR4 OUT_PAR5
+	}
+	else if ( PARAM1 equals 'tdebugt' )
+	{
+		local OUT_PAR1 PARAM2
+		local OUT_PAR2 PARAM3
+		local OUT_PAR3 PARAM4
+		local OUT_PAR4 PARAM5
+		local OUT_PAR5 $get(ent_currentplayer,id)
+		callevent get_player_target
+		consolemsg ent_currentplayer Running debug on $get(PLAYER_TARGET,name) OUT_PAR1 OUT_PAR2 OUT_PAR3 OUT_PAR4
+		callexternal PLAYER_TARGET bd_debug OUT_PAR1 OUT_PAR2 OUT_PAR3 OUT_PAR4 OUT_PAR5
+	}
+
+	if ( PARAM1 equals 'devcmd' )
+	{
+		if !game.central
+
+		if ( PARAM2 equals 'pass' )
+		{
+			if PARAM3 equals DEV_PASSWORD
+			setvard DEV_PASS 1
+			consolemsg ent_currentplayer Password Accepted - Available Commands:
+			consolemsg ent_currentplayer devcmd tele <x> <y> <z>
+			consolemsg ent_currentplayer devcmd slayall [only_bad]
+			consolemsg ent_currentplayer devcmd usetrig <map_trigger>
+			consolemsg ent_currentplayer devcmd tospawn [spawn_name]
+			consolemsg ent_currentplayer devcmd event [params...]
+			consolemsg ent_currentplayer devcmd eventme [params...]
+			consolemsg ent_currentplayer devcmd eventall [params...]
+			consolemsg ent_currentplayer devcmd eventgm [params...]
+		}
+		local EXIT_SUB 1
+		//if ( DEV_PASS ) local EXIT_SUB 0
+		//if ( G_DEVELOPER_MODE ) local EXIT_SUB 0
+		if DEV_PASS
+		if ( PARAM2 equals 'tele' )
+		{
+			local OUT_PAR1 PARAM3
+			local OUT_PAR2 PARAM4
+			local OUT_PAR3 PARAM5
+			callevent do_tele OUT_PAR1 OUT_PAR2 OUT_PAR3
+			consolemsg ent_currentplayer Teleporting OUT_PAR1 OUT_PAR2 OUT_PAR3
+		}
+		else if ( PARAM2 equals 'slayall' )
+		{
+			local RACE_PARAMS PARAM3
+			if ( RACE_PARAMS equals evil )
+			{
+				consolemsg ent_currentplayer "Slaying Bad Guys"
+				callexternal all npc_suicide only_bad
+			}
+			if ( RACE_PARAMS isnot evil )
+			{
+				consolemsg ent_currentplayer "Slaying all"
+				callexternal all npc_suicide
+			}
+		}
+		else if ( PARAM2 equals 'usetrig' )
+		{
+			consolemsg ent_currentplayer Fire map event: PARAM1
+			usetrigger PARAM3
+		}
+		else if ( PARAM2 equals 'tospawn' )
+		{
+			consolemsg ent_currentplayer Move to spawn PARAM3
+			tospawn ent_currentplayer PARAM3
+		}
+		else if ( PARAM2 equals 'event' )
+		{
+			local MY_TARGET $get(ent_currentplayer,target)
+			consolemsg ent_currentplayer Sending Event PARAM3 to $get(MY_TARGET,name) with params ( PARAM3 PARAM4 PARAM5 )
+			local DO_EVENT PARAM3
+			local SEND_PAR1 PARAM4
+			if ( SEND_PAR1 equals 'ME' ) local SEND_PAR1  $get(ent_currentplayer,id)
+			if ( SEND_PAR1 equals 'GM' ) local SEND_PAR1  GAME_MASTER
+			local SEND_PAR2 PARAM5
+			if ( SEND_PAR2 equals 'ME' ) local SEND_PAR2  $get(ent_currentplayer,id)
+			if ( SEND_PAR2 equals 'GM' ) local SEND_PAR2  GAME_MASTER
+			local SEND_PAR3 PARAM6
+			if ( SEND_PAR3 equals 'ME' ) local SEND_PAR3  $get(ent_currentplayer,id)
+			if ( SEND_PAR3 equals 'GM' ) local SEND_PAR3  GAME_MASTER
+			local SEND_PAR4 PARAM7
+			if ( SEND_PAR4 equals 'ME' ) local SEND_PAR4  $get(ent_currentplayer,id)
+			if ( SEND_PAR4 equals 'GM' ) local SEND_PAR4  GAME_MASTER
+			local SEND_PAR5 PARAM8
+			if ( SEND_PAR5 equals 'ME' ) local SEND_PAR5  $get(ent_currentplayer,id)
+			if ( SEND_PAR5 equals 'GM' ) local SEND_PAR5  GAME_MASTER
+			consolemsg ent_currentplayer Sending Event PARAM3 to $get(MY_TARGET,name) parameters: SEND_PAR1 SEND_PAR2 SEND_PAR3 SEND_PAR4 SEND_PAR5
+			callexternal MY_TARGET DO_EVENT SEND_PAR1 SEND_PAR2 SEND_PAR3 SEND_PAR4 SEND_PAR5
+		}
+		else if ( PARAM2 equals 'eventall' )
+		{
+			local DO_EVENT PARAM3
+			local SEND_PAR1 PARAM4
+			if ( SEND_PAR1 equals 'ME' ) local SEND_PAR1  $get(ent_currentplayer,id)
+			if ( SEND_PAR1 equals 'GM' ) local SEND_PAR1  GAME_MASTER
+			local SEND_PAR2 PARAM5
+			if ( SEND_PAR2 equals 'ME' ) local SEND_PAR2  $get(ent_currentplayer,id)
+			if ( SEND_PAR2 equals 'GM' ) local SEND_PAR2  GAME_MASTER
+			local SEND_PAR3 PARAM6
+			if ( SEND_PAR3 equals 'ME' ) local SEND_PAR3  $get(ent_currentplayer,id)
+			if ( SEND_PAR3 equals 'GM' ) local SEND_PAR3  GAME_MASTER
+			local SEND_PAR4 PARAM7
+			if ( SEND_PAR4 equals 'ME' ) local SEND_PAR4  $get(ent_currentplayer,id)
+			if ( SEND_PAR4 equals 'GM' ) local SEND_PAR4  GAME_MASTER
+			local SEND_PAR5 PARAM8
+			if ( SEND_PAR5 equals 'ME' ) local SEND_PAR5  $get(ent_currentplayer,id)
+			if ( SEND_PAR5 equals 'GM' ) local SEND_PAR5  GAME_MASTER
+			consolemsg ent_currentplayer Sending Event PARAM3 to all scripts, parameters: SEND_PAR1 SEND_PAR2 SEND_PAR3 SEND_PAR4 SEND_PAR5
+			callexternal all DO_EVENT SEND_PAR1 SEND_PAR2 SEND_PAR3 SEND_PAR4 SEND_PAR5
+		}
+		else if ( PARAM2 equals 'eventme' )
+		{
+			local DO_EVENT PARAM3
+			local SEND_PAR1 PARAM4
+			if ( SEND_PAR1 equals 'ME' ) local SEND_PAR1  $get(ent_currentplayer,id)
+			if ( SEND_PAR1 equals 'GM' ) local SEND_PAR1  GAME_MASTER
+			local SEND_PAR2 PARAM5
+			if ( SEND_PAR2 equals 'ME' ) local SEND_PAR2  $get(ent_currentplayer,id)
+			if ( SEND_PAR2 equals 'GM' ) local SEND_PAR2  GAME_MASTER
+			local SEND_PAR3 PARAM6
+			if ( SEND_PAR3 equals 'ME' ) local SEND_PAR3  $get(ent_currentplayer,id)
+			if ( SEND_PAR3 equals 'GM' ) local SEND_PAR3  GAME_MASTER
+			local SEND_PAR4 PARAM7
+			if ( SEND_PAR4 equals 'ME' ) local SEND_PAR4  $get(ent_currentplayer,id)
+			if ( SEND_PAR4 equals 'GM' ) local SEND_PAR4  GAME_MASTER
+			local SEND_PAR5 PARAM8
+			if ( SEND_PAR5 equals 'ME' ) local SEND_PAR5  $get(ent_currentplayer,id)
+			if ( SEND_PAR5 equals 'GM' ) local SEND_PAR5  GAME_MASTER
+			consolemsg ent_currentplayer Sending Event PARAM3 to you, parameters: SEND_PAR1 SEND_PAR2 SEND_PAR3 SEND_PAR4 SEND_PAR5
+			callexternal ent_currentplayer DO_EVENT SEND_PAR1 SEND_PAR2 SEND_PAR3 SEND_PAR4 SEND_PAR5
+		}
+		if ( PARAM1 equals 'eventgm' )
+		{
+			local DO_EVENT PARAM3
+			local SEND_PAR1 PARAM4
+			if ( SEND_PAR1 equals 'ME' ) local SEND_PAR1  $get(ent_currentplayer,id)
+			if ( SEND_PAR1 equals 'GM' ) local SEND_PAR1  GAME_MASTER
+			local SEND_PAR2 PARAM5
+			if ( SEND_PAR2 equals 'ME' ) local SEND_PAR2  $get(ent_currentplayer,id)
+			if ( SEND_PAR2 equals 'GM' ) local SEND_PAR2  GAME_MASTER
+			local SEND_PAR3 PARAM6
+			if ( SEND_PAR3 equals 'ME' ) local SEND_PAR3  $get(ent_currentplayer,id)
+			if ( SEND_PAR3 equals 'GM' ) local SEND_PAR3  GAME_MASTER
+			local SEND_PAR4 PARAM7
+			if ( SEND_PAR4 equals 'ME' ) local SEND_PAR4  $get(ent_currentplayer,id)
+			if ( SEND_PAR4 equals 'GM' ) local SEND_PAR4  GAME_MASTER
+			local SEND_PAR5 PARAM8
+			if ( SEND_PAR5 equals 'ME' ) local SEND_PAR5  $get(ent_currentplayer,id)
+			if ( SEND_PAR5 equals 'GM' ) local SEND_PAR5  GAME_MASTER
+			consolemsg ent_currentplayer Sending Event PARAM3 to Game Master, parameters: SEND_PAR1 SEND_PAR2 SEND_PAR3 SEND_PAR4 SEND_PAR5
+			callexternal GAME_MASTER DO_EVENT SEND_PAR1 SEND_PAR2 SEND_PAR3 SEND_PAR4 SEND_PAR5 SEND_PAR6
+		}
+
+		//temp
+//		if ( PARAM2 equals 'ferismurder' )
+//		{
+//			consolemsg ent_currentplayer Spawn quarterstaff
+//			//precachefile PARAM2
+//			local SPAWN_POINT $get(ent_currentplayer,origin)
+//			local MY_ANGLES $get(ent_currentplayer,angles)
+//			local MY_YAW $vec.yaw(MY_ANGLES)
+//			vectoradd SPAWN_POINT $relpos($vec(0,MY_YAW,0),$vec(0,64,0))
+//			createitem polearms_qs SPAWN_POINT
+//		}
+	}
+	if !EXIT_SUB
+
+	if ( PARAM1 equals 'dridje_sphere' )
+	{
+		//check steamid here
+		if $get(ent_currentplayer,steamid) equals 'STEAM_0:1:4985228'
+		if ( $get(ent_currentplayer,scriptvar,PLR_DRIDJE_SPHERE) )
+		{
+			consolemsg ent_currentplayer One sphere at a time, please. ;)
+			local EXIT_SUB 1
+		}
+		if !EXIT_SUB
+
+		local SPAWN_POINT $get(ent_currentplayer,origin)
+		local MY_ANGLES $get(ent_currentplayer,angles)
+		local MY_YAW $vec.yaw(MY_ANGLES)
+		vectoradd SPAWN_POINT $relpos($vec(0,MY_YAW,0),$vec(0,64,0))
+		local OUT_PAR1 PARAM3
+		local OUT_PAR2 PARAM4
+		local OUT_PAR3 PARAM5
+		local OUT_PAR4 PARAM6
+		createnpc monsters/companion/dridje SPAWN_POINT $get(ent_currentplayer,id)
+	}
+	else if ( PARAM1 equals 'lastmap' )
+	{
+		consolemsg ent_currentplayer quest_destmap $get_quest_data(ent_currentplayer,m) lastmap $get_lastmap(ent_currentplayer) thismap $lcase(game.map.name) spawnpos $get(ent_currentplayer,scriptvar,MY_HOME)
+	}
+	else if ( PARAM1 equals 'msversion' )
+	{
+		consolemsg ent_currentplayer MS.DLL reports version game.revision ( central game.central )
+	}
+	else if ( PARAM1 equals 'spam' )
+	{
+		consolemsg ent_currentplayer fx FX_SPAMMERS max MAX_FX_SPAMMERS
+	}
+	else if ( PARAM1 equals 'contact' )
+	{
+		local ADMIN_CONTACT game.cvar.ms_admin_contact
+		consolemsg ent_currentplayer The Host's given contact is: ADMIN_CONTACT
+	}
+
+	//This was for Orochi's special build
+//	if ( PARAM1 equals 'icewave' )
+//	{
+//		if !game.central
+//		consolemsg ent_currentplayer Ice Wave Test
+//		createnpc monsters/summon/ice_wave_player $get(ent_currentplayer,origin) $get(ent_currentplayer,id) 0 3
+//	}
+
+	if ( PARAM1 equals 'ms_bloom_darken' )
+	{
+		if ( PARAM2 > -1 )
+		{
+			consolemsg ent_currentplayer Bloom Darken Set to Level PARAM2
+			clientevent update ent_currentplayer const.localplayer.scriptID cl_darken_bloom PARAM2
+		}
+		else
+		{
+			consolemsg ent_currentplayer Bloom Darken Set to Automatic ( G_DARKEN_BLOOM )
+			clientevent update ent_currentplayer const.localplayer.scriptID cl_darken_bloom G_DARKEN_BLOOM
+		}
+	}
+	else if ( PARAM1 equals 'choosebloom' )
+	{
+		callexternal ent_currentplayer ext_bloom_cycle
+	}
+
+	if ( PARAM1 equals '.' )
+	{
+		//move developer commands after you polish this to cut down on IF checks/command
+		local OUT_PAR1 PARAM2
+		local OUT_PAR2 PARAM3
+		local OUT_PAR3 PARAM4
+		local OUT_PAR4 PARAM5
+		local OUT_PAR5 PARAM6
+		local OUT_PAR6 PARAM7
+		local OUT_PAR7 PARAM8
+		local OUT_PAR8 PARAM9
+		callevent dev_command OUT_PAR1 OUT_PAR2 OUT_PAR3 OUT_PAR4 OUT_PAR5 OUT_PAR6 OUT_PAR7 OUT_PAR8 OUT_PAR9
+	}
+
+	//anti-cheat ================================================ BEGIN
+//FEB2008b - something bogus is going on with this
+	local IN_CMD $lcase(PARAM1)
+	if ( game.central )
+	{
+		if ( IN_CMD equals 'amx_god' ) callevent cheater_crash IN_CMD $get(ent_currentplayer,id)
+		else if ( IN_CMD equals 'amx_noclip' ) callevent cheater_crash IN_CMD $get(ent_currentplayer,id)
+		else if ( IN_CMD equals 'amx_godmode' ) callevent cheater_crash IN_CMD $get(ent_currentplayer,id)
+		else if ( IN_CMD equals 'amx_god_mode' ) callevent cheater_crash IN_CMD $get(ent_currentplayer,id) 
+		else if ( IN_CMD equals 'amx_heal' ) callevent cheater_crash IN_CMD $get(ent_currentplayer,id)
+		else if ( IN_CMD equals '+hook' ) callevent cheater_crash IN_CMD $get(ent_currentplayer,id)
+		else if ( IN_CMD equals 'hook_toggle' ) callevent cheater_crash IN_CMD $get(ent_currentplayer,id)
+		else if ( IN_CMD equals '+rope' ) callevent cheater_crash IN_CMD $get(ent_currentplayer,id)
+		else if ( IN_CMD equals 'rope_toggle' ) callevent cheater_crash IN_CMD $get(ent_currentplayer,id)
+		else if ( IN_CMD equals '+copyent' ) callevent cheater_crash IN_CMD $get(ent_currentplayer,id)
+		else if ( IN_CMD equals 'copyent_toggle' ) callevent cheater_crash IN_CMD $get(ent_currentplayer,id)
+		else if ( IN_CMD equals 'amx_apache' ) callevent cheater_crash IN_CMD $get(ent_currentplayer,id)
+		else if ( IN_CMD equals '+push' ) callevent cheater_crash IN_CMD $get(ent_currentplayer,id)
+		else if ( IN_CMD equals '+pull' ) callevent cheater_crash IN_CMD $get(ent_currentplayer,id)
+		else if ( IN_CMD startswith 'grab_' ) callevent cheater_crash IN_CMD $get(ent_currentplayer,id)
+		else if ( IN_CMD startswith '+grab' ) callevent cheater_crash IN_CMD $get(ent_currentplayer,id)
+		else if ( IN_CMD contains 'ent_' ) callevent cheater_crash IN_CMD $get(ent_currentplayer,id)
+	}
+	//anti-cheat ================================================ END
+}
+
+{ cheater_crash //<cmd> <cheater_id>
+
+	//consolemsg ent_currentplayer would crash on FN
+	//if game.central equals 1
+	//errormessage CHEATER VIOLATION ( PARAM1 ): Your server IP, $get(ent_currentplayer,name) [ $get(ent_currentplayer,steamid) ] , and ( game.players ) player STEAM_IDs from your server have been sent to [FN]
+	local MSG_TITLE $get(PARAM2,name)
+	local STEAM_ID $get(PARAM2,steamid)
+	local CHEAT_NAME MSG_TITLE
+	stradd MSG_TITLE " "
+	stradd MSG_TITLE STEAM_ID
+	consolemsg all MSG_TITLE
+	stradd MSG_TITLE "ATTEMPTED TO CHEAT (Type II)"
+	infomsg all MSG_TITLE "His name and auth id have been logged to FN"
+	consolemsg PARAM2 You have attempted to use a cheat. Your Steam ID has been logged on FN. ( PARAM1 )
+	clientcmd PARAM2 "disconnect"
+
+
+	if ( G_CHEATER_IDS equals 'G_CHEATER_IDS' )
+	{
+		setvarg G_CHEATER_IDS ''
+		setvarg G_CHEATER_NAMES ''
+		setvarg G_CHEATER_TYPES ''
+	}
+	token.add G_CHEATER_IDS STEAM_ID
+	token.add G_CHEATER_NAMES CHEAT_NAME
+	token.add G_CHEATER_TYPES 2
+
+	chatlog $timestamp(>) CHEATER: CHEAT_NAME STEAM_ID (Type II) was KICKED
+}
+
+{ reset_timeset_delay
+
+	setvard TIMESET_DELAY 0
+}
+
+{ reset_weatherset_delay
+
+	setvard WEATHERSET_DELAY 0
+}
+
+{ give_timestamp
+	consolemsg ent_currentplayer SC.DLL date BETA_TIMESTAMP MS.DLL version game.revision
+	playermessage ent_currentplayer SC.DLL timestamp is BETA_TIMESTAMP MS.DLL version game.revision
+}
+
+{ set_time //<hour> <minute>
+
+	if game.event.params >= 2
+
+	mod PARAM1 24
+	mod PARAM2 60
+
+	callevent time_getseconds			//Get the number of seconds passed
+	local local.mstime.secs global.mstime.secs	//since the beginning of game (MS Time)
+
+	local l.secs $int(PARAM1)			//Get the desired time in seconds
+	multiply l.secs 3600
+
+	local l.mins_to_secs $int(PARAM2)
+	multiply l.mins_to_secs 60
+	
+	add l.secs l.mins_to_secs
+
+	//Get the time offset from the start of the current day
+	//Compare it to the requested time of day, to check if I should
+	//advance to the next day.
+	//--------------------------------------------------
+
+	local l.daystart.secs global.mstime.secs	//Get start of this day
+	divide l.daystart.secs 86400				
+	setvard l.daystart.secs $int(l.daystart.secs)
+	multiply l.daystart.secs 86400
+
+	local l.timefromdaystart global.mstime.secs	//Get time offset from start of day
+	subtract l.timefromdaystart l.daystart.secs
+
+	//If Requested time of day is earlier than Current time of day, fast forward a full day
+
+	if( l.secs < l.timefromdaystart ) add l.secs 86400
+
+	//Add requested time to start of day
+
+	local l.newtime l.daystart.secs
+	add l.newtime l.secs
+
+	//Store in global
+
+	setvarg global.mstime.secs l.newtime
+
+	setvarg global.mstime.updateall 0	//Force update to all
+}
+
+
+{ roll_die //param1 = sides of die
+	local MY_NAME $get(ent_currentplayer,name)
+	local N_SIDES $alphanum(PARAM1) //sanatize
+	stradd MY_NAME " Rolls a "
+	stradd MY_NAME N_SIDES
+	stradd MY_NAME " Sided Die!"
+	local DIE_ROLL $rand(1,N_SIDES)
+	local MSG_STRING "It comes up "
+	stradd MSG_STRING DIE_ROLL
+	infomsg all MY_NAME MSG_STRING
+	consolemsg ent_currentplayer You rolled DIE_ROLL on your N_SIDES sided die.
+}
+
+{ get_player_target
+	if ( $get(ent_currentplayer,target) isnot 0 ) setvard PLAYER_TARGET $get(ent_currentplayer,target)
+	if $get(ent_currentplayer,target) equals 0
+	consolemsg ent_currentplayer "no player target, using insphere..."
+	local PLAYER_POS $get(ent_currentplayer,origin)
+	callexternal ent_currentplayer ext_get_sphere_test any 128 PLAYER_POS
+	setvard PLAYER_TARGET $get(ent_currentplayer,scriptvar,'SPHERE_GOT')
+	if ( PLAYER_TARGET equals 0 ) consolemsg ent_currentplayer "No target in range?"
+	////dbg caller has no target, insphere: $get(PLAYER_TARGET,name)
+}
+
+{ ang3d_loop
+	callevent 0.1 ang3d_loop
+	//draw line from 0 towards player
+	local ANG_TO_PLAYER $angles3d($vec(0,0,0),$get(ANG3D_TESTER,origin))
+	//vectorset ANG_TO_PLAYER x $neg($vec.x(ANG_TO_PLAYER))
+	local VEC_TO_PLAYER $relpos(ANG_TO_PLAYER,$vec(0,128,0))
+	gplayermessage ANG3D_TESTER ANG_TO_PLAYER
+	effect beam point lgtning.spr 20 $relpos(0,0,0) VEC_TO_PLAYER (255,0,255) 200 0 0.2
+}
+
+{ stack_effect_test
+	local CUR_NPC $get_token(MONSTER_LIST,game.script.iteration)
+	if $get(CUR_NPC,relationship,APPLY_ALL_ATTACKER) equals enemy
+	applyeffect CUR_NPC APPLY_ALL_EFFECT 10 APPLY_ALL_ATTACKER 1
+}
+
+{ do_tele
+	consolemsg ent_currentplayer got command tele
+	local X_DEST PARAM1
+	local Y_DEST PARAM2
+	local Z_DEST PARAM3
+	setorigin ent_currentplayer (X_DEST,Y_DEST,Z_DEST)
+}
+
+{ list_critical_npcs
+	local CUR_NPC $get_token(G_CRITICAL_NPCS,game.script.iteration)
+	consolemsg ent_currentplayer game.script.iteration $get(CUR_NPC,name) : [ hp $get(CUR_NPC,hp) ] [ isalive = $get(CUR_NPC,isalive) ]
+}
+
+{ list_scan_tokens
+	//list slowly to prevent flood
+	//setvard SCAN_TOKEN $get_insphere_token(TYPE_SCAN,SCAN_RANGE,SCAN_ORIGIN)
+	if SCAN_COUNT < $get_token_amt(SCAN_TOKEN)
+	callevent 0.1 list_scan_tokens
+
+	local CUR_SCAN $get_token(SCAN_TOKEN,SCAN_COUNT)
+	local SCAN_COUNT_STR "#"
+	stradd SCAN_COUNT_STR $int(SCAN_COUNT)
+	local CUR_SCAN_ORG $get(CUR_SCAN,origin)
+	local CUR_PLAYER_ORG $get(SCAN_CALLER,origin)
+	consolemsg SCAN_CALLER SCAN_COUNT_STR [ $get(CUR_SCAN,name) ] [ CUR_SCAN ] [ dist: $dist(CUR_PLAYER_ORG,CUR_SCAN_ORG) ]
+	
+	add SCAN_COUNT 1
+}
+
+{ check_can_vote
+
+	local VOTE_DELAY $get(PARAM1,scriptvar,'VOTE_DISABLED')
+
+	if ( VOTE_DELAY )
+	{
+		yplayermessage PARAM1 VOTE SYSTEM: You cannot start another vote so soon.
+		consolemsg PARAM1 You cannot start another vote so soon.
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	local ALREADY_VOTING $get(GAME_MASTER,scriptvar,'VOTE_IN_PROGRESS')
+	if ( ALREADY_VOTING )
+	{
+		yplayermessage PARAM1 VOTE SYSTEM: There is a vote in progress.
+		consolemsg PARAM1 There is a vote in progress.
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	setvard CAN_VOTE 1
+
+	dbg check_can_vote: Player can vote
+}
+
+{ test_nest_loop1
+	consolemsg CUR_PLAYER >loop_top_level: game.script.iteration
+	calleventloop 3 test_nest_loop2
+}
+
+{ test_nest_loop2
+	consolemsg CUR_PLAYER >>loop_sublevel1: game.script.iteration
+	calleventloop 2 test_nest_loop3
+}
+
+{ test_nest_loop3
+	consolemsg CUR_PLAYER >>>loop_sublevel2: game.script.iteration
+}
+
+{ loop_get_points
+	local CUR_IDX game.script.iteration
+	local CUR_PLAYER $get_token(PLAYER_LIST,CUR_IDX)
+	local PLAYER_STAT $get(CUR_PLAYER,scriptvar,PLR_TOTAL_DMG) //newfunc in player_main/game_master +1000 for heal/iceshield -1000 for death
+	local PLAYER_SUB_STAT $get(CUR_PLAYER,scriptvar,PLR_DMG) //fraction points
+	multiply PLAYER_SUB_STAT 0.001
+	add PLAYER_STAT PLAYER_SUB_STAT
+	token.add POINTS_TNLIST $get(CUR_PLAYER,name)
+	token.add POINTS_TPLIST PLAYER_STAT
+}
+
+{ loop_sort_points
+	local CUR_IDX game.script.iteration
+	setvard TEST_PLR CUR_IDX
+	setvard HIGH_IDX 0
+	setvard HIGH_SCORE 0
+	calleventloop $get_token_amt(POINTS_TPLIST) loop_find_highest
+	token.add POINTS_PLIST $get_token(POINTS_TPLIST,HIGH_IDX)
+	token.add POINTS_NLIST $get_token(POINTS_TNLIST,HIGH_IDX)
+	token.del POINTS_TPLIST HIGH_IDX
+	token.del POINTS_TNLIST HIGH_IDX
+}
+
+{ loop_find_highest
+	local CUR_IDX game.script.iteration
+	local CUR_SCORE $get_token(POINTS_TPLIST,CUR_IDX)
+	dbg loop_find_highest CUR_IDX  $get_token(POINTS_TNLIST,CUR_IDX) is CUR_SCORE vs HIGH_SCORE
+	if ( CUR_SCORE > HIGH_SCORE )
+	{
+		setvard HIGH_SCORE CUR_SCORE
+		setvard HIGH_IDX CUR_IDX
+	}
+}
+
+{ loop_show_points
+	local CUR_IDX game.script.iteration
+	local CUR_N $get_token(POINTS_NLIST,CUR_IDX)
+	local CUR_P $get_token(POINTS_PLIST,CUR_IDX)
+	multiply CUR_P 1000
+	local OUT_MSG CUR_N
+	strconc OUT_MSG " has" $int(CUR_P) damage points
+	consolemsg CALLING_PLAYER OUT_MSG
+	//infomsg CALLING_PLAYER " " OUT_MSG
+	gplayermessage CALLING_PLAYER OUT_MSG
+	strconc TIP_TEXT OUT_MSG "|"
+}
+
+{ do_list_points
+		getplayersnb PLAYER_LIST
+		setvard POINTS_TNLIST ''
+		setvard POINTS_TPLIST ''
+		calleventloop $get_token_amt(PLAYER_LIST) loop_get_points
+		//these are fake scores for testing
+		if ( G_DEVELOPER_MODE )
+		{
+			token.add PLAYER_LIST "0"
+			token.add PLAYER_LIST "0"
+			token.add PLAYER_LIST "0"
+			token.add PLAYER_LIST "0"
+			token.add POINTS_TNLIST "test_30"
+			token.add POINTS_TPLIST 0.03
+			token.add POINTS_TNLIST "test_1k"
+			token.add POINTS_TPLIST 1.0
+			token.add POINTS_TNLIST "test_40"
+			token.add POINTS_TPLIST 0.04
+			token.add POINTS_TNLIST "test_50"
+			token.add POINTS_TPLIST 0.05
+		}
+		dbg list_points - POINTS_TPLIST POINTS_TNLIST
+		setvard POINTS_NLIST ''
+		setvard POINTS_PLIST ''
+		calleventloop $get_token_amt(POINTS_TPLIST) loop_sort_points
+		consolemsg CALLING_PLAYER "Damage Point Listings:"
+		gplayermessage CALLING_PLAYER "Damage Point Listings:"
+		setvard TIP_TEXT ''
+		calleventloop $get_token_amt(POINTS_NLIST) loop_show_points
+		consolemsg CALLING_PLAYER "Damage points are acquire by harming monsters and aiding allies"
+		consolemsg CALLING_PLAYER "The player with the highest dmg point score has contributed the most to your victory"
+		helptip CALLING_PLAYER generic "Damage Point Listings" TIP_TEXT
+}
+
+{ do_list_resists
+	setvard RESIST_NAMES $get(CALLING_PLAYER,scriptvar,'PLR_RESIST_ELEMENTS')
+	setvard RESIST_VALUES $get(CALLING_PLAYER,scriptvar,'PLR_RESIST_VALUES')
+	consolemsg CALLING_PLAYER "Resistance ratios (lower = more resistant, 1.0 = normal, 0.0 = immune)"
+	setvard TIP_TEXT ''
+	calleventloop $get_token_amt(RESIST_NAMES) list_resist_loop
+	local STUN_VALUE $get(CALLING_PLAYER,scriptvar,'IMMUNE_STUN')
+	stradd STUN_VALUE "%"
+	strconc TIP_TEXT Stun = STUN_VALUE "||"
+	local DARK_LEVEL $get(CALLING_PLAYER,scriptvar,'PLR_DARK_LEVEL')
+	strconc TIP_TEXT Darkness Level = $int(DARK_LEVEL) "|"
+	helptip CALLING_PLAYER generic "Resistance Listings" TIP_TEXT
+}
+
+{ list_resist_loop
+	local CUR_IDX game.script.iteration
+	consolemsg CALLING_PLAYER $get_token(RESIST_NAMES,CUR_IDX) = $get_token(RESIST_VALUES,CUR_IDX)
+
+	local RESIST_VAL $get_token(RESIST_VALUES,CUR_IDX)
+	multiply RESIST_VAL 100
+	local OUT_VAL 100
+	subtract OUT_VAL RESIST_VAL
+	local OUT_VAL $int(OUT_VAL)
+	stradd OUT_VAL "%"
+	strconc TIP_TEXT $get_token(RESIST_NAMES,CUR_IDX) = OUT_VAL "|"
+}
+
+{ get_sizes
+	if ( MAP_IDX < N_TOKENS )
+	{
+		local CUR_MAP $get_token(TOKEN_LIST,MAP_IDX)
+		local MAP_PREFIX 'maps/'
+		local MAP_SUFFIX '.bsp'
+		local MAP_FILE MAP_PREFIX
+		stradd MAP_FILE CUR_MAP
+		stradd MAP_FILE MAP_SUFFIX
+		local MAP_SIZE $filesize(MAP_FILE)
+		token.add MAP_SIZES MAP_SIZE
+		consolemsg CALLING_PLAYER [ MAP_SET ] MAP_FILE = MAP_SIZE
+	}
+	if ( MAP_IDX == N_TOKENS )
+	{
+		local WRITE_LOG "const MAP_SIZES_FN"
+		strconc WRITE_LOG $int(MAP_SET) $quote(MAP_SIZES)
+		writeline mapsizes.txt WRITE_LOG
+		add MAP_SET 1
+		if ( MAP_SET == 2 ) setvard TOKEN_LIST MAPS_FN2
+		if ( MAP_SET == 3 ) setvard TOKEN_LIST MAPS_FN3
+		if ( MAP_SET == 4 )
+		{
+			consolemsg CALLING_PLAYER Map catalog complete
+			local EXIT_SUB 1
+		}
+		setvard MAP_SIZES ''
+		setvard MAP_IDX -1
+		setvard N_TOKENS $get_token_amt(TOKEN_LIST)
+	}
+	if !EXIT_SUB
+	add MAP_IDX 1
+	callevent 0.1 get_sizes
+}
+
+{ get_sizes2
+	if ( MAP_IDX < N_TOKENS )
+	{
+		local CUR_MAP $get_token(TOKEN_LIST,MAP_IDX)
+		local MAP_PREFIX 'maps/'
+		local MAP_SUFFIX '.bsp'
+		local MAP_FILE MAP_PREFIX
+		stradd MAP_FILE CUR_MAP
+		stradd MAP_FILE MAP_SUFFIX
+		local MAP_SIZE $filesize(MAP_FILE)
+		local OUT_LOG CUR_MAP
+		stradd OUT_LOG " "
+		stradd OUT_LOG MAP_SIZE
+		writeline mapsizes.txt OUT_LOG
+	}
+	if ( MAP_IDX == N_TOKENS )
+	{
+		add MAP_SET 1
+		if ( MAP_SET == 2 ) setvard TOKEN_LIST MAPS_FN2
+		if ( MAP_SET == 3 ) setvard TOKEN_LIST MAPS_FN3
+		if ( MAP_SET == 4 )
+		{
+			consolemsg CALLING_PLAYER Map catalog complete
+			local EXIT_SUB 1
+		}
+		setvard MAP_SIZES ''
+		setvard MAP_IDX -1
+		setvard N_TOKENS $get_token_amt(TOKEN_LIST)
+	}
+	if !EXIT_SUB
+	add MAP_IDX 1
+	callevent 0.1 get_sizes2
+}
+
+{ cat_set
+	setvard MAP_SET 1
+	setvard TOKEN_LIST MAPS_FN1
+	setvard MAP_SIZES ''
+	setvard MAP_IDX 0
+	setvard N_TOKENS $get_token_amt(TOKEN_LIST)
+	callevent get_sizes
+}
+
+{ cat_set2
+	setvard MAP_SET 1
+	setvard TOKEN_LIST MAPS_FN1
+	setvard MAP_SIZES ''
+	setvard MAP_IDX 0
+	setvard N_TOKENS $get_token_amt(TOKEN_LIST)
+	callevent get_sizes2
+}
+
+{ list_players
+
+	local CUR_PLAYER $get_token(TEST_PLAYERS,LOOP_COUNT)
+	consolemsg PLAYER_LISTER # LOOP_COUNT - $get(CUR_PLAYER,name) [ CUR_PLAYER ] req $get(CUR_PLAYER,REQ_ATTRIB,REQ_STRING)
+
+	add LOOP_COUNT 1
+	if LOOP_COUNT < $get_token_amt(TEST_PLAYERS)
+	callevent 0.1 list_players
+}
+
+{ list_players_fast
+
+	local PLAYER_IDX game.script.iteration
+
+	local CUR_PLAYER $get_token(TEST_PLAYERS,PLAYER_IDX)
+	consolemsg PLAYER_LISTER # PLAYER_IDX - $get(CUR_PLAYER,name) [ CUR_PLAYER ] req $get(CUR_PLAYER,REQ_ATTRIB,REQ_STRING)
+}
+
+{ list_with_item
+	local CUR_PLAYER $get_token(TEST_PLAYERS,LOOP_COUNT)
+	local HAS_ITEM $item_exists(CUR_PLAYER,ITEM_CHECK)
+	local IS_BOT $get(CUR_PLAYER,isbot)
+	consolemsg ent_currentplayer # LOOP_COUNT $get(CUR_PLAYER,name) ITEM_CHECK ( HAS_ITEM )
+	add LOOP_COUNT 1
+	if LOOP_COUNT < $get_token_amt(TEST_PLAYERS)
+	callevent 0.1 list_with_item
+}
+
+{ make_tickets
+	setvard TICKET_LIST "axes_dragon;smallarms_nh;bows_firebird;bows_frost;armor_faura;armor_paura;armor_venom"
+	setvard TICKET_PREFIX "item_tk_"
+	setvard N_TICKETS $get_token_amt(TICKET_LIST)
+	setvard TICKET_IDX 0
+	callevent make_tickets_loop
+	
+}
+
+{ make_tickets_loop
+	local CUR_TICKET $get_token(TICKET_LIST,TICKET_IDX)
+	local TICKET_NAME TICKET_PREFIX
+	stradd TICKET_NAME CUR_TICKET
+	writeline tickets.txt TICKET_NAME
+	local TICKET_FILE TICKET_NAME
+	stradd TICKET_FILE ".script"
+	writeline TICKET_FILE "#include items/base_ticket"
+	writeline TICKET_FILE "{ ticket_spawn"
+	local TICKET_ITEM "name Ticket for "
+	stradd TICKET_ITEM $item_exists(MASTER_ID,CUR_TICKET,name)
+	writeline TICKET_FILE TICKET_ITEM
+	writeline TICKET_FILE "}"
+
+	local TICKET_IDX_P1 TICKET_IDX
+	add TICKET_IDX_P1 1
+	consolemsg MASTER_ID Wrote TICKET_FILE ( TICKET_IDX_P1 of N_TICKETS )
+
+	if ( TICKET_IDX_P1 == N_TICKETS )
+	{
+		consolemsg MASTER_ID Done. Remember to add to NPCs/base_storage
+	}
+	else
+	{
+		add TICKET_IDX 1
+		callevent 1.0 make_tickets_loop
+	}
+	
+}
+
+{ make_array
+	local CUR_ID $get_token(TO_ARRAY,game.script.iteration)
+	array.add ARRAY_TEST CUR_ID
+}
+
+{ list_array
+	local CUR_ARRAY $get_array(ARRAY_TEST,game.script.iteration)
+	consolemsg MASTER_ID # game.script.iteration = CUR_ARRAY $get(CUR_ARRAY,name)
+}
+
+{ list_item_array
+	getitemarray ITEM_ARRAY_TARGET ARRAY_ITEM_LIST
+	consolemsg ITEM_ARRAY_TARGET Dumping Inventory:
+	setvard ITEM_COUNTER 0
+	if ( !G_DEVELOPER_MODE ) callevent show_items
+	else callevent show_items_dev
+}
+
+{ show_items
+	local CUR_ITEM $get_array(ARRAY_ITEM_LIST,ITEM_COUNTER)
+	local OUT_MSG $get(CUR_ITEM,name)
+	if ( $get(CUR_ITEM,is_projectile) )
+	{
+		stradd OUT_MSG "("
+		stradd OUT_MSG $get(CUR_ITEM,quantity)
+		stradd OUT_MSG ")"
+
+	}
+	else if ( $get(CUR_ITEM,is_drinkable) )
+	{
+		stradd OUT_MSG "("
+		stradd OUT_MSG $get(CUR_ITEM,quality)
+		stradd OUT_MSG ")"
+	}
+	
+	consolemsg ITEM_ARRAY_TARGET $int(ITEM_COUNTER) OUT_MSG
+
+	local L_N_ITEMS $get_array_amt(ARRAY_ITEM_LIST)
+
+	subtract L_N_ITEMS 1
+	if ( ITEM_COUNTER < L_N_ITEMS )
+	{
+		add ITEM_COUNTER 1
+		callevent 0.1 show_items
+	}
+	else
+	{
+		consolemsg ITEM_ARRAY_TARGET - Total Items: ITEM_COUNTER
+	}
+}
+
+{ show_items_dev
+	local CUR_ITEM $get_array(ARRAY_ITEM_LIST,ITEM_COUNTER)
+
+	local L_ITEM $int(ITEM_COUNTER)
+	local L_ENTRY "    "
+	local L_ENTRY $replace(L_ENTRY,L_ITEM,0)
+	local OUT_MSG L_ENTRY
+
+	local L_ITEM $get(CUR_ITEM,itemname)
+	local L_ENTRY "                            "
+	local L_ENTRY $replace(L_ENTRY,L_ITEM,0)
+	stradd OUT_MSG L_ENTRY
+
+	
+	local L_ITEM $get(CUR_ITEM,name)
+	local L_ENTRY "                            "
+	local L_ENTRY $replace(L_ENTRY,L_ITEM,0)
+	stradd OUT_MSG L_ENTRY
+
+	local L_ITEM $get(CUR_ITEM,quantity)
+	local L_ENTRY "      "
+	local L_ENTRY $replace(L_ENTRY,L_ITEM,0)
+	stradd OUT_MSG L_ENTRY
+
+	local L_ITEM $get(CUR_ITEM,quality)
+	local L_ENTRY "      "
+	local L_ENTRY $replace(L_ENTRY,L_ITEM,0)
+	stradd OUT_MSG L_ENTRY
+
+
+	consolemsg ITEM_ARRAY_TARGET OUT_MSG
+
+	local L_N_ITEMS $get_array_amt(ARRAY_ITEM_LIST)
+	subtract L_N_ITEMS 1
+	if ( ITEM_COUNTER < L_N_ITEMS )
+	{
+		add ITEM_COUNTER 1
+		callevent 0.1 show_items_dev
+	}
+	else
+	{
+		consolemsg ITEM_ARRAY_TARGET - Total Items: ITEM_COUNTER
+	}
+}
+
+
+{ dev_command
+
+//================================================= FN ENABLED DEVELOPER COMMANDS
+
+
+	if ( PARAM1 equals 'clientcmd' )
+	{
+		consolemsg ent_currentplayer clientcommand PARAM2
+		clientcmd ent_currentplayer PARAM2 PARAM3 PARAM4 PARAM5 PARAM6 PARAM7 PARAM8
+	}
+
+	if ( PARAM1 equals 'listenserver' )
+	{
+		getplayer FOUND_PLAYER 1
+		if ( $get(FOUND_PLAYER,ip) equals 'loopback' ) consolemsg ent_currentplayer This is a listen server.
+		else consolemsg ent_currentplayer This is a dedicated server.
+	}
+
+	if ( PARAM1 equals 'log' )
+	{
+		//consolemsg ent_currentplayer Logging PARAM2
+		chatlog PARAM2 PARAM3 PARAM4 PARAM5
+	}
+
+	if ( PARAM1 equals 'getplayer' )
+	{
+		getplayer FOUND_PLAYER PARAM2
+		consolemsg ent_currentplayer Player # PARAM2 is $get(FOUND_PLAYER,name) [ FOUND_PLAYER ] req: $get(FOUND_PLAYER,PARAM3)  scriptvar: $get(FOUND_PLAYER,scriptvar,PARAM3)
+	}
+
+	if ( PARAM1 equals 'quest' )
+	{
+		local QUEST_STRING PARAM2
+		if ( PARAM2 equals 'dump' )
+		{
+			callexternal ent_currentplayer ext_dump_quests
+		}
+		else
+		{
+			consolemsg ent_currentplayer quest QUEST_STRING is $get_quest_data(ent_currentplayer,QUEST_STRING)
+		}
+	}
+
+	if ( PARAM1 equals 'attackprop' )
+	{
+		local ACTIVE_WEAPON $get(ent_currentplayer,active_item)
+		local ACTIVE_PROP $get_attackprop(ACTIVE_WEAPON,0,PARAM2)
+		consolemsg ent_currentplayer [ PARAM2 ] $get(ACTIVE_WEAPON,name) returned ACTIVE_PROP
+	}
+
+	if ( PARAM1 equals 'scan' )
+	{
+		local SCAN_RANGE PARAM3
+		local TYPE_SCAN PARAM2
+		if ( TYPE_SCAN contains 'PARAM' ) local TYPE_SCAN any
+		if ( SCAN_RANGE contains 'PARAM' ) local SCAN_RANGE 1024
+		local SCAN_ORIGIN $get(ent_currentplayer,origin)
+		callexternal ent_currentplayer ext_sphere_token TYPE_SCAN SCAN_RANGE SCAN_ORIGIN
+		setvard SCAN_TOKEN $get(ent_currentplayer,scriptvar,PLR_SCAN_TOKEN)
+		setvard SCAN_COUNT 0
+		setvard SCAN_CALLER $get(ent_currentplayer,id)
+		consolemsg ent_currentplayer Scan_Type: TYPE_SCAN range: SCAN_RANGE
+
+		callevent 0.1 list_scan_tokens
+	}
+
+	if ( PARAM1 equals 'scanx' )
+	{
+		local SCAN_RANGE PARAM3
+		local TYPE_SCAN PARAM2
+		if ( TYPE_SCAN contains 'PARAM' ) local TYPE_SCAN any
+		if ( SCAN_RANGE contains 'PARAM' ) local SCAN_RANGE 1024
+		local SCAN_ORIGIN $get(ent_currentplayer,origin)
+		callexternal ent_currentplayer ext_sphere_token_x TYPE_SCAN SCAN_RANGE SCAN_ORIGIN
+		setvard SCAN_TOKEN $get(ent_currentplayer,scriptvar,PLR_SCAN_TOKEN)
+		setvard SCAN_COUNT 0
+		setvard SCAN_CALLER $get(ent_currentplayer,id)
+		consolemsg ent_currentplayer Scan_Type: TYPE_SCAN range: SCAN_RANGE
+
+		callevent 0.1 list_scan_tokens
+	}
+
+	if ( PARAM1 equals 'inbox' )
+	{
+		local SCAN_RANGE PARAM3
+		local TYPE_SCAN PARAM2
+		if ( TYPE_SCAN contains 'PARAM' ) local TYPE_SCAN any
+		if ( SCAN_RANGE contains 'PARAM' ) local SCAN_RANGE 1024
+		local SCAN_ORIGIN $get(ent_currentplayer,origin)
+		callexternal ent_currentplayer ext_box_token TYPE_SCAN SCAN_RANGE SCAN_ORIGIN
+		setvard SCAN_TOKEN $get(ent_currentplayer,scriptvar,PLR_SCAN_TOKEN)
+		setvard SCAN_COUNT 0
+		setvard SCAN_CALLER $get(ent_currentplayer,id)
+		consolemsg ent_currentplayer Scan_Type: TYPE_SCAN range: SCAN_RANGE
+
+		callevent 0.1 list_scan_tokens
+	}
+
+	if ( PARAM1 equals 'debug' )
+	{
+		local TARGET_ID $get_token(SCAN_TOKEN,PARAM2)
+		if ( PARAM2 > $get_token_amt(SCAN_TOKEN) )
+		{
+			consolemsg ent_currentplayer Invalid Index - Run . scan first?
+			local EXIT_SUB 1
+		}
+		if !EXIT_SUB
+		local OUT_PAR1 PARAM3
+		local OUT_PAR2 PARAM4
+		local OUT_PAR3 PARAM5
+		local OUT_PAR4 PARAM6
+		local OUT_PAR5 $get(ent_currentplayer,id)
+		consolemsg ent_currentplayer Running debug on $get(TARGET_ID,name) OUT_PAR1 OUT_PAR2 OUT_PAR3 OUT_PAR4
+		callexternal TARGET_ID bd_debug OUT_PAR1 OUT_PAR2 OUT_PAR3 OUT_PAR4 OUT_PAR5
+	}
+
+	if ( PARAM1 equals 'mapinfo' )
+	{
+		dbg map info
+		consolemsg ent_currentplayer Map Title: game.map.title
+		consolemsg ent_currentplayer Map Desc: game.map.desc
+		consolemsg ent_currentplayer HPWarn: game.map.hpwarn
+		consolemsg ent_currentplayer Weather: game.map.weather
+	}
+	if ( PARAM1 equals 'dbg' )
+	{
+		consolemsg ent_currentplayer DebugActiveTest:
+		dbg PARAM1 PARAM2 PARAM3 PARAM4 PARAM5 PARAM6 PARAM7 PARAM8
+	}
+	if ( PARAM1 equals 'time' )
+	{
+		local T_TIME game.time
+		divide T_TIME 60
+		consolemsg ent_currentplayer Game_uptime: game.time ( $int(T_TIME) min ) Worldtime: global.mstime.secs gm: G_MAP_UPTIME ( Yours: afkbeat: $get(ent_currentplayer,scriptvar,IS_AFK) total: $get(ent_currentplayer,scriptvar,AFK_TIME) inworldtime: $get(ent_currentplayer,scriptvar,PL_TIME) )
+	}
+	if ( PARAM1 equals 'hasitem' )
+	{
+		consolemsg ent_currentplayer Checking for item PARAM2
+		setvard ITEM_CHECK PARAM2
+		getplayers TEST_PLAYERS
+		setvard LOOP_COUNT 0
+		callevent 0.1 list_with_item
+	}
+
+	if ( PARAM1 equals 'sphere' )
+	{
+		local OUT_PAR1 PARAM2
+		local OUT_PAR2 PARAM3
+		consolemsg ent_currentplayer Seinding get_insphere OUT_PAR1 OUT_PAR2 $get(ent_currentplayer,origin)
+		callexternal ent_currentplayer ext_get_sphere_test OUT_PAR1 OUT_PAR2  $get(ent_currentplayer,origin)
+	}
+
+	if ( PARAM1 equals 'scriptvar' )
+	{
+		callevent get_player_target
+		consolemsg ent_currentplayer scriptvar PARAM2 on PLAYER_TARGET reads $get(PLAYER_TARGET,scriptvar,PARAM2)
+	}
+	if ( PARAM1 equals 'getcvar' )
+	{
+		consolemsg ent_currentplayer cvar PARAM2 is $get_cvar(PARAM2)
+	}
+	if ( PARAM1 equals 'getents' )
+	{
+		consolemsg ent_currentplayer sending getents PARAM2 PARAM3
+		callexternal $get(ent_currentplayer,id) ext_scan_radius PARAM2 PARAM3
+	}
+
+	//FN-i/o tests: [BEGIN}
+	if ( G_DEVELOPER_MODE )
+	{
+		if ( PARAM1 equals 'writefn' ) 
+		{ 
+			local FILENAME test.txt
+			local LINE PARAM2  
+			writefnfile FILENAME LINE 2  
+			consolemsg ent_currentplayer Writing file to FN [ FILENAME ] LINE  
+		} 
+		if ( PARAM1 equals 'overwritefn' ) 
+		{ 
+			local FILENAME 'test.txt'  
+			local LINE PARAM1
+			writefnfile FILENAME LINE 1 o
+			consolemsg ent_currentplayer overwriting Line 1 with LINE  
+		} 
+		if ( PARAM1 equals 'appendfn' ) 
+		{ 
+			local FILENAME 'test.txt'  
+			local LINE PARAM2
+			appendfnfile FILENAME LINE  
+			consolemsg ent_currentplayer Appending FN File [ FILENAME ] with LINE  
+		} 
+		if ( PARAM1 equals 'readfnfile' ) 
+		{ 
+			local FILENAME 'test.txt'  
+			consolemsg ent_currentplayer Reading a file from FN file FILENAME  - rec'd $get_fnfileline(FILENAME)
+		}
+		if ( PARAM1 equals 'closefnfile' )  
+		{ 
+			closefnfile test.txt  
+			consolemsg ent_currentplayer Closed FN File: test.txt  
+		}
+	}
+	//FN-i/o tests: [END]
+
+
+//================================================= END FN ENABLED DEVELOPER COMMANDS
+
+	if !game.central
+
+	if ( PARAM1 equals 'power' )
+	{
+		if G_DEVELOPER_MODE
+		consolemsg ent_currentplayer powah!
+		callexternal ent_currentplayer potion_regen 500.0
+		applyeffect ent_currentplayer effects/speed 1800 400 3.0
+		applyeffect ent_currentplayer effects/protection 5400 0.4
+	}
+
+	if ( PARAM1 startswith 'create' )
+	{
+		if G_DEVELOPER_MODE
+
+		if ( PARAM1 equals 'createnpc' )
+		{
+			consolemsg got command createnpc
+			//precachefile PARAM2
+			local SPAWN_POINT $get(ent_currentplayer,origin)
+			local MY_ANGLES $get(ent_currentplayer,angles)
+			local MY_YAW $vec.yaw(MY_ANGLES)
+			vectoradd SPAWN_POINT $relpos($vec(0,MY_YAW,0),$vec(0,128,0))
+			local OUT_PAR1 PARAM3
+			if ( $lcase(OUT_PAR1) equals 'me' ) local OUT_PAR1 $get(ent_currentplayer,id)
+			if ( $lcase(OUT_PAR1) equals 'gm' ) local OUT_PAR1 GAME_MASTER
+			local OUT_PAR2 PARAM4
+			if ( $lcase(OUT_PAR2) equals 'me' ) local OUT_PAR1 $get(ent_currentplayer,id)
+			if ( $lcase(OUT_PAR2) equals 'gm' ) local OUT_PAR1 GAME_MASTER
+			local OUT_PAR3 PARAM5
+			if ( $lcase(OUT_PAR3) equals 'me' ) local OUT_PAR1 $get(ent_currentplayer,id)
+			if ( $lcase(OUT_PAR3) equals 'gm' ) local OUT_PAR1 GAME_MASTER
+			local OUT_PAR4 PARAM6
+			if ( $lcase(OUT_PAR4) equals 'me' ) local OUT_PAR1 $get(ent_currentplayer,id)
+			if ( $lcase(OUT_PAR4) equals 'gm' ) local OUT_PAR1 GAME_MASTER
+			if ( OUT_PAR1 equals 'ME' ) local OUT_PAR1 $get(ent_currentplayer,id)
+			createnpc PARAM2 SPAWN_POINT OUT_PAR1 OUT_PAR2 OUT_PAR3 OUT_PAR4
+		}
+
+		if ( PARAM1 equals 'createdyn' )
+		{
+			consolemsg ent_currentplayer got command createdyn PARAM2 PARAM3 PARAM4 PARAM5
+			local SPAWN_POINT $get(ent_currentplayer,origin)
+			local MY_ANGLES $get(ent_currentplayer,angles)
+			local MY_YAW $vec.yaw(MY_ANGLES)
+			vectoradd SPAWN_POINT $relpos($vec(0,MY_YAW,0),$vec(0,128,0))
+			local SCRIPT_IDX PARAM2
+			if ( PARAM2 startswith 'PARAM' ) local SCRIPT_IDX 0	
+			local OUT_PAR1 PARAM3
+			local OUT_PAR2 PARAM4
+			local OUT_PAR3 PARAM5
+			local OUT_PAR4 PARAM6
+			local SCRIPT_TOKEN $get_token(game.cvar.ms_dynamicnpc,SCRIPT_IDX)
+			createnpc SCRIPT_TOKEN SPAWN_POINT OUT_PAR1 OUT_PAR2 OUT_PAR3 OUT_PAR4
+		}
+
+		if ( PARAM1 equals 'createitem' )
+		{
+			consolemsg ent_currentplayer got command createitem
+			//precachefile PARAM2
+			local SPAWN_POINT $get(ent_currentplayer,origin)
+			local MY_ANGLES $get(ent_currentplayer,angles)
+			local MY_YAW $vec.yaw(MY_ANGLES)
+			vectoradd SPAWN_POINT $relpos($vec(0,MY_YAW,0),$vec(0,64,0))
+			createitem PARAM2 SPAWN_POINT PARAM3 PARAM4 PARAM5
+		}
+	}
+
+	if ( PARAM1 equals 'remv' )
+	{
+		if G_DEVELOPER_MODE
+		consolemsg ent_currentplayer got command remv
+		callexternal $get(ent_currentplayer,target) npc_suicide
+	}
+	if ( PARAM1 equals 'setquality' )
+	{
+		local MY_WEAPON $get(ent_currentplayer,scriptvar,'PLR_ACTIVE_WEAPON')
+		consolemsg ent_currentplayer setquality PARAM2 PARAM3 on $get(MY_WEAPON,name)
+		if ( PARAM2 !startswith PARAM ) setquality MY_WEAPON PARAM2 PARAM3
+		else setquality MY_WEAPON PARAM2
+	}
+
+	if ( PARAM1 equals 'clme' )
+	{
+		consolemsg ent_currentplayer Running clientevent PARAM2 on you with params PARAM3 PARAM4 PARAM5 PARAM6
+		clientevent update ent_currentplayer const.localplayer.scriptID PARAM2 PARAM3 PARAM4 PARAM5 PARAM6 PARAM7 PARAM8
+	}
+
+//	if ( PARAM1 equals 'alpha' )
+//	{
+//		local L_SPACE " "
+//		consolemsg ent_currentplayer Testing alpha strip with spaces: $alphanum(PARAM2,L_SPACE)
+//	}
+
+	if ( PARAM1 equals 'clall' )
+	{
+		consolemsg ent_currentplayer Running clientevent PARAM2 to all with params PARAM3 PARAM4 PARAM5 PARAM6
+		clientevent update all const.localplayer.scriptID PARAM2 PARAM3 PARAM4 PARAM5 PARAM6 PARAM7 PARAM8
+	}
+
+	if ( PARAM1 equals 'functest' )
+	{
+		consolemsg ent_currentplayer Running functest $func(func_test,PARAM2)
+	}
+
+//
+//	if ( PARAM1 equals 'dclientcmd' )
+//	{
+//		local OUT_CMD PARAM2
+//		stradd OUT_CMD " "
+//		strconc OUT_CMD PARAM3 PARAM4 PARAM5 PARAM6 PARAM7
+//		consolemsg ent_currentplayer Running direct clientcmd OUT_CMD to you
+//		callexternal ent_currentplayer ext_clevent_me ext_cl_clientcmd OUT_CMD
+//	}
+//
+//	if ( PARAM1 equals 'dorecon' )
+//	{
+//		consolemsg ent_currentplayer Running reconnect script on you
+//		clientevent update ent_currentplayer const.localplayer.scriptID ext_cl_clientcmd "exec recon.cfg"
+//	}
+
+
+	if ( PARAM1 equals 'imgtest' )
+	{
+		//msc\gfx\vgui\
+		consolemsg ent_currentplayer Imgtest img PARAM2 x PARAM3 y PARAM4 w PARAM5 h PARAM6
+		gplayermessage ent_currentplayer IMG: x PARAM3 y PARAM4 w PARAM5 h PARAM6
+		//hud.addimgicon <player> <icon> <name> <x> <y> <width> <height> <duration>
+
+		hud.addimgicon ent_currentplayer PARAM2 $rand(1,1000) PARAM3 PARAM4 PARAM5 PARAM6 10.0
+	}
+
+	if ( PARAM1 equals 'icon' )
+	{
+		local ICON_NAME PARAM2
+		hud.addstatusicon ent_currentplayer ICON_NAME test 10.0
+	}
+//	if ( PARAM1 equals 'dsword' )
+//	{
+//		if !game.central
+//		if ( PARAM2 equals 'create' )
+//		{
+//			consolemsg ent_currentplayer Creating dev sword
+//			//precachefile PARAM2
+//			local SPAWN_POINT $get(ent_currentplayer,origin)
+//			local MY_ANGLES $get(ent_currentplayer,angles)
+//			local MY_YAW $vec.yaw(MY_ANGLES)
+//			vectoradd SPAWN_POINT $relpos($vec(0,MY_YAW,0),$vec(0,64,0))
+//			createitem swords_dynamic SPAWN_POINT
+//		}
+//		if ( PARAM2 isnot 'create' )
+//		{
+//			local CUR_WEAPON $get(ent_currentplayer,scriptvar,PLR_ACTIVE_WEAPON)
+//			consolemsg ent_currentplayer Setting devsword submodel PARAM2 anim PARAM3
+//			local OUT_PAR1 PARAM2
+//			local OUT_PAR2 PARAM3
+//			//setviewmodelprop ent_currentplayer submodel 1 OUT_PAR2
+//			callexternal CUR_WEAPON ext_sub OUT_PAR1 OUT_PAR2
+//		}
+//	}
+	if ( PARAM1 equals fn )
+	{
+		consolemsg ent_currentplayer FNspr PARAM2
+		hud.setfnconnection PARAM2
+	}
+
+	if ( PARAM1 equals 'viewprop' )
+	{
+		local CUR_WEAPON $get(ent_currentplayer,scriptvar,PLR_ACTIVE_WEAPON)
+		consolemsg ent_currentplayer Setting rendermode PARAM2 of PARAM3 PARAM4 on $get(CUR_WEAPON,name)
+		setviewmodelprop CUR_WEAPON PARAM2 PARAM3 PARAM4
+	}
+	if ( PARAM1 equals 'spellslot' )
+	{
+		consolemsg ent_currentplayer Spellslot PARAM2 is $get(ent_currentplayer,spellname,PARAM2)
+	}
+	if ( PARAM1 equals 'filesize' )
+	{
+		consolemsg ent_currentplayer File PARAM2 is $filesize(PARAM2)
+	}
+//	if ( PARAM1 equals 'nestloop' )
+//	{
+//		//testing if can nest loops
+//		consolemsg ent_currentplayer Loop begins:
+//		setvard CUR_PLAYER $get(ent_currentplayer,id)
+//		calleventloop 3 test_nest_loop1
+//	}
+//	if ( PARAM1 equals 'break' )
+//	{
+//		//testing exit command
+//		if ( 1 == 1 )
+//		{
+//			consolemsg ent_currentplayer Not breaking
+//			consolemsg ent_currentplayer Breaking now...
+//			exit
+//			consolemsg ent_currentplayer Past break
+//		}
+//		consolemsg ent_currentplayer Post if break
+//	}
+
+
+
+//	if ( PARAM1 equals 'strconc' )
+//	{
+//		local L_OUT_STR $get(ent_currentplayer,name)
+//		strconc L_OUT_STR ' ' has $get(ent_currentplayer,hp) and you sent PARAM2 PARAM3 PARAM4
+//		consolemsg ent_currentplayer L_OUT_STR
+//	}
+	if ( PARAM1 equals 'takedmg' )
+	{
+		local OUT_PAR PARAM2
+		consolemsg ent_currentplayer calling takedmg reports
+		callexternal all ext_report_armor OUT_PAR $get(ent_currentplayer,id)
+	}
+//	if ( PARAM1 equals 'tokidx' )
+//	{
+//		local TOKEN_STR "1;2;3;"
+//		consolemsg ent_currentplayer TOKEN_STR counts as $get_token_amt(TOKEN_STR) items
+//	}
+//	if ( PARAM1 equals 'testmap' )
+//	{
+//		local MAP_TEST PARAM2
+//		local MAP_VALID $map_exists(MAP_TEST)
+//		if ( MAP_VALID ) consolemsg ent_currentplayer Yes, PARAM2 does exist ( MAP_TEST $map_exists(MAP_TEST) )
+//		if ( !MAP_VALID ) consolemsg ent_currentplayer No, PARAM2 does not exist on this server ( MAP_TEST $map_exists(MAP_TEST) )
+//	}
+	if ( PARAM1 equals 'viewanim' )
+	{
+		local ANIM_IDX PARAM2
+		splayviewanim $get(ent_currentplayer,active_item) ANIM_IDX
+		consolemsg ent_currentplayer Playin anim ANIM_IDX
+	}
+
+	if ( PARAM1 equals 'clit' )
+	{
+		local CUR_WEAPON $get(ent_currentplayer,active_item)
+		consolemsg ent_currentplayer Sending PARAM2 to $get(CUR_WEAPON,name)
+		callclitemevent CUR_WEAPON PARAM2 PARAM3 PARAM4 PARAM5
+	}
+
+//	if ( PARAM1 equals 'touchon' )
+//	{
+//		consolemsg ent_currentplayer Activating game_touch
+//		callexternal all ext_touch_on
+//	}
+
+//	if ( PARAM1 equals 'tokenset' )
+//	{
+//		local TOKEN_IDX PARAM2
+//		local TOKEN_REP PARAM3
+//		callexternal ent_currentplayer ext_tokentest_set TOKEN_IDX TOKEN_REP
+//	}
+//	if ( PARAM1 equals 'tscramble' )
+//	{
+//		callexternal ent_currentplayer ext_tokentest_scramble
+//	}
+//	if ( PARAM1 equals 'tokenreset' )
+//	{
+//		callexternal ent_currentplayer ext_tokentest_reset
+//	}
+//	if ( PARAM1 equals 'tokenfind' )
+//	{
+//		callexternal ent_currentplayer ext_tokentest_find PARAM2
+//	}
+
+	if ( PARAM1 equals 'poisonme' ) applyeffect ent_currentplayer effects/effect_poison 30 GAME_MASTER 1 0 spellcasting.affliction
+
+	if ( PARAM1 equals 'cheat' )
+	{
+		CheatEngineCheck
+		consolemsg ent_currentplayer Checking encryption...
+	}
+//	if ( PARAM1 equals 'precount' )
+//	{
+//		precount TEST_VAR
+//		consolemsg ent_currentplayer Precache_count TEST_VAR
+//	}
+
+	if ( PARAM1 equals 'woundme' )
+	{
+		local DMG_TYPE PARAM3
+		if ( DMG_TYPE startswith 'PARAM' ) local DMG_TYPE target
+		consolemsg ent_currentplayer Wounding you for PARAM2 with DMG_TYPE
+		//callexternal GAME_MASTER send_damage $get(ent_currentplayer,id) direct PARAM2 100 GAME_MASTER target
+		xdodamage ent_currentplayer direct PARAM2 100% GAME_MASTER GAME_MASTER none DMG_TYPE none
+	}
+	if ( PARAM1 equals 'drainme' )
+	{
+		local DMG_TYPE PARAM3
+		if ( DMG_TYPE startswith 'PARAM' ) local DMG_TYPE target
+		consolemsg ent_currentplayer Wounding you for PARAM2 with DMG_TYPE
+		//callexternal GAME_MASTER send_damage $get(ent_currentplayer,id) direct PARAM2 100 GAME_MASTER target
+		drainhp ent_currentplayer GAME_MASTER PARAM2
+	}
+
+	if ( PARAM1 equals 'gm_say' )
+	{
+		local OUT_MSG PARAM2
+		consolemsg ent_currentplayer game_master_say OUT_MSG
+		callexternal GAME_MASTER gm_say OUT_MSG
+	}
+
+	if ( PARAM1 equals 'playmp3' )
+	{
+		local OUT_PAR2 PARAM2
+		if ( PARAM2 equals me ) local OUT_PAR2 $get(ent_currentplayer,id)
+		local OUT_PAR3 PARAM3
+		local OUT_PAR4 PARAM4
+		local OUT_PAR5 PARAM5
+		consolemsg ent_currentplayer (self)formatis: <target|all> <minutes_loop|0> <file.mp3>
+		consolemsg ent_currentplayer You sent: PARAM3 PARAM4 PARAM5
+		callexternal $get(ent_currentplayer,id) ext_play_music OUT_PAR2 OUT_PAR3 OUT_PAR4 OUT_PAR5
+	}
+	if ( PARAM1 equals 'playsound' )
+	{
+		////dbg playing sound PARAM2 at range PARAM4 (must be precached)
+		local OUT_PAR2 PARAM2
+		local OUT_PAR3 PARAM3
+		local OUT_PAR4 PARAM4
+		local OUT_PAR5 PARAM5
+		callexternal all ext_playsound OUT_PAR2 $get(ent_currentplayer,origin) OUT_PAR4
+	}
+	if ( PARAM1 equals 'setangle' )
+	{
+		consolemsg ent_currentplayer sending setangle PARAM2 PARAM3
+		local OUT_PAR1 PARAM2
+		local OUT_PAR2 PARAM3
+		callexternal $get(ent_currentplayer,id) ext_setangle OUT_PAR1 OUT_PAR2
+	}
+//	if ( PARAM1 equals 'gleft' )
+//	{
+//		consolemsg ent_currentplayer got PARAM2 return $left(PARAM2,PARAM3)
+//	}
+//	if ( PARAM1 equals 'mspeak' )
+//	{
+//		consolemsg ent_currentplayer sending ext_speak all
+//		local OUT_PAR PARAM2
+//		callexternal all ext_speak OUT_PAR
+//	}
+//	if ( PARAM1 equals 'mspeakt' )
+//	{
+//		callevent get_player_target
+//		consolemsg ent_currentplayer sending ext_speak to $get(PLAYER_TARGET,name)
+//		local OUT_PAR PARAM2
+//		callexternal PLAYER_TARGET ext_speak OUT_PAR
+//	}
+	if ( PARAM1 equals 'lcritical' )
+	{
+		//list critical NPCs, names, health
+		consolemsg ent_currentplayer Critcal_NPC_List: ( $get_token_amt(G_CRITICAL_NPCS) ) G_CRITICAL_NPCS
+		calleventloop $get_token_amt(G_CRITICAL_NPCS) list_critical_npcs
+	}
+	if ( PARAM1 equals 'resetnames' )
+	{
+		callexternal players ext_reset_names
+	}
+	if ( PARAM1 equals 'vote' )
+	{
+		//<caller_id> <token_options> <title> [descript] [silent:0|1]
+		local DE_OPTIONS PARAM2
+		local DE_TITLE PARAM3
+		local DE_DESC PARAM4
+		consolemsg ent_currentplayer vote, opt: DE_OPTIONS title: DE_TITLE desc: DE_DESC
+		callexternal GAME_MASTER gm_generic_vote $get(ent_currentplayer) DE_OPTIONS DE_TITLE DE_DESC
+	}
+	if ( PARAM1 equals 'event' )
+	{
+		//if G_DEVELOPER_MODE
+		local MY_TARGET $get(ent_currentplayer,target)
+		consolemsg ent_currentplayer Sending Event PARAM2 to $get(MY_TARGET,name) with params ( PARAM3 PARAM4 PARAM5 )
+		local DO_EVENT PARAM2
+		local SEND_PAR1 PARAM3
+		if ( SEND_PAR1 equals 'ME' ) local SEND_PAR1  $get(ent_currentplayer,id)
+		if ( SEND_PAR1 equals 'GM' ) local SEND_PAR1  GAME_MASTER
+		local SEND_PAR2 PARAM4
+		if ( SEND_PAR2 equals 'ME' ) local SEND_PAR2  $get(ent_currentplayer,id)
+		if ( SEND_PAR2 equals 'GM' ) local SEND_PAR2  GAME_MASTER
+		local SEND_PAR3 PARAM5
+		if ( SEND_PAR3 equals 'ME' ) local SEND_PAR3  $get(ent_currentplayer,id)
+		if ( SEND_PAR3 equals 'GM' ) local SEND_PAR3  GAME_MASTER
+		local SEND_PAR4 PARAM6
+		if ( SEND_PAR4 equals 'ME' ) local SEND_PAR4  $get(ent_currentplayer,id)
+		if ( SEND_PAR4 equals 'GM' ) local SEND_PAR4  GAME_MASTER
+		local SEND_PAR5 PARAM7
+		if ( SEND_PAR5 equals 'ME' ) local SEND_PAR5  $get(ent_currentplayer,id)
+		if ( SEND_PAR5 equals 'GM' ) local SEND_PAR5  GAME_MASTER
+		local SEND_PAR6 PARAM8
+		if ( SEND_PAR6 equals 'ME' ) local SEND_PAR6  $get(ent_currentplayer,id)
+		if ( SEND_PAR6 equals 'GM' ) local SEND_PAR6  GAME_MASTER
+		callexternal MY_TARGET DO_EVENT SEND_PAR1 SEND_PAR2 SEND_PAR3 SEND_PAR4 SEND_PAR5
+	}
+	if ( PARAM1 equals 'eventall' )
+	{
+		if G_DEVELOPER_MODE
+		local MY_TARGET $get(ent_currentplayer,target)
+		consolemsg ent_currentplayer Sending Event PARAM2 to all_scripts with params ( PARAM3 PARAM4 PARAM5 )
+		local DO_EVENT PARAM2
+		local SEND_PAR1 PARAM3
+		if ( SEND_PAR1 equals 'ME' ) local SEND_PAR1  $get(ent_currentplayer,id)
+		if ( SEND_PAR1 equals 'GM' ) local SEND_PAR1  GAME_MASTER
+		local SEND_PAR2 PARAM4
+		if ( SEND_PAR2 equals 'ME' ) local SEND_PAR2  $get(ent_currentplayer,id)
+		if ( SEND_PAR2 equals 'GM' ) local SEND_PAR2  GAME_MASTER
+		local SEND_PAR3 PARAM5
+		if ( SEND_PAR3 equals 'ME' ) local SEND_PAR3  $get(ent_currentplayer,id)
+		if ( SEND_PAR3 equals 'GM' ) local SEND_PAR3  GAME_MASTER
+		local SEND_PAR4 PARAM6
+		if ( SEND_PAR4 equals 'ME' ) local SEND_PAR4  $get(ent_currentplayer,id)
+		if ( SEND_PAR4 equals 'GM' ) local SEND_PAR4  GAME_MASTER
+		local SEND_PAR5 PARAM7
+		if ( SEND_PAR5 equals 'ME' ) local SEND_PAR5  $get(ent_currentplayer,id)
+		if ( SEND_PAR5 equals 'GM' ) local SEND_PAR5  GAME_MASTER
+		local SEND_PAR6 PARAM8
+		if ( SEND_PAR6 equals 'ME' ) local SEND_PAR6  $get(ent_currentplayer,id)
+		if ( SEND_PAR6 equals 'GM' ) local SEND_PAR6  GAME_MASTER
+
+
+		callexternal all DO_EVENT SEND_PAR1 SEND_PAR2 SEND_PAR3 SEND_PAR4 SEND_PAR5 SEND_PAR6
+	}
+	if ( PARAM1 equals 'eventplayers' )
+	{
+		if G_DEVELOPER_MODE
+		consolemsg ent_currentplayer Sending Event PARAM2 to all players with params ( PARAM3 PARAM4 PARAM5 )
+		local DO_EVENT PARAM2
+		local SEND_PAR1 PARAM3
+		if ( SEND_PAR1 equals 'ME' ) local SEND_PAR1  $get(ent_currentplayer,id)
+		if ( SEND_PAR1 equals 'GM' ) local SEND_PAR1  GAME_MASTER
+		local SEND_PAR2 PARAM4
+		if ( SEND_PAR2 equals 'ME' ) local SEND_PAR2  $get(ent_currentplayer,id)
+		if ( SEND_PAR2 equals 'GM' ) local SEND_PAR2  GAME_MASTER
+		local SEND_PAR3 PARAM5
+		if ( SEND_PAR3 equals 'ME' ) local SEND_PAR3  $get(ent_currentplayer,id)
+		if ( SEND_PAR3 equals 'GM' ) local SEND_PAR3  GAME_MASTER
+
+		local SEND_PAR4 PARAM6
+		if ( SEND_PAR4 equals 'ME' ) local SEND_PAR4  $get(ent_currentplayer,id)
+		if ( SEND_PAR4 equals 'GM' ) local SEND_PAR4  GAME_MASTER
+		local SEND_PAR5 PARAM7
+		if ( SEND_PAR5 equals 'ME' ) local SEND_PAR5  $get(ent_currentplayer,id)
+		if ( SEND_PA52 equals 'GM' ) local SEND_PAR5  GAME_MASTER
+		local SEND_PAR6 PARAM8
+		if ( SEND_PAR6 equals 'ME' ) local SEND_PAR6  $get(ent_currentplayer,id)
+		if ( SEND_PAR6 equals 'GM' ) local SEND_PAR6  GAME_MASTER
+
+		callexternal players DO_EVENT SEND_PAR1 SEND_PAR2 SEND_PAR3 SEND_PAR4 SEND_PAR5 SEND_PAR6
+	}
+	if ( PARAM1 equals 'eventme' )
+	{
+		if G_DEVELOPER_MODE
+		consolemsg ent_currentplayer Sending Event PARAM2 to self with params ( PARAM3 PARAM4 PARAM5 )
+		local DO_EVENT PARAM2
+		local SEND_PAR1 PARAM3
+		if ( SEND_PAR1 equals 'ME' ) local SEND_PAR1  $get(ent_currentplayer,id)
+		if ( SEND_PAR1 equals 'GM' ) local SEND_PAR1  GAME_MASTER
+		local SEND_PAR2 PARAM4
+		if ( SEND_PAR2 equals 'ME' ) local SEND_PAR2  $get(ent_currentplayer,id)
+		if ( SEND_PAR2 equals 'GM' ) local SEND_PAR2  GAME_MASTER
+		local SEND_PAR3 PARAM5
+		if ( SEND_PAR3 equals 'ME' ) local SEND_PAR3  $get(ent_currentplayer,id)
+		if ( SEND_PAR3 equals 'GM' ) local SEND_PAR3  GAME_MASTER
+
+		local SEND_PAR4 PARAM6
+		if ( SEND_PAR4 equals 'ME' ) local SEND_PAR4  $get(ent_currentplayer,id)
+		if ( SEND_PAR4 equals 'GM' ) local SEND_PAR4  GAME_MASTER
+		local SEND_PAR5 PARAM7
+		if ( SEND_PAR5 equals 'ME' ) local SEND_PAR5  $get(ent_currentplayer,id)
+		if ( SEND_PA52 equals 'GM' ) local SEND_PAR5  GAME_MASTER
+		local SEND_PAR6 PARAM8
+		if ( SEND_PAR6 equals 'ME' ) local SEND_PAR6  $get(ent_currentplayer,id)
+		if ( SEND_PAR6 equals 'GM' ) local SEND_PAR6  GAME_MASTER
+
+
+		callexternal $get(ent_currentplayer,id) DO_EVENT SEND_PAR1 SEND_PAR2 SEND_PAR3 SEND_PAR4 SEND_PAR5 SEND_PAR6
+	}
+	if ( PARAM1 equals 'eventgm' )
+	{
+		if G_DEVELOPER_MODE
+		local DO_EVENT PARAM2
+		local SEND_PAR1 PARAM3
+		if ( SEND_PAR1 equals 'ME' ) local SEND_PAR1  $get(ent_currentplayer,id)
+		if ( SEND_PAR1 equals 'GM' ) local SEND_PAR1  GAME_MASTER
+		local SEND_PAR2 PARAM4
+		if ( SEND_PAR2 equals 'ME' ) local SEND_PAR2  $get(ent_currentplayer,id)
+		if ( SEND_PAR2 equals 'GM' ) local SEND_PAR2  GAME_MASTER
+		local SEND_PAR3 PARAM5
+		if ( SEND_PAR3 equals 'ME' ) local SEND_PAR3  $get(ent_currentplayer,id)
+		if ( SEND_PAR3 equals 'GM' ) local SEND_PAR3  GAME_MASTER
+
+		local SEND_PAR4 PARAM6
+		if ( SEND_PAR4 equals 'ME' ) local SEND_PAR4  $get(ent_currentplayer,id)
+		if ( SEND_PAR4 equals 'GM' ) local SEND_PAR4  GAME_MASTER
+		local SEND_PAR5 PARAM7
+		if ( SEND_PAR5 equals 'ME' ) local SEND_PAR5  $get(ent_currentplayer,id)
+		if ( SEND_PA52 equals 'GM' ) local SEND_PAR5  GAME_MASTER
+		local SEND_PAR6 PARAM8
+		if ( SEND_PAR6 equals 'ME' ) local SEND_PAR6  $get(ent_currentplayer,id)
+		if ( SEND_PAR6 equals 'GM' ) local SEND_PAR6  GAME_MASTER
+		consolemsg ent_currentplayer Sending Event PARAM2 to Game Master ( SEND_PAR1 SEND_PAR2 SEND_PAR3 SEND_PAR4 SEND_PAR5 SEND_PAR6 )
+		callexternal GAME_MASTER DO_EVENT SEND_PAR1 SEND_PAR2 SEND_PAR3 SEND_PAR4 SEND_PAR5 SEND_PAR6
+	}
+	if ( PARAM1 equals 'gmvar' )
+	{
+		consolemsg ent_currentplayer GM var PARAM2 is $get(GAME_MASTER,scriptvar,PARAM2)
+	}
+	if ( PARAM1 equals 'rename' )
+	{
+		consolemsg ent_currentplayer Changing your name to PARAM2
+		playername ent_currentplayer PARAM2
+	}
+	if ( PARAM1 equals 'title' )
+	{
+		consolemsg ent_currentplayer Changing your title to PARAM2
+		playertitle ent_currentplayer PARAM2
+	}
+	if ( PARAM1 equals 'popup' )
+	{
+		consolemsg ent_currentplayer sending_poup PARAM2
+		popup PARAM2
+	}
+//	if ( PARAM1 equals 'setcvar' )
+//	{
+//		consolemsg ent_currentplayer setting PARAM2 to PARAM3
+//		setcvar PARAM2 PARAM3
+//	}
+//	if ( PARAM1 equals 'error' )
+//	{
+//		consolemsg ent_currentplayer sending_error PARAM2
+//		errormessage PARAM2
+//	}
+	if( PARAM1 equals 'startattack' )
+	{
+		local ATTACK_TYPE PARAM2
+		callexternal $get_by_name(script_helena) manual_start ATTACK_TYPE
+	}
+	if( PARAM1 equals 'usetrig' )
+	{
+		setvard WEATHERSET_DELAY 0
+		setvard TIMESET_DELAY 0
+		if !game.central
+		usetrigger PARAM2
+	}
+	if ( PARAM1 equals 'gabort' )
+	{
+		consolemsg ent_currentplayer got command gabort
+		setvarg VALID_SPAWN 1
+		setvarg	G_VALID_SPAWN 1
+	}
+	if ( PARAM1 equals 'gen_cmd' )
+	{
+		//if G_DEVELOPER_MODE
+		local MY_TARGET $get(ent_currentplayer,target)
+		local SEND_PAR1 PARAM2
+		local SEND_PAR2 PARAM3
+		local SEND_PAR3 PARAM4
+		local SEND_PAR4 PARAM5
+		local SEND_PAR5 PARAM6
+		local SEND_PAR6 PARAM7
+		consolemsg ent_currentplayer Sending command to $get(MY_TARGET,name) ( SEND_PAR1 SEND_PAR2 SEND_PAR3 SEND_PAR4 SEND_PAR5 SEND_PAR6 )
+		callexternal MY_TARGET gen_cmd SEND_PAR1 SEND_PAR2 SEND_PAR3 SEND_PAR4 SEND_PAR5 SEND_PAR6
+	}
+	if ( PARAM1 equals 'intrig' )
+	{
+		if !game.central
+		local OUT_PAR PARAM2
+		callexternal ent_currentplayer ext_usetrig OUT_PAR
+	}
+	//These require developer dll =================================================
+	//(although developer DLL is public now, password aint)
+	if G_DEVELOPER_MODE
+	if ( PARAM1 equals 'zorcs' )
+	{
+		callexternal all bo_zombie_mode
+		setvarg G_SHAD_PRESENT 1
+		consolemsg ent_currentplayer Zombie Orcs mode activated
+	}
+	if ( PARAM1 equals 'sv_command' )
+	{
+		consolemsg ent_currentplayer Sending sv_command PARAM2
+		servercmd PARAM2
+	}
+	if ( PARAM1 equals 'bolts' )
+	{
+		consolemsg ent_currentplayer Chest o bolts
+		local SPAWN_POINT $get(ent_currentplayer,origin)
+		local MY_ANGLES $get(ent_currentplayer,angles)
+		local MY_YAW $vec.yaw(MY_ANGLES)
+		vectoradd SPAWN_POINT $relpos($vec(0,MY_YAW,0),$vec(0,128,0))
+		local OUT_PAR1 PARAM3
+		local OUT_PAR2 PARAM4
+		local OUT_PAR3 PARAM5
+		local OUT_PAR4 PARAM6
+		createnpc developer/real_bolts SPAWN_POINT
+	}
+	if ( PARAM1 equals 'arrows' )
+	{
+		consolemsg ent_currentplayer Chest o arrows
+		local SPAWN_POINT $get(ent_currentplayer,origin)
+		local MY_ANGLES $get(ent_currentplayer,angles)
+		local MY_YAW $vec.yaw(MY_ANGLES)
+		vectoradd SPAWN_POINT $relpos($vec(0,MY_YAW,0),$vec(0,128,0))
+		local OUT_PAR1 PARAM3
+		local OUT_PAR2 PARAM4
+		local OUT_PAR3 PARAM5
+		local OUT_PAR4 PARAM6
+		createnpc chests/arrow_dev SPAWN_POINT
+	}
+	if ( PARAM1 equals 'potions' )
+	{
+		consolemsg ent_currentplayer Chest o poshuns
+		local SPAWN_POINT $get(ent_currentplayer,origin)
+		local MY_ANGLES $get(ent_currentplayer,angles)
+		local MY_YAW $vec.yaw(MY_ANGLES)
+		vectoradd SPAWN_POINT $relpos($vec(0,MY_YAW,0),$vec(0,128,0))
+		local OUT_PAR1 PARAM3
+		local OUT_PAR2 PARAM4
+		local OUT_PAR3 PARAM5
+		local OUT_PAR4 PARAM6
+		createnpc developer/chest_pots SPAWN_POINT
+	}
+	if ( PARAM1 equals 'tpoke' )
+	{
+		//laser eyes 'pew pew'
+		local VEC_START $get(ent_currentplayer,eyepos)
+		local VEC_END VEC_START
+		local VEC_ANG $get(ent_currentplayer,angles)
+		local PLR_PITCH $vec.pitch(VEC_ANG)
+		local PLR_PITCH $neg(PLR_PITCH)
+		consolemsg ent_currentplayer TPoke Dmg: PARAM2 ( pitch PLR_PITCH )
+		vectoradd VEC_END $relpos($vec(PLR_PITCH,$vec.yaw(VEC_ANG),$vec.roll(VEC_ANG)),$vec(0,2000,0))
+		effect beam point lgtning.spr 20 $get(ent_currentplayer,eyepos) VEC_END (255,0,255) 200 0 0.5
+		xdodamage $get(ent_currentplayer,eyepos) VEC_END PARAM2 50% $get(ent_currentplayer,id) $get(ent_currentplayer,id) spellcasting.fire fire_effect none T
+	}
+	if ( PARAM1 equals 'poke' )
+	{
+		consolemsg ent_currentplayer Poke Range: PARAM2 Dmg: PARAM3
+		//XDODAMAGE <target|(origin)> <range|aoe|direct> <damage> <cth|fall_off> <attacker> <inflciter> <skill|none> <dmg_type> [flag_string]
+		xdodamage $get(ent_currentplayer,target) PARAM2 PARAM3 50% $get(ent_currentplayer,id) $get(ent_currentplayer,id) spellcasting.fire fire none
+	}
+	if ( PARAM1 equals 'blamb' )
+	{
+		consolemsg ent_currentplayer Blamb AOE: PARAM2 DMG: PARAM3
+		//XDODAMAGE <target|(origin)> <range|aoe|direct> <damage> <cth|fall_off> <attacker> <inflciter> <skill|none> <dmg_type> [flag_string]
+		xdodamage $get(ent_currentplayer,origin) PARAM2 PARAM3 0 $get(ent_currentplayer,id) $get(ent_currentplayer,id) archery dark none
+	}
+	if ( PARAM1 equals 'zap2' )
+	{
+		local MY_TARGET $get(ent_currentplayer,target)
+		consolemsg ent_currentplayer Zapping $get(MY_TARGET,name) for PARAM2
+		//XDODAMAGE <target|(origin)> <range|aoe|direct> <damage> <cth|fall_off> <attacker> <inflciter> <skill|none> <dmg_type> [flag_string]
+		xdodamage MY_TARGET direct PARAM2 100% $get(ent_currentplayer,id) $get(ent_currentplayer,id) spellcasting.ice cold none
+	}
+	if ( PARAM1 equals 'nuke' )
+	{
+		consolemsg ent_currentplayer NUKE!
+		//XDODAMAGE <target|(origin)> <range|aoe|direct> <damage> <cth|fall_off> <attacker> <inflciter> <skill|none> <dmg_type> [flag_string]
+		xdodamage $get(ent_currentplayer,origin) 1024 20000 10 GAME_MASTER GAME_MASTER none magic
+	}
+	if ( PARAM1 equals 'mnuke' )
+	{
+		consolemsg ent_currentplayer Mini-NUKE! PARAM2
+		//XDODAMAGE <target|(origin)> <range|aoe|direct> <damage> <cth|fall_off> <attacker> <inflciter> <skill|none> <dmg_type> [flag_string]
+		xdodamage $get(ent_currentplayer,origin) 1024 PARAM2 10 GAME_MASTER GAME_MASTER none magic
+	}
+	if ( PARAM1 equals 'setquest' )
+	{
+		local QUEST_STRING PARAM2
+		local QUEST_DATA PARAM3
+		consolemsg ent_currentplayer setting quest QUEST_STRING to QUEST_DATA
+		quest set $get(ent_currentplayer,id) QUEST_STRING QUEST_DATA
+	}
+	if ( PARAM1 equals 'setgold' )
+	{
+		local OUT_PAR PARAM2
+		consolemsg ent_currentplayer setgold PARAM2
+		callexternal ent_currentplayer ext_setgold OUT_PAR
+	}
+	if ( PARAM1 equals 'addgold' )
+	{
+		local OUT_PAR PARAM2
+		consolemsg ent_currentplayer addgold PARAM2
+		callexternal ent_currentplayer ext_addgold OUT_PAR
+	}
+	if ( PARAM1 equals 'wound' )
+	{
+		callevent get_player_target
+		consolemsg ent_currentplayer wounding $get(PLAYER_TARGET,name) for PARAM2
+		callexternal ent_currentplayer send_damage PLAYER_TARGET direct PARAM2 100 $get(ent_currentplayer,id)
+	}
+	if ( PARAM1 equals 'shock' )
+	{
+		consolemsg ent_currentplayer Shock burst
+		callexternal ent_currentplayer ext_bolt_test
+	}
+//	if ( PARAM1 equals 'faketime' )
+//	{
+//		consolemsg ent_currentplayer Faking play time
+//		callexternal ent_currentplayer ext_fake_time
+//	}
+	if (PARAM1 equals 'tele' )
+	{
+		local OUT_PAR1 PARAM2
+		local OUT_PAR2 PARAM3
+		local OUT_PAR3 PARAM4
+		callevent do_tele OUT_PAR1 OUT_PAR2 OUT_PAR3
+	}
+	if ( PARAM1 equals 'fplayers' )
+	{
+		consolemsg ent_currentplayer "faking players" PARAM2
+		setvarg G_FAKE_PLAYERS PARAM2
+		//remember to add a function to game.players to read this var
+	}
+//	if ( PARAM1 equals 'zcheat' )
+//	{
+//		consolemsg ent_currentplayer setting zombies PARAM2
+//		local MAYOR_ENT $get_by_name(dwarf_mayor)
+//		local MAYOR_ID $get(MAYOR_ENT,id)
+//		local SET_COUNT_TO PARAM2
+//		callexternal MAYOR_ID z_cheat SET_COUNT_TO
+//	}
+	if ( PARAM1 equals 'gen_cmd_all' )
+	{
+		//if G_DEVELOPER_MODE
+		local SEND_PAR1 PARAM2
+		local SEND_PAR2 PARAM3
+		local SEND_PAR3 PARAM4
+		local SEND_PAR4 PARAM5
+		local SEND_PAR5 PARAM6
+		local SEND_PAR6 PARAM7
+		consolemsg ent_currentplayer Sending command to all ( SEND_PAR1 SEND_PAR2 SEND_PAR3 SEND_PAR4 SEND_PAR5 SEND_PAR6 )
+		callexternal all gen_cmd SEND_PAR1 SEND_PAR2 SEND_PAR3 SEND_PAR4 SEND_PAR5 SEND_PAR6
+	}
+	if ( PARAM1 equals 'scare' )
+	{
+		if G_DEVELOPER_MODE
+		consolemsg ent_currentplayer sending scare
+		//flee debug
+		callexternal $get(ent_currentplayer,target) npcatk_flee $get(ent_currentplayer,id) 5000 10.0
+	}
+
+	if ( PARAM1 equals 'setprop' )
+	{
+		local L_TARGET PARAM1
+		if ( L_TARGET equals GM ) local L_TARGET $get(GAME_MASTER,id)
+		else if ( L_TARGET equals ME ) local L_TARGET $get(ent_currentplayer,id)
+		else if ( L_TARGET equals TG ) local L_TARGET $get(ent_currentplayer,target)
+		consolemsg ent_currentplayer setting props on $get(L_TARGET,name) PARAM2 PARAM3 PARAM4
+		setprop L_TARGET PARAM2 PARAM3 PARAM4
+	}
+	if ( PARAM1 equals 'gm_summon' )
+	{
+		local SPAWN_POINT $get(ent_currentplayer,origin)
+		local MY_ANGLES $get(ent_currentplayer,angles)
+		local MY_YAW $vec.yaw(MY_ANGLES)
+		vectoradd SPAWN_POINT $relpos($vec(0,MY_YAW,0),$vec(0,128,0))
+		local OUT_PAR1 PARAM3
+		local OUT_PAR2 PARAM4
+		local OUT_PAR3 PARAM5
+		local OUT_PAR4 PARAM6
+		local OUT_PAR5 PARAM7
+		local OUT_PAR6 PARAM8
+		consolemsg ent_currentplayer gm_summoning PARAM2 OUT_PAR1 OUT_PAR2 OUT_PAR3 OUT_PAR4 OUT_PAR5 OUT_PAR6
+		createnpc PARAM2 SPAWN_POINT GAME_MASTER OUT_PAR1 OUT_PAR2 OUT_PAR3 OUT_PAR4 OUT_PAR5 OUT_PAR6
+	}
+	if ( PARAM1 equals 'mana' )
+	{
+		consolemsg ent_currentplayer Giving PARAM2 mana
+		callexternal ent_currentplayer give_mp PARAM2
+	}
+	if ( PARAM1 equals 'mp' )
+	{
+		consolemsg ent_currentplayer Giving PARAM2 mana
+		callexternal ent_currentplayer give_mp PARAM2
+	}
+	if ( PARAM1 equals 'hp' )
+	{
+		consolemsg ent_currentplayer Giving PARAM2 hp
+		callexternal ent_currentplayer give_hp PARAM2
+	}
+	if ( PARAM1 equals 'mapver' )
+	{
+		consolemsg ent_currentplayer Setting map as verified
+		callexternal GAME_MASTER gm_verify_map_hax
+	}
+//	if ( PARAM1 equals 'setstat' )
+//	{
+//		local OUT_PAR1 PARAM2
+//		local OUT_PAR2 PARAM3
+//		local OUT_PAR3 PARAM4
+//		local OUT_PAR4 PARAM5
+//		local OUT_PAR5 PARAM6
+//		local OUT_PAR6 PARAM7
+//		consolemsg ent_currentplayer Setting stat OUT_PAR1 OUT_PAR2 OUT_PAR3 OUT_PAR4 OUT_PAR5 OUT_PAR6
+//		callexternal ent_currentplayer ext_setstat OUT_PAR1 OUT_PAR2 OUT_PAR3 OUT_PAR4 OUT_PAR5 OUT_PAR6
+//	}
+	if ( PARAM1 equals 'applyeffect' )
+	{
+		local OUT_PAR1 PARAM2
+		local OUT_PAR2 PARAM3
+		local OUT_PAR3 PARAM4
+		local OUT_PAR4 PARAM5
+		local OUT_PAR5 PARAM6
+		local OUT_PAR6 PARAM7
+		if ( OUT_PAR1 equals GM ) local OUT_PAR1 $get(GAME_MASTER,id)
+		if ( OUT_PAR2 equals GM ) local OUT_PAR2 $get(GAME_MASTER,id)
+		if ( OUT_PAR3 equals GM ) local OUT_PAR3 $get(GAME_MASTER,id)
+		if ( OUT_PAR4 equals GM ) local OUT_PAR4 $get(GAME_MASTER,id)
+		if ( OUT_PAR5 equals GM ) local OUT_PAR5 $get(GAME_MASTER,id)
+		if ( OUT_PAR6 equals GM ) local OUT_PAR6 $get(GAME_MASTER,id)
+		consolemsg ent_currentplayer (use GM for game_master_id) applyeffect OUT_PAR1 OUT_PAR2 OUT_PAR3 OUT_PAR4 OUT_PAR5 OUT_PAR6
+		applyeffect ent_currentplayer OUT_PAR1 OUT_PAR2 OUT_PAR3 OUT_PAR4 OUT_PAR5 OUT_PAR6
+	}
+	if ( PARAM1 equals 'tapplyeffect' )
+	{
+		local OUT_PAR1 PARAM2
+		local OUT_PAR2 PARAM3
+		local OUT_PAR3 PARAM4
+		local OUT_PAR4 PARAM5
+		local OUT_PAR5 PARAM6
+		local OUT_PAR6 PARAM7
+		if ( OUT_PAR1 equals GM ) local OUT_PAR1 $get(GAME_MASTER,id)
+		if ( OUT_PAR2 equals GM ) local OUT_PAR2 $get(GAME_MASTER,id)
+		if ( OUT_PAR3 equals GM ) local OUT_PAR3 $get(GAME_MASTER,id)
+		if ( OUT_PAR4 equals GM ) local OUT_PAR4 $get(GAME_MASTER,id)
+		if ( OUT_PAR5 equals GM ) local OUT_PAR5 $get(GAME_MASTER,id)
+		if ( OUT_PAR6 equals GM ) local OUT_PAR6 $get(GAME_MASTER,id)
+		consolemsg $get(ent_currentplayer,target) (use GM for game_master_id) applyeffect OUT_PAR1 OUT_PAR2 OUT_PAR3 OUT_PAR4 OUT_PAR5 OUT_PAR6
+		applyeffect $get(ent_currentplayer,target) OUT_PAR1 OUT_PAR2 OUT_PAR3 OUT_PAR4 OUT_PAR5 OUT_PAR6
+	}
+	if ( PARAM1 equals 'applyeffectstack' )
+	{
+		local OUT_PAR1 PARAM2
+		local OUT_PAR2 PARAM3
+		local OUT_PAR3 PARAM4
+		local OUT_PAR4 PARAM5
+		local OUT_PAR5 PARAM6
+		local OUT_PAR6 PARAM7
+		if ( OUT_PAR1 equals GM ) local OUT_PAR1 $get(GAME_MASTER,id)
+		if ( OUT_PAR2 equals GM ) local OUT_PAR2 $get(GAME_MASTER,id)
+		if ( OUT_PAR3 equals GM ) local OUT_PAR3 $get(GAME_MASTER,id)
+		if ( OUT_PAR4 equals GM ) local OUT_PAR4 $get(GAME_MASTER,id)
+		if ( OUT_PAR5 equals GM ) local OUT_PAR5 $get(GAME_MASTER,id)
+		if ( OUT_PAR6 equals GM ) local OUT_PAR6 $get(GAME_MASTER,id)
+		consolemsg ent_currentplayer (use GM for game_master_id) applyeffect OUT_PAR1 OUT_PAR2 OUT_PAR3 OUT_PAR4 OUT_PAR5 OUT_PAR6
+		applyeffectstack ent_currentplayer OUT_PAR1 OUT_PAR2 OUT_PAR3 OUT_PAR4 OUT_PAR5 OUT_PAR6
+	}
+	if ( PARAM1 equals 'clientevent' )
+	{
+		local OUT_PAR1 PARAM2
+		local OUT_PAR2 PARAM3
+		local OUT_PAR3 PARAM4
+		local OUT_PAR4 PARAM5
+		local OUT_PAR5 PARAM6
+		local OUT_PAR6 PARAM7
+		local OUT_PAR7 PARAM8
+		local OUT_PAR8 PARAM9
+
+		//<scriptfile> [params]
+		clientevent new all OUT_PAR1 OUT_PAR2 OUT_PAR3 OUT_PAR4 OUT_PAR5 OUT_PAR6 OUT_PAR7 OUT_PAR8
+	}
+	if ( PARAM1 equals 'zap' )
+	{
+		local MY_TARGET $get(ent_currentplayer,target)
+		consolemsg ent_currentplayer Zapping $get(MY_TARGET,name) for PARAM2
+		callexternal MY_TARGET DO_EVENT SEND_PAR1 SEND_PAR2 SEND_PAR3 SEND_PAR4 SEND_PAR5
+		//dosskilldamage <target> "direct" <dmg> <cth> <dmg source> <type> <skill>
+		doskilldamage MY_TARGET $get(ent_currentplayer,id) PARAM2 lightning spellcasting.lightning
+	}
+	if ( PARAM1 equals 'crack' )
+	{
+		local ACTIVE_WEAPON $get(ent_currentplayer,active_item)
+		attackprop ACTIVE_WEAPON 0 delay.end 0.2
+		attackprop ACTIVE_WEAPON 0 delay.strike 0.1
+		consolemsg ent_currentplayer T3h Cr4ck
+	}
+	if ( PARAM1 equals 'skele' )
+	{
+		consolemsg ent_currentplayer Spawning skele
+		local SPAWN_POINT $get(ent_currentplayer,origin)
+		local MY_ANGLES $get(ent_currentplayer,angles)
+		local MY_YAW $vec.yaw(MY_ANGLES)
+		vectoradd SPAWN_POINT $relpos($vec(0,MY_YAW,0),$vec(0,128,0))
+		local OUT_PAR1 PARAM3
+		local OUT_PAR2 PARAM4
+		local OUT_PAR3 PARAM5
+		local OUT_PAR4 PARAM6
+		createnpc monsters/skeleton SPAWN_POINT OUT_PAR1 OUT_PAR2 OUT_PAR3 OUT_PAR4
+	}
+	if ( PARAM1 equals 'rat' )
+	{
+		consolemsg ent_currentplayer Spawning Rat
+		local SPAWN_POINT $get(ent_currentplayer,origin)
+		local MY_ANGLES $get(ent_currentplayer,angles)
+		local MY_YAW $vec.yaw(MY_ANGLES)
+		vectoradd SPAWN_POINT $relpos($vec(0,MY_YAW,0),$vec(0,128,0))
+		local OUT_PAR1 PARAM3
+		local OUT_PAR2 PARAM4
+		local OUT_PAR3 PARAM5
+		local OUT_PAR4 PARAM6
+		createnpc monsters/giantrat SPAWN_POINT OUT_PAR1 OUT_PAR2 OUT_PAR3 OUT_PAR4
+	}
+	if ( PARAM1 equals 'icewave' )
+	{
+		consolemsg ent_currentplayer Ice Wave Test
+		createnpc monsters/summon/ice_wave_player $get(ent_currentplayer,origin) $get(ent_currentplayer,id) 0 3
+	}
+	if ( PARAM1 equals 'unquest' )
+	{
+		local QUEST_STRING PARAM2
+		consolemsg ent_currentplayer unsetting QUEST_STRING
+		if game.serverside
+		if ( PARAM2 isnot all )	quest unset $get(ent_currentplayer,id) QUEST_STRING 0
+		if ( PARAM2 equals all ) quest clear $get(ent_currentplayer,id) erase nadda
+	}
+	if ( PARAM1 equals 'setattack' )
+	{
+		local ACTIVE_WEAPON $get(ent_currentplayer,active_item)
+		attackprop ACTIVE_WEAPON PARAM2 PARAM3 PARAM4
+		consolemsg ent_currentplayer attackprop PARAM2 PARAM3 PARAM4
+	}
+	if ( PARAM1 equals 'writeline' )
+	{
+		consolemsg ent_currentplayer writing PARAM3 to file PARAM2
+		writeline PARAM2 PARAM3
+	}
+	if ( PARAM1 equals 'readfile' )
+	{
+		local IN_LINE $get_fileline(PARAM2)
+		consolemsg ent_currentplayer File PARAM2 reads: IN_LINE
+	}
+	if ( PARAM1 equals 'erasefile' )
+	{
+		consolemsg ent_currentplayer Erasing file: PARAM2
+		erasefile PARAM2
+	}	
+	if ( PARAM1 equals 'setlights' )
+	{
+		consolemsg ent_currentplayer setting lights PARAM2
+		setlights PARAM2
+	}	
+	if ( PARAM1 equals 'messageall' )
+	{
+		consolemsg ent_currentplayer all huds PARAM2 PARAM3
+		messageall PARAM2 PARAM3
+	}
+	if ( PARAM1 equals 'arty' )
+	{
+		//artifact chest test
+		local ITEM_LIST "swords_shortsword;health_apple;item_torch;mana_mpotion"
+		local ITEM_CHANCES "50;50;50;100"
+		local REQ_PLAYERS  "1;2;1;1"
+		local ITEM_NAMES "Shortsword;Apple;Torch;Mana Potion"
+		consolemsg ent_currentplayer creating arti chest: ITEM_LIST ITEM_CHANCES REQ_PLAYERS ITEM_NAMES
+
+		local SPAWN_POINT $get(ent_currentplayer,origin)
+		local MY_ANGLES $get(ent_currentplayer,angles)
+		local MY_YAW $vec.yaw(MY_ANGLES)
+		vectoradd SPAWN_POINT $relpos($vec(0,MY_YAW,0),$vec(0,128,0))
+		createnpc chests/black_chest2 SPAWN_POINT ITEM_LIST ITEM_CHANCES REQ_PLAYERS ITEM_NAMES
+	}
+	if ( PARAM1 equals 'hup' )
+	{
+		if ( HUP_HOUR equals 'HUP_HOUR' ) setvard HUP_HOUR 12
+		add HUP_HOUR 1
+		if ( HUP_HOUR > 24 ) setvard HUP_HOUR 0
+		gplayermessage ent_currentplayer HOUR: HUP_HOUR
+		callevent set_time HUP_HOUR PARAM3
+	}
+	if ( PARAM1 equals 'stacktest' )
+	{
+		if ( EFFECT_TYPE equals 'EFFECT_TYPE' ) setvard EFFECT_TYPE 0
+		if ( EFFECT_TYPE == 3 ) setvard EFFECT_TYPE 0
+		add EFFECT_TYPE 1
+		setvard APPLY_ALL_ATTACKER $get(ent_currentplayer,id)
+		if ( EFFECT_TYPE ==  1 ) setvard APPLY_ALL_EFFECT effects/effect_shock_dmg
+		if ( EFFECT_TYPE ==  2 ) setvard APPLY_ALL_EFFECT effects/effect_frostbite_dmg
+		if ( EFFECT_TYPE ==  3 ) setvard APPLY_ALL_EFFECT effects/effect_poison
+		gplayermessage ent_currentplayer EFFECT: APPLY_ALL_EFFECT
+		local PLAYER_LOC $get(ent_currentplayer,origin)
+		setvard MONSTER_LIST ''
+		setvard MONSTER_LIST $get_tsphere(any,200,PLAYER_LOC)
+		calleventloop $get_token_amt(MONSTER_LIST) stack_effect_test
+	}
+//	if ( PARAM1 equals 'catmaps' )
+//	{
+//		consolemsg ent_currentplayer catalogging map sizes
+//		setvard MAP_SET 0
+//		setvard CALLING_PLAYER $get(ent_currentplayer,id)
+//		callevent 0.1 cat_set
+//	}
+//	if ( PARAM1 equals 'catmaps2' )
+//	{
+//		consolemsg ent_currentplayer catalogging map sizes
+//		setvard MAP_SET 0
+//		setvard CALLING_PLAYER $get(ent_currentplayer,id)
+//		callevent 0.1 cat_set2
+//	}
+	if ( PARAM1 equals 'setpvp' )
+	{
+		consolemsg ent_currentplayer set pvp mode PARAM2
+		setpvp PARAM2
+	}
+	if ( PARAM1 equals 'bd' )
+	{
+		if G_DEVELOPER_MODE
+		consolemsg ent_currentplayer got command brain death
+		callexternal all npcatk_suspend_ai
+	}
+	if ( PARAM1 equals 'unbd' )
+	{
+		if G_DEVELOPER_MODE
+		consolemsg ent_currentplayer got command un-brain death
+		callexternal all npcatk_resume_ai
+	}
+	if ( PARAM1 equals 'vuln' )
+	{
+		if G_DEVELOPER_MODE
+		local MY_TARGET $get(ent_currentplayer,target)
+		callexternal MY_TARGET vulnerable
+	}
+	if ( PARAM1 equals 'fakehp' )
+	{
+		if !game.central
+		consolemsg ent_currentplayer Simulating PARAM2 hp worth of players on server
+		//fakehp PARAM2 //obsolete
+		setcvar ms_fake_hp PARAM2
+	}
+	if ( PARAM1 equals 'setpvp' )
+	{
+		consolemsg ent_currentplayer Setting PVP PARAM2
+		setpvp PARAM2
+	}
+	if ( PARAM1 equals 'gag' )
+	{
+		consolemsg ent_currentplayer You have been gagged...
+		gagplayer ent_currentplayer 1
+	}
+	if ( PARAM1 equals 'ungag' )
+	{
+		consolemsg ent_currentplayer You have been un-gagged.
+		gagplayer ent_currentplayer 0
+	}
+	if ( PARAM1 equals 'guards' )
+	{
+		//for testing heavy damage on summons
+		local SUM_POS $get(ent_currentplayer,origin)
+		local SUM_DIST 72
+		dbg $relpos(0,0,0) vs $relpos($vec(0,0,0),$vec(0,0,0))
+		vectoradd SUM_POS $relpos($vec(0,0,0),$vec(0,SUM_DIST,0))
+		createnpc monsters/summon/skeleton_guard SUM_POS $get(ent_currentplayer,id) 3000 1 90 spellcasting.summoning
+
+		local SUM_POS $get(ent_currentplayer,origin)
+		vectoradd SUM_POS $relpos($vec(0,90,0),$vec(0,SUM_DIST,0))
+		createnpc monsters/summon/skeleton_guard SUM_POS $get(ent_currentplayer,id) 3000 1 90 spellcasting.summoning
+
+		local SUM_POS $get(ent_currentplayer,origin)
+		vectoradd SUM_POS $relpos($vec(0,180,0),$vec(0,SUM_DIST,0))
+		createnpc monsters/summon/skeleton_guard SUM_POS $get(ent_currentplayer,id) 3000 1 90 spellcasting.summoning
+
+		local SUM_POS $get(ent_currentplayer,origin)
+		vectoradd SUM_POS $relpos($vec(0,270,0),$vec(0,SUM_DIST,0))
+		createnpc monsters/summon/skeleton_guard SUM_POS $get(ent_currentplayer,id) 3000 1 90 spellcasting.summoning
+	}
+//	if ( PARAM1 equals 'blowback' )
+//	{
+//		//this kinda works, but is not origin dependant
+//		//consolemsg ent_currentplayer reverse course
+//		//local NEW_VEL $get(ent_currentplayer,velocity)
+//		//vectormultiply NEW_VEL NEW_VEL $vec(-1000,-1000,-1000)
+//		//setvelocity ent_currentplayer NEW_VEL
+//
+//
+//		//origin dependant attempts
+//		local PUSH_STR PARAM2
+//		local TARGET_ID $get(ent_currentplayer,target)
+//		local TARGET_ORG $get(TARGET_ID,origin)
+//		local PLAYER_ORG $get(ent_currentplayer,origin)
+//		if ( !$get(TARGET_ID,isalive) ) local TARGET_ORG $vec(0,0,0)
+//		local PLAYER_ORG $get(ent_currentplayer,origin)
+//		local TARG_ANG $angles(PLAYER_ORG,TARGET_ORG)
+//		dbg blowback: TARG_ANG
+//		local NEW_YAW TARG_ANG
+//		add NEW_YAW 180
+//		if ( NEW_YAW > 359 ) subtract NEW_YAW 359
+//
+//		consolemsg ent_currentplayer Blowback from $get(TARGET_ID,name) fin: NEW_YAW orig: TARG_ANG
+//		setvelocity ent_currentplayer $relvel($vec(0,NEW_YAW,0),$vec(0,PUSH_STR,0))
+//	}
+//	if ( PARAM1 equals 'elm' )
+//	{
+//		local CODE_NAME PARAM2
+//		local ELM_TYPE PARAM3
+//		local ELM_AMT PARAM4
+//		consolemsg ent_currentplayer elemental_reg: name: CODE_NAME type: ELM_TYPE amt: ELM_AMT
+//		callexternal ent_currentplayer ext_register_element CODE_NAME ELM_TYPE ELM_AMT
+//	}
+	if ( PARAM1 equals 'overflow' )
+	{
+		consolemsg ent_currentplayer 123456789A123456789B123456789C123456789D123456789E123456789F123456789G123456789H123456789I123456789J123456789K123456789L123456789M123456789N123456789O123456789P123456789Q123456789R123456789S123456789T123456789U123456789V123456789W123456789X123456789Y123456789Z
+	}
+	if ( PARAM1 equals 'fball' )
+	{
+		local SPAWN_POINT $get(ent_currentplayer,origin)
+		local MY_ANGLES $get(ent_currentplayer,angles)
+		local MY_YAW $vec.yaw(MY_ANGLES)
+		vectoradd SPAWN_POINT $relpos($vec(0,MY_YAW,0),$vec(0,128,256))
+		local OUT_PAR1 PARAM3
+		local OUT_PAR2 PARAM4
+		local OUT_PAR3 PARAM5
+		local OUT_PAR4 PARAM6
+		local OUT_PAR5 PARAM7
+		local OUT_PAR6 PARAM8
+		consolemsg ent_currentplayer fireball!
+		createnpc monsters/summon/fire_ball_guided SPAWN_POINT GAME_MASTER 200 30.0 200
+	}
+	if ( PARAM1 equals 'jump' )
+	{
+		consolemsg ent_currentplayer Hop!
+		callexternal GAME_MASTER gm_boost $get(ent_currentplayer,id) $relpos($vec(0,90,0),$vec(0,200,1000))
+	}
+	if ( PARAM1 equals 'jumpovr' )
+	{
+		consolemsg ent_currentplayer Hop! [override]
+		callexternal GAME_MASTER gm_boost $get(ent_currentplayer,id) $relpos($vec(0,90,0),$vec(0,200,1000)) override
+	}
+	if ( PARAM1 equals 'jumpext' )
+	{
+		consolemsg ent_currentplayer Hop! [external]
+		callexternal ent_currentplayer ext_hoptest
+	}
+	if ( PARAM1 equals 'posess' )
+	{
+		local POS_TARGET $get(ent_currentplayer,target)
+		effect beam update POS_TARGET start_target  $get(ent_currentplayer,id) 0
+		effect beam update POS_TARGET end_target $get(ent_currentplayer,id) 0
+		consolemsg ent_currentplayer Posesssing $get(POS_TARGET,name)
+	}
+	if ( PARAM1 equals 'xbody' )
+	{
+		local POS_TARGET $get(ent_currentplayer,target)
+		if ( !$get(POS_TARGET,isalive) ) local POS_TARGET ent_currentplayer
+		consolemsg ent_currentplayer Submodel PARAM2 PARAM3 on $get(POS_TARGET,name)
+		setmodelbody POS_TARGET PARAM2 PARAM3
+	}
+//	if ( PARAM1 equals 'trange' )
+//	{
+//		consolemsg ent_currentplayer Token range test...
+//		callexternal ent_currentplayer ext_token_range_test
+//		
+//	}
+	if ( PARAM1 equals 'trans' )
+	{
+		consolemsg ent_currentplayer Transtest
+		callexternal ent_currentplayer ext_trans_info PARAM2
+	}
+	if ( PARAM1 equals 'tospawn' )
+	{
+		consolemsg ent_currentplayer Move to spawn
+		tospawn ent_currentplayer PARAM2
+	}
+	if ( PARAM1 equals 'nh' )
+	{
+		consolemsg ent_currentplayer Test Neck Hunter FX
+		local START_POS $get(ent_currentplayer,origin)
+		local START_ANG $get(ent_currentplayer,viewangles)
+		vectoradd START_POS $relpos(START_ANG,$vec(0,256,0))
+		local GROUND_Z $get_ground_height(START_POS)
+		vectorset START_POS z GROUND_Z
+		vectoradd START_POS z 128
+		clientevent new all kfortress/nh_appear_cl START_POS
+		callexternal GAME_MASTER gm_createitem 15.0 smallarms_nh START_POS
+	}
+	if ( PARAM1 equals 'ang3d' )
+	{
+		consolemsg ent_currentplayer UTIL_VecToAngles test
+		setvard ANG3D_TESTER $get(ent_currentplayer,id)
+		callevent ang3d_loop
+	}
+	if ( PARAM1 equals 'clfb' )
+	{
+		consolemsg ent_currentplayer Client Side Fireball Test 
+		callexternal ent_currentplayer ext_fireball_test
+	}
+	if ( PARAM1 equals 'tdcheck' )
+	{
+		consolemsg ent_currentplayer Check take dmg
+		local PLR_TARGET $get(ent_currentplayer,target)
+		gplayermessage ent_currentplayer Target Fire Resist: $get_takedmg(PLR_TARGET,fire)
+		gplayermessage ent_currentplayer Your Lightning Resist: $get_takedmg(ent_currentplayer,lightning)
+		consolemsg ent_currentplayer Target Fire Resist: $get_takedmg(PLR_TARGET,fire)
+		consolemsg ent_currentplayer Your Lightning Resist: $get_takedmg(ent_currentplayer,lightning)
+	}
+
+	if ( PARAM1 equals 'dragspr' )
+	{
+		consolemsg ent_currentplayer Dragon death sprite test.
+		local SPAWN_POS $get(ent_currentplayer,origin)
+		local SPAWN_YAW $get(ent_currentplayer,angles.yaw)
+		vectoradd SPAWN_POS $relpos($vec(0,SPAWN_YAW,0),$vec(0,64,0))
+		clientevent update all const.localplayer.scriptID kh_dragon_death SPAWN_POS
+	}
+
+	if ( PARAM1 equals 'killme' )
+	{
+		consolemsg ent_currentplayer Slay player
+		kill ent_currentplayer
+	}
+
+	if ( PARAM1 equals 'fire' )
+	{
+		//fxfire test
+		applyeffect $get(ent_currentplayer,target) effects/effect_burn 20.0 $get(ent_currentplayer,id) 0.1 
+	}
+
+	if ( PARAM1 equals 'mdltest' )
+	{
+		consolemsg ent_currentplayer mdltest <body#> <skin#>
+		local SPAWN_POS $get(ent_currentplayer,origin)
+		local SPAWN_YAW $get(ent_currentplayer,angles.yaw)
+		vectoradd SPAWN_POS $relpos($vec(0,SPAWN_YAW,0),$vec(0,64,0))
+		clientevent new all effects/sfx_model_test SPAWN_POS $get(ent_currentplayer,index) PARAM2 PARAM3
+		
+	}
+
+	if ( PARAM1 equals 'glowtest' )
+	{
+		local GLOW_TARG_ID $get_by_name(me_glow)
+		effect glow GLOW_TARG_ID (255,255,0) 64 30 30 
+		effect glow ent_currentplayer (255,255,0) 64 10 10 //just to make sure this command functions here 
+	}
+
+	if ( PARAM1 equals 'i' )
+	{
+		local CUR_USER_LHAND_ID $get(ent_currentplayer,scriptvar,'PLR_LEFT_HAND')
+		local CUR_USER_RHAND_ID $get(ent_currentplayer,scriptvar,'PLR_RIGHT_HAND')
+		consolemsg ent_currentplayer left: $get(CUR_USER_LHAND_ID,itemname)
+		consolemsg ent_currentplayer right: $get(CUR_USER_RHAND_ID,itemname)
+	}
+
+	if ( PARAM1 equals 'tickets' )
+	{
+		consolemsg ent_currentplayer Making tickets...
+		setvard MASTER_ID ent_currentplayer
+		callevent make_tickets
+	}
+
+	if ( PARAM1 equals 'givexp' )
+	{
+		consolemsg ent_currentplayer Give_XP PARAM2 PARAM3
+		giveexp ent_currentplayer PARAM2 PARAM3
+	}
+
+	if ( PARAM1 equals 'arraytest' )
+	{
+		consolemsg ent_currentplayer Array test...
+		array.create ARRAY_TEST
+		callexternal ent_currentplayer ext_sphere_token_x any 4096
+		setvard TO_ARRAY $get(ent_currentplayer,scriptvar,'PLR_SCAN_TOKEN')
+		if ( TO_ARRAY equals none )
+		{
+			consolemsg ent_currentplayer Can't find any ents to array.
+			local EXIT_SUB 1
+		}
+		else
+		{
+			calleventloop $get_token_amt(TO_ARRAY) make_array
+		}
+		if !EXIT_SUB
+
+		setvard MASTER_ID $get(ent_currentplayer,id)
+
+		consolemsg ent_currentplayer Array Size: $get_array_amt(ARRAY_TEST)
+
+		calleventloop $get_array_amt(ARRAY_TEST) list_array
+
+		local CUR_TARG $get(ent_currentplayer,target)
+		if ( $get(CUR_TARG,isalive) )
+		{
+			local TARG_ARRAY_IDX $get_arrayfind(ARRAY_TEST,CUR_TARG)
+			local TARG_ARRAY_ID $get_array(ARRAY_TEST,TARG_ARRAY_IDX)
+			local TARG_ARRAY_NAME $get(TARG_ARRAY_ID,name)
+			consolemsg ent_currentplayer Target is in TARG_ARRAY_IDX ( TARG_ARRAY_NAME )
+		}
+	}
+
+	if ( PARAM1 equals 'scale' )
+	{
+		if ( !$get(PARAM3,exists) )
+		{
+			local PLAYER_TARGET $get(ent_currentplayer,target)
+		}
+		else
+		{
+			local PLAYER_TARGET PARAM3
+		}
+		consolemsg ent_currentplayer Setting scale PARAM2 on $get(PLAYER_TARGET,name)
+		setprop PLAYER_TARGET scale PARAM2
+	}
+
+	if ( PARAM1 equals 'setmodel' )
+	{
+		setvar PLAYER_TARGET $get(ent_currentplayer,target)
+		if ( PLAYER_TARGET equals '0' ) setvar PLAYER_TARGET $get(ent_currentplayer,id)
+		consolemsg ent_currentplayer Changing $get(PLAYER_TARGET,name) model to PARAM2 from $get(PLAYER_TARGET,model)
+		setprop PLAYER_TARGET model PARAM2
+	}
+
+//commented, as would cause crash without precache, and I have it bound, so that'd be annoying ^_^
+//	if ( PARAM1 equals 'hitshield' )
+//	{
+//		consolemsg ent_currentplayer Hitshield cleffect test.
+//		local SPAWN_POINT $get(ent_currentplayer,origin)
+//		local MY_ANGLES $get(ent_currentplayer,angles)
+//		local MY_YAW $vec.yaw(MY_ANGLES)
+//		vectoradd SPAWN_POINT $relpos($vec(0,MY_YAW,0),$vec(0,128,0))		
+//		clientevent new all effects/sfx_hit_shield SPAWN_POINT MY_YAW (255,255,255) 2.0 20.0
+//	}
+
+	if ( PARAM1 equals 'createlist' )
+	{
+		local IN_LINE $get_fileline(create_list.txt)
+
+		consolemsg ent_currentplayer Creating IN_LINE
+		local SPAWN_POINT $get(ent_currentplayer,origin)
+		local MY_ANGLES $get(ent_currentplayer,angles)
+		local MY_YAW $vec.yaw(MY_ANGLES)
+		vectoradd SPAWN_POINT $relpos($vec(0,MY_YAW,0),$vec(0,64,0))
+		createitem IN_LINE SPAWN_POINT
+	}
+
+	if ( PARAM1 equals 'slot' )
+	{
+		consolemsg ent_currentplayer Your slot: $get(ent_currentplayer,slot)
+	}
+
+	if ( PARAM1 equals 'listgarray' )
+	{
+		consolemsg ent_currentplayer Listing_array: PARAM2 ( $g_get_array_amt(PARAM2) items )
+		setvard GLOBAL_ARRAY_TO_TEST PARAM2
+		setvard CUR_IDX 0
+		callevent list_global_array
+	}
+
+	if ( PARAM1 equals 'itemname' )
+	{
+		local L_ITEM_NAME $item_exists(PARAM1,name)
+		consolemsg ent_currentplayer PARAM1 name_data: L_ITEM_NAME
+	}
+
+	if ( PARAM1 equals 'trackkeys' )
+	{
+		if ( PARAM2 equals on )
+		{
+			consolemsg ent_currentplayer Key tracker on:
+			setvard SV_TRACK_KEYS 1
+			local SET_KEY_TRACKER 1
+			setvard SV_TRACK_PLAYER $get(ent_currentplayer,id)
+			callevent sv_track_keys_loop
+		}
+
+		if ( PARAM2 equals off )
+		{
+			consolemsg ent_currentplayer Key tracker off.
+			local SET_KEY_TRACKER 1
+			setvard SV_TRACK_KEYS 0
+		}
+
+		if ( !SET_KEY_TRACKER ) consolemsg ent_currentplayer "Key tracker format: . trackkeys <on|off>"
+	}
+
+	if ( PARAM1 equals 'xmas' )
+	{
+		consolemsg ent_currentplayer Xmass Mode Active
+		setvarg G_CHRISTMAS_MODE 1
+	}
+
+	if ( PARAM1 equals 'sorc_villa' )
+	{
+		if ( PARAM2 equals 'friendly' )
+		{
+			writeline header.dat x
+			consolemsg ent_currentplayer Sorc Villa set Friendly.
+			local EXIT_SUB 1
+		}
+		if ( PARAM2 equals 'hostile' )
+		{
+			erasefile header.dat
+			consolemsg ent_currentplayer Sorc Villa set Hostile.
+			local EXIT_SUB 1
+		}
+		if !EXIT_SUB
+		consolemsg ent_currentplayer FAIL - Format: sorc_villa [friendly|hostile]
+	}
+
+	if ( PARAM1 equals 'idebug' )
+	{
+		local MY_WEAPON $get(ent_currentplayer,scriptvar,'PLR_ACTIVE_WEAPON')
+		consolemsg ent_currentplayer Running item debug on $get(MY_WEAPON,name)
+		callexternal MY_WEAPON item_debug PARAM2 PARAM3 PARAM4 PARAM5
+	}
+
+	if ( PARAM1 equals 'medal' )
+	{
+		consolemsg ent_currentplayer Showing SorcVilla medal level PARAM2
+		local SPAWN_POINT $get(ent_currentplayer,origin)
+		local MY_ANGLES $get(ent_currentplayer,angles)
+		local MY_YAW $vec.yaw(MY_ANGLES)
+		vectoradd SPAWN_POINT $relpos($vec(0,MY_YAW,0),$vec(0,128,0))
+
+		vectorset SPAWN_POINT z $get_ground_height(SPAWN_POINT)
+		vectoradd SPAWN_POINT z 128
+		clientevent new all items/item_sorcv_cl SPAWN_POINT PARAM2 MY_YAW 20.0
+	}
+
+	if ( PARAM1 equals 'allgodsarebastards' )
+	{
+		consolemsg ent_currentplayer Offending the gods...
+		local BEAM_TARG $get(ent_currentplayer,origin)
+		local BEAM_START BEAM_TARG
+		vectoradd BEAM_START $relpos($vec(0,0,0),$vec(0,0,128))
+		effect beam point lgtning.spr 50 BEAM_START BEAM_TARG (255,255,255) 255 20 5.0
+		callexternal ent_currentplayer ext_playsound_kiss 0 10 weather/Storm_exclamation.wav
+		infomsg all $get(ent_currentplayer,name) "Has offended the gods..."
+		xdodamage ent_currentplayer direct 99999 100% GAME_MASTER GAME_MASTER none target
+	}
+
+	if ( PARAM1 equals 'banks' )
+	{
+		consolemsg ent_currentplayer Dumping banks to chatlog
+		chatlog BANK_DUMP: $get_quest_data(ent_currentplayer,b1)
+		chatlog BANK_DUMP: $get_quest_data(ent_currentplayer,b2)
+		chatlog BANK_DUMP: $get_quest_data(ent_currentplayer,b3)
+	}
+
+	if ( PARAM1 equals 'darkenbloom' )
+	{
+		consolemsg ent_currentplayer Unblooming by PARAM2
+		clientevent update ent_currentplayer const.localplayer.scriptID cl_darken_bloom PARAM2
+	}
+
+	if ( PARAM1 equals 'teleforward' )
+	{
+		local DIST_FORWARD PARAM2
+		if ( PARAM2 startswith 'PARAM' ) local PARAM2 32
+		consolemsg ent_currentplayer Teleporting Forward PARAM2 units
+		local MY_POS $get(ent_currentplayer,origin)
+		local MY_ANG $get(ent_currentplayer,angles)
+		local PLR_PITCH $vec.pitch(MY_ANG)
+		local PLR_PITCH $neg(PLR_PITCH)
+		vectoradd MY_POS $relpos($vec(PLR_PITCH,$vec.yaw(MY_ANG),$vec.roll(MY_ANG)),$vec(0,PARAM2,0))
+		setorigin ent_currentplayer MY_POS
+	}
+
+	if ( PARAM1 equals 'decal' )
+	{
+		consolemsg ent_currentplayer Decal PARAM2
+
+		local VEC_START $get(ent_currentplayer,eyepos)
+		local VEC_END VEC_START
+		local VEC_ANG $get(ent_currentplayer,angles)
+		local PLR_PITCH $vec.pitch(VEC_ANG)
+		local PLR_PITCH $neg(PLR_PITCH)
+		vectoradd VEC_END $relpos($vec(PLR_PITCH,$vec.yaw(VEC_ANG),$vec.roll(VEC_ANG)),$vec(0,2000,0))
+		local TRACE_LINE $get_traceline(VEC_START,VEC_END,worldonly)
+		effect decal TRACE_LINE PARAM2
+		setvard CUR_DECAL PARAM2
+	}
+
+	if ( PARAM1 equals 'decalcycle' )
+	{
+		add CUR_DECAL 1
+		consolemsg ent_currentplayer DecalCycle CUR_DECAL
+
+		local VEC_START $get(ent_currentplayer,eyepos)
+		local VEC_END VEC_START
+		local VEC_ANG $get(ent_currentplayer,angles)
+		local PLR_PITCH $vec.pitch(VEC_ANG)
+		local PLR_PITCH $neg(PLR_PITCH)
+		vectoradd VEC_END $relpos($vec(PLR_PITCH,$vec.yaw(VEC_ANG),$vec.roll(VEC_ANG)),$vec(0,2000,0))
+		local TRACE_LINE $get_traceline(VEC_START,VEC_END,worldonly)
+		effect decal TRACE_LINE CUR_DECAL
+	}
+
+	if ( PARAM1 equals 'listbank' )
+	{
+		consolemsg ent_currentplayer Dumping Bank Contents...
+		setvard TARGET_PLAYER $get(ent_currentplayer,id)
+		callevent list_bank
+	}
+
+	if ( PARAM1 equals 'ce' )
+	{
+		consolemsg ent_currentplayer Running ce with PARAM2
+		clientevent new all developer/clcmd_test $get(ent_currentplayer,index) $get(ent_currentplayer,id) PARAM2
+	}
+
+//	if ( PARAM1 equals 'boartest' )
+//	{
+//		consolemsg ent_currentplayer Boar trail test active
+//		clientevent new all monsters/boar_lava_cl $get(ent_currentplayer,index) 3
+//	}
+
+//	if ( PARAM1 equals 'rocktest' )
+//	{
+//		consolemsg ent_currentplayer Rock test
+//		createnpc monsters/summon/rock_storm $get(ent_currentplayer,origin) $get(ent_currentplayer,id) 4 500 64 90 1 //<Owner> <#Rocks> <Dmg> <FX_Radius> <Letivtate_Height> <fire>
+//	}
+
+//	if ( PARAM1 equals 'clinfo' )
+//	{
+//		local INFO_ASK PARAM2
+//		if ( INFO_ASK startswith 'PARAM' ) local INFO_ASK ms_bloom_darken
+//		consolemsg ent_currentplayer GM Requesting INFO_ASK from client.
+//		callexternal GAME_MASTER gm_ask_client_info $get(ent_currentplayer,id) INFO_ASK
+//	}
+
+//	if ( PARAM1 equals 'rtest' )
+//	{
+//		consolemsg ent_currentplayer Doing reserve test
+//		callexternal GAME_MASTER reserve_test $get(ent_currentplayer,id)
+//	}
+
+//	if ( PARAM1 equals 'mang' )
+//	{
+//		local OWNER_YAW $get(ent_currentplayer,angles.yaw)
+//		local BEAM_START $get(ent_currentplayer,origin)
+//		local BEAM_END $relpos($vec(0,OWNER_YAW,0),$vec(0,1000,0))
+//		local BEAM_DIR $dir(BEAM_START,BEAM_END)
+//		consolemsg ent_currentplayer mang BEAM_DIR
+//		local BEAM_END2 BEAM_START
+//		vectormultiply BEAM_DIR 1000.0 
+//		vectoradd BEAM_END2 BEAM_DIR
+//
+//		effect beam point lgtning.spr 100 BEAM_START BEAM_END (255,0,255) 200 0 10.0
+//		effect beam point lgtning.spr 100 BEAM_START BEAM_END2 (255,255,0) 200 0 15.0
+//	}
+//
+//	if ( PARAM1 equals 'showce' )
+//	{
+//		if ( PARAM2 startswith 'PARAM' ) local PARAM2 1
+//		setvard SHOW_CE PARAM2
+//		consolemsg ent_currentplayer Show CE calls: SHOW_CE
+//	}
+
+	if ( PARAM1 equals 'halo' )
+	{
+		consolemsg ent_currentplayer Halo set PARAM2 
+		clientevent update all const.localplayer.scriptID cl_set_halo PARAM2 $get(ent_currentplayer,index)
+	}
+
+	if ( PARAM1 equals eventunique )
+	{
+		local L_UNIQUE_NAME $get_by_name(PARAM2)
+		local L_EVENT_NAME PARAM3
+		local L_EVENT_PARAM1 PARAM1
+		local L_EVENT_PARAM2 PARAM2
+		local L_EVENT_PARAM3 PARAM3
+		local L_EVENT_PARAM4 PARAM4
+		
+		consolemsg ent_currentplayer eventunique: ( PARAM2 ) event L_EVENT_NAME params L_EVENT_PARAM1 L_EVENT_PARAM2 L_EVENT_PARAM3 L_EVENT_PARAM4
+		callexternal L_UNIQUE_NAME L_EVENT_NAME L_EVENT_PARAM1 L_EVENT_PARAM2 L_EVENT_PARAM3 L_EVENT_PARAM4
+	}
+
+	if ( PARAM1 equals 'btest' )
+	{
+		consolemsg ent_currentplayer btest
+		callexternal ent_currentplayer ext_btest
+	}
+
+
+	//==================================================== END DEVELOPER COMMANDS
+}
+
+{ list_global_array
+	local CUR_ELEMENT $g_get_array(GLOBAL_ARRAY_TO_TEST,CUR_IDX)
+	consolemsg ent_currentplayer CUR_IDX - CUR_ELEMENT
+	add CUR_IDX 1
+	if CUR_IDX < $g_get_array_amt(GLOBAL_ARRAY_TO_TEST)
+	callevent 0.1 list_global_array
+}
+
+{ sv_track_keys_loop
+	if SV_TRACK_KEYS
+	callevent 1.0 sv_track_keys_loop
+	dbg key_tracker: m1 $get(SV_TRACK_PLAYER,keydown,attack1) m2 $get(SV_TRACK_PLAYER,keydown,attack2) us $get(SV_TRACK_PLAYER,keydown,use) ju $get(SV_TRACK_PLAYER,keydown,jump) ml $get(SV_TRACK_PLAYER,keydown,moveleft) mr $get(SV_TRACK_PLAYER,keydown,moveright) fw $get(SV_TRACK_PLAYER,keydown,forward) bk $get(SV_TRACK_PLAYER,keydown,back)
+}
+
+{ check_vote_options
+
+	setvard CAN_VOTE 0
+	callevent check_can_vote $get(ent_currentplayer,id)
+	if CAN_VOTE
+
+	if ( PARAM1 equals 'votemap' )
+	{
+		local ALLOW_MAPVOTE game.cvar.msvote_map_enable 
+		if ( !ALLOW_MAPVOTE )
+		{
+			local OUT_MSG "VOTEMAP: This server does not allow map votes."
+			consolemsg ent_currentplayer OUT_MSG
+			dplayermessage ent_currentplayer OUT_MSG
+		}
+		if ALLOW_MAPVOTE
+		local MAP_TO_VOTE PARAM2
+		callevent player_votemap $get(ent_currentplayer,id) MAP_TO_VOTE VOTE_FROM_CONSOLE
+	}
+
+	if ( PARAM1 equals 'votepvp' )
+	{
+		local ALLOW_PVPVOTE game.cvar.msvote_pvp_enable 
+		if ( !ALLOW_PVPVOTE )
+		{
+			local OUT_MSG "VOTEPVP: This server does not allow PVP votes."
+			consolemsg ent_currentplayer OUT_MSG
+			dplayermessage ent_currentplayer OUT_MSG
+		}
+		if ALLOW_PVPVOTE
+		if ( game.players < 2 )
+		{
+			if !G_DEVELOPER_MODE
+			local OUT_MSG "VOTEPVP: Requires at least 2 players to vote for PVP."
+			consolemsg ent_currentplayer OUT_MSG
+			dplayermessage ent_currentplayer OUT_MSG
+			local EXIT_SUB 1
+		}
+		if !EXIT_SUB
+		callevent player_votepvp $get(ent_currentplayer,id) VOTE_FROM_CONSOLE
+	}
+
+	if ( PARAM1 equals 'votekick' )
+	{
+		if ( game.players < 3 )
+		{
+			if !G_DEVELOPER_MODE
+			dplayermessage ent_currentplayer VOTEKICK: Need at least three players to start a kick vote
+			local EXIT_SUB 1
+		}
+		if !EXIT_SUB
+
+		local ALLOW_KICKVOTE game.cvar.msvote_kick_enable 
+		if ( !ALLOW_KICKVOTE )
+		{
+			local OUT_MSG "VOTEKICK: This server does not allow kickvotes."
+			consolemsg ent_currentplayer OUT_MSG
+			dplayermessage ent_currentplayer OUT_MSG
+		}
+		if ALLOW_KICKVOTE
+		local L_PLAYER_NAME PARAM2
+		if ( L_PLAYER_NAME startswith 'PARAM' ) local L_PLAYER_NAME 'PARAMETER' //weirdness voting from console
+		local L_CALLER $get(ent_currentplayer,id)
+		callevent player_votekick L_PLAYER_NAME L_CALLER
+	}
+
+	if ( PARAM1 equals 'voteban' )
+	{
+		if ( game.players < 3 )
+		{
+			if !G_DEVELOPER_MODE
+			dplayermessage ent_currentplayer VOTEBAN: Need at least three players to start a ban vote
+			local EXIT_SUB 1
+		}
+		if !EXIT_SUB
+
+		local ALLOW_BANVOTE game.cvar.msvote_ban_enable 
+		if ( !ALLOW_BANVOTE ) consolemsg ent_currentplayer VOTEBAN: This server does not allow ban votes.
+		if ALLOW_BANVOTE
+		local L_PLAYER_NAME PARAM2
+		if ( L_PLAYER_NAME startswith 'PARAM' ) local L_PLAYER_NAME 'PARAMETER' //weirdness voting from console
+		local L_CALLER $get(ent_currentplayer,id)
+		callevent player_voteban L_PLAYER_NAME L_CALLER
+	}
+
+	if ( PARAM1 equals 'votelock' )
+	{
+		if ( G_SERVER_LOCKED )
+		{
+			dplayermessage ent_currentplayer Server is already vote locked. ( Password: game.cvar.sv_password )
+			consolemsg ent_currentplayer Server is already vote locked.  ( Password: game.cvar.sv_password )
+
+			local EXIT_SUB 1
+		}
+		if !EXIT_SUB
+
+		if ( !game.cvar.msvote_lock_enable )
+		{
+			dplayermessage ent_currentplayer This server does not allow votes to lock the server.
+			consolemsg ent_currentplayer This server does not allow votes to lock the server.
+			local EXIT_SUB 1
+		}
+		if !EXIT_SUB
+
+		if ( game.players < 3 )
+		{
+			if !G_DEVELOPER_MODE
+			dplayermessage ent_currentplayer Need at least three players to start a vote to lock the server.
+			consolemsg ent_currentplayer Need at least three players to start a vote to lock the server.
+			local EXIT_SUB 1
+		}
+		if !EXIT_SUB
+
+		callevent player_votelock $get(ent_currentplayer,id)
+	}
+}
+
+{ list_bank
+	chatlog $timestamp(>) Dumping bank...
+	setvard BANK_LIST $get_quest_data(TARGET_PLAYER,b1)
+	calleventloop $get_token_amt(BANK_LIST) list_bank_loop
+	setvard BANK_LIST $get_quest_data(TARGET_PLAYER,b2)
+	calleventloop $get_token_amt(BANK_LIST) list_bank_loop
+	setvard BANK_LIST $get_quest_data(TARGET_PLAYER,b3)
+	calleventloop $get_token_amt(BANK_LIST) list_bank_loop
+	setvard BANK_LIST $get_quest_data(TARGET_PLAYER,b4)
+	calleventloop $get_token_amt(BANK_LIST) list_bank_loop
+	setvard BANK_LIST $get_quest_data(TARGET_PLAYER,b5)
+	calleventloop $get_token_amt(BANK_LIST) list_bank_loop
+	setvard BANK_LIST $get_quest_data(TARGET_PLAYER,b6)
+	calleventloop $get_token_amt(BANK_LIST) list_bank_loop
+	setvard BANK_LIST $get_quest_data(TARGET_PLAYER,b7)
+	calleventloop $get_token_amt(BANK_LIST) list_bank_loop
+	setvard BANK_LIST $get_quest_data(TARGET_PLAYER,b8)
+	calleventloop $get_token_amt(BANK_LIST) list_bank_loop
+	setvard BANK_LIST $get_quest_data(TARGET_PLAYER,b9)
+	calleventloop $get_token_amt(BANK_LIST) list_bank_loop
+	chatlog $timestamp(>) Bank Dump Complete.
+}
+
+{ list_bank_loop
+	local CUR_ITEM $get_token(BANK_LIST,game.script.iteration)
+	consolemsg TARGET_PLAYER CUR_ITEM
+	chatlog bank_dump: CUR_ITEM
+}
+
+{ strip_test
+	if ( BLARG ) dbg test
+}
+
+{ func_test //<loop#>
+	setvard FUNC_COUNT 0
+	calleventloop PARAM1 func_test_loop
+	stradd FUNC_COUNT x
+	dbg func_test PARAM1 res FUNC_COUNT
+	return FUNC_COUNT
+}
+
+{ func_test_loop
+	stradd FUNC_COUNT game.script.iteration
+}

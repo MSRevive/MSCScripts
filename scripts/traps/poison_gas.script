@@ -1,0 +1,74 @@
+//poison gas trap DOT
+//takes addparam set_aoe;<radius> (default 256)
+//damage scales by % of maxhealth
+//dmgmulti can be used to increase damage
+
+#scope server
+{
+	
+}
+
+{ game_spawn
+	name a|Poison Gas Trap
+	setmodel null.mdl
+	hp 1
+	width 1
+	height 1
+	invincible 1
+	gravity 0
+	fly 1
+	blood none
+	race hated
+	setvard PLAYING_DEAD 1
+	nopush 1
+	callevent 0.1 start_dot
+}
+
+{ game_postspawn
+	if ( PARAM4 startswith set_ ) callevent set_aoe $get_token(PARAM4,1)
+
+	if PARAM2 > 1
+	dmgmulti PARAM2
+}
+
+{ start_dot
+	if ( TRAP_AOE equals 'TRAP_AOE' ) setvard TRAP_AOE 256
+	setvard DOT_ORG $get(ent_me,origin)
+	vectorset DOT_ORG z $get_ground_height(DOT_ORG)
+	clientevent new all effects/sfx_poison_cloud DOT_ORG TRAP_AOE 20.0
+	setvard IS_ACTIVE 1
+	callevent dot_loop
+	callevent 20.0 dot_end
+}
+
+{ dot_loop
+	if IS_ACTIVE
+	callevent 1.0 dot_loop
+	xdodamage DOT_ORG TRAP_AOE 0 0 ent_me ent_me none target dmgevent:dot
+}
+
+{ dot_dodamage
+	if PARAM1
+	local L_DOT $get(PARAM2,maxhp)
+	multiply L_DOT 0.1
+	applyeffect PARAM2 effects/greater_poison 10.0 $get(ent_me,id) L_DOT
+}
+
+{ dot_end
+	setvard IS_ACTIVE 0
+	callevent 11.0 npc_suicide
+}
+
+{ npc_suicide
+	setorigin ent_me $vec(20000,10000,30000)
+	invincible 0
+	dodamage ent_me direct 99999 100 GAME_MASTER target
+}
+
+{ game_dynamically_created //<aoe>
+	setvard TRAP_AOE PARAM1
+}
+
+{ set_aoe
+	setvard TRAP_AOE PARAM1
+}

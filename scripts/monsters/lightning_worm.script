@@ -1,0 +1,232 @@
+//Well this thing's just weird
+
+{
+	if ( $lcase(game.map.name) equals cleicert ) setvard NPC_IS_BOSS 1
+
+	const NPC_BOSS_REGEN_RATE 0.05
+	const NPC_BOSS_RESTORATION 0.5
+
+	setvar IS_UNHOLY 1
+
+	setvard ANIM_ATTACK treadwater
+	const ANIM_EGG headshot
+
+	setvard ANIM_DEATH die_simple
+
+	setvard ATTACK_MOVERANGE 1
+
+	setvar ANIM_IDLE swim
+	setvar ANIM_RUN swim
+	setvar ANIM_WALK swim
+
+	setvard NPC_GIVE_EXP 1500
+
+	const SOUND_LOOP1 ambience/alien_creeper.wav
+	const SOUND_LOOP2 ambience/alien_frantic.wav
+	const SOUND_STRUCK1 bullchicken/bc_bite1.wav
+	const SOUND_STRUCK2 bullchicken/bc_bite3.wav
+	const SOUND_STRUCK3 debris/bustflesh2.wav
+	const SOUND_EGG tentacle/te_roar1.wav
+	const SOUND_CHARGE1 houndeye/he_attack1.wav
+	const SOUND_CHARGE2 houndeye/he_attack2.wav
+	const SOUND_CHARGE3 houndeye/he_attack3.wav
+	const SOUND_SHOOT1 houndeye/he_blast1.wav
+	const SOUND_SHOOT2 houndeye/he_blast2.wav
+	const SOUND_SHOOT3 houndeye/he_blast3.wav
+
+	const DMG_SHOCK	$rand(100,200)
+	const DOT_SHOCK $rand(20,40)
+
+	const ROAM_RADIUS 256
+	const VERT_RANGE_FULL $randf(-196,128)
+	const VERT_RANGE_HALF $randf(-196,0)
+
+	const ATTACK_RANGE 2048
+
+	const FREQ_SHOOT $randf(5,10)
+	const FREQ_EGG $randf(30,60)
+	const FREQ_SOUND 10.0
+	const FREQ_REND 0.5
+
+	//base_turn_undead (horror)
+	precache ambience/the_horror1.wav
+	precache ambience/the_horror2.wav
+	precache ambience/the_horror3.wav
+	precache ambience/the_horror4.wav
+
+	//horror egg
+	precache monsters/egg.mdl
+	precache debris/bustflesh1.wav
+	precache weapons/g_bounce1.wav
+	precache player/pl_fallpain1.wav
+
+	const FWD_SPEED 10
+}
+
+#include monsters/base_monster_new
+#include monsters/base_noclip
+
+{ npc_spawn
+
+	name an|Ethereal Vermicular
+	race demon
+	hp 4000
+	setmodel monsters/weird_worm.mdl
+	takedmg lightning 0.0
+	takedmg holy 1.0
+	blood green
+	fly 1
+
+	width 72
+	height 72
+
+	setmoveanim swim
+	setidleanim swim
+
+	setvard ACTIVE_HORRORS 0
+
+	callevent npcatk_suspend_ai
+	callevent 0.1 set_centerpoint
+}
+
+{ set_centerpoint
+	setvard CENTER_POINT game.monster.origin
+	vectoradd CENTER_POINT z 256
+}
+
+{ [override] npcatk_hunt
+	//no AI - kept lower includes just for operations
+}
+
+{ npc_post_spawn
+	callevent loop_sound
+	callevent npcatk_suspend_ai //redund
+	setvard QUARTER_HP game.monster.maxhp
+	multiply QUARTER_HP 0.25
+	setmovedest CENTER_POINT 0
+	setvard MOVING_CENTER 1
+
+	setvard HORROR_LIMIT 4
+	if ( game.players.totalhp > 1600 ) add HORROR_LIMIT 1
+	if ( game.players.totalhp > 3200 ) add HORROR_LIMIT 1
+}
+
+{
+repeatdelay FREQ_REND
+	if ( game.monster.hp < QUARTER_HP )
+	{
+		if $rand(1,5) == 1	
+		effect glow ent_me (255,0,0) 64 1 1 
+	}
+	if ( $rand(1,20) == 1 ) playanim critical crouch_idle
+	//playanim once swim
+
+	setprop ent_me rendermode 5
+	setprop ent_me renderamt $rand(128,255)
+}
+
+{
+repeatdelay FREQ_SOUND
+	svplaysound 2 0 null.wav
+	callevent 0.1 loop_sound
+}
+
+{ loop_sound
+	if ( game.monster.hp > QUARTER_HP ) svplaysound 2 10 SOUND_LOOP1
+	if ( game.monster.hp < QUARTER_HP ) svplaysound 2 10 SOUND_LOOP2
+}
+
+{ game_struck
+	playrandomsound 0 10 SOUND_STRUCK1 SOUND_STRUCK2 SOUND_STRUCK3
+	setvard WORM_TARGET $get(ent_laststruck,id)
+}
+
+{
+repeatdelay FREQ_SHOOT
+	if $get(WORM_TARGET,isalive)
+	playrandomsound 0 10 SOUND_CHARGE1 SOUND_CHARGE2 SOUND_CHARGE3
+	local SHOOT_DELAY $randf(1.5,2)
+	playanim critical ANIM_ATTACK
+	effect glow ent_me (255,255,0) 128 5 5
+	callevent SHOOT_DELAY do_lightning
+}
+
+{ do_lightning
+	playrandomsound 0 10 SOUND_SHOOT1 SOUND_SHOOT2 SOUND_SHOOT3
+	setvard BEAM_ATTACK 1
+	
+	//beam ents <spritename> <width> <target> <attachment index> <(r,g,b)> <brightness> <noise> <duration>
+	//effect beam ents lgtning.spr 60 WORM_TARGET 0 (255,255,50) 200 60 1.0
+	dodamage WORM_TARGET ATTACK_RANGE DMG_SHOCK 100% lightning
+}
+
+{ game_dodamage //PARAM1=hit:0|1 PARAM2=ent_hit PARAM3=(start) PARAM4=(end)
+
+	if ( !PARAM1 )
+	{
+		if BEAM_ATTACK
+		setvard BEAM_ATTACK 0
+		if !$get(PARAM2,isalive)
+		local TRACE_START $get(ent_me,origin)
+		local TRACE_END $get(WORM_TARGET,origin)
+		local TRACE_IT $get_traceline(TRACE_START,TRACE_END,worldonly)
+		effect beam point lgtning.spr 60 TRACE_START TRACE_IT (255,255,50) 200 60 1.0
+	}
+
+	if PARAM1
+	//beam point <spritename> <width> <startpos> <endpos> <(r,g,b)> <brightness> <noise> <duration>
+	if BEAM_ATTACK
+	setvard BEAM_ATTACK 0
+	applyeffect PARAM2 effects/effect_shock_dmg 5 $get(ent_me,id) DOT_SHOCK
+	local L_BEAM_START $get(ent_me,origin)
+	local L_BEAM_END $get(WORM_TARGET,origin)
+	effect beam point lgtning.spr 60 L_BEAM_START L_BEAM_END (255,255,50) 200 60 1.0
+}
+
+{
+repeatdelay FREQ_EGG
+	if ACTIVE_HORRORS < HORROR_LIMIT
+	playanim critical ANIM_EGG
+	playsound 0 10 SOUND_EGG
+	callevent 0.5 lay_egg
+}
+
+{ lay_egg
+	if $get(ent_me,inwater) == 0 //hoping off map will = in water
+	createnpc monsters/summon/horror_egg_lightning $relpos(0,0,0) $get(ent_me,id)
+	add ACTIVE_HORRORS 1
+}
+
+{ basenoclip_flight
+
+	dbg temp dist $dist(game.monster.origin,CENTER_POINT)  ( MOVING_CENTER )
+
+	if ( MOVING_CENTER )
+	{
+		setvard NPC_NOCLIP_DEST CENTER_POINT
+		if $dist(game.monster.origin,NPC_NOCLIP_DEST) < 96
+		setvard MOVING_CENTER 0
+	}
+	if !MOVING_CENTER
+
+	if ( $dist(game.monster.origin,NPC_NOCLIP_DEST) < 96 )
+	{
+		add DEST_ROT 45
+		if ( DEST_ROT > 359 ) subtract DEST_ROT 359
+		setvard NPC_NOCLIP_DEST CENTER_POINT 
+		local L_VERT_RANGE VERT_RANGE_FULL
+		if ( $rand(1,2) == 1 ) local L_VERT_RANGE VERT_RANGE_HALF
+		vectoradd NPC_NOCLIP_DEST $relpos($vec(0,DEST_ROT,0),$vec(0,ROAM_RADIUS,L_VERT_RANGE))
+	}
+}
+
+{ horror_died
+	subtract ACTIVE_HORRORS 1
+}
+
+{ game_death
+	callexternal GAME_MASTER gm_worm_gold $get(ent_me,id) chests/bag_o_gold_50
+	svplaysound 2 0 null.wav
+	setprop ent_me movetype const.movetype.bounce
+	setvelocity ent_me $vec(-110,110,110)
+}

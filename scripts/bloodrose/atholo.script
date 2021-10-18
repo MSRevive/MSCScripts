@@ -1,0 +1,402 @@
+//Altholo rebuilt from scratch, by Thothie
+
+{
+
+	if ( $lcase(game.map.name) equals bloodrose )
+	{
+		setvard NPC_GIVE_EXP 5000
+		setvard NPC_IS_BOSS 1
+	}
+	else
+	{
+		setvard NPC_GIVE_EXP 1500
+	}
+
+	const NPC_BOSS_REGEN_RATE 0
+	const NPC_BOSS_RESTORATION 0
+
+	setvar REGEN_AMT 60
+	setvar REGEN_RATE 5.0
+
+	const NPC_BOSS_REGEN_RATE 0 //has his own internal regen
+
+	setvard NPC_ALLY_RESPONSE_RANGE 6000
+
+	setvar SOUND_STRUCK1 weapons/cbar_hitbod1.wav
+	setvar SOUND_STRUCK2 weapons/cbar_hitbod2.wav
+	setvar SOUND_STRUCK3 weapons/cbar_hitbod3.wav
+	setvar SOUND_PAIN controller/con_pain2.wav
+	setvar SOUND_ATTACK1 zombie/claw_miss1.wav
+	setvar SOUND_ATTACK2 zombie/claw_miss2.wav
+	setvar SOUND_PISSED garg/gar_die1.wav //added for invul script
+	const SOUND_DEATH garg/gar_die2.wav
+	setvar SOUND_TAUNT nihilanth/nil_die.wav
+	setvar SOUND_IDLE garg/gar_idle2.wav //was atholo/idle.wav
+
+	setvard ATTACK_HITRANGE 240
+	setvard ATTACK_RANGE 180
+	setvard MOVE_RANGE 50
+	setvard ATTACK_MOVERANGE 64
+	setvar ATTACK_HITCHANCE 90%
+
+	setvar DAMAGE_ATTACK1 $rand(50,90)
+	setvar DAMAGE_ATTACK2 $rand(100,200)
+
+	setvar FIRE_DAMAGE $rand(50,100)
+	setvar FIRE_DURATION 5.0
+	setvar FREEZE_DAMAGE $rand(25,50)
+	setvar FREEZE_DURATION 5.0
+
+	setvar ANIM_RUN run
+	setvar ANIM_IDLE idle1
+	setvar ANIM_WALK walk
+
+	setvar ANIM_SLASH attack1
+	setvar ANIM_SMASH attack2
+	setvar ANIM_CAST castspell
+	setvard ANIM_DEATH dieforward
+
+	setvar NO_STEP_ADJ 1
+
+	setvar BURST_FREQ 15.0
+
+	precache SOUND_DEATH //External
+
+	setvar MONSTER_MODEL monsters/skeleton_boss2.mdl
+	precache MONSTER_MODEL //upload new model
+
+	setvar I_AM_TURNABLE 0
+
+	setvard MISS_ATTACK 0
+
+	setvard NPC_MUST_SEE_TARGET 0
+}
+
+#include [server] monsters/base_monster
+
+{ [server] game_dynamically_created
+	setangle face $vec(0,PARAM1,0)
+	setvard VENGENCE_TARGET PARAM2
+	callevent 0.1 set_vengence
+}
+
+{ [server]  set_vengence
+	if ( $get(VENGENCE_TARGET,range) < 2048 ) callevent npcatk_settarget VENGENCE_TARGET
+}
+
+{ [shared] npc_spawn
+
+	name_unique boss_atholo
+
+	name |Atholo
+	invincible 1
+	hp 7000
+	
+	takedmg all 0.5
+	takedmg holy 1.5
+	takedmg dark 0.75
+	takedmg fire 0.0
+	setvard IMMUNE_FIRE 1
+	takedmg ice 0.2
+	takedmg cold 0.12
+	takedmg lightning 0.5
+	
+	width 40
+	height 128
+	race undead
+	roam 0
+	hearingsensitivity 6
+	setmodel MONSTER_MODEL
+	setmodelbody 0 9
+	setmodelbody 1 6
+	setidleanim ANIM_IDLE
+	setmoveanim ANIM_WALK
+	setvard ANIM_ATTACK attack1
+
+	//setsolid box
+	//setbbox npcsize
+
+	movespeed 2.0
+
+	stepsize 64
+	maxslope 90
+	
+	volume 10
+	playsound 2 SOUND_TAUNT
+
+	setvard SWIPES_COUNT 0
+
+	callevent 2.0 rt_adj_stepsize
+
+	callevent 30.0 return_home
+}
+
+{ [server] rt_adj_stepsize
+
+	callevent 2.0 rt_adj_stepsize
+	if $get(HUNT_LASTTARGET,isplayer)
+	local MY_ORG game.monster.origin
+	local MY_Z $vec.z(MY_ORG)
+	local TARG_ORG $get(HUNT_LASTTARGET,origin)
+	local TARG_Z $vec.z(TARG_ORG)
+	add TARG_Z PLAYER_HALF_HEIGHT
+	local DIFF 0
+	if ( TARG_Z > MY_Z )
+	{
+		local DIFF TARG_Z
+		subtract DIFF MY_Z
+	}
+	if ( TARG_Z < MY_Z )
+	{
+		local DIFF MY_Z
+		subtract DIFF TARG_Z
+	}
+	if ( DIFF > 64 )
+	{
+		//dbg temp stepsize 200
+		stepsize 300
+	}
+	if ( DIFF <= 64 )
+	{
+		//dbg temp stepsize 64
+		stepsize 64
+	}
+	
+}
+
+{ [server] attack_1
+
+	add MISS_ATTACK 1
+
+	if ( MISS_ATTACK > 5 )
+	{
+		setvard MISS_ATTACK 0
+		callevent chicken_run 3.0
+	}
+
+	//callevent npcatk_dodamage NPCATK_TARGET ATTACK_HITRANGE DAMAGE_ATTACK1 ATTACK_HITCHANCE
+	if ( $get(HUNT_LASTTARGET,range) < ATTACK_HITRANGE ) dodamage HUNT_LASTTARGET direct DAMAGE_ATTACK1 ATTACK_HITCHANCE $get(ent_me,id) slash
+	setvard FIRE_ATTACK 1
+
+	add SWIPES_COUNT 1
+	if SWIPES_COUNT > 20
+	setvard SWIPES_COUNT 0
+	setvard ANIM_ATTACK ANIM_SMASH
+}
+
+{ [server] attack_2
+
+	add MISS_ATTACK 1
+
+	if ( MISS_ATTACK > 5 )
+	{
+		setvard MISS_ATTACK 0
+		callevent chicken_run 3.0
+	}
+
+	//callevent npcatk_dodamage NPCATK_TARGET ATTACK_HITRANGE DAMAGE_ATTACK2 ATTACK_HITCHANCE
+	if ( $get(HUNT_LASTTARGET,range) < ATTACK_HITRANGE ) dodamage HUNT_LASTTARGET direct DAMAGE_ATTACK2 ATTACK_HITCHANCE $get(ent_me,id)  slash
+
+	setvard FIRE_ATTACK 2
+	setvard ANIM_ATTACK ANIM_SLASH
+}
+
+   //Hit by someone
+{ [server] game_struck
+   
+	playrandomsound 0 5 SOUND_STRUCK1 SOUND_STRUCK2
+
+	//last second fireball addition
+
+	if $get(ent_laststruck,range) > 200
+	if !FIREBALL_DELAY
+	setvard FIREBALL_DELAY 1
+	setangle face_origin $get(ent_laststruck,origin)
+	setvard FIREBALL_TARGET $get(ent_laststruck,id)
+	callevent 0.1 throw_fireball
+}
+
+{ [server] throw_fireball
+	//straighten out so you dont get goodie leaning look
+	local MY_ANG game.monster.angles
+	local MY_YAW $vec.yaw(MY_ANG)
+	setangle face $vec(0,MY_YAW,0)
+
+	playanim critical attack3
+
+	playsound 0 10 magic/fireball_strike.wav
+
+	local DIST $get(FIREBALL_TARGET,range)
+
+	callevent npcatk_suspend_ai 0.3
+
+	callevent act_toss
+	if ( DIST > 300 ) callevent 0.1 act_toss
+	if ( DIST > 400 ) callevent 0.2 act_toss
+
+	callevent 5.0 reset_fireball_delay
+}
+
+{ [server] act_toss
+	tossprojectile FIREBALL_TARGET 400 400 10 proj_fire_ball (0,48,96)
+	callexternal $get(ent_lastprojectile,id) ext_lighten 0
+	setprop ent_lastprojectile rendermode 5
+	setprop ent_lastprojectile renderamt 255
+}
+
+{ [server] reset_fireball_delay
+	setvard FIREBALL_DELAY 0
+}
+
+{ [server] taunt
+
+   repeatdelay $rand(15,60)
+
+	if game.monster.isalive
+
+   volume 10
+   playsound 2 SOUND_TAUNT
+}
+
+//attempt to make vulnerable via msnpc_script
+
+{ [server] vulnerable
+	invincible 0
+	playsound 0 10 SOUND_PISSED
+	saytextrange 1024
+	setanim.movespeed 2.0
+	setanim.framerate 1.5
+	setvard CAN_FLINCH 1
+	saytext Fools! I shall destroy you all!
+}
+
+{ [server] my_target_died
+
+	playsound 0 10 SOUND_TAUNT
+}
+
+{ [server] npc_death
+
+	usetrigger atholo_died
+
+	local RYZA_NAME $get_by_name(ryza)
+	local RYZA_ID $get(RYZA_NAME,id)
+	callexternal RYZA_ID atholo_done
+}
+
+{ [server] cycle_up
+
+	if ( game.serverside )
+	{
+		callevent light_on
+	}
+
+	if !ROAM_ON
+	setvard ROAM_ON 1
+	callevent BURST_FREQ flame_burst_check
+	roam 1
+}
+
+{ [server] game_dodamage //1:AttackHit(1/0)  2:EntityHit  3:StartOrigin  4:EndOrigin
+
+	setvard MISS_ATTACK 0
+
+	if ( FIRE_ATTACK == 1 )
+	{
+		if PARAM1
+	   	applyeffect PARAM2 effects/effect_burn FIRE_DURATION $get(ent_me,id) FIRE_DAMAGE
+	}
+
+	if ( FIRE_ATTACK == 2 )
+	{
+		if PARAM1
+	   	applyeffect PARAM2 effects/freeze_solid FREEZE_DURATION $get(ent_me,id) FREEZE_DAMAGE
+	}
+
+	if ( THROW_ATTACK )
+	{
+		if $get(PARAM2,range) < 256
+		addvelocity PARAM2 $relvel(0,800,800)
+	}
+	setvard FIRE_ATTACK 0
+}
+
+//===============================
+//glow system (should be an include, but making it so seems to cause issues with sticky client bits
+//glow
+{ [client]
+	setvard GLOW_COLOR (255,255,128)
+	setvard GLOW_RAD 200
+	const NO_LOOP_DETECT 1
+}
+
+{ [client] client_activate
+
+	setvard SKEL_ID PARAM1
+	if SKEL_LIGHT_ID equals 'SKEL_LIGHT_ID'
+	cleffect light new $getcl(SKEL_ID,origin) GLOW_RAD GLOW_COLOR 5.0
+	setvard SKEL_LIGHT_ID game.script.last_light_id
+	setcallback render enable
+
+	//callevent light_loop
+}
+
+{ [client] game_prerender
+
+	local L_POS $getcl(SKEL_ID,origin)
+	cleffect light SKEL_LIGHT_ID L_POS GLOW_RAD GLOW_COLOR 1.0
+}
+
+{ [server] game_death
+
+	clientevent remove all MY_LIGHT_SCRIPT
+}
+
+{ [server] light_on
+	if !I_R_GLOWING
+	setvard I_R_GLOWING 1
+	clientevent persist all $currentscript $get(ent_me,index)
+	setvard MY_LIGHT_SCRIPT game.script.last_sent_id
+}
+//=============================== End Glow System
+
+{ [server] flame_burst_check
+	callevent BURST_FREQ flame_burst_check
+
+	if $cansee(enemy,128)
+	playanim break
+	callevent npcatk_suspend_ai 1.0
+	callevent 0.1 flame_burst
+}
+
+{ [server] flame_burst
+	playanim critical ANIM_CAST
+	createnpc monsters/summon/flame_burst $relpos(0,0,0) $get(ent_me,id) FLAME_BURST_DAMAGE
+	setvard THROW_ATTACK 1
+	dodamage $relpos(0,0,0) 512 0.0 100% 0.0 reflective target
+	callevent 0.2 stop_throwing
+}
+
+{ [server] stop_throwing
+	setvard THROW_ATTACK 0
+}
+
+{ [server] return_home
+	callevent 15.0 return_home
+	if HUNT_LASTTARGET equals ¯NONE¯
+	//dbg no target, going home NPC_SPAWN_LOC
+	setmovedest NPC_SPAWN_LOC MOVE_RANGE
+}
+
+{ [server]
+repeatdelay REGEN_RATE
+
+	if game.monster.hp < game.monster.maxhp
+	local HP_GIVE REGEN_AMT
+	local GIVE_TEST game.monster.maxhp
+	subtract GIVE_TEST REGEN_AMT
+	if game.monster.hp < GIVE_TEST
+	givehp REGEN_AMT
+	playsound 0 10 player/heartbeat_noloop.wav
+	effect glow ent_me (0,255,0) 96 1 1
+}

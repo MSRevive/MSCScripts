@@ -1,0 +1,58 @@
+//Thothie MAR2010_15 - stationary cloud cl effect (ala poison cloud)
+{
+	const SOUND_SPAWN ambience/steamburst1.wav //pre-cache in calling script
+}
+
+{ client_activate //<origin> <duration> <radius> [color] [sprite]
+	setvard FX_CENTER PARAM1
+	setvard FX_DURATION PARAM2
+	setvard FX_RADIUS PARAM3
+	setvard FX_COLOR PARAM4
+	setvard FX_SPRITE PARAM5
+
+	if ( FX_SPRITE startswith PARAM ) setvard FX_SPRITE poison_cloud.spr
+	if ( FX_COLOR startswith PARAM ) setvard FX_COLOR (0,255,0)
+
+	local L_FX_RADIUS FX_RADIUS
+	multiply L_FX_RADIUS 2.0 //double light rad
+	cleffect light new FX_CENTER L_FX_RADIUS FX_COLOR FX_DURATION
+
+	setvard FX_ACTIVE 1
+	callevent FX_DURATION end_fx
+	callevent smokes_loop
+
+	sound.play3d SOUND_SPAWN 10 FX_CENTER
+}
+
+{ smokes_loop
+	if FX_ACTIVE
+	callevent 0.25 smokes_loop
+	local SPRITE_POS FX_CENTER
+	local RND_ANG $randf(0,359.99)
+	local NEG_RAD $neg(FX_RADIUS)
+	local RND_OFS $randf(NEG_RAD,FX_RADIUS)
+	vectoradd SPRITE_POS $relpos($vec(0,RND_ANG,0),$vec(0,RND_OFS,0))
+	cleffect tempent sprite FX_SPRITE SPRITE_POS setup_smoke
+}
+
+{ end_fx
+	setvard FX_ACTIVE 0
+	callevent 3.0 remove_me
+}
+
+{ remove_me
+	removescript
+}
+
+{ setup_smoke
+	cleffect tempent set_current_prop death_delay 2.5
+	cleffect tempent set_current_prop framerate 10
+	cleffect tempent set_current_prop frames 17
+	cleffect tempent set_current_prop bouncefactor 0
+	cleffect tempent set_current_prop scale $randf(0.5,1.0)
+	cleffect tempent set_current_prop rendermode add
+	cleffect tempent set_current_prop renderamt 200
+	cleffect tempent set_current_prop rendercolor FX_COLOR
+	cleffect tempent set_current_prop gravity 0.005
+	cleffect tempent set_current_prop collide none
+}

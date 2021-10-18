@@ -1,0 +1,197 @@
+#scope server
+{
+	const MY_SKILL smallarms
+
+	const WEAPON 1
+	const OVERRIDE_BANDIT_SPAWN 1
+
+	const AI_NO_TARGET_STRING ¯NONE¯ //need this as bandit uses older AI
+	const ANIM_ALLY_JUMP long_jump
+	const SOUND_ALLY_JUMP player/shout1.wav
+	const ALLY_JUMP_THRESHOLD 150
+}
+
+{ game_precache
+	precachefile monsters/bandit_elite
+}
+
+#include monsters/base_battle_ally
+#include monsters/bandit_elite_dagger
+
+{ [shared] npc_spawn
+
+	setvar BANDIT_TYPE dagger
+
+	name |Skelr the Swift
+	name_unique bandit_skelr
+	setmonsterclip 0
+	setmodel		npc/rogue_1337.mdl
+	gold			$rand(30,40)
+	width		32
+	height		92
+
+	race			human
+	takedmg		all 0.6
+	hearingsensitivity	10
+	roam			0
+
+	setidleanim		ANIM_IDLE
+	setmoveanim		ANIM_WALK
+
+	callevent 0.1 custom_bandit
+}
+
+{ custom_bandit
+	//bowey
+	hp 800
+	setvard MOVE_RANGE 30
+	setvard ATTACK_RANGE 90
+	setvar ATTACK1_DAMAGE DMG_DAGGER
+	setvar ATTACK_PERCENTAGE 80%
+	setvard ANIM_ATTACK swordjab1_R
+	setvar ORIG_ATTACK ANIM_ATTACK
+	setactionanim ANIM_ATTACK
+	setmodelbody 1 1
+	setvard DROP_ITEM1 smallarms_fangstooth //Used by base_monster
+   	setvard DROP_ITEM1_CHANCE 5%		//Used by base_monster
+	setvar BANDIT_TYPE dagger
+}
+
+{ bandit_ally_start_follow
+	//saytext Following...
+	playanim break
+	setvard ALLY_FOLLOW_ON 1
+	setvard MADE_DEAL 1
+}
+
+{ bandit_ally_go_hostile
+	setvard HOSTILE_MODE 1
+	setvard NPC_NO_PLAYER_DMG 0
+	setvard NPC_BATTLE_ALLY 0
+	setvard ALLY_FOLLOW_ON 0
+	race rogue
+	roam 1
+	if ( BANDIT_TYPE isnot bow ) setvard NO_STUCK_CHECKS 0
+}
+
+{ bandit_ally_drinkup
+	playanim critical aim_punch1
+
+	local MY_HP $get(ent_me,hp)
+	local MY_MAXHP $get(ent_me,maxhp)
+
+	if ( MY_HP < MY_MAXHP )
+	{
+		local HEAL_AMT MY_MAXHP
+		subtract HEAL_AMT MY_HP
+		givehp ent_me HEAL_AMT
+	}
+
+	local OUT_TITLE $get(ent_me,name)
+	stradd OUT_TITLE " has quaffed a potion of fire resistance."
+	infomsg all OUT_TITLE ' '
+	takedmg fire 0.25
+	takedmg all 0.4
+	playsound 0 10 items/drink.wav
+	effect glow ent_me (255,0,0) 64 2 2
+}
+
+{ bandit_ally_boss_dead
+	callevent npcatk_suspend_ai
+	callevent npcatk_suspend_movement deep_idle
+	setmovedest none
+	callevent check_qualify
+	setvard ALLY_FOLLOW_ON 0
+	setvard REWARD_MODE 1
+	menu.autoopen 1
+}
+
+{ check_qualify
+	setvard TC_QUAL_PLAYERS 0
+	getplayersnb TC_QUAL_PLAYERS
+	setvard TC_AVG_DMG_PTS 0
+	calleventloop $get_token_amt(TC_QUAL_PLAYERS) tc_get_averages
+	divide TC_AVG_DMG_PTS game.players
+	setvard TC_HALF_AVG_DMG_PTS TC_AVG_DMG_PTS
+	multiply TC_HALF_AVG_DMG_PTS 0.5
+}
+
+{ tc_get_averages
+	local CUR_PLAYER $get_token(TC_QUAL_PLAYERS,game.script.iteration)
+	add TC_AVG_DMG_PTS $get(CUR_PLAYER,scriptvar,'PLR_TOTAL_DMG')
+}
+
+{ say_reward
+	local USER_PTS $get(PARAM1,scriptvar,'PLR_TOTAL_DMG')
+	setvard USER_QUALIFIES 0
+	if ( USER_PTS >= TC_HALF_AVG_DMG_PTS ) setvard USER_QUALIFIES 1
+	if ( !USER_QUALIFIES )
+	{
+		playanim critical look_idle
+		saytext Judging by your performance out there, or rather the lack there of, I don't think you're ready for what I could teach you.
+	}
+	if USER_QUALIFIES
+	local USER_STEAM $get(PARAM1,steamid)
+	add USER_STEAM $get(PARAM1,slot)
+	if ( G_REWARD_LIST contains USER_STEAM )
+	{
+		playanim critical look_idle
+		saytext Sorry, the deal was you could train once from one of us. Thanks for the assist though. We should be fine from here.
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	local RALION_ID $get_by_name(bandit_ralion)
+	if ( !$get(RALION_ID,isalive) )
+	{
+		playanim critical look_idle
+		saytext Ralion maybe dead, but I'll stick to his deal... I'll show you what I know.
+	}
+	else
+	{
+		playanim critical look_idle
+		saytext Alright... I'll show you what I know.
+	}
+
+	local XP_GAIN 20000
+	local PLR_ADJ game.players
+	subtract PLR_ADJ 1
+	multiply PLR_ADJ 0.25
+	add PLR_ADJ 1
+	multiply XP_GAIN PLR_ADJ
+	giveexp PARAM1 MY_SKILL $int(XP_GAIN)
+	gplayermessage PARAM1 * $int(XP_GAIN) XP Awarded ( MY_SKILL )
+	token.add G_REWARD_LIST USER_STEAM
+
+	local OUT_MSG "You recieve "
+	stradd OUT_MSG MY_SKILL
+	stradd OUT_MSG " from "
+	stradd OUT_MSG $get(ent_me,name)
+	infomsg PARAM1 "Training Recieved" OUT_MSG
+}
+
+
+{ game_menu_getoptions
+
+	if !HOSTILE_MODE
+	if MADE_DEAL
+
+	if ( REWARD_MODE )
+	{
+		infomsg PARAM1 "Training with bandits" "You may only train with one bandit, so choose wisely."
+		local reg.mitem.title 	"Smallarms Training..."
+		local reg.mitem.type 	callback
+		local reg.mitem.callback say_reward
+		menuitem.register		
+	}
+}
+
+{ bandits_remove
+	deleteent ent_me fade //folks left us here, probably hoping to exploit, remove
+}
+
+{ bandit_ally_lights
+	if $get(ent_me,isalive)
+	callevent 10.0 bandit_ally_lights
+	clientevent new all effects/sfx_follow_glow_cl $get(ent_me,index) (128,64,0) 64 9.9
+}

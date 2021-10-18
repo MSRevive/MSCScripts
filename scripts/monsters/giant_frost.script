@@ -1,0 +1,323 @@
+#scope server
+
+{ [shared]
+	setvar ANIM_WALK cwalk //frame_walk_step
+	setvar ANIM_IDLE creadyr_idle1
+	setvard ANIM_RUN crun //frame_run_step
+	setvard ANIM_ATTACK ca1slashl
+	setvard ANIM_DEATH ckdbck_death_p1
+
+	const ANIM_IDLE_AGRO creadyl_idle2
+	const ANIM_IDLE_NORM creadyr_idle1
+
+	const ANIM_WARCRY ctaunt_alert
+
+	const ANIM_ATTACK_NORM ca1slashl //frame_melee_strike
+	const ANIM_ATTACK_NEAR ccloseh_attack //frame_melee_strike2
+	const ANIM_ATTACK_FAR creach //frame_reach_attack
+	const ANIM_ATTACK_STOMP cclosel_stomp //frame_stomp
+
+	const CUSTOM_ANIM_FLINCH cdamagel_flinch1
+}
+
+{
+	setvard ATTACK_MOVERANGE 80
+	setvard MOVE_RANGE 80
+
+	const BPATROL_MOVEPROX 90
+
+	setvard NPC_GIVE_EXP 1500
+
+	const FREQ_STOMP $randf(10.0,15.0)
+	const FREQ_REACH_SWING $randf(2.0,5.0)
+
+	const RANGE_NEAR 80
+	const RANGE_NORM 100
+	const RANGE_FAR 160
+	const RANGE_MAX 245
+	const ATK_RAD 128
+
+	setvard ATTACK_RANGE 80
+	setvard ATTACK_HITRANGE 320
+
+	setvard NPC_MUST_SEE_TARGET 0 //aoe attacks, doesn't need to see target
+	const NPC_NO_VADJ 1 //don't increase reach for vertical adjustments (useless)
+
+	const DMG_SWING 100 //***
+	const DMG_STOMP 200 //***
+
+
+	const SOUND_WARCRY1 monsters/earth/c_elemerth_bat1.wav
+	const SOUND_WARCRY2 monsters/earth/c_elemerth_bat2.wav
+
+	const SOUND_ATTACK1 monsters/earth/c_elemerth_atk1.wav
+	const SOUND_ATTACK2 monsters/earth/c_elemerth_atk2.wav
+	const SOUND_ATTACK3 monsters/earth/c_elemerth_atk3.wav
+	const SOUND_SWING weapons/swinghuge.wav
+	const SOUND_STOMP monsters/earth/c_elemerth_slct.wav
+
+	const SOUND_STRUCK1 weapons/axemetal1.wav
+	const SOUND_STRUCK2 weapons/axemetal2.wav
+	const SOUND_STRUCK3 debris/concrete1.wav
+	const SOUND_PAIN1 monsters/earth/c_elemerth_hit1.wav
+	const SOUND_PAIN2 monsters/earth/c_elemerth_hit2.wav
+	
+	const SOUND_DEATH monsters/earth/c_elemerth_dead.wav
+	precache SOUND_DEATH
+}
+
+#include monsters/base_monster_new
+#include monsters/base_patrol_radius
+
+{ [shared] npc_spawn
+	name a|Frost Giant Construct
+	setmodel monsters/giant_frost.mdl
+	setidleanim ANIM_IDLE
+	setmoveanim ANIM_WALK
+	height 256
+	width 64
+	hearingsensitivity 4
+
+	playanim critical ANIM_IDLE
+
+	if game.serverside
+
+	hp 5000
+	takedmg all 0.5
+	takedmg fire 1.5
+	takedmg cold 0.0
+	takedmg holy 1.0 //is construct
+
+	race demon
+
+	setvard RUN_STEP_COUNT 0
+
+	const MY_HEIGHT 256
+
+	roam 1
+
+	callevent 2.0 npc_finalize
+}
+
+{ npc_finalize
+	setvard HALF_HP $get(ent_me,maxhp)
+	multiply HALF_HP 0.5
+}
+
+//{ npc_post_spawn
+//	setvard BPATROL_ACTIVE 1 //*** set zero when done
+//	setvard BPATROL_RAD 256 //*** remove when done
+//}
+
+{ npc_targetsighted
+	
+	if ( DID_INTRO )
+	{
+		if game.time > NEXT_RAGE
+		setmovedest NPCATK_TARGET 9999
+		callevent npcatk_suspend_ai 1.0
+		playanim critical ANIM_WARCRY
+		playrandomsound 0 10 SOUND_WARCRY1 SOUND_WARCRY2
+		setvard NEXT_RAGE game.time
+		add NEXT_RAGE $randf(120.0,240.0)
+	}
+
+	if !DID_INTRO
+
+	setmovedest NPCATK_TARGET 9999
+	callevent npcatk_suspend_ai 1.0
+	playanim critical ANIM_WARCRY
+	playrandomsound 0 10 SOUND_WARCRY1 SOUND_WARCRY2
+	setvard NEXT_RAGE game.time
+	add NEXT_RAGE $randf(120.0,240.0)
+
+	setvard DID_INTRO 1
+	setvard NEXT_STOMP game.time
+	add NEXT_STOMP FREQ_STOMP
+}
+
+{ npcatk_clear_targets
+	setvard NEXT_RAGE game.time
+	add NEXT_RAGE $randf(20.0,30.0)
+}
+
+{ npcatk_hunt
+	if ( NPCATK_TARGET equals unset )
+	{
+		setidleanim ANIM_IDLE_NORM
+		//dbg opatrol BPATROL_OUTSIDE_RANGE
+	}
+
+	if NPCATK_TARGET isnot unset
+	setidleanim ANIM_IDLE_AGRO
+	local TARG_RANGE $get(NPCATK_TARGET,range)
+
+	if ( game.time > NEXT_STOMP )
+	{
+		if ( TARG_RANGE <= RANGE_NORM )
+		{
+			setvard ANIM_ATTACK ANIM_ATTACK_STOMP
+			setvard ATTACK_RANGE RANGE_NORM
+			setvard ATTACK_HITRANGE RANGE_NORM
+			setvard DOING_STOMP 1
+		}
+	}
+
+	if ( TARG_RANGE > RANGE_FAR )
+	{
+		if TARG_RANGE <= RANGE_MAX
+		if game.time > NEXT_REACH_SWING
+		setvard ANIM_ATTACK ANIM_ATTACK_FAR
+		setvard ATTACK_RANGE RANGE_FAR
+		setvard ATTACK_HITRANGE RANGE_FAR
+		setvard DOING_REACH_SWING 1
+	}
+
+	if ( TARG_RANGE > RANGE_NEAR )
+	{
+		if !DOING_REACH_SWING
+		if !DOING_STOMP
+		setvard ANIM_ATTACK ANIM_ATTACK_NORM
+		setvard ATTACK_RANGE RANGE_NORM
+		setvard ATTACK_HITRANGE RANGE_NORM
+	}
+
+	if ( TARG_RANGE <= RANGE_NEAR )
+	{
+		if !DOING_REACH_SWING
+		if !DOING_STOMP
+		setvard ANIM_ATTACK ANIM_ATTACK_NEAR
+		setvard ATTACK_RANGE RANGE_NEAR
+		setvard ATTACK_HITRANGE RANGE_NEAR
+	}
+
+	add ATTACK_HITRANGE MY_HEIGHT
+
+	//dbg targrng TARG_RANGE atkrng ATTACK_RANGE opatrol BPATROL_OUTSIDE_RANGE
+}
+
+
+{ frame_walk_step
+	callevent frame_run_step
+}
+
+{ frame_run_step
+	add RUN_STEP_COUNT 1
+	if ( RUN_STEP_COUNT == 1 ) playsound 0 10 monsters/troll/step1.wav
+	if ( RUN_STEP_COUNT == 2 )
+	{
+		playsound 0 10 monsters/troll/step2.wav
+		setvard RUN_STEP_COUNT 0
+	}
+}
+
+{ set_patrol //<radius> - addparam
+	setvard BPATROL_RAD PARAM1
+	setvard BPATROL_ACTIVE 1 
+}
+
+
+{ frame_melee_strike
+	playrandomsound 1 10 SOUND_ATTACK1 SOUND_ATTACK2 SOUND_ATTACK3
+	playsound 2 10 SOUND_SWING
+	local IMPACT_POINT $relpos(0,RANGE_NORM,32)
+	vectorset IMPACT_POINT z $get_ground_height(IMPACT_POINT)
+	vectoradd IMPACT_POINT z 32
+	xdodamage IMPACT_POINT ATK_RAD DMG_SWING 0.1 ent_me ent_me none blunt dmgevent:normswing
+}
+
+{ normswing_dodamage
+	if PARAM1
+	local RND_LR $randf(-50.0,-10.0)
+	local RND_FB $randf(0.0,100.0)
+	local PUSH_VEL $relvel(RND_LR,RND_FB,10)
+	addvelocity PARAM2 PUSH_VEL
+}
+
+{ frame_melee_strike2
+	playrandomsound 1 10 SOUND_ATTACK1 SOUND_ATTACK2 SOUND_ATTACK3
+	playsound 2 10 SOUND_SWING
+
+	local IMPACT_POINT $relpos(0,RANGE_SHORT,32)
+	vectorset IMPACT_POINT z $get_ground_height(IMPACT_POINT)
+	vectoradd IMPACT_POINT z 32
+
+	xdodamage IMPACT_POINT ATK_RAD DMG_SWING 0.1 ent_me ent_me none blunt dmgevent:closeswing
+}
+
+{ closeswing_dodamage
+	if PARAM1
+	local RND_LR $randf(-50.0,50.0)
+	local RND_FB $randf(0.0,50.0)
+	local PUSH_VEL $relvel(RND_LR,RND_FB,10)
+	addvelocity PARAM2 PUSH_VEL
+}
+
+{ frame_stomp
+	playsound 0 10 SOUND_STOMP
+	setvard STOMP_POINT $relpos(0,RANGE_NORM,32)
+	xdodamage STOMP_POINT 256 DMG_STOMP 0.2 ent_me ent_me none blunt_effect dmgevent:stomp
+	vectorset STOMP_POINT z $get_ground_height(STOMP_POINT)
+	clientevent new all effects/sfx_stun_burst STOMP_POINT 256 0 0
+	setvard NEXT_STOMP game.time
+	add NEXT_STOMP FREQ_STOMP
+	setvard ANIM_ATTACK ANIM_ATTACK_NORM
+	setvard ATTACK_RANGE RANGE_NORM
+	setvard ATTACK_HITRANGE RANGE_NORM
+	setvard DOING_STOMP 0
+}
+
+{ stomp_dodamage
+
+	if PARAM1
+
+	if ( $get(PARAM2,isplayer) )
+	{
+		if !$get(PARAM2,onground)
+		local EXIT_SUB
+	}
+	if !EXIT_SUB
+	applyeffect PARAM2 effects/effect_stun 5.0 $get(ent_me,id) 0
+
+	local TARG_ORG $get(PARAM2,origin)
+	local MY_ORG STOMP_POINT
+	local TARG_ANG $angles(MY_ORG,TARG_ORG)
+	local NEW_YAW TARG_ANG
+	setvelocity PARAM2 $relvel($vec(0,NEW_YAW,0),$vec(0,500,110))
+}
+
+{ frame_reach_attack
+	playrandomsound 1 10 SOUND_ATTACK1 SOUND_ATTACK2 SOUND_ATTACK3
+	playsound 2 10 SOUND_SWING
+	local IMPACT_POINT $relpos(0,RANGE_FAR,32)
+	vectorset IMPACT_POINT z $get_ground_height(IMPACT_POINT)
+	vectoradd IMPACT_POINT z 32
+	xdodamage IMPACT_POINT ATK_RAD DMG_SWING 0.1 ent_me ent_me none blunt dmgevent:reachswing
+	setvard NEXT_REACH_SWING game.time
+	add NEXT_REACH_SWING FREQ_REACH_SWING
+	setvard DOING_REACH_SWING 0
+	setvard ANIM_ATTACK ANIM_ATTACK_NORM
+	setvard ATTACK_RANGE RANGE_NORM
+	setvard ATTACK_HITRANGE RANGE_NORM
+}
+
+{ reachswing_dodamage
+	if PARAM1
+	local RND_FB $randf(0.0,-150.0)
+	local PUSH_VEL $relvel(0,RND_FB,110)
+	addvelocity PARAM2 PUSH_VEL
+}
+
+{ game_damaged
+	if ( PARAM3 contains effect	) local EXIT_SUB 1 //no sound for DOT (annoying)
+	if !EXIT_SUB
+
+	playrandomsound 1 10 SOUND_STRUCK1 SOUND_STRUCK2 SOUND_STRUCK3
+	if $get(ent_me,hp) < HALF_HEALTH
+	if game.time > NEXT_CUSTOM_FLINCH
+	playanim critical ANIM_CUSTOM_FLINCH
+	playrandomsound 2 10 SOUND_PAIN1 SOUND_PAIN2
+	setvard NEXT_CUSTOM_FLINCH game.time
+	add NEXT_CUSTOM_FLINCH $randf(20.0,30.0)
+}
+

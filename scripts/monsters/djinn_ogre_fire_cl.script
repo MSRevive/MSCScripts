@@ -1,0 +1,145 @@
+{
+	const GLOW_RAD 128
+	const GLOW_COLOR (255,128,0)
+
+	const FLAME_SPRITE explode1.spr
+	const N_FRAMES 9
+}
+
+{ client_activate //<owner> <duration> <fire_storm_on>
+
+	setvard FX_OWNER PARAM1
+	setvard FX_DURATION PARAM2
+
+	setcallback render enable
+
+	setvard FX_ACTIVE 1
+
+	cleffect light new $getcl(FX_OWNER,origin) GLOW_RAD GLOW_COLOR 5.0
+	setvard MY_LIGHT_ID game.script.last_light_id
+
+	setvard RIGHT_HAND_POS $getcl(FX_OWNER,attachment0)
+	setvard LEFT_HAND_POS $getcl(FX_OWNER,attachment1)
+
+	cleffect tempent sprite Fire1_fixed.spr RIGHT_HAND_POS setup_hand_sprite update_rhand_sprite 
+	cleffect tempent sprite Fire1_fixed.spr LEFT_HAND_POS setup_hand_sprite update_lhand_sprite 
+
+	if ( PARAM3 == 1 ) callevent fire_storm_on
+
+	callevent FX_DURATION end_fx	
+}
+
+{ game_prerender
+
+	if FX_ACTIVE
+	local L_POS $getcl(FX_OWNER,origin)
+	cleffect light MY_LIGHT_ID L_POS GLOW_RAD GLOW_COLOR 1.0
+}
+
+{
+repeatdelay 0.01
+	setvard RIGHT_HAND_POS $getcl(FX_OWNER,attachment0)
+	setvard LEFT_HAND_POS $getcl(FX_OWNER,attachment1)
+}
+
+{ update_rhand_sprite
+	if ( FX_ACTIVE )
+	{
+		cleffect tempent set_current_prop origin RIGHT_HAND_POS
+	}
+	else
+	{
+		cleffect tempent set_current_prop origin $vec(20000,20000,20000)
+	}
+}
+
+{ update_lhand_sprite
+	if ( FX_ACTIVE )
+	{
+		cleffect tempent set_current_prop origin LEFT_HAND_POS
+	}
+	else
+	{
+		cleffect tempent set_current_prop origin $vec(20000,20000,20000)
+	}
+}
+
+{ fire_storm_on
+	setvard FX_STORM_ON 1
+	callevent fire_storm_loop
+}
+
+{ fire_storm_off
+	setvard FX_STORM_ON 0
+}
+
+{ fire_storm_loop
+	if FX_STORM_ON
+	callevent make_cloud RIGHT_HAND_POS $getcl(FX_OWNER,angles)
+	callevent make_cloud LEFT_HAND_POS $getcl(FX_OWNER,angles)
+	callevent 0.1 fire_storm_loop
+}
+
+{ end_fx
+	setvard FX_ACTIVE 0
+	setvard FX_STORM_ON 0
+	callevent 2.0 remove_fx
+}
+
+{ remove_fx
+	removescript
+}
+
+{ make_cloud //<origin> <angles>
+
+	//dbg make_cloud PARAM1 PARAM2
+
+	local CLOUD_ORG PARAM1
+	setvard CLOUD_ANG PARAM2
+	cleffect tempent sprite FLAME_SPRITE CLOUD_ORG setup_cloud update_cloud
+	//cleffect tempent sprite FLAME_SPRITE CLOUD_ORG setup_cloud update_cloud
+	//cleffect tempent sprite FLAME_SPRITE CLOUD_ORG setup_cloud
+}
+
+{ update_cloud
+	local CUR_SCALE game.tempent.fuser1
+	if ( CUR_SCALE < 2 )
+	{
+		add CUR_SCALE 0.1
+		cleffect tempent set_current_prop fuser1 CUR_SCALE
+		cleffect tempent set_current_prop scale CUR_SCALE 
+	}
+}
+
+{ setup_cloud
+   cleffect tempent set_current_prop death_delay 	1.0
+   cleffect tempent set_current_prop framerate		10
+   cleffect tempent set_current_prop frames			N_FRAME
+   cleffect tempent set_current_prop bouncefactor 	0
+   cleffect tempent set_current_prop scale 			0.1
+   cleffect tempent set_current_prop rendermode		add
+   cleffect tempent set_current_prop renderamt		200
+   cleffect tempent set_current_prop rendercolor	(0,0,0)
+   cleffect tempent set_current_prop gravity 		.005
+   cleffect tempent set_current_prop collide 		none
+	cleffect tempent set_current_prop fuser1 		0.1
+	cleffect tempent set_current_prop angles CLOUD_ANG
+
+	local RND_RL $randf(-20,20)
+	local RND_UD $randf(-20,20)
+	local CLOUD_VEL $relvel(CLOUD_ANG,$vec(RND_RL,$randf(300,400),RND_UD))
+	cleffect tempent set_current_prop velocity CLOUD_VEL
+}
+
+{ setup_hand_sprite
+	cleffect tempent set_current_prop death_delay    FX_DURATION
+	cleffect tempent set_current_prop rendermode add
+	cleffect tempent set_current_prop renderamt 255
+	cleffect tempent set_current_prop rendercolor (255,255,255)
+	cleffect tempent set_current_prop scale 1.0
+	cleffect tempent set_current_prop gravity    0
+	cleffect tempent set_current_prop collide    none
+	cleffect tempent set_current_prop framerate	30
+	cleffect tempent set_current_prop frames	23
+	cleffect tempent set_current_prop update 1
+}

@@ -1,0 +1,92 @@
+//Attempt to see if I can create an scriptable movable object with no AI
+//Figure less resource than a full monster, and less trouble than a client side monster
+
+//no good - projectiles are immune to add/setvelocity
+
+#scope server
+{
+	const MP_DRAIN_RATE 1
+	const CL_SCRIPT items/proj_mana_drainer_cl
+	const HOVER_SOUND ambience/labdrone2.wav
+	const SOUND_POP turret/tu_die2.wav
+}
+
+{ game_precache
+	//recachefile CL_SCRIPT
+}
+
+{ [shared] game_spawn
+
+	name a|Mana Drainer
+	width 16
+	height 16
+
+	setmodel weapons/projectiles.mdl
+	setmodelbody 0 13 //needs new model
+	setidleanim spin_horizontal_slow
+	playanim spin_horizontal_slow
+
+	movetype normal //projectile
+	setbbox none
+	setsolid none
+
+	gravity 0
+	fly 1
+
+	local reg.proj.dmg 0
+	local reg.proj.dmgtype none
+	local reg.proj.aoe.range 0
+	local reg.proj.aoe.falloff 0
+	local reg.proj.stick.duration 0
+	local reg.proj.collidehitbox 0
+	local reg.proj.ignorenpc 1
+	local reg.proj.ignoreworld 1 //this will have to be implemented
+	setmonsterclip 0
+
+	registerprojectile
+
+	callevent 60.0 end_life
+}
+
+{ game_tossprojectile
+	usable 0
+	setvard F_MP_DRAIN_RATE MP_DRAIN_RATE
+	setvard MP_DRAIN_OVERRIDE $get(ent_expowner,scriptvar,'DRAINER_POWER')
+	if ( MP_DRAIN_OVERRIDE isnot 'DRAINER_POWER' ) setvard F_MP_DRAIN_RATE MP_DRAIN_OVERRIDE
+	svplaysound 1 5 HOVER_SOUND
+}
+
+{ 
+repeatdelay 1.0
+	dbg pulse
+	addvelocity ent_me $relvel($vec(0,$randf(0,359),0),$vec(0,500,0))
+	local SCAN_TARGET $get_insphere(player,64,game.monster.origin)
+	if $get(SCAN_TARGET,isalive)
+	dbg drain target $get(SCAN_TARGET,name) F_MP_DRAIN_RATE
+	//givemp SCAN_TARGET F_MP_DRAIN_RATE
+	rplayermessage SCAN_TARGET "A corpse light is draining your mana!"
+	if ( $get(SCAN_TARGET,mp) <= 0 )
+	{
+		callexternal ent_expowner drainer_kill SCAN_TARGET
+		callevent 0.1 end_life
+	}
+}
+
+{
+repeatdelay 30.0
+	svplaysound 1 5 HOVER_SOUND
+}
+
+{ end_life
+	callexternal ent_expowner drainer_died
+	svplaysound 1 0 HOVER_SOUND
+	playsound 0 10 SOUND_POP
+	//splode fx
+	//clientevent new all CL_SCRIPT $get(ent_me,origin)
+	callevent 0.1 remove_me
+}
+
+{ remove_me
+	deleteent ent_me
+	removescript
+}

@@ -1,0 +1,113 @@
+//Giant Sidewinder by Thothie (from Sidewinder)
+{
+	setvar ANIM_WALK walk
+	setvar ANIM_RUN walk
+	setvard ANIM_DEATH diesimple
+	setvar ANIM_IDLE idle1
+	setvard ANIM_ATTACK attack1
+	setvard ATTACK_RANGE 100
+	setvard ATTACK_HITRANGE 180
+	setvard ATTACK_MOVERANGE 30
+	const ATTACK_HITCHANCE 80%
+	const ATTACK_DAMAGE '$randf(10,30)'
+	const POISON_DAMAGE '$randf(4,8)'
+	const POISON_DURATION '$rand(30,45)'
+
+	const SOUND_ALERT monsters/gsnake_idle1.wav
+	const SOUND_IDLE monsters/gsnake_idle1.wav
+	const SOUND_ATTACK bullchicken/bc_bite2.wav
+	const SOUND_POISON monsters/snakeman/sm_alert1.wav
+	const SOUND_STRUCK debris/flesh3.wav
+	const SOUND_PAIN1 agrunt/ag_attack3.wav
+	const SOUND_PAIN2 agrunt/ag_idle2.wav
+	const SOUND_DEATH agrunt/ag_die2.wav
+	precache SOUND_DEATH //external (base_npc)
+
+	
+	const MONSTER_MODEL monsters/gsidewinder.mdl
+	const MONSTER_MODELT monsters/gsidewinderT.mdl
+	precache MONSTER_MODEL //for old dll users
+	precache MONSTER_MODELT
+}
+
+#include monsters/base_monster_new
+
+{ npc_spawn
+
+	name a|Large Rattle Snake
+	hp 400
+	width 48
+	height 32
+	roam 0
+	setvard NPC_GIVE_EXP 100
+	race demon	//for easier placement
+	precache MONSTER_MODEL //for old dll uesrs
+	precache MONSTER_MODELT
+	setmodel MONSTER_MODEL
+	hearingsensitivity 8
+	callevent 0.2 post_spawn_props
+	callevent 1.0 idle_sounds
+}
+
+{ idle_sounds
+
+	playsound 0 10 SOUND_IDLE
+	callevent $randf(5,10) idle_sounds	
+}
+
+{ post_spawn_props
+
+	takedmg holy 0.0 //not actually a demon :)
+}
+
+{ bite1
+
+	setvard BITE_SOUND 1
+	callevent npcatk_dodamage NPCATK_TARGET ATTACK_HITRANGE ATTACK_DAMAGE ATTACK_HITCHANCE ent_me
+}
+
+{ game_damaged_other //PARAM1=ent hit PARAM2=damage
+
+	if BITE_SOUND
+	setvard BITE_SOUND 0
+	if $rand(1,2) == 1
+	playsound 0 10 SOUND_POISON
+	applyeffect PARAM1 effects/effect_poison POISON_DURATION $get(ent_me,id) POISON_DAMAGE
+}
+
+{ game_struck
+
+	playrandomsound 0 10 SOUND_PAIN1 SOUND_PAIN2 SOUND_STRUCK SOUND_STRUCK
+}
+
+{ npcatk_targetvalidate
+
+	if !DID_ALERT
+	playsound 0 10 SOUND_ALERT
+	roam 1
+	setvard DID_ALERT 1
+}
+
+{ my_target_died
+
+	setmovedest NPC_SPAWN_LOC
+	callevent idle_sounds
+	setvard DID_ALERT 0
+}
+
+
+{ [override] npcatk_attack
+
+	setvard NPC_DELAYING_UNSTUCK NPC_UNSTUCK_DELAY //I've stopped moving to attack, I'm not stuck
+
+	if !ATTACK_DELAY
+	playanim critical ANIM_ATTACK
+	playsound 0 10 SOUND_ATTACK
+	setvard ATTACK_DELAY 1
+	callevent 1.0 reset_attack_delay
+}
+
+{ reset_attack_delay
+
+	setvard ATTACK_DELAY 0
+}

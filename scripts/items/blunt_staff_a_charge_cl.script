@@ -1,0 +1,122 @@
+{ client_activate //<owner>
+
+	dbg cleyes_activate
+
+	setvard MAX_CHARGE 0
+	setvard CHARGE_COLOR (0,255,0)
+	setvard FX_OWNER PARAM1
+	setvard FX_ACTIVE 1
+	setvard CHARGE_LEVEL 1
+	setvard CUR_FRAME 0
+	setcallback render enable
+	callevent add_charge_level
+	callevent 20.0 end_fx //max duration
+
+}
+
+{ add_charge_level //<charge_level>
+
+	if FX_ACTIVE
+
+	setvard MAX_CHARGE 0
+	setvard CHARGE_LEVEL PARAM1
+
+	if ( CHARGE_LEVEL == 1 ) setvard CHARGE_COLOR (0,255,0) //COD1
+	if ( CHARGE_LEVEL == 1.5 ) setvard MAX_CHARGE 1
+	if ( CHARGE_LEVEL == 2 ) setvard CHARGE_COLOR (255,0,0) //COD2
+	if ( CHARGE_LEVEL == 2.5 ) setvard MAX_CHARGE 1
+	if ( CHARGE_LEVEL == 3 ) setvard CHARGE_COLOR (255,255,255) //Summon
+	if ( CHARGE_LEVEL == 3.5 ) setvard MAX_CHARGE 1
+//	if ( CHARGE_LEVEL == 4 ) setvard CHARGE_COLOR (255,0,255) //Summon2
+//	if ( CHARGE_LEVEL == 4.5 ) setvard MAX_CHARGE 1
+//	if ( CHARGE_LEVEL == 5 ) setvard CHARGE_COLOR (255,255,0) //Summon3
+//	if ( CHARGE_LEVEL == 5.5 ) setvard MAX_CHARGE 1
+//	if ( CHARGE_LEVEL == 6 ) setvard CHARGE_COLOR (255,255,255) //???
+//	if ( CHARGE_LEVEL == 6.5 ) setvard MAX_CHARGE 1
+
+	if ( MAX_CHARGE )
+	{
+		if !game.localplayer.thirdperson
+		cleffect spark $getcl(game.localplayer.viewmodel.active.id,attachment2)
+		cleffect spark $getcl(game.localplayer.viewmodel.active.id,attachment3)
+	}
+
+	//render third person sprite, if needed
+	if ( game.localplayer.index equals FX_OWNER )
+	{
+		if game.localplayer.thirdperson
+		local ANG_ADJ $getcl(FX_OWNER,viewangles)
+		local ANG_ADJ $vec.yaw(ANG_ADJ)
+		local SPR_POS $getcl(FX_OWNER,origin)
+		vectoradd SPR_POS $relpos($vec(0,ANG_ADJ,0),$vec(0,32,32))
+		cleffect tempent sprite 3dmflaora.spr SPR_POS setup_thirdperson_flare
+	}
+}
+
+{ end_fx
+	setvard FX_ACTIVE 0
+	callevent 1.0 remove_fx
+}
+
+{ remove_fx
+	removescript
+}
+
+{ game_prerender
+
+	//viewmodel sprite
+	if FX_ACTIVE
+	//if game.localplayer.index equals FX_OWNER
+	if !game.localplayer.thirdperson
+	
+	add CUR_FRAME 1
+	if ( CUR_FRAME > 15 ) setvard CUR_FRAME 0
+
+	if ( MAX_CHARGE )
+	{
+		local EYE_POS $getcl(game.localplayer.viewmodel.active.id,attachment2)
+		cleffect frameent sprite  3dmflaora.spr  EYE_POS setup_eye_max
+		local EYE_POS $getcl(game.localplayer.viewmodel.active.id,attachment3)
+		cleffect frameent sprite  3dmflaora.spr  EYE_POS setup_eye_max
+	}
+
+	local EYE_POS $getcl(game.localplayer.viewmodel.active.id,attachment2)
+	//dbg cl_eyes1 EYE_POS
+	cleffect frameent sprite calflame_small.spr EYE_POS setup_eye
+
+	local EYE_POS $getcl(game.localplayer.viewmodel.active.id,attachment3)
+	//dbg cl_eyes2 EYE_POS
+	cleffect frameent sprite calflame_small.spr EYE_POS setup_eye
+	
+}
+
+{ setup_thirdperson_flare
+
+	cleffect tempent set_current_prop renderamt 200
+	cleffect tempent set_current_prop rendermode add
+	cleffect tempent set_current_prop rendercolor CHARGE_COLOR
+	cleffect tempent set_current_prop scale 0.5
+	cleffect tempent set_current_prop frame 0
+
+	cleffect tempent set_current_prop death_delay 	2.0
+	cleffect tempent set_current_prop gravity 	0
+	cleffect tempent set_current_prop collide 	none
+}
+
+{ setup_eye
+
+	cleffect frameent set_current_prop renderamt 200
+	cleffect frameent set_current_prop rendermode glow
+	cleffect frameent set_current_prop rendercolor CHARGE_COLOR
+	cleffect frameent set_current_prop scale 1.0
+	cleffect frameent set_current_prop frame CUR_FRAME
+}
+
+{ setup_eye_max
+
+	cleffect frameent set_current_prop renderamt 200
+	cleffect frameent set_current_prop rendermode glow
+	cleffect frameent set_current_prop rendercolor CHARGE_COLOR
+	cleffect frameent set_current_prop scale 1.0
+	cleffect frameent set_current_prop frame 0
+}

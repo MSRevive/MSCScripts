@@ -1,0 +1,919 @@
+//Thothie JAN2009 - made sure HUNT_LASTTARGET is mirrfored in NPCATK_TARGET here to ensure forward compatibility
+#scope server
+
+{
+	setvar HAS_AI 1
+
+	setvard CYCLE_TIME_IDLE 2.8
+	//dbg constset CYCLE_TIME_IDLE
+
+	setvard CYCLE_TIME_BATTLE 0.1
+	//dbg constset CYCLE_TIME_BATTLE
+
+	setvard CYCLE_TIME CYCLE_TIME_IDLE
+	//dbg varset CYCLE_TIME
+
+	setvard MONSTER_ID $rand(1000,9999) //for debugging only
+	//dbg varset MONSTER_ID
+
+	//old AI uses different XP multipliers cuz the damage isn't adjustable
+	//normal monsters tripple at 8 players
+	//const NPC_NORM_EXP_ADJ 0.05
+	//const NPC_NORM_HP_ADJ 0.25
+	//const NPC_NORM_DMG_ADJ 0.2
+	//const NPC_NORM_CAP 3.0
+
+	//boss monsters double at 8 players
+	//const NPC_BOSS_EXP_ADJ 0.025
+	//const NPC_BOSS_HP_ADJ 0.1
+	//const NPC_BOSS_DMG_ADJ 0.1
+	//const NPC_BOSS_CAP 2.0
+}
+
+#include [server] monsters/base_npc //includes externals
+
+{
+   eventname game_spawn
+
+	//randoms here to cut down on mass-spawn lag
+
+	callevent $randf(0.5,1.0) npcatk_get_postspawn_properties
+	//callevent 0.75 hunting_mode_go
+}
+
+{ npcatk_get_postspawn_properties
+
+	callevent npcatk_check_sets
+
+	setvard ORIG_HUNT_AGRO HUNT_AGRO
+	setvard IS_FLEEING 0
+	setvard HUNT_LASTTARGET ¯NONE¯
+	setvard NPCATK_TARGET unset
+
+	////dbg atkrng ATTACK_RANGE atkhitrange ATTACK_HITRANGE
+
+
+	////dbg temp MONSTER_ID post atkrng ATTACK_RANGE atkhit ATTACK_HITRANGE alyresp ALLY_RESPONSE_RANGE
+	setvard NPC_INITIALIZED 1
+}
+
+
+//======================================================================= MAIN CYCLE
+{ hunting_mode_go
+repeatdelay CYCLE_TIME
+
+	callevent npcatk_hunt
+
+	////dbg temp seenme NPC_MOVE_TARGET $cansee(NPC_MOVE_TARGET) hnting IS_HUNTING agro HUNT_AGRO chs CHASE_RANGE canhunt CAN_HUNT sup SUSPEND_AI flee IS_FLEEING ded PLAYING_DEAD
+
+	//these all work: //dbg game.monster.onground $get(ent_me,onground)
+	//this always returns 1: godtest $get(ent_me,invincible)
+	if NPC_INITIALIZED
+
+   if CAN_HUNT
+	if !SUSPEND_AI
+   if !IS_FLEEING
+	if !PLAYING_DEAD
+
+	setvard NPCATK_TARGET HUNT_LASTTARGET
+
+	if ( HUNT_LASTTARGET isnot ¯NONE¯ )
+	{
+		//is target out of range
+		if ( $get(HUNT_LASTTARGET,range) > CHASE_RANGE ) 
+		{
+			////dbg MONSTER_ID Target $get(HUNT_LASTTARGET,name) out of range
+			setmoveanim ANIM_WALK
+			callevent npcatk_clear_targets "targ_out_of_range"
+		}
+
+		if ( !$get(HUNT_LASTTARGET,isalive) ) local TARG_DIED 1
+		if ( !$get(HUNT_LASTTARGET,exists) ) local TARG_DIED 1
+
+		if ( TARG_DIED )
+		{	
+			//Target died or was removed
+			callevent my_target_died HUNT_LASTTARGET
+			setvard HUNT_LASTTARGET ¯NONE¯
+			setvard NPCATK_TARGET unset
+			callevent game_wander
+		}
+	}
+
+	if ( HUNT_LASTTARGET equals ¯NONE¯ ) setvard IS_HUNTING 0
+
+	if ( IS_HUNTING )
+	{
+		local L_GAME_TIME game.time
+		setvard NPC_CANSEE_TARGET $cansee(HUNT_LASTTARGET) 
+		if ( !CANT_TRACK ) 
+		{
+			if ( NPC_CANSEE_TARGET )
+			{
+				setvard NPC_LASTSEEN_POS $get(HUNT_LASTTARGET,origin)
+				callevent npcatk_setmovedest HUNT_LASTTARGET MOVE_RANGE "hunt:saw_target"
+			}
+			if ( !NPC_CANSEE_TARGET ) callevent npcatk_setmovedest NPC_LASTSEEN_POS game.monster.moveprox "hunt:blind_move" //otherwise ranged mons wont move towards you
+		}
+		if ( NPC_CANSEE_TARGET )
+		{
+			callevent npc_targetsighted HUNT_LASTTARGET	
+			if NPC_MUST_SEE_TARGET
+			if ( $get(HUNT_LASTTARGET,range) < ATTACK_HITRANGE ) callevent check_attack
+		}
+		if ( !NPC_MUST_SEE_TARGET )
+		{
+			if ( $get(HUNT_LASTTARGET,range) < ATTACK_HITRANGE )
+			{
+				callevent check_attack
+			}
+		}
+		if ( $cansee(enemy) )
+		{
+			//favor nearest enemy
+			if ent_lastseen isnot HUNT_LASTTARGET
+			if $get(ent_lastseen,isplayer)
+			if $get(ent_lastseen,range) < $get(HUNT_LASTTARGET,range)
+			callevent npcatk_target $get(ent_lastseen,id) "is_closer_enemy"
+		}
+
+		callevent npcatk_targetvalidate HUNT_LASTTARGET
+		//if HUNT_LASTTARGET isnot ¯NONE¯ //wtf is this?
+	}
+
+	//look for target
+	if !IS_HUNTING
+	if HUNT_AGRO
+	if ( $cansee(NPC_MOVE_TARGET) )
+	{ 
+		//target spotted
+		//setvard HUNT_LASTTARGET $get(ent_lastseen,id)
+		////dbg validating_target HUNT_LASTTARGET
+		callevent npcatk_targetvalidate $get(ent_lastseen,id) //set HUNT_LASTTARGET to ¯NONE¯ to invalidate
+	
+		if HUNT_LASTTARGET isnot ¯NONE¯
+		callevent npc_targetsighted HUNT_LASTTARGET
+	}
+}
+
+{ game_wander
+	//setvard IS_HUNTING 0
+	//setmoveanim ANIM_WALK
+	//if ( IS_FLEEING ) callevent npcatk_stopflee
+	if !IS_HUNTING
+	callevent npc_wander
+}
+
+{ game_reached_dest
+
+	if ( CHICKEN_RUN ) callevent npcatk_setmovedest $relpos(0,50,0) 0 "chicken_run_reachdest"
+}
+
+   //Attack
+{ check_attack
+
+   if CAN_ATTACK
+   if !IS_FLEEING
+	if !SUSPEND_AI
+
+	//adjust attack range case cheater standing on me head, or vis'versa
+
+	//this bit with overriding const naybe causing weird stuff, not enough time to test out right now, so remming
+	local TARG_POS $get(HUNT_LASTTARGET,origin)
+	local MY_Z $vec.z(game.monster.origin)
+	local TARG_Z $vec.z(TARG_POS)
+	local Z_DIFF TARG_Z
+	add MY_Z NPC_TARG_HALFHEIGHT
+	subtract Z_DIFF MY_Z
+	if ( Z_DIFF < 0 ) local Z_DIFF $neg(Z_DIFF)
+	local FINAL_ATTACK_RANGE ATTACK_RANGE
+	if ( Z_DIFF > NPC_TARG_HALFHEIGHT ) // PLAYER_HALFHEIGHT
+	{
+		//setvard ATTACK_RANGE E_ATTACK_RANGE
+		//setvard ATTACK_HITRANGE E_ATTACK_HITRANGE
+		local FINAL_ATTACK_RANGE ATTACK_HITRANGE
+		////dbg check_attack reaching... Z_DIFF game.monster.origin TARG_POS
+	}
+
+	////dbg zdiff Z_DIFF using atkrng ATTACK_RANGE ( org O_ATTACK_RANGE ext E_ATTACK_RANGE )
+	////dbg zdiff Z_DIFF using FINAL_ATTACK_RANGE ( norm ATTACK_RANGE )
+
+	////dbg temp check_attack inrng $cansee(HUNT_LASTTARGET,FINAL_ATTACK_RANGE) ( FINAL_ATTACK_RANGE )
+
+	if $cansee(HUNT_LASTTARGET,FINAL_ATTACK_RANGE)
+
+   callevent npcatk_attackenemy
+}
+
+{ npcatk_attackenemy
+
+	if !NPC_NO_ATTACK
+
+   callevent npc_selectattack		//Give a chance to select attack anim
+
+	callevent npcatk_faceenemy
+   playanim once ANIM_ATTACK
+
+    callevent npc_attack
+}
+
+{ npcatk_go_agro
+	if !CANT_TRACK
+	setvard HUNT_AGRO 1
+	setvard NPC_MOVE_TARGET $get(ent_laststruck,id)
+	if ( !$get(HUNT_LASTTARGET,isalive) ) callevent npcatk_target NPC_MOVE_TARGET
+}
+
+//Hit by someone
+{ game_struck
+
+	if ( !HUNT_AGRO )
+	{
+		callevent npcatk_go_agro $get(ent_laststruck,id)
+	}
+
+	if ( !$get(HUNT_LASTTARGET,isalive) ) callevent npcatk_target $get(ent_laststruck,id) "struck_while_idle"
+
+	if ( $get(ent_laststruck,isplayer) )
+	{
+		//Thothie JAN2009 - moved ally alert system to targeting via base_monster_shared
+		if !CYCLED_UP
+		callevent cycle_up "stuck_by_player"
+	}
+
+   if ( $get(ent_laststruck,relationship,ent_me) isnot ally ) callevent npcatk_retaliate $get(ent_laststruck,id)
+   callevent npcatk_checkflee
+   if ( PARAM1 > FLINCH_DMG_REQ ) callevent npcatk_checkflinch
+
+//comment out Thothie JAN2009
+//	if ( $get(ent_laststruck,isplayer) )
+//	{
+//		if ( $cansee(ally) ) 
+//		{
+//			if !NO_ALERT_ALLIES
+//			////dbg MONSTER_ID see ally, alerting
+//			callexternal ent_lastseen npcatk_ally_alert $get(ent_laststruck,id) $get(ent_me,id) "alert_seen"
+//		}
+//	}
+
+   callevent npc_struck //backwards compat
+}
+
+{ npcatk_retaliate
+
+   if CAN_RETALIATE
+
+	if ( !$get(HUNT_LASTTARGET,exists) )	//Always retaliate when current target is invalid
+	{
+		callevent npcatk_target $get(ent_laststruck,id) "retaliate"
+		////dbg temp Retaliating against $get(PARAM1,id)
+	}
+
+	if $get(ent_laststruck,id) isnot HUNT_LASTTARGET //don't retarget current target
+   
+	local L_RETALITE_CHANCE RETALIATE_CHANCE
+	if ( RETALIATE_CHANGETARGET_CHANCE isnot 'RETALIATE_CHANGETARGET_CHANCE' ) local L_RETALITE_CHANCE RETALIATE_CHANGETARGET_CHANCE //backwards compatiblity
+
+	if $rand(1,100) < L_RETALITE_CHANCE
+    	
+   //setvard NPC_MOVE_TARGET $get(ent_laststruck,id)
+   callevent npcatk_target $get(ent_laststruck,id) "retaliate"
+}
+
+   //Face my new enemy and stop moving
+   //=================================
+{ npcatk_faceattacker 			//PARAM1: Entity to face
+
+   	if !IS_FLEEING
+	if !SUSPEND_AI
+
+    if ( PARAM1 equals 'PARAM1' ) callevent npcatk_setmovedest HUNT_LASTTARGET 9999 "npcatk_faceattacker:undef"
+	if ( PARAM1 isnot 'PARAM1' )
+	{
+		////dbg face enemy PARAM1 ( $get(PARAM1,name) )
+		callevent npcatk_setmovedest $get(PARAM1,id) 9999 "npcatk_faceattacker:p1"
+	}
+
+   	//look 1024 //maybe causing flood?
+}
+
+
+   //Chance of fleeing at low health
+   //===============================
+{ npcatk_checkflee
+
+   	if CAN_FLEE equals 1
+   	if game.monster.hp <= FLEE_HEALTH
+   	if $rand(0,100) < FLEE_CHANCE
+
+	callevent npcatk_flee $get(ent_laststruck,id) FLEE_DISTANCE 3.0
+}
+{ npcatk_stopflee
+
+	setvard IS_FLEEING 0
+	//setmoveanim ANIM_WALK
+	if ( NPCATK_FLEE_RESTORETARGET ) callevent npcatk_target HUNT_LASTTARGET
+	callevent npc_stopflee
+}
+
+{ npcatk_flee		//PARAM1: Threatning Entity  2: Dist to flee  3: Time to stop fleeing (optional)
+
+	if $get(PARAM1,id) isnot $get(ent_me,id) //don't flee own danger sounds
+
+	//dbg MONSTER_ID Fleeing $get(PARAM1,name) dist PARAM2 time PARAM3
+
+	playanim break
+	setmovedest PARAM1 PARAM2 flee
+	setmoveanim ANIM_RUN
+
+	setvard IS_FLEEING 1
+	setvard NPCATK_FLEE_RESTORETARGET IS_HUNTING
+
+	//anti-olympix h4x
+	local FLEE_TIME PARAM3
+	if ( FLEE_TIME equals 'PARAM3' )
+	{
+		//dbg got infinite flee time
+		local FLEE_TIME 5.0
+	}
+	if ( FLEE_TIME > 10.0 )
+	{
+		//dbg got flee time over 10.0  ( PARAM3 )
+		local PARAM3 10.0
+	}
+
+   	callevent FLEE_TIME npcatk_stopflee
+}
+
+  //Hear enemies
+  //============
+{ game_heardsound	//PARAM1: Sound type   2: Sound Origin   3: Danger radius
+
+   	if CAN_HEAR
+	if !NPC_HEARDSOUND_OVERRIDE
+	//if CAN_HUNT //makes bats not drop down
+	if !SUSPEND_AI //test on keledros
+   	if !IS_FLEEING
+
+//	if ( $get(ent_lastheard,relationship,ent_me) equals enemy )
+//	{
+//		//if hear closer enemy, favor him
+//		if IS_HUNTING
+//		if $get(HUNT_LASTTARGET,range) > ATTACK_RANGE
+//		if $get(ent_lastheard,range) < $get(HUNT_LASTTARGET,range)
+//		callevent npcatk_target $get(ent_lastheard,id) "heard_closer_enemy"
+//	}
+//
+//	if ( PARAM1 equals 'combat' )
+//	{
+//		if !IS_HUNTING
+//		if !IS_FLEEING
+//		if HUNT_AGRO
+//		if $get(ent_lastheard,relationship,ent_me) equals enemy
+//		callevent npcatk_target $get(ent_lastheard,id) "heard_enemy"
+//	}
+
+	local I_HEARD $get(ent_lastheard,id) //gotta do this to prevent relationship issuses
+
+	////dbg temp heard $get(I_HEARD,name) PARAM1
+
+   	if ( PARAM1 equals 'danger' )
+	{
+		//MAY2010_21 Fixed some bugs in this function
+		local DANGER_RADIUS PARAM3
+		if $get(I_HEARD,range) < DANGER_RADIUS
+		setvard I_WILL_FLEE 1
+		callevent npcatk_check_if_scared_of I_HEARD //base_monster_shared
+		if ( I_WILL_FLEE ) callevent npcatk_flee I_HEARD DANGER_RADIUS 3.0
+	}
+
+	if ( PARAM1 isnot 'danger' )
+	{
+		if !IS_HUNTING
+		if $get(I_HEARD,relationship,ent_me) equals enemy
+		if $get(I_HEARD,range) < HEAR_RANGE_MAX
+		if !$get(I_HEARD,scriptvar,PLAYING_DEAD)
+		if !NPC_IGNORE_PLAYERS
+		callevent npc_heardenemy //backwards compat
+		if ( $get(I_HEARD,isplayer) )
+		{
+			if $get(I_HEARD,range) < HEAR_RANGE_PLAYER
+			if !CYCLED_UP
+			callevent cycle_up "heard_player"
+			if !HEARD_PLAYER
+			setvard HEARD_PLAYER 1
+			callevent 5.0 heard_cycle_down
+		}
+   		
+		if game.monster.race isnot hguard
+		local SEE_HEARD $cansee(I_HEARD)
+		if ( SEE_HEARD )
+		{
+			callevent npcatk_target $get(ent_lastseen,id) "spotted_heard"
+		}
+		
+		if ( !SEE_HEARD )
+		{
+			//callevent npcatk_faceattacker I_HEARD "heard_enemy"
+			if game.monster.race isnot hguard
+			callevent npcatk_setmovedest I_HEARD game.monster.moveprox "heard_enemy"
+		}
+	}
+}
+
+  //Flinch when hit
+{
+   eventname npcatk_checkflinch
+
+	if !SUSPEND_AI //no flinchie while AI suspended
+
+   if CAN_FLINCH
+   if !NPC_DELAYING_FLINCH
+   if $rand(0,99) < FLINCH_CHANCE
+
+	if ( FLINCH_ANIM isnot 'FLINCH_ANIM' ) playanim critical FLINCH_ANIM
+
+   setvard NPC_DELAYING_FLINCH 0
+   callevent FLINCH_DELAY npcatk_resetflinch
+   callevent npc_flinch
+}
+{
+   eventname npcatk_resetflinch
+   setvard NPC_DELAYING_FLINCH 1
+}
+
+{ npcatk_vanish //param1 = time - if unset monster will not return until npcatk_vanish_return is called
+
+	setvard NPC_VANISHED_AT game.monster.origin
+	setorigin ent_me (20000,20000,20000)
+
+	if ( NPC_VANISH_RETURN_TIME equals 'NPC_VANISH_RETURN_TIME' ) setvard NPC_VANISH_RETURN_TIME PARAM1
+	////dbg MONSTER_ID Winking out from NPC_VANISHED_AT , be back in NPC_VANISH_RETURN_TIME
+	callevent NPC_VANISH_RETURN_TIME npcatk_vanish_return
+}
+
+{ npcatk_vanish_return
+
+	////dbg MONSTER_ID winking in to NPC_VANISHED_AT
+	setorigin ent_me NPC_VANISHED_AT
+	setvard NPC_STUCK_TELEPORT 0
+}
+
+{ npcatk_targetvalidate //PARAM1 = target to validate
+
+	////dbg temp validating $get(PARAM1,name)
+	local OLD_HUNT_LASTTARGET HUNT_LASTTARGET
+
+	setvard NPC_TARGET_INVALID 0
+
+	if ( HUNT_LASTTARGET equals ¯NONE¯ )
+	{
+		setvard HUNT_LASTTARGET PARAM1
+		setvard NPCATK_TARGET HUNT_LASTTARGET
+	}
+
+	if ( $get(PARAM1,relationship,ent_me) equals ally )
+	{
+		//dbg MONSTER_ID invalidtarget ally
+		callevent npcatk_clear_targets "validate:targ_is_ally"
+	}
+
+	if ( $get(HUNT_LASTTARGET,scriptvar,PLAYING_DEAD) )
+	{
+		//dbg MONSTER_ID invalidtarget playing_dead
+		setvard NPC_TARGET_INVALID 1
+		//callevent npcatk_clear_targets "validate:targ_playing_dead"
+	}
+
+	if ( !CYCLED_UP ) //for some reason CYCLED_TIME == CYCLE_TIME_BATTLE no workie
+	{
+		if $get(HUNT_LASTTARGET,isplayer)
+		callevent cycle_up "spotted_player"
+	}
+
+	if ( $get(NPCATK_TARGET,relationship,ent_me) equals ally )
+	{
+		//dbg npcatk_targetvalidate: Attempted to target ally?
+		setvard HUNT_LASTTARGET ¯NONE¯
+		setvard NPCATK_TARGET unset
+		setvard NPC_TARGET_INVALID 1
+	}
+
+	if ( $get(PARAM1,isplayer) )
+	{
+		if NPC_IGNORE_PLAYERS
+		setvard NPC_TARGET_INVALID 1
+	}
+
+	callevent npc_targetvalidate $get(PARAM1,id)
+
+	if ( NPC_TARGET_INVALID )
+	{
+		if ( PARAM1 isnot OLD_HUNT_LASTTARGET )
+		{
+			//in case current target became invalid
+			setvard HUNT_LASTTARGET OLD_HUNT_LASTTARGET
+			setvard NPCATK_TARGET HUNT_LASTTARGET
+		}
+		if ( HUNT_LASTTARGET equals PARAM1 )
+		{
+			callevent npcatk_clear_targets
+			setvard HUNT_LASTTARGET ¯NONE¯
+			setvard NPCATK_TARGET unset
+		}
+	}
+	if !NPC_TARGET_INVALID
+
+	if HUNT_LASTTARGET isnot ¯NONE¯
+
+	setvard NPC_LASTSEEN_POS $get(HUNT_LASTTARGET,origin)
+
+	callevent npc_targetsighted HUNT_LASTTARGET //bakcwards compat, only activates for valid target so useful
+
+	if !IS_HUNTING
+
+	setvard ENTITY_ENEMY HUNT_LASTTARGET
+	setvard NPCATK_TARGET HUNT_LASTTARGET //forward compat
+
+	//new valid target
+	if ( $get(PARAM1,isplayer) )
+	{
+		setvard HUNTING_PLAYER 1
+		callevent check_attack
+		//Thothie JAN2009 - moved to base_monster_shared (targeting)
+//		if ( !NO_ALERT_ALLIES )
+//		{
+//			////dbg MONSTER_ID Alerting allies to $get(PARAM1,name)
+//			callexternal all npcatk_ally_alert $get(PARAM1,id) $get(ent_me,id) "alert_all"
+//		}
+		if ( !CYCLED_UP ) callevent cycle_up "spotted_player_redund"
+	}
+
+	//human guards use full cycle vs. npcs, as they often defend against them
+	if ( game.monster.race equals hguard ) setvard CYCLE_TIME CYCLE_TIME_BATTLE
+
+	setmoveanim ANIM_RUN
+	setvard IS_HUNTING 1
+	setvard NPC_TARG_HALFHEIGHT $get(HUNT_LASTTARGET,height)
+	divide NPC_TARG_HALFHEIGHT 2
+	capvar NPC_TARG_HALFHEIGHT 37 2000
+	////dbg temp npcatk_targetvalidate ishunt IS_HUNTING NPC_TARG_HALFHEIGHT
+	//setmovedest HUNT_LASTTARGET MOVE_RANGE
+}
+
+{ my_target_died
+
+	////dbg my_target_died $get(PARAM1,name) $get(PARAM1,isalive) $get(PARAM1,exists) ( PARAM1 )
+	setvard OUT_OF_RANGE 0
+	callevent npcatk_clear_targets "target_dead"
+	setmoveanim ANIM_WALK
+	//if !$cansee(enemy)
+	callevent 2.0 game_wander
+}
+
+{ npcatk_clear_targets //PARAM1 = reason
+	////dbg npcatk_clear_targets PARAM1
+	setvard NPC_MOVE_TARGET ORIG_NPC_MOVE_TARGET
+	setvard HUNT_AGRO ORIG_HUNT_AGRO
+	setvard HUNTING_PLAYER 0
+	setvard IS_HUNTING 0
+	setvard HUNT_LASTTARGET ¯NONE¯
+	setvard NPCATK_TARGET unset
+	callevent cycle_down "clear_targets"
+}
+
+{ super_lure //called externally by super lure, PARAM1=target PARAM2=race to lure (ommit for all)
+
+	////dbg MONSTER_ID temp superlure from $get(PARAM1,name) PARAM2 but game.monster.race $get(NPCATK_TARGET,name)
+	local TARG_RACE game.monster.race
+	if ( PARAM2 isnot 'PARAM2' ) local TARG_RACE PARAM2
+
+	if game.monster.race equals TARG_RACE
+	if HUNT_LASTTARGET equals ¯NONE¯
+	if !IS_HUNTING
+	////dbg MONSTER_ID temp Superlure called from $get(PARAM1,name)
+	callevent npcatk_target PARAM1 "super_lure"
+}
+
+{ npcatk_target	//PARAM1 == entity to target PARAM2 = debug
+
+
+	//sets NPC attack target
+	//this shoulda been in here a long time ago
+	local OLD_TARGET HUNT_LASTTARGET
+	setvard HUNT_LASTTARGET $get(PARAM1,id) //make sure HUNT_LASTTARGET is ALWAYS ID and NEVER a string (ie. ent_lastseen)
+	setvard NPCATK_TARGET HUNT_LASTTARGET
+	callevent npcatk_targetvalidate HUNT_LASTTARGET
+	if ( !$get(HUNT_LASTTARGET,isalive) )
+	{
+		//target was invalidated, restore old, if allive
+		if $get(PARAM1,id) isnot OLD_TARGET
+		if $get(OLD_TARGET,isalive)
+		setvard HUNT_LASTTARGET OLD_TARGET
+		setvard NPCATK_TARGET HUNT_LASTTARGET
+	}
+
+	if $get(HUNT_LASTTARGET,isalive)
+	if ( !HUNT_AGRO ) callevent npcatk_go_agro
+
+//	if ( $get(HUNT_LASTTARGET,isalive) )
+//	{
+//		//dbg MONSTER_ID newtarget $get(HUNT_LASTTARGET,name) > PARAM2
+//	}
+}
+
+{ chicken_run //param =1 duration
+
+	//random movement
+
+	////dbg MONSTER_ID Chicken run for PARAM1 cuz PARAM2
+	if !PLAYING_DEAD
+	if !CANT_FLEE
+	if !IS_FLEEING
+	setvard IS_FLEEING 1
+	setvard CHICKEN_RUN 1
+	setvard PURE_FLEE 1
+	setvard NPCATK_FLEE_RESTORETARGET IS_HUNTING
+
+	setmoveanim ANIM_RUN
+	setactionanim ANIM_RUN
+	setidleanim ANIM_RUN
+
+	setvard FLEE_DIR $rand(1,359)
+
+	setvard CKN_TIME_END PARAM1
+
+	setvard CKN_STUCK_COUNTER 0
+
+	callevent npcatk_clearmovedest "chicken_run:prep"
+	callevent 0.1 init_chicken_run
+}
+
+{ npcatk_chicken_run //convention
+
+	callevent chicken_run PARAM1 PARAM2
+}
+
+{ npcatk_chickenrun //convention alias
+
+	callevent chicken_run PARAM1 PARAM2
+}
+
+{ init_chicken_run
+
+	//setangle view.yaw FLEE_DIR
+
+	callevent npcatk_setmovedest $relpos($vec(0,FLEE_DIR,0),$vec(0,500,0)) 0 "init_chicken_run"
+
+	setvard CKN_MY_OLD_POS $get(ent_me,origin)
+
+	callevent 0.5 chicken_run_stuckcheck
+
+	////dbg MONSTER_ID ChickenInit run ends in CKN_TIME_END
+
+	callevent CKN_TIME_END chicken_run_end "time_up"
+}
+
+{ chicken_run_stuckcheck
+
+	if CHICKEN_RUN
+
+	local CKN_MY_POS $get(ent_me,origin)
+	local CKN_MOVE_DIST $dist(CKN_MY_POS,CKN_MY_OLD_POS)
+
+	////dbg MONSTER_ID dist CKN_MOVE_DIST Cmp CKN_MY_POS vs CKN_MY_OLD_POS
+
+	if ( CKN_MOVE_DIST == 0 )
+	{
+		setmoveanim ANIM_RUN
+		////dbg MONSTER_ID Chicken - stuck, picking new dir CKN_MOVE_DIST oldpos CKN_MY_OLD_POS vs CKN_MY_POS
+		setvard FLEE_DIR $rand(1,359)
+		callevent npcatk_clearmovedest "chicken_run_stuckcheck"
+		//setangle view.yaw FLEE_DIR
+		local RUN_DIR $relpos($vec(0,FLEE_DIR,0),$vec(0,500,0))
+		callevent npcatk_setmovedest RUN_DIR 0 "chicken_run_stuckcheck"
+		////dbg MONSTER_ID temp chicken run stuck
+		playanim once ANIM_RUN
+		add CKN_STUCK_COUNTER 1
+	}
+	setvard CKN_MY_OLD_POS CKN_MY_POS
+
+	if ( CKN_MOVE_DIST > 0 ) setvard CKN_STUCK_COUNTER 0
+	if ( CKN_STUCK_COUNTER > 4 ) callevent chicken_run_end "stuck_too_long"
+
+	callevent 0.25 chicken_run_stuckcheck
+}
+
+{ chicken_run_end
+
+	if CHICKEN_RUN
+	////dbg MONSTER_ID CHICKEN RUN ENDED PARAM1
+
+	setmoveanim ANIM_RUN
+	setvard CHICKEN_RUN 0
+	setvard IS_FLEEING 0
+	setvard PURE_FLEE 0
+	//setmoveanim ANIM_WALK
+	if ( NPCATK_FLEE_RESTORETARGET ) callevent npcatk_faceattacker HUNT_LASTTARGET
+}
+
+{ npcatk_suspend_ai
+	setvard SUSPEND_AI 1
+	callevent PARAM1 npcatk_resume_ai
+}
+
+{ npcatk_resume_ai
+	setvard SUSPEND_AI 0
+}
+
+{ npcatk_adj_attack
+
+	//TS basenpc_adj_attack and rename
+
+	//Thothie - for future use
+	//concept being: being spells, items, or npc scripts may adjust any monsters's hit damage and hit chance up or down
+	//(eg. spell 'curse' or ms_npcscript make_strong)
+	//to apply (example):
+	//setvard FINAL_HITCHANCE ATTACK_HITRANGE
+	//setvard FINAL_DAMAGE ATTACK_DAMAGE
+	//callevent basenpc_get_final_damage
+    //dodamage ent_lastseen ATTACK_HITRANGE FINAL_DAMAGE FINAL_HITCHANCE
+	//set in npcatk_postspawn and remove these ifs
+	//handled internally in npcatk_new
+	if ( EXT_DAMAGE_ADJUSTMENT isnot 'EXT_DAMAGE_ADJUSTMENT' ) add FINAL_ATTACK_DAMAGE EXT_DAMAGE_ADJUSTMENT
+	if ( EXT_HITCHANCE_ADJUSTMENT isnot 'EXT_HITCHANCE_ADJUSTMENT' ) add FINAL_HITCHANCE_DAMAGE EXT_HITCHANCE_ADJUSTMENT
+}
+
+{ npcatk_settarget //forward compatibility ^_^
+
+	//Thothie JAN2009 - oops (param pass fix)
+	local OUT_PAR1 PARAM1
+	local OUT_PAR2 PARAM2
+	callevent npcatk_target OUT_PAR1 "compatibility" OUT_PAR2
+}
+
+{ cycle_up //PARAM1=debug reason
+	setvard CYCLED_UP 1
+	if ( !IS_HUNTING )
+	{
+		////dbg cycle_up PARAM1
+		//step adjustements to help monsters get around
+	
+		if !NO_STEP_ADJ
+		callevent adj_step_size
+	}
+
+	setvard CYCLE_TIME CYCLE_TIME_BATTLE
+	//callevent npc_sensed_player //nothing uses this, axing
+}
+
+{ cycle_down //PARAM1=debug reason
+
+	//dbg cycle_down PARAM1
+	setvard NPC_ALERTED_ALL 0 //Thothie JAN2009
+	setvard CYCLED_UP 0
+	setvard CYCLE_TIME CYCLE_TIME_IDLE
+}
+
+{ heard_cycle_down
+
+	if !$cansee(enemy)
+	if !HUNTING_PLAYER
+	////dbg Calming down, heard player but never found
+	setvard HEARD_PLAYER 0
+	callevent cycle_down "heard+never_found"
+}
+
+//{ [client]
+//	if game.debug > 4
+//	//dbg //dbg_level game.debug
+//	if !STARTED_DEBUG_LOOP
+//	setvard STARTED_DEBUG_LOOP 1
+//	callevent still_here_loop
+//}
+
+//{ [client] still_here_loop
+//	//dbg base_npc_attack script lingering on client
+//	callevent 2.0 still_here_loop
+//}
+
+{ npcatk_clearmovedest
+	////dbg temp npcatk_clearmovedest PARAM1
+	setmovedest none
+}
+
+{ npcatk_setmovedest
+	////dbg temp npcatk_setmovedest PARAM3 ( PARAM1 PARAM2 )
+	setmovedest PARAM1 PARAM2
+}
+
+{ npcatk_check_sets
+	//set anything that wasn't
+
+	//olympix prevention
+	//init defaults
+
+	if ( NPC_MUST_SEE_TARGET equals 'NPC_MUST_SEE_TARGET' ) setvard NPC_MUST_SEE_TARGET 1
+
+	if ( HUNT_AGRO equals 'HUNT_AGRO' ) setvard HUNT_AGRO 1
+	setvard ORIG_HUNT_AGRO HUNT_AGRO
+
+	//dbg hunt_agro HUNT_AGRO ORIG_HUNT_AGRO
+
+	if ( CANT_TRACK equals 'CANT_TRACK' ) setvard CANT_TRACK 0
+
+	if ( CAN_HUNT equals 'CAN_HUNT' ) setvard CAN_HUNT 1
+
+	if ( CAN_ATTACK equals 'CAN_ATTACK' ) setvard CAN_ATTACK 1
+
+	if ( CAN_HEAR equals 'CAN_HEAR' ) setvard CAN_HEAR 1
+
+	if ( CAN_FLEE equals 'CAN_FLEE' ) setvard CAN_FLEE 1
+
+	if ( CAN_RETALIATE equals 'CAN_RETALIATE' ) setvard CAN_RETALIATE 1
+
+	if ( CAN_FLINCH equals 'CAN_FLINCH' ) setvard CAN_FLINCH 0
+
+	if ( RETALIATE_CHANCE equals 'RETALIATE_CHANCE' ) setvard RETALIATE_CHANCE 75
+
+	if ( NPC_HEAR_TARGET equals 'NPC_HEAR_TARGET' ) setvard NPC_HEAR_TARGET enemy
+
+	if ( FLEE_DISTANCE equals 'FLEE_DISTANCE' ) setvard FLEE_DISTANCE 1024
+
+	if ( RETALIATE_CHANGETARGET_CHANCE isnot 'RETALIATE_CHANGETARGET_CHANCE' )
+	{
+		setvard RETALIATE_CHANCE RETALIATE_CHANGETARGET_CHANCE
+	}
+
+	if ( MY_ENEMY isnot 'MY_ENEMY' )
+	{
+		//Backwards compatibility
+		setvard NPC_MOVE_TARGET MY_ENEMY
+	}
+
+	if ( NPC_MOVE_TARGET equals 'NPC_MOVE_TARGET' )
+	{
+		if HUNT_AGRO
+		setvard NPC_MOVE_TARGET enemy
+	}
+	setvard ORIG_NPC_MOVE_TARGET NPC_MOVE_TARGET
+
+	if ( !HUNT_AGRO )
+	{
+		if ( NPC_MOVE_TARGET equals 'NPC_MOVE_TARGET' ) setvard NPC_MOVE_TARGET none
+	}
+
+	if ( NPC_ALLY_RESPONSE_RANGE equals 'NPC_ALLY_RESPONSE_RANGE' )
+	{
+		setvard NPC_ALLY_RESPONSE_RANGE game.monster.maxhp
+		multiply NPC_ALLY_RESPONSE_RANGE 10
+		capvar NPC_ALLY_RESPONSE_RANGE 96 1024
+	}
+
+	//APR2010_01 - thothie - wrong comparison was here
+	if ( FLINCH_DMG_REQ equals 'FLINCH_DMG_REQ' )
+	{
+		setvard FLINCH_DMG_REQ game.monster.maxhp
+		multiply FLINCH_DMG_REQ 0.1
+	}
+
+	if ( HEAR_RANGE_MAX equals 'HEAR_RANGE_MAX' ) setvard HEAR_RANGE_MAX 1024
+
+	if ( HEAR_RANGE_PLAYER equals 'HEAR_RANGE_PLAYER' ) setvard HEAR_RANGE_PLAYER 800
+	if ( CHASE_RANGE equals 'CHASE_RANGE' ) setvard CHASE_RANGE 4000
+
+	if ( FLINCH_DELAY equals 'FLINCH_DELAY' ) setvard FLINCH_DELAY 5.0
+
+	//====== These are critical, and its going to eat CPU to fix em, edit the monster asap
+	//====== Not having these set will cause problems with include scripts
+	if ( MOVE_RANGE equals 'MOVE_RANGE' )
+	{
+		//dbg move_range NOT SET!!!
+		setvard MOVE_RANGE game.monster.moveprox
+	}
+
+	if ( ATTACK_RANGE equals 'ATTACK_RANGE' )
+	{
+		//dbg attack_range NOT SET!!!
+		setvard ATTACK_RANGE game.monster.moveprox
+		multiply ATTACK_RANGE 2.5
+	}
+
+	//attack range should always be monster height + player height/2
+	//case player is on monster head (remember, monsters measure from feet, instead of center)
+	setvard M_ATTACK_HITRANGE game.monster.height
+	add M_ATTACK_HITRANGE 10
+	add M_ATTACK_HITRANGE 38
+
+	if ( ATTACK_HITRANGE equals 'ATTACK_HITRANGE' )
+	{
+		//dbg ATTACK_HITRANGE NOT SET!!!
+		setvard ATTACK_HITRANGE M_ATTACK_HITRANGE
+	}
+
+	if ( ATTACK_HITRANGE < M_ATTACK_HITRANGE )
+	{
+		//dbg attack_hitrange set too low! ATTACK_HITRANGE < M_ATTACK_HITRANGE
+		setvard ATTACK_HITRANGE M_ATTACK_HITRANGE
+	}
+}

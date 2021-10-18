@@ -1,0 +1,248 @@
+//Orc Brawler from Orc Berserker by Thothie
+//- A really, big, angry, orc - stun attacks galor
+
+{
+   setvard DROP_GOLD 1			//Gold Drops
+   setvard DROP_GOLD_AMT $rand(30,60)	//
+   setvard NPC_GIVE_EXP 200
+   setvard DROP_ITEM1 blunt_gauntlets //Used by base_monster
+   setvard DROP_ITEM1_CHANCE 20%	  //Used by base_monster
+
+   setvard ANIM_ATTACK1 swordswing1_L //Attack animation 1
+
+	const ANIM_SMASH battleaxe_swing1_L
+	const ANIM_SWIPE1 swordswing1_L
+	const ANIM_SLAP deflectcounter
+	const ANIM_KICK kick
+	const ANIM_WARCRY warcry
+
+	const KICK_DMG_DELAY 0.5
+	const SLAP_DMG_DELAY 0.5
+
+   setvard FLINCH_CHANCE 45%
+
+   const ATTACK_ACCURACY 70%
+
+	setvard ATTACK_DAMAGE $rand(50,100)
+   const ATTACK_DMG_LOW 10
+   const ATTACK_DMG_HIGH 20
+
+	setvard ATTACK_RANGE 100
+	setvard ATTACK_HITRANGE 150
+	setvard ATTACK_MOVERANGE 50
+	setvard MOVE_RANGE 50
+
+	const SOUND_KICK zombie/claw_miss1.wav
+	const SOUND_SLAP zombie/claw_miss2.wav
+	const SOUND_KICKHIT zombie/claw_strike2.wav
+	const SOUND_SLAPHIT zombie/claw_strike3.wav
+	const SOUND_WARCRY monsters/troll/trollidle.wav
+	const SOUND_CHARGE garg/gar_alert3.wav
+
+	const STUCK_CHECK_FREQUENCY 2.0
+
+	const ZORC_DMG_MULTI 4.0
+	const ZORC_HP_MULTI 3.0
+}
+
+#include monsters/orc_base_melee
+#include monsters/orc_base
+
+{  orc_spawn
+
+	if ( G_SHAD_PRESENT ) callevent 0.1 bo_zombie_mode
+
+   	hp 1000
+   	//ov 180
+	if ( $lcase(game.map.name) equals mscave ) width 32
+	if ( $lcase(game.map.name) isnot mscave ) width 38
+	height 72
+   	name an|Orcish Brawler
+   	hearingsensitivity 8
+	setmodel monsters/orc_big.mdl
+
+	movespeed 2.0
+
+   	setmodelbody	0 0		//Body 0=naked 1=leather 2=plate 3=green-hide
+   	setmodelbody	1 1		//Head 0=cap_shorthorn 1=cap_nohorn 2=buffo_skin 3=cheif_ramhorns 4=green_hood
+   	setmodelbody	2 0		//Weapon 0=fist 1=axe 2=bow_weak 3=bow_strng 4=sword 5=bloodyaxe 6=sword&sheild
+	if( ORC_SHIELD equals 1 ) setmodelbody 2 6
+}
+
+{ npc_selectattack
+
+	setvard ATTACK_PUSH 'none'
+
+	if !ATTACKING
+
+	if ( NEXT_ATTACK equals 'NEXT_ATTACK' ) setvard ATTACK_TYPE $rand(1,4)
+
+	if ( NEXT_ATTACK isnot 'NEXT_ATTACK' ) setvard ATTACK_TYPE NEXT_ATTACK
+
+	setvard ATTACKING 1
+
+	if ( ATTACK_TYPE == 1 )
+	{
+		setvard ATTACK_PUSH $relvel(-200,230,220)
+		setvard ATTACK_DAMAGE $rand(50,150)
+		setvard ANIM_ATTACK ANIM_SMASH
+		playanim critical ANIM_SMASH
+		setvard ATTACK_TYPE $rand(1,4)
+	}
+
+	if ( ATTACK_TYPE == 2 )
+	{
+		setvard ATTACK_DAMAGE $rand(25,100)
+		setvard ATTACK_PUSH $relvel(-100,130,120)
+		setvard ANIM_ATTACK ANIM_SWIPE1
+		playanim critical ANIM_SWIPE1
+		setvard ATTACK_TYPE $rand(1,4)
+	}
+
+	if ( ATTACK_TYPE == 3 )
+	{
+		setvard ATTACK_DAMAGE $rand(25,50)
+		setvard ATTACK_PUSH $relvel(-10,13,12)
+		setvard ANIM_ATTACK ANIM_SLAP
+		playanim critical ANIM_SLAP
+  		playsound 0 10 SOUND_SLAP
+		callevent SLAP_DMG_DELAY slap_damage
+		setvard NEXT_ATTACK 1
+	}
+
+	if ( ATTACK_TYPE == 4 )
+	{
+		setvard ATTACK_DAMAGE $rand(50,100)
+		setvard ATTACK_PUSH $relvel(-300,330,320)
+		setvard ANIM_ATTACK ANIM_KICK
+		playanim critical ANIM_KICK
+  		playsound 0 10 SOUND_KICK
+		callevent KICK_DMG_DELAY kick_damage
+		if ( !I_R_FROZEN ) movespeed 2.0
+		setvard NEXT_ATTACK 1
+	}
+}
+
+{ kick_damage
+
+   	callevent npcatk_dodamage $get(ent_lastseen,id) ATTACK_HITRANGE ATTACK_DAMAGE ATTACK_ACCURACY
+	setvard ATTACKING 0
+}
+
+{ slap_damage
+
+   	callevent npcatk_dodamage $get(ent_lastseen,id) ATTACK_HITRANGE ATTACK_DAMAGE ATTACK_ACCURACY
+	setvard ATTACKING 0
+}
+
+{ [override] swing_axe
+
+   	callevent npcatk_dodamage $get(ent_lastseen,id) ATTACK_HITRANGE ATTACK_DAMAGE ATTACK_ACCURACY
+	callevent baseorc_yell
+	setvard ATTACKING 0
+}
+
+{ [override] swing_sword
+
+   	callevent npcatk_dodamage $get(ent_lastseen,id) ATTACK_HITRANGE ATTACK_DAMAGE ATTACK_ACCURACY	
+	callevent baseorc_yell
+	setvard ATTACKING 0
+}
+
+{ npcatk_targetvalidate
+
+	if ( !DID_WARCRY )
+	{
+		if ( $get(ent_lastseen,isplayer) )
+		{
+			playanim critical ANIM_WARCRY
+			playsound 0 10 SOUND_WARCRY
+			setvard DID_WARCRY 1
+			setvard DONE_WARCRY 0
+			callevent 3.0 warcry_over
+			local EXIT_SUB 1
+		}
+	}
+
+	if !EXIT_SUB
+
+	if DONE_WARCRY
+
+	local NME_RANGE $get(ent_lastseen,range)
+
+	////dbg NME_RANGE  donewc DONE_WARCRY exit EXIT_SUB
+
+	if NME_RANGE > 200
+	//dbg delay CHARGE_DELAY
+	if !CHARGE_DELAY
+	callevent start_charge
+
+}
+
+{ start_charge
+
+	//dbg Doing Charge!
+	applyeffect ent_me effects/sfx_motionblur $get(ent_me,id) 0
+	if ( !I_R_FROZEN ) movespeed 5.0
+	playsound 0 10 SOUND_CHARGE
+	setvard NEXT_ATTACK 4
+	setvard CHARGE_DELAY 1
+	callevent 3.0 charge_out
+	callevent 10.0 charge_reset
+}
+
+{ charge_out
+
+	if ( !I_R_FROZEN ) movespeed 2.0
+}
+
+{ charge_reset
+
+	setvard CHARGE_DELAY 0
+}
+
+{ warcry_over
+
+	setvard DONE_WARCRY 1
+}
+
+{ game_dodamage //1: Attack Hit (1/0)  2: Entity Attack hit  3:  Start Position  4:  End 
+
+	setvard ATTACKING 0
+	
+	if PARAM1
+
+	if ( ATTACK_TYPE == 1 )
+	{
+		if ( $rand(1,5) == 1 ) applyeffect ent_laststruckbyme effects/effect_stun $rand(5,10)
+	}
+
+	if ( ATTACK_TYPE == 2 )
+	{
+		if ( $rand(1,10) == 1 ) applyeffect ent_laststruckbyme effects/heavy_stun $rand(5,10)
+	}
+
+	if ( ATTACK_TYPE == 3 )
+	{
+		playsound 0 10 SOUND_SLAPHIT
+		if ( $rand(1,10) == 1 ) applyeffect ent_laststruckbyme effects/heavy_stun $rand(5,10)
+		if ( $rand(1,20) == 1 ) applyeffect ent_laststruckbyme effects/blind $rand(1,5)
+	}
+
+	if ( ATTACK_TYPE == 4 )
+	{
+		playsound 0 10 SOUND_KICKHIT
+		if ( $rand(1,2) == 1 ) applyeffect ent_laststruckbyme effects/effect_push 3 $relvel(0,200,30)
+		applyeffect ent_laststruckbyme effects/heavy_stun $rand(5,10)
+	}
+}
+
+{ freeze_solid_end
+
+	movespeed 2.0
+}
+
+{ bo_zombie_mode
+	//too lazy to remake the zombie skin for this orc
+	callevent npc_suicide
+}

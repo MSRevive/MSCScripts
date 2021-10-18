@@ -1,0 +1,236 @@
+//Kharaztorant Larva by Thothie, from scratch (some bits from childre)
+//one of the evolutions of the Kharaztorant dragonkin
+{
+	setvar IS_UNHOLY 1
+
+	//anims used by base
+	setvar ANIM_WALK walk
+	setvar ANIM_RUN runlong
+	setvar ANIM_IDLE idle1
+	setvard ANIM_ATTACK attack1 //attack_lick
+	setvard ANIM_DEATH diesimple
+	setvar ANIM_FLINCH flinch
+
+	//custom anims
+	const ANIM_IDLE1 idle1
+	const ANIM_IDLE2 idle2
+	const ANIM_SEARCH idle1
+	const ANIM_LICK attack1 //attack_lick x2
+	const ANIM_CLAW1 attack2 //attack_claw1
+	const ANIM_CLAW2 attack3 //attack_claw2 (throw to left)
+	const ANIM_RUN_FAST runshort
+	const ANIM_RUN_NORM runlong
+	const ANIM_VICTORY victoryeat1
+	const ANIM_VICTORY_LOOP eat_loop
+	
+	//stats used by base
+	setvard ATTACK_RANGE 60
+	setvard ATTACK_HITRANGE 120
+	setvard ATTACK_MOVERANGE 50
+	setvard DROP_GOLD 1
+	setvard DROP_GOLD_AMT $rand(10,20)
+	setvard NPC_GIVE_EXP 150
+	setvard CAN_FLINCH 1
+	setvard FLINCH_CHANCE 90
+	setvard FLINCH_HEALTH 600
+	setvard FLINCH_DAMAGE_THRESHOLD 30
+	setvard FLINCH_DELAY 30.0
+
+	//custom stats
+	setvard ATTACK_HITCHANCE 80
+	const DMG_LICK $rand(20,40)
+	const DMG_CLAW1 $rand(30,80)
+	const DMG_CLAW2	$rand(30,80)
+	const FREQ_IDLE $randf(5,10)
+	const CHANCE_LICK_STUN 50
+	const FREQ_LOOK 10.0 //seconds between search anims
+
+	//sounds (prob bullchicken/gonome mix)
+	const SOUND_LICK_HIT "barnacle/bcl_tongue1.wav"
+	const SOUND_WARCRY "barnacle/bcl_alert2.wav"
+	const SOUND_MISS1 "zombie/claw_miss1.wav"
+	const SOUND_MISS2 "zombie/claw_miss2.wav"
+	const SOUND_CLAW_HIT1 "zombie/claw_strike1.wav"
+	const SOUND_CLAW_HIT2 "zombie/claw_strike2.wav"
+	const SOUND_IDLE1 "bullchicken/bc_idle1.wav"
+	const SOUND_IDLE2 "bullchicken/bc_idle3.wav"
+	const SOUND_IDLE3 "bullchicken/bc_idle4.wav"
+	const SOUND_IDLE4 "bullchicken/bc_idle5.wav"
+	const SOUND_IDLE5 "houndeye/he_die2.wav"
+	const SOUND_IDLE6 "houndeye/he_die3.wav"
+	const SOUND_SEARCH1 "bullchicken/bc_die3.wav"
+	const SOUND_SEARCH2 "houndeye/he_alert2.wav"
+	const SOUND_EAT "monsters/gonome/gonome_eat.wav"
+	const SOUND_CRAWL1 "barnacle/bcl_chew1.wav"
+	const SOUND_CRAWL2 "barnacle/bcl_chew2.wav"
+	const SOUND_ANGRY1 "agrunt/ag_alert2.wav"
+	const SOUND_ANGRY2 "agrunt/ag_alert3.wav"
+	const SOUND_ANGRY3 "agrunt/ag_alert4.wav"
+	const SOUND_STRUCK1 "debris/flesh1.wav"
+	const SOUND_STRUCK2 "debris/flesh2.wav"
+	const SOUND_GETUP "bullchicken/bc_pain4.wav"
+
+	//base_npc
+	const SOUND_DEATH "agrunt/ag_die2.wav"
+}
+
+#include [server] monsters/base_monster_new
+
+{ npc_spawn
+
+	callevent larva_spawn
+}
+
+{ larva_spawn
+
+	name a|Kharaztorant Larva
+	setmodel monsters/k_larva.mdl
+	hp 800
+	race demon
+	width 32
+	height 48
+	roam 1
+	hearingsensitivity 6
+}
+
+{ npc_post_spawn
+	takedmg holy 1.0
+	takedmg fire 0.5
+	setmoveanim ANIM_WALK
+	setidleanim ANIM_IDLE
+}
+
+{ npcatk_lost_sight
+	if !$cansee(enemy)
+	playrandomsound 0 10 SOUND_SEARCH1 SOUND_SEARCH2
+	if ( !SEARCH_DELAY )
+	{
+		setvard SEARCH_DELAY 1
+		callevent FREQ_LOOK reset_search_delay
+		playanim once ANIM_SEARCH
+	}
+	setvard AS_ATTACKING game.time
+}
+
+{ reset_search_delay
+	setvard SEARCH_DELAY 0
+}
+
+{ my_target_died
+	playanim critical ANIM_VICTORY
+	playsound 0 10 SOUND_EAT
+	roam 0
+	setidleanim ANIM_VICTORY_LOOP
+	setmoveanim ANIM_VICTORY_LOOP
+	setvard AM_EATING 1
+}
+
+{ game_struck
+	playrandomsound 0 10 SOUND_STRUCK1 SOUND_STRUCK2
+	setmoveanim ANIM_RUN
+	setidleanim ANIM_IDLE
+	setvard AM_EATING 0
+}
+
+{ npc_targetsighted
+	setmoveanim ANIM_RUN
+	setidleanim ANIM_IDLE
+	setvard AM_EATING 0
+
+	if !DID_WARCRY
+	setvard DID_WARCRY 1
+	playsound 0 10 SOUND_WARCRY
+	playanim critical ANIM_IDLE2
+	setvard AS_ATTACKING game.time
+}
+
+{
+repeatdelay FREQ_IDLE
+
+	if ( NPCATK_TARGET isnot unset ) playrandomsound 0 10 SOUND_ANGRY1 SOUND_ANGRY2 SOUND_ANGRY3
+
+	if NPCATK_TARGET equals unset
+
+	if ( AM_EATING )
+	{
+		if ( game.monster.hp < game.monster.maxhp ) givehp 100
+		playsound 0 10 SOUND_EAT
+	}
+
+	if !AM_EATING
+	playrandomsound 0 10 SOUND_IDLE1 SOUND_IDLE2 SOUND_IDLE3 SOUND_IDLE4 SOUND_IDLE5 SOUND_IDLE6
+	local RND_IDLE $rand(1,2)
+	if ( RND_IDLE == 1 ) playanim critical ANIM_IDLE1
+	if ( RND_IDLE == 2 ) playanim critical ANIM_IDLE2	
+}
+
+{ npc_selectattack
+	local RND_ATK $rand(1,6)
+	if ( RND_ATK <= 2 ) setvar ANIM_ATTACK ANIM_CLAW1
+	if ( RND_ATK > 3 ) setvar ANIM_ATTACK ANIM_CLAW2
+	if ( RND_ATK == 6 ) setvar ANIM_ATTACK ANIM_LICK
+}
+
+//============= model events - BEGIN
+{ crawl_step
+	playrandomsound 0 8 SOUND_CRAWL1 SOUND_CRAWL2
+}
+
+{ attack_lick
+	setvard ATTACK_TYPE attack_lick //heavy stun
+	callevent npcatk_dodamage NPCATK_TARGET ATTACK_HITRANGE DMG_LICK ATTACK_HITCHANCE blunt
+	setvar ANIM_ATTACK ANIM_CLAW1
+}
+
+{ attack_claw1
+	setvard ATTACK_TYPE attack_claw1
+	callevent npcatk_dodamage NPCATK_TARGET ATTACK_HITRANGE DMG_CLAW1 ATTACK_HITCHANCE blunt
+}
+
+{ attack_claw2
+	setvard ATTACK_TYPE attack_claw2
+	callevent npcatk_dodamage NPCATK_TARGET ATTACK_HITRANGE DMG_CLAW2 ATTACK_HITCHANCE blunt
+	setvar ANIM_ATTACK ANIM_CLAW1
+}
+//============= model events - END
+
+{ game_dodamage
+
+	if ( !PARAM1 ) playrandomsound 0 10 SOUND_MISS1 SOUND_MISS2
+
+	if ( ATTACK_TYPE equals attack_claw1 )
+	{
+		if PARAM1
+		playrandomsound 0 10 SOUND_CLAW_HIT1 SOUND_CLAW_HIT2
+	}
+
+	if ( ATTACK_TYPE equals attack_lick )
+	{
+		if PARAM1
+		playsound 0 10 SOUND_LICK_HIT
+		if $rand(1,100) < CHANCE_LICK_STUN
+		//poison, stun only
+		addvelocity PARAM2 $relvel(-200,-10,10)
+		dbg temp apply stun
+		applyeffect PARAM2 effects/greater_poison $randf(3,5) $get(ent_me,id) 0
+	}
+
+	if ( ATTACK_TYPE equals attack_claw2 )
+	{
+		if PARAM1
+		addvelocity PARAM2 $relvel(-400,-100,50)
+		playrandomsound 0 10 SOUND_CLAW_HIT1 SOUND_CLAW_HIT2
+	}
+
+	setvard ATTACK_TYPE none
+}
+
+{ npc_flinch
+	playsound 0 10 SOUND_DEATH
+	//the fake death in this one is part of the flinch animation
+	callevent 1.0 snap_to
+}
+
+{ snap_to
+	playsound 0 10 SOUND_GETUP
+}

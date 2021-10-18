@@ -1,0 +1,273 @@
+{
+	const DRESS_SPRITE explode1.spr
+	const DRESS_SPRITE_NFRAMES 8
+}
+
+{ client_activate
+	setvard FX_OWNER PARAM1
+	setvard STAFF_ON PARAM2
+
+	dbg ice_cl FX_OWNER STAFF_ON
+
+	setvard FX_ACTIVE 1
+	callevent 45.0 end_fx
+	callevent dress_sprite_loop
+}
+
+{ guardian_death
+	setvard DEATH_MODE 1
+	callevent 1.0 end_fx
+}
+
+{ end_fx
+	setvard FX_ACTIVE 0
+	callevent 2.0 remove_fx
+}
+
+{ remove_fx
+	removescript
+}
+
+{ dress_sprite_loop
+	if FX_ACTIVE
+	callevent 0.1 dress_sprite_loop
+	local SPR_POS $getcl(FX_OWNER,attachment0)
+	setvard OWNER_VEL $getcl(FX_OWNER,velocity)
+	vectormultiply OWNER_VEL 0.1
+	//dbg dress_sprite_loop OWNER_VEL
+	//local OWNER_YAW $getcl(FX_OWNER,angles.yaw)
+	//dbg dress_sprite_loop OWNER_YAW
+	//vectoradd SPR_POS z 8
+	//vectoradd SPR_POS $relvel($vec(0,OWNER_YAW,0),$vec(0,16,8))
+	cleffect tempent sprite DRESS_SPRITE SPR_POS setup_cloud update_cloud
+	cleffect tempent sprite DRESS_SPRITE SPR_POS setup_cloud update_cloud
+	cleffect tempent sprite DRESS_SPRITE SPR_POS setup_cloud update_cloud
+	cleffect tempent sprite DRESS_SPRITE SPR_POS setup_cloud update_cloud
+}
+
+//{ fire_projectile //<angles> <end_pos> <hit:0|1> <speed>
+//
+//	setvard PROJECTILE_ANGLES PARAM1
+//	local PROJECTILE_HIT PARAM3
+//	setvard PROJECTILE_SPEED PARAM4
+//	if ( !PROJECTILE_HIT )
+//	{
+//		setvard PROJECTILE_END PARAM2
+//		callevent 0.5 fire_projectile_miss_sound
+//	}
+//	local SPR_POS $getcl(FX_OWNER,attachment1)
+//	if ( !STAFF_LOOP_ACTIVE )
+//	{
+//		//dont need to track staff pos all the time, so just do it for next 10 secs
+//		setvard STAFF_LOOP_ACTIVE 1
+//		callevent 10.0 staff_track_end
+//		callevent staff_track_loop
+//	}
+//	//dbg *** fire_projectile SPR_POS
+//	cleffect tempent model weapons/projectiles.mdl SPR_POS setup_projectile
+//	cleffect tempent sprite 3dmflaora.spr SPR_POS setup_staff_glow update_staff_glow
+//}
+
+{ staff_glow //fire fire variant, that doesn't use a client projectile
+	cleffect tempent sprite 3dmflaora.spr SPR_POS setup_staff_glow update_staff_glow
+}
+
+{ poison_storm_on //<ground_pos>
+	if ( !STAFF_LOOP_ACTIVE ) callevent staff_track_loop
+	setvard SHOCK_STORM_ON 1
+
+	local SPR_POS $getcl(FX_OWNER,origin)
+	setvard RING_Z PARAM1
+
+	sound.play3d magic/blackhole.wav 10 SPR_POS
+
+	setvard RING_ROT 0
+	setvard RING_ADD 90
+	setvard RING_RAD 128
+	setvard RING_VADJ 128
+	calleventloop 4 make_poison_storm_ring
+	setvard RING_ROT 0
+	setvard RING_ADD 45
+	setvard RING_RAD 256
+	setvard RING_VADJ 64
+	calleventloop 8 make_poison_storm_ring
+	setvard RING_ROT 0
+	setvard RING_ADD 22.5
+	setvard RING_RAD 512
+	setvard RING_VADJ 32
+	calleventloop 16 make_poison_storm_ring
+
+	cleffect light new $getcl(FX_OWNER,origin) 512 (0,128,0) 10.0
+
+}
+
+{ make_poison_storm_ring
+	local SPR_POS $getcl(FX_OWNER,origin)
+	local RING_FINAL_Z RING_Z
+	add RING_FINAL_Z RING_VADJ
+	vectoradd SPR_POS $relpos($vec(0,RING_ROT,0),$vec(0,RING_RAD,RING_FINAL_Z))
+	cleffect tempent sprite poison_cloud.spr SPR_POS setup_storm_sprite update_storm_sprite
+	add RING_ROT RING_ADD
+}
+
+{ poison_storm_end
+	setvard SHOCK_STORM_ON 0
+	callevent staff_track_end
+}
+
+{ poison_storm_loop
+	if SHOCK_STORM_ON
+	if FX_ACTIVE
+	callevent 0.5 shock_storm_loop
+	cleffect tempent sprite 3dmflaora.spr SPR_POS setup_staff_glow update_staff_glow
+}
+
+{ staff_track_loop
+	if STAFF_LOOP_ACTIVE
+	callevent 0.01 staff_track_loop
+	setvard STAFF_POS $getcl(FX_OWNER,attachment1)
+}
+
+{ staff_track_end
+	setvard STAFF_LOOP_ACTIVE 0
+}
+
+{ fire_projectile_miss_sound
+	sound.play3d weapons/dagger/daggermetal2.wav 10 PROJECTILE_END
+}
+
+{ update_staff_glow
+	cleffect tempent set_current_prop origin STAFF_POS
+	local CUR_SIZE game.tempent.fuser1
+	subtract CUR_SIZE 0.01
+	if ( CUR_SIZE > 0 )
+	{
+		cleffect tempent set_current_prop fuser1 CUR_SIZE
+		cleffect tempent set_current_prop scale CUR_SIZE
+	}
+	if ( CUR_SIZE == 0 ) cleffect tempent set_current_prop origin $vec(20000,20000,20000)
+}
+
+{ setup_staff_glow
+	cleffect tempent set_current_prop death_delay 1.0
+	cleffect tempent set_current_prop renderamt 255
+	cleffect tempent set_current_prop rendermode add
+	cleffect tempent set_current_prop fade lifetime
+	//cleffect tempent set_current_prop rendercolor (64,128,255)
+	cleffect tempent set_current_prop scale 1.0
+	cleffect tempent set_current_prop gravity 0
+	cleffect tempent set_current_prop collide none
+	cleffect tempent set_current_prop framerate 30
+	cleffect tempent set_current_prop frames 1
+	cleffect tempent set_current_prop fuser1 1.0
+	cleffect tempent set_current_prop update 1
+}
+
+//{ setup_projectile
+//
+//	cleffect tempent set_current_prop death_delay 	1.5
+//	cleffect tempent set_current_prop renderamt	255
+//	cleffect tempent set_current_prop rendermode add
+//	cleffect tempent set_current_prop scale 2.0
+//	cleffect tempent set_current_prop gravity 	0
+//	local L_PROJECTILE_ANGLES PROJECTILE_ANGLES
+//	vectorset L_PROJECTILE_ANGLES x $neg($vec.x(PROJECTILE_ANGLES))
+//	cleffect tempent set_current_prop angles L_PROJECTILE_ANGLES //$getcl(FX_OWNER,angles)
+//	cleffect tempent set_current_prop velocity $relvel(PROJECTILE_ANGLES,$vec(0,PROJECTILE_SPEED,0))
+//	cleffect tempent set_current_prop collide world;die
+//	cleffect tempent set_current_prop body 	38
+//	cleffect tempent set_current_prop fadeout lifetime
+//	cleffect tempent set_current_prop framerate 1.0
+//	cleffect tempent set_current_prop frames 40
+//	cleffect tempent set_current_prop sequence 15
+//}
+
+{ setup_cloud
+
+	cleffect tempent set_current_prop death_delay last_frame
+	cleffect tempent set_current_prop framerate 60
+	cleffect tempent set_current_prop frames DRESS_SPRITE_NFRAMES
+	cleffect tempent set_current_prop bouncefactor 0
+	cleffect tempent set_current_prop framerate 15
+	cleffect tempent set_current_prop scale  0.05
+	cleffect tempent set_current_prop rendermode add
+	cleffect tempent set_current_prop renderamt 255
+	//cleffect tempent set_current_prop rendercolor (128,230,255)
+	if ( !DEATH_MODE )
+	{
+		cleffect tempent set_current_prop gravity 0.5
+	}
+	else
+	{
+		cleffect tempent set_current_prop gravity 0.0
+	}
+	cleffect tempent set_current_prop collide none
+	cleffect tempent set_current_prop fuser1 0.05
+
+
+	if ( !DEATH_MODE )
+	{
+		local RND_PITCH $randf(70,110)
+		local RND_ANG $randf(0,359.99)
+		cleffect tempent set_current_prop angles $vec(RND_PITCH,RND_ANG,0)
+
+		local CLOUD_VEL OWNER_VEL
+		vectoradd CLOUD_VEL $relvel($vec(RND_PITCH,RND_ANG,0),$vec(0,10,0))
+		cleffect tempent set_current_prop velocity CLOUD_VEL
+	}
+	else
+	{
+		local RND_ANG $randf(0,359.99)
+		local RND_PITCH $randf(0,359.99)
+		cleffect tempent set_current_prop angles $vec(RND_PITCH,RND_ANG,0)
+		local CLOUD_VEL OWNER_VEL
+		vectoradd CLOUD_VEL $relvel($vec(RND_PITCH,RND_ANG,0),$vec(0,50,0))
+		cleffect tempent set_current_prop velocity CLOUD_VEL
+	}
+}
+
+{ update_cloud
+	local CUR_SCALE game.tempent.fuser1
+	if ( CUR_SCALE < 1.0 )
+	{
+		add CUR_SCALE 0.025
+		cleffect tempent set_current_prop fuser1 CUR_SCALE
+		cleffect tempent set_current_prop scale CUR_SCALE 
+	}
+
+	if DEATH_MODE	
+	local CUR_VEL game.tempent.velocity
+	local CUR_ANG game.tempent.angles
+	vectoradd CUR_VEL $relvel(CUR_ANG,$vec(0,50,0))
+	cleffect tempent set_current_prop velocity CUR_VEL  
+}
+
+
+{ setup_storm_sprite
+	cleffect tempent set_current_prop death_delay 	10.0
+	cleffect tempent set_current_prop framerate		10
+	cleffect tempent set_current_prop frames		17
+	cleffect tempent set_current_prop bouncefactor 	0
+	cleffect tempent set_current_prop scale 		1.0
+	cleffect tempent set_current_prop rendermode	add
+	cleffect tempent set_current_prop renderamt		200
+	cleffect tempent set_current_prop rendercolor	(0,0,0)
+	cleffect tempent set_current_prop gravity 		-0.01
+	cleffect tempent set_current_prop collide 		none
+	cleffect tempent set_current_prop fuser1		RING_RAD
+	cleffect tempent set_current_prop fuser2		RING_ROT
+}
+
+{ update_storm_sprite
+	local CUR_POS game.tempent.origin
+	local CUR_RAD game.tempent.fuser1
+	local CUR_ROT game.tempent.fuser2
+	add CUR_ROT 1
+	if ( CUR_ROT > 359.99 ) local CUR_ROT 0
+	cleffect tempent set_current_prop fuser2 CUR_ROT
+
+	local NEW_POS $getcl(FX_OWNER,origin)
+	vectorset NEW_POS z $vec.z(CUR_POS)
+	vectoradd NEW_POS $relpos($vec(0,CUR_ROT,0),$vec(0,CUR_RAD,0))
+	cleffect tempent set_current_prop origin NEW_POS
+}

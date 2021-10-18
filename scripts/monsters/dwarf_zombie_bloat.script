@@ -1,0 +1,408 @@
+#scope server
+{
+	setvar ANIM_WALK walk
+	setvar ANIM_RUN walk
+	setvar ANIM_IDLE idle
+	setvar ANIM_DEATH none //custom
+	const SOUND_DEATH none //custom
+
+	setvard MSC_PUSH_RESIST 0.25 //"weighted"
+
+	setvard NPC_GIVE_EXP 400
+
+	setvard ANIM_ATTACK attack //frame_attack
+
+	const ANIM_PUKE anim_puke //frame_puke_start frame_puke_finish
+	const ANIM_EXPLODE anim_death //frame_death_buckle1 frame_death_buckle2 frame_death_explode frame_death_done
+
+	const FREQ_PUKE $randf(10.0,20.0)
+	const FREQ_SPIT $randf(1.0,5.0)
+
+	const PUKE_RANGE 256
+
+	const RAD_EXPLODE 300
+
+	const SOUND_PUKE monsters/mummy/c_mummycom_bat1.wav
+
+	const SOUND_DEATH1 agrunt/ag_die5.wav
+	const SOUND_DEATH2 agrunt/ag_die4.wav
+	const SOUND_DEATH3 agrunt/ag_die3.wav
+
+	setvar ATTACK_RANGE 90
+	setvar ATTACK_HITRANGE 120 
+
+   	const SOUND_TURNED1	ambience/the_horror1.wav
+   	const SOUND_TURNED2	ambience/the_horror2.wav
+   	const SOUND_TURNED3	ambience/the_horror3.wav
+	const SOUND_TURNED4	ambience/the_horror4.wav	
+	const SOUND_HOLYPAIN1 agrunt/ag_pain4.wav
+	const SOUND_HOLYPAIN2 agrunt/ag_die3.wav
+
+	const DMG_PROJECTILE 300
+	const DOT_PUKE 100
+	const DMG_SWIPE 100
+	const DMG_EXPLODE 2000
+
+	const SOUND_SPIT1 bullchicken/bc_attack2.wav
+	const SOUND_SPIT2 bullchicken/bc_attack3.wav
+
+	const SOUND_ATTACK1 zombie/claw_miss1.wav
+	const SOUND_ATTACK2 zombie/claw_miss2.wav
+	const SOUND_ATTACKHIT1 zombie/claw_strike1.wav
+	const SOUND_ATTACKHIT2 zombie/claw_strike2.wav
+	const SOUND_ATTACKHIT3 zombie/claw_strike3.wav
+
+	const SOUND_IDLE1 agrunt/ag_idle2.wav
+	const SOUND_IDLE2 agrunt/ag_alert3.wav
+	const SOUND_IDLE3 agrunt/ag_idle5.wav
+
+	const SOUND_STRUCK1 debris/flesh2.wav
+	const SOUND_STRUCK2 debris/flesh5.wav
+	const SOUND_STRUCK3 debris/flesh7.wav
+	const SOUND_PAIN1 agrunt/ag_pain2.wav
+	const SOUND_PAIN2 agrunt/ag_pain3.wav
+	const SOUND_PAIN3 agrunt/ag_pain5.wav
+
+    const SOUND_ALERT agrunt/ag_alert2.wav
+
+	setvard I_AM_TURNABLE 1
+}
+
+{ game_precache
+	precache bloodspray.spr
+}
+
+
+#include monsters/base_monster_new
+
+{ npc_spawn
+	name a|Bloated Dwarven Zombie
+
+	setmodel monsters/dwarf_bloat.mdl
+	width 48
+	height 96
+
+	race undead
+	blood green
+	hp 2000
+	roam 1
+	hearingsensitivity 5
+
+	takedmg poison 0.0
+	setvard IS_BLOODLESS 1
+	
+	//slightly different resistance than standard undead
+	takedmg pierce 1.5
+	takedmg blunt 0.75
+	takedmg holy 2.5
+	takedmg cold 0.5
+	takedmg lightning 1.0
+	takedmg acid 0.75
+
+	setidleanim ANIM_IDLE
+	setmoveanim ANIM_WALK
+
+	setvard LIGHT_SIZE 64
+
+	setvard NEXT_SPIT game.time
+	add NEXT_SPIT FREQ_SPIT
+	setvard NEXT_PUKE game.time
+	add NEXT_PUKE FREQ_PUKE
+}
+
+{ npc_post_spawn
+	setvard LIGHT_SIZE 64
+	clientevent new all monsters/dwarf_zombie_bloat_light_cl $get(ent_me,index) (0,255,0) LIGHT_SIZE 30.0
+	setvard MY_LIGHT_IDX game.script.last_sent_id
+	setvard NEXT_LIGHT game.time
+	add NEXT_LIGHT 15.0
+}
+
+{ npc_targetsighted
+	if !DID_INTRO
+	setvard DID_INTRO 1
+	playanim critical ANIM_IDLE
+	playsound 0 10 SOUND_ALERT 0.8 75
+
+	setvard NEXT_SPIT game.time
+	add NEXT_SPIT FREQ_SPIT
+	setvard NEXT_PUKE game.time
+	add NEXT_PUKE FREQ_PUKE
+
+	//restart light
+	setvard LIGHT_SIZE 64
+	clientevent update all MY_LIGHT_IDX remove_light
+	clientevent new all monsters/dwarf_zombie_bloat_light_cl $get(ent_me,index) (0,255,0) LIGHT_SIZE 30.0
+	setvard MY_LIGHT_IDX game.script.last_sent_id
+	setvard NEXT_LIGHT game.time
+	add NEXT_LIGHT 15.0
+}
+
+{ my_target_died
+	if game.time > NEXT_CONFUSED
+	setvard NEXT_CONFUSED game.time
+	add NEXT_CONFUSED 20.0
+	playanim critical ANIM_IDLE
+	playsound 0 10 SOUND_IDLE2 0.8 75
+	setvard DID_INTRO 0
+}
+
+{ npcatk_lost_sight
+	if game.time > NEXT_CONFUSED
+	setvard NEXT_CONFUSED game.time
+	add NEXT_CONFUSED 20.0
+	playanim critical ANIM_IDLE
+	playsound 0 10 SOUND_IDLE1 0.8 75
+}
+
+{ npcatk_hunt
+
+	if !AM_EXPLODING
+	if $get(ent_me,isalive)
+
+	local L_GAME_TIME game.time
+
+	if ( L_GAME_TIME > NEXT_LIGHT )
+	{
+		clientevent new all monsters/dwarf_zombie_bloat_light_cl $get(ent_me,index) (0,255,0) LIGHT_SIZE 15.0
+		setvard MY_LIGHT_IDX game.script.last_sent_id
+		setvard NEXT_LIGHT L_GAME_TIME
+		add NEXT_LIGHT 15.0
+	}
+
+	if !SUSPEND_AI
+	if !AM_PUKING
+
+	if ( L_GAME_TIME > NEXT_IDLE_SOUND )
+	{
+		setvard NEXT_IDLE_SOUND L_GAME_TIME
+		add NEXT_IDLE_SOUND $randf(5.0,15.0)
+		local RND_SOUND $rand(1,3)
+		if ( RND_SOUND == 1 ) playsound 0 10 SOUND_IDLE1 0.8 75
+		if ( RND_SOUND == 2 ) playsound 0 10 SOUND_IDLE2 0.8 75
+		if ( RND_SOUND == 3 ) playsound 0 10 SOUND_IDLE3 0.8 75
+	}
+
+	if NPCATK_TARGET isnot none
+
+	if ( L_GAME_TIME > NEXT_SPIT )
+	{
+		if $get(NPCATK_TARGET,range) > 256
+		if NPC_CANSEE_TARGET
+		setvard DO_PROJECTILE 1
+		setvard NEXT_SPIT L_GAME_TIME
+		add NEXT_SPIT FREQ_SPIT
+		setvard AS_ATTACKING game.time
+		add AS_ATTACKING 5.0
+		playanim once ANIM_ATTACK
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+	if $get(NPCATK_TARGET,range) < 256
+	if L_GAME_TIME > NEXT_PUKE
+	setvard NEXT_PUKE L_GAME_TIME
+	add NEXT_PUKE FREQ_PUKE
+	setvard AS_ATTACKING game.time
+	add AS_ATTACKING 15.0
+	callevent do_puke
+}
+
+{ frame_attack
+	if ( DO_PROJECTILE )
+	{
+		playrandomsound 0 10 SOUND_SPIT1 SOUND_SPIT2
+		setvard DO_PROJECTILE 0
+		playsound SOUND_SPIT 
+		tossprojectile NPCATK_TARGET 250 DMG_PROJECTILE 2 proj_poison_spit2 $get(ent_me,attachpos,0) notoffset
+		effect glow ent_lastprojectile (0,255,0) 64 -1 0
+	}
+	else
+	{
+		xdodamage NPCATK_TARGET ATTACK_HITRANGE DMG_SWIPE 80% ent_me ent_me none blunt dmgevent:swipe
+	}
+}
+
+{ swipe_dodamage //PARAM1=hit:0|1 PARAM2=ent_hit PARAM3=(start) PARAM4=(end) DmgType DmgAmt
+	if ( PARAM1 )
+	{
+		playrandomsound 0 10 SOUND_ATTACKHIT1 SOUND_ATTACKHIT2 SOUND_ATTACKHIT3
+		addvelocity NPCATK_TARGET $vec(-25,150,110)
+	}
+	else
+	{
+		playrandomsound 0 10 SOUND_ATTACK1 SOUND_ATTACK2
+	}
+}
+
+{ do_puke
+	setvard AM_PUKING 1
+	callevent npcatk_suspend_ai
+	setvard CAN_FLINCH 0
+	callevent npcatk_suspend_movement ANIM_PUKE
+	playanim critical ANIM_PUKE
+	playsound 2 10 SOUND_PUKE 0.8 85
+	setvard LIGHT_SIZE PUKE_RANGE
+	clientevent update all MY_LIGHT_IDX light_grow PUKE_RANGE 0.5
+}
+
+{ frame_puke_start
+	clientevent new all monsters/dwarf_zombie_bloat_cl $get(ent_me,index)
+	setvard PUKE_SCRIPT_IDX game.script.last_sent_id
+	setvard DRIFT_ANG $get(ent_me,angles)
+	callevent puke_scan_loop
+}
+
+{ puke_scan_loop
+	if AM_PUKING
+	callevent 0.25 puke_scan_loop
+	setvard DRIFT_ANG $get(ent_me,angles)
+	setvard MY_HEAD_POS $get(ent_me,attachpos,0)
+	setvard MY_PUKE_POS $get(ent_me,attachpos,1)
+	vectorset.yaw DRIFT_ANG	$angles(MY_HEAD_POS,MY_PUKE_POS)
+	setvard PUKE_TARGS $get_tsphere(enemy,PUKE_RANGE)
+	if PUKE_TARGS isnot none
+	calleventloop $get_token_amt(PUKE_TARGS) puke_affect_targets
+}
+
+{ puke_affect_targets
+	local CUR_TARG $get_token(PUKE_TARGS,game.script.iteration)
+	local CUR_TARG_ORG $get(CUR_TARG,origin)
+	if $within_cone2D(CUR_TARG_ORG,MY_HEAD_POS,DRIFT_ANG,30)
+	//check if blocked
+	local TRACE_START MY_HEAD_POS
+	local TRACE_END CUR_TARG_ORG
+	local TRACE_LINE $get_traceline(MY_HEAD_POS,CUR_TARG_ORG,worldonly)
+	if TRACE_LINE equals TRACE_END
+	applyeffect CUR_TARG effects/effect_poison_blinding 5.0 $get(ent_me,id) DOT_PUKE
+
+	if game.time > NEXT_ALLY_ALERT
+	callevent set_ally_targets CUR_TARG
+}
+
+//switched this in favor of a system where puke angles are determined by two attachments
+//{ frame_puke_drift_left
+//	dbg anim.current_frame
+//	clientevent update all PUKE_SCRIPT_IDX ext_drift_left
+//	setvard PUKE_DRIFT_DIR -1
+//}
+//
+//{ frame_puke_drift_right
+//	dbg anim.current_frame
+//	clientevent update all PUKE_SCRIPT_IDX ext_drift_right
+//	setvard PUKE_DRIFT_DIR 1
+//}
+
+{ frame_puke_finish
+	clientevent update all PUKE_SCRIPT_IDX end_puke
+	setvard AM_PUKING 0
+	callevent npcatk_resume_movement
+	callevent npcatk_resume_ai
+
+	setvard LIGHT_SIZE 64
+	clientevent update all MY_LIGHT_IDX light_shrink 64 1
+}
+
+
+{ game_death
+
+	if !DID_FAKE_DEATH
+	setvard DID_FAKE_DEATH 1
+
+	//reinit light for sequence
+	clientevent update all MY_LIGHT_IDX remove_light
+	clientevent new all monsters/dwarf_zombie_bloat_light_cl $get(ent_me,index) (0,255,0) LIGHT_SIZE 30.0
+	setvard MY_LIGHT_IDX game.script.last_sent_id
+
+	if ( AM_PUKING )
+	{
+		//cancel puke sequence
+		clientevent update all PUKE_SCRIPT_IDX end_puke
+		playsound 2 0 SOUND_PUKE 
+	}
+
+	clearfx
+	setalive 1
+	invincible 1
+	callevent npcatk_suspend_movement ANIM_EXPLODE
+	callevent npcatk_suspend_ai
+	playanim critical ANIM_EXPLODE
+	playsound 0 10 SOUND_DEATH1 0.8 75
+	setvard DID_FAKE_DEATH 1
+	setvard AM_EXPLODING 1
+	callevent 0.1 light_flicker
+}
+
+{ light_flicker
+	clientevent update all MY_LIGHT_IDX light_flicker
+}
+
+{ frame_death_buckle1
+	//gurgle sound, flicker light
+	playsound 0 10 SOUND_DEATH2 0.8 75
+	clientevent update all MY_LIGHT_IDX light_grow 512 2
+
+}
+
+{ frame_death_buckle2
+	//gurgle sound, light grows to 512
+	playsound 0 10 SOUND_DEATH3 0.8 75
+	setvard LIGHT_SIZE 512
+}
+
+{ frame_death_explode
+	//explode here
+	clientevent new all effects/sfx_acid_splash $get(ent_me,origin) 512
+	setprop ent_me rendermode 5
+	setprop ent_me renderamt 0
+	xdodamage $relpos(0,0,0) RAD_EXPLODE DMG_EXPLODE 0.1 ent_me ent_me none poison_effect dmgevent:explode
+}
+
+{ explode_dodamage
+	if PARAM1
+	applyeffect PARAM2 effects/effect_poison_blinding 8.0 $get(ent_me,id) DOT_PUKE
+	if game.time > NEXT_ALLY_ALERT
+	callevent set_ally_targets $get(PARAM2,id)
+}
+
+{ frame_death_done
+	invincible 0
+	setorigin ent_me $vec(20000,-20000,20000)
+	callevent npc_suicide
+}
+
+{ set_ally_targets //<target>
+	//causes all enemies to target first guy puked on
+	setvard NEXT_ALLY_ALERT game.time
+	add NEXT_ALLY_ALERT 15.0
+
+	setvard NEW_ALLY_TARGET PARAM1
+	setvard NEARBY_ALLIES $get_tsphere(ally,1024)
+	if NEARBY_ALLIES isnot none
+	calleventloop $get_token_amt(NEARBY_ALLIES) set_allies_target_loop
+}
+
+{ set_allies_target_loop
+	local CUR_ALLY $get_token(NEARBY_ALLIES,game.script.iteration)
+	callexternal CUR_ALLY npcatk_settarget NEW_ALLY_TARGET
+}
+
+{ game_damaged //PARAM1=attacker PARAM2=dmg PARAM3=dmg_type
+
+	if ( PARAM3 !contains effect )
+	{
+		local L_DO_PAIN $rand(1,3)
+	}
+
+	if ( L_DO_PAIN == 1 )
+	{
+		local L_RND_SND $randf(1,3)
+		if ( L_RND_SND == 1 ) playsound 0 10 SOUND_PAIN1 0.5 $rand(50,75)
+		if ( L_RND_SND == 2 ) playsound 0 10 SOUND_PAIN2 0.5 $rand(50,75)
+		if ( L_RND_SND == 3 ) playsound 0 10 SOUND_PAIN3 0.5 $rand(50,75)
+		
+	}
+	else
+	{
+		playrandomsound 0 10 SOUND_STRUCK1 SOUND_STRUCK2 SOUND_STRUCK3
+	}
+}

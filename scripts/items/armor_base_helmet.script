@@ -1,0 +1,132 @@
+{
+	//base_item
+	const MODEL_HANDS misc/p_misc.mdl
+	const MODEL_WORLD misc/p_misc.mdl
+	const MODEL_VIEW none
+
+	//local
+	const IS_HELM 1
+	const HELM_HIDES_HEAD 0
+}
+
+#include items/base_miscitem
+#include items/base_effect_armor
+
+{ game_spawn
+
+	wearable     1 head
+	setmodelbody ARMOR_GROUP ARMOR_BODY
+}
+
+{ game_wear
+	local CL_RACE PARAM1
+	local CL_GENDER PARAM2
+	local CL_DEBUG PARAM3
+	//dbg game_wear PARAM1 PARAM2
+	callevent game_show CL_RACE CL_GENDER CL_DEBUG
+}
+
+{ game_show
+	setmodel ARMOR_MODEL
+	setmodelbody ARMOR_GROUP ARMOR_BODY
+
+	if ( game.clientside )
+	{
+		local OWNER_RACE $get_local_prop(race)
+		local OWNER_GENDER $get_local_prop(gender)
+	}
+	else
+	{
+		if game.serverside
+		local OWNER_RACE $get(ent_owner,race)
+		local OWNER_GENDER $get(ent_owner,gender)
+	}
+
+	local OWNER_RACE $lcase(OWNER_RACE)
+	local OWNER_GENDER $lcase(OWNER_GENDER)
+	if ( OWNER_RACE equals 0 ) local OWNER_RACE PARAM1 //char_menu, most likely
+	if ( OWNER_GENDER equals 0 ) local OWNER_GENDER PARAM2 //char_menu, most likely
+
+	dbg game_show race OWNER_RACE gend OWNER_GENDER dbg PARAM3
+
+
+	if ( OWNER_GENDER equals female )
+	{
+		if ( OWNER_RACE equals human )
+		{
+			dbg *** Adjusted for Fembot
+
+			if ( ARMOR_BODY_HUMAN_FEMALE isnot 'ARMOR_BODY_HUMAN_FEMALE' )
+			{
+				setmodelbody ARMOR_GROUP ARMOR_BODY_HUMAN_FEMALE
+			}
+			else
+			{
+				local FEM_BODY ARMOR_BODY
+				add FEM_BODY 14
+				setmodelbody ARMOR_GROUP FEM_BODY
+			}
+		}
+	}
+
+	if HELM_HIDES_HEAD
+	callexternal ent_owner ext_setheadtype 1
+}
+
+{ [server] display_stun_info
+
+	stradd CUR_STUN_PROT "%"
+	if ( CUR_STUN_PROT > 0 ) gplayermessage ent_owner Your stun resistance is now CUR_STUN_PROT
+	if ( CUR_STUN_PROT == 0 ) dplayermessage ent_owner You now have no stun resistance
+}
+
+{ [server] barmor_effect_activate
+	if game.serverside
+	dbg barmor_effect_activate [ HELM_EFFECT_ACTIVE ]
+	if !HELM_EFFECT_ACTIVE
+	setvard HELM_EFFECT_ACTIVE 1
+	if ( HELM_HIDES_HEAD ) callexternal ent_owner ext_setheadtype 1
+	callexternal ent_owner ext_register_helm $get(ent_me,id)
+	local OLD_PROT $get(ent_owner,scriptvar,'IMMUNE_STUN')
+	local POT_CHECK $get(ent_owner,scriptvar,'PLR_LESSER_LEADFOOT')
+	if ( POT_CHECK )
+	{
+		setvard CUR_STUN_PROT $get(ent_owner,scriptvar,'PLR_LESSER_LEADFOOT_STUN')
+		local SAME_PROTECT 1
+		gplayermessage ent_owner Your stun resistance remains STUN_PROTECTION due to Lesser Leadfoot Potion
+	}
+	if ( OLD_PROT != STUN_PROTECTION )
+	{
+		callexternal ent_owner set_stun_prot STUN_PROTECTION
+		callevent 0.1 display_stun_info
+	}
+	if ( !SAME_PROTECT ) setvard CUR_STUN_PROT STUN_PROTECTION
+}
+
+{ [server] barmor_effect_remove
+
+	if game.serverside
+	dbg barmor_effect_remove [ HELM_EFFECT_ACTIVE ]
+	if HELM_EFFECT_ACTIVE
+	setvard HELM_EFFECT_ACTIVE 0
+	if ( HELM_HIDES_HEAD ) callexternal ent_owner ext_setheadtype 0
+	callexternal $get(ent_owner,id) ext_register_helm none
+	local POT_CHECK $get(ent_owner,scriptvar,'PLR_LESSER_LEADFOOT')
+	if ( POT_CHECK )
+	{
+		local L_STUN_RESIST $get(ent_owner,scriptvar,'PLR_LESSER_LEADFOOT_STUN')
+		gplayermessage ent_owner Your stun resistance remains L_STUN_RESIST due to Lesser Leadfoot Potion
+	}
+	if !POT_CHECK
+	local OLD_PROT $get(ent_owner,scriptvar,'IMMUNE_STUN')
+	callexternal ent_owner set_stun_prot 0
+	local STUN_PROT $get(ent_owner,scriptvar,'IMMUNE_STUN')
+	setvard CUR_STUN_PROT 0
+	if ( OLD_PROT != STUN_PROT ) callevent 0.1 display_stun_info
+}
+
+//debug
+{ ext_setrender
+	dbg got ext_setrender PARAM1
+	setrender PARAM1
+}

@@ -1,0 +1,95 @@
+{ client_activate //<owner> <duration> <breath_active>
+
+	setvard FX_OWNER PARAM1
+	setvard FX_DURATION PARAM2
+	setvard BREATH_ON PARAM3
+
+	if ( BREATH_ON ) callevent breath_on
+
+	callevent PARAM2 end_fx
+}
+
+{ end_fx
+	callevent 2.0 remove_fx
+}
+
+{ remove_fx
+	removescript
+}
+
+{ quick_breath
+	setvard BREATH_VEL $getcl(FX_OWNER,velocity)
+	setvard BREATH_ANG $getcl(FX_OWNER,angles)
+	vectoradd BREATH_VEL $relpos(BREATH_ANG,$vec(0,$randf(5,100),0))
+	cleffect tempent sprite char_breath.spr $getcl(FX_OWNER,attachment0) weather_snow_breath
+}
+
+{ quick_breath_last
+	setvard BREATH_ON 0
+	callevent quick_breath
+	callevent end_fx
+}
+
+{ breath_on
+	setvard BREATH_ON 1
+	callevent breath_loop
+}
+
+{ breath_off
+	setvard BREATH_ON 0
+}
+
+{ breath_loop
+	if BREATH_ON
+	callevent 0.2 breath_loop
+	local CLOUD_ORG $getcl(FX_OWNER,attachment0)
+	setvard CLOUD_ANG $getcl(FX_OWNER,angles.yaw)
+	cleffect tempent sprite rain_mist.spr CLOUD_ORG setup_cloud update_cloud
+	cleffect tempent sprite rain_mist.spr CLOUD_ORG setup_cloud update_cloud
+	cleffect tempent sprite rain_mist.spr CLOUD_ORG setup_cloud update_cloud
+}
+
+{ weather_snow_breath
+
+	cleffect tempent set_current_prop death_delay 	last_frame
+	cleffect tempent set_current_prop framerate 30
+	cleffect tempent set_current_prop frames 30
+	cleffect tempent set_current_prop scale $randf(0.3,0.75)
+	cleffect tempent set_current_prop gravity -0.01
+	cleffect tempent set_current_prop collide none
+	cleffect tempent set_current_prop rendermode add
+	cleffect tempent set_current_prop renderamt $rand(30,100)
+	cleffect tempent set_current_prop angles BREATH_ANG
+	cleffect tempent set_current_prop velocity BREATH_VEL
+}
+
+{ setup_cloud
+
+	cleffect tempent set_current_prop death_delay 1.0
+	cleffect tempent set_current_prop framerate 10
+	cleffect tempent set_current_prop frames 9
+	cleffect tempent set_current_prop bouncefactor 0
+	cleffect tempent set_current_prop scale  0.01
+	cleffect tempent set_current_prop rendermode add
+	cleffect tempent set_current_prop renderamt 255
+	cleffect tempent set_current_prop rendercolor (128,128,255)
+	cleffect tempent set_current_prop gravity .005
+	cleffect tempent set_current_prop collide none
+	cleffect tempent set_current_prop fuser1 0.01
+
+	local RND_RL $randf(-20,20)
+	local RND_UD $randf(-20,20)
+	local CLOUD_VEL $relvel($vec(0,CLOUD_ANG,0),$vec(RND_RL,$randf(300,400),RND_UD))
+	cleffect tempent set_current_prop velocity CLOUD_VEL
+}
+
+
+{ update_cloud
+	local CUR_SCALE game.tempent.fuser1
+	if ( CUR_SCALE < 2 )
+	{
+		add CUR_SCALE 0.05
+		cleffect tempent set_current_prop fuser1 CUR_SCALE
+		cleffect tempent set_current_prop scale CUR_SCALE 
+	}
+}

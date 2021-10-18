@@ -1,0 +1,94 @@
+{ [server] game_dynamically_created
+
+	// MY_OWNER DMG_ICE ICE_RADIUS ICE_AMT
+	setvard MY_OWNER PARAM1
+	setvard DMG_ICE PARAM2
+	setvard MY_RADIUS PARAM3
+	setvard NUM_SPIKES PARAM4
+
+	//dbg ice_spikes set $get(MY_OWNER,name) dmg DMG_ICE rad MY_RADIUS num NUM_SPIKES
+
+	callevent 0.1 apply_damage
+}
+
+{ [server] game_spawn
+
+	name some|Ice Spikes
+	setsolid none
+	width 32
+	height 32
+	race beloved
+	setvard PLAYING_DEAD 1 //not valid target
+	invincible 1
+}
+
+{ [server] apply_damage
+
+	clientevent new all $currentscript $get(ent_me,origin) MY_RADIUS NUM_SPIKES
+	setvard MY_SCRIPT_ID game.script.last_sent_id
+	
+	local DMG_POS game.monster.origin
+										//<position> 	<range> 	<dmg> 	<cth> 	<attn> 	<flags> 	[type]
+	callexternal MY_OWNER send_damage	DMG_POS			MY_RADIUS	DMG_ICE	100%	0		reflective	pierce
+	xdodamage DMG_POS MY_RADIUS DMG_ICE 0 MY_OWNER MY_OWNER spellcasting.ice ice
+
+	playsound 0 10 magic/freeze.wav
+	callevent 5.0 remove_me
+}
+
+{ [server] remove_me
+
+	clientevent remove all MY_SCRIPT_ID
+	callevent 1.0 remove_me2
+}
+
+{ [server] remove_me2
+
+	deleteent ent_me
+}
+
+//===================== CLIENT SIDE
+
+{ [client] client_activate
+
+	setvard CENTER_POINT PARAM1
+	setvard CL_RADIUS PARAM2
+	setvard CL_NSPIKES PARAM3
+
+	//if ( game.debug > 4 ) //dbg ice_spikes_cl cent CENTER_POINT rad CL_RADIUS num CL_NSPIKES
+
+	calleventloop CL_NSPIKES spawn_spikes
+}
+
+{ [client] spawn_spikes
+
+	local SPIKE_POS CENTER_POINT
+	local F_ADJ $rand(0,CL_RADIUS)
+	local YAW_ADJ $rand(0,359)
+	vectoradd SPIKE_POS $relpos($vec(0,YAW_ADJ,0),$vec(0,F_ADJ,0))
+	cleffect tempent sprite glassgibs.mdl SPIKE_POS setup_spike
+}
+
+{ [client] setup_spike
+
+	local PITCH_ADJ 0 //$rand(230,300)
+	local YAW_ADJ $rand(0,359) //$rand(0,359)
+	local ROLL_ADJ $rand(200,320) //$rand(0,359) //270 pointed at about 3o'clock
+	local SCALE_ADJ $randf(5.0,20.0)
+	local ANGLE_ADJ $vec(PITCH_ADJ,YAW_ADJ,ROLL_ADJ)
+	local BODY_ADJ $rand(0,7)
+
+	//if ( game.debug > 4 ) //dbg cl_spikes ANGLE_ADJ
+
+	cleffect tempent set_current_prop death_delay 	4.7
+	cleffect tempent set_current_prop rendercolor (255,255,255)
+	cleffect tempent set_current_prop renderamt	255
+	cleffect tempent set_current_prop rendermode add
+	cleffect tempent set_current_prop scale SCALE_ADJ //this is being ignored, had to use custom model :/
+	cleffect tempent set_current_prop gravity 	0
+	cleffect tempent set_current_prop angles ANGLE_ADJ //check which of these is valid in code
+	cleffect tempent set_current_prop angle ANGLE_ADJ
+	cleffect tempent set_current_prop collide 	none
+	cleffect tempent set_current_prop body 	1
+	cleffect tempent set_current_prop fadeout lifetime
+}

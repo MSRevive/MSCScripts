@@ -1,0 +1,130 @@
+//glowie and 'pig-pen' style cloud of toxic
+//also serves for doom plant in fx
+
+#scope client
+
+{ [client]
+	const GLOW_RAD 128
+	const GLOW_COLOR (0,255,0)
+
+	const SPRITE_FIRE poison_cloud.spr
+	const N_SPR_FRAMES 17
+	const SMOKE_RAD 128
+
+	const STUN_SPRITE fire1_fixed.spr
+}
+
+{ [client] client_activate //<index>
+
+	setvard SKEL_ID PARAM1
+	if SKEL_LIGHT_ID equals 'SKEL_LIGHT_ID'
+	cleffect light new $getcl(SKEL_ID,origin) GLOW_RAD GLOW_COLOR 5.0
+	setvard SKEL_LIGHT_ID game.script.last_light_id
+	setcallback render enable
+}
+
+{ [client] game_prerender
+
+	local L_POS $getcl(SKEL_ID,origin)
+	cleffect light SKEL_LIGHT_ID L_POS GLOW_RAD GLOW_COLOR 1.0
+}
+
+{ [client]
+repeatdelay 0.25
+	
+	local C_POS $getcl(SKEL_ID,origin)
+	local L_POS C_POS
+	vectoradd L_POS $relpos($vec(0,$randf(0,359),0),$vec(0,$randf(-64,64),0))
+	cleffect tempent sprite poison_cloud.spr L_POS setup_smokes
+	local L_POS C_POS
+	vectoradd L_POS $relpos($vec(0,$randf(0,359),0),$vec(0,$randf(-64,64),0))
+	cleffect tempent sprite poison_cloud.spr L_POS setup_smokes
+	local L_POS C_POS
+	vectoradd L_POS $relpos($vec(0,$randf(0,359),0),$vec(0,$randf(-64,64),0))
+	cleffect tempent sprite poison_cloud.spr L_POS setup_smokes
+	local L_POS C_POS
+	vectoradd L_POS $relpos($vec(0,$randf(0,359),0),$vec(0,$randf(-64,64),0))
+	cleffect tempent sprite poison_cloud.spr L_POS setup_smokes
+}
+
+{  [client] setup_smokes
+
+   cleffect tempent set_current_prop death_delay 	0.5
+   cleffect tempent set_current_prop framerate		10
+   cleffect tempent set_current_prop frames			17
+   cleffect tempent set_current_prop bouncefactor 	0
+   cleffect tempent set_current_prop scale 			0.5
+   cleffect tempent set_current_prop rendermode		add
+   cleffect tempent set_current_prop renderamt		200
+   cleffect tempent set_current_prop rendercolor	(0,255,0)
+   cleffect tempent set_current_prop gravity 		.005
+   cleffect tempent set_current_prop collide 		world
+}
+
+{ [client] dewm_plant_fx //<origin>
+	local SPRITE_CENTER PARAM1
+	cleffect tempent sprite 3dmflaora.spr SPRITE_CENTER plant_sprite
+	cleffect tempent sprite 3dmflaora.spr SPRITE_CENTER plant_sprite
+	cleffect tempent sprite 3dmflaora.spr SPRITE_CENTER plant_sprite
+	cleffect tempent sprite 3dmflaora.spr SPRITE_CENTER plant_sprite
+	cleffect tempent sprite 3dmflaora.spr SPRITE_CENTER plant_sprite
+	cleffect tempent sprite 3dmflaora.spr SPRITE_CENTER plant_sprite
+}
+
+{ [client] plant_sprite
+	cleffect tempent set_current_prop death_delay 	5.0
+	cleffect tempent set_current_prop velocity 	$vec($randf(-125,125),$randf(-125,125),$randf(-125,125))
+	cleffect tempent set_current_prop bouncefactor 	5
+	cleffect tempent set_current_prop scale 	2
+	cleffect tempent set_current_prop gravity 	$randf(-1.5,-1.1)
+	cleffect tempent set_current_prop collide 	none
+	cleffect tempent set_current_prop framerate	30
+	cleffect tempent set_current_prop frames	1
+	cleffect tempent set_current_prop rendermode add
+	cleffect tempent set_current_prop rendercolor (0,255,0)
+}
+
+{ [client] stunburst_go_cl //<pos> <rad>
+
+	setvard CYCLE_ANGLE 0
+	const TOTAL_OFS 10
+	setvard STUN_POS PARAM1
+	setvard STUN_RADIUS PARAM2
+
+	local POS_GROUND $get_ground_height(STUN_POS)
+	vectorset STUN_POS z POS_GROUND
+
+	calleventloop 17 stun_burst_fx
+}
+
+{ [client] stun_burst_fx
+
+	local FLAME_POS STUN_POS
+	vectoradd FLAME_POS $relpos($vec(0,CYCLE_ANGLE,0),$vec(0,TOTAL_OFS,0))
+	cleffect tempent sprite STUN_SPRITE FLAME_POS stunburst_flame
+
+	add CYCLE_ANGLE 20
+}
+
+{ [client] stunburst_flame
+
+	local FADE_DEL 1.0
+	if ( STUN_RADIUS > 128 ) local FADE_DEL 2.0
+
+	local SPRITE_SPEED 100
+	if ( STUN_RADIUS > 128 ) local SPRITE_SPEED 400
+
+	cleffect tempent set_current_prop death_delay 	FADE_DEL
+	cleffect tempent set_current_prop rendercolor (0,0,255)
+	cleffect tempent set_current_prop renderamt	200
+	cleffect tempent set_current_prop rendermode add
+	cleffect tempent set_current_prop framerate	30
+	cleffect tempent set_current_prop frames	23
+	cleffect tempent set_current_prop scale 	1.0
+	cleffect tempent set_current_prop gravity 	0
+
+	local FLAME_TURN $relvel($vec(0,CYCLE_ANGLE,0),$vec(0,SPRITE_SPEED,0))
+	cleffect tempent set_current_prop velocity FLAME_TURN
+	cleffect tempent set_current_prop collide 	none
+	cleffect tempent set_current_prop fadeout lifetime
+}

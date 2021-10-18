@@ -1,0 +1,77 @@
+{
+
+}
+
+{ client_activate
+	setvard FX_OWNER PARAM1
+	setvard BREATH_TYPE PARAM2
+	setvard BREATH_YAW $getcl(FX_OWNER,angles)
+	setvard BREATH_YAW $vec.yaw(BREATH_YAW) //not sure if we can use angles.yaw client side
+
+	//1=fire 2=lightning 3=cold
+	if ( BREATH_TYPE == 1 ) setvard BREATH_COLOR (255,128,0)
+	if ( BREATH_TYPE == 2 ) setvard BREATH_COLOR (255,255,0)
+	if ( BREATH_TYPE == 3 ) setvard BREATH_COLOR (64,64,255)
+
+	setvard FX_ACTIVE 1
+	callevent breath_loop
+}
+
+{ breath_loop
+	if FX_ACTIVE
+	callevent $randf(0.1,0.2) breath_loop
+	cleffect tempent sprite 3dmflaora.spr $getcl(FX_OWNER,attachment0) setup_breath_sprite update_breath_sprite
+}
+
+{ ext_breath_stop
+	setvard FX_ACTIVE 0
+	callevent 8.0 remove_fx
+}
+
+{ remove_fx
+	removescript
+}
+
+{ update_breath_sprite
+	if FX_ACTIVE
+
+	if ( $vec.z(game.tempent.origin) > -2100 )
+	{
+		cleffect tempent set_current_prop gravity 2 //not bouncing off ceiling for some reason
+		cleffect tempent set_current_prop fuser2 1
+//		local CUR_VEL game.tempent.velocity
+//		vectorset CUR_VEL z -800
+//		cleffect tempent set_current_prop velocity CUR_VEL
+		dbg update_breath_sprite adjust_down
+	}
+	else
+	{
+		if game.tempent.fuser2 == 1
+		cleffect tempent set_current_prop gravity -2
+	}
+
+	local CUR_SCALE game.tempent.fuser1
+	if CUR_SCALE < 20
+	add CUR_SCALE 0.1
+	cleffect tempent set_current_prop scale CUR_SCALE
+	cleffect tempent set_current_prop fuser1 CUR_SCALE
+}
+
+{ setup_breath_sprite
+	cleffect tempent set_current_prop death_delay 6.0
+	local L_BREATH_YAW BREATH_YAW
+	add L_BREATH_YAW $randf(-30.00,30.00)
+	local RND_F $randf(100.00,300.00)
+
+	cleffect tempent set_current_prop velocity 	$relpos($vec(0,L_BREATH_YAW,0),$vec(0,RND_F,0))
+	cleffect tempent set_current_prop bouncefactor 2
+	cleffect tempent set_current_prop scale 1
+	cleffect tempent set_current_prop gravity $randf(-3.0,-2.0)
+	cleffect tempent set_current_prop collide world
+	cleffect tempent set_current_prop framerate 30
+	cleffect tempent set_current_prop frames 1
+	cleffect tempent set_current_prop fuser1 1
+	cleffect tempent set_current_prop rendermode add
+	cleffect tempent set_current_prop renderamt 255
+	cleffect tempent set_current_prop rendercolor BREATH_COLOR
+}

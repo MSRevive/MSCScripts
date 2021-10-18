@@ -1,0 +1,101 @@
+//Thothie - tired of dealing with the weirdness from these old guard scripts
+//making some new guard scripts from scratch - will include/adjust ext scripts as needed
+
+{
+	const SOUND_STRUCK body/flesh1.wav
+	const SOUND_WARCRY voices/human/male_guard_shout.wav //swordsman will use 2
+	const SOUND_ATTACK weapons/bow/bowslow.wav
+	const SOUND_DEATH voices/human/male_die.wav
+	precache SOUND_DEATH //handled in base_monster
+
+	setvar ANIM_IDLE idle1
+   	setvar ANIM_RUN run
+   	setvar ANIM_WALK walk
+   	setvard ANIM_DEATH die_fallback
+   	setvard ANIM_ATTACK shootorcbow
+
+   	const ATTACK_SPEED 500
+	setvard MOVE_RANGE ATTACK_SPEED
+   	setvard ATTACK_RANGE ATTACK_SPEED
+   	setvard ATTACK_HITRANGE ATTACK_SPEED
+	const ATTACK_DAMAGE '$rand(8,12)'
+	const ATTACK_COF 0
+
+	setvard CAN_HUNT 1
+	setvard CAN_ATTACK 1
+	setvard HUNT_AGRO 1
+	setvard CAN_RETALIATE 1
+
+	setvard NPC_GIVE_EXP 0
+}
+
+#include monsters/base_monster_new
+//nclude monsters/base_aim_proj
+#include monsters/base_guard_friendly_new
+
+{ npc_spawn	//in helena 	name_unique	Archer
+
+
+	name	a|Human Archer
+	hp	120
+	//ov	359
+	hearingsensitivity	12
+	width	32
+	height	85
+	race	hguard
+	roam	0
+	setmodel npc/archer.mdl
+	takedmg all .9
+	setmodelbody	2 2
+	//this fixed shakey idle! :)
+	//playanim loop ANIM_IDLE
+	//setidleanim	ANIM_IDLE
+	//setmovedest ANIM_IDLE
+	//setmoveanim	ANIM_IDLE
+	//setactionanim	none
+	setstat parry 2 2 2
+	movespeed 0.0
+
+	if game.serverside
+	if $lcase(game.map.name) equals foutpost
+	takedmg all 0.25
+	race human
+	setvard NPC_NO_PLAYER_DMG 1 //foutpost guards maybe forced to work amongst AOE player spells
+}
+
+{ shoot_arrow //called from anim shootorcbow @ frame 100
+
+	//callevent baseaim_adjust_angles
+	playsound 0 10 SOUND_ATTACK
+	////local FINAL_ATTACK_DAMAGE ATTACK_DAMAGE
+	//if ( EXT_DAMAGE_ADJUSTMENT isnot 'EXT_DAMAGE_ADJUSTMENT' ) add FINAL_ATTACK_DAMAGE EXT_DAMAGE_ADJUSTMENT //for future use
+   	//tossprojectile view ATTACK_SPEED FINAL_ATTACK_DAMAGE ATTACK_COF proj_arrow_npc (0,0,48)
+
+	//works:
+	local TARG_ORG $get(NPCATK_TARGET,origin)
+	if ( !$get(TARG_ORG,isplayer) ) vectoradd TARG_ORG z $get(NPCATK_TARGET,height)
+	local TARG_DIST $dist(TARG_ORG,game.monster.origin)
+	divide TARG_DIST 25
+	setangle add_view.pitch TARG_DIST
+	tossprojectile view ATTACK_SPEED ATTACK_DAMAGE ATTACK_COF proj_arrow_npc (0,0,48)
+ 	callexternal $get(ent_lastprojectile,id) ext_lighten 0.4
+
+//	local TARG_ORG $get(NPCATK_TARGET,origin)
+//	if ( !$get(TARG_ORG,isplayer) ) vectoradd TARG_ORG z $get(NPCATK_TARGET,height)
+//	local TARG_DIST $dist(TARG_ORG,game.monster.origin)
+//	divide TARG_DIST 25
+//	add TARG_DIST 30
+//	setangle add_view.pitch TARG_DIST
+//	tossprojectile view 300 ATTACK_DAMAGE ATTACK_COF proj_arrow_npc (0,0,48)
+// 	callexternal $get(ent_lastprojectile,id) ext_lighten 0.4
+}
+
+{ npc_struck
+
+	playsound 0 5 SOUND_STRUCK
+}
+
+{ baseguard_tobattle
+
+	playsound 0 10 SOUND_WARCRY
+}

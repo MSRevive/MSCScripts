@@ -1,0 +1,143 @@
+//NO LONGER IN USE
+//- Experimental changes integrated into armor_base
+{
+	//base_item
+	const MODEL_HANDS misc/p_misc.mdl
+	const MODEL_WORLD misc/p_misc.mdl
+	const MODEL_BODY_OFS 16
+	const MODEL_VIEW none
+
+	//local
+	const NEW_ARMOR_MODEL armor/p_armorvest_new.mdl
+}
+
+#include items/base_item
+#include items/base_effect_armor
+
+{  game_spawn
+
+	setworldmodel MODEL_WORLD
+	sethudsprite hand armor
+	sethudsprite trade leather
+
+	sethand any
+
+	setvard ARMOR_TYPE BARMOR_TYPE
+	setvard ARMOR_PROTECTION 0
+	setvard ARMOR_PROTECTION_AREA BARMOR_PROTECTION_AREA
+	setvard ARMOR_REPLACE_BODYPARTS BARMOR_PROTECTION_AREA
+
+	registerarmor
+
+
+	setmodelbody 0 NEW_ARMOR_OFS
+	callevent hide_body_parts
+
+	if game.serverside
+	setvard L_PERC_TO_FLOAT BARMOR_PROTECTION
+	multiply L_PERC_TO_FLOAT 0.01
+	setvard DMG_REDUCT 1
+	subtract DMG_REDUCT L_PERC_TO_FLOAT
+}
+
+{ hide_body_parts
+	//if ( BARMOR_TYPE equals leather ) setmodelbody ent_owner 1 1
+	//if ( BARMOR_TYPE equals platemail ) setmodelbody ent_owner 1 2
+	callexternal ent_owner ext_setbodytype BARMOR_TYPE
+}
+
+{ show_body_parts
+	//setmodelbody ent_owner 1 0
+	callexternal ent_owner ext_setbodytype normal
+}
+
+{ game_deploy
+
+	setviewmodel  MODEL_VIEW
+	setmodel MODEL_HANDS
+
+	local L_SUBMODEL 16
+	add L_SUBMODEL game.item.hand_index
+	setmodelbody 0 L_SUBMODEL
+}
+
+{ game_wear
+
+	setmodel NEW_ARMOR_MODEL
+	setmodelbody 0 NEW_ARMOR_OFS
+
+	playermessagecl ARMOR_TEXT ( BARMOR_PROTECTION )
+
+	if game.serverside
+	//callexternal ent_owner ext_setbodytype BARMOR_TYPE
+	callevent hide_body_parts
+
+	if $get(ent_owner,stat.strength) < ARMOR_STR_REQ
+	callevent 0.1 failed_str_req_loop
+}
+
+{ barmor_effect_remove
+	if $get(ent_owner,scriptvar,'PLR_BODY_TYPE') isnot normal
+	//callexternal ent_owner ext_setbodytype normal
+	callevent show_body_parts
+}
+
+//place holder for dbg spam removal
+{ barmor_effect_activate
+	callexternal ent_owner ext_setbodytype BARMOR_TYPE
+}
+
+{ failed_str_req_loop
+	if $get(ent_me,is_worn)
+	if $get(ent_owner,stat.strength) < ARMOR_STR_REQ
+	callevent 10.0 failed_str_req_loop
+	local ALRT_STR "You are too weak to move freely in this armor. (Min Strength "
+	stradd ALRT_STR ARMOR_STR_REQ
+	stradd ALRT_STR ")"
+	infomsg ent_owner "Insufficient Strength for Armor" ALRT_STR
+	applyeffectstack ent_owner effects/effect_slow 10.0 50% $get(ent_me,id) //effects/speed 10.0 75% 0.5
+}
+
+{ ext_activate_items
+	if PARAM1 equals $get(ent_owner,id)
+	if $get(ent_owner,stat.strength) < ARMOR_STR_REQ
+	callevent 0.1 failed_str_req_loop
+}
+
+{ game_takedamage //PARAM1=attacker PARAM2=inflictor? PARAM3=dmg PARAM4=dmg_type 
+
+	if $get(ent_me,is_worn) 
+	
+	//this has to be handled here, for some damned reason
+	if ( $get(ent_owner,scriptvar,'PLR_SPIDER_PROT') )
+	{
+		if $get(PARAM1,race) equals spider
+		local DMG_RED_AMT $get(ent_owner,scriptvar,'PLR_SPIDER_AMT')
+		local OUT_DMG PARAM3
+		multiply OUT_DMG PLR_SPIDER_AMT
+		setdmg hit 1
+		setdmg dmg OUT_DMG
+		returndata PLR_SPIDER_AMT
+	}
+
+	if ( PARAM4 contains poison )
+	{
+		//armor no longer protects against poison
+		//but we are reducing all poison damage 50% to compensate
+		local OUT_DMG PARAM3
+		multiply PARAM3 0.5
+		setdmg hit 1
+		setdmg dmg PARAM3
+		returndata 0.5
+	}
+	else
+	{
+		//basic protection
+		if !$get(PARAM1,scriptvar,'NPC_IGNORES_ARMOR')
+		multiply PARAM3 DMG_REDUCT
+		setdmg hit 1
+		setdmg dmg PARAM3
+		returndata DMG_REDUCT
+	}
+}
+

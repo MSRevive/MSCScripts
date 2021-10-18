@@ -1,0 +1,108 @@
+#scope server
+{
+	const DMG_SWORD $rand(200,300)
+	const DOT_THROW_SHOCK 120.0
+	const DOT_SHOCK 60.0
+	const DMG_KICK $rand(40,100)
+
+	const CHAT_USE_CONV_ANIMS 0
+	const CHAT_NO_CLOSE_MOUTH 1
+	const CHAT_NEVER_INTERRUPT 1
+
+	const NPC_EXTRA_VALIDATIONS 1
+}
+
+#include monsters/sorc_warrior
+#include bloodshrine/base_sorc_friendly
+#include monsters/base_chat_array
+
+{ orc_spawn
+
+	name Shadahar Lieutenant
+	name_unique fsorc_second
+	setmodel monsters/sorc.mdl
+	hp 8000
+	takedmg all 0.5
+	setstat parry 110
+	race human
+	roam 0
+	
+	width 32
+	height 96
+
+	setmodelbody 0 2 //body: 0=bare 1=bloody_shirt 2=gold_armor 3=archer
+	setmodelbody 1 2 //head: 0=hat_horns 1=hat_spiked 2=lizardskin_horned 3=gold_Chieftain 4=lizard_cap
+	setmodelbody 2 7 //weapon: 0=unarmed 1=axe 2=bow 3=steel_bow 4=sword 5=great_axe 6=sword_sheild 8=yellow_axe 9=blooddrinker
+}
+
+{ npcatk_hunt
+	if ( !DID_INTRO )
+	{
+		if $cansee(player)
+		setvard CHAT_CURRENT_SPEAKER $get(ent_lastseen,id)
+		if ( !$get(ent_lastseen,isalive) )
+		{
+			setvard CHAT_CURRENT_SPEAKER $get_tsphere(player,512)
+			setvard CHAT_CURRENT_SPEAKER $sort_entlist(CHAT_CURRENT_SPEAKER,range)
+			setvard CHAT_CURRENT_SPEAKER $get_token(CHAT_CURRENT_SPEAKER,0)
+		}
+		setvard FOLLOW_PLR_ID CHAT_CURRENT_SPEAKER
+		setvard FOLLOW_PLR_DIST 200
+		setvard DID_INTRO 1
+		callevent do_intro
+	}
+}
+
+{ do_intro
+	callevent chat_now "Humans!? Attack!!!" 3.0 ANIM_ATTACK add_to_que
+	callevent 1.0 leader_interrupt
+}
+
+{ leader_interrupt
+	setvard LEADER_ID $get_by_name(fsorc_leader)
+	setmovedest LEADER_ID 9999
+	callexternal LEADER_ID ext_do_leader_intro
+}
+
+{ ext_zombie_react
+	name Vurinahr, the Lieutenant
+	local FIND_ZOMBIE $get_tsphere(enemy,1024)
+	setvard ZOMBIE_ID $get_token(FIND_ZOMBIE,0)
+	callevent npcatk_settarget ZOMBIE_ID
+	setvard NPCATK_TARGET ZOMBIE_ID
+	setmovedest ZOMBIE_ID 64
+	callevent 1.5 alert_others
+	callevent bfsorc_follow_normal
+	callevent chat_now "Make that three! Ashinkahr has changed!" 3.0 ANIM_ATTACK add_to_que
+}
+
+{ alert_others
+	callexternal all fsorc_zombie_alert ZOMBIE_ID
+}
+
+{ my_target_died
+	if !DID_ASHINKAHR
+	setvard DID_ASHINKAHR 1
+	callevent npcatk_suspend_ai 3.0
+	callevent chat_now "That should put him to rest once and for all." 3.0 add_to_que
+	callexternal LEADER_ID ext_leader_ash
+}
+
+{ npc_targetvalidate
+	if ( NPCATK_TARGET equals SBOSS_ID ) setvard NPCATK_TARGET unset
+}
+
+{ give_reward_options
+	if !GAVE_REWARD
+	local reg.mitem.title 	"Gather Reward"
+	local reg.mitem.type 	callback
+	local reg.mitem.callback give_reward
+	menuitem.register
+}
+
+{ give_reward
+	setvard GAVE_REWARD 1
+	offer PARAM1 axes_thunder11
+	callevent chat_now "It's a meager reward, for bravery, but I'm sure you'll find one who make use of it." 3.0 nod_yes
+	callevent 6.0 ready_to_go
+}

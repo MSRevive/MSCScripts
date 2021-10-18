@@ -1,0 +1,911 @@
+//note that this script must come before AI includes
+#scope server
+{
+	setvard BALL_ID $get_by_name(soccer_ball)
+	if ( $get(BALL_ID,scriptvar,'GAME_PAUSED') ) setvard SUSPEND_AI 1
+	const NPC_EXTRA_VALIDATIONS 1
+	setvard GOAL_RAD 124
+
+	setvard CHASE_RANGE 8000
+	setvard NPC_CHASE_RANGE 8000
+
+	//const NPC_NO_VADJ 1
+}
+
+{ game_spawn
+	callevent 2.0 soccer_finalize
+	callevent 0.5 soc_spawn_stuck_check
+	setvard SPEED_INCREASED 0
+	setvard SPEED_DECREASED 0
+}
+
+{ soccer_finalize
+	setvard BALL_ID $get_by_name(soccer_ball)
+	setvard BALL_HOME $get(BALL_ID,scriptvar,'NPC_HOME_LOC')
+	setvard BLUE_GOAL_LOC $get_by_name(blue_goal_ref)
+	setvard BLUE_GOAL_LOC $get(BLUE_GOAL_LOC,origin)
+	setvard RED_GOAL_LOC $get_by_name(red_goal_ref)
+	setvard RED_GOAL_LOC $get(RED_GOAL_LOC,origin)
+	setvard DEF_MOVE_RANGE ATTACK_MOVERANGE
+	setvard BALL_OOMF 0
+
+	if ( AM_TEAM ==  1 )
+	{
+		setvard NME_GOAL_LOC BLUE_GOAL_LOC
+	}
+	else
+	{
+		setvard NME_GOAL_LOC RED_GOAL_LOC
+	}
+
+	setvard DRIBBLE_COUNT 0
+
+	setvard NPC_RANGED 0
+
+	//if ( AM_GOALIE ) setvard NPC_NO_MOVE 1 //manual moves
+	//if ( AM_DEFENSE ) setvard NPC_NO_MOVE 1 //verified moves
+	//all scripts either use verified or custom moves
+	setvard NPC_NO_MOVE 1
+
+	if ( AM_TEAM == 1 )
+	{
+		local MY_NAME "Red "
+	}
+	else
+	{
+		local MY_NAME "Blue "
+	}
+
+	local NAME_SUFFIX "Wingman"
+	if ( AM_DEFENSE ) local NAME_SUFFIX "Defender"
+	if ( AM_LEADER ) local NAME_SUFFIX "Leader"
+	if ( AM_GOALIE ) local NAME_SUFFIX "Goalkeeper"
+	
+	stradd MY_NAME NAME_SUFFIX
+
+	name MY_NAME
+
+	menu.autoopen 1
+}
+
+{ game_menu_getoptions
+
+	local reg.mitem.title "Remove "
+	stradd reg.mitem.title $get(ent_me,name)
+	local reg.mitem.type callback
+	local reg.mitem.callback menu_remove
+	menuitem.register
+
+	local RESTORE_NORM_OPTION 0
+	if ( SPEED_INCREASED ) local RESTORE_NORM_OPTION 1
+	if ( SPEED_DECREASED ) local RESTORE_NORM_OPTION 1
+
+	if ( RESTORE_NORM_OPTION )
+	{
+		local reg.mitem.title "Restore Normal Speed"
+		local reg.mitem.type callback
+		local reg.mitem.callback menu_normal
+		menuitem.register
+
+		local reg.mitem.title "Set all "
+		stradd reg.mitem.title TEAM_NAME
+		stradd reg.mitem.title " Team Normal Speed"
+		local reg.mitem.type callback
+		local reg.mitem.callback menu_normal_all
+		menuitem.register
+	}
+
+	if ( !SPEED_INCREASED )
+	{
+		local reg.mitem.title "Make Faster"
+		local reg.mitem.type callback
+		local reg.mitem.callback menu_faster
+		menuitem.register
+
+		local reg.mitem.title "Make All "
+		stradd reg.mitem.title TEAM_NAME
+		stradd reg.mitem.title " Team Faster"
+		local reg.mitem.type callback
+		local reg.mitem.callback menu_faster_all
+		menuitem.register
+	}
+
+	if ( !SPEED_DECREASED )
+	{
+		local reg.mitem.title "Make Slower"
+		local reg.mitem.type callback
+		local reg.mitem.callback menu_slower
+		menuitem.register
+
+		local reg.mitem.title "Make All "
+		stradd reg.mitem.title TEAM_NAME
+		stradd reg.mitem.title " Team Slower"
+		local reg.mitem.type callback
+		local reg.mitem.callback menu_slower_all
+		menuitem.register
+	}
+}
+
+//========== MAKE FASTER BEGIN
+{ menu_faster
+	local OUT_MSG $get(PARAM1,name)
+	stradd OUT_MSG " increased speed on a "
+	stradd OUT_MSG $get(ent_me,name)
+	infomsg all "ORC SPEED INCREASED" OUT_MSG
+	callevent make_faster
+}
+
+{ menu_faster_all
+	local OUT_MSG $get(PARAM1,name)
+	stradd OUT_MSG " increased speed on all "
+	stradd OUT_MSG TEAM_NAME
+	stradd OUT_MSG " Team orcs"
+	infomsg all "TEAM SPEED INCREASED" OUT_MSG
+	callevent make_faster
+	callexternal all extsorc_make_team_faster AM_TEAM
+}
+
+{ extsorc_make_team_faster
+	if AM_TEAM == PARAM1
+	callevent make_faster
+}
+
+{ make_faster
+	playanim critical ANIM_IDLE
+	setvard SPEED_INCREASED 1
+	setvard SPEED_DECREASED 0
+	//movespeed 1.5
+	setanim.movespeed 1.5
+	setanim.framerate 1.5
+	setvard BASE_MOVESPEED 1.5
+	setvard BASE_FRAMERATE 1.5
+}
+
+//========== MAKE SLOWER BEGIN
+{ menu_slower
+	local OUT_MSG $get(PARAM1,name)
+	stradd OUT_MSG " reduced speed on a "
+	stradd OUT_MSG $get(ent_me,name)
+	infomsg all "ORC SPEED DECREASED" OUT_MSG
+	callevent make_slower
+}
+
+{ menu_slower_all
+	local OUT_MSG $get(PARAM1,name)
+	stradd OUT_MSG " reduced speed on all "
+	stradd OUT_MSG TEAM_NAME
+	stradd OUT_MSG " Team orcs"
+	infomsg all "TEAM SPEED DECREASED" OUT_MSG
+	callevent make_slower
+	callexternal all extsorc_make_team_slower AM_TEAM
+}
+
+{ extsorc_make_team_slower
+	if AM_TEAM == PARAM1
+	callevent make_slower
+}
+
+{ make_slower
+	playanim critical ANIM_IDLE
+	setvard SPEED_INCREASED 0
+	setvard SPEED_DECREASED 1
+	//movespeed 0.5
+	setanim.movespeed 0.5
+	setanim.framerate 0.5
+	setvard BASE_MOVESPEED 0.5
+	setvard BASE_FRAMERATE 0.5
+}
+
+{ menu_remove
+	setorigin ent_me $vec(20000,-20000,-10000)
+	local OUT_MSG $get(PARAM1,name)
+	stradd OUT_MSG " removed a "
+	stradd OUT_MSG $get(ent_me,name)
+	stradd OUT_MSG " from the field."
+	infomsg all "ORC REMOVED FROM FIELD" OUT_MSG
+	callevent 0.1 npc_suicide
+}
+
+//========== MAKE NORMAL BEGIN
+{ menu_normal
+	local OUT_MSG $get(PARAM1,name)
+	stradd OUT_MSG " restored normal speed on a "
+	stradd OUT_MSG $get(ent_me,name)
+	infomsg all "ORC SPEED DECREASED" OUT_MSG
+	callevent make_normal
+}
+
+{ menu_normal_all
+	local OUT_MSG $get(PARAM1,name)
+	stradd OUT_MSG " restored normal speed on all "
+	stradd OUT_MSG TEAM_NAME
+	stradd OUT_MSG " Team orcs"
+	infomsg all "TEAM SPEED DECREASED" OUT_MSG
+	callevent make_normal
+	callexternal all extsorc_make_team_normal AM_TEAM
+}
+
+{ extsorc_make_team_normal
+	if AM_TEAM == PARAM1
+	callevent make_normal
+}
+
+{ make_normal
+	playanim critical ANIM_IDLE
+	setvard SPEED_INCREASED 0
+	setvard SPEED_DECREASED 0
+	//movespeed 1.0
+	setanim.movespeed 1.0
+	setanim.framerate 1.0
+	setvard BASE_MOVESPEED 1.0
+	setvard BASE_FRAMERATE 1.0
+}
+
+{ soc_spawn_stuck_check
+	setorigin ent_me NPC_HOME_LOC
+	local reg.npcmove.endpos NPC_HOME_LOC
+	vectoradd reg.npcmove.endpos $relpos($vec(0,game.monster.angles.yaw,0),$vec(0,0,16))
+	local reg.npcmove.testonly	1
+	npcmove ent_me NPCATK_TARGET //be nice if I actually knew what this second param was supposed to be
+	if ( game.ret.npcmove.dist <= 0 )
+	{
+		//failed, try again in a sec
+		dbg soc_spawn_stuck_check blocked
+		setorigin ent_me $vec(5000,-5000,-5000)
+		callevent 1.0 soc_spawn_stuck_check
+		if ( game.time > NEXT_BALL_BLOCK_WARN )
+		{
+			infomsg all "ORC BLOCKED" "An orc is blocked..."
+			setvard NEXT_BALL_BLOCK_WARN game.time
+			add NEXT_BALL_BLOCK_WARN 10.0
+		}
+	}
+}
+
+{ setsoc_blue
+	setvard AM_TEAM 2
+	setprop ent_me skin 1
+	setvard TEAM_NAME Blue
+}
+
+{ setsoc_red
+	setvard AM_TEAM 1
+	setprop ent_me skin 0
+	setvard TEAM_NAME Red
+}
+
+{ setsoc_goalrad
+	setvard GOAL_RAD PARAM1
+}
+
+{ ext_soc_blue_remove
+	if AM_TEAM == 2
+	callevent npc_suicide
+}
+
+{ ext_soc_red_remove
+	if AM_TEAM == 1
+	callevent npc_suicide
+}
+
+{ setsoc_def
+	//dbg is halfback (don't cross mid point)
+	setvard AM_DEFENSE 1
+}
+
+{ npcatk_hunt
+
+	if ( game.time > NEXT_REGEN )
+	{
+		setvard NEXT_REGEN game.time
+		add NEXT_REGEN 1.0
+		if $get(ent_me,hp) < $get(ent_me,maxhp)
+		local GIVE_AMT $get(ent_me,maxhp)
+		multiply GIVE_AMT 0.05
+		givehp ent_me GIVE_AMT
+	
+	}
+
+	if !IS_FLEEING
+	if !SUSPEND_AI
+
+	if ( $get(BALL_ID,scriptvar,'GAME_PAUSED') )
+	{
+		setvard SUSPEND_AI 1
+	}
+	else
+	{
+		local LAST_SUSPEND_PLUS5 NPC_LAST_SUSPEND_AI
+		add LAST_SUSPEND_PLUS5 5.0
+		if ( game.time > LAST_SUSPEND_PLUS5 ) callevent npcatk_resume_ai //got suspended for more than 5 secs for some reason
+	}
+
+	if !$get(BALL_ID,scriptvar,'GAME_PAUSED')
+
+	if ( NPCATK_TARGET equals unset )
+	{
+		if ( !AM_DEFENSE ) callevent npcatk_settarget BALL_ID
+	}
+
+	if ( $get(ent_me,onground) )
+	{
+		setvard LAST_ON_GROUND game.time
+	}
+	else
+	{
+		local LAST_ON_GROUND_PLUS LAST_ON_GROUND
+		add LAST_ON_GROUND_PLUS 5.0
+		if ( game.time > LAST_ON_GROUND_PLUS )
+		{
+			setvard LAST_ON_GROUND game.time
+			//I've been off the ground for an awfully long time
+			//run randomly a bit - maybe I've stuck the ball
+			dbg in_air_too_long chicken_run
+			callevent chicken_run $randf(3.0,5.0)
+		}
+	}
+
+	local BALL_ORG $get(BALL_ID,origin)
+
+	if ( AM_DEFENSE )
+	{
+		//half backs don't wander beyond the map center
+		//which side they stay on is based on team
+		//always assume blue team is west of ball (+)
+		//...and red is east of ball (-)
+		local BALL_HOME_X $vec.x(BALL_HOME)
+		local DEST_X $vec.x(game.monster.movedest.origin)
+		//dbg DEST_X vs BALL_HOME_X
+		if ( AM_TEAM == 1 )
+		{
+			//red team
+			if ( DEST_X > BALL_HOME_X )
+			{
+				//dbg am_defense ball_out_of_range DEST_X vs BALL_HOME_X
+				setvard ATTACK_MOVERANGE 9999 //don't go any further
+				setvard MOVE_RANGE 9999
+			}
+			else
+			{
+				setvard ATTACK_MOVERANGE DEF_MOVE_RANGE
+				setvard MOVE_RANGE DEF_MOVE_RANGE
+			}
+		}
+		else
+		{
+			//blue team
+			if ( DEST_X < BALL_HOME_X )
+			{
+				//dbg am_defense ball_out_of_range DEST_X vs BALL_HOME_X
+				setvard ATTACK_MOVERANGE 9999 //don't go any further
+				setvard MOVE_RANGE 9999
+			}
+			else
+			{
+				setvard ATTACK_MOVERANGE DEF_MOVE_RANGE
+				setvard MOVE_RANGE DEF_MOVE_RANGE
+			}
+		}
+	}
+
+	if ( AM_GOALIE )
+	{
+		//dont wander outside goalie box, but try to stay paralell with ball
+		if ( $dist(NPC_HOME_LOC,BALL_ORG) > GOAL_RAD )
+		{
+			//draw line from goal center to ball, 112 units long
+			local BALL_DIR $dir(NPC_HOME_LOC,BALL_ORG)
+			vectormultiply BALL_DIR GOAL_RAD
+			local MOVE_DEST NPC_HOME_LOC
+			vectoradd MOVE_DEST BALL_DIR
+			vectorset MOVE_DEST z $get_ground_height(MOVE_DEST)
+			setmovedest MOVE_DEST ATTACK_MOVERANGE
+//			if ( G_DEVELOPER_MODE )
+//			{
+//				local DEBUG_BEAM_START MOVE_DEST
+//				local DEBUG_BEAM_END MOVE_DEST
+//				vectoradd DEBUG_BEAM_END z 64
+//				effect beam point lgtning.spr 20 DEBUG_BEAM_START DEBUG_BEAM_END (255,0,255) 200 0 1.0
+//			}
+		}
+		else
+		{
+			setmovedest BALL_ORG ATTACK_MOVERANGE
+		}
+
+		local MY_ORG $get(ent_me,origin)
+		local DEST_ORG game.monster.movedest.origin
+
+		if ( $dist(MY_ORG,DEST_ORG) < ATTACK_MOVERANGE )
+		{
+			//setmovedest BALL_ID 9999 //close as we're gonna get - just stare longingly at ball
+			local ANG_TO_BALL $angles3d(MY_ORG,BALL_ORG)
+			setangle face $vec(0,$vec.yaw(ANG_TO_BALL),0)
+		}
+	}
+}
+
+{ soc_kickball
+	//find my goal
+	//dbg soc_kickball
+	if ( AM_TEAM ==  1 )
+	{
+		local TARG_ORG BLUE_GOAL_LOC
+		local MY_GOAL_LOC RED_GOAL_LOC
+	}
+	else
+	{
+		local TARG_ORG RED_GOAL_LOC
+		local MY_GOAL_LOC BLUE_GOAL_LOC
+	}
+	
+	local BALL_ORG $get(BALL_ID,origin)
+	local MY_ORG $get(ent_me,origin)
+
+	//figure if I am closer to my goal than the ball is, if so, try to jump over it
+	if ( !AM_GOALIE )
+	{
+		local BALL_FROM_GOAL $dist(BALL_ORG,TARG_ORG)
+		local MY_FROM_GOAL $dist(MY_ORG,TARG_ORG)
+		if ( MY_FROM_GOAL < BALL_FROM_GOAL )
+		{
+			if ( $get(BALL_ID,onground) )
+			{
+				if game.time > NEXT_JUMP
+				setvard NEXT_JUMP game.time
+				add NEXT_JUMP $randf(1.0,3.0)
+				callevent soc_jump_over_ball
+				local EXIT_SUB 1
+			}
+		}
+	}
+	else
+	{
+		//if I am a goalie, and the ball is closer to my own team's goal
+		//break anim, and hopefully I'll try to pick it up on the next attack
+		local MY_FROM_MY_GOAL $dist(MY_ORG,MY_GOAL_LOC)
+		local BALL_FROM_MY_GOAL $dist(BALL_ORG,MY_GOAL_LOC)
+		//dbg soc_kickball am_goalie BALL_FROM_MY_GOAL vs MY_FROM_MY_GOAL
+		if BALL_FROM_MY_GOAL <  MY_FROM_MY_GOAL
+		dbg soc_kickball am_goalie break
+		playanim break
+		playanim once ANIM_SCOOP_BALL
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	//all is well, figure angle between ball and goal
+	local TARG_ANG $angles(BALL_ORG,TARG_ORG)
+
+	//figure if ent between me and goal, if so, dribble
+	//(goalie's dont dribble)
+	if ( !AM_GOALIE )
+	{
+		local TRACE_START BALL_ORG
+		vectoradd TRACE_START z 32
+		local TRACE_END TARG_ORG
+		vectoradd TRACE_END z 32
+		//vectoradd TRACE_START $relpos(TARG_ANG,$vec(0,40,0)) //add a bit so our trace doesn't hit the ball
+		local TRACE_DIR $dir(TRACE_START,TRACE_END)
+		vectormultiply TRACE_DIR 64
+		vectoradd TRACE_START TRACE_DIR
+		local TRACE_LINE $get_traceline(TRACE_START,TRACE_END,ent)
+		local DRIBBLE_CHANCE 10
+		if ( $get(TRACE_LINE,isalive) )
+		{
+			local DRIBBLE_CHANCE 75
+			dbg dribble_check $get(TRACE_LINE,name)
+			//if ( G_DEVELOPER_MODE ) effect beam point lgtning.spr 20 TRACE_START TRACE_END (255,0,0) 200 0 1.0
+		}
+		else
+		{
+			//if ( G_DEVELOPER_MODE ) effect beam point lgtning.spr 20 TRACE_START TRACE_END (0,255,0) 200 0 1.0
+		}
+		//dbg dribble_check DRIBBLE_CHANCE
+		if ( $rand(1,100) < DRIBBLE_CHANCE )
+		{
+			local DO_DRIBBLE 1
+		}
+	}
+
+	local RND_F $randf(200,400)
+	local RND_V $randf(110,200)
+	local RND_LR 0
+	if ( AM_LEADER )
+	{
+		multiply RND_F 1.5
+		multiply RND_V 1.5
+	}
+	
+	if ( DO_DRIBBLE )
+	{
+		add DRIBBLE_COUNT 1
+		if ( DRIBBLE_COUNT == 1 ) local RND_LR $randf(-300.0,-100.0)
+		if ( DRIBBLE_COUNT == 2 )
+		{
+			local RND_LR $randf(100,300)
+			setvard DRIBBLE_COUNT 0
+		}
+		dbg doing_dribble RND_LR
+	}
+
+	//dbg sorc_kickball range $get(BALL_ID,range) vs ATTACK_HITRANGE
+
+	//be nice to have a function
+	//if ball is on mah head
+	//head butt
+	//meanwhile - extend range if ball maybe on mah head
+	local L_HITRANGE ATTACK_RANGE
+	if ( NPC_VADJSTING ) local L_HITRANGE 9999
+	if $get(BALL_ID,range) < L_HITRANGE //ball might have moved before kick landed
+	//dbg sorc_kickball $vec.yaw(TARG_ANG) lr RND_LR v RND_V f RND_F
+
+
+	if ( $dist(OLD_BALL_ORG,BALL_ORG) < 50 )
+	{
+		//balls been stuck here awhile, kick harder
+		if !AM_GOALIE //goalies tend to get the ball in the same spot a lot
+		if ( BALL_OOMF < 1 ) setvard BALL_OOMF 1.0
+		add BALL_OOMF 0.2
+		dbg oomf_ball BALL_OOMF
+		multiply RND_V BALL_OOMF
+
+		if ( BALL_OOMF > 5 )
+		{
+			//wtf - MOVE - gonna run off in frustration for a bit
+			dbg ZOMGWTF oomf_ball
+			setvard BALL_OOMF 0
+			callevent npcatk_flee BALL_ID 640 $randf(3.5,6.0)
+		}
+	}
+	else
+	{
+		setvard BALL_OOMF 0
+	}
+	setvard OLD_BALL_ORG BALL_ORG
+
+	callexternal BALL_ID ext_kicked
+	addvelocity BALL_ID $relvel($vec(0,$vec.yaw(TARG_ANG),0),$vec(RND_LR,RND_F,RND_V))
+}
+
+{ npc_selectattack
+	local BALL_ORG $get(BALL_ID,origin)
+	local MY_ORG $get(ent_me,origin)
+
+	if ( AM_TEAM ==  1 )
+	{
+		local TARG_ORG BLUE_GOAL_LOC
+		local MY_GOAL_LOC RED_GOAL_LOC
+	}
+	else
+	{
+		local TARG_ORG RED_GOAL_LOC
+		local MY_GOAL_LOC BLUE_GOAL_LOC
+	}
+	
+	//if goalie, and ball is closer to goal than I am, try to pick it up
+	if ( AM_GOALIE )
+	{
+		local BALL_FROM_MY_GOAL $dist(BALL_ORG,MY_GOAL_LOC)
+		local MY_FROM_MY_GOAL $dist(MY_ORG,MY_GOAL_LOC)
+
+		//dbg BALL_FROM_MY_GOAL vs MY_FROM_MY_GOAL ( $get(BALL_ID,onground) [ rad $dist(NPC_HOME_LOC,MY_ORG) ])
+		
+		if ( BALL_FROM_MY_GOAL < MY_FROM_MY_GOAL  )
+		{
+			if ( $dist(NPC_HOME_LOC,MY_ORG) < GOAL_RAD  )
+			{
+				if ( $get(BALL_ID,onground) )
+				{
+					setvard ANIM_ATTACK ANIM_SCOOP_BALL
+				}
+				else
+				{
+					setvard ANIM_ATTACK ANIM_KICK
+				}
+			}
+			else
+			{
+				setvard ANIM_ATTACK ANIM_KICK
+			}
+		}
+		else
+		{
+			setvard ANIM_ATTACK ANIM_KICK
+		}
+	}
+	else
+	{
+		//if not a goalie, and I'm closer to nme goal than the ball
+		//try to jump over it
+		local BALL_FROM_GOAL $dist(BALL_ORG,TARG_ORG)
+		local MY_FROM_GOAL $dist(MY_ORG,TARG_ORG)
+		if ( MY_FROM_GOAL < BALL_FROM_GOAL )
+		{
+			if ( $get(BALL_ID,onground) )
+			{
+				callevent soc_jump_over_ball
+				local EXIT_SUB 1
+			}
+		}
+	}
+}
+
+{ extsoc_game_start
+	if ( SET_FINAL )
+	{
+		setidleanim ANIM_IDLE
+		setmoveanim ANIM_RUN
+		setvard SET_FINAL 0
+	}
+	callevent npcatk_resume_ai
+	if !AM_DEFENSE
+	if !AM_GOALIE
+	callevent npcatk_settarget BALL_ID
+}
+
+{ extsoc_reset
+	callevent soc_stop_movement
+	callevent npcatk_suspend_ai
+	callevent extsoc_reset_loop
+}
+
+{ extsoc_reset_loop
+	local CUR_POS $get(ent_me,origin)
+	setorigin ent_me NPC_HOME_LOC
+	setangle face $vec(0,$vec.yaw(NPC_HOME_ANG),0)
+	//test position
+	local reg.npcmove.endpos NPC_HOME_LOC
+	vectoradd reg.npcmove.endpos $relpos($vec(0,game.monster.angles.yaw,0),$vec(0,0,16))
+	local reg.npcmove.testonly	1
+	npcmove ent_me NPCATK_TARGET //be nice if I actually knew what this second param was supposed to be
+	if ( game.ret.npcmove.dist <= 0 )
+	{
+		//failed, try again in a sec
+		dbg extsoc_reset blocked
+		setorigin ent_me CUR_POS
+		callevent 0.1 extsoc_reset_loop
+	}
+}
+
+{ extsoc_pause_game
+	callevent soc_stop_movement
+	callevent npcatk_suspend_ai
+}
+
+{ extsoc_unpause_game
+	callevent extsoc_game_start
+}
+
+{ extsoc_score //<winner:red|blue>
+	callevent soc_stop_movement
+
+	if ( $get(BALL_ID,scriptvar,'POINTS_BLUE') == 5 ) local GAME_OVER 1
+	if ( $get(BALL_ID,scriptvar,'POINTS_RED') == 5 ) local GAME_OVER 1
+
+	if ( GAME_OVER )
+	{
+		setvard SET_FINAL 1
+	}
+	else
+	{
+		setvard SET_FINAL 0
+	}
+
+	if ( PARAM1 equals red )
+	{
+		if ( AM_TEAM == 1 )
+		{
+			callevent soc_round_win
+		}
+		else
+		{
+			callevent soc_round_lose
+		}
+	}
+	else
+	{
+		if ( AM_TEAM == 2 )
+		{
+			callevent soc_round_win
+		}
+		else
+		{
+			callevent soc_round_lose
+		}
+	}
+}
+
+{ soc_round_win
+	callevent soc_stop_movement
+	if ( $rand(1,2) == 1 )
+	{
+		//playrandomsound 0 10 SOUND_ROUND_WIN1 SOUND_ROUND_WIN2
+		playanim critical ANIM_ROUND_WIN1
+		if ( SET_FINAL )
+		{
+			setidleanim ANIM_ROUND_WIN1
+			setmoveanim ANIM_ROUND_WIN1
+		}
+	}
+	else
+	{
+		//playrandomsound 0 10 SOUND_ROUND_WIN1 SOUND_ROUND_WIN2
+		playanim critical ANIM_ROUND_WIN2
+		if ( SET_FINAL )
+		{
+			setidleanim ANIM_ROUND_WIN2
+			setmoveanim ANIM_ROUND_WIN2
+		}
+	}
+}
+
+{ soc_round_lose
+	callevent soc_stop_movement
+	if ( $rand(1,2) == 1 )
+	{
+		//playrandomsound 0 10 SOUND_ROUND_WIN1 SOUND_ROUND_LOSE
+		playanim critical ANIM_ROUND_LOST1
+		if ( SET_FINAL )
+		{
+			setidleanim ANIM_ROUND_LOST1
+			setmoveanim ANIM_ROUND_LOST1
+		}
+	}
+	else
+	{
+		//playrandomsound 0 10 SOUND_ROUND_WIN1 SOUND_ROUND_WIN2
+		playanim critical ANIM_ROUND_LOST2
+		if ( SET_FINAL )
+		{
+			setidleanim ANIM_ROUND_LOST2
+			setmoveanim ANIM_ROUND_LOST2
+		}
+	}
+}
+
+{ soc_jump_over_ball
+	playanim break
+	callevent npcatk_suspend_ai 1.0
+	setmovedest BALL_ID 9999
+	playanim critical ANIM_JUMP
+}
+
+{ soc_stop_movement
+	setmovedest none
+	roam 0
+}
+
+{ npcatk_setmovedest
+
+	if ( IS_FLEEING ) setmovedest PARAM1 PARAM2
+
+	if !IS_FLEEING
+	if !AM_GOALIE //goalie handles movement think side
+
+	//favor side of ball near your own goal
+	if ( $get(PARAM1,isalive) )
+	{
+		if PARAM1 equals BALL_ID
+		local L_IS_BALL 1
+		local PARAM1 $get(PARAM1,origin)
+	}
+
+	if ( L_IS_BALL )
+	{
+		if ( AM_TEAM == 1 )
+		{
+			vectoradd PARAM1 $relpos($vec(0,0,0),$vec(0,-40,0))
+		}
+		else
+		{
+			vectoradd PARAM1 $relpos($vec(0,0,0),$vec(0,40,0))
+		}
+
+//		if ( G_DEVELOPER_MODE )
+//		{
+//			local DEBUG_BEAM_START PARAM1
+//			local DEBUG_BEAM_END PARAM1
+//			vectoradd DEBUG_BEAM_END z 64
+//			if ( AM_TEAM == 1 ) local L_COLOR (255,0,0)
+//			if ( AM_TEAM == 2 ) local L_COLOR (0,0,255)
+//			effect beam point lgtning.spr 20 DEBUG_BEAM_START DEBUG_BEAM_END L_COLOR 200 0 0.2
+//		}
+	}
+
+
+	//defenders ignore ball on wrong side of field
+	if ( AM_DEFENSE )
+	{
+		local BALL_HOME_X $vec.x(BALL_HOME)
+		if ( $get(PARAM1,isalive) )
+		{
+			local DEST_X $get(PARAM1,origin.x)
+		}
+		else
+		{
+			local DEST_X $vec.x(PARAM1)
+		}
+
+		if ( AM_TEAM == 1 )
+		{
+			//red team is west side (x-of ball org)
+			if ( DEST_X > BALL_HOME_X )
+			{
+				//dbg am_defense MD_ball_out_of_range DEST_X vs BALL_HOME_X
+				if ( $get(BALL_ID,range2D) < 256 )
+				{
+					local PARAM2 9999
+				}
+				else
+				{
+					if ( $dist(game.monster.origin,NPC_HOME_LOC) > 32 )
+					{
+						local PARAM1 NPC_HOME_LOC
+						local PARAM2 16
+					}
+					else
+					{
+						local PARAM1 BALL_ID
+						local PARAM2 9999
+					}
+				}
+			}
+		}
+		else
+		{
+			//blue team is east side (x+of ball org)
+			if ( DEST_X < BALL_HOME_X )
+			{
+				//dbg am_defense MD_ball_out_of_range DEST_X vs BALL_HOME_X
+				if ( $get(BALL_ID,range2D) < 256 )
+				{
+					local PARAM2 9999
+				}
+				else
+				{
+					if ( $dist(game.monster.origin,NPC_HOME_LOC) > 32 )
+					{
+						local PARAM1 NPC_HOME_LOC
+						local PARAM2 16
+					}
+					else
+					{
+						local PARAM1 BALL_ID
+						local PARAM2 9999
+					}
+				}
+			}
+		}
+	}
+
+	setmovedest PARAM1 PARAM2
+}
+
+{ soc_ball_scoop
+	local MADE_GRAB 0
+	if ( $get(BALL_ID,range) < ATTACK_RANGE )
+	{
+		if $get(BALL_ID,onground) 
+		setorigin BALL_ID $relpos(0,0,-400)
+		setmodelbody 1 1
+		local MADE_GRAB 1
+		setmovedest NME_GOAL_LOC 9999
+		callevent npcatk_suspend_ai
+		callevent npcatk_suspend_movement ANIM_SCOOP_BALL
+	}
+	if !MADE_GRAB
+	playanim break
+}
+
+{ soc_ball_release
+	callevent npcatk_resume_movement
+	setmovedest NME_GOAL_LOC 9999
+	setmodelbody 1 0
+	local BALL_RETURN_ORG $get(ent_me,origin)
+	local MY_YAW $get(ent_me,angles.yaw)
+	vectoradd BALL_RETURN_ORG $relpos($vec(0,MY_YAW,0),$vec(0,NPC_HALF_WIDTH,NPC_HEIGHT))
+	setorigin BALL_ID BALL_RETURN_ORG
+	setvelocity BALL_ID $relvel($vec(0,MY_YAW,0),$vec(0,300,200))
+	callevent npcatk_resume_ai
+}

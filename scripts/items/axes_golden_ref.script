@@ -1,0 +1,162 @@
+{
+	const THIS_NO_BREAK 1
+
+	const BASE_LEVEL_REQ 15
+
+	const CUSTOM_AXE_SECONDARY 1
+
+	const FINAL_VALUE 5000
+
+	const BREAK_SOUND 	debris/bustmetal1.wav
+	const ANIM_LIFT1         0
+	const ANIM_IDLE1         1
+	const ANIM_ATTACK1       2
+	const ANIM_ATTACK2       3
+	const ANIM_ATTACK3       4
+	const ANIM_SHEATH       5
+	const MELEE_VIEWANIM_ATK ANIM_ATTACK1
+	const MODEL_VIEW viewmodels/v_2haxesgreat.mdl
+	const MODEL_VIEW_IDX 1
+	const MODEL_HANDS weapons/p_weapons2.mdl
+	const MODEL_WORLD weapons/p_weapons2.mdl
+	const SOUND_SWIPE       magic/energy4.wav
+
+	const MODEL_BODY_OFS 80
+	const ANIM_PREFIX  khopesh //woulda been nice if p_weapons2 had the greataxe idle :D
+
+	const BREAK_CHANCE 2 //to be 2
+
+	//Used in base_melee
+	//------------------
+	const MELEE_RANGE  100
+	const MELEE_DMG_DELAY  0.6
+	const MELEE_ATK_DURATION 1.5
+	const MELEE_ENERGY  3
+	const MELEE_DMG  300
+	const MELEE_DMG_RANGE      100
+	const MELEE_DMG_TYPE  holy
+	const MELEE_ACCURACY  24%
+	const MELEE_STAT  axehandling
+
+	const MELEE_SOUND      SOUND_SWIPE
+	const MELEE_SOUND_DELAY      MELEE_DMG_DELAY
+	const MELEE_PARRY_CHANCE      25%
+}
+
+#include items/axes_base_twohanded
+
+{  weapon_spawn
+
+	name an|Unbreakable Golden Axe
+	sethudsprite trade 110
+
+	desc A holy axe, forged by the dwarves of Urdual
+	weight 90
+	size 25
+	value FINAL_VALUE
+	sethand both
+}
+
+{ register_charge1
+
+	local reg.attack.type  strike-land
+	local reg.attack.keys  -attack1
+	local reg.attack.range  90
+	local reg.attack.dmg  MELEE_DMG
+	multiply reg.attack.dmg  8
+	local reg.attack.dmg.range MELEE_DMG_RANGE
+	local reg.attack.dmg.type MELEE_DMG_TYPE
+	local reg.attack.aoe.range 100
+	local reg.attack.aoe.falloff 1.5
+	local reg.attack.energydrain MELEE_ENERGY
+	multiply reg.attack.energydrain 2
+	local reg.attack.stat MELEE_STAT
+	local reg.attack.hitchance MELEE_ACCURACY
+	add reg.attack.hitchance  10%
+	local reg.attack.priority 2
+	local reg.attack.delay.strike 1.7
+	local reg.attack.delay.end 2.2
+	local reg.attack.ofs.startpos MELEE_STARTPOS
+	local reg.attack.ofs.aimang MELEE_AIMANGLE
+	local reg.attack.callback special_02
+	local reg.attack.noise  1000
+	local reg.attack.chargeamt 200%
+	local reg.attack.reqskill 4
+
+	if ( BASE_LEVEL_REQ > reg.attack.reqskill ) add reg.attack.reqskill BASE_LEVEL_REQ
+ 
+	registerattack
+}
+
+{ special_02_start
+	setvard SPEC_ATTACK 1
+
+ playsound 0 10 magic/energy1.wav
+}
+
+{ special_02_strike
+
+	//dbg temp breakcheck spec2
+	callevent break_check
+}
+
+{ hitwall
+	////dbg temp breakcheck hitwall
+	if !BROKEN
+	callevent break_check
+}
+
+{ melee_start
+	setvard SPEC_ATTACK 0
+}
+
+{ melee_strike
+	local TARGET_ID $get(ent_owner,target)
+	if $get(TARGET_ID,isalive)
+	callevent break_check
+	if !BROKEN
+	local WACKING_RACE $get(TARGET_ID,scriptvar,IMMUNE_HOLY)
+	//if ( WACKING_RACE equals undead ) local VALID_TARGET 1
+	//if ( WACKING_RACE equals demon ) local VALID_TARGET 1
+	//if ( $get(TARGET_ID,takedmg,holy) > 0 ) local VALID_TARGET 1 //future use
+	if WACKING_RACE == 1
+	//if !VALID_TARGET
+	playermessage This weapon is only effective against the undead and unholy
+}
+
+{ break_check
+	if !THIS_NO_BREAK
+	if !BROKEN
+
+	if $rand(1,100) < BREAK_CHANCE
+	setvard BROKEN 1
+	setviewmodel none
+	playsound 0 10 BREAK_SOUND
+	effect tempent gibs glassgibs.mdl $relpos(0,0,0) 0.3 30 10 5 1.0
+	playermessage YOUR GOLDEN AXE HAS BROKEN!
+	callevent 0.2 break_msg2
+}
+
+{ break_msg2
+	playermessage You might want to ask the mayor of Gatecity about this.
+	createnpc monsters/companion/giver $replos(0,0,32) $get(ent_owner,id) item_gaxe_handle
+	callevent 0.1 remove_me
+}
+
+{ remove_me
+	deleteent ent_me
+}
+
+{ game_dodamage //1: Attack Hit (1/0)  2: Entity Attack hit  3:  Start Position  4:  End Position
+
+	if PARAM1
+	if SPEC_ATTACK
+	setvard SPEC_ATTACK 0
+	//if $get(MY_TARGET,range) < MELEE_RANGE
+	local MY_OWNER $get(ent_owner,id)
+	local MY_TARGET PARAM2
+	//dbg calling against $get(MY_TARGET,name)
+	setvard HOLY_DMG $get(ent_owner,skill.spellcasting.divination)
+	multiply HOLY_DMG 8.0 //was 15x - but turn_undead used to not do holy damage (for some reason)
+	callexternal MY_TARGET turn_undead HOLY_DMG MY_OWNER
+}

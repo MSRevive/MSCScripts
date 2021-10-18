@@ -1,0 +1,72 @@
+//Ice Wave for North Maul by Thothie
+//- Probably use this for stun wave later
+{
+	const AOE_FREQ 0.1
+	const AOE_RADIUS 128
+	const FWD_SPEED 20
+}
+
+#include monsters/summon/base_aoe
+#include monsters/base_noclip
+
+{ game_dynamically_created //<owner> <freeze_duration> <max_live_time>
+
+	setvard MY_OWNER PARAM1
+	setvard FREEZE_DURATION PARAM2
+	setvard MY_DURATION PARAM3
+
+	callevent MY_DURATION aoe_end
+	local FADE_START MY_DURATION
+	subtract FADE_START 2.0
+	callevent FADE_START begin_fade
+
+	callevent 0.1 set_angles_and_dest
+}
+
+{ apply_aoe_effect
+	dbg freezing $get(PARAM1,name)
+	applyeffect PARAM1 effects/freeze_solid FREEZE_DURATION MY_OWNER
+}
+
+{ set_angles_and_dest
+
+	drop_to_floor ent_me
+	local OWNER_ANG $get(MY_OWNER,angles)
+	setvard NPC_NOCLIP_DEST $relpos($vec(0,$vec.yaw(OWNER_ANG),0),$vec(0,10000,0))
+	setangle face $vec(0,$vec.yaw(OWNER_ANG),0)
+	setprop ent_me rendermode 5
+	setprop ent_me renderamt 255
+}
+
+{ game_spawn
+
+	name an|Ice Wave
+	hp 1
+	invincible 1
+	race beloved
+	setsolid none
+	setbbox none
+	blood none
+	setidleanim idle_standard
+	setvard PLAYING_DEAD 1
+	nopush 1
+	setmodel weapons/projectiles.mdl
+	setmodelbody 0 52
+	drop_to_floor ent_me
+	setprop ent_me rendermode 5
+	setprop ent_me renderamt 0
+}
+
+{ begin_fade
+	setvard IS_FADING 1
+	setvard FADE_AMT 255
+}
+
+{ aoe_scan_loop
+
+	if IS_FADING
+	subtract FADE_AMT 10
+	if FADE_AMT >= 0
+	setprop ent_me rendermode 5
+	setprop ent_me renderamt FADE_AMT
+}

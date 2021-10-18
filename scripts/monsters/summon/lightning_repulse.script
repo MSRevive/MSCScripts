@@ -1,0 +1,90 @@
+{
+	const SOUND_SHOCK1 debris/zap8.wav
+	const SOUND_SHOCK2 debris/zap3.wav
+	const SOUND_SHOCK3 debris/zap4.wav
+}
+
+{ game_dynamically_created
+
+	setvard MY_OWNER PARAM1
+	setvard MY_RANGE PARAM2
+	race $get(MY_OWNER,race)
+	setvard MY_DURATION PARAM3
+	setvard MY_BASE_DMG PARAM4
+	setvard OWNER_DBLHP $get(MY_OWNER,maxhp)
+	multiply OWNER_DBLHP 2.0
+	setvard OWNER_ISPLAYER $get(MY_OWNER,isplayer)
+	setvard GAME_PVP game.pvp
+	setvard IS_ACTIVE 1
+	callevent MY_DURATION end_summon
+	setvard ACTIVE_SKILL PARAM5
+	if ( ACTIVE_SKILL equals 'PARAM5' ) setvard ACTIVE_SKILL spellcasting.lightning
+}
+
+{ game_spawn
+	name a|Static Shock
+	invincible 1
+	width 32
+	height 32
+	setsolid none
+	setvard PLAYING_DEAD 1
+}
+
+{
+repeatdelay 0.1
+	
+	if IS_ACTIVE
+	setorigin ent_me $get(MY_OWNER,origin)
+
+	dodamage $relpos(0,0,0) MY_RANGE 0 100% 0 reflective lightning
+}
+
+{ game_dodamage
+
+	if PARAM1
+	if ( OWNER_ISPLAYER )
+	{
+		if GAME_PVP == 0
+		if $get(PARAM2,isplayer)
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	if $get(PARAM2,relationship,MY_OWNER) equals enemy
+
+	local BEAM_START game.monster.origin
+
+	//effect beam point lgtning.spr 30 BEAM_START BEAM_END (255,255,255) 255 10 0.2
+	effect beam end lgtning.spr 30 BEAM_START PARAM2 0 (200,255,50) 200 30 0.1
+
+	if !$get(PARAM2,scriptvar,IMMUNE_PUSH)
+	local TARG_HP $get(PARAM2,maxhp)
+	if ( TARG_HP > 1500 )
+	{
+		if OWNER_DBLHP < TARG_HP
+		local EXIT_SUB 1
+		if ( OWNER_ISPLAYER )
+		{
+			if !DID_MESSAGE
+			setvard DID_MESSAGE 1
+			playermessage MY_OWNER $get(PARAM2,name) is too strong to be affected.
+		}
+	}
+	if !EXIT_SUB
+
+	local TARG_VEL $get(MY_OWNER,angles)
+	setangle face PARAM2
+	addvelocity PARAM2 $relvel(0,500,10)
+	playrandomsound 0 10 SOUND_SHOCK1 SOUND_SHOCK2 SOUND_SHOCK3
+	if MY_BASE_DMG > 0
+	xdodamage PARAM2 direct MY_BASE_DMG 100% MY_OWNER MY_OWNER ACTIVE_SKILL lightning
+}
+
+{ end_summon
+	setvard IS_ACTIVE 0
+	callevent 0.1 remove_me
+}
+
+{ remove_me
+	deleteent ent_me
+}

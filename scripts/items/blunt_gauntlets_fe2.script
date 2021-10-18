@@ -1,0 +1,147 @@
+//Greater Flesheater Gauntlets by CrazyMonkeyDude 
+//Greaters do more damage, have a poison burst on right-click, and have a small lifesteal on regular attack.
+
+{
+	const BASE_LEVEL_REQ 27
+
+	const ANIM_HANDS_DOWN 20
+	const ANIM_LIFT1 12
+	const ANIM_LOWER 11
+	const ANIM_IDLE1 11
+	const ANIM_IDLE_TOTAL 12
+	const ANIM_ATTACK1 16
+	const ANIM_ATTACK2 17
+	const ANIM_ATTACK3 18
+	const ANIM_ATTACK4 19
+	const ANIM_SPEC_ATTACK 14
+	const ANIM_SHEATH 16
+
+	const MODEL_VIEW viewmodels/v_martialarts_claws.mdl
+	const MODEL_VIEW_IDX 1
+	const MODEL_HANDS weapons/p_weapons3.mdl
+	const MODEL_WORLD weapons/p_weapons3.mdl
+	const MODEL_BODY_OFS 60
+
+	const MELEE_DMG  250
+	const MELEE_DMG_RANGE      0
+	const MELEE_DMG_TYPE  acid
+	const MELEE_ACCURACY  85%
+	const MELEE_DMG_DELAY 0.2
+	const MELEE_ATK_DURATION 0.9
+	const MELEE_AFFLIC_RATIO 0.8
+	const MELEE_AFFLICDMG_MIN 20
+
+	const GOUGE_MPDRAIN 40
+	const GOUGE_MPSTEAL 30
+	const GOUGE_LIFESTEAL_RATIO 0.12
+
+	const AURA_DOT_RATIO 0.6
+	const AURA_RADIUS 86
+
+	const SOUND_SWIPE zombie/claw_miss1.wav
+	const SOUND_HITWALL1 weapons/cbar_hit1.wav
+	const SOUND_HITWALL2 weapons/cbar_hit2.wav
+	const SOUND_SWING zombie/claw_miss2.wav
+
+	const SOUND_DEPLOY monsters/skeleton/calrain3.wav
+	const SOUND_GOUGE monsters/gonome/gonome_jumpattack.wav
+
+	const RAND_GROWL $randf(5.5,8.5)
+	const SOUND_GROWL1 monsters/zombie1/zo_pain1.wav
+	const SOUND_GROWL2 monsters/zombie1/zo_pain3.wav
+	const SOUND_GROWL3 monsters/gonome/gonome_pain1.wav
+	const SOUND_GROWL4 monsters/gonome/gonome_pain2.wav
+	const SOUND_GROWL5 monsters/gonome/gonome_pain3.wav
+	const SOUND_GROWL6 monsters/gonome/gonome_pain4.wav
+
+	const NOVA_SCRIPT monsters/summon/poison_burst
+	const DMG_NOVA 50
+	const NOVA_MPDRAIN 60
+	const NOVA_ATKDELAY 10.0
+
+	//old script
+	const ANIM_PREFIX gauntlets
+	const NO_WORLD_MODEL 1
+	const MELEE_RANGE 50
+	const REACH_MELEE_RANGE 100
+	const MELEE_ENERGY 1
+	const MELEE_STAT martialarts
+	const MELEE_VIEWANIM_ATK ANIM_ATTACK1
+
+	const MELEE_SOUND SOUND_SWIPE
+	const MELEE_SOUND_DELAY MELEE_DMG_DELAY
+	const MELEE_PARRY_CHANCE 5%
+
+	const PLAYERANIM_AIM		axe_onehand
+
+	const SOUND_GAS_ON ambience/steamburst1.wav
+}
+
+{ game_precache
+	precache poison_cloud.spr
+	precachefile NOVA_SCRIPT
+}
+
+#include items/blunt_gauntlets_fe1
+
+{  weapon_spawn
+
+   name 	Greater Flesheater's Claws
+   desc 	Vicious claws have burst from your hands!
+   weight 	3
+   size 	1
+   value	1500
+   sethand 	both
+   sethudsprite hand gauntlets
+   sethudsprite trade gauntlets
+
+   callevent 0.1 growl_noises
+}
+
+{ [server] do_special_damage
+	if ( $get(PARAM1,race) isnot undead )
+	{
+		if !$get(PARAM1,scriptvar,'IMMUNE_VAMPIRE')
+		local LIFE_STOLEN MELEE_DAMAGE
+		multiply LIFE_STOLEN $get_takedmg(PARAM1,acid)
+		multiply LIFE_STOLEN 0.01
+		givehp ent_owner LIFE_STOLEN
+	}
+}
+
+{ growl_noises
+	callevent RAND_GROWL growl_noises
+	playrandomsound 0 8 SOUND_GROWL1 SOUND_GROWL2 SOUND_GROWL3 SOUND_GROWL4 SOUND_GROWL5 SOUND_GROWL6
+	effect glow ent_owner (0,255,0) 256 1.9 1.9
+}
+
+{ game_+attack2
+	if game.serverside
+	if $get(ent_owner,canattack)
+
+	if ( game.time < DELAY_NOVA )
+	{
+		local EXIT_SUB 1
+		if game.time > LAST_ERR
+		dplayermessage ent_owner Too soon to use Poison Burst again!
+		setvard LAST_ERR game.time
+		add LAST_ERR 2.0
+	}
+	if !EXIT_SUB
+	
+	if ( $get(ent_owner,mp) < NOVA_MPDRAIN )
+	{
+		dplayermessage ent_owner Greater Flesheater Gauntlets: Insufficient mana for Poison Burst.
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	setvard DELAY_NOVA game.time
+	add DELAY_NOVA NOVA_ATKDELAY
+	local DOT_POISON $get(ent_owner,skill.spellcasting.affliction)
+	multiply DOT_POISON 0.5
+	createnpc NOVA_SCRIPT $relpos(0,0,0) $get(ent_owner,id) 86 1 DMG_NOVA DOT_POISON
+
+	givemp ent_owner $neg(NOVA_MPDRAIN)
+	callexternal ent_owner mana_drain
+}

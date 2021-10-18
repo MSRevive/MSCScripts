@@ -1,0 +1,105 @@
+//Big floating eyes used by monsters/zombie_zygol
+
+{
+	setvar IS_UNHOLY 1
+
+	setvard ANIM_DEATH spin_vertical_norm
+	setvar ANIM_IDLE spin_horizontal_slow
+	setvar ANIM_WALK spin_horizontal_slow
+	setvar ANIM_RUN spin_horizontal_slow
+	setvard ANIM_ATTACK spin_horizontal_slow
+
+	const SOUND_SHOCK1 debris/zap8.wav
+	const SOUND_SHOCK2 debris/zap3.wav
+	const SOUND_SHOCK3 debris/zap4.wav
+
+	const SHOCK_DMG 100
+	const SHOCK_DUR 5.0
+	const RUN_REQ 30
+
+	setvard NPC_GIVE_EXP 200
+}
+
+{ game_dynamically_created //<1:owner> <2:hp> <3:dmg>
+
+	setvard MY_OWNER $get(PARAM1,id)
+	hp PARAM2
+	setvard BEAM_DAMAGE PARAM3
+	callevent npcatk_flee MY_OWNER 9999 5.0
+}
+
+#include monsters/base_monster_new
+#include monsters/base_propelled
+
+{ npc_spawn
+
+	name an|Eye of Zygoli
+	setmodel weapons/projectiles.mdl
+	setmodelbody 0 10
+	setidleanim spin_horizontal_slow
+	setmoveanim spin_horizontal_slow
+	width 32
+	height 32
+	roam 1
+	takedmg holy 2.0
+	takedmg poison 0.0
+	takedmg pierce 2.0
+	race demon
+	invincible 1 //invincible until hp is set
+	setvard RENDER_AMT 1
+	callevent 0.1 remove_invuln
+	setprop ent_me rendermode 5
+	setprop ent_me renderamt 0
+
+	callevent npcatk_suspend_ai
+}
+
+{ remove_invuln
+	invincible 0
+	callevent fade_in
+	playsound 0 10 magic/spawn_loud.wav
+}
+
+{ fade_in
+	if RENDER_AMT < 255
+	add RENDER_AMT 1
+	callevent 0.1 fade_in
+	setprop ent_me rendermode 5
+	setprop ent_me renderamt RENDER_AMT
+}
+
+{
+repeatdelay 5.0
+
+	if $cansee(enemy)
+	effect glow ent_me (128,128,255) 64 3.0 3.0
+	playrandomsound 0 10 SOUND_SHOCK1 SOUND_SHOCK2 SOUND_SHOCK3
+	applyeffect ent_lastseen effects/effect_shock_dmg SHOCK_DUR $get(ent_me,id) BEAM_DAMAGE
+	callevent npcatk_flee ent_lastseen 9999 10.0
+	local BEAM_START game.monster.origin
+	vectoradd BEAM_START $relpos($vec(0,0,0),$vec(0,0,64))
+	effect beam end lgtning.spr 30 BEAM_START ent_lastseen 0 (255,255,255) 200 30 1.5
+}
+
+{
+repeatdelay 1.0
+	if RENDER_AMT == 255
+	setprop ent_me rendermode 5
+	setprop ent_me renderamt 255
+}
+
+{ game_struck
+	if ( PARAM1 > RUN_REQ )
+	{
+		callevent npcatk_flee ent_laststruck 9999 15.0
+	}	
+}
+
+{ game_death
+	callexternal MY_OWNER ext_eye_died
+	callexternal GAME_MASTER gm_fade $get(ent_me,id)
+}
+
+{ zygoli_died
+	deleteent ent_me fade
+}

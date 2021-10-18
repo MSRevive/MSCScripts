@@ -1,0 +1,102 @@
+{ client_activate //<origin> <scale> [owner_index] [skin] [anim_seq#] [attach]
+	setvard FX_ORIGIN PARAM1
+	setvard FX_MAX_SCALE PARAM2
+	setvard FX_OWNER PARAM3
+	setvard FX_SKIN PARAM4
+	setvard FX_ANIM PARAM5
+	if ( FX_OWNER startswith PARAM ) setvard NO_BLUR 1
+	setvard FX_ACTIVE 1
+	callevent 5.0 end_fx
+
+	sound.play3d magic/sff_explsonic.wav 10 FX_ORIGIN
+
+	
+	//vectoradd SPR_POS z -48 //dunno why this thing's center is wrong
+	//local GROUND_LEVEL $get_ground_height(SPR_POS)
+	//if ( $vec.z(SPR_POS) < GROUND_LEVEL ) vectorset SPR_POS z GROUND_LEVEL
+	if ( PARAM6 startswith PARAM )
+	{
+		local SPR_POS FX_ORIGIN
+	}
+	else
+	{
+		if ( PARAM6 == 0 ) local SPR_POS $getcl(FX_OWNER,attachment0)
+		if ( PARAM6 == 1 ) local SPR_POS $getcl(FX_OWNER,attachment1)
+		if ( PARAM6 == 2 ) local SPR_POS $getcl(FX_OWNER,attachment2)
+		if ( PARAM6 == 3 ) local SPR_POS $getcl(FX_OWNER,attachment3)
+
+		dbg *** SPR_POS
+	}
+	cleffect tempent model monsters/zubat_sphere.mdl $getcl(FX_OWNER,origin) setup_sphere update_sphere
+	
+	if !NO_BLUR
+	setvard VEL_X 0
+	calleventloop 8 blur_loop
+
+}
+
+{ end_fx
+	setvard FX_ACTIVE 0
+	callevent 1.0 remove_fx
+}
+
+{ remove_fx
+	removescript
+}
+
+{ blur_loop
+	add VEL_R 20
+	setvard BLUR_ANG $getcl(FX_OWNER,angles)
+
+	setvard BLUR_VEL $relvel(BLUR_ANG,$vec($neg(VEL_R),0,0))
+	cleffect tempent model $getcl(FX_OWNER,model) $getcl(FX_OWNER,origin) setup_blur
+	setvard BLUR_VEL $relvel(BLUR_ANG,$vec(VEL_R,0,0))
+	cleffect tempent model $getcl(FX_OWNER,model) $getcl(FX_OWNER,origin) setup_blur
+}
+
+{  setup_blur
+
+	cleffect tempent set_current_prop death_delay 	1.0
+	cleffect tempent set_current_prop fadeout lifetime
+	cleffect tempent set_current_prop scale 2.0
+	cleffect tempent set_current_prop angles 	BLUR_ANG
+	cleffect tempent set_current_prop gravity 	0
+	cleffect tempent set_current_prop rendermode 	alpha
+	cleffect tempent set_current_prop renderamt 	50
+	cleffect tempent set_current_prop collide 	none
+	cleffect tempent set_current_prop skin FX_SKIN
+	cleffect tempent set_current_prop velocity BLUR_VEL
+	cleffect tempent set_current_prop sequence FX_ANIM
+}
+
+{ setup_sphere
+	cleffect tempent set_current_prop death_delay 4.0
+	cleffect tempent set_current_prop fadeout 2.0
+	cleffect tempent set_current_prop scale 0.25
+	cleffect tempent set_current_prop gravity 	0
+	cleffect tempent set_current_prop sequence 0 //7
+	cleffect tempent set_current_prop framerate 1.0
+	cleffect tempent set_current_prop frames 999
+	cleffect tempent set_current_prop rendermode 	add
+	cleffect tempent set_current_prop renderamt 	255
+	cleffect tempent set_current_prop rendercolor (64,64,255)
+	cleffect tempent set_current_prop color (64,64,255)
+	cleffect tempent set_current_prop collide 	none
+	//cleffect tempent set_current_prop body 65
+	cleffect tempent set_current_prop fuser1 0.25
+}
+
+{ update_sphere
+	if ( FX_ACTIVE )
+	{
+		local CUR_SCALE game.tempent.fuser1
+		if CUR_SCALE < FX_MAX_SCALE
+		add CUR_SCALE 0.05
+		cleffect tempent set_current_prop scale CUR_SCALE
+		cleffect tempent set_current_prop fuser1 CUR_SCALE
+	}
+	else
+	{
+		cleffect tempent set_current_prop origin $vec(20000,20000,2000) //send off map for removal
+	}
+}

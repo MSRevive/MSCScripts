@@ -1,0 +1,247 @@
+//This was an attempt to allow fletchers to organize arrows
+//It won't work, apparently the payment system thinks each tile = 1 item
+
+{
+	const ARROW_STACK_TYPES "proj_arrow_bluntwooden;proj_arrow_broadhead;proj_arrow_fire;proj_arrow_frost;proj_arrow_gholy;proj_arrow_gpoison;proj_arrow_holy;proj_arrow_jagged;proj_arrow_poison;proj_arrow_silvertipped;proj_arrow_wooden;"
+	const BOLT_STACK_TYPES "proj_bolt_fire;proj_bolt_iron;proj_bolt_silver;proj_bolt_steel;proj_bolt_wooden;"
+	const SAYTEXT_NOT_ENOUGH "You do not have enough of that type of projectile."
+	const SAYTEXT_BUNDLE_DONE "There you go, all bundled up."
+	const SAYTEXT_BUNDLE "I can tie your arrows and bolts into neat bundles for quicker access, if you have enough to make such bundles. No charge for this."
+
+	//default anims intended for npc/human1.mdl
+	const ANIM_DONE pull_needle
+	const ANIM_NO no
+	const ANIM_CONVO converse1
+}
+
+{ game_menu_getoptions
+	
+
+	setvard CUSTOMER_ID PARAM1
+
+	if ( !BUNDLE_MENU )
+	{
+		setvard LOOP_COUNT 0
+		calleventloop $get_token_amt(ARROW_STACK_TYPES) check_arrows
+		setvard LOOP_COUNT 0
+		calleventloop $get_token_amt(ARROW_STACK_TYPES) check_bolts
+
+		//dbg temp BOLT_MENU ARROW_MENU $item_exists(CUSTOMER_ID,proj_arrow_jagged) $item_exists(CUSTOMER_ID,proj_arrow_,partialname)
+
+		if ( ARROW_MENU )
+		{
+			local reg.mitem.title "Bundle Arrows (120)"
+			local reg.mitem.type callback
+			local reg.mitem.data 120
+			local reg.mitem.callback bundle_arrows_menu
+			menuitem.register
+
+			local reg.mitem.title "Bundle Arrows (240)"
+			local reg.mitem.type callback
+			local reg.mitem.data 120
+			local reg.mitem.callback bundle_arrows_menu
+			menuitem.register
+		}
+
+		if ( BOLT_MENU )
+		{
+			local reg.mitem.title "Bundle Bolts (200)"
+			local reg.mitem.type callback
+			local reg.mitem.data 200
+			local reg.mitem.callback bundle_bolts_menu
+			menuitem.register
+
+			local reg.mitem.title "Bundle Bolts (400)"
+			local reg.mitem.type callback
+			local reg.mitem.data 400
+			local reg.mitem.callback bundle_bolts_menu
+			menuitem.register
+		}
+	}
+
+	if BUNDLE_MENU
+
+	if ( BUNDLE_TYPE equals arrows )
+	{
+		setvard LOOP_COUNT 0
+		calleventloop $get_token_amt(ARROW_STACK_TYPES) add_arrow_options
+	}
+
+	if ( BUNDLE_TYPE equals bolts )
+	{
+		setvard LOOP_COUNT 0
+		calleventloop $get_token_amt(BOLT_STACK_TYPES) add_bolt_options
+	}
+
+}
+
+{ bundle_arrows_menu
+	setvard BUNDLE_MENU 1
+	setvard VENDOR_MENU_OFF 1
+	setvard BUNDLE_AMT PARAM2
+	setvard BUNDLE_TYPE arrows
+	menu.open CUSTOMER_ID
+
+	playanim critical ANIM_CONVO
+	saytext SAYTEXT_BUNDLE
+}
+
+{ bundle_bolts_menu
+	setvard BUNDLE_MENU 1
+	setvard VENDOR_MENU_OFF 1
+	setvard BUNDLE_AMT PARAM2
+	setvard BUNDLE_TYPE bolts
+	menu.open CUSTOMER_ID
+
+	playanim critical ANIM_CONVO
+	saytext SAYTEXT_BUNDLE
+}
+
+{ add_arrow_options
+	local CUR_ITEM $get_token(ARROW_STACK_TYPES,game.script.iteration)
+
+	local STACK_STRING CUR_ITEM
+	stradd STACK_STRING ":"
+	stradd STACK_STRING BUNDLE_AMT
+
+	local CALLBACK_STRING give_bundle_
+	stradd CALLBACK_STRING CUR_ITEM
+
+	local TITLE_STRING "bundle "
+	stradd TITLE_STRING $item_exists(CUSTOMER_ID,CUR_ITEM,name)
+	stradd TITLE_STRING "s"
+
+	dbg adding_menu item CUR_ITEM title TITLE_STRING data STACK_STRING callback CALLBACK_STRING
+
+	if $item_exists(CUSTOMER_ID,CUR_ITEM)
+	local reg.mitem.title TITLE_STRING
+	local reg.mitem.type payment
+	local reg.mitem.data STACK_STRING
+	local reg.mitem.callback  CALLBACK_STRING
+	local reg.mitem.cb_failed not_enough_arrows
+	menuitem.register
+}
+
+{ add_bolt_options
+	dbg iteration game.script.iteration
+	local CUR_ITEM $get_token(BOLT_STACK_TYPES,LOOP_COUNT)
+	add LOOP_COUNT 1
+
+	local STACK_STRING CUR_ITEM
+	stradd STACK_STRING ":"
+	stradd STACK_STRING BUNDLE_AMT
+
+	local CALLBACK_STRING give_bundle_
+	stradd CALLBACK_STRING CUR_ITEM
+
+	if $item_exists(CUSTOMER_ID,CUR_ITEM)
+	local ITEM_NAME $item_exists(CUSTOMER_ID,CUR_ITEM,name)
+	local reg.mitem.title "Bundle " ITEM_NAME "s"
+	local reg.mitem.type payment
+	local reg.mitem.data	STACK_STRING
+	local reg.mitem.callback  CALLBACK_STRING
+	local reg.mitem.cb_failed not_enough_arrows
+	menuitem.register
+}
+
+{ check_arrows
+	local CUR_ITEM $get_token(ARROW_STACK_TYPES,LOOP_COUNT)
+	add LOOP_COUNT 1
+	local ITEM_NAME $item_exists(CUSTOMER_ID,CUR_ITEM,name)
+	setvard ARROW_MENU 1
+}
+
+{ check_bolts
+	local CUR_ITEM $get_token(ARROW_STACK_TYPES,LOOP_COUNT)
+	add LOOP_COUNT 1
+	local ITEM_NAME $item_exists(CUSTOMER_ID,CUR_ITEM,name)
+	setvard BOLT_MENU 1
+}
+
+{ not_enough_arrows
+
+	playanim critical ANIM_NO
+	saytext SAYTEXT_NOT_ENOUGH
+	setvard BUNDLE_MENU 0
+	setvard VENDOR_MENU_OFF 0
+}
+
+{ give_bundle_proj_arrow_bluntwooden
+	setvard GIVE_ITEM proj_arrow_bluntwooden
+	callevent return_bundle
+}
+{ give_bundle_proj_arrow_broadhead
+	setvard GIVE_ITEM proj_arrow_broadhead
+	callevent return_bundle
+}
+{ give_bundle_proj_arrow_fire
+	setvard GIVE_ITEM proj_arrow_fire
+	callevent return_bundle
+}
+{ give_bundle_proj_arrow_frost
+	setvard GIVE_ITEM proj_arrow_frost
+	callevent return_bundle
+}
+{ give_bundle_proj_arrow_gholy
+	setvard GIVE_ITEM proj_arrow_gholy
+	callevent return_bundle
+}
+{ give_bundle_proj_arrow_gpoison
+	setvard GIVE_ITEM proj_arrow_gpoison
+	callevent return_bundle
+}
+{ give_bundle_proj_arrow_holy
+	setvard GIVE_ITEM proj_arrow_holy
+	callevent return_bundle
+}
+{ give_bundle_proj_arrow_jagged
+	setvard GIVE_ITEM proj_arrow_jagged
+	callevent return_bundle
+}
+{ give_bundle_proj_arrow_poison
+	setvard GIVE_ITEM proj_arrow_poison
+	callevent return_bundle
+}
+{ give_bundle_proj_arrow_silvertipped
+	setvard GIVE_ITEM proj_arrow_silvertipped
+	callevent return_bundle
+}
+{ give_bundle_proj_arrow_wooden
+	setvard GIVE_ITEM proj_arrow_wooden
+	callevent return_bundle
+}
+
+{ give_bundle_proj_bolt_fire
+	setvard GIVE_ITEM proj_bolt_fire
+	callevent return_bundle
+}
+{ give_bundle_proj_bolt_iron
+	setvard GIVE_ITEM proj_bolt_iron
+	callevent return_bundle
+}
+{ give_bundle_proj_bolt_silver
+	setvard GIVE_ITEM proj_bolt_silver
+	callevent return_bundle
+}
+{ give_bundle_proj_bolt_steel
+	setvard GIVE_ITEM proj_bolt_steel
+	callevent return_bundle
+}
+{ give_bundle_proj_bolt_wooden
+	setvard GIVE_ITEM proj_bolt_wooden
+	callevent return_bundle
+}
+
+{ return_bundle
+
+	dbg return_bundle 
+
+	local BUNDLE_STRING GIVE_ITEM
+	stradd BUNDLE_STRING ":"
+	stradd BUNDLE_STRING BUNDLE_AMT
+	offer CUSTOMER_ID BUNDLE_STRING
+	playanim critical ANIM_DONE
+	saytext SAYTEXT_BUNDLE_DONE
+	setvard BUNDLE_MENU 0
+	setvard VENDOR_MENU_OFF 0
+}

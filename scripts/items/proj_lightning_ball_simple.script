@@ -1,0 +1,89 @@
+//magic bolt that varies with size by the energy put into it
+{
+	const MODEL_HANDS      		none
+	const MODEL_WORLD      		none
+	const ARROW_BODY_OFS		6
+
+	const SOUND_SHOOT ambience/alienflyby1.wav
+	const SOUND_ZAP1 debris/beamstart14.wav
+	const SOUND_ZAP2 debris/beamstart14.wav
+	const SOUND_ZAP3 debris/zap1.wav
+
+	const PROJ_MOTIONBLUR 0
+
+	const PROJ_ANIM_IDLE spin_horizontal_slow
+
+	const MODEL_BODY_OFS		0
+	const PROJ_DAMAGE			200
+	const PROJ_STICK_DURATION	0
+	const PROJ_SOLIDIFY_ON_WALL	0  //Does not turn solid when a wall is hit
+
+	const PROJ_DAMAGE_AOE_RANGE	32
+	const PROJ_DAMAGE_AOE_FALLOFF	1
+	const PROJ_DAMAGE_TYPE		lightning
+}
+
+#include items/proj_arrow_base
+
+{  arrow_spawn
+
+	name 	a|Manabolt
+	desc 	Manabolt
+	weight 	0
+	size 	1
+	value	1
+	gravity	0.0001
+
+	setmodel none
+
+	setidleanim spin_horizontal_slow
+
+	setprop ent_me rendermode 5
+	setprop ent_me renderamt 255
+
+	callevent 10.0 remove_me
+}
+
+{ [override] game_fall //override base_arrow.  Just do nothing
+}
+
+{ game_hitworld
+	playrandomsound 0 10 SOUND_ZAP1 SOUND_ZAP2 SOUND_ZAP3
+}
+
+{ [server] game_tossprojectile
+	setvard MY_OWNER $get(ent_expowner,id)
+	setvard OWNER_ISPLAYER $get(MY_OWNER,isplayer)
+	setvard F_BALL_SIZE $get(MY_OWNER,scriptvar,BALL_SIZE)
+	setvard F_BALL_DMG $get(MY_OWNER,scriptvar,BALL_DMG)
+	setvard F_BALL_TYPE lightning
+	setvard SCAN_SIZE 16
+	if ( OWNER_ISPLAYER ) setvard SCAN_SIZE 12
+	multiply SCAN_SIZE F_BALL_SIZE
+
+	if ( F_BALL_SIZE == 0 ) deleteent ent_me
+	if F_BALL_SIZE > 0
+
+	setmodel weapons/projectiles.mdl
+	local SUB_MODEL $int(F_BALL_SIZE)
+	add SUB_MODEL 12
+	local SUB_MODEL $int(SUB_MODEL)
+	setmodelbody 0 SUB_MODEL
+	setbbox animsize
+	playsound 0 F_BALL_SIZE SOUND_SHOOT
+}
+
+{ game_projectile_hitnpc
+
+	setmodel none
+	playrandomsound 0 10 SOUND_ZAP1 SOUND_ZAP2 SOUND_ZAP3
+	effect screenfade $get(ent_laststruckbyme,id) 3 1 (255,255,255) 255 fadein
+	expiretime 0
+}
+
+{ game_projectile_landed
+
+	setmodel none
+
+	expiretime 0
+}

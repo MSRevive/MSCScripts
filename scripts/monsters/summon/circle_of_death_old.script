@@ -1,0 +1,322 @@
+//Circle of Ice, Lesser - by Thothie
+//- same as circle of ice but smaller radius, less sprites, and frost_dmg instead of freeze_solid
+{
+	const SEAL_MODEL weapons/magic/seals.mdl
+	const SEAL_OFS 4
+	const SOUND_MANIFEST magic/temple.wav
+	const SOUND_PULSE magic/pulsemachine_noloop.wav
+	const SOUND_FADE magic/frost_reverse.wav
+	const FX_SPRITE skull.spr
+	const PULSE_PLAYTIME 1.7
+	const CIRCLE_RADIUS 180
+	const LIGHT_DIE 1.6
+
+	precache FX_SPRITE
+}	
+
+#include monsters/base_npc
+
+{ eventname game_dynamically_created //PARAM1 = owner PARAM2 = CircleDuration PARAM3 = damage
+
+	add FX_SPAMMERS 1
+
+	setvard MY_OWNER PARAM1
+	setvard MY_DURATION PARAM2
+	setvard MY_BASE_DAMAGE PARAM3
+
+	setvard OWNER_ISPLAYER $get(MY_OWNER,isplayer)
+
+	if ( !OWNER_ISPLAYER )
+	{
+		setvard MY_SKILL PARAM4
+	}
+	else
+	{
+		setvard MY_SKILL none
+	}
+	setvard GAME_PVP game.pvp
+
+	setvard MY_OWNER_RACE $get(PARAM1,race)
+
+	race MY_OWNER_RACE
+
+
+	callevent MY_DURATION circle_end
+
+	//dbg Circle got: Owner $get(MY_OWNER,name) Dur MY_DURATION Dmg MY_BASE_DAMAGE EffectDur FROST_DURATION
+
+     //tempent trail <modelname/spritename> <start> <dest> <count> <life> <scale> <speed> <randomness>
+	//effect tempent trail SEAL_MODEL $relpos(0,0,96) $get(ent_me,origin) 1 MY_DURATION 1 1 0
+	//effect tempent spray <modelname/spritename> <position> <direction> <count> <speed> <noise>
+	//effect tempent trail <modelname/spritename> <start> <dest> <count> <life> <scale> <speed> <randomness>
+	//effect tempent gibs <modelname/spritename> <position> <size> <velocity> <randomness> <amount> <duration>
+	//effect tempent gibs SEAL_MODEL $relpos(0,0,0) 1.0 1 0 1 MY_DURATION
+}
+
+{ npc_spawn
+
+	name a|Circle of Death
+	hp 10000
+	fov 359
+	invincible 1
+	height 2
+	width 2
+	fly 1
+	float 1
+	takedmg all 0.0
+	gravity 0.0
+	blood none
+	setmodel none
+	setsolid none
+	setbbox none
+
+	nopush 1
+
+	setvard PLAYING_DEAD 1
+
+	setvard CIRCLE_ON 1
+
+	callevent 0.1 make_seal
+
+	callevent 1.0 circle_go
+
+	callevent 0.1 circle_hum
+}
+
+{ make_seal
+
+	race MY_OWNER_RACE
+	local SEAL_POS $get(ent_me,origin)
+	local GROUND_Z $get_ground_height(SEAL_POS)
+	local SEAL_Z $vec.z(SEAL_POS)
+	local GROUND_DIST GROUND_Z
+	subtract GROUND_DIST SEAL_Z
+	////dbg MyBasePos SEAL_POS GroundZ GROUND_Z
+	subract GROUND_DIST 2
+	vectoradd SEAL_POS $relpos($vec(0,0,0),$vec(0,0,GROUND_DIST)) 
+	////dbg MyGroundPos SEAL_POS Ground GROUND_DIST
+	createnpc monsters/summon/seal_maker SEAL_POS SEAL_MODEL MY_DURATION SEAL_OFS
+}
+
+{ circle_hum
+
+	//drop_to_floor ent_me
+
+   	if ( !CIRCLE_UP )
+	{
+		//clientevent persist all $currentscript effect.duration $get(ent_me,index) PARAM2 GLOW_COLOR
+		local CLIENT_DURATION MY_DURATION
+		subtract CLIENT_DURATION 0.2 //effort to prevent client side fx from sticking
+		clientevent new all_in_sight $currentscript CLIENT_DURATION $get(ent_me,index) CIRCLE_RADIUS
+		local MY_ORIGIN $get(ent_me,origin)
+		cleffect light new MY_ORIGIN CIRCLE_RADIUS (128,128,255) MY_DURATION
+		setvard THIS_SCRIPT_CLIENT_ID game.script.last_sent_id
+		setvard CIRCLE_UP 1
+	}
+
+	if ( DID_WINDUP ) playsound 0 10 SOUND_PULSE
+	if ( !DID_WINDUP )
+	{
+		playsound 0 10 SOUND_MANIFEST
+		setvard DID_WINDUP 1
+	}
+
+
+	if CIRCLE_ON
+
+	callevent PULSE_PLAYTIME circle_hum
+}
+
+{ circle_go
+
+	if CIRCLE_ON
+
+	callevent 0.5 circle_go
+	setvard CIRCLE_TARGETS $get_tsphere(enemy,CIRCLE_RADIUS)
+	if CIRCLE_TARGETS isnot none
+	calleventloop $get_token_amt(CIRCLE_TARGETS) damage_targets
+}
+
+{ damage_targets
+	local CUR_TARG $get_token(CIRCLE_TARGETS,game.script.iteration)
+	//dodamage CUR_TARG direct MY_BASE_DAMAGE 100% MY_OWNER magic
+
+	if ( OWNER_ISPLAYER )
+	{
+		if !GAME_PVP
+		if $get(CUR_TARG,isplayer)
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	xdodamage CUR_TARG direct MY_BASE_DAMAGE 100% MY_OWNER MY_OWNER MY_SKILL magic
+}
+
+//	if ( ENT_LASTHIT isnot 'ENT_LASTHIT' )
+//	{
+//		////dbg temp $get(ENT_LASTHIT,name) alive $get(ENT_LASTHIT,isalive)
+//		if !$get(ENT_LASTHIT,alive)
+//		////dbg temp CALLING LAUGH
+//		callexternal $get(ent_creationowner,id) circle_kill
+//		setvard ENT_LASTHIT 'ENT_LASTHIT'
+//	}
+//
+//	if ( $get(ent_lastseen,id) equals MY_OWNER )
+//	{
+//		look 1024
+//	}
+//
+//	dodamage $relpos(0,0,0) CIRCLE_RADIUS 0 100% 0 reflective
+//
+//	if $cansee(ally)
+//	if $get(ent_lastseen,range) <= CIRCLE_RADIUS
+//	if $get(ent_lastseen,relationship,MY_OWNER) equals enemy
+//	setvard DMG_TARGET $get(ent_lastseen,id)
+//	callevent apply_circle_effect
+//	////dbg temp Saw $get(ent_lastseen,name) is $get(ent_lastseen,relationship,MY_OWNER)
+//	////dbg temp $get(ENT_LASTHIT,name)
+//
+//}
+//
+//{  game_dodamage //1: Attack Hit (1/0)  2: Entity Attack hit  3:  Start Position  4:  End Position
+//	
+//	if $get(PARAM2,relationship,MY_OWNER) equals enemy
+//	setvard DMG_TARGET $get(ent_laststruckbyme,id)
+//	callevent 0.1 apply_circle_effect
+//}
+//
+//{ apply_circle_effect
+//
+//	if !DMG_DELAY
+//	////dbg temp Circle Damage via ATTACK_FROM for $get(DMG_TARGET,name)
+//	dodamage DMG_TARGET direct MY_BASE_DAMAGE 100% MY_OWNER
+//	if ( $get(DMG_TARGET,isalive) )
+//	{
+//		setvard ENT_LASTHIT DMG_TARGET
+//		callevent 0.25 dmg_delay_reset
+//		setvard DMG_DELAY 1
+//	}
+//}
+//
+//{ dmg_delay_reset
+//
+//	//anti crash from dodamage stack
+//	setvard DMG_DELAY 0
+//}
+//
+{ circle_end
+
+	subtract FX_SPAMMERS 1
+
+	clientevent remove all THIS_SCRIPT_CLIENT_ID
+	setvard CIRCLE_ON 0
+
+	clientevent remove all $currentscript	//there can be only one
+	playsound 0 10 SOUND_FADE
+	callevent 0.5 circle_remove
+}
+
+{ circle_remove
+
+	deleteent ent_me
+}
+
+// ===========
+// Client Side
+// ===========
+
+{ [client]
+
+	const OFS_POS			128
+	const OFS_NEG			-128
+	const OFSZ_POS			256
+	const OFSZ_NEG			-10
+	
+	const LIGHT_PLAYER_SCALE	0.3
+	const LIGHT_DROPPED_SCALE	0.5
+}
+
+{ [client] client_activate
+
+	setvard sfx.duration PARAM1
+	setvard sfx.npcid PARAM2
+	setvard sfx.radius PARAM3
+
+	setcallback render enable
+
+	setvard RAIN_SPRITES 1
+
+	setvard SEAL_DROP_COUNTER 0
+
+	setvard ROT_COUNT 0
+	
+	callevent 0.1 rain_go
+
+	callevent PARAM1 effect_die
+}
+
+//Sprite
+
+{ [client] rain_go
+	//repeatdelay 0.1
+
+	if RAIN_SPRITES
+	callevent createsprite
+	callevent 1.0 rain_go
+}
+
+{ [client] createsprite
+
+		local g.pos $getcl(sfx.npcid,origin)
+		local SEAL_POS g.pos
+		vectoradd SEAL_POS $relpos($vec(0,0,0),$vec(0,0,-64))
+		//last_light_id - ID of last dynamic light
+		//light <"new"/id> <origin> <radius> <(color)> <death delay> <flags>
+		cleffect remove LAST_LIGHT
+		cleffect light new g.pos 196 (255,0,0) 0.9
+		setvard LAST_LIGHT game.script.last_light_id
+		cleffect tempent model SEAL_MODEL SEAL_POS setup_seal
+		cleffect tempent model FX_SPRITE g.pos setup_flame
+}
+
+{ [client] setup_seal
+
+	cleffect tempent set_current_prop death_delay 	 sfx.duration
+    cleffect tempent set_current_prop bouncefactor 	0
+	cleffect tempent set_current_prop scale 	1.0
+	cleffect tempent set_current_prop framerate	3
+	cleffect tempent set_current_prop frames	15
+	cleffect tempent set_current_prop rendercolor 	(255,0,0)
+	cleffect tempent set_current_prop gravity 	-1.0
+	cleffect tempent set_current_prop collide 	none
+    cleffect tempent set_current_prop velocity 	(0,0,-2)
+	cleffect tempent set_current_prop body SEAL_OFS
+}
+
+{ [client] setup_flame
+
+	cleffect tempent set_current_prop death_delay 	 sfx.duration
+    cleffect tempent set_current_prop bouncefactor 	0
+	cleffect tempent set_current_prop scale 	2.0
+	cleffect tempent set_current_prop framerate	15
+	cleffect tempent set_current_prop frames	15
+	cleffect tempent set_current_prop rendercolor 	(255,0,0)
+	cleffect tempent set_current_prop gravity 	0.0
+	cleffect tempent set_current_prop collide 	none
+    cleffect tempent set_current_prop velocity 	(0,0,-1)
+	cleffect tempent set_current_prop rendermode add
+	cleffect tempent set_current_prop renderamt 255
+	
+}
+
+{ [client] effect_die
+
+	cleffect remove LAST_LIGHT
+	setvard RAIN_SPRITES 0
+	removescript
+}
+
+{ game_death
+
+	setalive 1
+}

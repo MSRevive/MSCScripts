@@ -1,0 +1,374 @@
+//Want this to move from target to target
+//but may need to simply make a projectile
+//player version should simply move to wherever the player is looking
+//player version will also need to pass damage differently to deal with FF
+//-
+//There is within this the basis for a base_noclip script
+//combined with base_propelled and the 0.1 sec repeatdelay here in
+//(use NPC_HACKED_MOVE_SPEED 1 + setmovedest + setorigin $relvel(0,FWD_SPEED,0))
+{
+	setvar NPC_HACKED_MOVE_SPEED 1
+	setvard FWD_SPEED 20
+
+	const MOVE_RANGE 40
+	const FREQ_NEW_TARGET 5.0
+	const FREQ_SOUND 0.5
+	const FREQ_GLOW 1.0
+	const SOUND_SPIN zombie/claw_miss2.wav
+
+	const BEAM_BRIGHTNESS 50
+
+	setcallback touch enable
+}
+
+#include monsters/base_propelled
+
+{ game_dynamically_created
+	setvard MY_OWNER PARAM1
+	setvard FIRST_TARGET PARAM2
+	setvard DMG_BASE PARAM3
+	setvard BLADE_DURATION PARAM4
+
+	setvard GAME_PVP game.pvp
+
+	dbg bladedur BLADE_DURATION PARAM4
+
+	//dbg blood_drinker dmg DMG_BASE
+
+	setvard OWNER_HEIGHT $get(MY_OWNER,height)
+	setvard OWNER_ISPLAYER $get(MY_OWNER,isplayer)
+
+	setvard MY_SKILL none
+	if ( OWNER_ISPLAYER )
+	{
+		setvard RETURN_ID PARAM5 //id to send return message to
+		setvard MY_SKILL swordsmanship
+	}
+
+	race $get(MY_OWNER,race)
+	setvard CUR_TARGET FIRST_TARGET
+	callevent set_target FIRST_TARGET
+	setmovedest CUR_TARGET MOVE_RANGE
+	callevent BLADE_DURATION return_to_owner
+	setvard IS_ACTIVE 1
+	callevent 0.1 damage_loop
+}
+
+{ game_spawn
+	name Blood Drinker
+	setmodel weapons/projectiles.mdl
+	setmodelbody 0 30
+	setidleanim spin_horizontal_norm
+	setmoveanim spin_horizontal_norm
+	setsolid trigger
+	width 64
+	height 64
+	fly 1
+	blood none
+	invincible 1
+	setmonsterclip 0
+	setvard PLAYING_DEAD 1
+	effect glow ent_me (255,0,0) 32 -1 0
+	callevent 0.1 init_beam
+
+	takedmg cold 0.0
+	takedmg fire 0.0
+	takedmg ice 0.0
+	takedmg lightning 0.0
+}
+
+//{ damage_loop
+//	callevent 0.1 damage_loop
+//	
+//	//if ( OWNER_ISPLAYER )
+//	//{
+//	//	dbg damage_loop DMG_BASE $get(MY_OWNER,name)
+//	//			//(src_origin)  rng dmg      cth  <attacr> <inflcer><skill>       <type> 
+//	//	xdodamage $relpos(0,0,0) 72 DMG_BASE 100% MY_OWNER MY_OWNER none dar
+//	//}
+//	//else
+//	//{
+////		local F_DMG_BASE 0
+////		if ( !OWNER_ISPLAYER ) local F_DMG_BASE DMG_BASE
+////		dodamage $relpos(0,0,0) 72 F_DMG_BASE 100% 0.0 reflective dark
+//	//}
+//
+//	xdodamage $relpos(0,0,0) 72 DMG_BASE 0 MY_OWNER ent_me swordsmanship dark dmgevent:*bds
+//}
+
+{ game_touch
+	if game.time > NEXT_TOUCH
+	setvard NEXT_TOUCH game.time
+	add NEXT_TOUCH 0.1
+
+	if $get(PARAM1,relationship,MY_OWNER) equals enemy
+	xdodamage PARAM1 direct DMG_BASE 100% MY_OWNER ent_me MY_SKILL dark
+
+	if ( !$get(PARAM1,scriptvar,'IMMUNE_VAMPIRE') )
+	{
+		if $get(PARAM1,race) isnot undead
+		if ( OWNER_ISPLAYER )
+		{
+			if ( !GAME_PVP )
+			{
+				if $get(PARAM1,isplayer)
+				setdmg hit 0
+				setdmg dmg 0
+				returndata 0.0
+				local EXIT_SUB 1
+			}
+			if !EXIT_SUB
+
+			dbg PARAM1 healowner
+			
+			givehp MY_OWNER 4.0
+		}
+		else
+		{
+			local DMG_DONE PARAM2
+			givehp MY_OWNER DMG_DONE
+			if !GLOW_DELAY
+			setvard GLOW_DELAY 1
+			callevent FREQ_GLOW reset_glow_delay
+			effect glow MY_OWNER (0,255,0) 128 0.25 0.25
+		}
+	}
+
+	if !NEW_TARG_DELAY
+	if !AM_RETURNING
+	if PARAM1 equals CUR_TARGET
+	setvard NEW_TARG_DELAY 1
+	callevent FREQ_NEW_TARGET reset_new_targ_delay
+	callevent find_new_target
+}
+
+{ reset_new_targ_delay
+	setvard NEW_TARG_DELAY 0
+}
+
+{
+repeatdelay 2.0
+
+	if IS_ACTIVE
+	setvard CUR_DEST $get(CUR_TARGET,origin)
+	vectoradd CUR_DEST z $rand(1,TARG_HEIGHT)
+	setmovedest CUR_DEST MOVE_RANGE
+}
+
+{
+repeatdelay 0.1
+	if IS_ACTIVE
+	//teleport through objects
+	local MY_ORG game.monster.origin
+	vectoradd MY_ORG $relvel(0,FWD_SPEED,0)
+	
+	if ( $get(CUR_TARGET,isalive) )
+	{
+		setorigin ent_me MY_ORG
+	}
+	else
+	{
+		local MY_ORG $get(ent_me,origin)
+		local DEST_DIR $dir(MY_ORG,CUR_DEST)
+		vectormultiply DEST_DIR 100
+		setvelocity ent_me DEST_DIR
+	}
+
+	local MASTER_ORG $get(MY_OWNER,origin)
+
+	if ( AM_RETURNING )
+	{
+		setmovedest MY_OWNER 8
+		if $dist(game.monster.origin,MASTER_ORG) < OWNER_HEIGHT
+		callevent notify_return
+	}
+
+	if !AM_RETURNING
+	if ( $dist(game.monster.origin,CUR_DEST) < 64 )
+	{
+		if ( $dist(game.monster.origin,MASTER_ORG) > 1024 ) callevent return_to_owner "too_far"
+		if !AM_RETURNING
+		vectoradd MY_ORG $relvel(0,512,0)
+
+//		if ( !$get(CUR_TARGET,isalive) )
+//		{
+//			local OWNER_YAW $get(MY_OWNER,angles.yaw)
+//			vectoradd MY_ORG $relpos($vec(0,OWNER_YAW,0),$vec(0,256,256)) //hover in front of and above owner
+//		}
+
+		setmovedest MY_ORG MOVE_RANGE
+		//callevent find_new_target
+	}
+
+	if ( !$get(CUR_TARGET,isalive) ) callevent find_new_target
+	local CUR_TARG_ORIGIN $get(CUR_TARGET,origin)
+	if ( !$dist(CUR_TARG_ORIGIN,MASTER_ORG) > 1024 ) callevent find_new_target
+}
+
+{ game_reached_dest
+	if !AM_RETURNING
+	//dbg game_reached_dest
+	//callevent find_new_target
+}
+
+{ find_new_target
+	if !AM_RETURNING
+	if ( $get(CUR_TARGET,isalive) )
+	{
+		if ( $get(CUR_TARGET,range) < 1024 )
+		{
+			callevent set_target CUR_TARGET
+			local EXIT_SUB 1
+		}
+	}
+	if !EXIT_SUB 
+	local OLD_TARGET CUR_TARGET
+	local MASTER_ORG $get(MY_OWNER,origin)
+	local TARGET_LIST $get_tsphere(enemy,1024,MASTER_ORG)
+	if ( $get_token_amt(TARGET_LIST) > 0 )
+	{
+		token.scramble TARGET_LIST
+		callevent set_target $get_token(TARGET_LIST,0)
+	}
+}
+
+{ set_target
+
+	setvard CUR_TARGET PARAM1
+	if ( $get(CUR_TARGET,isalive) )
+	{
+		if !AM_RETURNING
+		if ( CUR_TARGET isnot MY_OWNER )
+		{
+			//make sure I can "see" target
+			local TRACE_START $get(ent_me,origin)
+			local TRACE_END $get(CUR_TARGET,origin)	
+			local TRACE_LINE $get_traceline(TRACE_START,TRACE_END,worldonly)
+			if ( TRACE_LINE equals TRACE_END )
+			{
+				effect beam update BEAM_ID end_target CUR_TARGET
+				effect beam update BEAM_ID brightness BEAM_BRIGHTNESS
+			}
+			else
+			{
+				//not valid, cant "see"
+				effect beam update BEAM_ID brightness BEAM_ID 0
+				setvard CUR_TARGET unset
+			}
+		}
+	}
+	else
+	{
+		effect beam update BEAM_ID brightness BEAM_ID 0
+		//setvard CUR_TARGET MY_OWNER
+	}
+
+	//setvard TARG_ISPLAYER 1
+	//if ( !$get(CUR_TARGET,isplayer) )
+	//{
+	//setvard TARG_ISPLAYER 0
+	//dbg setting_target $get(CUR_TARGET,name)
+	setvard TARG_HEIGHT $get(CUR_TARGET,height)
+	if ( $get(CUR_TARGET,isplayer) ) divide TARG_HEIGHT 2
+	setvard CUR_DEST $get(CUR_TARGET,origin)
+	vectoradd CUR_DEST z $rand(1,TARG_HEIGHT)
+	if ( !AM_RETURNING )
+	{
+		if !$get(CUR_TARGET,isalive)
+		local OWNER_YAW $get(MY_OWNER,angles.yaw)
+		setvard CUR_DEST $get(MY_OWNER,origin)
+		vectoradd CUR_DEST $relpos($vec(0,OWNER_YAW,0),$vec(0,128,64)) //hover in front of and above owner
+	}
+	setmovedest CUR_DEST MOVE_RANGE
+	setvard AM_HOVERING 0
+}
+
+{
+repeatdelay FREQ_SOUND
+	if IS_ACTIVE
+	playsound 0 10 zombie/claw_miss2.wav
+}
+
+{ return_to_owner
+
+	dbg return_to_owner PARAM1
+	effect beam update BEAM_ID remove 0
+	setvard AM_RETURNING 1
+	setvard AM_HOVERING 0
+	multiply FWD_SPEED 2.0
+	setvard CUR_TARGET MY_OWNER
+	callevent set_target MY_OWNER
+	setmovedest MY_OWNER MOVE_RANGE
+	//callevent 0.1 return_boost
+}
+
+//{ return_boost
+//	//addvelocity ent_me $relvel(0,1000,0)
+//	callevent 5.0 notify_return
+//}
+
+{ notify_return
+	if ( !OWNER_ISPLAYER )
+	{
+		callexternal MY_OWNER sword_return
+	}
+	else
+	{
+		callexternal RETURN_ID sword_return
+	}
+	setprop ent_me rendermode 2
+	setprop ent_me renderamt 0
+	effect glow ent_me (0,0,0) 0 -1 0
+	setvard IS_ACTIVE 0
+	callevent 0.1 remove_me
+}
+
+{ remove_me
+
+	deleteent ent_me
+}
+
+//{ game_damaged_other
+//
+//	if !$get(PARAM1,scriptvar,'IMMUNE_VAMPIRE')
+//	if $get(PARAM1,race) isnot undead
+//
+//	if ( OWNER_ISPLAYER )
+//	{
+//		if ( !GAME_PVP )
+//		{
+//			if $get(PARAM1,isplayer)
+//			setdmg hit 0
+//			setdmg dmg 0
+//			returndata 0.0
+//			local EXIT_SUB 1
+//		}
+//		if !EXIT_SUB
+//		
+//		givehp MY_OWNER 4.0
+//	}
+//	else
+//	{
+//		local DMG_DONE PARAM2
+//		givehp MY_OWNER DMG_DONE
+//		if !GLOW_DELAY
+//		setvard GLOW_DELAY 1
+//		callevent FREQ_GLOW reset_glow_delay
+//		effect glow MY_OWNER (0,255,0) 128 0.25 0.25
+//	}
+//}
+
+{ reset_glow_delay
+	setvard GLOW_DELAY 0
+}
+
+{ init_beam
+	//effect beam ents lgtning.spr 100 ent_me 0 ent_me 0 (255,255,0) 1 1 -1
+	effect beam ents laserbeam.spr 300 ent_me 0 CUR_TARGET 0 (255,0,0) BEAM_BRIGHTNESS 1 -1
+	setvard BEAM_ID ent_lastcreated
+}
+
+{ ext_remove //deleted due to player/monster death, or whatnot
+	effect beam update BEAM_ID remove 0
+	callevent 0.1 remove_me
+}

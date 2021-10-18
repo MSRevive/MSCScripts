@@ -1,0 +1,166 @@
+// Human Guard
+{
+   setvard ATTACK_RANGE 100
+   setvard ATTACK1_DAMAGE 5
+   setvard ATTACK_PERCENTAGE 80%
+   setvar ANIM_WALK walk
+   setvar ANIM_RUN run
+   setvard ANIM_ATTACK swordswing1_L
+   setvard ANIM_DEATH diesimple
+   setvard MOVE_RANGE 64
+   setvard SEE_ENEMY_NOW equals 0
+   setvard SEE_ENEMY 0
+   setvard INNOCENT 0
+   setvard SURRENDER 0
+   setvard SURRENDERED 0
+   setvard CAN_RETALIATE 1
+   setvard RETALIATE_CHANGETARGET_CHANCE 75%
+   setvard CAN_HUNT 1
+   setvard CAN_ATTACK 1
+   setvard HUNT_AGRO 0
+
+   setvar SOUND_STRUCK1 body/armour4.wav
+
+   setvar SOUND_HIT voices/human/male_hit1.wav
+   setvar SOUND_HIT2 voices/human/male_hit2.wav
+   setvar SOUND_HIT3 voices/human/male_hit3.wav
+   setvar SOUND_DIE voices/human/male_die.wav
+
+   setvar SND_SHOUT voices/human/male_guard_shout.wav
+   setvar SND_SHOUT2 voices/human/male_guard_shout2.wav
+
+   setvar SND_DISMISS voices/human/male_guard_dismiss.wav
+   setvar SND_DISMISS2 voices/human/male_guard_dismiss2.wav
+}
+
+
+#include monsters/base_monster_new
+
+{
+   eventname npc_spawn
+
+   hp		60/60
+   gold		$rand(1,4)
+   //ov		345
+   width	32
+   height	72
+   race		hguard
+   skilllevel	13
+   name		Guard
+   roam		1
+   setmodel	npc/guard1.mdl
+   setmoveanim	ANIM_WALK
+   stepsize	25
+
+   setactionanim ANIM_ATTACK
+
+
+   catchspeech say_surrender I surrender
+   catchspeech say_surrender give up
+   catchspeech say_surrender mercy
+
+   catchspeech say_nothing I'm innocent
+   catchspeech say_nothing I didn't do it
+   catchspeech say_nothing I had nothing to do with it
+   catchspeech say_nothing I am innocent
+   catchspeech say_nothing innocent   
+}
+// Greet player and other NPCs
+{
+  repeatdelay 45
+
+  see player 128
+  setmovedest ent_lastseen 128
+
+  if SURRENDERED equals 1
+
+  volume 7
+  playrandomsound 2 SND_DISMISS SND_DISMISS2
+}
+
+{ game_dynamically_created
+
+	setvard NPC_MOVE_TARGET PARAM1
+	setvar PERP PARAM1
+
+	callevent 1.0 set_target
+}
+
+{ set_target
+	callevent npcatk_settarget NPC_MOVE_TARGET
+}
+
+{
+	repeatdelay 2
+
+	if !SURRENDERED
+	setvard NPC_MOVE_TARGET PERP
+}
+
+
+{
+  eventname say_surrender
+
+  setvar SURRENDERED 1
+  setvar SURRENDER $rand(1,2)
+  race human
+
+  callevent surrender1
+  callevent surrender2
+
+  setvard NPC_MOVE_TARGET enemy
+  calleventtimed 60 disappear
+}
+{
+  eventname surrender1
+
+  if SURRENDER equals 1
+  saytext All right, but stay out of trouble next time.
+	callevent npcatk_clear_targets
+}
+{
+  eventname surrender2
+
+  if SURRENDER equals 2
+
+  saytext All right, but stay out of trouble next time.
+	callevent npcatk_clear_targets
+}
+{
+  eventname say_nothing
+
+  if SURRENDERED equals 0
+  if INNOCENT equals 0
+
+  //race neutral
+  setmoveanim ANIM_WALK
+
+  saytext Is that so? Well, off with you, then, and don't let me see you again, because if I do, you're in trouble!
+  setvar INNOCENT 1
+
+	callevent npcatk_clear_targets
+
+  calleventtimed 40 reset_hostility
+}
+
+{
+   // Deal damage
+   eventname attack_1
+
+   dodamage ent_lastseen ATTACK_RANGE ATTACK1_DAMAGE ATTACK_PERCENTAGE
+} 
+
+   //Hit by someone
+{
+   eventname npc_struck
+   
+   volume 10
+   playrandomsound 2 SOUND_STRUCK1
+   playrandomsound 1 SOUND_HIT SOUND_HIT2 SOUND_HIT3
+}
+
+{
+   eventname disappear
+
+   deleteent ent_me fade
+}

@@ -1,0 +1,87 @@
+//Base fish
+
+{
+	setvard NPC_MUST_SEE_TARGET 0
+
+   const ANIM_TURN_RIGHT	rturn
+   const ANIM_TURN_LEFT		lturn
+   const TURN_ANIM_THRESHOLD	90
+
+   setvard CAN_RETALIATE		1
+   const RETALIATE_CHANGETARGET_CHANCE 75%  //base_npc_attack - Automatically switch targets to the last damaging player
+}
+
+#include monsters/base_monster
+#include monsters/base_propelled	
+
+{  npc_spawn
+
+   	race wildanimal
+   	roam 1
+   	hearingsensitivity 3
+   	float 1
+
+   	setidleanim ANIM_IDLE
+   	setmoveanim ANIM_WALK
+}
+
+{
+   repeatdelay $rand(10,25)
+
+   	if !IS_HUNTING
+   	if !IS_FLEEING
+
+   	playrandomsound game.sound.body game.sound.maxvol SOUND_IDLE1 SOUND_IDLE2
+}
+
+{  npc_struck	//Hit by someone
+   
+   	playrandomsound game.sound.body game.sound.maxvol SOUND_STRUCK1 SOUND_STRUCK2 SOUND_STRUCK3 SOUND_STRUCK4 SOUND_STRUCK5
+}
+
+{  npc_targetsighted
+
+   	roamdelay 2
+	if( $get(HUNT_LASTTARGET,range) < MOVE_RANGE ) setmovedest none
+}
+
+{  game_stopmoving
+
+	setvard FISH_LASTYAW game.monster.angles.yaw
+}
+
+//PARAM1: Absolute angles towards destination
+{  game_movingto_dest  //Use the dern turn animations
+
+	if( IS_HUNTING ) setangle face.x $vec.x(PARAM1)
+
+	if !IS_HUNTING
+	if !IS_ATTACKING
+
+   	local L_CURRENT_YAW game.monster.angles.yaw
+   	local L_DIFF $anglediff($vec.y(PARAM1),L_CURRENT_YAW)
+	local L_NEGATIVE 0
+	if( L_DIFF < 0 )
+	{
+		setvard L_NEGATIVE 1
+		multiply L_DIFF -1
+	}
+
+	if L_DIFF > TURN_ANIM_THRESHOLD 
+	
+	local L_ANIM ANIM_TURN_LEFT
+	if( L_NEGATIVE ) setvard L_ANIM ANIM_TURN_RIGHT
+	
+	playanim once L_ANIM
+}
+
+{  npc_wander
+ 
+   	setturnrate .175
+ 	setangle face.x 0
+  	roamdelay 0
+   	setvard FISH_WANDER_DEST game.monster.movedest.origin
+   	vectoradd FISH_WANDER_DEST $vec(0,0,$randf(32,256))
+	setmovedest FISH_WANDER_DEST game.monster.moveprox
+}
+

@@ -1,0 +1,127 @@
+//Variant of arhcer for uses with archers with high perches
+//- This has not yet achieved the desired effect :/
+{
+	const SOUND_STRUCK body/flesh1.wav
+	const SOUND_WARCRY voices/human/male_guard_shout.wav //swordsman will use 2
+	const SOUND_ATTACK weapons/bow/bowslow.wav
+	const SOUND_DEATH voices/human/male_die.wav
+	precache SOUND_DEATH //handled in base_monster
+
+	setvar ANIM_IDLE idle1
+   	setvar ANIM_RUN run
+   	setvar ANIM_WALK walk
+   	setvard ANIM_DEATH die_fallback
+   	setvard ANIM_ATTACK shootorcbow
+
+	const ATTACK_SPEED 900
+	const ARROW_TYPE proj_arrow_jagged
+
+	setvard MOVE_RANGE ATTACK_SPEED
+   	setvard ATTACK_RANGE 2000
+   	setvard ATTACK_HITRANGE 2000
+	const ATTACK_DAMAGE '$rand(8,12)'
+	const ATTACK_COF 5
+
+	setvard CAN_HUNT 1
+	setvard CAN_ATTACK 1
+	setvard HUNT_AGRO 1
+	setvard CAN_RETALIATE 1
+
+	setvard NPC_GIVE_EXP 0
+}
+
+#include monsters/base_monster_new
+
+{ npc_spawn	//in helena 	name_unique	Archer
+
+
+	name	a|Human Archer
+	hp	120
+	//ov	359
+	hearingsensitivity	12
+	width	32
+	height	85
+	blind 1 //cant really 'see' anything up here, to don't waste the cycles
+	race	hguard
+	roam	0
+	setmodel npc/archer.mdl
+	takedmg all .9
+	setmodelbody	2 2
+	setstat parry 2 2 2
+	movespeed 0.0
+
+	setanim.movespeed 0.0
+
+	callevent npcatk_suspend_ai
+	callevent 1.0 scan_for_nme
+	setvard PLAYING_DEAD 1 //monsters can't reach me, so ignore me
+
+	if game.serverside
+	if $lcase(game.map.name) equals foutpost
+	race human
+	setvard NPC_NO_PLAYER_DMG 1 //foutpost guards maybe forced to work amongst AOE player spells
+}
+
+{ scan_for_nme
+	callevent 1.0 scan_for_nme
+	local T_BOX $get_tbox(enemy,1800)
+	if T_BOX isnot none
+	local T_BOX $sort_entlist(T_BOX,range)
+	setvard ARROW_TARGET $get_token(T_BOX,0)
+	if ( $get(ARROW_TARGET,race) equals human )
+	{
+		setvard ARROW_TARGET unset
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+	callevent shoot_target
+}
+
+{ shoot_target
+	setmovedest ARROW_TARGET 9999
+	playanim once ANIM_ATTACK
+}
+
+
+{ [override] shoot_arrow
+
+	setvard NPCATK_TARGET ARROW_TARGET
+	local TARG_ORG $get(NPCATK_TARGET,origin)
+	if ( !$get(TARG_ORG,isplayer) ) vectoradd TARG_ORG z $get(NPCATK_TARGET,height)
+	local TARG_DIST $dist(TARG_ORG,game.monster.origin)
+	divide TARG_DIST 15 //lower = higher arc
+	setangle add_view.pitch TARG_DIST
+	tossprojectile view 400 ATTACK_DAMAGE 0 proj_arrow_npc (0,0,72) //0=10, for testing
+ 	//callexternal $get(ent_lastprojectile,id) ext_lighten 0.4
+
+	playsound 0 10 SOUND_ATTACK
+}
+
+{ game_struck
+
+	setvard ARROW_TARGET $get(ent_laststruck,id)
+	callevent shoot_target
+	playsound 0 5 SOUND_STRUCK
+}
+
+{ baseguard_tobattle
+
+	playsound 0 10 SOUND_WARCRY
+}
+
+{ catapults_fire
+
+	local RAND $rand(1,100)
+	if( RAND > 60 )
+	{
+		saytextrange 1024
+		if( RAND < 85 )
+		{
+			saytext Take cover!
+		}
+		else
+		{
+			saytext Projectiles inbound!
+		}	
+	}
+}

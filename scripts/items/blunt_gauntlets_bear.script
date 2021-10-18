@@ -1,0 +1,354 @@
+{
+	const BASE_LEVEL_REQ 30
+
+	//const BEAR_DMG_MULTI 6
+
+	const DRAIN_RATE -8 //last adjusted NOV2015_01
+
+	const NO_IDLE 1
+	const MELEE_OVERRIDE 1
+
+	const ANIM_HANDS_DOWN 0
+	const ANIM_LIFT1 3
+	const ANIM_LOWER 4
+	const ANIM_IDLE1 2
+	const ANIM_IDLE_TOTAL 1
+	const ANIM_ATTACK1 5
+	const ANIM_ATTACK2 6
+	const ANIM_SHEATH 5
+
+	const MODEL_VIEW viewmodels/v_martialarts.mdl
+	const MODEL_VIEW_IDX 6
+	const MODEL_BODY_OFS 58
+	const MODEL_HANDS weapons/p_weapons3.mdl
+	const MODEL_WORLD weapons/p_weapons3.mdl
+
+	const MELEE_DMG 190
+	const MELEE_DMG_RANGE 0
+	const MELEE_DMG_TYPE slash
+	const MELEE_ACCURACY 85%
+	const MELEE_RANGE 100
+	const MELEE_DMG_DELAY 0.3
+	const MELEE_ATK_DURATION 0.9
+
+	const MELEE_RANGE_BEAR 80
+	const MELEE_DELAY_BEAR 0.3
+	const MELEE_DMG_BEAR 1000
+
+	const MELEE_STAT martialarts
+
+	const MELEE_SOUND weapons/swingsmall.wav
+	const MELEE_SOUND_DELAY MELEE_DMG_DELAY
+	const MELEE_PARRY_CHANCE 0%
+
+	const SOUND_SWIPE weapons/swingsmall.wav
+	const SOUND_HITWALL1 weapons/cbar_hitbod1.wav
+	const SOUND_HITWALL2 weapons/cbar_hitbod2.wav
+	const SOUND_SWING weapons/swingsmall.wav
+	const ANIM_PREFIX standard
+
+	const PLAYERANIM_AIM fists
+
+	const SOUND_BEAR_IDLE1 monsters/bear/c_bear_yes.wav
+	const SOUND_BEAR_IDLE2 monsters/bear/c_bear_bat1.wav
+	const SOUND_BEAR_IDLE3 monsters/bear/c_bear_bat2.wav
+	const SOUND_BEAR_TRANSFORM_ON monsters/bear/c_beardire_bat1.wav
+	//const SOUND_BEAR_TRANSFORM_OFF monsters/bear/c_bear_dead.wav
+
+	const SOUND_BEAR_ATTACK1 monsters/bear/c_bear_atk1.wav
+	const SOUND_BEAR_ATTACK2 monsters/bear/c_bear_atk2.wav
+	const SOUND_BEAR_ATTACK3 monsters/bear/c_bear_atk3.wav
+
+	const FREQ_BEAR_IDLE $randf(3.0,8.0)
+
+	const SOUND_BEAR_HITWALL1 debris/bustconcrete1.wav
+	const SOUND_BEAR_HITWALL2 debris/bustconcrete2.wav
+	const FREQ_BEAR_RAWR $randf(3.0,10.0)
+
+	const BEAR_CLAWS_VOFS 1
+
+	const FREQ_BEAR_ATTACK 0.75
+
+	const ANIM_BEAR_ATTACK1 5 //%%likely going to be different index
+	const ANIM_BEAR_ATTACK2 6 //%%likely going to be different index
+	const ANIM_BEAR_LIFT1 1 //%%ditto
+}
+
+#include items/base_melee
+#include items/base_kick
+
+{ game_precache
+	precachefile monsters/companion/bear_image
+	precache SOUND_BEAR_IDLE1
+	precache SOUND_BEAR_IDLE2
+	precache SOUND_BEAR_IDLE3
+	//recache SOUND_BEAR_TRANSFORM_OFF
+	precache SOUND_BEAR_TRANSFORM_ON
+	precache SOUND_BEAR_HITWALL1
+	precache SOUND_BEAR_HITWALL2
+}
+
+{ weapon_spawn
+
+	name  Bear Claws
+	desc  Magical claws enchanted with the spirit of a great bear
+	weight  3
+	size  1
+	value 3000
+	sethand  both
+	sethudsprite hand 138
+	sethudsprite trade 138
+}
+
+{ weapon_deploy
+	setmodelbody 0 MODEL_BODY_OFS
+	playviewanim  ANIM_HANDS_DOWN
+
+	if BEAR_MODE
+	callevent bear_transformation_end
+}
+
+{ melee_start
+
+	if ( BEAR_MODE )
+	{
+		callexternal BEAR_IMAGE_ID ext_attack
+		svplayrandomsound 0 10 SOUND_BEAR_ATTACK1 SOUND_BEAR_ATTACK2 SOUND_BEAR_ATTACK3
+	}
+
+	if !BEAR_MODE
+
+	if( PUNCH_ATTACK == 0 )
+	{
+		local l.punch_anim stance_normal_lowjab_r1
+		setvard PUNCH_ATTACK 1
+		playviewanim ANIM_ATTACK1
+	}
+	else if( PUNCH_ATTACK == 1 )
+	{
+		local l.punch_anim stance_normal_lowjab_r2
+		setvard PUNCH_ATTACK 0
+		playviewanim ANIM_ATTACK2
+	}
+
+	playowneranim once l.punch_anim global.anim.combatwalk 3
+
+	playsound 3 5 SOUND_SWING
+	setvard FISTS_LAST_ATTACK game.time
+	callevent punch1_done  //Lower fists in 5 seconds
+}
+
+{ punch1_done
+
+	if FISTS_LAST_ATTACK
+	local l_elapsedtime game.time
+	subtract l_elapsedtime FISTS_LAST_ATTACK
+
+	if l_elapsedtime > 5
+
+	playviewanim ANIM_LOWER
+	setvard FISTS_LAST_ATTACK 0
+}
+
+{ hitwall
+
+	if ( !BEAR_MODE )
+	{
+		playrandomsound 2 10 SOUND_HITWALL1 SOUND_HITWALL2
+	}
+	else
+	{
+		svplayrandomsound 2 10 SOUND_BEAR_HITWALL1 SOUND_BEAR_HITWALL2
+	}
+}
+
+{ game_+attack2
+
+	if game.serverside
+	if $get(ent_owner,canattack)
+
+	if game.time > NEXT_RIGHT_CLICK
+	setvard NEXT_RIGHT_CLICK game.time
+	add NEXT_RIGHT_CLICK 1.0 //1 second before transform/attempts
+
+	callevent 0.1 bear_mode_toggle
+}
+
+{ bear_mode_toggle
+
+	if ( !BEAR_MODE )
+	{
+		if ( $get(ent_owner,mp) < 30 )
+		{
+			dplayermessage ent_owner Bear Claws: Not enough mana to transform.
+		}
+		else
+		{
+			if ( $get(ent_owner,skill.spellcasting) < 20 )
+			{
+				dplayermessage ent_owner Bear Claws: You lack the magical talent to activate this item. (Spellcasting:20)
+				local EXIT_SUB 1
+			}
+			if !EXIT_SUB
+
+			callevent 0.1 bear_transformation //give a cycle for button to clear
+		}
+	}
+	else
+	{
+		callevent 0.1 bear_transformation_end
+	}
+}
+
+{ bear_transformation
+	//not sure how we're going to do this, exactly, until I setup the model and experiment
+
+	//current thought is to change viewmodel and attack attribs
+	//may also want to slow player here a bit and/or prevent run, however
+	//you'll need a new slow effect that can be canceled
+	//you'll also need to lock inventory here
+	//hope game_mouse_down and +attack2 work with inventory lock
+
+	//sethand	undroppable
+
+	setviewmodelprop ent_me model none
+
+	//applyeffect ent_owner effects/effect_templock $get(ent_owner,id)
+	//setvard game.effect.canattack 0
+
+	attackprop ent_me 0 range MELEE_RANGE_BEAR
+	//attackprop ent_me 0 callback bear //causes overflow
+	attackprop ent_me 0 dmg MELEE_DMG_BEAR
+	attackprop ent_me 1 reqskill 99 //stop kick ability
+
+	svplaysound 0 10 SOUND_BEAR_TRANSFORM_ON
+
+	setvard BEAR_MODE 1
+	callevent bear_loop
+
+	//if ( game.serverside ) callclitemevent ent_me bear_viewmodel //crash
+	
+	if game.serverside
+	createnpc monsters/companion/bear_image $get(ent_owner,origin) $get(ent_owner,id)
+	setvard BEAR_IMAGE_ID $get(ent_lastcreated,id)
+	callexternal ent_owner ext_bear_mode BEAR_IMAGE_ID
+	//setviewmodelprop ent_me rendermode 5
+	//setviewmodelprop ent_me renderamt 0
+	//splayviewanim ent_me ANIM_BEAR_LIFT1
+}
+
+{ bear_transformation_end
+	//setviewmodelprop ent_owner submodelbody MODEL_VIEW_IDX
+	if game.serverside
+
+	if BEAR_MODE
+
+	setvard BEAR_MODE 0
+	//playsound 0 10 SOUND_BEAR_TRANSFORM_OFF
+
+	if ( $get(ent_me,id) equals $get(ent_owner,scriptvar,'PLR_LEFT_HAND') ) local IS_WIELDED 1
+	if ( $get(ent_me,id) equals $get(ent_owner,scriptvar,'PLR_RIGHT_HAND') ) local IS_WIELDED 1
+
+	if ( PARAM1 isnot removed )
+	{
+		attackprop ent_me 0 range MELEE_RANGE
+		attackprop ent_me 0 dmg MELEE_DMG
+		attackprop ent_me 1 reqskill 5 //restore kick ability
+	}
+
+	if ( $get(ent_owner,isalive) ) 
+	{
+		callexternal ent_owner ext_bear_mode_end 1
+		callexternal BEAR_IMAGE_ID remove_bear
+		if IS_WIELDED
+		setviewmodelprop ent_me model MODEL_VIEW
+		setviewmodelprop ent_me submodel MODEL_VIEW_IDX
+		if ( PARAM1 isnot removed ) callevent 0.1 sv_lift_arms
+	}
+	else
+	{
+		if ( $get(BEAR_IMAGE_ID,exists) ) callexternal BEAR_IMAGE_ID ext_bear_die from_gauntlets
+	}
+}
+
+{ sv_lift_arms
+	splayviewanim ent_me ANIM_LIFT1
+}
+
+//{ game_attack1_down
+//
+//	if game.serverside
+//
+//	setvard BOGUS_ITEM not
+//
+//	if BEAR_MODE
+//	if game.time > NEXT_BEAR_ATTACK
+//	setvard NEXT_BEAR_ATTACK game.time
+//	add NEXT_BEAR_ATTACK FREQ_BEAR_ATTACK
+//
+//	callexternal BEAR_IMAGE_ID ext_attack
+//
+//	//splayviewanim ent_me ANIM_BEAR_ATTACK1
+//
+//	playrandomsound 0 10 SOUND_BEAR_ATTACK1 SOUND_BEAR_ATTACK2 SOUND_BEAR_ATTACK3
+//
+//	local BEAR_CL_INDEX $get(ent_owner,scriptvar,'PLR_BEAR_CL_INDEX')
+//	clientevent update all BEAR_CL_INDEX bear_attack
+//	callevent MELEE_DELAY_BEAR bear_damage
+//}
+
+//{ bear_damage
+//	local DMG_SET $get(ent_owner,skill.martialarts.ratio)
+//	multiply DMG_SET MELEE_DMG
+//	multiply DMG_SET BEAR_DMG_MULTI
+//	local OWNER_TARG $get(ent_owner,target)
+//	local OWNER_POS $get(ent_owner,origin)
+//	local TARG_POS $get(OWNER_TARG,origin)
+//	xdodamage OWNER_TARG MELEE_RANGE_BEAR DMG_SET 90% $get(ent_owner,id) $get(ent_owner,id) MELEE_STAT slash
+//}
+
+{ bear_loop
+	if game.serverside
+
+	if BEAR_MODE
+
+	if ( !$get(ent_owner,isalive) )
+	{
+		callevent bear_transformation_end
+	}
+
+	if $get(ent_owner,isalive)
+	if ( $get(ent_owner,mp) > 0 ) givemp ent_owner DRAIN_RATE
+	if ( $get(ent_owner,mp) <= 1 )
+	{
+		dplayermessage ent_owner Bear Claws: You've run out of mana!
+		callevent bear_transformation_end
+		local ExIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	callevent 0.5 bear_loop
+
+	if ( game.time > NEXT_BEAR_IDLE )
+	{
+		setvard NEXT_BEAR_IDLE game.time
+		add NEXT_BEAR_IDLE FREQ_BEAR_IDLE
+		svplayrandomsound 1 10 SOUND_BEAR_IDLE1 SOUND_BEAR_IDLE2 SOUND_BEAR_IDLE3 
+	}
+}
+
+//{ [server]
+//repeatdelay 1.0
+//	dbg bear_check BOGUS_ITEM
+//}
+
+{ game_fall
+	local WORLD_OFS MODEL_BODY_OFS
+	add WORLD_OFS 1
+	setmodelbody 0 WORLD_OFS
+}
+
+{ bweapon_effect_remove
+	dbg Item Removed
+	callevent bear_transformation_end removed
+}

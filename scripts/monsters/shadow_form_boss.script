@@ -1,0 +1,372 @@
+#scope server
+
+{
+	setvard NPC_GIVE_EXP 10000
+
+	setvar NPC_IS_BOSS 1
+
+	const FREQ_MANIFEST 15.0
+
+	const FREQ_BEAM $randf(3.0,8.0)
+
+	const DOT_SHOCK 200
+	const DOT_CAGE 100
+	const DMG_BEAM 200
+
+	const BEAM_RANGE 700
+
+	const SOUND_ZAP1 debris/zap1.wav
+	const SOUND_ZAP2 debris/zap3.wav
+	const SOUND_ZAP3 debris/zap8.wav
+
+	const SOUND_ATTACK1 monsters/undeadz/c_shadow_atk1.wav
+	const SOUND_ATTACK2 monsters/undeadz/c_shadow_atk2.wav
+	const SOUND_ATTACK3 monsters/undeadz/c_shadow_atk3.wav
+
+	const SOUND_MANIFEST1 monsters/undeadz/c_shadow_bat1.wav
+	const SOUND_MANIFEST2 monsters/undeadz/c_shadow_bat2.wav
+
+	const SOUND_PAIN monsters/undeadz/c_shadow_hit1.wav
+	const SOUND_PAIN monsters/undeadz/c_shadow_hit2.wav
+	const SOUND_PAIN monsters/undeadz/c_shadow_slct.wav
+
+	const SOUND_CAGE_LOOP weapons/egon_run3.wav
+
+	const SOUND_DEATH monsters/undeadz/c_shadow_dead.wav
+
+	const SOUND_IDLE_LOOP magic/chant_loop.wav
+
+	//const SOUND_LOOP_AURA1 magic/chant_loop.wav 
+	//const SOUND_LOOP_AURA2 magic/haunted_loop.wav
+
+	setvard ANIM_DEATH idle
+}
+
+{ [shared] game_precache
+	precachefile monsters/shadow_form_boss_fx
+	precache monsters/shadowform_beams.mdl
+	precache shadowfog.spr
+	precache magic/bolt_start.wav
+	precache SOUND_DEATH
+}
+
+#include monsters/base_npc
+
+{ [shared] npc_spawn
+	name an|Ancient Shadowform
+	name_unique shadowform_boss
+	setmodel monsters/shadowform_eye.mdl
+	hp 25000
+	width 64
+	height 64
+	fly 1
+	gravity 0
+	nopush 1
+	movespeed 0.0
+	hearingsensitivity 11
+	race undead
+	setvard IMMUNE_VAMPIRE 1
+
+	takedmg poison 0.0
+	takedmg cold 0.0
+	takedmg fire 0.0
+	takedmg acid 0.0
+	takedmg lightning 0.0
+	takedmg slash 0.0
+	takedmg blunt 0.0
+	takedmg pierce 0.0
+	takedmg generic 0.0
+	takedmg holy 1.0
+	takedmg dark 0.5
+
+	setprop ent_me rendermode 5
+	setprop ent_me renderamt 0
+	invincible 1
+	setvard AM_VISIBLE 0
+
+	callevent 0.1 cl_fx_loop
+	callevent 0.5 setup_beams
+	setvard NPCATK_TARGET unset
+	callevent 1.0 npcatk_hunt
+}
+
+{ npc_post_spawn
+	if ( $lcase(game.map.name) equals bloodshrine ) callexternal all ext_shadowform_boss
+}
+
+{ setup_beams
+	createnpc monsters/shadow_form_boss_fx $relpos(0,0,0)
+	setvard BEAM_FX_ID $get(ent_lastcreated,id)
+}
+
+{ game_heardsound
+	if !CAGE_ACTIVE
+	local HEARD_ID $get(ent_lastheard,id)
+	if $get(HEARD_ID,relationship,ent_me) equals enemy
+	if ( NPCATK_TARGET equals unset ) local ACQUIRE_TARGET 1
+	if ( $get(NPCATK_TARGET,range) > $get(HEARD_ID,range) ) local ACQUIRE_TARGET 1
+	if ACQUIRE_TARGET
+	setvard NPCATK_TARGET HEARD_ID
+}
+
+{ npcatk_hunt
+	if $get(ent_me,isalive)
+	callevent 0.1 npcatk_hunt
+
+	local GAME_TIME game.time
+
+	if ( !AM_VISIBLE )
+	{
+		if GAME_TIME > NEXT_MANIFEST
+		if GAME_TIME > NEXT_MANIFEST_CHECK
+		setvard NEXT_MANIFEST_CHECK GAME_TIME
+		add NEXT_MANIFEST_CHECK 3.0
+		local NME_DETECT $get_tsphere(enemy,384)
+		if NME_DETECT isnot none
+		token.scramble NME_DETECT
+		setvard NPCATK_TARGET $get_token(NME_DETECT,0)
+		callevent do_manifest
+	}
+
+	if ( GAME_TIME > NEXT_BEAM )
+	{
+		setvard NEXT_BEAM GAME_TIME
+		add NEXT_BEAM FREQ_BEAM
+		local BEAM_TARGS $get_tsphere(enemy,BEAM_RANGE)
+		if ( BEAM_TARGS equals none )
+		{
+			setvard NEXT_BEAM GAME_TIME
+			add NEXT_BEAM 1.0
+		}
+		if BEAM_TARGS isnot none
+		token.scramble BEAM_TARGS
+		setvard BEAM_TARGET $get_token(BEAM_TARGS,0)
+		callevent 0.1 do_beam
+	}
+
+	if ( NPCATK_TARGET equals unset )
+	{
+		if GAME_TIME > NEXT_NME_SCAN
+		setvard NEXT_NME_SCAN GAME_TIME
+		add NEXT_NME_SCAN 1.0
+		callevent random_target
+	}
+
+	if ( AM_VISIBLE )
+	{
+		setprop ent_me rendermode 5
+		setprop ent_me renderamt 255
+	}
+
+	if !CAGE_ACTIVE
+	if !TOTAL_INVIS
+
+	if NPCATK_TARGET isnot unset
+	if ( !$get(NPCATK_TARGET,isalive) )
+	{
+		setvard NPCATK_TARGET unset
+	}
+	else
+	{
+		local TARG_ORG $get(NPCATK_TARGET,origin)
+		local MY_ORG $get(ent_me,origin)
+		local NEW_ANGS $angles3d(MY_ORG,TARG_ORG)
+		//vectormultiply NEW_ANGS $vec(-1,1,1)
+		//dbg NEW_ANGS
+		setangle face NEW_ANGS
+		if ( CAN_CAGE )
+		{
+			if GAME_TIME > NEXT_CAGE
+			setvard NEXT_CAGE GAME_TIME
+			add NEXT_CAGE 1.0
+			callevent do_cage
+		}
+	}
+}
+
+{ game_struck
+	setvard NPCATK_TARGET $get(ent_laststruck,id)
+}
+
+
+{ cl_fx_loop
+	if $get(ent_me,isalive)
+	svplaysound 2 0 SOUND_IDLE_LOOP
+	svplaysound 2 10 SOUND_IDLE_LOOP
+	if ( CL_FX_ID isnot 'CL_FX_ID' ) clientevent update all CL_FX_ID remove_fx
+	clientevent new all monsters/shadow_form_boss_cl $get(ent_me,index)
+	setvard CL_FX_ID game.script.last_sent_id
+	callevent 30.0 cl_fx_loop
+}
+
+{ ext_cl_fx_update //called by brush/gm
+	if ( CL_FX_ID isnot 'CL_FX_ID' ) clientevent update all CL_FX_ID remove_fx
+	clientevent new all monsters/shadow_form_boss_cl $get(ent_me,index)
+}
+
+{ game_damaged
+	if ( AM_VISIBLE )
+	{
+		setprop ent_me rendermode 5
+		setprop ent_me renderamt 255
+	}
+	else
+	{
+		clearfx
+	}
+	playrandomsound 0 10 SOUND_PAIN1 SOUND_PAIN2 SOUND_PAIN3
+}
+
+{ make_visible
+	callevent fade_in
+	setvard AM_VISIBLE 1
+	invincible 0
+	callevent 2.0 enable_cage
+	callevent 20.0 make_invisible
+}
+
+{ enable_cage
+	setvard CAN_CAGE 1
+}
+
+{ make_invisible
+	setvard CAN_CAGE 0
+	setvard AM_VISIBLE 0
+	setvard NEXT_MANIFEST game.time
+	add NEXT_MANIFEST FREQ_MANIFEST
+	callevent fade_out
+	//invulnerability restored on fade out
+}
+
+{ fade_in
+	setvard FADE_STEP 0
+	callevent fade_in_loop
+}
+
+{ fade_in_loop
+	if FADE_STEP < 255
+	add FADE_STEP 5
+	if ( FADE_STEP == 255 ) setvard FADE_STEP 255
+	setprop ent_me rendermode 5
+	setprop ent_me renderamt FADE_STEP
+	callevent 0.1 fade_in_loop
+}
+
+{ fade_out
+	setvard FADEOUT_STEP 255
+	callevent fade_out_loop
+}
+
+{ fade_out_loop
+	if FADEOUT_STEP > 0
+	subtract FADEOUT_STEP 5
+	if ( FADEOUT_STEP <= 0 )
+	{
+		setvard FADEOUT_STEP 0
+		clearfx
+		invincible 1
+		setvard TOTAL_INVIS 1
+	}
+	setprop ent_me rendermode 5
+	setprop ent_me renderamt FADEOUT_STEP
+	callevent 0.1 fade_out_loop
+}
+
+{ do_manifest
+	setvard TOTAL_INVIS 0
+	setvard NEXT_MANIFEST game.time
+	add NEXT_MANIFEST 999
+	callevent make_visible
+}
+
+{ do_beam
+
+	local TRACE_START $get(ent_me,origin)
+	local RND_ANG $randf(0,359.99)
+	local RND_DIST $randf(64,150)
+	vectoradd TRACE_START $relpos($vec(0,RND_ANG,0),$vec(0,RND_DIST,0))
+	local TRACE_END $get(BEAM_TARGET,origin)
+	local TRACE_LINE $get_traceline(TRACE_START,TRACE_END,worldonly)
+	if ( TRACE_LINE equals TRACE_END )
+	{
+		local BEAM_TYPE $rand(1,2)
+		if ( BEAM_TYPE == 1 )
+		{
+			local BEAM_COLOR $vec(64,128,255)
+			local REND_PROPS "1;1.0;255;add;(64,128,255);1;1"
+			local DMG_TYPE lightning
+		}
+		else
+		{
+			local BEAM_COLOR $vec(255,0,0)
+			local REND_PROPS "1;1.0;255;add;(255,0,0);1;1"
+			local DMG_TYPE dark
+		}
+		effect beam point lgtning.spr 60 TRACE_START TRACE_END BEAM_COLOR 200 10 1.0
+		clientevent new all effects/sfx_sprite TRACE_START 3dmflaora.spr REND_PROPS 2.0
+		playrandomsound 1 10 SOUND_ZAP1 SOUND_ZAP2 SOUND_ZAP3
+		playrandomsound 3 10 SOUND_ATTACK1 SOUND_ATTACK2 SOUND_ATTACK3
+		dodamage BEAM_TARGET direct DMG_BEAM 100% ent_me DMG_TYPE
+		if ( BEAM_TYPE == 1 )
+		{
+			applyeffect BEAM_TARGET effects/effect_shock_dmg 5.0 $get(ent_me,id) DOT_SHOCK
+		}
+		
+	}
+	else
+	{
+		setvard NEXT_BEAM game.time
+		add NEXT_BEAM 1.0
+	}
+}
+
+{ do_cage
+	local TRACE_START $get(ent_me,origin)
+	local TRACE_END $get(NPCATK_TARGET,origin)
+	local TRACE_LINE $get_traceline(TRACE_START,TRACE_END,worldonly)
+	if ( TRACE_LINE equals TRACE_END )
+	{
+		setvard CAN_CAGE 0
+		setvard NEXT_CAGE game.time
+		add NEXT_CAGE 15.0
+		playrandomsound 3 10 SOUND_MANIFEST1 SOUND_MANIFEST2
+		svplaysound 4 10 SOUND_CAGE_LOOP
+		effect beam ents lgtning.spr 90 ent_me 1 NPCATK_TARGET 1 (200,255,0) 255 20 15.0
+		setvard CAGE_BEAM_ID $get(ent_lastcreated,id)
+		applyeffect NPCATK_TARGET effects/force_cage_temp $get(ent_me,id) DOT_CAGE 15.0
+		setvard CAGE_ACTIVE 1
+		callevent 15.0 ext_end_cage
+	}
+	else
+	{
+		setvard CAN_CAGE 1
+		callevent random_target
+	}
+}
+
+{ random_target
+	local NME_DETECT $get_tsphere(enemy,384)
+	if NME_DETECT isnot none
+	token.scramble NME_DETECT
+	setvard NPCATK_TARGET $get_token(NME_DETECT,0)
+}
+
+{ ext_end_cage
+	if CAGE_ACTIVE
+	setvard CAGE_ACTIVE 0
+	svplaysound 4 0 SOUND_CAGE_LOOP
+	setvard CAN_CAGE 0
+	effect beam update CAGE_BEAM_ID brightness 0
+}
+
+{ game_death
+	dbg game_death - enter
+	if ( $lcase(game.map.name) equals bloodshrine ) callexternal all ext_boss_dead
+	if ( CAGE_ACTIVE ) callevent ext_end_cage
+	setprop ent_me rendermode 5
+	setprop ent_me renderamt 0
+	clientevent update all CL_FX_ID boss_died
+	callexternal BEAM_FX_ID remove_beams
+	svplaysound 2 0 SOUND_IDLE_LOOP
+	dbg game_death - exit
+}

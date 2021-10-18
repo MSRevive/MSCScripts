@@ -1,0 +1,200 @@
+{
+	setvar ANIM_WALK walk
+	setvar ANIM_RUN walk
+	setvar ANIM_IDLE idle
+
+	setvar NPC_GIVE_EXP 200
+	setvard DROP_GOLD 1
+	setvard DROP_GOLD_AMT 100
+
+	setvar SOUND_DEATH agrunt/ag_die5.wav
+
+	setvar NPC_RANGED 1
+
+	setvar ATTACK_RANGE 2048
+	setvar ATTACK_HITRANGE 2048
+
+	setvar ANIM_ATTACK anim_sxbow_shoot //frame_attack_sxbow
+
+	const ANIM_RELOAD anim_sxbow_reload //frame_reload_sxbow x5
+	const ANIM_RELOAD_DONE anim_sxbow_reload_done //pending - frame_reload_sxbow_done
+	const ANIM_ALERT nod
+	setvar AMMO_TYPE unset
+
+	const AMMO_MAX 5
+	setvar AMMO_COUNT 5
+
+   	const SOUND_TURNED1	ambience/the_horror1.wav
+   	const SOUND_TURNED2	ambience/the_horror2.wav
+   	const SOUND_TURNED3	ambience/the_horror3.wav
+	const SOUND_TURNED4	ambience/the_horror4.wav	
+	const SOUND_HOLYPAIN1 agrunt/ag_pain4.wav
+	const SOUND_HOLYPAIN2 agrunt/ag_die3.wav
+
+	const SOUND_IDLE1 agrunt/ag_idle2.wav
+	const SOUND_IDLE2 agrunt/ag_alert3.wav
+	const SOUND_IDLE3 agrunt/ag_idle5.wav
+
+	const SOUND_STRUCK debris/flesh2.wav		//most common
+	const SOUND_PAIN1 agrunt/ag_pain3.wav	//rare > 50%
+	const SOUND_PAIN2 agrunt/ag_pain5.wav	//rare < 50%
+
+    const SOUND_ALERT agrunt/ag_alert2.wav
+
+	setvard I_AM_TURNABLE 1
+
+	const SOUND_XBOW_STRETCH weapons/bow/stretch.wav //monsters/archer/stretch.wav //faster stretch sound
+	const SOUND_XBOW_SHOOT weapons/bow/crossbow.wav
+	const SOUND_BOLT_HIT weapons/bow/bolthit1.wav
+
+	const XBOW_ACCURACY 90
+	const XBOW_CL_SCRIPT monsters/elf_xbow_cl
+	const XBOW_BONE 35
+	const DMG_XBOW 30
+	const DOT_POISON 5
+}
+
+{ game_precache
+	precachefile XBOW_CL_SCRIPT
+}
+
+#include monsters/base_monster_new
+
+{ game_spawn
+	name a|Dwarven Zombie Bowman
+	setmodel dwarf/male1.mdl
+	setmodelbody 0 2
+	setmodelbody 1 6
+	width 32
+	height 48
+	roam 1
+	hp 300
+	race undead
+	takedmg poison 0.0
+	takedmg holy 2.0
+	takedmg lightning 0.5
+	takedmg cold 0.5
+	takedmg pierce 0.5
+	hearingsensitivity 8
+}
+
+{ npc_post_spawn
+	if ( AMMO_TYPE equals unset )
+	{
+		local L_RND_TYPE $rand(1,3)
+		if ( L_RND_TYPE == 1 ) setvard AMMO_TYPE poison
+		if ( L_RND_TYPE == 2 ) setvard AMMO_TYPE explode
+		if ( L_RND_TYPE == 2 ) setvard AMMO_TYPE pierce
+	}
+
+	if ( AMMO_TYPE equals explode )
+	{
+		setvard EXPLOSIVE_BOLTS 1
+		add NPC_GIVE_EXP 100
+	}
+
+	if ( AMMO_TYPE equals poison )
+	{
+		add NPC_GIVE_EXP 50
+	}
+
+}
+
+{ set_ammo //addparam
+	if ( PARAM2 startswith poison ) setvard AMMO_TYPE poison 
+	if ( PARAM2 startswith explode ) setvard AMMO_TYPE explode
+	if ( PARAM2 startswith pierce ) setvard AMMO_TYPE pierce
+	if ( AMMO_TYPE equals unset )
+	{
+		local L_TITLE "MAP ERROR - "
+		stradd L_TITLE $get(ent_me,scriptname)
+		infomsg all L_TITLE "Ammo type incorrectly set, options are: set_ammo;poison | explode | pierce"
+	}
+}
+
+{ frame_attack_sxbow
+	dbg frame_attack_sxbow
+	if ( AMMO_COUNT > 1 )
+	{
+		subtract AMMO_COUNT 1
+		callevent bow_fire
+	}
+
+	if AMMO_COUNT <= 0
+	callevent bow_reload
+}
+
+{ bow_fire
+	playsound 1 10 SOUND_XBOW_SHOOT
+
+	local L_START_LINE $get(ent_me,svbonepos,XBOW_BONE)
+	local TARG_ORG $get(NPCATK_TARGET,origin)
+
+	if ( $rand(1,100) > XBOW_ACCURACY )
+	{
+		local RND_X $randf(-64.0,64.0)
+		local RND_Y $randf(-64.0,64.0)
+		vectoradd TARG_ORG x RND_X
+		vectoradd TARG_ORG y RND_Y
+		vectorset TARG_ORG z $get_ground_height(TARG_ORG)
+	}
+
+	setvard XBOW_AIM_ANGLES $angles3d(L_START_LINE,TARG_ORG)
+	vectorset XBOW_AIM_ANGLES x $neg($vec.x(XBOW_AIM_ANGLES))
+	local L_END_LINE L_START_LINE
+	vectoradd L_END_LINE $relpos(XBOW_AIM_ANGLES,$vec(0,2048,0))
+	setvard ELF_XBOW_SHOT 1
+	local L_END_LINE $get_traceline(L_START_LINE,L_END_LINE,worldonly)
+	setvard XBOW_BOLT_LAND L_END_LINE
+
+	setvard XBOW_REPELL_POINT L_END_LINE
+	vectorset XBOW_REPELL_POINT z $get_ground_height(XBOW_REPELL_POINT)
+
+	xdodamage L_START_LINE L_END_LINE DMG_XBOW 100% ent_me ent_me none pierce dmgevent:bolt
+	if ( EXPLOSIVE_BOLTS ) callevent 0.1 bolt_explode
+}
+
+{ bolt_dodamage
+	clientevent new all XBOW_CL_SCRIPT PARAM3 PARAM4 XBOW_AIM_ANGLES EXPLOSIVE_BOLTS
+	if PARAM1
+	if ( AMMO_TYPE equals poison )
+	{
+		if $get(PARAM2,relationship,ent_me) equals enemy
+		applyeffect PARAM2 effects/effect_poison 10.0 $get(ent_me,id) DOT_POISON
+	}
+}
+
+{ bolt_explode
+
+	xdodamage XBOW_BOLT_LAND 128 DMG_XBOW 0 ent_me ent_me none fire_effect dmgevent:explode
+}
+
+{ explode_dodamage
+	local CUR_TARG PARAM2
+	if $get(CUR_TARG,relationship,ent_me) equals enemy
+	local TARG_ORG $get(CUR_TARG,origin)
+	local TARG_ANG $angles(XBOW_REPELL_POINT,TARG_ORG)
+
+	local TARG_DIST $dist(TARG_ORG,ELF_XBOW_REPELL_POINT)
+	divide TARG_DIST 128
+	local PUSH_STR $ratio(TARG_DIST,500,100)
+	local HALF_PUSH_STR PUSH_STR
+	divide HALF_PUSH_STR 2
+	//dbg game_dodamage str PUSH_STR ratio TARG_DIST
+	setvelocity CUR_TARG $relvel($vec(0,TARG_ANG,0),$vec(10,PUSH_STR,HALF_PUSH_STR))
+}
+
+{ bow_reload
+	setvard IN_RELOAD 1
+	playanim critical ANIM_RELOAD
+}
+
+{ frame_reload_sxbow
+	playsound 2 10 SOUND_RELOAD
+	add AMMO_COUNT 1
+	if ( AMMO_COUNT == AMMO_MAX ) playanim critical ANIM_RELOAD_DONE
+}
+
+{ frame_reload_sxbow_done
+	setvard IN_RELOAD 0
+}

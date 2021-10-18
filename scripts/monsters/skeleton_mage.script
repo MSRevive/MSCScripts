@@ -1,0 +1,607 @@
+#scope server
+
+{
+	setvard NPC_GIVE_EXP 600
+
+	setvar ANIM_WALK walk
+	setvar ANIM_IDLE idle1
+	setvar ANIM_RUN walk
+	setvard ANIM_ATTACK anim_projectile
+	setvard ANIM_DEATH dieforward
+
+	const ANIM_PROJECTILE anim_projectile //frame_projectile_start frame_projectile_show frame_projectile_fire
+	const ANIM_SWIPE attack1 //frame_swipe x2
+	const ANIM_SLAM attack2 //frame_slam
+	const ANIM_SEAL anim_seal //frame_seal_start frame_seal_create
+	const ANIM_KICK anim_roundhouse //frame_kick_start frame_kick_land
+	const ANIM_DEATH_IDLE dead_on_stomach
+
+	setvard ANIM_RANGED_ATTACK anim_projectile
+
+	const DMG_CLAW 50
+	const DMG_SLAM 100
+	const DMG_KICK 100
+	const DMG_SEAL 400
+	const DMG_PROJECTILE 400
+
+	setvard NPC_RANGED 1
+	setvard ATTACK_MOVERANGE 600
+	setvard ATTACK_RANGE 1024
+	setvard ATTACK_HITRANGE 1024
+	setvard DROP_GOLD 1
+
+	const SKELE_GOLD 500
+	setvard AM_SKELETON 1
+	const SKELE_HEARING 10
+	const FREQ_KICK 30.0
+
+	const ATTACK_MELERANGE 96
+	const RANGE_PROJECTILE 1024
+	const RANGE_SEAL 640
+	const RANGE_SWIPE 64
+
+	const SEAL_RAD 140
+
+	setvard CUST_ELEMENT_LIST ''
+
+	const FREQ_CL_UPDATE 20.0
+
+	const BPAIN_USE_PAIN 1
+	const BPAIN_USE_FLINCH 1
+	const BPAIN_FREQ_FLINCH $randf(10.0,20.0)
+	const BPAIN_FLINCH_HEALTH 0.75 //ratio health must be below before can flinch
+	const BPAIN_PAIN_HEALTH 1.0 //ratio health must be below before uses pain sounds
+	const BPAIN_FLINCH_TOKENS "flinchsmall;flinch;bigflinch;laflinch;raflinch;llflinch;rlflinch"
+	const SOUND_STRUCK1 weapons/cbar_hitbod1.wav
+	const SOUND_STRUCK2 weapons/cbar_hitbod2.wav
+	const SOUND_STRUCK3 weapons/cbar_hitbod3.wav
+	const SOUND_PAIN1 monsters/undeadz/c_shadow_hit1.wav
+	const SOUND_PAIN2 monsters/undeadz/c_shadow_hit2.wav
+
+	const SOUND_DEATH monsters/undeadz/c_skeltwiz_bat1.wav
+
+	const SOUND_CLAW_MISS zombie/claw_miss1.wav
+	const SOUND_CLAW_HIT zombie/claw_strike1.wav
+}
+
+{ game_precache
+	precache 3dmflagry.spr
+}
+
+{ fake_precache
+	svplaysound 0 0 magic/sps_fogfire.wav
+	svplaysound 0 0 magic/cold_breath.wav
+	svplaysound 0 0 magic/bolt_loop.wav
+	svplaysound 0 0 magic/flame_loop.wav
+}
+
+#include monsters/base_monster_new
+#include [server] monsters/base_pain
+
+{ npc_spawn
+	callevent skeleton_attribs
+	callevent skele_spawn
+
+	setvard SKELE_DEFAULT_ANIM_WALK ANIM_WALK
+	setvard SKELE_DEFAULT_ANIM_RUN ANIM_RUN
+	setvard SKELE_DEFAULT_ANIM_IDLE ANIM_IDLE
+
+	setvard DROP_GOLD_AMT SKELE_GOLD
+
+	setvard SKELE_BASE_ROAM 1
+
+	setmoveanim ANIM_WALK
+	setidleanim ANIM_IDLE
+
+	roam 1
+	hearingsensitivity SKELE_HEARING
+	blood none
+	race undead
+
+	callevent 0.5 reduce_xp_by_element
+}
+
+{ reduce_xp_by_element
+	//reduce XP by 10% per element removed
+	if RESTRICTED_ELEMENTS
+	local L_SHORT_ELEMENTS 4
+	local L_CUR_ELEMENTS $get_token_amt(CUST_ELEMENT_LIST)
+
+	subtract L_SHORT_ELEMENTS L_CUR_ELEMENTS
+	if ( L_SHORT_ELEMENTS > 0 )
+	{
+		multiply L_SHORT_ELEMENTS 0.1
+		local L_XP_REDUCT 1.0
+		subtract L_XP_REDUCT L_SHORT_ELEMENTS
+		callevent ext_reduct_xp L_XP_REDUCT
+	}
+}
+
+{ skele_spawn
+	name a|Skeletal Mage
+	hp 5000
+	setmodel monsters/skeletonDX.mdl
+	width 32
+	height 72
+}
+
+{ skeleton_attribs
+	if ( !STONE_SKELETON )
+	{
+		takedmg slash 0.7
+		takedmg pierce 0.5
+		takedmg blunt 1.2
+		takedmg fire 1.25
+		takedmg holy 1.5
+		takedmg cold 0.5
+		takedmg poison 0.0
+	}
+	else
+	{
+		takedmg all 0.5
+		takedmg holy 1.5
+		takedmg poison 0.0
+		takedmg cold 0.1
+	}
+}
+
+{ npc_selectattack
+	//may need delays, as these may spam
+
+	if ( ELEMENT_TYPE equals 'ELEMENT_TYPE' ) callevent pick_element
+
+	if ( $get(NPCATK_TARGET,range) < RANGE_PROJECTILE ) setvard ANIM_ATTACK ANIM_PROJECTILE
+	if ( $get(NPCATK_TARGET,range) < RANGE_SEAL )
+	{
+		setvard ANIM_ATTACK ANIM_RANGED_ATTACK //switches with each use
+	}
+	if ( $get(NPCATK_TARGET,range) < RANGE_SWIPE )
+	{
+		if ( SWIPE_COUNT < 4 )
+		{
+			setvard ANIM_ATTACK ANIM_SWIPE
+		}
+		else
+		{
+			setvard ANIM_ATTACK ANIM_SLAM
+		}
+
+		if ( KICK_ENABLED )
+		{
+			if game.time > NEXT_KICK
+			setvard ANIM_ATTACK ANIM_KICK
+		}
+	}
+}
+
+{ frame_swipe
+	add SWIPE_COUNT 1
+	if ( !KICK_ENABLED )
+	{
+		if SWIPE_COUNT > 2
+		setvard KICK_ENABLED 1
+	}
+	xdodamage NPCATK_TARGET ATTACK_MELERANGE DMG_CLAW 90% ent_me ent_me none slash dmgevent:swipe
+}
+
+{ frame_slam
+	setvard SWIPE_COUNT 0
+	xdodamage NPCATK_TARGET ATTACK_MELERANGE DMG_SLAM 80% ent_me ent_me none slash dmgevent:slam
+}
+
+{ swipe_dodamage
+	if ( !PARAM1 )
+	{
+		playsound 0 10 SOUND_CLAW_MISS 0.8 $randf(125,175)
+	}
+	else
+	{
+		setvard MISS_COUNT 0
+		playsound 0 10 SOUND_CLAW_HIT 0.8 $randf(125,175)
+		if $get(PARAM2,relationship,ent_me) equals enemy
+		callevent apply_element_dot $get(PARAM2,id)
+	}
+}
+
+{ slam_dodamage
+	if ( !PARAM1 )
+	{
+		playsound 0 10 SOUND_CLAW_MISS 0.8 $randf(125,175)
+	}
+	else
+	{
+		setvard MISS_COUNT 0
+		playsound 0 10 SOUND_CLAW_HIT 0.8 $randf(125,175)
+		if $get(PARAM2,relationship,ent_me) equals enemy
+		addvelocity PARAM2 $relvel(0,400,110)
+		applyeffect PARAM2 effects/effect_stun 3.0 0 1 $get(ent_me,id)
+		callevent apply_element_dot $get(PARAM2,id)
+	}
+}
+
+{ frame_kick_start
+	setvard NEXT_KICK game.time
+	add NEXT_KICK FREQ_KICK
+	effect beam follow lgtning.spr ent_me 2 1 1.5 255 (128,128,255)
+}
+
+{ frame_kick_land
+	xdodamage NPCATK_TARGET ATTACK_MELERANGE DMG_KICK 100% ent_me ent_me none slash dmgevent:kick
+}
+
+{ kick_dodamage
+	if ( !PARAM1 )
+	{
+		playsound 0 10 SOUND_CLAW_MISS 0.8 $randf(60,80)
+	}
+	else
+	{
+		playsound 0 10 SOUND_CLAW_HIT 0.8 $randf(60,80)
+		setvard MISS_COUNT 0
+		if $get(PARAM2,relationship,ent_me) equals enemy
+		addvelocity PARAM2 $relvel(0,2000,200)
+		applyeffect PARAM2 effects/effect_stun 3.0 0 1 $get(ent_me,id)
+		callevent apply_element_dot $get(PARAM2,id)
+	}
+}
+
+{ npcatk_hunt
+	if ( game.time > NEXT_CL_UPDATE ) callevent update_cl_fx
+
+	if ( NPCATK_TARGET isnot unset )
+	{
+		if ( MISS_COUNT > 5 )
+		{
+			setvard MISS_COUNT 0
+			if !NPC_IS_TURRET
+			callevent chicken_run $randf(3.0,5.0)
+		}
+	}
+}
+
+{ update_cl_fx
+	setvard NEXT_CL_UPDATE game.time
+	add NEXT_CL_UPDATE FREQ_CL_UPDATE
+	local L_DUR FREQ_CL_UPDATE
+	add L_DUR 0.1
+	if ( CL_FX_IDX isnot 'CL_FX_IDX' ) clientevent update all CL_FX_IDX end_effect
+	clientevent new all monsters/skeleton_mage_cl $get(ent_me,index) L_DUR
+	setvard CL_FX_IDX game.script.last_sent_id
+	setvard CL_LAST_UPDATE_TIME game.time
+}
+
+{ cycle_up
+	local L_TIME_SINCE_LAST_UPDATE game.time
+	subtract L_TIME_SINCE_LAST_UPDATE CL_LAST_UPDATE_TIME
+	if ( L_TIME_SINCE_LAST_UPDATE > 5.0 ) clientevent update_cl_fx
+}
+
+{ game_death
+	clientevent update all CL_FX_IDX end_effect
+}
+
+{ frame_projectile_start
+	add MISS_COUNT 1
+	callevent pick_element
+	playsound 0 10 SOUND_ELEMENT_CHARGE //set by pick_element
+	clientevent update all CL_FX_IDX show_orb ELEMENT_COLOR
+}
+
+{ frame_projectile_fire
+	playsound 0 10 SOUND_ELEMENT_FIRE //set by pick_element
+	clientevent update all CL_FX_IDX hide_orb
+	setvard PROJ_ELEMENT_TARGET NPCATK_TARGET
+	tossprojectile view 100 0 10 proj_elemental_guided $get(ent_me,attachpos,0) notoffset
+	if $get(NPCATK_TARGET,range) < RANGE_SEAL
+	setvard ANIM_RANGED_ATTACK ANIM_SEAL
+}
+
+{ frame_seal_start
+	callevent pick_element //sets seal model body too
+	setvard SEAL_ORG $get(NPCATK_TARGET,origin)
+	vectorset SEAL_ORG z $get_ground_height(SEAL_ORG)
+	clientevent update all CL_FX_IDX show_seal_warning SEAL_ORG SEAL_RAD ELEMENT_SEAL_IDX ELEMENT_COLOR
+}
+
+{ frame_seal_create
+	clientevent new all effects/sfx_seal_instant SEAL_ORG ELEMENT_TYPE SEAL_RAD ELEMENT_SEAL_IDX
+	vectoradd SEAL_ORG z 32 //in case of uneven terrain
+	local L_DMG_TYPE ELEMENT_TYPE
+	stradd L_DMG_TYPE _effect
+	xdodamage SEAL_ORG SEAL_RAD DMG_SEAL 0 ent_me ent_me none L_DMG_TYPE dmgevent:seal
+
+	setvard ANIM_RANGED_ATTACK ANIM_PROJECTILE
+}
+
+{ seal_dodamage
+	if PARAM1
+	if $get(PARAM2,relationship,ent_me) equals enemy
+	callevent apply_element_dot $get(PARAM2,id)
+	setvard MISS_COUNT 0
+}
+
+{ apply_element_dot //<target> [element]
+	if ( ELEMENT_TYPE equals 'ELEMENT_TYPE' ) callevent pick_element //case I get jumped early
+
+	local L_ELEMENT_TYPE ELEMENT_TYPE
+	local L_ELEMENT_EFFECT ELEMENT_EFFECT
+	local L_DOT_ELEMENT DOT_ELEMENT
+
+	if ( PARAM2 !startswith PARAM ) local L_ELEMENT_TYPE PARAM2
+
+	if ( L_ELEMENT_TYPE isnot ELEMENT_TYPE )
+	{
+		//element requested does not match current setting, find appropriate effect
+		if ( L_ELEMENT_TYPE equals fire )
+		{
+			local L_ELEMENT_EFFECT effects/effect_burn
+			local L_DOT_ELEMENT 100
+		}
+		else if ( L_ELEMENT_TYPE equals cold )
+		{
+			local L_DOT_ELEMENT 30
+		}
+		else if ( L_ELEMENT_TYPE equals lightning )
+		{
+			local L_ELEMENT_EFFECT effects/effect_shock_dmg
+			local L_DOT_ELEMENT 75
+		}
+		else if ( L_ELEMENT_TYPE equals poison )
+		{
+			local L_ELEMENT_EFFECT effects/greater_poison
+			local L_DOT_ELEMENT 50
+		}
+
+		//cold has special handling below
+	}
+
+	if ( L_ELEMENT_TYPE isnot cold )
+	{
+		applyeffect PARAM1 L_ELEMENT_EFFECT 5.0 $get(ent_me,id) L_DOT_ELEMENT
+	}
+	else
+	{
+		if ( $get_takedmg(PARAM1,cold) < 0.75 )
+		{
+			applyeffect PARAM1 effects/effect_frostbite_dmg 5.0 $get(ent_me,id) L_DOT_ELEMENT
+		}
+		else
+		{
+			applyeffect PARAM1 effects/freeze_solid 5.0 $get(ent_me,id) L_DOT_ELEMENT
+		}
+	}
+}
+
+{ pick_element //pick a random element
+
+	if ( RESTRICTED_ELEMENTS )
+	{
+		setvard ELEMENT_LIST CUST_ELEMENT_LIST
+	}
+	else
+	{
+		setvard ELEMENT_LIST "fire;cold;lightning;poison"
+	}
+	
+	local L_N_ELEMENTS $get_token_amt(ELEMENT_LIST)
+	subtract L_N_ELEMENTS 1
+
+	if ( ELEMENT_IDX > L_N_ELEMENTS ) setvard ELEMENT_IDX 0
+
+
+	setvard ELEMENT_TYPE $get_token(ELEMENT_LIST,ELEMENT_IDX)
+
+	if ( ELEMENT_TYPE equals fire )
+	{
+		setvard ELEMENT_COLOR (255,0,0)
+		setvard ELEMENT_SEAL_IDX 32
+		setvard SOUND_ELEMENT_CHARGE magic/fireball_powerup.wav
+		setvard SOUND_ELEMENT_FIRE magic/fireball_strike.wav
+		setvard ELEMENT_EFFECT effects/effect_burn
+		setvard DOT_ELEMENT 100
+	}
+	else if ( ELEMENT_TYPE equals cold )
+	{
+		setvard ELEMENT_COLOR (128,128,255)
+		setvard ELEMENT_SEAL_IDX 33
+		setvard SOUND_ELEMENT_CHARGE magic/frost_reverse.wav
+		setvard SOUND_ELEMENT_FIRE magic/ice_strike2.wav
+		setvard DOT_ELEMENT 30
+	}
+	else if ( ELEMENT_TYPE equals lightning )
+	{
+		setvard ELEMENT_COLOR (255,255,0)
+		setvard ELEMENT_SEAL_IDX 34
+		setvard SOUND_ELEMENT_CHARGE magic/bolt_start.wav
+		setvard SOUND_ELEMENT_FIRE magic/bolt_end.wav
+		setvard ELEMENT_EFFECT effects/effect_shock_dmg
+		setvard DOT_ELEMENT 75
+	}
+	else if ( ELEMENT_TYPE equals poison )
+	{
+		setvard ELEMENT_COLOR (0,255,0)
+		setvard ELEMENT_SEAL_IDX 35
+		setvard SOUND_ELEMENT_CHARGE bullchicken/bc_attack1.wav
+		setvard SOUND_ELEMENT_FIRE bullchicken/bc_attack3.wav
+		setvard ELEMENT_EFFECT effects/greater_poison
+		setvard DOT_ELEMENT 50
+	}
+
+	setvard PROJ_ELEMENT_TYPE ELEMENT_TYPE
+
+	if ( TOGGLE_ADD )
+	{
+		setvard TOGGLE_ADD 0
+		local EXIT_SUB 1
+	}
+	else
+	{
+		setvard TOGGLE_ADD 1
+	}
+	if !EXIT_SUB
+
+	add ELEMENT_IDX 1
+}
+
+//add params
+//options to restrict elements
+{ use_fire
+	setvard RESTRICTED_ELEMENTS 1
+	token.add CUST_ELEMENT_LIST fire
+}
+
+{ use_cold
+	setvard RESTRICTED_ELEMENTS 1
+	token.add CUST_ELEMENT_LIST cold
+}
+
+{ use_lightning
+	setvard RESTRICTED_ELEMENTS 1
+	token.add CUST_ELEMENT_LIST lightning
+}
+
+{ use_poison
+	setvard RESTRICTED_ELEMENTS 1
+	token.add CUST_ELEMENT_LIST poison
+}
+
+{ ext_proj_elemental_hit //<origin> <element> - called by projectile
+	setvard CUR_PROJ_ELEMENT PARAM2
+	local L_DMG_TYPE CUR_PROJ_ELEMENT
+	stradd L_DMG_TYPE _effect
+	xdodamage PARAM1 128 DMG_PROJECTILE 0.1 ent_me ent_me none L_DMG_TYPE dmgevent:proj
+}
+
+{ proj_dodamage
+	if PARAM1
+	if $get(PARAM2,relationship,ent_me) equals enemy
+	callevent apply_element_dot $get(PARAM2,id) CUR_PROJ_ELEMENT
+}
+
+//=================== Copy pasta'd from skeletal archer, but untested
+
+{ skeleton_wakeup_call //ms_npcscript event - wake up all sleeping skeles
+	callevent skeleton_wake_up
+}
+
+{ make_sleeper //additional parameter - play dead until player near
+	hearingsensitivity 0
+	roam 0
+	invincible 1
+	setmovedest none
+	callevent npcatk_suspend_ai
+	setvard NPC_PROXACT_TRIPPED 0
+	setvard NPC_PROXACT_IFSEEN 0
+	setvard NPC_PROX_ACTIVATE 1
+	setvard NPC_PROXACT_RANGE 128
+	setvard NPC_PROXACT_EVENT skeleton_wake_up
+	setvard NPC_PROXACT_FOV 0
+	setvard PLAYING_DEAD 1
+
+	if ( !STONE_SKELETON )
+	{
+		setsolid none
+		setbbox (0,0,0) (0,0,0)
+		setidleanim ANIM_DEATH_IDLE
+		setmoveanim ANIM_DEATH_IDLE
+		playanim critical ANIM_DEATH_IDLE
+	}
+	else
+	{
+		callevent skele_stone_sleep
+	}
+}
+
+{ skele_target_disturber
+	if $get(NPC_PROXACT_PLAYERID,isalive)
+	setidleanim ANIM_IDLE
+	setmoveanim ANIM_RUN
+	callevent npcatk_settarget NPC_PROXACT_PLAYERID
+	setvard NPC_PROXACT_PLAYERID 0
+}
+
+{ skeleton_wake_up
+	if ( !STONE_SKELETON )
+	{
+		setvard SKELE_FIRST_RAISE 1
+		callevent skele_rebirth
+	}
+	else
+	{
+		hearingsensitivity SKELE_HEARING
+		setvard ANIM_RUN SKELE_DEFAULT_ANIM_RUN
+		setvard ANIM_WALK SKELE_DEFAULT_ANIM_WALK
+		setvard ANIM_IDLE SKELE_DEFAULT_ANIM_IDLE
+		setmoveanim ANIM_IDLE
+		setidleanim ANIM_WALK
+		invincible 0
+		setvard PLAYING_DEAD 0
+		if ( BASE_FRAMERATE equals 'BASE_FRAMERATE' )
+		{
+			setanim.framerate 1.0
+		}
+		else
+		{
+			setanim.framerate BASE_FRAMERATE
+		}
+		roam SKELE_BASE_ROAM
+		callevent npcatk_resume_ai
+		callevent skele_refresh_name
+		dbg Stone Skeleton Awaken ( $get(NPC_PROXACT_PLAYERID,name) )
+
+		if $get(NPC_PROXACT_PLAYERID,isalive)
+		callevent 1.1 skele_target_disturber
+	}
+}
+
+{ skele_hide_name
+	setvard SKELE_ORG_NAME game.monster.name.full
+	race none
+	name ''
+}
+
+{ skele_refresh_name
+	if ( SKELE_ORG_NAME isnot 'SKELE_ORG_NAME' )
+	{
+		name SKELE_ORG_NAME
+		race undead
+	}
+}
+
+{ make_deep_sleeper //additional paramater - play dead until awakened via event
+	if ( !STONE_SKELETON )
+	{
+		hearingsensitivity 0
+		roam 0
+		setvard PLAYING_DEAD 1
+		setsolid none
+		setbbox (0,0,0) (0,0,0)
+		setmovedest none
+		setvard SKELE_FIRST_RAISE 1
+		setidleanim ANIM_DEATH_IDLE
+		setmoveanim ANIM_DEATH_IDLE
+		playanim critical ANIM_DEATH_IDLE
+		callevent npcatk_suspend_ai
+	}
+	else
+	{
+		callevent skele_stone_sleep
+	}
+	invincible 1
+}
+
+{ skele_stone_sleep
+	hearingsensitivity 0
+	setvard PLAYING_DEAD 1
+	callevent skele_hide_name
+	setvard ANIM_RUN ANIM_IDLE
+	setvard ANIM_WALK ANIM_IDLE
+	setmoveanim ANIM_IDLE
+	setidleanim ANIM_IDLE
+	setanim.framerate 0
+	invincible 1
+	roam 0
+	callevent npcatk_suspend_ai
+	playanim hold ANIM_IDLE
+	setmovedest none
+}

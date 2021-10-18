@@ -1,0 +1,260 @@
+//This is an older script and may have some bad conventions as a result.
+
+//Zombie Boss from Decayed Zombie
+{
+	setvar ANIM_WALK walk
+	setvar ANIM_RUN walk
+	const ANIM_SWIPE attack1
+	const ANIM_DISEASE attack2
+	setvard ANIM_ATTACK ANIM_SWIPE
+	setvard ANIM_DEATH diesimple
+	setvar ANIM_IDLE idle1
+	setvard ANIM_DEATH1 diesimple
+	setvard ANIM_DEATH2 diebackward
+	setvard ANIM_DEATH3 dieheadshot
+	setvard ANIM_DEATH4 dieheadshot2
+	setvard ANIM_DEATH5 dieforward
+	setvard ANIM_DEATH ANIM_DEATH1
+
+	setvard CAN_FLINCH 1
+	setvard FLINCH_CHANCE 10
+	
+	const SOUND_IDLE1 garg/gar_breathe1.wav
+	const SOUND_IDLE2 garg/gar_breathe2.wav
+	const SOUND_IDLE3 garg/gar_breathe3.wav
+	const SOUND_IDLE4 garg/gar_idle4.wav
+	const SOUND_PAIN1 garg/gar_idle1.wav
+	const SOUND_PAIN2 garg/gar_idle2.wav
+	const SOUND_PAIN3 garg/gar_idle3.wav
+	const SOUND_STRUCK1 weapons/cbar_hitbod1.wav
+	const SOUND_STRUCK2 weapons/cbar_hitbod2.wav
+	const SOUND_STRUCK3 weapons/cbar_hitbod3.wav
+	const SOUND_WARCRY1 garg/gar_alert1.wav
+	const SOUND_WARCRY2 garg/gar_alert2.wav
+	const SOUND_WARCRY3 garg/gar_alert3.wav
+	const SOUND_RAGE1 garg/gar_attack1.wav
+	const SOUND_RAGE2 garg/gar_attack2.wav
+	const SOUND_DEATH garg/gar_die1.wav
+	const SOUND_MISS1 zombie/claw_miss1.wav
+	const SOUND_MISS2 zombie/claw_miss2.wav
+	const SOUND_HIT1 zombie/claw_strike1.wav
+	const SOUND_HIT2 zombie/claw_strike2.wav
+	precache SOUND_DEATH //external
+
+	const ATTACK_DAMAGE $randf(50,80)
+	setvard ATTACK_RANGE 120
+	setvard ATTACK_HITRANGE 150
+	const ATTACK_HITCHANCE 80
+	setvard ATTACK_MOVERANGE 80
+
+	const DISEASE_FREQ 5.0
+	const DISEASE_DMG $randf(13,16)
+	const DISEASE_DUR $rand(20,25)
+
+	setvard NPC_GIVE_EXP 150
+
+	const MONSTER_MODEL monsters/zombie_huge.mdl
+	precache MONSTER_MODEL //upload new model
+
+	const ME_NO_WANDER 1
+
+	setvard HEAR_RANGE_MAX 200
+	setvard HEAR_RANGE_PLAYER 200
+}
+
+{ game_precache
+	precachefile chests/islesofdread1
+}
+
+#include monsters/base_monster_new
+#include monsters/base_turn_undead
+
+{ npc_spawn
+
+	name a|Giant Zombie
+	setmodel MONSTER_MODEL
+	local MAX_HP $rand(2000,4000) //random hp
+	hp MAX_HP
+	width 50
+	if ( $lcase(game.map.name) isnot challs )
+	{
+		height 110
+	}
+	else
+	{
+		height 72
+	}
+	setidleanim ANIM_IDLE
+	setmoveanim ANIM_WALK
+	playanim once ANIM_IDLE //stop the shakes
+	race undead
+	hearingsensitivity 3
+
+	if ( !ME_NO_WANDER ) roam 1
+	if ( ME_NO_WANDER ) roam 0
+
+	gold $rand(40,100)
+
+	if ( game.map.name equals challs )
+	{
+		name Iuluz the Giant
+		if $rand(1,5) == 1
+		giveitem mana_vampire
+	}
+
+	takedmg holy 1.0
+	takedmg poison 0.0
+	takedmg fire 2.0
+	takedmg ice 0.25
+	takedmg cold 0.25
+	takedmg pierce 0.5
+	takedmg blunt 1.0
+	takedmg slash 1.25
+
+	callevent 1.0 idle_sounds
+
+	catchspeech debug_props debug
+}
+
+{ debug_props
+
+	saytext My Atkrange ATTACK_RANGE vs. MIN_ATTACK_RANGE against game.monster.height
+}
+
+{ npc_selectattack
+
+
+	////dbg temp selecting attack ( del DISEASE_DELAY vs DISEASE_FREQ )
+	if !DISEASE_DELAY
+	setvard DISEASE_DELAY 1
+	callevent DISEASE_FREQ reset_disease_delay
+	setvard ANIM_ATTACK ANIM_DISEASE
+}
+
+{ reset_disease_delay
+	setvard DISEASE_DELAY 0
+}
+
+{ npcatk_targetvalidate
+
+	if !DID_WARCRY
+	setvard DID_WARCRY 1
+	setvard DISEASE_DELAY 1
+	callevent DISEASE_FREQ reset_disease_delay
+	playrandomsound 0 10 SOUND_WARCRY1 SOUND_WARCRY2 SOUND_WARCRY3
+}
+
+{ attack_1
+	////dbg temp using swipe ANIM_ATTACK
+	setvard I_ATTACKING 1
+	callevent npcatk_dodamage NPCATK_TARGET ATTACK_HITRANGE ATTACK_DAMAGE ATTACK_HITCHANCE blunt
+}
+
+{ attack_2
+	////dbg temp using disease ANIM_ATTACK
+	setvard I_ATTACKING 1
+	callevent npcatk_dodamage NPCATK_TARGET ATTACK_HITRANGE ATTACK_DAMAGE ATTACK_HITCHANCE blunt
+	setvard I_DISEASE 1
+	setvard ANIM_ATTACK ANIM_SWIPE
+}
+
+{ game_dodamage //1:AttackHit(1/0)  2:EntityHit  3:StartOrigin  4:EndOrigin
+
+	if I_ATTACKING
+	setvard I_ATTACKING 0
+	if ( PARAM1 ) playrandomsound 0 10 SOUND_HIT1 SOUND_HIT2
+	if ( !PARAM1 ) playrandomsound 0 10 SOUND_MISS1 SOUND_MISS2
+
+	if I_DISEASE
+	setvard I_DISEASE 0
+	if PARAM1
+	applyeffect PARAM2 effects/effect_disease DISEASE_DUR $get(ent_me,id) DISEASE_DMG 1
+}
+
+{ idle_sounds
+
+	if ( NPCATK_TARGET equals unset ) playrandomsound 0 10 SOUND_IDLE1 SOUND_IDLE2 SOUND_IDLE3 SOUND_IDLE4
+
+	if ( NPCATK_TARGET isnot unset ) playrandomsound 0 5 SOUND_RAGE1 SOUND_RAGE2
+
+	local NEXT_SOUND $randf(4,15)
+
+	callevent NEXT_SOUND idle_sounds
+}
+
+// Zombie walkstep pattern
+//  { event 600 2 "common/npc_step1.wav" } 
+//  { event 600 12 "common/npc_step3.wav" } 
+//  { event 600 22 "common/npc_step2.wav" } 
+//  { event 600 31 "common/npc_step4.wav" } 
+//  { event 600 41 "common/npc_step1.wav" } 
+//  { event 600 51 "common/npc_step3.wav" } 
+{ walk_step1
+	playsound 0 10 garg/gar_step1.wav
+}
+{ walk_step2
+	playsound 0 10 garg/gar_step2.wav
+}
+{ walk_step3
+	playsound 0 10 garg/gar_step1.wav
+}
+{ walk_step4
+	playsound 0 10 garg/gar_step2.wav
+}
+{ walk_step5
+	playsound 0 10 garg/gar_step1.wav
+}
+{ walk_step6
+	playsound 0 10 garg/gar_step2.wav
+}
+
+{ npc_death
+
+	local PICK_DEATH $rand(1,5)
+	
+	if ( PICK_DEATH == 1 ) setvard ANIM_DEATH ANIM_DEATH1
+	if ( PICK_DEATH == 2 ) setvard ANIM_DEATH ANIM_DEATH2
+	if ( PICK_DEATH == 3 ) setvard ANIM_DEATH ANIM_DEATH3
+	if ( PICK_DEATH == 4 ) setvard ANIM_DEATH ANIM_DEATH4
+	if ( PICK_DEATH == 5 ) setvard ANIM_DEATH ANIM_DEATH5
+
+	if ( $lcase(game.map.name) contains islesofdread1 )
+	{
+		createnpc chests/islesofdread1 $relpos(0,0,0)
+	}
+}
+
+{ cycle_up
+	if ( ME_NO_WANDER ) roam 1
+}
+
+{ cycle_down
+	setvard DID_WARCRY 0
+}
+
+{ game_struck
+	playrandomsound 0 10 SOUND_STRUCK1 SOUND_STRUCK2 SOUND_STRUCK3
+	if ( !PAIN_DELAY ) callevent 0.1 pain_sound
+}
+
+{ pain_sound
+
+	setvard PAIN_DELAY 1
+	local $randf(5,10) NEXT_PAIN
+	playrandomsound 0 10 SOUND_PAIN1 SOUND_PAIN2 SOUND_PAIN3
+	callevent NEXT_PAIN pain_delay_reset
+}
+
+{ pain_delay_reset
+	setvard PAIN_DELAY 0
+}
+
+{ npc_flinch
+
+	local R_FLINCH $rand(1,4)
+	if ( R_FLINCH == 1 ) setvard FLINCH_ANIM flinchsmall
+	if ( R_FLINCH == 2 ) setvard FLINCH_ANIM flinch
+	if ( R_FLINCH == 3 ) setvard FLINCH_ANIM bigflinch
+	if ( R_FLINCH == 4 ) setvard FLINCH_ANIM llflinch
+	playrandomsound 0 10 SOUND_PAIN1 SOUND_PAIN2 SOUND_PAIN3
+}

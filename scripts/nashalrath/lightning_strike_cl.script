@@ -1,0 +1,98 @@
+//strikes below [min_z] are not scanned for
+
+{ client_activate //<pos> <control_player> [min_z]
+	setvard FX_ORIGIN PARAM1
+	setvard FX_CONTROL_PLAYER PARAM2
+	setvard MIN_Z PARAM3
+	if ( MIN_Z startswith PARAM ) setvard NO_MIN_Z 1
+	setvard FX_GROUND FX_ORIGIN
+	vectorset FX_GROUND z $get_ground_height(FX_GROUND)
+
+	if ( !NO_MIN_Z )
+	{
+		if $vec.z(FX_GROUND) < MIN_Z
+		//bolt is below min z (islands on Nashalrath) - just draw bolt and exit
+		callevent do_strike nohit
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	setvard GLOW_SIZE 1
+	cleffect light new FX_GROUND 1 (255,255,0) 5.0
+	setvard LIGHT_ID game.script.last_light_id
+
+	setcallback render enable
+
+	sound.play3d magic/bolt_start.wav 10 FX_GROUND
+
+	setvard FX_ACTIVE 1
+	cleffect tempent sprite 3dmflaora.spr FX_GROUND setup_glow_sprite update_glow_sprite
+	callevent 3.0 do_strike
+}
+
+{ game_prerender
+	if FX_ACTIVE
+	if ( GLOW_SIZE < 255 ) add GLOW_SIZE 1
+	cleffect light LIGHT_ID FX_GROUND GLOW_SIZE (255,255,0) 1.0
+}
+
+{ do_strike
+
+	cleffect beam_points FX_ORIGIN FX_GROUND lgtning.spr 2.0 30 1 0.8 0.5 30 (255,255,0)
+
+	sound.setvolume 5 weather/Storm_exclamation.wav 10
+	playsound 5 10 weather/Storm_exclamation.wav
+
+	callevent 3.0 remove_fx
+
+	if PARAM1 isnot nohit
+	sound.play3d weather/lightning.wav 10 FX_GROUND
+
+	cleffect tempent sprite 3dmflaora.spr FX_GROUND setup_spit_sprite
+	cleffect tempent sprite 3dmflaora.spr FX_GROUND setup_spit_sprite
+	cleffect tempent sprite 3dmflaora.spr FX_GROUND setup_spit_sprite
+	cleffect tempent sprite 3dmflaora.spr FX_GROUND setup_spit_sprite
+	cleffect tempent sprite 3dmflaora.spr FX_GROUND setup_spit_sprite
+
+	if game.localplayer.index == FX_CONTROL_PLAYER
+	cleffect ce GM gm_lsl $quote(FX_GROUND) x
+}
+
+{ remove_fx
+	removescript
+}
+
+{ update_glow_sprite
+	if FX_ACTIVE
+	local CUR_SCALE game.tempent.fuser1
+	if CUR_SCALE < 6
+	add CUR_SCALE 0.01
+	cleffect tempent set_current_prop fuser1 CUR_SCALE
+	cleffect tempent set_current_prop scale CUR_SCALE
+}
+
+{ setup_glow_sprite
+	cleffect tempent set_current_prop death_delay 3.0
+	cleffect tempent set_current_prop gravity 0
+	cleffect tempent set_current_prop collide none
+	cleffect tempent set_current_prop framerate 30
+	cleffect tempent set_current_prop frames 1
+	cleffect tempent set_current_prop fuser1 0.1
+	cleffect tempent set_current_prop scale 0.1
+	cleffect tempent set_current_prop rendermode add
+	cleffect tempent set_current_prop renderamt 128
+}
+
+{ setup_spit_sprite
+	cleffect tempent set_current_prop death_delay 1.0
+	cleffect tempent set_current_prop scale 0.5
+	cleffect tempent set_current_prop collide world
+	cleffect tempent set_current_prop bouncefactor 5
+	cleffect tempent set_current_prop framerate 30
+	cleffect tempent set_current_prop frames 1
+	cleffect tempent set_current_prop rendermode add
+	cleffect tempent set_current_prop renderamt 255
+	local RND_ANG $randf(0,359.99)
+	local RND_VEL $randf(100,200)
+	cleffect tempent set_current_prop velocity $relpos($vec(0,RND_ANG,0),$vec(0,RND_VEL,RND_VEL))
+}

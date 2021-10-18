@@ -1,0 +1,162 @@
+{
+	//ye shitload of anims
+	const ANIM_IDLE1 idle1 //shrug
+	const ANIM_IDLE2 idle2 //peeping
+	const ANIM_IDLE3 idle3 //calm, crouched
+	const ANIM_DUCK crouch
+	const ANIM_JUMP jump
+	const ANIM_SUMMON1 updown
+	const ANIM_SUMMON2 downup
+	const ANIM_SUMMON_FLYER jabber
+
+	const ANIM_PARRY right //maybe parry?
+	const ANIM_SLASH attack1 //needs event
+	const ANIM_PROJECTILE zapattack1 //needs event
+	
+	const ANIM_FLINCH1 flinch2
+	const ANIM_FLINCH2 laflinch
+	const ANIM_FLINCH3 raflinch
+	const ANIM_FLINCH4 llflinch
+	const ANIM_FLINCH5 rlflinch
+
+	const ANIM_DEATH_FINAL diebackward
+	const ANIM_DEATH_FAKE dieheadshot
+
+	const ANIM_IDLE_DEAD cw_sleep_headshot
+	const ANIM_GET_UP cw_awake_headshot
+
+	//base anims
+	setvar ANIM_RUN run1
+	setvar ANIM_WALK walk1
+	setvard ANIM_ATTACK ANIM_SLASH
+	setvard ANIM_IDLE ANIM_IDLE3
+
+	//base stats
+	setvard ATTACK_MOVERANGE 30
+	setvard ATTACK_RANGE 60
+	setvard ATTACK_HITRANGE 164
+
+	//custom stats
+	const FREQ_IDLE $randf(10,20)
+	const TURN_REQ 5 //$rand(1,TURN_UNDEAD_DAMAGE) < TURN_REQ = turned
+
+	//emotes
+	const ANIM_BEG collar1
+	const ANIM_ANGRY1 collar2
+	const ANIM_ANGRY2 jibber
+	const ANIM_TEASE cw_pepsiidle
+
+	//when starting dead
+	const ANIM_PLAY_DEAD1 cw_sleep_head
+	const ANIM_AWAKE1 cw_awake_head
+	const ANIM_PLAY_DEAD2 cw_sleep_back
+	const ANIM_AWAKE2 cw_awake_back
+
+	//sounds
+	const SOUND_ALERT1 monsters/kelly_sounds/slv_alert1.wav
+	const SOUND_ALERT2 monsters/kelly_sounds/slv_alert3.wav
+	const SOUND_ALERT3 monsters/kelly_sounds/slv_alert4.wav
+	const SOUND_ATTACK monsters/kelly_sounds/hc_attack3.wav
+	const SOUND_DEATH1 monsters/kelly_sounds/slv_die1.wav
+	const SOUND_DEATH2 monsters/kelly_sounds/slv_die2.wav
+	const SOUND_STRUCK1 xxx
+	const SOUND_STRUCK2 xxx
+	const SOUND_PAIN1 monsters/kelly_sounds/slv_pain1.wav
+	const SOUND_PAIN2 monsters/kelly_sounds/slv_pain2.wav
+	const SOUND_IDLE1 monsters/kelly_sounds/slv_word1.wav
+	const SOUND_IDLE2 monsters/kelly_sounds/slv_word2.wav
+	const SOUND_IDLE3 monsters/kelly_sounds/slv_word3.wav
+	const SOUND_IDLE4 monsters/kelly_sounds/slv_word4.wav
+	const SOUND_IDLE5 monsters/kelly_sounds/slv_word5.wav
+	const SOUND_IDLE6 monsters/kelly_sounds/slv_word6.wav
+	const SOUND_IDLE7 monsters/kelly_sounds/slv_word7.wav
+	const SOUND_IDLE8 monsters/kelly_sounds/slv_word8.wav
+}
+
+#include monsters/base_monster_new
+
+{ npc_spawn
+	takedmg poison 0.0
+	callevent rabid_skele_spawn
+	callevent 0.1 idle_loop
+}
+
+{ rabid_skele_spawn
+	name a|Rabid Poisonbone
+	setmodel monsters/rabid_skelly.mdl
+	race undead
+	blood none
+	hearingsensitivity 4
+	setvard NPC_GIVE_EXP 60
+	setmoveanim ANIM_WALK
+	setidleanim ANIM_IDLE
+	playanim once ANIM_IDLE
+	width 32
+	height 64
+	setprop ent_me skin 3
+	
+	hp 200
+	takedmg holy 2.0
+}
+
+{ idle_loop
+	callevent FREQ_IDLE idle_loop
+
+	local RND_SOUND $rand(1,8)
+	if ( RND_SOUND == 1 ) playsound 2 10 SOUND_IDLE1
+	if ( RND_SOUND == 2 ) playsound 2 10 SOUND_IDLE2
+	if ( RND_SOUND == 3 ) playsound 2 10 SOUND_IDLE3
+	if ( RND_SOUND == 4 ) playsound 2 10 SOUND_IDLE4
+	if ( RND_SOUND == 5 ) playsound 2 10 SOUND_IDLE5
+	if ( RND_SOUND == 6 ) playsound 2 10 SOUND_IDLE6
+	if ( RND_SOUND == 7 ) playsound 2 10 SOUND_IDLE7
+	if ( RND_SOUND == 8 ) playsound 2 10 SOUND_IDLE8
+
+	local RND_ANIM $rand(1,3)
+	if ( RND_ANIM == 1 ) playanim once ANIM_IDLE1
+	if ( RND_ANIM == 3 ) playanim once ANIM_IDLE3
+}
+
+{ game_takedamage //PARAM1=attacker  PARAM2=inflictor? PARAM3=dmg PARAM4=dmg_type - use returndata to alter incoming damage
+	playrandomsound 2 10 SOUND_STRUCK1 SOUND_STRUCK2 SOUND_STRUCK1 SOUND_PAIN1 SOUND_PAIN2
+	if ( PARAM4 contains 'effect' ) local EXIT_SUB 1
+	if !EXIT_SUB
+	if $rand(1,5) == 1
+	callevent npcatk_flee $get(ent_laststruck,id) 1024 5.0
+}
+
+{ npcatk_lost_sight
+	playanim once idle1
+	setvard DID_WARCRY 0
+}
+
+{ my_target_died
+	setvard DID_WARCRY 0
+}
+
+{ npc_targetsighted
+	if ( !DID_WARCRY )
+	{
+		setvard DID_WARCRY 1
+		callevent do_warcry
+	}
+	callevent check_projectile
+}
+
+{ do_warcry
+	playanim once idle2
+	playrandomsound 0 10 SOUND_ALERT1 SOUND_ALERT2 SOUND_ALERT3
+}
+
+{ turn_undead
+	playsound 0 10 SOUND_PAIN1
+	if ( $rand(1,PARAM1) < TURN_REQ ) callevent npcatk_flee $get(PARAM2,id) 1024 5.0
+}
+
+{ check_projectile
+	//if cansee and freq do projectile
+}
+
+{ npc_death //fake death ala skeleton
+
+}

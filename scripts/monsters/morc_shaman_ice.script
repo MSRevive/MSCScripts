@@ -1,0 +1,232 @@
+//Orc Ice Shamman, from Orc Sniper by Thothie
+{
+	setvard DROP_GOLD 1			//Gold Drop
+	setvard DROP_GOLD_AMT $rand(15,30)	//
+	setvard NPC_GIVE_EXP 100
+	//setvard DROP_ITEM1 scroll2_frost_xolt //hanled through monsters/base_monster
+	//setvard DROP_ITEM1_CHANCE 5%	  //hanled through by monsters/base_monster
+	
+	setvard ANIM_ATTACK swordswing1_L //Attack animation
+	setvard FLINCH_CHANCE 45%
+	
+	setvard MOVE_RANGE 256
+	setvard ATTACK_RANGE 2000
+	const ATTACK_SPEED 300
+	const ATTACK_CONE_OF_FIRE 2//Cone of fire
+	
+	const MELE_RANGE 96
+	const MELE_HITRANGE 128
+	const ATTACK_ACCURACY 80
+	const ANIM_SWIPE swordswing1_L
+	const ANIM_FIRE swordswing1_L
+	const ANIM_WARCRY warcry
+	const ANIM_KICK kick
+	setvar ANIM_IDLE idle1
+	const SWIPE_DAMAGE '$rand(25,65)'
+	const SOUND_MELEMISS zombie/claw_miss1.wav
+	const SOUND_MELEHIT zombie/claw_strike3.wav
+	const SOUND_ICESHOOT magic/ice_strike.wav
+	const SOUND_DEATH_SHOOT magic/spawn.wav
+	const SOUND_WARCRY1 monsters/orc/attack1.wav
+	const SOUND_WARCRY2 monsters/orc/attack3.wav
+	const SOUND_MAKEBLIZZ magic/heal_powerup.wav
+	const FROST_BOLT_DAMAGE '$rand(10,50)'
+	const FROST_STRIKE_DAMAGE '$rand(10,20)'
+	const FROST_BOLT_FREQ 1.0
+	const BLIZZARD_DELAY 20.0
+	const DEATH_SCRIPT monsters/summon/ice_blast
+
+	//Ice Blast Precache (crap I shouldn't have to do)
+	//const DEATH_SCRIPT monsters/summon/ice_blast
+	//const XBLAST_MODEL weapons/magic/iceball.mdl
+	//const SOUND_FREEZE magic/freeze.wav
+	//const XSOUND_HOVERLOOP ambience/alienwind1.wav
+	//const XSOUND_HITWALL ambience/alienlaser1.wav
+	//const XLIGHTNING_SPRITE lgtning.spr
+	//const SOUND_ICEBLAST magic/temple.wav
+	//precache XBLAST_MODEL
+	//precache XSOUND_FREEZE
+	//precache XSOUND_HOVERLOOP
+	//precache XSOUND_HITWALL
+	//precache XLIGHTNING_SPRITE
+
+	setvard IMMUNE_FIRE 1.5
+	setvard IMMUNE_COLD 1
+
+    precachefile monsters/summon/summon_blizzard
+	precache snow1.spr
+	precachefile DEATH_SCRIPT
+}
+
+#include monsters/orc_base_ranged
+#include monsters/orc_base
+
+{ orc_spawn
+
+   	hp 320
+   	//ov 180
+   	name a|Marogar Ice Shaman
+	race orc
+   	hearingsensitivity 8
+   	setstat parry 30
+   	takedmg all .8
+	takedmg fire 1.5
+	takedmg cold 0.0
+	takedmg ice 0.0
+	setstat spellcasting 30 30 30 30 30 30 30 //><
+
+	precache monsters/morc.mdl //precache for those who do not have the model
+	setmodel monsters/morc.mdl
+
+	callevent BLIZZARD_DELAY make_blizzard
+
+   	setmodelbody	0 0		//Body 0=topless+skirt 1=topless+pants 2=brestplate 3=whitefurhide
+   	setmodelbody	1 2		//Head 0=cap_shorthorn 1=cap_spike 2=wbuffo_skin 3=cheif_ramhorns 4=wletherhood
+   	setmodelbody	2 0		//Weapon 0=fist 1=axe 2=wood_bow 3=icebow 4=icesword 5=iceaxe
+}
+
+{ npc_selectattack
+
+	local NME_RANGE $get(ent_lastseen,range)
+	if ( FROST_BOLT_DELAY ) 
+	{
+		if ( NME_RANGE > MELE_HITRANGE ) setvard ANIM_ATTACK ANIM_FIRE
+	}
+	if ( !FROST_BOLT_DELAY ) setvard ANIM_ATTACK ANIM_FIRE
+	if ( NME_RANGE < MELE_HITRANGE )
+	{
+		if ( $rand(1,4) == 1 ) setvard ANIM_ATTACK ANIM_KICK
+	}
+}
+
+{ swing_sword //called by modeanim swordswing1_L at frame 14
+
+	if ( $cansee(enemy,MELE_RANGE) )
+	{
+		//dbg Can See NME in range
+		setvard ANIM_ATTACK ANIM_SWIPE
+		callevent swipe_attack $get(ent_lastseen,id)
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	if ( $cansee(enemy) )
+	{
+		//prevents shamman from moving closer to target than needed
+		if ( !$cansee(enemy,MOVE_RANGE) ) setvard ANIM_ATTACK ANIM_RUN
+		//if ( $cansee(enemy,MOVE_RANGE) ) setvard ANIM_ATTACK ANIM_WARCRY
+	}
+
+	//if !FROST_BOLT_DELAY
+	setvard ANIM_ATTACK ANIM_FIRE
+	callevent throw_frostbolt
+}
+
+{ throw_frostbolt
+
+	if $cansee(enemy)
+
+	callevent FROST_BOLT_FREQ reset_frostbolt
+
+	playsound 0 10 SOUND_ICESHOOT
+
+	local FINAL_DAMAGE FROST_BOLT_DAMAGE
+	if ( EXT_DAMAGE_ADJUSTMENT isnot 'EXT_DAMAGE_ADJUSTMENT' ) add FINAL_DAMAGE EXT_DAMAGE_ADJUSTMENT //for future use
+	tossprojectile view ATTACK_SPEED FINAL_DAMAGE ATTACK_CONE_OF_FIRE proj_ice_bolt (0,48,48)
+	setvard FROST_BOLT_DELAY 1
+}
+
+{ reset_frostbolt
+	setvard ANIM_ATTACK ANIM_FIRE
+	setvard DID_WARCRY 0
+	setvard FROST_BOLT_DELAY 0
+}
+
+{ npc_death
+
+	setsolid none
+	setbbox none
+	local BALL_DEST $relpos(0,0,2000)
+	playsound 0 10 SOUND_DEATH_SHOOT
+	createnpc DEATH_SCRIPT $relpos(0,0,32) $get(ent_me,id) 10.0 BALL_DEST
+}
+
+{ swipe_attack //PARAM1 = enemy struck
+
+	setvard SWIPE_SOUNDS 1
+	local FINAL_DAMAGE SWIPE_DAMAGE
+	if ( EXT_DAMAGE_ADJUSTMENT isnot 'EXT_DAMAGE_ADJUSTMENT' ) add FINAL_DAMAGE EXT_DAMAGE_ADJUSTMENT //for future use
+	if $get(ent_laststruckbyme,range) <= MELE_HITRANGE
+	callevent npcatk_dodamage PARAM1 MELE_HITRANGE FINAL_DAMAGE ATTACK_ACCURACY
+	applyeffect PARAM1 effects/effect_frostbite_dmg $rand(5,10) ent_me FROST_STRIKE_DAMAGE
+}
+
+{ game_dodamage //1: Attack Hit (1/0)  2: Entity Attack hit  3:  Start Position  4:  End Position
+
+	if SWIPE_SOUNDS
+
+	if ( !PARAM1 ) playsound 0 10 SOUND_MELEMISS
+
+	if ( PARAM1 ) playsound 0 10 SOUND_MELEHIT
+
+	setvard SWIPE_SOUNDS 0
+}
+
+{ npc_struck
+
+	if $get(ent_laststruck,range) < MELE_RANGE
+	//setvard ANIM_ATTACK ANIM_KICK
+	callevent npcatk_settarget $get(ent_laststruck,id)
+	//callevent check_attack
+}
+
+{ make_blizzard
+
+	if !MADE_BLIZZARD
+
+	if ( !$cansee(enemy) ) callevent BLIZZARD_DELAY make_blizzard
+
+	if $cansee(enemy)
+	callevent npcatk_faceattacker NPCATK_TARGET
+
+	playanim critical ANIM_WARCRY
+	playsound 0 10 SOUND_WARCRY1
+
+	setvard MADE_BLIZZARD 1
+	setvard IS_FLEEING 1
+	setvard PURE_FLEE 1
+
+	effect glow ent_me (128,128,255) 128 3 3
+
+	callevent 1.5 really_make_blizzard
+}
+
+{ really_make_blizzard
+
+	local EFFECT_SCRIPT monsters/summon/summon_blizzard
+	local SET_DAMAGE 20
+	local SET_DURATION 10
+
+	playsound 0 10 SOUND_MAKEBLIZZ
+
+    createnpc EFFECT_SCRIPT $get(ent_lastseen,origin) $get(ent_me,id) $get(ent_me,angles.y) SET_DAMAGE SET_DURATION 
+}
+
+{ warcry_done //called from model anim warcry @ frame 29
+
+	setvard IS_FLEEING 0
+	setvard PURE_FLEE 0
+}
+
+{ kick_land //called from model anim kick @ frame 9
+
+	setvard SWIPE_SOUNDS 1
+	setvard ANIM_ATTACK ANIM_SWIPE
+	local FINAL_DAMAGE SWIPE_DAMAGE
+	if ( EXT_DAMAGE_ADJUSTMENT isnot 'EXT_DAMAGE_ADJUSTMENT' ) add FINAL_DAMAGE EXT_DAMAGE_ADJUSTMENT //for future use
+	callevent npcatk_dodamage ent_laststruckbyme MELE_HITRANGE FINAL_DAMAGE ATTACK_ACCURACY
+	if $get(ent_laststruckbyme,range) <= MELE_HITRANGE
+	applyeffect ent_laststruckbyme effects/effect_push 3 $relvel(0,400,50) 0
+	setvard PURE_FLEE 1
+	callevent npcatk_flee ent_lastseen 800 5
+}

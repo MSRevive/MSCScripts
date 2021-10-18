@@ -1,0 +1,1191 @@
+//Kharaztorant Hollow One by Thothie
+//level 35-40 mini-boss
+//Should be mean enough not to require escort
+//Remember: Thar can only be one (cuz he uses the player script)
+
+//spinning flaming sprites that splode when near (monster npc, sprite via hollow's cl effect)
+//cl guided fireball
+//cl guided iceball (same thing, different sprite, aoe freeze solid)
+//many tiny lil blue mists that move v. slow and drain mana until player dies (just to keep player movin)
+//- these can be periodically called back en mass, moving quickly
+//dodge with movement shift
+//invisible+client mirror images
+//flame face
+//repel stun burst
+//ibarrier
+//hold person
+//static field (constant, damages enemies in range)
+
+#scope server
+{
+	//custom
+	const ANIM_FLOAT float
+	const ANIM_JUMP	jump
+	const ANIM_LEAP leap
+	const ANIM_PREP_DEPLOY ref_aim_trip
+	const ANIM_RELEASE_DEPLOY ref_shoot_trip
+	const ANIM_MIRROR_PREP ref_aim_grenade
+	const ANIM_ICE_SPIRAL ref_shoot_smartgun
+	const ANIM_FIRE_BREATH float
+
+	const LHAND_ATCH 1
+	const RHAND_ATCH 2
+	const MOUTH_ATCH 3
+	const N_SPECIALS 9
+
+	const MIRROR_DURATION 60.0
+	const FREQ_MIRROR 120.0
+
+	const FLIGHT_DURATION 60.0
+	const FREQ_FLIGHT 90.0
+	const FLIGHT_SPEED 100
+
+	const MAX_DRAIN_SPRITES 8
+	const DRAIN_SPRITE_SPEED 25
+	const DRAINER_MAX_LIVE_TIME 180.0
+	const MP_DRAIN_RATE -10
+
+	const DMG_FIREBALL 300
+	const DMG_ICEBALL 200
+	const DOT_ICE 50
+	const DOT_FIRE 75
+	const DOT_FIRE2 125
+	const DOT_POISON 25
+	const DMG_ZAP 25
+
+	const FREQ_DODGE $randf(5.0,15.0)
+
+	const SHIELD_RANGE 80
+
+	//base
+	setvar IS_UNHOLY 1
+	setvard ANIM_IDLE idle
+	setvard ANIM_DEATH die_forwards2
+	setvard ANIM_WALK walk
+	setvard ANIM_RUN walk
+	setvard NPC_GIVE_EXP 5000
+
+	setvard ATTACK_RANGE 100
+	setvard ATTACK_HITRANGE 170
+	setvard ATTACK_MOVERANGE 128 //close, but don't go into melee
+	setvard NPC_RANGED 1 //treat as ranged (keep anti-stuck when close, etc.)
+
+	//sound
+	const SOUND_SPELL_PREP magic/bolt_start.wav
+	const SOUND_FIRE_PREP magic/spookie1.wav
+	const SOUND_ICE_PREP magic/spookie1.wav
+	const SOUND_POP magic/elecidlepop.wav
+	const SOUND_FIREBALL_RELEASE ambience/alienflyby1.wav
+	const sOUND_MIRROR monsters/gonome/gonome_melee2.wav
+	const SOUND_MIRROR_OFF debris/beamstart15.wav
+	const SOUND_BREATH monsters/goblin/sps_fogfire.wav
+	const SOUND_ZAP_LOOP magic/bolt_loop.wav
+	const SOUND_ZAP_START magic/bolt_end.wav
+	const SOUND_POISON_BREATH magic/flame_loop.wav
+	const SOUND_POISON_BREATH_START magic/flame_loop_start.wav
+	const SOUND_DODGE magic/frost_reverse.wav
+	const SOUND_FLIGHT_START magic/vent3.wav 
+	const SOUND_FLIGHT_LOOP magic/vent3.wav
+	const FREQ_SOUND_FLIGHT_LOOP 5.92
+
+	const SOUND_DEATH x/x_pain3.wav
+	precache SOUND_DEATH
+
+	//precahing these here. They are used in various client scripts
+	precache magic/egon_run3_noloop.wav
+	precache magic/energy1_loud.wav1
+	precache explode1.spr
+}
+
+{ game_precache
+	precachefile monsters/summon/client_side_fireball
+	precachefile monsters/summon/client_side_iceball
+}
+
+#include monsters/base_monster_new
+
+{ game_precache
+	precachefile effects/sfx_motionblur_perm
+}
+
+{ [shared] npc_spawn
+	name a|Kharaztorant Hollow One
+
+	precache monsters/hollow_one.mdl //paranoia for cl script
+
+	setmodel monsters/hollow_one.mdl
+	width 32
+	height 80
+	setidleanim idle
+	setmoveanim walk
+
+	hearingsensitivity 2
+
+	if game.serverside
+
+	roam 0
+	hp 8000
+	race demon
+	takedmg all 0.4
+	takedmg holy 1.5
+	takedmg poison 0.0
+
+	callevent npcatk_suspend_attack //custom hunt system
+
+	setvard N_DRAIN_SPRITES 0
+	setvard SPECIAL_CYCLE 0
+
+	setvard DRAINER_ROTATIONS "1;2;3;4;5;6;7;8"
+	setvard DRAINER_ALIVES "0;0;0;0;0;0;0;0"
+	setvard DRAINER_TARGS "1;2;3;4;5;6;7;8"
+	setvard DRAINER_LOCS "1;2;3;4;5;6;7;8"
+	setvard DRAINER_TIMES "1;2;3;4;5;6;7;8"
+
+	setvard CL_IDX const.localplayer.scriptID //hope this "const" doesn't change :|
+	clientevent update all CL_IDX kh_setup $get(ent_me,index)
+}
+
+{ game_dynamically_created
+	//not summoned, but for debuggary
+	setvard SPECIAL_CYCLE PARAM1
+}
+
+{ cycle_up
+	roam 1
+}
+
+{ cycle_down
+	callevent npcatk_go_home
+}
+
+{ npc_made_it_home
+	roam 0
+}
+
+{ my_target_died
+	//prevent "sticky noises"
+	if ( POISON_BREATH_ON ) svplaysound 1 0 SOUND_POISON_BREATH
+	if ( FIRE_BREATH_ON ) svplaysound 1 0 SOUND_BREATH
+}
+
+{ game_death
+	if ( POISON_BREATH_ON ) svplaysound 1 0 SOUND_POISON_BREATH
+	if ( FIRE_BREATH_ON ) svplaysound 1 0 SOUND_BREATH
+	//if ( MIRRORS_ON ) clientevent update all CL_IDX kh_mirrors_off
+	//if ( FLIGHT_MODE ) clientevent update all CL_IDX kh_flight_sprites 0
+	gravity 1
+	setvelocity ent_me 0
+	setanim.movespeed 0
+	clientevent update all CL_IDX kh_end_effects
+	setprop ent_me rendermode 0
+	setprop ent_me renderamt 255
+	if ( CFB_FIREBALL_ACTIVE ) callevent cfb_explode
+	callexternal GAME_MASTER gm_hollow_one_died $get(ent_me,origin)
+}
+
+{ npcatk_hunt
+
+	if !SUSPEND_AI
+
+	if ( NPCATK_TARGET isnot unset )
+	{
+		if ( game.time > NEXT_SPECIAL ) callevent do_special
+		if ( game.time > NEXT_ZAP_SCAN ) callevent zap_scan
+	}
+}
+
+{ do_special
+
+	setvard NEXT_SPECIAL game.time
+	add NEXT_SPECIAL 10.0 //will reset when we know WHICH special
+
+	add SPECIAL_CYCLE 1
+
+	if ( MIRRORS_ON )
+	{
+		setprop ent_me rendermode 5
+		setprop ent_me renderamt 1 //in case glow shell renders invis and fux up cl effects
+	}
+
+	if ( SPECIAL_CYCLE > N_SPECIALS ) setvard SPECIAL_CYCLE 1
+
+	//create blue flame
+	if ( SPECIAL_CYCLE == 1 )
+	{
+		if N_DRAIN_SPRITES < MAX_DRAIN_SPRITES
+
+		dbg do_special: spawn_drain_sprite
+	
+		callevent spawn_drain_sprite
+		setvard NEXT_SPECIAL game.time
+		add NEXT_SPECIAL 10.0
+	}
+
+	if ( SPECIAL_CYCLE == 2 )
+	{
+		dbg do_special: fireball
+	
+		callevent prep_fireball
+		setvard NEXT_SPECIAL game.time
+		add NEXT_SPECIAL 25.0 //will be reset when fireball expires/explodes
+	}
+
+	if ( SPECIAL_CYCLE == 3 )
+	{
+		dbg do_special: iceball
+	
+		callevent prep_iceball
+		setvard NEXT_SPECIAL game.time
+		add NEXT_SPECIAL 25.0 //will be reset when fireball expires/explodes
+	}
+
+	if ( SPECIAL_CYCLE == 4 )
+	{
+		if ( FLIGHT_MODE )
+		{
+			add SPECIAL_CYCLE 1
+			setvard NEXT_SPECIAL game.time
+		}
+		if !FLIGHT_MODE
+		dbg do_special: fire breath
+		callevent do_fire_breath //no prep, just go
+		setvard NEXT_SPECIAL game.time
+		add NEXT_SPECIAL 10.0
+	}
+
+	if ( SPECIAL_CYCLE == 5 )
+	{
+		dbg do_special: ice spiral
+		callevent prep_ice_spiral //no prep (despite the name), just go
+		setvard NEXT_SPECIAL game.time
+		add NEXT_SPECIAL 10.0
+	}
+
+	if ( SPECIAL_CYCLE == 6 )
+	{	
+		if ( FLIGHT_MODE )
+		{
+			add SPECIAL_CYCLE 1
+			setvard NEXT_SPECIAL game.time
+		}
+		if !FLIGHT_MODE
+		dbg do_special: poison breath
+		callevent do_poison_breath //no prep (despite the name), just go
+		setvard NEXT_SPECIAL game.time
+		add NEXT_SPECIAL 10.0
+	}
+
+	if ( SPECIAL_CYCLE == 7 )
+	{
+		dbg do_special: hold person
+		callevent prep_hold_person
+		setvard NEXT_SPECIAL game.time
+		add NEXT_SPECIAL 10.0
+	}
+
+
+	if ( SPECIAL_CYCLE == 8 )
+	{
+		if ( FLIGHT_MODE )
+		{
+			add SPECIAL_CYCLE 1
+			setvard NEXT_SPECIAL game.time
+		}
+		if !FLIGHT_MODE
+
+		if ( MIRRORS_ON )
+		{
+			add SPECIAL_CYCLE 1
+			setvard NEXT_SPECIAL game.time
+		}
+		if !MIRRORS_ON
+
+		if ( game.time <= NEXT_MIRROR )
+		{
+			add SPECIAL_CYCLE 1
+			setvard NEXT_SPECIAL game.time
+		}
+		if game.time > NEXT_MIRROR	
+
+		dbg do_special: mirror image
+		callevent prep_mirrors
+		setvard NEXT_SPECIAL game.time
+		add NEXT_SPECIAL 10.0
+	}
+
+	if ( SPECIAL_CYCLE == 9 )
+	{
+		dbg do_special: attempt flight
+
+		if ( FLIGHT_MODE )
+		{
+			dbg attempt_flight: canceled, already in flight
+			add SPECIAL_CYCLE 1
+			setvard NEXT_SPECIAL game.time
+		}
+		if !FLIGHT_MODE
+
+		if ( MIRRORS_ON )
+		{
+			dbg attempt_flight: canceled, mirror image up
+			add SPECIAL_CYCLE 1
+			setvard NEXT_SPECIAL game.time
+		}
+		if !MIRRORS_ON
+
+		if ( game.time <= NEXT_FLIGHT )
+		{
+			dbg attempt_flight: canceled, too soon since light flight
+			add SPECIAL_CYCLE 1
+			setvard NEXT_SPECIAL game.time
+		}
+		if game.time > NEXT_FLIGHT	
+
+		callevent prep_flight_mode
+		setvard NEXT_SPECIAL game.time
+		add NEXT_SPECIAL 10.0
+	}
+}
+
+{ npcatk_suspend_ai
+	roam 0
+}
+
+{ npcatk_resume_ai
+	roam 1
+}
+
+//====================================== DRAIN SPRITE HANDLING =============================
+{ spawn_drain_sprite
+	callevent npcatk_suspend_ai
+	playanim critical ANIM_PREP_DEPLOY
+	setidleanim ANIM_PREP_DEPLOY
+	setmoveanim ANIM_PREP_DEPLOY
+
+	setvard DRAINER_INDEX -1
+	dbg spawn_drain_sprite alives: DRAINER_ALIVES
+	calleventloop 8 find_free_drainer_index
+
+	add N_DRAIN_SPRITES 1
+		
+	effect beam ents lgtning.spr 5 ent_me LHAND_ATCH ent_me RHAND_ATCH (32,64,255) 200 100 2.0
+	playsound 0 10 SOUND_SPELL_PREP	
+
+	callevent 2.0 spawn_drain_sprite2
+}
+
+{ find_free_drainer_index
+	if DRAINER_INDEX < 0
+	local CUR_IDX game.script.iteration
+	local IS_ALIVE $get_token(DRAINER_ALIVES,CUR_IDX)
+	if ( !IS_ALIVE )
+	{
+		setvard DRAINER_INDEX CUR_IDX
+		dbg find_free_drainer_index: Found Free ( DRAINER_INDEX )
+	}
+}
+
+{ spawn_drain_sprite2
+
+	playanim critical ANIM_RELEASE_DEPLOY
+
+	//pick a nearby target
+	local TARG_LIST $get_tbox(enemy,512)
+
+	setvard OUT_TARGET NPCATK_TARGET //just in case somethin dies below
+
+	callevent 0.1 spawn_drain_sprite3
+
+	if TARG_LIST isnot none
+	if ( $get_token_amt(TARG_LIST) > 1 ) token.scramble TARG_LIST
+	setvard OUT_TARGET $get_token(TARG_LIST,0)
+}
+
+{ spawn_drain_sprite3
+	dbg Using target $get(OUT_TARGET,name)
+
+	playsound 0 10 SOUND_POP
+	local SPAWN_LOC $get(ent_me,attachpos,LHAND_ATCH)
+	local MOVE_DEST SPAWN_LOC
+	local TARG_ORG $get(OUT_TARGET,origin)
+	local TARG_ANG $angles3d(SPAWN_LOC,TARG_ORG)
+	vectoradd MOVE_DEST $relvel(TARG_ANG,$vec(0,DRAIN_SPRITE_SPEED,0))
+	vectorset MOVE_DEST x $neg($vec.x(MOVE_DEST))
+	clientevent update all CL_IDX kh_make_drain_sprite SPAWN_LOC DRAINER_INDEX TARG_ANG
+	token.set DRAINER_TARGS DRAINER_INDEX OUT_TARGET
+	token.set DRAINER_LOCS DRAINER_INDEX SPAWN_LOC
+	token.set DRAINER_TIMES DRAINER_INDEX game.time
+	token.set DRAINER_ROTATIONS DRAINER_INDEX $rand(0,359)
+	token.set DRAINER_ALIVES DRAINER_INDEX 1
+	callevent resume_movement
+	callevent npcatk_resume_ai
+	setvard NEXT_SPECIAL game.time
+	add NEXT_SPECIAL 1.0
+}
+
+{ resume_movement
+	if ( !FLIGHT_MODE )
+	{
+		setmoveanim ANIM_WALK
+		setidleanim ANIM_IDLE
+	}
+	else
+	{
+		setmoveanim ANIM_FLOAT
+		setidleanim ANIM_FLOAT
+	}
+}
+
+{ stop_movement
+	//in flight mode, you'll need to set velocity to 0 here
+}
+
+{ track_drain_sprites
+	local CUR_IDX game.script.iteration
+	local IS_ALIVE $get_token(DRAINER_ALIVES,CUR_IDX)
+	if IS_ALIVE
+
+	local MY_TARG $get_token(DRAINER_TARGS,CUR_IDX)
+	local MY_ORG $get_token(DRAINER_LOCS,CUR_IDX)
+	local MY_ORBIT_ANG $get_token(DRAINER_ROTATIONS,CUR_IDX)
+	local MY_TIME $get_token(DRAINER_TIMES,CUR_IDX)
+
+	local TARG_ORG $get(MY_TARG,origin)
+
+	local MY_DEST TARG_ORG
+
+	local TARG_HEIGHT_ADJ $get(MY_TARG,height)
+	divide TARG_HEIGHT_ADJ 2 //will orbit around heads of players, and wastes of monsters
+	vectoradd MY_DEST $relpos($vec(0,MY_ORBIT_ANG,0),$vec(0,32,TARG_HEIGHT_ADJ))
+
+	local TARG_MP $get(MY_TARG,mp)
+
+	if ( $dist(MY_ORG,TARG_ORG) < 64 )
+	{
+		//dbg Drainer: Near Target [ MY_ORBIT_ANG ]
+		//drain and orbit
+		givemp MY_TARG MP_DRAIN_RATE
+		if ( game.time > NEXT_ALERT )
+		{
+			if TARG_MP > 0
+			setvard NEXT_ALERT game.time
+			add NEXT_ALERT 2.0
+			playermessage MY_TARG "A corpse-light is draining your mana!"
+			local IS_DRAINING 1
+		}
+
+		if ( TARG_MP <= 0 )
+		{
+			playermessage NPCATK_TARGET Your soul has been drained by a corpse light!
+			dodamage NPCATK_TARGET direct 99999 100% ent_me target
+			clientevent update all CL_IDX kh_sprite_splode MY_ORG
+			token.set DRAINER_ALIVES CUR_IDX "0"
+			local IS_ALIVE 0
+			subtract N_DRAIN_SPRITES 1
+			dbg Drainer: popped
+		}
+		else
+		{
+			//orbit
+			add MY_ORBIT_ANG 45
+			token.set DRAINER_ROTATIONS CUR_IDX MY_ORBIT_ANG
+		}
+	}
+
+	if IS_ALIVE
+
+	local TIME_ALIVE game.time
+	subtract TIME_ALIVE MY_TIME
+	if ( TIME_ALIVE > DRAINER_MAX_LIVE_TIME )
+	{
+		clientevent update all CL_IDX kh_sprite_splode MY_ORG
+		token.set DRAINER_ALIVES CUR_IDX "0"
+		local IS_ALIVE 0
+		subtract N_DRAIN_SPRITES 1
+		dbg Drainer: Timed out
+	}
+
+	if IS_ALIVE
+
+	if ( !$get(MY_TARG,isalive) )
+	{
+		clientevent update all CL_IDX kh_sprite_splode MY_ORG
+		token.set DRAINER_ALIVES CUR_IDX "0"
+		local IS_ALIVE 0
+		subtract N_DRAIN_SPRITES 1
+		dbg Drainer: Target Died
+	}
+
+	if IS_ALIVE
+
+	local DEST_ANG $angles3d(MY_ORG,MY_DEST)
+	vectorset DEST_ANG x $neg($vec.x(DEST_ANG))
+	//dbg sv_update_drainer: $get(MY_TARG,name) TARG_ORG 
+	clientevent update all CL_IDX kh_make_drain_sprite MY_ORG CUR_IDX DEST_ANG IS_DRAINING
+	local OLD_ORG MY_ORG
+	vectoradd MY_ORG $relvel(DEST_ANG,$vec(0,DRAIN_SPRITE_SPEED,0))
+	token.set DRAINER_LOCS CUR_IDX MY_ORG //stores progressive origin
+
+	//if ( G_DEVELOPER_MODE ) effect beam point lgtning.spr 30 OLD_ORG MY_ORG (255,0,255) 255 0 0.5
+}
+
+{
+repeatdelay 1.0
+	if ( N_DRAIN_SPRITES > 0 ) calleventloop 8 track_drain_sprites
+}
+
+//====================================== FIRE/ICEBALL HANDLING =============================
+{ prep_fireball
+
+	callevent 2.0 prep_fireball2
+
+	callevent npcatk_suspend_ai
+	playanim critical ANIM_PREP_DEPLOY
+	setidleanim ANIM_PREP_DEPLOY
+	setmoveanim ANIM_PREP_DEPLOY
+		
+	clientevent update all CL_IDX kh_hand_sprites 2.0 (255,128,96)
+	playsound 0 10 SOUND_FIRE_PREP
+}
+
+
+{ prep_fireball2
+
+	playanim critical ANIM_RELEASE_DEPLOY
+	playsound 0 10 SOUND_FIREBALL_RELEASE
+	callevent npcatk_resume_ai
+	callevent resume_movement
+	setvard BALL_TYPE fire
+	callevent start_ball
+}
+
+{ prep_iceball
+
+	callevent 2.0 prep_iceball2
+
+	callevent npcatk_suspend_ai
+	playanim critical ANIM_PREP_DEPLOY
+	setidleanim ANIM_PREP_DEPLOY
+	setmoveanim ANIM_PREP_DEPLOY
+	
+	effect beam ents lgtning.spr 30 ent_me LHAND_ATCH ent_me RHAND_ATCH (128,164,255) 200 200 2.0
+	playsound 0 10 SOUND_ICE_PREP
+}
+
+
+{ prep_iceball2
+
+	playanim critical ANIM_RELEASE_DEPLOY
+	playsound 0 10 SOUND_FIREBALL_RELEASE
+	callevent npcatk_resume_ai
+	callevent resume_movement
+	setvard BALL_TYPE ice
+	callevent start_ball
+}
+
+{ start_ball
+	if !CFB_FIREBALL_ACTIVE //one at a time
+	setvard CFB_FIREBALL_ACTIVE 1
+	setvard CFB_FIRST_TARGET_FOUND 0
+	setvard CFB_EST_ORG $relpos(0,32,0)
+	local START_ANGS $get(ent_me,angles)
+	setvard CFB_EST_ANG START_ANGS
+	if ( BALL_TYPE equals fire ) clientevent new all monsters/summon/client_side_fireball CFB_EST_ORG START_ANGS
+	if ( BALL_TYPE equals ice ) clientevent new all monsters/summon/client_side_iceball CFB_EST_ORG START_ANGS
+	setvard CFB_FIREBALL_IDX game.script.last_sent_id
+	callevent 0.1 cfb_fireball_loop
+	setvard CFB_FORCE_END game.time
+	add CFB_FORCE_END 20.0
+}
+
+{ cfb_fireball_loop
+	if CFB_FIREBALL_ACTIVE
+	callevent 0.5 cfb_fireball_loop
+	if ( game.time > CFB_NEXT_SCAN )
+	{
+		setvard CFB_NEXT_SCAN game.time
+		add CFB_NEXT_SCAN 2.0
+		if ( !$get(CFB_TARGET,isalive) )
+		{
+			local OWNER_ORG $get(ent_me,origin)
+			local TARGET_TOKENS $get_tsphere(enemy,512,CFB_EST_ORG) 	//try and see if $get_sphere is fixed - can't remember
+			if TARGET_TOKENS isnot none
+			if ( $get_token_amt(TARGET_TOKENS) > 1 ) token.scramble TARGET_TOKENS //not important when player is owner, but may prevent targeting same player every time
+			local TEST_TARG $get_token(TARGET_TOKENS,0)
+			if $get(TEST_TARG,isalive)
+			if !$get(TEST_TARG,scriptvar,'PLAYING_DEAD')
+			setvard CFB_TARGET TEST_TARG
+			//dbg *** cfb_fireball_loop: targeting $get(CFB_TARGET,id)
+			if !CFB_FIRST_TARGET_FOUND
+			setvard CFB_FIRST_TARGET_FOUND 1
+			local ANG_TO_TARG $angles3d(CFB_EST_ORG,TARG_ORG)
+		}
+		else
+		{
+			local SCAN_DOWN CFB_EST_ORG
+			//vectoradd SCAN_DOWN z -32 //scan down a lil bit, cuz yer aiming at heads
+			local TARGET_TOKENS $get_tsphere(enemy,96,SCAN_DOWN)
+			if TARGET_TOKENS isnot none
+			callevent cfb_explode "hit_nme"
+		}
+	}
+
+	if CFB_FIREBALL_ACTIVE //case exploded
+
+	if ( $get(CFB_TARGET,isalive) )
+	{
+		local TARG_ORG $get(CFB_TARGET,origin)
+		if ( !$get(CFB_TARGET,isplayer) ) vectoradd TARG_ORG z $get(CFB_TARGET,height) //aim for the heads of monsters
+
+		//if ( G_DEVELOPER_MODE ) gplayermessage ent_me Fireball Tracking: $get(CFB_TARGET,name)
+
+		local ANG_TO_TARG $angles3d(CFB_EST_ORG,TARG_ORG)
+		vectorset ANG_TO_TARG x $neg($vec.x(ANG_TO_TARG))
+		clientevent update all CFB_FIREBALL_IDX svr_update_fireball_vec ANG_TO_TARG CFB_EST_ORG
+		setvard CFB_EST_ANG ANG_TO_TARG
+		vectoradd CFB_EST_ORG $relvel(ANG_TO_TARG,$vec(0,60,0))
+	}
+	else
+	{
+		vectoradd CFB_EST_ORG $relvel(CFB_EST_ANG,$vec(0,60,0))
+	}
+
+	local TRACE_DEST CFB_EST_ORG
+	vectoradd TRACE_DEST $relvel(CFB_EST_ANG,$vec(0,60,0))
+	local TRACE_RESULT $get_traceline(CFB_EST_ORG,TRACE_DEST,worldonly)
+	if ( TRACE_RESULT isnot TRACE_DEST ) callevent cfb_explode "hitwall"
+
+//	if ( G_DEVELOPER_MODE )
+//	{
+//		//show where I *think* the fireball is
+//		local BEAM_START CFB_EST_ORG
+//		local BEAM_END TRACE_DEST
+//		effect beam point lgtning.spr 100 BEAM_START BEAM_END (255,0,255) 200 16 3
+//	}
+
+	if CFB_FIREBALL_ACTIVE //case sploded
+	if game.time > CFB_FORCE_END
+	callevent cfb_explode "time_out"
+}
+
+{ cfb_explode
+
+	//do next special sooner
+	setvard NEXT_SPECIAL game.time
+	add NEXT_SPECIAL 1.0
+
+	setvard CFB_FIREBALL_ACTIVE 0
+	//if ( G_DEVELOPER_MODE ) gplayermessage ent_me Fireball Explode: PARAM1
+	clientevent update all CFB_FIREBALL_IDX fireball_explode
+	callevent 0.1 cfb_fireball_release
+	//scan/dodamage aoe here
+	setvard CFB_LIST $get_tsphere(enemy,128,CFB_EST_ORG)
+	if CFB_LIST isnot none
+	if $get_token_amt(CFB_LIST) > 0
+	//xdodamage CFB_EST_ORG 128 DMG_FIREBALL 0 ent_me ent_me skill.fire fire
+	//dodamage CFB_EST_ORG 128 DMG_FIREBALL 100% 0 reflective fire
+	calleventloop $get_token_amt(CFB_LIST) cfb_affect_targets
+}
+
+{ cfb_affect_targets
+	local CHECK_ENT $get_token(CFB_LIST,game.script.iteration)
+
+	local TARGET_ORG $get(CHECK_ENT,origin)
+	local TARG_ANG $angles(CFB_EST_ORG,TARGET_ORG)
+	local NEW_YAW TARG_ANG
+	setvelocity CHECK_ENT $relvel($vec(0,NEW_YAW,0),$vec(0,1000,0))
+	if ( BALL_TYPE equals fire )
+	{
+		dodamage CHECK_ENT direct DMG_FIREBALL 100% ent_me fire
+		applyeffect CHECK_ENT effects/effect_burn 5.0 $get(ent_me,id) DOT_FIRE
+	}
+	if ( BALL_TYPE equals ice )
+	{
+		//dodamage CHECK_ENT direct DMG_ICEBALL 100% ent_me cold
+		applyeffect CHECK_ENT effects/effect_frostbite_dmg 5.0 $get(ent_me,id) DOT_ICE
+	}
+}
+
+{ cfb_fireball_end
+	dbg cfb_fireball_end
+	clientevent update all CFB_FIREBALL_IDX fireball_end
+	callevent 0.1 cfb_fireball_release
+}
+
+{ cfb_fireball_release
+	dbg cfb_fireball_release
+	setvard CFB_FIREBALL_ACTIVE 0
+}
+
+//================================ MIRROR IMAGE ======================================
+//This won't fool anyone, but it'll look neat ;)
+
+{ prep_mirrors
+	playsound 0 10 SOUND_MIRROR
+	setvard MIRRORS_ON 1
+	callevent stop_movement
+	callevent npcatk_suspend_ai
+	setmoveanim ANIM_MIRROR_PREP
+	setidleanim ANIM_MIRROR_PREP
+	playanim critical ANIM_MIRROR_PREP
+	setvard SPIN_ANG $get(ent_me,angles.yaw)
+	setvard MIRROR_ANG SPIN_ANG
+	setvard SPIN_ON 1
+	setvard SPIN_SPEED 1
+	setvard FADE_LEVEL 255
+	setprop ent_me rendermode 5
+	setprop ent_me renderfx 16
+	callevent mirror_spin
+	callevent 3.0 stop_mirror_spin
+	clientevent update all CL_IDX kh_spawn_mirrors monsters/hollow_one.mdl $get(ent_me,origin) SPIN_ANG
+}
+
+{ stop_mirror_spin
+	setprop ent_me rendermode 5
+	setprop ent_me renderamt 1 //if we use renderamt 0, the client effects can't find the model attachments
+	setprop ent_me renderfx 0
+
+	setvard SPIN_ON 0
+	callevent resume_movement
+	callevent npcatk_resume_ai
+	callevent MIRROR_DURATION end_mirror_fx
+}
+
+{ mirror_spin
+	if SPIN_ON
+	callevent 0.05 mirror_spin
+	subtract FADE_LEVEL 10
+	if ( FADE_LEVEL < 0 ) setvard FADE_LEVEL 0
+	dbg FADE_LEVEL
+	setprop ent_me renderamt FADE_LEVEL
+	add SPIN_ANG SPIN_SPEED
+	add SPIN_SPEED 1
+	if ( SPIN_ANG > 359 ) subtract SPIN_ANG 359
+	local FACE_POS $get(ent_me,origin)
+	vectoradd FACE_POS $relpos($vec(0,SPIN_ANG,0),$vec(0,100,0))
+	setmovedest FACE_POS 9999
+}
+
+{ end_mirror_fx
+	setvard NEXT_MIRROR game.time
+	add NEXT_MIRROR FREQ_MIRROR
+	setvard MIRRORS_ON 0
+	setprop ent_me rendermode 0
+	setprop ent_me renderamt 255
+	playsound 0 10 SOUND_MIRROR_OFF
+	clientevent update all CL_IDX kh_mirrors_off
+}
+
+//================================ ICE SPIRAL ======================================
+
+
+{ prep_ice_spiral
+	callevent stop_movement
+	callevent npcatk_suspend_ai
+	setmoveanim ANIM_ICE_SPIRAL
+	setidleanim ANIM_ICE_SPIRAL
+	playanim critical ANIM_ICE_SPIRAL
+	setvard SPIN_ANG $get(ent_me,angles.yaw)
+	setvard SPIN_ON 1
+	setvard ICE_DIST 32
+	callevent ice_spiral_spin
+	callevent 4.0 stop_ice_spiral_spin
+}
+
+{ stop_ice_spiral_spin
+
+	setvard SPIN_ON 0
+	callevent resume_movement
+	callevent npcatk_resume_ai
+	setvard NEXT_SPECIAL game.time
+	add NEXT_SPECIAL 1.0
+}
+
+{ ice_spiral_spin
+	if SPIN_ON
+	callevent 0.05 ice_spiral_spin
+	local FACE_POS $get(ent_me,origin)
+	vectoradd FACE_POS $relpos($vec(0,SPIN_ANG,0),$vec(0,100,0))
+	setmovedest FACE_POS 9999
+
+	if ( game.time > NEXT_SPIKE )
+	{
+		setvard NEXT_SPIKE game.time
+		add NEXT_SPIKE 0.25
+
+		local FREEZE_TARGET $get(ent_me,origin)
+		vectoradd FREEZE_TARGET $relpos($vec(0,SPIN_ANG,0),$vec(0,ICE_DIST,0))
+		callevent freeze_area FREEZE_TARGET
+		add ICE_DIST 16
+	}
+
+	add SPIN_ANG 10
+	if ( SPIN_ANG > 359 ) subtract SPIN_ANG 359
+}
+
+{ freeze_area
+	local ICE_POS PARAM1
+	vectorset ICE_POS z $get_ground_height(ICE_POS)
+	setvard ICE_LIST $get_tbox(enemy,96,ICE_POS)
+	clientevent update all CL_IDX kh_ice_spikes ICE_POS
+	if ICE_LIST isnot none
+	local N_ICE_LIST $get_token_amt(ICE_LIST)
+	if N_ICE_LIST > 0
+	calleventloop N_ICE_LIST freeze_targets
+}
+
+{ freeze_targets
+	local CUR_TARGET $get_token(ICE_LIST,game.script.iteration)
+	applyeffect CUR_TARGET effects/freeze_solid 10.0 $get(ent_me,id) DOT_ICE
+}
+
+//================================ FIRE BREATH ======================================
+{ do_fire_breath
+	callevent stop_movement
+	callevent npcatk_suspend_ai
+	setmoveanim ANIM_FIRE_BREATH
+	setidleanim ANIM_FIRE_BREATH
+	playanim critical ANIM_FIRE_BREATH
+	setvard SPIN_ANG $get(ent_me,angles.yaw)
+	setvard SPIN_ON 1
+	subtract SPIN_ANG 45
+	if ( SPIN_ANG < 0 ) add SPIN_ANG 359
+	svplaysound 1 10 SOUND_BREATH
+	clientevent update all CL_IDX kh_fire_breath_on explode1.spr
+	callevent fire_breath_spin
+	callevent 8.0 stop_fire_breath_spin
+	setvard FIRE_BREATH_ON 1
+}
+
+{ stop_fire_breath_spin
+	svplaysound 1 0 SOUND_BREATH
+	clientevent update all CL_IDX kh_fire_breath_off
+	setvard SPIN_ON 0
+	callevent resume_movement
+	callevent npcatk_resume_ai
+	setvard NEXT_SPECIAL game.time
+	add NEXT_SPECIAL 1.0
+	setvard FIRE_BREATH_ON 0
+}
+
+{ fire_breath_spin
+	if SPIN_ON
+	callevent 0.05 fire_breath_spin
+	local FACE_POS $get(ent_me,origin)
+	vectoradd FACE_POS $relpos($vec(0,SPIN_ANG,0),$vec(0,100,0))
+	setmovedest FACE_POS 9999
+	//clientevent update all CL_IDX kh_fire_breath $get(ent_me,angles.yaw)
+	if ( game.time > NEXT_BURN )
+	{
+		setvard NEXT_BURN game.time
+		add NEXT_BURN 0.5
+
+		local BURN_TARGET $get(ent_me,origin)
+		//vectoradd BURN_TARGET $relpos($vec(0,SPIN_ANG,0),$vec(0,256,0))
+		setvard BURN_LIST $get_tsphere(enemy,512,BURN_TARGET)
+		local N_BURN_LIST $get_token_amt(BURN_LIST)
+		//dbg fire_breath_spin BURN_LIST
+		if N_BURN_LIST > 0
+		calleventloop N_BURN_LIST burn_targets
+	}
+
+	add SPIN_ANG 10
+	if ( SPIN_ANG > 359 ) subtract SPIN_ANG 359
+}
+
+{ burn_targets
+	local CUR_TARGET $get_token(BURN_LIST,game.script.iteration)
+	if $get(CUR_TARGET,isalive)
+	local TARG_ORG $get(CUR_TARGET,origin)
+	if $within_cone2D(TARG_ORG,game.monster.origin,game.monster.angles,10)
+	if $get(CUR_TARGET,range) < 256
+	if $get(CUR_TARGET,height) > 36 //duckable
+	applyeffect CUR_TARGET effects/effect_burn 10.0 $get(ent_me,id) DOT_FIRE2 0 0 none
+	addvelocity CUR_TARGET $relvel(0,300,120)
+}
+
+//================================ Lightning Shield ======================================
+
+{ zap_scan
+	setvard NEXT_ZAP_SCAN game.time
+	add NEXT_ZAP_SCAN 1.0
+
+	local ZAP_LIST $get_tsphere(enemy,64)
+	if ZAP_LIST isnot none
+	if ( $get_token_amt(ZAP_LIST) > 1 ) token.scramble ZAP_LIST
+	setvard ZAP_TARGET $get_token(ZAP_LIST,0)
+}
+
+{ npcatk_hunt
+	if ( $get(ZAP_TARGET,isalive) )
+	{
+		if ( $get(ZAP_TARGET,range) <= SHIELD_RANGE )
+		{
+			if ( !ZAP_ON )
+			{
+				svplaysound 2 10 SOUND_ZAP_LOOP
+				playsound 0 10 SOUND_ZAP_START
+				setvard ZAP_TARG_RESIST $get_takedmg(ZAP_TARGET,lightning)
+				clientevent update all CL_IDX kh_zap_target_on $get(ZAP_TARGET,index)
+			}
+						
+			setvard ZAP_ON 1
+			dodamage ZAP_TARGET direct DMG_ZAP 100% ent_me lightning_effect //no parry
+			if $randf(0.0,1.0) < ZAP_TARG_RESIST
+			//addvelocity ZAP_TARGET $relvel(0,200,110) 
+			local TARGET_ORG $get(ZAP_TARGET,origin)
+			local TARG_ANG $angles(game.monster.origin,TARGET_ORG)
+			local NEW_YAW TARG_ANG
+			addvelocity ZAP_TARGET $relvel($vec(0,NEW_YAW,0),$vec(0,200,110))
+		}
+		else
+		{
+			setvard ZAP_ON 0
+			svplaysound 2 0 SOUND_ZAP_LOOP
+			clientevent update all CL_IDX kh_zap_target_off
+		}
+	}
+	else
+	{
+		if ZAP_ON
+		setvard ZAP_ON 0
+		svplaysound 2 0 SOUND_ZAP_LOOP
+		clientevent update all CL_IDX kh_zap_target_off
+		
+	}
+}
+
+//================================ POISON BREATH ======================================
+//- Same as fire breath - shoulda used some switches, but oh well, lazy
+{ do_poison_breath
+	callevent stop_movement
+	callevent npcatk_suspend_ai
+	setmoveanim ANIM_FIRE_BREATH
+	setidleanim ANIM_FIRE_BREATH
+	playanim critical ANIM_FIRE_BREATH
+	setvard SPIN_ANG $get(ent_me,angles.yaw)
+	add SPIN_ANG 180
+	if ( SPIN_ANG > 359 ) subtract SPIN_ANG 359
+	setvard SPIN_ON 1
+	svplaysound 1 10 SOUND_POISON_BREATH
+	playsound 0 10 SOUND_POISON_BREATH_START
+	callevent 0.06 cl_breath_on
+	callevent poison_breath_spin
+	callevent 8.0 stop_poison_breath_spin
+	setvard POISON_BREATH_ON 1
+}
+
+{ cl_breath_on
+	//slight delay to give him a chance to 180 around
+	//- this effect is v. debilitating so I want to give players a chance to duck
+	clientevent update all CL_IDX kh_poison_breath_on poison_cloud.spr
+}
+
+{ stop_poison_breath_spin
+	svplaysound 1 0 SOUND_POISON_BREATH
+	clientevent update all CL_IDX kh_poison_breath_off
+	setvard SPIN_ON 0
+	callevent resume_movement
+	callevent npcatk_resume_ai
+	setvard NEXT_SPECIAL game.time
+	add NEXT_SPECIAL 1.0
+	setvard POISON_BREATH_ON 0
+}
+
+{ poison_breath_spin
+	if SPIN_ON
+	callevent 0.05 poison_breath_spin
+	local FACE_POS $get(ent_me,origin)
+	vectoradd FACE_POS $relpos($vec(0,SPIN_ANG,0),$vec(0,100,0))
+	setmovedest FACE_POS 9999
+	//clientevent update all CL_IDX kh_fire_breath $get(ent_me,angles.yaw)
+	if ( game.time > NEXT_BURN )
+	{
+		setvard NEXT_BURN game.time
+		add NEXT_BURN 0.5
+
+		local BURN_TARGET $get(ent_me,origin)
+		//vectoradd BURN_TARGET $relpos($vec(0,SPIN_ANG,0),$vec(0,256,0))
+		setvard BURN_LIST $get_tsphere(enemy,512,BURN_TARGET)
+		local N_BURN_LIST $get_token_amt(BURN_LIST)
+		//dbg fire_breath_spin BURN_LIST
+		if N_BURN_LIST > 0
+		calleventloop N_BURN_LIST poison_targets
+	}
+
+	add SPIN_ANG 10
+	if ( SPIN_ANG > 359 ) subtract SPIN_ANG 359
+}
+
+{ poison_targets
+	local CUR_TARGET $get_token(BURN_LIST,game.script.iteration)
+	if $get(CUR_TARGET,isalive)
+	local TARG_ORG $get(CUR_TARGET,origin)
+	if $within_cone2D(TARG_ORG,game.monster.origin,game.monster.angles,10)
+	if $get(CUR_TARGET,range) < 256
+	if $get(CUR_TARGET,height) > 36 //duckable
+	applyeffect CUR_TARGET effects/effect_poison_blinding 10.0 $get(ent_me,id) DOT_POISON 0 0 none
+	addvelocity CUR_TARGET $relvel(0,200,110)
+}
+
+//================================ SHADOW SHIFT ======================================
+{ game_damaged //PARAM1=attacker PARAM2=dmg PARAM3=dmg_type
+	
+	if $get(ent_me,isalive)
+	if $get(ent_me,hp) > PARAM2
+
+	if ( FLIGHT_MODE )
+	{
+		if ( PARAM3 contains effect ) local EXIT_SUB 1
+		if !EXIT_SUB
+
+		if ( $rand(1,10) == 1 ) callevent npcatk_flee $get(PARAM1,id) 4096 5.0
+	}
+
+	if !FLIGHT_MODE //no shadow dodging in flight
+	if !MIRRORS_ON //no shadow dodging with mirrors up
+	if !POISON_BREATH_ON //not during poison breath (cheap)
+
+	local DMG_TYPE PARAM3
+	if ( PARAM3 contains effect ) local EXIT_SUB 1 //dont dodge for DOT
+	if !EXIT_SUB
+
+	if game.time > NEXT_DODGE
+	setvard NEXT_DODGE game.time
+	add NEXT_DODGE FREQ_DODGE
+
+	clientevent persist all effects/sfx_motionblur_perm $get(ent_me,index) 0 0
+	setvard CL_IDX_SHADOW game.script.last_sent_id
+
+	local RND_ANG $randf(0,359)
+	addvelocity ent_me $relvel($vec(0,RND_ANG,0),$vec(0,1000,0))
+
+	playsound 0 10 SOUND_DODGE
+
+	callevent 0.25 stop_shadow_shift
+}
+
+{ stop_shadow_shift
+	setvelocity ent_me $relvel(0,0,0)
+	clientevent remove all CL_IDX_SHADOW
+}
+
+//================================ HOLD PERSON ======================================
+{ prep_hold_person
+
+	callevent 2.0 prep_hold_person2
+
+	callevent npcatk_suspend_ai
+	playanim critical ANIM_PREP_DEPLOY
+	setidleanim ANIM_PREP_DEPLOY
+	setmoveanim ANIM_PREP_DEPLOY
+		
+	clientevent update all CL_IDX kh_hand_sprites 2.0 (255,255,255)
+	playsound 0 10 SOUND_FIRE_PREP
+}
+
+
+{ prep_hold_person2
+
+	playanim critical ANIM_RELEASE_DEPLOY
+	playsound 0 10 SOUND_FIREBALL_RELEASE
+	callevent npcatk_resume_ai
+	callevent resume_movement
+	tossprojectile NPCATK_TARGET 50 0 0 proj_hold_person (0,0,64)
+}
+
+//================================ FLIGHT MODE ======================================
+{ prep_flight_mode
+	playsound 0 10 SOUND_FLIGHT_START
+	callevent FREQ_SOUND_FLIGHT_LOOP flight_sound
+	setvard FLOAT_DIR -25
+	setvard FLIGHT_MODE 1
+	callevent stop_movement
+	callevent npcatk_suspend_ai
+	setmoveanim ANIM_MIRROR_PREP
+	setidleanim ANIM_MIRROR_PREP
+	playanim critical ANIM_MIRROR_PREP
+	setvard SPIN_ANG $get(ent_me,angles.yaw)
+	setvard MIRROR_ANG SPIN_ANG
+	setvard SPIN_ON 1
+	setvard SPIN_SPEED 1
+	setvard FADE_LEVEL 255
+	callevent flight_mode_spinup
+	callevent 2.0 stop_flight_mode_spinup
+
+	clientevent update all CL_IDX kh_flight_sprites 1
+	callevent SOUND_FLIGHT_LOOP flight_sound
+}
+
+{ stop_flight_mode_spinup
+	setvard SPIN_ON 0
+	callevent resume_movement
+	callevent npcatk_resume_ai
+	callevent FLIGHT_DURATION end_flight_mode
+	gravity 0
+	setvard NEXT_SPECIAL game.time
+	add NEXT_SPECIAL 1.0
+}
+
+{ flight_mode_spinup
+	if SPIN_ON
+	callevent 0.05 mirror_spin
+	add SPIN_ANG SPIN_SPEED
+	add SPIN_SPEED 1
+	if ( SPIN_ANG > 359 ) subtract SPIN_ANG 359
+	local FACE_POS $get(ent_me,origin)
+	vectoradd FACE_POS $relpos($vec(0,SPIN_ANG,0),$vec(0,100,0))
+	setmovedest FACE_POS 9999
+}
+
+{ end_flight_mode
+	gravity 1
+	setvard FLIGHT_MODE 0
+	setvard NEXT_FLIGHT game.time
+	add NEXT_FLIGHT FREQ_FLIGHT
+	clientevent update all CL_IDX kh_flight_sprites 0
+}
+
+{ npcatk_hunt
+	if FLIGHT_MODE
+
+	local MY_POS $get(ent_me,origin)
+	local MY_UP MY_POS
+	vectoradd MY_UP z 96
+	local MY_DOWN MY_POS
+	vectoradd MY_DOWN z -32
+	local SCAN_UP $get_traceline(MY_POS,MY_UP,worldonly)
+	local SCAN_DOWN $get_traceline(MY_POS,MY_DOWN,worldonly)
+
+	setvard FLOAT_DIR 1
+
+	if ( SCAN_UP isnot MY_UP ) setvard FLOAT_DIR -25
+	if ( SCAN_DOWN isnot MY_DOWN ) setvard FLOAT_DIR 25
+
+	local MAX_HEIGHT $get_ground_height(MY_POS)
+	add MAX_HEIGHT 384
+	if ( $vec.z(MY_POS) >= MAX_HEIGHT ) setvard FLOAT_DIR -25
+
+	//local MY_VEL $get(ent_me,velocity)
+	//vectoradd MY_VEL $relvel(0,0,FLOAT_DIR)
+	//setvelocity ent_me MY_VEL
+	addvelocity ent_me $relvel(0,0,FLOAT_DIR)
+}
+
+{ game_movingto_dest
+
+	if FLIGHT_MODE
+	setanim.movespeed FLIGHT_SPEED
+}
+
+{ game_stopmoving
+
+	if FLIGHT_MODE
+	setanim.movespeed 0
+}
+
+{ flight_sound
+	if FLIGHT_MODE
+	playsound 0 10 SOUND_FLIGHT_LOOP
+	callevent FREQ_SOUND_FLIGHT_LOOP flight_sound
+}

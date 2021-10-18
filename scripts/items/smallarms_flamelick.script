@@ -1,0 +1,146 @@
+//Dagger
+
+{
+	const BASE_LEVEL_REQ 20
+
+  //These give "names" to animations, models and sounds for later reference
+  //original: weapons/smallarms/firedagger_rview.mdl
+  const MODEL_VIEW        viewmodels/v_smallarms.mdl
+	const MODEL_VIEW_IDX 5
+
+  	const ANIM_LIFT1 0
+  	const ANIM_IDLE1 1
+  	const ANIM_IDLE_TOTAL 1
+  	const ANIM_WIELD 2
+  	const ANIM_UNWIELD 3
+  	const ANIM_WIELDEDIDLE1 4
+  	const ANIM_ATTACK1 5
+  	const ANIM_ATTACK2 6
+
+const MODEL_HANDS weapons/p_weapons2.mdl
+const MODEL_WORLD weapons/p_weapons2.mdl
+
+  //Used in base_melee
+  //------------------
+  const MELEE_RANGE  50
+  const MELEE_DMG_DELAY  0.2
+  const MELEE_ATK_DURATION 0.9
+  const MELEE_ENERGY  0.6
+	const MELEE_DMG_TYPE fire
+  const MELEE_DMG  250
+  const MELEE_DMG_RANGE      50
+  const MELEE_ACCURACY  85%
+  const MELEE_ALIGN_BASE 3.6,-6
+  const MELEE_ALIGN_TIP  0,0 
+
+  const MELEE_SOUND_DELAY      MELEE_DMG_DELAY
+  const MELEE_PARRY_CHANCE      25%
+
+  const PLAYERANIM_AIM  knife
+  const PLAYERANIM_SWING swing_knife
+  const SOUND_HITWALL2      ambience/steamburst1.wav
+
+const MODEL_BODY_OFS 32
+  const ANIM_PREFIX  firedagger
+}
+
+//Include important base info that makes the dagger function
+//It uses all of the above constants
+#include items/smallarms_base
+
+//Called whenever the dagger spawns
+//Setup the basic info specific to this weapon
+{  weapon_spawn
+
+   name  a|Flamelick
+   desc  A magical dagger forged from the tongue of an Efreeti
+   weight  3
+   size  3
+   value 1000
+   sethudsprite hand 107
+   sethudsprite trade 107
+}
+
+{ game_dodamage //1: Attack Hit (1/0)  2: Entity Attack hit  3:  Start Position  4:  End Position
+
+ if PARAM1
+
+ if $rand(1,5) == 1
+
+ local BURN_DAMAGE $get(ent_owner,skill.spellcasting.fire)
+ divide BURN_DAMAGE 3
+ add BURN_DAMAGE $randf(1,3)
+ if ( BURN_DAMAGE < 5 ) local BURN_DAMAGE 5
+
+   applyeffect PARAM2 effects/effect_burn 5 $get(ent_owner,id) BURN_DAMAGE
+}
+
+{ [override] register_secondary
+
+ local reg.attack.type  strike-land
+ local reg.attack.keys  -attack1
+ local reg.attack.range  MELEE_RANGE
+ local reg.attack.dmg  1
+ local reg.attack.dmg.range 1
+ local reg.attack.dmg.type fire
+ local reg.attack.energydrain 9999
+ local reg.attack.stat  spellcasting.fire
+ local reg.attack.hitchance MELEE_ACCURACY
+ local reg.attack.priority 2
+ local reg.attack.delay.strike 1.0
+ local reg.attack.delay.end 1.2
+ local reg.attack.ofs.startpos MELEE_STARTPOS
+ local reg.attack.ofs.aimang MELEE_AIMANGLE
+ local reg.attack.callback special_02
+ local reg.attack.noise  1000
+   local reg.attack.chargeamt 200%
+   local reg.attack.reqskill 10
+   local reg.attack.dmg.ignore 1
+ 
+ registerattack
+}
+
+{ [override] special_02_start
+
+ playsound 0 10 magic/fireball_powerup.wav
+
+ //this bit depends on GM entity, pending
+ //-- setvarg GM_ID $get_by_name(game_master)
+ //if FX_GLOWS < MAX_FX_GLOWS
+ //add FX_GLOWS 1
+ //callexternal $get 5.1 remove_glow 1
+ 
+ if ( FX_FLAMES < MAX_FX_FLAMES ) effect glow ent_me (255,75,0) 128 5.0 5.0
+}
+
+{ [override] special_02_strike
+
+ if ( CHARGE_COUNTER equals 'CHARGE_COUNTER' ) setvard CHARGE_COUNTER 10
+ if ( CHARGE_COUNTER <= 0 ) playermessage The flamelick's magic is exhausted, for now.
+ if CHARGE_COUNTER > 0
+ subtract CHARGE_COUNTER 1
+ local INT_COUNTER $int(CHARGE_COUNTER)
+ playermessage The flamelick has INT_COUNTER charges remaining.
+
+ //local FLAME_BURST_DAMAGE $get(ent_owner,skill.spellcasting.fire)
+ //createnpc monsters/summon/flame_burst $relpos(0,0,-32) $get(ent_owner,id) FLAME_BURST_DAMAGE 0 smallarms
+	clientevent new all monsters/summon/flame_burst_cl $get(ent_owner,index)
+
+	setvard BURST_DAMAGE $get(ent_owner,skill.spellcasting.fire)
+	callexternal ent_owner ext_sphere_token_x enemy 256
+	setvard TARG_LIST $get(ent_owner,scriptvar,'PLR_SCAN_TOKEN')
+	if TARG_LIST isnot none
+	calleventloop $get_token_amt(TARG_LIST) burst_affect_targets
+}
+
+{ burst_affect_targets
+	local CUR_TARG $get_token(TARG_LIST,game.script.iteration)
+	if ( !GAME_PVP )
+	{
+		if $get(CUR_TARG,isplayer)
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	applyeffect CUR_TARG effects/effect_burn 5 $get(ent_owner,id) BURST_DAMAGE 1 0 smallarms
+}

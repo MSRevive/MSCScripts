@@ -1,0 +1,178 @@
+#scope server
+
+{ [shared]
+	const ANIM_SWIM swim
+	const ANIM_RUN_NORMAL Run
+
+	setvard ANIM_RUN Run
+	setvar ANIM_WALK Walk
+	setvar ANIM_IDLE idle
+
+	setvard ANIM_DEATH diesimple
+
+	const ANIM_CUSTOM_FLINCH Sflinch
+
+	setvard ANIM_ATTACK biteattack //frame_bite	
+}
+
+{
+	const DMG_BITE 300
+	
+	setvard NPC_GIVE_EXP 600
+
+	setvard MOVE_RANGE 50
+	setvard ATTACK_MOVERANGE 50
+	setvard ATTACK_RANGE 80
+	setvard ATTACK_HITRANGE 90
+
+	//borrowing bits from base_fish2, to allow vertical swimming
+	const FISH_VSPEED_UP 25	//up speed
+	const FISH_VSPEED_DOWN -25 //down speed
+	const FISH_VRANGE 50 //consider self on same plane if in this z range
+
+	const SOUND_STEP1 monsters/gator/Gator_Footstep1.wav
+	const SOUND_STEP2 monsters/gator/Gator_Footstep2.wav
+
+	const SOUND_IDLE1 monsters/gator/Gator_IdleNormal_F0.wav
+	const SOUND_IDLE2 monsters/gator/Gator_IdleRoarLow_F0.wav
+
+	const SOUND_ATTACK1 monsters/gator/Gator_BiteAttack.wav
+	const SOUND_ATTACK2 monsters/gator/Gator_BiteAttack_1.wav
+	const SOUND_ATTACK3 monsters/gator/Gator_BiteAttack_2_f0.wav
+
+	const SOUND_STRUCK1	weapons/cbar_hitbod1.wav
+	const SOUND_STRUCK2	weapons/cbar_hitbod2.wav
+	const SOUND_STRUCK3	weapons/cbar_hitbod3.wav
+
+	const SOUND_DEATH monsters/Gator_DieSimple.wav
+}
+
+#include monsters/base_monster_new
+
+{ npc_spawn
+
+	name a|Crocodile
+	setmodel monsters/gator.mdl
+	width 32
+	height 32
+	race wildanimal
+	hp 3000
+	takedmg cold 1.25
+	roam 1
+	hearingsensitivity 4
+
+	setvard STEP_COUNT 0
+
+	callevent 2.0 finalize_me
+}
+
+{ finalize_me
+	setvard HALF_HP $get(ent_me,maxhp)
+	multiply HALF_HP 0.5
+}
+
+{ npc_targetsighted
+	if !DID_INTRO
+	setvard DID_INTRO 1
+	callevent npcatk_suspend_roam 2.0
+	playsound 0 10 monsters/gator/Gator_SeePlayer_f0.wav
+	playanim critical idleroarlow
+}
+
+{ my_target_died
+	if game.time > NEXT_VICTORY
+	callevent npcatk_suspend_roam 2.0
+	setvard NEXT_VICTORY game.time
+	add NEXT_VICTORY 20.0
+	playsound 0 10 monsters/gator/Gator_IdleRoarLow_F0.wav
+	playanim critical idleroarlow
+}
+
+{ cycle_down
+	setvard DID_INTRO 0
+}
+
+{ npcatk_hunt
+	if ( NPCATK_TARGET equals unset )
+	{
+		if game.time > NEXT_IDLE_SOUND
+		setvard NEXT_IDLE_SOUND game.time
+		add NEXT_IDLE_SOUND $randf(5.0,15.0)
+		playrandomsound 0 10 SOUND_IDLE1
+	}
+
+	if NPCATK_TARGET isnot unset
+
+	if ( $get(ent_me,inwater) )
+	{
+		setvard ANIM_RUN ANIM_SWIM
+		setmoveanim ANIM_RUN
+
+		local MOVE_DEST_Z $vec.z(game.monster.movedest.origin)
+		local MY_Z $get(ent_me,origin.z)
+
+		gravity 0
+
+		//borrowing bits from base_fish2, to allow vertical swimming
+		if ( MOVE_DEST_Z > MY_Z )
+		{
+			if $get(ent_me,inwater)
+			local Z_DIFF MOVE_DEST_Z
+			subtract Z_DIFF MY_Z
+			if Z_DIFF > FISH_VRANGE
+			addvelocity ent_me $relvel(0,0,FISH_VSPEED_UP)
+		}
+		if ( MOVE_DEST_Z < MY_Z )
+		{
+			local Z_DIFF MY_Z
+			subtract Z_DIFF MOVE_DEST_Z
+			if Z_DIFF > FISH_VRANGE
+			addvelocity ent_me $relvel(0,0,FISH_VSPEED_DOWN)
+		}
+
+	}
+	else
+	{
+		gravity 1
+		setvard ANIM_RUN Run
+		setmoveanim ANIM_RUN
+	}
+}
+
+{ frame_step
+	add STEP_COUNT 1
+	if ( STEP_COUNT == 1 )
+	{
+		playsound 0 10 SOUND_STEP1
+	}
+	else
+	{
+		playsound 0 10 SOUND_STEP2
+	}
+}
+
+{ frame_bite
+	playrandomsound 0 10 SOUND_ATTACK1 SOUND_ATTACK2 SOUND_ATTACK3
+	dodamage NPCATK_TARGET ATTACK_HITRANGE DMG_BITE 80% pierce
+	if $get(NPCATK_TARGET,range) < ATTACK_HITRANGE
+	addvelocity NPCATK_TARGET $relvel(0,250,110)
+}
+
+{ game_damaged
+	if $get(ent_me,hp) < HALF_HP
+	if game.time > NEXT_FLINCH
+	setvard NEXT_FLINCH game.time
+	add NEXT_FLINCH 20.0
+	callevent npcatk_suspend_roam 2.0
+	playanim critical ANIM_CUSTOM_FLINCH
+	playsound 0 10 monsters/gator/Gator_Sflinch_f0.wav
+}
+
+//Think monster makes a swim sound by default
+//{ frame_swim
+//	playrandomsound 0 5 SOUND_SWIM1 SOUND_SWIM2 SOUND_SWIM3 SOUND_SWIM4
+//}
+
+{ game_struck
+	playrandomsound 0 5 SOUND_STRUCK1 SOUND_STRUCK2 SOUND_STRUCK3
+}

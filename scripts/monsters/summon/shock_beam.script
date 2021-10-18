@@ -1,0 +1,126 @@
+//Thothie - single beam of shocky goodness
+{
+	const SOUND_THUNDER weather/Storm_exclamation.wav
+	const SOUND_LIGHTNING magic/lightning_strike_replica.wav
+	const SOUND_WARNING magic/eraticlightfail.wav
+}
+
+{ game_dynamically_created
+	setvard MY_OWNER PARAM1
+	setvard MY_RADIUS PARAM2
+	setvard MY_DURATION PARAM3
+	setvard MY_DAMAGE PARAM4	//x5 seconds
+	setvard BEAM_COLOR PARAM5
+	setvard BEAM_DELAY PARAM6
+
+	setvard OWNER_ISPLAYER $get(PARAM1,isplayer)
+	setvard GAME_PVP game.pvp
+
+	if ( BEAM_COLOR equals 'PARAM5' ) setvard BEAM_COLOR (255,255,0)
+	local F_DURATION MY_DURATION
+	if ( BEAM_DELAY isnot 'PARAM6' ) add F_DURATION BEAM_DELAY
+
+	callevent F_DURATION end_effect
+}
+
+{ game_spawn
+	invincible 1
+	setvard PLAYING_DEAD 1
+	callevent 0.1 make_thunder
+}
+
+{ make_thunder
+	setvard MY_SCRIPT game.script.last_sent_id
+
+	setvard BEAM_START game.monster.origin
+	setvard BEAM_END BEAM_START
+	vectorset BEAM_END z $get_sky_height(BEAM_START)
+
+
+	local CL_DURATION MY_DURATION
+	if ( BEAM_DELAY isnot 'PARAM6' ) add CL_DURATION BEAM_DELAY
+	if ( BEAM_DELAY equals 'PARAM6' )
+	{
+		//instant beam
+		callevent make_lightning
+	}
+	if ( BEAM_DELAY isnot 'PARAM6' )
+	{
+		//beam with warning
+		callevent BEAM_DELAY make_lightning
+		playsound 0 10 SOUND_WARNING
+	}
+	clientevent new all $currentscript BEAM_START BEAM_COLOR MY_RADIUS CL_DURATION
+}
+
+{ make_lightning
+	playsound 0 10 SOUND_LIGHTNING
+	effect beam point lgtning.spr 200 BEAM_START BEAM_END BEAM_COLOR 255 100 MY_DURATION
+	setvard IS_ACTIVE 1
+	callevent 0.1 more_noise
+	callevent damage_loop
+}
+
+{ more_noise
+	playsound 0 10 SOUND_THUNDER
+}
+
+{ damage_loop
+	if IS_ACTIVE
+	dodamage $relpos(0,0,0) MY_RADIUS 0.0 100% 0.0 reflective target
+	callevent 0.25 damage_loop
+}
+
+{ game_dodamage
+
+	if ( GAME_PVP == 0 )
+	{
+		if OWNER_ISPLAYER
+		if $get(PARAM2,isplayer)
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+	if $get(MY_OWNER,relationship,PARAM2) equals enemy
+
+	if !$get(PARAM2,haseffect,DOT_lightning)
+	applyeffect PARAM2 effects/effect_shock_dmg 5.0 MY_OWNER MY_DAMAGE
+}
+
+{ end_effect
+	setvard IS_ACTIVE 0
+	clientevent remove all MY_SCRIPT
+	callevent 0.1 remove_me
+}
+
+{ remove_me
+	deleteent ent_me
+}
+
+//cl_effects
+{ [client] client_activate
+	setvard CLBEAM_ORIGIN PARAM1
+	setvard CLBEAM_COLOR PARAM2
+	setvard CLBEAM_RADIUS PARAM3
+	setvard CLBEAM_DUR PARAM4
+	cleffect light new CLBEAM_ORIGIN CLBEAM_RADIUS CLBEAM_COLOR CLBEAM_DUR
+	cleffect tempent sprite blueflare1.spr CLBEAM_ORIGIN shock_beam_endsprite
+	callevent CLBEAM_DUR remove_cl
+}
+
+{ [client] shock_beam_endsprite
+
+	cleffect tempent set_current_prop death_delay CLBEAM_DUR
+	cleffect tempent set_current_prop fadeout lifetime
+	cleffect tempent set_current_prop framerate	30
+	cleffect tempent set_current_prop frames 1
+	cleffect tempent set_current_prop scale 1.5
+	cleffect tempent set_current_prop gravity 	0
+	cleffect tempent set_current_prop collide none
+	cleffect tempent set_current_prop rendermode add
+	cleffect tempent set_current_prop renderamt 200
+	cleffect tempent set_current_prop rendercolor CLBEAM_COLOR
+}
+
+{ [client] remove_cl
+	removescript
+}

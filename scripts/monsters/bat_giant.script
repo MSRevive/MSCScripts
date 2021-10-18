@@ -1,0 +1,210 @@
+//Thothie - the only way I can see of fixing this is to remove all CAN_ATTACK 0 and CAN_HUNT 0 events...
+//- However, that would kill a lot of the niftier effects, so I've decided to see how it looks on a seperate beast, meantime.
+//- See gbat_hunter
+//Giant Bat
+
+#scope server
+
+{ [server]
+	setvard HEAR_RANGE_PLAYER 256
+	setvard HEAR_RANGE_MAX 300
+
+   setvar ANIM_RUN fly
+   setvar ANIM_WALK fly
+   setvard ANIM_ATTACK attack2
+   setvar ANIM_IDLE_HANG idle //idlehang
+   setvar ANIM_IDLE_FLY idle
+   const ANIM_DROP idle //hangtofly
+   setvard ANIM_DEATH die
+
+   setvard MOVE_RANGE 10
+   setvard ATTACK_DAMAGE 15
+   setvard ATTACK_RANGE 200
+   setvard ATTACK_HITRANGE 250
+   setvard ATTACK_HITCHANCE 85%
+   setvard NPC_GIVE_EXP 150
+
+   const SOUND_STRUCK1 weapons/cbar_hitbod1.wav
+   const SOUND_STRUCK2 weapons/cbar_hitbod2.wav
+   const SOUND_STRUCK3 weapons/cbar_hitbod3.wav
+   const SOUND_PAIN1 monsters/bat/pain1.wav
+   const SOUND_PAIN2 monsters/bat/pain2.wav
+   const SOUND_ATTACK1 zombie/claw_miss1.wav
+   const SOUND_ATTACK2 zombie/claw_miss2.wav
+   const SOUND_ATTACK3 monsters/orc/attack3.wav
+   const SOUND_ALERT monsters/bat/alert.wav
+   const SOUND_FLAP1 monsters/bat/flap_big1.wav
+   const SOUND_FLAP2 monsters/bat/flap_big2.wav
+   const SOUND_DEATH monsters/bat/death.wav
+
+   const BAT_SUMMON_SCRIPT	monsters/bat_summon
+   const BAT_SUMMON_AMT		5	//Number of mini-bats
+   const BAT_SUMMON_LIFETIME	15	//Mini-bat lifetime
+   const BAT_SUMMON_DMG		4	//Damage mini-bat does
+   const BAT_SUMMON_HEIGHT	300
+   const BAT_SUMMON_CHANCE	60%
+   const BAT_SUMMON_SND_RETREAT	monsters/bat/pain1.wav
+   const BAT_SUMMON_SND_SUMMON	monsters/bat/death.wav
+
+   precachefile monsters/bat_summon
+
+	const FREQ_SUMMON 17.0
+
+   precache monsters/bat.mdl
+}
+
+#include monsters/bat_base
+
+{ bat_spawn
+
+   name a|Giant Bat
+   hp 500
+   //fov 359
+   width 40
+   height 40
+	//setbbox npcsize
+   hearingsensitivity 10
+   setmodel monsters/giant_bat.mdl
+   volume 10
+
+}
+
+{ npc_post_spawn
+
+	if ( $lcase(game.map.name) equals chapel )
+	{
+		divide ATTACK_DAMAGE 2
+		divide NPC_GIVE_EXP 2
+		hp 250
+		setvard ATTACK_HITCHANCE 75
+		setvard CHAPEL_BAT 1
+	}
+}
+
+{ [server] cycle_up
+	if !ITS_ON
+	setvard ITS_ON 1
+	setidleanim ANIM_IDLE_FLY
+	setmoveanim ANIM_RUN
+	playanim critical ANIM_DROP
+	playsound 0 10 SOUND_ALERT 
+	roam 1
+	callevent FREQ_SUMMON make_babies
+}
+
+{ [server] make_babies
+	callevent FREQ_SUMMON make_babies
+	setvard OLD_TARG NPCATK_TARGET
+	callevent npcatk_suspend_ai 2.0
+	local DEST_POS game.monster.origin
+	vectoradd DEST_POS z 1024
+	setmovedest DEST_POS 10
+	addvelocity ent_me $vec(0,-50,900)
+	callevent 0.5 make_babies2
+}
+
+{ [server] make_babies2
+	addvelocity ent_me $vec(0,-50,900)
+	setmovedest OLD_TARG 9999
+	//face targ, straighten
+	setvelocity ent_me (0,0,0)
+	callevent 0.1 make_babies3
+}
+
+{ [server] make_babies3
+	local MY_YAW $vec.yaw(game.monster.angles)
+	setangle face $vec(0,MY_YAW,0)
+	playanim critical ANIM_ATTACK
+	callevent 0.1 bat_summon_all
+}
+
+{ [server]  bat_summon_all
+
+	playsound game.sound.voice game.sound.maxvol BAT_SUMMON_SND_SUMMON
+	playanim once attack2
+	setvard BAT_SUMMON_NUM BAT_SUMMON_AMT
+	callevent 0.1 bat_summon_loop
+}
+
+{ [server]  bat_summon_loop
+
+	if BAT_SUMMON_NUM
+	decvar BAT_SUMMON_NUM 1
+   	local L_TARGETPOS $get(ent_me,origin)
+	local L_OFS_X $rand(-100,100)
+	local L_OFS_Y $rand(-100,100)
+   	vectoradd L_TARGETPOS (L_OFS_X,L_OFS_Y,-64)
+ 	createnpc BAT_SUMMON_SCRIPT L_TARGETPOS BAT_SUMMON_LIFETIME BAT_SUMMON_DMG HUNT_LASTTARGET
+	callevent 0.1 bat_summon_loop
+}
+
+{  [server] 	frame_attack1	// Deal damage
+
+   callevent attack_yell
+   dodamage HUNT_LASTTARGET ATTACK_HITRANGE ATTACK_DAMAGE ATTACK_HITCHANCE
+}
+
+{  [server] 	frame_attack2	// Deal damage
+
+   callevent attack_yell
+   dodamage HUNT_LASTTARGET ATTACK_HITRANGE ATTACK_DAMAGE ATTACK_HITCHANCE
+}
+
+   
+{  [server] 	attack_yell	//Attack grunts
+   
+   if( $rand(0,1) == 0 )
+   	playrandomsound CHAN_VOICE SOUND_ATTACK1 SOUND_ATTACK2
+}
+
+  
+{  [server] 	npc_struck//Hit by someone
+   
+   playrandomsound CHAN_BODY SOUND_PAIN1 SOUND_PAIN2 SOUND_STRUCK1 SOUND_STRUCK2 none
+}
+
+{ [server] npc_death
+
+	callexternal $get_by_name(spawner) makechest
+}
+
+//the fect that this was client side was part of the issue
+//casues all vars to duplicate
+{ [server] 	cl_frame_flap
+
+   if( !CL_FLAP_SND )
+   {
+   	playsound 0 10 SOUND_FLAP1
+	setvard CL_FLAP_SND 1
+   }
+   else
+   {
+   	playsound 0 10 SOUND_FLAP2
+	setvard CL_FLAP_SND 0
+   }
+
+}
+
+{ [server]
+repeatdelay 1.0
+	//dbg FLIGHT_STUCK $get(NPCATK_TARGET,range) vs. ATTACK_RANGE
+	if ( $get(NPCATK_TARGET,range) < ATTACK_RANGE ) playanim critical ANIM_ATTACK
+}
+
+{ [override] npcatk_setmovedest
+
+	if ( $get(PARAM1,id) isnot NPCATK_TARGET ) setmovedest PARAM1 PARAM2
+
+	if ( $get(PARAM1,id) equals NPCATK_TARGET )
+	{
+		//attack from above
+		local TARG_ORG $get(NPCATK_TARGET,origin)
+		vectoradd TARG_ORG $relpos($vec(0,0,0),$vec(0,0,128))
+		setmovedest TARG_ORG 10
+	}
+}
+
+{ game_death
+	if CHAPEL_BAT
+	callexternal GAME_MASTER gm_createnpc 0.1 chests/chapel_bat $relpos(0,0,0)
+}

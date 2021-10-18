@@ -1,0 +1,285 @@
+{
+	const BASE_LEVEL_REQ 15
+
+	const DEMON_STRIKE_RATIO 3.0
+
+	const NO_IDLE 1
+
+	const ANIM_HANDS_DOWN 9
+	const ANIM_LIFT1 1
+	const ANIM_LOWER 0
+	const ANIM_IDLE1 0
+	const ANIM_IDLE_TOTAL 1
+	const ANIM_ATTACK1 5
+	const ANIM_ATTACK2 6
+	const ANIM_ATTACK3 7
+	const ANIM_ATTACK4 8
+	const ANIM_SPEC_ATTACK 3
+	const ANIM_SHEATH 5
+
+	const MODEL_VIEW viewmodels/v_martialarts_claws.mdl
+	const MODEL_HANDS weapons/p_weapons2.mdl
+	const MODEL_WORLD weapons/p_weapons2.mdl
+	const MODEL_BODY_OFS 116
+
+	const MELEE_DMG  180
+	const MELEE_DMG_RANGE      0
+	const MELEE_DMG_TYPE  slash
+	const MELEE_ACCURACY  85%
+	const MELEE_DMG_DELAY 0.3
+	const MELEE_ATK_DURATION 0.9
+
+	const DEMON_MELEE_DMG_DELAY 0.1
+	const DEMON_MELEE_ATK_DURATION 0.3
+
+	const SOUND_SWIPE zombie/claw_miss1.wav
+	const SOUND_HITWALL1 weapons/cbar_hit1.wav
+	const SOUND_HITWALL2 weapons/cbar_hit2.wav
+	const SOUND_SWING zombie/claw_miss2.wav
+
+	const SOUND_DEPLOY weapons/swords/sworddraw.wav
+	const SOUND_LUNGE zombie/claw_miss1.wav
+
+	//old script
+	const ANIM_PREFIX gauntlets
+	const NO_WORLD_MODEL 1
+	const MELEE_RANGE 50
+	const REACH_MELEE_RANGE 100
+	const MELEE_ENERGY 1
+	const MELEE_DMG_RANGE 0
+	const MELEE_STAT martialarts
+	const MELEE_VIEWANIM_ATK ANIM_ATTACK1
+
+	const MELEE_SOUND SOUND_SWIPE
+	const MELEE_SOUND_DELAY MELEE_DMG_DELAY
+	const MELEE_PARRY_CHANCE 5%
+
+	const PLAYERANIM_AIM		axe_onehand
+}
+
+#include items/base_melee
+#include items/base_kick
+
+{  weapon_spawn
+
+   name  Demon Claws
+   desc  These infernal claws can inflict massive wounds
+   weight  3
+   size  1
+   value 3000
+   sethand  both
+   sethudsprite hand 119
+   sethudsprite trade 119
+
+	if !CUSTOM_CLAWS
+	callevent register_demon_toggle
+	setvard DEMON_MODE 0
+}
+
+{ weapon_deploy
+
+	playviewanim  ANIM_LIFT1
+	playsound 0 10 SOUND_DEPLOY
+}
+
+{ melee_start
+
+	playrandomsound const.sound.item 10 SOUND_SWING SOUND_SWIPE
+
+	local RND_ATTACK $rand(1,4)
+	if ( RND_ATTACK == 1 ) playviewanim  ANIM_ATTACK1
+	if ( RND_ATTACK == 2 ) playviewanim  ANIM_ATTACK2
+	if ( RND_ATTACK == 3 ) playviewanim  ANIM_ATTACK3
+	if ( RND_ATTACK == 4 ) playviewanim  ANIM_ATTACK4
+
+  if( PUNCH_ATTACK == 0 )
+  {
+  	local l.punch_anim stance_normal_lowjab_r1
+  	setvard PUNCH_ATTACK 1
+  }
+  else if( PUNCH_ATTACK == 1 )
+  {
+  	local l.punch_anim stance_normal_lowjab_r2
+  	setvard PUNCH_ATTACK 0
+  }
+
+  playowneranim once l.punch_anim global.anim.combatwalk 3
+
+  setvard FISTS_LAST_ATTACK game.time
+  callevent punch1_done		//Lower fists in 5 seconds
+}
+
+{ punch1_done
+  repeatdelay 1
+
+  if FISTS_LAST_ATTACK
+  local l_elapsedtime game.time
+  subtract l_elapsedtime FISTS_LAST_ATTACK
+
+  if l_elapsedtime > 5
+
+  playviewanim ANIM_LOWER
+  setvard FISTS_LAST_ATTACK 0
+}
+
+{ hitwall
+
+  playrandomsound 2 10 SOUND_HITWALL1 SOUND_HITWALL2
+}
+
+{ register_demon_toggle
+   local reg.attack.type		strike-land
+   local reg.attack.keys		-attack1
+   local reg.attack.range		REACH_MELEE_RANGE
+   local reg.attack.dmg			0
+   local reg.attack.dmg.range		0
+   local reg.attack.dmg.type		magic
+   local reg.attack.energydrain		2
+   local reg.attack.stat		martialarts
+   local reg.attack.hitchance		90%
+   local reg.attack.priority		2
+   local reg.attack.delay.strike	0.2
+   local reg.attack.delay.end		0.9
+   local reg.attack.ofs.startpos	MELEE_STARTPOS
+   local reg.attack.ofs.aimang		MELEE_AIMANGLE
+   local reg.attack.callback		demon
+   local reg.attack.noise		MELEE_NOISE
+   local reg.attack.chargeamt	200%
+   local reg.attack.reqskill	15
+	registerattack
+}
+
+{ demon_start
+	//playsound 0 10 SOUND_RAWR
+
+	if ( $get(ent_owner,mp) < 10 )
+	{
+		dplayermessage ent_owner Demon Claws: Insufficient mana for soul drain.
+		local EXIT_SUB 1
+	}
+
+//	local OWNER_TARG $get(ent_owner,target)
+//	if ( !$get(OWNER_TARG,isalive) )
+//	{
+//		dplayermessage ent_owner Demon Claws: No target.
+//		local EXIT_SUB 1
+//	}
+	if !EXIT_SUB
+
+	splayviewanim ent_me ANIM_SPEC_ATTACK
+
+	playsound 0 10 SOUND_LUNGE
+	setvard DEBUG_ATTACK 1
+}
+
+{ demon_strike //PARAM1: "none"/"npc"/"world"   2: Attack end Position   3: Entity hit (if any)
+
+	if $get(PARAM3,isalive)
+
+	if ( game.pvp == 0 )
+	{
+		if $get(PARAM3,isplayer)
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	local OWNER_TARG $get(ent_owner,target)
+	local OWNER_MP $get(ent_owner,mp)
+	multiply OWNER_MP 0.5
+	local NEG_OWNER_MP $neg(OWNER_MP)
+	playsound 0 10 magic/eraticlightfail.wav
+	givemp NEG_OWNER_MP
+	callexternal ent_owner mana_drain //update mana on player hud readout, if using hud feedback
+	multiply OWNER_MP DEMON_STRIKE_RATIO
+	xdodamage OWNER_TARG REACH_MELEE_RANGE OWNER_MP 100% ent_owner ent_me martialarts magic
+	//callexternal ent_owner ext_dodamage OWNER_TARG direct OWNER_MP 100% $get(ent_owner,id) magic
+	effect screenfade ent_owner 0.25 3 (0,0,255) 96 fadeout
+	setvard DEBUG_ATTACK 0
+}
+
+{ game_+attack2
+	//if $get(ent_owner,canattack)
+
+	if !ATTACK_DELAY
+	setvard ATTACK_DELAY 1
+	callevent 0.25 attack_delay_reset
+	setvard ATTACK_ON 1
+}
+
+{ attack_delay_reset
+	setvard ATTACK_DELAY 0
+}
+
+{ game_-attack2
+
+	if ATTACK_ON
+	setvard ATTACK_ON 0
+
+	if ( game.serverside )
+	{
+		local DO_ATTACK 1
+		if ( $get(ent_owner,mp) <= 10 )	local DO_ATTACK 0
+		if ( !DO_ATTACK ) dplayermessage ent_owner Demon Claws: Insufficient mana for speed attack.
+		if ( !$get(ent_owner,canattack) )
+		{
+			dplayermessage ent_owner Can't attack now...
+			local DO_ATTACK 0
+		}
+		if DO_ATTACK
+		local RND_ATTACK $rand(1,4)
+		if ( RND_ATTACK == 1 ) splayviewanim ent_me ANIM_ATTACK1
+		if ( RND_ATTACK == 2 ) splayviewanim ent_me ANIM_ATTACK2
+		if ( RND_ATTACK == 3 ) splayviewanim ent_me ANIM_ATTACK3
+		if ( RND_ATTACK == 4 ) splayviewanim ent_me ANIM_ATTACK4
+	}
+
+	if DO_ATTACK
+
+	playrandomsound const.sound.item 10 SOUND_SWING SOUND_SWIPE
+
+	givemp -10
+	callexternal ent_owner mana_drain //update mana on player hud readout, if using hud feedback
+
+	if( PUNCH_ATTACK == 0 )
+	{
+	local l.punch_anim stance_normal_lowjab_r1
+	setvard PUNCH_ATTACK 1
+	}
+	else if( PUNCH_ATTACK == 1 )
+	{
+	local l.punch_anim stance_normal_lowjab_r2
+	setvard PUNCH_ATTACK 0
+	}
+
+	playowneranim once l.punch_anim global.anim.combatwalk 3
+
+	setvard FISTS_LAST_ATTACK game.time
+	callevent punch1_done		//Lower fists in 5 seconds
+
+	if game.serverside
+	local DMG_SET $get(ent_owner,skill.martialarts.ratio)
+	multiply DMG_SET MELEE_DMG
+	multiply DMG_SET 2
+	local OWNER_TARG $get(ent_owner,target)
+	local OWNER_POS $get(ent_owner,origin)
+	local TARG_POS $get(OWNER_TARG,origin)
+	//dbg specatk $get(OWNER_TARG,name) dmg DMG_SET rng $get(OWNER_TARG,range) dist $dist(TARG_POS,OWNER_POS) vs MELEE_RANGE
+	//local OWNER_POS $get(ent_owner,origin)
+	//if $get(OWNER_TARG,range) < MELE_RANGE
+	//callexternal ent_owner ext_dodamage OWNER_TARG MELEE_RANGE DMG_SET 90% $get(ent_owner,id) magic
+	xdodamage OWNER_TARG MELEE_RANGE DMG_SET 90% $get(ent_owner,id) $get(ent_owner,id) martialarts magic
+}
+
+//{ [client] client_activate
+//	dbg client_activate PARAM1
+//	local IN_PAR PARAM1
+//	if ( !PARAM1 ) setvard CL_NOSWING 1
+//	if ( PARAM1 ) setvard CL_NOSWING 1
+//}
+
+//{ [client] client_activate
+//	dbg client_activate PARAM1
+//	local IN_PAR PARAM1
+//	if ( !PARAM1 ) setvard CL_NOSWING 1
+//	if ( PARAM1 ) setvard CL_NOSWING 1
+//}

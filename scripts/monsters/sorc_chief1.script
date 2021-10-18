@@ -1,0 +1,883 @@
+//Shadahar Orc Chief, from scratch by Thothie
+//Powers
+//- Summong Tornado: pick sup players, swings about, damages
+//- Vampyric Sword*
+//- Throw, said vampyric sword*
+//- Lightning storm*
+//- Lightning burst - thinking redundant?
+//- Lightning blast (drop one bolt on each nearby enemy from sky)*
+//- Teleport (teleports behind one player, strikes, then returns to spawn point)
+//- Can also teleport to up to 4 pre-defined locations monster/sorc_telepointX
+//- Counter gang bang with lightning repulsion
+//- Kick to the nuts repulse + stun
+//- Lots of jumping
+//- Double jump height at 50% health
+//- Cold immunity pot
+
+{
+	const MIN_TELEPORT_DELAY 15.0
+
+	const NPC_BOSS_REGEN_RATE 0
+	const NPC_BOSS_RESTORATION 0.3
+
+	const NPC_USES_LIGHTS 1
+
+	if ( $lcase(game.map.name) equals lodagond-1 )
+	{
+		setvard NPC_GIVE_EXP 10000
+		setvard NPC_IS_BOSS 1
+	}
+	else
+	{
+		setvard NPC_GIVE_EXP 3000
+	}
+
+	const ANIM_WARCRY warcry
+	setvar ANIM_IDLE idle1
+	setvar ANIM_RUN run
+	setvar ANIM_WALK walk
+	setvard ANIM_FLINCH flinch
+	setvard ANIM_ATTACK swordswing1_L
+	const ANIM_SWIPE swordswing1_L
+	const ANIM_SMASH battleaxe_swing1_L
+	const ANIM_KICK kick
+	const ANIM_PARRY shielddeflect1
+	setvard ANIM_DEATH die_fallback
+	const ANIM_HOP battleaxe_swing1_L
+
+	setvard CAN_FLINCH 1
+
+	const ATTACK_HITCHANCE 90%
+	setvard ATTACK_MOVERANGE 32
+	setvard MOVE_RANGE 32
+	setvard ATTACK_RANGE 60
+	setvard ATTACK_HITRANGE 120
+
+	const DMG_SLASH $rand(100,200)
+	const DMG_SMACK $rand(25,50)
+	const DMG_SMASH $rand(150,400)
+	const DMG_KICK $randf(25,100)
+	const DMG_LBLAST 100
+	const DMG_LSTORM 100
+
+	const DUR_LSTORM 30
+	
+	//I've so many damn special moves, it maybe
+	//better to put them under one central script and cycle them
+	const FREQ_TORNADO $rand(15,30) //moved to FREQ_SPECIAL
+	const FREQ_LSTORM $rand(30,45) //moved to FREQ_SPECIAL
+	const FREQ_LBLAST $rand(15,30) //moved to FREQ_SPECIAL
+	const FREQ_THROW $rand(10,30) //moved to FREQ_SPECIAL
+	const FREQ_SPECIAL $rand(10,15)
+	const FREQ_TELEPORT $rand(20,140)
+	const FREQ_TELEPORT_FAST $rand(20,40)
+	const FREQ_KICK 10.0
+	setvard FREQ_LEAP 5.0
+
+	const SOUND_WARCRY "monsters/troll/trollidle.wav"
+	const SOUND_STRUCK1 "body/armour1.wav"
+	const SOUND_STRUCK2 "body/armour2.wav"
+	const SOUND_STRUCK3 "body/armour3.wav"
+	const SOUND_HIT "voices/orc/hit.wav"
+	const SOUND_HIT2 "voices/orc/hit2.wav"
+	const SOUND_HIT3 "voices/orc/hit3.wav"
+	const SOUND_PAIN "monsters/orc/pain.wav"
+	const SOUND_WARCRY1 "monsters/orc/battlecry.wav"
+	const SOUND_ATTACK1 "voices/orc/attack.wav"
+	const SOUND_ATTACK2 "voices/orc/attack2.wav"
+	const SOUND_ATTACK3 "voices/orc/attack3.wav"
+	const SOUND_DEATH "voices/orc/die.wav"
+	const SOUND_HELP "voices/orc/help.wav"
+	const SOUND_TELE "magic/teleport.wav"
+
+	const VAMPIRE_RATIO 0.1
+
+	const IMMUNE_STUN 75
+	const IMMUNE_COLD 0.25
+	const IMMUNE_FIRE 0.25
+	const IMMUNE_LIGHTNING 1
+
+	//media precache
+	precache SOUND_DEATH
+
+	//tornado
+	precache weapons/magic/tornado.mdl
+	precache magic/vent1.wav
+	precache magic/vent2.wav
+	precache magic/vent3.wav
+	precache magic/gusts1.wav
+	precache magic/gusts2.wav
+
+	//lstrike
+	precache weather/Storm_exclamation.wav
+	precache magic/lightning_strike.wav
+
+	//barrier
+	precache doors/aliendoor3.wav
+	precache magic/spawn.wav
+
+	//blood drinker
+	precache zombie/claw_miss2.wav
+}
+
+#include monsters/base_monster_new
+
+{ npc_spawn
+	name Runegahr, Shadahar Orc Chieftain
+	race orc
+
+	hp 8000
+	takedmg all 0.5
+	takedmg fire 0.5
+	takedmg cold 0.25
+	takedmg lightning 0.0
+
+	hearingsensitivity 10
+
+	setmodel monsters/sorc.mdl
+	setmodelbody 0 2 //body: 0=bare 1=bloody_shirt 2=gold_armor 3=archer
+	setmodelbody 1 3 //head: 0=hat_horns 1=hat_spiked 2=lizardskin_horned 3=gold_chieften 4=lizard_cap
+	setmodelbody 2 8 //weapon: 0=unarmed 1=axe 2=bow 3=steel_bow 4=sword 5=great_axe 6=sword_sheild 8=yellow_axe 9=blooddrinker
+	setstat parry 150
+	width 32
+  	height 96
+
+	roam 1 //re-enable, debug
+
+	saytextrange 1024
+
+	setvard SWORD_ATTACK 0
+	setvard JUMP_FWD_DIST 250
+	setvard CUR_SPECIAL 0
+	callevent 1.0 get_teleporters
+
+	if game.serverside
+	erasefile quest.chk
+}
+
+{ game_damaged_other //PARAM1=target_hit PARAM2=dmg
+
+	////dbg game_damaged_other $get(PARAM1,name) PARAM2
+
+	if ( SWORD_ATTACK )
+	{
+		setvard SWORD_ATTACK 0
+		addvelocity PARAM1 $relvel(-100,130,120)
+		if ( game.monster.hp < game.monster.maxhp )
+		{
+			local HP_TO_GIVE PARAM2
+			multiply HP_TO_GIVE VAMPIRE_RATIO
+			givehp VAMPIRE_RATIO
+			effect glow ent_me (0,255,0) 96 0.5 0.5
+			////dbg vampire_result game.monster.hp 
+			playsound 0 10 "player/heartbeat_noloop.wav"
+		}
+	}
+}
+
+{ cycle_up
+
+	if !CYCLES_STARTED
+	setvard CYCLES_STARTED 1
+	//callevent FREQ_TORNADO do_tornado
+	//callevent FREQ_LSTORM do_lstorm
+	//callevent FREQ_LBURST do_lburst
+	//callevent FREQ_LBLAST do_lblast
+	//callevent FREQ_THROW do_throw
+	callevent FREQ_SPECIAL do_special
+	callevent 60.0 do_teleport //do first teleport 1 min in, rest are random
+	roam 1
+	local L_MAP_NAME $lcase(game.map.name)
+	if ( L_MAP_NAME equals sorc_test ) local PLOT_MAP 1
+	if ( L_MAP_NAME contains lodagond ) local PLOT_MAP 1
+	if PLOT_MAP
+	getplayers PLAYER_LIST
+	setvard FIRST_PLAYER $get_token(PLAYER_LIST,0)
+	if ( $get(FIRST_PLAYER,race) equals human )
+	{
+		local RACE_REMARK human
+		local RACE_PLURAL humans
+	}
+	if ( $get(FIRST_PLAYER,race) equals elf )
+	{
+		local RACE_REMARK elf
+		local RACE_PLURAL elves
+	}
+	if ( $get(FIRST_PLAYER,race) equals dwarf )
+	{
+		local RACE_REMARK dwarf
+		local RACE_PLURAL dwarves
+	}
+	
+	saytextrange 2048
+
+	if ( game.players == 1 ) saytext No! I will NOT be rescued by a lowly RACE_REMARK !
+
+	if ( game.players > 1 ) saytext No! I will NOT be rescued by a couple of puny RACE_PLURAL !
+
+	playsound 0 10 SOUND_ATTACK2
+}
+
+//This was axed due to crash issues
+//{ do_lblast
+//
+////centralized under do_special now
+////	local NEXT_TRY FREQ_LBLAST
+////	if ( SUSPEND_AI )
+////	{
+////		//I'm busy doing something else
+////		//come back to this later
+////		local NEXT_TRY 10.0
+////		local ABORT_SPECIAL 1
+////	}
+////	
+////	callevent NEXT_TRY do_lblast
+////	if !ABORT_SPECIAL
+//
+//	createnpc monsters/summon/lstrike $relpos(0,0,0) $get(ent_me,id) DMG_LBLAST 9
+//
+//	setvard CAN_FLINCH 0
+//	callevent npcatk_suspend_ai 2.0
+//	setvard AS_ATTACKING 20
+//	playanim critical ANIM_WARCRY
+//	playsound 0 10 SOUND_WARCRY
+//}
+
+{ swing_axe //ANIM_SMASH
+
+	if ( $get(NPCATK_TARGET,range) < ATTACK_RANGE ) setvard LAST_SWORD_HIT game.time
+
+	callevent sorc_yell
+	//						  <target>		<range>			<dmg>		<cth>				[type]
+	setvard SWORD_ATTACK 1
+	if ( !AM_UNARMED ) callevent npcatk_dodamage NPCATK_TARGET ATTACK_HITRANGE DMG_SMASH	ATTACK_HITCHANCE	slash
+	if ( AM_UNARMED )
+	{
+		setvard SWORD_ATTACK 0
+		callevent npcatk_dodamage NPCATK_TARGET ATTACK_HITRANGE DMG_SMACK	ATTACK_HITCHANCE	blunt
+	}
+	setvard ANIM_ATTACK ANIM_SWIPE
+	callevent check_kick
+}
+
+{ swing_sword //ANIM_SWIPE
+
+	if ( $get(NPCATK_TARGET,range) < ATTACK_RANGE ) setvard LAST_SWORD_HIT game.time
+
+	callevent sorc_yell
+	//						  <target>		<range>			<dmg>		<cth>				[type]
+	if ( !AM_UNARMED ) setvard SWORD_ATTACK 1
+	callevent npcatk_dodamage NPCATK_TARGET ATTACK_HITRANGE DMG_SLASH	ATTACK_HITCHANCE	slash
+	if ( AM_UNARMED )
+	{
+		setvard SWORD_ATTACK 0
+		callevent npcatk_dodamage NPCATK_TARGET ATTACK_HITRANGE DMG_SMACK	ATTACK_HITCHANCE	blunt
+	}
+
+	if ( $rand(1,5) == 1 ) setvard ANIM_ATTACK ANIM_SMASH
+	callevent check_kick
+}
+
+{ check_kick
+	if !KICK_DELAY
+	if ( !AM_UNARMED )
+	{
+		if $rand(1,5) != 1
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+	setvard ANIM_ATTACK ANIM_KICK
+	setvard KICK_DELAY 1
+	//dbg swing_axe - set kick mode
+	if ( !AM_UNARMED ) callevent FREQ_KICK reset_kick_delay
+	if ( AM_UNARMED ) callevent 1.0 reset_kick_delay //favor kick when unarmed
+}
+
+{ kick_land
+	//dbg kick_land PARAM1
+	if ( $get(NPCATK_TARGET,range) < ATTACK_RANGE ) setvard LAST_SWORD_HIT game.time
+	callevent npcatk_dodamage NPCATK_TARGET ATTACK_HITRANGE DMG_KICK	ATTACK_HITCHANCE	slash
+	setvard ANIM_ATTACK ANIM_SWIPE
+	if $get(NPCATK_TARGET,range) < ATTACK_HITRANGE
+	//callexternal NPCATK_TARGET ext_playsound "player/stomachhit1.wav"
+	applyeffect NPCATK_TARGET effects/effect_stun $randf(5,10) 0 1
+	addvelocity NPCATK_TARGET $relvel(-100,200,150)
+}
+
+{ reset_kick_delay
+	setvard KICK_DELAY 0
+}
+
+{ sorc_yell
+	playrandomsound 0 10 SOUND_ATTACK1 SOUND_ATTACK2 SOUND_ATTACK3
+}
+
+{ game_damaged //PARAM1=attacker PARAM2=dmg PARAM3=dmg_type
+
+	//dbg game_damaged game.monster.hp $get(PARAM1,name) PARAM2 PARAM3
+
+	if ( game.monster.hp < HALF_HEALTH )
+	{
+		setvard JUMP_FWD_DIST 500
+		setvard FREQ_LEAP 0.1
+	}
+
+	local HIT_BY $get(PARAM1,id)
+	if ( PARAM2 > 30 )
+	{
+		if $get(HIT_BY,range) < ATTACK_HITRANGE
+		if $rand(1,3) == 1
+		if !LEAP_DELAY
+		setvard LEAP_DELAY 1
+		callevent FREQ_LEAP leap_delay_reset 
+		callevent leap_away HIT_BY
+	}
+}
+
+{ leap_delay_reset
+	setvard LEAP_DELAY 0
+}
+
+{ orc_hop
+
+	playsound 0 10 monsters/orc/attack1.wav
+	if ( game.monster.hp > HALF_HEALTH ) local JUMP_HEIGHT $rand(350,450)
+	if ( game.monster.hp <= HALF_HEALTH ) local JUMP_HEIGHT $rand(350,950)
+
+	local L_JUMP_FWD_DIST JUMP_FWD_DIST
+	local L_JUMP_HEIGHT JUMP_HEIGHT
+
+	if ( DOUBLE_FOR )
+	{
+		setvard DOUBLE_FOR 0
+		multiply L_JUMP_FWD_DIST 2
+	}
+
+	if ( DOUBLE_UP )
+	{
+		setvard DOUBLE_UP 0
+		multiply L_JUMP_HEIGHT 2
+	}
+
+	addvelocity ent_me $relvel(0,L_JUMP_FWD_DIST,L_JUMP_HEIGHT)
+}
+
+{ leap_away //<target>
+	
+	setvard AM_LEAPING 1
+	setvard NPC_FORCED_MOVEDEST 1
+	callevent npcatk_suspend_ai 1.0
+	setmovedest PARAM1 800 flee
+	callevent 0.1 do_leap
+}
+
+{ leap_random
+	setvard AM_LEAPING 1
+	setvard NPC_FORCED_MOVEDEST 1
+	callevent npcatk_suspend_ai 1.0
+	local RND_ROT $rand(0,359)
+	local LEAP_DEST game.monster.origin
+	vectoradd LEAP_DEST $relpos($vec(0,RND_ROT,0),$vec(0,400,0))
+	setmovedest LEAP_DEST ATTACK_MOVERANGE
+	callevent 0.1 do_leap
+}
+
+{ leap_at //<target>
+
+	if !AM_LEAPING
+	setvard AM_LEAPING 1
+	setvard NPC_FORCED_MOVEDEST 1
+
+	if ( $get(NPCATK_TARGET,isalive) )
+	{
+		local TARGET_ORG $get(NPCATK_TARGET,origin)
+		local TARGET_Z $vec.z(TARGET_ORG)
+		local MY_Z game.monster.origin.z
+		if ( TARGET_Z > MY_Z )
+		{
+			local V_DEST game.monster.origin
+			vectorset V_DEST z $vec.z(TARGET_ORG)
+			if $dist(game.monster.origin,V_DEST) > 96
+			setvard DOUBLE_UP 1
+		}
+		if ( $get(NPCATK_TARGET,range2d) > 1600 ) setvard DOUBLE_FOR 1
+	}
+
+	callevent npcatk_suspend_ai 1.0
+	setmovedest PARAM1 ATTACK_MOVERANGE
+	callevent 0.1 do_leap
+}
+
+{ do_leap
+
+	playrandomsound 0 10 SOUND_HIT SOUND_HIT2 SOUND_HIT3
+	playanim critical ANIM_HOP
+	callevent 0.1 orc_hop
+	callevent 1.0 reset_leaping
+}
+
+{ reset_leaping
+
+	setvard AM_LEAPING 0
+}
+
+{ do_lstorm
+
+//Centralized under do_special
+//	local NEXT_TRY FREQ_LSTORM
+//	if ( SUSPEND_AI )
+//	{
+//		//I'm busy doing something else
+//		//come back to this later
+//		local NEXT_TRY 10.0
+//		local ABORT_SPECIAL 1
+//	}
+//	
+//	callevent NEXT_TRY do_lstorm
+//	if !ABORT_SPECIAL
+
+	//make up to 2 lighting storms
+	setvard CAN_FLINCH 0
+	setvard AS_ATTACKING game.time
+	playanim critical ANIM_WARCRY
+	playsound 0 10 SOUND_WARCRY
+	callevent npcatk_suspend_ai 2.0
+	
+	setvard LSTORM_TARGS "placeholder"
+	getplayers LSTORM_TARGS
+	local N_LSTORM_TARGS $get_token_amt(LSTORM_TARGS)
+	setvard N_STORMS 0
+	setvard LOC_LSTORM1 0
+	setvard LOC_LSTORM2 0
+	setvard LSTORM_LOOPCOUNT 0
+	if ( N_LSTORM_TARGS > 0 ) calleventloop N_LSTORM_TARGS do_lstorm_loop
+	if N_STORMS > 0
+	callevent 0.1 do_lstorm2
+	if ( N_STORMS > 1 ) callevent 0.5 do_lstorm3
+
+}
+
+{ do_lstorm2
+
+	createnpc monsters/summon/summon_lightning_storm LOC_LSTORM1 $get(ent_me,id) $get(ent_me,angles.y) DMG_LSTORM DUR_LSTORM
+	setvard ID_LSTORM1 $get(ent_lastcreated,id)
+}
+
+{ do_lstorm3
+
+	createnpc monsters/summon/summon_lightning_storm LOC_LSTORM2 $get(ent_me,id) $get(ent_me,angles.y) DMG_LSTORM DUR_LSTORM
+	setvard ID_LSTORM2 $get(ent_lastcreated,id)
+}
+
+{ do_lstorm_loop
+
+	//dbg do_lstorm_loop
+
+	//make up to two storms, centering on players
+	//storms must be within 1024 units of me
+	//for there to be more than one, they must be more than 256 units apart
+
+	local CUR_PLAYER $get_token(LSTORM_TARGS,LSTORM_LOOPCOUNT)
+	add LSTORM_LOOPCOUNT 1
+
+	if ( $get(CUR_PLAYER,range) < 1024 )
+	{
+		if N_STORMS < 2
+		add N_STORMS 1
+		local TARG_ORG $get(CUR_PLAYER,origin)
+		if ( N_STORMS == 2 )
+		{
+			if $dist(TARG_ORG,LOC_LSTORM1) < 256
+			local EXIT_SUB 1
+		}
+		if !EXIT_SUB
+
+		local STORM_GRNDPOS $get_ground_height(TARG_ORG)
+		vectorset TARG_ORG z STORM_GRNDPOS
+		//dbg do_lstorm_loop cnt LSTORM_LOOPCOUNT name $get(CUR_PLAYER,name) org TARG_ORG grnd STORM_GRNDPOS
+		if ( N_STORMS == 1 ) setvard LOC_LSTORM1 TARG_ORG
+		if ( N_STORMS == 2 ) setvard LOC_LSTORM2 TARG_ORG
+	}
+}
+
+{ warcry_done
+
+	setvard CAN_FLINCH 1
+	if ( SUSPEND_AI ) callevent npcatk_resume_ai
+}
+
+{
+repeatdelay $randf(8,15)
+	if !SUSPEND_AI
+	if NPCATK_TARGET isnot unset
+	local LEAP_TYPE $rand(1,4)
+	if ( LEAP_TYPE < 4 ) callevent leap_at NPCATK_TARGET "random"
+	if ( LEAP_TYPE == 4 ) callevent leap_random
+}
+
+{ game_parry
+	playrandomsound 0 10 SOUND_STRUCK1 SOUND_STRUCK2 SOUND_STRUCK3
+	if !SUSPEND_AI
+	if ( $rand(1,3) == 1 ) playanim critical shielddeflect1
+}
+
+{ get_teleporters
+	setvard N_TELES 0
+
+	setvard TELE_ID1 $get_by_name(sorc_telepoint1)
+	setvard TELE_ID2 $get_by_name(sorc_telepoint2)
+	setvard TELE_ID3 $get_by_name(sorc_telepoint3)
+	setvard TELE_ID4 $get_by_name(sorc_telepoint4)
+
+	if ( $get(TELE_ID1,exists) ) add N_TELES 1
+	if ( $get(TELE_ID2,exists) ) add N_TELES 1
+	if ( $get(TELE_ID3,exists) ) add N_TELES 1
+	if ( $get(TELE_ID4,exists) ) add N_TELES 1
+}
+
+
+{ do_teleport //PARAM1 = reason
+
+	if N_TELES > 0
+
+	//dbg do_teleport PARAM1
+
+	if ( PARAM1 isnot "stuck_count" )
+	{
+		if ( game.monster.hp > HALF_HEALTH ) local TELEPORT_FAST 0
+		if ( game.monster.hp <= HALF_HEALTH ) local TELEPORT_FAST 1
+
+		if ( !TELEPORT_FAST ) callevent FREQ_TELEPORT do_teleport
+		if ( TELEPORT_FAST ) callevent FREQ_TELEPORT_FAST do_teleport
+	}
+
+	//abort if too often
+	local LAST_TELE_DIFF game.time
+	subtract LAST_TELE_DIFF LAST_TELE
+	if LAST_TELE_DIFF > MIN_TELEPORT_DELAY
+
+	dbg game.time secs: do_teleport PARAM1 PARAM2
+
+	setvard LAST_TELE game.time //this is also set at tele_in for better accuracy
+
+	local TOTAL_TELES N_TELES
+	add TOTAL_TELES 1
+	local PICK_TELE $rand(1,TOTAL_TELES)
+
+
+	if ( PARAM2 equals "no_hits" )
+	{
+		//find if any players are near my teleport points
+		//if the are, teleport there and target them
+		if ( G_DEVELOPER_MODE ) messageall green no_hits teleport
+		getplayersnb PLAYER_LIST
+		token.scramble PLAYER_LIST //so we dont always go for the same player
+
+		setvard FOUND_NEAR_TARGET 0
+		setvard SEARCH_RAD 512
+		calleventloop $get_token_amt(PLAYER_LIST) find_near_teleporter
+		if ( FOUND_NEAR_TARGET > 0 )
+		{
+			callevent npcatk_settarget NEW_TARGET
+			if ( G_DEVELOPER_MODE ) messageall green SORC_CHIEF: found $get(NEW_TARGET,name) near FOUND_NEAR_TARGET
+			local PICK_TELE FOUND_NEAR_TARGET
+		}
+	}
+
+	if ( PICK_TELE == 1 )
+	{
+		setvard TELE_DEST $get(TELE_ID1,origin)
+		setvard TELE_ANG $get(TELE_ID1,angles)
+		callexternal TELE_ID1 tele_used
+	}
+	if ( PICK_TELE == 2 )
+	{
+		setvard TELE_DEST $get(TELE_ID2,origin)
+		setvard TELE_ANG $get(TELE_ID2,angles)
+		callexternal TELE_ID2 tele_used
+	}
+	if ( PICK_TELE == 3 )
+	{
+		setvard TELE_DEST $get(TELE_ID3,origin)
+		setvard TELE_ANG $get(TELE_ID3,angles)
+		callexternal TELE_ID3 tele_used
+	}
+	if ( PICK_TELE == 4 )
+	{
+		setvard TELE_DEST $get(TELE_ID4,origin)
+		setvard TELE_ANG $get(TELE_ID4,angles)
+		callexternal TELE_ID4 tele_used
+	}
+	if ( PICK_TELE > N_TELES ) 
+	{
+		setvard TELE_DEST NPC_SPAWN_LOC
+		vectoradd TELE_DEST z 128
+		setvard TELE_ANGS NPC_SPAWN_ANGLES
+	}
+
+	createnpc monsters/summon/ibarrier TELE_DEST $get(ent_me,id) 64 2 0 0 0 1 //<owner> <rad> <duration> [invisible:0|1] [silent:0|1] [dmg] [push_allys:0|1]
+	callevent leap_tele
+}
+
+{ find_near_teleporter
+
+	//find which teleporter player is nearest to
+
+	//player to check
+	local CUR_PLAYER $get_token(PLAYER_LIST,game.script.iteration)
+	local PLAYER_ORG $get(CUR_PLAYER,origin)
+	if FOUND_NEAR_TARGET == 0
+
+	if N_TELES >= 1
+	local TEST_TELE $get(TELE_ID1,origin)
+	vectorset TEST_TELE z $get_ground_height(TEST_TELE)
+	local TELE_DIST $dist(PLAYER_ORG,TEST_TELE)
+	if ( TELE_DIST < SEARCH_RAD )
+	{
+		setvard FOUND_NEAR_TARGET 1
+		setvard NEW_TARGET CUR_PLAYER
+	}
+
+	if N_TELES >= 2
+	local TEST_TELE $get(TELE_ID2,origin)
+	vectorset TEST_TELE z $get_ground_height(TEST_TELE) //measure from ground
+	local OLD_TELE_DIST TELE_DIST //store last teleport distance
+	local TELE_DIST $dist(PLAYER_ORG,TEST_TELE)
+	if ( TELE_DIST < SEARCH_RAD )
+	{
+		if OLD_TELE_DIST > TELE_DIST //use only if player is closer to this than the last one
+		setvard FOUND_NEAR_TARGET 2
+		setvard NEW_TARGET CUR_PLAYER
+	}
+
+	if N_TELES >= 3
+	local TEST_TELE $get(TELE_ID3,origin)
+	vectorset TEST_TELE z $get_ground_height(TEST_TELE)
+	local OLD_TELE_DIST TELE_DIST
+	local TELE_DIST $dist(PLAYER_ORG,TEST_TELE)
+	if ( TELE_DIST < SEARCH_RAD )
+	{
+		if OLD_TELE_DIST > TELE_DIST
+		setvard FOUND_NEAR_TARGET 3
+		setvard NEW_TARGET CUR_PLAYER
+	}
+
+	if N_TELES >= 4
+	local TEST_TELE $get(TELE_ID4,origin)
+	vectorset TEST_TELE z $get_ground_height(TEST_TELE)
+	local OLD_TELE_DIST TELE_DIST
+	local TELE_DIST $dist(PLAYER_ORG,TEST_TELE)
+	if ( TELE_DIST < SEARCH_RAD )
+	{
+		if OLD_TELE_DIST > TELE_DIST
+		setvard FOUND_NEAR_TARGET 4
+		setvard NEW_TARGET CUR_PLAYER
+	}
+
+	local TEST_TELE NPC_SPAWN_LOC
+	vectorset TEST_TELE z $get_ground_height(TEST_TELE)
+	local OLD_TELE_DIST TELE_DIST
+	local TELE_DIST $dist(PLAYER_ORG,TEST_TELE)
+	if ( TELE_DIST < SEARCH_RAD )
+	{
+		if OLD_TELE_DIST > TELE_DIST
+		setvard FOUND_NEAR_TARGET 5
+		setvard NEW_TARGET CUR_PLAYER
+	}
+}
+
+{ leap_tele //<target>
+
+	setvard AM_LEAPING 1
+	setvard NPC_FORCED_MOVEDEST 1
+	callevent npcatk_suspend_ai 1.0
+	setmovedest $relpos(0,1000,0) ATTACK_MOVERANGE
+	callevent 0.1 do_leap
+	setvard RENDER_COUNT 255
+	callevent 0.25 flicker_out
+	callevent 0.75 tele_out
+	callevent 1.0 tele_in
+}
+
+{ flicker_out
+	subtract RENDER_COUNT 50
+	if RENDER_COUNT > 0
+	callevent 0.1 flicker_out
+	setprop ent_me rendermode 5
+	setprop ent_me renderamt RENDER_COUNT
+}
+
+{ tele_out
+	playsound 0 10 SOUND_TELE
+	setorigin ent_me (-20000,10000,-20000)
+}
+
+{ tele_in
+	setorigin ent_me TELE_DEST
+	setangle face TELE_ANGS
+	playsound 0 10 SOUND_TELE
+	setvard RENDER_COUNT 0
+	callevent flicker_in
+	setvard LAST_TELE game.time
+}
+
+{ flicker_in
+	add RENDER_COUNT 50
+	if ( RENDER_COUNT >= 255 )
+	{
+		setprop ent_me rendermode 0
+		setprop ent_me renderamt 255
+	}
+	if RENDER_COUNT < 255
+	callevent 0.1 flicker_in
+	setprop ent_me rendermode 5
+	setprop ent_me renderamt RENDER_COUNT
+}
+
+{
+repeatdelay 1.1
+	if STUCK_COUNT > 4
+	callevent do_teleport "stuck_count"
+}
+
+{ npc_post_spawn
+	setvard HALF_HEALTH game.monster.maxhp
+	divide HALF_HEALTH 2
+
+	local L_MAP_NAME $lcase(game.map.name)
+	if L_MAP_NAME equals lodagond-1
+	setvard ON_LODAGOND 1
+}
+
+
+{ do_tornado
+	playanim critical ANIM_SWIPE
+	createnpc monsters/summon/tornado $relpos(0,72,0) $get(ent_me,id) 200 20.0
+	setvard TORNADO_ID ent_lastcreated
+}
+
+{ game_takedamage
+	if ( ATTACK_PARRY )
+	{
+		//dbg game_takedamage - parried PARAM3 , setting 0
+		setdmg hit 0
+		setdmg dmg 0
+	}
+}
+
+{ do_throw
+
+	if !AM_UNARMED
+
+	setvard PLAYERS_NEAR 0
+	setvard PLAYERS_INRANGE 0
+	getplayersnb SORC_LPLAYERS
+	setvard PNEAR_LOOP_COUNT 0
+	calleventloop $get_token_amt(SORC_LPLAYERS) any_players_near
+	//dbg do_throw check nplayers $get_token_amt(SORC_LPLAYERS) near PLAYERS_NEAR inrang PLAYERS_INRANGE
+	if !PLAYERS_NEAR
+	if PLAYERS_INRANGE
+	callevent do_throw2
+}
+
+{ do_throw2
+	//dbg do_throw2 throwing sword
+	setmodelbody 2 0
+	setvard AM_UNARMED 1
+	playanim critical ANIM_SWIPE
+	createnpc monsters/summon/blood_drinker $relpos(0,48,48) $get(ent_me,id) $get(ent_laststruck,id) 100 30.0
+	setvard BLOOD_DRINKER_ID ent_lastcreated
+}
+
+{ any_players_near
+	local CUR_PLAYER $get_token(SORC_LPLAYERS,PNEAR_LOOP_COUNT)
+	if ( $get(CUR_PLAYER,range) < ATTACK_RANGE ) setvard PLAYERS_NEAR 1
+	if ( $get(CUR_PLAYER,range) < 2048 ) setvard PLAYERS_INRANGE 1
+	add PNEAR_LOOP_COUNT 1
+}
+
+{ do_special
+
+	local NEXT_TRY FREQ_SPECIAL
+
+	if ( SUSPEND_AI )
+	{
+		//I'm busy doing something else
+		//come back to this later
+		local NEXT_TRY 5.0
+		local ABORT_SPECIAL 1
+	}
+	
+	callevent NEXT_TRY do_special
+	if !ABORT_SPECIAL
+
+	add CUR_SPECIAL 1
+
+	//setvard CUR_SPECIAL 3 //TEMP
+	if ( CUR_SPECIAL > 3 ) setvard CUR_SPECIAL 1
+
+	if ( CUR_SPECIAL == 1 ) callevent do_tornado
+	if ( CUR_SPECIAL == 2 ) callevent do_lstorm
+	if ( CUR_SPECIAL == 3 ) callevent do_throw
+	//if ( CUR_SPECIAL == 3 ) callevent do_lblast
+
+
+
+//
+//	if ( CUR_SPECIAL == 1 ) callevent do_tornado
+//	if ( CUR_SPECIAL == 2 ) callevent do_lstorm
+//	if ( CUR_SPECIAL == 3 ) callevent do_lblast
+//	if ( CUR_SPECIAL == 4 ) callevent do_throw
+}
+
+{ sword_return
+	setmodelbody 2 8
+	setvard AM_UNARMED 0
+}
+
+{ do_nadda
+	//debuggary
+}
+
+{ game_death
+	usetrigger sorc_defeat
+	if ( $get(BLOOD_DRINKER_ID,exists) ) callexternal BLOOD_DRINKER_ID ext_remove
+	if ( $get(TORNADO_ID,exists) ) deleteent TORNADO_ID
+
+	if ( ON_LODAGOND ) callexternal GAME_MASTER gm_lodagond_ver 2
+	setprop ent_me rendermode 5
+	setprop ent_me renderamt 0
+	createnpc lodagond/sorc_image_defeat $relpos(0,0,0) $get(ent_me,angles.yaw)
+}
+
+{ npcatk_suspend_ai
+	setvard MAX_AI_SUSPEND game.time
+	add MAX_AI_SUSPEND 10.0
+	
+}
+
+{
+repeatdelay 20.0
+		//if I've not thwacked anyone for a bit, teleport
+		//- but not if I can see him almost in range
+
+		//hacky brain death prevention FEB2010_26
+		if ( game.time > MAX_AI_SUSPEND )
+		{
+			setvard MAX_AI_SUSPEND game.time
+			add MAX_AI_SUSPEND 10.0
+			callevent npcatk_resume_ai
+		}
+
+		if $get(NPCATK_TARGET,range) > 256
+
+		//- or if I teleported very recently
+		local LAST_TELE_DIFF game.time
+		subtract LAST_TELE_DIFF LAST_TELE
+		if LAST_TELE_DIFF > 5.0
+
+		local LAST_HIT_DIFF game.time
+		subtract LAST_HIT_DIFF LAST_SWORD_HIT
+		if LAST_HIT_DIFF > 20.0
+		callevent do_teleport "stuck_count" "no_hits"
+}

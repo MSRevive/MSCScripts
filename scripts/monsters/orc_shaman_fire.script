@@ -1,0 +1,253 @@
+//Orc Fire Shamman, from Orc Sniper by Thothie
+{
+	const PROJECTILE_SCRIPT proj_fire_ball
+
+   setvard DROP_GOLD 1			//Gold Drop
+   setvard DROP_GOLD_AMT $rand(15,30)	//
+   setvard NPC_GIVE_EXP 200
+   //setvard DROP_ITEM1 scroll2_fire_dart //Used by base_monster
+   //setvard DROP_ITEM1_CHANCE 5%	  //Used by base_monster
+
+   setvard ANIM_ATTACK swordswing1_L //Attack animation
+   setvard FLINCH_CHANCE 45%
+
+   const AIM_RATIO 50			//Ratio of target distance to aim-up angle up
+   setvard MOVE_RANGE 256
+   setvard ATTACK_RANGE 5500
+   const ATTACK_SPEED 500
+   const ATTACK_CONE_OF_FIRE 2//Cone of fire
+
+	const FIRE_BALL_DAMAGE_NORM '$rand(75,100)'
+	const FIRE_BALL_DAMAGE_ALT '$rand(5,10)'
+
+	const MELE_RANGE 96
+	const MELE_HITRANGE 128
+	const ATTACK_ACCURACY 80
+	const ANIM_SWIPE swordswing1_L
+	const ANIM_FIRE swordswing1_L
+	const ANIM_WARCRY warcry
+	const SWIPE_DAMAGE '$rand(25,65)'
+	const WEAK_SWIPE_DAMAGE '$rand(5,20)'
+	const SOUND_MELEMISS zombie/claw_miss1.wav
+	const SOUND_MELEHIT zombie/claw_strike3.wav
+	const SOUND_FIRECHARGE magic/fireball_powerup.wav
+	const SOUND_FIRESHOOT magic/fireball_strike.wav
+	const SOUND_WARCRY1 monsters/orc/attack1.wav
+	const SOUND_WARCRY2 monsters/orc/attack3.wav
+	const BASE_BURN_DAMAGE 15
+	setvard BURN_DAMAGE BASE_BURN_DAMAGE
+	const FIRE_BALL_FREQ 3.0
+	const DEATH_SCRIPT traps/fire_wall2
+	const FIRE_FIST_SCRIPT monsters/fire_fist_cl
+
+	setvard IMMUNE_FIRE 1
+
+	precachefile DEATH_SCRIPT
+}
+
+#include monsters/orc_base_ranged
+#include monsters/orc_base
+
+{
+   eventname orc_spawn
+
+   	hp 220
+   	//ov 180
+   	name an|Orc Fire Shaman
+   	hearingsensitivity 8
+   	takedmg all .8
+	takedmg fire 0.0
+	takedmg cold 1.5
+	setstat spellcasting 30 30 30 30 30 30 30
+
+	setvard FIRE_BALL_DAMAGE FIRE_BALL_DAMAGE_NORM
+	if ( $lcase(game.map.name) equals mscave ) setvard FIRE_BALL_DAMAGE FIRE_BALL_DAMAGE_ALT
+
+	clientevent persist all FIRE_FIST_SCRIPT $get(ent_me,index) 19
+	setvard MY_CL_SCRIPT_IDX game.script.last_sent_id
+
+	//giveitem item_torch
+
+   	setmodelbody	0 0		//Body 0=naked 1=leather 2=plate 3=green-hide
+   	setmodelbody	1 4		//Head 0=cap_shorthorn 1=cap_nohorn 2=buffo_skin 3=cheif_ramhorns 4=green_hood
+   	setmodelbody	2 0		//Weapon 0=fist 1=axe 2=bow_weak 3=bow_strng 4=sword 5=bloodyaxe 6=sword&sheild
+}
+
+{ npc_selectattack
+
+	if !BO_ZOMBIE_MODE
+	if !FIRE_BALL_DELAY
+	if !$cansee(enemy,MELE_RANGE)
+	playsound 0 10 SOUND_FIRECHARGE
+}
+
+{ swing_sword
+
+	if ( $cansee(enemy,MELE_RANGE) )
+	{
+		//dbg Can See NME in range
+		setvard ANIM_ATTACK ANIM_SWIPE
+		callevent swipe_attack $get(ent_lastseen,id)
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	if !BO_ZOMBIE_MODE
+
+	if ( $cansee(enemy) )
+	{
+		//prevents shamman from moving closer to target than needed
+		if ( !$cansee(enemy,MOVE_RANGE) ) setvard ANIM_ATTACK ANIM_RUN
+		if ( $cansee(enemy,MOVE_RANGE) ) setvard ANIM_ATTACK ANIM_WARCRY
+	}
+
+	if !FIRE_BALL_DELAY
+	setvard ANIM_ATTACK ANIM_FIRE
+	callevent throw_fireball
+}
+
+{ throw_fireball
+
+	if !ORC_SHAMAN_CUSTOM_FIREBALL
+
+	if $cansee(enemy)
+
+	//dbg Throwing Fireball
+
+	callevent FIRE_BALL_FREQ reset_fireball
+
+	playsound 0 10 SOUND_FIRESHOOT
+
+	local TARGET_ID $get(ent_lastseen,id)
+
+	local AIM_ANGLE $get(TARGET_ID,dist)		//Aim up a bit
+	divide AIM_ANGLE AIM_RATIO				//
+	setangle add_view.x AIM_ANGLE			//
+
+	local L_TARGET_RANGE $get(TARGET_ID,range)
+
+	if ( L_TARGET_RANGE <= 800 ) tossprojectile view ATTACK_SPEED FIRE_BALL_DAMAGE ATTACK_CONE_OF_FIRE PROJECTILE_SCRIPT (0,48,48)
+	if ( L_TARGET_RANGE > 800 ) tossprojectile TARGET_ID ATTACK_SPEED FIRE_BALL_DAMAGE ATTACK_CONE_OF_FIRE PROJECTILE_SCRIPT (0,48,48)
+	local LIGHTEN_AMT 0.4
+	if ( L_TARGET_RANGE > 800 ) local LIGHTEN_AMT 0.01
+	callexternal $get(ent_lastprojectile,id) lighten BURN_DAMAGE LIGHTEN_AMT
+	setvard FIRE_BALL_DELAY 1
+}
+
+{ reset_fireball
+	setvard ANIM_ATTACK ANIM_FIRE
+	setvard DID_WARCRY 0
+	setvard FIRE_BALL_DELAY 0
+}
+
+{ npc_death
+	
+	//removeitem ent_me item_torch
+	callevent orc_shaman_death
+}
+
+{ orc_shaman_death
+	if !ORC_SHAMAN_CUSTOM_DEATH
+	clientevent remove all MY_CL_SCRIPT_IDX
+	if game.time > G_FIRE_WALL_DELAY
+	setvarg G_FIRE_WALL_DELAY game.time
+	add G_FIRE_WALL_DELAY 2.0 //anti-crash when killing multiple fire shamans
+	if ( !BO_ZOMBIE_MODE )
+	{
+		callexternal GAME_MASTER gm_createnpc 0.1 DEATH_SCRIPT $relpos(0,0,0) $get(ent_me,id) $get(ent_me,angles.y)
+	}
+	else
+	{
+		//fire burst borrowed from fire beetle
+		setprop ent_me rendermode 5
+		setprop ent_me renderamt 0
+
+		playsound 0 10 weapons/explode3.wav
+		xdodamage $relpos(0,0,0) 256 300 0 ent_me ent_me none fire_effect
+		clientevent new all effects/sfx_explode $get(ent_me,origin) 256
+		setvard POISON_TARGS $get_tsphere(enemy,256)
+		if POISON_TARGS isnot none
+		calleventloop $get_token_amt(POISON_TARGS) poison_affect_targets
+	}
+}
+
+//fire burst borrowed from fire beetle
+{ poison_affect_targets
+	local CUR_TARG $get_token(POISON_TARGS,game.script.iteration)
+	applyeffect CUR_TARG effects/effect_burn 5.0 $get(ent_me,id) 100
+	local TARG_ORG $get(CUR_TARG,origin)
+	local TARG_ANG $angles(game.monster.origin,TARG_ORG)
+	setvelocity CUR_TARG $relvel($vec(0,TARG_ANG,0),$vec(10,1000,0))
+}
+
+{ swipe_attack
+
+	setvard SWIPE_SOUNDS 1
+
+	if ( !WEAK_ATTACK ) callevent npcatk_dodamage PARAM1 MELE_HITRANGE SWIPE_DAMAGE ATTACK_ACCURACY
+	if ( WEAK_ATTACK ) callevent npcatk_dodamage PARAM1 MELE_HITRANGE WEAK_SWIPE_DAMAGE ATTACK_ACCURACY
+
+	local DOT_FIRE $rand(20,40)
+	if ( BO_ZOMBIE_MODE ) local DOT_FIRE $rand(40,100)
+
+	applyeffect PARAM1 effects/effect_burn $rand(5,10) ent_me DOT_FIRE
+}
+
+{ game_dodamage //1: Attack Hit (1/0)  2: Entity Attack hit  3:  Start Position  4:  End Position
+
+	if SWIPE_SOUNDS
+
+	if ( !PARAM1 ) playsound 0 10 SOUND_MELEMISS
+
+	if ( PARAM1 ) playsound 0 10 SOUND_MELEHIT
+
+	setvard SWIPE_SOUNDS 0
+}
+
+{ npc_struck
+
+	if $get(ent_laststruck,range) < MELE_RANGE
+	setvard ANIM_ATTACK ANIM_SWIPE
+	callevent npcatk_settarget $get(ent_laststruck,id)
+	//callevent check_attack
+}
+
+{ npc_attack
+
+	if ANIM_ATTACK equals ANIM_WARCRY
+	if !DID_WARCRY
+	playrandomsound 0 10 SOUND_WARCRY1 SOUND_WARCRY2
+	setvard DID_WARCRY 1
+}
+
+{ npc_post_spawn
+	if ( $lcase(game.map.name) equals mscave )
+	{
+		if !BO_ZOMBIE_MODE
+		name a|Orc Fire Shaman Initiate
+		setvard WEAK_ATTACK 1
+		setvard DROP_GOLD 1
+		setvard DROP_GOLD_AMT $rand(15,30)
+		setvard NPC_GIVE_EXP 100
+		setvard FIRE_BALL_DAMAGE FIRE_BALL_DAMAGE_ALT
+		setvard BURN_DAMAGE 5
+	}
+}
+
+{ [override] npcatk_setup_siege
+
+	//fire shamans do not ignore players on old helena
+	local L_MAP_NAME $lcase(game.map.name)
+	if L_MAP_NAME isnot old_helena
+	//in siege maps, 1 in 3 monsters ignore players until struck, prefering to go for the critical NPCs
+	if $get(ent_me,race) isnot hguard
+	if $get(ent_me,race) isnot human
+	if $rand(1,3) == 1
+	setvard NPC_IGNORE_PLAYERS 1
+	callevent npcatk_npc_hunter_loop
+	if ( G_DEVELOPER_MODE )
+	{
+		setprop ent_me rendermode 5 //for visual debug
+		setprop ent_me renderamt 255
+	}
+}

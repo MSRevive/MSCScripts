@@ -1,0 +1,90 @@
+//Pet Rat
+
+{
+   setvar ANIM_IDLE glide
+   setvar ANIM_WALK fly_slow
+   setvar ANIM_RUN fly
+   setvard ANIM_ATTACK fly
+   setvard MOVE_RANGE 48
+   setvard ATTACK_RANGE 64
+   const ATK_MIN 2
+   const ATK_MAX 4
+   setvard ATTACK_HITRANGE 100
+   const ATTACK_HITCHANCE 90%
+
+   const SOUND_STRUCK1 weapons/cbar_hitbod1.wav
+   const SOUND_STRUCK2 weapons/cbar_hitbod1.wav
+   const SOUND_STRUCK3 weapons/cbar_hitbod1.wav
+   const SOUND_PAIN none
+   const SOUND_ATTACK1 monsters/rat/squeak2.wav
+   const SOUND_IDLE1 monsters/rat/squeak2.wav
+   const SOUND_DEATH monsters/rat/squeak3.wav
+
+   setvard RETALIATE_CHANCE 75%  //base_npc_attack - Automatically switch targets to the last damaging player
+   setvard CAN_FLEE 0		//base_npc_attack - Whether I run away at low health
+   setvard CAN_HUNT 1
+   setvard CAN_HEAR 0
+   setvard CAN_FLINCH 0
+}
+
+#include monsters/summon/base_summon
+#include monsters/companion/base_companion
+//#include monsters/base_propelled
+
+{
+   eventname summon_spawn
+
+   name a|Pet Crow
+   hp 10
+   //ov 360
+   width 32
+   height 20
+   roam 1
+   hearingsensitivity 3
+   skilllevel 5
+   race human
+   fly 1
+   setmodel monsters/crow.mdl
+   setmodelbody	1 0
+   setidleanim ANIM_IDLE
+   setmoveanim ANIM_WALK
+
+   callevent basesummon_attackall //Premptive attack
+
+   catchspeech regme reg
+   catchspeech unregme unreg
+   
+}
+   
+{  regme
+
+   companion add ent_me ent_lastspoke
+   setvar SUMMON_MASTER $get(ent_lastspoke,id)
+   callevent basesummon_follow_master
+}
+{  unregme
+   if( $get(ent_lastspoke,id) equals SUMMON_MASTER )
+   {
+	companion remove ent_me ent_lastspoke
+	setvar SUMMON_MASTER -!-
+	callevent basesummon_say_attackall
+   }
+}
+
+   // Deal damage
+{
+   eventname bite1
+
+   volume 5
+   playrandomsound 2 SOUND_ATTACK1 none
+
+   dodamage ent_lastseen ATTACK_HITRANGE $randf(ATK_MIN,ATK_MAX) ATTACK_HITCHANCE
+}
+
+   //Hit by someone
+{
+   eventname npc_struck
+   
+   volume 5
+   playrandomsound 2 SOUND_PAIN SOUND_PAIN SOUND_STRUCK1 SOUND_STRUCK2 SOUND_STRUCK3
+}

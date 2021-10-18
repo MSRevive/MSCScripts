@@ -1,0 +1,532 @@
+//generic chat menu options
+
+//EXAMPLE USAGE
+//
+//setvard CHAT_STEPS 3 //number of chat steps
+//setvard ANIM_STEP1 panic //animation to play on first step
+//setvard CHAT_STEP1 "Wow, this base_chat thing sure is complicated!" //sentence to use on first step
+//setvard CHAT_STEP2 "I guess..."
+//setvard CHAT_STEP_DELAY2 2.0	//custom delay for second step
+//setvard CHAT_STEP3 "I mean, it sure has evolved over the years."
+//callevent chat_loop
+//
+//- other useful events and vars
+//
+//callevent convo_anim //plays a scientist-model compatible conversation animation from the token list stored below in CONVO_ANIMS (you can override this string for use with other models)
+//callevent bchat_mouth_move //moves the model's mouth, if it has the proper controller (causes other models to wiggle a little, which sometimes works nearly as well)
+//callevent bchat_auto_mouth_move <seconds> //as above but moves mouth for X seconds
+//callevent bchat_open_mouth //opens mouth and leaves it open
+//callevent bchat_open_close //closes mouth
+//CHAT_EVENT_STEPX - Call this event when finished speaking this step text
+//
+//- default behavior
+//
+//base_chat registers "say_hi" "say_jobs" and "say_rumors" callbacks on the interaction menu
+//these can be disabled by setting NO_HAIL, NO_JOB, NO_RUMOR, to 1, as desired
+//(this was to more quickly uniform the chat menu amongst existing NPC's when it was first implemented.)
+//
+//CHAT_DELAY contains the default pause between sentences. The default value is 3 seconds.
+//
+//Note: You can use single-quotes when setting vars (') but not double (") except to deliniate.
+//
+//Base_Chat also handles christmas event text/music and the bloodstone ring quest is centralized here
+
+#scope server
+{
+	setvar HAS_BASE_CHAT_INCLUDE 1
+
+	const CONV_ANIMS "converse2;converse1;talkleft;talkright;lean;pondering;pondering2;pondering3;"
+
+	const CHAT_DELAY 3.0
+				//gatecity(magic);daragoth;mscave;
+	const RQUEST_NAMES "0;Galan;Narad;Darrelin;Rudolf;Vadrel;Edrin;Thordac;Slinker;Slinker;Gerald;Mosor;Cathain;"
+}
+
+{ game_spawn
+	menu.autoopen 1
+}
+
+{ game_menu_getoptions
+
+	dbg base_chat game_menu_getoptions
+
+	if CAN_CHAT isnot 0
+	if !NO_CHAT
+
+	callevent bchat_before_menus
+
+	if ( !NO_HAIL )
+	{
+		dbg base_chat reghail
+		local reg.mitem.title 	"Hail"
+		local reg.mitem.type 	callback
+		local reg.mitem.callback say_hi
+		menuitem.register
+	}
+
+	if ( !NO_JOB )
+	{
+		dbg base_chat regjob
+		local reg.mitem.title 	"Ask about Jobs"
+		local reg.mitem.type 	callback
+		local reg.mitem.callback say_job
+		menuitem.register
+	}
+
+	if ( !NO_RUMOR )
+	{
+		dbg base_chat regrumor
+		local reg.mitem.title 	"Ask about Rumors"
+		local reg.mitem.type 	callback
+		local reg.mitem.callback say_rumor
+		menuitem.register
+	}
+
+	//dbg $item_exists(PARAM1,item_ring) 
+	
+	dbg game_menu_getoptions Ring Check
+
+	if ( $get(PARAM1,isplayer) )
+	{
+		if $item_exists(PARAM1,item_ring)
+		local RQUEST_STAGE $get_quest_data(PARAM1,r)
+		if RQUEST_STAGE >= 1
+		local RQUEST_NAME $get_token(RQUEST_NAMES,RQUEST_STAGE)
+		if ( game.monster.name contains RQUEST_NAME )
+		{
+			//set this to 1 if npc has a quest, then to 0 when completed
+			if ( REQ_QUEST_NOTDONE == 1 )
+			{
+				local reg.mitem.title 	"Ask about the ring"
+				local reg.mitem.type 	callback
+				local reg.mitem.data 	RQUEST_STAGE
+				local reg.mitem.callback rquest_rub_my_back_first
+				menuitem.register
+			}
+			if !REQ_QUEST_NOTDONE
+			local reg.mitem.title 	"Ask about the ring"
+			local reg.mitem.type 	callback
+			local reg.mitem.data 	RQUEST_STAGE
+			local reg.mitem.callback give_runaround
+			menuitem.register
+		}
+	}
+
+	callevent bchat_after_menus
+
+	dbg game_menu_getoptions Post Ring Check
+}
+
+{ say_rumor
+	//callevent say_rumour //spellinks
+}
+
+{ face_speaker
+	setmovedest PARAM1 9999
+}
+
+{ chat_loop
+	if game.serverside
+
+	if ( !BUSY_CHATTING )
+	{
+		setvard BUSY_CHATTING 1
+		setvard CHAT_STEP 0
+	}
+	add CHAT_STEP 1
+	if ( CHAT_STEP == CHAT_STEPS )
+	{
+		setvard BUSY_CHATTING 0
+	}
+	if CHAT_STEP <= CHAT_STEPS
+
+	local L_ANIM none
+	local L_CHAT_DELAY CHAT_DELAY
+	local L_CHAT_TEXT none
+
+	if ( CHAT_STEP ==  1 )
+	{
+		local L_CHAT_TEXT CHAT_STEP1
+		local L_ANIM ANIM_STEP1
+		local L_CHAT_DELAY CHAT_DELAY_STEP1
+		local L_CHAT_SOUND CHAT_SOUND1
+		setvard CHAT_STEP1 'CHAT_STEP1'
+		setvard CHAT_DELAY_STEP1 'CHAT_DELAY_STEP1'
+		setvard ANIM_STEP1 'ANIM_STEP1'
+		local L_CHAT_EVENT CHAT_EVENT_STEP1
+		setvard CHAT_EVENT_STEP1 'CHAT_EVENT_STEP1'
+		setvard CHAT_SOUND1 'CHAT_SOUND1'
+	}
+	if ( CHAT_STEP ==  2 )
+	{
+		local L_CHAT_TEXT CHAT_STEP2
+		local L_ANIM ANIM_STEP2
+		local L_CHAT_DELAY CHAT_DELAY_STEP2
+		local L_CHAT_SOUND CHAT_SOUND2
+		setvard CHAT_STEP2 'CHAT_STEP2'
+		setvard CHAT_DELAY_STEP2 'CHAT_DELAY_STEP2'
+		setvard ANIM_STEP2 'ANIM_STEP2'
+		local L_CHAT_EVENT CHAT_EVENT_STEP2
+		setvard CHAT_EVENT_STEP2 'CHAT_EVENT_STEP2'
+		setvard CHAT_SOUND2 'CHAT_SOUND2'
+	}
+	if ( CHAT_STEP ==  3 )
+	{
+		local L_CHAT_TEXT CHAT_STEP3
+		local L_ANIM ANIM_STEP3
+		local L_CHAT_DELAY CHAT_DELAY_STEP3
+		local L_CHAT_SOUND CHAT_SOUND3
+		setvard CHAT_STEP3 'CHAT_STEP3'
+		setvard CHAT_DELAY_STEP3 'CHAT_DELAY_STEP3'
+		setvard ANIM_STEP3 'ANIM_STEP3'
+		local L_CHAT_EVENT CHAT_EVENT_STEP3
+		setvard CHAT_EVENT_STEP3 'CHAT_EVENT_STEP3'
+		setvard CHAT_SOUND3 'CHAT_SOUND3'
+	}
+	if ( CHAT_STEP ==  4 )
+	{
+		local L_CHAT_TEXT CHAT_STEP4
+		local L_ANIM ANIM_STEP4
+		local L_CHAT_DELAY CHAT_DELAY_STEP4
+		local L_CHAT_SOUND CHAT_SOUND4
+		setvard CHAT_STEP4 'CHAT_STEP4'
+		setvard CHAT_DELAY_STEP4 'CHAT_DELAY_STEP4'
+		setvard ANIM_STEP4 'ANIM_STEP4'
+		local L_CHAT_EVENT CHAT_EVENT_STEP4
+		setvard CHAT_EVENT_STEP4 'CHAT_EVENT_STEP4'
+		setvard CHAT_SOUND4 'CHAT_SOUND4'
+	}
+	if ( CHAT_STEP ==  5 )
+	{
+		local L_CHAT_TEXT CHAT_STEP5
+		local L_ANIM ANIM_STEP5
+		local L_CHAT_DELAY CHAT_DELAY_STEP5
+		local L_CHAT_SOUND CHAT_SOUND5
+		setvard CHAT_STEP5 'CHAT_STEP5'
+		setvard CHAT_DELAY_STEP5 'CHAT_DELAY_STEP5'
+		setvard ANIM_STEP5 'ANIM_STEP5'
+		local L_CHAT_EVENT CHAT_EVENT_STEP5
+		setvard CHAT_EVENT_STEP5 'CHAT_EVENT_STEP5'
+		setvard CHAT_SOUND5 'CHAT_SOUND5'
+	}
+	if ( CHAT_STEP ==  6 )
+	{
+		local L_CHAT_TEXT CHAT_STEP6
+		local L_ANIM ANIM_STEP6
+		local L_CHAT_DELAY CHAT_DELAY_STEP6
+		local L_CHAT_SOUND CHAT_SOUND6
+		setvard CHAT_STEP6 'CHAT_STEP6'
+		setvard CHAT_DELAY_STEP6 'CHAT_DELAY_STEP6'
+		setvard ANIM_STEP6 'ANIM_STEP6'
+		local L_CHAT_EVENT CHAT_EVENT_STEP6
+		setvard CHAT_EVENT_STEP6 'CHAT_EVENT_STEP6'
+		setvard CHAT_SOUND6 'CHAT_SOUND6'
+	}
+	if ( CHAT_STEP ==  7 )
+	{
+		local L_CHAT_TEXT CHAT_STEP7
+		local L_ANIM ANIM_STEP7
+		local L_CHAT_DELAY CHAT_DELAY_STEP7
+		local L_CHAT_SOUND CHAT_SOUND7
+		setvard CHAT_STEP7 'CHAT_STEP7'
+		setvard CHAT_DELAY_STEP7 'CHAT_DELAY_STEP7'
+		setvard ANIM_STEP7 'ANIM_STEP7'
+		local L_CHAT_EVENT CHAT_EVENT_STEP7
+		setvard CHAT_EVENT_STEP7 'CHAT_EVENT_STEP7'
+		setvard CHAT_SOUND7 'CHAT_SOUND7'
+	}
+	if ( CHAT_STEP ==  8 )
+	{
+		local L_CHAT_TEXT CHAT_STEP8
+		local L_ANIM ANIM_STEP8
+		local L_CHAT_DELAY CHAT_DELAY_STEP8
+		local L_CHAT_SOUND CHAT_SOUND8
+		setvard CHAT_STEP8 'CHAT_STEP8'
+		setvard CHAT_DELAY_STEP8 'CHAT_DELAY_STEP8'
+		setvard ANIM_STEP8 'ANIM_STEP8'
+		local L_CHAT_EVENT CHAT_EVENT_STEP8
+		setvard CHAT_EVENT_STEP8 'CHAT_EVENT_STEP8'
+		setvard CHAT_SOUND8 'CHAT_SOUND8'
+	}
+	if ( CHAT_STEP ==  9 )
+	{
+		local L_CHAT_TEXT CHAT_STEP9
+		local L_ANIM ANIM_STEP9
+		local L_CHAT_DELAY CHAT_DELAY_STEP9
+		local L_CHAT_SOUND CHAT_SOUND9
+		setvard CHAT_STEP9 'CHAT_STEP9'
+		setvard CHAT_DELAY_STEP9 'CHAT_DELAY_STEP9'
+		setvard ANIM_STEP9 'ANIM_STEP9'
+		local L_CHAT_EVENT CHAT_EVENT_STEP9
+		setvard CHAT_EVENT_STEP9 'CHAT_EVENT_STEP9'
+		setvard CHAT_SOUND9 'CHAT_SOUND9'
+	}
+	if ( CHAT_STEP ==  10 )
+	{
+		local L_CHAT_TEXT CHAT_STEP10
+		local L_ANIM ANIM_STEP10
+		local L_CHAT_DELAY CHAT_DELAY_STEP10
+		local L_CHAT_SOUND CHAT_SOUND10
+		setvard CHAT_STEP10 'CHAT_STEP10'
+		setvard CHAT_DELAY_STEP10 'CHAT_DELAY_STEP10'
+		setvard ANIM_STEP10 'ANIM_STEP10'
+		local L_CHAT_EVENT CHAT_EVENT_STEP10
+		setvard CHAT_EVENT_STEP10 'CHAT_EVENT_STEP10'
+		setvard CHAT_SOUND10 'CHAT_SOUND10'
+	}
+
+	if ( L_ANIM startswith 'ANIM_STEP' ) local NO_ANIM 1
+	if ( !NO_ANIM ) playanim critical L_ANIM
+
+	saytext L_CHAT_TEXT
+
+	if ( L_CHAT_DELAY startswith 'CHAT_DELAY_STEP' ) local L_CHAT_DELAY CHAT_DELAY
+	if ( L_CHAT_EVENT startswith 'CHAT_EVENT_STEP' ) local NO_EVENT 1
+	if ( !NO_EVENT ) callevent L_CHAT_DELAY L_CHAT_EVENT
+
+	if ( L_CHAT_SOUND startswith 'CHAT_SOUND' ) local NO_SOUND 1
+	if ( !NO_SOUND )
+	{
+		if L_CHAT_SOUND isnot none
+		playsound 0 10 L_CHAT_SOUND
+	}
+
+	if ( !NO_MOUTH_MOVE ) callevent bchat_auto_mouth_move L_CHAT_DELAY
+
+	if CHAT_STEP < CHAT_STEPS
+	callevent L_CHAT_DELAY chat_loop
+}
+
+{ bchat_mouth_move
+
+	setvard BC_TOTAL_MOUTH_TIME 0
+
+	local RND_SAY1 "["
+	local M_TIME $randf(0.1,0.3)
+	add BC_TOTAL_MOUTH_TIME M_TIME
+	stradd RND_SAY1 M_TIME
+	stradd RND_SAY1 "]"
+
+	local RND_SAY2 "["
+	local M_TIME $randf(0.1,0.3)
+	add BC_TOTAL_MOUTH_TIME M_TIME
+	stradd RND_SAY2 M_TIME
+	stradd RND_SAY2 "]"
+
+
+	local RND_SAY3 "["
+	local M_TIME $randf(0.1,0.3)
+	add BC_TOTAL_MOUTH_TIME M_TIME
+	stradd RND_SAY3 M_TIME
+	stradd RND_SAY3 "]"
+
+
+	local RND_SAY4 "["
+	local M_TIME $randf(0.1,0.3)
+	add BC_TOTAL_MOUTH_TIME M_TIME
+	stradd RND_SAY4 M_TIME
+	stradd RND_SAY4 "]"
+
+	say RND_SAY1 RND_SAY2 RND_SAY3 RND_SAY4
+	add BC_TOTAL_MOUTH_TIME 1.0
+	callevent BC_TOTAL_MOUTH_TIME bchat_close_mouth
+}
+
+{ bchat_auto_mouth_move //<sentence_time> just keep moving mouth until sentence ends based on delay (looks better than pure random)
+
+	if ( PARAM1 startswith 'PARAM' )
+	{
+		//do nadda
+		//dbg ERROR: bchat_auto_mouth_move called without delay
+	}
+	else
+	{
+		setvard BC_END_AUTO_MOUTH_MOVE game.time
+		add BC_END_AUTO_MOUTH_MOVE PARAM1
+		subtract BC_END_AUTO_MOUTH_MOVE 1.0 //give sec for sentence to end
+		//dbg bchat_auto_mouth_move ( PARAM1 )
+	}
+//
+//	if ( game.time < BC_END_AUTO_MOUTH_MOVE )
+//	{
+//		local RND_SAY "["
+//		local M_TIME $randf(0.1,0.3)
+//		stradd RND_SAY M_TIME
+//		stradd RND_SAY "]"
+//		say RND_SAY
+//		callevent M_TIME bchat_auto_mouth_move
+//	}
+//	else
+//	{
+//		callevent 2.0 bchat_close_mouth
+//	}
+
+	if ( game.time < BC_END_AUTO_MOUTH_MOVE )
+	{
+		local RND_SAY "["
+		local M_TIME $randf(0.1,0.3)
+		stradd RND_SAY M_TIME
+		stradd RND_SAY "]"
+		say RND_SAY
+
+		add M_TIME 0.1
+		callevent M_TIME bchat_close_mouth
+		add M_TIME 0.1
+		callevent M_TIME bchat_auto_mouth_move
+	}
+}
+
+{ bchat_mouth_twitch
+	local RND_DIST $randf(-1.0,0.0) 
+	dbg bchat_mouth_twitch RND_DIST
+	setprop ent_me controller1 RND_DIST
+}
+
+{ bchat_close_mouth
+	if !NO_CLOSE_MOUTH //some monsters express chat by shaking their spine controller - setting them to 0 may look odd, so use this in those cases
+	setprop ent_me controller1 0
+}
+
+{ bchat_open_mouth //not used here in, but maybe useful externally
+	setprop ent_me controller1 -1
+}
+
+{ give_runaround
+
+	if !BUSY_CHATTING
+
+	local RQUEST_STEP PARAM2
+	//Galan
+	if ( RQUEST_STEP == 1 )
+	{
+		setvard CHAT_STEP 0
+		setvard CHAT_STEPS 4
+		setvard CHAT_STEP1 "My goodness, Olof sent you to me with this? It almost looks like one of those old bloodstone rings..."
+		setvard CHAT_STEP2 "It's no good without the stone though. I remember Narad was saying he saw one once. They are very rare..."
+		setvard CHAT_STEP3 "So it could be the same one. I don't remember WHERE he said he saw it though..." 
+		setvard CHAT_STEP4 "You can find him over in Daragoth, on the outskirts of Derlia. Provided the orcs and spiders haven't killed him." 
+		callevent chat_loop
+		quest set PARAM1 r 2
+	}
+	//Narad
+	if ( RQUEST_STEP == 2 )
+	{
+		setvard CHAT_STEP 0
+		setvard CHAT_STEPS 2
+		setvard CHAT_STEP1 "Oh, yeah, I've seen that ring before... In a play I believe... A famous actor had it..."
+		setvard CHAT_STEP2 "Darrelin, was his name, I believe. Last I heard he moved out by the orc caves to aid actors travelling to Gatecity."
+		callevent chat_loop
+		quest set PARAM1 r 3
+	}
+	//Darrelin
+	if ( RQUEST_STEP == 3 )
+	{
+		playsound 0 10 voices/mscave/actor-bloodstone.wav
+		setvard CHAT_STEP 0
+		setvard CHAT_STEPS 2
+		setvard CHAT_STEP1 "Ah... That ring looks familiar... It almost looks like Rudolf's old battle ring."
+		setvard CHAT_STEP2 "I think he's up by the old mines playing adventurer again. He's far too old for that..."
+		callevent chat_loop
+		quest set PARAM1 r 4
+	}
+	//Rudolf (sets in script)
+	if ( RQUEST_STEP == 4 ) saytext "Nice ring by the way! You know, I think Vadrel used to have one just like it!"
+	//Vadrel
+	if ( RQUEST_STEP == 5 )
+	{
+		setvard CHAT_STEP 0
+		setvard CHAT_STEPS 2
+		setvard CHAT_STEP1 "Ah yes, an old warrior friend of mine had one of those, very useful if you have the stone that goes in it."
+		setvard CHAT_STEP2 "Edrin, his name was. I believe he's now captain of the guard in Edana. He might be able to help you with it."
+		callevent chat_loop
+		quest set PARAM1 r 6
+	}
+	//Edrin
+	if ( RQUEST_STEP == 6 )
+	{
+		setvard CHAT_STEP 0
+		setvard CHAT_STEPS 2
+		setvard CHAT_STEP1 "Oh, one of those old golden bloodstone rings, too bad the stone has come out of it."
+		setvard CHAT_STEP2 "It looks a lot like the one Thordac forged and used to wear. You can find him in Deralia."
+		callevent chat_loop
+		quest set PARAM1 r 7
+	}
+	//Thordac
+	if ( RQUEST_STEP == 7 )
+	{
+		setvard CHAT_STEP 0
+		setvard CHAT_STEPS 2
+		setvard CHAT_STEP1 "Oh, wow! That old thing, I've not seen it since I sold it of to..."
+		setvard CHAT_STEP2 "Slinker! Yeah, that was his name. Slimey guy - still slinks about here somewhere..."
+		callevent chat_loop
+		quest set PARAM1 r 9
+	}
+	//Slinker - oops, had him twice, hence the numbering ^_^
+	if ( RQUEST_STEP == 9 )
+	{
+		setvard CHAT_STEP 0
+		setvard CHAT_STEPS 2
+		setvard CHAT_STEP1 "Oh that old ring... Was handy for extort... I mean handy for business back in the day."
+		setvard CHAT_SOUND1 voices/deralia/slinker_ring.wav
+		setvard CHAT_DELAY_STEP1 7.0
+		setvard CHAT_STEP2 "I lost it in a card game with Holten a looong time ago. He runs the inn now."
+		setvard CHAT_DELAY_STEP2 5.8
+		callevent chat_loop
+		quest set PARAM1 r 10
+	}
+	//Gerald
+	if ( RQUEST_STEP == 10 )
+	{
+		setvard CHAT_STEP 0
+		setvard CHAT_STEPS 3
+		setvard CHAT_STEP1 "Ah that, I won it in card game, if I recall correctly... Lost it in another the next day."
+		setvard CHAT_STEP2 "Long time ago that was, yet somehow you remember these things..."
+		setvard CHAT_STEP3 "Eh, it was that whino, Mosor, over there in the corner who won it. He might know something about it."
+		callevent chat_loop
+		quest set PARAM1 r 11
+	}
+	//Mosor
+	if ( RQUEST_STEP == 11 )
+	{
+		setvard CHAT_STEP 0
+		setvard CHAT_STEPS 4
+		setvard CHAT_STEP1 "Oh that old thing, not seen it in... Must be twenty seasons now... Before I took to the drink so hard."
+		setvard CHAT_STEP2 "Yeaah, shouldn't have parted with it. I traded it for some ale to Cathain, who made a lot of money off it."
+		setvard CHAT_STEP3 "Boxing, as I recall. Suppose you have to be a warrior to make real use of it. Too bad the stone's gone."
+		setvard CHAT_STEP4 "He's the Quartermaster of the local militia... Might find him in the barracks."
+		callevent chat_loop
+		quest set PARAM1 r 12
+	}
+	//Cathain
+	if ( RQUEST_STEP == 12 )
+	{
+		if !$item_exists(PARAM1,item_ring_percept)
+		setvard CHAT_STEP 0
+		setvard CHAT_STEPS 5
+		setmoveanim idle1
+		roam 0
+		setmovedest PARAM1 9999
+		setvard CHAT_STEP1 "Oh wow! I've not seen that thing since I was in the boxing circuit!"
+		setvard CHAT_STEP2 "I used to use it to size up my opponents, let me know when to bow out or go in for the kill!"
+		setvard CHAT_STEP3 "Oh, I'm far too old for that now though. Easier just to keep the recruits in line around here."
+		setvard CHAT_STEP4 "I still have the stone though... It broke off in a fight! Never saw where the ring went till now."
+		setvard CHAT_STEP5 "Tell ya what, you look like someone who could use it. Give me 500 gold, and I'll give you the stone!"
+		callevent chat_loop
+		setvard TRADE_RING 1
+		callevent npcatk_suspend_ai
+		//quest set PARAM1 r 0
+	}
+
+}
+
+{ rquest_rub_my_back_first
+	saytext Oh, I know a little something about that... If you could just help me with my 'little problem' first.
+}
+
+{ convo_anim //only good for models with scientist anims
+
+	local N_ANIMS $get_token_amt(CONV_ANIMS)
+	subtract N_ANIMS 1
+	local RND_ANIM $rand(0,N_ANIMS)
+	playanim critical $get_token(CONV_ANIMS,RND_ANIM)
+}

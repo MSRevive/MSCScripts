@@ -1,0 +1,222 @@
+#scope server
+
+{ [shared]
+	setvar ANIM_RUN run
+
+	const ANIM_CAST castspell
+}
+
+{
+	const GOLD_BAGS 1
+	const GOLD_BAGS_PPLAYER 1
+	const GOLD_PER_BAG 50
+	const GOLD_RADIUS 64
+	const GOLD_MAX_BAGS 4
+
+	const SOUND_SHOCK1 debris/zap8.wav
+	const SOUND_SHOCK2 debris/zap3.wav
+	const SOUND_SHOCK3 debris/zap4.wav
+	const SOUND_LAUGH monsters/skeleton/cal_laugh.wav
+	const SOUND_WARCRY monsters/skeleton/calrain3.wav
+
+	//skele base
+	const SKEL_HP		1000
+	const ATTACK_HITCHANCE 	85%
+	const ATTACK_DAMAGE_LOW 	15.5
+	const ATTACK_DAMAGE_HIGH 	25.5
+	setvard NPC_GIVE_EXP 		400
+
+	const DMG_ZAP $randf(40,60)
+	const DOT_ZAP 10.0
+	const DUR_ZAP 5.0
+	const DMG_BARRIER 10.0
+	const BARRIER_RAD 96
+	const ZAP_FREQ $randf(10,15)
+	const ZAP_RANGE 1024
+	const ATTACH_WAND 0
+	const FREQ_ZAP 30.0
+
+	//barrier media
+	const SOUND_BARRIER_REPELL doors/aliendoor3.wav
+	const SOUND_BARRIER_SPAWN magic/spawn.wav
+}
+
+#include monsters/skeleton_base
+
+{ [shared] skeleton_spawn
+
+	name a|Lightning Forged Skeleton
+	race undead
+	roam 1
+	takedmg all .7
+	setmodel monsters/skeleton_enraged.mdl
+	hearingsensitivity 8
+	setmodelbody	0 6 //0=standard 1=ash 2=green 3=bloody 4=decayed 5=ice 6=gold 7=stone 8=crystal 9=weirdgel
+	setmodelbody	1 8 //0=Unarmed 1=darkmace 2=sword 3=hammahs 4=bigsword+shield 5=iceclubs 6=fireclubs 7=highsword 8=wand
+
+	if ( $lcase(game.map.name) equals thanatos ) setvard SET_GREEK 1
+	if ( SET_GREEK ) setmodelbody 0 10
+
+	setmoveanim sitstand
+	setidleanim sitstand
+
+	takedmg lightning 0.0
+
+	local MY_SKY game.monster.origin
+	vectoradd MY_SKY (0,0,4096)
+	local MY_CENTER $get(ent_me,origin)
+	vectoradd MY_CENTER $vec(0,0,-48)
+	//fearing sticky client events
+	//clientevent new all_in_sight effects/sfx_lightning MY_CENTER MY_SKY 1 1
+	//<spritename> <width> <startpos> <endpos> <(r,g,b)> <brightness> <noise> <duration>
+	playsound 0 10 weather/lightning.wav
+	effect beam point lgtning.spr 120 MY_CENTER MY_SKY (128,64,255) 200 3.0 1.0
+	callevent 10.0 zap_check
+	callevent 2.0 stand_complete
+}
+
+{ npcatk_targetvalidate
+
+	if ( !DID_WARCRY )
+	{
+		setvard DID_WARCRY 1
+		playsound 0 10 SOUND_LAUGH
+	}
+}
+
+{ stand_complete
+	setidleanim idle1
+	if !CYCLED_UP
+	setmoveanim ANIM_WALK
+}
+
+{ zap_check
+	if $get(ent_me,isalive)
+	callevent FREQ_ZAP zap_check
+	if NPCATK_TARGET isnot unset
+
+	setvard ZAP_LIST $get_tsphere(enemy,ZAP_RANGE)
+	if ZAP_LIST isnot none
+
+	playsound 3 10 SOUND_WARCRY
+	playsound 1 10 SOUND_BARRIER_SPAWN
+
+	callevent npcatk_suspend_ai
+	callevent suspend_movement ANIM_CAST
+
+	clientevent new all effects/sfx_barrier $get(ent_me,index) BARRIER_RAD (255,0,0) DUR_ZAP 1 1
+	setvard BARRIER_ID game.script.last_sent_id
+
+	setvard ZAP_ACTIVE 1
+	callevent DUR_ZAP stop_zapping
+	callevent 0.5 zap_scan_loop
+
+	setvard ZAP_END_TIME game.time
+	add ZAP_END_TIME DUR_ZAP
+	setvard BEAM_LIST ''
+	setvard TOTAL_ZAP_LIST ''
+	calleventloop $get_token_amt(ZAP_LIST) zap_targets
+	setvard TOTAL_ZAP_INDEX ZAP_LIST
+	playrandomsound 2 10 SOUND_SHOCK1 SOUND_SHOCK2 SOUND_SHOCK3
+	//clientevent update all BARRIER_ID zap_targets $get(ent_me,index) ATTACH_WAND ZAP_INDEXES
+}
+
+{ zap_scan_loop
+	if ZAP_ACTIVE
+	callevent 0.5 zap_scan_loop
+
+	setvard ZAP_LIST $get_tsphere(enemy,ZAP_RANGE)
+	if ZAP_LIST isnot none
+	calleventloop $get_token_amt(ZAP_LIST) zap_targets
+
+	//dodamage $get(ent_me,origin) ZAP_RANGE DMG_ZAP 100% 0 reflective lightning
+
+	//dbg zap_scan_loop ZAP_INDEXES
+
+	setmovedest NPCATK_TARGET 9999
+
+	playrandomsound 0 10 SOUND_SHOCK1 SOUND_SHOCK2 SOUND_SHOCK3
+	//clientevent update all BARRIER_ID zap_targets $get(ent_me,index) ATTACH_WAND ZAP_INDEXES
+}
+
+{ zap_targets
+	local CUR_TARG $get_token(ZAP_LIST,game.script.iteration)
+	local TARG_ORG $get(CUR_TARG,origin)
+	//dbg zap_targets range $get(CUR_TARG,name) $get(CUR_TARG,range) vs BARRIER_RAD
+
+	if ( $get(CUR_TARG,range) < BARRIER_RAD )
+	{
+		//damage and repell target
+		//dbg zap_targets $get(CUR_TARG,name) in barrier
+		local TARG_ANG $angles(game.monster.origin,TARG_ORG)
+		setvelocity CUR_TARG $relvel($vec(0,TARG_ANG,0),$vec(10,1000,110))
+		local DID_BARRIER_DMG 1
+		playsound 1 10 SOUND_BARRIER_REPELL
+		dodamage CUR_TARG "direct" DMG_BARRIER 100% ent_me magic
+	}
+
+	local TRACE_START $get(ent_me,attachpos,ATTACH_WAND)
+	local TRACE_LINE $get_traceline(TRACE_START,TARG_ORG,worldonly)
+
+	if ( TOTAL_ZAP_LIST contains CUR_TARG ) local DONT_ADD_BEAM 1
+	if ( !DONT_ADD_BEAM )
+	{
+		//add beam if can hit
+		if TRACE_LINE equals TARG_ORG
+		local BEAM_DURATION ZAP_END_TIME
+		subtract BEAM_DURATION game.time
+		effect beam ents lgtning.spr 100 ent_me 1 CUR_TARG 2 (255,200,64) 200 50 BEAM_DURATION
+		token.add ZAP_LIST_HITABLE "1"
+		token.add TOTAL_ZAP_LIST CUR_TARG
+		token.add BEAM_LIST $get(ent_lastcreated,id)
+	}
+
+	if ( TRACE_LINE isnot TARG_ORG )
+	{
+		//remove beam from guy I cant hit anymore
+		if TOTAL_ZAP_LIST contains CUR_TARG
+		local TOKEN_IDX $get_find_token(TOTAL_ZAP_LIST,CUR_TARG)
+		token.del TOTAL_ZAP_LIST TOKEN_IDX
+		effect beam update $get_token(BEAM_LIST,TOKEN_IDX) remove 0.1
+		token.del BEAM_LIST TOKEN_IDX
+	}
+
+	if TRACE_LINE equals TARG_ORG
+	if !DID_BARRIER_DMG
+	//dbg zap_targets $get(CUR_TARG,name) lightning
+	dodamage CUR_TARG "direct" DMG_ZAP 100% ent_me lightning
+	applyeffect CUR_TARG effects/effect_shock_dmg 5.0 $get(ent_me,id) DOT_ZAP
+	addvelocity CUR_TARG $vec(0,-105,0)
+}
+
+{ stop_zapping
+	setvard ZAP_ACTIVE 0
+	clientevent update all BARRIER_ID clear_sprites
+	callevent npcatk_resume_ai
+	callevent resume_movement
+}
+
+{ suspend_movement //<animtohold>
+	setvard NO_STUCK_CHECKS 1
+	setidleanim PARAM1
+	setmoveanim PARAM1
+	//dbg suspend_movement ANIM_RUN ANIM_WALK ANIM_IDLE
+	setvard OLD_ANIM_RUN ANIM_RUN
+	setvard OLD_ANIM_WALK ANIM_WALK
+	setvard OLD_ANIM_IDLE ANIM_IDLE
+	setvard ANIM_RUN PARAM1
+	setvard ANIM_WALK PARAM1
+	setvard ANIM_IDLE PARAM1
+	roam 0
+}
+
+{ resume_movement
+	setvard NO_STUCK_CHECKS 0
+	setvard ANIM_RUN OLD_ANIM_RUN
+	setvard ANIM_WALK OLD_ANIM_WALK
+	setvard ANIM_IDLE OLD_ANIM_IDLE
+	setidleanim ANIM_IDLE
+	setmoveanim ANIM_RUN
+	//dbg resume_movement ANIM_RUN ANIM_WALK ANIM_IDLE
+	roam 1
+}

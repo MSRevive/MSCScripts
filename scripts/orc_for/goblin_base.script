@@ -1,0 +1,398 @@
+//Blood goblin fodder by Thothie
+//
+//Weakest of the blood goblins
+//generic randomized high-end goblin with random weapon
+//
+//All the bgoblins and vgoblins use this as their base, hence its complexity
+//In addition the hobgoblin_ scripts use this base their base
+//The old goblin_ scripts, however, still use their original configurations, and do not share this script
+
+#scope server
+
+{
+	//base
+	setvar ANIM_WALK walk
+	setvar ANIM_IDLE idle1
+	setvard ANIM_RUN run
+	setvard ATTACK_RANGE 64
+	setvard ATTACK_HITRANGE 120
+	setvard ATTACK_MOVERANGE 48
+	setvard MOVE_RANGE 48
+	setvard NPC_GIVE_EXP 200
+	setvard DROP_GOLD 1
+	setvard DROP_GOLD_AMT $rand(10,15)
+	setvard NPC_ALLY_RESPONSE_RANGE 4096
+	setvard ANIM_DEATH die_fallback
+	setvard CAN_FLINCH 1
+	setvard FLINCH_ANIM flinch
+	const FLINCH_CHANCE 25%
+	setvard FLINCH_HEALTH 100
+
+	//custom
+	const ANIM_SMASH battleaxe_swing1_L
+	const ANIM_SWIPE swordswing1_L
+	const ANIM_WARCRY warcry
+	const ANIM_KICK kick
+	const ANIM_BOW shootorcbow
+	const DMG_CLUB $rand(40,75)
+	const DMG_AXE $rand(50,60)
+	const DMG_SWORD $rand(25,50)
+	const GOB_TYPE $rand(1,3) //1-Club 2-Axe 3-Sword
+	const GOBLIN_JUMPRANGE 512
+	const DMG_FIREBALL 50
+	const DMG_FIREBALL_DOT 10
+	const FREQ_FIREBALL $randf(20.0,30.0)
+	const GOB_JUMPER 1
+	const ANIM_PARRY deflectcounter
+	const CHARGE_SPEED 600
+	const FREQ_CHARGE 10.0
+	const GOB_CHARGER 1
+	const GOB_CHARGE_MIN_DIST 128
+	const GOB_CHARGE_MAX_DIST 256
+	const MIN_FIREBALL_DIST 96
+
+	const FREQ_LEAP_AWAY $randf(5.0,10.0)
+
+	const FREQ_GOB_JUMP $randf(3.0,8.0)
+
+	const NEW_MODEL 1
+
+	const FREQ_ZDIFF_JUMP $randf(2.0,4.0)
+	const GOB_MAX_ZDIFF_JUMP_RANGE 600
+
+	//sounds
+	const SOUND_STRUCK1 body/flesh1.wav
+	const SOUND_STRUCK2 body/flesh2.wav
+	const SOUND_STRUCK3 body/flesh3.wav
+	const SOUND_PAIN1 monsters/goblin/c_gargoyle_hit1.wav
+	const SOUND_PAIN2 monsters/goblin/c_gargoyle_hit2.wav
+	const SOUND_ALERT1 monsters/goblin/c_goblin_bat1.wav
+	const SOUND_ALERT2 monsters/goblin/c_goblin_bat2.wav
+	const SOUND_IDLE monsters/goblin/c_goblin_slct.wav
+	const SOUND_ATTACK1 monsters/goblin/c_goblin_atk1.wav
+	const SOUND_ATTACK2 monsters/goblin/c_goblin_atk2.wav
+	const SOUND_ATTACK3 monsters/goblin/c_goblin_atk3.wav
+	const SOUND_FIREBALL_CAST monsters/goblin/c_gargoyle_slct.wav
+	const SOUND_FIREBALL magic/fireball_strike.wav
+	const SOUND_IDLE monsters/goblin/c_goblin_slct.wav
+	const SOUND_JUMP1 monsters/goblin/c_goblin_hit1.wav
+	const SOUND_JUMP2 monsters/goblin/c_goblin_hit2.wav
+	const SOUND_PARRY1 body/armour1.wav
+	const SOUND_PARRY2 body/armour2.wav
+	const SOUND_PARRY3 body/armour3.wav
+	const SOUND_CHIEF_ALERT monsters/goblin/c_goblinchf_bat1.wav
+	const SOUND_SHAM_ALERT monsters/goblin/c_goblinwiz_bat1.wav
+
+	const SOUND_DEATH monsters/goblin/c_goblin_dead.wav
+	precache SOUND_DEATH //this may need to be done in top script
+}
+
+#include monsters/base_monster_new
+
+{ [shared] npc_spawn
+
+	blood red //green for v_goblin
+	roam 1
+	hearingsensitivity 2
+
+	setidleanim ANIM_IDLE
+	setmoveanim ANIM_WALK
+
+	callevent goblin_spawn
+	callevent 2.0 final_post_spawn_checks
+	callevent 1.0 idle_mode
+	callevent 0.01 goblin_pre_spawn //use to reset setvard props handled by post_spawn
+}
+
+{ goblin_pre_spawn //not required in this script, but here to stop console spam
+	setvard ATTACK_RANGE 64
+	setvard ATTACK_HITRANGE 120
+	setvard ATTACK_MOVERANGE 48
+	setvard MOVE_RANGE 48
+}
+
+{ [shared] goblin_spawn
+
+	callevent 0.01 goblin_set_weapon
+}
+
+{ final_post_spawn_checks
+	setvard GOB_LEAP_AWAY_THRESHOLD $get(ent_me,maxhp)
+	multiply GOB_LEAP_AWAY_THRESHOLD 0.05
+}
+
+{ swing_axe //ANIM_SMASH
+
+	playrandomsound 0 10 SOUND_ATTACK1 SOUND_ATTACK2 SOUND_ATTACK3
+	if ( F_GOB_TYPE == 1 ) dodamage NPCATK_TARGET ATTACK_HITRANGE DMG_CLUB ATTACK_HITCHANCE blunt
+	if ( F_GOB_TYPE == 2 ) dodamage NPCATK_TARGET ATTACK_HITRANGE DMG_AXE ATTACK_HITCHANCE slash
+}
+
+{ swing_sword //ANIM_SWIPE
+
+	if ( TOSS_FIREBALL ) callevent toss_fireball
+	if !TOSS_FIREBALL
+	playrandomsound 0 10 SOUND_ATTACK1 SOUND_ATTACK2 SOUND_ATTACK3
+	dodamage NPCATK_TARGET ATTACK_HITRANGE DMG_SWORD ATTACK_HITCHANCE slash
+}
+
+{ toss_fireball
+	setvard TOSS_FIREBALL 0
+	tossprojectile NPCATK_TARGET 400 DMG_FIREBALL 0.5 proj_fire_ball (0,48,28)
+	callexternal ent_lastprojectile lighten DMG_FIREBALL_DOT 0.01
+	playsound 0 10 SOUND_FIREBALL
+}
+
+{ npcatk_hunt
+
+	callevent gob_hunt
+}
+
+{ gob_hunt
+
+	if $get(NPCATK_TARGET,isalive)
+	if !SUSPEND_AI
+	if !I_R_FROZEN
+
+	if ( CAN_FIREBALL )
+	{
+		if !IS_FLEEING
+		if game.time > NEXT_FIREBALL
+		callevent prep_fireball
+	}
+
+	if GOB_CHARGER
+
+	if !I_R_FROZEN
+	if !IS_FLEEING
+	if !AM_LATCHED
+	if !IN_LEAP
+	if !LEAP_MODE
+
+	//mega-jump if opponent out of reach
+	if ( game.time > NEXT_ZDIFF_JUMP )
+	{
+		if GOB_JUMPER
+		if ( $get(NPCATK_TARGET,range) < GOB_MAX_ZDIFF_JUMP_RANGE )
+		{
+			if game.time > NEXT_ZDIFF_JUMP
+			local MY_Z $get(ent_me,origin.z)
+			local TARG_Z $get(NPCATK_TARGET,origin.z)
+			if ( $get(NPCATK_TARGET,isplayer) ) subtract TARG_Z 38 //compensate for origin center
+
+			local Z_DIFF TARG_Z
+			subtract Z_DIFF MY_Z
+
+			if ( Z_DIFF > ATTACK_RANGE )
+			{
+				callevent gob_hop_zdiff Z_DIFF
+				local EXIT_SUB 1
+				setvard NEXT_ZDIFF_JUMP game.time
+				add NEXT_ZDIFF_JUMP FREQ_ZDIFF_JUMP
+
+				//don't do a positional jump and random jump one after the other
+				setvard GOB_NEXT_JUMP game.time
+				add GOB_NEXT_JUMP FREQ_GOB_JUMP
+			}
+		}
+		if !EXIT_SUB 1
+
+		if $get(NPCATK_TARGET,range) > GOB_CHARGE_MIN_DIST
+		if $get(NPCATK_TARGET,range) < GOB_CHARGE_MAX_DIST
+	}
+	if !EXIT_SUB 1
+
+	//randomly jump forward if far enough and haven't attacked recently
+	if ( GOB_JUMPER )
+	{
+		if game.time > GOB_NEXT_JUMP
+
+		if $get(NPCATK_TARGET,range) < GOBLIN_JUMPRANGE
+
+		if $get(NPCATK_TARGET,range) > ATTACK_HITRANGE
+
+		setvard GOB_NEXT_JUMP game.time
+		add GOB_NEXT_JUMP FREQ_GOB_JUMP
+
+		//jump at target if he's higher than I am
+		local ME_POS game.monster.origin
+		local MY_Z $vec.z(ME_POS)
+		local TARGET_POS $get(NPCATK_TARGET,origin)
+		local TARGET_Z $vec.z(TARGET_POS)
+		local TARGET_Z_DIFFERENCE TARGET_Z
+		subtract TARGET_Z_DIFFERENCE MY_Z
+
+		if TARGET_Z_DIFFERENCE < 500 //not hoplessly high up - handled above
+		playanim critical ANIM_SMASH
+		callevent 0.1 gob_hop
+		//don't do a zdiff jump for a bit
+		setvard NEXT_ZDIFF_JUMP game.time
+		add NEXT_ZDIFF_JUMP FREQ_ZDIFF_JUMP
+	}
+
+
+	if ( game.time > NEXT_CHARGE ) callevent leap_forward
+}
+
+{ prep_fireball
+	if $get(NPCATK_TARGET,range) > MIN_FIREBALL_DIST
+	if $cansee(NPCATK_TARGET)
+	setvard NEXT_FIREBALL game.time
+	add NEXT_FIREBALL FREQ_FIREBALL
+	setvard TOSS_FIREBALL 1
+	playanim critical ANIM_SWIPE
+	playsound 0 10 SOUND_FIREBALL_CAST
+	setvard AS_ATTACKING game.time
+	add AS_ATTACKING 10.0
+}
+
+{ leap_forward
+
+	setvard NEXT_CHARGE game.time
+	add NEXT_CHARGE FREQ_CHARGE
+	playrandomsound 0 10 SOUND_JUMP1 SOUND_JUMP2
+	playanim critical ANIM_SMASH
+	addvelocity ent_me $relvel(0,CHARGE_SPEED,100)
+	callevent 0.5 leap_stun
+}
+
+{ leap_stun
+	setvard STUN_LIST $get_tsphere(enemy,64,game.monster.origin)
+	if STUN_LIST isnot none
+	calleventloop $get_token_amt(STUN_LIST) stun_targets
+}
+
+{ stun_targets
+	local CUR_TARGET $get_token(STUN_LIST,game.script.iteration)
+	addvelocity CUR_TARGET $relvel(0,200,120)
+	if ( CAN_STUN ) applyeffect CUR_TARGET effects/effect_stun 3.0 1 1
+}
+
+{ cycle_up
+
+	callevent gob_cycle_up
+}
+
+{ gob_cycle_up
+	//delay first fireball
+	setvard NEXT_FIREBALL game.time
+	add NEXT_FIREBALL $randf(10,30)
+
+	if !GOB_JUMP_SCANNING
+	setvard GOB_JUMP_SCANNING 1
+	playrandomsound 0 10 SOUND_ALERT1 SOUND_ALERT2
+	//callevent gob_jump_check
+}
+
+{ cycle_down
+	setvard GOB_JUMP_SCANNING 0
+	setmoveanim ANIM_WALK
+	callevent 1.0 idle_mode
+}
+
+{ gob_hop
+
+	playrandomsound 0 10 SOUND_JUMP1 SOUND_JUMP2
+	local JUMP_HEIGHT $rand(350,550)
+	if ( DBL_JUMP )
+	{
+		multiply JUMP_HEIGHT 2.0
+		setvard DBL_JUMP 0
+	}
+	addvelocity ent_me $relvel(0,250,JUMP_HEIGHT)
+}
+
+{ game_death
+	//hide arrow
+	setmodelbody 2 0
+}
+
+{ idle_mode
+	if NPCATK_TARGET equals unset
+	if $cansee(ally)
+	setmovedest ent_lastseen 9999
+	playanim once ANIM_WARCRY
+	playsound 0 10 SOUND_IDLE
+	callevent $randf(10,20) idle_mode
+	callexternal ent_lastseen ext_faceme $get(ent_me,id)
+}
+
+{ ext_faceme
+	if NPCATK_TARGET equals unset
+	setmovedest PARAM1 9999
+	callevent 0.1 reply_anim
+}
+
+{ reply_anim
+	playanim once ANIM_WARCRY
+}
+
+{ game_damaged //PARAM1=attacker PARAM2=dmg PARAM3=dmg_type
+	if ( !AM_LATCHED )
+	{
+		playrandomsound 0 5 SOUND_STRUCK1 SOUND_STRUCK2 SOUND_STRUCK3 SOUND_STRUCK1 SOUND_STRUCK2 SOUND_STRUCK3 SOUND_PAIN1 SOUND_PAIN2
+	}
+	else
+	{
+		callexternal LATCH_TARGET ext_playrandomsound 0 5 SOUND_STRUCK1 SOUND_STRUCK2 SOUND_STRUCK3 SOUND_STRUCK1 SOUND_STRUCK2 SOUND_STRUCK3 SOUND_PAIN1 SOUND_PAIN2
+	}
+
+	if ( PARAM2 > GOB_LEAP_AWAY_THRESHOLD )
+	{
+		if !AIMING_CAGE
+		if game.time > NEXT_LEAP_AWAY
+		if $get(PARAM1,range) < 150
+		setvard NEXT_LEAP_AWAY game.time
+		add NEXT_LEAP_AWAY FREQ_LEAP_AWAY
+		if !AM_LATCHED
+		if !IN_LEAP
+		if !LEAP_MODE
+		callevent gob_leap_away $get(PARAM1,id)
+	}
+}
+
+{ gob_leap_away
+	callevent npcatk_flee $get(PARAM1,id) 512 1.0
+	callevent 0.1 gob_leap_away2
+}
+
+{ gob_leap_away2
+	playrandomsound 0 10 SOUND_JUMP1 SOUND_JUMP2
+	playanim critical ANIM_SMASH
+	addvelocity ent_me $relvel(0,CHARGE_SPEED,100)
+}
+
+{ npc_selectattack
+	//I'm in swing range, don't do random jump unless struck
+	//dbg npc_selectattack
+	local L_NEXT_GOB_HOP NEXT_GOB_HOP
+	add L_NEXT_GOB_HOP 1.0
+	if game.time > L_NEXT_GOB_HOP
+
+	setvard NEXT_GOB_HOP game.time
+	add NEXT_GOB_HOP 2.0
+}
+
+//Zdiff jump
+{ cycle_up
+	if !CYCLES_STARTED
+	setvard CYCLES_STARTED 1
+	callevent jump_check
+}
+
+//=================== Hop up at targets out of reach (from elf_base)
+{ gob_hop_zdiff //<vertical_difference> - determines jump strength
+	playanim critical ANIM_SMASH
+	playrandomsound 0 10 SOUND_JUMP1 SOUND_JUMP2
+	setvard UP_JUMP_STR PARAM1
+	multiply UP_JUMP_STR 5
+	setmovedest NPCATK_TARGET AS_MOVEPROX
+	if ( !SUSPEND_AI ) callevent npcatk_suspend_ai 1.0
+	setvard FWD_JUMP_STR $get(NPCATK_TARGET,range)
+	//dbg do_hop UP_JUMP_STR FWD_JUMP_STR
+	callevent 0.1 gob_hop_zdiff_boost
+}
+
+{ gob_hop_zdiff_boost
+	addvelocity ent_me $relvel(0,FWD_JUMP_STR,UP_JUMP_STR)
+}

@@ -1,0 +1,107 @@
+{
+	const MODEL_HANDS      	none
+	const MODEL_WORLD      	weapons/projectiles.mdl
+	const MODEL_BODY_OFS 66 
+	const ARROW_BODY_OFS 66 
+	const ARROW_STICK_DURATION 5
+	const ARROW_EXPIRE_DELAY 2
+	const SOUND_HITWALL1		weapons/xbow_hit1.wav
+	const SOUND_HITWALL2		weapons/xbow_hit1.wav
+	const ARROW_SOLIDIFY_ON_WALL	0  	//base_arrow: Turns solid when a wall is hit
+	const ARROW_BREAK_CHANCE	100%	//base_arrow: Chance of breaking upon hit
+	const ITEM_NAME		watermana
+	const PROJ_DAMAGE_TYPE	fire
+	const PROJ_DAMAGESTAT		spellcasting.fire //this does not determin xp stat
+	const PROJ_ANIM_IDLE		idle_icebolt
+	const PROJ_MOTIONBLUR 1
+
+	const PROJ_DAMAGE		0 //via tossprojectile only
+	const PROJ_AOE_RANGE		0
+	const PROJ_AOE_FALLOFF	0
+	const PROJ_STICK_DURATION	0  //Don't stick in enemies
+	const PROJ_COLLIDE	1
+}
+
+#include items/proj_arrow_base
+
+{ arrow_spawn
+
+	name 		a|Dragon Lance
+	desc 		Wait! I'm not a dragon!
+	weight 		0.1
+	size 		1
+	value		0
+	gravity		0.8
+	groupable    	25
+	setidleanim idle_icebolt
+}
+
+{ game_projectile_hitnpc
+
+
+	if ( $get(PARAM1,isplayer) )
+	{
+		if !game.pvp		
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	local L_DMG 300
+	local OWNER_SKILL_RATIO $get(ent_expowner,skill.polearms)
+	multiply OWNER_SKILL_RATIO 0.01
+	multiply L_DMG OWNER_SKILL_RATIO
+
+	xdodamage PARAM1 direct L_DMG 100% ent_expowner ent_me polearms fire
+
+	local L_DOT $get(ent_expowner,skill.spellcasting.fire)
+	if L_DOT >= 15
+	if ( L_DOT >= 20 ) callevent do_fire_burst $get(PARAM1,origin)
+	multiply LOT_DOT 0.5
+	applyeffect PARAM1 effects/effect_burn 5.0 $get(ent_expowner,id) L_DOT
+}
+
+{ hitwall
+	if ( $get(ent_expowner,skill.spellcasting.fire) >= 20 )  callevent do_fire_burst $get(ent_me,origin)
+}
+
+{ do_fire_burst
+	if !DID_FIREBURST
+	setvard DID_FIREBURST 1
+	local PROJ_POS PARAM1
+	local OWNER_POS $get(ent_expowner,origin)
+
+	dbg do_fire_burst $dist(PROJ_POS,OWNER_POS)
+
+	if $dist(PROJ_POS,OWNER_POS) > 128
+	local GROUND_HEIGHT $get_ground_height(PROJ_POS)
+	local Z_DIFF $vec.z(PROJ_POS)
+	subtract Z_DIFF GROUND_HEIGHT
+	if ( Z_DIFF > 50 ) local EXIT_SUB 1
+	if ( Z_DIFF < -50 ) local EXIT_SUB 1
+	if !EXIT_SUB
+	vectorset PROJ_POS z GROUND_HEIGHT
+	clientevent new all effects/sfx_fire_burst PROJ_POS 128 1 (255,0,0)
+	//local DMG_AOE $get(ent_expowner,skill.spellcasting.fire)
+	//xdodamage PROJ_POS 128 DMG_AOE 0 ent_expowner ent_me polearms fire_effect
+	vectoradd PROJ_POS z 32
+	setvard BURN_TARGS $get_tsphere(any,128,PROJ_POS)
+	if BURN_TARGS isnot none
+	setvard GAME_PVP game.pvp
+	setvard FIRE_DOT $get(ent_expowner,skill.spellcasting.fire)
+	multiply FIRE_DOT 0.5
+	calleventloop $get_token_amt(BURN_TARGS) fire_burst_affect_targets
+}
+
+{ fire_burst_affect_targets
+
+	local CUR_TARG $get_token(BURN_TARGS,game.script.iteration)
+	if $get(CUR_TARG,relationship,ent_expowner) equals enemy
+	if ( $get(CUR_TARG,isplayer) )
+	{
+		if !GAME_PVP		
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	applyeffect CUR_TARG effects/effect_burn 5.0 $get(ent_expowner,id) FIRE_DOT
+}

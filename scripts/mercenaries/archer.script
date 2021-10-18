@@ -1,0 +1,208 @@
+//A Human Archer
+
+{
+   eventname spawn
+
+   hp 120
+   //ov 180
+   width 32
+   height 85
+   race orc
+   name a|Human Archer
+   roam 1
+   skilllevel 0
+   gold $rand(6,10)
+   hearingsensitivity 3
+   setmodel npc/archer.mdl
+   takedmg all .8
+   setmodelbody	0 2
+   setmodelbody	1 1
+   setmodelbody	2 3
+   setidleanim idle1
+   setmoveanim walk
+   setactionanim shootorcbow
+   setvar SND_STRUCK1 body/flesh1.wav
+   setvar SND_STRUCK2 body/flesh2.wav
+   setvar SND_STRUCK3 body/flesh3.wav
+   setvar SOUND_PAINYELL voices/human/male_hit1.wav
+   setvar SOUND_WARCRY1 voices/human/male_guard_shout.wav
+   setvar SND_ATTACK1 voices/human/male_hit1.wav
+   setvar SND_ATTACK2 voices/human/male_hit2.wav
+   setvar SND_ATTACK3 voices/human/male_hit3.wav
+   setvar SND_BOW weapons/bow/bow.wav
+   const SOUND_DEATH voices/human/male_die.wav
+   setvard CAN_FLINCH 1
+   setvar ANIM_RUN run
+   setvar ANIM_WALK walk
+   setvard MOVE_RANGE 40
+   setvard ATTACK_RANGE 600
+   setvard ATTACK_HITRANGE 650
+   setvar ATTACK_DAMAGE 7
+   setvar ATTACK_HITCHANCE 90%
+   setvard FLINCH_DELAY 4
+   setvar FLEE_HEALTH 10
+   setvar FLEE_CHANCE 15%
+   setvar IS_FLEEING 0
+   setstat parry 5
+
+
+   callevent hunt_look
+}
+
+//Wield weapons
+{
+   eventname wield_battleaxe
+
+   setmodelbody 2 2
+}
+{
+   eventname drop_battleaxe
+
+   setmodelbody 2 0
+}
+{
+   eventname grab_arrow
+
+   setmodelbody 3 1
+}
+
+   //Hunting
+{
+   eventname hunt_look
+   repeatdelay 0.2
+
+   // Condition: See any enemy
+   see enemy
+
+   // Action: Chase enemy
+   callevent warcry
+   setmoveanim ANIM_RUN
+   setmovedest ent_lastseen MOVE_RANGE
+   setvar SEE_ENEMY 1
+   callevent hunt_attack
+}
+{
+   eventname wander
+   setmoveanim ANIM_WALK
+   setvar SEE_ENEMY 0
+}
+
+   //Attack
+{
+   eventname hunt_attack
+
+   if LASTSEENENTITY_DISTANCE <= ATTACK_RANGE
+
+   setmovedest ent_lastseen ATTACK_RANGE
+   attack anim
+}
+{
+   // Deal damage
+   eventname shoot_arrow
+
+   tossprojectile ent_lastseen ATTACK_HITRANGE ATTACK_DAMAGE proj_arrow_npc
+   setmodelbody 3 0
+   playsound 2 SND_BOW
+} 
+
+
+
+   //War cry
+{
+   eventname warcry
+
+   var SEE_ENEMY equals 0
+
+   volume 10
+   playsound 2 SOUND_WARCRY1
+}
+
+
+   //Attack grunts
+{
+   eventname attackstrike
+
+   volume 10
+   playrandomsound 2 SND_ATTACK1 SND_ATTACK2 SND_ATTACK3 none
+}
+
+   //Hit by someone
+{
+   eventname struck
+   
+   volume 10
+   playrandomsound 2 SOUND_PAINYELL SND_STRUCK2 SOUND_PAINYELL
+   callevent flinch
+
+   //Change targets to attacker
+   callevent retaliate
+}
+{
+   eventname flinch
+   if CAN_FLINCH equals 1
+   playanim critical flinch
+   setvard CAN_FLINCH 0
+   calleventtimed FLINCH_DELAY resetflinch
+}
+{
+   eventname resetflinch
+   setvard CAN_FLINCH 1
+}
+{
+   eventname retaliate
+   if $rand(1,3) == 1
+
+   setmovedest ent_laststruck 9999
+   look
+   callevent hunt_look
+}
+{
+   //Chance of fleeing at low health
+   eventname checkflee
+
+   if CURRENT_HEALTH <= FLEE_HEALTH
+   if $rand(0,100) < FLEE_CHANCE
+
+   setmoveanim ANIM_RUN
+   setmovedest flee ent_laststruck 300
+   setvar IS_FLEEING 1
+   calleventtimed 0.5 stopflee
+}
+{
+   eventname stopflee
+   setvar IS_FLEEING 0
+}
+{
+   //Face my new enemy, if i didn't decide to flee
+   eventname facenewenemy
+
+   if IS_FLEEING equals 0
+
+   setmovedest moveto ent_laststruck 9999
+   look 1024
+}
+{
+   eventname death
+   
+   volume 10
+   playsound 2 SOUND_DEATH
+   setmodelbody 2 0
+   callevent dropstuff
+}
+{
+   //60% chance of dropping arrows
+   eventname dropstuff
+
+   if $rand(0,100) >= 40
+
+   giveitem proj_arrow_iron 30
+}
+{
+   //90% chance of dropping bow
+   eventname dropstuff
+
+   if $rand(0,100) >= 10
+
+   giveitem bows_shortbow
+
+}

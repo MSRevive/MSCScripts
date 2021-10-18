@@ -1,0 +1,781 @@
+#scope server
+{ [shared]
+	setvar ANIM_IDLE idle
+	setvard ANIM_DEATH death
+	setvard ANIM_ATTACK attack
+
+	setvar ANIM_RUN run
+	setvar ANIM_WALK walk
+
+	const STAIR_TOP_Z -1519.97
+}
+
+{
+	//base monster
+	setvard ATTACK_RANGE 50
+	setvard ATTACK_MOVERANGE 32
+	setvard ATTACK_HITRANGE 100
+	setvard NPC_GIVE_EXP 0
+	const NPC_BATTLE_ALLY 1
+	setvard NPC_NO_PLAYER_DMG 1
+	//setvard SPELL_HEAL_MULTI 5.0
+
+	//base chat
+	const NO_RUMOR 1
+	const NO_HAIL 1
+	const NO_JOB 1
+
+	//local
+	const DMG_SWING 200
+	const ATTACK_HITCHANCE 90
+	setvard REWARD_LIST "bows_telf1;bows_telf2;bows_telf3;bows_telf4;swords_katana4;axes_b;smallarms_rd;blunt_gauntlets_bear;polearms_h;"
+
+	//sounds
+	const SOUND_STRUCK1 weapons/cbar_hitbod1.wav
+	const SOUND_STRUCK2 weapons/cbar_hitbod2.wav
+	const SOUND_STRUCK3 weapons/cbar_hitbod3.wav
+
+	const SOUND_SWING weapons/swingsmall.wav
+
+	const SOUND_BATTLE_CRY1 voices/dwarf/vs_ndwarfm1_attk.wav
+	const SOUND_BATTLE_CRY2 voices/dwarf/vs_ndwarfm1_bat1.wav
+	const SOUND_BATTLE_CRY3 voices/dwarf/vs_ndwarfm1_bat2.wav
+	const SOUND_BATTLE_CRY4 voices/dwarf/vs_ndwarfm1_bat3.wav
+	const SOUND_BATTLE_CRY5 voices/dwarf/vs_ndwarfm1_050.wav
+	const SOUND_VICTORY1 voices/dwarf/vs_ndwarfm1_haha.wav
+	const SOUND_VICTORY2 voices/dwarf/vs_ndwarfm1_vict.wav
+	const SOUND_PAIN1 voices/dwarf/vs_ndwarfm1_hit1.wav
+	const SOUND_PAIN2 voices/dwarf/vs_ndwarfm1_hit2.wav
+	const SOUND_PAIN3 voices/dwarf/vs_ndwarfm1_hit3.wav
+	const SOUND_COME_HERE voices/dwarf/vs_ndwarfm1_say.wav
+	const SOUND_HEALER1 voices/dwarf/vs_ndwarfm1_heal.wav
+	const SOUND_HEALER2 voices/dwarf/vs_ndwarfm1_help.wav
+	const SOUND_HI voices/dwarf/vs_ndwarfm1_hi.wav
+	const SOUND_HI_ALT voices/dwarf/vs_ndwarfm1_054.wav
+	const SOUND_BYE voices/dwarf/vs_ndwarfm1_bye.wav
+	const SOUND_DEATH voices/dwarf/vs_ndwarfm1_dead.wav
+	const SOUND_YES voices/dwarf/vs_ndwarfm1_yes.wav
+	const SOUND_NO voices/dwarf/vs_ndwarfm1_no.wav
+	const SOUND_LAUGH voices/dwarf/vs_ndwarfm1_haha.wav
+	const SOUND_ATTACK1 voices/dwarf/vs_ndwarfm1_atk1.wav
+	const SOUND_ATTACK2 voices/dwarf/vs_ndwarfm1_atk2.wav
+	const SOUND_ATTACK3 voices/dwarf/vs_ndwarfm1_atk3.wav
+
+	const FREQ_ALERT 120.0
+	const FREQ_VICTORY 120.0
+	const FREQ_HEALER 30.0
+	const FREQ_CRITICAL 60.0
+
+	const MY_HP 5000
+	const HALF_HP 2500
+
+	const CHAT_DELAY 4.0
+
+	setvard FOLLOW_RANGE_MIN 64
+	setvard FOLLOW_RANGE_MAX 256
+}
+
+#include monsters/base_monster_new
+#include monsters/base_chat
+
+{ [shared] npc_spawn
+
+	name Forsuth the Frosty
+	name_unique forsuth_frost
+	setmodel dwarf/male1.mdl
+	hp MY_HP
+	takedmg all 0.5
+	takedmg cold 0.0
+	width 32
+	height 72
+	hearingsensitivity 8
+	race human
+	roam 0
+	saytextrange 2048
+	nopush 1 //no one tosses a dwarf!
+
+	movespeed 3.0
+	setanim.movespeed 3.0
+	setvard BASE_MOVESPEED 4.0
+
+	setidleanim ANIM_IDLE
+	setmoveanim ANIM_WALK
+
+	catchspeech say_seekers seekers elves felewyn elf
+	catchspeech say_stairs card hate zoe bill
+
+	setmodelbody 0 0 //0-Elder 1-Youngin 2-Zombie
+	setmodelbody 1 2 //0-Unarmed 1-smallaxe 2-battleaxe 3-bastardsword
+
+	if game.serverside
+	setvard GAVE_POT_LIST ''
+	callevent 90.0 set_critical //since he opens in battle, we don't want the critical alert to come as a surprise, save it for later
+
+	setvard NEXT_VICTORY game.time
+	add NEXT_VICTORY FREQ_VICTORY
+}
+
+{ npc_post_spawn
+	stepsize 32
+}
+
+
+{ set_critical
+	setvard FORSUTH_CRITICAL 1
+}
+
+{ game_damaged //PARAM1=attacker PARAM2=dmg PARAM3=dmg_type
+
+	if ( !DID_WRAITH_COMMENT )
+	{
+		if $get(PARAM1,name) contains Wrait
+		setvard DID_WRAITH_COMMENT 1
+		saytext Blast! Wraiths! You'll need a holy weapon to even hit 'em!
+	}
+
+	if ( $get(ent_me,hp) < HALF_HP )
+	{
+		if !$get(PARAM1,isplayer)
+		if game.time > NEXT_HEALER
+		setvard NEXT_HEALER game.time
+		add NEXT_HEALER FREQ_HEALER
+		local REQUESTED_HEALER 1
+		playrandomsound 0 10 SOUND_HEALER1 SOUND_HEALER2
+	}
+
+	if ( $get(PARAM1,isplayer) )
+	{
+		if !DID_FF_WARN
+		setvard DID_FF_WARN 1
+		playsound 0 10 SOUND_LAUGH
+		saytext "Woah there! Friendly dwarf comin' through!"
+	}
+	else
+	{
+		local MAX_HP $get(ent_me,maxhp)
+		local RND_PAIN $rand(1,MAX_HP)
+		if ( RND_PAIN > MAX_HP )
+		{
+			if !REQUESTED_HEALER
+			playrandomsound 0 10 SOUND_PAIN1 SOUND_PAIN2 SOUND_PAIN3
+		}
+		else
+		{
+			if !REQUESTED_HEALER
+			if ( $rand(1,5) != 1 )
+			{
+				playrandomsound 0 10 SOUND_STRUCK1 SOUND_STRUCK2 SOUND_STRUCK3 SOUND_STRUCK1 SOUND_STRUCK2 SOUND_STRUCK3
+			}
+			else
+			{
+				playrandomsound 0 10 SOUND_PAIN1 SOUND_PAIN2 SOUND_PAIN3
+			}
+		}
+
+		setvard NEXT_REGEN game.time
+		add NEXT_REGEN 10.0
+
+		if FORSUTH_CRITICAL
+		if game.time > NEXT_CRITICAL
+		setvard NEXT_CRITICAL game.time
+		add NEXT_CRITICAL FREQ_CRITICAL
+		infomsg all "CRITICAL NPC UNDER ATTACK" "Forsuth the Frosty is under attack!"
+	}
+}
+
+{ npcatk_hunt
+	setvard CYCLCE_TIME 0.1
+
+	if ( TELEPORT_CHEAT )
+	{
+		local MY_Z $get(ent_me,origin.z)
+		if MY_Z < STAIR_TOP_Z
+		if game.time > NEXT_TELEPORT
+		if !BUSY_CHATTING
+		if !SUSPEND_AI
+		if !DID_END_EVENT
+
+		if NPCATK_TARGET equals unset
+		if $get(PLAYER_FOLLOW,isalive)
+		if $get(PLAYER_FOLLOW,dist) > 200
+		callevent basecompanion_catchup
+	}
+	
+
+	if ( !DID_INTRO )
+	{
+		if NPCATK_TARGET equals unset
+		local NEAR_PLAYER $get_tsphere(player,128)
+		roam 0
+		setvard NO_STUCK_CHECKS 1
+		if NEAR_PLAYER isnot none
+		setvard PLAYER_CHAT $get_token(NEAR_PLAYER,0)
+		setmovedest PLAYER_CHAT 64
+		setvard DID_INTRO 1
+		callevent do_intro
+	}
+
+	if !SUSPEND_AI
+
+	if ( NPCATK_TARGET equals unset )
+	{
+		setvard NO_STUCK_CHECKS 1
+		if ( FACE_PLAYERS )
+		{
+			if $get(ent_lastheard,isplayer)
+			setmovedest ent_lastheard 9999
+		}
+
+		setvard NO_STUCK_CHECKS 1
+		if ( $get(PLAYER_FOLLOW,isalive) )
+		{
+			setmovedest PLAYER_FOLLOW FOLLOW_RANGE_MIN
+			if ( $get(PLAYER_FOLLOW,range) > FOLLOW_RANGE_MAX )
+			{
+				setmoveanim ANIM_RUN
+			}
+			else
+			{
+				setmoveanim ANIM_WALK
+			}
+		}
+		else
+		{
+			local LOOK_FOR_NEW_PLAYER 1
+		}
+
+		if ( $get(PLAYER_FOLLOW,range) > 768 ) local LOOK_FOR_NEW_PLAYER 1
+
+		if LOOK_FOR_NEW_PLAYER
+		local L_PLAYERS $get_tsphere(player,512)
+		if L_PLAYERS isnot none
+		setvard PLAYER_FOLLOW $get_token(L_PLAYERS,0)
+
+		if ( game.time > NEXT_REGEN )
+		{
+			if $get(ent_me,hp) < $get(ent_me,maxhp)
+			local REGEN_AMT $get(ent_me,maxhp)
+			multiply REGEN_AMT 0.1
+			givehp ent_me REGEN_AMT
+			setvard NEXT_REGEN game.time
+			add NEXT_REGEN 1.0
+		}
+	}
+	else
+	{
+		setvard NO_STUCK_CHECKS 0
+	}
+}
+
+{ do_intro
+	if ( BUSY_CHATTING ) callevent 1.0 do_intro
+	if !BUSY_CHATTING
+	playsound 0 10 SOUND_HI
+	setvard CHAT_STEP1 "Hail thar! I heard you were spotted goin into The Wall, so I took the shortcut from my house and wandered on down here."
+	setvard CHAT_STEP2 "Wanted to make sure ya'll were alright. Dangerous in here, but I guess you already figured that out, from the look of ye."
+	setvard CHAT_STEP3 "Take this, it'll keep ya warm. Though, judging by the frost on yer armor, I think it might have done ya more good earlier."
+	setvard CHAT_STEPS 3
+	setvard CHAT_EVENT_STEP2 give_pot
+
+	local L_TOTAL_CHAT_TIME CHAT_STEPS
+	add L_TOTAL_CHAT_TIME 1
+	multiply L_TOTAL_CHAT_TIME CHAT_DELAY
+	setvard MAX_CHAT_TIME L_TOTAL_CHAT_TIME
+	callevent chat_loop
+}
+
+{ give_pot
+	setvard GAVE_FIRST_POT 1
+	offer PLAYER_CHAT drink_forsuth
+	stradd GAVE_POT_LIST PLAYER_CHAT
+	callevent 2.0 do_intro2	
+}
+
+{ do_intro2
+	saytext "Now, let's be gettin' out of here before anything too troublesome comes our way."
+	playanim critical nod
+	roam 0
+	setvard PLAYER_FOLLOW PLAYER_CHAT
+}
+
+{ game_menu_getoptions
+
+	if ( PLAT_SUSPEND_MODE )
+	{
+		callevent npcatk_resume_ai
+		callevent npcatk_resume_movement
+		saytext Oh, sorry. Dozed off for a sec there.
+		setvard PLAT_SUSPEND_MODE 0
+	}
+
+	if ( NPCATK_TARGET isnot unset )
+	{
+		local reg.mitem.title 	"(In combat...)"
+		local reg.mitem.type 	disabled
+		menuitem.register
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	if ( BUSY_CHATTING )
+	{
+		local reg.mitem.title 	"(Talking...)"
+		local reg.mitem.type 	disabled
+		menuitem.register
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	playsound 0 10 SOUND_YES
+
+	setvard PLAYER_FOLLOW PARAM1
+
+	setmovedest PARAM1 9999
+
+	local reg.mitem.title 	"Hail"
+	local reg.mitem.type 	callback
+	local reg.mitem.callback say_hi
+	menuitem.register
+
+	local reg.mitem.title 	"Ask for Ale"
+	local reg.mitem.type 	callback
+	local reg.mitem.callback say_ale
+	menuitem.register
+
+	local reg.mitem.title 	"About Seekers"
+	local reg.mitem.type 	callback
+	local reg.mitem.callback say_seekers
+	menuitem.register
+
+	if ( PARAM1 equals QUEST_WINNER )
+	{
+		if !GAVE_REWARD
+		local SAYTEXT_STR "Thar ye be, "
+		stradd SAYTEXT_STR $get(QUEST_WINNER,name)
+		stradd ". Here, I have something for ye."
+		callevent bchat_mouth_move
+		callevent 3.0 bchat_close_mouth
+
+		playsound 0 10 SOUND_COME_HERE
+	
+		local reg.mitem.title 	"Get Reward"
+		local reg.mitem.type 	callback
+		local reg.mitem.callback give_reward
+		menuitem.register
+	}
+}
+
+{ give_reward
+	setvard GAVE_REWARD 1
+	local N_REWARDS_M1 $get_token_amt(REWARD_LIST)
+	subtract N_REWARDS_M1 1
+	local REWARD_IDX $rand(0,N_REWARDS_M1)
+	local REWARD_ITEM $get_token(REWARD_LIST,REWARD_IDX)
+	offer PARAM1 REWARD_ITEM
+	if ( REWARD_ITEM isnot smallarms_rd )
+	{
+		saytext "Thar ya go! Somethin' for a fine warrior. Use it wisely."
+	}
+	else
+	{
+		setvard CHAT_STEP1 "This here may not look like much, but I've a feeling it be special."
+		setvard CHAT_STEP2 "You'll be needin a more experienced smith than I to figure it out though."
+		setvard CHAT_STEPS 2
+		local L_TOTAL_CHAT_TIME CHAT_STEPS
+		add L_TOTAL_CHAT_TIME 1
+		multiply L_TOTAL_CHAT_TIME CHAT_DELAY
+		setvard MAX_CHAT_TIME L_TOTAL_CHAT_TIME
+		callevent chat_loop
+	}
+	callevent bchat_mouth_move
+	callevent 3.0 bchat_close_mouth
+}
+
+{ say_hi
+	if !BUSY_CHATTING
+	playsound 0 10 SOUND_HI_ALT
+	setvard CHAT_STEP1 "Ya remember me, surely! Good ol' Forsuth the frosty, who lives up on the Frozen Summit!"
+	setvard ANIM_STEP1 nod
+	setvard CHAT_STEP2 "Word got to me that you got hired by some [Seekers] at the entrance to The Wall."
+	setvard CHAT_STEP3 "Got me worried. So I came runnin just as fast as my stubby dwarf legs would carry me."
+	setvard CHAT_STEP4 "Not that it looks as though you really need the help, mind ye."
+	setvard CHAT_STEP5 "But it never hurts to have an extra pair of hands on your side. Especially if those hands can wield some dwarven steel!"
+	setvard CHAT_STEPS 5
+
+	local L_TOTAL_CHAT_TIME CHAT_STEPS
+	add L_TOTAL_CHAT_TIME 1
+	multiply L_TOTAL_CHAT_TIME CHAT_DELAY
+	setvard MAX_CHAT_TIME L_TOTAL_CHAT_TIME
+	callevent chat_loop
+}
+
+{ say_ale
+	if ( GAVE_POT_LIST contains PARAM1 )
+	{
+		playsound 0 10 SOUND_NO
+		if ( game.players > 1 )
+		{
+			saytext "Sorry, I only brought enough for one for each of ye."
+		}
+		else
+		{
+			saytext "I brought more, actually, but me throte got parched along the way here and..."
+		}
+	}
+	else
+	{
+		playsound 0 10 SOUND_YES
+		offer PARAM1 drink_forsuth
+		token.add GAVE_POT_LIST PARAM1
+		saytext "Thar ya go, that'll keep you warm through narely anything."
+		playanim critical nod
+	}
+}
+
+{ say_seekers
+	if !BUSY_CHATTING
+	setvard CHAT_STEP1 "Those elves who hired you outside. Seekers they are. Bad news they can be."
+	setvard CHAT_STEP2 "They ain't evil, per-say, but they are rather... Methodical."
+	setvard CHAT_STEP3 "They believe in executing the letter of the law, but compassion and mercy ne'er enter into it."
+	setvard CHAT_STEP4 "Sometimes that makes them lose sight of the bigger picture, if you get my meaning."
+	setvard CHAT_STEP5 "Although I'm a dwarf, born of Urdual, and sworn to Him, first are foremost, I understand Torkalath."
+	setvard CHAT_STEP6 "He values freedom, strength, and independence... And I've always been a bit too independent meself."
+	setvard CHAT_STEP7 "So, I kinda feel sorry for these 'Rammata' those zealots hunt so fanatically. Not that this lot wasn't mad..."
+	setvard CHAT_STEP8 "But if the Seekers showed some tolerance, they likely would not have become so."
+	setvard CHAT_STEP9 "Anyways, I don't want to go near those Seekers, for fear they might catch onto me disposition, if ya catch me drift."
+	setvard ANIM_STEP9 nod
+	setvard CHAT_STEPS 9
+
+	local L_TOTAL_CHAT_TIME CHAT_STEPS
+	add L_TOTAL_CHAT_TIME 1
+	multiply L_TOTAL_CHAT_TIME CHAT_DELAY
+	setvard MAX_CHAT_TIME L_TOTAL_CHAT_TIME
+	callevent chat_loop
+}
+
+//combat
+{ attack_1	//called by modelanim attack @frame 6
+
+	playsound 0 10 SOUND_SWING
+	dodamage NPCATK_TARGET ATTACK_HITRANGE DMG_SWING ATTACK_HITCHANCE slash
+
+	if $rand(1,5) == 1
+	setvard ANIM_ATTACK attack2
+}
+
+{ attack_2
+	playrandomsound 0 10 SOUND_ATTACK1 SOUND_ATTACK2 SOUND_ATTACK3
+	local L_DMG DMG_SWING
+	multiply L_DMG 2
+	dodamage NPCATK_TARGET ATTACK_HITRANGE L_DMG ATTACK_HITCHANCE slash
+	setvard ANIM_ATTACK attack
+	applyeffect NPCATK_TARGET effects/effect_stun 10.0 1 1	
+}
+
+{ npcatk_clear_targets
+	if game.time > NEXT_VICTORY
+	setvard NEXT_VICTORY game.time
+	add NEXT_VICTORY FREQ_VICTORY
+	playrandomsound 0 10 SOUND_VICTORY1 SOUND_VICTORY2
+}
+
+{ npc_targetsighted
+	if game.time > NEXT_ALERT
+	setvard NEXT_ALERT game.time
+	add NEXT_ALERT FREQ_ALERT
+	playrandomsound 0 10 SOUND_BATTLE_CRY1 SOUND_BATTLE_CRY2 SOUND_BATTLE_CRY3 SOUND_BATTLE_CRY4 SOUND_BATTLE_CRY5
+}
+
+{
+repeatdelay $randf(15.0,60.0)
+
+	if GAVE_FIRST_POT
+
+	if ( $cansee(ally) )
+	{
+		local CANT_SHIELD_TARGET 0
+		if ( $get(ent_lastseen,scriptvar,'ICE_SHIELDED') ) local CANT_SHIELD_TARGET 1
+		if ( $get(ent_lastseen,scriptvar,'PLAYING_DEAD') ) local CANT_SHIELD_TARGET 1
+
+		if ( !CANT_SHIELD_TARGET )
+		{
+			setmovedest ent_lastseen 9999
+			playanim critical nod
+			applyeffect ent_lastseen effects/effect_iceshield 120 0.5
+			gplayermessage ent_lastseen Forsuth casts Ice Shield upon you.
+		}
+		else
+		{
+			playanim critical nod
+			applyeffect ent_me effects/effect_iceshield 120 0.5
+		}
+	}
+	else
+	{
+		playanim critical nod
+		applyeffect ent_me effects/effect_iceshield 120 0.5
+	}
+	playsound 0 10 magic/cast.wav
+}
+
+//=================== MAP TRIGGERED EVENTS
+{ ext_forsuth_mountain
+	if !DID_MOUNTAIN_COMMENT
+	setvard DID_MOUNTAIN_COMMENT 1
+	callevent 5.0 ext_forsuth_mountain2
+	local FACE_TO $get(ent_me,origin)
+	vectoradd FACE_TO $relpos($vec(0,90,0),$vec(0,1000,0))
+	setmovedest FACE_TO 9999
+	callevent npcatk_suspend_ai 8.0
+	callevent npcatk_suspend_movement ANIM_IDLE
+	setvard CHAT_STEP1 "Them be the mountains surrounding The Bleak. Pretty they are... Though deadly"
+	setvard ANIM_STEP1 nod
+	//setvard CHAT_STEP2 "Deadly, but pretty."
+	setvard CHAT_STEPS 1
+
+	local L_TOTAL_CHAT_TIME CHAT_STEPS
+	add L_TOTAL_CHAT_TIME 1
+	multiply L_TOTAL_CHAT_TIME CHAT_DELAY
+	setvard MAX_CHAT_TIME L_TOTAL_CHAT_TIME
+	callevent chat_loop
+}
+
+{ ext_forsuth_mountain2
+	callevent npcatk_resume_movement
+	saytext "Oh well, enough gawkin' - let's be movin'."
+	//playanim critical nod
+}
+
+{ ext_forsuth_morc
+	//no repeat flag here, as this is a trigger_once
+	setvard CHAT_STEP1 "Stupid bleedin Marogar orcs come down here, lookin' for lost elven treasure."
+	setvard CHAT_STEP2 "Half of them wind up like that poor bloke there - rotting zombies."
+	setvard CHAT_STEPS 2
+
+	local L_TOTAL_CHAT_TIME CHAT_STEPS
+	add L_TOTAL_CHAT_TIME 1
+	multiply L_TOTAL_CHAT_TIME CHAT_DELAY
+	setvard MAX_CHAT_TIME L_TOTAL_CHAT_TIME
+	callevent chat_loop
+}
+
+{ ext_forsuth_undead
+	if !DID_UNDEAD_COMMENT
+	setvard DID_UNDEAD_COMMENT 1
+	setvard CHAT_STEP1 "Well, will ye be lookin' at that! Orcs and undead, livin' together in harmony!"
+	setvard CHAT_STEP2 "Well... Together, anyways..."
+	setvard CHAT_STEPS 2
+
+	local L_TOTAL_CHAT_TIME CHAT_STEPS
+	add L_TOTAL_CHAT_TIME 1
+	multiply L_TOTAL_CHAT_TIME CHAT_DELAY
+	setvard MAX_CHAT_TIME L_TOTAL_CHAT_TIME
+	callevent chat_loop
+}
+
+{ ext_forsuth_stairs
+	if !DID_STAIRS_COMMENT
+	setvard DID_STAIRS_COMMENT 1
+	setvard CHAT_STEP1 "By Urdual's Beard! My poor stubby dwarven legs!"
+	setvard CHAT_STEP2 "Ya'd think... The elves... Such skinny legged folk they be..."
+	//setvard ANIM_STEP2 nod
+	setvard CHAT_STEP3 "Would be less prone to building endless flights of stairs!"
+	setvard CHAT_STEPS 3
+
+	local L_TOTAL_CHAT_TIME CHAT_STEPS
+	add L_TOTAL_CHAT_TIME 1
+	multiply L_TOTAL_CHAT_TIME CHAT_DELAY
+	setvard MAX_CHAT_TIME L_TOTAL_CHAT_TIME
+	callevent chat_loop
+}
+
+{ say_stairs
+	//left4dead easter egg
+	if DID_STAIRS_COMMENT
+	saytext "We got enough zombies to deal with without draggin' Bill and Francis into this!"
+	playanim critical nod
+}
+
+{ ext_forsuth_paint
+	//no repeat flag here, as this is a trigger_once
+	callevent 3.0 ext_forsuth_paint2
+	local FACE_TO $get(ent_me,origin)
+	vectoradd FACE_TO $relpos($vec(0,270,0),$vec(0,1000,0))
+	setmovedest FACE_TO 128
+	callevent npcatk_suspend_ai 3.0
+	callevent npcatk_suspend_movement ANIM_IDLE
+	saytext "Now who'd go ruinin' a perflectly good paintin' of Felewyn like that?"
+	playanim critical nod
+}
+
+{ ext_forsuth_paint2
+	callevent npcatk_resume_movement
+}
+
+{ ext_forsuth_plat
+	callevent 40.0 forsuth_plat_abort
+	callevent 1.0 forsuth_plat_loop
+	callevent forsuth_plat_chatter
+
+	local FACE_TO $get(ent_me,origin)
+	vectoradd FACE_TO $relpos($vec(0,270,0),$vec(0,1000,0))
+	setmovedest FACE_TO 128
+	callevent npcatk_suspend_ai
+	callevent npcatk_suspend_movement ANIM_IDLE
+}
+
+{ forsuth_plat_loop
+	if !REACHED_TOP
+	callevent 1.0 forsuth_plat_loop
+	local ADJ_ORG $get(ent_me,origin)
+	vectoradd ADJ_ORG z 16
+	setorigin ent_me ADJ_ORG
+}
+
+{ forsuth_plat_chatter
+	//case we just crossed the orc trigger
+	if ( BUSY_CHATTING ) callevent 1.0 ext_forsuth_plat_chatter
+	if !BUSY_CHATTING
+	setvard CHAT_STEP1 "Alright, here's the pullyworks..."
+	setvard CHAT_STEP2 "Turn that wheel there, and it'll take us up the mountain to the surface."
+	setvard CHAT_STEPS 2
+
+	local L_TOTAL_CHAT_TIME CHAT_STEPS
+	add L_TOTAL_CHAT_TIME 1
+	multiply L_TOTAL_CHAT_TIME CHAT_DELAY
+	setvard MAX_CHAT_TIME L_TOTAL_CHAT_TIME
+	callevent chat_loop
+}
+
+{ reached_top
+	setvard REACHED_TOP 1
+}
+
+{ forsuth_plat_abort
+	usetrigger spawn_forsuth_extras
+
+	if !REACHED_TOP
+	//not hit the top for some reason, teleport
+	setorigin ent_me $vec(-3488,1136,-224)
+	saytext Don't ask me how I did that.
+	setvard REACHED_TOP 1
+	setvard PLAT_SUSPEND_MODE 1
+
+	callevent 120.0 ext_forsuth_bye //just in case the exit event fails
+}
+
+{ ext_forsuth_reached_top
+	callevent 1.5 reached_top
+	saytext "Top floor: seekers, undead elves, and lovely mountain vistas."
+	callevent npcatk_resume_ai
+	callevent npcatk_resume_movement
+}
+
+{ ext_forsuth_bye
+	if !DID_END_EVENT
+	setvard DID_END_EVENT 1
+	callexternal players ext_clear_valid_gauntlets
+	callevent npcatk_suspend_ai
+	callevent npcatk_suspend_movement ANIM_IDLE
+	playsound 0 10 SOUND_BYE
+	setvard CHAT_STEP1 "Alright, this is as far as I go."
+	setvard CHAT_STEP2 "I don't blame you for working for the [Seekers]. They pay well..."
+	setvard CHAT_STEP3 "...but I don't want to be goin' anywhere near 'em, meself."
+	callexternal GAME_MASTER gm_find_strongest_reset
+	setvard QUEST_WINNER $get(GAME_MASTER,scriptvar,'THE_CHOSEN_ONE')
+	setvard CHAT_STEP4 "Send "
+	stradd CHAT_STEP4 $get(QUEST_WINNER,name)
+	if ( $get(QUEST_WINNER,gender) equals male )
+	{
+		stradd CHAT_STEP4 " over yonder. He's done more than his share, and I've a reward for him."
+	}
+	else
+	{
+		stradd CHAT_STEP4 " over yonder. The lass has done more than her share, and I've a reward for her."
+	}
+	setvard CHAT_STEPS 4
+
+	setvard FACE_PLAYERS 1
+
+	local L_TOTAL_CHAT_TIME CHAT_STEPS
+	add L_TOTAL_CHAT_TIME 1
+	multiply L_TOTAL_CHAT_TIME CHAT_DELAY
+	setvard MAX_CHAT_TIME L_TOTAL_CHAT_TIME
+	callevent chat_loop
+	setsolid none
+}
+
+{ ext_forsuth_follow_close
+	dbg ext_forsuth_follow_close
+	if !TELEPORT_CHEAT
+	setvard TELEPORT_CHEAT 1
+	callevent teleport_cheat_loop
+	setvard NO_STUCK_CHECKS 1
+	setvard FOLLOW_RANGE_MIN 48
+	setvard FOLLOW_RANGE_MAX 64
+}
+
+{ ext_forsuth_follow_norm
+	setvard TELEPORT_CHEAT 0
+	setvard NO_STUCK_CHECKS 0
+	setvard FOLLOW_RANGE_MIN 64
+	setvard FOLLOW_RANGE_MAX 256
+}
+
+//debugarry
+{ ext_unsolid
+	setsolid none
+}
+
+//Something odd is happening with forsuth getting stuck in chat mode
+//this is part of hacky workaround
+{ chat_loop
+	setvard CHAT_OVERRIDE_TIME game.time
+	add CHAT_OVERRIDE_TIME MAX_CHAT_TIME
+}
+
+{
+repeatdelay 10.0
+	if BUSY_CHATTING
+	if game.time > CHAT_OVERRIDE_TIME
+	setvard BUSY_CHATTING 0
+	setvard CHAT_STEP 0
+	setvard CHAT_STEPS 0
+}
+
+{ basecompanion_catchup
+
+	local L_POS $get(PLAYER_FOLLOW,origin)
+
+	//alternate tele positions
+	//add COMPANION_LR 10
+	//if ( COMPANION_LR > 359 ) subtract COMPANION_LR 359
+
+	//default to behind player if not teleported recently
+	setvard COMPANION_LR $get(PLAYER_FOLLOW,viewangles)
+
+	local L_ANG $vec.y(COMPANION_LR)
+	vectoradd L_POS $relpos($vec(0,L_ANG,0),$vec(0,-48,0))
+
+	//vectorset L_POS z $get_ground_height(L_POS)
+
+	//dbg basecompanion_catchup $get(PLAYER_FOLLOW,name)
+
+
+	//dbg game.ret.npcmove.success game.ret.npcmove.dist game.ret.npcmove.hitstep
+	//setsolid PLAYER_FOLLOW slidebox
+
+	local OLD_POS $get(ent_me,origin)
+	setorigin ent_me L_POS
+	vectoradd L_POS $relpos($vec(0,90,0),$vec(0,16,0))
+	//setsolid PLAYER_FOLLOW none
+	local reg.npcmove.endpos	L_POS
+	local reg.npcmove.testonly	1
+	npcmove ent_me PLAYER_FOLLOW
+	setvard NEXT_TELEPORT game.time
+	add NEXT_TELEPORT 3.0
+	if game.ret.npcmove.dist <= 0
+	setorigin ent_me OLD_POS
+	setvard NEXT_TELEPORT 0
+}
+

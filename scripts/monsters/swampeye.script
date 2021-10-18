@@ -1,0 +1,275 @@
+//Eye stalk for use in shallow water. Lightning beams. 
+#scope server
+{ [shared]
+	
+	setvar ANIM_IDLE hide_idle
+	setvar ANIM_WALK idle
+	setvard ANIM_RUN idle
+	setvard ANIM_FLINCH flinch1
+	setvard ANIM_ATTACK eyeblast
+	setvard ANIM_DEATH death2
+
+	const ANIM_IDLE_NORM idle
+	const ANIM_HIDE hide_idle
+	const ANIM_LOOK idle2
+	const ANIM_FLINCH1 flinch1
+	const ANIM_FLINCH2 flinch2
+	const ANIM_ALERT scream
+	const ANIM_BEAM eyeblast
+	const ANIM_MELEE attack
+
+	const ANIM_RISE rise
+	const ANIM_LOWER lower
+}
+
+{
+	setvard NO_STUCK_CHECKS 1 //monster does not move
+
+	setvard NPC_GIVE_EXP 400
+
+	//setvard NPC_RANGED 1
+	setvard ATTACK_RANGE 1024
+	setvard ATTACK_HITRANGE 1024
+	const BEAM_RANGE 1024
+	const DMG_BEAM 300
+	const DOT_BEAM 50
+
+	const MELEE_RANGE 64
+	const MELEE_HITRANGE 96
+	const DMG_MELEE 100
+	const FREQ_MELEE 4.0
+
+	const SOUND_BEAM_FIRE1 debris/beamstart14.wav
+	const SOUND_BEAM_FIRE2 debris/beamstart15.wav
+	const SOUND_BEAM_FIRE3 debris/beamstart9.wav
+	const SOUND_BEAM_CHARGE debris/beamstart2.wav
+
+	const SOUND_ALERT_IDLE1 controller/con_alert1.wav
+	const SOUND_ALERT_IDLE2 controller/con_alert2.wav
+	const SOUND_ALERT_IDLE3 controller/con_alert3.wav
+
+	const SOUND_STRUCK1 weapons/cbar_hitbod1.wav
+	const SOUND_STRUCK2 weapons/cbar_hitbod2.wav
+	const SOUND_STRUCK3 weapons/cbar_hitbod3.wav
+
+	const SOUND_PAIN1 aslave/slv_pain1.wav
+	const SOUND_PAIN2 aslave/slv_pain2.wav
+
+	const SOUND_DEATH aslave/slv_die2.wav
+	precache SOUND_DEATH
+
+	const SOUND_CLAW zombie/claw_miss2.wav
+
+	const NPC_NO_MOVE 1
+}
+
+#include monsters/base_monster_new
+
+{ npc_spawn
+	name a|Swamp Eye
+	setmodel monsters/swamp_eye.mdl
+	width 48
+	height 92
+	race demon
+	blood green
+	hp 1000
+	takedmg lightning 0.25
+	hearingsensitivity 11
+	setmoveanim ANIM_HIDE
+	setidleanim ANIM_HIDE
+	playanim hold ANIM_HIDE
+	setvard HIDE_MODE 1
+	nopush 1
+	setvard NPC_CAN_BE_STUNNED 1
+
+	gravity 0
+
+	callevent 2.0 final_props
+}
+
+{ final_props
+	setvard MIN_FLINCH_DAMAGE $get(ent_me,maxhp)
+	multiply MIN_FLINCH_DAMAGE 0.05
+}
+
+{ npcatk_targetvalidate
+	if HIDE_MODE
+	callevent rise_and_shine
+}
+
+{ npc_targetsighted
+	setvard GO_TO_REST game.time
+	add GO_TO_REST 10.0
+}
+
+{ npcatk_hunt
+	if !HIDE_MODE
+
+	if ( game.time > GO_TO_REST )
+	{
+		callevent go_to_sleep
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	if NPCATK_TARGET isnot unset
+
+	setmovedest NPCATK_TARGET 9999
+
+	if ( $get(NPCATK_TARGET,range) < MELEE_RANGE )
+	{
+		if game.time > NEXT_MELEE
+		setvard NEXT_MELEE game.time
+		add NEXT_MELEE 4.0
+		setvard MELEE_TARGET NPCATK_TARGET
+		callevent npcatk_suspend_ai 1.0
+		playanim critical ANIM_MELEE
+	}
+
+	if ( !$cansee(NPCATK_TARGET) )
+	{
+		//check for "I can't see him cuz he's in da water" bullshit
+		//nvm we fixed this code side - water also stops beam damage though :/
+		//- gonna check if target is in water instead, do direct damage if so
+//		local BEAM_START $get(ent_me,attachpos,0)
+//		local BEAM_END $get(NPCATK_TARGET,origin)
+//		if ( !$get(NPCATK_TARGET,isplayer) )
+//		{
+//			local HALF_TARG_HEIGHT $get(NPCATK_TARGET,height)
+//			multiply HALF_TARG_HEIGHT 0.5
+//			vectoradd BEAM_END z HALF_TARG_HEIGHT
+//		}
+//		local TRACE_LINE $get_traceline(BEAM_START,BEAM_END,worldonly)
+//		if ( TRACE_LINE equals BEAM_END )
+//		{
+//			//aha! I can see him!
+//			setvard WATER_BULLSHIT 1
+//			playanim once ANIM_ATTACK
+//			setvard GO_TO_REST game.time
+//			add GO_TO_REST 10.0
+//			local EXIT_SUB 1			
+//		}
+//		if !EXIT_SUB
+
+		if game.time > NEXT_SEARCH_SOUND
+		setvard NEXT_SEARCH_SOUND game.time
+		add NEXT_SEARCH_SOUND $randf(3.0,10.0)
+		playrandomsound 0 10 SOUND_ALERT_IDLE1 SOUND_ALERT_IDLE2 SOUND_ALERT_IDLE3
+		playanim once ANIM_LOOK
+		if ( $rand(1,2) == 1 ) callevent do_blink
+	}
+}
+
+{ rise_and_shine
+	setvard HIDE_MODE 0
+	setvard ANIM_IDLE ANIM_IDLE_NORM
+	setmoveanim ANIM_IDLE
+	setidleanim ANIM_IDLE
+	playanim critical ANIM_RISE
+	setvard GO_TO_REST game.time
+	add GO_TO_REST 20.0
+	callevent do_blink
+}
+
+{ go_to_sleep
+	setvard NPCATK_TARGET unset
+	setvard ANIM_IDLE ANIM_HIDE
+	setmoveanim ANIM_IDLE
+	setidleanim ANIM_IDLE
+	playanim once ANIM_LOWER
+	setvard HIDE_MODE 1
+}
+
+{ game_damaged
+	setvard GO_TO_REST game.time
+	add GO_TO_REST 10.0
+
+	if HIDE_MODE
+	callevent rise_and_shine
+}
+
+{ frame_beam_charge
+	playsound 0 10 SOUND_BEAM_CHARGE
+}
+
+{ frame_beam_fire
+	playrandomsound 0 10 SOUND_BEAM_FIRE1 SOUND_BEAM_FIRE2 SOUND_BEAM_FIRE3
+
+	local BEAM_START $get(ent_me,attachpos,0)
+	local BEAM_END $get(NPCATK_TARGET,origin)
+	if ( !$get(NPCATK_TARGET,isplayer) )
+	{
+		local HALF_TARG_HEIGHT $get(NPCATK_TARGET,height)
+		multiply HALF_TARG_HEIGHT 0.5
+		vectoradd BEAM_END z HALF_TARG_HEIGHT
+	}
+	local TRACE_LINE $get_traceline(BEAM_START,BEAM_END,worldonly)
+	
+	effect beam end lgtning.spr 30 TRACE_LINE ent_me 1 (255,255,0) 150 30.0 1.0
+	setvard BEAM_ATTACK 1
+
+	if ( $get(NPCATK_TARGET,inwater) == 0 )
+	{
+		xdodamage BEAM_START BEAM_END DMG_BEAM 100% ent_me ent_me none lightning
+	}
+	else
+	{
+		dodamage NPCATK_TARGET direct DMG_BEAM 100% ent_me lightning
+	}
+}
+
+{ game_dodamage
+	if ( BEAM_ATTACK )
+	{
+		applyeffect PARAM2 effects/effect_shock_dmg 5.0 $get(ent_me,id) DOT_BEAM
+	}
+	setvard BEAM_ATTACK 0
+}
+
+{ game_struck
+	playrandomsound 0 5 SOUND_STRUCK1 SOUND_STRUCK2 SOUND_STRUCK3 SOUND_STRUCK1 SOUND_STRUCK2 SOUND_STRUCK3 SOUND_STRUCK1 SOUND_STRUCK2 SOUND_STRUCK3 SOUND_PAIN1 SOUND_PAIN2
+	//manual flinch
+	if game.time > NEXT_FLINCH
+	if PARAM1 > MIN_FLINCH_DAMAGE
+	if $rand(1,game.monster.maxhp) > $get(ent_me,hp)
+	setvard NEXT_FLINCH game.time
+	add NEXT_FLINCH 20.0
+	callevent npcatk_suspend_ai 1.0
+	if ( $rand(1,2) == 1 )
+	{
+		playanim critical ANIM_FLINCH1
+		callevent do_blink
+	}
+	else
+	{
+		playanim critical ANIM_FLINCH2
+		callevent do_blink
+	}
+}
+
+{ frame_claw
+	playsound 0 10 SOUND_CLAW
+	dodamage MELEE_TARGET MELEE_HITRANGE DMG_MELEE 90% slash
+}
+
+{ game_death
+	setprop ent_me skin 3
+}
+
+{ do_blink
+	setvard EYE_SKIN 0
+	callevent do_blink2
+}
+
+{ do_blink2
+	add EYE_SKIN 1
+	if ( EYE_SKIN < 5 )
+	{
+		setprop ent_me skin EYE_SKIN
+		callevent 0.1 do_blink2
+	}
+	else
+	{
+		setprop ent_me skin 0
+	}
+}

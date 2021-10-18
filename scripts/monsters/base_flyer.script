@@ -1,0 +1,126 @@
+//attempts to fix the flight AI by Thothie
+
+{
+	const BF_CHECK_FREQ 0.2 //lower for faster monsters
+	const BF_RETREAT_TIME 1.0 //lower for faster mons
+	//const NO_ADVANCED_SEARCHES 1
+	const BF_UNSTUCK_ADJ $relvel(0,50,0) 
+	setvard FLIGHT_CHECK_FREQ BF_CHECK_FREQ 
+	setvard NO_STUCK_CHECKS 1
+}
+
+{ game_spawn
+
+	//setbbox npcsize
+	//callevent 2.0 flight_check
+	callevent 0.2 setup_flight
+}
+
+{ setup_flight
+
+	//setvard DISTANCE_THRESH MONSTER_WIDTH
+	//multiply DISTANCE_THRESH 2
+	//setprop ent_me movetype const.movetype.fly
+	setvard FLY_OLD_POS game.monster.pos
+}
+
+{ npcatk_targetvalidate
+	if !FLIGHT_SCANNING
+	setvard FLIGHT_SCANNING 1
+	callevent 1.0 flight_check
+}
+
+
+{ flight_check
+
+	local FLY_MOVED $dist(FLY_OLD_POS,game.monster.origin)
+
+	local HIT_WALL $get_traceline(game.monster.origin,game.monster.movedest,worldonly)
+	if ( HIT_WALL isnot game.monster.movedest )
+	{
+		if $dist(game.monster.origin,game.monster.movedest) < 50
+		callevent npcatk_suspend_ai 0.2
+		callevent do_one_eighty
+		setmovedest NEW_DEST 20
+		callevent 0.1 bat_boost
+	}
+
+	if ( FLY_MOVED == 0 ) 
+	{
+		if !BF_NO_STUCK
+		callevent npcatk_suspend_ai 0.2
+		setvard BOUNCED 1
+		setvard FLIGHT_CHECK_FREQ BF_RETREAT_TIME
+		if !$cansee(enemy)
+		callevent do_one_eighty
+		////dbg unstucking NEW_DEST MY_ANGLES
+		setmovedest NEW_DEST 20
+		callevent 0.1 bat_boost
+	}
+	if ( FLY_MOVED != 0 )
+	{
+		if !BF_NO_STUCK
+		if BOUNCED
+		////dbg resetting vel
+		setvard BOUNCED 0
+		setvard FLIGHT_CHECK_FREQ BF_CHECK_FREQ
+	}
+
+	setvard FLY_OLD_POS game.monster.origin
+	callevent FLIGHT_CHECK_FREQ flight_check
+}
+
+{ npc_selectattack
+
+	setvard FLY_OLD_POS (20000,20000,20000)
+}
+
+{ bf_suspend_stuck
+
+	callevent PARAM1 bf_resume_stuck
+	setvard BF_NO_STUCK 1
+}
+
+{ bf_resume_stuck
+	setvard FLY_OLD_POS (20000,20000,20000)
+	setvard BF_NO_STUCK 0
+}
+
+{ bat_boost
+	addvelocity ent_me BF_UNSTUCK_ADJ
+	callevent 1.0 bf_reset_target
+}
+
+{ bf_reset_target
+	setmovedest NPCATK_TARGET game.monster.moveprox
+}
+
+{ do_one_eighty2
+	local MY_YAW $vec.yaw(game.monster.angles)
+	add MY_YAW 180
+	if ( MY_YAW > 359 ) subtract MY_YAW 359
+	local MY_PITCH $vec.pitch(game.monster.angles)
+	add MY_PITCH 180
+	if ( MY_PITCH > 359 ) subtract MY_PITCH 359
+	setvard NEW_DEST $relpos($vec(0,MY_PITCH,0),$vec(0,1000,0))
+}
+
+{ do_one_eighty2
+	local MY_YAW $vec.yaw(game.monster.angles)
+	add MY_YAW 180
+	if ( MY_YAW > 359 ) subtract MY_YAW 359
+	local MY_PITCH $vec.pitch(game.monster.angles)
+	add MY_PITCH 180
+	if ( MY_PITCH > 359 ) subtract MY_PITCH 359
+	local MY_ROLL $vec.roll(game.monster.angles)
+	add MY_ROLL 180
+	if ( MY_ROLL > 359 ) subtract MY_ROLL 359
+	setvard NEW_DEST $relpos($vec(MY_PITCH,MY_YAW,MY_ROLL),$vec(0,1000,0))
+}
+
+{ do_rand_tweedee
+	local MY_PITCH $rand(0,359)
+	local MY_YAW $rand(0,359)
+	local MY_ROLL $rand(0,359)
+	setvard NEW_DEST $relpos($vec(MY_PITCH,MY_YAW,MY_ROLL),$vec(0,1000,0))
+}

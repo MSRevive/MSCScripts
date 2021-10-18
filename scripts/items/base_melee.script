@@ -1,0 +1,323 @@
+//Basic Melee Weapon
+//REQ:
+//
+//	MODEL_VIEW
+//	MODEL_HANDS
+//
+//	MELEE_RANGE, MELEE_DMG, MELEE_DMG_RANGE, MELEE_DMG_TYPE
+//	MELEE_ENERGY
+
+{
+	const MELEE_NOISE 	650
+	const SPECIAL01_SND $get(ent_owner,scriptvar,'PLR_SOUND_JAB2')
+	const FREQ_NUB 30.0
+
+	const MELEE_CALLBACK melee
+	const MELEE_CALLBACK_CHARGED melee
+
+	const BWEAPON_DBL_CHARGE_ADJ 2.0
+}
+
+#include items/base_weapon
+
+{  weapon_spawn
+
+	callevent register_normal
+
+}
+
+{ register_normal
+
+   //Normal swing attack
+   //===================
+
+	if !CUSTOM_REGISTER_NORMAL
+
+	local F_BASE_LEVEL_REQ BASE_LEVEL_REQ
+	if ( BASE_LEVEL_REQ equals 'BASE_LEVEL_REQ' ) local F_BASE_LEVEL_REQ 0
+
+   local reg.attack.type		strike-land
+   local reg.attack.keys		+attack1
+   local reg.attack.range		MELEE_RANGE
+   local reg.attack.dmg			MELEE_DMG
+   local reg.attack.dmg.range		MELEE_DMG_RANGE
+   local reg.attack.dmg.type		MELEE_DMG_TYPE
+   local reg.attack.energydrain		MELEE_ENERGY
+   local reg.attack.stat		MELEE_STAT
+   local reg.attack.hitchance		MELEE_ACCURACY
+   local reg.attack.priority		0
+   local reg.attack.delay.strike	MELEE_DMG_DELAY
+   local reg.attack.delay.end		MELEE_ATK_DURATION
+   local reg.attack.ofs.startpos	MELEE_STARTPOS
+   local reg.attack.ofs.aimang		MELEE_AIMANGLE
+   local reg.attack.callback		MELEE_CALLBACK
+   local reg.attack.noise		MELEE_NOISE
+	local reg.attack.reqskill F_BASE_LEVEL_REQ
+
+	setvard WEAPON_PRIMARY_SKILL reg.attack.stat
+
+   registerattack
+
+	callevent register_charge1
+}
+
+{ game_deploy
+	if game.serverside
+
+	callevent weapon_equip
+
+	local FIND_MELEE_STAT "skill."
+	stradd FIND_MELEE_STAT MELEE_STAT
+	if ( $get(ent_owner,FIND_MELEE_STAT) < BASE_LEVEL_REQ )
+	{
+		callevent 5.0 nub_loop
+		setvard BITEM_UNDERSKILLED 1
+		dplayermessage ent_owner You lack the skill to properly wield this weapon!
+		local OUT_STR "You lack the proficiency to wield this weapon properly. ( requires: "
+		stradd OUT_STR MELEE_STAT
+		stradd OUT_STR " proficiency "
+		stradd OUT_STR BASE_LEVEL_REQ
+		stradd OUT_STR " )"
+		infomsg ent_owner "Insufficient Skill" OUT_STR
+		setvard NOOB_LOOP 1
+	}
+}
+
+{ register_charge1
+
+	if !CUSTOM_REGISTER_CHARGE1
+	if !IS_TWO_HANDED_SWORD
+
+	//thothie made seperate so can override
+
+   //Default charge up attack - Double damage for holding to 100%
+   //============================================================
+
+   local reg.attack.type		strike-land
+   local reg.attack.keys		+attack1
+   local reg.attack.range		MELEE_RANGE
+   local reg.attack.dmg			MELEE_DMG
+   local reg.attack.dmg.range		MELEE_DMG_RANGE
+   local reg.attack.dmg.type		MELEE_DMG_TYPE
+   local reg.attack.energydrain		MELEE_ENERGY
+   local reg.attack.stat		MELEE_STAT
+   local reg.attack.hitchance		MELEE_ACCURACY
+   local reg.attack.priority		0
+   local reg.attack.delay.strike	MELEE_DMG_DELAY
+   local reg.attack.delay.end		MELEE_ATK_DURATION
+   local reg.attack.ofs.startpos	MELEE_STARTPOS
+   local reg.attack.ofs.aimang		MELEE_AIMANGLE
+   local reg.attack.callback		MELEE_CALLBACK_CHARGED
+   local reg.attack.noise		MELEE_NOISE
+
+   local reg.attack.priority	1
+   local reg.attack.keys	-attack1
+   local reg.attack.callback	special_01
+   multiply reg.attack.dmg	BWEAPON_DBL_CHARGE_ADJ
+	multiply reg.attack.energydrain BWEAPON_DBL_CHARGE_ADJ
+   local reg.attack.chargeamt	100%
+   local reg.attack.reqskill	2
+
+	if ( BASE_LEVEL_REQ > reg.attack.reqskill ) add reg.attack.reqskill BASE_LEVEL_REQ
+
+   registerattack
+}
+
+{  melee_start
+
+	if !MELEE_OVERRIDE
+
+	callevent bm_attack_start
+}
+
+
+{ bm_attack_start
+	playviewanim	 MELEE_VIEWANIM_ATK
+	//dbg bm_attack_start PLAYERANIM_SWING global.anim.combatwalk
+	if ( PLAYERANIM_SWING isnot 'PLAYERANIM_SWING' ) playowneranim once PLAYERANIM_SWING global.anim.combatwalk 3
+	callevent MELEE_SOUND_DELAY melee_playsound
+}
+
+{  melee_playsound
+	playsound const.snd.weapon const.snd.maxvol SOUND_SWIPE
+}
+
+{ game_attack_done
+	callevent item_idle
+}
+
+{  special_01_start
+
+	if !SPECIAL1_OVERRIDE
+
+	callevent melee_start
+	if game.serverside
+	svplaysound 1 10 SPECIAL01_SND
+}
+
+{ hitwall
+	if !OVERRIDE_HITWALL
+	if SOUND_HITWALL1 isnot 'SOUND_HITWALL1'
+	playrandomsound 1 10 SOUND_HITWALL1 SOUND_HITWALL2
+	//clientevent update all const.localplayer.scriptID cl_playsound SOUND_HITWALL1 10 $get(ent_owner,origin)
+}
+
+{ nub_loop
+
+	if game.serverside
+
+	if ( !NOOB_LOOP )
+	{
+		setvard BITEM_UNDERSKILLED 0
+	}
+
+	if NOOB_LOOP
+	setvard BITEM_UNDERSKILLED 1
+	local FIND_MELEE_STAT "skill."
+	stradd FIND_MELEE_STAT MELEE_STAT
+	if $get(ent_owner,FIND_MELEE_STAT) < BASE_LEVEL_REQ
+	callevent FREQ_NUB nub_loop
+	local OUT_STR "You lack the proficiency to wield this weapon. ( requires: "
+	stradd OUT_STR MELEE_STAT
+	stradd OUT_STR " proficiency "
+	stradd OUT_STR BASE_LEVEL_REQ
+	stradd OUT_STR " )"
+	infomsg ent_owner "Insufficient Skill" OUT_STR
+	dplayermessage ent_owner You lack the skill to wield this weapon.
+}
+
+{ game_drop
+	callevent weapon_unequip
+	setvard NOOB_LOOP 0
+}
+
+{ game_wear
+	callevent weapon_equip
+	setvard NOOB_LOOP 0
+}
+
+{ game_putinpack //works
+	setvard NOOB_LOOP 0
+	callevent weapon_unequip
+	//dbg temp game_putinpack
+}
+
+//this seems to go off when item is put in pack OR drawn - but seems undepndable for second weapon?
+{ game_removefromowner
+	setvard NOOB_LOOP 0
+	//dbg temp game_removefromowner PARAM1
+}
+
+//this does not seem to work
+//{ game_wielditem
+//	dbg temp game_wielditem
+//}
+
+//These work! (no params)
+//{ game_attack1_down //goes off every frame mouse1 is down
+//	if !REPORT_RELEASE
+//	dbg game_attack1_down
+//	setvard REPORT_RELEASE 1
+//}
+//
+//{ game_-attack1 //goes off every frame mouse1 is up
+//	if REPORT_RELEASE
+//	dbg game_-attack1
+//	setvard REPORT_RELEASE 0
+//}
+//
+//{ game_attack1 //goes off once when mouse1 is pressed down
+//	dbg game_attack1
+//}
+//
+//{ game_+attack2 //goes off every frame mouse2 is down
+//	if !REPORT_RELEASE2
+//	setvard REPORT_RELEASE2 1
+//	dbg game_+attack2
+//}
+//
+//{ game_-attack2 //goes off every frame mouse2 is up
+//	if REPORT_RELEASE2
+//	setvard REPORT_RELEASE2 0
+//	
+//	dbg game_-attack2
+//}
+//
+//{ game_hitnpc //goes off when NPC struck (even if miss)
+//	dbg game_hitnpc
+//}
+//
+//does not work
+//{ game_attack2
+//	dbg game_attack2
+//}
+
+{ weapon_equip
+	
+
+	if ( AM_SHIELD )
+	{
+		setvard PARRY_VALUE "am_shield"
+		setvard PARRY_MULTI_OUT PARRY_MULTI
+	}
+	if ( !AM_SHIELD )
+	{
+		local FIND_MELEE_STAT "skill."
+		stradd FIND_MELEE_STAT MELEE_STAT
+		setvard PARRY_VALUE $get(ent_owner,FIND_MELEE_STAT)
+	}
+	if ( NO_PARRY ) setvard PARRY_VALUE 0
+
+	//local RL_HAND game.item.hand_index
+
+	//callexternal ent_owner ext_set_hand_id RL_HAND $get(ent_me,id)
+
+//	if !AM_SHIELD
+//	local FIND_MELEE_STAT "skill."
+//	stradd FIND_MELEE_STAT MELEE_STAT
+//	local OUT_PARRY $get(ent_owner,FIND_MELEE_STAT)
+//	if ( NO_PARRY ) local OUT_PARRY 0
+//	callexternal ent_owner ext_set_parry_base OUT_PARRY
+}
+
+{ weapon_unequip
+
+//	if !AM_SHIELD
+//	callexternal ent_owner ext_set_parry_base 0
+	local RL_HAND game.item.hand_index
+	callexternal ent_owner ext_set_hand_id RL_HAND 0
+}
+
+{ game_setchargepercent
+	//dbg game_setchargepercent PARAM1
+	setvard BWEAPON_CHARGE_PERCENT PARAM1
+}
+
+{ melee_damaged_other
+	if !BWEAPON_NO_PERCENT_CHARGE
+	if ( BWEAPON_CHARGE_PERCENT > 0.25 )
+	{
+		subtract BWEAPON_CHARGE_PERCENT 0.25
+
+		local L_CHARGE_RATIO $ratio(BWEAPON_CHARGE_PERCENT,1.25,BWEAPON_DBL_CHARGE_ADJ)
+
+		local NEW_DMG PARAM2
+		multiply NEW_DMG L_CHARGE_RATIO
+		setdmg dmg NEW_DMG
+		returndata L_CHARGE_RATIO
+		dbg Adjusted dmg x L_CHARGE_RATIO
+		setvard BWEAPON_CHARGE_PERCENT 0
+
+		local CUR_DRAIN MELEE_ENERGY
+		multiply CUR_DRAIN BWEAPON_CHARGE_PERCENT
+		drainstamina ent_owner CUR_DRAIN
+	}
+}
+
+//{ game_attack1_down
+//	dbg game_attack1_down
+//}
+//
+//{ game_+attack2
+//	dbg game_+attack2
+//}

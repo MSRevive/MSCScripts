@@ -1,0 +1,298 @@
+//Player animations
+{
+	//Player animation names... must match up with reference.mdl
+	const	ANIM_STAND	stand
+	const	ANIM_STAND_IDLE	idle
+	const	ANIM_CROUCH	crouch_idle
+	const	ANIM_CROUCHMOVE	crawl
+	const	ANIM_WALK	walk_slow
+	const	ANIM_RUN	run
+	const	ANIM_JUMP	jump
+	const	ANIM_TREAD	treadwater
+	const	ANIM_SWIM	swim
+	const	ANIM_DEATH	die_simple
+	const	ANIM_DEATH2	die_forwards
+
+	const	ANIM_TYPE_WALK	0
+	const	ANIM_TYPE_ONCE	1
+	const	ANIM_TYPE_HOLD	2
+	setvard anim.underwater	0
+}
+
+{ [override] game_animate	//Called every frame
+
+	//Normal animation
+
+	setstatus remove swimming
+	local L_WATERLEVEL game.monster.waterlevel
+
+	if( L_WATERLEVEL == 0 ) setvard anim.underwater 0
+	else if( L_WATERLEVEL < 2 )
+	{
+		if( game.monster.onground ) setvard anim.underwater 0
+		else setvard anim.underwater 1
+	}
+	else if( L_WATERLEVEL >= 2 ) setvard anim.underwater 1
+
+	gaitframerate 0		//Reset gait framerate
+
+	if( game.monster.anim.type == ANIM_TYPE_WALK ) callevent walk_animate
+	else if( game.monster.anim.type == ANIM_TYPE_ONCE ) callevent once_animate
+	else if( game.monster.anim.type == ANIM_TYPE_HOLD ) callevent hold_animate
+}
+
+{ [override] walk_animate
+
+	//Normal player walking around or standing idle, not doing anything special
+
+
+	if( !game.monster.in_attack_stance )
+	{
+		//Set the Torso Animation
+		//crouch, walk, run
+		
+		setvard TORSO_ANIM 0 //JUN2013_09 - conflict - also, we really need to get rid of this whole script
+		local LEGS_FRAMERATE 1.0
+		local L_CURRENT_SPEED game.monster.speed2D
+		local SPEED_SHOW_RUN_ANIM game.monster.walkspeed
+		add SPEED_SHOW_RUN_ANIM 60
+		//local SPEED_SHOW_RUN_ANIM game.monster.walkspeed  //Threshold Lowered.  Now runs when just pressing 'W'
+
+		if( !anim.underwater )
+		{	//Dry land
+			local l.onground 1
+			//if( !game.monster.onground ) if( $vec.z(game.monster.velocity) <= -300 ) local l.onground 0
+			
+			if( l.onground )
+			{
+				//On ground
+ 				if( game.monster.ducking )
+				{ 
+					if( !L_CURRENT_SPEED ) setvard TORSO_ANIM ANIM_CROUCH
+					else
+					{
+						setvard TORSO_ANIM ANIM_CROUCHMOVE
+						//setvard LEGS_FRAMERATE 2.0
+					}
+					setvard LEGS_ANIM TORSO_ANIM
+				}
+	 			else if( L_CURRENT_SPEED == 0 )
+				{
+					if( game.monster.currentitem ) setvard TORSO_ANIM ANIM_STAND
+					else setvard TORSO_ANIM ANIM_STAND_IDLE
+				
+					setvard LEGS_ANIM TORSO_ANIM
+				}
+	 			else if( L_CURRENT_SPEED <= SPEED_SHOW_RUN_ANIM )
+				{
+					setvard TORSO_ANIM ANIM_WALK
+					setvard LEGS_ANIM TORSO_ANIM
+					setgaitspeed game.monster.walkspeed
+					//setvard LEGS_FRAMERATE 1.0
+				}
+	 			else//if( L_CURRENT_SPEED  > SPEED_SHOW_RUN_ANIM )
+				{
+					setvard TORSO_ANIM ANIM_RUN
+					setvard LEGS_ANIM 0
+					setgaitspeed SPEED_SHOW_RUN_ANIM
+				}
+			}
+			else
+			{	//In air
+					setvard TORSO_ANIM ANIM_JUMP
+					setvard LEGS_ANIM 0
+			}
+		}
+		else
+		{	//In water
+	 		if( game.monster.forwardspeed <= 75 ) //100
+			{		
+				setvard TORSO_ANIM ANIM_TREAD
+				setvard LEGS_ANIM 0
+			}
+			else
+			{
+				setvard TORSO_ANIM ANIM_SWIM
+				setvard LEGS_ANIM 0
+				setstatus add swimming
+			}
+		}
+		
+		//Set the Legs Animation... same as torso
+		//gaitframerate LEGS_FRAMERATE
+	}
+	else
+	{
+		//In attack stance (holding an animation after an attack)
+
+		stradd TORSO_ANIM aim_ game.monster.currentitem.anim_torso
+		local L_USELEGS 0
+		if( game.monster.ducking ) setvard L_USELEGS 1	//ducking - always use legs
+		if( game.monster.speed2D ) setvard L_USELEGS 1	//standing - only use legs when moving
+
+		if( L_USELEGS ) callevent legs_animate
+		else setvard LEGS_ANIM 0
+	}
+
+
+//	if ( LEGS_ANIM equals 0 )
+//	{
+//		//legs anim fuxed for some reason
+//		setvard LEGS_ANIM idle
+//		if ( game.monster.ducking )
+//		{
+//			setvard LEGS_ANIM crouch_idle
+//			if game.monster.speed > 0
+//			setvard LEGS_ANIM crawl
+//		}
+//		else
+//		{
+//			setvard LEGS_ANIM idle
+//			if game.monster.speed > 0
+//			setvard LEGS_ANIM walk
+//			if game.monster.jumping
+//			setvard LEGS_ANIM jump
+//		}
+//		dbg player_animation - no_leg_anim ( set LEGS_ANIM )
+//	}
+
+
+	//Set the final animation to use in-game
+	setanimtorso TORSO_ANIM
+	setanimlegs LEGS_ANIM
+
+	//debuggary
+//	if ( TORSO_ANIM isnot OLD_TORSO_ANIM ) local DEBUG_REPORT 1
+//	if ( LEGS_ANIM isnot OLD_LEGS_ANIM ) local DEBUG_REPORT 1
+//	if ( DEBUG_REPORT ) dbg TORSO_ANIM LEGS_ANIM
+//	setvard OLD_TORSO_ANIM TORSO_ANIM 
+//	setvard OLD_LEGS_ANIM LEGS_ANIM 
+}
+
+{ [override] once_animate
+
+	//This is an animation played once to completion, then let go for the walk handler to take over
+	//Attack, jump, some emotes, etc. use this.
+
+	//Keep the default Torso anim, but make sure we pick the right Legs anim based on
+	//what the player is currently doing
+	if( game.monster.anim.uselegs )
+	{
+		callevent legs_animate
+
+		//Set the final Legs anim
+		setanimlegs LEGS_ANIM
+	}
+
+
+	//Let go of this animation when we've played all the frames
+	if( game.monster.anim.current_frame >= game.monster.anim.max_frames )
+	{
+		playanim break
+		callevent walk_animate	//Make sure that "setanimtorso" is set right, in case we're going to hold the ready anim for 3 secs
+	}
+}
+
+{ [override] hold_animate
+
+	//This is an animation played once to completion, then held on the last frame until a break is called
+	//Sit uses this
+
+}
+
+{ [override] legs_animate
+
+	//Uses the anim ext set by an item to determine the current leg anim
+	//This event sets LEGS_ANIM as the final legs to be used
+
+	local CUSTOM_LEGS_ANIM 0
+	local CUSTOM_EXT 0
+	local LEGS_FRAMERATE 2.3
+
+	setvard LEGS_ANIM	game.player.currentitem.anim_legs
+	if( game.monster.ducking )
+	{
+		if( !game.monster.speed2D )
+		{
+			//setvard LEGS_ANIM	ANIM_CROUCH		//this doesn't work for some reason -- just use crawl for now
+			setvard LEGS_ANIM 	ANIM_CROUCHMOVE
+			setvard CUSTOM_EXT	crouchidle_
+		}
+		else
+		{
+			setvard LEGS_ANIM 	ANIM_CROUCHMOVE
+			setvard CUSTOM_EXT	crouchwalk_
+		}
+	}
+	else
+	{
+		local SPEED_SHOW_RUN_ANIM game.monster.walkspeed
+		inc SPEED_SHOW_RUN_ANIM 60
+
+		if( !anim.underwater )
+		{
+			if( !game.monster.speed2D )
+			{
+				setvard LEGS_ANIM	ANIM_STAND
+				setvard CUSTOM_EXT	stand_
+			}
+			else if( game.monster.speed2D <= SPEED_SHOW_RUN_ANIM )
+			{
+				setvard LEGS_ANIM 	ANIM_WALK
+				setvard CUSTOM_EXT	walk_
+			}
+ 			else if( game.monster.speed2D  > SPEED_SHOW_RUN_ANIM )
+			{
+				setvard LEGS_ANIM 	ANIM_RUN
+				setvard CUSTOM_EXT	run_
+			}	
+		}
+		else
+		{
+			setvard LEGS_ANIM	ANIM_TREAD
+			setvard CUSTOM_EXT	tread_
+			gaitframerate -0.1	//Plays gait at set fps
+		}
+	}
+
+	//Try to use [stand/walk/crouchidle/crouchwalk]_<legext>, if it exists
+	stradd CUSTOM_LEGS_ANIM CUSTOM_EXT game.player.currentitem.anim_legs
+	if( $anim_exists(CUSTOM_LEGS_ANIM) ) setvard LEGS_ANIM CUSTOM_LEGS_ANIM
+}
+
+//Custom
+//------
+
+{ animate_death
+
+	
+        if( $rand(0,1) == 0 ) 	setvard CURRENT_DEATH_ANIM ANIM_DEATH
+        else 			setvard CURRENT_DEATH_ANIM ANIM_DEATH2
+
+	playanim critical CURRENT_DEATH_ANIM
+}
+
+//{	weararmor
+//	//Thothie's armor fix attempt
+//	//callexternal items/armor_base register_armor
+//	setmodelbody 0 ARMOR_COVERS_LEGS
+//	setmodelbody 1 ARMOR_COVERS_HEAD
+//	setmodelbody 2 ARMOR_COVERS_TORSO
+//	setmodelbody 3 ARMOR_COVERS_ARMS
+//}
+
+//{ ext_setanimtorso
+//	dbg ext_setanimtorso PARAM1
+//	setanimtorso PARAM1
+//}
+//
+//{ ext_setanimlegs
+//	dbg ext_setanimlegs PARAM1
+//	setanimlegs PARAM1
+//}
+//
+//{ ext_setanims
+//	dbg ext_setanims PARAM1 PARAM2
+//	setanimtorso PARAM1
+//	setanimlegs PARAM2
+//}

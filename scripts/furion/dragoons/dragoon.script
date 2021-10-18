@@ -1,0 +1,497 @@
+//Elemental Dragoons or Elemental Bandits By Furion With Quite a bit of help from Thothie
+//=Quite based off the normal Bandit script
+
+// Randomize if no settings are set
+//
+{
+	setvard CONTAINER_DROP_CHANCE 10% 
+	setvard CONTAINER_SCRIPT chests/quiver_of_random_lesser
+
+	const SOUND_PAIN		player/chesthit1.wav
+	const SOUND_PAIN2		player/armhit1.wav
+	const SOUND_BOW weapons/bow/bow.wav
+	setvar ANIM_IDLE		idle
+	setvar ANIM_RUN		run
+	setvar ANIM_WALK		walk2
+	setvard ANIM_DEATH		die_simple
+	setvard CAN_HUNT 1
+	setvard HUNT_AGRO		1
+	setvard CAN_ATTACK	1
+	setvard CAN_RETALIATE		1
+	const RETALIATE_CHANGETARGET_CHANCE	75%
+	setvard CAN_HEAR		1
+	setvard NPC_GIVE_EXP		150
+	callevent bowey
+	callevent fistey
+	callevent daggerey
+	callevent swordey
+	callevent axey
+	callevent macey
+	callevent magey
+	callevent speary
+	callevent icey
+	callevent poisoney
+	callevent firey
+	callevent zappy
+
+	setvard ATTACK_HITRANGE ATTACK_RANGE
+	multiply ATTACK_HITRANGE 1.5
+
+	setvar NO_STEP_ADJ 1 //seem to be getting stuck on ramps in prelude2
+
+	const FIREBALL_FREQ 5.0
+	const SPELL_RANGE 700
+	const ANIM_PREP_SPELL prepare_fireball
+	const ANIM_AIM_SPELL aim_fireball_R
+	const ANIM_CAST_SPELL throw_fireball_R
+
+//magey AOEs
+	const LIGHTING_SCRIPT monsters/summon/summon_lightning_storm
+	const BLIZZARD_SCRIPT monsters/summon/summon_blizzard
+	const FIREWALL_SCRIPT monsters/summon/keledros_fire_wall
+	const POISONCLOUD_SCRIPT monsters/summon/npc_poison_cloud
+
+	const FREQ_SPELL 12.0
+	const SPELL_DURATION 10.0
+	const SPELL_DOT 100 //DPS - maybe a bit high, depending on what level yer after
+
+
+}
+
+#include monsters/base_monster
+
+// Spawn properties
+{ npc_spawn
+
+	setvard BD_COUNT 0
+
+   if ( ELEMENT equals 'ELEMENT' ) setvard ELEMENT $rand(0,3)
+   if ( WEAPON equals 'WEAPON' ) setvard WEAPON $rand(0,7)
+   gold			$rand(50,75)
+   //ov			180
+   width		32
+   height		92
+   race			rogue
+   hearingsensitivity	3
+   roam			1
+   setmodel		fur/npcs/dragoon.mdl
+   setidleanim		ANIM_IDLE
+   setmoveanim		ANIM_WALK
+}
+{
+	eventname bowey
+	if WEAPON == 0
+	name a|Dragoon Archer
+	hp 220
+	setvard MOVE_RANGE 300
+	setvard ATTACK_RANGE 800
+	setvar ATTACK_SPEED 1200
+	setvar ATTACK1_DAMAGE $randf(8.5,12.0)
+	setvar ATTACK_COF 0
+	setvard ANIM_ATTACK shootbow
+	setactionanim ANIM_ATTACK
+	setmodelbody 1 5
+	setvard DROPS_CONTAINER 1
+	setvard NO_STUCK_CHECKS 1
+}
+{
+	eventname daggerey
+	if WEAPON == 1
+	name a|Dragoon Rogue
+	hp 230
+	setvard MOVE_RANGE 50
+	setvard ATTACK_RANGE 90
+	setvar ATTACK1_DAMAGE $randf(8.5,10.0)
+	setvar ATTACK_PERCENTAGE 80%
+	setvard ANIM_ATTACK swordjab1_R //attack_jab
+	setactionanim ANIM_ATTACK
+	setmodelbody 1 1
+}
+{
+	eventname fistey
+	if WEAPON == 2
+	name a|Dragoon Brawler
+	hp 280
+	setvard MOVE_RANGE 50
+	setvard ATTACK_RANGE 80
+	setvar ATTACK1_DAMAGE $randf(6.5,8.0)
+	setvar ATTACK_PERCENTAGE 80%
+	setvard ANIM_ATTACK aim_punch1 //attack
+	setactionanim ANIM_ATTACK
+	setmodelbody 1 0
+}
+{
+	eventname swordey
+	if WEAPON == 3
+	name a|Dragoon Swordsman
+	hp 280
+	setvard MOVE_RANGE 80
+	setvard ATTACK_RANGE 120
+	setvar ATTACK1_DAMAGE $randf(8.5,10.0)
+	setvar ATTACK_PERCENTAGE 85%
+	setvard ANIM_ATTACK swordswing2_R //attack
+	setactionanim ANIM_ATTACK
+	setmodelbody 1 4
+}
+{
+	eventname axey
+	if WEAPON == 4
+	name a|Dragoon Axeman
+	hp 340
+	setvard MOVE_RANGE 80
+	setvard ATTACK_RANGE 120
+	setvar ATTACK1_DAMAGE $randf(9.5,11.0)
+	setvar ATTACK_PERCENTAGE 85%
+	setvard ANIM_ATTACK battleaxe_swing1_R //attack
+	setactionanim ANIM_ATTACK
+	setmodelbody 1 3
+}
+{
+	eventname macey
+	if WEAPON == 5
+	name a|Dragoon Berserker
+	hp 330
+	setvard MOVE_RANGE 80
+	setvard ATTACK_RANGE 130
+	setvar ATTACK1_DAMAGE $randf(9.5,11.0)
+	setvar ATTACK_PERCENTAGE 85%
+	setvard ANIM_ATTACK battleaxe_swing1_R //attack
+	setactionanim ANIM_ATTACK
+	setmodelbody 1 2
+}
+{
+	eventname magey
+	if WEAPON == 6
+	name a|Dragoon Mage
+	hp 210
+	setvard MOVE_RANGE 300
+	setvard ATTACK_RANGE 32
+	setvar ATTACK1_DAMAGE $randf(20.0,40.0)
+	setvar ATTACK_PERCENTAGE 85%
+	setvard ANIM_ATTACK aim_punch1 //attack
+	setvard CAN_FLINCH 0
+	setactionanim ANIM_ATTACK
+	setmodelbody 1 0
+	callevent 1.0 scan_for_allies
+	catchspeech debug_params debug
+	//NPC chooses it's deadly weapon
+	if ( ELEMENT equals 0 ) setvard SPELL_SCRIPT BLIZZARD_SCRIPT
+	if ( ELEMENT equals 1 ) setvard SPELL_SCRIPT POISONCLOUD_SCRIPT
+	if ( ELEMENT equals 2 ) setvard SPELL_SCRIPT FIREWALL_SCRIPT
+	if ( ELEMENT equals 3 ) setvard SPELL_SCRIPT LIGHTING_SCRIPT
+	setvard SPELL_FLINGER 1
+}
+{
+	eventname speary
+	if WEAPON == 7
+	name a|Dragoon Lancer
+	hp 400
+	setvard MOVE_RANGE 120
+	setvard ATTACK_RANGE 150
+	setvar ATTACK1_DAMAGE $randf(14.0,20.0)
+	setvar ATTACK_PERCENTAGE 75%
+	setvard ANIM_ATTACK spearjab
+	setactionanim ANIM_ATTACK
+	setmodelbody 1 6
+}
+{
+	eventname icey
+	if ELEMENT == 0
+	takedmg slash 0.8
+	takedmg pierce 0.8
+	takedmg blunt 0.8
+	takedmg fire 1.3
+	takedmg cold 0.1
+	takedmg poison 0.8
+	takedmg lightning 0.8
+	takedmg holy 0.0
+	setmodelbody 0 0  
+}
+{
+	eventname poisoney
+	if ELEMENT == 1
+	takedmg slash 0.8
+	takedmg pierce 0.8
+	takedmg blunt 0.8
+	takedmg fire 0.8
+	takedmg cold 0.8
+	takedmg poison 0.1
+	takedmg lightning 1.3
+	takedmg holy 0.0
+	setmodelbody 0 1  
+
+}
+{
+	eventname firey
+	if ELEMENT == 2
+	takedmg slash 0.8
+	takedmg pierce 0.8
+	takedmg blunt 0.8
+	takedmg fire 0.1
+	takedmg cold 1.3
+	takedmg poison 0.8
+	takedmg lightning 0.8
+	takedmg holy 0.0
+	setmodelbody 0 2  
+
+}
+{
+	eventname zappy
+	if ELEMENT == 3
+	takedmg slash 0.8
+	takedmg pierce 0.8
+	takedmg blunt 0.8
+	takedmg fire 0.8
+	takedmg cold 0.8
+	takedmg poison 1.3
+	takedmg lightning 0.1
+	takedmg holy 0.0
+	setmodelbody 0 3  
+
+}
+
+{ debug_params
+	saytextrange 1024
+	saytext Mov MOVE_RANGE
+}
+
+{
+   // Deal damage
+   eventname attack
+   if( WEAPON == 0 )
+   {
+      //setvar AIM_ANGLE game.monster.last_seen.distance	//Aim up a bit
+      //divide AIM_ANGLE GEXT_ADJ1
+      setangle add_view.pitch 5 //fires in such a shallow arc, no need to adj based on distance
+		setvard AS_ATTACKING game.time
+      tossprojectile view ATTACK_SPEED ATTACK1_DAMAGE ATTACK_COF proj_arrow_npc (0,0,48)
+	  callexternal $get(ent_lastprojectile,id) ext_lighten 0.4 //helps aim - thothie
+      playsound 2 SOUND_BOW
+   }
+   else
+   {
+      dodamage NPCATK_TARGET ATTACK_HITRANGE ATTACK1_DAMAGE ATTACK_PERCENTAGE
+   }
+}
+
+{ attack_jab
+	callevent attack
+}
+
+{ npc_struck
+   
+	volume 5
+	playrandomsound 2 SOUND_PAIN SOUND_PAIN2 none none
+}
+
+{ npc_death
+   
+	volume 5
+	playrandomsound 2 SOUND_PAIN SOUND_PAIN2 none none
+	local L_DEATHANIM $rand(0,6)
+	if( L_DEATHANIM equals 0 )	setvard ANIM_DEATH die_simple
+	if( L_DEATHANIM equals 1 )	setvard ANIM_DEATH die_backwards1
+	if( L_DEATHANIM equals 2 )	setvard ANIM_DEATH die_backwards
+	if( L_DEATHANIM equals 3 )	setvard ANIM_DEATH die_forwards
+	if( L_DEATHANIM equals 4 )	setvard ANIM_DEATH headshot
+	if( L_DEATHANIM equals 5 )	setvard ANIM_DEATH die_spin
+	if( L_DEATHANIM equals 6 )	setvard ANIM_DEATH gutshot
+}
+
+{ npc_targetsighted
+	//archer
+	if ( WEAPON == 0 )
+	{
+		if !IS_FLEEING
+		if $cansee(PARAM1)
+		playanim once ANIM_ATTACK
+	}
+
+	if ( WEAPON == 6 )
+	{
+		if !IS_FLEEING
+		if !FIREBALL_DELAY
+		if !CASTING_SPELL
+		if !IS_BUFFING
+		setvard FIREBALL_DELAY 1
+		callevent FIREBALL_FREQ reset_fireball_delay
+		if $cansee(enemy,SPELL_RANGE)
+		local L_SPELL_TARGET $get(ent_lastseen,id)
+		callevent spell_attack L_SPELL_TARGET
+		setvard CASTING_SPELL 1
+		if ( SPELL_FLINGER )
+		{
+			if game.time > NEXT_SPELL
+			setvard NEXT_SPELL game.time //current game time (server up in seconds [floats to 100ths])
+			add NEXT_SPELL FREQ_SPELL
+			playanim critical ANIM_PREP_SPELL
+			callevent 2.0 do_spell
+		}
+	}
+}
+ 
+{ reset_fireball_delay
+	setvard FIREBALL_DELAY 0
+}
+
+{ spell_attack //param1 = targ
+
+	setvard AS_ATTACKING game.time
+	playsound 0 10 magic/fire_powerup.wav	
+	setvard SPELL_TARGET PARAM1
+	setmovedest SPELL_TARGET 9999
+	playanim once ANIM_PREP_SPELL
+	callevent 0.5 spell_attack2
+}
+
+{ spell_attack2
+	setmovedest SPELL_TARGET 9999
+	playanim critical ANIM_AIM_SPELL
+	callevent 0.5 spell_attack3
+}
+
+{ spell_attack3
+	setmovedest SPELL_TARGET 9999
+	local TARG_ORG $get(SPELL_TARGET,origin)
+	setangle face_origin TARG_ORG
+	callevent 0.1 straighten_out
+
+	playsound 0 10 magic/ice_strike.wav
+
+	playanim critical ANIM_CAST_SPELL
+	tossprojectile FIREBALL_TARGET 400 ATTACK1_DAMAGE 5 proj_fire_ball (0,48,48)
+	callexternal $get(ent_lastprojectile,id) ext_lighten 0
+	setvard CASTING_SPELL 0
+}
+
+{ straighten_out
+
+	local MY_ANG game.monster.angles
+	local MY_YAW $vec.yaw(SPELL_TARGET)
+	setangle face $vec(0,MY_YAW,0)
+	callevent 1.0 mage_reposition
+}
+
+{ mage_reposition
+	if ( $get(HUNT_LASTTARGET,range) < SPELL_RANGE ) callevent npcatk_flee $get(HUNT_LASTTARGET,id) 700 1.0
+	if ( $get(HUNT_LASTTARGET,range) >= MOVE_RANGE ) callevent chicken_run 1.0
+}
+
+{ game_struck
+	
+	if ( WEAPON == 6 )
+	{
+		if !BANDIT_FLEE_DELAY
+		setvard BANDIT_FLEE_DELAY 1
+		callevent 10.0 reset_bandit_flee_delay	
+		callevent npcatk_flee $get(ent_laststruck,id) 2000 5.0
+	}
+}
+
+{ reset_bandit_flee_delay
+	setvard BANDIT_FLEE_DELAY 0
+}
+
+{ npcatk_ally_alert //param1 attacker, param2 ally under attack
+
+	if !SUSPEND_AI
+
+	if ( $get(PARAM1,isplayer) ) callevent cycle_up "ally_hit_by_player"
+
+	if $get(PARAM2,id) isnot $get(ent_me,id)
+
+	if WEAPON == 6
+	if !IS_BUFFING
+	if $get(PARAM2,range) < SPELL_RANGE
+	//if $get(PARAM2,scriptvar,ICE_SHIELDED) != 1 //this wont work because both monsters have ICE_SHIELDED in their vars (externals)
+	setvard ALLY_CHECK_ID $get(PARAM2,id)
+	callevent check_can_shield
+}
+
+{ check_can_shield
+
+	if !IS_BUFFING
+	if CYCLED_UP
+	if $get(ALLY_CHECK_ID,race) equals $get(ent_me,race) //switched from ally, as he'd shield beloveds and such
+	callexternal ALLY_CHECK_ID ice_shield_check 
+	callevent 0.1 check_can_shield2
+}
+
+{ check_can_shield2
+
+	setvard AS_ATTACKING game.time
+	
+	if ICE_SHIELD_CHECK != 1
+	callexternal ALLY_CHECK_ID ice_shield_on
+	//yes, I can shield this guy
+	setvard IS_BUFFING 1
+	playanim critical ANIM_PREP_SPELL
+	setmovedest ALLY_CHECK_ID 64
+	callevent npcatk_suspend_ai 1.0
+	callevent 0.1 shield_ally
+}
+
+{ shield_ally
+
+	if $cansee(ALLY_CHECK_ID)
+
+	callevent 0.5 cast_shield
+}
+
+{ cast_shield
+	setvard IS_BUFFING 0
+	playsound 0 10 magic/cast.wav
+	applyeffect ALLY_CHECK_ID effects/effect_iceshield 20 0.2
+}
+
+{ scan_for_allies
+	callevent 0.7 scan_for_allies
+	if $cansee(ally)
+	setvard ALLY_CHECK_ID $get(ent_lastseen,id)
+	callevent check_can_shield ent_lastseen
+}
+
+{
+repeatdelay 2.0
+
+	//something in this script is causing BD periodically
+	//prevention measure/hack
+
+	if ( SUSPEND_AI ) add BD_COUNT 1
+	if ( !SUSPEND_AI ) setvard BD_COUNT 0
+	if ( BD_COUNT > 10 ) callevent npcatk_resume_ai
+}
+{ do_spell
+   if NPCATK_TARGET isnot unset //in case target dies before spell completed
+   if $get(ent_me,isalive) //in case I die before spell completed
+   createnpc SPELL_SCRIPT $get(NPCATK_TARGET,origin) $get(ent_me,id) $get(ent_me,angles.y) SPELL_DOT SPELL_DURATION
+}
+{ game_dodamage //PARAM1=hit:0|1 PARAM2=ent_hit PARAM3=(start) PARAM4=(end) DmgType DmgAmt
+   if PARAM1
+   setvard SPECIAL_EFFECT_CHANCE $rand(0,100)
+   if ( SPECIAL_EFFECT_CHANCE < 30 ) 
+   //Crude chance of effect snippet, If player is resistant to element, it runs this and their resistence checks
+   //30% of doing effect, subject to increase if players escape it too frequently.
+   {
+	if ( ELEMENT == 0 ) //set in spawn
+	{
+	applyeffect PARAM2 effects/effect_frostbite_dmg 10.0 $get(ent_me,id) $rand(5.0,15.0)
+	//^ Freezes target with WEAPON_DOT/DPS for 10 seconds
+	}
+	if ( ELEMENT == 1 ) //set in spawn
+	{
+	applyeffect PARAM2 effects/effect_poison_dmg 10.0 $get(ent_me,id) $rand(5.0,15.0)
+	//^ Poisons target with WEAPON_DOT/DPS for 10 seconds
+	} 
+	if ( ELEMENT == 2 ) //set in spawn
+	{
+	applyeffect PARAM2 effects/effect_burn 10.0 $get(ent_me,id) $rand(5.0,15.0) 1 1
+	//^ Burns target with WEAPON_DOT/DPS for 10 seconds
+	} 
+	if ( ELEMENT == 3 ) //set in spawn
+	{
+	applyeffect PARAM2 effects/effect_shock_dmg 10.0 $get(ent_me,id) $rand(5.0,15.0)
+	//^ Shocks target with WEAPON_DOT/DPS for 10 seconds
+	}
+    }
+}

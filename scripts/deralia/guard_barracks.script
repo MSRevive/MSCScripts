@@ -1,0 +1,189 @@
+// Guards, Patrol
+
+{
+	//const PLACE_HOLDER 0
+	const BG_ROAM 1
+	const BG_SPEED 1.0
+}
+
+#include NPCs/human_guard
+#include monsters/base_chat
+
+{ npc_spawn
+
+	name Cathain, Militia Quartermaster	
+
+	roam 1
+
+   catchspeech say_hi hi hello hail greet hey
+   catchspeech say_help help
+   catchspeech say_rumour news happenings rumour rumours
+   catchspeech say_island island
+
+	menu.autoopen 1
+}
+
+{ say_rumor
+	callevent say_rumour
+}
+
+// Talk
+{ say_hi
+   setvar TALK $rand(1,5)
+   callevent respond1
+   callevent respond2
+}
+{ respond1
+   if TALK equals 1
+   saytext I should've joined the army...
+}
+{ respond2
+   if TALK isnot 1
+   saytext Be on your way sir.
+}
+
+{ say_help
+   saytext Ergh, help yourself.
+}
+
+{ say_rumour
+   saytext Hmmm, why would you ask such things? Best be on your way traveller.
+}
+
+{ say_island
+   saytext Huh, what? How did you ... the people in this city talk too much.
+}
+
+// Greet player and other NPCs
+{
+
+   repeatdelay $rand(25,45)
+
+   if !IS_HUNTING
+
+   if $cansee(ally,128)
+
+   	callevent npcatk_setmovedest ent_lastseen 128
+
+   playsound 0 5 npc/hello1.wav
+   say [.83] [.33] [.91] [.91] [.38] [.36]
+}
+
+{ game_menu_getoptions
+
+	if ( !TRADE_RING )
+	{
+		if MENU_MODE equals sewers
+		local reg.mitem.title	"Take the Sewer Job"
+		local reg.mitem.type	callback
+		local reg.mitem.callback go_to_sewers
+		menuitem.register
+	}
+
+	if TRADE_RING
+	local L_RQUEST_STEP $get_quest_data(PARAM1,r)
+	if L_RQUEST_STEP == 12
+	local reg.mitem.title	"Offer 500 gold"
+	local reg.mitem.type	payment
+	local reg.mitem.data 	"gold:500;item_ring"
+	local reg.mitem.callback got_ring
+	menuitem.register
+}
+
+{ got_ring
+	offer PARAM1 item_ring_percept
+	setvard QUEST_WIN PARAM1
+	saytext "There ya go, snapped back together, good as new."
+	callevent 2.0 got_ring2
+	quest set QUEST_WIN r 0
+}
+
+{ got_ring2
+	setmoveanim walk
+	roam 1
+	playanim once walk
+	setmovedest QUEST_WIN 200 flee
+	saytext "Make good use of it!"
+}
+
+{ say_job
+	if !BUSY_TALKING_JOB
+	setvard BUSY_TALKING_JOB 1
+	roam 0
+	setvard MENU_MODE sewers
+	if ( $get(PARAM1,isalive) )
+	{
+		setmovedest PARAM1 9999
+		setvard JOB_TARGET PARAM1
+	}
+	else
+	{
+		setmovedest ent_lastspoke 9999
+		setvard JOB_TARGET $get(ent_lastspoke,id)
+	}
+	saytext "Eh? You want a job aye? Well have I got one for you..."
+	callevent 3.0 say_job2
+}
+
+{ say_job2
+	if !TOOK_JOB
+	saytext "We sent a construction team, down into the sewers, a little while ago, and lost em."
+	callevent 5.0 say_job3
+}
+
+{ say_job3
+	if !TOOK_JOB
+	saytext "So we sent a chunk of the militia after them... And we lost THEM."
+	callevent 5.0 say_job4
+}
+
+{ say_job4
+	if !TOOK_JOB
+	saytext "I can't spare anymore men on that ancient maze, but if we don't fix things down there soon..."
+	callevent 5.0 say_job5
+}
+
+{ say_job5
+	if !TOOK_JOB
+	saytext "...It's going to get... Very odorous, up here in Deralia..."
+	callevent 5.0 say_job6
+}
+
+{ say_job6
+	if !TOOK_JOB
+	saytext "I can't pay you, mind ye. However, all sorts of recluse wizards and such have setup shop down there in the past..."
+	callevent 5.0 say_job7
+}
+
+{ say_job7
+	if !TOOK_JOB
+	saytext "So there's bound to be a fair amount of loot - if you can get out alive."
+	callevent 5.0 say_job8
+}
+
+{ say_job8
+	if !TOOK_JOB
+	saytext "If you're interested, give me a heads up, and I'll show you the way. I'm too busy to go down there myself, mind you."
+	setvard BUSY_TALKING_JOB 0
+	callevent 5.0 say_job9
+}
+
+{ say_job9
+	setvard NO_CHAT 1 //suspend other chat menus
+	menu.open JOB_TARGET
+}
+
+{ go_to_sewers
+	setvard TOOK_JOB 1
+	saytext "Alright, I'll show you the way in just a few minutes... Now where'd I put that damned key..."
+	callexternal GAME_MASTER gm_map_vote JOB_TARGET deraliasewers "Do you wish to enter Deralia Sewers?" 1 1
+	callexternal players ext_set_map deraliasewers from_deralia from_deralia
+	gplayermessage JOB_TARGET Starting vote for Deraliasewers...
+	setvard NO_CHAT 0
+}
+
+{ game_menu_cancel
+	roam 1
+	setvard NO_CHAT 0
+	setvard TOOK_JOB 0
+}

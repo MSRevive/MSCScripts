@@ -1,0 +1,375 @@
+//Bear Gods by Thothie for Skycastle remake
+{
+
+	setvard NPC_OVERSIZED 1
+
+	const NPC_BOSS_REGEN_RATE 0.05
+	const NPC_BOSS_RESTORATION 0.25
+
+
+	 const NPC_BASE_EXP		4000
+	setvard NPC_IS_BOSS 1
+
+	setvar ANIM_IDLE	idle
+	setvar ANIM_WALK	walk
+	setvar ANIM_RUN	run
+	setvard ANIM_ATTACK	attack
+
+	const ATTACK_STOMPRANGE 512
+
+	const FREQ_STOMP 20.0
+	const FREQ_STAND '$randf(15,25)'
+	const FREQ_BOLT '$randf(10,20)'
+	const FREQ_TREE '$randf(20,30)'
+
+	const DMG_STORM 20.0
+	const STORM_DUR 60.0
+	const STORM_RAD 1024
+	const SMASH_DAMAGE '$rand(50,150)'
+
+   const ATTACK_NORMAL_DAMAGE '$rand(40,80)'
+   const ATTACK_STANDING_DAMAGE '$rand(40,58)'
+   const ATTACK_STOMPRANGE 	200
+   const ATTACK_STOMPDMG 	50
+   const ATTACK_HITCHANCE 	70%
+   setvard NPC_GIVE_EXP		2000
+
+	setvard NPCATK_SUSPEND_AI
+
+	const GOLD_BAGS 1
+	const GOLD_BAGS_PPLAYER 4
+	const GOLD_PER_BAG 50
+	const GOLD_RADIUS 200
+	const GOLD_MAX_BAGS 32
+
+   const SOUND_ATTACK1 	monsters/bear/giantbearattack.wav
+   const SOUND_STRUCK4 	monsters/bear/giantbearpain.wav
+   const SOUND_STRUCK5 	none
+	
+	setvard IMMUNE_STUN 70
+
+	setvard NPC_MUST_SEE_TARGET 0
+
+	setvard IMMUNE_COLD 1
+
+	//stun burst media
+	precache magic/boom.wav
+
+	//shock beam (odd, seems these should all be precached already)
+	precache weather/Storm_exclamation.wav
+	precache weather/lightning.wav
+	precache magic/eraticlightfail.wav
+	precache magic/lightning_strike_replica.wav
+
+	//dewm tree
+	precache monsters/dewm_shrub.mdl
+	precache monsters/dewm_bush.mdl
+	precache monsters/dewm_tree.mdl
+	precache cactusgibs.mdl
+	precache debris/bustflesh1.wav
+	precache zombie/claw_miss1.wav
+	precache headcrab/hc_attack1.wav
+	precache weapons/bow/crossbow.wav
+	precache weapons/bow/stretch.wav
+	precache weapons/xbow_hitbod1.wav
+	precache weapons/xbow_hitbod2.wav
+
+}
+
+#include monsters/bear_base_giant
+
+{ npc_spawn
+
+   hp 6000
+   //ov 165
+	setmodel monsters/bear_huge.mdl
+	width 200
+	height 96
+
+	invincible 1
+
+	setidleanim upattack
+	setmoveanim upattack
+
+	callevent 0.1 select_bear_type
+	setvard IN_INTRO 1
+	setvard ANIM_INTRO upattack
+	callevent 0.1 intro_loop
+	callevent 3.0 intro_down
+	callevent 5.0 end_intro
+
+	callevent npcatk_suspend_ai
+
+	nopush 1
+}
+
+{ select_bear_type
+
+	callevent npcatk_suspend_ai //redund
+	setvard INTRO_YAW $get(ent_me,angles.yaw)
+	setangle face $vec(0,INTRO_YAW,0)
+
+	takedmg dark 0.5
+
+	if ( !OVERRIDE_BEAR ) setvard BEAR_TYPE $rand(1,3)
+
+	if ( BEAR_TYPE == 1 )
+	{
+		name The|Bear God of the Frozen Tundra
+		takedmg cold 0.0
+		takedmg fire 1.25
+		setmodelbody	0 0
+		callexternal players ext_weather_change snow
+		callevent 2.0 make_uber_blizzard
+		usetrigger make_ice
+		infomsg all "The Bear God of the Frozen Tundra" "Has appeared..."
+	}
+
+	if ( BEAR_TYPE == 2 )
+	{
+		name The|Bear God of the Thundering Plains
+		takedmg lightning 0.0
+		takedmg poison 1.25
+		setmodelbody 0 1
+		callexternal players ext_weather_change rain_storm
+		callevent 10.0 make_storm_bolt
+		usetrigger make_plains
+		infomsg all "The Bear God of the Thundering Plains" "Has appeared..."
+	}
+
+	if ( BEAR_TYPE == 3 )
+	{
+		name The|Bear God of the Black Forest
+		takedmg poison 0.0
+		takedmg holy 1.0
+		setmodelbody 0 2
+		setvarg G_WEATHER_LOCK fog_black
+		callexternal players ext_weather_change G_WEATHER_LOCK
+
+		callevent 10.0 make_dewm_tree
+		usetrigger make_trees
+		infomsg all "The Bear God of the Black Forest" "Has appeared..."
+	}
+
+	invincible 0
+}
+
+{ intro_loop
+	if IN_INTRO
+	setvard AS_ATTACKING 20
+	setvard SUSPEND_AI 1
+	setangle face $vec(0,INTRO_YAW,0)
+	playanim once ANIM_INTRO
+	setidleanim ANIM_INTRO
+	setmoveanim ANIM_INTRO
+	callevent 0.1 intro_loop
+}
+
+{ intro_down
+	setvard AS_ATTACKING 20
+	setangle face $vec(0,INTRO_YAW,0)
+	setvard ANIM_INTRO attack
+}
+
+{ end_intro
+	setangle face $vec(0,INTRO_YAW,0)
+	setvard IN_INTRO 0
+	setmoveanim ANIM_WALK
+	setidleanim ANIM_IDLE
+	callevent npcatk_resume_ai
+	local FIRST_DEST game.monster.origin
+	vectoradd FIRST_TEST $relpos($vec(0,INTRO_YAW,0),$vec(0,1024,0))
+	setmovedest FIRST_TEST MOVE_RANGE
+}
+
+{ npc_post_spawn
+	setangle face $vec(0,INTRO_YAW,0)
+	setvard ATTACK_RANGE 250
+	setvard ATTACK_HITRANGE 275
+	setvard ATTACK_MOVERANGE 200 
+}
+
+{ make_uber_blizzard
+	if game.monster.isalive
+	createnpc monsters/summon/uber_blizzard $relpos(0,0,0) $get(ent_me,id) DMG_STORM STORM_DUR STORM_RAD 30%
+	local REFRESH_BLIZ STORM_DUR
+	add REFRESH_BLIZ 5
+	callevent REFRESH_BLIZ make_uber_blizzard
+}
+
+{ bear_stomp
+	if !STOMP_DELAY
+	setvard STOMP_DELAY 1
+	callevent FREQ_STOMP bg_reset_stomp_delay
+	callevent 0.5 repulse_stomp
+}
+
+{ repulse_stomp
+	createnpc monsters/summon/stun_burst $relpos(0,0,0) $get(ent_me,id) 512 0 SMASH_DAMAGE 
+}
+
+{ bg_reset_stomp_delay
+	setvard STOMP_DELAY 0
+}
+
+{ [override] bear_shake
+
+   effect screenshake $relpos(0,0,0) 380 20 1 512
+   playsound 1 SOUND_GETDOWN
+}
+
+{ [override] bear_walkeffect
+
+   effect screenshake $relpos(0,0,0) 256 10 1 256
+   playrandomsound 1 SOUND_UPSTEP1 SOUND_UPSTEP2
+}
+
+{ [override] frame_attack1
+
+   playrandomsound game.sound.weapon BEAR_VOLUME SOUND_ATTACK1 SOUND_ATTACK2 SOUND_ATTACK3	//Attack grunts
+
+   setvard BEAR_ISSTOMPATK 0
+	//I r effing huge thus I need to reach over (read: through) allies to hit opponents'
+	//so I do direct damage
+	if $get(HUNT_LASTTARGET,range) < ATTACK_HITRANGE
+   dodamage ent_lastseen direct ATTACK_DAMAGE ATTACK_HITCHANCE
+}
+
+{ npc_selectattack
+	if !BG_STAND_DELAY
+	setvard BG_STAND_DELAY 1
+	callevent FREQ_STAND bg_reset_stand_delay
+	callevent bear_standup
+}
+
+{ bg_reset_stand_delay
+	setvard BG_STAND_DELAY 0
+}
+
+{ [override] game_damaged_other
+
+   local SHOULD_PUSH_ENTITY 1
+   if( BEAR_ISSTOMPATK )
+   {
+   	//Let player jump to avoid stomp damage
+   	if( !$get(ent_laststruckbyme,onground) )
+	{
+   		setvard SHOULD_PUSH_ENTITY 0
+		setvard game.monster.canceldamage 1
+	}
+   }
+
+   if SHOULD_PUSH_ENTITY
+
+   local FORWARDPUSH 190
+   local SIDEPUSH $randf(-60,0)
+   local UPPUSH 10
+   if( BEAR_ISDEAD )
+   {
+   	setvard FORWARDPUSH 100
+   	setvard SIDEPUSH 0
+  	setvard UPPUSH 200
+   }
+
+	if BG_PUSH_ATK
+   addvelocity ent_laststruckbyme $relvel(SIDEPUSH,FORWARDPUSH,UPPUSH)	//Push the player a bit
+	setvard BG_PUSH_ATK 0
+}
+
+{ frame_attack1
+	setvard BG_PUSH_ATK 1
+}
+
+{ bear_stomp
+	setvard BG_PUSH_ATK 1
+}
+
+{ npc_death
+	setvarg G_WEATHER_LOCK 0
+
+	if ( $lcase(game.map.name) isnot tundra )
+	{
+		callexternal players ext_weather_change clear
+	}
+	else
+	{
+		if game.players.totalhp < 2000
+		usetrigger mm_early_release
+	}
+
+	if ( $lcase(game.map.name) equals skycastle )
+	{
+		 callexternal players ext_clear_valid_gauntlets
+	}
+
+	callexternal GAME_MASTER gm_bear_god_death
+
+}
+
+{ make_storm_bolt
+	callevent FREQ_BOLT make_storm_bolt
+	setvard FOUND_TARGET 0
+	callevent pick_player_inrange 2048
+	if ( FOUND_TARGET ) callevent make_storm_bolt2
+}
+
+{ make_storm_bolt2
+	//dbg selected $get(P_TARGET,name) as target ( RND_TARGET of N_TARGETS [ BG_LPLAYERS ] )
+	local P_ORG $get(P_TARGET,origin)
+	vectorset P_ORG z $get_ground_height(P_ORG)
+	createnpc monsters/summon/shock_beam P_ORG $get(ent_me,id) 128 7.0 40 (255,255,0) 2.0
+}
+
+{ pick_player_inrange //PARAM1=range
+	getplayersnb BG_LPLAYERS
+	local N_TARGETS $get_token_amt(BG_LPLAYERS)
+	setvard BG_LOOP_COUNT 0
+	setvard BG_RANGE PARAM1
+	setvard BG_LPLAYERS_INRANGE ''
+	calleventloop N_TARGETS filter_range_loop
+	//dbg temp targets in range returned BG_LPLAYERS_INRANGE amongst BG_LPLAYERS
+
+	local N_TARGETS $get_token_amt(BG_LPLAYERS_INRANGE)
+	local RND_TARGET $rand(1,N_TARGETS)
+	subtract RND_TARGET 1 //token strings enumberate from 0
+	setvard P_TARGET $get_token(BG_LPLAYERS,RND_TARGET)
+	if ( $get(P_TARGET,isalive) ) setvard FOUND_TARGET 1
+}
+
+{ filter_range_loop
+	local CUR_PLAYER $get_token(BG_LPLAYERS,BG_LOOP_COUNT)
+	add BG_LOOP_COUNT 1
+	if ( $get(CUR_PLAYER,range) <= BG_RANGE ) token.add BG_LPLAYERS_INRANGE CUR_PLAYER
+}
+
+{ make_dewm_tree
+	callevent FREQ_TREE make_dewm_tree
+
+	if N_TREES < 3
+	setvard FOUND_TARGET 0
+	callevent pick_player_inrange 2048
+	if FOUND_TARGET
+	local P_ORG $get(P_TARGET,origin)
+	createnpc monsters/summon/doom_plant P_ORG $get(ent_me,id) 20
+	add N_TREES 1
+}
+
+{ plant_died
+	subtract N_TREES 1
+}
+
+{ npc_monster_stuck
+	//black bear god has a habbit of getting stuck in his shrubbery
+	if STUCK_COUNT > 2
+	callexternal all master_stuck
+}
+
+{ worldevent_time
+	//reset blackness on hour advance
+	if BEAR_TYPE == 3
+	callevent 0.1 re_black
+}
+
+{ re_black
+	callexternal all game_playercmd_setweather fog_black 1 1
+}

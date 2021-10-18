@@ -1,0 +1,208 @@
+//Thothie - naming conventions
+//Orc base
+
+{
+	setvar IS_UNHOLY 1
+	setvard IMMUNE_VAMPIRE 1
+
+	const FREQ_BOW 2.0
+	const FIN_EXP 45
+	setvard NPC_MUST_SEE_TARGET 1
+   const SOUND_STRUCK1 body/armour1.wav
+   const SOUND_STRUCK2 body/armour2.wav
+   const SOUND_STRUCK3 body/armour3.wav
+   const SOUND_HIT body/armour3.wav
+   const SOUND_HIT2 body/armour2.wav
+   const SOUND_HIT3 body/armour1.wav
+   const SOUND_PAIN body/armour1.wav
+   const SOUND_ATTACK1 none
+   const SOUND_ATTACK2 none
+   const SOUND_ATTACK3 none
+   const SOUND_DEATH none
+   setvar ANIM_RUN run
+   setvar ANIM_IDLE idle1
+   setvar ANIM_WALK walk
+   setvard ANIM_DEATH die
+//   setvard CAN_HUNT 1
+   //setvard HUNT_AGRO 1		//base_npc_attack - Premptive attack
+//   setvard CAN_HEAR 1		//Turn to face enemies I hear
+//   setvard CAN_FLEE 0		//Don't flee
+//   setvard CAN_FLINCH 0		//Flinch when hit
+//   setvard LAST_ENEMY		`NONE`
+   const SOUND_BOW weapons/bow/bow.wav
+   setvard DROP_GOLD 1			//Gold Drop
+   setvard DROP_GOLD_AMT $rand(15,25)	//
+   setvard NPC_GIVE_EXP FIN_EXP
+
+   setvard DROPS_CONTAINER 1
+   setvard CONTAINER_DROP_CHANCE 10% 
+   setvard CONTAINER_SCRIPT chests/quiver_of_silver
+
+   setvard ANIM_ATTACK shootorcbow	//Attack animation
+
+   const AIM_RATIO 50			//Ratio of target distance to aim-up angle up
+   const ARROW_DAMAGE_LOW 12
+   const ARROW_DAMAGE_HIGH 15
+   setvard MOVE_RANGE 400
+   setvard ATTACK_RANGE 60
+   const ATTACK_SPEED 1000
+   const ATTACK_CONE_OF_FIRE 2//Cone of fire
+
+	setvard IMMUNE_POISON 1
+
+	setvard I_AM_TURNABLE 0
+}
+
+#include monsters/base_monster
+#include monsters/base_turn_undead
+
+{ npc_spawn
+
+	name Animated armor
+	roam 1
+	race demon
+	width 40
+	height 90
+	hp 200
+	stepsize 16 //override basic step size or these things walk off the catwalks in keledrosruins
+	setmodel monsters/animarmor.mdl
+	setidleanim ANIM_IDLE
+	setmoveanim ANIM_WALK
+	blood none
+
+	takedmg all 0.9
+	takedmg poison 0.0
+	setvard IMMUNE_POISON 1
+	takedmg holy 3.0
+	takedmg lightning 1.2
+
+	setmodelbody 1 1	//Pointy hat
+	setmodelbody 2 3	//Steel Bow
+}
+
+{ npc_targetsighted		//Warcry
+
+	if ( $get(PARAM1,range) < ATTACK_SPEED )
+	{
+		if !ATTACK_DELAY
+		//if $cansee(enemy)
+		if $cansee(HUNT_LASTTARGET)
+		callevent do_attack
+	}
+
+
+   local LASTSEEN_ENEMY $get(ent_lastseen,id)
+   if LASTSEEN_ENEMY isnot LAST_ENEMY
+
+   playsound game.sound.voice 5 SOUND_ATTACK2
+   setvard LAST_ENEMY LASTSEEN_ENEMY
+
+}
+
+{ reset_attack_delay
+	setvard ATTACK_DELAY 0
+}
+
+   //Hit by someone
+{ npc_struck
+
+	playrandomsound game.sound.voice game.sound.maxvol SOUND_PAIN SOUND_STRUCK2 SOUND_PAIN none none
+}
+
+{ npc_targetsighted
+	setvard AS_ATTACKING game.time
+	add AS_ATTACKING 1.0
+}
+
+{  game_damaged_other
+
+   if ATTACK_PUSH isnot 'ATTACK_PUSH'
+   if ATTACK_PUSH isnot 'none'
+
+   addvelocity ent_laststruckbyme ATTACK_PUSH	//Push the player a bit
+}
+
+{
+   eventname npc_flinch
+
+   playanim critical flinch
+}
+
+{
+   eventname retaliate
+   if $rand(1,3) == 1
+
+   setmovedest ent_laststruck 9999
+   look
+   callevent hunt_look
+}
+
+{  shoot_arrow
+
+   local AIM_ANGLE $get(ent_lastseen,dist)		//Aim up a bit
+   divide AIM_ANGLE AIM_RATIO				//
+   setangle add_view.x AIM_ANGLE			//
+
+   local LCL_ATKDMG $randf(ARROW_DAMAGE_LOW,ARROW_DAMAGE_HIGH)
+   tossprojectile view ATTACK_SPEED LCL_ATKDMG ATTACK_CONE_OF_FIRE proj_arrow_npc (0,0,48)
+   setmodelbody 3 0		//Hide arrow
+   playsound 2 10 SOUND_BOW
+
+	setvard AS_ATTACKING game.time
+	add AS_ATTACKING 5.0
+}
+
+{  grab_arrow			//Called from the animation...
+				//Just pulled an arrow out of quiver
+   	setmodelbody 3 1	//Show arrow
+	setvard AS_ATTACKING game.time
+	add AS_ATTACKING 5.0
+}
+
+{ game_dynamically_created
+
+	setvard SPAWNER PARAM1
+}
+
+//This system allows Keledros' spawners to keep track of which archers are alive and which are dead, and can therefor be resummoned.
+{ two_was_summoned
+	setvarg ONE_IS_DEAD 0
+	setvard I_AM_ONE 1
+}
+
+{ two_was_summoned
+	setvarg TWO_IS_DEAD 0
+	setvard I_AM_TWO 1
+}
+
+{ three_was_summoned
+	setvarg THREE_IS_DEAD 0
+	setvard I_AM_THREE 1
+}
+
+{ four_was_summoned
+	setvarg FOUR_IS_DEAD 0
+	setvard I_AM_FOUR 1
+}
+
+
+{ npc_death		//On death, don't display weapon
+
+   if ( I_AM_ONE == 1 ) setvarg ONE_IS_DEAD 1
+   if ( I_AM_TWO == 1 ) setvarg TWO_IS_DEAD 1
+   if ( I_AM_THREE == 1 ) setvarg THREE_IS_DEAD 1
+   if ( I_AM_FOUR == 1 ) setvarg FOUR_IS_DEAD 1
+
+   setmodelbody 2 0		//Hide weapon
+   setmodelbody 3 0		//Hide arrow
+   setmodelbody 4 0		//Hide Shield
+
+   callexternal SPAWNER undead_died
+}
+
+{ do_attack
+	setvard AS_ATTACKING game.time
+	setvard ATTACK_DELAY 1
+	callevent FREQ_BOW reset_attack_delay
+	playanim once ANIM_ATTACK
+}

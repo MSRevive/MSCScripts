@@ -1,0 +1,206 @@
+//lil fire spider
+//big ones go splodie on death
+{
+	//base anims
+	setvar ANIM_IDLE idle
+	setvar ANIM_WALK walk
+	setvar ANIM_RUN run
+	setvard ANIM_ATTACK attack
+	const ANIM_DODGE dodge
+	setvard ANIM_DEATH die
+
+	//base stats
+	setvard MOVE_RANGE 30
+	setvard ATTACK_RANGE 50
+	setvard ATTACK_HITRANGE 80
+	setvard NPC_GIVE_EXP 10
+
+	//custom stats
+	const FREQ_IDLE_NOISE 3.6
+	const DMG_BITE $randf(3,8)
+	const FREQ_LEAP 15 //$rand(20,40)
+	const RANGE_LEAP_MAX 512
+	const RANGE_LEAP_LONG 256
+	const RANGE_LEAP_SHORT 64
+	const DMG_BURN_DOT 10
+
+	//custom anim
+	const ANIM_LEAP jump_miss
+
+	//sounds
+	const SOUND_PAIN monsters/spider/spiderhiss.wav
+	const SOUND_STRUCK1 body/flesh1.wav
+	const SOUND_STRUCK2 body/flesh2.wav
+	const SOUND_STRUCK3 body/flesh3.wav
+	const SOUND_STRUCK4 monsters/spider/spiderhiss.wav
+	const SOUND_STRUCK5 monsters/spider/spiderhiss.wav
+	const SOUND_IDLE1 monsters/spider/spideridle.wav
+	const SOUND_DEATH monsters/spider/spiderdie.wav
+	precache SOUND_IDLE1
+
+	//latch stuff
+	const ANIM_LATCH_ON	 	hitbite
+	const ANIM_LATCH_OFF	 	falloff
+	const SOUND_LATCH_HISS 	monsters/spider/spiderhiss2.wav
+	const SOUND_LATCH_JUMP 	monsters/spider/spiderjump.wav
+	const SOUND_LATCH_PLYR 	monsters/spider/spiderlatch.wav
+	const SOUND_LATCH_MNTR 	body/flesh1.wav
+}
+
+#include monsters/base_monster_new
+
+{  npc_spawn
+
+	name a|Fire Spider Hatchling
+	setmodel monsters/fer_spider_mini.mdl
+	setprop ent_me skin 1
+	hp 10
+	width 16
+	height 20
+	race demon
+	hearingsensitivity 6
+	roam 1
+	setidleanim ANIM_IDLE
+	setmoveanim ANIM_WALK
+	setbbox npcsize //hoping will help with "reach" issues
+
+	setsolid none
+}
+
+
+{ bite1 //model anim
+	callevent npcatk_dodamage NPCATK_TARGET ATTACK_HITRANGE DMG_BITE ATTACK_ACCURACY
+}
+
+{ game_struck
+	playrandomsound game.sound.body 10 SOUND_STRUCK1 SOUND_STRUCK2 SOUND_STRUCK3 SOUND_STRUCK4 SOUND_STRUCK5
+}
+
+{
+   repeatdelay FREQ_IDLE_NOISE
+
+   if game.monster.alive
+   if !SPIDER_LATCHED
+
+   svplaysound 2 5 SOUND_IDLE1
+}
+
+{ game_death
+	svplaysound 2 0 SOUND_IDLE1
+}
+
+{ npc_targetsighted
+
+	if NPCATK_TARGET isnot unset
+	if game.time > LAST_LEAP
+	if $get(NPCATK_TARGET,range) < RANGE_LEAP_MAX
+
+	setvard LAST_LEAP game.time
+	add LAST_LEAP FREQ_LEAP
+
+	callevent npcatk_suspend_ai
+
+	playanim critical ANIM_LEAP
+	setmovedest NPCATK_TARGET 999
+	callevent 0.1 leap_boost
+	callevent 1.0 check_hit
+}
+
+{ check_hit
+	if !AM_CHEWING
+	callevent npcatk_resume_ai
+	setvard JUMP_SCAN_ACTIVE 0
+}
+
+{ leap_boost
+	playsound 0 10 SOUND_LATCH_HISS
+	if ( $get(NPCATK_TARGET,range) >= RANGE_LEAP_LONG ) local JUMP_VEL $relvel(0,800,300)
+	if ( $get(NPCATK_TARGET,range) < RANGE_LEAP_LONG ) local JUMP_VEL $relvel(0,400,200)
+	if ( $get(NPCATK_TARGET,range) <= RANGE_LEAP_SHORT ) local JUMP_VEL $relvel(0,200,50)
+	addvelocity ent_me JUMP_VEL
+	setvard JUMP_SCAN_ACTIVE 1
+	callevent 0.1 jump_scan
+}
+
+{ jump_scan
+	if JUMP_SCAN_ACTIVE
+	callevent 0.1 jump_scan
+	local IN_BOX $get_tbox(enemy,64)
+	if IN_BOX isnot 'none'
+	local IN_BOX $sort_entlist(IN_BOX,range)
+	callevent latch_onto $get_token(IN_BOX,0)
+}
+
+{ latch_onto
+	setsolid box
+	setvard MY_V_POS $rand(-64,0)
+	setvard AM_CHEWING 1
+	setvard JUMP_SCAN_ACTIVE 0
+	setvard LATCH_TARGET PARAM1
+	//setfollow LATCH_TARGET align_bottom
+	playanim break
+	setangle face.pitch 0
+	setidleanim ANIM_LATCH_ON
+	setmoveanim ANIM_LATCH_ON
+	//applyeffect LATCH_TARGET effects/effect_spiderlatch 5.0 DMG_BITE $get(ent_me,id)
+	applyeffect LATCH_TARGET effects/effect_burn 10.0 $get(ent_me,id) DMG_BURN_DOT
+	setbbox (-40,-40,0) (40,40,128)
+	callevent spider_latch_think
+	callevent 5.0 do_dismount
+}
+
+{  spider_latch_think
+
+   	if AM_CHEWING
+
+	dbg chewing
+	//target face
+	if ( $get(LATCH_TARGET,isplayer) )
+	{
+		local TARG_ORG $get(LATCH_TARGET,eyepos)
+	}
+	else
+	{
+		local TARG_ORG $get(LATCH_TARGET,origin)
+		local TARG_HEIGHT $get(LATCH_TARGET,height)
+		vectoradd TARG_ORG z TARG_HEIGHT
+	}
+	local TARG_YAW $get(LATCH_TARGET,angles.yaw)
+	vectoradd TARG_ORG $relpos($vec(0,TARG_YAW,0),$vec(0,5,MY_V_POS))
+	setorigin ent_me TARG_ORG
+
+   	if( !$get(LATCH_TARGET,alive) ) callevent do_dismount
+	else callevent 0.01 spider_latch_think
+}
+
+{ do_dismount
+
+	setsolid none
+	setvard ROLLING_AWAY 1
+	callevent roll_away
+
+	setvard AM_CHEWING 0
+	//setfollow none
+	playanim critical ANIM_LATCH_OFF
+	setbbox (0,0,0) (0,0,0)
+	callevent npcatk_resume_ai
+}
+
+{ roll_away
+	if $get(ent_me,isalive)
+	if ROLLING_AWAY
+	//callevent as_check_spawn_stuck
+	//callevent 0.1 roll_away
+	//leap away
+	local TARGET_ORG $get(LATCH_TARGET,origin)
+	local TARG_ANG $angles(game.monster.origin,TARGET_ORG)
+	addvelocity ent_me $relvel($vec(0,TARG_ANG,0),$vec(10,-500,10))
+}
+
+{  frame_falloffend
+	setvard ROLLING_AWAY 0
+  	setidleanim ANIM_IDLE
+	setmoveanim ANIM_RUN
+	playanim critical ANIM_IDLE
+	setbbox npcsize
+}

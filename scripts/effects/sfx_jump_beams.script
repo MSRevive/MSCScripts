@@ -1,0 +1,304 @@
+//Beam that jump from target to target
+//beam report to player (or GM) when landing, finding new targets, or selecting new landing, server side
+//hover on target ~2 sec before jumping to next
+
+//needs: sounds, sprite effects, lag test
+
+{
+	const MAX_JUMPS 6
+	const BONE_BEAM_WIDTH 5
+	const JUMP_BEAM_WIDTH 10
+
+	const SOUND_IDLEZAP1 debris/zap4.wav
+	const SOUND_IDLEZAP2 debris/zap2.wav
+	const SOUND_IDLEZAP3 debris/zap5.wav
+	const SOUND_ZAP_TARG magic/lightning_strike2.wav
+}
+
+{ client_activate //<owner> <first_origin> <initial_yaw> <first_target_index|-1>
+	setvard FX_OWNER PARAM1
+	local FX_ORIGIN PARAM2
+	local FX_YAW PARAM3
+
+	setcallback render enable
+
+	local FIRST_TARG PARAM4
+
+	dbg client_activate own FX_OWNER org FX_ORIGIN yaw FX_YAW ftarg FIRST_TARG
+
+	setvard TARG_IS_ENT 1
+	if ( FIRST_TARG == -1 ) setvard TARG_IS_ENT 0
+	setvard GOT_NEW_TARG 0
+	setvard SWIRL_ROT 0
+
+	setvard N_JUMPS 0
+	
+	if ( !TARG_IS_ENT )
+	{
+		setvard BEAM_TARG FX_ORIGIN
+		setvard OLD_TARG BEAM_TARG
+		vectoradd BEAM_TARG $relpos($vec(0,FX_YAW,0),$vec(0,128,0))
+		vectorset BEAM_TARG z $get_ground_height(BEAM_TARG)
+		vectoradd BEAM_TARG z 32
+		cleffect beam_points FX_ORIGIN BEAM_TARG lgtning.spr 1.0 JUMP_BEAM_WIDTH 1 255 255 30 (255,64,0)
+		setvard SWIRL_ACTIVE 1
+		setvard STATIC_ACTIVE 0
+		callevent 1.0 beam_get_svtarg
+		callevent 2.0 beam_jump
+	}
+	else
+	{
+		setvard BEAM_TARG FIRST_TARG
+		setvard OLD_TARG BEAM_TARG
+		cleffect beam_end FIRST_TARG 1 FX_ORIGIN lgtning.spr 1.0 JUMP_BEAM_WIDTH 1 255 255 30 (255,64,0)
+		setvard SWIRL_ACTIVE 0
+		setvard STATIC_ACTIVE 1
+		callevent 1.0 beam_get_svtarg
+		callevent 2.0 beam_jump
+	}
+
+	//sprite at origin
+	//spark at dest
+	//if static not active, swirl at point
+
+
+	setvard FX_ACTIVE 1
+	callevent fx_loop
+
+	callevent 120.0 end_fx //just in case client locks/drops and beam tries to go on forever
+}
+
+{ game_prerender
+	if FX_ACTIVE
+	if ( STATIC_ACTIVE )
+	{
+		local RND_BONE $rand(1,10)
+		local BONE1_ORG $getcl(BEAM_TARG,bonepos,RND_BONE)
+		local RND_BONE $rand(1,10)
+		local BONE2_ORG $getcl(BEAM_TARG,bonepos,RND_BONE)
+
+		//dbg *** static BEAM_TARG BONE1_ORG
+
+		//in case beyond # of available bones, or bones match
+		if ( BONE1_ORG equals $vec(0,0,0) ) local BONE1_ORG $getcl(BEAM_TARG,origin)
+		if ( BONE2_ORG equals $vec(0,0,0) ) local BONE2_ORG $getcl(BEAM_TARG,origin)
+		if ( BONE2_ORG equals BONE1_ORG )
+		{
+			vectoradd BONE2_ORG $relpos($vec(0,$randf(0,359),0),$vec($randf(-48,48),$randf(-48,48),0))
+		}
+		
+		cleffect beam_points BONE1_ORG BONE2_ORG lgtning.spr 0.001 BONE_BEAM_WIDTH 1 255 255 30 (255,64,0)
+	}
+}
+
+{ fx_loop
+	if FX_ACTIVE
+
+	callevent 0.05 fx_loop
+
+	//dbg *** fx_loop TARG_IS_ENT BEAM_TARG
+
+	if SWIRL_ACTIVE
+	//coils while waiting to leap to next target
+	local BEAM_START BEAM_TARG
+	local BEAM_END BEAM_START
+	add SWIRL_ROT 40
+	if ( SWIRL_ROT > 359 ) setvard SWIRL_ROT 0
+	vectoradd BEAM_END $relpos($vec(0,SWIRL_ROT,0),$vec(0,15,2))
+	if ( SNAP_GROUND )
+	{
+		setvard SNAP_GROUND 0
+		vectorset BEAM_END z $get_ground_height(BEAM_END)
+	}
+	cleffect beam_points BEAM_START BEAM_END lgtning.spr 1.0 BONE_BEAM_WIDTH 1 255 255 30 (255,64,0)
+	setvard BEAM_TARG BEAM_END
+}
+
+{ sv_sends_index //<index> - script recieves its clid from server 0.1 seconds after start
+	setvard BEAM_SV_IDX PARAM1
+}
+
+{ beam_get_svtarg
+	if game.localplayer.index equals FX_OWNER
+	if ( TARG_IS_ENT )
+	{
+		local REPORT_ORG $getcl(BEAM_TARG,origin)
+	}
+	else
+	{
+		local REPORT_ORG BEAM_TARG
+	}
+	dbg *** beam_get_svtarg
+	
+	cleffect ce player ext_jump_beam $quote(REPORT_ORG) TARG_IS_ENT $quote(BEAM_TARG) BEAM_SV_IDX x
+}
+
+{ update_targ //<target_index|-1> called from server's player/externals
+	dbg *** update_targ PARAM1 [ gtn GOT_NEW_TARG ]
+
+	if !GOT_NEW_TARG
+	setvard GOT_NEW_TARG 1
+	setvard NEW_TARG PARAM1
+
+	if ( NEW_TARG == -1 ) callevent random_jump //no new living target, trace to random loc
+}
+
+{ random_jump
+	dbg *** random_jump enter
+
+	if ( TARG_IS_ENT )
+	{
+		setvard OLD_TARG $getcl(BEAM_TARG,origin)
+	}
+	else
+	{
+		setvard OLD_TARG BEAM_TARG
+	}
+
+	dbg *** random_jump trace
+
+	setvard NEW_TARG OLD_TARG
+	vectoradd NEW_TARG $relpos($vec(0,$randf(0,359),0),$vec(0,256,32))
+	local TRACE_START OLD_TARG
+	local TRACE_END NEW_TARG
+	local TRACE_LINE $get_traceline(TRACE_START,TRACE_END,clworld)
+	setvard NEW_TARG TRACE_LINE
+
+	dbg *** random_jump exit
+}
+
+{ beam_jump
+
+	if FX_ACTIVE
+
+	//dbg *** beam_jump enter [ isent TARG_IS_ENT jmps N_JUMPS vs MAX_JUMPS ]
+
+	if ( N_JUMPS >= MAX_JUMPS )
+	{
+		//dbg *** beam_jump MAX JUMPS ABORT
+		callevent end_fx
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	//dbg *** beam_jump passed max jump
+
+	setvard STATIC_ACTIVE 0
+	setvard SWIRL_ACTIVE 0
+
+	add N_JUMPS 1
+
+	local WAS_ENT TARG_IS_ENT
+
+	if ( TARG_IS_ENT )
+	{
+		setvard OLD_TARG $getcl(BEAM_TARG,origin)
+	}
+	else
+	{
+		setvard OLD_TARG BEAM_TARG
+	}
+
+	//dbg *** beam_jump passed is ent
+
+	if ( !GOT_NEW_TARG )
+	{
+		//client failed to report new targ (maybe lag)
+		//jump randomly about instead
+		callevent random_jump
+	}
+	setvard GOT_NEW_TARG 0
+
+	//dbg *** beam_jump passed new targ
+
+	setvard BEAM_TARG NEW_TARG
+
+	//dbg *** beam_jump ent_check enter
+
+	if ( BEAM_TARG startswith '(' )
+	{
+		setvard TARG_IS_ENT 0
+	}
+	else
+	{
+		setvard TARG_IS_ENT 1
+	}
+
+	//dbg *** beam_jump ent_check exit
+
+
+	//dbg *** beam_jump do_beam enter
+
+	if ( WAS_ENT ) vectoradd OLD_TARG z 32 //mitigates foot-to-foot movement
+
+	if ( !TARG_IS_ENT )
+	{
+		setvard BEAM_TARG OLD_TARG
+		vectoradd BEAM_TARG $relpos($vec(0,$randf(0,359),0),$vec(0,128,0))
+		vectorset BEAM_TARG z $get_ground_height(BEAM_TARG)
+		vectoradd BEAM_TARG z 32
+		cleffect beam_points OLD_TARG BEAM_TARG lgtning.spr 1.0 JUMP_BEAM_WIDTH 1 255 255 30 (255,64,0)
+		setvard SWIRL_ACTIVE 1
+		setvard SNAP_GROUND 1
+		setvard STATIC_ACTIVE 0
+		callevent 1.0 beam_get_svtarg
+		callevent 2.0 beam_jump
+	}
+	else
+	{
+		//tell server to burn now to sync up
+		if ( game.localplayer.index equals FX_OWNER )
+		{
+			cleffect ce player ext_jump_beam_burn BEAM_SV_IDX x
+		}
+
+		cleffect beam_end BEAM_TARG 1 OLD_TARG lgtning.spr 1.0 JUMP_BEAM_WIDTH 1 255 255 30 (255,64,0)
+		setvard SWIRL_ACTIVE 0
+		setvard STATIC_ACTIVE 1
+		callevent 1.0 beam_get_svtarg
+		callevent 2.0 beam_jump
+	}
+
+	if ( BEAM_TARG startswith '(' )
+	{
+		local SOUND_ORG BEAM_TARG
+	}
+	else
+	{
+		local SOUND_ORG $getcl(BEAM_TARG,origin)
+	}
+
+	if ( SWIRL_ACTIVE )
+	{
+
+		local RND_ZAP $rand(1,3)
+		if ( RND_ZAP == 1 ) sound.play3d SOUND_IDLEZAP1 10 SOUND_ORG
+		if ( RND_ZAP == 2 ) sound.play3d SOUND_IDLEZAP2 10 SOUND_ORG
+		if ( RND_ZAP == 3 ) sound.play3d SOUND_IDLEZAP3 10 SOUND_ORG
+	}
+	else
+	{
+		local RND_ZAP $rand(1,3)
+		if ( RND_ZAP == 1 ) sound.play3d SOUND_ZAP_TARG 10 SOUND_ORG
+	}
+
+	//dbg *** beam_jump do_beam exit
+
+	//dbg *** beam_jump exit [ isent TARG_IS_ENT targ BEAM_TARG njumps N_JUMPS ]
+}
+
+{ end_fx
+	dbg *** end_fx
+	if ( game.localplayer.index equals FX_OWNER )
+	{
+		if !TOLD_PLAYER_ENDED
+		setvard TOLD_PLAYER_ENDED 1
+		//cleffect ce player ext_jump_beam_end //It appears that this event is commented out in the externals, and therefore does nothing. -greatguys1@SEP2021
+	}
+	setvard FX_ACTIVE 0
+	callevent 1.0 remove_fx
+}
+
+{ remove_fx
+	removescript
+}

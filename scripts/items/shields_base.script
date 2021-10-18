@@ -1,0 +1,300 @@
+//Thothie - long awaited "make sheilds useful" patch up
+//Shields
+//
+//System:
+//- Shields have a small chance to "deflect" a damage while equipped
+//- When activated, shields absorb a percentage of incoming damage
+//- Players cannot attack while shield is active
+//- Shields break after absorbing/deflecting a certain amount of damage
+//- Rune Shields have other effects
+
+{
+	setvar AM_SHIELD 1
+
+	const NOPUSH_CHANCE 25%
+
+	const ANIM_IDLE1        	0
+	const ANIM_IDLE_TOTAL        	1
+	const ANIM_LIFT1        	0
+	const ANIM_THRUST1        	1
+	const ANIM_RETRACT1      	2
+	const MELEE_VIEWANIM_ATK 	ANIM_THRUST1
+	const BASEWEAPON_NO_HAND_IDLE   1		//base_weapon
+
+	const MODEL_WORLD      		weapons/p_weapons2.mdl // armor/shields/p_shields.mdl
+	const MODEL_HANDS      		weapons/p_weapons2.mdl //MODEL_HANDS
+  	const MODEL_WEAR      		weapons/p_weapons2.mdl // MODEL_WORLD
+  	const SOUND_THRUST      	weapons/cbar_miss1.wav
+  	const ANIM_PREFIX allshields //none //was buckler
+  	const PLAYERANIM_AIM		battleaxe
+
+	const MELEE_STAT      		parry
+	const MELEE_ACCURACY   		40
+	const MELEE_DMG_DELAY   	0.1
+	const MELEE_ATK_DURATION	1.0
+	const MELEE_ACCURACY   		40
+	const MELEE_CALLBACK   		melee
+	const MELEE_NOISE  		400
+	const MELEE_SOUND_DELAY		0
+	const SOUND_SWIPE		SOUND_THRUST
+	const SHIELD_TAKEDMG		0.5
+	const SOUND_BLOCK			body/armour3.wav
+	const SHIELD_BREAK_SOUND 	debris/bustmetal1.wav
+}
+
+#include items/base_melee
+
+{  [override] weapon_spawn
+
+   sethand 	left
+   wearable     1 bow
+
+   //Normal swing attack
+   //===================
+
+   local reg.attack.type		hold-strike
+   local reg.attack.keys		+attack1
+   local reg.attack.range		0
+   local reg.attack.dmg			0
+   local reg.attack.dmg.range		100
+   local reg.attack.dmg.type		block
+   local reg.attack.energydrain		0
+   local reg.attack.stat		MELEE_STAT
+   local reg.attack.hitchance		MELEE_ACCURACY
+   local reg.attack.priority		0
+   local reg.attack.delay.strike	MELEE_DMG_DELAY
+   local reg.attack.delay.end		MELEE_ATK_DURATION
+   local reg.attack.ofs.startpos	MELEE_STARTPOS
+   local reg.attack.ofs.aimang		MELEE_AIMANGLE
+   local reg.attack.callback		MELEE_CALLBACK
+   local reg.attack.noise		MELEE_NOISE
+   local reg.attack.dmg.ignore		1
+
+   registerattack
+
+   //Charge up attack (200%) - Shield bash
+   //=====================================
+
+//   local reg.attack.priority	1
+//   local reg.attack.keys	-attack1
+//   local reg.attack.callback	special_02
+//   multiply reg.attack.dmg	2
+//   local reg.attack.chargeamt	200%
+//   local reg.attack.reqskill	5
+//
+//   registerattack
+
+
+	setvard PARRY_MULTI_OUT PARRY_MULTI
+
+
+   callevent shield_spawn
+}
+
+{ melee_start
+	if $rand(1,100) < NOPUSH_CHANCE
+	scriptflags ent_me add shield nopush 1 -1 none
+}
+
+{  melee_hold
+
+	playowneranim hold aim_axe_onehand squatwalk1
+}
+
+{  melee_end
+
+	scriptflags ent_me remove shield
+	playowneranim break
+	playviewanim ANIM_RETRACT1
+}
+
+{ bweapon_effect_remove
+	scriptflags ent_me remove shield
+}
+
+{ game_wear
+
+	setvard		IS_DEPLOYED	0
+	setmodel	MODEL_WEAR
+	local		L_SUBMODEL MODEL_BODY_OFS
+	add		L_SUBMODEL 3
+	//add		L_SUBMODEL 1 //for new p_body
+	setmodelbody 	0 L_SUBMODEL
+}
+
+{ game_show
+	setmodel	MODEL_WEAR
+	local		L_SUBMODEL MODEL_BODY_OFS
+	add		L_SUBMODEL 3
+	setmodelbody 	0 L_SUBMODEL
+}
+
+{ weapon_deploy
+
+	setvard		IS_DEPLOYED	1
+	local L_ANIM_IDLE ANIM_PREFIX
+	stradd L_ANIM_IDLE _idle
+  	playanim	L_ANIM_IDLE
+}
+
+{ [override] game_viewanimdone
+
+     if ANIM_IDLE_TOTAL > 0
+     if !game.item.attacking
+     
+     callevent $rand(ANIM_IDLE_DELAY_LOW,ANIM_IDLE_DELAY_HIGH) item_idle
+}
+
+{ game_takedamage //1: Attacker  2: Inflictor  3: dmg  4: dmg type
+
+	if IS_DEPLOYED
+
+	if ( SHIELD_PRE_BLOCK_EFFECT )
+	{
+		setvard EXIT_BLOCK 0
+		local OUT_PAR1 PARAM1
+		local OUT_PAR2 PARAM2
+		local OUT_PAR4 PARAM4
+		callevent shield_pre_block_effect OUT_PAR1 OUT_PAR2 SHIELD_DMG_TAKEN OUT_PAR4
+	}
+	if !EXIT_BLOCK
+
+	////dbg temp shield_dmgtype PARAM4
+	
+	//if ( PARAM4 startswith cold ) local CANT_BLOCK 1
+	//if ( PARAM4 startswith fire ) local CANT_BLOCK 1
+	//if ( PARAM4 startswith poison ) local CANT_BLOCK 1
+	if ( PARAM4 startswith target ) local CANT_BLOCK 1
+	if ( PARAM4 contains effect ) local CANT_BLOCK 1
+	if !CANT_BLOCK
+
+	//if PARAM4 isnot magic //use magic to bypass parry without bypassing shield
+	//if PARAM4 isnot lightning //going to be kind and let peeps deflect lightning
+
+	////dbg DamgeType DMG_TYPE
+	//This is pointless as DMG_TYPE is not working (PARAM4 always empty)
+	//However, sheilds don't block any of these types anyways
+	//Keeping here in case this is fixed later
+
+	local MY_OWNER $get(ent_owner,id)
+	local THE_ATTACKER PARAM2
+	if $get(PARAM1,id) isnot $get(ent_owner,id)	//don't freeze self shielding from effects
+
+	local l.pos $get(ent_owner,origin)
+	local l.mypos $get(ent_owner,origin)
+	local l.myang $get(ent_owner,angles)
+	local l.attpos $get(PARAM1,origin)
+
+	if $within_cone2D(l.attpos,l.mypos,l.myang,100)	//Attack must come from in front of player
+
+	if ( SHIELD_REPORT_HITS )
+	{
+		local THE_INFLICTOR PARAM2
+		callevent shield_hit THE_ATTACKER THE_INFLICTOR $lcase(PARAM3) $lcase(PARAM4)
+	}
+
+	//if $rand(0,100) < MELEE_ACCURACY	//Chance to block at all (reduce damage or eliminate it)
+	
+	//local l.deflectroll $rand(0,100)
+	//if( game.item.attacking ) multiply l.deflectroll 0.75	//Bonus for holding shield up
+
+	////dbg ItemUp game.item.attacking UpChance BLOCK_CHANCE_UP downchance BLOCK_CHANCE_DOWN
+
+	if( game.item.attacking ) 
+	{
+		////dbg Sheild is up
+		if ( $rand(1,100) <= BLOCK_CHANCE_UP ) 
+		{
+			setvard SHIELD_DMG_TAKEN PARAM3
+			local ORIG_DMG PARAM3
+			multiply SHIELD_DMG_TAKEN DMG_BLOCK_UP
+
+			if ( SHIELD_IMMORTAL == 0 ) 
+			{
+				subtract ORIG_DMG SHIELD_DMG_TAKEN
+				subtract SHIELD_HEALTH ORIG_DMG
+				local SHIELD_STATUS SHIELD_HEALTH
+				divide SHIELD_STATUS SHIELD_MAXHEALTH
+				multiply SHIELD_STATUS 100
+				local SHIELD_STATUS $int(SHIELD_STATUS)
+			}
+			if ( SHIELD_IMMORTAL == 1 ) local SHIELD_STATUS 100
+
+			if ( ORIG_DMG > 0 )
+			{
+				stradd SHIELD_STATUS "%%"
+				playermessage Shield absorbed: ORIG_DMG hp ( shield hp: SHIELD_STATUS )
+			}
+			setdmg dmg SHIELD_DMG_TAKEN
+			callevent shield_deflect THE_ATTACKER
+		}
+	}
+	
+	if( !game.item.attacking ) 
+	{
+		////dbg Sheild is down
+		if ( $rand(1,100) <= BLOCK_CHANCE_DOWN ) 
+		{
+			if ( SHIELD_IMMORTAL == 0 ) 
+			{
+				subtract SHIELD_HEALTH PARAM3
+				local SHIELD_STATUS SHIELD_HEALTH
+				divide SHIELD_STATUS SHIELD_MAXHEALTH
+				multiply SHIELD_STATUS 100
+				local SHIELD_STATUS $int(SHIELD_STATUS)
+			}
+			if ( SHIELD_IMMORTAL == 1 ) local SHIELD_STATUS 100
+			setvard SHIELD_DMG_TAKEN PARAM3
+			if ( PARAM3 > 0 ) playermessage Deflected! ( shield health SHIELD_STATUS %%)
+			setdmg hit 0
+			setdmg dmg 0
+			//clientevent update ent_owner DMG_BLOCK_DOWN shield_absorb		
+			callevent shield_deflect THE_ATTACKER
+		}
+	}
+}
+
+{ shield_deflect //PARAM1 = attacker
+
+ 	playsound const.snd.body const.snd.fullvol SOUND_BLOCK
+
+	if ( SHIELD_IMMORTAL == 0 )
+	{
+		if ( SHIELD_HEALTH <= 0 ) 
+		{ 
+			//dbg Fuggin shield broke!
+ 			playsound 2 const.snd.fullvol SHIELD_BREAK_SOUND
+			removeitem name
+			playermessage YOUR SHIELD HAS BROKEN!
+			deleteme
+		}
+	}
+	if !game.item.attacking
+
+	playviewanim ANIM_RETRACT1
+}
+
+{ game_pickup
+
+	if ( SHIELD_IMMORTAL ) playermessage This shield is immortal.
+
+	if !SHIELD_IMMORTAL
+	local SHIELD_STATUS SHIELD_HEALTH
+	divide SHIELD_STATUS SHIELD_MAXHEALTH
+	multiply SHIELD_STATUS 100
+	local SHIELD_STATUS $int(SHIELD_STATUS)
+
+	playermessage This shield's health is SHIELD_STATUS %% ( $int(SHIELD_HEALTH) / $int(SHIELD_MAXHEALTH) hp )
+}
+
+{ weapon_equip
+	
+	//if ( $get(ent_owner,scriptvar,PL_PARRY_BASE) < SHIELD_BASE_PARRY ) callexternal ent_owner ext_set_parry_base SHIELD_BASE_PARRY
+	//callexternal ent_owner ext_set_parry_multi PARRY_MULTI
+}
+
+{ weapon_unequip
+
+	//if ( $get(ent_owner,scriptvar,PL_PARRY_BASE) <= SHIELD_BASE_PARRY ) callexternal ent_owner ext_set_parry_base 0
+	//callexternal ent_owner ext_set_parry_multi 1.0
+}

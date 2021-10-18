@@ -1,0 +1,91 @@
+//as proj_glob, but lets monster deal the damage, just reporting impact location
+{
+	const MODEL_HANDS      		none
+	//may make own over-sized model via scale QC
+	const MODEL_WORLD      		weapons/projectiles.mdl
+	const MODEL_BODY_OFS 68
+	const PROJ_ANIM_IDLE	spin_vertical_fast
+	const ITEM_NAME			firemana
+	const PROJ_DAMAGE_TYPE		acid_effect
+	const PROJ_MOTIONBLUR 0
+
+	const PROJ_DAMAGE			0
+	const PROJ_AOE_RANGE		0
+	const PROJ_AOE_FALLOFF		0
+	const PROJ_STICK_DURATION	0  //Don't stick in enemies
+	const PROJ_SOLIDIFY_ON_WALL	0  //Don't go solid on wall hit
+	//const SOUND_SMOOSH gonarch/gon_birth1.wav
+	const PROJ_IGNORENPC 0
+}
+
+#include items/proj_base
+
+{  projectile_spawn
+
+	name 		a|Acid Glob
+	gravity		0
+
+	setprop ent_me scale 0.25
+
+	playanim once spin_vertical_fast
+	setidleanim spin_vertical_fast
+}
+
+
+{  game_tossprojectile
+
+	playanim critical spin_vertical_fast
+	clientevent new all items/proj_slime_jet_cl $get(ent_me,index) xfireball3.spr
+	setvard MY_CL_ID game.script.last_sent_id
+	callevent 0.1 pick_target
+}
+
+{ pick_target
+	setvard MY_TARG $get(ent_expowner,scriptvar,'GLOB_TARG') //get target from owner
+	if MY_TARG isnot none
+	if ( !$get(MY_TARG,isplayer) )
+	{
+		setvard TARG_HALF_HEIGHT $get(MY_TARG,height)
+		multiply TARG_HALF_HEIGHT 0.5
+	}
+	else
+	{
+		setvard TARG_HALF_HEIGHT 0
+	}
+	setvard IS_ACTIVE 1
+	callevent home_on_target
+	callevent 10.0 max_chase_time
+}
+
+{ home_on_target
+	if IS_ACTIVE
+	if $get(MY_TARG,isalive)
+	callevent 0.25 home_on_target
+	local TARG_ORG $get(MY_TARG,origin)
+	vectoradd TARG_ORG z TARG_HALF_HEIGHT
+	local MY_ORG $get(ent_me,origin)
+	local ANG_TO_TARG $angles3d(MY_ORG,TARG_ORG)
+	vectorset ANG_TO_TARG x $neg($vec.x(ANG_TO_TARG))
+	//dbg orient_on_target ANG_TO_TARG
+	setprop ent_me velocity $relvel(ANG_TO_TARG,$vec(0,300,0))
+	setprop ent_me movedir ANG_TO_TARG
+}
+
+{ max_chase_time
+	//maxed out chase time, delete
+	callevent projectile_landed
+}
+
+{ projectile_landed
+	setvard IS_ACTIVE 0
+	local SPLOOSH_POINT $get(ent_me,origin)
+	clientevent new all effects/sfx_acid_splash SPLOOSH_POINT 64
+	callexternal ent_expowner ext_glob_landed SPLOOSH_POINT
+	clientevent update all MY_CL_ID end_fx
+	callevent 0.1 remove_me
+}
+
+{ remove_me
+	removescript
+	deleteent ent_me
+}

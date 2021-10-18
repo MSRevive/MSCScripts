@@ -1,0 +1,155 @@
+{
+	setvard DROP_GOLD 1			//Gold Drops
+	setvard DROP_GOLD_AMT $rand(150,220)	//
+	setvard NPC_GIVE_EXP 1750
+
+	setvard ANIM_ATTACK1 battleaxe_swing1_L //Attack animation 1
+	setvard ANIM_ATTACK2 swordswing1_L //Attack animation 2
+	setvard FLINCH_CHANCE 25%
+	const DMG_KICK $randf(25,100)
+
+	setvard ANIM_ATTACK ANIM_ATTACK1
+
+	const ATTACK_ACCURACY 70%
+	const DMG_SWORD $rand(400,800)
+
+	const FREQ_LUNGE 10.0
+	const LUNGE_RANGE 256
+
+	const SOUND_WALK1	monsters/troll/step1.wav
+	const SOUND_WALK2	monsters/troll/step2.wav
+
+   	const SOUND_UPSWING monsters/orc/attack1.wav
+   	const SOUND_SWINGHIT monsters/orc/pain.wav
+    const SOUND_SWINGMISS debris/bustmetal2.wav
+
+	const AS_MAX_ATTACK_TIME 10.0
+
+	const SORC_LRESIST 0.6
+	const SORC_PRESIST 1.2
+}
+
+#include monsters/orc_base_melee
+#include monsters/sorc_base
+
+{ orc_spawn
+
+	name a|Shadahar Juggernaut
+	setmodel monsters/sorc_huge.mdl
+	hp 5000
+	takedmg all 0.5
+	setstat parry 110
+	
+	width 48
+	height 128
+
+	setmodelbody 0 0 //body: 0=bare 1=bloody_shirt 2=gold_armor 3=archer
+	setmodelbody 1 0 //head: 0=hat_horns 1=hat_spiked 2=lizardskin_horned 3=gold_Chieftain 4=lizard_cap
+	setmodelbody 2 5 //weapon: 0=unarmed 1=axe 2=bow 3=steel_bow 4=sword 5=great_axe 6=sword_sheild 8=yellow_axe 9=blooddrinker
+}
+
+{ npc_post_spawn
+	setvard ATTACK_MOVERANGE 96
+	setvard ATTACK_RANGE 128
+	setvard ATTACK_HITRANGE 200
+}
+
+{ [override] swing_axe
+
+	callevent baseorc_yell
+
+	callevent npcatk_dodamage ent_lastseen ATTACK_HITRANGE DMG_SWORD ATTACK_ACCURACY slash
+	addvelocity ent_lastseen $relvel(-120,120,150)
+
+	if $rand(1,10) == 1
+	setvard ANIM_ATTACK kick
+}
+
+{ npc_targetsighted
+	
+	if !I_R_FROZEN
+	if !LUNGE_DELAY
+	if $get(NPCATK_TARGET,range) < LUNGE_RANGE
+
+	setvard LUNGE_DELAY 1
+	callevent FREQ_LUNGE reset_lunge_delay
+	callevent leap_at NPCATK_TARGET
+}
+
+{ reset_lunge_delay
+	setvard LUNGE_DELAY 0
+}
+
+{ leap_at //<target>
+
+	clientevent new all effects/sfx_motionblur_perm $get(ent_me,index) 0
+	setvard MY_SCRIPT_IDX game.script.last_sent_id
+	setvard NPC_FORCED_MOVEDEST 1
+	callevent npcatk_suspend_ai 1.0
+	setvard LEAP_TARGET PARAM1
+	setmovedest PARAM1 MOVE_RANGE
+	callevent 0.1 leap_at2
+	setvard DID_LEAPSTUN 0
+	setvard LEAPING 1
+	setvard LEAP_END game.time
+	add LEAP_END 1
+	callevent leap_scan
+	callevent 1.0 leap_end
+}
+
+{ leap_end
+	clientevent remove all MY_SCRIPT_IDX
+}
+
+{ leap_scan
+
+	if game.time < LEAP_END
+	callevent 0.1 leap_scan
+	dbg temp leap_scan $get(LEAP_TARGET,name) $get(LEAP_TARGET,range)
+	if $get(LEAP_TARGET,range) < ATTACK_RANGE
+
+	addvelocity LEAP_TARGET $relvel(0,120,105)
+	if !DID_LEAPSTUN
+	setvard DID_LEAPSTUN 1
+	applyeffect LEAP_TARGET effects/effect_stun 2 0 1
+}
+
+{ leap_at2
+
+	playrandomsound 0 10 voices/orc/hit.wav voices/orc/hit2.wav voices/orc/hit3.wav
+	playanim critical ANIM_ATTACK2
+	callevent 0.1 leap_boost
+}
+
+{ leap_boost
+
+	addvelocity ent_me $relvel(0,350,120)
+}
+
+{ run_step1
+	playsound 2 8 SOUND_WALK2
+	effect screenshake $relpos(0,0,0) 128 10 1 256
+}
+
+{ run_step2
+	playsound 2 8 SOUND_WALK1
+	effect screenshake $relpos(0,0,0) 128 10 1 256
+}
+
+{ swing_axe
+	playsound 2 10 SOUND_SWINGMISS
+}
+
+{ swing_start
+	playsound 1 10 SOUND_UPSWING
+}
+
+{ kick_land
+	//dbg kick_land PARAM1
+	if ( $get(NPCATK_TARGET,range) < ATTACK_RANGE ) setvard LAST_SWORD_HIT game.time
+	callevent npcatk_dodamage NPCATK_TARGET ATTACK_HITRANGE DMG_KICK ATTACK_ACCURACY blunt
+	setvard ANIM_ATTACK battleaxe_swing1_L
+	if $get(NPCATK_TARGET,range) < ATTACK_HITRANGE
+	applyeffect NPCATK_TARGET effects/effect_stun $randf(5,10) 0 1
+	addvelocity NPCATK_TARGET $relvel(-100,200,150)
+}

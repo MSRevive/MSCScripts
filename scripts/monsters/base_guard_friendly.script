@@ -1,0 +1,135 @@
+//Thothie - human guards having problems across the board (always have) - hoping to make a base to help them out
+//- requires: ANIM_IDLE ANIM_ATTACK
+{
+	setvard NO_STUCK_CHECKS 1
+}
+
+
+{ npc_spawn
+
+	roam 0
+	movespeed 0.0
+	callevent npcatk_suspend_ai
+
+	callevent 1.0 set_guard_post
+	callevent 1.0 scan_for_enemies
+}
+
+{ set_guard_post
+
+	setvard MY_GUARD_POST $get(ent_me,origin)
+	setvard MY_ORG_ANGLES $get(ent_me,angles)
+}
+
+{ game_struck
+
+	if !OH_IT_IS_ON
+	//setvard HUNT_LASTTARGET ent_laststruck
+	//setvard NPC_ATTACK_TARGET ent_laststruck
+	//if ( $get(ent_laststruck,isplayer) )
+	//{
+	//	setvard NPC_MOVE_TARGET player
+	//}
+	callevent baseguard_tobattle $get(ent_laststruck,id)
+}
+
+{ npcatk_targetvalidate //called from base_npc_attack on spotting target
+
+	if !OH_IT_IS_ON
+	if $cansee(enemy)
+	callevent baseguard_tobattle
+}
+
+{ baseguard_tobattle //param1 = enemy_id
+
+	//dbg TO BATTLE!
+	callevent npcatk_resume_ai
+	setvard OH_IT_IS_ON 1
+	movespeed 1.0
+	roam 1
+	setmoveanim	ANIM_RUN
+	setactionanim ANIM_ATTACK
+	playanim critical ANIM_ATTACK
+	if ( PARAM1 isnot 'PARAM1' ) 
+	{
+		setvard IS_HUNTING 1
+		setvard HUNT_LASTTARGET PARAM1
+		setvard NPC_MOVE_TARGET PARAM1
+		setmovedest HUNT_LASTTARGET ATTACK_RANGE
+		//dbg TargetIs $get(HUNT_LASTTARGET,name) of $get(HUNT_LASTTARGET,race)
+	}
+}
+
+//This return to post bit not working so good
+//plus it seems once you strike a guard, he never forgives you
+{ my_target_died	//called from base_npc_attack
+
+	if !$cansee(enemy)
+	setvard STRUCK_BY_PLAYER 0
+	cancelattack
+	setvard OH_IT_IS_ON 0
+	setangle face_origin MY_GUARD_POST
+	setmovedest MY_GUARD_POST 1
+	setvard MADE_IT_HOME 0
+	callevent going_home
+}
+
+{ game_heardsound
+
+	////dbg heard $get(ent_lastheard,relationship,ent_me) $get(ent_lastheard,name)
+
+	if $get(ent_lastheard,relationship,ent_me) equals enemy
+	if !$get(ent_lastheard,isplayer)
+	setvard HUNT_LASTTARGET ent_lastseen
+	setmovedest ent_lastheard ATTACK_RANGE
+	callevent baseguard_tobattle $get(ent_lastheard,id)
+}
+
+{ scan_for_enemies
+
+	if !OH_IT_IS_ON
+	callevent 1.1 scan_for_enemies
+	
+	////dbg Info width game.monster.width move game.monster.movespeed
+
+	////dbg Enemy? $cansee(enemy)
+
+	if $cansee(enemy)
+	if !$get(ent_lastseen,isplayer)
+	setvard HUNT_LASTTARGET ent_lastseen
+	setmovedest ent_lastseen ATTACK_RANGE
+	callevent baseguard_tobattle $get(ent_lastseen,id)
+}
+
+{ going_home
+
+	if !$cansee(enemy)
+	if !MADE_IT_HOME
+	if !OH_IT_IS_ON
+
+	callevent 1.0 going_home
+	local MY_POS $get(ent_me,origin)
+	////dbg GoingHome distance game.monster.origin vs MY_POS
+
+	if ( game.monster.movedest.origin isnot MY_GUARD_POST ) setmovedest MY_GUARD_POST 1
+
+	if ( $dist(MY_POS,MY_GUARD_POST) < 10 )
+	{
+		if !OH_IT_IS_ON
+		//dbg made it home
+		local MY_POS $get(ent_me,origin)
+		setmovedest none
+		roam 0
+		movespeed 0.0
+		setmoveanim	ANIM_IDLE
+		setactionanim ANIM_IDLE
+		setangle face MY_ORG_ANGLES
+		callevent 1.0 scan_for_enemies
+		setvard MADE_IT_HOME 1
+	}
+}
+
+{ check_attack //if player hits him, and bad guys show up, he cant attack
+
+	setvard NPC_ATTACK_TARGET HUNT_LASTTARGET
+}

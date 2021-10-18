@@ -1,0 +1,101 @@
+{
+	const MONSTER_HP 20000
+	const NPC_BASE_EXP 7000
+	const DOT_BREATH 100
+	const DMG_BITE_SHORT 150
+	const DMG_BITE_LONG 350
+	const DMG_LSHIELD 150
+	setvar NPC_SELF_ADJUST 1
+	const NPC_ADJ_TIERS "0;500;1000;2000;3000;5000"
+	const NPC_ADJ_DMG_MUTLI_TOKENS "1.0;1.0;1.0;1.0;1.25;2.0;"
+	const NPC_ADJ_HP_MUTLI_TOKENS "1.0;1.0;1.0;1.0;1.5;2.0;"
+
+	const START_SUSPEND 1
+
+	setvar NO_SPAWN_STUCK_CHECK 1
+
+	const NPC_BOSS_REGEN_RATE 0.03
+	const NPC_BOSS_RESTORATION 0.25
+}
+
+{ game_precache
+	precachefile monsters/abomination_bone
+	precache monsters/Orc.mdl
+}
+
+{ game_spawn
+	name_unique bone_abomination
+}
+
+{ final_adj
+	if ( NPC_ADJ_LEVEL < 5 )
+	{
+		name a|Lesser Bone Abomination
+	}
+	else
+	{
+		name a|Bone Abomination
+	}
+}
+
+#include monsters/abomination_bone
+
+{ eat_me
+	playanim critical grab_fling
+}
+
+{ frame_grab
+	deleteent $get_by_name(orc_summoner)
+	clientevent new all orc_for/orc_summoner_slaughter_cl $get(ent_me,index)
+	setvard FLING_IDX game.script.last_sent_id
+	playsound 0 10 debris/bustflesh1.wav
+}
+
+{ frame_fling
+	usetrigger twal_shaman_block
+	local FLING_VEL $relvel(-400,400,110)
+	clientevent update all FLING_IDX do_fling FLING_VEL
+	callevent 1.0 intro_done
+	playsound 0 10 debris/bustflesh2.wav
+}
+
+{ intro_done
+	callevent npcatk_resume_ai
+	roam 1
+	invincible 0
+	setvard INTRO_DONE 1
+	callevent 4.0 start_da_musak
+}
+
+{ start_da_musak
+	getplayersnb PLAYER_LIST
+	callevent $get_token_amt(PLAYER_LIST) start_musak
+	callevent 45.0 start_da_musak2
+
+{ start_musak
+	local CUR_TARG $get_token(PLAYER_LIST,game.script.iteration)
+	if ( $get(CUR_TARG,range) < 768 )
+	{
+		callexternal CUR_TARG ext_orcfor_boss_musak 1		
+	}
+}
+
+{ start_da_musak2
+	if $get(ent_me,isalive)
+	callevent 80.0 start_da_musak2
+	if NPCATK_TARGET isnot unset
+	getplayersnb PLAYER_LIST
+	callevent $get_token_amt(PLAYER_LIST) start_musak2
+}
+
+{ start_musak2
+	local CUR_TARG $get_token(PLAYER_LIST,game.script.iteration)
+	if ( $get(CUR_TARG,range) < 768 )
+	{
+		callexternal CUR_TARG ext_orcfor_boss_musak 2		
+	}
+}
+
+{ game_death
+	callexternal players ext_orcfor_boss_musak 3 $get(ent_me,origin)
+}

@@ -1,0 +1,240 @@
+//Giant Cobra by Thothie (from Large Sidewinder)
+{
+	const ANIM_BREATH breath
+	const GAS_RANGE 200
+
+	setvar ANIM_WALK walk
+	setvar ANIM_RUN walk
+	setvard ANIM_DEATH diesimple
+	setvar ANIM_IDLE ANIM_SLEEP
+	const ANIM_IDLE_NORM idle1
+	const ANIM_SLEEP idle2
+	setvard ANIM_ATTACK attack1
+	setvard ATTACK_RANGE 120
+	setvard ATTACK_HITRANGE 150
+	setvard ATTACK_MOVERANGE 60
+	const ATTACK_HITCHANCE 80%
+	const ATTACK_DAMAGE '$randf(20,50)'
+	const POISON_DAMAGE '$randf(10,20)'
+	const POISON_DURATION '$rand(10,20)'
+   	setvard NPC_GIVE_EXP 	200
+
+	const SOUND_ALERT monsters/gsnake_idle1.wav
+	const SOUND_IDLE monsters/gsnake_idle1.wav
+	const SOUND_ATTACK agrunt/ag_attack2.wav
+	const SOUND_POISON monsters/snakeman/sm_alert1.wav
+   const SOUND_STRUCK1 weapons/axemetal1.wav
+   const SOUND_STRUCK2 weapons/axemetal2.wav
+   const SOUND_STRUCK3 doors/doorstop5.wav
+	const SOUND_PAIN1 agrunt/ag_attack3.wav
+	const SOUND_PAIN2 agrunt/ag_idle2.wav
+	const SOUND_DEATH agrunt/ag_die2.wav
+
+	const CL_SCRIPT monsters/snake_gcobra_cl
+
+	const MONSTER_MODEL monsters/gcobra.mdl
+}
+
+#include monsters/base_monster_new
+
+{ npc_spawn
+
+	name a|Giant Metallic Cobra
+	hp 800
+	width 64
+	height 32
+	setidleanim ANIM_SLEEP
+	roam 0
+	race demon	//for easier placement
+	setmodel MONSTER_MODEL
+	hearingsensitivity 0
+	callevent sleep_mode
+	callevent 0.2 post_spawn_props
+	callevent 1.0 idle_sounds
+
+	setprop ent_me skin 1
+
+	takedmg all 0.25
+	takedmg poison 0.0
+	takedmg lightning 4.0
+	takedmg holy 1.0
+
+	clientevent new all CL_SCRIPT
+	setvard CL_IDX game.script.last_sent_id
+	setvard GAS_AMMO 1
+}
+
+{ npc_post_spawn
+	setvard IS_UNHOLY 1
+}
+
+{ game_death
+	clientevent remove all CL_IDX
+	svplaysound 1 0 ambience/steamjet1.wav
+}
+
+{ idle_sounds
+
+	playsound 0 10 SOUND_IDLE
+	callevent $randf(5,10) idle_sounds	
+}
+
+{ post_spawn_props
+
+	takedmg holy 0.0 //not actually a demon :)
+}
+
+{ attack1
+
+	setvard BITE_SOUND 1
+	callevent npcatk_dodamage NPCATK_TARGET ATTACK_HITRANGE ATTACK_DAMAGE ATTACK_HITCHANCE ent_me
+}
+
+{ game_damaged_other //PARAM1=ent hit PARAM2=damage
+
+	if BITE_SOUND
+	setvard BITE_SOUND 0
+	if $rand(1,2) == 1
+	playsound 0 10 SOUND_POISON
+	applyeffect PARAM1 effects/effect_poison POISON_DURATION $get(ent_me,id) POISON_DAMAGE
+}
+
+{ game_struck
+
+	playrandomsound 0 10 SOUND_PAIN1 SOUND_PAIN2 SOUND_STRUCK1 SOUND_STRUCK2 SOUND_STRUCK3
+}
+
+{ npcatk_targetvalidate
+
+	if $get(PARAM1,isalive)
+	if $get(PARAM1,relationship,ent_me) equals enemy
+
+	if !DID_ALERT
+	playsound 0 10 SOUND_ALERT
+	callevent wake_up
+	setvard DID_ALERT 1
+}
+
+{ my_target_died
+
+	setvard GAS_AMMO 1
+
+	setmovedest NPC_SPAWN_LOC 10
+	callevent idle_sounds
+	setvard DID_ALERT 0
+
+	dbg	my_target_died
+
+	callevent 1.0 npcatk_go_home
+}
+
+{ npc_made_it_home
+
+	callevent sleep_mode
+}
+
+{ reset_attack_delay
+
+	setvard ATTACK_DELAY 0
+}
+
+{ sleep_mode
+	setvard SLEEP_MODE 1
+	setvard NO_STUCK_CHECKS 1
+	roam 0
+	setidleanim ANIM_SLEEP
+	setmoveanim ANIM_SLEEP
+	setvard ANIM_IDLE ANIM_SLEEP
+	hearingsensitivity 0
+}
+
+{ wake_up
+	setvard SLEEP_MODE 0
+	setvard NO_STUCK_CHECKS 0
+	setidleanim ANIM_IDLE_NORM
+	setmoveanim ANIM_WALK
+	setvard ANIM_IDLE ANIM_IDLE_NORM
+	roam 1
+	hearingsensitivity 4
+}
+
+//== poison gas spray
+{ npc_targetsighted
+	if GAS_AMMO > 0
+	if $get(NPCATK_TARGET,range) < GAS_RANGE
+	setvard GAS_AMMO 0
+	callevent do_cloud
+}
+
+{ do_cloud
+
+	svplaysound 1 10 ambience/steamjet1.wav
+	callevent npcatk_suspend_ai
+	roam 0
+	setvard DOING_SPECIAL 1
+	playanim critical ANIM_BREATH
+	setmoveanim ANIM_BREATH
+	setidleanim ANIM_BREATH
+	setmovedest NPCATK_TARGET 9999
+	setvard CUR_ANG $get(ent_me,angles.yaw)
+	setvard CLOUD_COUNT 0
+	callevent 0.01 adj_angles
+}
+
+{ adj_angles
+	
+	subtract CUR_ANG 45
+	if ( CUR_ANG < 0 ) add CUR_ANG 359
+	local FACE_POS game.monster.origin
+	vectoradd FACE_POS $relpos($vec(0,CUR_ANG,0),$vec(0,1000,0))
+	setmovedest FACE_POS 9999
+	callevent 0.01 do_cloud_loop
+}
+
+{ do_cloud_loop
+
+	if $get(ent_me,isalive)
+
+	if ( CLOUD_COUNT == 45 )
+	{
+		callevent npcatk_resume_ai
+		setvard DOING_SPECIAL 0
+		setidleanim ANIM_IDLE_NORM
+		setmoveanim ANIM_WALK
+		if ( !AM_TURRET ) roam 1
+		svplaysound 1 0 ambience/steamjet1.wav
+	}
+
+	if CLOUD_COUNT < 45
+	callevent 0.1 do_cloud_loop
+
+	add CLOUD_COUNT 1
+
+	local CLOUD_START $get(ent_me,svbonepos,8)
+	clientevent update all CL_IDX make_cloud CLOUD_START $get(ent_me,angles.yaw)
+
+	add CUR_ANG 2
+	if ( CUR_ANG > 359 ) subtract CUR_ANG 359
+	local FACE_POS game.monster.origin
+	vectoradd FACE_POS $relpos($vec(0,CUR_ANG,0),$vec(0,1000,0))
+	setmovedest FACE_POS 9999
+
+	if ( CLOUD_TARGS isnot none ) calleventloop $get_token_amt(CLOUD_TARGS) poison_targets
+
+	if game.time > NEXT_SCAN
+	setvard NEXT_SCAN game.time
+	add NEXT_SCAN 0.5
+	local SCAN_POINT $relpos(0,96,0)
+	setvard CLOUD_TARGS $get_tbox(enemy,96,SCAN_POINT)
+	svplaysound 1 10 ambience/steamjet1.wav
+}
+
+{ poison_targets
+	local CUR_TARGET $get_token(CLOUD_TARGS,game.script.iteration)
+	if $get(CUR_TARGET,isalive)
+	local TARG_ORG $get(CUR_TARGET,origin)
+	if $within_cone2D(TARG_ORG,game.monster.origin,game.monster.angles,30)
+	if $get(CUR_TARGET,range) < 256
+	dbg poison_targets $get(CUR_TARGET,name) [ $get(CUR_TARGET,scriptvar,'IMMUNE_POISON')  ]
+	applyeffect CUR_TARGET effects/effect_poison_blinding POISON_DURATION $get(ent_me,id) POISON_DAMAGE
+}

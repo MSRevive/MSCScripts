@@ -1,0 +1,233 @@
+//Earthquake Effect by Thothie
+//be nice to rig up a function to screenshake individual players based on distance from src, or do it client side
+{
+
+}
+
+{ client_activate //<src_idx|origin> <mobile:0|1> <aoe> <duration> [volcanic] [attacker_idx]
+	//$get(ent_me,index) 1 256 L_DUR 1 PARAM2
+	//. clfx effects/sfx_quake 1 1 256 20.0
+	setvard FX_SRC PARAM1
+	setvard FX_MOBILE PARAM2
+	setvard FX_AOE PARAM3
+	setvard FX_DURATION PARAM4
+	setvard FX_VOLCANIC PARAM5
+
+	setvard FX_ACTIVE 1
+
+	if ( FX_VOLCANIC )
+	{
+		if ( PARAM6 !startswith PARAM )
+		{
+			setvard ATTACKER_IDX PARAM6 //we'll report to and damage each player struck direct
+		}
+		else
+		{
+			setvard ATTACKER_IDX 0 //don't report if not provided
+		}
+		callevent $rand(0.5,1.0) flaming_rocks_loop
+	}
+
+	setvard FX_RATIO $math(divide,FX_AOE,1024) //max AOE is 1024
+	setvard FX_ROCKS_PER_CIRC $ratio(FX_RATIO,4,16)
+	setvard FX_ROCKS_PER_CIRC $int(FX_ROCKS_PER_CIRC)
+	setvard FX_N_CIRCS $ratio(FX_RATIO,2,8)
+	setvard FX_N_CIRCS $int(FX_N_CIRCS)
+
+	callevent quake_loop
+	callevent FX_DURATION end_fx
+}
+
+{ flaming_rocks_loop
+	if FX_ACTIVE
+	callevent $randf(0.25,0.5) flaming_rocks_loop
+
+	if ( FX_MOBILE )
+	{
+		setvard FX_ORIGIN $getcl(FX_SRC,origin)
+	}
+	else
+	{
+		setvard FX_ORIGIN FX_SRC
+	}
+
+	//pick a point around area, drop a flaming rock of random size, report blast loc on land
+	local L_DROP_YAW $randf(0,359.99)
+	local L_DROP_DIST $randf(0,FX_AOE)
+	local L_DROP_POINT FX_ORIGIN
+	vectoradd L_DROP_POINT $relpos($vec(0,L_DROP_YAW,0),$vec(0,L_DROP_DIST,256))
+	
+	cleffect tempent model rockgibs.mdl L_DROP_POINT setup_frock update_frock
+	
+}
+
+{ cb_frock_land
+	//explode sound, check if near current player, ce if so
+
+	local L_ORG game.tempent.origin
+	cleffect tempent sprite xfireball3.spr L_ORG setup_frock_explode
+	cleffect tempent sprite xfireball3.spr L_ORG setup_frock_explode
+	cleffect tempent sprite xfireball3.spr L_ORG setup_frock_explode
+
+	sound.play3d fire.wav 10 L_ORG
+
+	if ATTACKER_IDX > 0
+
+	local L_PLR_IDX game.localplayer.index
+	local L_PLR_ORG $getcl(L_PLR_IDX,origin)
+
+	dbg *** $currentscript cb_frock_land ds $dist(L_ORG,L_PLR_ORG) atk ATTACKER_IDX [ L_ORG vs. L_PLR_ORG ]
+
+	if $dist(L_ORG,L_PLR_ORG) <= 100
+
+	//This bit should no longer exist. -greatguys1@SEP2021
+	//cleffect ce player clmsg_callback ATTACKER_IDX ext_frock_hit L_PLR_IDX x
+}
+
+{ setup_frock
+	cleffect tempent set_current_prop death_delay 3.0
+	cleffect tempent set_current_prop scale $randf(6.0,8.0)
+	cleffect tempent set_current_prop gravity 	1
+	cleffect tempent set_current_prop collide world;die
+	cleffect tempent set_current_prop cb_collide cb_frock_land
+	cleffect tempent set_current_prop framerate 1.0
+	cleffect tempent set_current_prop frames 50
+	cleffect tempent set_current_prop body $rand(1,2)
+	cleffect tempent set_current_prop sequence 0
+	cleffect tempent set_current_prop angles $vec(90,RND_YAW,0)
+	cleffect tempent set_current_prop rendermode texture
+	cleffect tempent set_current_prop renderamt 255
+	cleffect tempent set_current_prop fuser1 $math(add,game.time,0.1)
+	
+}
+
+{ update_frock
+	if game.time > game.tempent.fuser1
+	cleffect tempent set_current_prop fuser1 $math(add,game.time,0.1)
+	cleffect tempent sprite xfireball3.spr game.tempent.origin setup_frock_trail
+}
+
+{ setup_frock_trail
+
+	cleffect tempent set_current_prop death_delay last_frame
+	cleffect tempent set_current_prop fade lifetime
+	cleffect tempent set_current_prop framerate 30
+	cleffect tempent set_current_prop frames 19
+	cleffect tempent set_current_prop bouncefactor 0
+	cleffect tempent set_current_prop scale 1.0
+	cleffect tempent set_current_prop rendercolor (128,96,64)
+	cleffect tempent set_current_prop gravity 0
+	cleffect tempent set_current_prop collide none
+}
+
+{ setup_frock_explode
+
+	cleffect tempent set_current_prop death_delay last_frame
+	cleffect tempent set_current_prop fade lifetime
+	cleffect tempent set_current_prop framerate 30
+	cleffect tempent set_current_prop frames 19
+	cleffect tempent set_current_prop bouncefactor 2
+	cleffect tempent set_current_prop scale 2.0
+	cleffect tempent set_current_prop rendercolor (128,96,64)
+	cleffect tempent set_current_prop gravity 1
+	cleffect tempent set_current_prop collide world
+	cleffect tempent set_current_prop velocity $vec($randf(-100,100),$randf(-100,100),$randf(100,400))
+}
+
+
+
+{ quake_loop
+	if FX_ACTIVE
+	callevent 1.0 quake_loop
+	if ( FX_MOBILE )
+	{
+		setvard FX_ORIGIN $getcl(FX_SRC,origin)
+	}
+	else
+	{
+		setvard FX_ORIGIN FX_SRC
+	}
+	vectorset FX_ORIGIN z $get_ground_height(FX_ORIGIN)
+
+	setvard CIRC_COUNT 0
+	setvard CIRC_STEP $math(divide,FX_AOE,FX_N_CIRCS)
+	calleventloop FX_N_CIRCS do_circles
+}
+
+{ do_circles
+	local CUR_CIRC game.script.iteration
+	setvard CIRC_RAD $math(multiply,CIRC_STEP,CUR_CIRC)
+	add CIRC_RAD CIRC_STEP
+	setvard ROT_COUNT $randf(0,359.99)
+	local L_NROCKS $math(divide,CUR_CIRC,FX_N_CIRCS)
+	local L_NROCKS $ratio(L_NROCKS,4,FX_ROCKS_PER_CIRC)
+	local L_NROCKS $int(L_NROCKS)
+	setvard ROT_STEP $math(divide,359.99,L_NROCKS)
+
+	//dbg $currentscript do_circles cur CUR_CIRC / FX_N_CIRCS rad CUR_RAD step ROT_STEP rocks L_NROCKS
+	//dbg $currentscript do_circles FX_ORIGIN cur CUR_CIRC / FX_N_CIRCS rad CUR_RAD rocks L_NROCKS
+
+	calleventloop L_NROCKS do_rocks
+}
+
+{ do_rocks
+	local L_POS FX_ORIGIN
+	vectoradd L_POS $relpos($vec(0,ROT_COUNT,0),$vec(0,CIRC_RAD,0))
+	cleffect tempent model rockgibs.mdl L_POS setup_rock update_rock
+
+	add ROT_COUNT ROT_STEP
+	if ( ROT_COUNT > 359.99 ) subtract ROT_COUNT 359.99
+}
+
+{ setup_rock
+	cleffect tempent set_current_prop death_delay 3.0
+	cleffect tempent set_current_prop scale $randf(1.4,2.0)
+	cleffect tempent set_current_prop gravity 	0
+	cleffect tempent set_current_prop velocity (0,0,50)
+	cleffect tempent set_current_prop collide none
+	cleffect tempent set_current_prop framerate 1.0
+	cleffect tempent set_current_prop frames 50
+	cleffect tempent set_current_prop body $rand(1,2)
+	cleffect tempent set_current_prop sequence 0
+	cleffect tempent set_current_prop angles $vec(0,RND_YAW,0)
+	cleffect tempent set_current_prop rendermode texture
+	cleffect tempent set_current_prop renderamt 255
+	cleffect tempent set_current_prop fuser1 game.time
+}
+
+{ update_rock
+	if ( !FX_ACTIVE )
+	{
+		local L_CUR_VEL game.tempent.velocity
+		vectoradd L_CUR_VEL z -100
+		if ( $vec.z(L_CUR_VEL) < -600 ) vectorset L_CUR_VEL z -600
+		cleffect tempent set_current_prop bouncefactor 1
+		cleffect tempent set_current_prop velocity L_CUR_VEL
+		cleffect tempent set_current_prop gravity 1
+		cleffect tempent set_current_prop collide world
+	}
+
+	local CUR_ANG game.tempent.angles
+	local L_YAW $vec.yaw(CUR_ANG)
+	add L_YAW 1
+	if ( L_YAW > 359.99 ) subtract L_YAW 359.99
+	cleffect tempent set_current_prop angles $vec(0,L_YAW,0)
+
+	//works, but think they look better solid
+	local CUR_REND game.time
+	subtract CUR_REND game.tempent.fuser1
+	local CUR_REND $math(divide,CUR_REND,3)
+	local CUR_REND $ratio(CUR_REND,512,0)
+	if ( CUR_REND > 255 ) local CUR_REND 255
+	//dbg *** $currentscript CUR_REND
+	cleffect tempent set_current_prop renderamt CUR_REND
+}
+
+{ end_fx
+	setvard FX_ACTIVE 0
+	callevent 4.0 remove_fx
+}
+
+{ remove_fx
+	removescript
+}

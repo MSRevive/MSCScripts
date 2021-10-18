@@ -1,0 +1,227 @@
+//This uses a new model, so it cannot share the old bear base
+{
+
+	//anims used by base
+	setvar ANIM_WALK bear_walk
+	setvar ANIM_RUN bear_run
+	setvar ANIM_IDLE bear_idle01
+	setvar ANIM_FLINCH bear_flinch
+	setvard ANIM_ATTACK bear_claw02
+	setvard ANIM_DEATH bear_die02
+
+	//custom anims
+	const ANIM_RUN_NORM bear_run
+	const ANIM_WALK_NORM bear_walk
+	const ANIM_HOP bear_pounce
+	const ANIM_IDLE_NORM bear_idle01
+	const ANIM_IDLE_STAND bear_standingidle01
+	const ANIM_CLAW_STAND bear_claw
+	const ANIM_CLAW_NORM bear_claw02
+	const ANIM_DEATH_STAND bear_diestanding
+	const ANIM_DEATH_NORM bear_die02
+	const ANIM_STANDUP bear_standup
+	const ANIM_STANDDOWN bear_standdown
+
+	//stats used by base
+	setvard ATTACK_MOVERANGE 140	//get this close
+	setvard ATTACK_RANGE 150		//hit when this close
+	setvard ATTACK_HITRANGE 200		//actual range of attack
+	setvar CAN_FLINCH 0				//bear only flinches while standing
+	setvard FLINCH_CHANCE 25		//chance to flinch when struck for 10% health
+	setvard FLINCH_HEALTH 500		//how low on health I must be before I will flinch
+	setvard FLINCH_DELAY 10			//delay between flinches
+	const NPC_BASE_EXP		200
+	setvard NPC_MUST_SEE_TARGET 0
+
+	//other custom
+	const DMG_CLAW_NORM $rand(40,60)
+	const DMG_CLAW_STAND $rand(30,40)
+	const FREQ_HOP 5.0				//how often I can leap
+	const FREQ_CHECK_STAND 1.0		//player must be in range this long x2 before I attempt to stand
+	const FREQ_STAND $randf(5,10)	//this long before I stand again
+	const LEAP_RANGE 256			//target must be at least this far before I will leap at him
+	const LEAP_RANGE_MAX 512		//but also closer than this
+	const ATTACK_HITCHANCE 90
+
+	//sound
+	const SOUND_DEATH 		monsters/bear/giantbeardeath.wav
+	const SOUND_DEATH2 		monsters/bear/giantbeardeath2.wav
+	const SOUND_GETUP_GROWL	monsters/bear/giantbeardeath2.wav
+	const SOUND_GETUP		monsters/troll/step1.wav
+	const SOUND_GETDOWN		monsters/troll/step2.wav
+	const SOUND_UPSNARL		monsters/bear/giantbearupsnarl.wav
+	const SOUND_ATTACK1 	monsters/bear/cubattack.wav
+	const SOUND_ATTACK2 	zombie/claw_miss2.wav
+	const SOUND_ATTACK3 	none
+	const SOUND_STRUCK1 	weapons/cbar_hitbod1.wav
+	const SOUND_STRUCK2 	weapons/cbar_hitbod2.wav
+	const SOUND_STRUCK3 	weapons/cbar_hitbod3.wav
+	const SOUND_STRUCK4 	monsters/bear/cubpain.wav
+	const SOUND_STRUCK5 	none
+	precache SOUND_DEATH
+}
+
+#include monsters/base_monster_new
+
+{ npc_spawn
+	name a|Bear Guardian
+	race wildanimal
+	hp 800
+	width 100
+	height 80
+	setmodel monsters/bear_mean.mdl
+	roam 1
+}
+
+{ npc_post_spawn
+	setmoveanim ANIM_WALK
+	setidleanim ANIM_IDLE_NORM
+}
+
+{ npcatk_hunt
+
+	if ( AM_STANDING )
+	{
+		if $get(NPCATK_TARGET,range) > ATTACK_RANGE
+		callevent bear_getdown
+	}
+
+	if !AM_STANDING
+	if $get(NPCATK_TARGET,isalive)
+
+	if ( $get(NPCATK_TARGET,range) >= LEAP_RANGE )
+	{
+		if $get(NPCATK_TARGET,range) <= LEAP_RANGE_MAX
+		callevent bear_leap	NPCATK_TARGET	
+	}
+	if !AM_LEAPING
+	if !STAND_DELAY
+	if !CHECK_STAND_DELAY
+	setvard CHECK_STAND_DELAY 1
+	callevent FREQ_CHECK_STAND reset_check_stand_delay
+	if ( $get(NPCATK_TARGET,range) <= ATTACK_RANGE )
+	{
+		//dbg temp considering standing
+		if !AM_STANDING
+		callevent bear_getup
+	}
+}
+
+{ reset_check_stand_delay
+	setvard CHECK_STAND_DELAY 0
+}
+
+{ bear_getup
+	playsound 0 10 SOUND_GETUP_GROWL
+	setvar CAN_FLINCH 0
+	setvard ANIM_ATTACK ANIM_CLAW_STAND
+	playanim critical ANIM_STANDUP
+	setvar ANIM_RUN ANIM_IDLE_STAND
+	setvar ANIM_WALK ANIM_IDLE_STAND
+	setvar ANIM_IDLE ANIM_IDLE_STAND
+	setmoveanim ANIM_IDLE_STAND
+	setidleanim ANIM_IDLE_STAND
+	setvard NO_STUCK_CHECKS 1	//I cant move while standing, so turn off stuck checker
+	setvard AM_STANDING 1
+	callevent 1.0 resume_flinch
+}
+
+{ bear_getdown
+	setvar CAN_FLINCH 0
+	setvard ANIM_ATTACK ANIM_CLAW_NORM
+	playanim critical ANIM_STANDDOWN
+	setvar ANIM_RUN ANIM_RUN_NORM
+	setvar ANIM_WALK ANIM_WALK_NORM
+	setvar ANIM_IDLE ANIM_IDLE_NORM
+	setmoveanim ANIM_RUN
+	setidleanim ANIM_IDLE_NORM
+	setvard AM_STANDING 0
+	callevent 0.5 resume_stuck
+	setvard STAND_DELAY 1
+	callevent FREQ_STAND reset_stand_delay
+}
+
+{ reset_stand_delay
+	setvard STAND_DELAY 0
+}
+
+{ resume_stuck
+	playsound 0 10 SOUND_GETDOWN
+	setvard NO_STUCK_CHECKS 0
+}
+
+{ resume_flinch
+	setvar CAN_FLINCH 1
+}
+
+{ bear_leap //PARAM1 = target
+	if !LEAP_DELAY
+	setvard LEAP_DELAY 1
+	callevent FREQ_HOP reset_leap_delay
+
+	setvard NPC_FORCED_MOVEDEST 1
+	setmovedest PARAM1 ATTACK_MOVERANGE
+	playsound 0 10 SOUND_UPSNARL
+	playanim critical ANIM_HOP
+	setvard AM_LEAPING 1
+	setvard DID_STUN 0
+	callevent 0.1 bear_leap2
+	callevent 0.5 bear_leap_done
+}
+
+{ reset_leap_delay
+	setvard LEAP_DELAY 0
+}
+
+{ bear_leap_done
+	setvard AM_LEAPING 0
+}
+
+{ bear_leap2
+	callevent bear_leap_scan
+	addvelocity ent_me $relvel(0,500,100)
+}
+
+{ bear_leap_scan
+	if AM_LEAPING
+	callevent 0.1 bear_leap_scan
+	if ( $get(NPCATK_TARGET,range) < ATTACK_RANGE )
+	{
+		if !DID_STUN
+		setvard DID_STUN 1
+		addvelocity ent_laststruckbyme $relvel(0,100,100)
+		applyeffect NPCATK_TARGET effects/effect_stun 5.0 0 1
+	}
+}
+
+{ game_struck
+   playrandomsound 0 8 SOUND_STRUCK1 SOUND_STRUCK2 SOUND_STRUCK3 SOUND_STRUCK4 SOUND_STRUCK5
+}
+
+{ attack_sound
+   playrandomsound 0 10 SOUND_ATTACK1 SOUND_ATTACK2 SOUND_ATTACK3
+}
+
+{ npcatk_clear_targets
+	callevent bear_getdown
+}
+
+//anim events
+{ standclaw_1
+	callevent attack_sound
+	if $get(NPCATK_TARGET,range) < ATTACK_HITRANGE
+	callevent npcatk_dodamage NPCATK_TARGET direct DMG_CLAW_STAND ATTACK_HITCHANCE $get(ent_me,id) slash
+}
+
+{ standclaw_2
+	callevent attack_sound
+	if $get(NPCATK_TARGET,range) < ATTACK_HITRANGE
+	callevent npcatk_dodamage NPCATK_TARGET direct DMG_CLAW_STAND ATTACK_HITCHANCE $get(ent_me,id) slash
+}
+
+{ crawlclaw_1
+	callevent attack_sound
+	if $get(NPCATK_TARGET,range) < ATTACK_HITRANGE
+	callevent npcatk_dodamage NPCATK_TARGET direct DMG_CLAW_NORM ATTACK_HITCHANCE $get(ent_me,id) slash
+}
+

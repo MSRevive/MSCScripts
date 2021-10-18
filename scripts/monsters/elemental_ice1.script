@@ -1,0 +1,360 @@
+//This is an older script and may have some bad conventions as a result.
+
+//Lesser Fire Elemental by Thothie (From Screatch)
+//- Throws three fire balls, approaches player, uses Circle of Fire spell, repeats
+{
+	setvar AS_SUMMON_TELE_CHECK 1
+
+	setvar IS_UNHOLY 1
+	setvard IMMUNE_VAMPIRE 1
+	setvard ATTACK_RANGE 100
+	setvard ATTACK_HITRANGE 150
+	setvard MOVE_RANGE 65
+	const ATTACK_HITCHANCE 0.8
+	setvard ATTACK_RANGE_STANDARD 100
+	const SWIPE_MOVERANGE 65
+	const SWIPE_RANGE 100
+	const SWIPE_HITRANGE 150
+
+	const ATTACK_ACCURACY 80%
+	const CIRCLE_RANGE 256
+    const AIM_RATIO 50
+
+	const AMB_FROST_DAMAGE '$rand(10,30)' //frost damage inflicted when struck @ close range
+	const FROST_DAMAGE '$rand(30,40)' //frost effect damage from strike
+	const STRIKE_DAMAGE '$rand(50,150)' //actual impact damage from strike
+	const ICESEAL_DAMAGE 200 //spell frost damage per pulse
+
+	setvar ANIM_IDLE idle1
+	setvar ANIM_WALK idle1
+	setvar ANIM_RUN idle1
+	setvard ANIM_ATTACK attack1
+	setvard ANIM_FLINCH flinch
+	setvard ANIM_DEATH die1
+
+	const ANIM_BASEIDLE idle1
+	const ANIM_FLOAT idle1
+	const ANIM_BUGIDLE_A idle1	//letters here as weird behavior I am the gettingz
+	const ANIM_BUGIDLE_B idle2
+	const ANIM_BUGIDLE_C dunno
+	const ANIM_CHARGE float
+
+	const ANIM_SWIPE attack1
+
+	const ANIM_ALERT yes
+	const ANIM_GLOAT no
+	const ANIM_SEARCH dunno
+
+	const ANIM_TOCHARGE tocharge
+	const ANIM_CHARGEIDLE charging
+	const ANIM_FROMCHARGE fromcharge
+
+	const SOUND_ALERT agrunt/ag_alert5.wav
+
+	const SOUND_IDLE1 agrunt/ag_alert1.wav
+	const SOUND_IDLE2 agrunt/ag_die1.wav
+	const SOUND_IDLE3 agrunt/ag_idle1.wav
+
+	const SOUND_SWIPE weapons/debris1.wav
+	const SOUND_SWIPEHIT magic/frost_reverse.wav //check
+
+	const SOUND_DEATH garg/gar_die1.wav
+
+	const SOUND_PAIN0 debris/glass1.wav		//most common
+	const SOUND_PAIN1 agrunt/ag_pain1.wav	//rare > 50%
+	const SOUND_PAIN2 agrunt/ag_pain4.wav	//rare < 50%
+
+	const SOUND_GLOAT x/x_laugh1.wav
+
+	const SOUND_CIRCLE_READY debris/beamstart1.wav
+
+	const SOUND_HOVER fans/fan3on.wav
+	const PLAYTIME_HOVER 3.0
+
+	const CIRCLE_INTERVAL 30.0
+
+
+	//shouldn't have to do this crap, but it's refusing to precache externally! ><
+	const CIRCLE_SCRIPT monsters/summon/circle_of_ice_lesser
+	precache weapons/magic/seals.mdl
+	precache magic/spawn.wav
+	precache magic/frost_forward.wav
+	precache magic/frost_reverse.wav
+	precache teleporter_blue_sprites.mdl
+	precache FX_SPRITE
+
+
+	setvard DROP_GOLD 1
+	setvard DROP_GOLD_MIN 10
+	setvard DROP_GOLD_MAX 40
+
+	const I_AM_TURNABLE 0
+
+	const MOVE_FAST 200
+	const MOVE_NORMAL 100
+	setvard NPC_HACKED_MOVE_SPEED MOVE_NORMAL //for basepropelled
+
+	//Immunities: 1 = Immune, <>1 = Multiply Damage (1.5=take 150%, 0.5=take 50%)
+	//Only affects Effect damage (not weapon damage)
+	setvard IMMUNE_FIRE 1.5
+	setvard IMMUNE_POISON 1
+	setvard IMMUNE_COLD 1
+
+	const MONSTER_MODEL monsters/elementals_lesser.mdl
+
+	precache MONSTER_MODEL	//for older SC.DLL users
+}
+
+#include monsters/base_monster_new
+#include monsters/base_turn_undead
+
+{ npc_spawn
+
+	name an|Ice Elemental
+	hp 600
+	width 32
+	height 48
+	race demon
+	takedmg all 0.4
+	takedmg holy 2.0
+	takedmg fire 1.25
+	takedmg cold 0.0
+	takedmg ice 0.0
+	takedmg poison 0.0
+	//ov 80
+	roam 1
+	setidleanim ANIM_IDLE
+	setmoveanim ANIM_WALK
+	hearingsensitivity 3
+	precache MONSTER_MODEL //for old version clients
+	setmodel MONSTER_MODEL
+	setmodelbody 0 2
+	blood none
+
+	setvard NPC_GIVE_EXP 130
+	callevent 1.0 idle_sounds
+   	setstat parry 40
+
+	setvard MY_HURT_STAGE $get(ent_me,maxhp)
+	multiply MY_HURT_STAGE 0.5
+}
+
+{ npc_struck //called from base_npc_attack - param1 damage taken as of 22/Aug/2006 14:50
+
+	local MY_HEALTH $get(ent_me,hp)
+
+	if ( MY_HEALTH >= MY_HURT_STAGE ) playrandomsound 0 10 SOUND_PAIN0 SOUND_PAIN0 SOUND_PAIN1
+	if ( MY_HEALTH <= MY_HURT_STAGE ) playrandomsound 0 10 SOUND_PAIN0 SOUND_PAIN0 SOUND_PAIN2
+
+	if ( PARAM1 > 20 ) addvelocity ent_me $relpos(1,-10,1) //float around when struck hard
+
+	//If enemy that hit me is close, he will be frozen
+	if $get(ent_laststruck,range) < MOVE_RANGE
+	applyeffect ent_laststruck effects/effect_frostbite_dmg 1 $get(ent_me,id) AMB_FROST_DAMAGE
+}
+
+{ idle_sounds
+
+	local NEXT_SOUND $randf(5,15)
+
+	callevent NEXT_SOUND idle_sounds
+
+	if !IS_HUNTING
+	local RAND_ANIM $rand(1,3)
+	if ( RAND_ANIM == 1 ) playanim once ANIM_BUGIDLE_A	//was having some odd bug with idle anims, hence odd names
+	if ( RAND_ANIM == 2 ) playanim once ANIM_BUGIDLE_B
+	if ( RAND_ANIM == 3 ) playanim once ANIM_BUGIDLE_C
+
+	playrandomsound 0 10 SOUND_IDLE1 SOUND_IDLE2 SOUND_IDLE3
+}
+
+{ game_dodamage //1: Attack Hit (1/0)  2: Entity Attack hit  3:  Start Position  4:  End Position
+
+	if ( PARAM1 )
+	{
+		if ( USE_SWIPE_SOUND )
+		{
+			applyeffectstack ent_laststruckbyme effects/effect_frost 4 $get(ent_me,id) FROST_DAMAGE
+			playsound 0 10 SOUND_SWIPEHIT
+		}
+	}
+	setvard USE_SWIPE_SOUND 0
+}
+
+{ npc_selectattack
+
+	if ( CIRCLE_DELAY ) setvard ATTACK_RANGE ATTACK_RANGE_STANDARD
+
+	////dbg ATTACK_RANGE
+
+	if !RUNNING_CIRCLE
+	if !CIRCLE_DELAY
+	if $cansee(NPCATK_TARGET)
+	setvard ATTACK_RANGE MOVE_RANGE
+	multiply ATTACK_RANGE 1.25
+	if $get(NPCATK_TARGET,range) < ATTACK_RANGE //CIRCLE_RANGE too far, he doesn't get close enough
+	effect glow ent_me (0,75,255) 50 5 5
+	playsound 0 10 SOUND_CIRCLE_READY
+	callevent circle_of_ice_init
+}
+
+{ circle_of_ice_init
+
+	//	<"new"/id> <origin> <radius> <(color)> <death delay> <flags>
+	//cleffect light new $relpos(0,0,48) 256 (255,64,128) 4
+	setvard NO_STUCK_CHECKS 1
+	callevent npcatk_suspend_ai 5.0
+
+	setvard RUNNING_CIRCLE 1
+	setanim.movespeed 0
+	movespeed 0
+
+	//playsound 0 10 SOUND_CHARGEUP
+	playanim critical ANIM_TOCHARGE
+
+	//disable attacks without ruining system
+	setidleanim ANIM_CHARGEIDLE
+	setmoveanim ANIM_CHARGEIDLE
+}
+
+{ tocharge_done //called from model at end of tocharge
+
+	if !SWITCHED_TO_CHARGEIDLE
+	setvard SWITCHED_TO_CHARGEIDLE 1
+	playanim critical ANIM_CHARGEIDLE
+	callevent 0.2 circle_go
+}
+
+{ circle_go
+
+	//circle_of_fire pos owner dmg
+	//local SEAL_POS $get(ent_me,origin)
+	//local GROUND_Z $get_ground_height(SEAL_POS)
+	//local SEAL_Z $vec.z(SEAL_POS)
+	//local GROUND_DIST GROUND_Z
+	//subtract GROUND_DIST SEAL_Z
+	//subract GROUND_DIST 2
+	//vectoradd SEAL_POS $relpos($vec(0,0,0),$vec(0,0,GROUND_DIST))
+ 	createnpc CIRCLE_SCRIPT $relpos(0,0,0) $get(ent_me,id) 10.0 1.3 ICESEAL_DAMAGE //$relpos(0,0,0) works *okay*
+	callevent 5.1 circle_done
+}
+
+{ circle_done
+
+	setvard RUNNING_CIRCLE 0
+
+	playanim critical fromcharge
+	setvard SWITCHED_TO_CHARGEIDLE 0
+
+	//restore attacks
+	setidleanim ANIM_IDLE
+	setactionanim ANIM_ATTACK
+	setmoveanim ANIM_WALK
+
+	//flee a bit before resuming FIRE_BALLs
+	setvard NPC_HACKED_MOVE_SPEED MOVE_FAST
+	setvard NO_STUCK_CHECKS 0
+    setanim.movespeed NPC_HACKED_MOVE_SPEED
+	movespeed 1.0
+	if ( $cansee(enemy) ) 
+	{
+		setvard PURE_FLEE 1 //no fighting retreat
+		callevent npcatk_flee ent_lastseen FLEE_DISTANCE 5.0 //move away from circle to force enemy to follow through
+	}
+	setvard CIRCLE_DELAY 1
+	callevent 5.0 slow_down
+	callevent 4.0 ammo_up
+	callevent CIRCLE_INTERVAL reset_circle_delay
+	
+}
+
+{ reset_circle_delay
+
+	setvard CIRCLE_DELAY 0
+}
+
+{ slow_down
+
+	//setvard CAN_ATTACK 1
+	setvard NPC_HACKED_MOVE_SPEED MOVE_NORMAL
+}
+
+{ ammo_up
+
+	setvard FIRE_BALL_AMMO FULL_FIRE_BALL_AMMO
+}
+
+{ npcatk_search_init_advanced
+
+	if !$cansee(enemy)
+
+	if !DID_SHRUG
+	setvard DID_SHRUG 1
+
+	setvard NPC_DELAYING_UNSTUCK 5.0
+
+	playanim critical ANIM_SEARCH
+	playsound 0 10 SOUND_IDLE3
+}
+
+{ my_target_died //called from base_npc_attack
+
+	if ( !GLOAT_DELAY )
+	{
+		playanim critical ANIM_GLOAT
+		playsound 0 10 SOUND_GLOAT
+		setvard GLOAT_DELAY 1
+		callevent 10.0 reset_gloat
+	}
+
+	if ( !$cansee(enemy) ) 
+	{
+		setvard DID_WARCRY 0
+		setvard DID_SHRUG 0
+	}
+}
+
+{ reset_gloat
+
+	setvard GLOAT_DELAY 0 //this prevents sploiting with icewall/pets
+}
+
+{ npcatk_targetvalidate
+
+	if $get(PARAM1,isplayer)
+	callevent npcatk_setmovedest ent_lastseen ATTACK_RANGE
+	if !DID_WARCRY
+
+	callevent npcatk_faceattacker
+	setvard DID_WARCRY 1
+	playanim critical ANIM_ALERT
+	playsound 0 10 SOUND_ALERT
+}
+
+{ attack1_strike //called from anim attack1 @ frame12
+
+	setvard USE_SWIPE_SOUND 1
+	callevent npcatk_dodamage NPCATK_TARGET ATTACK_HITRANGE STRIKE_DAMAGE ATTACK_ACCURACY
+}
+
+{  [server] 	game_movingto_dest		//Hack in movement because the model anims are missing it
+
+	if !RUNNING_CIRCLE
+   setanim.movespeed NPC_HACKED_MOVE_SPEED	//Force move, since the animation doesn't have the required movement
+
+	if !HOVER_LOOP_DELAY
+	playsound CHAN_BODY 8 SOUND_HOVER
+	setvard HOVER_LOOP_DELAY 1
+	callevent PLAYTIME_HOVER hover_loop_reset
+}
+
+{ hover_loop_reset
+
+	setvard HOVER_LOOP_DELAY 0
+}
+
+{  [server] 	game_stopmoving
+
+   setanim.movespeed 0				//Force Stop
+}
+

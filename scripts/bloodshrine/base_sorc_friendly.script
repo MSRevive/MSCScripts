@@ -1,0 +1,400 @@
+//It would be better to use monsters/base_battle_ally for this
+//This script was made before that base_battle_ally implemented, but base_battle_ally based on this script
+
+{
+	setvard NPC_NO_PLAYER_DMG 1
+	const NPC_BATTLE_ALLY 1
+	const NPC_FIGHTS_NPCS 1
+	setvard FOLLOW_PLR_DIST 128
+	//setvard SPELL_HEAL_MULTI 5.0
+
+	saytextrange 4096
+
+	setvard NO_STUCK_CHECKS 1
+
+	setvard FSORC_DMG_POINTS 0
+
+	setvard NPC_ALLY_RESPONSE_RANGE 4096
+
+	const TO_SBOSS_TELE_POINT $vec(512,128,-16)
+
+	setvard F_STUCK_COUNT 0
+	setvard F_AS_UNSTUCK_ANG 0
+
+	const FSORC_DMG_REQ 0 //amount of damage sorc must have inflicted to avoid feeling humiliated
+}
+
+{ ext_fsorc_init
+	setvard FSORC_ON 1
+}
+
+{ npc_post_spawn
+	menu.autoopen 0
+	callevent 2.0 fix_step_size
+}
+
+{ fix_step_size
+	stepsize 48
+}
+
+{ npcatk_hunt
+	if !SUSPEND_AI
+	if FSORC_ON
+	local GAME_TIME game.time
+	setvard CYCLE_TIME 0.1
+
+	if ( NPCATK_TARGET isnot unset )
+	{
+		setvard NO_STUCK_CHECKS 0
+		if !WAIT_MODE
+		if GAME_TIME > NEXT_TEAM_ALERT
+		setvard NEXT_TEAM_ALERT GAME_TIME
+		add NEXT_TEAM_ALERT 10.0
+		//something funky going on with them not realizing targets are dead sometimes
+		//check also if SUSPEND_AI is being fuxed with, next time you see it
+		if ( !$get(NPCATK_TARGET,isalive) )
+		{
+			setvard NPCATK_TARGET unset
+		}
+		else
+		{
+			callevent do_team_alert
+		}
+	}
+
+	if NPCATK_TARGET equals unset
+
+	if ( GAME_TIME > NEXT_FAS_CHECK )
+	{
+		setvard NEXT_FAS_CHECK game.time
+		add NEXT_FAS_CHECK 0.5
+		callevent fsorc_friendly_stuck_check
+	}
+	if !SUSPEND_AI //incase AS triggered AI suspend
+
+	if ( BFSORC_MOVE_TELE )
+	{
+		if !BFSORC_DID_TELE
+		if !BFSORC_GOING_TELE
+		local MY_ORG $get(ent_me,origin)
+		if $dist(MY_ORG,TO_SBOSS_TELE_POINT) < 600
+		setvard BFSORC_GOING_TELE 1
+		setvard NO_STUCK_CHECKS 0
+		callevent fsorc_wait TO_SBOSS_TELE_POINT
+	}
+
+	if ( GAME_TIME > NEXT_REGEN )
+	{
+		if $get(ent_me,hp) < $get(ent_me,maxhp)
+		local REGEN_AMT $get(ent_me,maxhp)
+		multiply REGEN_AMT 0.1
+		givehp ent_me REGEN_AMT
+		setvard NEXT_REGEN GAME_TIME
+		add NEXT_REGEN 1.0
+	}
+
+	if game.players > 0
+
+	if ( GAME_TIME > NEXT_FOLLOW_CHECK ) local FIND_NEW_FOLLOW 1
+	if ( !$get(FOLLOW_PLR_ID,isalive) ) local FIND_NEW_FOLLOW 1
+
+	if ( FIND_NEW_FOLLOW )
+	{
+		setvard NEXT_FOLLOW_CHECK GAME_TIME
+		add NEXT_FOLLOW_CHECK 10.0
+		setvard FPLAYER_LIST 0
+		getplayersnb FPLAYER_LIST
+		setvard FPLAYER_LIST $sort_entlist(FPLAYER_LIST,range)
+		setvard FOLLOW_PLR_ID $get_token(FPLAYER_LIST,0)
+	}
+
+	if ( $get(FOLLOW_PLR_ID,range) > 200 )
+	{
+		setmoveanim ANIM_RUN
+	}
+	else
+	{
+		setmoveanim ANIM_WALK
+	}
+
+	if ( !WAIT_MODE )
+	{
+
+		if ( $get(FOLLOW_PLR_ID,range) > 42 )
+		{
+			setmovedest FOLLOW_PLR_ID FOLLOW_PLR_DIST
+		}
+		else
+		{
+			//give him some room
+			setmovedest FOLLOW_PLR_ID 64 flee
+		}
+	}
+
+	if ( WAIT_MODE ) setmovedest WAIT_POINT 32
+
+	if GAME_TIME > NEXT_SORCJUMP
+
+	dbg jumprange SORC_MAX_JUMP_RANGE ANIM_SORCJUMP
+
+	if $get(FOLLOW_PLR_ID,range) < SORC_MAX_JUMP_RANGE
+
+	local MY_Z $get(ent_me,origin.z)
+	local TARG_Z $get(FOLLOW_PLR_ID,origin.z)
+	subtract TARG_Z 38 //compensate for origin center
+
+	local Z_DIFF TARG_Z
+	subtract Z_DIFF MY_Z
+
+	if ( Z_DIFF > ATTACK_RANGE )
+	{
+		callevent sorc_hop_friendly Z_DIFF
+		local EXIT_SUB 1
+		setvard NEXT_SORCJUMP GAME_TIME
+		add NEXT_SORCJUMP FREQ_SORCJUMP
+	}
+}
+
+{ game_damaged
+	if $get(PARAM1,relationship,ent_me) equals enemy
+	setvard NEXT_REGEN game.time
+	add NEXT_REGEN 20.0
+}
+
+{ bfsorc_follow_close
+	setvard FOLLOW_PLR_DIST 60
+}
+
+{ bfsorc_follow_normal
+	setvard FOLLOW_PLR_DIST 128
+}
+
+{ sorc_hop_friendly //<vertical_difference> - determines jump strength
+	playsound 0 10 monsters/orc/attack1.wav
+	setvard UP_SORCJUMP_STR PARAM1
+	if ( UP_SORCJUMP_STR > 100 ) callevent 0.5 push_forward
+	multiply UP_SORCJUMP_STR 5
+	callevent npcatk_suspend_ai 1.0
+	setvard FWD_JUMP_STR $get(FOLLOW_PLR_ID,range)
+	playanim critical ANIM_SORCJUMP
+	callevent 0.1 sorc_jump_boost
+}
+
+{ push_forward
+	setmovedest FOLLOW_PLR_ID 9999
+	addvelocity ent_me $relvel(0,110,0)
+	local MY_Z $get(ent_me,origin.z)
+	local GROUND_POS $get_ground_height(game.monster.origin)
+	subtract MY_Z GROUND_POS
+	if MY_Z > 20
+	callevent 0.1 push_forward
+}
+
+{ fsorc_wait
+	setvard WAIT_MODE 1
+	setvard WAIT_POINT PARAM1
+}
+
+{ fsorc_unwait
+	setvard WAIT_MODE 0
+}
+
+{ game_damaged_other
+	add FSORC_DMG_POINTS PARAM2
+	if ( FSORC_DMG_POINTS > 10000 ) setvard FSORC_DMG_POINTS 10000 //case overflows
+}
+
+{ game_damaged
+	if ( PARAM1 equals SBOSS_ID ) setvard FSORC_HIT_BY_BOSS 1
+	if ( $get(SBOSS_ID,range) < 256 ) setvard FSORC_HIT_BY_BOSS 1 //in case immune to lightning prevents this registering
+}
+
+{ fsorc_zombie_alert
+	setmoveanim ANIM_RUN
+	setvard ZOMBIE_ID PARAM1
+	callevent npcatk_settarget ZOMBIE_ID
+	setvard NPCATK_TARGET ZOMBIE_ID
+	setmovedest ZOMBIE_ID 64
+}
+
+{ ext_shadowform_boss
+	setvard SBOSS_ID $get_by_name(shadowform_boss)
+	setvard SBOSS_ORG $get(L_SBOSS_ID,origin)
+}
+
+{ fsorc_move_tele
+	setvard BFSORC_MOVE_TELE 1
+}
+
+{ fsorc_did_tele
+	setvard BFSORC_DID_TELE 1
+	setvard BFSORC_MOVE_TELE 0
+	callevent 1.0 fsorc_unwait
+}
+
+
+{ got_team_alert
+	if !WAIT_MODE
+	if NPCATK_TARGET equals unset
+	callevent npcatk_settarget NPCATK_TARGET
+}
+
+{ do_team_alert
+	setvard T_SHAMAN_ID $get_by_name(fsorc_shaman)
+	setvard T_LEADER_ID $get_by_name(fsorc_leader)
+	setvard T_SECOND_ID $get_by_name(fsorc_second)
+	if ( $get(T_SHAMAN_ID,isalive) )
+	{
+		if T_SHAMAN_ID isnot $get(ent_me,id)
+		callexternal T_SHAMAN_ID got_team_alert NPCATK_TARGET
+	}
+	if ( $get(T_LEADER_ID,isalive) )
+	{
+		if T_LEADER_ID isnot $get(ent_me,id)
+		callexternal T_LEADER_ID got_team_alert NPCATK_TARGET
+	}
+	if ( $get(T_SECOND_ID,isalive) )
+	{
+		if T_SECOND_ID isnot $get(ent_me,id)
+		callexternal T_SECOND_ID got_team_alert NPCATK_TARGET
+	}
+}
+
+{ fsorc_friendly_stuck_check
+	//for navigating towards wait targets / players
+	local MY_ORG $get(ent_me,origin)
+	local MY_DEST game.monster.movedest.origin
+	local CUR_DIST $dist(MY_ORG,MY_DEST)
+	if CUR_DIST >= game.monster.movedest.prox
+	if ( CUR_DIST >= OLD_DIST )
+	{
+		if OLD_DIST != 0
+		add F_STUCK_COUNT 1
+	}
+	else
+	{
+		setvard F_STUCK_COUNT 0
+		setvard F_AS_UNSTUCK_ANG $randf(-15.0,15.0)
+		setvard OLD_DIST 0
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+	setvard OLD_DIST CUR_DIST
+
+	if ( F_STUCK_COUNT > 1 )
+	{
+		dbg fsorc_friendly_stuck_check (no_progress)
+		local MOVE_DEST MY_ORG
+		callevent npcatk_suspend_ai $randf(0.5,1.0)
+		add F_AS_UNSTUCK_ANG 36
+		if ( F_AS_UNSTUCK_ANG > 359 ) setvard F_AS_UNSTUCK_ANG 0
+		local MY_YAW $get(ent_me,angles.yaw)
+		add MY_YAW F_AS_UNSTUCK_ANG
+		if ( MY_YAW > 359 ) setvard MY_YAW 0
+		vectoradd MOVE_DEST $relpos($vec(0,MY_YAW,0),$vec(0,200,0))
+		setmovedest MOVE_DEST 1
+		setvard F_STUCK_COUNT 0
+		//playanim once ANIM_RUN
+	}
+}
+
+{ ext_boss_dead
+	setvard REWARD_MODE 1
+	setvard FOLLOW_PLR_DIST 9999
+	menu.autoopen 1
+}
+
+{ reward_test
+	setvard FSORC_HIT_BY_BOSS 1
+	setvard FSORC_DMG_POINTS 99999
+	callevent ext_boss_dead
+}
+
+{ game_menu_getoptions
+	if REWARD_MODE
+
+	if ( FSORC_DMG_POINTS < FSORC_DMG_REQ ) setvard AM_HUMILIATED 1
+	if ( !FSORC_HIT_BY_BOSS ) setvard AM_HUMILIATED 1
+
+	if ( AM_HUMILIATED )
+	{
+		local reg.mitem.title 	"Humiliated"
+		local reg.mitem.type 	disabled
+		menuitem.register
+		callevent chat_now "Seeing my humiliation, being saved by humans, without my having lifted a finger to save myself, should be payment enough." 3.0 neigh add_to_que
+		callevent 6.0 ready_to_go
+	}
+
+	if !AM_HUMILIATED
+
+	if ( !SETUP_QUALIFICATIONS )
+	{
+		setvard SETUP_QUALIFICATIONS 1
+		callevent check_qualify
+	}
+	local USER_PTS $get(PARAM1,scriptvar,'PLR_TOTAL_DMG')
+	setvard USER_QUALIFIES 0
+	if ( USER_PTS >= TC_HALF_AVG_DMG_PTS ) setvard USER_QUALIFIES 1
+	dbg check_qualify req: TC_HALF_AVG_DMG_PTS has USER_PTS [ USER_QUALIFIES ]
+
+	if ( USER_QUALIFIES )
+	{
+		callevent give_reward_options $get(PARAM1,id)
+	}
+	else
+	{
+		callevent chat_now "I would reward you, but I find your performance as a warrior, wanting." 3.0 neigh add_to_que
+	}
+}
+
+{ check_qualify
+	setvard TC_QUAL_PLAYERS 0
+	getplayersnb TC_QUAL_PLAYERS
+	calleventloop $get_token_amt(TC_QUAL_PLAYERS) tc_get_averages
+	divide TC_AVG_DMG_PTS game.players
+	setvard TC_HALF_AVG_DMG_PTS TC_AVG_DMG_PTS
+	multiply TC_HALF_AVG_DMG_PTS 0.5
+}
+
+{ tc_get_averages
+	local CUR_PLAYER $get_token(TC_QUAL_PLAYERS,game.script.iteration)
+	add TC_AVG_DMG_PTS $get(CUR_PLAYER,scriptvar,'PLR_TOTAL_DMG')
+}
+
+{ ready_to_go
+	menu.autoopen 0
+	setvard REWARD_MODE 0
+	callevent ready_to_go_comment
+	callevent FSORC_TELE_HOME_DELAY tele_home
+}
+
+{ tele_home
+	local REPULSE_AOE game.monster.moveprox
+	multiply REPULSE_AOE 1.5
+	setvard SORC_FINAL_TELEDEST $get(ent_me,origin)
+	clientevent new all effects/sfx_repulse_burst SORC_FINAL_TELEDEST REPULSE_AOE 1.0
+	callevent npcatk_suspend_ai
+	deleteent ent_me fade
+}
+
+{ ready_to_go_comment
+	setvard T_SHAMAN_ID $get_by_name(fsorc_shaman)
+	setvard T_LEADER_ID $get_by_name(fsorc_leader)
+	setvard T_SECOND_ID $get_by_name(fsorc_second)
+	setvard FSORC_TELE_HOME_DELAY 3.0
+	if ( T_SHAMAN_ID equals $get(ent_me,id) )
+	{
+		setvard FSORC_TELE_HOME_DELAY 7.0
+		callevent chat_now "With the beast slain dead, we may now return home..." 3.0 add_to_que
+		callevent chat_now "Maybe the Great Father Torkalath was wrong to forsake your kind." 3.0 warcry add_to_que
+	}
+	if ( T_LEADER_ID equals $get(ent_me,id) )
+	{
+		callevent chat_now "The tale of your bravery shall not go untold among the Shadahar." 3.0 warcry add_to_que
+	}
+
+	if ( T_SECOND_ID equals $get(ent_me,id) )
+	{
+		callevent chat_now "Thank you, once more, mighty warriors." 3.0 warcry add_to_que
+	}
+}

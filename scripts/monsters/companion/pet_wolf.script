@@ -1,0 +1,468 @@
+#scope server
+{
+	//base_summon / Companion
+	setvar IS_COMPANION 1
+
+	const SUMMON_CIRCLE_INDEX 13
+
+	const SUMMON_RUN_DIST 160 //run if master further than this dist
+
+	const ANIM_WALK_BASE walk_wolf
+	const ANIM_RUN_BASE run_wolf
+	const BASE_HP 150
+	setvard IS_HIRED 1
+	const SUM_NO_TALK 1
+	const COMPANION_MAXHP 3000
+	const MAX_DMG 50
+	const XPDMG_MULTI 0.01
+	const BASE_DMG 4
+	setvar COMPANION_TYPE wolf
+	setvard ACT_NAME "pet wolf"
+	setvard NPC_REVIVAL_SCRIPT $currentscript //this is for pet ressurection crystals (future item)
+	const SOUND_TELE monsters/wolves/wolf_atk2.wav
+
+	const HOVER_FAR 256
+	const HOVER_CLOSE 128
+
+	//_base anims
+	setvar ANIM_WALK walk_wolf //model needs a walk anim
+	setvar ANIM_RUN run_wolf
+	setvar ANIM_IDLE standidle1
+	setvard ANIM_DEATH die1
+	setvard ANIM_ATTACK attack1	//using event bite1
+	//setvard NPC_ALLY_RESPONSE_RANGE 2048
+	setvard ANIM_FLINCH hopback
+
+	//custom anims
+	const ANIM_LEAP attack2
+	const ANIM_CLAW attack2	//using event claw1
+	const ANIM_HOWL howl
+	const ANIM_ALERT threat
+	const ANIM_IDLE_SIT sit_idle1
+	const ANIM_IDLE_SIT2 sit_idle2
+	const ANIM_IDLE_STAND standidle1
+	const ANIM_IDLE_STAND2 standidle2
+	const ANIM_IDLE_STAND3 guard
+	const ANIM_TOSTAND standup
+	const ANIM_BITE attack1
+	const ANIM_CLAW attack2
+	const ANIM_EAT eat
+
+	const ANIM_FLINCH1 hopback
+	const ANIM_FLINCH2 pain1
+	const ANIM_FLINCH3 pain2
+
+	//_base stats
+	setvard ATTACK_RANGE 92
+	setvard ATTACK_HITRANGE 128
+	setvard ATTACK_MOVERANGE 72
+	const NPC_BATTLE_ALLY 1
+	setvard NPC_NO_PLAYER_DMG 1
+
+	//custom stats
+	const ATTACK_HITCHANCE 70
+	const LEAP_RANGE 256
+	const DMG_BITE $randf(3.0,6.0)
+	const DMG_CLAW $randf(4.0,5.0)
+	const FREQ_LOOK 20.0
+	const FREQ_IDLE $randf(10,30)
+	const FREQ_HOWL $randf(30,60)
+	const CHANCE_CLAW 50
+
+	//sound set
+	const SOUND_HOWL1 monsters/wolves/wolf_howl1.wav
+	const SOUND_HOWL2 monsters/wolves/wolf_howl2.wav
+	const SOUND_GROWL monsters/wolves/wolf_alert.wav
+	const SOUND_ATK1 monsters/wolves/wolf_atk1.wav
+	const SOUND_ATK2 monsters/wolves/wolf_atk2.wav
+	const SOUND_ATK3 monsters/wolves/wolf_atk3.wav
+	const SOUND_PAIN monsters/wolves/wolf_yelp1.wav
+	const SOUND_STRUCK1 weapons/cbar_hitbod1.wav
+	const SOUND_STRUCK2 weapons/cbar_hitbod2.wav
+	const SOUND_YELP monsters/wolves/wolf_yelp2.wav
+	const SOUND_DEATH monsters/wolves/wolf_death.wav
+}
+
+#include monsters/companion/base_companion
+#include monsters/summon/base_summon
+
+{ [shared] pet_spawn
+
+	name pet wolf
+	race human
+	setmodel monsters/giant_rat.mdl
+	setmodelbody 0 1
+	hearingsensitivity 8
+	width 36
+	height 48
+	roam 0
+
+	hp BASE_HP
+
+	setvard NEXT_HOWL 0
+
+	catchspeech say_sit sit
+	catchspeech say_speak speak
+}
+
+//{ companion_check_spawn
+//
+//	//determine if pet deployed or not
+//
+//	local SPAWN_IN 0
+//	local OWNER_PET_PREF $get_quest_data(ent_owner,s)
+//	dbg check_spawn_in quest: OWNER_PET_PREF
+//	if ( OWNER_PET_PREF equals out ) local SPAWN_IN 1
+//	if ( OWNER_PET_PREF equals 0 ) local SPAWN_IN 1
+//	if ( !SPAWN_IN )
+//	{
+//		invincible 1
+//		dbg check_spawn_in out
+//		setvard COMPANION_EGGED 1
+//		setvard SUSPEND_AI 1
+//		setvard CYCLE_TIME 10.0
+//		blind 1
+//		setorigin ent_me (10000,20000,10000)
+//	}
+//	if SPAWN_IN
+//	invincible 0
+//	setvard CYCLE_TIME 0.1
+//	setvard SUSPEND_AI 0
+//	setvard COMPANION_EGGED 0
+//	blind 0
+//	setvard PET_LAST_ATTACK 0
+//	callevent basecompanion_catchup
+//	effect glow ent_me (255,255,255) 128 5.0 5.0
+//	playsound 0 10 magic/spawn_loud.wav
+//}
+
+{ npc_post_spawn
+	setmoveanim ANIM_WALK
+	setidleanim ANIM_IDLE
+}
+
+{
+repeatdelay FREQ_IDLE
+
+	if !SUSPEND_AI
+	
+	if ( !AM_ALPHA )
+	{
+		if MY_ALPHA isnot unset
+		callevent npcatk_setmovedest G_ALPHA ATTACK_MOVERANGE
+	}
+
+	if NPCATK_TARGET equals unset
+
+	if ( game.time > NEXT_HOWL )
+	{
+		dbg idle howl
+		setvard NEXT_HOWL game.time
+		add NEXT_HOWL FREQ_HOWL
+		callevent do_howl
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	if ( SIT_MODE )
+	{
+		setvard NO_STUCK_CHECKS 1
+		playanim critical ANIM_IDLE_SIT2
+	}
+	else
+	{
+		setvard NO_STUCK_CHECKS 0
+		local RND_IDLE $rand(1,2)
+		if ( RND_IDLE == 1 )
+		{
+			callevent atk_sound
+			playanim critical ANIM_IDLE_STAND2
+			setvard AS_ATTACKING game.time
+		}
+		if ( RND_IDLE == 2 )
+		{
+			playsound 0 10 SOUND_GROWL
+			playanim critical ANIM_IDLE_STAND3
+			setvard AS_ATTACKING game.time
+		}
+	}
+
+	if AM_ALPHA
+	if $rand(1,2) == 1
+	if !GUARD_MODE
+	if ( SIT_MODE ) callevent 0.5 sitmode_off
+	if ( !SIT_MODE ) callevent 0.5 sitmode_on
+}
+
+{ sitmode_off
+	if ( SIT_MODE ) playanim critical ANIM_TOSTAND
+	setvard SIT_MODE 0
+	setmoveanim ANIM_RUN
+	setidleanim ANIM_IDLE
+}
+
+{ sitmode_on
+	setvard SIT_MODE 1
+	setmoveanim ANIM_IDLE_SIT
+	setidleanim ANIM_IDLE_SIT
+}
+
+//anim events
+{ bite1
+	setvard PET_LAST_ATTACK game.time
+	setvard ATTACK_TYPE bite
+	local DMG_FINAL DMG_BITE
+	local ADD_DMG COMPANION_XP
+	multiply ADD_DMG XPDMG_MULTI
+	add DMG_FINAL ADD_DMG
+	if ( DMG_FINAL > MAX_DMG ) local ATTACK_DAMAGE MAX_DMG
+	callevent npcatk_dodamage NPCATK_TARGET ATTACK_HITRANGE DMG_FINAL ATTACK_HITCHANCE slash
+	callevent atk_sound
+	if ( $rand(1,100) < CHANCE_CLAW ) setvard ANIM_ATTACK ANIM_CLAW
+	setvard MELEE_ATTACK 1
+}
+
+{ claw1
+	setvard ATTACK_TYPE claw
+	local DMG_FINAL DMG_CLAW
+	local ADD_DMG COMPANION_XP
+	multiply ADD_DMG XPDMG_MULTI
+	add DMG_FINAL ADD_DMG
+	if ( DMG_FINAL > MAX_DMG ) local ATTACK_DAMAGE MAX_DMG
+	multiply ATTACK_DAMAGE $get(SUMMON_MASTER,skill.spellcasting)
+	callevent npcatk_dodamage NPCATK_TARGET ATTACK_HITRANGE DMG_FINAL ATTACK_HITCHANCE slash
+	callevent atk_sound
+	setvard MELEE_ATTACK 1
+	setvard ANIM_ATTACK ANIM_BITE
+}
+//==== end anim events
+
+{ do_howl
+	if ( $get(ent_me,isalive) ) playanim critical ANIM_HOWL
+	playrandomsound 0 10 SOUND_HOWL1 SOUND_HOWL2
+}
+
+{ npcatk_lost_sight
+	if !$cansee(enemy)
+	if !SEARCH_DELAY
+	setvard SEARCH_DELAY 1
+	playsound 0 10 SOUND_GROWL
+	callevent FREQ_LOOK reset_search_delay
+	callevent do_howl
+}
+
+{ reset_search_delay
+	setvard SEARCH_DELAY 0
+}
+
+{ npc_flinch
+	//monster favorw backpedal for flinch, but has two other less likely flinches, including a rollover
+	local RND_FLINCH $rand(1,5)
+	if ( RND_FLINCH == 1 ) setvard FLINCH_ANIM ANIM_FLINCH2
+	if ( RND_FLINCH == 2 ) setvard FLINCH_ANIM ANIM_FLINCH3
+	if ( RND_FLINCH > 2 ) setvard FLINCH_ANIM ANIM_FLINCH1
+	playsound 0 10 SOUND_YELP
+}
+
+{ cycle_up
+	if ( SIT_MODE ) callevent sitmode_off
+}
+
+{ atk_sound
+	playrandomsound 0 10 SOUND_ATK1 SOUND_ATK2 SOUND_ATK3
+}
+
+{ game_struck
+	local HALF_HEALTH $get(ent_me,maxhp)
+	multiply HALF_HEALTH 0.5
+	local QUART_HEALTH $get(ent_me,maxhp)
+	multiply QUART_HEALTH 0.25
+
+	if ( $get(ent_me,hp) > HALF_HEALTH )
+	{
+		playrandomsound 0 10 SOUND_STRUCK1 SOUND_STRUCK2 SOUND_STRUCK1 SOUND_STRUCK2 SOUND_STRUCK1
+	}
+	else
+	{
+		if ( $get(ent_me,hp) > QUART_HEALTH )
+		{
+			playrandomsound 0 10 SOUND_STRUCK1 SOUND_STRUCK2 SOUND_PAIN
+		}
+		else
+		{
+			playrandomsound 0 10 SOUND_PAIN
+		}
+	}
+}
+
+{ game_dodamage
+	if PARAM1
+	if !$get(PARAM2,scriptvar,IMMUNE_PUSH)
+	if ( ATTACK_TYPE equals bite ) addvelocity PARAM2 $relvel(-50,110,105)
+	if ( ATTACK_TYPE equals claw ) addvelocity PARAM2 $relvel(-100,130,120)
+}
+
+{ game_death
+	local RND_DEATH $rand(1,2)
+	if ( RND_DEATH == 1 ) setvard ANIM_DEATH die1
+	if ( RND_DEATH == 2 ) setvard ANIM_DEATH die2
+}
+
+{ my_target_died
+	if !$cansee(enemy)
+	playanim once ANIM_EAT
+	
+}
+
+//======================== BASE_SUMMON CHANGES / MODS
+{ [override] npc_death
+
+	infomsg SUMMON_MASTER "YOUR PET HAS BEEN SLAIN!" COMPANION_NAME has been slain!
+	callevent summon_death
+	callevent bcompanion_un_regme
+}
+
+{ bs_set_guard_mode
+	playsound 0 10 SOUND_ATK2
+	callevent sitmode_on
+}
+
+{ bs_set_hunt_mode
+	playsound 0 10 SOUND_ATK2
+	callevent sitmode_off
+}
+
+{ bs_set_follow_mode
+	playsound 0 10 SOUND_ATK2
+	callevent sitmode_off
+}
+
+{ bs_set_defend_mode
+	playsound 0 10 SOUND_ATK2
+	callevent sitmode_off
+}
+
+{ [override] bs_set_hunt_mode
+	callevent bs_set_defend_mode
+}
+
+{ [override] basesummon_say_report
+
+	if ( PARAM2 isnot from_menu )
+	{
+		if ( $get(ent_lastspoke,id) isnot SUMMON_MASTER ) local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+	
+
+	if ( ATK_MIN equals 'ATK_MIN' ) local ATK_MIN DMG_MAX
+
+	local ME_HEALTH game.monster.hp
+	local ME_MAX_HEALTH game.monster.maxhp
+	local HEALTH_STRING "("
+	stradd HEALTH_STRING ME_HEALTH
+	stradd HEALTH_STRING "/"
+	stradd HEALTH_STRING ME_MAX_HEALTH
+	stradd HEALTH_STRING ")"
+
+	local DMG_FINAL BASE_DMG
+	local ADD_DMG COMPANION_XP
+	multiply ADD_DMG XPDMG_MULTI
+	add DMG_FINAL ADD_DMG
+	if ( DMG_FINAL > MAX_DMG ) local DMG_FINAL MAX_DMG
+
+	local ME_STRENGTH DMG_FINAL
+
+	saytextrange 1024
+	saytext [status] HP HEALTH_STRING DMG/ATK: ME_STRENGTH XP: $int(COMPANION_XP)
+}
+
+
+//======================= HUNT FACE
+//- face where my master faces, looking for enemies
+{ npcatk_hunt
+
+	callevent cliff_check
+
+	if !SUSPEND_AI
+
+	if NPCATK_TARGET equals unset
+	if $get(SUMMON_MASTER,isalive)
+	local ESCORT_DIST $get(SUMMON_MASTER,range)
+	if ( ESCORT_DIST > 128 )
+	{
+		if ( SIT_MODE ) callevent sitmode_off //unique to wolf
+		setvard NEXT_REFACE game.time
+		add NEXT_REFACE 2.0
+		setvard NO_STUCK_CHECKS 0
+		callevent npcatk_setmovedest SUMMON_MASTER 128
+		if ( ESCORT_DIST > SUMMON_RUN_DIST )
+		{
+			setmoveanim ANIM_RUN
+		}
+		else
+		{
+			setmoveanim ANIM_WALK
+		}
+	}
+	else
+	{
+		setvard NO_STUCK_CHECKS 1
+		if game.time > NEXT_REFACE
+		setmovedest none
+		//dbg facing escort angs
+		local ESCORT_FACE $get(SUMMON_MASTER,angles.yaw)
+		setangle face $vec(0,ESCORT_FACE,0)
+	}
+}
+
+{ game_targeted_by_player
+	dbg game_targeted_by_player $get(PARAM1,name)
+	callexternal PARAM1 ext_show_hbar_monster $get(ent_me,id) 1
+}
+
+//passive regen
+{
+repeatdelay 15.0
+	if game.time > COMPANION_NEXT_REGEN
+	if NPCATK_TARGET equals unset
+	if $get(ent_me,hp) < $get(ent_me,maxhp)
+	local TEN_PERCENT $get(ent_me,maxhp)
+	multiply TEN_PERCENT 0.1
+	givehp TEN_PERCENT
+	callevent sitmode_on
+}
+
+{ game_damaged
+	if SIT_MODE
+	setidleanim ANIM_IDLE
+}
+
+{ [override] summon_cycle
+
+}
+
+{ cliff_check
+
+	if !$get(ent_me,onground)
+	local TRACE_START $get(ent_me,origin)
+	vectoradd TRACE_START z 28
+	local TRACE_END TRACE_START
+	vectoradd TRACE_END z -128
+	if $get_traceline(TRACE_START,TRACE_END,worldonly) equals TRACE_END
+	dbg OMG cliff!
+	callevent basecompanion_catchup 1
+}
+
+{ npcatk_anti_stuck
+	if STUCK_COUNT > 1
+	callevent basecompanion_catchup
+}
+
+{ say_sit
+	playanim hold ANIM_IDLE_SIT
+}
+
+{ say_speak
+	playsound 0 10 monsters/wolves/wolf_alert.wav
+}

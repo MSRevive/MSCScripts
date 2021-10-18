@@ -1,0 +1,404 @@
+//Kharaztorant Childre by Thothie, from scratch
+//one of the evolutions of the Kharaztorant dragonkin
+{
+	setvar IS_UNHOLY 1
+
+	//anims used by base
+	setvar ANIM_WALK walk
+	setvar ANIM_RUN run
+	setvar ANIM_IDLE idle1
+	setvard ANIM_ATTACK ability1_alien //{ event 500 7 "attack_strike" } 
+	setvard ANIM_DEATH death1_die
+
+	//custom anims
+	const ANIM_IDLE_NORM idle1
+	const ANIM_IDLE_CROUCH crouch_idle
+	const ANIM_WALK_NORM walk
+	const ANIM_RUN_NORM run
+	const ANIM_CRAWL crawl
+	setvard ANIM_FLINCH new_flinch
+	const ANIM_JUMP jump
+	const ANIM_DEATH_BACK1 death1_die	//some of these maybe duplicate, trim from model?
+	const ANIM_DEATH_BACK2 back_die
+	const ANIM_DEATH_FORWARD1 forward_die
+	const ANIM_DEATH_CROUCH crouch_die
+	
+	//stats used by base (more in npc_post_spawn below)
+	setvard ATTACK_RANGE 125
+	setvard ATTACK_HITRANGE 200
+	setvard ATTACK_MOVERANGE 100
+	setvard DROP_GOLD 1
+	setvard DROP_GOLD_AMT $rand(10,40)
+	setvar NO_STEP_ADJ 1
+
+	//custom stats
+	const PROJECTILE_SCRIPT proj_fire_ball
+	setvard ATTACK_HITCHANCE 90
+	const FREQ_FADE $randf(5.0,20.0)
+	const FREQ_FIREBALL $rand(2,8)
+	const FREQ_RELOAD 30.0
+	setvard FIREBALL_AMMO 3
+	const DMG_SWIPE $rand(40,100)
+	const FREQ_IDLE $randf(5,10)
+	const FREQ_JUMP $randf(2,5)
+	setvard STEP_SIZE_NORM 64
+	
+	//sounds
+	const SOUND_FIREBALL "magic/fireball_strike.wav"
+	const SOUND_FLINCH "monsters/gonome/gonome_pain3.wav" //custom
+	const SOUND_WARCRY "monsters/gonome/gonome_melee1.wav" //custom
+	const SOUND_FADE "monsters/gonome/gonome_melee2.wav" //custom
+	const SOUND_UNFADE "monsters/gonome/gonome_death3.wav" //alt: gonome_death3.wav
+	const SOUND_STRUCK1 "debris/flesh1.wav"
+	const SOUND_STRUCK2 "debris/flesh2.wav"
+	const SOUND_PAIN1 "monsters/gonome/gonome_jumpattack.wav" //custom
+	const SOUND_PAIN2 "monsters/gonome/gonome_melee1.wav" //custom
+	const SOUND_SWING_MISS1 "zombie/claw_miss1.wav"
+	const SOUND_SWING_MISS2 "zombie/claw_miss2.wav"
+	const SOUND_SWING_HIT1 "zombie/claw_strike1.wav"
+	const SOUND_SWING_HIT2 "zombie/claw_strike2.wav"
+	const SOUND_STEP1 "common/npc_step1.wav" //add events to model
+	const SOUND_STEP2 "common/npc_step2.wav"
+	const SOUND_IDLE1 "monsters/gonome/gonome_idle1.wav"
+	const SOUND_IDLE2 "monsters/gonome/gonome_idle2.wav"
+	const SOUND_IDLE3 "monsters/gonome/gonome_idle3.wav"
+	const SOUND_PARRY "weapons/axemetal1.wav"
+
+	//base_npc
+	const SOUND_DEATH bullchicken/bc_die2.wav
+	precache SOUND_DEATH
+}
+
+#include [server] monsters/base_monster_new
+
+{ npc_spawn
+
+	callevent childre_spawn
+}
+
+{ childre_spawn
+
+	setvard NPC_GIVE_EXP 200
+
+	name a|Kharaztorant Childre
+	setmodel monsters/k_childre.mdl
+	hp 1000
+	race demon
+	width 32
+	height 68
+	roam 1
+	setbbox npcsize
+	hearingsensitivity 4
+	local L_MAP_NAME $lcase(game.map.name)
+	if ( L_MAP_NAME contains helena )
+	{
+		setvard STEP_SIZE_NORM 18
+		local EXIT_SUB 1
+	}
+	if ( L_MAP_NAME contains demontemple )
+	{
+		setvard STEP_SIZE_NORM 24
+		local EXIT_SUB 1
+	}
+	if ( L_MAP_NAME contains islesofdread )
+	{
+		setvard STEP_SIZE_NORM 24
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+	stepsize STEP_SIZE_NORM
+}
+
+{ npc_post_spawn
+
+	//resistances
+	takedmg all 0.7
+	takedmg fire 0.0
+	takedmg cold 1.25
+	takedmg holy 0.5
+
+	setvard IMMUNE_STUN 50
+
+	//post-load stats used by base
+	setvard ANIM_FLINCH new_flinch
+	setvard CAN_FLINCH 1
+	setvard FLINCH_HEALTH 500
+	setvard FLINCH_DELAY 5.0
+	setvard FLINCH_CHANCE 50
+
+	setmoveanim ANIM_WALK
+	setidleanim ANIM_IDLE
+	setstat parry 100
+}
+
+{ npc_targetsighted
+
+	if $cansee(enemy)
+	if ( !DID_WARCRY )
+	{
+		setvard DID_WARCRY 1
+		callevent do_warcry
+	}
+
+	if !STARTED_CYCLES
+	setvard STARTED_CYCLES 1
+	callevent FREQ_FADE fade_check
+	callevent 1.0 fireball_check
+	callevent 1.0 jump_check
+}
+
+{ my_target_died
+
+	setvard DID_WARCRY 0
+	playsound 0 10 SOUND_IDLE1
+	playanim critical ANIM_FLINCH
+}
+
+{ fade_check
+	callevent 1.0 fade_check
+	if !DOING_FADE
+	if !FADE_DELAY
+	if NPCATK_TARGET isnot unset
+	if $get(NPCATK_TARGET,range) < ATTACK_HITRANGE
+
+	if game.time > NEXT_FADE
+	setvard NEXT_FADE game.time
+	add NEXT_FADE FREQ_FADE
+	callevent do_fade	
+}
+
+{ do_fade
+	callevent npcatk_flee NPCATK_TARGET 2048 3.0
+	setvard FADE_TARGET NPCATK_TARGET
+	setvard DOING_FADE 1
+	callevent npcatk_suspend_ai 2.0
+	setmoveanim ANIM_RUN
+	setvard WAS_STRUCK 0
+	callevent 0.1 do_fade2
+	callevent 1.0 resume_attack
+}
+
+{ do_fade2
+	playsound 0 10 SOUND_FADE
+	addvelocity ent_me $relvel(0,800,200)
+	setvard FADE_STEP 255
+	callevent fade_loop
+	callevent etherial_immunes
+}
+
+{ fade_loop
+	subtract FADE_STEP 20
+	if ( FADE_STEP < 0 ) setprop ent_me renderamt 1
+	if FADE_STEP >= 0
+	if DOING_FADE
+	callevent 0.1 fade_loop
+	setprop ent_me rendermode 2
+	setprop ent_me renderamt FADE_STEP
+}
+
+{ resume_attack
+	callevent npcatk_resume_ai
+	setmoveanim ANIM_CRAWL
+	setvard AM_CRAWLING 1
+	if !WAS_STRUCK
+	callevent chicken_run 2.0
+	callevent 2.1 invis_run2 //run around a bit while invisible to lose target
+}
+
+{ invis_run2
+	if !WAS_STRUCK
+	if DOING_FADE
+	callevent chicken_run 2.0
+	callevent 2.1 flank_targ
+}
+
+{ flank_targ
+	callevent npcatk_flank FADE_TARGET
+}
+
+{ do_warcry
+	setvard AS_ATTACKING game.time
+	playanim critical ANIM_IDLE_CROUCH
+	callevent npcatk_faceattacker NPCATK_TARGET
+	playsound 0 10 SOUND_WARCRY
+}
+
+{ fireball_check
+	callevent 1.1 fireball_check
+	if FIREBALL_AMMO > 0
+	if !DOING_FADE
+	if NPCATK_TARGET isnot unset
+	if $get(NPCATK_TARGET,range) > ATTACK_HITRANGE
+	if !FIREBALL_DELAY
+	setvard FIREBALL_DELAY 1
+	callevent FREQ_FIREBALL reset_fireball_delay
+
+	callevent npcatk_faceattacker NPCATK_TARGET
+	setvard AS_ATTACKING game.time
+	callevent npcatk_suspend_ai
+	roam 0
+	callevent 0.1 do_fireball
+}
+
+{ reset_fireball_delay
+	setvard FIREBALL_DELAY 0
+}
+
+{ do_fireball
+	playsound 0 10 SOUND_FIREBALL
+	setvard FIREBALL_TOSS 1
+	playanim critical ANIM_ATTACK
+	tossprojectile NPCATK_TARGET 400 200 0 PROJECTILE_SCRIPT (0,48,96)
+	callexternal $get(ent_lastprojectile,id) ext_lighten 0
+	subtract FIREBALL_AMMO 1
+	if ( FIREBALL_AMMO == 0 ) setprop ent_me skin 0
+	callevent npcatk_resume_ai
+	roam 1
+}
+
+{ game_dodamage
+	if SWIPE_ATTACK
+	if ( PARAM1 ) playrandomsound 0 10 SOUND_SWING_HIT1 SOUND_SWING_HIT2
+	if ( !PARAM1 ) playrandomsound 0 10 SOUND_SWING_MISS1 SOUND_SWING_MISS2
+	setvard SWIPE_ATTACK 0
+}
+
+{ game_parry
+	playsound 0 10 SOUND_PARRY
+	//playanim once ANIM_IDLE_CROUCH
+}
+
+{
+repeatdelay FREQ_RELOAD
+	add FIREBALL_AMMO 1
+	setprop ent_me skin 1
+	if FIREBALL_AMMO > 3
+	setvard FIREBALL_AMMO 3
+}
+
+{ become_visible
+	setvard NEXT_FADE game.time
+	add NEXT_FADE FREQ_FADE
+	callevent normal_immunes
+	playsound 0 10 SOUND_UNFADE
+	//dbg become_visible PARAM1
+	setvard DOING_FADE 0
+	setprop ent_me rendermode 0
+	setprop ent_me renderamt 255
+}
+
+{ npc_flinch
+	local RND_FLINCH $rand(1,2)
+	if ( RND_FLINCH == 1 ) setvard FLINCH_ANIM ANIM_FLINCH1
+	if ( RND_FLINCH == 2 ) setvard FLINCH_ANIM ANIM_FLINCH2
+	playsound 0 10 SOUND_FLINCH
+}
+
+{
+repeatdelay FREQ_IDLE
+	if NPCATK_TARGET equals unset
+	playrandomsound 0 10 SOUND_IDLE1 SOUND_IDLE2 SOUND_IDLE3
+}
+
+{ game_death
+	setprop ent_me skin 2
+	if ( DOING_FADE )
+	{
+		setvard DOING_FADE 0
+		callexternal GAME_MASTER gm_fade_in $get(ent_me,id)
+	}
+
+	if ( $get(ent_laststruck,range) > 256 )	setvard	ANIM_DEATH ANIM_DEATH_FORWARD1
+	if ( $get(ent_laststruck,range) <= 256 )
+	{
+		local RND_DEATH $rand(1,2)
+		if ( RND_DEATH == 1 ) setvard ANIM_DEATH ANIM_DEATH_BACK1
+		if ( RND_DEATH == 2 ) setvard ANIM_DEATH ANIM_DEATH_BACK2
+	}
+	if ( AM_CRAWLING ) setvard ANIM_DEATH ANIM_DEATH_CROUCH
+}
+
+{ game_struck
+	playsound 0 8 SOUND_STRUCK1 SOUND_STRUCK2 SOUND_STRUCK1 SOUND_STRUCK2 SOUND_PAIN1 SOUND_PAIN2
+
+	if AM_CRAWLING
+	if DOING_FADE
+	setmoveanim ANIM_RUN
+	setvard AM_CRAWLING 0
+	setvard WAS_STRUCK 1
+	callevent chicken_run 1.5
+}
+
+{ jump_check
+	callevent FREQ_JUMP jump_check
+
+	if NPCATK_TARGET isnot unset
+
+	local TARG_Z $get(NPCATK_TARGET,origin.z)
+	local MY_Z $vec.z(game.monster.origin)
+	local Z_DIFF TARG_Z
+	subtract Z_DIFF MY_Z
+	//dbg temp z_targ TARG_Z z_me MY_Z z_diff Z_DIFF 
+	if Z_DIFF > ATTACK_RANGE
+	callevent npcatk_faceattacker NPCATK_TARGET
+	callevent 0.1 do_jump
+	playsound 0 10 SOUND_FADE
+}
+
+{ do_jump
+	stepsize 1000
+	setmoveanim ANIM_JUMP
+	addvelocity ent_me $relvel(0,-200,800)
+	callevent 0.5 push_forward
+	callevent 1.0 jump_done
+}
+
+{ push_forward
+	addvelocity ent_me $relvel(0,400,100)
+}
+
+{ jump_done
+	stepsize STEP_SIZE_NORM
+	setmoveanim ANIM_RUN
+}
+
+//model events
+{ walk_step
+	playsound 0 4 SOUND_STEP1 SOUND_STEP2
+}
+
+{ run_step
+	playsound 0 10 SOUND_STEP1 SOUND_STEP2
+}
+
+{ attack_strike
+	if ( DOING_FADE )
+	{
+		if !FIREBALL_TOSS
+		callevent become_visible "attack_strike"
+	}
+	setmoveanim ANIM_RUN
+	setvard AM_CRAWLING 0
+	setvard FIREBALL_TOSS 0
+	setvard SWIPE_ATTACK 1
+	callevent npcatk_dodamage NPCATK_TARGET ATTACK_HITRANGE DMG_SWIPE ATTACK_HITCHANCE slash
+}
+
+{ etherial_immunes
+	clearfx
+	setvard AM_INVISIBLE 1
+	takedmg fire 0.0
+	takedmg cold 0.0
+	takedmg poison 0.0
+	takedmg holy 0.0
+}
+
+{ normal_immunes
+	setvard AM_INVISIBLE 0
+	takedmg fire 0.0
+	takedmg cold 1.25
+	takedmg poison 1.0
+	takedmg holy 0.5
+}
+
+

@@ -1,0 +1,375 @@
+//generic adventurer
+#scope server
+{
+	const MAGIC_LIST "fire;ice;lightning;earth;poison;acid;magic;"
+	const FREQ_FF_WARN 10.0
+
+	setvard REWARD_LIST "axes_poison1;swords_poison1;swords_liceblade;gauntlets_normal;mana_leadfoot;scroll2_summon_rat;bows_swiftbow;item_charm_w1"
+	setvard REWARD_NAMES "an Envenomed Axe;a Envenomed Shortsword;a Lesser Ice Blade;a set of Gauntlets;a Potion of Stability;a Summon Rat Scroll;an Elven Bow;a Wolf Charm"
+	setvard N_REWARDS_GIVEN 0 //maxes at whatever game.players was at battle_over
+	setvard MAX_REWARDS_TOGIVE 0
+
+
+	const SOUND_STRUCK body/flesh1.wav
+	const SOUND_DEATH voices/human/male_die.wav
+	precache SOUND_DEATH //handled in base_monster
+
+	setvar ANIM_IDLE idle1
+	setvar ANIM_RUN run
+	setvar ANIM_WALK walk
+	setvard ANIM_DEATH diebackward
+	setvard ANIM_ATTACK swordswing1_l
+
+	setvard MOVE_RANGE 32
+	setvard ATTACK_RANGE 64
+	setvard ATTACK_HITRANGE 120
+	const ATTACK_HITCHANCE 85%
+	const ATTACK_DAMAGE '$randf(5.0,8.0)'
+
+	setvard NPC_GIVE_EXP 0
+
+	const NO_JOB 1
+	const NO_RUMOR 1
+	setvard NO_HAIL 0
+}
+
+#include monsters/base_monster_new
+#include monsters/base_chat
+
+{ [shared] npc_spawn
+	name Jerdid the Adventurer
+	invincible 1 //toggle off when battle begins
+	callevent 0.1 stay_invuln_damnit
+	race human
+	width 32
+	height 96
+	hp 300
+	saytextrange 800
+	hearingsensitivity 8
+	setmodel npc/royal_guard1.mdl
+	setmodelbody 1 3
+	callevent 1.0 critical_npc
+	setidleanim idle1
+	setmoveanim walk
+
+	catchspeech say_hi hi hail j0 jo yo waddup wassup hello greet
+}
+
+{ stay_invuln_damnit //wtfness
+	invincible 1
+}
+
+{ game_damaged			//PARAM1=attacker PARAM2=dmg PARAM3=dmg_type
+
+	//cant get him to stay invulnerable pre and post battle for some reason
+	//not sure if this fixes it, but something did
+	if ( BATTLE_OVER )
+	{
+		setdmg dmg 0
+		setdmg hit 0
+		returndata 0
+		local EXIT_SUB 1
+	}
+
+	if ( !IN_BATTLE )
+	{
+		setdmg dmg 0
+		setdmg hit 0
+		returndata 0
+		local EXIT_SUB 1
+	}
+
+	if !EXIT_SUB
+
+	playsound 0 5 SOUND_STRUCK
+
+	if $get(PARAM1,isplayer)
+
+	if game.time > NEXT_FF_WARNING
+
+	setvard NEXT_FF_WARNING game.time
+	add NEXT_FF_WARNING FREQ_FF_WARN
+
+	//if ( PARAM3 contains effect ) local IS_SPELL 1
+	//if ( $get_find_token(MAGIC_LIST,PARAM3) > -1 ) local IS_SPELL 1
+
+	local L_ITEM_NAME $get(PARAM1,scriptvar,'PLR_ACTIVE_WEAPON')
+	local L_ITEM_NAME $get(L_ITEM_NAME,itemname)
+	if ( L_ITEM_NAME startswith magic_hand ) local IS_SPELL 1
+	if ( L_ITEM_NAME startswith blunt_staff )  local IS_SPELL 1
+
+	if ( IS_SPELL )
+	{
+		saytext Watch where you cast your spells!
+		local RND_SPELL $rand(1,2)
+		if ( RND_SPELL == 1 )
+		{
+			playsound 0 10 voices/jerdid/Jerdid_8.wav
+		}
+		else
+		{
+			playsound 0 10 voices/jerdid/Jerdid_8_2.wav
+		}
+	}
+
+	if ( !IS_SPELL )
+	{
+		saytext Hey there! Careful where you swing that!
+		playsound 0 10 voices/jerdid/Jerdid_9.wav
+	}
+}
+
+
+{ say_hi
+
+	if !IN_BATTLE
+	if !BUSY_CHATTING
+
+	if ( $get(PARAM1,isplayer) )
+	{
+		setvard CURRENT_SPEAKER $get(PARAM1,id)
+		callevent face_speaker CURRENT_SPEAKER
+	}
+	if ( $get(ent_lastspoke,isplayer) )
+	{
+		setvard CURRENT_SPEAKER $get(ent_lastspoke,id)
+		callevent face_speaker CURRENT_SPEAKER
+	}
+
+	if ( !BATTLE_OVER )
+	{
+		setvard DID_INTRO 1
+		playanim critical lean
+		callevent 2.0 fix_anims
+		setvard CONVO_TYPE intro
+		setvard CHAT_STEPS 3
+		setvard CHAT_STEP 0
+		setvard CHAT_STEP1 "Ah, hello there. I’ve been honing my skills here for awhile now."
+		setvard CHAT_DELAY_STEP1 5.01
+		setvard CHAT_SOUND1 voices/jerdid/Jerdid_1.wav
+		setvard CHAT_STEP2 "However, I’m hearing far more howls than I’d feel comfortable dealing with... Should there be wolves attached to them all."
+		setvard CHAT_DELAY_STEP2 8.19
+		setvard CHAT_SOUND2 voices/jerdid/Jerdid_2.wav
+		setvard CHAT_STEP3 "If you'd be so kind as to stay a moment and assist me, I'd would be forever grateful."
+		setvard CHAT_DELAY_STEP3 6.33
+		setvard CHAT_SOUND3 voices/jerdid/Jerdid_3.wav
+		callevent chat_loop
+	}
+
+	if ( BATTLE_OVER )
+	{
+		playanim critical yes
+		callevent 2.0 fix_anims
+		saytext Thanks again for your assistance.
+		playsound 0 10 voices/jerdid/Jerdid_10.wav
+	}
+}
+
+{ chat_loop
+	if ( CHAT_STEP == 2 )
+	{
+		//face some unseen howl in the distance and shiver a bit
+		if CONVO_TYPE equals intro
+		setmovedest $relpos(0,-8000,0) 9999
+		usetrigger distant_howl
+		playanim critical panic
+		callevent 2.0 fix_anims
+	}
+	if ( CHAT_STEP == 3 )
+	{
+		if CONVO_TYPE equals intro
+		setmovedest CURRENT_SPEAKER 9999
+		playanim critical converse2
+		setvard NO_HAIL 1
+		callevent 2.0 open_menu
+	}
+}
+
+{ open_menu
+	menu.open CURRENT_SPEAKER
+}
+
+{ game_menu_getoptions
+
+	dbg game_menu_getoptions conv: CONVO_TYPE
+
+	if ( CONVO_TYPE equals intro )
+	{
+		local reg.mitem.title 	"Yes, I'll help."
+		local reg.mitem.type 	callback
+		local reg.mitem.callback player_accept
+		menuitem.register
+
+		local reg.mitem.title 	"Sorry, busy."
+		local reg.mitem.type 	callback
+		local reg.mitem.callback player_deny
+		menuitem.register
+	}
+
+	if ( BATTLE_OVER )
+	{
+		dbg game_menu_getoptions bat BATTLE_OVER
+		if CONVO_TYPE isnot 'give_list'
+		if !$get(PARAM1,scriptvar,'PLR_GOT_REWARD')
+		local reg.mitem.title 	"Collect reward"
+		local reg.mitem.type 	callback
+		local reg.mitem.callback give_reward
+		menuitem.register
+	}
+
+	if ( CONVO_TYPE equals 'give_list' )
+	{
+		if !$get(PARAM1,scriptvar,PLR_GOT_REWARD)
+		calleventloop $get_token_amt(REWARD_LIST) add_rewards
+		setvard CONVO_TYPE none
+		setvard NO_HAIL 0
+	}
+}
+
+{ add_rewards
+
+	if $rand(1,2) == 1
+
+	local CUR_IDX game.script.iteration
+	local CUR_REWARD $get_token(REWARD_LIST,CUR_IDX)
+	local CUR_NAME $get_token(REWARD_NAMES,CUR_IDX)
+
+	local reg.mitem.title	CUR_NAME
+	local reg.mitem.type 	callback
+	local reg.mitem.data 	CUR_IDX
+	local reg.mitem.cb_failed no_want
+	local reg.mitem.callback 	give_selected_reward
+
+	dbg add_rewards reg.mitem.title reg.mitem.callback
+
+	menuitem.register
+}
+
+{ give_selected_reward
+	dbg give_selected_reward $get(PARAM1,name) PARAM2
+	add N_REWARDS_GIVEN 1
+	offer PARAM1  $get_token(REWARD_LIST,PARAM2)
+	callexternal PARAM1 ext_set_reward 1
+}
+
+{ [server] player_accept
+
+	callevent cycle_up "manual_override"
+	setvard CONVO_TYPE none
+	setvard QUEST_WINNER PARAM1
+	playanim critical yes
+	saytext Your assistance is greatly appreciated! Now stand-fast and be ready... I’m sure they’ve caught our scent by now.
+	playsound 0 10 voices/jerdid/Jerdid_5.wav
+	setvard IN_BATTLE 1
+	usetrigger wolves_go
+	invincible 0
+	roam 1
+}
+
+{ player_deny
+
+	setvard NO_HAIL 0
+	setvard CONVO_TYPE none
+	playanim critical eye_wipe
+	saytext I... Undestand... A powerful warrior like yourself must be busy... Quite often, I suppose...
+	playsound 0 10 voices/jerdid/Jerdid_4.wav
+	roam 1
+}
+
+{ wolf_raid_over
+
+	setvard MAX_REWARDS_TOGIVE game.playersnb
+	setvard BATTLE_OVER 1
+	setvard NO_HAIL 0
+	callevent npcatk_clear_targets
+	setvard BATTLLE_OVER 1
+	setvard IN_BATTLE 0
+	setvard FORCED_MOVE_DEST 1
+	setmovedest QUEST_WINNER 32
+	invincible 1
+	callevent 1.0 hunt_quest_winner_loop
+}
+
+{ hunt_quest_winner_loop
+
+	if !$get(QUEST_WINNER,scriptvar,PLR_GOT_REWARD) 
+	callevent 1.0 hunt_quest_winner_loop
+	setvard NPC_FORCED_MOVEDEST 1
+	if ( $cansee(QUEST_WINNER,128) )
+	{
+		if !SAID_REWARD
+		setvard SAID_REWARD 1
+		callevent 0.1 give_reward
+	}
+	else
+	{
+		setmovedest QUEST_WINNER 32
+	}
+	
+}
+
+{ give_reward
+	if ( N_REWARDS_GIVEN >= MAX_REWARDS_TOGIVE )
+	{
+		saytext Sorry, I've nothing left to offer.
+		playsound 0 10 voices/jerdid/Jerdid_7.wav
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	setvard NPC_FORCED_MOVEDEST 1
+	playanim critical yes
+	if ( $get(PARAM1,isalive) ) setmovedest PARAM1 9999
+	callevent 2.0 fix_anims
+
+	if !$get(PARAM1,scriptvar,PLR_GOT_REWARD)
+	saytext Thank you ever-so-much for your assistance! Please select a reward for your aid.
+	playsound 0 10 voices/jerdid/Jerdid_6.wav
+	setvard CONVO_TYPE "give_list"
+	setvard NO_HAIL 1
+	if ( $get(PARAM1,isalive) ) setvard MENU_TARGET PARAM1
+	if ( !$get(PARAM1,isalive) ) setvard MENU_TARGET QUEST_WINNER
+	callevent 0.1 send_menu
+}
+
+{ send_menu
+	menu.open MENU_TARGET
+}
+
+{
+repeatdelay 10.0
+
+	if ( BATTLE_OVER )
+	{
+		if !GAVE_REWARD
+		setmovedest QUEST_WINNER 32
+	}
+
+	//try to stay within 800 units of spawn
+	if $dist(game.monster.origin,NPC_HOME_LOC) > 800
+	callevent npcatk_suspend_ai 2.0
+	setvard NPC_FORCED_MOVEDEST 1
+	callevent npcatk_setmovedest NPC_HOME_LOC 32 //make home official destination
+	setmovedest NPC_HOME_LOC 32 //ai is suspended, so get there manually
+	if ( NPCATK_TARGET isnot unset ) callevent npcatk_run
+}
+
+{ fix_anims
+	//ms_npcscript seems to be fubar'ing my anims, reset after call
+	setmoveanim walk
+	setidleanim idle1
+	playanim once idle1
+}
+
+{ game_menu_cancel
+	setvard NO_HAIL 0
+	setvard CONVO_TYPE none
+}
+
+{ attack_1
+	callevent npcatk_dodamage NPCATK_TARGET ATTACK_HITRANGE ATTACK_DAMAGE ATTACK_HITCHANCE
+}
+
+{ [override] npc_suicide
+	dbg No suicide for me
+}

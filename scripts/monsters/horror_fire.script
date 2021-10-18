@@ -1,0 +1,76 @@
+{
+	const NPC_BASE_EXP 200
+
+	const BREATH_SPRITE 3dmflaora.spr
+}
+
+#include monsters/horror
+
+{ npc_spawn
+
+	name a|Flaming Horror
+	hp 500
+	takedmg all 1.0
+	takedmg holy 1.0
+	takedmg fire 0.0
+
+	width 22
+	height 22
+	setbbox npcsize
+	roam 1
+	fly 1
+	setvard I_FLY 1
+	float 0
+	race demon
+	setidleanim ANIM_WALK
+	setmoveanim ANIM_WALK
+	hearingsensitivity 5
+	setmodel monsters/edwardgorey.mdl
+	setmodelbody 0 1
+	setvard NPC_GIVE_EXP 300
+	callevent 1.0 idle_sounds
+	setvard FLIGHT_SCANNING 1
+
+	setvard SPORE_CLOUD_AMMO 1
+}
+
+{ npc_post_spawn
+	setvard NO_STUCK_CHECKS 0
+}
+
+{ [override] attack1	//called by model anim: bite1
+
+	if ( SPITTING )
+	{
+		tossprojectile view 500 SPIT_DAMAGE 0.5 proj_fire_xolt (0,0,0)
+		setvard SPITTING 0
+		if ( SPIT_AMMO == 0 ) callevent fly_mode
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	dodamage ENTITY_ENEMY ATTACK_HITRANGE ATTACK_DAMAGE ATTACK_ACCURACY
+	playrandomsound 0 10 SOUND_ATTACK1 SOUND_ATTACK2 SOUND_ATTACK3
+	if ( $rand(1,10) == 1 ) setvard ANIM_ATTACK ANIM_GORE	//developer - set back to 20
+}
+
+{ npcatk_anti_stuck
+	if STUCK_CHECK > 10
+	if ( $get(MY_OWNER,isalive) ) callevent 0.1 npc_suicide
+}
+
+{ game_dynamically_created
+	setvard MY_OWNER PARAM1
+	setvard AM_SUMMONED 1
+	setvard SPAWNED_ORG game.monster.origin
+	callevent 180.0 do_vanish
+}
+
+{ do_vanish
+	callexternal MY_OWNER horror_died
+	callevent 0.1 do_vanish2	
+}
+
+{ do_vanish2
+	deleteent ent_me fade
+}

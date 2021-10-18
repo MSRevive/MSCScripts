@@ -1,0 +1,155 @@
+//Thothie - Increasing heal formula and mana use in an attempt to cut down on 'rejuv lag'
+{
+  const SOUND_SHOOT      	magic/heal_strike.wav
+
+  const MELEE_RANGE		384
+  const MELEE_HITCHANCE 	100%
+  const MELEE_ATK_DURATION 	1
+
+  setvar SPELL_SKILL_REQUIRED	5
+  const SPELL_FIZZLE_TIME	25
+  const SPELL_CAST_SUCCESS	95%
+  const SPELL_PREPARE_TIME	2
+  const SPELL_DAMAGE_TYPE	divination
+  const SPELL_ENERGYDRAIN	10
+  const SPELL_MPDRAIN		5
+  const SPELL_STAT		spellcasting.divination
+
+  const EFFECT_MAXDURATION 	20
+  const EFFECT_MINDURATION 	10
+  const EFFECT_DURATION_STAT	$get(ent_owner,stat.concentration.ratio)
+  const EFFECT_DURATION_FORMULA $get_skill_ratio(EFFECT_DURATION_STAT,EFFECT_MINDURATION,EFFECT_MAXDURATION,inversed)
+  const HEAL_MAX	 	75	//old formula 10000
+  const HEAL_MIN 		30	//old formula 5
+  const HEAL_SKILL		$get(ent_owner,skill.spellcasting.divination.ratio)
+  
+  const LOOP_SOUND		player/heartbeat_noloop.wav
+  const LOOP_CHANNEL		const.sound.item 
+  precache LOOP_SOUND
+
+  const SPELL_SCRIPT		effects/effect_rejuv2
+  precachefile 			SPELL_SCRIPT
+}
+
+#include items/magic_hand_base
+
+{  spell_spawn
+
+   name 		Rejuvination
+   desc 		Replenish yours or an ally's health over time
+
+   setvard FAN_LOOP 0
+
+   callevent passive_regen
+}
+
+{  spell_casted	//PARAM1: "none"/"npc"/"world"   2: Attack end Position   3: Entity hit (if any)
+
+	local DEMON_ON $get(ent_owner,scriptvar,DEMON_BLOOD)
+	if ( DEMON_ON )
+	{
+		playermessage You cannot use divine magic while under the influence of Demon Blood!
+		callevent spell_end
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	//Cast on owner... unless another npc is hit.  Then cast on the other NPC
+	local SPELL_TARGET ent_owner
+	if( PARAM1 equals 'npc' )
+	{
+		if ( $get(ent_owner,relationship,PARAM3) equals 'ally' ) setvard SPELL_TARGET PARAM3
+	}
+	if ( $get(PARAM3,isplayer) ) setvard SPELL_TARGET PARAM3
+	if ( $get(PARAM3,scriptvar,IAM_PLAYER) ) local SPELL_TARGET PARAM3
+
+	//local HEAL_FORMULA $get_skill_ratio(HEAL_SKILL,HEAL_MIN,HEAL_MAX)
+	//local FINAL_DURATION EFFECT_DURATION_FORMULA
+	//divide FINAL_DURATION 2
+	//applyeffect SPELL_TARGET SPELL_SCRIPT FINAL_DURATION HEAL_FORMULA
+
+	//Heal Formula, take deux
+
+	local HEAL_AMT $get(ent_owner,skill.spellcasting.divination)
+	add HEAL_AMT HEAL_MIN
+
+	if ( $get(ent_owner,id) isnot $get(SPELL_TARGET,id) )
+	{
+		 ////dbg Healer is not owner
+		local TEN_PERCENT $get(SPELL_TARGET,maxhp)
+		multiply TEN_PERCENT 0.1
+		add HEAL_AMT TEN_PERCENT
+		//gplayermessage ent_owner You heal $get(SPELL_TARGET,name) for HEAL_AMT
+		//if $get(SPELL_TARGET,isplayer)
+		//gplayermessage SPELL_TARGET $get(ent_owner,name) heals you for HEAL_AMT
+		
+		//give damage point if other player or critical npc
+		if ( $get(SPELL_TARGET,isplayer) ) local L_ADD_BONUS 1
+		if ( $get(SPELL_TARGET,scriptvar,NPC_CRITICAL) ) local L_ADD_BONUS 1
+		if ( L_ADD_BONUS ) callexternal ent_owner add_damage_points HEAL_AMT
+	}
+	else
+	{
+		multiply HEAL_AMT 0.5
+	}
+	////dbg HealAmt Final HEAL_AMT
+	
+	svplaysound game.sound.voice 10 SOUND_SHOOT
+
+	applyeffect SPELL_TARGET SPELL_SCRIPT HEAL_AMT DIV_SKILL $get(ent_owner,id)
+	if ( SPELL_TARGET isnot ent_owner ) callexternal SPELL_TARGET display_health
+}
+
+{ prepare_success_done
+		//volume 5
+		//playsound const.sound.item 5 UP_SOUND
+		setvard FAN_LOOP 1
+		//callevent 2 loop_sound
+}
+
+{ passive_regen
+
+	repeatdelay 0.5
+
+	if FAN_LOOP >= 1
+
+	add FAN_LOOP 1
+	if ( FAN_LOOP == 3 )
+	{
+        playsound LOOP_CHANNEL 10 LOOP_SOUND
+		effect glow ent_owner (0,255,0) 64 0.5 0.5
+		setvard FAN_LOOP 1 
+	}
+
+	local MY_MAX_HEALTH $get(ent_owner,maxhp)
+	local MY_CUR_HEALTH $get(ent_owner,hp)
+
+	local MY_SKILL $get(ent_owner,skill.spellcasting.divination)
+	local MY_PASSIVE_RATE MY_SKILL
+	multiply MY_PASSIVE_RATE 0.1
+	add MY_PASSIVE_RATE 4
+
+	if ( MY_CUR_HEALTH < MY_MAX_HEALTH ) givehp MY_PASSIVE_RATE
+
+	callexternal $get(ent_owner,id) display_health
+}
+
+{ game_takedamage
+
+	if PARAM4 isnot target //dont cancel heal for target tracking damage
+
+	setvard BITCH_SLAPPED 1
+	callevent spell_end
+}
+
+{ [override] spell_end
+
+	if ( BITCH_SLAPPED ) playermessage You cannot rejuvenate while being attacked!
+	if ( !BITCH_SLAPPED ) playermessage The spell's duration ends.
+	deleteme
+	//playviewanim	ANIM_IDLE1
+}
+
+{ fake_precache
+	svplaysound 0 0 SOUND_SHOOT
+}

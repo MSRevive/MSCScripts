@@ -1,0 +1,220 @@
+//Standard Giant Bear
+
+{
+   setvar ANIM_IDLE 	ANIM_IDLE	//This is a workaround	
+   setvar ANIM_WALK 	ANIM_WALK	//because I use these as variables
+   setvar ANIM_RUN 	ANIM_RUN	//while bear_base uses them as
+   setvard ANIM_ATTACK 	ANIM_ATTACK	//consts
+
+	setvard MSC_PUSH_RESIST 0.75
+	
+   const ATTACK_NORMAL_DAMAGE 	10
+   const ATTACK_STANDING_DAMAGE $randf(15,20)
+   setvard ATTACK_DAMAGE 	 ATTACK_NORMAL_DAMAGE
+   setvard MOVE_RANGE 		108
+   setvard ATTACK_RANGE 		128
+   setvard ATTACK_HITRANGE 	160
+   const ATTACK_STOMPRANGE 	160
+   const ATTACK_STOMPDMG 	5
+   const NPC_BASE_EXP		90
+   const BEAR_VOLUME		game.sound.maxvol
+
+   const SOUND_DEATH 		monsters/bear/giantbeardeath.wav
+   const SOUND_DEATH2 		monsters/bear/giantbeardeath2.wav
+   const SOUND_GETUP_GROWL	monsters/bear/giantbeardeath2.wav
+   const SOUND_GETUP		monsters/troll/step1.wav
+   const SOUND_GETDOWN		monsters/troll/step2.wav
+   const SOUND_UPSNARL		monsters/bear/giantbearupsnarl.wav
+   const SOUND_UPSTEP1		monsters/bear/giantbearstep1.wav
+   const SOUND_UPSTEP2		monsters/bear/giantbearstep2.wav
+ 
+   const NPC_AUTO_DEATH 0
+}
+
+#include monsters/bear_base
+
+{
+   removesetvar ANIM_IDLE	//part of the workaround
+   removesetvar ANIM_RUN
+   removesetvar ANIM_WALK
+   removesetvard ANIM_ATTACK
+}
+
+{  npc_spawn
+
+   hp 170
+   //ov 150
+   width 105
+   height 95
+   volume 10
+   setmodel monsters/giant_bear.mdl
+   hearingsensitivity 8
+
+   setvard ANIM_ATTACK attack	//part of the workaround
+   setvar ANIM_IDLE idle
+   setvar ANIM_WALK walk
+   setvar ANIM_RUN run
+   setvar BEAR_STANDING 0
+   setvar BEAR_CANSTAND 1
+   setvar BEAR_ISSTOMPATK 0
+   setvar BEAR_ISDDEAD 0
+}
+
+{ npc_post_spawn
+	setvard STAND_HEALTH game.monster.maxhp
+	multiply STAND_HEALTH 0.75
+	//dbg stand_health STAND_HEALTH
+}
+
+{  frame_runstomp
+   	callevent bear_shake
+}
+
+//ATTACK
+{ frame_attack1
+
+   playrandomsound game.sound.weapon BEAR_VOLUME SOUND_ATTACK1 SOUND_ATTACK2 SOUND_ATTACK3	//Attack grunts
+
+   setvard BEAR_ISSTOMPATK 0
+   dodamage ent_lastseen ATTACK_HITRANGE ATTACK_DAMAGE ATTACK_HITCHANCE
+}
+
+{ game_damaged_other
+
+   local SHOULD_PUSH_ENTITY 1
+   if( BEAR_ISSTOMPATK )
+   {
+   	//Let player jump to avoid stomp damage
+   	if( !$get(ent_laststruckbyme,onground) )
+	{
+   		setvard SHOULD_PUSH_ENTITY 0
+		setvard game.monster.canceldamage 1
+	}
+   }
+
+   if SHOULD_PUSH_ENTITY
+
+   local FORWARDPUSH 190
+   local SIDEPUSH $randf(-60,0)
+   local UPPUSH 10
+   if( BEAR_ISDEAD )
+   {
+   	setvard FORWARDPUSH 100
+   	setvard SIDEPUSH 0
+  	setvard UPPUSH 200
+   }
+
+   addvelocity ent_laststruckbyme $relvel(SIDEPUSH,FORWARDPUSH,UPPUSH)	//Push the player a bit
+}
+
+//STAND UP ON HIND LEGS
+//---------------------
+{
+   //Stand up after some health is gone
+   repeatdelay 3
+
+	if ( BEAR_STANDING )
+	{
+		if $rand(0,100) < 25
+		playsound 0 10 BEAR_VOLUME SOUND_UPSNARL
+	}
+
+   if $rand(0,100) < 50
+   if game.monster.hp < STAND_HEALTH
+   if !BEAR_STANDING
+   if BEAR_CANSTAND
+   if IS_HUNTING
+   if $cansee(ent_lastseen,range) < 250
+
+   callevent bear_standup
+}
+
+
+{ bear_standup
+
+   setvard BEAR_STANDING 1
+   setvard ANIM_ATTACK upattack
+   setvar ANIM_IDLE upidle
+   setvar ANIM_WALK upwalk
+   setvar ANIM_RUN upwalk
+   setvard ATTACK_DAMAGE ATTACK_STANDING_DAMAGE
+   
+   callevent $rand(7,15) bear_getdown
+   setidleanim upidle
+   setmoveanim ANIM_WALK
+   takedmg all 0.6
+   playanim critical getup
+	setvard AS_ATTACKING game.time
+   playsound game.sound.voice BEAR_VOLUME SOUND_GETUP_GROWL
+}
+
+{ bear_getdown
+
+   setvard BEAR_STANDING 0
+   setvard BEAR_CANSTAND 0
+   setvard ANIM_ATTACK attack
+   setvar ANIM_IDLE idle
+   setvar ANIM_WALK walk
+   setvar ANIM_RUN run
+   setvard ATTACK_DAMAGE ATTACK_NORMAL_DAMAGE
+   setvard CAN_ATTACK 0
+   setidleanim idle
+   setmoveanim ANIM_WALK
+	setvard AS_ATTACKING game.time
+   playanim critical getdown
+   takedmg all 1
+   callevent bear_stomp
+   callevent 15 bear_resetstand
+   callevent 3 bear_falldelay
+}
+{ bear_falldelay
+   setvard CAN_ATTACK 1		//Resume attack after a slight delay
+}
+{ frame_getup
+
+   playsound game.sound.voice BEAR_VOLUME SOUND_GETUP
+}
+{ frame_upstep
+
+   callevent bear_walkeffect
+}
+{ frame_hitground
+
+   callevent bear_shake
+   callevent bear_stomp
+}
+
+{ bear_resetstand
+
+   setvard BEAR_CANSTAND 1
+}
+//--------------------------
+//--------------------------
+
+{ npc_death
+
+   playrandomsound 2 SOUND_DEATH SOUND_DEATH2
+
+   if( BEAR_STANDING ) setvard ANIM_DEATH updeath
+
+   playanim critical ANIM_DEATH
+   setvard BEAR_ISDEAD 1
+}
+
+{ bear_shake
+
+   effect screenshake $relpos(0,0,0) 190 20 1 256
+   playsound 1 SOUND_GETDOWN
+}
+
+{ bear_walkeffect
+
+   effect screenshake $relpos(0,0,0) 128 10 1 128
+   playrandomsound 1 SOUND_UPSTEP1 SOUND_UPSTEP2
+}
+
+{ bear_stomp
+
+   setvard BEAR_ISSTOMPATK 1
+   dodamage $relpos(0,0,0) ATTACK_STOMPRANGE ATTACK_STOMPDMG 100% 0
+}

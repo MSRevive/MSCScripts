@@ -1,0 +1,222 @@
+{
+	//base anims
+	setvar ANIM_RUN fly
+	setvar ANIM_WALK fly
+	setvard ANIM_ATTACK attack
+	setvar ANIM_IDLE flapping
+
+	//standard stats
+	setvard NPC_GIVE_EXP 150
+	setvard ATTACK_RANGE 100
+	setvard ATTACK_HITRANGE 125
+	setvard MOVE_RAGE 40
+	const ATTACK_HITCHANCE 80%
+	const DMG_BITE $rand(25,35)
+
+	//custom anims
+	const ANIM_IDLE_HANG flapping
+	const ANIM_IDLE_FLY fly
+
+	//custom stats
+	const FREQ_RETURN $randf(5,10)
+	const FREQ_SUMMON $randf(15,30)
+	const ROAM_RADIUS 1024 //hover around spawn
+	const SUMMON_HEALTH 30
+
+	const SUMMON_SCRIPT monsters/summon/dragonfly
+	const DMG_SUMMON $randf(5,10)
+
+	const SUMMON_LIFETIME 15.0
+	const BAT_SUMMON_HEIGHT 300
+	const BAT_SUMMON_AMT 8
+
+	//Sound
+	const SOUND_STRUCK1 weapons/cbar_hitbod1.wav
+	const SOUND_STRUCK2 weapons/cbar_hitbod2.wav
+	const SOUND_STRUCK3 weapons/cbar_hitbod3.wav
+	const SOUND_HOVER monsters/dragonfly_queen.wav
+	const FREQ_SOUND_HOVER 9.5
+	const SOUND_DEATH none
+}
+
+#include monsters/base_monster
+#include monsters/attack_hack
+#include monsters/base_flyer
+
+{ npc_spawn
+
+	name a|Dread Dragonfly
+	race demon
+	hp 400
+	roam 1
+
+	setmodel monsters/dragonfly_queen.mdl
+	hearingsensitivity 10
+	setmonsterclip 0
+	fly 1
+	width 32
+	height 32
+}
+
+{ npc_post_spawn
+
+	setidleanim ANIM_IDLE
+	setmoveanim ANIM_WALK
+}
+
+{ cycle_up
+
+	if !STARTED_CYCLES
+	setvard STARTED_CYCLES 1
+	callevent FREQ_SUMMON make_babies
+}
+
+{
+repeatdelay FREQ_RETURN
+	if ( $dist(game.monster.origin,NPC_HOME_LOC) > ROAM_RADIUS )
+	{
+		callevent return_home
+	}
+}
+
+{ return_home
+	callevent npcatk_suspend_ai
+	setvard RETURNING_HOME 1
+	setmovedest NPC_HOME_LOC MOVE_RANGE
+}
+
+
+//=========================== custom flyer mods - BEGIN
+{
+repeatdelay 0.5
+	if ( RETURNING_HOME )
+	{
+		setmovedest NPC_HOME_LOC MOVE_RANGE
+		if $dist(game.monster.origin,NPC_HOME_LOC) < ATTACK_MOVERANGE
+		setvard RETURNING_HOME 0
+		callevent npcatk_resume_ai
+	}
+
+	if IS_HUNTING
+	callevent npcatk_faceattacker
+	if ( $get(NPCATK_TARGET,range) > MOVE_RANGE ) setvelocity ent_me $relvel(0,200,0)
+	if ( $get(NPCATK_TARGET,range) < MOVE_RANGE ) setvelocity ent_me $vec(0,0,0)
+	if ( HOVER_MODE ) setvelocity ent_me $vec(0,0,0)
+
+	if ( FLIGHT_STUCK > 4 )
+	{
+		//callevent chicken_run 1.0
+		callevent do_rand_tweedee //do_rand_tweedee
+		callevent npcatk_suspend_ai $randf(0.3,0.9)
+		setmovedest NEW_DEST game.monster.moveprox
+		callevent 0.1 horror_boost
+		setvard FLIGHT_STUCK 0
+	}
+
+	subtract AS_ATTACKING 2
+
+	local TARG_POS $get(NPCATK_TARGET,origin)
+	if ( !SUSPEND_AI ) setangle face_origin TARG_POS
+
+
+	if AS_ATTACKING <= 0
+	setvard AS_ATTACKING 0
+	if !IS_FLEEING
+	if !SPITTING
+	if $get(NPCATK_TARGET,range) > ATTACK_RANGE
+	local CUR_PROG $dist(game.monster.origin,TARG_POS)
+	if ( LAST_PROG >= CUR_PROG ) add FLIGHT_STUCK 1
+	setvard LAST_PROG $dist(game.monster.origin,TARG_POS)
+	setvard LAST_POS game.monster.origin
+	
+}
+
+{ chicken_run
+	callevent 0.1 horror_boost
+}
+
+{ horror_boost
+	setvelocity ent_me $relvel(0,200,0)
+}
+//=========================== custom flyer mods - END
+
+//=========================== Borrowed from bat_giant - BEGIN
+{ [override] npcatk_setmovedest
+
+	//fly above target
+	if !RETURNING_HOME
+
+	if ( $get(PARAM1,id) isnot NPCATK_TARGET ) setmovedest PARAM1 PARAM2
+
+	if ( $get(PARAM1,id) equals NPCATK_TARGET )
+	{
+		//attack from above
+		local TARG_ORG $get(NPCATK_TARGET,origin)
+		vectoradd TARG_ORG $relpos($vec(0,0,0),$vec(0,0,64))
+		setmovedest TARG_ORG 10
+	}
+}
+
+{ [server] make_babies
+	callevent FREQ_SUMMON make_babies
+	setvard OLD_TARG NPCATK_TARGET
+	callevent npcatk_suspend_ai 2.0
+	local DEST_POS game.monster.origin
+	vectoradd DEST_POS z 1024
+	setmovedest DEST_POS 10
+	addvelocity ent_me $vec(0,-50,900)
+	callevent 0.5 make_babies2
+}
+
+{ [server] make_babies2
+	addvelocity ent_me $vec(0,-50,900)
+	setmovedest OLD_TARG 9999
+	//face targ, straighten
+	setvelocity ent_me (0,0,0)
+	callevent 0.1 make_babies3
+}
+
+{ [server] make_babies3
+	local MY_YAW $vec.yaw(game.monster.angles)
+	setangle face $vec(0,MY_YAW,0)
+	playanim critical ANIM_ATTACK
+	callevent 0.1 bat_summon_all
+}
+
+{ [server] bat_summon_all
+
+	playsound 0 10 BAT_SUMMON_SND_SUMMON
+	playanim once attack2
+	setvard BAT_SUMMON_NUM BAT_SUMMON_AMT
+	callevent 0.1 bat_summon_loop
+	callevent FREQ_SUMMON make_babies
+}
+
+{ [server] bat_summon_loop
+
+	if BAT_SUMMON_NUM
+	decvar BAT_SUMMON_NUM 1
+	local L_TARGETPOS $get(ent_me,origin)
+	local L_OFS_X $rand(-100,100)
+	local L_OFS_Y $rand(-100,100)
+	vectoradd L_TARGETPOS (L_OFS_X,L_OFS_Y,-64)
+	createnpc SUMMON_SCRIPT L_TARGETPOS $get(ent_me,id) DMG_SUMMON SUMMON_HEALTH SUMMON_LIFETIME HUNT_LASTTARGET
+	callevent 0.1 bat_summon_loop
+}
+//=========================== Borrowed from bat_giant - END
+
+//Anim Events
+{ bite1
+	dodamage HUNT_LASTTARGET ATTACK_HITRANGE DMG_BITE ATTACK_HITCHANCE pierce
+}
+
+//sound loop
+{
+repeatdelay FREQ_SOUND_HOVER
+
+	svplaysound 2 10 SOUND_HOVER
+}
+
+{ game_death
+	svplaysound 2 0 SOUND_HOVER
+}

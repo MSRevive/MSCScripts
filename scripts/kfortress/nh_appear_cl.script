@@ -1,0 +1,139 @@
+//overly ostentatious, self-removing effect for entrance of Neck Hunter
+#scope client
+{
+   const GLOW_RAD 512
+   const GLOW_COLOR (256,128,64)
+
+   const START_DIST 256
+   const SPRITE_SPEED 120
+   const ROT_RATE 36
+}
+
+{ [client] client_activate //<origin>
+
+   setvard X_ANG 0
+   setvard Y_ANG 0
+
+   setvard MY_POS PARAM1
+   setvard ANG_COUNT 0
+
+   cleffect light new MY_POS GLOW_RAD GLOW_COLOR 17.0
+   
+   cleffect tempent sprite weapons/projectiles.mdl MY_POS setup_knife //update_knife
+
+   setvard SPRITES_ON 1
+   callevent sprite_vacuum
+
+   sound.play3d ambience/alien_humongo.wav 10 MY_POS
+
+   callevent 0.1 spookie_sound
+
+   callevent 10.0 close_effect
+}
+
+{ [client] spookie_sound
+   sound.play3d ambience/alienflyby1.wav 10 MY_POS
+
+}
+
+{ [client] close_effect
+   setvard SPRITES_ON 0
+   sound.play3d magic/cast.wav 10 MY_POS
+   callevent glitter_effect
+   callevent 6.0 ting_sound
+   callevent 7.0 end_effect
+}
+
+{ [client] glitter_effect
+   callevent 0.1 glitter_effect
+   local GLITTER_POS MY_POS
+   vectoradd GLITTER_POS $relpos($vec(0,0,0),$vec(0,$rand(0,20),0))
+   cleffect tempent sprite 3dmflaora.spr GLITTER_POS setup_glitter
+}
+
+{ [client] ting_sound
+   local GROUND_POS MY_POS
+   local GROUND_Z $get_ground_height(MY_POS)
+   vectorset GROUND_POS z GROUND_Z
+
+   sound.play3d weapons/dagger/daggermetal1.wav 10 GROUND_POS
+}
+
+{ [client] end_effect
+   removescript
+}
+
+{ [client] sprite_vacuum
+   if SPRITES_ON
+
+   callevent 0.1 sprite_vacuum
+
+   //callevent update_knife
+
+   setvard F_SPRITE_SPEED SPRITE_SPEED
+   calleventloop 10 sprite_sphere
+   setvard F_SPRITE_SPEED $neg(SPRITE_SPEED)
+   calleventloop 10 sprite_sphere
+}
+
+{ [client] sprite_sphere
+   cleffect tempent sprite 3dmflaora.spr MY_POS setup_vac_sprite
+}
+
+//Was trying to get the knife to spin, but wouldn't work
+//{ [client] game_prerender
+//
+//   //callevent update_knife
+//   cleffect light SKEL_LIGHT_ID L_POS GLOW_RAD GLOW_COLOR 1.0
+//}
+
+//{ [client] update_knife
+//
+//   cleffect tempent set_current_prop angles ($randf(0,350),$randf(0,350),$randf(0,350))
+//}
+
+{ [client] setup_knife
+   cleffect tempent set_current_prop death_delay    15.0
+   cleffect tempent set_current_prop renderamt   255
+   cleffect tempent set_current_prop rendermode normal
+   cleffect tempent set_current_prop scale 1.0
+   cleffect tempent set_current_prop gravity    0
+   cleffect tempent set_current_prop angles (0,0,0)
+   cleffect tempent set_current_prop collide    all;die
+   cleffect tempent set_current_prop body    44
+   //cleffect tempent set_current_prop update 1
+}
+
+{ [client] setup_vac_sprite
+
+   add X_ANG ROT_RATE
+   add Y_ANG ROT_RATE
+   if ( X_ANG > 359 ) subtract X_ANG 359
+   if ( Y_ANG > 359 ) subtract Y_ANG 359
+   local SPRITE_ANGS $vec(X_ANG,Y_ANG,Z_ANG)
+
+   cleffect tempent set_current_prop death_delay    2.0
+   cleffect tempent set_current_prop fadeout    2.0
+   cleffect tempent set_current_prop velocity    $relvel(SPRITE_ANGS,$vec(0,F_SPRITE_SPEED,0))
+   cleffect tempent set_current_prop scale    0.5
+   cleffect tempent set_current_prop renderamt   150
+   cleffect tempent set_current_prop rendermode add
+   cleffect tempent set_current_prop gravity    0
+   cleffect tempent set_current_prop collide    none
+   cleffect tempent set_current_prop framerate   30
+   cleffect tempent set_current_prop frames   1
+}
+
+{ setup_glitter
+   cleffect tempent set_current_prop death_delay    $randf(0.5,1.5)
+   cleffect tempent set_current_prop fadeout    lifetime
+   cleffect tempent set_current_prop scale    0.1
+   cleffect tempent set_current_prop renderamt   255
+   cleffect tempent set_current_prop rendermode add
+   cleffect tempent set_current_prop rendercolor (0,0,255)
+   cleffect tempent set_current_prop gravity    -2.0
+
+   cleffect tempent set_current_prop collide    none
+   cleffect tempent set_current_prop framerate   30
+   cleffect tempent set_current_prop frames   1
+}

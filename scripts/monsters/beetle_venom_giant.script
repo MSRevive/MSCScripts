@@ -1,0 +1,184 @@
+//giant venomsack beetle
+//poison aura - blinding poison breath
+
+{
+	setvard NPC_GIVE_EXP 3000
+	const BBET_SIZE 2
+	const BBET_CAN_FLY 0
+	const BBET_CAN_LEAP 0
+	const BBET_CAN_SLAM 1
+	const BBET_GORE_PUSH_STR 800
+	const BBET_FAKE_DEATH 0
+
+	const DMG_SLASH 160
+	const DMG_GORE 150
+	const DMG_SLAM 600
+	const DOT_APOISON 50
+	const DOT_POISON 100
+	const DOT_SLIME 50
+	const DMG_BURST 800
+
+	const SOUND_SLIME monsters/gonome/gonome_eat.wav
+	const SOUND_SLIME_LOOP ambience/steamjet1.wav
+
+	const ANIM_SPECIAL bug_conjure //frame_spell
+
+	const FREQ_SLIME $randf(20.0,30.0)
+	const SLIME_ATTACK_DURATION 4.0
+
+	setvard NPC_MUST_SEE_TARGET 0 //likely fighting through minions
+
+	const SOUND_ATTACK1 monsters/beetle/attack_double1.wav
+	const SOUND_ATTACK2 monsters/beetle/attack_double2.wav
+	const SOUND_ATTACK3 monsters/beetle/attack_double3.wav
+
+	const SOUND_POISON_BURST weapons/explode3.wav
+}
+
+{ game_precache
+	precache monsters/beetles_giant.mdl
+	precache magic/boom.wav
+	precache cactusgibs.mdl
+	precache ambience/steamburst1.wav
+	precache poison_cloud.spr
+}
+
+#include monsters/beetle_base
+
+{ beetle_spawn
+	name a|Giant Venomsack
+	hp 4000
+	takedmg all 0.5
+	takedmg poison 0.1
+	setmodelbody 0 1 //0=Horned 1=Venom 2=Fire
+
+	clientevent new all effects/sfx_poison_aura $get(ent_me,index) 256 10.0	
+}
+
+//================ Slam attack
+{ beetle_slam
+	setvard SLAM_POS $get(ent_me,attachpos,1)
+	vectorset SLAM_POS z $get_ground_height(SLAM_POS)
+	dodamage SLAM_POS BBET_SLAM_RADIUS DMG_SLAM 100% 0 reflective blunt
+	clientevent new all effects/sfx_stun_burst SLAM_POS 256 0
+	setvard STUN_TARGS $get_tsphere(enemy,256,SLAM_POS)
+	if STUN_TARGS isnot none
+	calleventloop $get_token_amt(STUN_TARGS) affect_targets
+}
+
+{ affect_targets
+	local CUR_TARG $get_token(STUN_TARGS,game.script.iteration)
+	if $get(CUR_TARG,onground)
+	applyeffect CUR_TARG effects/effect_stun 8.0 0 1
+	local TARG_ORG $get(CUR_TARG,origin)
+	local TARG_ANG $angles(SLAM_POS,TARG_ORG)
+	setvelocity CUR_TARG $relvel($vec(0,TARG_ANG,0),$vec(10,1000,0))
+}
+
+//================ Poison Aura
+{
+repeatdelay 1.0
+	if $get(ent_me,isalive)
+	setvard APOISON_TARGS $get_tsphere(enemy,256)
+	if APOISON_TARGS isnot none
+	calleventloop $get_token_amt(APOISON_TARGS) apoison_affect_targets
+}
+
+{ apoison_affect_targets
+	local CUR_TARG $get_token(APOISON_TARGS,game.script.iteration)
+	applyeffect CUR_TARG effects/effect_poison 5.0 $get(ent_me,id) DOT_APOISON
+}
+
+{
+repeatdelay 10.0
+	if $get(ent_me,isalive)
+	clientevent new all effects/sfx_poison_aura $get(ent_me,index) 256 10.0	
+}
+
+//================ Splodie Death
+{ game_death
+	setprop ent_me rendermode 5
+	setprop ent_me renderamt 0
+
+	playsound 0 10 SOUND_POISON_BURST
+	xdodamage $relpos(0,0,0) 512 DMG_BURST 0 ent_me ent_me none poison_effect
+	clientevent new all effects/sfx_poison_explode $get(ent_me,origin) 512
+	effect tempent gibs cactusgibs.mdl $relpos(0,0,0) 1.0 50 50 15 2.0
+	setvard POISON_TARGS $get_tsphere(enemy,512)
+	playsound 0 10 SOUND_POISON_BURST
+	if POISON_TARGS isnot none
+	calleventloop $get_token_amt(POISON_TARGS) poison_affect_targets
+}
+
+{ poison_affect_targets
+	local CUR_TARG $get_token(POISON_TARGS,game.script.iteration)
+	applyeffect CUR_TARG effects/greater_poison 5.0 $get(ent_me,id) DOT_POISON
+	local TARG_ORG $get(CUR_TARG,origin)
+	local TARG_ANG $angles(game.monster.origin,TARG_ORG)
+	setvelocity CUR_TARG $relvel($vec(0,TARG_ANG,0),$vec(10,1000,200))
+}
+
+//================ Slime attack
+{ cycle_up
+	setvard NEXT_SLIME game.time
+	add NEXT_SLIME FREQ_SLIME
+}
+
+{ npcatk_hunt
+	if NPCATK_TARGET isnot unset
+	if !DOING_SLIME
+	if game.time > NEXT_SLIME
+	callevent do_slime
+}
+
+{ do_slime
+	callevent npcatk_suspend_ai
+	callevent npcatk_suspend_movement ANIM_SPECIAL
+	playanim critical ANIM_SPECIAL
+	clientevent new all monsters/beetle_venom_giant_cl $get(ent_me,index) SLIME_ATTACK_DURATION
+	svplaysound 2 10 SOUND_SLIME_LOOP
+	playsound 0 10 SOUND_SLIME
+	setvard SPIN_ANG $get(ent_me,angles.yaw)
+	setvard DOING_SLIME 1
+	callevent slime_scan
+	callevent SLIME_ATTACK_DURATION end_slime
+}
+
+{ end_slime
+	setvard DOING_SLIME 0
+	callevent npcatk_resume_ai
+	callevent npcatk_resume_movement
+	playanim break
+	setvard NEXT_SLIME game.time
+	add NEXT_SLIME FREQ_SLIME
+	svplaysound 2 0 SOUND_SLIME_LOOP
+}
+
+{ slime_scan
+	if DOING_SLIME
+	callevent 0.5 slime_scan
+
+	local FACE_POS $get(ent_me,origin)
+	vectoradd FACE_POS $relpos($vec(0,SPIN_ANG,0),$vec(0,100,0))
+	add SPIN_ANG 10
+	if ( SPIN_ANG > 359 ) subtract SPIN_ANG 359
+
+	local SLIME_CENTER $get(ent_me,attachpos,1)
+	vectoradd SLIME_CENTER $relpos($vec(0,game.monster.angles.yaw,0),$vec(0,128,0))
+	vectorset SLIME_CENTER z $get_ground_height(SLIME_CENTER)
+	setvard SLIME_TARGETS $get_tsphere(enemy,96,SLIME_CENTER)
+	if SLIME_TARGETS isnot 'none'
+	calleventloop $get_token_amt(SLIME_TARGETS) slime_affect_targets
+}
+
+{ slime_affect_targets
+	local CUR_TARG $get_token(SLIME_TARGETS,game.script.iteration)
+	if $get(CUR_TARG,range) < 256
+	local TARG_ORG $get(CUR_TARG,origin)
+	if $within_cone2D(TARG_ORG,game.monster.origin,game.monster.angles,10)
+	local TRACE_START $get(ent_me,attachpos,1)
+	local TRACE_END TARG_ORG
+	local TRACE_LINE $get_traceline(TRACE_START,TRACE_END,worldonly)
+	if TRACE_LINE equals TRACE_END
+	applyeffect CUR_TARG effects/effect_poison_blinding 5.0 $get(ent_me,id) DOT_SLIME
+}

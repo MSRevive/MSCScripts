@@ -1,0 +1,423 @@
+#scope server
+{ [shared]
+
+	const ANIM_CUSTOM_FLINCH flinch
+	const ANIM_ALERT arming
+
+	setvar ANIM_IDLE idle
+	setvar ANIM_WALK walk
+	setvard ANIM_RUN walk
+
+	setvard ANIM_ATTACK qkfire //frame_shoot_needle
+	const ANIM_ATTACK_QUICK qkfire
+	const ANIM_MORTAR_READY arming
+	const ANIM_MORTAR shoot //frame_shoot_blob (twice)
+}
+
+{
+	setvard NPC_GIVE_EXP 750
+
+	setvard FREQ_MORTAR 10.0
+
+	const DMG_GLOB 400
+	const DOT_GLOB 100
+	const DMG_NEEDLE 150
+
+	setvard NPC_IS_RANGED 1
+	setvard ATTACK_RANGE 2048
+	setvard ATTACK_HITRANGE 2048
+	setvard ATTACK_MOVERANGE 768
+	setvard MOVE_RANGE 768
+
+	const SOUND_SHOOT monsters/tube/tube_fire_new.wav
+
+	const SOUND_MOURN1 monsters/tube/tube_mourn1.wav
+	const SOUND_MOURN2 monsters/tube/tube_mourn2.wav
+	const SOUND_MOURN3 monsters/tube/tube_mourn3.wav
+
+	const SOUND_IDLE1 monsters/tube/Tube_Idle.wav
+	const SOUND_IDLE2 monsters/tube/Tube_Idle2.wav
+	const SOUND_IDLE3 monsters/tube/Tube_Idle3.wav
+
+	const SOUND_ALERT1 monsters/tube/tube_gtfo.wav
+	const SOUND_ALERT2 monsters/tube/Tube_SeePlayer.wav
+
+	const SOUND_STRUCK1 monsters/tube/TubeCritter_Hit1.wav
+	const SOUND_STRUCK2 monsters/tube/TuberCritter_Hit2.wav
+	const SOUND_STRUCK3 monsters/tube/TubeCritter_Hit3.wav
+	const SOUND_PAIN monstrs/tube/Tube_Flinch.wav
+
+	const SOUND_DEATH1 monsters/tube/die1.wav
+	const SOUND_DEATH2 monsters/tube/Tube_DieBack.wav
+	const SOUND_DEATH3 monsters/tube/Tube_DieSimple.wav
+	setvard NPC_ALT_SOUND_DEATH monsters/tube/die1.wav
+
+	precache SOUND_DEATH1
+	precache SOUND_DEATH2
+	precache SOUND_DEATH3
+
+	precache xfireball3.spr //used by proj_glob
+}
+
+#include monsters/base_monster_new
+
+{ [shared] npc_spawn
+	name Oodle-Beak
+	race wildanimal
+	setmodel monsters/tube.mdl
+	width 32
+	height 64
+	hp 2000
+	takedmg fire 1.5
+	hearingsensitivity 4
+	roam 1
+
+	setidleanim ANIM_IDLE
+	setmoveanim ANIM_WALK
+
+	if game.serverside
+	callevent 2.0 finalize_me
+	setvard RUN_STEP 0
+}
+
+{ finalize_me
+	setvard HALF_HP $get(ent_me,maxhp)
+	multiply HALF_HP 0.5
+}
+
+{ npcatk_hunt
+	if ( NPCATK_TARGET equals unset )
+	{
+		if game.time > NEXT_IDLE
+		setvard NEXT_IDLE game.time
+		add NEXT_IDLE $randf(5.0,10.0)
+		local RND_IDLE $rand(1,4)
+		if ( RND_IDLE >= 1 )
+		{
+			if RND_IDLE <= 3
+			playrandomsound 0 10 SOUND_IDLE1 SOUND_IDLE2 SOUND_IDLE3
+			if ( RND_IDLE == 1 )
+			{
+				if ( !NPC_IS_TURRET ) callevent npcatk_suspend_roam 2.0
+				playanim critical eating#idle
+			}
+
+			if ( RND_IDLE == 2 )
+			{
+				if ( !NPC_IS_TURRET ) callevent npcatk_suspend_roam 2.0
+				playanim critical eating#hiss
+			}
+		}
+		if RND_IDLE == 4
+		playanim critical mourn
+		if ( !NPC_IS_TURRET ) callevent npcatk_suspend_roam 2.0
+		playrandomsound 0 10 SOUND_MOURN1 SOUND_MOURN2 SOUND_MOURN3
+	}
+
+	if NPCATK_TARGET isnot unset
+	if !SUSPEND_AI
+	if !IS_FLEEING
+	if !I_R_FROZEN
+	
+	if ( game.time > NEXT_MORTAR )
+	{
+		if $cansee(enemy)
+		setvard NEXT_MORTAR game.time
+		add NEXT_MORTAR 20.0 //reset when mortar done
+		callevent do_mortar
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+	if !NPC_IS_TURRET
+
+	if ( game.time > NEXT_REPOS )
+	{
+		setvard NEXT_REPOS game.time
+		add NEXT_REPOS 15.0
+		local L_LAST_ATTACK AS_ATTACKING
+		add L_LAST_ATTACK 5.0
+		if game.time < L_LAST_ATTACK
+		if $get(NPCATK_TARGET,range) > 128
+		movespeed 4.0
+		callevent chicken_run 3.0
+		callevent 3.0 normal_speed
+	}
+
+	if !MORTAR_ACTIVE
+	if !MORTAR_READY
+	if $get(NPCATK_TARGET,range) < 128
+	if game.time > NEXT_RETREAT
+	setvard NEXT_RETREAT game.time
+	add NEXT_RETREAT $randf(5.0,10.0)
+	//manual flee, because regular is being screwy
+	callevent do_manual_flee
+}
+
+{ normal_speed
+	movespeed 1.0
+}
+
+{ do_manual_flee
+	callevent npcatk_suspend_ai 3.0
+	setmovedest NPCATK_TARGET 1024 flee
+	movespeed 4.0
+	callevent 3.0 end_manual_flee
+}
+
+{ end_manual_flee
+	callevent npcatk_resume_ai
+	movespeed 1.0
+}
+
+{ my_target_died
+	if game.time > NEXT_VICTORY
+	setvard NEXT_VICTORY game.time
+	add NEXT_VICTORY 15.0
+	playanim critical mourn
+	if ( !NPC_IS_TURRET ) callevent npcatk_suspend_roam 2.0
+	playrandomsound 0 10 SOUND_MOURN1 SOUND_MOURN2 SOUND_MOURN3
+	setvard DID_ALERT 0
+}
+
+{ game_damaged
+	playrandomsound 1 10 SOUND_STRUCK1 SOUND_STRUCK2 SOUND_STRUCK3
+
+	if ( $get(ent_me,hp) < HALF_HP )
+	{
+		if game.time > NEXT_CUST_FLINCH
+		setvard NEXT_CUST_FLINCH game.time
+		add NEXT_CUST_FLINCH 10.0
+		callevent npcatk_suspend_ai 1.5
+		playsound 2 10 SOUND_PAIN
+		playanim critical ANIM_CUSTOM_FLINCH
+	}
+}
+
+{ npc_targetsighted
+	if !DID_ALERT
+	if ( !NPC_IS_TURRET ) callevent npcatk_suspend_roam 2.0
+	setmovedest NPCATK_TARGET 9999
+	setvard DID_ALERT 1
+
+	setvard NEXT_REPOS game.time
+	add NEXT_REPOS 15.0
+
+	if ( !NPC_IS_TURRET )
+	{
+		setvard NEXT_MORTAR game.time
+		add NEXT_MORTAR FREQ_MORTAR
+	}
+
+	if ( G_ALERT_CYCLE == 1 )
+	{
+		playanim critical ANIM_ALERT
+		playsound 0 10 SOUND_ALERT1
+	}
+
+	if ( G_ALERT_CYCLE == 2 )
+	{
+		playanim critical dropped
+		playsound 0 10 SOUND_ALERT2
+	}
+
+	if ( G_ALERT_CYCLE == 3 )
+	{
+		playanim critical mourn
+		playrandomsound 0 10 SOUND_MOURN1 SOUND_MOURN2 SOUND_MOURN3
+	}
+
+
+	if ( G_ALERT_CYCLE == 3 ) setvarg G_ALERT_CYCLE 0
+}
+
+{ npc_set_turret
+	setvard FREQ_MORTAR 5.0
+}
+
+{ frame_step
+	add RUN_STEP 1
+	if ( RUN_STEP == 1 )
+	{
+		playsound 0 5 monsters/tube/Tube_Footstep_Left1.wav
+	}
+	else
+	{
+		playsound 0 5 monsters/tube/Tube_Footstep_Right1.wav
+		setvard RUN_STEP 0
+	}
+}
+
+{ npc_heard_player
+	if NPCATK_TARGET equals unset
+	if game.time > NEXT_HEARD_ALERT
+	setvard NEXT_HEARD_ALERT game.time
+	add NEXT_HEARD_ALERT 10.0
+	playrandomsound 0 10 SOUND_IDLE1 SOUND_IDLE2 SOUND_IDLE3
+}
+
+{ game_death
+	local RND_DEATH $rand(1,3)
+	if ( RND_DEATH == 1 ) setvard NPC_ALT_SOUND_DEATH SOUND_DEATH1
+	if ( RND_DEATH == 2 ) setvard NPC_ALT_SOUND_DEATH SOUND_DEATH2
+	if ( RND_DEATH == 3 ) setvard NPC_ALT_SOUND_DEATH SOUND_DEATH3
+
+	if AM_SUMMONED
+	callexternal MY_MASTER ext_tube_died
+}
+
+{ do_mortar
+	dbg do_mortar
+	setvard MORTAR_READY 1
+	playsound 0 10 monsters/tube/Tube_Arming.wav
+	callevent npcatk_suspend_ai 3.0
+	playanim critical ANIM_MORTAR_READY
+	setmovedest NPCATK_TARGET 9999
+	callevent 1.0 do_mortar2
+}
+
+{ do_mortar2
+	callevent npcatk_suspend_movement ANIM_MORTAR
+	playanim critical ANIM_MORTAR
+	setvard MORTAR_ANG $get(ent_me,angles.yaw)
+	subtract MORTAR_ANG 30
+	if ( MORTAR_ANG < 0 ) add MORTAR_ANG 359
+	setvard MORTAR_ACTIVE 1
+	callevent 2.0 mortar_end
+	callevent mortar_loop
+}
+
+{ mortar_loop
+	if MORTAR_ACTIVE
+	callevent 0.1 mortar_loop
+	add MORTAR_ANG 2
+	if ( MORTAR_ANG > 359 ) subtract MORTAR_ANG 359
+	local FACE_POS game.monster.origin
+	vectoradd FACE_POS $relpos($vec(0,MORTAR_ANG,0),$vec(0,500,0))
+	setmovedest FACE_POS 9999
+}
+
+{ mortar_end
+	setvard MORTAR_ACTIVE 0
+	setvard MORTAR_READY 0
+	callevent npcatk_resume_movement
+	setvard NEXT_MORTAR game.time
+	add NEXT_MORTAR FREQ_MORTAR
+}
+
+{ frame_shoot_blob
+	playsound 0 10 bullchicken/bc_attack2.wav
+
+	local TARG_DIST_RATIO $get(NPCATK_TARGET,range)
+	if ( TARG_DIST_RATIO > 1200 ) local TARG_DIST_RATIO 1200
+	divide TARG_DIST_RATIO 1200
+	local ATTACK_SPEED $ratio(TARG_DIST_RATIO,150,550)
+	multiply ATTACK_SPEED $randf(0.8,1.2)
+	local ANGLE_ADJ $ratio(TARG_DIST_RATIO,25,45)
+	setangle add_view.pitch ANGLE_ADJ
+
+	tossprojectile view ATTACK_SPEED 0 0.1 proj_glob_dynamic (-10,32,64)
+
+//	local TARG_ORG $get(NPCATK_TARGET,origin)
+//	if ( !$get(TARG_ORG,isplayer) ) vectoradd TARG_ORG z $get(NPCATK_TARGET,height)
+//	local TARG_DIST $dist(TARG_ORG,game.monster.origin)
+//	divide TARG_DIST 25
+//	setangle add_view.pitch TARG_DIST
+//
+//	local BOMB_SPEED $randf(300,400)
+//	if ( $get(NPCATK_TARGET,range) > 800 ) multiply BOMB_SPEED 2
+//
+//	tossprojectile view BOMB_SPEED 0 0.1 proj_glob_dynamic (-10,32,64)
+//
+//	local TARG_Z $vec.z(TARG_ORG)
+//	local MY_Z $get(ent_me,origin.z)
+//
+//	//man, I wish I had my old "artillery" code about now
+//
+//	if ( TARG_Z > MY_Z )
+//	{
+//		local Z_DIFF TARG_Z
+//		subtract Z_DIFF MY_Z
+//		if ( Z_DIFF > 75 )
+//		{
+//			if Z_DIFF < 200
+//			callexternal ent_lastprojectile ext_lighten 0.1
+//		}
+//		if ( Z_DIFF >= 200 )
+//		{
+//			callexternal ent_lastprojectile ext_lighten 0.05
+//		}
+//	}
+}
+
+{ ext_glob_landed //<origin> - from items/proj_glob_dynamic
+	setvard BLOB_ORG PARAM1
+	xdodamage PARAM1 96 DMG_GLOB 0.2 ent_me ent_me none acid_effect dmgevent:glob
+}
+
+{ glob_dodamage
+	if PARAM1
+	if $get(PARAM2,relationship,ent_me) equals enemy
+	local TARG_ORG $get(PARAM2,origin)
+	local BLOB_DIST $dist(BLOB_ORG,TARG_ORG)
+	divide BLOB_DIST 64
+	local BLOB_DIST_RATIO 1
+	subtract BLOB_DIST_RATIO BLOB_DIST
+	local BLIND_DURATION $ratio(BLOB_DIST_RATIO,2.0,6.0) //blind 2-6 seconds based on how direct the hit was
+	dbg glob_dodamage BLIND_DURATION
+	applyeffect PARAM2 effects/effect_poison_blinding BLIND_DURATION $get(ent_me,id) DOT_GLOB
+}
+
+{ frame_aim_needle
+
+	setvard NEEDLE_AIM_POS $get(NPCATK_TARGET,origin)
+	//dbg frame_aim_needle NEEDLE_AIM_POS
+	//vectoradd NEEDLE_AIM_POS $relvel($vec(0,game.monster.yaw,0),$vec(0,2048,0))
+}
+
+{ frame_shoot_needle
+	setvard NEEDLE_AIM_POS $get(NPCATK_TARGET,origin)
+	playsound 0 10 SOUND_SHOOT
+	local TRACE_START $get(ent_me,attachpos,0) 
+	local TRACE_END NEEDLE_AIM_POS
+	setvard NEEDLE_ANGLES $angles3d(TRACE_START,NEEDLE_AIM_POS)
+	vectorset NEEDLE_ANGLES x $neg($vec.x(NEEDLE_ANGLES))
+	clientevent new all monsters/swamp_tube_cl $get(ent_me,index) NEEDLE_ANGLES
+	callevent 0.1 do_needle_damage
+}
+
+{ do_needle_damage
+	local TRACE_START $get(ent_me,attachpos,0) 
+	local TRACE_END TRACE_START
+	vectoradd TRACE_END $relpos(NEEDLE_ANGLES,$vec(0,2048,0))
+
+	xdodamage TRACE_START TRACE_END DMG_NEEDLE 100% ent_me ent_me none pierce dmgevent:needle
+}
+
+{ needle_dodamage
+	if PARAM1
+	setvard NEXT_REPOS game.time
+	add NEXT_REPOS 15.0
+}
+
+{ game_dynamically_created
+	setvard AM_SUMMONED 1
+	setvard MY_MASTER PARAM1
+}
+
+{ ext_mommy_died
+	if AM_SUMMONED
+	callevent npcatk_suspend_ai
+	setvard DEATH_GOAL PARAM1
+	movespeed 3.0
+	playanim break
+	playanim ANIM_RUN
+	setmovedest DEATH_GOAL 32
+	callevent death_goal_loop
+}
+
+{ death_goal_loop
+	roam 1
+	setvard SUSPEND_AI 1 //in case revoked
+	callevent 2.0 death_goal_loop
+	setmovedest DEATH_GOAL 32
+}

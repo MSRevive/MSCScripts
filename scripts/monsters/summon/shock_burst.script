@@ -1,0 +1,123 @@
+//Lightning Burst by Thothie from Scratch
+//- Odd bug, it seems only the first lightning bolt is doing damage
+//- it also seems its target is pretty far off
+//- I tried using dodamage, same effect, so its not a fault in $get_insphere's code
+
+{
+	const SOUND_THUNDER weather/Storm_exclamation.wav
+	const BOLT_HEIGHT 512
+}
+
+{ game_dynamically_created //<owner> <dmg> <radius> <#bolts> [beam_color] [beam_width]
+
+	setvard MY_OWNER PARAM1
+	setvard MY_DMG PARAM2
+	setvard MY_RADIUS PARAM3
+	setvard NUM_BOLTS PARAM4
+	setvard BEAM_COLOR PARAM5
+	setvard BEAM_WIDTH PARAM6
+
+	if ( BEAM_COLOR equals 'PARAM5' ) setvard BEAM_COLOR (255,255,0)
+	if ( BEAM_WIDTH equals 'PARAM6' ) setvard BEAM_WIDTH 200
+
+	//dbg incvars $get(MY_OWNER,name) dmg MY_DMG rad MY_RADIUS nbolts NUM_BOLTS
+
+	setvard OWNER_ISPLAYER $get(MY_OWNER,isplayer)
+
+	setvard ANG_ADJ 359
+	divide ANG_ADJ NUM_BOLTS
+
+	setvard CUR_RAD 5
+	setvard CUR_ANG 0
+	setvard BOLTS_DEFINED 0
+
+	callevent 0.25 define_bolts
+}
+
+{ game_spawn
+
+	name a|Lightning Blast
+	race hated
+	hp 1
+	invincible 1
+	setvard PLAYING_DEAD 1
+}
+
+{ define_bolts
+	if BOLTS_DEFINED < NUM_BOLTS
+	add BOLTS_DEFINED 1
+	if ( BOLTS_DEFINED <= NUM_BOLTS )
+	{
+		add CUR_RAD 2
+		add CUR_ANG 5
+		add DL_ANG_ADJ CUR_ANG
+		if ( DL_ANG_ADJ > 359 ) subtract DL_ANG_ADJ 359
+		local DBOLT_START game.monster.origin
+		vectoradd DBOLT_START $relpos($vec(0,DL_ANG_ADJ,0),$vec(0,CUR_RAD,0))
+		createnpc monsters/summon/shock_burst_child DBOLT_START MY_OWNER MY_DMG BOLTS_DEFINED
+		if ( BOLTS_STRING isnot 'BOLTS_STRING' ) token.add BOLTS_STRING $get(ent_lastcreated,id)
+		if ( BOLTS_STRING equals 'BOLTS_STRING' ) setvard BOLTS_STRING $get(ent_lastcreated,id)
+		callevent 0.25 define_bolts
+	}
+
+	if ( BOLTS_DEFINED == NUM_BOLTS )
+	{
+		setvard IS_ACTIVE 1
+		callevent move_bolts
+		playsound 0 10 SOUND_THUNDER
+		////dbg define_bolts BOLTS_STRING
+	}
+}
+
+{ move_bolts
+
+	if IS_ACTIVE
+	callevent 0.1 move_bolts
+
+	add CUR_RAD 2
+	add CUR_ANG 5
+	setvard LOOP_COUNT 0
+	calleventloop NUM_BOLTS draw_bolts
+
+	if ( CUR_RAD >= MY_RADIUS ) callevent end_summon
+}
+
+{ draw_bolts
+	
+	local L_ANG_ADJ LOOP_COUNT
+	multiply L_ANG_ADJ ANG_ADJ
+	add L_ANG_ADJ CUR_ANG
+	if ( L_ANG_ADJ > 359 ) subtract L_ANG_ADJ 359
+
+	local BOLT_START game.monster.origin
+	vectoradd BOLT_START $relpos($vec(0,L_ANG_ADJ,0),$vec(0,CUR_RAD,0))
+	local BOLT_END BOLT_START
+	vectoradd BOLT_END z BOLT_HEIGHT
+	effect beam point lgtning.spr BEAM_WIDTH BOLT_START BOLT_END BEAM_COLOR 255 100 0.1
+
+	local BOLT_TO_MOVE $get_token(BOLTS_STRING,LOOP_COUNT)
+	setorigin BOLT_TO_MOVE BOLT_START
+
+	////dbg draw_bolts_moving#( LOOP_COUNT / NUM_BOLTS ) id( BOLT_TO_MOVE )
+
+	add LOOP_COUNT 1
+}
+
+{ end_summon
+	setvard IS_ACTIVE 0
+	setvard LOOP_COUNT 0
+	callevent remove_bolts_loop
+}
+
+{ remove_bolts_loop
+	
+	if ( LOOP_COUNT < NUM_BOLTS ) callevent 0.1 remove_bolts_loop
+	if ( LOOP_COUNT == NUM_BOLTS ) callevent 1.0 remove_me
+	local BOLT_TO_REMOVE $get_token(BOLTS_STRING,LOOP_COUNT)
+	if ( $get(BOLT_TO_REMOVE,exists) ) deleteent BOLT_TO_REMOVE
+	add LOOP_COUNT 1
+}
+
+{ remove_me
+	deleteent ent_me
+}

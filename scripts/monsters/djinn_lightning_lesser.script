@@ -1,0 +1,546 @@
+//Lesser Lightning Djinn by The Magical Bong/CrazyMonkeyDude (From Swamp Ogre by Thothie)
+{
+	const ORC_HOP_DELAY 1.0 //how often the orc jumps
+	const ORC_JUMP_THRESH 80 //how much higher the player must be for the orc to want to jump
+
+	setvard NPC_GIVE_EXP 800
+
+	const ANIM_SEARCH idle_look
+	setvar ANIM_IDLE idle1
+	//const ANIM_JUMPING_JACKS idle2
+	const ANIM_SWIPE attack1
+	const ANIM_HEADBUTT attack2
+	const ANIM_JUMP jump
+	const ANIM_LEAP jump //leap
+	setvar ANIM_WALK_DEFAULT walk
+	setvar ANIM_RUN_DEFAULT run1
+	setvard ANIM_DEATH dieforward
+	const ANIM_WARCRY warcry
+	setvard ANIM_FLINCH bigflinch
+
+	setvar ANIM_WALK ANIM_WALK_DEFAULT
+	setvar ANIM_RUN ANIM_RUN_DEFAULT
+	setvard ANIM_ATTACK ANIM_SWIPE
+
+	const SOUND_IDLE1 bullchicken/bc_idle1.wav
+	const SOUND_IDLE2 bullchicken/bc_idle2.wav
+	const SOUND_IDLE3 bullchicken/bc_idle3.wav
+	const SOUND_IDLE4 bullchicken/bc_idle4.wav
+	const SOUND_IDLE5 bullchicken/bc_idle5.wav
+	const SOUND_DEATH bullchicken/bc_die1.wav
+	const SOUND_HEADBUTT bullchicken/bc_spithit1.wav
+	const SOUND_SWIPEHIT1 zombie/claw_strike1.wav
+	const SOUND_SWIPEHIT2 zombie/claw_strike2.wav
+ 	const SOUND_SWIPEMISS1 zombie/claw_miss1.wav
+	const SOUND_SWIPEMISS2 zombie/claw_miss2.wav
+	const SOUND_STRUCK1 debris/flesh1.wav
+	const SOUND_STRUCK2 debris/flesh2.wav
+	const SOUND_STEP1 player/pl_dirt1.wav
+	const SOUND_STEP2 player/pl_dirt2.wav
+	const SOUND_PAIN_WEAK bullchicken/bc_pain2.wav
+	const SOUND_PAIN_STRONG bullchicken/bc_pain1.wav
+	const SOUND_WARCRY bullchicken/bc_attackgrowl3.wav
+	const SOUND_LEAP bullchicken/bc_attackgrowl2.wav
+	const SOUND_LEAP_LAND weapons/g_bounce2.wav
+	const SOUND_FLINCH bullchicken/bc_pain3.wav
+
+	precache SOUND_DEATH
+
+	const WEAK_THRESHOLD 1250
+	const SWIPE_DAMAGE '$rand(75,110)'
+	const HEADBUTT_CHANCE 100%
+	const HEADBUTT_FREQ 7.0
+	const HEADBUTT_DAMAGE '$rand(75,110)'
+	const LEAP_DAMAGE '$rand(20,75)'
+	const LEAP_STUNCHANCE 35%
+	const LEAP_RANGE_TOOFAR 512 //leap if cloesr than this
+	const LEAP_RANGE_TOOCLOSE 128 //but not if closer than this
+	const LEAP_AWAY_INTERVAL 500 //leap away every time I loose this many HP
+	const NEXT_LEAP_AWAY 1800
+	const FREQ_CHAIN $rand(10,40)
+	const CHANCE_SHOCK 30
+	const DMG_CHAIN $randf(2,6)
+	setvard CAN_LEAP 1 //stop the hip-hopping when needed
+
+	const SOUND_SHOCK1 debris/zap8.wav
+	const SOUND_SHOCK2 debris/zap3.wav
+	const SOUND_SHOCK3 debris/zap4.wav
+
+	setvard DROP_GOLD 1
+	setvard DROP_GOLD_MIN 30
+	setvard DROP_GOLD_MAX 50
+
+	//setvard ATTACK_HITRANGE
+	//setvard ATTACK_MOVERANGE
+	const ATTACK_HITCHANCE 95%
+
+	setvard CAN_FLINCH 1
+	setvard FLINCH_CHANCE 10%
+	setvard FLINCH_DELAY 10.0
+	setvard FLINCH_HEALTH 1750
+
+	//lshield schtuff
+	const LSHIELD_PASSIVE 0
+	const LSHIELD_RADIUS 120
+	const DMG_LSHIELD 60
+	const FREQ_SHIELD $randf(30,50)
+
+	const MONSTER_MODEL monsters/swamp_ogre.mdl
+	precache MONSTER_MODEL
+}
+
+#include monsters/base_monster_new
+#include monsters/base_lightning_shield
+
+{ npc_spawn
+
+	name a|Lesser Lightning Djinn
+	hp 2750
+	race demon
+	roam 1
+	setmodel MONSTER_MODEL
+	setmoveanim ANIM_WALK
+	height 64
+	width 32
+	hearingsensitivity 2
+	blood green //check in code
+	setidleanim ANIM_IDLE
+
+	setvard RUN_STEP 0
+
+	if game.serverside
+
+	callevent 1.0 idle_sounds
+
+	setvard CUR_BEAM 0
+	setvard BEAM_LIST ''
+	callevent 0.1 init_beam1
+
+}
+
+{ npc_post_spawn
+	takedmg all 0.8
+	takedmg lightning 0.0
+	takedmg holy 0.25
+	takedmg poison 1.5
+}
+
+{ npcatk_validatetarget //first spot
+
+	if $get(PARAM1,isplayer)
+	if !DID_WARCRY
+	playanim critical ANIM_WARCRY
+	playsound 0 10 SOUND_WARCRY
+	setvard DID_WARCRY 1
+}
+
+
+
+{ my_target_died
+
+	if ( !$cansee(enemy) )
+	{
+		playanim critical ANIM_WARCRY
+		playsound 0 10 SOUND_WARCRY
+		setvard DID_WARCRY 0
+		callevent 1.0 enable_leap
+	}
+}
+
+{ enable_leap
+
+	setvard LEAP_ENABLED 1
+} 
+
+{ cycle_up
+	callevent FREQ_CHAIN do_lightning
+}
+
+{ npcatk_hunt
+
+	if game.time > NEXT_SHIELD 
+	setvard NEXT_SHIELD game.time 
+	add NEXT_SHIELD FREQ_SHIELD 
+	callevent ext_lshield_on 
+
+	//regenerate
+	if ( game.monster.hp < game.monster.maxhp ) givehp 0.1
+
+	if NPCATK_TARGET isnot unset
+	if $get(NPCATK_TARGET,range) <= LEAP_RANGE_TOOFAR
+	if $get(NPCATK_TARGET,range) > LEAP_RANGE_TOOCLOSE
+	if LEAP_ENABLED
+
+	setvard LEAP_ENABLED 0
+	callevent 5.0 enable_leap
+	callevent script_leap //do not confused with model vent leap_attack
+}
+
+{ script_leap
+
+	playanim critical ANIM_LEAP
+	callevent 0.1 leap_boost	
+}
+
+{ leap_boost
+
+	if !I_R_FROZEN
+	addvelocity ent_me $relvel(0,600,100)	
+}
+	
+{ npc_selectattack
+
+	if ( HEADBUTT_DELAY )
+	{
+		setvard ANIM_ATTACK ANIM_SWIPE
+	}
+	else
+	{
+		if ( $rand(1,100) < HEADBUTT_CHANCE )
+		{
+			setvard ANIM_ATTACK ANIM_HEADBUTT
+			setvard HEADBUTT_DELAY 1
+			callevent HEADBUTT_FREQ headbutt_reset
+		}
+	}
+
+
+}
+
+{ headbutt_reset
+	
+	setvard HEADBUTT_DELAY 0
+}
+
+{ attack1
+
+	setvard SWIPE_ATTACK 1
+	callevent npcatk_dodamage NPCATK_TARGET ATTACK_HITRANGE SWIPE_DAMAGE ATTACK_HITCHANCE
+}
+
+{ attack2 //headbut on frame 6 of attack2
+
+	callevent npcatk_dodamage NPCATK_TARGET ATTACK_HITRANGE HEADBUTT_DAMAGE ATTACK_HITCHANCE
+	setvard HEADBUTT_ON 1
+}
+
+{ game_dodamage //1: Attack Hit (1/0)  2: Entity Attack hit  3:  Start Position  4:  End Position
+
+	if ( HEADBUTT_ON )
+	{
+		if ( PARAM1 )
+		{
+			playsound 0 10 SOUND_HEADBUTT
+			applyeffect NPCATK_TARGET effects/heavy_stun 5 1
+		}
+		if ( !PARAM1 ) playrandomsound 0 10 SOUND_SWIPEMISS1 SOUND_SWIPEMISS2
+		setvard ANIM_ATTACK ANIM_SWIPE
+		setvard HEADBUTT_ON 0
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	//assumes swipe
+	if ( SWIPE_ATTACK )
+	{
+		setvard SWIPE_ATTACK 0
+		if $rand(1,100) < CHANCE_SHOCK
+		playsound 0 10 SOUND_BFIRE
+		effect glow ent_me (255,255,0) 64 1 1
+		applyeffect PARAM2 effects/effect_shock_dmg $rand(2,5) $get(ent_me,id) 10
+	}
+
+	if ( PARAM1 )
+	{
+		playrandomsound 0 10 SOUND_SWIPEHIT1 SOUND_SWIPEHIT2
+		addvelocity ent_laststruckbyme $relvel(-100,130,120)
+	}
+	if ( !PARAM1 ) playrandomsound 0 10 SOUND_SWIPEMISS1 SOUND_SWIPEMISS2
+
+		if ( CHAIN_ON )
+	{
+		//effect beam point lgtning.spr 30 BEAM_START BEAM_END (255,255,255) 255 10 0.2
+		//effect beam end lgtning.spr 30 BEAM_START PARAM2 0 (200,255,50) 200 10 0.2
+		//callevent set_beam $get(PARAM2,id)
+		if ( !$get(PARAM2,scriptvar,IMMUNE_PUSH) )
+		{
+			addvelocity PARAM2 $vec(50,0) //$vec(0,-110,130)
+		}
+	}
+}
+
+{ game_struck //PARAM1 = damage
+
+	if ( game.monster.hp > WEAK_THRESHOLD )	playrandomsound 0 10 SOUND_STRUCK1 SOUND_STRUCK2 SOUND_PAIN_STRONG
+	if ( game.monster.hp <= WEAK_THRESHOLD ) playrandomsound 0 10 SOUND_STRUCK1 SOUND_STRUCK2 SOUND_PAIN_WEAK
+
+	if ( PARAM1 > 200 )
+	{
+		//dbg leaping away due to damage
+		callevent leap_away
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	local HP_AFTER game.monster.hp
+	subtract HP_AFTER PARAM1
+
+	if ( HP_AFTER < NEXT_LEAP_AWAY )
+	{
+		//dbg leaping away due to interval
+		subtract NEXT_LEAP_AWAY LEAP_AWAY_INTERVAL
+		callevent leap_away
+	}
+}
+
+{ leap_away
+	
+	playanim critical ANIM_LEAP
+	setmovedest NPCATK_TARGET 99999 flee
+	callevent 0.1 leap_boost
+	callevent npcatk_suspend_ai 3.0
+}
+
+{ leap_attack //called from ANIM_LEAP at frame 28
+
+	playsound 0 10 SOUND_LEAP
+
+	if ( $cansee(enemy,128) )
+	{
+		callevent npcatk_dodamage $get(ent_lastseen,id) ATTACK_HITRANGE LEAP_DAMAGE ATTACK_HITCHANCE
+		if ( $rand(1,100) < LEAP_STUNCHANCE ) applyeffect $get(ent_lastseen,id) effects/effect_stun 5 1
+	}
+}
+
+{ leap_done
+
+	playsound 0 10 SOUND_LEAP_LAND
+	setmoveanim ANIM_RUN
+}
+
+{ npcatk_search_init_advanced
+
+	if !SEARCH_ANIM_DELAY
+	setvard NPC_DELAYING_UNSTUCK 10.0
+	playanim critical ANIM_SEARCH
+	playrandomsound 0 10 SOUND_IDLE1 SOUND_IDLE2 SOUND_IDLE3 SOUND_IDLE4 SOUND_IDLE5
+	setvard SEARCH_ANIM_DELAY 1
+	callevent 5.0 reset_search_anim
+}
+
+{ reset_search_anim
+
+	setrvard SEARCH_ANIM_DELAY 0
+}
+
+{ npc_flinch
+
+	playsound 0 10 SOUND_FLINCH
+}
+
+{ idle_sounds
+
+	callevent $randf(3,10) idle_sounds
+	if NPCATK_TARGET equals unset
+	playrandomsound 0 10 SOUND_IDLE1 SOUND_IDLE2 SOUND_IDLE3 SOUND_IDLE4 SOUND_IDLE5
+}
+
+{ run_step1 //called from model during ANIM_RUN
+
+	playsound 0 5 SOUND_STEP1
+}
+
+{ run_step2 //called from model during ANIM_RUN
+
+	playsound 0 5 SOUND_STEP2
+}
+
+{ npcatk_targetvalidate
+
+	//if spotted player, start jump checks
+	if !ORC_JUMPING
+	if $get(NPCATK_TARGET,isplayer)
+	setvard ORC_JUMPING 1
+	callevent 1.0 orc_jump_check
+	
+}
+
+{ orc_jump_check
+
+	if ORC_JUMPING
+	callevent ORC_HOP_DELAY orc_jump_check
+	if CAN_LEAP
+	if !IS_FLEEING
+	if NPCATK_TARGET isnot unset
+	if $cansee(NPCATK_TARGET)
+
+	//jump at player if he's higher than I am
+	local ME_POS game.monster.origin
+	local MY_Z $vec.z(ME_POS)
+	local TARGET_POS $get(NPCATK_TARGET,origin)
+	local TARGET_Z $vec.z(TARGET_POS)
+	local TARGET_Z_DIFFERENCE TARGET_Z
+	subtract TARGET_Z_DIFFERENCE MY_Z
+
+	if ( TARGET_Z_DIFFERENCE > ORC_JUMP_THRESH ) callevent orc_hop
+}
+
+{ orc_hop
+	
+	
+	setvard NPC_FORCED_MOVEDEST 1 
+	setmovedest NPCATK_TARGET 1
+	playanim critical ANIM_LEAP
+	playsound 0 10 SOUND_LEAP
+	local JUMP_HEIGHT $rand(550,650)
+	addvelocity ent_me $relvel(0,250,JUMP_HEIGHT)
+}
+
+{ my_target_died
+
+	if !$cansee(enemy)
+	//stop jumping (saves CPU when monster idle)
+	setvard ORC_JUMPING 0
+}
+
+{ bo_zombie_mode
+	callevent npc_suicide
+}
+
+{ ext_lshield_on //[duration]
+
+	setvard CAN_LEAP 0
+	local SHIELD_DURATION PARAM1
+	if ( SHIELD_DURATION == 0 ) local SHIELD_DURATION 3.0
+	callevent npcatk_suspend_ai
+	roam 0
+	callevent lshield_activate SHIELD_DURATION
+	setidleanim warcry
+	setmoveanim warcry
+	playsound 0 10 SOUND_WARCRY
+	callevent SHIELD_DURATION ext_end_shield
+}
+
+{ ext_end_shield
+	setidleanim ANIM_IDLE
+	setmoveanim ANIM_RUN
+	callevent npcatk_resume_ai
+	roam 1
+	setvard CAN_LEAP 1
+}
+
+//====== DELUXE SHOCKIE (From bigger brother)
+{ do_lightning
+	setvard CHAIN_ON 1
+	setvard CHAIN_COUNT 0
+	setvard CAN_LEAP 0
+	callevent npcatk_suspend_ai
+	effect glow ent_me (255,255,0) 128 3 1
+	setvard CUR_BEAM 0
+	setvard BEAM_TARGET_LIST $get_tsphere(enemy,1024,game.monster.origin)
+	dbg BEAM_TARGET_LIST
+	calleventloop $get_token_amt(BEAM_TARGET_LIST) set_beam
+	callevent 0.1 chain_lightning
+}
+
+{ chain_lightning
+
+	add CHAIN_COUNT 1
+	if ( CHAIN_COUNT < 10 )
+	{
+		setidleanim idle2
+		setmoveanim idle2
+		setvard CAN_LEAP 0
+	}
+	if ( CHAIN_COUNT == 10 )
+	{
+		setvard CHAIN_ON 0
+		calleventloop $get_token_amt(BEAM_LIST) beams_off
+		callevent 1.0 resume_attack
+		callevent FREQ_CHAIN do_lightning
+	}
+	if CHAIN_COUNT < 10
+	callevent 0.1 chain_lightning
+	//dodamage $relpos(0,0,0) 1024 DMG_CHAIN 100% 0.0 reflective lightning
+	playrandomsound 0 10 SOUND_SHOCK1 SOUND_SHOCK2 SOUND_SHOCK3
+	calleventloop $get_token_amt(BEAM_TARGET_LIST) push_targets
+	setvard CAN_LEAP 1
+}
+
+{ push_targets
+	local CUR_TARGET $get_token(BEAM_TARGET_LIST,game.script.iteration)
+	local TARG_ORG $get(BEAM_TARGET_LIST,origin)
+	local TRACE_LINE $get_traceline(game.monster.origin,TARG_ORG,worldonly)
+	if TRACE_LINE equals TARG_ORG
+	local FIN_DMG DMG_CHAIN
+	local RESIST_FLOAT $get(CUR_TARGET,scriptvar,'IMMUNE_LIGHTNING')
+	if ( RESIST_FLOAT > 1 ) multiply FIN_DMG RESIST_FLOAT
+	if ( RESIST_FLOAT == 1 ) local FIN_DMG 0
+	drainhp CUR_TARGET ent_me FIN_DMG
+	addvelocity CUR_TARGET $vec(130,0,0)
+}
+
+
+{ set_beam
+	local CUR_BEAM_ID $get_token(BEAM_LIST,CUR_BEAM)
+	local CUR_TARGET $get_token(BEAM_TARGET_LIST,game.script.iteration)
+
+	if CUR_BEAM_ID isnot 0
+
+	dbg beam CUR_BEAM_ID to $get(CUR_TARGET,name)
+	effect beam update CUR_BEAM_ID brightness 200
+	effect beam update CUR_BEAM_ID end_target CUR_TARGET 0
+	add CUR_BEAM 1
+
+	//applyeffect CUR_TARGET effects/effect_shock_dmg 3.0 $get(ent_me,id) DMG_SHOCK
+
+	if CUR_BEAM > $get_token_amt(BEAM_LIST)
+	setvard CUR_BEAM 0
+}
+
+{ beams_off
+	effect beam update $get_token(BEAM_LIST,game.script.iteration) brightness 0
+}
+
+{ beams_remove
+	effect beam update $get_token(BEAM_LIST,game.script.iteration) remove 0
+}
+
+{ resume_attack
+	callevent npcatk_resume_ai
+	setidleanim ANIM_IDLE
+	setmoveanim ANIM_RUN
+}
+
+{ init_beam1
+	effect beam ents lgtning.spr 30 ent_me 1 ent_me 0 (200,255,50) 0 10 -1
+	token.add BEAM_LIST	$get(ent_lastcreated,id)
+	setvard BEAM_ID $get(ent_lastcreated,id)
+	dbg init_beam1 BEAM_ID
+	callevent 0.1 init_beam2
+}
+
+{ init_beam2
+	effect beam ents lgtning.spr 30 ent_me 2 ent_me 0 (200,255,50) 0 10 -1
+	token.add BEAM_LIST	$get(ent_lastcreated,id)
+	dbg init_beam2 BEAM_LIST $get(ent_lastcreated,id)
+	callevent 0.1 init_beam3
+}
+
+{ init_beam3
+	effect beam ents lgtning.spr 30 ent_me 1 ent_me 0 (200,255,50) 0 10 -1
+	token.add BEAM_LIST	$get(ent_lastcreated,id)
+	dbg init_beam3 BEAM_LIST $get(ent_lastcreated,id)
+	callevent 0.1 init_beam4
+}
+
+{ init_beam4
+	effect beam ents lgtning.spr 30 ent_me 2 ent_me 0 (200,255,50) 0 10 -1
+	token.add BEAM_LIST	$get(ent_lastcreated,id)
+	dbg init_beam4 BEAM_LIST $get(ent_lastcreated,id)
+}
+
+{ game_death
+	calleventloop $get_token_amt(BEAM_LIST) beams_remove
+}
+

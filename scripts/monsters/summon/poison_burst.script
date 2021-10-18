@@ -1,0 +1,72 @@
+//Poison burst, from Stun Burst (Thothie JAN2009)
+{ game_dynamically_created //PARAM1 Owner, PARAM2 ScanRange, PARAM3 = throw if set 1, PARAM4 blast damage, PARAM5 = DOT
+
+	setvard MY_OWNER PARAM1
+	setvard OWNER_ISPLAYER $get(PARAM1,isplayer)
+	setvard SCAN_RANGE PARAM2
+	if ( PARAM3 isnot 'PARAM3' ) setvard THROW_TARGETS PARAM3
+	setvard MY_BASE_DAMAGE PARAM4
+	setvard MY_DOT PARAM5
+
+	setangle face $vec(0,90,0) //$get(MY_OWNER,angles)
+
+	race $get(MY_OWNER,race)
+
+	clientevent new all_in_sight monsters/summon/poison_burst_cl $get(ent_me,origin) SCAN_RANGE
+	setvard BURST_SCRIPT_IDX game.script.last_sent_id
+
+	callevent 0.1 do_aoe
+
+	callevent 0.25 set_targets
+
+	callevent 3.0 effect_die
+}
+
+{ do_aoe
+	xdodamage $relpos(0,0,0) SCAN_RANGE MY_BASE_DAMAGE 0 MY_OWNER MY_OWNER spellcasting.affliction poison
+}
+
+{ game_spawn
+	fly 1
+	gravity 0
+	nopush 1
+	invincible 1
+	setvard PLAYING_DEAD 1
+}
+
+{ effect_die
+
+	clientevent remove all BURST_SCRIPT_IDX
+	deleteent ent_me
+}
+
+{ set_targets
+
+	playsound 0 10 ambience/steamburst1.wav
+
+	setvard TARG_LIST $get_tsphere(enemy,SCAN_RANGE,game.monster.origin)
+	if TARG_LIST isnot none
+	calleventloop $get_token_amt(TARG_LIST) affect_targets
+}
+
+{ affect_targets
+
+	local CHECK_ENT $get_token(TARG_LIST,game.script.iteration)
+	
+	if ( OWNER_ISPLAYER )
+	{
+		if game.pvp == 0
+		if $get(CHECK_ENT,isplayer)
+		local EXIT_SUB 1
+		//dbg aborted, players do not stun players in non-pvp ( game.pvp )
+	}
+	if !EXIT_SUB
+
+	if ( !$get(CHECK_ENT,haseffect,DOT_poison) ) applyeffect CHECK_ENT effects/effect_poison 5.0 MY_OWNER MY_DOT
+
+	if THROW_TARGETS
+	local TARGET_ORG $get(CHECK_ENT,origin)
+	local TARG_ANG $angles(game.monster.origin,TARGET_ORG)
+	local NEW_YAW TARG_ANG
+	setvelocity CHECK_ENT $relvel($vec(0,NEW_YAW,0),$vec(0,1000,0))
+}

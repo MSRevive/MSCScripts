@@ -1,0 +1,117 @@
+//This was an attempt to create a persistant "quest bank" for items to be read back by quest npcs
+//got to be too complicated, just going to use a simpler system for m2_quest2
+
+#scope server
+
+{
+	setcallback touch enable
+}
+
+{ game_spawn
+	width 16
+	height 16
+	setsolid trigger
+	invincible 1
+	nopush 1
+	setvard PLAYING_DEAD 1 //not a valid target
+}
+
+{ game_touch
+	if game.time > NEXT_TOUCH
+	setvard NEXT_TOUCH game.time
+	add NEXT_TOUCH 0.1
+
+	if $get(PARAM1,isplayer)
+	setvard QUEST_PLAYER PARAM1			
+
+	if ( IS_UNIQUE )
+	{
+		setvard QUEST_ITEM_FOUND 0
+		calleventloop 9 check_quest_data
+		if QUEST_ITEM_FOUND
+
+		if ( game.time > NEXT_QUEST_ERROR )
+		{
+			setvard NEXT_QUEST_ERROR game.time
+			add NEXT_QUEST_ERROR 5.0
+			dplayermessage QUEST_PLAYER "You already have this unique quest item."
+
+		}
+	}
+	if !QUEST_ITEM_FOUND
+
+	playsound 0 10 items/ammopickup1.wav
+	local OUT_MSG "You find "
+	stradd OUT_MSG $get(ent_me,name.full)
+	gplayermessage QUEST_PLAYER "You acquire " $get(ent_me,name.full)
+	infomsg QUEST_PLAYER "QUEST ITEM FOUND" OUT_MSG
+	helptip QUEST_PLAYER questitem "QUEST ITEM" "This is a special quest item that will not appear in your inventory."
+	calleventloop 9 add_quest_item
+	callevent 0.1 remove_me
+}
+
+{ remove_me
+	//this valid death should be monster spawn friendly
+	invincible 0
+	race hated
+	dodamage ent_me direct 99999 100 GAME_MASTER target
+}
+
+//copy pasta these two events to NPC
+{ check_quest_data
+	if !QUEST_ITEM_FOUND
+	local QUEST_BANK q
+	stradd QUEST_BANK $int(game.script.iteration)
+	setvard CUR_QUEST_BANK $get_quest_data(QUEST_PLAYER,QUEST_BANK)
+	if CUR_QUEST_BANK isnot 0
+	calleventloop $get_token_amt(CUR_QUEST_BANK) check_quest_bank
+}
+
+{ check_quest_bank
+	local CUR_ITEM $get_token(CUR_QUEST_BANK,game.script.iteration)
+	if ( CUR_ITEM equals QUEST_TAG ) setvard QUEST_ITEM_FOUND 1
+}
+
+{ add_quest_item
+	if !QUEST_ITEM_ADDED
+	local QUEST_BANK q
+	stradd QUEST_BANK $int(game.script.iteration)
+	setvard CUR_QUEST_BANK $get_quest_data(QUEST_PLAYER,QUEST_BANK)
+	if ( $len(CUR_QUEST_BANK) < 200 )
+	{
+		setvard QUEST_ITEM_ADDED 1
+		if ( CUR_QUEST_BANK equals 0 )
+		{
+			quest set QUEST_PLAYER QUEST_BANK QUEST_TAG
+		}
+		else
+		{
+			token.add CUR_QUEST_BANK QUEST_TAG
+			quest set QUEST_PLAYER QUEST_BANK CUR_QUEST_BANK
+		}
+	}
+}
+
+{ game_postspawn //<name>
+	setvard IN_NAME PARAM1
+	setvard IN_PARAMS PARAM4 //<tag>;<model>;<model_idx>;<trigger>;[unique]
+	setvard FINAL_NAME "a|QUEST ITEM: "
+	stradd FINAL_NAME IN_NAME
+	setvard QUEST_TAG $get_token(IN_PARAMS,0)
+
+	//need to rethink the model def - maybe only p_misc models, and always use flor anim	
+	setvard MODEL_NAME misc/p_misc.mdl //$get_token(IN_PARAMS,1)
+	setvard MODEL_BODY 2 //$get_token(IN_PARAMS,2)
+
+	setidleanim apple_floor_idle
+	setvard MAP_TRIGGER $get_token(IN_PARAMS,3)
+	if ( $get_token(IN_PARAMS,4) equals 'unique' )
+	{
+		setvard IS_UNIQUE 1
+		stradd FINAL_NAME (unique)
+	}
+
+	setmodel MODEL_NAME
+	setmodelbody 0 MODEL_BODY
+	name FINAL_NAME
+}

@@ -1,0 +1,881 @@
+//Mind you, this was setup before base_chat_array got the ability to play sounds
+//Plus, Jaz's voice plays everywhere on the map, so his sound needs are a bit unique
+
+#scope server
+{
+	setvar ANIM_IDLE anim_img_idle2
+	const ANIM_IDLE_LOOK anim_img_idle2_look
+	const ANIM_TALK anim_img_idle2_talk
+	const ANIM_LEAVE anim_img_flyout
+	const ANIM_LIFT_LEFT anim_img_lift_left //{ { event 500 5 "frame_lift" } { event 500 58 "frame_release" } }
+	const ANIM_LIFT_RIGHT anim_img_lift_right //{ { event 500 5 "frame_lift" } { event 500 58 "frame_release" } }
+	const ANIM_BREATH_STORM anim_img_breath_storm //{ { event 500 1 "frame_storm_prep" } { event 500 15 "frame_storm_breath_start" } { event 500 50 "frame_storm_breath_stop" } { event 500 58 "frame_storm_breath_done" } }
+
+	//needs a summon aspect anim (also better convo anims)
+	//place holders
+	const ANIM_SUMMON anim_img_idle2_look
+	const ANIM_LAUGH anim_img_idle2_talk
+	const ANIM_LAUGH_CONVO anim_img_idle2_talk
+	const ANIM_CONVO1 anim_img_idle2_talk
+	const ANIM_CONVO2 anim_img_idle2_look
+
+	const ATTN_VOICE 0.01
+	const PITCH_VOICE 50
+
+	const CHAT_MOVE_MOUTH 0
+	const CHAT_AUTO_FACE 0
+	const CHAT_FACE_ON_USE 0
+	const CHAT_MENU_ENABLE 0
+
+	const CHAT_PLAYANIM_STYLE once
+
+	const STORM_CENTER $vec(2496,-2608,-2024)
+	const STORM_RAD 768
+	const FREQ_BREATH 120.0
+	const DUR_STORM 60.0
+
+	const FREQ_BOLTS $randf(3.0,7.0)
+	const FREQ_BALLS $randf(5.0,10.0)
+
+	const DMG_ICE_SHARD $rand(100,200)
+	const DOT_COLD 50
+
+	const DMG_LIGHTNING_STRIKE $rand(400,800)
+	const DOT_LIGHTNING 150
+
+	//variable so meteor summoner can read them
+	const DOT_FIRE 100
+	const DMG_METEOR 800
+
+	const NECK_MAX_ANG 30
+	const NECK_MIN_ANG -30
+	setvard DEST_NECK_ANG 0
+	setvard CURRENT_NECK_ANG 0
+
+	const SOUND_BREATH_IN magic/spookie1.wav
+	const SOUND_BREATH_OUT monsters/goblin/sps_fogfire.wav
+
+	precache weather/Storm_exclamation.wav //prob redun but not playing
+
+	const DG_BASE_RENDERAMT 100
+}
+
+{ fake_precache
+	//svplaysounds have to be precached in a hacky way
+	svplaysound 1 0 voices/dragons/Jaminporlants_hide1.wav
+	svplaysound 1 0 voices/dragons/Jaminporlants_hide2.wav
+	svplaysound 1 0 voices/dragons/Jaminporlants_hide3.wav
+	svplaysound 1 0 voices/dragons/Jaminporlants_intro01.wav
+	svplaysound 1 0 voices/dragons/Jaminporlants_intro02.wav
+	svplaysound 1 0 voices/dragons/Jaminporlants_intro03.wav
+	svplaysound 1 0 voices/dragons/Jaminporlants_intro04.wav
+	svplaysound 1 0 voices/dragons/Jaminporlants_laugh1.wav
+	svplaysound 1 0 voices/dragons/Jaminporlants_laugh2.wav
+	svplaysound 1 0 voices/dragons/Jaminporlants_minions01.wav
+	svplaysound 1 0 voices/dragons/Jaminporlants_minions02.wav
+	svplaysound 1 0 voices/dragons/Jaminporlants_minions03.wav
+	svplaysound 1 0 voices/dragons/Jaminporlants_player_human.wav
+	svplaysound 1 0 voices/dragons/Jaminporlants_player_multirace.wav
+	svplaysound 1 0 voices/dragons/Jaminporlants_players_human.wav
+	svplaysound 1 0 voices/dragons/Jaminporlants_win01.wav
+	svplaysound 1 0 voices/dragons/Jaminporlants_win02.wav
+}
+
+#include monsters/base_chat_array
+
+//debug funcs, for we has no externals
+{ bd_debug  //<print_var> <property_printvar> <extra> <extra> <caller_id>
+	//tdebug/tdebugt
+	saytextrange 2048
+	saytext var PARAM1 prop PARAM2 = $get(PARAM1,PARAM2)
+	consolemsg PARAM5 $get(ent_me,name) reports: var PARAM1 pvar $get(PARAM1,PARAM2)
+	dbg PARAM5 $get(ent_me,name) reports: var PARAM1 pvar $get(PARAM1,PARAM2)
+}
+
+
+{ [shared] game_spawn
+	name Jaminporlants
+	setmodel monsters/dragon_green_img.mdl
+	name_unique gdragon_img
+	race demon
+	hp 99999
+	invincible 1
+	setvard PLAYING_DEAD 1
+	nopush 1
+	width 1
+	height 1
+	fly 1
+	gravity 0
+	setprop ent_me movetype 0
+	saytextrange 2048
+	callevent 0.1 scan_for_players
+
+	setprop ent_me rendermode 5
+	setprop ent_me renderamt DG_BASE_RENDERAMT
+}
+
+{ scan_for_players
+	if !DID_INTRO
+	setvard PLAYER_LIST ''
+	getplayersnb PLAYER_LIST
+	calleventloop $get_token_amt(PLAYER_LIST) check_players
+	if !DID_INTRO
+	callevent 1.0 scan_for_players
+}
+
+{ check_players
+	local CUR_TARG $get_token(PLAYER_LIST,game.script.iteration)
+	if !DID_INTRO
+	if $get(CUR_TARG,range) < 768
+	setvard DID_INTRO 1
+	setvard CHAT_CURRENT_SPEAKER CUR_TARG
+	callevent 1.0 do_intro
+}
+
+{ do_intro
+	//check players for racial types here (need to work up a system for this)
+
+	setvarg G_ISL_OWNER $get(ent_me,id)
+	setvarg G_LSL_OWNER $get(ent_me,id)
+	setvarg G_FBL_OWNER $get(ent_me,id)
+	setvard FLICKER_BRUSH_ID $get_by_name(brush_storm_lightning2)
+
+	setvard GLOAT_COUNT 0
+
+	if ( L_RACE_MULTI )
+	{
+		setvard RACE_VOICE voices/dragons/Jaminporlants_player_multirace.wav
+		setvard RACE_TEXT "Children of the Triad...?"
+	}
+	else if ( game.players > 1 )
+	{
+		setvard RACE_VOICE voices/dragons/Jaminporlants_players_human.wav
+		setvard RACE_TEXT "Children of Torkalath...?"
+	}
+	else if ( game.players == 1 )
+	{
+		setvard RACE_VOICE voices/dragons/Jaminporlants_player_human.wav
+		setvard RACE_TEXT "A child of Torkalath...?"
+	}
+
+	//callexternal players ext_svplaysound_kiss 5 10 RACE_VOICE 0.8 100 //ATTN_VOICE PITCH_VOICE
+	callexternal players ext_svplaysound_kiss 2 10 RACE_VOICE 0.8 100 //ATTN_VOICE PITCH_VOICE
+	setidleanim ANIM_CONVO1
+	callevent chat_now RACE_TEXT 2.6 ANIM_IDLE_LOOK do_intro2 add_to_que
+}
+
+{ do_intro2
+	setvard HEAD_TARGET CHAT_CURRENT_SPEAKER
+	setvard HEAD_FOLLOW 1
+
+	//AUG! Wish we'd added a playsound array for base_chat_array, but no time now
+	//callexternal players ext_svplaysound_kiss 5 10 "voices/dragons/Jaminporlants_intro01.wav" ATTN_VOICE PITCH_VOICE
+	callexternal players ext_svplaysound_kiss 2 10 "voices/dragons/Jaminporlants_intro01.wav" ATTN_VOICE PITCH_VOICE
+	callevent chat_now "Creatures forged by, single, pitiful gods... Dare to seek out me?" 7.9 ANIM_CONVO1 none add_to_que
+	callevent chat_now "...a being who was forged at the dawn of time by thousands of gods!?" 6.91 ANIM_CONVO1 do_intro3 add_to_que
+}
+
+{ do_intro3
+	//callexternal players ext_svplaysound_kiss 5 10 "voices/dragons/Jaminporlants_intro02.wav" ATTN_VOICE PITCH_VOICE
+	callexternal players ext_svplaysound_kiss 2 10 "voices/dragons/Jaminporlants_intro02.wav" ATTN_VOICE PITCH_VOICE
+	callevent chat_now "...but I'm afraid your efforts, are in vain." 3.86 ANIM_CONVO2 do_intro4 add_to_que
+}
+
+{ do_intro4
+	//callexternal players ext_svplaysound_kiss 5 10 voices/dragons/Jaminporlants_intro03.wav ATTN_VOICE PITCH_VOICE
+	callexternal players ext_svplaysound_kiss 2 10 voices/dragons/Jaminporlants_intro03.wav ATTN_VOICE PITCH_VOICE
+	callevent chat_now "I have long since moved on from this place..." 4.10 ANIM_CONVO1 none add_to_que
+	callevent chat_now "...And have merely left this image here to 'entertain' belated guests." 6.2 ANIM_CONVO1 do_intro5 add_to_que
+}
+
+{ do_intro5
+	//callexternal players ext_svplaysound_kiss 5 10 "voices/dragons/Jaminporlants_intro04.wav" ATTN_VOICE PITCH_VOICE
+	callexternal players ext_svplaysound_kiss 2 10 "voices/dragons/Jaminporlants_intro04.wav" ATTN_VOICE PITCH_VOICE
+	callevent chat_now "But fear not... It is not all I have left behind... " 5.23 ANIM_CONVO1 none add_to_que
+	callevent chat_now "Behold..." 2.2 none none add_to_que
+	callevent 4.5 do_intro6
+}
+
+{ do_intro6
+	setidleanim ANIM_IDLE
+	playanim critical ANIM_SUMMON
+	callevent 1.0 start_battle
+	callevent 3.0 ext_gloat
+}
+
+//========================= HEAD TRACKING SYSTEM BEGIN
+{
+repeatdelay 1.0
+	if HEAD_FOLLOW
+	if ( !$get(HEAD_TARGET,isalive) )
+	{
+		setprop ent_me controller0 0
+		setprop ent_me controller1 0
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	if ( !$get(HEAD_TARGET,isalive) )
+	{
+		setvard DEST_NECK_ANG 0
+		if !HEAD_TRACKING
+		setvard HEAD_TRACKING 1
+		callevent head_track
+	}
+
+	if $get(HEAD_TARGET,isalive)
+	local MY_ORG $get(ent_me,origin)
+	local TARG_RANGE $get(HEAD_TARGET,range)
+
+	if ( TARG_RANGE > 128 )
+	{
+		local TARG_ORG $get(HEAD_TARGET,origin)
+		local ANG_TO_TARG $angles(MY_ORG,TARG_ORG)
+
+		multiply ANG_TO_TARG 0.25
+		local ANG_TO_TARG $neg(ANG_TO_TARG)
+
+		setvard DEST_NECK_ANG ANG_TO_TARG
+	}
+	else
+	{
+		//too close to swing my neck around
+		setvard DEST_NECK_ANG 0
+	}
+
+	if ( DEST_NECK_ANG > NECK_MAX_ANG ) setvard DEST_NECK_ANG NECK_MAX_ANG 
+	if ( DEST_NECK_ANG < NECK_MIN_ANG ) setvard DEST_NECK_ANG NECK_MIN_ANG 
+
+	if ( !HEAD_TRACKING )
+	{
+
+		local DEST_ANG_P DEST_NECK_ANG
+		local DEST_ANG_M DEST_NECK_ANG
+		add DEST_ANG_P 2
+		subtract DEST_ANG_M 2
+
+		local L_CLOSE 0
+		if ( CURRENT_NECK_ANG < DEST_ANG_P ) local L_CLOSE 1
+		if ( CURRENT_NECK_ANG > DEST_ANG_M ) add L_CLOSE 1
+		if ( L_CLOSE == 2 )
+		{
+			setvard HEAD_TRACKING 0 //close enough, stop tracking
+			//dbg close enough
+		}
+		else
+		{
+			setvard HEAD_TRACKING 1
+			callevent head_track
+		}
+	}
+	//dbg head_follow neck ANG_TO_TARG head L_HEAD_ADJ
+
+	if ( game.time > NEXT_PULSE )
+	{
+		setvard NEXT_PULSE game.time
+		add NEXT_PULSE $randf(30.0,60.0)
+		callevent do_pulse
+	}
+}
+
+{ head_track
+	if HEAD_FOLLOW
+	if HEAD_TRACKING
+	if ( CURRENT_NECK_ANG < DEST_NECK_ANG ) add CURRENT_NECK_ANG 1
+	if ( CURRENT_NECK_ANG > DEST_NECK_ANG ) subtract CURRENT_NECK_ANG 1
+
+	local DEST_ANG_P DEST_NECK_ANG
+	local DEST_ANG_M DEST_NECK_ANG
+	add DEST_ANG_P 2
+	subtract DEST_ANG_M 2
+
+
+	local L_CLOSE 0
+	if ( CURRENT_NECK_ANG < DEST_ANG_P ) local L_CLOSE 1
+	if ( CURRENT_NECK_ANG > DEST_ANG_M ) add L_CLOSE 1
+	if ( L_CLOSE == 2 )
+	{
+		setvard HEAD_TRACKING 0 //close enough, stop tracking
+		//dbg close enough
+	}
+
+	//probably need to adjust before this
+	setprop ent_me controller0 CURRENT_NECK_ANG
+
+	if HEAD_TRACKING
+	//dbg head_track CURRENT_NECK_ANG vs DEST_NECK_ANG
+
+
+	if ( !$get(HEAD_TARGET,isalive) )
+	{
+		local L_HEAD_ADJ 0
+	}
+	else
+	{
+		local MY_ORG $get(ent_me,origin)
+		local TARG_RANGE $get(HEAD_TARGET,range)
+
+		local L_RANGE_RATIO TARG_RANGE
+		divide L_RANGE_RATIO 1000
+		local L_HEAD_ADJ $ratio(L_RANGE_RATIO,-10,18)
+	}
+	
+	setprop ent_me controller1 L_HEAD_ADJ
+	callevent 0.01 head_track
+}
+
+{ suspend_head_tracking
+	setprop ent_me controller0 0
+	setprop ent_me controller1 0
+ 	setvard HEAD_TRACKING 0
+	setvard HEAD_FOLLOW 0
+	setvard DEST_NECK_ANG 0
+	setvard CURRENT_NECK_ANG 0
+}
+
+{ resume_head_tracking
+	setvard HEAD_FOLLOW 1
+}
+
+//========================= HEAD TRACKING SYSTEM END
+
+{ start_battle
+	usetrigger spawn_dragon
+	setvard NEXT_BREATH game.time
+	add NEXT_BREATH FREQ_BREATH
+	setvard NEXT_LIFT_CHECK game.time
+	add NEXT_LIFT_CHECK 20.0
+	setvard BATTLE_ACTIVE 1
+	setvard BREATH_CYCLE 0 //1=fire 2=lightning 3=cold
+	setvard LIFT_COUNT 0
+	callevent battle_loop
+}
+
+//========================= MAIN THINK CYCLE
+
+{ battle_loop
+	if BATTLE_ACTIVE
+
+	callevent 1.0 battle_loop
+
+	if ( !$get(ASPECT_ID,isalive) )
+	{
+		setvard ASPECT_ID $get_by_name(gdragon_aspect)
+		if $get(ASPECT_ID,isalive)
+		setvard HALF_ASPECT_HEALTH $get(ASPECT_ID,maxhp)
+		multiply HALF_ASPECT_HEALTH 0.5
+	}
+	else
+	{
+		setvard HEAD_TARGET $get(ASPECT_ID,scriptvar,'NPCATK_TARGET')
+		if ( !$get(HEAD_TARGET,isalive) ) setvard HEAD_TARGET ASPECT_ID
+	}
+
+	if ( $get(ASPECT_ID,hp) < HALF_ASPECT_HEALTH )
+	{
+		if !DID_MINIONS
+		setvard DID_MINIONS 1
+		setvard BUSY_TALKING 1 //remember to reset after summoning minions
+		callevent do_minions
+	}
+
+	if ( STORM_ON )
+	{
+		if ( BREATH_CYCLE == 1 )
+		{
+			if game.time > NEXT_BALLS
+			setvard NEXT_BALLS game.time
+			add NEXT_BALLS FREQ_BALLS
+			callevent drop_meteor
+			if $rand(1,2) == 1
+			callevent $randf(0.5,2.0) drop_meteor //somtimes two	
+			if $rand(1,4) < 4
+			callevent $randf(2.1,4.0) drop_meteor //somtimes three
+		}
+
+		if ( BREATH_CYCLE == 2 )
+		{
+			if game.time > NEXT_BOLTS
+			setvard NEXT_BOLTS game.time
+			add NEXT_BOLTS FREQ_BOLTS
+			callevent do_lightning_bolt
+			if $rand(1,2) == 1
+			callevent $randf(0.5,2.0) do_lightning_bolt //somtimes two	
+			//if $rand(1,2) == 1
+			//callevent $randf(2.1,4.0) do_lightning_bolt //somtimes three
+		}
+	}
+
+	if ( game.time > NEXT_BREATH )
+	{
+		if !AM_BREATHING
+
+		if ( BUSY_TALKING )
+		{
+			//wait until minion comment is over
+			local EXIT_SUB 1
+			setvard NEXT_BREATH game.time
+			add NEXT_BREATH 20.0
+		}
+
+		if ( AM_LIFTING )
+		{
+			//wait until life sequence is over
+			local EXIT_SUB 1
+			setvard NEXT_BREATH game.time
+			add NEXT_BREATH 10.0
+		}
+		if !EXIT_SUB
+
+		callevent do_breath
+		local EXIT_SUB 1		
+	}
+	if !EXIT_SUB
+
+	if ( game.time > NEXT_LIFT_CHECK )
+	{
+		if !AM_LIFTING
+
+		//check pillars every 20 seconds
+		setvard NEXT_LIFT_CHECK game.time
+		add NEXT_LIFT_CHECK 20.0
+
+		if ( BUSY_TALKING )
+		{
+			//wait until minion comment is over
+			local EXIT_SUB 1
+			setvard NEXT_LIFT game.time
+			add NEXT_LIFT 20.0
+		}
+		if !EXIT_SUB
+
+		if ( AM_BREATHING )
+		{
+			//wait until breath sequence is over
+			local EXIT_SUB 1
+			setvard NEXT_LIFT game.time
+			add NEXT_LIFT 20.0
+		}
+		if !EXIT_SUB
+
+		local PILLAR_ID $get_by_name(lift_pillar_left)
+		callexternal PILLAR_ID ext_check_targets
+		if ( $get(PILLAR_ID,scriptvar,'TARGET_CHECK') isnot none )
+		{
+			callevent do_lift left PILLAR_ID
+			local EXIT_SUB 1
+		}
+		if !EXIT_SUB
+
+		local PILLAR_ID $get_by_name(lift_pillar_right)
+		callexternal PILLAR_ID ext_check_targets
+		if ( $get(PILLAR_ID,scriptvar,'TARGET_CHECK') isnot none )
+		{
+			callevent do_lift right PILLAR_ID
+			local EXIT_SUB 1
+		}
+		if !EXIT_SUB
+	}
+}
+
+{ ext_breath_now //debuggary
+	setvard NEXT_BREATH 0
+}
+
+{ ext_lift_now //debuggary
+	setvard NEXT_LIFT_CHECK 0
+}
+
+//========================= LIFT PILLARS
+
+{ do_lift //<left/right> <pillar_check_id>
+	//set this again when lift done
+	setvard NEXT_LIFT_CHECK game.time
+	add NEXT_LIFT_CHECK 60.0
+
+	setvard PILLAR_NAME PARAM1
+	setvard PILLAR_CHECK_ID PARAM2
+
+	local L_ANIM_NAME anim_img_lift_
+	stradd L_ANIM_NAME PILLAR_NAME
+	playanim critical L_ANIM_NAME
+
+	callevent suspend_head_tracking
+
+	dbg do_lift anim L_ANIM_NAME
+
+	add LIFT_COUNT 1
+	setvard AM_LIFTING 1
+
+	if ( LIFT_COUNT == 1 )
+	{
+		callevent chat_now "Hiding already?" 3.0 none none add_to_que
+		//callexternal players ext_svplaysound_kiss 5 10 voices/dragons/Jaminporlants_hide1.wav ATTN_VOICE PITCH_VOICE
+		callexternal players ext_svplaysound_kiss 2 10 voices/dragons/Jaminporlants_hide1.wav ATTN_VOICE PITCH_VOICE
+	}
+	else if ( LIFT_COUNT == 2 )
+	{
+		callevent chat_now "What are you doing over there? ...Trying to hide?" 3.0 none none add_to_que
+		//callexternal players ext_svplaysound_kiss 5 10 voices/dragons/Jaminporlants_hide2.wav ATTN_VOICE PITCH_VOICE
+		callexternal players ext_svplaysound_kiss 2 10 voices/dragons/Jaminporlants_hide2.wav ATTN_VOICE PITCH_VOICE
+	}
+	else if ( LIFT_COUNT == 3 )
+	{
+		callevent chat_now "Hiding again, I see..." 3.0 none none add_to_que
+		//callexternal players ext_svplaysound_kiss 5 10 voices/dragons/Jaminporlants_hide3.wav ATTN_VOICE PITCH_VOICE
+		callexternal players ext_svplaysound_kiss 2 10 voices/dragons/Jaminporlants_hide3.wav ATTN_VOICE PITCH_VOICE
+		setvard LIFT_COUNT 0
+	}
+
+}
+
+{ frame_lift
+	local L_TRIGGER_NAME door_lift_
+	stradd L_TRIGGER_NAME PILLAR_NAME
+	usetrigger L_TRIGGER_NAME
+	callexternal PILLAR_CHECK_ID ext_do_shake
+}
+
+{ frame_release
+	callevent 2.0 resume_head_tracking
+	setvard AM_LIFTING 0
+	local L_TRIGGER_NAME door_lift_
+	stradd L_TRIGGER_NAME PILLAR_NAME
+	usetrigger L_TRIGGER_NAME
+	callexternal PILLAR_CHECK_ID ext_do_boom
+	setvard NEXT_LIFT_CHECK game.time
+	add NEXT_LIFT_CHECK 30.0
+}
+
+//========================= BREATH STORM
+
+{ do_breath
+	callevent suspend_head_tracking
+	setvard AM_BREATHING 1
+	add BREATH_CYCLE 1
+	if ( BREATH_CYCLE > 3 ) setvard BREATH_CYCLE 1
+	playanim critical ANIM_BREATH_STORM
+}
+
+{ frame_storm_prep
+	playsound 0 10 SOUND_BREATH_IN 0.1 80
+}
+
+{ frame_storm_breath_start
+	playsound 0 10 SOUND_BREATH_OUT 0.1 70
+	clientevent new all nashalrath/dragon_green_img_cl $get(ent_me,index) BREATH_CYCLE
+	setvard CL_BREATH_IDX game.script.last_sent_id
+	callevent 2.0 setup_storm
+}
+
+{ frame_storm_breath_stop
+	clientevent update all CL_BREATH_IDX ext_breath_stop
+}
+
+{ frame_storm_breath_done
+	setvard AM_BREATHING 0
+	setvard NEXT_BREATH game.time
+	add NEXT_BREATH FREQ_BREATH
+	callevent resume_head_tracking
+}
+
+{ setup_storm
+	setvard STORM_ON 1
+	if ( BREATH_CYCLE == 1 )
+	{
+		usetrigger light_storm_fire
+		callexternal GAME_MASTER gm_set_weather fog_dragon_red 1
+		setvard STORM_BRUSH_ID $get_by_name(brush_storm_fire)
+		setvard NEXT_BALLS game.time
+		add NEXT_BALLS FREQ_BALLS
+	}
+	if ( BREATH_CYCLE == 2 )
+	{
+		//usetrigger light_storm_lightning //this flickers during strikes
+		callexternal GAME_MASTER gm_set_weather fog_dragon_black 1
+		setvard STORM_BRUSH_ID $get_by_name(brush_storm_lightning1)
+		setvard NEXT_BOLTS game.time
+		add NEXT_BOLTS FREQ_BOLTS
+	}
+	if ( BREATH_CYCLE == 3 )
+	{
+		usetrigger light_storm_cold
+		callexternal GAME_MASTER gm_set_weather fog_dragon_white 1
+		setvard STORM_BRUSH_ID $get_by_name(brush_storm_cold)
+		callevent get_control_player
+		
+		clientevent new all nashalrath/dragon_ice_storm_cl STORM_CENTER $get(CONTROL_PLAYER,index)
+		setvard CL_STORM_IDX game.script.last_sent_id
+	}
+	callexternal STORM_BRUSH_ID storm_fade_in
+	callevent DUR_STORM end_storm
+}
+
+{ end_storm //remember to call on aspect death
+	if STORM_ON
+	setvard STORM_ON 0
+	setvarg G_WEATHER_LOCK 0
+	setvarg G_CURRENT_WEATHER clear
+	callexternal GAME_MASTER gm_start_weather clear
+	callexternal STORM_BRUSH_ID storm_fade_out
+	if ( BREATH_CYCLE == 1 ) usetrigger light_storm_fire
+	if ( BREATH_CYCLE == 3 )
+	{
+		usetrigger light_storm_cold
+		clientevent update all CL_STORM_IDX end_fx
+	}
+}
+
+{ ext_isl //<origin> - ice shard landed - called by ice storm CL script and returned by GM
+	dbg ext_isl PARAM1
+	xdodamage PARAM1 64 DMG_ICE_SHARD 0.1 ent_me ent_me none cold dmgevent:isl
+}
+
+{ ext_lsl //<origin> - lightning strike landed - called by lightning storm CL script and returned by GM
+	dbg ext_lsl PARAM1
+
+	xdodamage PARAM1 128 DMG_LIGHTNING_STRIKE 0.1 ent_me ent_me none lightning_effect dmgevent:lsl
+}
+
+{ lsl_dodamage
+
+	if PARAM1
+	if $get(ent_me,relationship,PARAM2) equals enemy
+	applyeffect PARAM2 effects/effect_shock_dmg 10.0 $get(ent_me,id) DOT_LIGHTNING
+}
+
+{ isl_dodamage
+	if PARAM1
+	if $get(ent_me,relationship,PARAM2) equals enemy
+	applyeffect PARAM2 effects/effect_frostbite_dmg 5.0 $get(ent_me,id) DOT_COLD
+}
+
+{ do_lightning_bolt
+	callevent get_control_player
+
+	if ( !LIGHTNING_FLICKERING )
+	{
+		setvard LIGHTNING_FLICKERING 1
+		setvard FLICKER_COUNT 0
+		callevent lightning_flicker
+		callevent 5.0 lightning_flicker_end
+	}
+
+	local L_POS STORM_CENTER
+	local RND_ANG $randf(0,359.99)
+	local RND_DIST $randf(0,STORM_RAD)
+	vectoradd L_POS $relpos($vec(0,RND_ANG,0),$vec(0,RND_DIST,0))
+
+	clientevent new all nashalrath/lightning_strike_cl L_POS $get(CONTROL_PLAYER,index) -3000
+}
+
+{ lightning_flicker
+	add FLICKER_COUNT 1
+	if FLICKER_COUNT < 7
+	dbg lightning_flicker
+	callevent $randf(0.1,0.2) lightning_flicker
+	if ( !FLICKER_BRUSH_ON )
+	{
+		setvard FLICKER_BRUSH_ON 1
+		usetrigger light_storm_lightning
+		callexternal FLICKER_BRUSH_ID storm_show
+	}
+	else
+	{
+		setvard FLICKER_BRUSH_ON 0
+		usetrigger light_storm_lightning
+		callexternal FLICKER_BRUSH_ID storm_hide
+	}
+}
+
+{ lightning_flicker_end
+	if ( FLICKER_BRUSH_ON )
+	{
+		setvard FLICKER_BRUSH_ON 0
+		usetrigger light_storm_lightning
+		callexternal FLICKER_BRUSH_ID storm_hide
+	}
+	setvard LIGHTNING_FLICKERING 0
+}
+
+{ drop_meteor //called by main think cycle when fire storm active
+	callevent get_control_player
+
+	local L_POS STORM_CENTER
+	local RND_ANG $randf(0,359.99)
+	local RND_DIST $randf(0,STORM_RAD)
+	vectoradd L_POS $relpos($vec(0,RND_ANG,0),$vec(0,RND_DIST,0))
+	//createnpc monsters/summon/meteor_deployer L_POS $get(ent_me,id) $get(ent_me,id)
+	clientevent new all nashalrath/fire_bomb_cl L_POS $get(CONTROL_PLAYER,index) -3000
+}
+
+{ ext_fbl //<origin> - fire bomb landed - called by fire storm CL script and returned by GM
+	dbg ext_fbl
+
+	effect screenshake PARAM1 100 5 3 500
+
+	local SPLOOSH_POINT PARAM1
+	//vectorset SPLOOSH_POINT z $get_ground_height(SPLOOSH_POINT)
+	clientevent new all items/proj_arrow_phx_cl SPLOOSH_POINT 256
+	xdodamage PARAM1 256 DMG_METEOR 0.1 ent_me ent_me none fire_effect dmgevent:fbl	
+}
+
+{ fbl_dodamage
+	if PARAM1
+	if $get(PARAM2,relationship,ent_me) equals enemy
+	applyeffect PARAM2 effects/effect_burn 5.0 $get(ent_me,id) DOT_FIRE
+}
+
+{ get_control_player
+	//player used to report various CL events
+	setvard CONTROL_PLAYER $get(ASPECT_ID,scriptvar,'NPCATK_TARGET') 
+	if ( !$get(L_CONTROL_PLAYER,isplayer) )
+	{
+		local L_PLAYER_LIST ''
+		getplayersnb L_PLAYER_LIST
+		local L_PLAYER_LIST $sort_entlist(L_PLAYER_LIST,range)
+		setvard CONTROL_PLAYER $get_token(L_PLAYER_LIST,0)
+	}
+}
+
+
+//========================= SUMMON MINIONS (once)
+
+{ do_minions
+	//callexternal players ext_svplaysound_kiss 5 10 "voices/dragons/Jaminporlants_minions01.wav" ATTN_VOICE PITCH_VOICE
+	callexternal players ext_svplaysound_kiss 2 10 "voices/dragons/Jaminporlants_minions01.wav" ATTN_VOICE PITCH_VOICE
+	callevent chat_now "Did you enjoy my minions?" 3.3 ANIM_CONVO1 do_minions2 add_to_que
+}
+
+{ do_minions2
+	usetrigger spawn_minions
+	callexternal players ext_play_music_me 3.0 dream_battle.mp3
+	//callexternal players ext_svplaysound_kiss 5 10 "voices/dragons/Jaminporlants_minions02.wav" ATTN_VOICE PITCH_VOICE
+	callexternal players ext_svplaysound_kiss 2 10 "voices/dragons/Jaminporlants_minions02.wav" ATTN_VOICE PITCH_VOICE
+	callevent chat_now "Their creation was inspired by Kharaztorant's pitiful attempts at immortality..." 7.5 ANIM_CONVO1 do_minions3 add_to_que
+}
+
+{ do_minions3
+	//callexternal players ext_svplaysound_kiss 5 10 "voices/dragons/Jaminporlants_minions03.wav" ATTN_VOICE PITCH_VOICE
+	callexternal players ext_svplaysound_kiss 2 10 "voices/dragons/Jaminporlants_minions03.wav" ATTN_VOICE PITCH_VOICE
+	callevent chat_now "But they are well suited for menial tasks..." 4.1 ANIM_CONVO1 none add_to_que
+	callevent chat_now "...such as crushing insects!" 3.5 ANIM_CONVO1 do_minions4 add_to_que
+}
+
+{ do_minions4
+	setvard BUSY_TALKING 0
+}
+
+//========================= SUMMON MINIONS END
+
+{ ext_gloat
+
+	//dbg ext_gloat AM_BREATHING BUSY_TALKING AM_LIFTING
+	if !AM_BREATHING
+	if !BUSY_TALKING
+	if !AM_LIFTING
+
+	add GLOAT_COUNT 1
+
+	if ( GLOAT_COUNT == 1 )
+	{
+		//callexternal players ext_svplaysound_kiss 5 10 "voices/dragons/Jaminporlants_laugh1.wav" ATTN_VOICE PITCH_VOICE
+		callexternal players ext_svplaysound_kiss 2 10 "voices/dragons/Jaminporlants_laugh1.wav" ATTN_VOICE PITCH_VOICE
+	}
+	else
+	{
+		//callexternal players ext_svplaysound_kiss 5 10 "voices/dragons/Jaminporlants_laugh2.wav" ATTN_VOICE PITCH_VOICE
+		callexternal players ext_svplaysound_kiss 2 10 "voices/dragons/Jaminporlants_laugh2.wav" ATTN_VOICE PITCH_VOICE
+		setvard GLOAT_COUNT 0
+	}
+}
+
+{ ext_image_died
+	setvard BATTLE_ACTIVE 0
+	if ( STORM_ON ) callevent end_storm
+	callevent 2.0 win_sequence1
+}
+
+{ win_sequence1
+	callexternal players ext_play_music_me 4.0 Nashalrath.mp3
+	//callexternal players ext_svplaysound_kiss 5 10 "voices/dragons/Jaminporlants_win01.wav" ATTN_VOICE PITCH_VOICE
+	callexternal players ext_svplaysound_kiss 2 10 "voices/dragons/Jaminporlants_win01.wav" ATTN_VOICE PITCH_VOICE
+	callevent chat_now "Impressive... Most impressive..." 3.81 ANIM_LAUGH none add_to_que
+	callevent chat_now "When you die, for the final time, should you be fortunate enough to see your god Torkalath..." 9.52 ANIM_CONVO1 none add_to_que
+	callevent chat_now "Remind him... That I still believe in rewarding strength!" 7.02 ANIM_SUMMON win_sequence2 add_to_que
+}
+
+{ win_sequence2
+	usetrigger spawn_dragon_chest
+}
+
+{ ext_exit_sequence //called by treasure chest when opened
+	//callexternal players ext_svplaysound_kiss 5 10 "voices/dragons/Jaminporlants_win02.wav" ATTN_VOICE PITCH_VOICE
+	callexternal players ext_svplaysound_kiss 2 10 "voices/dragons/Jaminporlants_win02.wav" ATTN_VOICE PITCH_VOICE
+	callevent chat_now "Should your efforts continue to be so fruitful..." 7.0 ANIM_CONVO1 none add_to_que
+	callevent chat_now "We may one day, meet in person!" 2.58 none do_exit add_to_que
+
+}
+
+{ do_exit
+	playanim hold ANIM_LEAVE
+	setvard FADE_COUNT 255
+	setvard DG_PULSE_LOOP 0
+	callevent drag_fade_out
+}
+
+{ drag_fade_out
+	//play game.time based huge wing beat sound here too
+	if ( game.time > NEXT_WING_BEAT )
+	{
+		setvard NEXT_WING_BEAT game.time
+		add NEXT_WING_BEAT 0.75
+		playsound 0 10 weapons/swinghuge.wav 0.8 $rand(75,100)
+	}
+
+	subtract FADE_COUNT 5
+	if ( FADE_COUNT < 0 ) setvard FADE_COUNT 0
+	setprop ent_me renderamt FADE_COUNT
+	if FADE_COUNT > 0
+	callevent 0.1 drag_fade_out
+}
+
+{ do_pulse
+	if !DG_PULSE_LOOP
+	setvard DG_PULSE_COUNT DG_BASE_RENDERAMT
+	setvard DG_PULSE_LOOP 1
+	setvard DG_PULSE_DIR 1
+	callevent do_dgpulse_loop	
+}
+
+{ do_dgpulse_loop
+	if DG_PULSE_LOOP
+	callevent 0.1 do_dgpulse_loop
+
+	dbg do_dgpulse_loop DG_PULSE_COUNT
+	if ( DG_PULSE_DIR == 1 )
+	{
+		if ( DG_PULSE_COUNT < 255 )
+		{
+			add DG_PULSE_COUNT 1
+			setprop ent_me renderamt DG_PULSE_COUNT
+		}
+		else
+		{
+			setvard DG_PULSE_DIR -1
+		}
+	}
+	else
+	{
+		if ( DG_PULSE_COUNT > DG_BASE_RENDERAMT )
+		{
+			subtract DG_PULSE_COUNT 1
+			setprop ent_me renderamt DG_PULSE_COUNT
+		}
+		else		
+		{
+			setprop ent_me renderamt DG_BASE_RENDERAMT
+			setvard DG_PULSE_LOOP 0
+		}
+	}
+}

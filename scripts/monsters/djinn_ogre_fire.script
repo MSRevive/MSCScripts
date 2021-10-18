@@ -1,0 +1,584 @@
+#scope server
+
+{ [shared]
+	const ANIM_SEARCH idle_look
+	setvar ANIM_IDLE idle1
+	//const ANIM_JUMPING_JACKS idle2
+	const ANIM_SWIPE attack1
+	const ANIM_HEADBUTT attack2
+	const ANIM_JUMP jump
+	const ANIM_LEAP jump //leap
+	setvar ANIM_WALK_DEFAULT walk
+	setvar ANIM_RUN_DEFAULT run1
+	setvard ANIM_DEATH dieforward
+	const ANIM_WARCRY warcry
+	setvard ANIM_FLINCH bigflinch
+	const ANIM_BEAM beam
+
+	setvar ANIM_WALK ANIM_WALK_DEFAULT
+	setvar ANIM_RUN ANIM_RUN_DEFAULT
+	setvard ANIM_ATTACK ANIM_SWIPE
+}
+
+{
+	const ORC_HOP_DELAY 1.0 //how often the orc jumps
+	const ORC_JUMP_THRESH 80 //how much higher the player must be for the orc to want to jump
+
+	setvard NPC_GIVE_EXP 1500
+
+	const DOT_FIRE 20.0
+	const DOT_FIRE_SPELL 40.0
+	const FREQ_SPECIAL $randf(10.0,20.0)
+
+	const SOUND_BREATH monsters/goblin/sps_fogfire.wav
+
+	const SOUND_IDLE1 bullchicken/bc_idle1.wav
+	const SOUND_IDLE2 bullchicken/bc_idle2.wav
+	const SOUND_IDLE3 bullchicken/bc_idle3.wav
+	const SOUND_IDLE4 bullchicken/bc_idle4.wav
+	const SOUND_IDLE5 bullchicken/bc_idle5.wav
+	const SOUND_DEATH bullchicken/bc_die1.wav
+	const SOUND_HEADBUTT bullchicken/bc_spithit1.wav
+	const SOUND_SWIPEHIT1 zombie/claw_strike1.wav
+	const SOUND_SWIPEHIT2 zombie/claw_strike2.wav
+ 	const SOUND_SWIPEMISS1 zombie/claw_miss1.wav
+	const SOUND_SWIPEMISS2 zombie/claw_miss2.wav
+	const SOUND_STRUCK1 debris/flesh1.wav
+	const SOUND_STRUCK2 debris/flesh2.wav
+	const SOUND_STEP1 player/pl_dirt1.wav
+	const SOUND_STEP2 player/pl_dirt2.wav
+	const SOUND_PAIN_WEAK bullchicken/bc_pain2.wav
+	const SOUND_PAIN_STRONG bullchicken/bc_pain1.wav
+	const SOUND_WARCRY bullchicken/bc_attackgrowl3.wav
+	const SOUND_LEAP bullchicken/bc_attackgrowl2.wav
+	const SOUND_LEAP_LAND weapons/g_bounce2.wav
+	const SOUND_FLINCH bullchicken/bc_pain3.wav
+
+	precache SOUND_DEATH
+
+	const WEAK_THRESHOLD 1000
+	const SWIPE_DAMAGE '$rand(50,75)'
+	const HEADBUTT_CHANCE 100%
+	const HEADBUTT_FREQ 7.0
+	const HEADBUTT_DAMAGE '$rand(50,75)'
+	const LEAP_DAMAGE '$rand(10,30)'
+	const LEAP_STUNCHANCE 30%
+	const LEAP_RANGE_TOOFAR 512 //leap if cloesr than this
+	const LEAP_RANGE_TOOCLOSE 128 //but not if closer than this
+	setvard LEAP_AWAY_INTERVAL 500 //leap away every time I loose this many HP (1/4th hp)
+	const FREQ_LEAP_AWAY $randf(5.0,15.0) //but only this often*
+
+	setvard DROP_GOLD 1
+	setvard DROP_GOLD_MIN 30
+	setvard DROP_GOLD_MAX 50
+
+	//setvard ATTACK_HITRANGE
+	//setvard ATTACK_MOVERANGE
+	const ATTACK_HITCHANCE 95%
+
+	setvard CAN_FLINCH 1
+	setvard FLINCH_CHANCE 20%
+	setvard FLINCH_DELAY 10.0
+	setvard FLINCH_HEALTH 1500
+
+	const MONSTER_MODEL monsters/swamp_ogre.mdl
+	precache MONSTER_MODEL
+}
+
+{ game_precache
+	precachefile monsters/djinn_ogre_fire_cl
+}
+
+#include monsters/base_monster_new
+
+{ [shared] npc_spawn
+
+	name a|Lesser Fire Djinn
+	hp 2000
+	race orc
+	if ( !START_SUSPEND ) roam 1
+	setmodel MONSTER_MODEL
+	setmoveanim ANIM_WALK
+	height 64
+	width 32
+	hearingsensitivity 2
+	blood green //check in code
+	setidleanim ANIM_IDLE
+
+	setprop ent_me skin 5
+
+	takedmg fire 0.0
+	takedmg cold 1.5
+	takedmg holy 0.5
+
+	setvard RUN_STEP 0
+
+	if game.serverside
+
+	if ( G_SHAD_PRESENT )
+	{
+		race undead
+		setprop ent_me skin 2
+	}
+	else
+	{
+		race orc
+	}
+
+	setvard CUR_SPECIAL 1
+
+	if ( !START_SUSPEND ) callevent 1.0 idle_sounds
+	callevent 2.0 final_postspawn
+}
+
+{ npcatk_validatetarget //first spot
+
+	if $get(PARAM1,isplayer)
+	if !DID_WARCRY
+	playanim critical ANIM_WARCRY
+	playsound 0 10 SOUND_WARCRY
+	setvard DID_WARCRY 1
+}
+
+{ my_target_died
+
+	if ( !$cansee(enemy) )
+	{
+		playanim critical ANIM_WARCRY
+		playsound 0 10 SOUND_WARCRY
+		setvard DID_WARCRY 0
+		if !LEAP_ENABLED
+		callevent 1.0 enable_leap
+	}
+}
+
+{ enable_leap
+
+	setvard LEAP_ENABLED 1
+}
+
+{ npcatk_hunt
+
+	//regenerate
+	if ( game.monster.hp < game.monster.maxhp ) givehp 0.1
+
+	if NPCATK_TARGET isnot unset
+	if $get(NPCATK_TARGET,range) <= LEAP_RANGE_TOOFAR
+	if $get(NPCATK_TARGET,range) > LEAP_RANGE_TOOCLOSE
+	if LEAP_ENABLED
+
+	if !DOING_FIRE_STORM
+	if !DOING_FIRE_BURST
+
+	setvard LEAP_ENABLED 0
+	callevent 5.0 enable_leap
+	callevent script_leap //do not confused with model vent leap_attack
+}
+
+{ script_leap
+
+	playanim critical ANIM_LEAP
+	callevent 0.1 leap_boost	
+}
+
+{ leap_boost
+
+	if !I_R_FROZEN
+	addvelocity ent_me $relvel(0,600,100)	
+}
+	
+{ npc_selectattack
+
+	if ( HEADBUTT_DELAY )
+	{
+		setvard ANIM_ATTACK ANIM_SWIPE
+	}
+	else
+	{
+		if ( $rand(1,100) < HEADBUTT_CHANCE )
+		{
+			setvard ANIM_ATTACK ANIM_HEADBUTT
+			setvard HEADBUTT_DELAY 1
+			callevent HEADBUTT_FREQ headbutt_reset
+		}
+	}
+}
+
+{ headbutt_reset
+	
+	setvard HEADBUTT_DELAY 0
+}
+
+{ attack1
+
+	setvard SWIPE_ATTACK 1
+	callevent npcatk_dodamage NPCATK_TARGET ATTACK_HITRANGE SWIPE_DAMAGE ATTACK_HITCHANCE
+}
+
+{ attack2 //headbut on frame 6 of attack2
+
+	callevent npcatk_dodamage NPCATK_TARGET ATTACK_HITRANGE HEADBUTT_DAMAGE ATTACK_HITCHANCE
+	setvard HEADBUTT_ON 1
+}
+
+{ game_dodamage //1: Attack Hit (1/0)  2: Entity Attack hit  3:  Start Position  4:  End Position
+
+	if ( HEADBUTT_ON )
+	{
+		if ( PARAM1 )
+		{
+			playsound 0 10 SOUND_HEADBUTT
+			applyeffect NPCATK_TARGET effects/heavy_stun 5 1
+		}
+		if ( !PARAM1 ) playrandomsound 0 10 SOUND_SWIPEMISS1 SOUND_SWIPEMISS2
+		setvard ANIM_ATTACK ANIM_SWIPE
+		setvard HEADBUTT_ON 0
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	//assumes swipe
+	if SWIPE_ATTACK
+	setvard SWIPE_ATTACK 0
+	if ( PARAM1 )
+	{
+		playrandomsound 0 10 SOUND_SWIPEHIT1 SOUND_SWIPEHIT2
+		addvelocity ent_laststruckbyme $relvel(-100,130,120)
+		applyeffect PARAM2 effects/effect_burn 5.0 $get(ent_me,id) DOT_FIRE
+	}
+	if ( !PARAM1 ) playrandomsound 0 10 SOUND_SWIPEMISS1 SOUND_SWIPEMISS2
+}
+
+{ game_struck //PARAM1 = damage
+
+	if ( game.monster.hp > WEAK_THRESHOLD )	playrandomsound 0 10 SOUND_STRUCK1 SOUND_STRUCK2 SOUND_PAIN_STRONG
+	if ( game.monster.hp <= WEAK_THRESHOLD ) playrandomsound 0 10 SOUND_STRUCK1 SOUND_STRUCK2 SOUND_PAIN_WEAK
+
+	if !DOING_FIRE_STORM
+	if !DOING_FIRE_BURST
+
+	if ( PARAM1 > 200 )
+	{
+		//dbg leaping away due to damage
+		if game.time > NEXT_DMG_LEAP_AWAY
+		setvard NEXT_DMG_LEAP_AWAY game.time
+		add NEXT_DMG_LEAP_AWAY FREQ_LEAP_AWAY
+		callevent leap_away
+	}
+//	if !EXIT_SUB
+//
+//	local HP_AFTER game.monster.hp
+//	subtract HP_AFTER PARAM1
+//
+//	if ( HP_AFTER < NEXT_LEAP_AWAY )
+//	{
+//		//dbg leaping away due to interval
+//		subtract NEXT_LEAP_AWAY LEAP_AWAY_INTERVAL
+//		if game.time > NEXT_DMG_LEAP_AWAY
+//		setvard NEXT_DMG_LEAP_AWAY game.time
+//		add NEXT_LEAP_AWAY FREQ_LEAP_AWAY
+//		callevent leap_away
+//	}
+}
+
+{ leap_away
+
+	playanim critical ANIM_LEAP
+	setmovedest NPCATK_TARGET 99999 flee
+	callevent 0.1 leap_boost
+	callevent npcatk_suspend_ai 3.0
+}
+
+{ leap_attack //called from ANIM_LEAP at frame 28
+
+	playsound 0 10 SOUND_LEAP
+
+	if ( $cansee(enemy,128) )
+	{
+		callevent npcatk_dodamage $get(ent_lastseen,id) ATTACK_HITRANGE LEAP_DAMAGE ATTACK_HITCHANCE
+		if ( $rand(1,100) < LEAP_STUNCHANCE ) applyeffect $get(ent_lastseen,id) effects/effect_stun 5 1
+	}
+}
+
+{ leap_done
+
+	playsound 0 10 SOUND_LEAP_LAND
+	setmoveanim ANIM_RUN
+}
+
+{ npcatk_search_init_advanced
+
+	if !SEARCH_ANIM_DELAY
+	setvard NPC_DELAYING_UNSTUCK 10.0
+	playanim critical ANIM_SEARCH
+	playrandomsound 0 10 SOUND_IDLE1 SOUND_IDLE2 SOUND_IDLE3 SOUND_IDLE4 SOUND_IDLE5
+	setvard SEARCH_ANIM_DELAY 1
+	callevent 5.0 reset_search_anim
+}
+
+{ reset_search_anim
+
+	setvard SEARCH_ANIM_DELAY 0
+}
+
+{ npc_flinch
+
+	playsound 0 10 SOUND_FLINCH
+}
+
+{ idle_sounds
+
+	callevent $randf(3,10) idle_sounds
+	if NPCATK_TARGET equals unset
+	playrandomsound 0 10 SOUND_IDLE1 SOUND_IDLE2 SOUND_IDLE3 SOUND_IDLE4 SOUND_IDLE5
+}
+
+{ run_step1 //called from model during ANIM_RUN
+
+	playsound 0 5 SOUND_STEP1
+}
+
+{ run_step2 //called from model during ANIM_RUN
+
+	playsound 0 5 SOUND_STEP2
+}
+
+{ npcatk_targetvalidate
+
+	//if spotted player, start jump checks
+	if !ORC_JUMPING
+	if $get(NPCATK_TARGET,isplayer)
+	setvard ORC_JUMPING 1
+	callevent 1.0 orc_jump_check
+	
+}
+
+{ orc_jump_check
+
+	if ORC_JUMPING
+	callevent ORC_HOP_DELAY orc_jump_check
+
+	if !IS_FLEEING
+	if NPCATK_TARGET isnot unset
+	if $cansee(NPCATK_TARGET)
+
+	//jump at player if he's higher than I am
+	local ME_POS game.monster.origin
+	local MY_Z $vec.z(ME_POS)
+	local TARGET_POS $get(NPCATK_TARGET,origin)
+	local TARGET_Z $vec.z(TARGET_POS)
+	local TARGET_Z_DIFFERENCE TARGET_Z
+	subtract TARGET_Z_DIFFERENCE MY_Z
+
+	if ( TARGET_Z_DIFFERENCE > ORC_JUMP_THRESH ) callevent orc_hop
+}
+
+{ orc_hop
+
+	setvard NPC_FORCED_MOVEDEST 1 
+	setmovedest NPCATK_TARGET 1
+	playanim critical ANIM_LEAP
+	playsound 0 10 SOUND_LEAP
+	local JUMP_HEIGHT $rand(550,650)
+	addvelocity ent_me $relvel(0,250,JUMP_HEIGHT)
+}
+
+{ my_target_died
+
+	if !$cansee(enemy)
+	//stop jumping (saves CPU when monster idle)
+	setvard ORC_JUMPING 0
+}
+
+{ bo_zombie_mode
+	callevent npc_suicide
+}
+
+//================ Fire bits
+{ cycle_up
+
+
+	setvard NEXT_SPECIAL game.time
+	add NEXT_SPECIAL FREQ_SPECIAL
+}
+
+{ npc_targetsighted
+
+	if !DOING_FIRE_STORM
+	if !DOING_FIRE_BURST
+	if !SUSPEND_AI
+	if !I_R_FROZEN
+	if game.time > NEXT_SPECIAL
+	setvard NEXT_SPECIAL game.time
+	add NEXT_SPECIAL FREQ_SPECIAL
+	if ( CUR_SPECIAL > 3 ) setvard CUR_SPECIAL 1
+	if ( CUR_SPECIAL == 3 )
+	{
+		if $get(NPCATK_TARGET,range) < 512
+		callevent do_fire_burst
+		add CUR_SPECIAL 1
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	if ( CUR_SPECIAL == 2 )
+	{
+		if $get(NPCATK_TARGET,range) < 512
+		callevent do_fire_burst
+		add CUR_SPECIAL 1
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	if ( CUR_SPECIAL == 1 )
+	{
+		if $get(NPCATK_TARGET,range) < 256
+		callevent do_fire_storm
+		add CUR_SPECIAL 1
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+}
+
+{ do_fire_burst
+	setvard DOING_FIRE_BURST 1
+
+	xdodamage $get(ent_me,origin) 128 DOT_FIRE_SPELL 0 ent_me ent_me none fire_effect
+
+	callevent npcatk_suspend_ai
+	callevent npcatk_suspend_movement ANIM_WARCRY
+	playanim critical ANIM_WARCRY
+	
+	clientevent new all effects/sfx_fire_burst $get(ent_me,origin) 768 1 (255,128,0)
+
+	setvard BURST_TARGS $get_tsphere(enemy,768)
+	if BURST_TARGS isnot none
+
+	calleventloop $get_token_amt(BURST_TARGS) fire_burst_affect_targets
+	callevent 1.5 end_fire_burst
+}
+
+{ end_fire_burst
+
+	setvard NEXT_SPECIAL game.time
+	add NEXT_SPECIAL FREQ_SPECIAL
+
+	callevent npcatk_resume_ai
+	callevent npcatk_resume_movement
+
+	setvard DOING_FIRE_BURST 0
+}
+
+{ fire_burst_affect_targets
+	local CUR_TARG $get_token(BURST_TARGS,game.script.iteration)
+	if ( $get(CUR_TARG,isplayer) )
+	{
+		if !$get(CUR_TARG,onground)
+		local EXIT_SUB
+	}
+	if !EXIT_SUB
+	applyeffect CUR_TARG effects/effect_burn 5.0 $get(ent_me,id) DOT_FIRE_SPELL
+	local TARG_ORG $get(CUR_TARG,origin)
+	local MY_ORG $get(ent_me,origin)
+	local TARG_ANG $angles(MY_ORG,TARG_ORG)
+	local NEW_YAW TARG_ANG
+	setvelocity CUR_TARG $relvel($vec(0,NEW_YAW,0),$vec(0,1000,0))
+}
+
+{ do_fire_storm
+	setvard DOING_FIRE_STORM 1
+	callevent npcatk_suspend_ai
+	callevent npcatk_suspend_movement ANIM_BEAM
+	playanim critical ANIM_WARCRY
+	setvard NEXT_SPECIAL game.time
+	add NEXT_SPECIAL FREQ_SPECIAL
+
+	clientevent update all CL_IDX fire_storm_on
+
+	setvard BREATH_ANG $get(ent_me,angles.yaw)
+	subtract BREATH_ANG 45
+	if ( BREATH_ANG < 0 ) add BREATH_ANG 359
+	setvard BREATH_COUNT 0
+
+	callevent 0.01 fire_breath_loop
+	setvard FIRE_BREATH_ON 1
+	svplaysound 1 10 SOUND_BREATH
+}
+
+{ fire_breath_loop
+
+	if DOING_FIRE_STORM
+
+	add BREATH_COUNT 1
+	if ( BREATH_COUNT == 45 ) callevent end_fire_breath
+
+	if BREATH_COUNT < 45
+	callevent 0.05 fire_breath_loop
+
+	add BREATH_ANG 1
+	if ( BREATH_ANG > 359 ) subtract BREATH_ANG 359
+
+	local FACE_POS $get(ent_me,origin)
+	vectoradd FACE_POS $relpos($vec(0,BREATH_ANG,0),$vec(0,500,0))
+	setmovedest FACE_POS 9999
+
+	if game.time > NEXT_SCAN
+	setvard NEXT_SCAN game.time
+	add NEXT_SCAN 0.25
+	local SCAN_POINT $relpos(0,128,0)
+	setvard CLOUD_TARGS $get_tbox(enemy,128,SCAN_POINT)
+	if ( CLOUD_TARGS isnot none ) calleventloop $get_token_amt(CLOUD_TARGS) burn_targets
+}
+
+{ burn_targets
+	local CUR_TARGET $get_token(CLOUD_TARGS,game.script.iteration)
+	local TARG_ORG $get(CUR_TARGET,origin)
+	if $within_cone2D(TARG_ORG,game.monster.origin,game.monster.angles,30)
+	if $get(CUR_TARGET,range) < 256
+	applyeffect CUR_TARGET effects/effect_burn 10.0 $get(ent_me,id) DOT_FIRE_SPELL 0 0 none
+	addvelocity CUR_TARGET $relvel(0,800,120)
+}
+
+{ end_fire_breath
+	setvard NEXT_SPECIAL game.time
+	add NEXT_SPECIAL FREQ_SPECIAL
+
+	clientevent update all CL_IDX fire_storm_off
+	callevent npcatk_resume_ai
+	callevent npcatk_resume_movement
+	svplaysound 1 0 SOUND_BREATH
+	setvard DOING_FIRE_STORM 0
+}
+
+
+{ final_postspawn
+
+	setvard LEAP_AWAY_INTERVAL $get(ent_me,hp)
+	multiply LEAP_AWAY_INTERVAL 0.25
+
+	//axe lesser from the name, if I'm ramped
+	if NPC_ADJ_LEVEL >= 2
+	name a|Fire Djinn
+}
+
+{ game_death
+	if ( CL_IDX isnot 'CL_IDX' ) clientevent update all CL_IDX end_fx
+}
+
+{ cycle_up
+	if !CL_REFRESH_LOOP_ON
+	setvard CL_REFRESH_LOOP_ON 1
+	callevent refresh_cl_loop
+}
+
+{ refresh_cl_loop
+	if $get(ent_me,isalive)
+	callevent 10.0 refresh_cl_loop
+	if ( CL_IDX isnot 'CL_IDX' )
+	{
+		clientevent update all CL_IDX end_fx
+	}
+
+	clientevent new all monsters/djinn_ogre_fire_cl $get(ent_me,index) 10.0 DOING_FIRE_STORM
+	setvard CL_IDX game.script.last_sent_id
+}

@@ -1,0 +1,116 @@
+#scope server
+{ [shared]
+	setvar ANIM_IDLE idle
+	setvar ANIM_WALK walk
+	setvard ANIM_ATTACK attack //frame_attack
+	setvard ANIM_RUN walk
+	setvard ANIM_DEATH die
+
+	const ANIM_WALK1 walk
+	const ANIM_WALK2 walk2
+	const ANIM_ATTACK1 attack
+	const ANIM_ATTACK2 attack2 //frame_attack
+}
+
+{
+	setvard NPC_GIVE_EXP 100
+
+	setvar NPC_ALLY_RESPONSE_RANGE 1024 //larger response range than hp would suggest for better swarming
+
+	const FREQ_SWITCH_ANIM $randf(5.0,15.0)
+
+	const DMG_BITE 50
+
+	setvard ATTACK_RANGE 32
+	setvard MOVE_RANGE 16
+	setvard ATTACK_MOVERANGE 16
+	setvard ATTACK_HITRANGE 64
+
+	const SOUND_PAIN monsters/spider/spiderhiss.wav
+	const SND_STRUCK1 body/flesh1.wav
+	const SND_STRUCK2 body/flesh2.wav
+	const SND_STRUCK3 body/flesh3.wav
+	const SOUND_IDLE1 monsters/spider/spideridle.wav
+	const SOUND_DEATH monsters/spider/spiderdie.wav
+
+	const SOUND_ATTACK1 monsters/spider/spiderhiss2.wav
+	const SOUND_ATTACK2 monsters/spider/spiderhiss.wav
+}
+
+#include monsters/base_monster_new
+
+{ [shared] npc_spawn
+
+	name a|Giant Ant
+	setmodel monsters/ant_fubar.mdl
+	width 32
+	height 16
+	race ant_red
+	hp 200
+	takedmg pierce 1.25
+	roam 1
+	hearingsensitivity 5
+	
+
+	//movespeed's too slow, and I ain't redoing the anims again! ><
+	setanim.movespeed 2.0
+	movespeed 2.0
+}
+
+{ npc_post_spawn
+	if ( $rand(1,2) == 1 )
+	{
+		setvard ANIM_ATTACK ANIM_ATTACK1
+	}
+	else
+	{
+		setvard ANIM_ATTACK ANIM_ATTACK2
+	}
+}
+
+{ frame_attack
+	playrandomsound 0 10 SOUND_ATTACK1 SOUND_ATTACK2 none none none none
+	dodamage NPCATK_TARGET ATTACK_HITRANGE DMG_BITE 90% pierce
+
+	if ( $rand(1,2) == 1 )
+	{
+		setvard ANIM_ATTACK ANIM_ATTACK1
+	}
+	else
+	{
+		setvard ANIM_ATTACK ANIM_ATTACK2
+	}
+}
+
+{ npcatk_hunt
+	if game.time > NEXT_SWITCH_ANIM
+	setvard NEXT_SWITCH_ANIM game.time
+	add NEXT_SWITCH_ANIM FREQ_SWITCH_ANIM
+
+	if ( $rand(1,2) == 1 )
+	{
+		setvard ANIM_RUN ANIM_WALK1
+		setvard ANIM_WALK ANIM_WALK1
+		setmoveanim ANIM_RUN
+	}
+	else
+	{
+		setvard ANIM_RUN ANIM_WALK2
+		setvard ANIM_WALK ANIM_WALK2
+		setmoveanim ANIM_RUN
+	}
+}
+
+{
+repeatdelay 3.6
+	if $get(ent_me,isalive)
+	svplaysound 4 5 SOUND_IDLE1
+}
+
+{ game_struck
+	playrandomsound 2 10 SND_STRUCK1 SND_STRUCK2 SND_STRUCK3 SND_STRUCK1 SND_STRUCK2 SND_STRUCK3 SOUND_PAIN SOUND_PAIN
+}
+
+{ game_death
+	svplaysound 4 0 SOUND_IDLE1
+}

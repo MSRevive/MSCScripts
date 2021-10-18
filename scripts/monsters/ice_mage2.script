@@ -1,0 +1,393 @@
+#scope server
+{
+	//base anims
+	setvar ANIM_IDLE idle
+	setvard ANIM_RUN run
+	setvard ANIM_WALK walk
+	setvard ANIM_DEATH die_simple
+
+	const ANIM_BURST crouch_idle
+
+	setvard MOVE_RANGE 512
+	setvard ATTACK_MOVERANGE 512
+	setvard ATTACK_RANGE 1024
+	setvard ATTACK_HITRANGE 1024
+
+	const ANIM_IDLE_ALERT alert_idle
+	setvard ANIM_ATTACK ref_shoot_staff //staff_strike
+	const ANIM_FREEZE_RAY ref_shoot_rayspell
+	const ANIM_FLY jump //jump straight up and float down? (not sure if can do)
+	const ANIM_LOOK look
+	
+	setvard NPC_GIVE_EXP 1000
+
+	setvard NPC_RANGED 1
+
+	const FREQ_DODGE 5.0
+
+	const LIGHT_COLOR (200,200,255)
+	const LIGHT_RAD 96
+
+	const FREQ_BURST $randf(30.0,60.0)
+	const FREQ_BURST_SHORT 10.0
+
+	const DOT_FREEZE 100.0
+
+	const FREEZE_RAY_BASEDOT 25.0
+	const FREEZE_RAY_SLOW_AMT 1
+
+	const SOUND_FREEZE_RAY magic/freezeray_loop.wav
+	const SOUND_BURST_CHARGE weapons/magic/ice_powerup.wav
+	const SOUND_BURST weapons/magic/frost_reverse.wav
+}
+
+#include monsters/base_monster_new
+
+{ npc_spawn
+	name a|Frost Mage
+	setmodel monsters/ice_mage.mdl
+	hp 4000
+	
+	takedmg all 0.5
+	takedmg cold 0
+	takedmg fire 1.25
+	takedmg poison 0.5
+
+	width 32
+	height 96
+	roam 1
+	hearingsensitivity 4
+	setprop ent_me skin 1
+
+	setvard NExT_BURST game.time
+	add NEXT_BURST FREQ_BURST
+
+	callevent 1.0 get_teleporters
+}
+
+{ npc_targetsighted
+
+	if ( !DID_INTRO )
+	{
+		setvard NEXT_BURST game.time
+		add NEXT_BURST FREQ_BURST
+	}
+
+	if ( game.time > NEXT_BURST )
+	{
+		if ( $get(NPCATK_TARGET,range) < 200 )
+		{
+			callevent do_burst
+		}
+		else
+		{
+			setvard NEXT_BURST game.time
+			add NEXT_BURST FREQ_BURST_SHORT
+		}
+	}
+}
+
+{ do_burst
+
+	if ( DOING_BEAM ) callevent beam_end
+	setvard DOING_BURST 1
+	roam 0
+	callevent npcatk_suspend_movement crouch_aim_staff 6.0
+	callevent npcatk_suspend_ai 6.0
+	playsound 0 10 SOUND_BURST_CHARGE
+	callevent 3.0 do_burst2
+	callevent 6.0 do_burst3
+	clientevent new all effects/sfx_burst_sphere $get(ent_me,origin)
+}
+
+{ do_burst2
+
+	playsound 0 10 SOUND_BURST
+	xdodamage $relpos(0,0,0) 256 DOT_FREEZE 100% ent_me ent_me none cold_effect dmgevent:freeze
+}
+
+{ do_burst3
+	roam 1
+	setvard DOING_BURST 0
+}
+
+{ freeze_dodamage
+	if $get(PARAM2,relationship,ent_me) equals enemy
+	applyeffect PARAM2 effects/freeze_solid 7.0 $get(ent_me,id) DOT_FREEZE none 9999
+}
+
+{ npcatk_hunt
+	if ( NPCATK_TARGET equals unset )
+	{
+		if DOING_BEAM
+		callevent beam_end
+	}
+
+	if NPCATK_TARGET isnot unset
+	if ( game.time > NEXT_CL_REFRESH )
+	{
+		clientevent new all effects/sfx_follow_glow_cl $get(ent_me,index) LIGHT_COLOR LIGHT_RAD 15.0
+		setvard CL_LIGHT_IDX game.script.last_sent_id
+		setvard NEXT_CL_REFRESH game.time
+		add NEXT_CL_REFRESH 15.0
+	}
+
+	if !DOING_BURST
+	if ( $cansee(NPCATK_TARGET) )
+	{
+		if ( !DOING_BEAM )
+		{
+			callevent beam_start
+		}
+		else
+		{
+			if ( !$get(NPCATK_TARGET,haseffect,freeze_ray) )
+			{
+				applyeffectstack NPCATK_TARGET effects/freeze_ray $get(ent_me,id) FREEZE_RAY_BASEDOT FREEZE_RAY_SLOW_AMT
+			}
+			else
+			{
+				callexternal NPCATK_TARGET ext_freeze_ray_add $get(ent_me,id) FREEZE_RAY_BASEDOT FREEZE_RAY_SLOW_AMT
+			}
+		}
+	}
+	else
+	{
+		if DOING_BEAM
+		callevent beam_end
+	}
+}
+
+{ game_damaged //PARAM1=attacker PARAM2=dmg PARAM3=dmg_type
+	if ( PARAM3 contains effect ) local NO_DODGE 1
+	if game.time > NEXT_DODGE
+	setvard NEXT_DODGE game.time
+	add NEXT_DODGE FREQ_DODGE
+	callevent shadow_shift
+}
+
+{ game_death
+	clientevent remove all CL_LIGHT_IDX
+	if ( DOING_BEAM ) callevent beam_end
+}
+
+{ shadow_shift
+
+	clientevent persist all effects/sfx_motionblur_temp $get(ent_me,index) 0 1 3.0
+	local RND_ANG $randf(0,359)
+	addvelocity ent_me $relvel($vec(0,RND_ANG,0),$vec(0,1000,0))
+	playsound 0 10 SOUND_DODGE
+	callevent 0.25 stop_shadow_shift
+}
+
+{ stop_shadow_shift
+	setvelocity ent_me $relvel(0,0,0)
+}
+
+{ beam_start
+	setvard DOING_BEAM 1
+	effect beam ents lgtning.spr 1 NPCATK_TARGET 1 ent_me 1 (0,128,255) 200 0 60.0
+	setvard LAST_BEAM ent_lastcreated
+	playsound 1 10 SOUND_FREEZE_RAY
+}
+
+{ beam_end
+	if ( DOING_BEAM ) callexternal NPCATK_TARGET ext_freeze_ray_remove $get(ent_me,id)
+	setvard DOING_BEAM 0
+	playsound 1 0 SOUND_FREEZE_RAY
+	effect beam update LAST_BEAM remove
+}
+
+
+//=============== Teleport system from original script
+{ [server] get_teleporters
+	setvard N_TELES 0
+
+	setvard TELE_ID1 $get_by_name(sorc_telepoint1)
+	setvard TELE_ID2 $get_by_name(sorc_telepoint2)
+	setvard TELE_ID3 $get_by_name(sorc_telepoint3)
+	setvard TELE_ID4 $get_by_name(sorc_telepoint4)
+
+	if ( $get(TELE_ID1,exists) ) add N_TELES 1
+	if ( $get(TELE_ID2,exists) ) add N_TELES 1
+	if ( $get(TELE_ID3,exists) ) add N_TELES 1
+	if ( $get(TELE_ID4,exists) ) add N_TELES 1
+}
+
+{ [server]
+repeatdelay FREQ_TELE
+
+	if N_TELES > 0
+
+	//prevent tele merges
+	local LAST_TELE_DIFF game.time
+	subtract LAST_TELE_DIFF G_ICE_TELE
+	if LAST_TELE_DIFF > 5
+
+	if !$cansee(NPCATK_TARGET,256)
+
+	local TOTAL_TELES N_TELES
+	add TOTAL_TELES 1
+
+	//find if any players are near my teleport points
+	//if the are, teleport there and target them
+	getplayersnb PLAYER_LIST
+	setvard FOUND_NEAR_TARGET 0
+	setvard SEARCH_RAD 512
+	calleventloop $get_token_amt(PLAYER_LIST) find_near_teleporter
+
+	if FOUND_NEAR_TARGET > 0
+
+	callevent npcatk_settarget NEW_TARGET
+	if ( G_DEVELOPER_MODE ) messageall green ICE_MAGE: found $get(NEW_TARGET,name) near FOUND_NEAR_TARGET
+	local PICK_TELE FOUND_NEAR_TARGET
+
+	if ( PICK_TELE == 1 )
+	{
+		setvard TELE_DEST $get(TELE_ID1,origin)
+		setvard TELE_ANG $get(TELE_ID1,angles)
+		callexternal TELE_ID1 tele_used
+	}
+	if ( PICK_TELE == 2 )
+	{
+		setvard TELE_DEST $get(TELE_ID2,origin)
+		setvard TELE_ANG $get(TELE_ID2,angles)
+		callexternal TELE_ID2 tele_used
+	}
+	if ( PICK_TELE == 3 )
+	{
+		setvard TELE_DEST $get(TELE_ID3,origin)
+		setvard TELE_ANG $get(TELE_ID3,angles)
+		callexternal TELE_ID3 tele_used
+	}
+	if ( PICK_TELE == 4 )
+	{
+		setvard TELE_DEST $get(TELE_ID4,origin)
+		setvard TELE_ANG $get(TELE_ID4,angles)
+		callexternal TELE_ID4 tele_used
+	}
+	if ( PICK_TELE > N_TELES ) 
+	{
+		setvard TELE_DEST NPC_SPAWN_LOC
+		vectoradd TELE_DEST z 128
+		setvard TELE_ANGS NPC_SPAWN_ANGLES
+	}
+
+	createnpc monsters/summon/ibarrier TELE_DEST $get(ent_me,id) 64 2 0 0 0 1 //<owner> <rad> <duration> [invisible:0|1] [silent:0|1] [dmg] [push_allys:0|1]
+	setvard LAST_TELE game.time
+	setvarg G_ICE_TELE game.time
+	callevent 0.25 flicker_out
+	callevent 0.75 tele_out
+	callevent 1.5 tele_in
+}
+
+{ [server] flicker_out
+	subtract RENDER_COUNT 50
+	if RENDER_COUNT > 0
+	callevent 0.1 flicker_out
+	setprop ent_me rendermode 5
+	setprop ent_me renderamt RENDER_COUNT
+}
+
+{ [server] tele_out
+	playsound 0 10 SOUND_TELE
+	setorigin ent_me (-20000,10000,-20000)
+}
+
+{ [server] tele_in
+
+	//check for targets in dest path
+	setvard NEAR_DEST $get_tsphere(any,64,TELE_DEST)
+	setvard BUGGER_IN_WAY 0
+	calleventloop $get_token_amt(NEAR_DEST) check_near_dest
+	if ( BUGGER_IN_WAY )
+	{
+		add BUGGER_IN_WAY_COUNT 1
+		dbg tele_in $get(BUGGER_ID,name) / $get(BUGGER_ID,scriptvar,IS_TELE) @ TELE_DEST
+		callevent 0.1 tele_in
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	setvard BUGGER_IN_WAY_COUNT 0
+
+	setorigin ent_me TELE_DEST
+	setangle face TELE_ANGS
+	playsound 0 10 SOUND_TELE
+	setvard RENDER_COUNT 0
+	callevent flicker_in
+	setvard LAST_TELE game.time
+	setvarg G_ICE_TELE game.time
+}
+
+{ [server] check_near_dest
+	local CUR_ENT $get_token(NEAR_DEST,game.script.iteration)
+	if ( $get(CUR_ENT,name) contains Barrier ) local ENT_OKAY 1
+	if ( $get(CUR_ENT,scriptvar,IS_TELE) ) local ENT_OKAY 1
+	if !ENT_OKAY
+	setvard BUGGER_IN_WAY 1
+	setvard BUGGER_ID CUR_ENT
+}
+
+{ [server] flicker_in
+	add RENDER_COUNT 50
+	if ( RENDER_COUNT >= 255 )
+	{
+		setprop ent_me rendermode 0
+		setprop ent_me renderamt 255
+	}
+	if RENDER_COUNT < 255
+	callevent 0.1 flicker_in
+	setprop ent_me rendermode 5
+	setprop ent_me renderamt RENDER_COUNT
+}
+
+{ [server] find_near_teleporter
+	local CUR_PLAYER $get_token(PLAYER_LIST,game.script.iteration)
+	local PLAYER_ORG $get(CUR_PLAYER,origin)
+
+	if FOUND_NEAR_TARGET == 0
+
+	if N_TELES >= 1
+	local TEST_TELE $get(TELE_ID1,origin)
+	vectorset TEST_TELE z $get_ground_height(TEST_TELE)
+	if ( $dist(PLAYER_ORG,TEST_TELE) < SEARCH_RAD )
+	{
+		setvard FOUND_NEAR_TARGET 1
+		setvard NEW_TARGET CUR_PLAYER
+	}
+
+	if N_TELES >= 2
+	local TEST_TELE $get(TELE_ID2,origin)
+	vectorset TEST_TELE z $get_ground_height(TEST_TELE)
+	if ( $dist(PLAYER_ORG,TEST_TELE) < SEARCH_RAD )
+	{
+		setvard FOUND_NEAR_TARGET 2
+		setvard NEW_TARGET CUR_PLAYER
+	}
+
+	if N_TELES >= 3
+	local TEST_TELE $get(TELE_ID3,origin)
+	vectorset TEST_TELE z $get_ground_height(TEST_TELE)
+	if ( $dist(PLAYER_ORG,TEST_TELE) < SEARCH_RAD )
+	{
+		setvard FOUND_NEAR_TARGET 3
+		setvard NEW_TARGET CUR_PLAYER
+	}
+
+	if N_TELES >= 4
+	local TEST_TELE $get(TELE_ID4,origin)
+	vectorset TEST_TELE z $get_ground_height(TEST_TELE)
+	if ( $dist(PLAYER_ORG,TEST_TELE) < SEARCH_RAD )
+	{
+		setvard FOUND_NEAR_TARGET 4
+		setvard NEW_TARGET CUR_PLAYER
+	}
+
+	local TEST_TELE NPC_SPAWN_LOC
+	if ( $dist(PLAYER_ORG,TEST_TELE) < SEARCH_RAD )
+	{
+		setvard FOUND_NEAR_TARGET 5
+		setvard NEW_TARGET CUR_PLAYER
+	}
+}

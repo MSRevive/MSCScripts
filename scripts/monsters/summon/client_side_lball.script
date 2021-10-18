@@ -1,0 +1,95 @@
+//This particular script is not working very well due to the fact that the
+//model is vanishing when passing through map solids or beyond the hull
+
+#scope client
+{
+	const BALL_SPEED 120
+	const BALL_MODEL weapons/projectiles.mdl
+	const BALL_MODEL_OFS 18
+	const SOUND_KABOOM weapons/explode3.wav //replace with shock sound
+	const SOUND_LOOP items/torch1.wav //replace with non-looped zap
+	const FREQ_LOOP_SOUND 6.1 //reqplace with frequency of above
+}
+
+{ client_activate //<spawn_pos> <start_ang>
+
+	dbg **** PARAM1 PARAM2
+
+	local MY_ORG PARAM1
+	setvard START_ANG PARAM2
+	setvard VEL_ANGLES START_ANG
+	setvard BALL_DURATION PARAM3
+	setvard IS_ACTIVE 1
+	cleffect tempent model BALL_MODEL MY_ORG setup_ball update_ball
+	sound.play3d SOUND_LOOP 10 MY_ORG
+
+	local L_BALL_DURATION BALL_DURATION
+	add L_BALL_DURATION 1.0
+	callevent L_BALL_DURATION ball_end //case I don't get called for some reason
+}
+
+{ update_ball //<veladj:0|1> <angles>
+
+	if ( !IS_ACTIVE )
+	{
+		if !IS_DESTROYED
+		cleffect tempent set_current_prop death_delay 0.1
+		setvard IS_DESTROYED 1 
+	}
+
+	if IS_ACTIVE
+
+	setvard FB_ORG game.tempent.origin
+
+	cleffect tempent set_current_prop velocity $relvel(VEL_ANGLES,$vec(0,BALL_SPEED,0))
+}
+
+{ setup_ball
+	cleffect tempent set_current_prop body 17
+	cleffect tempent set_current_prop death_delay BALL_DURATION
+	cleffect tempent set_current_prop gravity 0
+	cleffect tempent set_current_prop velocity $relvel(START_ANG,$vec(0,BALL_SPEED,0))
+	cleffect tempent set_current_prop collide none
+	cleffect tempent set_current_prop framerate 1.0
+	cleffect tempent set_current_prop sequence 6
+	cleffect tempent set_current_prop update 1
+}
+
+
+{ ball_explode
+	setvard IS_ACTIVE 0
+
+	//splodie beams
+	setvard CYCLE_ANGLE 0
+	calleventloop 18 splodie_beams
+
+	callevent ball_end
+	sound.play3d SOUND_KABOOM 10 FB_ORG
+}
+
+{ splodie_beams
+	local BEAM_START FB_ORG
+	local BEAM_END BEAM_START
+	local RND_UD $randf(-64.0,64.0)
+	vectoradd BEAM_END $relpos($vec(0,CYCLE_ANGLE,0),$vec(0,128,RND_UD))
+	cleffect beam_points BEAM_START BEAM_END lgtning.spr 1.5 2.5 1.5 255 50 30 (255,255,0)
+	add CYCLE_ANGLE 20
+}
+
+{ svr_update_vec //<angs> <where_server_thinks_I_am>
+	setvard VEL_ANGLES PARAM1
+}
+
+{ ball_end
+	setvard IS_ACTIVE 0
+	callevent 1.0 end_effect //give a sec for tempents to disipate
+}
+
+{ end_effect
+	removescript
+}
+
+{
+repeatdelay FREQ_LOOP_SOUND
+	sound.play3d SOUND_LOOP 10 FB_ORG
+}

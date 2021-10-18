@@ -1,0 +1,166 @@
+//One handed sword
+//
+{
+	const IS_TWO_HANDED_SWORD 1
+
+	const NO_IDLE 1
+
+	const PLAYERANIM_AIM		sword_idle
+	const PLAYERANIM_SWING		sword_swing
+	const SOUND_PARRY		weapons/cbar_hit1.wav
+
+	const SOUND_HITWALL1 weapons/cbar_hit1.wav
+	const SOUND_HITWALL2 weapons/cbar_hit2.wav
+
+	const FREQ_MANUAL_PARRY 2.0
+	const ANIM_PARRY 4
+	const ANIM_UNPARRY 5
+	const SWORD_MANUAL_PARRY_RATIO 0.5
+}
+
+#include items/axes_base_onehanded
+
+{ weapon_spawn
+   	sethand both
+}
+
+{ game_deploy
+	setvard SWORD_CAN_PARRY 1
+	setvard IS_DEPLOYED 1
+}
+
+{ bweapon_effect_remove
+	setvard SWORD_CAN_PARRY 0
+	setvard IS_DEPLOYED 0
+}
+
+{ game_takedamage //1: Attacker  2: Inflictor  3: dmg  4: dmg type
+
+	//dbg dply IS_DEPLOYED pry SWORD_CAN_PARRY man SWORD_MANUAL_PARRY_ON
+
+	if IS_DEPLOYED
+
+	if SWORD_CAN_PARRY
+
+	//if MELEE_NEW_PARRY_CHANCE isnot 'MELEE_NEW_PARRY_CHANCE'
+
+	if ( PARAM4 contains 'effect' ) local EXIT_SUB 1
+	if ( PARAM4 contains 'target' ) local EXIT_SUB 1
+	if ( PARAM4 contains 'magic' ) local EXIT_SUB 1
+	if !EXIT_SUB
+
+	local l.pos $get(ent_owner,origin)
+	local l.mypos $get(ent_owner,origin)
+	local l.myang $get(ent_owner,angles)
+	local l.attpos $get(PARAM1,origin)
+
+	if $within_cone2D(l.attpos,l.mypos,l.myang,100)	//Attack must come from in front of player
+	
+	local PARRY_CHANCE MELEE_NEW_PARRY_CHANCE
+
+	if ( !SWORD_MANUAL_PARRY_ON )
+	{	
+		if ( PARRY_ON ) local PARRY_CHANCE 100
+		if ( $rand(1,100) <= PARRY_CHANCE ) 
+		{
+				local DMG_TAKEN PARAM3
+				volume 5
+				playsound 2 SOUND_PARRY
+				playermessage Sword parried! ( DMG_TAKEN hp )
+				setdmg hit 0
+				setdmg dmg 0
+				callevent 0.1 parryanim
+		}
+	}
+	else
+	{
+		local DMG_TAKEN PARAM3
+		local DMG_BLOCKED PARAM3
+		multiply DMG_TAKEN SWORD_MANUAL_PARRY_RATIO
+		subtract DMG_BLOCKED DMG_TAKEN
+		playsound 2 5 SOUND_PARRY
+		playermessage Sword blocked DMG_BLOCKED hp
+		setdmg dmg DMG_TAKEN
+		returndata SWORD_MANUAL_PARRY_RATIO
+	}
+}
+
+{ game_parry
+
+	//dbg game_parry triggered
+	callevent 0.1 play_parry
+}
+
+{ play_parry
+	playviewanim  ANIM_PARRY1
+	playsound 0 10 SOUND_PARRY
+	if $get(ent_laststruck,range) < MELEE_RANGE
+	local RIPOSTE_DAMAGE $get(ent_owner,skill.parry)
+	playermessage You riposté the attack! ( RIPOSTE_DAMAGE )
+	local L_MY_OWNER $get(ent_owner,id)
+	//applyeffect ent_laststruck effects/generic_damage RIPOSTE_DAMAGE L_MY_OWNER
+	xdodamage $get(ent_laststruck,id) direct RIPOSTE_DAMAGE 100% L_MY_OWNER L_MY_OWNER MELEE_STAT MELEE_DMG_TYPE
+}
+
+{ melee_end
+	playviewanim ANIM_IDLE1
+}
+
+{ special_01_end
+	playviewanim ANIM_IDLE1
+}
+
+{ parryanim
+	if ANIM_PARRY isnot ANIM_PARRY
+	splayviewanim ent_me ANIM_PARRY
+}
+
+{ register_charge1
+
+	if !CUSTOM_REGISTER_CHARGE1
+
+   local reg.attack.type		strike-land
+   local reg.attack.range		MELEE_RANGE
+	multiply reg.attack.range 1.5
+   local reg.attack.dmg			MELEE_DMG
+   local reg.attack.dmg.range		MELEE_DMG_RANGE
+   local reg.attack.dmg.type		MELEE_DMG_TYPE
+   local reg.attack.energydrain		MELEE_ENERGY
+   local reg.attack.stat		MELEE_STAT
+   local reg.attack.hitchance		MELEE_ACCURACY
+   local reg.attack.delay.strike	1.3
+   local reg.attack.delay.end		1.9
+   local reg.attack.ofs.startpos	MELEE_STARTPOS
+   local reg.attack.ofs.aimang		MELEE_AIMANGLE
+   local reg.attack.noise		MELEE_NOISE
+
+   local reg.attack.priority	1
+   local reg.attack.keys	-attack1
+   local reg.attack.callback	special_01
+   multiply reg.attack.dmg	2
+   local reg.attack.chargeamt	100%
+   local reg.attack.reqskill	2
+
+	if ( BASE_LEVEL_REQ > reg.attack.reqskill ) add reg.attack.reqskill BASE_LEVEL_REQ
+
+   registerattack
+}
+
+{ game_+attack2
+	if SWORD_MANUAL_PARRY
+	if !SWORD_MANUAL_PARRY_ON
+	if game.time > NEXT_MANUAL_PARRY
+	setvard NEXT_MANUAL_PARRY game.time
+	add NEXT_MANUAL_PARRY FREQ_MANUAL_PARRY
+	splayviewanim ent_me ANIM_PARRY
+	setvard SWORD_MANUAL_PARRY_ON 1
+}
+
+{ game_-attack2
+	if SWORD_MANUAL_PARRY
+	if SWORD_MANUAL_PARRY_ON
+	splayviewanim ent_me ANIM_UNPARRY
+	setvard SWORD_MANUAL_PARRY_ON 0
+	setvard NEXT_MANUAL_PARRY game.time
+	add NEXT_MANUAL_PARRY FREQ_MANUAL_PARRY
+}

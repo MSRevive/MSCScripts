@@ -1,0 +1,230 @@
+//Thothie - bludgeon, based on Boar (can charge) for MS 1.35 compatibility
+//- has a very mean charge
+//- sensitive to ice attacks
+//- cowardly when hurt
+//- Primary attack animation doesn't seem to work, does model need editing?
+//- XP/GOLD set way low until attack (punch1) fixed in the model (needs event)
+//- Since I can't get it to work due to model bjork, I adjusted so it jumps around like mad. Funny as hell it is.
+
+{
+	setvar IS_UNHOLY 1
+
+   //setvard CAN_FLEE		1
+   //const FLEE_HEALTH		100
+   //const FLEE_CHANCE		50%
+
+	if ( $lcase(game.map.name) isnot islesofdread2 )
+	{
+	   setvard NPC_GIVE_EXP		120	//intended 80
+	}
+	else
+	{
+	   setvard NPC_GIVE_EXP		0	//just here for show
+	}
+
+
+   setvard DROP_GOLD 		1	
+   setvard DROP_GOLD_MIN		10	//intended 10
+   setvard DROP_GOLD_MAX		30	//intended 30
+
+   const SOUND_STRUCK1 monsters/bludgeon/bludgeonattack.wav
+   const SOUND_STRUCK2 monsters/bludgeon/bludgeonattack.wav
+   const SOUND_STRUCK3 monsters/bludgeon/bludgeonattack.wav
+   const SOUND_PAIN monsters/bludgeon/bludgeonpain.wav
+   const SOUND_IDLE1 monsters/bludgeon/bludgeonidle.wav
+   const SOUND_IDLE2 monsters/bludgeon/bludgeonidle.wav
+   const SOUND_CHARGE monsters/boar/boarsight.wav
+   const SOUND_DEATH monsters/bludgeon/bludgeonpain.wav
+
+	const BASE_MOVESPEED 2
+	const CHARGE_MOVESPEED 6
+
+	precache SOUND_DEATH //external
+
+	const NO_ADJ_RANGES 1
+
+	setvard MOVE_RANGE 32
+	setvard ATTACK_RANGE 96
+	setvard ATTACK_HITRANGE 120
+	const ATTACK_DAMAGE '$rand(20,40)'
+	const CHARGE_DAMAGE '$rand(40,80)'
+	const CHARGE_HITRANGE 32
+
+	setvar ANIM_IDLE stand
+	setvar ANIM_RUN run
+	setvar ANIM_WALK walk
+	setvard ANIM_ATTACK punch1
+	const ANIM_JUMP jump
+
+   const CL_SCRIPT	monsters/boar_base_cl_charge
+   precachefile 	CL_SCRIPT
+}
+
+#include monsters/base_monster
+#include monsters/base_turn_undead
+
+{  npc_spawn
+
+   name a|Bludgeon Demon
+   setmodel monsters/bludgeon.mdl
+   hp 200
+   width 32
+   height 72
+   race demon
+   roam 1
+   hearingsensitivity 8	
+	setvard IMMUNE_FIRE 1
+   takedmg all 0.5		//dark armor.. damn my tabs don't match source :)
+   takedmg fire 0.0		//immune to fire
+   takedmg cold 5.0		//very vulnerable to cold
+   takedmg lightning 2.0	//vulnerable to lightning
+	takedmg holy 30.0 //^_^
+
+	movespeed BASE_MOVESPEED //anim LX fux0red
+
+	callevent 5.0 idle_loop
+
+	catchspeech debug_props debug
+
+   setidleanim ANIM_IDLE
+   setmoveanim ANIM_WALK
+	playanim once ANIM_IDLE
+}
+
+{ debug_props
+	saytextrange 2048
+	saytext Range ATTACK_RANGE
+}
+
+{ my_target_died
+	setvard IS_JUMPING 0
+	saytext "Little-G rox0rz your box0rz!"
+}
+
+{ npc_targetsighted
+
+	if ( !IS_JUMPING )
+	{
+		setvard IS_JUMPING 1
+		callevent 2.0 jump_checks
+	}
+
+	if $get(PARAM1,range) > 256
+	//charge
+	if !IN_CHARGE
+	if !IN_JUMP
+	setvard CHARGE_TARGET HUNT_LASTTARGET
+	callevent do_charge
+}
+
+{ do_charge
+
+	setvard IN_CHARGE 1
+	setmoveanim ANIM_RUN
+  	playsound 0 10 SOUND_CHARGE
+	callevent npcatk_suspend_ai
+	setmovedest CHARGE_TARGET 10
+	callevent 1.0 charge_noise
+	clientevent new all_in_sight CL_SCRIPT $get(ent_me,index)	//Start Dust effect
+	setvard CL_SCRIPT_ID game.script.last_sent_id
+	callevent 15.0 charge_stop
+
+	callevent charge_scan
+}
+
+{ charge_noise
+
+	movespeed CHARGE_MOVESPEED
+	//dbg temp Charging $get(CHARGE_TARGET,name)
+	playsound 0 10 SOUND_CHARGE
+}
+
+{ charge_scan
+
+	if IN_CHARGE
+	callevent 0.1 charge_scan
+	setmovedest CHARGE_TARGET 10
+	if $get(CHARGE_TARGET,range) <= ATTACK_RANGE
+	dodamage CHARGE_TARGET ATTACK_HITRANGE CHARGE_DAMAGE 100%
+	callevent 0.1 charge_stop
+}
+
+{ charge_stop
+
+	movespeed BASE_MOVESPEED
+	setvard IN_CHARGE 0
+	clientevent remove all CL_SCRIPT
+	callevent npcatk_resume_ai
+	if ( $get(CHARGE_TARGET,isalive) ) callevent npcatk_target CHARGE_TARGET
+}
+
+{ jump_checks
+
+	if IS_JUMPING
+	callevent $randf(2,6) jump_checks
+	playanim critical ANIM_JUMP
+}
+
+{ attack_1
+
+	playsound 0 10 SOUND_STRUCK1
+	dodamage HUNT_LASTTARGET ATTACK_HITRANGE CHARGE_DAMAGE 100%
+}
+
+{ jump_start //from model
+
+	setvard IN_JUMP 1
+	callevent 0.1 jump_boost
+	playsound 0 10 SOUND_CHARGE
+}
+
+{ jump_boost
+
+	//dbg temp jump boost
+	addvelocity ent_me $relvel(0,0,600)
+}
+
+{ jump_land //from model
+
+	playsound 0 10 SOUND_IDLE1
+}
+
+{ jump_done //from model
+	setvard IN_JUMP 0
+}
+
+{ game_struck
+
+	playrandomsound 0 5 SOUND_STRUCK1 SOUND_STRUCK2 SOUND_STRUCK3 SOUND_PAIN
+}
+
+{ idle_loop
+
+	callevent $randf(5,10) idle_loop
+	if !$cansee(enemy)
+	playrandomsound 0 10 SOUND_IDLE1 SOUND_IDLE2
+}
+
+{  game_damaged_other
+
+	local L_R $rand(50,100)
+	if ( $rand(1,2) == 1 ) local L_R $neg(L_R)
+	
+   setvar PUSH_VEL $relvel(L_R,50,10)
+
+   if( IN_CHARGE ) callevent charge_hit
+   else addvelocity ent_laststruckbyme PUSH_VEL //Push the player a bit
+}
+
+{  charge_hit
+
+	//dbg temp charge hit $get(ent_laststruckbyme,name)
+	//using stun and addvel instead of effect_push to make stun resist possible
+   addvelocity ent_laststruckbyme $relvel(0,200,200)
+   applyeffect ent_laststruckbyme effects/effect_stun 3 0 1
+}
+
+{ npc_death
+	clientevent remove all CL_SCRIPT
+	if ( $rand(1,50) == 1 ) saytext No, little-G, I have failed you!
+}

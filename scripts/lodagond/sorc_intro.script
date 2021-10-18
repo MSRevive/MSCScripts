@@ -1,0 +1,235 @@
+//use this to track ice mage deaths and spawn cheiften as well
+{
+	//defining these in case I spelled the map name wrong
+	const IMG_SORC lodagond/sorc_image
+	const IMG_ICE_MAGE lodagond/ice_mage_image
+
+	const MAGE_RADIUS 164
+	const DETECT_RADIUS 256
+	const SPAWN_DELAY 0.25
+
+	const CONV_DELAY 3.0
+
+	//sorc chief precache
+//	_recache monsters/sorc.mdl
+//	_recache "monsters/troll/trollidle.wav"
+//	_recache "body/armour1.wav"
+//	_recache "body/armour2.wav"
+//	_recache "body/armour3.wav"
+//	_recache "voices/orc/hit.wav"
+//	_recache "voices/orc/hit2.wav"
+//	_recache "voices/orc/hit3.wav"
+//	_recache "monsters/orc/pain.wav"
+//	_recache "monsters/orc/battlecry.wav"
+//	_recache "voices/orc/attack.wav"
+//	_recache "voices/orc/attack2.wav"
+//	_recache "voices/orc/attack3.wav"
+//	_recache "voices/orc/die.wav"
+//	_recache "voices/orc/help.wav"
+//	_recache "magic/teleport.wav"
+//	_recache "monsters/orc/attack1.wav"
+
+	//icemage media
+	//_recache monsters/ice_mage.mdl
+
+	//barrier
+	precache doors/aliendoor3.wav
+	precache magic/spawn.wav
+}
+
+{ game_spawn
+
+	name Runegahr, Shadahar Orc Chieftain
+	fly 1
+	gravity 0
+	invincible 1
+	setmodel null.mdl
+	nopush 1
+	race demon
+	width 20
+	height 20
+	setmodel none
+	setvard IMMUNE_PUSH 1
+	gravity 0.0
+	name_unique sorc_intro
+	if game.serverside
+	callevent 0.1 spawn_image_sorc	
+	setvard DEAD_MAGES 0
+}
+
+{ game_precache
+
+	//holy crap this works here!
+	precachefile monsters/sorc_chief1
+	precachefile monsters/ice_mage
+	precachefile lodagond/sorc_image
+	precachefile lodagond/ice_mage_image
+}
+
+{ spawn_image_sorc
+	createnpc IMG_SORC $relpos(0,0,64) $vec.yaw(game.monster.angles)
+	setvard ID_SORC $get(ent_lastcreated,id)
+	callevent SPAWN_DELAY spawn_image1
+}
+
+{ spawn_image1
+	local SPAWN_LOC game.monster.origin
+	vectoradd SPAWN_LOC $relpos($vec(0,45,0),$vec(0,MAGE_RADIUS,0))
+	createnpc IMG_ICE_MAGE SPAWN_LOC $get(ent_me,id) mage1
+	callevent SPAWN_DELAY spawn_image2
+}
+
+{ spawn_image2
+	local SPAWN_LOC game.monster.origin
+	vectoradd SPAWN_LOC $relpos($vec(0,135,0),$vec(0,MAGE_RADIUS,0))
+	createnpc IMG_ICE_MAGE SPAWN_LOC $get(ent_me,id) mage2
+	callevent SPAWN_DELAY spawn_image3
+}
+
+{ spawn_image3
+	local SPAWN_LOC game.monster.origin
+	vectoradd SPAWN_LOC $relpos($vec(0,225,0),$vec(0,MAGE_RADIUS,0))
+	createnpc IMG_ICE_MAGE SPAWN_LOC $get(ent_me,id) mage3
+	callevent SPAWN_DELAY spawn_image4
+}
+
+{ spawn_image4
+	local SPAWN_LOC game.monster.origin
+	vectoradd SPAWN_LOC $relpos($vec(0,315,0),$vec(0,MAGE_RADIUS,0))
+	createnpc IMG_ICE_MAGE SPAWN_LOC $get(ent_me,id) mage4
+	callevent SPAWN_DELAY spawn_barrier
+}
+
+{ spawn_barrier
+
+	local BARRIER_RADIUS MAGE_RADIUS
+	add BARRIER_RADIUS 32
+	//createnpc monsters/summon/barrier $relpos(0,0,0) $get(ent_me,id) BARRIER_RADIUS 1 0
+	setvard BARRIER_ID $get(ent_lastcreated,id)
+	callevent scan_for_players
+
+	//gather ID's
+	//- if this doens't work, use callexternal all
+	setvard ID_MAGE1 $get_by_name(mage1)
+	setvard ID_MAGE2 $get_by_name(mage2)
+	setvard ID_MAGE3 $get_by_name(mage3)
+	setvard ID_MAGE4 $get_by_name(mage4)
+}
+
+{ scan_for_players
+	if !STARTED_INTRO
+	callevent 0.25 scan_for_players	
+	
+	getplayersnb L_PLAYERS
+	calleventloop $get_token_amt(L_PLAYERS) scan_loop
+}
+
+{ scan_loop
+	if !STARTED_INTRO
+	local CUR_PLAYER $get_token(L_PLAYERS,game.script.iteration)
+	if $get(CU_PLAYER,range) < DETECT_RADIUS
+	setvard STARTED_INTRO 1
+	callevent do_intro1
+}
+
+{ do_intro1
+	callexternal ID_SORC ext_convo1
+	callevent 2.1 do_intro2
+	usetrigger ice_crystal1
+}
+
+{ do_intro2
+	callexternal ID_MAGE1 ext_convo2
+	callevent 4.3 do_intro3
+	usetrigger ice_crystal2
+}
+
+{ do_intro3
+	callexternal ID_MAGE2 ext_convo3
+	callevent 4.0 do_intro4
+	usetrigger ice_crystal3
+}
+
+{ do_intro4
+	callexternal ID_MAGE3 ext_convo4
+	callevent 6.3 do_intro5
+	usetrigger ice_crystal4
+}
+
+{ do_intro5
+	callexternal ID_SORC ext_convo5
+	callevent 7.1 do_intro6
+	usetrigger ice_crystal5
+}
+
+{ do_intro6
+	callexternal ID_MAGE4 ext_convo6
+	callevent 3.5 do_intro_oops
+	usetrigger ice_crystal6
+}
+
+{ do_intro_oops //oops
+	callexternal ID_MAGE3 ext_convo7
+	callevent 5.7 do_intro7
+	usetrigger ice_crystal7
+}
+
+{ do_intro7
+	callexternal ID_SORC ext_convo8
+	callevent 7.1 do_intro8
+	usetrigger ice_crystal8
+}
+
+{ do_intro8
+	callexternal ID_MAGE2 ext_convo9
+	callevent 3.7 do_intro9
+	usetrigger ice_crystal9
+}
+
+{ do_intro9
+	callexternal ID_MAGE3 ext_convo10
+	callevent 5.6 intro_complete
+}
+
+{ ext_ice_mage_died
+	add DEAD_MAGES 1
+	if DEAD_MAGES == 4
+	callevent spawn_sorc
+}
+
+{ spawn_sorc
+	callexternal ID_SORC sorc_in
+	callevent 0.1 remove_me
+}
+
+{ remove_me
+	deleteent ent_me
+}
+
+{ intro_complete
+	setvard INTRO_COMPLETE 1
+	callexternal BARRIER_ID remove_barrier
+	callexternal ID_MAGE1 ext_mage_go
+	callevent 0.2 intro_complete2
+}
+
+{ intro_complete2
+	callexternal ID_MAGE2 ext_mage_go
+	callevent 0.2 intro_complete3
+}
+
+{ intro_complete3
+	callexternal ID_MAGE3 ext_mage_go
+	callevent 0.2 intro_complete4
+}
+
+{ intro_complete4
+	callexternal ID_MAGE4 ext_mage_go
+}
+
+{
+repeatdelay FREQ_BEAM
+
+	if !INTRO_COMPLETE
+	effect tempent trail 3dmflaora.spr $relpos(0,0,64) $relpos(0,0,128) 10 1 1 5 12
+}

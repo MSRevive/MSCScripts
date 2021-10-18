@@ -1,0 +1,141 @@
+//Orion Bow by Thothie (non-h4x0r weapon)
+//Drains mana, damage increases longer held
+{
+  const MODEL_VIEW       	viewmodels/v_bows.mdl
+	const MODEL_VIEW_IDX 3
+  const MODEL_HANDS      	weapons/p_weapons2.mdl
+  const MODEL_WORLD      	weapons/p_weapons2.mdl
+  const MODEL_WEAR		weapons/p_weapons2.mdl
+  const SOUND_SHOOT      	weapons/bow/bow.wav
+  const ITEM_NAME		longbow
+  const ANIM_PREFIX		longbow
+	const MODEL_BODY_OFS 49
+
+	const BOLT_SPRITE nhth1.spr
+
+	const CLIENT_SCRIPT items/bow_orion_cl
+
+	const CUSTOM_ATTACK 1 //tells base not to register the attack
+
+  //Used in base_ranged
+  //------------------
+  const RANGED_AIMANGLE		(0,3,0)
+}
+
+#include items/bows_base
+
+{ bow_spawn
+
+   name 	an|Orion Bow
+   desc 	This enchanted bow fires bolts of pure mana
+   weight 	30
+   size 	1
+   value	1000
+   sethudsprite trade longbow
+
+	setvard BOLT_SIZE 0
+
+	callevent custom_register
+}
+
+{ custom_register
+
+   local reg.attack.type		charge-throw-projectile
+   local reg.attack.keys		+attack1
+   local reg.attack.hold_min&max	0
+   local reg.attack.dmg.type		magic
+   local reg.attack.range		200
+   local reg.attack.energydrain	1
+   local reg.attack.stat		archery
+   local reg.attack.COF			0
+   local reg.attack.projectile		proj_magic
+   local reg.attack.priority		0
+   local reg.attack.delay.strike	0.1
+   local reg.attack.delay.end		0.1
+   local reg.attack.ofs.startpos	RANGED_STARTPOS
+   local reg.attack.ofs.aimang		RANGED_AIMANGLE
+	local reg.attack.ammodrain	0
+   local reg.attack.callback		ranged
+   local reg.attack.noise		1000
+
+   registerattack
+
+	local reg.attack.chargeamt 	200%
+	local reg.attack.priority		1
+	local reg.attack.callback		level2
+	registerattack
+
+	local reg.attack.chargeamt 	300%
+	local reg.attack.priority		2
+	local reg.attack.callback		level3
+	registerattack
+
+	local reg.attack.chargeamt 	400%
+	local reg.attack.priority		3
+	local reg.attack.callback		level4
+	registerattack
+	
+}
+
+{ [override] ranged_start
+
+	setvar STRETCHED 0
+  	playviewanim  ANIM_STRETCH
+  	playowneranim critical bow_pull global.anim.combatwalk
+  	callevent RANGED_PULLTIME ranged_stretchbow
+
+	clientevent all persists 
+
+	setvard STRETCHING 1
+	callevent tally_stretch
+	if !SCRIPT_ON
+	setvard SCRIPT_ON 1
+	clientevent persists all CLIENT_SCRIPT $get(ent_owner,index) BOLT_SIZE
+	setvard BOW_SCRIPT_ID game.script.last_sent_id
+}
+
+{ tally_stretch
+
+	if STRETCHING
+	if !MAX_LEVEL
+	add BOLT_SIZE 2
+	clientevent update all BOW_SCRIPT_ID resize_bolt BOLT_SIZE
+	callevent 0.25 tally_stretch
+}
+
+{ ranged_toss
+
+	callevent reset_atk
+
+	givemp $neg(BOLT_SIZE)
+
+	if ( $get(ent_owner,mp) =< 0 )
+	{
+		playermessage Insufficient Mana!
+		deleteent ent_lastprojectile
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+	callexternal ent_lastprojectile set_bolt_size BOLT_SIZE
+}
+
+{ reset_atk
+	clientevent remove all CLIENT_SCRIPT
+	setvard BOLT_SIZE 0
+	setvard SCRIPT_ON 0
+	setvard MAX_LEVEL 0
+}
+
+//maybe flicker fx and sound at each charge level
+{ level2_toss
+	callevent ranged_toss
+}
+{ level3_toss
+	callevent ranged_toss
+}
+{ level4_toss
+	callevent ranged_toss
+}
+{ level4_start
+	setvard MAX_LEVEL 1
+}

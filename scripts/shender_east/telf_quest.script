@@ -1,0 +1,144 @@
+#scope server
+{
+	setvard HBAR_ADJ_POS $vec(0,0,-32)
+
+	setvard NPC_NO_PLAYER_DMG 1 //skimping on AI to save resources, but kept this for externals
+	setvard NPC_BATTLE_ALLY 1 //ditto
+
+	const CHAT_USE_CONV_ANIMS 0
+
+	const SOUND_PAIN1 scientist/getoutalive.wav
+	const SOUND_PAIN2 scientist/iwoundedbad.wav
+}
+
+#include monsters/base_chat_array
+#include monsters/base_npc
+
+{ [shared] game_spawn
+	name Fedrosh the Rammata
+	setmodel npc/elf_m_wizard.mdl
+	width 32
+	height 96
+	setidleanim deep_idle
+	setmoveanim deep_idle
+	race human
+	hp 5000
+	takedmg all 0.5
+	nopush 1
+	
+	if game.serverside
+	name_unique telf_quest
+	callevent 0.1 scan_for_players
+	callevent 2.0 finalize_npc
+}
+
+{ finalize_npc
+	setvard HALF_HP $get(ent_me,maxhp)
+	multiply HALF_HP 0.5
+}
+
+{ game_death
+	if !MISSION_COMPLETE
+	//local ELF_ID $get_by_name(sleep_elf)
+	//callexternal ELF_ID quest_fail
+	callexternal all ext_shender_fail
+	usetrigger sound_nightmare_fail
+	setvard PLAYER_LIST ''
+	getplayersnb PLAYER_LIST
+	calleventloop $get_token_amt(PLAYER_LIST) respawn_players
+	infomsg all "A CRITIAL NPC HAS DIED!" "Fedrosh the Rammata is dead."
+	clientcmd all "cd fadeout"
+}
+
+{ respawn_players
+	local CUR_TARG $get_token(PLAYER_LIST,game.script.iteration)
+	local SPAWN_NAME $get_quest_data(CUR_TARG,d)
+	tospawn CUR_TARG SPAWN_NAME
+}
+
+{ scan_for_players
+	if !DID_INTRO
+	setvard PLAYER_LIST ''
+	getplayersnb PLAYER_LIST
+	calleventloop $get_token_amt(PLAYER_LIST) check_players
+	if !DID_INTRO
+	callevent 1.0 scan_for_players
+}
+
+{ check_players
+	local CUR_TARG $get_token(PLAYER_LIST,game.script.iteration)
+	if !DID_INTRO
+	if $get(CUR_TARG,range) < 256
+	setvard DID_INTRO 1
+	setvard CHAT_CURRENT_SPEAKER CUR_TARG
+	callevent 2.0 do_intro
+}
+
+{ do_intro
+	if ( $get(CHAT_CURRENT_SPEAKER,race) equals human )
+	{
+		if ( game.players > 1 )
+		{
+			callevent chat_now "Children of Torkalath!?" 1.0 convo_unarmed_norm none add_to_que
+		}
+		else
+		{
+			callevent chat_now "A child of Torkalath!?" 1.0 convo_unarmed_norm none add_to_que
+		}
+	}
+	callevent chat_now "Surely the Lord of Might has sent you to save me!" 2.0 none none add_to_que
+	callevent chat_now "I am Fedrosh, a Ramatta refugee. I was attacked by Seekers after the location of our stronghold." 5.0 none none add_to_que
+	callevent chat_now "I drove them off, but not before one muttered a curse against me." 4.0 none none add_to_que
+	callevent chat_now "Nothing happened, so I thought it was a bluff. But when I slept that eve, I awoke here." 5.0 none none add_to_que
+	callevent chat_now "Now, each day, nightmarish servants of Felewyn appear and tear me apart!" 5.0 convo_unarmed_norm none add_to_que
+	//callevent chat_now "It's happened so many times that I've lost track. I know not how long I've been here!" 5.0 none none add_to_que
+	callevent chat_now "My magic does not work here, so I cannot defend myself... But maybe yours will!" 5.0 none nightmare_start add_to_que
+	callevent chat_now "By Torkalath! They are coming! Prepare yourselves!" 3.0 convo_unarmed_panic none add_to_que
+}
+
+{ nightmare_start
+	callevent 1.0 nightmare_start2
+}
+
+{ nightmare_start2
+	setidleanim cower_idle
+	setmoveanim cower_idle
+	usetrigger mm_nightmare_begin
+	setvarg G_IDLE_MUSIC dream_battle.mp3
+	setvarg G_IDLE_MUSIC_LENGTH 3.5
+	setvarg G_COMBAT_MUSIC dream_battle.mp3
+	setvarg G_COMBAT_MUSIC_LENGTH 3.5
+//	callexternal players ext_play_music_me 3.5 dream_battle.mp3
+	callexternal players set_music G_IDLE_MUSIC G_IDLE_MUSIC_LENGTH G_COMBAT_MUSIC G_COMBAT_MUSIC_LENGTH 1
+}
+
+{ game_targeted_by_player
+
+	callexternal PARAM1 ext_show_hbar_monster $get(ent_me,id) 1
+}
+
+{ game_damaged
+
+	if ( $get(PARAM1,isplayer) )
+	{
+		setdmg dmg 0
+		setdmg hit 0
+		returndata 0
+	}
+	else
+	{
+		if game.time > NEXT_WARN
+		setvard NEXT_WARN game.time
+		add NEXT_WARN 30.0
+		infomsg all "CRITICAL NPC UNDER ATTACK" "Fedrosh is under attack!"
+		if $get(ent_me,hp) < HALF_HP
+		playrandomsound 0 10 SOUND_PAIN1 SOUND_PAIN2
+	}
+}
+
+{ ext_quest_win
+	setvard MISSION_COMPLETE 1
+	invincible 1
+	deleteent ent_me
+}
+

@@ -1,0 +1,286 @@
+#scope server
+{ [shared]
+
+	setvar ANIM_IDLE idle
+	setvar ANIM_WALK walk
+	setvard ANIM_RUN walk
+	setvard ANIM_DEATH death
+	setvard ANIM_ATTACK spit //frame_spit
+
+	const ANIM_JUMP latch_jump
+	const ANIM_BURROW_IN BurrowIn
+	const ANIM_BURROW_OUT BurrowOut
+}
+
+{
+	setvard WEB_STRENGTH 1 //determines # of webs required to cocoon a target (11-WEB_STRENGTH)
+
+	setvard ATTACK_MOVERANGE 250
+	setvard PROJECTILE_RANGE 400
+	setvard ATTACK_HITRANGE 90
+	setvard ATTACK_RANGE 70
+
+	const HITCHANCE_BITE 80%
+	const DMG_BITE 10
+	const DOT_POISON 5
+
+	const FREQ_FLIP $randf(15.0,30.0)
+
+	const SOUND_SHOOT bullchicken/bc_attack3.wav
+
+	setvard NPC_GIVE_EXP 200
+}
+
+#include monsters/base_monster_new
+
+{ game_precache
+	precachefile effects/effect_webbed
+	precachefile effects/cocooned
+	precachefile monsters/summon/cocoon
+}
+
+{ npc_spawn
+	name a|Wooly Spider
+	hp 100
+	setmodel monsters/spider_fuzzy.mdl
+	width 32
+	height 32
+	race spider
+	roam 1
+
+	setidleanim ANIM_IDLE
+	setmoveanim ANIM_WALK
+
+	setmodelbody 0 2
+
+	if game.serverside
+	takedmg cold 0.0
+	takedmg fire 1.25
+	hearingsensitivity 4
+
+	callevent 0.5 start_ai
+	callevent 1.5 post_activated
+}
+
+{ render_normal
+	setprop ent_me renderamt 255
+	setprop ent_me rendermode 0
+}
+
+{ burrow_in
+	callevent npcatk_suspend_ai
+	playanim break
+	playanim hold ANIM_BURROW_IN
+	setvard AM_BURROWED 1
+	if ( !SILENT_BURROW )
+	{
+		playsound 0 10 SOUND_BURROW
+	}
+	setvard SILENT_BURROW 0
+}
+
+{ burrow_out
+	if ( START_BURROWED )
+	{
+		setmovedest NPC_PROXACT_PLAYERID 9999
+		setvard START_BURROWED 0
+	}
+	callevent npcatk_resume_ai
+	playanim break
+	playanim critical ANIM_BURROW_OUT
+	setvard AM_BURROWED 0
+}
+
+{ game_struck
+	if ( PARAM1 > $get(ent_me,hp) ) gravity 1
+
+	if AM_BURROWED
+	callevent burrow_out
+}
+
+{ set_start_burrowed //[proxactivate range]
+	setvard NPC_NO_AUTO_ACTIVATE 1
+	setvard START_BURROWED 1
+	if ( PARAM2 > 32 )
+	{
+		setvard NPC_PROXACT_RANGE PARAM2
+	}
+	else
+	{
+		setvard NPC_PROXACT_RANGE 256
+	}
+	setvard NPC_PROX_ACTIVATE 1			//suspend AI on spawn, wait for player to come..
+	setvard NPC_PROXACT_EVENT burrow_out	//this event.
+	setvard NPC_PROXACT_IFSEEN 1			//activate if a player can see me, or targets me, regardless of range
+	setvard NPC_PROXACT_FOV 0				//Require player must be in field of vision to activate
+	setvard NPC_PROXACT_DELAY 0.5			//give me a moment to burrow
+
+	setprop ent_me rendermode 5
+	setprop ent_me renderamt 0
+	setvard SILENT_BURROW 1
+
+	callevent 0.01 burrow_in
+	callevent 1.5 render_normal
+}
+
+{ set_start_ceiling
+	setvard AM_FLIPPED 1
+ 	setvard ANIM_IDLE up_idle
+	setvard ANIM_WALK up_walk
+	setvard ANIM_RUN up_walk
+	setvard ANIM_DEATH up_death
+	setvard ANIM_ATTACK up_spit //frame_spit
+	setidleanim ANIM_IDLE
+	setmoveanim ANIM_WALK
+	gravity -1.0
+	addvelocity ent_me $relvel(0,0,10000)
+	callevent 2.0 set_ceiling_spider
+}
+
+{ set_ceiling_spider
+	setvard AM_FLIPPED 1
+ 	setvard ANIM_IDLE up_idle
+	setvard ANIM_WALK up_walk
+	setvard ANIM_RUN up_walk
+	setvard ANIM_DEATH up_death
+	setvard ANIM_ATTACK up_spit //frame_spit
+	setidleanim ANIM_IDLE
+	setmoveanim ANIM_WALK
+	gravity -1.0
+	addvelocity ent_me $relvel(0,0,10000)
+}
+
+{ set_ground_spider
+	setvard AM_FLIPPED 0
+ 	setvard ANIM_IDLE idle
+	setvard ANIM_WALK walk
+	setvard ANIM_RUN walk
+	setvard ANIM_DEATH death
+	setvard ANIM_ATTACK spit //frame_spit
+	setidleanim ANIM_IDLE
+	setmoveanim ANIM_WALK
+	gravity 1
+}
+
+{ set_can_flip
+	setvard NEXT_FLIP game.time
+	add NEXT_FLIP FREQ_FLIP
+	setvard CAN_FLIP 1
+}
+
+{ frame_spit
+	if ( $get(NPCATK_TARGET,range) > ATTACK_RANGE )
+	{
+		if !$get(NPCATK_TARGET,scriptvar,'COCOON_ATTACHED')
+
+		if ( AM_FLIPPED )
+		{
+			local L_START_OFS (0,32,-32)
+		}
+		else
+		{
+			local L_START_OFS (0,32,16)
+		}
+		tossprojectile NPCATK_TARGET 150 0 0.1 proj_web (0,32,16)
+		playsound 0 5 SOUND_SHOOT
+		setvard NEXT_QUICK_SPIT game.time
+		add NEXT_QUICK_SPIT 1.0
+	}
+	else
+	{
+		setvard BITE_ATTACK 1
+		if ( !$get(NPCATK_TARGET,scriptvar,'COCOON_ATTACHED') )
+		{
+			dodamage NPCATK_TARGET ATTACK_HITRANGE DMG_BITE HITCHANCE_BITE pierce
+		}
+		else
+		{
+			//direct damage, or cocoon will block attack
+			dodamage NPCATK_TARGET direct DMG_BITE 100% ent_me pierce
+		}
+	}
+}
+
+{ npcatk_hunt
+
+	if NPCATK_TARGET isnot unset
+
+	local TARG_COCOONED $get(NPCATK_TARGET,scriptvar,'COCOON_ATTACHED')
+
+	if ( $cansee(NPCATK_TARGET) )
+	{
+		if ( TARG_COCOONED )
+		{
+			setvard ATTACK_MOVERANGE 32
+		}
+		else
+		{
+			setvard ATTACK_MOVERANGE 250
+		}
+	}
+	else
+	{
+		setvard ATTACK_MOVERANGE 32
+	}
+
+
+	if ( CAN_FLIP )
+	{
+		if game.time > NEXT_FLIP
+		setvard NEXT_FLIP game.time
+		add NEXT_FLIP FREQ_FLIP
+
+		if ( AM_FLIPPED )
+		{
+			callevent set_ground_spider
+		}
+		else
+		{
+			callevent set_ceiling_spider
+		}
+	}
+
+	if ( TARG_COCOONED ) callevent set_ground_spider
+
+	if ( AM_FLIPPED ) addvelocity ent_me $relvel(0,0,1000)
+}
+
+{ npc_targetsighted
+
+	if !$get(NPCATK_TARGET,scriptvar,'COCOON_ATTACHED')
+
+	if ( $get(NPCATK_TARGET,range) > ATTACK_RANGE )
+	{
+		if game.time > NEXT_QUICK_SPIT
+		setvard NEXT_QUICK_SPIT game.time
+		add NEXT_QUICK_SPIT 2.0
+		if $get(NPCATK_TARGET,range) < PROJECTILE_RANGE
+		setvard AS_ATTACKING game.time
+		add AS_ATTACKING 2.0
+		playanim once ANIM_ATTACK
+	}
+}
+
+{ game_dodamage
+
+	if ( PARAM1 )
+	{
+		if BITE_ATTACK
+		applyeffect PARAM2 effects/effect_poison 10.0 $get(ent_me,id) DOT_POISON
+	}
+	setvard BITE_ATTACK 0
+}
+
+{ game_death
+	gravity 1
+}
+
+
+{ post_activated
+	if ( NPC_ADJ_LEVEL > 0 )
+	{
+		local ADD_TO_WS NPC_ADJ_LEVEL
+		capvar ADD_TO_WS 1 7 //in case level caps increase in future
+		add WEB_STRENGTH ADD_TO_WS
+	}
+}

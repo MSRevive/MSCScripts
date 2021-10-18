@@ -1,0 +1,149 @@
+//Thothie - Undamael is not working, remaking based on Blacksmith-Atholo Conversion
+//-Again, IMO - invulnerable, but drops too much stuff (is there some way to kill invulnerables?)
+//-One unique item per boss - plzkthnx! :)
+//-Reducing GOld
+//-Does insane damage -but not the 400/hit of the original script ><
+//-Other Noteable Differences from Atholo: no glow, >hp >damage, sounds
+//-attempting to make vulnerable via NPC script
+
+//Undamael (from Atholo)
+
+{
+   setvar SOUND_STRUCK1 weapons/cbar_hitbod1.wav
+   setvar SOUND_STRUCK2 weapons/cbar_hitbod2.wav
+   setvar SOUND_STRUCK3 weapons/cbar_hitbod3.wav
+   setvar SOUND_PAIN controller/con_pain2.wav
+   setvar SOUND_ATTACK1 zombie/claw_miss1.wav
+   setvar SOUND_ATTACK2 zombie/claw_miss2.wav
+   const SOUND_DEATH npc/undamael2.wav
+   setvar SOUND_SPAWN npc/undamael1.wav
+   setvar ANIM_RUN walk
+   setvar ANIM_IDLE idle1
+   setvar ANIM_WALK walk
+   setvard ANIM_ATTACK attack1
+   setvar ATTACK1_RANGE 600
+   setvar ATTACK2_RANGE 200
+   setvard MOVE_RANGE 500
+   setvar SEE_ENEMY 0
+   setvar IGNORE_ENEMY 0
+   setvard CAN_FLINCH 0
+   setvard FLINCH_DELAY 12
+   setvard NPC_MOVE_TARGET enemy
+   volume 10
+   playsound 2 SOUND_SPAWN //plays fresh blood sound
+
+    //Precache
+   precache SOUND_DEATH //This sound must be explicitly precached since
+			//the play command for it isn't in this file (it's
+			//in base_monster.script)
+   precache lgtning.spr
+
+   const SOUND_PISSED nihilanth/nil_done.wav //added for invul script
+	const SOUND_REGEN x/x_laugh1.wav
+
+	setvard I_AM_TURNABLE 0
+}
+
+#include monsters/base_monster
+#include monsters/base_turn_undead
+
+{ npc_spawn
+
+   name |Lord Undamael
+   invincible 1
+   hp 9000
+   gold $rand(100,400)
+   //ov 359
+   width 50
+   height 128
+   race undead
+   roam 0
+   hearingsensitivity 10
+   setvard NPC_GIVE_EXP 400
+   setmodel monsters/skeleton_hood.mdl
+   setmodelbody	0 0
+   setidleanim ANIM_IDLE
+   setmoveanim ANIM_WALK
+   setactionanim ANIM_ATTACK
+
+	takedmg all 0.25
+	takedmg holy 2.0
+	takedmg fire 0.0
+	setvard IMMUNE_FIRE 1
+	setvard IMMUNE_STUN 100
+	takedmg ice 0.1
+	takedmg cold 0.1
+	takedmg lightning 0.1
+
+   volume 10
+   playsound 2 SOUND_SPAWN
+
+}
+
+{ attack_1
+
+   dodamage ent_lastseen 600 $randf(20.0,150.0) 75%
+}
+
+{ attack_2
+
+   dodamage ent_lastseen ATTACK2_RANGE $randf(10.0,100.0) 100%
+   dodamage ent_lastseen ATTACK2_RANGE $randf(10.0,100.0) 100%
+}
+
+   //Hit by someone
+{ npc_struck
+   
+   volume 5
+   playrandomsound 2 SOUND_STRUCK1 SOUND_STRUCK2
+}
+
+{ npc_attack
+
+   if( $rand(0,10) > 9 )
+   {
+      setvard ANIM_ATTACK attack1
+      setvard ATTACK_RANGE 600
+      setvard MOVE_RANGE 500
+   }
+   else
+   {
+      setvard ANIM_ATTACK attack2
+      setvard ATTACK_RANGE 160
+      setvard MOVE_RANGE 130
+   }
+}
+
+//ported from original, edited
+
+{
+   eventname death
+   
+   volume 10
+   playsound 2 SOUND_DEATH
+   giveitem bows_swiftbow
+   giveitem smallarms_huggerdagger3
+}
+
+//attempt to make vulnerable via msnpc_script
+
+{ vulnerable
+
+	invincible 0
+ 	playsound 0 10 SOUND_PISSED
+ 	saytextrange 1024
+	saytext No! What have you done!?
+}
+
+{ game_damaged //PARAM1=attacker PARAM2=Damage PARAM3=DamageType
+
+	'reflect attacks >100dmg
+	if ( PARAM2 > 100 ) dodamage PARAM1 direct 100% PARAM2 ent_me magic
+}
+
+{ my_target_died
+	'regen all health on kill
+	playsound 0 10 SOUND_REGEN
+	effect glow ent_me (0,255,0) 128 2 2
+	hp game.monster.maxhp
+}

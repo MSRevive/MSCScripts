@@ -1,0 +1,289 @@
+//Orbits players (can't quite figure this bit), drains Mana, insta-kills players with no mana remaining
+//Consider deleting (fade away) on sucsseful kill
+{
+	setvard NPC_GIVE_EXP 200
+	
+	//infinite spawn single hit critters - reduce XP per spawn (min 25)
+	if ( $lcase(game.map.name) equals shender_east )
+	{
+		if G_GENERAL_USE1 < 175
+		subtract NPC_GIVE_EXP G_GENERAL_USE1
+		add G_GENERAL_USE1 5
+	}
+
+	const NPC_NO_END_FLY 1
+	setvard NPC_HACKED_MOVE_SPEED  100 //base_propelled
+
+	//base params
+	setvard MOVE_RANGE 128
+	setvard ATTACK_RANGE 128
+	setvard ATTACK_HITRANGE 128
+	setvard ANIM_ATTACK idle_standard
+
+	//has no real animations
+	setvar ANIM_WALK idle_standard
+	setvard ANIM_RUN idle_standard
+	setvar ANIM_IDLE spin_horizontal_slow
+	setvard ANIM_DEATH spin_horizontal_fast
+	const ANIM_SPIN spin_horizontal_slow
+
+	setvar IS_UNHOLY 1
+
+	//sounds
+	const SOUND_BEAM_LOOP x/x_teleattack1.wav
+	const SOUND_STRUCK weapons/cbar_hitbod1.wav
+	const SOUND_PAIN1 houndeye/he_pain2.wav
+	const SOUND_PAIN2 houndeye/he_pain5.wav
+	const SOUND_KILL houndeye/he_blast3.wav
+	const SOUND_DEATH turret/tu_die2.wav
+	const SOUND_HOVER_LOOP ambience/labdrone2.wav
+	precache SOUND_DEATH
+}
+
+#include monsters/base_flyer
+#include monsters/base_propelled
+#include monsters/base_monster
+
+{ game_dynamically_created //<owner>
+
+	setvard AM_SUMMONED 1
+	setvard MY_OWNER PARAM1
+	callevent 60.0 npc_suicide //remove self in 60 seconds, case stuck
+}
+
+{ npc_spawn
+
+	hp 450
+	width 16
+	height 16
+	name an|Eye of Death
+	hearingsensitivity 10
+	roam 1
+	race demon
+	setmodel monsters/eye_medium_float.mdl
+	setidleanim ANIM_SPIN
+	setmoveanim ANIM_WALK
+	setmonsterclip 0
+	gravity 0
+	fly 1
+	svplaysound 4 10 SOUND_HOVER_LOOP
+
+	setprop ent_me rendermode 5
+	setprop ent_me renderamt 255
+	setprop ent_me renderfx 16
+
+	takedmg holy 2.0
+	takedmg pierce 4.0
+
+	setvard ANG_HOVER 0
+
+	setvard IDLE_MODE 1
+
+	callevent 3.0 solidify_me
+	callevent 0.1 init_beam	
+}
+
+{ npc_post_spawn
+	setprop ent_me rendermode 5
+	setprop ent_me renderamt 255
+	setprop ent_me renderfx 16
+}
+
+{ solidify_me
+	setprop ent_me renderfx 0
+	setprop ent_me rendermode 5
+	setprop ent_me renderamt 255
+}
+
+{ init_beam
+	effect beam ents laserbeam.spr 30 ent_me 0 ent_me 0 (64,64,255) 0 30 -1
+	setvard BEAM_ID $get(ent_lastcreated,id)
+}
+
+{ npc_targetsighted
+	if ( IDLE_MODE )
+	{
+		setmoveanim ANIM_WALK
+		setidleanim ANIM_WALK
+		setvard IDLE_MODE 0
+	}
+}
+
+{ npcatk_hunt
+
+	if ( game.time > NEXT_RENDER_CHECK )
+	{
+		setvard NEXT_RENDER_CHECK game.time
+		add NEXT_RENDER_CHECK 5.0
+		setprop ent_me rendermode 5
+		setprop ent_me renderamt 255
+	}
+
+	if ( NPCATK_TARGET equals unset )
+	{
+		if BEAM_ACTIVE
+		callevent beam_off
+	}
+
+	if $get(NPCATK_TARGET,isalive)
+
+	local TARGET_RANGE $get(NPCATK_TARGET,range)
+	if ( BEAM_ACTIVE )
+	{
+		if ( TARGET_RANGE > ATTACK_RANGE )
+		{
+			callevent beam_off
+		}
+		else
+		{
+			local SEE_TARGET $cansee(NPCATK_TARGET)
+			if ( SEE_TARGET )
+			{
+				givemp NPCATK_TARGET -0.5
+				if ( game.time > LASTATK_MESSAGE )
+				{
+					setvard LASTATK_MESSAGE game.time
+					add LASTATK_MESSAGE 2.0
+					playermessage NPCATK_TARGET Your soul is being drained!
+					effect screenfade NPCATK_TARGET 2 1 (0,0,255) 180 fadein
+				}
+				if $get(NPCATK_TARGET,mp) <= 0
+				callevent slay_target
+			}
+			if ( !SEE_TARGET )
+			{
+				callevent beam_off
+			}
+		}
+	}
+
+	if !BEAM_ACTIVE
+
+	if TARGET_RANGE < ATTACK_RANGE
+
+	callevent beam_on	
+}
+
+{ my_target_died
+	callevent beam_off
+}
+
+{ npcatk_clear_targets
+	setvard IDLE_MODE 1
+	setmoveanim ANIM_SPIN
+	setidleanim ANIM_SPIN
+}
+
+{ beam_on
+
+	setvard BEAM_ACTIVE 1
+	effect beam update BEAM_ID end_target NPCATK_TARGET 0
+	effect beam update BEAM_ID brightness 200
+	svplaysound 1 10 SOUND_BEAM_LOOP
+}
+
+{ beam_off
+
+	svplaysound 1 0 SOUND_BEAM_LOOP
+	effect beam update BEAM_ID end_target $get(ent_me,id) 0
+	effect beam update BEAM_ID brightness 0
+	setvard BEAM_ACTIVE 0
+}
+
+{ slay_target
+
+	playermessage NPCATK_TARGET Your soul has been drained.
+	//figure slay target function here (maybe new code-side function)
+	dodamage NPCATK_TARGET direct 99999 100% ent_me target
+	playsound 2 10 SOUND_KILL
+}
+
+{ [server]
+repeatdelay 10.0
+	if $get(ent_me,isalive)
+	svplaysound 4 0 SOUND_HOVER_LOOP
+	callevent 0.1 hover_loop
+
+	setprop ent_me rendermode 5
+	setprop ent_me renderamt 255
+
+	//summons suicide if stuck in same place > 10 secs
+	if AM_SUMMONED
+	if !BEAM_ACTIVE //no suicide if can hit a target
+	if ( EYE_STUCK_POS equals game.monster.origin ) callevent npc_suicide
+	setvard EYE_STUCK_POS game.monstemr.origin
+}
+
+{ hover_loop
+	svplaysound 4 10 SOUND_HOVER_LOOP
+}
+
+{ game_death
+	callevent beam_off
+	effect beam update BEAM_ID remove 0.1
+	svplaysound 4 0 SOUND_HOVER_LOOP
+	svplaysound 1 0 SOUND_BEAM_LOOP
+	callexternal GAME_MASTER gm_fade $get(ent_me,id) 5
+	if AM_SUMMONED
+	if $get(MY_OWNER,isalive)
+	callexternal MY_OWNER eye_died
+}
+
+{ game_struck
+	if ( !DOING_DODGE ) callevent do_dodge
+	playsound 1 5 SOUND_STRUCK SOUND_PAIN1 SOUND_PAIN2
+}
+
+{ do_dodge
+	if !DOING_FS_DODGE
+	if $get(ent_me,isalive)
+	setvard DOING_DODGE 1
+	local RND_FB $randf(0,-120)
+	local RND_RL $randf(-120,120)
+	local RND_UD $randf(-120,120)
+	addvelocity ent_me $relvel(RND_RL,RND_FB,RND_UD)
+	callevent 1.0 reset_dodge
+}
+
+{ reset_dodge
+	setvard DOING_DODGE 0
+	setvelocity ent_me (0,0,0)
+}
+
+{
+repeatdelay 1.0
+
+	//avoid floor/ceiling
+
+	if $get(ent_me,isalive)
+
+	//floor
+	local MY_POS game.monster.origin
+	local GROUND_Z $get_ground_height(MY_POS)
+	local GROUND_LOC MY_POS
+	vectorset GROUND_LOC z GROUND_Z
+	if ( $dist(MY_POS,GROUND_LOC) < 16 )
+	{
+		if !DOING_FS_DODGE
+		setvard DOING_FS_DODGE 1
+		addvelocity ent_me $relvel(0,0,-110)
+		callevent 1.0 reset_fs_dodge
+	}
+
+	//ceiling
+	local UP_POS MY_POS
+	vectoradd UP_POS z 64
+	local UP_POS $get_traceline(MY_POS,UP_POS,worldonly)
+	if ( $dist(MY_POS,UP_POS) < 16 )
+	{
+		if !DOING_FS_DODGE
+		setvard DOING_FS_DODGE 1
+		addvelocity ent_me $relvel(0,0,110)
+		callevent 1.0 reset_fs_dodge
+	}
+}
+
+{ reset_fs_dodge
+	setvard DOING_FS_DODGE 0
+	setvelocity ent_me (0,0,0)
+}

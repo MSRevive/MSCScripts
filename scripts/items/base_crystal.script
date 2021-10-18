@@ -1,0 +1,63 @@
+//Thothie - Base for crystals
+#include items/base_hide_stuff
+#include items/base_miscitem
+
+{ game_spawn
+
+	setvard ACTIVE_DELAY 5
+	callevent crystal_spawn
+	setanimext	PLAYERANIM_AIM
+	setworldmodel	MODEL_WORLD
+	setviewmodel	MODEL_VIEW
+	sethudsprite	trade 71
+}
+
+{ game_deploy
+	setvard ATTACK_DELAY game.time
+	add ATTACK_DELAY 1.0
+}
+
+{ game_attack1
+
+	if game.time > ATTACK_DELAY
+	setvard ATTACK_DELAY game.time
+	add ATTACK_DELAY 1.0
+
+	local OWNER_SKILL $get(ent_owner,SKILL_TYPE)
+
+	If ( OWNER_SKILL < SKILL_LEVEL_REQ )
+	{
+		local S_REQ "("
+		stradd S_REQ SKILL_LEVEL_REQ
+		stradd S_REQ ")"
+		dplayermessage ent_owner You lack the arcane skills to activate this crystal's magic. S_REQ
+	}
+	If ( OWNER_SKILL >= SKILL_LEVEL_REQ ) 
+	{
+		callevent check_use
+		if ( CRYSTAL_ABORT_USE )
+		{
+			setvard CRYSTAL_ABORT_USE 0
+			local EXIT_SUB 1
+		}
+		if !EXIT_SUB
+		callevent 0.1 break_crystal
+		callevent 0.2 activate_crystal
+		callevent 0.3 remove_crystal
+	}
+}
+
+{ break_crystal
+
+	playsound 0 5 debris/bustglass2.wav
+	if ( FX_SPAMMERS < MAX_FX_SPAMMERS ) 
+	{
+		effect tempent gibs glassgibs.mdl $relpos(0,0,0) 0.3 30 10 5 1.0
+	}
+	callevent 0.1 remove_crystal
+}
+
+{ remove_crystal
+
+	deleteent ent_me
+}

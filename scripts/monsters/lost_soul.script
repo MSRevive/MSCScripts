@@ -1,0 +1,163 @@
+//Flying munch on face skull in the spirit of dewm
+#scope server
+{
+	setvar IS_UNHOLY 1
+	setvard IMMUNE_VAMPIRE 1
+
+	const NO_DIVE 1
+	const DMG_ATTACK $randf(10,40)
+	setvard NPC_GIVE_EXP 100
+	setvar MONSTER_HP 300
+
+	const SOUND_WARCRY controller/con_pain3.wav
+	const SOUND_DEATH controller/con_die1.wav
+	const SOUND_ATTACK controller/con_pain2.wav
+	const SOUND_STRUCK debris/flesh2.wav
+	const SOUND_PAIN controller/con_pain1.wav
+	const SOUND_PAIN2 controller/con_die2.wav
+	const SOUND_VICTORY controller/con_die2.wav
+
+	const DMG_SPLODIE 100
+	const DMG_POISON 25
+}
+
+//using eagle for dodgie flight model
+#include monsters/eagle_base
+
+{
+	//override anims
+	setvard ANIM_IDLE idle
+	setvard ANIM_ATTACK attack
+	setvard ANIM_DEATH idle
+	setvard ANIM_WALK idle
+	setvard ANIM_RUN idle
+}
+
+
+{ [shared] npc_spawn
+	callevent skull_spawn
+}
+
+{ [shared] skull_spawn
+
+	name a|Lost Soul
+	race demon
+	if ( MONSTER_HP equals 'MONSTER_HP' )
+	{
+		hp 300
+	}
+	else
+	{
+		hp MONSTER_HP
+	}
+	blood green
+	width 16
+	height 16
+	setmodel monsters/skull.mdl
+	setidleanim idle
+	setmoveanim idle
+	hearingsensitivity 11
+	roam 1
+	fly 1
+	takedmg poison 0.0
+	takedmg holy 4.0
+
+	setvard IMMUNE_VAMPIRE 1
+	setvard COUNT_ATK 0
+}
+
+
+{ [override] game_dynamically_created //<owner> <str> <duration>
+
+	setvard MY_OWNER PARAM1
+	race $get(MY_OWNER,race)
+	setvard AM_SUMMONED 1
+	setvard MONSTER_HP 300
+
+	setmonsterclip 0
+
+	if ( $get(MY_OWNER,race) equals 0 ) race demon
+
+	if ( PARAM2 isnot 'PARAM2' )
+	{
+		dmgmulti PARAM2
+		multiply MONSTER_HP PARAM2
+	}
+
+	hp MONSTER_HP
+
+	if PARAM3 isnot 'PARAM3'
+	local GO_BOOM PARAM3
+	callevent GO_BOOM self_destruct
+}
+
+{ self_destruct
+	callevent npc_suicide
+}
+
+{ game_death
+	callevent skull_death
+}
+
+{ skull_death
+	setvard DEATH_TIME game.time
+	setvard AM_DEAD 1
+	add DEATH_TIME 0.2
+	setprop ent_me rendermode 5
+	setprop ent_me renderamt 0
+	local SPLODE_POS $relpos(0,0,0)
+	clientevent new all effects/sfx_splodie SPLODE_POS (0,255,0)
+//	if ( $get(ent_laststruck,range) < 64 )
+//	{
+//		addvelocity ent_laststruck $relvel(0,600,120)
+//		applyeffect ent_laststruck effects/effect_poison 5.0 $get(ent_me,id) DMG_POISON
+//	}
+	setvard DEATH_ATTACK 1
+	//dodamage SPLODE_POS 128 DMG_SPLODE 100% 0 reflective poison
+	xdodamage SPLODE_POS 128 DMG_SPLODE 0 ent_me ent_me none blunt
+}
+
+{ [override] attack1
+
+	playsound 0 5 SOUND_ATTACK
+	dodamage HUNT_LASTTARGET ATTACK_HITRANGE DMG_ATTACK 90% slash
+
+	add COUNT_ATK 1
+
+	if ( COUNT_ATK > FLEE_COUNT )
+	{
+		setvard COUNT_ATK 0
+		callevent npcatk_suspend_ai 3.0
+		setmovedest HUNT_LASTTARGET 1000 flee
+	}
+}
+
+{ game_dodamage
+	if !CUSTOM_DAMAGE
+
+	if ( DEATH_ATTACK )
+	{
+		if game.time < DEATH_TIME //delay so poison effect doesnt keep pushing player
+		if $get(PARAM2,isalive)
+		if $get(PARAM2,relationship,ent_me) equals enemy
+		local TARGET_ORG $get(PARAM2,origin)
+		local TARG_ANG $angles(game.monster.origin,TARGET_ORG)
+		local NEW_YAW TARG_ANG
+		setvelocity PARAM2 $relvel($vec(0,NEW_YAW,0),$vec(0,1000,0))
+		applyeffect PARAM2 effects/effect_poison 5.0 $get(ent_me,id) DMG_POISON
+	}
+	else
+	{
+		if PARAM1
+		if $get(ent_me,isalive)
+		if $get(PARAM2,isalive)
+		addvelocity PARAM2 $relvel(20,200,10)
+	}
+}
+
+{
+repeatdelay $randf(0.1,1.0)
+	//drift about
+	if NPCATK_TARGET equals unset
+	addvelocity ent_me $relpos($vec(0,$randf(0,359),0),$vec($randf(-100,100),0,0))
+}

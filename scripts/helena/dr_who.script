@@ -1,0 +1,175 @@
+//Keeper of Time by Thothie for Helena2
+{
+	const NO_JOB 1
+	const NO_RUMOR 1
+	const CHAT_DELAY 4.0
+}
+
+#include monsters/base_chat
+
+{
+	name Torwhodoc Sa'thraz, Keeper of Time
+	hp 1
+	invincible 1
+	nopush 1
+	race human
+	roam 0
+	setmodel npc/balancepriest2.mdl //need new wizard
+	width 32
+	height 72
+	setbbox npcsize
+
+	saytextrange 512
+
+	setidleanim idle1
+
+	catchspeech say_hi hail hi howdy hello greet gweet j0 waddup wassup
+	catchspeech hear_no no uh what
+	catchspeech hear_apple apple
+
+	setvard SPELL_PATIENTS ''
+
+	callevent 1.0 scan_for_ally
+}
+
+{ hear_apple
+	if !PORTAL_OPEN
+	playanim critical eye_wipe
+	saytext An... An apple you say?
+	setvard HEARD_APPLE 1
+}
+
+{ scan_for_ally
+
+	if !DID_INTRO
+	callevent 2.0 scan_for_ally
+	if $cansee(ally)
+	if $get(ent_lastseen,range) < 512
+	setvard DID_INTRO 1
+	callevent say_hi
+}
+
+{ say_hi
+
+	if ( !$get(PARAM1,isalive) )
+	{
+		if ( $get(ent_lastspoke,isalive) )
+		{
+			if $get(ent_lastspoke,range) > 256
+			local EXIT_SUB 1
+		}
+	}
+	if !EXIT_SUB
+
+	if !BUSY_CHATTING
+	if ( !DID_CONFUSED )
+	{
+		playanim critical eye_wipe
+		setvard CHAT_STEPS 3
+		setvard CHAT_STEP 0
+		setvard BUSY_CHATTING 1
+		setvard CHAT_STEP1 "At last, we meet! ...or is this the second time...?"
+		setvard CHAT_STEP2 "I'm always getting confused about these things you see..."
+		setvard CHAT_STEP3 "You'd be confused too, if you were as unstuck in time as I..."
+		callevent chat_loop
+		setvard DID_CONFUSED 1
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+	
+	if ( DID_CONFUSED )
+	{
+		setvard CHAT_STEPS 8
+		setvard CHAT_STEP 0
+		setvard BUSY_CHATTING 1
+		setvard CHAT_STEP1 "Huh? Oh, yes, sorry... I am Torwhodoc Sa'thraz - last of the time wizards!"
+		setvard CHAT_STEP2 "...and you... You are the one who was... or is... or will be... or..."
+		setvard CHAT_STEP3 "No matter, you'll have to do, assuming, you have the gold I asked for..."
+		setvard CHAT_STEP4 "Surely you remember, after you saved Helena? I asked for... Oh nevermind."
+		setvard CHAT_STEP5 "It doesn't matter if you remember or not, I need 1000 gold to eat *cough* I mean, open the portal."
+		setvard CHAT_STEP6 "Granted, if you don't go through the portal and save the town, there'll be no place to eat at..."
+		setvard CHAT_STEP7 "...but if I don't get the gold, I'll have nothing to eat with so...."
+		setvard CHAT_STEP8 "Don't worry, I gave you something to make it worth the money. Remember?"
+		callevent chat_loop
+	}
+}
+
+{ hear_no
+
+	if !TALKING
+	if !RESPONDED_NO
+	saytext Oh, you will.... You will... Or... Maybe you already have?
+	setvard RESPONDED_NO 1
+}
+
+{ open_portal //PARAM1 = customer
+
+	local NAME_STR $get(PARAM1,name)
+	stradd NAME_STR "!"
+	saytext Quickly NAME_STR This time portal, it will not last long!
+	setvard RANT_STEP 0
+	callevent 20.0 timer_rant_loop
+	setprop ent_me rendermode 5
+	setprop ent_me renderamt 255
+	setsolid none
+	setvard PORTAL_OPEN 1
+	usetrigger time_tele
+}
+
+{ game_menu_getoptions
+
+	if !PORTAL_OPEN
+
+	local reg.mitem.title 	"Give 1000 gold"
+	local reg.mitem.type 	payment
+	local reg.mitem.data	gold:1000
+	local reg.mitem.callback open_portal
+	local reg.mitem.cb_failed payment_failed
+	menuitem.register
+
+	if HEARD_APPLE
+	if $item_exists(PARAM1,health_apple)
+	local reg.mitem.title 	"Give Apple"
+	local reg.mitem.type 	payment
+	local reg.mitem.data	health_apple
+	local reg.mitem.callback open_portal
+	menuitem.register
+	
+}
+
+{ payment_failed
+
+	playanim critical no
+	local RND_RESP $rand(1,2)
+	if ( RND_RESP == 1 ) saytext Come now, the last of the time wizards deserves better food than that will buy.
+	if ( RND_RESP == 2 ) saytext Now what sort of apples am I going to buy with that sort of cash? Bryan's of Edana, mayhaps?
+}
+
+{ timer_rant_loop
+	saytextrange 200
+	local RND_DELAY $randf(40,80)
+	callevent RND_DELAY timer_rant_loop
+	add RANT_STEP 1
+	if ( RANT_STEP > 9 ) setvard RANT_STEP 1
+	if !BUSY_TALKING
+	callevent convo_anim
+	if ( RANT_STEP == 1 ) saytext Actually, now that I think of it.... Take your time.
+	if ( RANT_STEP == 2 ) saytext I mean, cannot run out of time. After all, time is infinite...
+	if ( RANT_STEP == 3 ) saytext You are finite, Torwhodoc is finite... This... This is wrong tool.
+	if ( RANT_STEP == 4 ) saytext Do you know I had five brothers?
+	if ( RANT_STEP == 5 ) saytext You would say we all have the same name, but all pronounced slightly differently...
+	if ( RANT_STEP == 6 ) saytext TorwhoDOC... TORwhodoc... TorWHOdoc... TORwhoDOC... TorWHODOC.... TORWHOdoc...
+	if ( RANT_STEP == 7 ) saytext So, you see, how I am become so very easily confused...
+	if ( RANT_STEP == 8 ) saytext Torwhodoc have very sad life, probably have very sad death, but at least, there is symmetry.
+	if ( RANT_STEP == 9 ) saytext Wow, you're still here!? Comeon' I gotta eat sometime!
+}
+
+{ chat_loop
+
+	if ( CHAT_STEP == 2 ) callevent convo_anim
+	if ( CHAT_STEP == 4 ) callevent convo_anim
+	if ( CHAT_STEP == 6 ) callevent convo_anim
+	if ( CHAT_STEP == 8 ) callevent convo_anim
+	if ( CHAT_STEP == 10 ) callevent convo_anim
+}
+

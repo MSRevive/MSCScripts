@@ -1,0 +1,571 @@
+#scope server
+{
+	//sorcs jump a wee higher (save the big ones)
+	//- Move this to elf style system
+
+	setvard NO_CLOSE_MOUTH 1
+
+	if ( !SORC_NOJUMP )
+	{
+		setvard ORC_JUMPER 1
+		if ( $lcase(game.map.name) contains sorc_palace ) setvard SORC_SUPERJUMP 1
+		if SORC_SUPERJUMP
+		setvard ORC_JUMPER 0 //uses local system instead
+	}
+
+	setvard ANIM_KNEEL kneel //vard to let the higher scripts use it
+
+	const ANIM_SORCJUMP battleaxe_swing1_L
+	const FREQ_SORCJUMP 5.0
+
+	const SORC_MAX_JUMP_RANGE 600
+
+	const ORC_JUMP_RANGE 512
+	const ORC_JUMP_CUTOFF 400
+	const ORC_JUMP_POWER $rand(550,650)
+
+	//teleportation system
+	const FREQ_TELE $randf(5.0,10.0)
+
+	const SORC_TELEPORTS 1
+
+	const SORC_LRESIST 0.75
+	const SORC_PRESIST 1.10
+}
+
+#include monsters/base_monster_new
+
+{ game_spawn
+	takedmg lightning SORC_LRESIST
+	takedmg poison SORC_PRESIST
+	takedmg acid SORC_PRESIST
+
+}
+
+{ cycle_up
+
+	if G_SORC_TELE_POINTS > 0
+	if SORC_TELEPORTS
+	if !SORC_NO_TELE
+	if !SORC_TELE_CYCLE_ON
+	setvard SORC_TELE_CYCLE_ON 1
+
+	//load telepoints from GM
+	setvard SORC_TELE_SETS $get(GAME_MASTER,scriptvar,'SORC_TELE_SETS')
+	setvard SORC_TELE_SET1 $get(GAME_MASTER,scriptvar,'SORC_TELE_SET1')
+	if ( SORC_TELE_SETS > 1 ) setvard SORC_TELE_SET2 $get(GAME_MASTER,scriptvar,'SORC_TELE_SET2')
+	if ( SORC_TELE_SETS > 2 ) setvard SORC_TELE_SET3 $get(GAME_MASTER,scriptvar,'SORC_TELE_SET3')
+
+	callevent FREQ_TELE sorc_check_tele_points
+}
+
+{ ext_list_telepoints //debug
+	calleventloop $get_token_amt(SORC_TELE_SET1) list_tele_points1
+	if ( SORC_TELE_SETS > 1 ) calleventloop $get_token_amt(SORC_TELE_SET2) list_tele_points2
+	if ( SORC_TELE_SETS > 2 ) calleventloop $get_token_amt(SORC_TELE_SET3) list_tele_points3
+}
+
+{ list_tele_points1
+	dbg set1: game.script.iteration $get_token(SORC_TELE_SET1,game.script.iteration)
+}
+{ list_tele_points2
+	dbg set2: game.script.iteration $get_token(SORC_TELE_SET2,game.script.iteration)
+}
+{ list_tele_points3
+	dbg set3: game.script.iteration $get_token(SORC_TELE_SET3,game.script.iteration)
+}
+
+{ no_teleport //external addparam
+	setvard SORC_NO_TELE 1
+}
+
+{ sorc_check_tele_points
+
+	callevent FREQ_TELE sorc_check_tele_points
+
+	//don't teleport if AI suspended
+	if !SUSPEND_AI
+
+	//don't teleport if you were in swing range within last few seconds, or have otherwise been marked as mid-attack
+	local L_LAST_ATK AS_ATTACKING
+	add L_LAST_ATK 10.0
+	dbg Last Attack game.time vs L_LAST_ATK
+	if game.time > L_LAST_ATK
+
+	//don't teleport if someone teleported recently
+	if game.time > G_SORC_NEXT_TELE
+
+	//dont teleport if I'm already near striking range of my target
+	if ( NPCATK_TARGET isnot unset )
+	{
+		if $get(NPCATK_TARGET,range) <= ATTACK_HITRANGE
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	//find teleport point with player closet to it
+	setvard PLAYER_LIST ''
+	getplayersnb PLAYER_LIST
+
+	token.scramble PLAYER_LIST
+
+	setvard SORC_SCAN_BEST_SET 0
+
+	setvard SORC_SCAN_IDX 1
+	setvard SORC_SCAN_SET SORC_TELE_SET1
+	calleventloop $get_token_amt(SORC_SCAN_SET) sorc_scan_tele_points
+	if ( SORC_TELE_SETS > 1 )
+	{
+		setvard SORC_SCAN_IDX 2
+		setvard SORC_SCAN_SET SORC_TELE_SET2
+		calleventloop $get_token_amt(SORC_SCAN_SET) sorc_scan_tele_points
+	}
+	if ( SORC_TELE_SETS > 2 )
+	{
+		setvard SORC_SCAN_IDX 3
+		setvard SORC_SCAN_SET SORC_TELE_SET3
+		calleventloop $get_token_amt(SORC_SCAN_SET) sorc_scan_tele_points
+	}
+
+	//store destination
+	if ( SORC_SCAN_BEST_SET == 1 ) setvard SORC_SCAN_BEST_SET SORC_TELE_SET1
+	if ( SORC_SCAN_BEST_SET == 2 ) setvard SORC_SCAN_BEST_SET SORC_TELE_SET2
+	if ( SORC_SCAN_BEST_SET == 3 ) setvard SORC_SCAN_BEST_SET SORC_TELE_SET3
+	setvard SORC_FINAL_TELEDEST $get_token(SORC_SCAN_BEST_SET,SORC_SCAN_BEST_IDX)
+
+	//reserver teleporter
+	setvarg G_SORC_NEXT_TELE game.time
+	add G_SORC_NEXT_TELE 5.0
+
+
+	//hold up
+	callevent npcatk_suspend_ai
+
+	//fade out (fast)
+	setprop ent_me rendermode 5
+	setprop ent_me renderamt 255
+
+	//get off map
+	callevent 0.20 sorc_tele_out
+
+	//repulse targets near destination
+	callevent 0.25 sorc_repulse
+
+	//teleport
+	callevent 0.5 sorc_finalize_teleport
+}
+
+{ sorc_tele_out
+	setorigin ent_me (20000,-20000,-20000)
+}
+
+{ sorc_finalize_teleport
+	setorigin ent_me SORC_FINAL_TELEDEST
+	callevent npcatk_resume_ai
+	callevent 0.25 sorc_reset_renderprops
+}
+
+{ sorc_reset_renderprops
+	setprop ent_me rendermode 0
+}
+
+{ sorc_repulse
+	local REPULSE_AOE game.monster.moveprox
+	multiply REPULSE_AOE 1.5
+	clientevent new all effects/sfx_repulse_burst SORC_FINAL_TELEDEST REPULSE_AOE 1.0
+	setvard SORC_REPULSE_TARGETS $get_tsphere(any,ATTACK_RANGE,SORC_FINAL_TELEDEST)
+	if SORC_REPULSE_TARGETS isnot none
+	calleventloop $get_token_amt(SORC_REPULSE_TARGETS) sorc_repulse_targets
+}
+
+{ sorc_repulse_targets
+	local CUR_TARG $get_token(SORC_REPULSE_TARGETS,game.script.iteration)
+	local TARG_ORG $get(CUR_TARG,origin)
+	local TARG_ANG $angles(SORC_FINAL_TELEDEST,TARG_ORG)
+	setvelocity CUR_TARG $relvel($vec(0,TARG_ANG,0),$vec(10,800,0)) override
+}
+
+{ sorc_scan_tele_points
+	dbg Checking: SORC_CUR_TELE_IDX of $get_token_amt(SORC_SCAN_SET) in set SORC_SCAN_IDX cur_best_dist SORC_SCAN_BEST_DIST
+	setvard SORC_CUR_TELE_IDX game.script.iteration
+	setvard SORC_TELE_ORG $get_token(SORC_SCAN_SET,SORC_CUR_TELE_IDX)
+	calleventloop $get_token_amt(PLAYER_LIST) sorc_scan_tele_find_nearest_player
+}
+
+{ sorc_scan_tele_find_nearest_player
+	local CUR_PLAYER $get_token(PLAYER_LIST,game.script.iteration)
+
+	if $get(CUR_PLAYER,isalive)
+
+	local CUR_PLAYER_ORG $get(CUR_PLAYER,origin)
+	local DIST_FROM_POINT $dist(SORC_TELE_ORG,CUR_PLAYER_ORG)
+
+	if ( SORC_SCAN_BEST_SET == 0 )
+	{
+		//first canidate
+		dbg First: SORC_SCAN_BEST_IDX
+		setvard SORC_SCAN_BEST_SET SORC_SCAN_IDX
+		setvard SORC_SCAN_BEST_IDX SORC_CUR_TELE_IDX
+		setvard SORC_SCAN_BEST_DIST DIST_FROM_POINT
+	}
+	else
+	{
+		//test canidate vs. previous
+		dbg Better: SORC_SCAN_BEST_IDX ( SORC_SCAN_BEST_DIST ) vs. SORC_CUR_TELE_IDX ( DIST_FROM_POINT )
+
+		if ( DIST_FROM_POINT < SORC_SCAN_BEST_DIST )
+		{
+			setvard SORC_SCAN_BEST_SET SORC_SCAN_IDX
+			setvard SORC_SCAN_BEST_IDX SORC_CUR_TELE_IDX
+			setvard SORC_SCAN_BEST_DIST DIST_FROM_POINT
+		}
+	}
+}
+
+{ sorc_tele_fx //<origin>
+	local REPULSE_AOE game.monster.moveprox
+	multiply REPULSE_AOE 1.5
+	local L_ORG PARAM1
+	vectorset L_ORG z $get_ground_height(L_ORG)
+	clientevent new all effects/sfx_repulse_burst L_ORG REPULSE_AOE 1.0
+}
+
+{ set_tele_in
+	callevent set_fade_in 1.0
+	callevent 0.1 set_tele_in2
+}
+
+{ set_tele_in2
+	callevent sorc_tele_fx $get(ent_me,origin)
+}
+
+//================================================================ Orc base
+//================================================================
+//================================================================
+
+{
+   const SOUND_STRUCK1 body/armour1.wav
+   const SOUND_STRUCK2 body/armour2.wav
+   const SOUND_STRUCK3 body/armour3.wav
+   const SOUND_HIT voices/orc/hit.wav
+   const SOUND_HIT2 voices/orc/hit2.wav
+   const SOUND_HIT3 voices/orc/hit3.wav
+   const SOUND_PAIN monsters/orc/pain.wav
+   const SOUND_WARCRY1 monsters/orc/battlecry.wav
+   const SOUND_ATTACK1 voices/orc/attack.wav
+   const SOUND_ATTACK2 voices/orc/attack2.wav
+   const SOUND_ATTACK3 voices/orc/attack3.wav
+	setvard NPC_SILENT_DEATH 1
+   const SOUND_HELP voices/orc/help.wav
+   setvar ANIM_RUN run
+   setvar ANIM_IDLE idle1
+   setvar ANIM_WALK walk
+   setvard ANIM_DEATH die_fallback
+   setvard HUNT_AGRO 1		//base_npc_attack - Premptive attack
+   setvard CAN_HEAR 1		//Turn to face enemies I hear
+   setvard CAN_FLEE 0		//Don't flee
+   setvard CAN_FLINCH 1		//Flinch when hit
+   setvard FLINCH_CHANCE 30%	//Chance of flinch
+   setvard ANIM_FLINCH flinch
+   setvard FLINCH_DELAY 4		//base_npc_attack - Time until next allowed flinch
+   setvard LAST_ENEMY		`NONE`
+
+	const SOUND_ZOMB_STRUCK1 debris/flesh2.wav
+	const SOUND_ZOMB_STRUCK2 agrunt/ag_pain3.wav
+	const SOUND_ZOMB_STRUCK3 agrunt/ag_pain5.wav
+	const SOUND_ZOMB_ATK1 zombie/claw_miss1.wav
+	const SOUND_ZOMB_ATK2 zombie/claw_miss2.wav
+	const SOUND_ZOMB_ATK3 zombie/claw_strike1.wav
+	const SOUND_ZOMB_ALERT1 monsters/zombie1/orc_zo_alert10.wav
+	const SOUND_ZOMB_ALERT2 monsters/zombie1/orc_zo_alert20.wav
+	const SOUND_ZOMB_ALERT3 monsters/zombie1/orc_zo_alert30.wav
+
+	precache voices/orc/help.wav
+}
+
+{ npc_spawn
+
+	roam 1
+	race orc
+
+	setidleanim ANIM_IDLE
+	setmoveanim ANIM_WALK
+
+	callevent orc_spawn
+}
+
+{ npc_death		//On death, don't display weapon
+
+   setmodelbody 2 0		//Hide weapon
+   setmodelbody 4 0		//Hide Shield
+   callevent orc_death
+}
+
+{ npcatk_targetvalidate		//Warcry
+
+   local LASTSEEN_ENEMY NPCATK_TARGET
+   if LASTSEEN_ENEMY isnot LAST_ENEMY
+
+   setvard LAST_ENEMY LASTSEEN_ENEMY
+}
+
+ //Hit by someone
+{ npc_struck
+	if( ORC_SHIELD equals 1 )
+	{
+		local block $rand(0,99)
+		if( block < 30 )
+		{
+			if( block < 5 )
+			{
+				playanim critical deflectcounter
+				callevent swing_axe
+			}
+			else
+			{
+				local rand $rand(0,1)
+				if( rand equals 0 )
+				{
+					playanim critical shielddeflect1
+				}
+				if( rand equals 1 )
+				{
+					playanim critical shielddeflect2
+				}
+			}
+		}
+		else
+		{
+			callevent sound_struck
+		}
+	}
+	else
+	{
+		callevent sound_struck
+	}
+	callevent orc_struck
+}
+
+{ sound_struck
+	playrandomsound 1 10 SOUND_PAIN SOUND_STRUCK2 SOUND_PAIN none none
+}
+
+{  baseorc_yell
+	playrandomsound 1 10 SOUND_ATTACK1 SOUND_ATTACK2 SOUND_ATTACK3
+}
+
+{  game_damaged_other
+   if ATTACK_PUSH isnot 'ATTACK_PUSH'
+   if ATTACK_PUSH isnot 'none'
+   addvelocity ent_laststruckbyme ATTACK_PUSH	//Push the player a bit
+}
+
+{ game_parry
+	playrandomsound 0 10 SOUND_STRUCK1 SOUND_STRUCK2 SOUND_STRUCK3
+}
+
+{ npc_aiding_ally
+
+	if !CALLED_HELP
+	setvard CALLED_HELP 1
+	callexternal $get(PARAM2,id) ext_mon_playsound 0 10 voices/orc/help.wav
+}
+
+{ game_death
+	playsound 0 5 voices/orc/die.wav
+}
+
+//============================= End Orc_Base
+//=============================
+
+//============================= Sorc Superjump (elf style)
+{ npcatk_hunt
+	if NPCATK_TARGET isnot unset
+
+	local GAME_TIME game.time
+
+	if GAME_TIME > NEXT_SORCJUMP
+
+	if $get(NPCATK_TARGET,range) < SORC_MAX_JUMP_RANGE
+
+	local MY_Z $get(ent_me,origin.z)
+	local TARG_Z $get(NPCATK_TARGET,origin.z)
+	if ( $get(NPCATK_TARGET,isplayer) ) subtract TARG_Z 38 //compensate for origin center
+
+	local Z_DIFF TARG_Z
+	subtract Z_DIFF MY_Z
+
+	if ( Z_DIFF > ATTACK_RANGE )
+	{
+		callevent sorc_hop Z_DIFF
+		local EXIT_SUB 1
+		setvard NEXT_SORCJUMP GAME_TIME
+		add NEXT_SORCJUMP FREQ_SORCJUMP
+	}
+}
+
+{ sorc_hop //<vertical_difference> - determines jump strength
+	playsound 0 10 monsters/orc/attack1.wav
+	setvard UP_SORCJUMP_STR PARAM1
+	multiply UP_SORCJUMP_STR 5
+	callevent npcatk_suspend_ai 1.0
+	setvard FWD_JUMP_STR $get(NPCATK_TARGET,range)
+	playanim critical ANIM_SORCJUMP
+	callevent 0.1 sorc_jump_boost
+}
+
+{ sorc_jump_boost
+	addvelocity ent_me $relvel(0,FWD_JUMP_STR,UP_SORCJUMP_STR)
+}
+
+//=============== Sorc Palace Chatter
+{ npc_targetsighted
+	if !DID_SPOT_SPEECH
+	setvard DID_SPOT_SPEECH 1
+	if SPOT_SPEECH isnot 'SPOT_SPEECH'
+	saytext SPOT_SPEECH
+}
+
+{ npc_post_spawn
+	if SPAWN_SPEECH isnot 'SPAWN_SPEECH'
+	callevent SPAWN_SPEECH_DELAY say_spawn_speech
+}
+
+{ say_spawn_speech
+	saytext SPAWN_SPEECH
+}
+
+{ set_sorcpal_jailer1
+	saytextrange 2048
+	setvard SPAWN_SPEECH "What's all that racket down there?"
+	setvard SPAWN_SPEECH_DELAY 1.0
+	setvard SPOT_SPEECH "Sound the alarm! Introduers!"
+}
+
+{ set_sorcpal_jailer2
+	saytextrange 2048
+	setvard SPAWN_SPEECH "I don't know..."
+	setvard SPAWN_SPEECH_DELAY 2.0
+	setvard SPOT_SPEECH "Intruders! ...and they let the beef escape!!!"
+
+	if ( G_ONE_SHOT >= 1 )
+	{
+		setvard SPAWN_SPEECH 'SPAWN_SPEECH'
+		setvard SPOT_SPEECH 'SPOT_SPEECH'
+	}
+
+	setvarg G_ONE_SHOT 1 //didn't realize this guy had two lives, so we don't want him repeating
+
+}
+
+{ set_sorcpal_kennel1
+	saytextrange 2048
+	setvard SPOT_SPEECH "Go get em Fido!"
+}
+
+{ set_sorcpal_wrecked1
+	saytextrange 2048
+	setvard SPAWN_SPEECH "We really gotta fix this place someday."
+	setvard SPAWN_SPEECH_DELAY 0.1
+	setvard SPOT_SPEECH "Intruders!! Armed humans within the palace walls!"
+}
+
+{ set_sorcpal_wrecked2
+	saytextrange 2048
+	setvard SPAWN_SPEECH "Just shut up and do your patrol."
+	setvard SPAWN_SPEECH_DELAY 2.0
+}
+
+{ set_sorcpal_reward1
+	saytextrange 2048
+	setvard SPOT_SPEECH "Runegahr will promote us good if we smash these guys!"
+}
+
+{ set_sorcpal_reached1
+	saytextrange 2048
+	setvard SPOT_SPEECH "The intruders have reached the north east hall!"
+}
+
+{ set_sorcpal_reached2
+	saytextrange 2048
+	if ( game.players > 1 )
+	{
+		setvard SPOT_SPEECH "How did a couple of humans get this far into the palace!?"
+	}
+	else
+	{
+		setvard SPOT_SPEECH "How did one armed human get THIS far into the palace!?"
+	}
+}
+
+{ set_sorcpal_reached3
+	saytextrange 2048
+	if ( game.players > 1 )
+	{
+		setvard SPOT_SPEECH "They've reached the east tower!"
+	}
+	else
+	{
+		setvard SPOT_SPEECH "He's reached the east tower!"
+	}
+}
+
+{ set_sorcpal_killthem1
+	saytextrange 2048
+	if ( game.players > 1 )
+	{
+		setvard SPOT_SPEECH "Kill them! Kill them NOW!"
+	}
+	else
+	{
+		setvard SPOT_SPEECH "Kill him! Kill him NOW!"
+	}
+}
+
+{ set_sorc_villa_first_guard
+	setvard SPOT_SPEECH "Humans! Humans have entered the town from the palace! SOUND THE ALARM!"
+}
+
+
+//================================================================ Throne guards
+{ set_sorcpal_throne
+	//throne room escort
+
+	saytextrange 2048
+
+	setvard SORC_NO_TELE 1
+	setvard AM_ESCORT 1
+
+	if ( G_SORC_CHIEF_PRESENT )
+	{
+		setvard CHIEF_ID $get_by_name(the_warchief)
+		if !$get(CHIEF_ID,scriptvar,'ESCORT_ACTIVE')
+		invincible 2
+		setvard KNEEL_MODE 1
+		setidleanim ANIM_KNEEL
+		setmoveanim ANIM_KNEEL
+		callevent npcatk_suspend_ai
+		roam 0
+	}
+}
+
+{ npc_post_spawn
+	if KNEEL_MODE
+	setidleanim ANIM_KNEEL
+	setmoveanim ANIM_KNEEL
+	roam 0
+}
+
+{ sorcs_confirm_order
+	saytext Yes, warchief.
+	say [.16] [.32] [.32] [.16]
+}
+
+{ ext_chief_orders_attack
+	if KNEEL_MODE
+	setidleanim ANIM_IDLE
+	setmoveanim ANIM_RUN
+	callevent npcatk_resume_ai
+	invincible 0
+	setvard KNEEL_MODE 0
+}

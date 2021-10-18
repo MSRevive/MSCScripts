@@ -1,0 +1,167 @@
+{
+	const GALA_CHEST_POS $relpos(0,48,64)
+
+	const ANIM_CHAT pondering3
+	const ANIM_NO no
+	const ANIM_STORE return_needle
+	setvar ANIM_IDLE idle1
+	setvar ANIM_RUN run
+	setvar ANIM_WALK walk_scared
+	const SAYTEXT_REFUND "Here's your fee back. Such as it is."
+	const SAYTEXT_SELECT_ITEM "What do you wish to store?"
+	const SAYTEXT_NOITEM "I did not recieve your item."
+	const SAYTEXT_NOTICKET "I did not recieve your ticket."
+	const SAYTEXT_NOSTORABLES "Sorry, I'm afraid you have nothing we can store for you."
+	const SAYTEXT_GIVETICKET "Here is your ticket! You can redeem that at any Galat outlet."
+	const SAYTEXT_SELECT_TICKET "Which ticket would do you like to redeem?"
+	const SAYTEXT_HAND_WARN "Please place your tickets in your hands."
+	const SAYTEXT_REDEEMTICKET "Thank you for using Galat Storage."
+	const SAYTEXT_ITEMS_HANDS "Please hold forth any items you wish to store in your hands."
+
+	const NO_HAIL 1
+	const NO_JOB 1
+	const NO_RUMOR 1
+}
+
+#include monsters/base_npc
+#include monsters/base_chat
+#include NPCs/base_storage
+#include monsters/base_civilian
+
+{ npc_spawn
+
+	name Guilda of Galat's Storage
+	hp 40
+	invincible 0
+	gold 10
+	race human
+	width 28
+	height 96
+	setmodel	npc/human2.mdl
+	setidleanim idle1
+	setmoveanim run
+	roam 0
+	playanim once idle1
+	setmodelbody 0 0
+	setmodelbody 1 1
+
+	//dbg temp Deralia Teller Spawned
+
+	saytextrange 1024
+
+	catchspeech heard_hi hail hello hi greets gweets j0 waddup
+	catchspeech heard_rumor job rumor rumour quest Kayle woman women gal girls chicks
+	catchspeech heard_store shop store bank
+
+	callevent 1.6 post_spawn
+}
+
+{ post_spawn
+	setvard MY_HOME game.monster.origin
+}
+
+{ heard_hi
+
+	if !CHATTING
+	setvard CHATTING 1
+
+	setvard DID_HELLO 1
+	playanim critical 180_right
+	saytext Welcome to Galat's Weapon and Armor Storage.
+	callevent 5.0 heard_hi2
+}
+
+{ heard_hi2
+	saytext For a nominal fee, we can store your weapons and armor.
+	callevent 5.0 heard_hi3
+}
+
+{ heard_hi3
+	saytext We'll give you a ticket for any item that we can store.
+	callevent 5.0 heard_hi4
+}
+
+{ heard_hi4
+	saytext Thanks to our contacts with the Felewyn wizards, you may redeem this ticket at any Galat outlet!
+	callevent 5.0 heard_hi5
+}
+
+{ heard_hi5
+
+	setvard CHATTING 0
+	playanim critical pondering2
+	saytext Galat has outlets in Deralia, Gatecity, and Kray Eldorad. A new one just opened in Helena.
+}
+
+{ heard_rumor
+
+	playanim critical fear1
+	saytext By Urdual! You mean there's more than one woman in this town!?
+}
+
+{ heard_store
+
+	menu.open $get(ent_lastheard,id)
+}
+
+{ game_menu_getoptions
+
+	if ( !DID_HELLO )
+	{
+		setvard DID_HELLO 1
+		playanim critical lean
+		saytext Welcome to Galat's Weapon and Armor Storage!
+	}
+
+	local reg.mitem.title 	"Hail"
+	local reg.mitem.type 	callback
+	local reg.mitem.callback heard_hi
+	menuitem.register
+}
+
+{ game_struck
+	roam 1
+	setmoveanim ANIM_RUN
+	setmovedest ent_laststruck 9999 flee
+	menu.autoopen 0
+	if !IS_FLEEING
+	setvard IS_FLEEING 1
+	callevent 20.0 stop_fleeing
+}
+
+{ stop_fleeing
+	setmovedest MY_HOME 10
+	setmoveanim ANIM_WALK
+	
+	menu.autoopen 1
+	roam 0
+	setvard IS_FLEEING 0
+}
+
+{ say_storage_chest
+	if ( BUSY_CHATTING ) callevent 1.0 say_storage_chest
+	if !BUSY_CHATTING
+	callevent convo_anim
+	setvard CHAT_STEPS 6
+	setvard CHAT_STEP1 "Yes, this before me is the latest in magical banking: Galat's Chest of Wondrous Storage!"
+	setvard CHAT_STEP2 "This new chest here can store items for you, no need for tickets."
+	setvard CHAT_STEP3 "Simply place the items you wish to store in your hands, and use the chest. It does the rest!"
+	setvard CHAT_STEP4 "To withdraw items, use it as you would any chest, simply reach in and take what you need."
+	setvard CHAT_STEP5 "The chest keeps each customer's inventory in a special dimensional pocket only the customer can access."
+	setvard CHAT_STEP6 "The chest can hold about a dozen or so items for each user. You can use this one here at any time."
+	callevent chat_loop 
+}
+
+{ say_wondrous
+	if ( BUSY_CHATTING ) callevent 1.0 say_wondrous
+	if !BUSY_CHATTING
+	callevent convo_anim
+	setvard CHAT_STEPS 4
+	setvard CHAT_STEP1 "With a Wondrous Scroll of Galat's storage you can summon Galat's Chest of Wondrous Storage anywhere you may happen to be."
+	setvard CHAT_STEP2 "Any Galat customers present can then use the chest to access whatever items they have stored therein."
+	setvard CHAT_STEP3 "Each scroll is good for single summoning. Be sure you have a fair amount of room around yourself for the chest to manifest in."
+	setvard CHAT_STEP4 "I, and any Galat Banking representative can sell you one of these scrolls for the meager asking price of "
+	stradd CHAT_STEP4 GALA_SCROLL_PRICE
+	stradd CHAT_STEP4 " gold." 
+	callevent chat_loop 
+}

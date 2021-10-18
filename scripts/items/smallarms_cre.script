@@ -1,0 +1,425 @@
+{ [shared]
+	setvard MATCHED_SET 1
+	setvard MATCHED_SET_TYPE crescent
+
+	const MP_THROW 10
+
+	const CRE_TYPE slash
+
+	const BWEAPON_NAME "a|Crescent Blade"
+	const BWEAPON_DESC "A viscious pair of curving blades (matched set)"
+	const BWEAPON_WEIGHT 1
+	const BWEAPON_VALUE 3000
+	const BWEAPON_INV_SPRITE_IDX 193
+	const BWEAPON_HANDS right
+
+	const BASE_LEVEL_REQ 30
+
+	const BWEAPON_CUSTOM_DRAW 1
+	const BWEAPON_CUSTOM_SWITCHHANDS 1
+	const BITEM_CUSTOM_ATK2_EVENT 1
+
+	const VMODEL_FILE viewmodels/v_1hswords.mdl
+	const VMODEL_IDX 6
+	const PMODEL_FILE weapons/p_weapons4.mdl //p_model (world/player model file)
+	const PMODEL_IDX_FLOOR 42 //p_model floor offset (-1 from JHLMV index)
+	const PMODEL_IDX_HAND_RIGHT 40 //p_model hands offset (-1 from JHLMV index)
+	const PMODEL_IDX_HAND_LEFT 41 //p_model hands offset (-1 from JHLMV index)
+	const PMODEL_IDX_HANDS 40
+
+	const PANIM_IDLE aim_axe_onehand
+	const PANIM_EXT knife //extention for automatic player anims
+
+	const VANIM_DRAW 0 //6 if other hand empty
+	const VANIM_IDLE 1 //7 if other hand empty
+	setvar C_VANIM_DRAW 0
+	setvar C_VANIM_IDLE 1
+
+	const VANIM_DRAW_SNG 6
+	const VANIM_IDLE_SNG 7
+
+	const WANIM_FLOOR standard_floor_idle
+	const WANIM_HAND standard_idle
+
+	const ATK1_TYPE strike-land //strike-land|target|charge-throw-projectile|hold-strike
+	const ATK1_KEYS +attack1
+	const ATK1_RANGE 60 //max reach
+	const ATK1_DMG 275 //max damage
+	const ATK1_DMG_RANGE 5 //damage +/-
+	const ATK1_DMG_TYPE slash //damage type
+	const ATK1_STAMINA 0.1 //stamina drain
+	const ATK1_SKILL smallarms //skill to use for dmg and xp
+	const ATK1_ACCURACY 85% //base chance to hit (raises slightly with skill)
+	const ATK1_DELAY_STRIKE 0.5 //delay before attack strikes (to match viewmodel anim)
+	const ATK1_DURATION 1.1 //total delay before attack completes
+	const ATK1_OFS 0 //should control ofset of attack, but not seen used
+	const ATK1_ANG 0 //should control angle of attack, but not seen used
+	const ATK1_CALLBACK atk1 //callback prefix (atk1_start atk1_strike atk1_dodamage etc.)
+	const ATK1_NOISE 650 //radius of noise that attacks alert monsters that can hear
+	const ATK1_SKILL_LEVEL BASE_LEVEL_REQ //base weapon requirements
+	const ATK1_MPDRAIN 0 //mana drain
+	const ATK1_DMG_MULTI 0 //multiply dmg
+	const ATK1_NO_AUTOAIM 0 //don't use auto aim
+	const ATK1_PANIM axe_onehand_swing //player anim for this atk
+	const ATK1_VANIM 3 //viewmodel anim for this atk
+	const SOUND_ATK1 weapons/cbar_miss1.wav //sound to play when attack starts
+	const PITCH_ATK1 $randf(125,150)
+
+	const ATK2_TYPE ATK1_TYPE
+	const ATK2_KEYS -attack1 //charged attacks must be -attack
+	const ATK2_RANGE ATK1_RANGE
+	const ATK2_DMG ATK1_DMG
+	const ATK2_DMG_RANGE ATK1_DMG_RANGE
+	const ATK2_DMG_TYPE AT1_DMG_TYPE
+	const ATK2_STAMINA ATK1_STAMINA
+	const ATK2_SKILL ATK1_SKILL
+	const ATK2_ACCURACY ATK1_ACCURACY
+	const ATK2_DELAY_STRIKE 0.3
+	const ATK2_DURATION ATK1_DURATION
+	const ATK2_OFS 0 ATK1_OFS
+	const ATK2_ANG 0 ATK1_ANG
+	const ATK2_CALLBACK atk2
+	const ATK2_NOISE ATK1_NOISE
+	const ATK2_SKILL_LEVEL BASE_LEVEL_REQ
+	const ATK2_ADD_SKILL_REQ 2
+	const ATK2_MPDRAIN 0
+	const ATK2_DMG_MULTI 2
+	const ATK2_NO_AUTOAIM 0
+	const ATK2_PANIM pole_swing 
+	const ATK2_VANIM 5 
+	const ATK2_IS_PROJECTILE 0
+	const ATK2_PROJECTILE arrow
+	const ATK2_AMMODRAIN 1
+	const ATK2_COF 0
+	const SOUND_ATK2 zombie/claw_miss2.wav
+	const PITCH_ATK2 80
+
+	const SOUND_HITWALL1 weapons/dagger/daggermetal1.wav
+	const SOUND_HITWALL2 weapons/dagger/daggermetal2.wav
+
+	const SOUND_BLOCK1 body/armour3.wav
+}
+
+#include items/base_weapon_new
+
+//custom draw, anims vary with weapons
+{ bitem_draw
+	playviewanim break
+	playanim break
+
+	setviewmodel VMODEL_FILE
+	setmodel PMODEL_FILE
+	setworldmodel PMODEL_FILE
+
+	local L_PMODEL_IDX_HANDS PMODEL_IDX_HANDS
+	if ( BWEAPON_HANDS equals right ) add L_PMODEL_IDX_HANDS game.item.hand_index
+	setmodelbody 0 L_PMODEL_IDX_HANDS
+
+	setanimext PANIM_EXT
+
+	playanim WANIM_HAND
+
+	setvard NEXT_BLOCK game.time
+	add NEXT_BLOCK 2.0
+
+	callevent 0.1 set_anims
+}
+
+{ set_anims
+	if ( game.serverside )
+	{
+		if ( !SENT_HELP_TIP )
+		{
+			helptip ent_owner crematch "MATCHED SET WEAPON" "If you can find another crescent weapon, you'll have no dual weild penalty with it!"
+			setvard SENT_HELP_TIP 1
+		}
+
+		callevent check_matched
+
+		//dbg bitem_draw [ game.item.hand_index ] $get(OTHER_HAND,itemname)
+
+		if ( $get(OTHER_HAND,itemname) equals fist_bare ) local SINGLE_HANDED 1
+		if ( $get(OTHER_HAND,itemname) equals 0 ) local SINGLE_HANDED 1
+
+		if ( SINGLE_HANDED )
+		{
+			callevent set_anims_single
+			callclitemevent ent_me set_anims_single 1
+			//splayviewanim ent_me C_VANIM_DRAW
+		}
+		else
+		{
+			callevent set_anims_double
+			callclitemevent ent_me set_anims_double 1
+			//splayviewanim ent_me C_VANIM_DRAW
+		}
+	}
+
+	if game.clientside
+	callevent cl_play_draw //give a sec for anim info to propigate
+
+	//if setting up idle anims, call cl event
+}
+
+{ [client] cl_play_draw
+	//dbg bitem_draw hndsngl HANDS_SINGLE
+	if ( HANDS_SINGLE equals 'HANDS_SINGLE' )
+	{
+		//not got the hand mode yet
+		callevent 0.1 cl_play_draw
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+	playviewanim C_VANIM_DRAW
+}
+
+{ [client] cl_play_idle
+	//dbg bitem_idle hndsngl HANDS_SINGLE
+	if ( HANDS_SINGLE equals 'HANDS_SINGLE' )
+	{
+		//not got the hand mode yet
+		callevent 0.1 cl_play_idle
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+	playviewanim C_VANIM_IDLE
+}
+
+{ [shared] set_anims_single
+	setvard HANDS_SINGLE 1
+	setvard C_VANIM_DRAW VANIM_DRAW_SNG
+	setvard C_VANIM_IDLE VANIM_IDLE_SNG
+	if game.clientside
+	local DONT_IDLE PARAM1
+	if !DONT_IDLE
+	playviewanim C_VANIM_IDLE
+	//dbg *** set_anims_single
+}
+
+{ [shared] set_anims_double
+	setvard HANDS_SINGLE 0
+	setvard C_VANIM_DRAW VANIM_DRAW
+	setvard C_VANIM_IDLE VANIM_IDLE
+	if game.clientside
+	local DONT_IDLE PARAM1
+	if !DONT_IDLE
+	playviewanim C_VANIM_IDLE
+	//dbg *** set_anims_double
+}
+
+{ game_switchhands
+	callevent set_idle
+}
+
+{ atk1_end
+	if ( game.serverside ) callevent check_matched
+	if game.clientside
+	//dbg *** atk1_end
+	callevent cl_play_idle
+}
+
+{ atk2_end
+	if ( game.serverside ) callevent check_matched
+}
+
+{ ext_off_hand_change //<item_id>
+	callevent set_idle
+	callevent check_matched
+}
+
+{ set_idle
+	if ( game.serverside )
+	{
+		if ( game.item.hand_index == 0 )
+		{
+			setvard OTHER_HAND $get(ent_owner,scriptvar,'PLR_LEFT_HAND')
+		}
+		else
+		{
+			setvard OTHER_HAND $get(ent_owner,scriptvar,'PLR_RIGHT_HAND')
+		}
+
+		//dbg bitem_draw [ game.item.hand_index ] $get(OTHER_HAND,itemname)
+
+		if ( $get(OTHER_HAND,itemname) equals fist_bare ) local SINGLE_HANDED 1
+		if ( $get(OTHER_HAND,itemname) equals 0 ) local SINGLE_HANDED 1
+
+		if ( SINGLE_HANDED )
+		{
+			callevent set_anims_single
+			callclitemevent ent_me set_anims_single
+		}
+		else
+		{
+			callevent set_anims_double
+			callclitemevent ent_me set_anims_double
+		}
+	}	
+	//if game.clientside
+	//callevent cl_play_idle //give a sec for anim info to propigate
+}
+
+{ atk2_start
+	if game.serverside
+	if ( $get(ent_owner,mp) < MP_THROW )
+	{
+		splayviewanim ent_me 9
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+	splayviewanim ent_me 15
+	playowneranim critical ATK2_PANIM global.anim.combatwalk 3
+	playsound 1 10 SOUND_ATK2 0.8 PITCH_ATK2
+}
+
+{ atk2_strike
+	if game.serverside
+
+	if ( $get(ent_owner,mp) < MP_THROW )
+	{
+		dplayermessage ent_owner Crescent Blade: Insufficient mana for shadow throw
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	givemp ent_owner $neg(MP_THROW)
+
+	callexternal ent_owner ext_tosscre $int(game.item.hand_index) CRE_TYPE
+}
+
+{ check_keys_loop
+	if MATCHED_SET_ACTIVE
+	if $get(ent_owner,scriptvar,'PLR_ACTIVE_WEAPON') equals $get(ent_me,id)
+	callevent 0.25 check_keys_loop
+	//dbg check_keys_loop
+
+	setvard LAST_KEY_CHECK game.time
+
+	if ( BLOCK_ON )
+	{
+		If !$get(ent_owner,keydown,use)
+		callevent block_end
+	}
+
+	if !BLOCK_ON
+	if game.time > NEXT_BLOCK
+
+	if $get(ent_owner,keydown,use)
+
+	setvard NEXT_BLOCK game.time
+	add NEXT_BLOCK 1.0
+
+	callevent check_matched
+
+	if MATCHED_SET_ACTIVE
+	splayviewanim ent_me 14
+	setvard BLOCK_ON 1
+	playowneranim critical aim_fists global.anim.combatwalk 3 
+	callexternal OTHER_HAND match_block_anim
+	callevent lock_weapon
+	scriptflags ent_owner add wcre nopush 1 -1 none
+}
+
+{ block_end
+	if BLOCK_ON
+	splayviewanim ent_me C_VANIM_IDLE
+	setvard BLOCK_ON 0
+	setvard NEXT_BLOCK game.time
+	add NEXT_BLOCK 1.0
+	playowneranim once PANIM_IDLE global.anim.combatwalk 3
+	callevent unlock_weapon
+	callexternal OTHER_HAND match_unblock_anim
+	scriptflags ent_owner remove wcre
+}
+
+{ game_putinpack
+	if ( BLOCK_ON ) scriptflags ent_owner remove wcre
+	setvard BLOCK_ON 0
+	setvard MATCHED_SET_ACTIVE 0
+}
+
+{ game_takedamage //1: Attacker  2: Inflictor  3: dmg  4: dmg type
+	if BLOCK_ON
+	if $get(ent_owner,scriptvar,'PLR_ACTIVE_WEAPON') equals $get(ent_me,id)
+	if ( PARAM4 startswith target ) local CANT_BLOCK 1
+	if ( PARAM4 contains effect ) local CANT_BLOCK 1
+	if ( $get(PARAM2,itemname) startswith proj_arrow ) local CANT_BLOCK 1 //can't block arrows with these
+	if !CANT_BLOCK
+	if PARAM1 isnot $get(ent_owner,id)
+	if $get(PARAM1,relationship,ent_owner) equals enemy
+	local OWNER_POS $get(ent_owner,origin)
+	local OWNER_ANG $get(ent_owner,angles)
+	local ATTACKER_POS $get(PARAM1,origin)
+
+
+	if $within_cone2D(ATTACKER_POS,OWNER_POS,OWNER_ANG,100)
+	local INC_DMG PARAM3
+	local OUT_DMG PARAM3
+	multiply OUT_DMG 0.25
+	setdmg dmg OUT_DMG
+	local AMT_BLOCKED INC_DMG
+	subtract AMT_BLOCKED OUT_DMG
+	if ( AMT_BLOCKED > 1 ) local AMT_BLOCKED $int(AMT_BLOCKED)
+	playsound 4 10 SOUND_BLOCK1 0.8 $randf(125.00,150.00)
+	yplayermessage ent_owner Crescents blocked AMT_BLOCKED hp
+}
+
+{ match_block_anim
+	splayviewanim ent_me 14
+}
+
+{ match_unblock_anim
+	splayviewanim ent_me C_VANIM_IDLE
+}
+
+{ lock_weapon
+	callexternal ent_owner ext_removed_effects lock
+	applyeffect ent_owner effects/effect_templock $get(ent_owner,id)
+}
+
+{ unlock_weapon
+	callexternal ent_owner ext_remove_lock
+}
+
+{ check_matched
+	if ( game.item.hand_index == 0 )
+	{
+		setvard OTHER_HAND $get(ent_owner,scriptvar,'PLR_LEFT_HAND')
+	}
+	else
+	{
+		setvard OTHER_HAND $get(ent_owner,scriptvar,'PLR_RIGHT_HAND')
+	}
+	if ( $get(OTHER_HAND,scriptvar,'MATCHED_SET_TYPE') equals crescent )
+	{
+		setvard MATCHED_SET_ACTIVE 1
+	}
+	else
+	{
+		setvard MATCHED_SET_ACTIVE 0
+	}
+
+	dbg check_matched MATCHED_SET_ACTIVE
+
+	if MATCHED_SET_ACTIVE
+	local L_LAST_KEY_CHECK LAST_KEY_CHECK
+	add L_LAST_KEY_CHECK 1
+	if ( game.time > L_LAST_KEY_CHECK )
+	{
+		callevent check_keys_loop
+	}
+	if ( !GAVE_MATCH_SET_MSG )
+	{
+		setvard GAVE_MATCH_SET_MSG 1
+		infomsg ent_owner "MATCHED SET ABILITY" "Hold +use to block with crescent blades"
+	}
+}
+
+{ ext_activate_items
+	callevent check_matched
+}
+
+{ bweapon_effect_remove
+	if BLOCK_ON
+	scriptflags ent_me remove wcre
+}

@@ -1,0 +1,112 @@
+{ client_activate
+	setvard FX_OWNER PARAM1
+	setvard BREATH_TYPE PARAM2
+	if ( BREATH_TYPE startswith 'PARAM' ) setvard BREATH_TYPE 0
+	cleffect light new $getcl(FX_OWNER,origin) 256 (0,255,0) 1.0
+	setcallback render enable
+	setvard FX_ACTIVE 1
+	callevent breath_loop
+	callevent 15.0 end_fx //in case dies mid-breath
+}
+
+{ [client] game_prerender
+
+	if FX_ACTIVE
+	local L_POS $getcl(FX_OWNER,origin)
+	cleffect light SKEL_LIGHT_ID L_POS GLOW_RAD GLOW_COLOR 1.0
+}
+
+
+{ breath_loop
+	if FX_ACTIVE
+	callevent make_cloud $getcl(FX_OWNER,attachment0) $getcl(FX_OWNER,angles.yaw)
+	callevent 0.2 breath_loop
+}
+
+{
+repeatdelay 0.01
+	if FX_ACTIVE
+	setvard ATTACHMENT_POS $getcl(FX_OWNER,attachment0)
+}
+
+{ make_cloud //<origin> <angles>
+
+	//dbg make_cloud PARAM1 PARAM2
+
+	local CLOUD_ORG PARAM1
+	setvard CLOUD_ANG PARAM2
+	if ( BREATH_TYPE == 0 )
+	{
+		cleffect tempent sprite poison_cloud.spr CLOUD_ORG setup_cloud update_cloud
+		cleffect tempent sprite poison_cloud.spr CLOUD_ORG setup_cloud update_cloud
+		cleffect tempent sprite poison_cloud.spr CLOUD_ORG setup_cloud update_cloud
+	}
+	else
+	{
+		cleffect tempent sprite explode1.spr CLOUD_ORG setup_fire_cloud update_cloud
+		cleffect tempent sprite explode1.spr CLOUD_ORG setup_fire_cloud update_cloud
+		cleffect tempent sprite explode1.spr CLOUD_ORG setup_fire_cloud update_cloud
+	}
+}
+
+{ end_fx
+	if FX_ACTIVE
+	setvard FX_ACTIVE 0
+	callevent 1.25 remove_fx
+}
+
+{ remove_fx
+	removescript
+}
+
+{ update_cloud
+	local CUR_SCALE game.tempent.fuser1
+	if ( CUR_SCALE < 2 )
+	{
+		add CUR_SCALE 0.1
+		cleffect tempent set_current_prop fuser1 CUR_SCALE
+		cleffect tempent set_current_prop scale CUR_SCALE 
+	}
+}
+
+{ setup_cloud
+	cleffect tempent set_current_prop death_delay 1.0
+	cleffect tempent set_current_prop framerate 10
+	cleffect tempent set_current_prop frames 17
+	cleffect tempent set_current_prop bouncefactor 0
+	cleffect tempent set_current_prop scale 0.1
+	cleffect tempent set_current_prop rendermode add
+	cleffect tempent set_current_prop renderamt 200
+	cleffect tempent set_current_prop rendercolor (0,0,0)
+	cleffect tempent set_current_prop gravity .005
+	cleffect tempent set_current_prop collide none
+	cleffect tempent set_current_prop fuser1 0.1
+
+	local RND_RL $randf(-10,10)
+	local RND_UD $randf(-30,30)
+	local RND_FD $randf(300,400)
+	local CLOUD_VEL $relvel($vec(0,CLOUD_ANG,0),$vec(RND_RL,RND_FD,RND_UD))
+	cleffect tempent set_current_prop velocity CLOUD_VEL
+}
+
+
+{ setup_fire_cloud
+
+	cleffect tempent set_current_prop death_delay 1.0
+	cleffect tempent set_current_prop framerate 10
+	cleffect tempent set_current_prop frames 9
+	cleffect tempent set_current_prop bouncefactor 0
+	cleffect tempent set_current_prop scale  $randf(0.5,1.0)
+	cleffect tempent set_current_prop rendermode add
+	cleffect tempent set_current_prop renderamt 200
+	cleffect tempent set_current_prop rendercolor (0,0,0)
+	if ( $rand(1,3) == 1 ) cleffect tempent set_current_prop rendercolor (255,255,0)
+	cleffect tempent set_current_prop gravity .005
+	cleffect tempent set_current_prop collide none
+	cleffect tempent set_current_prop fuser1 0.1
+
+	local RND_RL $randf(-20,20)
+	local RND_UD $randf(-20,20)
+	local CLOUD_VEL $relvel($vec(0,CLOUD_ANG,0),$vec(RND_RL,$randf(300,400),RND_UD))
+	cleffect tempent set_current_prop velocity CLOUD_VEL
+}

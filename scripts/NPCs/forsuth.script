@@ -1,0 +1,417 @@
+//Forsuth - the frosted dwarf, from gatecity./mayor by thothie
+
+{
+	const SOUND_INTRO npc/dwarftakeoffhat.wav
+	const SOUND_SERVICE npc/dwarfatservice.wav
+	const SOUND_GOODDAY npc/dwarfchitchat.wav
+	const SOUND_SWING weapons/swingsmall.wav
+	const ATTACK_DAMAGE 30
+	setvard ATTACK_RANGE 50
+	setvard ATTACK_HITRANGE 100
+	const ATTACK_ACCURACY 70%
+	setvard MONSTER_WIDTH 32
+	setvard NO_STUCK_CHECKS 1
+	const STORE_RESTOCK 0
+	const CHAT_SPEED 5.0
+	setvard HUNT_AGRO 0
+
+	setvar ANIM_IDLE idle
+	setvard ANIM_DEATH death
+	setvard ANIM_ATTACK attack
+
+	const STORE_NAME forsuths_store
+    setvar STORE_TRIGGERTEXT "drink shop store cold ale bitter"
+    //const STORE_TRADEEXT 	(Default: "trade") //what's this do? :\
+    const STORE_SELLMENU 1
+
+	setvard CAN_HEAR 0
+}
+
+#include monsters/base_monster
+#include monsters/base_npc_vendor
+
+{ npc_spawn
+
+	setvar ANIM_WALK idle
+	setvar ANIM_RUN idle
+
+   hp 200
+   gold 10    
+   name	Forsuth, the Frosty
+   //ov 120
+   width 32
+   height 72
+	hearingsensitivity 8
+   race human
+   roam 0      //Don't go roaming around
+   setmodel	dwarf/male1.mdl
+   setmodelbody 0 0	//0-Elder 1-Youngin 2-Zombie
+   setmodelbody 1 1 //0-Unarmed 1-smallaxe 2-battleaxe 3-bastardsword
+
+	setidleanim ANIM_IDLE
+
+	setmoveanim ANIM_IDLE
+	playanim once ANIM_IDLE
+	movespeed 0.0
+	hearingsensitivity 6
+
+   catchspeech say_hi hi hello hail greet hey wuddup wassup j0
+   catchspeech say_job job work money gold
+   catchspeech say_rumor rumour news happenings rumor icebone snow ice lord
+	catchspeech npc_say_store drink shop store cold ale bitter
+	catchspeech say_orcs marogar orcs
+	catchspeech lor_lore malgoriand loridian Fate
+	catchspeech debug_props debug
+   
+	setvard IMMUNE_COLD 1
+	takedmg cold 0.0
+	takedmg ice 0.0
+
+	setvard CAN_CHAT 1
+
+	callevent 1.0 get_pos
+
+	callevent 1.0 watch_for_friends
+
+}
+
+{ debug_props
+
+	saytext Izhunting IS_HUNTING
+}
+
+{ game_heardsound
+	if $get(ent_lastheard,isplayer)
+	if $get(ent_lastheard,range) < 100
+	setmovedest $get(ent_lastheard,id) 9999
+}
+
+{ get_pos
+
+	setvard MY_START $get(ent_me,origin)
+}
+
+// ====== chat
+
+{ reset_chat
+
+	if ( IN_CHAT ) callevent 6.0 reset_chat
+	if !IN_CHAT
+	setvard ORC_STEP 0
+	setvard ICE_LORD_PLOT_STEP 0
+	setvard JOB_PLOT_STEP 0
+}
+
+{ watch_for_friends
+
+	if !INVITED
+
+	callevent 5.0 watch_for_friends
+
+	if $cansee(ally)
+
+	setvard FACE_TARG $get(ent_lastseen,id)
+	saytextrange 2048
+	saytext By Urdual's beard! Get in here where it's warm, ya young fool!
+	setvard INVITED 1
+
+	callevent start_facing_targ
+	callevent 4.0 invite_in
+}
+
+{ start_facing_targ
+
+	repeatdelay 5.0
+
+	if !NO_ROTATE 
+	if !CLOSE_STORE
+	setmovedest FACE_TARG 9999
+}
+
+{ invite_in
+
+	saytext That's better! You'll catch yer death of cold out there!
+	playanim critical ANIM_IDLE
+}
+
+{ say_hi
+
+	if ( $get(ent_lastspoke,isplayer) ) setvard FACE_TARG ent_lastspoke
+
+	//reset speeches
+	callevent reset_chat
+
+
+	playanim once nod
+	playsound 0 10 SOUND_INTRO
+	if !IN_CHAT
+	setvard IN_CHAT 1
+	saytext Hello thar, they call me Frosty. Forsuth the Frosty.
+	calleventtimed CHAT_SPEED hailed2
+}
+
+{ hailed2
+
+	saytext Thar be all sorts of nasty things out thar in the cold thar.
+	calleventtimed CHAT_SPEED hailed3
+}
+
+{ hailed3
+	
+	saytext Didn't used to be this way though.
+	calleventtimed CHAT_SPEED hailed4
+}
+
+{ hailed4
+	
+	saytext Not until the [Ice Lord] woke up... And the [Marogar] ain't be helping much either.
+	calleventtimed CHAT_SPEED hailed5
+}
+
+{ hailed5
+
+	saytext ...but never mind ye that, I've got some things 'er that'll warm ya right up!
+	playanim critical ANIM_IDLE
+	setvard IN_CHAT 0
+}
+
+{ say_rumor
+
+	if ( IN_CHAT ) saytext ...Just a second, ask me about that when I'm done... Anyways... Where was I? Oh yes...
+
+	if !IN_CHAT
+	setvard IN_CHAT 1
+	callevent say_icequeen_loop
+}
+
+{ say_icequeen_loop
+
+	if ( $get(ent_lastspoke,isplayer) ) setvard FACE_TARG ent_lastspoke
+
+	add	ICE_LORD_PLOT_STEP 1
+	if ( ICE_LORD_PLOT_STEP == 1 )
+	{
+		playanim once nod
+		saytext Well, truth be told, that thing, it's been here longer than I.
+	}
+	if ( ICE_LORD_PLOT_STEP == 2 ) saytext Longer than me folks too, who be long gone, and let it be known that I am a might older than you...
+	if ( ICE_LORD_PLOT_STEP == 3 ) saytext But before that beast's arrival, you had to go quite a bit further north before it got cold.
+	if ( ICE_LORD_PLOT_STEP == 4 ) saytext It's old, so very old, no one remembers its name - and it ain't tellin' neither.
+	if ( ICE_LORD_PLOT_STEP == 5 ) saytext Legends been told that it was once a toy of the Loreldians' themselves, the masters of Fate.
+	if ( ICE_LORD_PLOT_STEP == 6 ) 
+	{
+		playanim once nod
+		saytext Now it plagues the livin' in retribution for its abandonment, or so it's said.
+	}
+	if ( ICE_LORD_PLOT_STEP == 7 ) saytext We call it 'the Ice Bone Lord', but truth be told I know not whether it be lord or lady.. or somethin' else.
+	if ( ICE_LORD_PLOT_STEP == 8 ) saytext Best be careful 'round these parts, lest you find yourselves face to face with it.
+	if ( ICE_LORD_PLOT_STEP == 9 ) saytext Thar's certainly no helpin' runnin into its creations.
+	if ( ICE_LORD_PLOT_STEP == 10 ) saytext But I shant complain, that's why I keep this shop here...
+	if ( ICE_LORD_PLOT_STEP == 11 ) 
+	{
+		playanim critical ANIM_IDLE
+		saytext People need my wares just to survive in these parts!
+		setvard IN_CHAT 0
+	}
+
+	if ( ICE_LORD_PLOT_STEP < 11 ) callevent CHAT_SPEED say_icequeen_loop
+	if ( ICE_LORD_PLOT_STEP == 11 ) setvard ICE_LORD_PLOT_STEP 0
+}
+
+
+{ say_job
+
+	if ( IN_CHAT ) saytext ...Just a second, ask me about that when I'm done... Anyways... Where was I? Oh yes...
+
+	if !IN_CHAT
+	setvard IN_CHAT 1
+	callevent say_job_loop
+}
+
+{ say_job_loop
+
+	if ( $get(ent_lastspoke,isplayer) ) setvard FACE_TARG ent_lastspoke
+
+	add	JOB_PLOT_STEP 1
+	if ( JOB_PLOT_STEP == 1 )
+	{
+		playanim once nod
+		saytext Well, thar is one thing ye could do for me.
+	}
+	if ( JOB_PLOT_STEP == 2 ) saytext Out thar, in the colder parts, thar be some orcs. Talnorgah's boys, the [Marogar].
+	if ( JOB_PLOT_STEP == 3 ) saytext The stronger of em get have these lovely ice blades.
+	if ( JOB_PLOT_STEP == 4 ) saytext They aren't nuthin' too fancy - I can't sell the really good ones...
+	if ( JOB_PLOT_STEP == 5 ) saytext But these orc'ish ones - they sell like hotcakes when I visit Deralia, I'll tell ya that.
+	if ( JOB_PLOT_STEP == 6 ) 
+	{
+		saytext Bring some to me, and I'll give you a fair shake for em.
+		playanim critical ANIM_IDLE
+		setvard IN_CHAT 0
+	}
+
+	if ( JOB_PLOT_STEP < 6 ) callevent CHAT_SPEED say_job_loop
+	if ( JOB_PLOT_STEP == 6 ) setvard JOB_PLOT_STEP 0
+}
+
+{ say_orcs
+
+	if ( IN_CHAT ) saytext ...Just a second, ask me about that when I'm done... Anyways... Where was I? Oh yes...
+
+	if !IN_CHAT
+	setvard IN_CHAT 1
+	callevent say_orc_loop
+}
+
+{ say_orc_loop
+
+	if ( $get(ent_lastspoke,isplayer) ) setvard FACE_TARG ent_lastspoke
+
+	add	ORC_STEP 1
+	if ( ORC_STEP == 1 )
+	{
+		playanim once nod
+		saytext Ya look like ye are from down south, so let me warn ye...
+	}
+	if ( ORC_STEP == 2 ) saytext The orcs here, are not like the orcs where ye come from, these are the Marogar tribe.
+	if ( ORC_STEP == 3 ) saytext When Lor Malgoriand setup, it was cold, so these were his first... Not the worst, but still the first. 
+	if ( ORC_STEP == 4 ) saytext They dun like the heat, and they certainly dun like fire.
+	if ( ORC_STEP == 5 ) saytext Ya can usually keep em at bay with that.
+	if ( ORC_STEP == 6 ) saytext Still, they've got shamans, and some good warriors. 
+	if ( ORC_STEP == 7 ) saytext Their chief, Talnorgah, is a beast indeed. Slow, but strong. 
+	if ( ORC_STEP == 8 ) saytext Word has it that he's waitin' on the return of Lor Malgoriand himself!
+	if ( ORC_STEP == 9 ) 
+	{
+		saytext So my advice to you is, if ya see him, keep running!
+		playanim critical ANIM_IDLE
+		setvard IN_CHAT 0
+	}
+
+	if ( ORC_STEP < 9 ) callevent CHAT_SPEED say_orc_loop
+	if ( ORC_STEP == 9 ) setvard ORC_STEP 0
+}
+
+{ lor_lore
+
+	if ( IN_CHAT ) saytext ...Just a second, ask me about that when I'm done... Anyways... Where was I? Oh yes...
+	if !IN_CHAT
+	saytext Hmmm... Already said too much about that. Better to ask a priest, for all I know of gods and demons.
+}
+
+// ====== combat
+
+{ npcatk_targetvalidate
+
+	if $cansee(enemy)
+	if $get(ent_lastseen,range) < 200
+	setmovedest ent_lastseen ATTACK_RANGE
+	movespeed 1.0
+
+	setvard CLOSE_SHOP 1
+
+	if ( !DID_WARCRY )
+	{
+		setvard DID_WARCRY 1
+		saytext We'll be havin' none of that in here!		
+	}
+}
+
+{ npc_struck
+
+	setvar ANIM_WALK walk
+	setvar ANIM_RUN walk
+	
+	movespeed 1.0
+	setvard CLOSE_SHOP 1
+	setmoveanim ANIM_RUN
+
+	if $get(ent_laststruck,isplayer)
+
+	if ( !DID_PLAYER )
+	{
+		setvard DID_PLAYER 1
+		race hguard
+		saytext Argh! $get(ent_laststruck,name) ! Yer no better than the orcs!
+		setvard HUNT_LASTTARGET $get(ent_laststruck,id)		
+	}
+}
+
+{ my_target_died
+
+	if !$cansee(enemy)
+
+	//playanim once nod
+	saytext There now, nice and peaceful again.
+	setmovedest MY_START 1
+	setvar CLOSE_SHOP 0
+}
+
+{ attack_1	//called by modelanim attack @frame 6
+
+	playsound 0 10 SOUND_SWING
+	dodamage ENTITY_ENEMY ATTACK_HITRANGE ATTACK_DAMAGE ATTACK_ACCURACY
+}
+
+// ====== shop
+
+
+{
+   eventname vendor_used
+
+	if !CLOSE_SHOP
+	if !IN_CHAT
+
+   saytext What can I do ye for?
+   playsound 0 10 SOUND_SERVICE
+	setvard NO_ROTATE 1
+}
+
+{
+   eventname vendor_addstoreitems
+
+   //           |Store name|  |Item name|  	|Quantity| |cost%|   |Sell ratio|
+   addstoreitem STORE_NAME drink_mead 20 100 2.0
+   addstoreitem STORE_NAME drink_ale 20 100 2.0
+   addstoreitem STORE_NAME drink_wine 0 100 2.0
+   addstoreitem STORE_NAME drink_forsuth 10 100 0
+   addstoreitem STORE_NAME swords_liceblade 1 400 0.5
+   addstoreitem STORE_NAME swords_iceblade 0 150 0.2
+   addstoreitem STORE_NAME mana_resist_cold 5 150 0
+   addstoreitem STORE_NAME mana_immune_cold 1 150 0
+   addstoreitem STORE_NAME mana_mpotion 1 300 0
+   addstoreitem STORE_NAME item_crystal_reloc 5 300 0
+   addstoreitem STORE_NAME item_crystal_return 10 300 0
+   addstoreitem STORE_NAME health_spotion 1 200 0
+   addstoreitem STORE_NAME health_mpotion 1 200 0
+   addstoreitem STORE_NAME scroll2_frost_xolt 1 400 0
+   addstoreitem STORE_NAME sheath_spellbook 1 150 0
+   addstoreitem STORE_NAME proj_arrow_fire 180 400 0 60
+   addstoreitem STORE_NAME item_torch 180 800 0
+}
+
+{
+   eventname trade_success
+
+		callevent 60.0 restore_rotate
+}
+
+{ restore_rotate
+
+	setvard NO_ROTATE 0
+}
+
+{ npcatk_targetvalidate
+
+	//ignore the stuff outside
+	if !IS_HUNTING
+	if $get(PARAM1,range) > 100
+	setvard HUNT_LASTTARGET ¯NONE¯
+}
+
+{ [override] npcatk_faceattacker //PARAM1: Entity to face
+
+   	if !IS_FLEEING
+	if IS_HUNTING
+
+   	setmovedest $get(PARAM1,id) 9999
+   	look 1024
+}

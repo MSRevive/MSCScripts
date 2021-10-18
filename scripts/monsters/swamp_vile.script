@@ -1,0 +1,201 @@
+#scope server
+{ [shared]
+	const ANIM_POINT point
+	const ANIM_RALLY rally
+	const ANIM_RAWR idle_scream
+
+	setvar ANIM_WALK walk_lx
+	setvar ANIM_IDLE idle_base
+	setvard ANIM_RUN run_kx
+	setvard ANIM_ATTACK melee1
+
+	const ANIM_ATTACK1 melee1 //frame_melee1_strike - some reach and lunge
+	const ANIM_ATTACK2 melee1b //frame_melee1_strike - some reach, no lunge
+	const ANIM_ATTACK3 melee2 //frame_melee2_strike - double strike close, long pause
+
+	const ANIM_THROW throw_rock //frame_throw1
+
+	const ANIM_CUST_FLINCH duck
+
+
+	setvard ANIM_DEATH death //needs a death anim! :O
+}
+
+{
+	setvard NPC_BASE_EXP 2000
+
+	const DMG_SLASH 400
+
+	setvard FREQ_THROW 5.0
+
+	setvard ATTACK_MOVERANGE 40
+	setvard MOVE_RANGE 40
+	setvard ATTACK_RANGE 50
+	setvard ATTACK_HITRANGE 70
+
+	const SOUND_STRUCK1	weapons/cbar_hitbod1.wav
+	const SOUND_STRUCK2	weapons/cbar_hitbod2.wav
+	const SOUND_STRUCK3	weapons/cbar_hitbod3.wav
+
+	const SOUND_PAIN1 monsters/keeper/c_troll_hit1.wav
+	const SOUND_PAIN2 monsters/keeper/c_troll_hit2.wav
+
+	const SOUND_ALERT1 monsters/keeper/c_troll_bat1.wav
+	const SOUND_ALERT2 monsters/keeper/c_troll_bat2.wav
+	const SOUND_ALERT3 monsters/keeper/c_troll_bat2_rev.wav
+
+	const SOUND_ATTACK1 monsters/keeper/c_lizardm_atk1.wav
+	const SOUND_ATTACK2 monsters/keeper/c_lizardm_atk2.wav
+	const SOUND_ATTACK3 monsters/keeper/c_lizardm_atk3.wav
+
+	const SOUND_SWING1 zombie/claw_miss1.wav
+	const SOUND_SWING2 zombie/claw_miss2.wav
+
+	const SOUND_DEATH monsters/keeper/c_troll_dead.wav
+
+	setvard GLOB_EFFECT_TYPE effects/effect_poison_blinding
+	setvard GLOB_EFFECT_DOT 150
+	setvard GLOB_EFFECT_DUR 3.0
+}
+
+#include monsters/base_monster_new
+
+{ [shared] npc_spawn
+	name a|Swamp Keeper
+
+	setmodel monsters/keeper.mdl
+	height 64
+	width 32
+	roam 1
+	hp 5000
+	takedmg all 0.5
+	takedmg poison 0.5
+	race demon
+
+	setmoveanim ANIM_WALK
+	setidleanim ANIM_IDLE
+
+	callevent 2.0 finalize_me
+}
+
+{ finalize_me //give time for any map side HP adjusts
+	setvard HALF_HP $get(ent_me,maxhp)
+	multiply HALF_HP 0.5
+}
+
+{ game_struck
+	playrandomsound 0 5 SOUND_STRUCK1 SOUND_STRUCK2 SOUND_STRUCK3 SOUND_PAIN1 SOUND_PAIN2
+}
+
+{ npc_targetsighted
+
+	if !DID_ALERT
+	callevent npcatk_suspend_roam 2.0
+	setmovedest NPCATK_TARGET 9999
+	setvard DID_ALERT 1
+
+	add G_ALERT_CYCLE 1
+
+	if ( !NPC_IS_TURRET )
+	{
+		setvard NEXT_THROW game.time
+		add NEXT_THROW FREQ_THROW
+	}
+
+	if ( G_ALERT_CYCLE == 1 )
+	{
+		playanim critical ANIM_POINT
+		playsound 0 10 SOUND_ALERT2
+	}
+
+	if ( G_ALERT_CYCLE == 2 )
+	{
+		playanim critical ANIM_RALLY
+		playsound 0 10 SOUND_ALERT1
+	}
+
+	if ( G_ALERT_CYCLE == 3 )
+	{
+		playanim critical ANIM_RAWR
+		playsound 0 10 SOUND_ALERT3
+	}
+
+
+	if ( G_ALERT_CYCLE == 3 ) setvarg G_ALERT_CYCLE 0
+}
+
+{ cycle_down
+	setvard DID_ALERT 0
+}
+
+{ npc_heard_player
+	if NPCATK_TARGET equals unset
+	if game.time > NEXT_HEARD_ALERT
+	setvard NEXT_HEARD_ALERT game.time
+	add NEXT_HEARD_ALERT 15.0
+	playsound 0 10 monsters/keeper/c_troll_slct.wav
+}
+
+{ npcatk_hunt
+
+	if NPCATK_TARGET isnot unset
+
+	local TARG_RANGE $get(NPCATK_TARGET,range)
+
+	if ( TARG_RANGE > ATTACK_HITRANGE )
+	{
+		if game.time > NEXT_THROW
+		setvard NEXT_THROW game.time
+		add NEXT_THROW FREQ_THROW
+		callevent npcatk_suspend_roam 2.0
+		playanim once ANIM_THROW
+	}
+
+	if ( TARG_RANGE < ATTACK_RANGE )
+	{
+		if ( TARG_RANGE < ATTACK_MOVERANGE )
+		{
+			setvard ANIM_ATTACK ANIM_ATTACK3 //double slash when very close
+		}
+		else
+		{
+			local RND_ATK $rand(1,2)
+			if ( RND_ATK == 1 ) setvard ANIM_ATTACK ANIM_ATTACK1
+			if ( RND_ATK == 2 ) setvard ANIM_ATTACK ANIM_ATTACK2
+		}
+	}
+}
+
+{ frame_melee_start
+	playrandomsound 1 10 SOUND_ATTACK1 SOUND_ATTACK2 SOUND_ATTACK3
+}
+
+{ frame_melee1_strike
+	playrandomsound 2 10 SOUND_SWING1 SOUND_SWING2
+	dodamage NPCATK_TARGET ATTACK_HITRANGE DMG_SLASH 80% slash
+}
+
+{ frame_melee2_strike
+	playrandomsound 2 10 SOUND_SWING1 SOUND_SWING2
+	dodamage NPCATK_TARGET ATTACK_HITRANGE DMG_SLASH 80% slash
+}
+
+{ game_damaged
+	if $get(ent_me,hp) < HALF_HP
+	if game.time > NEXT_FLINCH
+	setvard NEXT_FLINCH game.time
+	add NEXT_FLINCH 20.0
+	callevent npcatk_suspend_ai 1.0
+	playsound 0 10 SOUND_PAIN1 SOUND_PAIN2
+	playanim critical ANIM_CUST_FLINCH
+}
+
+{ set_npc_turret
+	setvard FREQ_THROW 2.0 //turret variant throws faster, but pauses to taunt occasionally
+	callevent $randf(10.0,15.0) taunt_loop
+}
+
+{ taunt_loop
+	setvard DID_ALERT 0
+	callevent $randf(10.0,15.0) taunt_loop
+}

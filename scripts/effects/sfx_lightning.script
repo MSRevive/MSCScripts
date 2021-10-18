@@ -1,0 +1,70 @@
+//Lightning
+//
+//1: Start Origin
+//2: End Origin
+//3: Duration
+//4: Intensity (0-1)
+
+{
+	const LIGHTNING_SPRITE		lgtning.spr
+	const LIGHTNING_SPRITE_SPARKS	3dmflaora.spr
+	const LIGHT_COLOR		(1,0.5,2)//(100,33,253)
+  	const LIGHTNING_SOUND		weather/lightning.wav
+	const SPARK_HORIZONTAL_NOISE	30
+	const SHN			SPARK_HORIZONTAL_NOISE
+	precache LIGHTNING_SPRITE
+	precache LIGHTNING_SPRITE_SPARKS
+}
+
+{  client_activate
+   
+	setvard sfx.start	PARAM1
+	setvard sfx.end		PARAM2
+	setvard sfx.duration	PARAM3
+	setvard sfx.amt		PARAM4
+
+	setvard sfx.width	$get_skill_ratio(sfx.amt,1,25)
+	setvard sfx.sparkscale	$get_skill_ratio(sfx.amt,0.1,0.2)
+
+	setvard l.grnd $get_ground_height(sfx.start)
+	if( l.grnd isnot 'none' ) vectorset sfx.start z l.grnd
+
+	callevent effect_start
+	callevent effect_die
+}
+
+{ effect_start
+	
+	cleffect beam_points sfx.start sfx.end LIGHTNING_SPRITE sfx.duration sfx.width .4 .5 1 30 LIGHT_COLOR
+   	sound.play3d LIGHTNING_SOUND 7 sfx.start
+	calleventloop $rand(6,8) effect_createball
+
+}
+
+{ effect_createball
+
+	cleffect tempent sprite LIGHTNING_SPRITE_SPARKS sfx.start effect_setupball_tempent
+}
+
+{ effect_setupball_tempent
+
+	cleffect tempent set_current_prop death_delay 	$randf(0.6,1)
+	cleffect tempent set_current_prop bouncefactor 	2
+	local l.x $randf($neg(SHN),SHN)			//Calculate velocity randomness
+	local l.y $randf($neg(SHN),SHN)
+	local l.z $randf(-300,-30)
+	local l.vel $vec(l.x,l.y,l.z)
+	cleffect tempent set_current_prop velocity 	l.vel
+	cleffect tempent set_current_prop collide 	world
+	cleffect tempent set_current_prop rendermode 	add
+	cleffect tempent set_current_prop renderamt 	255
+	//cleffect tempent set_current_prop rendercolor 	(100,33,253)
+	cleffect tempent set_current_prop scale 	sfx.sparkscale
+	//cleffect tempent set_current_prop timer 	0.4 effect_setupball_fade
+	cleffect tempent set_current_prop fadeout	lifetime	
+}
+
+{  effect_die
+
+	removescript
+}

@@ -1,0 +1,166 @@
+#scope server
+{
+	setvar NPC_GIVE_EXP 200
+
+	const ANIM_IDLE idle
+	const ANIM_ATTACK attack1
+	const ANIM_GROW raise
+	setvard ANIM_DEATH lower
+	const ATTACK_HITRANGE 200
+
+	const DMG_ATK 100
+	const DOT_ATK 50
+
+	const SOUND_ATTACK1 tentacle/te_roar1.wav
+	const SOUND_ATTACK2 tentacle/te_roar1.wav
+	const SOUND_BURN ambience/burning1.wav
+	const SOUND_STRUCK1 debris/flesh1.wav
+	const SOUND_STRUCK2 debris/flesh2.wav
+	const SOUND_STRUCK3 debris/flesh3.wav
+	const SOUND_PAIN1 tentacle/te_alert1.wav
+	const SOUND_PAIN2 tentacle/te_alert2.wav
+	const SOUND_DEATH tentacle/te_move2.wav
+
+	const FREQ_SOUND_BURN 30.0
+}
+
+#include monsters/base_stripped_ai
+
+{ game_spawn
+	name a|Lava Root
+	setmodel monsters/deadlyvine.mdl
+	width 32
+	height 64
+	hp 1000
+	race demon
+	blood none
+	nopush 1
+	setvard IMMUNE_VAMPIRE 1 //tiger blood
+	setvard SKIN_CYCLE 0
+	hearingsensitivity 11
+	setidleanim ANIM_GROW
+	setmoveanim ANIM_GROW
+	playanim once ANIM_IDLE
+	setvard VINE_SUSPEND 1
+	setprop ent_me rendermode 2
+	setprop ent_me renderamt 0
+	skilllevel NPC_GIVE_EXP
+	takedmg fire 0.0
+	takedmg cold 2.0
+	callevent 2.0 grow_in
+}
+
+{ grow_in
+	setprop ent_me rendermode 0
+	setprop ent_me renderamt 255
+	
+	setidleanim ANIM_IDLE
+	setmoveanim ANIM_IDLE
+	setvard VINE_SUSPEND 0
+	playanim critical ANIM_GROW
+	playsound 1 10 tentacle/te_move1.wav
+}
+
+{ game_death
+	if !QUIET_DEATH
+	playanim critical ANIM_DEATH
+	svplaysound 2 0 SOUND_BURN
+	playsound 1 10 SOUND_DEATH
+	clearfx
+}
+
+{
+repeatdelay 0.1
+
+	if $get(ent_me,isalive)
+	if !QUIET_DEATH
+	setprop ent_me skin SKIN_CYCLE
+	add SKIN_CYCLE 1
+	if ( SKIN_CYCLE > 7 ) setvard SKIN_CYCLE 0
+
+	if !VINE_SUSPEND
+	if $get(ent_me,isalive)
+	if game.time > NEXT_BURN_SOUND
+	setvard NEXT_BURN_SOUND game.time
+	add NEXT_BURN_SOUND FREQ_SOUND_BURN
+	svplaysound 2 0 SOUND_BURN
+	svplaysound 2 5 SOUND_BURN
+}
+
+{ game_heardsound
+	if $get(ent_me,isalive)
+	if !VINE_SUSPEND
+	local HEARD_ID $get(ent_lastheard,id)
+	//dbg game_heardsound $get(ent_lastheard,name) $get(HEARD_ID,range) $get(ent_me,relationship,HEARD_ID)
+	if $get(ent_me,relationship,HEARD_ID) equals enemy
+	setvard NPCATK_TARGET HEARD_ID
+	setmovedest NPCATK_TARGET 9999
+	if $get(HEARD_ID,range) < ATTACK_HITRANGE
+	playanim once ANIM_ATTACK
+}
+
+{ game_struck
+	if $get(ent_me,isalive)
+	playsound 0 5 SOUND_STRUCK1 SOUND_STRUCK2 SOUND_STRUCK3 SOUND_STRUCK1 SOUND_STRUCK2 SOUND_STRUCK3 SOUND_PAIN1 SOUND_PAIN2
+
+	if !VINE_SUSPEND
+	if $get(ent_laststruck,range) < ATTACK_HITRANGE
+	setvard NPCATK_TARGET $get(ent_laststruck,id)
+	setmovedest NPCATK_TARGET 9999
+	playanim once ANIM_ATTACK
+}
+
+{ frame_attack
+	setvard SWING_ATTACK 1
+	playrandomsound 0 10 SOUND_ATTACK1 SOUND_ATTACK2
+	dodamage NPCATK_TARGET ATTACK_HITRANGE DMG_ATK 100% pierce
+}
+
+{ game_dodamage
+	if PARAM1
+	if ( SWING_ATTACK )
+	{
+		applyeffect PARAM2 effects/effect_burn 5.0 $get(ent_me,id) DOT_ATK
+		addvelocity PARAM2 $relvel(-200,-300,110)
+	}
+	setvard SWING_ATTACK 0
+}
+
+{ phlames_vine
+
+	setvard PHLAMES_VINE 1
+	setvard MY_MASTER $get_by_name(phlame_wiz)
+
+	//don't spawn if phlames is in bird form, or eagles are in air (case I get stuck in em)
+	if ( $get(MY_MASTER,scriptvar,'AM_TRANSFORMED') ) local AUTO_REMOVE 1
+	if ( G_FLAMES_EAGLES > 0 ) local AUTO_REMOVE 1
+
+	dbg set phlames_vine $get(MY_MASTER,name) $get(MY_MASTER,scriptvar,'AM_TRANSFORMED')
+
+
+	if AUTO_REMOVE
+	setprop ent_me rendermode 5
+	setprop ent_me renderamt 0
+	setvard QUIET_DEATH 1
+	callevent npc_suicide
+}
+
+{ ext_summon_fade
+
+	dbg ext_summon_fade NPC_SUMMON G_NPC_SUMMON_COUNT
+
+	if ( PHLAMES_VINE )
+	{
+		dbg Birds present - fading
+		setanim.framerate 0
+		setanim.movespeed 0
+		gravity 0
+		setvelocity ent_me (0,0,0)
+		setvard NPC_DID_DEATH 1
+		setvard NPC_OVERRIDE_DEATH 1
+		setvard SKEL_RESPAWN_TIMES 99
+		setvard QUIET_DEATH 1
+		dodamage ent_me direct 99999 100 GAME_MASTER target
+		deleteent ent_me fade
+	}
+}

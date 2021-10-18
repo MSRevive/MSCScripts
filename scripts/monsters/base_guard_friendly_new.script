@@ -1,0 +1,175 @@
+//Thothie - human guards having problems across the board (always have) - hoping to make a base to help them out
+//- requires: ANIM_IDLE ANIM_ATTACK
+//- BG_BASESPEED def: 1.0 - if your guard has movement multiplier, you can change this
+//- BG_ROAM - set to 1 if you want guard to roam
+//- BG_NO_GO_HOME - set to 1 if you want guard not to return home after all clear
+//- Some of the stuff in here is now built into the AI, but wasn't at time of this creation (no conflicts)
+
+#scope server
+
+{ [server]
+	const BG_BASESPEED 1.0 //set this to higher than 1.0 if your guard has a move speed multiplier
+	const BG_ROAM 0	//set this to 1 if you want guard to roam
+	const BG_NO_GO_HOME 0
+	const BG_MAX_HEAR_CIV 2048 //max distance a civlian can be under attack and I'll notice (make limitless for LotL)
+	const BG_HOME_RANGE 10 //how close guard must be to post before considering himself back in position
+
+	setvard NO_STUCK_CHECKS 1
+}
+
+{ [server] npc_spawn
+
+	roam BG_ROAM
+
+	if ( !BG_ROAM )
+	{
+		movespeed 0.0
+		setvard NO_STUCK_CHECKS 1
+	}
+	if ( BG_ROAM > 0 )
+	{
+		setmoveanim ANIM_WALK
+		movespeed BG_BASESPEED
+	}
+
+	////dbg Baseguard Got Roam BG_ROAM GoHome BG_NO_GO_HOME Spd BG_BASESPEED
+	
+	callevent 1.0 set_guard_post
+}
+
+{ [server] set_guard_post
+
+	setvard MY_GUARD_POST game.monster.origin
+	setvard MY_ORG_ANGLES game.monster.angles
+	setvard HOME_YAW $vec.yaw(MY_ORG_ANGLES)
+	callevent guard_loop
+}
+
+{ guard_loop
+	callevent 1.0 guard_loop
+	if !OH_IT_IS_ON
+	if $cansee(enemy)
+	callevent baseguard_tobattle
+}
+
+{ [server] game_struck
+
+	if !OH_IT_IS_ON
+	callevent baseguard_tobattle $get(ent_laststruck,id)
+	callevent npcatk_settarget $get(ent_laststruck,id)
+}
+
+{ [server] npcatk_targetvalidate //called from base_npc_attack on spotting target
+
+	if !OH_IT_IS_ON
+	callevent baseguard_tobattle
+}
+
+{ [server] baseguard_tobattle //param1 = enemy_id
+
+	////dbg TO BATTLE!
+	setvard NO_STUCK_CHECKS 0
+	setvard MADE_IT_HOME 0
+	setvard OH_IT_IS_ON 1
+	movespeed BG_BASESPEED
+	roam 1
+	setmoveanim	ANIM_RUN
+	if !CHECKING_CLEAR
+	setvard CHECKING_CLEAR 1
+	callevent 5.0 baseguard_check_clear
+}
+
+{ [server] npcatk_clear_targets
+
+	callevent baseguard_check_clear
+}
+
+{ [server] baseguard_check_clear
+
+	if !$cansee(enemy)
+	if !$cansee(NPCATK_TARGET)
+	if !NPC_MOVING_LAST_KNOWN
+	setvard OH_IT_IS_ON 0
+	////dbg temp Clearing targs Check_Clear ( BG_NO_GO_HOME )
+	if ( MADE_IT_HOME )	setangle face (0,HOME_YAW,0)
+	if ( !BG_NO_GO_HOME )
+	{
+		callevent npcatk_setmovedest MY_GUARD_POST 1
+		if !MADE_IT_HOME
+		callevent going_home "check_clear"
+		dbg baseguard_check_clear going_home
+	}
+}
+
+{ [server] going_home
+
+	dbg going_home PARAM1
+
+	////dbg temp Going Home Conditions Cansee $cansee(enemy) Madeit MADE_IT_HOME Agro OH_IT_IS_ON noHome BG_NO_GO_HOME Roam BG_ROAM From PARAM1
+
+	if !$cansee(enemy)
+	if !MADE_IT_HOME
+	if !OH_IT_IS_ON
+	if !BG_NO_GO_HOME
+
+	callevent 1.0 going_home
+	local MY_POS $get(ent_me,origin)
+	////dbg GoingHome distance game.monster.origin vs MY_POS
+
+	if ( game.monster.movedest.origin isnot MY_GUARD_POST ) callevent npcatk_setmovedest MY_GUARD_POST 1 "going_home"
+
+	local MY_POS game.monster.origin
+	if ( $dist(MY_POS,MY_GUARD_POST) < BG_HOME_RANGE )
+	{
+		if !OH_IT_IS_ON
+		//dbg made it home ( MADE_IT_HOME )
+		callevent npcatk_clear_movedest
+		roam BG_ROAM
+		movespeed BG_ROAM
+		setmoveanim	ANIM_IDLE
+		setangle face (0,HOME_YAW,0)
+		setvard MADE_IT_HOME 1
+		setvard NO_STUCK_CHECKS 1
+		//callevent npcatk_suspend_ai
+	}
+}
+
+{ [server] npc_pre_flee
+
+	movespeed BG_BASESPEED
+}
+
+{ [server] civilian_attacked //PARAM1 Attacker ID PARAM2 isplayer - called from NPC's with base_civlian when attacked / killed
+
+	////dbg temp Responding to attacked civilian?
+
+	local OFFENDER PARAM1
+
+	if $get(OFFENDER,race) isnot hguard //don't attack friends who accidentally cause 'collateral damage'
+
+	if $get(OFFENDER,range) <= BG_MAX_HEAR_CIV //resond only to civilians within a certain range
+
+	if NPCATK_TARGET equals unset //do not break off current attack to save civi
+	if !NPC_MOVING_LAST_KNOWN
+
+ 	setvard NO_STUCK_CHECKS 0
+	callevent npcatk_settarget PARAM1
+
+
+	////dbg temp Responding to murderer $get(PARAM1,name)
+
+	if $cansee(NPCATK_TARGET)
+	saytextrange 1024
+	local RAND_HALT $rand(1,4)
+	if ( RAND_HALT == 1 ) saytext Hey you! Leave him alone!
+	if ( RAND_HALT == 2 ) saytext You there, leave him be I said!
+	if ( RAND_HALT == 3 ) saytext Stop that!
+	if ( RAND_HALT == 4 ) saytext Halt! We'll have no trouble making around here!
+}
+
+
+//only two scripts use this, so we took it out of the AI to save load time
+{ npcatk_clear_movedest
+	setmovedest none
+	setvard NPC_MOVEDEST_TARGET unset
+}

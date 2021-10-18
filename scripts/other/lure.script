@@ -1,0 +1,176 @@
+{ game_spawn
+
+	setvard IS_LURE 1 //prevents glow shells
+	setvard IMMUNE_PUSH 1 //prevents pushing
+	
+
+	hp 1
+	roam 0
+	race human
+	blood none
+	skilllevel 0
+	width 32
+	height 32
+	setmodel null.mdl
+
+	setsolid trigger
+	setbbox npcsize
+
+	callevent 1.0 get_pos
+}
+
+{ get_pos
+	setvard LURE_HOME_POS game.monster.origin
+	callevent 20.0 maintain_pos
+}
+
+{ npc_spawn
+	blood none
+	setprop ent_me const.movetype.none
+}
+
+#include monsters/base_npc
+
+{ game_death
+
+	usetrigger lure_died
+}
+
+{ game_struck
+
+	setorigin ent_me LURE_HOME_POS
+	//dbg Remaining Lure Heath $get(ent_me,hp) [ struck for PARAM1 ]
+	if $get(ent_laststruck,isplayer) == 1
+	givehp PARAM1
+	//dbg Lure struck by player, restoring PARAM1 hp
+}
+
+{ game_takedamage //1: Attacker  2: Inflictor  3: dmg  4: dmg type
+
+	dbg game_takedamage $get(PARAM1,name) $get(PARAM2,name) PARAM3 PARAM4
+
+	//dbg Took PARAM3 from either PARAM1 or PARAM2
+	if ( $get(PARAM1,isplayer) )
+	{
+		setdmg dmg 0.0
+		returndata 0
+	}
+	if ( $get(PARAM2,isplayer) )
+	{
+		setdmg dmg 0.0
+		returndata 0
+	}
+}
+
+{ game_damaged
+
+	dbg game_takedamage $get(PARAM1,name)
+
+ 	if $get(PARAM1,isplayer)
+	setdmg dmg 0
+	setdmg hit 0
+	returndata 0
+}
+
+//Effect Damage	PARAM1=Dmg PARAM2=Attacker PARAM3=Duration PARAM4=Type
+//- Called from external damaging effects in hopes of reducing crash / making XP pass proper
+{ [override] effect_damage
+
+	////dbg Effect_damage Delay EFFECT_DAMAGE_DELAY Dmg PARAM1 Durat PARAM3 Type PARAM4
+
+	if !$get(PARAM2,isplayer)
+
+	if !EFFECT_DAMAGE_DELAY
+	setvard EFFECT_DAMAGE_DELAY 1
+	callevent 0.9 reset_effect_damage
+	dodamage ent_me direct PARAM1 100% PARAM2 PARAM4
+}
+
+{ maintain_pos
+
+	setorigin ent_me LURE_HOME_POS
+	callevent 20.0 maintain_pos
+}
+
+{ make_sun //vampire blood hack (dun think we're using this anymore, but not sure)
+
+	name The sun
+	invincible 1
+	race hated
+}
+
+//========= siege system, adjustable HP, etc.
+{ game_postspawn //PARAM1 = (name|default), PARAM2 = DmgMulti, PARAM3 = HPMulti, PARAM4 = pass_params
+
+	dbg game_postspawn got name PARAM1 dmg PARAM2 hp PARAM3 ( PARAMS: PARAM4 )
+	setvard NEW_NAME PARAM1
+	if ( NEW_NAME isnot 'default' ) name NEW_NAME
+
+	setvard NPC_DMG_MULTI 1
+	if ( PARAM2 > 1 )
+	{
+		add NPC_DMG_MULTI PARAM2
+		dmgmulti PARAM2
+	}
+
+	setvard NPC_HP_MULTI 1
+	if ( PARAM3 > 1 )
+	{
+		setvard NPC_HP_MULTI PARAM3
+	}
+
+	setvard NPC_DO_EVENTS PARAM4
+	if PARAM4 isnot 'none'
+	calleventloop $get_token_amt(NPC_DO_EVENTS) npcatk_do_events
+}
+
+{ game_death
+
+	//siege system
+	if NPC_CRITICAL
+	local INFO_TITLE "A CRITICAL OBJECT HAS BEEN DESTROYED!"
+	local INFO_MSG $get(ent_me,name)
+	stradd INFO_MSG " has been destroyed! "
+	infomsg all INFO_TITLE INFO_MSG
+	callexternal GAME_MASTER gm_crit_npc_died $get(ent_me,id) $get(ent_laststruck,id)
+}
+
+{ game_struck
+
+	if ( NPC_CRITICAL )
+	{
+		//warn players if critical NPC struck
+		if ( !NPC_CRIT_WARN_DELAY )
+		{
+			setvard NPC_CRIT_WARN_DELAY 1
+			callevent NPC_FREQ_WARN npcatk_reset_warn_delay
+			local INFO_TITLE "Critical Object Under Attack!"
+			local INFO_MSG $get(ent_me,name)
+			stradd INFO_MSG " is under attack!"
+			infomsg all INFO_TITLE INFO_MSG
+		}
+	}
+}
+
+{ critical_npc
+
+	//for siege mode maps
+	invincible 0
+	setvard NPC_CRITICAL 1
+	token.add G_CRITICAL_NPCS $get(ent_me,id)
+	setvarg G_SIEGE_MAP 1
+	local FIRST_TOKEN $get_token(G_CRITICAL_NPCS,0)
+	if ( !$get(FIRST_TOKEN,isalive) ) token.del G_CRITICAL_NPCS 0 //fix buggy token creation
+}
+
+{ npcatk_reset_warn_delay
+	
+	setvard NPC_CRIT_WARN_DELAY 0
+}
+
+{ [server] bd_debug  //<print_var> <property_printvar> <extra> <extra> <caller_id>
+	saytextrange 2048
+	saytext var PARAM1 prop PARAM2 = $get(PARAM1,PARAM2)
+	consolemsg PARAM5 $get(ent_me,name) reports: var PARAM1 pvar $get(PARAM1,PARAM2)
+	dbg PARAM5 $get(ent_me,name) reports: var PARAM1 pvar $get(PARAM1,PARAM2)
+}

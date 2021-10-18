@@ -1,0 +1,206 @@
+// Mayor's Guard
+{
+   setvard ANIM_ATTACK swordswing1_L
+   const ATTACK1_DAMAGE 30
+   setvard ATTACK_RANGE 128
+
+	const NO_RUMOR 1
+
+   const HEAR_RANGE 100 	//Smaller range check, cuz I'm so close to the blacksmith
+
+	const NPC_REACTS 1
+}
+
+#include monsters/base_npc
+#include monsters/base_xmass
+
+{
+   eventname npc_spawn
+
+   name_unique		mayorguard
+   hp			1
+   name			Mayor's Guard
+   //ov			180
+   width		32
+   height		72
+   race			hguard
+   roam			0
+   setmodel		npc/guard1.mdl
+   invincible		1
+   setactionanim	ANIM_ATTACK
+
+   setvar	EVIDENCE_FOUND	0
+   setvar	BRIBED	0
+   setvar	THIEF_1	5
+   setvar	SHOW_APPLE	0
+   menu.autoopen	1
+
+   catchspeech say_hi hi hello hail greet
+   catchspeech say_mayor mayor
+   catchspeech say_thief thief theives bandit catpurse poacher
+   catchspeech say_job job work quest
+   catchspeech say_name name
+}
+
+
+{ say_name
+
+  playsound game.sound.voice 9 npc/hello1.wav
+  name Dorian
+  saytext My name is Dorian.
+}
+
+////// Greets ///////
+{ say_hi
+
+  if BRIBED equals 0
+  if $get(ent_lastspoke,dist) <= HEAR_RANGE	//Range check, cuz I'm so close to the blacksmith
+
+  playsound game.sound.voice 7 npc/edrin1.wav
+  saytext If you do not have business with the mayor, be on your way.
+}
+{
+  eventname say_mayor
+
+  if( BRIBED == 0 )
+  {
+  	if !EVIDENCE_FOUND
+     	
+	saytext He is much too busy for the likes of you, move on!
+     	playanim once no
+  }
+  if( EVIDENCE_FOUND == 1 )
+  {
+  	saytext The house is going to be locked until a new mayor is found
+     	playanim once no
+  }
+}
+{ npcreact_targetsighted
+ 
+  if BRIBED equals 0
+  saytext Halt!  What is your business?
+  playanim once pushbutton2
+}
+
+///////////// Bribe /////////////
+
+{ give_apple
+
+	if EVIDENCE_FOUND equals 0
+
+	recvoffer accept
+	saytext A delicious treat, proceed traveller
+	usetrigger mayorsdoor
+	setvar BRIBED 1
+}
+
+{ give_map
+
+	if THIEF_1 equals 7
+
+	recvoffer accept
+	playanim once return_needle  
+	saytext Ah, what's this? A map of the thieves whereabouts? You have done well, my friend.
+	callevent 4 say_thiefloc
+}
+
+
+{ bribe
+
+  	recvoffer accept
+  	saytext *whispering* Thank you, traveller.  Proceed.
+  	playanim once lean
+  	usetrigger mayorsdoor
+  	setvard BRIBED 1
+}
+
+{ bribe_failed
+
+	saytext You call that a bribe? HA! If you offer 500, give me 500!
+	playanim once no
+}
+
+{  attack_1
+
+   dodamage ent_laststole ATTACK_RANGE ATTACK1_DAMAGE ATTACK_PERCENTAGE
+}
+
+{ say_job
+
+  if $get(ent_lastspoke,dist) <= HEAR_RANGE	//Range check, cuz I'm so close to the blacksmith
+
+  saytext What, do I look like a tourguide? My job is to protect the mayor, now leave!
+  playanim once no	
+}
+//Thief Quest, part 2
+{
+  eventname say_thief
+  if THIEF_1 equals 5
+  setvar THIEF_1 6
+  playsound CHAN_VOICE npc/suspicious.wav
+  saytext If you see anything suspicious around here, you let me know.
+}
+//After telling him about thieves one second time
+{
+  eventname say_thief
+  if THIEF_1 equals 6
+  setvar THIEF_1 7
+  saytext If you see any thieves, try bribing them for information, or give threats that I will lock them up for good.
+  calleventtimed 4 say_thief2
+}
+{
+  eventname say_thief2
+  saytext Aye, I will have them thieves locked up, if not killed should I get my hands on them.
+}
+//After getting map
+
+{
+  eventname say_thiefloc
+  saytext Hmmmm... this map shows bandits in a few of the local areas, one being in the Thornlands.
+  callevent 4 say_thiefloc2
+}
+{
+  eventname say_thiefloc2
+  saytext There will probably be thieves around the area. If not, look in the caves near the road to Edana.
+  callevent 4 say_thiefloc3
+}
+{
+  eventname say_thiefloc3
+  saytext Bring me proof that you've killed them and I'll reward you, if not killing them is reward enough.
+  callevent 4 say_thiefloc4
+}
+{
+  eventname say_thiefloc4
+  volume 8
+  say guardwarn
+  saytext Be wary, it is dangerous outside.
+} 
+{ worldevent_evidence_found
+
+  setvard EVIDENCE_FOUND 1
+}
+{ game_menu_getoptions
+
+	if !EVIDENCE_FOUND
+
+	if( $item_exists(PARAM1,health_apple) )
+	{
+		local reg.mitem.title 	"Bribe with apple"
+		local reg.mitem.type 	payment
+		local reg.mitem.data 	health_apple
+		local reg.mitem.callback give_apple
+		menuitem.register
+	}
+
+	local reg.mitem.title 	"Bribe (500g)"
+	local reg.mitem.type 	payment
+	local reg.mitem.data 	gold:500
+	local reg.mitem.callback bribe
+	local reg.mitem.cb_failed bribe_failed
+	menuitem.register
+}
+
+{ bryan_said_so
+
+	setvar SHOW_APPLE 1
+}

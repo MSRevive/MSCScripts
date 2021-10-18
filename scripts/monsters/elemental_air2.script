@@ -1,0 +1,497 @@
+//This is an older script and may have some bad conventions as a result.
+
+//idears:
+//- teleport dodge (go invisible, push in random dir)
+//- *guided lightning balls (just use g.fireballs)
+//- *chain lightning (from target to target)
+//- pick up and throw a random opponent
+//- *hurricane with spawn delay
+
+//features:
+//- *passive flight AI
+
+{
+	setvar AS_SUMMON_TELE_CHECK 1
+
+	//base anims
+	setvar ANIM_IDLE idle1
+	setvar ANIM_WALK idle1
+	setvar ANIM_RUN idle1
+	setvard ANIM_ATTACK attack1
+	setvard ANIM_FLINCH flinch
+	setvard ANIM_DEATH die1
+	setvard CAN_FLINCH 1
+	setvard FLINCH_CHANCE 10
+	setvard FLINCH_ANIM flinch
+
+	//base stats
+	setvar IS_UNHOLY 1
+	setvard IMMUNE_VAMPIRE 1
+	setvard ATTACK_RANGE 100
+	setvard ATTACK_HITRANGE 150
+	setvard MOVE_RANGE 65
+	setvard NPC_HACKED_MOVE_SPEED 100
+
+	//custom stats
+	const MOVESPEED_SLOW 100
+	const MOVESPEED_FAST 200
+	const FREQ_CHAIN $randf(10,15)
+	const FREQ_GLOAT 10.0
+	const FREQ_BALLS 30.0
+	const FREQ_TORNADO $randf(45,120)
+	const DMG_CHAIN_DOT 100
+	const DMG_CHAIN_DRAIN 50
+	const DMG_BALL 200
+	//const FREQ_LIGHTING_BALLS 10 //$randf(20,45)
+	const FREQ_TELEPORT $randf(20.0,30.0)
+
+
+	//sounds
+	const SOUND_THUNDER magic/bolt_end.wav
+	const SOUND_THUNDER_CHARGE magic/bolt_start.wav
+	const SOUND_SHOCK1 debris/zap8.wav
+	const SOUND_SHOCK2 debris/zap3.wav
+	const SOUND_SHOCK3 debris/zap4.wav
+	const SOUND_IDLE1 agrunt/ag_alert1.wav
+	const SOUND_IDLE2 agrunt/ag_die1.wav
+	const SOUND_IDLE3 agrunt/ag_idle1.wav
+	const SOUND_SWIPE weapons/debris1.wav
+	const SOUND_SWIPEHIT ambience/steamburst1.wav
+	const SOUND_DEATH garg/gar_die1.wav
+	const SOUND_PAIN0 debris/bustflesh2.wav		//most common
+	const SOUND_PAIN1 agrunt/ag_pain1.wav	//rare > 50%
+	const SOUND_PAIN2 agrunt/ag_pain4.wav	//rare < 50%
+	const SOUND_GLOAT x/x_laugh1.wav
+	const SOUND_HOVER fans/fan4on.wav
+
+	//sound related vars
+	const HURT_THRESHOLD 0.5
+	const PLAYTIME_HOVER 3.0
+}
+
+{ game_precache
+	precachefile monsters/summon/tornado
+	precachefile monsters/summon/lightning_ball_guided
+	precache SOUND_THUNDER
+}
+
+#include monsters/base_monster_new
+#include monsters/base_propelled
+
+{ npc_spawn
+
+	name a|Greater Air Elemental
+	hp 4000
+	width 64
+	height 64
+	race demon
+	takedmg holy 2.0
+	takedmg poison 0.0
+	takedmg acid 0.0
+	takedmg lightning 0.0
+
+	blood none
+
+	roam 0
+	setidleanim ANIM_IDLE
+	setmoveanim ANIM_WALK
+	hearingsensitivity 11
+	setmodel monsters/elementals_greater_flyer.mdl
+	setmodelbody 0 3
+	setvard NPC_GIVE_EXP 600
+	callevent 1.0 idle_sounds
+
+	fly 1
+
+	setvard MY_HURT_STAGE $get(ent_me,maxhp)
+	multiply MY_HURT_STAGE HURT_THRESHOLD
+
+	setvard NPC_MOVE_DEST unset
+	setvard ROAM_ROT 0
+
+	setvard BEAM_LIST ''
+	callevent 0.1 init_beam1
+}
+
+{ [override] npcatk_hunt
+	callevent 0.1 npcatk_hunt
+
+	if !SUSPEND_AI
+	if !IS_FLEEING
+
+	if ( $cansee(enemy) )
+	{
+		local LAST_SEEN_NME $get(ent_lastseen,id)
+	}
+
+	if ( NPCATK_TARGET equals unset )
+	{
+		callevent npcatk_settarget LAST_SEEN_NME
+	}
+
+	if ( $get(NPCATK_TARGET,range) > $get(LAST_SEEN_NME,range) )
+	{
+		//favor closer player targets
+		if $get(LAST_SEEN_NME,isplayer)
+		callevent npcatk_settarget LAST_SEEN_NME
+	}
+
+	if ( NPCATK_TARGET isnot unset )
+	{
+		setvard NPC_MOVE_DEST $get(NPCATK_TARGET,origin) //stay above target, hover front to back
+		vectoradd NPC_MOVE_DEST z 128
+		local RND_FB $randf(-128,128)
+		vectoradd NPC_MOVE_DEST x RND_FB
+		//local RND_FB $randf(-256,256)
+		//vectoradd NPC_MOVE_DEST $relvel(0,RND_FB,128) //originally just added 128 to z
+	}	
+}
+
+{ [override] game_heardsound //PARAM1: Sound type   2: Sound Origin   3: Danger radius
+
+	if NPCATK_TARGET equals unset
+
+	local LAST_HEARD $get(ent_lastheard,id)
+	if $get(ent_me,relationship,LAST_HEARD) equals enemy
+	callevent npcatk_settarget NPCATK_TARGET
+}
+
+{ my_target_died
+	setvard NPC_MOVE_DEST unset
+
+	if game.time > NEXT_GLOAT
+	setvard NEXT_GLOAT game.time
+	add NEXT_GLOAT FREQ_GLOAT
+	playanim critical idle2
+	callevent suspend_move 1.0
+}
+
+{ suspend_move
+	setvard NO_MOVE 1
+	callevent PARAM1 resume_move
+}
+
+{ resume_move
+	setidleanim ANIM_IDLE
+	setmoveanim ANIM_WALK
+	setvard NO_MOVE 0
+}
+
+{
+repeatdelay 1.0
+	//main movement cycle
+	if ( NO_MOVE )
+	{
+		setmovedest none
+		setvard NPC_HACKED_MOVE_SPEED 0
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	if ( NPC_MOVE_DEST equals unset )
+	{
+		//no target, circle around spawn point
+		add ROAM_ROT 10
+		if ( ROAM_ROT > 359 ) subtract ROAM_ROT 359
+		local MOVE_DEST game.monster.origin
+		vectoradd MOVE_DEST $relpos($vec(0,ROAM_ROT,0),$vec(0,128,0))
+		setmovedest MOVE_DEST 0
+		setvard NPC_HACKED_MOVE_SPEED MOVESPEED_SLOW
+	}
+	else
+	{
+		setvard NPC_HACKED_MOVE_SPEED MOVESPEED_FAST
+		setmovedest NPC_MOVE_DEST ATTACK_MOVERANGE
+	}
+
+	if ( I_R_FROZEN )
+	{
+		setmovedest none
+		addvelocity ent_me $relvel(0,0,-200)
+		setvard NPC_HACKED_MOVE_SPEED 0
+	}
+	else
+	{
+		if ( $dist(OLD_POS,game.monster.origin) < 5 )
+		{
+			//stuck, jerk around a bit
+			local RND_RL $rand(-100,100)
+			local RND_FB $rand(-100,100)
+			local RND_UD $rand(-100,100)
+			addvelocity ent_me $relvel(RND_RL,RND_FB,RND_UD)
+		}
+		setvard OLD_POS game.monster.origin
+	}
+}
+
+
+{ [server] game_movingto_dest		//Hack in movement because the model anims are missing it
+
+	if game.time > HOVER_LOOP_DELAY
+	playsound CHAN_BODY 8 SOUND_HOVER
+	setvard HOVER_LOOP_DELAY game.time
+	add HOVER_LOOP_DELAY 3.0
+}
+
+{ npc_struck //called from base_npc_attack - param1 damage taken as of 22/Aug/2006 14:50
+
+	local MY_HEALTH $get(ent_me,hp)
+
+	if ( MY_HEALTH >= MY_HURT_STAGE ) playrandomsound 0 10 SOUND_PAIN0 SOUND_PAIN0 SOUND_PAIN1
+	if ( MY_HEALTH < MY_HURT_STAGE ) playrandomsound 0 10 SOUND_PAIN0 SOUND_PAIN0 SOUND_PAIN2
+
+	if ( PARAM1 > 20 ) addvelocity ent_me $relpos(1,-10,1) //float around when struck hard
+}
+
+{ cycle_up
+	callevent start_cycles
+}
+
+{ cycle_npc
+	callevent start_cycles
+}
+
+{ start_cycles
+	if !CYCLES_ON
+	setvard CYCLES_ON 1
+	callevent FREQ_CHAIN do_chain
+	callevent FREQ_BALLS do_balls
+	callevent FREQ_TORNADO do_tornado
+
+	if TELEPORT_ENABLED
+	callevent FREQ_TELEPORT do_teleport
+}
+
+{ do_chain
+
+	callevent FREQ_CHAIN do_chain
+	if NPCATK_TARGET isnot unset
+	if $get(NPCATK_TARGET,isalive)
+	if $get(NPCATK_TARGET,range) < 2048
+	if $cansee(NPCATK_TARGET)
+
+	callevent suspend_move 2.0
+
+	playsound 0 10 SOUND_THUNDER_CHARGE
+
+	playanim critical tocharge
+	setidleanim charging
+	setmoveanim charging
+	local TARGET_ORG $get(NPCATK_TARGET,origin)
+	setvard CHAIN_TARGETS $get_tsphere(enemy,1024,TARGET_ORG)
+
+	//first two beams go from hands to NPCATK_TARGET
+	effect beam update $get_token(BEAM_LIST,0) end_target NPCATK_TARGET 0
+	effect beam update $get_token(BEAM_LIST,1) end_target NPCATK_TARGET 0
+	effect beam update $get_token(BEAM_LIST,0) brightness 200
+	effect beam update $get_token(BEAM_LIST,1) brightness 200
+	dodamage NPCATK_TARGET direct DMG_CHAIN_DRAIN 100% ent_me lightning
+	applyeffect NPCATK_TARGET effects/effect_shock_dmg 5 $get(ent_me,id) DMG_CHAIN_DOT
+
+	setvard BEAM_STEP 0
+	callevent 0.5 setup_beams
+
+	callevent 2.0 clear_beams
+}
+
+{ setup_beams
+	
+	dbg setup_beams stp BEAM_STEP targs CHAIN_TARGETS
+
+	add BEAM_STEP 1
+	local CUR_IDX BEAM_STEP
+	if CUR_IDX < 5
+	if CUR_IDX < $get_token_amt(CHAIN_TARGETS)
+	callevent 0.25 setup_beams //keep setting up beams until you have 4 or are out of tokens
+	local BEAM_IDX CUR_IDX
+	add BEAM_IDX 1
+	local CUR_BEAM $get_token(BEAM_LIST,CUR_IDX)
+	local CUR_TARGET $get_token(CHAIN_TARGETS,CUR_IDX)
+	local PREV_IDX CUR_IDX
+	subtract PREV_IDX 1
+	local PREV_TARGET $get_token(CHAIN_TARGETS,PREV_IDX)
+	if ( PREV_IDX == 0 ) local PREV_TARGET NPCATK_TARGET
+
+	effect beam update CUR_BEAM start_target PREV_TARGET 0
+	effect beam update CUR_BEAM end_target CUR_TARGET 0
+	effect beam update CUR_BEAM brightness 200
+	applyeffect CUR_TARGET effects/effect_shock_dmg 5 $get(ent_me,id) DMG_CHAIN_DOT
+	dodamage CUR_TARGET direct DMG_CHAIN_DRAIN 100% ent_me lightning
+	callexternal CUR_TARGET ext_playsound_kiss 0 10 SOUND_THUNDER
+}
+
+{ clear_beams
+	calleventloop $get_token_amt(BEAM_LIST) clear_beams_loop
+}
+
+{ clear_beams_loop
+	effect beam update $get_token(BEAM_LIST,game.script.iteration) brightness 0
+}
+
+//=========== BEAM INIT
+
+{ init_beam1
+	effect beam ents lgtning.spr 60 ent_me 1 ent_me 0 (200,200,255) 0 20 -1
+	token.add BEAM_LIST	$get(ent_lastcreated,id)
+	setvard BEAM_ID $get(ent_lastcreated,id)
+	dbg init_beam1 BEAM_ID
+	callevent 0.1 init_beam2
+}
+
+{ init_beam2
+	effect beam ents lgtning.spr 60 ent_me 2 ent_me 0 (200,200,255) 0 20 -1
+	token.add BEAM_LIST	$get(ent_lastcreated,id)
+	dbg init_beam2 BEAM_LIST $get(ent_lastcreated,id)
+	callevent 0.1 init_beam3
+}
+
+{ init_beam3
+	effect beam ents lgtning.spr 60 ent_me 1 ent_me 0 (200,200,255) 0 20 -1
+	token.add BEAM_LIST	$get(ent_lastcreated,id)
+	dbg init_beam3 BEAM_LIST $get(ent_lastcreated,id)
+	callevent 0.1 init_beam4
+}
+
+{ init_beam4
+	effect beam ents lgtning.spr 60 ent_me 2 ent_me 0 (200,200,255) 0 20 -1
+	token.add BEAM_LIST	$get(ent_lastcreated,id)
+	dbg init_beam4 BEAM_LIST $get(ent_lastcreated,id)
+	callevent 0.1 init_beam5
+}
+
+{ init_beam5
+	effect beam ents lgtning.spr 60 ent_me 2 ent_me 0 (200,200,255) 0 20 -1
+	token.add BEAM_LIST	$get(ent_lastcreated,id)
+	dbg init_beam4 BEAM_LIST $get(ent_lastcreated,id)
+	callevent 0.1 init_beam6
+}
+
+{ init_beam6
+	effect beam ents lgtning.spr 60 ent_me 2 ent_me 0 (200,200,255) 0 20 -1
+	token.add BEAM_LIST	$get(ent_lastcreated,id)
+	dbg init_beam4 BEAM_LIST $get(ent_lastcreated,id)
+}
+
+{ do_balls
+	callevent FREQ_BALLS do_balls
+
+	if NPCATK_TARGET isnot unset
+	if $get(NPCATK_TARGET,isalive)
+	if $get(NPCATK_TARGET,range) < 2048
+
+	if CYCLED_TIME != CYCLE_TIME_IDLE
+
+	setvard BALL_TARGETS $get_tsphere(enemy,2048,game.monster.origin)
+	token.scramble BALL_TARGETS
+
+	if $get_token_amt(BALL_TARGETS) > 0
+
+	playanim critical block
+
+	createnpc monsters/summon/lightning_ball_guided $relpos(0,64,0) $get(ent_me,id) DMG_BALL 30.0 192 $get_token(BALL_TARGETS,0)
+
+	if ( $get_token_amt(BALL_TARGETS) == 1 )
+	{
+		//do three balls anyways
+		callevent 0.1 do_balls2
+		callevent 0.2 do_balls3
+	}
+
+	if $get_token_amt(BALL_TARGETS) > 1
+	callevent 0.1 do_balls2
+
+	if $get_token_amt(BALL_TARGETS) > 2
+	callevent 0.2 do_balls3
+
+	if $get_token_amt(BALL_TARGETS) > 3
+	callevent 0.3 do_balls4
+}
+
+{ do_balls2
+	createnpc monsters/summon/lightning_ball_guided $relpos(0,-64,0) $get(ent_me,id) DMG_BALL 30.0 192 $get_token(BALL_TARGETS,1)
+}
+
+{ do_balls3
+	createnpc monsters/summon/lightning_ball_guided $relpos(64,64,0) $get(ent_me,id) DMG_BALL 30.0 192 $get_token(BALL_TARGETS,2)
+}
+
+{ do_balls4
+	createnpc monsters/summon/lightning_ball_guided $relpos(-64,64,0) $get(ent_me,id) DMG_BALL 30.0 192 $get_token(BALL_TARGETS,3)
+}
+
+{ do_tornado
+	callevent FREQ_TORNADO do_tornado
+	if NPCATK_TARGET isnot unset
+	if $get(NPCATK_TARGET,isalive)
+	if $get(NPCATK_TARGET,range) < 2048
+
+	playanim critical block
+	createnpc monsters/summon/tornado $relpos(0,72,0) $get(ent_me,id) 300 20.0
+}
+
+{ game_death
+	calleventloop $get_token_amt(BEAM_LIST) remove_beams_loop
+}
+
+{ remove_beams_loop
+	effect beam update $get_token(BEAM_LIST,game.script.iteration) remove 0.1
+}
+
+{ game_dynamically_created
+	setvard AM_SUMMONED 1
+	setvard NO_SPAWN_STUCK_CHECK 1
+
+	setvard TELEPORT_ENABLED 1
+}
+
+{ idle_sounds
+
+	local NEXT_SOUND $randf(5,15)
+
+	callevent NEXT_SOUND idle_sounds
+
+	playrandomsound 0 10 SOUND_IDLE1 SOUND_IDLE2 SOUND_IDLE3
+}
+
+{ do_teleport
+	//if can't see target, or target is very far, see if can safely teleport to
+	if ( !$cansee(NPCATK_TARGET) ) local L_TELE_CHECK 1
+	if ( $get(NPCATK_TARGET,range) > 1024 ) local L_TELE_CHECK 1
+
+	dbg do_teleport $get(NPCATK_TARGET,range) L_TELE_CHECK
+
+	if ( !L_TELE_CHECK ) callevent FREQ_TELEPORT do_teleport //no need, check later
+
+	if L_TELE_CHECK
+
+	local L_TELE_POINT $get(NPCATK_TARGET,origin)
+	local RND_ANG $randf(0,359.99)
+	vectoradd L_TELE_POINT $relpos($vec(0,RND_ANG,0),$vec(0,192,34))
+
+
+	local CUR_POS $get(ent_me,origin)
+	setorigin ent_me L_TELE_POINT
+	local reg.npcmove.endpos L_TELE_POINT
+	vectoradd reg.npcmove.endpos $relpos($vec(0,game.monster.angles.yaw,0),$vec(-16,0,0))
+	local reg.npcmove.testonly	1
+	npcmove ent_me NPCATK_TARGET
+	if ( game.ret.npcmove.dist <= 0 )
+	{
+		dbg do_teleport fail @ L_TELE_POINT
+		local L_TELE_FAIL 1
+		setorigin ent_me CUR_POS
+	}
+	else
+	{
+		callevent FREQ_TELEPORT do_teleport
+		clientevent new all effects/sfx_sprite_in_fancy L_TELE_POINT c-tele1.spr 25 2.0 (255,255,255) 512 magic/teleport.wav
+		clientevent new all effects/sfx_sprite_in_fancy CUR_POS c-tele1.spr 25 2.0 (255,255,255) 512 magic/teleport.wav
+		//re init beams
+		calleventloop $get_token_amt(BEAM_LIST) remove_beams_loop
+		setvard BEAM_LIST ''
+		callevent 0.1 init_beam1
+	}
+
+	if L_TELE_FAIL
+	callevent 5.0 do_teleport //try again soon
+}

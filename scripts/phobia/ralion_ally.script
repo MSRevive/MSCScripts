@@ -1,0 +1,348 @@
+#scope server
+{
+	const MY_SKILL archery
+
+	setvard NPC_HBAR_ADJ $vec(0,0,32)
+
+	const WEAPON 0
+	const OVERRIDE_BANDIT_SPAWN 1
+
+	const AI_NO_TARGET_STRING ¯NONE¯ //need this as bandit uses older AI
+	const ANIM_ALLY_JUMP long_jump
+	const SOUND_ALLY_JUMP player/shout1.wav
+	const ALLY_JUMP_THRESHOLD 150
+
+	const NPC_PROX_ACTIVATE 1			//suspend AI on spawn, wait for player to come..
+	const NPC_PROXACT_RANGE 512			//within this range then activate...
+	const NPC_PROXACT_EVENT do_intro	//event to fire
+	const NPC_PROXACT_DELAY 0			//delay before calling NPC_PROXACT_EVENT when activated
+	const NPC_PROXACT_IFSEEN 0			//activate if a player can see me, or targets me, regardless of range
+	const NPC_PROXACT_FOV 0				//Require player must be in field of vision to activate
+
+	const CHAT_MOVE_MOUTH 0
+}
+
+{ game_precache
+	precachefile monsters/bandit_elite
+}
+
+#include monsters/base_battle_ally
+#include monsters/bandit_elite_archer
+#include monsters/base_chat_array
+
+{ [shared] npc_spawn
+
+	setvar BANDIT_TYPE bow
+
+	name |Ralion
+	name_unique bandit_ralion
+	setmonsterclip 0
+	setmodel		npc/rogue_1337.mdl
+	setprop ent_me scale 1.5
+	gold			$rand(30,40)
+	width		32
+	height		92
+
+	race			human
+	takedmg		all 0.6
+	hearingsensitivity	10
+	roam			0
+
+	setidleanim		ANIM_IDLE
+	setmoveanim		ANIM_WALK
+
+	menu.autoopen 1
+
+	callevent 0.1 custom_bowey
+}
+
+{ custom_bowey
+	//bowey
+	hp 800
+	setvar ATTACK_SPEED 1200
+	setvard MOVE_RANGE ATTACK_SPEED
+	setvard ATTACK_RANGE ATTACK_SPEED
+	setvar ATTACK_COF 0
+	setvard ANIM_ATTACK shootbow
+	setmodelbody 1 5
+	setvard TOO_CLOSE 0
+	setvard DROPS_CONTAINER 1
+	setvard NO_STUCK_CHECKS 1
+	setvar BANDIT_TYPE bow
+
+	callevent 300.0 bandit_remove_delay
+}
+
+{ bandit_remove_delay
+	if !HOSTILE_MODE
+	if !MADE_DEAL
+	callexternal all bandits_remove
+}
+
+{ bandits_remove
+	deleteent ent_me fade //folks left us here, probably hoping to exploit, remove
+}
+
+{ game_menu_getoptions
+
+	if !HOSTILE_MODE
+
+	if ( REWARD_MODE )
+	{
+		if MADE_DEAL
+		infomsg PARAM1 "Training with bandits" "You may only train with one bandit, so choose wisely."
+		local reg.mitem.title 	"Bow Training..."
+		local reg.mitem.type 	callback
+		local reg.mitem.callback say_reward
+		menuitem.register		
+	}
+
+	if ( !MADE_DEAL )
+	{
+		setvarg G_REWARD_LIST ''
+		local reg.mitem.title 	"Deal."
+		local reg.mitem.type 	callback
+		local reg.mitem.callback say_deal
+		menuitem.register
+
+		local reg.mitem.title 	"No Deal."
+		local reg.mitem.type 	callback
+		local reg.mitem.callback say_no_deal
+		menuitem.register
+	}
+
+
+	if G_DEVELOPER_MODE
+
+	if ( !ALLY_FOLLOW_ON )
+	{
+		local reg.mitem.title 	"Dev:Follow."
+		local reg.mitem.type 	callback
+		local reg.mitem.callback bandit_ally_start_follow
+		menuitem.register
+	}
+	else
+	{
+		local reg.mitem.title 	"Dev:Stay here."
+		local reg.mitem.type 	callback
+		local reg.mitem.callback stop_follow
+		menuitem.register
+	}
+
+	local reg.mitem.title 	"Dev:Go hostile."
+	local reg.mitem.type 	callback
+	local reg.mitem.callback bandit_ally_go_hostile
+	menuitem.register
+}
+
+{ bandit_ally_start_follow
+	//saytext Following...
+	playanim break
+	setvard ALLY_FOLLOW_ON 1
+}
+
+{ stop_follow
+	saytext Stopping...
+	playanim break
+	setvard ALLY_FOLLOW_ON 0
+}
+
+{ bandit_ally_go_hostile
+	setvard HOSTILE_MODE 1
+	setvard NPC_NO_PLAYER_DMG 0
+	setvard NPC_BATTLE_ALLY 0
+	setvard ALLY_FOLLOW_ON 0
+	race rogue
+	roam 1
+	if ( BANDIT_TYPE isnot bow ) setvard NO_STUCK_CHECKS 0
+	menu.autoopen 0
+}
+
+{ do_intro
+	setmovedest NPC_PROXACT_PLAYERID 96
+	setvard CHAT_CURRENT_SPEAKER NPC_PROXACT_PLAYERID
+	playsound 0 10 voices\phobia\ralion01.wav
+	callevent npcatk_resume_ai
+	//callevent chat_now <text> [time] [anim|"none"] [event|"none"] ["clear_que"] ["add_to_que"]
+	setvard CHAT_TEMP_NO_AUTO_FACE 1
+	callevent chat_now "Woah there! Hold a sec! Truce! Truce!" 2.0 none do_intro2 add_to_que
+}
+
+{ do_intro2
+	setvard CHAT_TEMP_NO_AUTO_FACE 0
+	callevent chat_now "I saw you tear through those orcs, and our would-be rescuers, like so much butter, and have no desire to put your steel to the test further." 4.0 look_idle play_line2 add_to_que
+	callevent chat_now "Not that it matters. Even without that display, the fort we escaped belongs to Graznux's horde, and the only way out, without going through it, is through this forest." 6.0 deep_idle play_line3 add_to_que
+	callevent chat_now "But there's angry spirits in this forest, and I'd rather not tangle with such a beasts alone, or with just my two men here." 5.0 deep_idle play_line4 add_to_que
+	callevent chat_now "I'd offer you gold for your help, but I'm sure you'd just as soon take it off our corpses. So let me offer you something that you can't acquire so easily..." 6.0 look_idle play_line5 add_to_que
+	callevent chat_now "We three know our stuff. We can teach you a few tricks. I know my bows... Betor there knows his hammers. ...And Skelr sleeps with that damned dagger like it was a teddy." 7.0 aim_fireball_R play_line6 add_to_que
+	callevent chat_now "Help us escape this mess, and we'll teach you what we know... One lesson for each of you. Whaddaya say, deal?" 3.0 look_idle set_deal_idle add_to_que
+}
+
+{ set_deal_idle
+	menu.open NPC_PROXACT_PLAYERID
+	setvard ANIM_IDLE aim_fireball_R
+	setidleanim ANIM_IDLE
+}
+
+{ play_line2
+	playsound 0 10 voices\phobia\ralion02.wav
+}
+
+{ play_line3
+	playsound 0 10 voices\phobia\ralion03.wav
+}
+
+{ play_line4
+	playsound 0 10 voices\phobia\ralion04.wav
+}
+
+{ play_line5
+	playsound 0 10 voices\phobia\ralion05.wav
+}
+
+{ play_line6
+	playsound 0 10 voices\phobia\ralion06.wav
+}
+
+{ say_deal
+	callevent chat_clear_que
+	setvard MADE_DEAL 1
+	menu.autoopen 0
+	setvard ANIM_IDLE deep_idle
+	setidleanim ANIM_IDLE
+	playsound 0 10 voices\phobia\ralion_deal.wav
+	callevent chat_now "Alright, we may make it out of this alive yet. Lead on, we'll follow." 2.0 aim_fireball_R none clear_que 
+	//callevent bandit_ally_start_follow
+	callexternal all bandit_ally_start_follow
+}
+
+{ say_no_deal
+	callevent chat_clear_que
+	setvard ANIM_IDLE deep_idle
+	setvard MADE_DEAL 1
+	menu.autoopen 0
+	setidleanim ANIM_IDLE
+	playsound 0 10 voices\phobia\ralion_no_deal.wav
+	callevent chat_now "Well, I suppose we can always train you in the more direct way then." 2.0 none none clear_que 
+	callevent 1.0 say_no_deal2
+}
+
+{ say_no_deal2
+	//callevent bandit_ally_go_hostile
+	callexternal all bandit_ally_go_hostile
+}
+
+{ npcatk_suspend_ai
+	dbg npcatk_suspend_ai PARAM1 PARAM2 //AI suspended for no reason, trying to find out where
+}
+
+{ bandit_ally_fire_spawn
+	//slight delay to give chance for players to spot boss (kinda floats in the air)
+	callevent 5.0 bandit_ally_fire_spawn2
+}
+
+{ bandit_ally_fire_spawn
+	callevent chat_now "Oh, I was afraid Cethin would show her ugly self after we killed that damned bear of hers..." 3.0 none aim_punch1 clear_que 
+	callevent chat_now "You know the plan men, drink up!" 2.0 none none clear_que
+	callevent 5.0 bandit_ally_fire_spawn3
+}
+
+{ bandit_ally_fire_spawn3
+	callexternal all bandit_ally_drinkup
+}
+
+{ bandit_ally_drinkup
+	playanim critical aim_punch1
+
+	local MY_HP $get(ent_me,hp)
+	local MY_MAXHP $get(ent_me,maxhp)
+
+	if ( MY_HP < MY_MAXHP )
+	{
+		local HEAL_AMT MY_MAXHP
+		subtract HEAL_AMT MY_HP
+		givehp ent_me HEAL_AMT
+	}
+
+	local OUT_TITLE $get(ent_me,name)
+	stradd OUT_TITLE " has quaffed a potion of fire resistance."
+	infomsg all OUT_TITLE ' '
+	takedmg fire 0.25
+	takedmg all 0.4
+	playsound 0 10 items/drink.wav
+	effect glow ent_me (255,0,0) 64 2 2
+}
+
+{ bandit_ally_boss_dead
+	callevent npcatk_suspend_ai
+	callevent npcatk_suspend_movement deep_idle
+	setmovedest none
+	callevent check_qualify
+	setvard ALLY_FOLLOW_ON 0
+	setvard REWARD_MODE 1
+	menu.autoopen 1
+}
+
+{ check_qualify
+	setvard TC_QUAL_PLAYERS 0
+	getplayersnb TC_QUAL_PLAYERS
+	setvard TC_AVG_DMG_PTS 0
+	calleventloop $get_token_amt(TC_QUAL_PLAYERS) tc_get_averages
+	divide TC_AVG_DMG_PTS game.players
+	setvard TC_HALF_AVG_DMG_PTS TC_AVG_DMG_PTS
+	multiply TC_HALF_AVG_DMG_PTS 0.5
+}
+
+{ tc_get_averages
+	local CUR_PLAYER $get_token(TC_QUAL_PLAYERS,game.script.iteration)
+	add TC_AVG_DMG_PTS $get(CUR_PLAYER,scriptvar,'PLR_TOTAL_DMG')
+}
+
+{ say_reward
+	local USER_PTS $get(PARAM1,scriptvar,'PLR_TOTAL_DMG')
+	setvard USER_QUALIFIES 0
+	if ( USER_PTS >= TC_HALF_AVG_DMG_PTS ) setvard USER_QUALIFIES 1
+	if ( !USER_QUALIFIES )
+	{
+		playanim critical look_idle
+		saytext Judging by your performance out there, or rather the lack there of, I don't think you're ready for what I could teach you.
+	}
+	if USER_QUALIFIES
+	local USER_STEAM $get(PARAM1,steamid)
+	add USER_STEAM $get(PARAM1,slot)
+	if ( G_REWARD_LIST contains USER_STEAM )
+	{
+		playanim critical look_idle
+		saytext Sorry, only one training session per customer. Thanks for helping us out of this mess though.
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	//local RALION_ID $get_by_name(bandit_ralion)
+	//if ( !$get(RALION_ID,isalive) ) saytext Ralion maybe dead, but I'll stick to his deal... I'll show you what I know.
+
+	playanim critical look_idle
+	saytext Alright, here's a few tricks that'll let you show your enemies what-for.
+
+	local XP_GAIN 20000
+	local PLR_ADJ game.players
+	subtract PLR_ADJ 1
+	multiply PLR_ADJ 0.25
+	add PLR_ADJ 1
+	multiply XP_GAIN PLR_ADJ
+	giveexp PARAM1 MY_SKILL $int(XP_GAIN)
+	gplayermessage PARAM1 * $int(XP_GAIN) XP Awarded ( MY_SKILL )
+	token.add G_REWARD_LIST USER_STEAM
+
+	local OUT_MSG "You recieve "
+	stradd OUT_MSG MY_SKILL
+	stradd OUT_MSG " from "
+	stradd OUT_MSG $get(ent_me,name)
+	infomsg PARAM1 "Training Recieved" OUT_MSG
+}
+
+{ bandit_ally_lights
+	if $get(ent_me,isalive)
+	callevent 10.0 bandit_ally_lights
+	clientevent new all effects/sfx_follow_glow_cl $get(ent_me,index) (128,64,0) 64 9.9
+}

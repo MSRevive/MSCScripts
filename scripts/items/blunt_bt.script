@@ -1,0 +1,141 @@
+{
+	const BASE_LEVEL_REQ 35
+
+	const STUN_BURST_MP 40
+
+	const MELEE_RANGE 90
+	const MELEE_DMG_DELAY  0.5
+	const MELEE_ATK_DURATION 1.1
+	const DEMON_DMG_DELAY  0.25
+	const DEMON_ATK_DURATION 0.7
+	const MELEE_ENERGY 2
+	const MELEE_DMG 600
+	const MELEE_DMG_RANGE 40
+	const MELEE_ACCURACY 80%
+	const MELEE_PARRY_AUGMENT 20%
+	const MELEE_DMG_TYPE lightning
+
+	const MODEL_VIEW viewmodels/v_2hblunts.mdl
+	const MODEL_VIEW_IDX 13
+
+	const MODEL_WORLD weapons/p_weapons4.mdl
+	const MODEL_BODY_OFS 37
+	const ANIM_PREFIX standard
+}
+
+#include items/blunt_base_twohanded
+
+{  weapon_spawn
+
+   name  The|Thunder Breaker
+   desc  An Earth Breaker imbued with elemental lightning
+   weight  80
+   size  10
+   value 7000
+   sethudsprite hand hammer
+   sethudsprite trade 192
+}
+
+{ game_deploy
+	setvard GAME_PVP game.pvp
+}
+
+{ special_02_strike
+	local ATTACK_END_POS PARAM2
+	//if $vec.z(ATTACK_END_POS) equals $get_ground_height(ATTACK_END_POS)
+	if ( $get(ent_owner,mp) < STUN_BURST_MP )
+	{
+		dplayermessage ent_owner "Thunder Breaker: Insufficient Mana for Shock Burst"
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	vectorset ATTACK_END_POS z $get_ground_height(ATTACK_END_POS)
+
+	givemp ent_owner $neg(STUN_BURST_MP)
+	clientevent new all effects/sfx_shock_burst ATTACK_END_POS 250 1 (255,255,0)
+	setvard BURST_POS ATTACK_END_POS
+	vectoradd BURST_POS 32
+	//callexternal ent_owner ext_sphere_token_byrange enemy 128 BURST_POS
+	//setvard BURST_TARGS $get(ent_owner,scriptvar,'PLR_SCAN_TOKEN')
+	//setvard BURST_POS ATTACK_END_POS
+
+	setvard DOT_DMG $get(ent_owner,skill.spellcasting.lightning)
+	if ( DOT_DMG > 20 ) callevent 0.1 chain_beam_start 
+
+	setvard BURST_STUN_DURATION $get(ent_owner,skill.bluntarms)
+	setvard BURST_DMG BURST_STUN_DURATION
+	multiply BURST_STUN_DURATION 0.5
+	multiply BURST_DMG 4.0
+	//dbg special_02_strike stundur BURST_STUN_DURATION
+	//calleventloop $get_token_amt(BURST_TARGS) burst_affect_targs
+	//callevent 0.1 aoe_damage
+	setvard BURST_TARGS none
+	xdodamage BURST_POS 128 BURST_DMG 0 ent_owner ent_me spellcasting.lightning lightning_effect dmgevent:*burst
+	if ( $get_token_amt(BURST_TARGS) > 1 ) token.del BURST_TARGS 0
+}
+
+{ burst_dodamage
+	local CUR_TARG PARAM2 //$get_token(BURST_TARGS,game.script.iteration)
+	if $get(CUR_TARG,relationship,ent_owner) equals enemy
+	if ( $get(CUR_TARG,isplayer) )
+	{
+		if !GAME_PVP
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+	token.add BURST_TARGS CUR_TARG
+	applyeffect CUR_TARG effects/effect_stun BURST_STUN_DURATION 0 1 $get(ent_owner,id)
+	if ( DOT_DMG >= 10 ) applyeffect CUR_TARG effects/effect_shock_dmg 5.0 $get(ent_owner,id) DOT_DMG
+	local TARG_ORG $get(CUR_TARG,origin)
+	local MY_ORG BURST_POS
+	local NEW_YAW $angles(MY_ORG,TARG_ORG)
+	addvelocity CUR_TARG $relvel($vec(0,NEW_YAW,0),$vec(0,800,110))
+}
+
+{ chain_beam_start
+
+	//dbg chain_beam_start
+
+	//if !$get(ent_owner,scriptvar,'PLR_JUMP_BEAM_ACTIVE')
+
+	local FIRST_TARGET -1
+	if ( BURST_TARGS isnot none )
+	{
+		//first beam found a target, send straight over
+		local FIRST_TARGET $get_token(BURST_TARGS,0)
+		local FIRST_TARGET $get(FIRST_TARGET,index)
+		dbg chain_beam_start BURST_TARGS idx FIRST_TARGET
+	}
+
+//	local L_BURST_POS BURST_POS
+//	vectorset L_BURST_POS z $get_ground_height(BURST_POS)
+//	vectoradd L_BURST_POS z 32
+
+	local START_YAW $get(ent_owner,viewangles)
+	local START_YAW $vec.yaw(START_YAW)
+
+	//callexternal ent_owner ext_jump_beam_start L_BURST_POS START_YAW FIRST_TARGET
+	clientevent new all effects/sfx_jump_beams $get(ent_owner,index) BURST_POS START_YAW FIRST_TARGET
+	setvard CL_BEAM_IDX game.script.last_sent_id
+	callevent 0.1 supply_script_clidx
+}
+
+{ supply_script_clidx
+	clientevent update all CL_BEAM_IDX sv_sends_index CL_BEAM_IDX
+}
+
+{ melee_damaged_other
+	if ( $get(PARAM1,isplayer) )
+	{
+		if !GAME_PVP
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	if $get(ent_owner,relationship,PARAM1) equals enemy
+
+	local L_DOT $get(ent_owner,skill.spellcasting.lightning)
+	multiply L_DOT 0.25
+	applyeffect PARAM1 effects/effect_shock_dmg 10.0 $get(ent_owner,id) L_DOT
+}

@@ -1,0 +1,178 @@
+{
+	const NO_JOB 1
+	const NO_RUMOR 1
+	const CHAT_AUTO_HAIL 1
+	setvard B_QUEST_DONE 0
+	setvard TALKED_SUMDALE 0
+	const CHAT_USE_CONV_ANIMS 0 //fairly animated already
+	//const CHAT_CONV_ANIMS "converse2;talkleft;talkright;eye_wipe;no"
+}
+#include monsters/base_chat_array
+{ spawn
+
+	name_unique urduaf
+	hp	30
+	gold	50    
+	name	Urduaf
+	//ov	30
+	width	32
+	height	72
+	race	human
+	roam	0
+	setmodel	npc/human1.mdl
+	invincible	1
+	setmodelbody	1 2
+
+	catchspeech  say_hi hi hail hello greet
+
+	catchspeech  say_job  book
+}
+
+{ askbook
+
+	setvard TALKED_SUMDALE 1
+	//dbg temp Got Sumdale askbook ( Taked TALKED_SUMDALE ) ( Done B_QUEST_DONE )
+
+}
+
+{ say_hi
+
+	//try to avoid the whole bar responding to the same statement
+	if ( PARAM1 equals 'PARAM1' )
+	{
+		if $get(ent_lastspoke,range) > 128
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+
+	if ( !B_QUEST_DONE )
+	{
+		callevent chat_now "Look, I don't feel like talking right now so please just leave."
+		playanim critical no
+	}
+	
+	if ( B_QUEST_DONE )
+	{
+		local WINNER_NAME $get(QUEST_COMPLETER,name)
+		local L_MSG "I'm so happy now that "
+		stradd L_MSG WINNER_NAME
+		stradd L_MSG " has returned my journal!"
+		playanim once wave
+		callevent chat_now L_MSG
+	}
+}
+
+{ say_job
+
+	//try to avoid the whole bar responding to the same statement
+	if ( PARAM1 equals 'PARAM1' )
+	{
+		if $get(ent_lastspoke,range) > 128
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	if TALKED_SUMDALE
+	if !B_QUEST_DONE
+
+    callevent chat_now "You know about the book? You must have learned of it from Sumdale."
+    calleventtimed 4 say_bothered1a
+}
+
+{ say_bothered1a
+	playanim once no
+	callevent chat_now "..I had a book once, it's very important to me.. "
+	calleventtimed 3 story
+}
+
+{ story
+  
+	playanim once converse1
+	callevent chat_now "I was foolish enough to take it with me to explore the caves. I fancied myself an adventurer."
+	calleventtimed 5 say_story2
+}
+
+{ say_story2
+
+	playanim critial talkright
+	callevent chat_now "I was going to explore a little and write down what I found."
+	calleventtimed 5 say_story3
+}
+
+{ say_story3
+
+	playanim critial converse1
+	callevent chat_now "I was in a room with an incredible drop off. There was a chest nearby."
+	calleventtimed 5 say_story4
+}
+
+{ say_story4
+
+	playanim once converse1
+	callevent chat_now "I was startled by an huge spider. If there are any spiders bigger than that I'd hate to meet it. "
+	calleventtimed 5 say_story5
+}
+
+{ say_story5
+
+	playanim once converse1
+	callevent chat_now "I dropped my precious book and ran to the surface. There was a cave in behind me as I crawled frantically away."
+	calleventtimed 5 say_story6
+}
+
+{ say_story6
+
+	playanim once converse1
+	callevent chat_now "I couldn't get back to my book and now all I can ask is for the help of a real adventurer."
+	calleventtimed 5 say_story7
+}
+
+{ say_story7
+
+	playanim once yes
+	callevent chat_now "If you can return my book to me i'm sure there'd be some kind of reward for your troubles."
+	setvar TOLD_STORY 1
+}
+
+{ give_book
+
+	recvoffer accept
+	playanim once eye_wipe
+	callevent chat_now "My god, that's my book! I cannot thank you enough brave adventurer!"
+	say [.10] [.20] [.20] [.10] [.10] [.10] [.25] [.20] [.10] [.30] [.20] [.40]
+	
+	setvar QUEST_COMPLETER PARAM1
+	setvar B_QUEST_DONE 1
+	callevent 2 recvbook_2
+}
+
+{ recvbook_2
+
+	setvar B_QUEST_DONE 1
+	callexternal $get_by_name(sumdale) bookfound
+	callevent chat_now "Here, take this gold as a reward, adventurer."
+	offer QUEST_COMPLETER gold $rand(6,9)
+}
+
+{ game_menu_getoptions
+
+
+	if ( $item_exists(PARAM1,item_book_old) )
+	{
+		local reg.mitem.title 	"Return book"
+		local reg.mitem.type 	payment
+		local reg.mitem.data 	item_book_old
+		local reg.mitem.callback give_book
+		menuitem.register
+	}
+
+	if ( TALKED_SUMDALE )
+	{
+		if !B_QUEST_DONE
+		local reg.mitem.title 	"Ask about Book"
+		local reg.mitem.type 	callback
+		local reg.mitem.callback say_job
+		menuitem.register
+	}
+}

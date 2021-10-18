@@ -1,0 +1,340 @@
+//Da Chief
+//Launches laughing skulls from his axe that chew on players and 'splode into clouds
+//alternate skull bounces around and explodes
+//large AOE stun
+//dewm tree
+//constant cloud of poison
+//
+//also todo:
+//stone cobra (g. cobra w/breath atk)
+//axes_dragon  ("the dragon's breath" - axe with w/breath atk)
+//chests for chapel
+//chests for isle
+
+#scope server
+{
+	const NEW_MODEL 1
+
+	const NPC_BASE_EXP 3000
+
+	const SOUND_ATTACK1 monsters/goblin/c_gargoyle_atk1.wav
+	const SOUND_ATTACK2 monsters/goblin/c_gargoyle_atk2.wav
+	const SOUND_ATTACK3 monsters/goblin/c_gargoyle_atk3.wav
+	const STEP_SIZE_NORM 36
+
+	const FREQ_CLOUD 1.5
+	const DMG_CLOUD 20
+	const CL_SCRIPT monsters/vgoblin_chief_cl
+
+	const FREQ_SPECIAL $randf(10.0,30.0)
+
+	setvard CAN_STUN 1
+
+	setvard DROP_GOLD 0
+
+	setvard ANIM_ATTACK battleaxe_swing1_L
+
+	const DMG_AXE $rand(100,300)
+	const DOT_POISON 50
+	const DMG_CHARGE 50
+
+	setvard ATTACK_HITCHANCE 90%
+
+	const PLANT_SCRIPT monsters/summon/doom_plant
+	const CHEW_SKULL_SCRIPT monsters/lost_soul //use eagle, strip anims/sounds, splode on death
+	const SPLODIE_SKULL_SCRIPT traps/splodie_skull //use horror egg + more rand bounce, splode on death
+
+	const SPLODIE_SKULL_STR 1.0
+	const CHEW_SKULL_STR 1.0
+	const PLANT_STR 30
+
+	const SKULL_DURATION $randf(60.0,120.0) //for chewy skulls
+}
+
+#include monsters/bgoblin
+
+{ [shared] game_precache
+	precachefile PLANT_SCRIPT
+	precachefile CHEW_SKULL_SCRIPT
+	precachefile SPLODIE_SKULL_SCRIPT
+	precachefile CL_SCRIPT
+}
+
+{ [override] [shared] goblin_spawn
+
+	name a|Vile Goblin Chieftain
+	race goblin
+	blood green
+	hp 5000
+
+	if ( !NEW_MODEL )
+	{
+		setmodel monsters/goblin2_boss.mdl
+		width 32
+		height 72
+
+		setmodelbody 0 0 //body: 0-Runed 1-Archer 2-Leathers 3-Sniper
+		setmodelbody 1 3 //head: 0-Horns 1-Spikes 2-Animal 3-Chief 4-Cowl
+		setmodelbody 2 1 //weapon: 0-Unarmed 1-SkullClub 2-DragonAxe 3-Knife 4-Bow 5-Raxe 6-SW&SH
+		setmodelbody 3 0 //arrow: on/off
+
+		setprop ent_me skin 3
+	}
+	else
+	{
+		setmodel monsters/goblin_new_boss.mdl
+		width 32
+		height 72
+
+		setmodelbody 0 0 //body: 0-Bare 1-Quiver&Strap
+		setmodelbody 1 3 //head: 0-Bare 1-Horns 2-Animal 3-Chief 4-Rag
+		setmodelbody 2 1 //weapon: 0-Unarmed 1-SkullClub 2-DragonAxe 3-Knife 4-Bow 5-Raxe 6-SW&SH
+		setmodelbody 3 0 //arrow: On/off
+		
+
+		setprop ent_me skin 2 //0-norm 1-blood 2-vile
+	}
+
+	roam 1
+
+	setanim.framerate 1.5
+
+	hearingsensitivity 4
+
+
+	setidleanim ANIM_IDLE
+	setmoveanim ANIM_WALK
+
+	takedmg all 0.5
+	takedmg poison 0.0
+	takedmg lightning 1.25
+
+	clientevent persist all CL_SCRIPT $get(ent_me,index)
+	setvard MY_CL_SCRIPT_IDX game.script.last_sent_id
+}
+
+{ game_death
+	clientevent remove all MY_CL_SCRIPT_IDX
+	callexternal GAME_MASTER vgoblin_chief_died $get(ent_me,origin)
+}
+
+{ [override] swing_axe //ANIM_SMASH
+
+	setvard AXE_SWING 1
+	playrandomsound 0 10 SOUND_ATTACK1 SOUND_ATTACK2 SOUND_ATTACK3
+	dodamage NPCATK_TARGET ATTACK_HITRANGE DMG_AXE ATTACK_HITCHANCE blunt
+}
+
+{ game_dodamage //PARAM1=hit:0|1 PARAM2=ent_hit PARAM3=(start) PARAM4=(end)
+
+	//poison mace effect
+	if ( PARAM1 )
+	{
+		if AXE_SWING
+		applyeffect PARAM2 effects/effect_poison 10.0 $get(ent_me,id) DOT_POISON
+	}
+	setvard AXE_SWING 0
+}
+
+{ [override] leap_stun
+	//createnpc monsters/summon/stun_burst $relpos(0,64,0) $get(ent_me,id) 64 0 DMG_CHARGE
+	//optimization: doing stun burst local to save an NPC creation
+	local BURST_POS $relpos(0,64,0)
+	callevent stunburst_go BURST_POS 64 0 DMG_CHARGE
+}
+
+
+//less likey to jump, but jumps higher, if needed to reach target
+{ [override] gob_jump_check
+
+	if GOB_JUMPER
+	if GOB_JUMP_SCANNING
+
+	local GOB_HOP_DELAY $randf(2,4)
+
+	callevent GOB_HOP_DELAY gob_jump_check
+
+	if NPCATK_TARGET isnot unset
+	if !IS_FLEEING
+	if !SUSPEND_AI
+	if $get(NPCATK_TARGET,range) < GOBLIN_JUMPRANGE
+
+	//jump at target if he's higher than I am
+	local ME_Z game.monster.origin.z
+	local TARG_Z $get(NPCATK_TARGET,origin.z)
+	if ( $get(NPCATK_TARGET,isplayer) ) subtract TARG_Z 38 //player center compensation
+
+	if ( ME_Z > TARG_Z )
+	{
+		local Z_DIFF ME_Z
+		subtract ME_Z TARG_Z
+	}
+	else
+	{
+		local Z_DIFF TARG_Z
+		subtract Z_DIFF ME_Z
+	}
+
+	if ( Z_DIFF > ATTACK_RANGE )
+	{
+		playanim critical ANIM_SMASH
+		callevent 0.1 do_jump //bludgeon style
+	}
+}
+
+{ do_jump
+	stepsize 1000
+	addvelocity ent_me $relvel(0,-200,800)
+	callevent 0.5 push_forward
+	callevent 1.0 jump_done
+}
+
+{ push_forward
+	addvelocity ent_me $relvel(0,400,100)
+}
+
+{ jump_done
+	stepsize STEP_SIZE_NORM
+	setmoveanim ANIM_RUN
+}
+
+{ cycle_up
+	if !STARTED_CYCLES
+	setvard STARTED_CYCLES 1
+	callevent FREQ_SPECIAL set_special
+	callevent FREQ_CLOUD update_cloud
+}
+
+{ set_special
+
+	callevent FREQ_SPECIAL set_special
+	setvard RND_SPECIAL $rand(1,3)
+}
+
+{ [override] swing_axe //ANIM_SMASH
+
+	setvard AXE_SWING 1
+	playrandomsound 0 10 SOUND_ATTACK1 SOUND_ATTACK2 SOUND_ATTACK3
+	dodamage NPCATK_TARGET ATTACK_HITRANGE DMG_AXE ATTACK_HITCHANCE slash
+
+	if RND_SPECIAL > 0
+	local BURST_POS $relpos(0,64,-16)
+	callevent stunburst_go BURST_POS 256 1 DMG_CHARGE
+	if ( RND_SPECIAL == 1 ) callevent 0.2 summon_chew_skulls
+	if ( RND_SPECIAL == 2 ) callevent 0.2 summon_splodie_skulls
+	if ( RND_SPECIAL == 3 ) callevent 0.2 summon_dewm
+	setvard RND_SPECIAL 0
+}
+
+{ summon_chew_skulls //x2
+	setvard SUM_POS $relpos(-64,64,-16)
+	callevent summon_effect
+	createnpc CHEW_SKULL_SCRIPT SUM_POS $get(ent_me,id) CHEW_SKULL_STR SKULL_DURATION
+	callevent 0.01 summon_chew_skulls2
+}
+
+{ summon_chew_skulls2
+	setvard SUM_POS $relpos(64,64,-16)
+	callevent summon_effect
+	createnpc CHEW_SKULL_SCRIPT SUM_POS $get(ent_me,id) CHEW_SKULL_STR SKULL_DURATION
+}
+
+{ summon_splodie_skulls //x4
+	setvard SUM_POS $relpos(-64,64,32)
+	callevent summon_effect
+	createnpc SPLODIE_SKULL_SCRIPT SUM_POS $get(ent_me,id) SPLODIE_SKULL_STR SKULL_DURATION
+	callevent 0.01 summon_splodie_skulls2
+}
+
+{ summon_splodie_skulls2
+	setvard SUM_POS $relpos(64,64,32)
+	callevent summon_effect
+	createnpc SPLODIE_SKULL_SCRIPT $relpos(64,64,32) $get(ent_me,id) SPLODIE_SKULL_STR SKULL_DURATION
+	callevent 0.01 summon_splodie_skulls3
+}
+
+{ summon_splodie_skulls3
+	setvard SUM_POS $relpos(64,64,-16)
+	callevent summon_effect
+	createnpc SPLODIE_SKULL_SCRIPT $relpos(64,64,-16) $get(ent_me,id) SPLODIE_SKULL_STR SKULL_DURATION
+	callevent 0.01 summon_splodie_skulls4
+}
+
+{ summon_splodie_skulls4
+	setvard SUM_POS $relpos(-64,64,-16)
+	callevent summon_effect
+	createnpc SPLODIE_SKULL_SCRIPT $relpos(-64,64,-16) $get(ent_me,id) SPLODIE_SKULL_STR SKULL_DURATION
+}
+
+{ summon_dewm //x1
+	callevent summon_plant_effect
+	local PLANT_POS $relpos(0,64,-32)
+	clientevent update all MY_CL_SCRIPT_IDX dewm_plant_fx PLANT_POS
+	createnpc PLANT_SCRIPT PLANT_POS PLANT_STR
+}
+
+//draw a beam from mace to summon point
+{ summon_effect
+
+	local START_POS $get(ent_me,svbonepos,12) //use attach index if he has one (check)
+	effect beam point lgtning.spr 30 START_POS SUM_POS (0,255,0) 200 30 0.5
+}
+
+{ update_cloud
+
+	callevent FREQ_CLOUD update_cloud
+	if GOB_JUMP_SCANNING
+	//xdodamage $relpos(0,0,-32) 128 DMG_CLOUD 0 ent_me ent_me none poison
+	setvard POISON_LIST $get_tbox(enemy,128,$relpos(0,0,-32))
+	if POISON_LIST isnot none
+	token.scramble POISON_LIST
+	applyeffect $get_token(POISON_LIST,0) effects/effect_poison 5.0 $get(ent_me,id) DOT_POISON
+}
+
+{ my_target_died
+	callevent 1.0 npcatk_go_home
+}
+
+{ stunburst_go //<pos> <radius> <repel:0|1> <dmg>
+	setvard STUN_BURST_POS PARAM1
+	setvard STUN_BURST_RAD PARAM2
+	setvard STUN_BURST_REPEL PARAM3
+	setvard STUN_BURST_DMG PARAM4
+	dbg stunburst_go pos: STUN_BURST_POS rad: STUN_BURST_RAD repel: STUN_BURST_REPEL dmg: STUN_BURST_DMG
+
+	clientevent update all MY_CL_SCRIPT_IDX stunburst_go_cl STUN_BURST_POS STUN_BURST_RAD
+	playsound 0 10 magic/boom.wav
+	callevent 0.25 stun_targets
+}
+
+{ stun_targets
+	setvard STUN_LIST $get_tsphere(enemy,STUN_BURST_RAD,STUN_BURST_POS)
+	dbg stun_targets STUN_LIST
+	if STUN_LIST isnot none
+	if $get_token_amt(STUN_LIST) > 0
+	calleventloop $get_token_amt(STUN_LIST) stunburst_affect_targets
+}
+
+{ stunburst_affect_targets
+
+	local CHECK_ENT $get_token(STUN_LIST,game.script.iteration)
+
+	if $get(CHECK_ENT,onground)
+
+	applyeffect CHECK_ENT effects/effect_stun 5.0 0 1
+
+	if ( STUN_BURST_DMG > 0 ) dodamage CHECK_ENT direct STUN_BURST_DMG 100% ent_me magic
+
+	if STUN_BURST_REPEL
+	local TARGET_ORG $get(CHECK_ENT,origin)
+	local TARG_ANG $angles(STUN_BURST_POS,TARGET_ORG)
+	local NEW_YAW TARG_ANG
+	setvelocity CHECK_ENT $relvel($vec(0,NEW_YAW,0),$vec(0,1000,0))
+}
+
+{ goblin_pre_spawn
+	setvard ATTACK_RANGE 96
+	setvard ATTACK_HITRANGE 128
+	setvard ATTACK_MOVERANGE 58
+	setvard MOVE_RANGE 58
+}

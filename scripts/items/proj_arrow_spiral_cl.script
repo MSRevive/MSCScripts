@@ -1,0 +1,81 @@
+//Dynamic CL effects for spiral arrow
+//Be sure to precache the sprite
+
+#scope client
+
+{
+	const GLOW_RAD 256
+	const MAX_DURATION 10.0
+}
+
+{ client_activate
+
+	setcallback render enable
+
+	setvard MY_OWNER PARAM1
+	setvard SPRITE_NAME PARAM2
+	setvard SPRITE_FRAMES PARAM3
+	setvard SPRITE_SCALE PARAM4
+	setvard SPRITE_COLOR PARAM5
+	setvard GLOW_COLOR PARAM6
+
+	//dbg **** Own MY_OWNER spr SPRITE_NAME frms SPRITE_FRAMES scl SPRITE_SCALE col SPRITE_COLOR gcol GLOW_COLOR
+
+	setvard FX_ACTIVE 1
+
+	cleffect light new $getcl(MY_OWNER,origin) GLOW_RAD GLOW_COLOR 0.25
+	setvard CL_LIGHT_ID game.script.last_light_id
+
+	setvard ROT_COUNT 0
+	callevent fx_loop
+	callevent MAX_DURATION end_fx
+}
+
+{ fx_loop
+	if FX_ACTIVE
+	callevent 0.05 fx_loop
+	add ROT_COUNT 10
+	if ( ROT_COUNT > 359 ) setvard ROT_COUNT 0
+	local SPRITE_POS $getcl(MY_OWNER,origin)
+	vectoradd SPRITE_POS $relpos($vec(ROT_COUNT,ROT_COUNT,0),$vec(0,32,0))
+	cleffect tempent sprite SPRITE_NAME SPRITE_POS setup_spiral_sprite
+
+	local SPRITE_POS $getcl(MY_OWNER,origin)
+	vectoradd SPRITE_POS $relpos($vec($neg(ROT_COUNT),$neg(ROT_COUNT),0),$vec(0,32,0))
+	cleffect tempent sprite SPRITE_NAME SPRITE_POS setup_spiral_sprite
+
+	if $getcl(MY_OWNER,isplayer)
+	//got re-indexed to a player model, so I know I don't belong here at least
+	callevent end_fx
+}
+
+{ end_fx
+	if FX_ACTIVE
+	setvard FX_ACTIVE 0
+	callevent 2.0 remove_me
+}
+
+{ remove_me
+	removescript
+}
+
+{ game_prerender
+
+	if FX_ACTIVE
+	//if ( !$getcl(MY_OWNER,exists) ) callevent end_fx
+	if $getcl(MY_OWNER,exists)
+	local L_POS $getcl(MY_OWNER,origin)
+	cleffect light CL_LIGHT_ID L_POS GLOW_RAD GLOW_COLOR 0.25
+}
+
+{ setup_spiral_sprite
+	cleffect tempent set_current_prop death_delay 0.5
+	//cleffect tempent set_current_prop renderamt   255
+	//cleffect tempent set_current_prop rendermode add
+	cleffect tempent set_current_prop rendercolor SPRITE_COLOR
+	cleffect tempent set_current_prop scale SPRITE_SCALE
+	cleffect tempent set_current_prop gravity    0
+	cleffect tempent set_current_prop collide    none
+	cleffect tempent set_current_prop framerate	30
+	cleffect tempent set_current_prop frames	SPRITE_FRAMES
+}

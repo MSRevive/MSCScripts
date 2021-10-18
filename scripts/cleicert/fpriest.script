@@ -1,0 +1,241 @@
+//MiB for Cleicert Temple 
+{
+	const NO_JOB 1
+	const NO_RUMOR 1
+	const CHAT_DELAY 5.75
+}
+
+#include monsters/base_npc
+#include monsters/base_chat
+
+{ npc_spawn 
+
+   hp 40/40 
+   gold 0 
+   name Ghostly Priest 
+   width 32 
+   height 72 
+   race beloved 
+   roam 0      //Don't go roaming around 
+   setmodel    npc/balancepriest1.mdl 
+   invincible  1
+	setmodelbody 1 3
+	setprop ent_me rendermode 5
+	setprop ent_me renderamt 0
+
+   setvard ALREADYTALKING 0 
+
+	saytextrange 2048
+
+   catchspeech say_hi hi hail heil yo hello sup 
+	catchspeech say_stfu stfu STFU fuck
+
+	callevent 0.1 scan_for_players
+	callevent 0.1 get_angles
+}
+
+{ get_angles
+	setvard MY_YAW game.monster.angles.yaw
+}
+
+{ scan_for_players
+	if !IS_ACTIVE
+	callevent 0.25 scan_for_players
+	getplayersnb PLAYER_LIST
+	calleventloop $get_token_amt(PLAYER_LIST) check_near
+}
+
+{ check_near
+	local CUR_PLAYER $get_token(PLAYER_LIST,game.script.iteration)
+	if $get(CUR_PLAYER,range) < 512
+	setvard IS_ACTIVE 1
+	setvard PLAYER_DETECT CUR_PLAYER
+	callevent do_intro
+}
+
+{ do_intro
+	callevent light_up
+	callevent face_speaker PLAYER_DETECT
+	playanim critical comehere
+	playsound 0 10 magic/spawn.wav
+	setvard FADE_LOOP 0
+	callevent fade_in_loop
+	saytext Pssst... Over here.
+	callevent 5.0 say_hi
+}
+
+{ fade_in_loop
+	add FADE_LOOP 1
+	setvard FADING_IN 1
+	if ( FADE_LOOP == 255 ) setvard FADING_IN 0
+	if FADE_LOOP < 255
+	callevent 0.1 fade_in_loop
+	setprop ent_me renderamt FADE_LOOP
+}
+
+{ fade_out
+
+	subtract FADE_LOOP 1
+	if ( FADE_LOOP == 0 ) deleteent ent_me
+	if ( FADE_LOOP == 1 ) callevent remove_light
+	if FADE_LOOP > 0
+	if ( !BREAK_FADE ) callevent 0.1 fade_out
+	setprop ent_me renderamt FADE_LOOP
+}
+
+{ say_hi
+
+	if !BUSY_CHATTING
+
+	setvard BREAK_FADE 1
+
+	setvard BUSY_CHATTING 1
+
+	setvard CHAT_STEP 0
+	setvard CHAT_TYPE intro
+	setvard CHAT_STEP1 "Thank the gods! You've come just in time... I've not much time to explain..."
+	setvard CHAT_STEP2 "Long ago we imprisoned a great evil in this temple: a dreaded lightning Djinn of the Shadahar Orc Tribe."
+	setvard CHAT_STEP3 "We were able to weaken him, and seal him here inside the temple, but we lacked the power to slay him."
+	setvard CHAT_STEP4 "...As such, we felt the only option, to prevent his escape, was to fortify the temple's defenses and seal it, from the inside."
+	setvard CHAT_STEP5 "As you can see by my current, ghostly state, that was quite some time ago, and alas, we have all long since perished."
+	setvard CHAT_STEP6 "My spirit was bound here in hopes that I could somehow influence someone of power to the temple, to finish our task, and destroy the Djinn."
+	setvard CHAT_STEP7 "However, it maybe too late, it seems the Shadahar Orcs have also found our temple, and are breaking in as we speak!"
+	setvard CHAT_STEP8 "If they find the Djinn first, they will be able to rejuvenate and release him at full power! You must find the Djinn before they do, and destroy it!"
+	setvard CHAT_STEP9 "There are four crystals that lock the beast in its cage within the temple - find them, use them to release him."
+	setvard CHAT_STEP10 "You MAY be able to defeat him while he is still in his weakened state! My time here has nearly ended, so hurry! You are now our only hope!"
+	setvard CHAT_STEPS 10
+	callevent chat_loop
+
+}
+
+{ chat_loop
+	if ( CHAT_TYPE equals intro )
+	{
+		if ( CHAT_STEP != 9 ) callevent face_speaker PLAYER_DETECT
+		if ( CHAT_STEP == 1 ) playanim critical comehere
+		if ( CHAT_STEP == 3 ) playanim critical converse1
+		if ( CHAT_STEP == 5 ) playanim critical converse2
+		if ( CHAT_STEP == 7 ) playanim critical talkright
+		if ( CHAT_STEP == 8 ) playanim critical pondering2
+		if ( CHAT_STEP == 9 )
+		{
+			setangle face $vec(0,MY_YAW,0)
+			playanim critical dryhands
+			callevent 0.25 use_trig
+		}
+
+		if ( CHAT_STEP == 10 )
+		{
+			playanim critical wave
+			setmoveanim none
+			setidleanim none
+			setvard FADING_OUT 1
+			setvard BREAK_FADE 0
+			callevent 2.0 fade_out
+		}
+		if ( FADING_OUT )
+		{
+			if BREAK_FADE
+			if !FADING_IN
+			callevent fade_in_loop
+		}
+	}
+}
+
+{ use_trig
+	if !USED_TRIGGER
+	setvard USED_TRIGGER 1
+	usetrigger GiveCrystalOne
+}
+
+{ [server] light_up //call at spawn or cycle_up
+
+	local LIGHT_COLOR (200,200,255)
+	local LIGHT_RAD 128
+	clientevent persist all monsters/lighted_cl $get(ent_me,index) LIGHT_COLOR LIGHT_RAD
+	setvard MY_LIGHT_SCRIPT game.script.last_sent_id
+}
+
+{ [server] remove_light
+
+	clientevent remove all MY_LIGHT_SCRIPT
+}
+
+
+//=============== OLD INTRO
+
+{ say_hi_old
+  if( ALREADYTALKING == 0 ) 
+  { 
+   setvard ALREADYTALKING 1 
+	playanim critical crouch
+   saytext Cowards! Cowards you all are! Oh, you are not one of those [orcs], are you? 
+   calleventtimed 5 greet1 
+  } 
+} 
+{  greet1 
+  saytext Well, this certainly changes things. Anyone who fights against those creatures certainly deserves my help. 
+  calleventtimed 5 greet2 
+} 
+{  greet2 
+  saytext I am unsure as to who their master is or what their master plan is, but I think I know why they're here. 
+  calleventtimed 5 greet3 
+} 
+{  greet3 
+  saytext Our temple worshipped lightning, perhaps more than we should have. 
+  calleventtimed 5 greet4 
+} 
+{ greet4 
+  saytext For our 100 year celebration, we thought that we should create a symbol for ourselves. 
+  calleventtimed 5 greet5 
+} 
+{ greet5 
+  saytext We wanted something powerful, something moving. We didn't count on it actually moving.. 
+  calleventtimed greet6 
+} 
+{ greet6 
+  saytext We created a being of pure lightning, and during our celebrations, it started killing. 
+  calleventtimed greet7 
+} 
+{ greet7 
+  saytext It took our strongest mages to stop the beast. They managed to drain it's magic into [crystals]. 
+  calleventtimed greet8 
+} 
+{ greet8 
+  saytext The process drained them so much that they died in the process. I fear that these orcs are intending 
+  calleventtimed greet9 
+} 
+{ greet9 
+  saytext to return the beast's magic and release him into the world. Here, take this crystal and do with it what you will. 
+  usetrigger GiveCrystalOne 
+  calleventtimed greet10 
+} 
+{ greet10 
+  saytext I fear that the orcs may continue to try to release him if something isn't done... 
+  setvard ALREADYTALKING 0 
+} 
+
+{ crystal 
+  if( ALREADYTALKING == 0 ) 
+  { 
+   setvard ALREADYTALKING 1 
+   saytext Ah, yes. The magic crystals contain all of the beast's powers. They have been scattered through the temple, but 
+   calleventtimed 5 crystal1 
+  } 
+} 
+{ crystal1 
+  saytext I fear the orcs may be attempting to gather them to release the monster. When the crystals have 
+  calleventtimed 5 crystal2 
+} 
+{ crystal2 
+  saytext been placed into the base of the monster's statue, he will be released. 
+  setvard ALREADYTALKING 0 
+} 
+
+//=== STFU (new)
+{ say_stfu
+	if !USED_TRIGGER
+	//setvard CHAT_STEP 10
+	saytext My werd, so rude...
+	callevent 1.0 use_trig
+}

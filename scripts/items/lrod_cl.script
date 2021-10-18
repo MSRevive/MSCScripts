@@ -1,0 +1,240 @@
+//Magic (client-side special effects)
+
+{
+  	const SPRITE_LIGHTNING		lgtning.spr
+	const SPRITE_GLOW		3dmflaora.spr
+	const GLOW_DURATION		3
+	const OFS_POS			0.2
+	const OFS_NEG			-0.2
+ 	const LIGHT_RADIUS		128
+  	const LIGHT_COLOR		(100,33,253)
+	const SKYLTNG_OFS		256
+ 
+	precache 			SPRITE_GLOW
+	precache 			SPRITE_LIGHTNING
+}
+
+{ client_activate
+
+	setvard script.modelid PARAM1
+	setvard script.prepduration PARAM2
+	setvard script.duration PARAM3
+	setvard script.islocal 0
+
+	if( script.modelid == game.localplayer.index )
+	{
+		setvard script.islocal 1
+		setcallback render enable
+	}
+
+	if( $getcl(script.modelid,exists) )
+	{
+		callevent script.prepdone prep_done
+
+		callevent create_light $getcl(script.modelid,origin)
+	
+		callevent cl_handmagic_beam righthand
+	}
+	else callevent effect_die
+}
+{ effect_die
+
+	removescript 
+}
+{ prep_done
+
+	setvard script.prepdone 1
+}
+
+
+{
+	repeatdelay $randf(0.15,0.25)
+
+	if !script.prepdone
+
+	if( script.islocal )
+	{
+		if !game.localplayer.thirdperson
+		local script.isfirstperson 1
+	}
+
+	if( !script.isfirstperson )
+	{
+		//Watching other player cast spell
+		callevent make_sprite_1 $getcl(script.modelid,bonepos,21)
+		callevent make_sprite_1 $getcl(script.modelid,bonepos,38)
+
+		////dbg 'script.modelid' - script.modelid
+		////dbg bone 21 -- $getcl(script.modelid,bonepos,21)
+	}
+	else
+	{
+		//Watching self cast spell in first person
+		local handid game.localplayer.viewmodel.active.id
+		//callevent make_sprite_1 $getcl(handid,bonepos,13)
+		//callevent make_sprite_1 $getcl(handid,bonepos,32)
+	}
+}
+
+{ make_sprite_1
+
+	if PARAM1 isnot '0'
+
+	local l.pos PARAM1
+	vectoradd l.pos $vec($rand(OFS_NEG,OFS_POS),$rand(OFS_NEG,OFS_POS),$rand(OFS_NEG,OFS_POS))
+	cleffect tempent sprite SPRITE_GLOW l.pos setup_sprite_1
+}
+
+{  setup_sprite_1
+
+
+   cleffect tempent set_current_prop death_delay 	GLOW_DURATION
+   cleffect tempent set_current_prop bouncefactor 	0.1
+   cleffect tempent set_current_prop scale 		0.1
+   cleffect tempent set_current_prop gravity 		$randf(0.2,0.1)
+   cleffect tempent set_current_prop collide 		world|die
+}
+
+{ create_light
+
+	if PARAM1 isnot '0'
+
+	cleffect light new PARAM1 LIGHT_RADIUS LIGHT_COLOR script.duration
+	//setvard local.lightid game.script.last_light_id
+}
+
+
+// Eletricity moving through player hands in view model
+// ====================================================
+
+{ cl_handmagic_beam	//Called from viewmodel and from this script
+
+	if( PARAM1 equals 'hands' )
+	{
+		setvard magichand.on 1
+		setvard handmagic.handid game.localplayer.viewmodel.active.id
+		setvard handmagic.anim $getcl(game.localplayer.viewmodel.active.id,anim)
+		setvard handmagic.event handmagic_connecthands
+	}
+	else if( PARAM1 equals 'righthand' )
+	{
+		setvard magichand.on 1
+		setvard handmagic.handid game.localplayer.viewmodel.active.id
+		setvard handmagic.anim $getcl(game.localplayer.viewmodel.active.id,anim)			
+		setvard handmagic.event handmagic_righthand
+	}
+	else
+	{
+		setvard magichand.on 0
+	}
+}
+
+{ handmagic_connecthands
+	
+	if( !PARAM1 )
+	{
+		//Called from game_render_transparent
+		//Connect beams between these finger bones
+		callevent handmagic_createbeam 16 35
+		callevent handmagic_createbeam 19 38
+		callevent handmagic_createbeam 22 41
+		callevent handmagic_createbeam 25 44
+		callevent handmagic_createbeam 28 47
+	}
+	else
+	{
+		//Called from game_prerender
+		//Create glow on hands
+		callevent create_sprite_2 1	//Righthand
+		callevent create_sprite_2 2	//Lefthand
+	}
+}
+
+{ handmagic_righthand
+	
+	if( !PARAM1 )
+	{
+		//Called from game_render_transparent
+		//Connect beams between these finger bones
+		callevent handmagic_createbeam_to_sky 35
+		callevent handmagic_createbeam_to_sky 38
+		callevent handmagic_createbeam_to_sky 41
+		callevent handmagic_createbeam_to_sky 44
+		callevent handmagic_createbeam_to_sky 47
+	}
+	else
+	{
+		//Called from game_prerender
+		//Create glow on right hands
+		callevent create_sprite_2 1	//Righthand
+	}
+}
+
+{ game_render_transparent
+
+	if magichand.on == 1
+	
+	local l.continue 1
+
+	//Make sure its the same mode and anim as when the effect started
+	if( game.localplayer.viewmodel.active.id != handmagic.handid ) local l.continue 0
+	if( handmagic.anim != $getcl(game.localplayer.viewmodel.active.id,anim) ) local l.continue 0
+
+	if( !l.continue ) callevent cl_handmagic_beam stop	//Model or anim changed, stop effect
+
+	if l.continue 
+
+	//Create lightning on fingers
+	callevent handmagic.event
+
+
+	local l.lightpos $getcl(game.localplayer.index,origin)
+	vectoradd l.lightpos (0,0,12)
+
+	cleffect light new l.lightpos LIGHT_RADIUS LIGHT_COLOR 0.01
+}
+
+{ handmagic_createbeam
+	local l.pos.left $getcl(handmagic.handid,bonepos,PARAM1)
+	local l.pos.right $getcl(handmagic.handid,bonepos,PARAM2)
+
+	cleffect beam_points l.pos.left l.pos.right SPRITE_LIGHTNING 0.001 0.1 0.1 0.3 0.1 30 (1,0.5,2)
+}
+
+{ handmagic_createbeam_to_sky
+	
+	if $rand(0,100) < 10
+
+	local l.pos.finger $getcl(handmagic.handid,bonepos,PARAM1)
+	local l.pos.sky l.pos.finger
+
+	local l.ofs.x $randf($neg(SKYLTNG_OFS),SKYLTNG_OFS)
+	local l.ofs.y $randf($neg(SKYLTNG_OFS),SKYLTNG_OFS)
+	vectoradd l.pos.sky $vec(l.ofs.x,l.ofs.y,1024)
+
+	cleffect beam_points l.pos.finger l.pos.sky SPRITE_LIGHTNING 0.1 1 0.1 0.3 0.1 30 (1,0.5,2)
+}
+
+{ game_prerender
+
+	if magichand.on == 1
+	
+	callevent handmagic.event 1	//The 1 indicates that the event is being called from game_prerender
+}
+
+{  create_sprite_2	//Glow sprite in middle of hand.  Attaches to viewmodel attachment point
+
+	setvard magichand.attachment PARAM1
+	cleffect frameent sprite SPRITE_GLOW (0,0,0) setup_sprite_2
+}
+{  setup_sprite_2
+
+	cleffect frameent set_current_prop scale 	0.25
+	cleffect frameent set_current_prop rendermode 	add
+	cleffect frameent set_current_prop renderamt 	128
+	cleffect frameent set_current_prop rendercolor	(0,0,255)
+	cleffect frameent set_current_prop follow 	handmagic.handid
+	cleffect frameent set_current_prop body 	magichand.attachment
+}
+
+

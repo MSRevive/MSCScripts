@@ -1,0 +1,108 @@
+//Thothie - handeling all transition stuff here
+//Player first sees a Transition
+
+{ game_transition_entered //1: Transition_desc //2: DestBSP //3: local_spawn //4: dest_spawn
+
+	dbg game_transition_entered [help] desc[ PARAM1 ] bsp[ PARAM2 ] trans[ PARAM3 ] desttrans[ PARAM4 ]
+
+	local TEXT "You have entered a transition to "
+	stradd TEXT PARAM1
+	if ( game.players == 1 ) stradd TEXT ".|Press enter to travel to this area"
+	if ( game.players > 1 ) stradd TEXT ".|Press enter to start a vote to travel to this area"
+	//transwarn (meh, buffer can't handle anymore, stops at "crash")
+	//stradd TEXT "|Currently, some servers may crash if more than one player transitions at a time."
+	//stradd TEXT "|So it is best to choose one member of your party to do so."
+	helptip ent_me help_transition "Transition"  TEXT
+
+	setvard S_DESTNAME $lcase(PARAM2)
+	setvard S_TRANNAME PARAM1
+	local LOCAL_TRANS PARAM3
+	local DEST_TRANS PARAM4
+	callevent 0.1 trans_message
+
+	//callexternal $get(ent_me,id) ext_quest m S_DESTNAME
+	callexternal $get(ent_me,id) ext_set_map S_DESTNAME LOCAL_TRANS DEST_TRANS
+
+	//Allow AMX to start a vote for trans map
+	//This crashes
+	//infomsg all "TRANSITION WARNING" "Remember: Only one player can transition at a time, or the server may crash."
+	//infomsg all "SOLUTION" "If there are multiple players, elect one to transition while the rest reconnect."
+}
+
+{ trans_message
+
+	if game.time > NEXT_TRANS_MESSAGE
+
+	setvard NEXT_TRANS_MESSAGE game.time
+	add NEXT_TRANS_MESSAGE 15.0
+
+	local OUT_MSG "This leads to "
+	stradd OUT_MSG S_TRANNAME
+	if ( game.cvar.amx_vote_time == 0 ) stradd OUT_MSG ". Press (enter) to continue."
+	if ( game.cvar.amx_vote_time > 0 )
+	{
+		if ( game.players > 1 )	stradd OUT_MSG ". Press (enter) to start an AMX vote."
+		if ( game.players == 1 )	stradd OUT_MSG ". Press (enter) to continue."
+	}
+	local OUT_TITLE "Travel to next area "
+	stradd OUT_TITLE "("
+	stradd OUT_TITLE $lcase(S_DESTNAME)
+	stradd OUT_TITLE ")"
+	infomsg ent_me OUT_TITLE OUT_MSG
+}
+
+{ game_transition_exited //1: Transition name //2: DestMapName //3: LocalTrans
+
+	//dbg game_transition_exited PARAM1 PARAM2 PARAM3 PARAM4
+}
+
+//removing this function in favor of MS.DLL assembling the trigger
+//{ game_touchtrans //1: Ent Touch //2: DestMapName
+//
+//	//activated whenever player presses <enter> on a transition
+//
+//	//Allow AMX to prompt user to start a vote for next map
+//
+//	local SERVER_EVENT "touch_trans_"
+//	stradd SERVER_EVENT PARAM2
+//	////dbg game_transition_entered(first_trans) PARAM1 PARAM2 PARAM3 PARAM4
+//	usetrigger SERVER_EVENT
+//
+////	//think we're going to axe this
+//////	local SERVER_EVENT "single_trans_"
+//////	stradd SERVER_EVENT PARAM2
+//////	usetrigger SERVER_EVENT
+////
+////	local TOUCH_ID $get(PARAM1,id)
+////	local TOUCH_SPAWN $get(TOUCH_ID,scriptvar,MY_HOME)
+////	//local TOUCH_SPAWN $vec(TOUCH_SPAWN)
+////	local TOUCH_POS $get(TOUCH_ID,origin)
+////	local HOME_DIST $dist(TOUCH_SPAWN,TOUCH_POS)
+////	
+////	local INV_SPAWN 0
+////	if ( $vec.x(TOUCH_SPAWN) == 0 ) add INV_SPAWN 1
+////	if ( $vec.y(TOUCH_SPAWN) == 0 ) add INV_SPAWN 1
+////	if ( $vec.z(TOUCH_SPAWN) == 0 ) add INV_SPAWN 1
+////	if ( INV_SPAWN == 3 ) local EXIT_SUB 1
+////	if ( $vec.y(TOUCH_SPWWN) == 20000 ) local EXIT_SUB 1
+////	//if ( EXIT_SUB ) //dbg temp dest not stored due to invalid spawn ( got TOUCH_SPAWN )
+////	IF !EXIT_SUB
+////
+////	//if ( HOME_DIST <= 640 ) //dbg temp dest not stored due too close to origin spawn
+////
+////	if HOME_DIST > 640
+////	////dbg game_touchtrans $get(TOUCH_ID,name) willset ( PARAM2 ) - HisHomepos TOUCH_SPAWN dist HOME_DIST setting
+////	//quest set TOUCH_ID m PARAM2
+//}
+//
+//{ game_singletouch //1: Ent Touch
+//
+//	////dbg game_singletouch $get(PARAM1,name) ( PARAM1 )
+//}
+
+{ game_map_change
+	//dbg changing map to PARAM1
+
+}
+
+//game_transition_triggered is found in /game_master

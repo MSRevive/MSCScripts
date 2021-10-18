@@ -1,0 +1,323 @@
+#scope server
+{
+	const CHAT_USE_CONV_ANIMS 0
+	const CHAT_NO_CLOSE_MOUTH 1
+	const CHAT_NEVER_INTERRUPT 1
+	const NO_SUMMON 1
+
+	const SWIPE_DAMAGE '$rand(50,120)'
+	const FROST_BOLT_DAMAGE '$rand(80,175)'
+	const FROST_STRIKE_DAMAGE '$rand(60,120)'
+	
+	setvard FOLLOW_PLR_DIST 256
+
+	const SFS_ENTRANCE_POINT $vec(1584,-1152,-128)
+
+	setvard SKILL_PAGE 1
+}
+
+#include monsters/sorc_shaman_elder
+#include monsters/sorc_base
+#include bloodshrine/base_sorc_friendly
+#include monsters/base_chat_array
+
+{ orc_spawn
+
+	name Meshkhar, the Elder
+	name_unique fsorc_shaman
+	hp 8000
+	hearingsensitivity 8
+	takedmg lightning 0.0
+	takedmg poison 2.0
+	race human
+	roam 0
+	width 32
+	height 96
+
+	setmodel monsters/sorc.mdl
+
+	setmodelbody 1 0 //body: 0=bare 1=bloody_shirt 2=gold_armor 3=archer
+	setmodelbody 1 4 //head: 0=hat_horns 1=hat_spiked 2=lizardskin_horned 3=gold_Chieftain 4=lizard_cap
+	setmodelbody 2 0 //weapon: 0=unarmed 1=axe 2=bow 3=steel_bow 4=sword 5=great_axe 6=sword_sheild 8=yellow_axe 9=blooddrinker
+}
+
+{ ext_shaman_lines
+	setvard LEADER_ID $get_by_name(fsorc_leader)
+	setvard FOLLOW_PLR_ID $get(LEADER_ID,scriptvar,'FOLLOW_PLR_ID')
+	callevent bfsorc_follow_close
+	callevent chat_now "Yes... And then some of us, began to change, and were taken away." 5.0 nod_yes release_zorc add_to_que
+	callevent chat_now "We were once a force of nine, but now, we are but four..." 5.0 neigh add_to_que
+}
+
+
+{ release_zorc
+	callevent bfsorc_follow_normal
+	usetrigger sorc_door2
+	callevent 5.0 release_zorc2
+}
+
+{ release_zorc2
+	setvard SECOND_ID $get_by_name(fsorc_second)
+	callexternal SECOND_ID ext_zombie_react
+}
+
+{ alert_shadowforms
+	if !DID_SHADOWFORM
+	setvard T_LEADER_ID $get_by_name(fsorc_leader)
+	setvard T_SECOND_ID $get_by_name(fsorc_second)
+	setvard DID_SHADOWFORM 1
+	callevent chat_now "Wait... This scent..." 5.0 add_to_que
+	callevent chat_now "One of the old dark ones lairs here..." 4.0 warcry add_to_que
+	if ( $get(T_LEADER_ID,isalive) ) local LEADER_ALIVE 1
+	if ( $get(T_SECOND_ID,isalive) ) local SECOND_ALIVE 1
+	if ( LEADER_ALIVE )
+	{
+		if ( !SECOND_ALIVE ) callevent chat_now "Brindahr, wait here. Your weapon will be useless against it." 4.0 add_to_que
+		if ( SECOND_ALIVE ) callevent chat_now "You two wait here. Your weapons will be useless against it." 4.0 add_to_que
+	}
+	if ( !LEADER_ALIVE )
+	{
+		if ( SECOND_ALIVE ) callevent chat_now "Vurinahr, wait here. Your weapon will be useless against it." 4.0 add_to_que
+	}
+
+	if ( LEADER_ALIVE ) local DO_READY_COMMENT 1
+	if ( SECOND_ALIVE ) local DO_READY_COMMENT 1
+	if ( DO_READY_COMMENT )
+	{
+		callevent chat_now "I, on the other hand, have a trick or two for just such creatures." 4.0 none set_warrior_wait add_to_que
+	}
+	else
+	{
+		callevent chat_now "I have a trick or two for just such creatures..." 4.0 none set_warrior_wait add_to_que
+	}
+}
+
+{ set_warrior_wait
+	setvard LEADER_ID $get_by_name(fsorc_leader)
+	setvard SECOND_ID $get_by_name(fsorc_second)
+	callexternal LEADER_ID fsorc_wait $vec(1616,-1348,-128)
+	callexternal SECOND_ID fsorc_wait $vec(1616,-1428,-128)
+}
+
+{ ext_shadowform_boss
+	divide BALL_DMG 3
+	callevent 10.0 ext_shadowform_boss2
+}
+
+{ ext_shadowform_boss2
+	setvard T_LEADER_ID $get_by_name(fsorc_leader)
+	setvard T_SECOND_ID $get_by_name(fsorc_second)
+	callevent chat_now "This creature is immune to our weaponry - you must use holy weapons and banishing magics!" 5.0 add_to_que
+	callevent chat_now "It's only vulnerable when the eye looks upon us! BEWARE THE EYE!" 5.0 add_to_que
+	if ( $get(T_LEADER_ID,isalive) ) local LEADER_ALIVE 1
+	if ( $get(T_SECOND_ID,isalive) ) local SECOND_ALIVE 1
+	if ( LEADER_ALIVE )
+	{
+		if ( !SECOND_ALIVE ) callevent chat_now "Brindahr - concentrate on the undead! The humans and I will strike at the eye of the beast!" 5.0 add_to_que
+		if ( SECOND_ALIVE ) callevent chat_now "Shadahar warriors - concentrate on the undead! The humans and I will strike at the eye of the beast!" 5.0 add_to_que
+	}
+	if ( !LEADER_ALIVE )
+	{
+		if ( SECOND_ALIVE ) callevent chat_now "Vurinahr - concentrate on the undead! The humans and I will strike at the eye of the beast!" 5.0 add_to_que
+	}
+}
+
+{ npcatk_hunt
+	if NPCATK_TARGET isnot unset
+	if ( $get_takedmg(NPCATK_TARGET,lightning) == 0 ) local USE_HOLY_BALLS 1
+	if ( $get(NPCATK_TARGET,scriptvar,'IMMUNE_LIGHTNING') == 1 ) local USE_HOLY_BALLS 1
+	if ( USE_HOLY_BALLS )
+	{
+		setvard BALL_TYPE holy
+	}
+	else
+	{
+		setvard BALL_TYPE lightning
+	}
+}
+
+{ ext_return_comment
+	callevent chat_now "If we can find the source of evil in this place, and destroy it, we should be able to return home through the ways." 5.0 nod_yes add_to_que
+}
+
+{ ext_wait_sfs_loop
+	if !DID_SHADOWFORM
+	local MY_ORG $get(ent_me,origin)
+	if ( $dist(SFS_ENTRANCE_POINT,MY_ORG) < 256 ) callevent alert_shadowforms
+	if !DID_SHADOWFORM
+	callevent 0.1 ext_wait_sfs_loop
+}
+
+{ give_reward_options
+
+	dbg give_reward_options REWARDS_LEFT vs REWARDS_TOTAL list PLAYERS_TO_REWARD vs PARAM1
+	if REWARDS_LEFT > 0
+
+	if PLAYERS_TO_REWARD contains PARAM1
+
+	if ( !DOING_SWITCH_PAGE )
+	{
+		callevent chat_now "I can use my magics to enhance one of your skills, please select which one." 3.0 neigh add_to_que
+	}
+	setvard DOING_SWITCH_PAGE 0
+
+	if ( SKILL_PAGE == 1 )
+	{
+		local reg.mitem.title 	"Archery"
+		local reg.mitem.type 	callback
+		local reg.mitem.data	archery
+		local reg.mitem.callback enhance_skill
+		menuitem.register
+
+		local reg.mitem.title 	"Axe Handling"
+		local reg.mitem.type 	callback
+		local reg.mitem.data	axehandling
+		local reg.mitem.callback enhance_skill
+		menuitem.register
+
+		local reg.mitem.title 	"Bluntarms"
+		local reg.mitem.type 	callback
+		local reg.mitem.data	bluntarms
+		local reg.mitem.callback enhance_skill
+		menuitem.register
+
+		local reg.mitem.title 	"Martial Arts"
+		local reg.mitem.type 	callback
+		local reg.mitem.data	martialarts
+		local reg.mitem.callback enhance_skill
+		menuitem.register
+
+		local reg.mitem.title 	"Polearms"
+		local reg.mitem.type 	callback
+		local reg.mitem.data	polearms
+		local reg.mitem.callback enhance_skill
+
+		local reg.mitem.title 	"Smallarms"
+		local reg.mitem.type 	callback
+		local reg.mitem.data	smallarms
+		local reg.mitem.callback enhance_skill
+		menuitem.register
+
+		local reg.mitem.title 	"Swordsmanship"
+		local reg.mitem.type 	callback
+		local reg.mitem.data	swordsmanship
+		local reg.mitem.callback enhance_skill
+		menuitem.register
+
+
+		local reg.mitem.title 	"Spellcasting..."
+		local reg.mitem.type 	callback
+		local reg.mitem.callback switch_page2
+		menuitem.register
+	}
+
+	if ( SKILL_PAGE == 2 )
+	{
+		local reg.mitem.title 	"Fire"
+		local reg.mitem.type 	callback
+		local reg.mitem.data	spellcasting.fire
+		local reg.mitem.callback enhance_skill
+		menuitem.register
+
+		local reg.mitem.title 	"Ice"
+		local reg.mitem.type 	callback
+		local reg.mitem.data	spellcasting.ice
+		local reg.mitem.callback enhance_skill
+		menuitem.register
+
+		local reg.mitem.title 	"Lightning"
+		local reg.mitem.type 	callback
+		local reg.mitem.data	spellcasting.lightning
+		local reg.mitem.callback enhance_skill
+		menuitem.register
+
+		local reg.mitem.title 	"Affliction"
+		local reg.mitem.type 	callback
+		local reg.mitem.data	spellcasting.affliction
+		local reg.mitem.callback enhance_skill
+		menuitem.register
+
+		local reg.mitem.title 	"Divination"
+		local reg.mitem.type 	callback
+		local reg.mitem.data	spellcasting.divination
+		local reg.mitem.callback enhance_skill
+		menuitem.register
+
+		local reg.mitem.title 	"(previous)"
+		local reg.mitem.type 	callback
+		local reg.mitem.callback switch_page1
+		menuitem.register
+	}
+}
+
+{ switch_page2
+	setvard DOING_SWITCH_PAGE 1
+	setvard SKILL_PAGE 2
+	setvard SFORC_MENU_TARGET PARAM1
+	callevent 0.5 sforc_offer_menu
+}
+
+{ switch_page1
+	setvard DOING_SWITCH_PAGE 1
+	setvard SKILL_PAGE 1
+	setvard SFORC_MENU_TARGET PARAM1
+	callevent 0.5 sforc_offer_menu
+}
+
+{ enhance_skill
+	callevent chat_now "So be it. It is done." 3.0 warcry add_to_que
+	local FIND_INDX $get_find_token(PLAYERS_TO_REWARD,PARAM1)
+	token.del PLAYERS_TO_REWARD FIND_INDX
+	subtract REWARDS_LEFT 1
+	effect glow ent_me glow (255,255,0) 64 1 1
+	if ( PARAM2 isnot spellcasting.lightning )
+	{
+		local XP_GAIN 5000
+		local PLR_ADJ game.playersnb
+		subtract PLR_ADJ 1
+		multiply PLR_ADJ 0.25
+		add PLR_ADJ 1
+		multiply XP_GAIN PLR_ADJ
+		giveexp PARAM1 PARAM2 $int(XP_GAIN)
+		gplayermessage PARAM1 * $int(XP_GAIN) XP Awarded ( PARAM2 )
+	}
+	else
+	{
+		local XP_GAIN 10000
+		local PLR_ADJ game.playersnb
+		subtract PLR_ADJ 1
+		multiply PLR_ADJ 0.25
+		add PLR_ADJ 1
+		multiply XP_GAIN PLR_ADJ
+		giveexp PARAM1 PARAM2 $int(XP_GAIN)
+		gplayermessage PARAM1 * $int(XP_GAIN) XP Awarded ( PARAM2 )
+	}
+	if REWARDS_LEFT == 0
+	callevent 6.0 ready_to_go
+}
+
+{ sforc_offer_menu
+	menu.open SFORC_MENU_TARGET
+}
+
+{ ext_boss_dead
+	setvard REWARDS_LEFT 0
+	setvard PLAYERS_TO_REWARD ''
+	getplayersnb REWARD_PLAYER_LIST
+	if ( !SETUP_QUALIFICATIONS )
+	{
+		setvard SETUP_QUALIFICATIONS 1
+		callevent check_qualify
+	}
+	calleventloop $get_token_amt(REWARD_PLAYER_LIST) gather_reward_players
+	
+}
+
+{ gather_reward_players
+	local CUR_PLAYER $get_token(REWARD_PLAYER_LIST,game.script.iteration)
+	local DMG_PTS $get(CUR_PLAYER,scriptvar,'PLR_TOTAL_DMG')
+	if ( DMG_PTS >= TC_HALF_AVG_DMG_PTS ) local PLR_QUALIFIED 1
+	if PLR_QUALIFIED
+	token.add PLAYERS_TO_REWARD CUR_PLAYER
+	add REWARDS_LEFT 1
+}

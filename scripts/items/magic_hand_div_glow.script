@@ -1,0 +1,220 @@
+//Thothie - Divination can't be raised, switching raise skill to raw SC
+//- The original formula, in addition to being unused in output, tis a bit funky, hopefully this works.
+{
+  const SOUND_SHOOT      	magic/cast.wav
+
+  const MELEE_RANGE		1024
+  const MELEE_HITCHANCE 	100%
+  const MELEE_ATK_DURATION 	0.5
+
+  setvar SPELL_SKILL_REQUIRED	1
+  const SPELL_FIZZLE_TIME	25
+  const SPELL_CAST_SUCCESS	100%
+  const SPELL_PREPARE_TIME	0.5
+  const SPELL_DAMAGE_TYPE	generic
+  const SPELL_ENERGYDRAIN	5
+  const SPELL_MPDRAIN		1
+  const SPELL_STAT		none
+
+  const EFFECT_MAXDURATION 	240
+  const EFFECT_MINDURATION 	60
+  const EFFECT_DURATION_STAT	$get(ent_owner,stat.concentration)
+  divide EFFECT_DURATION_STAT 100
+  const EFFECT_DURATION_FORMULA $get_skill_ratio(EFFECT_DURATION_STAT,EFFECT_MINDURATION,EFFECT_MAXDURATION)
+  const LIGHTRNG_MAX	 	384
+  const LIGHTRNG_MIN 		96
+  const LIGHTRNG_SKILL		l.skillratio
+  const LIGHTRNG_FORMULA 	$get_skill_ratio(LIGHTRNG_SKILL,LIGHTRNG_MIN,LIGHTRNG_MAX)
+
+  const SPELL_SCRIPT		effects/effect_light
+	const EFFECT_STACK 1
+  precachefile 			SPELL_SCRIPT
+
+	const FREQ_INC_LIGHT 0.2
+}
+
+#include items/magic_hand_base
+
+{  spell_spawn
+
+   name 		Glow
+   desc 		Create artificial light
+}
+
+//old version
+//{  spell_casted	//PARAM1: "none"/"npc"/"world"   2: Attack end Position   3: Entity hit (if any)
+//
+//	local DEMON_ON $get(ent_owner,scriptvar,'DEMON_BLOOD')
+//	if ( DEMON_ON )
+//	{
+//		playermessage You cannot use divine magic while under the influence of Demon Blood!
+//		callevent spell_end
+//		local EXIT_SUB 1
+//	}
+//	if !EXIT_SUB
+//
+//	local DEMON_ON $get(ent_owner,scriptvar,'PLR_GLOW_BLOCK')
+//	if ( DEMON_ON )
+//	{
+//		playermessage A dark force is blocking the glow spell!
+//		callevent spell_end
+//		local EXIT_SUB 1
+//	}
+//	if !EXIT_SUB
+//
+//	if !WAS_CAST
+//	setvard WAS_CAST 1
+//
+//	local OWNER_SKILL $get(ent_owner,skill.spellcasting)
+//	local GLOW_RADIUS OWNER_SKILL
+//	multiply GLOW_RADIUS 50
+//	If ( GLOW_RADIUS > LIGHTRNG_MAX ) local GLOW_RADIUS LIGHTRNG_MAX
+//	If ( GLOW_RADIUS < LIGHTRNG_MIN ) local GLOW_RADIUS LIGHTRNG_MIN
+//
+//
+//	if ( OWNER_SKILL >= 10 ) local G_COLOR (254,254,254)
+//	if ( OWNER_SKILL <= 9 ) local G_COLOR (255,164,255)
+//	if ( OWNER_SKILL <= 8 ) local G_COLOR (255,128,255)
+//	if ( OWNER_SKILL <= 7 ) local G_COLOR (255,128,196)
+//	if ( OWNER_SKILL <= 6 ) local G_COLOR (255,128,164)
+//	if ( OWNER_SKILL <= 5 ) local G_COLOR (255,128,128)
+//	if ( OWNER_SKILL <= 4 ) local G_COLOR (255,96,128)
+//	if ( OWNER_SKILL <= 3 ) local G_COLOR (255,64,128)
+//	if ( OWNER_SKILL <= 2 ) local G_COLOR (255,0,128)
+//
+//	//Always cast on owner, lest player targeted
+//	local SPELL_TARGET $get(ent_owner,id)
+//	if ( $get(PARAM3,isplayer) == 1 ) local SPELL_TARGET $get(PARAM3,id)
+//
+//	applyeffect SPELL_TARGET SPELL_SCRIPT EFFECT_DURATION_FORMULA GLOW_RADIUS G_COLOR $get(ent_owner,id)
+//
+//	volume 5
+//	playsound 2 magic/elecidlepop.wav
+//
+//	//only cast once, then clear hands
+//	callevent 0.1 glow_done
+//}
+
+{ game_deploy
+	setvard CAST_DELAY game.time
+	add CAST_DELAY 0.2
+
+	if ( $get(ent_owner,scriptvar,'PLR_HAS_GLOW') )
+	{
+		if !CAST_STARTED
+		playermessage Glow: Extinguishing spell...
+		callexternal GAME_MASTER gm_light_update remove $get(ent_owner,index) //$vec(COLOR_RATIO_R,COLOR_RATIO_G,COLOR_RATIO_B) RAD_RATIO "magic_hand_div_glow"
+		callexternal ent_owner ext_set_glow 0
+		playsound 0 5 magic/elecidlepop.wav
+		callevent glow_done remove_glow
+	}
+}
+
+{ game_attack1_down
+	if game.time > CAST_DELAY
+
+//	if ( $get(ent_owner,scriptvar,'PLR_HAS_GLOW') )
+//	{
+//		if !CAST_STARTED
+//		playermessage Glow: Extinguishing spell...
+//		callexternal GAME_MASTER gm_light_update remove $get(ent_owner,index) //$vec(COLOR_RATIO_R,COLOR_RATIO_G,COLOR_RATIO_B) RAD_RATIO "magic_hand_div_glow"
+//		callexternal ent_owner ext_set_glow 0
+//		playsound 0 5 magic/elecidlepop.wav
+//		callevent glow_done remove_glow
+//		local EXIT_SUB 1
+//	}
+//	if !EXIT_SUB
+
+	if ( $get(ent_owner,scriptvar,'DEMON_BLOOD') )
+	{
+		playermessage You cannot use divine magic while under the influence of Demon Blood!
+		callevent glow_done demon_blood
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	if ( $get(ent_owner,scriptvar,'PLR_GLOW_BLOCK') )
+	{
+		playermessage A dark force is blocking the glow spell!
+		if ( CAST_STARTED )
+		{
+			//case someone gets clever and starts charging before crossing the brush
+			callexternal GAME_MASTER gm_light_update remove $get(ent_owner,index) //$vec(COLOR_RATIO_R,COLOR_RATIO_G,COLOR_RATIO_B) RAD_RATIO "magic_hand_div_glow"
+			callexternal ent_owner ext_set_glow 0
+			playsound 0 5 magic/elecidlepop.wav
+			callevent glow_done dark_force
+		}
+		callevent spell_end
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	if ( !CAST_STARTED )
+	{
+		setvard CAST_STARTED 1
+		setvard LIGHT_POWER 0.05
+		setvard MAX_LIGHT_POWER $get(ent_owner,skill.spellcasting)
+		multiply MAX_LIGHT_POWER 0.1
+		if ( MAX_LIGHT_POWER > 1 ) setvard MAX_LIGHT_POWER 1
+		playsound 0 5 magic/elecidlepop.wav
+		svplaysound 2 5 ambience/labdrone2.wav 0.8 50
+		local COLOR_RATIO_R 255
+		local COLOR_RATIO_G $ratio(LIGHT_POWER,0,255)
+		local COLOR_RATIO_B $ratio(LIGHT_POWER,128,255)
+		local RAD_RATIO $ratio(LIGHT_POWER,50,255)
+		playermessage Glow: Charging...
+		callexternal GAME_MASTER gm_light_update new $get(ent_owner,index) $vec(COLOR_RATIO_R,COLOR_RATIO_G,COLOR_RATIO_B) RAD_RATIO "magic_hand_div_glow"
+		setvard NEXT_LIGHT_UPDATE game.time
+		add NEXT_LIGHT_UPDATE FREQ_INC_LIGHT
+		callexternal ent_owner ext_set_glow 1
+	}
+
+	if ( game.time > NEXT_LIGHT_UPDATE )
+	{
+		setvard NEXT_LIGHT_UPDATE game.time
+		add NEXT_LIGHT_UPDATE FREQ_INC_LIGHT
+		add LIGHT_POWER 0.05
+		if ( LIGHT_POWER >= MAX_LIGHT_POWER ) callevent glow_done max_power
+		if LIGHT_POWER < MAX_LIGHT_POWER
+
+		local PITCH_RATIO $ratio(LIGHT_POWER,50,200)
+		svplaysound 2 5 ambience/labdrone2.wav 0.8 PITCH_RATIO
+
+		dbg cur_power LIGHT_POWER
+
+		local COLOR_RATIO_R 255
+		local COLOR_RATIO_G $ratio(LIGHT_POWER,64,255)
+		local COLOR_RATIO_B $ratio(LIGHT_POWER,32,255)
+		local RAD_RATIO $ratio(LIGHT_POWER,50,400)
+
+		callexternal GAME_MASTER gm_light_update update $get(ent_owner,index) $vec(COLOR_RATIO_R,COLOR_RATIO_G,COLOR_RATIO_B) RAD_RATIO "magic_hand_div_glow"
+	}
+}
+
+{ game_-attack1
+	if CAST_STARTED
+	callevent glow_done mouse_release
+}
+
+{ glow_done
+	dbg glow_done PARAM1
+	if ( CAST_STARTED ) svplaysound 2 0 ambience/labdrone2.wav
+	if ( PARAM1 equals max_power )
+	{
+		playermessage Glow: Maximum charge reached.
+	}
+	else
+	{
+		if CAST_STARTED
+		local DISP_POWER '('
+		local L_LIGHT_POWER LIGHT_POWER
+		multiply L_LIGHT_POWER 100
+		local L_LIGHT_POWER $int(L_LIGHT_POWER)
+		stradd DISP_POWER L_LIGHT_POWER
+		stradd DISP_POWER '%%'
+		stradd DISP_POWER ')'
+
+		playermessage Glow: Charge set DISP_POWER
+	}
+	deleteme
+}

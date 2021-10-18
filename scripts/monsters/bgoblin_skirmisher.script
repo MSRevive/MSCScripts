@@ -1,0 +1,137 @@
+//Fast moving, aggressive Blood Goblin with a knife
+
+#scope server
+
+{
+	const NEW_MODEL 1
+
+	const NPC_BASE_EXP 350
+
+	setvard CAN_FIREBALL 1
+	const DMG_FIREBALL 100
+	const DMG_FIREBALL_DOT 25
+	const FREQ_FIREBALL 20.0
+
+	setvard DROP_GOLD 1
+	setvard DROP_GOLD_AMT $rand(25,50)
+
+	const DMG_KNIFE $rand(40,60)
+	setvard BASE_FRAMERATE 2.0
+	setvard ATTACK_HITCHANCE 80
+
+	setvard CAN_STUN 0
+	setvard FLINCH_HEALTH 200
+}
+
+#include monsters/bgoblin
+
+{ [override] [shared] goblin_spawn
+
+	name a|Blood Goblin Skirmisher
+	race goblin
+	blood red //green for v_goblin
+	hp 1000
+	roam 1
+
+	hearingsensitivity 4
+
+	setanim.framerate 2.0
+
+	if ( !NEW_MODEL )
+	{
+		setmodel monsters/goblin2.mdl
+		width 32
+		height 60
+
+		setmodelbody 0 1 //body: 0-Bare 1-Archer 2-Armor 3-Sniper
+		setmodelbody 1 4 //head: 0-Horns 1-Spikes 2-Animal 3-Chief 4-Cowl
+		setmodelbody 2 8 //weapon: 0-Unarmed 1-Axe 2-wbow 3-sbow 4-sword 5-rAxe 6-sword&shield 7-club 8-knife
+		setmodelbody 3 0 //arrow: on/off
+
+		setprop ent_me skin 2
+	}
+	else
+	{
+		setmodel monsters/goblin_new.mdl
+		width 24
+		height 50
+
+		setmodelbody 0 1 //body: 0-Bare 1-Quiver&Strap
+		setmodelbody 1 4 //head: 0-Bare 1-Horns 2-Animal 3-Chief 4-Rag
+		setmodelbody 2 8 //weapon: 0-Unarmed 1-Axe 2-wbow 3-sbow 4-sword 5-rAxe 6-sword&shield 7-club 8-knife
+		setmodelbody 3 0 //arrow: On/off
+		
+
+		setprop ent_me skin 1 //0-norm 1-blood 2-vile
+	}
+
+	setidleanim ANIM_IDLE
+	setmoveanim ANIM_WALK
+
+	takedmg fire 0.25	//blood goblins only
+	takedmg cold 1.25
+
+	setvard ANIM_ATTACK swordswing1_L
+}
+
+{ [override] swing_axe
+
+	playrandomsound 0 10 SOUND_ATTACK1 SOUND_ATTACK2 SOUND_ATTACK3
+	dodamage NPCATK_TARGET ATTACK_HITRANGE DMG_KNIFE ATTACK_HITCHANCE slash
+
+}
+
+{ [override] swing_sword
+
+	if ( TOSS_FIREBALL )
+	{
+		setvard TOSS_FIREBALL 0
+		tossprojectile NPCATK_TARGET 400 DMG_FIREBALL 0.5 proj_fire_ball (0,48,28)
+		callexternal ent_lastprojectile lighten DMG_FIREBALL_DOT 0.01
+		playsound 0 10 SOUND_FIREBALL
+	}
+	if !TOSS_FIREBALL
+	playrandomsound 0 10 SOUND_ATTACK1 SOUND_ATTACK2 SOUND_ATTACK3
+	dodamage NPCATK_TARGET ATTACK_HITRANGE DMG_KNIFE ATTACK_HITCHANCE pierce
+}
+
+{ [override] gob_jump_check
+
+	if GOB_JUMP_SCANNING
+	local GOB_HOP_DELAY $randf(2,4)
+	callevent GOB_HOP_DELAY gob_jump_check
+
+	//no jumpy if in stabby range
+	if $get(NPCATK_TARGET,range) > ATTACK_HITRANGE
+
+	if NPCATK_TARGET isnot unset
+	if !I_R_FROZEN
+	if !IS_FLEEING
+	if $get(NPCATK_TARGET,range) < GOBLIN_JUMPRANGE
+
+	//jump at target if he's higher than I am
+	local ME_POS game.monster.origin
+	local MY_Z $vec.z(ME_POS)
+	local TARGET_POS $get(NPCATK_TARGET,origin)
+	local TARGET_Z $vec.z(TARGET_POS)
+	local TARGET_Z_DIFFERENCE TARGET_Z
+	subtract TARGET_Z_DIFFERENCE MY_Z
+
+	if ( TARGET_Z_DIFFERENCE > GOB_JUMP_THRESH )
+	{
+		if TARGET_Z_DIFFERENCE < 500 //not hoplessly high up
+		playanim critical ANIM_SMASH
+		callevent 0.1 gob_hop
+	}
+}
+
+{ game_struck
+	if PARAM1 > 50
+	if $rand(1,5) == 1
+	callevent jump_away
+}
+
+{ jump_away
+	callevent npcatk_flee $get(ent_laststruck,id) 100 1.0
+	callevent 0.1 gob_hop
+}

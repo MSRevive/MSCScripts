@@ -1,0 +1,594 @@
+#scope server
+{
+
+}
+
+{
+	setvard NPC_ATTACK_INVULN 1
+
+	setvard POINTS_RED 0
+	setvard POINTS_BLUE 0
+
+	const BALL_WEIGHTS "0.1;0.25;0.5;1.0;2.0"
+	setvard NEXT_BALL_WEIGHT 4
+
+	setvard IS_SOCCER_BALL 1
+
+	const SENSE_RANGE 128
+
+	setvard IMMUNE_STUN 100
+
+	setvard SB_BLUE0 0
+	setvard SB_BLUE1 0
+	setvard SB_BLUE2 0
+	setvard SB_BLUE3 0
+	setvard SB_BLUE4 0
+	setvard SB_BLUE5 0
+
+	setvard BLUE_SCORE_TOKENS "0;0;0;0;0;0"
+	setvard RED_SCORE_TOKENS "0;0;0;0;0;0"
+
+	setvard SB_RED0 0
+	setvard SB_RED1 0
+	setvard SB_RED2 0
+	setvard SB_RED3 0
+	setvard SB_RED4 0
+	setvard SB_RED5 0
+
+
+	const SOUND_IDLE1 houndeye/he_idle4.wav
+	const SOUND_IDLE2 houndeye/he_pain1.wav
+	const SOUND_IDLE3 houndeye/he_pain3.wav
+	const SOUND_IDLE4 houndeye/he_alert2.wav
+
+	const SOUND_STRUCK1 houndeye/he_die1.wav
+	const SOUND_STRUCK2 houndeye/he_die2.wav
+	const SOUND_STRUCK3 houndeye/he_pain2.wav
+	const SOUND_STRUCK4 houndeye/he_pain4.wav
+	const SOUND_STRUCK5 houndeye/he_pain5.wav
+	const SOUND_STRUCK6 houndeye/he_alert3.wav
+}
+
+{ [shared] game_spawn
+	name a|Soccer Ball
+	setmodel soccer/soccer_ball.mdl
+	width 32
+	height 38
+
+	name_unique soccer_ball
+
+	hearingsensitivity 2
+
+	gravity 1.0
+
+	if game.serverside
+	race hated
+	hp 1
+
+	setvard ADJ_PITCH -1.1
+
+	setidleanim idle_standard
+	setmoveanim idle_standard
+
+	saytextrange 4096
+
+	setmonsterclip 1
+
+	menu.autoopen 1
+
+	setvard GAME_PAUSED 1
+
+	nopush 1
+
+	callevent 0.1 get_home_pos
+	callevent 1.0 update_scoreboards
+}
+
+{ get_home_pos
+	setvarg G_CHRISTMAS_MODE 0
+	setvard NPC_HOME_LOC $get(ent_me,origin)
+	playanim critical idle_standard
+	setvard NEXT_IDLE_SOUND game.time
+	add NEXT_IDLE_SOUND $randf(20.0,30.0)
+}
+
+{ game_heardsound
+	local LAST_HEARD $get(ent_lastheard,id)
+	if $get(LAST_HEARD,range) < SENSE_RANGE
+	setvard TRACK_TARGET LAST_HEARD
+}
+
+{
+repeatdelay 0.1
+	if ( $get(ent_me,speed) > 50 ) playanim once spin_horizontal_slow
+	if ( $get(ent_me,speed) > 200 ) playanim once spin_horizontal_fast
+	//dbg $get(ent_me,speed)
+	
+	if $get(TRACK_TARGET,isalive)
+
+	if ( $get(TRACK_TARGET,range) < SENSE_RANGE )
+	{
+		if ( $get(ent_me,speed) > 0 )
+		{
+			setvard ADJ_PITCH -1.1
+			setprop ent_me controller0 ADJ_PITCH
+		}
+		if $get(ent_me,speed) == 0
+		setmovedest TRACK_TARGET 9999
+
+		local TARG_ORG $get(TRACK_TARGET,origin)
+		local ANG_TO_TARG $angles3d(game.monster.origin,TARG_ORG)
+		vectorset ANG_TO_TARG x $neg($vec.x(ANG_TO_TARG))
+		setvard ADJ_PITCH $vec.x(ANG_TO_TARG)
+		add ADJ_PITCH 20 //down a bit
+		if ( ADJ_PITCH > -1.1 ) setvard ADJ_PITCH -1.1
+		setprop ent_me controller0 ADJ_PITCH
+		//dbg trackang  ADJ_PITCH
+		if game.time > NEXT_IDLE_SOUND
+		setvard NEXT_IDLE_SOUND game.time
+		add NEXT_IDLE_SOUND $randf(20.0,30.0)
+		playanim once idle_scared
+		svplayrandomsound 4 10 SOUND_IDLE1 SOUND_IDLE2 SOUND_IDLE3 SOUND_IDLE4
+	}
+	else
+	{
+		if ( ADJ_PITCH > -1.1 ) subtract ADJ_PITCH 0.1
+		if ( ADJ_PITCH < -1.1 ) add ADJ_PITCH 0.1
+		if ( $get(ent_me,speed) > 0 ) setvard ADJ_PITCH -1.1
+		setprop ent_me controller0 ADJ_PITCH
+	}
+}
+
+{ game_damaged
+	if ( GAME_PAUSED )
+	{
+		if ( !GAME_STARTED )
+		{
+			infomsg PARAM1 "CLICK THE BALL TO BEGIN" "Click USE on the ball to begin the game..."
+			//callexternal $get_by_name(sorc_sayer) say_instruct
+		}
+		dplayermessage PARAM1 "Ball not yet in play..."
+
+	}
+
+	setvard AM_HOME 0
+	setdmg hit 0
+	setdmg dmg 0
+	returndata 0.0
+	svplayrandomsound 2 10 SOUND_STRUCK1 SOUND_STRUCK2 SOUND_STRUCK3 SOUND_STRUCK4 SOUND_STRUCK5 SOUND_STRUCK6
+	setvard ATK_ID PARAM1
+	setvard ATK_ANG $get(PARAM1,viewangles)
+	
+	callevent 0.1 adj_vel
+}
+
+{ ext_kicked
+	svplayrandomsound 2 10 SOUND_STRUCK1 SOUND_STRUCK2 SOUND_STRUCK3 SOUND_STRUCK4 SOUND_STRUCK5 SOUND_STRUCK6
+}
+
+{ adj_vel
+	//in theory, gives players a bit more control over the ball, based on the pitch ang
+	if $get(PARAM1,isplayer)
+	local MY_VEL $get(ent_me,velocity)
+	vectorset ATK_ANG x $neg($vec.x(ATK_ANG))
+	vectorset MY_VEL $relvel(ATK_ANG,MY_VEL)
+	setvelocity ent_me MY_VEL
+}	
+
+{ game_menu_getoptions
+
+	if ( !GAME_STARTED )
+	{
+		local reg.mitem.title "BEGIN GAME!"
+		local reg.mitem.type callback
+		local reg.mitem.data 1
+		local reg.mitem.callback soc_game_begin
+		menuitem.register
+	}
+
+	local BALL_WEIGHT_MENU "Set ball weight to "
+	stradd BALL_WEIGHT_MENU $get_token(BALL_WEIGHTS,NEXT_BALL_WEIGHT)
+
+	local reg.mitem.title BALL_WEIGHT_MENU
+	local reg.mitem.type callback
+	local reg.mitem.callback set_weight
+	menuitem.register
+
+	if ( !AM_BOUNCY )
+	{
+		local reg.mitem.title "Bouncy Ball"
+		local reg.mitem.type callback
+		local reg.mitem.data 1
+		local reg.mitem.callback set_bouncy
+		menuitem.register
+	}
+	else
+	{
+		local reg.mitem.title "Less Bouncy"
+		local reg.mitem.type callback
+		local reg.mitem.data 0
+		local reg.mitem.callback set_bouncy
+		menuitem.register
+	}
+
+	local reg.mitem.title "Move Ball Home"
+	local reg.mitem.type callback
+	local reg.mitem.callback reset_ball
+	menuitem.register
+
+
+	if ( POINTS_RED != 0 ) local OPT_RESET_SCORES 1
+	if ( POINTS_BLUE != 0 ) local OPT_RESET_SCORES 1
+	if ( OPT_RESET_SCORES )
+	{
+		local reg.mitem.title "Reset Scores"
+		local reg.mitem.type callback
+		local reg.mitem.callback reset_scores
+		menuitem.register
+	}
+
+	if ( G_DEVELOPER_MODE )
+	{
+		local reg.mitem.title "DELETE BALL"
+		local reg.mitem.type callback
+		local reg.mitem.callback menu_dev_delete
+		menuitem.register
+	}
+
+	if GAME_STARTED
+	if ( !GAME_PAUSED )
+	{
+		local reg.mitem.title "Call Timeout"
+		local reg.mitem.type callback
+		local reg.mitem.callback call_timeout
+		menuitem.register
+	}
+	else
+	{
+		if ( $get(GAME_MASTER,scriptvar,'GMSOC_RED_TEAM_ACTIVE') ) local SORCS_ACTIVE 1
+		if ( $get(GAME_MASTER,scriptvar,'GMSOC_BLUE_TEAM_ACTIVE') ) local SORCS_ACTIVE 1
+		if ( SORCS_ACTIVE )
+		{
+			local reg.mitem.title "Reset Positions"
+			local reg.mitem.type callback
+			local reg.mitem.callback reset_sorcs
+			menuitem.register
+		}
+
+		local reg.mitem.title "Call Time In"
+		local reg.mitem.type callback
+		local reg.mitem.callback call_timein
+		menuitem.register
+	}
+}
+
+{ menu_dev_delete
+	deleteent ent_me
+}
+
+{ reset_sorcs
+	local OUT_MSG $get(PARAM1,name)
+	stradd OUT_MSG " reset sorc positions"
+	infomsg all "SORCS RESET" OUT_MSG
+	callexternal all extsoc_reset
+}
+
+{ call_timeout
+	local OUT_MSG $get(PARAM1,name)
+	stradd OUT_MSG " called time out"
+	infomsg all "TIME OUT!" OUT_MSG
+	callexternal all ext_soccer_timeout
+	callevent pause_game
+	//callexternal $get_by_name(soc_sayer) msg_call_out
+}
+
+{ call_timein
+	local OUT_MSG $get(PARAM1,name)
+	stradd OUT_MSG " called time in"
+	infomsg all "TIME IN!" OUT_MSG
+	callexternal all ext_soccer_timein
+	callevent unpause_game
+	//callexternal $get_by_name(soc_sayer) msg_call_timein
+}
+
+{ reset_ball
+	local OUT_MSG $get(PARAM1,name)
+	stradd OUT_MSG " sent the ball home"
+	infomsg all "BALL RESET" OUT_MSG
+	setvard AM_HOME 0
+	setorigin ent_me $vec(5000,5000,-5000)
+	setvelocity ent_me $vec(0,0,0)
+	setprop ent_me velocity $vec(0,0,0)
+	setvard HOME_REPEAT 1
+	callevent move_ball_home
+	//callexternal $get_by_name(soc_sayer) msg_ball_reset
+}
+
+{ reset_scores
+	local OUT_MSG $get(PARAM1,name)
+	stradd OUT_MSG " reset the scores"
+	infomsg all "SCORES RESET" OUT_MSG
+	setvard POINTS_BLUE 0
+	setvard POINTS_RED 0
+	callevent update_scoreboards
+	//callexternal $get_by_name(soc_sayer) msg_score_reset
+}
+
+{ set_weight
+	gravity $get_token(BALL_WEIGHTS,NEXT_BALL_WEIGHT)
+	local OUT_MSG $get(PARAM1,name)
+	stradd OUT_MSG " changed ball weight to "
+	stradd OUT_MSG $get_token(BALL_WEIGHTS,NEXT_BALL_WEIGHT)
+	infomsg all "BALL WEIGHT CHANGE" OUT_MSG
+	add NEXT_BALL_WEIGHT 1
+	if ( NEXT_BALL_WEIGHT >= $get_token_amt(BALL_WEIGHTS) ) setvard NEXT_BALL_WEIGHT 0
+}
+
+
+{ set_bouncy
+	local BOUNCY_ON PARAM2
+	if ( BOUNCY_ON )
+	{
+		setvard AM_BOUNCY 1
+		local OUT_MSG $get(PARAM1,name)
+		stradd OUT_MSG " made the ball bouncier!"
+		infomsg all "BOUNCY BALL" OUT_MSG
+		setprop ent_me movetype 10
+	}
+	else
+	{
+		setvard AM_BOUNCY 0
+		local OUT_MSG $get(PARAM1,name)
+		stradd OUT_MSG " restored the ball to normal."
+		infomsg all "NOT SO BOUNCY BALL" OUT_MSG
+		setprop ent_me movetype 4
+	}
+}
+
+{ ext_blue_scores_goal
+	add POINTS_BLUE 1
+	callevent update_scoreboards
+	callexternal players extsoc_show_scores POINTS_RED POINTS_BLUE
+	//callexternal $get_by_name(soc_sayer) msg_blue_scores
+
+	callevent do_goal blue
+}
+
+{ ext_red_scores_goal
+	add POINTS_RED 1
+	callevent update_scoreboards
+	callexternal players extsoc_show_scores POINTS_RED POINTS_BLUE
+	//callexternal $get_by_name(soc_sayer) msg_red_scores
+
+	callevent do_goal red
+}
+
+{ [server] bd_debug  //<print_var> <property_printvar> <extra> <extra> <caller_id>
+	//tdebug/tdebugt
+	saytextrange 2048
+	saytext var PARAM1 prop PARAM2 = $get(PARAM1,PARAM2)
+	consolemsg PARAM5 $get(ent_me,name) reports: var PARAM1 pvar $get(PARAM1,PARAM2)
+	dbg PARAM5 $get(ent_me,name) reports: var PARAM1 pvar $get(PARAM1,PARAM2)
+}
+
+
+{ do_goal
+	setorigin ent_me $vec(5000,5000,-5000)
+	callevent pause_game
+	callexternal all extsoc_score $lcase(PARAM1)
+	local OUT_MSG "RED: "
+	stradd OUT_MSG $int(POINTS_RED)
+	stradd OUT_MSG " BLUE: "
+	stradd OUT_MSG $int(POINTS_BLUE)
+
+	if ( PARAM1 equals red ) infomsg all "RED SCORES" OUT_MSG
+	if ( PARAM1 equals blue ) infomsg all "BLUE SCORES" OUT_MSG
+
+	//do fanfair - have npc's cheer/jeer
+
+	if ( POINTS_RED == 5 )
+	{
+		callevent do_game_win 1
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	if ( POINTS_BLUE == 5 )
+	{
+		callevent do_game_win 2
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	callevent 3.0 resume_after_score1
+}
+
+{ resume_after_score1
+	callexternal all extsoc_reset
+
+	if ( $get(GAME_MASTER,scriptvar,'GMSOC_RED_TEAM_ACTIVE') ) usetrigger spawn_red_team //respawn anyone who died
+	if ( $get(GAME_MASTER,scriptvar,'GMSOC_BLUE_TEAM_ACTIVE') ) usetrigger spawn_blue_team //respawn anyone who died
+	callevent 5.0 resume_after_score2
+	setvard COUNT_DOWN 5
+	setvard COUNT_DOWN_EVENT unpause_game
+	callevent do_countdown
+	setvard AM_HOME 0
+	setvelocity ent_me $vec(0,0,0)
+	setprop ent_me velocity $vec(0,0,0)
+	callevent move_ball_home
+}
+
+{ do_countdown
+	if ( COUNT_DOWN > 1 )
+	{
+		callevent 1.0 do_countdown
+	}
+
+	if ( !AM_HOME )
+	{
+		callevent move_ball_home
+		setvard COUNT_DOWN_ABORT 1
+		setvard COUNT_DOWN 5
+	}
+	else
+	{
+		setvard COUNT_DOWN_ABORT 0
+	}
+	if !COUNT_DOWN_ABORT
+
+	callexternal players ext_hud_icon $int(COUNT_DOWN) cnt 40 0 20 30 0.75
+	//callexternal $get_by_name(soc_sayer) msg_countdown COUNT_DOWN
+	local OUT_MSG $int(COUNT_DOWN)
+	stradd OUT_MSG ...
+	messageall green OUT_MSG
+
+	subtract COUNT_DOWN 1
+
+
+
+	if ( COUNT_DOWN <= 0 )
+	{
+		callevent COUNT_DOWN_EVENT
+	}
+}
+
+{ resume_after_score2
+	if ( AM_HOME )
+	{
+		setvard COUNT_DOWN_ABORT 0
+	}
+	else
+	{
+		setvelocity ent_me $vec(0,0,0)
+		setprop ent_me velocity $vec(0,0,0)
+		callevent move_ball_home
+		setvard COUNT_DOWN_ABORT 1
+		setvard COUNT_DOWN 5
+		callevent 0.1 resume_after_score2
+	}
+}
+
+
+{ move_ball_home
+	local CUR_POS $get(ent_me,origin)
+	setorigin ent_me NPC_HOME_LOC
+	//test position
+	local reg.npcmove.endpos NPC_HOME_LOC
+	vectoradd reg.npcmove.endpos $relpos($vec(0,game.monster.angles.yaw,0),$vec(0,0,16))
+	local reg.npcmove.testonly	1
+	npcmove ent_me NPCATK_TARGET //be nice if I actually knew what this second param was supposed to be
+	if ( game.ret.npcmove.dist <= 0 )
+	{
+		//failed, calling event should try again in a sec
+		dbg extsoc_reset blocked
+		setorigin ent_me CUR_POS
+		if ( HOME_REPEAT ) callevent 0.1 move_ball_home
+		if ( game.time > NEXT_BALL_BLOCK_WARN )
+		{
+			infomsg all "BALL BLOCKED" "Please step away from the ball spawn..."
+			setvard NEXT_BALL_BLOCK_WARN game.time
+			add NEXT_BALL_BLOCK_WARN 10.0
+			//callexternal $get_by_name(soc_sayer) msg_ball_stuck
+		}
+	}
+	else
+	{
+		setvard HOME_REPEAT 0
+		setvard AM_HOME 1
+	}
+}
+
+{ pause_game
+	setvard GAME_PAUSED 1
+	nopush 1
+	callexternal all extsoc_pause_game
+}
+
+{ unpause_game
+	setvard GAME_PAUSED 0
+	nopush 0
+	callexternal all extsoc_unpause_game
+}
+
+{ soc_game_begin
+	setvard POINTS_RED 0
+	setvard POINTS_BLUE 0
+	callevent update_scoreboards
+	//callexternal $get_by_name(soc_sayer) msg_game_begins
+	if ( GAME_WON )
+	{
+		//one a previous game, so reset sorcs
+		callexternal all extsoc_reset
+		setvard GAME_WON 0
+	}
+	setvard GAME_STARTED 1
+	callevent 1.0 soc_game_begin2
+}
+
+{ soc_game_begin2
+	setvard COUNT_DOWN 5
+	setvard COUNT_DOWN_EVENT unpause_game
+	callevent do_countdown
+}
+
+{ do_game_win //<red|blue:1|2>
+	setvard GAME_STARTED 0
+	setvard GAME_WON 1
+	setvard HOME_REPEAT 1
+	callevent move_ball_home
+	//callexternal all extsoc_game_won $int(PARAM1)
+}
+
+{ ext_say_scores
+	callexternal players extsoc_show_scores POINTS_RED POINTS_BLUE
+}
+
+{ ext_send_menu //<target>
+	menu.open PARAM1
+}
+
+{ update_scoreboards
+
+	dbg update_scoreboards blue_before: BLUE_SCORE_TOKENS
+	setvard TWAL_TEAM_SUFFIX blue
+	setvard DEST_POINTS POINTS_BLUE
+	setvard CUR_TOKEN_LIST BLUE_SCORE_TOKENS
+	calleventloop $get_token_amt(BLUE_SCORE_TOKENS) update_twals
+	setvard BLUE_SCORE_TOKENS CUR_TOKEN_LIST
+	dbg update_scoreboards blue_after: BLUE_SCORE_TOKENS
+
+	dbg update_scoreboards red_before: RED_SCORE_TOKENS
+	setvard TWAL_TEAM_SUFFIX red
+	setvard DEST_POINTS POINTS_RED
+	setvard CUR_TOKEN_LIST RED_SCORE_TOKENS
+	calleventloop $get_token_amt(RED_SCORE_TOKENS) update_twals
+	setvard RED_SCORE_TOKENS CUR_TOKEN_LIST
+	dbg update_scoreboards red_after: RED_SCORE_TOKENS
+
+}
+
+{ update_twals
+	local CUR_IDX $int(game.script.iteration)
+	local TWAL_NAME twal_score_
+	stradd TWAL_NAME TWAL_TEAM_SUFFIX
+	stradd TWAL_NAME CUR_IDX
+
+	if ( CUR_IDX == DEST_POINTS )
+	{
+		if ( $get_token(CUR_TOKEN_LIST,CUR_IDX) == 0 )
+		{
+			token.set CUR_TOKEN_LIST CUR_IDX 1
+			usetrigger TWAL_NAME
+			dbg turning TWAL_NAME on [ CUR_TOKEN_LIST ]
+		}
+	}
+	else
+	{
+		if ( $get_token(CUR_TOKEN_LIST,CUR_IDX) == 1 )
+		{
+			token.set CUR_TOKEN_LIST CUR_IDX 0
+			usetrigger TWAL_NAME
+			dbg turning TWAL_NAME off  [ CUR_TOKEN_LIST ]
+		}
+	}
+}

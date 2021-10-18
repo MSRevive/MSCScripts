@@ -1,0 +1,131 @@
+//Beefier Vile Goblins
+//Less agile, but meaner
+//randoms between envnomed axe and shielder
+
+#scope server
+
+{
+	const NEW_MODEL 1
+
+	const NPC_BASE_EXP 500
+	const DOT_FIRE 40
+	setvard CAN_FIREBALL 0
+
+	setvard CAN_FIREBALL 0
+
+	setvard DROP_GOLD 1
+	setvard DROP_GOLD_AMT $rand(25,50)
+
+	setvard ATTACK_HITCHANCE 80
+
+	setvard CAN_STUN 1
+
+	const GOB_TYPE $rand(1,2) //1-fAxe 2-Shield
+
+	const DMG_AXE $rand(60,150)
+	const DMG_SWORD $rand(50,80)
+
+	//armor makes less leapy
+	const GOB_JUMPER 0
+	const CHARGE_SPEED 300
+	const FREQ_CHARGE 10.0
+	const GOB_CHARGE_MIN_DIST 96
+	const GOB_CHARGE_MAX_DIST 128
+
+	setvard FLINCH_HEALTH 300
+}
+
+#include monsters/bgoblin
+
+{ [override] [shared] goblin_spawn
+
+	name a|Vile Goblin Guard
+	race goblin
+	blood green
+	hp 1500
+	roam 1
+
+	hearingsensitivity 2
+
+	if ( !NEW_MODEL )
+	{
+		setmodel monsters/goblin2.mdl
+		width 32
+		height 60
+
+		setmodelbody 0 2 //body: 0-Runed 1-Archer 2-Leathers 3-Sniper
+		setmodelbody 1 2 //head: 0-Horns* 1-Spikes* 2-Animal 3-Chief 4-Cowl *redcap
+		setmodelbody 2 0 //weapon: 0-Unarmed 1-Axe 2-wbow 3-sbow 4-sword 5-rAxe 6-sword&shield 7-club 8-knife
+		setmodelbody 3 0 //arrow: on/off
+
+		setprop ent_me skin 3
+	}
+	else
+	{
+		setmodel monsters/goblin_new.mdl
+		width 24
+		height 50
+
+		setmodelbody 0 0 //body: 0-Bare 1-Quiver&Strap
+		setmodelbody 1 $rand(1,2) //head: 0-Bare 1-Horns 2-Animal 3-Chief 4-Rag
+		setmodelbody 2 0 //weapon: 0-Unarmed 1-Axe 2-wbow 3-sbow 4-sword 5-rAxe 6-sword&shield 7-club 8-knife
+		setmodelbody 3 0 //arrow: On/off
+		
+
+		setprop ent_me skin 2 //0-norm 1-blood 2-vile
+	}
+
+	setidleanim ANIM_IDLE
+	setmoveanim ANIM_WALK
+
+	takedmg all 0.75
+	takedmg poison  0.25
+	takedmg cold 1.25
+
+	callevent 0.01 gob_guard_set_weapon
+}
+
+{ gob_guard_set_weapon
+
+	setvard F_GOB_TYPE GOB_TYPE
+	
+	if ( F_GOB_TYPE == 1 )
+	{
+		//raxe
+		setmodelbody 2 1
+		setvard ANIM_ATTACK ANIM_SMASH
+		setvard ATTACK_HITCHANCE 80%
+		setvard CAN_STUN 1
+	}
+
+	if ( F_GOB_TYPE == 2 )
+	{
+		//sword&shield
+		setmodelbody 2 6
+		setvard ANIM_ATTACK ANIM_SWIPE
+		setvard ATTACK_HITCHANCE 90%
+		setstat parry 120
+		setvard FLINCH_ANIM shielddeflect1
+		setvard CAN_STUN 1
+	}
+}
+
+{ game_parry
+	playanim critical ANIM_PARRY
+	playrandomsound 0 10 SOUND_PARRY1 SOUND_PARRY2 SOUND_PARRY3
+	callevent 0.75 swing_sword //counter
+}
+
+{ [override] swing_axe //ANIM_SMASH
+
+	setvard AXE_SWING 1
+	playrandomsound 0 10 SOUND_ATTACK1 SOUND_ATTACK2 SOUND_ATTACK3
+	dodamage NPCATK_TARGET ATTACK_HITRANGE DMG_AXE ATTACK_HITCHANCE slash
+}
+
+{ game_dodamage //PARAM1=hit:0|1 PARAM2=ent_hit PARAM3=(start) PARAM4=(end)
+
+	//fire axe effect
+	applyeffect NPCATK_TARGET effects/effect_poison 10.0 $get(ent_me,id) DOT_FIRE
+}
+

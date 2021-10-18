@@ -1,0 +1,799 @@
+#scope server
+{
+	setvar IS_UNHOLY 1
+
+	if ( $lcase(game.map.name) equals bloodrose )
+	{
+		setvard NPC_GIVE_EXP 3000
+		setvard NPC_IS_BOSS 1
+	}
+	else
+	{
+		if (  $lcase(game.map.name) equals aleyesu )
+		{
+			setvard NPC_GIVE_EXP 5000
+			setvard NPC_IS_BOSS 1
+		}
+		else
+		{
+			setvard NPC_GIVE_EXP 1000
+		}
+	}
+
+	const NPC_BOSS_REGEN_RATE 0.1
+	const NPC_BOSS_RESTORATION 0.5
+
+	const MAX_RANGE 2048
+	
+	const ANIM_CAST castspell
+	setvar ANIM_RUN walk
+	setvar ANIM_WALK walk
+	setvar ANIM_IDLE idle1
+	setvard ANIM_DEATH castspell
+	const ANIM_DEAD lying_on_stomach
+	setvard SNOWBALL_DURATION 10.0 //read by proj_snow_ball
+
+	const SPELL_FREQ 6.0
+	const POISON_ALL_FREQ 200.0
+
+	const SOUND_LAUGH monsters/skeleton/cal_laugh.wav
+	const SOUND_POWERUP ambience/particle_suck2.wav
+	const SOUND_STEAM ambience/steamburst1.wav
+	const SOUND_BOOM ambience/flameburst1.wav
+	//const SOUND_DEATH x/x_die1.wav
+	const SOUND_ACID_CHARGE bullchicken/bc_attack1.wav
+	const SOUND_STRUCK1 zombie/zo_pain2.wav
+	const SOUND_STRUCK2 zombie/zo_pain2.wav
+	const SOUND_STRUCK3 zombie/zo_pain2.wav
+	const SOUND_SHOCK1 debris/zap8.wav
+	const SOUND_SHOCK2 debris/zap3.wav
+	const SOUND_SHOCK3 debris/zap4.wav
+	const SOUND_SNOWBALL zombie/claw_miss1.wav
+	const SOUND_ICEBLAST magic/temple.wav
+	const SOUND_THROW debris/beamstart5.wav
+	const SOUND_FIRE_WALL magic/fireball_strike.wav
+
+	const POISON_CLOUD_DAMAGE 40.0
+	const POISON_CLOUD_DURATION SPELL_FREQ
+    const AIM_RATIO 50
+
+	const OFFSET_LIGHTNING 100
+	const OFFSET_POISON 100
+	const OFFSET_ICE 100
+	const OFFSET_FIRE 100
+
+	const ACID_BOLT_DAMAGE 600
+	const LIGHTNING_BOLT_DAMAGE 40
+	const SHOCK_DAMAGE 30
+	const SHOCK_DURATION 1
+
+	setvard NO_STUCK_CHECKS 1
+
+	const BEING_SPLOITED_THRESHOLD 500 //500
+
+	//poison cloud
+	//volcano
+	//lightning
+	//fire wall
+	//snow ball
+	//freezing sphere
+
+	const I_AM_TURNABLE 0
+
+	const MONSTER_MODEL monsters/venevus.mdl
+	const LIGHTNING_SPRITE lgtning.spr
+	precache MONSTER_MODEL
+	precache LIGHTNING_SPRITE
+	//precache SOUND_DEATH
+}
+
+#include monsters/base_npc
+#include monsters/base_turn_undead
+
+{ npc_spawn
+
+	if ( !AM_GENERIC ) name Venevus, the Corruptor
+	if ( AM_GENERIC ) name an|Evil Necromancer
+	hp 3000
+   	fov 359
+   	width 40
+   	height 80
+   	roam 0
+   	race demon
+	precache MONSTER_MODEL
+	setmodel MONSTER_MODEL
+   	setidleanim ANIM_IDLE
+   	setmoveanim ANIM_WALK
+	gold 200
+
+	//make sure these are all weapon damage types
+	takedmg all 0.4
+	takedmg slash 0.0
+	takedmg pierce 0.0
+	takedmg blunt 0.0
+	takedmg fire 0.25
+	takedmg holy 2.0
+	takedmg dark 0.5
+	takedmg acid 0.25 // Added acid reduct, poison immune. greatguys1@April2018
+	takedmg poison 0
+	takedmg lightning 1.2
+
+	setvard SPELL_SELECT 0
+
+	setvard THROW_CHANCE 0	
+
+	callevent 1.1 post_spawn_props
+
+	//callevent npcatk_suspend_ai
+
+	if ( !AM_GENERIC ) callevent scan_for_intro
+	if ( AM_GENERIC ) callevent 0.1 pre_mortal_kombat
+
+	if ( !AM_GENERIC ) invincible 1 //invincible until intro over
+
+	callevent 0.1 init_beam
+
+	setvard ACTIVE_VOLCANO 0
+
+	setvard DMG_VOLCANO 50
+}
+
+{ post_spawn_props
+
+	takedmg holy 2.0 //setting post-spawn to override default demon settings
+	setvard NPC_SPAWN_LOC game.monster.origin
+	setvard LAST_STUCK_CHECK_POS game.monster.origin
+
+	if ( $lcase(game.map.name) contains 'aleyesu' )
+	{
+		setvard MAX_TELE_RANGE 768
+	}
+	else
+	{
+		setvard MAX_TELE_RANGE 2048
+	}
+
+}
+
+{ scan_for_intro
+
+	if ( $cansee(enemy,600) )
+	{
+		saytextrange 2048
+		setmovedest ent_lastseen 9999
+		saytext My my, so you've shown your faces after all...
+		callevent 3.0 pre_mortal_kombat
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	callevent 0.5 scan_for_intro
+}
+
+{ pre_mortal_kombat
+
+	saytextrange 2048
+	if ( !AM_GENERIC ) saytext And here I took you for cowards... But obviously...
+	callevent 3.0 let_mortal_kombat_begin
+	callevent 2.0 green_blast
+}
+
+{ let_mortal_kombat_begin
+
+	playsound 0 10 SOUND_LAUGH
+	saytextrange 2048
+	if ( !AM_GENERIC ) saytext ...You are simply FOOLS!
+	invincible 0
+	roam 1
+	callevent 5.0 select_random_spell
+	callevent 10.0 stuck_checks
+}
+
+{ green_blast
+
+	playanim critical ANIM_CAST
+	playsound 0 10 SOUND_POWERUP
+	setvard OUT_SPELL poison_all
+	effect glow ent_me (0,255,0) 100 5 5
+	callevent POISON_ALL_FREQ poison_all_again
+}
+
+{ poison_all_again
+
+	setvard POISON_EM 1
+}
+
+{ select_random_spell
+
+	//select spell and cast timer here
+	//poison cloud
+	//volcano
+	//lightning
+	//fire wall
+	//snow ball
+	//freezing sphere
+	//acid bolt (+ when struck by turn_undead)
+	//poison all (every 200 secs)
+
+	//local SPELL_SELECT $rand(1,7)
+	add SPELL_SELECT 1
+	if ( SPELL_SELECT > 7 ) setvard SPELL_SELECT 1
+	
+	if ( SPELL_SELECT == 1 ) setvard NEXT_SPELL poison_cloud
+	if ( SPELL_SELECT == 2 ) setvard NEXT_SPELL chain_lightning
+	if ( SPELL_SELECT == 3 ) setvard NEXT_SPELL fire_wall
+	if ( SPELL_SELECT == 4 ) setvard NEXT_SPELL snow_ball
+	if ( SPELL_SELECT == 5 ) setvard NEXT_SPELL freezing_sphere
+	if ( SPELL_SELECT == 6 ) setvard NEXT_SPELL acid_bolt
+	if ( SPELL_SELECT == 7 ) setvard NEXT_SPELL volcano
+	if ( POISON_EM == 1 ) setvard NEXT_SPELL poison_all
+	//if ( MURDER_A_PLAYER == 1 ) setvard NEXT_SPELL kill //Insta kill move is kinda bs, and the "anti-cheat" is just guessing and never works as intended. -greatguys1 SEP2021
+
+	callevent SPELL_FREQ select_random_spell
+	callevent SPELL_FREQ setup_spell
+}
+
+{ setup_spell
+
+	////dbg temp Setup Deadski IR_DEADSKI Teled TELED_OUT
+
+	if !IR_DEADSKI
+	if !TELED_OUT
+
+	setvard CASTING_SPELL_DELAY 1
+	setvard CKN_MY_OLD_POS 0
+
+	if ( NEXT_SPELL equals poison_all )
+	{
+		callevent green_blast
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	//dbg Casting NEXT_SPELL
+
+	setvard OUT_SPELL NEXT_SPELL	
+	playanim critical ANIM_CAST
+
+	if ( $cansee(enemy) ) 
+	{
+		setvard SPELL_TARGET $get(ent_lastseen,id)
+		setmovedest SPELL_TARGET 9999
+	}
+
+	if ( OUT_SPELL equals poison_cloud )
+	{
+		effect glow ent_me (0,255,0) 100 5 5
+		createnpc monsters/companion/spell_maker_affliction $relpos(0,0,40) $get(ent_me,id) none none OFFSET_POISON
+	}
+
+	if ( OUT_SPELL equals volcano )
+	{
+		effect glow ent_me (255,0,0) 256 5 5
+		createnpc monsters/companion/spell_maker_fire $relpos(0,0,40) $get(ent_me,id) none none OFFSET_FIRE
+	}
+
+	if ( OUT_SPELL equals fire_wall )
+	{
+		effect glow ent_me (255,80,80) 100 5 5
+		createnpc monsters/companion/spell_maker_fire $relpos(0,0,40) $get(ent_me,id) none none OFFSET_FIRE
+	}
+
+	if ( OUT_SPELL equals snow_ball )
+	{
+		effect glow ent_me (80,80,255) 100 5 5
+		createnpc monsters/companion/spell_maker_ice $relpos(0,0,40) $get(ent_me,id) none none OFFSET_ICE
+	}
+
+	if ( OUT_SPELL equals freezing_sphere )
+	{
+		effect glow ent_me (128,128,255) 512 5 5
+		createnpc monsters/companion/spell_maker_ice $relpos(0,0,40) $get(ent_me,id) none none OFFSET_ICE
+	}
+
+	if ( OUT_SPELL equals acid_bolt )
+	{
+		effect glow ent_me (0,255,0) 200 5 5
+		playsound 0 10 SOUND_ACID_CHARGE
+	}
+
+	if ( OUT_SPELL equals chain_lightning )
+	{
+		effect glow ent_me (255,255,0) 200 5 5
+		createnpc monsters/companion/spell_maker_lightning $relpos(0,0,40) $get(ent_me,id) none none OFFSET_LIGHTNING
+	}
+
+	if ( OUT_SPELL equals kill )
+	{
+		effect glow ent_me (255,255,255) 200 5 5
+		playsound 0 10 SOUND_POWERUP
+	}
+}
+
+{ castspell //called from model anim castspell
+
+	if ( !DID_ALE_INTRO )
+	{
+		setvard DID_ALE_INTRO 1
+		if $lcase(game.map.name) contains 'aleyesu'
+		callevent do_ale_intro
+	}
+
+	if !IR_DEADSKI
+
+	setmovedest SPELL_TARGET 9999
+
+	if ( OUT_SPELL equals poison_all )
+	{
+		playsound 0 10 SOUND_BOOM
+		effect screenfade all 3 1 (0,255,0) 255 fadein
+		setvard FIRE_AT unset
+		setvard POISON_SITE 1
+		setvard SPOTTING 1
+		setvard DO_DAMAGE_SITE 1
+		callevent spot_targets
+		callevent 1.0 stop_spotting
+		callevent 1.0 reset_poison_site
+		setvard POISON_EM 0
+	}
+
+	if ( OUT_SPELL equals kill )
+	{
+		playsound 0 10 SOUND_LAUGH
+		effect screenfade all 3 1 (255,255,255) 255 fadein
+		callevent 0.1 kill_a_player
+	}
+
+	if ( OUT_SPELL equals poison_cloud )
+	{
+		if ( $cansee(enemy) ) local SPELL_TARG $get(ent_lastseen,origin)
+		if ( $get(ent_lastseen,relationship,ent_me) equals enemy )
+		{
+			local NME_POS get(ent_lastseen,origin)
+			local NME_DIST $dist(NME_POS,game.monster.origin)
+			if (  NME_DIST < MAX_RANGE )
+			{
+				local SPELL_TARG $get(ent_lastseen,origin)
+			}
+			if ( NME_DIST > MAX_RANGE )
+			{
+				local SPELL_TARG $relpos(0,200,0)
+			}
+		}
+		if ( SPELL_TARG equals 'SPELL_TARG' ) local SPELL_TARG $relpos(0,10,50)
+		//PARAM1=Owner PARAM2=Angles PARAM3=Damage PARAM4=Duration
+		playsound 0 10 SOUND_STEAM
+		createnpc monsters/summon/npc_poison_cloud2 SPELL_TARG $get(ent_me,id) POISON_CLOUD_DAMAGE POISON_CLOUD_DURATION
+	}
+
+	if ( OUT_SPELL equals snow_ball )
+	{
+		if ( $cansee(enemy) ) local SPELL_TARG $get(ent_lastseen,origin)
+		if ( SPELL_TARG equals 'SPELL_TARG' ) local SPELL_TARG $relpos(0,640,0)
+		local AIM_ANGLE $dist(game.monster.origin,SPELL_TARG)
+		divide AIM_ANGLE AIM_RATIO
+		setangle add_view.x AIM_ANGLE
+		playsound 0 10 SOUND_SNOWBALL
+		tossprojectile SPELL_TARG 300 SNOWBALL_DAMAGE 2 proj_snow_ball (0,52,48)
+	}
+
+	if ( OUT_SPELL equals freezing_sphere )
+	{
+		local BALL_DEST $relpos(0,2000,0)
+		playsound 0 10 SOUND_ICEBLAST
+		createnpc monsters/summon/ice_blast $relpos(0,64,32) $get(ent_me,id) 10.0 BALL_DEST
+	}
+
+	if ( OUT_SPELL equals volcano )
+	{
+		if ( $cansee(enemy) ) local pos $get(ent_lastseen,origin)
+		if ( $get(ent_lastseen,relationship,ent_me) equals enemy ) local pos $get(ent_lastseen,origin)
+		if ( !$cansee(enemy) )
+		{
+			if $dist(game.monster.origin,pos) > MAX_RANGE
+			local pos $vec(game.monster.origin)
+			vectoradd pos $relpos($vec(0,0,0),$vec(0,500,0))
+			local pos $get_traceline(game.monster.origin,pos,worldonly)
+		}
+		local temp $get_ground_height(pos)
+		local x $vec.x(pos)
+		local y $vec.y(pos)
+		local pos $vec(x,y,temp)
+		setvarg VOLCANO_DMG 2
+		local VOLCANO_DURATION SPELL_FREQ
+		multiply VOLCANO_DURATION 6
+		createnpc monsters/summon/npc_volcano pos $get(ent_me,id) 150 VOLCANO_DURATION
+		add ACTIVE_VOLCANO 1
+		callevent VOLCANO_DURATION reset_active_volcano
+	}
+
+	if ( OUT_SPELL equals fire_wall )
+	{
+		if ( $cansee(enemy) ) local pos $get(ent_lastseen,origin)
+		if ( $get(ent_lastseen,relationship,ent_me) equals enemy ) local pos $get(ent_lastseen,origin)
+		if ( !$cansee(enemy) )
+		{
+			if $dist(pos,game.monster.origin) > MAX_RANGE
+			local pos $relpos(0,256,0)
+		}
+		playsound 0 10 SOUND_FIRE_WALL
+		//local pos $get(ent_lastseen,origin)
+		local temp $get_ground_height(pos)
+		local x $vec.x(pos)
+		local y $vec.y(pos)
+		local pos $vec(x,y,temp)
+		local SET_DAMAGE 80
+		local SET_DURATION SPELL_FREQ
+		createnpc monsters/summon/keledros_fire_wall pos $get(ent_me,id) $get(ent_me,angles.y) SET_DAMAGE SET_DURATION 
+	}
+
+	if ( OUT_SPELL equals acid_bolt )
+	{
+		setvard FIRE_AT unset
+		setvard DO_ACID_BOLTS 1
+		setvard SPOTTING 1
+		setvard DO_DAMAGE_SITE 0
+		callevent spot_targets
+		callevent 2.0 stop_spotting
+		callevent 2.0 reset_acid_bolt
+	}
+
+	if ( OUT_SPELL equals chain_lightning )
+	{
+		setvard FIRE_AT unset
+		setvard DO_LIGHTNING 1
+		setvard SPOTTING 1
+		setvard DO_DAMAGE_SITE 0
+		callevent spot_targets
+		//effect beam update BEAM_ID end_target ent_me 2
+		effect beam update BEAM_ID brightness 150
+		callevent 3.0 stop_spotting
+		callevent 3.0 reset_lightning
+	}
+
+	//if FX_SPAMMERS >= MAX_FX_SPAMMERS abort and use deathmagic
+
+	setvard CASTING_SPELL_DELAY 0
+	setvard OUTSPELL unset
+	//callevent select_random_spell
+}
+
+{ reset_lightning
+
+	setvard DO_LIGHTNING 0
+	effect beam update BEAM_ID brightness 0
+	effect beam update BEAM_ID end_target ent_me 2
+}
+
+{ reset_acid_bolt
+
+	setvard DO_ACID_BOLTS 0
+}
+
+{ stop_spotting
+
+	setvard SPOTTING 0
+}
+
+{ reset_poison_site
+
+	setvard POISON_SITE 0
+}
+
+{ spot_targets
+	
+	if SPOTTING
+	callevent 0.1 spot_targets
+
+	add DO_DAMAGE_SITE 1
+	if ( DO_DAMAGE_SITE > 10 )
+	{
+		dodamage $relpos(0,0,0) 2048 0 100% 0 reflective
+	}
+
+	if $cansee(enemy)
+	//if ( $get(ent_lastseen,id) isnot $get(FIRE_AT,id) )
+	//{
+	//	if ( game.players == 1 ) setvard FIRE_AT unset
+	//		local EXIT_SUB 1
+	//}
+	//if !EXIT_SUB
+
+	local OLD_FIRE_AT FIRE_AT
+	setvard FIRE_AT $get(ent_lastseen,id)
+	if ( DO_ACID_BOLTS ) callevent throw_acid_bolt
+	if ( DO_LIGHTNING )
+	{
+		callevent throw_lightning
+		if OLD_FIRE_AT isnot FIRE_AT
+		dbg spot_targets beam [ BEAM_ID ] @ $get(FIRE_AT,name)
+		effect beam update BEAM_ID end_target $get(FIRE_AT,id) 1
+		effect beam update BEAM_ID brightness 255
+	}
+	if ( POISON_SITE ) applyeffect FIRE_AT effects/effect_poison 90.0 $get(ent_me,id) 1.0
+}
+
+{ throw_lightning
+
+	////dbg temp LightningTo $get(FIRE_AT,name)
+
+	if !BOLT_DELAY
+	setvard BOLT_DELAY 1
+	callevent 0.1 reset_bolt_delay
+
+	playrandomsound 0 10 SOUND_SHOCK1 SOUND_SHOCK2 SOUND_SHOCK3
+	local BEAM_END $get(FIRE_AT,origin)
+	//effects beam LIGHTNING_SPRITE 80 $relpos(0,0,22) BEAM_END (255,255,255) 150 100 1.5
+	//effect beam point LIGHTNING_SPRITE 80 $relpos(0,0,42) BEAM_END (255,255,255) 150 50 0.2
+	//effect beam point LIGHTNING_SPRITE 80 $relpos(-22,0,22) BEAM_END (255,255,255) 150 50 1.5
+	//effect beam point LIGHTNING_SPRITE 80 $relpos(22,0,22) BEAM_END (255,255,255) 150 50 1.5
+	if $get(FIRE_AT,scriptvar,IMMUNE_LIGHTNING) != 1
+	dodamage FIRE_AT direct LIGHTNING_BOLT_DAMAGE 100% ent_me
+	if !$get(FIRE_AT,haseffect,DOT_lightning)
+	applyeffect FIRE_AT effects/effect_shock_dmg SHOCK_DURATION $get(ent_me,id) SHOCK_DAMAGE
+}
+
+{ throw_acid_bolt
+
+	if !BOLT_DELAY
+	setvard BOLT_DELAY 1
+	callevent 0.2 reset_bolt_delay	
+
+	tossprojectile $get(FIRE_AT,id) 300 ACID_BOLT_DAMAGE 1 proj_poison_spit2 (0,10,50)
+}
+
+{ reset_bolt_delay
+
+	setvard BOLT_DELAY 0
+}
+
+{ game_dodamage
+
+	if ( POISON_SITE )
+	{
+		applyeffect PARAM2 effects/effect_poison 90.0 $get(ent_me,id) 1.0
+		if ( $cansee(enemy) ) applyeffect ent_lastseen effects/effect_poison 90.0 $get(ent_me,id) 1.0
+	}
+
+	if ( DO_ACID_BOLTS ) 
+	{
+		local CHECK_TARG $get(PARAM2,id)
+		//if CHECK_TARG isnot FIRE_AT
+		setvard FIRE_AT CHECK_TARG
+		callevent throw_acid_bolt
+	}
+	if ( DO_LIGHTNING )
+	{
+		local CHECK_TARG $get(PARAM2,id)
+		//if CHECK_TARG isnot FIRE_AT
+		setvard FIRE_AT CHECK_TARG
+		//calleveent throw_lightning
+	}
+}
+
+{ game_death
+
+	effect beam update BEAM_ID remove 0
+
+	if ( AM_GENERIC )
+	{
+		setanim.framerate 0.1
+		playanim critical dieforward
+		playsound 0 10 x/x_die1.wav
+	}
+	if !AM_GENERIC
+
+	setvard IR_DEADSKI 1
+	setalive 1
+	invincible 1
+	setsolid none
+	setbbox none
+	//playanim critical ANIM_DEATH
+	setidleanim ANIM_CAST
+	setmoveanim ANIM_CAST
+	fly 1
+	setvard STATUE_ID $get_by_name(atholo_statue)
+	effect glow $get(STATUE_ID,id) (255,0,0) 255 5 5
+	setprop ent_me solid 0
+	setprop ent_me movetype const.movetype.noclip
+	setanim.movespeed 200
+	setmovedest $get(STATUE_ID,id) 10
+	//dbg Moving to $get(STATUE_ID,origin)
+	
+	saytextrange 2048
+	saytext I sacrafice my wretched life to release the greatest evil in this world...
+	setvard MOVE_LASTPOS game.monster.origin
+	callevent 0.1 cycle_move
+	callevent 6.0 game_over
+}
+
+{ cycle_move
+	setmovedest $get(STATUE_ID,id) 10
+	setanim.movespeed 200
+
+	addvelocity ent_me $relvel(-1,100,40)
+	callevent 0.2 cycle_move
+}
+
+{ game_over
+
+	saytextrange 2048
+	playsound 0 10 SOUND_LAUGH
+	callexternal STATUE_ID spawn_atholo $get(ent_laststruck,id)
+	saytext With my blood I bring you the legendary evil! ATHOLO!
+	usetrigger atholo_door
+	setalive 0
+	deleteent ent_me fade
+}
+
+{ reset_active_volcano
+
+	subtract ACTIVE_VOLCANO 1
+}
+
+{ game_damaged //PARAM1=attacker PARAM2=Damage PARAM3=DamageType
+
+	//dbg MyHp game.monster.hp
+
+	if $get(PARAM1,relationship,ent_me) equals enemy
+
+	local INC_DMG PARAM2
+
+	add BEING_SPLOITED_DMG INC_DMG
+
+	multiply INC_DMG 0.15
+	add THROW_CHANCE INC_DMG
+
+	if ( game.monster.hp < 500 )
+	{
+		if ( KILLED_A_PLAYER == 0 )
+		{
+			//dbg temp MurderCalled because Im low on HP
+			setvard MURDER_A_PLAYER 1
+		}
+	}
+
+	if ( PARAM3 equals holy )
+	{
+		//throw players when struck by holy, regardless of distance
+		local DID_THROW 1
+		setmovedest ent_laststruck 9999
+		playsound 0 10 SOUND_THROW
+		addvelocity ent_laststruck $relvel(0,500,200)
+		setvard THROW_CHANCE 0
+		if INC_DMG > 200
+		add STRUCK_BY_HOLY 1
+
+		//if struck for a fair amount of holy damage 3 times, tele attack
+		if STRUCK_BY_HOLY > 2
+		setvard STRUCK_BY_HOLY 0
+		setvard DO_HOLY_MSG 1
+		setvard MURDER_A_PLAYER 1
+		setvard PRESET_TARGET 1
+		setvard HOLY_OFFENDER $get(ent_laststruck,id)
+	}
+
+	if ( $rand(1,100) <= THROW_CHANCE )
+	{
+		if !DID_THROW
+		if $get(ent_laststruck,range) < 200
+		setmovedest ent_laststruck 9999
+		playsound 0 10 SOUND_THROW
+		addvelocity ent_laststruck $relvel(0,500,200)
+		setvard THROW_CHANCE 0
+	}
+
+
+	if !SPLOITED_CHECKED
+	setvard SPLOITED_CHECKED 1
+	callevent 5.0 check_if_sploited
+}
+
+{ check_if_sploited
+
+	if ( BEING_SPLOITED_DMG > BEING_SPLOITED_THRESHOLD )
+	{
+		//I've taken over 500 dmg in 5 seconds, somoene is probably sticking me on a volcano or somethin
+		//dbg temp Murder called because BEING_SPLOITED_DMG > BEING_SPLOITED_THRESHOLD 
+		setvard MURDER_A_PLAYER 1
+	}
+	setvard BEING_SPLOITED_DMG 0
+	setvard SPLOITED_CHECKED 0
+}
+
+
+{ kill_a_player
+
+	setvard TELED_OUT 1
+	setvard KILLED_A_PLAYER 1
+	playsound 0 10 SOUND_BOOM
+	saytext Oh me oh my, where did he go...
+	setorigin ent_me (20000,20000,20000)
+	if ( !PRESET_TARGET )
+	{
+		setvard THIS_MUST_DIE $get(ent_laststruck,id)
+	}
+	if ( PRESET_TARGET )
+	{
+		setvard THIS_MUST_DIE HOLY_OFFENDER
+		setvard PRESET_TARGET 0
+	}
+	setvard CHANGE_RETURN_POINT 0
+	callevent 8.0 murder_return
+	callevent scan_for_death
+}
+
+{ scan_for_death
+
+	if TELED_OUT
+	if ( !$get(THIS_MUST_DIE,isalive) ) 
+	{
+		//dbg temp target died while I was out
+		setvard CHANGE_RETURN_POINT 1
+	}
+	local KILL_TARG_ORIGIN $get(THIS_MUST_DIE,origin)
+	if ( $dist(KILL_TARG_ORIGIN,NPC_SPAWN_LOC) > MAX_TELE_RANGE ) setvard CHANGE_RETURN_POINT 1
+	if !CHANGE_RETURN_POINT
+	callevent 0.1 scan_for_death
+}
+
+{ murder_return
+
+	setvard TELED_OUT 0
+	setvard MURDER_A_PLAYER 0
+	setvard	SPELL_SELECT 0
+	//callevent select_random_spell
+	if ( DO_HOLY_MSG )
+	{
+		setvard DO_HOLY_MSG 0
+		infomsg all BEWARE! Venevus uses death magic to counter holy magic!
+	}
+	playsound 0 10 SOUND_BOOM
+	effect screenfade all 3 1 (255,255,255) 255 fadein
+	local RETURN_POINT $get(THIS_MUST_DIE,origin)
+	if ( CHANGE_RETURN_POINT ) 
+	{
+		//if target died while I was out, return to spawn origin instead
+		local RETURN_POINT NPC_SPAWN_LOC
+	}
+	if ( !CHANGE_RETURN_POINT ) callevent 0.1 kill_target
+	setorigin ent_me RETURN_POINT
+	callevent 0.2 murder_done
+}
+
+{ murder_done
+
+	saytextrange 2048
+	saytext Who's next?
+	playsound 0 10 SOUND_LAUGH
+}
+
+{ kill_target
+
+	local TARGET_ORG $get(THIS_MUST_DIE,origin)
+	if $dist(game.monster.origin,TARGET_ORG) < 100
+	if $get(THIS_MUST_DIE,isalive)
+	dodamage THIS_MUST_DIE direct 10000 100% ent_me
+	callevent 0.11 kill_target
+}
+
+{ stuck_checks
+
+	//note moved for 25 seconds, time to tele
+	if ( $dist(game.monster.origin,LAST_STUCK_CHECK_POS) == 0 ) 
+	{
+		//dbg MurderCalled due to Stuck too long
+		setvard MURDER_A_PLAYER 1
+	}
+	setvard LAST_STUCK_CHECK_POS game.monster.origin
+	callevent 25.0 stuck_checks
+}
+
+{ init_beam
+	effect beam ents LIGHTNING_SPRITE 80 ent_me 1 ent_me 2 (255,255,255) 0 50 -1
+	setvard BEAM_ID $get(ent_lastcreated,id)
+}
+
+{ die_fast
+	hp 10
+}

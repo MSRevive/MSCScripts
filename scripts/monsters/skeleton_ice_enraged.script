@@ -1,0 +1,180 @@
+//Ice Bone Skeleton (Decayed) by Thothie from mscave/Shaddar
+
+{
+
+	const FREQ_RETREAT 20.0
+
+   const SKEL_HP		1000
+   const ATTACK_HITCHANCE 	85%
+   setvard NPC_GIVE_EXP 		200
+	
+	const SMASH_DAMAGE $rand(50,100)
+	const SWIPE_DAMAGE $rand(10,20)
+
+	setvard ANIM_ATTACK attack1
+
+	//always run
+	setvar ANIM_WALK run
+	setvar ANIM_RUN run
+
+	const ANIM_SWIPE attack1
+	const ANIM_SMASH attack2
+
+   setvard DROP_GOLD 		1
+   setvard DROP_GOLD_MIN		20
+   setvard DROP_GOLD_MAX		45
+
+   const SKEL_RESPAWN_CHANCE	50%
+   const SKEL_RESPAWN_LIVES	1
+
+   const ANIM_BLAST		rlflinch
+   const SOUND_BOLT		magic/ice_strike.wav
+
+	setvard IMMUNE_COLD 1
+	
+	const BOLT_FREQUENCY '$randf(15,60)'
+	const BOLT_DAMAGE 30
+	
+	const FREEZE_CHANCE 50%
+
+	setvard RUN_THRESHOLD 200 //chucken_run every 200pts damage
+
+	const STUCK_CHECK_FREQUENCY 2.0 //I move fast
+
+   precache items/proj_ice_bolt
+
+	precache monsters/skeleton_enraged.mdl //for older clients
+}
+
+#include monsters/skeleton_base
+
+{ skeleton_spawn
+
+   	name a|Enraged Ice Bone
+   	race undead
+   	roam 1
+   	takedmg all .7
+   	takedmg fire 1.2
+   	takedmg lightning .5
+   	takedmg cold 0.0
+	takedmg ice 0.0
+	//applyeffect ent_me effects/speed -1
+	setanim.movespeed 2.0
+   	setmodel monsters/skeleton_enraged.mdl
+   	hearingsensitivity 5
+	setmoveanim ANIM_RUN
+	setmodelbody	0 5 //0=standard 1=ash 2=green 3=bloody 4=decayed 5=ice 6=gold 7=stone 8=crystal 9=weirdgel
+	setmodelbody	1 5 //0=Unarmed 1=darkmace 2=sword 3=hammahs 4=bigsword+shield 5=iceclubs 6=fireclubs 7=highsword 8=wand
+   	setstat concentration 30
+   	setstat spellcasting 30 30 30	//not sure if this'll work
+
+	setvard DAMAGE_TRACKER 0
+
+	if ( $lcase(game.map.name) equals thanatos ) setvard SET_GREEK 1
+	if ( SET_GREEK ) setmodelbody 0 10
+
+   	//ov 180
+}
+
+{ npc_post_spawn
+	setvard RUN_THRESHOLD $get(ent_me,maxhp)
+	multiply RUN_THRESHOLD 0.25
+}
+
+{ cast_bolts
+
+	if $get(ent_me,isalive)
+
+	//callevent BOLT_FREQUENCY cast_bolts
+
+	setvard BOLT_CHECKING 0
+
+	if !ICE_BLASTING
+	if !PLAYING_DEAD
+
+	//dbg Checking for Boltables
+
+	playanim critcal ANIM_BLAST
+
+	setvard ICE_BLASTING 1
+	dodamage $relpos(0,0,0) 2048 0 100% 0 reflective
+	setvard ICE_BLASTING 0
+}
+
+
+
+{ game_dodamage //1: Attack Hit (1/0)  2: Entity Attack hit  3:  Start Position  4:  End Position
+
+	if ( !ICE_BLASTING )
+	{
+		if ( !FREEZE_ATTACK )
+		{
+			if ( ANIM_ATTACK equals ANIM_SMASH )
+			{
+				if( $rand(1,4) == 1 ) applyeffectstack PARAM2 effects/effect_frost 5 $get(ent_me,id) $rand(3,5)
+			}
+		}
+	}
+
+
+	if ( ICE_BLASTING )
+	{
+		if PARAM1
+
+		if $get(PARAM2,relationship,ent_me) equals enemy
+
+		//dbg Casting Bolt
+
+		playsound game.sound.voice 10 SOUND_BOLT
+
+		setmovedest PARAM2 9999
+
+		tossprojectile PARAM2 500 BOLT_DAMAGE 1 proj_ice_bolt (0,5,50)
+	}
+}
+
+{ npc_targetsighted
+
+	if !BOLT_CHECKING
+	setvard BOLT_CHECKING 1
+
+   callevent 4.0 cast_bolts
+}
+
+{ [override] attack_1	// Deal damage
+
+   	callevent attack_snd
+   	dodamage ent_lastseen ATTACK_HITRANGE SWIPE_DAMAGE ATTACK_HITCHANCE slash
+
+	if ( $rand(1,4) == 1 ) setvard ANIM_ATTACK ANIM_SMASH
+	callevent 2.0 reset_atk
+}
+
+{ reset_atk
+	setvard ANIM_ATTACK ANIM_SWIPE //something happens that causes attack2 to sip the attack_2 frame
+}
+
+{ attack_2
+
+   	callevent attack_snd
+   	dodamage ent_lastseen ATTACK_HITRANGE SMASH_DAMAGE ATTACK_HITCHANCE blunt
+
+	setvard ANIM_ATTACK ANIM_SWIPE
+}
+
+{ game_struck
+
+	if !CHICKEN_RUN
+
+	add DAMAGE_TRACKER PARAM1
+
+	if DAMAGE_TRACKER > RUN_THRESHOLD
+
+	if game.time > NEXT_RETREAT
+	setvard NEXT_RETREAT game.time
+	add NEXT_RETREAT FREQ_RETREAT
+
+	setvard DAMAGE_TRACKER 0
+	
+	callevent chicken_run 3.0
+}

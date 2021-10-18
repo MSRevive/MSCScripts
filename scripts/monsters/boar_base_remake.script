@@ -1,0 +1,285 @@
+//For updated boars, not compatible with old base
+#scope server
+
+{ [shared]
+
+	setvar ANIM_IDLE idle1
+	setvard ANIM_IDLE2 idle2
+	setvard ANIM_RUN run
+	setvar ANIM_WALK walk
+	setvard ANIM_ATTACK gore_forward
+	const ANIM_ATTACK1_NORM gore_forward
+	const ANIM_ATTACK1_LARGE gore_forward2
+	const ANIM_ATTACK_GORE_RIGHT gore_right
+	const ANIM_ATTACK_GORE_LEFT gore_left
+	const ANIM_STOMP stompsnort
+	const ANIM_CHARGE charge
+	setvard ANIM_DEATH die1
+
+	const ANIM_BACKUP back_off
+}
+
+{
+	const ATTACK_HITCHANCE 50%
+
+	const BOAR_WIDTH1 50
+	const BOAR_HEIGHT1 50
+	const BOAR_WIDTH2 75
+	const BOAR_HEIGHT2 75
+	const BOAR_WIDTH3 96
+	const BOAR_HEIGHT3 96
+
+	const BOAR_RIGHT_PUSH $relvel(-50,50,10)
+	const BOAR_LEFT_PUSH $relvel(-100,50,10)
+
+	const BOAR_SIZE 1 //1=norm 2=med 3=huge
+	const BOAR_SKIN 0
+	const BOAR_MODEL monsters/boar1.mdl //change on top script to avoid extra precache
+
+	const FREQ_CHARGE 20.0
+	const FREQ_BACKUP 10.0
+
+	const CL_CHARGE_SCRIPT monsters/boar_base_cl_charge
+
+	//sounds
+	const SOUND_STRUCK1 weapons/cbar_hitbod1.wav
+	const SOUND_STRUCK2 weapons/cbar_hitbod2.wav
+	const SOUND_STRUCK3 weapons/cbar_hitbod3.wav
+	const SOUND_PAIN monsters/boar/boarpain.wav
+	const SOUND_IDLE1 monsters/boar/boaridle.wav
+	const SOUND_IDLE2 monsters/boar/boarsight2.wav
+	const SOUND_CHARGE monsters/boar/boarsight.wav
+	const SOUND_DEATH monsters/boar/boardeath.wav
+
+	const SOUND_SWIPE1 "zombie/claw_miss1.wav"
+	const SOUND_SWIPE2 "zombie/claw_miss2.wav"
+	const SOUND_GORE "zombie/claw_strike3.wav"
+}
+
+{ game_precache
+	precache monsters/boar/hoofbeats_loop.wav
+}
+
+#include monsters/base_monster_new
+
+{ game_postspawn
+	setvard ATTACK_RANGE BOAR_WIDTH
+	multiply ATTACK_RANGE 1.25
+	setvard ATTACK_HITRANGE BOAR_WIDTH
+	multiply ATTACK_HITRANGE 1.5
+	setvard ATTACK_MOVERANGE BOAR_WIDTH
+	multiply ATTACK_MOVERANGE 1.2
+
+	if ( BOAR_SIZE > 1 )
+	{
+		setvard ANIM_ATTACK ANIM_ATTACK1_LARGE
+		setvard ANIM_ATTACK_DEF ANIM_ATTACK1_LARGE
+	}
+	else
+	{
+		setvard ANIM_ATTACK ANIM_ATTACK1_NORM
+		setvard ANIM_ATTACK_DEF ANIM_ATTACK1_NORM
+	}
+}
+
+{ npc_spawn
+
+	setmodel BOAR_MODEL
+	setprop ent_me skin BOAR_SKIN
+
+	if ( BOAR_SIZE == 1 )
+	{
+		setvard BOAR_WIDTH BOAR_WIDTH1
+		setvard BOAR_HEIGHT BOAR_HEIGHT1
+	}
+	if ( BOAR_SIZE == 2 )
+	{
+		setvard BOAR_WIDTH BOAR_WIDTH2
+		setvard BOAR_HEIGHT BOAR_HEIGHT2
+	}
+	if ( BOAR_SIZE == 3 )
+	{
+		setvard BOAR_WIDTH BOAR_WIDTH3
+		setvard BOAR_HEIGHT BOAR_HEIGHT3
+	}
+
+	width BOAR_WIDTH
+	height BOAR_HEIGHT
+
+	setmoveanim ANIM_WALK
+	setidleanim ANIM_IDLE
+
+	//no affect here
+//	setvard BOAR_LENGTH BOAR_WIDTH
+//	multiply BOAR_LENGTH 10.0
+//	setsolid box
+//	local NEG_WIDTH $neg(BOAR_WIDTH)
+//	setbbox $vec(NEG_WIDTH,NEG_WIDTH,0) $vec(BOAR_WIDTH,BOAR_LENGTH,BOAR_HEIGHT)
+
+
+	if ( $lcase(game.map.name) equals nightmare_thornlands ) setmonsterclip 0
+
+	race wildanimal
+
+	roam 1
+
+	callevent boar_spawn
+}
+
+//Works here, but not helping
+//{ npc_post_spawn
+//	width BOAR_WIDTH
+//	height BOAR_HEIGHT
+//	local NEG_WIDTH $neg(BOAR_WIDTH)
+//	setbbox $vec(NEG_WIDTH,NEG_WIDTH,0) $vec(BOAR_WIDTH,BOAR_WIDTH,BOAR_HEIGHT)
+//}
+
+{ npc_targetsighted
+	if !BOAR_CHARGING
+	if game.time > NEXT_CHARGE
+	if $cansee(NPCATK_TARGET)
+	if ( $get(NPCATK_TARGET,range) > ATTACK_HITRANGE )
+	{
+		setvard NEXT_CHARGE game.time
+		add NEXT_CHARGE FREQ_CHARGE
+		setvard BOAR_CHARGING 1
+		callevent boar_charge_sequence
+	}
+	else
+	{
+		if game.time > NEXT_BACKUP
+		setvard AS_ATTACKING game.time
+		add AS_ATTACKING 6.0
+		setvard NEXT_BACKUP game.time
+		add NEXT_BACKUP FREQ_BACKUP
+		roam 0
+		playanim critical ANIM_BACKUP
+		callevent npcatk_suspend_movement ANIM_BACKUP 1.0
+		dbg backingup
+	}
+}
+
+{ npcatk_resume_movement
+	roam 1
+}
+
+{ boar_charge_sequence
+	setvard BOAR_CHARGE_TARGET NPCATK_TARGET
+//	callevent npcatk_suspend_ai
+//	setvard AS_ATTACKING game.time
+//	add AS_ATTACKING 6.0
+	playsound 1 10 SOUND_CHARGE
+	roam 0
+	playanim critical ANIM_STOMP
+	setmoveanim ANIM_CHARGE
+	movespeed 2
+	callevent 1.0 boar_charge_sequence2
+	callevent 5.0 boar_charge_stop
+}
+
+{ boar_charge_sequence2
+	if $get(ent_me,isalive)
+	clientevent new all CL_CHARGE_SCRIPT $get(ent_me,index) BOAR_SIZE
+	setvard BOAR_CHARGE_FX_IDX game.script.last_sent_id
+
+	if ( BOAR_SIZE == 3 )
+	{
+		dbg sound_loop_start
+		svplaysound 2 10 monsters/boar/hoofbeats_loop.wav
+	}
+	callevent boar_charge_loop
+}
+
+{ boar_charge_loop
+	if BOAR_CHARGING
+	if $get(ent_me,isalive)
+	callevent 0.1 boar_charge_loop
+	setmovedest BOAR_CHARGE_TARGET ATTACK_MOVERANGE
+	addvelocity ent_me $relvel(0,200,0)
+	if ( $get(BOAR_CHARGE_TARGET,range) < ATTACK_RANGE )
+	{
+		dodamage BOAR_CHARGE_TARGET ATTACK_HITRANGE DMG_CHARGE 100% blunt
+		addvelocity BOAR_CHARGE_TARGET $relvel(0,200,200)
+		applyeffect BOAR_CHARGE_TARGET effects/effect_stun 3 0 1
+		callevent boar_charge_stop
+	}
+}
+
+{ boar_charge_stop
+	if ( BOAR_SIZE == 3 )
+	{
+		dbg sound_loop_stop
+		svplaysound 2 0 monsters/boar/hoofbeats_loop.wav
+	}
+
+	if ( BOAR_CHARGE_FX_IDX > 0 ) clientevent update all BOAR_CHARGE_FX_IDX remove_fx
+	setvard BOAR_CHARGE_FX_IDX 0
+	movespeed 1
+	roam 1
+	setvard BOAR_CHARGING 0
+	setmoveanim ANIM_RUN
+	setvard NEXT_CHARGE game.time
+	add NEXT_CHARGE FREQ_CHARGE
+	//callevent npcatk_resume_ai
+}
+
+{ game_death
+	if ( BOAR_CHARGING )
+	{
+		if BOAR_SIZE == 3
+		svplaysound 2 0 monsters/boar/hoofbeats_loop.wav
+	}
+	setvard BOAR_CHARGING 0
+	if ( BOAR_CHARGE_FX_IDX > 0 ) clientevent update all BOAR_CHARGE_FX_IDX remove_fx
+}
+
+{  npc_struck	//Hit by someone
+	playrandomsound 4 5 SOUND_STRUCK1 SOUND_STRUCK2 SOUND_STRUCK3 SOUND_PAIN SOUND_PAIN SOUND_PAIN
+}
+
+{  npc_selectattack
+   
+	local NEXT_ATTACK $rand(0,2)
+	if ( NEXT_ATTACK == 0 ) setvard ANIM_ATTACK ANIM_ATTACK_DEF
+	if( NEXT_ATTACK == 1 ) setvard ANIM_ATTACK ANIM_ATTACK_GORE_RIGHT
+	if( NEXT_ATTACK == 2 ) setvard ANIM_ATTACK ANIM_ATTACK_GORE_LEFT
+}
+
+{ gore_left
+	setvar PUSH_VEL BOAR_LEFT_PUSH
+	setvard DMG_ATTACK DMG_GORE_LEFT
+	if ( BOAR_SIZE == 3 ) playrandomsound 0 5 SOUND_SWIPE1 SOUND_SWIPE2
+	callevent gore_damage
+}
+
+{ gore_right
+	setvar PUSH_VEL BOAR_RIGHT_PUSH
+	setvard DMG_ATTACK DMG_GORE_RIGHT
+	if ( BOAR_SIZE == 3 ) playrandomsound 0 5 SOUND_SWIPE1 SOUND_SWIPE2
+	callevent gore_damage
+}
+
+{ gore_forward
+	setvard DMG_ATTACK DMG_GORE_FORWARD
+	callevent gore_damage
+	local TARG_RANGE $get(NPCATK_TARGET,range)
+	local MAX_PUSH_RANGE ATTACK_HITRANGE
+	if TARG_RANGE < MAX_PUSH_RANGE
+	local RANGE_PERCENT TARG_RANGE
+	divide RANGE_PERCENT MAX_PUSH_RANGE
+	local PUSH_STR $ratio(RANGE_PERCENT,400,110)
+	setvard PUSH_VEL $relvel(0,PUSH_STR,110)
+	if ( BOAR_SIZE == 3 ) playrandomsound 0 8 SOUND_GORE
+}
+
+{ gore_damage
+	dodamage NPCATK_TARGET ATTACK_HITRANGE DMG_ATTACK ATTACK_HITCHANCE
+	if PUSH_VEL isnot 'PUSH_VEL'
+	addvelocity NPCATK_TARGET PUSH_VEL
+}
+
+{ back_off
+	dbg animevent back_off
+	if !I_R_FROZEN
+	addvelocity ent_me $relvel(0,-400,110)
+}

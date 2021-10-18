@@ -1,0 +1,168 @@
+//Thothie - re-write of firewall for optimization
+{ [server] 
+	const MY_DURATION 15.0
+}
+
+{ [server] game_dynamically_created
+
+
+	setvard AM_SUMMONED 1
+	setvard MY_OWNER PARAM1
+	setvard MY_ANGLES PARAM2
+	setangle face.y $get(MY_ANGLES,angles.y)
+	setvard MY_BASE_DMG PARAM3
+	if ( PARAM3 startswith 'PARAM' ) setvard MY_BASE_DMG 300
+	storeentity ent_expowner MY_OWNER
+	race $get(MY_OWNER,race)
+}
+
+{ game_spawn
+
+	name a|Fire Wall Trap
+	hp 1
+	invincible 1
+	setvard PLAYING_DEAD 1
+	setvard IMMUNE_PUSH 1
+
+	callevent 0.1 define_vars
+
+	callevent MY_DURATION end_effect  	//Die after a delay
+}
+
+{ [server] define_vars
+
+	if ( !AM_SUMMONED )
+	{
+		race hated
+		setvard MY_OWNER $get(ent_me,id)
+		setvard MY_BASE_DMG 300
+		setvard MY_ANGLES $get(ent_me,angles.y)
+	}
+
+	callevent 0.1 activate_effect
+}
+
+{ [server] activate_effect
+
+	clientevent new all $currentscript $get(ent_me,origin) MY_ANGLES
+	setvard MY_CL_IDX game.script.last_sent_id
+	setvard IS_ACTIVE 1
+	setvard DMG_STEP 0
+	callevent 2.0 damage_cycle
+}
+
+{ [server] damage_cycle
+
+	if IS_ACTIVE
+	callevent 0.2 damage_cycle
+	if ( DMG_STEP == 3 ) setvard DMG_STEP 0
+	add DMG_STEP 1
+
+	if ( DMG_STEP == 1 ) local SCAN_POS $relpos(0,0,0)
+	if ( DMG_STEP == 2 ) local SCAN_POS $relpos(0,96,0)
+   	if ( DMG_STEP == 3 ) local SCAN_POS $relpos(0,-96,0)
+
+	//if ( G_DEVELOPER_MODE ) gplayermessage G_DEV_PLAYER SCAN_POS $get(SCAN_POS,range) $get(ent_me,race)
+
+	setvard SCAN_TARGETS $get_tsphere(enemy,96,SCAN_POS)
+	if SCAN_TARGETS isnot none
+	callevent $get_token_amt(SCAN_TARGETS) apply_aoe_effect
+
+
+//Error (SERVER): Error: CMSMonster::Think - monsters/orc_shaman_fire --> StudioFrameAdvance
+}
+
+{ [server] apply_aoe_effect
+
+	local CUR_TARGET $get_token(SCAN_TARGETS,game.script.iteration)
+	applyeffect CUR_TARGET effects/effect_burn 2 MY_OWNER MY_BASE_DMG 1 
+}
+
+{ [server] end_effect
+	setvard IS_ACTIVE 0
+	clientevent remove all MY_CL_IDX
+	callevent 0.1 final_remove
+}
+
+{ final_remove
+	removescript
+	deleteent ent_me
+}
+
+
+//Client
+//======================================
+
+{ [client]
+	const HEIGHT 60
+	const WIDTH 2
+	const TIME_LIVE 14
+}
+
+{ [client] client_activate
+
+   setvard FLAME_POSITION PARAM1
+   setvard FLAME_ANGLE $vec(0,PARAM2,0)
+   callevent 2 flames_start  		//Start erupting after a delay
+}
+
+{ [client] flames_start  // Start shooting
+   playsound CHAN_ITEM 7 items/torch1.wav
+   setvard FLAMING 1
+}
+
+{ [client]
+	repeatdelay 6
+	if FLAMING
+	if ( FX_SPAMMERS < 3 ) playsound CHAN_ITEM 7 items/torch1.wav
+}
+
+{ [client]
+   repeatdelay $randf(0.25,0.5)
+   if FLAMING
+   callevent flames_shoot
+}
+{ [client]
+   repeatdelay $randf(0.25,0.5)
+   if FLAMING
+   callevent flames_shoot
+}
+
+{ [client] flames_shoot
+   local NEGWIDTH WIDTH
+   multiply NEGWIDTH -1
+
+   local x $rand(-30,30)
+   local y $rand(NEGWIDTH,WIDTH)
+   local L_POS $relpos(FLAME_ANGLE,$vec(x,y,HEIGHT))
+   vectoradd L_POS FLAME_POSITION
+
+   local yar $rand(1,0)
+   if( yar ) cleffect tempent sprite fire1_fixed.spr L_POS setup_flames
+
+   local x $rand(-96,96)
+   local y $rand(NEGWIDTH,WIDTH)
+   local L_POS $relpos(FLAME_ANGLE,$vec(x,y,HEIGHT))
+   vectoradd L_POS FLAME_POSITION
+   local yar $rand(1,0)
+   if( yar ) cleffect tempent sprite fire1_fixed.spr L_POS setup_flames
+
+   local x $rand(-192,192)
+   local y $rand(NEGWIDTH,WIDTH)
+   local L_POS $relpos(FLAME_ANGLE,$vec(x,y,HEIGHT))
+   vectoradd L_POS FLAME_POSITION
+   local yar $rand(1,0)
+   if( yar ) cleffect tempent sprite fire1_fixed.spr L_POS setup_flames
+}
+
+{  [client] setup_flames
+
+
+   cleffect tempent set_current_prop death_delay 	2
+   cleffect tempent set_current_prop framerate		30
+   cleffect tempent set_current_prop frames		23
+   cleffect tempent set_current_prop bouncefactor 	0
+   cleffect tempent set_current_prop scale 		$randf(0.6,1.0)
+   cleffect tempent set_current_prop gravity 		$randf(0.1,1.0)
+   cleffect tempent set_current_prop collide 		all
+}

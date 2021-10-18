@@ -1,0 +1,131 @@
+{
+	const BASE_LEVEL_REQ 30
+
+	const VENOM_BURST_MP 50
+
+	const VMODEL_IDX 14 //viewmodel offset
+	const PMODEL_FILE weapons/p_weapons4.mdl //p_model (world/player model file)
+	const PMODEL_IDX_FLOOR 31 //p_model floor offset
+	const PMODEL_IDX_HANDS 30 //p_model hands offset
+
+	const MELEE_DMG 350 //max damage
+	const MELEE_RANGE 120 //max reach
+	const MELEE_DMG_TYPE acid
+	const MELEE_STARTPOS (0,0,5) //aims a bit higher than center
+
+	const POLE_MIN_RANGE 60 //short range (less than this does min damage)
+
+	const POLE_MIN_DMG_MULTI 0.5 //min damage multiplier
+	const POLE_MAX_DMG_MULTI 2.0 //max damage multiplier
+
+	const POLE_CAN_POKE1 1 //basic forward thrust attack
+	const POLE_CAN_POKE2 1 //charged attack (spin thrust) - dbl damage, requires +2 skill levels above base
+	const POLE_CAN_SWIPE 0 //swipe attack (when strafing - doesn't use fall-off system)
+	const POLE_CAN_BLOCK 1 //blocks on right click
+	const POLE_CAN_SPIN 0 //spins when right click + backpeddle after 2 seconds
+	const POLE_CAN_REPEL 1 //pushes monsters away when blocking + forward, but aborts spin
+	const POLE_CAN_BACKHAND 1 //attacks with back end of stick when backpeddling (shorter range, no fall off, similar to swipe, but slower)
+
+	const POLE_BACKHAND_DMG 150 //backhand damage
+	const POLE_BACKHAND_DMG_RANGE 10 //+/- random damage adjust for backhand attack
+	const POLE_BACKHAND_DMG_TYPE pierce //backhand attack may do slash instead of pierce, etc
+	const POLE_BACKHAND_RANGE 40 //range for backhand (usually shorter)
+	const POLE_BACKHAND_ACCURACY 90% //accuracy for backhand (doesn't use fall-off system, so isn't 100%)
+	const POLE_BACKHAND_REPEL 500
+
+	const POLE_CAN_POWER_THROW 1
+	const POLE_THROW_POWER 700 //force of throw
+	const POLE_THOW_PROJECTILE proj_pole_a //throw projectile scriptname
+}
+
+#include items/polearms_base
+
+{ polearm_spawn
+
+	name  a|Lance of Affliction
+	desc  An acursed lance of profane magic
+	weight  30
+	size  2
+	value 5000
+	sethudsprite trade 57
+}
+
+{ game_deploy
+	callexternal ent_owner ext_alance_init
+}
+
+{ polearm_register_attacks
+	//holy circle register
+	local reg.attack.mpdrain 0
+	local reg.attack.type strike-land
+	local reg.attack.range 10
+	local reg.attack.dmg 1
+	local reg.attack.dmg.range 0
+	local reg.attack.dmg.type acid
+	local reg.attack.energydrain 5
+	local reg.attack.stat spellcasting.affliction
+	local reg.attack.hitchance 100
+	local reg.attack.priority 3
+	local reg.attack.delay.strike 0.1
+	local reg.attack.delay.end 0.2
+	local reg.attack.ofs.startpos 0
+	local reg.attack.ofs.aimang 0
+	local reg.attack.noise 5000
+	local reg.attack.keys -attack1
+	local reg.attack.callback venom_burst
+	local reg.attack.chargeamt 300%
+	local reg.attack.reqskill 30
+	registerattack
+}
+
+{ venom_burst_start
+	playviewanim VANIM_WIDE
+	playowneranim once PANIM_SWIPE2 global.anim.combatwalk 1
+	dbg holy_circle_start
+}
+
+{ venom_burst_strike
+
+	if game.serverside
+	if ( $get(ent_owner,mp) < VENOM_BURST_MP )
+	{
+		dplayermessage ent_owner "Affliction Lance: Insufficient Mana for Venom Burst"
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	givemp ent_owner $neg(VENOM_BURST_MP)
+
+	local BURST_TARG_ORG $get(ent_owner,origin)
+	clientevent new all effects/sfx_poison_explode BURST_TARG_ORG 256
+	xdodamage BURST_TARG_ORG 512 $get(ent_owner,skill.spellcasting.affliction) 0.1 ent_owner ent_me spellcasting.affliction poison dmgevent:alance
+}
+
+{ attack_poke1_damaged_other
+
+	if $rand(1,4) == 1
+
+	if ( !GAME_PVP )
+	{
+		if $get(PARAM1,isplayer)
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	local DOT_BURN $get(ent_owner,skill.spellcasting.affliction)
+	multiply DOT_BURN 0.25
+	applyeffect PARAM1 effects/effect_acid 5.0 $get(ent_owner,id) DOT_BURN
+}
+
+{ attack_poke2_damaged_other
+	if ( !GAME_PVP )
+	{
+		if $get(PARAM1,isplayer)
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	local DOT_BURN $get(ent_owner,skill.spellcasting.affliction)
+	multiply DOT_BURN 0.5
+	applyeffect PARAM1 effects/effect_acid 5.0 $get(ent_owner,id) DOT_BURN
+}

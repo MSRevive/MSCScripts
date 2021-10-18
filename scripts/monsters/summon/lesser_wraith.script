@@ -1,0 +1,568 @@
+#scope server
+{ [shared]
+
+	setvar ANIM_RUN wraith_idle
+	setvar ANIM_IDLE wraith_idle
+	setvar ANIM_WALK wraith_idle
+}
+
+{
+	const NPC_EXTRA_VALIDATIONS 1
+
+	setvard I_R_PET 1
+
+	setvard NPC_NO_PLAYER_DMG 1
+	setvard NPC_BATTLE_ALLY 1
+
+	setvard ANIM_ATTACK wraith_attack
+	setvard ANIM_DEATH wraith_idle
+
+	setvard ATTACK_RANGE 128
+	setvard ATTACK_MOVERANGE 100
+	setvard ATTACK_HITRANGE 150
+	setvard NPC_GIVE_EXP 0
+	const BASENOCLIP_NO_SETMOVEDEST 1
+
+	const FWD_SPEED_STANDARD 20
+	setvard FWD_SPEED 20
+	setvard DMG_DRAIN 10 //for monsters
+	setvard MP_DRAIN_AMT 1 //for players
+	const CL_SCRIPT monsters/summon/lesser_wraith_cl
+	const FREQ_ROAM $randf(5.0,10.0)
+
+	const SOUND_MOAN crow/ghostwail.wav
+	const SOUND_DEATH ichy/ichy_die2.wav
+	const SOUND_DRAIN_START crow/Triggered/tomb5.wav
+	const SOUND_DRAIN_LOOP x/x_teleattack1.wav
+	const SOUND_HOVER_LOOP ambience/labdrone2.wav
+	const SOUND_KILL houndeye/he_blast3.wav
+	const SOUND_TELE magic/teleport.wav
+
+	precache SOUND_KILL
+	precache SOUND_DEATH
+}
+
+#include monsters/base_monster_new
+#include monsters/base_noclip
+
+{ [shared] npc_spawn
+
+	name a|Lesser Wraith
+	setmodel weapons/projectiles.mdl
+	setmodelbody 0 72
+	setidleanim ANIM_IDLE
+	setmoveanim ANIM_WALK
+	playanim once ANIM_IDLE
+	width 0
+	height 0
+	setbbox (0,0,0) (0,0,0)
+	setprop ent_me rendermode 5
+	setprop ent_me renderamt 255
+	setvard IMMUNE_VAMPIRE 1
+	setvard IS_UNHOLY 1
+
+	menu.autoopen 1
+
+	blood none
+
+	hp 1000
+	race human
+
+	takedmg slash 0.25
+	takedmg pierce 0.25
+	takedmg blunt 0.25
+	takedmg fire 0.25
+	takedmg cold 0.25
+	takedmg generic 0.25
+	takedmg poison 0.0
+	takedmg lightning 3.0
+	takedmg holy 4.0
+	setvard IMMUNE_STUN 100
+
+	setsolid none
+
+	nopush 1
+
+	gravity 0
+
+	roam 0
+
+	hearingsensitivity 11
+
+	setvard OLD_WRAITH_TARG unset
+
+	callevent 1.0 sustain_renderprops
+
+	callevent 0.5 do_manual_roam
+}
+
+{ npc_targetvalidate
+	if ( FOLLOW_MODE )
+	{
+		setvard NPCATK_TARGET unset
+		local EXIT_SUB 1 
+	}
+
+	if ( $get(NPCATK_TARGET,race) equals hguard )
+	{
+		//don't attack guards unless they are picking on you, your master, or his friends
+		local HGUARD_TARGET $get(NPCATK_TARGET,scriptvar,'NPCATK_TARGET')
+		if ( HGUARD_TARGET equals MY_OWNER ) local GO_HOSTILE 1
+		if ( HGUARD_TARGET equals $get(ent_me,id) ) local GO_HOSTILE 1
+		if ( $get(HGUARD_TARGET,relationship,MY_OWNER) equals ally ) local GO_HOSTILE 1
+		if !GO_HOSTILE
+		setvard NPCATK_TARGET unset
+		local EXIT_SUB 1 
+	}
+
+	if ( $get(NPCATK_TARGET,scriptvar,'IS_LURE') )
+	{
+		setvard NPCATK_TARGET unset
+		local EXIT_SUB 1
+	}
+
+	if !EXIT_SUB
+
+	if OLD_WRAITH_TARG isnot NPCATK_TARGET
+
+	//anything beyond my master's LOS is invalid
+
+	if $get(NPCATK_TARGET,isalive)
+
+	local TRACE_START $get(MY_OWNER,origin)
+	local TRACE_END $get(NPCATK_TARGET,origin)
+	local HALF_HEIGHT $get(NPCATK_TARGET,height)
+	multiply HALF_HEIGHT 0.5
+	vectoradd TRACE_END z HALF_HEIGHT
+	local TRACE_LINE $get_traceline(TRACE_START,TRACE_END,worldonly)
+	if ( TRACE_LINE isnot TRACE_END )
+	{
+		setvard NPCATK_TARGET OLD_WRAITH_TARG
+	}
+	else
+	{
+		setvard OLD_WRAITH_TARG NPCATK_TARGET
+	}
+}
+
+{ sustain_renderprops
+	//in case a glow shell renders invisible, also handle sound loop here
+	if $get(ent_me,isalive)
+	callevent 5.0 sustain_renderprops
+	setprop ent_me rendermode 5
+	setprop ent_me renderamt 255
+	svplaysound 3 10 SOUND_HOVER_LOOP
+	if ( $rand(1,10) == 1 ) playsound 0 10 SOUND_MOAN
+}
+
+{ turn_undead
+	//turn undead is instant death for these guys
+	if !NOT_SUMMONED //unless they ain't summoned
+	local HOLY_CASTER PARAM2
+	local DMG_HOLY $get(ent_me,maxhp)
+	multiply DMG_HOLY 2.0
+	xdodamage ent_me direct 1000 100% HOLY_CASTER HOLY_CASTER spellcasting.divination holy
+}
+
+{ npc_death
+	setvard AM_DRAINING 0
+	setanim.framerate 0
+	setvard FWD_SPEED 0
+	callexternal GAME_MASTER gm_fade $get(ent_me,id) 5 128
+	playsound 1 10 SOUND_DEATH
+	svplaysound 2 0 SOUND_DRAIN_LOOP
+	svplaysound 3 0 SOUND_HOVER_LOOP
+	if ( MY_CL_IDX != 0 ) clientevent update all MY_CL_IDX end_fx
+	if $get(MY_OWNER,isalive)
+	callexternal MY_OWNER ext_wraith_active 0
+}
+
+{ frame_attack_start
+	svplaysound 2 10 SOUND_DRAIN_LOOP
+	callevent start_drain_attack
+}
+
+{ frame_attack_end
+	callevent end_drain_attack
+}
+
+{ end_drain_attack
+	svplaysound 2 0 SOUND_DRAIN_LOOP
+	clientevent update all MY_CL_IDX end_fx
+	setvard AM_DRAINING 0
+	setvard MY_CL_IDX 0
+}
+
+{ start_drain_attack
+	clientevent new all CL_SCRIPT $get(ent_me,index) $get(NPCATK_TARGET,index) ATTACK_HITRANGE
+	setvard MY_CL_IDX game.script.last_sent_id
+	setvard AM_DRAINING 1
+	callevent drain_attack_loop
+}
+
+{ drain_attack_loop
+	if AM_DRAINING
+	callevent 0.5 drain_attack_loop
+	if ( $get(NPCATK_TARGET,isplayer) )
+	{
+		local SEE_TARGET $cansee(NPCATK_TARGET)
+
+		if ( SEE_TARGET )
+		{
+			if $get(NPCATK_TARGET,range) < ATTACK_HITRANGE
+			givemp NPCATK_TARGET $neg(MP_DRAIN_AMT)
+			if ( game.time > LASTATK_MESSAGE )
+			{
+				setvard LASTATK_MESSAGE game.time
+				add LASTATK_MESSAGE 2.0
+				playermessage NPCATK_TARGET Your soul is being drained!
+				effect screenfade NPCATK_TARGET 2 1 (0,0,255) 180 fadein
+			}
+			if $get(NPCATK_TARGET,mp) <= 0
+			callevent slay_target
+		}
+	}
+	else
+	{
+		if $cansee(NPCATK_TARGET)
+		dodamage NPCATK_TARGET direct DMG_DRAIN 100% ent_me dark
+	}
+
+	if ( $get(MY_OWNER,isalive) )
+	{
+		if $get(MY_OWNER,mp) < $get(MY_OWNER,maxmp)
+		givemp MY_OWNER 5
+	}
+
+	if ( !$get(NPCATK_TARGET,isalive) )
+	{
+		callevent end_drain_attack
+	}
+}
+
+{ slay_target
+	if $get(NPCATK_TARGET,isplayer)
+	callevent end_drain_attack
+	playermessage NPCATK_TARGET Your soul has been drained.
+	//figure slay target function here (maybe new code-side function)
+	dodamage NPCATK_TARGET direct 99999 100% ent_me target
+	callexternal NPCATK_TARGET ext_playsound_kiss 1 10 SOUND_KILL
+	playsound 0 10 SOUND_MOAN
+}
+
+{ game_dynamically_created //<owner> <start_pos>
+	setvard MY_OWNER PARAM1
+
+	callevent 0.1 circle_in
+
+	setvard NEXT_READY game.time
+	add NEXT_READY 2.0
+
+   	setvard NAMEPREFIX $get(MY_OWNER,name)
+  	stradd NAMEPREFIX 's
+  	stradd NAMEPREFIX " "
+	stradd NAMEPREFIX $get(ent_me,name)
+
+	name NAMEPREFIX
+
+	setvard INITIAL_ORIGIN PARAM2
+	callevent 0.1 set_first_origin
+	callevent 300.0 end_wraith
+
+
+	callexternal MY_OWNER ext_wraith_active 1
+}
+
+{ set_first_origin
+	setorigin ent_me INITIAL_ORIGIN
+}
+
+{ ext_master_died //called by master on death
+	if PARAM1 equals MY_OWNER
+	callevent npc_suicide
+}
+
+{ npcatk_hunt
+
+	setvard CYCLE_TIME 0.1
+
+	if ( !$get(MY_OWNER,exists) ) local REMOVE_ME 1
+	if ( !$get(MY_OWNER,isalive) ) local REMOVE_ME 1
+	if ( REMOVE_ME ) callevent end_wraith
+	if !REMOVE_ME
+
+	setvard FWD_SPEED FWD_SPEED_STANDARD
+
+	if ( IS_FLEEING ) setvard NPC_NOCLIP_DEST game.monster.movedest.origin
+
+	if ( NPCATK_TARGET isnot unset )
+	{
+		if ( NPCATK_TARGET isnot WRAITH_OLD_TARG )
+		{
+			playermessage MY_OWNER Your Lesser Wraith has targeted $get(NPCATK_TARGET,name.full)
+		}
+		setvard WRAITH_OLD_TARG NPCATK_TARGET
+
+		setvard NPC_PROPELL_SUSPEND 0
+		if ( $get(NPCATK_TARGET,range) < ATTACK_MOVERANGE )
+		{
+			setvard FWD_SPEED 0
+		}
+		else
+		{
+			setvard FWD_SPEED FWD_SPEED_STANDARD
+		}
+
+		if ( $get(NPCATK_TARGET,range) > 1024 )
+		{
+			setvard NPCATK_TARGET unset
+			callevent zap_to_owner
+			local EXIT_SUB 1
+		}
+		if !EXIT_SUB
+
+		//adjust vertical
+		local MY_Z $get(ent_me,origin.z)
+		local TARGET_Z $get(NPCATK_TARGET,origin.z)
+		if ( $get(NPCATK_TARGET,isplayer) ) subtract TARGET_Z 46
+		local MY_ORG $get(ent_me,origin)
+		vectorset MY_ORG z TARGET_Z
+		setorigin ent_me MY_ORG
+
+		if ( $get(NPCATK_TARGET,range) < 55 )
+		{
+			//setvard IS_FLEEING 1
+			//callevent npcatk_suspend_ai 1.0
+			//setvard FWD_SPEED 50
+			//setvard NPC_NOCLIP_DEST $get(NPCATK_TARGET,origin)
+			//local RND_ANG $randf(0,359.99)
+			//teleport away from targets stuck inside you
+			local RND_ANG $randf(0,359.99)
+			vectoradd NPC_NOCLIP_DEST $relpos($vec(0,RND_ANG,0),$vec(0,80,0))
+			vectorset NPC_NOCLIP_DEST z TARGET_Z
+			setorigin ent_me NPC_NOCLIP_DEST
+			playsound 0 10 SOUND_TELE
+		}
+		else
+		{
+			setvard IS_FLEEING 0
+			setvard NPC_NOCLIP_DEST $get(NPCATK_TARGET,origin)
+			vectorset NPC_NOCLIP_DEST z TARGET_Z
+		}
+	}
+
+	if NPCATK_TARGET equals unset
+
+	
+	local MY_ORG $get(ent_me,origin)
+	setvard HOLD_POS $get(MY_OWNER,origin)
+	if ( $get(MY_OWNER,range) > 64 )
+	{
+		setvard LAST_OWNER_YAW $get(MY_OWNER,viewangles)
+		setvard LAST_OWNER_YAW $vec.yaw(LAST_OWNER_YAW)
+	}
+
+	if ( OWNER_OLD_POS != $get(MY_OWNER,origin) )
+	{
+		//owner is moving, stay behind him
+		setvard LAST_OWNER_YAW $get(MY_OWNER,viewangles)
+		setvard LAST_OWNER_YAW $vec.yaw(LAST_OWNER_YAW)
+	}
+
+	vectoradd HOLD_POS $relpos($vec(0,LAST_OWNER_YAW,0),$vec(0,-48,-20))
+
+	local OWNER_GROUND $get(MY_OWNER,origin)
+	local OWNER_GROUND $get_ground_height(OWNER_GROUND)
+	add OWNER_GROUND 10
+	vectorset HOLD_POS z OWNER_GROUND
+
+	
+
+	if ( $dist(MY_ORG,HOLD_POS) < 64 )
+	{
+		//dbg holding
+		setmovedest none
+		setvard FWD_SPEED 0
+		local CUR_YAW $get(MY_OWNER,viewangles)
+		local CUR_YAW $vec.yaw(CUR_YAW)
+		setangle face $vec(0,CUR_YAW,0)
+		setvard NPC_PROPELL_SUSPEND 1
+		setorigin ent_me HOLD_POS
+	}
+	else
+	{
+		//dbg moving to snuggy $dist(MY_ORG,HOLD_POS)
+
+		//snap z
+		local MY_Z $get(ent_me,origin.z)
+		local TARGET_Z $vec.z(HOLD_POS)
+		vectorset MY_ORG z TARGET_Z
+		setorigin ent_me MY_ORG
+
+		setvard NPC_PROPELL_SUSPEND 0
+		setvard FWD_SPEED FWD_SPEED_STANDARD
+		setvard NPC_NOCLIP_DEST HOLD_POS
+		setmovedest HOLD_POS
+	}
+	setvard OWNER_OLD_POS $get(MY_OWNER,origin)
+
+	//local MY_ORG $get(ent_me,origin)
+
+	//dbg $dist(MY_ORG,NPC_NOCLIP_DEST) WANDER_ROT
+
+//	if ( $dist(MY_ORG,NPC_NOCLIP_DEST) < 40 )
+//	{
+//		//if game.time > NEXT_WANDER_ROT_ADJ
+//		//setvard NEXT_WANDER_ROT_ADJ game.time
+//		//add NEXT_WANDER_ROT_ADJ 0.25 //give him time to get away from the point
+//		add WANDER_ROT 20
+//		if ( WANDER_ROT >= 360 ) setvard WANDER_ROT 0
+//	}
+//
+//
+//	if ( $get(MY_OWNER,range) > 1024 )
+//	{
+//		setorigin ent_me NPC_NOCLIP_DEST
+//		callevent 0.5 delay_tele_sound
+//	}
+
+	if ( game.time > NEXT_SCAN )
+	{
+		setvard NEXT_SCAN game.time
+		add NEXT_SCAN 5.0
+
+		local OWNER_TARG $get(MY_OWNER,target)
+		if ( $get(OWNER_TARG,relationship,MY_OWNER) equals enemy )
+		{
+			setvard NPCATK_TARGET OWNER_TARG
+			callevent npcatk_targetvalidate NPCATK_TARGET
+		}
+
+		if NPCATK_TARGET equals unset //failed validation
+		local TARG_LIST $get_tsphere(enemy,768,game.monster.origin)
+		local TARG_LIST $sort_entlist(TARG_LIST,range)
+		setvard NPCATK_TARGET $get_token(TARG_LIST,0)
+		callevent npcatk_targetvalidate NPCATK_TARGET
+	}
+}
+
+{ delay_tele_sound
+	playsound 0 10 SOUND_TELE
+}
+
+{ end_wraith
+	if ( $get(MY_OWNER,isalive) ) playermessage MY_OWNER Your wraith has vanished!
+	callexternal MY_OWNER ext_wraith_active 0
+	callevent npc_suicide
+}
+
+{ game_menu_getoptions
+
+	if PARAM1 equals MY_OWNER
+
+	local reg.mitem.title 	"Report Health"
+	local reg.mitem.type 	callback
+	local reg.mitem.data 	report
+	local reg.mitem.callback bs_global_command
+	menuitem.register
+
+	if ( !FOLLOW_MODE )
+	{
+		if ( NPCATK_TARGET equals unset )
+		{
+			local reg.mitem.title 	"Don't Attack"
+			local reg.mitem.type 	callback
+			local reg.mitem.data 	follow
+			local reg.mitem.callback bs_global_command
+			menuitem.register
+		}
+		else
+		{
+			local reg.mitem.title 	"Disengage Enemy"
+			local reg.mitem.type 	callback
+			local reg.mitem.data 	follow
+			local reg.mitem.callback bs_global_command
+			menuitem.register
+		}
+	}
+	else
+	{
+		local reg.mitem.title 	"Attack on Sight"
+		local reg.mitem.type 	callback
+		local reg.mitem.data 	hunt
+		local reg.mitem.callback bs_global_command
+		menuitem.register
+	}
+
+	local reg.mitem.title 	"Unsummon"
+	local reg.mitem.type 	callback
+	local reg.mitem.data 	vanish
+	local reg.mitem.callback bs_global_command
+	menuitem.register
+}
+
+{ bs_global_command
+	if PARAM1 equals MY_OWNER
+
+	if ( PARAM2 equals vanish )
+	{
+		callevent end_wraith
+		local ENDED_WRAITH 1
+	}
+	if !ENDED_WRAITH
+
+	playsound 0 10 SOUND_KILL
+
+	if ( PARAM2 equals follow )
+	{
+		if ( NPCATK_TARGET equals unset )
+		{
+			gplayermessage MY_OWNER Lesser Wraith set non agro.
+		}
+		else
+		{
+			gplayermessage MY_OWNER Lesser Wraith disengaging.
+		}
+
+		setvard NPCATK_TARGET unset
+		setvard FOLLOW_MODE 1
+		callevent zap_to_owner
+	}
+
+	if ( PARAM2 equals hunt )
+	{
+		gplayermessage MY_OWNER Lesser Wraith set agro.
+		setvard FOLLOW_MODE 0
+	}
+
+	if ( PARAM2 equals defend )
+	{
+		gplayermessage MY_OWNER Lesser Wraith set defensive.
+		setvard FOLLOW_MODE 0
+	}
+
+	if ( PARAM2 equals report )
+	{
+		local HEALTH_STRING $int($get(ent_me,hp))
+		stradd HEALTH_STRING "/"
+		stradd HEALTH_STRING $int($get(ent_me,maxhp))
+		stradd HEALTH_STRING hp
+		gplayermessage MY_OWNER Lesser Wraith Reports: HEALTH_STRING
+	}
+}
+
+{ zap_to_owner
+	setvard NPC_NOCLIP_DEST $get(MY_OWNER,origin)
+	local OWNER_YAW $get(MY_OWNER,viewangles)
+	local OWNER_YAW $vec.z(MY_OWNER)
+	add OWNER_YAW $randf(-45.0,45.0)
+	vectoradd NPC_NOCLIP_DEST $relpos($vec(0,OWNER_YAW,0),$vec(0,-256,0))
+	setorigin ent_me NPC_NOCLIP_DEST
+	callevent 0.1 delay_tele_sound
+}
+
+{ circle_in
+	local CIRCLE_ORG $get(ent_me,origin)
+	vectorset CIRCLE_ORG z $get_ground_height(CIRCLE_ORG)
+	clientevent new all effects/sfx_summon_circle CIRCLE_ORG 3
+}

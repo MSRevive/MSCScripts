@@ -1,0 +1,303 @@
+{
+	//onst CUSTOM_REGISTER_CHARGE1 1
+	const CUSTOM_REGISTER_BLUNT 1
+
+	const BASE_LEVEL_REQ 20
+
+	const ICEWAVE_MPDRAIN 60
+	const BLIZZARD_MPDRAIN 30
+
+	const MODEL_VIEW viewmodels/v_2hblunts.mdl
+	const MODEL_VIEW_IDX 5
+
+	const MODEL_WORLD weapons/p_weapons3.mdl
+
+	const MODEL_BODY_OFS 7
+	const ANIM_PREFIX  standard
+
+	//Used in base_melee
+	//------------------
+	const MELEE_RANGE 80
+	const MELEE_DMG_DELAY  0.5
+	const MELEE_ATK_DURATION 1.5
+	const MELEE_ENERGY 2
+	const MELEE_DMG 400
+	const MELEE_DMG_RANGE 20
+	const MELEE_ACCURACY 65%
+	const MELEE_PARRY_AUGMENT 10%
+
+	const ANIM_SWITCH 11
+	const ANIM_PIERCE_IDLE 12
+	const ANIM_PIERCE_SWING1 4
+	const ANIM_PIERCE_SWING2 5
+	const ANIM_GROUND_SMASH_NORM 10
+	const ANIM_GROUND_SMASH_PIERCE 13
+	const ANIM_BLIZZARD 14
+
+	const SWIVEL_DELAY 3.0 //delay between attempts to switch hammer around
+	const SWIVEL_TIME 1.0 //time to switch hammer around
+
+	const SOUND_COLD_HITWALL1 debris/glass1.wav
+	const SOUND_COLD_HITWALL2 debris/glass2.wav
+
+	const SOUND_PIERCE_HITWALL1 weapons/axemetal1.wav
+	const SOUND_PIERCE_HITWALL2 weapons/axemetal2.wav
+
+	const MELEE_DMG_TYPE cold
+}
+
+#include items/blunt_base_twohanded
+
+{  weapon_spawn
+
+   name  a|North Maul
+   desc  A gigantic hammer of solid elemental ice
+   weight  80
+   size  10
+   value 3750
+   sethudsprite hand 125
+   sethudsprite trade 125
+}
+
+{ game_deploy
+	setvard ATTACK_MODE cold
+}
+
+//mouse2 switches attack modes
+{ game_+attack2
+
+	if game.serverside
+	if $get(ent_owner,canattack)
+
+	local TIME_DIFF game.time
+	subtract TIME_DIFF LAST_SWIVEL
+	if TIME_DIFF > SWIVEL_DELAY
+	setvard LAST_SWIVEL game.time
+
+	if ( ATTACK_MODE equals cold )
+	{
+		splayviewanim ent_me ANIM_SWITCH
+		setvard ATTACK_MODE pierce
+		attackprop ent_me 0 dmg.type blunt //was "pierce", but realized this was over-nerf, as most cold resistant things are pierce resistant too
+		attackprop ent_me 1 dmg.type blunt
+	}
+	else
+	{
+		splayviewanim ent_me ANIM_LIFT1
+		setvard ATTACK_MODE cold
+		attackprop ent_me 0 dmg.type cold
+		attackprop ent_me 1 dmg.type cold
+	}
+
+	//dbg Attack_mode ATTACK_MODE
+
+	callexternal ent_owner ext_removed_effects lock
+	applyeffect ent_owner effects/effect_templock $get(ent_owner,id) SWIVEL_TIME
+	setvard game.effect.canattack 0
+	callevent SWIVEL_TIME remove_lock
+}
+
+{ remove_lock
+	callexternal ent_owner ext_remove_lock
+}
+
+{ register_charge1
+
+	callevent register_charge2
+}
+
+{ register_charge2
+
+   registerattack
+
+	//stun
+	local reg.attack.type		strike-land
+	local reg.attack.keys		-attack1
+	local reg.attack.range		MELEE_RANGE
+	local reg.attack.dmg		SECONDARY_DMG
+	local reg.attack.dmg.range	MELEE_DMG_RANGE
+	local reg.attack.dmg.type	MELEE_DMG_TYPE
+	//local reg.attack.aoe.range	100
+	//local reg.attack.aoe.falloff	1.5
+	local reg.attack.energydrain	MELEE_ENERGY
+	multiply reg.attack.energydrain	2
+	local reg.attack.stat		MELEE_STAT
+	local reg.attack.hitchance	MELEE_ACCURACY
+	add reg.attack.hitchance 	10%
+	local reg.attack.priority	2
+	local reg.attack.delay.strike	1.5
+	local reg.attack.delay.end	2.0
+	local reg.attack.ofs.startpos	MELEE_STARTPOS
+	local reg.attack.ofs.aimang	MELEE_AIMANGLE
+	local reg.attack.callback	special_02
+	local reg.attack.noise		1000
+  	local reg.attack.chargeamt	200%
+  	local reg.attack.reqskill	4
+	if ( BASE_LEVEL_REQ > reg.attack.reqskill ) add reg.attack.reqskill BASE_LEVEL_REQ
+	
+	registerattack
+
+	//blizzard
+	local reg.attack.type  strike-land
+	local reg.attack.keys  -attack1
+	local reg.attack.range  0
+	local reg.attack.dmg  0
+	local reg.attack.dmg.range 0
+	local reg.attack.dmg.type target
+	local reg.attack.energydrain MELEE_ENERGY
+	multiply reg.attack.energydrain 2
+	local reg.attack.stat  spellcasting.ice
+	local reg.attack.hitchance 100%
+	local reg.attack.priority 3
+	local reg.attack.delay.strike 1.5
+	local reg.attack.delay.end 2.0
+	local reg.attack.ofs.startpos MELEE_STARTPOS
+	local reg.attack.ofs.aimang MELEE_AIMANGLE
+	local reg.attack.callback blizzard
+	local reg.attack.noise  1000
+	local reg.attack.chargeamt 300%
+	local reg.attack.mpdrain BLIZZARD_MPDRAIN
+	local reg.attack.reqskill 15
+	registerattack
+
+	//ice wave
+	local reg.attack.type  strike-land
+	local reg.attack.keys  -attack1
+	local reg.attack.range  80
+	local reg.attack.dmg  MELEE_DMG
+	multiply reg.attack.dmg 4
+	local reg.attack.dmg.range MELEE_DMG_RANGE
+	local reg.attack.dmg.type pierce
+	local reg.attack.energydrain MELEE_ENERGY
+	multiply reg.attack.energydrain 2
+	local reg.attack.stat  bluntarms
+	local reg.attack.hitchance 100%
+	local reg.attack.priority 4
+	local reg.attack.delay.strike 0.75
+	local reg.attack.delay.end 1.0
+	local reg.attack.ofs.startpos MELEE_STARTPOS
+	local reg.attack.ofs.aimang MELEE_AIMANGLE
+	local reg.attack.callback stomp
+	local reg.attack.noise  1000
+	local reg.attack.chargeamt 400%
+	local reg.attack.mpdrain ICEWAVE_MPDRAIN
+	local reg.attack.reqskill 27
+	registerattack
+}
+
+{ blizzard_start
+
+	if ( $get(ent_owner,skill.bluntarms.proficiency) < 20 )
+	{
+		dplayermessage ent_owner Northmaul: You do not have sufficient blunt arms skill to use Blizzard attack
+		local EXIT_SUB 1
+	}
+	if ( $get(ent_owner,mp) < BLIZZARD_MPDRAIN )
+	{
+		dplayermessage ent_owner Northmaul: Insufficient mana for Blizzard.
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+
+
+	splayviewanim ent_me ANIM_BLIZZARD
+	playowneranim once PLAYERANIM_SWING global.anim.combatwalk 3
+	callevent 1.0 summon_blizzard
+
+	if game.serverside
+	svplaysound 2 10 $get(ent_owner,scriptvar,'PLR_SOUND_SHOUT1')
+
+}
+
+{ summon_blizzard
+
+	local pos $get(ent_owner,origin)
+	local temp $get_ground_height(pos)
+	local x $vec.x(pos)
+	local y $vec.y(pos)
+	local pos $vec(x,y,temp)
+
+	createnpc monsters/summon/summon_blizzard pos $get(ent_owner,id) $get(ent_owner,angles.y) 15 15 spellcasting.ice
+}
+
+{ stomp_start
+
+	if ( $get(ent_owner,skill.spellcasting.ice) < 15 )
+	{
+		dplayermessage ent_owner Northmaul: You do not have sufficient ice magic skill to use Ice Wave attack
+		local EXIT_SUB 1
+	}
+	if ( $get(ent_owner,mp) < ICEWAVE_MPDRAIN )
+	{
+		dplayermessage ent_owner Northmaul: Insufficient mana for Ice Wave.
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	if ( ATTACK_MODE equals cold ) splayviewanim ent_me ANIM_GROUND_SMASH_NORM
+	if ( ATTACK_MODE equals pierce ) splayviewanim ent_me ANIM_GROUND_SMASH_PIERCE
+	playowneranim once PLAYERANIM_SWING global.anim.combatwalk 3
+
+	if game.serverside
+	svplaysound 2 10 $get(ent_owner,scriptvar,'PLR_SOUND_SHOUT1')
+}
+
+{ stomp_strike
+
+	playsound 0 10 magic/boom.wav
+	createnpc monsters/summon/ice_wave_player $get(ent_owner,origin) $get(ent_owner,id) 10 3
+}
+
+{ [override] melee_start
+
+	if game.serverside
+
+	local RND_ANIM $rand(1,2)
+	if ( ATTACK_MODE equals cold )
+	{
+		if ( RND_ANIM == 1 ) splayviewanim ent_me ANIM_ATTACK1
+		if ( RND_ANIM == 2 ) splayviewanim ent_me ANIM_ATTACK2
+	}
+	if ( ATTACK_MODE equals pierce )
+	{
+		if ( RND_ANIM == 1 ) splayviewanim ent_me ANIM_PIERCE_SWING1
+		if ( RND_ANIM == 2 ) splayviewanim ent_me ANIM_PIERCE_SWING2
+	}
+	//playviewanim	 MELEE_VIEWANIM_ATK
+	if( PLAYERANIM_SWING isnot 'PLAYERANIM_SWING' ) playowneranim once PLAYERANIM_SWING global.anim.combatwalk 3
+	callevent	 MELEE_SOUND_DELAY melee_playsound
+}
+
+{ [override] item_idle
+
+//	dbg item_idle game.item.inhand game.item.attacking ATTACK_MODE
+	if !game.item.attacking
+	if $get(ent_me,inhand)
+	if !IN_PACK
+
+	if ( ATTACK_MODE equals cold ) splayviewanim ent_me 1
+	if ( ATTACK_MODE equals pierce ) splayviewanim ent_me ANIM_PIERCE_IDLE
+}
+
+{ game_deploy
+	setvard IN_PACK 0
+}
+
+{ game_putinpack
+	setvard IN_PACK 1
+}
+
+
+{ [override] game_switchhands
+
+//	if ( ATTACK_MODE equals cold ) splayviewanim ent_me 1
+//	if ( ATTACK_MODE equals pierce ) splayviewanim ent_me 5
+//
+//	callevent item_switchhands
+}
+
+{ [override] hitwall
+	if ( ATTACK_MODE equals cold ) playrandomsound game.sound.weapon game.sound.maxvol SOUND_COLD_HITWALL1 SOUND_COLD_HITWALL2
+	if ( ATTACK_MODE equals pierce ) playrandomsound game.sound.weapon game.sound.maxvol SOUND_PIERCE_HITWALL1 SOUND_PIERCE_HITWALL2
+}

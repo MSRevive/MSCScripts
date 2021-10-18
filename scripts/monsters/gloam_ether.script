@@ -1,0 +1,271 @@
+{
+	setcallback touch enable
+
+	setvard NPC_IS_BOSS 1
+	const NPC_BOSS_REGEN_RATE 0.05
+
+	//base anims
+	setvar ANIM_RUN run
+	setvar ANIM_WALK walk
+	setvar ANIM_IDLE idle_1
+	setvard ANIM_FLINCH flinchb
+	setvard ANIM_ATTACK bite //mdl_attack
+	setvard ANIM_DEATH die
+
+	//custom anims
+	const ANIM_GALLOP gallop
+	const ANIM_JUMP jump //mdl_jump_boost
+	const ANIM_PROJECTILE turnright
+	const ANIM_VICTORY eat
+	
+	//base stats
+	setvard ATTACK_RANGE 96
+	setvard ATTACK_HITRANGE 128
+	setvard ATTACK_MOVERANGE 34
+	setvard NPC_GIVE_EXP 600
+
+	//custom stats
+	const FREQ_SPORES 30.0
+	const FREQ_SPITWAD $randf(15,20)
+	const FREQ_CLOAK $randf(15,30)
+	const DUR_CLOAK 10.0
+	const DMG_SWIPE '$rand(80,150)'
+	setvard SPORE_POISON_DMG 50
+	const DMG_SPoRE 200
+	const DMG_SPITWAD 80
+
+	//sounds
+	const SOUND_STRUCK1 debris/flesh1.wav
+	const SOUND_STRUCK2 debris/flesh2.wav
+	const SOUND_ATTACK1 zombie/claw_miss1.wav
+	const SOUND_ATTACK2 zombie/claw_miss2.wav
+	const SOUND_ATTACKHIT1 zombie/claw_strike1.wav
+	const SOUND_ATTACKHIT2 zombie/claw_strike2.wav
+	const SOUND_CLOAK magic/spawn.wav
+	const SOUND_DEATH aslave/slv_die2.wav
+	const SOUND_PAIN1 aslave/slv_pain1.wav
+	const SOUND_PAIN2 aslave/slv_pain2.wav
+	const SOUND_SPORES bullchicken/bc_attack3.wav
+	const SOUND_SPITWAD headcrab/hc_attack1.wav
+	const SOUND_JUMP aslave/slv_alert3.wav
+}
+
+#include monsters/base_monster_new
+
+{ npc_spawn
+	
+	name an|Ether Gloam
+
+	setmodel monsters/hunter1.mdl
+	race demon
+	blood green
+	hearingsensitivity 11
+	setmoveanim ANIM_WALK
+	setidleanim ANIM_IDLE
+	playanim once ANIM_IDLE
+	width 32
+	height 32
+
+	hp 5000
+	setprop ent_me rendermode 5
+	setprop ent_me renderamt 255
+	setprop ent_me renderfx 16
+	takedmg all 0.6 //ethereal damage reduct
+	takedmg poison 0.5
+	takedmg cold 0.5
+	takedmg fire 0.5
+	takedmg holy 1.0
+	takedmg dark 0.5
+
+	setvard AM_CLOAKED 0
+
+	setvard PUSH_TARG unset
+}
+
+{ game_struck
+	playrandomsound 0 8 SOUND_STRUCK1 SOUND_STRUCK2 SOUND_STRUCK1 SOUND_STRUCK2 SOUND_STRUCK1 SOUND_STRUCK2 SOUND_PAIN1 SOUND_PAIN2
+}
+
+{ cycle_up
+	callevent start_cycles
+}
+
+{ cycle_npc
+	callevent start_cycles
+}
+
+{ start_cycles
+	if !CYCLES_STARTED
+	setvard CYCLES_STARTED 1
+	callevent FREQ_CLOAK do_cloak
+	callevent FREQ_SPORES do_spores
+	callevent FREQ_SPITWAD do_spitwad
+}
+
+{ do_cloak
+
+	if ( !CALLED_BY_DANGER ) callevent FREQ_CLOAK do_cloak
+	setvard CALLED_BY_DANGER 0
+	if !SPIT_WADS
+	if $get(ent_laststruck,isalive)
+
+	clearfx
+
+	playsound 0 10 SOUND_CLOAK
+	effect glow ent_me (128,255,0) 256 1 1
+	setprop ent_me renderamt 0
+	setprop ent_me renderfx 0
+
+	movespeed 5.0
+	callevent npcatk_flee $get(ent_laststruck,id) 2048 DUR_CLOAK
+	setvard AM_CLOAKED 1
+	callevent DUR_CLOAK end_cloak
+}
+
+{ end_cloak
+	playsound 0 10 SOUND_CLOAK
+	setvard AM_CLOAKED 0
+	effect glow ent_me (128,255,0) 256 2 2
+	setprop ent_me renderamt 255
+	setprop ent_me renderfx 16
+	movespeed 1.0
+}
+
+{ game_damaged	//PARAM1=attacker PARAM2=dmg PARAM3=dmg_type
+
+	if ( !AM_CLOAKED )
+	{
+		local T_BOX $get_tbox(players,256)
+		if T_BOX isnot none
+		if $get_token_amt(T_BOX) > 2
+		setvard CALLED_BY_DANGER 1
+		callevent do_cloak
+	}
+
+	if AM_CLOAKED
+	local CAN_HIT 0
+	//if ( $get(PARAM1,range) < 96 ) addvelocity PARAM1 $relvel(0,400,200)
+	if ( PARAM3 equals magic ) local CAN_HIT 1
+	if ( PARAM3 equals holy ) local CAN_HIT 1
+	if ( PARAM3 equals dark ) local CAN_HIT 1
+	if !CAN_HIT
+	setdmg hit 0
+	setdmg dmg 0
+	returndata 0.0
+}
+
+{ do_spores
+	callevent FREQ_SPORES do_spores
+	if !AM_CLOAKED
+	if $cansee(NPCATK_TARGET)
+	playanim critical turnright
+	playsound 0 10 SOUND_SPORES
+	tossprojectile NPCATK_TARGET 500 DMG_SPoRE 0.1 proj_spore (-10,0,48)
+}
+
+{ mdl_attack
+	if !AM_CLOAKED
+	setvard SWIPE_ATTACK 1
+	dodamage NPCATK_TARGET ATTACK_HITRANGE DMG_SWIPE 90% slash
+}
+
+{ game_dodamage
+	if ( SWIPE_ATTACK )
+	{
+		addvelocity PARAM2 $relvel(0,300,110)
+		if ( PARAM1 )
+		{
+			playrandomsound 0 10 SOUND_ATTACKHIT1 SOUND_ATTACKHIT2
+		}
+		else
+		{
+			playrandomsound 0 10 SOUND_ATTACK1 SOUND_ATTACK2
+		}
+		setvard SWIPE_ATTACK 0
+	}
+}
+
+{ game_touch
+	if AM_CLOAKED
+	if $get(PARAM1,relationship,ent_me) equals enemy
+	setvard PUSH_TARG PARAM1
+}
+
+{
+repeatdelay 0.1
+	if ( SPIT_WADS )
+	{
+		if ( !$get(NPCATK_TARGET,isalive) )
+		{
+			callevent end_spitwad
+		}
+		else
+		{
+			playanim once flinchs
+			setmovedest NPCATK_TARGET 9999
+		}
+	}
+
+	if ( !AM_CLOAKED )
+	{
+		setprop ent_me renderamt 255
+		setprop ent_me renderfx 16
+	}
+
+	if AM_CLOAKED
+	setprop ent_me renderamt 0
+	if PUSH_TARG isnot unset
+	local RND_RL $rand(-1,1)
+	multiply RND_RL 400
+	addvelocity PUSH_TARG $relvel(RND_RL,800,400) //can't be called from game_touch
+	setvard PUSH_TARG unset
+}
+
+{ [override] npcatk_run
+
+	setmoveanim ANIM_RUN
+	playanim once ANIM_GALLOP
+}
+
+{ do_spitwad
+	callevent FREQ_SPITWAD do_spitwad
+
+	if $cansee(NPCATK_TARGET)
+	if !AM_CLOAKED
+
+	setmoveanim flinchs
+	setidleanim flinchs
+	roam 0
+
+	callevent npcatk_suspend_ai
+
+	setvard SPIT_WADS 1
+	callevent 4.0 end_spitwad
+}
+
+{ end_spitwad
+	roam 1
+	setvard SPIT_WADS 0
+	setmoveanim ANIM_RUN
+	setidleanim ANIM_IDLE
+	callevent npcatk_resume_ai
+}
+
+{ mdl_attack2
+	playsound 0 10 SOUND_SPITWAD
+	tossprojectile NPCATK_TARGET 600 DMG_SPITWAD 5 proj_thorn (20,0,32)
+}
+
+{ mdl_jump_boost
+	playsound 0 10 SOUND_JUMP
+	local JUMP_HEIGHT $rand(150,250)
+	add JUMP_HEIGHT JUMP_HEIGHT_FACTOR
+	addvelocity ent_me $relvel(0,250,JUMP_HEIGHT)
+}
+
+{ my_target_died
+	if game.time > NEXT_VICTORY
+	setvard NEXT_VICTORY game.time
+	add NEXT_VICTORY 10.0
+	playanim critical ANIM_VICTORY
+}

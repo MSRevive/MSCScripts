@@ -1,0 +1,455 @@
+//Companion.  Follows player through transitions
+//	      Teleports to player when too far away
+#scope server
+{
+	setvar I_R_COMPANION 1
+	setvar I_R_PET 1
+	setvard COMPANION_LR 0
+	setvard NO_SPAWN_STUCK_CHECK 1
+
+	const COMPANION_NEW_TYPE 1
+}
+
+{ [shared] game_spawn
+	callevent pet_spawn
+
+	setvard COMPANION_NAME ACT_NAME
+	callevent ext_companion_update_name
+}
+
+{ ext_companion_update_name
+	local MY_NAME $get(ent_me,itemname)
+	stradd MY_NAME _name
+	local MY_NAME $get_quest_data(SUMMON_MASTER,MY_NAME)
+	if ( MY_NAME isnot 0 )
+	{
+		local L_NEW_NAME MY_NAME
+		setvard COMPANION_NAME MY_NAME
+		stradd L_NEW_NAME " ("
+		stradd L_NEW_NAME $get(SUMMON_MASTER,name)
+		stradd L_NEW_NAME 's
+		stradd L_NEW_NAME ")"
+		name L_NEW_NAME
+	}
+	else
+	{
+		setvard ACT_NAME $get(ent_me,name)
+		setvard NAMEPREFIX $get(SUMMON_MASTER,name)
+		stradd NAMEPREFIX 's
+		stradd NAMEPREFIX " "
+		stradd NAMEPREFIX $get(ent_me,name)
+		name NAMEPREFIX
+	}
+
+}
+
+{ game_companion_save
+
+	setvard companion.save.health $get(ent_me,hp)
+	setvard companion.save.xp COMPANION_XP
+	dbg game_companion_save COMPANION_XP
+}
+
+
+{ game_companion_restore
+	setvard SUMMON_MASTER $get(ent_owner,id)
+	hp companion.save.health
+	setvard COMPANION_XP companion.save.xp
+	setvard CONVERTING_COMPANION 1
+	dbg game_companion_restore COMPANION_XP
+	//debugprint restore - companion.save.health
+}
+
+//{ game_spawn
+//	callevent 1.0 companion_initiate
+//	//stepsize 256
+//}
+
+//{ companion_initiate
+//	//init XP and other stuff here
+//
+//	if ( COMPANION_TYPE isnot 'COMPANION_TYPE' )
+//	{
+//		if !COMPANION_NEW_TYPE
+//		//callexternal ent_owner ext_add_pet COMPANION_TYPE $get(ent_me,id)
+//	}
+//
+//	callevent companion_update_hp
+//	setvard COMPANION_NAME "Your "
+//	stradd COMPANION_NAME ACT_NAME
+//
+//}
+
+{ companion_update_hp
+	if ( COMPANION_XP equals 'COMPANION_XP' ) setvard COMPANION_XP 0
+	local FINAL_HP BASE_HP
+	add FINAL_HP COMPANION_XP
+	if ( FINAL_HP > COMPANION_MAXHP ) local FINAL_HP COMPANION_MAXHP
+	hp $get(ent_me,hp) FINAL_HP
+	dbg companion_update_hp $get(ent_me,hp) $get(ent_me,maxhp)
+}
+
+{ game_dodamage
+	setvard PET_LAST_ATTACK game.time
+	add PET_LAST_ATTACK 10.0
+}
+
+{ bs_set_follow_mode
+	callevent basecompanion_catchup 1
+}
+
+{ basecompanion_catchup //<emergency:0|1>
+
+	local L_EMERGENCY_TELEPORT PARAM1
+
+	if ( !L_EMERGENCY_TELEPORT )
+	{
+		if ( GUARD_MODE ) local EXIT_SUB 1
+		if ( !IS_HIRED ) local EXIT_SUB 1
+		if ( NPCATK_TARGET isnot unset ) local EXIT_SUB 1
+		if ( EXIT_SUB ) dbg basecompanion_catchup ABORTED GUARD_MODE IS_HIRED $cansee(NPCATK_TARGET) L_PET_LAST_ATTACK vs. game.time
+	}
+	if !EXIT_SUB
+
+	local L_POS $get(SUMMON_MASTER,origin)
+	if ( !L_EMERGENCY_TELEPORT ) vectorset L_POS z $get_ground_height(L_POS) //dun wanna teleport into lava if master standing at edge of pit
+
+	local L_TELE_PLUS10 BCOMP_LAST_TELEPORT
+	add L_TELE_PLUS10 1.0
+	//if teleport  greater than 1 seconds ago, make dest origin based on master's viewangle
+	//otherwise rotate around master
+	if ( game.time > L_TELE_PLUS10 )
+	{
+		setvard COMPANION_LR $get(SUMMON_MASTER,viewangles)
+		//setvard COMPANION_TELE_ANG $randf(-16.0,16.0)
+	}
+	else
+	{
+		add COMPANION_TELE_ANG 16
+		if ( COMPANION_TELE_ANG > 359 ) subtract COMPANION_TELE_ANG 359
+	}
+	setvard BCOMP_LAST_TELEPORT game.time
+
+	//calc left side of master
+	local L_ANG $vec.yaw(COMPANION_LR)
+	add L_ANG COMPANION_TELE_ANG
+	vectoradd L_POS $relpos($vec(0,L_ANG,0),$vec(-48,0,0))
+	local OLD_POS $get(ent_me,origin)
+	setorigin ent_me L_POS
+	//test new position
+	//vectoradd L_POS $relpos($vec(0,90,0),$vec(0,16,0))
+	//setsolid PLAYER_FOLLOW none
+	local reg.npcmove.endpos	L_POS
+	vectoradd reg.npcmove.endpos z 16
+	local reg.npcmove.testonly	1
+	npcmove ent_me SUMMON_MASTER
+	if ( game.ret.npcmove.dist <= 0 )
+	{
+		//position failed, go back to where I was
+		//dbg failed OLD_POS -> L_POS
+		setorigin ent_me OLD_POS
+	}
+	else
+	{
+		if ( game.time > COMPANION_NEXT_TELE_SOUND ) 
+		{
+			//sucesess - make notification sound once in awhile
+			playsound 0 10 SOUND_TELE
+			setvard COMPANION_NEXT_TELE_SOUND game.time
+			add COMPANION_NEXT_TELE_SOUND 2.0
+		}
+	}
+	//callevent 0.01 basecompanion_snap_to_ground
+}
+
+//{ basecompanion_snap_to_ground
+//
+//	if !AM_FLYER
+//
+//	//teleport to ground, if nearby
+//	local TRACE_START $get(ent_me,origin)
+//	vectoradd TRACE_START z 28
+//	local TRACE_END TRACE_START
+//	vectoradd TRACE_END z -64
+//	local TRACE_LINE $get_traceline(TRACE_START,TRACE_END,worldonly)
+//	dbg snap to ground
+//	if TRACE_LINE equals TRACE_END
+//	setorigin ent_me TRACE_LINE
+//}
+
+   //Teleport to master if too far away
+{ npcatk_hunt
+	//if !COMPANION_EGGED
+	////debugprint $get(ent_owner,dist)
+	if ( CONVERTING_COMPANION )
+	{
+		setvard SUMMON_MASTER $get(ent_owner,id)
+		if ( !$get(SUMMON_MASTER,scriptvar,'PLR_IN_WORLD') ) local EXIT_SUB 1
+		if !EXIT_SUB
+
+		setvard COMPANION_XP companion.save.xp
+		setvard COMPANION_HP companion.save.health
+		dbg convert_companion $get(SUMMON_MASTER,name) COMPANION_XP COMPANION_HP $get(SUMMON_MASTER,scriptvar,'PLR_IN_WORLD')
+
+		local MY_SCRIPT $get(ent_me,itemname)
+		local PET_LIST $get_quest_data(SUMMON_MASTER,pets)
+		if ( PET_LIST equals 0 )
+		{
+			local ADD_PET MY_SCRIPT
+			quest set SUMMON_MASTER pets ADD_PET
+		}
+		else
+		{
+			token.add PET_LIST MY_SCRIPT
+			quest set SUMMON_MASTER pets PET_LIST
+		}
+
+		quest set SUMMON_MASTER MY_SCRIPT COMPANION_XP
+		stradd MY_SCRIPT _hp
+		quest set SUMMON_MASTER MY_SCRIPT COMPANION_HP
+
+		companion remove ent_me ent_owner
+		setalive 0
+		setvard CONVERTING_COMPANION 0
+		local EXIT_SUB 1
+		yplayermessage SUMMON_MASTER Companion converted to new system
+		deleteent ent_me
+	}
+	if !EXIT_SUB
+
+	if game.time > BCOMP_START_CATCHUP
+	if ( !$get(SUMMON_MASTER,isalive) )
+	{
+		callevent companion_unsummon
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+	if $get(SUMMON_MASTER,dist) > 512
+	//dbg npcatk_hunt basecompanion_catchup
+	callevent basecompanion_catchup
+}
+
+{ npc_death
+	if ( COMPANION_NEW_TYPE ) callevent newtype_remove_pet 1
+	if !COMPANION_NEW_TYPE
+	companion remove ent_me ent_owner
+}
+
+{ bcompanion_regme //<owner>
+	if ( COMPANION_NEW_TYPE )
+	{
+		if NEW_PET
+		callexternal SUMMON_MASTER ext_summon_register_pet $get(ent_me,id)
+		local MY_SCRIPT $get(ent_me,itemname)
+		local PET_LIST $get_quest_data(SUMMON_MASTER,pets)
+		if ( PET_LIST equals 0 )
+		{
+			local ADD_PET MY_SCRIPT
+			quest set SUMMON_MASTER pets ADD_PET
+		}
+		else
+		{
+			token.add PET_LIST MY_SCRIPT
+			quest set SUMMON_MASTER pets PET_LIST
+		}
+		if ( COMPANION_XP == 0 ) quest.set SUMMON_MASTER MY_SCRIPT COMPANION_XP
+		local MY_SCRIPT $get(ent_me,itemname)
+		stradd MY_SCRIPT _hp
+		quest set MY_SCRIPT $get(ent_me,maxhp)
+	}
+
+	if !COMPANION_NEW_TYPE
+	companion add ent_me PARAM1
+}
+//
+//{ bcompanion_un_regme
+//	if !COMPANION_NEW_TYPE
+//	companion remove ent_me SUMMON_MASTER
+//}
+
+{ game_dynamically_created //<owner> <first_summon:0|1>
+	
+	if !CONVERTING_COMPANION
+
+	if ( COMPANION_NEW_TYPE )
+	{
+		setvard BCOMP_START_CATCHUP game.time
+		add BCOMP_START_CATCHUP 3.0
+		setvard SUMMON_MASTER PARAM1
+		local MY_SCRIPT $get(ent_me,itemname)
+		setvard COMPANION_XP $get_quest_data(SUMMON_MASTER,MY_SCRIPT)
+		if ( PARAM2 == 1 ) setvard NEW_PET 1
+		if ( !NEW_PET )
+		{
+			//dbg game_dynamically_created $get(ent_me,hp) / $get(ent_me,maxhp)
+			//callevent companion_update_hp
+			local FINAL_HP BASE_HP
+			add FINAL_HP COMPANION_XP
+			if ( FINAL_HP > COMPANION_MAXHP ) local FINAL_HP COMPANION_MAXHP
+
+			local MY_SCRIPT $get(ent_me,itemname)
+			stradd MY_SCRIPT _hp //current hp
+			setvard COMPANION_HP $get_quest_data(SUMMON_MASTER,MY_SCRIPT)
+			hp COMPANION_HP FINAL_HP
+			dbg game_dynamically_created $get(ent_me,hp) / $get(ent_me,maxhp)
+			callevent 0.1 bcomp_restore_old_hp
+		}
+		else
+		{
+			hp BASE_HP
+		}
+	}
+
+	callevent bcompanion_regme PARAM1
+}
+
+{ bcomp_restore_old_hp
+	local FINAL_HP BASE_HP
+	add FINAL_HP COMPANION_XP
+	if ( FINAL_HP > COMPANION_MAXHP ) local FINAL_HP COMPANION_MAXHP
+
+	local MY_SCRIPT $get(ent_me,itemname)
+	stradd MY_SCRIPT _hp //current hp
+	setvard COMPANION_HP $get_quest_data(SUMMON_MASTER,MY_SCRIPT)
+	if ( COMPANION_HP == 0 ) setvard COMPANION_HP FINAL_HP
+	hp COMPANION_HP FINAL_HP
+	dbg bcomp_restore_old_hp $get(ent_me,hp) $get(ent_me,maxhp)
+}
+
+{ game_damaged_other
+
+	local TARG_VALUE $get(PARAM1,skilllevel)
+
+	if TARG_VALUE > 0
+
+	//target's XP value must be > 10% of my own XP
+	local MIN_VALUE COMPANION_XP //$get(PARAM1,skilllevel)
+	multiply MIN_VALUE 0.1
+
+	//dbg game_damaged_other TARG_VALUE vs MIN_VALUE
+	if TARG_VALUE > MIN_VALUE
+
+	local IN_DMG PARAM2
+	multiply IN_DMG 0.01
+	add COMPANION_XP IN_DMG 
+	setvard BCOMP_UPDATE_XP 1
+}
+
+{
+repeatdelay 5.0
+	if $get(ent_me,isalive)
+	if COMPANION_NEW_TYPE
+	if BCOMP_UPDATE_XP
+	local MY_SCRIPT $get(ent_me,itemname)
+	quest set SUMMON_MASTER MY_SCRIPT COMPANION_XP
+	stradd MY_SCRIPT _hp
+	dbg update_hp MY_SCRIPT $get(ent_me,hp)
+	quest set SUMMON_MASTER MY_SCRIPT $get(ent_me,hp) //current health
+	setvard BCOMP_UPDATE_XP 0
+}
+
+{ ext_unreg_pets
+	if PARAM1 equals SUMMON_MASTER
+	callevent bcompanion_un_regme
+}
+
+{ game_damaged
+
+	setvard BCOMP_UPDATE_XP 1
+
+	if ( !$get(PARAM1,isplayer) )
+	{
+		if ( $get(SUMMON_MASTER,range) > 512 ) playermessage SUMMON_MASTER COMPANION_NAME is under attack!
+
+		local QUART_HEALTH $get(ent_me,maxhp)
+		multiply QUART_HEALTH 0.25
+		if ( $get(ent_me,hp) < QUART_HEALTH ) playermessage SUMMON_MASTER COMPANION_NAME is low on health! ( $int($get(ent_me,hp)) hp )
+
+		setvard COMPANION_NEXT_REGEN game.time
+		add COMPANION_NEXT_REGEN 30.0
+	}
+
+	if !NEW_AI
+
+	if $get(PARAM1,isplayer)
+	setdmg dmg 0
+	setdmg hit 0
+	returndata 0
+}
+
+{ my_target_died
+	callevent companion_update_hp
+}
+
+{ ext_givexp
+	add COMPANION_XP PARAM1
+	setvard BCOMP_UPDATE_XP 1
+}
+
+{ companion_abandon
+	//offer SUMMON_MASTER item_charm_w1_full
+	//deleteent ent_me fade
+	//callevent bcompanion_un_regme
+	if PARAM2 equals from_menu
+	setvard COMPANION_CONFIRM_DISMISS 1
+	callevent 0.5 companion_give_menu
+}
+
+{ companion_give_menu
+	menu.open SUMMON_MASTER
+}
+
+{ game_menu_cancel
+	setvard COMPANION_CONFIRM_DISMISS 0
+}
+
+{ companion_release_cancel
+	setvard COMPANION_CONFIRM_DISMISS 0
+}
+
+{ companion_release
+	helptip SUMMON_MASTER generic "PET DISMISSED" "This pet will continue to remain with you until map change or death."
+	playermessage SUMMON_MASTER Pet dismissed...
+	//callexternal ent_owner ext_remove_pet COMPANION_TYPE
+	callevent bs_set_defend_mode
+	setvard IS_HIRED 0
+	callevent 0.1 bcompanion_un_regme
+	if COMPANION_NEW_TYPE
+	callevent newtype_remove_pet
+}
+
+{ companion_unsummon
+	if IS_HIRED
+	if ( PARAM1 equals trigger_hurt )
+	{
+		playsound 0 10 SOUND_PAIN
+		helptip SUMMON_MASTER generic "PET UNSUMMONED DUE TO HAZARD" "You can re-summon your pet by using Summon Pet on the player menu [default: F11]"
+	}
+	else
+	{
+		helptip SUMMON_MASTER generic "PET UNSUMMONED" "You can re-summon your pet by using Summon Pet on the player menu [default: F11]"
+	}
+	//callexternal ent_owner player_unsummon_pets
+	if COMPANION_NEW_TYPE
+	local MY_SCRIPT $get(ent_me,itemname)
+	quest set SUMMON_MASTER MY_SCRIPT COMPANION_XP
+	stradd MY_SCRIPT _hp
+	dbg update_hp MY_SCRIPT $get(ent_me,hp)
+	quest set SUMMON_MASTER MY_SCRIPT $get(ent_me,hp) //current health
+	setvard BCOMP_UPDATE_XP 0
+	if ( !PARAM3 ) callexternal SUMMON_MASTER ext_unsummon_pets_new SUMMON_MASTER $get(ent_me,id) 1
+	setalive 0
+	deleteent ent_me fade
+}
+
+{ newtype_remove_pet //<died:0|1>
+	local PET_LIST $get_quest_data(SUMMON_MASTER,pets)
+	local MY_SCRIPT $get(ent_me,itemname)
+	local PET_IDX $get_find_token(PET_LIST,MY_SCRIPT)
+	token.del PET_LIST PET_IDX
+	dbg newtype_remove_pet PET_LIST
+	quest set SUMMON_MASTER pets PET_LIST
+	quest set SUMMON_MASTER MY_SCRIPT 0
+	if PARAM1
+	callexternal SUMMON_MASTER ext_unsummon_pets_new SUMMON_MASTER $get(ent_me,id)
+}

@@ -1,0 +1,111 @@
+#scope server
+{
+	const NPC_EXTRA_VALIDATIONS 1
+
+	setvard PLAYING_DEAD 1 //so summons don't target
+
+	const DELETE_ON_DEATH 1
+	setvar ANIM_IDLE		idle
+	setvar ANIM_WALK		swim
+	setvar ANIM_RUN		thrust
+	setvard ANIM_DEATH		die1
+	const ANIM_ATK_BIG		srattack1
+	const ANIM_ATK_RIGHT		bite_r
+	const ANIM_ATK_LEFT		bite_l
+	setvard ANIM_FLINCH		bgflinch
+
+	const SOUND_IDLE1 		ichy/ichy_idle1.wav
+	const SOUND_IDLE2 		ichy/ichy_idle2.wav
+	const SOUND_ATTACK1		ichy/ichy_bite1.wav
+	const SOUND_ATTACK2		ichy/ichy_bite2.wav
+	const SOUND_STRUCK1 		ichy/ichy_pain2.wav
+	const SOUND_STRUCK2 		ichy/ichy_pain3.wav
+	const SOUND_STRUCK3 		ichy/ichy_pain5.wav
+	const SOUND_STRUCK4 		ichy/ichy_pain3.wav
+	const SOUND_STRUCK5 		ichy/ichy_pain5.wav
+	const SOUND_DEATH 		ichy/ichy_die2.wav
+
+	setvard ATTACK_MOVERANGE		64
+	setvard ATTACK_RANGE		120
+	setvard ATTACK_HITRANGE	180
+	const ATTACK_HITCHANCE	75%
+
+	setvard NPC_HACKED_MOVE_SPEED  250 //base_propelled
+
+	setvard NPC_GIVE_EXP		1000
+	const ATK_DMG_LOW 		200.0
+	const ATK_DMG_HIGH 		500.0
+}
+
+#include monsters/base_monster_new
+#include monsters/base_propelled
+#include monsters/base_fish2
+
+{ [shared] npc_spawn
+	hp 2000
+	width 64
+	height 32
+	name a|Nightmare Orca
+	hearingsensitivity 10
+	roam 1
+	race demon
+	invincible 1
+	nopush 1
+
+	setmodel monsters/killie.mdl
+}
+
+{  npc_selectattack	//Switch up my attack
+   
+   	local NEXT_ATTACK $rand(0,2)
+   	if( NEXT_ATTACK == 0 ) setvard ANIM_ATTACK ANIM_ATK_BIG
+   	else if( NEXT_ATTACK == 1 ) setvard ANIM_ATTACK ANIM_ATK_LEFT
+   	else if( NEXT_ATTACK == 2 ) setvard ANIM_ATTACK ANIM_ATK_RIGHT
+	//setanim.movespeed 0
+}
+
+{  frame_attack	// Deal damage
+
+	playrandomsound 0 10 SOUND_ATTACK1 SOUND_ATTACK2
+   	dodamage NPCATK_TARGET ATTACK_HITRANGE $randf(ATK_DMG_LOW,ATK_DMG_HIGH) ATTACK_HITCHANCE
+}
+
+{  game_damaged_other
+
+	//insta-kill (no XP loss, if you survive the damage, but boots you out of dreamland)
+	effect screenfade PARAM1 5 1 (255,0,0) 255
+	local SPAWN_NAME $get_quest_data(PARAM1,d)
+	tospawn PARAM1 SPAWN_NAME
+	setvard NPCATK_TARGET unset
+}
+
+{ npc_targetvalidate
+
+	//only attack players, only those in water
+	if ( !$get(NPCATK_TARGET,isplayer) ) setvard NPCATK_TARGET unset
+	if ( $get(NPCATK_TARGET,inwater) < 1 ) setvard NPCATK_TARGET unset
+}
+
+{ npcatk_hunt
+	if NPCATK_TARGET isnot unset
+	if ( $get(NPCATK_TARGET,inwater) == 0 ) setvard NPCATK_TARGET unset
+}
+
+{
+repeatdelay 1.0
+	//check for players in water
+	setvard PLAYER_LIST ''
+	getplayersnb PLAYER_LIST
+	calleventloop $get_token_amt(PLAYER_LIST) water_check
+
+	if NPCATK_TARGET equals unset
+	if $dist(game.monster.origin,NPC_HOME_LOC) > 512
+	callevent npcatk_setmovedest NPC_HOME_LOC 32
+}
+
+{ water_check
+	if NPCATK_TARGET equals unset
+	local CUR_TARG $get_token(PLAYER_LIST,game.script.iteration)
+	if $get(CUR_TARG,inwater) > 0
+	callevent npcatk_settarget CUR_TARG
+}

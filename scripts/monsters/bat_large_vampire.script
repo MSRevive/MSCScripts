@@ -1,0 +1,177 @@
+#scope server
+{
+	const BFLY_NO_FAKE_DEATH 1
+	
+	const AS_CUSTOM_UNSTUCK 1
+
+	setvar NPC_HACKED_MOVE_SPEED 500
+
+	setvar ANIM_IDLE IdleFlyNormal
+	setvar ANIM_WALK IdleFlyFace
+	setvard ANIM_RUN IdleFlyNormal
+	setvard ANIM_ATTACK Bite //bite1
+	setvar ANIM_DEATH Deadground //Die
+
+	const ANIM_DEAD_GROUND Deadground
+	const ANIM_HOVER IdleFlyFace
+	const ANIM_IDLE_HANG IdleHang
+
+	setvard ATTACK_MOVERANGE 15
+	setvard ATTACK_RANGE 80
+	setvard ATTACK_HITRANGE 100
+	setvard NPC_GIVE_EXP 150
+
+	const DMG_BITE 50
+
+	const DOT_POISON 10.0
+
+	const SOUND_HEARTBEAT player/heartbeat_noloop.wav
+	
+	const SOUND_STRUCK1 weapons/cbar_hitbod1.wav
+	const SOUND_STRUCK2 weapons/cbar_hitbod2.wav
+	const SOUND_STRUCK3 weapons/cbar_hitbod3.wav
+	const SOUND_PAIN monsters/bat/c_bat_hit1.wav
+	const SOUND_IDLE monsters/bat/c_bat_hit2.wav
+	const SOUND_DEATH monsters/bat/c_bat_yes.wav
+
+	const SOUND_BOOST1 monsters/bat/c_bat_bat1.wav
+	const SOUND_BOOST2 monsters/bat/c_bat_bat2.wav
+
+	const SOUND_ATTACK1 monsters/bat/c_bat_atk1.wav
+	const SOUND_ATTACK2 monsters/bat/c_bat_atk2.wav
+	const SOUND_ATTACK3 monsters/bat/c_bat_atk3.wav
+
+	const SOUND_ALERT monsters/bat/death.wav
+
+}
+
+#include monsters/base_monster_new
+#include monsters/base_flyer_grav
+#include monsters/base_propelled
+
+{ npc_spawn
+
+	name a|Vampire Bat
+	setmodel monsters/bat_large.mdl
+	hp 200
+	race vermin
+	width 32
+	height 32
+	gravity 0
+	//fly 1
+	hearingsensitivity 3.5
+	setidleanim ANIM_IDLE_HANG
+	setmoveanim ANIM_RUN
+	playanim once ANIM_IDLE_HANG
+	setvard IS_ACTIVE 0
+	callevent npcatk_suspend_ai
+	callevent 2.0 final_props
+	setprop ent_me skin 1
+
+	if ( $lcase(game.map.name) equals nightmare_edana ) setmonsterclip 0
+}
+
+{ final_props
+	setvard REGEN_RATE $get(ent_me,maxhp)
+	multiply REGEN_RATE 0.1
+}
+
+{ set_spawn_active
+	callevent 0.1 active_mode
+}
+
+{ active_mode
+	playanim critical ANIM_WALK
+	setidleanim ANIM_WALK
+	setmoveanim ANIM_RUN
+	setvard IS_ACTIVE 1
+	callevent npcatk_resume_ai
+}
+
+{ game_heardsound
+	if !IS_ACTIVE
+	local HEARD_ID $get(ent_lastheard,id)
+	if $get(HEARD_ID,relationship,ent_me) equals enemy
+	callevent active_mode
+}
+
+{ game_damaged
+	if ( !IS_ACTIVE ) callevent active_mode
+
+	if game.time > NEXT_RETREAT
+	setvard NEXT_RETREAT game.time
+	add NEXT_RETREAT $randf(3.0,5.0)
+	local RND_LR $randf(-300.0,300.0)
+	local RND_FB $randf(-1500.0,500.0)
+	addvelocity ent_me $relvel(RND_LR,RND_FB,0)
+}
+
+{ game_dodamage
+	if ( !$get(PARAM2,scriptvar,'IMMUNE_VAMPIRE') )
+	{
+		givehp ent_me REGEN_RATE
+		playsound 0 10 SOUND_HEARTBEAT
+	}
+
+	if ( !$get(OLD_TARGET,isalive) ) setvard OLD_TARGET PARAM1
+	if ( OLD_TARGET equals PARAM2 )
+	{
+		add TRACK_HIT 1
+	}
+	else
+	{
+		setvard TRACK_HIT 0
+	}
+	if ( TRACK_HIT > 3 )
+	{
+		setvard TRACK_HIT 0
+		applyeffect PARAM2 effects/greater_poison 5.0 $get(ent_me,id) DOT_POISON 1
+	}
+	setvard OLD_TARGET PARAM2
+}
+
+{ bite1 //frame event
+	dodamage NPCATK_TARGET ATTACK_HITRANGE DMG_BITE 90% pierce
+	svplayrandomsound 0 10 SOUND_ATTACK1 SOUND_ATTACK2 SOUND_ATTACK3
+}
+
+{ npc_targetsighted
+	if ( game.time > NEXT_HORROR_BOOST )
+	{
+		//if $cansee(NPCATK_TARGET) //look at the event name, duh
+		setvard NEXT_HORROR_BOOST game.time
+		add NEXT_HORROR_BOOST $randf(3.0,5.0)
+		addvelocity ent_me $relvel(0,800,0)
+
+		svplayrandomsound 0 10 SOUND_BOOST1 SOUND_BOOST2
+	}
+
+	if ( $get(NPCATK_TARGET,range) < ATTACK_RANGE ) addvelocity ent_me $relvel(-50,0,0) //rotate around target
+
+	if !DID_ALERT
+	setvard DID_ALERT 1
+	svplaysound 0 10 SOUND_ALERT
+}
+
+{ my_target_died
+	setvard DID_ALERT 0
+}
+
+{ npc_death
+	setprop ent_me rendermode 5
+	setprop ent_me renderamt 0
+	clientevent new all monsters/bat_large_corpse_cl $get(ent_me,origin) 1
+}
+
+{ npcatk_suspend_ai
+	dbg npcatk_suspend_ai PARAM1 PARAM2
+}
+
+{ as_npcatk_suspend_ai
+	dbg as_npcatk_suspend_ai PARAM1 PARAM2
+}
+
+{ npc_stuck
+	dbg npc_stuck
+	callevent chicken_run 1.0
+}

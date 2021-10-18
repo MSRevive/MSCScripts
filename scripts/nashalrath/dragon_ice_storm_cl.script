@@ -1,0 +1,117 @@
+{
+	const STORM_RAD 768
+	const MIN_V -3000 //don't check for hits if I fell past this point
+	const MIN_SCALE 2.0
+	const MAX_SCALE 6.0 //big as shards get
+	const EXPLODE_SCALE 4.0 //only shards larger than this explode and do damage
+
+	const SOUND_BREAK1 debris/glass1.wav
+	const SOUND_BREAK2 debris/glass2.wav
+
+	const SOUND_SHATTER debris/bustglass2.wav
+}
+
+{ client_activate //<origin> <control_player>
+
+	setvard FX_ORIGIN PARAM1
+	setvard FX_CONTROL_PLAYER PARAM2 //player we are going to use to return hits
+	setvard FX_ACTIVE 1
+	setvard FX_GROUND FX_ORIGIN
+	vectorset FX_GROUND z $get_ground_height(FX_GROUND)
+	if ( FX_CONTROL_PLAYER equals none ) setvard FX_NO_DMG 1 //no player to return event with
+	callevent fx_loop
+}
+
+{ end_fx
+	setvard FX_ACTIVE 0
+	callevent 2.0 remove_fx
+	
+}
+
+{ fx_loop
+	if FX_ACTIVE
+	callevent $randf(0.1,0.3) fx_loop
+	local L_POS FX_ORIGIN
+	local RND_ANG $randf(0,359.99)
+	local RND_DIST $randf(0,STORM_RAD)
+	vectoradd L_POS $relpos($vec(0,RND_ANG,0),$vec(0,RND_DIST,0))
+	cleffect tempent sprite glassgibs.mdl L_POS setup_ice_spike
+}
+
+{ shard_land
+	local SHARD_ORIGIN game.tempent.origin
+	if $vec.z(SHARD_ORIGIN) > MIN_V
+
+	local SHARD_SIZE game.tempent.fuser1
+	local SHARD_VOLUME EXPLODE_SCALE
+	if ( SHARD_VOLUME > 0 ) divide SHARD_VOLUME MAX_SCALE //dunno why shard volume would be 0, but ya can never be too careful...
+	local SHARD_VOLUME $ratio(SHARD_VOLUME,3,10)
+
+	if ( SHARD_SIZE < EXPLODE_SCALE )
+	{
+		local RND_SOUND $rand(1,2)
+		if ( RND_SOUND == 1 ) sound.play3d SOUND_BREAK1 SHARD_VOLUME game.tempent.origin
+		else if ( RND_SOUND == 2 ) sound.play3d SOUND_BREAK2 SHARD_VOLUME game.tempent.origin
+	}
+	
+	if SHARD_SIZE >= EXPLODE_SCALE
+	
+	sound.play3d SOUND_SHATTER SHARD_VOLUME game.tempent.origin
+
+	setvard GIB_SCALE_ADJ SHARD_SIZE
+	cleffect tempent sprite glassgibs.mdl game.tempent.origin setup_gibs
+
+	dbg shard_land explode game.localplayer.index vs FX_CONTROL_PLAYER
+
+	if !FX_NO_DMG
+	if game.localplayer.index == FX_CONTROL_PLAYER
+	local BLAST_ORG SHARD_ORIGIN
+	vectoradd BLAST_ORG z 1 //keeps returning wrong, seeing if this converts to vec proper
+	//if still fails, use FX_GROUND
+	cleffect ce GM gm_isl $quote(BLAST_ORG) x
+}
+
+{ setup_ice_spike
+
+	cleffect tempent set_current_prop death_delay 2.0
+	cleffect tempent set_current_prop body 0
+	cleffect tempent set_current_prop framerate 1.0
+	cleffect tempent set_current_prop sequence 0
+	cleffect tempent set_current_prop rendermode add
+	cleffect tempent set_current_prop renderamt 255
+	cleffect tempent set_current_prop gravity 1
+	cleffect tempent set_current_prop collide world;die
+	cleffect tempent set_current_prop cb_collide shard_land
+	cleffect tempent set_current_prop frames 1
+	local RND_SCALE $randf(MIN_SCALE,MAX_SCALE)
+	cleffect tempent set_current_prop scale RND_SCALE
+	cleffect tempent set_current_prop fuser1 RND_SCALE //only shards larger than EXPLODE_SCALE will cause damage or explode
+	cleffect tempent set_current_prop gravity $randf(1.0,2.0)
+	cleffect tempent set_current_prop angles $vec(90,0,0)
+	cleffect tempent set_current_prop velocity (-10,-10,-100)
+}
+
+{ setup_gibs
+
+	cleffect tempent set_current_prop death_delay 2.0
+	cleffect tempent set_current_prop body $rand(0,6)
+	cleffect tempent set_current_prop framerate 1.0
+	cleffect tempent set_current_prop sequence 0
+	cleffect tempent set_current_prop rendermode add
+	cleffect tempent set_current_prop renderamt 255
+	cleffect tempent set_current_prop gravity 1
+	cleffect tempent set_current_prop collide world
+	cleffect tempent set_current_prop fadeout lifetime
+	cleffect tempent set_current_prop frames 1
+	local L_GIB_SCALE $randf(0.25,0.5)
+	multiply L_GIB_SCALE GIB_SCALE_ADJ
+	cleffect tempent set_current_prop scale L_GIB_SCALE
+	cleffect tempent set_current_prop gravity 1
+	cleffect tempent set_current_prop bouncefactor 1
+	cleffect tempent set_current_prop angles $vec($rand(0,359),$rand(0,359),0)
+
+	local RND_ANG $randf(0,359.99)
+	local RND_SPRING $randf(150,350)
+	local RND_SWING $randf(-100,100)
+	cleffect tempent set_current_prop velocity $relvel($vec(0,RND_ANG,0),$vec(RND_SWING,0,RND_SPRING))
+}

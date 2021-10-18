@@ -1,0 +1,282 @@
+//Orc Brawler from Orc Berserker by Thothie
+//- A really, big, angry, orc - stun attacks galor
+
+{
+   setvard DROP_GOLD 1			//Gold Drops
+   setvard DROP_GOLD_AMT $rand(100,200)	//
+   setvard NPC_GIVE_EXP 500
+
+	setvard BASE_MOVESPEED 2.0
+
+   setvard ANIM_ATTACK1 swordswing1_L //Attack animation 1
+
+	const ANIM_SMASH battleaxe_swing1_L
+	const ANIM_SWIPE1 swordswing1_L
+	const ANIM_SLAP deflectcounter
+	const ANIM_KICK kick
+	const ANIM_WARCRY warcry
+
+	const KICK_DMG_DELAY 0.5
+	const SLAP_DMG_DELAY 0.5
+
+   setvard FLINCH_CHANCE 45%
+
+   const ATTACK_ACCURACY 70%
+
+	setvard ATTACK_DAMAGE $rand(50,100)
+   const ATTACK_DMG_LOW 10
+   const ATTACK_DMG_HIGH 20
+
+	setvard ATTACK_RANGE 150
+	setvard ATTACK_HITRANGE 200
+	setvard ATTACK_MOVERANGE 50
+	setvard MOVE_RANGE 50
+
+	const SOUND_KICK zombie/claw_miss1.wav
+	const SOUND_SLAP zombie/claw_miss2.wav
+	const SOUND_KICKHIT zombie/claw_strike2.wav
+	const SOUND_SLAPHIT zombie/claw_strike3.wav
+	const SOUND_WARCRY monsters/troll/trollidle.wav
+	const SOUND_CHARGE garg/gar_alert3.wav
+	const SOUND_ZAP1 debris/beamstart14.wav
+	const SOUND_ZAP2 debris/beamstart14.wav
+	const SOUND_ZAP3 debris/zap1.wav
+	const SOUND_WALK1	monsters/troll/step1.wav
+	const SOUND_WALK2	monsters/troll/step2.wav
+	const SOUND_TELE magic/teleport.wav
+
+	const STUCK_CHECK_FREQUENCY 2.0
+}
+
+#include monsters/orc_base_melee
+#include monsters/sorc_base
+
+{  orc_spawn
+
+   	hp 4000
+	width 38
+	height 96
+   	name a|Shadahar Thunderfist
+   	hearingsensitivity 8
+	setmodel monsters/sorc_big.mdl
+
+	movespeed 2.0
+
+	setmodelbody 0 0 //body: 0=bare 1=bloody_shirt 2=gold_armor 3=archer
+	setmodelbody 1 1 //head: 0=hat_horns 1=hat_spiked 2=lizardskin_horned 3=gold_Chieftain 4=lizard_cap
+	setmodelbody 2 0 //weapon: 0=unarmed 1=axe 2=bow 3=steel_bow 4=sword 5=great_axe 6=sword_sheild 8=yellow_axe 9=blooddrinker
+}
+
+
+{ npc_post_spawn
+	setvard ATTACK_MOVERANGE 86
+	setvard ATTACK_RANGE 110
+	setvard ATTACK_HITRANGE 175
+}
+
+{ npc_selectattack
+
+	setvard ATTACK_PUSH 'none'
+
+	if !ATTACKING
+
+	if ( NEXT_ATTACK equals 'NEXT_ATTACK' ) setvard ATTACK_TYPE $rand(1,4)
+
+	if ( NEXT_ATTACK isnot 'NEXT_ATTACK' ) setvard ATTACK_TYPE NEXT_ATTACK
+
+	setvard ATTACKING 1
+
+	if ( ATTACK_TYPE == 1 )
+	{
+		setvard ATTACK_PUSH $relvel(-200,230,220)
+		setvard ATTACK_DAMAGE $rand(50,150)
+		setvard ANIM_ATTACK ANIM_SMASH
+		playanim critical ANIM_SMASH
+		setvard ATTACK_TYPE $rand(1,4)
+	}
+
+	if ( ATTACK_TYPE == 2 )
+	{
+		setvard ATTACK_DAMAGE $rand(25,100)
+		setvard ATTACK_PUSH $relvel(-100,130,120)
+		setvard ANIM_ATTACK ANIM_SWIPE1
+		playanim critical ANIM_SWIPE1
+		setvard ATTACK_TYPE $rand(1,4)
+	}
+
+	if ( ATTACK_TYPE == 3 )
+	{
+		setvard ATTACK_DAMAGE $rand(25,50)
+		setvard ATTACK_PUSH $relvel(-10,13,12)
+		setvard ANIM_ATTACK ANIM_SLAP
+		playanim critical ANIM_SLAP
+  		playsound 0 10 SOUND_SLAP
+		callevent SLAP_DMG_DELAY slap_damage
+		setvard NEXT_ATTACK 1
+	}
+
+	if ( ATTACK_TYPE == 4 )
+	{
+		setvard ATTACK_DAMAGE $rand(50,100)
+		setvard ATTACK_PUSH $relvel(-300,330,320)
+		setvard ANIM_ATTACK ANIM_KICK
+		playanim critical ANIM_KICK
+  		playsound 0 10 SOUND_KICK
+		if ( !I_R_FROZEN ) movespeed 2.0
+		setvard NEXT_ATTACK 1
+	}
+}
+
+{ kick_land //model event
+
+   	callevent npcatk_dodamage $get(ent_lastseen,id) ATTACK_HITRANGE ATTACK_DAMAGE ATTACK_ACCURACY
+	setvard ATTACKING 0
+}
+
+{ slap_damage
+
+   	callevent npcatk_dodamage $get(ent_lastseen,id) ATTACK_HITRANGE ATTACK_DAMAGE ATTACK_ACCURACY
+	setvard ATTACKING 0
+}
+
+{ [override] swing_axe
+
+   	callevent npcatk_dodamage $get(ent_lastseen,id) ATTACK_HITRANGE ATTACK_DAMAGE ATTACK_ACCURACY
+	callevent baseorc_yell
+	setvard ATTACKING 0
+}
+
+{ [override] swing_sword
+
+   	callevent npcatk_dodamage $get(ent_lastseen,id) ATTACK_HITRANGE ATTACK_DAMAGE ATTACK_ACCURACY	
+	callevent baseorc_yell
+	setvard ATTACKING 0
+}
+
+{ npcatk_targetvalidate
+
+	if ( !DID_WARCRY )
+	{
+		if ( $get(ent_lastseen,isplayer) )
+		{
+			playanim critical ANIM_WARCRY
+			playsound 0 10 SOUND_WARCRY
+			setvard DID_WARCRY 1
+			setvard DONE_WARCRY 0
+			callevent 3.0 warcry_over
+			local EXIT_SUB 1
+		}
+	}
+
+	if !EXIT_SUB
+
+	if DONE_WARCRY
+
+	local NME_RANGE $get(ent_lastseen,range)
+
+	////dbg NME_RANGE  donewc DONE_WARCRY exit EXIT_SUB
+
+	if NME_RANGE > 200
+	//dbg delay CHARGE_DELAY
+	if !CHARGE_DELAY
+	callevent start_charge
+
+}
+
+{ start_charge
+
+	//dbg Doing Charge!
+	clientevent new all effects/sfx_motionblur_perm $get(ent_me,index) 0
+	setvard MY_SCRIPT_IDX game.script.last_sent_id
+	setvard NPC_FORCED_MOVEDEST 1
+	setmovedest NPCATK_TARGET ATTACK_MOVERANGE
+	if ( !I_R_FROZEN ) movespeed 5.0
+	playsound 0 10 SOUND_CHARGE
+	setprop ent_me rendermode 5
+	setprop ent_me renderamt 255
+	setvard NEXT_ATTACK 4
+	setvard CHARGE_DELAY 1
+	callevent 0.1 boost_me
+	callevent 0.5 render_norm
+	callevent 3.0 charge_out
+	callevent 10.0 charge_reset
+}
+
+{ boost_me
+	playsound 0 10 SOUND_TELE
+	addvelocity ent_me $relvel(0,1000,110)
+}
+
+{ render_norm
+	setprop ent_me rendermode 0
+	setprop ent_me renderamt 255
+}
+
+{ charge_out
+
+	clientevent remove all MY_SCRIPT_IDX
+
+	if !I_R_FROZEN
+	movespeed 2.0
+}
+
+{ charge_reset
+
+	setvard CHARGE_DELAY 0
+}
+
+{ warcry_over
+
+	setvard DONE_WARCRY 1
+}
+
+{ game_dodamage //1: Attack Hit (1/0)  2: Entity Attack hit  3:  Start Position  4:  End 
+
+	setvard ATTACKING 0
+	
+	if PARAM1
+
+	if ( ATTACK_TYPE == 1 )
+	{
+		if ( $rand(1,5) == 1 ) applyeffect ent_laststruckbyme effects/effect_stun $rand(5,10)
+	}
+
+	if ( ATTACK_TYPE == 2 )
+	{
+		if ( $rand(1,10) == 1 ) applyeffect ent_laststruckbyme effects/heavy_stun $rand(5,10)
+	}
+
+	if ( ATTACK_TYPE == 3 )
+	{
+		playsound 0 10 SOUND_SLAPHIT
+		if ( $rand(1,10) == 1 ) applyeffect ent_laststruckbyme effects/heavy_stun $rand(5,10)
+		if ( $rand(1,20) == 1 )
+		{
+			playrandomsound 0 10 SOUND_ZAP1 SOUND_ZAP2 SOUND_ZAP3
+			effect glow ent_me (255,255,0) 128 1 1
+			effect screenfade PARAM2 3 1 (255,255,255) 255 fadein
+		}
+	}
+
+	if ( ATTACK_TYPE == 4 )
+	{
+		playsound 0 10 SOUND_KICKHIT
+		if ( $rand(1,2) == 1 ) applyeffect ent_laststruckbyme effects/effect_push 3 $relvel(0,200,30)
+		applyeffect ent_laststruckbyme effects/heavy_stun $rand(5,10)
+	}
+}
+
+{ freeze_solid_end
+
+	movespeed 2.0
+}
+
+{ run_step1
+	playsound 2 8 SOUND_WALK2
+	effect screenshake $relpos(0,0,0) 128 10 1 128
+}
+
+{ run_step2
+	playsound 2 8 SOUND_WALK1
+	effect screenshake $relpos(0,0,0) 128 10 1 128
+}

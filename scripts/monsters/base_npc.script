@@ -1,0 +1,346 @@
+#scope server
+{
+	const NPC_FREQ_WARN 5.0
+	setvar HAS_INCLUDE_NPC 1
+}
+
+#include [server] monsters/externals
+#include [server] monsters/base_self_adjust
+
+{
+ 	const NPC_DEATH_MSG unset
+    const NPC_AUTO_DEATH 1
+	const SOUND_DEATH none
+}
+
+{ npc_post_spawn
+	if( ANIM_DEATH equals 'ANIM_DEATH' ) setvard ANIM_DEATH death
+}
+
+{
+   eventname game_spawn
+
+	blood 	red		//Default blood
+
+	callevent npc_spawn //give splits second for vars to load
+	callevent 1.0 npc_post_spawn
+
+	if ( G_COMBAT_MUSIC isnot none ) setvard NPC_HAS_COMBAT_MUSIC 1
+
+	if ( G_CHRISTMAS_MODE )
+	{
+		//add christmas hat
+		if $get(ent_me,race) equals human
+		setmodelbody 2 1
+	}
+
+	local MY_RACE game.monster.race
+
+	//FEB2010_04 - To deal with combative NPC's not cycling up fully
+	if ( MY_RACE equals human ) setvard NPC_FRIENDLY 1
+	if ( MY_RACE equals hguard ) setvard NPC_FRIENDLY 1
+	if ( MY_RACE equals elf ) setvard NPC_FRIENDLY 1
+	if ( MY_RACE equals dwarf ) setvard NPC_FRIENDLY 1
+	if ( NPC_FRIENDLY ) setvard NPC_FIGHTS_NPCS 1
+	if ( G_NPC_COMBAT_MAP ) setvard NPC_FIGHTS_NPCS 1
+
+	if ( MY_RACE isnot undead ) 
+	{
+		if ( IMMUNE_HOLY equals 'IMMUNE_HOLY' )
+		{
+			if !IS_SKELETON
+			if ( !IS_UNHOLY )  takedmg holy 0.0
+		}
+	}
+	else
+	{
+		//is undead (make this into an event if you need to override - or use npc_post_spawn)
+		takedmg poison 0.0
+		setvard IMMUNE_POISON 1
+		setvard IMMUNE_VAMPIRE 1
+	}
+
+	//can't set holy dmg multiplier here, because they multiply on the other side too, and thus cannot be adjusted individually
+	//if ( MY_RACE equals undead ) 
+	//{
+	//	//dbg temp setting undead attribs
+	//	takedmg holy 12.0
+	//	setvard	IMMUNE_POISON 1
+	//}
+	//if ( MY_RACE equals demon ) takedmg holy 3.0
+	setvard EFFECT_DAMAGE_DELAY 0
+
+	local MAP_NAME game.map.name
+	setvard CHEAT_MAP 0
+	//if ( MAP_NAME equals walltest ) setvard CHEAT_MAP 1
+	if ( MAP_NAME equals tower ) setvard CHEAT_MAP 1
+	if ( MAP_NAME equals weather_tower ) setvard CHEAT_MAP 1
+	if ( MAP_NAME equals scripts ) setvard CHEAT_MAP 1
+	if ( MAP_NAME equals scripts_out ) setvard CHEAT_MAP 1
+	if ( MAP_NAME equals scripts_demo ) setvard CHEAT_MAP 1
+	if ( MAP_NAME equals ms_npcscript_tutor ) setvard CHEAT_MAP 1
+
+//	if ( CHEAT_MAP ) 
+//	{
+//		skilllevel 0
+//	}
+}
+
+{ game_postspawn //PARAM1 = (name|default), PARAM2 = DmgMulti, PARAM3 = HPMulti, PARAM4 = pass_params
+
+	//dbg Spawned: $get(ent_me,name) [ PARAM1 PARAM2 PARAM3 PARAM4 ]
+
+	if ( NPC_REACTS )
+	{
+		//if !HAS_INCLUDE_VENDOR
+		callevent npc_react_loop
+	}
+
+	if ( $get(ent_me,name) contains metal ) setvard IS_BLOODLESS 1
+	if ( $get(ent_me,name) contains iron ) setvard IS_BLOODLESS 1
+	if ( $get(ent_me,name) contains stone ) setvard IS_BLOODLESS 1
+
+	if ( IS_BLOODLESS )
+	{
+		setvard IMMUNE_VAMPIRE 1
+		takedmg poison 0.0
+	}
+}
+
+//Death
+{ game_death
+
+	if !NPC_DID_DEATH
+	setvard NPC_DID_DEATH 1
+
+	//DEC2010_03 - death tracker
+	if ( game.serverside )
+	{
+		if ( G_APRIL_FOOLS_MODE )
+		{
+			callexternal GAME_MASTER gm_april_fools_spawn_add $get(ent_me,origin)
+		}
+
+		if ( NPC_SUMMON )
+		{
+			subtract G_NPC_SUMMON_COUNT 1
+			if ( G_NPC_SUMMON_COUNT < 0 ) setvarg G_NPC_SUMMON_COUNT 0 //not sure how this is happening - death getting called twice, or something
+			dbg game_death_summoned G_NPC_SUMMON_COUNT
+		}
+	}
+
+
+	//from base_monster_shared
+	if ( !NPC_NO_END_FLY ) fly 0 //Thothie - if it flies, its flying days are over
+
+	if ( GOLD_BAGS )
+	{
+		if !NPC_NO_DROPS
+		callevent bm_gold_spew GOLD_PER_BAG GOLD_BAGS_PPLAYER GOLD_RADIUS GOLD_BAGS_PPLAYER GOLD_MAX_BAGS
+	}
+
+	if ( DROPS_CONTAINER == 1 )
+	{
+		if !G_NO_DROP
+		if ( $rand(1,100) <= CONTAINER_DROP_CHANCE ) createnpc CONTAINER_SCRIPT $relpos(0,0,0) CONTAINER_PARAM1 CONTAINER_PARAM2 CONTAINER_PARAM3 CONTAINER_PARAM4
+	}
+
+	//from monsters/externals
+	if ( EXT_FADE_ON_DEATH )
+	{
+		if game.monster.maxhp < 1000
+		if !NPC_NEVER_FADE
+		callexternal GAME_MASTER gm_fade $get(ent_me,id)
+	}
+
+	setanim.framerate BASE_FRAMERATE
+	setanim.movespeed BASE_MOVESPEED
+
+	if ( IN_ICECAGE )
+	{
+		//if ( $get(SCRIPT_ICECAGE,exists) ) deleteent SCRIPT_ICECAGE
+		clientevent update all SCRIPT_ICECAGE end_cage_fx
+		//playsound 0 5 debris/bustglass2.wav
+		//if ( FX_SPAMMERS < MAX_FX_SPAMMERS ) effect tempent gibs glassgibs.mdl $relpos(0,0,0) 1.0 30 10 10 1.0
+		setvard IN_ICECAGE 0
+	}
+
+	if ( NPC_CRITICAL )
+	{
+		//siege system
+		local INFO_TITLE "A CRITICAL NPC HAS DIED!"
+		local INFO_MSG $get(ent_me,name)
+		stradd INFO_MSG " has been slain! "
+		infomsg all INFO_TITLE INFO_MSG
+		callexternal GAME_MASTER gm_crit_npc_died $get(ent_me,id) $get(ent_laststruck,id)
+	}
+
+	//if ( IN_ICECAGE ) setanim.framerate OLD_FRAMERATE
+
+	callevent npc_death
+
+	//ye old standard base_npc
+	if ( NPC_AUTO_DEATH	)
+	{
+		//Handle death here, instead of in the individual script
+		menu.autoopen 0 //no more talking to the dead
+
+		if ( !NPC_ALERTED_ALL )
+		{
+			if HAS_AI
+			callevent npcatk_alert_all_allies $get(ent_laststruck,id)
+		}
+
+		if ( !NPC_SILENT_DEATH )
+		{
+			if ( NPC_ALT_SOUND_DEATH equals 'NPC_ALT_SOUND_DEATH' )
+			{
+				playsound 0 5 SOUND_DEATH
+			}
+			else
+			{
+				playsound 0 5 NPC_ALT_SOUND_DEATH
+			}
+		}
+		playanim critical ANIM_DEATH
+
+		if ( CHEAT_MAP ) deleteent ent_me fade
+
+		//edit reduce - hopefully handled in game_struck anyways
+		//callexternal all npcatk_ally_alert $get(ent_laststruck,id) $get(ent_me,id) "ally_died"
+
+		if !NPC_GAVE_XP_MSG
+		setvard NPC_GAVE_XP_MSG 1
+		local MON_FULL game.monster.name.full
+		local OUT_MSG "You've slain "
+		stradd OUT_MSG MON_FULL
+		if( NPC_DEATH_MSG isnot unset ) local OUT_MSG NPC_DEATH_MSG
+		gplayermessage $get(ent_laststruck,id) OUT_MSG
+	}
+
+	clearfx
+
+}
+
+{ game_fake_death
+	setvard NPC_DID_DEATH 0
+}
+
+{ game_struck
+
+	if ( NPC_CRITICAL )
+	{
+		//warn players if critical NPC struck
+		if ( !NPC_CRIT_WARN_DELAY )
+		{
+			setvard NPC_CRIT_WARN_DELAY 1
+			callevent NPC_FREQ_WARN npcatk_reset_warn_delay
+			local INFO_TITLE "Critical NPC Under Attack!"
+			local INFO_MSG $get(ent_me,name)
+			stradd INFO_MSG " is under attack!"
+			infomsg all INFO_TITLE INFO_MSG
+		}
+	}
+}
+
+{ npcatk_reset_warn_delay
+	
+	setvard NPC_CRIT_WARN_DELAY 0
+}
+
+//== End Siege Map System
+
+//{ game_heardtext
+//	if G_DEVELOPER_MODE
+//	saytext I heard PARAM1
+//}
+
+//FEB2010_08 Moved from base_monster_shared
+
+
+//moved from base_monster_shared JUN2010_06
+{ [server] npcatk_get_postspawn_properties //called by base_npc_attack (_new)
+
+	dbg npcatk_get_postspawn_properties NPC_HP_MULTI
+
+	setvard EXT_HITCHANCE_ADJUSTMENT 1
+	setvard EXT_DAMAGE_ADJUSTMENT 1
+
+
+//	if !I_R_PET
+//	if !NPC_NO_RAMP
+//	if G_PLAYER_RAMP
+//
+//	callevent 0.1 npcatk_ramp_monster
+}
+
+{ npc_react_loop
+	if $get(ent_me,isalive)
+	callevent 1.0 npc_react_loop
+	if ( $cansee(NPC_REACT_SEETARGET,NPC_REACT_SEETARGET_RANGE) )
+	{
+		//don't scream at the same player repeatedly, annoying
+		if $get(ent_lastseen,id) isnot NPC_REACT_LAST_TARGET
+		setvard NPC_REACT_LAST_TARGET $get(ent_lastseen,id)
+		setvard NPC_REACT_RESET_TARGET_TIME game.time
+		add NPC_REACT_RESET_TARGET_TIME 60.0
+		if ( !NPC_REACT_CANSEETARGET ) callevent npcreact_targetsighted NPC_REACT_LAST_TARGET
+		setvard NPC_REACT_CANSEETARGET 1
+	}
+	else
+	{
+		if ( NPC_REACT_CANSEETARGET ) callevent npc_react_sightlost
+		setvard NPC_REACT_CANSEETARGET 0
+		if game.time > NPC_REACT_RESET_TARGET_TIME
+		setvard NPC_REACT_LAST_TARGET 0
+		
+	}
+}
+
+
+{ npc_post_spawn
+	if ( !$anim_exists(ANIM_DEATH) )
+	{
+		dbg WARNING! ANIM_DEATH does not exist in $get(ent_me,scriptname)
+		local TEST_ANIM_DEATH diesimple
+		if ( $anim_exists(TEST_ANIM_DEATH) ) setvard ANIM_DEATH TEST_ANIM_DEATH
+		local TEST_ANIM_DEATH diesforward
+		if ( $anim_exists(TEST_ANIM_DEATH) ) setvard ANIM_DEATH TEST_ANIM_DEATH
+		local TEST_ANIM_DEATH die
+		if ( $anim_exists(TEST_ANIM_DEATH) ) setvard ANIM_DEATH TEST_ANIM_DEATH
+		local TEST_ANIM_DEATH die_fallback
+		if ( $anim_exists(TEST_ANIM_DEATH) ) setvard ANIM_DEATH TEST_ANIM_DEATH
+
+		if G_DEVELOPER_MODE
+
+		if ( $anim_exists(ANIM_DEATH) )
+		{
+			dbg Substituting with ANIM_DEATH
+		}
+		else
+		{
+//			local WARN_MSG "Cannot find "
+//			strconc WARN_MSG ANIM_DEATH in $get(ent_me,scriptname)
+//			infomsg all "SCRIPT ERROR" WARN_MSG
+			dbg WARNING! COULD NOT FIND ALT DEATH ANIM FOR $get(ent_me,scriptname) [ ANIM_DEATH ]
+			//chatlog $timestamp DEBUG: COULD NOT FIND DEATH ANIM FOR $get(ent_me,scriptname) [ ANIM_DEATH ]
+		}
+	}
+}
+
+//optimal debuggary
+//{
+//	dbg OPT_DEBUG: init game.time
+//}
+//
+//{ game_spawn
+//	dbg OPT_DEBUG: game_spawn game.time
+//}
+//
+//{ game_postspawn
+//	dbg OPT_DEBUG: game_postspawn game.time
+//}
+//
+//{ npc_post_spawn
+//	dbg OPT_DEBUG: npc_post_spawn game.time
+//}

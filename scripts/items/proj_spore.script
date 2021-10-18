@@ -1,0 +1,87 @@
+
+{
+	const PROJ_ANIM_IDLE idle_standard
+  	const PROJ_DAMAGE		$rand(60,90)
+  	//const ARROW_SOLIDIFY_ON_WALL	0  	//base_arrow: Turns solid when a wall is hit
+	const MODEL_BODY_OFS	23
+	const ARROW_BODY_OFS	23
+	const PROJ_ANIM_IDLE spore_spinning
+
+  	const PROJ_DAMAGETYPE	poison
+
+	const SOUND_HITWALL1		ambience/steamburst1.wav
+	const SOUND_HITWALL2		ambience/steamburst1.wav
+	setvard SOUND_BURN			ambience/steamburst1.wav
+
+	const SPRITE_ARROW_TRADE	woodenarrow
+	const ARROW_STICK_DURATION	10	//How long to stick in enemies
+	const ARROW_SOLIDIFY_ON_WALL	0  	//base_arrow: Turns solid when a wall is hit
+	const ARROW_BREAK_CHANCE	1%	//base_arrow: Chance of breaking upon hit
+  	const ARROW_EXPIRE_DELAY 	5
+
+//	const PROJ_AOE_RANGE		256
+//	const PROJ_AOE_FALLOFF	1
+
+//	const PROJ_AOE_RANGE		256
+//	const PROJ_AOE_FALLOFF	1
+//	const PROJ_STICK_DURATION	1
+//	const ARROW_SOLIDIFY_ON_WALL 1
+//	//const PROJ_COLLIDEHITBOX	32 
+
+ 	const MODEL_WORLD	weapons/projectiles.mdl
+}
+
+#include items/proj_arrow_base
+
+{ arrow_spawn
+
+	name 		a|spore sack
+	desc 		a spore sack
+	weight 		0.1
+	size 		1
+	value		0
+	gravity		0.001
+	useable		0
+}
+
+{ game_tossprojectile
+	playanim spore_spinning
+	setidleanim spore_spinning
+	setmoveanim spore_spinning
+	setvard MY_OWNER $get(ent_expowner,id)
+	local OWNER_ISPLAYER $get(MY_OWNER,isplayer)
+
+	if ( OWNER_ISPLAYER ) setvard SPORE_STR $get(MY_OWNER,skill.spellcasting.affliction)
+	if ( !OWNER_ISPLAYER ) setvard SPORE_STR $get(MY_OWNER,scriptvar,'SPORE_POISON_DMG')
+}
+
+{ game_projectile_hitwall
+
+	dbg game_projectile_hitwall $get(ent_me,origin)
+
+	if !SPAWNED_CLOUD
+	setvard SPAWNED_CLOUD 1
+	setvard MY_OWNER $get(ent_expowner,id)
+	createnpc monsters/summon/npc_poison_cloud2 $get(ent_me,origin) MY_OWNER SPORE_STR 10.0 2
+}
+
+{ game_projectile_landed
+	dbg game_projectile_landed $get(ent_me,origin)
+	setvard MY_OWNER $get(ent_expowner,id)
+	xdodamage $get(ent_me,origin) 256 SPORE_POISON_DMG 0 MY_OWNER MY_OWNER spellcasting.affliction poison
+}
+
+{ game_projectile_hitnpc
+
+	dbg game_projectile_hitnpc $get(PARAM1,name)
+
+	//if $get(PARAM1,relationship,ent_owner) equals enemy
+
+	if !SPAWNED_CLOUD
+	setvard SPAWNED_CLOUD 1
+	createnpc monsters/summon/npc_poison_cloud2 $get(PARAM1,origin) MY_OWNER SPORE_STR 10.0 2
+}
+
+//{ game_hitnpc
+//	applyeffect ent_laststruckbyme effects/poison_spore 5.0 MY_OWNER SPORE_STR spellcasting.affliction
+//}

@@ -1,0 +1,215 @@
+//Thothie - trying to get slinker to fight back when attacked
+//- Quest seems to be bugged too - maybe OVER is reserved word? (could be true of QUEST too) :\
+//- Quest fixed, Attack fixed (simplification + potential reserved word replacement)
+// Slinker in Deralia
+// Magnus Damli : Fixed responses dependant on the phase of the quest; Initiation, on-going and result.
+// Magnus Damli : Fixed repeating the quest over and over without having to reload the map.
+{
+	setvard	CAN_ATTACK 0
+	setvard	CAN_HUNT 0
+	setvard	CAN_FLEE 1
+	setvard	CAN_RETALIATE 1	
+	setvard FLEE_HEALTH 25	//Used by base_monster
+	setvard FLEE_CHANCE 50%	//Used by base_monster	const	RETALIATE_CHANGETARGET_CHANCE 75%
+	setvard	ATTACK_RANGE 150
+	setvard	ATTACK_HITRANGE 200
+	setvard	ATTACK_DAMAGE 8
+	setvard	MOVE_RANGE 90
+	setvard	ATTACK_PERCENTAGE 95%
+	setvar	ANIM_WALK walk
+	setvar	ANIM_RUN run
+	setvard	ANIM_ATTACK beatdoor
+	const NO_RUMOR 1
+	const NO_JOB 1
+	const NO_HAIL 1
+
+	precache voices/deralia/slinker_ring.wav
+}
+
+#include monsters/base_monster
+#include monsters/base_chat
+
+{ npc_spawn
+
+	name_unique	Slinker
+	hp		150
+	setvard REQ_QUEST_NOTDONE 1
+	//fov		359
+	width	32
+	height	72
+	race		human
+	name		Slinker
+	roam		0
+	setmodel	npc/human1.mdl
+	setmodelbody 0 3	//no more random models on named NPC's please
+	setmodelbody 1 1
+	setmoveanim	walk
+
+	setvard MISSION_OVER 0
+
+	catchspeech say_hi hi hail greet hello
+	catchspeech say_no no nope naw never nah
+	catchspeech say_yes yes sure yea ok
+
+	setvard ASKED 0
+	setvard GAVE_QUEST 2
+}
+
+{ say_job
+	say_hi
+}
+
+{
+repeatdelay 3.0
+
+  //Thothie - he never does this... pisses me off no end
+
+  if !MISSION_OVER
+	if !CAN_HUNT
+
+	//thothie  6/29/2007 - new method
+
+	//  if $cansee(player,256) //no workie
+	getplayersnb SLINK_PLAYERS
+	setvard PLAYER_NEAR 0
+	setvard SLINKER_LOOP 0
+	calleventloop $get_token_amt(SLINK_PLAYERS) check_near
+	//dbg pulse PLAYER_NEAR SLINK_PLAYERS
+	if PLAYER_NEAR
+	if LAST_SPOKE_TO isnot PLAYER_SPLOTTED
+  setmovedest PLAYER_SPLOTTED 50
+  saytextrange 512
+  saytext Hey, want to make some fast cash?
+	playsound 2 10 voices/deralia/slinker1.wav
+	setvard LAST_SPOKE_TO PLAYER_SPLOTTED
+}
+
+{ check_near
+	//dbg game.script.iteration //cant remember if this works - I think not
+	local CUR_PLAYER $get_token(SLINK_PLAYERS,SLINKER_LOOP)
+	if ( $get(CUR_PLAYER,range) < 256 )
+	{
+		setvard PLAYER_NEAR 1
+		setvard PLAYER_SPLOTTED CUR_PLAYER
+	}
+	add SLINKER_LOOP 1
+}
+
+{ say_hi
+	if !CAN_HUNT
+	if ASKED equals 0
+	saytext You aren't a goody-two-shoes good guy, are ya?
+	playsound 2 10 voices/deralia/slinker2.wav
+	callevent bchat_mouth_move
+}
+{ say_hi
+	if !CAN_HUNT
+	if ASKED equals 1
+	saytext Well, get goin' already!
+	callevent bchat_mouth_move
+}
+{ say_hi
+	if !CAN_HUNT
+	if T_QUEST_COMPLETE equals 1
+	saytext I've got no further business with you.
+	callevent bchat_mouth_move
+}
+
+{ say_no
+	if !CAN_HUNT
+	saytext Alright, here's the scoop. Master Proffund, that snobby nobleman who always hangs out at the bank, owes me a little money.
+	playsound 2 10 voices/deralia/slinker3.wav
+	callevent bchat_auto_mouth_move 9.2
+	setvard ASKED 1
+	calleventtimed 9.2 say_instruct
+}
+
+{ say_instruct
+
+	saytext A gambling man, he is, but not a very good one. Anyway, he owes me so much money, I've decided to settle for the deed to one of his nice farm properties.
+	playsound 2 10 voices/deralia/slinker4.wav
+	callevent bchat_auto_mouth_move 11.5
+	calleventtimed 11.5 say_instruct2
+}
+
+{ say_instruct2
+
+	saytext Go and get that deed from him for me, and I'll pay you handsomely.
+	playsound 2 10 voices/deralia/slinker5.wav
+	callexternal $get_by_name(Proffund) quest_start
+}
+
+{ mortal
+
+	race orc
+}
+
+{ give_deed
+
+	recvoffer accept
+	setvard QUEST_WINNER PARAM1
+	calleventtimed 1 say_letter
+}
+
+{ say_letter
+
+	if !T_QUEST_COMPLETE
+
+	playanim once yes
+	saytext Nice work, here's your reward.
+	callevent bchat_mouth_move
+	playsound 2 10 voices/deralia/slinker_reward.wav
+	offer QUEST_WINNER gold 15
+	offer QUEST_WINNER health_spotion
+	setvard T_QUEST_COMPLETE 1
+	setvard MISSION_OVER 1
+	setvard REQ_QUEST_NOTDONE 0
+	setvard ASKED 2
+}
+
+{ npc_death
+
+	callexternal $get_by_name(Proffund) slinker_dead
+}
+
+{ attack_1
+
+   dodamage ent_lastseen ATTACK_RANGE $randf(6.0,9.0) ATTACK_PERCENTAGE
+}
+
+{ game_menu_getoptions
+	local reg.mitem.title	"Say Hello"
+	local reg.mitem.type	say
+
+	local l.say $rand(2,4)
+	if( l.say == 1 ) local reg.mitem.data 'Hello'
+	else if( l.say == 2 )	local reg.mitem.data 'Hi'
+	else if( l.say == 3 )	local reg.mitem.data "Hail" 
+	else if( l.say == 4 )	local reg.mitem.data 'Greetings!'
+	menuitem.register
+
+	if( $item_exists(PARAM1,item_deed) )
+	{
+		local reg.mitem.title 	"Give deed"
+		local reg.mitem.type 	payment
+		local reg.mitem.data 	item_deed
+		local reg.mitem.callback give_deed
+		menuitem.register
+	}
+}
+
+{ npc_struck
+
+	setvard CAN_ATTACK 1
+	setvard CAN_HUNT 1
+	race orc
+	roam 1
+	callevent npcatk_target $get(ent_laststruck,id)
+}
+
+{ my_target_died
+	setvard CAN_ATTACK 0
+	setvard CAN_HUNT 0
+	race human
+}
+

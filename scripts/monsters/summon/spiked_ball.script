@@ -1,0 +1,117 @@
+{
+	const SPRITE_EXPLODE bigsmoke.spr
+	const SOUND_EXPLODE weapons/explode3.wav
+}
+
+{ game_dynamically_created //<owner> <vel> <dmg_multi>
+	setvard MY_OWNER PARAM1
+	setvard START_VEL PARAM2
+	setvard DMG_MULTI PARAM3
+	setcallback touch enable
+	setvard IS_ACTIVE 1
+	callevent 0.01 boost_and_scan
+	callevent 10.0 go_splodie
+}
+
+{ game_spawn
+	name a|Spiked Ball
+	setmodel weapons/projectiles.mdl
+	setmodelbody 0 64
+	width 48
+	height 48
+	gravity 2
+	setidleanim spin_vertical_norm
+	setprop ent_me movetype const.movetype.bounce
+	setprop ent_me friction 0.2
+	invincible 1
+	race beloved
+	setvard PLAYING_DEAD 1
+}
+
+{ boost_and_scan
+	addvelocity ent_me START_VEL
+	setvard OLD_SPEED $get(ent_me,speed)
+	setvard N_DMG_TIMES 0
+	setvard GROUND_PULSE 0
+	callevent monitor_speed
+}
+
+{ monitor_speed
+	if IS_ACTIVE
+	callevent 0.1 monitor_speed
+
+	local CUR_SPEED $get(ent_me,speed)
+	if ( CUR_SPEED < 200 )
+	{
+		if OLD_SPEED < 200
+		callevent go_splodie
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	local MY_Z $get(ent_me,origin.z)
+	local MY_GROUND_Z $get_ground_height(game.monster.origin)
+
+	subtract MY_Z MY_GROUND_Z
+
+	if ( MY_Z < 10 )
+	{
+		add GROUND_PULSE 1
+		playsound 0 10 debris/bustmetal2.wav
+		if GROUND_PULSE > 2
+		callevent go_splodie
+	}
+
+	setvard OLD_SPEED CUR_SPEED
+}
+
+{ game_touch
+	//dbg game_touch $get(PARAM1,id) $get(ent_me,speed)
+	if IS_ACTIVE
+	setvard TOUCH_TARG PARAM1
+	callevent 0.01 damage_touched
+}
+
+{ damage_touched
+	if game.time > NEXT_DMG
+	setvard NEXT_DMG game.time
+	add NEXT_DMG 0.25
+	add N_DMG_TIMES 1
+	if $get(MY_OWNER,relationship,TOUCH_TARG) equals enemy
+	local DMG_AMT $get(ent_me,speed)
+	multiply DMG_AMT DMG_MULTI
+	playsound 0 10 debris/bustmetal2.wav
+	xdodamage TOUCH_TARG direct DMG_AMT 100% MY_OWNER MY_OWNER none blunt_effect
+
+	if ( N_DMG_TIMES > 10 ) callevent 0.1 go_splodie
+	//local DEFL_SPEED $get(ent_me,speed)
+	//multiply DEFL_SPEED -1
+	//setvelocity ent_me $relvel(0,DEFL_SPEED,0)
+}
+
+{ go_splodie
+	effect tempent spray SPRITE_EXPLODE game.monster.origin 0 1 0 0
+	setmodel none
+	local DMG_AMT DMG_MULTI
+	multiply DMG_AMT 300
+	xdodamage $get(ent_me,origin) 128 DMG_AMT 0 MY_OWNER MY_OWNER none fire_effect
+	setvard PUSH_LIST $get_tsphere(enemy,128,game.monster.origin)
+	if ( PUSH_LIST isnot none ) calleventloop $get_token_amt(PUSH_LIST) push_loop
+	//attachsprite SPRITE_EXPLODE trans 20 1.0
+	playsound 0 10 SOUND_EXPLODE
+	//drop splodie sprite here
+	setvard IS_ACTIVE 0
+	callevent 0.1 remove_me
+}
+
+{ push_loop
+	local CUR_TARGET $get_token(PUSH_LIST,game.script.iteration)
+	//dbg push_loop $get(CUR_TARGET,name) of PUSH_LIST
+	local TARGET_ORG $get(CUR_TARGET,origin)
+	local TARG_ANG $angles(game.monster.origin,TARGET_ORG)
+	setvelocity CUR_TARGET $relvel($vec(0,TARG_ANG,0),$vec(10,1000,110)) //a little to the left too, in case he's stuck up against a wall
+}
+
+{ remove_me
+	deleteent ent_me
+}

@@ -1,0 +1,245 @@
+//Armor
+//#scope server
+//[shared] game_wear, register_loop, set_armor_body
+
+//Requires:
+//BARMOR_TYPE				platemail|leather - affects display
+//BARMOR_PROTECTION			Damage reduction%
+//NEW_ARMOR_OFS				body offset in p_armorvest_new.mdl
+//ARMOR_TEXT				text to display when donning armor, eg. "You assemble the phoenix armor."
+//ARMOR_STR_REQ				optional - strength requirement for armor
+
+{
+	//base_item
+	const MODEL_HANDS misc/p_misc.mdl
+	const MODEL_WORLD misc/p_misc.mdl
+	//const MODEL_BODY_OFS OFS_GENERIC
+	const MODEL_VIEW none
+
+	const ARMOR_HUMAN_FEMALE_OFS_ADJ 20 //should represent the "blank" index inbetween male and female entries (JHLMV index -1)
+
+	//local
+	const NEW_ARMOR_MODEL armor/p_armorvest_new.mdl
+}
+
+#include items/base_miscitem
+#include items/base_effect_armor
+
+{  game_spawn
+
+	setworldmodel MODEL_WORLD
+	sethudsprite hand armor
+	sethudsprite trade leather
+
+	sethand any
+
+	setvard ARMOR_TYPE BARMOR_TYPE
+	setvard ARMOR_PROTECTION 0
+	setvard ARMOR_PROTECTION_AREA BARMOR_PROTECTION_AREA
+	setvard ARMOR_REPLACE_BODYPARTS BARMOR_PROTECTION_AREA
+
+	registerarmor
+
+
+	//setmodelbody 0 NEW_ARMOR_OFS
+	callevent hide_body_parts
+
+	if game.serverside
+	setvard L_PERC_TO_FLOAT BARMOR_PROTECTION
+	multiply L_PERC_TO_FLOAT 0.01
+	setvard DMG_REDUCT 1
+	subtract DMG_REDUCT L_PERC_TO_FLOAT
+}
+
+{ hide_body_parts
+	//if ( BARMOR_TYPE equals leather ) setmodelbody ent_owner 1 1
+	//if ( BARMOR_TYPE equals platemail ) setmodelbody ent_owner 1 2
+	callexternal ent_owner ext_setbodytype BARMOR_TYPE $get(ent_me,id)
+}
+
+{ barmor_effect_activate
+	callexternal ent_owner ext_register_armor $get(ent_me,id)
+}
+
+{ show_body_parts
+	//setmodelbody ent_owner 1 0
+	if ( $get(ent_owner,scriptvar,'PLR_LAST_WORN_ARMOR') equals $get(ent_me,id) ) callexternal ent_owner ext_setbodytype normal remove
+	callexternal ent_owner ext_register_armor none remove
+}
+
+{ game_deploy
+
+	setviewmodel  MODEL_VIEW
+	setmodel MODEL_HANDS
+
+	local L_SUBMODEL 16
+	add L_SUBMODEL game.item.hand_index
+	setmodelbody 0 L_SUBMODEL
+}
+
+{ game_wear
+
+	local L_RACE PARAM1
+	local L_GENDER PARAM2
+	local L_DEBUG PARAM3
+
+	callevent barmor_update_vest L_RACE L_GENDER L_DEBUG
+
+
+	local L_ARMOR_TEXT ARMOR_TEXT
+	stradd L_ARMOR_TEXT " ("
+	stradd L_ARMOR_TEXT BARMOR_PROTECTION
+	stradd L_ARMOR_TEXT "%)"
+	playermessagecl L_ARMOR_TEXT
+
+	if game.serverside
+	//callexternal ent_owner ext_setbodytype BARMOR_TYPE
+	callevent hide_body_parts
+
+	if $get(ent_owner,stat.strength) < ARMOR_STR_REQ
+	callevent 0.1 failed_str_req_loop
+}
+
+{ game_show
+	local L_RACE PARAM1
+	local L_GENDER PARAM2
+	local L_DEBUG PARAM3
+
+	callevent barmor_update_vest L_RACE L_GENDER L_DEBUG
+}
+
+{ barmor_update_vest //<race> <gender> <debug>
+	setmodel NEW_ARMOR_MODEL
+	setmodelbody 0 NEW_ARMOR_OFS
+
+	if ( game.clientside )
+	{
+		local OWNER_RACE $get_local_prop(race)
+		local OWNER_GENDER $get_local_prop(gender)
+	}
+	else
+	{
+		if game.serverside
+		local OWNER_RACE $get(ent_owner,race)
+		local OWNER_GENDER $get(ent_owner,gender)
+	}
+
+	local OWNER_RACE $lcase(OWNER_RACE)
+	local OWNER_GENDER $lcase(OWNER_GENDER)
+	if ( OWNER_RACE equals 0 ) local OWNER_RACE PARAM1 //char_menu, most likely
+	if ( OWNER_GENDER equals 0 ) local OWNER_GENDER PARAM2 //char_menu, most likely
+
+	dbg barmor_update_vest race OWNER_RACE gend OWNER_GENDER dbg PARAM3
+
+	if ( OWNER_GENDER equals female )
+	{
+		if ( OWNER_RACE equals human )
+		{
+			dbg *** Adjusted for Fembot
+			local ARMOR_GROUP 0
+
+			if ( ARMOR_BODY_HUMAN_FEMALE isnot 'ARMOR_BODY_HUMAN_FEMALE' )
+			{
+				setmodelbody ARMOR_GROUP ARMOR_BODY_HUMAN_FEMALE
+			}
+			else
+			{
+				local FEM_BODY NEW_ARMOR_OFS
+				add FEM_BODY ARMOR_HUMAN_FEMALE_OFS_ADJ
+				setmodelbody ARMOR_GROUP FEM_BODY
+			}
+		}
+	}
+
+	if ( $get(ent_owner,scriptvar,'PLR_HIDE_ARMOR') ) setmodelbody ARMOR_GROUP 0
+
+}
+
+{ ext_set_armor //for testing
+	setmodelbody PARAM1 PARAM2
+}
+
+{ barmor_effect_remove
+	if $get(ent_owner,scriptvar,'PLR_BODY_TYPE') isnot normal
+	//callexternal ent_owner ext_setbodytype normal
+	callevent show_body_parts
+}
+
+//place holder for dbg spam removal
+{ barmor_effect_activate
+	callexternal ent_owner ext_setbodytype BARMOR_TYPE $get(ent_me,id)
+}
+
+{ failed_str_req_loop
+	if $get(ent_me,is_worn)
+	if $get(ent_owner,stat.strength) < ARMOR_STR_REQ
+	callevent 10.0 failed_str_req_loop
+	local ALRT_STR "You are too weak to move freely in this armor. (Min Strength "
+	stradd ALRT_STR ARMOR_STR_REQ
+	stradd ALRT_STR ")"
+	infomsg ent_owner "Insufficient Strength for Armor" ALRT_STR
+	applyeffectstack ent_owner effects/effect_slow 10.0 50% $get(ent_me,id) //effects/speed 10.0 75% 0.5
+}
+
+{ ext_activate_items
+	dbg $currentscript ext_activate_items
+	if PARAM1 equals $get(ent_owner,id)
+	if $get(ent_owner,stat.strength) < ARMOR_STR_REQ
+	callevent 0.1 failed_str_req_loop
+}
+
+{ game_takedamage //PARAM1=attacker PARAM2=inflictor? PARAM3=dmg PARAM4=dmg_type 
+
+	if $get(ent_me,is_worn)
+
+	local DMG_AMT PARAM3
+
+	//should be in player_main, but not working here either
+	if ( $get(ent_owner,scriptvar,'PLR_SPIDER_PROT') )
+	{
+		if ( $get(PARAM1,race) equals spider ) local IS_SPIDER 1
+		if ( $get(PARAM2,race) equals spider ) local IS_SPIDER 1
+		local L_NAME $get(PARAM1,name)
+		local L_NAME $lcase(L_NAME)
+		if ( L_NAME contains spider ) local IS_SPIDER 1
+		if ( $get(PARAM1,itemname) contains spid ) local IS_SPIDER 1
+		if IS_SPIDER
+		local DMG_RED_AMT $get(ent_owner,scriptvar,'PLR_SPIDER_AMT')
+
+		multiply DMG_AMT DMG_RED_AMT
+
+		setdmg hit 1
+		setdmg dmg DMG_AMT
+
+		dbg spider_adjusted_damage PARAM3 to OUT_DMG via DMG_RED_AMT
+	}
+
+
+	if ( PARAM4 contains poison )
+	{
+		//armor no longer protects against poison
+		//but we are reducing all poison damage 50% to compensate
+		local OUT_DMG PARAM3
+		multiply DMG_AMT 0.5
+		setdmg hit 1
+		setdmg dmg DMG_AMT
+		returndata 0.5
+	}
+	else
+	{
+		//basic protection
+		if !$get(PARAM1,scriptvar,'NPC_IGNORES_ARMOR')
+		multiply DMG_AMT DMG_REDUCT
+		setdmg hit 1
+		setdmg dmg DMG_AMT
+		returndata DMG_REDUCT
+	}
+}
+
+{ ext_hide_armor
+	setmodelbody 0 0
+}
+
+{ ext_hide_armor_cl
+	setmodelbody 0 0
+}

@@ -1,0 +1,585 @@
+//Wizards, Crossbowmen, and Necromancers of the pointy eared persuasion
+
+#scope server
+{ [shared]
+
+	const ELF_MODEL npc/elf_m_wizard.mdl
+
+	setvar ANIM_IDLE idle
+	setvar ANIM_WALK walk2handed
+	setvard ANIM_RUN run2
+	setvard ANIM_DEATH die_simple
+
+	const ANIM_LOOK look_idle
+	const ANIM_HOP jump //frame_hop_land
+	const ANIM_JUMP long_jump //frame_jump_land
+
+	const ANIM_MELEE ref_shoot_crowbar //frame_melee
+	const ANIM_PALM_ATTACK ref_shoot_trip //frame_repell
+	const ANIM_XBOW_AIM ref_aim_bow
+	const ANIM_XBOW_FIRE ref_shoot_bow //frame_xbow_shoot_stand frame_xbow_reload_now
+	const ANIM_XBOW_RELOAD ref_shoot_squeak //frame_xbow_reloaded
+
+	const ANIM_DUCK_MOVE crawl
+	const ANIM_MELEE_DUCK crouch_shoot_crowbar //frame_melee
+	const ANIM_XBOW_AIM_DUCK crouch_aim_bow
+	const ANIM_XBOW_FIRE_DUCK crouch_shoot_bow //frame_xbow_shoot_crouch frame_xbow_reload_now
+	const ANIM_XBOW_RELOAD_DUCK crouch_aim_squeak //frame_xbow_reloaded
+
+	const ANIM_SPELL_HOLD ref_aim_onehanded
+	const ANIM_SPELL_LEFT_HOLD ref_aim_egon //left handed sustain spell	
+
+	const ANIM_SPELL_PREP ref_aim_trip
+	const ANIM_SPELL_RELEASE ref_shoot_trip //frame_repell
+	const ANIM_REPELL ref_shoot_trip //frame_repell
+
+	const ANIM_PREP_EGG ref_aim_squeak
+	const ANIM_RELEASE_EGG ref_shoot_squeak
+
+	const ANIM_SHIELD_HOLD aim_2 //spell shield
+
+	const ANIM_STAFF_HOLD ref_aim_crowbar //for flinging spell on top of staff
+
+	const ANIM_DEATH1 die_simple
+	const ANIM_DEATH2 die_backwards1
+	const ANIM_DEATH3 die_backwards
+	const ANIM_DEATH4 die_forwards
+	const ANIM_DEATH5 headshot
+	const ANIM_DEATH6 die_spin
+	const ANIM_DEATH7 gutshot
+
+	precache weapons/bow/bolthit1.wav
+}
+
+{
+	const ELF_IS_ARCHER 0
+	const ELF_EXPLOSIVE_BOLTS 1
+	const ELF_XBOW_CL_SCRIPT monsters/elf_xbow_cl
+	const ELF_XBOW_STAND_OFS (10,0,68)
+	const ELF_XBOW_DUCK_OFS (10,0,32)
+	const ELF_XBOW_BONE 27
+	const DMG_XBOW 200
+	const FREQ_XBOW_BASH 5.0
+	const ELF_XBOW_ACCURACY 75
+	const ATTACK_HITRANGE_MELEE 64
+
+	const ATTACH_STAFF_TIP 2
+	const ATTACH_STAFF_HILT 1
+	const ATTACH_LHAND 3
+	const ATTACH_RHAND 0
+
+	const ELF_IS_NOVICE 0
+	const FREQ_GUIDED 25.0
+	const ELF_CAN_GUIDED 0
+	const ELF_GUIDED_TYPES "fire;cold;lightning;poison"
+	const ELF_GUIDED_DOTS "100;75;75;75"
+	const ELF_GUIDED_DMG 200
+	const ELF_GUIDED_DURATION 20.0
+	const ELF_GUIDED_SCRIPT monsters/summon/guided_sphere_cl
+	const CFB_SPEED 60
+
+	const ELF_PALM_ATTACK 0
+	const ELF_PALM_DMG 300
+	const ELF_PALM_RANGE 96
+	const FREQ_PALM 3.0
+
+	//setvard for easy adjustment
+	setvard ELF_BEAM_DMG 100
+	setvard ELF_BEAM_DOT 100
+	setvard ELF_BEAM_DMG_TYPE lightning
+	setvard ELF_BEAM_PUSH_VEL $relvel(0,300,110)
+	setvard ELF_BEAM_DUR 5.0
+	const ELF_BEAM_RANGE 512
+	setvard ELF_BEAM_SPECIAL none
+	const ELF_PALM_CL_SCRIPT effects/sfx_hit_shield
+
+	const DMG_MELEE 200
+	const ELF_MELEE_PUSH_VEL $relvel(10,400,110)
+
+	const SOUND_ELF_BEAM_START magic/bolt_start.wav
+
+	const SOUND_STRUCK1 weapons/cbar_hitbod1.wav
+	const SOUND_STRUCK2 weapons/cbar_hitbod2.wav
+	const SOUND_STRUCK3 weapons/cbar_hitbod3.wav
+
+	const SOUND_XBOW_STRETCH weapons/bow/stretch.wav //monsters/archer/stretch.wav //faster stretch sound
+	const SOUND_XBOW_SHOOT weapons/bow/crossbow.wav
+	const SOUND_BOLT_HIT weapons/bow/bolthit1.wav //played client side- precached here
+}
+
+{ game_precache
+	if ( ELF_IS_ARCHER ) precachefile ELF_XBOW_CL_SCRIPT
+	if ( ELF_PALM_ATTACK ) precache rain_ripple.spr
+	if ( ELF_CAN_GUIDED )
+	{
+		precache debris/zap1.wav
+		precache debris/zap3.wav
+		precache debris/zap3.wav
+		precache 3dmflaora.spr
+		precache magic/alien_frantic_1sec_noloop.wav
+		precache magic/alien_beacon_1sec_noloop.wav
+	}
+}
+
+#include monsters/base_monster_new
+
+//==================================== Init
+{ npc_spawn
+
+	setmodel ELF_MODEL
+	width 24
+	height 80
+	roam 1
+
+	hearingsensitivity 10
+
+	setmoveanim ANIM_WALK
+	setidleanim ANIM_IDLE
+
+	//general elemental resistance
+	takedmg cold 0.5
+	takedmg fire 0.5
+	takedmg poison 0.5
+	takedmg lightning 0.5
+
+	takedmg holy 0.0 //native to plane
+
+	callevent elf_spawn
+
+	setvard ELF_HALF_HEALTH $get(ent_me,maxhp)
+	multiply ELF_HALF_HEALTH 0.5
+
+	setvard DEF_ANIM_WALK ANIM_WALK
+	setvard DEF_ANIM_RUN ANIM_RUN
+	setvard DEF_ANIM_IDLE ANIM_IDLE
+
+	setvard FIRST_CYCLE game.time
+	add FIRST_CYCLE 5.0
+
+	if ( ELF_IS_ARCHER )
+	{
+		setvard ATTACK_RANGE 1024
+		setvard ATTACK_HITRANGE 1024
+		setvard ANIM_ATTACK ANIM_XBOW_FIRE
+		setvard NPC_RANGED 1
+		setvard ELF_MISS_COUNT 0
+	}
+
+	if ( ELF_IS_NOVICE )
+	{
+		setvard ATTACK_RANGE 64
+		setvard ATTACK_HITRANGE 120
+		setvard ANIM_ATTACK ANIM_PALM_ATTACK
+	}
+
+	if ( ELF_LIGHTNING_WIZARD )
+	{
+		setvard ELF_BEAM_ATTACK 1
+		setvard ELF_BEAM_COLOR (255,128,64)
+		setvard ELF_BEAM_EFFECT effects/effect_shock_dmg
+	}
+}
+
+//==================================== Anim Events
+{ frame_xbow_shoot_stand
+	//setvard NPC_NO_ATTACK 1 //risky, and may not be needed
+	//dbg frame_xbow_shoot_stand
+	if ( ELF_IS_ARCHER ) callevent elf_shoot_xbow
+}
+
+{ frame_xbow_shoot_crouch
+	if ( ELF_IS_ARCHER ) callevent elf_shoot_xbow
+}
+
+{ frame_xbow_reload_now
+	//dbg frame_xbow_reload_now
+	if ELF_IS_ARCHER
+	playsound 0 10 SOUND_XBOW_STRETCH
+	setvard AS_ATTACKING game.time
+	add AS_ATTACKING 10.0
+
+	if ( !ELF_DUCK_MODE )
+	{
+		playanim critical ANIM_XBOW_RELOAD
+	}
+	else
+	{
+		playanim critical ANIM_XBOW_RELOAD_DUCK
+	}
+}
+
+{ frame_xbow_reloaded
+	//dbg frame_xbow_reloaded
+	if ELF_IS_ARCHER
+	//playsound 0 10 SOUND_XBOW_COCK
+	//setvard NPC_NO_ATTACK 0
+	setvard AS_ATTACKING game.time
+	add AS_ATTACKING 10.0
+
+	if ( !ELF_DUCK_MODE )
+	{
+		playanim critical ANIM_XBOW_AIM
+	}
+	else
+	{
+		playanim critical ANIM_XBOW_AIM_DUCK
+	}
+}
+
+{ frame_repell
+	if ELF_PALM_ATTACK
+
+	local REPELL_SPRITE_ORG $relpos(0,32,32)
+	clientevent new all ELF_PALM_CL_SCRIPT REPELL_SPRITE_ORG $get(ent_me,angles.yaw) (255,255,255) 2.0 2.0
+
+	playsound 0 10 magic/frost_pulse.wav
+
+	
+	if ( $get(NPCATK_TARGET,isalive) )
+	{
+		local FINAL_TARG NPCATK_TARGET
+	}
+	else
+	{
+		//in case AI suspended during attack call
+		local FINAL_TARG ELF_PALM_TARGET
+	}
+	//if ( $get(FINAL_TARG,range) < ELF_PALM_RANGE ) local FINAL_TARG ELF_PALM_TARGET
+	dodamage FINAL_TARG ELF_PALM_RANGE ELF_PALM_DMG 100% magic
+	if ( $get(FINAL_TARG,range) < ELF_PALM_RANGE ) addvelocity FINAL_TARG $relvel(10,1000,110)
+}
+
+{ frame_melee
+	dodamage NPCATK_TARGET DMG_MELEE ATTACK_HITRANGE_MELEE 90% blunt
+	if ( ELF_IS_ARCHER ) playanim critical frame_xbow_reloaded
+	addvelocity NPCATK_TARGET ELF_MELEE_PUSH_VEL
+}
+
+//==================================== XBow Attack
+{ elf_shoot_xbow
+	playsound 1 10 SOUND_XBOW_SHOOT
+
+	local START_LINE $get(ent_me,svbonepos,ELF_XBOW_BONE)
+	local TARG_ORG $get(NPCATK_TARGET,origin)
+
+	if ( $rand(1,100) > ELF_XBOW_ACCURACY )
+	{
+		dbg elf_shoot_xbow miss //miss slightly
+		local RND_X $randf(-64.0,64.0)
+		local RND_Y $randf(-64.0,64.0)
+		vectoradd TARG_ORG x RND_X
+		vectoradd TARG_ORG y RND_Y
+		vectorset TARG_ORG z $get_ground_height(TARG_ORG)
+	}
+
+	setvard ELF_AIM_ANGLES $angles3d(START_LINE,TARG_ORG)
+	dbg before ELF_AIM_ANGLES
+	vectorset ELF_AIM_ANGLES x $neg($vec.x(ELF_AIM_ANGLES))
+	dbg after ELF_AIM_ANGLES
+	local END_LINE START_LINE
+	vectoradd END_LINE $relpos(ELF_AIM_ANGLES,$vec(0,2048,0))
+	setvard ELF_XBOW_SHOT 1
+	local END_LINE $get_traceline(START_LINE,END_LINE,worldonly)
+	setvard ELF_BOLT_LAND END_LINE
+
+	//if ( G_DEVELOPER_MODE ) effect beam point lgtning.spr 30 START_LINE END_LINE (255,0,0) 255 0 1.0
+	xdodamage START_LINE END_LINE DMG_XBOW 100% ent_me ent_me none pierce
+	if ( ELF_EXPLOSIVE_BOLTS ) callevent 0.1 elf_do_explode
+}
+
+{ elf_do_explode
+	xdodamage ELF_BOLT_LAND 128 DMG_XBOW 0 ent_me ent_me none fire_effect
+}
+
+{ game_dodamage //PARAM1=hit:0|1 PARAM2=ent_hit PARAM3=(start) PARAM4=(end)
+	if ( ELF_XBOW_SHOT )
+	{
+		clientevent new all ELF_XBOW_CL_SCRIPT PARAM3 PARAM4 ELF_AIM_ANGLES ELF_EXPLOSIVE_BOLTS
+		//if ( G_DEVELOPER_MODE ) effect beam point lgtning.spr 30 PARAM3 PARAM4 (0,0,255) 255 0 1.0
+		if ELF_EXPLOSIVE_BOLTS
+		setvard ELF_XBOW_TARGETS $get_tsphere(enemy,128,PARAM4)
+		if ELF_XBOW_TARGETS isnot none
+		setvard ELF_XBOW_REPELL_POINT PARAM4
+		calleventloop $get_token_amt(ELF_XBOW_TARGETS) elf_xbow_repell_targs
+	}
+	setvard ELF_XBOW_SHOT 0
+
+	if ( ELF_GUIDED_ACTIVE )
+	{
+		if ELF_GUIDED_EFFECT isnot 'ELF_GUIDED_EFFECT'
+		applyeffect ELF_GUIDED_EFFECT 5.0 $get(ent_me,id) ELF_GUIDED_DOT
+	}
+}
+
+{ elf_xbow_repell_targs
+	local CUR_TARG $get_token(ELF_XBOW_TARGETS,game.script.iteration)
+	local TARG_ORG $get(CUR_TARG,origin)
+	local TARG_ANG $angles(ELF_XBOW_REPELL_POINT,TARG_ORG)
+
+	local TARG_DIST $dist(TARG_ORG,ELF_XBOW_REPELL_POINT)
+	divide TARG_DIST 128
+	local PUSH_STR $get_skill_ratio(TARG_DIST,500,100)
+	local HALF_PUSH_STR PUSH_STR
+	divide HALF_PUSH_STR 2
+	dbg game_dodamage str PUSH_STR ratio TARG_DIST
+	setvelocity CUR_TARG $relvel($vec(0,TARG_ANG,0),$vec(10,PUSH_STR,HALF_PUSH_STR))
+	
+}
+
+//==================================== Main Cycle
+{ npcatk_hunt
+
+	if NPCATK_TARGET isnot unset
+
+	if $cansee(NPCATK_TARGET)
+
+	if ( ELF_CAN_GUIDED )
+	{
+		if !ELF_GUIDED_ACTIVE
+		if game.time > NEXT_GUIDED
+		setvard NEXT_GUIDED game.time
+		add NEXT_GUIDED FREQ_GUIDED
+		callevent setup_guided
+		local EXIT_SUB 1
+	}
+
+	if ( ELF_BEAM_ATTACK )
+	{
+		if !ELF_BEAM_ON
+		if $get(NPCATK_TARGET,range) < ELF_BEAM_RANGE
+		local TRACE_START $get(ent_me,attachpos,ATTACH_STAFF_TIP)
+		local TRACE_END $get(NPCATK_TARGET,origin)
+		local TRACE_LINE $get_traceline(TRACE_START,TRACE_END,worldonly)
+		if TRACE_LINE equals TRACE_END
+		callevent elf_do_beam
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	if ( ELF_IS_ARCHER )
+	{
+		if $get(NPCATK_TARGET,range) < 32
+		if game.time > NEXT_XBOW_BASH
+		setvard NEXT_XBOW_BASH game.time
+		add NEXT_XBOW_BASH FREQ_XBOW_BASH
+		setvard AS_ATTACKING game.time
+		add AS_ATTACKING 5.0
+		playanim critical ANIM_MELEE
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+}
+
+//==================================== Guided Spell
+//guided magic cloud that pushes and does damage
+//similar system to guided fire ball, but does not explode
+
+{ setup_guided
+
+	setprop ent_me controller2 100
+	callevent npcatk_suspend_movement ANIM_SPELL_LEFT_HOLD
+	playanim critical ANIM_RELEASE_EGG
+	callevent 0.3 setup_guided2
+}
+
+{ setup_guided2
+	local N_TYPES $get_token_amt(ELF_GUIDED_TYPES)
+	subtract N_TYPES 1
+	local RND_TYPE $rand(0,N_TYPES)
+	setvard ELF_GUIDED_TYPE $get_token(ELF_GUIDED_TYPES,RND_TYPE)
+	setvard ELF_GUIDED_DOT $get_token(ELF_GUIDED_DOTS,RND_TYPE)
+	setvard ELF_GUIDED_ACTIVE 1
+	setvard CFB_FIRST_TARGET_FOUND 0
+	setvard CFB_EST_ORG $relpos(0,32,40)
+	local START_ANGS $get(ent_me,angles)
+	setvard CFB_EST_ANG START_ANGS
+	clientevent new all ELF_GUIDED_SCRIPT CFB_EST_ORG START_ANGS ELF_GUIDED_TYPE $get(ent_me,index) ATTACH_LHAND $get(NPCATK_TARGET,index)
+	setvard CFB_FIREBALL_IDX game.script.last_sent_id
+	callevent 0.1 cfb_fireball_loop
+	setvard CFB_FORCE_END game.time
+	add CFB_FORCE_END ELF_GUIDED_DURATION
+}
+
+{ cfb_fireball_loop
+	if ELF_GUIDED_ACTIVE
+
+	if ( $get(CFB_TARGET,isalive) )
+	{
+		setmovedest CFB_TARGET 9999
+	}
+	else
+	{
+		setmovedest CFB_EST_ORG 9999
+	}
+
+	callevent 0.5 cfb_fireball_loop
+	if ( game.time > CFB_NEXT_SCAN )
+	{
+		setvard CFB_NEXT_SCAN game.time
+		add CFB_NEXT_SCAN 2.0
+		if ( !$get(CFB_TARGET,isalive) )
+		{
+			local OWNER_ORG $get(ent_me,origin)
+			local TARGET_TOKENS $get_tsphere(enemy,512,CFB_EST_ORG)
+			if TARGET_TOKENS isnot none
+			if ( $get_token_amt(TARGET_TOKENS) > 1 ) token.scramble TARGET_TOKENS //not important when player is owner, but may prevent targeting same player every time
+			local TEST_TARG $get_token(TARGET_TOKENS,0)
+			if $get(TEST_TARG,isalive)
+			if !$get(TEST_TARG,scriptvar,'PLAYING_DEAD')
+			setvard CFB_TARGET TEST_TARG
+			//dbg *** cfb_fireball_loop: targeting $get(CFB_TARGET,id)
+			if !CFB_FIRST_TARGET_FOUND
+			setvard CFB_FIRST_TARGET_FOUND 1
+			local ANG_TO_TARG $angles3d(CFB_EST_ORG,TARG_ORG)
+		}
+	}
+
+	xdodamage CFB_EST_ORG 128 ELF_GUIDED_DMG 0 ent_me ent_me none ELF_GUIDED_DMG_TYPE
+
+	if ( $get(CFB_TARGET,isalive) )
+	{
+		local TARG_ORG $get(CFB_TARGET,origin)
+		if ( !$get(CFB_TARGET,isplayer) ) vectoradd TARG_ORG z $get(CFB_TARGET,height) //aim for the heads of monsters
+		local ANG_TO_TARG $angles3d(CFB_EST_ORG,TARG_ORG)
+		vectorset ANG_TO_TARG x $neg($vec.x(ANG_TO_TARG))
+		setvard CFB_EST_ANG ANG_TO_TARG
+		vectoradd CFB_EST_ORG $relvel(ANG_TO_TARG,$vec(0,CFB_SPEED,0))
+	}
+	else
+	{
+		vectoradd CFB_EST_ORG $relvel(CFB_EST_ANG,$vec(0,CFB_SPEED,0))
+		local ANG_TO_TARG CFB_EST_ANG
+	}
+
+	clientevent update all CFB_FIREBALL_IDX svr_update_fireball_vec ANG_TO_TARG CFB_EST_ORG $get(CFB_TARGET,index)
+
+	//hopefully we can just pass through walls without losing our sprite
+	//local TRACE_DEST CFB_EST_ORG
+	//vectoradd TRACE_DEST $relvel(CFB_EST_ANG,$vec(0,60,0))
+	//local TRACE_RESULT $get_traceline(CFB_EST_ORG,TRACE_DEST,worldonly)
+	//if ( TRACE_RESULT isnot TRACE_DEST ) callevent cfb_explode "hitwall"
+
+	if ( game.time > CFB_FORCE_END )
+	{
+		setvard ELF_GUIDED_ACTIVE 0
+		callevent 1.0 npcatk_resume_movement
+		clientevent update all CFB_FIREBALL_IDX fireball_end
+		setprop ent_me controller2 120
+	}
+}
+
+//{ cfb_explode
+//
+//	//do next special sooner
+//	setvard NEXT_SPECIAL game.time
+//	add NEXT_SPECIAL 1.0
+//
+//	setvard ELF_GUIDED_ACTIVE 0
+//
+//	//if ( G_DEVELOPER_MODE ) gplayermessage ent_me Fireball Explode: PARAM1
+//	clientevent update all CFB_FIREBALL_IDX fireball_explode
+//	callevent 0.1 cfb_fireball_release
+//	//scan/dodamage aoe here
+//	setvard CFB_LIST $get_tsphere(enemy,128,CFB_EST_ORG)
+//	if CFB_LIST isnot none
+//	if $get_token_amt(CFB_LIST) > 0
+//}
+
+{ cfb_fireball_end
+	dbg cfb_fireball_end
+	clientevent update all CFB_FIREBALL_IDX fireball_end
+	callevent 0.1 cfb_fireball_release
+}
+
+{ cfb_fireball_release
+	dbg cfb_fireball_release
+	setvard ELF_GUIDED_ACTIVE 0
+}
+
+//==================================== Struck / Damaged
+{ game_damaged //PARAM1=attacker PARAM2=dmg PARAM3=dmg_type
+	playsound 0 10 SOUND_STRUCK1 SOUND_STRUCK2 SOUND_STRUCK3
+
+	if ELF_PALM_ATTACK
+	if $get(PARAM1,exists) //shouldn't need to do this, but checking isalive vs. map entities causes error
+	if $get(PARAM1,isalive) 
+
+	if ( $get(PARAM1,range) < ELF_PALM_RANGE )
+	{
+		setvard ELF_PALM_TARGET PARAM1
+		setmovedest PARAM1 9999
+		playanim once ANIM_REPELL
+	}
+}
+
+//==================================== Beam Attack
+{ elf_do_beam
+	setvard BEAM_TARGET NPCATK_TARGET
+	callevent npcatk_suspend_movement ANIM_SPELL_HOLD
+	callevent npcatk_suspend_ai
+	setvard ELF_BEAM_ON 1
+	local L_ATTACH_STAFF_TIP ATTACH_STAFF_TIP //effect beam attach indexes are base index 1 :/
+	add L_ATTACH_STAFF_TIP 1
+	effect beam ents lgtning.spr 50 ent_me L_ATTACH_STAFF_TIP BEAM_TARGET 1 ELF_BEAM_COLOR 200 30 ELF_BEAM_DUR
+	clientevent new all effects/sfx_beam_sparks $get(ent_me,index) $get(BEAM_TARGET,index) ATTACH_STAFF_TIP ELF_BEAM_COLOR ELF_BEAM_DUR
+	callevent ELF_BEAM_DUR elf_beam_end
+	callevent elf_beam_loop
+	playsound 2 10 SOUND_ELF_BEAM_START
+	svplaysound 1 10 SOUND_ELF_BEAM_LOOP //precache this in top script
+}
+
+{ elf_beam_end
+	setvard ELF_BEAM_ON 0
+	callevent npcatk_resume_ai
+	callevent npcatk_resume_movement
+	svplaysound 1 0 SOUND_ELF_BEAM_LOOP
+}
+
+{ elf_beam_loop
+	if ELF_BEAM_ON
+	callevent 0.25 elf_beam_loop
+	local TRACE_START $get(ent_me,attachpos,ATTACH_STAFF_TIP)
+	local TRACE_END $get(BEAM_TARGET,origin)
+	local TRACE_LINE $get_traceline(TRACE_START,TRACE_END,worldonly)
+	setmovedest BEAM_TARGET 9999
+	if TRACE_LINE equals TRACE_END
+	if ( ELF_BEAM_SPECIAL equals none )
+	{
+		applyeffect BEAM_TARGET ELF_BEAM_EFFECT 5.0 $get(ent_me,id) ELF_BEAM_DOT
+	}
+	else
+	{
+		callevent elf_beam_special BEAM_TARGET //used by top script
+	}
+	dodamage BEAM_TARGET direct ELF_BEAM_DMG 100% ELF_BEAM_DMG_TYPE 
+	addvelocity BEAM_TARGET ELF_BEAM_PUSH_VEL
+}
+
+//==================================== Debugarry
+{ ext_con
+	dbg got ext_con PARAM1 PARAM2
+	if ( PARAM1 == 0 ) setprop ent_me controller0 PARAM2
+	if ( PARAM1 == 1 ) setprop ent_me controller1 PARAM2
+	if ( PARAM1 == 2 ) setprop ent_me controller2 PARAM2
+	if ( PARAM1 == 3 ) setprop ent_me controller3 PARAM2
+}
+
+
+{ close_mouth
+	setprop ent_me controller1 0
+}
+
+{ game_death
+	local RND_DEATH $rand(1,7)
+	if ( RND_DEATH == 1 ) setvard ANIM_DEATH ANIM_DEATH1
+	if ( RND_DEATH == 2 ) setvard ANIM_DEATH ANIM_DEATH2
+	if ( RND_DEATH == 3 ) setvard ANIM_DEATH ANIM_DEATH3
+	if ( RND_DEATH == 4 ) setvard ANIM_DEATH ANIM_DEATH4
+	if ( RND_DEATH == 5 ) setvard ANIM_DEATH ANIM_DEATH5
+	if ( RND_DEATH == 6 ) setvard ANIM_DEATH ANIM_DEATH6
+	if ( RND_DEATH == 7 ) setvard ANIM_DEATH ANIM_DEATH7
+
+	if ELF_GUIDED_ACTIVE
+	setvard ELF_GUIDED_ACTIVE 0
+	clientevent update all CFB_FIREBALL_IDX fireball_end
+}

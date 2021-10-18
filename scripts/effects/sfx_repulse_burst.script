@@ -1,0 +1,81 @@
+//ring of sprites, stays for a brief time, then vanishes by raising through ceiling for barrier fx
+//(self removing)
+
+#scope client
+
+{ [client] client_activate //<origin> <radius> <stay_duration> [color]
+
+	setvard FX_CENTER PARAM1
+	setvard FX_RADIUS PARAM2
+	setvard FX_DURATION PARAM3
+
+	//dbg **** FX_CENTER FX_RADIUS FX_DURATION
+
+	if ( PARAM4 equals 'PARAM4' )
+	{
+		setvard SPRITE_COLOR (0,0,255)
+	}
+	else
+	{
+		setvard SPRITE_COLOR PARAM4
+	}
+
+	setvard CYCLE_ANGLE 0
+	callevent spriteify
+
+	callevent FX_DURATION clear_sprites
+
+	//I *think* this is precached in the weapons, but if not, this will have to be precached seperately
+	//always smart to precache client effects in the game_precache event via precachefile in anycase
+	sound.play3d magic/energy1_loud.wav 10 FX_CENTER
+}
+
+//Sprite
+
+{ [client] spriteify
+
+	calleventloop 18 createsprite
+}
+
+{ [client] createsprite
+
+	local SPRITE_POS FX_CENTER
+	add CYCLE_ANGLE 20
+	vectoradd SPRITE_POS $relpos($vec(0,CYCLE_ANGLE,0),$vec(0,FX_RADIUS,36))
+	cleffect tempent sprite 3dmflaora.spr SPRITE_POS setup_sprite1_sparkle sprite_update
+}
+
+{ [client] setup_sprite1_sparkle
+
+	cleffect tempent set_current_prop death_delay 90.0
+	cleffect tempent set_current_prop framerate 30
+	cleffect tempent set_current_prop frames 1
+	cleffect tempent set_current_prop scale 1.0
+	cleffect tempent set_current_prop rendermode add
+	cleffect tempent set_current_prop renderamt 180
+	cleffect tempent set_current_prop rendercolor SPRITE_COLOR
+	cleffect tempent set_current_prop gravity 0.0
+	cleffect tempent set_current_prop collide none
+	cleffect tempent set_current_prop fadeout lifetime
+	cleffect tempent set_current_prop update 1
+}
+
+{ [client] sprite_update
+
+	if GO_AWAY
+	cleffect tempent set_current_prop death_delay 2.0
+	cleffect tempent set_current_prop velocity (0,0,400)
+	//cleffect tempent set_current_prop rendercolor (254,254,254)
+	cleffect tempent set_current_prop fadeout 2.0
+	cleffect tempent set_current_prop gravity -4.0
+}
+
+{ [client] clear_sprites
+	setvard GO_AWAY 1
+	callevent sprite_update
+	callevent 3.0 remove_me
+}
+
+{ [client] remove_me
+	removescript
+}

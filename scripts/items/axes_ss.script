@@ -1,0 +1,182 @@
+//Skull Scythe (Vampyric + Dark + Range + Balance + Throw)
+// get back to this after you have an xtossprojectile function
+
+{
+	const BASE_LEVEL_REQ     30
+
+	const RANGED_MP 30
+
+	const THROW_ATTACK_DELAY 0.5
+
+	const HP_RETURN_RATIO 0.02
+
+	const ANIM_LIFT1         0
+	const ANIM_IDLE1         1
+	const ANIM_ATTACK1       2
+	const ANIM_ATTACK2       3
+	const ANIM_ATTACK3       4
+	const ANIM_SHEATH       5
+	const MELEE_VIEWANIM_ATK ANIM_ATTACK1
+	const MODEL_VIEW viewmodels/v_2haxesgreat.mdl
+	const MODEL_VIEW_IDX 7
+	const MODEL_HANDS weapons/p_weapons3.mdl
+	const MODEL_WORLD weapons/p_weapons3.mdl
+	const SOUND_SWIPE       weapons/swingsmall.wav
+
+	const MODEL_BODY_OFS 74
+	const ANIM_PREFIX  standard
+
+	//Used in base_melee
+	//------------------
+	const MELEE_RANGE  120
+	const MELEE_DMG_DELAY  0.6
+	const MELEE_ATK_DURATION 1.5
+	const MELEE_ENERGY  2
+	const MELEE_DMG  500
+	const MELEE_DMG_RANGE      150
+	const MELEE_DMG_TYPE  dark
+	const MELEE_ACCURACY  75%
+	const MELEE_STAT  axehandling
+
+	const MELEE_SOUND      SOUND_SWIPE
+	const MELEE_SOUND_DELAY      MELEE_DMG_DELAY
+	const MELEE_PARRY_CHANCE      25%
+}
+
+#include items/axes_base_twohanded
+
+{  weapon_spawn
+
+   name  a|Skull Scythe
+   desc  A scythe imbued with magics of destruction
+   weight  90
+   size  25
+   value        700
+   sethudsprite hand axe
+   sethudsprite trade 145
+	callevent custom_register
+}
+
+//set this to throw on right click instead
+//{ custom_register
+//
+//	//shadow throw
+//	local reg.attack.mpdrain RANGED_MP
+//	local reg.attack.ammodrain 0
+//	local reg.attack.type		charge-throw-projectile
+//	local reg.attack.hold_min&max	"1;1"
+//	local reg.attack.dmg.type		dark
+//	local reg.attack.range			100
+//	local reg.attack.energydrain	MELEE_ENERGY
+//	local reg.attack.stat			MELEE_STAT
+//	local reg.attack.COF			0
+//	local reg.attack.projectile		proj_ub
+//	local reg.attack.priority		2
+//	local reg.attack.delay.strike	0.1
+//	local reg.attack.chargeamt	200%
+//	local reg.attack.delay.end		0.1
+//	local reg.attack.ofs.startpos	RANGED_STARTPOS
+//	local reg.attack.ofs.aimang		RANGED_AIMANGLE
+//	local reg.attack.noise		RANGED_NOISE
+//	local reg.attack.callback		shadow_throw
+//	local reg.attack.reqskill	34
+//
+//	local reg.attack.keys	-attack1
+//
+//	registerattack
+//}
+
+//Vampire
+{ game_dodamage
+
+	if PARAM1
+	if $can_damage(ent_owner,PARAM2)
+	if $get(PARAM2,race) isnot undead
+	if !$get(PARAM2,scriptvar,'IMMUNE_VAMPIRE')
+
+	if $get(ent_owner,hp) <  $get(ent_owner,maxhp)
+
+	local HP_TO_GIVE $get(ent_owner,maxhp)
+	multiply HP_TO_GIVE HP_RETURN_RATIO
+
+	givehp ent_owner HP_TO_GIVE
+}
+
+{ melee_start
+	if ( game.serverside ) callevent return_throw melee_start
+}
+
+{ special_01_start
+	if ( game.serverside ) callevent return_throw special_01_start
+}
+
+{ special_02_start
+	if ( game.serverside ) callevent return_throw special_02_start
+}
+
+{ game_+attack2
+
+	if game.serverside
+	if !game.item.attacking
+	if $get(ent_owner,canattack)
+
+	if game.time > NEXT_THROW_ATTEMPT
+	setvard NEXT_THROW_ATTEMPT game.time
+	add NEXT_THROW_ATTEMPT 1.0
+
+	if ( $get(ent_owner,mp) < RANGED_MP )
+	{
+		dplayermessage ent_owner Scull Scythe: Not enough mana to throw.
+		local EXIT_SUB 1
+	}
+
+	if ( $get(ent_owner,skill.axehandling) < 34 )
+	{
+		dplayermessage ent_owner Scull Scythe: Insufficient Axehandling Proficiency to throw (34)
+		local EXIT_SUB 1
+	}
+
+	if !EXIT_SUB
+
+	givemp ent_owner $neg(RANGED_MP)
+
+	splayviewanim ent_me ANIM_ATTACK2
+
+	callevent THROW_ATTACK_DELAY throw_weapon
+}
+
+{ throw_weapon
+	setviewmodelprop ent_me renderamt 1
+	setviewmodelprop ent_me rendermode 1
+	if ( $get(SHADOW_PROJ_ID,exists) ) callevent return_throw new_throw
+	callexternal ent_owner ext_tossprojectile view 200 100 1 proj_ss (-10,0,5)
+	setvard SHADOW_PROJ_ID $get(ent_owner,scriptvar,'PLR_LAST_PROJECTILE')
+}
+
+{ ext_projectile_landed
+	callevent return_throw ext_projectile_landed
+}
+
+{ return_throw
+
+	if ( PARAM1 equals ext_projectile_landed )
+	{
+		splayviewanim ent_me ANIM_IDLE1
+	}
+	else
+	{
+		if $get(SHADOW_PROJ_ID,exists)
+		callexternal SHADOW_PROJ_ID remove_me remote
+	}
+	if PARAM1 isnot new_throw
+	dbg return_throw PARAM1 (restore)
+	setviewmodelprop ent_me rendermode 1
+	setviewmodelprop ent_me renderamt 255
+}
+
+{ bweapon_effect_remove
+	dbg bweapon_effect_remove
+	callevent return_throw bweapon_effect_remove
+	setviewmodelprop ent_me rendermode 1
+	setviewmodelprop ent_me renderamt 255
+}

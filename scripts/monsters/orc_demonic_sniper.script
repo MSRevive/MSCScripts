@@ -1,0 +1,75 @@
+#scope server
+{
+	//custom
+	const ARROW_TYPE proj_arrow_npc_dyn
+
+	const DMG_SMASH '$rand(50,100)'
+	const DMG_SWIPE '$rand(20,50)'
+	const DMG_KICK '$rand(20,50)'
+	const DMG_BOW $rand(100,200)
+	const DMG_AOE 400
+	const DOT_DMG 30
+
+	const DROP_ITEM_BASE1 none
+	setvard DROPS_CONTAINER 1
+	const CONTAINER_BASE chests/quiver_of_fire
+
+	const FIN_EXP 200
+}
+
+#include monsters/orc_sniper
+
+{ [override] orc_spawn
+
+	name a|Demonic Blackhand Archer
+	setprop ent_me skin 2
+	width 32
+  	height 60
+	hp 400
+	hearingsensitivity 2
+	setstat parry 30
+	takedmg all .8
+	takedmg fire 0.0
+	takedmg holy 0.5
+	setvard IS_UNHOLY 1
+
+	setmodelbody	0 3		//Body 0=naked 1=leather 2=plate 3=green-hide
+	setmodelbody	1 3		//Head 0=cap_shorthorn 1=cap_nohorn 2=buffo_skin 3=cheif_ramhorns 4=green_hood
+	setmodelbody	2 3		//Weapon 0=fist 1=axe 2=bow_weak 3=bow_strng 4=sword 5=bloodyaxe 6=sword&sheild
+
+	callevent 1.0 reset_range //debug
+	callevent 2.0 finalize_npc
+}
+
+{ finalize_npc
+	setvard DROP_GOLD 1
+	setvard DROP_GOLD_AMT $rand(100,200)
+	setvard DROP_ITEM1 DROP_ITEM_BASE1
+	setvard DROP_ITEM1_CHANCE 0%
+}
+
+{ ext_arrow_landed
+	setvard ARROW_ORG PARAM1
+	//<center_point> <radius> <light:0|1> <light_color>
+	clientevent new all effects/sfx_fire_burst ARROW_ORG 128 1 (255,0,0)
+	xdodamage ARROW_ORG 128 DMG_AOE 0 ent_me ent_me none fire_effect dmgevent:fireburst
+}
+
+{ ext_arrow_hit //direct hit
+	if PARAM1
+	if $get(PARAM2,relationship,ent_me) equals enemy
+	applyeffect PARAM2 effects/effect_burn 5.0 $get(ent_me,id) DOT_DMG
+	addvelocity PARAM2 $relvel(0,600,110)
+}
+
+{ fireburst_dodamage
+	if PARAM1
+	if $get(PARAM2,relationship,ent_me) equals enemy
+	applyeffect PARAM2 effects/effect_burn 5.0 $get(ent_me,id) DOT_DMG
+
+	local TARG_ORG $get(PARAM2,origin)
+	local MY_ORG ARROW_ORG
+	local TARG_ANG $angles(MY_ORG,TARG_ORG)
+	local NEW_YAW TARG_ANG
+	addvelocity PARAM2 $relvel($vec(0,NEW_YAW,0),$vec(0,500,110))
+}

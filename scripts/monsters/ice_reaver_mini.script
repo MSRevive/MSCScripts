@@ -1,0 +1,179 @@
+#scope server
+{ [shared]
+	setvar ANIM_WALK walk
+	setvar ANIM_RUN run
+	setvar ANIM_IDLE idle1
+	setvard ANIM_FLINCH turnl
+	setvard ANIM_DEATH dieforward
+	setvard ANIM_ATTACK mattack3
+
+	const ANIM_SEARCH idle2
+	const ANIM_SMASH mattack3
+	const ANIM_SLASH mattack2
+	const ANIM_ALERT distanceattack
+	const ANIM_ALERT distanceattack
+	setvard ANIM_DEATH1 diesimple
+	setvard ANIM_DEATH2 diesideways
+	const ANIM_VICTORY1 victoryeat
+	const ANIM_VICTORY2 victorysniff
+}
+
+{
+	setvard CAN_FLINCH 1
+	setvard ATTACK_RANGE 64
+	setvard ATTACK_HITRANGE 75
+	setvard ATTACK_MOVERANGE 40
+
+	const DMG_SLASH $randf(25,50)
+	const DMG_SMASH $randf(50,100)
+	const DOT_FROST 25
+
+	setvard NPC_GIVE_EXP 200
+
+	const SLASH_HITCHANCE 80%
+	const SMASH_HITCHANCE 90%
+	const SMASH_HITRANGE 75
+	const SLASH_HITRANGE 75
+
+	const SOUND_STRUCK1 body/flesh1.wav
+	const SOUND_STRUCK2 body/flesh2.wav
+	const SOUND_STRUCK3 body/flesh3.wav
+
+	const SOUND_PAIN1 monsters/ice_reaver_mini/gon_pain2.wav
+	const SOUND_PAIN2 monsters/ice_reaver_mini/gon_pain4.wav
+	const SOUND_PAIN3 monsters/ice_reaver_mini/gon_pain5.wav
+	const SOUND_DEATH monsters/ice_reaver_mini/gon_die1.wav
+	const SOUND_ALERT monsters/ice_reaver_mini/gon_alert1.wav
+	const SOUND_SEARCH1 monsters/ice_reaver_mini/gon_childdie3.wav
+	const SOUND_SEARCH2 monsters/ice_reaver_mini/gon_childdie2.wav
+	const SOUND_SEARCH3 monsters/ice_reaver_mini/gon_childdie1.wav
+
+	const SOUND_RUN1 common/npc_step1.wav
+	const SOUND_RUN2 common/npc_step2.wav
+	const SOUND_RUN3 common/npc_step3.wav
+	const SOUND_RUN4 common/npc_step4.wav
+
+	const SOUND_SLASHHIT zombie/claw_strike1.wav
+	const SOUND_SMASHHIT zombie/claw_strike2.wav
+	const SOUND_SLASHMISS zombie/claw_miss1.wav
+	const SOUND_SMASHMISS zombie/claw_miss2.wav
+}
+
+{ game_precache
+	precache SOUND_PAIN1
+	precache SOUND_PAIN2
+	precache SOUND_PAIN3
+}
+
+#include monsters/base_monster_new
+
+{ [shared] npc_spawn
+	name an|Ice Reaver Hatchling
+	hp 500
+	roam 1
+	takedmg cold 0.0
+	takedmg ice 0.0
+	takedmg fire 0.5
+
+	width 32
+	height 32
+
+	setvard NPC_GIVE_EXP 200
+	race demon //actually a wildanimal - but I figure likely to be grouped with other baddies
+	hearingsensitivity 3
+	setmodel monsters/abominable_mini.mdl
+	setmoveanim ANIM_WALK
+
+	setvard PUSH_VEL none
+
+	callevent 1.5 post_setup
+}
+
+{ post_setup
+ 	setvard FLINCH_HEALTH $get(ent_me,maxhp)
+	multiply FLINCH_HEALTH 0.25
+	setvard FLINCH_CHANCE 30
+
+	setvard HALF_HEALTH $get(ent_me,maxhp)
+	multiply HALF_HEALTH 0.5
+
+	setvard QUARTER_HEALTH FLINCH_HEALTH
+}
+
+{ npc_targetsighted
+	if !DID_ALERT
+	setvard DID_ALERT 1
+	playanim critical ANIM_ALERT
+	playsound 0 10 SOUND_ALERT
+}
+
+{ my_target_died
+	setvard DID_ALERT 0
+	if game.time > NEXT_EAT
+	setvard NEXT_EAT game.time
+	add NEXT_EAT 20.0
+	local RND_VICT $rand(1,2)
+	if ( RND_VICT == 1 ) playanim critical ANIM_VICTORY1
+	if ( RND_VICT == 2 ) playanim critical ANIM_VICTORY2
+	playrandomsound 0 10 SOUND_SEARCH1 SOUND_SEARCH2 SOUND_SEARCH3
+}
+
+{ npcatk_lost_sight
+	if game.time > NEXT_SEARCH
+	setvard NEXT_SEARCH game.time
+	add NEXT_SEARCH 10.0
+	playanim once ANIM_SEARCH
+	playrandomsound 0 10 SOUND_SEARCH1 SOUND_SEARCH2 SOUND_SEARCH3
+}
+
+{ game_dodamage //1: Attack Hit (1/0)  2: Entity Attack hit  3:  Start Position  4:  End Position
+
+	if ( MELEE_ATTACK )
+	{
+		if ( !PARAM1 )
+		{
+			playsound 0 10 SOUND_ATTACKMISS
+		}
+
+		if ( PARAM1 )
+		{
+			playsound 0 10 SOUND_ATTACKHIT
+			if ( PUSH_VEL isnot none )
+			{
+				addvelocity PARAM2 PUSH_VEL
+				setvard PUSH_VEL none
+				applyeffect PARAM2 effects/effect_frostbite_dmg 5.0 $get(ent_me,id) DOT_FROST
+			}
+		}
+	}
+}
+
+{ game_struck
+	local MY_HP $get(ent_me,hp)
+	if ( MY_HP > HALF_HEALTH ) local PAIN_SOUND SOUND_PAIN1
+	if ( MY_HP < HALF_HEALTH ) local PAIN_SOUND SOUND_PAIN2
+	if ( MY_HP < QUARTER_HEALTH ) local PAIN_SOUND SOUND_PAIN3
+	playrandomsound 0 10 SOUND_STRUCK1 SOUND_STRUCK2 SOUND_STRUCK1 SOUND_STRUCK2 PAIN_SOUND
+
+}
+
+//============ ANIM EVENTS
+
+{ monster_run_step //called from model anim run at various frames
+	playrandomsound 0 5 SOUND_RUN1 SOUND_RUN2 SOUND_RUN3 SOUND_RUN4
+}
+
+{ attack_mele1
+	setvard PUSH_VEL none
+	setvard MELEE_ATTACK 1
+	dodamage NPCATK_TARGET SLASH_HITRANGE DMG_SLASH SLASH_HITCHANCE
+	if $rand(1,5) == 1
+	setvard ANIM_ATTACK ANIM_SMASH
+}
+
+{ attack_mele2
+	setvard MELEE_ATTACK 1
+	setvard PUSH_VEL $relvel(-100,300,110)
+	dodamage NPCATK_TARGET SMASH_HITRANGE DMG_SMASH SMASH_HITCHANCE
+	setvard ANIM_ATTACK ANIM_SLASH
+}

@@ -1,0 +1,173 @@
+//Ice Bone Skeleton (Decayed) by Thothie from mscave/Shaddar
+
+{
+
+   const SKEL_HP		700
+   const ATTACK_HITCHANCE 	85%
+   setvard ATTACK_DAMAGE_LOW 	10.5
+   setvard ATTACK_DAMAGE_HIGH 	15.5
+   setvard NPC_GIVE_EXP 		120
+
+   setvard DROP_GOLD 		1
+   setvard DROP_GOLD_MIN		20
+   setvard DROP_GOLD_MAX		35
+
+   const SKEL_RESPAWN_CHANCE	50%
+   const SKEL_RESPAWN_LIVES	1
+
+	setvard MOVE_RANGE 300
+
+   const ANIM_BLAST		castspell
+   const SOUND_BOLT		magic/ice_strike.wav
+
+	setvard IMMUNE_COLD 1
+	setvard IMMUNE_FIRE 1.2
+	
+	const BOLT_FREQUENCY 3.0
+	const BOLT_DAMAGE 60
+
+   precache items/proj_ice_bolt
+
+	precache monsters/skeleton_boss1.mdl //older clients
+}
+
+#include monsters/skeleton_base
+
+{ skeleton_spawn
+
+   	name a|Decayed Ice Bone
+   	race undead
+   	roam 1
+   	takedmg all .7
+   	takedmg fire 1.2
+   	takedmg lightning .5
+   	takedmg cold 0.0
+	takedmg ice 0.0
+    setmodel monsters/skeleton_boss1.mdl
+	setmodelbody	0 5 //0=standard 1=ash 2=green 3=bloody 4=decayed 5=ice 6=gold 7=stone 8=crystal 9=weirdgel
+	setmodelbody	1 8 //0=Unarmed 1=darkmace 2=sword 3=hammahs 4=bigsword+shield 5=iceclubs 6=fireclubs 7=highsword 8=wand 9=wand(active)
+   	hearingsensitivity 5
+
+	if ( $lcase(game.map.name) equals thanatos ) setvard SET_GREEK 1
+	if ( SET_GREEK ) setmodelbody 0 10
+
+	setmoveanim ANIM_WALK
+	setidleanim ANIM_IDLE
+
+	setvard BOLT_CHECKING 0
+
+   	setstat concentration 30
+   	setstat spellcasting 30 30 30	//not sure if this'll work
+
+   	//ov 360
+}
+
+{ cast_bolts
+
+	if $get(ent_me,isalive)
+
+	if BOLT_CHECKING
+
+	callevent BOLT_FREQUENCY cast_bolts
+
+	local SEE_NME $cansee(enemy)
+
+	if ( !SEE_NME )
+	{
+		setvard NO_STUCK_CHECKS 0
+	}
+
+	if SEE_NME
+
+	if $get(ent_lastseen,range) > ATTACK_RANGE
+
+ 	setvard NO_STUCK_CHECKS 1 
+
+	playsound 0 10 magic/frost_reverse.wav
+
+	effect glow ent_me (128,128,255) 32 2 2
+
+	setmodelbody 1 9
+
+	playanim once castspell
+
+	setvard BOLTS_ON 1
+
+	callevent 1.0 bolts_off
+}
+
+
+{ bolts_off
+
+	setvard BOLTS_ON 0
+
+	setmodelbody 1 8
+}
+
+{ extra_bolts
+
+	//playsound 0 10 SOUND_BOLT
+
+	local BOLT_DEST $get(ent_me,origin)
+	local BOLT_YAW $get(ent_me,angles.yaw)
+	vectoradd BOLT_DEST $relpos($vec(0,BOLT_YAW,0),$vec(0,100,40))
+	//local BOLT_START game.monster.origin
+	//vectoradd BOLT_START $relpos($vec(0,BOLT_DIR,0),$vec(0,30,40))
+	tossprojectile BOLT_DEST 500 BOLT_DAMAGE 20 proj_ice_bolt $get(ent_me,attachpos,0) notoffset
+}
+
+{ npc_targetsighted
+	if BOLTS_ON
+	if game.time > NEXT_BOLT
+	setvard NEXT_BOLT game.time
+	add NEXT_BOLT 0.2
+	local BOLT_DEST $get(NPCATK_TARGET,origin)
+	//local BOLT_START game.monster.origin
+	//vectoradd BOLT_START $relpos($vec(0,BOLT_DIR,0),$vec(0,30,40))
+	tossprojectile BOLT_DEST 500 BOLT_DAMAGE 10 proj_ice_bolt $get(ent_me,attachpos,0) notoffset
+}
+
+//{ game_dodamage //1: Attack Hit (1/0)  2: Entity Attack hit  3:  Start Position  4:  End Position
+//
+//	if ICE_BLASTING
+//
+//	if PARAM1
+//
+//	if PARAM2 isnot LAST_DAMAGED
+//
+//	if $get(PARAM2,relationship,ent_me) equals enemy
+//
+//	add BOLTED 1
+//
+//	//dbg Casting Bolt
+//
+//	playsound 0 10 SOUND_BOLT
+//
+//	//setmovedest PARAM2 9999
+//
+//	setvard LAST_DAMAGED PARAM2
+//
+//	tossprojectile PARAM2 500 BOLT_DAMAGE 1 proj_ice_bolt (0,20,50)
+//}
+
+{ cycle_up
+
+	if !BOLT_CHECKING
+	setvard BOLT_CHECKING 1
+
+   callevent cast_bolts
+}
+
+{ cycle_down
+
+	setvarad BOLT_CHECKING 0
+}
+
+{ game_death
+	setmodelbody 1 8
+}
+
+{ go_greek
+	setmodelbody 0 10
+	setvard SET_GREEK 1
+}

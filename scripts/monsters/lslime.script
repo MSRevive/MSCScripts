@@ -1,0 +1,109 @@
+//This is an older script and may have some bad conventions as a result.
+
+//Thothie - Wrong death animation
+//- Adding attack sounds
+
+//Lightning slime
+
+#include monsters/base_monster
+
+{
+   setvar SOUND_STRUCK1		weapons/cbar_hitbod1.wav
+   setvar SOUND_STRUCK2		weapons/cbar_hitbod2.wav
+   setvar SOUND_STRUCK3		weapons/cbar_hitbod3.wav
+   //setvar SOUND_STRUCK3		monsters\sludge\null.wav //had wrong slashes here + double define
+   setvar SOUND_ATTACK1		weapons/electro4.wav
+   setvar SOUND_ATTACK2		weapons/electro5.wav
+   setvar SOUND_ATTACK3		weapons/electro6.wav
+   setvar SOUND_DEATH		monsters/sludge/bio.wav
+   setvar SOUND_IDLE1		weapons/gauss2.wav
+   setvar ANIM_IDLE 	walk
+   setvar ANIM_RUN		run
+   setvar ANIM_WALK		walk
+   setvard ANIM_ATTACK		attack
+   setvard ANIM_DEATH		die
+   setvard MOVE_RANGE		150
+   setvard ATTACK_RANGE		200
+   setvard ATTACK_HITRANGE	230
+   setvar ATTACK_HITCHANCE	80%
+   setvar ATTACK_DAMAGE 10
+   setvar FLEE_CHANCE		25%	//base_npc_attack - Chance I run away
+   setvar MY_ENEMY		enemy	//base_npc_attack - Premptive attack
+   setvar RETALIATE_CHANGETARGET_CHANCE	75%	//base_npc_attack - Automatically switch targets to the last damaging player
+   setvard CAN_FLEE		0	//base_npc_attack - Whether I run away at low health
+   setvar LIGHTNING_SPRITE	lgtning.spr
+
+   //Precache
+   precache SOUND_DEATH //This sound must be explicitly precached since
+			//the play command for it isn't in this file (it's
+			//in base_monster.script)
+   precache SOUND_ATTACK1
+   precache SOUND_ATTACK2
+   precache SOUND_ATTACK3
+
+}
+
+{
+   eventname npc_spawn
+
+   hp 15
+   //ov 120
+   width 40
+   height 64
+   race wildanimal
+   name an|Electrified slime
+   if ( !ME_NO_WANDER ) roam 1
+	if ( ME_NO_WANDER ) roam 0
+   hearingsensitivity 4
+   setvard NPC_GIVE_EXP 20
+
+	blood green
+
+   takedmg lightning 0.0
+
+	setvard IMMUNE_LIGHTNING 1
+
+   setmodel monsters/slime.mdl
+   setmodelbody	0 4
+   setidleanim idle1
+   setmoveanim ANIM_WALK
+   setactionanim ANIM_ATTACK
+
+   effect glow ent_me (255,255,0) 64 -1 0
+}
+
+   //Idling
+{
+   repeatdelay 10
+  
+   if $rand(0,1) == 0
+   playsound game.sound.voice 5  SOUND_IDLE1
+}
+
+
+   // Deal damage
+{
+   eventname bite1
+
+	if $cansee(enemy)
+
+   dodamage ent_lastseen ATTACK_HITRANGE ATTACK_DAMAGE ATTACK_HITCHANCE lightning
+}
+
+{  game_dodamage //1: Attack Hit (1/0)  2: Entity Attack hit  3:  Start Position  4:  End Position
+	volume 5
+	playrandomsound 2 SOUND_ATTACK1 SOUND_ATTACK2 SOUND_ATTACK3
+	effect beam point LIGHTNING_SPRITE 30 $relpos(0,0,-22) PARAM4 (255,255,0) 150 50 0.2
+}
+
+   //Hit by someone
+{  npc_struck
+   
+   playrandomsound game.sound.body 5 SOUND_PAIN SOUND_STRUCK2 SOUND_PAIN
+}
+
+{ cycle_up
+	if ME_NO_WANDER
+	roam 1
+}
+

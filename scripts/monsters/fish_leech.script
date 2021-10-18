@@ -1,0 +1,181 @@
+//This is an older script and may have some bad conventions as a result.
+
+//Thothie - Again the include causing problems - fish_base includes animations not in model
+//Leech
+
+{
+	setvard NPC_EXTRA_VALIDATIONS 1
+
+	setvard NO_STUCK_CHECKS 1
+
+   const DELETE_ON_DEATH 1
+   setvar ANIM_IDLE		swim
+   setvar ANIM_WALK		swim
+   setvar ANIM_RUN		swim2
+   setvard ANIM_DEATH		death
+   setvard ANIM_ATTACK		attack
+
+   const SOUND_IDLE1 		none
+   const SOUND_IDLE2 		none
+   const SOUND_ATTACK1		leech/leech_bite1.wav
+   const SOUND_ATTACK2		leech/leech_bite2.wav
+   const SOUND_STRUCK1 		leech/leech_alert2.wav
+   const SOUND_STRUCK2 		leech/leech_alert1.wav
+   const SOUND_STRUCK3 		leech/leech_alert2.wav
+   const SOUND_STRUCK4 		leech/leech_alert1.wav
+   const SOUND_STRUCK5 		leech/leech_alert2.wav
+   const SOUND_DEATH 		none
+
+   setvard MOVE_RANGE		40
+   setvard ATTACK_RANGE		65
+   setvard ATTACK_HITRANGE	80
+   const ATTACK_HITCHANCE	80%
+
+   setvard CAN_HEAR 1
+   setvard HUNT_AGRO 1
+   setvard CAN_FLINCH 0		//Flinch when hit
+   setvar NPC_HACKED_MOVE_SPEED  100 //base_propelled
+
+   setvard NPC_GIVE_EXP		1
+   const ATK_DMG_LOW 		0.2
+   const ATK_DMG_HIGH 		0.8
+}
+
+{  npc_spawn
+
+   	hp 5
+   	//ov 360
+   	name a|Leech
+  	hearingsensitivity 2
+	gravity 0.02
+
+   	setmodel monsters/leech.mdl
+	setbbox (-5,-5,-5) (5,5,5)
+}
+
+{ npc_post_spawn
+	if $lcase(game.map.name) startswith lostcastle
+	setvard NPC_EXTRA_VALIDATIONS 0
+}
+
+{  bite
+
+	playrandomsound game.sound.voice game.sound.maxvol SOUND_ATTACK1 SOUND_ATTACK2
+   	dodamage ent_lastseen ATTACK_HITRANGE $randf(ATK_DMG_LOW,ATK_DMG_HIGH) ATTACK_HITCHANCE
+}
+
+//Importing fish base manually this time, edting
+{
+   const ANIM_TURN_RIGHT	leftturn
+   const ANIM_TURN_LEFT		rightturn
+   const TURN_ANIM_THRESHOLD	90
+
+   setvard CAN_RETALIATE		1
+   const RETALIATE_CHANGETARGET_CHANCE 75%  //base_npc_attack - Automatically switch targets to the last damaging player
+}
+
+#include monsters/base_monster
+#include monsters/base_propelled	
+
+{  npc_spawn
+
+   	race wildanimal
+   	roam 1
+   	hearingsensitivity 3
+   	float 1
+
+   	setidleanim ANIM_IDLE
+   	setmoveanim ANIM_WALK
+}
+
+{
+   repeatdelay $rand(10,25)
+
+   	if !IS_HUNTING
+   	if !IS_FLEEING
+
+   	playrandomsound game.sound.body game.sound.maxvol SOUND_IDLE1 SOUND_IDLE2
+}
+
+{  npc_struck	//Hit by someone
+   
+   	playrandomsound game.sound.body game.sound.maxvol SOUND_STRUCK1 SOUND_STRUCK2 SOUND_STRUCK3 SOUND_STRUCK4 SOUND_STRUCK5
+}
+
+{  npc_targetsighted
+
+   	roamdelay 2
+	if( $cansee(NPC_MOVE_TARGET,ATTACK_RANGE) ) setmovedest none
+}
+
+{  game_stopmoving
+
+	setvard FISH_LASTYAW game.monster.angles.yaw
+}
+
+//PARAM1: Absolute angles towards destination
+{  game_movingto_dest  //Use the dern turn animations
+
+	if( IS_HUNTING ) setangle face.x $vec.x(PARAM1)
+
+	if !IS_HUNTING
+	if !IS_ATTACKING
+
+   	local L_CURRENT_YAW game.monster.angles.yaw
+   	local L_DIFF $anglediff($vec.y(PARAM1),L_CURRENT_YAW)
+	local L_NEGATIVE 0
+	if( L_DIFF < 0 )
+	{
+		setvard L_NEGATIVE 1
+		multiply L_DIFF -1
+	}
+
+	if L_DIFF > TURN_ANIM_THRESHOLD 
+	
+	local L_ANIM ANIM_TURN_LEFT
+	if( L_NEGATIVE ) setvard L_ANIM ANIM_TURN_RIGHT
+	
+	playanim once L_ANIM
+}
+
+{  npc_wander
+ 
+   	setturnrate .175
+ 	//setangle face.x 0
+  	//roamdelay 0
+   	//setvard FISH_WANDER_DEST game.monster.movedest.origin
+   	//vectoradd FISH_WANDER_DEST $vec(0,0,$randf(32,256))
+	//setmovedest FISH_WANDER_DEST game.monster.moveprox
+}
+
+//no more flying leeches (outside of lostcastle)
+//{ npcatk_hunt
+//	if NPC_EXTRA_VALIDATIONS
+//
+//	if $get(ent_me,inwater) == 0
+//	if ( HUNT_LASTTARGET equals ¯NONE¯ )
+//	{
+//		setmovedest NPC_HOME_LOC 5
+//	}
+//	else
+//	{
+//		add OUT_OF_WATER 1
+//		if OUT_OF_WATER > 3
+//		setvard OUT_OF_WATER 0
+//
+//		callevent npcatk_clear_targets "out_of_water"
+//		callevent npcatk_suspend_ai 1.0
+//		setmovedest NPC_HOME_LOC 5
+//	}
+//}
+
+{ npc_targetvalidate
+	if $get(PARAM1,inwater) == 0
+	setvard TARGET_INVALID 1
+}
+
+//{ game_movingto_dest
+//	if HUNT_LASTTARGET equals ¯NONE¯
+//	local L_CONTENTS $get_contents(game.monster.movedest.origin)
+//	if ( L_CONTENTS isnot water ) setmovedest NPC_HOME_LOC 5
+//}

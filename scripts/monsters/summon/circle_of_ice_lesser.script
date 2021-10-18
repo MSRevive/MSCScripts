@@ -1,0 +1,222 @@
+//Circle of Ice, Lesser - by Thothie
+//- same as circle of ice but smaller radius, less sprites, and frost_dmg instead of freeze_solid
+{
+	const SEAL_MODEL weapons/magic/seals.mdl
+	const SEAL_OFS 7
+	const SOUND_MANIFEST magic/spawn.wav
+	const SOUND_PULSE magic/frost_forward.wav
+	const SOUND_FADE magic/frost_reverse.wav
+	const PULSE_PLAYTIME 1.0
+	const FX_SPRITE teleporter_blue_sprites.mdl
+	const CIRCLE_RADIUS 110
+	const APPLY_EFFECT effects/effect_frostbite_dmg
+	precache FX_SPRITE
+
+
+	const AOE_FREQ 1.0 //if set to > 0, scan this often (.1 sec given so definitions can be made)
+	const AOE_RADIUS 110
+}	
+
+#include [server] monsters/summon/base_aoe
+
+{ eventname game_dynamically_created //PARAM1 = owner PARAM2 = CircleDuration PARAM3 = Frost Duration PARAM4 = Damage
+
+	add FX_SPAMMERS 1
+
+	setvard MY_OWNER PARAM1
+	setvard MY_DURATION PARAM2
+	setvard FROST_DURATION PARAM3
+	setvard MY_BASE_DAMAGE PARAM4
+	setvard ACIVE_SKILL PARAM5
+	if ( ACTIVE_SKILL equals 'PARAM5' ) setvard ACTIVE_SKILL spellcasting.ice
+
+	setvard MY_OWNER_RACE $get(PARAM1,race)
+	setvard OWNER_ISPLAYER $get(PARAM1,isplayer)
+
+	callevent MY_DURATION circle_end
+
+	//dbg Circle got: Owner $get(MY_OWNER,name) Dur MY_DURATION Dmg MY_BASE_DAMAGE EffectDur FROST_DURATION
+
+     //tempent trail <modelname/spritename> <start> <dest> <count> <life> <scale> <speed> <randomness>
+	//effect tempent trail SEAL_MODEL $relpos(0,0,96) $get(ent_me,origin) 1 MY_DURATION 1 1 0
+	//effect tempent spray <modelname/spritename> <position> <direction> <count> <speed> <noise>
+	//effect tempent trail <modelname/spritename> <start> <dest> <count> <life> <scale> <speed> <randomness>
+	//effect tempent gibs <modelname/spritename> <position> <size> <velocity> <randomness> <amount> <duration>
+	//effect tempent gibs SEAL_MODEL $relpos(0,0,0) 1.0 1 0 1 MY_DURATION
+}
+
+{ game_spawn
+
+	name a|Lesser Circle of Ice
+	hp 10000
+	fov 359
+	invincible 1
+	race beloved
+	height 2
+	width 2
+	fly 1
+	float 1
+	takedmg all 0.0
+	gravity 0.0
+	blood none
+	setmodel none
+	setsolid none
+	setbbox none
+
+	setvard CIRCLE_ON 1
+
+	callevent 0.1 make_seal
+
+	//callevent 1.0 circle_go
+
+	callevent 0.2 circle_hum
+}
+
+{ make_seal
+
+	local SEAL_POS $get(ent_me,origin)
+	local GROUND_Z $get_ground_height(SEAL_POS)
+	//subtract GROUND_Z 8
+	vectorset SEAL_POS z GROUND_Z
+	dbg make_seal SEAL_POS
+	createnpc monsters/summon/seal_maker SEAL_POS SEAL_MODEL MY_DURATION SEAL_OFS
+}
+
+{ circle_hum
+
+	//drop_to_floor ent_me
+
+   	if ( !CIRCLE_UP )
+	{
+		//clientevent persist all $currentscript effect.duration $get(ent_me,index) PARAM2 GLOW_COLOR
+		local CLIENT_DURATION MY_DURATION
+		subtract CLIENT_DURATION 0.2 //effort to prevent client side fx from sticking
+		if ( !NO_RAIN_FX ) clientevent new all_in_sight $currentscript CLIENT_DURATION $get(ent_me,index) CIRCLE_RADIUS
+		local MY_ORIGIN $get(ent_me,origin)
+		cleffect light new MY_ORIGIN CIRCLE_RADIUS (128,128,255) MY_DURATION //dun think this does anything from here
+		setvard THIS_SCRIPT_CLIENT_ID game.script.last_sent_id
+		setvard CIRCLE_UP 1
+	}
+
+	if ( DID_WINDUP ) playsound 0 10 SOUND_PULSE
+	if ( !DID_WINDUP )
+	{
+		playsound 0 10 SOUND_MANIFEST
+		setvard DID_WINDUP 1
+	}
+
+	if CIRCLE_ON
+	callevent PULSE_PLAYTIME circle_hum
+}
+
+{ circle_end
+
+	subtract FX_SPAMMERS 1
+
+	clientevent remove all THIS_SCRIPT_CLIENT_ID
+	setvard CIRCLE_ON 0
+
+	clientevent remove all $currentscript	//there can be only one
+	playsound 0 10 SOUND_FADE
+	callevent 0.5 circle_remove
+}
+
+{ circle_remove
+
+	deleteent ent_me
+}
+
+// ===========
+// Client Side
+// ===========
+
+{ [client]
+
+	const OFS_POS			128
+	const OFS_NEG			-128
+	const OFSZ_POS			256
+	const OFSZ_NEG			-10
+	
+	const LIGHT_PLAYER_SCALE	0.3
+	const LIGHT_DROPPED_SCALE	0.5
+}
+
+{ [client] client_activate
+
+	setvard sfx.duration PARAM1
+	setvard sfx.npcid PARAM2
+	setvard sfx.radius PARAM3
+
+	setcallback render enable
+
+	setvard RAIN_SPRITES 1
+
+	setvard SEAL_DROP_COUNTER 0
+
+	setvard ROT_COUNT 0
+	
+	callevent 0.1 rain_go
+
+	callevent PARAM1 effect_die
+}
+
+//Sprite
+
+{ [client] rain_go
+	//repeatdelay 0.1
+
+	if RAIN_SPRITES
+	callevent createsprite
+	callevent 0.1 rain_go
+}
+
+{ [client] createsprite
+
+	if ( ROT_COUNT >= 360 ) setvard ROT_COUNT 0
+
+	local SPRITE_RAD CIRCLE_RADIUS
+	multiply SPRITE_RAD 0.65
+
+	////dbg temp Makign spirtes @ $getcl(sfx.npcid,origin) rad SPRITE_RAD cnt ROT_COUNT
+
+	local A_POS $getcl(sfx.npcid,origin)
+
+	local l.pos A_POS
+	add ROT_COUNT 20
+	vectoradd l.pos $relpos($vec(0,ROT_COUNT,0),$vec(0,SPRITE_RAD,128))
+	cleffect tempent sprite FX_SPRITE l.pos setup_flame
+
+	local l.pos A_POS
+	add ROT_COUNT 20
+	vectoradd l.pos $relpos($vec(0,ROT_COUNT,0),$vec(0,SPRITE_RAD,128))
+	cleffect tempent sprite FX_SPRITE l.pos setup_flame
+}
+
+{ [client] setup_flame
+
+	cleffect tempent set_current_prop death_delay 	1.0
+    //cleffect tempent set_current_prop bouncefactor 	0
+	//cleffect tempent set_current_prop scale 	1.0
+	//cleffect tempent set_current_prop framerate	30
+	//cleffect tempent set_current_prop frames	8
+	cleffect tempent set_current_prop rendercolor 	(128,128,255)
+	//cleffect tempent set_current_prop gravity 	1.0
+	//cleffect tempent set_current_prop collide 	none
+    //cleffect tempent set_current_prop velocity 	(0,0,100)
+}
+
+{ [client] effect_die
+
+	setvard RAIN_SPRITES 0
+	removescript
+}
+
+{ game_death
+
+	setalive 1
+}
+
+{ apply_aoe_effect //from base_aoe
+	if !$get(PARAM1,haseffect,DOT_cold)
+	applyeffect PARAM1 effects/effect_frostbite_dmg FROST_DURATION MY_OWNER MY_BASE_DAMAGE ACTIVE_SKILL
+}

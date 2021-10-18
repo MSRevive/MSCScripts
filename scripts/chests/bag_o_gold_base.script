@@ -1,0 +1,110 @@
+#scope server
+{ [server]
+	const ANIM_OPEN idle
+	const ANIM_CLOSE idle
+	setvar ANIM_IDLE idle
+	//const GOLD_AMT 10
+}
+
+{ [server] game_dynamically_created
+	callevent 90.0 fade_away //tends to spawn off map
+	if PARAM1 isnot 'PARAM1'
+	setvard GOLD_AMT PARAM1
+}
+
+{ [server] game_spawn
+
+
+	name		a|Bag of Gold
+	setmodel	misc/treasure.mdl //%& MERGE WITH NEW MODEL
+	setmodelbody 0 3
+	setsolid none
+
+
+	hp 1
+	invincible  2
+	width 20
+	height 30
+	setidleanim	ANIM_IDLE
+	playsound 0 10 misc/gold.wav
+
+	effect glow ent_me (230,210,80) 64 3 3
+}
+
+{ game_playerused
+	if !WAS_USED
+	setvard WAS_USED 1
+	callexternal PARAM1 ext_addgold GOLD_AMT
+	playsound 0 10 misc/gold.wav 0.8 $randf(80,120)
+	callevent remove_me
+}
+
+{ remove_me
+	deleteent ent_me
+}
+
+{ game_postspawn
+	setvard NEW_NAME PARAM1
+	if ( NEW_NAME isnot 'default' )	name NEW_NAME
+	if ( PARAM4 startswith PARAM ) local EXIT_SUB 1
+	if !EXIT_SUB
+	setvard NPC_DO_EVENTS PARAM4
+	callevent 0.01 run_addparams
+}
+
+{ run_addparams
+	calleventloop $get_token_amt(NPC_DO_EVENTS) npcatk_do_events
+}
+
+{ npcatk_do_events //run param events
+	local N_EVENT game.script.iteration
+	local EVENT_NAME $get_token(NPC_DO_EVENTS,N_EVENT)
+	add N_EVENT 1
+	if ( N_EVENT <= $get_token_amt(NPC_DO_EVENTS) )	local NEXT_EVENT $get_token(NPC_DO_EVENTS,N_EVENT)
+	dbg doing token event EVENT_NAME
+	callevent EVENT_NAME NEXT_EVENT
+}
+
+
+//{ [server] createchest
+//
+//	gold GOLD_AMT
+//
+//	local STORE_NUM $rand(1,1000)
+//	local BASENAME QuiverNum
+//	setvard STORENAME $stradd(STORE_NUM,BASENAME)
+//	//dbg Storename STORENAME num STORE_NUM base BASENAME
+//	createstore STORENAME
+//	//callevent chest_additems
+//}
+//
+//{ [server] trade_success
+//
+//	setvard DID_TRADE 1
+//   playrandomsound 0 10 misc/gold.wav
+//   setvar CANCHAT 0
+//   playanim  open
+//   setidleanim ANIM_IDLE
+//}
+//
+//{ [server] trade_done
+//
+//	//playanim	once	ANIM_CLOSE
+//	if !BAG_NO_DELETE
+//	callevent 1.0 fade_away
+//	setidleanim	ANIM_IDLE
+//}
+//
+//{ [server] game_playerused
+//
+//	if ( DID_TRADE ) local EXIT_SUB 1
+//	if ( BAG_MULTI_OPEN ) local EXIT_SUB 0
+//	if !EXIT_SUB
+//	offerstore	STORENAME PARAM1 inv	trade
+//}
+//
+{ [server] fade_away
+	if !BAG_NO_DELETE
+	deleteent ent_me fade
+}
+

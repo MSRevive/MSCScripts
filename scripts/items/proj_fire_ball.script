@@ -1,0 +1,93 @@
+//Thothie - fireball from Firedart
+//fireball projectile
+
+{
+	const MODEL_HANDS      		none
+	//may make own over-sized model via scale QC
+	const MODEL_WORLD      		weapons/projectiles.mdl
+	const SOUND_BURN		items/torch1.wav
+	const SPRITE_FIRE		3dmflaora.spr //fireball1.spr
+	const SPRITE_BURN 		fire1_fixed.spr
+	const ITEM_NAME			firemana
+	const PROJ_DAMAGE_TYPE		fire
+	const PROJ_DAMAGESTAT		spellcasting
+
+	const PROJ_DAMAGE		$rand(75,200)
+	const PROJ_AOE_RANGE		250
+	const PROJ_AOE_FALLOFF		0
+	const PROJ_STICK_DURATION	0  //Don't stick in enemies
+	const PROJ_SOLIDIFY_ON_WALL	0  //Don't go solid on wall hit
+	const PROJ_COLLIDEHITBOX	64 //entirely experimental
+
+	precache SPRITE_BURN
+
+	const SCRIPT_1			items/proj_fire_dart_cl
+	precachefile			SCRIPT_1
+	precache rjet1.spr
+	precache MODEL_WORLD
+}
+
+#include items/proj_base
+
+{  projectile_spawn
+
+	name 		a|Fireball
+	weight 		500
+	size 		10	//attempting adding size for larger collision box
+	value		5
+	gravity		0.7
+   	setmonsterclip 0
+	
+	setmodelbody 0 0
+
+	sethudsprite hand arrows
+	sethudsprite trade ITEM_NAME
+	sethand any
+	if ( FX_SPAMMERS < MAX_FX_SPAMMERS ) effect glow ent_me (255,75,0) 128 1 1
+}
+
+
+{  game_tossprojectile
+
+	//Called here because the origin isn't set in spawn
+	add FIRE_BALL_SPAM 1
+
+	//edict issues
+	//if ( FX_SPAMMERS < MAX_FX_SPAMMERS )
+	//{
+	//		if ( FIRE_BALL_SPAM < MAX_FIRE_BALL_SPAM ) clientevent new all_in_sight SCRIPT_1 $get(ent_me,index)
+	//}
+
+   	setvard SCRIPT_1_ID game.script.last_sent_id
+}
+
+{  projectile_landed
+
+
+	effect screenshake $relpos(0,0,0) 50 20 DURATION 256
+	if ( FX_SPAMMERS < MAX_FX_SPAMMERS ) effect tempent trail rjet1.spr $relpos(0,0,0) $relpos(0,0,10) 10 2 5 10 20 //more nifty effects
+	//clientevent remove all SCRIPT_1_ID
+	subtract FIRE_BALL_SPAM 1
+}
+
+{  game_hitnpc
+	//experimental
+	if !$get(ent_laststruckbyme,haseffect,DOT_fire)
+	setvard MY_OWNER $get(ent_expowner,id)
+	if ( LOCK_BURN_DAMAGE equals 'LOCK_BURN_DAMAGE' )
+	{
+		local BURN_DAMAGE $get(ent_expowner,skill.spellcasting.fire)
+		multiply BURN_DAMAGE 0.25
+		if ( !$get(MY_OWNER,isplayer) ) local BURN_DAMAGE 10
+	}
+	if ( LOCK_BURN_DAMAGE isnot 'LOCK_BURN_DAMAGE' ) local BURN_DAMAGE LOCK_BURN_DAMAGE
+	//dbg BurnDamage BURN_DAMAGE
+	applyeffect ent_laststruckbyme effects/effect_burn 5 MY_OWNER BURN_DAMAGE 1 0 spellcasting.fire
+}
+
+{ [override] lighten //param1 = fire dmg
+	if ( PARAM2 startswith 'PARAM' ) local PARAM2 0.4
+	gravity PARAM2
+	setvard LOCK_BURN_DAMAGE PARAM1
+}
+

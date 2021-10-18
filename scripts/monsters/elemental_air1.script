@@ -1,0 +1,75 @@
+//This is an older script and may have some bad conventions as a result.
+
+{
+	setvar AS_SUMMON_TELE_CHECK 1
+
+	setvard BALL_SIZE 3
+	setvard DMG_BALL 60
+
+	const FREQ_CIRCLE 60.0
+	const DMG_CIRCLE 100
+
+	const FREQ_LIGHTING_BALLS $randf(20,45)
+}
+
+#include monsters/elemental_air0
+
+{ npc_spawn
+
+	name an|Air Elemental
+	hp 500
+	width 64
+	height 64
+	race demon
+	takedmg holy 2.0
+	takedmg poison 1.5
+	takedmg lightning 0.0
+	roam 1
+	setidleanim ANIM_IDLE
+	setmoveanim ANIM_WALK
+	hearingsensitivity 5
+	setmodel monsters/elementals_lesser_fly.mdl
+	setmodelbody 0 1
+	setvard NPC_GIVE_EXP 150
+	callevent 1.0 idle_sounds
+	setvard FIRE_BALL_AMMO FULL_FIRE_BALL_AMMO
+	setvard I_JUST_SPAWNED 1
+
+	fly 1
+
+	blood none
+
+	setvard MY_HURT_STAGE $get(ent_me,maxhp)
+	multiply MY_HURT_STAGE HURT_THRESHOLD
+
+	setprop ent_me rendermode 5
+	setprop ent_me renderamt $rand(200,255)
+
+	callevent 0.1 init_beam
+
+	setvard NEXT_LIGHTNING_BALL 0
+}
+
+{ npc_targetsighted
+
+	if game.time > NEXT_LIGHTNING_BALL
+	setvard NEXT_LIGHTNING_BALL game.time
+	add NEXT_LIGHTNING_BALL FREQ_LIGHTING_BALLS
+	callevent npcatk_suspend_ai 1.5
+	playsound 0 10 SOUND_ALERT
+
+	setvard BALL_TARGETS $get_tsphere(enemy,1024,game.monster.origin)
+
+	token.scramble BALL_TARGETS
+	setmovedest $get_token(BALL_TARGETS,0) 9999
+	tossprojectile $get_token(BALL_TARGETS,0) 200 DMG_BALL 0.5 proj_lightning_ball_simple (0,0,0) 
+
+	if $get_token_amt(BALL_TARGETS) > 1
+	callevent 0.5 toss_ball_2
+}
+
+{ toss_ball_2
+	setmovedest $get_token(BALL_TARGETS,1) 9999
+	tossprojectile $get_token(BALL_TARGETS,1) 200 DMG_BALL 0.5 proj_lightning_ball_simple (0,0,0) 
+}
+

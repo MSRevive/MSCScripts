@@ -1,0 +1,58 @@
+//Aggressive fly AI
+//- As used by Horror, bats, etc. - good for swimmers too
+//- They have it integrated via copy & paste - figure overdue time to make a base
+//- use in place of base_flyer
+
+{
+	const BF_CRUISE_SPEED 200
+	const BF_BOOST_SPEED 500
+	const BF_FLIGHT_STUCK_LIMIT 4
+}
+
+#include monsters/base_flyer
+
+{ bf_agrofly_loop
+	callevent 0.5 bf_agrofly_loop
+
+	if IS_HUNTING
+	callevent npcatk_faceattacker
+	if ( $get(HUNT_LASTTARGET,range) > MOVE_RANGE ) setvelocity ent_me $relvel(0,BF_CRUISE_SPEED,0)
+	if ( $get(HUNT_LASTTARGET,range) < MOVE_RANGE ) setvelocity ent_me $vec(0,0,0)
+	if ( I_R_FROZEN ) setvelocity ent_me $vec(0,0,0)
+	
+
+	if ( FLIGHT_STUCK > BF_FLIGHT_STUCK_LIMIT )
+	{
+		//callevent chicken_run 1.0
+		callevent do_rand_tweedee
+		callevent npcatk_suspend_ai $randf(0.3,0.9)
+		setmovedest NEW_DEST game.monster.moveprox
+		callevent 0.1 bf_agrofly_boost
+		setvard FLIGHT_STUCK 0
+	}
+
+	subtract AS_ATTACKING 2
+
+	local TARG_POS $get(HUNT_LASTTARGET,origin)
+	if ( !SUSPEND_AI ) setangle face_origin TARG_POS
+
+
+	if AS_ATTACKING <= 0
+	setvard AS_ATTACKING 0
+	if !IS_FLEEING
+	if !SPITTING
+	if $get(HUNT_LASTTARGET,range) > ATTACK_RANGE
+	local CUR_PROG $dist(game.monster.origin,TARG_POS)
+	if ( LAST_PROG >= CUR_PROG ) add FLIGHT_STUCK 1
+	setvard LAST_PROG $dist(game.monster.origin,TARG_POS)
+	setvard LAST_POS game.monster.origin
+	
+}
+
+{ chicken_run
+	callevent 0.1 bf_agrofly_boost
+}
+
+{ bf_agrofly_boost
+	setvelocity ent_me $relvel(0,BF_BOOST_SPEED,0)
+}

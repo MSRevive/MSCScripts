@@ -1,0 +1,149 @@
+{
+	const BASE_LEVEL_REQ 25
+	const ZAP_MP 20
+
+	const VMODEL_IDX 2 //viewmodel offset
+	const PMODEL_FILE weapons/p_weapons4.mdl //p_model (world/player model file)
+	const PMODEL_IDX_FLOOR 17 //p_model floor offset
+	const PMODEL_IDX_HANDS 16 //p_model hands offset
+
+	const MELEE_DMG 300 //max damage
+	const MELEE_RANGE 120 //max reach
+	const MELEE_DMG_TYPE lightning
+	const MELEE_STARTPOS (0,0,5) //aims a bit higher than center
+
+	const POLE_MIN_RANGE 60 //short range (less than this does min damage)
+
+	const POLE_MIN_DMG_MULTI 0.5 //min damage multiplier
+	const POLE_MAX_DMG_MULTI 1.75 //max damage multiplier
+
+	const POLE_CAN_POKE1 1 //basic forward thrust attack
+	const POLE_CAN_POKE2 1 //charged attack (spin thrust) - dbl damage, requires +2 skill levels above base
+	const POLE_CAN_SWIPE 0 //swipe attack (when strafing - doesn't use fall-off system)
+	const POLE_CAN_BLOCK 1 //blocks on right click
+	const POLE_CAN_SPIN 1 //spins when right click + backpeddle after 2 seconds
+	const POLE_CAN_REPEL 1 //pushes monsters away when blocking + forward, but aborts spin
+	const POLE_CAN_BACKHAND 1 //attacks with back end of stick when backpeddling (shorter range, no fall off, similar to swipe, but slower)
+
+	const POLE_BACKHAND_DMG 150 //backhand damage
+	const POLE_BACKHAND_DMG_RANGE 10 //+/- random damage adjust for backhand attack
+	const POLE_BACKHAND_DMG_TYPE blunt //backhand attack may do slash instead of pierce, etc
+	const POLE_BACKHAND_RANGE 40 //range for backhand (usually shorter)
+	const POLE_BACKHAND_ACCURACY 90% //accuracy for backhand (doesn't use fall-off system, so isn't 100%)
+	const POLE_BACKHAND_STUN_CHANCE 100%
+	const POLE_BACKHAND_REPEL 500
+	const POLE_BACKHAND_SPECIAL 1
+
+	const POLE_CAN_POWER_THROW 1
+	const POLE_THROW_MP 10 //additional MP loss handled projectile side
+	const POLE_THROW_POWER 800 //force of throw
+	const POLE_THOW_PROJECTILE proj_pole_ph //throw projectile scriptname
+
+	const SOUND_THUNDER magic/bolt_end.wav
+	const SOUND_SHOCK1 debris/zap8.wav
+	const SOUND_SHOCK2 debris/zap3.wav
+	const SOUND_SHOCK3 debris/zap4.wav
+}
+
+#include items/polearms_base
+
+{ polearm_spawn
+
+	name  a|Stormpharaoh's Lance
+	desc  A spear once hefted by a mighty lord of the dead
+	weight  40
+	size  2
+	value 6000
+	sethudsprite trade 109
+} 
+
+{ attack_poke2_start
+	clientevent new all items/polearms_ph_cl $get(ent_owner,index)
+	setvard LIGHTNING_CL_IDX game.script.last_sent_id
+	playrandomsound 1 10 SOUND_SHOCK1 SOUND_SHOCK2 SOUND_SHOCK3
+}
+
+{ attack_poke2_strike //PARAM1: "none"/"npc"/"world"   2: Attack end Position   3: Entity hit (if any)
+	//get lightning target
+	if $get(ent_owner,skill.spellcasting.lightning) > 25
+
+	if ( $get(ent_owner,mp) < ZAP_MP )
+	{
+		dplayermessage ent_owner Stormpharaoh's Lance: Insufficient mana for Lightning Strike
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	//trace from end position, and extend
+	local TRACE_START PARAM2
+	local TRACE_END TRACE_START
+	local OWNER_VIEW $get(ent_owner,viewangles)
+	vectoradd TRACE_END $relpos(OWNER_VIEW,$vec(0,1024,0))
+
+	local TRACE_LINE $get_traceline(TRACE_START,TRACE_END,ent)
+
+	if ( !$get(TRACE_LINE,isalive) )
+	{
+		local BEAM_END $get_traceline(TRACE_START,TRACE_END,worldonly)
+	}
+	else
+	{
+		local BEAM_TARG TRACE_LINE
+		local BEAM_END $get(BEAM_TARG,origin)
+		if ( !$get(BEAM_TARG,isplayer) ) vectoradd BEAM_END z 32
+	}
+
+	if ( $get(BEAM_TARG,isplayer) )
+	{
+		if !GAME_PVP
+		local EXIT_SUB 1
+	}
+	local EXIT_SUB 1
+
+	givemp ent_owner $neg(ZAP_MP)
+
+	clientevent update all LIGHTNING_CL_IDX do_lightning BEAM_END
+	playsound 0 10 SOUND_THUNDER
+
+	if $get(BEAM_TARG,isalive)
+
+	local DBEAM_DMG $get(ent_owner,skill.spellcasting.lightning)
+	multiply DBEAM_DMG 3.0
+	xdodamage BEAM_TARG direct DBEAM_DMG 100% ent_owner ent_me spellcasting.lightning lightning
+	local DOT_SHOCK $get(ent_owner,skill.spellcasting.lightning)
+	multiply DOT_SHOCK 1.5
+	applyeffect BEAM_TARG effects/effect_shock_dmg 10.0 $get(ent_owner,id) DOT_SHOCK
+	local PUSH_STR 500
+	multiply PUSH_STR $get_takedmg(BEAM_TARG,lightning)
+	addvelocity BEAM_TARG $relvel(0,PUSH_STR,110)
+}
+
+{ pole_spin_hold
+	if $get(ent_owner,skill.spellcasting.lightning) > 25
+	callexternal ent_owner ext_pole_lshield		
+}
+
+{ pole_spin_end
+	callexternal ent_owner ext_pole_lshield_end abort
+}
+
+{ pole_backhand_special
+	local L_DOT $get(ent_owner,skill.spellcasting.lightning)
+	multiply L_DOT 0.5
+	applyeffect PARAM1 effects/effect_shock_dmg 5.0 $get(ent_owner,id) L_DOT
+}
+
+{ game_dodamage
+	if PARAM1
+	if ( $get(PARAM2,isplayer) )
+	{
+		if !GAME_PVP
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	if $rand(1,3) == 1
+	local DOT_BURN $get(ent_owner,skill.spellcasting.lightning)
+	multiply DOT_BURN 1.5
+	applyeffect PARAM2 effects/effect_shock_dmg 5.0 $get(ent_owner,id) DOT_BURN
+}

@@ -1,0 +1,97 @@
+#scope server
+{
+	const NPC_BASE_EXP 200
+
+	const ATTACK_ACCURACY 80%
+	const FREQ_FIREBALL $randf(5.0,10.0)
+
+	const FIRE_BALL_DAMAGE_NORM '$rand(75,100)'
+	const FIRE_BALL_DAMAGE_ALT '$rand(25,50)'
+
+	const DOT_FIRE 10.0
+
+	const SOUND_FIRECHARGE magic/fireball_powerup.wav
+	const SOUND_FIRESHOOT magic/fireball_strike.wav
+
+	setvard ORC_JUMPER 1
+
+	setvar IS_UNHOLY 1
+}
+
+#include orc_for/tiers1
+#include monsters/orc_flayer
+
+{ [shared] orc_spawn
+
+   	hp 500
+   	//ov 180
+	name a|Demonic Blackhand
+	setprop ent_me skin 2
+   	hearingsensitivity 2
+   	setstat parry 50
+	takedmg all .5
+	takedmg holy 0.5
+	takedmg fire 0.0
+
+   	setmodelbody	0 2		//Body 0=naked 1=leather 2=plate 3=green-hide
+   	setmodelbody	1 2		//Head 0=cap_shorthorn 1=cap_nohorn 2=buffo_skin 3=cheif_ramhorns 4=green_hood
+   	setmodelbody	2 5		//Weapon 0=fist 1=axe 2=bow_weak 3=bow_strng 4=sword 5=bloodyaxe 6=sword&sheild
+
+	if game.serverside
+	callevent 2.0 final_adjstments
+}
+
+{ final_adjstments
+	//get rid of shortsword drop
+	setvard DROP_ITEM1 none
+	setvard DROP_ITEM1_CHANCE 0%
+
+	if NPC_ADJ_LEVEL < 2
+	setvard FIRE_BALL_DAMAGE FIRE_BALL_DAMAGE_ALT
+}
+
+{ cycle_up
+	setvard NEXT_FIREBALL game.time
+	add NEXT_FIREBALL FREQ_FIREBALL
+	if SAY_SUMMONER
+	saytextrange 4096
+}
+
+{ npc_targetsighted
+
+	if ( SAY_SUMMONER )
+	{
+		saytextrange 4096
+		saytext "The enemy must not reach the summoner! STOP THEM!"
+		setvard SAY_SUMMONER 0
+	}
+
+	if game.time > NEXT_FIREBALL
+	if $get(NPCATK_TARGET,range) > ATTACK_HITRANGE
+	setvard NEXT_FIREBALL game.time
+	add NEXT_FIREBALL FREQ_FIREBALL
+
+	playsound 0 10 SOUND_FIRESHOOT
+	playanim critical ANIM_ATTACK
+	setvard AS_ATTACKING game.time
+	add AS_ATTACKING 2.0
+	tossprojectile NPCATK_TARGET 400 FIRE_BALL_DAMAGE 2 proj_fire_ball (0,48,48)
+	callexternal ent_lastprojectile lighten DOT_FIRE 0.0
+}
+
+{ set_summoner_comment
+	setvard SAY_SUMMONER 1
+}
+
+{ swing_sword
+	setvard MELEE_ATTACK 1
+}
+
+{ game_dodamage
+	if ( MELEE_ATTACK )
+	{
+		if PARAM1
+		applyeffect PARAM2 effects/effect_burn 5.0 $get(ent_me,id) DOT_FIRE
+	}
+	setvard MELEE_ATTACK 0
+}

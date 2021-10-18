@@ -1,0 +1,328 @@
+//Blizzard
+
+#scope server
+
+//Shared
+//======
+
+{ [server]
+	const AOE_FREQ 2.0
+	const AOE_RADIUS 172
+	const FREQ_NOISE 8.0
+}
+
+#include [server] monsters/summon/base_aoe
+
+{ [shared]
+
+	const BLIZZARD_RANGE 172
+	const SHARD_MODEL glassgibs.mdl
+	setvard I_DO_COLD_DAMAGE 1
+	precache snow1.spr
+	precache SHARD_MODEL
+
+	setvard SCAN_RATE 2.0
+}
+
+{ [shared] snow_start  // Start shooting
+   
+   setvard SNOWING 1
+}
+
+//Server
+//======
+
+{ [server]
+   eventname game_dynamically_created
+
+   setvard MY_OWNER PARAM1
+   setvard MY_ANGLES PARAM2
+   setvard MY_BASE_DMG PARAM3
+   setvard MY_BASE_DURATION PARAM4
+	setvard ACTIVE_SKILL PARAM5
+	if ( ACTIVE_SKILL equals 'PARAM5' ) setvard ACTIVE_SKILL spellcasting.ice
+
+	setvard OWNER_ISPLAYER $get(MY_OWNER,isplayer)
+	setvard GAME_PVP game.pvp
+	if ( OWNER_ISPLAYER ) setvard SCAN_RATE 1.0
+   ////dbg Created Blizzard!
+
+	//race $get(MY_OWNER,race)
+
+   //Thothie - desperate attempts to pass proper XP
+   //tried spellcasting.ice | spellcasting ice | skill.spellcasting ice | skill.spellcasting skill.spellcasting.balance |  |
+   //setexpstat $get(ent_me,id) skill.spellcasting skill.spellcasting.balance
+   //setexpstat ent_me skill.spellcasting skill.spellcasting.balance
+   //setexpstat MY_OWNER skill.spellcasting skill.spellcasting.balance
+
+   //storeentity ent_expowner MY_OWNER //no workie
+
+   ////dbg =====
+   ////dbg Mystat game.monster.spellcasting.ice //tried game.monster.skill.spellcasting.ice | game.skill.spellcasting.ice | game.monster.skill.spellcasting
+
+   setangle face.y MY_ANGLES
+   //multiply PARAM4 1.5
+   setvard TIME_LIVE MY_BASE_DURATION
+
+	//=========== Traceline test
+	local TRACE_START game.monster.origin
+	local TRACE_END TRACE_START
+	vectoradd TRACE_END $relpos($vec(0,0,0),$vec(0,0,2000))
+
+	local ROOF_HEIGHT $get_traceline(TRACE_START,TRACE_END,worldonly)
+	if ( $dist(ROOF_HEIGHT,game.monster.origin) > 512 )
+	{
+		//if celing > 512, it is probably inside a skybrush, thus just use 512
+		local ROOF_HEIGHT game.monster.origin
+		vectoradd ROOF_HEIGHT z 512
+	}
+
+	////dbg tracelin test $get_traceline(TRACE_START,TRACE_END,worldonly)
+	//===========
+
+	local MY_X $vec.x(game.monster.origin)
+	local MY_Y $vec.y(game.monster.origin)
+	local GRND_Z $vec.z(MY_OWNER,origin) //$get_ground_height(game.monster.origin)
+	local SNOWFX_SPAWN $vec(MY_X,MY_Y,GRND_Z)
+
+   //add FX_SPAMMERS 1
+   ////dbg CurrentSpammers FX_SPAMMERS Max MAX_FX_SPAMMERS
+	if ( OWNER_ISPLAYER )
+	{
+		//if ( FX_SPAMMERS >= MAX_FX_SPAMMERS ) consolemsg all Too many fx running, cannot create spell.
+		//if ( FX_SPAMMERS >= MAX_FX_SPAMMERS ) playermessage PARAM1 Too many fx present: cannot create spell.
+		if ( FX_SPAMMERS < MAX_FX_SPAMMERS )
+		{
+			clientevent new all $currentscript SNOWFX_SPAWN TIME_LIVE ROOF_HEIGHT //Send to client immediately - calls client_activate on client
+		}
+		else
+		{
+			dplayermessage MY_OWNER Too many FX present, hiding client effects.
+		}
+		callevent TIME_LIVE blizzard_death
+   		callevent snow_start
+	}
+
+	if ( !OWNER_ISPLAYER )
+	{
+		clientevent new all $currentscript SNOWFX_SPAWN TIME_LIVE ROOF_HEIGHT //Send to client immediately - calls client_activate on client
+		callevent TIME_LIVE blizzard_death
+		callevent snow_start
+	}
+}
+
+{ game_spawn
+
+	name a|Blizzard
+	hp 1
+	invincible 1
+	fly 1
+	race beloved
+	//height 2
+	//width 2
+	blood none
+	setmodel none
+	setsolid none
+	setvard PLAYING_DEAD 1
+
+	nopush 1
+
+	gravity 0
+	roam 0
+	//fly 1
+	if game.serverside
+	playsound 0 10 amb/windy.wav
+	callevent FREQ_NOISE do_noise
+}
+
+{ do_noise
+	if IS_ACTIVE
+	playsound 0 10 amb/windy.wav
+	callevent FREQ_NOISE do_noise
+}
+
+//{ [server] snow_attack	//Deal damage
+
+//   //epeatdelay SCAN_RATE
+//
+//   if SNOWING
+//
+//   local xoff $rand(-50,50)
+//   local yoff $rand(-50,50)
+//   local zoff $rand(-50,50)
+//   setangle view (270,0,0)
+
+//	getents any BLIZZARD_RANGE
+//	
+//	if GET_COUNT > 0
+//	setvard LOOP_COUNT 0
+//	calleventloop GET_COUNT freeze_check
+//}
+
+//{ [server] freeze_check
+//	add LOOP_COUNT 1
+//	if ( LOOP_COUNT == 1 ) local CHECK_ENT GET_ENT1
+//	if ( LOOP_COUNT == 2 ) local CHECK_ENT GET_ENT2
+//	if ( LOOP_COUNT == 3 ) local CHECK_ENT GET_ENT3
+//	if ( LOOP_COUNT == 4 ) local CHECK_ENT GET_ENT4
+//	if ( LOOP_COUNT == 5 ) local CHECK_ENT GET_ENT5
+//	if ( LOOP_COUNT == 6 ) local CHECK_ENT GET_ENT6
+//	if ( LOOP_COUNT == 7 ) local CHECK_ENT GET_ENT7
+//	if ( LOOP_COUNT == 8 ) local CHECK_ENT GET_ENT8
+//	if ( LOOP_COUNT == 9 ) local CHECK_ENT GET_ENT9
+//
+//	if $get(CHECK_ENT,relationship,MY_OWNER) equals enemy
+//	
+//	if ( OWNER_ISPLAYER )
+//	{
+//		if GAME_PVP equals 0
+//		if $get(CHECK_ENT,isplayer)
+//		local EXIT_SUB 1
+//	}
+//	if !EXIT_SUB
+//
+//	applyeffect CHECK_ENT effects/effect_frostbite_dmg 5 MY_OWNER MY_BASE_DMG
+//}
+
+
+{ [server] blizzard_death  // Pewf
+
+   //subtract FX_SPAMMERS 1
+
+   deleteent ent_me
+}
+
+{ apply_aoe_effect //base_aoe
+	if !$get(PARAM1,haseffect,DOT_cold)
+	applyeffect PARAM1 effects/effect_frostbite_dmg 5 MY_OWNER MY_BASE_DMG ACTIVE_SKILL
+}
+
+//Client
+//======
+
+{ [client]
+   const WIDTH 100
+   const HEIGHT 200
+
+}
+
+{ [client] client_activate 
+
+	setvard SNOW_CENTER PARAM1
+	setvard ROOF_HEIGHT PARAM3
+	setvard ROOF_HEIGHT $vec.z(ROOF_HEIGHT)
+	
+	setvard END_POS SNOW_CENTER
+
+   	callevent PARAM2 blizzard_end_cl 	//Die after a delay
+
+
+	//screw this, just use the traceline all the time - sky_height is not dependable
+	//local SKY_Z $get_sky_height(SNOW_CENTER)
+	//setvard FLAKE_HEIGHT SKY_Z
+	//setvard SHARD_HEIGHT SKY_Z
+	//subtract SHARD_HEIGHT 64
+
+	setvard FLAKE_HEIGHT $vec.z(ROOF_HEIGHT)
+	setvard SHARD_HEIGHT $vec.z(ROOF_HEIGHT)
+	subtract SHARD_HEIGHT 64
+	
+	///if ( game.debug > 4 ) //dbg My sky is SKY_Z roof is ROOF_HEIGHT stuff spawns at FLAKE_HEIGHT center ( SNOW_CENTER )
+	
+	//if ( SKY_Z < 768 )
+	//{
+	//	setvard FLAKE_HEIGHT $get_sky_height(SNOW_CENTER)
+	//	setvard SHARD_HEIGHT $get_sky_height(SNOW_CENTER)
+	//}
+}
+
+{ [client] blizzard_end_cl
+  removescript
+}
+
+//Snow!
+{  [client]
+
+   repeatdelay 0.12
+
+   ////dbg temp still here
+
+   local NEGWIDTH WIDTH
+   multiply NEGWIDTH -1
+
+   //setvar x $rand(NEGWIDTH,WIDTH)
+   //setvar y $rand(NEGWIDTH,WIDTH)
+   //vectoradd END_POS SNOW_CENTER $vec(x,y,FLAKE_HEIGHT)
+	//setvard RAND_ANG $rand(0,359)
+	//vectoradd END_POS SNOW_CENTER $relpos($vec(0,RAND_ANG,0),$vec(0,x,FLAKE_HEIGHT))
+
+	//local X $vec.x(SNOW_CENTER)
+	//local y $vec.y(SNOW_CENTER)
+	//local z FLAKE_HEIGHT
+	//add x $rand(NEGWIDTH,WIDTH)
+	//add y $rand(NEGWIDTH,WIDTH)
+	//local END_POS (x,y,z)
+
+   local NEGWIDTH WIDTH
+   multiply NEGWIDTH -1
+   local x $rand(NEGWIDTH,WIDTH)
+   local y $rand(NEGWIDTH,WIDTH)
+   vectoradd END_POS SNOW_CENTER $vec(x,y,FLAKE_HEIGHT)
+
+   cleffect tempent sprite snow1.spr END_POS setup_blizzardflake
+
+   local NEGWIDTH WIDTH
+   multiply NEGWIDTH -1
+   local x $rand(NEGWIDTH,WIDTH)
+   local y $rand(NEGWIDTH,WIDTH)
+   vectoradd END_POS SNOW_CENTER $vec(x,y,SHARD_HEIGHT)
+
+	//local X $vec.x(SNOW_CENTER)
+	//local y $vec.y(SNOW_CENTER)
+	//local z SHARD_HEIGHT
+	//add x $rand(NEGWIDTH,WIDTH)
+	//add y $rand(NEGWIDTH,WIDTH)
+	//local END_POS (x,y,z)
+
+	cleffect tempent sprite SHARD_MODEL END_POS setup_hailshard
+
+   local NEGWIDTH WIDTH
+   multiply NEGWIDTH -1
+   local x $rand(NEGWIDTH,WIDTH)
+   local y $rand(NEGWIDTH,WIDTH)
+   vectoradd END_POS SNOW_CENTER $vec(x,y,SHARD_HEIGHT)
+
+	//local X $vec.x(SNOW_CENTER)
+	//local y $vec.y(SNOW_CENTER)
+	//local z SHARD_HEIGHT
+	//add x $rand(NEGWIDTH,WIDTH)
+	//add y $rand(NEGWIDTH,WIDTH)
+	//local END_POS (x,y,z)
+
+	cleffect tempent sprite SHARD_MODEL END_POS setup_hailshard
+}
+
+{  [client] setup_blizzardflake
+   setvard vel $rand(-50,50)
+	local FLAKE_GRAv $randf(0.2,2.1)
+   cleffect tempent set_current_prop death_delay 	2
+   cleffect tempent set_current_prop bouncefactor 	0
+   cleffect tempent set_current_prop scale 		0.2
+   cleffect tempent set_current_prop gravity 		FLAKE_GRAv
+   cleffect tempent set_current_prop collide 		none
+   cleffect tempent set_current_prop velocity 		(vel,vel,-200)
+}
+
+{  [client] setup_hailshard
+	local SHARD_SIZE $randf(1.0,3.0)
+	//local SHARD_BODY $rand(0,5)
+   cleffect tempent set_current_prop death_delay 	2
+   //cleffect tempent set_current_prop body SHARD_BODY //this works, but dun look real good on this model
+   cleffect tempent set_current_prop bouncefactor 	0
+   cleffect tempent set_current_prop scale 		SHARD_SIZE
+   cleffect tempent set_current_prop angles 		(90,0,0)
+   cleffect tempent set_current_prop angle 		(90,0,0)
+   cleffect tempent set_current_prop gravity 		3
+   cleffect tempent set_current_prop collide 		none
+   cleffect tempent set_current_prop velocity 		(-10,-10,-100)
+}

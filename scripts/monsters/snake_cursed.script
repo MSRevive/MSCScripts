@@ -1,0 +1,110 @@
+//Cursed snake by Thothie (From Sidewinder)
+//- Bites until it manages to poison something, then vanishes.
+{
+	setvar IS_UNHOLY 1
+
+	setvar ANIM_WALK walk
+	setvar ANIM_RUN walk
+	setvard ANIM_DEATH diesimple
+	setvar ANIM_IDLE idle1
+	setvard ANIM_ATTACK attack1
+	setvard ATTACK_RANGE 80
+	setvard ATTACK_HITRANGE 120
+	setvard ATTACK_MOVERANGE 35
+	const ATTACK_HITCHANCE 80%
+	const ATTACK_DAMAGE '$randf(5,20)'
+	const POISON_DAMAGE '$randf(10,50)'
+	const POISON_DURATION '$rand(10,20)'
+
+	const SOUND_ALERT monsters/snake_idle1.wav
+	const SOUND_IDLE monsters/snake_idle2.wav
+	const SOUND_ATTACK bullchicken/bc_bite2.wav
+	const SOUND_PAIN1 monsters/snake_pain1.wav
+	const SOUND_PAIN2 monsters/snake_pain2.wav
+	const SOUND_POISON monsters/snakeman/sm_alert1.wav
+
+	const SOUND_STRUCK debris/flesh2.wav
+
+	setvard NPC_GIVE_EXP 5
+
+	setvard NO_SPAWN_STUCK_CHECK 1
+
+	const MONSTER_MODEL monsters/csnake.mdl
+
+	setvard IMMUNE_POISON 1
+}
+
+#include monsters/base_monster_new
+
+{ npc_spawn
+
+	name a|Cursed Snake
+	hp 30
+	width 48
+	height 32
+	roam 0
+	race demon	//for easier placement
+	setmodel MONSTER_MODEL
+	hearingsensitivity 4
+	callevent 1.0 idle_sounds
+	takedmg poison 0.0
+	takedmg holy 2.0
+	setsolid none
+}
+
+{ idle_sounds
+
+	playsound 0 10 SOUND_IDLE
+	callevent $randf(5,10) idle_sounds	
+}
+
+{ bite1
+
+	setvard BITE_SOUND 1
+	callevent npcatk_dodamage NPCATK_TARGET ATTACK_HITRANGE ATTACK_DAMAGE ATTACK_HITCHANCE ent_me
+}
+
+{ game_damaged_other //PARAM1=ent hit PARAM2=damage
+
+	if BITE_SOUND
+	setvard BITE_SOUND 0
+	if $rand(1,5) == 1
+	playsound 0 10 SOUND_POISON
+	applyeffect PARAM1 effects/greater_poison POISON_DURATION $get(ent_me,id) POISON_DAMAGE
+	callevent npc_fade_away
+}
+
+{ game_struck
+
+	playrandomsound 0 10 SOUND_PAIN1 SOUND_PAIN2 SOUND_STRUCK SOUND_STRUCK
+}
+
+{ npcatk_targetvalidate
+
+	if !DID_ALERT
+	playsound 0 10 SOUND_ALERT
+	roam 1
+	setvard DID_ALERT 1
+}
+
+{ my_target_died
+
+	//vanishes on kill
+	callevent npc_fade_away
+}
+
+{ [override] npcatk_attack
+
+	setvard NPC_DELAYING_UNSTUCK NPC_UNSTUCK_DELAY //I've stopped moving to attack, I'm not stuck
+
+	if !ATTACK_DELAY
+	playanim critical ANIM_ATTACK
+	playsound 0 10 SOUND_ATTACK
+	setvard ATTACK_DELAY 1
+	callevent 1.0 reset_attack_delay
+}
+
+{ reset_attack_delay
+
+	setvard ATTACK_DELAY 0
+}

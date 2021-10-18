@@ -1,0 +1,266 @@
+//Shadow Goblin from Blood Goblin Skirmisher by Thothie
+//Spends most of the time doing invisible hit and runs
+
+#scope server
+
+{
+	setvar NPC_SELF_ADJUST 1
+	const NPC_ADJ_TIERS "0;500;1000;2000;3000;5000"
+	const NPC_ADJ_DMG_MUTLI_TOKENS "1.0;1.5;2.0;5.0;7.5;10.0;"
+	const NPC_ADJ_HP_MUTLI_TOKENS "1.0;1.5;2.0;3.0;5.0;7.5;"
+
+	const NPC_BASE_EXP 150
+
+	setvard CAN_FIREBALL 0
+
+	setvard DROP_GOLD 1
+	setvard DROP_GOLD_AMT $rand(40,50)
+
+	const DMG_KNIFE $rand(10,30)
+	setvard BASE_FRAMERATE 2.0
+	setvard ATTACK_HITCHANCE 80
+
+	const FREQ_INVISIBLE $randf(7.0,10.0)
+
+	setvard CAN_STUN 0
+	setvard FLINCH_HEALTH 200
+
+	const CL_SCRIPT monsters/sgoblin_cl //poof effect
+
+	const ORG_BODY 0 //change this if ye make an archer
+	const SOUND_FADE "monsters/gonome/gonome_melee2.wav"
+	const SOUND_APPEAR "ambience/alien_humongo.wav"
+}
+
+{ game_precache
+	precachefile CL_SCRIPT
+}
+
+#include monsters/bgoblin
+
+{ [override] [shared] goblin_spawn
+
+	name a|Shadow Goblin
+	race demon
+	blood red
+	hp 200
+	roam 1
+
+	hearingsensitivity 4
+
+	setanim.framerate 2.0
+
+	setmodel monsters/goblin_new.mdl
+	width 24
+	height 50
+
+	setmodelbody 0 0 //body: 0-Bare 1-Quiver&Strap 2-invisible
+	setmodelbody 1 0 //head: 0-Bare 1-Horns 2-Animal 3-Chief 4-Rag
+	setmodelbody 2 8 //weapon: 0-Unarmed 1-Axe 2-wbow 3-sbow 4-sword 5-rAxe 6-sword&shield 7-club 8-knife
+	setmodelbody 3 0 //arrow: On/off
+	
+	setprop ent_me skin 3 //0-norm 1-blood 2-vile 3-Shadow
+
+	setidleanim ANIM_IDLE
+	setmoveanim ANIM_WALK
+
+	setvard ANIM_ATTACK swordswing1_L
+
+	clientevent new all CL_SCRIPT
+	setvard CL_IDX game.script.last_sent_id
+
+	setvard SWING_COUNT 0
+
+	setvard NEXT_INVISIBLE game.time
+	add NEXT_INVISIBLE FREQ_INVISIBLE
+
+	callevent 2.0 final_adj
+}
+
+{ final_adj
+	if NPC_ADJ_LEVEL <= 1
+	setvard SGOBLIN_TRAINEE 1
+	name a|Shadow Goblin Novice
+}
+
+{ game_death
+	clientevent remove all CL_IDX
+	if AM_INVISIBLE
+	callevent go_visible
+}
+
+{ [override] swing_axe
+
+	callevent normal_immunes
+
+	playrandomsound 0 10 SOUND_ATTACK1 SOUND_ATTACK2 SOUND_ATTACK3
+	dodamage NPCATK_TARGET ATTACK_HITRANGE DMG_KNIFE ATTACK_HITCHANCE slash
+	setvard OVERHEAD_SMASH 1
+}
+
+{ [override] swing_sword
+
+	//if ( AM_INVISIBLE ) callevent fade_in
+
+	callevent normal_immunes
+
+	playrandomsound 0 10 SOUND_ATTACK1 SOUND_ATTACK2 SOUND_ATTACK3
+	dodamage NPCATK_TARGET ATTACK_HITRANGE DMG_KNIFE ATTACK_HITCHANCE pierce
+	add SWING_COUNT 1
+	if SWING_COUNT > 5
+	setvard SWING_COUNT 0
+	callevent fade_and_flee	
+}
+
+{ npc_selectattack //gonna swing, make visible
+	if ( AM_INVISIBLE ) callevent fade_in
+}
+
+{ [override] gob_jump_check
+
+	if GOB_JUMP_SCANNING
+	local GOB_HOP_DELAY $randf(2,4)
+	callevent GOB_HOP_DELAY gob_jump_check
+
+	//no jumpy if in stabby range
+	if $get(NPCATK_TARGET,range) > ATTACK_HITRANGE
+
+	if NPCATK_TARGET isnot unset
+	if !I_R_FROZEN
+	if !IS_FLEEING
+	if $get(NPCATK_TARGET,range) < GOBLIN_JUMPRANGE
+
+	//jump at target if he's higher than I am
+	local ME_POS game.monster.origin
+	local MY_Z $vec.z(ME_POS)
+	local TARGET_POS $get(NPCATK_TARGET,origin)
+	local TARGET_Z $vec.z(TARGET_POS)
+	local TARGET_Z_DIFFERENCE TARGET_Z
+	subtract TARGET_Z_DIFFERENCE MY_Z
+
+	if ( TARGET_Z_DIFFERENCE > GOB_JUMP_THRESH )
+	{
+		if TARGET_Z_DIFFERENCE < 500 //not hoplessly high up
+		playanim critical ANIM_SMASH
+		callevent 0.1 gob_hop
+	}
+}
+
+{ game_struck
+	if ( AM_INVISIBLE ) callevent jump_away
+
+	if ( SGOBLIN_TRAINEE ) setvard BLEED_STEPS 1
+
+	if PARAM1 > 200
+	if $rand(1,2) == 1
+	callevent jump_away
+}
+
+{ [override] jump_away
+	if ( !IS_FLEEING ) callevent npcatk_flee $get(ent_laststruck,id) 100 3.0
+	callevent 0.1 gob_hop
+}
+
+{ fade_and_flee
+	clientevent update all CL_IDX poof_fx $get(ent_me,origin)
+	callevent jump_away
+	callevent 0.25 go_invisible
+}
+
+{ go_invisible
+	if $get(ent_me,isalive)
+	dbg *** GOING INVISIBLE ***
+	setvard AM_INVISIBLE 1
+	if ( SGOBLIN_TRAINEE )
+	{
+		if BLEED_STEPS
+		callevent blood_steps
+	}
+	playsound 0 10 SOUND_FADE
+	setprop ent_me rendermode 2
+	setprop ent_me renderamt 0
+	setmodelbody 0 2 //body: 0-Bare 1-Quiver&Strap 2-invisible
+	setmodelbody 1 0 //head: 0-Bare 1-Horns 2-Animal 3-Chief 4-Rag
+	setmodelbody 2 0 //weapon: 0-Unarmed 1-Axe 2-wbow 3-sbow 4-sword 5-rAxe 6-sword&shield 7-club 8-knife
+	setmodelbody 3 0 //arrow: On/off
+	callevent etherial_immunes
+}
+
+{ blood_steps
+	if AM_INVISIBLE
+	callevent $randf(0.1,0.3) blood_steps
+	dbg bloodystep AM_INVISIBLE SGOBLIN_TRAINEE BLEED_STEPS WALK_COUNT
+
+	effect decal $get(ent_me,origin) $rand(31,34)
+	
+}
+
+{ go_visible
+	dbg *** GOING VISIBLE ***
+	setvard AM_INVISIBLE 0
+	setprop ent_me rendermode 0
+	setprop ent_me renderamt 255
+	callevent normal_immunes
+
+	setmodelbody 0 0 //body: 0-Bare 1-Quiver&Strap 2-invisible
+	setmodelbody 1 0 //head: 0-Bare 1-Horns 2-Animal 3-Chief 4-Rag
+	setmodelbody 2 8 //weapon: 0-Unarmed 1-Axe 2-wbow 3-sbow 4-sword 5-rAxe 6-sword&shield 7-club 8-knife
+	setmodelbody 3 0 //arrow: On/off
+}
+
+{ fade_in
+	if $get(ent_me,isalive)
+	playsound 0 10 SOUND_APPEAR
+	clientevent update all CL_IDX unpoof_fx $get(ent_me,origin)
+	callevent go_visible
+}
+
+{ npc_targetsighted
+	if !FIRST_ALERT
+	if !AM_INVISIBLE
+	if game.time > NEXT_INVISIBLE
+	setvard NEXT_INVISIBLE game.time
+	add NEXT_INVISIBLE FREQ_INVISIBLE
+	setvard FIRST_ALERT 1
+	if $get(NPCATK_TARGET,range) > ATTACK_HITRANGE
+	callevent fade_and_flee
+}
+
+{ my_target_died
+	setvard FIRST_ALERT 0
+	if AM_INVISIBLE
+	callevent fade_in
+}
+
+{ etherial_immunes
+	if !SGOBLIN_TRAINEE
+	clearfx
+	setvard INVISIBLE_MODE 1
+	invincible 1
+	takedmg fire 0.0
+	takedmg cold 0.0
+	takedmg poison 0.0
+	takedmg holy 1.0 //blarg - wont work while invulnerable, but meh
+}
+
+{ normal_immunes
+	//if !SGOBLIN_TRAINEE
+	invincible 0
+	setvard INVISIBLE_MODE 0
+	takedmg fire 1.0
+	takedmg cold 1.0
+	takedmg poison 1.0
+	takedmg holy 0.0
+}
+
+{ game_dodamage
+
+	if ( INVISIBLE_MODE ) callevent normal_immunes
+	
+	if ( OVERHEAD_SMASH )
+	{
+		if AM_INVISIBLE
+		callevent fade_in
+	}
+	setvard OVERHEAD_SMASH 0
+}

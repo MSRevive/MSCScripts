@@ -1,0 +1,835 @@
+//Iron Guardian - Level 40 boss by Thothie
+//- Big wide swings*
+//- Lightning heals*
+//- Slows and recharges if charger script spawned (monsters/guardian_iron_charger)*
+//- Charger script MUST be spawned BEFORE this script*
+//- Stomp with stunning wave (knocks back nearby players to compensate for model lurch)
+//- Smash stun
+//- Projectile for distant targets (also knocks back any nearby players for model lurch)
+//- (Alternate from projectile: pull in distant targets and strike immediately)
+//- Sweep occasionally when roaming to charger to prevent sploits
+
+//createnpc monsters/guardian_iron_charger
+
+#scope server
+
+{ [shared]
+
+	//anims - base
+	setvar ANIM_WALK walk
+	setvar ANIM_IDLE idle
+	setvard ANIM_RUN run
+	setvard ANIM_DEATH die
+	setvard ANIM_ATTACK ready_attack1
+
+	//anims - custom
+	const ANIM_RAWR rawr
+	const ANIM_ATTACK1 attack1
+	const ANIM_ATTACK2 attack2
+	const ANIM_ATTACK1_READY ready_attack1
+	const ANIM_ATTACK2_READY ready_attack2
+	const ANIM_DRAW_SWORD draw
+	const ANIM_RECHARGE recharge
+	const ANIM_REACH reach
+	const ANIM_STOMP stomp
+	const ANIM_SMASH smash
+}
+
+{ [server]
+
+	//base stats
+	setvard CAN_FLEE 0
+	setvar IS_UNHOLY 1
+	setvard NPC_NO_ATTACK 1
+	if ( $lcase(game.map.name) contains shad_pal )
+	{
+		setvard NPC_GIVE_EXP 10000
+	}
+	else
+	{
+		setvard NPC_GIVE_EXP 5000
+	}
+
+	setvard ATTACK_MOVERANGE 140
+	setvard ATTACK_RANGE 200
+	setvard ATTACK_HITRANGE 300
+
+	//custom stats
+	const MAX_CHARGE_LEVEL 50
+	const CHARGE_DROP_RATE 1.0
+	const GUARDIAN_CL_SCRIPT monsters/guardian_iron_cl
+	const BATTERY_LIFE 60.0 //time batteries remain at full charge before draining
+	const STANCE_RANGE 500
+	const MAX_RECHARGE_RANGE 400 //max distance can use charger
+
+	const DMG_SWING_ZAP 700
+	const DMG_SWING_BLADE 400
+	const DMG_REACH 500
+	const DOT_REACH 100
+	const DMG_SMASH 400
+
+	const SWIPE_AOE 384
+	const SMASH_AOE 128
+
+	const FREQ_STOMP $randf(10.0,20.0)
+	const FREQ_REACH $randf(10.0,20.0)
+	const FREQ_SMASH $randf(10.0,30.0)
+
+	const SWORD_HILT_IDX 0
+	const SWORD_TIP_IDX 1
+	const RHAND_IDX 2
+	const LHAND_IDX 3
+
+	//sounds
+	const SOUND_STEP1_START monsters/guardian/joint_move1.wav
+	const SOUND_STEP2_START monsters/guardian/joint_move2.wav
+	const SOUND_STEP1_LAND monsters/guardian/step1.wav
+	const SOUND_STEP2_LAND monsters/guardian/step2.wav
+
+	const SOUND_ATTACK1 monsters/guardian/swing1.wav
+	const SOUND_ATTACK2 monsters/guardian/swing2.wav
+	const SOUND_SWING weapons/swinghuge.wav
+
+	const SOUND_PAIN1 monsters/guardian/pain1.wav
+	const SOUND_PAIN2 monsters/guardian/pain2.wav
+	const SOUND_PAIN3 monsters/guardian/pain3.wav
+	const SOUND_STRUCK1 monsters/guardian/struck1.wav
+	const SOUND_STRUCK2 monsters/guardian/struck2.wav
+
+	const SOUND_RAWR monsters/guardian/rawr.wav
+	const SOUND_REACH monsters/guardian/sca_dragelec.wav
+
+	const SOUND_RECHARGE_START monsters/guardian/sca_dragelec.wav
+
+	const SOUND_SWORD_IDLE magic/bolt_loop.wav
+	const SOUND_SWORD_DRAW magic/elecidlepop.wav
+	const SOUND_SWORD_OFF magic/elecidle.wav
+	
+	const SOUND_DEATH monsters/guardian/death.wav
+
+	setvard IMMUNE_VAMPIRE 1
+
+	precache SOUND_DEATH
+	precache c-tele1.spr
+	precache flare1.spr
+}
+
+{ game_precache
+	precachefile GUARDIAN_CL_SCRIPT
+}
+
+#include monsters/base_monster_new
+
+//======================= INIT
+
+{ [shared] npc_spawn
+	name an|Iron Guardian
+	hp 10000
+	setmodel monsters/guardian.mdl
+	width 75
+	height 200
+
+	setbbox npcsize
+
+	takedmg all 0.5
+	takedmg poison 0.0
+	takedmg holy 1.25
+	setvard IMMUNE_STUN 100%
+	setmodelbody 0 0
+	race demon
+
+	blood none
+
+	hearingsensitivity 1
+
+	setmoveanim ANIM_WALK
+	setidleanim ANIM_IDLE
+	roam 1
+
+	if game.serverside
+	if ( G_GUARDIAN_CHARGER isnot 'G_GUARDIAN_CHARGER' )
+	{
+		setvard CHARGER_ORG G_GUARDIAN_CHARGER
+		setvard NEEDS_CHARGER 1
+	}
+
+	setvard CHARGE_LEVEL MAX_CHARGE_LEVEL
+	setvard ANIM_RATE 1.0
+
+	clientevent new all GUARDIAN_CL_SCRIPT $get(ent_me,index)
+	setvard CL_SCRIPT_IDX game.script.last_sent_id
+
+	callevent 0.01 beam_init
+}
+
+{ npc_post_spawn
+	if ( $lcase(game.map.name) equals shad_palace )
+	{
+		if ( $filesize(trans2.dat) > -1 )
+		{
+			//someone's re-running the map, reduce XP value for not-sploit
+			setvard NPC_GIVE_EXP 1000
+			skilllevel NPC_GIVE_EXP
+		}
+	}
+}
+
+{ beam_init
+	effect beam ents lgtning.spr 10 ent_me 1 ent_me 2 (196,196,255) 0 30 -1
+	setvard SWORD_BEAM $get(ent_lastcreated,id)
+}
+
+//======================= ANIM EVENTS
+{ frame_step1_start
+	playsound 0 10 SOUND_STEP1_START
+}
+
+{ frame_step2_start
+	playsound 0 10 SOUND_STEP2_START
+}
+
+{ frame_step1_land
+	playsound 0 10 SOUND_STEP1_LAND
+}
+
+{ frame_step2_land
+	playsound 0 10 SOUND_STEP2_LAND
+}
+
+{ frame_attack1_start
+	setvard IN_SWING 1
+	playsound 0 10 SOUND_ATTACK1 SOUND_ATTACK2
+}
+
+{ frame_attack2_start
+	setvard IN_SWING 1
+	playsound 0 10 SOUND_ATTACK1 SOUND_ATTACK2
+}
+
+{ frame_draw_flicker
+	callevent sword_on
+}
+
+{ frame_smash
+	setvard ANIM_ATTACK ready_attack2
+	setvard SMASH_POINT $get(ent_me,attachpos,LHAND_IDX)
+	vectorset SMASH_POINT z $get_ground_height(SMASH_POINT)
+	vectoradd SMASH_POINT $relpos($vec(0,game.monster.angles.yaw,0),$vec(0,96,0))
+	dbg frame_smash SMASH_POINT distfromme $dist(SMASH_POINT,game.monster.origin)
+	clientevent update all CL_SCRIPT_IDX smash_fx SMASH_POINT
+	setvard SMASH_ATTACK 1
+	dodamage SMASH_POINT SMASH_AOE DMG_SMASH 100% 0 reflective blunt
+}
+
+{ frame_attack1_go
+	if !NPC_NO_ATTACK //case sword fizzled
+	local TARGS_IN_RANGE $get_tsphere(enemy,ATTACK_HITRANGE)
+	if TARGS_IN_RANGE isnot none
+	playanim critical ANIM_ATTACK1
+}
+
+{ frame_attack2_go
+	if !NPC_NO_ATTACK //case sword fizzled
+	local TARGS_IN_RANGE $get_tsphere(enemy,ATTACK_HITRANGE)
+	if TARGS_IN_RANGE isnot none
+	playanim critical ANIM_ATTACK2
+}
+
+{ frame_attack1_strike
+	callevent melee_attack
+	setvard ANIM_ATTACK ANIM_ATTACK2_READY
+	setidleanim ANIM_ATTACK
+	if $rand(1,3) == 1
+	setvard ANIM_ATTACK ANIM_ATTACK2 //attack quicker sometimes (sploit prevention)
+}
+
+{ frame_attack2_strike
+	callevent melee_attack
+	setvard ANIM_ATTACK ANIM_ATTACK1_READY
+	setidleanim ANIM_ATTACK
+	if $rand(1,3) == 1
+	setvard ANIM_ATTACK ANIM_ATTACK1 //attack quicker sometimes (sploit prevention)
+}
+
+{ frame_rawr_done
+	callevent RAWR_EVENT
+}
+
+{ frame_reach_start
+	setvard AS_ATTACKING game.time
+	add AS_ATTACKING 5.0
+}
+
+{ frame_reach_strike
+	callevent npcatk_resume_ai
+	if !ATTEMPTING_RECHARGE  //in case battery ran out mid swing
+	playsound 0 10 SOUND_REACH
+	clientevent update all CL_SCRIPT_IDX grab_fx $get(REACH_TARGET,index)
+	setvard ANIM_ATTACK ANIM_ATTACK1
+	dodamage REACH_TARGET 1024 DMG_REACH 100% lightning_effect
+	if $get_takedmg(REACH_TARGET,lightning) < 0.9
+	applyeffect REACH_TARGET effects/effect_shock_dmg 5.0 $get(ent_me,id) DOT_REACH
+	addvelocity REACH_TARGET $relvel(0,-3000,110)
+}
+
+{ frame_stomp_start
+
+	setvard AS_ATTACKING game.time
+	add AS_ATTACKING 10.0
+
+	playsound 0 10 SOUND_STEP1_START
+	setvard DOING_STOMP 1
+
+	setvard NEXT_STOMP game.time
+	add NEXT_STOMP FREQ_STOMP
+
+	//model lurches forward quite a bit, nudge players in front of me away
+	setvard NUDGE_NEAR 1
+	callevent nudge_loop
+	callevent 4.0 end_nudge_loop //in case doesn't reach end of stomp for some reason
+}
+
+{ nudge_loop
+	if NUDGE_NEAR
+	callevent 0.5 nudge_loop
+	setvard NUDGE_POINT $get(ent_me,svbonepos,13) //left foot
+	vectorset NUDGE_POINT z $get_ground_height(NUDGE_POINT)
+	setvard NUDGE_TARGETS $get_tsphere(enemy,64,NUDGE_POINT)
+	if NUDGE_TARGETS isnot none
+	calleventloop $get_token_amt(NUDGE_TARGETS) affect_nudge_targets
+}
+
+{ end_nudge_loop
+	setvard NUDGE_NEAR 0
+	setvard DOING_STOMP 0
+	setvard ANIM_ATTACK ready_attack1
+}
+
+{ affect_nudge_targets
+	local CUR_TARG $get_token(NUDGE_TARGETS,game.script.iteration)
+	addvelocity CUR_TARG $relvel(0,200,110)
+}
+
+{ frame_stomp
+	setvard ANIM_ATTACK ready_attack1
+	setvard DOING_STOMP 0
+	setvard NUDGE_NEAR 0
+	setvard STOMP_POINT $get(ent_me,svbonepos,13) //left foot
+	vectorset STOMP_POINT z $get_ground_height(STOMP_POINT)
+	setvard STOMP_TARGETS $get_tsphere(enemy,256,STOMP_POINT)
+	clientevent update all CL_SCRIPT_IDX stomp_fx STOMP_POINT
+	if STOMP_TARGETS isnot none
+	calleventloop $get_token_amt(STOMP_TARGETS) affect_stomp_targets
+}
+
+{ affect_stomp_targets
+	local CUR_TARGET $get_token(STOMP_TARGETS,game.script.iteration)
+	local STUN_DUR 5.0
+	if ( ATTEMPTING_RECHARGE ) local STUN_DUR 10.0
+
+	applyeffect CUR_TARGET effects/effect_stun STUN_DUR 0 1
+	local TARG_ORG $get(CUR_TARGET,origin)
+	local TARG_ANG $angles(STOMP_POINT,TARG_ORG)
+	local NEW_YAW TARG_ANG
+	setvelocity CUR_TARGET $relvel($vec(0,NEW_YAW,0),$vec(0,1000,0))
+}
+
+{ melee_attack
+	setvard IN_SWING 0
+	playsound 0 10 SOUND_SWING
+	dodamage $get(ent_me,attachpos,1) SWIPE_AOE DMG_SWING_ZAP 100% 0 reflective lightning_effect
+	dodamage $get(ent_me,attachpos,1) SWIPE_AOE DMG_SWING_BLADE 100% 0 reflective slash
+}
+
+//======================= STRUCK
+{ game_damaged //PARAM1=attacker PARAM2=dmg PARAM3=dmg_type
+	
+	if ( PARAM3 contains lightning )
+	{
+		effect glow ent_me (0,255,0) 64 1 1
+		if ( $get(ent_me,hp) < $get(ent_me,maxhp) ) givehp PARAM2
+		setdmg dmg 0
+		returndata 0
+		
+		//player just recharged your batteries
+		setvard CHARGE_LEVEL MAX_CHARGE_LEVEL
+		setvard NEXT_CHARGE_DROP game.time
+		add NEXT_CHARGE_DROP BATTERY_LIFE
+
+		if ATTEMPTING_RECHARGE
+		callevent recharge_done
+	}
+	else
+	{
+		if ( PARAM3 contains effect ) local EXIT_SUB 1 //no struck sounds from DOT's on this guy
+		if !EXIT_SUB
+		playsound 0 10 SOUND_STRUCK1 SOUND_STRUCK2 SOUND_STRUCK1 SOUND_STRUCK2 SOUND_STRUCK1 SOUND_STRUCK2 SOUND_PAIN1 SOUND_PAIN2 SOUND_PAIN3
+	}
+}
+
+
+//======================= MAIN CYCLE
+{ cycle_up
+	roam 0
+
+	callevent refresh_fx
+
+
+	local GAME_TIME game.time
+
+	setvard NEXT_SMASH GAME_TIME
+	add NEXT_SMASH FREQ_SMASH
+
+	setvard NEXT_STOMP GAME_TIME
+	add NEXT_STOMP FREQ_STOMP
+
+	setvard NEXT_REACH GAME_TIME
+	add NEXT_REACH FREQ_REACH
+	
+
+	if !DID_INTRO
+	setvard DID_INTRO 1
+	setvard AS_ATTACKING GAME_TIME
+	add AS_ATTACKING 5.0
+	setmovedest NPCATK_TARGET 9999
+	callevent do_intro
+}
+
+{ cycle_down
+	roam 1
+}
+
+{ npc_selectattack
+	setvard AS_ATTACKING game.time
+	add AS_ATTACKING 3.0
+	if ( ANIM_RATE < 1.0 ) add AS_ATTACKING 5.0 //give more times for attacks to complete when battery low
+}
+
+{ npcatk_hunt
+	if !SUSPEND_AI
+	if !ATTEMPTING_RECHARGE
+	if !DOING_RECHARGE
+	if !DOING_STOMP
+
+	if NPCATK_TARGET isnot unset
+
+	if ( $get(NPCATK_TARGET,range) > ATTACK_RANGE )
+	{
+		if !IN_SWING
+		if SWORD_STATE //only if sword drawn - don't want to intereferh with draw process
+		if game.time > NEXT_REACH
+		local TARG_ORG $get(NPCATK_TARGET,origin)
+		local HAND_ORG $get(ent_me,attachpos,LHAND_IDX)
+		local TRACE_LINE $get_traceline(HAND_ORG,TARG_ORG,worldonly)
+		if TRACE_LINE equals TARG_ORG
+		setvard NEXT_REACH game.time
+		add NEXT_REACH FREQ_REACH
+		setvard REACH_TARGET NPCATK_TARGET
+		callevent do_reach
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	if ( game.time > NEXT_STOMP )
+	{
+		setvard ANIM_ATTACK ANIM_STOMP
+		setvard NEXT_STOMP game.time
+		add NEXT_STOMP FREQ_STOMP
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	if ( game.time > NEXT_SMASH )
+	{
+		setvard ANIM_ATTACK ANIM_SMASH
+		setvard NEXT_SMASH game.time
+		add NEXT_SMASH FREQ_STOMP
+	}
+}
+
+//======================= INTRO SEQUENCE
+{ do_intro
+	playanim critical ANIM_RAWR
+	playsound 0 10 SOUND_RAWR
+
+	if ( NEEDS_CHARGER )
+	{
+		//callevent 5.0 stop_music //this does not work
+		callevent 1.5 do_recharge
+		callevent 0.1 intro_musak //in case hitting error here
+	}
+	else
+	{
+		callevent 1.5 draw_sword
+	}	
+}
+
+//Fail - playing a 0 second track doesn't seem to work either :(
+//{ stop_music
+//	callexternal players ext_play_music all 0.5 music/stop.mp3 1024
+//}
+
+{ intro_musak
+	callexternal players ext_play_music all 99999 media/Suspense07.mp3 1024
+}
+
+
+//======================= RECHARGE SEQUENCE
+{ do_recharge
+
+	callevent npcatk_suspend_ai
+	setvard ATTEMPTING_RECHARGE 0
+	callevent do_recharge_fx
+
+//Old buggy version
+//	setvard ATTEMPTING_RECHARGE 1
+//	setvard ATTEMPT_STARTED game.time
+//	callevent npcatk_suspend_ai
+//	setvard NPC_FORCED_MOVEDEST 1
+//	setmoveanim ANIM_RUN
+//	setmovedest CHARGER_ORG 200
+//	setvard NEXT_RECHARGE_STOMP game.time
+//	add NEXT_RECHARGE_STOMP 5.0
+//	setvard RECHARGE_OVERRIDE game.time
+//	add RECHARGE_OVERRIDE 20.0
+//
+//	setvard EMERGANCY_OVERRIDE game.time
+//	add EMERGANCY_OVERRIDE 45.0
+//
+//	callevent do_recharge_move_loop	
+}
+
+
+//Old buggy version
+//{ do_recharge_move_loop
+//
+//	local CUR_DIST $dist(game.monster.origin,CHARGER_ORG)
+//	if ( CUR_DIST > MAX_RECHARGE_RANGE )
+//	{
+//		callevent $randf(0.5,3.0) do_recharge_move_loop
+//		callevent npcatk_suspend_ai //AI keeps coming back on for some reason
+//		setmovedest CHARGER_ORG 100
+//		if ( game.time > RECHARGE_OVERRIDE )
+//		{
+//			//been trying to get home a long time now - force a wiggle
+//			dbg Overtime
+//			setvard RECHARGE_OVERRIDE game.time
+//			add RECHARGE_OVERRIDE 10.0
+//			local RND_ANG $randf(0.0,359.99)
+//			setmovedest $relpos($vec(0,RND_ANG,0),$vec(0,500,0)) 0
+//		}
+//
+//		//Thothie's redundant school of redunancy
+//		if ( game.time > EMERGANCY_OVERRIDE )
+//		{
+//			setvard ATTEMPTING_RECHARGE 0
+//			callevent do_recharge_fx
+//			local EXIT_SUB 1
+//		}
+//		if !EXIT_SUB
+//
+//		if ( CUR_DIST >= OLD_DIST )
+//		{
+//			dbg no_progress OLD_DIST vs CUR_DIST
+//			if !DOING_STOMP
+//			if $rand(1,2) == 1
+//			//don't seem to be getting closer - wiggle
+//			local RND_ANG $randf(0.0,359.99)
+//			setmovedest $relpos($vec(0,RND_ANG,0),$vec(0,500,0)) 0
+//		}
+//		setvard OLD_DIST CUR_DIST
+//
+//		//suck towards charger, force increases based on time
+//		local TARG_ORG CHARGER_ORG
+//		local TARG_ANG $angles(game.monster.origin,TARG_ORG)
+//		local NEW_YAW TARG_ANG
+//		local SUCK_STR game.time
+//		subtract SUCK_STR ATTEMPT_STARTED
+//
+//		if ( SUCK_STR > 30 )
+//		{
+//			//been trying to get to charge way too long, just charge from here
+//			setvard ATTEMPTING_RECHARGE 0
+//			callevent do_recharge_fx
+//			local EXIT_SUB 1
+//		}
+//		if !EXIT_SUB
+//
+//		multiply SUCK_STR 10
+//		//local SUCK_STR $neg(SUCK_STR)
+//		addvelocity ent_me $relvel($vec(0,NEW_YAW,0),$vec($rand(-100,100),SUCK_STR,0))
+//
+//		//use repulse stomp if players are trying to stop me from reaching charger
+//		if game.time > NEXT_RECHARGE_STOMP
+//		local NEAR_TARGS $get_tsphere(enemy,256)
+//		if NEAR_TARGS isnot none
+//		playanim critical ANIM_STOMP
+//		setvard NEXT_RECHARGE_STOMP game.time
+//		add NEXT_RECHARGE_STOMP 15.0
+//	}
+//	else
+//	{
+//		setvard ATTEMPTING_RECHARGE 0
+//		callevent do_recharge_fx
+//	}
+//}
+
+{ do_recharge_fx
+	callevent 8.0 recharge_done
+
+	setvard AS_ATTACKING game.time
+	add AS_ATTACKING 10.0
+
+	setmovedest CHARGER_ORG 9999
+
+	setvard DOING_RECHARGE 1
+	setidleanim ANIM_RECHARGE
+	setmoveanim ANIM_RECHARGE
+	playanim critical ANIM_RECHARGE
+	roam 0 //redundant
+	clientevent update all CL_SCRIPT_IDX recharge_fx CHARGER_ORG
+	callevent do_recharge_loop
+}
+
+{ do_recharge_loop
+	if DOING_RECHARGE
+	callevent 0.1 do_recharge_loop
+	if CHARGE_LEVEL < MAX_CHARGE_LEVEL
+	add CHARGE_LEVEL 1
+	callevent update_anim_speed
+}
+
+{ recharge_done
+	callevent npcatk_resume_ai
+	setvard NEXT_CHARGE_DROP game.time
+	add NEXT_CHARGE_DROP BATTERY_LIFE
+	setvard DOING_RECHARGE 0
+	setvard CHARGE_LEVEL MAX_CHARGE_LEVEL
+	setvard DID_FIRST_CHARGE 1
+	setanim.framerate 1.0
+	setvard ANIM_RATE 1.0
+	setmovedest NPCATK_TARGET ATTACK_MOVERANGE
+	setvard NPC_FORCED_MOVEDEST 1
+	callevent draw_sword
+	setidleanim ANIM_IDLE
+	setmoveanim ANIM_RUN
+
+	local GAME_TIME game.time
+
+	setvard NEXT_SMASH GAME_TIME
+	add NEXT_SMASH FREQ_SMASH
+
+	setvard NEXT_STOMP GAME_TIME
+	add NEXT_STOMP FREQ_STOMP
+
+	setvard NEXT_REACH GAME_TIME
+	//add NEXT_REACH game.time //go ahead, reach attack straight away, if applicable
+}
+
+//======================= DRAW SWORD
+{ draw_sword
+	local CUR_TARG NPCATK_TARGET
+	callevent npcatk_suspend_ai 1.0
+	setmovedest CUR_TARG 9999
+	playanim critical ANIM_DRAW_SWORD
+	callevent 5.0 sword_on //in case anim is interrupted
+}
+
+{ sword_on
+	if !SWORD_STATE
+	setvard AS_ATTACKING game.time
+	add AS_ATTACKING 2.0
+	clientevent update all CL_SCRIPT_IDX sword_on 1
+	setvard FLICKER_IN_COUNT 10
+	setvard FLICKER_DELAY 0
+	setvard FLICKER_MODE 1
+	setvard SWORD_STATE 1
+	callevent sword_flicker_loop
+	playsound 0 10 SOUND_SWORD_DRAW
+	svplaysound 1 5 SOUND_SWORD_IDLE
+	setvard NPC_NO_ATTACK 0
+}
+
+{ sword_flicker_loop
+	if ( FLICKER_IN_COUNT == 0 )
+	{
+		setmodelbody 1 SWORD_STATE
+		if ( SWORD_STATE )
+		{
+			effect beam update SWORD_BEAM brightness 200
+		}
+		else
+		{
+			effect beam update SWORD_BEAM brightness 0
+		}
+	}
+	if FLICKER_IN_COUNT >= 1
+	setmodelbody 1 FLICKER_MODE
+	if ( FLICKER_MODE )
+	{
+		setmodelbody 1 1
+		setvard FLICKER_MODE 0
+	}
+	else
+	{
+		setmodelbody 1 0
+		setvard FLICKER_MODE 1
+	}
+	subtract FLICKER_IN_COUNT 1
+	add FLICKER_DELAY 0.01
+	callevent FLICKER_DELAY sword_flicker_loop
+}
+
+{ sword_off
+	setvard NPC_NO_ATTACK 1
+	setvard SWORD_STATE 0
+	setvard FLICKER_IN_COUNT 10
+	setvard FLICKER_DELAY 0
+	setvard FLICKER_MODE 1
+	callevent sword_flicker_loop
+	playsound 0 10 SOUND_SWORD_OFF
+	svplaysound 1 0 SOUND_SWORD_IDLE
+	clientevent update all CL_SCRIPT_IDX sword_flicker_out
+}
+
+{ sword_off_instant //for death
+	clientevent update all CL_SCRIPT_IDX sword_flicker_out
+	effect beam update SWORD_BEAM brightness 0
+	effect beam update SWORD_BEAM remove 0.1
+	svplaysound 1 0 SOUND_SWORD_IDLE
+	setmodelbody 1 0
+	setvard SWORD_STATE 0
+}
+
+//======================= CHARGE DROP
+{
+repeatdelay CHARGE_DROP_RATE
+
+	if NEEDS_CHARGER
+	if DID_FIRST_CHARGE
+	if !ATTEMPTING_RECHARGE
+
+	if game.time > NEXT_CHARGE_DROP
+	subtract CHARGE_LEVEL 1
+	if ( ANIM_RATE > 0.3 )
+	{
+		callevent update_anim_speed
+		dbg losing_charge CHARGE_LEVEL ANIM_RATE
+	}
+	else
+	{
+		callevent sword_off
+		callevent do_recharge
+	}
+}
+
+{ update_anim_speed
+	setvard ANIM_RATE CHARGE_LEVEL
+	divide ANIM_RATE MAX_CHARGE_LEVEL
+	setvard BASE_FRAMERATE ANIM_RATE
+	setanim.framerate ANIM_RATE
+}
+
+//======================= DEATH
+{ game_death
+	callevent sword_off_instant
+	clientevent update all CL_SCRIPT_IDX remove_fx
+	if ( $lcase(game.map.name) equals shad_palace )
+	{
+		//reset player spawn points so they don't sploit the map
+		//(will suck if they die from post-mortem DOT, but not TOO likely with this boss)
+		callexternal players ext_set_map shad_palace from_aluhandra2 from_shad_palace
+	}
+}
+
+//======================= CLIENT FX REFRESH
+{
+repeatdelay 10.0
+
+	if !DOING_RECHARGE //dont refresh during recharge FX
+	if $get(ent_me,isalive)
+	callevent refresh_fx
+}
+
+{ refresh_fx
+	clientevent update all CL_SCRIPT_IDX remove_fx
+
+	clientevent new all GUARDIAN_CL_SCRIPT $get(ent_me,index) 1 SWORD_STATE
+	setvard CL_SCRIPT_IDX game.script.last_sent_id
+}
+
+//======================= "GET OVER HERE!" 
+{ do_reach
+	callevent npcatk_suspend_ai 2.0
+	playanim critical ANIM_REACH
+	playsound 0 10 SOUND_SWING
+	clientevent update all CL_SCRIPT_IDX grab_sprite_on
+}
+
+//======================= Other Dodamage Handling
+{ game_dodamage
+	if ( SMASH_ATTACK )
+	{
+		if $get(PARAM2,isalive)
+		if $get(PARAM2,range) < ATTACK_HITRANGE
+		applyeffect PARAM2 effects/heavy_stun 10.0 $get(ent_me,id) 1
+	}
+	setvard SMASH_ATTACK 0
+}
+
+//developer
+//{
+//	const BEAM_REPEAT 0.1
+//	const H_WIDTH 75
+//	const N_WIDTH -75
+//	const F_HEIGHT 200
+//}
+
+//{
+//repeatdelay BEAM_REPEAT
+//
+//	width 75
+//	height 200
+//	setbbox npcsize //(-75,-75,0) (75,75,200)
+//
+//	local MY_ORG $get(ent_me,origin)
+//	local MY_ANG $get(ent_me,angles.yaw)
+//
+//	local BEAM_START MY_ORG
+//	vectoradd BEAM_START $relpos($vec(0,MY_ANG,0),$vec(H_WIDTH,H_WIDTH,0))
+//	local BEAM_END BEAM_START
+//	vectoradd BEAM_END z F_HEIGHT
+//	effect beam point lgtning.spr 20 BEAM_START BEAM_END (255,0,255) 200 0 BEAM_REPEAT
+//
+//	local BEAM_START MY_ORG
+//	vectoradd BEAM_START $relpos($vec(0,MY_ANG,0),$vec(N_WIDTH,N_WIDTH,0))
+//	local BEAM_END BEAM_START
+//	vectoradd BEAM_END z F_HEIGHT
+//	effect beam point lgtning.spr 20 BEAM_START BEAM_END (255,0,255) 200 0 BEAM_REPEAT
+//
+//	local BEAM_START MY_ORG
+//	vectoradd BEAM_START $relpos($vec(0,MY_ANG,0),$vec(H_WIDTH,N_WIDTH,0))
+//	local BEAM_END BEAM_START
+//	vectoradd BEAM_END z F_HEIGHT
+//	effect beam point lgtning.spr 20 BEAM_START BEAM_END (255,0,255) 200 0 BEAM_REPEAT
+//
+//	local BEAM_START MY_ORG
+//	vectoradd BEAM_START $relpos($vec(0,MY_ANG,0),$vec(N_WIDTH,H_WIDTH,0))
+//	local BEAM_END BEAM_START
+//	vectoradd BEAM_END z F_HEIGHT
+//	effect beam point lgtning.spr 20 BEAM_START BEAM_END (255,0,255) 200 0 BEAM_REPEAT
+//
+//}
+
+//BD prevention
+{ npcatk_suspend_ai
+	setvard OVERRIDE_SUSPEND_AI game.time
+	add OVERRIDE_SUSPEND_AI 45.0
+}
+
+{
+repeatdelay 5.0
+	if SUSPEND_AI
+	if game.time > OVERRIDE_SUSPEND_AI
+	callevent npcatk_resume_ai
+}

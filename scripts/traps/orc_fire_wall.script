@@ -1,0 +1,54 @@
+#include traps/fire_wall
+
+{ [override] game_spawn
+
+ 	setvard PLAYING_DEAD 1 //not valid target
+
+   name a|Fire Wall Trap
+   hp 5
+   race orc
+   invincible 1
+   roam 0
+   skilllevel 0
+   hearingsensitivity 0
+	setvard PLAYING_DEAD 1
+
+   add FX_SPAMMERS 1
+
+   callevent 0.1 flames_start
+
+   //emitsound ent_me $get(ent_me,origin) 192 TIME_LIVE danger 192
+
+   setvard MY_OWNER $get(ent_me,id)
+   setvard MY_BASE_DMG 120
+
+	local REMOVE_TIME FIRE_DURATION
+	subtract REMOVE_TIME 0.5
+	callevent REMOVE_TIME remove_invul
+
+   callevent FIRE_DURATION firewall_death  	//Die after a delay
+   
+   setangle face.y $get(ent_me,angles.y)
+   clientevent new all $currentscript $get(ent_me,origin) $get(ent_me,angles.y) //Send to client immediately - calls client_activate on client
+	setvard FLAME_ID game.script.last_sent_id
+}
+
+{  [override] game_dodamage //1: Attack Hit (1/0)  2: Entity Attack hit  3:  Start Position  4:  End Position
+
+	//if ( $get(PARAM2,isplayer) ) applyeffect PARAM2 effects/effect_burn 2 $get(ent_me,id) MY_BASE_DMG 1
+	if ( $get(PARAM2,isalive) ) 
+	{
+		if ( $get(ent_me,relationship,PARAM2) isnot ally ) applyeffect PARAM2 effects/effect_burn 2 $get(ent_me,id) MY_BASE_DMG 1
+	}		
+}
+
+{ [override] firewall_death  // Pewf
+
+	setvard FLAMING 0
+	callevent firewall_end_cl
+	subtract FX_SPAMMERS 1
+	playsound CHAN_ITEM game.sound.silentvol items/torch1.wav
+	clientevent remove all FLAME_ID
+	removescript
+	deleteent ent_me
+}

@@ -1,0 +1,165 @@
+{
+	const BASE_LEVEL_REQ 25
+
+	const NO_IDLE 1
+
+	const ANIM_LIFT1         0
+	const ANIM_IDLE1         1
+	const ANIM_ATTACK1       9
+	const ANIM_ATTACK2       10
+	const ANIM_ATTACK3       11
+	const ANIM_SHEATH        5
+	const MELEE_VIEWANIM_ATK 9
+	const MODEL_VIEW viewmodels/v_1haxes.mdl
+	const MODEL_VIEW_IDX 5
+	const TOM_SKIN 4
+	const MODEL_HANDS weapons/p_weapons3.mdl
+	const MODEL_WORLD weapons/p_weapons3.mdl
+	const MODEL_BODY_OFS 20
+
+	const SOUND_SWIPE       weapons/swingsmall.wav
+
+	const ANIM_PREFIX  standard
+
+	//Used in base_melee
+	//------------------
+	const MELEE_RANGE  80
+	const MELEE_DMG_DELAY  0.6
+	const MELEE_ATK_DURATION 0.7
+	const MELEE_ENERGY  0.1
+	const MELEE_DMG  180
+	const MELEE_DMG_RANGE      70
+	const MELEE_DMG_TYPE  dark
+	const MELEE_ACCURACY  75%
+	const MELEE_STAT  axehandling
+
+	const MELEE_SOUND      SOUND_SWIPE
+	const MELEE_SOUND_DELAY      MELEE_DMG_DELAY
+	const MELEE_PARRY_CHANCE      25%
+}
+
+#include items/axes_base_onehanded
+
+{  weapon_spawn
+
+   name  a|Dark Tomahawk
+   desc  A cursed tomahawk of ancient times
+   weight  30
+   size  25
+   value        2500
+   sethudsprite hand axe
+   sethudsprite trade 175
+   
+   callevent bw_setup_model
+}
+
+{ game_deploy
+	callevent 0.1 toma_setup_skin
+}
+
+{ toma_setup_skin
+	setprop ent_me skin TOM_SKIN
+}
+
+{ bw_setup_model
+	setmodelskin TOM_SKIN //no workie?
+	setviewmodelprop ent_me skin TOM_SKIN
+	setprop ent_me skin TOM_SKIN
+	//setitemskin TOM_SKIN //no workie
+}
+
+{ register_charge1
+	local reg.attack.type		strike-land
+	local reg.attack.noautoaim		1
+	local reg.attack.keys		-attack1
+	local reg.attack.range		4096
+	local reg.attack.dmg			0
+	local reg.attack.dmg.range		0
+	local reg.attack.dmg.type		slash
+	local reg.attack.energydrain		2
+	local reg.attack.stat		axehandling
+	local reg.attack.hitchance		100%
+	local reg.attack.priority		2
+	local reg.attack.delay.strike	0.2
+	local reg.attack.delay.end		0.9
+	local reg.attack.ofs.startpos	MELEE_STARTPOS
+	local reg.attack.ofs.aimang		MELEE_AIMANGLE
+	local reg.attack.callback		axethrow
+	local reg.attack.noise		MELEE_NOISE
+	local reg.attack.chargeamt	200%
+	local reg.attack.reqskill	27
+	registerattack
+}
+
+{ axethrow_start
+
+	setvard AXE_RESTORED 0
+	//sethand	undroppable
+	setmodel none
+	setworldmodel none
+	setviewmodel viewmodels/v_martialarts.mdl
+	playviewanim  4
+	if game.serverside
+	setviewmodelprop ent_me submodel $get(ent_owner,scriptvar,'PLR_HAND_SET') 0
+	svplaysound 0 8 $get(ent_owner,scriptvar,'PLR_SOUND_JAB2')
+}
+
+{ axethrow_strike	//PARAM1: "none"/"npc"/"world"   2: Attack end Position   3: Entity hit (if any)
+
+	playowneranim critical bow_release
+
+	if game.serverside
+	local END_TARGET PARAM2
+	local MY_VIEW $get(ent_owner,viewangles)
+
+	dbg axethrow_strike PARAM1
+
+	if ( PARAM1 isnot world ) vectoradd END_TARGET $relpos(MY_VIEW,$vec(0,128,0))
+
+	local DMG_AXE $get(ent_owner,skill.axehandling)
+	multiply DMG_AXE 1.5
+	createnpc monsters/summon/tomahawk $get(ent_owner,attachpos,0) $get(ent_owner,id) END_TARGET DMG_AXE $get(ent_me,id) MELEE_DMG_TYPE
+	//setvard MY_AXE $get(ent_lastcreated,id)
+	callexternal ent_owner ext_removed_effects lock
+	applyeffect ent_owner effects/effect_templock $get(ent_owner,id)
+
+	setvard game.effect.canattack 0
+}
+
+{ restore_axe_cl
+	setviewmodel MODEL_VIEW
+	setmodel MODEL_WORLD
+	setworldmodel MODEL_WORLD
+	if !AXE_RESTORED
+	playviewanim  ANIM_LIFT1
+}
+
+{ catch_axe //called external from tom
+
+	dbg Caught Axe
+	//if ( game.clientside ) callevent restore_axe_cl //this is probably never client side as it is an external call
+	if ( game.serverside )
+	{
+		//callexternal ent_owner ext_force_itemevent $get(ent_me,id) restore_axe_cl
+		callclitemevent ent_me restore_axe_cl
+		setviewmodelprop ent_me submodel $get(ent_owner,scriptvar,'PLR_HAND_SET') MODEL_VIEW_IDX
+	}
+
+	callexternal ent_owner ext_remove_lock
+	setvard THROWING_AXE 0
+
+	//hacky way to restore axe attribs on the client
+	clientcmd ent_owner +attack
+	callevent 0.5 catch_axe2
+}
+
+{ catch_axe2
+	clientcmd ent_owner -attack
+}
+
+{ melee_start
+	setviewmodel MODEL_VIEW
+	setmodel MODEL_WORLD
+	setworldmodel MODEL_WORLD
+	setvard AXE_RESTORED 1
+}

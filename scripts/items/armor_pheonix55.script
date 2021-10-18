@@ -1,0 +1,107 @@
+{
+	const ARMOR_MODEL      	armor/p_armorvest2.mdl
+	const ARMOR_GROUP 4
+	const ARMOR_BODY 1	//JHLMV index -2
+	const ARMOR_TEXT		"You assemble the phoenix armor."
+	const BARMOR_TYPE		platemail
+	const BARMOR_PROTECTION	55%
+	//chest|arms|legs
+	const BARMOR_PROTECTION_AREA	"chest;arms;legs"
+	const BARMOR_REPLACE_BODYPARTS BARMOR_PROTECTION_AREA
+
+	const ELM_NAME "phonx"
+	const ELM_TYPE "fire"
+	const ELM_AMT 75
+
+	const ARMOR_STR_REQ 40
+
+	const NEW_ARMOR_OFS 11
+}
+
+#include items/armor_base
+#include [server] items/base_elemental_resist
+
+{  game_spawn
+
+   name 	Armor of the Phoenix
+   desc 	Forged with the blood of an efreet and the feathers of a phoenix
+   weight 	120
+   size 	60
+   wearable     1 "chest;arms;legs"
+   value	590
+   
+   sethudsprite trade 151
+
+	setvard IS_WORN 1
+}
+
+{ game_takedamage ////PARAM1=attacker  PARAM2=inflictor? PARAM3=dmg PARAM4=dmg_type
+
+	if $get(ent_me,is_worn)
+
+	if PARAM4 startswith fire
+
+	local L_BURN_ID $get(ent_owner,scriptvar,'BURNER_ID')
+	if ( PARAM2 equals L_BURN_ID ) local EXIT_SUB 1 //no protection for vampires
+	if !EXIT_SUB
+
+	if ( $get(ent_owner,skill.spellcasting.fire) < 15 ) dplayermessage Your magic is not strong enough to activate this armor's special ability
+
+	if $get(ent_owner,skill.spellcasting.fire) >= 15
+
+	local MP_TO_GIVE PARAM3
+
+	local DMG_TO_TAKE PARAM3
+	multiply DMG_TO_TAKE $get_takedmg(ent_owner,fire) //take into account resistance
+	dbg game_takedamage DMG_TO_TAKE
+//
+//	//setdmg hit 0
+//	setdmg dmg DMG_TO_TAKE
+
+	local OWNER_HP $get(ent_owner,hp)
+	subtract OWNER_HP DMG_TO_TAKE
+
+	dbg regen ( OWNER_HP )
+
+	if ( OWNER_HP <= 0 )
+	{
+		infomsg ent_owner "The Phoenix Armor" "Has restored your health to 100%"
+		givehp ent_owner $get(ent_owner,maxhp)
+		setdmg dmg 0
+		setdmg hit 0
+		playsound 0 10 magic/cast.wav
+		callevent 0.2 phoenix_sound
+	}
+
+	if ( $get(ent_owner,mp) != $get(ent_owner,maxmp) )
+	{
+		givemp MP_TO_GIVE
+		callexternal ent_owner mana_drain //update mana on player hud readout, if using hud feedback
+		local MP_TO_GIVE $int(MP_TO_GIVE)
+		stradd MP_TO_GIVE 'mp'
+		gplayermessage ent_owner The phoenix armor regenerates your mana ( MP_TO_GIVE )
+		effect glow ent_owner (0,255,0) 64 1 1
+		playsound 0 10 player/heartbeat_noloop.wav
+	}
+}
+
+{ phoenix_sound
+	playsound 0 10 monsters/birds/hawkcaw.wav
+}
+
+{ [override] elm_activate_effect
+	local OWNER_SKILL $get(ent_owner,skill.spellcasting.fire)
+	if ( OWNER_SKILL < 20 ) dplayermessage ent_owner You lack the fire skill to activate this armor's magic.
+	if OWNER_SKILL > 20
+	setvard PHOENIX_ACTIVE 1
+	callevent elm_get_resist
+	callexternal ent_owner ext_register_element ELM_NAME ELM_TYPE ELM_AMT
+}
+
+{ [override] elm_remove_effect
+	if PHOENIX_ACTIVE
+	setvard PHOENIX_ACTIVE 0
+	if $get(ent_owner,skill.spellcasting.fire) > 20
+	setvard PHOENIX_ACTIVE 0
+	callexternal ent_owner ext_register_element ELM_NAME remove
+}

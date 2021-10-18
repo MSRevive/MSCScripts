@@ -1,0 +1,115 @@
+//Sorc Chief, special barrier
+//- This barrier is likely going to be on a long time (until Thulhdar dies), so we can't use the standard monsters/summon/barrier
+//- This will have to refresh periodically
+
+#scope client
+
+
+{ [client] client_activate //<owner> <rad> <color> <duration> [auto_lift:0|1] [follow_owner:0|1]
+
+	//if auto_lift is used, barrier with lift at end of duration
+	//update clear_sprites to lift barrier (script removes 5 secs later)	
+
+	setvard OWNER_IDX PARAM1
+	setvard CL_RADIUS PARAM2
+	setvard CL_COLOR PARAM3
+	setvard CL_DURATION PARAM4
+	setvard CL_AUTO_LIFT PARAM5
+	setvard CL_FOLLOW PARAM6
+
+	dbg *** barrier_activate idx OWNER_IDX rad CL_RADIUS col CL_COLOR dur CL_DURATION alift CL_AUTO_LIFT fol CL_FOLLOW
+
+	callevent CL_DURATION remove_me
+
+	setvard CYCLE_ANGLE 0
+
+	callevent 0.1 spriteify
+}
+
+//Sprite
+
+{ [client] spriteify
+
+	setvard TOTAL_OFS 64
+
+	if ( CL_RADIUS <= 256 )
+	{
+		setvard SPRITE_SCALE 0.75
+	}
+	else
+	{
+		setvard SPRITE_SCALE 1.0
+	}
+
+	setvard TURN_INC 20
+	calleventloop 18 createsprite
+
+}
+
+{ [client] createsprite
+
+	local l.pos $getcl(OWNER_IDX,origin)
+	add CYCLE_ANGLE TURN_INC
+	vectoradd l.pos $relpos($vec(0,CYCLE_ANGLE,0),$vec(0,CL_RADIUS,36))
+	cleffect tempent sprite 3dmflaora.spr l.pos setup_sprite1_sparkle sprite_update
+}
+
+{ [client] setup_sprite1_sparkle
+
+	cleffect tempent set_current_prop death_delay 	CL_DURATION
+	cleffect tempent set_current_prop framerate	30
+	cleffect tempent set_current_prop frames	1
+	cleffect tempent set_current_prop scale 	SPRITE_SCALE
+	cleffect tempent set_current_prop rendermode add
+	cleffect tempent set_current_prop renderamt 180
+	cleffect tempent set_current_prop rendercolor CL_COLOR
+	cleffect tempent set_current_prop gravity 	0.0
+	cleffect tempent set_current_prop collide 	none
+	//cleffect tempent set_current_prop fadeout lifetime
+	//cleffect tempent set_current_prop update 1
+	cleffect tempent set_current_prop fuser1 CYCLE_ANGLE
+}
+
+{ [client] sprite_update
+
+
+	if ( !GO_AWAY )
+	{
+		if CL_FOLLOW
+		local SPRITE_ORG $getcl(OWNER_IDX,origin)
+		local MY_ANGLE game.tempent.fuser1
+		local SPRITE_VOF $vec.z(SPRITE_ORG)
+		add SPRITE_VOF 48
+		vectoradd SPRITE_ORG $relpos($vec(0,MY_ANGLE,0),$vec(0,CL_RADIUS,SPRITE_VOF))
+		cleffect tempent set_current_prop origin SPRITE_ORG
+		//dbg *** follow SPRITE_ORG
+	}
+	else
+	{
+		cleffect tempent set_current_prop death_delay 	2.0
+		cleffect tempent set_current_prop velocity (0,0,400)
+		cleffect tempent set_current_prop fadeout 2.0
+		cleffect tempent set_current_prop gravity 	-4.0
+	}
+}
+
+{ [client] clear_sprites
+	setvard GO_AWAY 1
+	setvard FX_ACTIVE 0
+	callevent sprite_update
+	callevent 5.0 remove_me
+}
+
+{ [client] remove_me
+
+	if ( CL_AUTO_LIFT )
+	{
+		setvard CL_AUTO_LIFT 0
+		callevent clear_sprites
+	}
+	else
+	{
+		removescript
+	}
+}
+

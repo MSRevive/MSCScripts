@@ -1,0 +1,318 @@
+//Sorc Shamman (In training) by Thothie (from morc shaman)
+//Elder Sorc Shaman worked by The Magical Bong/CrazyMonkeyDude
+{
+	//new
+	const FINGER_ADJ '$relpos($vec(0,MY_YAW,0),$vec(0,30,54))'
+	const SOUND_BEAM weather/Storm_exclamation.wav
+	const ANIM_BEAM battleaxe_swing1_L
+	setvard FREQ_REPULSE $randf(15,20)
+	const DMG_PUSH_BEAM $randf(10,20)
+	const PROJ_SCRIPT proj_lightning_ball
+
+
+	setvard DROP_GOLD 1			//Gold Drop
+	setvard DROP_GOLD_AMT $rand(15,30)	//
+	setvard NPC_GIVE_EXP 800
+	//setvard DROP_ITEM1 scroll2_frost_xolt //hanled through monsters/base_monster
+	//setvard DROP_ITEM1_CHANCE 5%	  //hanled through by monsters/base_monster
+	
+	setvard ANIM_ATTACK swordswing1_L //Attack animation
+	setvard FLINCH_CHANCE 45%
+	
+	setvard MOVE_RANGE 256
+	setvard ATTACK_RANGE 2000
+	const ATTACK_SPEED 300
+	const ATTACK_CONE_OF_FIRE 2//Cone of fire
+	
+	const MELE_RANGE 96
+	const MELE_HITRANGE 128
+	const ATTACK_ACCURACY 80
+	const ANIM_SWIPE swordswing1_L
+	const ANIM_FIRE swordswing1_L
+	const ANIM_WARCRY warcry
+	const ANIM_KICK kick
+	setvar ANIM_IDLE idle1
+	const SWIPE_DAMAGE '$rand(25,65)'
+	const SOUND_MELEMISS zombie/claw_miss1.wav
+	const SOUND_MELEHIT zombie/claw_strike3.wav 
+
+	const SOUND_SHOCK1 debris/zap8.wav
+	const SOUND_SHOCK2 debris/zap3.wav
+	const SOUND_SHOCK3 debris/zap4.wav
+
+	const SOUND_DEATH_SHOOT magic/spawn.wav
+	const SOUND_WARCRY1 monsters/orc/attack1.wav
+	const SOUND_WARCRY2 monsters/orc/attack3.wav
+	const FROST_BOLT_DAMAGE '$rand(40,75)'
+	const FROST_STRIKE_DAMAGE '$rand(30,60)'
+	const FROST_BOLT_FREQ 1.5
+	const DEATH_SCRIPT monsters/summon/summon_lightning_storm
+
+	setvard BALL_SIZE 5
+	setvard BALL_DMG 100
+	setvard BALL_TYPE lightning
+
+	//Summons
+	const MAX_SUMMONS 2
+
+	const LELM_SUMMON_SCRIPT monsters/elemental_air2
+	//Precache, damn you!
+	const SOUND_THUNDER magic/bolt_end.wav
+	const TORNADO_MODEL "weapons/magic/tornado.mdl"
+	
+	const SOUND_LHOR monsters/magic/elecidlepop.wav
+	setvard LHOR_SUMMON_SCRIPT monsters/horror_lightning
+	if ( $lcase(game.map.name) equals sorc_villa ) setvard LHOR_SUMMON_SCRIPT monsters/horror_lightning2
+	const LHOR_SUMMON_FREQ 15
+}
+
+#include monsters/orc_base_ranged
+#include monsters/orc_base
+#include monsters/base_lightning_shield
+
+{ game_precache
+     precachefile monsters/horror_lightning
+     precachefile monsters/elemental_air2
+     //To prevent "Not precached" errors"
+     precachefile monsters/summon/tornado
+     precache SOUND_THUNDER
+     precache TORNADO_MODEL
+     precachefile monsters/summon/lightning_ball_guided
+	precache c-tele1.spr
+}
+
+{ orc_spawn
+
+	hp 1750
+	name an|Elder Shadahar Shaman
+	hearingsensitivity 8
+	takedmg lightning 0.0
+	takedmg poison 2.0
+	takedmg acid 2.0
+	setstat spellcasting 30 30 30 30 30 30 30 //><
+
+	setmodel monsters/sorc.mdl
+
+	setmodelbody 1 0 //body: 0=bare 1=bloody_shirt 2=gold_armor 3=archer
+	setmodelbody 1 4 //head: 0=hat_horns 1=hat_spiked 2=lizardskin_horned 3=gold_Chieftain 4=lizard_cap
+	setmodelbody 2 0 //weapon: 0=unarmed 1=axe 2=bow 3=steel_bow 4=sword 5=great_axe 6=sword_sheild 8=yellow_axe 9=blooddrinker
+}
+
+{ npc_selectattack
+
+	local NME_RANGE $get(ent_lastseen,range)
+	if ( FROST_BOLT_DELAY ) 
+	{
+		if ( NME_RANGE > MELE_HITRANGE ) setvard ANIM_ATTACK ANIM_FIRE
+	}
+	if ( !FROST_BOLT_DELAY ) setvard ANIM_ATTACK ANIM_FIRE
+	if NME_RANGE < MELE_HITRANGE
+	if !REPULSE_DELAY
+
+	if ( $get(NPCATK_TARGET,nopush) ) local NO_BEAM 1
+	if ( $get_takedmg(NPCATK_TARGET,lightning) == 0 ) add NO_BEAM 1
+	setvard REPULSE_DELAY 1
+	callevent FREQ_REPULSE reset_repulse_delay
+
+	if NO_BEAM < 2 //if can neither push nor damage target, skip
+
+	setmoveanim ANIM_BEAM
+	setidleanim ANIM_BEAM
+	playanim critical ANIM_BEAM
+	setvard BEAM_TARGET NPCATK_TARGET
+	setvard AS_ATTACKING game.time
+	setvard BEAM_COUNT 0
+	callevent npcatk_suspend_ai
+	callevent beam_push
+}
+
+{ reset_repulse_delay
+	setvard REPULSE_DELAY 0
+}
+
+
+{ swing_sword //called by modeanim swordswing1_L at frame 14
+
+	if ( $cansee(NPCATK_TARGET,MELE_RANGE) )
+	{
+		//dbg Can See NME in range
+		setvard ANIM_ATTACK ANIM_SWIPE
+		callevent swipe_attack $get(NPCATK_TARGET,id)
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+//	if ( $cansee(NPCATK_TARGET) )
+//	{
+//		//prevents shamman from moving closer to target than needed
+//		//if ( !$cansee(enemy,MOVE_RANGE) ) setvard ANIM_ATTACK ANIM_RUN
+//		//if ( $cansee(enemy,MOVE_RANGE) ) setvard ANIM_ATTACK ANIM_WARCRY
+//	}
+
+	//if !FROST_BOLT_DELAY
+	setvard ANIM_ATTACK ANIM_FIRE
+	callevent throw_frostbolt
+}
+
+{ throw_frostbolt
+
+	if $cansee(NPCATK_TARGET)
+	callevent npcatk_faceattacker NPCATK_TARGET
+
+	callevent FROST_BOLT_FREQ reset_frostbolt
+	playrandomsound 0 10 SOUND_SHOCK1 SOUND_SHOCK2 SOUND_SHOCK3
+
+	local FINAL_DAMAGE FROST_BOLT_DAMAGE
+	if ( EXT_DAMAGE_ADJUSTMENT isnot 'EXT_DAMAGE_ADJUSTMENT' ) add FINAL_DAMAGE EXT_DAMAGE_ADJUSTMENT //for future use
+	tossprojectile NPCATK_TARGET ATTACK_SPEED FINAL_DAMAGE ATTACK_CONE_OF_FIRE PROJ_SCRIPT (0,48,48)
+	setvard FROST_BOLT_DELAY 1
+
+	add MISS_COUNT 1
+	if ( MISS_COUNT >= 5 )
+	{
+		callevent chicken_run 1.0
+		setvard MISS_COUNT 0
+	}
+}
+
+{ reset_frostbolt
+	setvard ANIM_ATTACK ANIM_FIRE
+	setvard DID_WARCRY 0
+	setvard FROST_BOLT_DELAY 0
+}
+
+{ npc_death
+
+	setsolid none
+	setbbox none
+	playsound 0 10 SOUND_DEATH_SHOOT
+	local STORM_POS game.monster.origin
+	vectorset STORM_POS z $get_ground_height(game.monster.origin)
+	createnpc DEATH_SCRIPT STORM_POS $get(ent_me,id) $get(ent_me,angles.y) 40.0 15.0
+	local SPAWN_POS $get(ent_me,origin)
+	vectoradd SPAWN_POS z 60
+	if !NO_SUMMON
+	createnpc LELM_SUMMON_SCRIPT SPAWN_POS
+}
+
+{ swipe_attack //PARAM1 = enemy struck
+
+	setvard SWIPE_SOUNDS 1
+	local FINAL_DAMAGE SWIPE_DAMAGE
+	if ( EXT_DAMAGE_ADJUSTMENT isnot 'EXT_DAMAGE_ADJUSTMENT' ) add FINAL_DAMAGE EXT_DAMAGE_ADJUSTMENT //for future use
+	if $get(ent_laststruckbyme,range) <= MELE_HITRANGE
+	callevent npcatk_dodamage PARAM1 MELE_HITRANGE FINAL_DAMAGE ATTACK_ACCURACY
+	if $rand(1,5) == 1
+	applyeffect PARAM1 effects/effect_shock_dmg $rand(5,10) ent_me FROST_STRIKE_DAMAGE
+}
+
+{ game_dodamage //1: Attack Hit (1/0)  2: Entity Attack hit  3:  Start Position  4:  End Position
+
+	if ( PARAM1 ) setvard MISS_COUNT 0
+
+	if SWIPE_SOUNDS
+
+	if ( !PARAM1 ) playsound 0 10 SOUND_MELEMISS
+
+	if ( PARAM1 ) playsound 0 10 SOUND_MELEHIT
+
+	setvard SWIPE_SOUNDS 0
+}
+
+{ npc_struck
+
+	if $get(ent_laststruck,range) < MELE_RANGE
+	//setvard ANIM_ATTACK ANIM_KICK
+	callevent npcatk_settarget $get(ent_laststruck,id)
+	//callevent check_attack
+}
+
+
+{ beam_push
+
+	add BEAM_COUNT 1
+	if ( BEAM_COUNT == 30 )
+	{
+		callevent npcatk_resume_ai
+		setidleanim ANIM_IDLE
+		setmoveanim ANIM_RUN
+		setvard BEAM_ON 0
+	}
+	if BEAM_COUNT < 30
+	callevent 0.1 beam_push
+	if ( !$get(BEAM_TARGET,isalive) ) setvard BEAM_COUNT 29
+	if $get(BEAM_TARGET,isalive)
+	callevent npcatk_faceattacker BEAM_TARGET
+	local BEAM_START game.monster.origin
+	local MY_YAW $vec.yaw(game.monster.angles)
+	vectoradd BEAM_START FINGER_ADJ //start fingers
+	local BEAM_END $get(BEAM_TARGET,origin)
+	
+	local BEAM_TRACE $get_traceline(BEAM_START,BEAM_END,worldonly)
+	if BEAM_TRACE equals BEAM_END
+
+	playsound 0 10 SOUND_BEAM
+	effect beam end lgtning.spr 30 BEAM_START BEAM_TARGET 0 (200,255,50) 200 30 1.0
+
+	local MY_YAW $vec.yaw(game.monster.angles)
+
+	add MY_YAW BEAM_COUNT
+	if ( MY_YAW > 359 ) subtract MY_YAW 359
+
+	local VEL_SET $relpos($vec(0,MY_YAW,0),$vec(500,1000,30))
+
+	setvelocity BEAM_TARGET VEL_SET
+
+	dodamage BEAM_TARGET direct DMG_PUSH_BEAM 100% $get(ent_me,id) lightning
+}
+
+{ npcatk_hunt
+	if ( !$cansee(NPCATK_TARGET) ) setvard ATTACK_MOVERANGE game.monster.moveprox
+	if ( $cansee(NPCATK_TARGET) ) setvard ATTACK_MOVERANGE ATTACK_RANGE
+
+	if $get(ent_me,isalive)
+	if NPCATK_TARGET isnot unset  
+	if game.time > NEXT_SUMMON  
+	if LHOR_NSUMMONS < MAX_SUMMONS 
+	setvard NEXT_SUMMON game.time  
+	add NEXT_SUMMON LHOR_SUMMON_FREQ 
+	callevent summon_lhor  
+}
+
+{ summon_lhor
+	if !NO_SUMMON
+	local SUMMON_POS $get(ent_me,origin)   
+	vectoradd SUMMON_POS z 76	
+	createnpc LHOR_SUMMON_SCRIPT SUMMON_POS $get(ent_me,id) NPCATK_TARGET   
+	add LHOR_NSUMMONS 1    
+} 
+
+{ horror_died
+	subtract LHOR_NSUMMONS 1
+	//dont constantly refresh summons
+	setvard NEXT_SUMMON game.time
+	add NEXT_SUMMON LHOR_SUMMON_FREQ
+}
+
+{ set_turret
+	setvard AM_TURRET 1
+	setmoveanim ANIM_IDLE
+	setvard ANIM_RUN ANIM_IDLE
+	setvard ANIM_WALK ANIM_IDLE
+	setvard NO_STUCK_CHECKS 1
+	roam 0
+}
+{ npc_post_spawn
+	//redundant
+	if AM_TURRET
+	setmoveanim ANIM_IDLE
+	setvard ANIM_RUN ANIM_IDLE
+	setvard ANIM_WALK ANIM_IDLE
+	setvard NO_STUCK_CHECKS 1
+	roam 0
+}
+
+{ set_sorcpal_shaman1
+	saytextrange 2048
+	saytext Fear the thunder! Feel the lightning!
+}

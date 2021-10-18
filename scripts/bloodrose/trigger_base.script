@@ -1,0 +1,143 @@
+{
+	const HOME_DELAY $randf(10,20)
+	setvard IS_LURE 1
+	const RESET_DELAY 30.0
+}
+
+#include monsters/externals
+
+{ game_spawn
+
+	setvard IMMUNE_PUSH 1
+	setvard IMMUNE_STUN 1
+
+	nopush 1
+
+	hp 1500
+	invincible 1
+	setvard TAKE_IT 0
+	name an|Elemental Shard
+	race demon
+	setmodel crystal.mdl
+	width 32
+	height 32
+	movespeed 0.0
+	blood none
+	gravity 0
+	fly 1
+	setprop ent_me movetype const.movetype.none
+	setvard TRIGGER_STRING toggle_
+	stradd TRIGGER_STRING ELEMENT_TYPE
+	setprop ent_me rendermode 5
+	setprop ent_me renderamt 255
+	callevent 1.0 get_origin
+
+	setmoveanim spin
+	setidleanim spin
+
+	takedmg all 0.5
+
+	setvard PLAYING_DEAD 1
+	setvard IS_LURE 1
+	callevent HOME_DELAY reset_pos
+
+	callevent glow_loop
+
+	callevent trigger_spawn
+}
+
+{ glow_loop
+	callevent 5.3 glow_loop
+	getent player 256
+	if ( GET_COUNT > 0 ) callexternal all npcatk_ally_alert GET_ENT1 $get(ent_me,id) "crystal_alert"
+	if ( ELEMENT_TYPE equals lightning ) effect glow ent_me (255,255,0) 128 10 10
+	if ( ELEMENT_TYPE equals cold ) effect glow ent_me (4,50,128) 128 10 10
+	if ( ELEMENT_TYPE equals fire ) effect glow ent_me (255,0,0) 128 10 10
+	if ( ELEMENT_TYPE equals poison ) effect glow ent_me (0,255,0) 128 10 10
+}
+
+{ get_origin
+	setvard HOME_POS game.monster.origin
+}
+
+{ reset_pos
+	setorigin ent_me HOME_POS
+	callevent 11.0 reset_pos
+}
+
+{ game_damaged //PARAM1=attacker PARAM2=Damage PARAM3=Type
+
+	if TAKE_IT
+
+	//setting hp to 3000 every time causing it to go BD?
+	if ( game.monster.hp < game.monster.maxhp )
+	{
+		local DIFF game.monster.maxhp
+		subtract DIFF game.monster.hp
+		givehp DIFF
+	}
+	setorigin ent_me HOME_POS
+
+	local DMG_TYPE PARAM3
+
+	callevent check_damage_type DMG_TYPE
+}
+
+{ check_damage_type
+
+	if !IAM_ON
+
+	local EXIT_SUB 1
+	if ( PARAM1 contains ELEMENT_TYPE ) local EXIT_SUB 0
+	if ( PARAM1 contains acid )
+	{
+		if ( ELEMENT_TYPE contains poison ) local EXIT_SUB 0
+	}
+	if !EXIT_SUB
+
+	if ( !TRIG_DELAY ) setvard TRIG_DELAY 1
+	
+	callevent element_on
+}
+
+{ trig_reset
+
+	setvard IAM_ON 0
+	setorigin ent_me HOME_POS
+	setvard TRIG_DELAY 0
+	local MON_NAME $get_by_name(ele_monitor)
+	local MON_ID $get(MON_NAME,id)
+	if ( !TRIG_DELAY ) callexternal MON_ID trigger_off ELEMENT_TYPE
+	usetrigger TRIGGER_STRING
+}
+
+{ element_trigs_remove
+	deleteent ent_me
+}
+
+{ element_on
+
+	setvard IAM_ON 1
+	callevent RESET_DELAY trig_reset
+	local MON_NAME $get_by_name(ele_monitor)
+	local MON_ID $get(MON_NAME,id)
+	callexternal MON_ID trigger_on ELEMENT_TYPE
+	usetrigger TRIGGER_STRING
+}
+
+{ make_vulnerable
+
+	//dbg Making vulnerable
+	invincible 0
+	setvard TAKE_IT 1
+}
+
+{ effect_damage //PARAM1=Dmg PARAM2=Attacker PARAM3=Duration PARAM4=Type
+
+	callevent check_damage_type PARAM4
+}
+
+{ game_death
+	//^_^ - I doubt this is happening, but just in case
+	infomsg all OMFG_WTF "MAJOR MAP ERROR - AN A ELEMENTAL CRYSTAL DIED! WTF!?"
+}

@@ -1,0 +1,402 @@
+//This is an older script and may have some bad conventions as a result
+
+//Dwarf Zombie by Thothie, from ghoul_lesser
+//Lesser Ghoul by Thothie - From Greater Ghoul
+//- Fugly model - basically fast Zombie, xtra danage attack secondary
+//- Differences: -stunatk <hp <size <damage
+#scope server
+{
+	setvard CAN_ATTACK 1
+	setvard CAN_HUNT 1
+	setvard HUNT_AGRO 1
+	setvard CAN_HEAR 1
+	setvard CAN_WANDER 1
+
+	setvard CAN_RETALIATE 1
+	const RETALIATE_CHANGETARGET_CHANCE 80
+
+	setvard CAN_FLINCH 0
+
+	setvard CAN_FLEE 1
+	const FLEE_HEALTH 25
+	const FLEE_CHANCE 25
+	setvard FLEE_DISTANCE 2048
+
+	setvard ATTACK_RANGE 125
+	setvard ATTACK_HITRANGE 200
+	setvard MOVE_RAGE 65
+	const ATTACK_ACCURACY 80%
+	const ATTACK2_ACCURACY 75%
+	//defined in type selection (this seems to be overriding, even though it shouldn't)
+	//setvard ATTACK_DAMAGE 30
+	//setvard ATTACK2_DAMAGE 80
+
+	//base anims
+	setvar ANIM_IDLE idle
+	setvar ANIM_WALK walk
+	setvar ANIM_RUN walk //zombies only run under special circumstances
+	setvard ANIM_DEATH death
+	setvard ANIM_ATTACK attack	//alternates between leap and slash
+
+	//cust anims
+	const ANIM_LEAP attack2
+	const ANIM_SLASH attack
+	const ANIM_NOD nod
+
+	const SOUND_IDLE1 agrunt/ag_idle2.wav
+	const SOUND_IDLE2 agrunt/ag_alert3.wav
+	const SOUND_IDLE3 agrunt/ag_idle5.wav
+
+    const SOUND_ALERT agrunt/ag_alert2.wav
+
+	const SOUND_LEAP agrunt/ag_attack2.wav
+
+	const SOUND_ATTACK1 zombie/claw_miss1.wav
+	const SOUND_ATTACK2 zombie/claw_miss2.wav
+	const SOUND_ATTACKHIT1 zombie/claw_strike1.wav
+	const SOUND_ATTACKHIT2 zombie/claw_strike2.wav
+	const SOUND_ATTACKHIT3 zombie/claw_strike3.wav
+
+	const SOUND_DEATH agrunt/ag_die5.wav
+
+	const SOUND_STRUCK debris/flesh2.wav		//most common
+	const SOUND_PAIN1 agrunt/ag_pain3.wav	//rare > 50%
+	const SOUND_PAIN2 agrunt/ag_pain5.wav	//rare < 50%
+	const HURT_POINT 0.5 //Hurt threshold point
+
+   	const SOUND_TURNED1	ambience/the_horror1.wav
+   	const SOUND_TURNED2	ambience/the_horror2.wav
+   	const SOUND_TURNED3	ambience/the_horror3.wav
+	const SOUND_TURNED4	ambience/the_horror4.wav	
+	const SOUND_HOLYPAIN1 agrunt/ag_pain4.wav
+	const SOUND_HOLYPAIN2 agrunt/ag_die3.wav
+
+	const SOUND_STEP1 player/pl_grate1.wav
+	const SOUND_STEP2 player/pl_grate2.wav
+	const SOUND_STEP3 player/pl_grate3.wav
+	const SOUND_STEP4 player/pl_grate4.wav
+
+	const SOUND_NOD x/x_laugh1.wav
+
+	setvard DROP_GOLD 1
+	setvard DROP_GOLD_MIN 5
+	setvard DROP_GOLD_MAX 30
+
+	const I_AM_TURNABLE	1	//for base_turn_undead
+
+	setvard MONSTER_WIDTH 32	//for anti-stuck
+
+	precache SOUND_DEATH //handled externally
+}
+
+#include monsters/base_monster_new
+#include monsters/base_turn_undead 
+
+{ npc_spawn
+
+	if ( ZOMBIE_QUEST_COMPLETE ) deleteent ent_me
+
+	setvard JUST_SPAWNED 1 //expar
+	name a|Dwarven Zombie
+	//ov 110
+	width 32
+	height 48
+	roam 1
+	race undead
+	setidleanim ANIM_IDLE
+	setmoveanim ANIM_WALK
+	takedmg holy 2.5
+	takedmg pierce 0.5
+	takedmg cold 0.25
+	takedmg lightning 0.5
+	hearingsensitivity 10
+	setmodel dwarf/male1.mdl
+
+	setmodelbody 0 2
+
+	callevent pick_weapon_type
+
+	if ( game.map.name equals gatecity )
+	{
+		//lots of insanely stupid monster clips in gatecity, ignore them
+		setmonsterclip 0
+	}
+
+	if ( WEAPON_TYPE == 0 )
+	{
+		//unarmed
+		setvard NPC_GIVE_EXP 40
+		hp 150
+		setmodelbody 1 0
+		setvard ATTACK_DAMAGE 20
+		setvard ATTACK2_DAMAGE 80
+		setvard ATTACK_RANGE 50
+		setvard ATTACK_HITRANGE 100
+		setvard MOVE_RAGE 48
+		setvard ATTACK2_CHANCE 0
+		setvard DROP_GOLD_MIN 5
+		setvard DROP_GOLD_MAX 15
+	}
+
+	if ( WEAPON_TYPE == 1 )
+	{
+		//small axe
+		setvard NPC_GIVE_EXP 50
+		hp 200
+		setmodelbody 1 1
+		setvard ATTACK_DAMAGE 30
+		setvard ATTACK2_DAMAGE 90
+		setvard ATTACK_RANGE 125
+		setvard ATTACK_HITRANGE 175
+		setvard MOVE_RAGE 48
+		setvard ATTACK2_CHANCE 0
+		setvard DROP_GOLD_MIN 10
+		setvard DROP_GOLD_MAX 20
+   		setvard DROP_ITEM1 axes_smallaxe //Used by base_monster
+   		setvard DROP_ITEM1_CHANCE 10%
+	}
+
+	if ( WEAPON_TYPE == 2 )
+	{
+		//big axe
+		setvard NPC_GIVE_EXP 100
+		hp 300
+		setmodelbody 1 2
+		setvard ATTACK_DAMAGE 40
+		setvard ATTACK2_DAMAGE 100
+		setvard ATTACK_RANGE 125
+		setvard ATTACK_HITRANGE 200
+		setvard MOVE_RAGE 65
+		setvard ATTACK2_CHANCE 25
+		setvard DROP_GOLD_MIN 15
+		setvard DROP_GOLD_MAX 30
+   		setvard DROP_ITEM1 axes_doubleaxe //Used by base_monster
+   		setvard DROP_ITEM1_CHANCE 10%
+	}
+
+	if ( WEAPON_TYPE == 3 )
+	{
+		//big sword
+		setvard NPC_GIVE_EXP 200
+		hp 400
+		setmodelbody 1 3
+		setvard ATTACK_DAMAGE 55
+		setvard ATTACK2_DAMAGE 150
+		setvard ATTACK_RANGE 125
+		setvard ATTACK_HITRANGE 200
+		setvard MOVE_RAGE 65
+		setvard ATTACK2_CHANCE 15
+		setvard DROP_GOLD_MIN 15
+		setvard DROP_GOLD_MAX 40
+   		setvard DROP_ITEM1 swords_bastardsword //Used by base_monster
+   		setvard DROP_ITEM1_CHANCE 5%
+	}
+
+	setvard WALKING_MY_OLD_POS $get(ent_me,origin)
+	setvard WALK_STEP 1
+	callevent 1.0 walking
+}
+
+{ npcatk_get_postspawn_properties
+	//lot of stuck in ceiling crap going on in Gatecity
+	//compensate
+	//npcatk_to_ground
+	local MY_POS game.monster.origin
+	local MY_GROUND $get_ground_height(MY_POS)
+	add MY_GROUND 1
+	local MY_X $vec.x(MY_POS)
+	local MY_Y $vec.y(MY_POS)
+	setorigin ent_me (MY_X,MY_Y,MY_GROUND)
+
+	if ( $lcase(game.map.name) isnot gatecity )
+	{
+		multiply ATTACK_RANGE 0.5
+		multiply ATTACK_HITRANGE 0.5
+	}
+}
+
+{ attack_1	//called by modelanim attack @frame 6
+
+	setvard STUCK_COUNT 0
+	setvard ATTACK_VOLUME 5
+	callevent npcatk_dodamage ENTITY_ENEMY ATTACK_HITRANGE ATTACK_DAMAGE ATTACK_ACCURACY
+	if ( $rand(1,100) < ATTACK2_CHANCE ) setvard ANIM_ATTACK ANIM_LEAP
+}
+
+{ attack_2 //called by modelanim attack2 @frame 9
+
+	setvard STUCK_COUNT 0
+	setvard ATTACK_VOLUME 10
+	callevent npcatk_dodamage ENTITY_ENEMY ATTACK_HITRANGE ATTACK2_DAMAGE ATTACK2_ACCURACY
+	setvard ANIM_ATTACK ANIM_SLASH
+	playsound CHAN_ITEM 10 SOUND_LEAP
+	if $get(ent_laststruckbyme,range) <= ATTACK_HITRANGE
+	applyeffect $get(ent_laststruckbyme,id) effects/heavy_stun $rand(2,8)
+    applyeffect $get(ent_laststruckbyme,id) effects/effect_push 2 $relvel(10,-200,10) 0
+}
+
+{ game_dodamage //1: Attack Hit (1/0)  2: Entity Attack hit  3:  Start Position  4:  End Position
+
+	if ( !PARAM1 ) playrandomsound CHAN_VOICE ATTACK_VOLUME SOUND_ATTACK1 SOUND_ATTACK2
+	if ( PARAM1 ) playrandomsound CHAN_VOICE ATTACK_VOLUME SOUND_ATTACKHIT1 SOUND_ATTACKHIT2 SOUND_ATTACKHIT3
+	
+	//if !ALERTED_OTHERS
+	//alert others to my target
+	//emitsound <source entity> <origin> <volume> <duration> <type> [danger radius (only for "danger")]
+	//not sure if this is working
+	//emitsound ent_laststruck $get(ent_laststruck,origin) 10 10 combat 1024
+	//setvard ALERTED_OTHERS 1
+}
+
+{ npc_struck
+
+	local MY_HEALTH $get(ent_me,hp)
+	local HURT_THRESHOLD $get(ent_me,maxhp)
+	multiply HURT_THRESHOLD HURT_POINT
+
+	if ( STRUCK_BY_HOLY )
+	{
+		playrandomsound CHAN_VOICE 10 SOUND_HOLYPAIN1 SOUND_HOLYPAIN2
+		setvard STRUCK_BY_HOLY 0
+		local EXIT_SUB 1		
+	}
+	if !EXIT_SUB
+
+	if ( MY_HEALTH > HURT_THRESHOLD ) playrandomsound CHAN_VOICE 8 SOUND_STRUCK SOUND_STRUCK SOUND_PAIN1	
+	if ( MY_HEALTH <= HURT_THRESHOLD ) playrandomsound CHAN_VOICE 8 SOUND_STRUCK SOUND_STRUCK SOUND_PAIN2
+}
+
+{ walking
+
+	//bit of a hack since the model has no walk events
+	
+	local MY_POS $get(ent_me,origin)
+	local TRAVEL_DIST $dist(MY_POS,WALKING_MY_OLD_POS)
+
+	if ( TRAVEL_DIST > 32 )	
+	{
+		if ( WALK_STEP == 1 ) playsound CHAN_ITEM 2 SOUND_STEP1
+		if ( WALK_STEP == 2 ) playsound CHAN_ITEM 2 SOUND_STEP2
+		if ( WALK_STEP == 3 ) playsound CHAN_ITEM 2 SOUND_STEP3
+		if ( WALK_STEP == 4 ) playsound CHAN_ITEM 2 SOUND_STEP4
+		add WALK_STEP 1
+		if ( WALK_STEP > 4 ) setvard WALK_STEP 1
+	}
+	
+	setvard WALKING_MY_OLD_POS MY_POS
+	callevent 1.0 walking
+}
+
+//play alert sound on spotting player
+{ npcatk_targetvalidate
+	callevent alert_dwarf_zombie
+}
+
+{ alert_dwarf_zombie
+
+	if !DID_ALERT
+	if $cansee(player)	//play alert sound for players only
+	playsound CHAN_VOICE 10 SOUND_ALERT
+	playanim critical ANIM_NOD
+	setvard DID_ALERT 1
+}
+
+{ pick_weapon_type
+
+	//pick random type (progressively meaner)
+	//0 - Unarmed
+	//1 - Small Axe
+	//2 - Great Axe
+	//3 - Broadsword
+	local MIN_TYPE 0
+
+	local MAYOR_ENT $get_by_name(dwarf_mayor)
+	local MAYOR_ID $get(MAYOR_ENT,id)
+
+	if ( $get(MAYOR_ID,scriptvar,ZOMBIE_QUEST) == 1 )
+	{
+		//Zombies get meaner as quest nears completion
+		local C_ZOMBIE_COUNT $get(MAYOR_ID,scriptvar,ZOMBIE_COUNT)
+		local C_ZOMBIE_REQ $get(MAYOR_ID,scriptvar,REQ_ZOMBIES)
+		local QUART_WAY C_ZOMBIE_REQ
+		multiply QUART_WAY 0.2
+		local HALF_WAY C_ZOMBIE_REQ
+		multiply HALF_WAY 0.4
+		local ALMOST_THERE C_ZOMBIE_REQ
+		multiply ALMOST_THERE 0.6
+		if ( C_ZOMBIE_COUNT > QUART_WAY ) local MIN_TYPE 1
+		if ( C_ZOMBIE_COUNT > HALF_WAY ) local MIN_TYPE 2
+		if ( C_ZOMBIE_COUNT > ALMOST_THERE ) local MIN_TYPE 3
+	}
+	setvard WEAPON_TYPE $rand(MIN_TYPE,3)
+	//dbg temp mintype MIN_TYPE ( selected WEAPON_TYPE )
+}
+
+{ my_target_died
+
+	if ( JUST_SPAWNED ) 
+	{
+		setvard JUST_SPAWNED 0
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	//if !$cansee(player)
+
+	playanim critical ANIM_NOD
+	playsound CHAN_VOICE 10 SOUND_NOD
+}
+
+{ [override] npcatk_flee
+
+	setvar ANIM_RUN run
+
+	if !IS_FLEEING
+
+	playanim break
+	setmovedest PARAM1 PARAM2 flee
+	setmoveanim ANIM_RUN
+
+	setvard IS_FLEEING 1
+	setvard NPCATK_FLEE_RESTORETARGET IS_HUNTING
+   	if( PARAM3 isnot 'PARAM3' ) callevent PARAM3 npcatk_stopflee
+}
+
+{ npcatk_stopflee
+
+	setvar ANIM_RUN walk
+}
+
+
+{ [server] game_death
+
+	local MAYOR_ENT $get_by_name(dwarf_mayor)
+	local MAYOR_ID $get(MAYOR_ENT,id)
+
+	//dbg Got mayor ID MAYOR_ID ( quest $get(MAYOR_ID,scriptvar,ZOMBIE_QUEST) count $get(MAYOR_ID,scriptvar,ZOMBIE_COUNT) )
+
+	if $get(MAYOR_ID,scriptvar,ZOMBIE_QUEST) == 1
+
+	callexternal MAYOR_ID zombie_died
+
+	local C_ZOMBIE_COUNT $get(MAYOR_ID,scriptvar,ZOMBIE_COUNT)
+	local C_ZOMBIE_REQ $get(MAYOR_ID,scriptvar,REQ_ZOMBIES)
+	local C_ZOMBIE_REQ $int(C_ZOMBIE_REQ)
+
+	if ( C_ZOMBIE_COUNT < C_ZOMBIE_REQ )
+	{
+		local Z_COUNT $int(C_ZOMBIE_COUNT)
+		playermessage ent_laststruck You have slain Z_COUNT / C_ZOMBIE_REQ dwarven zombies.
+	}
+
+	if C_ZOMBIE_COUNT == C_ZOMBIE_REQ
+	usetrig zombie_remove
+	bplayermessage ent_laststruck You have completed the dwarven zombie quest. Return to the mayor for your reward.
+	setvarg ZOMBIE_QUEST_COMPLETE 1
+	callexternal all zombie_remove
+}
+
+{ zombie_remove
+
+	deleteent ent_me fade
+}

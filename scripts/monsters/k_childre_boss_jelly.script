@@ -1,0 +1,414 @@
+//Kruxus the Corrupting Shadow, by Jelly
+//Note: haven't finished his nova yet, going to do it the same way I did repulse undead. Also think there's something else missing, just can't remember it.
+{
+
+  setvar IS_UNHOLY 1
+
+	setvar NPC_IS_BOSS 1
+
+  //anims used by base
+  setvar ANIM_WALK walk
+  setvar ANIM_RUN run
+  setvar ANIM_IDLE idle1
+  setvard ANIM_ATTACK ability1_alien //{ event 500 7 "attack_strike" } 
+  setvard ANIM_DEATH death1_die
+
+  //custom anims
+  const ANIM_IDLE_NORM idle1
+  const ANIM_IDLE_CROUCH crouch_idle
+  const ANIM_WALK_NORM walk
+  const ANIM_RUN_NORM run
+  const ANIM_CRAWL crawl
+  setvard ANIM_FLINCH new_flinch
+  const ANIM_JUMP jump
+  const ANIM_DEATH_BACK1 death1_die   //some of these maybe duplicate, trim from model?
+  const ANIM_DEATH_BACK2 back_die
+  const ANIM_DEATH_FORWARD1 forward_die
+  const ANIM_DEATH_CROUCH crouch_die
+
+  //Stats
+  setvard ATTACK_RANGE 150
+  setvard ATTACK_HITRANGE 250
+  setvard ATTACK_MOVERANGE 130
+  setvard ATTACK_HITCHANCE 75%
+  setvard DROP_GOLD 0
+  setvard NPC_GIVE_EXP 4000
+  const DMG_SWIPE $randf(50,70)
+  const DOT1_DMG 10.0
+  const DOT1_DURATION 15.0
+  const CLOUD_DMG 20.0
+  const CLOUD_DURATION 10.0
+  const NOVA_DMG 100.0
+  const NOVA_DOT_DMG 10.0
+  const NOVA_DOT_DURATION 5.0
+  const NOVA_COLOUR (0,254,0) //Red Green Blue
+
+  //Summoning
+  const SUMMON_FREQ 180 //THOTHIE: three minutes between summons?
+  const SUMMON_RATE_1 60
+  const SUMMON_RATE_2 90
+  const SUMMON_RATE_3 100 //THOTHIE: This appears to be unused
+  const SUMMON_SCRIPT_1 monsters/k_larva_black //THOTHIE: I don't have this script
+  const SUMMON_SCRIPT_2 monsters/horror //THOTHIE: Ye might also consider using the horror egg
+  const SUMMON_SCRIPT_3 monsters/k_childre_black
+	//THOTHIE: My experience with these is they only work in game_precache, but if they are working for ye here *shrug* go for it. ;)
+  precachefile SUMMON_SCRIPT_1
+  precachefile SUMMON_SCRIPT_2
+  precachefile SUMMON_SCRIPT_3
+
+  //sounds
+  const SOUND_SPAWN "magic/spawn.wav"
+  const SOUND_FLINCH "monsters/gonome/gonome_pain3.wav" //custom
+  const SOUND_WARCRY "monsters/gonome/gonome_melee1.wav" //custom
+  const SOUND_FADE "monsters/gonome/gonome_melee2.wav" //custom
+  const SOUND_UNFADE "monsters/gonome/gonome_death3.wav" //alt: gonome_death3.wav
+  const SOUND_STRUCK1 "debris/flesh1.wav"
+  const SOUND_STRUCK2 "debris/flesh2.wav"
+  const SOUND_PAIN1 "monsters/gonome/gonome_jumpattack.wav" //custom
+  const SOUND_PAIN2 "monsters/gonome/gonome_melee1.wav" //custom
+  const SOUND_SWING_MISS1 "zombie/claw_miss1.wav"
+  const SOUND_SWING_MISS2 "zombie/claw_miss2.wav"
+  const SOUND_SWING_HIT1 "zombie/claw_strike1.wav"
+  const SOUND_SWING_HIT2 "zombie/claw_strike2.wav"
+  const SOUND_STEP1 "common/npc_step1.wav" //add events to model
+  const SOUND_STEP2 "common/npc_step2.wav"
+  const SOUND_IDLE1 "monsters/gonome/gonome_idle1.wav"
+  const SOUND_IDLE2 "monsters/gonome/gonome_idle2.wav"
+  const SOUND_IDLE3 "monsters/gonome/gonome_idle3.wav"
+  const SOUND_PARRY "weapons/axemetal1.wav"
+  const SOUND_DEATH "bullchicken/bc_die2.wav"
+  precache SOUND_DEATH
+  precache magic/spookie1.wav //THOTHIE: yer playing this directly in the script, no need to precache, but no harm either.
+
+  
+  const MONSTER_MODEL monsters/k_childre_black.mdl
+  precache MONSTER_MODEL
+
+  setvard NOT_FIRST_TIME 0
+
+}
+
+#include monsters/base_monster_new
+
+{ npc_spawn
+
+  name Kruxus the Corrupting Shadow
+  hp 5000
+  setmodel MONSTER_MODEL
+  race demon
+  width 32
+  height 72
+  roam 1
+  hearingsensitivity 4
+
+
+}
+
+{ npc_post_spawn
+
+	//THOTHIE: SP: "taledmg"
+  taledmg all 0.8
+  takedmg fire 0.0
+  takedmg poison 0.0
+  takedmg acid 0.0
+  takedmg holy 0.5
+
+}
+
+{ npc_targetsighted
+
+   if $cansee(enemy)
+   if ( !DID_WARCRY )
+   {
+      setvard DID_WARCRY 1
+      callevent do_warcry
+   }
+
+   if !STARTED_CYCLES
+   setvard STARTED_CYCLES 1
+   callevent FREQ_FADE fade_check
+   callevent 1.0 jump_check
+   callevent SUMMON_FREQ do_summon
+}
+
+{ my_target_died
+
+   setvard DID_WARCRY 0
+   playsound 0 10 SOUND_IDLE1
+   playanim critical ANIM_FLINCH
+}
+
+{ do_summon
+
+   if ( I_HAS_ORIGIN != 1 )
+   {
+      local ENT_ID $get_by_name(kruxus_summon_origin) //THOTHIE: Is this another script?
+      setvard SUMMON_ORIGIN $get(ENT_ID,origin)
+      setvard I_HAS_ORIGIN 1
+   }
+
+   if ( NOT_FIRST_TIME == 1 )
+   {
+      if ( $get(MY_SUMMON,isalive) ) callexternal MY_SUMMON npc_fade_away
+   }
+
+
+	//THOTHIE: If THE_NUM rolls over 90, he'll summon two monsters, inside one another, with this arrangement:
+	//- also I think he already has Black Childre escort (not sure off hand)
+   local THE_NUM $rand(1,100)
+   if ( THE_NUM >= SUMMON_RATE_1 ) createnpc SUMMON_SCRIPT_1 $relpos(0,48,5) $get(ent_me,id)
+   if ( THE_NUM < SUMMON_RATE_1 )
+   {
+      if ( THE_NUM >= SUMMON_RATE_2 )   createnpc SUMMON_SCRIPT_3 $relpos(0,48,5) $get(ent_me,id)
+   }
+   if ( THE_NUM > SUMMON_RATE_2 )    createnpc SUMMON_SCRIPT_3 $relpos(0,48,5) $get(ent_me,id)
+
+   setvard MY_SUMMON ent_lastcreated
+   
+   setvard NOT_FIRST_TIME 1
+
+}
+
+{ do_nova_part_1
+   
+   local MY_ORG $get(ent_me,origin)
+   setvard NOVA_LIST $get_tsphere(enemy,256,MY_ORG)
+   callevent do_nova_FX
+   if NOVA_LIST isnot none
+   calleventloop $get_token_amt(NOVA_LIST) do_nova_part_2
+
+}
+
+{ do_nova_part_2
+   
+   local CUR_TARG $get_token(NOVA_LIST,game.script.iteration)
+   xdodamage CUR_TARG direct NOVA_DMG 100% ent_me ent_me none poison 
+   applyeffect CUR_TARG effects/effect_poison 5 ent_me 10 0 none
+   
+
+   //The pushing effect of the nova
+   local TARGET_ORG $get(CUR_TARG,origin)
+   local MY_ORG $get(ent_me,origin)
+   local TARG_ANG $angles(MY_ORG,TARGET_ORG)
+   playsound 0 10 magic/spookie1.wav
+   setvelocity PARAM1 $relvel($vec(0,TARG_ANG,0),$vec(10,1000,0))
+
+}
+
+{ do_nova_FX
+   clientevent new all monsters/k_childre_boss_cl $get(ent_me,index)
+}
+
+{ fade_check
+   callevent 1.0 fade_check
+   if !DOING_FADE
+   if !FADE_DELAY
+   if NPCATK_TARGET isnot unset
+   if $get(NPCATK_TARGET,range) < ATTACK_HITRANGE
+
+   setvard FADE_DELAY 1
+   callevent FREQ_FADE reset_fade_delay
+   callevent do_fade
+   createnpc monsters/summon/npc_poison_cloud2 $relpos(0,0,5) $get(ent_me,id) CLOUD_DMG CLOUD_DURATION 2
+}
+
+{ reset_fade_delay
+   setvard FADE_DELAY 0
+}
+
+{ do_fade
+   callevent npcatk_flee NPCATK_TARGET 2048 3.0
+   setvard FADE_TARGET NPCATK_TARGET
+   setvard DOING_FADE 1
+   callevent npcatk_suspend_ai 2.0
+   setmoveanim ANIM_RUN
+   setvard WAS_STRUCK 0
+   callevent 0.1 do_fade2
+   callevent 1.0 resume_attack
+}
+
+{ do_fade2
+   playsound 0 10 SOUND_FADE
+   addvelocity ent_me $relvel(0,800,200)
+   setvard FADE_STEP 255
+   callevent fade_loop
+   takedmg cold 0.0
+}
+
+{ fade_loop
+   subtract FADE_STEP 20
+   if ( FADE_STEP < 0 ) setprop ent_me renderamt 1
+   if FADE_STEP >= 0
+   if DOING_FADE
+   callevent 0.1 fade_loop
+   setprop ent_me rendermode 2
+   setprop ent_me renderamt FADE_STEP
+}
+
+{ resume_attack
+   callevent npcatk_resume_ai
+   setmoveanim ANIM_CRAWL
+   setvard AM_CRAWLING 1
+   if !WAS_STRUCK
+   callevent chicken_run 2.0
+   callevent 2.1 invis_run2 //run around a bit while invisible to lose target
+}
+
+{ invis_run2
+   if !WAS_STRUCK
+   if DOING_FADE
+   callevent chicken_run 2.0
+   callevent 2.1 flank_targ
+}
+
+{ flank_targ
+   callevent npcatk_flank FADE_TARGET
+}
+
+{ do_warcry
+   playanim critical ANIM_IDLE_CROUCH
+   callevent npcatk_faceattacker NPCATK_TARGET
+   playsound 0 10 SOUND_WARCRY
+}
+
+{ game_dodamage
+   if SWIPE_ATTACK
+   if ( PARAM1 ) 
+   {
+   playrandomsound 0 10 SOUND_SWING_HIT1 SOUND_SWING_HIT2
+   if $rand(1,100) <= 60
+   applyeffect PARAM2 effects/greater_poison DOT1_DURATION $get(ent_me,id) DOT1_DMG
+   }
+   if ( !PARAM1 ) playrandomsound 0 10 SOUND_SWING_MISS1 SOUND_SWING_MISS2
+   setvard SWIPE_ATTACK 0
+}
+
+{ game_parry
+   playsound 0 10 SOUND_PARRY
+   //playanim once ANIM_IDLE_CROUCH
+}
+
+{ become_visible
+   takedmg cold 1.25
+   playsound 0 10 SOUND_UNFADE
+   //dbg become_visible PARAM1
+   setvard DOING_FADE 0
+   setprop ent_me rendermode 0
+   setprop ent_me renderamt 255
+}
+
+{ npc_flinch
+   local RND_FLINCH $rand(1,2)
+   if ( RND_FLINCH == 1 ) setvard FLINCH_ANIM ANIM_FLINCH1
+   if ( RND_FLINCH == 2 ) setvard FLINCH_ANIM ANIM_FLINCH2
+   playsound 0 10 SOUND_FLINCH
+}
+
+{
+repeatdelay FREQ_IDLE //THOTHIE: FREQ_IDLE is not defined
+	//THOTHIE: in the original k_childre script, FREQ_IDLE is $randf(5,10)
+	//- this would be a good place, also, to take advantage of the headroom and jump randomly
+	//- perhaps, do a 1 second chicken run and use the high jump:
+	//-- callevent chicken_run 0.5
+	//-- callevent do_jump
+   if NPCATK_TARGET equals unset
+   playrandomsound 0 10 SOUND_IDLE1 SOUND_IDLE2 SOUND_IDLE3
+}
+
+{ game_death
+   setprop ent_me skin 2
+   if ( DOING_FADE )
+   {
+      setvard DOING_FADE 0
+      callexternal GAME_MASTER gm_fade_in $get(ent_me,id)
+   }
+
+   if ( $get(ent_laststruck,range) > 256 )   setvard   ANIM_DEATH ANIM_DEATH_FORWARD1
+   if ( $get(ent_laststruck,range) <= 256 )
+   {
+      local RND_DEATH $rand(1,2)
+      if ( RND_DEATH == 1 ) setvard ANIM_DEATH ANIM_DEATH_BACK1
+      if ( RND_DEATH == 2 ) setvard ANIM_DEATH ANIM_DEATH_BACK2
+   }
+   if ( AM_CRAWLING ) setvard ANIM_DEATH ANIM_DEATH_CROUCH
+
+   if $rand(1,8) < game.playersnb
+
+   if $lcase(game.map.name) equals kfortress      
+
+   //start 128 units from ground pos (in case monster dies in air)
+   local NK_START_POS game.monster.origin
+   local NK_START_GROUND_Z $get_ground_height(NK_START_POS)
+   vectorset NK_START_POS z NK_START_GROUND_Z
+   vectoradd KK_START_POS z 128
+   
+   //spawn ostentatious client effect
+   clientevent new all kfortress/nh_appear_cl NK_START_POS
+   
+   //time item spawn, more or less, with client script effect end
+   callexternal GAME_MASTER gm_createitem 15.0 smallarms_nh START_POS 1
+}
+
+
+{ game_struck
+   playsound 0 8 SOUND_STRUCK1 SOUND_STRUCK2 SOUND_STRUCK1 SOUND_STRUCK2 SOUND_PAIN1 SOUND_PAIN2
+   if ( $rand(1,20) > 14 ) callevent do_nova_part_1
+   if AM_CRAWLING
+   if DOING_FADE
+   setmoveanim ANIM_RUN
+   setvard AM_CRAWLING 0
+   setvard WAS_STRUCK 1
+   callevent chicken_run 1.5
+}
+
+{ jump_check
+   callevent FREQ_JUMP jump_check
+
+   if NPCATK_TARGET isnot unset
+
+   local TARG_Z $get(NPCATK_TARGET,origin.z)
+   local MY_Z $vec.z(game.monster.origin)
+   local Z_DIFF TARG_Z
+   subtract Z_DIFF MY_Z
+   dbg temp z_targ TARG_Z z_me MY_Z z_diff Z_DIFF 
+   if Z_DIFF > ATTACK_RANGE
+   callevent npcatk_faceattacker NPCATK_TARGET
+   callevent 0.1 do_jump
+   playsound 0 10 SOUND_FADE
+}
+
+{ do_jump
+   setmoveanim ANIM_JUMP
+   addvelocity ent_me $relvel(0,-200,800)
+   callevent 0.5 push_forward
+   callevent 1.0 jump_done
+}
+
+{ push_forward
+   addvelocity ent_me $relvel(0,400,100)
+}
+
+{ jump_done
+   setmoveanim ANIM_RUN
+}
+
+//model events
+{ walk_step
+   playsound 0 4 SOUND_STEP1 SOUND_STEP2
+}
+
+{ run_step
+   playsound 0 10 SOUND_STEP1 SOUND_STEP2
+}
+
+{ attack_strike
+   if ( DOING_FADE )
+   {
+      if !POISON_NOVA //THOTHIE: This is not set anywhere
+      callevent become_visible "attack_strike"
+   }
+   setmoveanim ANIM_RUN
+   setvard AM_CRAWLING 0
+   setvard SWIPE_ATTACK 1
+   callevent npcatk_dodamage NPCATK_TARGET ATTACK_HITRANGE DMG_SWIPE ATTACK_HITCHANCE slash
+}

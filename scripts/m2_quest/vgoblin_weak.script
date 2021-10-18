@@ -1,0 +1,144 @@
+//Vile Goblin Fodder
+//- Slightly weaker than the blood goblins, but just as rambunctious
+
+{
+	const NEW_MODEL 1
+
+	const NPC_BASE_EXP 150
+	const DMG_CLUB $rand(10,20)
+	const DMG_AXE $rand(10,25)
+	const DMG_SWORD $rand(5,25)
+	const DMG_FIREBALL 20
+	const DOT_POISON $rand(1,5)
+
+	const SOUND_FIREBALL bullchicken/bc_attack2.wav
+}
+
+#include monsters/bgoblin
+
+{ [override] [shared] goblin_spawn
+
+	name a|Vile Goblin
+	hp 300
+	if ( !NEW_MODEL )
+	{
+		setmodel monsters/goblin2.mdl
+		width 32
+		height 60
+	}
+	else
+	{
+		setmodel monsters/goblin_new.mdl
+		width 24
+		height 50
+	}
+	race goblin
+	blood green
+	roam 1
+
+	hearingsensitivity 2
+
+	if ( !NEW_MODEL )
+	{
+		setmodelbody 0 2 //body: 0-Runed 1-Archer 2-Leathers 3-Sniper
+		setmodelbody 1 4 //head: 0-Horns* 1-Spikes* 2-Animal 3-Chief 4-Cowl *redcap
+		setmodelbody 2 0 //weapon: 0-Unarmed 1-Axe 2-wbow 3-sbow 4-sword 5-rAxe 6-sword&shield 7-club 8-knife
+		setmodelbody 3 0 //arrow: on/off
+
+		setprop ent_me skin 3
+	}
+	else
+	{
+		setmodelbody 0 0 //body: 0-Bare 1-Quiver&Strap
+		setmodelbody 1 0 //head: 0-Bare 1-Horns 2-Animal 3-Chief 4-Rag
+		setmodelbody 2 0 //weapon: 0-Unarmed 1-Axe 2-wbow 3-sbow 4-sword 5-rAxe 6-sword&shield 7-club 8-knife
+		setmodelbody 3 0 //arrow: On/off
+		
+
+		setprop ent_me skin 2 //0-norm 1-blood 2-vile
+	}
+
+	setidleanim ANIM_IDLE
+	setmoveanim ANIM_WALK
+
+	takedmg poison 0.5
+	takedmg lightning 1.5
+
+	callevent 0.01 goblin_set_weapon
+}
+
+{ [override] goblin_set_weapon
+
+	if !GOB_TYPE_SET
+	setvard GOB_TYPE_SET 1
+
+	setvard F_GOB_TYPE GOB_TYPE
+
+	if ( PARAM1 startswith PARAM )
+	{
+		local DO_NADDA 1
+	}
+	else
+	{
+		setvard F_GOB_TYPE PARAM1
+	}
+
+	if ( F_GOB_TYPE == 1 )
+	{
+		//clubber
+		takedmg all 0.75
+		setmodelbody 2 7
+		setvard ANIM_ATTACK ANIM_SMASH
+		setvard ATTACK_HITCHANCE 75%
+		local MY_HP $get(ent_me,hp)
+		multiply MY_HP 1.5
+		hp MY_HP
+		setvard CAN_STUN 0
+	}
+
+	if ( F_GOB_TYPE == 2 )
+	{
+		//enevomed axe
+		takedmg all 0.75
+		setmodelbody 2 1
+		setvard ANIM_ATTACK ANIM_SMASH
+		setvard ATTACK_HITCHANCE 80%
+		local MY_HP $get(ent_me,hp)
+		multiply MY_HP 1.25
+		hp MY_HP
+		setvard CAN_STUN 0
+		setvard CAN_POISON 1
+		setvard DROP_ITEM1 axes_poison1
+		setvard DROP_ITEM1_CHANCE 5%
+	}
+
+	if ( F_GOB_TYPE == 3 )
+	{
+		//enevomed sword
+		setvard CAN_FIREBALL 1
+		setmodelbody 0 1
+		setmodelbody 2 4
+		setvard ANIM_ATTACK ANIM_SWIPE
+		setvard ATTACK_HITCHANCE 90%
+		setvard CAN_STUN 0
+		setvard CAN_POISON 1
+		setvard DROP_ITEM1 swords_poison1
+		setvard DROP_ITEM1_CHANCE 5%
+	}
+}
+
+//Tosses globs of poison instead of fireballs
+{ [override] toss_fireball
+
+	setvard TOSS_FIREBALL 0
+	tossprojectile NPCATK_TARGET 400 DMG_FIREBALL 0.5 proj_poison_spit2 (0,48,28)
+	playsound 0 10 SOUND_FIREBALL
+}
+
+{ game_dodamage
+
+	if PARAM1
+	if CAN_POISON
+	if $rand(1,3) == 1
+	applyeffect PARAM2 effects/effect_poison 5 $get(ent_me,id) DOT_POISON
+}

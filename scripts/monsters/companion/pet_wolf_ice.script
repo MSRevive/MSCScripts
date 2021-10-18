@@ -1,0 +1,103 @@
+//Pet ice wolf by Thothie
+{
+	const SUMMON_CIRCLE_INDEX 7
+
+	const BASE_HP 1000
+	const COMPANION_MAXHP 8000
+	const MAX_DMG 125
+	const XPDMG_MULTI 0.02
+	const BASE_DMG 20
+	setvar COMPANION_TYPE wolf
+	setvard ACT_NAME "pet winter wolf"
+	setvard NPC_REVIVAL_SCRIPT $currentscript //this is for pet ressurection crystals (future item)
+
+	//custom stats
+	const ATTACK_HITCHANCE 90
+	const LEAP_RANGE 256
+	const DMG_BITE $randf(10.0,15.0)
+	const DMG_CLAW $randf(10.0,20.0)
+	const FREQ_LOOK 20.0
+	const FREQ_IDLE $randf(10,30)
+	const FREQ_HOWL $randf(30,60)
+	const CHANCE_CLAW 50
+
+	const DOT_ICE 5
+	const FREQ_COMBAT_HOWL 30.0
+}
+
+#include monsters/companion/pet_wolf
+
+{ [shared] pet_spawn
+
+	name pet winter wolf
+	race human
+	setmodel monsters/giant_rat.mdl
+	setmodelbody 0 3
+	hearingsensitivity 8
+	width 36
+	height 48
+	roam 0
+
+	takedmg all 0.5
+	takedmg cold 0
+	takedmg ice 0
+	takedmg fire 1.5
+
+	setvard NEXT_HOWL 0
+
+	catchspeech say_sit sit
+	catchspeech say_speak speak
+}
+
+{ game_dodamage
+	if ( MELEE_ATTACK )
+	{
+		if PARAM1
+		if $rand(1,4) == 1
+		if $get(PARAM2,relationship,ent_me) equals enemy
+		if !$get(PARAM2,isplayer)
+		applyeffect PARAM2 effects/effect_frostbite_dmg 5.0 $get(ent_me,id) DOT_ICE
+		playsound 0 10 magic/frost_reverse.wav
+		effect glow ent_me (0,75,255) 128 1 1
+	}
+	setvard MELEE_ATTACK 0
+}
+
+{ npcatk_hunt
+	if NPCATK_TARGET isnot unset
+	if $get(NPCATK_TARGET,range) < 75
+	if game.time > NEXT_COMBAT_HOWL
+	setvard NEXT_COMBAT_HOWL game.time
+	add NEXT_COMBAT_HOWL FREQ_COMBAT_HOWL
+	callevent do_combat_howl
+}
+
+{ do_combat_howl
+	callevent npcatk_suspend_ai 1.0
+	if ( $get(ent_me,isalive) ) playanim critical ANIM_HOWL
+	playrandomsound 0 10 SOUND_HOWL1 SOUND_HOWL2
+	
+	clientevent new all effects/sfx_ice_burst $get(ent_me,origin) 128 1 (128,128,255)
+
+	setvard FREEZE_TARGS $get_tsphere(enemy,128)
+	if FREEZE_TARGS isnot none
+	calleventloop $get_token_amt(FREEZE_TARGS) freeze_targets
+}
+
+
+{ freeze_targets
+	local CUR_TARG $get_token(FREEZE_TARGS,game.script.iteration)
+	if !$get(CUR_TARG,isplayer) //pets cannot be harmed by players, even in PVP, so the reverse must also hold true
+
+	local FREEZE_CHANCE 1
+	if ( $get(ent_me,maxhp) > 3000 ) local FREEZE_CHANCE $rand(1,2)
+
+	if ( FREEZE_CHANCE == 1 )
+	{
+		applyeffect CUR_TARG effects/effect_frostbite_dmg 5.0 $get(ent_me,id) DOT_ICE
+	}
+	else
+	{
+		applyeffect CUR_TARG effects/freeze_solid 5.0 $get(ent_me,id)
+	}
+}

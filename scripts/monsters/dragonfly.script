@@ -1,0 +1,154 @@
+//This is an older script and may have some bad conventions as a result
+
+//Thothie - Bugger can't attack, adding attack_hack
+//- Bugger... The bugger STILL can't attack... Switching to bat script + attack_hack
+//- Attacks now, but has a habit of ignoring monster clips
+
+//Dragonfly
+
+{
+	const NPC_NO_END_FLY 1 //do not reset move type on death
+
+   const DELETE_ON_DEATH 1
+   setvar ANIM_IDLE_HANG flapping
+   setvar ANIM_IDLE_FLY fly
+   setvar ANIM_RUN fly
+   setvar ANIM_WALK fly
+   setvard ANIM_ATTACK attack
+   setvar ANIM_IDLE flapping
+   setvard ATTACK_DAMAGE 2
+   setvard ATTACK_RANGE 100
+   setvard ATTACK_HITRANGE 80
+   const ATTACK_HITCHANCE 30%
+   const ATTACK_FREQUENCY 10 //for attack_hack
+   const SOUND_STRUCK1 weapons/cbar_hitbod1.wav
+   const SOUND_STRUCK2 weapons/cbar_hitbod2.wav
+   const SOUND_STRUCK3 weapons/cbar_hitbod3.wav
+
+   //these were set to none, generated errors
+   const SOUND_PAIN monsters/sludge/null.wav
+   const SOUND_ATTACK1 monsters/sludge/null.wav
+   const SOUND_ATTACK2 monsters/sludge/null.wav
+   const SOUND_ATTACK3 monsters/sludge/null.wav
+   const SOUND_IDLE monsters/sludge/null.wav
+   const SOUND_DEATH monsters/sludge/null.wav
+
+   setvard HUNT_AGRO 1
+   setvard CAN_HUNT 1
+   setvard CAN_FLEE 1		//Used by base_npc_attack
+   const FLEE_HEALTH 5		//Used by base_npc_attack
+   const FLEE_CHANCE 50%	//Used by base_npc_attack
+
+	const SOUND_HOVER monsters/dragonfly.wav
+	const FREQ_SOUND_HOVER 5.9
+}
+
+#include monsters/base_monster
+#include monsters/attack_hack
+#include monsters/base_flyer
+
+{  npc_spawn
+
+   	name a|Giant dragonfly
+	fly 1
+	race vermin
+   	hp 20
+   	//ov 270
+  	width 24
+  	height 24
+   	hearingsensitivity 2
+   	volume 5
+	roam 1
+	takedmg pierce 0.5
+	setmonsterclip 0
+	setvard NPC_GIVE_EXP 10
+
+	setidleanim ANIM_IDLE
+	setmoveanim ANIM_WALK
+	setactionanim ANIM_ATTACK
+
+   	setmodel monsters/dragonfly.mdl
+}
+
+{
+  repeatdelay 10
+
+  if !IS_HUNTING 
+  if $rand(0,1) 
+
+  playanim once ANIM_IDLE
+}
+
+{  bite1				// Deal damage
+
+   	dodamage ent_lastseen ATTACK_RANGE ATTACK_DAMAGE ATTACK_HITCHANCE
+}
+
+
+   
+{  npc_struck				//Hit by someone
+   
+   	playrandomsound 2 SOUND_PAIN SOUND_STRUCK2 SOUND_PAIN
+}
+
+//custom flyer mods
+
+{
+repeatdelay 0.5
+	if IS_HUNTING
+	callevent npcatk_faceattacker
+	if ( $get(NPCATK_TARGET,range) > ATTACK_RANGE ) setvelocity ent_me $relvel(0,200,0)
+	if ( $get(NPCATK_TARGET,range) < ATTACK_RANGE ) setvelocity ent_me $vec(0,0,0)
+	if ( SPITTING ) setvelocity ent_me $vec(0,0,0)
+
+	if ( FLIGHT_STUCK > 4 )
+	{
+		//callevent chicken_run 1.0
+		callevent do_rand_tweedee //do_rand_tweedee
+		callevent npcatk_suspend_ai $randf(0.3,0.9)
+		setmovedest NEW_DEST game.monster.moveprox
+		callevent 0.1 horror_boost
+		setvard FLIGHT_STUCK 0
+	}
+
+	subtract AS_ATTACKING 2
+
+	local TARG_POS $get(NPCATK_TARGET,origin)
+	if ( !SUSPEND_AI ) setangle face_origin TARG_POS
+
+
+	if AS_ATTACKING <= 0
+	setvard AS_ATTACKING 0
+	if !IS_FLEEING
+	if !SPITTING
+	if $get(NPCATK_TARGET,range) > ATTACK_RANGE
+	local CUR_PROG $dist(game.monster.origin,TARG_POS)
+	if ( LAST_PROG >= CUR_PROG ) add FLIGHT_STUCK 1
+	setvard LAST_PROG $dist(game.monster.origin,TARG_POS)
+	setvard LAST_POS game.monster.origin
+	
+}
+
+{ chicken_run
+	callevent 0.1 horror_boost
+}
+
+{ horror_boost
+	setvelocity ent_me $relvel(0,200,0)
+}
+
+{
+repeatdelay FREQ_SOUND_HOVER
+
+	playsound 2 10 SOUND_HOVER
+}
+
+{ game_death
+	//drop to the f*cking ground
+//	local GROUND_Z $get_ground_height(game.monster.origin)
+//	local MY_POS game.monster.origin
+//	vectorset MY_POS z GROUND_Z
+//	setorigin ent_me MY_POS
+
+	addvelocity ent_me $relvel(0,0,-200)
+}

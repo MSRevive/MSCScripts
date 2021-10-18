@@ -1,0 +1,90 @@
+//Thothie - added tweak to deal with worldmodel weapons with no idle anims
+//Weapons
+//REQ:
+//
+//	MODEL_VIEW
+//	MODEL_HANDS
+
+{
+	const PLAYERANIM_AIM blunt
+	setvar IS_WEAPON 1
+}
+
+#include items/base_item
+
+{ item_spawn
+
+	setanimext	PLAYERANIM_AIM
+	sethand	 	right
+
+  	callevent weapon_spawn
+}
+
+{ game_sheath
+
+	//playviewanim  ANIM_SHEATH
+	setmodelbody 0 2
+
+	callevent weapon_sheath
+}
+
+{ game_parry
+
+	playsound 1 weapons/cbar_miss1.wav
+
+	callevent weapon_parry
+}
+
+{ game_deploy
+
+	setviewmodel  	MODEL_VIEW
+	setmodel	MODEL_HANDS
+
+  	local 		L_SUBMODEL MODEL_BODY_OFS
+	add		L_SUBMODEL 1
+	subtract	L_SUBMODEL game.item.hand_index
+
+ 	setmodelbody 	0 L_SUBMODEL
+
+	if( !BASEWEAPON_NO_HAND_IDLE )
+	{
+ 		local		L_ANIM ANIM_PREFIX
+		stradd		L_ANIM _idle
+   		if ( ANIM_PREFIX equals 'ANIM_PREFIX' ) local L_ANIM idle
+		if ( ANIM_PREFIX equals none ) 	local L_ANIM idle
+		playanim 	L_ANIM
+	}
+
+	callevent weapon_deploy
+}
+
+{ game_fall
+
+  	local 		L_SUBMODEL MODEL_BODY_OFS
+	inc		L_SUBMODEL 2
+	if ( NO_WORLD_MODEL ) subtract L_SUBMODEL 1
+	//add		L_SUBMODEL 2
+	local		L_ANIM ANIM_PREFIX
+	stradd		L_ANIM _floor_idle
+
+	////dbg temp playinbg L_ANIM
+
+ 	setmodelbody 	0 L_SUBMODEL
+	if ( ANIM_PREFIX equals 'ANIM_PREFIX' ) local L_ANIM idle
+	if ( ANIM_PREFIX equals none ) 	local L_ANIM idle
+	playanim 	L_ANIM
+
+	callevent weapon_fall
+}
+
+{ game_deploy
+	if game.serverside
+
+	//popup setviewmodelprop MODEL_VIEW_IDX
+	if MODEL_VIEW_IDX > 0
+	callevent 0.01 bw_setup_model
+}
+
+{ bw_setup_model
+	setviewmodelprop ent_me submodel $get(ent_owner,scriptvar,'PLR_HAND_SET') MODEL_VIEW_IDX
+}

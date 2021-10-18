@@ -1,0 +1,138 @@
+//Thothie - Adding more conventional naming terms in hopes of matching Jester's model
+{
+
+	const NO_PARRY 1
+
+  const ANIM_IDLE        	0
+  const ANIM_DEPLOY       	8
+  const ANIM_RELOAD      	7
+  const ANIM_FIRE      		4
+
+  const MODEL_VIEW       	viewmodels/v_xbows.mdl //weapons/bows/crossbow_rview.mdl
+  const MODEL_HANDS      	weapons/p_weapons2.mdl
+  const MODEL_WORLD      	weapons/p_weapons2.mdl
+  const MODEL_WEAR		weapons/p_weapons2.mdl
+  const SOUND_SHOOT      	weapons/bow/crossbow.wav
+  const ITEM_NAME		xbow
+	const MODEL_BODY_OFS 52
+
+	const NO_WORLD_MODEL 1
+
+	const XBOW_RELOAD_TIME 2.0
+
+	const ANIM_PREFIX orcbow //sparimental
+
+	const RANGED_PROJECTILE	bolt
+	const RANGED_HOLD_MINMAX	0;0
+	const RANGED_ATK_DURATION	0.0
+	const RANGED_DMG_TYPE		pierce
+	const RANGED_STAT			archery
+	const RANGED_AIMANGLE		(0,1,0)
+	const RANGED_DMG_DELAY 0.0
+	const RANGED_NOISE 10
+	const RANGED_ENERGY 20
+
+	//attempts to fix
+	const RANGED_STARTPOS (0,10,-15)
+	//const RANGED_ATK_DURATION 3.0
+	const RANGED_ACCURACY 0;0
+	const RANGED_FORCE 1000
+}
+
+#include items/base_weapon
+
+{
+   eventname weapon_spawn
+
+   name 	a|Crossbow
+   desc 	An accurate, long range crossbow
+   weight 	1
+   size 	3
+   value	300
+   wearable     0
+   setanimext   bow
+   setworldmodel MODEL_WORLD
+   setviewmodel MODEL_VIEW
+   setpmodel	MODEL_HANDS
+   sethand	both
+   sethudsprite hand bow
+   sethudsprite trade xbow
+   callevent	register_bow
+   setmodelbody	0 0	//For Jesters upcoming model
+   precache MODEL_VIEW
+}
+
+{ game_deploy
+	if game.clientside
+	playviewanim ANIM_IDLE
+}
+
+{ register_bow
+//Normal attack
+
+   local reg.attack.type charge-throw-projectile
+   local reg.attack.keys +attack1
+   local reg.attack.hold_min&max 0.1;0.1
+   local reg.attack.dmg.type pierce
+   local reg.attack.range 400
+   local reg.attack.energydrain 0
+   local reg.attack.stat archery
+   local reg.attack.COF 0
+   local reg.attack.projectile bolt
+   local reg.attack.priority 10
+   local reg.attack.delay.strike 0.0
+   local reg.attack.delay.end XBOW_RELOAD_TIME //reload time, I think
+   local reg.attack.ofs.startpos (10,10,-15) //(10,10,-15)
+   local reg.attack.ofs.aimang (0,1,0)
+   local reg.attack.callback ranged
+   local reg.attack.noise 10
+
+  registerattack
+}
+
+{ ranged_start	//Call from dll
+
+	if !XBOW_RELOADING
+	playowneranim critical bow_pull global.anim.combatwalk
+  	//playowneranim critical bow_pull global.anim.combatwalk
+}
+{ //Stretched animation loop
+	repeatdelay 3.35
+
+	playowneranim critical bow_hold global.anim.combatwalk
+}
+{ ranged_toss	//Called from dll
+
+  	playviewanim  ANIM_FIRE
+  	playsound game.sound.weapon game.sound.maxvol SOUND_SHOOT
+	playowneranim critical bow_release global.anim.combatwalk
+	setvar STRETCHED 0
+	callevent 0.2 reload_now
+	local HEAVYONE $get(ent_lastprojectile,scriptvar,HEAVY_BOLT)
+	if ( HEAVYONE equals 'HEAVY_BOLT' ) callexternal ent_lastprojectile ext_lighten 0.01
+	if ( HEAVYONE > 0 ) callexternal ent_lastprojectile ext_lighten HEAVYONE
+}
+
+{ reload_now
+
+  	playviewanim  ANIM_RELOAD
+}
+
+{ ranged_end	//Called from dll
+
+	callevent done_reload
+}
+
+{ done_reload
+  	playviewanim  ANIM_IDLE
+	setvard XBOW_RELOADING 0
+}
+
+{ ranged_returnstanding
+  	if !game.item.attacking
+  	playowneranim critical bow_aim_to_stand global.anim.combatwalk
+}
+
+{ ranged_noammo //testing MS.DLL tweaks, no go so far
+	//dbg temp Ya ain't got no ammo hoss!
+}

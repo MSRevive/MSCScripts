@@ -1,0 +1,327 @@
+#scope server
+{ [shared]
+	const ANIM_SLASH attack1 //frame_attack_start / frame_attack x2 
+	const ANIM_CHEW attack2 //frame_chewface_start / frame_chewface x4
+	const ANIM_THROW attack3 //frame_grab_crab / frame_toss_crab
+	const ANIM_JUMP jump1 //frame_jump_start / frame_jump_push / frame_jump_land / frame_jump_end
+	setvard ANIM_DEATH diebackward
+	const ANIM_DEATH1 diebackward
+	const ANIM_DEATH2 dieforward
+	const ANIM_DEATH3 dieheadshot_1
+	const ANIM_DEATH4 dieheadshot_2
+	const ANIM_FLINCH_CUSTOM big_flinch //frame_flinch
+	const ANIM_DANCE sohappy
+	
+	const ANIM_RUN1 runlong
+	const ANIM_RUN2 runshort
+	const ANIM_LOOK idle1 //frame_idle1
+	const ANIM_IDLE_DEF idle2
+
+	const ANIM_EAT_LOOP eat_loop //frame_eat
+	const ANIM_VICTORY victoryeat1 //frame_eat
+
+	setvar ANIM_WALK walk //frame_walk1 / frame_walk2
+	setvard ANIM_RUN runlong //frame_run1 / frame_run2
+	setvar ANIM_IDLE idle2
+}
+
+{
+	setvar NPC_GIVE_EXP 1000
+
+	setvard ATTACK_RANGE 64
+	setvard MOVE_RANGE 48
+	setvard ATTACK_MOVERANGE 48
+
+	setvard ANIM_ATTACK attack1 //frame_attack / frame_attack_start
+	
+	const DMG_SLASH 200
+	const DMG_CHEW 100
+	const DMG_GLOB 400
+
+	setvard GLOB_EFFECT_TYPE effects/effect_acid
+	setvard GLOB_EFFECT_DOT 50
+	setvard GLOB_EFFECT_DUR 5.0
+
+	const FREQ_CHEW $randf(20.0,30.0)
+	const FREQ_THROW $randf(10.0,20.0)
+
+	const SOUND_ATTACK_START monsters/undeadz/c_golmbone_atk1.wav
+	const SOUND_SLASH_MISS1 zombie/claw_miss1.wav
+	const SOUND_SLASH_MISS2 zombie/claw_miss2.wav
+	const SOUND_SLASH_HIT1 zombie/claw_strike1.wav
+	const SOUND_SLASH_HIT2 zombie/claw_strike2.wav
+	const SOUND_SLASH_HIT3 zombie/claw_strike3.wav
+
+	const SOUND_THROW zombie/claw_miss1.wav
+
+	const SOUND_STEP1 common/npc_step1.wav
+	const SOUND_STEP2 common/npc_step2.wav
+
+	const SOUND_IDLE monsters/undeadz/c_skeltchf_bat1.wav
+
+	const SOUND_THROW monsters/undeadz/c_hookhorr_atk1.wav
+
+	const SOUND_ALERT1 monsters/undeadz/c_golmbone_bat1.wav
+	const SOUND_ALERT2 monsters/undeadz/c_golmbone_slct.wav
+	const SOUND_ALERT3 monsters/undeadz/c_hookhorr_bat1.wav
+	
+	const SOUND_FLINCH1 monsters/undeadz/c_golmbone_hit1.wav
+	const SOUND_FLINCH2 monsters/undeadz/c_hookhorr_slct.wav
+
+	const SOUND_CHEW_START monsters/undeadz/c_hookhorr_atk1.wav
+	const SOUND_CHEW1 monsters/undeadz/c_skeleton_atk1.wav
+	const SOUND_CHEW2 monsters/undeadz/c_skeleton_atk2.wav
+	const SOUND_CHEW3 monsters/undeadz/c_skeleton_atk3.wav
+
+	const SOUND_DEATH1 monsters/undeadz/c_golmbone_dead.wav
+	const SOUND_DEATH2 monsters/undeadz/c_hookhorr_dead.wav
+	setvard NPC_ALT_SOUND_DEATH SOUND_DEATH1
+}
+
+{ game_precache
+	precache SOUND_DEATH1
+	precache SOUND_DEATH2
+	precachefile monsters/skullcrab
+	precache xfireball3.spr
+}
+
+#include monsters/base_monster_new
+
+{ npc_spawn
+
+	name a|Lumbering Dead
+	hp 4000
+	race undead
+	setmodel monsters/lumbering.mdl
+	width 32
+	height 96
+
+	setmoveanim ANIM_WALK
+	setidleanim ANIM_IDLE
+
+	hearingsensitivity 4
+	roam 1
+
+	takedmg all 0.75
+	takedmg poison 0.0
+	takedmg cold 0.5
+	takedmg holy 1.5
+	takedmg slash 1.0
+	takedmg blunt 1.5
+	takedmg pierce 0.5
+	setvard IMMUNE_VAMPIRE 1
+
+	callevent 2.0 finalize_npc
+}
+
+{ finalize_npc
+	setvard FLINCH_CUSTOM_HEALTH $get(ent_me,maxhp)
+	multiply FLINCH_CUSTOM_HEALTH 0.3
+}
+
+{ npc_targetsighted
+	local GAME_TIME game.time
+
+	if ( EAT_MODE )
+	{
+		setvard EAT_MODE 0
+		setidleanim ANIM_IDLE
+		setvard NO_STUCK_CHECKS 0
+		roam 1
+		setvard NEXT_THROW GAME_TIME
+		add NEXT_THROW 5.0
+	}
+
+	if ( NPCATK_TARGET isnot unset )
+	{
+		if game.time > NEXT_THROW
+		if $get(NPCATK_TARGET,range) > 128
+		setvard AS_ATTACKING GAME_TIME
+		add AS_ATTACKING 5.0
+		setvard NEXT_THROW GAME_TIME
+		add NEXT_THROW 5.0
+		playanim critical ANIM_THROW
+	}
+
+	if !DID_ALERT
+	setvard DID_ALERT 1
+	setvard NEXT_THROW GAME_TIME
+	add NEXT_THROW FREQ_THROW
+
+	setvard AS_ATTACKING GAME_TIME
+	add AS_ATTACKING 5.0
+
+	playrandomsound 0 10 SOUND_ALERT1 SOUND_ALERT2 SOUND_ALERT3
+}
+
+{ npcatk_hunt
+	local GAME_TIME game.time
+
+	if ( NPCATK_TARGET equals unset )
+	{
+		if GAME_TIME > NEXT_IDLE_SOUND
+		setvard NEXT_IDLE_SOUND GAME_TIME
+		add NEXT_IDLE_SOUND $randf(10.0,20.0)
+		playsound 0 10 SOUND_IDLE
+		playanim once ANIM_LOOK
+	}
+
+	if NPCATK_TARGET isnot unset
+
+	if ( $get(NPCATK_TARGET,range) > 200 )
+	{
+		setvard ANIM_RUN ANIM_RUN1
+		setmoveanim ANIM_RUN1
+	}
+	else
+	{
+		setvard ANIM_RUN ANIM_RUN2
+		setmoveanim ANIM_RUN2
+	}
+
+	if ( $get(NPCATK_TARGET,range) < 48 )
+	{
+		if GAME_TIME > NEXT_CHEW
+		setvard NEXT_CHEW GAME_TIME
+		add NEXT_CHEW FREQ_CHEW
+		playanim critical ANIM_CHEW
+	}
+}
+
+{ npcatk_lost_sight
+	if game.time > NEXT_LOOK
+	setvard NEXT_LOOK game.time
+	add NEXT_LOOK 20.0
+	setvard AS_ATTACKING GAME_TIME
+	add AS_ATTACKING 5.0
+	playanim once ANIM_LOOK
+	playrandomsound 0 10 SOUND_ALERT1 SOUND_ALERT2 SOUND_ALERT3
+}
+
+{ frame_attack_start
+	if $rand(1,3) == 1
+	playsound 0 10 SOUND_ATTACK_START
+}
+
+{ frame_attack
+	setvard SLASH_ATTACK 1
+	dodamage NPCATK_TARGET ATTACK_HITRANGE DMG_SLASH 80% slash
+}
+
+{ game_death
+	local RND_DEATH_SND $rand(1,2)
+	local RND_DEATH_ANIM $rand(1,3)
+	if ( RND_DEATH_SND == 1 ) setvard NPC_ALT_SOUND_DEATH SOUND_DEATH1
+	if ( RND_DEATH_SND == 2 ) setvard NPC_ALT_SOUND_DEATH SOUND_DEATH2
+	if ( RND_DEATH_ANIM == 1 ) setvard ANIM_DEATH ANIM_DEATH1
+	if ( RND_DEATH_ANIM == 2 ) setvard ANIM_DEATH ANIM_DEATH3 //ANIM_DEATH2 dies forward, too likely to fall into player
+	if ( RND_DEATH_ANIM == 3 ) setvard ANIM_DEATH ANIM_DEATH4
+}
+
+{ game_dodamage
+	if ( EAT_MODE )
+	{
+		setvard EAT_MODE 0
+		setidleanim ANIM_IDLE
+		setvard NO_STUCK_CHECKS 0
+		roam 1
+	}
+
+	setvard NPC_TARG_RANGE $get(NPCATK_TARGET,range)
+	setvard NPC_TARG_POS $get(NPCATK_TARGET,origin)
+
+	if ( PARAM1 )
+	{
+		playrandomsound 0 10 SOUND_SLASH_HIT1 SOUND_SLASH_HIT2 SOUND_SLASH_HIT3
+		addvelocity PARAM2 $relvel($randf(-100,100),$randf(100,200),100)
+	}
+	else
+	{
+		playrandomsound 0 10 SOUND_SLASH_MISS1 SOUND_SLASH_MISS2
+	}
+	setvard SLASH_ATTACK 0
+}
+
+{ game_damaged
+	if $get(ent_me,hp) < FLINCH_CUSTOM_HEALTH
+	if game.time > NEXT_CUSTOM_FLINCH
+	setvard NEXT_CUSTOM_FLINCH game.time
+	add NEXT_CUSTOM_FLINCH 20.0
+	playrandomsound 0 10 SOUND_FLINCH1 SOUND_FLINCH2
+	playanim critical ANIM_FLINCH_CUSTOM
+}
+
+{ my_target_died
+	if NPC_TARG_RANGE < 200
+	playanim once ANIM_VICTORY
+	setidleanim ANIM_EAT_LOOP
+	local FACE_POS $get(ent_me,origin)
+	local MY_YAW $get(ent_me,angles.yaw)
+	roam 0
+	setvard EAT_MODE 1
+	//vectoradd FACE_POS $relpos($vec(0,MY_YAW,0),$vec(0,200,0))
+	setmovedest NPC_TARG_POS 9999
+	setvard NO_STUCK_CHECKS 1
+}
+
+{ frame_walk1
+	playsound 0 5 SOUND_STEP1
+}
+
+{ frame_walk2
+	playsound 0 5 SOUND_STEP2
+}
+
+{ frame_run1
+	playsound 0 10 SOUND_STEP1
+}
+
+{ frame_run2
+	playsound 0 10 SOUND_STEP2
+}
+
+{ frame_chewface_start
+	playsound 0 10 SOUND_CHEW_START
+	if ( $get(NPCATK_TARGET,range) < 64 ) addvelocity NPCATK_TARGET $relvel(0,-300,0)
+}
+
+{ frame_chewface
+	playrandomsound 0 10 SOUND_CHEW1 SOUND_CHEW2 SOUND_CHEW3
+	addvelocity NPCATK_TARGET $relvel(0,-300,0)
+	dodamage NPCATK_TARGET 64 DMG_CHEW 90% pierce
+}
+
+{ crab_died
+	subtract N_CRABS 1
+}
+
+{ frame_grab_crab
+	if N_CRABS < 2
+	setmodelbody 1 1
+}
+
+{ frame_toss_crab
+	setvard NEXT_THROW game.time
+	add NEXT_THROW FREQ_THROW
+	playsound 0 10 SOUND_THROW
+	if ( N_CRABS < 2 )
+	{
+		add N_CRABS 1
+		createnpc monsters/skullcrab $relpos(-20,20,75) $get(ent_me,id) NPCATK_TARGET
+	}
+	else
+	{
+		local TARG_ORG $get(NPCATK_TARGET,origin)
+		if ( !$get(TARG_ORG,isplayer) ) vectoradd TARG_ORG z $get(NPCATK_TARGET,height)
+		local TARG_DIST $dist(TARG_ORG,game.monster.origin)
+		divide TARG_DIST 35
+		setangle add_view.pitch TARG_DIST
+
+		local BOMB_SPEED 600
+		if ( $get(NPCATK_TARGET,range) > 800 ) local BOMB_SPEED 800
+
+		setvard NEXT_THROW game.time
+		add NEXT_THROW 5.0
+		tossprojectile view BOMB_SPEED DMG_GLOB 0.1 proj_glob (-10,0,75)
+	}
+}

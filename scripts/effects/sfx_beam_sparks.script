@@ -1,0 +1,86 @@
+//Sparks fly from an attachment and a target for X seconds
+//Optionally this could be rigged to handle the beam between the two as well
+//But server side beam makes a smoother effect
+#scope client
+
+{
+	const SPRITE_NAME 3dmflaora.spr
+}
+
+{ client_activate //<owner_index> <target_index> <source_attach_idx> <sprite_color> <duration>
+
+	setvard FX_OWNER PARAM1
+	setvard FX_TARGET PARAM2
+	setvard ATTACH_NAME attachment
+	stradd ATTACH_NAME PARAM3
+	setvard FX_COLOR PARAM4
+	setvard FX_DURATION PARAM5
+
+	setvard FX_ACTIVE 1
+	callevent track_attach
+
+	cleffect tempent sprite SPRITE_NAME ATTACH_LOC setup_attach_sprite update_attach_sprite
+
+	callevent target_sprites
+
+	callevent FX_DURATION end_fx
+}
+
+{ end_fx
+	setvard FX_ACTIVE 0
+	callevent 1.0 remove_me
+}
+
+{ remove_me
+	removescript
+}
+
+{ target_sprites
+	if FX_ACTIVE
+	callevent 0.25 target_sprites
+
+	local TARG_ORG $getcl(FX_TARGET,origin)
+	if ( !$get(TARG_ORG,isplayer) ) vectoradd TARG_ORG z 38
+
+	cleffect tempent sprite SPRITE_NAME TARG_ORG setup_target_sprite
+	cleffect tempent sprite SPRITE_NAME TARG_ORG setup_target_sprite
+	cleffect tempent sprite SPRITE_NAME TARG_ORG setup_target_sprite
+}
+
+{ track_attach //can't get attachmentX pos from update events, so update here
+	if FX_ACTIVE
+	callevent 0.01 track_attach
+	setvard ATTACH_LOC $getcl(FX_OWNER,ATTACH_NAME)
+}
+
+{ update_attach_sprite
+	cleffect tempent set_current_prop origin ATTACH_LOC
+}
+
+{ setup_attach_sprite
+	cleffect tempent set_current_prop death_delay FX_DURATION
+	cleffect tempent set_current_prop scale 1.0
+	cleffect tempent set_current_prop renderamt 255
+	cleffect tempent set_current_prop rendermode add
+	cleffect tempent set_current_prop rendercolor FX_COLOR
+	cleffect tempent set_current_prop collide none
+	cleffect tempent set_current_prop gravity 0
+	cleffect tempent set_current_prop framerate 30
+	cleffect tempent set_current_prop frames 1
+	cleffect tempent set_current_prop update 1
+}
+
+{ setup_target_sprite
+	cleffect tempent set_current_prop death_delay 1.0
+	cleffect tempent set_current_prop scale 0.25
+	cleffect tempent set_current_prop renderamt 255
+	cleffect tempent set_current_prop rendermode add
+	cleffect tempent set_current_prop rendercolor FX_COLOR
+	cleffect tempent set_current_prop collide world;die
+	cleffect tempent set_current_prop framerate 30
+	cleffect tempent set_current_prop frames 1
+	local RND_ANG $randf(0,359)
+	local RND_SPEED $randf(200,500)
+	local RND_V $randf(0,300)
+	cleffect tempent set_current_prop velocity $relvel($vec(0,RND_ANG,0),$vec(0,RND_SPEED,RND_V))
+}

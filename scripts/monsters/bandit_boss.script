@@ -1,0 +1,1551 @@
+//This is an older script and may have some bad conventions as a result
+
+//Bandit Boss for The_Keep by Thothie from scratch
+//BOSS_TYPES
+//1 = Fire Dagger - Flame burst, turbo move, leap, invisiblity / teleport
+//2 = Dark Maul - slow, heavy damage, lots of HP, pull move, large AOE stun
+//3 = Rune Axe - Fast swing, large AOE stun charge, pull move
+//4 = Greater ice Blade - Slow swing, heavy damage, Freeze solid, blizzard (aim at distant), freezing sphere
+//5 = Orion Bow - fires magic arrows of various size, scatter arrows of various types, invisiblity / teleport
+//6 = Nova Blade - Flame Burst, Flaming Skull, Volcano, Huge fireball, Firewall, parry
+//All types have 50% armor, stunning kicks
+//All types can pull potions randomly (limit: 8 - 3 health, 3 resistance, 2 enhance [demon,speed,protect] )
+//Drinks resistance potion if struck 5 times by element for more than 50 damage
+
+//bug: Plevmus - getting stuck in flame burst loop
+//=bug: Plevmus - flanking sucks
+//=bug: Plevmus - flame burst doing 180 damage from ambient burn?
+//bug: axer spins in place just prior to charge atk
+//bug: axer charge attack timing is way off
+//bug: axer never switches to fast swing?
+//=bug: pull beam not drawing (also needs sound)
+//bug: (model) sweep kick a bit off ground
+//=bug: (6) - nova blade spells not appearing?
+//=bug: archers arrows not moving
+
+{
+	const NPC_BOSS_REGEN_RATE 0.1
+	const NPC_BOSS_RESTORATION 0.25
+
+	if ( $lcase(game.map.name) equals the_keep ) setvard NPC_IS_BOSS 1
+
+	//action anims
+	const ANIM_DRINK swordready1_R //drink_done
+	const ANIM_AXE_FAST battleaxe_swing1_R //axe_fast
+	const ANIM_AXE_SLOW battleaxe_swing1_L //axe_slow
+	const ANIM_SWORD_FAST longsword_swipe_R //sword_fast
+	const ANIM_SWORD_SLOW longsword_swipe_L //sword_slow
+	const ANIM_BOW shootbow //{ event 500 9 "bow_draw" }  { event 500 28 "bow_stretch" }  { event 500 42 "bow_shoot" }
+	const ANIM_SWING_SLOW swordswing1_R //swing_slow //1h swing
+	const ANIM_SWING_FAST swordswing2_R //swing_fast //1h swing
+	const ANIM_JAB swordjab1_R //attack_jab //v. fast
+	const ANIM_KICK_HIGH stance_normal_highkick_r1 //kick_high
+	const ANIM_KICK_LOW stance_normal_lowkick_r1 //kick_low //slow
+	const ANIM_PARRY longsword_parry
+	const ANIM_SPELL prepare_fireball //prep_done
+	const ANIM_CAST throw_fireball_R //spell_throw
+	setvard ANIM_FLINCH ANIM_PARRY
+
+	//move anims
+	setvar ANIM_WALK_NORM walk2
+	setvar ANIM_RUN_NORM run
+	const ANIM_MOVE_SLOW run_squatwalk1_R
+	setvar ANIM_WALK walk2
+	setvar ANIM_RUN run //bad thing here, can't setvar run for some reason
+	const ANIM_HOP jump
+	const ANIM_LEAP long_jump
+	setvard ANIM_DEATH die_backwards1
+
+	//noize (some called direct, usually only here if I hadn't cosen the sound during writeup)
+	const SOUND_PARRY weapons/parry.wav
+	const SOUND_POWERUP voices/big_swordready.wav //alter player/swordready.wav
+	const SOUND_LEAP voices/big_shout1.wav //alter player/shout1.wav
+	const SOUND_SATTACK voices/big_shout1.wav //alter player/shout1.wav //alias
+	const SOUND_TAUNT1 voices/big_yeah1.wav
+	const SOUND_TAUNT2 voices/big_taunt1.wav
+	const SOUND_PULL voices/big_pull.wav
+	const SOUND_SWING_FAST weapons/cbar_miss1.wav
+	const SOUND_SWING_SLOW1 zombie/claw_miss1.wav
+	const SOUND_SWING_SLOW2 zombie/claw_miss2.wav
+	const SOUND_DEATH voices/big_death.wav //alter
+	const SOUND_BOW_STRETCH weapons/bow/stretch.wav
+	const SOUND_BOW_SHOOT weapons/bow/crossbow.wav
+	const SOUND_PAIN voices/big_chesthit1.wav //convert
+	const SOUND_PAIN2 voices/big_armhit1.wav //alter
+	//precache SOUND_DEATH
+
+	//frequencies
+	const FREQ_HEALTH 20.0 //minimum number of seconds between health potions (all types)
+	const FREQ_PULL 10.0 //time between pull attacks (all types)
+	const FREQ_KICK $rand(10,30) //(all types)
+	const FREQ_VOLCANO 45.0 //volcano delay (type 6)
+	const FREQ_TURBO $randf(40,60) //turbo attack (type 1)
+	const FREQ_SPECIAL $randf(15,30) //flameburst (1), aoe stun (2), charge (3), freeze/blizz(4), scattershot (5)  fireball/skull/wall(6) flame burst (6)
+	const FREQ_INVIS $rand(30,120) //type (1 & 5)
+	const FREQ_FLANK 5.0 //minimum time between flanks for dagger
+	const FREQ_AVOID 10.0 //time between avoids for type 5
+
+	//combat
+	setvard CAN_FLINCH 1
+	const FLINCH_DAMAGE_THRESHOLD 75
+	setvard FLINCH_CHANCE 50
+	setvard FLINCH_ANIM longsword_parry
+
+	setvard ATTACK_RANGE 100 //swing if this close
+	setvard ATTACK_HITRANGE 180 //hits if this close
+	const ATTACK_HITCHANCE 85% //chance to hit
+	setvard ATTACK_MOVERANGE 90 //moves this close
+	setvard MOVE_RANGE 90 //debugary - shouldnt have to do this, maybe something up in base_npc_attack_new
+	
+	//damage
+	const DMG_KICK $rand(50,100)
+	const DMG_MACE $rand(300,500)
+	const DMG_SWORD_FAST $rand(30,80)
+	const DMG_SWORD_SLOW $rand(50,100)
+	const DMG_SWORD_JAB $rand(50,100)
+	const DMG_SWING_FAST $rand(30,80)
+	const DMG_SWING_SLOW $rand(50,100)
+	const DMG_AXE_FAST $rand(80,150)
+	const DMG_AXE_SLOW $rand(400,600)
+	const DMG_DAGGER $rand(30,80)
+	const DMG_NOVA_SLOW $rand(100,300)
+	const DMG_NOVA_FAST $rand(50,100)
+	const DMG_NOVA_STAB $rand(100,200)
+	const DMG_BURN_DAGGER $rand(10,20)
+	const DMG_BURN_MACE $rand(30,60)
+	const DMG_FLAME_BURST 400
+	const DMG_FIRE_BALL 200
+	const DMG_ARROW $rand(50,100)
+	const DMG_BLIZ 50
+	const DMG_SKULL 60
+
+	//unique
+	const ELEMENT_LIMIT 5 //how many times to be struck by element before using potion
+	const ELEMENT_DMG_THRESH 30 //how much damage must be struck for to consider using potion
+	const ARROW_SPEED 1200
+
+	//anti-stuck
+	const AS_ATK_VALUE 10
+
+	const BEAM_SPRITE lgtning.spr
+
+	//media precache
+	const MONSTER_MODEL npc/bandit_boss.mdl
+	precache MONSTER_MODEL
+
+	//magic dart
+	precache nhth1.spr
+	precache ambience/alienflyby1.wav
+	precache monsters/bat.mdl //o_0
+
+	//gold bags
+	precache misc/gold.wav
+
+	precache amb/quest1.wav //used by helena bandit chest
+
+	//hoping to fix loading of boss type consistency issues
+}
+
+{ game_precache
+	precachefile monsters/summon/ice_blast
+	precachefile monsters/summon/summon_blizzard
+	precachefile monsters/summon/stun_burst
+	precachefile monsters/summon/flame_burst
+	precachefile monsters/summon/bandit_boss_fire_wall
+	precachefile monsters/summon/flame_burst
+	precachefile monsters/summon/npc_volcano
+	precachefile monsters/summon/flame_skull 
+	precachefile chests/ver_bandit_chest 
+	precachefile helena/bandit_boss_chest
+}
+
+#include monsters/base_monster_new
+
+{ npc_spawn
+
+	invincible 1 //stay invincible until attribs defined, so you don't die in a volcano that happens to be laying around when you spawn
+
+	setmodel MONSTER_MODEL
+	width 40
+	height 120
+	race rogue
+	takedmg all 0.5
+	saytextrange 2048
+	roam 1
+
+	hp 9999 //this resets to stop insant death
+
+	hearingsensitivity 8
+	
+	setvard HEALTH_AMMO 3
+	setvard RESIST_AMMO 3
+	setvard SPECIAL_AMMO 3
+	setvard FIRE_STRUCK 0
+	setvard COLD_STRUCK 0
+	setvard POISON_STRUCK 0
+	setvard LIGHTNING_STRUCK 0
+	setvard FAST_SWINGS 0
+	setvard NEXT_ATTACK unset
+	setvard IMMUNE_STUN 50
+	setvard BD_COUNT 0
+	setvard NOVA_PICK_ATK 0
+
+
+	setvar ANIM_RUN run
+	setvar ANIM_WALK walk2
+
+	//setmodelbody 1 0 //unarmed
+	//setmodelbody 1 1 //fire dagger
+	//setmodelbody 1 2 //dark maul
+	//setmodelbody 1 3 //Rune Axe
+	//setmodelbody 1 4 //greater ice blade
+	//setmodelbody 1 5 //orion bow
+	//setmodelbody 1 6 //Nova Blade
+	//setmodelbody 1 7 //potion - red
+	//setmodelbody 1 8 //potion - green
+
+	callevent 0.1 setup_boss
+}
+
+{ setup_boss
+
+	if ( !BOSS_TYPE_OVERRIDE ) setvard BOSS_TYPE $rand(1,6)
+
+
+	if ( BOSS_TYPE == 1 )
+	{
+		name Plevmus of the Hidden Knife
+		hp 2500
+		setmodelbody 1 1
+		setvard ANIM_ATTACK ANIM_JAB
+		skilllevel 1000
+	}
+
+	if ( BOSS_TYPE == 2 )
+	{
+		name Golgar the Hammer
+		hp 6000
+		setmodelbody 1 2
+		setvard ANIM_ATTACK ANIM_AXE_SLOW
+		setvard NPC_GIVE_EXP 1000
+	}
+
+	if ( BOSS_TYPE == 3 )
+	{
+		name Vultekh of the Runes
+		hp 4000
+		setmodelbody 1 3
+		setvard ANIM_ATTACK ANIM_AXE_FAST
+		setvard NPC_GIVE_EXP 1000
+	}	
+
+	if ( BOSS_TYPE == 4 )
+	{
+		name Kryoh of the Frozen Blade
+		hp 3000
+		setmodelbody 1 4
+		setvard ATTACK_MOVERANGE 256
+		setvard ANIM_ATTACK ANIM_SWING_FAST
+		setvard NPC_GIVE_EXP 1500
+	}	
+
+	if ( BOSS_TYPE == 5 )
+	{
+		name Xaron of the Orion Bow
+		hp 3000
+		setmodelbody 1 5
+		setvard ANIM_ATTACK ANIM_BOW
+		setvard NPC_GIVE_EXP 2000
+	}
+
+	if ( BOSS_TYPE == 6 )
+	{
+		name Demonicus of the Burning Blade
+		hp 6000
+		setmodelbody 1 6
+		setstat parry 100
+		setvard ANIM_ATTACK ANIM_SWORD_FAST
+		setvard NPC_GIVE_EXP 500 //reduced due to parry skill artificially raising it
+	}
+
+	if ( $lcase(game.map.name) equals helena ) multiply NPC_GIVE_EXP 4 //since you don't get much treasure
+
+	setmoveanim ANIM_WALK
+
+	local L_MAP_NAME $lcase(game.map.name)
+	local GENERIC_NAME 1
+	if ( L_MAP_NAME equals keep_test ) local GENERIC_NAME 0
+	if ( L_MAP_NAME equals the_keep ) local GENERIC_NAME 0
+	if ( GENERIC_NAME ) name a|Bandit Leader
+
+	invincible 0
+}
+
+{ npc_post_spawn
+
+	setvard ORIG_MOVE_RANGE ATTACK_MOVERANGE
+
+	setvard HALF_HEALTH game.monster.maxhp
+	divide HALF_HEALTH 2
+
+	setvard FIRST_SPEC_POT_HEALTH game.monster.maxhp
+	multiply FIRST_SPEC_POT_HEALTH 0.75
+
+	setvard QUARTER_HEALTH game.monster.maxhp
+	multiply QUARTER_HEALTH 0.25
+
+	setvard ORIG_ATTACK ANIM_ATTACK
+	setvard ORIG_WEAPON BOSS_TYPE
+
+	if ( BOSS_TYPE = 1 ) setvard FREQ_ATTACK 0.25
+	if ( BOSS_TYPE = 2 ) setvard FREQ_ATTACK 2.0
+	if ( BOSS_TYPE = 3 ) setvard FREQ_ATTACK 1.75
+	if ( BOSS_TYPE = 4 ) setvard FREQ_ATTACK 0.25
+	if ( BOSS_TYPE = 5 ) setvard FREQ_ATTACK 0.1
+	if ( BOSS_TYPE = 6 ) setvard FREQ_ATTACK 1.5
+	setvard ORIG_FREQ_ATTACK FREQ_ATTACK
+}
+
+{ game_damaged //PARAM1=attacker PARAM2=Damage PARAM3=DamageType
+
+	//dbg temp health game.monster.hp PARAM2 PARAM3
+	if game.monster.isalive //no drinking potions post-mortem!
+
+	if ( ON_FIRST_POT )
+	{
+		if game.monster.hp <= HALF_HEALTH
+		setvard ON_FIRST_POT 0
+		callevent end_special_effect
+	}
+
+	if ( PARAM2 > 30 )
+	{
+		//sweep kick all if surrounded (repulse)
+		getents player 128
+		if ( GET_COUNT >= 3 )
+		{
+			if !SWEEP_KICK_DELAY
+			if !DRINKING_POT
+			if BOSS_TYPE != 5
+			setvard SWEEP_KICK_DELAY 1
+			callevent FREQ_KICK reset_sweep_kick_delay
+			local SWEEP_KICK 1
+			setvard CAN_FLINCH 0 //suspend flinch until this is done
+			setvard AS_ATTACKING game.time
+			playanim critical ANIM_KICK_LOW
+		}
+	}
+
+	if ( BOSS_TYPE == 5 )
+	{
+		//archer will sometimes leap away when attacked by melee (or kick attacker away)
+		if $get(PARAM1,range) < 120
+		if !AVOID_DELAY	
+		if !DRINKING_POT
+		setvard AVOID_DELAY 1
+		callevent FREQ_AVOID reset_avoid_delay
+		local AVOID_TYPE $rand(1,3)
+		setvard AS_ATTACKING game.time
+		if ( AVOID_TYPE == 1 ) callevent leap_away $get(PARAM1,id)
+		if ( AVOID_TYPE == 2 ) playanim critical ANIM_KICK_HIGH
+		if ( AVOID_TYPE == 3 ) playanim critical ANIM_KICK_LOW
+	}
+
+	//drink health pot when low on health
+	if ( HEALTH_AMMO > 0 )
+	{
+		if !AM_INVISIBLE
+		if !DRINKING_POT
+		if game.monster.hp < HALF_HEALTH
+		if !HEALTH_POT_DELAY
+		setvard HEALTH_POT_DELAY 1
+		callevent FREQ_HEALTH reset_health_pot_delay
+		callevent drink_pot health
+	}
+
+
+	//monster drinks special potions at 75% health (effect ends at 50%) and 25% health (lasts until death)
+	if ( !DID_FIRST_POT )
+	{
+		if !DRINKING_POT
+		if game.monster.hp < FIRST_SPEC_POT_HEALTH
+		setvard DID_FIRST_POT 1
+		setvard ON_FIRST_POT 1
+		callevent drink_special
+	}
+
+	if ( !DID_SECOND_POT )
+	{
+		if !DRINKING_POT
+		if game.monster.hp < QUARTER_HEALTH
+		setvard DID_SECOND_POT 1
+		callevent drink_special
+	}
+
+	if ( $get(PARAM1,range) > ATTACK_HITRANGE )
+	{
+		//if struck from afar, pull player to you
+		if ( BOSS_TYPE != 5 )
+		{
+			//archer rather you stay away
+			if !AM_INVISIBLE
+			if !DRINKING_POT
+			setvard PULL_TARGET PARAM1 //used by pull attack / freeze, etc
+			if ( PARAM2 > 20 ) local PULL_CHANCE $rand(1,10)
+			if ( PARAM2 > 60 ) local PULL_CHANCE $rand(1,2)
+			if !PULL_DELAY
+			setvard PULL_DELAY 1
+			callevent FREQ_PULL reset_pull_delay
+			callevent tractor_beam PULL_TARGET
+		}
+	}
+
+	if ( RESIST_AMMO > 0 )
+	{
+		//if struck by elemental attack repeatedly, use resistance potion
+		if PARAM2 > ELEMENT_DMG_THRESH
+		if !AM_INVISIBLE
+		if !DRINKING_POT
+
+		//dbg temp struck_by_type PARAM3 ( FIRE_STRUCK COLD_STRUCK LIGHTNING_STRUCK POISON_STRUCK )
+
+		if ( PARAM3 equals fire ) add FIRE_STRUCK 1
+		if ( PARAM3 equals cold ) add COLD_STRUCK 1
+		if ( PARAM3 equals lightning ) add LIGHTNING_STRUCK 1
+		if ( PARAM3 equals poison ) add POISON_STRUCK 1
+
+		if ( FIRE_STRUCK >= ELEMENT_LIMIT )
+		{
+			if ( !USED_FIRE_POT ) callevent drink_pot fire
+		}
+
+		if ( COLD_STRUCK >= ELEMENT_LIMIT )
+		{
+			if ( !USED_COLD_POT ) callevent drink_pot cold
+		}
+
+		if ( LIGHTNING_STRUCK >= ELEMENT_LIMIT )
+		{
+			if ( !USED_LIGHTNING_POT ) callevent drink_pot lightning
+		}
+
+		if ( POISON_STRUCK >= ELEMENT_LIMIT )
+		{
+			if ( !USED_POISON_POT ) callevent drink_pot poison
+		}
+	}
+}
+
+{ reset_avoid_delay
+	setvard AVOID_DELAY 0
+}
+
+{ reset_sweep_kick_delay
+	setvard SWEEP_KICK_DELAY 0
+}
+{ reset_health_pot_delay
+	setvard HEALTH_POT_DELAY 0
+}
+{ reset_pull_delay	
+	setvard PULL_DELAY 0
+}
+
+{ drink_special
+	local RND_POT $rand(1,3)
+	if ( BOSS_TYPE == 1 ) local RND_POT $rand(1,2) //dagger bandit does not use speed potion, as he has it naturally
+	if ( RND_POT == 1 ) callevent drink_pot demon
+	if ( RND_POT == 2 ) callevent drink_pot protection
+	if ( RND_POT == 3 ) callevent drink_pot speed
+}
+
+{ drink_pot
+
+	if game.monster.isalive
+
+	if !DRINKING_POT //don't try to change pots
+	setvard DRINKING_POT 1
+
+	if ( PARAM1 isnot health ) setmodelbody 1 8 //green pot
+	if ( PARAM1 equals health ) setmodelbody 1 7 //red pot
+	callevent npcatk_suspend_ai 2.0
+	playanim break
+	setvard AS_ATTACKING game.time
+	playanim critical ANIM_DRINK
+	setvard DRINK_TYPE PARAM1
+}
+
+{ drink_done
+
+	callevent npcatk_resume_ai
+
+	setvard DRINKING_POT 0
+
+	playsound 0 10 items/drink.wav
+
+	if ( DRINK_TYPE equals fire )
+	{
+		setvard USED_FIRE_POT 1
+		subtract RESIST_AMMO 1
+		local GLOW_COLOR (255,0,0)
+		callevent fire_immune
+		local OUT_MSG game.monster.name
+		stradd OUT_MSG " has drank a potion and is now immune to fire!"
+		infomsg all "POTION OF IMMUNITY TO FIRE" OUT_MSG
+	}
+
+	if ( DRINK_TYPE equals cold )
+	{
+		setvard USED_COLD_POT 1
+		subtract RESIST_AMMO 1
+		local GLOW_COLOR (128,128,255)
+		callevent cold_immune
+		local OUT_MSG game.monster.name
+		stradd OUT_MSG " has drank a potion and is now immune to cold attacks!"
+		infomsg all "POTION OF IMMUNITY TO COLD" OUT_MSG
+	}
+
+	if ( DRINK_TYPE equals poison )
+	{
+		setvard USED_POISON_POT 1
+		subtract RESIST_AMMO 1
+		local GLOW_COLOR (0,255,0)
+		callevent poison_immune
+		local OUT_MSG game.monster.name
+		stradd OUT_MSG " has drank a potion and is now immune to poison!"
+		infomsg all "POTION OF IMMUNITY TO POISON" OUT_MSG
+	}
+
+	if ( DRINK_TYPE equals lightning )
+	{
+		setvard USED_LIGHTNING_POT 1
+		subtract RESIST_AMMO 1
+		local GLOW_COLOR (255,255,0)
+		callevent lightning_immune
+		local OUT_MSG game.monster.name.full
+		stradd OUT_MSG " has drank a potion and is now immune to lightning!"
+		infomsg all "POTION OF IMMUNITY TO POISON" OUT_MSG
+	}
+
+	if ( DRINK_TYPE equals health )
+	{
+		subtract HEALTH_AMMO 1
+		local GLOW_COLOR (0,255,0)
+		local HP_GIVE game.monster.maxhp
+		subtract HP_GIVE game.monster.hp
+		givehp HP_GIVE
+		local OUT_MSG game.monster.name.full
+		stradd OUT_MSG " has used a potion of health!"
+		infomsg all "POTION OF HEALTH" OUT_MSG
+	}
+
+	if ( DRINK_TYPE equals protection )
+	{
+		setvard SPEC_TYPE protection
+		local GLOW_COLOR (255,255,255)
+		setvard GLOW_ON 1
+		setvard GLOW_LOOP_COLOR (255,255,255)
+		callevent 5.0 glow_loop
+		takedmg all 0.25
+
+		local OUT_MSG game.monster.name.full
+		stradd OUT_MSG " has used a potion of protection!"
+		infomsg all "POTION OF PROTECTION" OUT_MSG
+
+	}
+
+	if ( DRINK_TYPE equals demon )
+	{
+		setvard SPEC_TYPE demon
+		local GLOW_COLOR (255,0,0)
+		setvard DEMON_LEVEL 10
+		setvard DEMON_NOHP_LOSS 1
+		callevent 5.0 demon_blood
+
+		local OUT_MSG game.monster.name.full
+		stradd OUT_MSG " has used a vial of demon blood!"
+		infomsg all "POTION OF DEMON BLOOD" OUT_MSG
+	}
+
+	if ( DRINK_TYPE equals speed )
+	{
+		if BOSS_TYPE != 1 //dagger type's speed does not end at 50% health
+		setvard SPEC_TYPE speed
+		local GLOW_COLOR (255,0,255)
+		callevent 5.0 turbo_on
+		divide FREQ_ATTACK 2
+		local OUT_MSG game.monster.name.full
+		stradd OUT_MSG " has used a potion of speed!"
+		infomsg all "POTION OF SPEED" OUT_MSG
+	}
+
+	effect glow ent_me GLOW_COLOR 128 5 5
+
+	setvard DRINK_TYPE unset
+
+	setmodelbody 1 ORIG_WEAPON
+}
+
+{ npc_flinch
+
+	callevent npcatk_resume_ai
+	if ( DRINK_TYPE equals health ) createitem health_spotion $relpos(0,0,0)
+}
+
+{ npcatk_resume_ai
+	setmodelbody 1 ORIG_WEAPON
+	setvard DRINKING_POT 0
+}
+
+{ [override] npcatk_checkflinch //PARAM1 = incoming damage amt
+
+	//this monster can flinch while AI suspended
+
+	if ( CAN_FLINCH )
+	{
+		if !FLINCHED_RECENTLY
+		if ( game.monster.hp < HALF_HEALTH )
+		{
+			if PARAM1 > FLINCH_DAMAGE_THRESHOLD
+			if ( $rand(1,100) <= FLINCH_CHANCE ) 
+			{
+				callevent npc_flinch //external - can be used to select flinch anim
+				playanim break
+				setvard AS_ATTACKING game.time
+				playanim critical FLINCH_ANIM
+			}
+			setvard FLINCHED_RECENTLY 1
+			callevent FLINCH_DELAY npcatk_reset_flinch
+		}
+	}
+}
+
+{ game_parry
+
+	setvard AS_ATTACKING game.time
+	playanim critical ANIM_PARRY
+	playsound 0 10 SOUND_PARRY
+}
+
+{ end_special_effect
+	//end demon/speed/protection pot here
+	if ( SPEC_TYPE equals demon )
+	{
+		setvard DEMON_BLOOD 0
+		local OUT_MSG game.monster.name.full
+		stradd OUT_MSG "'s demon blood potion has run out."
+		infomsg all "EFFECT ENDED" OUT_MSG
+	}
+
+	if ( SPEC_TYPE equals protection )
+	{
+		takedmg all 0.6
+		setvard GLOW_ON 0
+		local OUT_MSG game.monster.name.full
+		stradd OUT_MSG "'s protection potion has run out."
+		infomsg all "EFFECTED ENDED" OUT_MSG
+	}
+
+	if ( SPEC_TYPE equals speed )
+	{
+		setvard FREQ_ATTACK ORIG_FREQ_ATTACK
+		callevent turbo_off
+		local OUT_MSG game.monster.name.full
+		stradd OUT_MSG "'s speed potion has run out."
+		infomsg all "EFFECTED ENDED" OUT_MSG
+	}
+}
+
+{ turbo_on
+
+	if ( !GLOW_ON )
+	{
+		setvard GLOW_ON 1
+		setvard GLOW_LOOP_COLOR (255,255,0)
+		callevent glow_loop
+	}
+	setvard SPEC_TYPE speed
+
+	movespeed 2.0
+	setanim.movespeed 2.0
+	setanim.framerate 3.0
+
+	setvar BASE_FRAMERATE 3.0
+	setvar BASE_MOVESPEED 3.0
+
+	callevent 0.1 stuck_fix
+
+	//callevent 10.0 turbo_off
+}
+
+{ stuck_fix
+	playanim critical ANIM_ATTACK
+}
+
+{ do_turbo
+	callevent turbo_on
+	callevent 10.0 turbo_off
+}
+
+{ turbo_off
+
+	movespeed 1.0
+	setanim.movespeed 1.0
+	setanim.framerate 1.0
+
+	setvar BASE_FRAMERATE 1.0
+	setvar BASE_MOVESPEED 1.0
+
+	if ( BOSS_TYPE == 1 ) callevent FREQ_TURBO do_turbo
+}
+
+{ tractor_beam
+
+	setvard DOING_PULL 1
+	if $get(PULL_TARGET,range) < 4000
+	callevent npcatk_suspend_ai
+	setmovedest PULL_TARGET 9999
+	playsound 0 10 SOUND_PULL
+	setvard AS_ATTACKING game.time
+	playanim critical ANIM_JAB
+	local BEAM_START $relpos(0,0,60)
+	local BEAM_END $get(PULL_TARGET,origin)
+	//<spritename> <width> <target> <attachment index> <(r,g,b)> <brightness> <noise> <duration>
+	//effect beam point BEAM_SPRITE 30 BEAM_START BEAM_END (255,255,0) 200 30 1.5
+	effect beam end BEAM_SPRITE 30 BEAM_START PULL_TARGET 0 (255,255,0) 200 30 1.5
+	callevent 1.0 tractor_beam2
+}
+
+{ tractor_beam2
+
+	saytext Get over here!
+	setangle face PULL_TARGET
+	//see if setangle works on player via external
+	addvelocity PULL_TARGET $relvel(10,-3000,10)
+	callevent 0.25 npcatk_resume_ai
+	callevent 0.5 tractor_beam3
+}
+
+{ tractor_beam3
+	setangle face PULL_TARGET
+	//straighten out
+	local MY_YAW $vec.yaw(game.monster.angles)
+	setangle face $vec(0,MY_YAW,0)
+	
+	callevent npcatk_settarget PULL_TARGET
+}
+
+{ kick_low
+	//repulse sweep kick
+	setvard KICK_ATTACK 1
+	createnpc monsters/summon/stun_burst $relpos(0,0,0) $get(ent_me,id) 256 1 100 //<owner> <range> [toss1|0] [damage]
+	callevent npcatk_dodamage NPCATK_TARGET ATTACK_RANGE DMG_KICK 100% blunt
+	setvard CAN_FLINCH 1
+	setvard ANIM_ATTACK ORIG_ATTACK
+}
+
+{ kick_high
+	setvard KICK_ATTACK 1
+	callevent npcatk_dodamage NPCATK_TARGET ATTACK_HITRANGE DMG_KICK 100% blunt
+	setvard ANIM_ATTACK ORIG_ATTACK
+}
+
+{ game_dodamage //1:AttackHit(1/0)  2:EntityHit  3:StartOrigin  4:EndOrigin
+
+	if ( PARAM1 )
+	{
+		if $get(PARAM2,range) < ATTACK_HITRANGE
+		if ( KICK_ATTACK )
+		{
+			applyeffect PARAM2 effects/effect_stun 10 1 1
+			if ( BOSS_TYPE == 5 ) addvelocity PARAM2 $relvel(10,800,10) //archer always has kick back
+			setvard ANIM_ATTACK ORIG_ATTACK
+		}
+		if ( FREEZE_ATTACK )
+		{
+			local FREEZE_CHANCE $rand(1,4)
+			if ( FREEZE_CHANCE < 4 )
+			{
+				playsound 0 10 playsound 0 10 debris/beamstart14.wav
+				applyeffect PARAM2 effects/freeze_solid 10 $get(ent_owner,id) 30
+			}
+			if ( FREEZE_CHANCE == 4 ) playsound 0 10 debris/zap1.wav
+			setvard ANIM_ATTACK ORIG_ATTACK
+		}
+		if ( STUN_ATTACK )
+		{
+			applyeffect PARAM2 effects/effect_stun 10 0 1
+		}
+
+		if ( BOSS_TYPE == 1 )
+		{
+			if !KICK_ATTACK
+			applyeffect PARAM2 effects/effect_burn 5 $get(ent_me,id) DMG_BURN_DAGGER
+		}
+		if ( BOSS_TYPE == 2 )
+		{
+			if !KICK_ATTACK
+			applyeffect PARAM2 effects/effect_burn 5 $get(ent_me,id) DMG_BURN_MACE
+		}
+		if ( BOSS_TYPE == 6 )
+		{
+			if NORM_ATTACK
+			applyeffect PARAM2 effects/effect_burn 5 $get(ent_me,id) DMG_BURN_MACE
+		}
+	}
+
+	//reset atk types
+	setvard KICK_ATTACK 0
+	setvard FREEZE_ATTACK 0
+	setvard STUN_ATTACK 0
+	setvard NORM_ATTACK 0
+
+}
+
+{ cycle_up
+
+	if !CYCLES_ON
+	setvard CYCLES_ON 1
+
+	callevent FREQ_KICK do_kick
+
+	if ( BOSS_TYPE == 1 )
+	{
+		callevent FREQ_SPECIAL do_special
+		callevent FREQ_TURBO do_turbo
+		callevent FREQ_INVIS do_invis
+	}
+
+	if ( BOSS_TYPE == 2 )
+	{
+		callevent FREQ_SPECIAL do_special
+	}
+
+	if ( BOSS_TYPE == 3 )
+	{
+		callevent FREQ_SPECIAL do_special
+	}
+
+	if ( BOSS_TYPE == 4 )
+	{
+		callevent FREQ_SPECIAL do_special
+	}
+
+	if ( BOSS_TYPE == 5 )
+	{
+		callevent FREQ_SPECIAL do_special
+		callevent FREQ_INVIS do_invis
+	}
+
+	if ( BOSS_TYPE == 6 )
+	{
+		callevent FREQ_VOLCANO do_volcano
+		callevent FREQ_SPECIAL do_special
+	}
+}
+
+{ do_special
+
+	local L_FREQ_SPECIAL FREQ_SPECIAL
+
+	callevent check_legal_act
+	if ( !LEGAL_ACT ) local L_FREQ_SPECIAL 5
+
+	local CAN_SEE_NME $cansee(enemy)
+	if ( !CAN_SEE_NME ) local L_FREQ_SPECIAL 5
+
+	callevent L_FREQ_SPECIAL do_special
+
+	if CAN_SEE_NME
+	if LEGAL_ACT
+	
+	if ( BOSS_TYPE == 1 )
+	{
+		//flame burst
+		playsound 0 10 SOUND_POWERUP
+		effect glow ent_me (255,0,0) 128 3 3
+		setvard AS_ATTACKING 20
+		playanim critical ANIM_SPELL
+	}
+
+	if ( BOSS_TYPE == 2 )
+	{
+		//stun attack
+		//playsound 0 10 SOUND_POWERUP
+		setvard NEXT_ATTACK ANIM_SWORD_SLOW
+	}
+
+	if ( BOSS_TYPE == 3 )
+	{
+		//charge attack
+		playsound 0 10 SOUND_POWERUP
+		playanim break
+		setvard LEAP_TARGET $get(ent_lastseen,id)
+		setvard POWER_ATTACK 1
+		if ( $get(LEAP_TARGET,range) < 200 )
+		{
+			setvard PURE_FLEE 1
+			callevent npcatk_flee LEAP_TARGET 300 2.0
+			callevent 2.1 leap_scan
+			local LEAP_EXIT_SUB 1
+		}
+		if !LEAP_EXIT_SUB
+		callevent 0.1 leap_scan
+	}
+
+	if ( BOSS_TYPE == 4 )
+	{
+		local PICK_ATK $rand(1,2) //we'll add a third attack if we get ice_spikes working
+		if ( PICK_ATK == 1 )
+		{
+			//blizzard at most distant target
+			callevent npcatk_find_distant 2048
+			callevent npcatk_suspend_ai
+			//dbg temp most distant returned $get(NPC_MOST_DISTANT,name)
+			setmovedest NPC_MOST_DISTANT 9999
+			setvard BLIZZ_TARGET NPC_MOST_DISTANT
+			callevent 0.1 go_blizz
+		}
+
+		if ( PICK_ATK == 2 )
+		{
+			//freezing sphere
+			effect glow ent_me (128,128,255) 128 3 3
+			playsound SOUND_POWERUP
+			callevent 2.0 do_sphere
+		}
+	}
+
+	if ( BOSS_TYPE == 5 )
+	{
+		playsound 0 10 SOUND_POWERUP
+		effect glow ent_me (0,255,255) 128 3 3
+		setvard SCATTER_SHOT 1
+	}
+
+	if ( BOSS_TYPE == 6 )
+	{
+		add NOVA_PICK_ATK 1
+
+		setvard DOING_NOVA 1
+		callevent 10.0 reset_doing_nova
+
+		if ( NOVA_PICK_ATK > 4 ) setvard NOVA_PICK_ATK 1
+
+		if ( NOVA_PICK_ATK == 1 )
+		{
+			//firewall
+			callevent npcatk_find_distant 2048
+			//dbg temp most distant returned $get(NPC_MOST_DISTANT,name)
+			setmovedest NPC_MOST_DISTANT 9999
+			setvard NOvA_TARGET NPC_MOST_DISTANT
+			playsound 0 10 SOUND_POWERUP
+			setvard AS_ATTACKING 20
+			setvard NOVA_ATTACK fire_wall
+			callevent 0.1 do_fire_wall
+		}
+
+		if ( NOVA_PICK_ATK == 2 )
+		{
+			//flame burst
+			setvard NOVA_ATTACK flame_burst
+			playsound 0 10 SOUND_POWERUP
+			effect glow ent_me (255,0,0) 128 3 3
+			setvard AS_ATTACKING 20
+			playanim critical ANIM_SPELL
+		}
+
+		if ( NOVA_PICK_ATK == 3 )
+		{
+			//uber fireball
+			playsound 0 10 SOUND_POWERUP
+			effect glow ent_me (255,72,0) 128 3 3
+			callevent 2.0 do_fireball
+		}
+
+		if ( NOVA_PICK_ATK == 4 )
+		{
+			//flaming skull
+			setvard NOVA_ATTACK flame_skull
+			playsound 0 10 SOUND_POWERUP
+			effect glow ent_me (255,255,0) 128 3 3
+			setvard AS_ATTACKING 20
+			playanim critical ANIM_SPELL
+		}
+
+		//flaming skull (circles continuously outward, screams, sets all on fire it touches)
+	}
+}
+
+{ reset_doing_nova
+	setvard DOING_NOVA 0
+}
+
+{ do_fire_wall
+	//dbg firewall delayed go
+	playanim critical ANIM_SPELL
+	effect glow ent_me (255,255,128) 128 3 3
+}
+
+{ do_fireball //do_special
+
+	setvard AS_ATTACKING game.time
+	playanim critical ANIM_JAB
+}
+
+{ do_sphere //do_special
+	setvard AS_ATTACKING game.time
+	playanim critical ANIM_JAB
+	playsound 0 10 SOUND_SATTACK
+	createnpc monsters/summon/ice_blast $relpos(0,64,32) $get(ent_me,id) 20.0 $relpos(0,2000,0)
+}
+
+{ go_blizz  //do_special
+	playsound 0 10 SOUND_SATTACK
+	setvard AS_ATTACKING game.time
+	playanim critical ANIM_JAB
+	effect glow ent_me (128,128,255) 128 3 3
+	local BLIZZ_POS $get(BLIZZ_TARGET,origin)
+	createnpc monsters/summon/summon_blizzard BLIZZ_POS $get(ent_me,id) $get(ent_me,angles) DMG_BLIZZ 20.0
+	callevent npcatk_resume_ai
+}
+
+{ do_kick
+
+	callevent FREQ_KICK do_kick
+
+	callevent check_legal_act
+	if LEGAL_ACT
+
+	local KICK_TYPE $rand(1,3)
+	if ( KICK_TYPE <= 2 ) setvard NEXT_ATTACK ANIM_KICK_HIGH
+	if ( KICK_TYPE == 3 ) setvard NEXT_ATTACK ANIM_KICK_LOW
+}
+
+{ do_volcano
+
+	local L_FREQ_VOLCANO FREQ_VOLCANO
+
+	callevent check_legal_act
+
+	if ( DOING_NOVA ) local L_FREQ_VOLCANO 5.0
+	if ( !LEGAL_ACT ) local L_FREQ_VOLCANO 5.0
+
+	//dbg checking vocano ( innova DOING_NOVA legal LEGAL_ACT )
+	
+	callevent L_FREQ_VOLCANO do_volcano
+
+	if LEGAL_ACT
+	if !DOING_NOVA
+
+	setvard NOVA_ATTACK volcano
+	setvard AS_ATTACKING 20
+	playanim critical ANIM_SPELL
+}
+
+{ do_scatter_shot
+	add SCATTER_COUNT 1
+	if ( SCATTER_COUNT < 10 ) callevent 0.1 do_scatter_shot
+	playsound 0 10 SOUND_BOW_SHOOT
+	local RND_ARROW $rand(1,3)
+	local FIN_DMG DMG_ARROW
+	if ( RND_ARROW == 1 ) local ARROW_TYPE proj_arrow_frost
+	if ( RND_ARROW == 2 ) local ARROW_TYPE proj_arrow_gpoison
+	if ( RND_ARROW == 3 )
+	{
+		local ARROW_TYPE proj_arrow_jagged
+		multiply FIN_DMG 4
+	}
+	tossprojectile view ARROW_SPEED FIN_DMG 10 ARROW_TYPE (0,32,92)
+	callexternal ent_lastprojectile ext_lighten 0.1
+}
+
+
+//================================ ATTACK ANIMS - BEGIN
+
+{ axe_fast
+	setvard BB_IN_ATTACK 0
+
+	if ( NEXT_ATTACK isnot unset )
+	{
+		setvard ANIM_ATTACK NEXT_ATTACK
+		setvard NEXT_ATTACK unset
+	}
+
+	callevent npcatk_dodamage NPCATK_TARGET ATTACK_HITRANGE DMG_AXE_FAST ATTACK_HITCHANCE slash
+	setvard NORM_ATTACK 1
+	if ( BOSS_TYPE == 3 )
+	{
+		if $rand(1,10) == 1
+		//playsound 0 10 SOUND_POWERUP
+		effect glow ent_me (255,255,255) 128 1 1
+		setvard NEXT_ATTACK ANIM_AXE_SLOW
+	}
+}
+
+{ axe_slow //used by mace, and periodically by axe
+	setvard BB_IN_ATTACK 0
+
+	if ( NEXT_ATTACK isnot unset )
+	{
+		setvard ANIM_ATTACK NEXT_ATTACK
+		setvard NEXT_ATTACK unset
+	}
+
+
+	if ( BOSS_TYPE == 3 )
+	{
+		setvard NEXT_ATTACK ANIM_SWING_FAST
+		playsound 0 10 SOUND_SATTACK
+	}
+	if ( BOSS_TYPE != 3 ) setvard NORM_ATTACK 1
+	callevent npcatk_dodamage NPCATK_TARGET ATTACK_HITRANGE DMG_AXE_SLOW ATTACK_HITCHANCE blunt
+}
+
+{ sword_fast
+	setvard BB_IN_ATTACK 0
+
+	if ( NEXT_ATTACK isnot unset )
+	{
+		setvard ANIM_ATTACK NEXT_ATTACK
+		setvard NEXT_ATTACK unset
+	}
+
+	setvard NORM_ATTACK 1
+	if ( BOSS_TYPE == 6 )
+	{
+		if $rand(1,10) == 1
+		setvard NEXT_ATTACK ANIM_SWORD_SLOW
+	}
+	callevent npcatk_dodamage NPCATK_TARGET ATTACK_HITRANGE DMG_SWORD_FAST ATTACK_HITCHANCE slash
+}
+
+{ sword_slow //used by sword and periodically by mace
+	setvard BB_IN_ATTACK 0
+
+	if ( NEXT_ATTACK isnot unset )
+	{
+		setvard ANIM_ATTACK NEXT_ATTACK
+		setvard NEXT_ATTACK unset
+	}
+
+
+	if ( BOSS_TYPE == 2 )
+	{
+		setvard STUN_ATTACK 1
+		setvard ANIM_ATTACK ORIG_ATTACK
+		createnpc monsters/summon/stun_burst $relpos(0,0,0) $get(ent_me,id) 256 0 200 //<owner> <range> [toss1|0] [damage]
+	}
+	IF ( BOSS_TYPE != 2 ) setvard NORM_ATTACK 1
+	callevent npcatk_dodamage NPCATK_TARGET ATTACK_HITRANGE DMG_SWORD_SLOW ATTACK_HITCHANCE slash
+}
+
+{ swing_slow
+
+	setvard BB_IN_ATTACK 0
+
+	if ( NEXT_ATTACK isnot unset )
+	{
+		setvard ANIM_ATTACK NEXT_ATTACK
+		setvard NEXT_ATTACK unset
+	}
+
+
+	setvard NORM_ATTACK 1
+	callevent npcatk_dodamage NPCATK_TARGET ATTACK_HITRANGE DMG_SWING_SLOW ATTACK_HITCHANCE slash
+}
+
+{ swing_fast
+	setvard BB_IN_ATTACK 0
+
+	if ( NEXT_ATTACK isnot unset )
+	{
+		setvard ANIM_ATTACK NEXT_ATTACK
+		setvard NEXT_ATTACK unset
+	}
+
+
+	if ( BOSS_TYPE == 3 )
+	{
+		add FAST_SWINGS 1
+		if ( FAST_SWINGS >= 20 )
+		{
+			setvard NEXT_ATTACK ANIM_AXE_FAST
+			setvard FAST_SWINGS 0
+		}
+	}
+	setvard NORM_ATTACK 1
+	callevent npcatk_dodamage NPCATK_TARGET ATTACK_HITRANGE DMG_SWING_FAST ATTACK_HITCHANCE slash
+}
+
+{ attack_jab
+	setvard BB_IN_ATTACK 0
+
+	if ( NEXT_ATTACK isnot unset )
+	{
+		setvard ANIM_ATTACK NEXT_ATTACK
+		setvard NEXT_ATTACK unset
+	}
+
+	if ( DOING_PULL )
+	{
+		setvard DOING_PULL 0
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	if ( BOSS_TYPE == 1 )
+	{
+		callevent npcatk_dodamage NPCATK_TARGET ATTACK_HITRANGE DMG_DAGGER ATTACK_HITCHANCE slash
+
+		//dagger bandit re-flanks periodically
+		if ( $rand(1,20) == 1 )
+		{
+			if !FLANK_DELAY
+			setvard FLANK_DELAY 1
+			callevent FREQ_FLANK flank_delay_reset
+			callevent npcatk_flank NPCATK_TARGET
+		}
+	}
+	if ( BOSS_TYPE == 4 )
+	{
+		playsound 0 10 SOUND_SATTACK
+		setvard FREEZE_ATTACK 1
+		setvard ANIM_ATTACK ORIG_ATTACK
+		callevent npcatk_dodamage NPCATK_TARGET ATTACK_HITRANGE DMG_SWORD_STAB ATTACK_HITCHANCE pierce
+	}
+	if ( BOSS_TYPE == 6 )
+	{
+		playsound 0 10 SOUND_SATTACK
+		setvard ANIM_ATTACK ORIG_ATTACK
+		tossprojectile view 200 DMG_FIRE_BALL 0 proj_fire_ball2 (0,48,96)
+		callexternal $get(ent_lastprojectile,id) lighten 20
+	}
+}
+
+{ prep_done
+	setvard BB_IN_ATTACK 0
+
+	if ( BOSS_TYPE == 1 )
+	{
+		playsound 0 10 SOUND_SATTACK
+		createnpc monsters/summon/flame_burst $relpos(0,0,0) $get(ent_me,id) DMG_FLAME_BURST 1
+	}
+
+	if ( BOSS_TYPE == 6 )
+	{
+		//dbg nova_type NOVA_ATTACK
+
+		if ( NOVA_ATTACK equals fire_wall )
+		{
+			playsound 0 10 SOUND_SATTACK
+			createnpc monsters/summon/bandit_boss_fire_wall $get(NOvA_TARGET,origin) $get(ent_me,id) $get(ent_me,angles) 75 20
+		}
+
+		if ( NOVA_ATTACK equals flame_burst )
+		{
+			playsound 0 10 SOUND_SATTACK
+			local BURST_DAM DMG_FLAME_BURST
+			multiply BURST_DAM 2
+			createnpc monsters/summon/flame_burst $relpos(0,0,0) $get(ent_me,id) BURST_DAM 1
+		}
+
+		if ( NOVA_ATTACK equals volcano )
+		{
+			if ( $cansee(enemy) ) local pos $get(ent_lastseen,origin)
+			if ( $get(ent_lastseen,relationship,ent_me) equals enemy ) local pos $get(ent_lastseen,origin)
+			if ( !$cansee(enemy) )
+			{
+				if $dist(game.monster.origin,pos) > 2000
+				local pos $vec(game.monster.origin)
+				vectoradd pos $relpos($vec(0,0,0),$vec(0,500,0))
+				local pos $get_traceline(game.monster.origin,pos,worldonly)
+			}
+			local temp $get_ground_height(pos)
+			local x $vec.x(pos)
+			local y $vec.y(pos)
+			local pos $vec(x,y,temp)
+			setvarg VOLCANO_DMG 2
+			setvard DMG_VOLCANO 40
+			createnpc monsters/summon/npc_volcano pos $get(ent_me,id) 100 40.0
+		}
+
+		if ( NOVA_ATTACK equals flame_skull )
+		{
+			createnpc monsters/summon/flame_skull $relpos(0,0,64) $get(ent_me,id) DMG_SKULL 256
+		}
+
+		setvard NOVA_ATTACK none
+	}
+}
+
+{ bow_shoot
+	setvard BB_IN_ATTACK 0
+
+	if ( NEXT_ATTACK isnot unset )
+	{
+		setvard ANIM_ATTACK NEXT_ATTACK
+		setvard NEXT_ATTACK unset
+	}
+
+	playsound 0 10 SOUND_BOW_SHOOT
+
+	if ( !SCATTER_SHOT )
+	{
+		//fires magic darts of various size, larger do more damage, but are slower
+		setvard BALL_SIZE $randf(1,9)
+		setvard BALL_SPEED 1000
+		local BALL_SADJ 90
+		multiply BALL_SADJ BALL_SIZE
+		subtract BALL_SPEED BALL_SADJ
+		setvard BALL_DMG BALL_SIZE
+		multiply BALL_DMG 30
+	
+		//local BALL_TARG $get(NPCATK_TARGET,origin)
+		////dbg temp magic_dart size BALL_SIZE spd BALL_SPEED dmg BALL_DMG
+		//createnpc monsters/summon/magic_dart $relpos(0,BALL_OFS,92) $get(ent_me,id) BALL_TARG BALL_SIZE BALL_SPEED BALL_DMG 
+
+		local OFS_ADJ (0,28,96)
+		if ( $get(NPCATK_TARGET,range) < 100 ) local V_ADJ (0,28,48)
+
+		tossprojectile view BALL_SPEED BALL_DMG 1 proj_mana OFS_ADJ
+	}
+
+	if ( SCATTER_SHOT )
+	{
+		playsound 0 10 SOUND_SATTACK
+		setvard SCATTER_SHOT 0
+		setvard SCATTER_COUNT 0
+		callevent do_scatter_shot
+	}
+}
+
+{ bow_stretch
+	setvard BB_IN_ATTACK 0
+	playsound 0 10 SOUND_BOW_STRETCH
+}
+
+{ sound_fast
+	if ( NEXT_ATTACK equals unset ) playsound 0 10 SOUND_SWING_FAST
+	if ( NEXT_ATTACK isnot unset )
+	{
+		if NEXT_ATTACK isnot ANIM_KICK_HIGH
+		if NEXT_ATTACK isnot ANIM_KICK_LOW
+		playsound 0 10 SOUND_POWERUP
+	}
+}
+
+{ sound_slow
+	if ( NEXT_ATTACK equals unset ) playrandomsound 0 8 SOUND_SWING_SLOW1 SOUND_SWING_SLOW2
+	if ( NEXT_ATTACK isnot unset )
+	{
+		if NEXT_ATTACK isnot ANIM_KICK_HIGH
+		if NEXT_ATTACK isnot ANIM_KICK_LOW
+		effect glow ent_me (255,255,255) 128 2 2
+		playsound 0 10 SOUND_POWERUP
+	}
+}
+//================================ ATTACK ANIMS - END
+
+
+//=================================== LEAP/CHARGE SEQUENCE - BEGIN
+{ leap_scan
+
+	if POWER_ATTACK
+
+	callevent 0.25 leap_scan
+
+	if !IS_FLEEING
+	if ( $get(LEAP_TARGET,isalive) )
+	{
+		callevent leap_at LEAP_TARGET
+	}
+
+	if ( !$get(LEAP_TARGET,isalive) )
+	{
+		setvard LEAP_TARGET NPCATK_TARGET
+		if ( NPCATK_TARGET equals unset )
+		{
+			callevent leap_at LEAP_TARGET //just do a leap at 0x0x0 to reset
+		}
+	}
+}
+
+{ leap_at //<target>
+
+	if !AM_LEAPING
+	setvard AM_LEAPING 1
+	setvard NPC_FORCED_MOVEDEST 1
+	callevent npcatk_suspend_ai 1.0
+	setvard POWER_ATTACK 0
+	setmovedest PARAM1 MOVE_RANGE
+	callevent 0.1 leap_at2
+}
+
+
+{ leap_at2
+
+	playsound 0 10 SOUND_LEAP
+	setvard AS_ATTACKING game.time
+	playanim critical ANIM_LEAP
+	callevent 0.1 bandit_charge
+	callevent 1.0 reset_leaping
+	callevent 0.9 bullrush_stun
+}
+
+
+{ bandit_charge
+
+	addvelocity ent_me $relvel(0,400,100)
+}
+
+{ reset_leaping
+
+	setvard AM_LEAPING 0
+}
+
+{ bullrush_stun
+
+	createnpc monsters/summon/stun_burst $relpos(0,60,0) $get(ent_me,id) 256 1 150 //<owner> <range> [toss1|0] [damage]
+}
+
+{ leap_away //<target>
+	//dbg leap_away PARAM2
+	setvard AM_LEAPING 1
+	setvard NPC_FORCED_MOVEDEST 1
+	callevent npcatk_suspend_ai 1.0
+	setmovedest PARAM1 800 flee
+	callevent 0.1 leap_away2
+}
+
+{ leap_away2
+	playsound 0 10 SOUND_LEAP
+	setvard AS_ATTACKING game.time
+	playanim critical ANIM_HOP
+	callevent 0.1 bandit_hop
+	callevent 1.0 reset_leaping
+}
+
+{ bandit_hop
+
+	local JUMP_HEIGHT $rand(350,450)
+	addvelocity ent_me $relvel(0,250,JUMP_HEIGHT)
+}
+//=================================== LEAP/CHARGE SEQUENCE - END
+
+{ flank_delay_reset
+	setvard FLANK_DELAY 0
+}
+
+{ my_target_died
+
+	//dbg temp MY TARGET DIED
+	callevent 0.1 taunt_sound
+	setvard AS_ATTACKING game.time
+	if !DRINKING_POT
+	if !$get(PARAM1,scriptvar,I_R_PET)
+	playanim critical aim_punch1
+}
+
+{ taunt_sound
+	playrandomsound 0 10 SOUND_TAUNT1 SOUND_TAUNT2
+}
+
+{ game_death
+
+	local L_MAP_NAME $lcase(game.map.name)
+	if ( L_MAP_NAME equals helena )
+	{
+		//call something to the game master here
+		callexternal GAME_MASTER helena_bandit_chest $relpos(0,0,0)
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+	if ( L_MAP_NAME equals keep_test ) local TREASURE_MAP 1
+	if ( L_MAP_NAME equals the_keep ) local TREASURE_MAP 1
+	//if ( TREASURE_MAP ) callevent bm_gold_spew 50 2 100 4 30 - skipping gold spew to cut down on crash
+
+	local VER_NAME $get_by_name(ver_bandit_chest)
+	local VER_ID $get(VER_NAME,id)
+	if !$get(VER_ID,exists)
+
+	createnpc chests/ver_bandit_chest $relpos(0,0,0) BOSS_TYPE //verifies map and determines treasure type for bandit chest
+}
+
+{ glow_loop
+
+	if GLOW_ON
+	callevent 5.1 glow_loop
+	effect ent_me glow GLOW_LOOP_COLOR 128 5 0
+}
+
+
+{ npc_targetsighted
+
+	if ( BOSS_TYPE == 5 )
+	{
+		if !IS_FLEEING
+		if $cansee(PARAM1)
+		setvard AS_ATTACKING game.time
+		playanim once ANIM_BOW
+	}
+}
+
+{ game_struck
+	playrandomsound 0 8 SOUND_PAIN SOUND_PAIN2 none none
+}
+
+{ do_invis
+	//pending
+}
+
+{ check_legal_act
+
+	setvard LEGAL_ACT 1
+
+	if ( I_R_FROZEN ) setvard LEGAL_ACT 0
+	if ( ANIM_ATTACK equals ANIM_KICK_HIGH ) setvard LEGAL_ACT 0
+	if ( ANIM_ATTACK equals ANIM_KICK_LOW ) setvard LEGAL_ACT 0
+	if ( IS_FLEEING ) setvard LEGAL_ACT 0
+	if ( SUSPEND_AI ) setvard LEGAL_ACT 0
+	if ( DRINKING_POT ) setvard LEGAL_ACT 0
+}
+
+{
+repeatdelay 2.0
+
+	//something in this script is causing BD periodically
+	//prevention measure/hack
+
+	if ( SUSPEND_AI ) add BD_COUNT 1
+	if ( !SUSPEND_AI ) setvard BD_COUNT 0
+	if ( BD_COUNT > 20 ) callevent npcatk_resume_ai
+}
+
+//JUN2007b
+//slow swinging banidts have an odd bug where if you 'dance' in front of them they
+//keep starting their attack animation over and over again (and thus, never swing)
+//this is an effort to fix that
+{ [override] npcatk_attack //( [override] npcatk_attack callevent npcatk_attack_hack - if you need atack hack, see below )
+
+	if !NPC_NO_ATTACK
+	callevent npc_selectattack //give chance for mon to chose an anim (external) (old naming convention for compatiblity)
+	playanim once ANIM_ATTACK
+	setvard ATTACK_ANIMINDEX $get(ent_me,anim.index)
+	//dbg temp npcatk_attack attackanimindex ATTACK_INDEX 
+	setvard ATTACK_MOVERANGE 9999
+	setvard NPC_NO_MOVE 1
+}
+
+{ npcatk_hunt
+	if ( ATTACK_ANIMINDEX == $get(ent_me,anim.index) )
+	{
+		setvard NPC_NO_MOVE 1
+		setvard NPC_FORCED_MOVEDEST 1
+		setmovedest NPCATK_TARGET 9999
+		setvard AS_ATTACKING 5
+	}
+
+	if ATTACK_ANIMINDEX != $get(ent_me,anim.index)
+	setvard ATTACK_MOVERANGE ORIG_MOVE_RANGE 
+	setvard NPC_NO_MOVE 0
+}

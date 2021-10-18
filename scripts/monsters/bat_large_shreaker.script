@@ -1,0 +1,132 @@
+//Shreaker Bat by Thothie - most of this is from monsters/bat
+#scope server
+{
+
+	const BAT_NO_FAKE_DEATH 1
+
+	const DMG_SHREAK 150
+	const FREQ_SHREAK 5.0
+
+	const SOUND_SHREAK monsters/bat/zoobat.wav
+	const ANIM_SHREAK //%%
+
+   setvar ANIM_WALK IdleFlyNormal
+   setvar ANIM_RUN ANIM_WALK
+   setvard ANIM_ATTACK bite
+   setvar ANIM_IDLE_HANG IdleHang
+   setvar ANIM_IDLE_FLY IdleFlyNormal
+   setvard ANIM_DEATH IdleFlyNormal	//use normal flight for death anim (see end of script)
+	const ANIM_HOVER IdleFlyFace
+
+   const SOUND_STRUCK1 weapons/cbar_hitbod1.wav
+   const SOUND_STRUCK2 weapons/cbar_hitbod2.wav
+   const SOUND_STRUCK3 weapons/cbar_hitbod3.wav
+   const SOUND_PAIN monsters/rat/squeak1.wav
+   const SOUND_IDLE monsters/rat/squeak2.wav
+   const SOUND_DEATH monsters/rat/squeak3.wav
+
+   setvard MOVE_RANGE 128
+   setvard ATTACK_RANGE 65
+   setvard ATTACK_HITRANGE 100
+   setvard ATTACK_HITCHANCE 80%
+   const ATTACK_DAMAGE 50
+   setvard NPC_GIVE_EXP 75
+   const SOUND_ALERT monsters/bat/alert.wav
+
+	precache monsters/zubat_sphere.mdl
+}
+
+
+#include monsters/bat_base
+
+{  bat_spawn
+
+   	name a|Shrieker Bat
+	hp 300
+  	width 32
+  	height 32
+   	hearingsensitivity 3.5
+	setvelocity ent_me $relvel(0,0,0)
+   	setmodel monsters/bat_large.mdl
+	setprop ent_me skin 2
+}
+
+{  game_postspawn
+	setbbox animsize
+}
+   
+{  bat_drop_down			// Drop down from the ceiling
+
+   	setvard CAN_HUNT 1
+   	setvard BAT_STATUS BAT_FLYING
+   	setidleanim ANIM_IDLE_FLY
+}
+
+{  bite1				// Deal damage
+
+	if $get(NPCATK_TARGET,range) < ATTACK_HITRANGE
+   	dodamage NPCATK_TARGET direct ATTACK_DAMAGE ATTACK_HITCHANCE ent_me pierce
+}
+   
+{  npc_struck				//Hit by someone
+   
+   	playrandomsound 0 10 SOUND_PAIN SOUND_STRUCK2 SOUND_PAIN
+
+	if game.time > NEXT_RETREAT
+	setvard NEXT_RETREAT game.time
+	add NEXT_RETREAT $randf(3.0,5.0)
+	local RND_LR $randf(-300.0,300.0)
+	local RND_FB $randf(-1500.0,500.0)
+	addvelocity ent_me $relvel(RND_LR,RND_FB,0)
+}
+
+{ npc_targetsighted
+	if $get(NPCATK_TARGET,range) < 256 
+	if game.time > NEXT_SHREAK
+	setvard NEXT_SHREAK game.time
+	add NEXT_SHREAK FREQ_SHREAK
+	playsound 2 10 SOUND_SHREAK 0.8 200
+	effect glow ent_me (255,255,255) 32 3.0 2.0
+	clientevent new all effects/sfx_pulse_sphere $get(ent_me,origin) 10.0 $get(ent_me,index) 2 2 0
+	callevent 0.5 shreak_blast
+	effect screenshake $relpos(0,0,0) 512 90 3.0 512 //screenshake <position> <amplitude> <frequency> <duration> <radius>
+}
+
+{ shreak_blast
+	xdodamage $get(ent_me,origin) 256 DMG_SHREAK 0.1 ent_me ent_me none magic_effect dmgevent:shreak 
+}
+
+{ shreak_dodamage
+	if $get(PARAM2,relationship,ent_me) equals enemy
+	applyeffect PARAM2 effects/effect_stun 5.0 1 0 $get(ent_me,id)
+}
+
+{ npcatk_hunt
+	if NPCATK_TARGET isnot unset
+	if ( $get(NPCATK_TARGET,range) < 256 )
+	{
+		setmoveanim ANIM_HOVER
+		playanim once ANIM_HOVER
+		setanim.movespeed 0
+		setvard MOVE_MODE 0
+		setvelocity ent_me $relvel($vec(0,0,0),$vec(0,0,0))
+		setvard AS_ATTACKING game.time
+		add AS_ATTACKING 2.0
+	}
+	else
+	{
+		setanim.movespeed 1
+		setmoveanim ANIM_WALK
+		if !MOVE_MODE
+		playanim break
+		setvard MOVE_MODE 1
+	}
+
+}
+
+{ npc_death
+	setprop ent_me rendermode 5
+	setprop ent_me renderamt 0
+	clientevent new all monsters/bat_large_corpse_cl $get(ent_me,origin) 2
+}
+

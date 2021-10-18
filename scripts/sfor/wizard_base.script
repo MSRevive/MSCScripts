@@ -1,0 +1,97 @@
+{
+	const CONV_ANIMS "converse2;converse1;talkleft;talkright;lean;pondering;pondering2;pondering3;"
+	const SOUND_DEATH1 scientist/scream1.wav
+	const SOUND_DEATH2 scientist/scream2.wav
+	const SOUND_DEATH3 scientist/scream3.wav
+	const SOUND_DEATH4 scientist/scream4.wav
+}
+
+{ game_spawn
+
+	race human
+	hp 60
+	setmodel npc/balancepriest2.mdl //reskin one of the balance priests
+	width 32
+	height 72
+	saytextrange 1024
+	setidleanim idle1 //pondering2 keypad
+	playanim once idle1
+	blind 1
+	menu.autoopen 1
+}
+
+{ anim_text
+	if ( !AM_KNEELING )
+	{
+		local N_ANIMS $get_token_amt(CONV_ANIMS)
+		subtract N_ANIMS 1
+		local RND_ANIM $rand(0,N_ANIMS)
+		playanim critical $get_token(CONV_ANIMS,RND_ANIM)
+	}
+	saytext PARAM1
+}
+
+{ game_struck
+	if $get(ent_laststruck,isplayer)
+	if !DID_WARN
+	setvard DID_WARN 1
+	saytext "What sort of maniac are you!? If any one of us dies Undamael will be freed!"
+}
+
+{ game_death
+	playrandomsound 0 10 SOUND_DEATH1 SOUND_DEATH2 SOUND_DEATH3 SOUND_DEATH4
+	callexternal $get_by_name(wizard1) wizard_died
+}
+
+{ game_menu_getoptions
+
+	if !HAS_SYMBOL
+
+	if ( $item_exists(PARAM1,SYMB_ITEM) )
+	{
+		local reg.mitem.title 	"Offer " SYMB_ITEM_NAME
+		local reg.mitem.type 	payment
+		local reg.mitem.data 	SYMB_ITEM
+		local reg.mitem.callback got_symbol
+		menuitem.register
+	}
+	else
+	{
+		local reg.mitem.title 	"Offer " SYMB_ITEM_NAME
+		local reg.mitem.type 	disabled
+		menuitem.register
+	}
+}
+
+{ got_symbol
+	setvard HAS_SYMBOL 1
+	local WIZ_ID $get_by_name(wizard1)
+	if ( $get(WIZ_ID,scriptvar,N_SYMBOLS) < 1 )
+	{
+		saytext Thank you. Remember we'll need all five at the same time.
+	}
+	else
+	{
+		saytext SAYTEXT_GOT_SYMBOL
+	}
+	setidleanim kneel_idle
+	setmoveanim kneel_idle
+	playanim critical kneel
+	callexternal WIZ_ID add_symbol
+
+	//dont reset symbol data, you only get to do this once
+//	local QUEST_ITEM_DATA $get_quest_data(PARAM1,f)
+//	local SYMB_IDX $get_find_token(QUEST_ITEM_DATA,SYM_QUEST_NAME)
+//	token.del QUEST_ITEM_DATA SYMB_IDX
+//	quest set PARAM1 f QUEST_ITEM_DATA
+}
+
+{ fade_away
+	deleteent ent_me fade
+}
+
+{ do_oshi
+	if $get(ent_me,isalive)
+	setidleanim crouch_idle
+	playanim once crouch_idle
+}

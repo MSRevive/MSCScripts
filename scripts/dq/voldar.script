@@ -1,0 +1,493 @@
+//Volar (From Flayer)
+//Beefed up MAY2007a by Thothie for ms_wicardoven by Replica
+//- Attacks:
+//- G. Poison Blade*
+//- Acid Bolt*
+//- Acid Cloud*
+//- Leap*
+//- Horror Egg*
+//- Hornet Swarm? ( too much )
+{
+	const NPC_BOSS_REGEN_RATE 0.05
+	const NPC_BOSS_RESTORATION 0.25
+
+	setvard NO_SPAWN_STUCK_CHECK 1
+
+	setvard NPC_GIVE_EXP 2000
+
+	if ( $lcase(game.map.name) equals ms_wicardoven )
+	{
+		setvard NPC_IS_BOSS 1
+	}
+	else
+	{
+		if ( $lcase(game.map.name) isnot orc_for )
+		{
+			setvard NPC_GIVE_EXP 1000
+		}
+	}
+
+	const ANIM_HOP battleaxe_swing1_L
+	setvard ANIM_ATTACK2 battleaxe_swing1_L
+	const ANIM_WARCRY warcry
+
+	setvard ANIM_FLINCH flinch
+
+	const SPIT_FREQ 3.0
+	const CLOUD_FREQ $rand(20,60)
+	const HORNET_FREQ $rand(10,30)
+	const EGG_FREQ $rand(20,40)
+
+	const ATTACK_SPEED 300
+
+	setvard MOVE_RANGE 300
+
+	const ANIM_KICK kick
+
+	const DMG_SPIT $rand(200,300)
+	const DMG_KICK $randf(20,50)
+	const DMG_SLASH $rand(20,60)
+
+	const SOUND_WARCRY monsters/orc/zo_alert10.wav
+
+	const SOUND_DEATH voices/orc/die2.wav
+	precache SOUND_DEATH
+
+	setvard DROP_GOLD 1			//Gold Drops
+	setvard DROP_GOLD_AMT $rand(100,300)	//
+
+	setvard ANIM_ATTACK swordswing1_L
+	setvard FLINCH_CHANCE 35%
+	setvard FLINCH_HEALTH 1000
+
+	const ATTACK_ACCURACY 90%
+
+	//horror media
+	precache controller/con_idle1.wav
+	precache controller/con_idle2.wav
+	precache controller/con_idle3.wav
+	precache controller/con_attack1.wav
+	precache controller/con_attack2.wav
+	precache controller/con_attack3.wav
+	precache controller/con_die1.wav
+	precache debris/bustflesh2.wav		//most common
+	precache controller/con_pain1.wav	//rare > 50%
+	precache controller/con_die2.wav	//rare < 50%
+	precache bullchicken/bc_attack3.wav
+	precache bullchicken/bc_attack2.wav
+	precache ambience/steamburst1.wav
+	precache monsters/bat/flap_big1.wav
+	precache monsters/bat/flap_big2.wav
+	precache player/pl_fallpain1.wav
+	precache monsters/edwardgorey.mdl
+
+	//base_turn_undead (horror)
+	precache ambience/the_horror1.wav
+	precache ambience/the_horror2.wav
+	precache ambience/the_horror3.wav
+	precache ambience/the_horror4.wav
+
+	//horror egg
+	precache monsters/egg.mdl
+	precache debris/bustflesh1.wav
+	precache weapons/g_bounce1.wav
+
+	//maldora
+	precache monsters/maldora.mdl
+	precache monsters/skeleton/cal_laugh.wav
+
+	//maldora's barrier
+	precache doors/aliendoor3.wav
+	precache magic/spawn.wav
+
+	//stun burst media
+	precache magic/boom.wav
+
+	//gold bags
+	precache misc/gold.wav
+
+	//activated (JUN2007b)
+	const NPC_PROXACT_RANGE 640
+	const NPC_PROXACT_IFSEEN 1
+	const NPC_PROXACT_EVENT start_intro
+}
+
+#include monsters/orc_base_melee
+#include monsters/orc_base
+
+{ orc_spawn
+
+   	hp 2500
+	width 32
+	height 60
+	name Voldar, former head of the Black Hand
+   	hearingsensitivity 11
+   	setstat parry 50
+	takedmg all 0.4
+	roam 0
+
+	setprop ent_me skin 3
+
+	setvard ACTIVE_HORRORS 0
+
+   	setmodelbody	0 2		//Body
+   	setmodelbody	1 3		//Head
+   	setmodelbody	2 6		//Weapon
+
+	saytextrange 2048
+
+	catchspeech debug_params debug
+
+	//only do maldora bit on certain maps
+	local L_MAP_NAME $lcase(game.map.name)
+	//dbg Map result L_MAP_NAME
+	local EXIT_SUB 1
+	if ( L_MAP_NAME equals 'ms_wicardoven' ) local EXIT_SUB 0
+	if ( L_MAP_NAME equals 'voldar_test' ) local EXIT_SUB 0
+	if ( EXIT_SUB )
+	{
+		name an|Orc Poisoner
+		setvard NPC_PROX_ACTIVATE 0
+		callevent 0.1 combat_go
+	}
+	if !EXIT_SUB
+	setvard NPC_PROX_ACTIVATE 1
+
+	//dbg Plot map, suspending AI
+
+	callevent npcatk_suspend_ai
+	
+	setidleanim ANIM_IDLE
+	setmoveanim ANIM_IDLE
+	//setmovespeed 0.0 //I think this mean "movespeed 0.0", but the script still appears to work as normal. -greatguys1 SEP2021
+
+	invincible 1
+	
+	createnpc ms_wicardoven/maldora_dead $relpos(0,64,0) valdor
+
+	callevent 0.25 get_maldora_id
+}
+
+{ get_maldora_id
+	
+	local MALDORA_NAME $get_by_name(dead_maldora)
+	setvard MALDORA_ID $get(MALDORA_NAME,id)
+	callevent 0.1 face_maldora
+}
+
+{ face_maldora
+	//callexteternal MALDORA_ID $get(ent_me,id) //No idea what this was supposed to accomplish, sans the typo.
+	callevent 0.1 scan_for_players
+}
+
+{ start_intro
+	playanim critical flinch
+	saytext You were supposed to help me take back my tribe! But now look what's happened!
+	playsound 0 10 voices/ms_wicardoven/voldor_2fmaldora1.wav
+	callevent 3.6 do_intro1
+}
+
+{ do_intro1
+	callexternal MALDORA_ID say_gaveyou1
+	callevent 6.22 do_intro2
+}
+
+{ do_intro2
+	callexternal MALDORA_ID say_gaveyou2
+	callevent 4.2 do_intro3
+}
+
+{ do_intro3
+	callexternal MALDORA_ID say_gaveyou3
+	callevent 5.8 do_intro4
+}
+
+{ do_intro4
+	callexternal MALDORA_ID say_gaveyou4
+	callevent 3.3 do_intro5
+}
+
+{ do_intro5
+	callexternal MALDORA_ID fly_out
+	saytext WAAAIIIT!!!!!
+	playsound 0 10 voices/ms_wicardoven/voldor_2fmaldora2.wav
+	playanim critical ANIM_WARCRY
+	callevent 1.8 do_intro6
+}
+
+{ do_intro6
+	playanim critical ANIM_ATTACK
+	saytext Fine! Have to prove my worth, do I?
+	playsound 0 10 voices/ms_wicardoven/voldor_2fmaldora3.wav
+	setmovedest FIRST_TARGET 9999
+	//recache voices/orc/help.wav
+	//callexternal all ext_playsound voices/orc/help.wav $get(ent_me,origin) 2048
+	setvard AS_ATTACKING game.time
+	callevent 2.0 combat_go
+}
+
+{ debug_params
+	saytext horrors ACTIVE_HORRORS leaping AM_LEAPING
+}
+
+{ combat_go
+	setvard DID_INTRO 1
+	invincible 0
+	setidleanim ANIM_IDLE
+	setmoveanim ANIM_WALK
+	callevent npcatk_resume_ai
+	callevent cycle_up "voldar_forced"
+	callevent CLOUD_FREQ make_cloud
+	callevent EGG_FREQ lay_egg
+	usetrigger voldar_go
+	callevent 0.1 set_first_targ
+}
+
+{ set_first_targ
+	callevent npcatk_settarget FIRST_TARGET "voldar_forced"
+}
+
+{ npc_post_spawn
+	setvard ORC_JUMPER 1
+}
+
+{ run_away //<target>
+	callevent npcatk_flee $get(PARAM1,id) 400 2.0
+}
+
+{ leap_away //<target>
+	//dbg leap_away PARAM2
+	setvard AM_LEAPING 1
+	setvard NPC_FORCED_MOVEDEST 1
+	callevent npcatk_suspend_ai 1.0
+	setmovedest PARAM1 800 flee
+	callevent 0.1 leap_away2
+}
+
+{ leap_away2
+	playrandomsound 0 10 voices/orc/hit.wav voices/orc/hit2.wav voices/orc/hit3.wav
+	playanim critical ANIM_HOP
+	callevent 0.1 orc_hop
+	callevent 1.0 reset_leaping
+}
+
+{ leap_at //<target>
+
+	if !AM_LEAPING
+	setvard AM_LEAPING 1
+	setvard NPC_FORCED_MOVEDEST 1
+	callevent npcatk_suspend_ai 1.0
+	setmovedest PARAM1 MOVE_RANGE
+	callevent 0.1 leap_at2
+}
+
+{ leap_at2
+	playrandomsound 0 10 voices/orc/hit.wav voices/orc/hit2.wav voices/orc/hit3.wav
+	playanim critical ANIM_HOP
+	callevent 0.1 orc_hop
+	callevent 1.0 reset_leaping
+	setvard OLD_Z $vec.z(game.monster.origin)
+	setvard DO_STUN 1
+	callevent 0.5 ground_scan
+}
+
+{ ground_scan
+
+	if DO_STUN
+	callevent 0.2 ground_scan
+
+	//find if on ground method not working
+	//local TRACE_ORG game.monster.origin
+	//local TRACE_END TRACE_ORG
+	//vectoradd TRACE_END $relpos($vec(0,0,0),$vec(0,0,-16))
+	//local TRACE_LINE $get_traceline(TRACE_ORG,TRACE_END,worldonly)
+	//if ( $dist(TRACE_LINE,TRACE_END) < 4 ) setvard DO_STUN 0
+
+	
+	local MY_GROUND $get_ground_height(game.monster.origin)
+	local MY_Z $vec.z(game.monster.origin)
+	local DIFF MY_Z
+	subtract DIFF MY_GROUND
+	if ( DIFF < 5 ) setvard DO_STUN 0
+
+	if !DO_STUN
+	////dbg TRACE_LINE vs $get_ground_height(TRACE_ORG)
+	createnpc monsters/summon/stun_burst $relpos(0,30,0) $get(ent_me,id) 128
+}
+
+{ game_hitground
+	//dbg HIT GROUND
+}
+
+{ reset_leaping
+	setvard AM_LEAPING 0
+}
+
+{ npc_targetsighted
+	if !SPIT_DELAY
+	if $get(PARAM1,range) > ATTACK_RANGE
+	if !AM_LEAPING
+	if !IS_FLEEING
+
+	setvard SPIT_DELAY 1
+
+	callevent SPIT_FREQ reset_spit_delay
+
+	setvard AS_ATTACKING game.time
+	playanim once ANIM_ATTACK2
+}
+
+{ reset_spit_delay
+	setvard SPIT_DELAY 0
+}
+
+{ game_struck
+
+	//dbg game.monster.hp
+
+	if ( game.monster.hp >= 1000 ) local THRESH 50
+	if ( game.monster.hp < 1000 ) local THRESH 25
+
+	local ESCAPE_CHANCE $rand(THRESH,100) //if struck for damage > than this, leap away or kick
+	if ( PARAM1 > ESCAPE_CHANCE )
+	{
+		//dbg temp game_struck/escape chan ESCAPE_CHANCE vs dmg PARAM1
+
+		local ESCAPE_CHOICE $rand(1,2)
+		if ( ESCAPE_CHOICE == 1 ) callevent leap_away $get(ent_laststruck,id) "struck_hard"
+		if ( ESCAPE_CHOICE == 2 ) callevent do_kick
+	}
+}
+
+{ do_kick
+
+	setvard AS_ATTACKING game.time
+	playanim critical ANIM_KICK
+	callevent 1.0 kick_damage
+}
+
+{ kick_damage
+	//callevent npcatk_dodamage NPCATK_TARGET ATTACK_HITRANGE KICK_DAMAGE 100% blunt
+	xdodamage NPCATK_TARGET ATTACK_HITRANGE KICK_DAMAGE 100% ent_me ent_me none blunt dmgevent:kick
+}
+
+{ kick_dodamage
+	if PARAM1
+	applyeffect PARAM2 effects/effect_stun 5.0 0 1
+	addvelocity PARAM2 $relvel(0,150,20)
+	callevent run_away $get(PARAM2,id)
+}
+
+{ make_cloud
+
+	callevent CLOUD_FREQ make_cloud
+
+	if $cansee(NPCATK_TARGET)
+
+	setvard MAKE_ACLOUD 1
+
+	setvard AS_ATTACKING game.time
+	playanim critical ANIM_WARCRY
+	playsound 0 10 SOUND_WARCRY
+
+	callevent 2.0 make_cloud2
+}
+
+{ make_cloud2
+
+	if ( MAKE_ACLOUD )
+	{
+		setvard MAKE_ACLOUD 0
+		callevent 0.1 magic_fx
+		local CLOUD_ORG $get(NPCATK_TARGET,origin)
+		if ( !$get(NPCATK_TARGET,isalive) ) local CLOUD_ORG $relpos(0,0,0)
+		if ( $get(NPCATK_TARGET,range) > 3000 ) local CLOUD_ORG $relpos(0,0,0)
+		createnpc monsters/summon/npc_poison_cloud2 CLOUD_ORG $get(ent_me,id) 100 20.0 3
+		local EXIT_SUB 1
+	}
+}
+
+{ npc_flinch
+	setvard MAKE_ACLOUD 0
+}
+
+{ lay_egg
+
+	callevent EGG_FREQ lay_egg
+
+	if ACTIVE_HORRORS < 2
+
+	setvard SUMMON_HORROR 1
+
+	setvard AS_ATTACKING game.time
+	playanim critical ANIM_ATTACK2
+	playsound 0 10 voices/orc/attack2.wav
+
+}
+
+{ horror_died
+	//dbg horror died
+	subtract ACTIVE_HORRORS 1
+}
+
+{ [override] swing_axe
+
+	if ( SUMMON_HORROR )
+	{
+		setvard SUMMON_HORROR 0
+		add ACTIVE_HORRORS 1
+		callevent 0.1 magic_fx
+		playsound 0 10 magic/frost_reverse.wav
+		createnpc monsters/summon/horror_egg $relpos(0,30,50) $get(ent_me,id)
+		addvelocity ent_lastcreated $relvel(0,100,20)
+		local EXIT_SUB 1
+	}
+
+	if !EXIT_SUB
+
+	if !IS_FLEEING
+
+	playsound 0 10 bullchicken/bc_attack3.wav
+	tossprojectile NPCATK_TARGET ATTACK_SPEED DMG_SPIT 0 proj_poison (0,48,48)
+	effect glow ent_lastprojectile (0,255,0) 64 -1 0
+
+	if ( $get(NPCATK_TARGET,range) > 200 )
+	{
+		if $rand(1,100) > 50
+		callevent leap_at NPCATK_TARGET,id
+	}
+
+}
+
+{ [override] swing_sword
+
+	if DID_INTRO
+	callevent baseorc_yell
+	//setvard SLASH_ATTACK 1
+   	//callevent npcatk_dodamage NPCATK_TARGET ATTACK_HITRANGE DMG_SLASH ATTACK_ACCURACY
+	xdodamage NPCATK_TARGET ATTACK_HITRANGE DMG_SLASH ATTACK_ACCURACY ent_me ent_me none slash dmgevent:swing
+}
+
+{ swing_dodamage
+	if PARAM1
+	applyeffect PARAM2 effects/greater_poison $rand(3,5) $get(ent_me,id) 40
+	if ( $rand(1,20) == 1 ) callevent leap_away $get(PARAM2,id) "slash_random"
+}
+
+{ magic_fx
+
+	effect glow ent_me (255,0,0) 64 2 2
+}
+
+{ game_death
+
+	local VER_NAME $get_by_name(oldar_death_ver)
+	local VER_ID $get(VER_NAME,id)
+	if ( !$get(VER_ID,exists) ) createnpc chests/ver_voldar_chest $relpos(0,0,-2000)
+
+	local L_MAP_NAME $lcase(game.map.name)
+	if ( L_MAP_NAME equals voldar_test ) local TREASURE_MAP 1
+	if ( L_MAP_NAME equals ms_wicardoven ) local TREASURE_MAP 1
+								////PARAM1=gold_per_bag PARAM2=bags_player PARAM3=dist_from_mon PARAM4=min#bags PARAM5 max#bags
+	if ( TREASURE_MAP )	callevent bm_gold_spew 25 2 75 4 30
+}

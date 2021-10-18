@@ -1,0 +1,215 @@
+{
+	const SKEL_MODEL monsters/skeleton_boss2.mdl
+	const SKEL_WIDTH 40
+	const SKEL_HEIGHT 130
+	const SKEL_MOVE_RANGE 64
+	const SKEL_ATTACK_RANGE 150
+	const SKEL_ATTACK_HITRANGE 220
+
+	setvar ANIM_RUN run
+   const SKEL_HP		4000
+   const ATTACK_HITCHANCE 	85%
+   const ATTACK_DAMAGE_LOW 	26
+   const ATTACK_DAMAGE_HIGH 	60
+   setvard NPC_GIVE_EXP 		1000
+
+   setvard DROP_GOLD 		1
+   setvard DROP_GOLD_MIN		100
+   setvard DROP_GOLD_MAX		200
+
+   const SKEL_RESPAWN_CHANCE	0%
+   const SKEL_RESPAWN_LIVES	0
+
+   const SOUND_STRUCK1 	weapons/axemetal1.wav
+   const SOUND_STRUCK2 	weapons/axemetal2.wav
+   const SOUND_STRUCK3 	debris/concrete1.wav
+
+	const SOUND_RUN1	monsters/troll/step1.wav
+	const SOUND_RUN2	monsters/troll/step2.wav
+	const SOUND_WALK1	common/npc_step1.wav
+	const SOUND_WALK2	common/npc_step2.wav
+
+	setvard BASE_MOVESPEED 2.0
+	const WALK_MOVESPEED 1.0
+
+	setvard CAN_FLINCH 0
+
+	const SOUND_STUN zombie/claw_strike2.wav
+
+	const SOUND_SUMMON monsters/skeleton/calrain3.wav
+
+	const ROCK_DAMAGE '$rand(400,800)'
+
+	const STUN_ATK_CHANCE 10
+
+	const STONE_SKELETON 1
+
+	const ROCK_FREQ 30.0
+
+	const CUSTOM_SIZE 1
+
+	//rock_storm precaches
+	const XSOUND_LEVITATE fans/fan4on.wav //about 4 seconds
+	const XSOUND_SPIN magic/fan4_noloop.wav
+	const XSOUND_SUMMON magic/volcano_start.wav
+	precache XSOUND_LEVITATE
+	precache XSOUND_SPIN
+	precache XSOUND_SUMMON
+
+	precache monsters/skeleton_boss2.mdl //precache model for older clients
+}
+
+#include monsters/skeleton_base
+
+{ skeleton_spawn
+
+	setmodelbody	0 7 //0=standard 1=ash 2=green 3=bloody 4=decayed 5=ice 6=gold 7=stone 8=icelord 9=bloodlord
+	setmodelbody	1 3 //0=Unarmed 1=darkmace 2=sword 3=hammahs 4=bigsword+shield 5=iceclubs 6=fireclubs 7=highsword 8=wand
+	if ( !SLEEPER ) callevent animate_stone
+	if ( SLEEPER )
+	{
+		invincible 1
+		setvard WAS_SLEEPING 1
+		callevent npcatk_suspend_ai
+		setidleanim ANIM_IDLE
+		setmoveanim ANIM_IDLE
+		setanim.framerate 0.0
+	}
+}
+
+{ animate_stone
+
+	name a|Greater Stone Mason
+   roam 1
+
+	blood none
+
+   takedmg all .6
+
+   hearingsensitivity 3
+
+	if ( WAS_SLEEPING )
+	{
+		setmoveanim ANIM_WALK
+		setanim.framerate 1.0
+		callevent npcatk_resume_ai
+	}
+}
+
+{ attack_1
+
+	setvard STUN_ATTACK 0
+
+	setvard PUSH_VEL $relvel(10,100,10)
+
+	if $rand(1,100) < STUN_ATK_CHANCE
+	setvard ANIM_ATTACK attack2	
+}
+
+{ npc_targetsighted
+
+	if !IS_FLEEING
+	
+	if ROCK_ON
+	if !ROCK_DELAY
+	callevent 0.1 summon_rock
+}
+
+{ rock_delay_reset
+
+	setvard ROCK_DELAY 0
+}
+
+{ attack_2
+
+	setvard PUSH_VEL $relvel(10,200,10)
+
+	setvard STUN_ATTACK 1
+   	callevent attack_snd
+   	dodamage ENTITY_ENEMY ATTACK_HITRANGE $randf(ATTACK_DAMAGE_LOW,ATTACK_DAMAGE_HIGH) ATTACK_HITCHANCE
+	setvard ANIM_ATTACK attack1
+}
+
+{ game_dodamage //1:AttackHit(1/0)  2:EntityHit  3:StartOrigin  4:EndOrigin
+
+	if PARAM1
+	addvelocity ent_laststruckbyme PUSH_VEL //Push the player a bit
+
+	if STUN_ATTACK
+	playsound 0 10 SOUND_STUN
+	applyeffect PARAM2 effects/effect_stun $randf(5,10) 1 1
+	setvard STUN_ATTACK 0
+}
+
+{ cycle_up
+
+	setvard ROCK_ON 1
+}
+
+{ summon_rock
+
+	if ( G_SUMMING_ROCKS )
+	{
+		if !ROCK_DELAY
+		//someone else is summoning rocks, try again later
+		callevent $randf(10,20) summon_rock
+		setvard ROCK_DELAY 1
+	}
+
+	if !G_SUMMING_ROCKS
+	setvarg G_SUMMING_ROCKS 1 //tell other stone masons that it's MY turn to summon (crash prevention)
+	callevent 5.0 reset_summoning //tell others I'm done in 5 seconds
+	setvard ROCK_DELAY 1
+	callevent ROCK_FREQ rock_delay_reset
+
+	playsound 0 10 SOUND_SUMMON
+
+	playanim break
+	setvard AS_ATTACKING game.time //tells anti-stuck he's attacking
+	callevent npcatk_suspend_ai
+	playanim critical castspell
+	local NUM_ROCKS 4
+	if ( game.players >= 1 )
+	{
+		local NUM_ROCKS game.players
+		if ( NUM_ROCKS > 4 ) local NUM_RUCKS 4
+		//dbg temp making NUM_ROCKS rocks for game.players
+	}
+	local NUM_ROCKS 4 //temporary
+	if !$get(MY_ROCK_STORM,exists)
+	createnpc monsters/summon/rock_storm $relpos(0,0,0) $get(ent_me,id) NUM_ROCKS ROCK_DAMAGE 64 200 //<Owner> <#Rocks> <Dmg> <FX_Radius> <Letivtate_Height>
+	setvard MY_ROCK_STORM $get(ent_lastcreated,id)
+}
+
+{ reset_summoning
+	setvard G_SUMMING_ROCKS 0
+	if SUSPEND_AI
+	callevent npcatk_resume_ai
+}
+
+//all called from model
+{ castspell //castspell (sometimes doesn't get this far) :\
+	setvarg G_SUMMING_ROCKS 0
+	if SUSPEND_AI
+	callevent npcatk_resume_ai
+}
+
+{ walk_step1 //walk
+	//movespeed WALK_MOVESPEED
+	playsound 0 8 SOUND_WALK1
+}
+
+{ walk_step2 //walk
+	//movespeed WALK_MOVESPEED
+	playsound 0 8 SOUND_WALK2
+}
+
+{ run_step1 //run
+	movespeed BASE_MOVESPEED
+	playsound 0 8 SOUND_RUN1
+}
+
+{ run_step2 //run
+	movespeed BASE_MOVESPEED
+	playsound 0 8 SOUND_RUN2
+}

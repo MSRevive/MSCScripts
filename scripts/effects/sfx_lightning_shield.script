@@ -1,0 +1,89 @@
+//Lightning shield client effect
+//<model_idx> <radius> <duration> <v_adjust> [constant:0|1]
+//- Can either be a temporary effect that is only visible when enemies get near
+//- Or a sustained effect
+//- In the case of constant effect, it needs to be toggled when zapping by updating lshield_on
+//- If constant, it recomended that the client fx be removed and renewed every 10-20 seconds, in case client indexes change
+//- If constant, set the duration to just over the refresh/renew rate
+// ( ALL OF THE ABOVE IS HANDLED IN monsters/base_lightning_shield )
+
+#scope client
+
+{ client_activate //<model_idx> <radius> <duration> <constant_effect:0|1>
+
+	setvard SHIELD_OWNER PARAM1 //index of the model casting the spell
+	setvard SHIELD_RADIUS PARAM2
+	setvard SHIELD_DURATION PARAM3
+	setvard SHIELD_VADJ PARAM4 //should be half model height
+	setvard SHIELD_IS_CONSTANT PARAM5
+
+	const SHIELD_COLOR (2,1.5,0.25)
+
+	//dbg **** Own SHIELD_OWNER rad SHIELD_RADIUS dur SHIELD_DURATION vadj SHIELD_VADJ cnst SHIELD_IS_CONSTANT
+
+	callevent SHIELD_DURATION remove_effect
+
+	if !SHIELD_IS_CONSTANT //if shield is constant, effect must be updated for it to become visible
+	//dbg ********* INIT FROM ACTIVATE
+	callevent lshield_on
+}
+
+
+{ lshield_on //<time_on>
+	setvard ZAP_ON 1
+	callevent lshield_loop
+	setvard ZAP_FX_NERF game.time
+	add ZAP_FX_NERF 1.0
+	callevent PARAM1 lshield_off
+}
+
+{ lshield_loop
+
+	if ZAP_ON
+	callevent 0.1 lshield_loop
+
+	if ( game.time > ZAP_FX_NERF )
+	{
+		//been zapping for awhile now, cut down to avoid ent flood
+		local EXIT_SUB $rand(0,1)
+	}
+	if !EXIT_SUB
+	
+
+	local BEAM_START $getcl(SHIELD_OWNER,origin)
+	local BEAM_END $getcl(SHIELD_OWNER,origin)
+
+	vectoradd BEAM_START z SHIELD_VADJ //adjust for height
+
+	local RND_PITCH $randf(0,359)
+	local RND_YAW $randf(0,359)
+
+	setvard L_SHIELD_RADIUS SHIELD_RADIUS
+	multiply L_SHIELD_RADIUS 0.5
+
+	vectoradd BEAM_START $relpos($vec(RND_PITCH,RND_YAW,0),$vec(0,L_SHIELD_RADIUS,0))
+
+	local RND_PITCH $randf(0,359)
+	local RND_YAW $randf(0,359)
+	vectoradd BEAM_END $relpos($vec(RND_PITCH,RND_YAW,0),$vec(0,L_SHIELD_RADIUS,0))
+	cleffect beam_points BEAM_START BEAM_END lgtning.spr 0.2 2 9 0.3 0.1 30 SHIELD_COLOR
+
+	if SHIELD_RADIUS > 128
+
+	//extra beams to fill gaps in larger shields
+	local BEAM_START $getcl(SHIELD_OWNER,origin)
+	local BEAM_END $getcl(SHIELD_OWNER,origin)
+	vectoradd BEAM_START $relpos($vec(RND_PITCH,RND_YAW,0),$vec(0,L_SHIELD_RADIUS,0))
+	local RND_PITCH $randf(0,359)
+	local RND_YAW $randf(0,359)
+	vectoradd BEAM_END $relpos($vec(RND_PITCH,RND_YAW,0),$vec(0,L_SHIELD_RADIUS,0))
+	cleffect beam_points BEAM_START BEAM_END lgtning.spr 0.2 2 9 0.3 0.1 30 SHIELD_COLOR
+}
+
+{ lshield_off
+	setvard ZAP_ON 0
+}
+
+{ remove_effect
+	removescript
+}

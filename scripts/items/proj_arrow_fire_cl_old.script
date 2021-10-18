@@ -1,0 +1,113 @@
+//Thothie - The fire arrow is too dim since 1.4 - attempting to give more torch level effect
+//Fire Arrow (client-side special effects)
+
+{
+	const SPR_FIRE			fire1_fixed.spr
+	const SPR_SMOKE1		xsmoke3.spr //was xsmoke4.spr - merged down for item limit
+	const SMOKE_DURATION		'$randf(1,2)'
+	const OFS_POS			5
+	const OFS_NEG			-5
+	const SPD_POS			60
+	const SPD_NEG			-60
+  	const LIGHT_RADIUS		256
+  	const LIGHT_COLOR		(255,200,64)
+}
+
+{ client_activate
+
+	setvard sfx.modelid PARAM1
+	setvard sfx.duration -1
+	if( $getcl(sfx.modelid,exists) )
+	{
+		callevent create_light $getcl(sfx.modelid,origin)
+		if ( FX_SPAMMERS < MAX_FX_SPAMMERS ) callevent fire_spr_create
+	}
+	else
+	{
+		setvard EFFECT_SET_TO_DIE 1
+		callevent 20.0 effect_die
+	}
+
+	setcallback render enable
+}
+{ effect_die
+
+	removescript 
+}
+
+{ game_think
+
+	if !$getcl(sfx.modelid,exists)
+	if !EFFECT_SET_TO_DIE
+	setvard EFFECT_SET_TO_DIE 1
+	callevent 20.0 effect_die
+}
+
+{
+	repeatdelay 0.1
+
+	//Create Smoke
+	local l.pos $getcl(sfx.modelid,attachment0)
+	callevent smoke_spr_create l.pos SPR_SMOKE1 0.5
+}
+
+{  smoke_spr_create
+
+	local l.pos PARAM1
+	vectoradd l.pos $vec($randf(OFS_NEG,OFS_POS),$randf(OFS_NEG,OFS_POS),$randf(OFS_NEG,OFS_POS))
+
+	setvard p.scale PARAM3
+	cleffect tempent sprite PARAM2 l.pos smoke_spr_steup
+}
+
+{  smoke_spr_steup
+
+	cleffect tempent set_current_prop death_delay 		last_frame
+	cleffect tempent set_current_prop rendermode 		add
+	cleffect tempent set_current_prop renderamt 		$randf(100,200)
+	cleffect tempent set_current_prop scale 		p.scale
+	cleffect tempent set_current_prop gravity 		$randf(-0.1,-0.01)
+	//cleffect tempent set_current_prop velocity 		$vec(0,0,$randf(0,5))
+	cleffect tempent set_current_prop collide 		none
+	cleffect tempent set_current_prop rendercolor 		(32,32,32)
+	cleffect tempent set_current_prop rendermodel 		alpha
+	cleffect tempent set_current_prop frames 		14
+	cleffect tempent set_current_prop framerate 		30
+}
+
+{ create_light
+
+	if PARAM1 isnot '0'
+
+	cleffect light new PARAM1 LIGHT_RADIUS LIGHT_COLOR 3
+	setvard sfx.lightid game.script.last_light_id
+}
+
+{  game_prerender
+
+	//Update light position
+	if LIGHT_RADIUS > 0
+
+	local l.radius LIGHT_RADIUS
+	add l.radius $randf(-8,8)
+	cleffect light sfx.lightid $getcl(sfx.modelid,origin) l.radius LIGHT_COLOR 1
+}
+
+{  fire_spr_create
+
+	cleffect tempent sprite SPR_FIRE (0,0,0) fire_spr_steup
+}
+
+{  fire_spr_steup
+
+	cleffect tempent set_current_prop death_delay 		die_with_ent sfx.modelid
+	cleffect tempent set_current_prop rendermode 		add
+	cleffect tempent set_current_prop renderamt 		128
+	cleffect tempent set_current_prop scale 		0.3
+	cleffect tempent set_current_prop rendercolor 		(128,128,128)
+	cleffect tempent set_current_prop frames 		23
+	cleffect tempent set_current_prop framerate 		30
+	cleffect tempent set_current_prop follow 		sfx.modelid 0
+	//cleffect tempent set_current_prop gravity 		0
+	//cleffect tempent set_current_prop collide 		all
+}

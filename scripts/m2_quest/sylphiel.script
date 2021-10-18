@@ -1,0 +1,699 @@
+//possible voice sets:
+//vs_fx0huskf_vict.wav - SOU
+//vs_fx0slinf_enmy.wav - SOU
+//vs_nx0jnahf_warn.wav - SOU - if we want to use an older female
+//vs_feltoorf_hit1.wav - MAIN - better than most of the above
+//vs_ffightf_move.wav - MAIN - best so far
+//vs_ncomolf1_say.wav - MAIN - good if you need an old witch
+#scope server
+{
+	setvard NPC_NO_PLAYER_DMG 1
+	const ANIM_BLUSH anim_blush
+	const ANIM_RANT anim_rant
+	setvard QUEST_SOUP_COMPLETE 0
+
+	setvard COUNT_APPLE 0
+	const MAX_APPLE 5
+	setvard COUNT_SALT 0
+	const MAX_SALT 1
+	setvard COUNT_PEPPER 0
+	const MAX_PEPPER 1
+	setvard COUNT_MEAD 0
+	const MAX_MEAD 5
+	setvard COUNT_LADEL 0
+	const MAX_LADEL 1
+
+	const QCODE_APPLE ap //placed 5/5
+	const QCODE_SALT bs //placed 1/1
+	const QCODE_PEPPER bp //placed 1/1
+	const QCODE_MEAD km //placed 5/5
+	const QCODE_LADEL la //placed 1/1
+
+	const ANIM_BLUSH anim_blush
+	const ANIM_RAGE anim_rage
+	const ANIM_RAGE_WALK anim_rage_walk
+	const ANIM_VICTORY wave
+	const ANIM_COOK keypad
+
+	setvar ANIM_WALK walk
+	setvar ANIM_IDLE idle1
+
+	setvard SOUP_LIST ''
+
+	const POS_SECOND_QUEST $vec(-888,-536,-544)
+}
+
+#include monsters/base_chat_array
+
+{ game_spawn
+	name Sylphiel
+	name_unique sylphiel
+	race human
+	width 32
+	height 72
+	roam 0
+	setmodel    npc/human2.mdl
+	invincible  1
+	//setvard PLAYING_DEAD 1
+	nopush 1
+
+	setvard LOCKED_PLAYER none
+	getplayersnb PLAYER_LIST
+
+	saytextrange 1024
+
+	callevent 3.0 scan_for_players
+	callevent 2.0 get_pot_id
+	setvard CIRCLE_ACTIVE 1
+	callevent 3.0 circle_pot
+
+}
+
+{ game_precache
+	precachefile m2_quest/pot
+	//^ only required for debuggary
+}
+
+{ get_pot_id
+	setvard COOKING_POT_ID $get_by_name(cooking_pot)
+}
+
+{ game_dynamically_created
+	callevent 0.1 setup_debug_pot
+}
+
+{ setup_debug_pot
+	local POT_ORG $get(ent_me,origin)
+	vectoradd POT_ORG x 32
+	createnpc m2_quest/pot POT_ORG
+}
+
+{ scan_for_players
+	setmoveanim ANIM_RAGE_WALK
+	setidleanim ANIM_RAGE_WALK
+	dbg scan_for_players
+
+	if !DID_INTRO
+	callevent 1.0 scan_for_players
+	getplayersnb PLAYER_LIST
+	if ( LOCKED_PLAYER equals none ) local FIND_NEW_LOCK 1
+	if ( !$get(LOCKED_PLAYER,exists) ) local FIND_NEW_LOCK 1
+	if ( $get(LOCKED_PLAYER,range) > 512 ) local FIND_NEW_LOCK 1
+	if FIND_NEW_LOCK
+	local SORT_PLAYERS $sort_entlist(PLAYER_LIST,range)
+	local TEST_PLAYER $get_token(SORT_PLAYERS,0)
+	if $get(TEST_PLAYER,range) < 64
+	setvard LOCKED_PLAYER TEST_PLAYER
+	if !DID_INTRO
+	setidleanim ANIM_IDLE
+	//if $cansee(TEST_PLAYER,96)
+	setvard DID_INTRO 1
+	setvard CHAT_CURRENT_SPEAKER LOCKED_PLAYER
+	callevent do_intro
+}
+
+{ do_intro
+	setvard CHAT_TEMP_NO_AUTO_FACE 1
+	setvard CIRCLE_ACTIVE 1
+	callevent chat_now "By the blood of the gods! Those damn goblins!" 1.0 none none clear_que add_to_que sound:voices/m2_quest/sylphiel_cuss.wav
+	callevent chat_now "May The Lost take their filthy little souls!" 4.0 ANIM_RAGE do_intro2 add_to_que  sound:voices/m2_quest/sylphiel_rage.wav
+}
+
+{ do_intro2
+	setvard CIRCLE_ACTIVE 0
+	playanim break
+	setmovedest LOCKED_PLAYER 32
+	callevent chat_now "Oh, sorry..." 2.0 ANIM_BLUSH do_intro3 add_to_que sound:voices/m2_quest/sylphiel_hi.wav
+	callevent chat_now "Didn't mean for anyone to actually hear that." 3.0 lean none add_to_que
+	callevent chat_now "Hey! Don't I know you from the Edana Inn?" 3.0 pondering move_closer add_to_que
+
+	if ( game.players > 1 )
+	{
+		callevent chat_now "You're adventurers, aren't you? Maybe you could [help] me?" 3.0 pondering3 !hold_for_help add_to_que
+	}
+	else
+	{
+		callevent chat_now "You're an adventurer, aren't you? Maybe you could [help] me?" 3.0 pondering3 !hold_for_help add_to_que
+	}
+}
+
+{ move_closer
+	playsound 0 10 voices/m2_quest/sylphiel_help.wav
+	setmovedest LOCKED_PLAYER 32
+}
+
+{ hold_for_help
+	setvard MENU_ENABLE_HELP 1
+	setmoveanim pondering3
+	setidleanim pondering3
+	catchspeech menu_help help
+}
+
+{ game_menu_getoptions
+
+	if ( !DID_INTRO )
+	{
+		setidleanim ANIM_IDLE
+		//if $cansee(TEST_PLAYER,96)
+		setvard DID_INTRO 1
+		setvard CHAT_CURRENT_SPEAKER PARAM1
+		setvard LOCKED_PLAYER PARAM1
+		callevent do_intro
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	if DID_INTRO
+
+	setvard CHAT_CURRENT_SPEAKER PARAM1
+	setvard LOCKED_PLAYER PARAM1
+
+	if ( CIRCLE_ACTIVE )
+	{
+		setvard CIRCLE_ACTIVE 0
+		setvard NEXT_PACE game.time
+		add NEXT_PACE 30.0
+	}
+
+	if ( !DOING_SOUP ) setmovedest LOCKED_PLAYER 9999
+
+	if ( ALL_QUESTS_DONE )
+	{
+		callevent chat_now "Thanks for all the help! I'll see you in town in a few days." 3.0 none none add_to_que
+	}
+
+	if ( SOUP_READY )
+	{
+		setvard CIRCLE_ACTIVE 0
+		local L_PLR_INDEX $get(PARAM1,index)
+		dbg game_menu_getoptions L_PLR_INDEX vs SOUP_LIST vs $get_find_token(SOUP_LIST,L_PLR_INDEX)
+		if $get_find_token(SOUP_LIST,L_PLR_INDEX) == -1
+		local reg.mitem.title 	"(Get soup)"
+		local reg.mitem.type 	callback
+		local reg.mitem.callback menu_get_soup
+		menuitem.register
+	}
+
+	if ( SECOND_QUEST_READY )
+	{
+		setvard CIRCLE_ACTIVE 0
+		local reg.mitem.title 	"One other thing?"
+		local reg.mitem.type 	callback
+		local reg.mitem.callback menu_help
+		menuitem.register
+	}
+
+	//some redunadncy, as I dunno how it's getting pass this
+	if !QUEST_COMPLETE
+	if !SECOND_QUEST_READY
+	if !SECOND_QUEST_INPROGRESS
+	if !SECOND_QUEST_OFFERED
+
+	setvard QUEST_PLAYER PARAM1
+	//check and remove quest items, if found, and thank player (sylphiel_thanks1.wav/sylphiel_thanks2.wav)
+
+	if ( MENU_ENABLE_HELP )
+	{
+		local reg.mitem.title 	"How can I help?"
+		local reg.mitem.type 	callback
+		local reg.mitem.callback menu_help
+		menuitem.register
+	}
+
+	if DID_FIRST_HELP
+
+	callevent tally_quest_items $get(PARAM1,id)
+
+	if ( QUEST_ENABLED )
+	{
+		setvard CHECK_PACING 1
+
+		//apple counter
+		local reg.mitem.title "Golden Apples ("
+		stradd reg.mitem.title $int(COUNT_APPLE)
+		stradd reg.mitem.title /
+		stradd reg.mitem.title $int(MAX_APPLE)
+		stradd reg.mitem.title )
+		if ( COUNT_APPLE >= MAX_APPLE )
+		{
+			local reg.mitem.type green //new function
+		}
+		else
+		{
+			local reg.mitem.type disabled
+		} 
+		menuitem.register
+
+		//salt counter
+		local reg.mitem.title "Bag of Salt ("
+		stradd reg.mitem.title $int(COUNT_SALT)
+		stradd reg.mitem.title /
+		stradd reg.mitem.title $int(MAX_SALT)
+		stradd reg.mitem.title )
+		if ( COUNT_SALT >= MAX_SALT )
+		{
+			local reg.mitem.type green //new function
+		}
+		else
+		{
+			local reg.mitem.type disabled
+		} 
+		menuitem.register
+
+		//pepper counter
+		local reg.mitem.title "Bag of Pepper ("
+		stradd reg.mitem.title $int(COUNT_PEPPER)
+		stradd reg.mitem.title /
+		stradd reg.mitem.title $int(MAX_PEPPER)
+		stradd reg.mitem.title )
+		if ( COUNT_PEPPER >= MAX_PEPPER )
+		{
+			local reg.mitem.type green //new function
+		}
+		else
+		{
+			local reg.mitem.type disabled
+
+		} 
+		menuitem.register
+
+		//mead counter
+		local reg.mitem.title "Barrel of Honeymead ("
+		stradd reg.mitem.title $int(COUNT_MEAD)
+		stradd reg.mitem.title /
+		stradd reg.mitem.title $int(MAX_MEAD)
+		stradd reg.mitem.title )
+		if ( COUNT_MEAD >= MAX_MEAD )
+		{
+			local reg.mitem.type green //new function
+		}
+		else
+		{
+			local reg.mitem.type disabled
+		} 
+		menuitem.register
+
+		//ladel counter
+		local reg.mitem.title "Ladel ("
+		stradd reg.mitem.title $int(COUNT_LADEL)
+		stradd reg.mitem.title /
+		stradd reg.mitem.title $int(MAX_LADEL)
+		stradd reg.mitem.title )
+		if ( COUNT_LADEL >= MAX_LADEL )
+		{
+			local reg.mitem.type green //new function
+		}
+		else
+		{
+			local reg.mitem.type disabled
+		} 
+		menuitem.register
+	}
+}
+
+{ menu_help
+	if !ALL_QUESTS_DONE
+
+	if ( $get(PARAM1,isplayer) )
+	{
+		setvard CHAT_CURRENT_SPEAKER PARAM1
+		setvard LOCKED_PLAYER PARAM1
+	}
+	else
+	{
+		setvard CHAT_CURRENT_SPEAKER $get(ent_lastspoke,id)
+		setvard LOCKED_PLAYER CHAT_CURRENT_SPEAKER
+	}
+
+	if ( SECOND_QUEST_READY )
+	{
+		setvard SECOND_QUEST_READY 0
+		setvard SECOND_QUEST_INPROGRESS 1
+		callevent chat_now "My grams, as you might guess by all the weird stuff on these shelves, was a bit of an alchemist." 4.0 converse1 none add_to_que
+		callevent chat_now "She passed on, just a bit ago, and I came here to maybe, try my hand at it..." 4.0 none none add_to_que
+		callevent chat_now "But there's a lot of secrets in this old house, and I'm a little afraid of what I might find..." 4.0 lean none add_to_que
+		callevent chat_now "Over here, for instance..." 2.0 no_convo second_quest_show add_to_que
+	}
+
+
+	if !SECOND_QUEST_READY
+	if !SECOND_QUEST_INPROGRESS
+
+	if ( !DID_FIRST_HELP )
+	{
+		setvard WASTING_MY_TIME -2
+		setvard DID_FIRST_HELP 1
+	}
+
+	if ( DID_HELP )
+	{
+		callevent chat_now "Just bring me these items, and we'll be golden." 4.0 pondering3 none add_to_que sound:voices/m2_quest/sylphiel_help.wav
+		callevent 0.1 send_menu
+	}
+
+	if !DID_HELP
+	callevent enable_quest
+	callevent chat_now "I came here, to my grand's house, to put together some of her special stew, for the inn." 4.0 converse1 none add_to_que
+	callevent chat_now "But I must have left the place unlocked on my last visit, as those damned goblins have been in here." 3.0 none none add_to_que
+	callevent chat_now "The little green thieves went and pilfered all my ingredients!" 4.0 none none add_to_que
+	callevent chat_now "If you can track them down, and get my stuff back, maybe I can give you a free sample!" 5.0 none none add_to_que
+	callevent chat_now "Plus I'll have some more, when I get back to town." 3.0 pondering none add_to_que
+	callevent chat_now "I need five of granny's golden apples, a sack of pepper, a sack of salt, and some honeymead." 6.0 none none add_to_que
+	callevent chat_now "Waddya say ya help ol Sylphiel out, aye? Just find the ingredients and bring them back here." 6.0 pondering3 none add_to_que
+	setvard DID_HELP 1
+}
+
+{ send_menu
+	menu.open LOCKED_PLAYER
+}
+
+{ enable_quest
+	setvard QUEST_ENABLED 1
+}
+
+
+{ tally_quest_items
+
+	//tally and remove quest items
+	setvard DO_THANK 0 //sets to 1 if one or more items found
+	setvard MY_ID $get(ent_me,id)
+
+	setvard QUEST_PLAYER PARAM1
+
+	setvard QUEST_ITEM_SEARCH QCODE_APPLE
+	calleventloop MAX_APPLE check_quest_items
+
+	setvard QUEST_ITEM_SEARCH QCODE_SALT
+	calleventloop MAX_SALT check_quest_items
+
+	setvard QUEST_ITEM_SEARCH QCODE_PEPPER
+	calleventloop MAX_PEPPER check_quest_items
+
+	setvard QUEST_ITEM_SEARCH QCODE_MEAD
+	calleventloop MAX_MEAD check_quest_items
+
+	setvard QUEST_ITEM_SEARCH QCODE_LADEL
+	calleventloop MAX_LADEL check_quest_items
+
+	//check if quest complete
+	local L_QUEST_COMPLETE 1
+	if ( COUNT_APPLE <  MAX_APPLE ) local L_QUEST_COMPLETE 0
+	if ( COUNT_SALT <  MAX_SALT ) local L_QUEST_COMPLETE 0
+	if ( COUNT_PEPPER <  MAX_PEPPER ) local L_QUEST_COMPLETE 0
+	if ( COUNT_MEAD <  MAX_MEAD ) local L_QUEST_COMPLETE 0
+	if ( COUNT_LADEL <  MAX_LADEL ) local L_QUEST_COMPLETE 0
+
+	if ( DO_THANK )
+	{
+		setvard WASTING_MY_TIME 0
+		if !L_QUEST_COMPLETE
+		add THANK_INDEX 1
+		if ( THANK_INDEX == 1 )
+		{
+			callevent chat_now "Thank you for that." 1.0 none none add_to_que
+			playsound 0 10 voices/m2_quest/sylphiel_thanks1.wav
+		}
+		if ( THANK_INDEX == 2 )
+		{
+			setvard THANK_INDEX 0
+			callevent chat_now "I appreciate it." 1.0 none none add_to_que
+			playsound 0 10 voices/m2_quest/sylphiel_thanks2.wav
+		}
+	}
+	else
+	{
+		if !L_QUEST_COMPLETE
+		add WASTING_MY_TIME 1
+		if ( WASTING_MY_TIME > 1 )
+		{
+			callevent chat_now "You're wasting time... Get going!" 2.0 pondering3 none add_to_que sound:voices/m2_quest/sylphiel_impatient.wav
+			setvard WASTING_MY_TIME 0		
+		}
+	}
+
+	if L_QUEST_COMPLETE
+	setvard QUEST_COMPLETE 1
+	setvard CHECK_PACING 0
+	setvard CIRCLE_ACTIVE 0
+	setidleanim ANIM_IDLE
+	callevent 1.0 do_soup
+
+	//close menu here via clientcmd
+}
+
+{ check_quest_items
+	callexternal QUEST_PLAYER ext_check_quest_item QUEST_ITEM_SEARCH MY_ID
+}
+
+{ ext_receive_quest_item //<item_code>
+	if ( PARAM1 equals QCODE_APPLE ) add COUNT_APPLE 1
+	if ( PARAM1 equals QCODE_SALT ) add COUNT_SALT 1
+	if ( PARAM1 equals QCODE_PEPPER ) add COUNT_PEPPER 1
+	if ( PARAM1 equals QCODE_MEAD ) add COUNT_MEAD 1
+	if ( PARAM1 equals QCODE_LADEL ) add COUNT_LADEL 1
+	setvard DO_THANK 1
+}
+
+{ check_quest_data //<qitem_code>
+	setvard QUEST_TAG PARAM1
+
+	local QUEST_BANK q
+	stradd QUEST_BANK $int(game.script.iteration)
+	setvard CUR_QUEST_BANK $get_quest_data(QUEST_PLAYER,QUEST_BANK)
+	if CUR_QUEST_BANK isnot 0
+	calleventloop $get_token_amt(CUR_QUEST_BANK) check_quest_bank
+}
+
+{ do_soup
+	setmovedest QUEST_PLAYER 9999
+	callevent chat_now "That's the way! All right!" 2.0 ANIM_VICTORY none add_to_que clear_que sound:voices/m2_quest/sylphiel_victory1.wav
+	callevent chat_now "Haha! Alright, let's get cooking!" 2.0 no_convo do_cook_loop add_to_que sound:voices/m2_quest/sylphiel_victory2.wav
+	setvard COOK_COMPLAIN game.time
+	add COOK_COMPLAIN 10.0
+}
+
+{ do_cook_loop
+	setmoveanim ANIM_WALK
+	setmovedest COOKING_POT_ID 4
+	local POT_ORG $get(COOKING_POT_ID,origin)
+	local MY_ORG $get(ent_me,origin)
+	local POT_DIST $dist2D(MY_ORG,POT_ORG)
+	dbg do_cook_loop POT_DIST
+	if ( POT_DIST > 32 )
+	{
+		callevent $randf(1.0,2.0) do_cook_loop
+		if ( game.time > COOK_COMPLAIN )
+		{
+			setvard COOK_COMPLAIN game.time
+			add COOK_COMPLAIN 10.0
+			saytext "Stand aside, you're between me and my pot!"
+			playsound 0 10 voices/m2_quest/sylphiel_blocked.wav
+		}
+	}
+	else
+	{
+		callevent do_soup2
+	}
+}
+
+{ do_soup2
+	setmovedest COOKING_POT_ID 9999
+	playanim break
+	playanim critical ANIM_COOK
+	callexternal COOKING_POT_ID ext_cooking
+	callevent 6.0 soups_on
+}
+
+{ soups_on
+	callevent chat_now "Alright, I'm done with this..." 2.0 ANIM_COOK none clear_que add_to_que sound:voices/m2_quest/sylphiel_done.wav
+	callevent chat_now "Gather here, form up, and get your soup!" 3.0 no_convo soups_on2 add_to_que  sound:voices/m2_quest/sylphiel_soupson.wav
+}
+
+{ soups_on2
+	playanim break
+	setmovedest LOCKED_PLAYER 9999
+	setvard SOUP_READY 1
+}
+
+{ circle_pot
+	if ( CIRCLE_ACTIVE )
+	{
+		//find nearest radial
+		//dbg circle_pot
+		local WANDER_POINT $get(COOKING_POT_ID,origin)
+		local ANGLE_TO_NPC $angles(WANDER_POINT,game.monster.origin)
+		local MY_ORG $get(ent_me,origin)
+		add ANGLE_TO_NPC 60.0
+		if ( ANGLE_TO_NPC > 359.99 ) subtract ANGLE_TO_NPC 359.99
+		vectoradd WANDER_POINT $relpos($vec(0,ANGLE_TO_NPC,0),$vec(0,32,0))
+		setmovedest WANDER_POINT 8
+		callevent 1.0 circle_pot
+//		if ( G_DEVELOPER_MODE )
+//		{
+//			local BEAM_START WANDER_POINT
+//			local BEAM_END BEAM_START
+//			vectoradd BEAM_END z 64
+//			effect beam point lgtning.spr 5 BEAM_START BEAM_END (255,0,255) 200 0 1.0
+//		}
+	}
+}
+
+{ menu_get_soup
+	token.add SOUP_LIST $get(PARAM1,index)
+	offer PARAM1 mana_soup
+	local L_QUEST_COUNT $get_quest_data(PARAM1,sy)
+	add L_QUEST_COUNT 1
+	quest set PARAM1 sy L_QUEST_COUNT
+
+	helptip	PARAM1 generic "Sylphiel's Soup" "Provides full health and three minutes of rapid mana regeneration"
+
+	playanim once push_button
+	callevent chat_now "There ya go, one free sample of Sylphee's delicious soup!" 2.0 none none add_to_que
+	setvard LAST_GAVE_SOUP PARAM1
+
+	local L_NSOUPS $get_token_amt(SOUP_LIST)
+	add L_NSOUPS 1
+
+	if ( L_NSOUPS >= game.playersnb )
+	{
+		callevent 2.0 second_quest_start
+	}
+
+	if !SECOND_QUEST_OFFERED
+	callevent 90.0 second_quest_start //auto start after 90 seconds, even if not all players got their soup
+}
+
+{ second_quest_start
+	if !SECOND_QUEST_OFFERED
+	setvard SECOND_QUEST_OFFERED 1
+	//beatdoor buysoda
+	setvard SECOND_QUEST_READY 1
+	setmovedest LAST_GAVE_SOUP 9999
+	callevent chat_now "Listen... There is one other little thing you can [help] me with, if you're interested." 4.0 ponder none add_to_que sound:voices/m2_quest/sylphiel_hey_listen.wav
+}
+
+{ second_quest_show
+	playanim break
+	setmoveanim walk
+	setmovedest POS_SECOND_QUEST 4
+	setvard COMPLAIN_BLOCKED game.time
+	add COMPLAIN_BLOCKED 10.0
+	callevent 1.0 second_quest_show_loop
+}
+
+{ second_quest_show_loop
+	local MY_POS $get(ent_me,origin)
+	if ( $dist(MY_POS,POS_SECOND_QUEST) > 8 )
+	{
+		setmovedest POS_SECOND_QUEST 4
+		callevent $randf(1.0,2.0) second_quest_show_loop
+		if ( game.time > COMPLAIN_BLOCKED )
+		{
+			setvard COMPLAIN_BLOCKED game.time
+			add COMPLAIN_BLOCKED 10.0
+			callevent chat_now "Stand aside, you're in my way..." 1.0 pondering3 none add_to_que sound:voices/m2_quest/sylphiel_blocked.wav
+		}
+	}
+	else
+	{
+		callevent second_quest_show2
+	}
+}
+
+{ second_quest_show2
+	setangle face $vec(0,-90,0)
+	usetrigger spawn_sylph_reward
+	callevent chat_now "Have a look behind here..." 3.0 buysoda second_quest_open_secret add_to_que sound:voices/m2_quest/sylphiel_lookhere.wav
+	callevent chat_now "Search this carefully... I just want to be sure it's safe - but if you find anything, it's yours." 4.0 ponder none add_to_que sound:voices/m2_quest/sylphiel_secrets.wav
+}
+
+{ second_quest_open_secret
+	setangle face $vec(0,-90,0)
+	usetrigger door_syph1
+}
+
+{
+repeatdelay 5.0
+
+	if ( CHECK_PACING )
+	{
+		if !QUEST_COMPLETE
+		if !SECOND_QUEST_READY
+		if !SECOND_QUEST_INPROGRESS
+		if !SECOND_QUEST_OFFERED
+		if game.time > NEXT_PACE
+		getplayersnb PLAYER_LIST
+		local SORT_PLAYERS $sort_entlist(PLAYER_LIST,range)
+		local TEST_PLAYER $get_token(SORT_PLAYERS,0)
+		if $get(TEST_PLAYER,range) > 256
+		if !CIRCLE_ACTIVE
+		setmoveanim ANIM_WALK
+		setidleanim ANIM_WALK
+		setvard CIRCLE_ACTIVE 1
+		callevent circle_pot
+	}
+	else
+	{
+		setidleanim ANIM_IDLE
+	}
+
+	if $cansee(enemy)
+	setvard NPCATK_TARGET $get(ent_lastseen,id)
+	if $get(NPCATK_TARGET,range) < 128
+	setvard CIRCLE_ACTIVE 0
+	setvard NEXT_PACE game.time
+	add NEXT_PACE 30.0
+	setmovedest NPCATK_TARGET 9999
+	callevent do_attack
+}
+
+{ game_struck
+	setvard NPCATK_TARGET $get(ent_laststruck,id)
+	setmovedest NPCATK_TARGET 9999
+	callevent do_attack
+	setvard NEXT_PACE game.time
+	add NEXT_PACE 30.0
+}
+
+{ do_attack
+	if game.time > NEXT_ATTACK
+	setvard NEXT_ATTACK game.time
+	add NEXT_ATTACK 3.0
+
+	if ( $rand(1,2) == 1 )
+	{
+		callevent chat_now "Bring it on!" 2.0 seeya none add_to_que 
+		playsound 0 10 voices/m2_quest/sylphiel_attacked.wav	
+	}
+	else
+	{
+		callevent chat_now "You're messing with more trouble than you can handle!" 2.0 seeya none add_to_que
+		playsound 0 10 voices/m2_quest/sylphiel_warn.wav 
+	}
+
+	callevent 2.0 fake_frame_attack
+}
+
+{ fake_frame_attack
+	dodamage NPCATK_TARGET 64 2 100% blunt
+}
+
+{ ext_saw_chest
+	callevent chat_now "Oh, will you look at that, a sinister looking chest..." 4.0 pondering none add_to_que
+	callevent chat_now "Eh, just, take it. I don't even want to know what's in there." 4.0 none none add_to_que
+	callevent chat_now "...and I'm also not going to ask what's kept that candle burning all this time." 4.0 none none add_to_que
+	callevent chat_now "*sigh* It's just so typical of grams, having something like this." 4.0 pondering3 none add_to_que
+	setvard ALL_QUESTS_DONE 1
+}
+
+{ [server] bd_debug  //<print_var> <property_printvar> <extra> <extra> <caller_id>
+	//tdebug/tdebugt
+	saytextrange 2048
+	saytext var PARAM1 prop PARAM2 = $get(PARAM1,PARAM2)
+	consolemsg PARAM5 $get(ent_me,name) reports: var PARAM1 pvar $get(PARAM1,PARAM2)
+	dbg PARAM5 $get(ent_me,name) reports: var PARAM1 pvar $get(PARAM1,PARAM2)
+}
+
+{ npc_suicide
+	if ( PARAM1 !equals only_bad ) deleteent ent_me
+}

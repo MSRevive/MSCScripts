@@ -1,0 +1,90 @@
+//Shark
+
+{
+   const DELETE_ON_DEATH 1
+   setvar ANIM_IDLE		idle
+   setvar ANIM_WALK		swim
+   setvar ANIM_RUN		thrust
+   setvard ANIM_DEATH		die1
+   const ANIM_ATK_BIG		srattack1
+   const ANIM_ATK_RIGHT		bite_r
+   const ANIM_ATK_LEFT		bite_l
+   setvard ANIM_FLINCH		bgflinch
+
+   const SOUND_IDLE1 		ichy/ichy_idle1.wav
+   const SOUND_IDLE2 		ichy/ichy_idle2.wav
+   const SOUND_ATTACK1		ichy/ichy_bite1.wav
+   const SOUND_ATTACK2		ichy/ichy_bite2.wav
+   const SOUND_STRUCK1 		ichy/ichy_pain2.wav
+   const SOUND_STRUCK2 		ichy/ichy_pain3.wav
+   const SOUND_STRUCK3 		ichy/ichy_pain5.wav
+   const SOUND_STRUCK4 		ichy/ichy_pain3.wav
+   const SOUND_STRUCK5 		ichy/ichy_pain5.wav
+   const SOUND_DEATH 		ichy/ichy_die2.wav
+
+   setvard ATTACK_MOVERANGE		32
+   setvard ATTACK_RANGE		120
+   setvard ATTACK_HITRANGE	150
+   const ATTACK_HITCHANCE	75%
+
+   setvard CAN_HEAR 1
+   setvard HUNT_AGRO 1
+   setvard CAN_FLINCH 1		//Flinch when hit
+   setvard FLINCH_ANIM 15%	//
+   setvard FLINCH_CHANCE 90%	//15
+   setvard FLINCH_DELAY 4		//base_npc_attack - Time until next allowed flinch
+   setvard NPC_HACKED_MOVE_SPEED  250 //base_propelled
+
+   setvard NPC_GIVE_EXP		12
+   const ATK_DMG_LOW 		5.0
+   const ATK_DMG_HIGH 		10.0
+}
+
+#include monsters/base_monster_new
+#include monsters/base_propelled
+#include monsters/base_fish2
+
+{  npc_spawn
+
+   	hp 50
+   	//ov 360
+	width 64
+	height 32
+   	name a|Shark
+  	hearingsensitivity 10
+	roam 1
+	race wildanimal
+
+   	setmodel monsters/shark1.mdl
+}
+
+{  npc_selectattack	//Switch up my attack
+   
+   	local NEXT_ATTACK $rand(0,2)
+   	if( NEXT_ATTACK == 0 ) setvard ANIM_ATTACK ANIM_ATK_BIG
+   	else if( NEXT_ATTACK == 1 ) setvard ANIM_ATTACK ANIM_ATK_LEFT
+   	else if( NEXT_ATTACK == 2 ) setvard ANIM_ATTACK ANIM_ATK_RIGHT
+	//setanim.movespeed 0
+}
+
+{  frame_attack	// Deal damage
+
+	playrandomsound game.sound.voice game.sound.maxvol SOUND_ATTACK1 SOUND_ATTACK2
+   	dodamage ent_lastseen ATTACK_HITRANGE $randf(ATK_DMG_LOW,ATK_DMG_HIGH) ATTACK_HITCHANCE
+}
+
+{  game_damaged_other
+
+	local PUSH_VEL (0,0,0)
+   	if( ANIM_ATTACK equals ANIM_ATK_BIG ) setvard PUSH_VEL $relvel(0,200,0)
+   	else if( ANIM_ATTACK equals ANIM_ATK_LEFT ) setvard PUSH_VEL $relvel(-100,100,0)
+   	else if( ANIM_ATTACK equals ANIM_ATK_RIGHT ) setvard PUSH_VEL $relvel(100,100,0)
+	addvelocity ent_laststruckbyme PUSH_VEL //Push the player a bit
+}
+
+{
+   eventname npc_flinch
+
+   	playanim critical ANIM_FLINCH
+}
+

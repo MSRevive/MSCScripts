@@ -1,0 +1,110 @@
+//Badlands Fire Djinn Variant by Thothie - throws fireballs instead of summons, does not move
+{
+	const SOUND_FIRESHOOT magic/fireball_strike.wav
+	const FIRE_BALL_FREQ 2.5
+	const AIM_RATIO 50
+	const ATTACK_SPEED 500
+	const ATTACK_CONE_OF_FIRE 2
+	const FIRE_BALL_DAMAGE 400
+	const FIRE_BALL_RANGE 4000
+	const SOUND_WARCRY monsters/troll/trollidle2.wav
+	const WARCRY_FREQ 60.0
+	const PUSH_CHANCE 5 //1 in X
+	const BURN_DAMAGE '$rand(20,50)'
+	setvard CAN_FLEE 0
+	const CANT_FLEE 1
+
+	setvar ANIM_WALK idle0
+	setvar ANIM_RUN idle1
+
+	setvard NO_STUCK_CHECKS 1
+
+	precachefile monsters/djinn_fire
+}
+
+#include monsters/djinn_fire
+
+{ npc_spawn
+
+	setvard IMMUNE_PUSH 1
+
+	name The|Fire Djinn Val-sul
+	movespeed 0.0
+	setprop ent_me const.movetype.none
+	moveanim idle1
+	roam 0
+	hp 4500
+	takedmg all 0.6
+	takedmg cold 1.25
+	takedmg ice 1.25
+	gravity 100
+
+	callevent WARCRY_FREQ do_warcry
+}
+
+{ npcatk_targetvalidate
+
+	if !FIRE_BALL_DELAY
+	if $cansee(enemy)
+	////dbg See enemy
+	if $get(ent_lastseen,range) > ATTACK_RANGE
+	////dbg in range
+	playanim once idle2
+	callevent throw_fire_ball_start
+	callevent FIRE_BALL_FREQ reset_fire_ball_delay
+}
+
+{ reset_fire_ball_delay
+
+	setvard FIRE_BALL_DELAY 0
+}
+
+{ throw_fire_ball_start
+
+	if !IS_FLEEING
+
+	////dbg throwing
+
+	setvard FIRE_BALL_DELAY 1
+	callevent npcatk_faceattacker $get(ent_lastseen,id)
+	playanim critical throw_rock
+}
+
+{ rock_throw
+
+	playsound 0 10 SOUND_FIRESHOOT
+
+	////dbg actual throw
+
+	local AIM_ANGLE $get(ent_lastseen,dist)		//Aim up a bit
+	divide AIM_ANGLE AIM_RATIO				//
+	setangle add_view.x AIM_ANGLE			//
+
+	tossprojectile view ATTACK_SPEED FIRE_BALL_DAMAGE ATTACK_CONE_OF_FIRE proj_fire_ball (0,0,96)
+	callexternal $get(ent_lastprojectile,id) lighten BURN_DAMAGE
+}
+
+{ [override] summon_firetroll
+
+	setvard DO_NADDA 1
+}
+
+{ do_warcry
+
+	setvard IS_FLEEING 1
+	setvard PURE_FLEE 1
+	playsound 0 10 SOUND_WARCRY
+	playanim critical idle2
+	callevent WARCRY_FREQ do_warcry
+	callevent 2.0 restore_attacks
+}
+
+{ restore_attacks
+	setvard IS_FLEEING 0
+	setvard PURE_FLEE 0
+}
+
+{ warcry //called by model anim idle2 @ frame #28
+
+	usetrigger djinn_push
+}

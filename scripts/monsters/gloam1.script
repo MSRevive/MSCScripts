@@ -1,0 +1,205 @@
+{
+	//base anims
+	setvar ANIM_RUN run
+	setvar ANIM_WALK walk
+	setvar ANIM_IDLE idle_1
+	setvard ANIM_FLINCH flinchb
+	setvard ANIM_ATTACK bite //mdl_attack
+	setvard ANIM_DEATH die
+
+	//custom anims
+	const ANIM_GALLOP gallop
+	const ANIM_JUMP jump //mdl_jump_boost
+	const ANIM_PROJECTILE turnright
+	const ANIM_VICTORY eat
+	
+	//base stats
+	setvard ATTACK_RANGE 96
+	setvard ATTACK_HITRANGE 128
+	setvard ATTACK_MOVERANGE 34
+	setvard NPC_GIVE_EXP 250
+	const FLEE_HEALTH 500
+	const FLEE_CHANCE 25
+	setvard FLEE_TIME 5.0
+
+	//custom stats
+	const FREQ_SPITWAD $randf(10,20)
+	const DUR_CLOAK 10.0
+	const DMG_SWIPE '$rand(20,40)'
+	setvard SPORE_POISON_DMG 5
+	const DMG_SPoRE 50
+	const DMG_SPITWAD 20
+	const JUMP_THRESHOLD 80
+	const JUMP_RANGE 512
+
+	//sounds
+	const SOUND_STRUCK1 debris/flesh1.wav
+	const SOUND_STRUCK2 debris/flesh2.wav
+	const SOUND_ATTACK1 zombie/claw_miss1.wav
+	const SOUND_ATTACK2 zombie/claw_miss2.wav
+	const SOUND_ATTACKHIT1 zombie/claw_strike1.wav
+	const SOUND_ATTACKHIT2 zombie/claw_strike2.wav
+	const SOUND_DEATH aslave/slv_die2.wav
+	const SOUND_PAIN1 aslave/slv_pain1.wav
+	const SOUND_PAIN2 aslave/slv_pain2.wav
+	const SOUND_SPITWAD headcrab/hc_attack1.wav
+	const SOUND_JUMP aslave/slv_alert3.wav
+}
+
+#include monsters/base_monster_new
+
+{ npc_spawn
+	
+	name a|Gloam
+
+	setmodel monsters/hunter1.mdl
+	race demon
+	blood green
+	hearingsensitivity 11
+	setmoveanim ANIM_WALK
+	setidleanim ANIM_IDLE
+	playanim once ANIM_IDLE
+	width 32
+	height 32
+
+	hp 1000
+	takedmg poison 0.5
+	takedmg cold 0.5
+	takedmg fire 0.5
+	takedmg holy 0.0
+
+	setvard AM_CLOAKED 0
+
+	setvard PUSH_TARG unset
+}
+
+{ game_struck
+	playrandomsound 0 8 SOUND_STRUCK1 SOUND_STRUCK2 SOUND_STRUCK1 SOUND_STRUCK2 SOUND_STRUCK1 SOUND_STRUCK2 SOUND_PAIN1 SOUND_PAIN2
+}
+
+{ cycle_up
+	callevent start_cycles
+}
+
+{ cycle_npc
+	callevent start_cycles
+}
+
+{ start_cycles
+	if !CYCLES_STARTED
+	setvard CYCLES_STARTED 1
+	callevent FREQ_SPITWAD do_spitwad
+}
+
+{ mdl_attack
+	setvard SWIPE_ATTACK 1
+	dodamage NPCATK_TARGET ATTACK_HITRANGE DMG_SWIPE 90% slash
+}
+
+{ game_dodamage
+	if ( SWIPE_ATTACK )
+	{
+		addvelocity PARAM2 $relvel(0,300,110)
+		if ( PARAM1 )
+		{
+			playrandomsound 0 10 SOUND_ATTACKHIT1 SOUND_ATTACKHIT2
+		}
+		else
+		{
+			playrandomsound 0 10 SOUND_ATTACK1 SOUND_ATTACK2
+		}
+		setvard SWIPE_ATTACK 0
+	}
+}
+
+{ spitwad_loop
+	if ( SPIT_WADS )
+	{
+		if ( !$get(NPCATK_TARGET,isalive) )
+		{
+			callevent end_spitwad
+		}
+		else
+		{
+			playanim once flinchs
+			setmovedest NPCATK_TARGET 9999
+			callevent 0.1 spitwad_loop
+		}
+	}
+}
+
+{ do_spitwad
+	callevent FREQ_SPITWAD do_spitwad
+
+	if $cansee(NPCATK_TARGET)
+	if !IS_FLEEING
+
+	setmoveanim flinchs
+	setidleanim flinchs
+	roam 0
+
+	callevent npcatk_suspend_ai
+
+	setvard SPIT_WADS 1
+	callevent 4.0 end_spitwad
+	callevent 0.1 spitwad_loop
+}
+
+{ end_spitwad
+	roam 1
+	setvard SPIT_WADS 0
+	setmoveanim ANIM_RUN
+	setidleanim ANIM_IDLE
+	callevent npcatk_resume_ai
+}
+
+{ mdl_attack2
+	playsound 0 10 SOUND_SPITWAD
+	tossprojectile NPCATK_TARGET 600 DMG_SPITWAD 5 proj_thorn (20,0,32)
+}
+
+{ npc_targetsighted
+
+	if game.time > NEXT_JUMP
+
+	if $get(NPCATK_TARGET,range) < JUMP_RANGE
+
+	local MY_Z game.monster.origin.z
+	local TARG_Z $get(NPCATK_TARGET,origin.z)
+	local Z_DIFF TARG_Z
+	subtract Z_DIFF MY_Z
+	if ( $rand(1,50) == 1 ) local Z_DIFF 81 //force a jump once in awhile
+	if ( Z_DIFF > JUMP_THRESHOLD )
+	{
+		setvard JUMP_HEIGHT_FACTOR Z_DIFF
+		multiply JUMP_HEIGHT_FACTOR 2
+		setvard AS_ATTACKING game.time
+		add AS_ATTACKING 5.0
+		playanim critical ANIM_JUMP
+		setvard NEXT_JUMP game.time
+		add NEXT_JUMP 2.0
+	}
+}
+
+{ mdl_jump_boost
+	playsound 0 10 SOUND_JUMP
+	local JUMP_HEIGHT $rand(250,350)
+	add JUMP_HEIGHT JUMP_HEIGHT_FACTOR
+	addvelocity ent_me $relvel(0,250,JUMP_HEIGHT)
+}
+
+{ npcatk_flee
+	callevent 0.1 flee_boost
+}
+
+{ flee_boost
+	setvard JUMP_HEIGHT_FACTOR JUMP_THRESHOLD
+	playanim critical ANIM_JUMP
+}
+
+{ my_target_died
+	if game.time > NEXT_VICTORY
+	setvard NEXT_VICTORY game.time
+	add NEXT_VICTORY 10.0
+	playanim critical ANIM_VICTORY
+}

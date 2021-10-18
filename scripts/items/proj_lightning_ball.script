@@ -1,0 +1,162 @@
+{
+	const MODEL_HANDS      		none
+	const MODEL_WORLD      		none
+	const ARROW_BODY_OFS		6
+
+	const SOUND_SHOOT ambience/alienflyby1.wav
+	const SOUND_ZAP1 debris/beamstart14.wav
+	const SOUND_ZAP2 debris/beamstart14.wav
+	const SOUND_ZAP3 debris/zap1.wav
+
+	const PROJ_MOTIONBLUR 0
+
+	const PROJ_ANIM_IDLE none
+
+	const MODEL_BODY_OFS		0
+	const PROJ_DAMAGE			0
+	const PROJ_STICK_DURATION	0
+	const PROJ_SOLIDIFY_ON_WALL	0  //Does not turn solid when a wall is hit
+
+	const PROJ_DAMAGE_AOE_RANGE	32
+	const PROJ_DAMAGE_AOE_FALLOFF	1
+	const PROJ_DAMAGE_TYPE		lightning
+}
+
+#include items/proj_arrow_base
+
+{  arrow_spawn
+
+	name 	a|Manabolt
+	desc 	Manabolt
+	weight 	0
+	size 	1
+	value	1
+	gravity	0.0001
+
+	setmodel none
+
+	setprop ent_me rendermode 5
+	setprop ent_me renderamt 255
+
+	callevent 10.0 remove_me
+}
+
+{ remove_me
+	deleteent ent_me
+}
+
+{ [override] game_fall //override base_arrow.  Just do nothing
+}
+
+{ game_hitworld
+	playrandomsound 0 10 SOUND_ZAP1 SOUND_ZAP2 SOUND_ZAP3
+}
+
+{ [server] game_tossprojectile
+	setvard MY_OWNER $get(ent_expowner,id)
+	setvard OWNER_ISPLAYER $get(MY_OWNER,isplayer)
+	setvard F_BALL_SIZE $get(MY_OWNER,scriptvar,'BALL_SIZE')
+	setvard F_BALL_DMG $get(MY_OWNER,scriptvar,'BALL_DMG')
+	setvard F_BALL_TYPE lightning
+	if ( $get(MY_OWNER,scriptvar,'BALL_TYPE') isnot 'BALL_TYPE' )
+	{
+		setvard F_BALL_TYPE $get(MY_OWNER,scriptvar,'BALL_TYPE')
+	}
+	setvard SCAN_SIZE 16
+	if ( OWNER_ISPLAYER ) setvard SCAN_SIZE 12
+	multiply SCAN_SIZE F_BALL_SIZE
+
+	if ( F_BALL_SIZE == 0 ) deleteent ent_me
+	if F_BALL_SIZE > 0
+
+	setmodel weapons/projectiles.mdl
+	setidleanim idle_standard
+	setmoveanim idle_standard
+	local SUB_MODEL $int(F_BALL_SIZE)
+	add SUB_MODEL 12
+	local SUB_MODEL $int(SUB_MODEL)
+	setmodelbody 0 SUB_MODEL
+	setbbox animsize
+
+	if ( F_BALL_TYPE equals holy )
+	{
+		setprop ent_me rendermode 1
+		setprop ent_me rendercolor (0,0,255)
+	}
+
+	//dbg temp got size F_BALL_SIZE dmg F_BALL_DMG sub SUB_MODEL
+
+	//clientevent new all monsters/summon/magic_dart_cl $get(ent_me,index) F_BALL_SIZE manabolt
+	setvard MY_SCRIPT_IDX game.script.last_sent_id
+	playsound 0 F_BALL_SIZE SOUND_SHOOT
+	setvard SCAN_ON 1
+	callevent scan_damage
+}
+
+{ [server] scan_damage
+	if ( SCAN_ON ) callevent 0.1 scan_damage
+
+	////dbg temp game.monster.moveprox
+
+	getents any SCAN_SIZE
+
+	if GET_COUNT > 0
+	callevent hit_target
+
+}
+
+{ game_hitnpc
+
+	setmodel none
+	
+	callexternal MY_OWNER send_damage $get(ent_laststruckbyme,id) direct F_BALL_DMG 100% MY_OWNER F_BALL_TYPE
+	xdodamage $get(ent_laststruckbyme,id)direct F_BALL_DMG 100% MY_OWNER MY_OWNER spellcasting.lightning F_BALL_TYPE
+	effect screenfade $get(ent_laststruckbyme,id) 3 1 (255,255,255) 255 fadein
+	expiretime 0
+}
+
+{ game_projectile_landed
+
+	setmodel none
+
+	clientevent update all MY_SCRIPT_IDX shrink_out
+
+	expiretime 0
+}
+
+{ [server] hit_target
+	setvard HIT_SOMETHING 1
+	setvard LOOP_COUNT 0
+	calleventloop GET_COUNT dmg_target
+}
+
+{ [server] dmg_target
+	add LOOP_COUNT 1
+	if ( LOOP_COUNT == 1 ) local CHECK_ENT GET_ENT1
+	if ( LOOP_COUNT == 2 ) local CHECK_ENT GET_ENT2
+	if ( LOOP_COUNT == 3 ) local CHECK_ENT GET_ENT3
+	if ( LOOP_COUNT == 4 ) local CHECK_ENT GET_ENT4
+	if ( LOOP_COUNT == 5 ) local CHECK_ENT GET_ENT5
+	if ( LOOP_COUNT == 6 ) local CHECK_ENT GET_ENT6
+	if ( LOOP_COUNT == 7 ) local CHECK_ENT GET_ENT7
+	if ( LOOP_COUNT == 8 ) local CHECK_ENT GET_ENT8
+	if ( LOOP_COUNT == 9 ) local CHECK_ENT GET_ENT9
+
+	//dbg in sphere ( SCAN_SIZE ) $get(CHECK_ENT,name)
+
+	if $get(CHECK_ENT,relationship,MY_OWNER) equals enemy
+
+	if ( OWNER_ISPLAYER )
+	{
+		if game.pvp == 0
+		if $get(CHECK_ENT,isplayer)
+		local EXIT_SUB 1
+		//dbg aborted, players do not atk players in non-pvp ( game.pvp )
+	}
+	if !EXIT_SUB
+
+	if ( !$get(CHECK_ENT,scriptvar,HIT_BY_MANABALL) ) xdodamage CHECK_ENT direct F_BALL_DMG 100% MY_OWNER MY_OWNER spellcasting.lightning F_BALL_TYPE
+	if ( OWNER_ISPLAYER ) callexternal CHECK_ENT ext_hit_manaball
+	effect screenfade CHECK_ENT 3 1 (255,255,255) 255 fadein
+	//if ( OWNER_ISPLAYER ) setvard SCAN_ON 0 //player version only damages once
+}

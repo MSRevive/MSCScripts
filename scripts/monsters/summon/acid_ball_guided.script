@@ -1,0 +1,183 @@
+{
+	const SOUND_EXPLODE bullchicken/bc_bite3.wav
+
+	const DETECT_RANGE 64
+	const COLLIDE_RANGE 16
+
+	const MY_SPEED 300
+
+	const FREQ_HUNT 1.0
+	const FREQ_MOVE 0.5
+}
+
+{ game_dynamically_created //<owner> <dmg> <maxlife> <aoe> [first_targ]
+
+	setvard MY_OWNER PARAM1
+	setvard MY_BASE_DMG PARAM2
+	setvard MY_DURATION PARAM3
+	setvard MY_AOE PARAM4
+	setvard FIRST_TARG PARAM5
+
+	setvard OWNER_ISPLAYER $get(MY_OWNER,isplayer)
+
+	race $get(MY_OWNER,race)
+
+	if ( !OWNER_ISPLAYER ) setvard MY_TARGET $get(MY_OWNER,scriptvar,NPCATK_TARGET)
+	if ( OWNER_ISPLAYER ) setvard MY_TARGET $get(MY_OWNER,target)
+
+	if ( $get(FIRST_TARG,isalive) ) setvard MY_TARGET FIRST_TARG
+
+	if ( !$get(MY_TARGET,isalive) ) callevent find_new_target 
+
+	setvard MY_DEST $get(MY_TARGET,origin)
+
+	callevent MY_DURATION go_splodie
+	setvard IS_ACTIVE 1
+	callevent 0.01 hunt_cycle
+	callevent 0.1 move_cycle
+
+	setvelocity ent_me $relvel(0,MY_SPEED,0)
+}
+
+{ game_spawn
+	name an|acid ball
+	hp 30 //may make this adjustable
+	fly 1
+	width 32
+	height 32
+	setmodel weapons/projectiles.mdl
+	//effect glow ent_me (255,0,0) 64 -1 -1
+	setvard PLAYING_DEAD 1
+
+	setmonsterclip 0
+
+	//setprop ent_me rendermode 5
+	//setprop ent_me renderamt 255
+	
+	//check attatchsprite/light commands here
+
+	playsound 0 10 bullchicken/bc_attack3.wav
+
+	setmodelbody 0 6
+	effect glow ent_me (0,255,0) 16 -1 -1
+	setidleanim idle_icebolt
+	setsolid none
+
+	setprop ent_me scale 2.0
+
+	//Removing for performance
+	//if ( !AM_LIGHTNING )
+	//{
+	//	clientevent new all monsters/summon/guided_ball_cl $get(ent_me,index) (255,0,0)
+	//	setvard MY_LIGHT_SCRIPT game.script.last_sent_id
+	//}
+}
+
+{ hunt_cycle
+
+	if IS_ACTIVE
+    callevent FREQ_HUNT hunt_cycle 
+
+	if ( !$get(MY_TARGET,isalive) ) callevent find_new_target
+	if ( !$get(MY_TARGET,isalive) )
+	{
+		//couldn't find a living target, just move forward based on owner's angles
+		local OWNER_ANG $get(MY_OWNER,angles)
+		setangle face $vec(0,$vec.yaw(OWNER_ANG),0)
+		setvard MY_DEST $relpos(0,1000,0)
+	}
+	else
+	{
+		setvard MY_DEST $get(MY_TARGET,origin)
+	}
+
+	//randomize dest a bit
+	local RND_FB $randf(0,64)
+	local RND_RL $randf(-64,64)
+	local RND_UD $randf(0,64)
+	vectoradd MY_DEST $relpos($vec(0,0,0),$vec(RND_RL,RND_FB,RND_UD))
+
+//	if ( G_DEVELOPER_MODE )
+//	{
+//		effect beam point lgtning.spr 50 game.monster.origin MY_DEST (255,0,255) 255 0 0.9	
+//	}
+
+	if ( PREV_POV isnot 'PREV_POV' )
+	{
+		if game.monster.origin equals PREV_POV
+		callevent go_splodie "stuck"
+	}
+	setvard PREV_POV game.monster.origin
+
+	//check for collision
+	local HIT_WALL $get_traceline(game.monster.origin,MY_DEST,worldonly)
+	if ( $dist(game.monster.origin,HIT_WALL) < COLLIDE_RANGE )	callevent go_splodie "hitwall"
+
+	//check for ground
+	local FLOOR_Z $get_ground_height(game.monster.origin)
+	local FLOOR_ORG game.monster.origin
+	vectorset FLOOR_ORG z FLOOR_Z
+	if $dist(game.monster.origin,FLOOR_ORG) < COLLIDE_RANGE 
+	callevent go_splodie "hitground"
+}
+
+{ move_cycle
+
+	if IS_ACTIVE
+	callevent FREQ_MOVE move_cycle 
+
+	if ( $get(MY_TARGET,range) < DETECT_RANGE ) callevent go_splodie "hittarget"
+	setmovedest MY_DEST 9999
+	vectoradd MY_DEST $relvel(0,MY_SPEED,0)
+	setvelocity ent_me $relvel(0,MY_SPEED,0)
+}
+
+{ find_new_target
+	local TARGET_LIST $get_tsphere(enemy,1024,game.monster.origin)
+	if ( $get_token_amt(TARGET_LIST) > 0 )
+	{
+		token.scramble TARGET_LIST
+		setvard MY_TARGET $get_token(TARGET_LIST,0)
+	}
+	setvard MY_DEST $get(MY_TARGET,origin)
+
+	if !$get(MY_TARGET,isalive)
+	local OWNER_ANG $get(MY_OWNER,angles)
+	setangle face $vec(0,$vec.yaw(OWNER_ANG),0)
+}
+
+{ go_splodie
+	if ( MY_LIGHT_SCRIPT isnot 'MY_LIGHT_SCRIPT' ) clientevent remove all MY_LIGHT_SCRIPT
+	//effect tempent spray SPRITE_EXPLODE game.monster.origin 0 1 0 0
+	setmodel none
+	xdodamage game.monster.origin MY_AOE MY_BASE_DMG 0.1 MY_OWNER MY_OWNER spellcasting.affliction acid
+	setvard MY_DOT MY_BASE_DMG
+	multiply MY_DOT 0.1
+	setvard PUSH_LIST $get_tsphere(enemy,MY_AOE)
+	if ( PUSH_LIST isnot none ) calleventloop $get_token_amt(PUSH_LIST) push_loop
+	//attachsprite SPRITE_EXPLODE trans 20 1.0
+	playsound 0 10 SOUND_EXPLODE
+	clientevent new all effects/sfx_acid_splash $get(ent_me,origin)
+	//drop splodie sprite here
+	setvard IS_ACTIVE 0
+	callevent 0.1 remove_me
+}
+
+{ push_loop
+	local CUR_TARG $get_token(PUSH_LIST,game.script.iteration)
+
+	applyeffect CUR_TARG effects/greater_poison 5 MY_OWNER MY_DOT
+}
+
+
+{ remove_me
+	deleteent ent_me	
+}
+
+{ game_death
+	setmodel none
+	setidleanim none
+	setanim.framerate 0
+	setalive 1 //without this ye get studio frame advance error
+	callevent go_splodie "slain"
+}

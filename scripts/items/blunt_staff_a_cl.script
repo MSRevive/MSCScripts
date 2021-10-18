@@ -1,0 +1,80 @@
+{
+	const BEAM_WIDTH 10.0
+	const BEAM_AMP 0.01
+}
+
+{ client_activate
+	setvard FX_OWNER PARAM1
+	setcallback render enable
+	setvard FX_ACTIVE 1
+	callevent fx_loop
+}
+
+{ fx_loop
+	if FX_ACTIVE
+	callevent 0.25 fx_loop
+	if ( game.time > NEXT_SPARK )
+	{
+		setvard NEXT_SPARK game.time
+		add NEXT_SPARK $randf(0.25,1.0)
+		local BEAM_START $getcl(FX_OWNER,attachment1)
+		local BEAM_END BEAM_START
+		local OWNER_VIEWANGS $getcl(FX_OWNER,viewangles)
+		vectoradd BEAM_END $relpos(OWNER_VIEWANGS,$vec(0,1024,0))
+		local TRACE_LINE $get_traceline(BEAM_START,BEAM_END,worldonly)
+		if TRACE_LINE isnot BEAM_END
+		cleffect spark TRACE_LINE
+		local RND_SPARK $rand(1,3)
+		if ( RND_SPARK == 1 ) sound.play3d buttons/spark1.wav 5 TRACE_LINE
+		if ( RND_SPARK == 2 ) sound.play3d buttons/spark2.wav 5 TRACE_LINE
+		if ( RND_SPARK == 3 ) sound.play3d buttons/spark4.wav 5 TRACE_LINE
+		//spark sound, if needed sound.play3d magic/freeze.wav 10 PARAM1
+	}
+
+	if ( game.localplayer.index equals FX_OWNER )
+	{
+		if ( !game.localplayer.thirdperson ) local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+	local BEAM_START $getcl(FX_OWNER,attachment1)
+	local BEAM_END BEAM_START
+	local OWNER_VIEWANGS $getcl(FX_OWNER,viewangles)
+	vectoradd BEAM_END $relpos(OWNER_VIEWANGS,$vec(0,1024,0))
+	cleffect beam_end FX_OWNER 1 BEAM_END lgtning.spr 0.25 BEAM_WIDTH BEAM_AMP 0.3 0.1 30 (2,0,0)
+}
+
+{ end_fx
+	setvard FX_ACTIVE 0
+	callevent 1.0 remove_fx
+}
+
+{ remove_fx
+	removescript
+}
+
+{ game_prerender
+	if FX_ACTIVE
+	if game.localplayer.index equals FX_OWNER
+	if !game.localplayer.thirdperson
+
+	local BEAM_START $getcl(game.localplayer.viewmodel.active.id,attachment1)
+	local BEAM_END BEAM_START
+	local OWNER_VIEWANGS $getcl(FX_OWNER,viewangles)
+	vectoradd BEAM_END $relpos(OWNER_VIEWANGS,$vec(0,1024,0))
+
+	//dbg viewang OWNER_VIEWANGS
+
+	cleffect beam_points BEAM_START BEAM_END lgtning.spr 0.001 BEAM_WIDTH BEAM_AMP 0.3 0.1 30 (2,0,0)
+	cleffect frameent sprite 3dmflaora.spr BEAM_START setup_flare
+}
+
+
+{ setup_flare
+
+	cleffect frameent set_current_prop renderamt 200
+	cleffect frameent set_current_prop rendermode add
+	cleffect frameent set_current_prop rendercolor (255,0,0)
+	cleffect frameent set_current_prop scale 0.25
+	cleffect frameent set_current_prop frame 0
+}
+

@@ -1,0 +1,108 @@
+{
+
+	const NO_PARRY 1
+
+	const NO_IDLE 1
+
+	const ANIM_HANDS_DOWN 3
+	const ANIM_LIFT1 2
+	const ANIM_LOWER 3
+	const ANIM_IDLE1 1
+	const ANIM_IDLE_TOTAL 1
+	const ANIM_ATTACK1 4
+	const ANIM_SHEATH 3
+	const MODEL_VIEW viewmodels/v_martialarts.mdl
+  const MODEL_HANDS      	none
+  const MODEL_WORLD      	none
+  const SOUND_SWIPE      	weapons/swingsmall.wav
+  const SOUND_HITWALL1      	weapons/cbar_hitbod1.wav
+  const SOUND_HITWALL2      	weapons/cbar_hitbod2.wav
+
+  const MODEL_BODY_OFS		0
+  const ANIM_PREFIX		fists
+
+  //Used in base_melee
+  //------------------
+  const MELEE_RANGE		50
+  const MELEE_DMG_DELAY		0.3
+  const MELEE_ATK_DURATION	0.9
+  const MELEE_ENERGY		1
+  const MELEE_DMG		60
+  const MELEE_DMG_RANGE     	0
+  const MELEE_DMG_TYPE		blunt
+  const MELEE_ACCURACY		70%
+  const MELEE_STAT		martialarts
+  const MELEE_VIEWANIM_ATK     	ANIM_ATTACK1
+
+  const MELEE_SOUND     	SOUND_SWIPE
+  const MELEE_SOUND_DELAY     	MELEE_DMG_DELAY
+  const MELEE_PARRY_CHANCE     	0%
+
+  const PLAYERANIM_AIM		fists
+  //const PLAYERANIM_SWING	axe_onehand_swing
+}
+
+#include items/base_melee
+#include items/base_kick
+
+{  weapon_spawn
+
+   name 	Bare Fists
+   desc 	Your bare fists
+   weight 	0
+   size 	0
+   value	0
+   sethand 	undroppable
+}
+
+{ weapon_deploy
+
+	playviewanim  ANIM_HANDS_DOWN
+
+}
+
+{ [override] melee_start
+
+  playviewanim  ANIM_ATTACK1
+
+  if( PUNCH_ATTACK == 0 )
+  {
+  	local l.punch_anim stance_normal_lowjab_r1
+  	setvard PUNCH_ATTACK 1
+  }
+  else if( PUNCH_ATTACK == 1 )
+  {
+  	local l.punch_anim stance_normal_lowjab_r2
+  	setvard PUNCH_ATTACK 0
+  }
+
+  playowneranim once l.punch_anim global.anim.combatwalk 3
+
+  //playsound game.sound.weapon game.sound.maxvol SOUND_SWIPE
+  setvard FISTS_LAST_ATTACK game.time
+  callevent punch1_done		//Lower fists in 5 seconds
+}
+
+{ punch1_done
+  repeatdelay 1
+
+  if FISTS_LAST_ATTACK
+  local l_elapsedtime game.time
+  subtract l_elapsedtime FISTS_LAST_ATTACK
+
+  if l_elapsedtime > 5
+
+  playviewanim ANIM_LOWER
+  setvard FISTS_LAST_ATTACK 0
+}
+
+{ hitwall
+
+  playrandomsound game.sound.weapon game.sound.maxvol SOUND_HITWALL1 SOUND_HITWALL2
+}
+
+{ ext_activate_items
+	if PARAM1 equals $get(ent_owner,id)
+	dbg ext_activate_items ext_register_fists
+	callexternal ent_owner ext_register_fists $get(ent_me,id)
+}

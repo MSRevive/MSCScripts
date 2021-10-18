@@ -1,0 +1,93 @@
+//temporary dynamic sprite on a specific attachment
+//render props format: fadeout:0|1;scale;renderamt;rendermode;rendercolor;framerate;frames
+#scope client
+{ client_activate //<render_props> <owner_model> <attach_idx> <duration> <sprite_name> <glow:0|1> <color> <rad>
+
+	setvard RENDER_PROPS PARAM1
+	//render props format: fadeout:0|1;scale;renderamt;rendermode;rendercolor;framerate;frames
+
+	setvard MY_OWNER PARAM2
+	setvard ATTACH_IDX PARAM3
+	setvard FX_DURATION PARAM4
+	setvard SPRITE_NAME PARAM5 //be sure to precache
+	setvard DO_GLOW PARAM6
+	setvard GLOW_COLOR PARAM7
+	setvard GLOW_RAD PARAM8
+
+	setcallback render enable
+
+	if ( ATTACH_IDX == 0 ) setvard SPRITE_POS $getcl(MY_OWNER,attachment0)
+	if ( ATTACH_IDX == 1 ) setvard SPRITE_POS $getcl(MY_OWNER,attachment1)
+	if ( ATTACH_IDX == 2 ) setvard SPRITE_POS $getcl(MY_OWNER,attachment2)
+	if ( ATTACH_IDX == 3 ) setvard SPRITE_POS $getcl(MY_OWNER,attachment3)
+
+	dbg **** mdl MY_OWNER attch ATTACH_IDX $getcl(MY_OWNER,attachment0) $getcl(MY_OWNER,attachment1) $getcl(MY_OWNER,attachment2) $getcl(MY_OWNER,attachment3) [ SPRITE_POS ]
+	//dbg *** delay FX_DURATION
+
+	if ( DO_GLOW )
+	{
+		cleffect light new SPRITE_POS GLOW_RAD GLOW_COLOR FX_DURATION
+		setvard SKEL_LIGHT_ID game.script.last_light_id
+	}
+
+	cleffect tempent sprite SPRITE_NAME SPRITE_POS setup_attach_sprite update_attach_sprite
+
+	callevent FX_DURATION end_fx
+
+	setvard FX_ACTIVE 1
+	callevent keep_sprite_pos
+}
+
+{ keep_sprite_pos
+	if FX_ACTIVE
+	//can't track this in update event for some reason, so tracking it here
+	callevent 0.01 keep_sprite_pos
+	if ( ATTACH_IDX == 0 ) setvard SPRITE_POS $getcl(MY_OWNER,attachment0)
+	if ( ATTACH_IDX == 1 ) setvard SPRITE_POS $getcl(MY_OWNER,attachment1)
+	if ( ATTACH_IDX == 2 ) setvard SPRITE_POS $getcl(MY_OWNER,attachment2)
+	if ( ATTACH_IDX == 3 ) setvard SPRITE_POS $getcl(MY_OWNER,attachment3)
+}
+
+{ end_fx
+	dbg **** END FX
+	setvard FX_ACTIVE 0
+	callevent 1.0 remove_me
+}
+
+{ remove_me
+	removescript
+}
+
+{ game_prerender
+
+//	if ( !$getcl(MY_OWNER,exists) ) callevent end_fx
+//	if $getcl(MY_OWNER,exists)
+
+	if ( DO_GLOW )
+	{
+		local L_POS $getcl(SKEL_ID,origin)
+		cleffect light SKEL_LIGHT_ID L_POS GLOW_RAD GLOW_COLOR 1.0
+	}
+}
+
+{ update_attach_sprite
+	//dbg **** mdl MY_OWNER attch ATTACH_IDX - $getcl(MY_OWNER,attachment0) $getcl(MY_OWNER,attachment1) $getcl(MY_OWNER,attachment2) $getcl(MY_OWNER,attachment3) [ SPRITE_POS ]
+	cleffect tempent set_current_prop origin SPRITE_POS
+	//dbg ** SPRITE_POS
+}
+
+{ setup_attach_sprite
+	//can't use this method - makes sprite die early
+	//cleffect tempent set_current_prop owner MY_OWNER
+	//cleffect tempent set_current_prop follow MY_OWNER ATTACH_IDX
+	cleffect tempent set_current_prop death_delay FX_DURATION
+	if ( $get_token(RENDER_PROPS,0) == 1 ) cleffect tempent set_current_prop fadeout lifetime
+	cleffect tempent set_current_prop scale $get_token(RENDER_PROPS,1)
+	cleffect tempent set_current_prop renderamt $get_token(RENDER_PROPS,2)
+	cleffect tempent set_current_prop rendermode $get_token(RENDER_PROPS,3)
+	cleffect tempent set_current_prop rendercolor $get_token(RENDER_PROPS,4)
+	cleffect tempent set_current_prop collide none
+	cleffect tempent set_current_prop framerate $get_token(RENDER_PROPS,5)
+	cleffect tempent set_current_prop frames $get_token(RENDER_PROPS,6)
+	cleffect tempent set_current_prop update 1
+}

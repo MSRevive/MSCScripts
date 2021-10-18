@@ -1,0 +1,301 @@
+{
+
+	const SOUND_CHARGE      	magic/fireball_powerup.wav
+	const SOUND_SHOOT      	magic/fireball_strike.wav
+	const SPECIAL01_SND 	$get(ent_owner,scriptvar,'PLR_SOUND_JAB2')
+	const SOUND_PARRY weapons/parry.wav
+
+	const SWORD_MANUAL_PARRY 1
+
+  const ANIM_LIFT         0
+  const ANIM_IDLE1         1
+  const ANIM_ATTACK1       2
+  const ANIM_ATTACK2       2
+  const ANIM_ATTACK3  2
+  const ATTACK_ANIMS  1
+  const ANIM_LUNGE   3
+  const ANIM_PARRY1       4
+  const ANIM_PARRY1_RETRACT 5
+  const ANIM_UNSHEATH       6
+  const ANIM_SHEATH       7
+  const ANIM_PARRY_DEBUG 4
+  const ANIM_UNPARRY_DEBUG 5
+  const MODEL_VIEW viewmodels/v_2hswords.mdl
+  const MODEL_VIEW_IDX 4
+
+const MODEL_HANDS weapons/p_weapons2.mdl
+const MODEL_WORLD weapons/p_weapons2.mdl
+
+  const SOUND_SWIPE       weapons/swingsmall.wav
+  const SOUND_HITWALL1       weapons/cbar_hit1.wav
+  const SOUND_HITWALL2       weapons/cbar_hit2.wav
+  const SOUND_DRAW       weapons/swords/sworddraw.wav
+	const SOUND_SHOUT $get(ent_owner,scriptvar,'PLR_SOUND_SHOUT1')
+
+	const BASE_LEVEL_REQ 15
+
+const MODEL_BODY_OFS 104
+  const ANIM_PREFIX  khopesh
+
+  //Used in base_melee
+  //------------------
+  const MELEE_RANGE  80
+  const MELEE_DMG_DELAY  0.6
+  const MELEE_ATK_DURATION 1.3
+  const MELEE_ENERGY  1
+  const MELEE_DMG  200
+  const MELEE_DMG_RANGE      140
+  const MELEE_DMG_TYPE  fire
+  const MELEE_ACCURACY  75%
+  const MELEE_STAT  swordsmanship
+  const MELEE_ALIGN_BASE 3,10 
+  const MELEE_ALIGN_TIP  0,-10
+  const MELEE_VIEWANIM_ATK      ANIM_ATTACK1
+
+  const MELEE_SOUND      SOUND_SWIPE
+  const MELEE_SOUND_DELAY      MELEE_DMG_DELAY
+  const MELEE_PARRY_CHANCE      60%
+  const MELEE_NEW_PARRY_CHANCE  50
+
+  const PLAYERANIM_AIM  sword_double_idle
+  const PLAYERANIM_SWING sword_double_swing
+
+	precache magic/spookie1.wav
+}
+
+#include items/swords_base_twohanded
+
+{ weapon_spawn
+
+   name  a|Novablade
+   desc  This is a twisted blade of elemental fire 
+   weight  75
+   size  9
+   value 3750
+   sethudsprite trade 115
+
+	callevent register_charge2
+	callevent register_charge3
+
+   sethand both
+}
+
+{ [override] melee_start
+
+  local SWING $rand(1,3)
+  if( SWING == 1 ) setvard SWING_ANIM ANIM_ATTACK1
+  if( SWING == 2 ) setvard SWING_ANIM ANIM_ATTACK2
+  if( SWING == 3 ) setvard SWING_ANIM ANIM_ATTACK3
+  playowneranim once sword_double_swing
+  playviewanim  SWING_ANIM
+  volume 10
+  playsound 1 SOUND_SWIPE
+}
+
+{ [override] special_01_start
+
+	playviewanim  ANIM_LUNGE
+   	playowneranim once axe_twohand_swing
+ 	playsound const.snd.weapon const.snd.maxvol SPECIAL01_SND
+}
+
+{ special_01_strike ////PARAM1: "none"/"npc"/"world"   2: Attack end Position   3: Entity hit (if any)
+
+	playsound 0 10 ambience/steamburst1.wav
+
+	if $get(PARAM3,relationship,ent_owner) equals enemy
+	if ( game.pvp == 0 ) //pvp
+	{
+		if ( $get(PARAM3,isplayer) ) local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+	
+	local DMG_FIRE $get(ent_owner,skill.spellcasting.fire)
+
+	applyeffect PARAM3 effects/effect_burn 5 $get(ent_owner,id) DMG_FIRE
+}
+
+{ blockmode_start
+
+ playviewanim  ANIM_PARRY1
+ playowneranim once sword_swing
+ setvard PARRY_ON 1
+}
+
+{ blockmode_end
+
+ playviewanim  ANIM_PARRY1_RETRACT
+ setvard PARRY_ON 0
+}
+
+{ [override] register_charge1
+
+	//thothie made seperate so can override
+
+   //Default charge up attack - Double damage for holding to 100%
+   //============================================================
+
+   local reg.attack.type		strike-land
+   local reg.attack.range		MELEE_RANGE
+   local reg.attack.dmg			MELEE_DMG
+   local reg.attack.dmg.range		MELEE_DMG_RANGE
+   local reg.attack.dmg.type		MELEE_DMG_TYPE
+   local reg.attack.energydrain		MELEE_ENERGY
+   local reg.attack.stat		spellcasting.fire
+   local reg.attack.hitchance		MELEE_ACCURACY
+   local reg.attack.delay.strike	MELEE_DMG_DELAY
+   local reg.attack.delay.end		MELEE_ATK_DURATION
+   local reg.attack.ofs.startpos	MELEE_STARTPOS
+   local reg.attack.ofs.aimang		MELEE_AIMANGLE
+   local reg.attack.noise		MELEE_NOISE
+
+   local reg.attack.priority	1
+   local reg.attack.keys	-attack1
+   local reg.attack.callback	special_01
+   multiply reg.attack.dmg	2
+   local reg.attack.chargeamt	100%
+   local reg.attack.reqskill	10
+
+   registerattack
+}
+
+{ register_charge2
+
+   local reg.attack.type		strike-land
+   local reg.attack.range		MELEE_RANGE
+   local reg.attack.dmg			MELEE_DMG
+   local reg.attack.dmg.range		MELEE_DMG_RANGE
+   local reg.attack.dmg.type		MELEE_DMG_TYPE
+   local reg.attack.energydrain		MELEE_ENERGY
+   local reg.attack.stat		spellcasting.fire
+   local reg.attack.hitchance		MELEE_ACCURACY
+   local reg.attack.delay.strike	MELEE_DMG_DELAY
+   local reg.attack.delay.end		MELEE_ATK_DURATION
+   local reg.attack.ofs.startpos	MELEE_STARTPOS
+   local reg.attack.ofs.aimang		MELEE_AIMANGLE
+   local reg.attack.noise		MELEE_NOISE
+
+   local reg.attack.priority	2.5
+   local reg.attack.keys	-attack1
+   local reg.attack.callback	special_02
+   multiply reg.attack.dmg	3
+   local reg.attack.chargeamt	200%
+   local reg.attack.reqskill	20
+
+   registerattack
+}
+
+{ register_charge3
+
+   local reg.attack.type		strike-land
+   local reg.attack.range		MELEE_RANGE
+   local reg.attack.dmg			MELEE_DMG
+   local reg.attack.dmg.range		MELEE_DMG_RANGE
+   local reg.attack.dmg.type		MELEE_DMG_TYPE
+   local reg.attack.energydrain		MELEE_ENERGY
+   local reg.attack.stat		spellcasting.fire
+   local reg.attack.hitchance		MELEE_ACCURACY
+   local reg.attack.delay.strike	MELEE_DMG_DELAY
+   local reg.attack.delay.end		MELEE_ATK_DURATION
+   local reg.attack.ofs.startpos	MELEE_STARTPOS
+   local reg.attack.ofs.aimang		MELEE_AIMANGLE
+   local reg.attack.callback		melee
+   local reg.attack.noise		MELEE_NOISE
+
+   local reg.attack.priority	3
+   local reg.attack.keys	-attack1
+   local reg.attack.callback	special_03
+   multiply reg.attack.dmg	3
+   local reg.attack.chargeamt	300%
+   local reg.attack.reqskill	30
+
+   registerattack
+}
+
+{ special_02_start
+
+	playsound 0 10 SOUND_CHARGE
+	playviewanim  ANIM_LUNGE
+   	playowneranim once axe_twohand_swing
+ 	playsound const.snd.weapon const.snd.maxvol SPECIAL01_SND
+}
+
+{ special_02_strike
+
+	if ( $get(ent_owner,mp) < 100 )
+	{
+		playermessage Novablade: Flaming Skull - insufficient mana!
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	givemp -100
+	callexternal ent_owner mana_drain //update mana on player hud readout, if using hud feedback
+
+	playsound 0 10 SOUND_SHOOT
+
+	local DMG_FIRE $get(ent_owner,skill.spellcasting.fire)
+	multiply DMG_FIRE 0.4
+	createnpc monsters/summon/flame_skull $relpos(0,0,0) $get(ent_owner,id) DMG_FIRE 256 spellcasting.fire
+}
+
+{ special_03_start
+
+	playsound 0 10 SOUND_CHARGE
+	playviewanim  ANIM_LUNGE
+   	playowneranim once axe_twohand_swing
+ 	playsound const.snd.weapon const.snd.maxvol SPECIAL01_SND
+}
+
+{ special_03_strike
+
+	if ( $get(ent_owner,mp) < 100 )
+	{
+		playermessage Novablade: Volcano - insufficient mana!
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	if ( VOLCANO_ON )
+	{
+		playermessage Novablade can only generate one volcano at a time
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	setvard VOLCANO_ON 1
+	callevent 30.0 volcano_reset
+
+	givemp -100
+	callexternal ent_owner mana_drain //update mana on player hud readout, if using hud feedback
+
+	 local pos $get(ent_owner,origin)
+	 local temp $get_ground_height(pos)
+	 local x $vec.x(pos)
+	 local y $vec.y(pos)
+	 local pos $vec(x,y,temp)
+	 createnpc monsters/summon/preset_volcano pos $get(ent_owner,id) 0 20 spellcasting.fire
+}
+
+{ volcano_reset
+
+	setvard VOLCANO_ON 0
+}
+
+//{ parryanim
+//
+//	//WTF WON'T THIS PLAY!??! - Thothie (frustrated)
+//	//- Thothie answers himself from the future: It's because the way this is called it's a server side event
+//	//playviewanim is a client side script - need a new command to play viewanims from the server
+//	playviewanim  ANIM_PARRY1
+//	//playviewanim critical parry1
+//	//playowneranim once sword_swing
+//	playsound 0 10 SOUND_PARRY
+//	callevent 0.75 unparryanim
+//}
+//
+//{ unparryanim
+//
+//	playviewanim  ANIM_PARRY1_RETRACT
+//	//playviewanim critical parry1_retract
+//}

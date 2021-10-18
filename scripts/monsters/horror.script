@@ -1,0 +1,502 @@
+//This is an older script and may have some bad conventions as a result.
+
+//Also, I apologize, this script is a mess.
+
+//Horror by Thothie - From scratch
+//- Big flyin death machine, arial poison spit attack, close in blinding gas attack, gore attack
+//- new model monsters/edwardgoery.mdl
+//- new sprite poison_cloud.spr
+
+{
+	setvar AS_SUMMON_TELE_CHECK 1
+
+	const NPC_NO_END_FLY 1 //do not reset move type on death
+
+	setvar IS_UNHOLY 1
+
+	setvard CAN_ATTACK 1
+	setvard CAN_HUNT 1
+	setvard HUNT_AGRO 1
+	setvard CAN_FLY 1
+	setvard CAN_HEAR 1
+	setvard CAN_WANDER 1
+
+	const ATTACK_BLIND_RANGE 200
+
+	setvard CAN_RETALIATE 1
+	const RETALIATE_CHANGETARGET_CHANCE 100
+
+	setvard CAN_FLINCH 1
+	setvard FLINCH_CHANCE 10
+	setvard FLINCH_ANIM bite2
+	setvard FLINCH_DELAY 1
+
+	setvard CAN_FLEE 1
+	const FLEE_HEALTH 25
+	const FLEE_CHANCE 25
+	setvard FLEE_DISTANCE 2048
+
+	setvard ATTACK_RANGE 100
+	setvard ATTACK_HITRANGE 125
+	const MOVE_RAGE 30
+	const ATTACK_ACCURACY 80%
+	const ATTACK_DAMAGE 100
+
+	const SPIT_DAMAGE 50
+	const BREATH_DAMAGE_MIN 10
+	const BREATH_DAMAGE_MAX 20
+
+	setvar ANIM_IDLE hover
+	setvar ANIM_WALK fly1
+	const ANIM_SPIRAL fly2
+	const ANIM_FLY fly1
+	setvar ANIM_RUN fly2	//alternates between fly1 and fly2
+
+	const ANIM_HOVER hover
+	setvard ANIM_ATTACK bite1
+	const ANIM_SPIT bite1
+	const ANIM_BITE bite1
+	const ANIM_GORE bite2
+	const ANIM_BREATH breath
+	setvard ANIM_DEATH die
+	const ANIM_DEAD dead
+
+	const SOUND_IDLE1 controller/con_idle1.wav
+	const SOUND_IDLE2 controller/con_idle2.wav
+	const SOUND_IDLE3 controller/con_idle3.wav
+
+	const SOUND_ATTACK1 controller/con_attack1.wav
+	const SOUND_ATTACK2 controller/con_attack2.wav
+	const SOUND_ATTACK3 controller/con_attack3.wav
+
+	const SOUND_DEATH controller/con_die1.wav
+
+	const SOUND_PAIN0 debris/bustflesh2.wav		//most common
+	const SOUND_PAIN1 controller/con_pain1.wav	//rare > 50%
+	const SOUND_PAIN2 controller/con_die2.wav	//rare < 50%
+
+	const SOUND_SPIT1 bullchicken/bc_attack3.wav
+	const SOUND_SPIT2 bullchicken/bc_attack2.wav
+
+	const SOUND_SPRAY ambience/steamburst1.wav
+
+	const SOUND_FLAP1 monsters/bat/flap_big1.wav
+	const SOUND_FLAP2 monsters/bat/flap_big2.wav
+
+	const SOUND_LAND player/pl_fallpain1.wav
+
+	setvard DROP_GOLD 1
+	setvard DROP_GOLD_MIN 10
+	setvard DROP_GOLD_MAX 40
+
+	setvard SPIT_AMMO 8	//Sometimes gets +2 for false target died message on spawn
+	setvard BREATH_AMMO 1
+
+	const BREATH_SPRITE poison_cloud.spr
+
+	precache BREATH_SPRITE
+
+	setvard MONSTER_WIDTH 48	//for anti-stuck
+
+	setvard NO_STUCK_CHECKS 1	//for anti-stuck
+
+	//setvard IMMUNE_POISON 1
+
+	setvard NO_ADVANCED_SEARCHES 1
+
+	//base flyer settings
+
+	precache monsters/edwardgorey.mdl	//for older SC.DLL users
+}
+
+#include monsters/base_flyer
+#include monsters/base_monster_new
+
+{ npc_spawn
+
+	if ( game.map.name equals calruin2 )
+	{
+		local VER_NAME $get_by_name(map_verify)
+		local VER_ID $get(VER_NAME,id)
+		if !$get(VER_ID,exists)
+		infomsg all DATED_MAP This version of Calruin2 is dated, the Black Smith and Horrors will not spawn
+		deleteent ent_me
+	}
+
+   name a|Horror
+   hp 500	//hi HP, no armor
+   width 22
+   height 22
+	setbbox npcsize
+   roam 1
+   fly 1
+	setvard I_FLY 1
+   float 0
+   race demon
+   setidleanim ANIM_WALK
+   setmoveanim ANIM_WALK
+   takedmg holy 4.0
+   takedmg poison 0.0
+   hearingsensitivity 5
+   setmodel monsters/edwardgorey.mdl
+   setvard NPC_GIVE_EXP 200
+   callevent 1.0 idle_sounds
+	setvard FLIGHT_SCANNING 1
+	//callevent 2.0 int_flight_check
+
+}
+
+{ npcatk_targetvalidate
+
+	if $cansee(enemy)
+
+	setvard LAST_TARGET $get(ent_lastsseen,id)
+
+	if ( SPIT_AMMO >= 1 )
+	{
+		//hover mode
+		setvard SPITTING 1
+		//do not move any closer
+		setvard MOVE_RANGE 9999
+		//movespeed 0.01
+		setidleanim ANIM_HOVER
+		setmoveanim ANIM_HOVER
+		if !FIRE_DELAY
+		setvard FIRE_DELAY 1
+		callevent 0.75 reset_fire_delay
+		playanim critical ANIM_ATTACK
+		playrandomsound 0 10 SOUND_SPIT1 SOUND_SPIT2
+		subtract SPIT_AMMO 1
+	}
+	else
+	{
+		callevent fly_mode
+	}
+}
+
+{ reset_fire_delay
+	setvard FIRE_DELAY 0
+}
+
+{ fly_mode
+
+	//setvard NO_STUCK_CHECKS 0
+	//movespeed 1.0
+	setvard MOVE_RANGE 30
+	setidleanim ANIM_HOVER
+	if ( BREATH_AMMO > 0 )
+	{
+		setvar ANIM_RUN ANIM_SPIRAL
+	}
+	else
+	{
+		setvar ANIM_RUN ANIM_FLY
+	}
+	setmoveanim ANIM_RUN
+}
+
+{ reset_hunt_mode
+
+	If CYCLED_UP
+    callevent 1.0 reset_hunt_mode
+
+	if !$cansee(enemy)
+	callevent fly_mode
+}
+
+{ cycle_up
+	callevent reset_hunt_mode
+}
+
+//{ npc_monster_stuck
+//
+//	//dbg I seem to be stuck
+//	setmovedest LAST_TARGET MOVE_RANGE
+//	//setmovedest game.monster.origin 512 flee
+//}
+
+{ npc_selectattack
+
+	if ( BREATH_AMMO >= 1 )
+	{
+		setvar ANIM_RUN ANIM_SPIRAL
+		setvard ANIM_ATTACK ANIM_BREATH
+		subtract BREATH_AMMO 1
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB //else is being screwy here?
+
+	setvar ANIM_RUN ANIM_FLY
+	local BITE_TYPE $rand(1,4)
+	if ( BITE_TYPE > 1 ) setvard ANIM_ATTACK ANIM_BITE
+	if ( BITE_TYPE == 1 ) setvard ANIM_ATTACK ANIM_GORE
+}
+
+{ attack1	//called by model anim: bite1
+
+	if ( SPITTING )
+	{
+		tossprojectile view 500 SPIT_DAMAGE 0.5 proj_poison_spit2 (0,0,0)
+		setvard SPITTING 0
+		setvard NEXT_HSTUCK_CHECK game.time
+		add NEXT_HSTUCK_CHECK 3.0
+		if ( SPIT_AMMO == 0 ) callevent fly_mode
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	dodamage ENTITY_ENEMY ATTACK_HITRANGE ATTACK_DAMAGE ATTACK_ACCURACY
+	playrandomsound 0 10 SOUND_ATTACK1 SOUND_ATTACK2 SOUND_ATTACK3
+	if ( $rand(1,2) == 1 ) setvard ANIM_ATTACK ANIM_GORE	//developer - set back to 20
+
+}
+
+{ attack2	//called by model anim: bite2
+
+	dodamage ENTITY_ENEMY ATTACK_HITRANGE ATTACK_DAMAGE ATTACK_ACCURACY
+
+	playrandomsound 0 10 SOUND_ATTACK1 SOUND_ATTACK2 SOUND_ATTACK3
+
+	setvard ANIM_ATTACK ANIM_BITE
+
+	if $get(ent_laststruckbyme,range) <= ATTACK_HITRANGE
+    applyeffect $get(ent_laststruckbyme,id) effects/effect_push 1 $relvel(-250,50,10) 0
+}
+
+{ stop_spraying
+
+	setvard SPRAYING_GAS 0
+}
+
+{ spiral_charge //called by model anim: fly2
+
+	if ( $rand(1,2) == 1 ) setvar ANIM_RUN ANIM_FLY	//try to vary moves
+	playrandomsound 0 10 SOUND_FLAP1 SOUND_FLAP2
+}
+
+{ turret_horror //called by model anim: hover
+
+	playrandomsound 0 10 SOUND_FLAP1 SOUND_FLAP2
+}
+
+{ game_death
+	addvelocity ent_me $relvel(0,0,-200)
+}
+
+{ npc_death
+
+	//setsolid none
+	//setbbox none
+	//setprop ent_me movetype const.movetype.noclip
+	//setanim.movespeed 30
+	//movespeed 2.0
+	//addvelocity ent_me $relvel(0,0,-50)
+	setmoveanim ANIM_DEATH
+	setidleanim ANIM_DEAD
+	setactionanim ANIM_DEATH
+
+	playsound 0 10 SOUND_DEATH
+	playanim critical ANIM_DEATH
+}
+
+{ npc_struck
+
+	local MY_HEALTH $get(ent_me,hp)
+	local MY_HURT_STAGE $get(ent_me,maxhp)
+	divide MY_HURT_STAGE 2
+
+	if ( MY_HEALTH >= MY_HURT_STAGE ) playrandomsound 0 10 SOUND_PAIN0 SOUND_PAIN0 SOUND_PAIN1
+	if ( MY_HEALTH <= MY_HURT_STAGE ) playrandomsound 0 10 SOUND_PAIN0 SOUND_PAIN0 SOUND_PAIN2
+}
+
+{ breath_reload
+
+	add BREATH_AMMO 1
+}
+
+{ breath_attack	//called by model anim: breath
+
+	//dbg temp Breath Ammo
+	
+	//tempent trail 	<modelname/spritename> <start> <dest> <count> <life> <scale> <speed> <randomness>
+	effect tempent trail BREATH_SPRITE $relpos(0,32,0) $relpos(0,200,20) 1 1 8 15 0	//maybe make new summon NPC
+	playsound 0 10 SOUND_SPRAY
+
+	setvard SPRAYING_GAS 1
+	//dodamage $relpos(0,64,0) 250 10 100% 0 reflective	//crash - wtf?
+	callevent 1.0 stop_spraying
+
+	if $get(ent_lastseen,range) <= ATTACK_BLIND_RANGE
+	//dbg Trying to poison Range $get(ent_laststruckbyme,range) of ATTACK_HITRANGE
+	if ( $get(ent_lastseen,scriptvar,'IMMUNE_POISON') != 1 ) applyeffect ent_lastseen effects/blind $rand(3,8)
+
+	if BREATH_AMMO <= 0
+	callevent 20.0 breath_reload
+}
+
+{ my_target_died	//new in base_npc_attack
+
+	add SPIT_AMMO 2
+}
+
+{ npcatk_stopflee
+
+	setvar ANIM_RUN ANIM_SPIRAL
+}
+
+{ idle_sounds
+
+	local NEXT_SOUND $randf(3,10)
+
+	callevent NEXT_SOUND idle_sounds
+
+	if HUNT_LASTTARGET equals ¯NONE¯
+	playrandomsound 0 10 SOUND_IDLE1 SOUND_IDLE2 SOUND_IDLE3
+}
+
+{ game_dynamically_created
+
+	setvard MY_OWNER PARAM1
+	setvard AM_SUMMONED 1
+	setvard NO_SPAWN_STUCK_CHECK 1
+
+	setvard SPAWNED_ORG game.monster.origin
+	//dbg spawned @ SPAWNED_ORG
+	callevent 10.0 check_stuck_summon
+}
+
+{ check_stuck_summon
+	if ( SPITTING )
+	{
+		callevent 5.0 check_stuck_summon
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	if ( $cansee(player) )
+	{
+		local EXIT_SUB 1
+		callevent 5.0 check_stuck_summon
+	}
+	if !EXIT_SUB
+
+	if ( game.monster.origin equals SPAWNED_ORG )
+	{
+		callevent npc_suicide
+	}
+	else
+	{
+		callevent as_tele_stuck_check
+	}
+}
+
+{ game_death
+
+	if ( AM_SUMMONED ) callexternal MY_OWNER horror_died
+}
+
+{ remove_total_stuckage
+	subtract TOTAL_STUCKAGE 1
+}
+
+{
+repeatdelay 1.0
+	if IS_HUNTING
+	callevent npcatk_faceattacker
+	if ( $get(NPCATK_TARGET,range) > ATTACK_RANGE )
+	{
+		if $cansee(NPCATK_TARGET)
+		setvelocity ent_me $relvel(0,200,0)
+	}
+	if ( $get(NPCATK_TARGET,range) < ATTACK_RANGE ) setvelocity ent_me $vec(0,0,0)
+	if ( I_R_FROZEN ) setvelocity ent_me $vec(0,0,0)
+	if ( SPITTING )
+	{
+		if $cansee(HUNT_LASTTARGET)
+		setvelocity ent_me $vec(0,0,0)
+	}
+
+	if ( FLIGHT_STUCK > 4 )
+	{
+		//callevent chicken_run 1.0
+		callevent do_rand_tweedee
+		callevent npcatk_suspend_ai $randf(0.3,0.9)
+		setmovedest NEW_DEST game.monster.moveprox
+		callevent 0.1 horror_boost
+		add TOTAL_STUCKAGE 1
+		callevent 5.0 remove_total_stuckage
+		if ( TOTAL_STUCKAGE > 3 )
+		{
+			if AM_SUMMONED
+			callevent npc_suicide
+		}
+		setvard FLIGHT_STUCK 0
+	}
+
+	local TARG_POS $get(NPCATK_TARGET,origin)
+	if ( !SUSPEND_AI ) setangle face_origin TARG_POS
+
+	if !IS_FLEEING
+	if !SPITTING
+	if $get(NPCATK_TARGET,range) > ATTACK_RANGE
+	local CUR_PROG $dist(game.monster.origin,TARG_POS)
+	if ( LAST_PROG >= CUR_PROG ) add FLIGHT_STUCK 1
+	setvard LAST_PROG $dist(game.monster.origin,TARG_POS)
+	setvard LAST_POS game.monster.origin
+	
+}
+
+{ chicken_run
+	callevent 0.1 horror_boost
+}
+
+{ horror_boost
+	setvelocity ent_me $relvel(0,500,0)
+}
+
+{ npcatk_hunt
+	if $get(HUNT_LASTTARGET,isalive)
+	if ( SPITTING )
+	{
+		if $cansee(HUNT_LASTTARGET)
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+	if game.time > NEXT_HSTUCK_CHECK
+	setvard NEXT_HSTUCK_CHECK game.time
+	add NEXT_HSTUCK_CHECK 0.5
+	if ( OLD_HSTUCK_POS equals 'OLD_HSTUCK_POS' )
+	{
+		setvard OLD_HSTUCK_POS $get(ent_me,origin)
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	local L_POS $get(ent_me,origin)
+	if ( $dist(L_POS,OLD_HSTUCK_POS) < 32 )
+	{
+		if $get(HUNT_LASTTARGET,range) > ATTACK_RANGE
+		add CUR_SOLUTION 1
+		if ( CUR_SOLUTION == 1 )
+		{
+			if !BAST_STUCK_DID_INIT
+			callevent as_tele_stuck_check
+			setvard OLD_HSTUCK_POS L_POS
+		}
+		else
+		{
+			setvard CUR_SOLUTION 0
+			local RND_LEFT $randf(-1000,1000)
+			local RND_FWD $randf(-2000,1000)
+			local RND_UP $randf(-1000,1000)
+			//local RND_YAW $randf(0,359.99)
+			//local MY_VEL $get(ent_me,velocity)
+			dbg solution #2 RND_LEFT RND_FWD RND_UP
+			setvelocity ent_me $relvel(RND_LEFT,RND_FWD,RND_UP)
+		}
+	}
+	else
+	{
+		setvard OLD_HSTUCK_POS L_POS
+	}
+}

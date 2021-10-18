@@ -1,0 +1,171 @@
+//6:01 AM 2/2/2005
+//Items
+//REQ:
+//	ANIM_LIFT1
+//	MODEL_VIEW
+//	MODEL_HANDS
+//	MODEL_WORLD
+
+//attempt to fix 0x0x0 bug by teleporting objects belonging to player off map for 1 second after spawn/death
+
+#include items/base_hide_stuff
+
+{
+	const ANIM_LIFT1 0
+	const ANIM_IDLE1 0
+	const ANIM_IDLE2 0
+	const ANIM_IDLE3 0
+	const ANIM_IDLE4 0
+	const ANIM_IDLE5 0
+	const ANIM_IDLE_DELAY_LOW 2
+	const ANIM_IDLE_DELAY_HIGH 5
+	setvard baseitem.canidle 1	//Changes
+	const PLAYERANIM_AIM blunt
+}
+
+#include items/base_item_extras
+
+{ game_spawn
+
+	if !IS_MAGIC_HAND
+
+	setanimext	PLAYERANIM_AIM
+
+	setworldmodel MODEL_WORLD
+	callevent item_spawn
+}
+
+{ game_pickup
+
+	if !IS_MAGIC_HAND
+
+	playviewanim  ANIM_LIFT1 
+
+	setmodel MODEL_HANDS
+	setmodelbody 0 game.item.hand_index
+
+	callevent item_pickup
+
+//	if game.serverside
+//
+//	if ( $get(ITEM_CURRENT_OWNER,isplayer) )
+//	{
+//		callevent 10.0 set_new_owner 
+//		if ( ITEM_CURRENT_OWNER isnot $get(ent_owner,id) ) gplayermessage ent_owner This item belonged to $get(ITEM_CURRENT_OWNER,name). Changing ownership... (10 seconds)
+//	}
+//	else
+//	{
+//		callevent 0.1 set_new_owner
+//	}
+}
+
+{ game_deploy
+
+	if !IS_WEAPON
+	if !IS_MAGIC_HAND
+
+	//temporary debug
+	//dbg game_deploy $get(ent_me,itemname)
+
+	setviewmodel  MODEL_VIEW
+
+	callevent item_deploy
+
+	if game.serverside
+	//popup setviewmodelprop MODEL_VIEW_IDX
+	if ITEM_MODEL_VIEW_IDX > 0
+	callevent 0.1 bi_setup_model
+}
+
+{ game_switchhands
+
+	if !IS_MAGIC_HAND
+
+	playviewanim  ANIM_IDLE1
+
+	callevent item_switchhands
+}
+
+{ game_drop
+
+	callevent item_drop
+
+	//dbg game_drop
+
+	//if game.serverside
+	//setvard ITEM_CURRENT_OWNER $get(ent_owner,id) //store owner if dropped
+	//if $get(ent_owner,scriptvar,'PLR_IS_TWINKER')
+	//if $get(ent_me,value) > 1000
+	//if $rand(1,5) == 1
+	//deleteent ent_me
+}
+
+{ game_attack_cancel
+
+	callevent game_viewanimdone
+}
+
+{ game_viewanimdone
+
+	if ANIM_IDLE_TOTAL > 0
+     
+	callevent $rand(ANIM_IDLE_DELAY_LOW,ANIM_IDLE_DELAY_HIGH) item_idle
+}
+
+{ item_idle
+
+	//dbg item_idle
+
+	if !NO_IDLE
+
+	if ANIM_IDLE_TOTAL > 0
+
+	if !game.item.attacking
+	if game.item.inhand
+	if baseitem.canidle
+
+	local l.anim $rand(1,ANIM_IDLE_TOTAL)
+	if( l.anim == 1 ) playviewanim ANIM_IDLE1
+	else if( l.anim == 2 ) playviewanim ANIM_IDLE2
+	else if( l.anim == 3 ) playviewanim ANIM_IDLE3
+	else if( l.anim == 4 ) playviewanim ANIM_IDLE4
+	else if( l.anim == 5 ) playviewanim ANIM_IDLE5
+}
+
+//{ [server] set_new_owner
+//
+//	if ( ITEM_CURRENT_OWNER isnot $get(ent_owner,id) ) callevent log_item_exchange ITEM_CURRENT_OWNER $get(ent_owner,id)
+//
+//	if ( $get(ITEM_CURRENT_OWNER,isplayer) )
+//	{
+//		if ( ITEM_CURRENT_OWNER isnot $get(ent_owner,id) )
+//		{
+//			//trasnfered ownership from one player to another
+//			if ( G_DEVELOPER_MODE ) gplayermessage ent_owner Old Owner $get(ITEM_CURRENT_OWNER,name) new owner $get(ent_owner,name)
+//			consolemsg ent_owner Ownership confirmed for: $get(ent_me,name)
+//			gplayermessage ent_owner New ownership confirmed for: $get(ent_me,name)
+//		}
+//	}
+//
+//	setvard ITEM_CURRENT_OWNER $get(ent_owner,id)
+//	if ( G_DEVELOPER_MODE ) messageall green $get(ent_me,name) set owner: $get(ITEM_CURRENT_OWNER,name)
+//}
+
+{ [server] bi_setup_model
+	if $get(ent_me,wielded)
+	setviewmodelprop ent_me submodel $get(ent_owner,scriptvar,'PLR_HAND_SET') ITEM_MODEL_VIEW_IDX
+	callevent 1.0 bitem_setup_model2
+}
+
+{ [server] bi_setup_model2
+	if $get(ent_me,wielded)
+	dbg bi_setup_model2
+	setviewmodelprop ent_me submodel $get(ent_owner,scriptvar,'PLR_HAND_SET') ITEM_MODEL_VIEW_IDX
+}
+
+
+//{ [server] game_removefrompack
+//	dbg game_removefrompack
+//	setvard ITEM_CURRENT_OWNER $get(ent_owner,id)
+//}
+

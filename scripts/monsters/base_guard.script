@@ -1,0 +1,107 @@
+//Thothie - human guards having problems across the board (always have) - hoping to make a base to help them out
+//- requires: ANIM_IDLE ANIM_ATTACK
+
+{ npc_spawn
+
+	roam 0
+	movespeed 0.0
+
+	callevent 1.0 set_guard_post
+	callevent 1.0 scan_for_enemies
+}
+
+{ set_guard_post
+
+	setvard MY_GUARD_POST $get(ent_me,origin)
+	setvard MY_ORG_ANGLES $get(ent_me,angles)
+}
+
+{ npc_struck
+
+	if !OH_IT_IS_ON
+	callevent baseguard_tobattle
+}
+
+{ npcatk_targetvalidate //called from base_npc_attack on spotting target
+
+	if !OH_IT_IS_ON
+	if $cansee(enemy)
+	callevent baseguard_tobattle
+}
+
+{ baseguard_tobattle //param1 = enemy triggered
+
+	//dbg TO BATTLE!
+	setvard OH_IT_IS_ON 1
+	movespeed 1.0
+	roam 1
+	setmoveanim	ANIM_RUN
+	setactionanim ANIM_ATTACK
+	playanim loop ANIM_ATTACK
+	if ( PARAM1 isnot 'PARAM1' ) setmovedest PARAM1 ATTACK_RANGE
+}
+
+//This return to post bit not working so good
+//plus it seems once you strike a guard, he never forgives you
+{ my_target_died	//called from base_npc_attack
+
+	if !$cansee(enemy)
+	setvard OH_IT_IS_ON 0
+	setangle face_origin MY_GUARD_POST
+	setmovedest MY_GUARD_POST 1
+	setvard MADE_IT_HOME 0
+	callevent going_home
+}
+
+{ game_heardsound
+
+	//dbg heard $get(ent_lastheard,relationship,ent_me) $get(ent-_astheard,name)
+
+	if $get(ent_lastheard,relationship,ent_me) equals enemy
+	if !$get(ent_lastheard,isplayer)
+	setvard HUNT_LASTTARGET ent_lastseen
+	setmovedest ent_lastheard ATTACK_RANGE
+	callevent baseguard_tobattle $get(ent_lastheard,id)
+}
+
+{ scan_for_enemies
+
+	if !OH_IT_IS_ON
+	callevent 1.1 scan_for_enemies
+
+	//dbg Enemy? $cansee(enemy)
+
+	if $cansee(enemy)
+	if !$get(ent_lastseen,isplayer)
+	setvard HUNT_LASTTARGET ent_lastseen
+	setmovedest ent_lastseen ATTACK_RANGE
+	callevent baseguard_tobattle $get(ent_lastseen,id)
+}
+
+{ going_home
+
+	if !$cansee(enemy)
+	if !MADE_IT_HOME
+	if !OH_IT_IS_ON
+
+	callevent 1.0 going_home
+	local MY_POS $get(ent_me,origin)
+	//dbg GoingHome distance $get(ent_me,"movedest.prox") vs $dist(MY_POS,MY_GUARD_POST) loc game.monster.movedest.origin
+
+	if ( game.monster.movedest.origin isnot MY_GUARD_POST ) setmovedest MY_GUARD_POST 1
+
+	if ( $dist(MY_POS,MY_GUARD_POST) < 10 )
+	{
+		if !OH_IT_IS_ON
+		//dbg made it home
+		local MY_POS $get(ent_me,origin)
+		setmovedest none
+		roam 0
+		movespeed 0.0
+		setmoveanim	ANIM_IDLE
+		setactionanim ANIM_IDLE
+		setangle face MY_ORG_ANGLES
+		callevent 1.0 scan_for_enemies
+		setvard MADE_IT_HOME 1
+	}
+}

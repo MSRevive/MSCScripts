@@ -1,0 +1,127 @@
+{
+  const ANIM_IDLE1        	0
+  const ANIM_LIFT1        	4
+  const ANIM_STRETCH      	8
+  const ANIM_FIRE      	7
+  const MODEL_VIEW       	weapons/bows/v_crossbow.mdl
+  const MODEL_HANDS      	weapons/bows/p_crossbow.mdl
+  const MODEL_WORLD      	weapons/bows/w_crossbow.mdl
+  const MODEL_WEAR		weapons/bows/crossbow_back.mdl
+  const SOUND_SHOOT      	weapons/bow/crossbow.wav
+  const ITEM_NAME		xbow
+}
+
+#include items/base_weapon
+
+{
+   eventname weapon_spawn
+
+   name 	a|Heavy Crossbow
+   desc 	A heavier crossbow that allows bolts to fly further
+   weight 	95
+   size 	12
+   value	3000
+   wearable     1 bow
+   setanimext   bow
+   setworldmodel MODEL_WORLD
+   setviewmodel MODEL_VIEW
+   setpmodel	MODEL_HANDS
+   sethand	both
+   sethudsprite hand bow
+   sethudsprite trade ITEM_NAME
+   callevent	register_shoot
+   setmodelbody	0 1	//For Jesters upcoming model
+   precache MODEL_VIEW
+}
+
+
+{
+  eventname deploy
+
+  setviewmodel  MODEL_VIEW
+
+  setholdmodel ITEM_NAME
+  setmodelbody 0 1
+}
+{
+  eventname pickup
+
+  playviewanim  ANIM_LIFT1 
+}
+{
+  eventname switchhands
+
+  playviewanim  ANIM_IDLE1
+}
+
+{
+  eventname wear
+  setviewmodel none
+  setmodel MODEL_WEAR
+  playermessage You sling a crossbow onto your back.
+}
+
+{
+  eventname removefromowner
+
+  setmodelbody 0 0
+  callownerevent drop_orcbow
+}
+
+//Normal attack
+{
+  eventname register_shoot
+
+  setvar ATTACK_TYPE		charge-throw-projectile
+  setvar ATTACK_DAMAGE_TYPE	none
+  setvar ATTACK_KEYS		+attack1
+  setvar ATTACK_PRIORITY	0
+  setvar ATTACK_EVENT		shoot
+  setvar ATTACK_LAND_EVENT	shoot_fire
+  setvar ATTACK_DONE_EVENT	shoot_done
+
+  //default values
+  setvard ATTACK_RANGE		1900
+  setvar ATTACK_ENERGY		0.1
+  setvar ATTACK_PROJMINHOLD     2.0
+  setvar ATTACK_PROJMAXHOLD	2.0
+  setvar ATTACK_DURATION	0.001
+  setvar ATTACK_ACCURACYSTAT	archery
+  setvar ATTACK_ACCURACYDEFAULT	0.01//degree spread... higher = more inaccurate
+  setvar ATTACK_ALIGN_BASE	0,0 
+  setvar ATTACK_ALIGN_TIP	0,0//angle offset
+  setvar ATTACK_PROJECTILE	bolt
+
+  registerattack
+}
+{
+  eventname shoot
+
+  playviewanim  ANIM_STRETCH
+  playowneranim break
+  playowneranim hold bow_fire
+  callownerevent commenceattack
+}
+
+{
+  eventname shoot_fire
+
+  volume 10
+  playsound 1 SOUND_SHOOT
+  playviewanim  ANIM_FIRE
+  callownerevent attackstrike
+}
+
+
+{
+  eventname shoot_done
+
+  playviewanim  ANIM_LIFT1
+  playowneranim critical aim_bow aim_bow 1.2
+  calleventtimed 1 shoot_returnstanding
+}
+{
+  eventname shoot_returnstanding
+  if CURRENTLY_ATTACKING == 0
+  playowneranim once bow_aim_to_stand
+}

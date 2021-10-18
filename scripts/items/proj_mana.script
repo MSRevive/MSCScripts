@@ -1,0 +1,308 @@
+//magic bolt that varies with size by the energy put into it
+{
+	const MODEL_HANDS      		none
+	const MODEL_WORLD      		none
+	const ARROW_BODY_OFS		6
+
+	const SOUND_SHOOT ambience/alienflyby1.wav
+	const SOUND_ZAP1 debris/beamstart14.wav
+	const SOUND_ZAP2 debris/beamstart14.wav
+	const SOUND_ZAP3 debris/zap1.wav
+
+	const ARROW_SOLIDIFY_ON_WALL 0
+
+	const HITWALL_VOL 2
+
+	const PROJ_MOTIONBLUR 0
+
+	const MODEL_BODY_OFS		0
+	const PROJ_DAMAGE			0
+	const PROJ_STICK_DURATION	0
+	const PROJ_SOLIDIFY_ON_WALL	0  //Does not turn solid when a wall is hit
+
+	const PROJ_DAMAGE_AOE_RANGE	0
+	const PROJ_DAMAGE_AOE_FALLOFF	1
+	const PROJ_DAMAGE_TYPE		magic
+
+	const PROJ_COLLIDEHITBOX 1
+	const PROJ_IGNORENPC 1
+	const PROJ_ANIM_IDLE none
+}
+
+#include items/proj_arrow_base
+
+{  arrow_spawn
+
+	name 	a|Manabolt
+	desc 	Manabolt
+	weight 	0
+	size 	16
+	value	16
+	gravity	0.0001
+
+	setmodel none
+
+	callevent 10.0 remove_me
+
+	setvard GAME_PVP game.pvp
+
+	projectiletouch 1
+}
+
+{ game_touch
+	if game.time > NEXT_TOUCH
+	setvard NEXT_TOUCH game.time
+	add NEXT_TOUCH 0.1
+	dbg game_touch $get(PARAM1,name)
+	callevent check_damage $get(PARAM1,id) 1
+}
+
+
+
+{ [override] game_fall //override base_arrow.  Just do nothing
+
+	dbg game_fall
+}
+
+{ [override] game_projectile_hitwall
+	dbg game_projectile_hitwall
+
+	playrandomsound 0 10 SOUND_ZAP1 SOUND_ZAP2 SOUND_ZAP3
+	//expiretime 0
+	setalive 0
+	setvard SCAN_ON 0
+	removescript
+	deleteent ent_me
+}
+
+{ [override] game_projectile_hitnpc
+	dbg game_projectile_hitnpc $get(PARAM1,name)
+}
+
+{ [override] game_projectile_landed
+	dbg game_projectile_landed
+}
+
+{ [server] game_tossprojectile
+	setvard TOKEN_TARGETS ''
+	setvard MY_OWNER $get(ent_expowner,id)
+	setvard OWNER_ISPLAYER $get(MY_OWNER,isplayer)
+	setvard F_BALL_SIZE $get(MY_OWNER,scriptvar,'BALL_SIZE')
+	setvard F_BALL_DMG $get(MY_OWNER,scriptvar,'BALL_DMG')
+	setvard F_BALL_TYPE $get(MY_OWNER,scriptvar,'BALL_TYPE')
+	setvard DAMAGE_LIST ''
+
+	local F_BALL_VOL $int(F_BALL_SIZE)
+	capvar F_BALL_VOL 1 10
+	svplaysound 4 F_BALL_VOL SOUND_SHOOT
+
+	dbg game_tossprojectile F_BALL_SIZE F_BALL_DMG F_BALL_TYPE $get(MY_OWNER,name)
+
+	if ( F_BALL_TYPE equals 'F_BALL_TYPE' ) setvard F_BALL_TYPE magic
+	setvard SCAN_SIZE 16
+	if ( OWNER_ISPLAYER ) setvard SCAN_SIZE 12
+	multiply SCAN_SIZE F_BALL_SIZE
+
+	if ( F_BALL_SIZE == 0 ) deleteent ent_me
+	if F_BALL_SIZE > 0
+
+	setmodel weapons/projectiles.mdl
+	//local SUB_MODEL $int(F_BALL_SIZE)
+	//add SUB_MODEL 12
+	//local SUB_MODEL $int(SUB_MODEL)
+	//setmodelbody 0 SUB_MODEL
+	setmodelbody 0 13
+	local SCALE_SIZE F_BALL_SIZE
+	multiply SCALE_SIZE 0.75
+	setprop ent_me scale SCALE_SIZE
+
+	width SCAN_SIZE
+	height SCAN_SIZE
+
+	setbbox animsize
+
+	setprop ent_me rendermode 5
+	setprop ent_me renderamt 20
+
+	//dbg temp got size F_BALL_SIZE dmg F_BALL_DMG sub SUB_MODEL
+
+	//clientevent new all monsters/summon/magic_dart_cl $get(ent_me,index) F_BALL_SIZE manabolt
+	//setvard MY_SCRIPT_IDX game.script.last_sent_id
+	setvard SCAN_ON 1
+	callevent scan_damage
+}
+
+{ [server] scan_damage
+	if ( SCAN_ON ) callevent 0.1 scan_damage
+
+	//if game.time > NEXT_DAMAGE
+
+	local MY_ORG $get(ent_me,origin)
+
+	if ( MY_ORG equals $vec(0,0,0) ) deleteent ent_me
+
+	////dbg temp game.monster.moveprox
+
+	//xdodamage MY_ORG SCAN_SIZE F_BALL_DMG 100% ent_expowner ent_expowner archery magic
+
+	//snap damage loc to ground if low flying
+	local MY_HEIGHT $vec.z(MY_ORG)
+	subtract MY_HEIGHT $get_ground_height(MY_ORG)
+	if ( MY_HEIGHT < 72 )
+	{
+		//dbg adjusting down
+		vectorset MY_ORG z $get_ground_height(MY_ORG)
+		if ( SCAN_SIZE > 32) vectoradd MY_ORG z 16
+	}
+
+	//local BEAM_END MY_ORG
+	//vectoradd BEAM_END z 16
+	//effect beam point lgtning.spr 5 MY_ORG BEAM_END (255,0,255) 255 0 0.1
+
+
+	setvard SCAN_TARGS $get_tsphere(any,SCAN_SIZE,MY_ORG)
+
+	//dbg SCAN_TARGS
+
+	if SCAN_TARGS isnot none
+
+	calleventloop $get_token_amt(SCAN_TARGS) damage_targets
+}
+
+{ damage_targets
+	
+	local CUR_TARG $get_token(SCAN_TARGS,game.script.iteration)
+	callevent check_damage CUR_TARGET
+}
+
+{ remove_last_touched
+	setvard LAST_TOUCHED 0
+}
+
+{ check_damage //<target> <by_touch-0:1>
+	local CUR_TARG PARAM1
+
+	if ( DAMAGE_LIST contains CUR_TARG ) local EXIT_SUB 1 //damage each target once
+	if !EXIT_SUB
+
+	dbg damage_targets nam $get(CUR_TARG,name) nme $get(CUR_TARG,relationship,ent_expowner) plr $get(CUR_TARG,isplayer)
+	if $get(CUR_TARG,relationship,MY_OWNER) equals enemy
+	if ( $get(CUR_TARG,isplayer) )
+	{
+		if !GAME_PVP
+		if OWNER_ISPLAYER
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+	local TARG_ORG $get(CUR_TARG,origin)
+	local MY_ORG $get(ent_me,origin)
+
+	dbg damageline MY_ORG TARG_ORG F_BALL_DMG
+	xdodamage MY_ORG TARG_ORG F_BALL_DMG 100% ent_expowner ent_me archery magic dmgevent:ext_manaball
+
+	token.add DAMAGE_LIST CUR_TARG
+//	if !PARAM2
+//	setvard NEXT_DAMAGE game.time
+//	add NEXT_DAMAGE 0.5
+}
+
+//Go through NPCs
+//{ game_hitnpc
+//
+//	setmodel null.mdl
+//	
+//	callexternal MY_OWNER send_damage $get(ent_laststruckbyme,id) direct F_BALL_DMG 100% MY_OWNER F_BALL_TYPE
+//	effect screenfade $get(ent_laststruckbyme,id) 3 1 (255,255,255) 255 fadein
+//	expiretime 0
+//}
+
+//{ [override] game_projectile_landed
+//
+//	dbg game_projectile_landed
+//
+//	setmodel null.mdl
+//
+//	//clientevent update all MY_SCRIPT_IDX shrink_out
+//
+//	expiretime 0
+//
+//	callevent remove_me
+//}
+
+//{ [server] hit_target
+//	setvard HIT_SOMETHING 1
+//	setvard LOOP_COUNT 0
+//	calleventloop GET_COUNT dmg_target
+//}
+
+//{ [server] dmg_target
+//	add LOOP_COUNT 1
+//	if ( LOOP_COUNT == 1 ) local CHECK_ENT GET_ENT1
+//	if ( LOOP_COUNT == 2 ) local CHECK_ENT GET_ENT2
+//	if ( LOOP_COUNT == 3 ) local CHECK_ENT GET_ENT3
+//	if ( LOOP_COUNT == 4 ) local CHECK_ENT GET_ENT4
+//	if ( LOOP_COUNT == 5 ) local CHECK_ENT GET_ENT5
+//	if ( LOOP_COUNT == 6 ) local CHECK_ENT GET_ENT6
+//	if ( LOOP_COUNT == 7 ) local CHECK_ENT GET_ENT7
+//	if ( LOOP_COUNT == 8 ) local CHECK_ENT GET_ENT8
+//	if ( LOOP_COUNT == 9 ) local CHECK_ENT GET_ENT9
+//
+//	//dbg in sphere ( SCAN_SIZE ) $get(CHECK_ENT,name)
+//
+//	if $get(CHECK_ENT,relationship,MY_OWNER) equals enemy
+//
+//	if ( OWNER_ISPLAYER )
+//	{
+//		if game.pvp == 0
+//		if $get(CHECK_ENT,isplayer)
+//		local EXIT_SUB 1
+//		//dbg aborted, players do not atk players in non-pvp ( game.pvp )
+//	}
+//	if !EXIT_SUB
+//
+//	if ( !$get(CHECK_ENT,scriptvar,HIT_BY_MANABALL) ) callexternal MY_OWNER send_damage CHECK_ENT direct F_BALL_DMG 100% MY_OWNER magic
+//	if ( OWNER_ISPLAYER ) callexternal CHECK_ENT ext_hit_manaball
+//	effect screenfade CHECK_ENT 3 1 (255,255,255) 255 fadein
+//	//if ( OWNER_ISPLAYER ) setvard SCAN_ON 0 //player version only damages once
+//}
+
+//{ damage_targets_insphere
+//	local CUR_TARGET $get_token(SCAN_TOKENS,game.script.iteration)
+//
+//	if $get(CUR_TARGET,relationship,MY_OWNER) equals enemy
+//
+//	//dont damage players in non-pvp (sometimes they show up as enemies)
+//	if ( OWNER_ISPLAYER )
+//	{
+//		if !GAME_PVP
+//		if $get(CUR_TARGET,isplayer)
+//		local EXIT_SUB 1
+//	}
+//	if !EXIT_SUB
+//
+//	//callexternal MY_OWNER send_damage CHECK_ENT direct F_BALL_DMG 100% MY_OWNER magic
+//	if ( TOKEN_TARGETS contains CUR_TARGET ) local EXIT_SUB 1
+//	if !EXIT_SUB
+//	if ( $get_token_amt(TOKEN_TARGETS) > 11 ) setvard TOKEN_TARGETS ''
+//	token.add TOKEN_TARGETS CUR_TARGET
+//
+//	if ( OWNER_ISPLAYER ) callexternal CUR_TARGET ext_hit_manaball
+//	local TARG_ORG $get(CUR_TARG,origin)
+//	local MY_ORG $get(ent_me,origin)
+//	xdodamage MY_ORG TARG_ORG F_BALL_DMG 100% MY_OWNER MY_OWNER archery magic
+//}
+
+{ remove_me
+	deleteent ent_me
+}
+
+//used
+{ game_projectile_hitwall
+	svplaysound 4 0 SOUND_SHOOT
+}
+
+//NOT USED
+//{ hitwall
+//	if G_DEVELOPER_MODE
+//	messageall green hitwall
+//}

@@ -1,0 +1,688 @@
+//closerange: <128
+//farrange: 128-256
+//move towards @ >256
+
+#scope server
+
+{ [shared]
+	const ANIMSET_ATK_CLOSE "anim_atk_close1;anim_atk_close2;anim_atk_close2;anim_atk_close1;anim_atk_close2;anim_atk_close3;anim_atk_close1;anim_atk_close2;anim_atk_close4"
+	//^ frame_slct_next_attack; frame_claw; frame_bite; frame_knock_left
+
+	const ANIMSET_ATK_FAR "anim_atk_far1"
+
+	const ANIM_BREATH_CLOSE anim_breath_close //frame_breath_prep frame_breath_close_start frame_breath_close_end
+	const ANIM_BREATH_FAR anim_breath_far //frame_breath_prep frame_breath_far_start frame_breath_far_end
+	
+	setvard ANIM_ATTACK anim_atk_far1
+	setvard ANIM_RUN anim_lx_leap
+	setvar ANIM_WALK anim_lx_leap //frame_leap_start frame_leap_land
+	setvar ANIM_IDLE anim_idle_deep //anim_idle_close anim_idle_far
+
+	const ANIM_SPIT anim_atk_fireball
+
+	const ANIM_BREATH_FAR anim_breath_far
+	const ANIM_BREATH_CLOSE anim_breath_close
+}
+
+{
+	setvar NO_SPAWN_STUCK_CHECK 1
+	setvar NO_STEP_ADJ 1
+	setvar NPC_MUST_SEE_TARGET 0
+	setvard ATTACK_MOVERANGE 256
+	setvard MOVE_RANGE 256
+	setvard ATTACK_RANGE 265
+	setvard ATTACK_HITRANGE 265
+
+	setvard NPC_IS_BOSS 1
+	const NPC_BOSS_REGEN_RATE 0.1
+	const NPC_BOSS_REGEN_FREQ 120.0
+	setvard NPC_GIVE_EXP 20000
+
+	const MAX_BREATH_RANGE 384
+
+	setvard ATTACK_MODE close
+
+	const BONE_RIGHT_CLAW 35
+	const BONE_LEFT_CLAW 30
+	const BONE_LEFT_FOOT 72
+
+	const DMG_CLAW 400
+	const AOE_CLAW 128
+	const FALLOFF_CLAW 0.01
+
+	const DMG_BITE 600
+	const AOE_BITE 96
+	const FALLOFF_BITE 0.01
+
+	const DMG_STOMP 800
+	const AOE_STOMP 256
+	const FALLOFF_STOMP 0
+
+	const SOUND_INTRO monsters/dragons/c_dragnold_bat2.wav
+
+	const SOUND_ALERT1 monsters/dragons/c_dragnold_bat1.wav
+	const SOUND_ALERT2 monsters/dragons/c_dragnold_bat2.wav
+	const SOUND_ATTACK1 monsters/dragons/c_dragnold_atk1.wav
+	const SOUND_ATTACK2 monsters/dragons/c_dragnold_atk2.wav
+	const SOUND_ATTACK3 monsters/dragons/c_dragnold_atk3.wav
+	const SOUND_DEATH monsters/dragons/c_dragnold_dead.wav
+	const SOUND_PAIN1 monsters/dragons/c_dragnold_hit1.wav
+	const SOUND_PAIN2 monsters/dragons/c_dragnold_hit2.wav
+	const SOUND_PAIN3 monsters/dragons/c_dragonold_hit2.wav
+	const SOUND_IDLE monsters/dragons/c_dragnold_slct.wav
+
+	const SOUND_STRUCK1 weapons/cbar_hitbod1.wav
+	const SOUND_STRUCK2 weapons/cbar_hitbod2.wav
+	const SOUND_STRUCK3 weapons/cbar_hitbod3.wav
+
+	const SOUND_SWING weapons/swinghuge.wav
+
+	const SOUND_STEP1 monsters/dragons/fs_x0snw_drg1.wav
+	const SOUND_STEP2 monsters/dragons/fs_x0snw_drg2.wav
+	const SOUND_STEP3 monsters/dragons/fs_x0snw_drg3.wav
+
+	const SOUND_BREATH magic/spookie1.wav
+	const SOUND_BREATH_START magic/flame_loop_start.wav
+	const SOUND_BREATH_LOOP magic/flame_loop.wav
+
+	const SOUND_FLAP monsters/bat/flap_big.wav
+
+	const FREQ_BREATH $randf(60.0,120.0)
+	setvard BREATH_IDX 0
+	const HOVER_DURATION 15.0
+	setvard ATK_SOUND_IDX 0
+
+	const DMG_BREATH 75
+	const DOT_BREATH 100
+
+	const NPC_DELAY_RETALITATE $randf(10.0,20.0)
+
+	precache monsters/monster_extras.mdl
+}
+
+{ game_precache
+	precachefile nashalrath/dragon_green_mini_cl
+	precachefile nashalrath/wind_cl
+}
+
+{ fake_precache
+	svplaysound 0 0 monsters/bat/flap_big.wav
+}
+
+#include monsters/base_monster_new
+
+{ [shared] npc_spawn
+
+	name Aspect of Jaminporlants
+	name_unique gdragon_aspect
+	setmodel monsters/dragon_green_mini.mdl
+	race demon
+	width 256
+	height 256
+	hp 40000
+	nopush 1
+	takedmg all 0.25
+	takedmg cold 0.75
+//	takedmg fire 0.75
+//	takedmg poison 0.75
+//	takedmg acid 0.75
+//	takedmg lightning 0.75
+	takedmg holy 0.0
+	setvard IMMUNE_STUN 100%
+
+	hearingsensitivity 11 //(change)
+	setidleanim anim_intro
+	setmoveanim anim_intro
+	setvard ATTACK_ANIM_IDX 0
+
+	setturnrate 0.1 //prob wont do anything, but we'll see (nope, does nodda)
+	stepsize 0
+
+	callevent 2.0 get_final_props
+}
+
+{ get_final_props
+	setvard HALF_HEALTH $get(ent_me,maxhp)
+	multiply HALF_HEALTH 0.5
+	setvard MASTER_ID $get_by_name(gdragon_img)
+	local MASTER_TARG $get(MASTER_ID,scriptvar,'CHAT_CURRENT_SPEAKER')
+	callevent npcatk_settarget MASTER_TARG
+}
+
+{ npc_targetsighted
+	if !DID_INTRO
+	setvard DID_INTRO 1
+	setidleanim ANIM_IDLE
+	setmoveanim ANIM_WALK
+	setvard AS_ATTACKING game.time
+	add AS_ATTACKING 5.0
+	playanim critical anim_intro
+	playsound 0 10 SOUND_INTRO
+	callexternal players ext_play_music_me 3.5 tikal.mp3
+
+	setvard NEXT_BREATH game.time //breath maybe hover or spit ball
+	add NEXT_BREATH FREQ_BREATH
+}
+
+{ npc_selectattack
+	if ( game.time > NEXT_STANCE_SHIFT )
+	{
+		setvard NEXT_STANCE_SHIFT game.time
+		add NEXT_STANCE_SHIFT $randf(4.0,6.0)
+		if ( $get(NPCATK_TARGET,range) < 128 )
+		{
+			if ATTACK_MODE isnot close
+			setvard ANIM_ATTACK anim_far2close
+		}
+		else
+		{
+			if ATTACK_MODE isnot far
+			setvard ANIM_ATTACK anim_close2far
+		}
+	}
+}
+
+{ frame_far2close_done
+	setvard ATTACK_MODE close
+	setvard ANIM_IDLE anim_idle_close
+	setidleanim ANIM_IDLE
+	callevent dist_select_attack
+}
+
+{ frame_close2far_done
+	setvard ATTACK_MODE far
+	setvard ANIM_IDLE anim_idle_far
+	setidleanim ANIM_IDLE
+	callevent dist_select_attack
+}
+
+{ frame_slct_next_attack
+	callevent dist_select_attack
+}
+
+{ dist_select_attack
+	if ( ATTACK_MODE equals close )
+	{
+		if ( ATTACK_ANIM_IDX >= $get_token_amt(ANIMSET_ATK_CLOSE) ) setvard ATTACK_ANIM_IDX 0
+		setvard ANIM_ATTACK $get_token(ANIMSET_ATK_CLOSE,ATTACK_ANIM_IDX)
+		add ATTACK_ANIM_IDX 1
+	}
+
+	if ( ATTACK_MODE equals far )
+	{
+		if ( ATTACK_ANIM_IDX >= $get_token_amt(ANIMSET_ATK_FAR) ) setvard ATTACK_ANIM_IDX 0
+		setvard ANIM_ATTACK $get_token(ANIMSET_ATK_FAR,ATTACK_ANIM_IDX)
+		add ATTACK_ANIM_IDX 1
+	}
+}
+
+{ frame_claw_right
+	callevent attack_sound
+	local L_POS $get(ent_me,svbonepos,BONE_RIGHT_CLAW)
+	//local MY_YAW $get(ent_me,angles.yaw)
+	//vectoradd L_POS $relpos($vec(0,MY_YAW,0),$vec(0,32,0)) //forward a bit
+	vectorset L_POS z $get(ent_me,origin.z) //and at my ground height
+	if ( G_DEVELOPER_MODE ) callevent debug_circle L_POS AOE_CLAW
+	xdodamage L_POS AOE_CLAW DMG_CLAW FALLOFF_CLAW ent_me ent_me none slash
+	
+}
+
+{ frame_claw_left
+	callevent attack_sound
+	local L_POS $get(ent_me,svbonepos,BONE_LEFT_CLAW)
+	//local MY_YAW $get(ent_me,angles.yaw)
+	//vectoradd L_POS $relpos($vec(0,MY_YAW,0),$vec(0,32,0)) //forward a bit
+	vectorset L_POS z $get(ent_me,origin.z) //and at my ground height
+	if ( G_DEVELOPER_MODE ) callevent debug_circle L_POS AOE_CLAW
+	xdodamage L_POS AOE_CLAW DMG_CLAW FALLOFF_CLAW ent_me ent_me none slash
+}
+
+{ frame_bite
+	callevent attack_sound
+	local L_POS $get(ent_me,attachpos,0)
+	//local MY_YAW $get(ent_me,angles.yaw)
+	//vectoradd L_POS $relpos($vec(0,MY_YAW,0),$vec(0,64,0)) //forward a bit
+	vectorset L_POS z $get(ent_me,origin.z) //and at my ground height
+	if ( G_DEVELOPER_MODE ) callevent debug_circle L_POS AOE_BITE
+	xdodamage L_POS AOE_BITE DMG_BITE FALLOFF_BITE ent_me ent_me none pierce
+}
+
+{ frame_knock_left
+	callevent attack_sound
+	local L_POS $get(ent_me,svbonepos,BONE_RIGHT_CLAW)
+	//local MY_YAW $get(ent_me,angles.yaw)
+	//vectoradd L_POS $relpos($vec(0,MY_YAW,0),$vec(0,64,0)) //forward a bit
+	vectorset L_POS z $get(ent_me,origin.z) //and at my ground height
+	if ( G_DEVELOPER_MODE ) callevent debug_circle L_POS AOE_CLAW
+	local L_DMG DMG_CLAW
+	multiply L_DMG 1.5
+	xdodamage L_POS AOE_CLAW L_DMG FALLOFF_CLAW ent_me ent_me none slash_effect dmgevent:knockleft
+}
+
+{ knockleft_dodamage
+	if PARAM1
+	addvelocity PARAM2 $relvel(-800,100,120)
+}
+
+{ frame_stomp
+	local L_POS $get(ent_me,svbonepos,BONE_LEFT_FOOT)
+	//local MY_YAW $get(ent_me,angles.yaw)
+	//vectoradd L_POS $relpos($vec(0,MY_YAW,0),$vec(0,64,0)) //forward a bit
+	vectorset L_POS z $get(ent_me,origin.z) //and at my ground height
+	if ( G_DEVELOPER_MODE ) callevent debug_circle L_POS AOE_STOMP
+	clientevent new all effects/sfx_stun_burst L_POS 256 1 (0,0,255)
+	setvard SLAM_ORG L_POS
+	xdodamage L_POS AOE_STOMP DMG_STOMP FALLOFF_STOMP ent_me ent_me none blunt_effect dmgevent:stomp
+}
+
+{ stomp_dodamage
+	if $get(PARAM2,relationship,ent_me) equals enemy
+	if $get(PARAM2,onground)
+	applyeffect PARAM2 effects/heavy_stun 5.0 $get(ent_me,id) 1
+	local TARG_ORG $get(PARAM2,origin)
+	local MY_ORG SLAM_ORG
+	local TARG_ANG $angles(MY_ORG,TARG_ORG)
+	local NEW_YAW TARG_ANG
+	addvelocity PARAM2 $relvel($vec(0,NEW_YAW,0),$vec(0,500,110))
+}
+
+{ debug_circle
+	//visual representation of AOE attacks
+	setvard DEBUG_BEAM_START PARAM1
+	setvard DEBUG_BEAM_END DEBUG_BEAM_START
+	vectoradd DEBUG_BEAM_END z 64
+	setvard DEBUG_BEAM_RADIUS PARAM2
+	effect beam point lgtning.spr 20 DEBUG_BEAM_START DEBUG_BEAM_END (255,0,255) 200 0 1.0
+
+	setvard DEBUG_BEAM_ROT 0
+	calleventloop 16 debug_circle_loop
+}
+
+{ debug_circle_loop
+	local BEAM_START DEBUG_BEAM_START
+	local BEAM_END DEBUG_BEAM_START
+
+	vectoradd BEAM_START $relpos($vec(0,DEBUG_BEAM_ROT,0),$vec(0,DEBUG_BEAM_RADIUS,32))
+	add DEBUG_BEAM_ROT 22.5
+
+	vectoradd BEAM_END $relpos($vec(0,DEBUG_BEAM_ROT,0),$vec(0,DEBUG_BEAM_RADIUS,32))
+
+
+	effect beam point lgtning.spr 20 BEAM_START BEAM_END (255,0,255) 200 0 1.0
+}
+
+{ my_target_died
+	if game.time > NEXT_GLOAT
+	setvard NEXT_GLOAT game.time
+	add NEXT_GLOAT $randf(20.0,60.0)
+	callexternal MASTER_ID ext_gloat
+}
+
+{ game_death
+	callexternal MASTER_ID ext_image_died
+}
+
+{ frame_slct_next_attack
+	playsound 0 10 SOUND_SWING 0.8 $rand(80,125)
+}
+
+{ game_struck
+	if ( $get(ent_me,hp) > HALF_HP )
+	{
+		playrandomsound 0 10 SOUND_STRUCK1 SOUND_STRUCK2 SOUND_STRUCK3 SOUND_STRUCK1 SOUND_STRUCK2 SOUND_STRUCK3 SOUND_PAIN1 SOUND_PAIN2
+	}
+	else
+	{
+		playrandomsound 0 10 SOUND_STRUCK1 SOUND_STRUCK2 SOUND_STRUCK3 SOUND_STRUCK1 SOUND_STRUCK2 SOUND_PAIN1 SOUND_PAIN2 SOUND_PAIN3
+	}
+}
+
+{ attack_sound
+	add ATK_SOUND_IDX 1
+	if ( ATK_SOUND_IDX == 2 ) playsound 0 10 SOUND_ATTACK1 0.8 $rand(80,110)
+	if ( ATK_SOUND_IDX == 4 ) playsound 0 10 SOUND_ATTACK2 0.8 $rand(80,110)
+	if ( ATK_SOUND_IDX == 6 )
+	{
+		playsound 0 10 SOUND_ATTACK3 0.8 $rand(80,110)
+		setvard ATK_SOUND_IDX 0
+	}
+}
+
+{ npcatk_hunt
+	if game.time > NEXT_BREATH
+	setvard NEXT_BREATH game.time
+	add NEXT_BREATH FREQ_BREATH
+	if NPCATK_TARGET isnot unset
+	setvard AS_ATTACKING game.time
+	add AS_ATTACKING 15.0
+	callevent do_breath
+}
+
+{ do_breath
+	dbg do_breath BREATH_IDX FORCE_BREATH
+
+	local VFAR_BREATH 0
+	if ( $get(NPCATK_TARGET,range) > MAX_BREATH_RANGE ) local VFAR_BREATH 1
+	if ( FORCE_BREATH equals vfar ) local VFAR_BREATH 1
+
+	if ( VFAR_BREATH )
+	{
+		//out of range of our standard breath weapons, use the projectile
+		setvard BREATH_TARGET NPCATK_TARGET
+		callevent npcatk_suspend_movement ANIM_SPIT
+		callevent npcatk_suspend_ai 5.0
+		playanim critical ANIM_SPIT
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	add BREATH_IDX 1
+
+	if ( FORCE_BREATH equals hover ) setvard BREATH_IDX 6
+
+	if ( BREATH_IDX < 5 )
+	{
+		//breath weapona anim based on distance
+
+		setvard BREATH_FWD_OFS 64
+
+		local L_ATTACK_MODE ATTACK_MODE
+		if ( FORCE_BREATH equals close ) local L_ATTACK_MODE FORCE_BREATH
+		if ( FORCE_BREATH equals far ) local L_ATTACK_MODE FORCE_BREATH
+
+		if ( L_ATTACK_MODE equals close )
+		{
+			playanim critical ANIM_BREATH_CLOSE
+			setvard BREATH_TARGET NPCATK_TARGET
+			setvard BREATH_FORWARD 100
+			callevent npcatk_suspend_ai 5.0
+			callevent npcatk_suspend_movement ANIM_BREATH_CLOSE
+		}
+		else
+		{
+			playanim critical ANIM_BREATH_FAR
+			setvard BREATH_TARGET NPCATK_TARGET
+			setvard BREATH_FORWARD 200
+			callevent npcatk_suspend_ai 5.0
+			callevent npcatk_suspend_movement ANIM_BREATH_FAR
+		}
+	}
+
+	if ( BREATH_IDX == 6 )
+	{
+		//hover breath
+		setvard BREATH_IDX 0
+		callevent npcatk_suspend_ai 25.0
+
+		setvard BREATH_FWD_OFS 128
+
+		if ( ATTACK_MODE equals close ) playanim critical anim_close2hover
+		if ( ATTACK_MODE equals far ) playanim critical anim_far2hover
+		local WIND_ORG $get(ent_me,origin)
+		//vectoradd WIND_ORG z 32
+		local L_HOVER_DURATION HOVER_DURATION
+		add L_HOVER_DURATION 1.0
+		clientevent new all nashalrath/wind_cl WIND_ORG 1.0 L_HOVER_DURATION
+		setvard CL_WIND_IDX game.script.last_sent_id
+	}
+
+	setvard FORCE_BREATH 0
+}
+
+{ frame_launch
+	playsound 0 10 SOUND_FLAP 
+}
+
+{ frame_launch_done
+	callevent npcatk_suspend_movement anim_hover_breath
+	playanim critical anim_hover_breath
+	playsound 0 10 SOUND_BREATH_START
+	clientevent new all nashalrath/dragon_green_mini_cl $get(ent_me,index) breath
+	setvard CL_BREATH_IDX game.script.last_sent_id
+	setvard BREATH_CURRENT_YAW $get(ent_me,angles.yaw)
+	setvard BREATH_ON 1
+	setvard BREATH_HOVER 1
+	callevent breath_loop
+	callevent HOVER_DURATION breath_end
+}
+
+{ frame_breath_prep
+	playsound 0 10 SOUND_BREATH 0.8 150
+	setmovedest BREATH_TARGET 9999
+}
+
+{ frame_breath_far_start
+	callevent breath_start
+}
+
+{ frame_breath_close_start
+	callevent breath_start
+}
+
+{ frame_breath_close_end
+	callevent breath_end
+}
+
+{ frame_breath_far_end
+	callevent breath_end
+}
+
+{ breath_start
+	playsound 1 10 SOUND_BREATH_START
+	callevent 1.5 breath_loop_sound
+	clientevent new all nashalrath/dragon_green_mini_cl $get(ent_me,index) breath
+	setvard CL_BREATH_IDX game.script.last_sent_id
+	setvard BREATH_CURRENT_YAW $get(ent_me,angles.yaw)
+	setvard BREATH_ON 1
+	callevent breath_loop
+}
+
+{ breath_loop_sound
+	//some quick breaths may end before the initials ound ends
+	if BREATH_ON
+	setvard BREATH_LOOP_SOUND 1
+	playsound 4 10 SOUND_BREATH_LOOP
+}
+
+{ breath_loop
+	if BREATH_ON
+	callevent 0.1 breath_loop
+	if ( !BREATH_HOVER )
+	{
+		//track target slowly
+		if ( game.time > NEXT_BREATH_ANG_ADJ )
+		{
+			setvard NEXT_BREATH_ANG_ADJ game.time
+			add NEXT_BREATH_ANG_ADJ 1.0
+			if $get(BREATH_TARGET,isalive)
+			local MY_ORG $get(ent_me,origin)
+			local TARG_ORG $get(BREATH_TARGET,origin)
+			local ANG_TO_TARG $angles(MY_ORG,TARG_ORG)
+			//local ANG_TO_TARG $neg(ANG_TO_TARG)
+			setvard BREATH_DEST_YAW ANG_TO_TARG
+		}
+
+		local MY_YAW $get(ent_me,angles.yaw)
+
+		if ( BREATH_CURRENT_YAW != BREATH_DEST_YAW )
+		{
+			if ( BREATH_DEST_YAW < MY_YAW )
+			{
+				setvard BREATH_ROT_DIR -1
+			}
+			else
+			{
+				setvard BREATH_ROT_DIR 1
+			}
+			add BREATH_CURRENT_YAW BREATH_ROT_DIR
+			if ( $anglediff(BREATH_DEST_YAW,BREATH_CURRENT_YAW) < 10 ) setvard BREATH_CURRENT_YAW BREATH_DEST_YAW
+			local L_BREATH_FACE_ORG $get(ent_me,origin)
+			vectoradd L_BREATH_FACE_ORG $relpos($vec(0,BREATH_CURRENT_YAW,0),$vec(0,500,0))
+			setmovedest L_BREATH_FACE_ORG 9999
+		}
+	}
+	else
+	{
+		//just circle
+		add BREATH_CURRENT_YAW 2
+		if ( BREATH_CURRENT_YAW > 359.99 ) setvard BREATH_CURRENT_YAW 0
+		local L_BREATH_FACE_ORG $get(ent_me,origin)
+		vectoradd L_BREATH_FACE_ORG $relpos($vec(0,BREATH_CURRENT_YAW,0),$vec(0,500,0))
+		setmovedest L_BREATH_FACE_ORG 9999
+
+		//plus flap sounds
+		if ( game.time > NEXT_FLAP_SOUND )
+		{
+			setvard NEXT_FLAP_SOUND game.time
+			add NEXT_FLAP_SOUND 1.0
+			svsound.play3d SOUND_FLAP 10 $get(ent_me,attachpos,0)
+		}
+	}
+
+	if game.time > NEXT_BREATH_DMG
+	setvard NEXT_BREATH_DMG game.time
+	add NEXT_BREATH_DMG $randf(0.2,0.5)
+	local L_BREATH_POS $get(ent_me,attachpos,0)
+	vectorset L_BREATH_POS z $get_ground_height(L_BREATH_POS)
+	vectoradd L_BREATH_POS $relpos($vec(0,BREATH_CURRENT_YAW,0),$vec(0,BREATH_FWD_OFS,0))
+	//breath is a combination of earth and poison
+	xdodamage L_BREATH_POS 128 DMG_BREATH 0.1 ent_me ent_me none blunt dmgevent:breath
+
+	if ( G_DEVELOPER_MODE )
+	{
+		if game.time > NEXT_BREATH_DEBUG_CIRC
+		setvard NEXT_BREATH_DEBUG_CIRC game.time
+		add NEXT_BREATH_DEBUG_CIRC 1
+		callevent debug_circle L_BREATH_POS 128
+	}
+}
+
+{ breath_dodamage
+	if PARAM1
+	//this is lagging like fuck, seeing if new haseffect func helps
+	//dbg breath_dodamage $get(PARAM2,haseffect,DOT_acid)
+	if ( !$get(PARAM2,haseffect,DOT_gpoison) ) applyeffect PARAM2 effects/greater_poison 5.0 $get(ent_me,id) DOT_BREATH
+	if ( !$get(PARAM2,haseffect,DOT_acid) ) applyeffect PARAM2 effects/effect_acid_dmg 5.0 $get(ent_me,id) DOT_BREATH
+}
+
+{ breath_end
+	setvard BREATH_ON 0
+	clientevent update all CL_BREATH_IDX end_fx
+
+	playsound 4 0 SOUND_BREATH_LOOP
+	setvard BREATH_LOOP_SOUND 0
+
+	if ( BREATH_HOVER )
+	{
+		if ( ATTACK_MODE equals close )
+		{
+			playanim critical anim_hover2close
+		}
+		else
+		{
+			playanim critical anim_hover2far
+		}
+		playsound 0 10 SOUND_FLAP
+	}
+
+	if !BREATH_HOVER
+	callevent npcatk_resume_movement
+	callevent npcatk_resume_ai
+}
+
+{ frame_land
+	setvard BREATH_HOVER 0
+	callevent npcatk_resume_ai
+	callevent npcatk_resume_movement 
+	clientevent update all CL_WIND_IDX end_fx
+}
+
+{ frame_vfar_breath_start
+	playsound 0 10 SOUND_BREATH 0.8 150
+	setmovedest BREATH_TARGET 9999
+}
+
+{ frame_vfar_breath_fire
+	playsound 0 10 SOUND_SPIT 0.8 50
+	local SPIT_DEST $get(ent_me,attachpos,0)
+	local SPIT_YAW $get(ent_me,angles.yaw)
+	vectoradd SPIT_DEST $relpos($vec(0,SPIT_YAW,0),$vec(0,512,0))
+	tossprojectile SPIT_DEST 400 0 0 proj_gdragon_spit $get(ent_me,attachpos,0) notoffset //special dragon spit, ignores target collides, but blinds as touch and splits into multi guided balls when hit wall
+	callevent npcatk_resume_movement
+	callevent npcatk_resume_ai
+}
+
+{ ext_proj_touch
+	local L_DOT_BREATH DOT_BREATH
+	multiply L_DOT_BREATH 0.5
+	applyeffect PARAM1 effects/effect_poison_blinding 5.0 $get(ent_me,id) L_DOT_BREATH
+}
+
+{ ext_proj_landed
+	setvard PROJ_LAND_ORG PARAM1
+	setvard PROJ_NME_TARGS $get_tsphere(enemy,1024)
+	if ( PROJ_NME_TARGS isnot none )
+	{
+		setvard CUR_SPIT_TARG_IDX 0
+		callevent guided_slime_ball	
+		callevent 0.4 guided_slime_ball
+		if ( $get_token_amt(PROJ_NME_TARGS) > 1 ) callevent 0.6 guided_slime_ball
+		if ( $get_token_amt(PROJ_NME_TARGS) > 2 ) callevent 0.8 guided_slime_ball
+	}
+}
+
+{ guided_slime_ball
+	local CUR_TARG $get_token(PROJ_NME_TARGS,CUR_SPIT_TARG_IDX)
+	add CUR_SPIT_TARG_IDX 1
+	if ( CUR_SPIT_TARG_IDX > $get_token_amt(PROJ_NME_TARGS) ) setvard CUR_SPIT_TARG_IDX 0 
+	setvard GLOB_TARG CUR_TARG
+	tossprojectile CUR_TARG 200 0 0 proj_glob_guided PROJ_LAND_ORG notoffset
+}
+
+{ ext_glob_landed
+	setvard BLOB_ORG PARAM1
+	setvard DMG_GLOB DOT_BREATH
+	multiply DMG_GLOB 0.5
+	xdodamage PARAM1 96 DMG_GLOB 0.2 ent_me ent_me none acid_effect dmgevent:glob
+}
+
+{ glob_dodamage
+	if PARAM1
+	if $get(PARAM2,relationship,ent_me) equals enemy
+	local TARG_ORG $get(PARAM2,origin)
+	local BLOB_DIST $dist(BLOB_ORG,TARG_ORG)
+	divide BLOB_DIST 64
+	local BLOB_DIST_RATIO 1
+	subtract BLOB_DIST_RATIO BLOB_DIST
+	local BLIND_DURATION $ratio(BLOB_DIST_RATIO,2.0,6.0) //blind 2-6 seconds based on how direct the hit was
+	//dbg glob_dodamage BLIND_DURATION
+	applyeffect PARAM2 effects/effect_poison_blinding BLIND_DURATION $get(ent_me,id) DMG_GLOB
+}
+
+{ ext_abreath_now //<type> debuggary
+	dbg ext_abreath_now PARAM1
+	setvard NEXT_BREATH 0
+	if ( PARAM1 startswith PARAM )
+	{
+		local DO_NADDA 1 //really need a !startswith
+	}
+	else
+	{
+		setvard FORCE_BREATH PARAM1
+	}
+}
+
+{ game_death
+	setvard ANIM_DEATH anim_die_far
+	if ( ATTACK_MODE equals close ) setvard ANIM_DEATH anim_die_close
+	if ( ATTACK_MODE equals far ) setvard ANIM_DEATH anim_die_far
+	if ( $get(ent_laststruck,range) > 384 ) setvard ANIM_DEATH anim_die_vfar
+
+	if ( BREATH_ON )
+	{
+		clientevent update all CL_BREATH_IDX end_fx
+		if ( BREATH_HOVER ) clientevent update all CL_WIND_IDX end_fx
+		if ( BREATH_LOOP_SOUND ) playsound 4 0 SOUND_BREATH_LOOP
+	}
+}
+

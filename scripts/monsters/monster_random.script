@@ -1,0 +1,77 @@
+//Special random monster selector
+//List of monster scripts must be placed in addparams, seperated by semi-colons
+//scripts beginning with monster/ can have that portion of their script name ommited (saves limited string space)
+//any script used must appear as a regular monster elsewhere on the map to ensure their media is precached
+//however, said monsters do not actually need to spawn
+
+#scope server
+{ game_spawn
+	setvard PLAYING_DEAD 1 //don't target me
+	invincible 1
+	gravity 0
+	nopush 1
+	fly 1
+	hp 1
+	setmodel null.mdl //need a model to gain proper origin
+	width 3
+	height 3
+	setsolid none
+}
+
+{ game_postspawn //PARAM1 = (name|default), PARAM2 = DmgMulti, PARAM3 = HPMulti, PARAM4 = pass_params
+	setvard IN_MOBS PARAM4
+	if ( $len(IN_MOBS) < 3 ) local NO_IN_MOBS 1
+	if ( IN_MOBS startswith PARAM ) local NO_IN_MOBS 1
+	if ( NO_IN_MOBS )
+	{
+		infomsg all "MAP ERROR" "monsters/monster_random not supplied with monster list"
+		callevent remove_me
+	}
+	if !NO_IN_MOBS
+	setvard FINAL_MOBS ''
+	calleventloop $get_token_amt(IN_MOBS) process_in_mobs
+	local N_MOBS $get_token_amt(FINAL_MOBS)
+	subtract N_MOBS 1
+	local RND_MOB $rand(0,N_MOBS)
+	local RND_MOB $get_token(FINAL_MOBS,RND_MOB)	
+	callevent spawn_mob RND_MOB
+}
+
+{ process_in_mobs
+	//auto-prefix with 'monsters/' if no slash in entry
+	local CUR_MOB $get_token(IN_MOBS,game.script.iteration)
+	if ( CUR_MOB contains '/' )
+	{
+		token.add FINAL_MOBS CUR_MOB
+	}
+	else
+	{
+		local OUT_TOKEN monsters/
+		stradd OUT_TOKEN CUR_MOB
+		token.add FINAL_MOBS OUT_TOKEN
+	}
+}
+
+{ spawn_mob //<script>
+	createnpc PARAM1 $get(ent_me,origin)
+	setvard SPAWN_ID $get(ent_lastcreated,id)
+	callevent 1.0 monitor_spawn
+}
+
+{ monitor_spawn
+	if ( !$get(SPAWN_ID,isalive) )
+	{
+		callevent remove_me
+	}
+	else
+	{
+		callevent 0.5 monitor_spawn
+	}
+}
+
+{ remove_me
+	//this valid death should be monster spawn friendly
+	invincible 0
+	race hated
+	dodamage ent_me direct 99999 100 GAME_MASTER target
+}

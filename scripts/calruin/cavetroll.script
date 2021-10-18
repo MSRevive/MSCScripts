@@ -1,0 +1,275 @@
+//Thothie - this script, is insanely overpowered, and his location in Calruin makes him useles.
+//- Just thought I'd overstate the obvious
+//- Lots of fixes (sound changes, animations, attacks)
+//- Added throw attack, case shield abuse
+//Calrian's Blacksmith
+
+{
+	if ( $lcase(game.map.name) equals calruin2 ) setvard NPC_IS_BOSS 1
+	if ( $lcase(game.map.name) equals calruin ) setvard NPC_IS_BOSS 1
+	if ( $lcase(game.map.name) equals ww3d ) setvard NPC_IS_BOSS 1
+	if ( !NPC_IS_BOSS ) setvard NPC_EXP_MULTI 0.25
+
+	const NPC_BOSS_REGEN_RATE 0.1
+	const NPC_BOSS_RESTORATION 1.0
+
+	setvard ANIM_DEATH diesimple
+   const SOUND_STRUCK1 controller/con_pain2.wav
+   const SOUND_STRUCK2 controller/con_pain3.wav
+   const SOUND_ATTACK1 zombie/claw_strike1.wav
+   const SOUND_ATTACK2 zombie/claw_strike2.wav
+   const SOUND_ATTACK3 zombie/claw_strike3.wav
+   const SOUND_DEATH garg/gar_die2.wav
+   const SOUND_SPAWN garg/gar_alert2.wav
+   const SOUND_FLINCH1 garg/gar_pain3.wav
+   const SOUND_FLINCH2 garg/gar_pain2.wav
+   const SOUND_PUSH garg/gar_attack3.wav
+   const SOUND_FALL weapons/mortarhit.wav
+   setvar ANIM_RUN walk
+	const ANIM_FULLRUN run
+   setvar ANIM_IDLE idle1
+   setvar ANIM_WALK walk
+   setvard ANIM_SMASH attack2	//these are reversed in model events! ><
+   setvard ANIM_SLASH attack1
+   setvard ANIM_ATTACK ANIM_SLASH
+   const SLASH_RANGE 150
+   const SMASH_RANGE 100
+   const SLASH_HITRANGE 200
+   const SMASH_HITRANGE 125
+	setvard THROW_RANGE 250
+   setvard ATTACK_RANGE SMASH_RANGE
+   setvard ATTACK_MOVERANGE 50
+   setvard ATTACK_HITRANGE SLASH_HITRANGE
+   setvard THROW_FREQ 10.0 //min seconds between throws
+
+	setvard NPC_MUST_SEE_TARGET 0 //he cant see through himself if yer on his head
+
+	const MAIN_MODEL monsters/skeleton_hood.mdl
+	const ALT_MODEL monsters/skeleton_boss2.mdl
+	precache ALT_MODEL //uplaod new model
+
+    //Precache
+   precache SOUND_DEATH //handled externally
+}
+
+#include monsters/base_monster_new
+#include monsters/base_turn_undead
+
+{ npc_spawn
+
+	local L_MAP_NAME $lcase(game.map.name)
+
+	setvard I_AM_TURNABLE 0
+
+	if ( L_MAP_NAME equals ww3d )
+	{
+		callevent geric_mode
+	}
+
+	if ( FORCE_GERIC ) callevent geric_mode
+
+	if ( !AM_GERIC ) 
+	{
+		name Garonhroth the Blacksmith
+		setmodel MAIN_MODEL
+		setvard ANIM_THROW throw_scientist
+		setvard THROW_TIME 15 //throw every 15th hit
+		setvard THROW_DELAY 2.0
+		setvard THROW_FREQ 20.0
+		if ( NPC_IS_BOSS ) setvard NPC_GIVE_EXP 2000
+		if ( !NPC_IS_BOSS ) setvard NPC_GIVE_EXP 1000
+	}
+	
+   hp 6000
+   gold $rand(100,300)
+   width 40
+   height 120
+   race undead
+	setbbox npcsize
+	setsolid box
+
+   roam 0
+   hearingsensitivity 12
+    //setmodelbody	0 0
+   local CURRENT_MAP game.map.name
+   if ( CURRENT_MAP equals calruin2 ) setmodelbody 0 1
+   if ( CURRENT_MAP equals calruin2_1 ) setmodelbody 0 1
+   setidleanim ANIM_IDLE
+   setmoveanim ANIM_WALK
+   playanim once ANIM_IDLE
+   takedmg all 0.6
+
+	setvard IMMUN_POISON 1
+	takedmg holy 1.5
+	//takedmg dark 0.25 //oops
+	takedmg poison 0.0
+
+	setvard THROW_COUNT 0
+
+   playsound 0 10 SOUND_SPAWN
+
+}
+
+{ [server] npc_post_spawn
+
+	local L_MAP_NAME $lcase(game.map.name)
+
+	if ( L_MAP_NAME equals calruin2 )
+	{
+		local VER_NAME $get_by_name(map_verify)
+		local VER_ID $get(VER_NAME,id)
+		if !$get(VER_ID,exists)
+		infomsg all DATED_MAP Please verify your map patched correctly.
+		deleteent ent_me
+	}
+}
+
+{ npcatk_get_postspawn_properties
+
+	if AM_GERIC
+	setvar ANIM_RUN ANIM_FULLRUN
+}
+
+{ npcatk_targetvalidate
+	
+	if !ROAM_ON
+	setvard ROAM_ON 1
+	roam 1
+}
+
+{ [override] attack_1	//called by model anim attack1
+
+   if ( $get(NPCATK_TARGET,range) < SLASH_HITRANGE ) callevent npcatk_dodamage NPCATK_TARGET direct $randf(40.0,55.0) 75% $get(ent_me,id) slash
+
+	if $rand(1,10) == 1
+    setvard ANIM_ATTACK ANIM_SMASH
+    setvard ATTACK_RANGE SMASH_RANGE
+	setvard ATTACK_HITRANGE SMASH_HITRANGE
+}
+
+{ [override] attack_2	//called by model anim attack2
+
+   if ( $get(NPCATK_TARGET,range) < SMASH_HITRANGE ) callevent npcatk_dodamage NPCATK_TARGET direct $randf(30.0,40.0) 100% $get(ent_me,id) blunt
+	setvard STUN_ATTACK 1
+   playsound 0 10 SOUND_ATTACK1 SOUND_ATTACK2 SOUND_ATTACK3
+   	setvard ANIM_ATTACK ANIM_SLASH
+	setvard ATTACK_RANGE SLASH_RANGE
+	setvard ATTACK_HITRANGE SLASH_HITRANGE
+}
+
+   //Hit by someone
+{ npc_struck
+
+   local MY_CURRENT_HP $get(ent_me,hp)
+
+   if ( MY_CURRENT_HP < 2000 ) setvard CAN_FLINCH 1
+
+   playrandomsound 0 10 SOUND_STRUCK1 SOUND_STRUCK2
+}
+
+{ npc_flinch
+
+	if CAN_FLINCH
+	playanim critical ANIM_FLINCH
+	playrandomsound 0 10 SOUND_FLINCH1 SOUND_FLINCH2
+}
+
+{ game_death
+
+	if ( $lcase(game.map.name) equals ww3d ) callexternal players ext_clear_valid_gauntlets
+	callevent kaboom_bs
+}
+
+{ kaboom_bs
+
+	//screenshake <position> <amplitude> <frequency> <duration> <radius>
+	effect screenshake $relpos(0,0,0) 50 10 2 1024
+	playsound CHAN_VOICE 10 SOUND_FALL
+}
+
+{ give_clubs
+
+	//to be called by external ms_npcscript
+ 	setmodelbody 0 1
+}
+
+{ invincible_on
+	
+	//to be called by external ms_npcscript
+	invincible 1
+}
+
+{ vulnerable
+
+	//to be called by external ms_npcscript
+	invincible 0
+}
+
+{ game_dodamage //1: Attack Hit (1/0)  2: Entity Attack hit  3:  Start Position  4:  End Position
+
+   if PARAM1
+
+   if ANIM_ATTACK equals 'attack1'
+
+	add THROW_COUNT 1
+
+   if ( THROW_COUNT > THROW_TIME )
+   {
+		setvard THROW_COUNT 0
+		if !DELAY_NEXT_THROW
+		setvard DELAY_NEXT_THROW 1
+		callevent THROW_FREQ reset_throw
+		playanim break
+		playanim critical ANIM_THROW
+		playsound CHAN_VOICE 10 SOUND_PUSH
+		setvard THROW_TARGET PARAM2 //cant pass params via params
+		callevent npcatk_suspend_ai 2.0
+		callevent THROW_DELAY throw_chummer
+   }
+}
+
+{ reset_throw
+
+	setvard DELAY_NEXT_THROW 0
+}
+
+{ throw_chummer	
+
+	////dbg ThrowChummerGot p1 PARAM1 range NME_DIST vs SMASH_RANGE
+	if $get(THROW_TARGET,range) < THROW_RANGE
+	applyeffect THROW_TARGET effects/effect_push 3 $relvel(0,800,800) 0
+}
+
+{ geric_mode
+
+	setvard AM_GERIC 1
+	setvard THROW_TIME 10 //throw every 10th hit
+	setvard ANIM_THROW bigflinch
+	setvard THROW_DELAY 0.5
+	setvard THROW_FREQ 8.0
+	movespeed 2.0 //model isnt setup right
+	name The Dread Knight Sir Geric
+	takedmg fire 0.1
+	setmodel ALT_MODEL
+	setmodelbody 0 9
+	setmodelbody 1 4
+	setvar ANIM_RUN ANIM_FULLRUN
+	setstat parry 100
+	if ( NPC_IS_BOSS ) setvard NPC_GIVE_EXP 5000 //v.hard to get to, make it worth it for the folks escorting the nubs
+	if ( !NPC_IS_BOSS ) setvard NPC_GIVE_EXP 800 //subject to gangbang
+	roam 1
+
+	if ( $lcase(game.map.name) equals thanatos ) setvard SET_GREEK 1
+	if ( SET_GREEK ) setmodelbody 0 10
+}
+
+{ game_damaged_other
+	if STUN_ATTACK
+	setvard STUN_ATTACK 0
+    applyeffect PARAM1 effects/effect_push 1 $relvel(0,200,30) 0
+}
+
+{ go_greek
+	setmodelbody 0 10
+	setvard SET_GREEK 1
+}

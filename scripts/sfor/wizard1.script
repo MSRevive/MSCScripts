@@ -1,0 +1,398 @@
+//For sake of simplicity, we'll have this wizard manage the other four
+//Need five such wizards, need to think of names... Hrmmm...
+//we're going to do all the saytext from this central script via callexternals
+
+//wizards names:
+//Unum
+//Duae
+//Tres
+//Quattuor
+//Quinque
+
+{
+	const CONV_ANIMS "converse2;converse1;talkleft;talkright;lean;pondering;pondering2;pondering3;"
+
+	const SYM_QUEST_NAME sym1
+
+	const CHAT_DELAY 5.0
+	const CHAT_DELAY_SHORT 3.0
+	const CHAT_DELAY_LONG 7.0
+	const NO_RUMOR 1
+	const NO_JOB 1
+	const SYMB_ITEM item_s1
+	const SOUND_DEATH1 scientist/scream1.wav
+	const SOUND_DEATH2 scientist/scream2.wav
+	const SOUND_DEATH3 scientist/scream3.wav
+	const SOUND_DEATH4 scientist/scream4.wav
+}
+
+#include monsters/base_chat
+
+{ game_spawn
+
+	name_unique wizard1
+
+	name Brother Unum
+	race human
+	hp 60
+	setmodel npc/balancepriest2.mdl //reskin one of the balance priests
+	width 32
+	height 48 //crouched
+	saytextrange 1024
+	setidleanim idle1
+	playanim once idle1
+	blind 1 //doesn't really need to "see"
+
+	catchspeech say_hi Hail hi greet gweets j0 yo
+
+	setvard N_SYMBOLS 0
+	setvard BEAM_SET ''
+
+	callevent 4.0 scan_for_players
+	callevent 3.0 gather_wizard_ids
+}
+
+{ gather_wizard_ids
+	setvard WIZARD2_ID $get_by_name(wizard2)
+	setvard WIZARD3_ID $get_by_name(wizard3)
+	setvard WIZARD4_ID $get_by_name(wizard4)
+	setvard WIZARD5_ID $get_by_name(wizard5)
+	callevent 0.1 init_beams
+}
+
+{ scan_for_players
+
+	if !DID_INTRO
+	callevent 1.0 scan_for_players
+
+	local T_BOX $get_tbox(player,512) //check player syntax in code
+	if T_BOX isnot none
+	local T_BOX $sort_entlist(T_BOX,range)
+	local TARG_ID $get_token(T_BOX,0)
+	local TARG_ORG $get(TARG_ID,origin)
+	local TARG_TRACE $get_traceline(game.monster.origin,TARG_ORG,worldonly) //make sure player really within range
+	if TARG_TRACE equals TARG_ORG
+	setvard DID_INTRO 1
+	callevent do_intro
+}
+
+{ do_intro
+
+	if DID_INTRO < 2
+	setvard DID_INTRO 2 //above function could trip twice
+
+	setvard N_PLAYERS game.players
+	if ( N_PLAYERS > 1 ) saytext By the... How'd they'd get in here?
+	else saytext By the beard of Urdual... How'd he get in here?
+	callevent convo_anim
+
+	callevent CHAT_DELAY do_intro2	
+}
+
+{ do_intro2
+	if !OMG_WTF
+	callexternal WIZARD2_ID anim_text "I warned you the seals were failing."
+	callevent CHAT_DELAY_SHORT do_intro3
+}
+
+{ do_intro3
+	if !OMG_WTF
+	saytext "Brother Tress, did not you destroy the bridge?"
+	callevent convo_anim
+	callevent CHAT_DELAY_SHORT do_intro4
+}
+
+
+{ do_intro4
+	if !OMG_WTF
+	callexternal WIZARD3_ID anim_text "Yes, but that alone would hardly stop an intrepid explorer who could brave The Dark Forest."
+	callevent CHAT_DELAY do_intro5
+}
+
+{ do_intro5
+	if !OMG_WTF
+	saytext "...then what of the door?"
+	callevent convo_anim
+	callevent CHAT_DELAY_SHORT do_intro6
+}
+
+{ do_intro6
+	if !OMG_WTF
+	callexternal WIZARD4_ID anim_text "May I remind you, brother Unum, we've been here, maintaining this seal, for over two hundred years now?"
+	callevent CHAT_DELAY do_intro7
+}
+
+{ do_intro7
+	if !OMG_WTF
+	callexternal WIZARD5_ID anim_text "Yes, between the negative energy of the forest, and the rust... I'd surprised if it were still there."
+	callevent CHAT_DELAY do_intro8
+}
+
+{ do_intro8
+	if !OMG_WTF
+	if ( N_PLAYERS > 1 ) saytext Well, none of them appear to be our apprentices. Perhaps they bring news?
+	else saytext Well, he doesn't appear to be one of our apprentices. Perhaps he brings news?
+	callevent convo_anim
+}
+
+{ say_hi
+	setvard OMG_WTF 0
+	if !UNDI_SPAWN
+	saytext Umm... Hello young lad. We five wizards are The Bretheren of Zahlon.
+	callevent convo_anim
+	callevent CHAT_DELAY say_hi2
+}
+
+{ say_hi2
+	if !OMG_WTF
+	saytext This chamber was once the meeting place of Undamael and his minions.
+	callevent convo_anim
+	callevent CHAT_DELAY say_hi3
+}
+
+{ say_hi3
+	if !OMG_WTF
+	saytext It was an arena of sorts, where Undamael would judge enemies which his forces had captured.
+	callevent convo_anim
+	callevent CHAT_DELAY say_hi4
+}
+
+{ say_hi4
+	if !OMG_WTF
+	callexternal WIZARD4_ID anim_text "You mean where he would EAT them, as his minions looked on."
+	callevent CHAT_DELAY say_hi5
+}
+
+{ say_hi5
+	if !OMG_WTF
+	saytext Umm, yes, quite, brother Quatra. *cough* In anycase, while the armies of elvenkind were combatting Lor Malgoriand's forces outside...
+	callevent convo_anim
+	callevent CHAT_DELAY_LONG say_hi6
+}
+
+{ say_hi6
+	if !OMG_WTF
+	callexternal WIZARD3_ID anim_text "We were here, sealing Undamael, the right hand of Lor Malgoriand, in his pit."
+	callevent CHAT_DELAY say_hi7
+}
+
+{ say_hi7
+	if !OMG_WTF
+	callexternal WIZARD2_ID anim_text "Unfortunately, we could only seal him, not defeat him, with what power we have."
+	callevent CHAT_DELAY say_hi8
+}
+
+{ say_hi8
+	if !OMG_WTF
+	callexternal WIZARD5_ID anim_text "Even then, we cannot hold him forever."
+	callevent CHAT_DELAY_SHORT say_hi9
+}
+
+{ say_hi9
+	if !OMG_WTF
+	callexternal WIZARD4_ID anim_text "You see, our apprentices were supposed to bring us five symbols of power, forged by the Felewyn priestesses."
+	callevent CHAT_DELAY_LONG say_hi10
+}
+
+{ say_hi10
+	if !OMG_WTF
+	saytext "Sadly, we can only assume our apprentices were slain during the war."
+	callevent convo_anim
+	callevent CHAT_DELAY say_hi11
+}
+
+{ say_hi11
+	if !OMG_WTF
+	callexternal WIZARD3_ID anim_text "In which case, the symbols would now be in the hands of the remains of Lor Malgoriand's armies."
+	callevent CHAT_DELAY_LONG say_hi12
+}
+
+{ say_hi12
+	if !OMG_WTF
+	if ( game.players > 1 ) saytext "You seem strong warriors. If you could bring us those symbols, we could put an end to Lord Undamael's evil once and for all."
+	if ( game.players == 1 ) saytext "You seem a strong warrior. If you could bring us those symbols, we could put an end to Lord Undamael's evil once and for all."
+	callevent convo_anim
+	callevent CHAT_DELAY_LONG say_hi13
+}
+
+{ say_hi13
+	if !OMG_WTF
+	saytext "Even weakened by the power of the symbols, Lord Undamael will still be a force to be feared."
+	callevent convo_anim
+	callevent CHAT_DELAY say_hi14
+}
+
+{ say_hi14
+	if !OMG_WTF
+	callexternal WIZARD5_ID anim_text "Indeed, it will take the most powerful warriors in the land to defeat him, even in his weakened state."
+	callevent CHAT_DELAY_LONG say_hi15
+}
+
+{ say_hi15
+	if !OMG_WTF
+	saytext "Please, go forth and seek - return to us the symbols of Felewyn and bring great warriors, that we may bring an end to this evil!"
+	callevent convo_anim
+}
+
+{ game_struck
+
+	if !UNDI_SPAWN
+
+	setvard OMG_WTF 1
+
+	if !DID_WARN
+	setvard DID_WARN 1
+	saytext "What sort of maniac are you!? If any one of us dies Undamael will be freed!"
+}
+
+{ game_death
+	playrandomsound 0 10 SOUND_DEATH1 SOUND_DEATH2 SOUND_DEATH3 SOUND_DEATH4
+	if !UNDI_SPAWN
+	usetrigger mm_undi_spawn
+	setvard UNDI_SPAWN 1
+	setvard REMOVE_DELAY 0.5
+	callevent remove_beams
+	callexternal WIZARD2_ID do_oshi
+	callexternal WIZARD3_ID do_oshi
+	callexternal WIZARD4_ID do_oshi
+	callexternal WIZARD5_ID do_oshi
+	setidleanim crouch_idle
+	playanim once crouch_idle
+}
+
+{ wizard_died
+	if !UNDI_SPAWN
+	usetrigger mm_undi_spawn
+	setvard UNDI_SPAWN 1
+	setvard REMOVE_DELAY 0.5
+	callevent remove_beams
+	callexternal WIZARD2_ID do_oshi
+	callexternal WIZARD3_ID do_oshi
+	callexternal WIZARD4_ID do_oshi
+	callexternal WIZARD5_ID do_oshi
+	setidleanim crouch_idle
+	playanim once crouch_idle
+}
+
+{ game_menu_getoptions
+
+	if !HAS_SYMBOL
+
+	if ( $item_exists(PARAM1,SYMB_ITEM) )
+	{
+		local reg.mitem.title 	"Offer the first symbol"
+		local reg.mitem.type 	payment
+		local reg.mitem.data 	SYMB_ITEM
+		local reg.mitem.callback add_symbol_me
+		menuitem.register
+	}
+	else
+	{
+		local reg.mitem.title 	"Offer the first symbol"
+		local reg.mitem.type 	disabled
+		local reg.mitem.callback none
+		menuitem.register
+	}
+}
+
+{ add_symbol_me
+	saytext Thank you. Remember we'll need all five at the same time.
+	setvard HAS_SYMBOL 1
+	callevent add_symbol
+	setidleanim kneel_idle
+	setmoveanim kneel_idle
+	playanim critical kneel
+
+	//dont reset quest data, you only get to do this once
+//	local QUEST_ITEM_DATA $get_quest_data(PARAM1,f)
+//	local SYMB_IDX $get_find_token(QUEST_ITEM_DATA,SYM_QUEST_NAME)
+//	token.del QUEST_ITEM_DATA SYMB_IDX
+//	quest set PARAM1 f QUEST_ITEM_DATA
+}
+
+{ add_symbol
+	add N_SYMBOLS 1
+	if N_SYMBOLS == 5
+	callevent start_spell
+}
+
+{ init_beams
+	effect beam ents lgtning.spr 100 $get(ent_me,id) 1 WIZARD3_ID 1 (255,0,0) 200 10 -1
+	token.add BEAM_SET $get(ent_lastcreated,id)
+	callevent 0.5 init_beam2
+}
+
+{ init_beam2
+	effect beam ents lgtning.spr 100 WIZARD3_ID 1 WIZARD5_ID 1 (255,0,0) 200 10 -1
+	token.add BEAM_SET $get(ent_lastcreated,id)
+	callevent 0.5 init_beam3
+}
+
+{ init_beam3
+	effect beam ents lgtning.spr 100 WIZARD5_ID 1 WIZARD2_ID 1 (255,0,0) 200 10 -1
+	token.add BEAM_SET $get(ent_lastcreated,id)
+	callevent 0.5 init_beam4
+}
+
+{ init_beam4
+	effect beam ents lgtning.spr 100 WIZARD2_ID 1 WIZARD4_ID 1 (255,0,0) 200 10 -1
+	token.add BEAM_SET $get(ent_lastcreated,id)
+	callevent 0.5 init_beam5
+}
+
+{ init_beam5
+	effect beam ents lgtning.spr 100 WIZARD4_ID 0 $get(ent_me,id) 1 (255,0,0) 200 10 -1
+	token.add BEAM_SET $get(ent_lastcreated,id)
+}
+
+{ remove_beams
+	calleventloop $get_token_amt(BEAM_SET) remove_beams_loop
+}
+
+{ remove_beams_loop
+	effect beam update $get_token(BEAM_SET,game.script.iteration) remove REMOVE_DELAY
+}
+
+{ start_spell
+	//frilly special effects followed by spawning undmael
+	//use a global to tell undi he's to spawn vulnerable
+	//wizards fade
+	//use map effects instead
+	//local WIZ_CENTER $get(GAME_MASTER,scriptvar,WIZARD_CENTER)	//defined by sfor/wizard_center
+	//clientevent new all sfor/wizard_cl WIZARD_CENTER
+	setvard MY_CL_IDX game.script.last_sent_id
+	setvarg G_UNDAMAEL_VULNERABLE 1
+	callevent 0.1 color_beams
+	setvard UNDI_SPAWN 1
+	callevent 1.0 splodie_fx
+	usetrigger mm_undi_fx
+}
+
+{ color_beams
+	calleventloop $get_token_amt(BEAM_SET) color_beams_loop
+}
+
+{ color_beams_loop
+	effect beam update $get_token(BEAM_SET,game.script.iteration) color (0,255,0)
+	effect beam update $get_token(BEAM_SET,game.script.iteration) remove 10.0
+}
+
+
+{ splodie_fx
+	usetrigger mm_undi_spawn
+	//clientevent update all MY_CL_IDX do_explode
+	callevent 0.1 remove_us
+}
+
+{ remove_us
+	callexternal WIZARD2_ID fade_away
+	callexternal WIZARD3_ID fade_away
+	callexternal WIZARD4_ID fade_away
+	callexternal WIZARD5_ID fade_away
+	saytext That's the last of our power - it is up to you to defeat him now. Aim for the horn atop his head! That's his weak point!
+	callevent 0.1 fade_away
+}
+
+{ fade_away
+	deleteent ent_me fade
+}

@@ -1,0 +1,256 @@
+//Thothie: Orc Sniper re-write JAN2009
+//- meh, this broke for reasons I couldnt figure so I needlessly re-wrote it
+//- turns out it is due to the range adjustments in base orc... however
+//- ...I can't for the life of me figure WHY wasnt an issue before. :\
+#scope server
+{
+	//custom
+	const ARROW_TYPE proj_arrow_npc
+	const ATTACK_SPEED 900
+	setvard ATTACK_CONE_OF_FIRE 2//Cone of fire
+	const DMG_BOW $rand(50,100)
+	const KICK_RANGE 96
+	const KICK_HITRANGE 128
+	const KICK_HITCHANCE 90
+	const ANIM_SMASH battleaxe_swing1_L
+	const ANIM_SWIPE swordswing1_L
+	const ANIM_BOW shootorcbow
+	const ANIM_KICK kick
+	const DMG_SMASH '$rand(30,75)'
+	const DMG_SWIPE '$rand(10,30)'
+	const DMG_KICK '$rand(10,30)'
+	const ALT_ATTACKS 1 //tells orc_base_ranged I have alternate attacks
+	const FREQ_KICK 10.0
+
+	//base
+	setvard DROP_GOLD 1
+	setvard DROP_GOLD_AMT $rand(10,20)
+	const DROP_ITEM_BASE1 bows_longbow
+	setvard DROP_ITEM1 DROP_ITEM_BASE1
+	setvard DROP_ITEM1_CHANCE 5%
+	setvard DROPS_CONTAINER 1
+	const CONTAINER_BASE chests/quiver_of_jagged
+	setvard CONTAINER_DROP_CHANCE 30% 
+	setvard CONTAINER_SCRIPT CONTAINER_BASE
+	setvard ANIM_ATTACK shootorcbow
+	setvard FLINCH_CHANCE 45%
+	const FIN_EXP 100	//several monsters use this as an include, so we must use archaic method
+	setvard NPC_GIVE_EXP FIN_EXP
+	setvard MOVE_RANGE 2000
+	setvard ATTACK_RANGE 2000
+	setvard ATTACK_HITRANGE 2000
+	setvard ATTACK_MOVERANGE 2000
+
+	//sound
+	const SOUND_KICK zombie/claw_miss1.wav
+}
+
+#include monsters/orc_base_ranged
+#include monsters/orc_base
+
+{ [shared] orc_spawn
+
+	name an|Elite Blackhand Archer
+	if ( game.map.name equals ms_wicardoven )
+	{
+		name a|Voldar Scout
+		setprop ent_me skin 3
+	}
+	hp 220
+	hearingsensitivity 2
+	setstat parry 30
+	takedmg all .8
+
+	setmodelbody	0 3		//Body 0=naked 1=leather 2=plate 3=green-hide
+	setmodelbody	1 3		//Head 0=cap_shorthorn 1=cap_nohorn 2=buffo_skin 3=cheif_ramhorns 4=green_hood
+	setmodelbody	2 3		//Weapon 0=fist 1=axe 2=bow_weak 3=bow_strng 4=sword 5=bloodyaxe 6=sword&sheild
+
+	callevent 1.0 reset_range //debug
+}
+
+{ reset_range
+	setvard ATTACK_HITRANGE 2000
+}
+
+{ [override] shoot_arrow
+
+	local TARGET_DIST $get(ent_lastseen,range)
+	local FINAL_TARGET $get(ent_lastseen,origin)
+	vectoradd FINAL_TARGET $relpos($vec(0,0,0),$vec(0,0,TARGET_DIST))
+	divide TARGET_DIST 100
+	setangle add_view.pitch TARGET_DIST
+
+	setvard IS_ARROW 1
+	tossprojectile view 900 DMG_BOW ATTACK_CONE_OF_FIRE ARROW_TYPE (0,0,48)
+	callexternal $get(ent_lastprojectile,id) ext_lighten 0.4
+
+	if ( !AM_SORC )
+	{
+		setmodelbody 3 0		//Hide arrow
+	}
+	else
+	{
+		setmodelbody 2 2
+		dbg hide arrow
+	}
+	playsound 2 10 SOUND_BOW
+
+	setvard MELEE_ATK 0
+}
+
+{ grab_arrow
+	if ( !AM_SORC )
+	{
+		setmodelbody 3 1		//Show Arrow
+	}
+	else
+	{
+		setmodelbody 2 3
+		dbg show arrow
+	}
+}
+
+{ game_death
+	if ( !AM_SORC )
+	{
+		setmodelbody 3 0		//Hide arrow
+	}
+	else
+	{
+		setmodelbody 2 2
+	}
+}
+
+{ npcatk_hunt
+	if $get(NPCATK_TARGET,isalive)
+	if ( $get(NPCATK_TARGET,range) >= KICK_RANGE ) setvard ANIM_ATTACK ANIM_BOW
+	if $get(NPCATK_TARGET,range) < KICK_RANGE
+	if game.time > NEXT_KICK
+	if ANIM_ATTACK equals ANIM_BOW
+	playanim break
+	if ( !AM_SORC )
+	{
+		setmodelbody 3 0		//Hide arrow
+	}
+	else
+	{
+		setmodelbody 2 2
+	}
+	setvard ANIM_ATTACK ANIM_SWIPE
+}
+
+{ swing_sword //swipe attack
+
+	setvard ANIM_ATTACK ANIM_KICK
+
+	playsound 0 10 SOUND_KICK
+	setvard ATTACK_PUSH $relvel(-100,130,120)
+   	callevent npcatk_dodamage NPCATK_TARGET KICK_HITRANGE DMG_SWIPE KICK_HITCHANCE
+}
+
+{ kick_land
+
+	setvard ANIM_ATTACK ANIM_SMASH
+
+	playsound 0 10 SOUND_KICK
+	setvard ATTACK_PUSH $relvel(50,130,120)
+   	callevent npcatk_dodamage NPCATK_TARGET KICK_HITRANGE DMG_KICK KICK_HITCHANCE
+}
+
+{ swing_axe
+
+	playsound 0 10 SOUND_KICK
+	setvard ATTACK_PUSH $relvel(50,130,120)
+   	callevent npcatk_dodamage NPCATK_TARGET KICK_HITRANGE DMG_SMASH KICK_HITCHANCE
+	if $get(NPCATK_TARGET,range) < KICK_HITRANGE
+	if $rand(1,2) == 1 
+	applyeffect $get(NPCATK_TARGET,id) effects/heavy_stun 7
+	if ( !AM_TURRET ) callevent npcatk_flee NPCATK_TARGET 600 2
+	setvard NEXT_KICK game.time
+	add NEXT_KICK FREQ_KICK
+}
+
+{ game_dodamage //1: Attack Hit (1/0)  2: Entity Attack hit  3:  Start Position  4:  End Position
+
+	if ( IS_ARROW )
+	{
+		if ( !PARAM1 )	
+		{
+			add ARROW_MISSED 1
+			//if ( AM_TURRET ) add ATTACK_CONE_OF_FIRE 1 //not work so good
+		}
+		if ( PARAM1 )
+		{
+			setvard ARROW_MISSED 0
+			if ( ARROW_PUSH_VEL isnot 'ARROW_PUSH_VEL' ) addvelocity PARAM2 ARROW_PUSH_VEL
+			//if ( AM_TURRET ) setvard ATTACK_CONE_OF_FIRE 2
+		}
+	}
+	setvard IS_ARROW 0
+
+	if ARROW_MISSED > 3
+	callevent change_position
+	setvard ARROW_MISSED 0
+}
+
+{ change_position
+
+	//can't hit from here, so running in a random direction for 3 seconds.
+	if !AM_TURRET
+	playanim critical ANIM_RUN
+	callevent chicken_run 3
+}
+
+{ set_turret
+	setvard AM_TURRET 1
+	setmoveanim ANIM_IDLE
+	setvard ANIM_RUN ANIM_IDLE
+	setvard ANIM_WALK ANIM_IDLE
+	setvard NO_STUCK_CHECKS 1
+	roam 0
+}
+
+{ npc_post_spawn
+	//redundant
+	if AM_TURRET
+	setmoveanim ANIM_IDLE
+	setvard ANIM_RUN ANIM_IDLE
+	setvard ANIM_WALK ANIM_IDLE
+	setvard NO_STUCK_CHECKS 1
+	roam 0
+}
+
+//========== Sorc comments here as Sorc Archers don't actually use Sorc Base
+{ npc_targetsighted
+	if !DID_SPOT_SPEECH
+	setvard DID_SPOT_SPEECH 1
+	if SPOT_SPEECH isnot 'SPOT_SPEECH'
+	saytext SPOT_SPEECH
+}
+
+{ npc_post_spawn
+	if SPAWN_SPEECH isnot 'SPAWN_SPEECH'
+	callevent SPAWN_SPEECH_DELAY say_spawn_speech
+}
+
+{ say_spawn_speech
+	saytext SPAWN_SPEECH
+}
+
+{ set_sorcpal_getem1
+	saytextrange 2048
+	setvard SPOT_SPEECH "Get em!"
+}
+
+{ set_sorcpal_getem2
+	saytextrange 2048
+	if ( game.players > 1 )
+	{
+		setvard SPAWN_SPEECH "Let's see them get out of this one!"
+	}
+	else
+	{
+		setvard SPAWN_SPEECH "Let's see him get out of this one!"
+	}
+	setvard SPAWN_SPEECH_DELAY 3.0
+}

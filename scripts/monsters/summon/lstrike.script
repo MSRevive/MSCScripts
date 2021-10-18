@@ -1,0 +1,206 @@
+//lightning strike, by Thothie
+//- Summons bolts down from sky onto everyone in area
+//- damage sustains for a few seconds
+//- first beam, 128 rad, comes down on summoner, lasts DUR_CENTER secs
+//- secondary beams, 96 rad, come down on each target 2 secs later, last DUR_SECONDARY secs
+//- odd naming conventions as this entire script was originally internal to sorc_chief1 
+{
+	const DUR_CENTER 15.0
+	const DUR_SECONDARY 13.0
+}
+
+{ game_dynamically_created
+	setvard MY_OWNER PARAM1
+	setvard MY_DMG PARAM2
+	setvard MAX_CHILDREN PARAM3 //abs max is 9
+
+	storeentity ent_expowner MY_OWNER
+
+	setvard OWNER_ISPLAYER $get(MY_OWNER,isplayer)
+	setvard PVP_MODE game.pvp
+	drop_to_floor
+	callevent 0.1 summon_start
+}
+
+{ game_spawn
+	name a|Lightning Strike
+	//race beloved
+	invincible 1
+	hp 1
+	setvard PLAYING_DEAD 1
+	drop_to_floor
+}
+
+{ summon_start
+	local BEAP_TOP game.monster.origin
+	local BEAM_BOTTOM game.monster.origin
+	vectorset BEAM_BOTTOM z $get_ground_height(game.monster.origin)
+	setorigin ent_me BEAM_BOTTOM //drop to ground, fo sure
+	local SKY_HEIGHT $get_sky_height(BEAM_TOP)
+	local BEAM_TOP $vec($vec.x(game.monster.origin),$vec.y(game.monster.origin),SKY_HEIGHT)
+	effect beam point lgtning.spr 200 BEAM_BOTTOM BEAM_TOP (255,255,0) 255 100 DUR_CENTER
+	clientevent new all effects/make_light BEAM_BOTTOM 128 (255,255,0) DUR_CENTER
+	setvard CENTER_POINT BEAM_BOTTOM
+
+	playsound 0 10 "weather/Storm_exclamation.wav"
+	setvard IS_ACTIVE 1
+	setvard LBLAST_CUR_TARG 0
+	callevent 0.1 damage_loop
+
+	callevent 2.0 start_secondary
+	callevent DUR_CENTER summon_end
+}
+
+{ start_secondary
+	getents any 1024
+	if ( GET_COUNT > 0 )
+	{
+		setvard LBLAST_LOOPCOUNT 0
+		setvard LBLAST_TARGETS 0
+		calleventloop GET_COUNT lblast_mark_targets
+	}
+	setvard SECONDARY_BEAMS_ON 1
+}
+
+{ lblast_mark_targets
+
+	add LBLAST_LOOPCOUNT 1
+	if ( LBLAST_LOOPCOUNT == 1 ) local CHECK_ENT GET_ENT1
+	if ( LBLAST_LOOPCOUNT == 2 ) local CHECK_ENT GET_ENT2
+	if ( LBLAST_LOOPCOUNT == 3 ) local CHECK_ENT GET_ENT3
+	if ( LBLAST_LOOPCOUNT == 4 ) local CHECK_ENT GET_ENT4
+	if ( LBLAST_LOOPCOUNT == 5 ) local CHECK_ENT GET_ENT5
+	if ( LBLAST_LOOPCOUNT == 6 ) local CHECK_ENT GET_ENT6
+	if ( LBLAST_LOOPCOUNT == 7 ) local CHECK_ENT GET_ENT7
+	if ( LBLAST_LOOPCOUNT == 8 ) local CHECK_ENT GET_ENT8
+	if ( LBLAST_LOOPCOUNT == 9 ) local CHECK_ENT GET_ENT9
+
+	if $get(CHECK_ENT,relationship,MY_OWNER) equals enemy
+
+	//stop pvp damage in non-pvp game
+	if ( OWNER_ISPLAYER )
+	{
+		if PVP_MODE == 0
+		if $get(CHECK_ENT,isplayer)
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	add LBLAST_TARGETS 1
+	if LBLAST_TARGETS <= MAX_CHILDREN
+	local MBEAM_TARG $get(CHECK_ENT,origin)
+	local BEAM_GROUND $get_ground_height(MBEAM_TARG)
+	vectorset MBEAM_TARG z BEAM_GROUND
+	//dbg lblast_mark_targets # LBLAST_LOOPCOUNT name $get(CHECK_ENT,name) gnd BEAM_GROUND adjtarg MBEAM_TARG actpos $get(CHECK_ENT,origin)
+
+	if ( LBLAST_TARGETS == 1 ) setvard LBLAST_TARG1 MBEAM_TARG
+	if ( LBLAST_TARGETS == 2 ) setvard LBLAST_TARG2 MBEAM_TARG
+	if ( LBLAST_TARGETS == 3 ) setvard LBLAST_TARG3 MBEAM_TARG
+	if ( LBLAST_TARGETS == 4 ) setvard LBLAST_TARG4 MBEAM_TARG
+	if ( LBLAST_TARGETS == 5 ) setvard LBLAST_TARG5 MBEAM_TARG
+	if ( LBLAST_TARGETS == 6 ) setvard LBLAST_TARG6 MBEAM_TARG
+	if ( LBLAST_TARGETS == 7 ) setvard LBLAST_TARG7 MBEAM_TARG
+	if ( LBLAST_TARGETS == 8 ) setvard LBLAST_TARG8 MBEAM_TARG
+	if ( LBLAST_TARGETS == 9 ) setvard LBLAST_TARG9 MBEAM_TARG
+
+	local SBEAM_SKY $get_sky_height(MBEAM_TARG)
+	local SBEAM_TOP MBEAM_TARG
+	vectorset SBEAM_TOP z SBEAM_SKY
+	effect beam point lgtning.spr 100 MBEAM_TARG SBEAM_TOP (255,255,0) 200 100 DUR_SECONDARY
+	clientevent new all effects/make_light MBEAM_TARG 96 (255,255,0) DUR_SECONDARY
+}
+
+{ damage_loop
+
+	if IS_ACTIVE
+	callevent 0.25 damage_loop
+	if ( SECONDARY_BEAMS_ON )
+	{
+		add LBLAST_CUR_TARG 1
+		if ( LBLAST_CUR_TARG == 1 )
+		{
+			if !$get(BLAST_CHILD1,exists)
+			createnpc monsters/summon/lstrike_child LBLAST_TARG1 MY_OWNER MY_DMG DUR_SECONDARY
+			setvard BLAST_CHILD1 $get(ent_lastcreated,id)
+		}
+		if ( LBLAST_CUR_TARG == 2 )
+		{
+			if !$get(BLAST_CHILD2,exists)
+			createnpc monsters/summon/lstrike_child LBLAST_TARG2 MY_OWNER MY_DMG DUR_SECONDARY
+			setvard BLAST_CHILD2 $get(ent_lastcreated,id)
+		}
+		if ( LBLAST_CUR_TARG == 3 )
+		{
+			if !$get(BLAST_CHILD3,exists)
+			createnpc monsters/summon/lstrike_child LBLAST_TARG3 MY_OWNER MY_DMG DUR_SECONDARY
+			setvard BLAST_CHILD3 $get(ent_lastcreated,id)
+		}
+		if ( LBLAST_CUR_TARG == 4 )
+		{
+			if !$get(BLAST_CHILD4,exists)
+			createnpc monsters/summon/lstrike_child LBLAST_TARG4 MY_OWNER MY_DMG DUR_SECONDARY
+			setvard BLAST_CHILD5 $get(ent_lastcreated,id)
+		}
+		if ( LBLAST_CUR_TARG == 5 )
+		{
+			if !$get(BLAST_CHILD5,exists)
+			createnpc monsters/summon/lstrike_child LBLAST_TARG5 MY_OWNER MY_DMG DUR_SECONDARY
+			setvard BLAST_CHILD5 $get(ent_lastcreated,id)
+		}
+		if ( LBLAST_CUR_TARG == 6 )
+		{
+			if !$get(BLAST_CHILD6,exists)
+			createnpc monsters/summon/lstrike_child LBLAST_TARG6 MY_OWNER MY_DMG DUR_SECONDARY
+			setvard BLAST_CHILD6 $get(ent_lastcreated,id)
+		}
+		if ( LBLAST_CUR_TARG == 7 )
+		{
+			if !$get(BLAST_CHILD7,exists)
+			createnpc monsters/summon/lstrike_child LBLAST_TARG7 MY_OWNER MY_DMG DUR_SECONDARY
+			setvard BLAST_CHILD7 $get(ent_lastcreated,id)
+		}
+		if ( LBLAST_CUR_TARG == 8 )
+		{
+			if !$get(BLAST_CHILD8,exists)
+			createnpc monsters/summon/lstrike_child LBLAST_TARG8 MY_OWNER MY_DMG DUR_SECONDARY
+			setvard BLAST_CHILD8 $get(ent_lastcreated,id)
+		}
+		if ( LBLAST_CUR_TARG == 9 )
+		{
+			if !$get(BLAST_CHILD9,exists)
+			createnpc monsters/summon/lstrike_child LBLAST_TARG9 MY_OWNER MY_DMG DUR_SECONDARY
+			setvard BLAST_CHILD9 $get(ent_lastcreated,id)
+		}
+		if ( LBLAST_CUR_TARG > 9 ) setvard SECONDARY_BEAMS_ON 0
+	}
+
+	dodamage game.monster.origin 128 MY_DMG 100% 0.1 normal lightning
+}
+
+{ summon_end
+	setvard IS_ACTIVE 0
+	callevent 0.5 remove_me
+}
+
+{ remove_me
+	deleteent ent_me
+}
+
+{ debug_beam //<(start)> [end] [color]
+	//if [end] not provided, draws a 64 unit beam straight up
+	//if [color] no provided, beam is purple
+
+	if ( PARAM3 equals 'PARAM3' ) local BEAM_COLOR (255,0,255)
+	if ( PARAM3 isnot 'PARAM3' ) local BEAM_COLOR PARAM3
+	local BEAM_DURATION 1.0
+	local BEAM_START PARAM1
+	if ( PARAM2 equals 'PARAM2' ) local BEAM_END BEAM_START
+	if ( PARAM2 isnot 'PARAM2' ) local BEAM_END PARAM2
+	vectoradd BEAM_END $relpos($vec(0,0,0),$vec(0,0,64))
+	effect beam point laserbeam.spr 20 BEAM_START BEAM_END BEAM_COLOR 255 0.7 BEAM_DURATION
+}
+
+{
+repeatdelay 1.0
+	playsound 0 10 magic/lightning_strike.wav
+}

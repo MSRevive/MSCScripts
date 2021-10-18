@@ -1,0 +1,180 @@
+//This is an older script and may have some bad conventions as a result.
+
+//Thothie - misc minor improvements sound + animation
+//Standard Troll
+{
+	setvard SOUND_STRUCK1	weapons/cbar_hitbod1.wav
+	setvard SOUND_STRUCK2	weapons/cbar_hitbod1.wav
+	setvard SOUND_STRUCK3	weapons/cbar_hitbod1.wav
+	const SOUND_PAIN	monsters/troll/trollpain.wav
+	const SOUND_ATTACK	monsters/troll/trollattack.wav
+	const SOUND_DEATH	monsters/troll/trolldeath.wav
+	const SOUND_WALK1	monsters/troll/step1.wav
+	const SOUND_WALK2	monsters/troll/step2.wav
+	const SOUND_IDLE	monsters/troll/trollidle2.wav
+	setvard DROP_GOLD 		1
+	setvard DROP_GOLD_MIN		10
+	setvard DROP_GOLD_MAX		35
+	setvar ANIM_IDLE idle0
+	setvar ANIM_RUN	run
+	setvar ANIM_WALK	walk
+	setvard ANIM_DEATH	die_fall
+	setvard ANIM_ATTACK	double_punch	//this varies, needs to be a var
+	setvard ATTACK_RANGE	135
+	setvard ATTACK_HITRANGE	200
+	setvard CAN_FLINCH	0
+	setvard MOVE_RANGE	100
+	setvard CAN_HUNT	1
+	setvard HUNT_AGRO	1
+	setvard NPC_GIVE_EXP		100
+	setvard NPC_MUST_SEE_TARGET 0
+    //setvard STUCK_CHECK_FREQUENCY 1.2 //I move pretty damn fast, so stuck check more often
+	
+	precache SOUND_DEATH
+
+	precachefile monsters/base_monster
+	precachefile monsters/base_npc_attack
+	precachefile monsters/base_npc
+
+	precache weapons/axemetal1.wav
+	precache weapons/axemetal2.wav
+	precache debris/concrete1.wav
+	precache weapons/cbar_hitbod1.wav
+
+}
+
+#include monsters/base_monster_new
+
+{ npc_spawn
+
+	hp 300
+	//ov 100
+	width 100
+	height 125
+	name a|Troll
+	if ( game.map.name equals ww3d ) setvard IS_GUARDIAN 1
+	if ( G_SHAD_PRESENT ) callevent bo_zombie_mode
+	if ( IS_GUARDIAN )
+	{
+		name a|Temple Guardian
+		race demon
+		setprop ent_me skin 1
+		setvard IMMUNE_VAMPIRE 1
+		blood none
+		callevent 0.1 guard_attribs
+	}
+	if ( !IS_GUARDIAN ) race orc
+	roam 1
+	takedmg all .7
+	takedmg fire 1.2
+	takedmg lightning 1.1
+	setmodel monsters/troll.mdl
+	setidleanim idle1
+	setmoveanim ANIM_WALK
+	setactionanim ANIM_ATTACK
+	hearingsensitivity 5
+
+	callevent 10.0 random_idle
+
+	callevent troll_spawn
+}
+
+{ guard_attribs
+	takedmg holy 2.0
+	setvard SOUND_STRUCK1	weapons/axemetal1.wav
+	setvard SOUND_STRUCK2	weapons/axemetal2.wav
+	setvard SOUND_STRUCK3	debris/concrete1.wav
+}
+
+{ attack_1 //called by model double_punch @ frame 13 and 26
+
+	playsound 2 10 SOUND_ATTACK
+	setvar PUSH_VEL $relvel(10,200,10)
+	if ( $get(NPCATK_TARGET,range) < ATTACK_HITRANGE ) callevent npcatk_dodamage ENTITY_ENEMY direct $randf(20,30) 75% blunt
+	
+	if ( $rand(1,4) == 1 ) setvard ANIM_ATTACK hit_down
+}
+
+{ attack_2 //called by model hit_down @ frame 20
+
+	playsound 2 10 SOUND_ATTACK
+	if ( $get(NPCATK_TARGET,range) < ATTACK_HITRANGE ) callevent npcatk_dodamage ENTITY_ENEMY direct $randf(35,45) 75% blunt
+	setvard ANIM_ATTACK double_punch
+	if ( $rand(1,4) == 1 ) setvard ANIM_ATTACK double_punch
+}
+
+{ npc_struck
+   
+	volume 5
+	playsound 2 5 SOUND_PAIN
+}
+
+{ stomp_1	//called by model run @ frame 10 (newer June 27,2006+ model only)
+
+   playsound 2 8 SOUND_WALK1
+}
+
+{ stomp_2	//called by model run @ frame 30 (newer June 27,2006+ model only)
+
+   playsound 2 8 SOUND_WALK2
+}
+
+{ game_hearsound
+
+   volume 10
+   playsound 2 SOUND_IDLE
+}
+
+//idle anims
+{ random_idle
+	////dbg CanHear CAN_HEAR
+	callevent 10.0 random_idle
+	if !IS_HUNTING
+	if !$cansee(enemy)
+	if !IS_FLEEING
+	local ANIM_SELECT $rand(0,3)
+	if ( ANIM_SELECT == 0 ) setvar ANIM_IDLE idle0
+	if ( ANIM_SELECT == 1 ) setvar ANIM_IDLE idle1
+	if ( ANIM_SELECT == 2 ) setvar ANIM_IDLE idle2
+	if ( ANIM_SELECT == 3 ) setvar ANIM_IDLE idle3
+	if ( ADVANCED_SEARCHING ) setvar ANIM_IDLE idle0
+	playanim once ANIM_IDLE
+}
+
+{ warcry	//called by model idle2 @ frame 28
+
+	playsound 2 10 SOUND_IDLE
+}
+
+{ npcatk_targetvalidate
+
+	if !DID_WARCRY
+	if $get(ent_lastseen,isplayer)
+
+	setvard AS_ATTACKING game.time	
+	playanim critical idle2
+	setvard DID_WARCRY 1
+}
+
+{ my_target_died
+	setvard DID_WARCRY 0
+	if !$cansee(player)
+	playanim critical idle2
+}
+
+{  game_damaged_other
+
+   if PUSH_VEL isnot 'PUSH_VEL'
+
+   addvelocity ent_laststruckbyme PUSH_VEL//Push the player a bit
+
+}
+
+{ bo_zombie_mode
+	name a|Petrified Troll
+	race demon
+	setprop ent_me skin 1
+	setvard IMMUNE_VAMPIRE 1
+	blood none
+	callevent 0.1 guard_attribs
+}

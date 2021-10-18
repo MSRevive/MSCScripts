@@ -1,0 +1,240 @@
+//Orion Bow by Thothie (non-h4x0r weapon)
+//Drains mana, damage increases longer held
+{
+  //const MODEL_VIEW       	weapons/bows/elvenbow_lview.mdl
+	const MODEL_VIEW_IDX	3
+	const MODEL_VIEW       	viewmodels/v_bows.mdl
+  const MODEL_HANDS      	weapons/p_weapons2.mdl
+  const MODEL_WORLD      	weapons/p_weapons2.mdl
+  const MODEL_WEAR		weapons/p_weapons2.mdl
+  const SOUND_SHOOT      	weapons/bow/bow.wav
+  const ITEM_NAME		longbow
+  const ANIM_PREFIX		longbow
+	const BASE_LEVEL_REQ 15
+	const MODEL_BODY_OFS 48
+	//const RANGED_STARTPOS (0,32,20)
+
+	const BOLT_SPRITE nhth1.spr
+
+	const CUSTOM_ATTACK 1 //tells base not to register the attack
+
+  //Used in base_ranged
+  //------------------
+  const RANGED_AIMANGLE		(0,3,0)
+
+	const MP_DRAIN 4
+	const CHARGE_RATE 0.3 //lower=faster
+	const DMG_MULTI 10 //pts damage per MP_DRAIN mana
+
+	const NOT_WEARABLE 1
+}
+
+#include items/bows_base
+
+{ bow_spawn
+
+   name 	an|Orion Bow
+   desc 	This enchanted bow fires spheres of pure mana
+   weight 	30
+   size 	1
+   value	1000
+   sethudsprite trade 108
+
+	setvard BOLT_SIZE 0
+
+	callevent custom_register
+}
+
+{ custom_register
+
+   local reg.attack.type		charge-throw-projectile
+   local reg.attack.keys		+attack1
+   local reg.attack.hold_min&max	0.1;0.1
+   local reg.attack.dmg.type		magic
+   local reg.attack.range		200
+   local reg.attack.energydrain	1
+   local reg.attack.stat		archery
+   local reg.attack.COF			0
+   local reg.attack.projectile		proj_mana2
+   local reg.attack.priority		0
+   local reg.attack.delay.strike	0
+   local reg.attack.delay.end		0
+   local reg.attack.ofs.startpos	RANGED_STARTPOS
+   local reg.attack.ofs.aimang		RANGED_AIMANGLE
+	local reg.attack.ammodrain	0
+   local reg.attack.callback		ranged
+   local reg.attack.noise		1000
+	local reg.attack.reqskill BASE_LEVEL_REQ
+
+//   registerattack
+//
+//	local reg.attack.chargeamt 	200%
+//	local reg.attack.priority		1
+//	local reg.attack.callback		level2
+//	registerattack
+//
+//	local reg.attack.chargeamt 	300%
+//	local reg.attack.priority		2
+//	local reg.attack.callback		level3
+//	registerattack
+//
+//	local reg.attack.chargeamt 	400%
+//	local reg.attack.priority		3
+//	local reg.attack.callback		level4
+//	registerattack
+	
+}
+
+//{ [override] ranged_start
+//
+//	setvard MY_OWNER $get(ent_owner,id)
+//
+//	callexternal MY_OWNER set_mana_dart 0 0
+//
+//	setvar STRETCHED 0
+//  	playviewanim  ANIM_STRETCH
+//  	playowneranim critical bow_pull global.anim.combatwalk
+//  	callevent RANGED_PULLTIME ranged_stretchbow
+//
+//	//clientevent all persists 
+//
+//	setvard AM_CHARGING 1
+//	callevent tally_stretch
+//}
+
+{ game_deploy
+	setvard NEXT_ATTACK game.time
+	add NEXT_ATTACK 1.0
+}
+
+{ game_attack1_down
+	if game.time > NEXT_ATTACK
+	setvard NEXT_ATTACK game.time
+	add NEXT_ATTACK 0.2
+	if !AM_CHARGING
+	setvard AM_CHARGING 1
+  	playviewanim  ANIM_STRETCH
+  	//callevent RANGED_PULLTIME ranged_stretchbow
+	if game.serverside
+	callexternal MY_OWNER set_mana_dart 0 0
+  	playowneranim critical bow_pull global.anim.combatwalk
+	if ( !TALLY_ACTIVE )
+	{
+		setvard TALLY_ACTIVE 1
+		callevent tally_stretch
+	}
+}
+
+{ [server] tally_stretch
+
+	if TALLY_ACTIVE
+	callevent 0.1 tally_stretch
+
+	if AM_CHARGING
+
+	if game.time > NEXT_CHARGE
+	setvard NEXT_CHARGE game.time
+	add NEXT_CHARGE CHARGE_RATE
+
+	local BOLT_DMG BOLT_SIZE
+	multiply BOLT_DMG DMG_MULTI
+
+	if !MAX_LEVEL
+	add BOLT_SIZE 1
+
+	if ( !BALOON_ON )
+	{
+		if BOLT_SIZE > 0
+		setvard BALOON_ON 1
+		//see if you can make this a CL effect instead
+		//createnpc monsters/summon/fx_manabolt $relpos(0,10,60) MY_OWNER archery
+		//local BALOON_ID $get(ent_lastcreated,id)
+		clientevent new all items/bows_orion1_cl $get(ent_owner,index)
+		setvard BOW_CL_IDX game.script.last_sent_id
+	}
+	else
+	{
+		clientevent update all BOW_CL_IDX add_charge
+	}
+	
+
+
+	if ( $get(ent_owner,mp) <= MP_DRAIN )
+	{
+		setvard MAX_LEVEL 1
+		dplayermessage ent_owner Orion Bow: Insufficient Mana
+		//callexternal $get(ent_owner,id) set_mana_dart 0 0
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	if ( BOLT_SIZE >= 10 )
+	{
+		setvard BOLT_SIZE 10
+		setvard MAX_LEVEL 1
+	}
+	if ( MAX_LEVEL ) playermessage Manaball has reached maximum charge
+
+	givemp $neg(MP_DRAIN)
+	callexternal ent_owner mana_drain //update mana on player hud readout, if using hud feedback
+
+	svplaysound 1 3 ambience/alien_humongo.wav
+
+	local BOLT_DMG BOLT_SIZE
+	multiply BOLT_DMG DMG_MULTI
+
+	callexternal ent_owner set_mana_dart BOLT_SIZE BOLT_DMG
+}
+
+{ game_-attack1
+
+	//deleteent BALOON_ID
+
+	if AM_CHARGING
+
+	setvard NEXT_ATTACK game.time
+	add NEXT_ATTACK 0.2
+
+	playviewanim ANIM_FIRE
+
+	if ( game.serverside )
+	{
+		clientevent update all BOW_CL_IDX charge_release 
+		callexternal ent_owner ext_tossprojectile view 200 0 0 proj_mana2 (0,20,28)
+
+//		if ( $get(ent_owner,mp) <= MP_DRAIN )
+//		{
+//			callexternal $get(ent_owner,id) set_mana_dart 0 0
+//			playermessage Insufficient Mana!
+//			deleteent ent_lastprojectile
+//		}
+	}
+
+	callevent reset_atk
+}
+
+{ game_fall
+	callevent reset_atk
+}
+
+{ reset_atk
+
+	////dbg resetting atk
+	setvard BALOON_ON 0
+	setvard AM_CHARGING 0
+	setvard BOLT_SIZE 0
+	setvard MAX_LEVEL 0
+	setvard TALLY_ACTIVE 0
+	if game.serverside
+	callexternal $get(ent_owner,id) set_mana_dart 0 0
+}
+
+{ game_putinpack
+	callevent cancel_attack
+}
+
+{ cancel_attack //thought there was a game func for this, but no can find
+	if AM_CHARGING
+	clientevent update all BOW_CL_IDX charge_release 
+	callevent reset_atk
+}

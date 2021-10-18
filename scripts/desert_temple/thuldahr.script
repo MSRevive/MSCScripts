@@ -1,0 +1,141 @@
+{
+	setvard NPC_NO_PLAYER_DMG 1 //don't take damage from players
+	setvard NPC_BATTLE_ALLY 1 //lets player view current health
+	const NPC_FIGHTS_NPCS 1
+
+	setvard ANIM_KNEEL kneel //this has to be a vard as the base script uses it too
+	const ANIM_SWING gglowswing
+	const ANIM_KICK kick
+	setvard ANIM_ATTACK gglowswing
+
+	setvard SORC_NO_TELE 1
+	const SOUND_DRAW_WEAPON weapons/swords/sworddraw.wav
+	const SOUND_SWING weapons/swinghuge.wav
+
+	const ATTACH_IDX_AXE 2
+
+	const FREQ_SPECIAL $randf(10.0,20.0)
+	const N_SPECIALS 3
+
+	const FREQ_KICK $randf(10.0,20.0)
+
+	const DMG_SWING 400
+
+	const DMG_ZAP 300
+	const DOT_ZAP 100
+
+	const SORC_LRESIST 0.0
+	const SORC_PRESIST 1.25
+}
+
+{ game_precache
+	precache weather/lightning.wav //sfx_multi_lighting
+}
+
+{ [override] orc_spawn
+	setmodel monsters/thuldahr.mdl
+	width 64
+	height 128
+	setmodelbody 2 1 //0=unarmed 1=hugeaxe 2=greataxe 3=beef 4=smith 5=mug
+
+	name Thuldahr
+	hp 15000
+	race human
+	takedmg all 0.5
+	takedmg lightning 0.0
+	takedmg poison 1.2
+	takedmg acid 1.5
+
+	width 48
+	height 128
+
+	setvard NO_STUCK_CHECKS 1
+}
+
+#include monsters/orc_base_melee
+#include monsters/sorc_base
+
+{ npc_targetsighted
+	if !CYCLES_ON
+	setvard CYCLES_ON 1
+	callevent FREQ_SPECIAL do_special
+}
+
+{ do_special
+	local RND_SPECIAL $rand(1,N_SPECIALS)
+
+	if ( RND_SPECIAL == 1 )
+	{
+		callevent lstrikes_go
+		setvard SPECIAL_DURATION 5.0
+	}
+
+	if ( RND_SPECIAL == 2 )
+	{
+		callevent repulse_go
+		setvard SPECIAL_DURATION 5.0
+	}
+
+	local SPECIAL_DELAY FREQ_SPECIAL
+	add SPECIAL_DELAY SPECIAL_DURATION
+	callevent SPECIAL_DELAY do_special
+}
+
+{ lstrikes_go
+	playanim critical warcry
+	callevent npcatk_suspend_ai
+	callevent 3.0 npcatk_resume_ai
+	setvard ZAP_TARGETS $get_tsphere(enemy,1024)
+	if ZAP_TARGETS isnot none
+	setvard ZAP_INDEXES ''
+	local N_ZAP_TARGETS $get_token_amt(ZAP_TARGETS)
+	calleventloop N_ZAP_TARGETS lstrikes_affect_targets
+	clientevent new all effects/sfx_multi_lightning ZAP_INDEXES
+}
+
+{ lstrikes_affect_targets
+	local CUR_TARG $get_token(ZAP_TARGETS,game.script.iteration)
+	token.add ZAP_INDEXES $get(CUR_TARG,index)
+	dodamage CUR_TARG direct DMG_ZAP 100% ent_me lightning
+	applyeffect CUR_TARG effects/effect_shock_dmg 5.0 $get(ent_me,id) DOT_ZAP
+}
+
+{ repulse_go
+	playanim critical warcry
+	callevent npcatk_suspend_ai
+	callevent 3.0 npcatk_resume_ai
+	clientevent new all effects/sfx_shock_burst $get(ent_me,origin) 256 1 (255,255,0)
+	setvard REPULSE_TARGETS $get_tsphere(enemy,512)
+	if REPULSE_TARGETS isnot none
+	calleventloop $get_token_amt(REPULSE_TARGETS) repulse_affect_targets
+}
+
+{ repulse_affect_targets
+	local CUR_TARG $get_token(REPULSE_TARGETS,game.script.iteration)
+	if $get(CUR_TARG,relationship,ent_me) equals enemy
+	applyeffect CUR_TARG effects/effect_shock_dmg 5.0 $get(ent_me,id) DOT_ZAP
+	local TARG_ORG $get(CUR_TARG,origin)
+	local TARG_ANG $angles(game.monster.origin,TARG_ORG)
+	setvelocity CUR_TARG $relvel($vec(0,TARG_ANG,0),$vec(10,2000,110))
+}
+
+{ frame_swing //add event
+	playsound 0 10 SOUND_SWING
+	local AXE_POS $get(ent_me,attachpos,ATTACH_IDX_AXE)	
+	xdodamage AXE_POS 200 DMG_SWING 0 ent_me ent_me none slash
+	if game.time > NEXT_KICK
+	setvard ANIM_ATTACK ANIM_KICK
+}
+
+{ frame_kick_start //add event
+	callevent baseorc_yell
+}
+
+{ frame_kick_land //add event
+	playsound 0 10 SOUND_KICK
+	setvard KICK_ATTACK 1
+	dodamage NPCATK_TARGET ATTACK_HITRANGE DMG_KICK 100% blunt
+	setvard ANIM_ATTACK ANIM_SWING
+	setvard NEXT_KICK game.time
+	add NEXT_KICK FREQ_KICK
+}

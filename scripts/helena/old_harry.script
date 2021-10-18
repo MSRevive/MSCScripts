@@ -1,0 +1,245 @@
+// Spawn properties
+{
+	const NO_RUMOR 1
+	const NO_JOB 1
+}
+#include monsters/base_chat
+
+{
+   //eventname MUST be the first field!
+   eventname spawn
+
+   hp 150
+   gold 1   
+   name	       Harry
+   //ov 30
+   width 32
+   height 72
+   race human
+   roam 0      //Don't go roaming around
+   setmodel    npc/human1.mdl
+   setmodelbody 1 1
+   setvar SAY_SO 0
+   setvar FRIGHTENED 0
+   setvar SEE_ENEMY 0
+   setvar CAN_SCREAM 1
+   setvar CAN_RUN 1
+   setvar      STORENAME harrys_inn
+   callevent   createmystore
+
+   catchspeech say_hi hi
+   catchspeech say_hi hello
+   catchspeech say_hi hail
+   catchspeech say_hi greet
+
+   catchspeech say_quiet quiet
+
+   catchspeech say_orcs orcs
+   catchspeech say_dorfgan dorfgan
+   catchspeech say_erkold erkold
+   catchspeech say_serrold serrold
+
+
+   catchspeech say_thanks ok
+   catchspeech say_thanks okay
+   catchspeech say_thanks sure
+}
+
+{
+  eventname say_hi
+
+  playanim once pondering3
+  saytext Greetings to you adventurer!
+  calleventtimed 3 say_hi2test
+}
+
+{
+  eventname say_hi2test
+
+  var SAY_SO equals 0
+
+  saytext I am Harry, your humble innkeeper. If you want to stay here you will have to be [quiet].
+
+  callevent setsayso
+}
+
+{
+  eventname satsayso
+  setvar SAY_SO 1
+}
+
+
+{
+  eventname say_quiet
+
+  playanim once pondering2
+
+  saytext I'm not really allowed to give booze to the adventurers.. Serrold said it would "deterioate their performance" and then he gave order to barricade the door..
+  calleventtimed 4 say_quiet2
+}
+
+{
+  eventname say_quiet2
+
+  playanim once pondering1
+
+  saytext If would have stopped as he said, i would be ruined by now! So I made a small hole in the wall.. you probably saw it on your way in!
+}
+
+
+{
+  eventname say_orcs
+
+  saytext They disappear after 10 drinks!
+}
+
+{
+  eventname say_dorfgan
+
+  playanim once yes
+  saytext Nice guy, he keeps order when my customers get a little "fuzzy"
+}
+
+{
+  eventname say_erkold
+
+  playanim once yes
+  saytext Poor man.. Lost everything..Except his armor, which he sent to Dorfgan for repairs, if I recall him correctly.
+}
+
+{
+  eventname say_serrold
+
+  playanim once no
+  saytext Hmf. Our "village elder". Never sat his foot in my beutiful Inn.
+}
+
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////
+
+{
+  eventname recvoffer_gold
+
+  callevent recv_enoughgold
+  callevent recv_notenoughgold
+}
+{
+  eventname recv_enoughgold
+
+  var OFFER_AMT >= 30
+
+  DLLFunc recvoffer accept
+  saytext Last time Erkold was here, he said he was looking for someone to take care of his [armor].
+  playanim once yes
+}
+{
+  eventname recv_notenoughgold
+
+  var OFFER_AMT < 30
+
+  DLLFunc recvoffer reject
+  saytext I am quite well off without your charity.
+  playanim once no
+}
+
+///////////////////////////////////////////////////////////////////////////////////7
+
+{
+   eventname playerused
+
+   volume 4
+   offerstore STORENAME buysell trade
+}
+
+{
+   eventname createmystore
+
+   createstore STORENAME
+   
+   //           |Store name|  |Item name|  	|Quantity| |cost%|   |Sell ratio|	|Bundle amt|
+   addstoreitem  STORENAME     health_apple         15  	100
+   addstoreitem  STORENAME     health_mpotion       4    	100 0.2
+   addstoreitem  STORENAME     proj_arrow_wooden    300         90 		0		25
+   addstoreitem  STORENAME     drink_mead           20  	20
+   addstoreitem  STORENAME     drink_ale            20  	20
+   addstoreitem  STORENAME     drink_wine           20  	20
+}
+
+// -------------------------------------------------------------
+//                      Flee from monsters
+// -------------------------------------------------------------
+{
+   repeatdelay 0.2
+
+   see enemy 300
+   if SEE_ENEMY equals 0
+
+   callevent flee
+   callevent shiver
+   callevent scream
+}
+{
+   eventname flee
+   if CAN_RUN equals 1
+
+   setmoveanim run1
+   setmovedest flee ent_lastseen 128
+   setvar SEE_ENEMY 1
+   setvar CAN_RUN 1
+   calleventtimed $rand(0,4) resetflee
+}
+{
+   eventname shiver
+   
+   playanim once crouch_idle3
+
+   if CAN_SCREAM equals 1
+   volume 8
+   playsound 1 player/fallpain4.wav
+   say *[100]
+   calleventtimed 2 flee
+}
+
+{
+   eventname stopmoving
+
+   if SEE_ENEMY equals 1
+
+   setvar SEE_ENEMY 0
+}
+{
+   eventname scream
+
+   if CAN_SCREAM equals 1
+
+   volume 8
+   playrandomsound 2 scientist/scream07.wav scientist/scream10.wav scientist/scream12.wav scientist/scream13.wav
+   setvar CAN_SCREAM 0
+   say *[200]
+   calleventtimed $rand(2,6) resetscream
+}
+{
+   eventname resetscream
+
+   setvar CAN_SCREAM 1
+}
+{
+   eventname resetflee
+
+   setvar CAN_RUN 1
+}
+
+{
+   eventname struck
+
+   volume 8
+   playsound 1 player/fallpain4.wav
+   callevent flee
+}
+{
+   eventname parry
+
+   playanim once flinch
+   callevent flee
+}

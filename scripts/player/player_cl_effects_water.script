@@ -1,0 +1,101 @@
+//Player client-side effects
+
+
+// Splashing effects
+// ================
+{ [shared]
+	const SPRITE_1			wsplash3.spr
+	precache SPRITE_1
+	const OFS_POS			5
+	const OFS_NEG			-5
+	const OFS_POS2			15
+	const OFS_NEG2			-15
+	const BIG_SPLASH_SPEED		300
+	const BIG_SPLASH_SND		body/splash1.wav
+	precache BIG_SPLASH_SND
+}
+
+//Thothie DEC2010_31 - Check if every entity on the map is in water, every frame?
+//- hell now, performance budjget
+//{  game_render	//1: Index of entity being rendered  |  2: "1" == Rendering In Mirror
+//
+//	if !PARAM2
+//	if $getcl(PARAM1,inwater)
+//		
+//	if !$getcl(PARAM1,underwater)
+//
+//	local l.pos $getcl(PARAM1,waterorigin)
+//	if l.pos isnot '0'
+//
+//	local l.speed $veclen($getcl(PARAM1,velocity))
+//	if l.speed
+//
+//	local l.splashdelay game.time
+//	subtract l.splashdelay $getcl(PARAM1,baseline.fuser3)
+//
+//	if l.splashdelay > 0.2
+//	
+//	if( l.speed < BIG_SPLASH_SPEED ) callevent water_createsplash l.pos	//small splash
+//	else calleventloop 3 water_createsplash_big l.pos			//3 big splashes
+//
+//  	cleffect setprop PARAM1 baseline.fuser3 	game.time
+//
+//	if PARAM1 != game.localplayer.index
+//	if $rand(0,3) == 0
+//
+//	callevent water_getsnd_wade
+// 	sound.play3d water.snd game.sound.maxvol l.pos
+//}
+
+//Called from physics
+{ game_playermove
+
+	if( game.pmove.oldwaterlevel == 0 )
+	{
+		if game.pmove.waterlevel
+		//Entered water
+
+		if( game.pmove.fallvelocity < BIG_SPLASH_SPEED )
+		{
+			callevent water_getsnd_wade
+		}
+		else
+		{
+			setvard water.snd BIG_SPLASH_SND
+		}
+		
+ 		sound.pm_play water.snd game.sound.maxvol const.snd.voice
+	}
+}
+
+
+{ water_createsplash	//1: Splash Origin
+
+	vectoradd PARAM1 $vec($rand(OFS_NEG,OFS_POS),$rand(OFS_NEG,OFS_POS),$rand(0,1.5))
+	setvard water.splashscale 0.2
+	cleffect tempent sprite SPRITE_1 PARAM1 setup_sprite1_splash
+}
+
+{ water_createsplash_big   //1: Splash Origin
+	
+	vectoradd PARAM1 $vec($rand(OFS_NEG2,OFS_POS2),$rand(OFS_NEG2,OFS_POS2),$rand(-3,0))
+	setvard water.splashscale 1
+	cleffect tempent sprite SPRITE_1 PARAM1 setup_sprite1_splash
+}
+
+{ water_getsnd_wade
+
+	setvard water.snd player/pl_wade
+	stradd water.snd $rand(1,4)
+	stradd water.snd .wav
+}
+
+{  setup_sprite1_splash
+
+	cleffect tempent set_current_prop death_delay 	last_frame
+	cleffect tempent set_current_prop framerate	20
+	cleffect tempent set_current_prop frames	14
+	cleffect tempent set_current_prop scale 	water.splashscale
+	cleffect tempent set_current_prop gravity 	0
+	cleffect tempent set_current_prop collide 	none
+}

@@ -1,0 +1,73 @@
+{
+	const BOAR_SIZE 3
+	const BOAR_SKIN 2
+	const BOAR_MODEL monsters/boar3.mdl
+
+	setvard NPC_GIVE_EXP 1000
+
+	const DMG_GORE_FORWARD $randf(60.0,80.0)
+	const DMG_GORE_LEFT $randf(60.0,80.0)
+	const DMG_GORE_RIGHT $randf(60.0,80.0)
+	const DMG_CHARGE $rand(300,500)
+
+	const DOT_FIRE 75
+
+	const ATTACK_HITCHANCE	70%
+
+	setvard FLEE_CHANCE 10%
+
+	const SOUND_STRUCK1 weapons/axemetal1.wav
+	const SOUND_STRUCK2 weapons/axemetal2.wav
+	const SOUND_STRUCK3 debris/concrete1.wav
+
+	const CL_CHARGE_SCRIPT monsters/boar_lava_cl
+}
+
+{ game_precache
+	precache fire1_fixed2.spr
+}
+
+#include monsters/boar_base_remake
+
+{ boar_spawn
+	name a|Great Lava Boar
+	race demon
+	hp 3000
+	hearingsensitivity 4
+	roam 1
+	takedmg all 0.5
+	takedmg fire 0.0
+	takedmg cold 1.5
+	takedmg pierce 0.5
+	takedmg holy 0.5 //some magic used in creation
+}
+
+{ npc_post_spawn
+	//this is set in the base too (on spawn), so must reset here 
+	setvard DROP_ITEM1_CHANCE 0%
+}
+
+{ game_dodamage
+
+	if $get(NPCATK_TARGET,range) < ATTACK_HITRANGE
+	applyeffect NPCATK_TARGET effects/effect_burn 5.0 $get(ent_me,id) DOT_FIRE
+}
+
+{ boar_charge_sequence
+	local BURST_ORG $get(ent_me,origin)
+	vectoradd BURST_ORG $relpos($vec(0,game.monster.angles.yaw,0),$vec(0,-50,0))
+	clientevent new all effects/sfx_fire_burst BURST_ORG 196 1 (255,128,0)
+	setvard BURST_TARGS $get_tsphere(enemy,196,BURST_ORG)
+	if BURST_TARGS isnot none
+	calleventloop $get_token_amt(BURST_TARGS) burst_affect_targets
+}
+
+{ burst_affect_targets
+	local CUR_TARG $get_token(BURST_TARGS,game.script.iteration)
+	applyeffect CUR_TARG effects/effect_burn 5.0 $get(ent_me,id) DOT_FIRE
+	local TARG_ORG $get(CUR_TARG,origin)
+	local MY_ORG $get(ent_me,origin)
+	local NEW_YAW $angles(MY_ORG,TARG_ORG)
+
+	addvelocity CUR_TARG $relvel($vec(0,NEW_YAW,0),$vec(0,2000,400))
+}

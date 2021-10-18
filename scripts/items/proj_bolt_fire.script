@@ -1,0 +1,203 @@
+
+{
+	const HITSCAN_BOLT 1
+	const MODEL_WORLD weapons/projectiles.mdl
+	const SOUND_HITWALL1 weapons/bow/arrowhit1.wav
+	const SOUND_HITWALL2 weapons/bow/arrowhit1.wav
+  	const MODEL_BODY_OFS 49
+	const ARROW_BODY_OFS 49
+
+	const PROJ_DAMAGE_AOE_RANGE 250
+
+	const PROJ_DAMAGE_TYPE fire
+
+	const PROJ_ANIM_IDLE none
+
+	const PROJ_IGNORENPC 1
+
+	const PROJ_DAMAGE $rand(400,500)
+  	const PROJ_STICK_DURATION	1 	//How long to stick in enemies
+  	const ARROW_SOLIDIFY_ON_WALL	1  	//base_arrow: Turns solid when a wall is hit
+  	const ARROW_BREAK_CHANCE	100%	//base_arrow: Chance of breaking upon hit
+}
+
+#include items/proj_arrow_base
+
+{ arrow_spawn
+
+	name 	a|Dwarven Bolt
+	desc 	An awkward bolt made by the dwarves. "Handle with care"
+	weight 	0.1
+	size 	1
+	value	500
+	gravity		0
+	groupable	25
+	sethudsprite hand arrows
+	sethudsprite trade expbolt
+
+	//dunno why it wont let me use a null.mdl without crashing
+	setprop ent_me rendermode 5
+	setprop ent_me renderamt 0
+}
+
+//{ game_projectile_hitwall
+//	setorigin ent_me TRACE_END
+//}
+
+//{ game_hitnpc
+//	callevent go_splodie
+//}
+
+{ [override] [server] hitscan_bolt
+
+	setvard MY_OWNER $get(ent_expowner,id)
+	setvard MY_XBOW $get(MY_OWNER,active_item)
+
+	setvard BOLT_DAMAGE $get(MY_OWNER,skill.archery)
+	multiply BOLT_DAMAGE 0.01
+	multiply BOLT_DAMAGE PROJ_DAMAGE
+	local DMG_MULTI $get(MY_XBOW,scriptvar,'HITSCAN_DMG_MULTI')
+	if ( DMG_MULTI > 0 ) multiply BOLT_DAMAGE DMG_MULTI
+
+	setvard START_TRACE $get(ent_me,origin)
+	//local TRACE_ANG $get(ent_expowner,viewangles)
+	//vectorset TRACE_ANG x $neg($vec.x(TRACE_ANG))
+	//vectoradd START_TRACE $relpos(TRACE_ANG,$vec(0,20,0))
+
+	local V_MY_DEST $relpos($vec($neg(game.monster.angles.pitch),game.monster.angles.yaw,game.monster.angles.roll),$vec(0,8000,0))
+	local MY_DEST START_TRACE
+	vectoradd MY_DEST V_MY_DEST
+
+	setvard MY_START_ANG $get(ent_me,angles)
+
+	setprop ent_me avelocity 0
+	setprop ent_me velocity 0
+	setprop ent_me movetype 0
+
+//	setvard TRACE_END $get_traceline(START_TRACE,MY_DEST,ent)
+//
+//	dbg trace TRACE_END $get(TRACE_END,exists) $get(TRACE_END,alive) $get(TRACE_END,hp)
+//
+//
+//	if ( $get(TRACE_END,exists) )
+//	{
+//		dbg trace_posnpc $get(TRACE_END,hp)
+//		if ( $get(TRACE_END,hp) == 0 ) local HIT_FUNC 1
+//		if ( !HIT_FUNC )
+//		{
+//			setvard TRACE_END $get(TRACE_END,origin) //hit monster, move to
+//		}
+//		else
+//		{
+//			setvard TRACE_END $get_traceline(START_TRACE,MY_DEST,worldonly) //hit func_wall or such, retrace
+//			dbg trace_wall TRACE_END
+//		}
+//	}
+//
+//	setorigin ent_me TRACE_END //$get(HIT_TARG,origin)
+
+	//xdodamage TRACE_END 128 BOLT_DAMAGE 0.5 MY_OWNER ent_me archery PROJ_DAMAGE_TYPE dmgevent:*bolt
+	if ( G_DEVELOPER_MODE ) effect beam point lgtning.spr 20 START_TRACE MY_DEST (255,0,255) 200 0 1.0
+	xdodamage START_TRACE MY_DEST 0 100% MY_OWNER ent_me none target dmgevent:*boltscan
+	//callevent go_splodie
+}
+
+{ go_splodie
+	if !DID_SPLODIE
+	movetype	none
+	setorigin ent_me TRACE_END
+	setvard DID_SPLODIE 1
+	playrandomsound 0 10 weapons/explode3.wav
+	attachlight torch
+	attachsprite explode1.spr trans 12 1.5
+	expiretime 1
+}
+
+{ boltscan_dodamage
+	if ( $get(PARAM2,isalive) )
+	{
+		setvard TRACE_END $get(PARAM2,origin)
+		setvard DIRECT_HIT 1
+	}
+	else
+	{
+		local L_END PARAM4
+		local L_TRACE $get_traceline(START_TRACE,L_END,worldonly)
+		setvard TRACE_END L_TRACE
+	}
+	dbg boltscan_dodamage TRACE_END $get(PARAM2,name) 
+
+	if ( G_DEVELOPER_MODE )
+	{
+		local L_TRACE_END TRACE_END
+		vectoradd L_TRACE_END z 64
+		effect beam point lgtning.spr 20 TRACE_END L_TRACE_END (255,0,0) 200 0 5.0
+
+		local L_END PARAM4
+		vectoradd L_END z 64
+		effect beam point lgtning.spr 20 PARAM4 L_END (0,0,255) 200 0 5.0
+	}
+	callevent 0.1 splode_dmg
+}
+
+{ splode_dmg
+	xdodamage TRACE_END 128 BOLT_DAMAGE 0.5 MY_OWNER ent_me archery PROJ_DAMAGE_TYPE dmgevent:*bolt
+	setorigin ent_me TRACE_END
+	//massive amounts of fail
+//	dbg splode_dmg MY_START_ANG
+//	setprop ent_me movetype 5
+//	setprop ent_me angles MY_START_ANG
+//	setprop ent_me angle MY_START_ANG
+//	setprop ent_me avelocity $relvel(MY_START_ANG,$vec(0,1000,0))
+//	setprop ent_me velocity $relvel(MY_START_ANG,$vec(0,1000,0))
+//	setangle face MY_START_ANG
+	callevent 0.1 go_splodie
+}
+
+{ bolt_dodamage //PARAM1=hit:0|1 PARAM2=ent_hit PARAM3=(start) PARAM4=(end) DmgType DmgAmt
+	if ( $get(PARAM2,isalive) )
+	{
+		dbg bolt_dodamage_npc $get(PARAM2,origin)
+		//setorigin ent_me $get(PARAM2,origin)
+		if PARAM1
+		local HIT_TARG PARAM2
+		if $get(HIT_TARG,maxhp) < 1000
+		if $get(HIT_TARG,race) isnot human
+		if $get(HIT_TARG,race) isnot hguard
+		//addvelocity HIT_TARG $relvel(10,400,600)
+		local TARG_ORG $get(HIT_TARG,origin)
+		local NEW_YAW $angles(TRACE_END,TARG_ORG)
+		if ( !DIRECT_HIT )
+		{
+			addvelocity PARAM2 $relvel($vec(0,NEW_YAW,0),$vec(10,400,600))
+		}
+		else
+		{
+			addvelocity PARAM2 $relvel($vec(0,NEW_YAW,0),$vec(10,-400,600))
+		}
+	}
+}
+
+//{ game_dodamage
+//
+//	local HIT_TARG PARAM2
+//
+//	if $get(HIT_TARG,isalive)
+//	if $get(HIT_TARG,maxhp) < 1000
+//	if $get(HIT_TARG,race) isnot human
+//	if $get(HIT_TARG,race) isnot hguard
+//	if !$get(HIT_TARG,scriptvar,NO_PUSH)
+//	if !$get(HIT_TARG,scriptvar,IMMUNE_PUSH)
+//	addvelocity HIT_TARG $relvel(10,400,600)
+//}
+
+{ game_fall
+	dbg game_fall MODEL_BODY_OFS MODEL_WORLD
+	setprop ent_me rendermode 0
+	setprop ent_me renderamt 255
+}
+
+{ game_tossprojectile
+	setprop ent_me rendermode 5
+	setprop ent_me renderamt 0
+}

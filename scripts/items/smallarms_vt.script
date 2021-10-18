@@ -1,0 +1,136 @@
+//Vorpal Tongue (Vampyric + FireDOT + FreezeBurst)
+{
+	const BASE_LEVEL_REQ 30
+
+	const CUSTOM_REGISTER_SECONDARY 1
+
+	const CUSTOM_SWING 1
+
+  	const ANIM_LIFT1 0
+  	const ANIM_IDLE1 1
+  	const ANIM_IDLE_TOTAL 1
+  	const ANIM_WIELD 2
+  	const ANIM_UNWIELD 3
+  	const ANIM_WIELDEDIDLE1 4
+  	const ANIM_ATTACK1 23
+  	const ANIM_ATTACK2 6
+
+	const MELEE_VIEWANIM_ATK ANIM_ATTACK1
+
+	const MODEL_VIEW viewmodels/v_smallarms.mdl
+	const MODEL_VIEW_IDX 13
+	const MODEL_HANDS weapons/p_weapons3.mdl
+	const MODEL_WORLD weapons/p_weapons3.mdl
+	const MODEL_BODY_OFS 66
+
+	const MELEE_DMG  250
+	const MELEE_DMG_DELAY  0.2
+	const MELEE_ATK_DURATION 0.5
+}
+
+#include items/smallarms_eth
+
+{  weapon_spawn
+	name  a|Vorpal Tongue
+	desc  Layers of magic have been sewn into this ethereal dagger
+	weight  3
+	size  2
+	value 5000
+	sethudsprite hand 141
+	sethudsprite trade 141
+}
+
+{ game_deploy
+	setvard GAME_PVP game.pvp
+}
+
+{ register_secondary
+
+	local reg.attack.type  strike-land
+	local reg.attack.keys  -attack1
+	local reg.attack.range  MELEE_RANGE
+	local reg.attack.dmg  1
+	local reg.attack.dmg.range 1
+	local reg.attack.dmg.type ice
+	local reg.attack.energydrain 9999
+	local reg.attack.stat  spellcasting.ice
+	local reg.attack.hitchance MELEE_ACCURACY
+	local reg.attack.priority 2
+	local reg.attack.delay.strike 1.5
+	local reg.attack.delay.end 1.8
+	local reg.attack.ofs.startpos MELEE_STARTPOS
+	local reg.attack.ofs.aimang MELEE_AIMANGLE
+	local reg.attack.callback freeze_burst
+	local reg.attack.noise  1000
+	local reg.attack.chargeamt 200%
+	local reg.attack.reqskill 1
+	local reg.attack.dmg.ignore 1
+	local reg.attack.mpdrain 75
+
+	registerattack
+}
+
+{ [override] special_01_start
+
+	if !SPECIAL1_OVERRIDE
+
+	playviewanim ANIM_ATTACK2	
+	if game.serverside
+	svplaysound 1 10 $get(ent_owner,scriptvar,'PLR_SOUND_JAB2')
+}
+
+{ freeze_burst_start
+
+	playviewanim 2
+
+	playsound 0 10 magic/frost_reverse.wav
+
+	effect glow ent_owner (0,75,255) 128 5.0 5.0
+}
+
+{ freeze_burst_strike
+
+//	local ICE_BURST_DAMAGE $get(ent_owner,skill.spellcasting.ice)
+//	createnpc monsters/summon/ice_burst $relpos(0,0,-32) $get(ent_owner,id) ICE_BURST_DAMAGE smallarms
+	clientevent new all monsters/summon/ice_burst_cl $get(ent_owner,index)
+
+	setvard BURST_DAMAGE $get(ent_owner,skill.spellcasting.ice)
+	callexternal ent_owner ext_sphere_token_x enemy 256
+	setvard TARG_LIST $get(ent_owner,scriptvar,'PLR_SCAN_TOKEN')
+	if TARG_LIST isnot none
+	calleventloop $get_token_amt(TARG_LIST) burst_affect_targets
+}
+
+{ burst_affect_targets
+	local CUR_TARG $get_token(TARG_LIST,game.script.iteration)
+
+	if ( !GAME_PVP )
+	{
+		if $get(CUR_TARG,isplayer)
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	local FREEZE_ON_CHANCE $rand(1,2)
+	if ( FREEZE_ON_CHANCE == 1 ) applyeffect CUR_TARG effects/effect_frostbite_dmg 10 $get(ent_owner,id) $rand(10,BURST_DAMAGE) smallarms
+	if ( FREEZE_ON_CHANCE == 2 ) 
+	{
+		if ( $get(CUR_TARG,hp) > 1500 ) applyeffect CUR_TARG effects/effect_frostbite_dmg 10 MY_OWNER $rand(10,BURST_DAMAGE) smallarms
+		if ( $get(CUR_TARG,hp) <= 1500 ) applyeffect CUR_TARG effects/freeze_solid 5 $get(ent_owner,id) $rand(10,20)
+	}
+}
+
+{ game_dodamage
+	if PARAM1
+	if ( $get(PARAM2,isplayer) )
+	{
+		if !GAME_PVP
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	local DOT_BURN $get(ent_owner,skill.spellcasting.fire)
+	multiply DOT_BURN 0.5
+	applyeffect PARAM2 effects/effect_burn 5.0 $get(ent_owner,id) DOT_BURN
+}
+

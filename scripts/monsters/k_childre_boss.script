@@ -1,0 +1,224 @@
+{
+	const PROJECTILE_SCRIPT proj_spore
+	setvard SPORE_POISON_DMG 100
+
+	const DMG_SWIPE $rand(160,300)
+	const FREQ_NOVA 30.0
+	const DUR_NOVA 5.0
+	const DOT_NOVA 50
+
+	setvar NPC_IS_BOSS 1
+
+	const FREQ_RANDOM_JUMP $randf(10.0,30.0)
+}
+
+#include monsters/k_childre
+
+{ game_precache
+	precachefile monsters/summon/poison_burst
+}
+
+{ [override] childre_spawn
+
+	if ( $lcase(game.map.name) equals kfortress )
+	{
+		name Kruxus the Corrupting Shadow
+		setvard NPC_GIVE_EXP 10000
+	}
+	else
+	{
+		name a|Black Kharaztorant Hierophant
+		setvard NPC_GIVE_EXP 800
+	}
+	setmodel monsters/k_childre_black.mdl
+	hp 9001
+	race demon
+	width 32
+	height 68
+	roam 1
+	setbbox npcsize
+	hearingsensitivity 4
+	local L_MAP_NAME $lcase(game.map.name)
+	if ( L_MAP_NAME contains helena )
+	{
+		setvard STEP_SIZE_NORM 18
+		local EXIT_SUB 1
+	}
+	if ( L_MAP_NAME contains demontemple )
+	{
+		setvard STEP_SIZE_NORM 24
+		local EXIT_SUB 1
+	}
+	if ( L_MAP_NAME contains islesofdread )
+	{
+		setvard STEP_SIZE_NORM 24
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+	stepsize STEP_SIZE_NORM
+}
+
+{ npc_post_spawn
+
+	//resistances
+	takedmg all 0.5
+	takedmg fire 1.0
+	takedmg cold 0.5
+	takedmg holy 1.0
+	takedmg poison 0.0
+	takedmg lightning 2.0
+
+	setvard IMMUNE_STUN 50
+
+	//post-load stats used by base
+	setvard ANIM_FLINCH new_flinch
+	setvard CAN_FLINCH 1
+	setvard FLINCH_HEALTH 500
+	setvard FLINCH_DELAY 5.0
+	setvard FLINCH_CHANCE 50
+
+	setmoveanim ANIM_WALK
+	setidleanim ANIM_IDLE
+	setstat parry 100
+}
+
+{ [override] normal_immunes
+	setvard AM_INVISIBLE 0
+	invincible 0
+	takedmg all 0.5
+	takedmg fire 1.0
+	takedmg cold 0.5
+	takedmg holy 1.0
+	takedmg poison 0.0
+	takedmg lightning 2.0
+}
+
+{ [override] do_fireball
+	playsound 0 10 SOUND_FIREBALL
+	setvard FIREBALL_TOSS 1
+	playanim critical ANIM_ATTACK
+	tossprojectile NPCATK_TARGET 400 200 0 PROJECTILE_SCRIPT (0,48,96)
+	subtract FIREBALL_AMMO 1
+	if ( FIREBALL_AMMO == 0 ) setprop ent_me skin 0
+	callevent npcatk_resume_ai
+	roam 1
+}
+
+
+{ [override] do_fade
+	createnpc monsters/summon/poison_burst $get(ent_me,origin) $get(ent_me,id) 128 1 100 30
+	callevent npcatk_flee NPCATK_TARGET 2048 3.0
+	setvard FADE_TARGET NPCATK_TARGET
+	setvard DOING_FADE 1
+	callevent npcatk_suspend_ai 2.0
+	setmoveanim ANIM_RUN
+	setvard WAS_STRUCK 0
+	callevent 0.1 do_fade2
+	callevent 1.0 resume_attack
+}
+
+{ game_struck
+	playsound 0 8 SOUND_STRUCK1 SOUND_STRUCK2 SOUND_STRUCK1 SOUND_STRUCK2 SOUND_PAIN1 SOUND_PAIN2
+	if ( game.time > NEXT_NOVA )
+	{
+		setvard NEXT_NOVA game.time
+		add NEXT_NOVA FREQ_NOVA
+		callevent do_nova
+	}
+	if AM_CRAWLING
+	if DOING_FADE
+	setmoveanim ANIM_RUN
+	setvard AM_CRAWLING 0
+	setvard WAS_STRUCK 1
+	callevent chicken_run 1.5
+}
+
+{ do_nova
+
+	playsound 0 10 magic/spookie1.wav
+	setvard NOVA_LIST $get_tsphere(enemy,256)
+	callevent do_nova_FX
+	if NOVA_LIST isnot none
+	calleventloop $get_token_amt(NOVA_LIST) nova_targets
+}
+
+{ nova_targets
+   
+	local CUR_TARG $get_token(NOVA_LIST,game.script.iteration)
+	//xdodamage CUR_TARG direct NOVA_DMG 100% ent_me ent_me none poison  //Thothie: save server cycles: let the DOT handle the damage
+	applyeffect CUR_TARG effects/greater_poison DUR_NOVA $get(ent_me,id) DOT_NOVA
+
+	//The pushing effect of the nova
+	//playsound 0 10 magic/spookie1.wav //Thothie: Moved to 'do_nova', otherwise sound flood will result when striking multiple targets
+	local TARGET_ORG $get(CUR_TARG,origin)
+	local MY_ORG $get(ent_me,origin)
+	local TARG_ANG $angles(MY_ORG,TARGET_ORG)
+	setvelocity CUR_TARG $relvel($vec(0,TARG_ANG,0),$vec(10,1000,0))
+}
+
+{ [override] npc_targetsighted
+
+	if $cansee(enemy)
+	if ( !DID_WARCRY )
+	{
+		setvard DID_WARCRY 1
+		callevent do_warcry
+	}
+
+	if !STARTED_CYCLES
+	setvard STARTED_CYCLES 1
+	callevent FREQ_FADE fade_check
+	callevent 1.0 fireball_check
+	callevent 1.0 jump_check
+	callevent FREQ_RANDOM_JUMP do_random_jump
+}
+
+{ do_random_jump
+	callevent FREQ_RANDOM_JUMP do_random_jump
+	callevent chicken_run 1.0
+	callevent 0.1 do_jump
+}
+
+{
+repeatdelay 0.5
+
+	local MY_POS $get(ent_me,origin)
+	local MY_Z $vec.z(MY_POS)
+	local MY_GROUND $get_ground_height(MY_POS)
+	if MY_GROUND isnot 'none' //I dunno how $get_ground_height returns 'none' but it does
+	local Z_DIFF MY_GROUND
+	subtract Z_DIFF MY_Z
+	if ( Z_DIFF < 0 ) multiply Z_DIFF -1
+	if Z_DIFF > 256
+	dbg Bombs away ( Z_DIFF - MY_Z vs MY_GROUND )
+	local GROUND_POS $get(ent_me,origin)
+	vectorset GROUND_POS z MY_GROUND
+	tossprojectile GROUND_POS 400 200 30 PROJECTILE_SCRIPT (0,24,-68)
+}
+
+{ [override] etherial_immunes
+	clearfx
+	effect glow ent_me (0,0,0) 10 -1 0
+	invincible 1
+	setvard AM_INVISIBLE 1
+	takedmg fire 0.0
+	takedmg cold 0.0
+	takedmg poison 0.0
+	takedmg holy 0.0
+}
+
+{ game_death
+   if $lcase(game.map.name) equals kfortress      
+
+   //start 128 units from ground pos (in case monster dies in air)
+   local START_POS $get(ent_me,origin)
+   local START_GROUND_Z $get_ground_height(START_POS)
+   vectorset START_POS z START_GROUND_Z
+   vectoradd START_POS z 96
+   
+   //spawn ostentatious client effect
+   clientevent new all kfortress/nh_appear_cl START_POS
+   
+   //time item spawn, more or less, with client script effect end
+   callexternal GAME_MASTER gm_createitem 15.0 smallarms_nh START_POS
+}

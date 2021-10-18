@@ -1,0 +1,308 @@
+//This script eventually to be applied to all helena NPC's as an include
+//- idea being to strip them of vunlerability and move them into a position where the orcs can reach them
+
+//{ orc_raid
+//
+//	//dbg temp got orc raid request
+//
+//	hearingsensitivity 4
+//
+//	setvard NPC_HOME_LOC game.monster.origin
+//	setvard NPC_HOME_ANG game.monster.angles
+//	if ( MY_RAID_POS equals 'MY_RAID_POS' ) setorigin ent_me $relpos(0,128,0)
+//	else setorigin ent_me MY_RAID_POS
+//	invincible  0
+//	roam 1
+//	setmoveanim run
+//	setidleanim idle1
+//	playanim once run
+//
+//	//close shop
+//	menu.autoopen 0
+//	//npsstore.remove STORE_NAME allitems
+//	//npcstore.remove STORE_NAME allitems //is npSstore.remove in script docs, but suspect typo
+//	//npsstore.remove STORE_NAME
+//	//npcstore.remove STORE_NAME
+//
+//	setvard GOT_SCARED 5
+//
+//	callevent 20.0 calm_down
+//
+//	setvard STORE_CLOSED 1
+//
+//	setvard RAID_ON 1
+//}
+//
+//{ stop_running
+//
+//	if !RAID_ON 
+//
+//	setmoveanim walk
+//}
+//
+//
+//{ orc_run_away
+//
+//	if !FLEE_DELAY
+//	setvard FLEE_DELAY 1
+//	callevent 5.0 flee_delay_reset
+//
+//
+//	//dbg Adding panic cuz ( PARAM2 $get(PARAM1,name) ) ( GOT_SCARED )
+//
+//	add GOT_SCARED 1
+//
+//}
+//
+//{ flee_delay_reset
+//
+//	setvard FLEE_DELAY 0
+//}
+//
+//{ calm_down
+//
+//	if ( GOT_SCARED > 1 ) subtract GOT_SCARED 1
+//
+//	if ( GOT_SCARED <= 0 )
+//	{
+//		//dbg Finished calming down,going home
+//		setmoveanim walk_scared
+//		setmovedest NPC_HOME_LOC 30
+//		setvard GOT_SCARED 0
+//		callevent 10.0 check_enemies
+//	}
+//	else
+//	{
+//		//dbg Still Scared ( GOT_SCARED )
+//	}
+//
+//	//dbg Fear_Level GOT_SCARED
+//
+//	if !RETURNED_HOME
+//	callevent 10.0 calm_down
+//}
+//
+//{ check_enemies
+//
+//	if GOT_SCARED <= 0
+//
+//	setvarg G_ORC_TALLY 0
+//	setvarg G_ROGUE_TALLY 0
+//
+//	callexternal all tally_race orc
+//	callevent 0.2 check_rogues //delay in case crash flood
+//	callevent 0.5 check_tally //give time to respond
+//}
+//
+//{ check_rogues
+//
+//	callexternal all tally_race rogue
+//}
+//
+//{ check_tally
+//	
+//	//dbg tally returned orcs G_ORC_TALLY rogues G_ROGUE_TALLY
+//	if G_ORC_TALLY == 0
+//	if G_ROGUE_TALLY == 0
+//
+//	callevent tele_home
+//}
+//
+//{ tele_home
+//
+//	if !RETURNED_HOME
+//
+//	if ( ANIM_IDLE equals 'ANIM_IDLE' ) setvar ANIM_IDLE idle1
+//
+//	setidleanim ANIM_IDLE
+//	setmoveanim ANIM_IDLE
+//	playanim once ANIM_IDLE
+//
+//	setorigin ent_me NPC_HOME_LOC
+//	local OLD_YAW $vec.yaw(NPC_HOME_ANG)
+//	setangle face $vec(0,OLD_YAW,0)
+//
+//	//discounts for our saviors
+//	setvard OVERCHARGE 100
+//	setvard SELL_RATIO 1.0
+//
+//	menu.autoopen 1
+//	setvard RETURNED_HOME 1
+//	setvard STORE_CLOSED 0
+//
+//	if ( !SET_MUSIC ) playmp3 all 2.9 mshelena.mp3
+//	setvarg SET_MUSIC 1
+//}
+
+{ bd_debug
+	saytext var PARAM1 pvar $get(PARAM1,PARAM2)
+	consolemsg PARAM5 $get(ent_me,name) reports: var PARAM1 pvar $get(PARAM1,PARAM2)
+}
+
+//================= NEW SYSTEM
+
+
+{ game_spawn
+	callevent 0.1 helena_setup_homepos
+}
+
+{ helena_setup_homepos //not all scripts use base_npc so we setup homepos here
+
+	local L_MAP_NAME $lcase(game.map.name)
+	if L_MAP_NAME equals helena
+	invincible 0
+}
+
+{ game_struck
+
+	callevent helena_flee $get(ent_laststruck,id) "struck"
+}
+
+{ game_heardsound
+
+	local LAST_HEARD $get(ent_lastheard,id)
+	if $get(LAST_HEARD,range) < 128
+	if !$get(LAST_HEARD,isplayer) //hguards will face some players if this condition isnt here
+	if ( $get(LAST_HEARD,race) equals orc ) callevent helena_flee LAST_HEARD "heard_orc"
+	if ( $get(LAST_HEARD,race) equals rogue ) callevent helena_flee LAST_HEARD "heard_bandit"
+}
+
+{ helena_flee
+
+	//dbg fleeing $get(PARAM1,name)
+
+	roam 1
+
+	setvard SCAREY_GUY PARAM1
+
+	setmoveanim run1
+	setmovedest SCAREY_GUY 1024 flee
+	callevent 10.0 helena_stopflee
+}
+
+{ helena_stopflee
+
+	setmoveanim walk_scared
+}
+
+{ helena_raid_go //called by helena/helena when bad guys come to down
+
+	//dbg helena_raid_go
+
+
+	hearingsensitivity 4
+
+	setvard RAID_ON 1
+	setvard HELENA_RETURNED_HOME 0
+
+	setvard HELENA_SAVED 0
+	if ( NPC_HOME_LOC equals 'NPC_HOME_LOC' )
+	{
+		//only set once
+		setvard NPC_HOME_LOC game.monster.origin
+		setvard NPC_HOME_ANG game.monster.angles
+	}
+	invincible  0
+	setmoveanim walk_scared
+	setidleanim crouch_idle
+
+	//close shop
+	menu.autoopen 0
+	setvard STORE_CLOSED 1
+}
+
+{ helena_raid_end //called by helena/helena when all bad guys are dead
+
+	//go home, if can't get home in 60 seconds, teleport
+	setvard HELENA_TELE_HOME_TIME game.time
+	add HELENA_TELE_HOME_TIME 60.0
+	if ( STORE_NAME isnot 'STORE_NAME' ) callevent helena_return_home
+	if ( STORE_NAME equals 'STORE_NAME' ) callevent helena_made_it_home
+}
+
+{ helena_return_home
+
+	setmovedest NPC_HOME_LOC 10
+	if ( $dist(game.monster.origin,NPC_HOME_LOC) < 10 )
+	{
+		callevent helena_made_it_home
+		local EXIT_SUB 1
+	}
+	if ( game.time >= HELENA_TELE_HOME_TIME )
+	{
+		callevent helena_made_it_home
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+	if game.time < HELENA_TELE_HOME_TIME
+	if !HELENA_RETURNED_HOME
+	local RND_DELAY $randf(4,9)
+	callevent RND_DELAY helena_return_home
+}
+
+{ helena_made_it_home
+
+	//vendors snap to
+	//re-open store at reduced prices
+	setvard OVERCHARGE 50
+	setvard SELL_RATIO 1.0	
+	setvard STORE_CLOSED 0
+	setvard HELENA_SAVED 1
+
+
+	if ( STORE_NAME isnot 'STORE_NAME' )
+	{
+		setorigin ent_me NPC_HOME_LOC
+		local OLD_YAW $vec.yaw(NPC_HOME_ANG)
+		setangle face $vec(0,OLD_YAW,0)
+		setidleanim idle1
+		setmoveanim idle1
+		roam 0
+		setmovedest none
+		npcstore.remove STORE_NAME allitems
+		callevent vendor_addstoreitems
+
+		menu.autoopen 1
+	}
+	else
+	{
+		setidleanim idle1
+		setmoveanim walk
+	}
+
+	setvard HELENA_RETURNED_HOME 1
+
+	setvard RAID_ON 0
+}
+
+{ basevendor_offerstore
+
+	if HELENA_SAVED
+	local RND_SAY $rand(1,3)
+	
+	if ( RND_SAY == 1 ) saytext Thank you for saving our little town. For you, I'll offer a discount rate.
+	if ( RND_SAY == 2 ) saytext For the saviors of Helena, we offer discount rates.
+	if ( RND_SAY == 3 ) saytext Thank you again, please, consider everything on discount. 
+	say [.56] [.4] [.58] [.66]
+}
+
+{ game_struck
+
+	if !DEFAULT_HUMAN //duplications in helenea/default_human
+	callevent call_for_help $get(ent_laststruck,id)
+}
+
+{ [override] call_for_help //PARAM1 = threatening entity
+	saytextrange 1024
+	local RAND_SCREAM $rand(1,4)
+	if ( RAND_SCREAM == 1 ) saytext Help! Help!
+	if ( RAND_SCREAM == 2 ) saytext Guards! Call the guards!
+	if ( RAND_SCREAM == 3 ) saytext Save me!
+	if ( RAND_SCREAM == 4 ) saytext Help! Help! I'm being repressed!
+	callexternal all civilian_attacked PARAM1 $get(PARAM1,isplayer)
+}
+
+{ game_death
+	if !DEFAULT_HUMAN
+	callexternal all civilian_attacked $get(ent_laststruck,id) $get(ent_laststruck,isplayer)
+}

@@ -1,0 +1,125 @@
+{ [client]
+
+	const KE_GLOW_SPRITE 3dmflaora.spr //glow01.spr is easier to control the color, but does not appear on some maps
+	const KE_GLOW_SPRITE_LARGE 0.5
+	const KE_GLOW_SPRITE_SMALL 0.1
+
+	precache KE_GLOW_SPRITE
+}
+
+{ [client] client_activate //<owner> <type> <reup:0|1> <beamup:0|1> <beam_targ_idx>
+
+	dbg ***** ke_setup PARAM1 PARAM2 PARAM3 PARAM4 PARAM5
+
+	setvard KE_OWNER_SKEL PARAM1
+	setvard OWNER_TYPE PARAM2
+	//setvard KE_SPRITE_TARGET PARAM3
+
+	if OWNER_TYPE equals lightning
+	local KNIFE_SPR_ORG $getcl(KE_OWNER_SKEL,bonepos,26)
+	setvard KE_RENDER_ON PARAM3
+	setvard KE_BEAM_ON PARAM4
+	setvard KE_SPRITE_TARGET PARAM5
+	cleffect tempent sprite KE_GLOW_SPRITE KNIFE_SPR_ORG ke_setup_knife_sprite ke_update_knife_sprite 
+	callevent 5.0 ke_maintain_script
+}
+
+{ [client] ke_maintain_script
+	if !KE_END_KNIFE_SPRITE
+	local KNIFE_SPR_ORG $getcl(KE_OWNER_SKEL,bonepos,26)
+	cleffect tempent sprite KE_GLOW_SPRITE KNIFE_SPR_ORG ke_setup_knife_sprite ke_update_knife_sprite
+	callevent 5.0 ke_maintain_script
+}
+
+{ [client] ke_update_knife_sprite
+
+	//dbg **** ke_update_knife_sprite
+
+	if ( KE_END_KNIFE_SPRITE )
+	{
+		cleffect tempent set_current_prop death_delay 0.01
+		cleffect tempent set_current_prop renderamt   0
+		cleffect tempent set_current_prop rendermode add
+	}
+
+	if !KE_END_KNIFE_SPRITE
+
+	if ( KE_RENDER_ON )
+	{
+		local KNIFE_SPR_ORG $getcl(KE_OWNER_SKEL,bonepos,26)
+		cleffect tempent set_current_prop origin KNIFE_SPR_ORG
+		cleffect tempent set_current_prop renderamt   255
+		cleffect tempent set_current_prop rendermode add
+	}
+}
+
+{ [client] ke_beam_loop
+	if KE_BEAM_ON
+	callevent 0.01 ke_beam_loop
+	local SPARK_ORG $getcl(KE_SPRITE_TARGET,origin)
+	vectoradd SPARK_ORG $relpos($vec(0,$randf(0,359),0),$vec(0,32,KE_TARG_HALF_HEIGHT))
+	cleffect tempent sprite KE_GLOW_SPRITE SPARK_ORG ke_spit_sparks
+
+	local BEAM_START $getcl(KE_OWNER_SKEL,bonepos,26)
+	local BEAM_END $getcl(KE_SPRITE_TARGET,origin)
+	vectoradd BEAM_END $relpos($vec(0,0,0),$vec($randf(-32,32),0,$randf($neg(KE_TARG_HALF_HEIGHT),KE_TARG_HALF_HEIGHT)))
+	cleffect beam_points BEAM_START BEAM_END lgtning.spr 0.1 2 0.1 0.3 0.1 30 (2,1.5,0.25) //(1,0.5,2)
+}
+
+{ [client] ke_beam_on //<target> <height>
+
+	dbg ***** KE_BEAM_ON PARAM1 PARAM2
+	setvard KE_SPRITE_TARGET PARAM1
+	setvard KE_TARG_HALF_HEIGHT PARAM2
+	setvard KE_BEAM_ON 1
+	callevent ke_beam_loop
+}
+
+{ [client] ke_beam_off //<target> <height>
+	setvard KE_BEAM_ON 0
+}
+
+{ [client] ke_knife_sprite_on
+	dbg ***** knife_sprite_on
+	setvard KE_RENDER_ON 1
+}
+
+{ [client] ke_setup_knife_sprite
+
+	dbg **** ke_setup_knife_sprite
+	cleffect tempent set_current_prop death_delay    5.0
+	cleffect tempent set_current_prop renderamt   0
+	cleffect tempent set_current_prop rendermode add
+	cleffect tempent set_current_prop velocity $relvel($vec(0,$rand(0,359),0),$vec(0,110,0))
+	cleffect tempent set_current_prop rendercolor (254,254,1)
+	cleffect tempent set_current_prop scale KE_GLOW_SPRITE_LARGE
+	cleffect tempent set_current_prop gravity    0
+	cleffect tempent set_current_prop collide    none
+	cleffect tempent set_current_prop framerate	30
+	cleffect tempent set_current_prop frames	1
+	cleffect tempent set_current_prop update 1
+}
+
+{ [client] ke_spit_sparks
+	cleffect tempent set_current_prop death_delay 	0.5
+	cleffect tempent set_current_prop fadeout 	lifetime
+	cleffect tempent set_current_prop bouncefactor 	5
+	cleffect tempent set_current_prop scale 	KE_GLOW_SPRITE_SMALL
+	cleffect tempent set_current_prop renderamt	255
+	cleffect tempent set_current_prop rendermode add
+	cleffect tempent set_current_prop rendercolor (255,255,128)
+	cleffect tempent set_current_prop gravity 	1.0
+	cleffect tempent set_current_prop collide 	none
+	cleffect tempent set_current_prop framerate	30
+	cleffect tempent set_current_prop frames	1
+}
+
+{ [client] ke_end_effect
+	dbg ***** Ending Effect
+	setvard KE_END_KNIFE_SPRITE 1
+	callevent 1.0 ke_remove_me
+}
+
+{ [client] ke_remove_me
+	removescript
+}

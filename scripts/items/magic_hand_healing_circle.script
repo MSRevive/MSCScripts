@@ -1,0 +1,86 @@
+//Healing Circle by Thothie
+{
+	const NO_REGISTER 1
+
+	const SOUND_SHOOT      	magic/cast.wav
+
+	setvar SPELL_SKILL_REQUIRED	18
+	//const SPELL_FIZZLE_TIME	25
+	//const SPELL_CAST_SUCCESS	95%
+	const SPELL_PREPARE_TIME	1
+	const SPELL_ENERGYDRAIN	50
+	const MANA_COST	150 //special internal handling
+
+	const MELEE_ATK_DURATION 4
+
+	const SPELL_SCRIPT		"monsters/summon/circle_of_healing"
+	precachefile 			SPELL_SCRIPT
+}
+
+#include items/magic_hand_base
+
+{  spell_spawn
+
+	name 		"Healing Circle"
+	desc 		"A large magic circle that heals all allies within"
+}
+
+{ [server] game_attack1
+
+	local TIME_DIFF game.time
+	subtract TIME_DIFF LAST_ATTACK
+	if TIME_DIFF > MELEE_ATK_DURATION
+
+	setvard LAST_ATTACK game.time
+
+	splayviewanim ent_me ANIM_CAST
+	playowneranim	critical PLAYERANIM_PREPARE squatwalk1
+	playsound	game.sound.item game.sound.maxvol SOUND_CHARGE
+
+	if ( $get(ent_owner,mp) < MANA_COST ) dplayermessage ent_owner Insufficient mana.
+	if $get(ent_owner,mp) >= MANA_COST
+
+	//delay for effect
+	callevent 0.5 make_circle
+}
+
+{ make_circle
+	
+	setvard SET_DELETE 0
+	setvard OWNER_LOC $get(ent_owner,origin)
+	setvard NEAR_SEAL $get_tsphere(any,230,OWNER_LOC)
+	if ( G_DEVELOPER_MODE ) gplayermessage ent_owner make_circle: $get_token_amt(NEAR_SEAL)
+	calleventloop $get_token_amt(NEAR_SEAL) check_if_near
+	callevent 0.1 make_circle2
+}
+
+{ check_if_near
+	local CUR_ENT $get_token(NEAR_SEAL,game.script.iteration)
+	if ( G_DEVELOPER_MODE ) consolemsg ent_owner make_circle->check_if_near: found $get(CUR_ENT,name)
+	if $get_scriptflag(CUR_ENT,'hc',name_exists)
+	if !SET_DELETE
+	setvard SET_DELETE 1
+	dplayermessage ent_owner Healing Circle: Cannot create one healing circle within another. 
+}
+
+{ make_circle2
+
+	if !SET_DELETE
+
+	svplaysound 0 10 SOUND_SHOOT
+
+	givemp $neg(MANA_COST)
+	callexternal ent_owner mana_drain //update mana on player hud readout, if using hud feedback
+
+	local HEAL_POWER $get(ent_owner,skill.spellcasting.divination)
+	divide HEAL_POWER 2
+	vectorset OWNER_LOC z $get_ground_height(OWNER_LOC)
+	createnpc SPELL_SCRIPT OWNER_LOC $get(ent_owner,id) $get(ent_owner,stat.concentration) HEAL_POWER
+	deleteent ent_me 
+}
+
+{ fake_precache
+	svplaysound 0 0 SOUND_CHARGE
+	svplaysound 0 0 SOUND_SHOOT
+}
+

@@ -1,0 +1,92 @@
+//Thothie - attempting to see if can create better death sequence
+//Bat
+
+{
+   setvar ANIM_WALK IdleFlyNormal
+   setvar ANIM_RUN ANIM_WALK
+   setvard ANIM_ATTACK bite
+   setvar ANIM_IDLE_HANG IdleHang
+   setvar ANIM_IDLE_FLY IdleFlyNormal
+   setvard ANIM_DEATH IdleFlyNormal	//use normal flight for death anim (see end of script)
+
+   const SOUND_STRUCK1 weapons/cbar_hitbod1.wav
+   const SOUND_STRUCK2 weapons/cbar_hitbod2.wav
+   const SOUND_STRUCK3 weapons/cbar_hitbod3.wav
+   const SOUND_PAIN monsters/rat/squeak1.wav
+   const SOUND_IDLE monsters/rat/squeak2.wav
+   const SOUND_DEATH monsters/rat/squeak3.wav
+
+   setvard MOVE_RANGE 30
+   setvard ATTACK_RANGE 65
+   setvard ATTACK_HITRANGE 100
+   setvard ATTACK_HITCHANCE 80%
+	if ( $lcase(game.map.name) equals catacombs ) setvard ATTACK_HITCHANCE 80%
+   const ATTACK_DAMAGE 20
+   setvard NPC_GIVE_EXP 25
+
+   setvard CAN_FLEE 1		  //base_npc_attack - Whether I run away
+   const FLEE_HEALTH 0		  //base_npc_attack - Flee heath
+   const FLEE_CHANCE 100%	  //base_npc_attack - Flee chance
+
+   precache SOUND_IDLE		//apparently not handled elsewhere
+}
+
+
+#include monsters/bat_base
+
+{  bat_spawn
+
+   	name a|Large Bat
+	hp 100
+
+  	width 32
+  	height 32
+   	hearingsensitivity 3.5
+	setvelocity ent_me $relvel(0,0,0)
+   	setmodel monsters/bat_large.mdl
+
+	if ( $lcase(game.map.name) equals nightmare_edana ) setmonsterclip 0
+}
+
+{  game_postspawn
+	setbbox animsize
+}
+   
+{  bat_drop_down			// Drop down from the ceiling
+
+   	setvard CAN_HUNT 1
+   	setvard BAT_STATUS BAT_FLYING
+   	setidleanim ANIM_IDLE_FLY
+}
+
+{  bite1				// Deal damage
+
+	if $get(NPCATK_TARGET,range) < ATTACK_HITRANGE
+   	dodamage NPCATK_TARGET direct ATTACK_DAMAGE ATTACK_HITCHANCE ent_me pierce
+}
+
+
+   
+{  npc_struck				//Hit by someone
+   
+   	playrandomsound 0 10 SOUND_PAIN SOUND_STRUCK2 SOUND_PAIN
+}
+
+{ game_damaged
+	if game.time > NEXT_DODGE
+	setvard NEXT_DODGE game.time
+	add NEXT_DODGE $randf(1.0,3.0)
+	local RND_LF $randf(-300,300)
+	local RND_FB $randf(-1000,0)
+	local RND_UP $randf(0,300)
+	addvelocity ent_me $relvel(RND_LF,RND_FB,RND_UP)
+}
+
+//Think this would screw with monster spawn counters
+//{ [override] npc_death
+//
+//	//laysound 2 5 SOUND_DEATH
+//	fly 0	//fall to ground
+//        playanim hold IdleFlyNormal
+//	//deleteent ent_me "fade"
+//}

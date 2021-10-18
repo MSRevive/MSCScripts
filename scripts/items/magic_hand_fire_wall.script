@@ -1,0 +1,62 @@
+{
+  const SOUND_SHOOT      	magic/fireball_powerup.wav
+  const SOUND_CHARGE		magic/fireball_strike.wav
+
+  const MELEE_RANGE		500
+  const MELEE_HITCHANCE 	100%
+  const MELEE_ATK_DURATION 	4
+
+  setvar SPELL_SKILL_REQUIRED	13
+  const SPELL_FIZZLE_TIME	10
+  const SPELL_CAST_SUCCESS	98%
+  const SPELL_PREPARE_TIME	2
+  const SPELL_DAMAGE_TYPE	fire
+  const SPELL_ENERGYDRAIN	50
+  const SPELL_MPDRAIN		30
+  const SPELL_STAT		spellcasting.fire
+
+  const EFFECT_MAXDURATION 	30
+  const EFFECT_MINDURATION 	0.5
+  const EFFECT_DURATION_STAT	$get(ent_owner,stat.concentration.ratio)
+  const EFFECT_DURATION 	$get_skill_ratio(EFFECT_DURATION_STAT,EFFECT_MINDURATION,EFFECT_MAXDURATION)
+  const EFFECT_MAX_DMG 		10
+  const EFFECT_MIN_DMG 		0.1
+  const EFFECT_DMG		$get(ent_owner,skill.spellcasting.fire.ratio)
+
+  const EFFECT_SCRIPT		monsters/summon/summon_fire_wall
+  precachefile 			EFFECT_SCRIPT
+}
+
+#include items/magic_hand_base
+
+{  spell_spawn
+
+   name 		Fire wall
+   desc 		Fire wall - A wall of seering fire to trap your opponents
+}
+
+{  spell_casted	//PARAM1: "none"/"npc"/"world"   2: Attack end Position   3: Entity hit (if any)
+
+  	local pos PARAM2
+  	local pos $vec($vec.x(pos),$vec.y(pos),$get_ground_height(pos))
+
+	local FIRE_DURATION 15 //Duration must be constant due to client side effect method in summon script
+	local FIRE_DAMAGE $get(ent_owner,skill.spellcasting.fire)
+	multiply FIRE_DAMAGE 0.5
+
+	//dbg spam FX_SPAMMERS max MAX_FX_SPAMMERS 
+
+	if ( FX_SPAMMERS >= MAX_FX_SPAMMERS ) 
+	{
+		playermessage $get(ent_owner,id) "Too many active FX: cannot create spell."
+		deleteent ent_me
+	}
+	if FX_SPAMMERS < MAX_FX_SPAMMERS
+	createnpc EFFECT_SCRIPT pos $get(ent_owner,id) $get(ent_owner,angles.yaw) FIRE_DAMAGE FIRE_DURATION spellcasting.fire
+	setexpstat ent_lastcreated SPELL_STAT
+	deleteent ent_me //prevents spam
+}
+
+{ fake_precache
+	svplaysound 0 0 SOUND_CHARGE
+}

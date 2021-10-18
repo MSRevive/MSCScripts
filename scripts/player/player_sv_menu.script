@@ -1,0 +1,186 @@
+//Severside Player
+/
+
+//Set up menu options.
+
+{ game_spawn
+
+	menu.autoopen 1
+}
+
+{ game_menu_getoptions
+
+	if( $get(ent_me,id) equals PARAM1 ) callevent menu_self
+	else callevent menu_other PARAM1
+}
+
+{ menu_self
+
+	if ( !$get(ent_me,sitting) )
+	{
+		local reg.mitem.title "Sit Down (Rest)"
+	}
+	else
+	{
+		local reg.mitem.title "Stand Up"
+	}
+	local reg.mitem.type callback
+	local reg.mitem.callback plr_menu_emote
+	local reg.mitem.data player_sitstand
+	menuitem.register
+
+	if ( !$get(ent_me,sitting) )
+	{
+		local reg.mitem.title "Emote: Nod Yes"
+		local reg.mitem.type callback
+		local reg.mitem.callback plr_menu_emote
+		local reg.mitem.data player_nodyes
+		menuitem.register
+
+		local reg.mitem.title "Emote: Nod No"
+		local reg.mitem.type callback
+		local reg.mitem.callback plr_menu_emote
+		local reg.mitem.data player_nodno
+		menuitem.register
+
+
+		local reg.mitem.title "Emote: Stand At Attention"
+		local reg.mitem.type callback
+		local reg.mitem.callback plr_menu_emote
+		local reg.mitem.data player_standidle
+		menuitem.register
+	}
+
+	local reg.mitem.id	itemdesc
+	local reg.mitem.title	"Item Desc"
+	local reg.mitem.type	itemdesc
+	menuitem.register
+
+	local reg.mitem.id	forgive
+	local reg.mitem.title	"Forgive Last PK"
+	local reg.mitem.type	forgive
+	menuitem.register
+
+	setvard PLR_PET_LIST $get_quest_data(ent_me,pets)
+	if ( PLR_PET_LIST isnot 0 )
+	{
+		calleventloop $get_token_amt(PLR_PET_LIST) list_summons
+	}
+
+	if ( $get_token_amt(PLR_ACTIVE_PETS) > 0 )
+	{
+		calleventloop $get_token_amt(PLR_ACTIVE_PETS) list_unsummons
+	}
+}
+
+
+{ menu_other //caller id
+
+	if G_DEVELOPER_MODE
+
+//	local AITEM_ID $get(PARAM1,scriptvar,'PLR_ACTIVE_WEAPON')
+//	local AITEM_NAME $get(AITEM_ID,name)
+//	local AITEM_SCRIPT $get(AITEM_ID,itemname)
+//	
+//	local reg.mitem.title 	"Give "
+//	stradd reg.mitem.title AITEM_NAME
+//	local reg.mitem.type 	callback
+//	local reg.mitem.callback menu_give_item
+//	local reg.mitem.data PARAM1
+//	menuitem.register
+}
+
+{ menu_give_item //caller id
+
+//	local AITEM_ID $get(PARAM1,scriptvar,'PLR_ACTIVE_WEAPON')
+//	local AITEM_NAME $get(AITEM_ID,name)
+//	local AITEM_SCRIPT $get(AITEM_ID,itemname)
+//
+//	if ( AITEM_SCRIPT startswith 'proj_' )
+//	{
+//		infomsg PARAM1 "Cannot trade this item" "You cannot trade stackable items, such as arrows, directly."
+//		local EXIT_SUB 1
+//	}
+//	if !EXIT_SUB
+//
+//	callexternal AITEM_ID ext_remove_item
+//	deleteent AITEM_ID
+//	callexternal GAME_MASTER give_item $get(ent_me,id) AITEM_ID
+}
+
+{ list_summons
+	local PET_TYPE $get_token(PLR_PET_LIST,game.script.iteration)
+	setvard PLR_CHECK_SUMMON_ACTIVE 0
+	setvard PLR_CHECK_SUMMON_ACTIVE_TYPE PET_TYPE
+	calleventloop $get_token_amt(PLR_ACTIVE_PET_TYPES) list_summons_check_active
+	if !PLR_CHECK_SUMMON_ACTIVE
+
+	local reg.mitem.title "Summon pet "
+	if ( PET_TYPE equals pet_wolf ) local PET_NAME "wolf"
+	if ( PET_TYPE equals pet_wolf_ice ) local PET_NAME "ice wolf"
+	if ( PET_TYPE equals pet_wolf_shadow ) local PET_NAME "shadow wolf"
+	stradd reg.mitem.title PET_NAME
+	local reg.mitem.type callback
+	local reg.mitem.data PET_TYPE
+	local reg.mitem.callback ext_summon_pets_new
+
+	if ( game.time < PLR_SUMMON_MENU_DISABLE )
+	{
+		local reg.mitem.title "(5 Second Pet Summon Delay)"
+		local reg.mitem.type disabled 
+	}
+
+	menuitem.register
+
+
+}
+
+{ list_summons_check_active
+	local CUR_SUMMON $get_token(PLR_ACTIVE_PET_TYPES,game.script.iteration)
+	if ( PLR_CHECK_SUMMON_ACTIVE_TYPE contains CUR_SUMMON ) setvard PLR_CHECK_SUMMON_ACTIVE 1
+}
+
+{ list_unsummons
+	dbg PLR_ACTIVE_PETS
+	local PET_ID $get_token(PLR_ACTIVE_PETS,game.script.iteration)
+	if $get(PET_ID,isalive)
+	local reg.mitem.title "Unsummon "
+	stradd reg.mitem.title $get(PET_ID,scriptvar,'ACT_NAME')
+	local reg.mitem.type callback
+	local reg.mitem.data PET_ID
+	local reg.mitem.callback ext_unsummon_pets_new
+
+	if ( game.time < PLR_SUMMON_MENU_DISABLE )
+	{
+		local reg.mitem.title "(5 Second Pet Summon Delay)"
+		local reg.mitem.type disabled 
+	}
+
+	menuitem.register
+}
+
+//
+//	local reg.mitem.id	trade
+//	local reg.mitem.title	"Trade"
+//	local reg.mitem.type	disabled
+//
+//	menuitem.register	
+//
+//	local reg.mitem.id	party
+//	local reg.mitem.title	"Invite to Party"
+//	local reg.mitem.type	disabled
+//
+//	menuitem.register	
+//
+//	local reg.mitem.id	duel
+//	local reg.mitem.title	"Challenge to Duel"
+//	local reg.mitem.type	disabled
+//
+//	menuitem.register	
+//}
+
+{ plr_menu_emote
+	local CMD_STRING "action "
+	stradd CMD_STRING PARAM2
+	clientcmd ent_me CMD_STRING
+}

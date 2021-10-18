@@ -1,0 +1,359 @@
+#include items/base_hide_stuff
+
+//Thothie - These reg's do not match up with the documented Scripting_Items.txt
+//- Not entirely sure if they all work
+//- Adding hitwall function in here (many projtiles using game_hitwall - which turns out to be wrong)
+//Base Projectile
+//1:32 PM 2/11/2005
+//
+//Req. Variables:
+//PROJ_STICK_DURATION
+//PROJ_DAMAGE
+
+{
+	const PROJ_COLLIDEHITBOX 1
+	const PROJ_IGNORENPC 0
+	const	MODEL_WORLD	none
+	const	PROJ_MOTIONBLUR	1
+
+	const CL_PROJECTILE_SCRIPT items/proj_arrow_cl
+}
+
+{  game_spawn
+
+	movetype	projectile	//Causes the orientation to change based on velocity
+
+	if ( !$get(ent_expowner,isplayer) )
+	{
+		if $get(ent_expowner,isalive)
+		if CLIENT_PROJECTILE
+		const_ovrd CLIENT_PROJECTILE 0 //projectiles fired by NPCs will not play well with client side arrows, I suspect
+		dbg overriding client projectile
+	}
+
+	if ( !CLIENT_PROJECTILE )
+	{
+		setworldmodel	MODEL_WORLD
+		callevent 	projectile_spawn
+
+		if ( PROJ_ANIM_IDLE isnot 'PROJ_ANIM_IDLE' ) 
+		{
+			if PROJ_ANIM_IDLE isnot none
+			playanim PROJ_ANIM_IDLE
+			setidleanim PROJ_ANIM_IDLE
+		}
+
+		if ( MODEL_BODY_OFS isnot 'MODEL_BODY_OFS' )
+		{
+			////dbg temp setting ofs MODEL_BODY_OFS
+			setmodelbody 0 MODEL_BODY_OFS
+		}
+	}
+	else
+	{
+		callevent 	projectile_spawn
+		if ( MODEL_BODY_OFS equals 'MODEL_BODY_OFS' )
+		{
+			setvard CL_BODY_OFS ARROW_BODY_OFS
+		}
+		else
+		{
+			setvard CL_BODY_OFS MODEL_BODY_OFS
+		}
+	}
+
+	if ( !HITSCAN_BOLT ) local reg.proj.dmg 		PROJ_DAMAGE
+	else local reg.proj.dmg 0
+	if ( HEAVY_ONLY ) local reg.proj.dmg 		PROJ_DAMAGE
+	local reg.proj.dmgtype 		PROJ_DAMAGE_TYPE
+	local reg.proj.aoe.range 	PROJ_AOE_RANGE
+	local reg.proj.aoe.falloff 	PROJ_AOE_FALLOFF
+	local reg.proj.stick.duration 	PROJ_STICK_DURATION //this is commented out in code, no effect
+	local reg.proj.collidehitbox PROJ_COLLIDEHITBOX //this is a boolean, decides if to use projectile's hitbox or not
+	local reg.proj.ignorenpc PROJ_IGNORENPC //collide only with world, pass through NPCs if set 1
+	setmonsterclip 0
+
+	registerprojectile
+}
+
+{ game_fall
+	if ( !$get(ent_expowner,isplayer) )
+	{
+		if $get(ent_expowner,isalive)
+		if CLIENT_PROJECTILE
+		const_ovrd CLIENT_PROJECTILE 0 //projectiles fired by NPCs will not play well with client side arrows, I suspect
+		dbg overriding client projectile
+	}
+	if ( MODEL_BODY_OFS isnot 'MODEL_BODY_OFS' )
+	{
+		////dbg temp setting ofs MODEL_BODY_OFS
+		if ( CLIENT_PROJECTILE ) setworldmodel	MODEL_WORLD
+		setmodelbody 0 MODEL_BODY_OFS
+	}
+}
+
+{ show_cl_projectile
+	local L_FX_STRING 0
+	if ( PROJ_MOTIONBLUR ) token.add L_FX_STRING blur
+	if ( PROJ_PASS_FX ) token.add L_FX_STRING PROJ_PASS_FX
+
+	local L_INFO_STR $get(ent_me,origin)
+	token.add L_INFO_STR $get(ent_me,angles) 
+	token.add L_INFO_STR $get(ent_me,velocity)
+	token.add L_INFO_STR $get(ent_me,gravity)
+
+	if ( !$get(ent_expowner,isplayer) )
+	{
+		//partial client side arrow for mobs
+		if ( !CL_PROJECTILE_CUSTOM )
+		{
+			clientevent new all CL_PROJECTILE_SCRIPT L_INFO_STR MODEL_WORLD CL_BODY_OFS 0 none L_FX_STRING
+		}
+		else
+		{
+			callevent proj_setup_custom_clfx
+			setvard CL_PROJECTILE_IDX game.script.last_sent_id
+		}
+	}
+	else
+	{
+		local L_DMG_STRING PROJ_DAMAGE
+		token.add L_DMG_STRING PROJ_DAMAGE_TYPE
+		token.add L_DMG_STRING $get(MY_XBOW,index)
+		token.add L_DMG_STRING $get(ent_me,itemname)
+		//<basedmg>;<dmgtype>;<weapon_idx>;<proj_itemname>
+		//partial client side arrow for mobs
+		if ( !CL_PROJECTILE_CUSTOM )
+		{
+			clientevent new all CL_PROJECTILE_SCRIPT L_INFO_STR MODEL_WORLD CL_BODY_OFS $get(ent_expowner,index) L_DMG_STRING L_FX_STRING
+		}
+		else
+		{
+			callevent proj_setup_custom_clfx
+			setvard CL_PROJECTILE_IDX game.script.last_sent_id
+		}
+
+		//from here on we're entirely client side, so go poof (client will tell server what it hit / where it landed)
+		if !CL_PROJECTILE_NO_REMOVE
+		callevent remove_projectile cl_proj
+	}
+}
+
+{ game_tossprojectile
+
+	if ( !$get(ent_expowner,isplayer) )
+	{
+		if $get(ent_expowner,isalive)
+		if CLIENT_PROJECTILE
+		const_ovrd CLIENT_PROJECTILE 0 //projectiles fired by NPCs will not play well with client side arrows, I suspect
+		dbg overriding client projectile
+	}
+	//dbg game_tossprojectile $get(ent_me,itemname)
+	setvard MY_XBOW $get(ent_expowner,active_item)
+
+	if ( CLIENT_PROJECTILE )
+	{
+		callevent 0.01 show_cl_projectile
+		if $get(ent_expowner,isplayer)
+		useable 0
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	//setvard MY_OWNER $get(ent_expowner,id)
+
+	if ( MODEL_BODY_OFS isnot 'MODEL_BODY_OFS' )
+	{
+		////dbg temp setting ofs MODEL_BODY_OFS
+		if ( !CLIENT_PROJECTILE ) setmodelbody 0 MODEL_BODY_OFS
+	}
+	useable		0//Can't be picked up after it's shot/tossed
+	if( PROJ_MOTIONBLUR ) clientevent new all_in_sight effects/sfx_motionblur $get(ent_me,index) MODEL_BODY_OFS
+	callevent game_fall
+
+	if game.serverside
+	if ( HITSCAN_BOLT ) callevent hitscan_bolt
+}
+
+{ game_projectile_landed
+
+	dbg game_projectile_landed
+
+	movetype	none	//Back to normal movement
+	if ( !PROJ_STICK_ON_WALL_NEW )
+	{
+		expiretime 0
+	}
+	else
+	{
+		//expiretime PROJ_STICK_DURATION
+		solidifyprojectile
+	}
+
+	callevent 	projectile_landed
+
+	if ( PROJ_STICK_DURATION == 0 ) callevent remove_projectile landed
+	if ( PROJ_STICK_DURATION > 0 ) callevent PROJ_STICK_DURATION remove_projectile landed_stickdur
+}
+
+//{ ext_touch
+//	dbg ext_touch PARAM1
+//	projectiletouch PARAM1
+//}
+
+{ game_touch
+	if PROJ_REMOVE_ON_USE
+	if !PROJ_DELETING
+	dbg $get(PARAM1,name)
+	if ( $get(PARAM1,keydown,use) )
+	{
+		setvard PROJ_DELETING 1
+		playsound 0 10 SOUND_HITWALL1
+		callevent remove_projectile touch_used
+	}
+	if !$get(PARAM1,isplayer)
+	setvard PROJ_DELETING 1
+	callevent remove_projectile touch_remove
+}
+
+//This is probably never called
+{ hitwall
+
+	playrandomsound game.sound.weapon HITWALL_VOL SOUND_HITWALL1 SOUND_HITWALL2
+
+	if ( PROJ_STICK_DURATION == 0 ) callevent remove_projectile hitwall
+
+	if ( PROJ_STICK_DURATION > 0 ) callevent PROJ_STICK_DURATION remove_projectile hitwall_stickdur
+}
+
+{ ext_lighten //param1 = gravity, called externally
+
+	gravity PARAM1
+}
+
+{ [server] hitscan_bolt
+
+	if ( HEAVY_ONLY )
+	{
+		local EXIT_SUB 1
+		if ( $get(MY_XBOW,name) contains Heavy )
+		{
+			local EXIT_SUB 0
+			gravity 0
+			//dbg adjusting for heavy
+		}
+		if ( $get(MY_XBOW,name) contains Steam )
+		{
+			local EXIT_SUB 0
+			gravity 0
+			//dbg adjusting for heavy
+		}
+	}
+	if !EXIT_SUB
+
+
+	local START_TRACE $get(ent_me,origin)
+	local V_MY_DEST $relpos($vec($neg(game.monster.angles.pitch),game.monster.angles.yaw,game.monster.angles.roll),$vec(0,8000,0))
+	local MY_DEST START_TRACE
+	vectoradd MY_DEST V_MY_DEST
+
+	//debug beam
+	//effect beam point lgtning.spr 20 START_TRACE MY_DEST (255,0,255) 200 0 3
+	local HIT_TARG $get_traceline(START_TRACE,MY_DEST,npc)
+
+	if ( HIT_TARG equals $get(ent_expowner,id) )
+	{
+		local EXIT_SUB 1
+		callevent 0.01 hitscan_bolt
+	}
+	if !EXIT_SUB
+
+	local MY_DAMAGE $get(ent_expowner,skill.archery)
+	multiply MY_DAMAGE 0.01
+	multiply MY_DAMAGE PROJ_DAMAGE
+	local DMG_MULTI $get(MY_XBOW,scriptvar,HITSCAN_DMG_MULTI)
+	if ( DMG_MULTI > 0 ) multiply MY_DAMAGE DMG_MULTI
+
+	if ( !$get(HIT_TARG,isalive) )
+	{
+		setorigin ent_me HIT_TARG
+		setvard BOLT_TRACE_END $get_traceline(START_TRACE,MY_DEST,worldonly)
+		xdodamage START_TRACE MY_DEST MY_DAMAGE 100% ent_expowner ent_me archery PROJ_DAMAGE_TYPE dmgevent:*bolt
+	}
+
+	if ( $get(HIT_TARG,isalive) )
+	{
+		setorigin ent_me $get(HIT_TARG,origin)
+		callevent strike_target HIT_TARG
+	}
+
+//	local HIT_TARG $get_traceline(START_TRACE,MY_DEST,ent)
+//	dbg hitscan_bolt HIT_TARG
+//	if ( !$get(HIT_TARG,isalive) ) setorigin ent_me HIT_TARG
+//
+//	if $get(HIT_TARG,isalive)
+//	if ( HIT_TARG equals MY_OWNER )
+//	{
+//		callevent 0.1 hitscan_bolt
+//		local EXIT_SUB 1
+//	}
+//	if !EXIT_SUB
+//
+//	callevent strike_target HIT_TARG
+}
+
+{ strike_target
+
+	if !BP_HIT_TARGET
+	setvard BP_HIT_TARGET 1
+
+	setorigin ent_me $get(PARAM1,origin)
+
+	local MY_DAMAGE $get(ent_expowner,skill.archery)
+	multiply MY_DAMAGE 0.01
+	multiply MY_DAMAGE PROJ_DAMAGE
+	local DMG_MULTI $get(MY_XBOW,scriptvar,HITSCAN_DMG_MULTI)
+	if ( DMG_MULTI > 0 ) multiply MY_DAMAGE DMG_MULTI
+	//dbg hit $get(MY_XBOW,name) : $get(PARAM1,name) for MY_DAMAGE with PROJ_DAMAGE_TYPE ( skill $get(MY_OWNER,skill.archery) )
+	xdodamage PARAM1 direct MY_DAMAGE 100% ent_expowner ent_expowner archery PROJ_DAMAGE_TYPE
+
+	if ( !PROJ_STICK_ON_NPC ) callevent remove_projectile strike_target
+}
+
+{ game_dodamage
+	setorigin ent_me PARAM4
+}
+
+{ game_projectile_hitnpc //tracelin and projectile touch work different
+
+	//dbg game_projectile_hitnpc $get(PARAM1,name)
+	
+	if HITSCAN_BOLT
+	local OUT_TARG PARAM1
+	callevent strike_target OUT_TARG
+}
+
+{ remove_projectile
+	if ( !$get(ent_expowner,isplayer) )
+	{
+		if $get(ent_expowner,isalive)
+		if CLIENT_PROJECTILE
+		const_ovrd CLIENT_PROJECTILE 0 //projectiles fired by NPCs will not play well with client side arrows, I suspect
+		dbg overriding client projectile
+	}
+
+	dbg remove_projectile PARAM1
+	if ( CLIENT_PROJECTILE )
+	{
+		if CL_PROJECTILE_IDX isnot 'CL_PROJECTILE_IDX' //case we hit before cl effect initiated
+		if !CL_LANDED
+		setvard CL_LANDED 1
+		clientevent update all CL_PROJECTILE_IDX cl_projectile_landed PROJ_STICK_DURATION
+	}
+	expiretime 0
+	deleteent ent_me
+}
+
+{ game_projectile_hitwall
+	dbg game_projectile_hitwall
+}

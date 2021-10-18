@@ -1,0 +1,158 @@
+{
+	//from shark
+   setvar ANIM_IDLE		idle
+   setvar ANIM_WALK		swim
+   setvar ANIM_RUN		thrust
+   setvard ANIM_DEATH		die1
+	setvard ANIM_ATTACK bite_r
+
+	//custom anims
+	const ANIM_ATK_BIG		srattack1 //big_bite1 big_bite2
+	const ANIM_ATK1		bite_r //bite_r
+	const ANIM_ATK2		bite_l //bite_r
+
+	//custom stats
+	const CHANCE_SWALLOW 10%
+	const DMG_BITE $rand(25,60)
+	const DMG_BITE2 $rand(50,100)
+	const DMG_BITE3 $rand(100,200)
+	const PUSH_RANGE 140
+	const FREQ_SWALLOW $randf(20,30)
+	const ATTACK_HITCHANCE 70	
+
+	//sounds
+   const SOUND_IDLE1 		ichy/ichy_idle1.wav
+   const SOUND_IDLE2 		ichy/ichy_idle2.wav
+   const SOUND_ATTACK1		ichy/ichy_bite1.wav
+   const SOUND_ATTACK2		ichy/ichy_bite2.wav
+   const SOUND_STRUCK1 		ichy/ichy_pain2.wav
+   const SOUND_STRUCK2 		ichy/ichy_pain3.wav
+   const SOUND_STRUCK3 		ichy/ichy_pain5.wav
+   const SOUND_STRUCK4 		ichy/ichy_pain3.wav
+   const SOUND_STRUCK5 		ichy/ichy_pain5.wav
+   const SOUND_DEATH 		ichy/ichy_die2.wav
+	precache SOUND_DEATH
+
+   setvard MOVE_RANGE		40
+   setvard ATTACK_RANGE		140
+   setvard ATTACK_HITRANGE	200
+
+   setvar NPC_HACKED_MOVE_SPEED  300 //base_propelled
+
+   setvard NPC_GIVE_EXP		300
+}
+
+#include monsters/fish_base
+
+{ npc_spawn
+
+   	hp 1500
+   	name a|Demon Fish
+   	setmodel monsters/devil_fish1.mdl
+	setbbox animsize
+	width 96
+	height 96
+  	hearingsensitivity 10
+	gravity 0.02
+
+	//etbbox (-100,-100,-60) (100,100,60)
+}
+
+//anim events ============================================
+{ bite_r //called from both bite_r and bite_l
+
+	playrandomsound 0 7 SOUND_ATTACK1 SOUND_ATTACK2
+
+	if ( ANIM_ATTACK equals bite_l )
+	{
+		//dodamage <target> <range> <dmg> <cth> [type]
+		callevent npcatk_dodamage HUNT_LASTTARGET ATTACK_HITRANGE DMG_BITE ATTACK_HITCHANCE $get(ent_me,id) slash
+		addvelocity HUNT_LASTTARGET $vec(100,0,0)		
+		setvard ANIM_ATTACK bite_r
+	}
+	else
+	{
+		callevent npcatk_dodamage HUNT_LASTTARGET ATTACK_HITRANGE DMG_BITE ATTACK_HITCHANCE $get(ent_me,id) slash
+		addvelocity HUNT_LASTTARGET $vec(-100,0,0)
+		setvard ANIM_ATTACK bite_l
+	}
+}
+
+{ big_bite1
+	playrandomsound 0 10 SOUND_ATTACK1 SOUND_ATTACK2
+	callevent npcatk_dodamage HUNT_LASTTARGET ATTACK_HITRANGE DMG_BITE2 ATTACK_HITCHANCE $get(ent_me,id) slash
+	addvelocity HUNT_LASTTARGET $vec(-100,200,0)
+	setvard ANIM_ATTACK bite_l
+}
+
+{ big_bite2
+	playrandomsound 0 10 SOUND_ATTACK1 SOUND_ATTACK2
+	callevent npcatk_dodamage HUNT_LASTTARGET ATTACK_HITRANGE DMG_BITE3 ATTACK_HITCHANCE $get(ent_me,id) slash
+	addvelocity HUNT_LASTTARGET $vec(100,200,0)
+	setvard ANIM_ATTACK bite_r
+}
+//end anim events ============================================
+
+{ cycle_up
+	if !CYCLES_ON
+	setvard CYCLES_ON 1
+	callevent FREQ_SWALLOW do_swallow
+}
+
+{ do_swallow
+	callevent FREQ_SWALLOW do_swallow
+	if HUNT_LASTTARGET isnot ¯NONE¯
+	setvard ANIM_ATTACK ANIM_ATK_BIG
+}
+
+{
+repeatdelay 0.1
+	//push target around in water
+	if $get(HUNT_LASTTARGET,isalive)
+	if $get(HUNT_LASTTARGET,range) < PUSH_RANGE
+	addvelocity HUNT_LASTTARGET $relvel(0,125,0)	
+}
+
+//fly mods
+{
+repeatdelay 0.5
+
+	if ( $get(HUNT_LASTTARGET,range) < ATTACK_RANGE ) playanim once ANIM_ATTACK
+
+	if IS_HUNTING
+	callevent npcatk_faceattacker
+	if ( $get(HUNT_LASTTARGET,range) > MOVE_RANGE ) setvelocity ent_me $relvel(0,200,0)
+	if ( $get(HUNT_LASTTARGET,range) <= MOVE_RANGE ) setvelocity ent_me $vec(0,0,0)
+	//if ( SPITTING ) setvelocity ent_me $vec(0,0,0)
+
+	if ( FLIGHT_STUCK > 4 )
+	{
+		//callevent chicken_run 1.0
+		callevent do_rand_tweedee
+		callevent npcatk_suspend_ai $randf(0.3,0.9)
+		setmovedest NEW_DEST game.monster.moveprox
+		callevent 0.1 horror_boost
+		setvard FLIGHT_STUCK 0
+	}
+
+	local TARG_POS $get(NPCATK_TARGET,origin)
+	if ( !SUSPEND_AI ) setangle face_origin TARG_POS
+
+
+	if !IS_FLEEING
+	if !SPITTING
+	if $get(NPCATK_TARGET,range) > ATTACK_RANGE
+	local CUR_PROG $dist(game.monster.origin,TARG_POS)
+	if ( LAST_PROG >= CUR_PROG ) add FLIGHT_STUCK 1
+	setvard LAST_PROG $dist(game.monster.origin,TARG_POS)
+	setvard LAST_POS game.monster.origin
+	
+}
+
+{ chicken_run
+	callevent 0.1 horror_boost
+}
+
+{ horror_boost
+	setvelocity ent_me $relvel(0,500,0)
+}

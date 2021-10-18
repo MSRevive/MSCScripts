@@ -1,0 +1,382 @@
+//Blood goblin fodder by Thothie
+//
+//Weakest of the blood goblins
+//generic randomized high-end goblin with random weapon
+//
+//All the bgoblins and vgoblins use this as their base, hence its complexity
+//In addition the hobgoblin_ scripts use this base their base
+//The old goblin_ scripts, however, still use their original configurations, and do not share this script
+
+#scope server
+
+{
+	//base
+	setvar ANIM_WALK walk
+	setvar ANIM_IDLE idle1
+	setvar ANIM_RUN run
+	setvard ATTACK_RANGE 64
+	setvard ATTACK_HITRANGE 80
+	setvard ATTACK_MOVERANGE 48
+	setvard MOVE_RANGE 48
+	setvard NPC_GIVE_EXP 100
+	setvard DROP_GOLD 1
+	setvard DROP_GOLD_AMT $rand(10,15)
+	setvard NPC_ALLY_RESPONSE_RANGE 4096
+	setvard ANIM_DEATH die_fallback
+	setvard CAN_FLINCH 1
+	setvard FLINCH_ANIM flinch
+	const FLINCH_CHANCE 25%
+	setvard FLINCH_HEALTH 100
+
+	//custom
+	const ANIM_SMASH battleaxe_swing1_L
+	const ANIM_SWIPE swordswing1_L
+	const ANIM_WARCRY warcry
+	const ANIM_KICK kick
+	const ANIM_BOW shootorcbow
+	const DMG_CLUB $rand(8,15)
+	const DMG_AXE $rand(10,20)
+	const DMG_SWORD $rand(12,15)
+	const GOB_TYPE $rand(1,3) //1-Club 2-Axe 3-Sword
+	const GOBLIN_JUMPRANGE 512
+	const DMG_FIREBALL 10
+	const DMG_FIREBALL_DOT 5
+	const FREQ_FIREBALL $randf(20.0,30.0)
+	const GOB_JUMPER 1
+	const ANIM_PARRY deflectcounter
+	const CHARGE_SPEED 600
+	const FREQ_CHARGE 5.0
+	const GOB_CHARGER 1
+	const GOB_CHARGE_MIN_DIST 96
+	const GOB_CHARGE_MAX_DIST 256
+	const MIN_FIREBALL_DIST 96
+
+	const NEW_MODEL 1
+
+
+	//sounds
+	const SOUND_STRUCK1 body/flesh1.wav
+	const SOUND_STRUCK2 body/flesh2.wav
+	const SOUND_STRUCK3 body/flesh3.wav
+	const SOUND_PAIN1 monsters/goblin/c_gargoyle_hit1.wav
+	const SOUND_PAIN2 monsters/goblin/c_gargoyle_hit2.wav
+	const SOUND_ALERT1 monsters/goblin/c_goblin_bat1.wav
+	const SOUND_ALERT2 monsters/goblin/c_goblin_bat2.wav
+	const SOUND_IDLE monsters/goblin/c_goblin_slct.wav
+	const SOUND_ATTACK1 monsters/goblin/c_goblin_atk1.wav
+	const SOUND_ATTACK2 monsters/goblin/c_goblin_atk2.wav
+	const SOUND_ATTACK3 monsters/goblin/c_goblin_atk3.wav
+	const SOUND_FIREBALL_CAST monsters/goblin/c_gargoyle_slct.wav
+	const SOUND_FIREBALL magic/fireball_strike.wav
+	const SOUND_IDLE monsters/goblin/c_goblin_slct.wav
+	const SOUND_JUMP1 monsters/goblin/c_goblin_hit1.wav
+	const SOUND_JUMP2 monsters/goblin/c_goblin_hit2.wav
+	const SOUND_PARRY1 body/armour1.wav
+	const SOUND_PARRY2 body/armour2.wav
+	const SOUND_PARRY3 body/armour3.wav
+	const SOUND_CHIEF_ALERT monsters/goblin/c_goblinchf_bat1.wav
+	const SOUND_SHAM_ALERT monsters/goblin/c_goblinwiz_bat1.wav
+
+	const SOUND_DEATH monsters/goblin/c_goblin_dead.wav
+	precache SOUND_DEATH //this may need to be done in top script
+}
+
+#include monsters/base_monster_new
+
+{ [shared] npc_spawn
+
+	callevent goblin_spawn
+	callevent 1.0 idle_mode
+	callevent 0.01 goblin_pre_spawn //use to reset setvard props handled by post_spawn
+}
+
+{ goblin_pre_spawn //not required in this script, but here to stop console spam
+	setvard ATTACK_RANGE 64
+	setvard ATTACK_HITRANGE 80
+	setvard ATTACK_MOVERANGE 48
+	setvard MOVE_RANGE 48
+}
+
+{ [shared] goblin_spawn
+
+	name a|Blood Goblin
+	if ( !NEW_MODEL )
+	{
+		setmodel monsters/goblin2.mdl
+		width 32
+		height 60
+	}
+	else
+	{
+		setmodel monsters/goblin_new.mdl
+		width 24
+		height 50
+	}
+	
+	race goblin
+	blood red //green for v_goblin
+	hp 200
+
+	roam 1
+
+	hearingsensitivity 2
+
+	if ( !NEW_MODEL )
+	{
+		setmodelbody 0 0 //body: 0-Bare 1-Archer 2-Armor 3-Sniper
+		setmodelbody 1 4 //head: 0-Horns 1-Spikes 2-Animal 3-Chief 4-Cowl
+		setmodelbody 2 0 //weapon: 0-Unarmed 1-Axe 2-wbow 3-sbow 4-sword 5-rAxe 6-sword&shield 7-club 8-knife
+		setmodelbody 3 0 //arrow: on/off
+
+		setprop ent_me skin 2
+	}
+	else
+	{
+		setmodelbody 0 0 //body: 0-Bare 1-Quiver&Strap
+		setmodelbody 1 0 //head: 0-Bare 1-Horns 2-Animal 3-Chief 4-Rag
+		setmodelbody 2 0 //weapon: 0-Unarmed 1-Axe 2-wbow 3-sbow 4-sword 5-rAxe 6-sword&shield 7-club 8-knife
+		setmodelbody 3 0 //arrow: On/off
+		
+
+		setprop ent_me skin 1 //0-norm 1-blood 2-vile
+	}
+
+	setidleanim ANIM_IDLE
+	setmoveanim ANIM_WALK
+
+	takedmg fire 0.5	//blood goblins only
+	takedmg cold 1.25
+
+	if F_GOB_TYPE equals 'F_GOB_TYPE'
+	callevent 0.01 goblin_set_weapon
+}
+
+{ goblin_set_weapon
+
+	if !GOB_TYPE_SET
+	setvard GOB_TYPE_SET 1
+
+	if ( PARAM1 startswith PARAM )
+	{
+		setvard F_GOB_TYPE GOB_TYPE
+	}
+	else
+	{
+		setvard F_GOB_TYPE PARAM1
+	}
+
+
+	if ( F_GOB_TYPE == 1 )
+	{
+		//clubber
+		setmodelbody 0 0
+		setmodelbody 2 7
+		setvard ANIM_ATTACK ANIM_SMASH
+		setvard ATTACK_HITCHANCE 75%
+		local MY_HP $get(ent_me,hp)
+		multiply MY_HP 1.5
+		hp MY_HP
+		setvard CAN_STUN 0 //only guards stun
+	}
+
+	if ( F_GOB_TYPE == 2 )
+	{
+		//axe
+		setmodelbody 0 0
+		setmodelbody 2 1
+		setvard ANIM_ATTACK ANIM_SMASH
+		setvard ATTACK_HITCHANCE 80%
+		local MY_HP $get(ent_me,hp)
+		multiply MY_HP 1.25
+		hp MY_HP
+		setvard CAN_STUN 0
+	}
+
+	if ( F_GOB_TYPE == 3 )
+	{
+		//sword
+		setvard CAN_FIREBALL 1
+		setmodelbody 0 1
+		setmodelbody 2 4
+		setvard ANIM_ATTACK ANIM_SWIPE
+		setvard ATTACK_HITCHANCE 90%
+		setvard CAN_STUN 0
+	}
+}
+
+{ swing_axe //ANIM_SMASH
+
+	playrandomsound 0 10 SOUND_ATTACK1 SOUND_ATTACK2 SOUND_ATTACK3
+	if ( F_GOB_TYPE == 1 ) dodamage NPCATK_TARGET ATTACK_HITRANGE DMG_CLUB ATTACK_HITCHANCE blunt
+	if ( F_GOB_TYPE == 2 ) dodamage NPCATK_TARGET ATTACK_HITRANGE DMG_AXE ATTACK_HITCHANCE slash
+}
+
+{ swing_sword //ANIM_SWIPE
+
+	if ( TOSS_FIREBALL ) callevent toss_fireball
+	if !TOSS_FIREBALL
+	playrandomsound 0 10 SOUND_ATTACK1 SOUND_ATTACK2 SOUND_ATTACK3
+	dodamage NPCATK_TARGET ATTACK_HITRANGE DMG_SWORD ATTACK_HITCHANCE slash
+}
+
+{ toss_fireball
+	setvard TOSS_FIREBALL 0
+	tossprojectile NPCATK_TARGET 400 DMG_FIREBALL 0.5 proj_fire_ball (0,48,28)
+	callexternal ent_lastprojectile lighten DMG_FIREBALL_DOT 0.01
+	playsound 0 10 SOUND_FIREBALL
+}
+
+{ npcatk_hunt
+
+	callevent gob_hunt
+}
+
+{ gob_hunt
+
+	if $get(NPCATK_TARGET,isalive)
+	if !SUSPEND_AI
+	if !I_R_FROZEN
+
+	if ( CAN_FIREBALL )
+	{
+		if !IS_FLEEING
+		if game.time > NEXT_FIREBALL
+		callevent prep_fireball
+	}
+
+	if GOB_CHARGER
+	if game.time > NEXT_LEAP
+
+	if $get(NPCATK_TARGET,range) > GOB_CHARGE_MIN_DIST
+	if $get(NPCATK_TARGET,range) < GOB_CHARGE_MAX_DIST
+	if !I_R_FROZEN
+
+	callevent leap_forward
+}
+
+{ prep_fireball
+	if $get(NPCATK_TARGET,range) > MIN_FIREBALL_DIST
+	if $cansee(NPCATK_TARGET)
+	setvard NEXT_FIREBALL game.time
+	add NEXT_FIREBALL FREQ_FIREBALL
+	setvard TOSS_FIREBALL 1
+	playanim critical ANIM_SWIPE
+	playsound 0 10 SOUND_FIREBALL_CAST
+	setvard AS_ATTACKING game.time
+	add AS_ATTACKING 10.0
+}
+
+{ leap_forward
+
+	setvard NEXT_LEAP game.time
+	add NEXT_LEAP FREQ_CHARGE
+	playrandomsound 0 10 SOUND_JUMP1 SOUND_JUMP2
+	playanim critical ANIM_SMASH
+	addvelocity ent_me $relvel(0,CHARGE_SPEED,100)
+	callevent 0.5 leap_stun
+}
+
+{ leap_stun
+	setvard STUN_LIST $get_tsphere(enemy,64,game.monster.origin)
+	if STUN_LIST isnot none
+	calleventloop $get_token_amt(STUN_LIST) stun_targets
+}
+
+{ stun_targets
+	local CUR_TARGET $get_token(STUN_LIST,game.script.iteration)
+	addvelocity CUR_TARGET $relvel(0,200,120)
+	if ( CAN_STUN ) applyeffect CUR_TARGET effects/effect_stun 3.0 1 1
+}
+
+{ cycle_up
+
+	callevent gob_cycle_up
+}
+
+{ gob_cycle_up
+	//delay first fireball
+	setvard NEXT_FIREBALL game.time
+	add NEXT_FIREBALL $randf(10,30)
+
+	if !GOB_JUMP_SCANNING
+	setvard GOB_JUMP_SCANNING 1
+	playrandomsound 0 10 SOUND_ALERT1 SOUND_ALERT2
+	callevent gob_jump_check
+}
+
+{ cycle_down
+	setvard GOB_JUMP_SCANNING 0
+	setmoveanim ANIM_WALK
+	callevent 1.0 idle_mode
+}
+
+{ gob_jump_check
+
+	if GOB_JUMPER
+	if GOB_JUMP_SCANNING
+
+	local GOB_HOP_DELAY $randf(2,4)
+
+	callevent GOB_HOP_DELAY gob_jump_check
+
+	if NPCATK_TARGET isnot unset
+	if !I_R_FROZEN
+	if !IS_FLEEING
+	if !SUSPEND_AI
+	if $get(NPCATK_TARGET,range) < GOBLIN_JUMPRANGE
+
+	//jump at target if he's higher than I am
+	local ME_POS game.monster.origin
+	local MY_Z $vec.z(ME_POS)
+	local TARGET_POS $get(NPCATK_TARGET,origin)
+	local TARGET_Z $vec.z(TARGET_POS)
+	local TARGET_Z_DIFFERENCE TARGET_Z
+	subtract TARGET_Z_DIFFERENCE MY_Z
+
+	if ( TARGET_Z_DIFFERENCE > GOB_JUMP_THRESH )
+	{
+		if TARGET_Z_DIFFERENCE < 500 //not hoplessly high up
+		playanim critical ANIM_SMASH
+		callevent 0.1 gob_hop
+	}
+}
+
+{ gob_hop
+
+	playrandomsound 0 10 SOUND_JUMP1 SOUND_JUMP2
+	local JUMP_HEIGHT $rand(350,550)
+	if ( DBL_JUMP )
+	{
+		multiply JUMP_HEIGHT 2.0
+		setvard DBL_JUMP 0
+	}
+	addvelocity ent_me $relvel(0,250,JUMP_HEIGHT)
+}
+
+{ game_death
+	setmodelbody 2 0
+}
+
+{ idle_mode
+	if NPCATK_TARGET equals unset
+	if $cansee(ally)
+	setmovedest ent_lastseen 9999
+	playanim once ANIM_WARCRY
+	playsound 0 10 SOUND_IDLE
+	callevent $randf(10,20) idle_mode
+	callexternal ent_lastseen ext_faceme $get(ent_me,id)
+}
+
+{ ext_faceme
+	if NPCATK_TARGET equals unset
+	setmovedest PARAM1 9999
+	callevent 0.1 reply_anim
+}
+
+{ reply_anim
+	playanim once ANIM_WARCRY
+}
+
+{ game_struck
+	playrandomsound 0 5 SOUND_STRUCK1 SOUND_STRUCK2 SOUND_STRUCK3 SOUND_STRUCK1 SOUND_STRUCK2 SOUND_STRUCK3 SOUND_PAIN1 SOUND_PAIN2
+}

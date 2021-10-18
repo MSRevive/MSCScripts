@@ -1,0 +1,277 @@
+//Blood Goblin Evoker
+//- Summons fire elementals
+//- Spawns fire walls
+//- Lotso fire balls
+//- Greater fire elemental bursts from body on death
+
+#scope server
+
+{
+	const NEW_MODEL 1
+
+	//not very agile
+	const GOB_JUMPER 0
+	const GOB_CHARGER 0
+
+	setvard CAN_FIREBALL 1
+	const FREQ_FIREBALL 3.0
+	const DMG_FIREBALL 150
+	const DMG_FIREBALL_DOT 25
+	const FREQ_FIREBALL 20.0
+	const DMG_FIST 10
+	const DOT_FIST 50
+	const DMG_FIREWALL 100
+	setvard ATTACK_HITCHANCE 75%
+
+	//setvard NO_STUCK_CHECKS 1
+
+	const NPC_BASE_EXP 800
+	setvard DROP_GOLD 1
+	setvard DROP_GOLD_AMT $rand(50,75)
+
+	setvard ATTACK_MOVERANGE 800
+	setvard MOVE_RANGE 800
+
+	const FREQ_FLEE 20.0
+
+	const FREQ_FIREWALL 18.0
+	const FREQ_SUMMON 15.0
+
+	const MIN_FIREBALL_DIST 70
+
+	const FIRE_FIST_SCRIPT monsters/fire_fist_cl
+
+	setvard ANIM_ATTACK swordswing1_L
+	const SUMMON_SCRIPT monsters/elemental_fire1
+	const DEATH_SCRIPT monsters/elemental_fire2
+	const FIREWALL_SCRIPT traps/fire_wall2
+}
+
+#include monsters/bgoblin
+
+{ [override] [shared] goblin_spawn
+
+	name a|Blood Goblin Evoker
+	race goblin
+	blood red //green for v_goblin
+	hp 800
+	roam 1
+
+	hearingsensitivity 2
+
+	if ( !NEW_MODEL )
+	{
+		setmodel monsters/goblin2.mdl
+		width 32
+		height 60
+
+		setmodelbody 0 0 //body: 0-Runed 1-Archer 2-Leathers 3-Sniper
+		setmodelbody 1 4 //head: 0-Horns* 1-Spikes* 2-Animal 3-Chief 4-Cowl *redcap
+		setmodelbody 2 0 //weapon: 0-Unarmed 1-Axe 2-wbow 3-sbow 4-sword 5-rAxe 6-sword&shield 7-club 8-knife
+		setmodelbody 3 0 //arrow: on/off
+
+		setprop ent_me skin 2
+	}
+	else
+	{
+		setmodel monsters/goblin_new.mdl
+		width 24
+		height 50
+
+		setmodelbody 0 0 //body: 0-Bare 1-Quiver&Strap
+		setmodelbody 1 4 //head: 0-Bare 1-Horns 2-Animal 3-Chief 4-Rag
+		setmodelbody 2 0 //weapon: 0-Unarmed 1-Axe 2-wbow 3-sbow 4-sword 5-rAxe 6-sword&shield 7-club 8-knife
+		setmodelbody 3 0 //arrow: On/off
+		
+
+		setprop ent_me skin 1 //0-norm 1-blood 2-vile
+	}
+
+	setidleanim ANIM_IDLE
+	setmoveanim ANIM_WALK
+
+	takedmg fire 0.0
+	takedmg cold 1.5
+
+	clientevent persist all FIRE_FIST_SCRIPT $get(ent_me,index) 19
+	setvard MY_CL_SCRIPT_IDX game.script.last_sent_id
+
+	//precachefile is failing on this one for some reason
+	precache ambience/burning2.wav
+}
+
+{ game_precache
+	precachefile SUMMON_SCRIPT
+	precachefile DEATH_SCRIPT
+	precachefile FIREWALL_SCRIPT
+}
+
+{ game_death
+	clientevent remove all MY_CL_SCRIPT_IDX
+	if !NO_DEATH_EVENT
+	createnpc DEATH_SCRIPT $relpos(0,0,0)
+	callexternal GAME_MASTER gm_fade $get(ent_me,id) 5
+}
+
+{ game_struck
+
+	setvard LAST_STRUCK game.time
+
+	if ( $get(NPCATK_TARGET,range) < 96 )
+	{
+		if game.time > NEXT_FLEE
+		setvard NEXT_FLEE game.time
+		add NEXT_FLEE FREQ_FLEE
+		setmoveanim ANIM_RUN
+		movespeed 2.0
+		callevent 5.0 reset_move_speed
+		callevent npcatk_flee $get(ent_laststruck) 5.0		
+	}
+}
+
+{ reset_move_speed
+	movespeed 1.0
+}
+
+{ [override] swing_sword
+
+	if ( TOSS_FIREBALL )
+	{
+		setvard TOSS_FIREBALL 0
+		tossprojectile NPCATK_TARGET 400 DMG_FIREBALL 0.5 proj_fire_ball (0,48,28)
+		callexternal ent_lastprojectile lighten DMG_FIREBALL_DOT 0.01
+		playsound 0 10 SOUND_FIREBALL
+	}
+	if !TOSS_FIREBALL
+	playrandomsound 0 10 SOUND_ATTACK1 SOUND_ATTACK2 SOUND_ATTACK3
+	setvard FLAME_FIST 1
+	dodamage NPCATK_TARGET ATTACK_HITRANGE DMG_FIST ATTACK_HITCHANCE blunt
+}
+
+{ [override] gob_cycle_up
+	//delay first fireball
+	setvard NEXT_FIREBALL game.time
+	add NEXT_FIREBALL 3.0
+
+	setvard NEXT_FIREWALL game.time
+	add NEXT_FIREWALL $randf(5.0,10.0)
+
+	setvard NEXT_SUMMON game.time
+	add NEXT_SUMMON $randf(15.0,20.0)
+
+	if !GOB_JUMP_SCANNING
+	setvard GOB_JUMP_SCANNING 1
+	playsound 0 10 SOUND_SHAM_ALERT
+	callevent gob_jump_check
+}
+
+{ game_dodamage //PARAM1=hit:0|1 PARAM2=ent_hit PARAM3=(start) PARAM4=(end)
+
+	//fire axe effect
+	if ( PARAM1 )
+	{
+		if FLAME_FIST
+		applyeffect PARAM2 effects/effect_burn 10.0 $get(ent_me,id) DOT_FIST 1 1 none
+	}
+	setvard FLAME_FIST 0
+}
+
+{ [override] gob_hunt
+
+	if $get(NPCATK_TARGET,isalive)
+	if !SUSPEND_AI
+	if !IS_FLEEING
+
+	if ( game.time > NEXT_FIREWALL )
+	{
+		if $cansee(NPCATK_TARGET)
+		setvard NEXT_FIREWALL game.time
+		add NEXT_FIREWALL FREQ_FIREWALL
+		playanim critical ANIM_WARCRY
+		callevent npcatk_suspend_ai 1.5
+		playsound 0 10 SOUND_SHAM_ALERT
+		local FIREWALL_POS $get(NPCATK_TARGET,origin)
+		local FIREWALL_OFS $rand(1,4)
+		if ( FIREWALL_OFS == 1 ) vectoradd FIREWALL_POS x 96
+		if ( FIREWALL_OFS == 2 ) vectoradd FIREWALL_POS y 96
+		if ( FIREWALL_OFS == 3 ) vectoradd FIREWALL_POS x -96
+		if ( FIREWALL_OFS == 4 ) vectoradd FIREWALL_POS y -96
+		createnpc FIREWALL_SCRIPT FIREWALL_POS $get(ent_me,id) $get(NPCATK_TARGET,angles.y) DMG_FIREWALL
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	if ( !SUMMON_ALIVE )
+	{
+		if !NO_SUMMONS
+		if game.time > NEXT_SUMMON
+		if $get(NPCATK_TARGET,range) < 1024
+		setvard NEXT_SUMMON game.time
+		add NEXT_SUMMON FREQ_SUMMON
+		playanim critical ANIM_WARCRY
+		callevent npcatk_suspend_ai 1.5
+		playsound 0 10 SOUND_SHAM_ALERT
+		setvard SUMMON_POS $get(NPCATK_TARGET,origin)
+		if ( $get(NPCATK_TARGET,isplayer) ) vectoradd SUMMON_POS z -30 //compensate for player center org
+		addvelocity NPCATK_TARGET $relvel(-120,500,200) override
+		callevent 0.2 summon_elemental
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	if ( CAN_FIREBALL )
+	{
+		if game.time > NEXT_FIREBALL
+		if $get(NPCATK_TARGET,range) > MIN_FIREBALL_DIST
+		if $cansee(NPCATK_TARGET)
+		setvard NEXT_FIREBALL game.time
+		add NEXT_FIREBALL FREQ_FIREBALL
+		setvard TOSS_FIREBALL 1
+		playanim critical ANIM_SWIPE
+		setvard AS_ATTACKING game.time
+		add AS_ATTACKING 10.0
+		playsound 0 10 SOUND_FIREBALL_CAST
+	}
+
+	//idle in place if can see target but not recently hurt
+	if ( $cansee(NPCATK_TARGET) )
+	{
+
+		local STRUCK_CHECK game.time
+		subtract STRUCK_CHECK 5.0 
+		if ( STRUCK_CHECK > LAST_STRUCK )
+		{
+			if !IS_FLEEING
+			setmoveanim ANIM_IDLE
+			setvard AS_ATTACKING game.time
+			add AS_ATTACKING 10.0
+		}
+		else
+		{
+			setmoveanim ANIM_RUN
+		}
+	}
+	else
+	{
+		setmoveanim ANIM_RUN
+	}
+}
+
+{ summon_elemental
+	setvard SUMMON_ALIVE 1
+	createnpc SUMMON_SCRIPT SUMMON_POS $get(ent_me,id)
+}
+
+{ elemental_died
+	setvard NEXT_SUMMON game.time
+	add NEXT_SUMMON FREQ_SUMMON
+	setvard SUMMON_ALIVE 0
+}
+
+{ set_no_summons
+	setvard NO_SUMMONS 1
+}
+
+{ no_death_event
+	setvard NO_DEATH_EVENT 1
+}

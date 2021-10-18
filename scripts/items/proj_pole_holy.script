@@ -1,0 +1,83 @@
+{
+	const MODEL_HANDS      	none
+	const MODEL_WORLD      	weapons/projectiles.mdl
+	const MODEL_BODY_OFS 61
+	const ARROW_BODY_OFS 61
+	const ARROW_STICK_DURATION 5
+	const ARROW_EXPIRE_DELAY 2
+	const SOUND_HITWALL1		weapons/xbow_hit1.wav
+	const SOUND_HITWALL2		weapons/xbow_hit1.wav
+	const ARROW_SOLIDIFY_ON_WALL	0  	//base_arrow: Turns solid when a wall is hit
+	const ARROW_BREAK_CHANCE	100%	//base_arrow: Chance of breaking upon hit
+	const ITEM_NAME		watermana
+	const PROJ_DAMAGE_TYPE	holy
+	const PROJ_DAMAGESTAT		spellcasting.ice //this does not determin xp stat
+	const PROJ_ANIM_IDLE		idle_icebolt
+	const PROJ_MOTIONBLUR 0
+
+	const PROJ_DAMAGE		0 //via tossprojectile only
+	const PROJ_AOE_RANGE		0
+	const PROJ_AOE_FALLOFF	0
+	const PROJ_STICK_DURATION	0  //Don't stick in enemies
+	const PROJ_COLLIDE	1
+}
+
+#include items/proj_arrow_base
+
+{ arrow_spawn
+
+	name 		a|Holy Lance
+	desc 		This holy weapon has made you holie
+	weight 		0.1
+	size 		1
+	value		0
+	gravity		0.8
+	groupable    	25
+}
+
+{ game_tossprojectile
+	setvard GAME_PVP game.pvp
+	clientevent new all effects/sfx_follow_glow_cl $get(ent_me,index) (255,255,255) 128 1.5
+}
+
+{ game_projectile_hitnpc
+
+	if ( $get(PARAM1,isplayer) )
+	{
+		if !GAME_PVP
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	if $get(PARAM1,relationship,ent_expowner) equals enemy
+
+	local L_DMG 800
+	local OWNER_SKILL_RATIO $get(ent_expowner,skill.polearms)
+	multiply OWNER_SKILL_RATIO 0.01
+	multiply L_DMG OWNER_SKILL_RATIO
+
+	local PUSH_STR 800
+
+	local TARG_ORG $get(PARAM1,origin)
+	local MY_ORG $get(ent_expowner,origin)
+	local TARG_ANG $angles(MY_ORG,TARG_ORG)
+	local NEW_YAW TARG_ANG
+	setvelocity PARAM1 $relvel($vec(0,NEW_YAW,0),$vec(0,PUSH_STR,0))
+
+	local HOLY_DMG $get(ent_expowner,skill.spellcasting.divination)
+	multiply HOLY_DMG 5.0
+	callexternal PARAM1 turn_undead HOLY_DMG $get(ent_expowner,id)
+
+	if $get(PARAM1,isalive)
+	xdodamage PARAM1 direct L_DMG 100% ent_expowner ent_me polearms holy
+}
+
+
+//{ [override] game_projectile_hitwall
+//	dbg game_projectile_wall PARAM1 vs $get(ent_me,origin)
+//	playrandomsound 0 10 SOUND_HITWALL1 SOUND_HITWALL2
+//}
+//
+//{ [override] hitwall
+//	dbg hitwall $get(ent_me,origin)
+//}

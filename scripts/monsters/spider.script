@@ -1,0 +1,209 @@
+//Thothie - SOUND_IDLE = wrong convention not loaded by _base... Use SOUND_IDLE1
+//Araneus Spider
+
+{
+   const SOUND_PAIN monsters/spider/spiderhiss.wav
+   const SND_STRUCK1 body/flesh1.wav
+   const SND_STRUCK2 body/flesh2.wav
+   const SND_STRUCK3 body/flesh3.wav
+   const SND_STRUCK4 SOUND_PAIN
+   const SND_STRUCK5 SOUND_PAIN
+   const SOUND_IDLE1 monsters/spider/spideridle.wav
+   const SOUND_DEATH monsters/spider/spiderdie.wav
+
+   precache SOUND_IDLE1
+
+   setvar ANIM_IDLE 	idle
+   setvar ANIM_WALK 	walk
+   setvar ANIM_RUN 	run
+   setvard ANIM_ATTACK 	attack
+   const ANIM_DODGE 	dodge
+   setvard ANIM_DEATH 	die
+
+   setvard MOVE_RANGE 	32
+   setvard ATTACK_RANGE 	80
+   const ATTACK_DAMAGE_LOW  2.0
+   const ATTACK_DAMAGE_HIGH 3.0
+   const ATTACK_ACCURACY 60%
+	const FIN_EXP 12
+   setvard NPC_GIVE_EXP 	FIN_EXP
+
+   const SPIDER_IDLE_VOL   	2
+   const SPIDER_IDLE_DELAY 	3.6
+   const SPIDER_VOLUME  	10
+   const SPIDER_LATCHATTACK 	1
+
+   setvard HUNT_AGRO 1		//base_npc_attack - Preemptive attack
+   setvard RETALIATE_CHANCE 75%   //base_npc_attack - Automatically switch targets to the last damaging player
+   setvard CAN_FLEE 0		//base_npc_attack - Whether I run away at low health
+
+	const SPIDER_MODEL monsters/spider.mdl
+}
+
+#include monsters/spider_base
+
+{
+   eventname npc_spawn
+
+   hp 30
+   //ov 359
+   width 34
+   height 40
+   hearingsensitivity 3
+   name the|Leaping Cave Spider
+   setvard NPC_GIVE_EXP 16
+   setmodel SPIDER_MODEL
+
+   setstat awareness 20
+   setstat parry 50 0 0
+}
+
+
+   //Dodge an attack
+{  [override] game_parry
+   
+   if !SPIDER_LATCHING
+   playanim critical ANIM_DODGE
+}
+
+
+
+   //Latch onto unsuspecting n00bs
+   //=============================
+
+{
+   const SPIDER_LATCH_ATKDMG	5		//Dmg per second
+   const SPIDER_LATCH_ATKDUR	4		//Duration 4
+   const SPIDER_LATCH_ATKCHANCE	20
+   const SPIDER_LATCH_MAXRANGE	200		//Must be this close to jump
+
+   const ANIM_LATCH_ATTACK 	jumpmiss
+   const ANIM_LATCH_HIT 	jumphit
+   const ANIM_LATCH_ON	 	hitbite
+   const ANIM_LATCH_OFF	 	falloff
+   const SOUND_LATCH_HISS 	monsters/spider/spiderhiss2.wav
+   const SOUND_LATCH_JUMP 	monsters/spider/spiderjump.wav
+   const SOUND_LATCH_PLYR 	monsters/spider/spiderlatch.wav
+   const SOUND_LATCH_MNTR 	SND_STRUCK1
+
+
+   precachefile effects/effect_spiderlatch
+}
+
+{  
+   repeatdelay 4
+
+	if SPIDER_LATCHATTACK
+   	if IS_HUNTING
+   	if !IS_ATTACKING
+	if $get(ent_me,alive)
+   	if $rand(0,99) < SPIDER_LATCH_ATKCHANCE
+	if !SPIDER_LATCHING
+   	if $get(HUNT_LASTTARGET,dist) < SPIDER_LATCH_MAXRANGE
+	if $get(ent_me,onground)
+	if $get(HUNT_LASTTARGET,onground)
+
+   	playanim critical ANIM_LATCH_ATTACK 
+	playsound game.sound.voice game.sound.maxvol SOUND_LATCH_HISS
+	setmovedest none
+	setanim.framerate .8
+	setvard SPIDER_LATCHING 1
+   	setvard SPIDER_LATCH_TARGET HUNT_LASTTARGET
+   	setvard CAN_ATTACK 0
+   	setvard CAN_HUNT 0
+   	setvard CAN_HEAR 0
+	setvard CAN_RETALIATE 0
+	roam 0
+}
+{  frame_jump
+        setvelocity ent_me $relvel(0,320,120)
+	gravity .9
+	setanim.framerate .5
+	movespeed 0
+	playsound game.sound.voice 5 SOUND_LATCH_JUMP
+	callevent 0.001 spider_latch_checkhitground
+}
+{  spider_latch_checkhitground
+		
+	if SPIDER_LATCHING
+	if !SPIDER_LATCHED
+
+   	if( $get(SPIDER_LATCH_TARGET,dist) < 70 ) callevent spider_latch_hit
+	else
+	{
+        	if( game.monster.onground )
+		{
+        		setvelocity ent_me (0,0,0)
+			setanim.framerate 1
+			callevent 0.2 spider_latch_resetmovement
+		}
+		else callevent 0.001 spider_latch_checkhitground
+	}
+}
+{  spider_latch_hit
+
+	setvard SPIDER_LATCHED 1
+   	playanim break
+   	setidleanim ANIM_LATCH_ON
+	setorigin ent_me $get(SPIDER_LATCH_TARGET,origin)
+   	setfollow SPIDER_LATCH_TARGET align_bottom
+	setangle face.pitch 0
+	applyeffect SPIDER_LATCH_TARGET effects/effect_spiderlatch SPIDER_LATCH_ATKDUR SPIDER_LATCH_ATKDMG $get(ent_me,id)
+	if( $get(SPIDER_LATCH_TARGET,isplayer) ) playsound game.sound.body game.sound.maxvol SOUND_LATCH_PLYR
+	else 				       playsound game.sound.body game.sound.maxvol SOUND_LATCH_MNTR
+	setbbox (-40,-40,0) (40,40,128)
+   	callevent spider_latch_think
+   	callevent SPIDER_LATCH_ATKDUR spider_latch_drop
+}
+{  spider_latch_think
+
+   	if SPIDER_LATCHED
+   	if( !$get(SPIDER_LATCH_TARGET,alive) ) callevent spider_latch_drop
+	else callevent 0.01 spider_latch_think
+}
+{  spider_latch_drop
+
+   	if SPIDER_LATCHING
+	setvard SPIDER_LATCHED 0
+   	setfollow none
+	gravity 1
+	movespeed -1
+	setbbox (0,0,0) (0,0,0)
+   	playanim critical ANIM_LATCH_OFF
+	playsound game.sound.body 0
+}
+{  spider_latch_resetmovement
+	roam 1
+	movespeed 1
+	gravity 1
+  	setidleanim ANIM_IDLE
+   	setvard CAN_ATTACK 1
+   	setvard CAN_HUNT 1
+   	setvard CAN_HEAR 1
+	setvard CAN_RETALIATE 1
+	setvard SPIDER_LATCHING 0
+	setvard SPIDER_LATCHED 0
+}
+{  frame_falloffend
+  	setidleanim ANIM_IDLE
+	callevent 0.2 spider_latch_resetmovement
+	playanim critical ANIM_IDLE
+	setbbox npcsize
+}
+
+{  npc_struck		//Can be knocked off
+
+   	if SPIDER_LATCHED
+   	callevent spider_latch_drop
+}
+
+{  npc_death		//unattach when dead
+
+   	if SPIDER_LATCHED
+    	setfollow none
+	callevent spider_latch_resetmovement
+}
+
+{ frame_bite1
+	setanim.framerate BASE_FRAMERATE
+}

@@ -1,0 +1,81 @@
+//Poisonus explosion on death
+{
+	setvard NPC_GIVE_EXP 1200
+	const BBET_SIZE 1
+	const BBET_CAN_FLY 1
+	const BBET_CAN_LEAP 1
+	const BBET_CAN_SLAM 0
+	const BBET_GORE_PUSH_STR 300
+	const BBET_FAKE_DEATH 1
+
+	const DMG_SLASH 80
+	const DMG_GORE 120
+	const DMG_LEAP 150
+	const DOT_POISON 100.0
+	const DMG_BURST 400
+
+	const ANIM_SPECIAL bug_conjure //frame_spell
+
+	const FREQ_SPIT $randf(5.0,10.0)
+
+	const SOUND_POISON_BURST weapons/explode3.wav
+
+	setvard FLAME_JET_DMG 100
+	setvard FLAME_JET_DOT 100
+}
+
+{ game_precache
+	precache monsters/beetles.mdl
+	precache cactusgibs.mdl
+	precache ambience/steamburst1.wav
+	precache explode1.spr
+	precache xfireball3.spr
+}
+
+#include monsters/beetle_base
+
+{ beetle_spawn
+	name a|Fire Beetle
+	hp 3500
+	takedmg fire 0.0
+	setmodelbody 0 2 //0=Horned 1=Venom 2=Fire
+}
+
+//================ Splodie Death (from Venom Beetle)
+{ game_death
+	setprop ent_me rendermode 5
+	setprop ent_me renderamt 0
+
+	playsound 0 10 SOUND_POISON_BURST
+	xdodamage $relpos(0,0,0) 256 DMG_BURST 0 ent_me ent_me none blunt
+	clientevent new all effects/sfx_explode $get(ent_me,origin) 256
+	effect tempent gibs cactusgibs.mdl $relpos(0,0,0) 1.0 50 50 15 2.0
+	setvard POISON_TARGS $get_tsphere(enemy,256)
+	playsound 0 10 SOUND_POISON_BURST
+	if POISON_TARGS isnot none
+	calleventloop $get_token_amt(POISON_TARGS) poison_affect_targets
+}
+
+{ poison_affect_targets
+	local CUR_TARG $get_token(POISON_TARGS,game.script.iteration)
+	applyeffect CUR_TARG effects/effect_burn 5.0 $get(ent_me,id) DOT_POISON
+	local TARG_ORG $get(CUR_TARG,origin)
+	local TARG_ANG $angles(game.monster.origin,TARG_ORG)
+	setvelocity CUR_TARG $relvel($vec(0,TARG_ANG,0),$vec(10,1000,0))
+}
+
+//================ Spit Fire
+{ npcatk_hunt
+	if NPCATK_TARGET isnot unset
+	if $get(NPCATK_TARGET,range) > 200
+	if $cansee(NPCATK_TARGET)
+	if game.time > NEXT_SPIT
+	setvard NEXT_SPIT game.time
+	add NEXT_SPIT FREQ_SPIT
+	setvard AS_ATTACKING game.time
+	playanim critical ANIM_SPECIAL
+}
+
+{ frame_spell
+	tossprojectile NPCATK_TARGET 300 DMG_SPIT 2 proj_flame_jet (0,64,64)
+}

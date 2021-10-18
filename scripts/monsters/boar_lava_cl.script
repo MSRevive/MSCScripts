@@ -1,0 +1,106 @@
+//Boar dust script (client-side special effects)
+//flame version from scratch by Thothie
+
+#scope client
+
+{
+	const SPRITE_NAME fire1_fixed2.spr
+}
+
+{ client_activate //<owner> <boar_size>
+	setvard FX_OWNER PARAM1
+	setvard FX_ACTIVE 1
+
+	local BOAR_SIZE PARAM2
+	if ( BOAR_SIZE == 1 )
+	{
+		setvard FB_OFS -25
+		setvard RL_OFS 10
+		setvard START_SCALE 0.5
+	}
+	if ( BOAR_SIZE == 2 )
+	{
+		setvard FB_OFS -35
+		setvard RL_OFS 20
+		setvard START_SCALE 1.0
+	}
+	if ( BOAR_SIZE == 3 )
+	{
+		setvard FB_OFS -45
+		setvard RL_OFS 30
+		setvard START_SCALE 2.0
+	}
+
+	dbg boar_lava_cl:client_activate FX_OWNER BOAR_SIZE
+
+	callevent fx_loop
+	callevent 10.0 remove_fx //max duration, but maybe ended from server side
+}
+
+{ fx_loop
+	if FX_ACTIVE
+	callevent 0.1 fx_loop
+	setvard OWNER_YAW $getcl(FX_OWNER,angles.yaw)
+	//add OWNER_YAW 90
+	//if ( OWNER_YAW > 359 ) subtract OWNER_YAW 359
+
+	setvard FLIP_SPRITE 0
+	local SPRITE_ORG $getcl(FX_OWNER,origin)
+	vectoradd SPRITE_ORG $relpos($vec(0,OWNER_YAW,0),$vec(RL_OFS,FB_OFS,0))
+	cleffect tempent sprite SPRITE_NAME SPRITE_ORG setup_hoof_sprite update_hoof_sprite
+
+	local SPRITE_ORG $getcl(FX_OWNER,origin)
+	local NEG_RL_OFS $neg(RL_OFS)
+	vectoradd SPRITE_ORG $relpos($vec(0,OWNER_YAW,0),$vec(NEG_RL_OFS,FB_OFS,0))
+	cleffect tempent sprite SPRITE_NAME SPRITE_ORG setup_hoof_sprite update_hoof_sprite
+
+	setvard FLIP_SPRITE 1
+	local SPRITE_ORG $getcl(FX_OWNER,origin)
+	vectoradd SPRITE_ORG $relpos($vec(0,OWNER_YAW,0),$vec(RL_OFS,FB_OFS,0))
+	cleffect tempent sprite SPRITE_NAME SPRITE_ORG setup_hoof_sprite update_hoof_sprite
+
+	local SPRITE_ORG $getcl(FX_OWNER,origin)
+	local NEG_RL_OFS $neg(RL_OFS)
+	vectoradd SPRITE_ORG $relpos($vec(0,OWNER_YAW,0),$vec(NEG_RL_OFS,FB_OFS,0))
+	cleffect tempent sprite SPRITE_NAME SPRITE_ORG setup_hoof_sprite update_hoof_sprite
+}
+
+{ remove_fx
+	setvard FX_ACTIVE 0
+	callevent 4.0 remove_fx2
+}
+
+{ remove_fx2
+	removescript
+}
+
+{ update_hoof_sprite
+	local CUR_SIZE game.tempent.fuser1
+	subtract CUR_SIZE 0.01
+	if CUR_SIZE > 0
+	cleffect tempent set_current_prop fuser1 CUR_SIZE
+	cleffect tempent set_current_prop scale CUR_SIZE
+}
+
+{ setup_hoof_sprite
+	cleffect tempent set_current_prop death_delay 2.0
+	cleffect tempent set_current_prop bouncefactor 0
+	cleffect tempent set_current_prop fadeout 2.0
+	cleffect tempent set_current_prop framerate 30
+	cleffect tempent set_current_prop rendermode add
+	cleffect tempent set_current_prop renderamt 200
+	cleffect tempent set_current_prop gravity 1
+	cleffect tempent set_current_prop collide world
+	cleffect tempent set_current_prop frames 23
+	local L_YAW OWNER_YAW
+	add L_YAW 90
+	if ( L_YAW > 359.99 ) subtract L_YAW 359.99
+	if ( FLIP_SPRITE )
+	{
+		add L_YAW 180
+		if ( L_YAW > 359.99 ) subtract L_YAW 359.99
+	}
+	cleffect tempent set_current_prop angles $vec(0,L_YAW,0)
+	cleffect tempent set_current_prop scale START_SCALE
+	cleffect tempent set_current_prop fuser1 START_SCALE
+}

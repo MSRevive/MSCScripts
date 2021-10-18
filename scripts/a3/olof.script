@@ -1,0 +1,650 @@
+#scope server
+{ [shared]
+	setvard ANIM_RUN run1
+	setvard ANIM_WALK walk_scared
+	setvard ANIM_DEATH diesimple
+	setvar ANIM_IDLE idle1
+}
+
+{
+	setvard NPC_NO_PLAYER_DMG 1
+	setvard NO_STUCK_CHECKS 1
+
+	setvard NPC_NO_ATTACK 1
+	setvard CANT_TURN 1
+
+	const NO_HAIL 1
+	const NO_JOB 1
+	const NO_RUMOR 1
+
+	const STORE_NAME olof_shop
+
+	setvard VENDOR_MENU_OFF 1
+	setvard VENDOR_NOT_ON_USE 1
+	setvar STORE_SELLMENU 1
+	setvar STORE_BUYMENU 1
+
+	const SND_SCREAM1 scientist/scream7.wav 
+	const SND_SCREAM2 scientist/scream17.wav
+	const SND_SCREAM3 scientist/scream07.wav
+}
+
+#include monsters/base_monster_new
+#include monsters/base_chat
+#include monsters/base_npc_vendor
+#include monsters/base_npc_vendor_confirm
+#include monsters/base_xmass
+
+{ [shared] npc_spawn
+
+	name Olof Odlaren
+	setmodel npc/human1.mdl
+	hp 30
+	width 32
+	height 72
+	race human
+	roam 0
+	setidleanim idle1
+
+	nopush 1
+
+	catchspeech say_yes yes yep yeah jawoll boo
+	catchspeech say_no no not stop nope nah calm nein
+	catchspeech say_hi hi hello hail greet j0 wud gweets
+	catchspeech say_curse curse people town help
+
+	if game.serverside
+	setvard SHOPPER_ID none
+}
+
+{
+repeatdelay 1.0
+	if $cansee(player,128)
+
+	local PLAYER_ID $get(ent_lastseen,id)
+	callevent check_player_status PLAYER_ID 1
+}
+
+{ check_player_status //<id> <react:0|1>
+
+	local PLAYER_ID PARAM1
+	local DO_REACT PARAM2
+	local PLAYER_STATUS $get(PLAYER_ID,scriptvar,'PLR_OLOF_STATUS')
+
+	if ( PLAYER_STATUS equals 'PLR_OLOF_STATUS' )
+	{
+		//dunno this guy, check him
+
+		if ( $get_quest_data(PARAM1,r) > 0 )
+		{
+			//I know this guy, gave ring quest
+			callexternal PARAM1 ext_olof_setstatus friendly
+			if DO_REACT
+			callevent calm_down ring_quest_started PLAYER_ID
+			local EXIT_SUB 1
+		}
+		if !EXIT_SUB
+
+		if ( $item_exists(PARAM1,item_ring_percept) )
+		{
+			//Has Galan's ring
+			callexternal PARAM1 ext_olof_setstatus friendly
+			callevent calm_down ring_percept PLAYER_ID
+			local EXIT_SUB 1
+		}
+		if !EXIT_SUB
+
+		if ( $item_exists(PARAM1,swords_skullblade4) )
+		{
+			callexternal PARAM1 ext_olof_setstatus friendly
+			if DO_REACT
+			if ( !$item_exists(PARAM1,item_ring) )
+			{
+				//I probably gave this guy my sword for a ring
+				callevent calm_down skull_blade PLAYER_ID
+			}
+			else
+			{
+				//Wait, he has one of my swords, and ANOTHER ring?
+				setvard RING_BOY_ID PARAM1
+				callevent calm_down ring_boy PLAYER_ID
+			}
+			local EXIT_SUB 1
+		}
+		if !EXIT_SUB
+
+		if ( $item_exists(PARAM1,item_ring) )
+		{
+			//this guy has my ring
+			callexternal PARAM1 ext_olof_setstatus friendly
+			if DO_REACT
+			callevent calm_down my_ring PLAYER_ID
+			local EXIT_SUB 1
+		}
+		if !EXIT_SUB
+
+		//I dunno this guy :|
+		callexternal PARAM1 ext_olof_setstatus unknown
+		if DO_REACT
+		callevent verify_friendly PLAYER_ID 0
+	}
+	else
+	{
+		if DO_REACT
+		if ( PLAYER_STATUS equals evil )
+		{
+			if !AM_SCREAMING
+			callevent start_screaming
+			saytext Get away from me you evil monster from hell!
+			say [0.5] [0.2] [0.1] [0.1] [0.1] [0.1] [0.1]
+		}
+	}
+}
+
+{ verify_friendly //<id> <from_menu:0|1>
+
+	setvard VERIFY_TARGET PARAM1
+	local FROM_MENU PARAM2
+
+	callexternal PARAM1 ext_olof_setstatus unknown
+
+	if ( !SAW_FIRST_PLAYER )
+	{
+  		saytext Halt!  Are you one of the undead monsters?
+	  	say [0.5] [0.2] [0.1] [0.1] [0.1] [0.1] [0.1]
+		setvard SAW_FIRST_PLAYER 1
+	}
+	else
+	{
+		saytext And you? ...are YOU one of the evil ones?
+		say [0.5] [0.2] [0.1] [0.1] [0.1] [0.1] [0.1]
+	}
+
+	playanim once panic
+
+	if !FROM_MENU
+	menu.open PARAM1
+}
+
+{ game_menu_getoptions
+
+	setmovedest PARAM1 9999
+
+	setvard VENDOR_TARGET PARAM1
+
+	local PLAYER_STATUS $get(PARAM1,scriptvar,'PLR_OLOF_STATUS')
+
+	if ( PLAYER_STATUS equals 'PLR_OLOF_STATUS' )
+	{
+		callevent check_player_status $get(PARAM1,id) 0
+		local PLAYER_STATUS $get(PARAM1,scriptvar,'PLR_OLOF_STATUS')
+	}
+
+	if ( PARAM1 isnot VERIFY_TARGET )
+	{
+		if ( PLAYER_STATUS equals unknown ) callevent verify_friendly $get(PARAM1,id) 1
+	}
+
+	if ( PARAM1 equals VERIFY_TARGET )
+	{
+		local reg.mitem.title "Yes!"
+		local reg.mitem.type callback
+		local reg.mitem.callback say_yes
+		menuitem.register
+
+		local reg.mitem.title "No!"
+		local reg.mitem.type callback
+		local reg.mitem.callback say_no
+		menuitem.register
+
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	if ( PLAYER_STATUS equals evil )
+	{
+		if AM_SCREAMING
+
+		local reg.mitem.title "Wait! I'm NOT evil!"
+		local reg.mitem.type callback
+		local reg.mitem.callback say_no
+		menuitem.register
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	if ( PLAYER_STATUS equals friendly )
+	{
+		local reg.mitem.title "Hail?"
+		local reg.mitem.type callback
+		local reg.mitem.callback say_hi
+		menuitem.register
+
+		local reg.mitem.title "You have wares?"
+		local reg.mitem.type callback
+		local reg.mitem.callback vendor_offerstore
+		menuitem.register
+
+		if ( MENTIONED_CURSE )
+		{
+			local reg.mitem.title "Cursed?"
+			local reg.mitem.type callback
+			local reg.mitem.callback say_curse
+			menuitem.register
+		}
+
+		if( $item_exists(PARAM1,item_ring) )
+		{
+
+			if ( $item_exists(PARAM1,swords_skullblade4) ) local SECOND_RING 1
+			if ( HAVE_RING ) local SECOND_RING 1
+			if ( !SECOND_RING )
+			{
+				local reg.mitem.title "Return ring"
+				local reg.mitem.type payment
+				local reg.mitem.data item_ring
+				local reg.mitem.callback got_ring
+				menuitem.register
+			}
+			else
+			{
+				local reg.mitem.title "Return ring"
+				local reg.mitem.type callback
+				local reg.mitem.callback second_ring
+				menuitem.register
+			}
+		}
+
+		if AM_SCREAMING
+		callevent calm_down friendly_used $get(PARAM1,id)
+	}
+}
+
+{ game_menu_cancel
+	if PARAM1 equals VERIFY_TARGET
+	saytext I... I won't talk until you answer me!
+	say [0.5] [0.2] [0.1] [0.1] [0.1] [0.1] [0.1]
+	playanim once panic
+}
+
+{ say_yes
+	if ( $get(PARAM1,isalive) )
+	{
+		local PLAYER_ID PARAM1
+	}
+	else
+	{
+		local PLAYER_ID $get(ent_lastspoke,id)
+	}
+	setvard VERIFY_TARGET 0
+	callexternal PLAYER_ID ext_olof_setstatus evil
+
+	saytext AAAAAAAAAAAAAAAAAAAAHHHHHHHHHHHHHHHHHHH!!!!!!!!
+	playanim once fear2
+	say [2]
+
+	setvard AM_SCREAMING 1
+	callevent 2.0 do_screaming
+}
+
+{ say_no
+	if ( $get(PARAM1,isalive) )
+	{
+		local PLAYER_ID PARAM1
+	}
+	else
+	{
+		local PLAYER_ID $get(ent_lastspoke,id)
+	}
+	setvard CALMER_ID PLAYER_ID
+	callexternal PLAYER_ID ext_olof_setstatus friendly
+	setvard VERIFY_TARGET 0
+	setvard AM_SCREAMING 0
+	playanim once lean
+	menu.autoopen 1
+	callevent 3 say_no2
+}
+
+{ say_no2
+	callevent calm_down said_no CALMER_ID
+	setvard VERIFY_TARGET 0
+}
+
+{ start_screaming
+	setvard AM_SCREAMING 1
+	callevent do_screaming
+}
+
+{ do_screaming
+	if AM_SCREAMING
+
+	local RND_ANIM $rand(1,4)
+	if ( RND_ANIM == 1 ) playanim once fear1
+	if ( RND_ANIM == 2 ) playanim once fear2
+	if ( RND_ANIM == 3 ) playanim once crouch_idle2
+	if ( RND_ANIM == 4 ) playanim once crouch_idle2
+	
+	playrandomsound 2 8 SND_SCREAM1 SND_SCREAM2 SND_SCREAM3
+	setidleanim crouch_idle
+
+	callevent $randf(5.0,10.0) do_screaming
+}
+
+//============= Calm Down
+{ calm_down //<reason> <player>
+	local REASON_CALM PARAM1
+	roam 0
+	setvard AM_SCREAMING 0
+	setidleanim idle1
+	if ( REASON_CALM equals ring_quest_started )
+	{
+		saytext Oh, it's you... I hope you got that ring back to Galan.
+		callevent bchat_auto_mouth_move 3.0
+	}
+
+	if ( REASON_CALM equals my_ring )
+	{
+		local L_NAME $get(PARAM2,name)
+		stradd L_NAME ,
+
+		saytext L_NAME have you found the ring yet?
+		say [0.5] [0.1] [0.1] [0.1] [0.1] [0.1] [0.2]
+		playanim once pondering3
+	}
+
+	if ( REASON_CALM equals skull_blade )
+	{
+		local L_NAME $get(PARAM2,name)
+		stradd L_NAME ,
+
+		saytext  Ah, L_NAME Thank you for the nice ring.
+		say [0.5] [0.1] [0.1] [0.1] [0.1] [0.1] [0.2]
+		playanim once yes
+	}
+
+	if ( REASON_CALM equals friendly_used )
+	{
+		saytext Oh! It... It's you... What can I do for you?
+		callevent bchat_auto_mouth_move 3.0
+	}
+
+	if ( REASON_CALM equals said_no )
+	{
+		saytext ...Ok, I believe you... for now...
+		say [0.2] [0.2] [0.1] [0.2] [0.1] [0.1]
+	}
+
+	if ( REASON_CALM equals ring_percept )
+	{
+		saytext I... I see you worked things out with Galan's ring.
+		say [0.2] [0.2] [0.1] [0.2] [0.1] [0.1]
+	}
+
+	if ( REASON_CALM equals ring_boy )
+	{
+		callevent not_my_ring
+	}
+}
+
+
+//============= Chatter
+{ say_hi
+	if ( $get(PARAM1,isalive) )
+	{
+		local PLAYER_ID PARAM1
+	}
+	else
+	{
+		local PLAYER_ID $get(ent_lastspoke,id)
+	}
+	local PLAYER_STATUS $get(PLAYER_ID,scriptvar,'PLR_OLOF_STATUS')
+
+	if $get(PLAYER_ID,isalive)
+
+	if ( PLAYER_STATUS equals 'PLR_OLOF_STATUS' ) local PLAYER_STATUS unknown
+
+	if ( PLAYER_STATUS equals unknown )
+	{
+		saytext Stay away from me! You look like evil! Are you evil?!?
+		say [0.2] [0.1] [0.05] [0.05] [0.05] [0.05] [0.05] [0.1]
+		playanim once panic
+		callevent verify_friendly PLAYER_ID 0
+	}
+
+	if ( PLAYER_STATUS equals evil )
+	{
+		saytext The evil fiend tried to talk to me!!! No, my ears have been cursed!
+		say [0.2] [0.1] [0.1] [0.1] [0.1] [0.1] [0.1] [0.1]
+
+		playanim once fear1
+	}
+
+	if ( PLAYER_STATUS equals friendly )
+	{
+		setvard HI_PLAYER PLAYER_ID 
+		callevent say_hi2
+	}
+}
+
+{ say_hi2
+
+	if ( BUSY_CHATTING ) dplayermessage HI_PLAYER Olof is busy babbling about something else...
+	if !BUSY_CHATTING
+
+	setvard CHAT_STEP1 "..Are you really sure you are no monster? "
+	setvard ANIM_STEP1 pondering3
+	setvard CHAT_DELAY_STEP1 3.0
+
+	setvard CHAT_STEP2 "There is too much evil these days.."
+	setvard ANIM_STEP2 c1a0_catwalkidle
+	setvard CHAT_DELAY_STEP2 2.0
+
+	setvard CHAT_STEP3 "If you really are a shining light, maybe you could help me?"
+	setvard CHAT_DELAY_STEP3 4.0
+
+	setvard CHAT_STEP4 "All of the people in this town have been [cursed]!"
+	setvard CHAT_DELAY_STEP4 3.0
+	setvard ANIM_STEP4 startle
+
+	setvard MENTIONED_CURSE 1
+
+	setvard CHAT_STEPS 4
+	callevent chat_loop
+}
+
+{ say_curse
+
+	if ( $get(PARAM1,isalive) )
+	{
+		local PLAYER_ID PARAM1
+	}
+	else
+	{
+		local PLAYER_ID $get(ent_lastspoke,id)
+	}
+	local PLAYER_STATUS $get(PLAYER_ID,scriptvar,'PLR_OLOF_STATUS')
+
+	if PLAYER_STATUS equals friendly
+
+	if ( BUSY_CHATTING ) dplayermessage PLAYER_ID Olof is busy babbling about something else...
+	if !BUSY_CHATTING
+
+	setvard CHAT_STEP1 "Yeah, horrible isn't it? "
+	setvard ANIM_STEP1 eye_wipe
+	setvard CHAT_DELAY_STEP1 2.0
+
+	setvard CHAT_STEP2 "The evil Lord Undamael has turned all the people in my town into books!"
+	setvard CHAT_DELAY_STEP2 4.0
+
+	setvard CHAT_STEP3 "I will need my ring to turn them back to normal again."
+	setvard ANIM_STEP3 yes
+	setvard CHAT_DELAY_STEP3 3.0
+
+	setvard CHAT_STEP4 "I will reward you if you find it, but you won't.. because I lost it in the.."
+	setvard ANIM_STEP4 no
+	setvard CHAT_DELAY_STEP4 3.0
+	setvard CHAT_EVENT_STEP4 say_curse2
+
+	setvard CHAT_STEPS 4
+	callevent chat_loop
+}
+
+{ say_curse2
+	playanim critical fear1
+	callevent 1.0 say_curse3
+}
+{ say_curse3
+	saytext ..H-A-U-N-T-E-D forest!
+	say [1] [0.2] [1] [0.2]
+}
+
+//============= STORE
+{ [override] vendor_offerstore
+
+	local PLAYER_STATUS $get(PARAM1,scriptvar,'PLR_OLOF_STATUS')
+	if PLAYER_STATUS equals friendly
+
+	if SHOPPER_ID equals none
+
+	if ( game.time > NEXT_STORE_CHATTER )
+	{
+		local RND_CHAT $rand(1,5)
+		if ( RND_CHAT == 1 ) saytext Demons leave the most interesting stuff lying around...
+		if ( RND_CHAT == 2 ) saytext Don't tell anyone, but there's more downstairs...
+		if ( RND_CHAT == 3 ) saytext All this stuff is cursed, you know...
+		if ( RND_CHAT == 4 ) saytext I don't sell to demons, but I suppose you're ok.
+		if ( RND_CHAT == 5 ) saytext I'll buy skins if ya have em, they keeps the demons away.
+		callevent bchat_auto_mouth_move 3.0
+		setvard NEXT_STORE_CHATTER game.time
+		add NEXT_STORE_CHATTER 10.0
+	}
+
+	setvard SHOPPER_ID PARAM1
+	callevent 2.0 give_store
+}
+
+{ give_store
+	callevent basevendor_offerstore SHOPPER_ID
+	setvard SHOPPER_ID none
+}
+
+{ vendor_addstoreitems
+   
+	//		 |Store name|  |Item name|  		|Quantity|	|cost%|		|Sell ratio|	|Bundle amt|
+	addstoreitem  STORE_NAME     health_mpotion		$rand(10,20)	105
+	addstoreitem  STORE_NAME     health_apple		$rand(15,25)	100
+	addstoreitem  STORE_NAME     proj_arrow_wooden	120		100 		0		60
+	addstoreitem  STORE_NAME     proj_arrow_poison	120		75 		0		30
+	addstoreitem  STORE_NAME     proj_arrow_broadhead	120		100 		0		60
+	addstoreitem  STORE_NAME     proj_arrow_silvertipped	120		100 		0		60
+	addstoreitem  STORE_NAME     pack_heavybackpack	$rand(0,1)	110
+	addstoreitem  STORE_NAME     item_torch		$rand(10,20)	75
+
+	addstoreitem  STORE_NAME     axes_scythe		$rand(0,1)	90
+	addstoreitem  STORE_NAME     scroll2_glow		$rand(0,1)	100
+	addstoreitem  STORE_NAME     scroll_glow		$rand(0,1)	100
+	addstoreitem  STORE_NAME     scroll2_fire_dart	$rand(0,1)	120
+	addstoreitem  STORE_NAME     sheath_spellbook	2		80
+
+	addstoreitem  STORE_NAME     skin_boar 0 150 1.5
+	addstoreitem  STORE_NAME     skin_ratpelt 0 250 2.5
+	addstoreitem  STORE_NAME     skin_bear 0 150 1.5
+	addstoreitem  STORE_NAME     skin_boar_heavy	0 150 1.5
+
+	if $rand(1,3) == 1
+	addstoreitem STORE_NAME sheath_back_holster 1 100 SELL_RATIO
+
+}
+
+//============== COMBAT (or lack thereof)
+{ closetskel //called from ms_npcscript on map
+
+	setmoveanim run1
+	setidleanim walk_scared
+}
+
+{ game_damaged
+	if !$get(PARAM1,isplayer)
+
+	setidleanim walk_scared
+	roam 1
+	menu.autoopen 0
+	callevent npcatk_flee $get(PARAM1,id) 9999 8.0
+	playrandomsound 0 10 SND_SCREAM1 SND_SCREAM2 SND_SCREAM3
+}
+
+
+{ [override] npcatk_settarget //I don't hunt
+
+}
+
+//============== Ring Quests
+{ got_ring
+
+	setvard HAVE_RING 1
+	saytext What's that? Ohh, nice ring! 
+  	playanim once return_needle
+  	say [0.2] [0.2] [0.05] [0.05] [0.05] [0.05]	
+	setvard QUEST_WINNER PARAM1
+	callevent 2 got_ring2
+}
+
+{ got_ring2
+	saytext Don't know who it belongs to, but I'll trade it for one of my swords!
+	playanim once pull_needle
+	say [0.2 [0.2] [0.1] [0.1] [0.1] [0.2] [0.2] [0.2] 
+	callevent 2 give_sword
+}
+
+{ give_sword
+	offer QUEST_WINNER swords_skullblade4
+}
+
+{ second_ring
+	saytext Another... Ring? So...
+	playanim once dryhands
+	say [1]
+	callevent 1.5 second_ring2
+}
+
+{ second_ring2
+	saytext pretty....
+	say [1]
+	callevent 2 second_ring3
+}
+
+{ second_ring3
+	saytext No! I musn't be tempted!
+	say [0.2] [0.2] [0.2] [0.2]
+	playanim critical rflinch1
+}
+
+{ not_my_ring //called from calm_down if player has skull blade and ring, but no bloodstone ring quest
+	if ( BUSY_CHATTING ) callevent 1.0 not_my_ring
+	if !BUSY_CHATTING
+
+	setmovedest RING_BOY_ID 9999
+	setvard CHAT_STEP1 "Hey, that rr.r....ring you have there..."
+	setvard ANIM_STEP1 eye_wipe
+	setvard CHAT_DELAY_STEP1 3.0
+
+	setvard CHAT_STEP2 "That one's not mine!"
+	setvard CHAT_DELAY_STEP2 2.0
+
+	setvard CHAT_STEP3 "But I bet I know who would know whose it is!"
+	setvard CHAT_DELAY_STEP3 3.0
+
+	setvard CHAT_STEP4 "Galan! In Gatecity..."
+	setvard CHAT_DELAY_STEP4 2.0
+
+	setvard CHAT_STEP5 "He and I were friends... Before... You know... The b..books...."
+	setvard CHAT_DELAY_STEP5 4.0
+	setvard CHAT_EVENT_STEP5 not_my_ring2
+
+	setvard CHAT_STEPS 5
+	callevent chat_loop
+}
+
+{ not_my_ring2
+	quest set RING_BOY_ID r 1
+}

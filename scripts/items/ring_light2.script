@@ -1,0 +1,107 @@
+//Thothie - Wrong model offset, and no MODEL_VIEW defined no setmodelbody in drop
+{
+  const MODEL_WORLD      	misc/p_misc.mdl
+  const MODEL_HANDS	     	misc/p_misc.mdl
+  const MODEL_VIEW		misc/p_misc.mdl
+  const	MODEL_BODY_OFS		27
+  const ANIM_PREFIX		ring
+
+	const FREQ_LIGHT_UPDATE 60.0
+}
+
+#include items/base_miscitem
+#include items/base_effect_armor
+
+{ miscitem_spawn
+
+   name 	Felewyn's Light
+   desc 	This sigil of Felewyn shall bring light on your path forever
+
+   weight 	0
+   size 	3
+   value	1000
+   wearable     1 rightfinger
+   sethudsprite trade ring
+}
+
+{ game_wear
+
+	setmodel none
+}
+
+{ game_newowner
+
+ 	local L_BODY game.item.hand_index
+	add L_BODY 1
+}
+
+{ [server] game_deploy
+
+	if $get(ent_owner,scriptvar,'PLR_IN_WORLD')
+	if !LIGHT_ON
+	callevent light_on
+}
+
+{ [server] ext_activate_items
+	if PARAM1 equals $get(ent_owner,id)
+	if $get(ent_me,is_worn)
+	if $get(ent_owner,scriptvar,'PLR_IN_WORLD')
+	if !LIGHT_ON
+	callevent light_on
+}
+
+{ [server] barmor_effect_activate
+	if !LIGHT_ON
+	callevent light_on
+}
+
+{ [server] barmor_effect_remove
+	if LIGHT_ON
+	callevent light_off
+}
+
+//{
+//repeatdelay FREQ_LIGHT_UPDATE
+//	if LIGHT_ON
+//	callevent light_off
+//	callevent 0.1 light_on
+//}
+
+{ [override] game_fall
+
+	setmodel MODEL_WORLD
+	setmodelbody 0 MODEL_BODY_OFS
+
+	if LIGHT_ON
+	callevent light_off
+}
+
+{ [server] light_on
+	dbg light_on
+
+	if $get(ent_me,is_worn)
+	if $get(ent_owner,scriptvar,'PLR_IN_WORLD')
+	if !$get(ent_owner,scriptvar,'PLR_HAS_GLOW') //dont fux with existing glow
+	setvard LIGHT_ON 1
+	callexternal GAME_MASTER gm_light_update new $get(ent_owner,index) $vec(255,255,128) 128 "ring_light2"
+	
+
+	//setvard LIGHT_ON 1
+	//clientevent new all effects/sfx_follow_glow_cl $get(ent_owner,index) (255,255,128) 128 FREQ_LIGHT_UPDATE
+	//setvard LIGHT_SCRIPT_ID game.script.last_sent_id
+	//dbg light_on LIGHT_SCRIPT_ID
+}
+
+{ [server] light_off
+	//if LIGHT_SCRIPT_ID isnot 'LIGHT_SCRIPT_ID'
+	//dbg light_off LIGHT_SCRIPT_ID
+	//clientevent update all LIGHT_SCRIPT_ID remove_light
+	//setvard LIGHT_SCRIPT_ID 'LIGHT_SCRIPT_ID'
+	if !$get(ent_owner,scriptvar,'PLR_HAS_GLOW') //dont fux with existing glow
+	callexternal GAME_MASTER gm_light_update remove $get(ent_owner,index) $vec(255,255,128) 128 "ring_light"
+	setvard LIGHT_ON 0
+}
+
+{ ext_restore_item_lights
+	callevent light_on
+}

@@ -1,0 +1,115 @@
+{
+	const V_ADJ 48
+}
+
+{ client_activate
+	setvard FX_OWNER PARAM1
+	setvard FX_ACTIVE 1
+	callevent 30.0 end_fx
+	callevent fx_loop
+}
+
+{ end_fx
+	if !BOSS_DEAD
+	setvard FX_ACTIVE 0
+	callevent 2.0 remove_fx
+}
+
+{ end_fx_post_boss
+	setvard FX_ACTIVE 0
+	callevent 2.0 remove_fx
+}
+
+{ remove_fx
+	removescript
+}
+
+{ fx_loop
+	if FX_ACTIVE
+	setvard OWNER_ORG $getcl(FX_OWNER,origin)
+	//callevent 1.0 fx_loop
+	setvard FX_RADIUS 90
+	setvard START_SCALE 1.0
+	setvard ROT_DIR -0.1
+	calleventloop 18 make_smokes
+	setvard FX_RADIUS 180
+	setvard START_SCALE 0.8
+	setvard ROT_DIR 0.1
+	calleventloop 18 make_smokes
+	setvard FX_RADIUS 270
+	setvard START_SCALE 0.6
+	setvard ROT_DIR -0.1
+	calleventloop 18 make_smokes
+}
+
+{ make_smokes
+	setvard CUR_ROT game.script.iteration
+	multiply CUR_ROT 20
+	local SPR_POS OWNER_ORG
+	vectoradd SPR_POS $relpos($vec(0,CUR_ROT,0),$vec(0,FX_RADIUS,V_ADJ))
+	cleffect tempent sprite shadowfog.spr SPR_POS setup_shadows1 update_shadows1
+}
+
+{ boss_died
+	setvard BOSS_DEAD 1
+	callevent 10.0 end_fx_post_boss
+}
+
+{ update_shadows1
+
+	if FX_ACTIVE
+
+	if ( BOSS_DEAD )
+	{
+		local SPR_VEL $relvel($vec(0,0,0),$vec(0,0,0))
+		local L_ROT game.tempent.fuser2 //current rotation
+		vectoradd SPR_VEL $relvel($vec(0,L_ROT,0),$vec(0,100,0))
+		cleffect tempent set_current_prop velocity SPR_VEL
+	}
+
+	if !BOSS_DEAD
+
+	if ( $rand(1,10) == 1 )
+	{
+		local CUR_FRAME game.tempent.fuser1
+		add CUR_FRAME 1
+		if ( CUR_FRAME > 30 ) local CUR_FRAME 20
+		//dbg update_shadows1 CUR_FRAME
+		cleffect tempent set_current_prop frame CUR_FRAME
+		cleffect tempent set_current_prop fuser1 CUR_FRAME
+		//cleffect tempent set_current_prop framerate 30
+	}
+
+	local L_ROT game.tempent.fuser2 //current rotation
+	local L_DIR game.tempent.fuser3 //direction for this ring
+	local L_RAD game.tempent.fuser4 //radius for this ring
+
+	add L_ROT L_DIR
+	if ( L_ROT < 0 ) local L_ROT 359.99
+	if ( L_ROT >  359.99 ) local L_ROT 0
+
+	local SPR_POS OWNER_ORG
+	vectoradd SPR_POS $relpos($vec(0,L_ROT,0),$vec(0,L_RAD,V_ADJ))
+	cleffect tempent set_current_prop origin SPR_POS
+	cleffect tempent set_current_prop fuser2 L_ROT
+}
+
+{ setup_shadows1
+
+	cleffect tempent set_current_prop death_delay 	30.0
+	cleffect tempent set_current_prop framerate		20
+	cleffect tempent set_current_prop frame			20
+	cleffect tempent set_current_prop frames		40
+	cleffect tempent set_current_prop bouncefactor 	0
+	cleffect tempent set_current_prop scale 		START_SCALE
+	cleffect tempent set_current_prop rendermode		alpha
+	cleffect tempent set_current_prop renderamt		255
+	cleffect tempent set_current_prop gravity 		0
+	cleffect tempent set_current_prop collide 		none
+	cleffect tempent set_current_prop update 		1
+
+	cleffect tempent set_current_prop fuser1 20.0
+	cleffect tempent set_current_prop fuser2 CUR_ROT
+	cleffect tempent set_current_prop fuser3 ROT_DIR
+	cleffect tempent set_current_prop fuser4 FX_RADIUS
+}

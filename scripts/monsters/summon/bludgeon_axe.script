@@ -1,0 +1,100 @@
+//spinning axe thrown by bludgeon
+{
+	const FWD_SPEED 50
+	setvard ATTACK_MOVERANGE 80
+	const SOUND_SPIN zombie/claw_miss2.wav
+	const FREQ_SOUND 0.3
+	const DMG_TYPE slash
+	const SCAN_RAD 72
+}
+
+#include monsters/base_noclip
+
+{ game_dynamically_created
+	setvard MY_OWNER PARAM1
+	setvard MY_DEST PARAM2
+	setvard DMG_BASE PARAM3
+	setvard GAME_PVP game.pvp
+	setvard OWNER_ISPLAYER $get(MY_OWNER,isplayer) //players can't throw this, but they can throw items that use this as a base
+	setvard ITEM_ID MY_OWNER
+	if ( OWNER_ISPLAYER )
+	{
+		setvard ITEM_ID PARAM4
+	}
+	setvard OWNER_HALFHEIGHT $get(MY_OWNER,height)
+	race $get(MY_OWNER,race)
+	if ( !OWNER_ISPLAYER ) divide OWNER_HALFHEIGHT 2
+	setvard NPC_NOCLIP_DEST MY_DEST
+	setvard IS_ACTIVE 1
+	storeentity ent_expowner MY_OWNER
+	callevent 0.1 damage_loop
+	setvard END_FLIGHT_TIME game.time
+	add END_FLIGHT_TIME 10.0
+}
+
+{ game_spawn
+	name a|Bludgeon Axe
+	setmodel weapons/projectiles.mdl
+	setmodelbody 0 32
+	setidleanim spin_vertical_norm
+	setmoveanim spin_vertical_norm
+	setsolid none
+	width 32
+	fly 1
+	height 32
+	blood none
+	invincible 1
+	setmonsterclip 0
+	setvard PLAYING_DEAD 1 //not a valid attack target
+}
+
+{ damage_loop
+	callevent 0.1 damage_loop
+	dodamage $relpos(0,0,0) SCAN_RAD DMG_BASE 100% 0.0 reflective DMG_TYPE
+}
+
+{
+repeatdelay FREQ_SOUND
+	if IS_ACTIVE
+	playsound 0 10 zombie/claw_miss2.wav
+}
+
+{
+repeatdelay 0.1
+	if IS_ACTIVE
+	if ( !AM_RETURNING )
+	{
+		if $dist(game.monster.origin,NPC_NOCLIP_DEST) <= ATTACK_MOVERANGE
+		setvard AM_RETURNING 1
+	}
+	if ( AM_RETURNING )
+	{
+		setvard NPC_NOCLIP_DEST $get(MY_OWNER,origin)
+		if ( $get(MY_OWNER,isplayer) )
+		{
+			setvard NPC_NOCLIP_DEST $get(MY_OWNER,attachpos,0)
+		}
+		else
+		{
+			vectoradd NPC_NOCLIP_DEST z OWNER_HALFHEIGHT
+		}
+
+		if $dist(game.monster.origin,NPC_NOCLIP_DEST) <= ATTACK_MOVERANGE
+		setvard IS_ACTIVE 0
+		callexternal ITEM_ID catch_axe
+		callevent 0.1 remove_me
+	}
+
+	if !OWNER_ISPLAYER
+	if ( game.time > END_FLIGHT_TIME )
+	{
+		//in air too long, force return
+		setvard IS_ACTIVE 0
+		callexternal ITEM_ID catch_axe
+		callevent 0.1 remove_me
+	}
+}
+
+{ remove_me
+	deleteent ent_me
+}

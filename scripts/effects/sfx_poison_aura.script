@@ -1,0 +1,91 @@
+//Poison gas aura by Thothie
+//- note that vgoblin_chief handles this in his own CL (this is newer)
+
+#scope client
+
+{
+	const GLOW_COLOR (0,255,0)
+}
+
+{ client_activate //<owner_index> <radius> <duration>
+	setvard MY_OWNER PARAM1
+	setvard FX_RAD PARAM2
+	setvard FX_RAD_NEG $neg(FX_RAD)
+	setvard FX_DURATION PARAM3
+	setvard GLOW_RAD FX_RAD
+	if ( $getcl(MY_OWNER,isplayer) )
+	{
+		multiply GLOW_RAD 2.5
+	}
+	else
+	{
+		multiply GLOW_RAD 1.5
+	}
+
+	setcallback render enable
+
+	cleffect light new $getcl(MY_OWNER,origin) GLOW_RAD GLOW_COLOR 1.0
+	setvard LIGHT_ID game.script.last_light_id
+
+	setvard FX_ACTIVE 1
+	callevent FX_DURATION end_fx
+	callevent fx_loop
+}
+
+{ game_prerender
+
+	//if ( !$getcl(MY_OWNER,exists) ) callevent end_fx
+	if $getcl(MY_OWNER,exists)
+	local L_POS $getcl(MY_OWNER,origin)
+	if ( $getcl(MY_OWNER,isplayer) ) vectoradd L_POS z -38
+	cleffect light LIGHT_ID L_POS GLOW_RAD GLOW_COLOR 1.0
+}
+
+{ end_fx
+	setvard FX_ACTIVE 0
+	callevent 1.0 remove_me
+}
+
+{ remove_me
+	removescript
+}
+
+{ fx_loop
+	if FX_ACTIVE
+	callevent 0.25 fx_loop
+
+	local C_POS $getcl(MY_OWNER,origin)
+
+	if ( $getcl(MY_OWNER,isplayer) )
+	{
+		//dbg *** fx_loop $getcl(MY_OWNER,height) //always returns 0 - maybe different for monsters
+		vectoradd C_POS z -24
+	}
+
+	local L_POS C_POS
+	vectoradd L_POS $relpos($vec(0,$randf(0,359),0),$vec(0,$randf(FX_RAD_NEG,FX_RAD),0))
+	cleffect tempent sprite poison_cloud.spr L_POS setup_smokes
+
+	local L_POS C_POS
+	vectoradd L_POS $relpos($vec(0,$randf(0,359),0),$vec(0,$randf(FX_RAD_NEG,FX_RAD),0))
+	cleffect tempent sprite poison_cloud.spr L_POS setup_smokes
+
+	local L_POS C_POS
+	vectoradd L_POS $relpos($vec(0,$randf(0,359),0),$vec(0,$randf(FX_RAD_NEG,FX_RAD),0))
+	cleffect tempent sprite poison_cloud.spr L_POS setup_smokes
+}
+
+{  [client] setup_smokes
+
+   cleffect tempent set_current_prop death_delay 	0.5
+   cleffect tempent set_current_prop framerate		10
+   cleffect tempent set_current_prop frames			17
+   cleffect tempent set_current_prop bouncefactor 	0
+   cleffect tempent set_current_prop scale 			0.5
+   cleffect tempent set_current_prop rendermode		add
+   cleffect tempent set_current_prop renderamt		200
+   cleffect tempent set_current_prop rendercolor	(0,255,0)
+   cleffect tempent set_current_prop gravity 		.005
+   cleffect tempent set_current_prop collide 		world
+}
+

@@ -1,0 +1,106 @@
+//Shadowfire aura - grows and follows owner
+
+#scope client
+{
+	const MIN_SIZE 2.0
+	const MAX_SIZE 9.0
+
+	const MIN_GLOW_SIZE 64
+	const MAX_GLOW_SIZE 368
+
+	const V_OFS -34
+	const V_OFS_DUCK 24
+
+	const GLOW_RAD 128
+	const GLOW_COLOR (255,128,64)
+}
+
+{ client_activate //<owner> <size_ratio> <duration> [growth_rate]
+
+	setvard GROWTH_RATE 0.015
+	if ( PARAM4 !startswith PARAM ) setvard GROWTH_RATE PARAM4
+
+	setcallback render enable
+
+	setvard FX_OWNER PARAM1
+	setvard CUR_SIZE PARAM2
+	setvard FX_DURATION PARAM3
+
+	dbg *** client_activate CUR_SIZE [ $ratio(CUR_SIZE,MIN_GLOW_SIZE,MAX_GLOW_SIZE) ] [ $ratio(CUR_SIZE,MIN_SIZE,MAX_SIZE) ]
+
+	setvard FX_ACTIVE 1
+	
+	callevent FX_DURATION remove_fx
+	cleffect tempent model weapons/projectiles.mdl $getcl(FX_OWNER,origin) make_aura update_aura
+
+	cleffect light new $getcl(FX_OWNER,origin) $ratio(CUR_SIZE,MIN_GLOW_SIZE,MAX_GLOW_SIZE) GLOW_COLOR 1.0
+	setvard LIGHT_ID game.script.last_light_id
+}
+
+{ game_prerender
+
+	//if ( !$getcl(MY_OWNER,exists) ) callevent remove_fx
+	if $getcl(MY_OWNER,exists)
+	cleffect light LIGHT_ID $getcl(FX_OWNER,origin) $ratio(CUR_SIZE,MIN_GLOW_SIZE,MAX_GLOW_SIZE) GLOW_COLOR 1.0
+}
+
+{ remove_fx
+	setvard FX_ACTIVE 0
+	callevent 0.5 remove_me
+}
+
+{ remove_me
+	removescript
+}
+
+{ update_aura
+
+	if ( !FX_ACTIVE )
+	{
+		cleffect tempent set_current_prop origin $vec(10000,10000,10000)
+	}
+	else
+	{
+		cleffect tempent set_current_prop scale $ratio(CUR_SIZE,MIN_SIZE,MAX_SIZE)
+
+		local L_POS $getcl(FX_OWNER,origin)
+		local L_VOFS V_OFS
+		vectoradd L_POS z V_OFS
+		if ( $get_contents(L_POS) isnot empty ) vectoradd L_POS z V_OFS_DUCK
+
+
+		
+		cleffect tempent set_current_prop origin L_POS
+	}
+}
+
+{
+repeatdelay 0.1
+	if FX_ACTIVE
+
+	if ( CUR_SIZE < 1.0 )
+	{
+		add CUR_SIZE GROWTH_RATE
+	}
+	if ( CUR_SIZE > 1.0 )
+	{
+		dbg *** sfaura_client_maxsize
+		setvard CUR_SIZE 1.0
+	}
+}
+
+{ make_aura
+	cleffect tempent set_current_prop death_delay FX_DURATION
+	cleffect tempent set_current_prop body 51
+	cleffect tempent set_current_prop framerate 0.5
+	cleffect tempent set_current_prop sequence 8
+	cleffect tempent set_current_prop rendermode add
+	cleffect tempent set_current_prop renderamt 100
+	cleffect tempent set_current_prop gravity 0
+	cleffect tempent set_current_prop collide none
+	cleffect tempent set_current_prop frames 11
+	cleffect tempent set_current_prop angles $vec(0,90,0)
+	cleffect tempent set_current_prop velocity $vec(0,0,0)
+	cleffect tempent set_current_prop movetype 0
+	cleffect tempent set_current_prop scale $ratio(CUR_SIZE,MIN_SIZE,MAX_SIZE)
+}

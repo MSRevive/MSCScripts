@@ -1,0 +1,63 @@
+//glowing light orbiting at fixed origin
+//note that actual rotation speed may vary quite a bit with frame rate
+//with commentary
+#scope client //this isn't actually required as its called with clientevent, but habbit...
+
+//These params are passed from the server side of the script (other/sfx_orbiting_light) when "clientevent" is called
+//it can be made to orbit other scripts by simply calling it from them with the same parameters
+{ client_activate //<origin> <duration> <wander_radius> <light_radius> <light_color> <speed>
+	setvard FX_ORIGIN PARAM1 //where I started
+	setvard FX_DURATION PARAM2 //how long unitl I die (this needs to be refreshed periodically from the server side)
+	setvard FX_RADIUS PARAM3 //how large is the circle I'm going to follow (don't let me wander off map, or I'll die)
+	setvard GLOW_RADIUS PARAM4 //how large is my glow
+	setvard GLOW_COLOR PARAM5 //what color is my glow
+	setvard FX_ROT_SPEED PARAM6 //how fast do I rotate (degrees per frame)
+
+	setcallback render enable //lets the script capture frames pre-render
+	setvard FX_ACTIVE 1 //flag to note this effect as active
+	setvard CYCLE_ANGLE 0 //initial radial angle position, relative to center
+	callevent FX_DURATION end_fx //end in <duration> seconds
+	cleffect light new FX_ORIGIN GLOW_RADIUS GLOW_COLOR 1.0 //initial light
+	setvard LIGHT_ID game.script.last_light_id //stores the light created above
+	cleffect tempent sprite 3dmflaora.spr FX_ORIGIN setup_sprite update_sprite
+	//^ creates cl sprite via the params in setup_sprite, updated each frame under update_sprite
+}
+
+//This DLL event only occurs if setcallback render is enabled
+{ game_prerender
+	if FX_ACTIVE
+	//moves the light to the current location each frame:
+	add CYCLE_ANGLE FX_ROT_SPEED
+	if ( CYCLE_ANGLE > 359.99 ) setvard CYCLE_ANGLE 0
+	setvard CUR_POS FX_ORIGIN
+	vectoradd CUR_POS $relpos($vec(0,CYCLE_ANGLE,0),$vec(0,FX_RADIUS,0))
+	cleffect light LIGHT_ID CUR_POS GLOW_RADIUS GLOW_COLOR 1.0
+}
+
+{ update_sprite
+	//moves the sprite to the current location, each update:
+	cleffect tempent set_current_prop origin CUR_POS
+}
+
+{ end_fx
+	//clears the effect..
+	setvard IS_ACTIVE 0
+	callevent 1.0 remove_fx
+}
+
+{ remove_fx
+	//and removes the script from the client
+	removescript
+}
+
+{ setup_sprite
+	//sets up the parameters for the sprite
+	cleffect tempent set_current_prop death_delay 	FX_DURATION
+	cleffect tempent set_current_prop scale 	1
+	cleffect tempent set_current_prop gravity 	0
+	cleffect tempent set_current_prop collide 	none
+	//^ prevents collision with world or npcs...
+	//...however, if the sprite leaves the map, it'll be removed, as with all tempent sprites/models
+	cleffect tempent set_current_prop framerate	30
+	cleffect tempent set_current_prop frames	1
+}

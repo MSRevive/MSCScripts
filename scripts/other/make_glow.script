@@ -1,0 +1,135 @@
+#include monsters/base_flyer_grav
+#include monsters/externals
+
+{ game_spawn
+	name a|Killer Map Brush
+	race hated
+	hp 1000
+	hearingsensitivity 11
+	setvard NPCATK_TARGET unset
+	menu.autoopen 1
+	setvard SUSPEND_AI 1
+	gravity 0
+	setvard CYCLE_RATE 1.0
+	callevent 1.0 npcatk_hunt
+	setprop rendermode 2
+	setprop renderamt 255
+}
+
+{ game_heardsound
+	local HEARD_ID $get(ent_lastheard,id)
+	if $get(ent_me,relationship,HEARD_ID) equals enemy
+	setvard NPCATK_TARGET HEARD_ID
+	effect glow ent_me (255,255,0) 64 30 30 
+}
+
+{ game_damaged
+	if $get(PARAM1,relationship,ent_me) equals enemy
+	setvard NPCATK_TARGET HEARD_ID
+	effect glow ent_me (255,0,0) 64 30 30 //no work
+}
+
+{ game_death
+	playsound 0 10 voices/human/male_die.wav
+	deleteent ent_me fade
+}
+
+{ npcatk_hunt
+	callevent CYCLE_RATE npcatk_hunt
+	if !SUSPEND_AI
+	dbg Hunting $get(NPCATK_TARGET,name) [ $get(NPCATK_TARGET,range) ]
+
+	playsound 2 10 magic/energy1.wav
+
+	if ( !$get(NPCATK_TARGET,isalive) ) setvard NPCATK_TARGET unset
+	if NPCATK_TARGET isnot unset
+	setmovedest NPCATK_TARGET 32
+	if ( $cansee(NPCATK_TARGET) ) addvelocity ent_me $relvel(0,50,0)
+
+	if ( $get(NPCATK_TARGET,range) < 64 ) dodamage NPCATK_TARGET 64 5 50 slash
+}
+
+//this works, btw
+//{ game_playerused
+//	setprop ent_me rendermode 5
+//	setprop ent_me renderamt 255
+//}
+
+{ npcatk_resume_ai
+	setvard CYCLE_RATE 0.1
+	setvard NPCATK_TARGET PARAM1
+	setvard SUSPEND_AI 0
+}
+
+{ npcatk_suspend_ai
+	setvard CYCLE_RATE 1.0
+	setvard SUSPEND_AI 1
+}
+
+{ menu_hunt
+	callevent npcatk_resume_ai $get(PARAM1,id)
+}
+
+{ menu_stop
+	callevent npcatk_suspend_ai
+}
+
+{ menu_glow
+	clientevent new all effects/sfx_follow_glow_cl $get(ent_me,index) (255,255,0) 128 30.0
+}
+
+{ game_menu_getoptions
+	if ( SUSPEND_AI )
+	{
+		local reg.mitem.title "Hunt"
+		local reg.mitem.type callback
+		local reg.mitem.callback menu_hunt
+		menuitem.register
+	}
+	else
+	{
+		local reg.mitem.title "Stop"
+		local reg.mitem.type callback
+		local reg.mitem.callback menu_stop
+		menuitem.register
+	}
+
+	local reg.mitem.title "Glow"
+	local reg.mitem.type callback
+	local reg.mitem.callback menu_glow
+	menuitem.register
+
+
+	local reg.mitem.title "Additive"
+	local reg.mitem.type callback
+	local reg.mitem.callback menu_additive
+	menuitem.register
+
+	local reg.mitem.title "Spin"
+	local reg.mitem.type callback
+	local reg.mitem.callback menu_spin
+	menuitem.register
+
+
+//	local reg.mitem.title "Fly Baby! Fly!"
+//	local reg.mitem.type callback
+//	local reg.mitem.callback menu_fly
+//	menuitem.register
+}
+
+{ menu_fly
+	//fly 1 //CRASHES
+	gravity 0
+	saytextrange 1024
+	saytext Weeee!
+}
+
+{ menu_additive
+	setprop ent_me rendermode 5
+	setprop ent_me renderamt 255
+}
+
+{ menu_spin
+	setprop ent_me avelocity $vec(50,50,0)
+	callevent 0.1 menu_spin
+}

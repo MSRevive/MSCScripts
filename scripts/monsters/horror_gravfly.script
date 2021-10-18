@@ -1,0 +1,259 @@
+#scope server
+{ [shared]
+	setvar ANIM_WALK fly1
+	setvar ANIM_IDLE idle1
+	setvar ANIM_RUN fly1
+	const ANIM_FLY fly1
+	const ANIM_ROLL fly2
+	setvard ANIM_ATTACK bite1 //attack1
+	const ANIM_BITE1 bite1 //attack1
+	const ANIM_BITE2 bite2 //attack2
+	setvard ANIM_DEATH die
+	const ANIM_BREATH breath //breath_attack
+	const ANIM_HOVER hover
+}
+
+{
+	setvard DROP_GOLD 1
+	setvard DROP_GOLD_MIN 40
+	setvard DROP_GOLD_MAX 200
+	setvard NPC_GIVE_EXP 400
+
+	setvar IS_UNHOLY 1
+
+	setvard SPIT_AMMO 3
+	const MAX_SPIT_AMMO 3
+	setvard BREATH_AMMO 1
+
+	setvard BALL_SIZE 5
+	setvard BALL_DMG 100
+
+	const DMG_PROJECTILE 100
+	const PROJ_SCRIPT proj_poison_spit2
+	const PROJ_SPEED 500
+	const PROJ_FOV 0.5
+
+	const FREQ_HORROR_BOOST $randf(5.0,10.0)
+
+	const DOT_SHOCK 15
+
+	const DMG_BLAST 100
+
+	setvard ATTACK_RANGE 60
+	setvard ATTACK_HITRANGE 60
+	const ATTACK_HITCHANCE 80%
+	const DMG_BITE 100
+
+
+	//sounds
+	const SOUND_IDLE1 controller/con_idle1.wav
+	const SOUND_IDLE2 controller/con_idle2.wav
+	const SOUND_IDLE3 controller/con_idle3.wav
+
+	const SOUND_SPIT1 bullchicken/bc_attack3.wav
+	const SOUND_SPIT2 bullchicken/bc_attack2.wav
+
+	const SOUND_ATTACK1 controller/con_attack1.wav
+	const SOUND_ATTACK2 controller/con_attack2.wav
+	const SOUND_ATTACK3 controller/con_attack3.wav
+
+	const SOUND_DEATH controller/con_die1.wav
+
+	const SOUND_PAIN0 debris/bustflesh2.wav		//most common
+	const SOUND_PAIN1 controller/con_pain1.wav	//rare > 50%
+	const SOUND_PAIN2 controller/con_die2.wav	//rare < 50%
+
+	const SOUND_SPRAY controller/con_attack3.wav
+
+	const SOUND_FLAP1 monsters/bat/flap_big1.wav
+	const SOUND_FLAP2 monsters/bat/flap_big2.wav
+
+	const SOUND_SPRAY ambient/steamburst1.wav
+	const SOUND_SHOCK1 bullchicken/bc_attack1.wav
+	const SOUND_SHOCK2 bullchicken/bc_attack2.wav
+	const SOUND_SHOCK3 bullchicken/bc_attack3.wav
+}
+
+#include monsters/base_monster_new
+#include monsters/base_flyer_grav
+
+{ [shared] npc_spawn
+	name an|Enraged Horror
+
+	hp 1000	//hi HP, no armor
+	width 32
+	height 32
+	setbbox npcsize
+	roam 1
+	race demon
+	setidleanim ANIM_IDLE
+	setmoveanim ANIM_WALK
+	hearingsensitivity 11
+	setmodel monsters/edwardgorey2.mdl
+	//setmodelbody 0 2
+	movespeed 3.0
+	setvard BASE_MOVESPEED 3.0
+
+	playanim once ANIM_WALK
+
+	if game.serverside
+	callevent 1.0 idle_sounds
+	takedmg poison 0.0
+	takedmg holy 2.0
+
+	setvard SPIT_AMMO 3
+	setvard BREATH_AMMO 1
+}
+
+{ npc_post_spawn
+	setvard NPC_HALF_HEALTH $get(ent_me,maxhp)
+	multiply NPC_HALF_HEALTH 0.5
+}
+
+{ idle_sounds
+
+	if $get(ent_me,isalive)
+
+	local NEXT_SOUND $randf(3,10)
+
+	callevent NEXT_SOUND idle_sounds
+
+	if NPCATK_TARGET equals none
+	playrandomsound 0 10 SOUND_IDLE1 SOUND_IDLE2 SOUND_IDLE3
+}
+
+{ npc_targetsighted
+	if ( SPIT_AMMO > 0 )
+	{
+		setvard ANIM_ATTACK ANIM_BREATH
+		setvard PROJECTILE_ATTACK 1
+		setvard BREATH_ATTACK 0
+		setvard ANIM_WALK ANIM_FLY
+		setvard ANIM_RUN ANIM_FLY
+		playanim once ANIM_ATTACK
+		local EXIT_SUB 1
+	}
+	else
+	{
+		if ( BREATH_AMMO > 0 )
+		{
+			setvard ANIM_ATTACK ANIM_BREATH
+			setvard ANIM_WALK ANIM_ROLL
+			setvard ANIM_RUN ANIM_ROLL
+			setvard PROJECTILE_ATTACK 0
+			setvard BREATH_ATTACK 1
+			local EXIT_SUB 1
+		}
+		else
+		{
+			if ( ANIM_ATTACK isnot ANIM_BITE1 )
+			{
+				if ANIM_ATTACK isnot ANIM_BITE2
+				setvard ANIM_ATTACK ANIM_BITE1
+			}
+			setvard ANIM_WALK ANIM_FLY
+			setvard ANIM_RUN ANIM_FLY
+			setvard BREATH_ATTACK 0
+			setvard PROJECTILE_ATTACK 0
+		}
+	}
+	if !EXIT_SUB
+
+	if game.time > NEXT_HORROR_BOOST
+	setvard NEXT_HORROR_BOOST game.time
+	add NEXT_HORROR_BOOST FREQ_HORROR_BOOST
+	playsound 0 10 SOUND_FLAP
+	playanim once ANIM_ROLL
+	addvelocity ent_me $relvel(0,800,0)
+}
+
+{ [server] breath_attack //called by model anim: breath
+	if ( PROJECTILE_ATTACK )
+	{
+		//lightning ball
+		tossprojectile view PROJ_SPEED DMG_PROJECTILE PROJ_FOV PROJ_SCRIPT (0,0,0)
+		playrandomsound 0 10 SOUND_SHOCK1 SOUND_SHOCK2 SOUND_SHOCK3
+		subtract SPIT_AMMO 1
+	}
+
+	if ( BREATH_ATTACK )
+	{
+		//lightning burst
+		effect glow ent_me (255,255,0) 768 2 2
+		playsound 0 10 SOUND_SPRAY
+		setvard BURST_POS $get(ent_me,origin)
+		vectorset BURST_POS z $get_ground_height(BURST_POS)
+		clientevent new all effects/sfx_poison_burst BURST_POS 256 1 (0,255,0)
+		dodamage BURST_POS 256 DMG_BLAST 100% 0 reflective poison_effect
+		subtract BREATH_AMMO 1
+		setvard BURST_TARGS $get_tsphere(enemy,256,BURST_POS)
+		if BURST_TARGS isnot none
+		calleventloop $get_token_amt(BURST_TARGS) burst_affect_targets
+	}
+}
+
+{ burst_affect_targets
+	local CUR_TARG $get_token(BURST_TARGS,game.script.iteration)
+	applyeffect CUR_TARG effects/effect_poison 5.0 $get(ent_me,id) DOT_SHOCK
+}
+
+{ [server] attack1	//called by model anim: bite1
+
+	dodamage NPCATK_TARGET ATTACK_HITRANGE DMG_BITE ATTACK_HITCHANCE
+	playrandomsound 0 10 SOUND_ATTACK1 SOUND_ATTACK2 SOUND_ATTACK3
+	if ( $rand(1,5) == 1 ) setvard ANIM_ATTACK ANIM_BITE2
+}
+
+{ [server] attack2	//called by model anim: bite2
+	dodamage NPCATK_TARGET ATTACK_HITRANGE DMG_BITE ATTACK_HITCHANCE
+
+	playrandomsound 0 10 SOUND_ATTACK1 SOUND_ATTACK2 SOUND_ATTACK3
+
+	setvard ANIM_ATTACK ANIM_BITE1
+
+	if $get(NPCATK_TARGET,range) <= ATTACK_HITRANGE
+	applyeffect NPCATK_TARGET effects/effect_poison_blinding 5.0 $get(ent_me,id) DOT_SHOCK
+    addvelocity NPCATK_TARGET $relvel(-550,50,10)
+}
+
+{ [server] spiral_charge //called by model anim: fly2
+
+	playrandomsound 0 10 SOUND_FLAP1 SOUND_FLAP2
+}
+
+{ [server] turret_horror //called by model anim: hover
+
+	playrandomsound 0 10 SOUND_FLAP1 SOUND_FLAP2
+}
+
+{ npc_struck
+
+	local MY_HEALTH $get(ent_me,hp)
+
+	if ( MY_HEALTH >= NPC_HALF_HEALTH ) playrandomsound 0 10 SOUND_PAIN0 SOUND_PAIN0 SOUND_PAIN1
+	if ( MY_HEALTH < NPC_HALF_HEALTH ) playrandomsound 0 10 SOUND_PAIN0 SOUND_PAIN0 SOUND_PAIN2
+}
+
+{ my_target_died
+	setvard SPIT_AMMO 3
+	setvard BREATH_AMMO 1
+}
+
+{
+repeatdelay 30.0
+	if SPIT_AMMO < MAX_SPIT_AMMO
+	if ( SPIT_AMMO == 0 )
+	{
+		if NPCATK_TARGET isnot unset
+		if $get(NPCATK_TARGET,range) < 200
+		callevent npcatk_flee NPCATK_TARGET 512 1.0
+	}
+
+	add SPIT_AMMO 1
+}
+
+{
+repeatdelay 60.0
+	if BREATH_AMMO <= 0
+	setvard BREATH_AMMO 1
+}

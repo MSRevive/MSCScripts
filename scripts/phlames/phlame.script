@@ -1,0 +1,899 @@
+//= FIX ROCK STORM CONNECTION (impact with clients ommits splodie FX)
+
+//- Summons monsters via map triggers (counts via external calls) [lava scrops, lava boars, demon birds]
+//* Transforms into Flame Wing (actually teleports out, and spawns flame wing via trigger) [pauses regen NPC_BOSS_PAUSE_REGEN {or not, seems his regen isn't as fast as expected}]
+//* Repulse flame burst /20sec (three in quick sucsession)
+//* Spawn fire variant of rock storm
+//* Blunt + Fire DOT mele
+//* Eye Beam single target
+//* Flame staff (fire breath'ish)
+//- [axed: made him giant] Flaming Shadow dodge (like Hollow One, but torrent of flames) [might skip, since we made him large]
+//- [axed: enough NPC's running around] Spawn multiple flaming boulders (bounce in arc)
+//- [axed: bird does enough of this] Trigger meteor shower (via map trigger)
+//- [axed: scratch this, would lag] Guided Burst (fire ball shoots out, explodes into multiple shots [1 for each valid target in radius])
+
+
+#scope server
+{ [shared]
+	setvar ANIM_IDLE idle
+	setvar ANIM_WALK walk2handed
+	setvar ANIM_RUN run2
+	setvard ANIM_ATTACK staff_strike //frame_staff_strike
+
+	const ANIM_RUN_DEF run2
+	const ANIM_WALK_DEF walk2handed
+	const ANIM_IDLE_DEF idle
+
+	const ANIM_TRANSFORM crouch_aim_dualmagicmissile
+
+	const ANIM_SEARCH look_idle
+	const ANIM_LOOK look_idle
+	const ANIM_SUMMON summon //frame_summon
+	const ANIM_METEOR cieling_strike //frame_cieling_strike
+	const ANIM_BOULDERS cieling_strike //frame_cieling_strike
+	const ANIM_REPULSE fdeploy_strike //frame_fdeploy_strike
+	const ANIM_DODGE staff_aim
+	const ANIM_BEAM staff_aim
+	const ANIM_FIRE_BREATH aim_1
+	const ANIM_GUIDED_BURST shoot_1
+	const ANIM_LEAP long_jump
+}
+
+{
+	setvar NPC_IS_BOSS 1
+	const NPC_BOSS_REGEN_RATE 0.1
+	const NPC_BOSS_REGEN_FREQ 40.0
+	setvard NPC_GIVE_EXP 15000
+
+	setvard MOVE_RANGE 512
+	setvard ATTACK_MOVERANGE 512
+	setvard ATTACK_RANGE 200
+	setvard ATTACK_HITRANGE 250
+
+	const FREQ_LOOK 15.0
+
+	const FREQ_GLOAT $randf(30.0,60.0)
+	const FREQ_PAIN $randf(20.0,30.0)
+
+	const FREQ_SPECIAL 15.0
+
+	const FREQ_CL_REFRESH 30.0
+
+	const FREQ_REPELL 20.0 //check if gang banged every 20 secs, if so, repell
+
+	const DMG_STAFF 100
+	const DOT_FIRE 100
+
+	const DMG_ROCKS 400
+
+	const DMG_EYE_BEAM 200
+
+	const DMG_REPULSE 100
+
+	const ATTACH_HAND 1
+	const ATTACH_STAFF 2
+	const ATTACH_EYE 3
+
+	const BIRD_SCRIPT phlames/phlame_bird
+
+
+	//these are random, but he also triggers map side "play everywhere" taunts on each kill (be it his or otherwise)
+	const SOUND_GLOAT1 "voices/phlame/vs_nx0headm_haha.wav"
+	const SOUND_GLOAT2 "voices/phlame/vs_nx0headm_attk.wav"
+	const SOUND_GLOAT3 "voices/phlame/vs_nx0headm_bat1.wav"
+	const SOUND_GLOAT4 "voices/phlame/vs_nx0headm_bat3.wav"
+
+	const SOUND_SUMMON "voices/phlame/vs_nx0headm_bat2.wav"
+
+	const SOUND_PAIN1 "voices/phlame/vs_nx0headm_atk1.wav"
+	const SOUND_PAIN_HEALTHY "voices/phlame/vs_nx0headm_yes.wav"
+	const SOUND_PAIN_WEAK "voices/phlame/vs_nx0headm_no.wav"
+
+	const SOUND_STRUCK1 "debris/flesh1.wav"
+	const SOUND_STRUCK2 "debris/flesh2.wav"
+
+	const SOUND_SWING1 "zombie/claw_miss1.wav"
+	const SOUND_SWING2 "zombie/claw_miss2.wav"
+	const SOUND_STRONG_SWING1 "zombie/claw_strike1.wav"
+	const SOUND_STRONG_SWING2 "zombie/claw_strike2.wav"
+
+	const SOUND_EYE_BEAM_PREP "weapons/egon_windup2.wav"
+	const SOUND_EYE_BEAM_LOOP "weapons/egon_run3.wav"
+	const SOUND_EYE_BEAM_FIRE "debris/beamstart1.wav"
+	const SOUND_EYE_BEAM_OFF "debris/beamstart1.wav"
+
+	const SOUND_BREATH_START "monsters/goblin/sps_fogfire.wav"
+
+	const SOUND_DEATH "voices/phlame/vs_nx0headm_hit1.wav" //also handled map side
+
+	precache c-tele1.spr
+	precache firemagic_8bit.spr
+	precache laserbeam.spr
+	precache red_aura_8bit.spr
+	precache 3dmflaora.spr
+	precache calflame.spr
+	precache monsters/demonwing/demonwing_huge.wav
+}
+
+{ game_precache
+	precachefile monsters/summon/rock_storm
+	precachefile phlames/phlame_cl
+	precachefile BIRD_SCRIPT
+}
+
+#include monsters/base_monster_new
+
+{ [shared] npc_spawn
+	name Phlame the Ever Burning
+	race demon
+	hp 17500
+	setmodel monsters/phlame.mdl
+	width 32
+	height 90
+	race demon
+
+	hearingsensitivity 5
+
+	name_unique phlame_wiz
+	
+	takedmg all 0.5
+	takedmg fire 0.0
+	takedmg cold 1.25
+	takedmg lightning 0.5
+	takedmg poison 0.25
+	takedmg acid 0.5
+	takedmg holy 1.25
+
+	setvard IMMUNE_VAMPIRE 1
+
+	setvard IS_UNHOLY 1
+	setmoveanim ANIM_LOOK
+	setidleanim ANIM_LOOK
+	playanim once ANIM_LOOK
+	movespeed 0
+
+	invincible 1
+	roam 0
+
+	catchspeech do_hurabi rape hentai tent hurabi porn anime
+
+	saytextrange 1024
+
+	effect glow ent_me (255,0,0) 128 20 25
+
+	callevent 35.0 start_vines
+
+	callevent npcatk_suspend_ai
+	setvar CAN_HEAR 0
+	setvard NO_SPAWN_STUCK_CHECK 1
+	setvard NPC_NO_AUTO_ACTIVATE 1
+	setvard NO_STUCK_CHECKS 1
+	setvard SPECIAL_ATTACK 0
+	setvard TRANSFORM_COUNT 0
+	setvard SUMMON_CYCLE 0
+
+	callevent 3.0 speak_begin
+	callevent 20.0 let_us_begin //just in case trigger fails
+	callevent 2.0 final_props
+}
+
+{ do_hurabi
+	if ( !ANIME_MODE )
+	{
+		setvard ANIM_MODE 1
+		setmodelbody 0 1
+	}
+	else
+	{
+		setvard ANIM_MODE 0
+		setmodelbody 0 0
+	}
+}
+
+{ npc_post_spawn
+	setvard CL_FX_ON 1
+	playanim once ANIM_LOOK
+}
+
+{ final_props
+	//determines tranform times
+	setvard HEALTH_75 $get(ent_me,maxhp)
+	setvard HEALTH_50 $get(ent_me,maxhp)
+	setvard HEALTH_25 $get(ent_me,maxhp)
+	multiply HEALTH_75 0.75
+	multiply HEALTH_50 0.5
+	multiply HEALTH_25 0.25
+}
+
+{ speak_begin
+	saytext Then... Let us... Begin...
+}
+
+{ let_us_begin
+
+	if !IT_HATH_BEGUN
+	setvard IT_HATH_BEGUN 1
+
+	invincible 0
+
+	setvard ANIM_RUN ANIM_WALK_DEF
+	setvard ANIM_IDLE ANIM_IDLE_DEF
+
+	setmoveanim ANIM_WALK
+	setidleanim ANIM_IDLE
+
+	callevent npcatk_resume_ai
+	setvard NO_STUCK_CHECKS 0
+	setvard IS_ACTIVE 1
+	setvard NEXT_GLOAT game.time
+	add NEXT_GLOAT FREQ_GLOAT
+
+	setvard NEXT_SPECIAL game.time
+	add NEXT_SPECIAL 5.0
+
+	setvard FIRST_SUMMON NEXT_SPECIAL
+	add FIRST_SUMMON 10.0
+
+	movespeed 1
+	setvard CAN_HEAR 1
+}
+
+{ bs_global_command
+	if $get(ent_me,isalive)
+
+	if game.time > NEXT_GLOBAL_GLOAT
+	setvard NEXT_GLOBAL_GLOAT game.time
+	add NEXT_GLOBAL_GLOAT 15.0
+
+	//random global gloat whenever a player dies (anywhere) - maps side
+	local RND_GLOAT $rand(1,4)
+	if ( RND_GLOAT == 1 ) usetrigger snd_gloat1
+	if ( RND_GLOAT == 2 ) usetrigger snd_gloat2
+	if ( RND_GLOAT == 3 ) usetrigger snd_gloat3
+	if ( RND_GLOAT == 4 ) usetrigger snd_gloat4
+}
+
+{ do_gloat
+	playrandomsound 0 10 SOUND_GLOAT1 SOUND_GLOAT2 SOUND_GLOAT3 SOUND_GLOAT4
+}
+
+{ game_struck
+
+	if ( EYE_BEAM_ON )
+	{
+		if $get(ent_laststruck,range) < $get(EYE_BEAM_TARGET,range)
+		callevent eye_beam_switchtargets $get(ent_laststruck,id)
+	}
+
+	if ( $get(ent_me,hp) < HEALTH_50 )
+	{
+		setvard IS_WEAK 1
+	}
+	else
+	{
+		setvard IS_WEAK 0
+	}
+
+	if ( game.time > NEXT_PAIN )
+	{
+		setvard NEXT_PAIN game.time
+		add NEXT_PAIN FREQ_PAIN
+		if ( !IS_WEAK )
+		{
+			playrandomsound 0 10 SOUND_PAIN1 SOUND_PAIN_HEALTHY
+		}
+		else
+		{
+			playrandomsound 0 10 SOUND_PAIN1 SOUND_PAIN_WEAK
+		}
+	}
+	else
+	{
+		playrandomsound 0 8 SOUND_STRUCK1 SOUND_STRUCK2
+	}
+
+	if ( IS_WEAK )
+	{
+		setvard ANIM_RUN ANIM_RUN_DEF
+		setmoveanim ANIM_RUN
+	}
+	else
+	{
+		setvard ANIM_RUN ANIM_WALK_DEF
+		setmoveanim ANIM_RUN
+	}
+
+	if IS_WEAK
+	if !BUSY_CASTING
+
+	if ( $get(ent_laststruck,range) < 200 )
+	{
+		if game.time > NEXT_LEAP_AWAY
+		setvard NEXT_LEAP_AWAY game.time
+		add NEXT_LEAP_AWAY FREQ_LEAP_AWAY
+		callevent do_leap_away
+	}
+}
+
+{ game_dodamage
+	if ( STAFF_STRIKE )
+	{
+		if PARAM1
+		if !REPULSE_ATTACK
+		//if $get(PARAM2,relationship,ent_me) equals enemy
+		applyeffect PARAM2 effects/effect_burn 5.0 $get(ent_me,id) DOT_FIRE
+	}
+	if ( REPULSE_ATTACK )
+	{
+		if PARAM1
+		//if $get(PARAM2,relationship,ent_me) equals enemy
+		local CUR_TARG PARAM2
+		local TARG_ORG $get(CUR_TARG,origin)
+		local MY_ORG $get(ent_me,origin)
+		local NEW_YAW $angles(MY_ORG,TARG_ORG)
+		applyeffect PARAM2 effects/effect_burn 5.0 $get(ent_me,id) DOT_FIRE
+		addvelocity CUR_TARG $relvel($vec(0,NEW_YAW,0),$vec(0,3000,600))
+	}
+	setvard STAFF_STRIKE 0
+}
+
+// ============================================================ Animation Events
+{ frame_staff_strike
+	local RND_STRENGTH $rand(1,2)
+	if ( RND_STRENGTH == 1 )
+	{
+		playrandomsound 0 10 SOUND_SWING1 SOUND_SWING2
+	}
+	else
+	{
+		playrandomsound 0 10 SOUND_STRONG_SWING1 SOUND_STRONG_SWING2
+	}
+
+	local L_DMG DMG_STAFF
+	if ( RND_STRENGTH == 2 ) multiply L_DMG 4
+
+	setvard STAFF_STRIKE 1
+
+	if ( REPULSE_ATTACK_MODE > 0 )
+	{
+		clientevent update all CL_EFFECT_ID repulse_attack
+		setvard REPULSE_ATTACK 1
+		dodamage $relpos(0,0,32) 512 DMG_REPULSE 100% 0 reflective fire
+		subtract REPULSE_ATTACK_MODE 1
+		callevent 0.1 repulse_reset
+	}
+	else
+	{
+		dodamage NPCATK_TARGET ATTACK_HITRANGE L_DMG 90% blunt
+	}
+}
+
+{ repulse_reset
+	setvard REPULSE_ATTACK 0
+}
+
+{ npcatk_hunt
+
+	local GAME_TIME game.time
+
+	if ( CL_FX_ON )
+	{
+		if !SUSPEND_CL_FX
+		if GAME_TIME > NEXT_FX_REFRESH
+		setvard NEXT_FX_REFRESH GAME_TIME
+		add NEXT_FX_REFRESH FREQ_CL_REFRESH
+		callevent refresh_client_fx
+	}
+
+	if NPCATK_TARGET isnot unset
+
+	if !SUSPEND_AI
+
+	if ( REPULSE_ATTACK_MODE > 0 ) playanim once ANIM_ATTACK
+
+	if IS_ACTIVE
+
+	if ( GAME_TIME > NEXT_GLOAT )
+	{
+		setvard NEXT_GLOAT GAME_TIME
+		add NEXT_GLOAT FREQ_GLOAT
+		callevent do_gloat
+	}
+
+	if ( GAME_TIME > NEXT_SPECIAL )
+	{
+		setvard NEXT_SPECIAL GAME_TIME
+		add NEXT_SPECIAL FREQ_SPECIAL
+
+		add SPECIAL_ATTACK 1
+		if ( SPECIAL_ATTACK > 4 ) setvard SPECIAL_ATTACK 0 //just in case
+
+		//Final order should be: 1-Rocks, 2-Eye, 3-Breath, 4-Repulse (favors summons / transform, if available)
+
+		//transform once at 75% and 25% health
+		if ( TRANSFORM_COUNT == 0 )
+		{
+			if ( $get(ent_me,hp) < HEALTH_75 )
+			{
+				callevent do_transform
+				local EXIT_SUB 1
+			}
+		}
+		if !EXIT_SUB
+		if ( TRANSFORM_COUNT == 1 )
+		{
+			if ( $get(ent_me,hp) < HEALTH_25 )
+			{
+				callevent do_transform
+				local EXIT_SUB 1
+			}
+		}
+		if !EXIT_SUB
+
+		if ( GAME_TIME > FIRST_SUMMON )
+		{
+			callevent do_summon
+			if DID_SUMMON
+			setvard DID_SUMMON 0
+			local EXIT_SUB 1
+		}
+		if !EXIT_SUB
+
+		if ( SPECIAL_ATTACK == 1 )
+		{
+			playanim critical ANIM_REPULSE
+			createnpc monsters/summon/rock_storm $relpos(0,0,32) $get(ent_me,id) 4 DMG_ROCKS 64 120 1 
+		}
+
+		if ( SPECIAL_ATTACK == 2 )
+		{
+			callevent do_eye_beam
+		}
+
+		if ( SPECIAL_ATTACK == 3 )
+		{
+			if ( $get(NPCATK_TARGET,range) < 512 )
+			{
+				callevent do_fire_breath
+			}
+			else
+			{
+				add SPECIAL_ATTACK 1
+			}
+		}
+
+		if ( SPECIAL_ATTACK == 4 )
+		{
+			if ( $get(NPCATK_TARGET,range) < 128 )
+			{
+				callevent do_repulse
+			}
+			else
+			{
+				setvard NEXT_SPECIAL game.time
+			}
+			setvard SPECIAL_ATTACK 0
+		}
+
+	}
+
+	if ( GAME_TIME > NEXT_REPELL )
+	{
+		if REPULSE_ATTACK_MODE <= 0
+		if !SUSPEND_AI
+		setvard NEXT_REPELL GAME_TIME
+		add NEXT_REPELL FREQ_REPELL
+		local NEARBY_NMES $get_tsphere(enemy,256)
+		if NEARBY_NMES isnot none
+		local N_NEARBY_NMES $get_token_amt(NEARBY_NMES)
+		local DO_REPULSE_CHANCE $rand(1,3)
+		dbg repulse_check nmes N_NEARBY_NMES vs DO_REPULSE_CHANCE
+		if DO_REPULSE_CHANCE < N_NEARBY_NMES
+		add REPULSE_ATTACK_MODE 1
+		playanim once ANIM_ATTACK
+	}
+}
+
+{ npcatk_lost_sight
+	if game.time > NEXT_LOOK
+	setvard NEXT_LOOK game.time
+	add NEXT_LOOK FREQ_LOOK
+	playanim once ANIM_SEARCH
+}
+
+{ refresh_client_fx
+	clientevent new all phlames/phlame_cl $get(ent_me,index) EYE_BEAM_ON FIRE_BREATH_ON
+	setvard CL_EFFECT_ID game.script.last_sent_id
+}
+
+{ do_eye_beam
+	setvard EYE_BEAM_TARGET NPCATK_TARGET
+	playanim break
+	callevent npcatk_suspend_ai
+	callevent npcatk_suspend_movement ANIM_BEAM
+
+	playsound 0 10 SOUND_EYE_BEAM_PREP
+
+	setvard EYE_BEAM_ON 1
+	clientevent update all CL_EFFECT_ID eye_beam_on
+	callevent 1.0 do_eye_beam2
+}
+
+{ do_eye_beam2
+	effect beam ents laserbeam.spr 30 ent_me ATTACH_EYE EYE_BEAM_TARGET 1 (255,0,255) 255 10 EYE_BEAM_DURATION
+	setvard EYE_BEAM_ID ent_lastcreated
+	playsound 0 10 SOUND_EYE_BEAM_FIRE
+	svplaysound 1 10 SOUND_EYE_BEAM_LOOP
+	callevent eye_beam_loop
+	callevent 10.0 end_eye_beam
+	callevent EYE_BEAM_DURATION end_eye_beam
+}
+
+{ eye_beam_loop
+
+	if EYE_BEAM_ON
+	callevent 0.1 eye_beam_loop
+
+	setmovedest EYE_BEAM_TARGET 9999
+
+	if game.time > NEXT_EYE_TRACE
+	setvard NEXT_EYE_TRACE game.time
+	add NEXT_EYE_TRACE 0.5
+
+	if ( !$get(EYE_BEAM_TARGET,isalive) )
+	{
+		local GET_NEW_TARGET 1
+	}
+	else
+	{
+		local TRACE_START $get(ent_me,attachpos,ATTACH_EYE)
+		local TRACE_END $get(EYE_BEAM_TARGET,origin)
+		local TRACE_LINE $get_traceline(TRACE_START,TRACE_END,worldonly)
+		//dbg eye_beam_loop TRACE_END vs TRACE_LINE
+	}
+
+	if ( TRACE_LINE isnot TRACE_END )
+	{
+		local GET_NEW_TARGET 1
+	}
+	else
+	{
+		//dbg eye_beam_loop dodamage $get(EYE_BEAM_TARGET,name) [ GET_NEW_TARGET ]
+		if !GET_NEW_TARGET
+		dodamage EYE_BEAM_TARGET direct DMG_EYE_BEAM 100% ent_me dark
+		addvelocity EYE_BEAM_TARGET $relvel(0,250,110)
+		clientevent update all CL_EFFECT_ID eye_beam_contact $get(EYE_BEAM_TARGET,origin)
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	//switch target if someone closer, or target dead/cant see him
+	local CAN_SEE_NME $cansee(enemy)
+	if ( CAN_SEE_NME) )
+	{
+		dbg eye_beam_loop see_nme CAN_SEE_NME $get(ent_lastseen,name)
+		if ( $get(ent_lastseen,range) < $get(EYE_BEAM_TARGET,range) ) local GET_NEW_TARGET 1
+		if GET_NEW_TARGET
+		callevent eye_beam_switchtargets $get(ent_lastseen,id)
+		local GOT_NEW_TARGET 1
+	}
+	if !GOT_NEW_TARGET
+
+	callevent end_eye_beam
+}
+
+{ eye_beam_switchtargets
+	setvard EYE_BEAM_TARGET PARAM1
+	effect beam update EYE_BEAM_ID end_target EYE_BEAM_TARGET
+}
+
+{ end_eye_beam
+	if EYE_BEAM_ON
+	setvard EYE_BEAM_ON 0
+	callevent npcatk_resume_movement
+	callevent npcatk_resume_ai
+	effect beam update EYE_BEAM_ID brightness 0
+	clientevent update all CL_EFFECT_ID eye_beam_off
+	svplaysound 1 0 SOUND_EYE_BEAM_LOOP
+	playsound 0 10 SOUND_EYE_BEAM_OFF
+	callevent 0.1 end_eye_beam2
+}
+
+{ end_eye_beam2
+	//this second removal is here, as it looks as though the beam update and client update are conflicting sometimes
+	clientevent update all CL_EFFECT_ID eye_beam_off
+}
+
+{ do_summon
+	dbg do_summon G_NPC_SUMMON_COUNT MAX_SUMMON_COUNT
+	//skip this until we test his basic abilities
+	//ideas here: cieling summons (birds) use different anim than floor summons (boars/scorp/vines)
+	//- do not summon if G_NPC_SUMMON_COUNT > 2 (4 if players >= 6)
+	//face center marker script before summoning birds or scorpion
+	//make sure distance from center marker is at least 200 units when summoning giant scorp (dont want it to land on head)
+	//- if no room to summon scorp, choose amongst the other summons
+	//vines fade/retract in time, so do not add set_summon to them (dont count against the summon limit)
+	//use NPC_HOME_LOC for centerpoint
+
+	local MAX_SUMMON_COUNT 2
+	if ( game.players > 5 ) local MAX_SUMMON_COUNT 4
+
+	if ( G_NPC_SUMMON_COUNT <= MAX_SUMMON_COUNT )
+	{
+		local CLEARED_FOR_SUMMON 1
+	}
+
+	if CLEARED_FOR_SUMMON
+	setvard DID_SUMMON 1
+
+	add SUMMON_CYCLE 1
+
+	if ( SUMMON_CYCLE == 3 )
+	{
+		//scorp (out of order here as we want to do it last, but may not be able to do it without room)
+
+		local SCORP_POS NPC_HOME_LOC
+		vectorset SCORP_POS z $get_ground_height(NPC_HOME_LOC)
+		local MY_POS $get(ent_me,origin)
+		if ( $dist(MY_POS,SCORP_POS) > 128 )
+		{
+			playanim critical ANIM_SUMMON
+			playsound 0 10 SOUND_SUMMON
+			usetrigger spawn_fboss_scorps
+		}
+		else
+		{
+			//too close to scorp's spawn point, pick random of the other two
+			//(scorp actually spawns well off the ground, but it is not aesthetically pleasing to have the huge thing land on its master's head)
+			setvard SUMMON_CYCLE $rand(1,2)
+		}
+	}
+
+
+	if ( SUMMON_CYCLE == 1 )
+	{
+		//birds
+		setmovedest NPC_HOME_LOC 9999
+		callevent npcatk_suspend_ai
+		callevent npcatk_suspend_movement ANIM_METEOR 1.0
+		playanim hold ANIM_METEOR
+		callevent 1.5 break_summon_anim
+		playsound 0 10 SOUND_SUMMON
+		usetrigger spawn_fboss_birds
+	}
+
+	if ( SUMMON_CYCLE == 2 )
+	{
+		//boars
+		playanim critical ANIM_SUMMON
+		playsound 0 10 SOUND_SUMMON
+		usetrigger spawn_fboss_boars
+	}
+
+	if SUMMON_CYCLE > 3
+	setvard SUMMON_CYCLE 0
+}
+
+{ break_summon_anim
+	callevent npcatk_resume_ai
+	playanim break
+}
+
+{ game_death
+	clientevent update all CL_EFFECT_ID end_fx
+	if ( EYE_BEAM_ON )
+	{
+		effect beam update EYE_BEAM_ID brightness 0
+		svplaysound 1 0 SOUND_EYE_BEAM_LOOP
+	}
+
+	usetrigger snd_fboss_death
+	callexternal all ext_summon_fade
+}
+
+{ do_fire_breath
+	callevent npcatk_suspend_ai
+	callevent npcatk_suspend_movement ANIM_FIRE_BREATH
+	clientevent update all CL_EFFECT_ID fire_breath_on
+	playsound 1 10 SOUND_BREATH_START
+	playanim break
+	playanim hold ANIM_FIRE_BREATH
+	setmovedest NPCATK_TARGET 9999
+	setvard BREATH_YAW $get(ent_me,angles.yaw)
+	setvard FIRE_BREATH_ON 1
+	callevent 10.0 end_fire_breath
+	callevent fire_breath_loop
+}
+
+{ fire_breath_loop
+	if FIRE_BREATH_ON
+	callevent 0.1 fire_breath_loop
+	add BREATH_YAW 1
+	if ( BREATH_YAW > 359.99 ) subtract BREATH_YAW 359.99
+	local FACE_POS $get(ent_me,origin)
+	vectoradd FACE_POS $relpos($vec(0,BREATH_YAW,0),$vec(0,1000,0))
+	setmovedest FACE_POS 9999
+	
+	if game.time > NEXT_SCAN
+	setvard NEXT_SCAN game.time
+	add NEXT_SCAN 1.0
+
+	setvard BREATH_TARGS $get_tsphere(enemy,256)
+	if BREATH_TARGS isnot none
+	setvard MY_ORG $get(ent_me,origin)
+	setvard MY_ANGLES $get(ent_me,angles)
+	calleventloop $get_token_amt(BREATH_TARGS) breath_affect_targets
+}
+
+{ breath_affect_targets
+	local CUR_TARG $get_token(BREATH_TARGS,game.script.iteration)
+	local TARG_ORG $get(CUR_TARG,origin)
+	if $within_cone2D(TARG_ORG,game.monster.origin,game.monster.angles,10)
+	applyeffect CUR_TARG effects/effect_burn 5.0 $get(ent_me,id) DOT_FIRE
+	addvelocity CUR_TARG $relvel(0,2000,110)
+}
+
+{ end_fire_breath
+	setvard FIRE_BREATH_ON 0
+	callevent npcatk_resume_movement
+	callevent npcatk_resume_ai
+	clientevent update all CL_EFFECT_ID fire_breath_off
+	playanim critical ANIM_ATTACK
+}
+
+{ do_repulse
+	//callevent npcatk_suspend_movement ANIM_ATTACK 3.0
+	playanim critical ANIM_ATTACK
+	setvard REPULSE_ATTACK_MODE 3
+}
+
+{ transform_check
+//	local TRACE_START $get(ent_me,origin)
+//	local TRACE_END TRACE_START
+//	vectoradd TRACE_END z 248
+//	local TRACE_LINE $get_traceline(TRACE_START,TRACE_END,worldonly)
+//	if ( G_DEVELOPER_MODE ) effect beam point lgtning.spr 20 TRACE_START TRACE_END (255,0,255) 200 0 1
+
+	//eff that, just try to get to center of room
+	local CENTER_POINT NPC_HOME_LOC
+	vectorset CENTER_POINT z $get_ground_height(NPC_HOME_LOC)
+	local MY_POS $get(ent_me,origin)
+
+	if ( $dist(MY_POS,CENTER_POINT) <= 200 )
+	{
+		setvard TRANSFORM_VALID 1
+	}
+	else
+	{
+		//don't have room to transform, run to center, and pray I can do it in 2 secs
+		//(rinse and repeat if I can't)
+		dbg transform_check no_room
+		callevent npcatk_suspend_ai 2.0
+		setmoveanim ANIM_RUN_DEF
+		local MOVE_DEST NPC_HOME_LOC
+		vectorset MOVE_DEST z $get_ground_height(NPC_HOME_LOC)
+		setmovedest NPC_HOME_LOC 10
+		playanim critical ANIM_LEAP
+		callevent 0.1 leap_forward_boost
+		setvard NEXT_SPECIAL game.time
+		add NEXT_SPECIAL 2.0
+	}
+}
+
+{ leap_forward_boost
+	addvelocity ent_me $relvel(0,300,110)
+}
+
+{ do_transform
+
+	setvard TRANSFORM_VALID 0
+	callevent transform_check
+	if TRANSFORM_VALID
+	add TRANSFORM_COUNT 1
+
+	setvard AM_TRANSFORMED 1
+
+	callevent npcatk_suspend_ai
+	invincible 1
+	callevent npcatk_suspend_movement ANIM_TRANSFORM
+	clientevent update all CL_EFFECT_ID do_transform $get(ent_me,origin)
+
+	setprop ent_me rendermode 2
+	setvard RENDER_AMT 255
+	callevent do_fade_out
+
+	svplaysound 1 10 ambience/alienfazzle1.wav
+	playsound 2 10 ambience/blackhole.wav
+
+	setvard CREATE_POINT $get(ent_me,origin)
+	vectoradd CREATE_POINT z 200
+	gravity 0
+	clearfx
+	setvelocity ent_me $relvel(0,0,100)
+	nopush 1
+	callevent 2.0 transform_finalize
+
+	callexternal all ext_summon_fade //suicide/fade my summons here, so I don't get stuck in my own birds
+}
+
+{ do_fade_out
+	subtract RENDER_AMT 5
+	if RENDER_AMT > 0
+	callevent 0.1 do_fade_out
+	setprop ent_me renderamt RENDER_AMT 
+}
+
+{ transform_finalize
+	usetrigger snd_phlame_bird_spawn
+	svplaysound 1 0 ambience/alienfazzle1.wav
+	clientevent update all CL_EFFECT_ID transform_finalize CREATE_POINT
+	callevent 0.5 remove_cl_fx
+	setvard SUSPEND_CL_FX 1
+	setorigin ent_me (20000,-20000,-20000)
+	createnpc BIRD_SCRIPT CREATE_POINT $get(ent_me,id) phlame
+}
+
+{ remove_cl_fx
+	clientevent update all CL_EFFECT_ID end_fx
+}
+
+{ transform_return //<death_origin>
+
+	setvard AM_TRANSFORMED 0
+	nopush 0
+	invincible 0
+	gravity 1
+	local RETURN_POINT NPC_HOME_LOC
+	local ORG_RETURN_POINT PARAM1
+	vectorset RETURN_POINT z $get_ground_height(RETURN_POINT)
+	vectoradd RETURN_POINT z 200
+	
+
+	//*sigh* none of this works because traclines can go from off the map to the inside just fine
+//	vectorset RETURN_POINT z $get_ground_height(RETURN_POINT)
+//	vectoradd RETURN_POINT 200
+//
+//	//make sure I actually have room to return here, if not, return to home loc
+//	local TRACE_START RETURN_POINT
+//	local TRACE_END RETURN_POINT
+//	vectoradd TRACE_END z 30
+//	local TRACE_LINE $get_traceline(TRACE_START,TRACE_END,worldonly)
+//	if ( TRACE_LINE isnot TRACE_END ) local RETURN_POINT NPC_HOME_LOC
+
+//	local TRACE_START RETURN_POINT
+//	subtract TRACE_END x 180
+//	local TRACE_END RETURN_POINT
+//	vectoradd TRACE_END x 180
+//	local TRACE_LINE $get_traceline(TRACE_START,TRACE_END,worldonly)
+//	if ( TRACE_LINE isnot TRACE_END ) local RETURN_POINT NPC_HOME_LOC
+
+	setorigin ent_me RETURN_POINT
+
+	setvard SUSPEND_CL_FX 0
+	setvard NEXT_FX_REFRESH GAME_TIME
+	add NEXT_FX_REFRESH FREQ_CL_REFRESH
+	callevent refresh_client_fx
+
+	clientevent update all CL_EFFECT_ID transform_return ORG_RETURN_POINT RETURN_POINT
+
+	callevent set_fade_in
+	callevent 1.0 npcatk_resume_ai //stunned for a bit
+	callevent npcatk_resume_movement
+	//resume movement failing here for some reason
+	setvard ANIM_WALK ANIM_WALK_DEF
+	setvard ANIM_IDLE ANIM_IDLE_DEF
+	setvard ANIM_RUN ANIM_WALK_DEF
+	setmoveanim ANIM_WALK_DEF
+	setidleanim ANIM_IDLE_DEF
+	playanim critical ANIM_TRANSFORM
+	effect glow ent_me (255,0,0) 128 1 1
+	setvard NEXT_SPECIAL game.time
+	add NEXT_SPECIAL 3.0 //delay next special a bit
+	setvard FIRST_SUMMON NEXT_SPECIAL
+	add FIRST_SUMMON 10.0 //make sure next special isn't summon
+}
+
+{ start_vines
+	//no anim or anything for this, just happens
+	usetrigger spawn_fboss_vines
+}

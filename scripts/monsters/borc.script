@@ -1,0 +1,193 @@
+//The Primitive Borsh, lost Orc tribe gone Feral
+#scope server
+{ [shared]
+	setvar ANIM_IDLE anim_borsh_idle_norm
+	setvar ANIM_WALK anim_borsh_walk
+	setvard ANIM_RUN anim_borsh_run
+	setvard ANIM_ATTACK anim_borsh_dashattack2
+	setvard ANIM_DEATH anim_borsh_death
+
+	const ANIM_LOOK anim_borsh_idle_look
+	const ANIM_NPC_JUMP anim_borsh_jump 
+
+	const ANIM_MIGHTY_BLOW anim_borsh_dashattack1
+	const ANIM_DASH_ATTACK anim_borsh_dashattack2
+}
+
+{
+	const NPC_JUMPER 1
+
+	setvard MSC_PUSH_RESIST 0.75 //"weighted"
+
+	const BJUMPER_CUSTOM_BOOST 1
+	const BJUMPER_NO_FORWARD 1
+	const BJUMPER_FACTOR 4
+
+	setvard NPC_GIVE_EXP 1000
+
+	const DMG_PUNCH_STRONG 500
+	const DMG_PUNCH_WEAK 200
+
+	setvard ATTACK_RANGE 96
+	setvard ATTACK_HITRANGE 128 //this is a rare case, where we're going to want a hitrange less than attack range, but the base won't allow it
+	const ATTACK_REACH 64
+	setvard ATTACK_MOVERANGE 80
+	setvard MOVE_RANGE 80 //not sure if we still need this double define
+
+	const FREQ_MIGHTY_BLOW $randf(5.0,10.0)
+
+	const SOUND_MIGHTY1 "monsters/orc/attack1.wav"
+	const SOUND_MIGHTY2 "monsters/orc/attack3.wav"
+	const SOUND_ATTACK "monsters/orc/attack2.wav"
+
+	const SOUND_ALERT "monsters/orc/battlecry.wav"
+
+	const SOUND_STRUCK1	"weapons/cbar_hitbod1.wav"
+	const SOUND_STRUCK2	"weapons/cbar_hitbod2.wav"
+	const SOUND_STRUCK3	"weapons/cbar_hitbod3.wav"
+
+	const SOUND_PAIN1 "monsters/orc/zo_alert10.wav"
+	const SOUND_PAIN2 "voices/orc/hit2.wav"
+	const SOUND_PAIN3 "voices/orc/hit3.wav"
+	const SOUND_PAIN4 "voices/orc/hit.wav"
+
+	const SOUND_DEATH "voices/orc/die2.wav"
+
+	const SOUND_NPC_JUMP "monsters/orc/attack1.wav"
+}
+
+#include monsters/base_monster_new
+#include monsters/base_jumper
+
+{ [shared] npc_spawn
+	name a|Feral Borsh
+	setmodel monsters/borsh.mdl
+	width 64
+	height 64
+	hp 4000
+	race orc
+	roam 1
+	hearingsensitivity 2
+	setmoveanim ANIM_WALK
+	setidleanim ANIM_IDLE
+	playanim once ANIM_IDLE
+
+	setmodelbody 1 $rand(0,1) //random hat
+
+	callevent 2.0 finalize_npc
+}
+
+{ finalize_npc
+	local MAX_HP $get(ent_me,maxhp)
+	setvard HALF_HEALTH MAX_HP
+	multiply HALF_HEALTH 0.5
+	setvard QUART_HEALTH MAX_HP
+	multiply HALF_HEALTH 0.25
+}
+
+{ game_struck
+	local MY_HP $get(ent_me,hp)
+	if ( MY_HP > HALF_HEALTH ) playrandomsound 0 10 SOUND_STRUCK1 SOUND_STRUCK2 SOUND_STRUCK3 SOUND_STRUCK1 SOUND_STRUCK2 SOUND_STRUCK3 SOUND_PAIN1
+	if ( MY_HP <= HALF_HEALTH )
+	{
+		if MY_HP > QUART_HEALTH 
+		playrandomsound 0 10 SOUND_STRUCK1 SOUND_STRUCK2 SOUND_STRUCK3 SOUND_STRUCK1 SOUND_STRUCK2 SOUND_PAIN2 SOUND_PAIN1
+	}
+	if ( MY_HP <= QUART_HEALTH ) layrandomsound 0 10 SOUND_STRUCK1 SOUND_STRUCK2 SOUND_STRUCK3 SOUND_STRUCK1 SOUND_PAIN1 SOUND_PAIN2 SOUND_PAIN3 SOUND_PAIN4
+}
+
+{ npcatk_lost_sight
+	dbg npcatk_lost_sight
+	if game.time > NEXT_LOOK
+	setvard NEXT_LOOK game.time
+	add NEXT_LOOK 15.0
+	playanim once ANIM_LOOK
+}
+
+{ npc_targetsighted
+	if !DID_ALERT
+	setvard DID_ALERT 1
+	//thread display goes here
+	setvard NEXT_MIGHTY_BLOW game.time
+	add NEXT_MIGHTY_BLOW FREQ_MIGHTY_BLOW
+}
+
+{ npc_selectattack
+	//dbg npc_selectattack game.time vs. NEXT_MIGHTY_BLOW
+	if game.time > NEXT_MIGHTY_BLOW
+	setvard NEXT_MIGHTY_BLOW game.time
+	add NEXT_MIGHTY_BLOW 200 //will reset after does blow
+	setvard ANIM_ATTACK ANIM_MIGHTY_BLOW
+}
+
+{ frame_jump_boost
+	addvelocity ent_me $relvel(0,FWD_NPC_JUMP_STR,NPC_UP_JUMP_STR)
+}
+
+{ frame_jump_land
+	callevent npcatk_resume_ai
+}
+
+{ frame_attack_dash2a
+	svplayrandomsound 0 10 SOUND_MIGHTY1 SOUND_MIGHTY2 //using svplaysound as attacking on the move
+	xdodamage NPCATK_TARGET ATTACK_HITRANGE DMG_PUNCH_STRONG 80% ent_me ent_me none blunt dmgevent:strong_punch
+}
+
+{ frame_attack_dash2b
+	svplaysound 0 10 SOUND_ATTACK //using svplaysound as attacking on the move
+	xdodamage NPCATK_TARGET ATTACK_HITRANGE DMG_PUNCH_WEAK 80% ent_me ent_me none blunt dmgevent:weak_punch
+}
+
+{ frame_mighty_blow
+	svplaysound 0 10 voices/orc/attack3.wav
+	setvard NEXT_MIGHTY_BLOW game.time
+	add NEXT_MIGHTY_BLOW FREQ_MIGHTY_BLOW
+	setvard ANIM_ATTACK ANIM_DASH_ATTACK
+	xdodamage NPCATK_TARGET ATTACK_REACH DMG_PUNCH_STRONG 90% ent_me ent_me none blunt dmgevent:mighty_blow
+}
+
+{ strong_punch_dodamage
+	if PARAM1
+	if $get(PARAM2,relationship,ent_me) equals enemy
+	addvelocity PARAM2 $relvel(0,350,180)
+	if $rand(1,3) == 1
+	applyeffect PARAM2 effects/effect_stun 5.0
+}
+
+{ weak_punch_dodamage
+	if PARAM1
+	if $get(PARAM2,relationship,ent_me) equals enemy
+	addvelocity PARAM2 $relvel(0,110,110)
+}
+
+{ mighty_blow_dodamage
+	if PARAM1
+	if $get(PARAM2,relationship,ent_me) equals enemy
+	addvelocity PARAM2 $relvel(0,300,400)
+	applyeffect PARAM2 effects/heavy_stun 5.0 $get(ent_me,id) 1
+}
+
+{ npcatk_hunt
+	if NPCATK_TARGET equals unset
+	if game.time > NEXT_LOOK
+	setvard NEXT_LOOK game.time
+	add NEXT_LOOK $randf(10.0,20.0)
+	dbg npcatk_hunt look
+	playanim once ANIM_LOOK
+}
+
+{ frame_run_land
+	playrandomsound 0 10 common/bodydrop1.wav common/bodydrop2.wav common/bodydrop3.wav common/bodydrop4.wav
+}
+
+{ set_hunderswamp_north_borc
+	dbg set_hunderswamp_north_borc
+	setvard HUNDERSWAMP_BORC 1
+}
+
+{ game_death
+	if HUNDERSWAMP_BORC
+	if $rand(1,2) == 1
+	createnpc chests/hunderswamp1_borc $relpos(0,0,0)
+	callexternal GAME_MASTER gm_fade $get(ent_me,id) 2
+}

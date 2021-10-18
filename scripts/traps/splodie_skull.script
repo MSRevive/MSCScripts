@@ -1,0 +1,178 @@
+// The old exploding bear trap in the ass trick
+// (Bounces around, then explodes, poisoning all nearby)
+
+#scope server
+{
+	setvar IS_UNHOLY 1
+
+	const SCAN_SIZE 100
+
+	const GLOW_SHELL (0,255,0)
+
+	const SOUND_HATCH debris/bustflesh1.wav
+
+	const DMG_SPLODE 200
+	const DMG_POISON 75
+
+	setvard MONSTER_HP 50
+	setvard NPC_GIVE_EXP 30 //note this monster has internal handlers
+	precache bonegibs.mdl
+}
+
+{ game_dynamically_created
+
+	setmonsterclip 0
+
+	setvard MY_OWNER PARAM1
+	race $get(MY_OWNER,race)
+
+	if ( PARAM2 isnot 'PARAM2' )
+	{
+		dmgmulti PARAM2
+		multiply MONSTER_HP PARAM2
+		hp MONSTER_HP
+	}
+}
+
+#include monsters/externals
+
+{ [shared] game_spawn
+	callevent skull_spawn
+}
+
+{ [shared] skull_spawn
+	name a|Green Goblin Skull
+	if ( MONSTER_HP equals 'MONSTER_HP' )
+	{
+		hp 50
+	}
+	else
+	{
+		hp MONSTER_HP
+	}
+	race demon
+	setmodel monsters/skull.mdl
+	blood none
+	width 16
+	height 16
+	setmodelbody 0 1
+
+	blood none
+	setvard IMMUNE_VAMPIRE 1
+
+	setbbox npcsize
+
+	setprop ent_me movetype const.movetype.bounce
+
+	 effect glow ent_me GLOW_SHELL 128 -1 0
+
+	callevent 0.1 scan_bounce
+
+	callevent $randf(10.0,20.0) self_destruct
+	callevent 0.01 bounce_about
+}
+
+{ game_postspawn //PARAM1 = (name|default), PARAM2 = DmgMulti, PARAM3 = HPMulti, PARAM4 = pass_params
+
+	local TOTAL_ADJ 0
+
+	if ( PARAM3 isnot 'PARAM2' )
+	{
+		dmgmulti PARAM3
+		add TOTAL_ADJ PARAM3
+	}
+
+	if ( PARAM4 isnot 'PARAM3' )
+	{
+		multiply MONSTER_HP PARAM2
+		hp MONSTER_HP
+		add TOTAL_ADJ PARAM3
+	}
+
+	setvard NPC_DO_EVENTS PARAM4
+
+	if ( TOTAL_ADJ != 0 )
+	{
+		divide TOTAL_ADJ 2
+		multiply NPC_GIVE_EXP TOTAL_ADJ
+	}
+
+	skilllevel NPC_GIVE_EXP
+
+	if PARAM4 isnot 'none'
+	calleventloop $get_token_amt(NPC_DO_EVENTS) npcatk_do_events
+}
+
+{
+repeatdelay $randf(1.0,5.0)
+	callevent bounce_about //random jiggle
+}
+
+{ scan_bounce
+
+	callevent 0.2 scan_bounce
+	local MY_ZVEL $vec.z(game.monster.velocity)
+	////dbg MY_ZVEL
+	if MY_ZVEL < 0
+	
+
+	local TRACE_START game.monster.origin
+	vectoradd TRACE_START $relpos($vec(0,0,0),$vec(0,0,0))
+	local TRACE_END TRACE_START
+	vectoradd TRACE_END $relpos($vec(0,0,0),$vec(0,0,-50))
+	local TRACE_LINE $get_traceline(TRACE_START,TRACE_END,worldonly)
+	if ( TRACE_LINE isnot TRACE_END ) playsound 0 10 weapons/g_bounce1.wav
+}
+
+{ bounce_about
+	//no room, toss in random dir
+	local TOSS_DIR $rand(-200,200)
+	local TOSS_HOR $rand(-200,200)
+	local TOSS_VER $rand(-400,600)
+	setvelocity ent_me $relvel(TOSS_DIR,TOSS_HOR,TOSS_VER)
+}
+
+{ game_struck
+	callevent bounce_about
+}
+
+{ self_destruct
+	callevent npc_suicide
+}
+
+{ game_death
+	if !CUSTOM_DEATH
+	callexternal MY_OWNER skull_died
+	callevent xp_send
+
+	setvard DEATH_TIME game.time
+	add DEATH_TIME 0.2
+
+	effect tempent gibs bonegibs.mdl $relpos(0,0,0) 0.1 100 30 2 4
+	playsound 0 10 SOUND_HATCH
+	setprop ent_me rendermode 5
+	setprop ent_me renderamt 0
+	local SPLODE_POS $relpos(0,0,0)
+	clientevent new all effects/sfx_splodie SPLODE_POS (0,255,0)
+	//dodamage SPLODE_POS 128 DMG_SPLODE 100% 0 reflective poison
+	xdodamage SPLODE_POS 128 DMG_SPLODE 0 ent_me ent_me none blunt
+}
+
+{ xp_send
+
+	local MON_FULL game.monster.name.full
+	local OUT_MSG "You've slain "
+	stradd OUT_MSG MON_FULL
+	gplayermessage $get(ent_laststruck,id) OUT_MSG
+}
+
+{ game_dodamage
+	if game.time < DEATH_TIME //delay so poison effect doesnt push
+	if $get(PARAM2,isalive)
+	if $get(PARAM2,relationship,ent_me) equals enemy
+	local TARGET_ORG $get(PARAM2,origin)
+	local TARG_ANG $angles(game.monster.origin,TARGET_ORG)
+	local NEW_YAW TARG_ANG
+	setvelocity PARAM2 $relvel($vec(0,NEW_YAW,0),$vec(0,1000,0))
+	applyeffect ent_laststruck effects/effect_poison 5.0 $get(ent_me,id) DMG_POISON
+}

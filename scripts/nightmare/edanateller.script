@@ -1,0 +1,223 @@
+{
+	const PLACEHOLDER 0
+	const GALA_CHEST_POS $relpos(55,8,0)
+
+	setvard NO_HAIL 1
+	setvard NO_JOB 1
+	setvard NO_RUMOR 0
+
+	const CONV_ANIMS "idle1;flinch;laflinch;raflinch;llflinch;rlflinch"
+
+	const SAYTEXT_wondrous_NOFUNDS "Need, more, flesh. I mean gold... Need more golds..."
+	const SAYTEXT_wondrous_PURCHASED "One scroll... Use... Wisely."
+	const SAYTEXT_BANKOPEN "Behold... Your shinies."
+
+	const SAYTEXT_REFUND "Fee... Returned."
+	const SAYTEXT_SELECT_ITEM "Choose... Item."
+	const SAYTEXT_SELECT_CAT SAYTEXT_SELECT_ITEM //no longer used
+	const SAYTEXT_NOITEM "Item, not, received."
+	const SAYTEXT_NOTICKET "Ticket, needs ticket."
+	const SAYTEXT_NOSTORABLES "Cannot, store."
+	const SAYTEXT_GIVETICKET "Ticket, I gives ticket to fleshling."
+	const SAYTEXT_SELECT_TICKET "Please choose ticket, fleshling."
+	const SAYTEXT_HAND_WARN "Tickets, in delicious meat hands, please."
+	const SAYTEXT_REDEEMTICKET "Fleshling... Transaction, complete."
+	const SAYTEXT_ITEMS_HANDS "Items to store, in delicious meat hands, please."
+	const SAYTEXT_BANK_NOTE "Give note, in exchange, golds."
+	const ANIM_CHAT idle1
+	const ANIM_NO llflinch
+	const ANIM_STORE raflinch	
+
+}
+
+#include monsters/base_npc
+#include monsters/base_chat
+#include NPCs/base_storage
+
+{ npc_spawn
+
+	name Deadric of Galat's Storage
+	hp 1
+	invincible 1
+	race beloved
+	width 16
+	height 72
+	setmodel monsters/skeleton.mdl
+	setmodelbody 0 8
+	roam 0
+
+	setvard PLAYING_DEAD 1
+	//dbg temp Edana Teller Spawned
+
+	saytextrange 1024
+
+	catchspeech heard_hi hail hello hi greets gweets j0 waddup
+	catchspeech say_rumor job rumor rumour quest
+	catchspeech heard_store shop store bank
+}
+
+{ heard_hi
+
+	setvard DID_HELLO 1
+	setvard NEXT_TALK game.time
+	add NEXT_TALK 6.0
+	playanim critical idle1
+	saytext Welcome, fleshlings, to Galat's Weapon and Armor Storage, Edeadna branch...
+	playsound 0 10 voices/nightmare_edana/teller_hail1.wav
+	callevent 6.5 heard_hi2
+}
+
+{ heard_hi2
+	playsound 0 10 voices/nightmare_edana/teller_hail2.wav
+	saytext Galat Storage, we're eveeerryyywheeeereee...
+}
+
+{ say_rumor
+	playanim critical rlflinch
+	playsound 0 10 voices/nightmare_edana/teller_rumors.wav
+	saytext The rumor mill here... Is kinda dead.
+}
+
+{ heard_store
+
+	menu.open $get(ent_lastheard,id)
+}
+
+{ game_menu_getoptions
+
+	if ( !DID_HELLO )
+	{
+		setvard DID_HELLO 1
+		saytext Welcome, fleshlings, to Galat's Weapon and Armor Storage, Edeadna branch...
+		playsound 0 10 voices/nightmare_edana/teller_hail1.wav
+		setvard NEXT_TALK game.time
+		add NEXT_TALK 6.0
+	}
+
+	local reg.mitem.title 	"Hail"
+	local reg.mitem.type 	callback
+	local reg.mitem.callback heard_hi
+	menuitem.register
+}
+
+{ say_storage_chest
+	if ( BUSY_CHATTING ) callevent 1.0 say_storage_chest
+	if !BUSY_CHATTING
+	callevent convo_anim
+	setvard CHAT_STEPS 4
+	setvard CHAT_STEP1 "Galat chest..."
+	setvard CHAT_DELAY_STEP1 1.5
+	setvard CHAT_SOUND1 voices/nightmare_edana/teller_gchest1.wav
+	setvard CHAT_STEP2 "Put items to store in your, delicious, meat hands..."
+	setvard CHAT_DELAY_STEP2 4.25
+	setvard CHAT_SOUND2 voices/nightmare_edana/teller_gchest2.wav
+	setvard CHAT_STEP3 "Then use chest..."
+	setvard CHAT_DELAY_STEP3 2.0
+	setvard CHAT_SOUND3 voices/nightmare_edana/teller_gchest3.wav
+	setvard CHAT_STEP4 "Stores stuff..."
+	setvard CHAT_DELAY_STEP4 2.0
+	setvard CHAT_SOUND4 voices/nightmare_edana/teller_gchest4.wav
+	callevent chat_loop 
+}
+
+{ say_wondrous
+	if ( BUSY_CHATTING ) callevent 1.0 say_wondrous
+	if !BUSY_CHATTING
+	callevent convo_anim
+	setvard CHAT_STEPS 4
+	setvard CHAT_STEP1 "Wondrous Scroll of Galat's Storage..."
+	setvard CHAT_DELAY_STEP1 3.0
+	setvard CHAT_SOUND1 voices/nightmare_edana/teller_wscroll1.wav
+	setvard CHAT_STEP2 "Summons chests with demonic magicks."
+	setvard CHAT_DELAY_STEP2 3.5
+	setvard CHAT_SOUND2 voices/nightmare_edana/teller_wscroll2.wav
+	setvard CHAT_STEP3 "Use anywhere."
+	setvard CHAT_DELAY_STEP3 1.5
+	setvard CHAT_SOUND3 voices/nightmare_edana/teller_wscroll3.wav
+	setvard CHAT_STEP4 "Exchange is "
+	stradd CHAT_STEP4 GALA_SCROLL_PRICE
+	stradd CHAT_STEP4 " golds. ...or one soul." 
+	setvard CHAT_DELAY_STEP4 4.0
+	if ( $rand(1,2) == 1 )
+	{
+		setvard CHAT_SOUND4 voices/nightmare_edana/teller_wscroll4a.wav
+	}
+	else
+	{
+		setvard CHAT_SOUND4 voices/nightmare_edana/teller_wscroll4b.wav
+	}
+	callevent chat_loop 
+}
+
+{ say_wondrous_cant_afford
+	playsound 0 10 voices/nightmare_edana/teller_wscroll_nofunds.wav
+}
+
+{ buy_scroll
+	playsound 0 10 voices/nightmare_edana/teller_wscroll_purchased.wav
+}
+
+{ open_betabank
+	playsound 0 10 voices/nightmare_edana/teller_return_fee1.wav
+}
+
+{ cancel_trade
+	if ( $rand(1,2) == 1 )
+	{
+		playsound 0 10 voices/nightmare_edana/teller_return_fee1.wav
+	}
+	else
+	{
+		playsound 0 10 voices/nightmare_edana/teller_return_fee2.wav
+	}
+}
+
+{ say_select_item
+	playsound 0 10 voices/nightmare_edana/teller_choose_item.wav
+}
+
+{ activate_storage
+	playsound 0 10 voices/nightmare_edana/teller_choose_item.wav
+}
+
+{ bteller_error_no_item
+	playsound 0 10 voices/nightmare_edana/teller_store_error.wav
+}
+
+{ bteller_error_no_ticket
+	playsound 0 10 voices/nightmare_edana/teller_ticket_error.wav
+}
+
+{ bteller_store_error
+	playsound 0 10 voices/nightmare_edana/teller_store_error.wav
+}
+
+{ bteller_give_ticket
+	playsound 0 10 voices/nightmare_edana/teller_ticket_purchased.wav
+}
+
+{ bteller_select_ticket
+	playsound 0 10 voices/nightmare_edana/teller_choose_item.wav
+}
+
+{ bteller_ticket_warn
+	playsound 0 10 voices/nightmare_edana/teller_ticket_detect.wav
+}
+
+{ bteller_ticket_redeemed
+	playsound 0 10 voices/nightmare_edana/teller_store_success.wav
+}
+
+{ bteller_hand_warn
+	if DID_HELLO
+	if game.time > NEXT_TALK
+
+	if ( $rand(1,2) == 1 )
+	{
+		playsound 0 10 voices/nightmare_edana/teller_items_in_hands1.wav
+	}
+	else
+	{
+		playsound 0 10 voices/nightmare_edana/teller_items_in_hands2.wav
+	}
+}

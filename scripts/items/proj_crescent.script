@@ -1,0 +1,286 @@
+//tempt at guided
+{
+	const MODEL_HANDS      	none
+	const MODEL_WORLD      	weapons/projectiles.mdl
+	//const MODEL_BODY_OFS 71
+	//const ARROW_BODY_OFS 71
+	const MODEL_BODY_OFS 0
+	const ARROW_BODY_OFS 0
+	const SOUND_HITWALL1		weapons/axemetal1.wav
+	const SOUND_HITWALL2		weapons/axemetal1.wav
+	const ARROW_SOLIDIFY_ON_WALL	0  	//base_arrow: Turns solid when a wall is hit
+	const ARROW_BREAK_CHANCE	100%	//base_arrow: Chance of breaking upon hit
+	const ITEM_NAME		watermana
+	const PROJ_DAMAGE_TYPE	slash
+	const PROJ_DAMAGESTAT		spellcasting.ice //this does not determin xp stat
+	const PROJ_ANIM_IDLE		spin_vertical_fast
+	const PROJ_MOTIONBLUR 0
+
+	const PROJ_DAMAGE		0
+	const PROJ_STICK_DURATION	0  //Don't stick in enemies
+	const PROJ_COLLIDEHITBOX	0
+	const PROJ_IGNORENPC 1
+
+	const FWD_SPEED 200
+
+	const SOUND_SPIN zombie/claw_miss2.wav
+}
+
+#include items/proj_arrow_base
+
+{ arrow_spawn
+
+	name 		a|Whirling Crescent Blade
+	desc 		A sharp bolt of ice
+	weight 		0.1
+	size 		1
+	value		0
+	gravity		0.0
+	groupable    	25
+
+	setmodel weapons/projectiles.mdl
+	setmodelbody 0 0
+	setprop ent_me rendermode 5
+	setprop ent_me renaderamt 0
+}
+
+{ game_touch
+	//dbg game_touch $get(PARAM1,name)
+	if game.time > NEXT_DAMAGE
+	setvard NEXT_DAMAGE game.time
+	add NEXT_DAMAGE 0.1
+	xdodamage PARAM1 direct DMG_AMT 100% ent_expowner ent_expowner USE_SKILL CRE_TYPE
+
+	if $get(ent_expowner,isplayer) //monsters handle this on their script side
+	if CRE_TYPE isnot slash
+	if ( $get(PARAM1,isplayer) )
+	{
+		if !GAME_PVP
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+	if !$get(PARAM1,haseffect,CRE_EFFECT_NAME)
+	local DOT_AMT $get(ent_expowner,CRE_EFFECT_SKILL)
+	multiply DOT_AMT CRE_EFFECT_RATIO
+	applyeffect PARAM1 CRE_EFFECT_SCRIPT CRE_EFFECT_DURATION $get(ent_expowner,id) DOT_AMT
+
+}
+
+{ game_tossprojectile
+	dbg game_tossprojectile
+	setvard GAME_PVP game.pvp
+	setvard CRE_TYPE $get(ent_expowner,scriptvar,'PLR_CRE_TYPE')
+
+	if ( CRE_TYPE equals fire )
+	{
+		setvard CRE_EFFECT_SCRIPT effects/effect_burn
+		setvard CRE_EFFECT_SKILL skill.spellcasting.fire
+		setvard CRE_EFFECT_RATIO 0.5
+		setvard CRE_EFFECT_NAME DOT_fire
+		setvard CRE_EFFECT_DURATION 5.0
+	}
+
+	if ( CRE_TYPE equals cold )
+	{
+		setvard CRE_EFFECT_SCRIPT effects/effect_frostbite_dmg
+		setvard CRE_EFFECT_SKILL skill.spellcasting.ice
+		setvard CRE_EFFECT_RATIO 0.25
+		setvard CRE_EFFECT_NAME DOT_cold
+		setvard CRE_EFFECT_DURATION 5.0
+	}
+
+	if ( CRE_TYPE equals lightning )
+	{
+		setvard CRE_EFFECT_SCRIPT effects/effect_shock_dmg
+		setvard CRE_EFFECT_SKILL skill.spellcasting.lightning
+		setvard CRE_EFFECT_RATIO 0.4
+		setvard CRE_EFFECT_NAME DOT_lightning
+		setvard CRE_EFFECT_DURATION 5.0
+	}
+
+	if ( CRE_TYPE equals poison )
+	{
+		setvard CRE_EFFECT_SCRIPT effects/effect_poison
+		setvard CRE_EFFECT_SKILL skill.spellcasting.affliction
+		setvard CRE_EFFECT_RATIO 0.3
+		setvard CRE_EFFECT_NAME DOT_poison
+		setvard CRE_EFFECT_DURATION 10.0
+	}
+
+	projectiletouch 1
+	setprop ent_me rendermode 5
+	setprop ent_me renaderamt 0
+	setvard IS_ACTIVE 1
+	setvard OWNER_ISPLAYER $get(ent_expowner,isplayer)
+	if ( OWNER_ISPLAYER )
+	{
+		setvard DMG_AMT $get(ent_expowner,skill.smallarms.power)
+		setvard USE_SKILL smallarms
+		setvard START_ANG $get(ent_expowner,viewangles)
+		setvard PLR_CRE_HAND $get(ent_expowner,scriptvar,'PLR_CRE_HAND')
+		//setvard START_YAW $vec.yaw(START_YAW)
+	}
+	else
+	{
+		setvard DMG_AMT $get(ent_expowner,scriptvar,'DMG_CRESCENT')
+		setvard START_ANG $get(ent_expowner,angles)
+		setvard USE_SKILL none
+	}
+	setvard SWIRVE_CYCLE 0
+	setprop ent_me velocity $relvel(START_ANG,$vec(0,FWD_SPEED,0))
+	setprop ent_me movedir START_ANG
+
+	setvard NEXT_ACQUIRE game.time
+	add NEXT_ACQUIRE 0.5
+
+	callevent 0.05 cl_start
+	callevent 0.1 projectile_loop
+	callevent 3.0 end_projectile
+}
+
+{ cl_start
+	setvard START_POS $get(ent_me,origin)
+	clientevent new all items/proj_crescent_cl $get(ent_me,index) $get(ent_me,angles) $get(ent_me,velocity) $get(ent_me,origin)
+	setvard CL_IDX game.script.last_sent_id
+}
+
+{ projectile_loop
+	if IS_ACTIVE
+	callevent 0.5 projectile_loop
+
+	svplaysound 2 10 SOUND_SPIN 0.8 200
+
+	if ( !$get(NPCATK_TARGET,isalive) )
+	{
+		if game.time > NEXT_ACQUIRE
+		setvard NEXT_ACQUIRE game.time
+		add NEXT_ACQUIRE 2.0
+		callexternal ent_expowner ext_sphere_token enemy 1024 $get(ent_me,origin) //yes monsters have this too
+		local TARG_LIST $get(ent_expowner,scriptvar,'PLR_SCAN_TOKEN')
+		if TARG_LIST isnot none
+		local TARG_LIST $sort_entlist(TARG_LIST,range)
+		setvard NPCATK_TARGET $get_token(TARG_LIST,0)
+
+		//don't track targets behind owner
+		local TARG_POS $get(NPCATK_TARGET,origin)
+		local OWNER_POS $get(ent_expowner,origin)
+		local OWNER_ANG START_ANG
+		if ( !$within_cone2D(TARG_POS,OWNER_POS,OWNER_ANG,100) )
+		{
+			setvard NPCATK_TARGET unset
+			local EXIT_SUB 1
+		}
+		if !EXIT_SUB
+
+		if ( !$get(NPCATK_TARGET,isplayer) )
+		{
+			setvard TARG_HALF_HEIGHT $get(NPCATK_TARGET,height)
+			multiply TARG_HALF_HEIGHT 0.5
+		}
+		else
+		{
+			setvard TARG_HALF_HEIGHT 0
+		}
+	}
+
+	//I want to take advantage of the weapon dmgevent here, but for some damn reason
+	//setting the inflictor to ent_me causes this projectile to switch positions
+	//xdodamage $get(ent_me,origin) 64 DMG_AMT 0 ent_expowner ent_expowner USE_SKILL DMG_TYPE
+
+	if game.time > NEXT_ANGLE_UPDATE
+	setvard NEXT_ANGLE_UPDATE game.time
+	add NEXT_ANGLE_UPDATE 0.1
+
+	if ( $get(NPCATK_TARGET,isalive) )
+	{
+		if ( $rand(1,2) < 100 )
+		{
+			local TARG_ORG $get(NPCATK_TARGET,origin)
+			vectoradd TARG_ORG z TARG_HALF_HEIGHT
+			local MY_ORG $get(ent_me,origin)
+			local ANG_TO_TARG $angles3d(MY_ORG,TARG_ORG)
+			vectorset ANG_TO_TARG x $neg($vec.x(ANG_TO_TARG))
+			setprop ent_me velocity $relvel(ANG_TO_TARG,$vec(0,FWD_SPEED,0))
+			setprop ent_me movedir ANG_TO_TARG
+
+			if ( $get(NPCATK_TARGET,range) < 64 )
+			{
+				dbg range_check $get(NPCATK_TARGET,range)
+				setvard NEXT_ANGLE_UPDATE game.time
+				add NEXT_ANGLE_UPDATE 0.9
+				callevent 1.0 return_user
+			}
+		}
+		else
+		{
+			//callevent swirve_wander
+		}
+	}
+	else
+	{
+		//callevent swirve_wander
+	}
+
+	//callevent 0.1 cl_update
+	clientevent update all CL_IDX sv_update_vel $get(ent_me,angles) $get(ent_me,velocity) $get(ent_me,origin)
+}
+
+{ return_user
+	setvard NPCATK_TARGET $get(ent_expowner,id)
+}
+
+{ cl_update
+	clientevent update all CL_IDX sv_update_vel $get(ent_me,angles) $get(ent_me,velocity) $get(ent_me,origin)
+}
+
+{ swirve_wander
+	add SWIRVE_CYCLE 1
+	if ( SWIRVE_CYCLE == 1 ) local L_SWIRVE -64
+	if ( SWIRVE_CYCLE == 2 )
+	{
+		local L_SWIRVE 64
+		setvard SWIRVE_CYCLE 0
+	}
+	local MY_ORG $get(ent_me,origin)
+	local TARG_ORG $get(ent_me,origin)
+	vectoradd TARG_ORG $relpos(START_ANG,$vec(L_SWIRVE,200,0))
+	local ANG_TO_TARG $angles3d(MY_ORG,TARG_ORG)
+	vectorset ANG_TO_TARG x $neg($vec.x(ANG_TO_TARG))
+	setprop ent_me velocity $relvel(ANG_TO_TARG,$vec(0,FWD_SPEED,0))
+	//setprop ent_me movedir ANG_TO_TARG
+}
+
+{ game_projectile_landed
+	setvard DID_LAND 1
+	callevent end_projectile
+}
+
+{ end_projectile
+	clientevent update all CL_IDX end_fx
+		if ( !OWNER_ISPLAYER )
+		{
+			callexternal ent_expowner ext_crescent_done //tell monster his ball popped
+			local SPR_POS $get(ent_expowner,origin)
+			local OWNER_ANG $get(ent_expowner,angles)
+			clientevent new all items/proj_ub_cl $get(ent_me,origin) SPR_POS
+		}
+		else
+		{
+			local SPR_POS $get(ent_expowner,origin)
+			local OWNER_YAW $get(ent_expowner,angles.yaw)
+			//vectoradd SPR_POS $relpos($vec(0,OWNER_YAW,0),$vec(10,32,20)) //gonna have to rig someting to figure right or left hand
+			if( PLR_CRE_HAND == 1 )
+			{
+				vectoradd SPR_POS $relpos($vec(0,OWNER_YAW,0),$vec(10,32,20))
+			}
+			else
+			{
+				vectoradd SPR_POS $relpos($vec(0,OWNER_YAW,0),$vec(-10,32,20))
+			}
+			//same CL effect as Unholy Blade on return
+			clientevent new all items/proj_ub_cl $get(ent_me,origin) SPR_POS
+		}
+	
+	if !DID_LAND
+	deleteent ent_me
+}

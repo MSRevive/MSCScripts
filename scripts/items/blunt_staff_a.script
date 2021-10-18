@@ -1,0 +1,410 @@
+{
+	precache calflame_small.spr
+
+	const BASE_LEVEL_REQ 25
+
+	const FREQ_CHARGE 1.5 //time between right charge upgrades / completes
+
+
+	const FINAL_CHARGE 3.5
+
+	const MP_BURST 30
+	const MP_LCOD 30
+	const MP_GCOD 100
+	const MP_WRAITH 50
+
+	const BWEAPON_NAME "Dark Staff"
+	const BWEAPON_DESC "Greater staff of Affliction"
+	const BWEAPON_WEIGHT 60
+	const BWEAPON_VALUE 7000
+	const BWEAPON_INV_SPRITE_IDX 72
+	const BWEAPON_HANDS both
+
+	const VMODEL_FILE viewmodels/v_polearms.mdl
+	const VMODEL_IDX 15
+	const PMODEL_FILE weapons/p_weapons4.mdl
+	const PMODEL_IDX_FLOOR 33 //p_model floor offset (-1 from JHLMV index)
+	const PMODEL_IDX_HANDS 32 //p_model hands offset (-1 from JHLMV index)
+	const PMODEL_IDX_HAND_RIGHT 32
+	const PMODEL_IDX_HAND_LEFT 32
+
+	const PANIM_IDLE aim_blunt //aim_sword_idle also possiblity
+	const PANIM_EXT blunt //sword
+
+	const VANIM_IDLE 21
+	const VANIM_DRAW 21
+	const VANIM_MELEE 22
+	const VANIM_SPELL1 23
+	const VANIM_SPELL2 24
+	const VANIM_BURST 25
+	const VANIM_BEAM_START 26
+	const VANIM_BEAM_IDLE 27
+	const VANIM_CHARGE_START 28
+	const VANIM_CHARGE_END 29
+	const VANIM_CHARGE_FAIL 30
+	
+	const WANIM_FLOOR standard_floor_idle
+	const WANIM_HAND standard_idle
+
+	const ATK1_RANGE 0 //max reach
+	const ATK1_DMG 0 //max damage
+	const ATK1_DMG_RANGE 0 //damage +/-
+	const ATK1_DMG_TYPE target //damage type
+	const ATK1_STAMINA 0 //stamina drain
+	const ATK1_SKILL spellcasting.affliction //skill to use for dmg and xp
+	const ATK1_ACCURACY 80% //base chance to hit (raises slightly with skill)
+	const ATK1_DELAY_STRIKE 0.6 //delay before attack strikes (to match viewmodel anim)
+	const ATK1_DURATION 1.0 //total delay before attack completes
+	const ATK1_CALLBACK beam //callback prefix (atk1_start atk1_strike atk1_dodamage etc.)
+	const ATK1_PANIM swing_blunt
+	const ATK1_VANIM VANIM_SPELL1
+
+	const SOUND_MELEE weapons/cbar_miss1.wav
+
+	const ATK2_DMG 0
+	const ATK2_RANGE 0
+	const ATK2_VANIM VANIM_SPELL2
+	const ATK2_PANIM sword_double_swing
+	const ATK2_CALLBACK spell2
+
+	const BWEAPON_CUSTOM_HITWALL 1
+	const SOUND_HITWALL1 none
+	const SOUND_HITWALL2 none
+
+	const SOUND_BEAM_LOOP ambience/dronemachine1.wav
+	const SOUND_CHARGE magic/spawn.wav
+
+	//recache ambience/dronemachine2.wav
+
+	setvard CL_FX_ID unset
+}
+
+#include items/base_weapon_new
+
+{ cbeam_start
+	playviewanim VANIM_BEAM_START
+	callevent 0.6 setup_beam
+}
+
+{ setup_beam
+	if !BEAM_ON
+	setvard BEAM_ON 1
+	playviewanim VANIM_BEAM_IDLE
+	if game.serverside
+	clientevent new all items/blunt_staff_a_cl $get(ent_owner,index)
+	setvard CL_FX_ID game.script.last_sent_id
+	setvard DMG_BEAM $get(ent_owner,skill.spellcasting.affliction)
+	svplaysound 3 10 SOUND_BEAM_LOOP
+	if game.serverside
+	callevent beam_loop	
+}
+
+{ beam_loop
+	if BEAM_ON
+
+	if ( $get(ent_owner,active_item) isnot $get(ent_me,id) ) local END_BEAM 1
+	if ( !$get(ent_owner,canattack) ) local END_BEAM 1
+	if ( !$get(ent_owner,isalive) ) local END_BEAM 1
+	if ( END_BEAM )
+	{
+		callevent end_beam
+		callclitemevent ent_me end_beam
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	callevent 0.5 beam_loop
+	local BEAM_END $get(ent_owner,origin)
+	local OWNER_VIEWANG $get(ent_owner,viewangles)
+	vectoradd BEAM_END $relpos(OWNER_VIEWANG,$vec(0,1024,0))
+	//<target|(src_origin)> <range|aoe|(dest_origin)|direct> <damage> <cth|fall_off> <attacker> <inflciter> <skill|none> <dmg_type> [flag_string]
+	xdodamage $get(ent_owner,origin) BEAM_END DMG_BEAM 100% ent_owner ent_me spellcasting.affliction dark nodecal;dmgevent:*beam
+	if !$get(ent_owner,canattack)
+
+	
+}
+
+{ beam_dodamage
+	//dbg beam_dodamage PARAM1 $get(PARAM2,name) PARAM3 PARAM4 PARAM5 PARAM6
+	if PARAM1
+	if $get(PARAM2,relationship,ent_owner) equals enemy
+	if ( !GAME_PVP )
+	{
+		if $get(PARAM2,isplayer)
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+	if $get(ent_owner,mp) < $get(ent_owner,maxhp)
+	givemp ent_owner DMG_BEAM
+}
+
+{ game_attack1_down
+
+	if ( game.serverside )
+	{
+		if ( !$get(ent_owner,canattack)	) local EXIT_SUB 1
+		if ( $get(ent_owner,active_item) isnot $get(ent_me,id) ) local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	if ( game.clientside )
+	{
+		if !game.localplayer.canattack
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	if !AM_CHARGING
+	if !BEAM_ON
+	if !BEAM_READY
+	setvard BEAM_READY 1
+	callevent cbeam_start
+}
+
+{ game_-attack1
+	if BEAM_ON
+	callevent end_beam
+}
+
+{ end_beam
+	playviewanim VANIM_IDLE
+	setvard BEAM_ON 0
+	setvard BEAM_READY 0
+	if game.serverside
+	svplaysound 3 0 SOUND_BEAM_LOOP
+	clientevent update all CL_FX_ID end_fx
+	setvard CL_FX_ID unset
+}
+
+{ bweapon_effect_remove
+	setvard BEAM_READY 0
+	if ( BEAM_ON ) callevent end_beam
+	if ( AM_CHARGING ) callevent end_charge
+}
+
+{ game_hitworld
+	//dbg game_hitworld
+	if !BEAM_ON
+	//playrandomsound 2 10 SOUND_HITWALL1 SOUND_HITWALL2
+}
+
+{ game_+attack2
+	if ( game.serverside )
+	{
+		if !$get(ent_owner,canattack)
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	if ( game.clientside )
+	{
+		if !game.localplayer.canattack
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	if !game.item.attacking
+
+	if !BEAM_READY
+	if !BEAM_ON
+	if game.time > NEXT_CHARGE
+	setvard NEXT_CHARGE game.time
+	add NEXT_CHARGE 20.0 //reset on release
+	if ( !AM_CHARGING )
+	{
+		if game.serverside
+		splayviewanim ent_me VANIM_CHARGE_START
+	}
+
+	setvard AM_CHARGING 1
+
+	setvard CUR_CHARGE 1
+
+	if ( game.serverside )
+	{
+	
+		//setvard OLD_CAN_MOVE $get(ent_owner,scriptvar,'game.effect.canmove')
+		//callexternal ent_owner set_status_canmove 0
+		//setvard OLD_PUSH_STATUS $get(ent_owner,nopush)
+		scriptflags ent_owner add af_staff nopush 1 -1 none
+		applyeffect ent_owner effects/effect_tempnomove $get(ent_owner,id)	
+
+		setvard OWNER_SKILL $get(ent_owner,skill.spellcasting.affliction)
+		if ( OWNER_SKILL >= 25 ) setvard MAX_CHARGE 1.5
+		if ( OWNER_SKILL >= 30 ) setvard MAX_CHARGE 2.5
+		if ( OWNER_SKILL >= 35 ) setvard MAX_CHARGE 3.5
+		callclitemevent ent_me cl_set_maxcharge MAX_CHARGE //pass max charge level to client 
+	}
+
+	callevent FREQ_CHARGE add_charge
+
+	if game.serverside
+	if ( OWNER_SKILL >= 25 ) callevent 0.75 repulse_burst
+
+	playowneranim critical aim_sword_double_idle global.anim.combatwalk 3
+	clientevent new ent_owner items/blunt_staff_a_charge_cl $get(ent_me,index)
+	setvard CL_STAFF_EYES game.script.last_sent_id
+}
+
+{ repulse_burst
+	if AM_CHARGING
+	if ( $get(ent_owner,mp) < MP_BURST )
+	{
+		dplayermessage ent_owner Dark Staff: Not enough mana for Dark Burst
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+	givemp ent_owner $neg(MP_BURST)
+	
+	local BURST_DMG OWNER_SKILL
+	callexternal ent_owner ext_repel BURST_DMG 128 0 dark_effect spellcasting.affliction 800 0
+	local SPELL_POS $get(ent_owner,origin)
+	vectorset SPELL_POS z $get_ground_height(SPELL_POS)
+	clientevent new all effects/sfx_dark_burst SPELL_POS 8.0
+	setvard CL_DARK_FX game.script.last_sent_id
+}
+
+{ cl_set_maxcharge
+	setvard MAX_CHARGE PARAM1
+}
+
+{ add_charge
+
+	if AM_CHARGING
+	if CUR_CHARGE < MAX_CHARGE
+	add CUR_CHARGE 0.5
+
+	if ( $get(ent_owner,active_item) isnot $get(ent_me,id) ) local END_CHARGE 1
+	if ( !$get(ent_owner,canattack) ) local END_CHARGE 1
+	if ( !$get(ent_owner,isalive) ) local END_CHARGE 1
+	if ( END_CHARGE )
+	{
+		callevent end_charge
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	callevent FREQ_CHARGE add_charge
+	if game.serverside
+	if $get(ent_owner,isalive)
+	callexternal ent_owner ext_repel 0 128 0 dark_effect spellcasting.affliction 300 0
+	clientevent update ent_owner CL_STAFF_EYES add_charge_level CUR_CHARGE
+	//effect screenshake $get(ent_owner,origin) 190 20 0.5 32 //fubar's eyes
+	playrandomsound 2 5 buttons/spark1.wav buttons/spark2.wav buttons/spark4.wav 
+	if ( CUR_CHARGE != $int(CUR_CHARGE) )
+	{
+		if ( CUR_CHARGE < FINAL_CHARGE ) playsound 1 5 SOUND_CHARGE
+		if ( CUR_CHARGE == FINAL_CHARGE ) playsound 1 10 SOUND_CHARGE
+	}
+}
+
+{ game_-attack2
+	if AM_CHARGING
+	setvard AM_CHARGING 0
+	setvard NEXT_CHARGE game.time
+	add NEXT_CHARGE 3.0
+	playviewanim VANIM_IDLE //anim retract or fail
+	dbg staff_charge_finish CUR_CHARGE
+
+	if game.serverside
+	if $get(ent_owner,isalive)
+
+	//setvard OLD_CAN_MOVE $get(ent_owner,scriptvar,'game.effect.canmove')
+	callevent end_charge
+	if $get(ent_owner,canattack) 	//in case stunned or otherwise can't attack before release
+	if !EXIT_SUB
+
+	if ( CUR_CHARGE >= 1.5 )
+	{
+		if CUR_CHARGE < 2.5
+		//lesser circle of death here
+		dbg lesser circle of death
+		if ( $get(ent_owner,scriptvar,'PLR_LCOD_ACTIVE') )
+		{
+			dplayermessage ent_owner Dark Staff: Can only maintain one Lesser Circle of Death.
+			local EXIT_SUB 1
+		}
+		if !EXIT_SUB
+		if ( $get(ent_owner,mp) < MP_LCOD )
+		{
+			dplayermessage ent_owner Dark Staff: Insufficient mana for Lesser Circle of Death
+			local EXIT_SUB 1
+		}
+		if !EXIT_SUB
+
+		givemp ent_owner $neg(MP_LCOD)
+
+		local DMG_COD $get(ent_owner,skill.spellcasting.affliction)
+		callexternal ent_owner ext_lcod $get(ent_owner,origin) DMG_COD 30.0
+	}
+
+	if ( CUR_CHARGE >= 2.5 )
+	{
+		if CUR_CHARGE < 3.5
+		//greater circle of death here
+		dbg greater circle of death
+		if ( $get(ent_owner,scriptvar,'PLR_GCOD_ACTIVE') )
+		{
+			dplayermessage ent_owner Dark Staff: Can only maintain one Greater Circle of Death.
+			local EXIT_SUB 1
+		}
+		if !EXIT_SUB
+		if ( $get(ent_owner,mp) < MP_GCOD )
+		{
+			dplayermessage ent_owner Dark Staff: Insufficient mana for Greater Circle of Death
+			local EXIT_SUB 1
+		}
+		if !EXIT_SUB
+
+		givemp ent_owner $neg(MP_GCOD)
+
+		local DMG_COD $get(ent_owner,skill.spellcasting.affliction)
+		callexternal ent_owner ext_gcod $get(ent_owner,origin) DMG_COD 30.0
+	}
+
+	if ( CUR_CHARGE == 3.5 )
+	{
+		if ( $get(ent_owner,scriptvar,'PLR_WRAITH_ACTIVE') )
+		{
+			dplayermessage ent_owner Dark Staff: Can only maintain one Lesser Wraith
+			local EXIT_SUB 1
+		}
+		if !EXIT_SUB
+
+		if ( $get(ent_owner,mp) < MP_WRAITH )
+		{
+			dplayermessage ent_owner Dark Staff: Insufficient mana for Lesser Wraith
+			local EXIT_SUB 1
+		}
+		if !EXIT_SUB
+
+		givemp ent_owner $neg(MP_WRAITH)
+
+		local SUMMON_POS $get(ent_owner,origin)
+		vectorset SUMMON_POS z $get_ground_height(SUMMON_POS)
+		local OWNER_YAW $get(ent_owner,viewangles)
+		local OWNER_YAW $vec.yaw(OWNER_YAW)
+		vectoradd SUMMON_POS $relpos($vec(0,OWNER_YAW,0),$vec(0,64,0))
+		
+		createnpc monsters/summon/lesser_wraith SUMMON_POS $get(ent_owner,id) SUMMON_POS
+	}
+}
+
+{ end_charge
+	if ( AM_CHARGING )
+	{
+		//maybe player put me away mid-charge or died
+		setvard AM_CHARGING 0
+		setvard NEXT_CHARGE game.time
+		add NEXT_CHARGE 3.0
+		callclitemevent ent_me cl_end_charge
+	}
+	if ( $get(ent_owner,isalive) ) scriptflags ent_owner remove af_staff
+	callexternal ent_owner ext_reset_nomove 1
+	clientevent update ent_owner CL_STAFF_EYES end_fx
+	clientevent update all CL_DARK_FX end_fx
+}
+
+{ cl_end_charge
+	setvard AM_CHARGING 0
+}

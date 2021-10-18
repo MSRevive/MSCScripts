@@ -1,0 +1,111 @@
+//Player client-side effects
+
+
+// Player fall
+// ===========
+{
+   const MAX_BOB_DURATION 3
+   const MAX_BOB_DIP 53
+}
+
+{  player_hitgroundhard	//1: Downward Velocity
+
+	local L_DIP 			PARAM1
+	multiply L_DIP 			0.05
+
+	////debugprint NEW FALL - game.time | L_DIP
+	if L_DIP >= 12		//Only dip if over a certain amount
+					//If under, keep the current dip or no dip
+
+	setvard GROUNDBOB_DURATION 	PARAM1
+	multiply GROUNDBOB_DURATION 	0.001
+	setvard GROUNDBOB_DIP 		L_DIP
+	setvard GROUNDBOB_STARTTIME 	game.time
+
+	if GROUNDBOB_DIP >= 12
+	capvar GROUNDBOB_DURATION 0 MAX_BOB_DURATION
+	capvar GROUNDBOB_DIP 0 MAX_BOB_DIP
+
+	callevent player_hitground_adjview
+	callevent GROUNDBOB_DURATION player_hitground_fixview
+}
+{  player_hitground_adjview
+
+	if GROUNDBOB_STARTTIME
+
+	local LCL_BOBTIME game.time
+	decvar LCL_BOBTIME GROUNDBOB_STARTTIME
+	capvar LCL_BOBTIME 0 MAX_BOB_DURATION
+
+	if LCL_BOBAMT <= GROUNDBOB_DURATION
+
+	local LCL_BOBAMT LCL_BOBTIME
+
+	local LCL_TIMESCALE 2
+	divide LCL_TIMESCALE GROUNDBOB_DURATION
+
+	multiply LCL_BOBAMT LCL_TIMESCALE
+	decvar LCL_BOBAMT 1
+
+	multiply LCL_BOBAMT LCL_BOBAMT
+	multiply LCL_BOBAMT GROUNDBOB_DIP
+
+	decvar LCL_BOBAMT GROUNDBOB_DIP
+
+	//if( LCL_BOBAMT > 0 )
+	//{
+	//	//debugprint Current Time: game.time
+	//	//debugprint StartTime:    GROUNDBOB_STARTTIME
+	//	//debugprint BobTime:      LCL_BOBTIME
+	//	//debugprint Duration:     GROUNDBOB_DURATION
+	//}
+
+	setvard game.cleffect.view_ofs.z LCL_BOBAMT
+	multiply LCL_BOBAMT 1.01
+	setvard game.cleffect.viewmodel_ofs.z LCL_BOBAMT //Viewmodel dips a bit lower than view
+
+	callevent 0.01 player_hitground_adjview
+}
+{  player_hitground_fixview
+
+	//debugpring STOP!! game.time | GROUNDBOB_STARTTIME
+	setvard GROUNDBOB_STARTTIME 0
+	setvard game.cleffect.view_ofs.z 0
+	setvard game.cleffect.viewmodel_ofs.z LCL_BOBAMT
+}
+
+
+
+// Player breathing
+// ================
+
+{  player_breathe
+
+	
+	if game.player.stamina.ratio < 0.05
+	if !BREATHE_PLAYING
+
+	if ( PLR_RACE equals human )
+	{
+		if ( PLR_GENDER equals male )
+		{
+			local LCL_BREATHESOUND player/breathe_fast
+		}
+		else
+		{
+			local LCL_BREATHESOUND player/Femalebreathe_fast
+		}
+	}
+	stradd LCL_BREATHESOUND $rand(1,3)
+	stradd LCL_BREATHESOUND .wav
+
+	playsound game.sound.voice game.sound.maxvol LCL_BREATHESOUND
+	
+	setvard BREATHE_PLAYING 1
+	callevent 6 player_breathe_done
+}
+
+{  player_breathe_done
+
+	setvard BREATHE_PLAYING 0
+}

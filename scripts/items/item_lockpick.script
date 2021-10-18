@@ -1,0 +1,161 @@
+{
+	setvard NO_BANK 1 //item stacks, so can't bank without losing all but one
+
+	const ANIM_LIFT1 18
+	const ANIM_IDLE 18
+	const ANIM_IDLE1 18
+	const ANIM_IDLE2 18
+	const ANIM_IDLE3 18
+	const ANIM_IDLE4 18
+	const ANIM_IDLE5 18
+	const ANIM_IDLE_DELAY_LOW 2
+	const ANIM_IDLE_DELAY_HIGH 5
+
+	const ANIM_USE 19
+	const ANIM_FAIL 16
+
+	const MODEL_WORLD misc/p_misc.mdl
+	const MODEL_HANDS misc/p_misc.mdl
+	const MODEL_BODY_OFS 13
+	const MODEL_VIEW viewmodels/v_martialarts.mdl
+	const ITEM_MODEL_VIEW_IDX 9
+	const ANIM_PREFIX rustedkey
+	const ICO_LOCKPICK_STATUS alpha_lockpick
+}
+
+#include items/base_miscitem
+
+{ miscitem_spawn
+	name 	Lockpick
+	desc 	This can be used to disarm traps and open certain chests
+	groupable	100
+	weight 		0
+	size 		1
+	value		300
+   sethudsprite trade 195
+}
+
+{ game_deploy
+	playviewanim ANIM_LIFT1
+	if game.serverside
+	setvard NEXT_USE game.time
+	add NEXT_USE 0.5
+	callevent 0.1 bi_setup_model
+}
+
+{ game_attack1
+	if game.serverside
+	if game.time > NEXT_USE
+	if !AM_LOCKPICKING
+	setvard NEXT_USE game.time
+	add NEXT_USE 0.5
+	if $get(ent_owner,canattack)
+	local L_TARG $get(ent_owner,target)
+	setvard LOCKPICK_FAIL 0
+	callevent validate_target L_TARG
+	if !LOCKPICK_FAIL
+
+	hud.addstatusicon ent_owner ICO_LOCKPICK_STATUS lockpick 10.0
+
+	splayviewanim ent_me ANIM_USE
+
+	setvard AM_LOCKPICKING 1
+	setvard LOCK_TARGET L_TARG
+	callevent 10.0 lockpick_complete
+}
+
+{ game_takedamage //1: Attacker  2: Inflictor  3: dmg  4: dmg type
+	if $get(PARAM1,relationship,ent_owner) equals enemy 
+	if !$get(PARAM1,isplayer) //anti-troll
+	splayviewanim ent_me ANIM_LIFT1
+	rplayermessage ent_owner Your lock picking is interrupted!
+	hud.killstatusicon ent_owner lockpick
+	setvard NEXT_USE game.time
+	add NEXT_USE 0.5
+	setvard AM_LOCKPICKING 0
+}
+
+{ lockpick_complete
+	if AM_LOCKPICKING
+	setvard AM_LOCKPICKING 0
+
+	setvard NEXT_USE game.time
+	add NEXT_USE 1.0
+
+	//check again in case moved away, or someone else unlocked
+	local L_TARG LOCK_TARGET
+	setvard LOCKPICK_FAIL 0
+	callevent validate_target L_TARG
+
+	if !LOCKPICK_FAIL
+
+	callexternal LOCK_TARGET ext_picked $get(ent_owner,id)
+
+	local L_COUNT $get(ent_me,quantity)
+	dbg lockpick_complete L_COUNT
+	subtract L_COUNT 1
+	if ( L_COUNT <= 0 )
+	{
+		removeitem
+		deleteent ent_me
+	}
+	else
+	{
+		setquantity ent_me L_COUNT
+	}
+}
+
+{ resume_idle
+	splayviewanim ent_me ANIM_IDLE1
+}
+
+{ [server] bi_setup_model
+	dbg setting up model
+	setviewmodelprop ent_me submodel $get(ent_owner,scriptvar,'PLR_HAND_SET') ITEM_MODEL_VIEW_IDX
+}
+
+
+{ validate_target
+	local L_TARG PARAM1
+
+	if ( !$get(L_TARG,isalive) )
+	{
+		dplayermessage ent_owner Lockpick: No target.
+		setvard LOCKPICK_FAIL 1
+		exitevent
+	}
+	if ( !$get(L_TARG,scriptvar,'BC_REQ_PICK') )
+	{
+		if !$get(L_TARG,scriptvar,'BC_TRAPPED')
+		local L_FAIL 1
+	}
+
+	if ( !L_FAIL )
+	{
+		local L_TARG_ORG $get(L_TARG,origin)
+		local L_OWNER_ORG $get(ent_owner,origin)
+		if ( $dist(L_TARG_ORG,L_OWNER_ORG) > 96 )
+		{
+			local L_TOO_FAR 1
+			local L_FAIL 1
+		}
+		if ( L_TOO_FAR ) local L_MSG "Lockpick: You are too far away..."
+	}
+	
+	if ( L_FAIL )
+	{
+		setvard LOCKPICK_FAIL 1
+		splayviewanim ent_me ANIM_FAIL
+		callevent 1.0 resume_idle
+		setvard NEXT_USE game.time
+		add NEXT_USE 1.0
+		if ( !L_TOO_FAR ) local L_MSG "Lockpick: This is not a valid target."
+		if ( $get(L_TARG,scriptvar,'BC_AM_CHEST') )
+		{
+			if !L_TOO_FAR
+			if ( $get(L_TARG,scriptvar,'CHEST_LOCKED') ) local L_MSG "Lockpick: This chest cannot be picked."
+			if ( !$get(L_TARG,scriptvar,'CHEST_LOCKED') ) local L_MSG "Lockpick: This chest is neither locked nor trapped."
+		} 
+		dplayermessage ent_owner L_MSG
+	}
+}

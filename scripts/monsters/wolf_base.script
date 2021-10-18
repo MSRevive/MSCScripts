@@ -1,0 +1,292 @@
+//Wolf by Thothie from scratch
+//- unique behavior: pack formation
+//- wolves will stay near their alpha leader to form a pack
+//- wolves will not flee if their alpha is alive, instead they will simply run to the alpha for protection
+//- alpha wolves never flee (fight to the death)
+#scope server
+{
+	//_base anims
+	setvar ANIM_WALK run //model needs a walk anim
+	setvar ANIM_RUN run
+	setvar ANIM_IDLE standidle1
+	setvard ANIM_DEATH die1
+	setvard ANIM_ATTACK attack1	//using event bite1
+	setvard NPC_ALLY_RESPONSE_RANGE 2048
+	setvard ANIM_FLINCH hopback
+
+	//custom anims
+	const ANIM_LEAP attack2
+	const ANIM_CLAW attack2	//using event claw1
+	const ANIM_HOWL howl
+	const ANIM_ALERT threat
+	const ANIM_IDLE_SIT sit_idle1
+	const ANIM_IDLE_SIT2 sit_idle2
+	const ANIM_IDLE_STAND standidle1
+	const ANIM_IDLE_STAND2 standidle2
+	const ANIM_IDLE_STAND3 guard
+	const ANIM_TOSTAND standup
+	const ANIM_BITE attack1
+	const ANIM_CLAW attack2
+	const ANIM_EAT eat
+
+	const ANIM_FLINCH1 hopback
+	const ANIM_FLINCH2 pain1
+	const ANIM_FLINCH3 pain2
+
+	//_base stats
+	setvard ATTACK_RANGE 92
+	setvard ATTACK_HITRANGE 128
+	setvard ATTACK_MOVERANGE 72
+	setvard CAN_FLEE 1
+	setvard FLEE_HEALTH 25
+	setvard FLEE_CHANCE 25
+
+	//custom stats
+	const ATTACK_HITCHANCE 70
+	const LEAP_RANGE 256
+	const DMG_BITE $randf(2,5)
+	const DMG_CLAW $randf(1,3)
+	const FREQ_LOOK 20.0
+	const FREQ_IDLE $randf(3,20)
+	const FREQ_HOWL $randf(20,30)
+	const CHANCE_CLAW 50
+
+	//sound set
+	const SOUND_HOWL1 monsters/wolves/wolf_howl1.wav
+	const SOUND_HOWL2 monsters/wolves/wolf_howl2.wav
+	const SOUND_GROWL monsters/wolves/wolf_alert.wav
+	const SOUND_ATK1 monsters/wolves/wolf_atk1.wav
+	const SOUND_ATK2 monsters/wolves/wolf_atk2.wav
+	const SOUND_ATK3 monsters/wolves/wolf_atk3.wav
+	const SOUND_PAIN monsters/wolves/wolf_yelp1.wav
+	const SOUND_STRUCK1 weapons/cbar_hitbod1.wav
+	const SOUND_STRUCK2 weapons/cbar_hitbod2.wav
+	const SOUND_YELP monsters/wolves/wolf_yelp2.wav
+	const SOUND_DEATH monsters/wolves/wolf_death.wav
+
+	//media
+	const MONSTER_MODEL monsters/normal_wolf.mdl
+	precache monsters/normal_wolf.mdl
+	precache SOUND_DEATH
+}
+
+#include [server] monsters/base_monster_new
+
+{ [shared] npc_spawn
+
+	name a|Wolf
+	race rogue //attacks everything but its own
+	setmodel MONSTER_MODEL
+	hearingsensitivity 8
+	width 36
+	height 48
+	roam 1
+	if ( !AM_ALPHA )
+	{
+		hp 50
+		//setvard NPC_GIVE_EXP 30
+		setmodelbody 0 0 //some skin
+		callevent 3.0 find_alpha
+	}
+	if ( AM_ALPHA )
+	{
+		hp 75
+		//setvard NPC_GIVE_EXP 35
+		setmodelbody 0 1 //some skin
+		setvard FLEE_HEALTH 0
+	}
+
+	if ( $lcase(game.map.name) equals sfor )
+	{
+		if $rand(1,100) == 50
+		giveitem swords_wolvesbane
+	}
+
+	setvard NEXT_HOWL 0
+}
+
+{ npc_post_spawn
+	setmoveanim ANIM_WALK
+	setidleanim ANIM_IDLE
+}
+
+{ find_alpha
+	callexternal all ext_wolf_setalpha
+	if ( $get(G_ALPHA,isalive) ) setvard MY_ALPHA G_ALPHA
+	if ( !$get(G_ALPHA,isalive) ) setvard MY_ALPHA unset
+}
+
+{ ext_wolf_setalpha
+	if AM_ALPHA
+	setvarg G_ALPHA $get(ent_me,id)
+}
+
+{
+repeatdelay FREQ_IDLE
+	
+	if ( !AM_ALPHA )
+	{
+		if MY_ALPHA isnot unset
+		callevent npcatk_setmovedest G_ALPHA ATTACK_MOVERANGE
+	}
+
+	if NPCATK_TARGET equals unset
+
+	if ( game.time > NEXT_HOWL )
+	{
+		dbg idle howl
+		setvard NEXT_HOWL game.time
+		add NEXT_HOWL FREQ_HOWL
+		callevent do_howl
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	if ( SIT_MODE ) playanim critical ANIM_IDLE_SIT2
+	if ( !SIT_MODE )
+	{
+		local RND_IDLE $rand(1,2)
+		if ( RND_IDLE == 1 )
+		{
+			callevent atk_sound
+			playanim critical ANIM_IDLE_STAND2
+		}
+		if ( RND_IDLE == 2 )
+		{
+			playsound 0 10 SOUND_GROWL
+			playanim critical ANIM_IDLE_STAND3
+		}
+	}
+
+	if AM_ALPHA
+	if $rand(1,2) == 1
+	if ( SIT_MODE ) callevent 0.5 sitmode_off
+	if ( !SIT_MODE ) callevent 0.5 sitmode_on
+}
+
+{ sitmode_off
+	if ( SIT_MODE ) playanim critical ANIM_TOSTAND
+	setvard SIT_MODE 0
+	setmoveanim ANIM_RUN
+	setidleanim ANIM_IDLE
+}
+
+{ sitmode_on
+	setvard SIT_MODE 1
+	setmoveanim ANIM_IDLE_SIT
+	setidleanim ANIM_IDLE_SIT
+}
+
+{ [override] npcatk_checkflee
+
+	//alphas do not flee due to health loss
+	//non-alphas only flee to the alpha, so long as he is alive
+
+	if !CANT_FLEE
+
+	if ( FLEE_HEALTH > 0 )
+	{
+		if ( game.monster.hp < FLEE_HEALTH )
+		{
+			if ( $rand(1,100) <= FLEE_CHANCE )
+			{
+				if !AM_ALPHA
+				if ( $get(MY_ALPHA,isalive) )
+				{
+					setvard NPC_FORCED_MOVEDEST 1
+					setmovedest MY_ALPHA ATTACK_MOVERANGE
+					callevent npcatk_suspend_ai 2.0
+				}
+				if ( !$get(MY_ALPHA,isalive) ) callevent npcatk_flee $get(ent_laststruck,id) FLEE_DISTANCE 10.0
+			}
+		}
+	}
+}
+
+//anim events
+{ bite1
+	setvard ATTACK_TYPE bite
+	callevent npcatk_dodamage NPCATK_TARGET ATTACK_HITRANGE DMG_BITE ATTACK_HITCHANCE slash
+	callevent atk_sound
+	if ( $rand(1,100) < CHANCE_CLAW ) setvard ANIM_ATTACK ANIM_CLAW
+}
+
+{ claw1
+	setvard ATTACK_TYPE claw
+	callevent npcatk_dodamage NPCATK_TARGET ATTACK_HITRANGE DMG_CLAW ATTACK_HITCHANCE slash
+	callevent atk_sound
+	
+	setvard ANIM_ATTACK ANIM_BITE
+}
+//==== end anim events
+
+{ npc_aiding_ally
+
+	callexternal NPC_ALLY_TO_AID being_aided
+}
+
+{ being_aided
+
+	//wolves being aided howl (to simulate calling allies)
+	if !DID_ALLY_ALERT
+	setvard DID_ALLY_ALERT 1
+	callevent do_howl
+}
+
+{ do_howl
+	if ( $get(ent_me,isalive) ) playanim critical ANIM_HOWL
+	playrandomsound 0 10 SOUND_HOWL1 SOUND_HOWL2
+}
+
+{ npcatk_lost_sight
+	if !$cansee(enemy)
+	if !SEARCH_DELAY
+	setvard SEARCH_DELAY 1
+	playsound 0 10 SOUND_GROWL
+	callevent FREQ_LOOK reset_search_delay
+	callevent do_howl
+}
+
+{ reset_search_delay
+	setvard SEARCH_DELAY 0
+}
+
+{ npc_flinch
+	//monster favorw backpedal for flinch, but has two other less likely flinches, including a rollover
+	local RND_FLINCH $rand(1,5)
+	if ( RND_FLINCH == 1 ) setvard FLINCH_ANIM ANIM_FLINCH2
+	if ( RND_FLINCH == 2 ) setvard FLINCH_ANIM ANIM_FLINCH3
+	if ( RND_FLINCH > 2 ) setvard FLINCH_ANIM ANIM_FLINCH1
+	playsound 0 10 SOUND_YELP
+}
+
+{ cycle_up
+	if ( SIT_MODE ) callevent sitmode_off
+}
+
+{ atk_sound
+	playrandomsound 0 10 SOUND_ATK1 SOUND_ATK2 SOUND_ATK3
+}
+
+{ game_struck
+	playrandomsound 0 10 SOUND_STRUCK1 SOUND_STRUCK2 SOUND_STRUCK1 SOUND_STRUCK2 SOUND_STRUCK1 SOUND_PAIN
+}
+
+{ game_dodamage
+	if PARAM1
+	if !$get(PARAM2,scriptvar,IMMUNE_PUSH)
+	if ( ATTACK_TYPE equals bite ) addvelocity PARAM2 $relvel(-50,110,105)
+	if ( ATTACK_TYPE equals claw ) addvelocity PARAM2 $relvel(-100,130,120)
+	setvard ATTACK_TYPE none
+}
+
+{ game_death
+	local RND_DEATH $rand(1,2)
+	if ( RND_DEATH == 1 ) setvard ANIM_DEATH die1
+	if ( RND_DEATH == 2 ) setvard ANIM_DEATH die2
+}
+
+{ my_target_died
+	if !$cansee(enemy)
+	playanim once ANIM_EAT		
+}

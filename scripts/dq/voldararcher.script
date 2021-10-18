@@ -1,0 +1,61 @@
+//Voldar's Rangers
+{
+   const ARROW_TYPE proj_arrow_gpoison
+	const NPC_DEATH_MSG "You have slain one of Voldar's rangers"
+}
+
+#include monsters/orc_sniper
+
+{
+   eventname orc_spawn
+
+	setprop ent_me skin 3
+
+   hp 220
+   //ov 180
+   name Voldar's Ranger
+   hearingsensitivity 2
+   setstat parry 30
+   takedmg all .8
+
+	setvard DOING_KICK 0
+	setvard KICK_TYPE 1
+
+   	setmodelbody	0 3		//Body 0=naked 1=leather 2=plate 3=green-hide
+   	setmodelbody	1 3		//Head 0=cap_shorthorn 1=cap_nohorn 2=buffo_skin 3=cheif_ramhorns 4=green_hood
+   	setmodelbody	2 3		//Weapon 0=fist 1=axe 2=bow_weak 3=bow_strng 4=sword 5=bloodyaxe 6=sword&sheild
+}
+
+{ npc_post_spawn
+   setvard DROPS_CONTAINER 1
+   setvard CONTAINER_DROP_CHANCE 10% 
+   setvard CONTAINER_SCRIPT chests/quiver_of_gpoison
+}
+
+{ [override] shoot_arrow
+
+	if ( $cansee(enemy,KICK_RANGE) )
+	{
+		playanim break
+		setvard DOING_KICK 0
+		setvard KICK_TYPE 1
+		callevent do_kick
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+  	local TARGET_DIST $get(ent_lastseen,range)
+	local FINAL_TARGET $get(ent_lastseen,origin)
+	vectoradd FINAL_TARGET $relpos($vec(0,0,0),$vec(0,0,TARGET_DIST))
+	divide TARGET_DIST 100
+	setangle add_view.pitch TARGET_DIST
+
+   local LCL_ATKDMG $randf(ARROW_DAMAGE_LOW,ARROW_DAMAGE_HIGH)
+
+	setvard IS_ARROW 1
+   tossprojectile view ATTACK_SPEED LCL_ATKDMG ATTACK_CONE_OF_FIRE ARROW_TYPE (0,0,48)
+ 	callexternal $get(ent_lastprojectile,id) ext_lighten 0.4
+
+   setmodelbody 3 0		//Hide arrow
+   playsound 2 SOUND_BOW
+}

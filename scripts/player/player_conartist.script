@@ -1,0 +1,154 @@
+//This wasnt unused, converted to central fx script - Thothie
+//If you plan to add effects without changing client.dll, make sure you add them here
+//otherwise new effects will crash dated clients
+
+#scope client
+
+{ [client] client_activate
+
+	////dbg mainfx got PARAM1 PARAM2
+
+	if ( PARAM1 equals glow )
+	{
+		//PARAM2=ent_index PARAM3=radius PARAM4=color PARAM5=Duration
+		cleffect light new $getcl(PARAM2,origin) PARAM3 PARAM4 PARAM5
+		////dbg make light PARAM3 PARAM4 PARAM5
+	}
+
+	if ( PARAM1 equals levelup )
+	{
+		setvard MY_OWNER PARAM2
+	
+		setvard OFSZ_POS 96
+		setvard OFSZ_NEG -96
+		setvard OFS_POS 72
+		setvard OFS_NEG -72
+		setvard DIST 32
+	
+		cleffect light new $getcl(MY_OWNER,origin) 200 (0,255,0) 3.0
+		setvard LVL_LIGHT game.script.last_light_id
+	
+		setvard LEVELUP_SPRITES 1
+		setvard LIGHT_RAD 200	
+		callevent sprite_spoog
+		callevent 4.0 end_fx_levelup
+
+		//callevent 5.0 debug_loop
+	}
+
+	if ( PARAM1 equals disco )
+	{
+		setvard MY_OWNER PARAM2
+	
+		setvard OFSZ_POS 96
+		setvard OFSZ_NEG -96
+		setvard OFS_POS 72
+		setvard OFS_NEG -72
+		setvard DIST 32
+
+		setvard DISCO_MODE 1
+	
+		cleffect light new $getcl(MY_OWNER,origin) 255 (0,255,0) 3.0
+		setvard LVL_LIGHT game.script.last_light_id
+		setvard LIGHT_RAD 512
+		setvard LEVELUP_SPRITES 1
+	
+		callevent sprite_spoog
+
+		//callevent 5.0 debug_loop
+	}
+}
+
+{ [client] game_prerender
+
+	if game.monster.isalive == 1
+	local L_POS $getcl(SKEL_ID,origin)
+	cleffect light SKEL_LIGHT_ID L_POS 256 (0,255,0) 5.0
+	//callevent 1.5 cl_light_loop
+}
+
+{ [client] sprite_spoog
+
+	if LEVELUP_SPRITES
+
+	callevent levelup_createsprite
+
+	callevent 0.1 sprite_spoog
+}
+
+{ [client] end_fx_levelup
+
+	removescript
+}
+
+{ [client] levelup_createsprite
+
+	local RND_LEFT $randf(-20,20)
+	local RND_RIGHT $randf(-20,20)
+	local SPRITE_VEL $vec(RND_LEFT,RND_RIGHT,0)
+	local COLOR_R $rand(0,255)
+	local COLOR_G $rand(0,255)
+	local COLOR_B $rand(0,255)
+	local COLOR_STRING '('
+	stradd COLOR_STRING COLOR_R
+	stradd COLOR_STRING ','
+	stradd COLOR_STRING COLOR_G
+	stradd COLOR_STRING ','
+	stradd COLOR_STRING COLOR_B
+	stradd COLOR_STRING ')'
+	cleffect light LVL_LIGHT $getcl(MY_OWNER,origin) LIGHT_RAD COLOR_STRING 0.1
+
+	if ( DISCO_MODE ) setvard DIST $rand(16,128)
+
+	local START_POS $getcl(MY_OWNER,origin)
+	local RND_RAD $rand(0,359)
+	vectoradd START_POS $relpos($vec(0,RND_RAD,0),$vec(0,DIST,-32))
+	//$vec($randf(OFS_NEG,OFS_POS),$randf(OFS_NEG,OFS_POS),$randf(OFSZ_POS,OFSZ_NEG))
+	cleffect tempent sprite xflare1.spr START_POS setup_levelup_sprite
+
+	local START_POS $getcl(MY_OWNER,origin)
+	local RND_RAD $rand(0,359)
+	vectoradd START_POS $relpos($vec(0,RND_RAD,0),$vec(0,DIST,-32))
+	//$vec($randf(OFS_NEG,OFS_POS),$randf(OFS_NEG,OFS_POS),$randf(OFSZ_POS,OFSZ_NEG))
+	cleffect tempent sprite xflare1.spr START_POS setup_levelup_sprite
+
+	local START_POS $getcl(MY_OWNER,origin)
+	local RND_RAD $rand(0,359)
+	vectoradd START_POS $relpos($vec(0,RND_RAD,0),$vec(0,DIST,-32))
+	//$vec($randf(OFS_NEG,OFS_POS),$randf(OFS_NEG,OFS_POS),$randf(OFSZ_POS,OFSZ_NEG))
+	cleffect tempent sprite xflare1.spr START_POS setup_levelup_sprite
+}
+
+{ [client] setup_levelup_sprite
+
+	local RND_LEFT $randf(-20,20)
+	local RND_RIGHT $randf(-20,20)
+	local SPRITE_VEL $vec(RND_LEFT,RND_RIGHT,0)
+	local COLOR_R $rand(0,255)
+	local COLOR_G $rand(0,255)
+	local COLOR_B $rand(0,255)
+	local COLOR_STRING '('
+	stradd COLOR_STRING COLOR_R
+	stradd COLOR_STRING ','
+	stradd COLOR_STRING COLOR_G
+	stradd COLOR_STRING ','
+	stradd COLOR_STRING COLOR_B
+	stradd COLOR_STRING ')'
+
+	local SCALE_SIZE 0.25
+	if ( DISCO_MODE ) local SCALE_SIZE $randf(0.25,1.0)
+
+	local DEATH_DELAY 1.0
+	if ( DISCO_MODE ) local DEATH_DELAY 2.5
+	
+	cleffect tempent set_current_prop death_delay 	DEATH_DELAY
+	cleffect tempent set_current_prop framerate	30
+	cleffect tempent set_current_prop frames	20
+	cleffect tempent set_current_prop velocity	SPRITE_VEL
+	cleffect tempent set_current_prop scale 	SCALE_SIZE
+	cleffect tempent set_current_prop rendermode add
+	cleffect tempent set_current_prop renderamt 255
+	cleffect tempent set_current_prop rendercolor COLOR_STRING
+	cleffect tempent set_current_prop gravity 	-0.5
+	cleffect tempent set_current_prop collide 	none
+}

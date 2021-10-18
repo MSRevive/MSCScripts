@@ -1,0 +1,149 @@
+//Thothie - Greater Animated Warrior - Keledros's Personal Summoned Guards
+//- In attempt to solve Keledros brain death issue
+//- Differences >HP >Damage BurnEffect FireResistant ColdVulnerable
+
+//Orc base
+
+{
+
+	setvar IS_UNHOLY 1
+	setvard IMMUNE_VAMPIRE 1
+
+   const SOUND_STRUCK1 body/armour1.wav
+   const SOUND_STRUCK2 body/armour2.wav
+   const SOUND_STRUCK3 body/armour3.wav
+   const SOUND_HIT body/armour3.wav
+   const SOUND_HIT2 body/armour2.wav
+   const SOUND_HIT3 body/armour1.wav
+   const SOUND_PAIN body/armour1.wav
+   const SOUND_ATTACK1 none
+   const SOUND_ATTACK2 none
+   const SOUND_ATTACK3 none
+   const SOUND_DEATH none
+   setvar ANIM_RUN run
+   setvar ANIM_IDLE idle1
+   setvar ANIM_WALK walk
+   setvard ANIM_DEATH die
+   setvard CAN_HUNT 1
+   setvard HUNT_AGRO 1		//base_npc_attack - Premptive attack
+   setvard CAN_HEAR 1		//Turn to face enemies I hear
+   setvard CAN_FLEE 0		//Don't flee
+   setvard CAN_FLINCH 0		//Flinch when hit
+   setvard LAST_ENEMY		`NONE`
+   setvard MOVE_RANGE 54
+   setvard ATTACK_RANGE 82
+   setvard ATTACK_HITRANGE 128
+   setvard DROP_GOLD 1			//Gold Drops
+   setvard DROP_GOLD_AMT $rand(20,40)	//
+   setvard NPC_GIVE_EXP 65
+
+   setvard ANIM_ATTACK battleaxe_swing1_L//Attack animation
+
+   const ATTACK_ACCURACY 85%
+   const ATTACK_DMG_LOW 25
+   const ATTACK_DMG_HIGH 35
+
+	setvard IMMUNE_POISON 1
+}
+
+#include monsters/base_monster
+
+{ npc_spawn
+
+	setvard I_AM_TURNABLE 0
+
+	name Infernal Animated Armor
+	roam 1
+	race demon
+	width 40
+	hp 400
+	fov 359
+	height 90
+	setmodel monsters/animarmor.mdl
+	setidleanim ANIM_IDLE
+	setmoveanim ANIM_WALK
+	stepsize 16 //override basic step size or these things walk off the catwalks in keledrosruins
+
+	takedmg all 0.9
+	takedmg lightning 2.0
+	takedmg fire 0.0
+	setvard IMMUNE_FIRE 1
+	takedmg cold 2.0
+	takedmg poison 0.0
+	setvard IMMUNE_POISON 1
+	takedmg holy 3.0
+
+	setmodelbody 0 0	//body: (no options)
+	setmodelbody 1 2	//Head: 0=CapW/horns 1=Capw/Spikes 2=Skull
+	setmodelbody 2 5	//Weapon: 0=Unarmed(Litterally!) 1=Axe 2=woodbow 3=steelbow 4=sword 5=bloodaxe
+	setmodelbody 3 0	//arrow: 0=noarrow 1=arrow
+}
+
+{ npc_death		//On death, don't display weapon
+
+   setmodelbody 2 0		//Hide weapon
+   setmodelbody 4 0		//Hide Shield
+
+   //Thothie - this doesn't work, using below setvarg instead
+   callexternal SPAWNER undead_died
+
+   add DEAD_GUARDS 1
+   if ( DEAD_GUARDS > 1000 ) setvarg DEAD_GUARDS 0 //super redundant overflow protection (who knows, someone may kill 32,000+ of them.) ;)
+}
+
+{
+   eventname npc_targetsighted		//Warcry
+
+   local LASTSEEN_ENEMY $get(ent_lastseen,id)
+   if LASTSEEN_ENEMY isnot LAST_ENEMY
+
+   playsound game.sound.voice 5 SOUND_ATTACK2
+   setvard LAST_ENEMY LASTSEEN_ENEMY
+}
+
+   //Hit by someone
+{ npc_struck
+
+	playrandomsound game.sound.voice game.sound.maxvol SOUND_PAIN SOUND_STRUCK2 SOUND_PAIN none none
+}
+
+{  game_damaged_other
+
+   if ATTACK_PUSH isnot 'ATTACK_PUSH'
+   if ATTACK_PUSH isnot 'none'
+
+   if ( FX_SPAMMERS < MAX_FX_SPAMMERS ) applyeffect ent_laststruckbyme effects/effect_burn 10 ent_me $rand(5,12)
+   addvelocity ent_laststruckbyme ATTACK_PUSH	//Push the player a bit
+}
+
+{
+   eventname npc_flinch
+
+   playanim critical flinch
+}
+
+{
+   eventname retaliate
+   if $rand(1,3) == 1
+
+   setmovedest ent_laststruck 9999
+   look
+   callevent hunt_look
+}
+
+{  swing_axe
+
+   	local L_DMG $randf(ATTACK_DMG_LOW,ATTACK_DMG_HIGH)
+	applyeffect ent_laststruckbyme effects/effect_burn 10 ent_me $rand(5,12)
+   	dodamage ent_lastseen ATTACK_HITRANGE L_DMG ATTACK_ACCURACY
+}
+
+{ swing_sword
+
+	callevent swing_axe
+}
+
+{ game_dynamically_created
+
+	setvard SPAWNER PARAM1
+}

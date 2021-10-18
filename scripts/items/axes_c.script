@@ -1,0 +1,306 @@
+//Axe o Chaos (model by truewarrior)
+{
+	const MP_ELEMENT_BLAST 100
+	const ECHAOS_AOE 200
+
+	const BASE_LEVEL_REQ     25
+	const ANIM_LIFT1         0
+	const ANIM_IDLE1         1
+	const ANIM_ATTACK1       2
+	const ANIM_ATTACK2       3
+	const ANIM_ATTACK3       4
+	const ANIM_SHEATH       5
+	const MELEE_VIEWANIM_ATK ANIM_ATTACK1
+	const MODEL_VIEW viewmodels/v_2haxesgreat.mdl
+	const MODEL_VIEW_IDX 8
+	const MODEL_HANDS weapons/p_weapons4.mdl
+	const MODEL_WORLD weapons/p_weapons4.mdl
+	const SOUND_SWIPE       weapons/swingsmall.wav
+
+	const MODEL_BODY_OFS 54
+	const ANIM_PREFIX  standard
+
+	//Used in base_melee
+	//------------------
+	const MELEE_RANGE  100
+	const MELEE_DMG_DELAY  0.6
+	const MELEE_ATK_DURATION 1.5
+	const MELEE_ENERGY  3
+	const MELEE_DMG  500
+	const MELEE_DMG_RANGE      250
+	const MELEE_DMG_TYPE  slash
+	const MELEE_ACCURACY  50
+	const MELEE_STAT  axehandling
+
+	const MELEE_SOUND      SOUND_SWIPE
+	const MELEE_SOUND_DELAY      MELEE_DMG_DELAY
+	const MELEE_PARRY_CHANCE      25
+
+	precache 3dmflagry.spr
+}
+
+#include items/axes_base_twohanded
+
+{  weapon_spawn
+
+   name an|Axe of Chaos
+   desc Elemental chaos, in weapon form
+   weight 90
+   size 25
+   value 1200
+   sethudsprite hand 198
+   sethudsprite trade 198
+}
+
+{ game_deploy
+	if game.serverside
+	callevent caxe_check_skill
+	if !ELEMENT_LOOP
+	setvard ELEMENT_LOOP 1
+	callevent 1.0 element_loop
+	setvard GAME_PVP game.pvp
+}
+
+{ element_loop
+	if game.item.wielded
+	if ELEMENT_LOOP
+
+	if game.time > NEXT_RANDOM_ELEMENT
+	setvard NEXT_RANDOM_ELEMENT game.time
+	add NEXT_RANDOM_ELEMENT 5.0
+	callevent 10.0 element_loop
+	callevent choose_dot none
+}
+
+{ caxe_check_skill
+	setvard CAXE_SKILLED 1
+	if ( $get(ent_owner,skill.spellcasting.fire) < 10 ) setvard CAXE_SKILLED 0
+	if ( $get(ent_owner,skill.spellcasting.ice) < 10 ) setvard CAXE_SKILLED 0
+	if ( $get(ent_owner,skill.spellcasting.lightning) < 10 ) setvard CAXE_SKILLED 0
+	if ( $get(ent_owner,skill.spellcasting.divination) < 10 ) setvard CAXE_SKILLED 0
+	if ( $get(ent_owner,skill.spellcasting.affliction) < 10 ) setvard CAXE_SKILLED 0
+	if ( !CAXE_SKILLED ) dplayermessage ent_owner Axe of Chaos: Insufficient magical talents for effects.
+}
+
+{ melee_damaged_other
+	if game.serverside
+	if ( CAXE_SKILLED ) callevent apply_dot PARAM1
+	callevent choose_dot PARAM1
+	setvard NEXT_RANDOM_ELEMENT game.time
+	add NEXT_RANDOM_ELEMENT 30.0
+}
+
+{ special_01_damaged_other
+	if game.serverside
+	if ( CAXE_SKILLED ) callevent apply_dot PARAM1
+	callevent choose_dot PARAM1
+	setvard NEXT_RANDOM_ELEMENT game.time
+	add NEXT_RANDOM_ELEMENT 30.0
+}
+
+{ special_02_damaged_other
+	if game.serverside
+	if ( CAXE_SKILLED ) callevent apply_dot PARAM1
+	callevent choose_dot PARAM1
+	setvard NEXT_RANDOM_ELEMENT game.time
+	add NEXT_RANDOM_ELEMENT 30.0
+}
+
+{ apply_dot //<target>
+	if !$get(PARAM1,haseffect,DOT_acid) //effect_acid_dmg
+	if !$get(PARAM1,haseffect,DOT_fire) //effect_burn
+	if !$get(PARAM1,haseffect,DOT_cold) //effect_frostbite_dmg
+	if !$get(PARAM1,haseffect,DOT_poison) //effect_poison
+	if !$get(PARAM1,haseffect,DOT_dark) //effect_shadowflames
+	if !$get(PARAM1,haseffect,DOT_lightning) //effect_shock_dmg
+	if !$get(PARAM1,haseffect,DOT_holy) //effect_holy_dmg
+
+	if ( $get(PARAM1,isplayer) )
+	{
+		if !GAME_PVP
+		exitevent
+	}
+
+	if ( CAXE_EFFECT isnot 'CAXE_EFFECT' )
+	{
+		dbg apply_dot CAXE_EFFECT dur CAXE_EFFECT_DUR dot CAXE_EFFECT_DOT
+		applyeffect PARAM1 CAXE_EFFECT CAXE_EFFECT_DUR $get(ent_owner,id) CAXE_EFFECT_DOT
+	}
+}
+
+{ choose_dot //[target] [noclupdate:0|1]
+
+	setvard EFFECT_LIST "effect_acid_dmg;effect_burn;effect_frostbite_dmg;effect_poison;effect_shadowflames;effect_shock_dmg;effect_holy_dmg"
+	setvard EFFECT_ELEMENTS "acid;fire;cold;poison;dark;lightning;holy"
+	setvard EFFECT_DURATIONS "5.0;5.0;5.0;10.0;5.0;5.0;5.0"
+	setvard EFFECT_SKILLS "affliction;fire;ice;affliction;affliction;lightning;holy"
+	setvard EFFECT_DOTS "1.0;2.0;0.5;0.5;0.25;0.75;2.0"
+
+	setvard EFFECT_TARGET PARAM1
+
+	local L_SKIP_CL_UPDATE PARAM2
+
+	//infomsg all PARAM1 PARAM2
+
+	local L_N_EFFECTS $get_token_amt(EFFECT_LIST)
+
+	if ( $get(EFFECT_TARGET,isalive) )
+	{
+		calleventloop L_N_EFFECTS filter_effects
+		setvard CAXE_EFFECT_COUNT 0
+		calleventloop L_N_EFFECTS filter_effects2
+		local L_N_EFFECTS $get_token_amt(EFFECT_LIST)
+	}
+
+	if L_N_EFFECTS > 0 //case immune to all, we'll just keep the last element
+
+	subtract L_N_EFFECTS 1
+	local L_RND_IDX $rand(0,L_N_EFFECTS)
+	
+	local L_EFFECT "effects/"
+	stradd L_EFFECT $get_token(EFFECT_LIST,L_RND_IDX)
+	local L_DUR $get_token(EFFECT_DURATIONS,L_RND_IDX)
+	local L_SKILL "skill.spellcasting."
+	stradd L_SKILL $get_token(EFFECT_SKILLS,L_RND_IDX)
+	local L_DOT $get(ent_owner,L_SKILL)
+	multiply L_DOT $get_token(EFFECT_DOTS,L_RND_IDX)
+
+	//applyeffect EFFECT_TARGET L_EFFECT L_DUR $get(ent_owner,id) L_DOT
+	setvard CAXE_EFFECT L_EFFECT
+	setvard CAXE_EFFECT_DUR L_DUR
+	setvard CAXE_EFFECT_DOT L_DOT
+	setvard CAXE_EFFECT_SKILL L_SKILL
+	setvard CAXE_ELEMENT $get_token(EFFECT_ELEMENTS,L_RND_IDX)
+	attackprop ent_me 0 type CAXE_ELEMENT
+	attackprop ent_me 1 type CAXE_ELEMENT
+	attackprop ent_me 2 type CAXE_ELEMENT
+
+	//update client effect
+	if ( !L_SKIP_CL_UPDATE ) callevent update_cl
+
+	if ( G_DEVELOPER_MODE ) gplayermessage G_DEV_PLAYER CAxeChoseDOT: L_EFFECT [ CAXE_ELEMENT ] for $get(EFFECT_TARGET,name)
+
+	dbg choose_dot L_EFFECT dr L_DUR dot L_DOT 
+}
+
+{ filter_effects
+	local L_CUR_IDX game.script.iteration
+	local L_CUR_ELEMENT $get_token(EFFECT_ELEMENTS,L_CUR_IDX)
+	if ( $get_takedmg(EFFECT_TARGET,L_CUR_ELEMENT) == 0 )
+	{
+		token.set EFFECT_ELEMENTS L_CUR_IDX x
+	}
+}
+
+{ filter_effects2
+	local L_CUR_IDX CAXE_EFFECT_COUNT
+	local L_CUR_ELEMENT $get_token(EFFECT_ELEMENTS,L_CUR_IDX)
+	if ( L_CUR_ELEMENT equals x )
+	{
+		token.del EFFECT_LIST L_CUR_IDX
+		token.del EFFECT_ELEMENTS L_CUR_IDX
+		token.del EFFECT_DURATIONS L_CUR_IDX
+		token.del EFFECT_SKILLS L_CUR_IDX
+		token.del EFFECT_DOTS
+	}
+	else
+	{
+		add CAXE_EFFECT_COUNT 1
+	}
+}
+
+
+{ update_cl
+	if ( MY_CL_IDX equals 'MY_CL_IDX' )
+	{
+		clientevent new ent_owner items/axes_c_cl $get(ent_owner,index)
+		setvard MY_CL_IDX game.script.last_sent_id
+	}
+	clientevent update ent_owner MY_CL_IDX update_caxe_sprite CAXE_ELEMENT
+}
+
+{ remove_cl
+	if MY_CL_IDX isnot 'MY_CL_IDX'
+	clientevent update ent_owner MY_CL_IDX end_fx
+	setvard MY_CL_IDX 'MY_CL_IDX'
+}
+
+{ bweapon_effect_remove
+	if game.serverside
+	callevent remove_cl
+	setvard ELEMENT_LOOP 0
+}
+
+{ game_+attack2
+
+	if game.serverside
+	if !game.item.attacking
+	if $get(ent_owner,canattack)
+
+	if game.time > NEXT_ELEMENT_BLAST
+	setvard NEXT_ELEMENT_BLAST game.time
+	add NEXT_ELEMENT_BLAST 1.0
+
+	if ( $get(ent_owner,mp) < MP_ELEMENT_BLAST )
+	{
+		dplayermessage ent_owner Chaos Axe: Not enough mana for elemental chaos. (100)
+		local EXIT_SUB 1
+	}
+
+	if ( !CAXE_SKILLED )
+	{
+		dplayermessage ent_owner Chaos Axe: Insufficient magical talent for elemental chaos. (All Magic 10)
+		local EXIT_SUB 1
+	}
+
+	if !EXIT_SUB
+
+	givemp ent_owner $neg(MP_ELEMENT_BLAST)
+
+	splayviewanim ent_me 9
+	playowneranim critical PLAYERANIM_PREPARE squatwalk1
+	//playsound game.sound.item 10 magic/temple.wav //different sfx, handel in clfx
+
+	callevent 0.1 do_chaos1
+}
+
+{ do_chaos1
+	local L_FX_ORG $get(ent_owner,origin)
+	vectoradd L_FX_ORG z -34
+	if ( $get(ent_owner,ducking) ) vectoradd L_FX_ORG z 24
+	clientevent new all effects/sfx_prism_blast L_FX_ORG ECHAOS_AOE CAXE_ELEMENT
+	callevent 0.1 do_chaos2
+}
+
+{ do_chaos2
+	local L_DMG $math(multiply,CAXE_EFFECT_DOT,3)
+	xdodamage $get(ent_owner,origin) ECHAOS_AOE L_DMG 0 ent_owner ent_me axehandling CAXE_ELEMENT dmgevent:*chaos
+	callevent 0.5 update_cl
+}
+
+{ chaos_dodamage
+	if PARAM1
+
+	callevent choose_dot PARAM2 1
+	callevent apply_dot PARAM2
+
+	if $get(PARAM2,relationship,ent_owner) equals enemy
+
+	if ( $get(PARAM2,isplayer) )
+	{
+		if !GAME_PVP
+		exitevent
+	}
+
+	local L_CUR_TARG PARAM2
+
+	local L_TARG_HP $get(L_CUR_TARG,hp)
+	local L_MAX_REPEL_HP $get(ent_owner,maxhp)
+	multiply L_MAX_REPEL_HP 4
+	if ( L_TARG_HP < L_MAX_REPEL_HP ) local L_DO_PUSH 1
+	if L_DO_PUSH
+	local L_TARG_ORG $get(L_CUR_TARG,origin)
+	local L_OWNER_ORG $get(ent_owner,origin)
+	local L_TARG_ANG $angles(L_OWNER_ORG,L_TARG_ORG)
+	setvelocity L_CUR_TARG $relvel($vec(0,L_TARG_ANG,0),$vec(0,1000,0))
+}

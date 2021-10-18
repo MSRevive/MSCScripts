@@ -1,0 +1,175 @@
+//Fire Wall
+
+#scope server
+
+{
+	setvard ANIM_DEATH ''
+}
+
+//Shared
+//======
+
+{ [shared]
+	const TIME_LIVE 14	//Seconds to live
+    const FIRE_DURATION 15.0
+	precache fire1_fixed.spr
+}
+
+{ [shared] flames_start  // Start shooting
+   playsound CHAN_ITEM 7 items/torch1.wav
+   setvard FLAMING 1
+}
+
+//Server
+//======
+
+{  game_spawn
+
+ 	setvard PLAYING_DEAD 1 //not valid target
+
+   name a|Fire Wall Trap
+   hp 1
+   //race hated
+   invincible 1
+   roam 0
+   skilllevel 0
+   hearingsensitivity 0
+	setvard PLAYING_DEAD 1
+
+   add FX_SPAMMERS 1
+
+   callevent 0.1 flames_start
+
+   emitsound ent_me $get(ent_me,origin) 192 TIME_LIVE danger 192
+
+   setvard MY_OWNER $get(ent_me,id)
+   setvard MY_BASE_DMG 300
+
+   callevent FIRE_DURATION firewall_death  	//Die after a delay
+
+	local REMOVE_TIME FIRE_DURATION
+	subtract REMOVE_TIME 0.2
+	callevent REMOVE_TIME remove_invul
+   
+   setangle face.y $get(ent_me,angles.y)
+   clientevent new all $currentscript $get(ent_me,origin) $get(ent_me,angles.y) //Send to client immediately - calls client_activate on client
+	setvard FLAME_ID game.script.last_sent_id
+}
+
+{ remove_invul
+
+	race hated
+	invincible 0
+}
+
+{
+   eventname game_dynamically_created
+
+}
+
+{ flames_attack	//Deal damage
+
+   repeatdelay 0.5
+
+   if FLAMING
+   local ATTACK_DAMAGE MY_BASE_DMG
+   dodamage $relpos(0,0,0) 96 0 100% 0 reflective target
+   dodamage $relpos(0,96,0) 96 0 100% 0 reflective target
+   dodamage $relpos(0,-96,0) 96 0 100% 0 reflective target
+}
+
+{  game_dodamage //1: Attack Hit (1/0)  2: Entity Attack hit  3:  Start Position  4:  End Position
+	
+	if ( $get(PARAM2,isplayer) ) applyeffect PARAM2 effects/effect_burn 2 $get(ent_me,id) MY_BASE_DMG 1
+	if ( $get(PARAM2,alive) ) applyeffect PARAM2 effects/effect_burn 2 $get(ent_me,id) MY_BASE_DMG 1
+}
+
+{ [shared] eventname firewall_death  // Pewf
+
+	setvard FLAMING 0
+	callevent firewall_end_cl
+	subtract FX_SPAMMERS 1
+	playsound CHAN_ITEM game.sound.silentvol items/torch1.wav
+	clientevent remove all FLAME_ID
+	dodamage ent_me direct 6000 100 ent_me
+	setalive 0
+}
+
+{ [client]
+  repeatdelay 6
+  if FLAMING
+  if ( FX_SPAMMERS < 3 ) playsound CHAN_ITEM 7 items/torch1.wav
+}
+
+//Client
+//======
+
+{ [client]
+   const HEIGHT 60
+   const WIDTH 2
+
+}
+
+{ [client] client_activate
+
+   setvard FLAME_POSITION PARAM1
+   setvard FLAME_ANGLE $vec(0,PARAM2,0)
+   callevent 2 flames_start  		//Start erupting after a delay
+   callevent TIME_LIVE firewall_end_cl 	//Die after a delay   
+}
+
+{ [client] firewall_end_cl
+  removescript
+}
+
+// Random shoot rock
+{ [client]
+   repeatdelay $randf(0.25,0.5)
+   if FLAMING
+   callevent flames_shoot
+}
+{ [client]
+   repeatdelay $randf(0.25,0.5)
+   if FLAMING
+   callevent flames_shoot
+}
+
+// Shoot flames
+{ [client] flames_shoot
+   local NEGWIDTH WIDTH
+   multiply NEGWIDTH -1
+
+   local x $rand(-30,30)
+   local y $rand(NEGWIDTH,WIDTH)
+   local L_POS $relpos(FLAME_ANGLE,$vec(x,y,HEIGHT))
+   vectoradd L_POS FLAME_POSITION
+
+   local yar $rand(1,0)
+   if( yar ) cleffect tempent sprite fire1_fixed.spr L_POS setup_flames
+
+   local x $rand(-96,96)
+   local y $rand(NEGWIDTH,WIDTH)
+   local L_POS $relpos(FLAME_ANGLE,$vec(x,y,HEIGHT))
+   vectoradd L_POS FLAME_POSITION
+   local yar $rand(1,0)
+   if( yar ) cleffect tempent sprite fire1_fixed.spr L_POS setup_flames
+
+   local x $rand(-192,192)
+   local y $rand(NEGWIDTH,WIDTH)
+   local L_POS $relpos(FLAME_ANGLE,$vec(x,y,HEIGHT))
+   vectoradd L_POS FLAME_POSITION
+   local yar $rand(1,0)
+   if( yar ) cleffect tempent sprite fire1_fixed.spr L_POS setup_flames
+}
+
+{  [client] setup_flames
+
+
+   cleffect tempent set_current_prop death_delay 	2
+   cleffect tempent set_current_prop framerate		30
+   cleffect tempent set_current_prop frames		23
+   cleffect tempent set_current_prop bouncefactor 	0
+   cleffect tempent set_current_prop scale 		$randf(0.6,1.0)
+   cleffect tempent set_current_prop gravity 		$randf(0.1,1.0)
+   cleffect tempent set_current_prop collide 		all
+}

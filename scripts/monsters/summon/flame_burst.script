@@ -1,0 +1,56 @@
+//flame burst
+{
+	const SCAN_RANGE 256
+}
+
+{ game_dynamically_created //PARAM1 Owner, PARAM2 Damage
+
+	////dbg temp got PARAM1 PARAM2
+	setvard MY_OWNER PARAM1
+	setvard OWNER_ISPLAYER $get(PARAM1,isplayer)
+	setvard MY_BASE_DAMAGE PARAM2
+	if ( PARAM3 isnot 'PARAM3' ) setvard ONE_SHOT PARAM3
+	setvard ACTIVE_SKILL PARAM4
+	if ( ACTIVE_SKILL equals 'PARAM4' ) setvard ACTIVE_SKILL spellcasting.fire
+
+	clientevent new all_in_sight monsters/summon/flame_burst_cl $get(MY_OWNER,index)
+	setvard BURST_SCRIPT_IDX game.script.last_sent_id
+
+	callevent 0.25 big_boom
+
+	callevent 3.0 effect_die
+}
+
+{ effect_die
+
+	clienteffect remove all BURST_SCRIPT_IDX
+	deleteent ent_me
+}
+
+{ big_boom
+
+	playsound 0 10 ambience/steamburst1.wav
+	dodamage $relpos(0,0,-32) SCAN_RANGE 0.0 100% 0 reflective
+}
+
+{ game_dodamage //1:AttackHit(1/0)  2:EntityHit  3:StartOrigin  4:EndOrigin
+
+	if PARAM1
+	if $get(PARAM2,relationship,MY_OWNER) equals enemy
+
+	//players don't burn each other
+	if ( OWNER_ISPLAYER )
+	{
+		if !game.pvp
+		if $get(PARAM2,isplayer)
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	if ( !ONE_SHOT )
+	{
+		if !$get(PARAM2,haseffect,DOT_fire)
+		applyeffect PARAM2 effects/effect_burn 5 MY_OWNER MY_BASE_DAMAGE 1 0 ACTIVE_SKILL
+	}
+	if ( ONE_SHOT ) xdodamage $get(PARAM2,id) direct MY_BASE_DAMAGE 100% MY_OWNER MY_OWNER ACTIVE_SKILL fire
+}

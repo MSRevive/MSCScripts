@@ -1,0 +1,153 @@
+{
+	const FREQ_PROJECTILE 5.0
+	const FREQ_CLOAK $rand(15,30)
+	const DUR_CLOAK 10.0
+}
+
+#include monsters/rabid_skele_base
+
+
+{ [override] rabid_skele_spawn
+
+	name an|Etherial Bone
+
+	setmodel monsters/rabid_skelly.mdl
+	race undead
+	blood none
+	hearingsensitivity 4
+	setvard NPC_GIVE_EXP 60
+	setmoveanim ANIM_WALK
+	setidleanim ANIM_IDLE
+	playanim once ANIM_IDLE
+	width 32
+	height 64
+	setprop ent_me skin 5 //or whatever the lightning skin is
+
+	hp 2000
+	takedmg holy 2.0
+	takedmg cold 0.5
+	takedmg lightning 0.0
+
+	setvard AM_CLOAKED 0
+
+	setvard BEAM_ID1 unset
+	setvard BEAM_ID2 unset
+	setvard BEAMS_INITED 0
+}
+
+{ cycle_up
+	callevent start_cycles
+}
+
+{ cycle_npc
+	callevent start_cycles
+}
+
+{ start_cycles
+	callevent FREQ_CLOAK do_cloak
+	callevent FREQ_PROJECTILE check_projectile
+}
+
+
+{ [overrode] check_projectile
+	//zap a random player
+	if !AM_CLOAKED
+
+	getplayersnb PLAYER_LIST
+	token.scramble PLAYER_LIST
+
+	if ( !BEAMS_INITED ) callevent init_beams
+
+	//pick first one you can draw a line to
+	setvard BEAM_TARGET unset
+	calleventloop $get_token_amt(PLAYER_LIST) pick_beam_target
+
+	if BEAM_TARGET isnot unset
+	callevent do_beam
+}
+
+{ do_beam
+	playsound 0 10 SOUND_BEAM_WARMUP
+	playanim critical ANIM_PROJECTILE
+}
+
+{ mdl_projectile //model event - needs to be added to model
+	playsound 0 10 SOUND_BEAM_FIRE
+	effect beam update BEAM_ID1 end_target BEAM_TARGET 0
+	effect beam update BEAM_ID2 end_target BEAM_TARGET 0
+	effect beam update BEAM_ID1 brightness 200
+	effect beam update BEAM_ID2 brightness 200
+	dodamage BEAM_TARGET direct DMG_BEAM 100% ent_me lightning
+	addvelocity BEAM_TARGET $relvel(0,800,1000)
+}
+
+{ pick_beam_target
+	if !$get(BEAM_TARG,isalive)
+	local CUR_PLAYER $get_token(PLAYER_LIST,game.script.iteration)
+	if $get(CUR_PLAYER,range) < 1024
+	local TARG_ORG $get(CUR_PLAYER,origin)
+	local START_TRACE $get(ent_me,attachpos,0)
+	local TRACE_ORG $get_traceline(START_TRACE,TARG_ORG,worldonly)
+	if START_TRACE equals TARG_ORG
+	setvard BEAM_TARG CUR_PLAYER
+}
+
+{ init_beams
+	effect beam ents lgtning.spr 30 ent_me 0 ent_me 1 (200,255,50) 0 30 -1
+	setvard BEAM_ID1 $get(ent_lastcreated,id)
+	callevent 0.5 init_beams2
+}
+
+{ init_beams2
+	effect beam ents lgtning.spr 30 ent_me 0 ent_me 1 (200,255,50) 0 30 -1
+	setvard BEAM_ID2 $get(ent_lastcreated,id)
+}
+
+{ do_cloak
+	playsound 0 10 SOUND_CLOAK
+	effect glow ent_me (255,255,255) 256 2 2
+	setprop ent_me rendermode 5
+	setprop ent_me renderamt 0
+	setanim.movespeed 5.0
+	callevent npcatk_flee $get(ent_laststruck,id) 2048 DUR_CLOAK
+	setvard AM_CLOAKED 1
+	setcallback touch enable
+	callevent DUR_CLOAK end_cloak
+}
+
+{ end_cloak
+	playsound 0 10 SOUND_CLOAK
+	setcallback touch disabled
+	setvard AM_CLOAKED 0
+	effect glow ent_me (255,255,255) 256 2 2
+	setprop ent_me rendermode 0
+	setprop ent_me renderamt 255
+	setanim.movespeed 2.0
+}
+
+{ game_touch
+	if AM_CLOAKED
+	if $get(PARAM1,relationship,ent_me) equals enemy
+	addvelocity PARAM1 $relvel(0,800,400)
+}
+
+{ game_damaged			//PARAM1=attacker PARAM2=dmg PARAM3=dmg_type
+
+	if ( !AM_CLOAKED )
+	{
+		local T_BOX $get_tbox(players,256)
+		if T_BOX isnot none
+		if $get_token_amt(T_BOX) > 2
+		callevent do_cloak
+	}
+
+	if AM_CLOAKED
+	local CAN_HIT 0
+	if ( PARAM3 isnot magic ) local CAN_HIT 1
+	if ( PARAM3 isnot holy ) local CAN_HIT 1
+	if ( PARAM3 isnot dark ) local CAN_HIT 1
+	if !CAN_HIT
+	setdmg hit 0
+	setdmg dmg 0
+	returndata 0.0
+}

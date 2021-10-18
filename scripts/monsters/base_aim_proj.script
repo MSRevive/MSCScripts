@@ -1,0 +1,41 @@
+//Thothie - I keep tweaking the aiming system for archers, when I get it right, I want an easy base for them all to use
+//- assumes proj_arrow_npc with no lightening and ATTACK_SPEED 500 to 1000
+//- ATTACK_RANGE / MOVE_RANGE should equal ATTACK_SPEED
+//- this can be used with speeds under 500, but less dependable and MOVE/ATTACK_RANGE should reduced below _SPEED
+//- in a perfect worked tossprojectile ent_lastseen would work ><
+//= To use: just callevent baseaim_adjust_angles before tossprojectile view
+//- FOR SOME REASON THIS WORKS PREFECT WITH SOME MONS AND NOT WITH OTHERS
+//- EVEN WITH THE SAME ATTACK_SPEED AND ARROW - WTF ><
+
+//call this event just before fire
+{ baseaim_adjust_angles
+
+	//I tried to use the old 2D formula from my old artillery scorched earth game
+	//but HL physics are apparently funky
+	//so instead of a formula, we this hacked teird system
+
+	if ( ANGLE_ADJ_DIVIDER equals 'ANGLE_ADJ_DIVIDER' )
+	{
+		if ( ATTACK_SPEED >= 1000 ) setvard ANGLE_ADJ_DIVIDER 60
+		if ( ATTACK_SPEED >= 900 ) setvard ANGLE_ADJ_DIVIDER 45
+		if ( ATTACK_SPEED >= 800 ) setvard ANGLE_ADJ_DIVIDER 40
+		if ( ATTACK_SPEED >= 700 ) setvard ANGLE_ADJ_DIVIDER 30
+		if ( ATTACK_SPEED >= 600 ) setvard ANGLE_ADJ_DIVIDER 20
+		if ( ATTACK_SPEED >= 500 ) setvard ANGLE_ADJ_DIVIDER 12
+		if ( ATTACK_SPEED < 500 ) setvard ANGLE_ADJ_DIVIDER 10
+	}
+
+	local TARGET_POS $get(HUNT_LASTTARGET,origin)
+	//if ( !$get(HUNT_LASTTARGET,isplayer) ) multiply ANGLE_ADJ_DIVIDER 1.25 
+	if ( !$get(HUNT_LASTTARGET,isplayer) )
+	{
+		//on NPC's, yer aiming at feet, adjust for center
+		local HALF_HEIGHT $get(HUNT_LASTTARGET,height)
+		divide HALF_HEIGHT 2
+		vectoradd TARGET_POS z HALF_HEIGHT
+	}
+  	local TARGET_DIST $dist(TARGET_POS,game.monster.origin)
+	divide TARGET_DIST ANGLE_ADJ_DIVIDER
+	setangle add_view.pitch TARGET_DIST
+	////dbg Aimup TARGET_DIST vs $get(HUNT_LASTTARGET,range) speed ATTACK_SPEED div ANGLE_ADJ_DIVIDER
+}

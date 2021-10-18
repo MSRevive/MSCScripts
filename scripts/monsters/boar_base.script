@@ -1,0 +1,203 @@
+//Weak Boar
+
+{
+   const SOUND_STRUCK1 weapons/cbar_hitbod1.wav
+   const SOUND_STRUCK2 weapons/cbar_hitbod2.wav
+   const SOUND_STRUCK3 weapons/cbar_hitbod3.wav
+   const SOUND_PAIN monsters/boar/boarpain.wav
+   const SOUND_IDLE1 monsters/boar/boaridle.wav
+   const SOUND_IDLE2 monsters/boar/boarsight2.wav
+   const SOUND_CHARGE monsters/boar/boarsight.wav
+   const SOUND_DEATH monsters/boar/boardeath.wav
+
+	setvard HUNT_AGRO 0 //boards are non-agro unless specified otherwise
+
+   precache SOUND_IDLE1
+   precache SOUND_IDLE2
+   precache SOUND_DEATH
+   precache SOUND_CHARGE
+
+   setvar ANIM_IDLE		idle1
+   setvar ANIM_IDLE_EATGRASS	idle2
+   setvar ANIM_RUN		run		//Not a constant because it changes
+   const ANIM_BOAR_RUN		run
+   setvar ANIM_WALK		walk
+   const ANIM_FORWARD		gore_forward
+   const ANIM_RIGHT		gore_right
+   const ANIM_LEFT		gore_left
+   const ANIM_STOMP		stompsnort
+   const ANIM_CHARGE		charge
+   setvard ANIM_DEATH		die1
+
+   setvard MOVE_RANGE		64
+   setvard ATTACK_RANGE		96
+   setvard ATTACK_HITRANGE	120
+   const ATTACK_HITCHANCE	50%
+   setvard DROP_ITEM1		skin_boar   //base_monster - Item Drop #1
+   setvard DROP_ITEM1_CHANCE	20%	    //base_monster - Chance of item drop #1
+
+   setvard CAN_RETALIATE	1	    //Not const
+   const RETALIATE_CHANGETARGET_CHANCE 75%  //base_npc_attack - Automatically switch targets to the last damaging player
+
+   setvard BOAR_IS_CHARGING	0
+   setvard BOAR_CHARGE_TARGET	ÅPNONEÅP
+	setvard ANIM_ATTACK ANIM_FORWARD //JUN2007b - start with some sort of attack to avoid anim error
+
+   const CL_SCRIPT	monsters/boar_base_cl_charge
+   precachefile 	CL_SCRIPT
+}
+
+#include monsters/base_monster
+
+{  npc_spawn
+
+   width 50
+   height 40
+   //ov 120
+   race wildanimal
+   roam 1
+   hearingsensitivity 0
+
+   setidleanim ANIM_IDLE
+   setmoveanim ANIM_WALK
+   setskin SKIN_NAME
+
+   setmodel monsters/boar.mdl
+
+	if ( $lcase(game.map.name) equals nightmare_thornlands ) setmonsterclip 0
+}
+
+{
+   repeatdelay $rand(10,25)
+
+   if !IS_HUNTING
+   if !IS_FLEEING
+
+   playrandomsound game.sound.voice game.sound.maxvol SOUND_IDLE1 SOUND_IDLE2
+}
+
+{
+   repeatdelay $rand(8,12)
+
+   if !IS_HUNTING
+   if !IS_FLEEING
+
+   playanim once ANIM_IDLE_EATGRASS
+}
+
+{  game_damaged_other
+
+   if PUSH_VEL isnot 'PUSH_VEL'
+
+   if( BOAR_IS_CHARGING ) callevent boar_charge_hit
+   else addvelocity ent_laststruckbyme PUSH_VEL//Push the player a bit
+
+}
+
+{  npc_struck	//Hit by someone
+   
+   playrandomsound game.sound.body 5 SOUND_PAIN SOUND_STRUCK2 SOUND_PAIN
+}
+
+   
+{  npc_attack	//Switch up my attack
+   
+   local NEXT_ATTACK $rand(0,2)
+   if( NEXT_ATTACK == 0 ) setvard ANIM_ATTACK ANIM_FORWARD
+   else if( NEXT_ATTACK == 1 ) setvard ANIM_ATTACK ANIM_LEFT
+   else if( NEXT_ATTACK == 2 ) setvard ANIM_ATTACK ANIM_RIGHT
+}
+
+
+   //Charge !
+   //--------
+{  npc_targetsighted
+  
+   if BOAR_CAN_CHARGE
+   if !BOAR_IS_CHARGING
+   if $get(HUNT_LASTTARGET,dist) > 256
+   
+   //if HUNT_LASTTARGET isnot BOAR_CHARGE_TARGET
+
+   setvard BOAR_CHARGE_TARGET HUNT_LASTTARGET
+   callevent boar_charge
+}
+
+{  boar_charge
+
+   playsound game.sound.voice game.sound.maxvol SOUND_CHARGE
+	setvard AS_ATTACKING game.time
+   playanim once ANIM_STOMP
+   movespeed 3
+   setvar ANIM_RUN ANIM_CHARGE
+   setvard BOAR_IS_CHARGING 1
+   setvard CAN_ATTACK 0
+   setvard CAN_HEAR 0
+   setvard CAN_RETALIATE 0
+   setvard BOAR_CAN_FLEE CAN_FLEE
+   setvard CAN_FLEE 0
+   callevent 1 boar_charge2
+   callevent 15 boar_charge_stop
+ 
+   clientevent new all_in_sight CL_SCRIPT $get(ent_me,index)	//Start Dust effect
+   setvard CL_SCRIPT_ID game.script.last_sent_id
+}
+{  boar_charge2
+   playsound game.sound.voice game.sound.maxvol SOUND_CHARGE
+}
+
+{  boar_charge_stop
+
+   if BOAR_IS_CHARGING
+
+   movespeed 1
+   setvar ANIM_RUN ANIM_BOAR_RUN
+   setvard BOAR_CHARGE_TARGET ÅPNONEÅP
+   setvard BOAR_IS_CHARGING 0
+   setvard CAN_ATTACK 1
+   setvard CAN_HEAR 1
+   setvard CAN_RETALIATE 1
+   setvard CAN_FLEE BOAR_CAN_FLEE
+   clientevent remove all CL_SCRIPT 				//Remove Dust effect   
+}
+
+{
+   repeatdelay 0.1
+
+   if BOAR_IS_CHARGING
+   if !IS_FLEEING
+
+   local CHARGE_RANGE MOVE_RANGE
+   multiply CHARGE_RANGE 1.8
+   if $get(BOAR_CHARGE_TARGET,dist) <= CHARGE_RANGE
+
+   dodamage BOAR_CHARGE_TARGET ATTACK_HITRANGE BOAR_CHARGE_DMG 100%
+   callevent boar_charge_stop
+}
+
+{  boar_charge_hit
+
+	//this prevents making boar anti-stun possible
+   //applyeffect ent_laststruckbyme effects/effect_push 3 $relvel(0,200,200) 0
+   addvelocity ent_laststruckbyme $relvel(0,200,200)
+   applyeffect ent_laststruckbyme effects/effect_stun 3 0 1
+}
+
+{  npc_wander
+ 
+   if BOAR_IS_CHARGING
+   callevent boar_charge_stop
+}
+
+{ gore_forward
+	//messageall green gore - anim
+	if IS_HARD
+	local TARG_RANGE $get(HUNT_LASTTARGET,range)
+	local MAX_PUSH_RANGE 96 //constant
+	if TARG_RANGE < MAX_PUSH_RANGE
+	local RANGE_PERCENT TARG_RANGE
+	divide RANGE_PERCENT MAX_PUSH_RANGE
+	local PUSH_STR $get_skill_ratio(RANGE_PERCENT,400,110)
+	if ( G_DEVELOPER_MODE ) gplayermessage HUNT_LASTTARGET gore - PUSH str PUSH_STR per RANGE_PERCENT rng TARG_RANGE
+	addvelocity HUNT_LASTTARGET $relvel(0,PUSH_STR,110)
+}

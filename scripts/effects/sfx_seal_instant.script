@@ -1,0 +1,176 @@
+//effect script for exploding temporary seal
+//- this assumes using the fixed size seals, may need to adjust script for smaller seals or to make another
+#scope client
+{
+	const SEAL_MODEL weapons/magic/seals.mdl
+	const FX_DURATION 2.0
+}
+
+{ client_activate //<origin> <type> <radius> <modelidx>
+
+	setvard FX_ORIGIN PARAM1
+	setvard SEAL_TYPE PARAM2
+	setvard SEAL_RAD PARAM3
+	setvard SEAL_BODY PARAM4
+	setvard SEAL_PITCH 100
+
+	if ( SEAL_TYPE equals fire )
+	{
+		setvard SEAL_COLOR (255,0,0)
+		setvard SEAL_SOUND ambience/steamburst1.wav
+		callevent fire_aura
+	}
+	else if ( SEAL_TYPE equals cold )
+	{
+		setvard SEAL_COLOR (128,128,255)
+		setvard SEAL_SOUND magic/freeze.wav
+		callevent cold_aura
+	}
+	else if ( SEAL_TYPE equals lightning )
+	{
+		setvard SEAL_COLOR (255,255,0)
+		setvard SEAL_SOUND magic/lightning_strike2.wav
+		callevent lightning_aura
+	}
+	else if ( SEAL_TYPE equals poison )
+	{
+		setvard SEAL_COLOR (0,255,0)
+		setvard SEAL_SOUND ambience/steamburst1.wav
+		setvard SEAL_PITCH 60
+		callevent poison_aura
+	}
+
+	callevent 2.0 end_fx
+
+	setvard FX_ACTIVE 1
+	sound.play3d SEAL_SOUND 10 FX_ORIGIN 0.8 0 SEAL_PITCH
+	cleffect tempent model SEAL_MODEL FX_ORIGIN setup_seal_instant
+	setvard LIGHT_RADIUS SEAL_RAD
+	multiply LIGHT_RADIUS 1.11
+	cleffect light new FX_ORIGIN LIGHT_RADIUS SEAL_COLOR FX_DURATION
+}
+
+{ end_fx
+	setvard FX_ACTIVE 0
+	callevent 2.0 remove_fx
+}
+
+{ remove_fx
+	removescript
+}
+
+{ setup_seal_instant
+
+	cleffect tempent set_current_prop death_delay FX_DURATION
+	cleffect tempent set_current_prop rendermode add
+	cleffect tempent set_current_prop framerate 1.0
+	cleffect tempent set_current_prop frames 40
+	cleffect tempent set_current_prop gravity 0
+	cleffect tempent set_current_prop collide none
+	cleffect tempent set_current_prop fadeout lifetime
+	cleffect tempent set_current_prop body SEAL_BODY
+	cleffect tempent set_current_prop sequence 0
+}
+
+//fire
+{ fire_aura
+	cleffect tempent model weapons/projectiles.mdl FX_ORIGIN make_aura
+}
+
+{ make_aura
+	cleffect tempent set_current_prop death_delay FX_DURATION
+	cleffect tempent set_current_prop body 51
+	cleffect tempent set_current_prop framerate 0.5
+	cleffect tempent set_current_prop sequence 8
+	cleffect tempent set_current_prop rendermode add
+	cleffect tempent set_current_prop renderamt 100
+	cleffect tempent set_current_prop gravity 0
+	cleffect tempent set_current_prop collide none
+	cleffect tempent set_current_prop frames 11
+	cleffect tempent set_current_prop angles $vec(0,90,0)
+	cleffect tempent set_current_prop velocity $vec(0,0,0)
+	cleffect tempent set_current_prop movetype 0
+	cleffect tempent set_current_prop scale 8.0
+}
+
+//cold
+{ cold_aura
+	cleffect tempent model weapons/projectiles.mdl FX_ORIGIN setup_shpere
+}
+
+{ setup_shpere
+	cleffect tempent set_current_prop death_delay 1.0
+	cleffect tempent set_current_prop scale 1.0
+	cleffect tempent set_current_prop body 1
+	cleffect tempent set_current_prop sequence 8
+	cleffect tempent set_current_prop frames 255
+	cleffect tempent set_current_prop gravity -0.5
+	cleffect tempent set_current_prop framerate 1.0
+	//cleffect tempent set_current_prop rendermode add
+	//cleffect tempent set_current_prop renderamt 100
+	cleffect tempent set_current_prop collide none
+	cleffect tempent set_current_prop movetype 0
+	cleffect tempent set_current_prop fadeout lifetime
+}
+
+//lightning
+{ lightning_aura
+	setvard CYCLE_ANGLE 0
+	calleventloop 17 create_beams
+}
+
+{ create_beams
+	local CL_BEAM_START FX_ORIGIN
+	local BEAM_RAD SEAL_RAD
+	multiply BEAM_RAD 0.8
+	vectoradd CL_BEAM_START $relpos($vec(0,CYCLE_ANGLE,0),$vec(0,BEAM_RAD,0))
+	local CL_BEAM_END CL_BEAM_START
+	vectoradd CL_BEAM_END z 128
+	cleffect beam_points CL_BEAM_START CL_BEAM_END lgtning.spr 1.0 5.0 3.0 200 50 30 (1.0,1.0,0.0)
+	add CYCLE_ANGLE 20
+}
+
+//poison
+{ poison_aura
+	setvard SPRITE_NAME poison_cloud.spr
+	setvard SPRITE_COLOR (0,255,0)
+	setvard SPRITE_RENDERAMT 200
+	setvard SPRITE_RENDERMODE add
+	setvard SPRITE_FRAMERATE 30
+	setvard SPRITE_NFRAMES 17
+	setvard SPRITE_SCALE 1.0
+
+	setvard CYCLE_ANGLE 0
+	calleventloop 17 create_sprites
+}
+
+{ create_sprites
+	local SPR_POS FX_ORIGIN
+	vectoradd SPR_POS $relpos($vec(0,CYCLE_ANGLE,0),$vec(0,10,0))
+	cleffect tempent sprite SPRITE_NAME SPR_POS setup_ring_sprite
+	add CYCLE_ANGLE 20
+}
+
+{ setup_ring_sprite
+	local FADE_DEL 1.0
+	local SPRITE_SPEED 100
+
+	if ( FX_RADIUS > 128 )
+	{
+		local FADE_DEL 2.0
+		local SPRITE_SPEED 400
+	}
+
+	cleffect tempent set_current_prop death_delay 	1.0
+	cleffect tempent set_current_prop rendercolor SPRITE_COLOR
+	cleffect tempent set_current_prop renderamt	SPRITE_RENDERAMT
+	cleffect tempent set_current_prop rendermode SPRITE_RENDERMODE
+	cleffect tempent set_current_prop framerate	SPRITE_FRAMERATE
+	cleffect tempent set_current_prop frames	SPRITE_NFRAMES
+	cleffect tempent set_current_prop scale 	SPRITE_SCALE
+	cleffect tempent set_current_prop gravity 	0
+	local SPRITE_TURN $relvel($vec(0,CYCLE_ANGLE,0),$vec(0,SPRITE_SPEED,0))
+	cleffect tempent set_current_prop velocity SPRITE_TURN
+	cleffect tempent set_current_prop collide 	none
+	cleffect tempent set_current_prop fadeout lifetime
+}

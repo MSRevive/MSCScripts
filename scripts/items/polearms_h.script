@@ -1,0 +1,127 @@
+{
+	const BASE_LEVEL_REQ 30
+
+	const HOLY_CIRCLE_MP 200
+	const HOLY_CIRCLE_DURATION 30.0
+
+	const VMODEL_IDX 4 //viewmodel offset
+	const PMODEL_FILE weapons/p_weapons4.mdl //p_model (world/player model file)
+	const PMODEL_IDX_FLOOR 15 //p_model floor offset
+	const PMODEL_IDX_HANDS 14 //p_model hands offset
+
+	const MELEE_DMG 200 //max damage
+	const MELEE_RANGE 120 //max reach
+	const MELEE_DMG_TYPE holy
+	const MELEE_STARTPOS (0,0,5) //aims a bit higher than center
+
+	const POLE_MIN_RANGE 60 //short range (less than this does min damage)
+
+	const POLE_MIN_DMG_MULTI 0.5 //min damage multiplier
+	const POLE_MAX_DMG_MULTI 1.75 //max damage multiplier
+
+	const POLE_CAN_POKE1 1 //basic forward thrust attack
+	const POLE_CAN_POKE2 1 //charged attack (spin thrust) - dbl damage, requires +2 skill levels above base
+	const POLE_CAN_SWIPE 0 //swipe attack (when strafing - doesn't use fall-off system)
+	const POLE_CAN_BLOCK 1 //blocks on right click
+	const POLE_CAN_SPIN 0 //spins when right click + backpeddle after 2 seconds
+	const POLE_CAN_REPEL 1 //pushes monsters away when blocking + forward, but aborts spin
+	const POLE_CAN_BACKHAND 1 //attacks with back end of stick when backpeddling (shorter range, no fall off, similar to swipe, but slower)
+
+	const POLE_BACKHAND_DMG 150 //backhand damage
+	const POLE_BACKHAND_DMG_RANGE 10 //+/- random damage adjust for backhand attack
+	const POLE_BACKHAND_DMG_TYPE pierce //backhand attack may do slash instead of pierce, etc
+	const POLE_BACKHAND_RANGE 40 //range for backhand (usually shorter)
+	const POLE_BACKHAND_ACCURACY 90% //accuracy for backhand (doesn't use fall-off system, so isn't 100%)
+	const POLE_BACKHAND_REPEL 500
+
+	const POLE_CAN_POWER_THROW 1
+	const POLE_THROW_POWER 800 //force of throw
+	const POLE_THOW_PROJECTILE proj_pole_holy //throw projectile scriptname
+}
+
+#include items/polearms_base
+
+{ polearm_spawn
+
+	name  a|Holy Lance
+	desc  A spear often wielded by Felewyn's Seekers
+	weight  30
+	size  2
+	value 4000
+	sethudsprite trade 78
+} 
+
+{ polearm_register_attacks
+	//holy circle register
+	local reg.attack.mpdrain 0
+	local reg.attack.type strike-land
+	local reg.attack.range 10
+	local reg.attack.dmg 1
+	local reg.attack.dmg.range 0
+	local reg.attack.dmg.type holy
+	local reg.attack.energydrain 5
+	local reg.attack.stat spellcasting.divination
+	local reg.attack.hitchance 100
+	local reg.attack.priority 3
+	local reg.attack.delay.strike 0.1
+	local reg.attack.delay.end 0.2
+	local reg.attack.ofs.startpos 0
+	local reg.attack.ofs.aimang 0
+	local reg.attack.noise 5000
+	local reg.attack.keys -attack1
+	local reg.attack.callback holy_circle
+	local reg.attack.chargeamt 300%
+	local reg.attack.reqskill 25
+	registerattack
+}
+
+{ holy_circle_start
+	playviewanim VANIM_WIDE
+	playowneranim once PANIM_SWIPE2 global.anim.combatwalk 1
+	dbg holy_circle_start
+}
+
+{ holy_circle_strike
+
+	if game.serverside
+	if ( $get(ent_owner,mp) < HOLY_CIRCLE_MP )
+	{
+		dplayermessage ent_owner "Holy Lance: Insufficient Mana for Holy Aura"
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	if ( $get(ent_owner,scriptvar,'PLR_HAURA_ACTIVE') )
+	{
+		dplayermessage ent_owner "Holy Lance: Holy aura already active"
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	givemp ent_owner $neg(HOLY_CIRCLE_MP)
+
+	local HEAL_POWER $get(ent_owner,skill.spellcasting.divination)
+	divide HEAL_POWER 4
+
+	callexternal ent_owner ext_holy_aura HOLY_CIRCLE_DURATION 128 HEAL_POWER
+}
+
+{ bweapon_effect_remove
+	dbg bweapon_effect_remove
+	callexternal ent_owner ext_end_holy_aura
+}
+
+{ bs_global_command
+	if PARAM1 equals $get(ent_owner,id)
+	callexternal ent_owner ext_end_holy_aura
+}
+
+{ game_takedamage //1: Attacker  2: Inflictor  3: dmg  4: dmg type
+	if $get(ent_owner,scriptvar,'PLR_HAURA_ACTIVE')
+	if ( $get(PARAM1,race) equals undead ) local REDUCE_DMG 1
+	if ( $get(PARAM1,scriptvar,'IS_UNHOLY') ) local REDUCE_DMG 1
+	local DMG_TAKEN PARAM3
+	multiply DMG_TAKEN 0.5
+	setdmg dmg DMG_TAKEN
+	returndata 0.5
+}

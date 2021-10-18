@@ -1,0 +1,126 @@
+//Spiral arrow - does damage as it flies
+{
+	const MODEL_HANDS      		weapons/projectiles.mdl
+	const MODEL_WORLD      		weapons/projectiles.mdl
+	const ARROW_BODY_OFS		55
+	const PROJ_ANIM_IDLE		spin_horizontal_fast
+
+	const ARROW_SOLIDIFY_ON_WALL 0
+
+	const HITWALL_VOL 2
+
+	const PROJ_MOTIONBLUR 0
+
+	const MODEL_BODY_OFS		55
+	const PROJ_DAMAGE			0
+	const PROJ_STICK_DURATION	0
+	const PROJ_SOLIDIFY_ON_WALL	0  //Does not turn solid when a wall is hit
+
+	const PROJ_DAMAGE 0 //no affect on PROJ_IGNORENPC projectiles
+	const PROJ_DAMAGE_AOE_RANGE	0
+	const PROJ_DAMAGE_AOE_FALLOFF	0
+	const PROJ_DAMAGE_TYPE		dark
+
+	const PROJ_COLLIDEHITBOX 1
+	const PROJ_IGNORENPC 1	//flies through players/NPCs
+	const PROJ_ANIM_IDLE spin_vertical_fast
+
+	const SCAN_RANGE 64
+}
+
+#include items/proj_arrow_base
+
+{ arrow_spawn
+
+	name 	a|Skull Scythe
+	desc 	Someone threw this thing with the intention of doing harm
+	weight 	0
+	size 	1
+	value	1
+	gravity	0.0001
+
+	setmodel weapons/projectiles.mdl
+	setmodelbody 0 ARROW_BODY_OFS //%%
+//	setprop ent_me rendermode 5
+//	setprop ent_me renderamt 255
+
+	svplaysound 1 10 fans/fan1.wav
+}
+
+{ [override] game_fall //override base_arrow.  Just do nothing
+}
+
+{ [override] game_projectile_hitnpc
+}
+
+{ [override] [server] game_projectile_landed
+	callevent remove_me
+}
+
+{ [server] game_projectile_hitwall
+	callevent remove_me
+}
+
+{ game_tossprojectile
+
+	callevent 10.0 remove_me //max dist
+
+	if game.serverside
+
+	if ( !$get(ent_expowner,isplayer) )
+	{
+		setvard DMG_AMT $get(ent_expowner,scriptvar,'DMG_SCYTHE_THROW')
+		setvard WEAPON_ID $get(ent_expowner,id)
+		setvard ACTIVE_SKILL none
+	}
+	else
+	{
+		setvard DMG_AMT $get(ent_expowner,skill.spellcasting.affliction)
+		multiply DMG_AMT 3
+		setvard WEAPON_ID $get(ent_expowner,scriptvar,'PLR_ACTIVE_WEAPON')
+		dbg game_tossprojectile WEAPON_ID
+		callexternal WEAPON_ID ext_register_projectile $get(ent_me,id)
+		setvard ACTIVE_SKILL $get(WEAPON_ID,scriptvar,'WEAPON_PRIMARY_SKILL')
+	}
+
+	setvard IS_ACTIVE 1
+	callevent 0.01 damage_area
+}
+
+{ damage_area
+	if IS_ACTIVE
+	callevent 0.2 damage_area
+	//<target|(src_origin)> <range|aoe|(dest_origin)|direct> <damage> <cth|fall_off> <attacker> <inflciter> <skill|none> <dmg_type> [flag_string]
+	xdodamage $get(ent_me,origin) SCAN_RANGE DMG_AMT 0.75 ent_expowner WEAPON_ID ACTIVE_SKILL dark
+}
+
+{ [override] game_projectile_hitwall
+	callevent remove_me
+}
+
+{ remove_me
+	if ( game.serverside )
+	{
+		if ( !$get(ent_expowner,isplayer) )
+		{
+			callexternal ent_expowner ext_sscythe_done //tell monster his ball popped
+		}
+		else
+		{
+			local SPR_POS $get(ent_expowner,origin)
+			local OWNER_YAW $get(ent_expowner,angles.yaw)
+			vectoradd SPR_POS $relpos($vec(0,OWNER_YAW,0),$vec(10,32,20))
+
+			//same CL effect as Unholy Blade on return
+			clientevent new all items/proj_ub_cl $get(ent_me,origin) SPR_POS
+
+			if PARAM1 isnot remote //when called by player
+			callexternal $get(ent_expowner,scriptvar,'PLR_ACTIVE_WEAPON') ext_projectile_landed
+		}
+		
+		setvard IS_ACTIVE 0
+		svplaysound 1 0 fans/fan1.wav
+		deleteent ent_me
+	}
+	removescript
+}

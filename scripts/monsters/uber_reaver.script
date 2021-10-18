@@ -1,0 +1,460 @@
+//Ice Reaver Patriarch by Thothie from monsters/ice_reaver for Crow
+
+{
+	setvar IS_UNHOLY 1
+
+	if ( $lcase(game.map.name) equals lodagond-1 ) setvard NPC_IS_BOSS 1
+
+	const NPC_BOSS_REGEN_RATE 0.1
+	const NPC_BOSS_RESTORATION 0.5
+
+	//new
+	const FREQ_ICE_BLAST 30.0
+	const FREQ_SHOCK_BURST 45.0
+	const FREQ_SMASH 10.0
+	const DMG_FROST 60.0
+	const DMG_SHOCK_BURST 20.0
+	const CHANCE_FREEZE 2 //1 in X chance
+	const DMG_STORM 20.0
+	const STORM_DUR 60.0
+	const STORM_RAD 800
+	const LODAGOND_LOC (-1728,2176,-576)
+	const FREEZE_DURATION 15.0
+	const SHOCK_CONE_RANGE 1024
+		
+	//from Ice Reaver
+	const SOUND_WALK1 common/npc_step1.wav
+	const SOUND_WALK2 common/npc_step2.wav
+	const SOUND_WALK3 common/npc_step3.wav
+	const SOUND_WALK4 common/npc_step4.wav
+	const SOUND_RUN1 gonarch/gon_step1.wav
+	const SOUND_RUN2 gonarch/gon_step2.wav
+	const SOUND_RUN3 gonarch/gon_step3.wav //optional
+	const SOUND_DEATH gonarch/gon_die1.wav
+	const SOUND_WARCRY gonarch/gon_alert1.wav //check
+	const SOUND_STRUCK1 gonarch/gon_sack1.wav //check
+	const SOUND_STRUCK2 gonarch/gon_sack2.wav //check
+	const SOUND_PAIN_STRONG gonarch/gon_pain2.wav
+	const SOUND_PAIN_WEAK gonarch/gon_pain4.wav
+	const SOUND_PAIN_NEAR_DEATH gonarch/gon_pain5.wav
+	const SOUND_SLASHHIT zombie/claw_strike1.wav //overused, look for alternates
+	const SOUND_SMASHHIT zombie/claw_strike2.wav //overused, look for alternates
+	const SOUND_SLASHMISS zombie/claw_miss1.wav //overused, look for alternates
+	const SOUND_SMASHMISS zombie/claw_miss2.wav //overused, look for alternates
+	const SOUND_BEAMCHARGE debris/beamstart2.wav
+	const SOUND_BEAMFIRE debris/beamstart9.wav
+	const SOUND_SEARCH1 gonarch/gon_childdie3.wav
+	const SOUND_SEARCH2 gonarch/gon_childdie2.wav
+	const SOUND_SEARCH3 gonarch/gon_childdie1.wav
+	setvard SOUND_ATTACKHIT unset
+	setvard SOUND_ATTACKMISS unset
+
+	//called indirectly, so need precache
+	precache SOUND_SLASHMISS
+	precache SOUND_SLASHHIT
+	precache SOUND_SMASHMISS
+	precache SOUND_SMASHHIT
+	precache SOUND_PAIN_STRONG 
+	precache SOUND_PAIN_WEAK
+	precache SOUND_PAIN_NEAR_DEATH
+
+	//stun burst media
+	precache magic/boom.wav
+
+	//defaults are a little too far, prob cuz of large model
+	setvard ATTACK_RANGE 200
+	setvard ATTACK_HITRANGE 250
+	setvard ATTACK_MOVERANGE 150 
+	setvard MOVE_RANGE 150 //this should be redundant, but ain't, for some reason
+
+	const STRONG_THRESHOLD 5000
+	const WEAK_THRESHOLD 2000
+	const NEAR_DEATH_THRESHOLD 1000
+	const PROJECTILE_RANGE 256
+	const MAX_PROJECTILE_AMMO 1
+
+	const SLASH_DAMAGE '$rand(50,100)'
+	const SMASH_DAMAGE '$rand(100,250)'
+	const SLASH_HITCHANCE 90%
+	const SMASH_HITCHANCE 100%
+	const SMASH_HITRANGE 200
+	const SMASH_STUN_CHANCE 50%
+
+	const BEAM_FREQ 45.0
+	const BEAM_DAMAGE 200
+	const SHOCK_DAMAGE 100
+	const SHOCK_DURATION $rand(5,10)
+
+	setvar ANIM_WALK walk
+	setvar ANIM_RUN run
+	setvar ANIM_IDLE idle1
+	const ANIM_SEARCH idle2
+	setvard ANIM_FLINCH turnl
+	const ANIM_SMASH mattack3
+	const ANIM_SLASH mattack2
+	const ANIM_PROJECTILE distanceattack
+	const ANIM_ALERT distanceattack
+	setvard ANIM_DEATH1 dieforward
+	setvard ANIM_DEATH2 diesimple
+	setvard ANIM_DEATH3 diesideways
+	const ANIM_VICTORY1 victoryeat
+	const ANIM_VICTORY2 victorysniff
+	setvard ANIM_VICTORY victoryeat
+	setvard ANIM_DEATH dieforward
+	setvard ANIM_ATTACK mattack3
+
+	setvard CAN_FLINCH 1
+	setvard FLINCH_HEALTH 500
+	setvard FLINCH_CHANCE 30
+
+	const DOSMASH_CHANCE 20
+
+	setvard IMMUNE_COLD 1
+	setvard IMMUNE_FIRE 0.2 //he's just THAT cold
+	setvard IMMUNE_STUN 75
+
+	const LIGHTNING_SPRITE lgtning.spr
+	const MONSTER_MODEL monsters/abominable_huge.mdl
+	precache LIGHTNING_SPRITE
+	precache SOUND_DEATH //handled by base_npc
+}
+
+#include monsters/base_monster_new
+
+{ npc_spawn
+
+	name an|Maldora's Pet
+	hp 9000
+	setvard HP_STORAGE 9000
+	roam 1
+	takedmg all 0.7
+	takedmg cold 0.0
+	takedmg ice 0.0
+	takedmg fire 0.2
+	takedmg holy 1.0
+	width 200
+	height 96
+	setvard NPC_GIVE_EXP 2000 //4000 maybe more appropriate, but he's too close to the beginning of the level
+	race demon
+	hearingsensitivity 3
+	setmodel MONSTER_MODEL
+	setmoveanim ANIM_WALK
+
+	setvard NPC_OVERSIZED 1
+	nopush 1
+}
+
+{ npc_post_spawn
+	local L_MAP_NAME $lcase(game.map.name)
+	if L_MAP_NAME equals lodagond-1
+	setvard ON_LODAGOND 1
+}
+
+{ npcatk_validatetarget //first spot
+
+	if $get(PARAM1,isplayer)
+	if !DID_WARCRY
+
+	////dbg temp Spotted Target $get(NPCATK_TARGET,name)
+
+	playsound 0 10 SOUND_WARCRY
+	setvard DID_WARCRY 1	
+	setvard FIRST_ATTACK 1
+}
+
+{ my_target_died
+
+	callevent ice_reaver_beam_reload
+
+	hp HP_STORAGE //anti-heal
+
+	if !$cansee(enemy)
+
+	local RAND_VICT $rand(1,2)
+	if ( RAND_VICT == 1 ) setvard ANIM_VICTORY ANIM_VICTORY1
+	if ( RAND_VICT == 2 ) setvard ANIM_VICTORY ANIM_VICTORY2
+	playanim critical ANIM_VICTORY
+	playrandomsound 0 10 SOUND_SEARCH1 SOUND_SEARCH2 SOUND_SEARCH3
+}
+
+//slash (right hook)
+{ attack_mele1 //called from model ANIM_SLASH (mattack2) @ frame 30
+
+	setvard SWING_ATTACK 1
+
+	local RANDOM_PUSH $rand(100,175)
+	setvard PUSH_VEL $relvel(-100,RANDOM_PUSH,120)
+	setvard SOUND_ATTACKHIT SOUND_SLASHHIT
+	setvard SOUND_ATTACKMISS SOUND_SLASHMISS
+	setvard STUN_ATTACK 0
+
+	if $get(NPCATK_TARGET,range) < ATTACK_HITRANGE
+	callevent npcatk_dodamage NPCATK_TARGET direct SLASH_DAMAGE SLASH_HITCHANCE $get(ent_me,id) slash
+
+	if !DO_SMASH_DELAY
+	setvard DO_SMASH_DELAY 1
+	callevent FREQ_SMASH reset_do_smash_delay
+	setvard ANIM_ATTACK ANIM_SMASH
+
+}
+
+{ reset_do_smash_delay
+	setvard DO_SMASH_DELAY 0
+}
+
+//smash (overhead strike)
+{ attack_mele2 //called from model ANIM_SMASH (mattack3) @ frame 30
+
+	setvard SWING_ATTACK 1
+
+	setvard SOUND_ATTACKHIT SOUND_SMASHHIT
+	setvard SOUND_ATTACKMISS SOUND_SMASHMISS
+
+	local RANDOM_PUSH $rand(200,400)
+	setvard PUSH_VEL $relvel(-100,RANDOM_PUSH,120)
+	if ( $get(NPCATK_TARGET,range) < ATTACK_HITRANGE ) callevent npcatk_dodamage NPCATK_TARGET direct SMASH_DAMAGE SMASH_HITCHANCE $get(ent_me,id) slash
+	setvard STUN_ATTACK 1
+
+	createnpc monsters/summon/stun_burst $relpos(0,0,0) $get(ent_me,id) 512 0 SMASH_DAMAGE 
+	setvard ANIM_ATTACK ANIM_SLASH
+}
+
+{ npcatk_search_init_advanced
+
+	if !SEARCH_ANIM_DELAY
+	setvard NPC_DELAYING_UNSTUCK 10.0
+	playanim critical ANIM_SEARCH
+	playrandomsound 0 10 SOUND_SEARCH1 SOUND_SEARCH2 SOUND_SEARCH3
+	setvard SEARCH_ANIM_DELAY 1
+	callevent 5.0 reset_search_anim
+}
+
+{ reset_search_anim
+	setrvard SEARCH_ANIM_DELAY 0
+}
+
+{ game_dodamage //1: Attack Hit (1/0)  2: Entity Attack hit  3:  Start Position  4:  End Position
+
+	if ( !PARAM1 )
+	{
+		if SWING_ATTACK
+		if ( SOUND_ATTACKMISS isnot unset ) playsound 0 10 SOUND_ATTACKMISS
+	}
+
+	if ( PARAM1 )
+	{
+		if SWING_ATTACK
+		if ( SOUND_ATTACKHIT isnot unset )	playsound 0 10 SOUND_ATTACKHIT
+		addvelocity ent_laststruckbyme PUSH_VEL
+		if ( $rand(1,CHANCE_FREEZE) == 1 ) applyeffect PARAM2 effects/effect_frostbite_dmg 5 $get(ent_me,id) DMG_FROST
+	}
+
+	if ( STUN_ATTACK )
+	{
+		setvard STUN_ATTACK 0
+		if ( $rand(1,100) > SMASH_STUN_CHANCE ) applyeffect PARAM2 effects/heavy_stun 10 $get(ent_me,id)
+	}
+	setvard SWING_ATTACK 0
+}
+
+{ game_struck
+
+	setvard HP_STORAGE game.monster.hp //anti-heal
+
+	if ( game.monster.hp >= 1500 ) local PAIN_SOUND SOUND_PAIN_STRONG
+	if ( game.monster.hp < 1500 ) local PAIN_SOUND SOUND_PAIN_WEAK
+	if ( game.monster.hp < 500 ) local PAIN_SOUND SOUND_PAIN_NEAR_DEATH
+	playrandomsound 0 10 SOUND_STRUCK1 SOUND_STRUCK2 SOUND_STRUCK1 SOUND_STRUCK2 PAIN_SOUND
+}
+
+{ monster_walk_step //called from model anim walk at various frames
+
+	playrandomsound 0 5 SOUND_WALK1 SOUND_WALK2 SOUND_WALK3 SOUND_WALK4
+}
+
+{ monster_run_step //called from model anim run at various frames
+
+   	effect screenshake $relpos(0,0,0) 64 10 0.5 128
+	playrandomsound 0 8 SOUND_RUN1 SOUND_RUN2 SOUND_RUN3
+}
+
+{ npc_death //called from base_npc
+
+	if ( ON_LODAGOND ) callexternal GAME_MASTER gm_lodagond_ver 1
+
+	//death anims
+	local RAND_DEATH $rand(1,3)
+	if ( RAND_DEATH == 1 ) setvard ANIM_DEATH ANIM_DEATH1
+	if ( RAND_DEATH == 2 ) setvard ANIM_DEATH ANIM_DEATH2
+	if ( RAND_DEATH == 3 ) setvard ANIM_DEATH ANIM_DEATH3
+
+	if ( SKELS_ON ) callexternal all ext_crystal_remove
+
+	//;<gold_per_bag> <bags_player> <dist_from_monster> <min#bags> <max#bags>
+	callevent bm_gold_spew 50 3 100 4 30
+}
+
+{ game_reached_destination
+
+	//idle anims
+	if NPCATK_TARGET equals unset
+	if NPC_LOST_TARGET equals unset
+	if !$cansee(enemy)
+	local RAND_VICT $rand(1,2)
+	if ( RAND_VICT == 1 ) setvard ANIM_VICTORY ANIM_VICTORY1
+	if ( RAND_VICT == 2 ) setvard ANIM_VICTORY ANIM_VICTORY2
+	playanim critical ANIM_VICTORY
+}
+
+{ cycle_up //called from npc_attack when player spotted
+
+	if !STARTED_SPELLS
+	setvard STARTED_SPELLS 1
+	callevent 0.5 ice_storm
+	callevent FREQ_ICE_BLAST ice_blast
+	callevent FREQ_SHOCK_BURST do_shock_burst
+	callevent toggle_skeles
+}
+
+{ ice_storm
+
+	//dbg ice storm
+
+	playsound 0 10 SOUND_WARCRY
+	playanim critical ANIM_PROJECTILE
+	local BLIZ_LOC $relpos(0,0,0)
+	if ( ON_LODAGOND ) local BLIZ_LOC LODAGOND_LOC
+	createnpc monsters/summon/uber_blizzard BLIZ_LOC $get(ent_me,id) DMG_STORM STORM_DUR STORM_RAD 60%
+	local NEXT_STORM STORM_DUR
+	add NEXT_STORM 5
+	callevent NEXT_STORM ice_storm
+}
+
+{ ice_blast
+
+	playsound 0 10 SOUND_WARCRY
+	playanim critical ANIM_PROJECTILE
+	setvard DO_ICEBLAST 1
+	callevent toggle_skeles
+	callevent FREQ_ICE_BLAST ice_blast
+}
+
+{ do_shock_burst
+
+	//dbg shock burst
+
+	callevent FREQ_SHOCK_BURST do_shock_burst
+
+	playsound 0 10 SOUND_WARCRY
+	playanim critical ANIM_PROJECTILE
+	setidleanim ANIM_PROJECTILE
+	setmoveanim ANIM_PROJECTILE
+	setvard AS_ATTACKING game.time
+	add AS_ATTACKING 10
+	callevent npcatk_faceattacker NPCATK_TARGET
+	callevent npcatk_suspend_ai 1.0
+
+	callevent 1.0 do_shock_burst2
+}
+
+{ do_shock_burst2
+
+	setidleanim ANIM_IDLE
+	setmoveanim ANIM_RUN
+
+	//crashie, can't figure why, not enough time to fix - need new attack
+	//createnpc monsters/summon/shock_burst $relpos(0,0,0) $get(ent_me,id) DMG_SHOCK_BURST 512 4 (200,200,255) 200
+	playsound 0 10 SOUND_BEAMFIRE
+	local BEAM_START game.monster.origin
+	local BEAM_END BEAM_START
+	local MY_YAW $vec.yaw(game.monster.angles)
+	vectoradd BEAM_END $relpos($vec(0,MY_YAW,0),$vec(0,2000,0))
+	//effects beam point LIGHTNING_SPRITE 50 BEAM_START BEAM_END (255,255,255) 200 2.7 1.5
+	vectoradd BEAM_START $relpos($vec(0,MY_YAW,0),$vec(-64,30,64))
+	effect beam point LIGHTNING_SPRITE 250 BEAM_START BEAM_END (254,254,254) 150 50 0.2
+	local BEAM_START game.monster.origin
+	vectoradd BEAM_START $relpos($vec(0,MY_YAW,0),$vec(0,30,64))
+	effect beam point LIGHTNING_SPRITE 250 BEAM_START BEAM_END (254,254,254) 150 50 0.2
+	local BEAM_START game.monster.origin
+	vectoradd BEAM_START $relpos($vec(0,MY_YAW,0),$vec(64,30,64))
+	effect beam point LIGHTNING_SPRITE 250 BEAM_START BEAM_END (254,254,254) 150 50 0.2
+
+	getplayersnb PLAYER_LIST
+	calleventloop $get_token_amt(PLAYER_LIST) shock_can_see
+}
+
+{ shock_can_see
+	local CUR_PLAYER $get_token(PLAYER_LIST,game.script.iteration)
+	local CUR_ORG $get(CUR_PLAYER,origin)
+	if $get(CUR_PLAYER,range) < SHOCK_CONE_RANGE
+	if $within_cone(CUR_ORG,game.monster.origin,game.monster.angles,60)
+	local MON_CENT game.monster.origin
+	vectoradd MON_CENT z 128
+	effect beam point LIGHTNING_SPRITE 250 MON_CENT CUR_ORG (254,254,254) 150 50 0.2
+	applyeffect CUR_PLAYER effects/effect_shock_dmg SHOCK_DURATION $get(ent_me,id) SHOCK_DAMAGE
+	effect screenfade CUR_PLAYER 3 1 (255,255,255) 255 fadein
+}
+
+{ toggle_skeles
+	if ( !SKELS_ON ) callevent summon_skeles
+	if ( SKELS_ON ) callevent unsummon_skeles
+}
+
+{ unsummon_skeles
+
+	//remove skeles, resummon
+	setvard SKELS_ON 0
+	callexternal all ext_crystal_remove
+	callevent 10.0 summon_skeles
+}
+
+{ summon_skeles
+	setvard SKELS_ON 1
+	playsound 0 10 SOUND_PAIN_STRONG
+	usetrigger summon_skels
+}
+
+{ attack_ranged //called from model ANIM_PROJECTILE ("distanceattack") @ frame 40
+	
+	if DO_ICEBLAST
+	setvard DO_ICEBLAST 0
+	//createnpc monsters/summon/uber_ice_blast $relpos(0,0,0) 1024 FREEZE_DURATION
+	callevent do_iceblast
+}
+
+{ do_iceblast
+
+	//dbg ice blast
+
+	local BALL_DEST game.monster.origin
+	local ANG_ADJ $vec(0,0,0)
+	vectoradd BALL_DEST $relpos(ANG_ADJ,$vec(0,2000,64))
+	local START_OFS game.monster.origin
+	vectoradd START_OFS $relpos(ANG_ADJ,$vec(0,64,32))
+	createnpc monsters/summon/ice_blast START_OFS $get(ent_me,id) 10.0 BALL_DEST 
+
+	local BALL_DEST game.monster.origin
+	local ANG_ADJ $vec(0,90,0)
+	vectoradd BALL_DEST $relpos(ANG_ADJ,$vec(0,2000,64))
+	local START_OFS game.monster.origin
+	vectoradd START_OFS $relpos(ANG_ADJ,$vec(0,64,32))
+	createnpc monsters/summon/ice_blast START_OFS $get(ent_me,id) 10.0 BALL_DEST 
+
+	local BALL_DEST game.monster.origin
+	local ANG_ADJ $vec(0,180,0)
+	vectoradd BALL_DEST $relpos(ANG_ADJ,$vec(0,2000,64))
+	local START_OFS game.monster.origin
+	vectoradd START_OFS $relpos(ANG_ADJ,$vec(0,64,32))
+	createnpc monsters/summon/ice_blast START_OFS $get(ent_me,id) 10.0 BALL_DEST 
+
+	local BALL_DEST game.monster.origin
+	local ANG_ADJ $vec(0,270,0)
+	vectoradd BALL_DEST $relpos(ANG_ADJ,$vec(0,2000,64))
+	local START_OFS game.monster.origin
+	vectoradd START_OFS $relpos(ANG_ADJ,$vec(0,64,32))
+	createnpc monsters/summon/ice_blast START_OFS $get(ent_me,id) 10.0 BALL_DEST 
+}
+
+{ game_damaged
+	//dbg my_health game.monster.hp
+}

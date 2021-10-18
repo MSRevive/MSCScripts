@@ -1,0 +1,161 @@
+//Thothie Added speech feedback, HP/ATK determined magic hand side
+//- Becomes giant rat at SC 8 (basically, same monster, diff model/name)
+//Summoned Rat
+#scope server
+{
+
+   setvard I_R_PET 1
+
+	const SUMMON_CIRCLE_INDEX 12
+
+   const SUM_SAY_COME "*squeek!*"
+   const SUM_SAY_ATTACK "*squeek!* *squeek!*"
+   const SUM_SAY_HUNT "*squeek...*"
+   const SUM_SAY_DEFEND "*squeekie!*"
+   const SUM_SAY_DEATH "*SQUEEK!*"
+   const SUM_SAY_GUARD "*squeek!*"
+   const SUM_REPORT_SUFFIX "..er, I mean, *squeek*!?"
+
+	const ANIM_WALK_BASE walk
+	const ANIM_RUN_BASE run
+
+   setvar ANIM_IDLE idle1
+	const ANIM_WALK_BASE walk
+	const ANIM_RUN_BASE run
+   setvar ANIM_WALK walk
+   setvar ANIM_RUN run
+
+   setvard ANIM_ATTACK attack
+   setvard ANIM_DEATH die
+   setvard MOVE_RANGE 20
+   setvard ATTACK_RANGE 75
+   setvard ATTACK_HITRANGE 100
+   setvar ATTACK_HITCHANCE 90%
+   setvar TRICK_ANIM idle2
+
+   setvar SOUND_STRUCK1 weapons/cbar_hitbod1.wav
+   setvar SOUND_STRUCK2 weapons/cbar_hitbod1.wav
+   setvar SOUND_STRUCK3 weapons/cbar_hitbod1.wav
+   setvar SOUND_PAIN monsters/rat/squeak1.wav
+   setvar SOUND_ATTACK1 monsters/rat/squeak2.wav
+   setvar SOUND_IDLE1 monsters/rat/squeak2.wav
+   const SOUND_DEATH monsters/rat/squeak3.wav
+
+   setvard RETALIATE_CHANCE 75%  //base_npc_attack - Automatically switch targets to the last damaging player
+   setvard CAN_FLEE 0		//base_npc_attack - Whether I run away at low health
+   setvard CAN_HUNT 1
+   setvard CAN_HEAR 0
+   setvard CAN_FLINCH 0
+}
+
+#include monsters/summon/base_summon
+
+{
+   eventname summon_spawn
+
+   name a|Rat
+   fov 359
+   width 32
+   height 20
+   roam 1
+   hearingsensitivity 3
+   skilllevel 0
+   race human
+   setmodel monsters/rat.mdl
+   setmodelbody	1 0
+   setidleanim ANIM_IDLE
+   setmoveanim ANIM_WALK
+
+   callevent basesummon_attackall //Premptive attack
+
+   catchspeech rat_standup stand shake trick
+   catchspeech rat_rollover rollover "roll over"
+   catchspeech rat_playdead "play dead"
+}
+
+{
+   eventname summon_summoned
+
+	local TIME_LIVE PARAM2
+	inc TIME_LIVE 20
+	setvard ATK_MIN PARAM3
+
+	setvar RAT_HP PARAM2
+	divide RAT_HP 2
+
+	hp RAT_HP
+
+	local SUM_SKILL PARAM4
+
+	calleventtimed TIME_LIVE killme
+}
+
+   // Deal damage
+{
+   eventname bite1
+
+   volume 5
+   playrandomsound 2 SOUND_ATTACK1 none
+
+   dodamage ent_lastseen ATTACK_HITRANGE ATK_MIN ATTACK_HITCHANCE
+}
+
+   //Hit by someone
+{
+   eventname npc_struck
+   
+   volume 5
+   playrandomsound 2 SOUND_PAIN SOUND_PAIN SOUND_STRUCK1 SOUND_STRUCK2 SOUND_STRUCK3
+}
+
+   //Do a trick
+{
+   eventname rat_standup
+
+ //dbg MyMaster SUMMON_MASTER
+ if $get(ent_lastspoke,id) equals SUMMON_MASTER
+	callevent npcatk_suspend_ai 3.0
+   saytextrange 1024
+   saytext "*squeek!* :D"
+   volume 10
+   playsound 2 SOUND_IDLE1
+   setangle face ent_lastspoke
+   playanim hold TRICK_ANIM
+}
+
+{ eventname rat_rollover
+
+ //dbg MyMaster SUMMON_MASTER
+ if $get(ent_lastspoke,id) equals SUMMON_MASTER
+
+	callevent npcatk_suspend_ai 3.0
+
+   saytextrange 1024
+   saytext "*squeek?*"
+   setangle face ent_lastspoke
+   volume 10
+   playsound 2 SOUND_IDLE1
+   playanim once TRICK_ANIM
+}
+
+{ eventname rat_playdead
+
+ //dbg MyMaster SUMMON_MASTER
+ if $get(ent_lastspoke,id) equals SUMMON_MASTER
+
+	callevent npcatk_suspend_ai
+
+   saytextrange 1024
+   saytext "*SQUEEK!*"
+   volume 10
+   playsound 2 SOUND_DEATH
+   setangle face ent_lastspoke
+   playanim hold ANIM_DEATH
+   callevent 3 stop_playing_dead
+}
+
+{ eventname stop_playing_dead
+
+	callevent npcatk_resume_ai
+   playanim once run
+}

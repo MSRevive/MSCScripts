@@ -1,0 +1,48 @@
+//NO LONGER IN USE
+//- Experimental changes integrated into armor_base
+{
+	const IS_HELM 1
+	const HELM_HIDES_HEAD 0
+}
+
+#include items/base_item
+#include items/base_effect_armor
+
+{ game_spawn
+
+	wearable     1 head
+	setmodelbody ARMOR_GROUP ARMOR_BODY
+}
+
+{ game_wear
+	setmodel ARMOR_MODEL
+	setmodelbody ARMOR_GROUP ARMOR_BODY
+
+	if game.serverside
+	if HELM_HIDES_HEAD
+	callexternal ent_owner ext_setheadtype 1
+}
+
+{ [server] display_stun_info
+
+	stradd CUR_STUN_PROT "%"
+	if ( CUR_STUN_PROT > 0 ) gplayermessage ent_owner Your stun resistance is now STUN_PROT
+	if ( CUR_STUN_PROT == 0 ) dplayermessage ent_owner You now have no stun resistance
+}
+
+{ [server] barmor_effect_activate
+	if ( HELM_HIDES_HEAD ) callexternal ent_owner ext_setheadtype 1
+	local OLD_PROT $get(ent_owner,scriptvar,'IMMUNE_STUN')
+	callexternal ent_owner set_stun_prot STUN_PROTECTION
+	setvard CUR_STUN_PROT STUN_PROTECTION
+	if ( OLD_PROT != STUN_PROTECTION ) callevent 0.1 display_stun_info
+}
+
+{ [server] barmor_effect_remove
+	if ( HELM_HIDES_HEAD ) callexternal ent_owner ext_setheadtype 0
+	local OLD_PROT $get(ent_owner,scriptvar,'IMMUNE_STUN')
+	callexternal ent_owner set_stun_prot 0
+	local STUN_PROT $get(ent_owner,scriptvar,'IMMUNE_STUN')
+	setvard CUR_STUN_PROT 0
+	if ( OLD_PROT != STUN_PROT ) callevent 0.1 display_stun_info
+}

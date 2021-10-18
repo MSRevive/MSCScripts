@@ -1,0 +1,101 @@
+//Thothie SEP2009_15
+//better optimized flame effect
+#scope client
+{
+	const GLOW_RAD 128
+	setvard GLOW_COLOR (255,255,128)
+	const FLAME_SPR fire1_fixed.spr
+}
+
+{ client_activate //<model_idx> <duration> <model_height> <glow:0|1> [dark] [model_width]
+	setcallback render enable
+
+	setvard FX_MODEL PARAM1
+	setvard FX_DURATION PARAM2
+	setvard MODEL_HEIGHT PARAM3
+	setvard DO_GLOW PARAM4
+	setvard IS_DARK PARAM5
+	setvard MODEL_WIDTH PARAM6
+
+	//in case unable to detect model width
+	local L_MODEL_WIDTH MODEL_WIDTH
+	if ( MODEL_WIDTH startswith PARAM ) local L_MODEL_WIDTH 32
+	if ( MODEL_WIDTH == 0 ) local L_MODEL_WIDTH 32
+	multiply L_MODEL_WIDTH 0.5
+	setvard OFS_MAX L_MODEL_WIDTH
+	setvard OFS_MIN $neg(L_MODEL_WIDTH)
+
+	setvard FX_ACTIVE 1
+
+	//dbg *** sfx_flames dur FX_DURATION
+
+	if ( DO_GLOW )
+	{
+		if ( IS_DARK ) setvard GLOW_COLOR (255,0,128)
+		cleffect light new $getcl(SKEL_ID,origin) GLOW_RAD GLOW_COLOR 5.0
+		setvard LIGHT_ID game.script.last_light_id
+	}
+
+	callevent FX_DURATION fx_die
+	callevent drip_flames
+}
+
+{ drip_flames
+	if FX_ACTIVE
+	callevent 0.4 drip_flames
+
+	local SPR_POS $getcl(FX_MODEL,origin)
+	vectoradd SPR_POS $vec($randf(OFS_MIN,OFS_MAX),$randf(OFS_MIN,OFS_MAX),$randf(0,MODEL_HEIGHT))
+	//dbg *** drip_flames SPR_POS
+	cleffect tempent sprite FLAME_SPR SPR_POS setup_sprite1_flame
+}
+
+{ game_prerender
+
+	if FX_ACTIVE
+	if DO_GLOW
+//
+//	if ( !$getcl(FX_MODEL,exists) )
+//	{
+//		callevent fx_die
+//	}
+//	else
+//	{
+		local L_POS $getcl(FX_MODEL,origin)
+		cleffect light LIGHT_ID L_POS GLOW_RAD GLOW_COLOR 1.0
+//	}
+}
+
+{ fx_die
+	//if FX_ACTIVE //This could prevent the effect from being removed.
+	setvard FX_ACTIVE 0
+	callevent 1.0 remove_me
+}
+
+
+{ end_fx //convention
+	//if FX_ACTIVE
+	setvard FX_ACTIVE 0
+	callevent 1.0 remove_me
+}
+
+{ remove_me
+	removescript
+}
+
+{  [client] setup_sprite1_flame
+
+	cleffect tempent set_current_prop death_delay 	$randf(0.4,0.6)
+	cleffect tempent set_current_prop framerate	25
+	cleffect tempent set_current_prop velocity	$vec($randf(-4,4),$randf(-4,4),0)
+	cleffect tempent set_current_prop frames	20
+	cleffect tempent set_current_prop scale 	0.75
+	cleffect tempent set_current_prop gravity 	-0.5
+	cleffect tempent set_current_prop collide 	none
+	if ( IS_DARK )
+	{
+		cleffect tempent set_current_prop rendermode add
+		cleffect tempent set_current_prop renderamt 255
+		cleffect tempent set_current_prop rendercolor (64,0,255)
+	}
+}

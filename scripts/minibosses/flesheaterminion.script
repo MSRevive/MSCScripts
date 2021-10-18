@@ -1,0 +1,105 @@
+//This is an older script and may have some bad conventions as a result.
+
+//Thothie - for MS 1.35 compatitbility - and because mini-bosses are kewl! ;)
+//Notable Differences from Calrian <damage <hp <gold sounds poison
+
+//Flesheater Minion
+
+{
+   setvar ANIM_RUN run
+   setvar ANIM_WALK walk
+   setvar ANIM_IDLE idle1
+   setvard CAN_HUNT 1
+   setvard HUNT_AGRO 1
+   setvard CAN_ATTACK 1
+   setvard ANIM_ATTACK attack3
+   const ATTACK_DAMAGE 10
+   setvard ATTACK_RANGE 100
+   setvard ATTACK_HITRANGE 200
+   setvard MOVE_RANGE 90
+   const ATTACK_HITCHANCE 85%
+   const SOUND_STRUCK1 controller/con_pain3.wav
+   const SOUND_STRUCK2 controller/con_pain3.wav
+   const SOUND_STRUCK3 none
+   const SOUND_PAIN zombie/zo_pain2.wav
+   const SOUND_ATTACK1 controller/con_attack1.wav
+   const SOUND_ATTACK2 controller/con_attack2.wav
+   const SOUND_DEATH controller/con_die2.wav
+   const SOUND_IDLE1 controller/con_attack3.wav
+   setvard MY_ENEMY enemy	//base_npc_attack - Premptive attack
+   setvard RETALIATE_CHANCE 75%  //base_npc_attack - Automatically switch targets to the last damaging player
+   setvard CAN_FLEE 0		//base_npc_attack - Whether I run away at low health
+   setvard DROP_GOLD 		1
+   setvard DROP_GOLD_MIN		15
+   setvard DROP_GOLD_MAX		240
+
+
+   //Precache
+   precache SOUND_DEATH //This sound must be explicitly precached since
+			//the play command for it isn't in this file (it's
+			//in base_monster.script
+
+	precache monsters/skeleton_enraged.mdl //for older users
+}
+
+#include monsters/base_monster
+#include monsters/base_turn_undead
+
+{
+   eventname npc_spawn
+
+	setvard I_AM_TURNABLE 0
+
+   hp 400
+   //ov 359
+   width 32
+   height 80
+   name A minion of Flesheater
+   roam 1
+   hearingsensitivity 8
+   setvard NPC_GIVE_EXP 80
+   race undead
+   setmodel monsters/skeleton_enraged.mdl
+	setmodelbody	0 2 //0=standard 1=ash 2=green 3=bloody 4=decayed 5=ice 6=gold 7=stone 8=crystal 9=weirdgel
+	setmodelbody	1 7 //0=Unarmed 1=darkmace 2=sword 3=hammahs 4=bigsword+shield 5=iceclubs 6=fireclubs 7=highsword 8=wand
+   takedmg all 0.65
+	takedmg holy 3.0
+	takedmg poison 0.0
+   setidleanim idle1
+   setmoveanim ANIM_WALK
+
+	if ( $lcase(game.map.name) equals thanatos ) setvard SET_GREEK 1
+	if ( SET_GREEK ) setmodelbody 0 10
+
+   callevent 2 game_wander
+}
+
+{ attack_3
+
+   dodamage ent_lastseen ATTACK_HITRANGE ATTACK_DAMAGE ATTACK_HITCHANCE
+   applyeffect ent_laststruckbyme effects/effect_poison 5 ent_me $rand(8,12)
+
+   if( $rand(0,1) == 0 )
+   {
+   	volume 5
+   	playrandomsound 2 SOUND_ATTACK1 SOUND_ATTACK2
+   }
+}
+
+   //Hit by someone
+{ npc_struck
+   
+   volume 5
+   playrandomsound 2 SOUND_PAIN SOUND_PAIN SOUND_STRUCK1 SOUND_STRUCK2 SOUND_STRUCK3
+}
+
+{ npc_death
+
+   setvard ANIM_DEATH dieheadshot
+   if( $rand(0,1) == 0 ) saytext My master shall have your flesh!
+}
+
+{ go_greek
+	setmodelbody 0 10
+	setvard SET_GREEK 1
+}

@@ -1,0 +1,318 @@
+#scope server
+
+{ [shared]
+	//standard anims
+	setvard ANIM_IDLE flapping
+	setvard ANIM_ATTACK attack
+	setvard ANIM_DEATH fall
+	setvard ANIM_WALK flapping
+	setvard ANIM_RUN flapping
+	
+	//standard stats
+	setvard MOVE_RANGE 20
+	setvard ATTACK_RANGE 64
+	setvard ATTACK_HITRANGE 72
+	setvard NPC_HACKED_MOVE_SPEED 200
+	//const NPC_BASE_EXP 100
+	//setvard NPC_GIVE_EXP NPC_BASE_EXP
+
+	//custom anims
+	const ANIM_PERCH1 idle
+	const ANIM_FIGIT idle2
+	const ANIM_IDLE_FLIGHT flapping
+	const ANIM_DIVE dive
+}
+
+{
+	//special flight params
+	const NPC_NO_END_FLY 1 //do not reset move type on death
+
+	//custom stats
+	const DMG_ATTACK $randf(5,20)
+	const DMG_DIVE $rand(30,100)
+	const FREQ_DIVE $rand(20,30)
+	const SPEED_STANDARD 200
+	const SPEED_DIVE 400
+	const FLEE_COUNT 10
+	const ATTACK_RANGE_STANDARD 64
+
+	//sounds
+	const SOUND_FLAP monsters/birds/hawkidle.wav
+	const SOUND_WARCRY monsters/birds/bird.wav
+	const SOUND_DEATH monsters/birds/hawk.wav
+	const SOUND_ATTACK monsters/birds/flutter.wav
+	const SOUND_STRUCK debris/flesh2.wav
+	const SOUND_PAIN monsters/birds/vulture.wav
+	const SOUND_PAIN2 monsters/birds/cry.wav
+	const SOUND_VICTORY monsters/birds/hawkcaw.wav
+
+	precache SOUND_DEATH
+}
+
+#include monsters/base_flyer
+#include monsters/base_propelled
+#include monsters/base_monster
+
+{ [shared] npc_spawn
+
+	name an|Eagle
+	race wildanimal
+	hp 300
+	width 32
+	height 32
+	setmodel monsters/eagle.mdl
+	setidleanim flapping
+	setmoveanim flapping
+	hearingsensitivity 11
+	roam 1
+	fly 1
+	takedmg poison 2.0
+
+	if game.serverside
+	if ( $lcase(game.map.name) equals thanatos ) local KEEP_CLIP 1
+	if ( $lcase(game.map.name) equals the_wall ) local KEEP_CLIP 1
+	if ( !KEEP_CLIP ) setmonsterclip 0
+
+	setvard COUNT_ATK 0
+}
+
+{ npc_targetsighted
+
+	//eagle cannot hit NPC's taller than 64 units without this bit
+	if ( !$get(HUNT_LASTTARGET,isplayer) )
+	{
+		setvard ATTACK_RANGE $get(HUNT_LASTTARGET,height)
+		if ( !CYCLED_UP ) callevent cycle_up
+	}
+	else
+	{
+		setvard ATTACK_RANGE ATTACK_RANGE_STANDARD
+	}
+	
+}
+
+{ start_perched //additional param
+	setidleanim idle
+	setmoveanim idle
+	roam 0
+	setvard AM_PERCHED 1
+
+	hearingsensitivity 0
+
+	callevent npcatk_suspend_ai
+
+	setvard NPC_PROX_ACTIVATE 1
+	setvard NPC_PROXACT_RANGE 384
+	setvard NPC_PROXACT_EVENT un_perch
+	setvard NPC_PROXACT_FOV 1
+	setvard NPC_PROXACT_CONE 90
+	callevent 0.1 npcatk_proxact_scan
+}
+
+{ un_perch
+	hearingsensitivity 8
+	setvard AM_PERCHED 0
+
+	setidleanim ANIM_WALK
+	setmoveanim ANIM_WALK
+	callevent npcatk_suspend_ai
+	setvard NPC_HACKED_MOVE_SPEED SPEED_STANDARD
+	playanim critical divestart
+	setvelocity ent_me $relvel(0,0,100) //pop up
+	setmovedest DIVE_START 0
+	callevent 1.0 npcatk_resume_ai
+	callevent 1.1 target_invader
+}
+
+{ target_invader
+	callevent npcatk_target NPC_PROXACT_PLAYERID
+}
+
+{ cycle_up
+	playsound 0 10 SOUND_WARCRY
+	callevent 1.0 dive_check
+}
+
+{ dive_check
+
+	//dive sequence no workie so far
+
+	if !NO_DIVE
+
+	callevent FREQ_DIVE dive_check
+	if $get(HUNT_LASTTARGET,isalive)
+	if $cansee(HUNT_LASTTARGET)
+
+	setvard DIVE_POS $get(HUNT_LASTTARGET,origin)
+	setvard DIVE_START game.monster.origin
+	setvard IN_DIVE 1
+	setvard NPC_HACKED_MOVE_SPEED SPEED_DIVE
+	callevent npcatk_suspend_ai
+	playanim critical divestart
+	setvelocity ent_me $relvel(0,0,-200)
+	callevent 1.0 dive_go
+}
+
+{ dive_go
+	playsound 0 10 SOUND_WARCRY
+	setmoveanim dive
+	setidleanim dive
+	setmovedest DIVE_POS 10
+	callevent dive_dmg_loop
+}
+
+{ dive_dmg_loop
+	if IN_DIVE
+	callevent 0.1 dive_dmg_loop
+	setmovedest DIVE_POS 10
+	dodamage $relpos(0,0,0) 64 DMG_DIVE 100% 0 reflective pierce
+	local MY_ORG $get(ent_me,origin)
+	local GRND_LEVEL $get_ground_height(MY_ORG)
+	if ( GRND_LEVEL <= 32 ) callevent dive_end
+	if $dist(MY_ORG,DIVE_POS) < 32
+	callevent dive_end
+}
+
+{ dive_end
+	setvard IN_DIVE 0
+	setidleanim ANIM_WALK
+	setmoveanim ANIM_WALK
+	setvard NPC_HACKED_MOVE_SPEED SPEED_STANDARD
+	playanim critical divestart
+	setvelocity ent_me $relvel(0,-400,-200) //pop up and back a bit
+	setmovedest DIVE_START 0
+	callevent 1.0 npcatk_resume_ai
+}
+
+{ game_dodamage
+	if IN_DIVE
+	addvelocity PARAM2 $relvel($randf(-20,20),200,10)
+}
+
+{ game_struck
+	if ( AM_PERCHED )
+	{
+		setvard NPC_PROXACT_PLAYERID $get(ent_laststruck,id)
+		setvard NPC_PROXACT_TRIPPED 1
+		callevent un_perch
+	}
+
+	//push about a bit
+	playrandomsound 0 10 SOUND_STRUCK SOUND_STRUCK SOUND_STRUCK SOUND_STRUCK SOUND_STRUCK SOUND_PAIN SOUND_PAIN2
+	if PARAM1 > 30
+	local RND_RL $randf(-40,40)
+	local RND_FB $randf(-40,40)
+	local RND_UD $randf(-40,40)
+	addvelocity ent_me $vec(RND_RL,RND_FB,RND_UD)
+}
+
+{ attack1 //anim event from attack
+	setvard MELEE_ATTACK 1
+	playsound 0 5 SOUND_ATTACK
+	dodamage HUNT_LASTTARGET ATTACK_HITRANGE DMG_ATTACK 90% slash
+}
+
+{ attack2 //anim event from attack
+	setvard MELEE_ATTACK 1
+	playsound 0 5 SOUND_ATTACK
+	dodamage HUNT_LASTTARGET ATTACK_HITRANGE DMG_ATTACK 90% slash
+	add COUNT_ATK 1
+
+	if ( COUNT_ATK > FLEE_COUNT )
+	{
+		setvard COUNT_ATK 0
+		callevent npcatk_suspend_ai 3.0
+		setmovedest HUNT_LASTTARGET 1000 flee
+	}
+}
+
+{ flap_sound //anim event from flapping
+	playsound 0 5 SOUND_FLAP
+}
+
+{ game_death
+
+	addvelocity ent_me $relvel(0,0,-200)
+	//fly 0
+	//bugger snaps back to the place he died (ie. mid air) - want bodies to follow velocity on death, if movetype is fly
+	//callexternal GAME_MASTER gm_fade $get(ent_me,id) 2
+}
+
+//========= ADV FLIGHT AI
+{
+repeatdelay 0.5
+
+	if !I_R_FROZEN
+
+	if ( AM_PERCHED )
+	{
+		if ( $rand(1,50) == 1 ) playanim once ANIM_FIGIT
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	if !SUSPEND_AI
+
+	local MY_GROUND $get_ground_height(game.monster.origin)
+	local MY_ALTI game.monster.origin.z
+	subtract MY_ALTI MY_GROUND
+
+	if ( MY_ALTI < 32 )
+	{
+		//too close to ground, fly up
+		setvelocity ent_me $relvel(0,0,300)
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	if IS_HUNTING
+	if !SUSPEND_AI
+	callevent npcatk_faceattacker
+	if ( $get(HUNT_LASTTARGET,range) > MOVE_RANGE ) setvelocity ent_me $relvel(0,200,0)
+	if ( $get(HUNT_LASTTARGET,range) <= MOVE_RANGE ) setvelocity ent_me $vec(0,0,0)
+	//if ( SPITTING ) setvelocity ent_me $vec(0,0,0)
+
+	if ( FLIGHT_STUCK > 2 )
+	{
+		//callevent chicken_run 1.0
+		playanim once ANIM_DIVE
+		callevent do_rand_tweedee
+		callevent npcatk_suspend_ai $randf(0.3,0.9)
+		setmovedest NEW_DEST game.monster.moveprox
+		callevent 0.1 horror_boost
+		setvard FLIGHT_STUCK 0
+	}
+
+	local TARG_POS $get(NPCATK_TARGET,origin)
+	if ( !SUSPEND_AI ) setangle face_origin TARG_POS
+
+	if !IS_FLEEING
+	if !SPITTING
+	if $get(NPCATK_TARGET,range) > ATTACK_RANGE
+	local CUR_PROG $dist(game.monster.origin,TARG_POS)
+	if ( LAST_PROG >= CUR_PROG ) add FLIGHT_STUCK 1
+	setvard LAST_PROG $dist(game.monster.origin,TARG_POS)
+	setvard LAST_POS game.monster.origin
+	
+}
+
+{ chicken_run
+	callevent 0.1 horror_boost
+}
+
+{ horror_boost
+	setvelocity ent_me $relvel(0,500,0)
+}
+
+{ my_target_died
+	playsound 0 10 SOUND_VICTORY
+}
+
+{ summon_eagle_vanish
+	if AM_SUMMONED
+	callevent npc_fade_away
+}
+
+{ game_dynamically_created
+	setvard AM_SUMMONED 1
+}

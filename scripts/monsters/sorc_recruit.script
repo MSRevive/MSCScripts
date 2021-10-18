@@ -1,0 +1,102 @@
+//weakest of the Shadahar Orc series
+{
+	setvard DROP_GOLD 1			//Gold Drops
+	setvard DROP_GOLD_AMT $rand(15,30)	//
+	setvard NPC_GIVE_EXP 100
+
+	setvard ANIM_ATTACK1 swordswing1_L //Attack animation 1
+	setvard ANIM_ATTACK2 battleaxe_swing1_L //Attack animation 2
+	setvard FLINCH_CHANCE 25%
+
+	setvard ANIM_ATTACK ANIM_ATTACK1
+
+	const ATTACK_ACCURACY 70%
+	const DMG_SWORD $rand(30,70)
+
+	setvard ORC_JUMPER 1
+
+	const FREQ_LUNGE 10.0
+	const LUNGE_RANGE 256
+}
+
+#include monsters/orc_base_melee
+#include monsters/sorc_base
+
+{ orc_spawn
+
+	name a|Shadahar Novice
+	setmodel monsters/sorc.mdl
+	hp 500
+	takedmg all 0.7
+	setstat parry 110
+	
+	width 32
+	height 96
+
+	setmodelbody 0 0 //body: 0=bare 1=bloody_shirt 2=gold_armor 3=archer
+	setmodelbody 1 1 //head: 0=hat_horns 1=hat_spiked 2=lizardskin_horned 3=gold_Chieftain 4=lizard_cap
+	setmodelbody 2 6 //weapon: 0=unarmed 1=axe 2=bow 3=steel_bow 4=sword 5=great_axe 6=sword_sheild 8=yellow_axe 9=blooddrinker
+}
+
+{ [override] swing_axe
+
+	callevent baseorc_yell
+
+	callevent npcatk_dodamage ent_lastseen ATTACK_HITRANGE DMG_SWORD ATTACK_ACCURACY
+}
+
+{ npc_targetsighted
+	
+	if !I_R_FROZEN
+	if !LUNGE_DELAY
+	if $get(NPCATK_TARGET,range) < LUNGE_RANGE
+
+	setvard LUNGE_DELAY 1
+	callevent FREQ_LUNGE reset_lunge_delay
+	callevent leap_at NPCATK_TARGET
+}
+
+{ reset_lunge_delay
+	setvard LUNGE_DELAY 0
+}
+
+{ leap_at //<target>
+
+	setvard AS_ATTACKING game.time
+	add AS_ATTACKING 3.0
+	setvard NPC_FORCED_MOVEDEST 1
+	setvard LEAP_TARGET PARAM1
+	callevent npcatk_suspend_ai 1.0
+	setmovedest LEAP_TARGET MOVE_RANGE
+	callevent 0.1 leap_at2
+	setvard DID_LEAPSTUN 0
+	setvard LEAPING 1
+	setvard LEAP_END game.time
+	add LEAP_END 1
+	callevent leap_scan
+}
+
+{ leap_scan
+
+	if game.time < LEAP_END
+	callevent 0.1 leap_scan
+	//dbg temp leap_scan $get(LEAP_TARGET,name) $get(LEAP_TARGET,range)
+	if $get(LEAP_TARGET,range) < ATTACK_RANGE
+
+	addvelocity LEAP_TARGET $relvel(0,120,105)
+	if !DID_LEAPSTUN
+	setvard DID_LEAPSTUN 1
+	applyeffect LEAP_TARGET effects/effect_stun 2 0 1
+}
+
+{ leap_at2
+
+	playrandomsound 0 10 voices/orc/hit.wav voices/orc/hit2.wav voices/orc/hit3.wav
+	playanim critical ANIM_ATTACK2
+	callevent 0.1 leap_boost
+}
+
+{ leap_boost
+
+	addvelocity ent_me $relvel(0,350,120)
+}

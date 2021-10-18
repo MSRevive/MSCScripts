@@ -1,0 +1,103 @@
+#include monsters/summon/bludgeon_axe
+
+
+{ game_spawn
+
+	name a|Tomahawk
+	setmodel weapons/projectiles.mdl
+	setmodelbody 0 39
+	setidleanim spin_vertical_norm
+	setmoveanim spin_vertical_norm
+	setsolid none
+	width 32
+	fly 1
+	height 32
+	blood none
+	invincible 1
+	setmonsterclip 0
+	race demon
+	setvard PLAYING_DEAD 1 //not a valid attack target
+}
+
+{ [override] game_dynamically_created
+	setvard MY_OWNER PARAM1
+	setvard MY_DEST PARAM2
+	setvard DMG_BASE PARAM3
+	setvard TOM_TYPE PARAM5
+	setvard GAME_PVP game.pvp
+	setvard OWNER_ISPLAYER $get(MY_OWNER,isplayer)
+
+	setorigin ent_me $get(MY_OWNER,attachpos,1)
+
+	setvard ITEM_ID MY_OWNER
+	if ( OWNER_ISPLAYER )
+	{
+		setvard ITEM_ID PARAM4
+		local DOT_SKILL "spellcasting."
+		if ( TOM_TYPE isnot cold ) stradd DOT_SKILL TOM_TYPE
+		else stradd DOT_SKILL ice
+		if ( TOM_TYPE isnot dark )
+		{
+			if ( TOM_TYPE equals cold )
+			{
+				setvard DOT_BASE $get(MY_OWNER,skill.spellcasting.ice)
+				multiply DOT_BASE 0.5
+			}
+			if ( TOM_TYPE equals lightning )
+			{
+				setvard DOT_BASE $get(MY_OWNER,skill.spellcasting.lightning)
+				multiply DOT_BASE 0.75
+			}
+			if ( TOM_TYPE equals fire )
+			{
+				setvard DOT_BASE $get(MY_OWNER,skill.spellcasting.fire)
+			}
+			if ( TOM_TYPE equals poison ) setvard DOT_BASE $get(MY_OWNER,skill.spellcasting.affliction)
+		}
+	}
+	setvard OWNER_HALFHEIGHT $get(MY_OWNER,height)
+	if ( !OWNER_ISPLAYER ) divide OWNER_HALFHEIGHT 2
+	race $get(MY_OWNER,race)
+	setvard NPC_NOCLIP_DEST MY_DEST
+	setvard IS_ACTIVE 1
+	//storeentity ent_expowner MY_OWNER
+
+	//dbg my $get(ent_me,race)
+	callevent 0.1 damage_loop
+	callevent set_skin
+}
+
+{ set_skin
+	if ( TOM_TYPE equals fire ) setprop ent_me skin 0
+	if ( TOM_TYPE equals cold ) setprop ent_me skin 1
+	if ( TOM_TYPE equals lightning ) setprop ent_me skin 2
+	if ( TOM_TYPE equals poison ) setprop ent_me skin 3
+	if ( TOM_TYPE equals dark ) setprop ent_me skin 4
+}
+
+{ [override] damage_loop
+	callevent 0.2 damage_loop
+	//dodamage $relpos(0,0,0) SCAN_RAD DMG_BASE 100% 0.0 reflective DMG_TYPE
+	setvard T_BOX $get_tsphere(enemy,SCAN_RAD)
+	if T_BOX isnot none
+	calleventloop $get_token_amt(T_BOX) damage_targets
+}
+
+{ damage_targets
+	local CUR_TARGET $get_token(T_BOX,game.script.iteration)
+
+	if ( $get(CUR_TARGET,isplayer) )
+	{
+		if OWNER_ISPLAYER
+		if GAME_PVP < 1
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+	
+	xdodamage CUR_TARGET direct DMG_BASE 100% MY_OWNER MY_OWNER axehandling TOM_TYPE
+
+	if ( TOM_TYPE equals cold ) applyeffect CUR_TARGET effects/effect_frostbite_dmg 5 MY_OWNER DOT_BASE
+	if ( TOM_TYPE equals fire ) applyeffect CUR_TARGET effects/effect_burn 5 MY_OWNER DOT_BASE
+	if ( TOM_TYPE equals lightning ) applyeffect CUR_TARGET effects/effect_lightning_dmg 5 MY_OWNER DOT_BASE
+	if ( TOM_TYPE equals poison ) applyeffect CUR_TARGET effects/greater_poison 10.0 MY_OWNER DOT_BASE
+}

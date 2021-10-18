@@ -1,0 +1,96 @@
+#scope client
+{
+
+}
+
+{ client_activate
+	setvard FX_OWNER PARAM1
+	setvard FX_DURATION PARAM2	
+	setvard FX_ACTIVE 1
+	dbg **** sfx_icecage FX_OWNER FX_DURATION
+	cleffect tempent sprite misc/treasure.mdl $getcl(FX_OWNER,origin) setup_icecage update_icecage
+	callevent FX_DURATION end_cage_fx
+}
+
+{ end_cage_fx
+	dbg **** end_fx
+	sound.play3d debris/bustglass2.wav 5 $getcl(FX_OWNER,origin)
+	calleventloop $rand(8,10) do_gibs
+	setvard FX_ACTIVE 0
+	callevent 2.1 remove_fx
+}
+
+{ remove_fx
+	removescript
+}
+
+{ do_gibs
+	local SPR_POS $getcl(FX_OWNER,origin)
+	if ( !$getcl(FX_OWNER,isplayer) ) vectoradd SPR_POS z 32
+	cleffect tempent sprite glassgibs.mdl $getcl(FX_OWNER,origin) setup_gibs
+}
+
+{ update_icecage
+	if ( FX_ACTIVE )
+	{
+		local CAGE_ORG $getcl(FX_OWNER,origin)
+		if ( $getcl(FX_OWNER,isplayer) ) vectoradd CAGE_ORG z -30
+		if ( $get_contents(CAGE_ORG) isnot empty ) vectoradd CAGE_ORG z 36 //maybe player ducked
+		cleffect tempent set_current_prop origin CAGE_ORG
+		
+	}
+	else
+	{
+		//cleffect tempent set_current_prop kill_current_ent //no workie - maybe causing issues
+		cleffect tempent set_current_prop rendermode 5
+		cleffect tempent set_current_prop renderamt 0
+		cleffect tempent set_current_prop death_delay $neg(FX_DURATION)
+		cleffect tempent set_current_prop fadeout 0
+		cleffect tempent set_current_prop origin $vec(10000,10000,10000)
+	}
+}
+
+{ setup_icecage
+	cleffect tempent set_current_prop death_delay FX_DURATION
+	cleffect tempent set_current_prop body 4
+	cleffect tempent set_current_prop framerate 1.0
+	cleffect tempent set_current_prop sequence 0
+	cleffect tempent set_current_prop rendermode add
+	cleffect tempent set_current_prop renderamt 255
+	cleffect tempent set_current_prop scale 1
+	cleffect tempent set_current_prop gravity 0
+	cleffect tempent set_current_prop collide none
+
+	cleffect tempent set_current_prop frames 1
+	local FADE_TIME FX_DURATION
+	add FADE_TIME 5.0
+	cleffect tempent set_current_prop fadeout FADE_TIME
+	cleffect tempent set_current_prop angles $vec(0,90,0)
+	cleffect tempent set_current_prop velocity $vec(0,0,0)
+	cleffect tempent set_current_prop movetype 0
+	//cleffect tempent set_current_prop skin 0
+	//cleffect tempent set_current_prop follow FX_OWNER
+}
+
+{ setup_gibs
+
+	cleffect tempent set_current_prop death_delay 2.0
+	cleffect tempent set_current_prop body $rand(0,6)
+	cleffect tempent set_current_prop framerate 1.0
+	cleffect tempent set_current_prop sequence 0
+	cleffect tempent set_current_prop rendermode add
+	cleffect tempent set_current_prop renderamt 255
+	cleffect tempent set_current_prop gravity 1
+	cleffect tempent set_current_prop collide world
+	cleffect tempent set_current_prop fadeout lifetime
+	cleffect tempent set_current_prop frames 1
+	cleffect tempent set_current_prop scale $randf(0.75,1.25)
+	cleffect tempent set_current_prop gravity 1
+	cleffect tempent set_current_prop bouncefactor 1
+	cleffect tempent set_current_prop angles $vec($rand(0,359),$rand(0,359),0)
+
+	local RND_ANG $randf(0,359.99)
+	local RND_SPRING $randf(150,350)
+	local RND_SWING $randf(-100,100)
+	cleffect tempent set_current_prop velocity $relvel($vec(0,RND_ANG,0),$vec(RND_SWING,0,RND_SPRING))
+}

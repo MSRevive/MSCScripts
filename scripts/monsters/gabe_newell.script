@@ -1,0 +1,147 @@
+{
+	setvard NPC_HACKED_MOVE_SPEED 75
+}
+
+#include monsters/base_flyer_grav
+#include monsters/base_propelled
+
+{ game_spawn
+	name Gabe Newell
+	race demon
+	setvard PLAYING_DEAD 1
+	setmodel weapons/projectiles.mdl
+	setmodelbody 0 65
+	width 8
+	height 8
+	//setprop ent_me rendermode 5
+	//setprop ent_me renderamt 255
+	setvard IS_ACTIVE 1
+	invincible 1
+	hp 9999
+	setidleanim spin_horizontal_slow
+	setmoveanim spin_horizontal_slow
+	playanim once spin_horizontal_slow
+	setanim.framerate 0.25
+
+	setmonsterclip 0
+
+	playsound 1 10 gabe_loop.wav
+
+	clientevent new all monsters/gabe_newell_cl $get(ent_me,index) 4.9
+
+	callevent 0.1 pick_player
+
+	callevent 5.0 npcatk_hunt
+}
+
+{ pick_player
+	getplayersnb PLAYER_LIST
+	local N_PLAYERS $get_token_amt(PLAYER_LIST)
+	subtract N_PLAYERS 1
+	local RND_PLAYER $rand(0,N_PLAYERS)
+	setvard CHOSEN_PLAYER $get_token(PLAYER_LIST,RND_PLAYER)
+	if ( CHOSEN_PLAYER equals G_LAST_GABE_TARGET ) setvard CHOSEN_PLAYER unset
+
+	if CHOSEN_PLAYER isnot unset
+	local OUT_TITLE "Gabe Newell is out to eat "
+	stradd OUT_TITLE $get(CHOSEN_PLAYER,name)
+	local OUT_MSG "If he catches you, he will deleted your character!"
+	infomsg all OUT_MSG OUT_TITLE
+
+	setvarg G_LAST_GABE_TARGET CHOSEN_PLAYER
+
+	callexternal players ext_gabe_musak
+}
+
+
+{ npcatk_hunt
+	if $get(ent_me,isalive)
+	if IS_ACTIVE
+	callevent 0.1 npcatk_hunt
+
+	if ( !$get(CHOSEN_PLAYER,exists) ) callevent pick_player
+
+	if $get(CHOSEN_PLAYER,exists)
+
+	setmovedest CHOSEN_PLAYER 16
+
+	if ( $get(CHOSEN_PLAYER,range) < 512 )
+	{
+		if game.time > NEXT_WARN
+		setvard NEXT_WARN game.time
+		add NEXT_WARN 15.0
+		infomsg CHOSEN_PLAYER "GABE NEWELL IS TRYING TO EAT YOU!" "Run you fool! He'll delete your character!"
+		callexternal players ext_gabe_musak
+	}
+
+	if ( $get(CHOSEN_PLAYER,range) < 64 )
+	{
+		callevent do_omnomnom
+	}
+
+	if ( NPC_HACKED_MOVE_SPEED < 250 )
+	{
+		if $get(CHOSEN_PLAYER,range) < 1024
+		add NPC_HACKED_MOVE_SPEED 0.02
+	}
+
+	if IS_ACTIVE //in case did omnomnom above
+
+//	//anti-stuck
+	local MY_ORG $get(ent_me,origin)
+	if ( $dist(AS_LAST_POS,MY_ORG) < 1 )
+	{
+		dbg anti-stuck
+		if AS_LAST_POS_SET
+		local RND_DIR $randf(0,359.99)
+		local RND_UD $randf(-200,200)
+		addvelocity ent_me $relpos($vec(0,RND_DIR,0),$vec(0,500,RND_UD))
+	}
+
+	setvard AS_LAST_POS MY_ORG
+	setvard AS_LAST_POS_SET 1
+}
+
+{ do_omnomnom
+	setvard IS_ACTIVE 0
+	playsound 1 0 gabe_loop.wav
+	setprop ent_me renderamt 0
+	setorigin ent_me $vec(20000,20000,-20000)
+	hud.addimgicon CHOSEN_PLAYER gabe1 gabe1 15 20 75 60 9.0
+	gplayermessage CHOSEN_PLAYER "OMG! Character gonna delete!"
+	callevent 10.1 do_omnomnom2
+}
+
+{ do_omnomnom2
+	setvarg G_APRIL_FOOLS_MODE 0
+	callexternal players ext_gabe_musak stop
+	hud.addimgicon CHOSEN_PLAYER gabe2 gabe2 15 20 75 60 10.0
+	gplayermessage CHOSEN_PLAYER "OMG! APRIL FOOLS! (- The RKS Crew)"
+	callevent 1.0 do_omnomnom3
+}
+
+{ do_omnomnom3
+	deleteent ent_me
+}
+
+{
+repeatdelay 5.0
+	if $get(ent_me,isalive)
+
+	if IS_ACTIVE
+	//setprop ent_me rendermode 5
+	//setprop ent_me renderamt 255
+
+	playanim once spin_horizontal_slow
+
+	setanim.framerate 0.25
+
+	if ( game.time > NEXT_MUSAK )
+	{
+		playsound 1 10 gabe_loop.wav
+		setvard NEXT_MUSAK game.time
+		add NEXT_MUSAK 15.0
+	}
+
+	clientevent new all monsters/gabe_newell_cl $get(ent_me,index) 4.9
+}

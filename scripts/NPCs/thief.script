@@ -1,0 +1,182 @@
+// *** Default human script ***
+//
+
+// Spawn properties
+{
+   eventname spawn
+
+   hp 45/45    //Start with 45 of 45 max hit points
+   gold 10    //Start with 10 gold
+   //ov 180
+   width 32
+   height 72
+   race orc
+   name        Shifty Person
+   roam 1      //Roam freely
+   setmodel    npc/human1.mdl
+   takedmg all .9
+   setmodelbody 0 1
+   setmodelbody 1 5
+   setmoveanim walk
+   setvar	ATTACK_RANGE 90
+   setvar	ATTACK1_DAMAGE 5
+   setvar	ATTACK_PERCENTAGE 60%
+
+   setvar      THIEF 0
+   setvar      STEAL 0
+
+   setvar FLEE_HEALTH 40
+   setvar FLEE_CHANCE 100%
+   setvar IS_FLEEING 0
+
+   catchspeech  say_gold gold
+   catchspeech  say_gold money
+   catchspeech  say_gold thief
+   catchspeech  say_gold bandit
+   catchspeech  say_gold back
+
+   catchspeech  say_gold2 gold
+   catchspeech  say_gold2 money
+   catchspeech  say_gold2 thief
+   catchspeech  say_gold2 bandit
+   catchspeech  say_gold2 back
+
+   catchspeech  say_thief lock
+   catchspeech  say_thief kill
+   catchspeech  say_thief execute
+   catchspeech  say_thief execution
+   catchspeech  say_thief prison
+}
+
+// Greet player and other NPCs
+{
+   // repeatdelay: How soon this event can be repeated.
+   repeatdelay 4
+// Condition: See any ally
+  see enemy 128
+
+// Face ally
+  setmovedest ent_lastseen 128
+
+// Action: Say hello
+// Volume min-max: 0-10
+
+  if STEAL equals 0
+  setvar STEALING $rand(-40,-20)
+  offer ent_lastseen gold STEALING
+  incvar gold STEALING
+  playanim once return_needle
+  roam 0
+  calleventtimed 4 resumeroam
+}
+// Action: Say hello
+// Volume min-max: 0-10
+{
+  if STEAL equals 1
+  volume 8
+  say hello1[50] *[20] *[55] *[55] *[23] *[22]
+  roam 0
+  calleventtimed 4 resumeroam
+}
+{
+  eventname resumeroam
+
+  roam 1
+}
+
+// -- Attack thieves --
+
+{
+  eventname robbed
+
+  setvar CURRENT_ENEMY ent_laststole
+
+  saytext Aha!  Thief!
+  setmovedest ent_laststole 9999
+  //ov 359
+}
+
+   //Hunting
+{
+   repeatdelay 0.2
+
+   see CURRENT_ENEMY
+
+   setmoveanim run
+   setmovedest ent_lastseen ATTACK_RANGE
+   setvar SEE_ENEMY 1
+}
+{
+   eventname wander
+   setmoveanim walk
+   setvar SEE_ENEMY 0
+   calleventtimed 12 losethief
+}
+{
+   eventname losethief
+   var SEE_ENEMY equals 0
+   setvar CURRENT_ENEMY noenemy
+   //ov 180
+}
+
+   //Attack
+{
+   repeatdelay 0.3
+
+   see CURRENT_ENEMY ATTACK_RANGE
+
+   setmovedest ent_lastseen 9999
+   playanim once beatdoor
+}
+{
+   // Deal damage
+   eventname attack_1
+
+   dodamage ent_lastseen ATTACK_RANGE ATTACK1_DAMAGE ATTACK_PERCENTAGE
+}
+{
+   //Chance of fleeing if hit
+   eventname struck
+
+   if CURRENT_HEALTH <= FLEE_HEALTH
+   if $rand(0,100) <= FLEE_CHANCE
+
+   setmoveanim run
+   setmovedest flee ent_laststruck 600
+   setvar IS_FLEEING 1
+   calleventtimed 0.5 stopflee
+}
+//Thief Quest, Step 1
+{
+  eventname say_gold
+  if THIEF equals 0
+  setvar THIEF 1
+  saytext I don't know what you're talking about. 
+}
+//After being bothered once again
+{
+  eventname say_gold2
+  if THIEF equals 1
+  setvar THIEF 2 
+  saytext Look, I don't know what you're talking about. With guards around, nobody would dare to steal.
+}
+//After spoken to Tristan and told to investigate the whole thief thing
+{
+  eventname say_thief
+  if THIEF equals 2
+  setvar THIEF 3 
+  setvar STEAL 1
+  saytext Oh... he told you that, did he? Look, if you don't report me, I'll give you this.
+  calleventtimed 4 say_thief2
+}
+{
+  eventname say_thief2
+  saytext It's a map of where the band is. I'm just a nobody among those. If you want to catch real thieves, go for them, not me.
+  offer ent_lastspoke item_thiefmap
+}
+//After he've given away the map
+{
+  eventname say_gold
+  if THIEF equals 3 
+  saytext Go away.
+}

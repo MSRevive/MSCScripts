@@ -1,0 +1,223 @@
+//Poison Cloud by Thothie (from scratch, save smokes, from monsters/summon/summon_lightning_storm)
+//- This script removes all occurances of itself at end, therefor, "there can be only one"
+//- If you want an NPC to use this, copy to poison_cloud_noc - so player can't 'steal' his cloud
+
+{
+	const SMOKE_SPRITE poison_cloud.spr
+	precache SMOKE_SPRITE
+}
+
+{ [shared]
+
+	setvard POISONING 1
+	const HEIGHT 40
+   	const WIDTH 96
+}
+
+{ [client]
+
+	const POISON_SPRITE poison_cloud.spr //may need to use direct name
+}
+
+{ [shared] smokes_start  // Start shooting
+   
+   setvard STORMING 1
+}
+
+{ eventname game_dynamically_created //PARAM1=Owner PARAM2=Angles PARAM3=Damage PARAM4=Duration [PARAM5=skill]
+	setvard MY_OWNER PARAM1
+	setvard MY_BASE_DAMAGE PARAM3
+	setvard MY_DURATION PARAM4
+
+	setvard OWNER_ISPLAYER $get(MY_OWNER,isplayer)
+
+	setvard MY_OWNER_RACE $get(PARAM1,race)
+
+	local MY_SKILL PARAM5
+
+	if ( MY_SKILL startswith 'PARAM' ) setvard MY_SKILL spellcasting.affliction
+
+	//dbg IncDur MY_DURATION
+
+	callevent MY_DURATION poisoning_end
+
+	callevent 2 smokes_start 
+	clientevent new all $currentscript $get(ent_me,origin) PARAM2 MY_DURATION
+	//needless to say, still on workie
+    storeentity ent_expowner MY_OWNER
+	//setxpstat MY_OWNER skill.spellcasting.affliction
+}
+
+{ game_spawn
+
+	setvard PLAYING_DEAD 1 //not a valid target
+
+	name a|Poison Cloud
+	hp 1
+	invincible 1
+	race beloved
+	height 32
+	width 32
+	blood none
+	setmodel none
+	setsolid none
+
+	setangle face $vec(0,90,0)
+
+	setvard POISONING 1
+
+	callevent 0.5 poisoning_go
+}
+
+{ poisoning_go
+
+	if POISONING
+
+	callevent 1.0 poisoning_go
+
+	getents any 256
+
+	if GET_COUNT > 0
+	if !IN_POISON_LOOP
+	setvard IN_POISON_LOOP 1
+	setvard LOOP_COUNT 0
+	callevent poison_area
+}
+
+{ poison_area
+
+	if POISONING
+	callevent 0.1 poison_area
+
+	add LOOP_COUNT 1
+	if ( LOOP_COUNT > 9 ) setvard LOOP_COUNT 1
+
+	if ( LOOP_COUNT == 1 ) local CHECK_ENT GET_ENT1
+	if ( LOOP_COUNT == 2 ) local CHECK_ENT GET_ENT2
+	if ( LOOP_COUNT == 3 ) local CHECK_ENT GET_ENT3
+	if ( LOOP_COUNT == 4 ) local CHECK_ENT GET_ENT4
+	if ( LOOP_COUNT == 5 ) local CHECK_ENT GET_ENT5
+	if ( LOOP_COUNT == 6 ) local CHECK_ENT GET_ENT6
+	if ( LOOP_COUNT == 7 ) local CHECK_ENT GET_ENT7
+	if ( LOOP_COUNT == 8 ) local CHECK_ENT GET_ENT8
+	if ( LOOP_COUNT == 9 ) local CHECK_ENT GET_ENT9
+
+	////dbg poison area spotted  $get(CHECK_ENT,name) alv $get(CHECK_ENT,isalive) rng $get(CHECK_ENT,relationship,MYOWNER) nme $get(CHECK_ENT,relationship,MY_OWNER)
+
+	if $get(CHECK_ENT,isalive)
+
+	if $get(CHECK_ENT,range) < 256
+
+	if $get(CHECK_ENT,relationship,MY_OWNER) equals enemy
+
+	if ( game.pvp == 0 )
+	{
+		if OWNER_ISPLAYER
+		if $get(CHECK_ENT,isplayer)
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	//no poison through walls
+	local TRACE_START $get(ent_me,origin)
+	local TRACE_END $get(CHECK_ENT,origin)
+	local TRACE_LINE $get_traceline(TRACE_START,TRACE_END,worldonly)
+	if TRACE_LINE equals TRACE_END
+
+	//effect glow CHECK_ENT (75,215,0) 18 1 1
+	//callexternal $get(ent_lastseen,id) effect_damage MY_BASE_DAMAGE MY_OWNER 0.5 poison //base_npc and player/externals
+	//callexternal MY_OWNER send_damage CHECK_ENT direct MY_BASE_DAMAGE 100% MY_OWNER poison
+	if !$get(CHECK_ENT,haseffect,DOT_poison)
+	applyeffect CHECK_ENT effects/effect_poison 2.5 MY_OWNER MY_BASE_DAMAGE
+}
+
+{ poisoning_end
+
+	clientevent remove all $currentscript
+	setvard POISONING 0
+	setvard STORMING 0
+	callevent 0.1 remove_final
+}
+
+{ [shared] remove_final
+
+	removescript
+	clientevent remove all $currentscript
+	deleteent ent_me
+}
+
+// EFFECTS STUFF from monsters/summon/summon_lightning_storm
+
+{ [server]
+  repeatdelay 1
+  if STORMING
+}
+
+//Client
+//======
+
+{ [client]
+   const HEIGHT 40
+   const WIDTH 96
+
+}
+
+{ [client] client_activate
+
+   setvard smoke_POSITION PARAM1
+   setvard smoke_ANGLE $vec(0,PARAM2,0)
+   callevent 2 smokes_start  		//Start erupting after a delay
+	local CL_TIME_LIVE PARAM3
+	subtract CL_TIME_LIVE 0.5
+   callevent CL_TIME_LIVE poison_end_cl 	//Die after a delay   
+}
+
+{ [client] poison_end_cl
+
+	setvard STORMING 0
+  	removescript
+}
+
+// Random lightning bolt
+{ [shared] smokes_start  // Start shooting
+   
+   setvard STORMING 1
+}
+{ [client]
+   repeatdelay 0.25
+   if STORMING
+   callevent smokes_shoot
+}
+//{ [client]
+//   repeatdelay 0.5
+//   if STORMING
+//   callevent smokes_shoot
+//}
+
+// Throw clouds
+{ [client] smokes_shoot
+   local NEGWIDTH WIDTH
+   multiply NEGWIDTH -1
+
+   local x $rand(NEGWIDTH,WIDTH)
+   local y $rand(NEGWIDTH,WIDTH)
+   local L_POS $relpos(smoke_ANGLE,$vec(x,y,HEIGHT))
+   vectoradd L_POS smoke_POSITION
+
+   cleffect tempent sprite poison_cloud.spr L_POS setup_smokes
+}
+
+{  [client] setup_smokes
+
+
+   cleffect tempent set_current_prop death_delay 	2.5
+   cleffect tempent set_current_prop framerate		10
+   cleffect tempent set_current_prop frames		17
+   cleffect tempent set_current_prop bouncefactor 	0
+   cleffect tempent set_current_prop scale 		$randf(0.5,1.0)
+   cleffect tempent set_current_prop rendermode		add
+   cleffect tempent set_current_prop renderamt		200
+   cleffect tempent set_current_prop rendercolor	(0,0,0)
+   cleffect tempent set_current_prop gravity 		.005
+   cleffect tempent set_current_prop collide 		none
+}

@@ -1,0 +1,218 @@
+//Thothie Added speech feedback, HP/ATK determined magic hand side
+//Summoned Skeleton
+#scope server
+{
+
+	const SUMMON_CIRCLE_INDEX 30
+
+   setvard I_R_PET 1
+
+   const SUM_SAY_COME "Yes, my master."
+   const SUM_SAY_ATTACK "It shall be more dead than I, my master."
+   const SUM_SAY_HUNT "Seeking prey for my master..."
+   const SUM_SAY_DEFEND "I shall defend you with my unlife, my master."
+   const SUM_SAY_DEATH "No! I have failed my master!"
+   const SUM_SAY_GUARD "I shall be as unmovable as the dead!"
+   const SUM_REPORT_SUFFIX ", my master."
+
+	const HOVER_FAR 128
+	const HOVER_CLOSE 64
+
+	const ANIM_WALK_BASE walk
+	const ANIM_RUN_BASE walk
+
+   setvar ANIM_IDLE idle1
+   setvard ANIM_DEATH dieheadshot
+   setvar ANIM_WALK walk
+   setvar ANIM_RUN walk
+   setvard ANIM_ATTACK attack1
+   setvard MOVE_RANGE 32
+   setvard ATTACK_RANGE 75
+   setvard ATTACK_HITRANGE 125
+   const ATTACK_HITCHANCE 90%
+
+   const SOUND_STRUCK1 	weapons/cbar_hitbod1.wav
+   const SOUND_STRUCK2 	weapons/cbar_hitbod2.wav
+   const SOUND_STRUCK3 	weapons/cbar_hitbod3.wav
+   const SOUND_STRUCK4 	zombie/zo_pain2.wav
+   const SOUND_ATTACK1 	zombie/claw_miss1.wav
+   const SOUND_ATTACK2 	zombie/claw_miss2.wav
+   const SOUND_DEATH 	zombie/zo_pain1.wav
+	const ANIM_RUN_BASE walk //skeleton has no run anim
+
+   setvard RETALIATE_CHANCE 75%  //base_npc_attack - Automatically switch targets to the last damaging player
+   setvard CAN_FLEE 0		//base_npc_attack - Whether I run away at low health
+   setvard CAN_HUNT 1
+   setvard CAN_HEAR 0
+   setvard CAN_FLINCH 0
+
+	setvard IMMUNE_POISON 1
+}
+
+#include monsters/summon/base_summon
+
+{ summon_spawn
+
+   name a|Skeleton
+   fov 359
+   width 32
+   height 72
+   roam 1
+   hearingsensitivity 3
+   skilllevel 0
+   race human
+   setmodel monsters/skeleton.mdl
+   setmodelbody	1 0
+   setidleanim ANIM_IDLE
+   setmoveanim ANIM_WALK
+
+	blood none
+
+	takedmg slash .7
+	takedmg pierce .5
+	takedmg blunt 1.2
+	takedmg fire 1.5
+	takedmg holy 3.0
+	takedmg cold 0.1
+	takedmg poison 0.0
+
+   catchspeech skeleton_no "play dead"
+   catchspeech skeleton_grave "roll over"
+
+   callevent basesummon_attackall //Premptive attack  
+}
+
+{ pre_name_set
+	setvard OWNER_SKILL $get(SUMMON_MASTER,skill.spellcasting)
+	if ( OWNER_SKILL == 8 ) setmodelbody 0 6
+	if ( OWNER_SKILL == 9 ) 
+	{
+		setmodelbody 0 6
+		setmodelbody 1 1
+	}
+	if ( OWNER_SKILL == 10 ) 
+	{
+		setmodelbody 0 1
+		setmodelbody 1 1
+	}
+	if ( OWNER_SKILL == 11 ) 
+	{
+		setmodelbody 0 1
+		setmodelbody 1 4
+	}
+	if ( OWNER_SKILL == 12 ) 
+	{
+		setmodelbody 0 1
+		setmodelbody 1 2
+	}
+	if ( OWNER_SKILL == 13 ) 
+	{
+		setmodelbody 0 5
+		setmodelbody 1 0
+	}
+	if ( OWNER_SKILL == 14 ) 
+	{
+		setmodelbody 0 5
+		setmodelbody 1 1
+	}
+	if ( OWNER_SKILL == 15 ) 
+	{
+		setmodelbody 0 3
+		setmodelbody 1 4
+	}
+	if ( OWNER_SKILL == 16 ) 
+	{
+		setmodelbody 0 3
+		setmodelbody 1 3
+	}
+	if ( OWNER_SKILL == 17 ) 
+	{
+		setmodelbody 0 4
+		setmodelbody 1 1
+	}
+	if ( OWNER_SKILL == 18 ) 
+	{
+		setmodelbody 0 4
+		setmodelbody 1 2
+	}
+	if ( OWNER_SKILL == 19 ) 
+	{
+		setmodelbody 0 4
+		setmodelbody 1 4
+	}
+	if ( OWNER_SKILL >= 20 ) 
+	{
+		setmodelbody 0 8
+		setmodelbody 1 0
+	}
+	//body (0)
+	//0 - old default
+	//1 - bloody
+	//2 - green M
+	//3 - black armor
+	//4 - white armor
+	//5 - white brest, black hat
+	//6 - one-eye
+	//7 - frosted
+	//8 - Wassup-G
+
+	//weapons (1)
+	//0 - Unarmed
+	//1 - bone blade
+	//2 - double axes
+	//3 - double shields
+	//4 - sword
+}
+
+{ summon_summoned
+
+	local	TIME_LIVE	PARAM2
+	inc	TIME_LIVE	20
+	setvard	ATK_MIN	PARAM3
+
+	hp	PARAM2
+	playanim critical getup
+	calleventtimed TIME_LIVE killme
+
+	////dbg Owner PARAM1
+	//storeentity ent_expowner PARAM1 - causes monsters to ignore summon in favor of player (exploitable)
+	////dbg SkeleDmg PARAM3 SkeleHP PARAM2
+}
+
+// Deal damage
+{ attack_1
+
+   volume 5
+   playrandomsound 2 SOUND_ATTACK1 none
+
+   dodamage ent_lastseen ATTACK_HITRANGE ATK_MIN ATTACK_HITCHANCE
+}
+
+   //Hit by someone
+{ npc_struck
+   
+   volume 5
+   playrandomsound 2 SOUND_STRUCK4 SOUND_STRUCK1 SOUND_STRUCK2 SOUND_STRUCK3
+}
+
+{ skeleton_no
+
+ //dbg MyMaster SUMMON_MASTER
+ if $get(ent_lastspoke,id) equals SUMMON_MASTER
+
+	callevent npcatk_suspend_ai 3.0
+ playanim once throw_scientist
+ saytextrange 1024
+ saytext "Not funny, master."
+}
+
+{ eventname skeleton_grave
+
+ //dbg MyMaster SUMMON_MASTER
+ if $get(ent_lastspoke,id) equals SUMMON_MASTER
+
+	callevent npcatk_suspend_ai 1.0
+	setmovedest SUMMON_MASTER 9999
+ saytextrange 1024
+ saytext "In who's grave?"
+}

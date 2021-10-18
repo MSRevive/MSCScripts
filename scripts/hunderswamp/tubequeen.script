@@ -1,0 +1,645 @@
+#scope server
+{ [shared]
+	const ANIM_SPELL_START spell_start //frame_spell_start frame_spell_ready
+	const ANIM_SPELL_LOOP spell_loop
+	setvar ANIM_IDLE idle1
+	setvar ANIM_WALK idle1
+	setvard ANIM_RUN idle1
+}
+
+{
+	const ESCORT_SPAWN_FREQ_LOW $randf(80.0,120.0)
+	const ESCORT_SPAWN_FREQ_MED $randf(60.0,100.0)
+	const ESCORT_SPAWN_FREQ_HIGH $randf(45.0,80.0)
+	const ESCORT_SPAWN_FREQ_PANIC $randf(20.0,60.0)
+
+	setvard FREQ_ESCORT_SPAWN 30.0
+
+	setvard NPC_HBAR_ADJ $vec(0,128,0)
+
+	setvard NPC_IS_BOSS 1
+	const NPC_BOSS_REGEN_RATE 0.05
+	const NPC_BOSS_REGEN_FREQ 120
+	setvard NPC_GIVE_EXP 20000
+	const CANT_FLEE 1
+
+	const NPC_HEARDSOUND_OVERRIDE 1
+
+	const SOUND_RAWR monsters/tubequeen/tq_lavascream.wav
+
+	const SOUND_SMALLFLINCH1 monsters/tubequeen/tq_smallflinch.wav
+	const SOUND_SMALLFLINCH2 monsters/tubequeen/tq_smallflinch2.wav
+	const SOUND_BIGFLINCH1 monsters/tubequeen/tq_bigflinch.wav
+	const SOUND_BIGLLFLINCH2 monsters/tubequeen/tq_bigflinch2.wav
+	const SOUND_VIOLENTFLINCH monsters/tubequeen/tq_flinchviolent.wav
+
+	const SOUND_STRUCK1 monsters/tube/TubeCritter_Hit1.wav
+	const SOUND_STRUCK2 monsters/tube/TuberCritter_Hit2.wav
+	const SOUND_STRUCK3 monsters/tube/TubeCritter_Hit3.wav
+
+	const SOUND_IDLE1 monsters/tubequeen/tq_idle1.wav
+	const SOUND_IDLE2 monsters/tubequeen/tq_idle1a.wav
+	const SOUND_IDLE3 monsters/tubequeen/tq_idle2.wav
+
+	const SOUND_SWOOP weapons/swinghuge.wav
+	const SOUND_ATTACK_FORWARD monsters/tubequeen/tq_clawattack.wav
+	const SOUND_ATTACK_RIGHT monsters/tubequeen/tq_clawattack_right.wav
+	const SOUND_ATTACK_LEFT monsters/tubequeen/tq_clawattack_left.wav
+
+	const SOUND_SPELLPREP1 monsters/tubequeen/tq_mortarfire1.wav
+	const SOUND_SPELLPREP2 monsters/tubequeen/tq_mortarfire2.wav
+	const SOUND_SPELLPREP3 monsters/tubequeen/tq_mortarfire3.wav
+
+	const ATTACH_RHAND 1
+	const ATTACH_LHAND 2
+
+	const DMG_SLAM 800
+
+	const FREQ_SPELL $randf(60.0,100.0) //60.0/100.0
+
+	const DMG_GLOB 300
+	const DOT_GLOB 100
+		
+}
+
+{ game_precache
+	precachefile monsters/swamp_tube
+	precachefile monsters/swamp_tube_cl
+	precachefile monsters/summon/slime_globe
+	precachefile monsters/summon/slime_globe_cl
+}
+
+#include monsters/base_npc
+#include monsters/base_monster_shared
+
+{ [shared] npc_spawn
+
+	name an|Oodle-beak Hivemother
+	setmodel monsters/tubequeen.mdl
+	width 600
+	height 600
+	race wildanimal
+	setidleanim idle1
+	setmoveanim idle1
+
+	if game.serverside
+	hp 30000
+	roam 0
+	nopush 1
+	hearingsensitivity 11
+	takedmg all 0.5
+	takedmg fire 1.25
+	takedmg slash 0.25
+	callevent 0.1 pre_setup
+	callevent 2.1 npcatk_hunt
+	callevent 2.0 finalize_monster
+	setvard CUR_HURT_STAGE 0
+	setvard NPCATK_TARGET unset //manual AI
+	setvard FIRST_ESCORT 0
+	setvard ESCORT_CYCLE 0
+}
+
+{ game_heardsound
+	if game.time > INIT_DELAY
+	if NPCATK_TARGET equals unset
+	local CHECK_TARG $get(ent_lastheard,id)
+	if $get(CHECK_TARG,relationship,ent_me) equals 'enemy'
+	callevent npcatk_settarget CHECK_TARG
+}
+
+{ pre_setup
+	setvard INIT_DELAY game.time
+	add INIT_DELAY 5.0
+	playanim once idle1
+
+	setvard NEXT_ESCORT game.time
+	add NEXT_ESCORT FREQ_ESCORT_SPAWN
+
+	setvard TIME_SPAWN_PLUS_20 game.time
+	add TIME_SPAWN_PLUS_20 20.0
+
+	callevent setup_delays //happens again on intro
+}
+
+{ setup_delays
+	setvard NEXT_FLINCH game.time
+	add NEXT_FLINCH 60.0
+
+	setvard NEXT_SPELL game.time
+	add NEXT_SPELL FREQ_SPELL
+
+	setvard NEXT_IDLE_ANIM game.time
+	add NEXT_IDLE_ANIM 10.0
+}
+
+{ finalize_monster
+	//setvard LEFT_YAW $get(ent_me,angles.yaw)
+	//subtract LEFT_YAW 45
+	setvard LEFT_YAW -60
+
+	//setvard RIGHT_YAW $get(ent_me,angles.yaw)
+	//add RIGHT_YAW 45
+	setvard RIGHT_YAW -110
+
+	local MY_HP $get(ent_me,maxhp)
+	setvard HURT_STAGE1 MY_HP
+	multiply HURT_STAGE1 0.75
+	setvard HURT_STAGE2 MY_HP
+	multiply HURT_STAGE2 0.5
+	setvard HURT_STAGE3 MY_HP
+	multiply HURT_STAGE3 0.25
+}
+
+{ game_damaged
+
+	setvard TUBEQUEEN_ACTIVE 1
+	setvard DID_INTRO 1
+
+	callevent delay_idle_anim
+
+	if ( NPCATK_TARGET equals unset )
+	{
+		if $get(PARAM1,relationship,ent_me) equals enemy
+		callevent npcatk_settarget $get(PARAM1,id)
+	}
+
+	local CUR_HP $get(ent_me,hp)
+	if ( CUR_HP < HURT_STAGE1 )
+	{
+		if CUR_HURT_STAGE == 0
+		setmodelbody 1 0
+		setvard CUR_HURT_STAGE 1
+		setprop ent_me skin 1
+		playsound 0 10 monsters/tubequeen/tq_inspectbelly.wav
+		playanim critical bellyinspect
+		callevent delay_flinch
+		setvard NEXT_ESCORT game.time
+		add NEXT_ESCORT 2.0
+		local EXIT_SUB 1
+	}
+	if ( CUR_HP < HURT_STAGE2 )
+	{
+		if CUR_HURT_STAGE == 1
+		setmodelbody 1 0
+		setvard CUR_HURT_STAGE 2
+		setprop ent_me skin 2
+		playsound 0 10 monsters/tubequeen/tq_inspectbelly.wav
+		playanim critical bellyinspect
+		callevent delay_flinch
+		setvard NEXT_ESCORT game.time
+		add NEXT_ESCORT 2.0
+		local EXIT_SUB 1
+	}
+	if ( CUR_HP < HURT_STAGE3 )
+	{
+		if CUR_HURT_STAGE == 2
+		setmodelbody 1 0
+		setvard CUR_HURT_STAGE 3
+		setprop ent_me skin 2
+		playsound 0 10 monsters/tubequeen/tq_inspectbelly.wav
+		playanim critical bellyinspect
+		callevent delay_flinch
+		setvard NEXT_ESCORT game.time
+		add NEXT_ESCORT 2.0
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	if ( game.time > NEXT_FLINCH )
+	{
+		local EXIT_SUB 1
+		callevent delay_flinch
+
+		local RND_FLINCH $rand(1,8)
+		if ( RND_FLINCH >= 4 )
+		{
+			playanim critical smallflinch
+			playrandomsound 0 10 SOUND_SMALLFLINCH1 SOUND_SMALLFLINCH2
+		}
+		if ( RND_FLINCH >= 2 )
+		{
+			if RND_FLINCH > 1
+			playanim critical bigflinch
+			playrandomsound 0 10 SOUND_BIGFLINCH1 SOUND_BIGFLINCH2
+		}
+		if ( RND_FLINCH == 1 )
+		{
+			playanim critical flinchviolent
+			playrandomsound 0 10 SOUND_VIOLENTFLINCH
+		}
+		setmodelbody 1 0
+	}
+	if !EXIT_SUB
+
+	playrandomsound 0 10 SOUND_STRUCK1 SOUND_STRUCK2 SOUND_STRUCK3
+}
+
+{ delay_flinch
+	setvard NEXT_FLINCH game.time
+	if ( CUR_HURT_STAGE == 0 ) add NEXT_FLINCH $randf(20.0,30.0)
+	if ( CUR_HURT_STAGE == 1 ) add NEXT_FLINCH $randf(15.0,25.0)
+	if ( CUR_HURT_STAGE == 2 ) add NEXT_FLINCH $randf(10.0,20.0)
+	if ( CUR_HURT_STAGE == 3 ) add NEXT_FLINCH $randf(5.0,15.0)
+	setvard NEXT_IDLE game.time
+	add NEXT_IDLE $randf(10.0,20.0)
+}
+
+{ delay_idle_anim //delays when struck or attacking
+	setvard NEXT_IDLE_ANIM game.time
+	add NEXT_IDLE_ANIM 10.0
+}
+
+{ npcatk_hunt
+	if $get(ent_me,isalive)
+	callevent 1.0 npcatk_hunt
+
+	local GAME_TIME game.time
+
+	if ( GAME_TIME > INIT_DELAY )
+	{
+		if ( NPCATK_TARGET equals unset ) callevent npcatk_gettarget
+		if ( !$get(NPCATK_TARGET,isalive) ) callevent npcatk_gettarget
+	}
+
+	if ( !DID_INTRO )
+	{
+		//after 20 secs, force intro/init
+		if GAME_TIME > TIME_SPAWN_PLUS_20
+		callevent force_active
+	}
+
+
+	if DID_INTRO
+
+	if ( GAME_TIME > NEXT_ESCORT )
+	{
+		if NPCATK_TARGET isnot unset
+		callevent check_escort
+	}
+
+	if !I_R_FROZEN
+	if !SUSPEND_AI
+	if !DOING_SPELL
+
+	if ( GAME_TIME > NEXT_IDLE )
+	{
+		setvard NEXT_IDLE GAME_TIME
+		add NEXT_IDLE $randf(10.0,20.0)
+		playrandomsound 0 10 SOUND_IDLE1 SOUND_IDLE2 SOUND_IDLE3
+		if GAME_TIME > NEXT_IDLE_ANIM
+		setvard NEXT_IDLE_ANIM GAME_TIME
+		add NEXT_IDLE_ANIM 10.0
+		playanim once idle2 //plays when not attacked or attacking for some time
+	}
+
+	if NPCATK_TARGET isnot unset
+
+	if ( GAME_TIME > NEXT_SPELL )
+	{
+		setvard NEXT_SPELL GAME_TIME
+		add NEXT_SPELL FREQ_SPELL
+		playanim critical ANIM_SPELL_START
+		callevent delay_idle_anim
+		callevent delay_flinch
+		setvard DOING_SPELL 1
+		callevent 15.0 spell_break
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	if ( GAME_TIME > NEXT_TUBE )
+	{
+		if TUBE_COUNT < 3
+		setvard NEXT_TUBE GAME_TIME
+		add NEXT_TUBE 20.0 //resets on complete
+		setvard NEXT_FLINCH GAME_TIME
+		add NEXT_FLINCH 60.0 //resets on complete
+		setvard NEXT_IDLE_ANIM GAME_TIME
+		add NEXT_IDLE_ANIM 60.0 //resets on complete
+		playanim once grabtube
+		callevent delay_spell 10.0
+	 	callevent delay_attack 5.0
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+	
+	if ( GAME_TIME > NEXT_ATTACK )
+	{
+		setvard NEXT_ATTACK GAME_TIME
+		add NEXT_ATTACK $randf(3.0,5.0)
+		//get angles to target to determine attack anim
+		local TARG_POS $get(NPCATK_TARGET,origin)
+		local MY_POS $get(ent_me,origin)
+		local TARG_ANGS $angles(MY_POS,TARG_POS)
+		setvard ANIM_ATTACK clawattack
+		if ( TARG_ANGS > LEFT_YAW ) setvard ANIM_ATTACK clawattackleft
+		if ( TARG_ANGS < RIGHT_YAW ) setvard ANIM_ATTACK clawattackright
+		playanim once ANIM_ATTACK
+		callevent delay_idle_anim
+	}
+}
+
+{ delay_attack //<delay>
+	setvard NEXT_ATTACK game.time
+	add NEXT_ATTACK PARAM1
+}
+
+{ npcatk_gettarget
+	if ( $cansee(enemy) ) setvard NPCATK_TARGET $get(ent_lastseen,id)
+
+	//can't see one - just pick up any in range
+	if ( NPCATK_TARGET equals unset )
+	{
+		local IN_SPHERE $get_tsphere(enemy,768)
+		if ( IN_SPHERE isnot none )
+		{
+			local IN_SPHERE $sort_entlist(IN_SPHERE,range)
+			setvard NPCATK_TARGET $get_token(IN_SPHERE,0)
+		}
+	}
+	callevent npcatk_targetvalidate NPCATK_TARGET
+}
+
+{ npcatk_targetvalidate //returns NPCATK_TARGET to unset if target invalid
+	if ( $get(NPCATK_TARGET,scriptvar,'PLAYING_DEAD') == 1 ) setvard NPCATK_TARGET unset
+	if ( !$get(NPCATK_TARGET,isalive) ) setvard NPCATK_TARGET unset
+	if ( !$can_damage(NPCATK_TARGET) ) setvard NPCATK_TARGET unset
+
+	if NPCATK_TARGET isnot unset
+	if !DID_INTRO
+	setvard DID_INTRO 1
+	playanim critical flinchviolent
+	playsound 0 10 SOUND_RAWR
+	effect screenshake $relpos(0,0,0) 380 20 5 1024
+	callevent setup_delays
+}
+
+{ npcatk_settarget //<possible_new_target>
+	if ( NPCATK_TARGET isnot unset )
+	{
+		if $get(NPCATK_TARGET,range) < $get(PARAM1,range)
+		//ignore, current target is closer
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	local OLD_TARGET NPCATK_TARGET
+	setvard NPCATK_TARGET PARAM1
+	callevent npcatk_targetvalidate $get(PARAM1,id)
+	if ( NPCATK_TARGET equals unset )
+	{
+		//target was invalidated, switch to old, if any
+		if OLD_TARGET isnot unset
+		setvard NPCATK_TARGET OLD_TARGET
+	}
+}
+
+{ frame_attack_forward_start
+	playsound 1 10 SOUND_SWOOP
+	playsound 2 10 SOUND_ATTACK_FORWARD
+}
+
+{ frame_attack_left_start
+	playsound 1 10 SOUND_SWOOP
+	playsound 2 10 SOUND_ATTACK_LEFT
+}
+
+{ frame_attack_right_start
+	playsound 1 10 SOUND_SWOOP
+	playsound 2 10 SOUND_ATTACK_RIGHT
+}
+
+
+{ frame_attack_forward_land
+	local LAND_POS $get(ent_me,attachpos,ATTACH_RHAND)
+	vectoradd LAND_POS $relpos(game.monster.angles,$vec(-128,0,0))
+	vectorset LAND_POS z $get_ground_height(LAND_POS)
+	effect screenshake LAND_POS 380 20 1 512
+	clientevent new all effects/sfx_stun_burst LAND_POS 512 0 0
+	setvard SLAM_ORG LAND_POS
+	vectoradd LAND_POS z 32
+	xdodamage LAND_POS 512 DMG_SLAM 0.3 ent_me ent_me none blunt_effect dmgevent:slam
+	//here, either create an npc stun wave (x2 for forward), or a cleffect and track
+}
+
+{ frame_attack_right_land
+	local LAND_POS $get(ent_me,attachpos,ATTACH_RHAND)
+	vectorset LAND_POS z $get_ground_height(LAND_POS)
+	effect screenshake LAND_POS 380 20 1 384
+	clientevent new all effects/sfx_stun_burst LAND_POS 384 0 0
+	setvard SLAM_ORG LAND_POS
+	vectoradd LAND_POS z 32
+	xdodamage LAND_POS 384 DMG_SLAM 0.3 ent_me ent_me none blunt_effect dmgevent:slam
+	//here, either create an npc stun wave (x2 for forward), or a cleffect and track
+}
+
+{ frame_attack_left_land
+	local LAND_POS $get(ent_me,attachpos,ATTACH_LHAND)
+	vectorset LAND_POS z $get_ground_height(LAND_POS)
+	effect screenshake LAND_POS 380 20 1 256
+	clientevent new all effects/sfx_stun_burst LAND_POS 384 0 0
+	setvard SLAM_ORG LAND_POS
+	vectoradd LAND_POS z 32
+	xdodamage LAND_POS 384 DMG_SLAM 0.3 ent_me ent_me none blunt_effect dmgevent:slam
+	//here, either create an npc stun wave (x2 for forward), or a cleffect and track
+}
+
+
+{ slam_dodamage
+	if PARAM1
+	if $get(PARAM2,relationship,ent_me) equals enemy
+	if $get(PARAM2,onground)
+	applyeffect PARAM2 effects/heavy_stun 5.0 $get(ent_me,id) 1
+	local TARG_ORG $get(PARAM2,origin)
+	local MY_ORG SLAM_ORG
+	local TARG_ANG $angles(MY_ORG,TARG_ORG)
+	local NEW_YAW TARG_ANG
+	addvelocity PARAM2 $relvel($vec(0,NEW_YAW,0),$vec(0,1000,0))
+
+	//delay slime ball spell, if I can hit someone, and spell to go off within 20 sec
+	callevent delay_spell 20.0
+}
+
+{ delay_spell //<delay> - delay spell X seconds, if to go off within X seconds
+	local CHECK_TIME game.time
+	add CHECK_TIME PARAM1
+	if ( CHECK_TIME > NEXT_SPELL )
+	{
+		dbg delay_spell PARAM1
+		setvard NEXT_SPELL game.time
+		add NEXT_SPELL PARAM1
+	}
+}
+
+
+{ frame_sack_start
+	callevent delay_spell 5.0
+	callevent delay_attack 10.0
+	playsound 0 10 monsters/tubequeen/tq_grabtube1.wav
+}
+
+{ frame_sack_grab
+	callevent delay_attack 10.0
+	setmodelbody 1 1
+	playsound 0 10 monsters/tubequeen/tq_grabtube2.wav
+}
+
+{ frame_sack_throw
+	callevent delay_attack 1.0
+	callevent delay_spell 5.0
+	setmodelbody 1 0
+	playsound 0 10 monsters/tubequeen/tq_grabtube3.wav
+
+	callevent delay_flinch
+	callevent delay_idle_anim
+	add TUBE_COUNT 1
+	if ( TUBE_COUNT < 3 )
+	{
+		setvard NEXT_TUBE game.time
+	}
+	else
+	{
+		setvard NEXT_TUBE game.time
+		add NEXT_TUBE 60.0
+	}
+
+	local SPAWN_POS $get(ent_me,attachpos,ATTACH_RHAND)
+	
+	createnpc monsters/swamp_tube SPAWN_POS $get(ent_me,id)
+	local RND_RL $get(ent_me,angles.yaw)
+	add RND_RL $randf(-65,65)
+	local RND_FD $randf(200,800)
+	local RND_UP $randf(200,900)
+	local RND_RL2 $randf(-1000,1000)
+
+	dbg frame_sack_throw $relpos($vec(0,RND_RL,0),$vec(0,RND_FD,RND_UP))
+
+	addvelocity ent_lastcreated $relpos($vec(0,RND_RL,0),$vec(RND_RL2,RND_FD,RND_UP))
+}
+
+{ ext_tube_died
+	subtract TUBE_COUNT 1
+}
+
+{ game_death
+	//tell all my children to follow me into the abyss
+	playsound 0 10 monsters/tubequeen/tq_lavascream.wav
+	effect screenshake $relpos(0,0,0) 380 20 10 1024
+	local DEATH_POS $get(ent_me,origin)
+	vectoradd DEATH_POS $relpos($vec(0,0,0),$vec(-256,256,0))
+	callexternal all ext_mommy_died DEATH_POS
+}
+
+{ frame_spell_start
+	playrandomsound 0 10 SOUND_SPELLPREP1 SOUND_SPELLPREP2 SOUND_SPELLPREP3
+	setvard DOING_SPELL 1
+	dbg frame_spell_start
+	createnpc monsters/summon/slime_globe $relpos(0,512,-64) $get(ent_me,id) DMG_GLOB
+	//setvard SLIME_GLOBE_ID $get(ent_lastcreated,id) //just using the external instead
+	setvard NEXT_SPELL game.time
+	add NEXT_SPELL FREQ_SPELL //redundant, but short delay during testing helps here
+}
+
+{ frame_spell_ready
+	playrandomsound 0 10 SOUND_SPELLPREP1 SOUND_SPELLPREP2 SOUND_SPELLPREP3
+	callevent npcatk_suspend_ai 12.0
+	callevent npcatk_suspend_movement ANIM_SPELL_LOOP 12.0
+	playanim critical ANIM_SPELL_LOOP
+}
+
+{ spell_break
+	setvard DOING_SPELL 0
+	if ( SUSPEND_AI ) callevent npcatk_resume_ai
+	playanim break
+	setvard ANIM_IDLE idle1
+	setidleanim ANIM_IDLE
+	setmoveanim ANIM_IDLE
+	setvard NEXT_SPELL game.time
+	add NEXT_SPELL FREQ_SPELL
+	callevent delay_attack 1.0
+}
+
+{ glob_dodamage //from monsters/summon/slime_globe
+	if PARAM1
+	if $get(PARAM2,relationship,ent_me) equals enemy
+//	local TARG_ORG $get(PARAM2,origin)
+//	local BLOG_ORG PARAM3
+//	local BLOB_DIST $dist(BLOB_ORG,TARG_ORG)
+//	divide BLOB_DIST 64
+//	local BLOB_DIST_RATIO 1
+//	subtract BLOB_DIST_RATIO BLOB_DIST
+//	local BLIND_DURATION $ratio(BLOB_DIST_RATIO,4.0,8.0) //blind 4-8 seconds based on how direct the hit was
+//	dbg glob_dodamage BLIND_DURATION BLOB_DIST_RATIO
+	applyeffect PARAM2 effects/effect_poison_blinding 5.0 $get(ent_me,id) DOT_GLOB
+}
+
+{ check_escort
+	dbg check_escort game.time
+	if ( !FIRST_ESCORT )
+	{
+		dbg first_escort
+		setvard FIRST_ESCORT 1
+		setvard ESCORT_CYCLE 2
+		usetrigger spawn_boss_escort1
+		usetrigger spawn_boss_escort2
+		local EXIT_SUB 1
+	}
+	setvard NEXT_ESCORT game.time
+	if ( CUR_HURT_STAGE == 0 ) setvard FREQ_ESCORT_SPAWN ESCORT_SPAWN_FREQ_LOW
+	if ( CUR_HURT_STAGE == 1 ) setvard FREQ_ESCORT_SPAWN ESCORT_SPAWN_FREQ_MED
+	if ( CUR_HURT_STAGE == 2 ) setvard FREQ_ESCORT_SPAWN ESCORT_SPAWN_FREQ_HIGH
+	if ( CUR_HURT_STAGE == 3 ) setvard FREQ_ESCORT_SPAWN ESCORT_SPAWN_FREQ_PANIC
+	add NEXT_ESCORT FREQ_ESCORT_SPAWN
+	if !EXIT_SUB
+
+	add ESCORT_CYCLE 1
+
+	if ( CUR_HURT_STAGE < 2 )
+	{
+		if ( ESCORT_CYCLE == 1 ) usetrigger spawn_boss_escort1
+		if ( ESCORT_CYCLE == 2 ) usetrigger spawn_boss_escort2
+		if ( ESCORT_CYCLE == 3 )
+		{
+			setvard ESCORT_CYCLE 0
+			usetrigger spawn_boss_escort3
+		}
+	}
+
+	if ( CUR_HURT_STAGE == 2 )
+	{
+		if ( ESCORT_CYCLE == 1 )
+		{
+			usetrigger spawn_boss_escort1
+			usetrigger spawn_boss_escort2
+		}
+		if ( ESCORT_CYCLE == 2 )
+		{
+			usetrigger spawn_boss_escort2
+			usetrigger spawn_boss_escort3
+		}
+		if ( ESCORT_CYCLE == 3 )
+		{
+			setvard ESCORT_CYCLE 0
+			usetrigger spawn_boss_escort3
+			usetrigger spawn_boss_escort1
+		}
+	}
+
+	if ( CUR_HURT_STAGE == 3 )
+	{
+		setvard ESCORT_CYCLE 0
+		usetrigger spawn_boss_escort1
+		usetrigger spawn_boss_escort2
+		usetrigger spawn_boss_escort3
+	}
+
+}
+
+{ force_active
+	setvard TUBEQUEEN_ACTIVE 1
+	setvard DID_INTRO 1
+	playanim critical flinchviolent
+	playsound 0 10 SOUND_RAWR
+	effect screenshake $relpos(0,0,0) 380 20 5 1024
+	callevent setup_delays
+}

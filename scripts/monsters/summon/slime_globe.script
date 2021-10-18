@@ -1,0 +1,84 @@
+//Big ball of slime, grows, tosses out semi-guided slime balls at great distances
+#scope server
+{
+	precache xfireball3.spr
+
+	const ORBIT_SOUND1 tentacle/te_move1.wav 
+	const ORBIT_SOUND2 tentacle/te_move2.wav 
+	const SOUND_SHOOT magic/blackhole.wav
+}
+
+{ game_spawn
+	name a|Globe of Slime
+	invincible 1
+	nopush 1
+	gravity 0
+	fly 1
+	setmodel null.mdl
+	width 2
+	height 2
+	setvard PLAYING_DEAD 1
+	setsolid none
+	setbbox none
+}
+
+{ game_dynamically_created //<owner> <dmg> <dot>
+	dbg game_dynamically_created PARAM1 PARAM2 PARAM3
+	//DOT handled owner side via glob_dodamage
+	setvard MY_OWNER PARAM1
+	setvard MY_DMG PARAM2
+	race $get(MY_OWNER,race)
+	callevent 0.1 setup_cl
+	setvard IS_ACTIVE 1
+	callevent 3.0 shoot_slime
+	callevent 13.0 end_slime
+	playrandomsound 1 10 ORBIT_SOUND1 ORBIT_SOUND2
+	setvard NEXT_ORBIT_SOUND game.time
+	add NEXT_ORBIT_SOUND 3.0
+}
+
+{ setup_cl
+	clientevent new all monsters/summon/slime_globe_cl $get(ent_me,origin) 13.0
+	setvard MY_CL_IDX game.script.last_sent_id
+}
+
+{ shoot_slime
+	if IS_ACTIVE
+	callevent 1.0 shoot_slime
+	setvard GLOB_TARG none
+	local TARG_LIST $get_tsphere(enemy,1200)
+	if TARG_LIST isnot none
+	token.scramble TARG_LIST
+	local CUR_TARG $get_token(TARG_LIST,0)
+	setvard GLOB_TARG CUR_TARG //for use by projectile
+	setmovedest CUR_TARG 9999
+	tossprojectile CUR_TARG 400 0 1 proj_glob_guided (0,0,0)
+
+	if game.time > NEXT_ORBIT_SOUND
+	playrandomsound 1 10 ORBIT_SOUND1 ORBIT_SOUND2
+	playsound 2 10 SOUND_SHOOT
+	setvard NEXT_ORBIT_SOUND game.time
+	add NEXT_ORBIT_SOUND 3.0
+}
+
+{ end_slime
+	setvard IS_ACTIVE 0
+	callevent 5.0 remove_me //give some time for projectiles to land / DOTs to finish
+}
+
+{ remove_me
+	deleteent ent_me
+}
+
+{ ext_glob_landed //<origin> - from items/proj_glob_dynamic
+	xdodamage PARAM1 96 MY_DMG 0.2 MY_OWNER MY_OWNER none acid_effect dmgevent:glob
+}
+
+{ early_remove
+	clientevent update all MY_CL_IDX early_remove
+	callevent end_slime
+}
+
+{ ext_mommy_died
+	callevent early_remove
+}

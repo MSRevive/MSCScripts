@@ -1,0 +1,143 @@
+//this is just a summon sequence for the felewyn shard reward
+#scope server
+{
+	const NPC_FWD_SPEED 5
+	const CHAT_DELAY 5.0
+}
+
+
+{ game_dynamically_created
+
+	setvard MY_TARGET PARAM1
+	
+}
+
+{ [shared] game_spawn
+
+	name A|Shard of Felewyn
+	invincible 1
+	width 32
+	height 128
+	gravity 0
+	setmodel weapons/projectiles.mdl
+	setmodelbody 0 43
+	setidleanim spin_horizontal_slow
+	playanim once spin_horizontal_slow
+	setprop ent_me rendermode 5
+	setprop ent_me renderamt 255
+	setsolid none
+
+	clientevent new all $currentscript $get(ent_me,index) (255,255,255) 255
+	setvard MY_SCRIPT_IDX game.script.last_sent_id	
+
+	setmonsterclip 0
+	fly 1
+	saytextrange 2048
+	callevent 1.0 do_intro
+}
+
+{ do_intro
+	saytext I am a shard of the original Felewyn Blade...
+	callevent CHAT_DELAY do_intro2
+}
+
+{ do_intro2
+	saytext One of five, scattered throughout the lands, when our goddess pierced the heart of the Doom Bringer with her sword.
+	callevent CHAT_DELAY do_intro3
+}
+
+{ do_intro3
+	saytext We await that dread day when the Lor Malgoriand is destined to return. We await that day when great warriors may find us.
+	callevent CHAT_DELAY do_intro4
+}
+{ do_intro4
+	saytext And lo, it has come, for you mighty warriors have defeated the mighty Undamael, a task previously believed beyond the reach of mortal hands.
+	callevent CHAT_DELAY do_intro5
+}
+
+{ do_intro5
+	saytext Although you have all fought valiantly, I am but one shard. Thus, I offer myself to the warrior known as $get(MY_TARGET,name)
+	callevent CHAT_DELAY do_intro6
+
+	setmovedest MY_TARGET 10
+	setvard NPC_NOCLIP_DEST MY_TARGET
+	callevent 0.1 basenoclip_flight
+}
+
+
+{ basenoclip_flight
+	if !GAVE_SWORD
+	callevent 0.1 basenoclip_flight
+
+	local MY_ORG game.monster.origin
+	vectoradd MY_ORG $relvel(0,NPC_FWD_SPEED,0)
+	setorigin ent_me MY_ORG
+
+	setmovedest NPC_NOCLIP_DEST 10
+
+
+	local TARG_ORG $get(MY_TARGET,origin)
+	if $dist(MY_ORG,TARG_ORG) < 30
+	setvard GAVE_SWORD 1
+	setprop ent_me renderamt 0
+	effect screenfade MY_TARGET 3 1 (255,255,255) 255 fadein
+	local FRAG_ELM $rand(1,5)
+	if ( FRAG_ELM == 1 ) offer MY_TARGET swords_fshard1
+	if ( FRAG_ELM == 2 ) offer MY_TARGET swords_fshard2
+	if ( FRAG_ELM == 3 ) offer MY_TARGET swords_fshard3
+	if ( FRAG_ELM == 4 ) offer MY_TARGET swords_fshard4
+	if ( FRAG_ELM == 5 ) offer MY_TARGET swords_fshard5
+
+	setmodel none
+	clientevent remove all MY_SCRIPT_IDX
+	callevent 0.1 remove_me
+}
+
+{ remove_me
+	deleteent ent_me
+}
+
+{ [client] client_activate
+
+	setvard CUR_ANG 0
+	setvard SKEL_ID PARAM1
+	setvard GLOW_COLOR PARAM2
+	setvard GLOW_RAD PARAM3
+	if SKEL_LIGHT_ID equals 'SKEL_LIGHT_ID'
+	cleffect light new $getcl(SKEL_ID,origin) GLOW_RAD GLOW_COLOR 5.0
+	setvard SKEL_LIGHT_ID game.script.last_light_id
+	setcallback render enable
+}
+
+{ [client] game_prerender
+
+	local L_POS $getcl(SKEL_ID,origin)
+	local RND_R $rand(0,255)
+	local RND_G $rand(0,255)
+	local RND_B $rand(0,255)
+	local RND_COLOR $vec(RND_R,RND_G,RND_B)
+	cleffect light SKEL_LIGHT_ID L_POS GLOW_RAD RND_COLOR 1.0
+
+	add CUR_ANG 18
+	if ( CUR_ANG > 359 ) subtract CUR_ANG 359
+	vectoradd L_POS $relpos($vec(0,CUR_ANG,0),$vec(0,32,0))
+	cleffect tempent sprite 3dmflaora.spr L_POS glow_sprite
+}
+
+{ [client] glow_sprite
+	cleffect tempent set_current_prop death_delay 	2
+	//cleffect tempent set_current_prop velocity 	$vec($randf(-200,200),$randf(-200,200),$randf(-200,200))
+	cleffect tempent set_current_prop bouncefactor 	5
+	cleffect tempent set_current_prop scale 0.5
+	//cleffect tempent set_current_prop gravity 	$randf(-1.1,-1.6)
+	cleffect tempent set_current_prop gravity 	-1.1
+	cleffect tempent set_current_prop collide 	all;die
+	cleffect tempent set_current_prop framerate	30
+	cleffect tempent set_current_prop frames	1
+
+//	local RND_R $rand(0,255)
+//	local RND_G $rand(0,255)
+//	local RND_B $rand(0,255)
+//	local RND_COLOR $vec(RND_R,RND_G,RND_B)
+	cleffect tempent set_current_prop rendercolor (128,128,255)
+}

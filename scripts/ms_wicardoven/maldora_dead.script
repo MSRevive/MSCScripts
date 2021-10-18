@@ -1,0 +1,195 @@
+{
+	setvar ANIM_IDLE idle
+
+	const SOUND_LAUGH monsters/skeleton/cal_laugh.wav
+
+	//media - monster model
+	const MONSTER_MODEL monsters/maldora.mdl
+	precache MONSTER_MODEL
+
+	setvard NO_SPAWN_STUCK_CHECK 1
+	const I_AM_TURNABLE 0
+
+	//media
+	//barrier media
+	precache doors/aliendoor3.wav
+	precache magic/spawn.wav
+}
+
+{ game_spawn
+
+	name a|Fragment of Maldora
+	hp 3000
+	race demon
+	invincible 1
+	setmodel MONSTER_MODEL
+	setprop ent_me rendermode 5
+	setprop ent_me renderamt 255
+
+	setsolid none
+	width 32
+	height 86
+
+	blood none
+
+	roam 0
+
+	saytextrange 2048
+
+	name_unique dead_maldora
+
+	setidleanim ANIM_IDLE
+	setmoveanim ANIM_IDLE
+}
+
+{ game_precache
+	precachefile monsters/summon/barrier
+}
+
+{ make_barrier
+
+	createnpc monsters/summon/barrier $relpos(0,0,0) $get(ent_me,id) 128 1 0
+	setvard BARRIER_ID $get(ent_lastcreated,id)
+	callevent 0.25 get_orc_ids
+}
+
+
+{ game_dynamically_created //PARAM1=type
+
+	setvard DEATH_ACCEL 20 //fly out faster for Voldar, as ceiling higher
+
+	if ( PARAM1 isnot crow )
+	{
+		if PARAM1 isnot crow_final
+		callevent 0.1 make_barrier
+	}
+
+	if ( PARAM1 equals death )
+	{
+		setvard DEATH_ACCEL 10
+		callevent death_exit
+	}
+
+	if ( PARAM1 equals crow )
+	{
+		setvard DEATH_ACCEL 10
+		callevent fly_out
+	}
+
+	if ( PARAM1 equals crow_final )
+	{
+		setvard DEATH_ACCEL 10
+		setprop ent_me rendermode 0
+		setprop ent_me renderamt 255
+		callevent fly_out
+		callexternal GAME_MASTER gm_lodagond_ver 4
+		dbg drop_axe PARAM2
+		if PARAM2 > -1
+		callevent 0.5 spawn_axe
+		setvard AXE_TYPE PARAM2
+	}
+}
+
+{ spawn_axe
+	saytext Here fools, you've earned a gift...
+	playsound 0 10 voices/lodagond-4/maldora_reward.wav
+	if ( AXE_TYPE == 0 ) setvard AXE_ITEM axes_tf
+	if ( AXE_TYPE == 1 ) setvard AXE_ITEM axes_td
+	if ( AXE_TYPE == 2 ) setvard AXE_ITEM axes_ti
+	if ( AXE_TYPE == 3 ) setvard AXE_ITEM axes_tp
+	if ( AXE_TYPE == 4 ) setvard AXE_ITEM axes_tl
+	setprop ent_me skin 5
+	//createitem AXE_ITEM $relpos(0,0,0)
+	callexternal GAME_MASTER gm_drop_item 1.0 AXE_ITEM $get(ent_me,origin) 1
+}
+
+//Externals called from Voldar
+{ say_gaveyou1
+	playanim critical ref_shoot_squeak
+	saytext I've empowered your shamans. I've given your troops all the poison they could ever use...
+	playsound 0 10 voices/ms_wicardoven/fmaldora_2voldar1.wav
+}
+
+{ say_gaveyou2
+	saytext ...and I've granted you your own magical powers... Just as we agreed.
+	playsound 0 10 voices/ms_wicardoven/fmaldora_2voldar2.wav
+}
+
+{ say_gaveyou3
+
+	playanim critical look_idle
+	if ( game.players == 1 ) saytext But if you can't stop one pathetic human, with all of that power...
+	if ( game.players == 2 ) saytext But if you can't stop a pair of puny humans, with all of that power...
+	if ( game.players == 3 ) saytext But if you can't stop a three puny humans, with all of that power...
+	if ( game.players == 4 ) saytext But if you can't stop a four puny humans, with all of that power...
+	if ( game.players == 5 ) saytext But if you can't stop a five puny humans, with all of that power...
+	if ( game.players == 6 ) saytext But if you can't stop a six puny humans, with all of that power...
+	if ( game.players > 6 )	saytext But if you can't stop a couple of puny humans, with all of that power...
+	playsound 0 10 voices/ms_wicardoven/fmaldora_2voldar3.wav
+}
+
+{ say_gaveyou4
+	saytext ...then you aren't of much use to me, are you?
+	playsound 0 10 voices/ms_wicardoven/fmaldora_2voldar4.wav
+}
+
+{ remove_me
+	deleteent ent_me
+}
+
+{ face_me
+	setangle face_origin $get(PARAM1,origin)
+	callevent 0.1 straighten_up
+}
+
+{ straighten_up
+	setangle face $vec(0,$vec.yaw(game.monster.angles),0)
+}
+
+{ fly_out
+
+	callexternal BARRIER_ID remove_barrier
+	playsound 0 10 voices/ms_wicardoven/fmaldora_exit4.wav
+	fly 1
+	setvard FLY_COUNT 0
+	local TRACE_ORG game.monster.origin
+	local TRACE_END $relpos($vec(0,0,0),$vec(0,0,2000))
+	local TRACE_LINE $get_traceline(TRACE_ORG,TRACE_END,worldonly)
+	setvard ROOF_HEIGHT $vec.z(TRACE_LINE)
+	add ROOF_HEIGHT 128
+	//playsound 0 10 SOUND_LAUGH
+	callevent 0.1 fly_out_loop
+}
+
+{ fly_out_loop
+
+	local MY_X $vec.x(game.monster.origin)
+	local MY_Y $vec.y(game.monster.origin)
+	setvard MY_Z $vec.z(game.monster.origin)
+	add MY_Z DEATH_ACCEL
+
+	setorigin ent_me (MY_X,MY_Y,MY_Z)
+	if ( MY_Z > ROOF_HEIGHT ) callevent remove_me
+	if ( MY_Z <= ROOF_HEIGHT ) callevent 0.1 fly_out_loop
+}
+
+{ death_exit
+	saytext Well, it seems what my master said maybe true... Maybe you are amongst the chosen ones.
+	playsound 0 10 voices/ms_wicardoven/fmaldora_exit1.wav
+	callevent 5.7 death_exit2
+}
+
+{ death_exit2
+	saytext If so, you maybe useful. We will meet again one day, to put that to the test.
+	playsound 0 10 voices/ms_wicardoven/fmaldora_exit2.wav
+	local L_MAP_NAME $lcase(game.map.name)
+	if ( L_MAP_NAME equals ms_wicardoven ) callevent 5.9 death_exit3
+	if ( L_MAP_NAME isnot ms_wicardoven ) callevent 1.0 fly_out
+}
+
+{ death_exit3
+
+	saytext That is, if you even survive the desert beyond.
+	playsound 0 10 voices/ms_wicardoven/fmaldora_exit3.wav
+	callevent 3.9 fly_out
+}

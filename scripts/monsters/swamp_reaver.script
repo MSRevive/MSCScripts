@@ -1,0 +1,665 @@
+//vitriolic
+//The new base for the firereaver.mdl based reavers
+#scope server
+{ [shared]
+
+	const REAVER_NAME "a|Vitriolic Reaver"
+	const REAVER_MAXHP 4000
+	const REAVER_XP 2750
+	const REAVER_SKIN 1
+	const REAVER_MODEL monsters/firereaver.mdl
+	const REAVER_WIDTH 72
+	const REAVER_HEIGHT 64
+
+	setvar ANIM_WALK walk
+	setvar ANIM_RUN run
+	setvar ANIM_IDLE idle1
+	const ANIM_SEARCH idle2
+	setvard ANIM_FLINCH turnl
+	const ANIM_SMASH mattack3
+	const ANIM_SLASH mattack2
+	const ANIM_PROJECTILE distanceattack //attack_ranged
+	const ANIM_BOMB bomb_attack //new: attack_bomb
+	const ANIM_ALERT distanceattack //attack_ranged
+	const ANIM_BREATH breath //frame_breath_start frame_breath_end
+	setvard ANIM_DEATH1 dieforward
+	setvard ANIM_DEATH2 diesimple
+	setvard ANIM_DEATH3 diesideways
+	const ANIM_VICTORY1 victoryeat
+	const ANIM_VICTORY2 victorysniff
+	setvard ANIM_VICTORY victoryeat
+	setvard ANIM_DEATH dieforward
+	setvard ANIM_ATTACK mattack3
+}
+
+{
+	const FREQ_FIRE_BALL 10.0
+	const DMG_FIRE_BALL 100
+
+	const SOUND_WALK1 common/npc_step1.wav
+	const SOUND_WALK2 common/npc_step2.wav
+	const SOUND_WALK3 common/npc_step3.wav
+	const SOUND_WALK4 common/npc_step4.wav
+	const SOUND_RUN1 gonarch/gon_step1.wav
+	const SOUND_RUN2 gonarch/gon_step2.wav
+	const SOUND_RUN3 gonarch/gon_step3.wav //optional
+	const SOUND_DEATH gonarch/gon_die1.wav
+	const SOUND_WARCRY gonarch/gon_alert1.wav //check
+	const SOUND_STRUCK1 gonarch/gon_sack1.wav //check
+	const SOUND_STRUCK2 gonarch/gon_sack2.wav //check
+	const SOUND_PAIN_STRONG gonarch/gon_pain2.wav
+	const SOUND_PAIN_WEAK gonarch/gon_pain4.wav
+	const SOUND_PAIN_NEAR_DEATH gonarch/gon_pain5.wav
+	const SOUND_SLASHHIT zombie/claw_strike1.wav //overused, look for alternates
+	const SOUND_SMASHHIT zombie/claw_strike2.wav //overused, look for alternates
+	const SOUND_SLASHMISS zombie/claw_miss1.wav //overused, look for alternates
+	const SOUND_SMASHMISS zombie/claw_miss2.wav //overused, look for alternates
+	const SOUND_SEARCH1 gonarch/gon_childdie3.wav
+	const SOUND_SEARCH2 gonarch/gon_childdie2.wav
+	const SOUND_SEARCH3 gonarch/gon_childdie1.wav
+	setvard SOUND_ATTACKHIT unset
+	setvard SOUND_ATTACKMISS unset
+
+	//called indirectly, so need precache
+	precache SOUND_SLASHMISS
+	precache SOUND_SLASHHIT
+	precache SOUND_SMASHMISS
+	precache SOUND_SMASHHIT
+	precache SOUND_PAIN_STRONG 
+	precache SOUND_PAIN_WEAK
+	precache SOUND_PAIN_NEAR_DEATH
+
+	//defaults are a little too far, prob cuz of large model
+	setvard ATTACK_RANGE 140
+	setvard ATTACK_HITRANGE 200
+	setvard ATTACK_MOVERANGE 100
+	setvard MOVE_RANGE 100
+
+	const SLASH_DAMAGE '$rand(100,200)'
+	const SMASH_DAMAGE 500
+	const SLASH_HITCHANCE 90%
+
+	precache SOUND_DEATH //handled by base_npc
+
+
+	//new
+	//- a lot of these are setvards as hoping to use this as #include for the mixed version
+	setvard DOT_EFFECT effects/effect_poison //mix reaver varies
+	setvard DOT_DURATION 10.0 //mix reaver varies
+	setvard DOT_DMG 30.0  //mix reaver varies
+
+	const FREQ_ERRUPT 30.0
+	setvard ERRUPT_TYPE poison
+
+	const FREQ_BREATH $randf(20.0,30.0)
+	setvard BREATH_TYPE poison
+	
+	const FREQ_ACID_BOMB $randf(5.0,15.0)
+	const DOES_ACID_BOMB 1
+
+	const FIREBALL1_SCRIPT monsters/summon/acid_ball_guided
+	const FIREBALL2_SCRIPT monsters/summon/acid_ball_guided
+
+	const FIREBALL1_DURATION 5.0
+	const FIREBALL2_DURATION 5.0
+
+	setvard PROJECTILE_SCRIPT proj_acid_bomb
+	const DMG_ACID_BOMB 400
+	setvard DOT_ACID_BOMB 150
+	setvard EFFECT_ACID_BOMB effects/effect_acid
+
+	const SOUND_ACID_BOMB_PREP gonarch/gon_birth3.wav
+	const SOUND_ACID_BOMB_FIRE gonarch/gon_birth1.wav
+	const SOUND_POISON_ERRUPT_START monsters/mummy/c_mummycom_bat1.wav
+	const SOUND_POISON_ERRUPT_LOOP amb/amb_spa2.wav
+	const SOUND_POISON_BREATH_START monsters/mummy/c_mummycom_bat2.wav
+	const SOUND_POISON_BREATH_LOOP magic/volcano_loop.wav
+	const SOUND_FIRE_ERRUPT_START magic/volcano_start.wav
+	const SOUND_FIRE_ERRUPT_LOOP magic/volcano_loop.wav
+	const SOUND_FIRE_BREATH_START ambience/steamburst1.wav
+	const SOUND_FIRE_BREATH_LOOP monsters/goblin/sps_fogfire.wav
+
+	const BOMB_DMG_TYPE acid
+}
+
+#include monsters/base_monster_new
+
+{ game_precache
+
+	//remember to precache both at the top script on the mix reaver
+	//precachefile monsters/summon/fire_ball_guided
+	precachefile monsters/summon/acid_ball_guided
+	precachefile effects/sfx_acid_splash
+}
+
+{ [shared] npc_spawn
+
+	name REAVER_NAME
+	hp REAVER_MAXHP
+	roam 1
+	callevent reaver_immunes
+	width 72
+	height 64
+	setvard NPC_GIVE_EXP REAVER_XP
+	race demon
+	hearingsensitivity 3
+	setmodel REAVER_MODEL
+	setmoveanim ANIM_WALK
+	setprop ent_me skin REAVER_SKIN
+	blood green
+
+	setvard SLASH_COUNT 0
+	setvard MIX_COUNT 0
+}
+
+{ reaver_immunes
+	takedmg lightning 2.0
+	takedmg acid 0.0
+	takedmg poison 0.0
+	takedmg holy 0.5 //some magic involved in creation
+}
+
+{ npc_targetsighted //first spot
+
+	if !DID_WARCRY
+
+	////dbg temp Spotted Target $get(NPCATK_TARGET,name)
+
+	playsound 0 10 SOUND_WARCRY
+	setvard DID_WARCRY 1	
+	setvard FIRST_ATTACK 1
+	playanim once ANIM_ALERT
+
+	if !CYCLES_ON
+
+	setvard CYCLES_ON 1
+
+	local GAME_TIME game.time
+
+	setvard NEXT_ERRUPT GAME_TIME
+	add NEXT_ERRUPT FREQ_ERRUPT
+
+	setvard NEXT_BREATH GAME_TIME
+	add NEXT_BREATH FREQ_BREATH
+
+	setvard NEXT_ACID_BOMB GAME_TIME
+	add NEXT_ACID_BOMB FREQ_ACID_BOMB
+
+	if ( CL_EFFECT_ID equals 'CL_EFFECT_ID' ) callevent refresh_client_fx
+}
+
+
+{ my_target_died
+
+	if !$cansee(enemy)
+
+	local RAND_VICT $rand(1,2)
+	if ( RAND_VICT == 1 ) setvard ANIM_VICTORY ANIM_VICTORY1
+	if ( RAND_VICT == 2 ) setvard ANIM_VICTORY ANIM_VICTORY2
+	playanim critical ANIM_VICTORY
+	playrandomsound 0 10 SOUND_SEARCH1 SOUND_SEARCH2 SOUND_SEARCH3
+}
+
+{ npc_targetsighted
+	if ( $get(NPCATK_TARGET,range) > ATTACK_RANGE )
+	{
+		local LAST_FIRE REAVER_LAST_FIRE_BALL
+		add LAST_FIRE FREQ_FIRE_BALL
+		if !DOING_BREATH
+		if !DOING_ACID_BOMB
+		if ( game.time > LAST_FIRE ) callevent do_fireballs
+	}
+}
+
+//slash (right hook)
+{ attack_mele1 //called from model ANIM_SLASH (mattack2) @ frame 30
+
+	setvard SLASH_ATTACK 1
+	local RANDOM_PUSH $rand(100,175)
+	setvard PUSH_VEL $relvel(-200,RANDOM_PUSH,120)
+	setvard SOUND_ATTACKHIT SOUND_SLASHHIT
+	setvard SOUND_ATTACKMISS SOUND_SLASHMISS
+	callevent npcatk_dodamage NPCATK_TARGET ATTACK_HITRANGE SLASH_DAMAGE SLASH_HITCHANCE
+	setvard PUSH_ATTACK 1
+
+	add SLASH_COUNT 1
+	if ( SLASH_COUNT > $rand(9,15) ) setvard ANIM_ATTACK ANIM_SMASH
+}
+
+//smash (overhead strike)
+{ attack_mele2 //called from model ANIM_SMASH (mattack3) @ frame 30
+
+	setvard SMASH_ATTACK 1
+	setvard SOUND_ATTACKHIT SOUND_SMASHHIT
+	setvard SOUND_ATTACKMISS SOUND_SMASHMISS
+	setvard ANIM_ATTACK ANIM_SLASH
+
+	//createnpc monsters/summon/stun_burst $relpos(0,0,0) $get(ent_me,id) 256 1 SMASH_DAMAGE
+	clientevent new all effects/sfx_stun_burst $get(ent_me,origin) 256 0
+	setvard STUN_BURST 1
+	setvard STUN_POS $get(ent_me,origin)
+	dodamage $relpos(0,0,0) 256 SMASH_DAMAGE 100% 0 reflective blunt
+	callevent 0.1 reset_stun_burst
+
+	setvard SLASH_COUNT 0
+	setvard ANIM_ATTACK ANIM_SLASH
+}
+
+{ reset_stun_burst
+	setvard STUN_BURST 0
+}
+
+
+{ npcatk_lost_sight
+
+	if game.time > NEXT_SEARCH
+	setvard NEXT_SEARCH game.time
+	add NEXT_SEARCH 20.0
+	setvard AS_ATTACKING game.time
+	add AS_ATTACKING 10.0
+	playanim critical ANIM_SEARCH
+	playrandomsound 0 10 SOUND_SEARCH1 SOUND_SEARCH2 SOUND_SEARCH3
+}
+
+{ game_dodamage //1: Attack Hit (1/0)  2: Entity Attack hit  3:  Start Position  4:  End Position
+
+	if ( STUN_BURST )
+	{
+		if PARAM1
+		local TARG_ORG $get(PARAM2,origin)
+		local MY_ORG STUN_POS
+		local NEW_YAW $angles(MY_ORG,TARG_ORG)
+		addvelocity PARAM2 $relvel($vec(0,NEW_YAW,0),$vec(0,1000,200))
+		applyeffect PARAM2 effects/effect_stun 5.0 0 0
+	}
+	if !EXIT_SUB
+
+	if ( ACID_BOMB_ATTACK )
+	{
+		local EXIT_SUB 1
+		if PARAM1
+		if $get(PARAM2,relationship,ent_me) equals enemy
+		applyeffect PARAM2 EFFECT_ACID_BOMB 5 $get(ent_me,id) DOT_ACID_BOMB
+
+		if IS_FIRE_BOMB
+		local TARG_ORG $get(PARAM2,origin)
+		local MY_ORG ACID_BOMB_POS
+		local NEW_YAW $angles(MY_ORG,TARG_ORG)
+		addvelocity PARAM2 $relvel($vec(0,NEW_YAW,0),$vec(0,1000,200))
+	}
+	if !EXIT_SUB
+
+	if ( !PARAM1 )
+	{
+		if ( SOUND_ATTACKMISS isnot unset ) playsound 0 10 SOUND_ATTACKMISS
+	}
+
+	if ( PARAM1 )
+	{
+		if ( SOUND_ATTACKHIT isnot unset )
+		{
+			playsound 0 10 SOUND_ATTACKHIT
+			if PUSH_ATTACK
+			addvelocity ent_laststruckbyme PUSH_VEL
+			applyeffect DOT_EFFECT DOT_DURATION $get(ent_me,id) DOT_DMG
+		}
+	}
+	setvard PUSH_ATTACK 0
+}
+
+{ game_struck
+
+	setvard HP_STORAGE game.monster.hp //anti-heal
+
+	if ( game.monster.hp >= 1500 ) local PAIN_SOUND SOUND_PAIN_STRONG
+	if ( game.monster.hp < 1500 ) local PAIN_SOUND SOUND_PAIN_WEAK
+	if ( game.monster.hp < 500 ) local PAIN_SOUND SOUND_PAIN_NEAR_DEATH
+	playrandomsound 0 10 SOUND_STRUCK1 SOUND_STRUCK2 SOUND_STRUCK1 SOUND_STRUCK2 PAIN_SOUND
+}
+
+{ monster_walk_step //called from model anim walk at various frames
+
+	playrandomsound 0 5 SOUND_WALK1 SOUND_WALK2 SOUND_WALK3 SOUND_WALK4
+}
+
+{ monster_run_step //called from model anim run at various frames
+
+   	effect screenshake $relpos(0,0,0) 64 10 0.5 128
+	playrandomsound 0 8 SOUND_RUN1 SOUND_RUN2 SOUND_RUN3
+}
+
+{ npc_death //called from base_npc
+
+	//death anims
+	local RAND_DEATH $rand(2,3)
+	//if ( RAND_DEATH == 1 ) setvard ANIM_DEATH ANIM_DEATH1 //use for volcano anim instead
+	if ( RAND_DEATH == 2 ) setvard ANIM_DEATH ANIM_DEATH2
+	if ( RAND_DEATH == 3 ) setvard ANIM_DEATH ANIM_DEATH3
+
+	setmovedest none
+	setmoveanim ANIM_DEATH
+}
+
+{ npcatk_clear_targets
+	setvard VOLCANO_ON 0
+	svplaysound 2 0 magic/volcano_loop.wav
+}
+
+{ do_fireballs
+	if !I_R_FROZEN
+	setvard DOING_FIREBALL 1
+	callevent 2.0 fireball_release
+	setvard AS_ATTACKING game.time
+	add AS_ATTACKING 10.0
+	setvard REAVER_LAST_FIRE_BALL game.time
+	playanim critical ANIM_PROJECTILE
+	createnpc FIREBALL1_SCRIPT $relpos(-64,96,64) $get(ent_me,id) DMG_FIRE_BALL FIREBALL1_DURATION 200
+	callevent 0.2 do_fireballs2
+}
+
+{ do_fireballs2
+	createnpc FIREBALL2_SCRIPT $relpos(64,96,64) $get(ent_me,id) DMG_FIRE_BALL FIREBALL2_DURATION 200
+	//callevent 0.2 do_fireballs3
+}
+
+{ fireball_release
+	setvard DOING_FIREBALL 0
+}
+
+//{ do_fireballs3
+//	createnpc monsters/summon/fire_ball_guided $relpos(0,96,64) $get(ent_me,id) DMG_FIRE_BALL 20.0 200
+//}
+
+{ npcatk_hunt
+
+	local GAME_TIME game.time
+
+	if ( CYCLES_ON )
+	{
+		if GAME_TIME > NEXT_FX_REFRESH
+		callevent refresh_client_fx
+	}
+
+	if NPCATK_TARGET isnot unset
+
+	if ( GAME_TIME > NEXT_ERRUPT )
+	{
+		setvard NEXT_ERRUPT GAME_TIME
+		add NEXT_ERRUPT FREQ_ERRUPT
+		if ( MIXED_REAVER ) callevent mixed_reaver_switch
+		callevent do_errupt
+	}
+
+	if $cansee(NPCATK_TARGET)
+	if !DOING_FIREBALL
+
+	if ( GAME_TIME > NEXT_BREATH )
+	{
+		if !DOING_ACID_BOMB
+		if $get(NPCATK_TARGET,range) < 300
+		setvard NEXT_BREATH GAME_TIME
+		add NEXT_BREATH FREQ_BREATH
+		if ( MIXED_REAVER ) callevent mixed_reaver_switch
+		if !I_R_FROZEN
+		callevent do_breath
+	}
+
+	if ( GAME_TIME > NEXT_ACID_BOMB )
+	{
+		if !DOING_ERRUPT
+		if !DOING_BREATH
+		if $get(NPCATK_TARGET,range) > 275
+		setvard NEXT_ACID_BOMB GAME_TIME
+		add NEXT_ACID_BOMB FREQ_ACID_BOMB
+		if ( MIXED_REAVER ) callevent mixed_reaver_switch
+		if !I_R_FROZEN
+		callevent do_acid_bomb
+	}
+}
+
+{ refresh_client_fx
+	setvard NEXT_FX_REFRESH game.time
+	add NEXT_FX_REFRESH 30.0
+	clientevent new all monsters/reavers_cl $get(ent_me,index) BREATH_TYPE ERRUPT_TYPE DOING_ERRUPT DOING_BREATH
+	setvard CL_EFFECT_ID game.script.last_sent_id
+}
+
+{ game_death
+	if CL_EFFECT_ID isnot 'CL_EFFECT_ID'
+	if ( DOING_BREATH )
+	{
+		callevent frame_breath_end
+	}
+
+	if ( DOING_ERRUPT )
+	{
+		callevent end_errupt
+	}
+
+	clientevent update all CL_EFFECT_ID end_fx
+
+	if ( $lcase(game.map.name) equals mscave )
+	{
+		//spawn some treasurez
+		local CHEST_ID $get_by_name(fire_cave_chest2)
+		if $get(CHEST_ID,exists)
+		createnpc mscave/firecave2 $relpos(0,0,0) "fire_reaver"
+	}
+}
+
+{ do_errupt
+	setvard DOING_ERRUPT 1
+	clientevent update all CL_EFFECT_ID errupt_on ERRUPT_TYPE
+	callevent errupt_loop
+	callevent 10.0 end_errupt
+	if ( ERRUPT_TYPE equals poison )
+	{
+		svplaysound 1 10 SOUND_POISON_ERRUPT_LOOP 
+		playsound 2 10 SOUND_POISON_ERRUPT_START
+	}
+	else
+	{
+		svplaysound 1 10 SOUND_FIRE_ERRUPT_LOOP 
+		playsound 2 10 SOUND_FIRE_ERRUPT_START
+	}
+}
+
+{ errupt_loop
+	if DOING_ERRUPT
+	callevent 0.75 errupt_loop
+	if ( ERRUPT_TYPE equals poison )
+	{
+		setvard ERRUPT_TARGS $get_tsphere(enemy,160)
+		if ERRUPT_TARGS isnot none
+		calleventloop $get_token_amt(ERRUPT_TARGS) errupt_affect_targets_poison
+	}
+	else
+	{
+		setvard ERRUPT_TARGS $get_tsphere(enemy,225)
+		if ERRUPT_TARGS isnot none
+		calleventloop $get_token_amt(ERRUPT_TARGS) errupt_affect_targets_fire
+	}
+}
+
+{ errupt_affect_targets_poison
+	local CUR_TARG $get_token(ERRUPT_TARGS,game.script.iteration)
+	applyeffect CUR_TARG effects/effect_poison_blinding 5.0 $get(ent_me,id) DOT_DMG
+}
+
+{ errupt_affect_targets_fire
+	local CUR_TARG $get_token(ERRUPT_TARGS,game.script.iteration)
+	applyeffect CUR_TARG effects/effect_burn 5.0 $get(ent_me,id) DOT_DMG
+}
+
+{ end_errupt
+	setvard DOING_ERRUPT 0
+	clientevent update all CL_EFFECT_ID errupt_off
+	if ( ERRUPT_TYPE equals poison )
+	{
+		svplaysound 1 0 SOUND_POISON_ERRUPT_LOOP 
+	}
+	else
+	{
+		svplaysound 1 0 SOUND_FIRE_ERRUPT_LOOP
+	}
+}
+
+{ do_breath
+	roam 0
+	playanim break
+	playanim critical ANIM_BREATH
+	callevent npcatk_suspend_movement ANIM_BREATH
+
+	if ( BREATH_TYPE equals poison )
+	{
+		playsound 1 10 SOUND_POISON_BREATH_START
+	}
+	else
+	{
+		playsound 1 10 SOUND_FIRE_BREATH_START
+	}
+
+	setmovedest NPCATK_TARGET 9999
+	callevent npcatk_suspend_ai
+
+	setvard BREATH_ANG $get(ent_me,angles.yaw)
+	callevent 1.5 frame_breath_start //in case he fails to play anim
+	callevent 15.0 frame_breath_end //in case he gets stuck
+}
+
+{ frame_breath_start
+	dbg frame_breath_start
+	if !DOING_BREATH
+	setvard DOING_BREATH 1
+	if ( BREATH_TYPE equals poison )
+	{
+		playsound 2 10 SOUND_POISON_BREATH_LOOP
+	}
+	else
+	{
+		playsound 2 10 SOUND_FIRE_BREATH_LOOP
+	}
+	setvard BREATH_COUNT 0
+	setvard BREATH_ANG $get(ent_me,angles.yaw)
+	callevent 0.1 breath_loop
+	clientevent update all CL_EFFECT_ID breath_on BREATH_TYPE
+}
+
+{ breath_loop
+	if DOING_BREATH
+	callevent 0.05 breath_loop
+
+	add BREATH_ANG 10
+	if ( BREATH_ANG > 359.99 ) subtract BREATH_ANG 359.99
+
+	local FACE_POS $get(ent_me,origin)
+	vectoradd FACE_POS $relpos($vec(0,BREATH_ANG,0),$vec(0,1000,0))
+	setmovedest FACE_POS 9999
+	dbg breath_loop BREATH_ANG
+	//setangle face $vec(0,BREATH_ANG,0)
+
+	if game.time > NEXT_SCAN
+	setvard NEXT_SCAN game.time
+	add NEXT_SCAN 0.25
+	local SCAN_POINT $relpos(0,128,0)
+	setvard CLOUD_TARGS $get_tsphere(enemy,256,SCAN_POINT)
+	if ( CLOUD_TARGS isnot none ) calleventloop $get_token_amt(CLOUD_TARGS) breath_affect_targets
+}
+
+{ breath_affect_targets
+	local CUR_TARG $get_token(CLOUD_TARGS,game.script.iteration)
+	local TARG_ORG $get(CUR_TARG,origin)
+	if $within_cone2D(TARG_ORG,game.monster.origin,game.monster.angles,30)
+	local TARG_RANGE $get(CUR_TARG,range)
+	if TARG_RANGE < 450
+	if ( BREATH_TYPE equals poison )
+	{
+		applyeffect CUR_TARG effects/effect_poison_blinding 5.0 $get(ent_me,id) DOT_DMG 0 0 none
+	}
+	else
+	{
+		applyeffect CUR_TARG effects/effect_burn 5.0 $get(ent_me,id) DOT_DMG
+	}
+
+	local PUSH_STR 1000
+	if ( TARG_RANGE > 200 ) subtract PUSH_STR TARG_RANGE
+	addvelocity CUR_TARG $relvel(0,PUSH_STR,120)
+}
+
+{ frame_breath_end
+	dbg frame_breath_end
+	if DOING_BREATH
+	setvard DOING_BREATH 0
+	callevent npcatk_resume_ai
+	callevent npcatk_resume_movement
+	clientevent update all CL_EFFECT_ID breath_off
+	roam 1
+	add NEXT_ACID_BOMB 5.0
+}
+
+{ do_acid_bomb
+	dbg do_acid_bomb
+	roam 0
+	//setmovedest NPCATK_TARGET 9999
+	//callevent npcatk_suspend_ai 0.5
+
+	setvard DOING_ACID_BOMB 1
+	setvard AS_ATTACKING game.time
+	add AS_ATTACKING 10.0
+	playsound 0 10 SOUND_ACID_BOMB_PREP
+
+	callevent 3.0 doing_acid_bomb_reset //in case interrupted
+	playanim critical ANIM_BOMB
+}
+
+{ doing_acid_bomb_reset
+	setvard DOING_ACID_BOMB 0
+}
+
+{ attack_ranged
+
+	dbg attack_ranged
+
+	playsound 0 10 SOUND_ACID_BOMB_FIRE
+
+	add NEXT_BREATH 5.0
+}
+
+{ attack_bomb
+	playsound 0 10 SOUND_ACID_BOMB_FIRE
+	local TARG_ORG $get(NPCATK_TARGET,origin)
+	if ( !$get(TARG_ORG,isplayer) ) vectoradd TARG_ORG z $get(NPCATK_TARGET,height)
+	local TARG_DIST $dist(TARG_ORG,game.monster.origin)
+	divide TARG_DIST 35
+	setangle add_view.pitch TARG_DIST
+
+	dbg attack_bomb $get(NPCATK_TARGET,range)
+
+	//not exactly dynamic, but works
+	local BOMB_SPEED 500
+	if ( $get(NPCATK_TARGET,range) > 800 ) local BOMB_SPEED 600
+
+	tossprojectile view BOMB_SPEED DMG_BOMB 0 PROJECTILE_SCRIPT (0,20,60)
+	roam 1
+	//callevent npcatk_resume_ai
+	setvard DOING_ACID_BOMB 0
+}
+
+{ ext_acid_bomb //<land point> - called by proj_acid_bomb
+	setvard ACID_BOMB_ATTACK 1
+	xdodamage PARAM1 200 DMG_ACID_BOMB 100% ent_me ent_me none acid
+	setvard IS_FIRE_BOMB 1
+	callevent 0.1 acid_bomb_reset
+}
+
+{ acid_bomb_reset
+	setvard ACID_BOMB_ATTACK 0
+}
+
+{ ext_fire_bomb //<land point> - called by proj_fire_bomb
+	setvard ACID_BOMB_ATTACK 1
+	setvard ACID_BOMB_POS PARAM1
+	setvard IS_FIRE_BOMB 1
+	xdodamage ACID_BOMB_POS 200 DMG_ACID_BOMB 0.01 ent_me ent_me none BOMB_DMG_TYPE
+	callevent 0.1 acid_bomb_reset
+}

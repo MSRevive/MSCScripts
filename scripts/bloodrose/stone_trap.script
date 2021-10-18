@@ -1,0 +1,159 @@
+{
+	const TRIGGER_RANGE 256
+}
+
+{ game_spawn
+
+	race beloved
+	blood none
+	setmodel none
+	invincible 1
+	hp 1
+	fly 1
+	width 32
+	height 32
+	setsolid none
+	hearingsensitivity 11
+
+	//dbg temp stone trap spawned
+
+	callevent 0.1 scan_for_players
+
+	setidleanim ''
+	setmoveanim ''
+}
+
+{ scan_for_players
+
+	//dbg temp cansee $cansee(player) $get(ent_lastseen,name) @ $get(ent_lastseen,range)
+
+	dbg stone_trap: scan_for_players
+
+	if !DID_INTRO
+	callevent 0.25 scan_for_players
+	if $get_tsphere(player,TRIGGER_RANGE) isnot none
+	callevent do_intro
+}
+
+{ game_heardsound
+
+	if !DID_INTRO
+	if $get(ent_lastheard,isplayer)
+	if $get(ent_lastheard,range) < TRIGGER_RANGE
+	//dbg temp Heard $get(ent_lastheard,name) at $get(ent_lastheard,range) vs TRIGGER_RANGE
+	callevent do_intro
+}
+
+{ do_intro
+
+	if !DID_INTRO
+	setvard DID_INTRO 1
+
+	name The Skeletal Statue
+
+	saytextrange 2048
+	saytext Identify yourself mortal! Only our masters may pass!
+
+	playsound 0 10 monsters/stoners/identify.wav
+
+	catchspeech say_smart slithar
+	catchspeech say_dumb venevus
+	callevent 30.0 times_up
+
+	local OUT_SOUND monsters/stoners/identify.wav
+	callexternal all ext_playsound OUT_SOUND game.monster.origin 1024
+}
+
+{ say_dumb
+
+	if !SKELS_ON
+	if !GAVE_ANSWER
+	saytextrange 2048
+	saytext Venevus is already in his chamber, Imposter!
+	playsound 0 10 monsters/stoners/alreadyin.wav
+
+	callevent 3.0 kill_intruder
+	callevent 4.0 clear_out
+
+	local OUT_SOUND monsters/stoners/alreadyin.wav
+	callexternal all ext_playsound OUT_SOUND game.monster.origin 1024
+}
+
+{ times_up
+
+	if !SKELS_ON
+	if !GAVE_ANSWER
+	saytextrange 2048
+	playsound 0 10 monsters/stoners/killtheintruder.wav
+
+	saytext Your time has expired, and now, so shall you.
+	callevent 1.0 kill_intruder
+	callevent 2.0 clear_out
+
+	local OUT_SOUND monsters/stoners/killtheintruder.wav
+	callexternal all ext_playsound OUT_SOUND game.monster.origin 1024
+}
+
+{ say_smart
+	
+	setvard GAVE_ANSWER 1
+	usetrigger player_smart
+	playsound 0 10 monsters/stoners/youmaypass.wav
+
+	saytextrange 2048
+	saytext You may pass.
+	callevent 1.0 clear_out
+
+	local OUT_SOUND monsters/stoners/youmaypass.wav
+	callexternal all ext_playsound OUT_SOUND game.monster.origin 1024
+}
+
+{ clear_out
+
+	//dbg temp suiciding
+
+	callevent 0.1 suicide_debug
+
+	invincible 0
+	race hated
+	callevent 0.2 clear_out2
+}
+
+{ clear_out2
+
+	dodamage $get(ent_me,id) direct 1000 100% $get(ent_me,id) magic
+}
+
+{ suicide_debug
+	//dbg still here
+	callevent 2.0 suicide_debug
+}
+
+{ kill_intruder
+
+	if !SKELS_ON
+	setvard SKELS_ON 1
+	usetrigger player_dumb
+	effect screenshake $relpos(0,0,0) 256 50 3.0 512
+	playsound 0 10 ambience/rocketrumble1.wav
+	callevent 0.1 rumble_sound2
+	callevent 0.3 wakie_wakie
+}
+
+{ rumble_sound2
+	playsound 0 10 ambience/rocket_groan1.wav
+}
+
+{ wakie_wakie
+	playsound 0 10 monsters/stoners/dieintruder.wav
+
+	callevent 0.1 wakie_wakie2
+
+	local OUT_SOUND monsters/stoners/dieintruder.wav
+	callexternal all ext_playsound OUT_SOUND game.monster.origin 1024
+}
+
+{ wakie_wakie2
+
+	callexternal all skeleton_wakeup_call
+}

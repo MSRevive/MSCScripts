@@ -1,0 +1,567 @@
+//Lesser Lightning Djinn rebuild by Thothie
+//- CMD's isn't working too well in its native environment
+
+#scope server
+
+{ [shared]
+	setvar ANIM_IDLE idle1
+	setvar ANIM_WALK walk
+	setvard ANIM_RUN run1
+	setvard ANIM_DEATH dieforward
+	setvard ANIM_FLINCH bigflinch
+	setvard ANIM_ATTACK attack1
+	
+	const ANIM_SWIPE attack1
+	const ANIM_HEADBUTT attack2
+	const ANIM_JUMP jump
+	const ANIM_LEAP jump //leap
+	const ANIM_SEARCH idle_look
+	const ANIM_WALK_DEFAULT walk
+	const ANIM_RUN_DEFAULT run1
+	const ANIM_IDLE_DEFAULT idle1
+	const ANIM_WARCRY warcry
+	const ANIM_JUMPING_JACKS idle2
+	const ANIM_BEAM beam
+}
+
+{ [server]
+
+	setvard NPC_GIVE_EXP 2000
+
+ 	setvar IS_UNHOLY 1
+
+	setvard DROP_GOLD 1
+	setvard DROP_GOLD_AMT 500
+
+	setvard ATTACK_MOVERANGE 88
+	setvard MOVE_RANGE 88
+	setvard ATTACK_RANGE 140
+	setvard ATTACK_HITRANGE 160
+
+	const RANGE_SWIPE 140
+	const RANGE_HEADBUTT 100
+
+	setvard CAN_FLINCH 1
+	setvard FLINCH_CHANCE 10%
+	setvard FLINCH_DELAY 10.0
+	setvard FLINCH_HEALTH 2000
+
+	const FREQ_JUMP 5.0
+	const MAX_JUMP_RANGE 600
+
+	const FREQ_RNDJUMP $randf(10.0,20.0)
+
+	const FREQ_HEADBUTT 7.0
+
+	const CHANCE_SHOCK 30
+	const DOT_SHOCK 40.0
+
+	const DMG_SWIPE 100
+	const DMG_HEADBUTT 50
+
+	const ATTACK_HITCHANCE 95%
+
+	const CL_SCRIPT monsters/djinn_lightning_lesser_cl
+	const FREQ_FX_REFRESH 15.0
+
+	const FREQ_SHIELD 45.0 //jump in place with lshield
+	const FREQ_BLAST $randf(10.0,20.0) //pull or repell players
+	const DMG_BEAM 100
+	const DMG_BEAM_SECONDARY 100
+
+	const SOUND_BCHARGE magic/bolt_start.wav
+	const SOUND_LOOP magic/bolt_loop.wav
+	const SOUND_BFIRE magic/bolt_end.wav
+	const SOUND_SHOCK1 debris/zap8.wav
+	const SOUND_SHOCK2 debris/zap3.wav
+	const SOUND_SHOCK3 debris/zap4.wav
+
+	const SOUND_IDLE1 bullchicken/bc_idle1.wav
+	const SOUND_IDLE2 bullchicken/bc_idle2.wav
+	const SOUND_IDLE3 bullchicken/bc_idle3.wav
+	const SOUND_IDLE4 bullchicken/bc_idle4.wav
+	const SOUND_IDLE5 bullchicken/bc_idle5.wav
+	const SOUND_DEATH bullchicken/bc_die1.wav
+	const SOUND_HEADBUTT bullchicken/bc_spithit1.wav
+	const SOUND_SWIPEHIT1 zombie/claw_strike1.wav
+	const SOUND_SWIPEHIT2 zombie/claw_strike2.wav
+ 	const SOUND_SWIPEMISS1 zombie/claw_miss1.wav
+	const SOUND_SWIPEMISS2 zombie/claw_miss2.wav
+	const SOUND_STRUCK1 debris/flesh1.wav
+	const SOUND_STRUCK2 debris/flesh2.wav
+	const SOUND_STEP1 player/pl_dirt1.wav
+	const SOUND_STEP2 player/pl_dirt2.wav
+	const SOUND_PAIN_WEAK bullchicken/bc_pain2.wav
+	const SOUND_PAIN_STRONG bullchicken/bc_pain1.wav
+	const SOUND_WARCRY bullchicken/bc_attackgrowl3.wav
+	const SOUND_LEAP bullchicken/bc_attackgrowl2.wav
+	const SOUND_LEAP_LAND weapons/g_bounce2.wav
+	const SOUND_FLINCH bullchicken/bc_pain3.wav
+
+	const LSHIELD_PASSIVE 0
+	const LSHIELD_RADIUS 256
+	const LSHIELD_REPELL_STRENGTH 500
+	const SOUND_ZAP_LOOP magic/bolt_loop.wav
+	const SOUND_ZAP_START magic/bolt_end.wav
+}
+
+{ game_precache
+	precachefile CL_SCRIPT
+}
+
+#include monsters/base_monster_new
+#include monsters/base_lightning_shield
+
+{ [shared] npc_spawn
+
+	name Lesser Lightning Djinn
+	hp 5000
+	race demon
+	roam 1
+	gold 0
+	setmodel monsters/swamp_ogre.mdl
+	setmoveanim ANIM_WALK
+	setidleanim ANIM_IDLE
+	height 64
+	width 32
+	hearingsensitivity 8
+	blood green //check in code
+
+	setprop ent_me skin 4
+
+	//debuggary
+	local DEF_ATTACK_RANGE game.monster.moveprox
+	multiply DEF_ATTACK_RANGE 1.5
+	dbg npc_spawn DEF_ATTACK_RANGE
+
+	takedmg all 0.7
+	takedmg lightning 0.0
+	takedmg holy 0.5
+	takedmg acid 2.0
+	takedmg poison 1.25
+
+	setvard ATTACK_HIDX 0
+
+	setvard WEAK_THRESHOLD $get(ent_me,maxhp)
+	multiply WEAK_THRESHOLD 0.3
+
+	callevent 0.1 setup_client
+	callevent 0.2 init_beam1
+	callevent 0.3 init_beam2
+}
+
+//=================== Init Client
+{ setup_client
+	clientevent new all CL_SCRIPT $get(ent_me,index) FREQ_FX_REFRESH
+	setvard CL_SCRIPT_IDX game.script.last_sent_id
+}
+
+//=================== Setup Beams
+{ init_beam1
+	effect beam ents lgtning.spr 30 ent_me 1 ent_me 0 (200,255,50) 0 10 -1
+	setvard BEAM1_ID $get(ent_lastcreated,id)
+}
+
+{ init_beam2
+	effect beam ents lgtning.spr 30 ent_me 2 ent_me 0 (200,255,50) 0 10 -1
+	setvard BEAM2_ID $get(ent_lastcreated,id)
+}
+
+//=================== Warcry
+{ npc_targetsighted //first spot
+
+	if $get(PARAM1,isplayer)
+	if !DID_WARCRY
+
+	local GAME_TIME game.time
+
+	setvard NEXT_JUMP GAME_TIME
+	add NEXT_JUMP FREQ_JUMP
+
+	setvard NEXT_BLAST GAME_TIME
+	add NEXT_BLAST FREQ_BLAST
+
+	setvard NEXT_SHIELD GAME_TIME
+	add NEXT_SHIELD FREQ_SHIELD
+
+
+	playanim critical ANIM_WARCRY
+	playsound 0 10 SOUND_WARCRY
+	setvard DID_WARCRY 1
+}
+
+{ cycle_down
+	setvard DID_WARCRY 0
+}
+
+//=================== Idle Sounds
+{
+repeatdelay $randf(3.0,10.0)
+
+	if $get(ent_me,isalive)
+	if NPCATK_TARGET equals unset
+	playrandomsound 0 10 SOUND_IDLE1 SOUND_IDLE2 SOUND_IDLE3 SOUND_IDLE4 SOUND_IDLE5
+}
+
+//=================== CL FX Refresh
+{
+repeatdelay FREQ_FX_REFRESH
+
+	if $get(ent_me,isalive)
+
+	if ( CL_SCRIPT_IDX isnot 'CL_SCRIPT_IDX' ) clientevent update all CL_SCRIPT_IDX remove_fx
+
+	clientevent new all CL_SCRIPT $get(ent_me,index) FREQ_FX_REFRESH
+	setvard CL_SCRIPT_IDX game.script.last_sent_id
+}
+
+//=================== Death
+{ game_death
+	callevent beams_remove
+}
+
+{ beams_remove
+	effect beam update BEAM1_ID brightness 0
+	effect beam update BEAM2_ID brightness 0
+	effect beam update BEAM1_ID remove 0.1
+	effect beam update BEAM2_ID remove 0.1
+}
+
+//=================== Hop up at targets out of reach (from elf_base)
+{ do_hop //<vertical_difference> - determines jump strength
+	playanim critical ANIM_LEAP
+	playsound 0 10 SOUND_LEAP
+	setvard UP_JUMP_STR PARAM1
+	multiply UP_JUMP_STR 5
+	callevent npcatk_suspend_ai 1.0
+	setvard FWD_JUMP_STR $get(NPCATK_TARGET,range)
+	dbg do_hop UP_JUMP_STR FWD_JUMP_STR
+	callevent 0.1 do_jump_boost
+}
+
+{ do_jump_boost
+	addvelocity ent_me $relvel(0,FWD_JUMP_STR,UP_JUMP_STR)
+}
+
+//=================== Main Cycle
+{ npcatk_hunt
+
+	if NPCATK_TARGET isnot unset
+
+	if !SUSPEND_AI
+	if !I_R_FROZEN
+
+	local GAME_TIME game.time
+
+	if ( GAME_TIME > NEXT_BLAST )
+	{
+		if $cansee(NPCATK_TARGET)
+		callevent do_blast
+		setvard NEXT_BLAST GAME_TIME
+		add NEXT_BLAST FREQ_BLAST
+
+		//try not to shield right after blast, or visa versa
+		local GAME_TIME_PLUS GAME_TIME
+		add GAME_TIME_PLUS 5.0
+		if GAME_TIME_PLUS > NEXT_SHIELD
+		add NEXT_SHIELD 10.0
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	if ( GAME_TIME > NEXT_SHIELD )
+	{
+		if $get(NPCATK_TARGET,range) < ATTACK_HITRANGE
+
+		callevent do_shield
+		setvard NEXT_SHIELD GAME_TIME
+		add NEXT_SHIELD FREQ_SHIELD
+
+		//try not to shield right after blast, or visa versa
+		local GAME_TIME_PLUS GAME_TIME
+		add GAME_TIME_PLUS 10.0
+		if GAME_TIME_PLUS > NEXT_BLAST
+		add NEXT_BLAST 15.0
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	if ( GAME_TIME > NEXT_JUMP )
+	{
+		if $get(NPCATK_TARGET,range) < MAX_JUMP_RANGE
+
+		local MY_Z $get(ent_me,origin.z)
+		local TARG_Z $get(NPCATK_TARGET,origin.z)
+		if ( $get(NPCATK_TARGET,isplayer) ) subtract TARG_Z 38 //compensate for origin center
+
+		local Z_DIFF TARG_Z
+		subtract Z_DIFF MY_Z
+
+		if ( Z_DIFF > ATTACK_RANGE )
+		{
+			callevent do_hop Z_DIFF
+			local EXIT_SUB 1
+			setvard NEXT_JUMP GAME_TIME
+			add NEXT_JUMP FREQ_JUMP
+
+			//don't do a positional jump and random jump one after the other
+			setvard NEXT_RNDJUMP GAME_TIME
+			add NEXT_RNDJUMP FREQ_RNDJUMP
+		}
+	}
+	if !EXIT_SUB
+
+	if ( GAME_TIME > NEXT_RNDJUMP )
+	{
+		//random jump (hopefully land behind player)
+		if $get(NPCATK_TARGET,range) > ATTACK_RANGE
+		setvard NEXT_RNDJUMP GAME_TIME
+		add NEXT_RNDJUMP FREQ_RNDJUMP
+		callevent do_hop $rand(80,200)
+	}
+}
+
+//=================== Anim Events
+{ run_step1 //called from model during ANIM_RUN
+	playsound 0 5 SOUND_STEP1
+}
+
+{ run_step2 //called from model during ANIM_RUN
+	playsound 0 5 SOUND_STEP2
+}
+
+{ attack1
+	setvard SWIPE_ATTACK 1
+	if ( !NPC_DIRECT_ATTACK )
+	{
+		dodamage NPCATK_TARGET ATTACK_HITRANGE DMG_SWIPE ATTACK_HITCHANCE
+	}
+	else
+	{
+		dodamage NPCATK_TARGET direct DMG_SWIPE ATTACK_HITCHANCE ent_me
+	}
+
+	local ATTACK_START $get(ent_me,attachpos,ATTACK_HIDX)
+	local TARG_ORG $get(NPCATK_TARGET,origin)
+	local ANG_TO_TARG $angles3d(ATTACK_START,TARG_ORG)
+	vectorset ANG_TO_TARG x $neg($vec.x(ANG_TO_TARG))
+
+	clientevent update all CL_SCRIPT_IDX hand_sprite ANG_TO_TARG ATTACK_HIDX
+
+	add ATTACK_HIDX 1
+	if ( ATTACK_HIDX > 1 ) setvard ATTACK_HIDX 0
+
+	if game.time > NEXT_HEADBUTT
+	setvard ANIM_ATTACK ANIM_HEADBUTT
+	setvard ATTACK_RANGE RANGE_HEADBUTT
+}
+
+{ attack2 //headbut on frame 6 of attack2
+	setvard HEADBUTT_ATTACK 1
+	dodamage NPCATK_TARGET ATTACK_HITRANGE DMG_HEADBUTT ATTACK_HITCHANCE
+
+	setvard ANIM_ATTACK ANIM_SWIPE
+	setvard ATTACK_RANGE RANGE_SWIPE
+	setvard NEXT_HEADBUTT game.time
+	add NEXT_HEADBUTT FREQ_HEADBUTT
+}
+
+{ leap_done
+	playsound 0 10 SOUND_LEAP_LAND
+	setmoveanim ANIM_RUN
+}
+
+//=================== Handle Outgoing Damage Effects
+{ game_dodamage
+
+	if ( DMG_FROM_BEAM )
+	{
+		if ( BEAM_TYPE equals push )
+		{
+			setvelocity BEAM_TARGET $relvel(MON_ANGLES,$vec(0,1000,110))
+		}
+		else
+		{
+			setvelocity BEAM_TARGET $relvel(MON_ANGLES,$vec(0,-1000,110))
+		}
+	}
+	setvard DMG_FROM_BEAM 0
+
+	if ( SWIPE_ATTACK )
+	{
+		if ( !PARAM1 ) playrandomsound 0 10 SOUND_SWIPEMISS1 SOUND_SWIPEMISS2
+		if PARAM1
+		playrandomsound 0 10 SOUND_SWIPEHIT1 SOUND_SWIPEHIT2
+		if $rand(1,100) < CHANCE_SHOCK
+		playsound 2 10 SOUND_BFIRE
+		effect glow ent_me (255,255,0) 64 1 1
+		if $get(PARAM2,range) < ATTACK_HITRANGE
+		applyeffect PARAM2 effects/effect_shock_dmg $rand(2,5) $get(ent_me,id) DOT_SHOCK
+	}
+	setvard SWIPE_ATTACK 0
+
+	if ( HEADBUTT_ATTACK )
+	{
+		if ( !PARAM1 ) playrandomsound 0 10 SOUND_SWIPEMISS1 SOUND_SWIPEMISS2
+		if PARAM1
+		playsound 0 10 SOUND_HEADBUTT
+		if $get(PARAM2,range) < RANGE_HEADBUTT
+		applyeffect PARAM2 effects/heavy_stun 5 1
+	}
+	setvard HEADBUTT_ATTACK 0
+}
+
+//=================== Struck and Flinch
+{ npc_flinch
+	playsound 0 10 SOUND_FLINCH
+}
+
+{ game_struck //PARAM1 = damage
+	if ( $get(ent_me,hp) > WEAK_THRESHOLD )	playrandomsound 0 10 SOUND_STRUCK1 SOUND_STRUCK2 SOUND_PAIN_STRONG
+	if ( $get(ent_me,hp) <= WEAK_THRESHOLD ) playrandomsound 0 10 SOUND_STRUCK1 SOUND_STRUCK2 SOUND_PAIN_WEAK
+
+	if !I_R_FROZEN
+
+	if ( PARAM1 > 200 )
+	{
+		//dbg leaping away due to damage
+		if $rand(1,2) == 1
+		callevent leap_away
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	if ( $get(ent_laststruck,range) < ATTACK_RANGE )
+	{
+		if $rand(1,10) == 1
+		callevent leap_away
+	}
+}
+
+{ leap_away
+	playanim critical ANIM_LEAP
+	setmovedest NPCATK_TARGET 99999 flee
+	callevent 0.1 leap_boost
+	callevent npcatk_suspend_ai 2.0
+}
+
+{ leap_boost
+	if !I_R_FROZEN
+	addvelocity ent_me $relvel(0,600,100)	
+}
+
+//=================== Shield
+{ do_shield
+	dbg do_shield
+
+	callevent npcatk_suspend_ai
+	callevent suspend_movement ANIM_JUMPING_JACKS
+	callevent lshield_activate 10.0
+	callevent 10.0 end_shield
+}
+
+{ end_shield
+	callevent npcatk_resume_ai
+	callevent resume_movement
+}
+
+//=================== Suspend/Resume Movement
+{ suspend_movement //<hold anim>
+	setvard CAN_FLINCH 0
+	roam 0
+	setvard ANIM_RUN PARAM1
+	setvard ANIM_IDLE PARAM1
+	setmoveanim PARAM1
+	setidleanim PARAM1
+	playanim critical PARAM1
+}
+
+{ resume_movement
+	setvard CAN_FLINCH 1
+	roam 1
+	setvard ANIM_RUN ANIM_RUN_DEFAULT
+	setvard ANIM_IDLE ANIM_IDLE_DEFAULT
+
+	setmoveanim ANIM_RUN_DEFAULT
+	setidleanim ANIM_IDLE_DEFAULT
+}
+
+//=================== Blast
+{ do_blast
+
+	dbg do_blast entered
+
+	setvard BEAM_TARGET NPCATK_TARGET
+	callevent npcatk_suspend_ai
+	callevent suspend_movement ANIM_BEAM
+
+	dbg do_blast setup_beams
+
+	effect beam update BEAM1_ID end_target BEAM_TARGET 1
+	effect beam update BEAM1_ID brightness 200
+	effect beam update BEAM2_ID end_target BEAM_TARGET 2
+	effect beam update BEAM2_ID brightness 200
+
+	dbg do_blast setup_sounds
+
+	playsound 0 10 SOUND_ZAP_START
+	svplaysound 1 10 SOUND_ZAP_LOOP
+	
+	if ( $get(BEAM_TARGET,range) > 300 )
+	{
+		setvard BEAM_TYPE pull
+	}
+	else
+	{
+		setvard BEAM_TYPE push
+	}
+
+	dodamage BEAM_TARGET 2048 DMG_BEAM 100% lightning
+	applyeffect BEAM_TARGET effects/effect_shock_dmg 5.0 $get(ent_me,id) DOT_SHOCK
+
+	setvard BEAM_ACTIVE 1
+	callevent beam_loop
+	callevent 2.0 end_beam
+}
+
+{ end_beam
+	setvard BEAM_ACTIVE 0
+	callevent npcatk_resume_ai
+	callevent resume_movement
+	svplaysound 1 0 SOUND_ZAP_LOOP
+	effect beam update BEAM1_ID end_target ent_me 0
+	effect beam update BEAM1_ID brightness 0
+	effect beam update BEAM2_ID end_target ent_me 1
+	effect beam update BEAM2_ID brightness 0
+}
+
+{ beam_loop
+	if BEAM_ACTIVE
+	callevent 0.1 beam_loop
+	setmovedest BEAM_TARGET 9999
+	setvard DMG_FROM_BEAM 1
+	dodamage BEAM_TARGET 2048 DMG_BEAM_SECONDARY 100% lightning
+	setvard DMG_FROM_BEAM 0
+
+	local MON_ANGLES $get(ent_me,angles)
+	vectorset MON_ANGLES x $neg($vec.x(MON_ANGLES))
+}
+
+{ set_direct_attack
+	setvard NPC_DIRECT_ATTACK 1
+	setvard NPC_MUST_SEE_TARGET 0
+}
+
+//hacky brain death prevention
+{ npcatk_suspend_ai
+	setvard MAX_SUSPEND_AI game.time
+	add MAX_SUSPEND_AI 20.0
+}
+
+{
+repeatdelay 10.0
+	if $get(ent_me,isalive)
+	if SUSPEND_AI
+	if game.time > MAX_SUSPEND_AI
+	callevent npcatk_resume_ai
+}

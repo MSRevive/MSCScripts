@@ -1,0 +1,224 @@
+//This blade fires magic images of itself short distances
+{
+	const CUSTOM_REGISTER_NORMAL 1
+	const CUSTOM_REGISTER_CHARGE1 1
+	const CUSTOM_REGISTER_SECONDARY 1
+
+  	const ANIM_LIFT1        	31
+  	const ANIM_IDLE1        	32
+  	const ANIM_IDLE_TOTAL     	1
+
+  	const ANIM_WIELD			21
+  	const ANIM_UNWIELD     		38
+  	const ANIM_WIELDEDIDLE1 	32
+
+  	const ANIM_ATTACK1      	34
+  	const ANIM_ATTACK2      	34
+ 	//const ANIM_ATTACK3      	35
+  	//const ANIM_ATTACK4      	36
+  	//const ANIM_ATTACK5      	37
+
+	const ANIM_IDLE_DELAY_LOW 	0
+	const ANIM_IDLE_DELAY_HIGH 	0
+
+	const BASE_LEVEL_REQ 30
+
+	const MODEL_VIEW viewmodels/v_smallarms.mdl
+	const MODEL_HANDS weapons/p_weapons3.mdl
+	const MODEL_WORLD weapons/p_weapons3.mdl
+	const MODEL_BODY_OFS 37
+	const MODEL_VIEW_IDX 11
+
+	const MELEE_DMG_TYPE slash
+
+  //Used in base_melee
+  //------------------
+  const MELEE_RANGE  600
+  const MELEE_DMG_DELAY  0.2
+  const MELEE_ATK_DURATION 0.9
+  const MELEE_ENERGY  0.6
+  const MELEE_DMG  225
+  const MELEE_DMG_RANGE      50
+  const MELEE_ACCURACY  85%
+  const MELEE_ALIGN_BASE 0,0
+  const MELEE_ALIGN_TIP  0,0 
+
+  const MELEE_SOUND_DELAY      MELEE_DMG_DELAY
+  const MELEE_PARRY_CHANCE      35%
+
+  const PLAYERANIM_AIM  knife
+  const PLAYERANIM_SWING swing_knife
+
+	//sounds handled client side
+  const SOUND_HITWALL1 none //debris/glass1.wav
+  const SOUND_HITWALL2 none //debris/glass2.wav
+
+  const ANIM_PREFIX  standard
+
+	const CL_SCRIPT items/smallarms_nh_cl
+}
+
+{ game_precache //this may not apply to items
+	precachefile CL_SCRIPT
+}
+
+#include items/smallarms_base
+
+{  weapon_spawn
+
+   name  a|Neck Hunter	
+   desc  An evil enchanted blade with unusual reach
+   weight  3
+   size  3
+   value 3000
+   sethudsprite hand 134
+   sethudsprite trade 134
+}
+
+{ [server] game_deploy
+
+	//setvard MY_HAND game.item.hand_index //0-right 1-left
+	setvard SPRITE_SCALE 0.1
+	setvard GAME_PVP game.pvp
+
+	if CL_IDX equals 'CL_IDX'
+	clientevent new all CL_SCRIPT $get(ent_owner,index)
+	setvard CL_IDX game.script.last_sent_id
+}
+
+{ [server] game_putinpack
+	if CL_IDX isnot 'CL_IDX'
+	clientevent remove all CL_IDX	
+	setvard CL_IDX 'CL_IDX'
+}
+
+{ [server] game_drop
+	if CL_IDX isnot 'CL_IDX'
+	clientevent remove all CL_IDX
+	setvard CL_IDX 'CL_IDX'
+}
+
+{ [server] melee_strike //PARAM1: "none"/"npc"/"world"   2: Attack end Position   3: Entity hit (if any)
+
+	//original
+	local BONE_POS $get(ent_owner,eyepos) //$get(ent_owner,svbonepos,BONE_IDX)
+	local OWNER_VIEWANG $get(ent_owner,viewangles)
+	local HIT_TYPE PARAM1
+	local ATTACK_END PARAM2
+	vectoradd BONE_POS $relpos(OWNER_VIEWANG,$vec(0,28,0))
+	clientevent update all CL_IDX shadow_knife BONE_POS $get(ent_owner,viewangles) ATTACK_END HIT_TYPE SPRITE_SCALE
+	setvard SPRITE_SCALE 0.1
+
+
+	//experiment
+//	if ( MY_HAND == 0 ) local BONE_IDX 21
+//	if ( MY_HAND == 1 ) local BONE_IDX 38
+//	local BONE_POS $get(ent_owner,origin) //$get(ent_owner,svbonepos,BONE_IDX)
+//	local HIT_TYPE PARAM1
+//	local ATTACK_END PARAM2
+//
+//	local ANG_TO_END $angles3d(BONE_POS,ATTACK_END)
+//	vectorset ANG_TO_END x $neg($vec.x(ANG_TO_END))
+//	vectoradd BONE_POS $relpos(ANG_TO_END,$vec(0,28,0))
+//
+//	if ( G_DEVELOPER_MODE )
+//	{
+//		local VEC_TO_END $relpos(ANG_TO_END,$vec(0,600,0))
+//		effect beam point laserbeam.spr 20 BONE_POS VEC_TO_END (255,255,0) 255 0.7 MELEE_ATK_DURATION
+//	}
+//	clientevent update all CL_IDX shadow_knife BONE_POS ATTACK_END HIT_TYPE SPRITE_SCALE
+	setvard SPRITE_SCALE 0.1
+}
+
+{ [server] special_01_strike
+
+	local CUR_TARG  PARAM3
+	if ( $get(CUR_TARG,isalive) )
+	{
+		if ( $get(CUR_TARG,isplayer) )
+		{
+			if !GAME_PVP
+			local EXIT_SUB 1
+		}
+		if !EXIT_SUB
+		if $get(CUR_TARG,maxhp) < 1250
+		local PUSH_VEL $relvel(0,300,120)
+		callexternal ent_owner ext_push_targ CUR_TARG PUSH_VEL
+	}
+
+	local OUT_PAR1 PARAM1
+	local OUT_PAR2 PARAM2
+	local OUT_PAR3 PARAM3
+	setvard SPRITE_SCALE 2.0
+	callevent melee_strike OUT_PAR1 OUT_PAR2 OUT_PAR3
+}
+
+{ register_normal
+
+   //Normal swing attack
+   //===================
+
+	local F_BASE_LEVEL_REQ BASE_LEVEL_REQ
+
+   local reg.attack.type		strike-land
+	local reg.attack.noautoaim		1
+   local reg.attack.keys		+attack1
+   local reg.attack.range		MELEE_RANGE
+   local reg.attack.dmg			MELEE_DMG
+   local reg.attack.dmg.range		MELEE_DMG_RANGE
+   local reg.attack.dmg.type		MELEE_DMG_TYPE
+   local reg.attack.energydrain		MELEE_ENERGY
+   local reg.attack.stat		MELEE_STAT
+   local reg.attack.hitchance		MELEE_ACCURACY
+   local reg.attack.priority		0
+   local reg.attack.delay.strike	MELEE_DMG_DELAY
+   local reg.attack.delay.end		MELEE_ATK_DURATION
+   local reg.attack.ofs.startpos	MELEE_STARTPOS
+   local reg.attack.ofs.aimang		MELEE_AIMANGLE
+   local reg.attack.callback		melee
+   local reg.attack.noise		MELEE_NOISE
+	local reg.attack.reqskill F_BASE_LEVEL_REQ
+
+	setvard WEAPON_PRIMARY_SKILL reg.attack.stat
+
+   registerattack
+
+	callevent register_charge1
+}
+
+{ register_charge1
+
+	//thothie made seperate so can override
+
+   //Default charge up attack - Double damage for holding to 100%
+   //============================================================
+
+   local reg.attack.type		strike-land
+	local reg.attack.noautoaim		1
+   local reg.attack.keys		+attack1
+   local reg.attack.range		MELEE_RANGE
+   local reg.attack.dmg			MELEE_DMG
+   local reg.attack.dmg.range		MELEE_DMG_RANGE
+   local reg.attack.dmg.type		magic
+   local reg.attack.energydrain		MELEE_ENERGY
+   local reg.attack.stat		MELEE_STAT
+   local reg.attack.hitchance		MELEE_ACCURACY
+   local reg.attack.priority		1
+   local reg.attack.delay.strike	MELEE_DMG_DELAY
+   local reg.attack.delay.end		MELEE_ATK_DURATION
+   local reg.attack.ofs.startpos	MELEE_STARTPOS
+   local reg.attack.ofs.aimang		MELEE_AIMANGLE
+   local reg.attack.callback		melee
+   local reg.attack.noise		MELEE_NOISE
+
+   local reg.attack.priority	1
+   local reg.attack.keys	-attack1
+   local reg.attack.callback	special_01
+   multiply reg.attack.dmg	3
+   local reg.attack.chargeamt	100%
+   local reg.attack.reqskill	2
+
+	if ( BASE_LEVEL_REQ > reg.attack.reqskill ) add reg.attack.reqskill BASE_LEVEL_REQ
+
+   registerattack
+}

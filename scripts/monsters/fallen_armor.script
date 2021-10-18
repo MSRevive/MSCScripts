@@ -1,0 +1,482 @@
+{
+	setvard NPC_GIVE_EXP 1000
+
+	if ( $lcase(game.map.name) equals b_castle )
+	{
+		setvard NPC_IS_BOSS 1
+	}
+
+	setvar IS_UNHOLY 1
+	setvard IMMUNE_VAMPIRE 1
+
+	//anims
+	const ANIM_WALK_NORM walk
+	const ANIM_RUN_NORM run
+	const ANIM_WALK_SHIELD shield_walk
+	const ANIM_STANCE_IDLE idle
+	const ANIM_SIT_IDLE sit_idle
+	const ANIM_SHIELD_IDLE shield_idle
+	setvar ANIM_IDLE ANIM_SIT_IDLE
+	setvar ANIM_WALK ANIM_WALK_NORM
+	setvar ANIM_RUN ANIM_RUN_NORM
+	setvard ANIM_DEATH dead
+
+	const ANIM_ATTACK_NORM attack1
+	const ANIM_ATTACK_STAB attack2
+	const ANIM_ATTACK_SHIELD shield_attack
+	setvard ANIM_ATTACK ANIM_ATTACK_NORM //anim attack is played by main AI whenever in attack range
+
+	const ANIM_SUMMON summon
+	const ANIM_GETUP get_up
+	const ANIM_EQUIP equip
+	const ANIM_EQUIP2 equip2
+	const ANIM_TOSHIELD stance_to_shield
+	const ANIM_TOSTANCE shield_to_stance
+
+	//behavior
+	setvard CAN_FLINCH 0
+	setvard CAN_FLEE 0
+	const SHIELD_RANGE 500 //how close must be to player before willing to go into shield stance
+	const TRIGGER_RANGE 256 //how close player must be to make him get up
+
+	//combat
+	const ATTACK_MOVERANGE_NORM 28
+	const ATTACK_MOVERANGE_SHIELD 64
+	const ATTACK_HITRANGE_SHIELD 160
+	const ATTACK_HITRANGE_STAB 160
+	const ATTACK_HITRANGE_NORM 128
+	const ATTACK_RANGE_NORM 80
+
+	setvard ATTACK_MOVERANGE ATTACK_MOVERANGE_NORM //try to get this close
+	setvard ATTACK_RANGE 80 //attack when this close
+	setvard ATTACK_HITRANGE ATTACK_HITRANGE_NORM //hit reaches up to this distance
+
+	const STAB_DAMAGE 2200
+	const SWORD_DAMAGE '$rand(60,120)'
+	const SHIELD_DAMAGE '$rand(50,200)'
+
+	const ACCURACY_SWORD 80%
+	const ACCURACY_SHIELD 90%
+	const ACCURACY_STAB 100%
+
+	const STAB_FREQ '$randf(30,60)' //super-stab check every 30-60 secs
+
+	//sounds
+	const SOUND_GETUP amb/screeching.wav
+	const SOUND_STEP1 player/pl_grate1.wav
+	const SOUND_STEP2 player/pl_grate2.wav
+	const SOUND_STEP3 player/pl_grate3.wav
+	const SOUND_STEP4 player/pl_grate4.wav
+	setvard MONSTER_STEP 0
+	const SOUND_STRUCK1 debris/metal1.wav
+	const SOUND_STRUCK2 debris/metal3.wav
+	const SOUND_STRUCKSHIELD1 debris/metal6.wav
+	const SOUND_STRUCKSHIELD2 doors/doorstop5.wav
+	const SOUND_HIT1 zombie/claw_strike1.wav
+	const SOUND_HIT2 zombie/claw_strike3.wav
+	const SOUND_LARGESWING zombie/claw_miss2.wav
+	const SOUND_MISS1 weapons/swingsmall.wav
+	const SOUND_MISS2 weapons/cbar_miss1.wav
+	const SOUND_PAIN1 x/x_pain1.wav
+	const SOUND_PAIN2 x/x_pain3.wav
+	const SOUND_SUMMON x/x_ballattack1.wav
+	const SOUND_SUMMON_START x/x_recharge2.wav //one of the x/ sounds
+	const SOUND_POWERUP ambience/particle_suck2.wav 
+	const SOUND_PRE_STAB x/x_attack2.wav
+	const SOUND_DEATH tentacle/te_death2.wav
+	precache SOUND_DEATH //handled externally
+
+	//movement hack
+	const MOVE_FAST 200
+	const MOVE_NORMAL 100
+	setvard NPC_HACKED_MOVE_SPEED MOVE_NORMAL
+}
+
+//new AI
+#include monsters/base_monster_new
+
+{ npc_spawn
+
+	callevent armor_spawn
+}
+
+{ armor_spawn
+
+	name The|Armor of the Fallen
+	hp 6000
+	width 32
+	height 96
+	race demon
+	setmodel monsters/enemy.mdl
+
+	hearingsensitivity 11
+
+	setidleanim ANIM_SIT_IDLE
+	setmoveanim ANIM_SIT_IDLE
+
+	playanim once ANIM_SIT_IDLE
+
+   	setstat parry 30
+	setvard NO_STUCK_CHECKS 1
+
+	invincible 1 //invincible until combat begins
+	takedmg all 0.1
+	takedmg fire 0.5
+	takedmg lightning 1.5
+	takedmg cold 0.8
+	takedmg poison 0.0
+	takedmg holy 1.5
+	setvard IMMUNE_POISON 1
+
+	setvard WAITING_FOR_PLAYER 1
+	callevent npcatk_suspend_ai //suspend AI until combat begins
+
+}
+
+{ game_heardsound
+
+	if WAITING_FOR_PLAYER
+	callevent armor_heardsound
+}
+
+{ armor_heardsound
+
+	//using heardsound as $cansee buggers in some situations (as demonstrated by Keledros)
+	if WAITING_FOR_PLAYER
+	if $get(ent_lastheard,isplayer)
+	if $get(ent_lastheard,range) < TRIGGER_RANGE
+	setvard FIRST_TARGET $get(ent_lastheard,id)
+	setvard WAITING_FOR_PLAYER 0
+	callevent oh_it_is_on_biatch
+}
+
+{ oh_it_is_on_biatch
+
+	setidleanim ANIM_IDLE
+	setmoveanim ANIM_WALK
+	setvard TOSHIELD_DELAY $randf(10,30)
+	callevent TOSHIELD_DELAY setup_shield_check
+	playanim critical ANIM_GETUP
+}
+
+{ getup_done //called from model when ANIM_GETUP is complete
+
+	setmovedest $relpos(0,64,0) 10
+	playanim critical ANIM_EQUIP
+}
+
+{ equip_done //called from model when ANIM_EQUIP is complete
+
+	usetrigger break_throne
+
+	effect glow ent_me (255,255,255) 256 5 5
+	createnpc monsters/companion/spell_maker_divination $relpos(0,0,50) $get(ent_me,id) none none 64
+	setmodelbody 0 1 //give weapons
+	playsound 0 10 SOUND_POWERUP
+	playanim critical ANIM_EQUIP2
+	invincible 0
+	setvard NPC_STORE_TARGET unset
+	callevent npcatk_resume_ai
+	if ( $get(FIRST_TARGET,isalive) ) callevent npcatk_settarget FIRST_TARGET
+	callevent stance_on
+	setvar ANIM_WALK ANIM_WALK_NORM
+	setvar ANIM_IDLE ANIM_STANCE_IDLE
+	setidleanim ANIM_STANCE_IDLE
+	setmoveanim ANIM_WALK_NORM
+	callevent STAB_FREQ super_stab_check
+	setvard CYCLE_TIME CYCLE_TIME_BATTLE
+	setvard NPC_FORCED_MOVEDEST 1
+	setmovedest $relpos(0,64,0) 10
+	callevent 5.0 restore_stuck_checks
+}
+
+{ restore_stuck_checks
+
+	roam 1
+	setvard NO_STUCK_CHECKS 0
+}
+
+{ super_stab_check
+
+	if ( NPCATK_TARGET equals unset )
+	{
+		//nothing to stab, check again real soon
+		local NEXT_STAB_CHECK STAB_FREQ
+		divide NEXT_STAB_CHECK 4
+		callevent NEXT_STAB_CHECK super_stab_check
+		//dbg temp SuperstabAbort no_target
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	if ( !$cansee(NPCATK_TARGET) )
+	{
+		//can't see target, check again real soon
+		local NEXT_STAB_CHECK STAB_FREQ
+		divide NEXT_STAB_CHECK 4
+		callevent NEXT_STAB_CHECK super_stab_check
+		//dbg temp SuperstabAbort cant_see_target
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	if ( !SHIELD_ON )
+	{
+		playsound 0 10 SOUND_PRE_STAB
+		effect glow ent_me (200,200,255) 256 5 5
+		setvard SUPER_STABBING 1 //flag to tell him not to change stances until super stab complete
+		callevent 2.0 do_super_stab
+		callevent STAB_FREQ super_stab_check
+	}
+
+	if ( SHIELD_ON )
+	{
+		//can't do super stab in this stance, check again later, but reduce time
+		local NEXT_STAB_CHECK STAB_FREQ
+		divide NEXT_STAB_CHECK 2
+		callevent NEXT_STAB_CHECK super_stab_check
+		//dbg temp SuperstabAbort in_shield_stance
+	}
+}
+
+{ do_super_stab
+
+	callevent npcatk_suspend_ai 6.0
+	setvard PLAYING_STAB 1
+	playanim break
+	playanim critical ANIM_ATTACK_STAB
+	setmoveanim ANIM_ATTACK_STAB
+	setidleanim ANIM_ATTACK_STAB
+}
+
+{ stab_strike //called from model when ANIM_ATTACK_STAB @ frame 24
+
+	//ai is suspended during this strike, so use ent_lastseen instead of the stored NPCATK_TARGET
+	callevent npcatk_dodamage $get(ent_lastseen,id) ATTACK_HITRANGE_STAB STAB_DAMAGE ACCURACY_STAB magic
+	callevent npcatk_resume_ai
+	setvard SUPER_STABBING 0
+	setvard PLAYING_STAB 0
+	callevent stance_on
+}
+
+{ setup_shield_check
+
+	//alternate periodically between stances
+	setvard TOSHIELD_DELAY $randf(10,30)
+	callevent TOSHIELD_DELAY setup_shield_check
+
+	if NPCATK_TARGET isnot unset
+
+	if ( !SHIELD_ON )
+	{
+		if !SUPER_STABBING
+		if ( $get(NPCATK_TARGET,range) <= SHIELD_RANGE )
+		{
+			callevent npcatk_suspend_ai 1.0  //suspend AI for a sec to ensure anim completes
+			playanim break
+			playanim critical ANIM_TOSHIELD
+		}
+	}
+
+	if ( SHIELD_ON )
+	{
+		callevent npcatk_suspend_ai 1.0 //suspend AI for a sec to ensure anim completes
+		playanim break
+		playanim critical ANIM_TOSTANCE
+	}
+}
+
+{
+repeatdelay 1.0
+
+	if ( NPCATK_TARGET equals unset )
+	{
+		if !NPC_MOVING_LAST_KNOWN
+		setvar ANIM_WALK ANIM_WALK_NORM
+		setmoveanim ANIM_WALK
+		setidleanim ANIM_IDLE
+	}
+
+	if NPCATK_TARGET isnot unset
+	if !SWITCHING_STANCE
+
+	local TARGET_RANGE $get(NPCATK_TARGET,range)
+	if ( TARGET_RANGE > SHIELD_RANGE )
+	{
+		if ( SHIELD_ON ) playanim critical shield_to_stance
+		setvar ANIM_RUN ANIM_RUN_NORM
+		setvard SWITCHING_STANCE 1
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	if ( !$cansee(NPCATK_TARGET) )
+	{
+		if SHIELD_ON
+		playanim critical shield_to_stance
+		setvar ANIM_RUN ANIM_RUN_NORM
+		setvard SWITCHING_STANCE 1
+	}
+
+}
+
+{ sword_strike //called from model when ANIM_ATTACK_NORM @ frame 15
+
+	callevent npcatk_dodamage NPCATK_TARGET ATTACK_HITRANGE SWORD_DAMAGE ACCURACY_SWORD slash
+}
+
+{ shield_strike //called from model when ANIM_ATTACK_SHIELD @ frame 20
+
+	callevent npcatk_dodamage NPCATK_TARGET ATTACK_HITRANGE SHIELD_DAMAGE ACCURACY_SHIELD slash
+}
+
+{ game_dodamage //1:AttackHit(1/0)  2:EntityHit  3:StartOrigin  4:EndOrigin
+
+	if ( !PARAM1 ) 
+	{
+		if ( ANIM_ATTACK equals attack1 ) playrandomsound 0 10 SOUND_MISS1 SOUND_MISS2
+		if ( ANIM_ATTACK equals attack2 ) playsound 0 10 SOUND_LARGESWING
+		if ( ANIM_ATTACK equals shield_attack ) playsound 0 10 SOUND_LARGESWING
+	}
+	if ( PARAM1 ) playrandomsound 0 10 SOUND_HIT1 SOUND_HIT2
+}
+
+{ stance_on //called from model when ANIM_TOSTANCE is complete
+
+   	setstat parry 30
+	takedmg all 0.4
+	setvard SHIELD_ON 0
+	setvar ANIM_WALK ANIM_WALK_NORM
+	setvar ANIM_RUN ANIM_RUN_NORM
+	setmoveanim ANIM_RUN
+	setidleanim ANIM_IDLE
+	setvard ANIM_ATTACK ANIM_ATTACK_NORM
+	setvard ATTACK_MOVERANGE ATTACK_MOVERANGE_NORM
+	setvard ATTACK_HITRANGE ATTACK_HITRANGE_NORM
+	setvard SWITCHING_STANCE 0
+}
+
+{ shield_on //called from model when ANIM_TOSHIELD is complete
+
+   	setstat parry 60
+	takedmg all 0.1
+	setvard SHIELD_ON 1
+	setvar ANIM_WALK ANIM_WALK_SHIELD
+	setvar ANIM_RUN ANIM_WALK_SHIELD
+	setmoveanim ANIM_WALK
+	setidleanim ANIM_SHIELD_IDLE
+	setvard ANIM_ATTACK ANIM_ATTACK_SHIELD
+	setvard ATTACK_MOVERANGE ATTACK_MOVERANGE_SHIELD
+	setvard ATTACK_HITRANGE ATTACK_HITRANGE_SHIELD
+	setvard SWITCHING_STANCE 0
+}
+
+{ run_step //called from model during anim "run" @ frames 6 and 13
+
+	add MONSTER_STEP 1
+	if ( MONSTER_STEP == 1 ) playsound 0 10 SOUND_STEP1
+	if ( MONSTER_STEP == 2 ) playsound 0 10 SOUND_STEP2
+	if ( MONSTER_STEP == 3 ) playsound 0 10 SOUND_STEP3
+	if ( MONSTER_STEP == 4 ) 
+	{
+		playsound 0 10 SOUND_STEP4
+		setvard MONSTER_STEP 0
+	}
+}
+
+{ game_struck //PARAM1 = inc damage
+
+
+	if ( game.monster.hp < 2000 )
+	{
+		if PARAM1 > 30
+		if $rand(1,10) == 1
+		playrandomsound 0 10 SOUND_PAIN1 SOUND_PAIN2
+		setvard DID_PAIN_SOUND 1
+	}
+
+	if ( !DID_PAIN_SOUND )
+	{
+		if ( SHIELD_ON ) playrandomsound 0 10 SOUND_STRUCKSHIELD1 SOUND_STRUCKSHIELD2
+		if ( !SHIELD_ON ) playrandomsound 0 10 SOUND_STRUCK1 SOUND_STRUCK2
+	}
+	setvard DID_PAIN_SOUND 0
+
+	if !DID_SUMMON
+	if game.monster.hp < 4000
+	//dbg temp Summoning Armors...
+	callevent npcatk_suspend_ai
+	setmoveanim ANIM_SUMMON
+	setidleanim ANIM_SUMMON
+	effect glow ent_me (255,255,0) 256 5 5
+	playsound 0 10 SOUND_SUMMON_START
+	playanim break
+	playanim critical ANIM_SUMMON
+	setvard AM_SUMMONING 1
+	setvard DID_SUMMON 1
+	setvard FIN_DID_SUMMON 0
+	callevent 0.25 summon_loop
+	callevent 5.0 summon_done
+}
+
+{ summon_loop
+	if !FIN_DID_SUMMON
+	callevent 0.25 summon_loop
+}
+
+{ cycle_up
+	if !DID_FIRST_SUMMON
+	setvard DID_FIRST_SUMMON 1
+	callevent 10.0 first_summon
+}
+
+{ first_summon
+	playanim critical ANIM_SUMMON
+}
+
+{ summon_done //also called from model but not dependable
+
+	if !FIN_DID_SUMMON
+	setvard FIN_DID_SUMMON 1
+	createnpc monsters/companion/spell_maker_summoning $relpos(0,0,50) $get(ent_me,id) none none 64
+	callevent npcatk_resume_ai
+	playsound 0 10 SOUND_SUMMON
+	//summons are handled by map
+	//dbg temp Summon complete
+	callevent stance_on
+	usetrigger summon_armors
+	setvard AM_SUMMONING 0
+}
+
+{  [server] game_movingto_dest		//Hack in movement because the model anims are missing it
+
+	setvard NPC_HACKED_MOVE_SPEED MOVE_FAST
+	if ( SHIELD_ON ) setvard NPC_HACKED_MOVE_SPEED MOVE_NORMAL
+	if ( NPCATK_TARGET equals unset ) setvard NPC_HACKED_MOVE_SPEED MOVE_NORMAL
+	if ( PLAYING_STAB ) setvard NPC_HACKED_MOVE_SPEED 0
+	if ( AM_SUMMONING ) setvard NPC_HACKED_MOVE_SPEED 0
+	setanim.movespeed NPC_HACKED_MOVE_SPEED	//Force move, since the animation doesn't have the required movement
+}
+
+{  [server] game_stopmoving
+
+   setanim.movespeed 0				//Force Stop
+}
+
+{ npcatk_suspend_ai
+
+	setvard HITBACK_FRUST 0
+	setmovedest none
+	callevent game_stopmoving
+}
+
+{ npc_selectattack
+
+	setanim.movespeed 0
+}
+
+{ npc_death
+
+	callexternal GAME_MASTER gm_verify_map b_castle
+	effect screenshake $relpos(0,0,0) 190 20 15 1024
+}

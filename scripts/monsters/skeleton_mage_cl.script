@@ -1,0 +1,141 @@
+{
+	const GLOW_RAD 128
+	const GLOW_COLOR (255,128,64)
+}
+
+{ client_activate //<owner> <duration>
+	setvard FX_OWNER PARAM1
+	setvard FX_DURATION PARAM2
+
+	setcallback render enable
+
+	cleffect light new $getcl(FX_OWNER,origin) GLOW_RAD GLOW_COLOR FX_DURATION
+	setvard SKEL_LIGHT_ID game.script.last_light_id
+
+	setvard FX_ACTIVE 1
+	callevent FX_DURATION end_effect
+}
+
+{ game_prerender
+	if $getcl(FX_OWNER,exists)
+	local L_POS $getcl(FX_OWNER,origin)
+	cleffect light SKEL_LIGHT_ID L_POS GLOW_RAD GLOW_COLOR 1.0
+
+	if ( ATTACK_LIGHT_ACTIVE )
+	{
+		if ( ATTACK_LIGHT_RAD < 256 ) add ATTACK_LIGHT_RAD 1
+		cleffect light ATTACK_LIGHT_ID L_POS ATTACK_LIGHT_RAD ATTACK_LIGHT_COLOR 0.1
+	}
+	else
+	{
+		if !ATTACK_LIGHT_REMOVED
+		if ATTACK_LIGHT_ID > 0
+		setvard ATTACK_LIGHT_REMOVED 1
+		cleffect light ATTACK_LIGHT_ID $vec(5000,0,0) 1 (1,1,1) 0.1
+	}
+
+	if ( SEAL_LIGHT_ACTIVE )
+	{
+		if ( SEAL_LIGHT_RADCOUNT < SEAL_GLOW_RAD ) add SEAL_LIGHT_RADCOUNT 1
+		cleffect light SEAL_LIGHT_ID L_POS SEAL_LIGHT_RADCOUNT SEAL_COLOR 0.1
+	}
+	else
+	{
+		if !SEAL_LIGHT_REMOVED
+		if SEAL_LIGHT_ID > 0
+		setvard SEAL_LIGHT_REMOVED 1
+		cleffect light SEAL_LIGHT_ID $vec(5000,0,0) 1 (1,1,1) 0.1
+	}
+}
+
+{ end_effect
+	setvard FX_ACTIVE 0
+	setvard SEAL_LIGHT_ACTIVE 0
+	callevent 1.0 remove_effect
+}
+
+{ remove_effect
+	removescript
+}
+
+//Power Projectile Orb
+{ show_orb //<color>
+	setvard ATTACK_LIGHT_COLOR PARAM1
+	cleffect tempent sprite 3dmflagry.spr $getcl(FX_OWNER,attachment0) setup_orb_sprite update_orb_sprite
+	cleffect light new $getcl(FX_OWNER,origin) 10 ATTACK_LIGHT_COLOR 0.1
+	setvard ATTACK_LIGHT_ID game.script.last_light_id
+	setvard ATTACK_LIGHT_ACTIVE 1
+	setvard ATTACK_LIGHT_RAD 10
+	setvard ATTACK_LIGHT_REMOVED 0 
+}
+
+{ hide_orb //called by owner
+	setvard ATTACK_LIGHT_ACTIVE 0
+}
+
+{ setup_orb_sprite
+	cleffect tempent set_current_prop death_delay 	2.0
+	cleffect tempent set_current_prop scale 	1
+	cleffect tempent set_current_prop gravity 	0
+	cleffect tempent set_current_prop framerate	30
+	cleffect tempent set_current_prop frames	1
+	cleffect tempent set_current_prop rendermode add
+	cleffect tempent set_current_prop rendercolor ATTACK_LIGHT_COLOR
+	cleffect tempent set_current_prop renderamt 1
+	cleffect tempent set_current_prop fuser1 1
+}
+
+{ update_orb_sprite
+	if ( ATTACK_LIGHT_ACTIVE )
+	{
+		local CUR_RENDERAMT game.tempent.fuser1
+		if ( CUR_RENDERAMT < 255 ) add CUR_RENDERAMT 1
+		cleffect tempent set_current_prop renderamt CUR_RENDERAMT
+		cleffect tempent set_current_prop fuser1 CUR_RENDERAMT
+		cleffect tempent set_current_prop origin $getcl(FX_OWNER,attachment0)
+	}
+	else
+	{
+		cleffect tempent set_current_prop renderamt 0
+	}
+}
+
+//seal warning circle
+{ show_seal_warning //<origin> <rad> <body> <color>
+	setvard SEAL_ORIGIN PARAM1
+	setvard SEAL_RAD PARAM2
+	setvard SEAL_OFS PARAM3
+	setvard SEAL_COLOR PARAM4
+	cleffect tempent model weapons/magic/seals.mdl SEAL_ORIGIN setup_seal_warn
+
+	setvard SEAL_GLOW_RAD SEAL_RAD
+	multiply SEAL_GLOW_RAD 1.11 //glow slightly larger than circle
+
+	setvard SEAL_LIGHT_ACTIVE 1
+	setvard SEAL_LIGHT_RADCOUNT 1
+	setvard SEAL_LIGHT_REMOVED 0
+	cleffect light new SEAL_ORIGIN SEAL_GLOW_RAD SEAL_COLOR 2.0
+	setvard SEAL_LIGHT_ID game.script.last_light_id
+
+	callevent 2.0 seal_warning_end
+
+	sound.play3d magic/lightprep.wav 5 SEAL_ORIGIN 0.8 0 50
+}
+
+{ seal_warning_end
+	setvard SEAL_LIGHT_ACTIVE 0
+}
+
+{ setup_seal_warn
+
+	cleffect tempent set_current_prop death_delay 2.0
+	cleffect tempent set_current_prop body SEAL_OFS
+    cleffect tempent set_current_prop bouncefactor 	0
+	cleffect tempent set_current_prop scale 	1.0
+	cleffect tempent set_current_prop framerate	1.0
+	cleffect tempent set_current_prop frames	2.0
+	cleffect tempent set_current_prop rendercolor 	SEAL_COLOR
+	cleffect tempent set_current_prop renderamt 100
+	cleffect tempent set_current_prop gravity 	0
+	cleffect tempent set_current_prop collide 	none
+}

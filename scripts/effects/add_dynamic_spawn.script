@@ -1,0 +1,347 @@
+#scope server
+//This is an additional extension script that causes the spawn monster to remove itself from the map and look.
+//for a point which no player is looking at to appear in within a bounding box assigned by its msarea_monsterspawn.
+//
+//If the "world" parameter is used, it will instead attempt to find a spawn spot within 512 (or PARAM2) units of the densest cluster of players.
+//
+//upon finding such a point it will appear there and this script is removed.
+//
+//(In short, left4dead zombie style spawning.)
+
+{ game_precache
+
+	local reg.effect.name dynamic_spawn
+	local reg.effect.flags nostack
+	local reg.effect.script $currentscript
+
+	setvard game.effect.removeondeath 1
+	setvard game.effect.id dynamic_spawn
+	setvard game.effect.displayname "Dynamic Spawner"
+	setvard game.effect.flags nostack
+
+	setvard EFFECT_IGNORE_CLEARFX 1 //need to add code function to prevent removal via clearfx
+
+	registereffect
+}
+
+
+{ game_activate //["world"] [<search_radius>]
+
+	if ( PARAM1 equals world )
+	{
+		setvard DYNS_GLOBAL 1
+		if ( PARAM2 !startswith 'PARAM' )
+		{
+			if ( $left(PARAM2,1) > 0 ) //PARAM2 may also be a string representing the next addparam, so at least make sure it starts with a number...
+			{
+				setvard DYNS_SRADIUS PARAM2			
+			}
+			else
+			{
+				setvard DYNS_SRADIUS 512
+			}
+		}
+		else
+		{
+			setvard DYNS_SRADIUS 512
+		}
+
+		//dbg $currentscript game_activate world DYNS_SRADIUS
+	}
+
+	setvard DYNS_STARTED game.time
+
+	setorigin ent_me $vec(40000,40000,4000) //may want to avoid this if DYNS_GLOBAL, and just tell players to keep their NPCs off map
+	callexternal ent_me npcatk_suspend_ai
+	setvard PLAYING_DEAD 1
+
+
+	if ( !DYNS_GLOBAL )
+	{
+		setvard DYN_SPAWNER $get(ent_me,spawner)
+		setvard DYN_SPAWNER_MINS $get(DYN_SPAWNER,absmin)
+		setvard DYN_SPAWNER_MAXS $get(DYN_SPAWNER,absmax)
+		//dbg $currentscript mins DYN_SPAWNER_MINS maxs DYN_SPAWNER_MAXS
+	}
+
+	if ( NPC_FLIGHT isnot 'NPC_FLIGHT' ) setvard DYNS_FLYER 1
+	if ( $get(ent_me,fly) ) setvard DYNS_FLYER 1
+
+	setvard DYNS_ACTIVE 1
+	setvard DYNS_FREQ 0.1
+	callevent 0.1 dyns_hunt_find_location
+}
+
+{ dyns_hunt_find_location
+
+	if DYNS_ACTIVE
+	callevent DYNS_FREQ dyns_hunt_find_location
+
+	if ( game.players == 0 ) setvard DYNS_FREQ 1.0
+
+	if game.players > 0
+	setvard DYNS_FREQ 0.1
+	getplayers DYNS_TARGETS
+	setvard DYNS_FOUND_VALID 0
+	setvard DYNS_VALID_TARGETS ''
+	if ( !DYNS_GLOBAL )
+	{
+		calleventloop $get_token_amt(DYNS_TARGETS) dyns_find_validate
+	}
+	else
+	{
+		setvard DYNS_FOUND_VALID 1
+		setvard DYNS_VALID_TARGETS DYNS_TARGETS
+	}
+
+	if DYNS_FOUND_VALID
+
+	dbg dyns_hunt_find_location
+
+	local L_RND $rand(1,5)
+	if ( DYNS_GLOBAL ) local L_RND 1
+	
+	if ( L_RND < 5 )
+	{
+		//pick random spot within spawn area
+		if ( !DYNS_GLOBAL )
+		{
+			local L_X $randf($vec.x(DYN_SPAWNER_MINS),$vec.x(DYN_SPAWNER_MAXS))
+			local L_Y $randf($vec.y(DYN_SPAWNER_MINS),$vec.y(DYN_SPAWNER_MAXS))
+			local L_Z $randf($vec.z(DYN_SPAWNER_MINS),$vec.z(DYN_SPAWNER_MAXS))
+			setvard DYNS_CHECK_SIGHT $vec(L_X,L_Y,L_Z)
+		}
+		else
+		{
+			//for global spawns, area is within DYN_SRADIUS of player with the least total distance between him and other players
+			setvard DYNS_CHECK_SIGHT $func(func_dyns_findspawnpoint)
+		}
+
+		if ( DYNS_CHECK_SIGHT equals none ) exitevent
+
+		//stick to ground, if I don't fly
+		if ( !DYNS_FLYER ) vectorset DYNS_CHECK_SIGHT z $get_ground_height(DYNS_CHECK_SIGHT)
+
+		//see DYNS_CHECK_SIGHT if in view of any player
+		setvard DYNS_IN_VIEW 0
+		calleventloop $get_token_amt(DYNS_TARGETS) dyns_check_inview
+		if !DYNS_IN_VIEW
+
+		//check if can move in new spawn point
+		setvard DYNS_SPAWN_POINT DYNS_CHECK_SIGHT
+		local L_LEGIT $func(func_dyns_test_point,DYNS_SPAWN_POINT)
+	}
+	else
+	{
+		//pick random spot behind player, see if in view of others
+		local L_N_TARGS $get_token_amt(DYNS_VALID_TARGETS)
+		if ( L_N_TARGS > 1 )
+		{
+			local L_PLAYER_IDX $rand(0,$math(subtract,L_N_TARGS,1))
+		}
+		else
+		{
+			local L_PLAYER_IDX 0
+		}
+
+		//pick spot behind player view, up 32-128 units + my width		
+		local L_PLAYER $get_token(DYNS_VALID_TARGETS,L_PLAYER_IDX)
+		local L_PLAYER_VIEW $get(L_PLAYER,viewangles)
+		local L_PLAYER_VIEW_YAW $vec.yaw(L_PLAYER_VIEW_YAW)
+		subtract L_PLAYER_VIEW 180
+		if ( L_PLAYER_VIEW < 0 ) add L_PLAYER_VIEW 180
+		vectorset L_PLAYER_VIEW y L_PLAYER_VIEW_YAW
+		local L_PLAYER_POS $get(L_PLAYER,origin)
+		local L_PLAYER_BACK $randf(32,128)
+		add L_PLAYER_BACK $get(ent_me,width)
+		vectoradd L_PLAYER_POS $relpos(L_PLAYER_VIEW,$vec(0,L_PLAYER_BACK,0))
+
+		setvard DYNS_CHECK_SIGHT L_PLAYER_POS
+		//stick to ground, if I don't fly
+		if ( !DYNS_FLYER ) vectorset DYNS_CHECK_SIGHT z $get_ground_height(DYNS_CHECK_SIGHT)
+
+		//check if DYNS_CHECK_SIGHT in view of any player
+		setvard DYNS_IN_VIEW 0
+		calleventloop $get_token_amt(DYNS_TARGETS) dyns_check_inview
+		if !DYNS_IN_VIEW
+
+		//check if can move in new spawn point
+		setvard DYNS_SPAWN_POINT DYNS_CHECK_SIGHT
+		local L_LEGIT $func(func_dyns_test_point,DYNS_SPAWN_POINT)
+	}
+	
+	if L_LEGIT
+	callevent dyns_finalize
+}
+
+{ dyns_finalize
+
+	local L_DYNS_TEST_MODE 0
+	if ( !L_DYNS_TEST_MODE )
+	{
+		setvard PLAYING_DEAD 0
+		callexternal ent_me npcatk_resume_ai
+		setvard DYNS_ACTIVE 0
+		callexternal ent_me set_home_loc $get(ent_me,origin)
+		dbg dyns_finalize @ $get(ent_me,origin)
+		removescript
+	}
+	else
+	{
+		//for testing, ping, repeat process
+		roam 0
+		callexternal ent_me npcatk_suspend_ai
+		playsound 0 10 magic/cast.wav
+		setvard DYNS_ACTIVE 0
+		callevent 5.0 dyns_loop_test
+	}
+}
+
+{ dyns_loop_test
+	callevent game_activate
+}
+
+
+{ dyns_find_validate
+	local L_CUR_TARG $get_token(DYNS_TARGETS,game.script.iteration)
+	if $within_box(L_CUR_TARG,$vec(0,0,0),DYN_SPAWNER_MINS,DYN_SPAWNER_MAXS)
+	setvard DYNS_FOUND_VALID 1
+	token.add DYNS_VALID_TARGETS L_CUR_TARG
+}
+
+{ dyns_check_inview
+
+	local L_CUR_TARG $get_token(DYNS_TARGETS,game.script.iteration)
+	local L_TARG_ORG $get(L_CUR_TARG,origin)
+	local L_TARG_ANG $get(L_CUR_TARG,viewangles)
+
+	if ( $within_cone2D(DYNS_CHECK_SIGHT,L_TARG_ORG,L_TARG_ANG,30) ) //might be in view, check traceline
+	{
+		local L_TRACE_START L_TARG_ORG
+		local L_MY_HEIGHT $get(ent_me,height)
+		local L_TRACE_END $math(vectoradd,DYNS_CHECK_SIGHT,z,L_MY_HEIGHT) //trace to head
+		local L_TRACE_LINE $get_traceline(L_TRACE_START,L_TRACE_END,worldonly)
+		if ( L_TRACE_LINE equals L_TRACE_END )
+		{
+			local L_DEBUG invew-YES-not_blocked
+		}
+		else
+		{
+			//vision might be blocked by something, give benefit of doubt
+			//dbg dyns_check_inview invew-NO-blocked
+			exitevent
+		}
+	}
+	else
+	{
+		//dbg dyns_check_inview invew-NO-notinfov
+		exitevent //not in FOV
+	}
+	//dbg dyns_check_inview L_DEBUG
+	setvard DYNS_IN_VIEW 1
+}
+
+{ func_dyns_test_point
+	local L_TELE_POINT PARAM1
+	local L_OLD_ORG $get(ent_me,origin)
+	setorigin ent_me L_TELE_POINT
+	local reg.npcmove.endpos L_TELE_POINT
+	local L_MY_ANG $get(ent_me,angles.yaw)
+	vectoradd reg.npcmove.endpos $relpos($vec(0,L_MY_ANG,0),$vec(-16,0,0))
+	local reg.npcmove.testonly	1
+	npcmove ent_me
+	local L_IS_LEGIT 1
+	if ( game.ret.npcmove.dist == 0 )
+	{
+		local L_IS_LEGIT 0
+		local L_DEBUG cant_move
+	}
+	if ( !DYNS_GLOBAL )
+	{
+		if !$within_box(L_TELE_POINT,$vec(0,0,0),DYN_SPAWNER_MINS,DYN_SPAWNER_MAXS)
+		local L_IS_LEGIT 0
+		local L_DEBUG not_in_box
+	}
+
+	if ( !L_IS_LEGIT )
+	{
+		dbg func_dyns_test_point L_DEBUG
+		setorigin ent_me L_OLD_ORG
+		return 0
+	}
+	else
+	{
+		dbg func_dyns_test_point valid
+		return 1
+	}
+}
+
+{ func_dyns_findspawnpoint
+
+	if ( game.players == 1 )
+	{
+		local L_PLAYER $get_token(DYNS_TARGETS,0)
+	}
+	else
+	{
+		if ( game.players == 2 )
+		{
+			//*shrug* it's 50/50
+			local L_RND $rand(0,1)
+			local L_PLAYER $get_token(DYNS_TARGETS,L_RND)
+		}
+		else
+		{
+			//find the most popular player, based on his proximity to all the others
+			setvard DYNS_LOWEST_TRANGE 9999
+			setvard DYNS_WINNER $get_token(DYNS_TARGETS,0)
+			setvard DYNS_NPLAYERS $get_token_amt(DYNS_TARGETS)
+			calleventloop DYNS_NPLAYERS dyns_find_popular_eloop
+			local L_PLAYER DYNS_WINNER
+		}
+	}
+
+
+	local L_SPAWN_POINT $get(L_PLAYER,origin)
+	if ( $math(subtract,game.time,DYNS_STARTED) < 3 )
+	{
+		//favor a spot the player is facing towards, if I've not been looking too long, so we spawn where he's headed
+		local L_ANG $get(L_PLAYER,viewangles)
+		local L_ANG $vec.yaw(L_ANG)
+		add L_ANG $randf(-100,100)
+	}
+	else
+	{
+		local L_ANG $randf(0,359.99)
+	}
+
+	local L_DIST $get(ent_me,width)
+	multiply L_DIST 2.0
+	add L_DIST $randf(0,DYNS_SRADIUS)
+	local L_Z $randf(0,64) //float up/down a bit for more likely success on uneven terrain
+	vectoradd L_SPAWN_POINT $relpos($vec(0,L_ANG,0),$vec(0,L_DIST,L_Z))
+
+	//dbg func_dyns_findspawnpoint select $get(L_PLAYER,name) @ L_SPAWN_POINT
+
+	return L_SPAWN_POINT
+}
+
+{ dyns_find_popular_eloop
+	local L_IDX game.script.iteration
+	setvard DYNS_TEST_PLAYER $get_token(DYNS_PLAYERS,L_IDX)
+	setvard DYNS_TEST_PLAYER_TRANGE 0
+	calleventloop DYNS_NPLAYERS dyns_test_popular_eeloop
+	if ( DYNS_TEST_PLAYER_TRANGE < DYNS_LEAST_AUTISTIC )
+	{
+		setvard DYNS_LOWEST_TRANGE DYNS_TEST_PLAYER_TRANGE
+		setvard DYNS_WINNER DYNS_TEST_PLAYER
+	}
+
+}
+
+{ dyns_test_popular_eeloop
+	local L_TEST_AGAINST $get_token(DYNS_PLAYERS,game.script.iteration)
+	local L_TEST_SUBJECT_ORG $get(DYNS_TEST_PLAYER,origin)
+	local L_TEST_TARGET_ORG $get(L_TEST_AGAINST,origin)
+	add DYNS_TEST_PLAYER_TRANGE $dist(L_TEST_SUBJECT_ORG,L_TEST_TARGET_ORG)
+}

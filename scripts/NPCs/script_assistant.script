@@ -1,0 +1,444 @@
+#scope server
+{
+	const CONTROLLER_HEAD_LR controller0
+	const CONTROLLER_HEAD_UD controller1
+
+	const CHAT_USE_CONV_ANIMS 0
+	const CHAT_NO_CLOSE_MOUTH 1
+
+	array.create PROBLEM_LIST
+	array.create ARRAY_SUMMONS
+	setvard SUMMON_SCRIPT 0
+	setvard N_SUMMONS 0
+	setvard MAP_SHIELD_ON 1
+	setvard WATER_OPEN 0
+	setvard SUMMON_ANG 90
+	const SUMMON_DIST 256
+	setvard MENU_MODE 0
+}
+
+#include monsters/base_chat_array
+
+{ game_spawn
+	name The|Dungeon Master's Assistant
+	setmodel monsters/venevus.mdl
+	width 32
+	height 72
+	hp 1
+	invincible 1
+	race beloved
+
+	saytextrange 1024
+
+	setprop ent_me scale 0.75
+
+	catchspeech menu_whoami hi hail hello who j0 waddup you
+	catchspeech menu_list_problems problem
+	catchspeech menu_map_help help
+	catchspeech menu_toggle_water water
+	catchspeech menu_toggle_shield shield
+	catchspeech summon send_menu
+	catchspeech menu_remove_all remove
+
+	callevent 0.1 scan_for_master	
+	callevent 0.05 check_problems
+}
+
+{ check_problems
+	local L_CVAR_DEV game.cvar.ms_dev_mode
+	setvard CVAR_SCRIPTS game.cvar.ms_dynamicnpc
+
+	if ( !L_CVAR_DEV )
+	{
+		array.add PROBLEM_LIST "ms_dev_mode is not set to 1 in the listenserver.cfg!"
+	}
+
+	if ( $len(CVAR_SCRIPTS) < 2 )
+	{
+		array.add PROBLEM_LIST "ms_dynamicnpc does not seem to be set in the listenserver.cfg!"
+	}
+
+	setvard DEV_SCRIPTS ''
+	calleventloop $get_token_amt(CVAR_SCRIPTS) parse_ms_dynamicnpc
+}
+
+
+{ scan_for_master
+	if !DID_INTRO
+	setvard PLAYER_LIST ''
+	getplayersnb PLAYER_LIST
+	calleventloop $get_token_amt(PLAYER_LIST) check_players
+	if !DID_INTRO
+	callevent 1.0 scan_for_master
+}
+
+{ check_players
+	local CUR_TARG $get_token(PLAYER_LIST,game.script.iteration)
+	if !DID_INTRO
+	if $get(CUR_TARG,range) < 256
+	setvard DID_INTRO 1
+	setvard CHAT_CURRENT_SPEAKER CUR_TARG
+	callevent 2.0 do_intro
+}
+
+{ do_intro
+	if ( $get_array_amt(PROBLEM_LIST) > 0 )
+	{
+		callevent chat_now "Master! Something is wrong!" 2.0 none none add_to_que
+
+		calleventloop $get_array_amt(PROBLEM_LIST) list_problems
+
+
+		if ( $get_array_amt(PROBLEM_LIST) > 1 )
+		{
+			callevent chat_now "I'm afraid this will have to be fixed before we can continue." 4.0 none none add_to_que
+		}
+		else
+		{
+			callevent chat_now "These problems will have to be remedied before we can continue." 4.0 none none add_to_que
+		}
+	}
+	else
+	{
+		callevent chat_now "Master... We are ready to begin." 2.0 none none add_to_que
+	}
+}
+
+{ list_problems
+	local CUR_PROB $get_array(PROBLEM_LIST,game.script.iteration)
+
+	dbg list_problems CUR_PROB
+
+	if ( game.script.iteration == 1 ) callevent chat_now "Also..." 1.0 none none add_to_que
+
+	local L_PROB_LEN_RATIO $len(CUR_PROB)
+	if ( L_PROB_LEN_RATIO > 60 ) local L_PROB_LEN_RATIO 60
+	divide L_PROB_LEN_RATIO 60
+
+	dbg list_problems lineratio L_PROB_LEN_RATIO
+
+	local L_CHAT_TIME $ratio(L_PROB_LEN_RATIO,2.0,4.5)
+
+	callevent chat_now CUR_PROB L_PROB_LEN_RATIO none none add_to_que
+}
+
+{ parse_ms_dynamicnpc
+	local L_CUR_SCRIPT $get_token(CVAR_SCRIPTS,game.script.iteration)
+
+	if ( L_CUR_SCRIPT startswith test_scripts )
+	{
+		if ( L_CUR_SCRIPT contains '.script' )
+		{
+			array.add PROBLEM_LIST "A script in ms_dynamicnpc has a .script extention..."
+			array.add PROBLEM_LIST "...Extentions should not be included in script names."
+			local L_SCRIPT_INVALID 1
+		}
+		if ( L_CUR_SCRIPT contains \ )
+		{
+			array.add PROBLEM_LIST "A script in has a back slash (\) in its name - please only use forward slahes (/) - usually under the question mark."
+			local L_SCRIPT_INVALID 1
+		}
+
+		if !L_SCRIPT_INVALID
+		token.add DEV_SCRIPTS L_CUR_SCRIPT
+	}
+	else
+	{
+		array.add PROBLEM_LIST "There is a script not prefixed with test_scripts/ in ms_dynamicnpc..."
+		array.add PROBLEM_LIST "I can only summon scripts found in the msc/test_scripts folder."
+	}
+}
+
+{ game_menu_getoptions
+
+	if ( MENU_MODE equals 0 )
+	{
+		if ( $get_array_amt(PROBLEM_LIST) == 0 )
+		{
+			if ( $len(DEV_SCRIPTS) > 12 )
+			{
+				local reg.mitem.title 	"[Summon] a creation..."
+				local reg.mitem.type 	callback
+				local reg.mitem.callback menu_summon
+				menuitem.register
+			}
+
+			if ( N_SUMMONS > 0 )
+			{
+				local reg.mitem.title 	"Remove a creation..."
+				local reg.mitem.type 	callback
+				local reg.mitem.callback menu_remove_specific
+				menuitem.register
+
+				local reg.mitem.title 	"[Remove] all creations."
+				local reg.mitem.type 	callback
+				local reg.mitem.callback menu_remove_all
+				menuitem.register
+			}
+		}
+		else
+		{
+			callevent show_help
+		}
+		
+
+		if ( !WATER_OPEN )
+		{
+			local reg.mitem.title 	"Open the [water] ways."
+		}
+		else
+		{
+			local reg.mitem.title 	"Close the [water] ways."
+		}
+		local reg.mitem.type 	callback
+		local reg.mitem.callback menu_toggle_water
+		menuitem.register
+
+		if ( !MAP_SHIELD_ON )
+		{
+			local reg.mitem.title 	"Raise the [shield]."
+		}
+		else
+		{
+			local reg.mitem.title 	"Lower the [shield]."
+		}
+		local reg.mitem.type 	callback
+		local reg.mitem.callback menu_toggle_shield
+		menuitem.register
+
+		if ( $get_array_amt(PROBLEM_LIST) == 0 ) callevent show_help
+	}
+
+	if ( MENU_MODE equals summon )
+	{
+		callevent chat_now "Which of your creations shall I summon?" 4.0 none none add_to_que clear_que
+		calleventloop $get_token_amt(DEV_SCRIPTS) list_summon_options
+		setvard MENU_MODE 0
+	}
+
+	if ( MENU_MODE equals remove_specific ) 
+	{
+		callevent chat_now "Which of your creations shall I remove?" 4.0 none none add_to_que clear_que
+		calleventloop $get_array_amt(ARRAY_SUMMONS) list_summons_loop
+		setvard MENU_MODE 0
+	}
+}
+
+{ list_summons_loop
+	local CUR_IDX game.script.iteration
+	local CUR_SUM $get_array(ARRAY_SUMMONS,CUR_IDX)
+	if $get(CUR_SUM,isalive)
+
+	local reg.mitem.title 	$get(CUR_SUM,name)
+	local reg.mitem.type 	callback
+	local reg.mitem.data	CUR_IDX
+	local reg.mitem.callback menu_remove_by_idx
+	menuitem.register
+}
+
+{ menu_remove_by_idx
+	playanim critical castspell
+	local CUR_SUM $get_array(ARRAY_SUMMONS,PARAM2)
+	setmovedest $get(CUR_SUM,origin) 9999
+	local L_CHAT_TEXT $get(CUR_SUM,name.full.capital)
+	stradd L_CHAT_TEXT " has been removed."
+	callevent chat_now L_CHAT_TEXT 3.0 none none add_to_que clear_que
+	array.set ARRAY_SUMMONS PARAM2 0
+	deleteent CUR_SUM fade
+	subtract N_SUMMONS 1
+}
+
+{ show_help
+	local reg.mitem.title 	"What is this place?"
+	local reg.mitem.type 	callback
+	local reg.mitem.callback menu_map_help
+	menuitem.register
+
+	local reg.mitem.title 	"Who are you?"
+	local reg.mitem.type 	callback
+	local reg.mitem.callback menu_whoami
+	menuitem.register
+
+	if ( $get_array_amt(PROBLEM_LIST) > 0 )
+	{
+		local reg.mitem.title 	"What were the [problems] again?"
+		local reg.mitem.type 	callback
+		local reg.mitem.callback menu_list_problems
+		menuitem.register
+	}
+}
+
+{ list_summon_options
+	local CUR_IDX game.script.iteration
+	local reg.mitem.title 	$get_token(DEV_SCRIPTS,CUR_IDX)
+	local reg.mitem.type 	callback
+	local reg.mitem.data	$get_token(DEV_SCRIPTS,CUR_IDX)
+	local reg.mitem.callback menu_summon_script
+	menuitem.register
+}
+
+{ menu_list_problems
+	callevent chat_clear_que
+	calleventloop $get_array_amt(PROBLEM_LIST) list_problems
+}
+
+{ menu_map_help
+	callevent chat_now "This map is for testing your creations, my master!" 3.0 castspell none clear_que add_to_que
+	callevent chat_now "Here, you can safely summon creatures, and your other creations..." 4.0 none none add_to_que
+	callevent chat_now "Scripts you created in the test_scripts/ folder." 3.0 none none add_to_que
+	callevent chat_now "I can summon any such script here, and offer various tools to help you in their testing." 5.0 none none add_to_que
+	callevent explain_cvars
+	if ( $get_array_amt(PROBLEM_LIST) > 0 ) callevent chat_now "I could start summoning your creations right now, but alas, there are these [problems]..." 5.0 none none add_to_que
+}
+
+{ menu_whoami
+	callevent chat_now "I, am your humble assistant..." 2.0 castspell none clear_que add_to_que
+	callevent chat_now "It is my task to aid in the testing of your creations." 4.0 none none add_to_que
+	callevent chat_now "I can summon your creations, remove them, and provide aid in a few other methods of testing." 4.0 none none add_to_que
+	callevent explain_cvars
+	if ( $get_array_amt(PROBLEM_LIST) > 0 ) callevent chat_now "I could start assisiting you right now, but alas, there are these [problems]..." 5.0 none none add_to_que
+}
+
+{ explain_cvars
+	callevent chat_now "Such creations must be scripts in the test_scripts/ folder..." 3.0 none none add_to_que
+	callevent chat_now "And added to ms_dynamicnpc cvar, set in your listenserver.cfg." none none add_to_que
+	callevent chat_now "You can add multiple creations, by adding their script names, and seperating them by semi-colons (;)." 4.0 none none add_to_que
+	callevent chat_now "For instance..." 2.0 none none add_to_que
+	callevent chat_now "ms_dynamic_npc test_scripts/test_spider;test_scripts/test_orc" 4.0 none none add_to_que
+	callevent chat_now "Lastly, the server must be in developer mode, so ms_dev_mode must be set to 1 in the listenserver.cfg as well." 5.0 none none add_to_que
+}
+
+{ menu_summon
+	setvard MENU_MODE summon
+	setvard MENU_TARGET PARAM1
+	callevent 0.1 send_menu
+}
+
+{ send_menu
+	if ( !$get(MENU_TARGET,isalive) ) setvard MENU_TARGET $get(ent_lastspoke,id)
+	menu.open MENU_TARGET
+}
+
+{ menu_summon_script
+	setvard SUMMON_SCRIPT PARAM2
+	playanim critical castspell
+	callevent face_summon
+	add SUMMON_ANG 90
+	if ( SUMMON_ANG > 359 ) setvard SUMMON_ANG 0
+	setvard MENU_MODE 0
+}
+
+{ castspell //frame event
+	dbg castspell SUMMON_SCRIPT
+	if SUMMON_SCRIPT isnot 0
+	createnpc SUMMON_SCRIPT SCRIPT_POS
+	setvard SUMMON_SCRIPT 0
+	add N_SUMMONS 1
+	clientevent new all effects/sfx_summon_circle SCRIPT_POS 3
+	callevent 1.0 name_summon
+}
+
+{ name_summon
+	local L_SUMMON_NAME $get(ent_lastcreated,name.full.capital)
+	local L_CHAT_STR L_SUMMON_NAME
+	stradd L_CHAT_STR " has been summoned."
+	callevent chat_now L_CHAT_STR 3.0 none none add_to_que
+	if ( $get(ent_lastcreated,scriptvar,'NPC_IS_FISH') )
+	{
+		if !WATER_OPEN
+		callevent chat_now "This appears to be a fish, so I shall open the [water] ways." 3.0 none none add_to_que
+		callevent menu_toggle_water
+		callevent 1.0 dunk_it
+	}
+	addvelocity ent_lastcreated $relvel($vec(0,0,0),$vec(0,0,-1000))
+
+	if ( $get_array_amt(ARRAY_SUMMONS) > 1 )
+	{
+		setvard ADDED_SUMMON 0
+		calleventloop $get_array_amt(ARRAY_SUMMONS) add_summon_loop
+		if !ADDED_SUMMON
+		array.add ARRAY_SUMMONS $get(ent_lastcreated,id)
+	}
+	else
+	{
+		array.add ARRAY_SUMMONS $get(ent_lastcreated,id)
+	}
+}
+
+{ add_summon_loop
+	if !ADDED_SUMMON
+	local CUR_SUM $get_array(ARRAY_SUMMONS,game.script.iteration)
+	if !$get(CUR_SUM,isalive)
+	array.set ARRAY_SUMMONS game.script.iteration $get(ent_lastcreated,id)
+	setvard ADDED_SUMMON 1
+}
+
+
+{ menu_toggle_shield
+	callevent face_summon
+	playanim critical castspell
+	usetrigger twal_shield
+	if ( MAP_SHIELD_ON )
+	{
+		setvard MAP_SHIELD_ON 0
+		callevent chat_now "The [shield] is lowered." 3.0 none none add_to_que
+	}
+	else
+	{
+		setvard MAP_SHIELD_ON 1
+		callevent chat_now "The [shield] is raised." 3.0 none none add_to_que
+	}
+}
+
+{ menu_toggle_water
+	callevent face_summon
+	playanim critical castspell
+	usetrigger door_water
+	if ( WATER_OPEN )
+	{
+		setvard WATER_OPEN 0
+		callevent chat_now "The [water] ways are sealed." 3.0 none none add_to_que
+	}
+	else
+	{
+		setvard WATER_OPEN 1
+		callevent chat_now "The [water] ways are opened." 3.0 none none add_to_que
+	}
+}
+
+{ face_summon
+	setvard SCRIPT_POS $get(ent_me,origin)
+	vectoradd SCRIPT_POS $relpos($vec(0,SUMMON_ANG,0),$vec(0,SUMMON_DIST,0))
+	setmovedest SCRIPT_POS 9999
+}
+
+{ menu_remove_all
+	playanim critical castspell
+	callevent face_summon
+	callevent chat_now "All your creations have been removed..." 3.0 none none add_to_que
+	setvard N_SUMMONS 0
+	if ( $get_array_amt(ARRAY_SUMMONS) > 1 )
+	{
+		calleventloop $get_array_amt(ARRAY_SUMMONS) remove_summons_loop
+	}
+	else
+	{
+		if ( $get_array(ARRAY_SUMMONS,0) isnot 0 ) deleteent $get_array(ARRAY_SUMMONS,0) fade
+		if ( $get_array(ARRAY_SUMMONS,1) isnot 0 ) deleteent $get_array(ARRAY_SUMMONS,1) fade
+		array.set ARRAY_SUMMONS 0 0
+		array.set ARRAY_SUMMONS 1 0
+	}
+}
+
+{ remove_summons_loop
+	local CUR_SUM $get_array(ARRAY_SUMMONS,game.script.iteration)
+	if $get(CUR_SUM,isalive)
+	deleteent CUR_SUM fade
+	array.set ARRAY_SUMMONS game.script.iteration 0
+}
+
+{ menu_remove_specific
+	setvard MENU_MODE remove_specific
+	setvard MENU_TARGET PARAM1
+	callevent 0.1 send_menu	
+}

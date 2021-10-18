@@ -1,0 +1,78 @@
+//Magic seal that follows player
+{
+	const MODEL_NAME weapons/magic/seals.mdl
+
+	const V_OFS 0 //-34
+	const V_OFS_DUCK 0 //24
+}
+
+{ client_activate //<owner> <duration> <seal_ofs> <light:0|1> <light_color> <light_rad>
+
+	setcallback render enable
+
+	setvard FX_OWNER PARAM1
+	setvard FX_DURATION PARAM2
+	setvard FX_MODEL_OFS PARAM3 //25 for holy circle x128
+	setvard DO_GLOW PARAM4
+	setvard GLOW_COLOR PARAM5
+	setvard GLOW_RAD PARAM6
+
+	dbg *** seal_follow FX_OWNER FX_DURATION
+
+	local L_DURATION FX_DURATION
+	add L_DURATION 1.0
+	callevent L_DURATION remove_fx
+
+	setvard FX_ACTIVE 1
+
+	cleffect tempent model MODEL_NAME $getcl(FX_OWNER,origin) make_aura update_aura
+
+	cleffect light new $getcl(FX_OWNER,origin) GLOW_RAD GLOW_COLOR 1.0
+	setvard LIGHT_ID game.script.last_light_id
+}
+
+{ game_prerender
+	if $getcl(FX_OWNER,exists)
+	cleffect light LIGHT_ID $getcl(FX_OWNER,origin) GLOW_RAD GLOW_COLOR 1.0
+}
+
+{ remove_fx
+	dbg **** seal_follow remove
+	setvard FX_ACTIVE 0
+	callevent 0.5 remove_me
+}
+
+{ remove_me
+	removescript
+}
+
+{ update_aura
+
+	if ( !FX_ACTIVE )
+	{
+		cleffect tempent set_current_prop origin $vec(10000,10000,10000)
+	}
+	else
+	{
+		local L_POS $getcl(FX_OWNER,origin)
+		local L_VOFS V_OFS
+		vectoradd L_POS z V_OFS
+		if ( $get_contents(L_POS) isnot empty ) vectoradd L_POS z V_OFS_DUCK
+		cleffect tempent set_current_prop origin L_POS
+	}
+}
+
+{ make_aura
+	dbg *** make_aura
+	cleffect tempent set_current_prop death_delay FX_DURATION
+	cleffect tempent set_current_prop body FX_MODEL_OFS
+	cleffect tempent set_current_prop framerate 0.5
+	cleffect tempent set_current_prop sequence 0
+	cleffect tempent set_current_prop scale 1.0
+	cleffect tempent set_current_prop gravity 0
+	cleffect tempent set_current_prop collide none
+	cleffect tempent set_current_prop frames 40
+	cleffect tempent set_current_prop angles $vec(0,90,0)
+	cleffect tempent set_current_prop velocity $vec(0,0,0)
+	cleffect tempent set_current_prop movetype 0
+}

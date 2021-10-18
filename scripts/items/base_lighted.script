@@ -1,0 +1,113 @@
+{
+  const SPRITE_FIRE		fire1_fixed.spr
+  const SPRITE_FIRE_FIXED	fire1_fixed.spr
+  setvard LIGHT_RADIUS		128
+  const LIGHT_COLOR		(255,255,128)
+  const LIGHT_PLAYER_SCALE	0.3
+  const LIGHT_DROPPED_SCALE	0.5
+  precache SPRITE_FIRE
+  precache SPRITE_FIRE_FIXED
+}
+
+{ game_putinpack
+	cleffect all LAST_TORCH_LIGHT
+	cleffect remove all LAST_TORCH_LIGHT
+}
+
+{ game_removefromowner
+	cleffect all LAST_TORCH_LIGHT
+	cleffect remove all LAST_TORCH_LIGHT
+}
+
+{ game_newowner
+	cleffect all LAST_TORCH_LIGHT
+	cleffect remove all LAST_TORCH_LIGHT
+}
+
+//Two instances
+//1 - Sent to all clients, including owner.  Handles the sprite and light on the player's body and viewmodel.
+//    (local.modelid == owner player model).  For owner, local.modelid == game.localplayer.index
+//2 - Sent to all clients.  Handles the sprite and light on the dropped torch.
+//    (local.modelid == torch model)
+
+//Client-side
+//-----------
+
+
+
+{ [client]
+	const FRAMES 23
+	const FRAMERATE 30
+
+	setvard local.modelid -1
+	setvard local.local3rdp_sprite 0 //Third person sprite on the local player 
+					 //(as oppsed to first person sprite, or third person on another player)
+	setcallback render enable
+}
+
+
+{ [client] client_activate
+	setvard local.modelid PARAM1
+	setvard local.body PARAM2
+	setvard local.sprite SPRITE_FIRE_FIXED
+	setvard local.scale LIGHT_DROPPED_SCALE
+	if( local.modelid == game.localplayer.index ) setvard local.local3rdp_sprite 1
+   	if( $getcl(local.modelid,isplayer) )
+	{
+		setvard local.sprite SPRITE_FIRE
+		setvard local.scale LIGHT_PLAYER_SCALE
+	}
+
+	callevent create_light 		//Create light
+}
+
+{ [client] create_light
+	cleffect light new (0,0,0) LIGHT_RADIUS LIGHT_COLOR 5
+	setvarg LAST_TORCH_LIGHT game.script.last_light_id
+	setvard local.lightid game.script.last_light_id
+}
+
+{  [client] game_prerender
+
+	//Create Sprite for this frame
+	if( SPRITE_FIRE isnot 'none' ) cleffect frameent sprite local.sprite (0,0,0) setup_flame	
+
+	//Update light position
+	if LIGHT_RADIUS > 0
+
+	local L_POS $getcl(local.modelid,origin)
+	if( $getcl(local.modelid,isplayer) )
+	{
+		setvard L_POS $relpos($getcl(local.modelid,angles),$vec(0,64,0))  //Hold the torch out some
+		vectoradd L_POS $getcl(local.modelid,center)
+	}
+	local L_RADIUS LIGHT_RADIUS
+	add L_RADIUS $randf(-8,8)
+	cleffect light local.lightid L_POS L_RADIUS LIGHT_COLOR 5
+}
+
+{  [client] setup_flame
+
+   local L_ATTACH_MDL_ID local.modelid
+   local L_ATTACH_BODY local.body
+   if( local.local3rdp_sprite ) if( !game.localplayer.thirdperson )
+   {
+	if( local.body == 1 ) setvard L_ATTACH_MDL_ID game.localplayer.viewmodel.left.id
+	else 		      setvard L_ATTACH_MDL_ID game.localplayer.viewmodel.right.id
+	setvard L_ATTACH_BODY 1
+   }
+   if L_ATTACH_MDL_ID > -1
+
+   cleffect frameent set_current_prop owner 		L_ATTACH_MDL_ID
+   cleffect frameent set_current_prop skin 		L_ATTACH_MDL_ID
+   cleffect frameent set_current_prop aiment 		L_ATTACH_MDL_ID
+   cleffect frameent set_current_prop movetype 		12
+   cleffect frameent set_current_prop body 		L_ATTACH_BODY
+   cleffect frameent set_current_prop scale		local.scale
+   local l.frame game.time
+   subtract l.frame START_BURNING
+   multiply l.frame FRAMERATE
+   mod l.frame FRAMES
+   
+   cleffect frameent set_current_prop frame		l.frame
+}

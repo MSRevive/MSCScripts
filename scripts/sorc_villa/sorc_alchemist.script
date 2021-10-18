@@ -1,0 +1,184 @@
+#scope server
+{
+	const CHAT_USE_CONV_ANIMS 0
+	const CHAT_NO_CLOSE_MOUTH 1
+
+	const CHAT_NEVER_INTERRUPT 1
+
+	setvar STORE_NAME sorc_pots
+	const VEND_INDIVIDUAL 1
+	const BUSY_COMMENT "Stupid impatient humans... One at a time!"
+}
+
+#include monsters/base_npc
+#include monsters/base_npc_vendor
+#include monsters/base_chat_array
+
+{ [shared] npc_spawn
+
+	name Easkhar
+	name_unique sorc_alchie
+	setmodel monsters/sorc.mdl
+	hp 5000
+	race beloved
+	invincible 1
+	setvard PLAYING_DEAD 1
+	nopush 1
+
+	setidleanim idle1
+	setmoveanim idle1
+
+	width 32
+	height 96
+
+	hearingsensitivity 11
+
+	setmodelbody 0 0 //body: 0=bare 1=bloody_shirt 2=gold_armor 3=archer
+	setmodelbody 1 2 //head: 0=hat_horns 1=hat_spiked 2=lizardskin_horned 3=gold_Chieftain 4=lizard_cap
+	setmodelbody 2 0 //weapon: 0=unarmed 1=axe 2=bow 3=steel_bow 4=sword 5=great_axe 6=sword_sheild 8=yellow_axe 9=blooddrinker 10=meat 11=hammah 12=drink
+
+	saytextrange 1024
+	callevent 0.1 crystal_complain
+
+	callevent npcatk_suspend_ai
+	callevent 0.1 scan_for_players
+}
+
+{ crystal_complain
+	saytext "*sigh* Just because I make the glue, they want *me* to fix the damned crystals when *they* break them..."
+}
+
+{ npc_post_spawn
+	menu.autoopen 0
+}
+
+{ scan_for_players
+	if !DID_INTRO
+	callevent 0.5 scan_for_players
+	if $cansee(player)
+	setvard DID_INTRO 1
+	setvard PLR_INTRO $get(ent_lastseen,id)
+	callevent do_intro
+}
+
+{ do_intro
+	callevent chat_add_text intro_chat "Humans!? I care not what Chief Runeghar says, I am NOT selling to humans!" 5.0 neigh
+	callevent chat_add_text intro_chat "Go! Be gone with thee!" 2.0 swordswing1_L
+	callevent chat_start_sequence intro_chat add_to_que
+	callevent 7.0 do_intro2
+}
+
+{ do_intro2
+	createnpc sorc_villa/sorc_chief_image $vec(-1952,-3120,48) $get(ent_me,id)
+	//manual position, if need be: (-1952,-3120,48)
+	setvard SORC_CHIEF_ID $get(ent_lastcreated,id)
+}
+
+{ ext_face_chief
+	setmovedest SORC_CHIEF_ID 9999
+	playanim critical flinch
+	callevent 1.0 ext_face_chief2
+}
+
+{ ext_face_chief2
+	setmovedest SORC_CHIEF_ID 9999
+	playanim critical kneeling
+	callevent 0.5 ext_face_chief3
+}
+
+{ ext_face_chief3
+	setmovedest SORC_CHIEF_ID 9999
+	playanim break
+	playanim hold kneel
+	setidleanim kneel
+	setmoveanim kneel
+}
+
+{ ext_chief_done_berating
+	if ( CHAT_BUSY )
+	{
+		callevent 0.1 ext_chief_done_berating
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+	setvard CHAT_TEMP_NO_AUTO_FACE 1
+	callevent chat_add_text sry_chief "I... I am sorry, warchief! I... I understand." 3.0
+	callevent chat_add_text sry_chief "I will do as you say." 3.0
+	callevent chat_start_sequence sry_chief add_to_que
+	//callevent 10.0 chief_gone
+}
+
+{ ext_chief_gone
+	setvard CHAT_TEMP_NO_AUTO_FACE 0
+	usetrigger twal_pot_block //remove the partition stopping players
+
+	setvard CHIEF_GONE 1
+
+	callevent chat_add_text chief_gone "Bah, I still don't like it." 3.0 neigh
+	callevent chat_add_text chief_gone "But fine, I will do business with you." 3.0
+	callevent chat_add_text chief_gone "I warn you, however, it won't be cheap." 3.0 nod_yes
+	callevent chat_start_sequence chief_gone add_to_que
+
+	local NEAR_PLAYER $get_tsphere(players,128)
+	local NEAR_PLAYER $get_token(NEAR_PLAYER,0)
+
+	if ( $get(NEAR_PLAYER,range) < $get(PLR_INTRO,range) ) setvard PLR_INTRO NEAR_PLAYER
+
+	setmovedest PLR_INTRO 9999
+
+	setmoveanim idle1
+	setidleanim idle1
+
+	menu.autoopen 1
+}
+
+{ vendor_addstoreitems
+	dbg vendor_addstoreitems
+	addstoreitem STORE_NAME health_mpotion 30 400 0.0
+	addstoreitem STORE_NAME health_lpotion 30 400 0.0
+	addstoreitem STORE_NAME mana_speed 1 500 0.0
+	addstoreitem STORE_NAME mana_gprotection 1 500 0.0
+	addstoreitem STORE_NAME mana_protection 1 500 0.0
+	addstoreitem STORE_NAME mana_resist_cold 1 500 0.0
+	addstoreitem STORE_NAME mana_immune_cold 1 500 0.0
+	addstoreitem STORE_NAME mana_resist_fire 1 500 0.0
+	addstoreitem STORE_NAME mana_immune_fire 1 500 0.0
+	addstoreitem STORE_NAME mana_immune_poison 1 500 0.0
+	addstoreitem STORE_NAME mana_vampire 1 500 0.0
+	addstoreitem STORE_NAME mana_forget 5 300 0.0
+	addstoreitem STORE_NAME mana_demon_blood 1 500 0.0
+	addstoreitem STORE_NAME mana_bravery 1 500 0.0
+	addstoreitem STORE_NAME mana_flesheater1 2 500 0.0
+	addstoreitem STORE_NAME mana_flesheater2 1 500 0.0
+	addstoreitem STORE_NAME mana_fbrand 1 500 0.0
+	addstoreitem STORE_NAME mana_faura 1 300 0.0
+	addstoreitem STORE_NAME mana_paura 1 300 0.0
+	addstoreitem STORE_NAME mana_font 1 500 0.0
+}
+
+{ game_heardsound
+	if CHIEF_GONE
+	if !VENDOR_STORE_ACTIVE
+	local LAST_HEARD $get(ent_lastheard,id)
+	if $get(LAST_HEARD,isplayer)
+	if $get(LAST_HEARD,range) < 256
+	setmovedest LAST_HEARD 9999
+}
+
+{ ext_player_on_shelf
+	if !CHAT_BUSY
+	playanim once warcry
+	callevent chat_now "By the mighty Torkalath, you humans are like monkeys! GET OFF MY SHELVES!" 6.0 add_to_que
+}
+
+{ ext_player_on_table
+	if CHIEF_GONE
+	if ( CHAT_BUSY )
+	{
+		callevent chat_now "...and could you, please, *try* not standing on my table..." 4.0 add_to_que
+	}
+	else
+	{
+		callevent chat_now "Could you, please, try *not* standing on my table..." 4.0 add_to_que
+	}
+}

@@ -1,0 +1,123 @@
+//Jet o flame
+{
+	const MODEL_HANDS      		weapons/projectiles.mdl
+	const MODEL_WORLD      		weapons/projectiles.mdl
+	const ARROW_BODY_OFS		1
+	const PROJ_ANIM_IDLE		idle_iceball
+
+	const ARROW_SOLIDIFY_ON_WALL 0
+
+	const HITWALL_VOL 2
+
+	const PROJ_MOTIONBLUR 0
+
+	const MODEL_BODY_OFS		1
+	const PROJ_DAMAGE			0
+	const PROJ_STICK_DURATION	0
+	const PROJ_SOLIDIFY_ON_WALL	0  //Does not turn solid when a wall is hit
+
+	const PROJ_DAMAGE_AOE_RANGE	0
+	const PROJ_DAMAGE_AOE_FALLOFF	1
+	const PROJ_DAMAGE_TYPE		cold
+
+	const PROJ_COLLIDEHITBOX 1
+	const PROJ_IGNORENPC 1	//flies through players/NPCs
+	const PROJ_ANIM_IDLE none
+
+	const SCAN_RANGE 64
+	const FREQ_SCAN 0.5
+}
+
+#include items/proj_arrow_base
+
+{ arrow_spawn
+
+	name 	a|Jet of Flame
+	desc 	A streaming jet of flames
+	weight 	0
+	size 	1
+	value	1
+	gravity	0.0001
+
+	setmodel weapons/projectiles.mdl
+	setmodelbody 0 0
+	setprop ent_me rendermode 5
+	setprop ent_me renaderamt 0
+
+	svplaysound 1 10 monsters/goblin/sps_fogfire.wav
+
+	setvard GAME_PVP game.pvp
+}
+
+{ [override] game_fall //override base_arrow.  Just do nothing
+}
+
+{ [override] game_projectile_hitnpc
+	if !$get(PARAM1,haseffect,DOT_fire)
+	if $get(PARAM1,isalive)
+	if $get(PARAM1,relationship,ent_expowner) equals enemy
+	applyeffect PARAM1 effects/effect_burn 5.0 $get(ent_expowner,id) DOT_AMT
+}
+
+{ [override] game_projectile_landed
+	callevent remove_me
+}
+
+{ [server] game_projectile_hitwall
+	callevent remove_me
+}
+
+{ game_tossprojectile
+
+	callevent 10.0 remove_me //max dist
+
+	if game.serverside
+
+	setvard DMG_AMT $get(ent_expowner,scriptvar,'FLAME_JET_DMG')
+	setvard DOT_AMT $get(ent_expowner,scriptvar,'FLAME_JET_DOT')
+	setvard USE_SKILL $get(ent_expowner,scriptvar,'FLAME_JET_SKILL')
+	if ( !$get(ent_expowner,isplayer) ) setvard USE_SKILL none
+
+	setvard IS_ACTIVE 1
+
+	clientevent new all items/proj_flame_jet_cl $get(ent_me,index) xfireball3.spr
+	setvard MY_CL_IDX game.script.last_sent_id
+
+	callevent 0.01 damage_area
+}
+
+{ damage_area
+	if IS_ACTIVE
+	callevent 0.1 damage_area
+	//<target|(src_origin)> <range|aoe|(dest_origin)|direct> <damage> <cth|fall_off> <attacker> <inflciter> <skill|none> <dmg_type> [flag_string]
+	dbg damage_area DMG_AMT
+	xdodamage $get(ent_me,origin) 128 DMG_AMT 0 ent_expowner ent_expowner USE_SKILL fire
+	if game.time > NEXT_SCAN
+	setvard NEXT_SCAN FREQ_SCAN
+	add NEXT_SCAN FREQ_SCAN
+	
+	//this may need to be an external
+	setvard TARGET_LIST $get_tsphere(any,64)
+}
+
+{ [override] game_projectile_hitwall
+	callevent remove_me
+}
+
+{ affect_targets
+	local CUR_TARGET $get_token(TARGET_LIST,game.script.iteration)
+	if $get(CUR_TARGET,relationship,ent_expowner) equals enemy
+	applyeffect CUR_TARGET effects/effect_burn 5.0 $get(ent_expowner,id) DOT_AMT
+}
+
+{ remove_me
+	if ( game.serverside )
+	{
+		if ( !$get(ent_expowner,isplayer) ) callexternal ent_expowner ext_spiral_done //tell monster his ball popped
+		clientevent update all MY_CL_IDX end_fx
+		playsound 1 0 monsters/goblin/sps_fogfire.wav
+		setvard IS_ACTIVE 0
+		deleteent ent_me
+	}
+	removescript
+}

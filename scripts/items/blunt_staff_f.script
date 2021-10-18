@@ -1,0 +1,387 @@
+{
+	const BASE_LEVEL_REQ 30
+
+	const MP_VOLCANO 100
+	const MP_METEOR 75
+	const MP_BURST 30
+
+	const STAFF_RADIUS1 96
+	const STAFF_RADIUS2 256
+
+	const BWEAPON_NAME "Phlame's Staff"
+	const BWEAPON_DESC "A demonic staff of fire"
+	const BWEAPON_WEIGHT 60
+	const BWEAPON_VALUE 7000
+	const BWEAPON_INV_SPRITE_IDX 52
+	const BWEAPON_HANDS both
+
+	const ELM_NAME "phlame"
+	const ELM_TYPE "cold"
+	const ELM_AMT 20
+	const ELM_WEAPON 1
+
+	const VMODEL_FILE viewmodels/v_polearms.mdl
+	const VMODEL_IDX 13
+	const PMODEL_FILE weapons/p_weapons4.mdl
+	const PMODEL_IDX_FLOOR 28 //p_model floor offset (-1 from JHLMV index)
+	const PMODEL_IDX_HANDS 29 //p_model hands offset (-1 from JHLMV index)
+	const PMODEL_IDX_HAND_RIGHT 29
+	const PMODEL_IDX_HAND_LEFT 29
+	const PANIM_IDLE aim_blunt //aim_sword_idle also possiblity
+	const PANIM_EXT blunt //sword
+
+	const VANIM_IDLE 21
+	const VANIM_DRAW 21
+	const VANIM_MELEE 22
+	const VANIM_SPELL1 23
+	const VANIM_SPELL2 24
+	const VANIM_BURST 25
+
+	const WANIM_FLOOR standard_floor_idle
+	const WANIM_HAND standard_idle
+
+	const ATK1_RANGE 110 //max reach
+	const ATK1_DMG 200 //max damage
+	const ATK1_DMG_RANGE 20 //damage +/-
+	const ATK1_DMG_TYPE fire //damage type
+	const ATK1_STAMINA 0 //stamina drain
+	const ATK1_SKILL spellcasting.fire //skill to use for dmg and xp
+	const ATK1_ACCURACY 80% //base chance to hit (raises slightly with skill)
+	const ATK1_DELAY_STRIKE 0.6 //delay before attack strikes (to match viewmodel anim)
+	const ATK1_DURATION 1.0 //total delay before attack completes
+	const ATK1_CALLBACK spell1 //callback prefix (atk1_start atk1_strike atk1_dodamage etc.)
+	const ATK1_PANIM swing_blunt
+	const ATK1_VANIM VANIM_SPELL1
+
+	const SOUND_MELEE weapons/cbar_miss1.wav
+
+	const ATK2_DMG 0
+	const ATK2_RANGE 0
+	const ATK2_VANIM VANIM_SPELL2
+	const ATK2_PANIM sword_double_swing
+	const ATK2_CALLBACK spell2
+
+	const DOT_RATIO 0.5
+}
+
+#include [server] items/base_elemental_resist
+#include items/base_weapon_new
+
+{ game_deploy
+
+	if game.serverside
+	if $get(ent_owner,scriptvar,'PLR_IN_WORLD')
+	if !BITEM_UNDERSKILLED
+	callevent viewfinder_loop
+	callevent 0.1 elm_activate_effect
+}
+
+{ viewfinder_loop
+	if game.serverside
+	if ( $get(ent_me,id) equals $get(ent_owner,scriptvar,'PLR_LEFT_HAND') ) local BEW_IS_WEILDED 1
+	if ( $get(ent_me,id) equals $get(ent_owner,scriptvar,'PLR_RIGHT_HAND') ) local BEW_IS_WEILDED 1
+	//if ( !$get(ent_owner,isalive) ) local BEW_IS_WEILDED 0
+	if ( BEW_IS_WEILDED )
+	{
+		clientevent update ent_owner const.localplayer.scriptID phlames_viewfinder_on $get(ent_owner,index)
+		callevent 5.0 cl_refresh_loop
+	}
+	else
+	{
+		clientevent update ent_owner const.localplayer.scriptID phlames_viewfinder_off
+	}
+}
+
+{ bweapon_effect_remove
+	clientevent update ent_owner const.localplayer.scriptID phlames_viewfinder_off
+}
+
+{ spell1_start
+
+	if ( game.clientside ) dbg spell1_start
+
+	playowneranim critical ATK1_PANIM global.anim.combatwalk 3
+
+	local OWNER_TARG $get(ent_owner,target)
+	if ( !$get(OWNER_TARG,isalive) )
+	{
+		local DO_MELEE 0
+	}
+	else
+	{
+		if ( $get(OWNER_TARG,range) < ATK1_RANGE )
+		{
+			local DO_MELEE 1
+		}
+	}
+	if ( BITEM_UNDERSKILLED ) local DO_MELEE 1
+
+	if ( !DO_MELEE )
+	{
+		attackprop ent_me 0 range 0
+		setvard MELEE_ATTACK 0
+		splayviewanim ent_me VANIM_SPELL1
+	}
+	else
+	{
+		attackprop ent_me 0 range ATK1_RANGE
+		setvard MELEE_ATTACK 1
+		playsound 1 10 SOUND_MELEE
+		splayviewanim ent_me VANIM_MELEE
+	}
+}
+
+{ get_spell_pos
+	local L_OWNER_VIEW $get(ent_owner,viewangles)
+	local L_SEAL_POS $get(ent_owner,origin)
+
+	local TRACE_START L_SEAL_POS
+	local TRACE_END L_SEAL_POS
+	vectoradd TRACE_END $relpos(L_OWNER_VIEW,$vec(0,1000,0))
+	local reg.trace.ignorenet $get(ent_owner,id)
+	local MY_OWNER $get(ent_owner,id)
+	local TRACE_LINE $get_traceline(TRACE_START,TRACE_END,worldonly)
+	vectorset TRACE_LINE z $get_ground_height(TRACE_LINE)
+	local OWNER_ORG $get(ent_owner,origin)
+	if ( $dist(L_SEAL_POS,OWNER_ORG) < 1024 )
+	{
+		setvard SPELL_POS TRACE_LINE
+	}
+	else
+	{
+		setvard SPELL_POS outofrange
+		playsound 1 10 magic/energy1.wav
+		dplayermessage ent_owner "Out of range."
+	}
+}
+
+{ spell1_strike //PARAM1: "none"/"npc"/"world"   2: Attack end Position   3: Entity hit (if any)
+	if game.serverside
+	if ( !MELEE_ATTACK )
+	{
+		callevent get_spell_pos
+		if SPELL_POS isnot outofrange
+
+		clientevent new all effects/sfx_fire_staff SPELL_POS
+		setvard BURN_TARG_ORG SPELL_POS
+		vectoradd BURN_TARG_ORG z 32
+		local DOT_FIRE $get(ent_owner,skill.spellcasting.fire)
+		xdodamage BURN_TARG_ORG STAFF_RADIUS1 DOT_FIRE 0.01 ent_owner ent_me spellcasting.fire fire_effect
+		//callevent 0.25 burn_targets //slight delay to avoid tsphere/xdodamage overlap
+	}
+	else
+	{
+		if $get(PARAM3,isalive)
+		if ( $get(PARAM3,isplayer) )
+		{
+			if !GAME_PVP
+			local EXIT_SUB 1
+		}
+		if !EXIT_SUB
+		if $get(PARAM3,relationship,ent_owner) equals enemy
+		local DOT_FIRE $get(ent_owner,skill.spellcasting.fire)
+		//multiply DOT_FIRE DOT_RATIO
+		//applyeffect PARAM3 effects/effect_burn 5.0 $get(ent_owner,id) DOT_FIRE
+	}
+	setvard MELEE_ATTACK 0
+}
+
+{ game_dodamage //checking to see if xdodamage reports to weapon (yes it does!)
+	//dbg game_dodamage PARAM1 $get(PARAM2,name)
+
+	if ( PARAM1 )
+	{
+		if ( !GAME_PVP )
+		{
+			if $get(PARAM2,isplayer)
+			local EXIT_SUB 1
+		}
+		if !EXIT_SUB
+		if $get(PARAM2,relationship,ent_owner) equals enemy
+		local DOT_FIRE $get(ent_owner,skill.spellcasting.fire)
+		multiply DOT_FIRE DOT_RATIO
+		applyeffect PARAM2 effects/effect_burn 5.0 $get(ent_owner,id) DOT_FIRE
+
+		if BURST_ATTACK
+		local MAX_HP $get(ent_owner,maxhp)
+		multiply MAX_HP 3
+		capvar MAX_HP 2000 10000
+		if $get(PARAM2,hp) < MAX_HP 
+
+		local CUR_TARG PARAM2
+		local TARG_ORG $get(CUR_TARG,origin)
+		local MY_ORG $get(ent_owner,origin)
+		local NEW_YAW $angles(MY_ORG,TARG_ORG)
+		addvelocity CUR_TARG $relvel($vec(0,NEW_YAW,0),$vec(0,1000,200))
+	}
+}
+
+//{ burn_targets
+//	callexternal ent_owner ext_fire_staff1 STAFF_RADIUS1 BURN_TARG_ORG
+//}
+
+{ spell2_start
+	if ( game.clientside ) dbg spell2_start
+	playowneranim critical ATK1_PANIM global.anim.combatwalk 3
+	splayviewanim ent_me VANIM_SPELL2
+}
+
+{ spell2_strike
+	if game.serverside
+	//check see if sky available
+	//check MP
+	//drop meteor if is
+	if ( $get(ent_owner,mp) < MP_METEOR )
+	{
+		dplayermessage ent_owner "Insufficient mana for Meteor."
+		playsound 1 10 magic/energy1.wav
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+	
+	callevent get_spell_pos
+	if SPELL_POS isnot outofrange
+
+	if ( !$get_under_sky(SPELL_POS) )
+	{
+		dplayermessage ent_owner "Can only summon Meteor under sky."
+		playsound 1 10 magic/energy1.wav
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+
+
+	local TRACE_START SPELL_POS
+	local TRACE_END SPELL_POS
+	vectoradd TRACE_END z 768
+	local TRACE_LINE $get_traceline(TRACE_START,TRACE_END,worldonly)
+	local METEOR_SPAWN TRACE_LINE
+	vectoradd METEOR_SPAWN z -64
+
+	givemp ent_owner $neg(MP_METEOR)
+
+	createnpc monsters/summon/meteor_deployer METEOR_SPAWN $get(ent_owner,id) $get(ent_me,id)
+}
+
+{ volcano_start
+	playowneranim critical ATK1_PANIM global.anim.combatwalk 3
+	splayviewanim ent_me VANIM_SPELL2
+}
+
+{ volcano_strike
+	if game.serverside
+	//check see if volcanos present
+	//check MP
+	//spawn volcano
+	callevent get_spell_pos
+	if SPELL_POS isnot outofrange
+	if ( VOLCANO_ON )
+	{
+		dplayermessage ent_owner "Phlame's Staff can only sustain one volcano at a time."
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+	if ( $get(ent_owner,mp) < MP_VOLCANO )
+	{
+		dplayermessage ent_owner "Insufficient mana for Volcano."
+		playsound 1 10 magic/energy1.wav
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	givemp ent_owner $neg(MP_VOLCANO)
+
+	setvard VOLCANO_ON 1
+	createnpc monsters/summon/preset_volcano SPELL_POS $get(ent_owner,id) 0 20 spellcasting.fire
+	callevent 20.0 volcano_reset
+}
+
+{ volcano_reset
+	setvard VOLCANO_ON 0
+}
+
+{ bitem_register_attacks
+
+	//yet to be tested:
+	//reg.attack.aoe.range
+	//reg.attack.aoe.falloff
+	//reg.attack.dmg.ignore //no damage?
+
+	local reg.attack.priority 2
+	local reg.attack.chargeamt	200%
+	local reg.attack.type ATK2_TYPE
+	local reg.attack.keys ATK2_KEYS
+	local reg.attack.range ATK2_RANGE
+	local reg.attack.dmg ATK2_DMG
+	local reg.attack.dmg.range ATK2_DMG_RANGE
+	local reg.attack.dmg.type ATK2_DMG_TYPE
+	local reg.attack.energydrain ATK2_STAMINA
+	local reg.attack.stat ATK2_SKILL
+	local reg.attack.hitchance ATK2_ACCURACY
+	local reg.attack.delay.strike ATK2_DELAY_STRIKE
+	local reg.attack.delay.end ATK2_DURATION
+	local reg.attack.ofs.startpos ATK2_OFS
+	local reg.attack.ofs.aimang ATK2_ANG
+	local reg.attack.callback volcano
+	local reg.attack.noise ATK2_NOISE
+	local reg.attack.mpdrain ATK2_MPDRAIN
+	local reg.attack.dmg.multi ATK2_DMG_MULTI
+	local reg.attack.noautoaim ATK2_NO_AUTOAIM
+	local reg.attack.reqskill ATK2_SKILL_LEVEL
+	add reg.attack.reqskill ATK2_ADD_SKILL_REQ
+
+	if ( ATK2_IS_PROJECTILE )
+	{
+		local reg.attack.ammodrain ATK2_AMMODRAIN
+		local reg.attack.projectile ATK2_PROJECTILE
+		local reg.attack.COF ATK2_COF
+	}
+
+	registerattack
+}
+
+{ game_+attack2
+	if game.serverside
+	if !game.item.attacking
+	if $get(ent_owner,canattack)
+
+	if game.time > NEXT_BURST_ATTEMPT
+	setvard NEXT_BURST_ATTEMPT game.time
+	add NEXT_BURST_ATTEMPT 1.0
+
+	if ( $get(ent_owner,mp) < MP_BURST )
+	{
+		dplayermessage ent_owner Insufficient mana for flame burst.
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	if game.time > NEXT_BURST
+	setvard NEXT_BURST game.time
+	add NEXT_BURST 5.0
+
+	setvard IN_BURST_ATTACK 1
+
+	splayviewanim ent_me VANIM_BURST
+	givemp ent_owner $neg(MP_BURST)
+	callevent 1.0 do_burst_attack
+}
+
+{ do_burst_attack
+	setvard BURST_ORG $get(ent_owner,origin)
+	vectorset BURST_ORG z $get_ground_height(BURST_ORG)
+	
+	clientevent new all effects/sfx_flame_repulse BURST_ORG
+	setvard BURST_ATTACK 1
+	callevent 0.1 end_burst_attack
+	vectoradd BURST_ORG z 32
+	local DOT_FIRE $get(ent_owner,skill.spellcasting.fire)
+	multiply DOT_FIRE 1.5
+	xdodamage BURST_ORG STAFF_RADIUS2 DOT_FIRE 0.01 ent_owner ent_me spellcasting.fire fire_effect
+}
+
+{ end_burst_attack
+	setvard BURST_ATTACK 0
+}
+

@@ -1,0 +1,76 @@
+{
+	const ARMOR_MODEL      	armor/p_armorvest2.mdl
+	const ARMOR_GROUP 4
+	const ARMOR_BODY 5	//JHLMV index -2
+	const ARMOR_TEXT		"You assemble the envenomed plate mail."
+	const BARMOR_TYPE		platemail
+	const BARMOR_PROTECTION	50%
+	//chest|arms|legs
+	const BARMOR_PROTECTION_AREA	"chest;arms;legs"
+	const BARMOR_REPLACE_BODYPARTS BARMOR_PROTECTION_AREA
+
+	const ELM_NAME "varmr"
+	const ELM_TYPE "poison"
+	const ELM_AMT 50
+
+	const ARMOR_STR_REQ 25
+
+	const NEW_ARMOR_OFS 15
+}
+
+#include items/armor_base
+#include [server] items/base_elemental_resist
+
+{  game_spawn
+
+   name 	Envenomed Plate
+   desc 	Hefty Plate mail enchanted with poison
+   weight 	180
+   size 	60
+   wearable     1 "chest;arms;legs"
+   value	600
+   
+   sethudsprite trade 152
+
+	setvard IS_WORN 1
+}
+
+{ game_takedamage ////PARAM1=attacker  PARAM2=inflictor? PARAM3=dmg PARAM4=dmg_type
+
+	//dbg temp dmg_type PARAM4
+
+	if $get(ent_me,is_worn)
+	if $rand(1,4) == 1
+
+	local OWNER_POS $get(ent_owner,origin)
+	local ATKR_POS $get(PARAM1,origin)
+
+	local MIN_DIST $get(PARAM1,moveprox) //approx monster width
+	add MIN_DIST 32 //adj for player size
+
+	if $dist(OWNER_POS,ATKR_POS) <= MIN_DIST
+
+	local POISON_DMG $get(ent_owner,skill.spellcasting.affliction)
+	multiply POISON_DMG 0.5
+	applyeffect PARAM1 effects/effect_poison 10.0 $get(ent_owner,id) POISON_DMG
+	playsound 0 10 bullchicken/bc_bite2.wav //monsters/snake_idle1.wav
+
+	playermessage Your Venom Plate poisons $get(PARAM1,name.full)
+}
+
+{ [override] elm_activate_effect
+	local OWNER_SKILL $get(ent_owner,skill.spellcasting.affliction)
+	if ( OWNER_SKILL < 20 ) dplayermessage ent_owner You lack the affliction skill to activate this armor's magic.
+	if OWNER_SKILL >= 20
+	setvard PHOENIX_ACTIVE 1
+	callevent elm_get_resist
+	callexternal ent_owner ext_register_element ELM_NAME ELM_TYPE ELM_AMT
+}
+
+{ [override] elm_remove_effect
+	if PHOENIX_ACTIVE
+	setvard PHOENIX_ACTIVE 0
+	if $get(ent_owner,skill.spellcasting.affliction) >= 20
+	setvard PHOENIX_ACTIVE 0
+	callexternal ent_owner ext_register_element ELM_NAME remove
+}

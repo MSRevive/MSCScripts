@@ -1,0 +1,151 @@
+//Thothie - Reducing gold slightly
+//- Naming convention note: please use all lower case names in future (case screws with Hammer sometimes)
+
+//Evil Skeleton
+
+{
+
+   const SKEL_HP		1000
+   const ATTACK_HITCHANCE 	85%
+   const ATTACK_DAMAGE_LOW 	15.5
+   const ATTACK_DAMAGE_HIGH 	25.5
+   setvard NPC_GIVE_EXP 		150
+
+	const ANIM_CIRCLE throw_scientist
+
+   const SKEL_RESPAWN_CHANCE	0%
+   const SKEL_RESPAWN_LIVES	0
+
+   const ANIM_BLAST		rlflinch
+   const SOUND_BOLT		magic/ice_strike.wav
+
+	const CIRCLE_FREQ 30.0
+	const SOUND_LAUGH monsters/skeleton/cal_laugh.wav
+	const SOUND_WARCRY monsters/skeleton/calrain3.wav
+
+	//cicle of death precache
+	precache weapons/magic/seals.mdl
+	precache magic/temple.wav
+	precache magic/pulsemachine_noloop.wav
+	precache magic/frost_reverse.wav
+	precache skull.spr
+
+}
+
+#include monsters/skeleton_base
+
+{ skeleton_spawn
+
+	if !LIGHTNING_SKELE
+
+   name Shadahar
+	if ( game.map.name isnot mscave )
+	{
+		gold $rand(25,75)
+		name a|Gold Forged Skeleton
+		setvard NPC_GIVE_EXP 150
+	}
+	if ( game.map.name equals mscave )
+	{
+		setvard NPC_GIVE_EXP 4000 //v. hard to get him to spawn
+		gold $rand(80,150)
+		if ( $rand(1,100) == 1 ) 
+		{
+			local PIC_THREE $rand(1,3)
+			if ( PIC_THREE == 1 ) giveitem scroll2_poison_cloud
+			if ( PIC_THREE == 2 ) giveitem mana_forget
+			if ( PIC_THREE == 3 ) giveitem armor_helm_gaz1
+		}
+	}
+
+	if ( LIGHTNING_SKELE )
+	{
+		name a|Lightning Forged Skeleton
+	}
+   race undead
+   roam 1
+   takedmg all .7
+   setmodel monsters/skeleton.mdl
+   hearingsensitivity 8
+   setmodelbody	0 8	//wassup-G - this thing is loaded with cash
+   setmodelbody	1 0
+
+   //ov 359
+
+   local MY_SKY game.monster.origin
+   vectoradd MY_SKY (0,0,4096)
+   local MY_CENTER $get(ent_me,origin)
+   vectoradd MY_CENTER $vec(0,0,-48)
+   clientevent new all_in_sight effects/sfx_lightning MY_CENTER MY_SKY 1 1
+
+	callevent 10.0 circle_check
+
+   ////dbg Yes, I did indeed spawn.
+}
+
+{ circle_check
+
+	if ( !$cansee(enemy) ) callevent 5.0 circle_check
+
+	if $cansee(enemy)
+
+	callevent CIRCLE_FREQ circle_check
+	if !I_R_FROZEN
+	if CYCLED_UP
+	callevent circle_prep
+}
+
+{ circle_prep
+
+	if !CIRCLE_ON
+	callevent 15.0 circle_reset
+	setvard CIRCLE_ON 1
+	setvard AS_ATTACKING game.time
+	add AS_ATTACKING 10
+	playanim critical ANIM_CIRCLE
+	if ( LIGHTNING_SKELE ) setmodelbody 1 9
+	playsound 0 10 SOUND_WARCRY
+	callevent can_reach_nme //delays anti-stuck checks
+	callevent 2.0 circle_spawn
+}
+
+{ circle_spawn
+
+	if ( LIGHTNING_SKELE ) callevent do_lightning
+
+	if ( !LIGHTNING_SKELE )
+	{
+		createnpc monsters/summon/circle_of_death $relpos(0,0,0) $get(ent_me,id) 10.0 200
+		callevent 1.0 circle_bait
+	}
+}
+
+{ circle_bait
+
+	setvard PURE_FLEE 1
+	callevent npcatk_flee $get(ent_lastseen,id) 500 5.0
+}
+
+{ circle_reset
+
+	setvard CIRCLE_ON 0
+}
+
+{ circle_kill //external call from circle
+
+	playsound 0 10 SOUND_LAUGH
+}
+
+{ skel_death
+
+	usetrigger beam11 beam13 beam21 beam23
+}
+
+{ npcatk_targetvalidate
+
+	if ( !DID_WARCRY )
+	{
+		setvard DID_WARCRY 1
+		playsound 0 10 SOUND_LAUGH	//switched to laugh to avoid confuszhionzinos with spell
+	}
+}

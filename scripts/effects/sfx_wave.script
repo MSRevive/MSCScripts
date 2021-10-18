@@ -1,0 +1,164 @@
+//wave that moves forward, reports position to index periodically to owner (currently must be player)
+{
+	const FX_DURATION 20.0 //max duration
+	const FX_LIGHT_OFS -100
+}
+
+{ client_activate //<owneridx> <start> <yaw> <speed> <type>
+	setvard FX_OWNER PARAM1
+	setvard FX_ORIGIN PARAM2
+	setvard FX_YAW PARAM3
+	setvard FX_SPEED PARAM4
+	setvard FX_TYPE PARAM5
+
+	setvard FX_RENDER_AMT 180
+
+	setvard FX_ACTIVE 1
+
+	setvard FX_MODEL_BODY 52
+
+	if ( FX_TYPE equals holy )
+	{
+		setcallback render enable
+		setvard FX_COLOR (200,128,0)
+		setvard FX_USE_LIGHT 1
+		setvard FX_MODEL_BODY 75
+	}
+
+	//vectoradd FX_ORIGIN z 8
+	cleffect tempent model weapons/projectiles.mdl FX_ORIGIN fx_wave_setup fx_wave_update fx_wave_collide
+
+	if ( FX_USE_LIGHT )
+	{
+		setvard FX_LIGHT_POS FX_ORIGIN
+		local L_FX_LIGHT_POS FX_LIGHT_POS
+		vectoradd L_FX_LIGHT_POS $relpos($vec(0,FX_YAW,0),$vec(0,FX_LIGHT_OFS,0))
+		cleffect light new L_FX_LIGHT_POS FX_RENDER_AMT (255,255,255) 0.1
+		setvard FX_LIGHT_ID game.script.last_light_id
+	}
+
+	callevent trail_loop
+	callevent FX_DURATION end_fx
+}
+
+{ trail_loop
+	if FX_ACTIVE
+	callevent 0.1 trail_loop
+	cleffect tempent model weapons/projectiles.mdl FX_LIGHT_POS fx_trail_setup
+}
+
+{ game_prerender
+	if FX_ACTIVE
+
+	if ( FX_RENDER_AMT > 220 )
+	{
+		local L_FX_COLOR $vec(255,255,255)
+	}
+	else
+	{
+		local L_FX_COLOR FX_COLOR
+	}
+
+	local L_FX_LIGHT_POS FX_LIGHT_POS
+	vectoradd L_FX_LIGHT_POS $relpos($vec(0,FX_YAW,0),$vec(0,FX_LIGHT_OFS,0))
+
+	cleffect light FX_LIGHT_ID L_FX_LIGHT_POS FX_RENDER_AMT L_FX_COLOR 0.1
+}
+
+{ fx_wave_update
+	if ( FX_ACTIVE )
+	{
+		cleffect tempent set_current_prop velocity $relvel($vec(0,FX_YAW,0),$vec(0,FX_SPEED,0))
+
+		cleffect tempent set_current_prop renderamt FX_RENDER_AMT
+
+		if ( FX_RENDER_AMT > 180 ) subtract FX_RENDER_AMT 5
+
+		local L_MY_POS game.tempent.origin
+
+		setvard FX_LIGHT_POS L_MY_POS
+
+		if ( OLD_POS equals L_MY_POS )
+		{
+			//we're stuck
+			callevent end_fx
+			exitevent
+		}
+		else
+		{
+			setvard OLD_POS L_MY_POS
+		}
+
+		local L_NEXT_UPDATE game.tempent.fuser1
+		if game.time > L_NEXT_UPDATE
+		local L_NEXT_UPDATE game.time
+		add L_NEXT_UPDATE 0.5
+		cleffect tempent set_current_prop fuser1 L_NEXT_UPDATE
+
+		setvard FX_RENDER_AMT 255
+
+		sound.play3d magic/hburst_sca_outholy01.wav 5 L_MY_POS 0.8 0 $rand(80,120)
+
+
+		if game.localplayer.index == FX_OWNER
+		cleffect ce player ext_ce_wave $quote(L_MY_POS) FX_TYPE x
+	}
+	else
+	{
+		dbg ** $currentscript - fx_wave_update not_active
+		cleffect tempent set_current_prop origin $vec(20000,20000,-20000)
+	}
+}
+
+{ fx_wave_collide
+	dbg ** $currentscript - fx_wave_collide PARAM1
+	callevent end_fx
+}
+
+{ end_fx
+	dbg ** $currentscript - end_fx
+	setvard FX_ACTIVE 0
+	callevent 1.0 remove_fx
+}
+
+{ remove_fx
+	removescript
+}
+
+
+{ fx_wave_setup
+
+	cleffect tempent set_current_prop death_delay FX_DURATION
+	cleffect tempent set_current_prop renderamt	180
+	cleffect tempent set_current_prop rendermode add
+	cleffect tempent set_current_prop body FX_MODEL_BODY
+	cleffect tempent set_current_prop scale 1.0
+	cleffect tempent set_current_prop gravity 0 //gravity 1 no worky, even if we add the velocity
+	cleffect tempent set_current_prop bouncefactor 0
+	cleffect tempent set_current_prop angles $vec(0,FX_YAW,0)
+	cleffect tempent set_current_prop velocity $relvel($vec(0,FX_YAW,0),$vec(0,FX_SPEED,0))
+	cleffect tempent set_current_prop collide world
+	cleffect tempent set_current_prop framerate 0.01
+	cleffect tempent set_current_prop frames 99999
+	cleffect tempent set_current_prop sequence 0
+	local L_NEXT_UPDATE game.time
+	add L_NEXT_UPDATE 0.5
+	cleffect tempent set_current_prop fuser1 L_NEXT_UPDATE
+}
+
+{ fx_trail_setup
+
+	cleffect tempent set_current_prop death_delay 1.0
+	cleffect tempent set_current_prop fadeout lifetime
+	cleffect tempent set_current_prop renderamt	50
+	cleffect tempent set_current_prop rendermode add
+	cleffect tempent set_current_prop body FX_MODEL_BODY
+	cleffect tempent set_current_prop angles $vec(0,FX_YAW,0)
+	cleffect tempent set_current_prop velocity $relvel($vec(0,FX_YAW,0),$vec(0,0.1,0))
+	cleffect tempent set_current_prop scale 1.0
+	cleffect tempent set_current_prop gravity 0 //gravity 1 no worky, even if we add the velocity
+	cleffect tempent set_current_prop collide none
+	cleffect tempent set_current_prop framerate 0.01
+	cleffect tempent set_current_prop frames 99999
+	cleffect tempent set_current_prop sequence 0
+}

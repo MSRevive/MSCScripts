@@ -1,0 +1,334 @@
+#scope server
+{ [shared]
+	const ANIM_AIM zap_aim
+	const ANIM_CAGE_SUSTAIN zap_cycle
+	setvard ANIM_ATTACK swordswing1_L
+}
+
+{
+	setvar NPC_SELF_ADJUST 1
+	const NPC_ADJ_TIERS "0;750;1500;2000;3000;5000"
+	const NPC_ADJ_DMG_MUTLI_TOKENS "1.0;1.5;2.0;5.0;7.5;10.0;"
+	const NPC_ADJ_HP_MUTLI_TOKENS "1.0;2.0;3.0;5.0;7.5;10.0;"
+
+	const NPC_BASE_EXP 300
+
+	const DMG_CLUB 20
+	const DMG_AXE 30
+	const DMG_SWORD 15
+
+	const GOB_JUMPER 0
+	const GOB_CHARGER 0
+
+	const FREQ_CAGE 30.0
+	const DOT_CAGE 60
+	const FREQ_REPEL $randf(30.0,40.0)
+
+	setvard ATTACK_HITCHANCE 90%
+
+	const AOE_ZAP 128
+	const DUR_ZAP 10.0
+	const DMG_ZAP 40.0
+
+	const ATTACH_HAND 0
+
+	const CL_SCRIPT monsters/djinn_lightning_lesser_cl
+	const FREQ_FX_REFRESH 15.0
+
+	const SOUND_BEAM_START magic/bolt_start.wav
+	const SOUND_BEAM_LOOP magic/bolt_loop.wav
+
+	const SOUND_CAGE_PREP magic/lightning_powerup.wav
+	const SOUND_GIGGLE monsters/goblin/c_goblinwiz_bat1.wav
+}
+
+#include orc_for/goblin_base
+
+{ [shared] goblin_spawn
+	name a|Hobgoblin Lightning Shaman
+	setmodel monsters/goblin_new.mdl
+	hp 400
+	width 24
+	height 50
+	race goblin
+	blood green
+	roam 1
+	hearingsensitivity 2
+	setmodelbody 0 0 //body: 0-Bare 1-Quiver&Strap
+	setmodelbody 1 0 //head: 0-Bare 1-Horns 2-Animal 3-Chief 4-Rag
+	setmodelbody 2 0 //weapon: 0-Unarmed 1-Axe 2-wbow 3-sbow 4-sword 5-rAxe 6-sword&shield 7-club 8-knife
+	setmodelbody 3 0 //arrow: On/off
+
+	setprop ent_me skin 4
+
+	takedmg lightning 0.0
+	takedmg acid 2.0
+	takedmg poison 1.25
+
+	setidleanim ANIM_IDLE
+	setmoveanim ANIM_WALK
+}
+
+{ [override] goblin_pre_spawn
+	setvard ATTACK_RANGE 128
+	setvard ATTACK_HITRANGE 256
+	setvard ATTACK_MOVERANGE 96
+	setvard MOVE_RANGE 96
+}
+
+{ npc_targetsighted
+
+	if ( !DID_INIT )
+	{
+		setvard DID_INIT 1
+		setvard NEXT_REPEL game.time
+		add NEXT_REPEL FREQ_REPEL
+
+		setvard NEXT_CAGE game.time
+		add NEXT_CAGE 10.0
+	}
+
+	if ( game.time > NEXT_CL_REFRESH )
+	{
+		if ( CL_SCRIPT_IDX isnot 'CL_SCRIPT_IDX' ) clientevent update all CL_SCRIPT_IDX remove_fx
+		clientevent new all CL_SCRIPT $get(ent_me,index) FREQ_FX_REFRESH
+		setvard CL_SCRIPT_IDX game.script.last_sent_id
+		setvard NEXT_CL_REFRESH game.time
+		add NEXT_CL_REFRESH FREQ_FX_REFRESH
+	}
+
+	if !AIMING_CAGE
+	if !SUSTAINING_CAGE
+
+	if !DOING_REPEL
+
+	if ( game.time > NEXT_REPEL )
+	{
+		if ( $get(ent_laststruck,isalive) )
+		{
+			if ( $get(ent_laststruck,range) < 128 ) local WILL_DO_REPEL 1
+		}
+		if ( $get(NPCATK_TARGET,range) < 128 ) local WILL_DO_REPEL 1
+		if WILL_DO_REPEL
+		setvard NEXT_REPEL game.time
+		add NEXT_REPEL FREQ_REPEL
+		setvard DOING_REPEL 1
+		callevent do_repel
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	if game.time > NEXT_CAGE
+	setvard NEXT_CAGE game.time
+	add NEXT_CAGE FREQ_CAGE
+
+	setvard CAGE_TARGET NPCATK_TARGET
+	setvard AIMING_CAGE 1
+	callevent npcatk_suspend_ai
+	callevent npcatk_suspend_movement ANIM_AIM
+	callevent tracking_loop
+	callevent 3.0 do_cage
+	playsound 2 10 SOUND_CAGE_PREP
+	playsound 1 10 SOUND_GIGGLE
+	clientevent update all CL_SCRIPT_IDX hand_powerup 0
+
+	if ( !DID_WARN )
+	{
+		setvard DID_WARN 1
+		infomsg CAGE_TARGET "Goblin Lightning Shaman" "Beware, if the shaman traps you in a force cage, you'll have to be rescued!"
+	}
+}
+
+{ tracking_loop
+	if AIMING_CAGE
+	setmovedest CAGE_TARGET 9999
+	callevent 0.1 tracking_loop
+}
+
+{ do_cage
+	if ( $get(CAGE_TARGET,scriptvar,'PLAYING_DEAD') )
+	{
+		//target invalidated
+		setvard AIMING_CAGE 0
+		setvard NEXT_CAGE game.time
+		add NEXT_CAGE 10.0
+		callevent npcatk_resume_ai
+		callevent npcatk_resume_movement
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	if ( $cansee(CAGE_TARGET) )
+	{
+		setvard AIMING_CAGE 0
+		setvard SUSTAINING_CAGE 1
+		callevent do_cage2
+	}
+	else
+	{
+		setvard AIMING_CAGE 0
+		setvard NEXT_CAGE game.time
+		add NEXT_CAGE 10.0
+		callevent npcatk_resume_ai
+		callevent npcatk_resume_movement
+	}
+}
+
+{ do_cage2
+	svplaysound 2 10 SOUND_BEAM_LOOP
+	setvard NEXT_UPDATE_LOOP_SOUND game.time
+	add NEXT_UPDATE_LOOP_SOUND 10.0
+	applyeffect CAGE_TARGET effects/force_cage $get(ent_me,id) DOT_CAGE
+	infomsg all $get(CAGE_TARGET,name) "Has been trapped by a Lightning Shaman!"
+
+	effect beam ents lgtning.spr 30 ent_me 1 CAGE_TARGET 0 (255,255,0) 200 20 -1
+	setvard CUR_BEAM $get(ent_lastcreated,id)
+	callevent npcatk_resume_movement
+	callevent npcatk_suspend_movement ANIM_CAGE_SUSTAIN
+	playanim critical ANIM_CAGE_SUSTAIN
+	callevent sustain_cage
+}
+
+{ sustain_cage
+	if SUSTAINING_CAGE
+	playanim once ANIM_CAGE_SUSTAIN
+	callevent 1.0 sustain_cage
+	if game.time > NEXT_UPDATE_LOOP_SOUND
+	setvard NEXT_UPDATE_LOOP_SOUND game.time
+	add NEXT_UPDATE_LOOP_SOUND 10.0
+	svplaysound 2 10 SOUND_BEAM_LOOP
+}
+
+{ player_left
+	if SUSTAINING_CAGE
+	if PARAM1 equals CAGE_TARGET
+	callevent ext_end_cage
+}
+
+{ ext_end_cage
+	svplaysound 2 0 SOUND_BEAM_LOOP
+	setvard SUSTAINING_CAGE 0
+	effect beam update CUR_BEAM remove 0.1
+	callevent npcatk_resume_movement
+	callevent npcatk_resume_ai
+	setvard NEXT_CAGE game.time
+	add NEXT_CAGE FREQ_CAGE
+	callevent leap_forward
+}
+
+{ do_repel
+	svplaysound 2 10 SOUND_BEAM_LOOP
+	playsound 1 10 SOUND_BEAM_START
+	callevent npcatk_suspend_ai
+	callevent npcatk_suspend_movement ANIM_WARCRY
+	local ZAP_AURA_ORG $get(ent_me,origin)
+	vectoradd ZAP_AURA_ORG z 32
+	clientevent new all effects/sfx_zap_aura $get(ent_me,index) AOE_ZAP DUR_ZAP
+	setvard CL_IDX_ZAP_AURA game.script.last_sent_id
+	callevent do_repel_loop
+	callevent DUR_ZAP end_repel
+}
+
+{ do_repel_loop
+	if DOING_REPEL
+	playanim once ANIM_WARCRY
+	callevent 0.25 do_repel_loop
+	setvard ZAP_TARGS $get_tsphere(enemy,AOE_ZAP)
+	if ZAP_TARGS isnot none
+	calleventloop $get_token_amt(ZAP_TARGS) repel_affect_targets
+}
+
+{ repel_affect_targets
+	local CUR_TARG $get_token(ZAP_TARGS,game.script.iteration)
+	dodamage CUR_TARG direct DMG_ZAP 100% ent_me lightning_effect
+	local TARGET_ORG $get(CUR_TARG,origin)
+	local TARG_ANG $angles(game.monster.origin,TARGET_ORG)
+	local NEW_YAW TARG_ANG
+	addvelocity CUR_TARG $relvel($vec(0,NEW_YAW,0),$vec(0,800,110))
+}
+
+{ end_repel
+	svplaysound 2 0 SOUND_BEAM_LOOP
+	callevent npcatk_resume_ai
+	callevent npcatk_resume_movement
+	setvard DOING_REPEL 0
+	callevent leap_forward
+
+	setvard NEXT_REPEL game.time
+	add NEXT_REPEL FREQ_REPEL
+
+	//don't go straight from repel to cage, tis cruel
+	if game.time > NEXT_CAGE
+	setvard NEXT_CAGE game.time
+	add NEXT_CAGE 5.0
+}
+
+{ game_death
+	if ( CL_SCRIPT_IDX isnot 'CL_SCRIPT_IDX' ) clientevent update all CL_SCRIPT_IDX remove_fx
+
+	if ( SUSTAINING_CAGE )
+	{
+		effect beam update CUR_BEAM remove 0.1
+		svplaysound 2 0 SOUND_BEAM_LOOP
+
+		local THE_RESCUER $get(ent_laststruck,id)
+		dbg rescuer_name $get(THE_RESCUER,name)
+		if ( THE_RESCUER isnot CAGE_TARGET )
+		{
+			if $get(CAGE_TARGET,isplayer)
+			if $get(THE_RESCUER,isplayer)
+			dbg sending_bonus
+			local BONUS_MSG "for freeing "
+			stradd BONUS_MSG $get(CAGE_TARGET,name)
+			callexternal THE_RESCUER ext_dmgpoint_bonus 1000 BONUS_MSG
+		}
+	}
+	if ( DOING_REPEL )
+	{
+		clientevent update all CL_IDX_ZAP_AURA end_fx
+		svplaysound 2 0 SOUND_BEAM_LOOP
+	}
+}
+
+{ swing_sword
+	local ATTACK_START $get(ent_me,attachpos,ATTACH_HAND)
+	local TARG_ORG $get(NPCATK_TARGET,origin)
+	local ANG_TO_TARG $angles3d(ATTACK_START,TARG_ORG)
+	vectorset ANG_TO_TARG x $neg($vec.x(ANG_TO_TARG))
+	clientevent update all CL_SCRIPT_IDX hand_sprite ANG_TO_TARG ATTACH_HAND
+
+	local TARG_RANGE $get(NPCATK_TARGET,range)
+	if TARG_RANGE < ATTACK_HITRANGE
+	divide TARG_RANGE ATTACK_HITRANGE
+	local DELAY_DMG $ratio(TARG_RANGE,0.1,1.0)
+	callevent DELAY_DMG swing_sword_delay_dmg
+}
+
+{ swing_sword_delay_dmg
+	setvard SWIPE_ATTACK 1
+	dodamage NPCATK_TARGET ATTACK_HITRANGE DMG_ZAP ATTACK_HITCHANCE lightning_effect
+}
+
+{ game_dodamage
+	if ( SWIPE_ATTACK )
+	{
+		if PARAM1
+		dbg game_dodamage DMG_ZAP
+		applyeffect PARAM2 effects/effect_shock_dmg 5.0 $get(ent_me,id) DMG_ZAP
+	}
+	setvard SWIPE_ATTACK 0
+}
+
+{ npcatk_hunt
+
+	if SUSPEND_AI
+	if $get(ent_me,isalive)
+	if ( game.time > NEXT_CL_REFRESH )
+	{
+		if ( CL_SCRIPT_IDX isnot 'CL_SCRIPT_IDX' ) clientevent update all CL_SCRIPT_IDX remove_fx
+		clientevent new all CL_SCRIPT $get(ent_me,index) FREQ_FX_REFRESH
+		setvard CL_SCRIPT_IDX game.script.last_sent_id
+		setvard NEXT_CL_REFRESH game.time
+		add NEXT_CL_REFRESH FREQ_FX_REFRESH
+	}
+}

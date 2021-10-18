@@ -1,0 +1,119 @@
+{ [server]
+	const FREQ_ROTATE 0.1
+	const FREQ_ZAP $randf(10,60)
+	const ROAM_DISTANCE 28
+	const ROAM_HEIGHT 0
+	const SOUND_ZAP1 debris/beamstart14.wav
+	const SOUND_ZAP2 debris/beamstart15.wav
+	const SOUND_ZAP3 debris/zap1.wav
+}
+
+{ [server] game_dynamically_created
+	setvard MY_OWNER PARAM1
+	callexternal MY_OWNER ext_dridje_sphere 1
+}
+
+{ game_spawn
+	name The Mighty Sphere of Dridje
+	invisible 1
+	blind 1
+	fly 1
+	invincible 1
+	setmodel weapons/projectiles.mdl
+	setmodelbody 0 13
+	setsolid none
+	setbbox none
+	setprop ent_me rendermode 5
+	setprop ent_me renderamt 64
+	catchspeech zap_dridje zap
+	catchspeech go_away vanish "go away"
+	setvard PLAYING_DEAD 1
+	setidleanim spin_horizontal_norm
+
+	setvard CUR_ROT 0
+
+	clientevent persist all $currentscript $get(ent_me,index)
+	setvard MY_LIGHT_SCRIPT game.script.last_sent_id
+	setvard SPAWN_ZAP 1
+	callevent 0.1 zap_dridje
+}
+
+{ [server] go_away
+	clientevent remove all MY_LIGHT_SCRIPT
+	callexternal MY_OWNER ext_dridje_sphere 0
+	//playsound 2 0 ambience/alien_beacon.wav
+	saytext Yes, my master...
+	callevent 0.1 remove_me
+}
+
+{ [server] remove_me
+	deleteent ent_me fade
+}
+
+{ [server] zap_dridje
+	if ( PARAM1 equals MY_OWNER ) local ZAP_GO 1
+	if ( $get(ent_lastspoke,id) equals MY_OWNER )
+	{
+		if PARAM1 isnot MY_OWNER
+		saytext Yes master...
+		local ZAP_GO 1
+	}
+	if ( SPAWN_ZAP )
+	{
+		setvard SPAWN_ZAP 0
+		local ZAP_GO 1
+		//playsound 2 3 ambience/alien_beacon.wav
+	}
+	if ZAP_GO
+	effect beam ents lgtning.spr 20 ent_me 0 MY_OWNER 1 (255,255,0) 200 200 3.0
+	effect beam ents lgtning.spr 20 ent_me 0 MY_OWNER 2 (255,255,0) 200 200 3.0
+	setmodelbody 0 16
+	playrandomsound 0 10 SOUND_ZAP1 SOUND_ZAP2 SOUND_ZAP3
+	effect glow MY_OWNER (255,255,0) 128 8.0 10.0
+	callevent 2.0 zap_down
+}
+
+{ [server] zap_down
+	setmodelbody 0 13
+}
+
+{ [server]
+repeatdelay FREQ_ZAP
+	callevent zap_dridje MY_OWNER
+}
+
+{ [server]
+repeatdelay FREQ_ROTATE
+	local DEST_POS $get(MY_OWNER,origin)
+	add CUR_ROT 5
+	if ( CUR_ROT > 359 ) subtract CUR_ROT 359
+	vectoradd DEST_POS $relpos($vec(0,CUR_ROT,0),$vec(0,ROAM_DISTANCE,ROAM_HEIGHT))
+	setorigin ent_me DEST_POS
+}
+
+//glow
+{ [client]
+
+	const GLOW_COLOR (255,255,0)
+	const GLOW_RAD 64
+}
+
+{ [client] client_activate
+
+	setvard SKEL_ID PARAM1
+	if SKEL_LIGHT_ID equals 'SKEL_LIGHT_ID'
+	cleffect light new $getcl(SKEL_ID,origin) GLOW_RAD GLOW_COLOR 5.0
+	setvard SKEL_LIGHT_ID game.script.last_light_id
+	setcallback render enable
+}
+
+{ [client] game_prerender
+
+	local L_POS $getcl(SKEL_ID,origin)
+	cleffect light SKEL_LIGHT_ID L_POS GLOW_RAD GLOW_COLOR 1.0
+}
+
+{ [server] game_death
+
+	clientevent remove all MY_LIGHT_SCRIPT
+}

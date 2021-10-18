@@ -1,0 +1,80 @@
+//custom light for bile zobmie
+#scope client
+
+{ [client] client_activate //<model_idx> <color> <radius> [duration]
+
+	setvard SKEL_ID PARAM1
+	setvard GLOW_COLOR PARAM2
+	setvard GLOW_RAD PARAM3
+	if SKEL_LIGHT_ID equals 'SKEL_LIGHT_ID'
+
+	cleffect light new $getcl(SKEL_ID,origin) GLOW_RAD GLOW_COLOR 5.0
+	setvard SKEL_LIGHT_ID game.script.last_light_id
+	setcallback render enable
+
+	callevent PARAM4 remove_light
+}
+
+{ [client] game_prerender
+
+	if ( NEW_GLOW_RAD > 0 )
+	{
+		if ( GLOW_RAD < NEW_GLOW_RAD ) add GLOW_RAD LIGHT_RAD_RATE
+		if ( GLOW_RAD > NEW_GLOW_RAD ) subtract GLOW_RAD LIGHT_RAD_RATE
+	}
+
+	if $getcl(SKEL_ID,exists)
+	local L_POS $getcl(SKEL_ID,origin)
+	cleffect light SKEL_LIGHT_ID L_POS GLOW_RAD GLOW_COLOR 1.0
+}
+
+{ [client] remove_light
+	removescript
+}
+
+{ light_grow //<desired> <speed>
+	setvard NEW_GLOW_RAD PARAM1
+	setvard LIGHT_RAD_RATE PARAM2
+	subtract FLICKER_COUNT 0
+}
+
+{ light_shrink //<desired> <speed>
+	setvard NEW_GLOW_RAD PARAM1
+	setvard LIGHT_RAD_RATE PARAM2
+}
+
+{ light_flicker
+	setvard FLICKER_COUNT 5
+	setvard SND_COUNT 0
+	callevent do_flicker
+}
+
+{ do_flicker
+	if FLICKER_COUNT > 0
+	subtract FLICKER_COUNT 1
+
+	if ( GLOW_RAD != 1 )
+	{
+		setvard NEW_GLOW_RAD 1
+		setvard GLOW_RAD 1
+	}
+	else
+	{
+		setvard NEW_GLOW_RAD 128
+		setvard GLOW_RAD 128
+	}
+
+	add SND_COUNT 1
+	local L_SND_POS $getcl(SKEL_ID,origin)
+	vectoradd L_SND_POS z 32
+	if ( SND_COUNT == 1 ) sound.play3d magic/energy1.wav 10 L_SND_POS 0.8 3 100
+	if ( SND_COUNT == 2 ) sound.play3d magic/energy2.wav 10 L_SND_POS 0.8 3 100
+	if ( SND_COUNT == 3 ) sound.play3d magic/energy3.wav 10 L_SND_POS 0.8 3 100
+	if ( SND_COUNT == 4 )
+	{
+		sound.play3d magic/energy4.wav 10 L_SND_POS 0.8 3 100
+		setvard SND_COUNT 0
+	}
+	
+	callevent $randf(0.2,0.6) do_flicker
+}

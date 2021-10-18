@@ -1,0 +1,86 @@
+//only used for the final boss
+#scope server
+{
+	const NPC_BASE_EXP 4000
+
+	//shouldn't spawn at >2000hp so this is kinda pointless
+	setvar NPC_SELF_ADJUST 1
+	const NPC_ADJ_TIERS "0;500;1000;2000;3000;5000"
+	const NPC_ADJ_DMG_MUTLI_TOKENS "1.0;1.0;1.5;2.0;5.0;7.0;"
+	const NPC_ADJ_HP_MUTLI_TOKENS "1.0;1.0;1.25;2.0;5.0;7.0;"
+
+	const START_SUSPEND 1
+
+	const SOUND_WARCRY bullchicken/bc_attackgrowl3.wav
+	const ANIM_WARCRY warcry
+}
+
+{ game_precache
+	precachefile monsters/djinn_ogre_fire
+}
+
+#include monsters/djinn_ogre_fire
+
+{ game_spawn
+	name_unique fire_djinn
+	invincible 1
+	callevent npcatk_suspend_ai
+}
+
+{ final_postspawn
+	callevent npcatk_suspend_ai
+}
+
+{ kill_zugdah
+	playanim critical ANIM_WARCRY
+	playsound 0 10 SOUND_WARCRY
+	callevent 1.0 kill_summoner
+}
+
+{ kill_summoner
+	playanim critical attack1
+	callexternal $get_by_name(orc_summoner) ext_me_die
+	playrandomsound 0 10 SOUND_SWIPEHIT1 SOUND_SWIPEHIT2
+	callevent 1.0 bring_the_pain
+}
+
+{ bring_the_pain
+	usetrigger twal_shaman_block
+	roam 1
+	invincible 0
+	callevent npcatk_resume_ai
+	callevent 4.0 start_da_musak
+}
+
+{ start_da_musak
+	getplayersnb PLAYER_LIST
+	callevent $get_token_amt(PLAYER_LIST) start_musak
+	callevent 45.0 start_da_musak2
+
+{ start_musak
+	local CUR_TARG $get_token(PLAYER_LIST,game.script.iteration)
+	if ( $get(CUR_TARG,range) < 768 )
+	{
+		callexternal CUR_TARG ext_orcfor_boss_musak 1		
+	}
+}
+
+{ start_da_musak2
+	if $get(ent_me,isalive)
+	callevent 80.0 start_da_musak2
+	if NPCATK_TARGET isnot unset
+	getplayersnb PLAYER_LIST
+	callevent $get_token_amt(PLAYER_LIST) start_musak2
+}
+
+{ start_musak2
+	local CUR_TARG $get_token(PLAYER_LIST,game.script.iteration)
+	if ( $get(CUR_TARG,range) < 768 )
+	{
+		callexternal CUR_TARG ext_orcfor_boss_musak 2		
+	}
+}
+
+{ game_death
+	callexternal players ext_orcfor_boss_musak 3 $get(ent_me,origin)
+}

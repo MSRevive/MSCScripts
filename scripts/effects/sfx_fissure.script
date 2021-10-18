@@ -1,0 +1,222 @@
+{
+	const SCALE_ROCK_LARGE $randf(5.5,7.5) //$randf(6.0,8.0)
+	const RIGHT_ADJ_LARGE $randf(20,22) //$randf(8.0,32.0)
+	const LEFT_ADJ_LARGE $randf(-20,-22) //$randf(-8.0,32.0)
+
+	const SCALE_ROCK_SMALL $randf(5.5,7.5) //$randf(6.0,8.0)
+	const RIGHT_ADJ_SMALL $randf(35,50) //$randf(8.0,32.0)
+	const LEFT_ADJ_SMALL $randf(-35,-50) //$randf(-8.0,32.0)
+
+}
+
+
+{ client_activate //<start_org> <yaw> <end> <length> <norocks:1|0> <nofire:1|0>
+
+	//dbg cl_fissure PARAM1 PARAM2
+	setvard FISSURE_START PARAM1
+	setvard ORG_FISSURE_START FISSURE_START
+	setvard FISSURE_YAW PARAM2
+	setvard FISSURE_END PARAM3
+	setvard FISSURE_LENGTH PARAM4
+	setvard NO_ROCKS PARAM5
+	setvard NO_FIRE PARAM6
+	//vectoradd FISSURE_END $relpos($vec(0,FISSURE_YAW,0),$vec(0,768,0))
+	setvard FISSURE_COUNT 0
+	setvard FISSURE_ACTIVE 1
+	setvard FX_ACTIVE 1
+	callevent fissure_loop
+	callevent 4.0 end_fx
+
+	//cleffect beam_points FISSURE_START FISSURE_END lgtning.spr 10.0 10.0 0.01 0.3 0.1 30 (2,0,0)
+}
+
+{ end_fx
+	setvard FX_ACTIVE 0
+	callevent 2.0 remove_fx
+}
+
+{ remove_fx
+	removescript
+}
+
+{ fissure_loop
+	if FISSURE_ACTIVE
+	callevent 0.135 fissure_loop
+
+	callevent fissure_debri
+
+	add DRAWN_FISSURE_LENGTH 64
+	if ( DRAWN_FISSURE_LENGTH >= FISSURE_LENGTH )
+	{
+		dbg fissure_stopped ( FISSURE_COUNT )
+		setvard FISSURE_ACTIVE 0
+	}
+
+	//vectoradd BEAM_END z 32
+	//vectormultiply BEAM_DIR 32
+
+	add FISSURE_COUNT 1
+	if ( FISSURE_COUNT == 16 ) setvard FISSURE_ACTIVE 0
+}
+
+{ fissure_debri
+
+	if $dist(FISSURE_START,ORG_FISSURE_START) < FISSURE_LENGTH
+
+	setvard BEAM_START FISSURE_START
+	setvard BEAM_DIR $dir(BEAM_START,FISSURE_END)
+	setvard BEAM_END FISSURE_START
+
+	vectoradd BEAM_END z 32
+	vectormultiply BEAM_DIR 48
+	vectoradd BEAM_END BEAM_DIR
+
+	//cleffect beam_points BEAM_START BEAM_END lgtning.spr 10.0 10.0 0.01 0.3 0.1 30 (0,2,0)
+
+	setvard FISSURE_START BEAM_END
+	vectorset FISSURE_START z $get_ground_height(FISSURE_START)
+
+	local DEF_LINE_CENTER BEAM_END
+	vectorset DEF_LINE_CENTER z $get_ground_height(DEF_LINE_CENTER)
+
+	if ( !NO_ROCKS )
+	{
+		//large left rock
+		local LINE_CENTER DEF_LINE_CENTER
+		local RND_LR RIGHT_ADJ_LARGE
+		local RND_FB $randf(-8.0,8.0)
+		setvard ROCK_SCALE SCALE_ROCK_LARGE
+		setvard ROCK_BODY 0
+		setvard ROCK_VELOCITY $vec(0,0,0)
+		vectoradd LINE_CENTER $relpos($vec(0,FISSURE_YAW,0),$vec(RND_LR,RND_FB,0))
+		vectorset LINE_CENTER z $get_ground_height(LINE_CENTER)
+		cleffect tempent model rockgibs.mdl LINE_CENTER setup_rock update_rock
+
+		//large right rock
+		local LINE_CENTER DEF_LINE_CENTER
+		local RND_LR LEFT_ADJ_LARGE
+		local RND_FB $randf(-8.0,8.0)
+		setvard ROCK_SCALE SCALE_ROCK_LARGE
+		setvard ROCK_BODY 0
+		setvard ROCK_VELOCITY $vec(0,0,0)
+		vectoradd LINE_CENTER $relpos($vec(0,FISSURE_YAW,0),$vec(RND_LR,RND_FB,0))
+		vectorset LINE_CENTER z $get_ground_height(LINE_CENTER)
+		cleffect tempent model rockgibs.mdl LINE_CENTER setup_rock update_rock
+
+		//small left rock x2
+		local LINE_CENTER DEF_LINE_CENTER
+		local RND_LR RIGHT_ADJ_SMALL
+		local RND_FB $randf(-16.0,16.0)
+		setvard ROCK_SCALE SCALE_ROCK_SMALL
+		setvard ROCK_BODY $rand(1,2)
+		setvard ROCK_VELOCITY $relvel($vec(0,FISSURE_YAW,0),(RND_LR,RND_FB,120))
+		vectoradd LINE_CENTER $relpos($vec(0,FISSURE_YAW,0),$vec(RND_LR,RND_FB,0))
+		vectorset LINE_CENTER z $get_ground_height(LINE_CENTER)
+		cleffect tempent model rockgibs.mdl LINE_CENTER setup_rock update_rock
+
+		//small right rock x2
+		local LINE_CENTER DEF_LINE_CENTER
+		local RND_LR LEFT_ADJ_SMALL
+		local RND_FB $randf(-16.0,16.0)
+		setvard ROCK_SCALE SCALE_ROCK_SMALL
+		setvard ROCK_BODY$rand(1,2)
+		setvard ROCK_VELOCITY $relvel($vec(0,FISSURE_YAW,0),(RND_LR,RND_FB,120))
+		vectoradd LINE_CENTER $relpos($vec(0,FISSURE_YAW,0),$vec(RND_LR,RND_FB,0))
+		vectorset LINE_CENTER z $get_ground_height(LINE_CENTER)
+		cleffect tempent model rockgibs.mdl LINE_CENTER setup_rock update_rock
+
+		//small left rock x2
+		local LINE_CENTER DEF_LINE_CENTER
+		local RND_LR RIGHT_ADJ_SMALL
+		local RND_FB $randf(-16.0,16.0)
+		setvard ROCK_SCALE SCALE_ROCK_SMALL
+		setvard ROCK_BODY $rand(1,2)
+		setvard ROCK_VELOCITY $relvel($vec(0,FISSURE_YAW,0),(RND_LR,RND_FB,120))
+		vectoradd LINE_CENTER $relpos($vec(0,FISSURE_YAW,0),$vec(RND_LR,RND_FB,0))
+		vectorset LINE_CENTER z $get_ground_height(LINE_CENTER)
+		cleffect tempent model rockgibs.mdl LINE_CENTER setup_rock update_rock
+
+		//small right rock x2
+		local LINE_CENTER DEF_LINE_CENTER
+		local RND_LR LEFT_ADJ_SMALL
+		local RND_FB $randf(-16.0,16.0)
+		setvard ROCK_SCALE SCALE_ROCK_SMALL
+		setvard ROCK_BODY $rand(1,2)
+		setvard ROCK_VELOCITY $relvel($vec(0,FISSURE_YAW,0),(RND_LR,RND_FB,120))
+		vectoradd LINE_CENTER $relpos($vec(0,FISSURE_YAW,0),$vec(RND_LR,RND_FB,0))
+		vectorset LINE_CENTER z $get_ground_height(LINE_CENTER)
+		cleffect tempent model rockgibs.mdl LINE_CENTER setup_rock update_rock
+	}
+
+	//flames
+	if !NO_FIRE
+	setvard FLIP_SPRITE 0
+	local L_FIRE_POS DEF_LINE_CENTER
+	vectorset L_FIRE_POS z $get_ground_height(L_FIRE_POS)
+	cleffect tempent sprite fire1_fixed2.spr L_FIRE_POS setup_fire update_fire
+	setvard FLIP_SPRITE 1
+	cleffect tempent sprite fire1_fixed2.spr L_FIRE_POS setup_fire update_fire
+}
+
+{ update_rock
+	//if !FX_ACTIVE
+	local CUR_REND game.tempent.fuser1
+	local FADE_TIME game.tempent.fuser2
+	if CUR_REND > 0
+	if game.time >= FADE_TIME
+	subtract CUR_REND 5
+	cleffect tempent set_current_prop fuser1 CUR_REND
+	cleffect tempent set_current_prop rendermode texture
+	cleffect tempent set_current_prop renderamt CUR_REND
+}
+
+{ setup_rock
+	cleffect tempent set_current_prop death_delay 4.0
+	cleffect tempent set_current_prop scale ROCK_SCALE
+	cleffect tempent set_current_prop gravity 	2
+	cleffect tempent set_current_prop velocity ROCK_VELOCITY
+	cleffect tempent set_current_prop collide 	world
+	cleffect tempent set_current_prop framerate 1.0
+	cleffect tempent set_current_prop frames 50
+	cleffect tempent set_current_prop body ROCK_BODY
+	cleffect tempent set_current_prop sequence 0
+	local RND_YAW $randf(0.0,359.99)
+	cleffect tempent set_current_prop angles $vec(0,RND_YAW,0)
+	cleffect tempent set_current_prop fuser1 255
+	local FADE_START game.time
+	add FADE_START 3.0 //hate that I have to do this manual
+	cleffect tempent set_current_prop fuser2 FADE_START
+}
+
+
+{ update_fire
+	local CUR_SIZE game.tempent.fuser1
+	subtract CUR_SIZE 0.01
+	if CUR_SIZE > 0
+	cleffect tempent set_current_prop fuser1 CUR_SIZE
+	cleffect tempent set_current_prop scale CUR_SIZE
+}
+
+{ setup_fire
+	cleffect tempent set_current_prop death_delay 1.0
+	cleffect tempent set_current_prop bouncefactor 0
+	cleffect tempent set_current_prop fadeout lifetime
+	cleffect tempent set_current_prop framerate 30
+	cleffect tempent set_current_prop rendermode add
+	cleffect tempent set_current_prop renderamt 200
+	cleffect tempent set_current_prop gravity 1
+	cleffect tempent set_current_prop collide world
+	cleffect tempent set_current_prop frames 23
+	local L_YAW FISSURE_YAW
+	add L_YAW 90
+	if ( L_YAW > 359.99 ) subtract L_YAW 359.99
+	if ( FLIP_SPRITE )
+	{
+		add L_YAW 180
+		if ( L_YAW > 359.99 ) subtract L_YAW 359.99
+	}
+	cleffect tempent set_current_prop angles $vec(0,L_YAW,0)
+	cleffect tempent set_current_prop scale 4.0
+	cleffect tempent set_current_prop fuser1 4.0
+}
+

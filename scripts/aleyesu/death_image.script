@@ -1,0 +1,142 @@
+{ game_spawn
+
+	name Younger Keledros
+	setmodel monsters/venevus.mdl
+	width 32
+	height 80
+	roam 0
+	invincible 1
+	setvard PLAYING_DEAD 1
+	setidleanim idle1
+	setmoveanim idle1
+	saytextrange 2048
+	setsolid none
+	setprop ent_me rendermode 5
+	setprop ent_me renderamt 255
+	setprop ent_me renderfx 16 //this works, schweet!
+	callevent 0.1 say_stuff1
+	setvard IS_ACTIVE 1
+	callevent setup_spinout
+
+	svplaysound 2 10 ambience/alien_chatter.wav
+}
+
+{ say_stuff1
+	saytext Ahck! No! I'm too weak to maintain phase in this time!
+
+	usetrigger timeroom_death
+
+	callevent 3.0 say_stuff2
+}
+
+{ say_stuff2
+	saytext Mark my words, this isn't the first time you had seen of meeeee...!
+	setvard SPEECH_DONE 1
+}
+
+{ spinout_done
+	svplaysound 2 0 ambience/alien_chatter.wav
+	playsound 0 10 ambience/alien_humongo.wav
+	setprop ent_me renderamt 0
+	clientevent update all MY_CL_IDX do_explode
+	effect screenfade all 3 1 (255,255,255) 200 fadein
+	callevent 1.0 remove_me1
+	if !$get(GAME_MASTER,scriptvar,GM_CHEST)
+	createnpc aleyesu/final_chest VORTEX_CENTER
+}
+
+{ remove_me1
+	clientevent remove all MY_CL_IDX
+	callevent 0.1 remove_me2
+}
+
+{ remove_me2
+	if ( !SPEECH_DONE ) callevent 1.0 remove_me2
+	if SPEECH_DONE
+	deleteent ent_me
+}
+
+{ setup_spinout
+	setvard DIST_VORTEX $dist(game.monster.origin,VORTEX_CENTER)
+	setvard ROT $angles(game.monster.origin,VORTEX_CENTER)
+	setvard REND_COUNT 0
+	callevent 0.1 spinout_loop
+}
+
+{ spinout_loop
+	if IS_ACTIVE
+	callevent 0.1 spinout_loop
+	setvard VEC_DEST VORTEX_CENTER
+	vectoradd VEC_DEST $relpos($vec(0,ROT,0),$vec(0,DIST_VORTEX,0))
+	add ROT 10
+	if ( ROT > 359 ) subtract ROT 359
+	if ( DIST_VORTEX > 0 ) subtract DIST_VORTEX 5
+	if ( DIST_VORTEX > 1024 ) setvard DIST_VORTEX 1024
+
+	if ( DIST_VORTEX <= 0 )
+	{
+		setvard IS_ACTIVE 0
+		callevent spinout_done
+	}
+
+	//flicker, but fade when near vortex center
+	local RND_AMT $rand(128,255)
+	setprop ent_me renderamt RND_AMT
+	setorigin ent_me VEC_DEST
+}
+
+{ game_dynamically_created
+	setvard VORTEX_CENTER PARAM1
+	clientevent new all $currentscript VORTEX_CENTER
+	setvard MY_CL_IDX game.script.last_sent_id
+}
+
+//============ CLIENT
+
+{ [client] client_activate
+	setvard SPRITE_CENTER PARAM1
+	setvard FOUNTAIN_ACTIVE 1
+	setvard FOUNTAIN_MODE 1
+}
+
+{ [client]
+repeatdelay 0.1
+
+	if FOUNTAIN_ACTIVE
+	if ( FOUNTAIN_MODE == 1 ) cleffect tempent sprite 3dmflaora.spr SPRITE_CENTER glow_sprite
+	if ( FOUNTAIN_MODE == 2 )
+	{
+		cleffect tempent sprite 3dmflaora.spr SPRITE_CENTER explode_sprite
+		cleffect tempent sprite 3dmflaora.spr SPRITE_CENTER explode_sprite
+		cleffect tempent sprite 3dmflaora.spr SPRITE_CENTER explode_sprite
+	}
+}
+
+{ [client] do_explode
+	setvard FOUNTAIN_MODE 2
+}
+
+{ [client] glow_sprite
+	cleffect tempent set_current_prop death_delay 	2
+	cleffect tempent set_current_prop velocity 	$vec($randf(-200,200),$randf(-200,200),$randf(-200,200))
+	cleffect tempent set_current_prop bouncefactor 	5
+	cleffect tempent set_current_prop scale 	1
+	cleffect tempent set_current_prop gravity 	$randf(-1.1,-1.6)
+	cleffect tempent set_current_prop collide 	all;die
+	cleffect tempent set_current_prop framerate	30
+	cleffect tempent set_current_prop frames	1
+	cleffect tempent set_current_prop rendermode add
+	cleffect tempent set_current_prop rendercolor	(128,128,255)
+}
+
+{ [client] explode_sprite
+	cleffect tempent set_current_prop death_delay 	20
+	cleffect tempent set_current_prop velocity 	$vec($randf(-200,200),$randf(-200,200),$randf(-200,200))
+	cleffect tempent set_current_prop bouncefactor 	0
+	cleffect tempent set_current_prop scale 	3
+	cleffect tempent set_current_prop gravity 	0
+	cleffect tempent set_current_prop collide 	none
+	cleffect tempent set_current_prop framerate	30
+	cleffect tempent set_current_prop frames	1
+	cleffect tempent set_current_prop rendercolor	(255,255,255)
+}

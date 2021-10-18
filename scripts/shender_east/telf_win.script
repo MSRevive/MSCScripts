@@ -1,0 +1,133 @@
+#scope server
+{
+	const CHAT_USE_CONV_ANIMS 0
+
+	const ATTACH_LHAND 3
+	const ATTACH_RHAND 0
+
+}
+
+#include monsters/base_chat_array
+
+{ [shared] game_spawn
+	name Fedrosh the Rammata
+	race human
+	hp 2000
+	width 32
+	height 96
+	setmodel npc/elf_m_wizard.mdl
+	setidleanim deep_idle
+	setmoveanim deep_idle
+	nopush 1
+	invincible 1
+	menu.autoopen 1
+	saytextrange 640
+	
+	if game.serverside
+	name_unique telf_win
+
+	callevent 2.0 win_speech
+	callevent 0.1 pre_glow
+}
+
+{ pre_glow
+	clientevent new all effects/sfx_follow_glow_cl $get(ent_me,index) (128,128,255) 32 9.9
+}
+
+{ win_speech
+	clientcmd all "cd fadeout"
+	setvarg G_IDLE_MUSIC BMS-06-end_credits.mp3
+	setvarg G_IDLE_MUSIC_LENGTH 2.0
+	setvarg G_COMBAT_MUSIC dream_battle.mp3
+	setvarg G_COMBAT_MUSIC_LENGTH 3.5
+	callexternal players set_music G_IDLE_MUSIC G_IDLE_MUSIC_LENGTH G_COMBAT_MUSIC G_COMBAT_MUSIC_LENGTH 1
+	callexternal players ext_remove_status_flags_type cmusak
+	callexternal $get_by_name(telf_chest) ext_unlock
+	callevent chat_now "By Torkalath! You did it! You broke the curse!" 3.0 convo_unarmed_norm none add_to_que
+	callevent chat_now "Please, take anything from my lock box over there, it's all yours." 5.0 none none add_to_que
+	callevent chat_now "Be sure to take the amulet. With that, you can enter our Melanion enclave." 5.0 convo_unarmed_norm none add_to_que
+	callevent chat_now "I can't promise how hospitable the refugees there will be, to anyone without one." 5.0 none none add_to_que
+}
+
+{ game_menu_getoptions
+	local reg.mitem.title 	"Who are you, exactly?"
+	local reg.mitem.type 	callback
+	local reg.mitem.callback say_hi
+	menuitem.register
+
+	local reg.mitem.title 	"What do you know of this place?"
+	local reg.mitem.type 	callback
+	local reg.mitem.callback say_detail
+	menuitem.register
+
+	local reg.mitem.title 	"Where is the enclave?"
+	local reg.mitem.type 	callback
+	local reg.mitem.callback say_stronghold
+	menuitem.register
+
+	if ( MENTIONED_SEEKERS )
+	{
+		local reg.mitem.title 	"Seekers?"
+		local reg.mitem.type 	callback
+		local reg.mitem.callback say_seeker
+		menuitem.register
+	}
+}
+
+{ say_hi
+	setvard MENTIONED_SEEKERS 1
+	//callevent chat_clear_que
+	callevent chat_now "Sorry, my introduction in the dream was a bit rushed, I suppose..." 4.0 convo_unarmed_norm clear_que add_to_que
+	callevent chat_now "I am Fedrosh, a follower of Torkalath. I watch over this particular Melenion entrance to the enclave, to keep it safe." 5.0 none none add_to_que
+	callevent chat_now "A few moons ago, I caught a group of Seekers, searching for the entrance." 3.0 convo_unarmed_norm none add_to_que
+	callevent chat_now "I drove them off, but not before one of them placed that nightmare curse on me." 4.0 none none add_to_que
+	callevent chat_now "It seems your efforts broke that curse. My magic is restored, so I should be fine now." 4.0 none do_spell_trick add_to_que
+}
+
+{ do_spell_trick
+	//play an anim and do some hand sparks here
+	playanim critical ref_aim_trip
+	clientevent new all effects/sfx_beam_sparks $get(ent_me,index) $get(ent_me,index) ATTACH_LHAND (255,255,0) 1.0
+	playsound 0 5 debris/zap1.wav
+}
+
+{ say_seeker
+	callevent chat_now "I suppose we elves have been isolated for quite some time, so you may not aware of our... Political situation." 4.0 convo_unarmed_norm clear_que add_to_que
+	callevent chat_now "The elven empire, or rather, what remains of it, is essentially divided into three factions:" 4.0 none none add_to_que
+	callevent chat_now "The Felewyn elves, who maintain the old traditions, and retain exclusive control over the capital city and the military..." 5.0 none none add_to_que
+	callevent chat_now "Those that follow Urdual, also known as the Eshu, who are still somewhat tollerated, and live in the surrounding forests..." 5.0 none none add_to_que
+	callevent chat_now "And those such as myself, who follow the God of Strength, Torkalath, also known as the Ramatta." 4.0 convo_unarmed_norm none add_to_que
+	callevent chat_now "Elves from the capital revile Ramatta. They send murderous squads of Seekers: wizards, warriors, and priests, trained to hunt us down." 5.0 none none add_to_que
+	callevent chat_now "They've been seeking our enclave for quite some time. But thus far, I've kept this entrance secure." 5.0 none none add_to_que
+	callevent chat_now "We've children and elderly housed there, but the Seekers are relentless, and would murder them, one and all." 5.0 convo_unarmed_panic none add_to_que
+}
+
+{ say_stronghold
+	callevent chat_now "Grateful as I am for your assistance, I'm afraid I'm under an oath, and cannot be very specific about that." 5.0 convo_unarmed_norm clear_que add_to_que
+	callevent chat_now "I can only go so far as to say that one entrance is nearby, and no, it is not inside this house." 4.0 none none add_to_que
+}
+
+{ say_detail
+	callevent chat_now "We're fairly close to the south side of The Wall..." 3.0 convo_unarmed_norm clear_que add_to_que
+	callevent chat_now "I'm afraid you can't pass beyond it, without going through it - which is quite dangerous, of course." 5.0 none none add_to_que
+	callevent chat_now "Additionally, there are tribes of ice orcs, Marogar, wandering about, no doubt attempting to probe the fortresses for a safe path." 5.0 convo_unarmed_norm none add_to_que
+	callevent chat_now "Oh! And there's also a giant ice construct, of some sort, wandering about the western lake!" 5.0 convo_unarmed_panic none add_to_que
+	callevent chat_now "However, it seems it will not accost you, provided you don't wander too close." 5.0 none none add_to_que
+	callevent chat_now "No doubt, it's some ancient creation of a previous age, set to guard something that has long since sunk beneath the ice." 5.0 convo_unarmed_norm none add_to_que
+	callevent chat_now "If you are unfortunate enough to accidentally gain the thing's attention, just keep running. It will tire of chasing you, eventually." 5.0 none none add_to_que
+}
+
+{
+repeatdelay 10.0
+	clientevent new all effects/sfx_follow_glow_cl $get(ent_me,index) (128,128,255) 32 9.9
+}
+
+{
+repeatdelay 90.0
+	callexternal $get_by_name(telf_chest) chest_glow
+}
+
+{ ext_bunny_comment
+	callevent chat_now "Now... Where has my bunny Hazel run off to?" 5.0 convo_unarmed_norm none add_to_que
+	playsound 0 10 scientist/cough.wav
+}

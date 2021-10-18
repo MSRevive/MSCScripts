@@ -1,0 +1,823 @@
+//This is an older script and may have some bad conventions as a result.
+
+//Slithar, the Necromancer's Apprentice by Thothie from scratch
+//- Summons highly poisonus snakes (up to 5 active)
+//- Summons poisoned bone series (random, 1 active)
+//- Poisoned staff
+//- Jumps away periodically / when heavily damaged
+{
+	//crashes
+	//recachefile monsters/skeleton_poison_random
+	//recachefile monsters/snake_cursed
+	setvar IS_UNHOLY 1
+
+	if ( $lcase(game.map.name) equals bloodrose )
+	{
+		setvard NPC_GIVE_EXP 1500
+		setvard NPC_IS_BOSS 1
+	}
+	else
+	{
+		setvard NPC_GIVE_EXP 400
+	}
+
+	const NPC_BOSS_RESTORATION 1.0
+
+	callevent precache_summons
+	const JUMP_FREQ 3.0 //for slithar_to_me
+	setvar ANIM_IDLE deep_idle
+	setvar ANIM_IDLE_NORM deep_idle
+	const ANIM_CRAWL crawl
+	setvar ANIM_IDLE_CROUCH crouch_aim_serpentstaff
+	const ANIM_SEARCH looK_idle
+	const ANIM_HOP jump
+	const ANIM_JUMP long_jump
+	const JUMP_AWAY_RANGE 160
+	setvard ANIM_DEATH headshot
+	//eh - shouldn't these be ATTACK_ ?
+	const ANIM_MOVERANGE 30
+	const ANIM_HITRANGE 120
+	const ANIM_RANGE 80
+	setvar ANIM_WALK walk2handed //sometimes switches to crawl
+	setvar ANIM_RUN walk2handed //only runs under certain circumstances (usually jumps)
+	setvar ANIM_WALKSLOW walk2handed
+	setvar ANIM_RUNFAST run2
+	const ATTACK_HITCHANCE 80%
+	
+	setvard ANIM_ATTACK ref_shoot_serpentstaff //sometimes switches to crawl
+	setvard ANIM_ATTACK_STAND ref_shoot_serpentstaff //event staff_strike
+	setvard ANIM_ATTACK_CROUCH crouch_shoot_serpentstaff //event crouch_strike
+	const ANIM_SUMMON cast_serpentstaff //event spell_strike
+
+	const STAFF_DAMAGE '$rand(10,30)'
+	const POISON_DAMAGE '$randf(20,30)'
+	const POISON_DURATION '$randf(3,8)'
+
+	const SKELETON_SCRIPT monsters/skeleton_poison_random
+	const SNAKE_SCRIPT monsters/snake_cursed
+
+	//custom sound set
+	const SOUND_ALERT monsters/snakeman/sm_alert2.wav
+	const SOUND_ATTACK1 monsters/snakeman/sm_attack1.wav	//these are idle'ish sounds he makes while attacking
+	const SOUND_ATTACK2 monsters/snakeman/sm_attack2.wav
+	const SOUND_ATTACK3 monsters/snakeman/sm_attack3.wav
+	const SOUND_IDLE1 monsters/snakeman/sm_idle1.wav	//these he makes when he cannot see target
+	const SOUND_IDLE2 monsters/snakeman/sm_idle2.wav
+	const SOUND_IDLE3 monsters/snakeman/sm_idle3.wav
+	const SOUND_IDLE4 monsters/snakeman/sm_alert3.wav
+	const SOUND_PAIN1 monsters/snakeman/sm_pain1.wav
+	const SOUND_PAIN2 monsters/snakeman/sm_pain2.wav
+	const SOUND_PAIN_WEAK1 monsters/snakeman/sm_pain3.wav //when struck for >100 damage or <500hp
+	const SOUND_PAIN_WEAK2 monsters/snakeman/sm_die2.wav
+	const SOUND_CHANT monsters/snakeman/sm_summon.wav
+	const SOUND_DEATH monsters/snakeman/sm_die1.wav
+	precache SOUND_DEATH //external (base_npc)
+
+	const SOUND_SUMMON magic/spawn.wav
+	const SOUND_STRUCK1 debris/flesh1.wav
+	const SOUND_STRUCK2 debris/flesh2.wav
+	const SOUND_STAFF_MISS zombie/claw_miss1.wav
+	const SOUND_STAFF_HIT zombie/claw_strike1.wav
+
+	const SUMMON_SKEL_FREQ 90.0
+	setvard SUMMON_SNAKE_FREQ 7.0
+
+	const I_AM_TURNABLE 0
+	
+	const MONSTER_MODEL  monsters/snakeman.mdl
+	precache MONSTER_MODEL
+}
+
+#include monsters/base_monster_new
+#include monsters/base_turn_undead
+
+{ npc_spawn
+
+	if !GENERIC_LORD
+
+	name_unique snake_lord
+
+	name Slithar, the Snake Lord
+	race demon
+	hp 3000
+	if ( game.map.name equals slithar_test ) hp 1501
+	width 32
+	height 84
+	roam 0
+	precache MONSTER_MODEL
+	setmodel MONSTER_MODEL
+	setidleanim ANIM_IDLE_CROUCH
+	hearingsensitivity 10
+	invincible 1 //invincible until intro over
+
+	takedmg poison 0.0
+	takedmg cold 1.25
+	takedmg fire 0.5
+	takedmg holy 1.5
+	setvard IMMUNE_POISON 1
+	setvard IMMUNE_COLD 1.25
+	setvard IMMUNE_FIRE 0.5
+
+	if ( game.map.name isnot slithar_test ) giveitem blunt_snake_staff //do not give to generic version
+
+	callevent npcatk_suspend_ai PARAM1 "start"
+
+	setvard LOOKING_FOR_PLAYERS 1
+	callevent look_for_players
+
+	setvard SNAKE_SLOT 0
+}
+
+{ look_for_players
+
+	if LOOKING_FOR_PLAYERS
+	if ( !DID_INTRO )
+	{
+		if $cansee(enemy,300) //wait till close enough to pounce on
+		callevent me_pouncie $get(ent_lastseen,id)
+		local EXIT_SUB 1
+	}
+	callevent 1.0 look_for_players
+}
+
+{ game_heardsound
+
+	if !GENERIC_LORD
+	if LOOKING_FOR_PLAYERS
+	local LASTHEARD_ID $get(ent_lastheard,id)
+	if $get(LASTHEARD_ID,isplayer)
+	if $get(LASTHEARD_ID,range) < 300
+	callevent me_pouncie LASTHEARD_ID
+
+}
+
+{ me_pouncie //PARAM1 first target
+
+	if LOOKING_FOR_PLAYERS
+	setvard LOOKING_FOR_PLAYERS 0
+	setmovedest PARAM1 9999
+	playsound 0 10 SOUND_ALERT
+	saytextrange 2048
+	saytext Ahhhh my childrensss you have come to die, yessss?
+	callevent 3.0 intro_jump_down
+	setvard FIRST_VICTIM PARAM1 "first_target"
+}
+
+{ intro_jump_down
+
+	setmoveanim ANIM_HOP
+	setidleanim ANIM_IDLE
+	playsound 0 10 SOUND_IDLE2
+	setmovedest $relpos(0,128,0) MONSTER_WIDTH
+	callevent 0.1 hop_boost
+	playanim critical ANIM_HOP
+}
+
+{ hop_boost
+
+	addvelocity ent_me $relvel(0,300,40)
+}
+
+{ jump_done
+
+	if !DID_INTRO
+	callevent go_stand
+	setvar ANIM_RUN ANIM_RUNFAST
+	setmoveanim ANIM_RUNFAST
+	setvard DID_INTRO 1
+	saytextrange 2048
+	saytext Thissss can be aranged. Yessss....
+	invincible 0
+	roam 1
+	setvard CYCLE_TIME CYCLE_TIME_BATTLE
+	callevent npcatk_resume_ai PARAM1 "intro_jump_done"
+	callevent npcatk_settarget FIRST_VICTIM
+	setvard SUMMON_SNAKE_FREQ 2.0
+	callevent 25.0 snake_slowdown
+	callevent 30.0 summon_skeleton //remove from generic version
+	callevent 5.0 summon_snake
+	callevent idle_sounds
+}
+
+{ snake_slowdown
+
+	setvar ANIM_WALK ANIM_WALKSLOW
+	setvar ANIM_RUN ANIM_WALKSLOW
+	if ( !ESCAPE_SCENE ) setmoveanim ANIM_WALK
+	setvard SUMMON_SNAKE_FREQ 5.0
+}
+
+{ idle_sounds
+
+	callevent $randf(5,10) idle_sounds
+	if ( !$cansee(enemy) ) playrandomsound 0 10 SOUND_IDLE1 SOUND_IDLE2 SOUND_IDLE3 SOUND_IDLE4 SOUND_IDLE1 SOUND_IDLE3 SOUND_IDLE4
+}
+
+{ summon_snake
+
+	callevent go_stand
+	if ( $cansee(enemy,JUMP_AWAY_RANGE) ) 
+	{
+		if !SUMMON_SKELETON
+		callevent jump_away
+		setvard STRIKE_STUN 1
+		callevent 1.0 summon_snake
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+	setvard STRIKE_STUN 0
+
+	callevent SUMMON_SNAKE_FREQ summon_snake
+
+	if ( NPCATK_TARGET equals unset )
+	{
+		//if not attacking, keep summoning until I have a full set
+		local TOTAL_SNAKES 0
+		if ( $get(SNAKE_SLOT1,isalive) ) add TOTAL_SNAKES 1
+		if ( $get(SNAKE_SLOT2,isalive) ) add TOTAL_SNAKES 1
+		if ( $get(SNAKE_SLOT3,isalive) ) add TOTAL_SNAKES 1
+		if ( $get(SNAKE_SLOT4,isalive) ) add TOTAL_SNAKES 1
+		if ( $get(SNAKE_SLOT5,isalive) ) add TOTAL_SNAKES 1
+		if ( TOTAL_SNAKES >= 5 ) local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	if !SUMMON_SKELETON
+	if !SUMMONING
+	if !ESCAPE_SCENE
+	setvard SUMMON_SNAKE 1
+	playsound 0 10 SOUND_CHANT
+	playanim critical ANIM_SUMMON
+}
+
+{ summon_skeleton
+
+	callevent go_stand
+	if ( $cansee(enemy,JUMP_AWAY_RANGE) ) 
+	{
+		callevent jump_away
+		setvard STRIKE_STUN 1
+		callevent 1.0 summon_skeleton
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	setvard STRIKE_STUN 0
+	callevent SUMMON_SKEL_FREQ summon_skeleton
+
+	setvard SUMMON_SNAKE 0	//prioritize skeleton over snake
+	setvard SUMMON_SKELETON 1
+	if !ESCAPE_SCENE
+	playsound 0 10 SOUND_CHANT
+	playanim critical ANIM_SUMMON
+}
+
+{ spell_strike //called from ANIM_SUMMON
+
+	if !ESCAPE_SCENE
+
+	if ( SUMMON_SKELETON )
+	{
+		setvard SUMMON_SKELETON 0
+		setvard SUMMONING 1
+		callevent 3.0 reset_summoning
+		playsound 0 10 SOUND_SUMMON
+		
+		if ( $get(MY_SKELETON,isalive) ) callexternal MY_SKELETON npc_fade_away
+
+		createnpc SKELETON_SCRIPT $relpos(0,48,5) $get(ent_me,id)
+		effect glow ent_lastcreated (0,255,0) 200 2 2
+		setvard MY_SKELETON $get(ent_lastcreated,id)
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	if ( SUMMON_SNAKE )
+	{
+		setvard SUMMON_SNAKE 0
+		setvard SUMMONING 1
+		callevent 3.0 reset_summoning
+		playsound 0 10 SOUND_SUMMON
+
+		add SNAKE_SLOT 1
+
+		if ( SNAKE_SLOT > 5 ) setvard SNAKE_SLOT 1
+
+		//unsummon any active snake in same slot
+		if ( SNAKE_SLOT == 1 )
+		{
+			if ( $get(SNAKE_SLOT1,isalive) ) callexternal SNAKE_SLOT1 npc_fade_away
+		}
+
+		if ( SNAKE_SLOT == 2 )
+		{
+			if ( $get(SNAKE_SLOT2,isalive) ) callexternal SNAKE_SLOT2 npc_fade_away
+		}
+
+		if ( SNAKE_SLOT == 3 )
+		{
+			if ( $get(SNAKE_SLOT3,isalive) ) callexternal SNAKE_SLOT3 npc_fade_away
+		}
+
+		if ( SNAKE_SLOT == 4 )
+		{
+			if ( $get(SNAKE_SLOT4,isalive) ) callexternal SNAKE_SLOT4 npc_fade_away
+		}
+
+		if ( SNAKE_SLOT == 5 )
+		{
+			if ( $get(SNAKE_SLOT5,isalive) ) callexternal SNAKE_SLOT5 npc_fade_away
+		}
+
+		createnpc SNAKE_SCRIPT $relpos(0,64,5)
+		effect glow ent_lastcreated (0,255,0) 100 1 1
+		callexternal ent_lastcreated npcatk_settarget NPCATK_TARGET "my_master"
+
+		//store active snake
+		if ( SNAKE_SLOT == 1 ) setvard SNAKE_SLOT1 $get(ent_lastcreated,id)
+		if ( SNAKE_SLOT == 2 ) setvard SNAKE_SLOT2 $get(ent_lastcreated,id)
+		if ( SNAKE_SLOT == 3 ) setvard SNAKE_SLOT3 $get(ent_lastcreated,id)
+		if ( SNAKE_SLOT == 4 ) setvard SNAKE_SLOT4 $get(ent_lastcreated,id)
+		if ( SNAKE_SLOT == 5 ) setvard SNAKE_SLOT5 $get(ent_lastcreated,id)
+	}
+
+	if ( $rand(1,2) == 1 ) callevent go_crawl
+}
+
+{ reset_summoning
+
+	setvard SUMMONING 0
+}
+
+{ jump_away
+	if !ESCAPE_SCENE
+
+	callevent go_stand
+	setmoveanim ANIM_JUMP
+	playrandomsound 0 10 SOUND_ATTACK1 SOUND_ATTACK2 SOUND_ATTACK3
+	setmovedest $get(NPCATK_TARGET,id) 9999 flee
+	//dbg temp Relvel $relvel(0,100,20)
+	callevent 0.1 long_jump_boost
+	callevent npcatk_suspend_ai 1.5 "jump_away"
+}
+
+{ long_jump_boost
+
+	addvelocity ent_me $relvel(0,400,50)
+}
+
+{ long_jump_done //not getting called :\
+
+	callevent npcatk_resume_ai PARAM1 "long_jump_done"
+	callevent npcatk_settarget NPCATK_TARGET
+}
+
+{ skeleton_died //called externally by skeleton
+
+	playsound 0 10 monsters/snakeman/sm_alert4.wav
+	saytextrange 2048
+	saytext Curse you!
+}
+
+{ skeleton_stuck
+
+	//dbg My skele is stuck, resummoning
+	callevent summon_skeleton
+}
+
+{ staff_strike
+
+	callevent npcatk_dodamage NPCATK_ATARGET ATTACK_HITRANGE STAFF_DAMAGE ATTACK_HITCHANCE ent_me
+	setvard STAFF_STRIKE 1
+	if ( $rand(1,10) == 1 ) callevent go_crawl
+}
+
+{ crouch_strike
+
+	callevent npcatk_dodamage NPCATK_ATARGET ATTACK_HITRANGE STAFF_DAMAGE ATTACK_HITCHANCE ent_me
+	setvard STAFF_STRIKE 1
+	if ( $rand(1,5) == 1 ) callevent go_stand
+}
+
+{ game_dodamage //1: Attack Hit (1/0)  2: Entity Attack hit  3:  Start Origin  4:  End Origin
+
+	if STAFF_STRIKE
+	if ( PARAM1 ) 
+	{
+		playsound 0 10 SOUND_STAFF_HIT
+		if ( !STRIKE_STUN ) applyeffect NPCATK_TARGET effects/effect_poison POISON_DURATION $get(ent_me,id) POISON_DAMAGE
+		if ( STRIKE_STUN ) applyeffect NPCATK_TARGET effects/heavy_stun 5
+	}
+	if ( !PARAM1 ) playsound 0 10 SOUND_STAFF_MISS
+	setvard STAFF_STRIKE 0
+}
+
+{ go_crawl
+
+	setvard ANIM_ATTACK ANIM_ATTACK_CROUCH
+	setvar ANIM_WALK ANIM_WALKSLOW
+	setvar ANIM_RUN ANIM_CRAWL
+	setvar ANIM_IDLE ANIM_IDLE_CROUCH
+	if ( !ESCAPE_SCENE ) setmoveanim ANIM_WALK
+	setidleanim ANIM_IDLE
+	setmoveanim ANIM_RUN
+}
+
+{ go_stand
+
+	setvard ANIM_ATTACK ANIM_ATTACK_STAND
+	setvar ANIM_WALK ANIM_WALKSLOW
+	setvar ANIM_RUN ANIM_WALKSLOW
+	if ( game.monster.hp < 2000 ) 
+	{
+		setvar ANIM_RUN ANIM_RUNFAST
+	}
+	setvar ANIM_IDLE ANIM_IDLE_NORM
+	if ( !ESCAPE_SCENE ) setmoveanim ANIM_WALK
+	setidleanim ANIM_IDLE
+	setmoveanim ANIM_RUN
+}
+
+{ npc_pre_flee
+
+	callevent go_stand
+	setvar ANIM_RUN ANIM_RUNFAST
+}
+
+{ npcatk_stopflee
+
+	setvar ANIM_RUN ANIM_WALKSLOW
+	if ( !ESCAPE_SCENE ) setmoveanim ANIM_WALK
+	callevent go_stand
+}
+
+{ chicken_run_end	
+
+	setvar ANIM_RUN ANIM_WALKSLOW
+	if ( !ESCAPE_SCENE ) setmoveanim ANIM_WALK
+	callevent go_stand
+}
+
+{ game_struck
+
+	if ( game.monster.hp < 1500 )
+	{
+		//this teleports slithar to his escape dest
+		if !GENERIC_LORD
+		if !DID_ESCAPE
+		setvard DID_ESCAPE 1
+		invincible 1
+		if ( !GENERIC_LORD ) usetrigger slithar_half
+	}
+
+	if PARAM1 > 30
+	if ( PARAM1 < 100 ) playrandomsound 0 10 SOUND_PAIN1 SOUND_PAIN2 SOUND_STRUCK1 SOUND_STRUCK2
+	if ( PARAM1 >= 100 ) 
+	{
+		playrandomsound 0 10 SOUND_PAIN_WEAK1 SOUND_PAIN_WEAK2	
+		callevent 1.0 jump_away
+	}
+}
+
+{ game_death
+	saytextrange 2048
+	if ( !GENERIC_LORD ) usetrigger flesheater_door
+	
+	local FINDLE $get_by_name(npc_findlebind)
+	if ( $get(FINDLE,exists) ) callexternal FINDLE slithar_died
+
+	callexternal SNAKE_SLOT1 npc_fade_away
+	callexternal SNAKE_SLOT2 npc_fade_away
+	callexternal SNAKE_SLOT3 npc_fade_away
+	callexternal SNAKE_SLOT4 npc_fade_away
+	callexternal SNAKE_SLOT5 npc_fade_away
+	callexternal MY_SKELETON npc_fade_away
+}
+
+{ precache_summons
+
+	//I dunno WHY I have to do this, WHY does not precachefile work!!! ><
+
+	//cursed snake
+	precache debris/bustflesh1.wav
+	precache monsters/snake_idle1.wav
+	precache monsters/snake_idle2.wav
+	precache bullchicken/bc_bite2.wav
+	precache monsters/snake_pain1.wav
+	precache monsters/snake_pain2.wav
+	precache monsters/snakeman/sm_alert1.wav
+	precache debris/flesh2.wav
+		
+	precache monsters/csnake.mdl
+	
+	//poisoned bone
+	precache body/armour1.wav
+	precache body/armour2.wav
+	precache body/armour3.wav
+	precache bullchicken/bc_attack1.wav
+	precache bullchicken/bc_attack2.wav
+	precache bullchicken/bc_attack3.wav
+	precache ambience/steamburst1.wav
+	precache player/heartbeat_noloop.wav
+	precache monsters/skeleton_enraged.mdl
+	precache monsters/skeleton.mdl
+	precache poison_cloud.spr
+	precache cactusgibs.mdl
+	
+	//base skeleton
+	precache weapons/cbar_hitbod1.wav
+	precache weapons/cbar_hitbod2.wav
+	precache weapons/cbar_hitbod3.wav
+	precache zombie/zo_pain2.wav
+	precache zombie/zo_pain2.wav
+	precache zombie/claw_miss1.wav
+	precache zombie/claw_miss2.wav
+	precache zombie/zo_pain1.wav
+	
+	precache ambience/the_horror1.wav
+	precache ambience/the_horror2.wav
+	precache ambience/the_horror3.wav
+	precache ambience/the_horror4.wav
+	precache doors/aliendoor1.wav
+}
+
+{ slithar_escape
+
+	setvard TELED_OUT 1
+
+	setvard LURE_NAME $get_by_name(slithar_lure)
+	setvard LURE_ID $get(LURE_NAME,id)
+	setvard LURE_ANG $get(LURE_ID,angles)
+	setvard LURE_YAW $vec.yaw(LURE_ANG)
+	//dbg temp got escape command from slithar_lure LURE_ID
+
+	if ( !SAID_ESCAPE ) 
+	{
+		setvard SAID_ESCAPE 1
+		saytext I'll not make it that eassssy for you...
+	}
+	callevent npcatk_suspend_ai PARAM1 "escape1"
+	setvard ESCAPE_SCENE 1
+	invincible 1
+	//setsolid none
+
+	setvard FADE_OUT_COUNT 200
+	callevent slithar_fade_out
+
+	setmoveanim ANIM_IDLE_NORM
+	setidleanim ANIM_IDLE_NORM
+	setvar ANIM_RUN ANIM_IDLE_NORM
+	setvar ANIM_WALK ANIM_IDLE_NORM
+	setvar ANIM_IDLE ANIM_IDLE_NORM
+
+	playanim break
+	playanim critical ANIM_SUMMON
+
+	setvard BEAM_STAGE 0
+	setvard ESCAPE_START game.monster.origin
+	callevent slithar_beam_cycle
+	playsound 0 10 SOUND_SUMMON
+
+	setmoveanim ANIM_SUMMON
+	setidleanim ANIM_SUMMON
+	setmovedest LURE_ID 10
+
+	callevent 0.25 slithar_beams
+}
+
+{ slithar_beams
+
+	local BEAM_SPRITE lgtning.spr
+
+	local START_X $vec.x(ESCAPE_START)
+	local START_Y $vec.y(ESCAPE_START)
+	local START_Z $vec.z(ESCAPE_START)
+	subtract START_Z 64
+
+	//start beam tpower
+	local BEAM_WIDTH 200
+	local BEAM_START $vec(START_X,START_Y,START_Z)
+	local BEAM_END BEAM_START
+	vectoradd BEAM_END $relpos($vec(0,0,0),$vec(0,0,256))
+	local BEAM_COLOR (255,255,255)
+	local BEAM_BRIGHTNESS 200
+	local BEAM_NOISE 30
+	local BEAM_DURATION 4.0
+	effect beam point BEAM_SPRITE BEAM_WIDTH BEAM_START BEAM_END BEAM_COLOR BEAM_BRIGHTNESS BEAM_NOISE BEAM_DURATION
+
+	local END_POS $get(LURE_ID,origin)
+	local START_X $vec.x(END_POS)
+	local START_Y $vec.y(END_POS)
+	local START_Z $vec.z(END_POS)
+	subtract START_Z 64
+
+	//end beam tower
+	local BEAM_WIDTH 200
+	local BEAM_START $vec(START_X,START_Y,START_Z)
+	local BEAM_END BEAM_START
+	vectoradd BEAM_END $relpos($vec(0,0,0),$vec(0,0,256))
+	local BEAM_COLOR (255,255,255)
+	local BEAM_BRIGHTNESS 200
+	local BEAM_NOISE 30
+	local BEAM_DURATION 4.0
+	effect beam point BEAM_SPRITE BEAM_WIDTH BEAM_START BEAM_END BEAM_COLOR BEAM_BRIGHTNESS BEAM_NOISE BEAM_DURATION
+}
+
+{ slithar_beam_cycle
+	
+	if BEAM_STAGE < 6
+	add BEAM_STAGE 1
+	callevent 0.4 slithar_beam_cycle
+
+	local BEAM_SPRITE lgtning.spr
+	local BEAM_WIDTH 200
+	local BEAM_START ESCAPE_START
+	local BEAM_END $get(LURE_ID,origin)
+	vectoradd BEAM_END $relpos($vec(0,0,0),$vec(0,0,32))
+	local BEAM_COLOR (0,255,0)
+	if ( BEAM_STAGE == 1 ) local BEAM_BRIGHTNESS 20
+	if ( BEAM_STAGE == 2 ) local BEAM_BRIGHTNESS 100
+	if ( BEAM_STAGE == 3 ) local BEAM_BRIGHTNESS 255
+	if ( BEAM_STAGE == 4 ) local BEAM_BRIGHTNESS 100
+	if ( BEAM_STAGE == 5 ) local BEAM_BRIGHTNESS 50
+	local BEAM_NOISE 5
+	local BEAM_DURATION 0.5
+
+	//                <spritename> <width>   <startpos> <endpos> <(r,g,b)>  <brightness>    <noise>    <duration>
+	effect beam point BEAM_SPRITE BEAM_WIDTH BEAM_START BEAM_END BEAM_COLOR BEAM_BRIGHTNESS BEAM_NOISE BEAM_DURATION
+	effect tempent trail poison.spr $relpos(0,0,64)  $relpos(0,0,96) 20 1 1 20 5
+}
+
+{ slithar_fade_out
+	if ( FADE_OUT_COUNT <= 0 )
+	{
+		setmoveanim ANIM_IDLE_NORM
+		setidleanim ANIM_IDLE_NORM
+		callevent slithar_escape_tele
+	}
+	if FADE_OUT_COUNT > 0
+	callevent 0.1 slithar_fade_out
+	subtract FADE_OUT_COUNT 10
+	setprop ent_me rendermode 2
+	setprop ent_me renderamt FADE_OUT_COUNT
+}
+
+{ slithar_escape_tele
+	//dbg temp slithar_escape_tele idle
+	setmoveanim ANIM_IDLE_NORM
+	setidleanim ANIM_IDLE_NORM
+	setvar ANIM_RUN ANIM_IDLE_NORM
+	setvar ANIM_WALK ANIM_IDLE_NORM
+	setvar ANIM_IDLE ANIM_IDLE_NORM
+	playanim break
+	playanim ANIM_IDLE_NORM
+	callevent stop_moving_damnit
+	movespeed 0.0
+	roam 0
+	setorigin ent_me $get(LURE_ID,origin)
+	setangle face $vec(0,LURE_YAW,0)
+	setvard FADE_COUNT 0
+	playsound 0 10 SOUND_SUMMON
+	callevent slithar_fade_in
+
+	local SPLUGE_START $get(LURE_ID,origin)
+	local SPLUGE_DEST SPLUGE_START
+	vectoradd SPLUGE_DEST $relpos($vec(0,0,0),$vec(0,0,200))
+
+	effect tempent trail poison.spr SPLUGE_START SPLUGE_DEST 20 1 5 20 5
+
+	usetrigger slithar_escaped
+
+	deleteent LURE_ID
+}
+
+{ stop_moving_damnit
+	if ESCAPE_SCENE
+	setangle face $vec(0,LURE_YAW,0)
+	callevent 1.0 stop_moving_damnit
+	////dbg told to stop walking ( ANIM_IDLE_NORM )
+	setmoveanim ANIM_IDLE_NORM
+	setidleanim ANIM_IDLE_NORM
+	setvar ANIM_RUN ANIM_IDLE_NORM
+	setvar ANIM_WALK ANIM_IDLE_NORM
+	setvar ANIM_IDLE ANIM_IDLE_NORM
+	playanim once ANIM_IDLE_NORM
+}
+
+{ slithar_fade_in
+	if ( FADE_COUNT >= 250 )
+	{
+		setprop ent_me rendermode 0
+		setprop ent_me renderamt 0
+	}
+	if FADE_COUNT < 250
+	callevent 0.1 slithar_fade_in
+	add FADE_COUNT 10
+	setprop ent_me rendermode 5
+	setprop ent_me renderamt FADE_COUNT
+}
+
+{ slithar_resume
+
+	//dbg Resuming combat
+	invincible 0
+	//setsolid 1
+	setvard ESCAPE_SCENE 0
+	callevent npcatk_resume_ai PARAM1 "resume_call"
+	setmoveanim ANIM_RUNFAST
+	setanimidle ANIM_IDLE_NORM
+	movespeed 1.0
+	roam 1
+	setvar ANIM_RUN ANIM_RUNFAST
+	setvar ANIM_WALK ANIM_WALKSLOW
+	setvar ANIM_IDLE ANIM_IDLE_NORM
+	setvard SUMMON_SKELETON 0
+	setvard SUMMON_SNAKE 0
+	setvard SUMMONING 0
+	callevent 3.0 reset_summoning
+}
+
+{ npcatk_suspend_ai //param1 seconds, if omitted ai suspends until npcatk_resume_ai called if omitted
+	//dbg suspend AI PARAM2
+}
+
+{ [override] npcatk_resume_ai
+
+	//this has to be overriden in case escape scene starts mid-jump
+
+	if !ESCAPE_SCENE
+	//dbg resume AI PARAM2
+
+	if SUSPEND_AI
+	if ( NPC_STORE_TARGET isnot unset ) callevent npcatk_restore_target
+	setvard SUSPEND_AI 0
+}
+
+{ slithar_to_me //PARAM1 dest PARAM2 range PARAM3 calling ent
+
+	if !TELED_OUT
+
+	if ( !SUSPEND_AI ) callevent npcatk_suspend_ai
+	if ( !ESCAPE_SCENE )
+	{
+		//anti-stuck doesn't work while AI is suspended, so we need our own, local anti-stuck (ripped from chicken_run)
+		setvard CKN_MY_OLD_POS $get(ent_me,origin)
+		setvard ESCAPE_SCENE 1
+		callevent 0.1 lure_stuck_check
+	}
+	setmoveanim ANIM_RUNFAST
+	if ( !LURE_JUMP_DELAY )
+	{
+		playanim critical ANIM_JUMP
+		setvard LURE_JUMP_DELAY 1
+		callevent 0.1 long_jump_boost
+		callevent JUMP_FREQ reset_lure_jump_delay
+	}
+	
+	setmovedest PARAM1 MOVE_RANGE
+	if ( PARAM2 < MOVE_RANGE ) local REACHED_LURE 1
+	if ( $dist(PARAM1,game.monster.origin) < MOVE_RANGE ) local REACHED_LURE 1
+
+
+	if REACHED_LURE
+	setvard ESCAPE_SCENE 0
+	callevent npcatk_resume_ai
+	callexternal PARAM3 slithar_made_it
+	usetrigger slithar_escaped
+	callevent slithar_resume
+}
+
+{ reset_lure_jump_delay
+	setvard LURE_JUMP_DELAY 0
+}
+
+{ lure_stuck_check
+
+	//attempt to run around players/obsticles while moving to lure
+
+	if !TELED_OUT
+	if ESCAPE_SCENE
+
+	local CKN_MOVE_DIST $dist(game.monster.origin,CKN_MY_OLD_POS)
+
+	if ( CKN_MOVE_DIST == 0 )
+	{
+		//I've not moved since the last check, pick a random dir and move there for a sec
+		setvard FLEE_DIR $rand(1,359)
+		setmovedest $relpos($vec(0,FLEE_DIR,0),$vec(0,500,0)) 0
+		
+		playanim loop ANIM_RUNFAST
+	}
+	setvard CKN_MY_OLD_POS game.monster.origin
+
+	callevent 0.25 lure_stuck_check
+}
+
+{ slithar_stop //PARAM1 = activator's yaw
+
+	//dbg Got stop command, will not resume until slithar/resume spawns
+	setvard ESCAPE_SCENE 1
+	invincible 1
+	setvard LURE_YAW PARAM1
+	callevent stop_moving_damnit
+}

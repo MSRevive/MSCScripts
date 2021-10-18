@@ -1,0 +1,77 @@
+{
+	const MODEL_HANDS      	none
+	const MODEL_WORLD      	weapons/projectiles.mdl
+	const MODEL_BODY_OFS 57
+	const ARROW_BODY_OFS 57
+	const ARROW_STICK_DURATION 5
+	const SOUND_HITWALL1		weapons/xbow_hit1.wav
+	const SOUND_HITWALL2		weapons/xbow_hit1.wav
+	const ARROW_SOLIDIFY_ON_WALL	0  	//base_arrow: Turns solid when a wall is hit
+	const ARROW_BREAK_CHANCE	100%	//base_arrow: Chance of breaking upon hit
+	const ITEM_NAME		watermana
+	const PROJ_DAMAGE_TYPE	pierce
+	const PROJ_DAMAGESTAT		spellcasting.ice //this does not determin xp stat
+	const PROJ_ANIM_IDLE		idle_icebolt
+	const PROJ_MOTIONBLUR 1
+
+	const PROJ_ANIM_IDLE idle_icebolt
+
+	const PROJ_DAMAGE		1 //via tossprojectile only
+	const PROJ_AOE_RANGE		0
+	const PROJ_AOE_FALLOFF	0
+	const PROJ_STICK_DURATION	0  //Don't stick in enemies
+	const PROJ_COLLIDE	1
+}
+
+#include items/proj_arrow_base
+
+{ arrow_spawn
+
+	name 		a|Wooden Spear
+	desc 		A pointy ended stick that someone threw
+	weight 		0.1
+	size 		1
+	value		0
+	gravity		0.8
+	groupable    	25
+	setidleanim idle_icebolt
+}
+
+{ game_projectile_hitnpc
+
+	local L_DMG 75
+	local OWNER_SKILL_RATIO $get(ent_expowner,skill.polearms)
+	multiply OWNER_SKILL_RATIO 0.01
+	multiply L_DMG OWNER_SKILL_RATIO
+
+	local CHARGE_LEVEL $get(ent_expowner,scriptvar,'PLR_SPEAR_CHARGE_LEVEL')
+	dbg game_projectile_hitnpc CHARGE_LEVEL
+	multiply CHARGE_LEVEL 2.0 //boost value of charge level
+	add CHARGE_LEVEL 1.0
+
+	multiply L_DMG CHARGE_LEVEL
+
+	local TARG_ORG $get(PARAM1,origin)
+	local OWNER_ORG $get(ent_expowner,origin)
+	local TARG_DIST $dist(OWNER_ORG,TARG_ORG)
+	if ( TARG_DIST < 256 )
+	{
+		//reduce damage if in melee range
+		local DIST_RATIO TARG_DIST
+		divide DIST_RATIO 256
+		dbg too_close DIST_RATIO ( dist TARG_DIST )
+		multiply L_DMG DIST_RATIO
+	}
+
+
+	xdodamage PARAM1 direct L_DMG 100% ent_expowner ent_me polearms pierce
+}
+
+//{ [override] game_projectile_hitwall
+//	dbg game_projectile_wall PARAM1 vs $get(ent_me,origin)
+//	playrandomsound 0 10 SOUND_HITWALL1 SOUND_HITWALL2
+//}
+//
+//{ [override] hitwall
+//	dbg hitwall $get(ent_me,origin)
+//}

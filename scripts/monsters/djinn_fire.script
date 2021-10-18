@@ -1,0 +1,310 @@
+//Fire Djinn Var-sul by Thothie (from Ice Djinn Ji-Ax by Father Brandon)
+{
+	if ( $lcase(game.map.name) equals demontemple )
+	{
+		setvard NPC_IS_BOSS 1
+		setvard NPC_GIVE_EXP 3000
+		if ( G_DEVELOPER_MODE ) messageall green Djinn Var-sul set BOSS MODE
+	}
+	else
+	{
+		setvard NPC_GIVE_EXP 800
+	}
+
+	const NPC_BOSS_REGEN_RATE 0.1
+	const NPC_BOSS_RESTORATION 1.0
+
+	setvar IS_UNHOLY 1
+	const SOUND_STRUCK1	weapons/cbar_hitbod1.wav
+	const SOUND_STRUCK2	monsters/troll/trollpain.wav
+	const SOUND_ATTACK1	monsters/troll/trollattack.wav
+	const SOUND_ATTACK2	monsters/troll/trollattack.wav
+	const SOUND_DEATH	monsters/troll/trolldeath.wav
+	const SOUND_WALK	monsters/troll/walk.wav
+	const SOUND_SUMMON	ambience/particle_suck2.wav
+	const SOUND_ROAR	monsters/troll/trollidle2.wav
+	const SOUND_WALK1	monsters/troll/step1.wav
+	const SOUND_WALK2	monsters/troll/step2.wav
+
+	//sounds aren't playing
+	precache SOUND_STRUCK1
+	precache SOUND_STRUCK2
+	precache SOUND_ATTACK1
+	precache SOUND_ATTACK2
+	precache SOUND_WALK
+	precache SOUND_DEATH
+	precache SOUND_SUMMON
+	precache SOUND_ROAR
+
+	const PUSH_CHANCE 10 //1 in X
+
+	const GOLD_BAGS 1
+	const GOLD_BAGS_PPLAYER 3
+	const GOLD_PER_BAG 50
+	const GOLD_RADIUS 64
+	const GOLD_MAX_BAGS 32
+
+	setvar ANIM_IDLE	idle0
+	setvar ANIM_RUN	run
+	setvar ANIM_WALK	walk
+	setvard ANIM_ATTACK	double_punch
+	setvard ANIM_DEATH	die_fall
+	setvard ATTACK_RANGE	125
+	setvard ATTACK_HITRANGE	200
+	setvard CAN_FLINCH	0
+	setvard MOVE_RANGE	100
+	setvard CAN_HUNT	1
+	setvard HUNT_AGRO	1
+	setvard CAN_FLEE 1	//hoping this gets him to avoid firewalls/volcanos
+	const FLEE_HEALTH 1
+
+	const SUMMON_SCRIPT	monsters/troll_fire
+	const TORCH_LIGHT_SCRIPT items/item_djinn_fire
+
+	const FIRE_DAMAGE '$rand(50,150)'
+
+	setvard IMMUNE_FIRE 1
+
+	precachefile TORCH_LIGHT_SCRIPT
+	//precachefile SUMMON_SCRIPT
+
+}
+
+#include monsters/base_monster
+
+{ npc_spawn
+
+	hp 4000
+	//ov 359
+	width 100
+	height 100
+	race demon
+	name a|Fire Djinn Val-sul
+	roam 0
+	takedmg all 0.7
+	takedmg fire 0.0
+	takedmg lightning 0.5
+	takedmg ice 1.25
+	hearingsensitivity 10
+	takedmg cold 1.25
+	takedmg holy 0.25 //almost, but not quite, part of this world
+	setmodel monsters/troll.mdl
+	setidleanim idle1
+	setmoveanim ANIM_WALK
+	setactionanim ANIM_ATTACK
+
+	//precachefile SUMMON_SCRIPT
+
+	callevent 10.0 summon_firetroll
+
+	setvarg ICE_TROLL_DEAD 1
+
+	callevent troll_spawn
+	clientevent persist all TORCH_LIGHT_SCRIPT $get(ent_me,index) 1
+	setvard FIRE_SCRIPT game.script.last_sent_id
+	effect glow ent_me (128,50,4) 64 -1 0
+
+	precache monsters/firetroll.mdl
+
+	if ( $rand(1,16) < game.playersnb )
+	{
+		setvard DROP_ITEM1 item_eh
+		setvard DROP_ITEM1_CHANCE 100
+	}
+
+//attempts to deal with faulty boss chamber
+//	local L_MAP_NAME $lcase(game.map.name)
+//	if ( L_MAP_NAME contains demontemple ) stepsize 99
+}
+
+{ attack_1
+
+	setvard I_ATTACKED 1
+
+	setvar PUSH_VEL $relvel(10,30,10)
+	//dodamage ENTITY_ENEMY ATTACK_HITRANGE $randf(25,35) 75%
+	if ( $get(HUNT_LASTTARGET,range) <= ATTACK_HITRANGE ) dodamage HUNT_LASTTARGET direct $randf(45,80) 75% $get(ent_me,id) blunt
+
+	if( $rand(1,4) == 1 ) setvard ANIM_ATTACK hit_down
+
+   //if( $rand(1,10) == 1 ) applyeffect $get(ent_laststruckbyme,id) effects/effect_push 3 $relvel(0,200,200) 0
+
+	callevent attack_sound
+}
+
+{ attack_2
+
+	setvard I_ATTACKED 1
+
+	if ( $get(HUNT_LASTTARGET,range) <= ATTACK_HITRANGE ) dodamage HUNT_LASTTARGET direct $randf(80,200) 75% $get(ent_me,id) blunt
+	setvard ANIM_ATTACK double_punch
+
+   if( $rand(1,PUSH_CHANCE) == 1 )
+   {
+
+	callevent 0.1 rawr
+	applyeffect $get(ent_laststruckbyme,id) effects/effect_push 3 $relvel(0,400,400) 0
+
+   }
+
+	callevent attack_sound
+}
+
+
+{ game_dodamage //1: Attack Hit (1/0)  2: Entity Attack hit  3:  Start Position  4:  End Position
+
+	if PARAM1
+	applyeffect $get(ent_laststruckbyme,id) effects/effect_burn 3 $get(ent_me,id) FIRE_DAMAGE
+}
+
+{ npc_struck
+   
+	playrandomsound CHAN_BODY 10 SOUND_STRUCK1 SOUND_STRUCK2 SOUND_STRUCK2
+}
+
+{ attack_sound
+
+	playsound 0 10 SOUND_ATTACK1
+}
+
+{ npc_death
+
+	clientevent remove all FIRE_SCRIPT
+	
+	if ( MY_ICE_TROLL isnot 'MY_ICE_TROLL' ) deleteent MY_ICE_TROLL fade
+
+	clientevent remove all SCRIPT_ID
+	clientevent remove TORCH_LIGHT_SCRIPT
+	clientevent remove all TORCH_LIGHT_SCRIPT
+}
+
+{ summon_firetroll
+
+	if !NO_SUMMON
+
+	callevent 10.0 summon_firetroll
+
+	if !$get(MY_ICE_TROLL,isalive)
+
+	local EXIT_SUB 0
+
+	if ( !SUMMON_NEXT_CHECK ) 
+	{
+		setvard SUMMON_NEXT_CHECK 1
+		local EXIT_SUB 1
+	}
+
+	if !EXIT_SUB
+
+	if $cansee(player)
+
+	if ( MY_ICE_TROLL isnot 'MY_ICE_TROLL' ) deleteent MY_ICE_TROLL fade
+
+	volume 10
+	playsound 2 SOUND_SUMMON
+
+
+	local SUMMON_POS $relpos(0,0,0) //only safe summon position, due to monsterclip around walkway
+
+	playanim critical throw_rock
+
+	local SUMMON_POINT1 $get_by_name(summon_point1)
+	if ( $get(SUMMON_POINT1,exists) ) local SUMMON_POS $get(SUMMON_POINT1,origin)
+
+	if ( !$get(SUMMON_POINT1,exists) ) setsolid none
+
+	createnpc SUMMON_SCRIPT SUMMON_POS
+
+	callevent 1 solidify_djinn	//stops me from getting stuck inside my pet
+
+	setvard MY_ICE_TROLL $get(ent_lastcreated,id)
+
+	if ( I_AM_BEAR == 1 ) callexternal MY_ICE_TROLL bearguard
+
+	setvard SUMMON_NEXT_CHECK 0
+
+	//run away for a second to get outside of my summoned
+	if ( !IS_FLEEING ) callevent npcatk_flee MY_ICE_TROLL 275 3
+}
+
+{ eventname solidify_djinn
+
+	//check if pet is clear, if so, go back to solid, if not, try again 5 secs
+	local MY_LOC $get(ent_me,origin)
+	local MY_PET_LOC $get(MY_ICE_TROLL,origin)
+	local PET_DISTANCE $dist(MY_LOC,MY_PET_LOC)
+	if ( PET_DISTANCE > 80 ) 
+	{
+		//dbg Going Solid
+		setsolid box
+	}
+	if ( PET_DISTANCE <= 80 ) 
+	{
+		//if ( !IS_FLEEING ) callevent npcatk_flee MY_ICE_TROLL 512 2
+ 		callevent 0.25 solidify_djinn
+	}
+}
+
+{ npc_targetsighted
+
+	if !DID_ROAR_INTRO
+
+	volume 10
+	playsound game.sound.voice SOUND_ROAR
+	
+	setvard DID_ROAR_INTRO 1
+}
+
+{ eventname rawr
+
+	volume 10
+	playsound game.sound.voice SOUND_ROAR
+}
+
+{ my_pet_stuck
+
+	//called by Troll Ice when Stuck Count == 2
+	//dbg my pet says he's stuck, resummoning
+
+    deleteent MY_ICE_TROLL fade
+
+	volume 10
+	playsound 2 SOUND_SUMMON
+
+	local SUMMON_POS $relpos(0,0,0) //only safe summon position, due to monsterclip around walkway
+
+	setvard AS_ATTACKING 20
+	playanim critical throw_rock
+
+	setsolid none
+
+	createnpc SUMMON_SCRIPT SUMMON_POS
+
+	callevent 1.0 solidify_djinn	//stops me from getting stuck inside my pet
+
+	setvard MY_ICE_TROLL $get(ent_lastcreated,id)
+
+	setvard SUMMON_NEXT_CHECK 0
+
+	//run away for a second to get outside of my summoned
+	if ( !IS_FLEEING ) callevent npcatk_flee MY_ICE_TROLL 275 3
+}
+
+{ stomp_1	//called by model run @ frame 10 (newer June 27,2006+ model only)
+
+   playsound 2 8 SOUND_WALK1
+}
+
+{ stomp_2	//called by model run @ frame 30 (newer June 27,2006+ model only)
+
+   playsound 2 8 SOUND_WALK2
+}
+
+{ cycle_up
+	if !CYCLED_UP
+	roam 1
+}
+
+{ set_no_summons
+	setvard NO_SUMMON 1
+}

@@ -1,0 +1,174 @@
+//Gauntlet's of Fire by Thothie (from Gauntlets_Normal)
+//Model/Concept by Jester
+//- Jester also discoverd that game_hitwall does not work - just use hitwall
+//- Thothie wonders how many other script functions are busted due to that break in convention
+{
+	const MELEE_OVERRIDE 1
+	const SPECIAL1_OVERRIDE 1
+	const MELEE_CALLBACK gaunt
+
+	const DOT_EFFECT effects/effect_burn
+
+  const BASE_LEVEL_REQ     15
+	const ANIM_HANDS_DOWN 3
+	const ANIM_LIFT1 2
+	const ANIM_LOWER 3
+	const ANIM_IDLE1 1
+	const ANIM_IDLE_TOTAL         1
+	const ANIM_ATTACK1 4
+	const ANIM_SHEATH 3
+	const MODEL_VIEW viewmodels/v_martialarts.mdl
+	const MODEL_VIEW_IDX 3
+const MODEL_HANDS weapons/p_weapons2.mdl
+const MODEL_WORLD weapons/p_weapons2.mdl
+  const SOUND_SWIPE weapons/swingsmall.wav
+  const SOUND_HITWALL1      weapons/axemetal1.wav
+  const SOUND_HITWALL2      ambience/steamburst1.wav
+  const SOUND_SWING   weapons/swingsmall.wav
+
+const MODEL_BODY_OFS 56
+	const NO_WORLD_MODEL 1 //indicate model only has a player and world model, no r&l hands nor sheath
+  const ANIM_PREFIX  gauntlets
+
+  //Used in base_melee
+  //------------------
+  const MELEE_RANGE  40
+  const MELEE_DMG_DELAY  0.3
+  const MELEE_ATK_DURATION 0.9
+  const MELEE_ENERGY  1
+  const MELEE_DMG  100
+  const MELEE_DMG_RANGE      0
+  const MELEE_DMG_TYPE  fire
+  const MELEE_ACCURACY  75%
+  const MELEE_STAT  martialarts
+  const MELEE_VIEWANIM_ATK      ANIM_ATTACK1
+
+  const MELEE_SOUND      SOUND_SWIPE
+  const MELEE_SOUND_DELAY      MELEE_DMG_DELAY
+  const MELEE_PARRY_CHANCE      10%
+
+  const PLAYERANIM_AIM  fists
+  //const PLAYERANIM_SWING axe_onehand_swing
+}
+
+#include items/base_melee
+#include items/base_kick
+
+{  weapon_spawn
+
+   name  Gauntlets of Fire
+   desc  These magical gauntlets are infused with elemental fire
+   weight  3
+   size  1
+   value 2500
+   sethand  both
+   sethudsprite hand 97
+   sethudsprite trade 97
+}
+
+{ weapon_deploy
+	setvard GAME_PVP game.pvp
+	playviewanim  ANIM_HANDS_DOWN
+}
+
+{ gaunt_start
+
+	//dbg melee_start
+
+  playviewanim MELEE_VIEWANIM_ATK
+
+	//infomsg ent_owner ATTACK_ANIM MELEE_VIEWANIM_ATK
+
+  if( PUNCH_ATTACK == 0 )
+  {
+   local l.punch_anim stance_normal_lowjab_r1
+   setvard PUNCH_ATTACK 1
+  }
+  else if( PUNCH_ATTACK == 1 )
+  {
+   local l.punch_anim stance_normal_lowjab_r2
+   setvard PUNCH_ATTACK 0
+  }
+
+  playowneranim once l.punch_anim global.anim.combatwalk 3
+
+  playsound const.sound.item 5 SOUND_SWING
+  setvard FISTS_LAST_ATTACK game.time
+  callevent punch1_done  //Lower fists in 5 seconds
+}
+
+{ punch1_done
+	//repeatdelay 1
+
+  if FISTS_LAST_ATTACK
+  local l_elapsedtime game.time
+  subtract l_elapsedtime FISTS_LAST_ATTACK
+
+  if l_elapsedtime > 5
+
+  playviewanim ANIM_LOWER
+  setvard FISTS_LAST_ATTACK 0
+}
+
+{ hitwall
+
+  ////dbg hitwall fired
+
+  playrandomsound 2 10 SOUND_HITWALL1 SOUND_HITWALL2
+}
+
+{ [override] item_idle
+
+}
+
+{ gaunt_damaged_other //1: Attack Hit (1/0)  2: Entity Attack hit  3:  Start Position  4:  End Position
+
+	if $rand(1,2) == 1
+
+	if ( $get(PARAM1,isplayer) )
+	{
+		if !GAME_PVP
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	local BURN_DAMAGE $get(ent_owner,skill.spellcasting.fire)
+	divide BURN_DAMAGE 1.5
+	add BURN_DAMAGE $randf(1,3)
+	if ( BURN_DAMAGE < 5 ) local BURN_DAMAGE 5
+
+	applyeffect PARAM1 DOT_EFFECT 5 $get(ent_owner,id) BURN_DAMAGE 0 0 martialarts
+}
+
+
+{ gaunt_damaged_other
+	if !BWEAPON_NO_PERCENT_CHARGE
+	if ( BWEAPON_CHARGE_PERCENT > 0.25 )
+	{
+		subtract BWEAPON_CHARGE_PERCENT 0.25
+
+		local CHARGE_RATIO $ratio(BWEAPON_CHARGE_PERCENT,1.25,BWEAPON_DBL_CHARGE_ADJ)
+
+		local NEW_DMG PARAM2
+		multiply NEW_DMG CHARGE_RATIO
+		setdmg dmg NEW_DMG
+		returndata CHARGE_RATIO
+		dbg Adjusted dmg x CHARGE_RATIO
+		setvard BWEAPON_CHARGE_PERCENT 0
+
+		local CUR_DRAIN MELEE_ENERGY
+		multiply CUR_DRAIN BWEAPON_CHARGE_PERCENT
+		drainstamina ent_owner CUR_DRAIN
+	}
+}
+
+{ gaunt_playsound
+	playsound const.snd.weapon const.snd.maxvol SOUND_SWIPE
+}
+
+{  special_01_start
+
+	callevent gaunt_start
+	if game.serverside
+	svplaysound 1 10 SPECIAL01_SND
+}

@@ -1,0 +1,99 @@
+{
+	const NO_JOB 1
+	const NO_RUMOR 1
+	const CHAT_DELAY 3.0
+}
+
+#include monsters/base_npc
+#include monsters/base_chat
+
+{ npc_spawn
+	name Jae'em
+	hp 1
+	invincible 1
+	width 32
+	height 72
+	race beloved
+	setmodel npc/human1.mdl
+	setmodelbody 0 2
+	setmodelbody 1 5
+	roam 0
+	setmoveanim idle1
+	hearingsensitivity 10
+	saytextrange 1024
+
+	catchspeech say_hi hi hail yo waddup greetings hello j0
+}
+
+{ game_heardsound
+
+
+	local LAST_HEARD $get(ent_lastheard,id)
+
+	if $get(LAST_HEARD,isplayer)
+
+	if $cansee(LAST_HEARD)
+
+	if $get(LAST_HEARD,range) < 200
+	if ( CONGRATS_MSG )
+	{
+		callevent face_speaker LAST_HEARD
+		if !DID_CONGRATS
+		callevent say_hi
+	}
+	if !SAID_HI
+	callevent face_speaker LAST_HEARD
+	callevent say_hi
+}
+
+{ say_hi
+
+	if ( $get(PARAM1,isplayer) ) callevent face_speaker $get(PARAM1,id)
+	if ( $get(ent_lastspoke,isplayer) ) callevent face_speaker $get(ent_lastspoke,id)	
+
+	setvard SAID_HI 1
+
+	if ( CONGRATS_MSG )
+	{
+		setvard DID_CONGRATS 1
+		playanim critical eye_wipe
+		callevent bchat_mouth_move
+		saytext Thank you for driving the orcs away! I hope our people will return soon...
+		callevent 2.0 fix_anims
+	}
+
+	if !CONGRATS_MSG
+
+	if !BUSY_CHATTING
+
+	playanim critical fear1
+	setvard CHAT_STEPS 5
+	setvard CHAT_STEP 0
+	setvard BUSY_CHATTING 1
+	playsound 0 10 npc/oldvillager2.wav
+	setvard CHAT_STEP1 "Please help us! The orcs have taken over our town!"
+	setvard CHAT_STEP2 "Most of the town's people fled but Taol and I got trapped here."
+	setvard CHAT_STEP3 "I've been hiding in this room and Taol has locked himself in the room below."
+	setvard CHAT_STEP4 "He won't let anyone in until the orcs are gone."
+	setvard CHAT_STEP5 "If you slay the orcs, I'll open two of the city gates for you and perhaps we'll get to see Taol again."
+
+	callevent chat_loop
+}
+
+{ wavend //ms_npcsript
+	setvard CONGRATS_MSG 1
+	local NEARBY_PLAYER $get_insphere(player,512)
+	if ( NEARBY_PLAYER isnot 0 )
+	{
+		callevent face_speaker NEARBY_PLAYER
+		callevent say_hi
+	}
+}
+
+
+{ fix_anims
+	//ms_npcscript seems to be fubar'ing my anims, reset after call
+	setmoveanim idle1
+	setidleanim idle1
+	playanim critical idle1
+}

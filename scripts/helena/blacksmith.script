@@ -1,0 +1,385 @@
+// Blacksmith - Dorfgan fights back
+{
+	const BG_MAX_HEAR_CIV 128 //only respond to civies very near
+
+	setvard ANIM_DEATH dieforward
+	setvard ANIM_ATTACK beatdoor
+	setvar ANIM_WALK walk
+	setvar ANIM_RUN run
+	setvard FIGHTING 0
+	setvard COUNT 0
+	setvard REST 10
+	setvard DELAY 1.05
+	//precache 3dmflaora.spr
+	precache amb/fx_anvil.wav
+	const NO_CHAT 1
+
+	setvard STORE_NAME helena_bs
+	setvard STORE_SELLMENU 1
+
+	const CUSTOM_GUARD 1
+
+   	setvard STORE_TRIGGERTEXT "store trade buy sell purchase sale offer"
+	setvard STORE_NAME helena_general_store
+	setvard CANCHAT 1
+	setvard OVERCHARGE 150%
+
+	setvard ANIM_DEATH dieforward
+	const NO_CHAT 1
+   	setvard SELL_WEAPON_LEVEL 6,12
+
+	const VEND_ARMORER 1
+}
+
+#include NPCs/human_guard_sword
+#include helena/helena_npc
+#include monsters/base_chat
+#include monsters/base_npc_vendor
+#include monsters/base_npc_vendor_confirm
+
+{
+   eventname npc_spawn
+
+   hp		250
+   invincible   1
+   name		Dorfgan
+   width	20
+   height	72
+   roam		0
+   race		hguard
+   setmodel	npc/blacksmith.mdl 
+   setmodelbody 0 1
+   setmodelbody 1 2
+   setidleanim	smith_hammer_time
+   setangle face $vec(0,-180,0)
+
+   //catchspeech say_goaway hi buy hello hail greet armor weapon
+}
+
+{
+	repeatdelay DELAY
+
+
+	if ( $cansee(enemy) )
+	{
+		local SEEN_ID $get(ent_lastseen,id)
+		if ( $get(SEEN_ID,race) equals orc ) local FIGHT_MODE 1
+		if ( $get(SEEN_ID,race) equals rogue ) local FIGHT_MODE 1
+		if ( FIGHT_MODE ) callevent combat_mode
+	}
+
+	if !FIGHTING
+	
+	if( COUNT < 8 )
+	{
+		playanim critical smith_hammer_time
+		add COUNT 1
+	}
+
+	if( COUNT == 8 )
+	{
+		if( REST > 0 )
+		{
+			if( DELAY == 8.36 )
+			{
+				playanim critical smith_hammer_look
+				setvar COUNT 0
+				setvar DELAY 1.05
+				dec REST 1
+			}
+			else
+			{
+				setvar DELAY 8.36
+			}
+		}
+	}
+
+	if( REST == 0 )
+	{
+		if( DELAY == 10.86 )
+		{
+			playanim critical smith_hammer_idle
+			setvar REST 10
+			setvar COUNT 0
+			setvar DELAY 1.05
+		}
+		else
+		{
+			setvar DELAY 10.86
+		}
+	}
+}
+
+{ hammer_sound
+
+	playsound 0 10 amb/fx_anvil.wav
+	//effect tempent trail 3dmflaora.spr $relpos(-11,15,15) $relpos(-11,15,15) 5 0.5 1 10 10
+}
+
+{ npc_death
+
+	setmodelbody 0 0
+	setmodelbody 1 0
+}
+
+{ npc_struck
+
+	if ( $get(ent_laststruck,isplayer) == 0 ) callevent To_battle
+
+}
+
+{ [override] helena_flee
+
+	//Dorfgon doesn't run - he fights back
+}
+
+{ [override] helena_raid_go //called by helena/helena when bad guys come to down
+
+	setmodelbody 0 0
+	setmodelbody 1 0
+	setvar FIGHTING 1
+	setvard CAN_ATTACK 1
+	setvard CAN_HUNT 1
+	setvard ANIM_ATTACK beatdoor
+
+	setorigin ent_me (759,749,164)
+
+	hearingsensitivity 4
+
+	setvard HELENA_SAVED 0
+	if ( NPC_HOME_LOC equals 'NPC_HOME_LOC' )
+	{
+		//only set once
+		setvard NPC_HOME_LOC game.monster.origin
+		setvard NPC_HOME_ANG game.monster.angles
+	}
+	invincible  0
+	roam 1
+	setmoveanim run
+	setidleanim idle1
+
+	//close shop
+	menu.autoopen 0
+	setvard STORE_CLOSED 1
+}
+
+{
+repeatdelay 1.0
+
+	//attack hack
+
+	if $get(ent_me,isalive)
+
+	if FIGHTING
+
+	setmoveanim run
+	setidleanim idle1
+
+	if $get(NPCATK_TARGET,isalive)
+	if $get(NPCATK_TARGET,range) < ATTACK_RANGE
+	playanim once ANIM_ATTACK
+	callevent npcatk_dodamage NPCATK_TARGET ATTACK_HITRANGE 20.0 80% blunt
+
+	if $cansee(enemy)
+	callevent npcatk_setmovedest ent_lastseen 32 "internal"
+
+}
+
+{ [override] helena_raid_end //called by helena/helena when all bad guys are dead
+
+	callevent npcatk_clear_targets
+	//go home, if can't get home in 60 seconds, teleport
+	setvard HELENA_TELE_HOME_TIME game.time
+	add HELENA_TELE_HOME_TIME 30.0
+	invincible 1
+	callevent return_home
+}
+
+{ [override] helena_made_it_home
+
+	setvard FIGHTING 0
+	setmodelbody 0 1
+	setmodelbody 1 2
+	setidleanim	smith_hammer_time
+
+	setorigin ent_me NPC_HOME_LOC
+	local OLD_YAW $vec.yaw(NPC_HOME_ANG)
+	setangle face $vec(0,OLD_YAW,0)
+
+	setmovedest none
+
+	roam 0
+
+	npcstore.remove STORE_NAME allitems
+	callevent vendor_addstoreitems
+
+	//re-open store at reduced prices
+	if HELENA_SAVED
+	setvard OVERCHARGE 75%
+	setvard SELL_RATIO 1.0	
+	setvard STORE_CLOSED 0
+	menu.autoopen 1
+}
+
+{ vendor_addstoreitems
+
+	//from edana/armorer
+   //           |Store name|   |Item name|	       |Quantity|	|cost| |Sell ratio|
+   addstoreitem  STORE_NAME		skin_ratpelt	 	0		100	1.0
+   addstoreitem  STORE_NAME     skin_boar		0		100	1.0
+   addstoreitem  STORE_NAME     skin_boar_heavy	 	0		100	1.0
+   addstoreitem  STORE_NAME     skin_bear	 	0		100	1.0
+
+   addstoreitem  STORE_NAME     armor_leather_torn 	$rand(1,2)	OVERCHARGE	SELL_RATIO
+   addstoreitem  STORE_NAME     armor_leather		$rand(1,2)	OVERCHARGE	SELL_RATIO
+   addstoreitem  STORE_NAME     armor_leather_studded	$rand(0,1)	OVERCHARGE	SELL_RATIO
+   addstoreitem  STORE_NAME     armor_plate   	 	$rand(0,2)	OVERCHARGE	SELL_RATIO
+   addstoreitem  STORE_NAME     armor_helm_plate 	$rand(0,2)	OVERCHARGE	SELL_RATIO
+   addstoreitem  STORE_NAME     shields_ironshield  	$rand(0,3)	OVERCHARGE	0.25
+   addstoreitem  STORE_NAME     shields_buckler  	$rand(0,3)	OVERCHARGE	SELL_RATIO
+
+   if( $rand(0,3) == 0 ) addstoreitem  STORE_NAME     armor_golden	0		100	SELL_RATIO
+   if( $rand(0,3) == 0 ) addstoreitem  STORE_NAME     armor_helm_golden 0		100	SELL_RATIO
+   if( $rand(0,2) == 0 ) addstoreitem  STORE_NAME     armor_dark	0		100	SELL_RATIO
+   if( $rand(0,2) == 0 ) addstoreitem  STORE_NAME     armor_helm_dark	0		100	SELL_RATIO
+}
+
+{ basevendor_offerstore
+	if !HELENA_SAVED
+	saytext I'll buy any good animal skins you have as well.
+}
+
+{
+   eventname trade_success
+
+   if CANCHAT equals 1
+
+   say goods[.56] [.4] [.58] [.66]
+   setvar CANCHAT 0
+}
+
+
+{ civilian_attacked
+	setvard FIGHTING 1
+}
+
+{ my_target_died
+	if !$cansee(enemy)
+	callevent return_home
+}
+
+{ combat_mode
+
+	setmodelbody 0 0
+	setmodelbody 1 0
+	setvar FIGHTING 1
+	setvard CAN_ATTACK 1
+	setvard CAN_HUNT 1
+	setvard NOT_AGRO 0
+	setvard ANIM_ATTACK beatdoor
+
+	if ( NPC_HOME_LOC equals 'NPC_HOME_LOC' )
+	{
+		//only set once
+		setvard NPC_HOME_LOC game.monster.origin
+		setvard NPC_HOME_ANG game.monster.angles
+	}
+
+	invincible  0
+	roam 1
+	setmoveanim run
+	setidleanim idle1
+
+	//close shop
+	menu.autoopen 0
+	setvard STORE_CLOSED 1
+}
+
+{ return_home
+
+	if NOT_AGRO
+	if FIGHTING
+	setmovedest NPC_HOME_LOC 10
+	if ( $dist(NPC_HOME_LOC,game.monster.origin) < 30 ) local TELE_HOME 1
+	if ( game.time > HELENA_TELE_HOME_TIME ) local TELE_HOME 1
+	if ( TELE_HOME ) callevent helena_made_it_home
+	if !TELE_HOME
+	callevent 5.0 return_home
+	
+}
+
+{ npcatk_clear_targets
+	setvard NOT_AGRO 1
+}
+
+{ npc_targetsighted
+	setvard NOT_AGRO 0
+}
+
+
+{ helena_raid_end
+	setvard HELENA_SAVED 1
+}
+
+{ [override] npcatk_ally_alert
+	//only goes after orcs
+}
+
+{ [override] civilian_attacked //PARAM1 Attacker ID PARAM2 isplayer - called from NPC's with base_civlian when attacked / killed
+
+	////dbg temp Responding to attacked civilian?
+
+	local OFFENDER PARAM1
+
+	if !$get(OFFENDER,isplayer) //blacksmith lets the guards handle player bandits
+
+	if $get(OFFENDER,race) isnot hguard //don't attack friends who accidentally cause 'collateral damage'
+
+	if $get(OFFENDER,range) <= BG_MAX_HEAR_CIV //resond only to civilians within a certain range
+
+	if NPCATK_TARGET equals unset //do not break off current attack to save civi
+	if !NPC_MOVING_LAST_KNOWN
+
+ 	setvard NO_STUCK_CHECKS 0
+	callevent npcatk_settarget PARAM1
+
+
+	////dbg temp Responding to murderer $get(PARAM1,name)
+
+	if $cansee(NPCATK_TARGET)
+	saytextrange 1024
+	local RAND_HALT $rand(1,4)
+	if ( RAND_HALT == 1 ) saytext Hey you! Leave him alone!
+	if ( RAND_HALT == 2 ) saytext You there, leave him be I said!
+	if ( RAND_HALT == 3 ) saytext Stop that!
+	if ( RAND_HALT == 4 ) saytext Halt! We'll have no trouble making around here!
+}
+
+{ game_playerused
+	if $item_exists(PARAM1,smallarms_rd)
+
+	if game.time > NEXT_DAGGER_CHAT
+	setvard NEXT_DAGGER_CHAT game.time
+	add NEXT_DAGGER_CHAT 60.0
+	callevent dagger_chat
+}
+
+{ dagger_chat
+
+	if ( BUSY_CHATTING ) callevent 1.0 dagger_chat
+	if !BUSY_CHATTING
+	setvard CHAT_STEP1 "Oh wow, I think that rusted dagger you have there might be one of those ancient ether daggers."
+	setvard CHAT_STEP2 "Back in the Age of Blood, some of the elvish armies used those. The blade passes through armor as if it weren't even there."
+	setvard CHAT_STEP3 "I wish I could fix it up for you, but alas, my elbow joints can't take that kind of stress anymore."
+	setvard CHAT_STEP4 "If only I was young again..."
+	setvard CHAT_STEPS 4
+	callevent chat_loop
+}
+
+{ game_menu_getoptions
+	if $item_exists(PARAM1,smallarms_rd)
+	local reg.mitem.title "About Rusted Dagger"
+	local reg.mitem.type callback
+	local reg.mitem.callback  dagger_chat
+	menuitem.register
+}

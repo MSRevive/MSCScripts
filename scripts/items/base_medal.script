@@ -1,0 +1,62 @@
+//Medals are reserved for their owners, set by creator/GM on spawn
+//They display a special effect when activated
+
+{
+	const MODEL_WORLD misc/p_misc.mdl
+	const MODEL_HANDS misc/p_misc.mdl
+
+	const FREQ_EFFECT 21.0
+}
+
+#include items/base_miscitem
+
+{ game_spawn
+	sethudsprite trade 80
+	callevent medal_spawn
+}
+
+{ game_fall
+	if game.serverside
+	if !BM_OWNER_SET
+	setvard BM_OWNER_SET 1
+	array.create PICKUP_ALLOW_LIST
+	array.add PICKUP_ALLOW_LIST $get(ent_owner,id)
+}
+
+{ game_restricted
+	local OUT_MSG "This trophy is reserved for "
+	local ITEM_OWNER $get_array(PICKUP_ALLOW_LIST,0)
+	stradd OUT_MSG $get(ITEM_OWNER,name)
+	infomsg PARAM1 "Item Damagepoint Restricted" OUT_MSG
+}
+
+{ ext_set_owner //<player>
+	//local WINNING_PLAYER $get(GAME_MASTER,scriptvar,'GM_MEDAL_OWNER')
+	dbg Owner set $get(PARAM1,name)
+	array.create PICKUP_ALLOW_LIST
+	array.add PICKUP_ALLOW_LIST PARAM1
+	setvard BM_OWNER_SET 1
+}
+
+{ game_deploy
+	setvard MEDAL_DEPLOY_TIME game.time
+	add MEDAL_DEPLOY_TIME 1.0
+	//so do don't accidentally activate it when pulling out of pack
+}
+
+{ game_attack1
+	if game.serverside
+
+	if game.time > MEDAL_DEPLOY_TIME
+
+	if ( game.time > MEDAL_NEXT_EFFECT )
+	{
+		setvard MEDAL_NEXT_EFFECT game.time
+		add MEDAL_NEXT_EFFECT FREQ_EFFECT
+		callevent medal_activate
+	}
+	else
+	{
+		dplayermessage ent_owner "You must wait a bit before showing off this medal again."
+	}
+}

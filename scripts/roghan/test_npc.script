@@ -1,0 +1,79 @@
+
+{
+
+	setvar ANIM_RUN run	//walk anim
+	setvar ANIM_WALK walk	//run anim
+	setvar ANIM_IDLE idle1	//idle anim
+	
+	const NPC_MODEL npc/balancepriest1.mdl
+	precache NPC_MODEL
+}
+
+#include monsters/base_monster_new
+
+{ npc_spawn
+
+	name an|Ancient Jailer
+
+	race beloved  			
+
+
+	hp 1000				
+
+	setmodel NPC_MODEL	
+	width 32					
+	height 72
+	
+	setmoveanim ANIM_RUN
+	setidleanim ANIM_IDLE
+
+	invincible 1
+	
+	callevent npcatk_suspend_ai
+	
+	setvard FIGHT_STARTED 0
+	setvard KEEP_PLAYERS_WARM_ACTIVE 1
+	
+	catchspeech begin_fight start 
+}
+
+{ begin_fight
+	if ( FIGHT_STARTED == 0 )
+	{
+		setvard MY_LOC $get(ent_me,origin)
+		callexternal ent_creationowner begin_float
+		add FIGHT_STARTED 1
+		callevent keep_players_warm_loop
+		saytext Heroes! Stay near me and I will protect you from his ice!
+	}
+}
+
+{ res_circle
+	clientevent new all effects/sfx_seal MY_LOC 172 26 3
+	local L_FX_ORIGIN MY_LOC
+    vectorset L_FX_ORIGIN z $get_ground_height(MY_LOC)
+}
+// Below is the frost resistance loop, as of now it does not work at all
+{ keep_players_warm_loop
+   if KEEP_PLAYERS_WARM_ACTIVE
+   callevent 3.0 keep_players_warm_loop
+   setvard PLAYER_LIST ''
+   getplayersnb PLAYER_LIST
+   calleventloop $get_token_amt(PLAYER_LIST) check_can_warm_players
+   callevent res_circle
+}
+
+{ check_can_warm_players
+   local CUR_TARG $get_token(PLAYER_LIST,game.script.iteration)
+   if ( $get(CUR_TARG,range) < 256 )
+   {
+      callexternal CUR_TARG ext_register_element warm cold 99
+	  gplayermessage CUR_TARG You are now protected from ICE!
+   }
+   else
+   {
+      callexternal CUR_TARG ext_register_element warm remove
+	  gplayermessage CUR_TARG You are no longer protected from ICE!
+      //removes the above effect, if it exists: ext_register_element  <effect_id_tag> <remove>
+   }
+}

@@ -1,0 +1,104 @@
+#scope server
+{
+	const MONSTER_HP 500
+	const DMG_SPLODIE 200
+	const DOT_COLD 30
+	const CUSTOM_DAMAGE 1
+
+	const NO_DIVE 1
+}
+
+#include monsters/lost_soul
+
+{ [override] [shared] skull_spawn
+
+	name a|Lost Soul
+	race demon
+	if ( MONSTER_HP equals 'MONSTER_HP' )
+	{
+		hp 300
+	}
+	else
+	{
+		hp MONSTER_HP
+	}
+	blood none
+	width 16
+	height 16
+	setmodel monsters/skull.mdl
+	setidleanim idle
+	setmoveanim idle
+	hearingsensitivity 11
+	roam 1
+	fly 1
+	takedmg poison 0.0
+	takedmg holy 4.0
+	takedmg cold 0.0
+
+	setvard IMMUNE_VAMPIRE 1
+
+	setvard COUNT_ATK 0
+
+	setprop ent_me skin 1
+
+	//effect glow ent_me (128,128,255) 10 -1
+}
+
+{ [override] skull_death
+	setvard DEATH_TIME game.time
+	setvard AM_DEAD 1
+	add DEATH_TIME 0.2
+	setprop ent_me rendermode 5
+	setprop ent_me renderamt 0
+	local SPLODE_POS $relpos(0,0,0)
+	clientevent new all effects/sfx_splodie SPLODE_POS (128,128,255)
+	setvard DEATH_ATTACK 1
+	//dodamage SPLODE_POS 128 DMG_SPLODE 100% 0 reflective poison
+	xdodamage SPLODE_POS 128 DMG_SPLODE 0 ent_me ent_me none blunt
+}
+
+{ game_dodamage
+
+	if ( DEATH_ATTACK )
+	{
+		if game.time < DEATH_TIME //delay so poison effect doesnt keep pushing player
+		if $get(PARAM2,isalive)
+		if $get(PARAM2,relationship,ent_me) equals enemy
+		local TARGET_ORG $get(PARAM2,origin)
+		local TARG_ANG $angles(game.monster.origin,TARGET_ORG)
+		local NEW_YAW TARG_ANG
+		setvelocity PARAM2 $relvel($vec(0,NEW_YAW,0),$vec(0,1000,0))
+		applyeffect PARAM2 effects/effect_frostbite_dmg 5.0 $get(ent_me,id) DOT_COLD
+	}
+	else
+	{
+		if PARAM1
+		if $get(ent_me,isalive)
+		if $get(PARAM2,isalive)
+		addvelocity PARAM2 $relvel(20,200,10)
+		applyeffect PARAM2 effects/effect_frostbite_dmg 5.0 $get(ent_me,id) DOT_COLD
+	}
+}
+
+{ [override] game_dynamically_created //<owner> <str> <duration>
+
+	setvard MY_OWNER PARAM1
+	race $get(MY_OWNER,race)
+	setvard AM_SUMMONED 1
+
+	setmonsterclip 0
+
+	if ( $get(MY_OWNER,race) equals 0 ) race demon
+
+	if ( PARAM2 isnot 'PARAM2' )
+	{
+		dmgmulti PARAM2
+		multiply MONSTER_HP PARAM2
+	}
+
+	hp MONSTER_HP
+
+	if PARAM3 isnot 'PARAM3'
+	local GO_BOOM PARAM3
+	callevent GO_BOOM self_destruct
+}

@@ -1,0 +1,564 @@
+#scope server
+//Monster script has a few interesting features
+//- Crawls on ceiling (though can't attack from there)
+//- Crawls on Ground
+//- Charging run attack
+//- Red blood CL beam-claws (maybe)
+{
+	setvard NPC_GIVE_EXP 500
+	const SKELE_SKIN 0
+
+	setvard NPC_JUMPER 0
+	const ANIM_NPC_JUMP attack2
+	const SOUND_NPC_JUMP monsters/undeadz/c_skeleton_slct.wav
+
+	const USES_PROJECTILE 0
+	const PROJECTILE_SCRIPT proj_fire_ball
+	const FREQ_PROJECTILE $randf(5.0,10.0)
+	const DMG_PROJECTILE 200
+	const PROJECTILE_SPEED 200
+
+	setvar ANIM_RUN anim_run //frame_claw_on frame_run_swipe frame_run_swipe frame_claw_off
+	setvar ANIM_WALK walk
+	setvar ANIM_IDLE idle1
+	setvard ANIM_ATTACK attack1 
+	setvard ANIM_DEATH anim_death_stand
+
+	const ANIM_MOVE_CEILING anim_ceiling_move //frame_ceiling_move
+	const ANIM_IDLE_CEILING anim_ceiling_idle
+	const ANIM_DEATH_CEILING anim_death_ceiling
+	const ANIM_PROJECTILE_CEILING anim_ceiling_projectile //frame_ceiling_projectile
+
+	const ANIM_MOVE_CRAWL anim_crawl_floor
+	const ANIM_IDLE_CRAWL anim_crawl_idle //half-assed
+	const ANIM_ATTACK_CRAWL anim_crawl_strike //frame_rclaw_on frame_floor_swipe frame_rclaw_off
+	const ANIM_DEATH_CRAWL anim_death_floor
+	const ANIM_PROJECTILE_CRAWL anim_crawl_strike
+
+	const ANIM_RUN_STAND anim_run //frame_claw_on frame_run_swipe frame_run_swipe frame_claw_off
+	const ANIM_WALK_STAND walk
+	const ANIM_IDLE_STAND idle1
+	const ANIM_ATTACK_STAND attack1 //frame_claw_on frame_swipe frame_swipe frame_claw_off
+	const ANIM_ATTACK_SLAM attack2 //(standard stand attack preriodically switches to this) frame_claw_on frame_slam frame_claw_off
+	const ANIM_DEATH_STAND anim_death_stand
+	const ANIM_PROJECTILE_STAND attack2
+
+	const ANIM_STAND2CRAWL anim_leapback2crawl
+	const ANIM_STAND2CEILING anim_stand2ceiling
+	const ANIM_CRAWL2STAND anim_crawl2stand
+	const ANIM_CEILING2STAND anim_ceiling2floor
+
+	setvar STANCE_MODE unset
+	const FREQ_STANCE_CHANGE $randf(20.0,40.0)
+
+	const DMG_CLAW $randf(150,200)
+	const DMG_CLAW_TYPE slash
+	const DMG_CLAW_EFFECT none
+	const DMG_CLAW_EFFECT_DUR 5.0
+	const DMG_CLAW_EFFECT_DOT 50
+
+	const CLAWFX_WIDTH 20
+	const CLAWFX_COLOR (255,0,0)
+	const CLAWFX_SPRITE claw.spr
+
+	const BPAIN_USE_PAIN 1
+	const BPAIN_USE_FLINCH 1
+	const BPAIN_FREQ_FLINCH $randf(10.0,20.0)
+	const BPAIN_FLINCH_HEALTH 0.9
+	const BPAIN_FLINCH_TOKENS "flinchsmall;flinch;bigflinch;laflinch;raflinch;llflinch;rlflinch"
+	const SOUND_STRUCK1 weapons/cbar_hitbod1.wav
+	const SOUND_STRUCK2 weapons/cbar_hitbod2.wav
+	const SOUND_STRUCK3 weapons/cbar_hitbod3.wav
+	const SOUND_PAIN1 monsters/undeadz/c_skeleton_hit1.wav
+	const SOUND_PAIN2 monsters/undeadz/c_skeleton_hit2.wav
+
+	const SOUND_ALERT1 monsters/undeadz/c_skeleton_bat1.wav
+	const SOUND_ALERT2 monsters/undeadz/c_skeleton_bat2.wav
+
+	const SOUND_ATTACK1 monsters/undeadz/c_skeleton_atk1.wav
+	const SOUND_ATTACK2 monsters/undeadz/c_skeleton_atk2.wav
+	const SOUND_ATTACK3 monsters/undeadz/c_skeleton_atk3.wav
+
+	const SOUND_SWIPE zombie/claw_miss2.wav
+
+	const SOUND_DEATH monsters/undeadz/c_skeleton_dead.wav
+
+	const SOUND_LOOK monsters/undeadz/c_skeleton_slct.wav
+
+	const MONSTER_MODEL monsters/skeleton_ravenous.mdl
+}
+
+#include monsters/base_monster_new
+#include [server] monsters/base_pain //new flinch/struck base, sick of doing this
+#include monsters/base_jumper
+
+{ game_precache
+	precache claw.spr
+}
+
+{ npc_spawn
+
+	callevent skele_spawn
+	callevent 1.0 finalize_stance
+}
+
+{ skele_spawn
+	name a|Skeletal Ravager
+	setmodel MONSTER_MODEL
+	hp 4000
+	width 32
+	height 72
+	race undead
+	blood none
+	takedmg poison 0.0
+	takedmg blunt 1.5
+	takedmg slash 1.0
+	takedmg pierce 0.75
+	takedmg lightning 0.5
+	takedmg cold 0.5
+	takedmg holy 2.0
+	roam 1
+	hearingsensitivity 4
+}
+
+{ finalize_stance
+	if STANCE_MODE equals unset 
+
+	//no stance set, pick one
+
+
+	setvard NEXT_STANCE_CHANGE game.time
+	add NEXT_STANCE_CHANGE FREQ_STANCE_CHANGE
+
+	callevent ceiling_check	
+	if ( CAN_REACH_CEILING )
+	{
+		setvard STANCE_MODE ceiling //skips anim
+		callevent ceiling_mode
+	}
+
+	if STANCE_MODE equals unset //couldn't do ceiling, do stand
+	setvard STANCE_MODE stand //skips anim
+	callevent stand_mode
+}
+
+{ set_start_ceiling
+	setvard STANCE_MODE ceiling //so we don't play the related anims
+	callevent ceiling_mode
+}
+
+{ set_start_crawl
+	setvard STANCE_MODE crawl //so we don't play the related anims
+	callevent crawl_mode
+}
+
+{ set_start_stand
+	setvard STANCE_MODE stand
+	callevent stand_mode
+}
+
+{ set_no_ceiling
+	setvard NO_CEILING 1
+}
+
+{ ceiling_mode
+	setvard AS_ATTACKING game.time
+	add AS_ATTACKING 5.0
+	playanim break
+	setvard NPC_JUMPER 0
+	setvard NPC_NO_ATTACK 1
+	setvard BPAIN_CAN_FLINCH 0 //I has no ceiling flinch anims
+	local L_PREV_STANCE STANCE_MODE
+	setvard STANCE_MODE ceiling
+ 	setvard ANIM_IDLE ANIM_IDLE_CEILING
+	setvard ANIM_WALK ANIM_MOVE_CEILING
+	setvard ANIM_RUN ANIM_MOVE_CEILING
+	setvard ANIM_DEATH ANIM_DEATH_CEILING
+	setvard ANIM_ATTACK none //can't attack from here
+	setvard ANIM_PROJECTILE ANIM_PROJECTILE_CEILING
+	setidleanim ANIM_IDLE
+	setmoveanim ANIM_WALK
+	if ( L_PREV_STANCE equals stand )
+	{
+		playsound 0 10 SOUND_LOOK
+		playanim critical ANIM_STAND2CEILING
+		callevent 1.0 ceiling_mode2
+	}
+	else
+	{
+		callevent ceiling_mode2
+	}
+}
+
+{ ceiling_mode2
+	setvard BPAIN_CAN_FLINCH 1
+ 	gravity -1.0
+	addvelocity ent_me $relvel(0,0,10000)
+}
+
+{ stand_mode
+	setvard AS_ATTACKING game.time
+	add AS_ATTACKING 5.0
+	playanim break
+	setvard NPC_JUMPER 1
+	setvard NPC_NO_ATTACK 0
+	callevent bflinch_suspend_flinch 2.0
+	local L_PREV_STANCE STANCE_MODE
+	setvard STANCE_MODE stand
+ 	setvard ANIM_IDLE ANIM_IDLE_STAND
+	setvard ANIM_WALK ANIM_WALK_STAND
+	setvard ANIM_RUN ANIM_RUN_STAND
+	setvard ANIM_DEATH ANIM_DEATH_STAND
+	setvard ANIM_ATTACK ANIM_ATTACK_STAND
+	setvard ANIM_PROJECTILE ANIM_PROJECTILE_STAND
+	setidleanim ANIM_IDLE
+	setmoveanim ANIM_WALK
+	if ( L_PREV_STANCE equals crawl )
+	{
+		playsound 0 10 SOUND_LOOK
+		playanim critical ANIM_CRAWL2STAND
+	}
+	else
+	{
+		if L_PREV_STANCE equals ceiling
+		playsound 0 10 SOUND_LOOK
+		playanim critical ANIM_CEILING2STAND
+	}
+	gravity 1
+}
+
+{ crawl_mode
+	setvard AS_ATTACKING game.time
+	add AS_ATTACKING 5.0
+	playanim break
+	setvard NPC_JUMPER 0
+	setvard NPC_NO_ATTACK 0
+	setvard BPAIN_CAN_FLINCH 0 //I has no crawling flinch anims
+	local L_PREV_STANCE STANCE_MODE
+	setvard STANCE_MODE crawl
+ 	setvard ANIM_IDLE ANIM_IDLE_CRAWL
+	setvard ANIM_WALK ANIM_MOVE_CRAWL
+	setvard ANIM_RUN ANIM_MOVE_CRAWL
+	setvard ANIM_DEATH ANIM_DEATH_CRAWL
+	setvard ANIM_ATTACK ANIM_ATTACK_CRAWL
+	setvard ANIM_PROJECTILE ANIM_PROJECTILE_CRAWL
+	setidleanim ANIM_IDLE
+	setmoveanim ANIM_WALK
+	if ( L_PREV_STANCE equals stand )
+	{
+		playsound 0 10 SOUND_LOOK
+		playanim critical ANIM_STAND2CRAWL
+	}
+	gravity 1
+}
+
+{ frame_swipe
+	callevent did_attack
+
+	add SWIPE_COUNT 1
+	if ( SWIPE_COUNT > 3 )
+	{
+		if STANCE_MODE stand //should always be, but just in case
+		setvard ANIM_ATTACK ANIM_ATTACK_SLAM
+		setvard SWIPE_COUNT 0
+	}
+
+	if ( DMG_CLAW_EFFECT equals none )
+	{
+		dodamage NPCATK_TARGET ATTACK_HITRANGE DMG_CLAW 90% slash
+	}
+	else
+	{
+		xdodamage NPCATK_TARGET ATTACK_HITRANGE DMG_CLAW 90% ent_me ent_me none slash dmgevent:claw
+	}
+}
+
+{ frame_slam
+	callevent did_attack
+
+	local L_SLAM_DMG DMG_CLAW
+	multiply L_SLAM_DMG 1.5
+	xdodamage NPCATK_TARGET ATTACK_HITRANGE L_SLAM_DMG 90% ent_me ent_me none slash dmgevent:slam
+
+	if ( USING_PROJECTILE ) callevent do_projectile $get(ent_me,attachpos,0)
+
+	if STANCE_MODE stand //should always be, but just in case
+	setvard ANIM_ATTACK ANIM_ATTACK_STAND
+	setvard SWIPE_COUNT 0 //redundancy
+}
+
+{ frame_floor_swipe
+	callevent did_attack
+	local L_DMG_CLAW DMG_CLAW
+	multiply L_DMG_CLAW 1.5 //attack is much slower
+	xdodamage NPCATK_TARGET ATTACK_HITRANGE L_DMG_CLAW 90% ent_me ent_me none slash dmgevent:clawfloor
+	if ( USING_PROJECTILE ) callevent do_projectile $get(ent_me,attachpos,0)
+}
+
+{ frame_run_swipe
+	if ( DMG_CLAW_EFFECT equals none )
+	{
+		dodamage NPCATK_TARGET ATTACK_HITRANGE DMG_CLAW 80% slash
+	}
+	else
+	{
+		xdodamage NPCATK_TARGET ATTACK_HITRANGE DMG_CLAW 80% ent_me ent_me none slash dmgevent:claw
+	}
+}
+
+{ clawfloor_dodamage
+
+	if PARAM1
+	addvelocity PARAM2 $relvel(0,300,110)
+
+	if DMG_CLAW_EFFECT isnot none
+	if $get(PARAM2,relationship,ent_me) equals enemy
+	applyeffect PARAM2 DMG_CLAW_EFFECT DMG_CLAW_EFFECT_DUR $get(ent_me,id) DMG_CLAW_EFFECT_DOT
+}
+
+{ claw_dodamage
+	if PARAM1
+	if $get(PARAM2,relationship,ent_me) equals enemy
+	applyeffect PARAM2 DMG_CLAW_EFFECT DMG_CLAW_EFFECT_DUR $get(ent_me,id) DMG_CLAW_EFFECT_DOT
+}
+
+{ slam_dodamage
+	if PARAM1
+	if $get(PARAM2,relationship,ent_me) equals enemy
+
+	addvelocity PARAM2 $relvel(0,400,110)
+	applyeffect PARAM2 effects/effect_stun 3.0 0 1 $get(ent_me,id)
+
+	if DMG_CLAW_EFFECT isnot none
+	applyeffect PARAM2 DMG_CLAW_EFFECT DMG_CLAW_EFFECT_DUR $get(ent_me,id) DMG_CLAW_EFFECT_DOT
+}
+
+{ did_attack
+	//reset stance to ceiling timer
+	if !NO_CEILING
+	if STANCE_MODE equals stand
+	setvard NEXT_CEILING game.time
+	add NEXT_CEILING 10.0
+}
+
+{ npc_targetsighted
+
+	if ( USES_PROJECTILE )
+	{
+		if $get(NPCATK_TARGET,range) > ATTACK_HITRANGE
+		if game.time > NEXT_PROJECTILE
+		setvard NEXT_PROJECTILE game.time
+		add NEXT_PROJECTILE FREQ_PROJECTILE
+		setvard USING_PROJECTILE 1
+		setvard AS_ATTACKING game.time
+		add AS_ATTACKING 5.0
+		playanim once ANIM_PROJECTILE
+	}
+
+	if !DID_INTRO
+	setvard NEXT_STANCE_CHANGE game.time
+	add NEXT_STANCE_CHANGE FREQ_STANCE_CHANGE
+	playrandomsound 0 10 SOUND_ALERT1 SOUND_ALERT2
+	setvard DID_INTRO 1
+
+	if STANCE_MODE equals ceiling
+	playanim critical ANIM_IDLE
+}
+
+{ npcatk_hunt
+
+	if !SUSPEND_AI
+
+	if ( STANCE_MODE equals ceiling )
+	{
+		local MY_ORG $get(ent_me,origin)
+		addvelocity ent_me $relvel(0,0,100)
+		if $get_under_sky(MY_ORG) //hit some sky, drop down
+		setvard NEXT_STANCE_CHANGE game.time
+		add NEXT_STANCE_CHANGE FREQ_STANCE_CHANGE
+		callevent stand_mode
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	if ( NPCATK_TARGET isnot unset )
+	{
+		//drop to floor if target close
+		if ( STANCE_MODE equals ceiling )
+		{
+			if $get(NPCATK_TARGET,range2D) < 256
+			//get their attention before dropping down
+			playanim critical ANIM_IDLE
+			playrandomsound 0 10 SOUND_ALERT1 SOUND_ALERT2
+			callevent 1.5 stand_mode
+			setvard NEXT_STANCE_CHANGE game.time
+			add NEXT_STANCE_CHANGE FREQ_STANCE_CHANGE
+			local EXIT_SUB 1
+		}
+		if !EXIT_SUB
+
+		//stand up if crawling, and target too far
+		if ( STANCE_MODE equals crawl )
+		{
+			if $get(NPCATK_TARGET,range2D) > 512
+			callevent stand_mode
+			setvard NEXT_STANCE_CHANGE game.time
+			add NEXT_STANCE_CHANGE FREQ_STANCE_CHANGE
+			local EXIT_SUB 1
+		}
+		if !EXIT_SUB
+
+		if ( STANCE_MODE equals stand )
+		{
+			//seems this should be happening automatically, hrmm...
+			if ( $get(NPCATK_TARGET,range) < ATTACK_RANGE )
+			{
+				setmoveanim ANIM_WALK
+			}
+			else
+			{
+				setmoveanim ANIM_RUN
+			}
+		}
+	}
+	if !EXIT_SUB
+
+	if ( game.time > NEXT_STANCE_CHANGE )
+	{
+		//randomly go to crawl in combat
+		if ( STANCE_MODE equals stand )
+		{
+			if NPCATK_TARGET isnot unset
+			if $get(NPCATK_TARGET,range) < 128
+			callevent crawl_mode
+			setvard NEXT_STANCE_CHANGE game.time
+			add NEXT_STANCE_CHANGE FREQ_STANCE_CHANGE
+			local EXIT_SUB 1
+		}
+		if !EXIT_SUB
+
+		//ceiling, if available, and no attackers near by
+		if ( STANCE_MODE equals stand )
+		{
+			if NPCATK_TARGET isnot unset
+			if $get(NPCATK_TARGET,range2D) > 256
+			callevent ceiling_check	
+			if CAN_REACH_CEILING
+			callevent ceiling_mode
+			setvard NEXT_STANCE_CHANGE game.time
+			add NEXT_STANCE_CHANGE FREQ_STANCE_CHANGE
+			local EXIT_SUB 1
+		}
+		if !EXIT_SUB
+
+		if ( STANCE_MODE equals crawl )
+		{
+			callevent stand_mode
+			setvard NEXT_STANCE_CHANGE game.time
+			add NEXT_STANCE_CHANGE FREQ_STANCE_CHANGE
+		}
+	}
+}
+
+{ frame_rclaw_on
+	callevent attack_sound $randf(80,125)
+	effect beam follow CLAWFX_SPRITE ent_me 1 CLAWFX_WIDTH 1.0 255 CLAWFX_COLOR
+}
+
+{ frame_lclaw_on
+	callevent attack_sound $randf(80,125)
+	effect beam follow CLAWFX_SPRITE ent_me 2 CLAWFX_WIDTH 1.0 255 CLAWFX_COLOR
+}
+
+
+//beams are not showing on these two for some reason
+{ frame_rclaw_on2
+	callevent attack_sound $randf(125,175)
+	effect beam follow CLAWFX_SPRITE ent_me 1 CLAWFX_WIDTH 1.0 255 CLAWFX_COLOR
+}
+
+{ frame_lclaw_on2
+	callevent attack_sound $randf(125,175)
+	effect beam follow CLAWFX_SPRITE ent_me 2 CLAWFX_WIDTH 1.0 255 CLAWFX_COLOR
+}
+
+
+{ frame_claws_on
+	callevent attack_sound $randf(80,125)
+	effect beam follow CLAWFX_SPRITE ent_me 1 CLAWFX_WIDTH 1.0 255 CLAWFX_COLOR
+	effect beam follow CLAWFX_SPRITE ent_me 2 CLAWFX_WIDTH 1.0 255 CLAWFX_COLOR
+}
+
+{ attack_sound //miss pitch
+	if ( $rand(1,5) < 5 )
+	{
+		playsound 0 10 SOUND_SWIPE 0.8 PARAM1
+	}
+	else
+	{
+		playrandomsound 0 10 SOUND_ATTACK1 SOUND_ATTACK2 SOUND_ATTACK3
+	}
+}
+
+{ frame_leapback_boost
+	addvelocity ent_me $relpos(0,-400,110)
+}
+
+{ ceiling_check
+	setvard CAN_REACH_CEILING 0
+	local MY_ORG $get(ent_me,origin)
+	if !$get_under_sky(MY_ORG) //can't, under sky
+	local TRACE_START $get(ent_me,origin)
+	local TRACE_END TRACE_START
+	vectoradd TRACE_END z 512
+	local TRACE_LINE $get_traceline(TRACE_START,TRACE_END,worldonly)
+	if TRACE_LINE isnot TRACE_END //can't, ceiling too high
+	setvard CAN_REACH_CEILING 1
+}
+
+{ game_dynamically_created
+	if ( PARAM1 equals stand ) callevent set_start_stand
+	if ( PARAM1 equals crawl ) callevent set_start_crawl
+	if ( PARAM1 equals ceiling )
+	{
+		callevent set_start_ceiling
+		callevent npcatk_suspend_ai
+		callevent npc_suicide
+	}
+}
+
+{ game_death
+
+	if STANCE_MODE equals ceiling
+
+	setprop ent_me rendermode 5
+	setprop ent_me renderamt 0
+	clientevent new all monsters/cl_corpse $get(ent_me,index) 23 SKELE_SKIN 0 1
+//	if PARAM2 >= $get(ent_me,hp)
+//	addvelocity ent_me $relpos(0,0,-200)
+//	gravity 1.0
+//
+//	local GROUND_POS $get(ent_me,origin)
+//	vectorset GROUND_POS z $get_ground_height(GROUND_POS)
+//	setorigin ent_me GROUND_POS
+}
+
+{ do_projectile //<offset>
+	setvard USING_PROJECTILE 0
+	playsound 0 10 SOUND_PROJECTILE
+	tossprojectile NPCATK_TARGET PROJECTILE_SPEED DMG_PROJECTILE 5 PROJECTILE_SCRIPT PARAM1 notoffset
+	callevent npc_adjust_projectile
+}
+
+{ npcatk_jump
+	add NEXT_STANCE_CHANGE 5.0 //so we don't change stances in the air
+}
+
+{ frame_ceiling_projectile
+	callevent do_projectile $get(ent_me,attachpos,0)
+}
+
+//debug
+//{ game_damaged
+//	dbg hitgroup $get(ent_me,lasthitgroup) ang $get(ent_me,attachang,1)
+//}

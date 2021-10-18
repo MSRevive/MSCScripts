@@ -1,0 +1,163 @@
+//Cursed snake by Thothie (From Sidewinder)
+//- This is the variant humans summon, it does not respond to commands ala base summon
+{
+	setvar ANIM_WALK snake_walk
+	setvar ANIM_RUN snake_walk
+	setvard ANIM_DEATH snake_diesimple
+	setvar ANIM_IDLE snake_idle1
+	setvard ANIM_ATTACK snake_attack1
+	setvard ATTACK_RANGE 80
+	setvard ATTACK_HITRANGE 120
+	setvard ATTACK_MOVERANGE 35
+	const ATTACK_HITCHANCE 80%
+	const ATTACK_DAMAGE '$randf(5,20)'
+	const POISON_DAMAGE '$randf(2,10)'
+	const POISON_DURATION '$rand(10,20)'
+
+	const SOUND_ALERT monsters/snake_idle1.wav
+	const SOUND_IDLE monsters/snake_idle2.wav
+	const SOUND_ATTACK bullchicken/bc_bite2.wav
+	const SOUND_PAIN1 monsters/snake_pain1.wav
+	const SOUND_PAIN2 monsters/snake_pain2.wav
+	const SOUND_POISON monsters/snakeman/sm_alert1.wav
+	const SOUND_STRUCK debris/flesh2.wav
+
+	setvard NO_SPAWN_STUCK_CHECK 1
+
+	const MONSTER_MODEL monsters/giant_rat.mdl
+
+	const CYCLE_TIME_BATTLE 0.1
+	const CYCLE_TIME_IDLE 0.1
+	const CYCLE_TIME_NPC 0.1
+	setvard CYCLE_TIME CYCLE_TIME_BATTLE
+
+	setvard IMMUNE_STUN 1
+	setvard IMMUNE_POISON 1
+
+	setvard NPC_NO_PLAYER_DMG 1
+}
+
+#include monsters/base_monster_new
+
+{ npc_spawn
+
+	name a|Cursed Snake
+	hp 1
+	width 48
+	height 32
+	roam 0
+	race human
+	setmodel MONSTER_MODEL
+	setmodelbody 0 6
+	setidleanim ANIM_IDLE
+	setmoveanim ANIM_WALK
+	hearingsensitivity 4
+	callevent 1.0 idle_sounds
+	takedmg poison 0.0
+	setsolid none
+}
+
+{ idle_sounds
+
+	playsound 0 10 SOUND_IDLE
+	callevent $randf(5,10) idle_sounds	
+}
+
+{ bite1
+
+	//dbg bite1 $get(NPCATK_TARGET,name)
+	setvard BITE_SOUND 1
+	if $get(NPCATK_TARGET,range) < ATTACK_HITRANGE
+	//has to be direct, or traceline may damage itself!
+	xdodamage NPCATK_TARGET direct ATTACK_DAMAGE ATTACK_HITCHANCE MY_OWNER ent_me spellcasting.affliction pierce
+
+	//callevent npcatk_dodamage NPCATK_TARGET ATTACK_HITRANGE ATTACK_DAMAGE ATTACK_HITCHANCE ent_me
+
+}
+
+{ game_dodamage
+	if PARAM1
+
+	dbg game_dodamage $get(PARAM2,name)
+
+	if BITE_SOUND
+	setvard BITE_SOUND 0
+	if $rand(1,5) == 1
+	playsound 0 10 SOUND_POISON
+
+	dbg effect_poison $get(PARAM2,name)
+
+	local L_DOT POISON_DAMAGE
+	multiply L_DOT $get(MY_OWNER,skill.spellcasting.affliction)
+	multiply L_DOT 0.2
+	applyeffect PARAM2 effects/effect_poison POISON_DURATION MY_OWNER L_DOT
+	//storeentity ent_expowner MY_OWNER
+	callevent 0.1 npc_fade_away
+}
+
+{ game_struck
+
+	playrandomsound 0 10 SOUND_PAIN1 SOUND_PAIN2 SOUND_STRUCK SOUND_STRUCK
+}
+
+{ npcatk_targetvalidate
+
+	if ( $get(PARAM1,isplayer) ) setvard NPCATK_TARGET unset //invalidate players (cuz they can't hurt me)
+
+	if !DID_ALERT
+	playsound 0 10 SOUND_ALERT
+	roam 1
+	setvard DID_ALERT 1
+}
+
+{ my_target_died
+
+	//vanishes on kill
+	deleteent ent_me fade
+}
+
+//{ [override] npcatk_attack
+//
+//	setvard NPC_DELAYING_UNSTUCK NPC_UNSTUCK_DELAY //I've stopped moving to attack, I'm not stuck
+//
+//	if !ATTACK_DELAY
+//	playanim critical ANIM_ATTACK
+//	playsound 0 10 SOUND_ATTACK
+//	setvard ATTACK_DELAY 1
+//	callevent 1.0 reset_attack_delay
+//}
+//
+//{ reset_attack_delay
+//
+//	setvard ATTACK_DELAY 0
+//}
+
+{ game_dynamically_created
+	//dbg temp My owner is $get(ent_creationowner,name)
+
+	setvard MY_OWNER PARAM1
+	dbg game_dynamically_created $get(PARAM1,name)
+	local FIRST_TARG $get(MY_OWNER,target)
+	if ( $get(FIRST_TARG,isalive) )
+	{
+		if $get(FIRST_TARG,relationship,MY_OWNER) equals enemy
+		callevent npcatk_settarget $get(FIRST_TARG,id)
+	}
+	callevent 30.0 npc_fade_away
+	setangle face $get(MY_OWNER,angles)
+
+	setanim.movespeed 5.0
+	setanim.framerate 1.5
+	callevent 0.01 set_hp
+
+
+	if !$get(FIRST_TARG,isalive)
+	local FIRST_TARG $get_insphere(monster,1024)
+	if $get(FIRST_TARG,isalive)
+	if $get(FIRST_TARG,relationship,MY_OWNER) equals enemy
+	callevent npcatk_target FIRST_TARG
+}
+
+{ set_hp
+	hp $get(MY_OWNER,skill.spellcasting.affliction)
+}

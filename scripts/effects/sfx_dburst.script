@@ -1,0 +1,102 @@
+#scope client
+{
+	const MODEL_NAME weapons/projectiles.mdl
+	const MODEL_OFS 74
+
+	//const V_OFS -34
+	//const V_OFS_DUCK 24
+}
+
+{ client_activate //<origin> <aoe> <sound>
+
+	setvard FX_ORIGIN PARAM1
+	setvard FX_AOE PARAM2
+	setvard FX_ACTIVE 1
+
+	if ( PARAM3 )
+	{
+		if ( FX_AOE > 100 )
+		{
+			local L_SOUND magic/dburst_large_sdr_darkness.wav
+		}
+		else
+		{
+			local L_SOUND magic/dburst_sdr_blackout.wav
+		}
+		sound.play3d L_SOUND 10 FX_ORIGIN
+	}
+
+	//dbg *** $currentscript FX_ORIGIN FX_AOE
+
+	setvard MIN_SIZE 0.1
+	setvard MAX_SIZE FX_AOE
+	divide MAX_SIZE 90
+
+	setvard FX_LIGHT_RAD $math(multiply,FX_AOE,1.5)
+	setcallback render enable
+	cleffect light new FX_ORIGIN FX_LIGHT_RAD (255,0,255) 0.1
+	setvard FX_LIGHT_ID game.script.last_light_id
+
+	setvard CUR_SIZE 0
+	cleffect tempent model weapons/projectiles.mdl FX_ORIGIN make_aura update_aura
+	callevent 2.0 end_fx
+}
+
+{ game_prerender
+
+	if FX_ACTIVE
+	cleffect light FX_LIGHT_ID FX_ORIGIN $ratio(CUR_SIZE,FX_LIGHT_RAD,0) (255,0,255) 0.1
+	dbg *** $currentscript update_light CUR_SIZE $ratio(CUR_SIZE,FX_LIGHT_RAD,0)
+}
+
+{
+repeatdelay 0.01
+	if FX_ACTIVE
+	if CUR_SIZE <= 1
+	add CUR_SIZE 0.02
+	if ( CUR_SIZE > 1 ) setvard CUR_SIZE 1
+}
+
+{ end_fx
+	setvard FX_ACTIVE 0
+	callevent 2.0 remove_fx
+}
+
+{ remove_fx
+	removescript
+}
+
+{ update_aura
+
+	local L_REMOVE_AURA 0
+	if ( !FX_ACTIVE ) local L_REMOVE_AURA 1
+	if ( CUR_SIZE >= 1 ) local L_REMOVE_AURA 1
+
+	if ( L_REMOVE_AURA )
+	{
+		if ( FX_ACTIVE ) callevent end_fx
+		cleffect tempent set_current_prop origin $vec(10000,10000,10000)
+	}
+	else
+	{
+		cleffect tempent set_current_prop scale $ratio(CUR_SIZE,MIN_SIZE,MAX_SIZE)
+		//dbg *** $currentscript update_aura CUR_SIZE $ratio(CUR_SIZE,MIN_SIZE,MAX_SIZE)
+	}
+}
+
+{ make_aura
+	cleffect tempent set_current_prop death_delay 2.0
+	cleffect tempent set_current_prop body MODEL_OFS
+	cleffect tempent set_current_prop framerate 0.5
+	cleffect tempent set_current_prop sequence 8
+	cleffect tempent set_current_prop rendermode add
+	cleffect tempent set_current_prop renderamt 100
+	cleffect tempent set_current_prop scale 0.1
+	cleffect tempent set_current_prop gravity 0
+	cleffect tempent set_current_prop collide none
+	cleffect tempent set_current_prop frames 11
+	cleffect tempent set_current_prop angles $vec(0,90,0)
+	cleffect tempent set_current_prop velocity $vec(0,0,0)
+	cleffect tempent set_current_prop movetype 0
+}
+

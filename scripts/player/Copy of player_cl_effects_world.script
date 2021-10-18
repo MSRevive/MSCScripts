@@ -1,0 +1,130 @@
+//Manages the game world on the client
+//
+//Useful for handling global events clientside
+
+
+//Day/Night
+//==========
+
+{
+	const DAY_SKYNAME 	game.map.skyname
+	const DAY_SOUND		amb/birds01.wav
+	const DAY_START_HOUR	6
+	const DAY_STATE		day
+	const AFT_SKYNAME 	DAY_SKYNAME
+	const AFT_SOUND		none
+	const AFT_START_HOUR	17
+	const AFT_STATE		aft
+	const NIGHT_SKYNAME 	space
+	const NIGHT_SOUND	amb/wolf01.wav
+	const NIGHT_START_HOUR	20
+	const NIGHT_STATE	night
+
+	setvarg clglobal.daystate DAY_STATE
+}
+
+{ recv_time_initial
+
+	if( clglobal.time.hour >= NIGHT_START_HOUR )
+		setvarg clglobal.daystate NIGHT_STATE
+	
+}
+
+{ recv_time
+
+	local l.olddaytime clglobal.daystate
+	setvarg clglobal.time.hour PARAM1
+	setvarg clglobal.time.min  PARAM2
+	setvarg clglobal.time.text PARAM3
+
+	if( clglobal.time.hour < NIGHT_START_HOUR )
+	{
+		if( clglobal.time.hour >= AFT_START_HOUR )
+		{
+			callevent change_to_aft
+		}
+		else if( clglobal.time.hour >= DAY_START_HOUR )
+		{
+			callexternal all environment_change DAY_STATE
+		}
+		else
+		{
+			callevent change_to_night
+		}
+	}
+	else
+	{
+		callevent change_to_night
+	}
+
+	callevent time_change l.olddaytime clglobal.daystate
+}
+
+{ change_to_night
+
+	if( !global.map.allownight ) callexternal all environment_change DAY_STATE
+	else callexternal all environment_change NIGHT_STATE
+}
+
+{ change_to_aft
+
+	if( !global.map.allownight ) callexternal environment_change DAY_STATE
+	else callexternal all environment_change AFT_STATE
+}
+
+{ environment_change //PARAM1 == new environment state
+
+	if( PARAM1 equals DAY_STATE )
+	{
+		setvarg clglobal.daystate DAY_STATE
+		setenv sky.texture 	DAY_SKYNAME
+		setenv lightgamma 	2.5
+		setenv fog.enabled	0
+		setenv screen.tint	(0,0,0,0)
+	}
+	else if( PARAM1 equals AFT_STATE )
+	{
+		setvarg clglobal.daystate AFT_STATE
+		setenv sky.texture 	AFT_SKYNAME
+		setenv lightgamma 	5
+		setenv fog.enabled	0
+		setenv screen.tint	(0.8156,0.368627,0.007843,0.1)
+	}
+	else if( PARAM1 equals NIGHT_STATE )
+	{
+		setvarg clglobal.daystate NIGHT_STATE
+		setenv sky.texture 	NIGHT_SKYNAME
+		setenv fog.enabled	1
+		setenv fog.density	0.01
+		setenv fog.start	512
+		setenv fog.end		2048
+		setenv fog.type		linear
+		setenv fog.color	(0,0,0)
+		setenv screen.tint	(0,0,0,0.7)
+		setenv lightgamma 	2.5
+	}
+}
+
+
+{ time_change 
+
+	//1: prev daytime  2: New daytime
+	//Detect a change in the daytime and start a transition of
+	//special effects to the new time
+
+	if PARAM1 isnot PARAM2
+
+	local l.daytime PARAM2
+	if( l.daytime equals DAY_STATE )
+	{
+		playsound const.snd.static const.snd.maxvol DAY_SOUND
+	}
+	else if( l.daytime equals AFT_STATE )
+	{
+		
+	}
+	else if( l.daytime equals NIGHT_STATE )
+	{
+		playsound const.snd.static const.snd.maxvol NIGHT_SOUND
+	}
+}

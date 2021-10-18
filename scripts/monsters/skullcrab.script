@@ -1,0 +1,256 @@
+// Another test script from Dridje
+// This is a SKULLCRAB
+
+{
+   setvar NPC_GIVE_EXP 300
+   setvard ANIM_ATTACK jump
+
+   setvar ANIM_WALK walk
+   setvar ANIM_RUN run
+   setvar ANIM_IDLE idle1
+
+   setvard MOVE_RANGE 48
+   setvard ATTACK_RANGE 70
+
+   setvard ATTACK_HITRANGE 90
+   
+   setvard ANIM_FLINCH flinch
+   setvard FLINCH_DAMAGE_THRESHOLD 25
+   setvard FLINCH_CHANCE 5
+   setvard FLINCH_DELAY 10.0
+
+   const SOUND_DEATH monsters/skeleton/skeldie.wav
+   precache SOUND_DEATH
+
+   const ANIM_ATT1 jump
+   const ANIM_ATT2 jump_variation1 
+
+   const DMG_ATT1 $rand(10,30)
+	const DMG_CHEW $rand(50,100)
+
+   const ATTACK_HITCHANCE 75
+
+	const SOUND_ALERT1 headcrab/hc_alert1.wav
+	const SOUND_ALERT2 headcrab/hc_alert2.wav
+	const SOUND_ATTACK1 headcrab/hc_attack2.wav
+	const SOUND_ATTACK2 headcrab/hc_attack3.wav
+	const SOUND_DEATH1 headcrab/hc_die1.wav
+	const SOUND_DEATH2 headcrab/hc_die2.wav
+	const SOUND_PAIN1 headcrab/hc_pain1.wav
+	const SOUND_PAIN2 headcrab/hc_pain2.wav
+	const SOUND_PAIN3 headcrab/hc_pain3.wav
+	const SOUND_IDLE1 headcrab/hc_idle1.wav
+	const SOUND_IDLE2 headcrab/hc_idle2.wav
+	const SOUND_IDLE3 headcrab/hc_idle3.wav
+	const SOUND_IDLE4 headcrab/hc_idle4.wav
+	const SOUND_IDLE5 headcrab/hc_idle5.wav
+
+	const SOUND_CHEW headcrab/hc_attack1.wav
+
+	const FREQ_JUMP $randf(3.0,5.0)
+
+	precache SOUND_DEATH1
+	precache SOUND_DEATH2
+}
+
+#include monsters/base_monster_new
+
+{ npc_spawn
+   
+   name a|Skrab
+   
+   race undead
+   
+   hp 500
+
+	roam 1
+
+   setmodel monsters/skullcrab.mdl
+   width 20
+   height 50
+
+	setvard IMMUNE_VAMPIRE 1
+	blood none
+	takedmg poison 0.0
+	takedmg holy 2.0
+
+	hearingsensitivity 4
+
+	setvard NEXT_JUMP game.time
+	add NEXT_JUMP $randf(1.0,3.0)
+}
+
+{ npcatk_hunt
+	if ( NPCATK_TARGET equals unset )
+	{
+		if game.time > NEXT_IDLE
+		setvard NEXT_IDLE game.time
+		add NEXT_IDLE $randf(10.0,20.0)
+		playanim once ANIM_ATTACK
+		playrandomsound 0 10 SOUND_IDLE1 SOUND_IDLE2 SOUND_IDLE3 SOUND_IDLE4 SOUND_IDLE5
+	}
+
+	if AM_SUMMONED
+	if ( game.time > UNSUMMON_TIME ) callevent npc_suicide fade
+	if ( !$get(MY_OWNER,isalive) ) callevent npc_suicide fade
+}
+
+{ npc_targetsighted
+	if !JUMP_SCAN_ACTIVE
+	if $get(NPCATK_TARGET,range) < 512
+	if game.time > NEXT_JUMP
+	setvard NEXT_JUMP game.time
+	add NEXT_JUMP 20.0
+	setmovedest NPCATK_TARGET 9999
+	playanim critical ANIM_ATTACK
+	callevent 0.01 do_jump
+}
+
+{ do_jump
+	local V_ADJ 0
+
+	local TARG_Z $get(NPCATK_TARGET,origin.z)
+	local MY_Z $vec.z(game.monster.origin)
+	local Z_DIFF TARG_Z
+	subtract Z_DIFF MY_Z
+	multiply Z_DIFF 4
+
+	if ( Z_DIFF < 200 )
+	{
+		local Z_DIFF 200
+		if ( TOSS_JUMP )
+		{
+			setvard TOSS_JUMP 0
+			local Z_DIFF 0
+		}
+	}
+
+	dbg do_jump Z_DIFF - MY_Z vs TARG_Z
+
+	playrandomsound 1 10 SOUND_ATTACK1 SOUND_ATTACK2
+	roam 0
+	addvelocity ent_me $relvel(0,1000,Z_DIFF)
+	setvard JUMP_SCAN_ACTIVE 1
+	setvard NPC_NO_ATTACK 1
+	setvard NO_STUCK_CHECKS 1
+	setvard CHEW_TARGET NPCATK_TARGET
+	callevent 0.01 jump_scan
+	callevent 1.5 end_jump_scan
+	callevent 4.0 abort_chew
+}
+
+{ jump_scan
+	if JUMP_SCAN_ACTIVE
+	if $get(CHEW_TARGET,isalive)
+	callevent 0.1 jump_scan
+	local TARG_RANGE $get(CHEW_TARGET,range)
+	if ( TARG_RANGE > 96 ) setvard STUCK_ON_FACE 0
+
+	if TARG_RANGE < 96
+	setmovedest CHEW_TARGET 9999
+	setvelocity ent_me $relvel(0,1000,10)
+	playanim once yaw_adjustment
+	if ( TARG_RANGE < 64 )
+	{
+		setvard STUCK_ON_FACE 1
+		if game.time > NEXT_CHEW_DMG
+		setvard NEXT_CHEW_DMG game.time
+		add NEXT_CHEW_DMG 0.5
+		dodamage CHEW_TARGET ATTACK_HITRANGE DMG_CHEW 100% slash
+		playsound 2 10 SOUND_CHEW
+	}
+	else
+	{
+		setvard STUCK_ON_FACE 0 
+	}
+}
+
+{ end_jump_scan
+	if ( !STUCK_ON_FACE )
+	{
+		if JUMP_SCAN_ACTIVE
+		callevent do_detatch
+	}
+	else
+	{
+		callevent 0.5 end_jump_scan
+	}
+}
+
+{ do_detatch
+	setvard JUMP_SCAN_ACTIVE 0
+	setvard NPC_NO_ATTACK 0
+	setvard NO_STUCK_CHECKS 0
+	setvard NEXT_JUMP game.time
+	add NEXT_JUMP FREQ_JUMP
+	addvelocity ent_me $relvel(0,-2000,110)
+	roam 1
+}
+
+{ abort_chew
+	//dbg abort_chew
+	if JUMP_SCAN_ACTIVE
+	callevent do_detatch
+}
+
+{ npc_post_spawn
+
+   setmoveanim ANIM_WALK 
+   setidleanim ANIM_IDLE
+}
+
+{ npc_selectattack
+   
+   local RND_ATTACK $rand(1,2)
+   if ( RND_ATTACK == 1 ) setvard ANIM_ATTACK ANIM_ATT1
+   if ( RND_ATTACK == 2 ) setvard ANIM_ATTACK ANIM_ATT2
+}
+
+{ game_damaged 
+	if ( AM_SUMMONED )
+	{
+		setvard UNSUMMON_TIME game.time
+		add UNSUMMON_TIME 20.0
+	}
+   playrandomsound 0 10 SOUND_PAIN1 SOUND_PAIN2 SOUND_PAIN3
+}
+
+{ npc_flinch
+
+   playsound 0 10 SOUND_PAIN1
+}
+
+{ frame_jump
+
+   callevent npcatk_dodamage NPCATK_TARGET ATTACK_HITRANGE DMG_ATT1 ATTACK_HITCHANCE slash
+}
+
+{ frame_falloffend
+
+   callevent npcatk_dodamage NPCATK_TARGET ATTACK_HITRANGE DMG_ATT1 ATTACK_HITCHANCE slash
+}
+
+{ game_dynamically_created //<master> <target>
+	setvard MY_OWNER PARAM1
+	setvard NPCATK_TARGET PARAM2
+	setvard AM_SUMMONED 1
+	setvard UNSUMMON_TIME game.time
+	add UNSUMMON_TIME 20.0
+	setmovedest NPCATK_TARGET 9999
+	setvard TOSS_JUMP 1
+	callevent 0.1 do_jump
+}
+
+{ game_death
+	if AM_SUMMONED
+	if $get(MY_OWNER,isalive)
+	callexternal MY_OWNER crab_died
+}
+
+{ game_dodamage
+	if ( AM_SUMMONED )
+	{
+		setvard UNSUMMON_TIME game.time
+		add UNSUMMON_TIME 20.0
+	}
+}

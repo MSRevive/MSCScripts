@@ -1,0 +1,123 @@
+//scientist/cough.wav
+//scientist/getoutalive.wav
+//scientist/iwoundedbad.wav
+//scientist/sneeze.wav
+
+#scope server
+{
+
+}
+
+{ [shared] game_spawn
+	name_unique sleep_elf
+	name a|Sleeping Elf
+	setmodel npc/elf_m_wizard.mdl
+	width 32
+	height 32
+	hp 1
+	invincible 1
+	setidleanim sleep_idle
+	setmoveanim sleep_idle
+	playanim once sleep_idle
+	menu.autoopen 1
+	setvard TELE_COUNT 0
+	setprop ent_me skin 8
+}
+
+{ game_precache
+	precache bunny.spr
+	precache debris/beamstart7.wav //played externally so it follows player
+}
+
+{ game_menu_getoptions
+	if !QUEST_FAILED
+	if !DOING_LEV
+	local reg.mitem.title 	"Wake Sleeping Elf"
+	local reg.mitem.type 	callback
+	local reg.mitem.callback wake_elf
+	menuitem.register
+}
+
+{ wake_elf
+	setvard DOING_LEV 1
+	playanim hold lev
+	playsound 1 10 scientist/sci_fear4.wav
+	playsound 2 10 ambience/particle_suck2.wav //debris/beamstart8.wav
+	callevent 2.0 fade_players
+	callevent 3.0 tele_players
+
+	//tag players for teleport
+	setvard PLAYER_LIST ''
+	getplayersnb PLAYER_LIST
+
+	setprop ent_me skin 9
+}
+
+{ fade_players
+	playsound 0 10 scientist/scream1.wav
+	calleventloop $get_token_amt(PLAYER_LIST) fade_players_go
+}
+
+{ fade_players_go
+	local CUR_TARG $get_token(PLAYER_LIST,game.script.iteration)
+	if $get(CUR_TARG,range) < 128
+	effect screenfade CUR_TARG 3.0 1.0 (255,255,255) 255 fadein
+}
+
+{ tele_players
+	calleventloop $get_token_amt(PLAYER_LIST) tele_players_go
+	callevent 1.0 resume_idle
+}
+
+{ resume_idle
+	playanim critical sleep_idle
+	setprop ent_me skin 8
+	setvard DOING_LEV 0
+}
+
+{ tele_players_go
+	local CUR_TARG $get_token(PLAYER_LIST,game.script.iteration)
+	if $get(CUR_TARG,range) < 384
+
+	if ( TELE_COUNT >= 8 ) setvard TELE_COUNT 0
+	if ( game.players < 5 )
+	{
+		if ( TELE_COUNT >= 4 ) setvard TELE_COUNT 0
+	}
+	add TELE_COUNT 1
+
+	if ( TELE_COUNT == 1 ) setorigin CUR_TARG $vec(-272,-8,-3720)
+	if ( TELE_COUNT == 2 ) setorigin CUR_TARG $vec(240,-8,-3720)
+	if ( TELE_COUNT == 3 ) setorigin CUR_TARG $vec(-16,-264,-3720)
+	if ( TELE_COUNT == 4 ) setorigin CUR_TARG $vec(-8,-240,-3720)
+	if ( TELE_COUNT == 5 ) setorigin CUR_TARG $vec(-232,-8,-3720)
+	if ( TELE_COUNT == 6 ) setorigin CUR_TARG $vec(220,-8,-3720)
+	if ( TELE_COUNT == 7 ) setorigin CUR_TARG $vec(-16,-234,-3720)
+	if ( TELE_COUNT == 8 ) setorigin CUR_TARG $vec(-8,-210,-3720)
+
+	//callexternal CUR_TARG ext_playsound_kiss 4 10 debris/beamstart7.wav
+	callexternal CUR_TARG ext_delay_playsound 0.5 4 10 debris/beamstart7.wav
+	callexternal CUR_TARG ext_darkenbloom 2
+}
+
+{ quest_fail
+	setvard QUEST_FAILED 1
+	playanim hold deadback
+	setidleanim deadback
+	setmoveanim deadback
+	name a|Dead Elf
+}
+
+{
+repeatdelay 5.0
+	if !QUEST_FAILED
+	clientevent new all effects/sfx_follow_glow_cl $get(ent_me,index) (128,128,255) 64 4.9
+}
+
+{ ext_quest_win
+	deleteent ent_me
+}
+
+{ ext_shender_fail
+	callevent quest_fail
+}

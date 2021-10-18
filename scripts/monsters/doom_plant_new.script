@@ -1,0 +1,277 @@
+#scope server
+{ [shared]
+
+}
+
+
+{
+	setvard NPC_GIVE_EXP 200
+
+	setvard NO_STUCK_CHECKS 1 //canna move
+
+	const DMG_SPUR 5.0
+	const DMG_SLASH 8.0
+	const DMG_SPORE 50.0
+
+	const DOT_POISON 30
+
+	const FREQ_GROW 40.0 //time between growth spirts
+	const FREQ_SHOOT 0.5 //cool down time between fireing
+	const FREQ_SPORE 15.0 //cool down time between spores (level 3)
+	const FREQ_CL_REFRESH 20.0
+	const FREQ_IDLE $randf(3.0,6.0)
+
+	const GIB_MODEL cactusgibs.mdl
+	const SOUND_GIB "debris/bustflesh1.wav"
+	const SOUND_SLASH "zombie/claw_miss1.wav"
+	const SOUND_SCRATCH "headcrab/hc_attack1.wav"
+	const SOUND_SPORE "weapons/bow/crossbow.wav"
+	const SOUND_GROW "weapons/bow/stretch.wav"
+	const SOUND_STRUCK1 "weapons/xbow_hitbod1.wav"
+	const SOUND_STRUCK2 "weapons/xbow_hitbod2.wav"
+
+	precache GIB_MODEL
+}
+
+
+#include monsters/base_monster_new
+
+{ npc_spawn
+
+	name a|Doom Tree
+	setmodel monsters/dewm_tree_combo.mdl
+	race demon
+	blood green
+	takedmg poison 0.0
+	takedmg fire 1.5
+	hp 100
+	nopush 1
+
+	hearingsensitivity 4
+
+	width 48
+	height 96
+
+	setvard TREE_LEVEL 1
+
+	setvard AM_GROWING 1
+	callevent 0.1 setup_tree_level
+
+	callevent 2.0 set_final_params
+}
+
+{ set_final_params
+
+}
+
+{ do_grow
+	if TREE_LEVEL < 3
+	add TREE_LEVEL 1
+	setvard AM_GROWING 1
+	callevent setup_tree_level
+}
+
+//addparams
+{ setup_tree_level
+
+	setvard NEXT_GROW game.time
+	add NEXT_GROW FREQ_GROW
+
+	setvard TREE_LEVEL $int(TREE_LEVEL)
+	setvard LEVEL_PREFIX $stradd(level,TREE_LEVEL,_)
+
+	local TREE_LEVEL_M1 TREE_LEVEL
+	subtract TREE_LEVEL_M1 1
+	setmodelbody 0 TREE_LEVEL_M1
+
+	callevent npcatk_suspend_ai 1.0
+
+	if ( AM_GROWING )
+	{
+		playanim critical $stradd(LEVEL_PREFIX,grow)
+	}
+	setvard AM_GROWING 0
+
+	setvard ANIM_ATTACK $stradd(LEVEL_PREFIX,attack)
+	setvard ANIM_IDLE $stradd(LEVEL_PREFIX,idle1)
+
+	setidleanim ANIM_IDLE
+	setmoveanim ANIM_IDLE
+
+	setvar ANIM_WALK ANIM_IDLE
+	setvar ANIM_RUN ANIM_IDLE
+
+	local FINAL_HP 100
+	if ( TREE_LEVEL == 1 ) multiply FINAL_HP 1.0
+	if ( TREE_LEVEL == 2 ) multiply FINAL_HP 5.0
+	if ( TREE_LEVEL == 3 ) multiply FINAL_HP 10.0
+
+	
+	if ( TREE_LEVEL < 3 ) setvard ATTACK_RANGE 72
+	if ( TREE_LEVEL == 3 ) setvard ATTACK_RANGE 128
+	setvard ATTACK_HITRANGE ATTACK_RANGE
+
+	if ( $lcase(game.map.name) equals underpath )
+	{
+		setvard ATTACK_RANGE 2048
+		setvard ATTACK_HITRANGE 2048
+	}
+
+	if ( NPC_SET_RANGE isnot 'NPC_SET_RANGE' )
+	{
+		setvard ATTACK_RANGE NPC_SET_RANGE
+		setvard ATTACK_HITRANGE NPC_SET_RANGE
+	}
+
+	multiply FINAL_HP NPC_HP_MULTI
+	hp FINAL_HP
+	setvard HALF_HP FINAL_HP
+	multiply HALF_HP 0.5
+}
+
+{ grow_done
+	callevent npcatk_resume_ai
+}
+
+{ game_damaged
+	if TREE_LEVEL > 1
+
+	if $get(ent_me,hp) < HALF_HP
+	setdmg dmg 0.0
+	setdmg hit 0
+	returndata 0.0
+	callevent do_shrink
+}
+
+{ game_death
+	setprop ent_me rendermode 5
+	setprop ent_me renderamt 0
+	playsound 0 10 SOUND_GIB
+	effect tempent gibs GIB_MODEL $relpos(0,0,0) 1.0 100 30 20 4.0
+	if ( TREE_SUMMONED )
+	{
+		if $get(MY_OWNER,isalive)
+		callexternal MY_OWNER plant_died
+	}
+}
+
+//Addparams
+{ start_level2
+	setvard TREE_LEVEL 2
+	multiply NPC_GIVE_EXP 2
+	callevent setup_tree_level
+}
+
+{ start_level3
+	setvard TREE_LEVEL 3
+	multiply NPC_GIVE_EXP 3
+	callevent setup_tree_level
+}
+
+{ npcatk_hunt
+
+	if ( game.time > NEXT_CL_REFRESH )
+	{
+		setvard NEXT_CL_REFRESH game.time
+		add NEXT_CL_REFRESH FREQ_CL_REFRESH
+		if ( TREE_CL_INDEX isnot 'TREE_CL_INDEX' ) clientevent update all TREE_CL_INDEX remove_fx
+		clientevent new all monsters/doom_plant_cl FREQ_CL_REFRESH
+		setvard TREE_CL_INDEX game.script.last_sent_id
+	}
+
+	if ( game.time > NEXT_GROW )
+	{
+		setvard NEXT_GROW game.time
+		add NEXT_GROW FREQ_GROW
+		callevent do_grow
+	}
+
+	if !SUSPEND_AI
+
+	if ( NPCATK_TARGET isnot unset )
+	{
+		if $cansee(NPCATK_TARGET)
+
+		if ( TREE_LEVEL >= 2 )
+		{
+			playsound 0 10 SOUND_SLASH
+			playanim once ANIM_ATTACK
+		}
+	}
+
+	if ( TREE_LEVEL == 1 )
+	{
+		if $get(NPCATK_TARGET,range) > ATTACK_RANGE
+		local DO_IDLE 1
+	}
+
+	if ( !$cansee(NPCATK_TARGET) ) local DO_IDLE 1
+
+	if DO_IDLE
+
+	if game.time > NEXT_IDLE
+	setvard NEXT_IDLE game.time
+	add NEXT_IDLE FREQ_IDLE
+	local RND_ANIM $rand(1,5)
+	playanim once $stradd(LEVEL_PREFIX,idle,RND_ANIM)
+}
+
+{ spur_damage
+	local L_DMG_SPUR DMG_SPUR
+	multiply L_DMG_SPUR TREE_LEVEL
+	dodamage NPCATK_TARGET "direct" L_DMG_SPUR 100% ent_me pierce
+}
+
+{ attack_slash
+	playsound 0 10 SOUND_SLASH
+	local L_DMG_SLASH DMG_SLASH
+	multiply L_DMG_SLASH TREE_LEVEL
+	setvard SLASH_ATTACK 1
+	dodamage NPCATK_TARGET ATTACK_RANGE L_DMG_SLASH 100% ent_me slash
+
+	if TREE_LEVEL > 1
+
+	if game.time > NEXT_SHOOT
+	setvard NEXT_SHOOT game.time
+	add NEXT_SHOOT FREQ_SHOOT
+	local TRACE_START $get(ent_me,origin)
+	local MY_YAW $get(ent_me,angles.yaw)
+	vectoradd TRACE_START $relpos($vec(0,MY_YAW,0),$vec(0,32,32))
+	if ( TREE_LEVEL == 3 ) vectoradd TRACE_START z 32
+	local TRACE_END $get(NPCATK_TARGET,origin)
+	local TRACE_LINE $get_traceline(TRACE_START,TRACE_END,worldonly)
+	if TRACE_LINE equals TRACE_END
+
+	clientevent update all TREE_CL_INDEX shoot_spur TRACE_START $get(ent_me,angles.yaw)
+	callevent 0.1 spur_damage
+
+	if TREE_LEVEL == 3
+	if game.time > NEXT_SPORE
+	setvard NEXT_SPORE game.time
+	add NEXT_SPORE FREQ_SPORE
+	playsound 0 10 SOUND_SPORE
+	setvard SPORE_POISON_DMG DOT_POISON //read by proj_spore
+	tossprojectile NPCATK_TARGET 500 DMG_SPORE 0.1 proj_spore (0,32,64)
+}
+
+{ game_dodamage
+	if ( SLASH_ATTACK )
+	{
+		playsound 0 10 SOUND_SCRATCH
+	}
+	setvard SLASH_ATTACK 0
+}
+
+{ do_shrink
+	setvard NEXT_GROW game.time
+	add NEXT_GROW FREQ_GROW
+	playanim critical $stradd(LEVEL_PREFIX,shrink)
+	subtract TREE_LEVEL 1
+	callevent npcatk_suspend_ai 0.75
+}
+
+{ shrink_done
+	setvard AM_GROWING 0
+	callevent npcatk_resume_ai
+	callevent setup_tree_level
+}

@@ -1,0 +1,277 @@
+//Thothie - Naming convention error causing spawn sound not to play
+//- Now drops 1 of 3 scroll/tomes
+//Calrian Himself! *gasp*
+
+{
+
+	if ( $lcase(game.map.name) startswith calruin ) setvard NPC_IS_BOSS 1
+	if ( !NPC_IS_BOSS ) setvard NPC_EXP_MULTI 0.25
+
+	const NPC_BOSS_REGEN_RATE 0
+	const NPC_BOSS_RESTORATION 0
+
+
+	const NPC_BOSS_REGEN_RATE 0
+
+   setvar ANIM_RUN run
+   setvar ANIM_WALK walk
+	const ANIM_SIT sitidle
+	setvar ANIM_IDLE_NORM idle1
+	const ANIM_GETUP sitstand
+	const ANIM_SWING attack3
+	const ANIM_THROW attack2
+
+   setvard ANIM_ATTACK ANIM_SWING
+   const ATTACK_DAMAGE 30
+   setvard ATTACK_RANGE 140
+   setvard MOVE_RANGE 65
+   setvard ATTACK_HITRANGE 175
+   const ATTACK_HITCHANCE 85%
+	setvar ANIM_IDLE ANIM_IDLE_NORM
+   const SOUND_STRUCK1 controller/con_pain3.wav
+   const SOUND_STRUCK2 controller/con_pain3.wav
+   const SOUND_STRUCK3 none
+   const SOUND_PAIN zombie/zo_pain2.wav
+   const SOUND_ATTACK1 controller/con_attack1.wav
+   const SOUND_HEAL monsters/skeleton/calrian2.wav
+   const SOUND_ATTACK2 controller/con_attack2.wav
+   const SOUND_BROTHER monsters/skeleton/calrian.wav
+   const SOUND_IDLE1 controller/con_attack3.wav
+   const SOUND_SPAWN monsters/skeleton/calrian2.wav //Naming convention error (was SND_SPAWN)
+   const SOUND_PUSH monsters/skeleton/calrain3.wav
+	setvard ANIM_FLINCH laflinch
+
+	setvard THROW_CHANCE 30
+
+	setvard IMMUNE_STUN 1
+ 
+   //Precache
+   precache SOUND_DEATH //This sound must be explicitly precached since
+			//the play command for it isn't in this file (it's
+			//in base_monster.script)
+   precache SOUND_SPAWN
+   playsound 2 SOUND_SPAWN
+
+	const MONSTER_MODEL monsters/skeleton_boss1.mdl
+	precache MONSTER_MODEL //upload newmodel
+
+}
+
+#include monsters/base_monster_new
+#include monsters/base_turn_undead
+
+{
+   eventname npc_spawn
+
+	setvard I_AM_TURNABLE 0
+
+   hp 1500
+   width 32
+   height 80
+   name The re-animated bones of Lord Calrian
+   roam 0
+   hearingsensitivity 8
+   setvard NPC_GIVE_EXP 1000
+   race undead
+    setmodel MONSTER_MODEL
+	setmodelbody	0 1 //0=standard 1=ash 2=green 3=bloody 4=decayed 5=ice 6=gold 7=stone 8=crystal 9=weirdgel
+	setmodelbody	1 1 //0=Unarmed 1=darkmace 2=sword 3=hammahs 4=bigsword+shield 5=iceclubs 6=fireclubs 7=highsword 8=wand
+
+   setmodelbody	1 1
+   takedmg all 0.65
+   setidleanim ANIM_SIT
+   setmoveanim ANIM_SIT
+
+	invincible 1
+
+	takedmg holy 1.5
+	takedmg fire 0.25
+	takedmg cold 0.25
+
+   local MAP_NAME game.map.name
+   setvard LEGIT_MAP 0
+
+   if ( MAP_NAME equals calruin ) setvard LEGIT_MAP 1
+   if ( MAP_NAME equals calruin2 ) setvard LEGIT_MAP 1
+
+   if ( LEGIT_MAP == 1 ) giveitem blunt_calrianmace
+
+   setvard LAST_STOLE_HP 10 //no soul stealing for first 10 atks
+
+	callevent npcatk_suspend_ai
+	setvard WAITING_FOR_PLAYERS 1
+}
+
+{ game_heardsound
+
+	if WAITING_FOR_PLAYERS
+	if $get(ent_lastheard,isplayer)
+	if $get(ent_lastheard,range) < 300
+	setvard WAITING_FOR_PLAYERS 0
+	callevent 0.5 bring_it_on
+}
+
+{ bring_it_on
+	playanim critical ANIM_GETUP
+	playsound 0 10 x/x_recharge1.wav
+}
+
+{ stand_complete //called from model ANIM_GETUP
+	invincible 0
+   setidleanim ANIM_IDLE
+   setmoveanim ANIM_WALK
+	setvard CYCLE_TIME CYCLE_TIME_BATTLE
+	callevent npcatk_resume_ai
+	look
+}
+
+{ attack_3
+
+   callevent npcatk_dodamage NPCATK_TARGET ATTACK_HITRANGE ATTACK_DAMAGE ATTACK_HITCHANCE
+
+	setvard SOUL_TARGET NPCATK_TARGET
+
+	if ( !SOUL_TARGET_DELAY )
+	{
+		callevent 1.0 reset_soul_target
+		setvard SOUL_TARGET_DELAY 1
+	}
+
+//	local ENEMY_HP $get(ent_laststruckbyme,hp)
+//	local DIV_ATTACK_DAMAGE ATTACK_DAMAGE
+//	multiply DIV_ATTACK_DAMAGE 0.6
+
+   if ( LAST_STOLE_HP > 0 ) subtract LAST_STOLE_HP 1
+
+//	if ( ENEMY_HP <= DIV_ATTACK_DAMAGE )
+//	{
+//		if ( LAST_STOLE_HP < 1 )
+//		{
+//			if $get(ent_laststruckbyme,relationship,ent_me) equals enemy
+//		    local ENEMY_MAXHP $get(ent_laststruckbyme,maxhp)
+//			local ICE_CREAM_NAME "Ice Wall"
+//			local NME_NAME $get(ent_laststruckbyme,name)
+//			infomsg ent_laststruckbyme Lord_Calrian Beware, Lord Calrian gains double your max health when he slays you!
+//			saytextrange 1024
+//			if ( NME_NAME equals ICE_CREAM_NAME ) saytext Mmmmmmm... Ice cream!
+//			if ( NME_NAME isnot ICE_CREAM_NAME ) saytext I'll swallow your soul!
+//			volume 10
+//			playsound 2 SOUND_HEAL
+//			//dbg HPBefore $get(ent_me,hp)
+//			multiply ENEMY_MAXHP 2.0
+//			givehp ENEMY_MAXHP
+//			//dbg HPAfter $get(ent_me,hp)
+//			effect glow ent_me (0,255,0) 255 2 2
+//			setvard LAST_STOLE_HP 10	//can't aborb again for 10 atks
+//		}
+//	}
+
+
+   local I_DID_PUSH 0
+   if ( DID_PUSH == 1 )
+   {
+		setvard DID_PUSH 0
+		local I_DID_PUSH 1
+   }
+
+   if !I_DID_PUSH
+
+   if( $rand(0,1) == 0 )
+   {
+   	volume 5
+	if  ( LAST_STOLE_HP < 3 ) playrandomsound 2 SOUND_ATTACK1 SOUND_ATTACK2
+   }
+}
+
+{ reset_soul_target
+
+	setvard SOUL_TARGET unset
+	setvard SOUL_TARGET_DELAY 0
+}
+
+   //Hit by someone
+{ game_struck
+   
+   volume 5
+   playrandomsound 2 SOUND_PAIN SOUND_PAIN SOUND_STRUCK1 SOUND_STRUCK2 SOUND_STRUCK3
+}
+
+{ [override] npc_death
+
+   usetrigger endboss
+
+   if LEGIT_MAP
+
+   volume 10
+   if ( LEGIT_MAP ) playsound 2 SOUND_BROTHER
+
+	callevent bm_gold_spew 10 3 40 4 20
+
+   if ( LEGIT_MAP ) saytext You're too late! ... My brother is already here!
+
+   local CHANCE $rand(1,3)
+
+   if ( CHANCE == 1 ) giveitem scroll_summon_undead
+   if ( CHANCE == 2 ) giveitem scroll2_summon_undead
+   if ( CHANCE == 3 ) giveitem scroll2_turn_undead
+}
+
+{ game_dodamage //1: Attack Hit (1/0)  2: Entity Attack hit  3:  Start Position  4:  End Position
+
+	if PARAM1
+
+	if ( $rand(1,THROW_CHANCE) == 1 )
+   	{
+		//push to cut down on shielders
+		playanim critical ANIM_THROW
+		volume 10
+		playsound 2 SOUND_PUSH
+		local MY_LOC game.monster.origin
+		local NME_LOC $get(ent_laststruckbyme,origin)
+		local NME_DISTANCE $dist(MY_LOC,NME_LOC)
+		if ( NME_DISTANCE < ATTACK_HITRANGE ) applyeffect $get(ent_laststruckbyme,id) effects/effect_push 3 $relvel(0,400,400) 0
+		setvard DID_PUSH 1
+	}
+}
+
+{ game_damaged //PARAM1=attacker PARAM2=Damage PARAM3=Type
+
+	if PARAM3 equals fire
+	if THROW_CHANCE != 2
+	setvard THROW_CHANCE 2
+	callevent 3.0 throw_reset
+}
+
+{ my_target_died
+
+	//dbg Killed $get(PARAM1,name) maxhp $get(PARAM1,maxhp)
+
+	if SOUL_TARGET equals $get(PARAM1,id)
+
+	if LAST_STOLE_HP == 0
+
+    local ENEMY_MAXHP $get(PARAM1,maxhp)
+	local ICE_CREAM_NAME "Ice Wall"
+	local NME_NAME $get(ent_laststruckbyme,name)
+	infomsg PARAM1 Lord_Calrian "Beware, Lord Calrian gains double your max health when he slays you!"
+	saytextrange 1024
+	if ( NME_NAME equals ICE_CREAM_NAME ) saytext Mmmmmmm... Ice cream!
+	if ( NME_NAME isnot ICE_CREAM_NAME ) saytext Not even death can save you from me!
+
+	volume 10
+	playsound 2 SOUND_HEAL
+	//dbg HPBefore $get(ent_me,hp)
+	multiply ENEMY_MAXHP 2.0
+	if ( game.monster.hp < game.monster.maxhp )	givehp ENEMY_MAXHP
+	//dbg HPAfter $get(ent_me,hp)
+	effect glow ent_me (0,255,0) 255 2 2
+	setvard LAST_STOLE_HP 10	//can't aborb again for 10 atks
+}
+
+{ throw_reset
+
+	setvard THROW_CHANCE 30
+}
+
+//can't use my_target_died because HUNT_LASTTARGET is reset before sub sets up 
+//(can't match up with ent_laststruckbyme)

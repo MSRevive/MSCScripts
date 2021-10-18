@@ -1,0 +1,505 @@
+//Kharaztorant Acolytes by Thothie for AmIAnnoyingNow, from scratch
+//- (experiment) this monster scales up its powers and value if there are more than 4 players on
+#scope server
+{ [shared]
+
+	//anims used by base
+	setvar ANIM_WALK walk2handed
+	setvard ANIM_RUN run2
+	setvar ANIM_IDLE idle
+	setvard ANIM_ATTACK ref_shoot_knife //{ event 500 5 "attack_knife" } 
+	setvard ANIM_DEATH die_simple
+
+	//custom anims
+	const ANIM_WALK_NORM walk2handed
+	const ANIM_RUN_NORM run2
+	const ANIM_IDLE_NORM idle
+	const ANIM_HOP jump
+	const ANIM_JUMP long_jump
+	const ANIM_CRAWL crawl
+	const ANIM_IDLE_CRAWL crouch_idle
+	const ANIM_ATTACK_NORM ref_shoot_knife //{ event 500 5 "attack_knife" } 
+	const ANIM_ATTACK_CRAWL crouch_shoot_knife //{ event 500 3 "attack_knife" } 
+	const ANIM_SEARCH look_idle
+	//used only for parry by this one, marked for initiate (no events on these)
+	const ANIM_CAST_NORM ref_shoot_onehanded
+	const ANIM_CAST_CRAWL crouch_shoot_onehanded
+	const ANIM_DEATH1 die_simple
+	const ANIM_DEATH2 die_backwards1
+	const ANIM_DEATH3 die_backwards
+	const ANIM_DEATH4 die_forwards
+	const ANIM_DEATH5 headshot
+	const ANIM_DEATH6 die_spin
+	const ANIM_DEATH7 gutshot
+}
+
+{
+	//stats used by base (more in npc_post_spawn below)
+	setvard ATTACK_RANGE 100
+	setvard ATTACK_HITRANGE 170
+	setvard ATTACK_MOVERANGE 80
+	setvard DROP_GOLD 1
+	setvard DROP_GOLD_AMT $rand(10,20)
+	setvard NPC_GIVE_EXP 100
+//	if ( game.serverside )
+//	{
+//		if ( game.players > 4 )
+//		{
+//			multiply NPC_GIVE_EXP 2
+//			multiply DROP_GOLD_AMT 2
+//		}
+//	}
+
+	//custom stats
+	const DMG_KNIFE $rand(10,20)
+	const CHANCE_EFFECT 30%
+	const FREQ_IDLE $randf(5.0,10.0)
+	const DMG_TOSS $rand(20,30)
+	const PROJ_SPEED 600 //400
+	const FREQ_LOOK 10.0 //time between search anims
+	//combat move frequency
+	const FREQ_LOTS $randf(3,10)
+	const FREQ_RARE $randf(20,30)
+	const FREQ_NORM $randf(10,15)
+	const FREQ_LEAP 5.0
+
+	//sounds
+	const SOUND_JUMP "voices/kcult_jump.wav"
+	const SOUND_SWING "weapons/swingsmall.wav"
+	const SOUND_THROW "zombie/claw_miss1.wav"
+	const SOUND_DRAW "weapons/dagger/dagger2.wav"
+	const SOUND_PARRY "weapons/dagger/daggermetal2.wav"
+	const SOUND_PAIN1 "voices/kcult_pain3.wav"
+	const SOUND_PAIN2 "voices/kcult_pain2.wav"
+	const SOUND_DEATH1 "voices/kcult_pain1.wav"
+	const SOUND_DEATH2 "voices/kcult_die1.wav"
+	const SOUND_ALERT1 "voices/kcult_ally_alert1.wav"
+	const SOUND_ALERT2 "voices/kcult_ally_alert2.wav"
+	const SOUND_IDLE "voices/kcult_idle.wav"
+	//const SOUND_IDLE2 "voices/human/male_oldidle2.wav" //initiates
+	const SOUND_WARCRY1 "voices/kcult_alert1.wav"
+	const SOUND_WARCRY2 "voices/kcult_alert2.wav"
+	const SOUND_STRUCK1 "debris/flesh1.wav"
+	const SOUND_STRUCK2 "debris/flesh2.wav"
+
+	const SOUND_BURN "ambience/steamburst1.wav"
+	const SOUND_POISON "bullchicken/bc_bite2.wav"
+	const SOUND_FREEZE magic/frost_forward.wav
+	//got a not precached report for sound_freeze? maybe cuz projectile? - other two are in item precache
+	precache SOUND_FREEZE
+}
+
+#include monsters/base_monster_new
+
+{ [shared] npc_spawn
+
+
+	name a|Kharaztorant Acolyte
+	setmodel monsters/k_alcolyte.mdl
+	if ( game.serverside )
+	{
+		//adjust health by # of players
+//		local N_PLAYERS game.players
+//		multiply BASE_HP N_PLAYERS
+//		capvar BASE_HP 200 600
+		local BASE_HP $rand(200,300)
+		hp BASE_HP
+	}
+	race demon
+	width 32
+	if ( !AM_TURRET ) height 72
+	if ( AM_TURRET ) height 48
+	roam 1
+	hearingsensitivity 4
+
+	if !OVERRIDE_TYPE
+	setvard ALCO_TYPE $rand(1,4)
+}
+
+{ npc_post_spawn
+
+	setvard NEXT_AIDED_SOUND game.time
+	add NEXT_AIDED_SOUND $randf(3.0,5.0)
+	setvard NEXT_LH game.time
+	add NEXT_LH $randf(3.0,5.0)
+
+	takedmg holy 0.0 //not quite that evil, yet
+
+	setvard JUMP_CHANCE 1
+
+	if ( ALCO_TYPE == 1 ) setvard ALCO_TYPE ninja
+	if ( ALCO_TYPE == 2 ) setvard ALCO_TYPE fire
+	if ( ALCO_TYPE == 3 ) setvard ALCO_TYPE poison
+	if ( ALCO_TYPE == 4 ) setvard ALCO_TYPE cold
+
+	local RND_FACE $rand(1,2)
+	if ( RND_FACE == 1 ) setmodelbody 1 0 //use face 1 for initiates
+	if ( RND_FACE == 2 ) setmodelbody 1 2
+
+	if ( ALCO_TYPE equals ninja )
+	{
+		setmodelbody 2 0
+		setvard ORIG_WEAPON 0
+		setvard FREQ_COMBAT FREQ_LOTS
+		takedmg all 0.5
+		setstat parry 100
+		setvard FREQ_THROW 5.0
+		setvard ATTACK_HITCHANCE 90
+		setvard JUMP_CHANCE 2
+	}
+
+	if ( ALCO_TYPE equals fire )
+	{
+		setmodelbody 2 1
+		setvard ORIG_WEAPON 1
+		setvard FREQ_COMBAT FREQ_RARE
+		setvard EFFECT_SCRIPT effects/effect_burn
+		setvard EFFECT_DUR 5.0
+		setvard EFFECT_DMG 30
+		setvard SOUND_EFFECT SOUND_BURN
+		setvard THROW_DELAY 1
+		setvard FREQ_THROW 10.0
+		callevent FREQ_THROW reset_throw_delay
+		setvard ATTACK_HITCHANCE 80
+	}
+
+	if ( ALCO_TYPE equals poison )
+	{
+		setmodelbody 2 2
+		setvard ORIG_WEAPON 2
+		setvard FREQ_COMBAT FREQ_NORM
+		setvard EFFECT_SCRIPT effects/effect_poison
+		setvard EFFECT_DUR 15.0
+		setvard EFFECT_DMG 4
+		setvard SOUND_EFFECT SOUND_POISON
+		setvard FREQ_THROW 2.0
+		setvard THROW_DELAY 1
+		callevent FREQ_THROW reset_throw_delay
+		setvard ATTACK_HITCHANCE 85
+		setvard JUMP_CHANCE 3
+	}
+
+	if ( ALCO_TYPE equals cold )
+	{
+		setmodelbody 2 3
+		setvard ORIG_WEAPON 3
+		setvard FREQ_COMBAT FREQ_RARE
+		setvard EFFECT_SCRIPT effects/effect_frostbite_dmg
+		setvard EFFECT_DUR 5.0
+		setvard EFFECT_DMG 5
+		setvard SOUND_EFFECT SOUND_FREEZE
+		setvard FREQ_THROW 10.0
+		setvard THROW_DELAY 1
+		callevent FREQ_THROW reset_throw_delay
+		setvard ATTACK_HITCHANCE 75
+	}
+
+	if ( I_POUNCE )
+	{
+		//ambush version
+		//set NPC_PROX_ACTIVATE stats in include
+		setmoveanim ANIM_IDLE_CRAWL
+		setidleanim ANIM_IDLE_CRAWL
+	}
+
+	setprop ent_me skin ORIG_WEAPON
+
+	if !I_POUNCE
+	callevent walk_mode
+}
+
+{ ambush //for ambush variant
+	dbg *** POUNCE ***
+
+	callevent npcatk_resume_ai
+	callevent npcatk_faceattacker NPC_PROXACT_PLAYERID
+	callevent run_mode
+	setvard AS_ATTACKING game.time
+	callevent 0.01 leap_ambush
+	callevent cycle_up "ambush"
+	setmoveanim ANIM_RUN_NORM
+	setidleanim ANIM_IDLE_NORM
+}
+
+{ leap_ambush
+	callevent leap_at NPC_PROXACT_PLAYERID
+}
+
+{ npc_targetsighted
+
+	if ( !DID_WARCRY )
+	{
+		setvard DID_WARCRY 1
+		playrandomsound 0 10 SOUND_WARCRY1 SOUND_WARCRY2
+		callevent 0.1 draw_sound
+	}
+
+	if !STARTED_CYCLES
+	setvard STARTED_CYCLES 1
+	callevent FREQ_COMBAT do_combat_move //chance stance or jump away
+}
+
+{ draw_sound
+	playsound 0 10 SOUND_DRAW
+}
+
+{ game_death
+
+	local RND_DEATH $rand(1,7)
+	if ( RND_DEATH == 1 ) setvard ANIM_DEATH ANIM_DEATH1
+	if ( RND_DEATH == 2 ) setvard ANIM_DEATH ANIM_DEATH2
+	if ( RND_DEATH == 3 ) setvard ANIM_DEATH ANIM_DEATH3
+	if ( RND_DEATH == 4 ) setvard ANIM_DEATH ANIM_DEATH4
+	if ( RND_DEATH == 5 ) setvard ANIM_DEATH ANIM_DEATH5
+	if ( RND_DEATH == 6 ) setvard ANIM_DEATH ANIM_DEATH6
+	if ( RND_DEATH == 7 ) setvard ANIM_DEATH ANIM_DEATH7
+
+	playrandomsound 0 10 SOUND_DEATH1 SOUND_DEATH2
+}
+
+{
+repeatdelay FREQ_IDLE
+	if NPCATK_TARGET equals unset
+	if !NPC_MOVING_LAST_KNOWN
+	playanim once ANIM_SEARCH
+	if( game.time > NEXT_LH )
+	{
+		setvard NEXT_LH game.time
+		add NEXT_LH $randf(5.0,15.0)
+		playsound 0 10 SOUND_IDLE
+	}
+	dbg repeat_idle
+}
+
+{ reset_search_delay
+	setvard SEARCH_DELAY 0
+}
+
+{ game_struck
+
+	playsound 0 8 SOUND_STRUCK1 SOUND_STRUCK2 SOUND_STRUCK1 SOUND_STRUCK2 SOUND_PAIN1 SOUND_PAIN2
+
+	if ( PARAM1 > 50 )
+	{
+		if !LEAP_DELAY
+		setvard LEAP_DELAY 1
+		callevent FREQ_LEAP reset_leap_delay
+		callevent leap_away $get(ent_laststruck,id)
+	}
+}
+
+{ run_mode
+	setvard K_MOVE_TYPE run
+	setvard ANIM_RUN ANIM_RUN_NORM
+	setvard ANIM_WALK ANIM_WALK_NORM
+	setvard ANIM_IDLE ANIM_IDLE_NORM
+	setvard ANIM_ATTACK ANIM_ATTACK_NORM
+	setmoveanim ANIM_RUN
+	setidleanim ANIM_IDLE
+}
+
+{ walk_mode
+	setvard K_MOVE_TYPE walk
+	setvard ANIM_RUN ANIM_RUN_NORM
+	setvard ANIM_WALK ANIM_WALK_NORM
+	setvard ANIM_IDLE ANIM_IDLE_NORM
+	setvard ANIM_ATTACK ANIM_ATTACK_NORM
+	setmoveanim ANIM_WALK
+	setidleanim ANIM_IDLE
+}
+
+{ crawl_mode
+	setvard K_MOVE_TYPE crawl
+	setvard ANIM_RUN ANIM_CRAWL
+	setvard ANIM_WALK ANIM_CRAWL
+	setvard ANIM_IDLE ANIM_IDLE_CRAWL
+	setvard ANIM_ATTACK ANIM_ATTACK_CRAWL
+	setmoveanim ANIM_CRAWL
+	setidleanim ANIM_IDLE_CRAWL
+}
+
+{ leap_at
+	if !NO_JUMPS
+	setvard NPC_FORCED_MOVEDEST 1
+	setmovedest $get(PARAM1,id) 9999
+	setvard AS_ATTACKING game.time
+	playsound 0 10 SOUND_JUMP
+	playanim critical ANIM_JUMP
+	callevent 0.1 leap_boost
+}
+
+{ leap_away
+	if !NO_JUMPS
+	setvard NPC_FORCED_MOVEDEST 1
+	callevent npcatk_suspend_ai 0.2 "leap_away"
+	setmovedest $get(PARAM1,id) 1024 flee
+	setvard AS_ATTACKING game.time
+	playsound 0 10 SOUND_JUMP
+	playanim critical ANIM_JUMP
+	callevent 0.1 leap_boost
+}
+
+{ leap_boost
+	addvelocity ent_me $relvel(0,600,75)
+}
+
+{ toggle_stance
+	if ( K_MOVE_TYPE isnot crawl ) callevent 0.1 crawl_mode
+	if ( K_MOVE_TYPE equals crawl )  callevent 0.1 run_mode
+}
+
+{ npcatk_hunt
+	if CYCLED_UP
+
+	if ( $get(NPCATK_TARGET,range) >= ATTACK_RANGE )
+	{
+		if ( K_MOVE_TYPE isnot run ) 
+		{
+			if ALCO_TYPE isnot poison
+			callevent run_mode
+		}
+
+		if ( !THROW_DELAY )
+		{
+			if $cansee(NPCATK_TARGET)
+			setvard THROW_DELAY 1
+			callevent FREQ_THROW reset_throw_delay
+			callevent npcatk_faceattacker NPCATK_TARGET
+			playsound 0 10 SOUND_THROW
+			playanim critical ANIM_ATTACK
+			callevent 0.1 do_throw
+			setvard NINJA_JUMP game.time
+			add NINJA_JUMP 2
+			local EXIT_SUB 1
+		}
+		if !EXIT_SUB
+
+		if ( ALCO_TYPE equals ninja )
+		{
+			if game.time > NINJA_JUMP
+			if !LEAP_DELAY
+			setvard LEAP_DELAY 1
+			callevent FREQ_LEAP reset_leap_delay
+			callevent leap_at NPCATK_TARGET
+		}
+	}
+}
+
+{ reset_throw_delay
+	setvard THROW_DELAY 0
+}
+
+{ game_dodamage
+	if ALCO_TYPE isnot ninja
+	if $get(PARAM2,relationship,ent_me) equals enemy
+	if $rand(1,100) < CHANCE_EFFECT
+	if ( !SOUND_EFFECT_DELAY )
+	{
+		setvard SOUND_EFFECT_DELAY 1
+		callevent 5.1 reset_sound_effect_delay
+		playsound 0 10 SOUND_EFFECT
+	}
+
+	if EFFECT_SCRIPT isnot 'EFFECT_SCRIPT'
+	applyeffect PARAM2 EFFECT_SCRIPT EFFECT_DUR $get(ent_me,id) EFFECT_DMG
+}
+
+{ reset_sound_effect_delay
+	setvard SOUND_EFFECT_DELAY 0
+}
+
+{ do_combat_move
+
+	if !AM_TURRET
+
+	callevent FREQ_COMBAT do_combat_move
+
+	if NPCATK_TARGET isnot unset
+
+	local RND_MOVE $rand(1,5)
+
+	if ( RND_MOVE > JUMP_CHANCE ) callevent toggle_stance
+
+	if ( RND_MOVE <= JUMP_CHANCE )
+	{
+		if !LEAP_DELAY
+		setvard LEAP_DELAY 1
+		callevent FREQ_LEAP reset_leap_delay
+		callevent leap_away NPCATK_TARGET
+	}
+}
+
+{ reset_leap_delay
+	setvard LEAP_DELAY 0
+}
+
+{ attack_knife //anim event
+	playsound 0 5 SOUND_SWING
+	local F_DMG_KNIFE DMG_KNIFE
+	if ( game.players > 4 ) multiply F_DMG_KNIFE 2
+	callevent npcatk_dodamage NPCATK_TARGET ATTACK_HITRANGE F_DMG_KNIFE ATTACK_HITCHANCE slash
+}
+
+{ game_parry
+	if ( K_MOVE_TYPE isnot crawl ) playanim critical ANIM_CAST_NORM
+	if ( K_MOVE_TYPE equals crawl ) playanim critical ANIM_CAST_CRAWL
+	playsound 0 10 SOUND_PARRY
+}
+
+{ do_throw
+	//dbg temp do_throw K_MOVE_TYPE
+	local F_DMG_TOSS DMG_TOSS
+	if ( game.players > 4 ) multiply F_DMG_TOSS 2
+	if ( K_MOVE_TYPE isnot crawl ) tossprojectile NPCATK_TARGET PROJ_SPEED F_DMG_TOSS 0.2 proj_k_knife (0,38,62)
+	if ( K_MOVE_TYPE equals crawl ) tossprojectile NPCATK_TARGET PROJ_SPEED F_DMG_TOSS 0.2 proj_k_knife (0,38,34)
+
+	setmodelbody 2 4
+	setvard AS_ATTACKING game.time
+	callevent npcatk_suspend_ai "do_throw"
+	callevent 0.5 do_reload
+}
+
+{ do_reload
+	if ( K_MOVE_TYPE isnot crawl ) playanim critical ANIM_SEARCH
+	if ( K_MOVE_TYPE equals crawl ) playanim critical ANIM_CAST_CRAWL
+	callevent 0.5 do_reload2
+}
+
+{ do_reload2
+	setvard AS_ATTACKING game.time
+	callevent npcatk_resume_ai "reload2"
+	setmodelbody 2 ORIG_WEAPON
+	playsound 0 10 SOUND_DRAW
+}
+
+{ npcatk_lost_sight
+	dbg npcatk_lost_sight NEXT_LH vs game.time
+	if !$cansee(enemy)
+	if( game.time > NEXT_LH )
+	{
+		setvard NEXT_LH game.time
+		add NEXT_LH $randf(5.0,15.0)
+		playsound 0 10 SOUND_IDLE
+	}
+	if !SEARCH_DELAY
+	setvard SEARCH_DELAY 1
+	callevent FREQ_LOOK reset_search_delay
+	playanim once ANIM_SEARCH
+	setvard AS_ATTACKING game.time
+}
+
+{ npc_aiding_ally
+
+	//dbg npc_aiding_ally $get(NPC_ALLY_TO_AID,name)
+	callexternal NPC_ALLY_TO_AID being_aided
+}
+
+{ being_aided
+	//dbg being_aided
+	if game.time > NEXT_AIDED_SOUND
+	setvard NEXT_AIDED_SOUND game.time
+	add NEXT_AIDED_SOUND $randf(3.0,5.0)
+	if $cansee(NPCATK_TARGET)
+	playrandomsound 0 10 SOUND_ALERT1 SOUND_ALERT2
+	//dbg playing alert sound
+}

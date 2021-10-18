@@ -1,0 +1,111 @@
+//Spider Turret by Thothie ( From Spitting Spider + Horror )
+//- This is basically a turret - it does not move, just shoots
+
+{
+	const PROJ_TYPE proj_poison
+	const PROJ_OFS (0,48,32)
+
+	const SOUND_PAIN 	monsters/spider/spiderhiss.wav
+	const SOUND_IDLE1 	monsters/spider/spideridle.wav
+	const SOUND_DEATH 	monsters/spider/spiderdie.wav
+	const SND_STRUCK1 	body/flesh1.wav
+	const SND_STRUCK2 	body/flesh2.wav
+	const SND_STRUCK3 	body/flesh3.wav
+	const SND_STRUCK4 	SOUND_PAIN
+	const SND_STRUCK5 	SOUND_PAIN
+	const SOUND_ATTACK1	zombie/claw_miss1.wav
+	const SOUND_ATTACK2	zombie/claw_miss2.wav
+
+	setvar ANIM_IDLE 	idle
+	setvar ANIM_WALK 	walk
+	setvar ANIM_RUN 	run
+	setvard ANIM_ATTACK 	attack
+	const ANIM_DODGE 	dodge
+	setvard ANIM_DEATH 	die
+
+	setvard ATTACK_RANGE 128
+	const ATTACK_SPEED   650
+	const ATTACK_DAMAGE_LOW	12
+	const ATTACK_DAMAGE_HIGH 24
+	const ATTACK_ACCURACY 60%
+
+	setvard ATTACK_RANGE 128
+	setvard MOVE_RANGE 75
+
+	const SPIDER_IDLE_VOL   3
+	const SPIDER_IDLE_DELAY 3.6
+	const SPIDER_VOLUME  10
+
+	const SPIT_FREQ 1.0
+
+    const AIM_RATIO 50
+
+	setvard NO_STEP_ADJ 1 //maybe causing aiming issues
+
+	setvard NO_STUCK_CHECKS 1 //not stuck, I just don't move
+
+	setvard NPC_MOVE_TARGET enemy	//base_npc_attack - Premptive attack
+	setvard RETALIATE_CHANCE 75%   //base_npc_attack - Automatically switch targets to the last damaging player
+}
+
+#include monsters/spider_base
+
+{ npc_spawn
+	callevent spider_spawn
+}
+
+{ spider_spawn
+   hp 150
+   //ov 359
+   width 64
+   height 64
+   roam 0
+   movespeed 0.0
+   name the|Spitting Spider
+   hearingsensitivity 10
+   setmodel monsters/fer_spider_large.mdl
+	setmodelbody 0 1
+
+   takedmg all .8
+	setvard NPC_GIVE_EXP	80
+}
+
+
+{ debug_props
+	saytextrange 1024
+
+	if ( $cansee(enemy) ) saytext I see enemy: ( $get(ent_lastseen,name) )
+	if ( IS_HUNTING ) saytext I am hunting: $get(ENTITY_ENEMY,name)
+	if ( HUNTING_PLAYER ) saytext I am hunting a player.
+
+	if ( !$cansee(enemy) ) saytext I see NO enemy.
+	if ( !IS_HUNTING ) saytext I am NOT hunting.
+	if ( !HUNTING_PLAYER ) saytext I am NOT hunting a player.
+
+	saytext My cycle time is CYCLE_TIME
+}
+
+{ [override] bite1 //called from modelanim attack @frame 12
+
+	playrandomsound CHAN_VOICE SOUND_ATTACK1 SOUND_ATTACK2
+	dodamage ENTITY_ENEMY ATTACK_HITRANGE $randf(ATTACK_DAMAGE_LOW,ATTACK_DAMAGE_HIGH) ATTACK_ACCURACY
+
+	setmovedest ENTITY_ENEMY 9999
+
+	tossprojectile HUNT_LASTTARGET ATTACK_SPEED $randf(ATTACK_DAMAGE_LOW,ATTACK_DAMAGE_HIGH) 2 PROJ_TYPE PROJ_OFS
+}
+
+{ reset_fire_delay
+
+	setvard FIRE_DELAY 0
+}
+
+{ npcatk_targetvalidate
+
+	if !FIRE_DELAY
+	setvard FIRE_DELAY 1
+	callevent SPIT_FREQ reset_fire_delay
+
+	if $cansee(enemy)
+	playanim once ANIM_ATTACK	
+}

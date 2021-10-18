@@ -1,0 +1,282 @@
+//This is a seperate include as some vendors do not use base_npc_vendor
+//It requires base_chat to function
+//I would have included base chat into this script, but it'd mess with a lot of existing venders
+
+//flags:
+//VEND_NEWBIE - (sevard plz) offers basic info on items:
+//VEND_ARMORER - for vendors that sell armor
+//VEND_WEAPONS - for vendors that sell weapons
+//VEND_CONTAINERS - for vendors that sell containers or sheaths
+//VEND_SPEC_SHEATHS - for vendors that still sell the specialist sheaths
+//- multiple flags can be enabled
+
+#scope server
+{
+	setvar HAS_INCLUDE_VENDOR_CONFIRM 1
+
+	setvard NPC_CHECK_LEVEL 1
+	//^ tells the code to check level of items purchased
+	//if the player lacks the skill to use the item, purchase is aborted, and a notice is given
+
+	local L_MAP_NAME $lcase(game.map.name)
+
+	//potential const/setvard confict - embarassing in a new function ><
+	if ( VEND_NEWBIE equals 'VEND_NEWBIE' )
+	{
+		if ( L_MAP_NAME equals edana ) setvard VEND_NEWBIE 1
+		if ( L_MAP_NAME equals deralia ) setvard VEND_NEWBIE 1
+		if ( L_MAP_NAME equals gatecity ) setvard VEND_NEWBIE 1
+		if ( L_MAP_NAME equals helena ) setvard VEND_NEWBIE 1
+	}
+
+	const FREQ_HINT_TEXT 120.0
+}
+
+{ game_spawn
+	callevent 1.0 player_scan
+	callevent 2.0 vend_post_spawn
+}
+
+{ vend_post_spawn
+	if ( VEND_WEAPONS ) catchspeech say_weapons weapon
+	if ( VEND_CONTAINERS ) catchspeech say_containers sheath pack container
+	setvard VEND_CHAT_MODE none
+}
+
+{ player_scan
+	if !NPC_REACTS
+	callevent 1.0 player_scan
+	if $cansee(player,128)
+	if $get(ent_lastseen,maxhp) < 100
+	callevent vendor_offer_help
+}
+
+{ vendor_offerstore //<player>
+	if game.serverside
+	callevent vendor_offer_help $get(PARAM1,id)
+}
+
+{ vendor_offer_help
+	if game.serverside
+	if !BUSY_CHATTING
+	if game.time > NEXT_HINT_TEXT
+	setvard NEXT_HINT_TEXT game.time
+	add NEXT_HINT_TEXT FREQ_HINT_TEXT
+
+	if $get(PARAM1,maxhp) < 200 //don't bother vets
+
+	if ( VEND_WEAPONS )
+	{
+		catchspeech say_weapons weapon
+		if !VEND_CONTAINERS
+		saytext I can tell you about the [weapons] I have for sale.
+		callevent bchat_mouth_move
+
+	}
+	if ( VEND_CONTAINERS )
+	{
+		catchspeech say_containers sheath pack container
+		callevent bchat_mouth_move
+
+		if ( !VEND_WEAPONS ) saytext I can tell you about the [containers] I have for sale.
+		if VEND_WEAPONS
+		saytext I can tell you about the types [weapons] and [containers] I have for sale, if you like.
+	}
+	if ( VEND_ARMORER )
+	{
+		if ( $get(PARAM1,strength) < 10 )
+		{
+			saytext "You might want to bulk up a bit before you try wearing any of my armors."
+			callevent bchat_mouth_move
+		}
+		else
+		{
+			if $get(PARAM1,strength) < 20
+			saytext "You look like you have enough muscle on you to handle my leather armors."
+			saytext "Still, I'd bulk up a bit more before trying the platemail, if I were you."
+			callevent bchat_mouth_move
+		}
+	}
+}
+
+{ game_menu_getoptions
+	if VEND_NEWBIE
+
+	if ( VEND_CHAT_MODE equals none )
+	{
+		if ( VEND_WEAPONS )
+		{
+			local reg.mitem.title 	"About Weapons"
+			local reg.mitem.type 	callback
+			local reg.mitem.callback say_weapons
+			menuitem.register
+			local OFFER_HELP 1
+		}
+		if ( VEND_CONTAINERS )
+		{
+			local reg.mitem.title 	"About Containers"
+			local reg.mitem.type 	callback
+			local reg.mitem.callback say_containers
+			menuitem.register
+			local OFFER_HELP 1
+		}
+		if ( OFFER_HELP ) callevent vendor_offer_help $get(PARAM1,id)
+	}
+
+	if ( VEND_CHAT_MODE equals weapons )
+	{
+		saytext Which sort of weapon would you like to know about?
+		local reg.mitem.title 	"Bows"
+		local reg.mitem.type 	callback
+		local reg.mitem.data	archery
+		local reg.mitem.callback say_weapon_desc
+		menuitem.register
+
+		local reg.mitem.title 	"Axes"
+		local reg.mitem.type 	callback
+		local reg.mitem.data	axehandling
+		local reg.mitem.callback say_weapon_desc
+		menuitem.register
+
+		local reg.mitem.title 	"Blunt Arms"
+		local reg.mitem.type 	callback
+		local reg.mitem.data	bluntarms
+		local reg.mitem.callback say_weapon_desc
+		menuitem.register
+
+		local reg.mitem.title 	"Gauntlets"
+		local reg.mitem.type 	callback
+		local reg.mitem.data	martialarts
+		local reg.mitem.callback say_weapon_desc
+		menuitem.register
+
+		local reg.mitem.title 	"Smallarms"
+		local reg.mitem.type 	callback
+		local reg.mitem.data	smallarms
+		local reg.mitem.callback say_weapon_desc
+		menuitem.register
+
+		local reg.mitem.title 	"Swords"
+		local reg.mitem.type 	callback
+		local reg.mitem.data	swordsmanship
+		local reg.mitem.callback say_weapon_desc
+		menuitem.register
+
+		local reg.mitem.title 	"Polearms"
+		local reg.mitem.type 	callback
+		local reg.mitem.data	polearms
+		local reg.mitem.callback say_weapon_desc
+		menuitem.register
+
+		local reg.mitem.title 	"Scrolls and Tomes"
+		local reg.mitem.type 	callback
+		local reg.mitem.data	spellcasting
+		local reg.mitem.callback say_weapon_desc
+		menuitem.register
+	}
+
+	callevent bchat_mouth_move
+}
+
+{ game_menu_cancel
+	setvard VEND_CHAT_MODE none
+}
+
+{ say_weapons
+	setvard VEND_CHAT_MODE weapons
+	setvard VEND_USER PARAM1
+	if ( !$get(VEND_USER,isalive) ) setvard VEND_USER $get(ent_lastspoke,id)
+	callevent 0.1 send_chat_menu
+}
+
+{ send_chat_menu
+	menu.open VEND_USER
+}
+
+{ say_weapon_desc
+
+	setvard VEND_CHAT_MODE none
+
+	if !BUSY_CHATTING
+
+	if ( PARAM2 equals archery )
+	{
+		setvard CHAT_STEPS 4
+		setvard CHAT_STEP1 "Bows are excellent for wearing down opponents from a distance, before they can reach you."
+		setvard CHAT_STEP2 "Basic arrows are always available, but for that extra kick, you'll want to purchase more specialized arrows."
+		setvard CHAT_STEP3 "Training with bows doesn't bulk one up much, but aids in awareness and concentration, honing the mind for other tasks."
+		setvard CHAT_STEP4 "Such mental discipline can also aid in the working of magic. But one does not live by bow and spell alone."
+	}
+
+	if ( PARAM2 equals axehandling )
+	{
+		setvard CHAT_STEPS 3
+		setvard CHAT_STEP1 "Smaller axes offer quick and steady damage. The large ones are slow and difficult to strike with, but can inflict massive wounds."
+		setvard CHAT_STEP2 "Either way, axe training offers rapid gains in both strength and endurance."
+		setvard CHAT_STEP3 "Nonetheless, the wise adventure always trains in as wide a range of weaponry as possible."
+	}
+
+	if ( PARAM2 equals bluntarms )
+	{
+		setvard CHAT_STEPS 2
+		setvard CHAT_STEP1 "Maces and hammers can be used to stun opponents, in addition to offering formidable strength."
+		setvard CHAT_STEP2 "It's a good idea, however, to balance the brute strength they offer with the other weapon disciplines as well."
+	}
+
+	if ( PARAM2 equals martialarts )
+	{
+		setvard CHAT_STEPS 3
+		setvard CHAT_STEP1 "Gauntlets are for aiding in brawling and martial arts training."
+		setvard CHAT_STEP2 "Virtually unarmed combat of this sort can get you out of a pinch!"
+		setvard CHAT_STEP3 "But you'll have to learn all the combat skills you can, or risk always being in one!"
+	} 
+
+	if ( PARAM2 equals smallarms )
+	{
+		setvard CHAT_STEPS 3
+		setvard CHAT_STEP1 "Knives and daggers require that you get in close with your opponent."
+		setvard CHAT_STEP2 "But they offer swift attack speeds and thus are not to be underestimated."
+		setvard CHAT_STEP3 "Training in smallarms offers little endurance, but great speed and agility."
+	}
+
+	if ( PARAM2 equals swordsmanship )
+	{
+		setvard CHAT_STEPS 3
+		setvard CHAT_STEP1 "Swordsmanship training is a balanced art, offering moderate gains in most all physical abilities."
+		setvard CHAT_STEP2 "While it is good to be a well rounded warrior, however, it is wise to learn all one can of all the weapons."
+		setvard CHAT_STEP3 "This ensures one doesn't fall behind the extremists by taking the moderate approach!"
+	}
+
+	if ( PARAM2 equals spellcasting )
+	{
+		setvard CHAT_STEPS 3
+		setvard CHAT_STEP1 "Memorizing tomes, or invoking scrolls, allows access to a wide range of magical abilities."
+		setvard CHAT_STEP2 "It's an entirely mental activity though, and does nothing for the physique."
+		setvard CHAT_STEP3 "So while magical ability is cruicial for the adventurer, to be sure, man cannot live by magic alone."
+	}
+
+	if ( PARAM2 equals polearms )
+	{
+		setvard CHAT_STEPS 4
+		setvard CHAT_STEP1 "Polearms are tricky to employ effectively in one on one combat, but deadly in the hands of an agile warrior."
+		setvard CHAT_STEP2 "They are very dynamic weapons, but you need to keep you enemy at a fair distance to optimize the damage."
+		setvard CHAT_STEP3 "While they aren't very effective at close range, the careful warrior can hold his opponent at bay, for a solid strike."
+		setvard CHAT_STEP4 "They do little to train robustness, but the footwork involved favors speed, concentration, and the like."
+	}
+
+	callevent chat_loop
+}
+
+{ say_containers
+	setvard CHAT_STEPS 3
+	setvard CHAT_STEP1 "Weapon straps hold any type of weapon. Quivers hold amunition. Big sacks hold nearly everything else."
+	setvard CHAT_STEP2 "Backpacks can hold nearly anything, useful for more a more generalized inventory."
+	setvard CHAT_STEP3 "Spellbooks hold magic scrolls. The small sack can hold most items, but has very little room, so it can't hold very many."
+
+	if ( VEND_SPEC_SHEATHS )
+	{
+		setvard CHAT_STEP4 "I also offer more specialized sheaths, that can only hold specific weapon types."
+		setvard CHAT_STEPS 4
+	}
+	callevent chat_loop
+}

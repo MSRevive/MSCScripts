@@ -1,0 +1,121 @@
+{
+	const SPR_FIRE			fire1_fixed.spr
+	const SPR_SMOKE1		xsmoke3.spr
+	const N_FRAMES 20
+  	const LIGHT_RADIUS		256
+  	const LIGHT_COLOR		(255,96,32)
+}
+
+{ client_activate
+
+	setvard FX_OWNER PARAM1
+
+	dbg client_activate
+
+	setvard FX_ORIGIN  $getcl(FX_OWNER,attachment0)
+
+	setvard FX_ACTIVE 1
+	setcallback render enable
+	cleffect light new FX_ORIGIN LIGHT_RADIUS LIGHT_COLOR 5.0
+	setvard SKEL_LIGHT_ID game.script.last_light_id
+
+	cleffect tempent sprite SPR_FIRE FX_ORIGIN setup_fire_sprite
+
+	setvard FX_SMOKES_ON 1
+	callevent do_smokes
+	callevent 10.0 end_smoke
+	callevent 60.0 end_fx
+}
+
+{ transfer_owner
+	setvard OWNER_TRANSFERED 1
+	setvard FX_OWNER PARAM1
+	setvard FX_ORIGIN  $getcl(FX_OWNER,attachment0)
+	callevent owner_update
+}
+
+{ owner_update
+	if FX_ACTIVE
+	callevent 1.0 owner_update
+	setvard FX_ORIGIN  $getcl(FX_OWNER,attachment0)
+}
+
+{ game_prerender
+	if FX_ACTIVE
+	if ( !FX_ORIGIN_FIXED )
+	{
+		local L_POS $getcl(FX_OWNER,attachment0)
+	}
+	else
+	{
+		local L_POS FX_ORIGIN
+	}
+
+	if ( L_POS equals $vec(0,0,0) ) callevent end_fx
+	cleffect light SKEL_LIGHT_ID L_POS LIGHT_RADIUS LIGHT_COLOR 1.0
+}
+
+{ end_smoke
+	setvard FX_SMOKES_ON 0
+	if !OWNER_TRANSFERED
+	setvard FX_ORIGIN $getcl(FX_OWNER,attachment0)
+	setvard FX_ORIGIN_FIXED 1
+}
+
+{ do_smokes
+	if FX_SMOKES_ON
+	callevent $randf(0.25,0.5) do_smokes
+	if ( !FX_ORIGIN_FIXED )
+	{
+		local L_POS $getcl(FX_OWNER,attachment0)
+	}
+	else
+	{
+		local L_POS FX_ORIGIN
+	}
+	cleffect tempent sprite SPR_SMOKE1 L_POS setup_smoke
+}
+
+{ end_fx
+	setvard FX_ACTIVE 0
+	callevent 1.0 remove_fx
+}
+
+{ remove_fx
+	removescript
+}
+
+{  setup_smoke
+
+	cleffect tempent set_current_prop death_delay 		last_frame
+	cleffect tempent set_current_prop rendermode 		add
+	cleffect tempent set_current_prop renderamt 		$randf(100,200)
+	cleffect tempent set_current_prop scale 		0.5
+	cleffect tempent set_current_prop gravity 		$randf(-0.2,-0.01)
+	cleffect tempent set_current_prop velocity 		$vec($randf(-5,5),$randf(-5,5),0)
+	cleffect tempent set_current_prop collide 		none
+	cleffect tempent set_current_prop rendercolor 		(32,32,32)
+	//cleffect tempent set_current_prop rendermode 		alpha
+	cleffect tempent set_current_prop frames 		N_FRAMES
+	cleffect tempent set_current_prop framerate 		30
+}
+
+{  setup_fire_sprite
+
+	cleffect tempent set_current_prop death_delay 		die_with_ent FX_OWNER
+	cleffect tempent set_current_prop rendermode 		add
+	cleffect tempent set_current_prop renderamt 		128
+	cleffect tempent set_current_prop scale 		0.3
+	cleffect tempent set_current_prop rendercolor 		(128,128,128)
+	cleffect tempent set_current_prop frames 		23
+	cleffect tempent set_current_prop framerate 		30
+	cleffect tempent set_current_prop follow 		FX_OWNER 0
+	//cleffect tempent set_current_prop gravity 		0
+	//cleffect tempent set_current_prop collide 		all
+}
+
+{ loop_sound
+	if FX_ACTIVE
+	sound.play3d items/torch1.wav 5 FX_ORIGIN
+	callevent 6.0 loop_sound
+}

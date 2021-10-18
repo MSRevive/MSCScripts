@@ -1,0 +1,130 @@
+{
+	setvard NPC_GIVE_EXP 400
+	const FREQ_ZAP 10.0
+	const DOT_SHOCK 25
+	const FREQ_STORM $randf(30,40)
+
+	const SOUND_ZAP_WARMUP debris/beamstart2.wav
+	const SOUND_ZAP debris/beamstart9.wav
+	const SOUND_STORM weather/Storm_exclamation.wav
+}
+
+{ game_precache
+	precachefile monsters/summon/tornado
+}
+
+#include monsters/eagle_giant_base
+
+{ npc_spawn
+
+	name a|Thunderbird
+	race demon
+	hp 2000
+	width 64
+	height 64
+	setmodel monsters/eagle_large.mdl
+	setidleanim flapping
+	setmoveanim flapping
+	hearingsensitivity 8
+	roam 1
+	takedmg poison 2.0
+	takedmg holy 1.0
+	takedmg lightning 0.0
+	setprop ent_me skin 6
+	callevent FREQ_ZAP do_zap
+	callevent FREQ_STORM do_storm
+
+	setvard BEAM_LIST ''
+	callevent 0.1 init_beam1
+}
+
+{ game_dodamage
+
+	if PARAM1
+	if PARAM5 !startswith effect_
+	addvelocity PARAM2 $relvel(20,200,10)
+}
+
+{ do_zap
+	callevent FREQ_ZAP do_zap
+	setvard BEAM_TARGETS $get_tbox(enemy,1024,game.monster.origin)
+	if BEAM_TARGETS isnot none
+	effect glow ent_me (255,255,0) 128 3 3
+	playsound 0 10 SOUND_ZAP_WARMUP
+	callevent 1.0 do_zap2
+}
+
+{ do_zap2
+	setvard BEAMS_ON 0
+	calleventloop $get_token_amt(BEAM_TARGETS) zap_targets
+	playsound 0 10 SOUND_ZAP
+	callevent 2.0 turn_beams_off
+}
+
+{ zap_targets
+	local CUR_IDX game.script.iteration
+	if BEAMS_ON < 4 //only have 4 beams to work with
+	local CUR_TARGET $get_token(BEAM_TARGETS,CUR_IDX)
+	local CUR_TARG_ORG $get(CUR_TARGET,origin)
+	local CUR_BEAM $get_token(BEAM_LIST,CUR_IDX)
+	local TRACE_TARGET $get_traceline(game.monster.origin,CUR_TARG_ORG,worldonly)
+	if TRACE_TARGET equals CUR_TARG_ORG
+	add BEAMS_ON 1
+	effect beam update CUR_BEAM end_target CUR_TARGET 0
+	effect beam update CUR_BEAM brightness 200
+	applyeffect CUR_TARGET effects/effect_shock_dmg 5 $get(ent_me,id) DOT_SHOCK
+	addvelocity CUR_TARGET $relvel(-100,1000,250)
+}
+
+{ turn_beams_off
+	calleventloop $get_token_amt(BEAM_LIST) beams_off_loop
+}
+
+{ beams_off_loop
+	effect beam update $get_token(BEAM_LIST,game.script.iteration) brightness 0
+}
+
+
+{ game_death
+	calleventloop $get_token_amt(BEAM_LIST) beams_remove
+}
+
+{ beams_remove
+	effect beam update $get_token(BEAM_LIST,game.script.iteration) remove 0.1
+}
+
+{ init_beam1
+	effect beam ents lgtning.spr 30 ent_me 1 ent_me 0 (200,255,50) 0 10 -1
+	token.add BEAM_LIST	$get(ent_lastcreated,id)
+	callevent 0.1 init_beam2
+}
+
+{ init_beam2
+	effect beam ents lgtning.spr 30 ent_me 2 ent_me 0 (200,255,50) 0 10 -1
+	token.add BEAM_LIST	$get(ent_lastcreated,id)
+	callevent 0.1 init_beam3
+}
+
+{ init_beam3
+	effect beam ents lgtning.spr 30 ent_me 1 ent_me 0 (200,255,50) 0 10 -1
+	token.add BEAM_LIST	$get(ent_lastcreated,id)
+	callevent 0.1 init_beam4
+}
+
+{ init_beam4
+	effect beam ents lgtning.spr 30 ent_me 2 ent_me 0 (200,255,50) 0 10 -1
+	token.add BEAM_LIST	$get(ent_lastcreated,id)
+}
+
+{ do_storm
+
+	callevent FREQ_STORM do_storm
+	if NPCATK_TARGET isnot unset
+
+	playsound 0 10 SOUND_STORM
+	playanim critical ANIM_ATTACK
+	createnpc monsters/summon/tornado $relpos(0,64,0) $get(ent_me,id) 50 20.0
+	callevent npcatk_suspend_ai 3.0
+	setvard NPC_FORCED_MOVEDEST 1
+	setmovedest NPC_HOME_LOC 32
+}

@@ -1,0 +1,199 @@
+//Please note that this is a very old script, so some of the conventions are a bit off
+{
+	const NPC_REACT_SEETARGET_RANGE 128
+}
+
+{  game_spawn
+
+	hp	20
+	gold	26	
+	name	Merchant Square Keeper
+	//ov	60
+	width	32
+	height	72
+	race	human
+	roam	0      //Don't go roaming around
+	setmodel	npc/human1.mdl
+	invincible	1
+	setmodelbody	1 1
+	setvard		ENTRY_GOLD	$rand(2,4)
+	menu.autoopen	1
+   
+	catchspeech say_hi 	  hi hello hail greet
+	catchspeech say_job 	  job work money gold
+	catchspeech say_rumor rumor rumour news happening
+
+	callevent open_store
+}
+
+#include monsters/base_chat
+#include help/first_marketsquare
+#include monsters/base_react
+
+{  npcreact_targetsighted
+
+	if CHAT_GREET
+	if !STORE_CLOSED
+
+	callevent say_hi
+}
+
+{  game_playerused
+  
+  	callevent say_hi
+}
+
+{  say_hi
+
+   if CHAT_GREET
+   if( STORE_CLOSED == 0 )
+   {
+  	playanim once studycart
+  	saytext Greetings and welcome to the merchant square!
+   	say [.5] [.1] [.1] [.05] [.05] [.1] [.3]
+  	callevent 2 say_hi_2
+   }
+   else
+   {
+	saytext Sorry, the square is closed from midnight 'til nine
+   	say [.3] [.1] [.1] [.1] [.1] [.1] [.05] [.05] [.04] [.5]
+   }
+
+   setvard CHAT_GREET 0
+   callevent 6 reset_greet
+}
+
+{  say_hi_2
+
+	saytext The entry fee is ENTRY_GOLD gold, you can stay as long as you want.
+}
+
+{ reset_greet
+  
+	setvard CHAT_GREET 1
+}
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////
+
+{ game_recvoffer_gold
+
+  if( STORE_CLOSED == 0 )
+  {
+	if( game.offer.gold >= ENTRY_GOLD )
+	{
+		if( game.offer.gold > ENTRY_GOLD ) saytext "More then i needed!"
+		else saytext "Thank you very much!"
+  		say [.05] [.05] [.05] [.03] [.1] [.05] [.2]
+		recvoffer accept
+		playanim once yes
+		callevent recv_payment $get(ent_lastgave,id)
+  	}
+  	else 
+  	{
+		recvoffer reject
+		callevent recv_payment_failed $get(ent_lastgave,id)
+  	}
+  }
+  else
+  {
+  	saytext Sorry, the square is closed from midnight 'til nine
+ 	say [.05] [.05] [.05] [.01] [.1] [.05] [.2] [.1] [.1]
+  	recvoffer reject
+	playanim once no
+  }
+}
+
+{ menu_recv_payment
+
+	saytext "Thank you very much!"
+  	say [.05] [.05] [.05] [.03] [.1] [.05] [.2]
+	recvoffer accept
+	playanim once yes
+
+	callevent recv_payment PARAM1		
+}
+{ menu_recv_payment_failed
+
+	saytext "Thank you very much!"
+  	say [.05] [.05] [.05] [.03] [.1] [.05] [.2]
+	recvoffer accept
+	playanim once yes
+
+	callevent recv_payment PARAM1		
+}
+
+{ recv_payment
+
+	usetrigger door1
+}
+{ recv_payment_failed
+
+	saytext I'm sorry, but since we just got this merchant square set up,
+  	say [.05] [.1] [.1] [.1] [.1] [.1] [.08] [.08] [.05] [.1] [.1] [.2]
+	callevent 1 speech_materials
+	playanim once no
+}
+
+{  speech_materials
+
+	saytext we have to charge a little extra to pay for materials. I'm sure you understand...
+}
+///////////////////////////////////////////////////////////////////////////////////7
+
+
+{ say_job
+
+	saytext Well, I just recently hired a new guard so I'm afraid we're fully staffed now.
+	say [.4] [.2] [.2] [.1] [.1] [.1] [.2] [.05] [.05] [.2] [.1] [.3] [.2] [.3] [.1]
+}
+//Rumours
+{ say_rumor
+
+	playanim once pondering
+	saytext Tristan is after the mayor, but he can't leave his post. He's at the backalley of the merchant square.
+}
+
+{ worldevent_time
+
+   if( PARAM1 >= 24 ) callevent close_store
+   else if( PARAM1 <= 9 ) callevent close_store
+   else if( PARAM1 > 9 )
+   {
+	if( PARAM1 < 24 ) callevent open_store
+   }
+}
+
+{ open_store
+
+	setvard	CHAT_GREET	1
+	setvard STORE_CLOSED 	0
+}
+
+{ close_store
+
+	setvard	CHAT_GREET	0
+	setvard STORE_CLOSED 	1
+}
+
+{ game_menu_getoptions
+
+	if( !STORE_CLOSED )
+	{
+		local reg.mitem.id	payment
+		local reg.mitem.title	"Pay " ENTRY_GOLD " gold"
+		local reg.mitem.type	payment
+		local reg.mitem.data	gold: ENTRY_GOLD
+		local reg.mitem.callback  menu_recv_payment
+		local reg.mitem.cb_failed menu_recv_payment_failed
+
+		menuitem.register
+	}
+	else
+	{
+		local reg.mitem.title	"Merc. Square Closed"
+		local reg.mitem.type	disabled
+
+		menuitem.register
+	}
+}

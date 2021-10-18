@@ -1,0 +1,173 @@
+{ client_activate //<owner> <startang> <startvel> <startorg> <color> <duration> <sprite>
+	setvard FX_OWNER PARAM1
+	setvard CUR_ANG PARAM2
+	setvard CUR_VEL PARAM3
+	setvard FX_COLOR PARAM4
+	setvard FX_DURATION PARAM5
+	setvard FX_SPRITE PARAM6 //sending this so we don't pre-cache without needing to
+
+	setvard CUR_ORG $getcl(FX_OWNER,origin)
+
+	setcallback render enable
+	setvard IS_ACTIVE 1
+
+	setvard CLOUD_ORG CUR_ORG
+
+	//this no workie with a sprite
+	//cleffect sprite FX_SPRITE CUR_ORG setup_cloud update_cloud
+	cleffect tempent model weapons/projectiles.mdl CUR_ORG setup_cloud update_cloud
+
+	cleffect light new $getcl(FX_OWNER,origin) 128 FX_COLOR 5.0
+	setvard PROJ_LIGHT_ID game.script.last_light_id
+
+	//dbg *** client_activate org CUR_ORG dur FX_DURATION
+
+	local L_FAILSAFE_DURATION FX_DURATION
+	multiply L_FAILSAFE_DURATION 1.5
+
+	callevent L_FAILSAFE_DURATION end_fx //server should end it, but just in case
+}
+
+{ game_prerender
+	if $getcl(FX_OWNER,exists)
+	local L_POS $getcl(FX_OWNER,origin)
+	cleffect light PROJ_LIGHT_ID L_POS 128 FX_COLOR 1.0
+}
+
+{ sv_update_vel
+	//dbg *** sv_update_vel ang CUR_ANG vel CUR_VEL org CUR_ORG
+
+	setvard CUR_ANG PARAM1
+	setvard CUR_VEL PARAM2
+	setvard CUR_ORG PARAM3
+	setvard UPDATE_VEL 1
+}
+
+{ update_cloud
+	if ( IS_ACTIVE )
+	{
+		setvard CLOUD_ORG game.tempent.origin
+		if ( UPDATE_VEL )
+		{
+			cleffect tempent set_current_prop angles CUR_ANG
+			cleffect tempent set_current_prop velocity CUR_VEL
+			//cleffect tempent set_current_prop origin CUR_ORG
+			setvard UPDATE_VEL 0
+		}
+	}
+	else
+	{
+		cleffect tempent set_current_prop origin $vec(20000,0,0)
+	}
+}
+
+{
+repeatdelay $randf(0.01,0.05)
+	if IS_ACTIVE
+	cleffect tempent sprite FX_SPRITE CLOUD_ORG spit_flames
+	cleffect tempent sprite FX_SPRITE CLOUD_ORG spit_flames
+	cleffect tempent sprite FX_SPRITE CLOUD_ORG spit_flames
+}
+
+{ proj_explode
+	setvard IS_ACTIVE 0
+
+	cleffect light new CLOUD_ORG 256 FX_COLOR 2.0
+
+	setvard CYCLE_ANGLE 0
+	calleventloop 17 create_explode_sprites
+	callevent 1.5 remove_fx
+}
+
+{ create_explode_sprites
+	local SPR_POS CLOUD_ORG
+	vectoradd SPR_POS $relpos($vec(0,CYCLE_ANGLE,0),$vec(0,10,0))
+	cleffect tempent sprite FX_SPRITE SPR_POS setup_explode_sprite update_explode_sprite
+	add CYCLE_ANGLE 20
+}
+
+{ update_explode_sprite
+	local CUR_SIZE game.tempent.fuser1
+	if CUR_SIZE > 0.01
+	subtract CUR_SIZE 0.01
+	cleffect tempent set_current_prop scale CUR_SIZE
+	cleffect tempent set_current_prop fuser1 CUR_SIZE
+}
+
+{ end_fx
+	setvard IS_ACTIVE 0
+	callevent 3.0 remove_fx
+}
+
+{ remove_fx
+	removescript
+}
+
+
+{ setup_cloud
+//	cleffect tempent set_current_prop origin $getcl(FX_OWNER,origin)
+//	cleffect tempent set_current_prop rendermode add
+//	cleffect tempent set_current_prop renderamt 255
+//	cleffect tempent set_current_prop death_delay FX_DURATION
+//	cleffect tempent set_current_prop scale 1.0
+//	cleffect tempent set_current_prop gravity 	0
+//	cleffect tempent set_current_prop angles CUR_ANG
+//	cleffect tempent set_current_prop velocity CUR_VEL
+//	cleffect tempent set_current_prop collide 	none
+//	cleffect tempent set_current_prop framerate 30
+//	cleffect tempent set_current_prop frames	1
+//	cleffect tempent set_current_prop rendercolor FX_COLOR
+
+	cleffect tempent set_current_prop origin $getcl(FX_OWNER,origin)
+	cleffect tempent set_current_prop rendermode add
+	cleffect tempent set_current_prop renderamt 1
+	cleffect tempent set_current_prop death_delay FX_DURATION
+	cleffect tempent set_current_prop scale 1.0
+	cleffect tempent set_current_prop gravity 	0
+	cleffect tempent set_current_prop angles CUR_ANG
+	cleffect tempent set_current_prop velocity CUR_VEL //$relvel(OWNER_ANG,$vec(0,1000,0))
+	cleffect tempent set_current_prop collide 	none
+	cleffect tempent set_current_prop body 	71
+	//cleffect tempent set_current_prop fadeout lifetime
+	cleffect tempent set_current_prop framerate 1.0
+	cleffect tempent set_current_prop frames 16
+	cleffect tempent set_current_prop sequence 11 //maybe adjust based on throw anim
+
+}
+
+{ spit_flames
+
+	cleffect tempent set_current_prop death_delay 	0.5
+	cleffect tempent set_current_prop fadeout 	0.5
+	cleffect tempent set_current_prop velocity 	 $relvel(CUR_ANG,$vec($randf(-120,120),-200,0))
+	cleffect tempent set_current_prop bouncefactor 	5
+	cleffect tempent set_current_prop scale 	0.5
+	cleffect tempent set_current_prop renderamt	180
+	cleffect tempent set_current_prop rendermode add
+	cleffect tempent set_current_prop gravity 	0
+	cleffect tempent set_current_prop collide 	all;die
+	cleffect tempent set_current_prop framerate	30
+	cleffect tempent set_current_prop frames	1
+	cleffect tempent set_current_prop rendercolor FX_COLOR
+}
+
+{ setup_explode_sprite
+
+	cleffect tempent set_current_prop death_delay 	1.0
+	cleffect tempent set_current_prop gravity 	0
+	local SPRITE_TURN $relvel($vec(0,CYCLE_ANGLE,0),$vec(0,200,0))
+	cleffect tempent set_current_prop velocity SPRITE_TURN
+	cleffect tempent set_current_prop collide 	none
+	cleffect tempent set_current_prop fadeout lifetime
+
+	cleffect tempent set_current_prop rendermode add
+	cleffect tempent set_current_prop renderamt 255
+	cleffect tempent set_current_prop death_delay 	FX_DURATION
+	cleffect tempent set_current_prop scale 2.0
+	cleffect tempent set_current_prop angles CUR_ANG
+	cleffect tempent set_current_prop framerate 30
+	cleffect tempent set_current_prop frames	1
+	cleffect tempent set_current_prop rendercolor FX_COLOR
+
+	cleffect tempent set_current_prop fuser1 1.0
+}

@@ -1,0 +1,606 @@
+//Beetlejuice! Beetlejuice! Beetlejuice! By thothie.
+//Base for fire, poison, and death beetles
+#scope server
+
+{ [shared]
+	//base anims
+	setvar ANIM_WALK bug_walk
+	setvar ANIM_IDLE bug_idle
+	setvard ANIM_RUN bug_run
+	setvard ANIM_ATTACK bug_leapatk
+	setvard ANIM_DEATH bug_death
+	setvard ANIM_FLINCH bug_flinch //suggest bug_flinch2 for larger beetles
+
+	//custom anims
+	const ANIM_RUN_DEFAULT bug_run
+	const ANIM_WALK_DEFAULT bug_walk
+	const ANIM_IDLE_DEFAULT bug_idle
+	const ANIM_ATTACK_LEAP bug_leapatk //frame_leap_attack1
+	const ANIM_ATTACK_CLAW bug_claw_up //frame_claw_up
+	const ANIM_ATTACK_GORE bug_gore //frame_gore
+	const ANIM_ATTACK_SLAM bug_slam //frame_slam
+
+	const ANIM_TO_BACK bug_toback //frame_on_back
+	const ANIM_BACK_TO_FEET bug_backtofeet //frame_back_on_feet
+	const ANIM_IDLE_ONBACK bug_onback
+	const ANIM_DEATH_ONBACK bug_back_to_death
+	const ANIM_DEATH_NORMAL bug_death
+
+	const ANIM_FLY bug_jump
+
+	const ANIM_SPECIAL bug_conjure //frame_spell
+	const ANIM_RISE_FROM_GROUND bug_rise //frame_rise_done
+
+	const ANIM_RAWR bug_rawr
+	const ANIM_ALERT bug_alert
+}
+
+{
+	//precache model to be used in top script
+	setvar BBET_LARGE_MODEL monsters/beetles.mdl
+	setvar BBET_GIANT_MODEL monsters/beetles_giant.mdl
+
+	//defaults for large beetle behavior
+	const BBET_SIZE 1
+	const BBET_CAN_FLY 1
+	const BBET_CAN_LEAP 1
+	const BBET_CAN_SLAM 0
+	const BBET_GORE_PUSH_STR 400
+	const BBET_FAKE_DEATH $rand(0,1) //set 0 for giants
+	const BBET_MAX_FLY_TIME 8.0
+	const BBET_HORN 0
+
+	const FREQ_ALERT 10.0
+	const FREQ_SEARCH 10.0
+	const FREQ_FORCE_GORE 15.0 //set lower for giant
+	const FREQ_SLAM $randf(10.0,20.0)
+	const FREQ_FLY $randf(5.0,15.0)
+	const FREQ_FLY_LEAP $randf(20.0,60.0)
+	const AOE_GORE 96
+
+	//level 30'ish beetle
+	const DMG_SLASH 60
+	const DMG_GORE 120
+	const DMG_LEAP 300
+	const DMG_SLAM 400
+	const ATTACK_HITCHANCE 90%
+	const DMGTYPE_GORE pierce //blunt for fire beetles (no horn)
+
+	const BBET_CL_SCRIPT monsters/beetle_base_cl
+
+
+	//soundset
+	const SOUND_ATTACK1 monsters/beetle/attack_single1.wav
+	const SOUND_ATTACK2 monsters/beetle/attack_single2.wav
+	const SOUND_ATTACK3 monsters/beetle/attack_single3.wav
+	const SOUND_SWIPE zombie/claw_miss1.wav
+
+	const SOUND_GROWL monsters/beetle/distract1.wav
+
+	const SOUND_DIG1 monsters/beetle/dig1.wav
+	const SOUND_DIG2 monsters/beetle/dig2.wav
+	const SOUND_DIGWARN monsters/beetle/rumble1.wav
+
+	const SOUND_IDLE1 monsters/beetle/idle1.wav
+	const SOUND_IDLE2 monsters/beetle/idle2.wav
+	const SOUND_IDLE3 monsters/beetle/idle3.wav
+	const SOUND_IDLE4 monsters/beetle/idle4.wav
+	const SOUND_IDLE5 monsters/beetle/idle5.wav
+
+	const SOUND_FLY_LOOP monsters/beetle/fly1.wav
+	const SOUND_CHITTER_LOOP monsters/beetle/charge_loop1.wav
+
+	const SOUND_LAND monsters/beetle/land1.wav
+
+	const SOUND_SLAM magic/boom.wav
+
+	const SOUND_PAIN1 monsters/beetle/pain1.wav
+	const SOUND_PAIN2 monsters/beetle/pain2.wav
+	const SOUND_STRUCK1 monsters/beetle/shell_impact1.wav
+	const SOUND_STRUCK2 monsters/beetle/shell_impact2.wav
+	const SOUND_STRUCK3 monsters/beetle/shell_impact3.wav
+	const SOUND_STRUCK4 monsters/beetle/shell_impact4.wav
+	const SOUND_GIBBED monsters/beetle/squashed.wav
+
+	const SOUND_DEATH monsters/beetle/pain2.wav
+}
+
+#include monsters/base_monster_new
+
+{ game_spawn
+
+	if ( BBET_SIZE == 1 )
+	{
+		//large beetle
+		setmodel BBET_LARGE_MODEL
+		width 40
+		height 40
+		setvard ATTACK_MOVERANGE 48
+		setvard ATTACK_RANGE 130
+		setvard ATTACK_HITRANGE 160
+		setvard ATTACK_RANGE_LEAP 150
+		setvard ATTACK_HITRANGE_LEAP 175
+		setvard ATTACK_RANGE_GORE 64
+		setvard ATTACK_HITRANGE_GORE 100
+		setvard ATTACK_RANGE_CLAW 32 
+		setvard ATTACK_HITRANGE_CLAW 64
+		setvard BBET_SLAM_RADIUS 128
+		setvard BBET_BURROW_CLOUD_RADIUS 64
+	}
+
+	if ( BBET_SIZE == 2 )
+	{
+		//giant beetle
+		setmodel BBET_GIANT_MODEL
+		width 72
+		height 72
+		setvard ATTACK_MOVERANGE 64
+		setvard ATTACK_RANGE 80
+		setvard ATTACK_HITRANGE 150
+		setvard ATTACK_RANGE_GORE 80
+		setvard ATTACK_HITRANGE_GORE 150
+		setvard ATTACK_RANGE_CLAW 48 
+		setvard ATTACK_HITRANGE_CLAW 96
+		setvard BBET_SLAM_RADIUS 256
+		setvard BBET_BURROW_CLOUD_RADIUS 128
+	}
+
+	race vermin
+	hearingsensitivity 4
+	roam 1
+
+	if ( !BBET_BURROWER )
+	{
+		setidleanim ANIM_IDLE
+		setmoveanim ANIM_WALK
+	}
+	
+	setvard BBET_WILL_FAKE_DEATH BBET_FAKE_DEATH
+
+	callevent beetle_spawn
+}
+
+{ npc_post_spawn
+	setvard BBET_HALF_HP $get(ent_me,maxhp)
+	divide BBET_HALF_HP 2
+	if ( BBET_SIZE == 2 ) stepsize 16 //to stop big bugs from crawling on top of the weed ones
+}
+
+//=================== Main Cycle
+{ npcatk_hunt
+	if BBET_CAN_FLY
+	if !BBET_ONBACK
+	if !SUSPEND_AI
+	if !BBET_FLYING
+	if !I_R_FROZEN
+	if game.time > BBET_NEXT_FLY
+	if ( NPCATK_TARGET isnot unset )
+	{
+		if ( $get(NPCATK_TARGET,range) < 800 )
+		{
+			local MY_Z $get(ent_me,origin.z)
+			local TARG_Z $get(NPCATK_TARGET,origin.z)
+			if ( $get(NPCATK_TARGET,isplayer) ) subtract TARG_Z 38 //compensate for origin center
+
+			local Z_DIFF TARG_Z
+			subtract Z_DIFF MY_Z
+			if ( Z_DIFF > 64 )
+			{
+				callevent bbet_fly_start
+			}
+		}
+
+		if $get(NPCATK_TARGET,range) > ATTACK_HITRANGE
+		if game.time > BBET_NEXT_FLY_LEAP
+		setvard BBET_NEXT_FLY_LEAP game.time
+		add BBET_NEXT_FLY_LEAP FREQ_FLY_LEAP
+		callevent bbet_fly_leap
+
+	}
+
+}
+
+{ npc_selectattack
+
+	local TARG_RANGE $get(NPCATK_TARGET,range)
+	if ( BBET_CAN_LEAP )
+	{
+		if TARG_RANGE < ATTACK_RANGE_LEAP
+		if TARG_RANGE > ATTACK_RANGE_GORE
+		setvard ANIM_ATTACK ANIM_ATTACK_LEAP
+	}
+
+	if ( TARG_RANGE < ATTACK_RANGE_GORE )
+	{
+		if TARG_RANGE > ATTACK_RANGE_CLAW
+		setvard ANIM_ATTACK ANIM_ATTACK_GORE
+	}
+
+	if ( TARG_RANGE < ATTACK_RANGE_CLAW )
+	{
+		setvard ANIM_ATTACK ANIM_ATTACK_CLAW
+		if game.time > NEXT_FORCE_GORE
+		setvard ANIM_ATTACK ANIM_ATTACK_GORE //reset NEXT_FORCE_GORE in attack anim
+	}
+
+	if ( BBET_CAN_SLAM )
+	{
+		if game.time > NEXT_SLAM //reset in anim event
+		setvard ANIM_ATTACK ANIM_ATTACK_SLAM
+	}
+}
+
+{ cycle_up
+	if ( BBET_CAN_SLAM )
+	{
+		setvard NEXT_SLAM game.time
+		add NEXT_SLAM FREQ_SLAM
+	}
+
+	if ( BBET_CAN_FLY )
+	{
+		if $rand(1,2) == 1 //so they don't all take flight at once
+		setvard BBET_NEXT_FLY_LEAP game.time
+		add BBET_NEXT_FLY_LEAP FREQ_FLY_LEAP
+	}
+	
+	if game.time > NEXT_ALERT
+	setvard NEXT_ALERT game.time
+	add NEXT_ALERT FREQ_ALERT
+	setvard AS_ATTACKING game.time
+	local RND_ANIM $rand(1,2)
+	if ( RND_ANIM == 1 ) playanim critical ANIM_ALERT
+	if ( RND_ANIM == 2 ) playanim critical ANIM_RAWR
+	playsound 0 10 SOUND_GROWL
+}
+
+{ npc_targetsighted
+	if !BBET_DID_GROWL
+	setvard BBET_DID_GROWL 1
+	setvard AS_ATTACKING game.time
+	local RND_ANIM $rand(1,2)
+	if ( RND_ANIM == 1 ) playanim critical ANIM_ALERT
+	if ( RND_ANIM == 2 ) playanim critical ANIM_RAWR
+	playsound 0 10 SOUND_GROWL
+}
+
+{ cycle_down
+	setvard BBET_DID_GROWL 0
+}
+
+{ npcatk_lost_sight
+	if game.time > NEXT_SEARCH
+	setvard NEXT_SEARCH game.time
+	add NEXT_SEARCH FREQ_SEARCH
+	playanim once ANIM_ALERT
+	playsound 0 10 SOUND_GROWL
+}
+
+//=================== Anim Events
+{ frame_gore_start
+	playrandomsound 0 10 SOUND_ATTACK1 SOUND_ATTACK2 SOUND_ATTACK3
+}
+
+{ frame_gore
+	setvard NEXT_FORCE_GORE game.time
+	add NEXT_FORCE_GORE FREQ_FORCE_GORE
+	setvard GORE_ATTACK 1
+	if ( BBET_SIZE == 1 )
+	{
+		dodamage NPCATK_TARGET ATTACK_HITRANGE_GORE DMG_GORE ATTACK_HITCHANCE DMGTYPE_GORE
+	}
+	else
+	{
+		xdodamage $get(ent_me,attachpos,BBET_HORN) AOE_GORE DMG_GORE 0 ent_me ent_me none DMGTYPE_GORE
+	}
+	callevent 0.1 bbet_reset_gore_attack //time delay in case AOE hits multiple targs
+}
+
+{ frame_leap_start
+	playrandomsound 0 10 SOUND_ATTACK1 SOUND_ATTACK2 SOUND_ATTACK3
+	svplaysound 1 10 SOUND_CHITTER_LOOP
+}
+
+{ frame_leap_attack1
+	dodamage NPCATK_TARGET ATTACK_HITRANGE_LEAP DMG_LEAP ATTACK_HITCHANCE slash
+	setvard LEAP_ATTACK 1
+	playsound 0 5 SOUND_LAND
+	svplaysound 1 0 SOUND_CHITTER_LOOP
+}
+
+{ frame_claw_up
+	if ( $rand(1,5) != 1 )
+	{
+		playsound 0 10 SOUND_SWIPE
+	}
+	else
+	{
+		playrandomsound 0 10 SOUND_ATTACK1 SOUND_ATTACK2 SOUND_ATTACK3
+	}
+
+	dodamage NPCATK_TARGET ATTACK_HITRANGE_CLAW DMG_LEAP ATTACK_HITCHANCE slash
+}
+
+{ bbet_reset_gore_attack
+	setvard GORE_ATTACK 0
+}
+
+{ game_dodamage
+	if ( GORE_ATTACK )
+	{
+		if $get(PARAM2,exists)
+		addvelocity PARAM2 $relvel(-10,BBET_GORE_PUSH_STR,110)
+	}
+
+	if ( LEAP_ATTACK )
+	{
+		if $get(PARAM2,exists)
+		addvelocity PARAM2 $relvel(-10,BBET_GORE_PUSH_STR,110)
+	}
+
+	setvard LEAP_ATTACK 0 //gore attack reset via delay instead
+}
+
+{ frame_rise_done
+	callevent bbet_rise_complete
+}
+
+{ frame_slam_start
+	playrandomsound 0 10 SOUND_ATTACK1 SOUND_ATTACK2 SOUND_ATTACK3	
+}
+
+{ frame_slam
+	playrandomsound 0 10 SOUND_SLAM
+	setvard NEXT_SLAM game.time
+	add NEXT_SLAM FREQ_SLAM
+	callevent beetle_slam //to be handled in top script
+}
+
+{ frame_on_back
+	playanim critical ANIM_IDLE_ONBACK
+}
+
+//=================== Add Params
+{ set_burrower
+	setvard BBET_BURROWER 1
+	setprop ent_me rendermode 1
+	setprop ent_me renderamt 0
+	setidleanim ANIM_RISE_FROM_GROUND
+	setmoveanim ANIM_RISE_FROM_GROUND
+	callevent 0.1 bbet_burrower_effect
+}
+
+{ bbet_burrower_effect
+	local EFFECT_ORG $get(ent_me,origin)
+	vectorset EFFECT_ORG z $get_ground_height(game.monster.origin)
+	playsound 0 10 SOUND_DIG1
+	clientevent new all BBET_CL_SCRIPT "burrow" EFFECT_ORG BBET_BURROW_CLOUD_RADIUS
+	setvard BBET_RENDERAMT 0
+	callevent bbet_burrower_effect_fadein
+	playanim critical ANIM_RISE_FROM_GROUND
+}
+
+{ bbet_burrower_effect_fadein
+	add BBET_RENDERAMT 50
+	if ( BBET_RENDERAMT > 255 ) setvard BBET_RENDERAMT 255
+	setprop ent_me renderamt BBET_RENDERAMT
+	if ( BBET_RENDERAMT < 255 )
+	{
+		callevent 0.1 bbet_burrower_effect_fadein
+	}
+	if BBET_RENDERAMT == 255
+	setprop ent_me rendermode 0
+	callevent 2.0 bbet_rise_complete
+}
+
+{ bbet_rise_complete
+	if !BBET_RISE_FINALIZED
+	setvard BBET_RISE_FINALIZED 1
+	playsound 0 10 SOUND_DIG2
+	setidleanim ANIM_IDLE
+	setmoveanim ANIM_WALK
+}
+
+//=================== El Morte
+{ game_death
+	svplaysound 1 0 SOUND_CHITTER_LOOP
+	svplaysound 2 0 SOUND_FLY_LOOP
+	if ( BBET_ONBACK )
+	{
+		setvard ANIM_DEATH ANIM_DEATH_ONBACK
+	}
+	else
+	{
+		setvard ANIM_DEATH ANIM_DEATH_NORMAL
+	}
+}
+
+//=================== Fake Death
+{ game_struck
+	playsound 0 10 SOUND_STRUCK1 SOUND_STRUCK2 SOUND_STRUCK3 SOUND_STRUCK4 SOUND_PAIN1 SOUND_PAIN2
+	if BBET_WILL_FAKE_DEATH
+	if !BBET_DID_FAKE_DEATH	
+	if !BBET_FLYING
+	if $get(ent_me,hp) < BBET_HALF_HP
+	setvard BBET_DID_FAKE_DEATH 1
+	callevent bbet_fake_death
+}
+
+{ bbet_fake_death
+	callevent npcatk_suspend_movement ANIM_IDLE_ONBACK
+	playanim critical ANIM_TO_BACK
+	setvard BBET_ONBACK 1
+	callevent $randf(4.0,8.0) bbet_get_up
+}
+
+{ bbet_get_up
+	callevent npcatk_resume_movement
+	playanim critical ANIM_BACK_TO_FEET
+	setvard BBET_ONBACK 0
+}
+
+//=================== Idle Noises (or maybe just random noises)
+{
+repeatdelay $randf(8.0,15.0)
+	if $get(ent_me,isalive)
+	playrandomsound 0 10 SOUND_IDLE1 SOUND_IDLE2 SOUND_IDLE3 SOUND_IDLE4 SOUND_IDLE5
+}
+
+//=================== Flight (called from main cycle)
+{ bbet_fly_leap
+	setvard BBET_FLY_LEAP 1
+	callevent bbet_fly_start
+}
+
+{ bbet_fly_start
+	setvard BBET_FLYING 1
+	gravity 0
+	setmodelbody 1 1
+	setvard BBET_WINGS_CL_IDX game.script.last_sent_id
+	addvelocity ent_me $relvel(0,0,200)
+	if ( !BBET_FLY_LEAP )
+	{
+		callevent BBET_MAX_FLY_TIME bbet_end_flight
+	}
+	else
+	{
+		callevent 2.0 bbet_end_flight
+	}
+	setmoveanim ANIM_FLY
+	setvard ANIM_WALK ANIM_FLY
+	setvard ANIM_RUN ANIM_FLY
+	setvard NPC_NO_ATTACK 1
+	svplaysound 2 10 SOUND_FLY_LOOP
+}
+
+{ npcatk_hunt
+	if BBET_FLYING
+	if $get(ent_me,isalive) //not sure if needed, think hunt cycle stops on death
+	if ( NPCATK_TARGET isnot unset )
+	{
+		if ( !BBET_FLY_LEAP )
+		{
+			local MY_Z $get(ent_me,origin.z)
+			local TARG_Z $get(NPCATK_TARGET,origin.z)
+			if ( $get(NPCATK_TARGET,isplayer) ) subtract TARG_Z 38 //compensate for origin center
+
+			local Z_DIFF TARG_Z
+			subtract Z_DIFF MY_Z
+
+			if ( Z_DIFF > 64 )
+			{
+				if ( Z_DIFF < 384 )
+				{
+					gravity 0
+					local RND_LR $randf(-10,10)
+					local FWD_SPEED 110
+					if ( $get(NPCATK_TARGET,range) > 400 ) local FWD_SPEED 210
+					addvelocity ent_me $relvel(RND_LR,FWD_SPEED,200)
+				}
+				else
+				{
+					//too high
+					gravity 0.5
+					if ( $get(NPCATK_TARGET,range) < ATTACK_RANGE )
+					{
+						callevent bbet_end_flight
+					}
+					else
+					{
+						//but don't hit ground either
+						local MY_GROUND $get_ground_height(game.monster.origin)
+						if $vec.z(game.monster.origin) == MY_GROUND
+						addvelocity ent_me $relvel(0,110,200)
+					}
+				}
+			}
+			else
+			{
+				gravity 0.5
+				if ( $get(NPCATK_TARGET,range) < ATTACK_RANGE )
+				{
+					callevent bbet_end_flight
+				}
+				else
+				{
+					//on level, but dont get stuck on ground
+					local MY_GROUND $get_ground_height(game.monster.origin)
+					if $vec.z(game.monster.origin) == MY_GROUND
+					dbg stuck_ground
+					addvelocity ent_me $relvel(0,110,150)
+				}
+			}
+		}
+		else
+		{
+			//just leaping at target (short flight)
+			if ( $get(NPCATK_TARGET,range) < ATTACK_RANGE )
+			{
+				callevent bbet_end_flight
+			}
+			else
+			{
+				dbg leap_flight
+				gravity 0.5
+				local RND_LR $randf(-10,10)
+				addvelocity ent_me $relvel(RND_LR,150,200)
+			}
+		}
+	}
+	else
+	{
+		callevent bbet_end_flight
+	}
+
+	if BBET_FLYING
+	if STUCK_COUNT >= 1
+	callevent bbet_end_flight
+}
+
+{ bbet_end_flight
+	if BBET_FLYING
+
+	setvard BBET_NEXT_FLY game.time
+	add BBET_NEXT_FLY FREQ_FLY
+
+	setvard BBET_FLYING 0
+	setvard BBET_FLY_LEAP 0
+	svplaysound 2 0 SOUND_FLY_LOOP
+	gravity 1
+	setvard ANIM_WALK ANIM_WALK_DEFAULT
+	setvard ANIM_RUN ANIM_RUN_DEFAULT
+	setmoveanim ANIM_RUN
+	setvard NPC_NO_ATTACK 0
+	setmodelbody 1 0
+	local MY_POS $get(ent_me,origin)
+	local GROUND_Z $get_ground_height(MY_POS)
+	if $vec.z(MY_POS) != GROUND_Z
+	setvard BBET_WAITING_TO_DROP 1
+	callevent 5.0 bbet_stop_waiting_for_drop
+	callevent bbet_wait_to_drop_loop
+}
+
+{ bbet_stop_waiting_for_drop
+	setvard BBET_WAITING_TO_DROP 0
+}
+
+{ bbet_wait_to_drop_loop
+	if BBET_WAITING_TO_DROP
+
+	local MY_POS $get(ent_me,origin)
+	local GROUND_Z $get_ground_height(MY_POS)
+	if ( $vec.z(MY_POS) != GROUND_Z )
+	{
+		callevent 0.1 bbet_wait_to_drop_loop
+	}
+	else
+	{
+		playsound 0 10 SOUND_LAND
+		setvard BBET_WAITING_TO_DROP 0
+	}
+}
+
+{ freeze_solid
+	if BBET_FLYING
+	callevent bbet_end_flight
+}

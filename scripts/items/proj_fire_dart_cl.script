@@ -1,0 +1,84 @@
+//Fireball (client-side special effects)
+
+{
+	const SPRITE_1			3dmflaora.spr
+	const GLOW_DURATION		'$randf(1,2)'
+	precache 			SPRITE_1
+	const OFS_POS			15
+	const OFS_NEG			-15
+	const SPD_POS			60
+	const SPD_NEG			-60
+  	const LIGHT_RADIUS		128
+  	const LIGHT_COLOR		(255,32,32)
+	setcallback render enable
+}
+
+{ client_activate
+
+	setvard script.modelid PARAM1
+	setvard script.duration 30
+	if( $getcl(script.modelid,exists) )
+	{
+		callevent script.duration effect_die
+
+		callevent create_light $getcl(script.modelid,origin)
+	}
+	else callevent effect_die
+}
+
+{ effect_die
+
+	//removescript
+	//clientevent remove script.modelid script.lightid
+}
+
+
+{
+	repeatdelay $randf(0.15,0.25)
+
+	//Drip flames
+	local l.pos $getcl(script.modelid,origin)
+	callevent make_sprite_1 l.pos
+	callevent make_sprite_1 l.pos
+	callevent make_sprite_1 l.pos
+
+	if( !$getcl(script.modelid,exists) ) callevent effect_die
+}
+
+{ make_sprite_1
+
+	local l.pos PARAM1
+	vectoradd l.pos $vec($randf(OFS_NEG,OFS_POS),$randf(OFS_NEG,OFS_POS),$randf(OFS_NEG,OFS_POS))
+	cleffect tempent sprite SPRITE_1 l.pos setup_sprite_1
+}
+
+{  setup_sprite_1
+
+
+   cleffect tempent set_current_prop death_delay 	GLOW_DURATION
+   cleffect tempent set_current_prop scale 		0.1
+   cleffect tempent set_current_prop gravity 		$randf(0.2,0.1)
+   cleffect tempent set_current_prop velocity 		$vec(0,0,$randf(0,5))
+   cleffect tempent set_current_prop collide 		world;die
+   cleffect tempent set_current_prop rendercolor 	(255,0,0)
+   cleffect tempent set_current_prop rendermodel 	alpha
+   cleffect tempent set_current_prop renderamt 		$randf(128,200)
+}
+
+{ create_light
+
+	if PARAM1 isnot '0'
+
+	cleffect light new PARAM1 LIGHT_RADIUS LIGHT_COLOR script.duration
+	setvard script.lightid game.script.last_light_id
+}
+
+{  game_prerender
+
+	//Update light position
+	if LIGHT_RADIUS > 0
+
+	local l.radius LIGHT_RADIUS
+	add l.radius $randf(-8,8)
+	cleffect light script.lightid $getcl(script.modelid,origin) l.radius LIGHT_COLOR 1
+}

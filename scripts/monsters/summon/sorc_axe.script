@@ -1,0 +1,105 @@
+{
+	const DMG_TYPE lightning
+	const SOUND_SHOCK1 debris/zap8.wav
+	const SOUND_SHOCK2 debris/zap3.wav
+	const SOUND_SHOCK3 debris/zap4.wav
+}
+
+#include monsters/summon/bludgeon_axe
+
+{ game_spawn
+
+	name a|Thunder Axe
+	setmodel weapons/projectiles.mdl
+	setmodelbody 0 34
+	setidleanim spin_horizontal_norm
+	setmoveanim spin_horizontal_norm
+	setsolid none
+	width 32
+	fly 1
+	height 32
+	blood none
+	invincible 1
+	setmonsterclip 0
+	race demon
+	setvard PLAYING_DEAD 1 //not a valid attack target
+
+	effect glow ent_me (255,255,0) 64 -1 0
+
+	dbg spawned
+}
+
+{ do_shock //<param1 = shock targ> <param2 damage> (called externally by owner)
+
+	//this is never called by the player script, so not entirely sure why this is here >_>
+	
+	if $get(PARAM1,relationship,MY_OWNER) equals enemy
+	if ( OWNER_ISPLAYER )
+	{
+		if GAME_PVP < 1
+		if $get(PARAM1,isplayer)
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	local BEAM_START game.monster.origin
+	local AXE_SHOCK_DOT PARAM2
+	effect beam end lgtning.spr 30 BEAM_START PARAM1 0 (255,255,0) 255 30 0.5
+	applyeffect PARAM1 effects/effect_shock_dmg 3 $get(ent_me,id) AXE_SHOCK_DOT
+	playrandomsound 0 10 SOUND_SHOCK1 SOUND_SHOCK2 SOUND_SHOCK3
+}
+
+{ [override] game_dynamically_created
+	setvard MY_OWNER PARAM1
+	setvard MY_DEST PARAM2
+	setvard DMG_BASE PARAM3
+	setvard GAME_PVP game.pvp
+	setvard OWNER_ISPLAYER $get(MY_OWNER,isplayer)
+	setvard ITEM_ID MY_OWNER
+	if ( OWNER_ISPLAYER ) setvard ITEM_ID PARAM4
+	setvard OWNER_HALFHEIGHT $get(MY_OWNER,height)
+	if ( !OWNER_ISPLAYER ) divide OWNER_HALFHEIGHT 2
+	race $get(MY_OWNER,race)
+	setvard NPC_NOCLIP_DEST MY_DEST
+	setvard IS_ACTIVE 1
+	storeentity ent_expowner MY_OWNER
+
+	if ( OWNER_ISPLAYER )
+	{
+		setvard BASE_DOT $get(MY_OWNER,skill.spellcasting.lightning)
+		multiply BASE_DOT 0.75
+	}
+	
+	//dbg my $get(ent_me,race)
+	callevent 0.1 damage_loop
+}
+
+{ [override] damage_loop
+	if IS_ACTIVE
+	callevent 0.1 damage_loop
+	if ( !OWNER_ISPLAYER )
+	{
+		dodamage $relpos(0,0,0) SCAN_RAD DMG_BASE 100% 0.0 reflective DMG_TYPE
+	}
+	else
+	{
+		xdodamage $relpos(0,0,0) SCAN_RAD DMG_BASE 0 MY_OWNER MY_OWNER axehandling slash
+		if game.time > NEXT_SCAN
+		setvard NEXT_SCAN game.time
+		add NEXT_SCAN 0.25
+		setvard TARG_LIST $get_tsphere(enemy,SCAN_RAD)
+		if TARG_LIST isnot none
+		calleventloop $get_token_amt(TARG_LIST) plr_zap_targets
+	}
+}
+
+{ plr_zap_targets
+	local CUR_TARG $get_token(TARG_LIST,game.script.iteration)
+	if ( $get(CUR_TARG,isplayer) )
+	{
+		if GAME_PVP < 1
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+	applyeffect CUR_TARG effects/effect_shock_dmg 5.0 MY_OWNER BASE_DOT
+}

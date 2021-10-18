@@ -1,0 +1,269 @@
+// Needs:
+//
+// MELEE_RANGE, MELEE_HITCHANCE, MELEE_ATK_DURATION
+//
+// SPELL_SKILL_REQUIRED, SPELL_FIZZLE_TIME, SPELL_CAST_SUCCESS, SPELL_PREPARE_TIME
+// SPELL_DAMAGE_TYPE, SPELL_ENERGYDRAIN, SPELL_MPDRAIN, SPELL_STAT
+
+
+{
+	setvar IS_MAGIC_HAND 1
+
+  const ANIM_LIFT1        	7 //0
+  const ANIM_PREPARE		9 //2
+  const ANIM_PREPARE_FAIL	10 //3
+  const ANIM_PREPARE_IDLE   11 //4
+  const ANIM_CAST			12 //5
+  const ANIM_IDLE1        	ANIM_PREPARE_IDLE
+  const ANIM_IDLE_TOTAL		1
+  const ANIM_IDLE_DELAY_LOW	0
+  const ANIM_IDLE_DELAY_HIGH	0
+  const MODEL_VIEW       	viewmodels/v_martialarts.mdl //weapons/magic/lightning_view.mdl
+  const MODEL_HANDS      	none
+  const MODEL_WORLD     	none
+
+  const SOUND_CHARGE      	none
+  const SOUND_SHOOT      	magic/cast.wav
+  const SPELL_NOISE		650
+
+  const SPELL_FIZZLE_TIME	25
+  const SPELL_CAST_SUCCESS	95
+  const SPELL_PREPARE_TIME	5.5
+
+  const RANGED_TYPE		charge-throw-projectile
+  const RANGED_DMG_DELAY	0.4
+  const RANGED_HOLD_MINMAX	2;2
+  const RANGED_COF		0;0
+
+  const MELEE_TYPE		target
+  const MELEE_DMG_DELAY		RANGED_DMG_DELAY
+  const MELEE_DMG 		0
+  const MELEE_DMG_RANGE		0
+  const MELEE_NOAUTOAIM		0
+
+  const PLAYERANIM_AIM		fireball
+  const PLAYERANIM_PREPARE	prepare_fireball
+  const PLAYERANIM_CAST		throw_fireball
+
+  const SCRIPT_SFX_PREP		items/magic_hand_base_cl
+  precachefile			SCRIPT_SFX_PREP
+}
+
+#include items/base_item
+
+{ game_spawn
+
+   weight 		0
+   size 		0
+   setanimext		PLAYERANIM_AIM
+   sethand		both
+   sethudsprite 	hand bow
+   sethudsprite 	trade firemagic
+
+   callevent spell_spawn
+   callevent setup_attack
+   callevent setup_spell
+}
+
+{ game_deploy
+
+	setviewmodel  MODEL_VIEW
+	playowneranim once PLAYERANIM_PREPARE global.anim.combatwalk SPELL_PREPARE_TIME
+	playviewanim  ANIM_LIFT1
+	setvard baseitem.canidle 0
+  
+	clientevent new all_in_sight SCRIPT_SFX_PREP $get(ent_owner,index) SPELL_PREPARE_TIME
+	setvard spell.prepscript.id game.script.last_sent_id
+
+	callevent spell_deploy
+
+	stradd SKILL_NAME SPELL_STAT
+	if $get(ent_owner,skill.spellcasting) < SPELL_SKILL_REQUIRED
+	dplayermessage ent_owner You lack the skill to use this spell.
+	deleteent ent_me
+}
+
+{ game_switchhands
+
+     //playviewanim  ANIM_IDLE1
+     callevent item_switchhands
+}
+
+{ game_pickup
+
+     //playviewanim  ANIM_PREPARE1
+     callevent item_switchhands
+}
+
+{ game_removefromowner
+
+	clientevent remove all spell.prepscript.id
+}
+
+{ setup_attack
+
+	//Weapon properties
+
+	setvard MELEE_DMG_TYPE SPELL_DAMAGE_TYPE
+    setvard RANGED_DMG_TYPE SPELL_DAMAGE_TYPE
+
+	if( MELEE_RANGE isnot 'MELEE_RANGE' )
+	{
+
+		local reg.attack.type		MELEE_TYPE
+		local reg.attack.range		MELEE_RANGE
+		local reg.attack.dmg		MELEE_DMG
+		local reg.attack.dmg.range	MELEE_DMG_RANGE
+		local reg.attack.dmg.type	MELEE_DMG_TYPE
+		local reg.attack.hitchance	MELEE_HITCHANCE
+		local reg.attack.priority	1
+		local reg.attack.delay.strike	MELEE_DMG_DELAY
+		local reg.attack.delay.end	MELEE_ATK_DURATION
+		local reg.attack.ofs.startpos	MELEE_STARTPOS
+		local reg.attack.ofs.aimang	MELEE_AIMANGLE
+
+	}
+	else
+	{
+
+		local reg.attack.type		charge-throw-projectile
+		local reg.attack.hold_min&max	RANGED_HOLD_MINMAX
+		local reg.attack.dmg.type	RANGED_DMG_TYPE
+		local reg.attack.range		RANGED_FORCE
+		local reg.attack.COF		RANGED_COF
+		local reg.attack.projectile	RANGED_PROJECTILE
+		local reg.attack.priority	0
+		local reg.attack.delay.strike	RANGED_DMG_DELAY
+		local reg.attack.delay.end	RANGED_ATK_DURATION
+		local reg.attack.ofs.startpos	RANGED_STARTPOS
+		local reg.attack.ofs.aimang	RANGED_AIMANGLE
+		local reg.attack.ammodrain	0
+	}
+
+	local reg.attack.keys		+attack1
+	//local reg.attack.dmg.ignore	1
+	local reg.attack.noise		SPELL_NOISE
+	local reg.attack.energydrain	SPELL_ENERGY
+	local reg.attack.mpdrain	SPELL_MPDRAIN
+	local reg.attack.stat		SPELL_STAT
+	local reg.attack.callback	cast
+	local reg.attack.noautoaim	MELEE_NOAUTOAIM
+
+	setvard WEAPON_PRIMARY_SKILL reg.attack.stat
+
+	if ( !NO_REGISTER ) registerattack
+}
+
+{ setup_spell
+
+	//Spell properties
+
+	local	reg.spell.reqskill	SPELL_SKILL_REQUIRED
+	local	reg.spell.fizzletime	SPELL_FIZZLE_TIME
+	local	reg.spell.castsuccess	100% //SPELL_CAST_SUCCESS - JAN2010_12 screw this spell failure crap
+	local	reg.spell.preparetime	SPELL_PREPARE_TIME
+
+//	local	fizzle_mod		$get(ent_owner,stat.concentration)
+//	divide fizzle_mod 2
+//	capvar fizzle_mod 1 4
+//	multiply reg.spell.fizzletime	fizzle_mod
+//	add reg.spell.castsuccess	$get(ent_owner,stat.wisdom)
+
+	//Thothie AUG2010_18 - adjusting the way we calc fizzle time
+	local OWNER_CON $get(ent_owner,stat.concentration)
+	multiply OWNER_CON 0.01
+	multiply reg.spell.fizzletime $ratio(OWNER_CON,1.0,10.0)
+
+	if ( IS_SCROLL == 1 )
+	{
+		//without this bit, spells cast through scrolls work until fizzle time expires
+		//then the scroll cannot be reactivated
+		//suspect the granted spell is somehow confusing the spell registry system
+		//as such, I've added a flag for limitless cast time in the base_magic_hand this passes to
+		local	reg.spell.fizzletime	9999999 //seeing if this can overflow
+		local	reg.spell.castsuccess	100
+		setvarg IS_SCROLL 0
+		callevent SPELL_FIZZLE_TIME spell_end
+		
+	}
+
+	registerspell
+}
+
+
+//Spell preparation
+//---------------------------
+
+{  game_prepare_success
+   
+	callevent 1.43 prepare_success_anim
+   	callevent SPELL_PREPARE_TIME prepare_success_done
+}
+
+{  prepare_success_anim
+	
+   	playviewanim  ANIM_PREPARE	
+}
+
+{ prepare_success_done
+
+	setvard baseitem.canidle 1
+  	callevent spell_prepare_success
+}
+
+{  [client] game_prepare_failed	//Only play failed anim on client
+
+	callevent 1.43 prepare_failed_anim
+}
+{  [client] prepare_failed_anim
+	
+   	playviewanim  ANIM_PREPARE_FAIL	
+}
+
+{  [server] game_prepare_failed	//Only delete failed spell on server - automatically propogates to client
+
+	callevent SPELL_PREPARE_TIME prepare_sv_failed_done
+}
+{  [server] prepare_sv_failed_done
+
+	playermessage You fail to prepare the spell
+	deleteme
+}
+
+{  spell_prepare_success
+}
+
+//---------------------------
+
+
+{  cast_start
+
+	playviewanim	ANIM_CAST
+	playowneranim	critical PLAYERANIM_PREPARE squatwalk1
+	svplaysound	game.sound.item game.sound.maxvol SOUND_CHARGE
+}
+{  cast_strike	//If melee
+  
+	callevent	spell_casted PARAM1 PARAM2 PARAM3
+}
+{  cast_toss	//If ranged
+	
+	callevent	spell_casted
+	playowneranim	critical PLAYERANIM_CAST squatwalk1
+	playviewanim	ANIM_CAST
+}
+{  cast_end
+
+	//playviewanim	ANIM_IDLE1
+}
+
+{  spell_end
+
+	if ( !CUST_MESSAGE ) playermessage The spell's duration ends.
+	deleteme
+	//playviewanim	ANIM_IDLE1
+}
+
+{ spell_casted
+	callexternal $get(ent_owner,id) mana_drain
+}

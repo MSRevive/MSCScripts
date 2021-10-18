@@ -1,0 +1,97 @@
+//Fire Bat (from Bat)
+//- Thothie sticky client side effect driving people nuts
+//- switching to effect (although rougher on server)
+
+{
+	setvar ANIM_WALK IdleFlyNormal
+	setvar ANIM_RUN ANIM_WALK
+	setvard ANIM_ATTACK bite
+	setvar ANIM_IDLE_HANG IdleHang
+	setvar ANIM_IDLE_FLY IdleFlyNormal
+	setvard ANIM_DEATH die
+
+	const SOUND_STRUCK1 weapons/cbar_hitbod1.wav
+	const SOUND_STRUCK2 weapons/cbar_hitbod2.wav
+	const SOUND_STRUCK3 weapons/cbar_hitbod3.wav
+	const SOUND_PAIN monsters/rat/squeak1.wav
+	const SOUND_IDLE1 monsters/rat/squeak2.wav
+	const SOUND_DEATH monsters/rat/squeak3.wav
+
+	setvard MOVE_RANGE 54
+	setvard ATTACK_RANGE 64
+	setvard ATTACK_HITRANGE 100
+	const ATTACK_DAMAGE 5
+	setvard NPC_GIVE_EXP 20
+
+	setvard CAN_FLEE 1		  //base_npc_attack - Whether I run away
+	const FLEE_HEALTH 1		  //base_npc_attack - Flee heath
+	const FLEE_CHANCE 100%	  //base_npc_attack - Flee chance
+
+	setvard IMMUNE_FIRE 1
+
+	//const TORCH_LIGHT_SCRIPT items/base_lighted
+
+	//precachefile TORCH_LIGHT_SCRIPT
+}
+
+
+#include monsters/bat_base
+
+{  bat_spawn
+
+   	name a|Fire Bat
+   	hp 50
+   	//ov 359
+  	width 32
+  	height 32
+   	hearingsensitivity 5
+   	volume 5
+
+	takedmg fire 0.0
+	takedmg cold 2.0
+   	setmodel monsters/bat.mdl
+
+	callevent 1 start_flaming
+}
+
+{ npc_post_spawn
+	setvard ATTACK_HITCHANCE 60%
+	if ( $lcase(game.map.name) isnot keledrosprelude2 ) setvard ATTACK_HITCHANCE 90%
+}
+
+{  game_postspawn
+	setbbox animsize
+}
+   
+{  bat_drop_down			// Drop down from the ceiling
+
+   	setvard CAN_HUNT 1
+   	setvard BAT_STATUS BAT_FLYING
+   	setidleanim ANIM_IDLE_FLY
+}
+
+{  bite1				// Deal damage
+
+	if $get(NPCATK_TARGET,range) < ATTACK_HITRANGE
+   	dodamage NPCATK_TARGET direct ATTACK_DAMAGE ATTACK_HITCHANCE ent_me pierce1
+}
+
+   
+{  npc_struck				//Hit by someone
+   
+   	playrandomsound 2 SOUND_PAIN SOUND_STRUCK2 SOUND_PAIN
+}
+
+{ start_flaming
+
+	repeatdelay 5.0
+
+	if ( FX_SPAMMERS < MAX_FX_SPAMMERS ) applyeffect ent_me effects/torch_flame 5
+}
+
+{ game_dodamage
+	if PARAM1
+	if $get(PARAM2,isalive)
+	if $rand(1,5) == 1
+	applyeffect PARAM2 effects/effect_burn 5.0 $get(ent_me,id) ATTACK_DAMAGE
+}

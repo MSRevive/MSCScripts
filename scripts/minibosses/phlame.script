@@ -1,0 +1,223 @@
+//- Summons monsters via map triggers (counts via external calls) [lava scrops, lava boars, demon birds]
+//- Transforms into Flame Wing (actually teleports out, and spawns flame wing via trigger)
+//- Repulse flame burst /20sec (three in quick sucsession)
+//- Flaming Shadow dodge (like Hollow One, but torrent of flames)
+//- Blunt + Fire DOT mele
+//- Eye Beam single target
+//- Spawn multiple flaming boulders (bounce in arc)
+//- Spawn fire variant of rock storm
+//- Trigger meteor shower (via map trigger)
+//- Flame staff (fire breath'ish)
+//- Guided Burst (fire ball shoots out, explodes into multiple shots [1 for each valid target in radius])
+// (also todo: make corrosive reaver)
+// (only resummon if G_NPC_SUMMON_COUNT <= 2)
+
+
+#scope server
+{ [shared]
+	setvar ANIM_IDLE idle
+	setvar ANIM_WALK walk2handed
+	setvar ANIM_RUN run2
+	setvard ANIM_ATTACK staff_strike //frame_staff_strike
+
+	const ANIM_RUN_DEF run2
+	const ANIM_WALK_DEF walk2handed
+	const ANIM_IDLE_DEF idle
+
+	const ANIM_LOOK idle_look
+	const ANIM_SUMMON summon //frame_summon
+	const ANIM_METEOR cieling_strike //frame_cieling_strike
+	const ANIM_BOULDERS cieling_strike //frame_cieling_strike
+	const ANIM_REPULSE fdeploy_strike //frame_fdeploy_strike
+	const ANIM_DODGE staff_aim
+	const ANIM_BEAM staff_aim
+	const ANIM_FIRE_BREATH aim_1
+	const ANIM_GUIDED_BURST shoot_1
+}
+
+{
+	setvar NPC_IS_BOSS 1
+	const NPC_BOSS_REGEN_RATE 0.05
+	setvard NPC_GIVE_EXP 15000
+
+	setvard ATTACK_MOVERANGE 768
+	setvard ATTACK_RANGE 200
+	setvard ATTACK_HITRANGE 250
+
+	const FREQ_GLOAT $randf(30.0,60.0)
+	const FREQ_PAIN $randf(30.0,40.0)
+
+	//these are random, but he also triggers map side "play everywhere" taunts on each kill (be it his or otherwise)
+	const SOUND_GLOAT1 "voices/phlame/vs_nx0headm_haha.wav"
+	const SOUND_GLOAT2 "voices/phlame/vs_nx0headm_attk.wav"
+	const SOUND_GLOAT3 "voices/phlame/vs_nx0headm_bat1.wav"
+	const SOUND_GLOAT4 "voices/phlame/vs_nx0headm_bat3.wav"
+
+	const SOUND_SUMMON "voices/phlame/vs_nx0headm_bat2.wav"
+
+	const SOUND_PAIN1 "voices/phlame/vs_nx0headm_atk1.wav"
+	const SOUND_PAIN_HEALTHY "voices/phlame/vs_nx0headm_yes.wav"
+	const SOUND_PAIN_WEAK "voices/phlame/vs_nx0headm_no.wav"
+
+	const SOUND_STRUCK1 "debris/flesh1.wav"
+	const SOUND_STRUCK2 "debris/flesh2.wav"
+
+	const SOUND_SWING1 "zombie/claw_miss1.wav"
+	const SOUND_SWING2 "zombie/claw_miss2.wav"
+
+	const SOUND_STRONG_SWING1 "zombie/claw_strike1.wav"
+	const SOUND_STRONG_SWING2 "zombie/claw_strike2.wav"
+
+	const SOUND_DEATH none //handled map side
+}
+
+{ game_precache
+	precache c-tele1.spr
+}
+
+
+#include monsters/base_npc_new
+
+{ npc_spawn
+	name Phlame the Ever Burning
+	race demon
+	hp 15000
+
+	name_unique phlame_wiz
+	
+	takedmg all 0.5
+	takedmg fire 0.0
+	takedmg cold 1.25
+	takedmg lightning 0.5
+	takedmg poison 0.25
+	takedmg acid 0.5
+	takedmg holy 1.25
+
+	setvard IS_UNHOLY 1
+	setmoveanim ANIM_LOOK
+	setidleanim ANIM_LOOK
+
+	invincible 1
+
+	saytextrange 1024
+
+	callevent npcatk_suspend_ai
+	setvard NO_STUCK_CHECKS 1
+
+	callevent 2.0 speak_begin
+	callevent 5.0 let_us_begin
+}
+
+{ speak_begin
+	saytext Then... Let us... Begin...
+}
+
+{ let_us_begin
+	invincible 0
+
+	setvard ANIM_RUN ANIM_WALK_DEF
+	setvard ANIM_IDLE ANIM_IDLE_DEF
+
+	setmoveanim ANIM_WALK
+	setidleanim ANIM_IDLE
+
+	callevent npcatk_resume_ai
+	setvard NO_STUCK_CHECKS 0
+	callevent start_cycles
+}
+
+{ bs_global_command
+	if game.time > NEXT_GLOBAL_GLOAT
+	setvard NEXT_GLOBAL_GLOAT game.time
+	add NEXT_GLOBAL_GLOAT 15.0
+
+	//random global gloat whenever a player dies (anywhere) - maps side
+	local RND_GLOAT $rand(1,4)
+	if ( RND_GLOAT == 1 ) usetrigger snd_gloat1
+	if ( RND_GLOAT == 2 ) usetrigger snd_gloat2
+	if ( RND_GLOAT == 3 ) usetrigger snd_gloat3
+	if ( RND_GLOAT == 4 ) usetrigger snd_gloat4
+}
+
+{ do_gloat
+	playrandomsound 0 10 SOUND_GLOAT1 SOUND_GLOAT2 SOUND_GLOAT3 SOUND_GLOAT4
+}
+
+{ game_struck
+
+	if ( $get(ent_me,hp) < HALF_HEALTH )
+	{
+		setvard IS_WEAK 1
+	}
+	else
+	{
+		setvard IS_WEAK 0
+	}
+
+	if ( game.time > NEXT_PAIN )
+	{
+		setvard NEXT_PAIN game.time
+		if ( !IS_WEAK )
+		{
+			playrandomsound 0 10 SOUND_PAIN1 SOUND_PAIN_HEALTHY
+		}
+		else
+		{
+			playrandomsound 0 10 SOUND_PAIN1 SOUND_PAIN_WEAK
+		}
+	}
+	else
+	{
+		playrandomsound 0 8 SOUND_STRUCK1 SOUND_STRUCK2
+	}
+
+	if ( IS_WEAK )
+	{
+		setvard ANIM_RUN ANIM_RUN_DEF
+		setmoveanim ANIM_RUN
+	}
+	else
+	{
+		setvard ANIM_RUN ANIM_WALK_DEF
+		setmoveanim ANIM_RUN
+	}
+
+	if IS_WEAK
+	if !BUSY_CASTING
+
+	if ( $get(ent_laststruck,range) < 200 )
+	{
+		if game.time > NEXT_LEAP_AWAY
+		setvard NEXT_LEAP_AWAY game.time
+		add NEXT_LEAP_AWAY FREQ_LEAP_AWAY
+		callevent do_leap_away
+	}
+}
+
+{ game_dodamage
+	if ( STAFF_STRIKE )
+	{
+		applyeffect NPCATK_TARGET effects/effect_burn 5.0 $get(ent_me,id) DOT_FIRE
+	}
+	setvard STAFF_STRIKE 0
+}
+
+// ============================================================ Animation Events
+{ frame_staff_strike
+	local RND_STRENGTH $rand(1,2)
+	if ( RND_STRENGTH == 1 )
+	{
+		playrandomsound 0 10 SOUND_SWING1 SOUND_SWING2
+	}
+	else
+	{
+		playrandomsound 0 10 SOUND_STRONG_SWING1 SOUND_STRONG_SWING2
+	}
+
+	local L_DMG DMG_STAFF
+	if ( RND_STRENGTH == 2 ) multiply L_DMG 4
+
+	setvard STAFF_STRIKE 1
+	dodamage NPCATK_TARGET ATTACK_HITRANGE L_DMG 90% blunt
+}
+

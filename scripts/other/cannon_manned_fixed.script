@@ -1,0 +1,95 @@
+//attach to func_rotating by adding scriptname parameter and this scriptfile
+{
+	const SPRITE_EXPLODE bigsmoke.spr
+	const SOUND_CANNON weapons/explode3.wav
+	const FREQ_FIRE 30.0
+	const DMG_CANNON 1000
+}
+
+{ game_spawn
+
+	name a|Cannon
+	setmodel props/cannon.mdl
+	blood none
+	width 32
+	height 48
+	hp 20
+	race human
+	roam 0
+	menu.autoopen 1
+	setvard IMMUNE_STUN 1
+	takedmg poison 0.0
+	takedmg cold 0.0
+	takedmg lightning 0.5
+	nopush 1
+	callevent 0.1 get_src_yaw
+}
+
+{ get_src_yaw
+	setvard SRC_YAW $get(ent_me,angles.yaw)
+}
+
+{ game_menu_getoptions
+
+	if $get(ent_me,isalive)
+
+	if ( !AM_LOADED )
+	{
+		if ( !$item_exists(PARAM1,item_cannon_ball) )
+		{
+			local reg.mitem.title 	"Load Cannon"
+			local reg.mitem.type 	disabled
+			menuitem.register
+		}
+		else
+		{
+			local reg.mitem.title 	"Load Cannon"
+			local reg.mitem.type 	payment
+			local reg.mitem.data	item_cannon_ball
+			local reg.mitem.cb_failed no_balls
+			local reg.mitem.callback load_cannon
+			menuitem.register
+		}
+	}
+	else
+	{
+		local reg.mitem.title 	"Fire!"
+		local reg.mitem.type 	callback
+		local reg.mitem.callback fire_cannon
+		menuitem.register
+	}
+}
+
+{ no_balls
+	dplayermessage PARAM1 You need a cannon ball to load this weapon.
+}
+
+{ load_cannon
+	setvard AM_LOADED 1
+}
+
+{ game_menu_cancel
+	setvard AM_AIMING 0
+}
+
+{ fire_cannon
+	setvard AM_LOADED 0
+	playsound 0 10 SOUND_CANNON
+	setangle view $vec(20,game.monster.angles.yaw,0)
+	tossprojectile view 400 DMG_CANNON 0 proj_cannon_ball (0,16,32)
+	effect tempent spray SPRITE_EXPLODE $relpos(0,0,0) 0 1 0 0
+	effect screenshake $relpos(0,0,0) 380 20 1 512
+	setvard FIRE_DELAY 1
+	usetrigger cannon_fired
+	playanim critical shoot
+}
+
+{ game_death
+	menu.autoopen 0
+	playsound 0 10 debris/bustcrate3.wav
+	playanim critical die
+}
+
+{ game_struck
+	playrandomsound 0 10 debris/wood1.wav debris/wood2.wav
+}

@@ -1,0 +1,148 @@
+//Thothie - Method for 'accept all' screwing with some packs, changed
+//- Problem with most multi-reject or mutlti-accept packs is the formatting
+//- file pipes are not seperators, and token strings with seperators must be in quotes
+//- ie. "arrows;bows;bolts"
+//- NOT arrows;bows;bolts NOR arrows|bows|bolts
+//- Armor not rendering properly maybe similar issue
+//Wearable, openable pack
+//
+//Required:
+//MODEL_VIEW, MODEL_HANDS, MODEL_WORLD, MODEL_WEAR
+//CONTAINER_TYPE, CONTAINER_SPACE, CONTAINER_CANCLOSE, CONTAINER_LOCK_STRENGTH, CONTAINER_ITEM_ACCEPT
+#include items/base_hide_stuff
+#include items/base_item_extras
+
+{
+	const IS_CONTAINER 1
+	const BLAH 0
+	//const CONTAINER_ITEM_ACCEPT ''	//Default to nothing (special case)
+}
+
+{ game_spawn
+
+	setworldmodel MODEL_WORLD
+	sethand any
+
+	callevent pack_spawn
+
+	setvar TRUE_ACCEPT ''
+
+	if ( CONTAINER_ITEM_ACCEPT isnot 'CONTAINER_ITEM_ACCEPT' )
+	{
+		setvard TRUE_ACCEPT CONTAINER_ITEM_ACCEPT
+	}
+	
+
+	local reg.container.type	CONTAINER_TYPE
+	local reg.container.space	CONTAINER_SPACE
+	local reg.container.canclose	CONTAINER_CANCLOSE
+	local reg.container.lock_str	CONTAINER_LOCK_STRENGTH
+	local reg.container.accept_mask	TRUE_ACCEPT
+	local reg.container.reject_mask	CONTAINER_ITEM_REJECT
+	local reg.container.maxitem CONTAINER_MAXITEMS //maxitem singular, not plural
+	registercontainer
+}
+
+{ game_deploy
+
+	setviewmodel  	MODEL_VIEW
+	
+	callevent pack_deploy
+}
+
+{ game_fall
+
+  	local 		L_SUBMODEL MODEL_BODY_OFS
+	add		L_SUBMODEL 1
+	local		L_ANIM ANIM_PREFIX
+	stradd		L_ANIM _floor_idle
+
+ 	setmodelbody 	0 L_SUBMODEL
+  	playanim 	L_ANIM
+
+	callevent pack_fall
+}
+
+{  game_pickup
+
+	setmodel	MODEL_HANDS
+	if ( MODEL_HANDS equals 'misc/p_misc.mdl' )
+	{
+		local L_SUBMODEL 16
+	}
+	else
+	{
+		local L_SUBMODEL MODEL_BODY_OFS
+	}
+	subtract L_SUBMODEL game.item.hand_index
+	setmodelbody 0 L_SUBMODEL
+
+	playviewanim  ANIM_IDLE 
+	callevent pack_pickup
+}
+
+
+{ game_playeractivate
+
+	if( !game.item.container.open )
+	{
+		playviewanim  ANIM_OPEN
+		callevent game_opencontainer
+	}
+	else playviewanim  ANIM_CLOSE
+
+	callevent pack_playeractivate
+}
+
+{ game_opencontainer
+
+	callevent pack_opencontainer
+}
+
+{ game_wear
+
+	setmodel	MODEL_WEAR
+	setmodelbody 	0 MODEL_BODY_OFS
+
+	callevent pack_wear
+}
+
+{ game_show
+	setmodel	MODEL_WEAR
+	setmodelbody 	0 MODEL_BODY_OFS
+}
+
+{ game_container_addeditem
+	//beware this goes off on spawn
+	//beware event disabled FEB2008a
+	//messageall green game_container_addeditem $get(ent_me,name) PARAM1 PARAM2
+	if G_DEVELOPER_MODE
+	if $get(ent_owner,onground)
+	messageall green $get(ent_me,name) additem $get(PARAM1,name)
+}
+
+{ game_container_gaveitem
+	//beware this goes off on spawn1
+	//beware event disabled FEB2008a
+	//messageall green game_container_gaveitem PARAM2 PARAM2
+	if G_DEVELOPER_MODE
+	if $get(ent_owner,onground)
+	messageall green $get(ent_me,name) gaveitem $get(PARAM1,name)
+}
+
+{ game_attempt_unlock
+	if G_DEVELOPER_MODE
+	messageall green $get(ent_me,name) openby $get(PARAM1,name)
+}
+
+{ ext_lock
+	setlock ent_me 1
+	if G_DEVELOPER_MODE
+	messageall green  $get(ent_me,name) locked.
+}
+
+{ ext_unlock
+	setlock ent_me 0
+	if G_DEVELOPER_MODE
+	messageall green  $get(ent_me,name) unlocked.
+}

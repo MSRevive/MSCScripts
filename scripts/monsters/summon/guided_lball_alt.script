@@ -1,0 +1,147 @@
+//Alternative server-side tracking sphere
+//Simpler navigation method than current guided fire or lightning projectiles
+
+#scope server
+{
+	const SPHERE_SPEED 30
+	const DMG_TYPE lightning
+	const SOUND_LOOP magic/bolt_loop.wav
+}
+
+
+{ [shared] game_spawn
+
+	name a|Lightning Sphere
+	setmodel weapons/projectiles.mdl
+	setmodelbody 0 18
+	width 16
+	height 16
+	setsolid none
+	setbbox (0,0,0) (0,0,0)
+	roam 0
+	gravity 0
+
+	setidleanim spin_horizontal_slow
+	setmoveanim spin_horizontal_slow
+
+	setvard PLAYING_DEAD 1
+	invincible 1
+
+	svplaysound 1 5 SOUND_LOOP
+}
+
+{ game_dynamically_created //<owner> <dmg> <radius> <duration> [skill]
+
+	setvard MY_OWNER PARAM1
+	setvard MY_DMG PARAM2
+	setvard MY_RADIUS PARAM3
+	setvard MAX_DURATION PARAM4
+
+	setvard DOT_DMG MY_DMG
+	multiply DOT_DMG 0.1
+
+	setvard OWNER_ISPLAYER $get(MY_OWNER,isplayer)
+	setvard GAME_PVP game.pvp
+
+	setvard EXPIRE_TIME game.time
+	add EXPIRE_TIME MAX_DURATION
+
+	setvard SKILL_TYPE none
+	if ( OWNER_ISPLAYER ) setvard SKILL_TYPE PARAM5
+
+	race $get(MY_OWNER,race)
+	callevent 0.1 pick_target
+}
+
+{ pick_target
+
+	local NME_TOKENS $get_tsphere(enemy,1024)
+	if ( NME_TOKEN isnot none )
+	{
+		token.scramble NME_TOKEN
+		setvard MY_TARGET $get_token(NME_TOKEN,0)
+	}
+
+	if ( !$get(MY_TARGET,isalive) )	setvard MY_TARGET $get(MY_OWNER,scriptvar,'NPCATK_TARGET')
+
+	setvard IS_ACTIVE 1
+}
+
+{
+repeatdelay 0.25
+
+	if IS_ACTIVE
+
+	if ( !$get(MY_TARGET,isalive) ) callevent pick_target
+
+	local MY_ORG $get(ent_me,origin)
+	local TARG_ORG $get(MY_TARGET,origin)
+
+	local ANG_TO_TARG $angles3d(MY_ORG,TARG_ORG)
+	vectorset ANG_TO_TARG x $neg($vec.x(ANG_TO_TARG))
+
+	local DEST_ORG MY_ORG
+	vectoradd DEST_ORG $relvel(ANG_TO_TARG,$vec(0,SPHERE_SPEED,0))
+
+	setvelocity ent_me $relvel(ANG_TO_TARG,$vec(0,SPHERE_SPEED,0))
+
+	//check for wall collision
+	local WALL_CHECK $get_traceline(MY_ORG,DEST_ORG,worldonly)
+	if ( WALL_CHECK isnot DEST_ORG ) callevent sphere_explode
+
+	//check if stuck on something I can't detect
+//	if ( IS_ACTIVE )
+//	{
+//		if ( $get(ent_me,origin) equals OLD_ORIGIN ) callevent sphere_explode
+//	}
+//	setvard OLD_ORIGIN MY_ORG
+
+	if ( game.time > EXPIRE_TIME )
+	{
+		if IS_ACTIVE
+		callevent sphere_explode
+	}
+
+	//check for nmes
+	if ( IS_ACTIVE )
+	{
+		setvard SCAN_TOKENS $get_tsphere(enemy,64)
+		if SCAN_TOKENS isnot none
+		callevent sphere_explode
+	}
+
+	if ( IS_ACTIVE ) setorigin ent_me DEST_ORG
+}
+
+{ sphere_explode
+
+	if IS_ACTIVE //redudant check so as not to explode twice for some odd reason
+	setvard IS_ACTIVE 0
+	svplaysound 1 0 SOUND_LOOP
+	clientevent new all monsters/summon/guided_lball_alt_cl $get(ent_me,origin) MY_RADIUS
+	xdodamage $get(ent_me,origin) MY_RADIUS MY_DMG 0 MY_OWNER MY_OWNER SKILL_TYPE DMG_TYPE
+	callevent 0.01 remove_me
+
+
+	setvard SCAN_TOKENS $get_tsphere(enemy,256)
+	if SCAN_TOKENS isnot none
+	calleventloop $get_token_amt(SCAN_TOKENS) affect_targets
+}
+
+{ affect_targets
+	local CUR_TARG $get_token(SCAN_TOKENS,game.script.iteration)
+
+	if ( OWNER_ISPLAYER )
+	{
+		if !GAME_PVP
+		if $get(CUR_TARG,isplayer)
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	applyeffect CUR_TARG effects/effect_shock_dmg 5.0 MY_OWNER DOT_DMG SKILL_TYPE
+}
+
+{ remove_me
+	deleteent ent_me
+}

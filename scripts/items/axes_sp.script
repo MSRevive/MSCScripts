@@ -1,0 +1,273 @@
+//Spider Axe (model by truewarrior)
+{
+	const BASE_LEVEL_REQ     25
+	const ANIM_LIFT1         0
+	const ANIM_IDLE1         1
+	const ANIM_ATTACK1       2
+	const ANIM_ATTACK2       3
+	const ANIM_ATTACK3       4
+	const ANIM_SHEATH       5
+	const MELEE_VIEWANIM_ATK ANIM_ATTACK1
+	const MODEL_VIEW viewmodels/v_2haxesgreat.mdl
+	const MODEL_VIEW_IDX 9
+	const MODEL_HANDS weapons/p_weapons4.mdl
+	const MODEL_WORLD weapons/p_weapons4.mdl
+	const SOUND_SWIPE       weapons/swingsmall.wav
+
+	const MODEL_BODY_OFS 57
+	const ANIM_PREFIX  standard
+
+	//Used in base_melee
+	//------------------
+	const MELEE_RANGE  100
+	const MELEE_DMG_DELAY  0.6
+	const MELEE_ATK_DURATION 1.5
+	const MELEE_ENERGY  3
+	const MELEE_DMG  375
+	const MELEE_DMG_RANGE      150
+	const MELEE_DMG_TYPE  slash
+	const MELEE_ACCURACY  65
+	const MELEE_STAT  axehandling
+
+	const MELEE_SOUND      SOUND_SWIPE
+	const MELEE_SOUND_DELAY      MELEE_DMG_DELAY
+	const MELEE_PARRY_CHANCE      25
+
+	//setvard WEFFECT_IMMUNE_SPIDER 1 //causes immunity to spider applyeffects in player_main - switching to scriptflag
+
+	const RANGED_MP 5
+	const THROW_ATTACK_DELAY 0.5
+	const MP_CIRCLE_OF_WEBS 200
+}
+
+#include items/axes_base_twohanded
+
+{  weapon_spawn
+
+	name a|Spider Axe
+	if ( $rand(1,3) == 1 )
+	{
+		desc How do I shot web?
+	}
+	else
+	{
+		desc This red amber axe debilitates spiders and ensnares other enemies
+	}
+	weight 90
+	size 25
+	value 1200
+	sethudsprite hand 197
+	sethudsprite trade 197
+}
+
+{ game_deploy
+	if game.clientside
+	if ( !AXE_DEPLOYED )
+	{
+		setvard AXE_DEPLOYED 1
+		setvard AXE_IDLE_COUNT 0
+		callevent 1.0 spec_idle_loop
+	}
+}
+
+{ spec_idle_loop
+	if AXE_DEPLOYED
+	if game.item.wielded
+
+	if game.time > NEXT_IDLE
+
+	if ( game.item.attacking )
+	{
+		setvard NEXT_IDLE game.time
+		add NEXT_IDLE 3.0
+		callevent 4.0 spec_idle_loop
+	}
+	else
+	{
+		add AXE_IDLE_COUNT 1
+		if ( AXE_IDLE_COUNT == 1 )
+		{
+			playviewanim 1
+			callevent 20.0 spec_idle_loop
+		}
+		else
+		{
+			playviewanim 4
+			callevent 5.0 spec_idle_loop
+			setvard AXE_IDLE_COUNT 0
+		}
+		
+	}
+}
+
+{ melee_start
+	setvard NEXT_IDLE game.time
+	add NEXT_IDLE 4.0
+}
+
+{ special_01_start
+	setvard NEXT_IDLE game.time
+	add NEXT_IDLE 4.0
+}
+
+{ melee_damaged_other //PARAM1=target_hit PARAM2=dmg PARAM3=dmg_type PARAM4=dmgevent //items return <attack_callback>_damaged_other
+	if $get(PARAM1,itemname) contains spid
+	setdmg dmg $math(multiply,PARAM2,3.0)
+	returndata 3.0
+	callevent spider_defile $get(PARAM1,id)
+}
+
+{ special_01_damaged_other //PARAM1=target_hit PARAM2=dmg PARAM3=dmg_type PARAM4=dmgevent //items return <attack_callback>_damaged_other
+	if $get(PARAM1,itemname) contains spid
+	setdmg dmg $math(multiply,PARAM2,3.0)
+	returndata 3.0
+	callevent spider_defile $get(PARAM1,id)
+}
+
+{ spider_defile
+	local L_DOT $get(ent_owner,skill.spellcasting.affliction)
+	capvar L_DOT 5 10
+	applyeffect PARAM1 effects/effect_defile 30.0 $get(ent_owner,id) 10 0.25 L_DOT
+}
+
+
+{ game_+attack2
+
+	if game.serverside
+	if !game.item.attacking
+	if $get(ent_owner,canattack)
+
+	if game.time > NEXT_WEB
+	setvard NEXT_WEB game.time
+	add NEXT_WEB 1.0
+
+	if ( $get(ent_owner,mp) < RANGED_MP )
+	{
+		dplayermessage ent_owner Spider Axe: Not enough mana for web projectile (5)
+		local EXIT_SUB 1
+	}
+
+	if ( $get(ent_owner,skill.spellcasting.affliction) < 5 )
+	{
+		dplayermessage ent_owner Spider Axe: Insufficient affliction talent for web projectile (5)
+		local EXIT_SUB 1
+	}
+
+	if !EXIT_SUB
+
+	givemp ent_owner $neg(RANGED_MP)
+
+	setvard NEXT_IDLE game.time
+	add NEXT_IDLE 4.0
+
+	splayviewanim ent_me 8
+
+	callevent THROW_ATTACK_DELAY do_web
+}
+
+{ do_web
+	playsound 0 10 bullchicken/bc_attack2.wav 0.8 $rand(80,120)
+	callexternal ent_owner ext_tossprojectile view 150 0 0.1 proj_web (0,0,5)
+}
+
+{ weapon_spawn
+
+	local reg.attack.type  strike-land
+	local reg.attack.keys  -attack1
+	local reg.attack.range  0
+	local reg.attack.dmg  0
+	local reg.attack.dmg.range 0
+	local reg.attack.dmg.type none
+	local reg.attack.energydrain 0
+	local reg.attack.stat  spellcasting.affliction
+	local reg.attack.hitchance 100
+	local reg.attack.priority 3
+	local reg.attack.delay.strike 1.5
+	local reg.attack.delay.end 2.0
+	local reg.attack.ofs.startpos MELEE_STARTPOS
+	local reg.attack.ofs.aimang MELEE_AIMANGLE
+	local reg.attack.callback makewebs
+	local reg.attack.noise  1000
+	local reg.attack.chargeamt 300
+	local reg.attack.reqskill 10
+	local reg.attack.mpdrain MP_CIRCLE_OF_WEBS
+
+	registerattack
+}
+
+{ makewebs_start
+
+	setvard NEXT_IDLE game.time
+	add NEXT_IDLE 4.0
+
+	if game.serverside
+	if $get(ent_owner,mp) > MP_CIRCLE_OF_WEBS
+
+	local L_REQS_MET 1
+
+	if ( $get(ent_owner,skill.spellcasting.affliction) < 5 )
+	{
+		dplayermessage ent_owner Spider Axe: Insufficient affliction talent for web projectile (5)
+		local L_REQS_MET 0
+	}
+
+
+	if ( game.time < NEXT_CIRCLE )
+	{
+		playermessage Spider axe can only maintain one web trap at a time.
+		local L_REQS_MET 0
+	}
+
+	if ( !L_REQS_MET )
+	{
+		cancelattack
+		exitevent
+	}
+
+	splayviewanim ent_me 9
+	playowneranim critical PLAYERANIM_PREPARE squatwalk1
+	playsound game.sound.item 10 magic/temple.wav
+}
+
+{ makewebs_strike
+	if game.serverside
+	createnpc monsters/summon/circle_of_lolth $get(ent_owner,origin) $get(ent_owner,id) 30.0
+	setvard NEXT_CIRCLE game.time
+	add NEXT_CIRCLE 30.0
+}
+
+{ bweapon_effect_remove
+	dbg $currentscript bweapon_effect_remove PARAM1
+	//problem was here actually... though I dun see what.
+	//apparently it had something to do with this being called on game_deleted by the item manager.
+	if $get_scriptflag(ent_owner,spideraxe,name_exists)
+	playermessage You are no longer resistant to spiders.
+	scriptflags ent_owner remove spideraxe
+}
+
+{ bweapon_effect_activate
+	//this may have created a global fubar in ext_activate_items due to the precent fail
+	//scratch that, problem was not here despite the percent sign... (see above)
+	if $get(ent_owner,scriptvar,'PLR_IN_WORLD')
+	playermessage You are now immune to web effects and take half damage from spiders.
+	scriptflags ent_owner add spideraxe spider_resist 0.5 -1
+}
+
+{ game_takedamage //PARAM1=attacker  PARAM2=inflictor? PARAM3=dmg PARAM4=dmg_type - use returndata to alter incoming damage
+	if $get(ent_me,wielded)
+	if ( $get(PARAM1,race) equals 'spider' ) local L_REDUCE_DMG 1
+	if ( $get(PARAM2,race) equals 'spider' ) local L_REDUCE_DMG 1
+	
+	local L_NAME $get(PARAM1,name)
+	local L_NAME $lcase(L_NAME)
+	if ( L_NAME contains 'spider' ) local L_REDUCE_DMG 1
+	
+	if ( $get(PARAM1,itemname) contains 'spid' ) local L_REDUCE_DMG 1
+	if ( $get(PARAM2,itemname) contains 'spid' ) local L_REDUCE_DMG 1
+	
+	if L_REDUCE_DMG
+	local L_DMG $math(multiply,PARAM3,0.5)
+	setdmg hit 1
+	setdmg dmg L_DMG
+	returndata 0.5
+}

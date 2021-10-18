@@ -1,0 +1,86 @@
+//Gravity based flyer
+//assumes model is centered a bit off ground and has monster AI (either new or old) and normal LX movement anims
+//death animations should end with the model resting on the ground
+//(minor aesthetic bug): if the creature dies at a great height, it may not reach the ground before the death sequence finishes, causing a 'suspended in air' death, or a 'snap-to' teleport effect
+//(technically, this flight model will work with any ground-movement based creature, but it will look awfully funny on something that walks.)
+#scope server
+
+{
+	const BFLY_VSPEED_UP 25	//up speed
+	const BFLY_VSPEED_DOWN -25 //down speed
+	const BFLY_VRANGE 50 //consider self on same plane if in this z range
+	const BFLY_MIN_REMOVE_DELAY 15.0 //time to stay before GM fades me
+
+	setvard BFLY_AGRESSIVE 0 //optional, move towards target faster when seen, speed increase based on distance (overshoots sometimes, but works alright)
+							 //be sure to turn this off if/when flier is firing projectiles
+
+	const BFLY_AGRESSIVE_MAX_THRUST 100 //max speed to add per think when accelerating towards target
+	const BFLY_AGRESSIVE_MIN_RANGE 128 //min distance from target to use acceleration
+}
+
+{ game_spawn
+	gravity 0
+}
+
+{ npc_targetsighted
+	if BFLY_AGRESSIVE
+	if $get(NPCATK_TARGET,range) > BFLY_AGRESSIVE_MIN_RANGE
+	local L_THRUST_RATIO $get(NPCATK_TARGET,range)
+	if ( L_THRUST_RATIO > 640 ) local L_THRUST_RATIO 640
+	divide L_THRUST_RATIO 640
+	local L_THRUST_RATIO $ratio(L_THRUST_RATIO,0,BFLY_AGRESSIVE_MAX_THRUST)
+	dbg L_THRUST_RATIO
+	addvelocity ent_me $relvel(0,L_THRUST_RATIO,0)
+}
+
+{ npcatk_hunt
+	if $get(ent_me,isalive)
+	if !SUSPEND_AI
+	if !I_R_FROZEN
+	if !BFLY_SUSPEND_FLY
+
+
+	local MOVE_DEST_Z $vec.z(game.monster.movedest.origin)
+	local MY_Z $get(ent_me,origin.z)
+
+	if ( MOVE_DEST_Z > MY_Z )
+	{
+		//dbg moving up
+		local Z_DIFF MOVE_DEST_Z
+		subtract Z_DIFF MY_Z
+		if Z_DIFF > BFLY_VRANGE
+		addvelocity ent_me $relvel(0,0,BFLY_VSPEED_UP)
+	}
+	if ( MOVE_DEST_Z < MY_Z )
+	{
+		//dbg moving down
+		local Z_DIFF MY_Z
+		subtract Z_DIFF MOVE_DEST_Z
+		if Z_DIFF > BFLY_VRANGE
+		addvelocity ent_me $relvel(0,0,BFLY_VSPEED_DOWN)
+	}
+}
+
+{ game_death
+	if !BFLY_NO_FAKE_DEATH
+
+	gravity 1
+	//snap to ground method
+	//local MY_GROUND_POS $get(ent_me,origin)
+	//vectorset MY_GROUND_POS z $get_ground_height(MY_GROUND_POS)
+	//setorigin ent_me MY_GROUND_POS
+
+	//fake death method
+	setalive 1
+	callevent npcatk_suspend_ai
+	invincible 1
+	playanim critical ANIM_DEATH
+	callevent 1.0 final_death
+}
+
+{ final_death
+	callexternal GAME_MASTER gm_add_del_que $get(ent_me,id) BFLY_MIN_REMOVE_DELAY
+	invincible 0
+	setalive 0
+	setsolid none
+}

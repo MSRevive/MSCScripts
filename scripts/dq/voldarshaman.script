@@ -1,0 +1,231 @@
+//Orc Fire Shamman, from Orc Sniper by Thothie
+{
+   setvard DROP_GOLD 1			//Gold Drop
+   setvard DROP_GOLD_AMT $rand(15,30)	//
+   setvard NPC_GIVE_EXP 100
+
+   setvard ANIM_ATTACK swordswing1_L //Attack animation
+   setvard FLINCH_CHANCE 45%
+
+   const AIM_RATIO 50			//Ratio of target distance to aim-up angle up
+   setvard MOVE_RANGE 256
+   setvard ATTACK_RANGE 5500
+   const ATTACK_SPEED 200
+   const ATTACK_CONE_OF_FIRE 2//Cone of fire
+
+   const MELE_RANGE 96
+   const MELE_HITRANGE 128
+   const ATTACK_ACCURACY 80
+   const ANIM_SWIPE swordswing1_L
+   const ANIM_FIRE swordswing1_L
+   const ANIM_WARCRY warcry
+   const SWIPE_DAMAGE '$rand(25,65)'
+   const SOUND_MELEMISS zombie/claw_miss1.wav
+   const SOUND_MELEHIT zombie/claw_strike3.wav
+   const SOUND_FIRECHARGE bullchicken/bc_attack1.wav
+   const SOUND_FIRESHOOT bullchicken/bc_attack3.wav
+   const SOUND_WARCRY1 monsters/orc/attack1.wav
+   const SOUND_WARCRY2 monsters/orc/attack3.wav
+   const FIRE_BALL_DAMAGE '$rand(75,100)'
+   const BURN_DAMAGE '$randf(10,20)'
+   const FIRE_BALL_FREQ 2.0
+   const DEATH_SCRIPT monsters/horror
+
+	const NPC_DEATH_MSG "You have slain one of Voldar's shamans"
+
+	setvard IMMUNE_POISON 1
+
+	//horror media
+	precache controller/con_idle1.wav
+	precache controller/con_idle2.wav
+	precache controller/con_idle3.wav
+	precache controller/con_attack1.wav
+	precache controller/con_attack2.wav
+	precache controller/con_attack3.wav
+	precache controller/con_die1.wav
+	precache debris/bustflesh2.wav		//most common
+	precache controller/con_pain1.wav	//rare > 50%
+	precache controller/con_die2.wav	//rare < 50%
+	precache bullchicken/bc_attack3.wav
+	precache bullchicken/bc_attack2.wav
+	precache ambience/steamburst1.wav
+	precache monsters/bat/flap_big1.wav
+	precache monsters/bat/flap_big2.wav
+	precache player/pl_fallpain1.wav
+	precache monsters/edwardgorey.mdl
+}
+
+#include monsters/orc_base_ranged
+#include monsters/orc_base
+
+{
+   eventname orc_spawn
+
+	setprop ent_me skin 3
+
+   	hp 220
+   	//ov 180
+   	name one of|Voldar's Shamans
+   	hearingsensitivity 8
+   	setstat parry 30
+   	takedmg all .8
+	takedmg lightning 3.0
+	takedmg acid 0.0
+	takedmg poison 0.0
+	setstat spellcasting 30 30 30 30 30 30 30
+
+   	setmodelbody	0 0		//Body 0=naked 1=leather 2=plate 3=green-hide
+   	setmodelbody	1 4		//Head 0=cap_shorthorn 1=cap_nohorn 2=buffo_skin 3=cheif_ramhorns 4=green_hood
+   	setmodelbody	2 0		//Weapon 0=fist 1=axe 2=bow_weak 3=bow_strng 4=sword 5=bloodyaxe 6=sword&sheild
+}
+
+{ npc_selectattack
+
+	if !DELAY_SOUND
+	if !$cansee(enemy,MELE_RANGE)
+	setvard DELAY_SOUND 1
+	playsound 0 10 SOUND_FIRECHARGE
+}
+
+{ swing_sword
+
+	if ( $cansee(enemy,MELE_RANGE) )
+	{
+		//dbg Can See NME in range
+		setvard ANIM_ATTACK ANIM_SWIPE
+		callevent swipe_attack $get(ent_lastseen,id)
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	if ( $cansee(enemy) )
+	{
+		//prevents shamman from moving closer to target than needed
+		if ( !$cansee(enemy,MOVE_RANGE) ) setvard ANIM_ATTACK ANIM_RUN
+		if ( $cansee(enemy,MOVE_RANGE) ) setvard ANIM_ATTACK ANIM_WARCRY
+	}
+
+	if !FIRE_BALL_DELAY
+	setvard ANIM_ATTACK ANIM_FIRE
+	callevent throw_fireball
+}
+
+{ throw_fireball
+
+	if $cansee(enemy)
+	playsound 0 10 SOUND_FIRESHOOT
+	tossprojectile view ATTACK_SPEED FIRE_BALL_DAMAGE ATTACK_CONE_OF_FIRE proj_acid_bolt (0,48,48)
+	setvard DELAY_SOUND 0
+}
+
+{ reset_fireball
+	setvard ANIM_ATTACK ANIM_FIRE
+	setvard DID_WARCRY 0
+	setvard FIRE_BALL_DELAY 0
+}
+
+{ npc_death
+
+	//removeitem ent_me item_torch
+	createnpc DEATH_SCRIPT $relpos(0,0,20) $get(ent_me,id) $get(ent_laststruck,id)
+	createnpc monsters/summon/npc_poison_cloud2 $relpos(0,0,0) $get(ent_me,id) 100 10.0 1
+}
+
+{ swipe_attack
+
+	//dbg swipe_attack got $get(PARAM1,name)
+	if ( $get(NPCATK_TARGET,range) > MELE_RANGE ) callevent throw_fireball
+	setvard SWIPE_SOUNDS 1
+	callevent npcatk_dodamage PARAM1 MELE_HITRANGE SWIPE_DAMAGE ATTACK_ACCURACY
+}
+
+{ game_dodamage //1: Attack Hit (1/0)  2: Entity Attack hit  3:  Start Position  4:  End Position
+
+	//EXPARIMENTING - BEGIN
+	//if ( $get(PARAM2,isplayer) )
+	//{
+	//	if !MUSAK_STARTED
+	//	setvard MUSAK_STARTED 1
+	//	playmp3 PARAM2 1 "ms_chaos.mp3"
+	//	callevent 10.0 musak_stop
+	//}
+	//EXPARIMENTING - END
+
+	if SWIPE_SOUNDS
+
+	if ( !PARAM1 ) playsound 0 10 SOUND_MELEMISS
+
+	if ( PARAM1 )
+	{
+		playsound 0 10 SOUND_MELEHIT
+		applyeffect PARAM2 effects/greater_poison $rand(5,10) $get(ent_me,id) $randf(10,40)
+	}
+
+
+	setvard SWIPE_SOUNDS 0
+}
+
+{ npc_struck
+
+	if $get(ent_laststruck,range) < MELE_RANGE
+	setvard ANIM_ATTACK ANIM_SWIPE
+	callevent npcatk_settarget $get(ent_laststruck,id)
+	//callevent check_attack
+}
+
+{ npc_attack
+
+	if ANIM_ATTACK equals ANIM_WARCRY
+	if !DID_WARCRY
+	playrandomsound 0 10 SOUND_WARCRY1 SOUND_WARCRY2
+	setvard DID_WARCRY 1
+}
+
+{ cycle_up
+	if game.serverside
+	if ( !I_R_GLOWING ) callevent light_on
+}
+
+//===============================
+//glow system (should be an include, but making it so seems to cause issues with sticky client bits
+//glow
+{ [client] client_activate
+
+	setvard GLOW_RAD 200
+	const NO_LOOP_DETECT 1
+
+	setvard SKEL_ID PARAM1
+	setvard GLOW_COLOR PARAM2
+
+	if SKEL_LIGHT_ID equals 'SKEL_LIGHT_ID'
+	cleffect light new $getcl(SKEL_ID,origin) GLOW_RAD GLOW_COLOR 5.0
+	setvard SKEL_LIGHT_ID game.script.last_light_id
+	setcallback render enable
+
+	//callevent light_loop
+}
+
+{ [client] game_prerender
+
+	local L_POS $getcl(SKEL_ID,origin)
+	cleffect light SKEL_LIGHT_ID L_POS GLOW_RAD GLOW_COLOR 1.0
+}
+
+{ [server] game_death
+
+	clientevent remove all MY_LIGHT_SCRIPT
+}
+
+{ [server] light_on
+	if !I_R_GLOWING
+	setvard I_R_GLOWING 1
+	clientevent persist all $currentscript $get(ent_me,index) (0,255,0)
+	setvard MY_LIGHT_SCRIPT game.script.last_sent_id
+}
+//=============================== End Glow System
+
+
+//{ musak_stop
+//	//dbg stop musak?
+//	playmp3 all 0 "ms_chaos.mp3"
+//}

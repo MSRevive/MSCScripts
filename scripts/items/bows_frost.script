@@ -1,0 +1,183 @@
+// Frost Bow. CrazyMonkeyDude Nov 2009 (From Phoenix Bow)
+// 50/50 chance to frost or freeze
+// 50% resistance to ice with a 10 second delay
+// To prevent sploiting with other means of ice resistance (Ice based damage also helps)
+// Updates by Thothie JAN2010_15
+
+{	
+	const BASE_LEVEL_REQ	25
+	const MODEL_VIEW_IDX	8
+	const MODEL_VIEW       	viewmodels/v_bows.mdl
+	const MODEL_HANDS      	weapons/p_weapons3.mdl
+	const MODEL_WORLD      	weapons/p_weapons3.mdl
+	const MODEL_WEAR	weapons/p_weapons3.mdl
+	const SOUND_SHOOT      	weapons/bow/bow.wav
+	const ITEM_NAME		longbow
+	const ANIM_PREFIX	standard
+	const MODEL_BODY_OFS	44
+
+	const RANGED_AIMANGLE	(0,0,0)
+
+	const SOUND_RESISTUP magic/frost_reverse.wav
+
+	const CUSTOM_ATTACK	1
+
+	const SOUND_RESIST_PREP magic/gaus_warmup.wav
+	const SOUND_RESIST_LOOP ambience/pulsemachine.wav
+	const SOUND_RESIST_LOCK weapons/egon_off1.wav
+}
+
+#include items/bows_base
+
+{ [shared] bow_spawn
+
+	name 			a|Frost Bow
+	desc 			An icy bow that fires icy projectiles.
+	weight 			100
+	value			1500
+	sethudsprite trade	135
+
+	callevent custom_register
+}
+
+{ custom_register
+
+	local reg.attack.type		charge-throw-projectile
+	local reg.attack.keys		+attack1
+	local reg.attack.hold_min&max	1.1;1.3
+	local reg.attack.dmg.type	magic
+	local reg.attack.range		1200
+	local reg.attack.energydrain	1
+	local reg.attack.stat		archery
+	local reg.attack.COF		1;1
+	local reg.attack.projectile	proj_arrow_fbow
+	local reg.attack.priority	0
+	local reg.attack.delay.strike	1.2
+	local reg.attack.delay.end	1.2
+	local reg.attack.ofs.startpos	(0,0,10)
+	local reg.attack.ofs.aimang	RANGED_AIMANGLE
+	local reg.attack.ammodrain	0
+	local reg.attack.callback	ranged
+	local reg.attack.noise		1000
+
+	registerattack
+}
+
+{ [server] bweapon_effect_activate
+	if game.serverside
+	dbg bweapon_effect_activate BOW_PREPPING RESIST_ACTIVE
+	if !BOW_PREPPING
+	if !RESIST_ACTIVE
+	setvard NOT_BOGUS_SCRIPT 1
+	callevent setup_bow 
+}
+
+{ [server] setup_bow
+	if game.serverside
+	callevent 0.1 prep_bow 
+	if ( !REMOVE_LOOP_ACTIVE )
+	{
+		setvard ABORT_PREP 0
+		setvard REMOVE_LOOP_ACTIVE 1 
+		callevent check_to_remove_loop
+	}
+}
+
+{ [server] prep_bow
+	if game.serverside
+	if !RESIST_ACTIVE
+	setvard BOW_PREPPING 1
+	playsound 0 10 SOUND_RESIST_PREP
+	callevent 10.0 activate_resistance
+	clientevent new all items/bows_frost_cl $get(ent_owner,index)
+	setvard BOW_PREP_SCRIPT_ID game.script.last_sent_id
+	callevent 3.0 play_resist_loop
+}
+
+{ [server] play_resist_loop
+	if game.serverside
+	if BOW_PREPPING
+	svplaysound 1 10 SOUND_RESIST_LOOP
+}
+ 
+{ [server] activate_resistance 
+	if game.serverside
+	if BOW_PREPPING
+	setvard BOW_PREPPING 0
+	if !RESIST_ACTIVE
+	setvard RESIST_ACTIVE 1
+	callexternal ent_owner ext_register_weapon $get(ent_me,id) "cbow" cold 75 
+	playsound 2 10 SOUND_RESIST_LOCK
+	svplaysound 1 0 SOUND_RESIST_LOOP
+} 
+ 
+{ [server] check_to_remove_loop 
+	if game.serverside
+	if REMOVE_LOOP_ACTIVE 
+	callevent 1.0 check_to_remove_loop
+	if ( !$get(ent_owner,isalive) )
+	{
+		callevent bweapon_effect_remove //owner died, remove effect
+	}
+}
+
+{ [server] bweapon_effect_remove
+	if game.serverside
+	dbg bweapon_effect_remove BOW_PREPPING RESIST_ACTIVE
+ 	setvard REMOVE_LOOP_ACTIVE 0
+	if ( BOW_PREPPING ) callevent abort_prep
+	if RESIST_ACTIVE
+	callexternal ent_owner ext_register_weapon $get(ent_me,id) "cbow" remove
+	setvard RESIST_ACTIVE 0
+}
+
+{ [server] abort_prep
+	if game.serverside
+	dbg abort_prep BOW_PREP_SCRIPT_ID
+	svplaysound 1 0 SOUND_RESIST_LOOP
+	setvard REMOVE_LOOP_ACTIVE 0 
+	setvard RESIST_ACTIVE 0
+	setvard BOW_PREPPING 0 //so bow will reinit if user dies
+	clientevent update all BOW_PREP_SCRIPT_ID remove_sprites //remove CL script if user dies during prep
+}
+
+//split script debug
+//{ [server]
+//repeatdelay 1.0
+//	if game.serverside
+//	dbg pulse BOW_PREPPING RESIST_ACTIVE NOT_BOGUS_SCRIPT
+//	//`if ( NOT_BOGUS_SCRIPT equals 'NOT_BOGUS_SCRIPT' ) deleteent ent_me
+//}
+
+////=== Wielded
+//{ [server] ext_activate_items
+//	if PARAM1 equals $get(ent_owner,id)
+//	if $get(ent_owner,scriptvar,'PLR_IN_WORLD')
+//	if ( $get(ent_me,id) equals $get(ent_owner,scriptvar,'PLR_LEFT_HAND') ) local BEW_IS_WEILDED 1
+//	if ( $get(ent_me,id) equals $get(ent_owner,scriptvar,'PLR_RIGHT_HAND') ) local BEW_IS_WEILDED 1
+//	if BEW_IS_WEILDED
+//	callevent bweapon_effect_activate
+//}
+//{ [server] game_deploy
+//	if $get(ent_owner,scriptvar,'PLR_IN_WORLD')
+//	callevent bweapon_effect_activate
+//}
+//
+//{ [server] game_wear
+//	callevent bweapon_effect_remove
+//}
+//{ [server] game_putinpack //this isn't working (SEP2009 - comment only)
+//	callevent bweapon_effect_remove
+//}
+//{ [server] game_remove
+//	callevent bweapon_effect_remove
+//}
+//{ [server] game_fall
+//	callevent bweapon_effect_remove
+//}
+//{ [server] game_sheath
+//	callevent bweapon_effect_remove
+//}
+//{ [server] game_drop
+//	callevent bweapon_effect_remove
+//}

@@ -1,0 +1,769 @@
+//Ice variant converted from phlames/phlame_bird by Thothie
+
+#scope server
+{ [shared]
+	setvar ANIM_WALK Flying_cycler
+	setvar ANIM_RUN Flying_cycler
+	setvar ANIM_IDLE Hover_slow
+	setvard ANIM_ATTACK Attack_claw //frame_attack_claw
+
+	const AS_CUSTOM_UNSTUCK 1
+
+	const ANIM_CEILING_LAND Land_ceiling
+	const ANIM_CEILING_DETATCH ceiling_detatch
+
+	const ANIM_CEILING_IDLE1 Subtle_fidget
+	const ANIM_CEILING_IDLE2 Preen_fidget
+	const ANIM_CEILING_IDLE3 Swing_fidget
+
+	const ANIM_FLY Flying_cycler
+	const ANIM_HOVER Hover_slow
+	const ANIM_BOOST Dive_cycler
+	setvar ANIM_IDLE Hover_slow
+
+	const FREQ_SPIT_CYCLE 30.0
+
+	setvard ANIM_DEATH Death_fall_simple
+	const ANIM_DEATH_FLY_MODE Death_fall_simple
+	const ANIM_DEATH_GROUND_MODE Die_on_ground
+
+	const ANIM_FLINCH1 Flinch_big
+	const ANIM_FLINCH2 Flinch_small
+
+	const AS_CUSTOM_UNSTUCK 1
+
+	//newer
+	const ATTACK_BOMB Attack_bomb
+	const ANIM_DIVE Dive_cycler
+}
+
+{
+	setvard ICELANCE_DOT 25
+
+	const BREATH_FREEZE 1
+
+	const SPIT_PROJECTILE proj_icelance
+
+	const BREATH_CL_SCRIPT monsters/demonwing_giant_ice_cl
+
+	const NPC_EXTRA_VALIDATIONS 1
+
+	const NPC_VALIDATE_HEARING 1
+
+	const NO_BOMB 1 //still has fire bomb code - update to frost type to re-enable
+
+	const DOT_EFFECT effects/effect_frostbite_dmg
+
+	setvard NPC_GIVE_EXP 1000
+
+	if ( $lcase(game.map.name) equals shender_east )
+	{
+		setvard NPC_GIVE_EXP 3000
+		setvard NPC_IS_BOSS 1
+	}
+
+	setvard ATTACK_RANGE 90
+	setvard ATTACK_HITRANGE 180
+
+	const DMG_CLAW 150
+	const DOT_DMG 30
+	const FREQ_HORROR_BOOST $randf(3.0,6.0)
+	const DMG_SPIT 75
+	const DMG_BOMB 300
+
+	const FREQ_SWITCH_GROUND_MODE 60.0
+
+	const SOUND_FLAP1 monsters/bat/flap_big1.wav
+	const SOUND_FLAP2 monsters/bat/flap_big2.wav
+	const SOUND_HOVER monsters/bat/flap_big.wav
+	const SOUND_ATTACK1 monsters/demonwing/demonwing_atk1.wav
+	const SOUND_ATTACK2 monsters/demonwing/demonwing_atk2.wav
+	const SOUND_ATTACK3 monsters/demonwing/demonwing_atk3.wav
+	const SOUND_ALERT1 monsters/demonwing/demonwing_bat1.wav
+	const SOUND_ALERT2 monsters/demonwing/demonwing_bat2.wav
+	const SOUND_ALERT1 monsters/demonwing/demonwing_bat1.wav
+	const SOUND_STRUCK1 weapons/cbar_hitbod1.wav
+	const SOUND_STRUCK2 weapons/cbar_hitbod2.wav
+	const SOUND_STRUCK3 weapons/cbar_hitbod3.wav
+	const SOUND_PAIN1 monsters/demonwing/demonwing_hit1.wav
+	const SOUND_PAIN2 monsters/demonwing/demonwing_hit2.wav
+	const SOUND_DEATH monsters/demonwing/demonwing_dead.wav
+	const SOUND_SPIT magic/ice_strike2.wav
+	precache SOUND_DEATH 
+
+	const SOUND_CIELING_FIDGET monsters/demonwing/demonwing_slct.wav
+
+	//newer
+	const FREQ_BOMB 10.0
+	const FREQ_BOMB_CHECK 1.0
+	const SOUND_FIRE_BREATH "magic/cold_breath.wav"
+
+	setvar NO_CIELING_IDLE 1 //never ceiling idle
+	setvar NPC_HACKED_MOVE_SPEED 400
+
+	const BABY_SCRIPT monsters/demonwing_ice
+}
+
+{ game_precache
+	precachefile BABY_SCRIPT
+}
+
+#include monsters/base_monster_new
+#include monsters/base_flyer_grav
+#include monsters/base_propelled
+
+{ [shared] npc_spawn
+	name a|Gigantic Icewing
+	setmodel monsters/demonwing_large_fancy.mdl
+	hp 5000
+	width 64
+	height 96
+	setbbox npcsize
+	roam 1
+	race demon
+	setidleanim ANIM_IDLE
+	setmoveanim ANIM_WALK
+	hearingsensitivity 4
+
+	takedmg fire 1.5
+	takedmg cold 0.0
+	takedmg holy 1.5
+
+	setvard IS_UNHOLY 1
+
+	setprop ent_me skin 2
+
+	if game.serverside
+
+	setvard FLAP_STEP 0
+
+	callevent 2.0 final_props
+
+	if ( NO_CIELING_IDLE ) hearingsensitivity 8
+
+	setvard SPIT_FIRE_CYCLE 0
+
+	setvard ACTIVE_BABIES 0
+
+	callevent 0.1 find_tele_point
+
+	if !NO_CIELING_IDLE
+	callevent npcatk_suspend_ai 2.0
+	setvard CIELING_MODE 1
+	callevent 0.1 stick_ceiling
+}
+
+{ find_tele_point
+	setvard RADIAL_CENTER $get(ent_me,origin)
+	vectorset RADIAL_CENTER z $get_ground_height(RADIAL_CENTER)
+}
+
+{ final_props
+	setvard MIN_FLINCH_DAMAGE $get(ent_me,maxhp)
+	multiply MIN_FLINCH_DAMAGE 0.05
+	setvard NPC_DID_DEATH 1 //custom death
+}
+
+{ stick_ceiling
+	roam 0
+	setvard NO_STUCK_CHECKS 1
+	setvard NPC_PROPELL_SUSPEND 1
+	setvard CANT_TURN 1
+	setvard NPC_NO_MOVE 1
+	gravity 0
+	hearingsensitivity 4
+	setvelocity ent_me $relvel(0,0,800)
+	setvard BFLY_SUSPEND_FLY 1
+	setvard CIELING_MODE 1
+	setvard GROUND_MODE 0
+	playanim critical ANIM_CEILING_LAND
+	setvard ANIM_IDLE ANIM_CEILING_IDLE1
+	setvard ANIM_WALK ANIM_CEILING_IDLE1
+	setvard ANIM_RUN ANIM_CEILING_IDLE1
+	setmoveanim ANIM_IDLE
+	setidleanim ANIM_IDLE
+	setvard NEXT_CIELING_FIDGET game.time
+	add NEXT_CIELING_FIDGET $randf(3.0,6.0)
+}
+
+{ set_telebird //<radius> external
+	setvard RADIAL_BIRD 1
+	setvard RADIAL_RANGE PARAM1
+}
+
+{ npcatk_hunt
+
+	if ( SUSPEND_AI )
+	{
+		local L_TIME_SUSPENDED NPC_LAST_SUSPEND_AI
+		add L_TIME_SUSPENDED 5.0
+		if game.time > L_TIME_SUSPENDED
+		//AI's been stuck for more than 5 seconds, force resume
+		callevent npcatk_resume_ai
+	}
+
+	if ( RADIAL_BIRD )
+	{
+		if ( TELED_OUT )
+		{
+			//am teled out - check if any target to get back in
+			if game.time > NEXT_RAD_TELE
+			local CHECK_AREA $get_tsphere(enemy,RADIAL_RANGE,RADIAL_CENTER)
+			if CHECK_AREA isnot none
+			dbg radialbird_tele_in
+			callevent do_tele_in
+			setvard TELE_IN_TARG $get_token(CHECK_AREA,0)
+			setvard NEXT_RAD_TELE game.time
+			add NEXT_RAD_TELE 5.0
+		}
+		else
+		{
+			if game.time > NEXT_RAD_TELE
+			local GET_NEW_TARG 1
+			if ( NPCATK_TARGET isnot unset )
+			{
+				local RAD_TARG_ORG $get(NPCATK_TARGET,origin)
+				if ( $dist(RAD_TARG_ORG,RADIAL_CENTER) <= RADIAL_RANGE ) local GET_NEW_TARG 0
+			}
+			if ( GET_NEW_TARG )
+			{
+				local CHECK_AREA $get_tsphere(enemy,RADIAL_RANGE,RADIAL_CENTER)
+				if ( CHECK_AREA isnot none )
+				{
+					local CHECK_AREA $sort_entlist(CHECK_AREA,range)
+					callevent npcatk_settarget $get_token(CHECK_AREA,0)
+					local GOT_NEW_TARG 1
+				}
+				if !GOT_NEW_TARG
+				setvard NEXT_RAD_TELE game.time
+				add NEXT_RAD_TELE 5.0
+				//current targ out of range and no new target found, tele out
+				callevent center_dash
+				callevent 1.0 do_tele_out
+			}
+		}
+	}
+
+	if ( NPCATK_TARGET equals unset )
+	{
+		if ( CIELING_MODE )
+		{
+			gravity 0
+			setvelocity ent_me $vec(0,0,800)
+			if game.time > NEXT_CIELING_FIDGET
+			setvard NEXT_CIELING_FIDGET game.time
+			add NEXT_CIELING_FIDGET $randf(3.0,6.0)
+			local RND_IDLE $rand(1,2)
+			if ( RND_IDLE == 1 )
+			{
+				playanim once ANIM_CEILING_IDLE2
+				playsound 0 10 SOUND_CIELING_FIDGET
+			}
+			if ( RND_IDLE == 2 )
+			{
+				playanim once ANIM_CEILING_IDLE3
+			}
+		}
+
+		if ( !CIELING_MODE )
+		{
+			if !NO_CIELING_IDLE
+			if game.time > GO_TO_SLEEP
+			callevent stick_ceiling
+		}
+	}
+
+	if NPCATK_TARGET isnot unset
+
+	setvard GO_TO_SLEEP game.time
+	add GO_TO_SLEEP 10.0
+
+	if !I_R_FROZEN
+
+	if ( CIELING_MODE )
+	{
+		callevent detatch_from_cieling
+	}
+
+	if ( game.time > NEXT_SPIT_CYCLE )
+	{
+		if $cansee(NPCATK_TARGET)
+		setvard NEXT_SPIT_CYCLE game.time
+		add NEXT_SPIT_CYCLE FREQ_SPIT_CYCLE
+		callevent do_spit_cycle
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	if ( !NO_BOMB )
+	{
+		if ( game.time > NEXT_BOMB_SCAN )
+		{
+			if !SPIT_MODE
+			setvard NEXT_BOMB_SCAN game.time
+			add NEXT_BOMB_SCAN FREQ_BOMB_SCAN
+			local BOMB_POINT $get(ent_me,origin)
+			vectorset BOMB_POINT z $get_ground_height(BOMB_POINT)
+
+			//make sure i'm at least 100 units from ground
+			local MY_Z $get(ent_me,origin.z)
+			if ( MY_Z > $vec.z(BOMB_POINT) )
+			{
+				subtract MY_Z $vec.z(BOMB_POINT)
+				if MY_Z < 100
+				local EXIT_SUB 1
+			}
+			else
+			{
+				local BOMB_Z $vec.z(BOMB_POINT)
+				subtract BOMB_Z MY_Z
+				if MY_Z < 100
+				local EXIT_SUB 1
+			}
+			if !EXIT_SUB
+
+			setvard BOMB_TARGET $get_tsphere(enemy,128,BOMB_POINT)
+			if BOMB_TARGET isnot none
+			setvard BOMB_TARGET $get_token(BOMB_TARGET,0)
+			if game.time > NEXT_BOMB
+			setvard NEXT_BOMB game.time
+			add NEXT_BOMB FREQ_BOMB
+			playanim critical ATTACK_BOMB
+
+		}
+	}
+	
+	if $get(NPCATK_TARGET,range) > ATTACK_RANGE
+
+	if !SPIT_MODE
+
+	if game.time > NEXT_HORROR_BOOST
+	setvard NEXT_HORROR_BOOST game.time
+	add NEXT_HORROR_BOOST FREQ_HORROR_BOOST
+	playrandomsound 0 10 SOUND_ALERT1 SOUND_ALERT2
+	svplaysound 0 10 SOUND_HOVER
+	playanim once ANIM_BOOST
+	addvelocity ent_me $relvel(0,800,0)
+}
+
+{ detatch_from_cieling
+	setvard NEXT_HORROR_BOOST game.time
+	add NEXT_HORROR_BOOST 6.0
+
+	setvard NEXT_SPIT_CYCLE game.time
+	add NEXT_SPIT_CYCLE FREQ_SPIT_CYCLE
+
+	hearingsensitivity 8
+
+	setvard CANT_TURN 0
+	setvard NPC_NO_MOVE 0
+	setmovedest NPCATK_TARGET 9999
+	gravity 0
+
+	callevent 3.0 frame_detatch_done //just in case the anim doesn't hit
+
+	callevent npcatk_suspend_ai 1.0
+	callevent fly_mode
+	playanim critical ANIM_CEILING_DETATCH
+	playrandomsound 0 10 SOUND_ALERT1 SOUND_ALERT2
+	setvard CIELING_MODE 0
+
+	setvard NEXT_GROUND_MODE game.time
+	add NEXT_GROUND_MODE FREQ_SWITCH_GROUND_MODE
+}
+
+{ frame_detatch_done
+	setvard BFLY_SUSPEND_FLY 0
+	setvard NO_STUCK_CHECKS 0
+	setvard NPC_PROPELL_SUSPEND 0
+	roam 1
+}
+
+{ fly_mode
+	gravity 0
+	setvard ANIM_IDLE ANIM_HOVER
+	setvard ANIM_WALK ANIM_FLY
+	setvard ANIM_RUN ANIM_FLY
+	setmoveanim ANIM_FLY
+	setidleanim ANIM_HOVER
+}
+
+{ set_no_ceiling_idle
+	setvard NO_CIELING_IDLE 1
+}
+
+{ game_struck
+	//manual flinch
+	if ( game.time > NEXT_FLINCH )
+	{
+		if PARAM1 > MIN_FLINCH_DAMAGE
+		setvard NEXT_FLINCH game.time
+		add NEXT_FLINCH $randf(10.0,20.0)
+		callevent npcatk_suspend_ai 1.0
+		setvard AS_ATTACKING game.time
+		add AS_ATTACKING 5.0
+		if ( $rand(1,2) == 1 )
+		{
+			playanim critical ANIM_FLINCH1
+		}
+		else
+		{
+			playanim critical ANIM_FLINCH2
+		}
+		addvelocity ent_me $relvel(0,-300,0)
+		local EXIT_SUB 1
+		playrandomsound 0 10 SOUND_PAIN1 SOUND_PAIN2
+	}
+	if !EXIT_SUB
+	playrandomsound 0 5 SOUND_STRUCK1 SOUND_STRUCK2 SOUND_STRUCK3 SOUND_STRUCK1 SOUND_STRUCK2 SOUND_STRUCK3 SOUND_STRUCK1 SOUND_STRUCK2 SOUND_STRUCK3 SOUND_PAIN1 SOUND_PAIN2
+}
+
+{ frame_flap
+	add FLAP_STEP 1
+	if ( FLAP_STEP == 1 )
+	{
+		svplaysound 0 10 SOUND_FLAP1
+	}
+	else
+	{
+		svplaysound 0 10 SOUND_FLAP2
+		setvard FLAP_STEP 0
+	}
+	//addvelocity ent_me $relvel(0,110,0)
+}
+
+{ frame_attack_claw
+	if !SPIT_MODE
+	playrandomsound 0 10 SOUND_ATTACK1 SOUND_ATTACK2 SOUND_ATTACK3
+	setvard CLAW_ATTACK 1
+	dodamage NPCATK_TARGET ATTACK_HITRANGE DMG_CLAW 90% slash
+}
+
+{ game_dodamage
+	if ( CLAW_ATTACK )
+	{
+		if $rand(1,4) == 1
+		applyeffect PARAM2 DOT_EFFECT 5.0 $get(ent_me,id) DOT_DMG
+	}
+	setvard CLAW_ATTACK 0
+
+	if ( FIRE_BOMB_ATTACK )
+	{
+		if PARAM1
+		if $get(PARAM2,relationship,ent_me) equals enemy
+		applyeffect PARAM2 DOT_EFFECT 5.0 $get(ent_me,id) DOT_DMG
+
+		local TARG_ORG $get(PARAM2,origin)
+		local MY_ORG FIRE_BOMB_POS
+		local NEW_YAW $angles(MY_ORG,TARG_ORG)
+		addvelocity PARAM2 $relvel($vec(0,NEW_YAW,0),$vec(0,1000,200))
+	}
+}
+
+{ npc_stuck
+	if ( !SUSPEND_AI ) callevent as_npcatk_suspend_ai AS_WIGGLE_DURATION
+	setvard NPC_FORCED_MOVEDEST 1
+	local MY_ORG $get(ent_me,origin)
+	local MOVE_DEST MY_ORG
+	add AS_UNSTUCK_ANG 36
+	if ( AS_UNSTUCK_ANG > 359 ) subtract AS_UNSTUCK_ANG 359
+	//dbg npcatk_anti_stuck stuck_count STUCK_COUNT ang AS_UNSTUCK_ANG
+	vectoradd MOVE_DEST $relpos($vec(0,AS_UNSTUCK_ANG,0),$vec(0,1000,0))
+	setmovedest MOVE_DEST AS_MOVEPROX //I'd love to have them trace along a wall, but I can't figure how to pull that.
+	playanim once ANIM_RUN
+
+	local RND_UD $randf(-200,200)
+	addvelocity ent_me $relvel(0,0,RND_UD)
+}
+
+{ do_spit_cycle
+
+	callevent npcatk_suspend_ai
+	setvard NPC_PROPELL_SUSPEND 1
+	setvard ANIM_WALK ANIM_HOVER
+	setvard ANIM_RUN ANIM_HOVER
+	setvard ANIM_IDLE ANIM_HOVER
+	setmoveanim ANIM_HOVER
+	setidleanim ANIM_HOVER
+
+	add SPIT_FIRE_CYCLE 1
+	if ( SPIT_FIRE_CYCLE == 1 )
+	{
+		setvard SPIT_MODE 1
+		callevent do_spit_cycle_loop
+		callevent 5.0 end_spit_cycle
+	}
+	else
+	{
+		if ( $get(NPCATK_TARGET,range) < 256 )
+		{
+			setvard SPIT_MODE 1
+			callevent do_fire_breath_loop
+			setvard FIRE_BREATH_ON 1
+			clientevent new all BREATH_CL_SCRIPT $get(ent_me,index) 10.0
+			setvard FB_CL_SCRIPT_ID game.script.last_sent_id
+			playsound 0 10 SOUND_FIRE_BREATH
+			setvard BREATH_YAW $get(ent_me,angles.yaw)
+			callevent fire_breath_loop
+			callevent 10.0 end_fire_breath
+		}
+		setvard SPIT_FIRE_CYCLE 0
+	}
+
+}
+
+{ do_spit_cycle_loop
+	if SPIT_MODE
+	callevent 2.0 do_spit_cycle_loop
+	setvelocity ent_me (0,0,0)
+	setvard TARGET_LIST $get_tsphere(enemy,2048)
+	if TARGET_LIST isnot none
+	token.scramble TARGET_LIST
+	setvard SPIT_TARGET 0
+	calleventloop $get_token_amt(TARGET_LIST) pick_target
+	if $get(SPIT_TARGET,isalive)
+	setmovedest SPIT_TARGET 9999
+	playsound 0 10 SOUND_SPIT
+	playanim once ANIM_ATTACK
+	tossprojectile SPIT_TARGET 300 DMG_BOMB 1 SPIT_PROJECTILE (0,0,32)
+	callexternal ent_lastprojectile ext_lighten 0.0
+}
+
+{ pick_target
+	if !$get(SPIT_TARGET,isalive)
+	local CUR_TARG $get_token(TARGET_LIST,game.script.iteration)
+	local TRACE_START $get(ent_me,origin)
+	local TRACE_END $get(CUR_TARG,origin)
+	local TRACE_LINE $get_traceline(TRACE_START,TRACE_END,worldonly)
+	if TRACE_LINE equals TRACE_END
+	setvard SPIT_TARGET CUR_TARG
+}
+
+{ end_spit_cycle
+	callevent 1.0 npcatk_resume_ai
+	setvard NPC_PROPELL_SUSPEND 0
+	setvard SPIT_MODE 0
+	setvard ANIM_IDLE ANIM_HOVER
+	setvard ANIM_WALK ANIM_FLY
+	setvard ANIM_RUN ANIM_FLY
+	setmoveanim ANIM_FLY
+	setidleanim ANIM_HOVER
+	setvard NEXT_SPIT_CYCLE game.time
+	add NEXT_SPIT_CYCLE FREQ_SPIT_CYCLE
+
+	//delay bombing for a bit
+	setvard NEXT_BOMB_SCAN game.time
+	add NEXT_BOMB_SCAN FREQ_BOMB_SCAN
+	callevent center_dash
+}
+
+{ game_death
+	if ( FIRE_BREATH_ON )
+	{
+		clientevent update all FB_CL_SCRIPT_ID end_fx
+	}
+}
+
+//newer
+
+{ frame_attack_bomb
+	tossprojectile BOMB_TARGET 300 DMG_BOMB 1 proj_fire_bomb (0,0,32)
+}
+
+{ fire_breath_loop
+	if FIRE_BREATH_ON
+	callevent 0.1 fire_breath_loop
+	add BREATH_YAW 4
+	if ( BREATH_YAW > 359.99 ) subtract BREATH_YAW 359.99
+	local FACE_POS $get(ent_me,origin)
+	vectoradd FACE_POS $relpos($vec(0,BREATH_YAW,0),$vec(0,1000,0))
+	setmovedest FACE_POS 9999
+	setvelocity ent_me (0,0,0)
+	
+	if game.time > NEXT_SCAN
+	setvard NEXT_SCAN game.time
+	add NEXT_SCAN 1.0
+
+	setvard BREATH_TARGS $get_tsphere(enemy,512)
+	if BREATH_TARGS isnot none
+	setvard B_MY_ORG $get(ent_me,origin)
+	setvard B_MY_ANGLES $get(ent_me,angles)
+	calleventloop $get_token_amt(BREATH_TARGS) breath_affect_targets
+}
+
+{ breath_affect_targets
+	local CUR_TARG $get_token(BREATH_TARGS,game.script.iteration)
+	local TARG_ORG $get(CUR_TARG,origin)
+	if $within_cone2D(TARG_ORG,B_MY_ORG,B_MY_ANGLES,10)
+	if ( !BREATH_FREEZE )
+	{
+		applyeffect CUR_TARG DOT_EFFECT 5.0 $get(ent_me,id) DOT_DMG
+	}
+	else
+	{
+		applyeffect CUR_TARG effects/freeze_solid 5.0 $get(ent_me,id) DOT_DMG
+	}
+	addvelocity CUR_TARG $relvel(0,1000,110)
+}
+
+{ end_fire_breath
+	setvard FIRE_BREATH_ON 0
+	setvard NPC_PROPELL_SUSPEND 0
+	setvard SPIT_MODE 0
+	setvard ANIM_IDLE ANIM_HOVER
+	setvard ANIM_WALK ANIM_FLY
+	setvard ANIM_RUN ANIM_FLY
+	setmoveanim ANIM_FLY
+	setidleanim ANIM_HOVER
+	setvard NEXT_SPIT_CYCLE game.time
+	add NEXT_SPIT_CYCLE FREQ_SPIT_CYCLE
+	playanim break
+	callevent 1.0 npcatk_resume_ai
+	callevent center_dash
+}
+
+{ center_dash
+	roam 0
+	playanim critical ANIM_DIVE
+	if ( PHLAME_BIRD )
+	{
+		local CENTER_POINT $get(MY_OWNER,scriptvar,'NPC_HOME_LOC')
+	}
+	else
+	{
+		local CENTER_POINT NPC_HOME_LOC
+	}
+	setmovedest CENTER_POINT 1
+	dbg center_dash CENTER_POINT
+	svplaysound 0 10 SOUND_FLAP2
+	callevent 0.1 center_dash_boost
+	callevent 1.5 center_dash_stop
+}
+
+{ center_dash_boost
+	addvelocity ent_me $relvel(0,1000,300)
+}
+
+{ center_dash_stop
+	roam 1
+	setvelocity ent_me $relvel($vec(0,0,0),$vec(0,0,0))
+}
+
+{ ext_fire_bomb //<land point> - called by proj_fire_bomb
+	setvard FIRE_BOMB_ATTACK 1
+	setvard FIRE_BOMB_POS PARAM1
+	setvard IS_FIRE_BOMB 1
+	xdodamage FIRE_BOMB_POS 250 DMG_BOMB 0.1 ent_me ent_me none blunt
+	//dodamage FIRE_BOMB_POS 200 DMG_BOMB 100% 0.05 reflective blunt
+	callevent 0.1 fire_bomb_reset
+}
+
+{ fire_bomb_reset
+	setvard FIRE_BOMB_ATTACK 0
+}
+
+{ frame_flap_panic
+	svplaysound 0 10 SOUND_HOVER
+	callevent 0.1 frame_flap_panic2 
+}
+
+{ frame_flap_panic2
+	svplaysound 0 10 SOUND_HOVER
+}
+
+{ do_tele_out
+	callevent 0.1 spawn_babies
+	setorigin ent_me $vec(5000,5000,5000)
+	clientevent new all effects/sfx_sprite_in NPC_HOME_LOC xflare1.spr 20 8.0	
+	setvard TELED_OUT 1
+}
+
+{ spawn_babies
+	if ACTIVE_BABIES < 1
+	local SPAWN_POINT NPC_HOME_LOC
+	vectoradd SPAWN_POINT $relpos($vec(0,0,0),$vec(-96,0,-64))
+	createnpc BABY_SCRIPT SPAWN_POINT $get(ent_me,id) 60.0
+	add ACTIVE_BABIES 1
+	callevent 0.1 spawn_babies2
+}
+
+{ spawn_babies2
+	if ACTIVE_BABIES < 2
+	local SPAWN_POINT NPC_HOME_LOC
+	vectoradd SPAWN_POINT $relpos($vec(0,0,0),$vec(96,0,-64))
+	createnpc BABY_SCRIPT SPAWN_POINT $get(ent_me,id) 60.0
+	add ACTIVE_BABIES 1
+	callevent 0.1 spawn_babies3
+}
+
+{ spawn_babies3
+	if game.players > 2
+	if ACTIVE_BABIES < 3
+	local SPAWN_POINT NPC_HOME_LOC
+	vectoradd SPAWN_POINT $relpos($vec(0,0,0),$vec(0,96,-64))
+	createnpc BABY_SCRIPT SPAWN_POINT $get(ent_me,id) 60.0
+	add ACTIVE_BABIES 1
+	callevent 0.1 spawn_babies4
+}
+
+{ spawn_babies4
+	if game.players > 3
+	if ACTIVE_BABIES < 4
+	local SPAWN_POINT NPC_HOME_LOC
+	vectoradd SPAWN_POINT $relpos($vec(0,0,0),$vec(0,-96,-64))
+	createnpc BABY_SCRIPT SPAWN_POINT $get(ent_me,id) 60.0
+	add ACTIVE_BABIES 1
+}
+
+{ babbie_died
+	subtract ACTIVE_BABIES 1
+}
+
+{ do_tele_in
+	setvard NEXT_RAD_TELE game.time
+	add NEXT_RAD_TELE 5.0
+	setorigin ent_me NPC_HOME_LOC
+	setvard TELED_OUT 0
+	callevent npcatk_resume_ai
+	callevent npcatk_settarget TELE_IN_TARG
+	callevent 1.0 double_resume
+
+	clientevent new all effects/sfx_sprite_in NPC_HOME_LOC xflare1.spr 20 8.0
+}
+
+{ double_resume
+	callevent npcatk_resume_ai
+	setvard SUSPEND_AI 0 //redundant but bugger keeps going BD
+	callevent npcatk_settarget TELE_IN_TARG
+}
+
+{ npc_targetvalidate
+	if RADIAL_BIRD
+	local TARG_ORG $get(NPCATK_TARGET,origin)
+	if ( $dist(TARG_ORG,RADIAL_CENTER) > RADIAL_RANGE ) setvard NPCATK_TARGET none
+}
+
+{ npc_validate_heard
+	if RADIAL_BIRD
+	local TARG_ORG $get(I_HEARD,origin)
+	if ( $dist(TARG_ORG,RADIAL_CENTER) > RADIAL_RANGE ) setvard HEARD_VERIFY 0
+}
+
+{ npc_stuck
+	if ACTIVE_BABIES > 0
+	setvard KILL_BABBIES $get_tsphere(ally,128)
+	if KILL_BABBIES isnot none
+	calleventloop $get_token_amt(KILL_BABBIES) remove_babbies
+}
+
+{ remove_babbies
+	local CUR_TARG $get_token(KILL_BABBIES,game.script.iteration)
+	callexternal CUR_TARG npc_suicide
+}
+
+{ fake_precache
+
+	svplaysound 0 0 monsters/bat/flap_big1.wav
+	svplaysound 0 0 monsters/bat/flap_big2.wav
+	svplaysound 0 0 monsters/bat/flap_big.wav
+}

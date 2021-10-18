@@ -1,0 +1,151 @@
+// Suliban, the mayor's courier
+{
+	const NO_RUMOR 1
+}
+
+#include monsters/base_chat
+{
+   eventname spawn
+
+   hp 3000 
+   gold 340  
+   name Warrior
+   //ov 300
+   width 32
+   height 72
+   race human
+   roam 0      
+   setmodel    npc/guard1.mdl
+   invincible  1
+   setactionanim swordswing1_L
+
+   setvar      EVIDENCE_FOUND 0
+   setvar      BRIBED 0
+   setvar CAN_BRIBE 0
+
+   setvar ATTACK1_DAMAGE 30
+   setvard ATTACK_RANGE 128
+
+   catchspeech say_hi hi hello hail greet
+
+   catchspeech say_mayor mayor
+
+   catchspeech say_edrin edrin
+
+   catchspeech say_job job work money gold
+
+   catchspeech say_name name
+}
+
+
+{ say_name
+
+  name Suliban
+  saytext I guess I can let you know now; my name is Suliban.
+  playanim once talkright
+}
+
+////// Greets ///////
+{
+  eventname say_hi
+
+  if BRIBED equals 0
+
+  volume 7
+  say edrin1[34]
+  saytext Yes? What do you want?
+}
+{
+  eventname say_mayor
+
+  if BRIBED equals 0
+
+  saytext Old fellow Erkold? What ye need from him? Did [Edrin] send you?
+  playanim once talkright
+}
+{
+  eventname say_edrin
+
+  saytext I don't speak with just anyone, nor do I speak for free. If you can offer me enough, I'll tell you everything.
+  setvar CAN_BRIBE 1
+}
+{
+  eventname say_mayor
+
+  if BRIBED equals 1
+
+  saytext I already told you what I know.
+  playanim once talkright
+}
+{
+  repeatdelay 20
+ 
+  see player 200
+  if BRIBED equals 0
+
+  saytext Stop pestering me. I've got no time for the likes of you.
+}
+
+///////////// Bribe /////////////
+
+{ bribe
+
+  recvoffer accept
+  saytext Right... Here's what you need to do - The mayor is guarded by a hot-tempered guard. You must steer off him. You might need a friend to help you stalk the guard, while one of you goes inside to speak with Erkold.
+  playanim once talkleft
+  calleventtimed 7 say_mayor2
+  usetrigger mayorsdoor
+
+  setvar BRIBED 1
+}
+{ bribe_failed
+
+  recvoffer reject
+  saytext What are you trying? Off with ye.
+  playanim once no
+}
+{
+  say_mayor2
+
+  saytext Try not to kill him, will you? Would rather spare the bloodshed in town. He is human afterall. Try talking him out of it instead. ... That's all I know...
+  playanim once talkright
+}
+
+// -- Attack thieves --
+
+{ robbed
+
+  saytext Thief!
+  playanim once beatdoor
+}
+
+{ attack_1
+
+   dodamage ent_laststole ATTACK_RANGE ATTACK1_DAMAGE ATTACK_PERCENTAGE
+}
+
+{ say_job
+  saytext I got nothing for you.
+}
+
+{ game_menu_getoptions
+	local reg.mitem.title	"Say Hello"
+	local reg.mitem.type	say
+
+	local l.say $rand(1,4)
+	if( l.say == 1 )	local reg.mitem.data 'Hello'
+	else if( l.say == 2 )	local reg.mitem.data 'Hi'
+	else if( l.say == 3 )	local reg.mitem.data "Hail" 
+	else if( l.say == 4 )	local reg.mitem.data 'Greetings!'
+	menuitem.register
+
+	if( CAN_BRIBE equals 1 )
+	{
+		local reg.mitem.title 	"Bribe (15g)"
+		local reg.mitem.type 	payment
+		local reg.mitem.data 	gold:15
+		local reg.mitem.callback bribe
+		local reg.mitem.cb_failed bribe_failed
+		menuitem.register
+	}
+}

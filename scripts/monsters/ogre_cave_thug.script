@@ -1,0 +1,259 @@
+#scope server
+{
+
+	const ANIM_SEARCH idle_look
+	setvar ANIM_IDLE idle1
+	//const ANIM_JUMPING_JACKS idle2
+	const ANIM_SWIPE attack1
+	const ANIM_HEADBUTT attack2
+	const ANIM_JUMP jump
+	const ANIM_LEAP jump //leap
+	setvar ANIM_WALK_DEFAULT walk
+	setvar ANIM_RUN_DEFAULT run1
+	setvard ANIM_DEATH dieforward
+	const ANIM_WARCRY warcry
+	setvard ANIM_FLINCH bigflinch
+	const ANIM_BEAM beam
+	const ANIM_BEATDOWN anim_beatdown //frame_beatdown x3
+	const ANIM_SLAM anim_slam //frame_slam
+
+	setvar ANIM_WALK ANIM_WALK_DEFAULT
+	setvar ANIM_RUN ANIM_RUN_DEFAULT
+	setvard ANIM_ATTACK ANIM_BEATDOWN
+
+	
+	//consider custom sound set
+	const SOUND_IDLE1 bullchicken/bc_idle1.wav
+	const SOUND_IDLE2 bullchicken/bc_idle2.wav
+	const SOUND_IDLE3 bullchicken/bc_idle3.wav
+	const SOUND_IDLE4 bullchicken/bc_idle4.wav
+	const SOUND_IDLE5 bullchicken/bc_idle5.wav
+	const SOUND_DEATH bullchicken/bc_die1.wav
+	const SOUND_HEADBUTT bullchicken/bc_spithit1.wav
+	const SOUND_SWIPEHIT1 zombie/claw_strike1.wav
+	const SOUND_SWIPEHIT2 zombie/claw_strike2.wav
+ 	const SOUND_SWIPEMISS1 zombie/claw_miss1.wav
+	const SOUND_SWIPEMISS2 zombie/claw_miss2.wav
+	const SOUND_STRUCK1 debris/flesh1.wav
+	const SOUND_STRUCK2 debris/flesh2.wav
+	const SOUND_STEP1 player/pl_slosh1.wav
+	const SOUND_STEP2 player/pl_slosh2.wav
+	const SOUND_PAIN_WEAK bullchicken/bc_pain2.wav
+	const SOUND_PAIN_STRONG bullchicken/bc_pain1.wav
+	const SOUND_WARCRY bullchicken/bc_attackgrowl3.wav
+	const SOUND_LEAP bullchicken/bc_attackgrowl2.wav
+	const SOUND_LEAP_LAND weapons/g_bounce2.wav
+	const SOUND_FLINCH bullchicken/bc_pain3.wav
+
+	const SOUND_BEATDOWN_START bullchicken/bc_attackgrowl2.wav
+	const SOUND_SLAM_START bullchicken/bc_attackgrowl3.wav
+
+	setvard NPC_GIVE_EXP 2000
+
+	const ATTACK_HITCHANCE 95%
+	const SWIPE_DAMAGE $rand(150,275)
+	const SLAM_DAMAGE 200
+
+	setvard ATTACK_RANGE 64
+	setvard ATTACK_HITRANGE 80
+}
+
+#include monsters/base_monster_new
+
+{ npc_spawn
+	name a|Cave Ogre Thug
+	setmodel monsters/ogre_cave_thug.mdl
+	hp 5000
+	race orc
+	roam 1
+	setmoveanim ANIM_WALK
+	height 96
+	width 32
+	hearingsensitivity 2
+	blood green
+	setidleanim ANIM_IDLE
+
+	takedmg poison 1.5
+	takedmg acid 1.5
+
+	setvard RUN_STEP 0
+
+	if game.serverside
+
+	callevent 1.0 idle_sounds
+	callevent 2.0 final_postspawn
+}
+
+{ final_postspawn
+	setvard WEAK_THRESHOLD $get(ent_me,maxhp)
+	multiply WEAK_THRESHOLD 0.5
+
+	setvard TEN_PERCENT_HP $get(ent_me,maxhp)
+	multiply TEN_PERCENT_HP 0.1
+
+	setvard REGEN_RATE 2
+
+	if ( NPC_HP_MULTI > 1 ) multiply REGEN_RATE NPC_HP_MULTI
+}
+
+{ npcatk_validatetarget //first spot
+
+	if $get(PARAM1,isplayer)
+	if !DID_WARCRY
+	playanim critical ANIM_WARCRY
+	playsound 0 10 SOUND_WARCRY 0.8 60
+	setvard DID_WARCRY 1
+}
+
+{ my_target_died
+
+	if ( !$cansee(enemy) )
+	{
+		playanim critical ANIM_WARCRY
+		playsound 0 10 SOUND_WARCRY 0.8 60
+		setvard DID_WARCRY 0
+	}
+}
+
+{ npcatk_hunt
+
+	//regenerate
+	if ( game.monster.hp < game.monster.maxhp ) givehp ent_me REGEN_RATE
+
+	if game.time > NEXT_IDLE_SOUND
+	setvard NEXT_IDLE_SOUND game.time
+	add NEXT_IDLE_SOUND $randf(3.0,10.0)
+	if NPCATK_TARGET equals unset
+	playrandomsound 0 10 SOUND_IDLE1 SOUND_IDLE2 SOUND_IDLE3 SOUND_IDLE4 SOUND_IDLE5
+}
+
+
+{ attack1 //frame event (unused)
+	setvard SWIPE_ATTACK 1
+	dodamage NPCATK_TARGET ATTACK_HITRANGE SWIPE_DAMAGE ATTACK_HITCHANCE
+}
+
+{ frame_beatdown_start //frame event
+	playsound 0 10 SOUND_BEATDOWN_START 0.8 $rand(50,200)
+}
+
+{ frame_beatdown //frame event
+	dbg frame_beatdown
+	setvard SWIPE_ATTACK 1
+	dodamage NPCATK_TARGET ATTACK_HITRANGE SWIPE_DAMAGE ATTACK_HITCHANCE
+	callevent do_step
+}
+
+{ frame_beatdown_final //frame event
+	setvard SWIPE_ATTACK 1
+	dodamage NPCATK_TARGET ATTACK_HITRANGE SWIPE_DAMAGE ATTACK_HITCHANCE
+	add SLAM_COUNT 1
+	if ( SLAM_COUNT == 5 )
+	{
+		setvard ANIM_ATTACK ANIM_SLAM
+		setvard SLAM_COUNT 0
+		playanim hold ANIM_SLAM
+	}
+	callevent do_step
+}
+
+{ frame_slam_start
+	playsound 0 10 SOUND_SLAM_START 0.8 60
+}
+
+{ frame_slam //frame event
+	setvard ANIM_ATTACK ANIM_BEATDOWN
+	local LAND_POS $relpos(0,64,0)
+	clientevent new all effects/sfx_stun_burst LAND_POS 256 0 0
+	setvard SLAM_LOC LAND_POS
+	xdodamage LAND_POS 128 SLAM_DAMAGE 0 ent_me ent_me none blunt_effect dmgevent:slam
+	callevent do_step
+	callevent 1.0 break_slam
+}
+
+{ break_slam
+	playanim break
+}
+
+{ slam_dodamage
+	if PARAM1
+	//pushes allies too, although less - just for effect
+	if (  $get(PARAM2,relationship,ent_me) equals enemy ) local L_IS_NME 1
+	local L_PUSH_VEL 2000
+	if ( !L_IS_NME ) local PUSH_VEL 500
+	local TARG_ORG $get(PARAM2,origin)
+	local MY_ORG SLAM_POS
+	local TARG_ANG $angles(MY_ORG,TARG_ORG)
+	local NEW_YAW TARG_ANG
+	addvelocity PARAM2 $relvel($vec(0,NEW_YAW,0),$vec(0,L_PUSH_VEL,110))
+	if L_IS_NME
+	applyeffect PARAM2 effects/effect_stun 5.0 
+}
+
+{ game_dodamage
+	if ( SWIPE_ATTACK )
+	{
+		if ( PARAM1 )
+		{
+			playrandomsound 0 10 SOUND_SWIPEHIT1 SOUND_SWIPEHIT2
+			if ( $rand(1,2) == 1 )
+			{
+				local RL_VEL -100
+			}
+			else
+			{
+				local RL_VEL 100
+			}
+			addvelocity PARAM2 $relvel(RL_VEL,300,110)
+		}
+		if ( !PARAM1 ) playrandomsound 0 10 SOUND_SWIPEMISS1 SOUND_SWIPEMISS2
+	}
+	setvard SWIPE_ATTACK 0
+}
+
+{ run_step1 //called from model during ANIM_RUN
+
+	callevent do_step
+}
+
+{ run_step2 //called from model during ANIM_RUN
+
+	callevent do_step
+}
+
+{ do_step
+	add STEP_COUNT 1
+	if ( STEP_COUNT == 1 ) playsound 0 5 SOUND_STEP1
+	if ( STEP_COUNT == 2 )
+	{
+		setvard STEP_COUNT 0
+		playsound 0 5 SOUND_STEP2
+	}
+}
+
+{ game_struck //PARAM1 = damage
+
+	if ( game.monster.hp > WEAK_THRESHOLD )	playrandomsound 0 10 SOUND_STRUCK1 SOUND_STRUCK2 SOUND_PAIN_STRONG
+	if ( game.monster.hp <= WEAK_THRESHOLD )
+	{
+		local DO_FLINCH 1
+		playrandomsound 0 10 SOUND_STRUCK1 SOUND_STRUCK2 SOUND_PAIN_WEAK
+	}
+	if ( PARAM1 > TEN_PERCENT_HP ) local DO_FLINCH 1
+
+	//custom flinch
+	if DO_FLINCH
+	if game.time > NEXT_CUSTOM_FLINCH
+	setvard NEXT_CUSTOM_FLINCH game.time
+	add NEXT_CUSTOM_FLINCH 30.0
+	setvard AS_ATTACKING game.time
+	add AS_ATTACKING 5.0
+	local RND_FLINCH $rand(1,6)
+	//wtf does this model have so many flinch anims? :O
+	if ( RND_FLINCH == 1 ) playanim critical flinch
+	if ( RND_FLINCH == 2 ) playanim critical bigflinch
+	if ( RND_FLINCH == 3 ) playanim critical raflinch
+	if ( RND_FLINCH == 4 ) playanim critical raflinch
+	if ( RND_FLINCH == 5 ) playanim critical llflinch
+	if ( RND_FLINCH == 6 ) playanim critical rlflinch
+}

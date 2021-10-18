@@ -1,0 +1,186 @@
+{
+	const BASE_LEVEL_REQ 15
+	const FIRE_BURST_MP 25
+
+	const VMODEL_IDX 12 //viewmodel offset
+	const PMODEL_FILE weapons/p_weapons4.mdl //p_model (world/player model file)
+	const PMODEL_IDX_FLOOR 21 //p_model floor offset
+	const PMODEL_IDX_HANDS 20 //p_model hands offset
+
+	const MELEE_DMG 210 //max damage
+	const MELEE_RANGE 110 //max reach
+	const MELEE_DMG_TYPE fire
+
+	const POLE_MIN_RANGE 60 //short range (less than this does min damage)
+
+	const POLE_MIN_DMG_MULTI 0.5 //min damage multiplier
+	const POLE_MAX_DMG_MULTI 1.75 //max damage multiplier
+
+	const POLE_CAN_POKE1 1 //basic forward thrust attack
+	const POLE_CAN_POKE2 1 //charged attack (spin thrust) - dbl damage, requires +2 skill levels above base
+	const POLE_CAN_SWIPE 0 //swipe attack (when strafing - doesn't use fall-off system)
+	const POLE_CAN_BLOCK 1 //blocks on right click
+	const POLE_CAN_SPIN 0 //spins when right click + backpeddle after 2 seconds
+	const POLE_CAN_REPEL 1 //pushes monsters away when blocking + forward, but aborts spin
+	const POLE_CAN_BACKHAND 1 //attacks with back end of stick when backpeddling (shorter range, no fall off, similar to swipe, but slower)
+
+	const POLE_BACKHAND_DMG 300 //backhand damage
+	const POLE_BACKHAND_DMG_RANGE 10 //+/- random damage adjust for backhand attack
+	const POLE_BACKHAND_DMG_TYPE blunt //backhand attack may do slash instead of pierce, etc
+	const POLE_BACKHAND_RANGE 40 //range for backhand (usually shorter)
+	const POLE_BACKHAND_ACCURACY 90% //accuracy for backhand (doesn't use fall-off system, so isn't 100%)
+	const POLE_BACKHAND_REPEL 400
+	const POLE_BACKHAND_STUN 1
+	const POLE_BACKHAND_STUN_CHANCE 90%
+
+	const POLE_CAN_POWER_THROW 1
+	const POLE_THROW_MP 0 //handled projectile side (only costs if freeze_solid sucsess)
+	const POLE_THROW_POWER 1000 //force of throw
+	const POLE_THOW_PROJECTILE proj_pole_dra //throw projectile scriptname
+
+	const POLE_POKE1_ENHANCED 1
+}
+
+#include items/polearms_base
+
+{ polearm_spawn
+
+	name  a|Dragon Lance
+	desc  A footman's lance imbued with elemental fire
+	weight  60
+	size  2
+	value 3000
+	sethudsprite trade 189
+
+	if game.serverside
+	setvard FREEZE_COUNT 0
+} 
+
+{ pole_poke1_enhance
+
+	if game.serverside
+	local TARG_HIT PARAM1
+	if ( $get(TARG_HIT,isplayer) )
+	{
+		if !GAME_PVP
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	local L_DOT $get(ent_owner,skill.spellcasting.fire)
+	multiply L_DOT 0.5
+	applyeffect TARG_HIT effects/effect_burn 5.0 $get(ent_owner,id) L_DOT
+}
+
+{ polearm_register_attacks
+	//ice burst register
+	local reg.attack.mpdrain 0
+	local reg.attack.type strike-land
+	local reg.attack.range 10
+	local reg.attack.dmg 1
+	local reg.attack.dmg.range 0
+	local reg.attack.dmg.type fire
+	local reg.attack.energydrain 5
+	local reg.attack.stat spellcasting.fire
+	local reg.attack.hitchance 100
+	local reg.attack.priority 3
+	local reg.attack.delay.strike 0.1
+	local reg.attack.delay.end 0.2
+	local reg.attack.ofs.startpos 0
+	local reg.attack.ofs.aimang 0
+	local reg.attack.noise 5000
+	local reg.attack.keys -attack1
+	local reg.attack.callback attack_fire_burst
+	local reg.attack.chargeamt 300%
+	local reg.attack.reqskill 15
+	registerattack
+}
+
+{ attack_fire_burst_start
+	playviewanim VANIM_WIDE
+	playowneranim once PANIM_SWIPE2 global.anim.combatwalk 1
+	dbg attack_ice_burst_start
+}
+
+{ attack_fire_burst_strike
+	dbg attack_ice_burst_strike
+
+	if game.serverside
+	if ( $get(ent_owner,mp) < FIRE_BURST_MP )
+	{
+		dplayermessage ent_owner "Dragon Lance: Insufficient mana for fire burst"
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	givemp ent_owner $neg(FIRE_BURST_MP)
+
+	local BURST_POS $get(ent_owner,origin)
+	vectorset BURST_POS z $get_ground_height(BURST_POS)
+	setvard ICE_WAVE_YAW $get(ent_owner,angles.yaw)
+	clientevent new all effects/sfx_fire_wave2 BURST_POS ICE_WAVE_YAW 45
+	//effects/sfx_ice_burst BURST_POS 128 1 (128,128,256)
+
+	local SCAN_POS $get(ent_owner,origin)
+	vectoradd SCAN_POS $relpos($vec(0,ICE_WAVE_YAW,0),$vec(0,128,32))
+
+	callexternal ent_owner ext_sphere_token enemy 512 SCAN_POS
+	setvard FREEZE_TARGS $get(ent_owner,scriptvar,'PLR_SCAN_TOKEN')
+	if FREEZE_TARGS isnot none
+	calleventloop $get_token_amt(FREEZE_TARGS) ice_burst_affect_targs
+}
+
+{ ice_burst_affect_targs
+	local CUR_TARG $get_token(FREEZE_TARGS,game.script.iteration)
+	if ( $get(CUR_TARG,isplayer) )
+	{
+		if !GAME_PVP
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	local OWNER_ORG $get(ent_owner,origin)
+	local OWNER_ANG $vec(0,ICE_WAVE_YAW,0)
+	local TARG_ORG $get(CUR_TARG,origin)
+
+	if $within_cone2D(TARG_ORG,OWNER_ORG,OWNER_ANG,100)
+
+	local TRACE_START OWNER_ORG
+	local TRACE_END TARG_ORG
+	local TRACE_LINE $get_traceline(TRACE_START,TRACE_END,worldonly)
+	if TRACE_LINE equals TRACE_END
+
+	local L_DOT $get(ent_owner,skill.spellcasting.fire)
+	multiply L_DOT 0.5
+	applyeffect CUR_TARG effects/effect_burn 5.0 $get(ent_owner,id) L_DOT
+}
+
+//90% immune to fire while in parry
+{ game_takedamage //PARAM1=attacker  PARAM2=inflictor? PARAM3=dmg PARAM4=dmg_type - use returndata to alter incoming damage
+
+	if POLE_IN_BLOCK
+
+	if $get(ent_owner,scriptvar,'PLR_ACTIVE_WEAPON') equals $get(ent_me,id)
+
+	if PARAM4 contains fire
+	local IN_DMG PARAM3
+	multiply IN_DMG 0.1
+	setdmg dmg IN_DMG
+	returndata 0.1
+}
+
+{ game_dodamage
+	if PARAM1
+	if ( $get(PARAM2,isplayer) )
+	{
+		if !GAME_PVP
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	if $rand(1,5) == 1
+	local L_DOT $get(ent_owner,skill.spellcasting.fire)
+	if L_DOT > 15
+	multiply L_DOT 0.5
+	applyeffect PARAM2 effects/effect_burn 5.0 $get(ent_owner,id) L_DOT
+}

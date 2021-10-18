@@ -1,0 +1,86 @@
+{
+  const SPELL_NAME		"Some Spell"
+  const SPELL_DESC		"Some Description"
+
+  const SOUND_SHOOT      	magic/cast.wav
+
+  const MELEE_RANGE		200
+  const MELEE_HITCHANCE 	100%
+  const MELEE_ATK_DURATION 	1
+
+  setvar SPELL_SKILL_REQUIRED	3
+  const SPELL_FIZZLE_TIME	10
+  const SPELL_CAST_SUCCESS	65%
+  const SPELL_PREPARE_TIME	2
+  const SPELL_DAMAGE_TYPE	summon
+  const SPELL_ENERGYDRAIN	20
+  const SPELL_MPDRAIN		1
+  const SPELL_STAT		none //spellcasting.summoning does not pass XP proper, so disabling
+
+  const EFFECT_MAXDURATION 	180
+  const EFFECT_MINDURATION 	10
+  const EFFECT_DURATION_STAT	$get(ent_owner,stat.concentration.ratio)
+  const EFFECT_DURATION 	$get_skill_ratio(EFFECT_DURATION_STAT,EFFECT_MINDURATION,EFFECT_MAXDURATION)
+  const EFFECT_MAX_DMG 		10
+  const EFFECT_MIN_DMG 		0.1
+  const EFFECT_DMG		$get(ent_owner,skill.spellcasting.ratio) //summoning.ratio is always 1
+  const EFFECT_SCRIPT		"EFFECT_SCRIPT needs to be defined!"
+  precachefile 			EFFECT_SCRIPT
+}
+
+#include items/magic_hand_base
+
+{  spell_spawn
+
+   name 		SPELL_NAME
+   desc 		SPELL_NAME
+}
+
+//{  spell_casted	//PARAM1: "none"/"npc"/"world"   2: Attack end Position   3: Entity hit (if any)
+//
+//  	createnpc EFFECT_SCRIPT $get(ent_owner,origin) $get(ent_owner,id) EFFECT_DURATION EFFECT_DMG spellcasting.summoning
+//	setexpstat ent_lastcreated SPELL_STAT
+//
+//	setsolid ent_owner none
+//	local reg.npcmove.endpos	PARAM2
+//	local reg.npcmove.testonly	0
+//	npcmove ent_lastcreated $get(ent_owner,id)
+//
+//	setsolid ent_owner slidebox
+//	if( game.ret.npcmove.dist <= 0 )
+//	{
+//		playermessage "You cannot summon here"
+//		deleteent ent_lastcreated
+//		givemp ent_owner SPELL_MPDRAIN
+//	}
+//	else drop_to_floor ent_lastcreated
+//}
+
+{ summon_check //<origin>
+
+	local SPAWN_ORG PARAM1
+	//setsolid ent_owner none
+	local reg.npcmove.endpos	SPAWN_ORG
+	vectoradd reg.npcmove.endpos z 16
+	local reg.npcmove.testonly	0
+	npcmove ent_lastcreated none //$get(ent_owner,id)
+
+	//setsolid ent_owner slidebox
+	if( game.ret.npcmove.dist <= 0 )
+	{
+		playermessage "You cannot summon here"
+		deleteent ent_lastcreated
+		//subtract CURRENT_SUMMONS 1
+		//dbg CurSums CURRENT_SUMMONS max MAX_SUMMONS
+		givemp ent_owner SPELL_MPDRAIN
+		if ( SUMMON_UNQIUE )
+		{
+			callexternal ent_owner ext_unsummon_unique SUMMON_UNIQUE_TAG
+		}
+	}
+	else
+	{
+		add CURRENT_SUMMONS 1
+		drop_to_floor ent_lastcreated
+	}
+}

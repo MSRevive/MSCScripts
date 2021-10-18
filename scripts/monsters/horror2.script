@@ -1,0 +1,67 @@
+{
+	const NPC_BASE_EXP 400
+
+	setvar IS_UNHOLY 1
+
+	const ATTACK_BLIND_RANGE 200
+
+	const ATTACK_DAMAGE 200
+
+	const SPIT_DAMAGE 100
+	const BREATH_DAMAGE_MIN 100
+	const BREATH_DAMAGE_MAX 200
+
+	setvard DROP_GOLD 1
+	setvard DROP_GOLD_MIN 30
+	setvard DROP_GOLD_MAX 60
+}
+
+#include monsters/horror
+
+{ npc_spawn
+
+   name an|Elder Horror
+   hp 1500
+	takedmg all 0.75
+	takedmg holy 0.5
+	takedmg poison 0.0
+	
+	width 22
+	height 22
+	setbbox npcsize
+	roam 1
+	fly 1
+	setvard I_FLY 1
+	float 0
+	race demon
+	setidleanim ANIM_WALK
+	setmoveanim ANIM_WALK
+	hearingsensitivity 5
+	setmodel monsters/edwardgorey.mdl
+	setmodelbody 0 1
+	setvard NPC_GIVE_EXP 400
+	callevent 1.0 idle_sounds
+	setvard FLIGHT_SCANNING 1
+
+	setvard SPORE_CLOUD_AMMO 1
+
+	//JUN2010_20, attempting to add delay to see if it stops Lodagond-4 crashes
+	setvard SPORE_DELAY game.time
+	add SPORE_DELAY $randf(3.0,20.0)
+}
+
+{ my_target_died
+	//reload spore cloud
+	setvard SPORE_CLOUD_AMMO 1
+}
+
+{ npc_targetsighted
+	if SPORE_CLOUD_AMMO > 0
+	if $get(NPCATK_TARGET,range) > 256
+	if game.time > SPORE_DELAY
+	playanim critical ANIM_ATTACK
+	local CLOUD_ORIGIN $get(NPCATK_TARGET,origin)
+	//if ( $get(NPCATK_TARGET,isplayer) ) vectoradd CLOUD_ORIGIN z -40
+	createnpc monsters/summon/npc_poison_cloud2 CLOUD_ORIGIN $get(ent_me,id) 75 20.0 2
+	subtract SPORE_CLOUD_AMMO 1
+}

@@ -1,0 +1,122 @@
+#scope server
+{
+	//required:
+	//ELM_NAME - item's code name (five letters, must be unique)
+	//ELM_TYPE - element type
+	//ELM_AMT - resistance % (use negative numbers to add vulnerability)
+	//ELM_WEAPON - set to 1 if reistance item is a weapon and does not need to be worn
+
+	//if resist% is variable, set in elm_get_resist
+	//if using multiple resistances, [override] elm_activate_effect and elm_remove_effect
+	//you will also need multiple code names for each type of resistance
+	//this can also be used for other effects that are only in play when an item is worn
+	//to use this, [override] elm_activate_effect and elm_remove_effect, then replace with desired effect
+
+	//list of used element names:
+	//farmr - primary faura armor effect
+	//carmr - secondary faura armor effect
+	//aarmr - primary paura armor effect
+	//aarmb - secondary paura armor effect
+	//cbow - frost bow effect (wrong length, but seems okay)
+	//ringl - lightning ring
+	//possw - green rune sword
+	//firel - fire lizard armor
+	//fireh - fire helm
+	//coldh - cold helm
+	//phonx - phoenix armor
+	//pois1 - salamander armor
+	//varmr - venom plate
+	//colip - immune cold potion
+	//firip - immune fire potion
+	//ligip - immune lightning potion
+	//coldp - resist cold potion
+	//firep - resist fire potion
+}
+
+{ game_putinpack
+	callevent elm_remove_effect
+}
+{ game_drop
+	callevent elm_remove_effect
+}
+//{ game_removefromowner
+//	callevent elm_remove_effect
+//}
+//{ game_removed
+//	callevent elm_remove_effect
+//}
+{ game_remove
+	callevent elm_remove_effect
+}
+{ game_fall
+	callevent elm_remove_effect
+}
+{ game_sheath
+	callevent elm_remove_effect
+}
+{ game_deploy
+	if !ELM_WEAPON
+	callevent elm_remove_effect
+}
+{ game_deleted
+	if game.serverside
+	if ( $get(ent_me,wielded) ) local L_REM_EFFECTS 1
+	if ( $get(ent_me,is_worn) ) local L_REM_EFFECTS 1
+	if L_REM_EFFECTS
+	callevent elm_remove_effect
+}
+
+{ game_wear
+	callevent 0.1 elm_activate_effect
+}
+
+{ elm_activate_effect
+	callevent elm_get_resist
+	if ( !ELM_WEAPON )
+	{
+		callexternal ent_owner ext_register_element ELM_NAME ELM_TYPE ELM_AMT $get(ent_me,scriptname)
+	}
+	else
+	{
+		callexternal ent_owner ext_register_weapon $get(ent_me,id) ELM_NAME ELM_TYPE ELM_AMT
+	}
+}
+
+{ elm_remove_effect
+	if ( !ELM_WEAPON )
+	{
+		callexternal ent_owner ext_register_element ELM_NAME remove 0 $get(ent_me,scriptname)
+	}
+	else
+	{
+		callexternal ent_owner ext_register_weapon $get(ent_me,id) ELM_NAME remove
+	}
+}
+
+{ elm_get_resist
+	//just here to supress errors on items that do not use this
+}
+
+{ ext_activate_items
+
+	if PARAM1 equals $get(ent_owner,id)
+
+	if ( !ELM_WEAPON )
+	{
+		//wearables don't give bonus if not worn
+		if !$get(ent_me,is_worn)
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	if ( ELM_WEAPON )
+	{
+		//weapons don't give bonus if not in hand
+		if $get(ent_owner,scriptvar,PLR_LEFT_HAND) isnot ent_me
+		if $get(ent_owner,scriptvar,PLR_RIGHT_HAND) isnot ent_me
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	callevent 0.1 elm_activate_effect
+}

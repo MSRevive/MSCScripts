@@ -1,0 +1,838 @@
+//Thothie - I percieve anything else in the Keledros script that would cause brain death
+//- Changelog got out of hand, resetting :)
+//- Fixed issues spawning too many guards
+//- Now attacks players who hide behind upper pillar with different spells to prevent crash/sploits
+//- Fixed issue where would get backup after death and cast 'one last spell'
+//- Can't be sploited by flooding spell spam
+//- Various new drops added
+//- Some drops removed (available in Keledrosprelude2)
+//- Added vulnerability to Rebuke Undead + Counter Attack
+
+{
+
+	if ( $lcase(game.map.name) startswith keledros ) setvard NPC_IS_BOSS 1
+
+	const NPC_BOSS_REGEN_RATE 0.1
+	const NPC_BOSS_RESTORATION 0.5
+
+		setvar IS_UNHOLY 1
+
+	const NPC_HEARDSOUND_OVERRIDE 1
+	const NPC_AUTO_DEATH 0
+
+   const SKEL_RESPAWN_CHANCE 100%
+   const SKEL_RESPAWN_LIVES 1
+
+   setvarg DEAD_GUARDS 2	//Sets up dead guard global var - starts at 3, so he thinks all guards are dead and summons the first batch, sets to 0 at summon
+	setvard TOTAL_GUARDS 2  //total number of infernals
+
+   //trackers for archers
+   setvarg TWO_IS_DEAD 1
+   setvarg THREE_IS_DEAD 1
+   setvarg FOUR_IS_DEAD 1
+
+   // Human form
+   setvard ATTACK_HITCHANCE 	0%
+   setvard NPC_GIVE_EXP 		500
+   setvar ANIM_IDLE 	idle1
+   setvar ANIM_WALK 	walk
+   setvar ANIM_RUN 	walk
+   setvard ANIM_ATTACK 	castspell
+   const ANIM_RESPAWN_DEADIDLE	lying_on_stomach
+   const SKEL_HP	2750
+   const CAST_SCRIPT	keledrosruins/keledros_cl_cast
+
+   const HIGHER_THAN_ME_THRESHOLD 140	//how much above me a player must be before I switch to nasty spells to get him out of rafters
+   const AIM_RATIO 80			//helps aim my anti-rafter exploiter fireball (seems he still aims high)
+
+   setvard INTRODUCED 0
+   setvard ALLOW_CHANGE 0
+
+   setvard MOVE_RANGE 	30
+   setvard ATTACK_RANGE 	2000
+   setvard ATTACK_HITRANGE 130
+
+   precachefile items/proj_fire_ball
+   precachefile items/proj_fire_dart
+
+   const SOUND_STRUCK1 	voices/human/male_hit2.wav
+   const SOUND_STRUCK2 	voices/human/male_hit1.wav
+   const SOUND_STRUCK3 	voices/human/male_hit3.wav
+   const SOUND_STRUCK4 	weapons/cbar_hitbod2.wav
+   const SOUND_STRUCK5 	weapons/cbar_hitbod1.wav
+   const SOUND_ATTACK1 	none
+   const SOUND_ATTACK2 	none
+   const SOUND_DEATH 	voices/human/male_die.wav
+   const SOUND_BOOM	monsters/bear/giantbearstep2.wav
+   const SOUND_POISON	x/x_laugh1.wav
+
+   setvard CAN_HUNT	0	//base_npc_attack - Variable, because it changes
+   setvard CAN_ATTACK	0	//base_npc_attack - Variable, because it changes
+   setvard NPC_MOVE_TARGET enemy //base_npc_attack - Only target players
+   setvard RETALIATE_CHANCE 85%   //base_npc_attack - Automatically switch targets to the last damaging player
+   setvard CAN_FLEE 0		//base_npc_attack - Whether I run away at low health
+   setvar LIGHTNING_SPRITE	lgtning.spr
+   precache LIGHTNING_SPRITE
+
+	const SPELL_FREQ 7.0
+
+	//Thothie note:
+	//animated armor bits must be cached here, or he will crash on a map where they are not already active
+	//precaching the whole script via precachefile causes crash, for some bloody reason
+	precache monsters/animarmor.mdl
+	precache body/armour1.wav
+	precache body/armour2.wav
+	precache body/armour3.wav
+
+	precache misc/gold.wav
+}
+
+
+#include monsters/base_monster
+#include monsters/base_turn_undead
+
+{  npc_spawn
+
+   	hp SKEL_HP
+	if ( !AM_GENERIC ) name The insane wizard, Keledros
+	if ( AM_GENERIC ) name an|Insane Wizard
+	fov 359
+   	width 40
+   	height 80
+   	roam 0
+   	race demon
+	nopush 1
+   	setmodel monsters/keledros.mdl
+	stepsize 16 //override basic step size due to Keledrosruins pits/catwalks are not monsterclipped
+   	setidleanim ANIM_IDLE
+   	setmoveanim ANIM_IDLE
+
+	hearingsensitivity 11
+
+	callevent npcatk_suspend_ai
+
+	takedmg slash 1
+	takedmg pierce 1
+	takedmg blunt 1
+	takedmg fire 1
+	takedmg holy 2.0
+	takedmg ice 0.2
+	takedmg cold 0.2
+
+	if ( AM_GENERIC )
+	{
+		callevent 0.1 go_intro
+	}
+
+	if !AM_GENERIC
+
+	setangle face $vec(0,-90,0) //dont do this! let the mapper set! >< (will undo if I ever ripent keledrosruins)
+
+	callevent scan_for_players
+
+	invincible 1
+}
+
+{ scan_for_players
+
+	if !INTRODUCED
+	callevent 0.1 scan_for_players
+
+	local PLAYER_ID $get_insphere(player,384)
+	if ( $get(PLAYER_ID,isplayer) )
+	{
+		callevent npcatk_target PLAYER_ID
+		//dbg player in sphere $get(PLAYER_ID,name)
+		callevent go_intro
+	}
+
+	if $cansee(player,384)
+	callevent npcatk_target $get(ent_lastseen,id)
+	//dbg saw player $get(ent_lastseen,name)
+	callevent go_intro
+}
+
+{ go_intro
+
+	if !INTRODUCED
+	setvard INTRODUCED 1
+	saytextrange 2048
+	if ( !AM_GENERIC ) saytext What's this? Visitors?
+	callevent 2.5 start_it_up_yo
+	//hearingsensitivity 0
+	local EXIT_SUB 1
+}
+
+{ game_heardsound
+
+
+	if ( $get(ent_lastheard,isplayer) )
+	{
+		if SCANNING_TARGETS
+		setvard NEXT_TARGET $get(ent_lastheard,origin)
+		setvard NEXT_TARGET_ID $get(ent_lastheard,id)
+	}
+	if ( I_DIED )
+	{
+		if $get(NPCATK_TARGET,range) > $get(ent_lastheard,range)
+		callevent npcatk_target $get(ent_lastheard,id)
+	}
+
+	if !INTRODUCED
+	if $get(ent_lastheard,isplayer)
+	setmovedest ent_lastheard 9999
+	if $get(ent_lastheard,range) < 450
+	callevent npcatk_target $get(ent_lastheard,id)
+	//dbg heard player $get(ent_lastheard,name)
+	callevent go_intro
+}		
+
+{ start_it_up_yo
+
+	setmoveanim ANIM_WALK
+	setvard SCANNING_TARGETS 1
+	callevent 1.0 scan_targets
+	callevent SPELL_FREQ do_spells
+
+	callevent npcatk_resume_ai
+
+	//setmovedest (-558,663,334)  30 // tele -558 663 334
+
+	usetrigger lights
+
+	if ( !AM_GENERIC ) saytext Please do stay for some...games.
+	setvard CAN_HUNT 1
+	setvard ANIM_ATTACK 	castspell
+	roam 1
+	invincible 0
+	//hearingsensitivity 0
+
+	playanim once ANIM_ATTACK
+
+	setvard START_TARG $get(ent_lastheard,id)
+
+	setvard CANT_TRACK 1
+	setvard CAN_HEAR 0
+	setvard MOVE_RANGE 30
+	setmovedest $relpos(0,600,0) MOVE_RANGE //try to encourage him not to go upstairs
+
+	callevent 10.0 start_wander
+}
+
+{ scan_targets
+	if SCANNING_TARGETS
+	if $cansee(enemy)
+	setvard NEXT_TARGET $get(ent_lastseen,origin)
+	setvard NEXT_TARGET_ID $get(ent_lastseen,id)
+	callevent 0.5 scan_targets
+}
+
+{ start_wander
+
+	
+	setvard MOVE_RANGE 10000
+}
+
+{ do_spells
+	
+	callevent SPELL_FREQ do_spells
+
+	if !I_DIED
+	if !SUSPEND_AI
+	setvard SCANNING_TARGETS 0
+	setmovedest NEXT_TARGET 9999
+	playanim once ANIM_ATTACK
+}
+
+{  castspell	// Deal damage
+
+	if ( !DID_ALE_INTRO )
+	{
+		setvard DID_ALE_INTRO 1
+		if $lcase(game.map.name) contains 'aleyesu'
+		callevent do_ale_intro
+	}
+
+	if !I_DIED		//no more getting back up to cast a spell
+
+	if SKEL_RESPAWN_TIMES < 1
+
+	setvard SCANNING_TARGETS 1
+
+	//dont combine counter-holy with spell
+	if ( RE_REBUKING == 1 ) 
+	{
+		setvard RE_REBUKING 0
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	// Pick a random attack, any attack
+	local random $rand(0,3)
+
+	if( random equals 3 )
+	{
+		// 'cept that one if I've used it recently
+		if( SPAWNED )
+		{
+				local random $rand(0,2)
+		}
+		//Thothie - or if some guards still alive (based on Infernal Count)
+		if ( DEAD_GUARDS < TOTAL_GUARDS ) 
+		{
+				local random $rand(0,2)
+		}		
+	}
+
+	// Calculate the spell's position
+	local pos NEXT_TARGET
+	local temp $get_ground_height(pos)
+	local x $vec.x(pos)
+	local y $vec.y(pos)
+	local pos $vec(x,y,temp)
+
+	//calculate target's vertical distance
+	local ME_POS $get(ent_me,origin)
+	local MY_Z $vec.z(ME_POS)
+	local TARGET_POS $get(HUNT_LASTTARGET,origin)
+	local TARGET_Z $vec.z(TARGET_POS)
+	local TARGET_Z_DIFFERENCE TARGET_Z
+	setvard KSPELL_TARGET HUNT_LASTTARGET
+	subtract TARGET_Z_DIFFERENCE MY_Z
+
+	//must be within 1024 units, or visible to target
+	if ( $dist(game.monster.origin,pos) < 1024 ) local VALID_CON 1
+	if ( $cansee(NEXT_TARGET_ID) ) local VALID_CON 1
+	if VALID_CON
+
+	local TARGET_HIGHER_THAN_ME 0
+	if ( TARGET_Z_DIFFERENCE > HIGHER_THAN_ME_THRESHOLD ) local TARGET_HIGHER_THAN_ME 1
+
+	//dbg MyZ MY_Z TargetZ TARGET_Z Diff TARGET_Z_DIFFERENCE TargHigher TARGET_HIGHER_THAN_ME 
+
+	if ( !TARGET_HIGHER_THAN_ME )
+	{
+		local EFFECT_SCRIPT effects/sfx_lightning
+		if( random equals 0 )
+		{
+			// Blizzard
+			//dbg KELEDROS casts BLIZZARD
+			local EFFECT_SCRIPT monsters/summon/summon_blizzard
+			local SET_DAMAGE 10
+			local SET_DURATION 5
+			playsound game.sound.voice game.sound.maxvol magic/ice_strike.wav
+		}
+		if( random equals 1 )
+		{
+			// Firewall
+			//dbg KELEDROS casts FIREWALL
+			local EFFECT_SCRIPT monsters/summon/keledros_fire_wall
+			local SET_DAMAGE 40
+			local SET_DURATION 10
+			playsound game.sound.voice game.sound.maxvol magic/fireball_strike.wav
+		}
+		if( random equals 2 )
+		{
+			// Lightning storm
+			//dbg KELEDROS casts LIGHTNING STORM
+			local EFFECT_SCRIPT monsters/summon/summon_lightning_storm
+			local SET_DAMAGE 20
+			local SET_DURATION 10
+			playsound game.sound.voice game.sound.maxvol magic/lightning_strike.wav
+		}
+		if( random equals 3 )
+		{
+			// Trigger all of the spawners - Thothie - rather, only those that aren't still alive
+			// Archers that are still alive shouldn't respawn (this is handled internally by each spawner)
+			// Infernals should all be dead before he recasts this (at least 2 must die)
+
+			// Yell really loudly
+			saytextrange 1000
+			saytext Come forth my undead minions!
+			saytextrange 768
+			playsound game.sound.voice game.sound.maxvol magic/heal_powerup.wav
+
+			//infernals
+			callexternal $get_by_name(spawner5) make_undead
+			callexternal $get_by_name(spawner6) make_undead
+			setvarg	DEAD_GUARDS 0 //reset dead_guards counter
+
+			//archers on seperate system
+			//dbg Archers Dead ONE_IS_DEAD TWO_IS_DEAD THREE_IS_DEAD FOUR_IS_DEAD
+			callexternal $get_by_name(spawner1) make_undead
+			callexternal $get_by_name(spawner2) make_undead
+			callexternal $get_by_name(spawner3) make_undead
+			callexternal $get_by_name(spawner4) make_undead
+	
+			//Can be summoned through map instead
+			usetrigger spawn_archers
+
+			// Prevent constant spawning
+			setvard SPAWNED 1
+			calleventtimed 20 allow_spawn
+		}
+	} //end if !TARGET_HIGHER_THAN_ME
+
+	if ( !TARGET_HIGHER_THAN_ME ) 
+	{
+		if ( !I_DIED ) createnpc EFFECT_SCRIPT pos $get(ent_me,id) $get(ent_me,angles.y) SET_DAMAGE SET_DURATION 
+	}
+
+	if ( TARGET_HIGHER_THAN_ME )
+	{
+		saytextrange 2048
+		saytext No use hiding up there!
+
+		//this bit prevents people sploitng rafters from hiding from Keledros
+		//also prevents him from crashing server with lightning spell placed in library pillar
+		local ALT_SPELL_CHOICE $rand(1,2)
+		if ( ALT_SPELL_CHOICE == 1 )
+		{
+			//Massive Fireball for guy hiding in rafters
+			local AIM_ANGLE $get(ent_lastseen,dist)		//Aim up a bit
+			divide AIM_ANGLE AIM_RATIO				//
+			setangle add_view.x AIM_ANGLE
+			tossprojectile view 1000 400 1 proj_fire_ball (0,10,75)
+		}
+		if ( ALT_SPELL_CHOICE == 2 )
+		{
+			//Massive Lightning Bolt for guy hiding in rafters
+			volume 10
+			playsound 2 debris/beamstart15.wav
+			effect beam point LIGHTNING_SPRITE 200 $relpos(0,0,0) $get(KSPELL_TARGET,origin) (255,255,0) 150 50 0.5
+			dodamage KSPELL_TARGET direct 200 100 ent_me lightning
+			applyeffect HUNT_LASTTARGET effects/effect_shock_dmg 10 $get(ent_me,id) 10
+		}
+	}
+
+	//switching so NPC spells always override players, since we can control spam freq
+	//if ( FX_SPAMMERS >= MAX_FX_SPAMMERS )
+	//{
+		//too many FX going on, do 300 damage to everyone around me instead
+		//Note: keeping a breakable near Keledros may make this bit crash (there's none on KeledrosRuins)
+		//This is to prevent exploiting by over-spelling him
+	//	saytextrange 1000
+	//	saytext I shall not be overwhelmed by your pathetic magics!
+	//	volume 10
+	//	playsound 2 x/x_ballattack1.wav
+	//	dodamage $relpos(0,0,0) 1024 300 100% 0
+	//	infomsg all Beware "Keledros uses death magic!"
+	//}
+
+   	if ( FX_SPAMMERS < MAX_FX_SPAMMERS ) clientevent new all CAST_SCRIPT $get(ent_me,index) 15 2	//Left Hand effect
+   	if ( FX_SPAMMERS < MAX_FX_SPAMMERS ) clientevent new all CAST_SCRIPT $get(ent_me,index) 19 2	//Right Hand effect
+}
+   
+{  npc_struck	//Hit by someone
+   
+   	playrandomsound game.sound.body game.sound.maxvol SOUND_STRUCK1 SOUND_STRUCK2 SOUND_STRUCK3 SOUND_STRUCK4 SOUND_STRUCK5
+}
+
+
+  //Rise from the dead
+  //==================
+
+{ npc_death
+
+	if game.serverside
+
+	dbg Keledros custom npc_death
+
+	//boom on fall
+    //effect screenshake $relpos(0,0,0) 255 20 2 0
+  
+	setvard I_DIED 1
+
+	setvard ANIM_ATTACK lying_on_stomach
+
+	if ( !AM_SKELE )
+	{
+		//saytextrange 1024
+		if ( !AM_GENERIC ) saytext This isn't the end!
+	} 
+
+	if ( AM_SKELE )
+	{ 
+		playanim critical ANIM_DEATH
+		////dbg Got Here! ITEM_MESSAGE
+		//cant use var in info messages, cant use playermessage to target all - most frustrating...
+		//fixed - use locals
+		usetrigger wizard_died topodahill_chest
+
+		local L_MAP_NAME $lcase(game.map.name)
+		if ( L_MAP_NAME equals keledrosruins ) local DO_DROP 1
+		if ( L_MAP_NAME equals aleyesu ) local DO_DROP 1
+		if ( DO_DROP ) createnpc chests/keledros $relpos(0,0,0)
+
+		if !AM_GENERIC
+//		local MESSAGE_TITLE "Critical Item Dropped"
+//		local FIN_ITEM_MESSAGE "Keledros has dropped "
+//		stradd FIN_ITEM_MESSAGE ITEM_MESSAGE
+//		infomsg all MESSAGE_TITLE FIN_ITEM_MESSAGE
+
+
+		local L_MAP_NAME $lcase(game.map.name)
+		if ( L_MAP_NAME equals keledrosruins )
+		{
+			local T_SPAWN game.monster.origin
+			vectoradd T_SPAWN $relpos($vec(0,0,0),$vec(0,100,40))
+			createnpc chests/bag_o_gold_25 T_SPAWN
+	
+			local T_SPAWN game.monster.origin
+			vectoradd T_SPAWN $relpos($vec(0,45,0),$vec(0,100,40))
+			createnpc chests/bag_o_gold_25 T_SPAWN
+	
+			local T_SPAWN game.monster.origin
+			vectoradd T_SPAWN $relpos($vec(0,90,0),$vec(0,100,40))
+			createnpc chests/bag_o_gold_25 T_SPAWN
+	
+			local T_SPAWN game.monster.origin
+			vectoradd T_SPAWN $relpos($vec(0,135,0),$vec(0,100,40))
+			createnpc chests/bag_o_gold_50 T_SPAWN
+	
+			local T_SPAWN game.monster.origin
+			vectoradd T_SPAWN $relpos($vec(0,180,0),$vec(0,100,40))
+			createnpc chests/bag_o_gold_50 T_SPAWN
+	
+			local T_SPAWN game.monster.origin
+			vectoradd T_SPAWN $relpos($vec(0,225,0),$vec(0,100,40))
+			createnpc chests/bag_o_gold_25 T_SPAWN
+	
+			local T_SPAWN game.monster.origin
+			vectoradd T_SPAWN $relpos($vec(0,270,0),$vec(0,100,40))
+			createnpc chests/bag_o_gold_25 T_SPAWN
+	
+			local T_SPAWN game.monster.origin
+			vectoradd T_SPAWN $relpos($vec(0,315,0),$vec(0,100,40))
+			createnpc chests/bag_o_gold_25 T_SPAWN
+		}	
+	}
+
+	if $rand(0,99) < SKEL_RESPAWN_CHANCE
+	if SKEL_RESPAWN_TIMES < SKEL_RESPAWN_LIVES
+
+	local L_DEATHANIM $rand(0,1)
+
+	setvard ANIM_DEATH diesimple
+	if( L_DEATHANIM == 1 ) setvard ANIM_DEATH dieforward
+
+	playanim hold ANIM_DEATH
+
+	setalive 		1
+	//setsolid 		none
+	setmovedest 		none
+	setidleanim 		ANIM_RESPAWN_DEADIDLE
+	invincible		1
+	roam			0
+	setvard CAN_ATTACK 	0
+	setvard CAN_HUNT 	0
+	setvard CAN_RETALIATE	0
+	setvard CAN_HEAR	1
+	setvard PLAYING_DEAD 1
+
+	callevent 7.0 skel_respawn
+}
+
+{ skel_respawn
+
+	setvard AM_SKELE 1
+	setvard CANT_TRACK 0
+	// Undead Form
+	setmodel monsters/skeleton3.mdl
+	takedmg slash .7
+	takedmg pierce .5
+	takedmg blunt 1.2
+	takedmg fire 0.0
+	takedmg all 0.7
+	setvard IMMUNE_FIRE 1
+	//akedmg holy 1.5 //I think this is multiplying from his base?
+	if ( !AM_GENERIC ) name The animated remains of Keledros
+	hearingsensitivity 11
+	setvard ATTACK_HITCHANCE 	85%
+	setvard ATTACK_DMG_LOW	 	15 
+	setvard ATTACK_DMG_HIGH 	30
+	setvard MOVE_RANGE 	150
+	setvard ATTACK_RANGE 	175
+	setvard ATTACK_HITRANGE 200
+	setvar ANIM_RUN	walk
+	setvard ANIM_ATTACK 	attack1
+	setvard ATTACK_SPEED	1000
+	setvard ATTACK_CONE_OF_FIRE 6
+	setvard ALLOW_CHANGE 1
+
+	setvard SOUND_STRUCK1 	zombie/zo_pain2.wav
+	setvard SOUND_STRUCK2 	zombie/zo_pain2.wav
+	setvard SOUND_STRUCK3 	zombie/zo_pain2.wav
+	setvard SOUND_ATTACK1 	zombie/claw_miss1.wav
+	const SOUND_DEATH 	x/x_die1.wav
+
+	skilllevel NPC_GIVE_EXP //reset XP
+
+	precache SOUND_DEATH
+
+	setidleanim ANIM_IDLE
+   	setmoveanim ANIM_WALK
+	playanim critical getup
+	setsolid box
+   	setbbox npcsize
+	incvar SKEL_RESPAWN_TIMES 1
+
+   	hp SKEL_HP
+
+	callevent 2.5 skel_respawn_revived
+}
+
+{ skel_respawn_revived
+
+	setvard PLAYING_DEAD 0
+
+	setmovedest		HUNT_LASTTARGET 9999
+	roam 			1
+	invincible		0
+	setvard CAN_ATTACK 	1
+	setvard CAN_HUNT 	1
+	setvard CAN_RETALIATE	1	
+	setvard CAN_HEAR	1
+	setvard CAN_FLEE	1
+	setvard kele.recharging	0
+	setvar 	FLEE_HEALTH	0
+	setvar	FLEE_CHANCE	1
+	setvar	FLEE_DISTANCE	4096
+	saytext You can't defeat me so easily!
+
+	local MAP_NAME $lcase(game.map.name)
+}
+
+{
+	repeatdelay 1
+	
+	if ALLOW_CHANGE equals 1
+
+	if !PLAYING_DEAD
+
+	local DIST $get(ent_lastseen,dist)
+	if( DIST < 300 )
+	{
+		setvard ANIM_ATTACK 	attack1
+		setvard MOVE_RANGE 	150
+		setvard ATTACK_RANGE 	175
+
+	}
+	if( DIST > 300 )
+	{
+		setvard ANIM_ATTACK 	attack2
+		setvard MOVE_RANGE 	500
+		setvard ATTACK_RANGE 	600
+	}
+}
+
+{ attack_1
+
+	local L_DMG $randf(ATTACK_DMG_LOW,ATTACK_DMG_HIGH)
+   	dodamage ent_lastseen ATTACK_HITRANGE L_DMG ATTACK_HITCHANCE
+}
+
+{ npc_targetsighted
+	if AM_SKELE
+
+	if !FIRE_BALL_DELAY
+	setvard FIRE_BALL_DELAY 1
+	callevent 2.0 reset_fire_delay
+	if $get(PARAM1,range) > 128
+	setvard AS_ATTACKING game.time
+	playanim once attack2
+}
+
+{ reset_fire_delay
+	setvard FIRE_BALL_DELAY 0
+}
+
+{ attack_2
+
+	//local AIM_ANGLE $get(ent_lastseen,dist)		//Aim up a bit
+	//divide AIM_ANGLE AIM_RATIO			//
+	//setangle add_view.x AIM_ANGLE			//
+
+	local LCL_ATKDMG $randf(ATTACK_DMG_LOW,ATTACK_DMG_HIGH)
+	local ATTACK_TYPE $rand(1,2)
+	if ( ATTACK_TYPE == 1 )
+	{
+		tossprojectile view ATTACK_SPEED LCL_ATKDMG ATTACK_CONE_OF_FIRE proj_fire_dart (0,10,75)
+		tossprojectile view ATTACK_SPEED LCL_ATKDMG ATTACK_CONE_OF_FIRE proj_fire_dart (0,10,75)
+		tossprojectile view ATTACK_SPEED LCL_ATKDMG ATTACK_CONE_OF_FIRE proj_fire_dart (0,10,75)
+		tossprojectile view ATTACK_SPEED LCL_ATKDMG ATTACK_CONE_OF_FIRE proj_fire_dart (0,10,75)
+	}
+	if ( ATTACK_TYPE == 2 )
+	{
+		tossprojectile view ATTACK_SPEED LCL_ATKDMG ATTACK_CONE_OF_FIRE proj_fire_ball (0,10,75)
+	}
+
+	setvard ANIM_ATTACK attack1
+	setvard MOVE_RANGE 	150
+	setvard ATTACK_RANGE 	175
+
+	setvard ALLOW_CHANGE 0
+
+	calleventtimed 2 allow_change
+}
+
+{ allow_change
+
+	setvard ALLOW_CHANGE 1
+}
+
+{ allow_spawn
+
+	setvard SPAWNED 0
+}
+
+{ turn_undead
+
+	if game.monster.isalive
+
+	if !AM_SKELE
+
+	if !REBUKE_DELAY
+	setvard REBUKE_DELAY 1
+	callevent 2.0 reset_rebuke_delay
+
+	local THE_EXCORCIST PARAM2
+
+	setvard RE_REBUKING 1
+
+	playanim once castspell
+
+	setmovedest $get(THE_EXCORCIST,id) 9999
+
+	saytextrange 1024
+	saytext Your so-called 'divine' magics shall only get you burned!
+
+	setvard REBUKE_TARGET THE_EXCORCIST
+
+	callevent 1 rebuke_rebuker 
+}
+
+{ reset_rebuke_delay
+	setvard REBUKE_DELAY 0
+}
+
+{ rebuke_rebuker
+
+	//Massive Fireball for Mr. Divination
+	playsound game.sound.voice 10 SOUND_POISON
+
+
+	local ALT_SPELL_CHOICE $rand(1,2)
+	if ( ALT_SPELL_CHOICE == 1 )
+	{
+		//Massive Fireball
+		local ALT_SPELL_CHOICE $rand(1,2)
+		local AIM_ANGLE $get(REBUKE_TARGET,dist)		//Aim up a bit
+		divide AIM_ANGLE AIM_RATIO				//
+		setangle add_view.x AIM_ANGLE
+		tossprojectile view 1000 400 1 proj_fire_ball (0,10,45)
+	}
+
+	if ( ALT_SPELL_CHOICE == 2 )
+	{
+		//Massive Lightning Bolt
+		volume 10
+		playsound 2 debris/beamstart15.wav
+		effect beam point LIGHTNING_SPRITE 200 $relpos(0,0,0) $get(REBUKE_TARGET,origin) (255,255,0) 150 50 0.5
+		dodamage REBUKE_TARGET direct 200 100 ent_me lightning
+		applyeffect PARAM1 effects/effect_shock_dmg 10 $get(ent_me,id) 10
+	}
+}
+
+{ game_damaged
+
+	if !AM_SKELE
+	if PARAM3 equals holy
+	if !RETAL_DELAY
+	local H_ATTACKER PARAM1
+	setvard RETAL_DELAY 1
+	saytextrange 1024
+	saytext Holy weapons call for unholy magic!
+	callevent 6.0 reset_retal_delay
+	callevent 1.0 rebuke_rebuker
+}
+
+{ reset_retal_delay
+	setvard RETAL_DELAY 0
+}
+
+{ game_struck
+	setvard NEXT_TARGET $get(ent_laststruck,origin)
+	setvard NEXT_TARGET_ID $get(ent_laststruck,id)
+
+	if ( AM_SKELE )
+	{
+		if !FIRE_PULSE_DELAY
+
+		if ( !DID_BURST_A )
+		{
+			if game.monster.hp < 2500
+			if $get(ent_laststruck,range) < 256
+			setvard DID_BURST_A 1
+			callevent 0.1 fire_pulse
+		}
+
+
+		if ( !DID_BURST_B )
+		{
+			if game.monster.hp < 2000
+			if $get(ent_laststruck,range) < 256
+			setvard DID_BURST_B 1
+			callevent 0.1 fire_pulse
+		}
+
+		if ( !DID_BURST_C )
+		{
+			if game.monster.hp < 1500
+			if $get(ent_laststruck,range) < 256
+			setvard DID_BURST_C 1
+			callevent 0.1 fire_pulse
+		}
+
+
+		if ( !DID_BURST_D )
+		{
+			if game.monster.hp < 500
+			if $get(ent_laststruck,range) < 256
+			setvard DID_BURST_D 1
+			callevent 0.1 fire_pulse
+		}
+	}
+}
+
+{ fire_pulse
+
+	if !FIRE_PULSE_DELAY
+	if game.monster.hp > 0
+	setvard FIRE_PULSE_DELAY 1
+	callevent 5.0 reset_fire_pulse_delay
+
+	setvard FIRE_PULSE 1
+	playanim critical throw_scientist
+	createnpc monsters/summon/flame_burst $relpos(0,0,0) $get(ent_me,id) 20.0
+	callevent npcatk_suspend_ai 1
+	dodamage $relpos(0,0,0) 512 0.0 100% 0.0 reflective target
+	callevent 0.2 reset_fire_pulse
+}
+
+{ reset_fire_pulse_delay
+
+	setvard FIRE_PULSE_DELAY 0
+}
+
+{ reset_fire_pulse
+
+	setvard FIRE_PULSE 0
+}
+
+{ game_dodamage //1:AttackHit(1/0)  2:EntityHit  3:StartOrigin  4:EndOrigin
+
+	if FIRE_PULSE
+	if $get(PARAM2,range) < 256
+	addvelocity PARAM2 $relvel(0,800,800)
+}

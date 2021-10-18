@@ -1,0 +1,296 @@
+
+//Mercenary
+#scope server
+{
+   const SUM_SAY_COME "On my way, sir."
+   const SUM_SAY_ATTACK "On it!"
+   const SUM_SAY_HUNT "There'll be some good eatin's tonight!"
+   const SUM_SAY_DEFEND "Got yer back."
+   const SUM_SAY_DEATH "I really need to charge more for this."
+   const SUM_REPORT_SUFFIX ", sir."
+
+	setvard ANIM_DEATH dieforward1
+
+   const ANIM_SITIDLE sitidle
+   setvar ANIM_IDLE idle1
+   setvar ANIM_WALK walk
+   setvar ANIM_RUN run
+   setvard ANIM_ATTACK swordswing1_L
+   setvard MOVE_RANGE 64
+   setvard ATTACK_RANGE 72
+   setvard ATTACK_HITRANGE 120
+   const DMG_MIN 1
+   const DMG_MAX 3
+   const ATTACK_HITCHANCE 80%
+
+   const SOUND_ALERT1 npc/prepdie.wav
+   const SOUND_ATTACK1 weapons/swingsmall.wav
+   const SOUND_ATTACK2 weapons/swingsmall.wav
+   const SOUND_STRUCK1 weapons/cbar_hitbod1.wav
+   const SOUND_STRUCK2 weapons/cbar_hitbod2.wav
+   const SOUND_STRUCK3 weapons/cbar_hitbod3.wav
+   const SOUND_PAIN player/chesthit1.wav
+   const SOUND_PAIN2 player/armhit1.wav
+   const VOLUME 5
+
+   setvard CAN_RETALIATE 1
+   setvard CAN_ATTACK 0
+   const RETALIATE_CHANGETARGET_CHANCE 75%  //base_npc_attack - Automatically switch targets to the last damaging player
+   setvard CAN_FLEE 0		//base_npc_attack - Whether I run away at low health
+   setvard CAN_HUNT 0
+   setvard CAN_HEAR 1
+   setvard CAN_FLINCH 1
+   setvard FLINCH_ANIM raflinch
+   setvard FLINCH_CHANCE 10%
+   const SUMMON_VICINITY 360
+
+	setvard NO_STUCK_CHECKS 1
+}
+
+#include monsters/summon/base_summon
+#include help/first_hireling
+
+{  summon_spawn
+
+   	hp 35
+   	name Holden, the Guide
+   	width 32
+   	height 64
+   	roam 0
+   	hearingsensitivity 3
+   	skilllevel 0
+   	race neutral
+   	setmodel npc/guard1.mdl
+   	setmodelbody	1 0
+   	setidleanim ANIM_SITIDLE
+   	setmoveanim ANIM_WALK
+
+   	setvard IS_HIRED 0
+   	setvard CONVERSE_PLAYER 0
+   	setvard SEE_PLAYER_NOW 0
+   	setvard SEE_ENEMY 0
+
+   	setstat parry 10 10 10
+
+   	setvard HIRE_PRICE $rand(4,16)
+	local reg.mitem.id		hire
+	local reg.mitem.access		all
+	local reg.mitem.title		"Hire for "
+	stradd reg.mitem.title		HIRE_PRICE
+	stradd reg.mitem.title		" gold"
+	local reg.mitem.type		payment
+	local reg.mitem.data		'gold:'
+	stradd reg.mitem.data		HIRE_PRICE
+	local reg.mitem.callback	hired_by_player
+	
+	menuitem.register
+
+	callevent npcatk_suspend_ai
+	
+
+	givehp -3
+   	callevent basesummon_attackall //Premptive attack   
+}
+
+{ hired_by_player	//PARAM1 - player
+
+	menuitem.remove hire
+	setvard IS_HIRED 1
+	setvard CAN_HUNT 1
+	callevent npcatk_resume_ai
+	setvar ANIM_IDLE idle1
+  	setvard SUMMON_MASTER PARAM1
+    	setvard MASTER_NAME $get(SUMMON_MASTER,name)
+     	stradd MASTER_NAME !
+  	setvard CAN_ATTACK 1
+  	race human
+     	saytext Lead on, MASTER_NAME
+		callevent bs_set_defend_mode
+	setidleanim ANIM_IDLE
+  	playanim once yes
+}
+
+
+
+   // See Enemy
+{  npc_targetsighted
+	
+
+	if( HUNT_LASTTARGET equals SUMMON_MASTER )
+	{
+		if $get(HUNT_LASTTARGET,dist) < 256
+		setmoveanim ANIM_WALK	
+	}
+	else if( $get(ent_lastseen,id) isnot HUNT_LASTTARGET )
+	{
+		playrandomsound game.sound.voice VOLUME SOUND_ALERT1 none none none
+	}
+}
+
+   // Deal damage
+{  attack_1
+
+   	playsound game.sound.weapon VOLUME SOUND_ATTACK1 SOUND_ATTACK2
+
+   	callevent npcatk_dodamage NPCATK_TARGET ATTACK_HITRANGE $randf(DMG_MIN,DMG_MAX) ATTACK_HITCHANCE
+}
+
+   //Hit by someone
+{  npc_struck
+   
+   	playrandomsound game.sound.body VOLUME SOUND_PAIN SOUND_PAIN SOUND_STRUCK1 SOUND_STRUCK2 SOUND_STRUCK3
+	if( IS_HIRED ) callevent rest_getup	
+}
+
+//See player, get up and offer services
+{
+   repeatdelay 2
+  
+   	if !IS_HIRED
+   
+   	race human
+   	if $cansee(ally)
+   	callevent standandtalk
+}
+{ standandtalk
+
+   	if CONVERSE_PLAYER equals 0
+   	if $cansee(ally,90)
+   
+   	setvard CONVERSE_PLAYER 1
+   	playanim once sitstand
+   	setidleanim idle1
+
+   	callevent 5 offer_1
+}
+{  offer_1
+  
+   	saytext You shouldn't be alone here.
+  	say [30] [30] [30] [30] [20] [20] [30]
+  	callevent 2 offer_2
+}
+{  offer_2
+  
+  	saytext I'll show you around these plains, if you pay me $int(HIRE_PRICE) gold
+   	say [30] [30] [30] [30] [30] [30] [30] [30] [30]
+   	playanim once yes
+   	callevent 5 sitdown
+}
+
+{  sitdown
+
+   	if !IS_HIRED
+   	setvard SEE_PLAYER_NOW 0
+   	callevent sitdownlater
+   	callevent sitdownnow
+}
+
+{  sitdownlater
+
+   	race human
+   	look 256
+   	callevent sitdownlater2
+}
+
+{  sitdownlater2
+
+   	look 256
+   	if $cansee(player,128)
+   	setvard SEE_PLAYER_NOW 1
+
+   	callevent 5 sitdown
+}
+
+{  sitdownnow
+
+   	if SEE_PLAYER_NOW equals 0
+   
+   	setvar CONVERSE_PLAYER 0
+   	setidleanim ANIM_IDLE
+}
+
+//Regen
+{  npcatk_target_lost
+
+	if !MERC_RESTING
+   	callevent $rand(2,5) rest_checksit
+}
+
+{  game_movingto_dest
+
+	if MERC_RESTING
+	callevent rest_getup	
+}
+
+{	rest_checksit
+
+	if !IS_HUNTING
+	if !IS_ATTACKING
+	if !SUMMON_RETURNING
+	if game.monster.hp < game.monster.maxhp
+
+	setvard MERC_RESTING 1
+   	setidleanim ANIM_SITIDLE
+	givehp 1
+	callevent 5 rest_checksit
+
+	if game.monster.hp >= game.monster.maxhp
+	callevent 3 rest_getup
+	
+}
+
+{	rest_getup
+
+   	setidleanim ANIM_IDLE
+	setvard MERC_RESTING 0
+}
+
+//Get hired
+{  menu_recv_payment
+
+  	if CONVERSE_PLAYER equals 1
+
+	recvoffer accept
+	callevent hired_by_player PARAM1
+}
+
+{ menu_recv_payment_failed
+
+	recvoffer reject
+	saytext I will not be persuaded for a lower price! $int(HIRE_PRICE). Nothing more, nothing less.
+	say [10] [10] [10] [6] [12] [4] [20] [10] [10]
+	playanim once no
+}
+
+{ menu_disband
+
+	saytext I guess this is where we part ways. It was a pleasure working for you.
+	playanim once yes
+	setvard MASTER_NAME \/NULL\/
+	race neutral
+	hp 35
+	setvard IS_HIRED 0
+}
+
+{ game_menu_getoptions
+
+	if( !IS_HIRED )
+	{
+		local reg.mitem.id	payment
+		local reg.mitem.title	"Pay " HIRE_PRICE " gold"
+		local reg.mitem.type	payment
+		local reg.mitem.data	gold: HIRE_PRICE
+		local reg.mitem.callback  menu_recv_payment
+		local reg.mitem.cb_failed menu_recv_payment_failed
+		menuitem.register
+	}
+
+	if( IS_HIRED )
+	{
+		local reg.mitem.id	disband
+		local reg.mitem.title	"Disband"
+		local reg.mitem.type	callback
+		local reg.mitem.callback  menu_disband
+		menuitem.register
+	}
+}

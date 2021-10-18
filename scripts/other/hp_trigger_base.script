@@ -1,0 +1,112 @@
+#scope server
+{
+	const TRIGGER_RANGE 256
+	const TRIGGER_REQ 300
+	const EVENT_NAME found_300
+}
+
+{ game_spawn
+
+	race beloved
+	blood none
+	setmodel none
+	invincible 1
+	hp 1
+	fly 1
+	width 32
+	height 32
+	setsolid none
+	hearingsensitivity 8
+	roam 0
+	movespeed 0.0
+
+	setidleanim ''
+	setmoveanim ''
+
+	//dbg temp hp trigger spawned ( req TRIGGER_REQ ) 
+
+	callevent 0.5 post_spawn
+	callevent 0.1 scan_for_players
+}
+
+{ post_spawn
+	setvard HOME_LOC game.monster.origin
+	callevent 20.7 reset_pos
+}
+
+{ scan_for_players
+
+	if !FOUND_ONE
+	callevent 1.0 scan_for_players
+
+	local PLAYER_ID $get_insphere(player,TRIGGER_RANGE)
+
+	//=== testing
+	//getents npc TRIGGER_RANGE
+	//setvard LOOP_COUNT 0
+	//setvard ENT_LIST "Names:"
+	//calleventloop GET_COUNT debug_loop
+	////dbg $get(PLAYER_ID,name) ent_count GET_COUNT list( ENT_LIST ) @ $get(GET_ENT1,range)
+
+	////dbg temp cansee $cansee(player) insphere $get(PLAYER_ID,name) getents_count GET_COUNT ge_1 $get(GET_ENT1,name) ge_2 $get(GET_ENT2,name) ge_3 $get(GET_ENT3,name)
+	//getents npc TRIGGER_RANGE
+	//=== end testing
+
+	
+	if ( $get(PLAYER_ID,isplayer) )
+	{
+		//dbg Player in sphere with $get(PLAYER_ID,maxhp) maxhp
+		if $get(PLAYER_ID,maxhp) >= TRIGGER_REQ
+		callevent found_worthy
+	}
+
+	if $cansee(player,TRIGGER_RANGE)
+	if $get(ent_lastseen,maxhp) >= TRIGGER_REQ
+	callevent found_worthy
+}
+
+{ game_heardsound
+
+	if !FOUND_ONE
+	if $get(ent_lastheard,isplayer)
+
+	if $get(ent_lastheard,range) < TRIGGER_RANGE
+	////dbg temp Heard $get(ent_lastheard,name) at $get(ent_lastheard,range) vs TRIGGER_RANGE maxhp $get(ent_lastheard,maxhp) vs TRIGGER_REQ
+	if $get(ent_lastheard,maxhp) >= TRIGGER_REQ
+	callevent found_worthy
+}
+
+{ found_worthy
+
+	if !FOUND_ONE
+	setvard FOUND_ONE 1
+	usetrigger EVENT_NAME
+	callevent 1.0 clear_out
+}
+
+{ clear_out
+
+	//dbg temp suiciding
+
+	callevent 0.1 suicide_debug
+
+	invincible 0
+	race hated
+	callevent 0.2 clear_out2
+}
+
+{ clear_out2
+
+	dodamage $get(ent_me,id) direct 1000 100% $get(ent_me,id) magic
+}
+
+{ suicide_debug
+	//dbg still here
+	callevent 2.0 suicide_debug
+}
+
+{ reset_pos
+	if game.monster.isalive
+	setorigin ent_me HOME_LOC
+	callevent 20.7 reset_pos
+}

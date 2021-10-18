@@ -1,0 +1,607 @@
+//Shadahar Orc Chief, ally variant by Thothie
+//- This version fights Maldora on the side of the players
+//- Since Maldora is immune to magic, he only uses his sword, except when fighting minions
+//- Can teleport out to heal
+
+{
+	const MIN_TELEPORT_DELAY 15.0
+
+	const NPC_USES_LIGHTS 1
+	setvard NPC_GIVE_EXP 0
+
+	const ANIM_WARCRY warcry
+	setvar ANIM_IDLE idle1
+	setvar ANIM_RUN run
+	setvar ANIM_WALK walk
+	setvard ANIM_FLINCH flinch
+	setvard ANIM_ATTACK swordswing1_L
+	const ANIM_SWIPE swordswing1_L
+	const ANIM_SMASH battleaxe_swing1_L
+	const ANIM_KICK kick
+	const ANIM_PARRY shielddeflect1
+	setvard ANIM_DEATH die_fallback
+	const ANIM_HOP battleaxe_swing1_L
+
+	setvard CAN_FLINCH 1
+
+	const ATTACK_HITCHANCE 90%
+	setvard ATTACK_MOVERANGE 32
+	setvard MOVE_RANGE 32
+	setvard ATTACK_RANGE 60
+	setvard ATTACK_HITRANGE 120
+
+	const DMG_SLASH $rand(100,200)
+	const DMG_SMACK $rand(25,50)
+	const DMG_SMASH $rand(150,400)
+	const DMG_KICK $randf(25,100)
+
+	//I've so many damn special moves, it maybe
+	//better to put them under one central script and cycle them
+	const FREQ_SPECIAL $rand(20,40)
+	const FREQ_KICK 10.0
+	setvard FREQ_LEAP 5.0
+
+	const SOUND_WARCRY "monsters/troll/trollidle.wav"
+	const SOUND_STRUCK1 "body/armour1.wav"
+	const SOUND_STRUCK2 "body/armour2.wav"
+	const SOUND_STRUCK3 "body/armour3.wav"
+	const SOUND_HIT "voices/orc/hit.wav"
+	const SOUND_HIT2 "voices/orc/hit2.wav"
+	const SOUND_HIT3 "voices/orc/hit3.wav"
+	const SOUND_PAIN "monsters/orc/pain.wav"
+	const SOUND_WARCRY1 "monsters/orc/battlecry.wav"
+	const SOUND_ATTACK1 "voices/orc/attack.wav"
+	const SOUND_ATTACK2 "voices/orc/attack2.wav"
+	const SOUND_ATTACK3 "voices/orc/attack3.wav"
+	const SOUND_DEATH "voices/orc/die.wav"
+	const SOUND_HELP "voices/orc/help.wav"
+	const SOUND_TELE "magic/teleport.wav"
+
+	const VAMPIRE_RATIO 0.1
+
+	const IMMUNE_STUN 75
+	const IMMUNE_COLD 0.25
+	const IMMUNE_FIRE 0.25
+	const IMMUNE_LIGHTNING 1
+
+	//media precache
+	precache SOUND_DEATH
+
+	//barrier
+	precache doors/aliendoor3.wav
+	precache magic/spawn.wav
+
+	//blood drinker
+	precache zombie/claw_miss2.wav
+}
+
+#include monsters/base_monster_new
+
+{ npc_spawn
+	name Runegahr, Shadahar Orc Chieftain
+	race human
+
+	hp 8000
+	takedmg all 0.5
+	takedmg fire 0.5
+	takedmg cold 0.25
+	takedmg lightning 0.0
+
+	hearingsensitivity 10
+
+	setmodel monsters/sorc.mdl
+	setmodelbody 0 2 //body: 0=bare 1=bloody_shirt 2=gold_armor 3=archer
+	setmodelbody 1 3 //head: 0=hat_horns 1=hat_spiked 2=lizardskin_horned 3=gold_chieften 4=lizard_cap
+	setmodelbody 2 8 //weapon: 0=unarmed 1=axe 2=bow 3=steel_bow 4=sword 5=great_axe 6=sword_sheild 8=yellow_axe 9=blooddrinker
+	setstat parry 150
+	width 32
+  	height 96
+
+	roam 1 //re-enable, debug
+
+	saytextrange 2048
+
+	setvard SWORD_ATTACK 0
+	setvard JUMP_FWD_DIST 250
+	setvard CUR_SPECIAL 0
+	callevent 1.0 get_teleporters
+}
+
+//no regen, Maldora is immune to regen, and everything he summons is undead
+{ game_damaged_other //PARAM1=target_hit PARAM2=dmg
+
+	if $get(PARAM1,name) contains Lightning
+	callevent zap_minion PARAM1
+
+	////dbg game_damaged_other $get(PARAM1,name) PARAM2
+
+//	if ( SWORD_ATTACK )
+//	{
+//		setvard SWORD_ATTACK 0
+//		addvelocity PARAM1 $relvel(-100,130,120)
+//		if ( game.monster.hp < game.monster.maxhp )
+//		{
+//			local HP_TO_GIVE PARAM2
+//			multiply HP_TO_GIVE VAMPIRE_RATIO
+//			givehp VAMPIRE_RATIO
+//			effect glow ent_me (0,255,0) 96 0.5 0.5
+//			////dbg vampire_result game.monster.hp 
+//			playsound 0 10 "player/heartbeat_noloop.wav"
+//		}
+//	}
+}
+
+{ [override] cycle_npc
+	callevent cycle_up
+}
+
+{ cycle_up
+
+	if !CYCLES_STARTED
+	setvard CYCLES_STARTED 1
+	//callevent FREQ_TORNADO do_tornado
+	//callevent FREQ_LSTORM do_lstorm
+	//callevent FREQ_LBURST do_lburst
+	//callevent FREQ_LBLAST do_lblast
+	//callevent FREQ_THROW do_throw
+	callevent FREQ_SPECIAL do_special
+	callevent 60.0 do_teleport //do first teleport 1 min in, rest are random
+	roam 1
+
+	saytext Now, Maldora! With these allies I shall defeat you!
+
+	playsound 0 10 SOUND_ATTACK2
+}
+
+{ swing_axe //ANIM_SMASH
+
+	if ( $get(NPCATK_TARGET,range) < ATTACK_RANGE ) setvard LAST_SWORD_HIT game.time
+
+	callevent sorc_yell
+	//						  <target>		<range>			<dmg>		<cth>				[type]
+	setvard SWORD_ATTACK 1
+	if ( !AM_UNARMED ) callevent npcatk_dodamage NPCATK_TARGET ATTACK_HITRANGE DMG_SMASH	ATTACK_HITCHANCE	dark
+	if ( AM_UNARMED )
+	{
+		setvard SWORD_ATTACK 0
+		callevent npcatk_dodamage NPCATK_TARGET ATTACK_HITRANGE DMG_SMACK	ATTACK_HITCHANCE	blunt
+	}
+	setvard ANIM_ATTACK ANIM_SWIPE
+	callevent check_kick
+}
+
+{ swing_sword //ANIM_SWIPE
+
+	if ( $get(NPCATK_TARGET,range) < ATTACK_RANGE ) setvard LAST_SWORD_HIT game.time
+
+	callevent sorc_yell
+	//						  <target>		<range>			<dmg>		<cth>				[type]
+	if ( !AM_UNARMED ) setvard SWORD_ATTACK 1
+	callevent npcatk_dodamage NPCATK_TARGET ATTACK_HITRANGE DMG_SLASH	ATTACK_HITCHANCE	dark
+	if ( AM_UNARMED )
+	{
+		setvard SWORD_ATTACK 0
+		callevent npcatk_dodamage NPCATK_TARGET ATTACK_HITRANGE DMG_SMACK	ATTACK_HITCHANCE	blunt
+	}
+
+	if ( $rand(1,5) == 1 ) setvard ANIM_ATTACK ANIM_SMASH
+	callevent check_kick
+}
+
+{ check_kick
+	if !KICK_DELAY
+	if ( !AM_UNARMED )
+	{
+		if $rand(1,5) != 1
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+	setvard ANIM_ATTACK ANIM_KICK
+	setvard KICK_DELAY 1
+	//dbg swing_axe - set kick mode
+	if ( !AM_UNARMED ) callevent FREQ_KICK reset_kick_delay
+	if ( AM_UNARMED ) callevent 1.0 reset_kick_delay //favor kick when unarmed
+}
+
+{ kick_land
+	//dbg kick_land PARAM1
+	if ( $get(NPCATK_TARGET,range) < ATTACK_RANGE ) setvard LAST_SWORD_HIT game.time
+	callevent npcatk_dodamage NPCATK_TARGET ATTACK_HITRANGE DMG_KICK	ATTACK_HITCHANCE	blunt
+	setvard ANIM_ATTACK ANIM_SWIPE
+	if $get(NPCATK_TARGET,range) < ATTACK_HITRANGE
+	//callexternal NPCATK_TARGET ext_playsound "player/stomachhit1.wav"
+	applyeffect NPCATK_TARGET effects/effect_stun $randf(5,10) 0 1
+	addvelocity NPCATK_TARGET $relvel(-100,200,150)
+}
+
+{ reset_kick_delay
+	setvard KICK_DELAY 0
+}
+
+{ sorc_yell
+	playrandomsound 0 10 SOUND_ATTACK1 SOUND_ATTACK2 SOUND_ATTACK3
+}
+
+{ game_damaged //PARAM1=attacker PARAM2=dmg PARAM3=dmg_type
+
+	//dbg game_damaged game.monster.hp $get(PARAM1,name) PARAM2 PARAM3
+
+	if ( game.monster.hp < HALF_HEALTH )
+	{
+		setvard JUMP_FWD_DIST 500
+		setvard FREQ_LEAP 0.1
+	}
+
+	local HIT_BY $get(PARAM1,id)
+	if ( PARAM2 > 30 )
+	{
+		if $get(HIT_BY,range) < ATTACK_HITRANGE
+		if $rand(1,3) == 1
+		if !LEAP_DELAY
+		setvard LEAP_DELAY 1
+		callevent FREQ_LEAP leap_delay_reset 
+		callevent leap_away HIT_BY
+	}
+}
+
+{ leap_delay_reset
+	setvard LEAP_DELAY 0
+}
+
+{ orc_hop
+
+	playsound 0 10 monsters/orc/attack1.wav
+	if ( game.monster.hp > HALF_HEALTH ) local JUMP_HEIGHT $rand(350,450)
+	if ( game.monster.hp <= HALF_HEALTH ) local JUMP_HEIGHT $rand(350,950)
+
+	local L_JUMP_FWD_DIST JUMP_FWD_DIST
+	local L_JUMP_HEIGHT JUMP_HEIGHT
+
+	if ( DOUBLE_FOR )
+	{
+		setvard DOUBLE_FOR 0
+		multiply L_JUMP_FWD_DIST 2
+	}
+
+	if ( DOUBLE_UP )
+	{
+		setvard DOUBLE_UP 0
+		multiply L_JUMP_HEIGHT 2
+	}
+
+	addvelocity ent_me $relvel(0,L_JUMP_FWD_DIST,L_JUMP_HEIGHT)
+}
+
+{ leap_away //<target>
+	
+	setvard AM_LEAPING 1
+	setvard NPC_FORCED_MOVEDEST 1
+	callevent npcatk_suspend_ai 1.0
+	setmovedest PARAM1 800 flee
+	callevent 0.1 do_leap
+}
+
+{ leap_random
+	setvard AM_LEAPING 1
+	setvard NPC_FORCED_MOVEDEST 1
+	callevent npcatk_suspend_ai 1.0
+	local RND_ROT $rand(0,359)
+	local LEAP_DEST game.monster.origin
+	vectoradd LEAP_DEST $relpos($vec(0,RND_ROT,0),$vec(0,400,0))
+	setmovedest LEAP_DEST ATTACK_MOVERANGE
+	callevent 0.1 do_leap
+}
+
+{ leap_at //<target>
+
+	if !AM_LEAPING
+	setvard AM_LEAPING 1
+	setvard NPC_FORCED_MOVEDEST 1
+
+	if ( $get(NPCATK_TARGET,isalive) )
+	{
+		local TARGET_ORG $get(NPCATK_TARGET,origin)
+		local TARGET_Z $vec.z(TARGET_ORG)
+		local MY_Z game.monster.origin.z
+		if ( TARGET_Z > MY_Z )
+		{
+			local V_DEST game.monster.origin
+			vectorset V_DEST z $vec.z(TARGET_ORG)
+			if $dist(game.monster.origin,V_DEST) > 96
+			setvard DOUBLE_UP 1
+		}
+		if ( $get(NPCATK_TARGET,range2d) > 1600 ) setvard DOUBLE_FOR 1
+	}
+
+	callevent npcatk_suspend_ai 1.0
+	setmovedest PARAM1 ATTACK_MOVERANGE
+	callevent 0.1 do_leap
+}
+
+{ do_leap
+
+	playrandomsound 0 10 SOUND_HIT SOUND_HIT2 SOUND_HIT3
+	playanim critical ANIM_HOP
+	callevent 0.1 orc_hop
+	callevent 1.0 reset_leaping
+}
+
+{ reset_leaping
+
+	setvard AM_LEAPING 0
+}
+
+{ warcry_done
+
+	setvard CAN_FLINCH 1
+	if ( SUSPEND_AI ) callevent npcatk_resume_ai
+}
+
+{
+repeatdelay $randf(8,15)
+
+	if ( NPCATK_TARGET equals unset ) callevent npcatk_settarget MALDORA_ID
+
+	//keep an eye out for lightning minions
+	setvard T_BOX $get_tbox(enemy,1024)
+	if T_BOX isnot none
+	setvard ZAPPED_MINION 0
+	calleventloop T_BOX check_for_lminion
+	if ( $get(MINION_TO_ZAP,isalive) )
+	{
+		callevent zap_minion MINION_TO_ZAP
+	}
+
+	if !SUSPEND_AI
+	if NPCATK_TARGET isnot unset
+	local LEAP_TYPE $rand(1,4)
+	if ( LEAP_TYPE < 4 ) callevent leap_at NPCATK_TARGET "random"
+	if ( LEAP_TYPE == 4 ) callevent leap_random
+}
+
+{ game_parry
+	playrandomsound 0 10 SOUND_STRUCK1 SOUND_STRUCK2 SOUND_STRUCK3
+	if !SUSPEND_AI
+	if ( $rand(1,3) == 1 ) playanim critical shielddeflect1
+}
+
+{ do_teleport //PARAM1 = reason
+	if !MALDORA_DEAD
+	//jump straight up, teleport out, return full health, repeat
+	createnpc monsters/summon/ibarrier $relpos(0,0,0) $get(ent_me,id) 64 2 0 0 0 1 //<owner> <rad> <duration> [invisible:0|1] [silent:0|1] [dmg] [push_allys:0|1]
+	callevent leap_tele
+}
+
+{ leap_tele //<target>
+
+	setvard AM_LEAPING 1
+	setvard NPC_FORCED_MOVEDEST 1
+	callevent npcatk_suspend_ai 1.0
+	setmovedest $relpos(0,0,1000) ATTACK_MOVERANGE
+	callevent 0.1 do_leap
+	setvard RENDER_COUNT 255
+	callevent 0.1 flicker_out
+	callevent 0.25 tele_out
+	callevent 4.5 tele_in_barrier
+	callevent 5.0 tele_in
+}
+
+{ flicker_out
+	subtract RENDER_COUNT 50
+	if RENDER_COUNT > 0
+	callevent 0.1 flicker_out
+	setprop ent_me rendermode 5
+	setprop ent_me renderamt RENDER_COUNT
+}
+
+{ tele_out
+	setvard RETURN_POINT game.monster.origin
+	playsound 0 10 SOUND_TELE
+	setorigin ent_me (-20000,10000,-20000)
+}
+
+{ tele_in_barrier
+	local RETURN_BAR RETURN_POINT
+	vectorset RETURN_BAR z $get_ground_height(RETURN_POINT)
+	createnpc monsters/summon/ibarrier RETURN_POINT $get(ent_me,id) 64 2 0 0 0 1 //<owner> <rad> <duration> [invisible:0|1] [silent:0|1] [dmg] [push_allys:0|1]
+}
+
+{ tele_in
+	setorigin ent_me RETURN_POINT
+	playsound 0 10 SOUND_TELE
+	setvard RENDER_COUNT 0
+	callevent flicker_in
+	setvard LAST_TELE game.time
+	givehp 2000
+	if ( !STUCK_TELE ) callevent 120.0 do_teleport
+	if ( STUCK_TELE ) setvard STUCK_TELE 0
+}
+
+{ flicker_in
+	add RENDER_COUNT 50
+	if ( RENDER_COUNT >= 255 )
+	{
+		setprop ent_me rendermode 0
+		setprop ent_me renderamt 255
+	}
+	if RENDER_COUNT < 255
+	callevent 0.1 flicker_in
+	setprop ent_me rendermode 5
+	setprop ent_me renderamt RENDER_COUNT
+}
+
+{
+repeatdelay 1.1
+	if STUCK_COUNT > 4
+	setvard STUCK_TELE 1
+	callevent do_teleport "stuck_count"
+}
+
+{ game_takedamage
+	if ( ATTACK_PARRY )
+	{
+		//dbg game_takedamage - parried PARAM3 , setting 0
+		setdmg hit 0
+		setdmg dmg 0
+	}
+}
+
+{ do_throw
+
+	if !AM_UNARMED
+
+	//setvard PLAYERS_NEAR 0
+	//setvard PLAYERS_INRANGE 0
+	//local SORC_LPLAYERS $get_tbox(1024,enemy)
+	//setvard PNEAR_LOOP_COUNT 0
+	//calleventloop $get_token_amt(SORC_LPLAYERS) any_players_near
+	//dbg do_throw check nplayers $get_token_amt(SORC_LPLAYERS) near PLAYERS_NEAR inrang PLAYERS_INRANGE
+	//if !PLAYERS_NEAR
+	//if PLAYERS_INRANGE
+	callevent do_throw2
+}
+
+{ do_throw2
+	//dbg do_throw2 throwing sword
+	setmodelbody 2 0
+	setvard AM_UNARMED 1
+	playanim critical ANIM_SWIPE
+	createnpc monsters/summon/blood_drinker $relpos(0,48,48) $get(ent_me,id) MALDORA_ID 100 30.0
+	setvard BD_ID $get(ent_lastcreated,id)
+}
+
+{ do_special
+
+	if !MALDORA_DEAD
+
+	local NEXT_TRY FREQ_SPECIAL
+
+	if ( SUSPEND_AI )
+	{
+		//I'm busy doing something else
+		//come back to this later
+		local NEXT_TRY 5.0
+		local ABORT_SPECIAL 1
+	}
+	
+	callevent NEXT_TRY do_special
+	if !ABORT_SPECIAL
+
+	callevent do_throw
+}
+
+{ sword_return
+	setmodelbody 2 8
+	setvard AM_UNARMED 0
+}
+
+{ do_nadda
+	//debuggary
+}
+
+{ game_death
+	usetrigger sorc_defeat
+	if ( ON_LODAGOND ) callexternal GAME_MASTER gm_lodagond_ver 2
+}
+
+{ check_for_lminion
+	local CUR_NME $get_token(T_BOX,game.script.iteration)
+	local CUR_NAME $get(CUR_NME,name)
+	if CUR_NAME contains 'Lightning'
+	setvard MINION_TO_ZAP CUR_NME
+}
+
+{ zap_minion //PARAM1 = minion
+	saytext Maldora! Your minions are pathetic!
+	playsound 0 10 weather/lightning.wav
+	effect beam ents lgtning.spr 100 ent_me 1 PARAM1 0 (255,255,0) 255 30 3.0
+	callexternal PARAM1 npc_suicide
+}
+
+{ game_dynamically_created
+	setvard MALDORA_ID PARAM1
+	setmovedest MALDORA_ID 9999
+	callevent 0.1 cycle_up
+}
+
+//========= REWARD SEQUENCE
+
+{ maldora_final_died
+	callevent npcatk_suspend_ai
+	setvard MALDORA_DEAD 1
+	menu.autoopen 1
+	if ( $get(BD_ID,isalive) ) deleteent BD_ID
+	callevent sword_return
+	catchspeech say_hi hail hi hello wassup j0 yo
+}
+
+{ game_menu_getoptions
+	if MALDORA_DEAD
+	if !GAVE_SWORD
+	local reg.mitem.title 	"Demand Reward"
+	local reg.mitem.type 	callback
+	local reg.mitem.callback say_sword
+	menuitem.register
+}
+
+{ say_hi
+	setmovedest $get(ent_lastspoke,id) 128
+	saytext I got something you want, human?
+	menu.open $get(ent_lastspoke,id)
+}
+
+{ say_sword
+	if !GAVE_SWORD
+	setvard TALK_TARGET PARAM1
+	setmovedest TALK_TARGET 128
+	roam 0
+	if MALDORA_DEAD
+	saytext Since you were the first to have the guts to ask, here you are, as promised.
+	setmodelbody 2 0
+	callevent 4.0 say_sword2
+	setvard GAVE_SWORD 1
+	offer PARAM1 swords_blood_drinker
+}
+
+{ say_sword2
+	setmovedest TALK_TARGET 128
+	saytext Worry not, I have a spare back at the palace... A couple spares, actually.
+	callevent 4.0 say_sword3
+}
+
+{ say_sword3
+	setmovedest TALK_TARGET 128
+	saytext If you ever dare to step foot within the walls of the palace, be sure to find me.
+	callevent 4.0 say_sword4
+}
+
+{ say_sword4
+	setmovedest TALK_TARGET 128
+	saytext You maybe lowly human's, but you've proven yourself true warriors all. Our doors are always open to true warriors.
+	callevent 4.0 say_sword4b
+}
+
+{ say_sword4b
+	setmovedest TALK_TARGET 128
+	saytext ...but when you do visit us, be sure to show me that sword. All you human's look alike to me.
+	callevent 4.0 say_sword5
+}
+
+{ say_sword5
+	setmovedest TALK_TARGET 128
+	saytext That having been said, I must leave before this citidel comes crashing down - I suggest you do the same.
+	playanim critical warcry
+	callevent 3.0 final_tele_out
+}
+
+{ final_tele_out
+	setmovedest TALK_TARGET 128
+	saytext Sorry I can't take you with me...
+	playsound 0 10 SOUND_TELE
+	createnpc monsters/summon/ibarrier $relpos(0,0,0) $get(ent_me,id) 64 2 0 0 0 1 //<owner> <rad> <duration> [invisible:0|1] [silent:0|1] [dmg] [push_allys:0|1]
+	callevent 0.1 fade_away
+}
+
+{ fade_away
+	deleteent ent_me fade
+}

@@ -1,0 +1,318 @@
+{
+	const GALA_CHEST_POS $relpos(0,64,64)
+
+	const ANIM_CHAT pondering3
+	const ANIM_NO no
+	const ANIM_STORE return_needle
+	setvar ANIM_IDLE idle1
+	setvar ANIM_RUN run
+	setvar ANIM_WALK walk_scared
+	const SAYTEXT_REFUND "Ummm Okay... Here's yer fee back. Come back anytime."
+	const SAYTEXT_SELECT_ITEM "What would you like to store?"
+	const SAYTEXT_NOITEM "Er, sorry, I didn't get the the thing you were going to store."
+	const SAYTEXT_NOTICKET "Sorry, I didn't get your ticket."
+	const SAYTEXT_NOSTORABLES "Sorry, I'm afraid you have nothing I can store for you."
+	const SAYTEXT_GIVETICKET "Here's your ticket! Remember, ya can redeem that at any Galat outlet."
+	const SAYTEXT_SELECT_TICKET "Which ticket would do you like to redeem?"
+	const SAYTEXT_HAND_WARN "Please place your tickets in your hands so I can redeem them for you."
+	const SAYTEXT_REDEEMTICKET "Th.. th... Thank you for using Galat Storage... Please come again! ...SOON!"
+	const SAYTEXT_ITEMS_HANDS "Please hold forth any items you wish to store in your hands."
+	const SAYTEXT_wondrous_NOFUNDS "Eh, look, I can't take less than that for it. Sorry, but I need this job."
+	const SAYTEXT_wondrous_PURCHASED "Here you go. Careful not to summon it into any walls. Remember: no refunds!"
+
+	const NO_HAIL 1
+	const NO_JOB 1
+}
+
+#include NPCs/base_storage
+#include monsters/base_npc
+#include monsters/base_chat
+#include monsters/base_civilian
+#include helena/helena_npc
+
+{ npc_spawn
+
+	name Smivel of Galat's Storage
+	hp 30
+	invincible 0
+	gold 0
+	race human
+	width 28
+	height 96
+	setmodel	npc/human1.mdl
+	setidleanim ANIM_IDLE
+	setmoveanim ANIM_RUN
+	roam 0
+	playanim once idle1
+	setmodelbody 0 3 
+	setmodelbody 1 4
+
+	//dbg temp Gatecity Teller Spawned
+
+	saytextrange 1024
+
+	catchspeech heard_hi hail hello hi greets gweets j0 waddup
+	catchspeech say_rumor job rumor rumour quest
+	catchspeech heard_store shop store bank
+}
+
+{ heard_hi
+
+	if !CHATTING
+	setvard CHATTING 1
+
+	setvard DID_HELLO 1
+	playanim critical checktie
+	saytext Eh? Oh, hello good sir... Um... Welcome to Galat's Weapon and Armor Storage.
+	playsound 0 10 voices/helena/smivel/welcome_to_galats.wav
+	callevent 5.8 heard_hi2
+}
+
+{ heard_hi2
+	saytext For a nominal fee, we can store weapons and armor.
+	playsound 0 10 voices/helena/smivel/for_a_nominal_fee.wav
+	callevent 4.2 heard_hi3
+}
+
+{ heard_hi3
+	saytext We'll give you a ticket for any item that we can store.
+	playsound 0 10 voices/helena/smivel/well_give_you_a_ticket.wav
+	callevent 3.1 heard_hi4
+}
+
+{ heard_hi4
+	saytext Thanks to our contacts with the Felewyn wizards, you may redeem this ticket at any Galat outlet!
+	playsound 0 10 voices/helena/smivel/thanks_to_our_contacts.wav
+	callevent 5.9 heard_hi5
+}
+
+{ heard_hi5
+
+	setvard CHATTING 0
+	playanim critical lean
+	saytext There are many other Galat outlets... All of which are in safer places than mine!
+	playsound 0 10 voices/helena/smivel/there_are_many_other_outlets.wav
+}
+
+{ say_rumor
+
+	playanim critical panic
+	callevent bchat_auto_mouth_move 3.0
+	saytext I'm hoping to get promoted to the Deralia branch - IT ISN'T SAFE HERE!
+	playsound 0 10 voices/helena/smivel/im_hoping_to_get_promoted.wav
+}
+
+{ heard_store
+
+	menu.open $get(ent_lastheard,id)
+}
+
+{ game_menu_getoptions
+
+	if ( !DID_HELLO )
+	{
+		setvard DID_HELLO 1
+		playanim critical eye_wipe
+		saytext Umm... Oh yeah... Welcome to Galat's Weapon and Armor Storage!
+		playsound 0 10 voices/helena/smivel/startled_hello.wav
+	}
+
+	local reg.mitem.title 	"Hail"
+	local reg.mitem.type 	callback
+	local reg.mitem.callback heard_hi
+	menuitem.register
+}
+
+{ game_struck
+	roam 1
+	setmoveanim ANIM_RUN
+	setmovedest ent_laststruck 9999 flee
+	menu.autoopen 0
+	if !IS_FLEEING
+	setvard IS_FLEEING 1
+	callevent 20.0 stop_fleeing
+}
+
+{ stop_fleeing
+	setmovedest MY_HOME 10
+	setmoveanim ANIM_WALK
+	
+	menu.autoopen 1
+	roam 0
+	setvard IS_FLEEING 0
+}
+
+{ orc_raid
+	setvard IS_FLEEING 1
+	callevent game_struck
+}
+
+{ tele_home
+	setvard FEE_HP_RATIO 0.01
+}
+
+{ [override] helena_made_it_home
+
+	//special case, vendor without store
+
+	//vendors snap to
+	setorigin ent_me NPC_HOME_LOC
+	local OLD_YAW $vec.yaw(NPC_HOME_ANG)
+	setangle face $vec(0,OLD_YAW,0)
+	setidleanim idle1
+	setmoveanim idle1
+	roam 0
+	menu.autoopen 1
+	setvard STORE_CLOSED 0
+	setvard RAID_ON 0
+}
+
+{ say_storage_chest
+	if ( BUSY_CHATTING ) callevent 1.0 say_storage_chest
+	if !BUSY_CHATTING
+	callevent convo_anim
+	setvard CHAT_STEPS 5
+
+	setvard CHAT_STEP1 "Oh yeah, that thing. Umm.. That's the new magical storage chest Galat put out recently."
+	setvard CHAT_SOUND1 voices/helena/smivel/oh_yeah_that_thing.wav
+	setvard CHAT_DELAY_STEP1 6.5
+
+	setvard CHAT_STEP2 "Eh, well.. You can put things in it, and it will store them for you."
+	setvard CHAT_SOUND2 voices/helena/smivel/well_you_can_put_things_in_it.wav
+	setvard CHAT_DELAY_STEP2 3.9
+
+	//setvard CHAT_STEP3 "Just place the items you want to store in your hands, and use the chest."
+	//canna find sound file
+
+	setvard CHAT_STEP3 "You can take things out too, of course. Just treat it like any other chest for that."
+	setvard CHAT_SOUND3 voices/helena/smivel/you_can_take_things_out_too.wav
+	setvard CHAT_DELAY_STEP3 4.7
+
+	setvard CHAT_STEP4 "Each customer's items are kept in a Dim... Dim-en-sion-al pocket. So they, eh, don't get mixed up."
+	setvard CHAT_SOUND4 voices/helena/smivel/each_customers_items_are_stored.wav
+	setvard CHAT_DELAY_STEP4 9.0
+
+	setvard CHAT_STEP5 "It holds maybe a few dozen items or so. Feel free to use it. Damn thing gives me the creeps."
+	setvard CHAT_SOUND5 voices/helena/smivel/holds_a_dozen_items.wav
+	setvard CHAT_DELAY_STEP5 6.3
+
+	callevent chat_loop 
+}
+
+{ say_wondrous
+	if ( BUSY_CHATTING ) callevent 1.0 say_wondrous
+	if !BUSY_CHATTING
+	setvard CHAT_STEPS 4
+	setvard ANIM_STEP1 checktie
+	setvard CHAT_STEP1 "Oh yes, *cough* with Galat's new Wondrous Scroll, you can summon forth a Galat's Wondrous Chest, anywhere."
+	setvard CHAT_SOUND1 voices/helena/smivel/with_galats_new_wonderous_scroll.wav
+	setvard CHAT_DELAY_STEP1 8.5
+
+	setvard ANIM_STEP2 lean
+	setvard CHAT_STEP2 "Which, I'd guess, would be very useful given the sort of places adventurer's like yourself get off to."
+	setvard CHAT_SOUND2 voices/helena/smivel/with_i_guess_would_be_very_useful.wav
+	setvard CHAT_DELAY_STEP2 6.3
+
+	setvard ANIM_STEP3 eye_wipe
+	setvard CHAT_STEP3 "We're supposed to sell these things for... Wow... That can't be right... Ummm... "
+	stradd CHAT_STEP3 GALA_SCROLL_PRICE
+	stradd CHAT_STEP3 " gold."
+	setvard CHAT_SOUND3 voices/helena/smivel/were_supposed_to_sell_these_things_for.wav
+	setvard CHAT_DELAY_STEP3 7.7
+
+	setvard ANIM_STEP4 no
+	setvard CHAT_STEP4 "I guess the higher ups at Galat figure adventurer's like yourself are just made of gold."
+	setvard CHAT_SOUND4 voices/helena/smivel/i_figure_the_higher_ups_at_galats.wav
+	setvard CHAT_DELAY_STEP4 5.2
+
+	dbg say_wondrous ANIM_STEP1
+	callevent chat_loop 
+}
+
+
+{ say_wondrous_cant_afford
+	callevent chat_move_mouth 3.0
+	//playsound 0 10 "voices/sorc_villa/varondo/failure_no_money.wav"
+	playsound 0 10 voices/helena/smivel/player_lacks_funds.wav
+}
+
+{ buy_scroll
+	callevent chat_move_mouth 4.0
+	//playsound 0 10 "voices/sorc_villa/varondo/scroll_bought.wav"
+	playsound 0 10 voices/helena/smivel/player_buys_scroll.wav
+}
+
+{ open_betabank
+	callevent chat_move_mouth 3.0
+	//playsound 0 10 "voices/sorc_villa/varondo/cancelled_transaction.wav"
+	playsound 0 10 voices/helena/smivel/player_declines_to_store.wav
+}
+
+{ cancel_trade
+	callevent chat_move_mouth 3.0
+	//playsound 0 10 "voices/sorc_villa/varondo/cancelled_transaction.wav"
+	playsound 0 10 voices/helena/smivel/player_declines_to_store.wav
+}
+
+{ say_select_item
+	callevent chat_move_mouth 3.0
+	//playsound 0 10 "voices/sorc_villa/varondo/store_item.wav"
+	playsound 0 10 voices/helena/smivel/player_wants_to_store.wav
+}
+
+{ activate_storage
+	callevent chat_move_mouth 3.0
+	//playsound 0 10 "voices/sorc_villa/varondo/store_item.wav"
+	playsound 0 10 voices/helena/smivel/player_wants_to_store.wav
+}
+
+{ bteller_error_no_item
+	callevent chat_move_mouth 3.0
+	//playsound 0 10 "voices/sorc_villa/varondo/failed_itemget.wav"
+	playsound 0 10 voices/helena/smivel/bank_didnt_get_the_item.wav
+}
+
+{ bteller_error_no_ticket
+	callevent chat_move_mouth 3.0
+	//playsound 0 10 "voices/sorc_villa/varondo/failed_ticketget.wav"
+	playsound 0 10 voices/helena/smivel/bank_failed_to_find_ticket.wav
+}
+
+{ bteller_store_error
+	callevent chat_move_mouth 3.0
+	//playsound 0 10 "voices/sorc_villa/varondo/no_storables.wav"
+	playsound 0 10 voices/helena/smivel/no_items_to_store.wav
+}
+
+{ bteller_give_ticket
+	callevent chat_move_mouth 3.0
+	//playsound 0 10 "voices/sorc_villa/varondo/storage_success.wav"
+	playsound 0 10 voices/helena/smivel/heres_your_ticket.wav
+}
+
+{ bteller_select_ticket
+	callevent chat_move_mouth 3.0
+	//playsound 0 10 "voices/sorc_villa/varondo/request_redeem_ticket.wav"
+	playsound 0 10 voices/helena/smivel/player_asks_to_redeem.wav
+}
+
+{ bteller_ticket_warn
+	callevent chat_move_mouth 3.0
+	//playsound 0 10 "voices/sorc_villa/varondo/no_ticket_in_hands.wav"
+	playsound 0 10 voices/helena/smivel/please_place_ticket_in_hands.wav
+}
+
+{ bteller_ticket_redeemed
+	callevent chat_move_mouth 3.0
+	//playsound 0 10 "voices/sorc_villa/varondo/success_other.wav"
+	playsound 0 10 voices/helena/smivel/thank_you_for_using_galat_storage.wav
+}
+
+{ bteller_hand_warn
+	if DID_HELLO
+	if game.time > NEXT_TALK
+
+	callevent chat_move_mouth 3.0
+	//playsound 0 10 "voices/sorc_villa/varondo/please_hold_forth_items.wav"
+	playsound 0 10 voices/helena/smivel/please_hold_forth_items.wav
+}

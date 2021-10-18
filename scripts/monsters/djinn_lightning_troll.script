@@ -1,0 +1,482 @@
+//This is based on an older script and may have some bad conventions as a result.
+
+
+//Yet another lightning Djinn by Thothie from monsters/troll_lobber
+//- Tosses lightning balls with AOE, and guided lightning spheres
+//- Chance of lightning DOT on strike
+//- (Needs new skin and submodel)
+//- (Needs proj_troll_lightning)
+
+#scope server
+
+{
+	const FREQ_GUIDED $randf(15.0,30.0)
+	const DMG_GUIDED 300
+	const DOT_PUNCH 100
+	const DMG_PUNCH 200
+	const DMG_DBL_PUNCH 100
+
+	setvard NPC_GIVE_EXP 3000
+
+	const LEFT_FIST_INDEX 0
+	const RIGHT_FIST_INDEX 1
+
+	const SOUND_STRUCK1	weapons/cbar_hitbod1.wav
+	const SOUND_STRUCK2	weapons/cbar_hitbod1.wav
+	const SOUND_STRUCK3	weapons/cbar_hitbod1.wav
+	const SOUND_PAIN	monsters/troll/trollpain.wav
+	const SOUND_ATTACK	monsters/troll/trollattack.wav
+	const SOUND_DEATH	monsters/troll/trolldeath.wav
+	const SOUND_WALK1	monsters/troll/step1.wav
+	const SOUND_WALK2	monsters/troll/step2.wav
+	const SOUND_IDLE	monsters/troll/trollidle2.wav
+	setvard DROP_GOLD 		1
+	setvard DROP_GOLD_MIN		500
+	setvard DROP_GOLD_MAX		600
+	setvar ANIM_IDLE idle0
+	setvar ANIM_RUN	run
+	setvar ANIM_WALK	walk
+	setvard ANIM_DEATH	die_fall
+	setvard ANIM_ATTACK	throw_rock	//this varies, needs to be a var
+	const ANIM_PUNCH hit_down
+	const ANIM_DBLPUNCH double_punch
+	const ANIM_THROW throw_rock
+	const ROCK_RANGE 800
+	const SWING_RANGE 130
+	setvard ATTACK_RANGE 800
+	setvard ATTACK_HITRANGE	200
+	setvard MOVE_RANGE	400
+	const MELE_RANGE 128
+	const MELE_HITRANGE 164
+	setvard CAN_FLINCH	1
+	setvar FLINCH_CHANCE 33
+	setvard FLINCH_ANIM flinch2
+	setvard FLINCH_DELAY 2.0
+	setvard CAN_HUNT	1
+	setvard HUNT_AGRO	1
+    const AIM_RATIO 25
+    const ATTACK_SPEED 500
+	const ROCK_DAMAGE '$rand(400,600)'
+	setvard PROJ_SHOCK_DOT 100
+	setvard PROJ_SHOCK_DMG 400
+
+	const BALL_SCRIPT monsters/summon/guided_lball_alt
+	const BALL_DURATION 10.0
+	const ANIM_WARCRY idle2
+	const MELEE_RANGE 200
+	const DMG_BALL 400
+
+	precache SOUND_DEATH
+}
+
+{ game_precache
+	precachefile BALL_SCRIPT
+}
+
+#include monsters/base_monster_new
+
+{ [shared] npc_spawn
+
+	hp 6000
+	width 100
+	height 125
+	race orc
+	name a|Shadahar Lightning Djinn
+	roam 1
+	takedmg all .7
+	takedmg poison 1.2
+	takedmg acid 2.0
+	takedmg lightning 0
+	setmodel monsters/troll_shad.mdl
+	setidleanim idle1
+	setmoveanim ANIM_WALK
+	hearingsensitivity 10
+
+	setvard COMBAT_REPOS 0
+
+	callevent 10.0 random_idle
+
+	clientevent new all effects/sfx_follow_glow_cl $get(ent_me,index) (255,255,0) 128 15.0
+}
+
+{ npc_selectattack
+	if ( $get(NPCATK_TARGET,range) > MELEE_RANGE )
+	{
+		setvard ANIM_ATTACK rock_throw
+	}
+	else
+	{
+		local RND_MELEE $rand(1,2)
+		if ( RND_MELEE == 1 ) setvard ANIM_ATTACK hit_down
+		if ( RND_MELEE == 2 ) setvard ANIM_ATTACK double_punch
+	}
+}
+
+{ rock_pickup
+
+	setmodelbody 1 1	//show rock
+}
+
+{ rock_throw
+
+	local ME_POS $get(ent_me,origin)
+	local MY_Z $vec.z(ME_POS)
+	local TARGET_POS $get(HUNT_LASTTARGET,origin)
+	local TARGET_Z $vec.z(TARGET_POS)
+	local TARGET_Z_DIFFERENCE TARGET_Z
+	subtract TARGET_Z_DIFFERENCE MY_Z
+
+	local FIN_ATTACK_SPEED ATTACK_SPEED
+	local AIM_ANGLE $get(HUNT_LASTTARGET,range)		//Aim up a bit
+	divide AIM_ANGLE AIM_RATIO				//
+	if ( TARGET_Z_DIFFERENCE > 200 )
+	{
+		//target higher, increase speed based on how much and reduce angle adj
+		divide TARGET_Z_DIFFERENCE 2
+		divide AIM_ANGLE 2
+		add FIN_ATTACK_SPEED TARGET_Z_DIFFERENCE
+	}
+	setangle add_view.x AIM_ANGLE			//
+	//this hits if you use HUNT_LASTTARGET instead of <view>, but its a straight throw, doesn't look kewl
+	//local SPEED_ADJ $get(HUNT_LASTTARGET,range)
+	//multiply SPEED_ADJ 4
+	//add FIN_ATTACK_SPEED SPEED_ADJ
+
+	tossprojectile view FIN_ATTACK_SPEED ROCK_DAMAGE 0.75 proj_troll_lightning (0,0,96)
+	add COMBAT_REPOS 1
+	//dbg temp  @ $get(HUNT_LASTTARGET,name) ( repos COMBAT_REPOS angle AIM_ANGLE speed FIN_ATTACK_SPEED zdiff TARGET_Z_DIFFERENCE )
+
+	setmodelbody 1 0		//Hide Rock
+
+	//missing a lot, reposition
+	if COMBAT_REPOS > 4
+	setvard COMBAT_REPOS 0
+	callevent chicken_run 5.0 "combat_repos"
+}
+
+{ cycle_up
+
+	setvard NEXT_GUIDED game.time
+	add NEXT_GUIDED FREQ_GUIDED
+
+	if !DID_WARCRY
+	playanim critical ANIM_WARCRY
+	setvard DID_WARCRY 1
+}
+
+{ npcatk_hunt
+
+	if NPCATK_TARGET isnot none
+	if $cansee(NPCATK_TARGET)
+
+	if game.time > NEXT_GUIDED
+	if $cansee(NPCATK_TARGET)
+	setvard LAUNCH_GUIDED_COUNT 2
+	setvard NEXT_GUIDED game.time
+	add NEXT_GUIDED FREQ_GUIDED	
+	playanim critical double_punch_slow
+}
+
+{ game_dodamage
+
+	if ( MELEE_STRIKE )
+	{
+		if $get(PARAM2,exists)
+		if $get(PARAM2,relationship,ent_me) equals enemy
+		if $get(PARAM2,range) < ATTACK_HITRANGE
+		addvelocity PARAM2 PUSH_VEL
+		if $rand(1,4) == 1
+		applyeffect PARAM2 effects/effect_shock_dmg 5.0 $get(ent_me,id) DOT_PUNCH
+		effect glow ent_me (255,255,0) 64 1 1
+	}
+	setvard MELEE_STRIKE 0
+}
+
+{ npcatk_targetvalidate
+
+	////dbg temp validating $get(PARAM1,name)
+	if $cansee(PARAM1)
+	setvard ANIM_ATTACK ANIM_DBLPUNCH
+	setvard ATTACK_RANGE SWING_RANGE
+	if ( $get(PARAM1,range) <= ROCK_RANGE )
+	{
+		if $get(PARAM1,range) > ATTACK_RANGE
+		setvard AS_ATTACKING game.time
+		add AS_ATTACKING 10
+		playanim once ANIM_THROW
+	}
+	if ( $get(PARAM1,range) < ATTACK_RANGE ) setvard ANIM_ATTACK ANIM_DBLPUNCH
+}
+
+{ npc_struck
+   
+	volume 5
+	playsound 2 5 SOUND_PAIN
+	if ( $get(ent_laststruck,range) < MELE_RANGE ) setvard ANIM_ATTACK ANIM_DBLPUNCH
+}
+
+{ stomp_1	//called by model run @ frame 10 (newer June 27,2006+ model only)
+
+   playsound 2 8 SOUND_WALK1
+}
+
+{ stomp_2	//called by model run @ frame 30 (newer June 27,2006+ model only)
+
+   playsound 2 8 SOUND_WALK2
+}
+
+{ random_idle
+	callevent 10.0 random_idle
+	if !IS_HUNTING
+	if !$cansee(enemy)
+	if !IS_FLEEING
+	local ANIM_SELECT $rand(0,3)
+	if ( ANIM_SELECT == 0 ) setvar ANIM_IDLE idle0
+	if ( ANIM_SELECT == 1 ) setvar ANIM_IDLE idle1
+	if ( ANIM_SELECT == 2 ) setvar ANIM_IDLE idle2
+	if ( ANIM_SELECT == 3 ) setvar ANIM_IDLE idle3
+	if ( ADVANCED_SEARCHING ) setvar ANIM_IDLE idle0
+	playanim once ANIM_IDLE
+}
+
+{ warcry	//called by model idle2 @ frame 28
+
+	playsound 2 10 SOUND_IDLE
+}
+
+{ my_target_died
+	setvard DID_WARCRY 0
+	if !$cansee(player)
+	playanim critical idle2
+}
+
+{ game_damaged_other
+
+	if PARAM1 equals HUNT_LASTTARGET
+	if PARAM2 > 1
+
+	setvard COMBAT_REPOS 0
+}
+
+{ attack_1 //called by model double_punch @ frame 13 and 26
+
+	setvard MELEE_STRIKE 1
+
+	setmodelbody 1 0	//hide rock
+
+	setvar PUSH_VEL $relvel(10,300,110)
+	dodamage NPCATK_TARGET ATTACK_HITRANGE DMG_DBL_PUNCH 75% blunt
+	
+	playsound 2 10 SOUND_ATTACK
+
+	if LAUNCH_GUIDED_COUNT >= 1
+	if ( LAUNCH_GUIDED_COUNT == 1 ) callevent spawn_guided_ball1
+	if ( LAUNCH_GUIDED_COUNT == 2 ) callevent spawn_guided_ball2
+	subtract LAUNCH_GUIDED_COUNT 1
+		
+}
+
+{ attack_2 //called by model hit_down @ frame 20
+
+	setvard MELEE_STIKE 1
+
+	setmodelbody 1 0	//hide rock
+	setvar PUSH_VEL $relvel(10,600,110)
+
+	dodamage NPCATK_TARGET ATTACK_HITRANGE DMG_PUNCH 75% blunt
+	playsound 2 10 SOUND_ATTACK
+}
+
+{ spawn_guided_ball1
+	createnpc BALL_SCRIPT $get(ent_me,attachpos,LEFT_FIST_INDEX) $get(ent_me,id) DMG_BALL 256 20.0
+}
+
+{ spawn_guided_ball2
+	createnpc BALL_SCRIPT $get(ent_me,attachpos,RIGHT_FIST_INDEX) $get(ent_me,id) DMG_BALL 256 20.0
+}
+
+//This didn't work out due to client side model vanishing too easily
+//{ spawn_guided_ball1
+//	setvard BALL1_ORG $get(ent_me,svbonepos,LEFT_FIST_INDEX)
+//	setvard BALL1_ACTIVE 1
+//	setvard BALL1_EXPIRE game.time
+//	add BALL1_EXPIRE BALL_DURATION
+//
+//	//pick a target
+//	local NEARBY_TARGETS $get_tsphere(enemy,2048)
+//	if ( NEARBY_TARGETS isnot none )
+//	{
+//		token.scramble NEARBY_TARGETS
+//		setvard BALL1_TARGET $get_token(NEARBY_TARGETS,0)
+//		if !$get(BALL1_TARGET,isalive)
+//		setvard BALL1_TARGET NPCATK_TARGET
+//	}
+//
+//	local TARG_ORG $get(BALL1_TARGET,origin)
+//	local ANG_TO_TARG $angles3d(BALL1_ORG,TARG_ORG)
+//	vectorset ANG_TO_TARG x $neg($vec.x(ANG_TO_TARG))
+//
+//	clientevent new all BALL_CL_SCRIPT BALL1_ORG ANG_TO_TARG BALL_DURATION
+//	setvard BALL1_CL_IDX game.script.last_sent_id
+//
+//	callevent ball1_guided_loop
+//}
+//
+//{ ball1_guided_loop
+//
+//	if BALL1_ACTIVE
+//	callevent 0.25 ball1_guided_loop
+//
+//	local TARG_ORG $get(BALL1_TARGET,origin)
+//	vectoradd TARG_ORG $relpos($vec(0,90,0),$vec(0,48,0)) //little to the left/right so balls don't merge
+//
+//	if ( !$get(BALL1_TARGET,isplayer) ) vectoradd TARG_ORG z $get(BALL1_TARGET,height) //aim for the heads of monsters
+//
+//	local OLD_ORG BALL1_ORG //developer
+//
+//	//calculate angles, update, and estimate next position	
+//	local ANG_TO_TARG $angles3d(BALL1_ORG,TARG_ORG)
+//	vectorset ANG_TO_TARG x $neg($vec.x(ANG_TO_TARG))
+//	clientevent update all BALL1_CL_IDX svr_update_vec ANG_TO_TARG
+//	vectoradd BALL1_ORG $relvel(ANG_TO_TARG,$vec(0,30,0))
+//
+//	//check for wall
+//	local TRACE_START OLD_ORG
+//	local TRACE_END BALL1_ORG
+//	local TRACE_LINE $get_traceline(TRACE_START,TRACE_END,worldonly)
+//	if ( TRACE_LINE isnot TRACE_END ) setvard BALL1_EXPIRE game.time
+//
+//	//visible debug trace
+//	if ( G_DEVELOPER_MODE )
+//	{
+//		local BEAM_START OLD_ORG
+//		local BEAM_END BALL1_ORG
+//		effect beam point lgtning.spr 30 BEAM_START BEAM_END (255,0,255) 255 0 1.0
+//	}
+//
+//	if ( game.time >= BALL1_EXPIRE )
+//	{
+//		local EXIT_SUB 1
+//		setvard BALL1_ACTIVE 0
+//		clientevent update all BALL1_CL_IDX ball_explode
+//		setvard BALL1_TOKENS $get_tsphere(enemy,64,BALL1_ORG)
+//		xdodamage BALL1_ORG 128 DMG_BALL 0 ent_me ent_me none lightning_effect
+//		if BALL1_TOKENS isnot none
+//		calleventloop $get_token_amt(BALL1_TOKENS) ball_affect_targets
+//	}
+//	if !EXIT_SUB
+//
+//	//scan
+//	setvard BALL1_TOKENS $get_tsphere(enemy,64,BALL1_ORG)
+//	if BALL1_TOKENS isnot none
+//
+//	//hit nme
+//	setvard BALL1_ACTIVE 0
+//	clientevent update all BALL1_CL_IDX ball_explode
+//	calleventloop $get_token_amt(BALL1_TOKENS) ball_affect_targets
+//	xdodamage BALL1_ORG 128 DMG_BALL 0 ent_me ent_me none lightning_effect
+//}
+//
+//{ spawn_guided_ball2
+//	setvard BALL2_ORG $get(ent_me,svbonepos,LEFT_FIST_INDEX)
+//	setvard BALL2_ACTIVE 1
+//	setvard BALL2_EXPIRE game.time
+//	add BALL2_EXPIRE BALL_DURATION
+//
+//	//pick a target
+//	local NEARBY_TARGETS $get_tsphere(enemy,2048)
+//	if ( NEARBY_TARGETS isnot none )
+//	{
+//		token.scramble NEARBY_TARGETS
+//		setvard BALL2_TARGET $get_token(NEARBY_TARGETS,0)
+//		if !$get(BALL2_TARGET,isalive)
+//		setvard BALL2_TARGET NPCATK_TARGET
+//	}
+//
+//	local TARG_ORG $get(BALL2_TARGET,origin)
+//	local ANG_TO_TARG $angles3d(BALL2_ORG,TARG_ORG)
+//	vectorset ANG_TO_TARG x $neg($vec.x(ANG_TO_TARG))
+//
+//	clientevent new all BALL_CL_SCRIPT BALL2_ORG ANG_TO_TARG BALL_DURATION
+//	setvard BALL2_CL_IDX game.script.last_sent_id
+//
+//	callevent ball2_guided_loop
+//}
+//
+//{ ball2_guided_loop
+//
+//	if BALL2_ACTIVE
+//	callevent 0.25 ball2_guided_loop
+//
+//	local TARG_ORG $get(BALL2_TARGET,origin)
+//	vectoradd TARG_ORG $relpos($vec(0,270,0),$vec(0,48,0)) //little to the left/right so balls don't merge
+//
+//	if ( !$get(BALL2_TARGET,isplayer) ) vectoradd TARG_ORG z $get(BALL2_TARGET,height) //aim for the heads of monsters
+//
+//	local OLD_ORG BALL2_ORG //developer
+//
+//	//calculate angles, update, and estimate next position	
+//	local ANG_TO_TARG $angles3d(BALL2_ORG,TARG_ORG)
+//	vectorset ANG_TO_TARG x $neg($vec.x(ANG_TO_TARG))
+//	clientevent update all BALL2_CL_IDX svr_update_vec ANG_TO_TARG
+//	vectoradd BALL2_ORG $relvel(ANG_TO_TARG,$vec(0,30,0))
+//
+//	//visible debug trace
+//	if ( G_DEVELOPER_MODE )
+//	{
+//		local BEAM_START OLD_ORG
+//		local BEAM_END BALL2_ORG
+//		effect beam point lgtning.spr 30 BEAM_START BEAM_END (255,0,0) 255 0 1.0
+//	}
+//
+//	//check for wall
+//	local TRACE_START OLD_ORG
+//	local TRACE_END BALL2_ORG
+//	local TRACE_LINE $get_traceline(TRACE_START,TRACE_END,worldonly)
+//	if ( TRACE_LINE isnot TRACE_END ) setvard BALL2_EXPIRE game.time
+//
+//	if ( game.time > BALL2_EXPIRE )
+//	{
+//		local EXIT_SUB 1
+//		setvard BALL2_ACTIVE 0
+//		clientevent update all BALL2_CL_IDX ball_explode
+//		setvard BALL2_TOKENS $get_tsphere(enemy,64,BALL2_ORG)
+//		xdodamage BALL2_ORG 128 DMG_BALL 0 ent_me ent_me none lightning_effect
+//		if BALL2_TOKENS isnot none
+//		calleventloop $get_token_amt(BALL2_TOKENS) ball_affect_targets
+//	}
+//	if !EXIT_SUB
+//
+//	//scan
+//	setvard BALL2_TOKENS $get_tsphere(enemy,64,BALL2_ORG)
+//	if BALL2_TOKENS isnot none
+//
+//	//hit nme
+//	setvard BALL2_ACTIVE 0
+//	clientevent update all BALL2_CL_IDX ball_explode
+//	calleventloop $get_token_amt(BALL2_TOKENS) ball_affect_targets
+//	xdodamage BALL2_ORG 128 DMG_BALL 0 ent_me ent_me none lightning_effect
+//}
+
+{ warcry	//called by model idle2 @ frame 28
+
+	playsound 2 10 SOUND_IDLE
+}
+
+{
+repeatdelay 15.0
+	//freshen glow
+	if $get(ent_me,isalive)
+	clientevent new all effects/sfx_follow_glow_cl $get(ent_me,index) (255,255,0) 128 14.9
+}
+
+{ set_sorcpal_djinn1
+	saytextrange 2048
+	setvard SPOT_SPEECH "You say smash? ME SMASH!!"
+}
+
+{ cycle_up
+	if SPOT_SPEECH isnot 'SPOT_SPEECH'
+	saytext SPOT_SPEECH
+	setvard SPOT_SPEECH 'SPOT_SPEECH'
+}

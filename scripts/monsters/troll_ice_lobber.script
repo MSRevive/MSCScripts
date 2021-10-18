@@ -1,0 +1,259 @@
+//This is an older script and may have some bad conventions as a result.
+
+//Troll Lobber by Thothie - as standard troll, but primary attack is rock throw
+
+{
+	const SOUND_STRUCK1	weapons/cbar_hitbod1.wav
+	const SOUND_STRUCK2	weapons/cbar_hitbod1.wav
+	const SOUND_STRUCK3	weapons/cbar_hitbod1.wav
+	const SOUND_PAIN	monsters/troll/trollpain.wav
+	const SOUND_ATTACK	monsters/troll/trollattack.wav
+	const SOUND_DEATH	monsters/troll/trolldeath.wav
+	const SOUND_WALK1	monsters/troll/step1.wav
+	const SOUND_WALK2	monsters/troll/step2.wav
+	const SOUND_IDLE	monsters/troll/trollidle2.wav
+	setvard DROP_GOLD 		1
+	setvard DROP_GOLD_MIN		20
+	setvard DROP_GOLD_MAX		40
+	setvar ANIM_IDLE idle0
+	setvar ANIM_RUN	run
+	setvar ANIM_WALK	walk
+	setvard ANIM_DEATH	die_fall
+	setvard ANIM_ATTACK	double_punch	//this varies, needs to be a var
+	const ANIM_PUNCH hit_down
+	const ANIM_DBLPUNCH double_punch
+	const ANIM_THROW throw_rock
+	const ROCK_RANGE 9999
+	const SWING_RANGE 130
+	setvard ATTACK_RANGE 100
+	setvard ATTACK_HITRANGE	300
+	setvard MOVE_RANGE	400
+	const MELE_RANGE 128
+	const MELE_HITRANGE 164
+	setvard CAN_FLINCH	1
+	setvar FLINCH_CHANCE 33
+	setvard FLINCH_ANIM flinch2
+	setvard FLINCH_DELAY 2.0
+	setvard CAN_HUNT	1
+	setvard HUNT_AGRO	1
+    const AIM_RATIO 25
+    const ATTACK_SPEED 500
+	const ROCK_DAMAGE '$rand(400,800)'
+    //setvard STUCK_CHECK_FREQUENCY 1.2 //I move pretty damn fast, so stuck check more often
+	
+	precache SOUND_DEATH
+
+	//ice spikes
+	precache misc/glassgibs_huge.mdl
+	precache magic/freeze.wav
+	
+}
+
+#include monsters/base_monster
+#include monsters/base_race_cold
+
+{ npc_spawn
+
+	hp 2000
+	//ov 100
+	width 100
+	height 125
+	race demon
+	name a|Ice Troll Lobber
+	roam 1
+	setvard NPC_GIVE_EXP 150
+	takedmg all .7
+	setmodel monsters/troll_ice_lobber.mdl
+	setidleanim idle1
+	setmoveanim ANIM_WALK
+	hearingsensitivity 10
+
+	setvard COMBAT_REPOS 0
+
+	callevent 10.0 random_idle
+
+	catchspeech debug_props debug
+
+	callevent troll_spawn
+}
+
+{ debug_props
+	saytextrange 1024
+	saytext I is hunting ( IS_HUNTING ) my target ( $get(HUNT_LASTTARGET,name)
+}
+
+{ npc_targetsighted
+
+	////dbg temp validating $get(PARAM1,name)
+	if $cansee(PARAM1)
+	//setvard ANIM_ATTACK ANIM_DBLPUNCH
+	setvard ATTACK_RANGE SWING_RANGE
+	if ( $get(PARAM1,range) <= ROCK_RANGE )
+	{
+		if $get(PARAM1,range) > ATTACK_RANGE
+		setvard AS_ATTACKING game.time
+		add AS_ATTACKING 20.0
+		setvard MOVE_RANGE 400
+		setvard ATTACK_MOVERANGE 400
+		playanim once ANIM_THROW
+	}
+	else
+	{
+		setvard MOVE_RANGE 100
+		setvard ATTACK_MOVERANGE 100
+	}
+	//if ( $get(PARAM1,range) < ATTACK_RANGE ) setvard ANIM_ATTACK ANIM_DBLPUNCH
+}
+
+{ rock_pickup
+	setvard AS_ATTACKING game.time
+	add AS_ATTACKING 20.0
+	setmodelbody 1 1	//show rock
+	callevent npcatk_suspend_ai 2.0
+	setmovedest HUNT_LASTTARGET 9999
+}
+
+{ rock_throw
+
+	local ME_POS $get(ent_me,origin)
+	local MY_Z $vec.z(ME_POS)
+	local TARGET_POS $get(HUNT_LASTTARGET,origin)
+	local TARGET_Z $vec.z(TARGET_POS)
+	local TARGET_Z_DIFFERENCE TARGET_Z
+	subtract TARGET_Z_DIFFERENCE MY_Z
+
+	local FIN_ATTACK_SPEED ATTACK_SPEED
+	local AIM_ANGLE $get(HUNT_LASTTARGET,range)		//Aim up a bit
+	divide AIM_ANGLE AIM_RATIO				//
+	if ( TARGET_Z_DIFFERENCE > 200 )
+	{
+		//target higher, increase speed based on how much and reduce angle adj
+		divide TARGET_Z_DIFFERENCE 2
+		divide AIM_ANGLE 2
+		add FIN_ATTACK_SPEED TARGET_Z_DIFFERENCE
+	}
+	setangle add_view.x AIM_ANGLE			//
+	//this hits if you use HUNT_LASTTARGET instead of <view>, but its a straight throw, doesn't look kewl
+	//local SPEED_ADJ $get(HUNT_LASTTARGET,range)
+	//multiply SPEED_ADJ 4
+	//add FIN_ATTACK_SPEED SPEED_ADJ
+	
+	local L_TARGET_RANGE $get(HUNT_LASTTARGET,range)
+	if ( L_TARGET_RANGE <= 1000 )
+	{
+		tossprojectile view FIN_ATTACK_SPEED ROCK_DAMAGE 0.75 proj_snow_ball2 (0,0,96)
+		callexternal $get(ent_lastprojectile,id) set_dmg 200 100 20 0.4 //<dmg> <amt> <radius> <gravity>
+	}
+	if ( L_TARGET_RANGE > 1000 )
+	{
+		tossprojectile HUNT_LASTTARGET FIN_ATTACK_SPEED ROCK_DAMAGE 0.75 proj_snow_ball2 (0,0,96)
+		callexternal $get(ent_lastprojectile,id) set_dmg 200 100 20 0.01 //<dmg> <amt> <radius> <gravity>
+	}
+	add COMBAT_REPOS 1
+	//dbg temp  @ $get(HUNT_LASTTARGET,name) ( repos COMBAT_REPOS angle AIM_ANGLE speed FIN_ATTACK_SPEED zdiff TARGET_Z_DIFFERENCE )
+
+   setmodelbody 1 0		//Hide Rock
+
+	callevent npcatk_resume_ai
+
+	if COMBAT_REPOS > 4
+	setvard COMBAT_REPOS 0
+	callevent chicken_run 5.0 "combat_repos"
+}
+
+
+{ attack_1 //called by model double_punch @ frame 13 and 26
+
+	setvard DO_THROW 0
+
+	setmodelbody 1 0	//hide rock
+
+	setvar PUSH_VEL $relvel(10,200,10)
+	dodamage ENTITY_ENEMY ATTACK_HITRANGE $randf(20,30) 75%
+	
+	if ( $rand(1,4) == 1 ) setvard ANIM_ATTACK ANIM_PUNCH
+
+	//if ( $get(ent_laststruck,range) > MELE_RANGE ) setvard ANIM_ATTACK ANIM_THROW
+
+	playsound 2 10 SOUND_ATTACK
+}
+
+{ attack_2 //called by model hit_down @ frame 20
+
+	setmodelbody 1 0	//hide rock
+
+	setvard DO_THROW 1
+
+	dodamage ENTITY_ENEMY ATTACK_HITRANGE $randf(35,45) 75%
+	setvard ANIM_ATTACK double_punch
+	playsound 2 10 SOUND_ATTACK
+	if ( $rand(1,4) == 1 ) setvard ANIM_ATTACK ANIM_DBLPUNCH
+	//if ( $get(ent_laststruck,range) > MELE_RANGE ) setvard ANIM_ATTACK ANIM_THROW
+}
+
+{ npc_struck
+   
+	volume 5
+	playsound 2 5 SOUND_PAIN
+	if ( $get(ent_laststruck,range) < MELE_RANGE ) setvard ANIM_ATTACK ANIM_DBLPUNCH
+}
+
+{ stomp_1	//called by model run @ frame 10 (newer June 27,2006+ model only)
+
+   playsound 2 8 SOUND_WALK1
+}
+
+{ stomp_2	//called by model run @ frame 30 (newer June 27,2006+ model only)
+
+   playsound 2 8 SOUND_WALK2
+}
+
+{ game_hearsound
+
+   volume 10
+   playsound 2 SOUND_IDLE
+}
+
+//idle anims
+{ random_idle
+	callevent 10.0 random_idle
+	if !IS_HUNTING
+	if !$cansee(enemy)
+	if !IS_FLEEING
+	local ANIM_SELECT $rand(0,3)
+	if ( ANIM_SELECT == 0 ) setvar ANIM_IDLE idle0
+	if ( ANIM_SELECT == 1 ) setvar ANIM_IDLE idle1
+	if ( ANIM_SELECT == 2 ) setvar ANIM_IDLE idle2
+	if ( ANIM_SELECT == 3 ) setvar ANIM_IDLE idle3
+	if ( ADVANCED_SEARCHING ) setvar ANIM_IDLE idle0
+	playanim once ANIM_IDLE
+}
+
+{ warcry	//called by model idle2 @ frame 28
+
+	playsound 2 10 SOUND_IDLE
+}
+
+{ my_target_died
+	setvard DID_WARCRY 0
+	if !$cansee(player)
+	playanim critical idle2
+}
+
+{ game_damaged_other
+
+	if PARAM1 is HUNT_LASTTARGET
+	if PARAM2 > 1
+
+	setvard COMBAT_REPOS 0
+}
+
+{ game_dodamage
+	if ( PARAM1 )
+	{
+		if ( DO_THROW ) applyeffect PARAM2 effects/effect_push 3 $relvel(0,400,400) 0
+		if ( PUSH_VEL isnot 0 ) addvelocity PARAM2 PUSH_VEL
+	}
+	setvard PUSH_VEL 0
+	setvard DO_THROW 0
+}

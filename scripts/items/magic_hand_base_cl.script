@@ -1,0 +1,91 @@
+//Magic (client-side special effects)
+
+{
+	const GLOW_DURATION		1
+	precache 			SPRITE_1
+	const OFS_POS			0.2
+	const OFS_NEG			-0.2
+  	const LIGHT_RADIUS		128
+	const LIGHT_COLOR		(255,255,128)		//maybe redifned in spell?
+
+	//all possible sprites must be precached here
+	precache 3dmflaora.spr
+	precache blueflare1.spr
+	precache lgtning.spr
+}
+
+{ client_activate
+
+	setvard script.modelid PARAM1
+	setvard script.duration PARAM2
+	setvard script.islocal 0
+	if( $getcl(script.modelid,exists) )
+	{
+		callevent script.duration effect_die
+
+		callevent create_light $getcl(script.modelid,origin)
+	}
+	else callevent effect_die
+}
+{ effect_die
+
+	removescript 
+}
+
+
+{
+	repeatdelay $randf(0.15,0.25)
+
+	setvard script.islocal 0
+	if( script.modelid == game.localplayer.index )
+	{
+		if !game.localplayer.thirdperson
+		setvard script.islocal 1
+	}
+
+	if( !script.islocal )
+	{
+		//Watching other player cast spell
+		callevent make_sprite_1 $getcl(script.modelid,bonepos,21)
+		callevent make_sprite_1 $getcl(script.modelid,bonepos,38)
+
+		////dbg 'script.modelid' - script.modelid
+		////dbg bone 21 -- $getcl(script.modelid,bonepos,21)
+	}
+	else
+	{
+		//Watching self cast spell in first person
+		local handid game.localplayer.viewmodel.active.id
+		callevent make_sprite_1 $getcl(handid,bonepos,13)
+		callevent make_sprite_1 $getcl(handid,bonepos,32)
+	}
+}
+
+{ make_sprite_1
+
+	if PARAM1 isnot '0'
+
+	setvard SPRITE_1 3dmflaora.spr
+
+	local l.pos PARAM1
+	vectoradd l.pos $vec($rand(OFS_NEG,OFS_POS),$rand(OFS_NEG,OFS_POS),$rand(OFS_NEG,OFS_POS))
+	if ( FX_SPAMMERS < MAX_FX_SPAMMERS ) cleffect tempent sprite SPRITE_1 l.pos setup_sprite_1
+}
+
+{  setup_sprite_1
+
+
+   cleffect tempent set_current_prop death_delay 	GLOW_DURATION
+   cleffect tempent set_current_prop bouncefactor 	0.1
+   cleffect tempent set_current_prop scale 		0.1
+   cleffect tempent set_current_prop gravity 		$randf(0.2,0.1)
+   cleffect tempent set_current_prop collide 		world|die
+}
+
+{ create_light
+
+	if PARAM1 isnot '0'
+
+	if ( FX_SPAMMERS < MAX_FX_SPAMMERS ) cleffect light new PARAM1 LIGHT_RADIUS LIGHT_COLOR script.duration
+	//setvard local.lightid game.script.last_light_id
+}

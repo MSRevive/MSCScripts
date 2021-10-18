@@ -1,0 +1,412 @@
+//Scarabs by Thothie - minimal AI to allow swarms
+//- Latch onto players and do DOT, the DOT increases with number attached
+#scope server
+{ [shared]
+	const ANIM_MOVE walk
+	setvard ANIM_DEATH die
+	const ANIM_IDLE idle
+}
+
+{
+	const RANGE_LEAP_MAX 512
+	const RANGE_LEAP_LONG 256
+	const RANGE_LEAP_SHORT 64
+	const FREQ_LEAP 15
+
+	setvard NPC_GIVE_EXP 100
+
+	const FREQ_CHITTER 3.6
+
+	const DMG_BURN_DOT 50
+	const DMG_CHEW 25 //multiplied by number of scarabs attached
+
+	const EFFECT_SCRIPT effects/effect_burn
+	const EFFECT_DURATION 5.0
+
+	const LATCH_DURATION 10.0
+	
+	const SOUND_CHITTER monsters/spider/spideridle.wav
+	const SOUND_STRUCK1 body/flesh1.wav
+	const SOUND_STRUCK2 body/flesh2.wav
+	const SOUND_STRUCK3 body/flesh3.wav
+	const SOUND_PAIN1 monsters/spider/spiderhiss.wav
+	const SOUND_PAIN2 monsters/spider/spiderhiss.wav
+	const SOUND_DEATH monsters/spider/spiderdie.wav
+	const SOUND_LATCH_HISS 	monsters/spider/spiderhiss2.wav
+	const SOUND_LATCH_JUMP 	monsters/spider/spiderjump.wav
+	const SOUND_LATCH_PLYR 	monsters/spider/spiderlatch.wav
+}
+
+#include monsters/base_stripped_ai
+
+{ [shared] game_spawn
+	setvard NPCATK_TARGET unset
+	callevent scarab_spawn
+}
+
+{ [shared] scarab_spawn
+	name a|Golden Scarab
+	setmodel monsters/scarab.mdl
+	blood red
+	hp 150
+	width 16
+	height 16
+	roam 1
+	race vermin
+	hearingsensitivity 8
+	takedmg holy 0.0
+	takedmg fire 0.0
+	setmoveanim ANIM_MOVE
+	setidleanim ANIM_IDLE
+	setbbox npcsize //hoping will help with "reach" issues
+	setsolid none
+
+	if game.serverside
+	setvard NPC_SPAWN_TIME game.time
+}
+
+{ game_damaged
+	local SINCE_SPAWN game.time
+	subtract SINCE_SPAWN NPC_SPAWN_TIME
+	if ( SINCE_SPAWN < 2.0 )
+	{
+		if ( $get(PARAM1,relationship,ent_me) equals enemy ) local BLOCK_PREMATURE_DAMAGE 1
+		if ( $get(PARAM1,isplayer) ) local BLOCK_PREMATURE_DAMAGE 1
+		if BLOCK_PREMATURE_DAMAGE
+		setdmg dmg 0
+		setdmg hit 0
+		returndata 0
+	}
+}
+
+{ game_struck
+	playrandomsound 1 10 SOUND_STRUCK1 SOUND_STRUCK2 SOUND_STRUCK3 SOUND_PAIN1 SOUND_PAIN2
+	if !LATCHED_ON
+	if NPCATK_TARGET equals unset
+	callevent scarab_set_target $get(ent_laststruck,id)
+}
+
+{ game_heardsound
+
+	if game.serverside
+	//dbg game_heardsound $get(ent_lastheard,name)
+	if !LATCHED_ON
+	if !RUN_AWAY
+	local HEARD_ID $get(ent_lastheard,id)
+	if $get(HEARD_ID,exists)
+	if $get(HEARD_ID,isalive)
+	if $get(HEARD_ID,relationship,ent_me) equals enemy
+	if ( NPCATK_TARGET isnot unset )
+	{
+		if ( $get(NPCATK_TARGET,range) > $get(HEARD_ID,range) )
+		{
+			callevent scarab_set_target HEARD_ID
+		}
+	}
+	else
+	{
+		callevent scarab_set_target HEARD_ID
+	}
+
+	if ( NPCATK_TARGET equals HEARD_ID ) setmovedest NPCATK_TARGET 16
+}
+
+{ scarab_set_target
+	local OLD_TARG NPCATK_TARGET
+
+	//validate
+	if ( $get(NPCATK_TARGET,scriptvar,'PLAYING_DEAD') )
+	{
+		setvard NPCATK_TARGET unset
+		if OLD_TARG isnot unset
+		if ( $get(OLD_TARG,isalive) ) setvard NPCATK_TARGET OLD_TARG
+	}
+
+	setvard NPCATK_TARGET PARAM1
+}
+
+//main cycle
+{
+repeatdelay 0.5
+	if game.serverside
+
+	if $get(ent_me,isalive)
+
+	if ( NPCATK_TARGET isnot unset )
+	{
+		if !$get(NPCATK_TARGET,isalive)
+		setvard NPCATK_TARGET unset
+	}
+
+	if $get(ent_me,isalive)
+	if !JUMP_SCAN_ACTIVE
+	if !I_R_FROZEN
+
+	if ( RUN_AWAY )
+	{
+		if ( $get(LATCH_TARGET,isalive) )
+		{
+			setmovedest LATCH_TARGET 512 flee
+			if ( $get(LATCH_TARGET,range) < 32 )
+			{
+				addvelocity ent_me $relvel(0,110,110)
+			}
+		}
+		else
+		{
+			callevent run_away_end
+		}
+	}
+	
+	if !RUN_AWAY
+
+	if ( !LATCHED_ON )
+	{
+		if NPCATK_TARGET isnot unset
+		if $get(NPCATK_TARGET,isalive)
+		
+		//validate
+		if ( $get(NPCATK_TARGET,range) < 1024 )
+		{
+			setmovedest NPCATK_TARGET 16
+			dbg move to $get(NPCATK_TARGET,name)
+		}
+		else
+		{
+			setvard NPCATK_TARGET unset //target too far away		
+		}
+
+		if ( !$get(NPCATK_TARGET,isalive) )
+		{
+			setvard NPCATK_TARGET unset
+			svplaysound 2 0 SOUND_CHITTER
+		}
+
+		if $get(NPCATK_TARGET,isalive) //case invalidated
+		
+		if game.time > NEXT_LEAP
+		if $get(NPCATK_TARGET,range) < RANGE_LEAP_MAX
+
+		setvard NEXT_LEAP game.time
+		add NEXT_LEAP FREQ_LEAP
+
+		setmovedest NPCATK_TARGET 999
+		callevent 0.1 leap_boost
+	}
+	else
+	{
+	   	if( !$get(LATCH_TARGET,isalive) )
+		{
+			callevent do_dismount
+		}
+		else
+		{
+//			setvard N_SCARABS_ATTACHED $get(LATCH_TARGET,scriptvar,'SCARABS_ATTACHED')
+//			local L_DMG DMG_CHEW
+//			multiply L_DMG N_SCARABS_ATTACHED
+//			dodamage LATCH_TARGET direct L_DMG 100% ent_me magic
+			applyeffect LATCH_TARGET effects/scarab_latch 2.0 $get(ent_me,id) DMG_CHEW
+		}
+	}
+}
+
+{ leap_boost
+	if $get(ent_me,isalive)
+
+	playsound 0 10 SOUND_LATCH_HISS
+
+	if ( $get(NPCATK_TARGET,range) >= RANGE_LEAP_LONG ) local JUMP_VEL $relvel(0,800,300)
+	if ( $get(NPCATK_TARGET,range) < RANGE_LEAP_LONG ) local JUMP_VEL $relvel(0,400,200)
+	if ( $get(NPCATK_TARGET,range) <= RANGE_LEAP_SHORT ) local JUMP_VEL $relvel(0,200,50)
+
+	//adjust for targets above me
+	local MY_Z $get(ent_me,origin.z)
+	local TARG_Z $get(NPCATK_TARGET,origin.z)
+	if ( $get(NPCATK_TARGET,isplayer) ) subtract TARG_Z 38 //compensate for origin center
+	local Z_DIFF TARG_Z
+	subtract Z_DIFF MY_Z
+	if ( Z_DIFF > 64 )
+	{
+		multiply Z_DIFF 4
+		vectoradd JUMP_VEL z Z_DIFF
+	}
+
+	addvelocity ent_me JUMP_VEL
+	setvard JUMP_SCAN_ACTIVE 1
+	callevent 0.1 jump_scan
+	callevent 1.0 end_jump_scan
+}
+
+{ jump_scan
+	if $get(ent_me,isalive)
+
+	if JUMP_SCAN_ACTIVE
+	callevent 0.1 jump_scan
+	local IN_BOX $get_tbox(enemy,32)
+	if IN_BOX isnot 'none'
+	local IN_BOX $sort_entlist(IN_BOX,range)
+	callevent latch_onto $get_token(IN_BOX,0)
+}
+
+{ end_jump_scan
+	setvard JUMP_SCAN_ACTIVE 0
+}
+
+{ latch_onto
+	if $get(ent_me,isalive)
+
+	setsolid box
+	setvard LATCHED_ON 1
+	setvard JUMP_SCAN_ACTIVE 0
+	setvard LATCH_TARGET PARAM1
+	//setfollow LATCH_TARGET align_bottom
+	playanim break
+	playanim critical chew
+	setidleanim chew
+	setmoveanim chew
+	setangle face.pitch 0
+	applyeffect LATCH_TARGET EFFECT_SCRIPT EFFECT_DURATION $get(ent_me,id) DMG_BURN_DOT
+	callexternal LATCH_TARGET ext_scarab_latch 1
+	//setbbox (-40,-40,0) (40,40,128)
+	callevent spider_latch_think
+	callevent LATCH_DURATION do_dismount
+}
+
+{ spider_latch_think
+
+	if $get(ent_me,isalive)
+
+   	if LATCHED_ON
+
+	//target face
+	if ( $get(LATCH_TARGET,isplayer) )
+	{
+		local TARG_ORG $get(LATCH_TARGET,eyepos)
+	}
+	else
+	{
+		local TARG_ORG $get(LATCH_TARGET,origin)
+		local TARG_HEIGHT $get(LATCH_TARGET,height)
+		vectoradd TARG_ORG z TARG_HEIGHT
+	}
+
+	local RND_V_POS $rand(-64,0)
+	local TARG_YAW $get(LATCH_TARGET,angles.yaw)
+	vectoradd TARG_ORG $relpos($vec(0,TARG_YAW,0),$vec(0,5,RND_V_POS))
+
+	local TARG_GROUND $get_ground_height(TARG_ORG)
+	if ( $vec.z(TARG_ORG) < TARG_GROUND )
+	{
+		vectorset TARG_ORG z TARG_GROUND
+		vectoradd TARG_ORG z 32 //don't latch on beneath ground for I may fall of the map when I release
+	}
+
+	setorigin ent_me TARG_ORG
+}
+
+{ do_dismount
+
+	if $get(ent_me,isalive)
+
+	if LATCHED_ON
+
+	setsolid none
+	setidleanim ANIM_IDLE
+	setmoveanim ANIM_MOVE
+
+	callevent roll_away
+
+	setvard LATCHED_ON 0
+	callexternal LATCH_TARGET ext_scarab_latch -1
+	//setbbox (0,0,0) (0,0,0)
+}
+
+{ roll_away
+	if $get(ent_me,isalive)
+	local TARGET_ORG $get(LATCH_TARGET,origin)
+	local TARG_ANG $angles(game.monster.origin,TARGET_ORG)
+	setmovedest LATCH_TARGET 512 flee
+	setprop ent_me movetype 8
+	addvelocity ent_me $relvel($vec(0,game.monster.angles.yaw,0),$vec(10,500,10))
+	setvard RUN_AWAY 1
+	setvard NPC_HACKED_MOVE_SPEED 50
+	setanim.framerate 2.0
+	callevent 5.0 run_away_end
+	callevent 0.1 fix_bbox
+}
+
+{ fix_bbox
+	setprop ent_me movetype 4
+}
+
+{ run_away_end
+	setvard NPC_HACKED_MOVE_SPEED 25
+	setanim.framerate 1.0
+	setvard RUN_AWAY 0
+}
+
+{
+repeatdelay FREQ_CHITTER
+
+	if game.serverside
+	if $get(ent_me,isalive)
+	if !LATCHED_ON
+	if $get(NPCATK_TARGET,isalive)
+
+	svplaysound 2 5 SOUND_CHITTER
+}
+
+{ game_death
+	playanim hold ANIM_DEATH
+	if game.serverside
+	svplaysound 2 0 SOUND_CHITTER
+	playsound 1 10 SOUND_DEATH
+	if ( LATCHED_ON )
+	{
+		if $get(LATCH_TARGET,isalive)
+		callexternal LATCH_TARGET ext_scarab_latch -1
+	}
+}
+
+{
+	const NPC_PROPELLED 1
+	setvard NPC_HACKED_MOVE_SPEED 25
+}
+
+{  [server] 	game_movingto_dest		//Hack in movement because the model anims are missing it
+	if !I_R_FROZEN
+	if !LATCHED_ON
+   setanim.movespeed NPC_HACKED_MOVE_SPEED	//Force move, since the animation doesn't have the required movement
+}
+{  [server] 	game_stopmoving
+
+   setanim.movespeed 0				//Force Stop
+}
+
+{ [server] bd_debug  //<print_var> <property_printvar> <extra> <extra> <caller_id>
+	saytextrange 2048
+	saytext var PARAM1 prop PARAM2 = $get(PARAM1,PARAM2)
+	consolemsg PARAM5 $get(ent_me,name) reports: var PARAM1 pvar $get(PARAM1,PARAM2)
+	dbg PARAM5 $get(ent_me,name) reports: var PARAM1 pvar $get(PARAM1,PARAM2)
+}
+
+{ npc_suicide
+
+	if ( PARAM1 equals no_pets )
+	{
+		if I_R_PET
+		local EXIT_SUB 1
+	}
+
+	if ( PARAM1 equals only_bad )
+	{
+		if ( $get(ent_me,race) equals human ) local EXIT_SUB 1
+		if ( $get(ent_me,race) equals hguard ) local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	invincible 0
+	race hated
+	setvard SKEL_RESPAWN_TIMES 99
+	dodamage ent_me direct 30000 100 GAME_MASTER target
+}

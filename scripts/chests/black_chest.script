@@ -1,0 +1,420 @@
+//Black chest, the revenge
+//- new string and token handling might simplify this mess, or so I thought
+{
+	const ANIM_IDLE idle
+	const ANIM_CLOSE close
+	const ANIM_OPEN open
+	const LIGHT_COLOR (200,200,255)
+	const LIGHT_RAD 96
+}
+
+{ game_spawn
+
+	//spawn invisible
+
+	hp 1
+	invincible  2
+	name ''
+	width 20
+	height 30
+	setmodel	misc/treasure.mdl
+	setmodelbody 0 1
+	setidleanim	ANIM_IDLE
+
+	setvard IMMUNE_PUSH 1
+	setvard PLAYING_DEAD 1
+	fly 1
+	gravity 0
+
+	setsolid none
+
+	setprop ent_me rendermode 5
+	setprop ent_me renderamt 0
+}
+
+{ game_dynamically_created //<token_items> <token_chances> <token_req_players> <token_disp_names> <angs> [min_hp]
+
+	//createnpc chests/black_chest "smallarms_eth;swords_ub" "50;100" "1;1" "Ethie;Unholie" 90 400
+	//BC_ITEM_LIST BC_ITEM_CHANCES BC_REQ_PLAYERS BC_ITEM_NAMES BC_REQ_STAT BC_REQ_STAT_LEVEL BC_REQ_HP $get(ent_me,angles) BC_MIN_HP
+
+
+	dbg arti game_dynamically_created
+
+	setvard IBC_ITEM_LIST PARAM1
+	setvard IBC_ITEM_CHANCES PARAM2
+	setvard IBC_REQ_PLAYERS PARAM3
+	setvard IBC_ITEM_NAMES PARAM4
+	
+	setangle ent_me PARAM5
+
+	setvard IBC_MIN_HP PARAM6
+	if ( IBC_MIN_HP startswith 'PARAM' ) setvard IBC_MIN_HP 5
+
+	dbg atri thoth_fucked_up
+
+	if ( IBC_ITEM_LIST startswith 'PARAM' ) infomsg all "THOTH FUCKED UP (Artifact Chest)" "Dude, artifact this chest has no items!"
+	if ( IBC_ITEM_CHANCES startswith 'PARAM' ) infomsg all "THOTH FUCKED UP (Artifact Chest)" "Artifact this chest no spawn chances!"
+	if ( IBC_REQ_PLAYERS startswith 'PARAM' ) infomsg all "THOTH FUCKED UP (Artifact Chest)" "Artifact this chest no req players!"
+	if ( IBC_ITEM_NAMES startswith 'PARAM' ) infomsg all "THOTH FUCKED UP (Artifact Chest)" "Artifact chest items have no names!"
+
+	if ( PARAM8 isnot 'PARAM8' ) setvard FACE_YAW $vec.yaw(PARAM8) //compatiblity
+
+	setvard ARTIFIACT_DEBUG "ARTIFACT_CHEST ("
+	stradd ARTIFIACT_DEBUG game.map.name
+	stradd ARTIFIACT_DEBUG "):"
+
+
+	dbg arti inv_to_chat
+
+	if ( game.cvar.ms_chatlog ) chatlog $timestamp(>) ARTIFIACT_DEBUG full_inventory: IBC_ITEM_NAMES req_players: IBC_REQ_PLAYERS spawn_chances: IBC_ITEM_CHANCES
+
+
+	dbg arti get_players
+
+	getplayersnb PLAYER_LIST
+	setvard N_PLAYERS $get_token_amt(PLAYER_LIST)
+	//setvard AVG_TIME_ON 0
+	setvard AVG_DMG_PTS 0
+	calleventloop N_PLAYERS get_averages
+	//divide AVG_TIME_ON N_PLAYERS
+	divide AVG_DMG_PTS N_PLAYERS
+	multiply AVG_DMG_PTS 0.5
+	setvard F_PLAYER_LIST ''
+	setvard F_PLAYER_NAMES ''
+	getplayersnb PLAYER_LIST
+	setvard N_PLAYERS $get_token_amt(PLAYER_LIST)
+	calleventloop N_PLAYERS filter_players
+	setvard PLAYER_LIST F_PLAYER_LIST
+	//setvard N_PLAYERS $get_token_amt(PLAYER_LIST)
+	dbg arti chat_players
+	if ( game.cvar.ms_chatlog )	chatlog $timestamp(>) ARTIFIACT_DEBUG final_qualaifying_players: F_PLAYER_NAMES
+
+	callevent 0.1 filter_items
+
+//	if G_DEVELOPER_MODE
+//	setvard DEV_PLAYER ''
+//	getplayer DEV_PLAYER 1
+//	consolemsg DEV_PLAYER ARTY_DEBUG: ARTIFIACT_DEBUG full_inventory:
+//	consolemsg DEV_PLAYER ARTY_DEBUG: - items: IBC_ITEM_LIST
+//	consolemsg DEV_PLAYER ARTY_DEBUG: - names: IBC_ITEM_NAMES
+//	consolemsg DEV_PLAYER ARTY_DEBUG: - players: IBC_REQ_PLAYERS
+//	consolemsg DEV_PLAYER ARTY_DEBUG: - chances: IBC_ITEM_CHANCES
+}
+
+{ get_averages
+	local CUR_PLAYER $get_token(PLAYER_LIST,game.script.iteration)
+	//add AVG_TIME_ON $get(CUR_PLAYER,scriptvar,'PL_TIME')
+	add AVG_DMG_PTS $get(CUR_PLAYER,scriptvar,'PLR_TOTAL_DMG')
+}
+
+{ filter_players
+	//player must have at least half the average damage points
+	//[strike]and have been on for half the average time to qualify[/strike]
+	//[strike]if map running longer than 10 minutes, player must also have been on at least 10 mins[/strike]
+	local CUR_PLAYER $get_token(PLAYER_LIST,game.script.iteration)
+	//local MY_TIME_ON $get(CUR_PLAYER,scriptvar,'PL_TIME')
+	local PLAYER_QUALIFIED 0
+//	if (  MY_TIME_ON > AVG_TIME_ON )
+//	{
+//		local GAME_MINUTES game.time
+//		divide GAME_MINUTES 60.0
+//		if ( GAME_MINUTES > 10 )
+//		{
+//			if ( AVG_TIME_ON > 10 )
+//			{
+//				if MY_TIME_ON < 10
+//				dplayermessage CUR_PLAYER "Failed to qualify for Artifact Chest due to lack of time on map."
+//				if ( game.cvar.ms_chatlog ) chatlog $timestamp(>) ARTIFIACT_DEBUG: $get(CUR_PLAYER,name) failed to qualify ( time: MY_TIME_ON vs. AVG_TIME_ON) ( dmg: PLAYER_STAT vs. AVG_DMG_PTS ) ( hp: $get(CUR_PLAYER,maxhp) vs. IBC_MIN_HP )
+//				local EXIT_SUB 1
+//			}
+//		}
+//		if !EXIT_SUB
+//		add PLAYER_QUALIFIED 1
+//	}
+	local PLAYER_DMG_PTS $get(CUR_PLAYER,scriptvar,'PLR_TOTAL_DMG')
+	if ( PLAYER_DMG_PTS > AVG_DMG_PTS )
+	{
+		local PLAYER_QUALIFIED 1
+	}
+	else
+	{
+		dplayermessage CUR_PLAYER "Failed to qualify for Artifact Chest due to lack of damage points." ( require $int(AVG_DMG_PTS) vs $int(PLAYER_DMG_PTS) )
+		if ( game.cvar.ms_chatlog ) chatlog $timestamp(>) ARTIFIACT_DEBUG: $get(CUR_PLAYER,name) failed to qualify ( dmg: PLAYER_DMG_PTS vs. AVG_DMG_PTS ) ( hp: $get(CUR_PLAYER,maxhp) vs. IBC_MIN_HP )
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	if ( $get(CUR_PLAYER,maxhp) < IBC_MIN_HP )
+	{
+		local PLAYER_QUALIFIED 0
+		dplayermessage CUR_PLAYER "Failed to qualify for Artifact Chest due to min HP requirement." ( min $int(IBC_MIN_HP) )
+		if ( game.cvar.ms_chatlog ) chatlog $timestamp(>) ARTIFIACT_DEBUG: $get(CUR_PLAYER,name) failed to qualify ( dmg: PLAYER_DMG_PTS vs. AVG_DMG_PTS ) ( hp: $get(CUR_PLAYER,maxhp) vs. IBC_MIN_HP )
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	if ( PLAYER_QUALIFIED == 1 )
+	{
+		token.add F_PLAYER_LIST CUR_PLAYER
+		token.add F_PLAYER_NAMES $get(CUR_PLAYER,name)
+	}
+}
+
+{ filter_items
+
+	dbg arti filter_items
+
+	if ( FACE_YAW isnot 'FACE_YAW' ) setangle face $vec(0,FACE_YAW,0)
+
+	//remove items that fail spawn chances, or there are not enough players for
+	setvard REMOVE_ITEMS ''
+	calleventloop $get_token_amt(IBC_ITEM_LIST) filter_items_loop
+	if ( $get_token_amt(REMOVE_ITEMS) == $get_token_amt(IBC_ITEM_LIST) )
+	{
+		if ( game.cvar.ms_chatlog ) chatlog $timestamp(>) ARTIFIACT_DEBUG Removed: all items failed spawn chance rolls.
+		deleteent ent_me //got nadda
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	callevent 0.1 remove_items //give a sec for strings to propigate
+}
+
+{ filter_items_loop
+
+	local CUR_IDX game.script.iteration
+	local CUR_ITEM_REQ_PLAYERS $get_token(IBC_REQ_PLAYERS,CUR_IDX)
+	if ( N_PLAYERS < CUR_ITEM_REQ_PLAYERS )
+	{
+		local REMOVE_ITEM 1
+		if G_DEVELOPER_MODE
+		if ( game.cvar.ms_chatlog ) chatlog $timestamp(>) ARTIFIACT_DEBUG: Not enough players for $get_token(IBC_ITEM_NAMES,CUR_IDX) [ needs: CUR_ITEM_REQ_PLAYERS ]
+	}
+
+	local CUR_ITEM_SPAWNCHANCE $get_token(IBC_ITEM_CHANCES,CUR_IDX)
+	multiply CUR_ITEM_SPAWNCHANCE N_PLAYERS
+	local RND_CHANCE $rand(1,100)
+	if ( RND_CHANCE > CUR_ITEM_SPAWNCHANCE )
+	{
+		local REMOVE_ITEM 1
+		if G_DEVELOPER_MODE
+		if ( game.cvar.ms_chatlog ) chatlog $timestamp(>) ARTIFIACT_DEBUG: $get_token(IBC_ITEM_NAMES,CUR_IDX) failed spawn chance [ RND_CHANCE vs. CUR_ITEM_SPAWNCHANCE ]
+	}
+
+	if REMOVE_ITEM
+	token.add REMOVE_ITEMS $get_token(IBC_ITEM_LIST,CUR_IDX)
+}
+
+{ remove_items
+
+	//if ( G_DEVELOPER_MODE ) consolemsg DEV_PLAYER ARTY_DEBUG: Remove_item_list: REMOVE_ITEMS
+
+	dbg arti remove_items
+
+	calleventloop $get_token_amt(REMOVE_ITEMS) remove_items_loop
+	if ( game.cvar.ms_chatlog ) chatlog $timestamp(>) ARTIFIACT_DEBUG final_inventory: IBC_ITEM_NAMES req_players: IBC_REQ_PLAYERS spawn_chances: IBC_ITEM_CHANCES
+//	if ( G_DEVELOPER_MODE )
+//	{
+//		consolemsg DEV_PLAYER ARTY_DEBUG: ARTIFIACT_DEBUG final_inventory:
+//		consolemsg DEV_PLAYER ARTY_DEBUG: - items: IBC_ITEM_NAMES
+//		consolemsg DEV_PLAYER ARTY_DEBUG: - players: IBC_REQ_PLAYERS
+//		consolemsg DEV_PLAYER ARTY_DEBUG: - chances: IBC_ITEM_CHANCES
+//	}
+
+	callevent 0.5 choose_player
+}
+
+{ remove_items_loop
+
+	local CUR_IDX game.script.iteration
+	local ITEM_TO_REMOVE $get_token(REMOVE_ITEMS,CUR_IDX)
+	local REMOVE_IDX $get_find_token(IBC_ITEM_LIST,ITEM_TO_REMOVE) 
+
+	//if ( G_DEVELOPER_MODE )	consolemsg DEV_PLAYER ARTY_DEBUG: Removing ( $get_token(IBC_ITEM_LIST,REMOVE_IDX) )
+
+	//doing this from here, rather than callevent remove_item, to be safer
+	token.del IBC_ITEM_LIST REMOVE_IDX
+	token.del IBC_ITEM_CHANCES REMOVE_IDX
+	token.del IBC_REQ_PLAYERS REMOVE_IDX
+	token.del IBC_ITEM_NAMES REMOVE_IDX
+}
+
+{ choose_player
+
+	dbg arti choose_player
+
+	setvard STRONGEST_IDX 0
+	setvard STRONGEST_STAT_LEVEL 0
+	calleventloop $get_token_amt(PLAYER_LIST) find_strongest_player
+	setvard THE_CHOSEN_ONE $get_token(PLAYER_LIST,STRONGEST_IDX)
+	setvard THE_CHOSEN_ONE_IDX STRONGEST_IDX
+	//token.del PLAYER_LIST STRONGEST_IDX
+	callevent inform_player
+}
+
+{ find_strongest_player
+
+	local CUR_IDX game.script.iteration
+	local CUR_PLAYER $get_token(PLAYER_LIST,CUR_IDX)
+	local PLAYER_STAT $get(CUR_PLAYER,scriptvar,PLR_TOTAL_DMG) //newfunc in player_main/game_master +1000 for heal/iceshield -1000 for death
+	local PLAYER_SUB_STAT $get(CUR_PLAYER,scriptvar,PLR_DMG) //fraction points
+	multiply PLAYER_SUB_STAT 0.001 //note: this will drop fractions < 0.01
+	add PLAYER_STAT PLAYER_SUB_STAT
+	//if ( G_DEVELOPER_MODE ) consolemsg DEV_PLAYER ARTY_DEBUG: reading PLAYER_STAT dmgpoints on $get(CUR_PLAYER,name)
+	if ( PLAYER_STAT > STRONGEST_STAT_LEVEL )
+	{
+		setvard STRONGEST_STAT_LEVEL PLAYER_STAT
+		setvard STRONGEST_IDX CUR_IDX
+	}
+}
+
+{ inform_player
+
+	dbg arti inform_player
+
+	if ( !I_MANIFESTED )
+	{
+		//I have items, manifest
+		name Artifact Chest
+		playsound 0 10 magic/spawn.wav
+		setvard I_MANIFESTED 1
+		clientevent persist all monsters/lighted_cl $get(ent_me,index) LIGHT_COLOR LIGHT_RAD
+		setvard MY_LIGHT_IDX game.script.last_sent_id
+		callexternal GAME_MASTER gm_fade_in $get(ent_me,id) 5
+	}
+	infomsg THE_CHOSEN_ONE "ARTIFACT CHEST: YOU HAVE BEEN CHOSEN!" "Select and item of your choosing..."
+	playanim hold ANIM_OPEN
+	menu.open THE_CHOSEN_ONE
+	callevent 10.0 resend_menu
+}
+
+{ game_menu_getoptions
+
+	dbg arti game_menu_getoptions
+
+	setvard CUR_USER PARAM1
+	setvard LAST_SKIPPED_ITEM -1
+	setvard LOOP_ITEMS_OFFERED 0
+	calleventloop $get_token_amt(IBC_ITEM_LIST) list_items
+
+	//player already has every item we offered
+	//offer him a random duplicate anyways (ie. the last item skipped)
+	//change: give him a random item instead
+	if LOOP_ITEMS_OFFERED == 0
+	local N_TEMP_ITEMS $get_token_amt(IBC_ITEM_NAMES)
+	subtract N_TEMP_ITEMS 1
+	local RND_DUP $rand(0,N_TEMP_ITEMS)
+	
+	local reg.mitem.title 	$get_token(IBC_ITEM_NAMES,RND_DUP)
+	local reg.mitem.type 	callback
+	local reg.mitem.data RND_DUP
+	local reg.mitem.callback give_item
+	menuitem.register
+}
+
+{ list_items
+
+	local CUR_IDX game.script.iteration
+	local CUR_ITEM_NAME $get_token(IBC_ITEM_NAMES,CUR_IDX)
+
+	local CUR_ITEM $get_token(IBC_ITEM_LIST,CUR_IDX)
+
+	//user already has item, skip it
+	if ( $item_exists(CUR_USER,CUR_ITEM) )
+	{
+		local SKIP_ITEM 1
+		setvard LAST_SKIPPED_ITEM CUR_IDX
+	}
+	else
+	{
+		add LOOP_ITEMS_OFFERED 1
+	}
+	if !SKIP_ITEM
+
+	local reg.mitem.title 	CUR_ITEM_NAME
+	local reg.mitem.type 	callback
+	local reg.mitem.data CUR_IDX
+	local reg.mitem.callback give_item
+	menuitem.register
+}
+
+{ game_menu_cancel
+
+	//player clicked cancel on the pop-up menu
+	callexternal THE_CHOSEN_ONE ext_last_artie_used $get(ent_me,id) //mark owner has having used me
+	local RESP_STRING $get(PARAM1,name)
+	strconc RESP_STRING " " has declined to partake in the bounty
+	infomsg all "ARTIFACT CHEST" RESP_STRING
+	playanim once ANIM_CLOSE
+	token.del PLAYER_LIST THE_CHOSEN_ONE_IDX //remove player from list - oops, handled when we choose next winner
+	callevent 2.0 next_winner
+}
+
+{ give_item //<prize_winner> <item_idx>
+
+	callexternal PARAM1 ext_last_artie_used $get(ent_me,id) //mark owner has having used me
+	//if ( G_DEVELOPER_MODE )	consolemsg DEV_PLAYER ARTY_DEBUG: Menu Select PARAM2
+
+	local CUR_ITEM $get_token(IBC_ITEM_LIST,PARAM2)
+	local CUR_ITEM_NAME $get_token(IBC_ITEM_NAMES,PARAM2)
+	offer PARAM1 CUR_ITEM
+	local RESP_STRING $get(PARAM1,name)
+	strconc RESP_STRING " " has recieved CUR_ITEM_NAME from an Artifact Chest. (NO ROLLING!)
+	infomsg all "ARTIFACT CHEST" RESP_STRING
+
+	if ( game.cvar.ms_chatlog ) chatlog $timestamp(>) ARTIFIACT_DEBUG $get(PARAM1,name) chose CUR_ITEM_NAME
+
+	local ITEM_IDX PARAM2
+	callevent remove_item ITEM_IDX
+
+	token.del PLAYER_LIST THE_CHOSEN_ONE_IDX //remove player from list
+	playanim once ANIM_CLOSE
+	callevent 2.0 next_winner
+}
+
+{ next_winner
+
+	if ( $get_token_amt(IBC_ITEM_LIST) == 0 )
+	{
+		callevent fade_away //out of stuff
+		local ALL_DONE 1
+	}
+	if ( $get_token_amt(PLAYER_LIST) == 0 )
+	{
+		callevent fade_away //out of players
+		local ALL_DONE 1
+	}
+
+	if !ALL_DONE
+	callevent 1.0 choose_player
+}
+
+{ remove_item //<item_idx>
+	token.del IBC_ITEM_LIST PARAM1
+	token.del IBC_ITEM_CHANCES PARAM1
+	token.del IBC_REQ_PLAYERS PARAM1
+	token.del IBC_ITEM_NAMES PARAM1
+}
+
+{ fade_away
+
+	//passed out everything I had, or ran out of players to pass stuff to, fade out
+	playsound 0 10 magic/spawn.wav
+	clientevent remove all MY_LIGHT_IDX
+	callexternal GAME_MASTER gm_fade_out $get(ent_me,id)
+	callevent 3.0 fade_away2
+}
+
+{ fade_away2
+
+	deleteent ent_me
+}
+
+{ resend_menu
+	if $get(THE_CHOSEN_ONE,isplayer) //still here
+	if $get(THE_CHOSEN_ONE,scriptvar,PLR_LAST_ARTIE) isnot $get(ent_me,id) //hasnt used me yet
+	//send menu again
+	menu.open THE_CHOSEN_ONE
+	callevent 10.0 resend_menu
+}
+
