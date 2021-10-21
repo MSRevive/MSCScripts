@@ -3758,7 +3758,7 @@
 	clientevent update ent_me const.localplayer.scriptID set_test_beam $get(ent_me,index) $get(BEAM_TARG,index)
 }
 
-{ ext_repel //<burst_dmg> <radius> <falloff> <skill|none> <dmg_type> <strength> <maxhp> [dot_effect] [dot_dur] [dot_dmg]
+{ ext_repel_burst //<burst_dmg> <radius> <falloff> <skill|none> <dmg_type> <strength> <maxhp> [dot_effect] [dot_dur] [dot_dmg]
 
 	local AOE_DMG PARAM1
 	local AOE_RAD PARAM2
@@ -3769,33 +3769,56 @@
 	setvard PLR_REPEL_PUSH_STR PARAM6
 	setvard PLR_REPEL_MAX_HP PARAM7
 
-	xdodamage $get(ent_me,origin) AOE_RAD AOE_DMG AOE_FAL ent_me ent_me DMG_SKILL DMG_TYPE dmgevent:repel
+	setvard PLR_REPEL_ORG PARAM8
 
+	if ( PLR_REPEL_ORG !startswith '(' ) setvard PLR_REPEL_ORG $get(ent_me,origin)
+
+	xdodamage PLR_REPEL_ORG AOE_RAD AOE_DMG AOE_FAL ent_me ent_me DMG_SKILL DMG_TYPE dmgevent:repel
 	//dot effect options to be added later
 }
 
 { repel_dodamage
 	if PARAM1
-	if $get(PARAM2,relationship,ent_me) equals enemy
-	if ( !GAME_PVP )
-	{
-		if $get(PARAM2,isplayer)
-		local EXIT_SUB 1
-	}
-	if !EXIT_SUB
+	callevent ext_repel PARAM2 PLR_REPEL_ORG PLR_REPEL_PUSH_STR 110 PLR_REPEL_MAX_HP 0 //externals_shared}
+}
 
-	if ( PLR_REPEL_MAX_HP > 0 )
-	{
-		if $get(PARAM2,hp) > PLR_REPEL_MAX_HP
-		local EXIT_SUB 1
-	}
-	if !EXIT_SUB
+{ ext_repel //<target> <origin> <strength> [vboost] [maxhp] [override:0|1]
+	//we're just doing this far too often, centralizing it in externals
+	//this should be in externals_shared
+	local L_TARG PARAM1
+	local L_TARG_ORG $get(PARAM1,origin)
+	local L_ORG PARAM2
+	local L_PUSHVEL PARAM3
+	local L_VPUSHVEL PARAM4
+	local L_MAXHP PARAM5
+	local L_OVERRIDE PARAM6
 
-	local TARG_ORG $get(PARAM2,origin)
-	local MY_ORG $get(ent_me,origin)
-	local TARG_ANG $angles(MY_ORG,TARG_ORG)
-	local NEW_YAW TARG_ANG
-	setvelocity PARAM2 $relvel($vec(0,NEW_YAW,0),$vec(0,PLR_REPEL_PUSH_STR,110))
+	dbg ext_repel vel L_PUSHVEL max L_MAXHP vs. $get(L_TARG,hp) [ $get(L_TARG,name) ]
+
+	if ( L_MAXHP > 0 )
+	{
+		local L_TARG_HP $get(L_TARG,hp)
+		if ( L_TARG_HP > L_MAXHP ) exitevent //too strong to push
+		//decrease push if targ hp > 50% of max push hp
+		if L_TARG_HP > $math(multiply,L_MAXHP,0.5) 
+		local L_RATIO 1
+		subtract L_RATIO $math(divide,L_TARG_HP,L_MAXHP)
+		multiply L_PUSHVEL L_RATIO
+		//dbg ext_repel reduced rat L_RATIO fpush L_PUSHVEL
+	}
+
+	dbg ext_repel fvel L_PUSHVEL
+
+	local L_NEW_ANG $angles(L_ORG,L_TARG_ORG)
+
+	if ( L_OVERRIDE )
+	{
+		addvelocity L_TARG $relvel($vec(0,L_NEW_ANG,0),$vec(0,L_PUSHVEL,L_VPUSHVEL)) override
+	}
+	else
+	{
+		addvelocity L_TARG $relvel($vec(0,L_NEW_ANG,0),$vec(0,L_PUSHVEL,L_VPUSHVEL))
+	}
 }
 
 { ext_lcod //<origin> <dmg> <duration>
