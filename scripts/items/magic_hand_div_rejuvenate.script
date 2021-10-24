@@ -45,7 +45,7 @@
 
 {  spell_casted	//PARAM1: "none"/"npc"/"world"   2: Attack end Position   3: Entity hit (if any)
 
-	local DEMON_ON $get(ent_owner,scriptvar,DEMON_BLOOD)
+	local DEMON_ON $get(ent_owner,scriptvar,'DEMON_BLOOD')
 	if ( DEMON_ON )
 	{
 		playermessage You cannot use divine magic while under the influence of Demon Blood!
@@ -54,50 +54,95 @@
 	}
 	if !EXIT_SUB
 
-	//Cast on owner... unless another npc is hit.  Then cast on the other NPC
-	local SPELL_TARGET ent_owner
+	local L_CASTER $get(ent_owner,id) 
+	local L_SPELL_TARGET $get(ent_owner,id)
+	
+	local L_HEAL_AMT $get(ent_owner,skill.spellcasting.divination)
+	add L_HEAL_AMT HEAL_MIN
+	
 	if( PARAM1 equals 'npc' )
 	{
-		if ( $get(ent_owner,relationship,PARAM3) equals 'ally' ) setvard SPELL_TARGET PARAM3
+		if ( $get(ent_owner,relationship,PARAM3) equals 'ally' ) local L_SPELL_TARGET PARAM3
 	}
-	if ( $get(PARAM3,isplayer) ) setvard SPELL_TARGET PARAM3
-	if ( $get(PARAM3,scriptvar,IAM_PLAYER) ) local SPELL_TARGET PARAM3
+	if ( $get(PARAM3,isplayer) ) local L_SPELL_TARGET PARAM3
+	if ( $get(PARAM3,scriptvar,IAM_PLAYER) ) local L_SPELL_TARGET PARAM3
 
-	//local HEAL_FORMULA $get_skill_ratio(HEAL_SKILL,HEAL_MIN,HEAL_MAX)
-	//local FINAL_DURATION EFFECT_DURATION_FORMULA
-	//divide FINAL_DURATION 2
-	//applyeffect SPELL_TARGET SPELL_SCRIPT FINAL_DURATION HEAL_FORMULA
-
-	//Heal Formula, take deux
-
-	local HEAL_AMT $get(ent_owner,skill.spellcasting.divination)
-	add HEAL_AMT HEAL_MIN
-
-	if ( $get(ent_owner,id) isnot $get(SPELL_TARGET,id) )
+	if ( L_CASTER isnot L_SPELL_TARGET )
 	{
-		 ////dbg Healer is not owner
-		local TEN_PERCENT $get(SPELL_TARGET,maxhp)
-		multiply TEN_PERCENT 0.1
-		add HEAL_AMT TEN_PERCENT
-		//gplayermessage ent_owner You heal $get(SPELL_TARGET,name) for HEAL_AMT
-		//if $get(SPELL_TARGET,isplayer)
-		//gplayermessage SPELL_TARGET $get(ent_owner,name) heals you for HEAL_AMT
+		local L_TEN_PERCENT $get(L_SPELL_TARGET,maxhp)
+		multiply L_TEN_PERCENT 0.1
+		add L_HEAL_AMT L_TEN_PERCENT
+		local L_HEAL_AMT $int(L_HEAL_AMT) // $int() now so rounding doesn't confuse when reporting damage points vs healed
 		
 		//give damage point if other player or critical npc
-		if ( $get(SPELL_TARGET,isplayer) ) local L_ADD_BONUS 1
-		if ( $get(SPELL_TARGET,scriptvar,NPC_CRITICAL) ) local L_ADD_BONUS 1
-		if ( L_ADD_BONUS ) callexternal ent_owner add_damage_points HEAL_AMT
+		if ( $get(L_SPELL_TARGET,isplayer) ) local L_ADD_BONUS 1
+		if ( $get(L_SPELL_TARGET,scriptvar,'NPC_CRITICAL') ) local L_ADD_BONUS 1
+		if ( L_ADD_BONUS )
+		{
+			if $get(L_SPELL_TARGET,hp) < $get(L_SPELL_TARGET,maxhp)
+			callexternal ent_owner add_dmg_points $math(multiply,L_HEAL_AMT,5)
+			local L_GAVE_DMG_POINTS 1
+		}
 	}
 	else
 	{
-		multiply HEAL_AMT 0.5
+		multiply L_HEAL_AMT 0.5
 	}
 	////dbg HealAmt Final HEAL_AMT
 	
 	svplaysound game.sound.voice 10 SOUND_SHOOT
 
-	applyeffect SPELL_TARGET SPELL_SCRIPT HEAL_AMT DIV_SKILL $get(ent_owner,id)
-	if ( SPELL_TARGET isnot ent_owner ) callexternal SPELL_TARGET display_health
+	//applyeffect SPELL_TARGET SPELL_SCRIPT HEAL_AMT DIV_SKILL $get(ent_owner,id)
+	callevent heal_target L_SPELL_TARGET L_HEAL_AMT L_GAVE_DMG_POINTS
+	if ( L_SPELL_TARGET isnot L_CASTER ) callexternal SPELL_TARGET display_health
+}
+
+{ heal_target //<target> <amt> <gave_dmgpts:0|1>
+
+	local L_HEAL_TGT PARAM1
+	local L_HEAL_AMT PARAM2
+	local L_DP PARAM3
+	local L_CASTER_ID $get(ent_owner,id)
+
+	local L_MAX_HEALTH $get(L_HEAL_TGT,maxhp)
+	local L_CUR_HEALTH $get(L_HEAL_TGT,hp)
+
+	if ( L_HEAL_TGT isnot L_CASTER_ID ) local L_HEALING_OTHER 1
+
+	if ( L_CUR_HEALTH < L_MAX_HEALTH )
+	{
+		givehp L_HEAL_TGT L_HEAL_AMT
+		local L_HEALED 1
+		if ( L_HEALING_OTHER )
+		{
+			gplayermessage L_CASTER_ID You heal $get(L_HEAL_TGT,name) for $int(L_HEAL_AMT) hp
+			gplayermessage L_HEAL_TGT $get(L_CASTER_ID,name) heals you for $int(L_HEAL_AMT) hp
+			if ( L_DP )
+			{
+				if game.players > 1
+				gplayermessage L_CASTER_ID (Credited $int($math(multiply,L_HEAL_AMT,5)) damage points.)
+			}
+		}
+		else
+		{
+			gplayermessage L_CASTER_ID You heal yourself for $int(L_HEAL_AMT) hp
+		}
+	}
+	else
+	{
+		if ( L_HEALING_OTHER )
+		{
+			gplayermessage L_CASTER_ID $get(L_HEAL_TGT,name) is at maximum health
+		}
+		else
+		{
+			gplayermessage L_CASTER_ID You are at maximum health
+		}
+	}
+
+	if L_HEALED
+
+	effect glow L_HEAL_TGT (0,255,0) 256 1 1
 }
 
 { prepare_success_done
@@ -134,10 +179,10 @@
 	callexternal $get(ent_owner,id) display_health
 }
 
-{ game_takedamage
+{ game_takedamage ////PARAM1=attacker  PARAM2=inflictor? PARAM3=dmg PARAM4=dmg_type - use returndata to alter incoming damage
 
 	if PARAM4 isnot target //dont cancel heal for target tracking damage
-
+	if PARAM3 > 0.01
 	setvard BITCH_SLAPPED 1
 	callevent spell_end
 }
@@ -146,10 +191,15 @@
 
 	if ( BITCH_SLAPPED ) playermessage You cannot rejuvenate while being attacked!
 	if ( !BITCH_SLAPPED ) playermessage The spell's duration ends.
-	deleteme
+	callevent end_spell
 	//playviewanim	ANIM_IDLE1
 }
 
 { fake_precache
 	svplaysound 0 0 SOUND_SHOOT
+}
+
+{ end_spell
+	//remove any cl effects here
+	deleteme
 }
