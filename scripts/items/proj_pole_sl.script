@@ -1,0 +1,72 @@
+{
+	const MODEL_HANDS      	none
+	const MODEL_WORLD      	weapons/projectiles.mdl
+	const MODEL_BODY_OFS 73
+	const ARROW_BODY_OFS 73
+	const ARROW_STICK_DURATION 0
+	const ARROW_EXPIRE_DELAY 0
+	const SOUND_HITWALL1		magic/dburst_sdr_blackout.wav
+	const SOUND_HITWALL2		magic/dburst_sdr_blackout.wav
+	const ARROW_SOLIDIFY_ON_WALL	0  	//base_arrow: Turns solid when a wall is hit
+	const ARROW_BREAK_CHANCE	100%	//base_arrow: Chance of breaking upon hit
+	const ITEM_NAME		watermana
+	const PROJ_DAMAGE_TYPE	dark
+	const PROJ_DAMAGESTAT		spellcasting.affliction //this does not determin xp stat
+	const PROJ_ANIM_IDLE		idle_icebolt
+	const PROJ_MOTIONBLUR 0
+
+	const PROJ_DAMAGE		0 //via tossprojectile only
+	const PROJ_AOE_RANGE		0
+	const PROJ_AOE_FALLOFF	0
+	const PROJ_STICK_DURATION	0  //Don't stick in enemies
+	const PROJ_COLLIDE	1
+}
+
+#include items/proj_arrow_base
+
+{ game_precache
+	precachefile monsters/summon/affliction_lance
+}
+
+{ arrow_spawn
+
+	name 		a|Shadow Lance
+	desc 		You have been afflicted by this lance
+	weight 		0.1
+	size 		1
+	value		0
+	gravity		0.8
+	groupable    	25
+}
+
+{ game_tossprojectile
+	clientevent new all effects/sfx_follow_glow_cl $get(ent_me,index) (255,0,255) 128 1.5
+	setvard MY_LIGHT_IDX game.script.last_sent_id
+	projectiletouch 0
+}
+
+{ game_projectile_landed
+
+	local L_MY_ORG $get(ent_me,origin)
+	local L_MY_Z $vec.z(L_MY_ORG)
+	local L_MY_GROUND $get_ground_height(L_MY_ORG)
+	if ( L_MY_GROUND > $math(subtract,L_MY_Z,128) )
+	{
+		if L_MY_GROUND < $math(add,L_MY_Z,128)
+		//landed somewhere near the ground, snap to
+		vectorset L_MY_ORG z L_MY_GROUND
+	}
+	clientevent new all items/proj_pole_sl_cl $get(ent_me,index) //poof effect
+	callexternal ent_expowner ext_dburst L_MY_ORG 96 0 0
+	clientevent update all MY_LIGHT_IDX remove_light
+
+	if ( G_DEVELOPER_MODE )
+	{
+		local L_BEAM_START $get(ent_me,origin)
+		local L_BEAM_END L_BEAM_START
+		local L_MY_ANG $get(ent_me,angles)
+		vectorset L_MY_ANG x $neg($vec.x(L_MY_ANG))
+		vectoradd L_BEAM_END $relpos(L_MY_ANG,$vec(0,-128,0))
+		effect beam point lgtning.spr 20 L_BEAM_START L_BEAM_END (255,255,0) 200 0 5.0
+	}
+}
