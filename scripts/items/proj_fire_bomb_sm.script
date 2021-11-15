@@ -1,0 +1,130 @@
+//small, wiggly, optionally semi-guided version of proj_fire_bomb with different sfx
+
+{
+	const MODEL_HANDS      		none
+	//may make own over-sized model via scale QC
+	const MODEL_WORLD      		weapons/projectiles.mdl
+	const MODEL_BODY_OFS 41
+	const PROJ_ANIM_IDLE	axis_spin
+	const ITEM_NAME			firemana
+	const PROJ_DAMAGE_TYPE		fire
+	const PROJ_MOTIONBLUR 0
+
+	const PROJ_DAMAGE			100
+	const PROJ_AOE_RANGE		200
+	const PROJ_AOE_FALLOFF		0
+	const PROJ_STICK_DURATION	0  //Don't stick in enemies
+	const PROJ_SOLIDIFY_ON_WALL	0  //Don't go solid on wall hit
+	//const SOUND_SMOOSH gonarch/gon_birth1.wav
+	const PROJ_IGNORENPC 1
+}
+
+#include items/proj_base
+
+{  projectile_spawn
+
+	name 		a|Meteor
+	weight 		500
+	size 		10
+	value		5
+	gravity		0
+	groupable	25
+
+	setprop ent_me scale 0.1
+	local L_SCALE $get(ent_expowner,scriptvar,'PROJ_FIRE_BOMB_SCALE')
+	if ( L_SCALE > 0 ) setprop ent_me scale L_SCALE
+
+	playanim once PROJ_ANIM_IDLE
+	setidleanim PROJ_ANIM_IDLE
+   
+	sethudsprite hand arrows
+	sethudsprite trade ITEM_NAME
+	sethand any
+}
+
+
+{  game_tossprojectile
+	local L_SCALE $get(ent_expowner,scriptvar,'PROJ_FIRE_BOMB_SCALE')
+	if ( L_SCALE > 0 ) setprop ent_me scale L_SCALE
+
+	playanim critical PROJ_ANIM_IDLE
+	setvard PROJ_LOOP_SOUND $get(ent_expowner,scriptvar,'PROJ_LOOP_SOUND')
+	if ( PROJ_LOOP_SOUND equals 'PROJ_LOOP_SOUND' ) setvard PROJ_LOOP_SOUND ambience/alienflyby1.wav
+	svplaysound 2 10 PROJ_LOOP_SOUND //%% replace (snakish)
+	setvard IN_FLIGHT 1
+
+	setvard PROJ_TARGET $get(ent_expowner,scriptvar,'PROJ_TARGET')
+	setvard WIGGLE_DIR 1
+	setvard WIGGLE_COUNT 0
+	if ( !$get(PROJ_TARGET,isplayer) )
+	{
+		setvard TARG_HALF_HEIGHT $get(PROJ_TARGET,height)
+		multiply TARG_HALF_HEIGHT 0.5
+	}
+	else
+	{
+		setvard TARG_HALF_HEIGHT 0
+	}
+	callevent 0.1 wiggle_loop
+}
+
+{ wiggle_loop
+	if IN_FLIGHT
+	callevent 0.1 wiggle_loop
+	if ( $get(PROJ_TARGET,isalive) )
+	{
+		local TARG_ORG $get(PROJ_TARGET,origin)
+		vectorset TARG_ORG z $get_ground_height(TARG_ORG)
+		local MY_ORG $get(ent_me,origin)
+		local ANG_TO_TARG $angles3d(MY_ORG,TARG_ORG)
+		vectorset ANG_TO_TARG x $neg($vec.x(ANG_TO_TARG))
+		//dbg orient_on_target ANG_TO_TARG
+		setprop ent_me velocity $relvel(ANG_TO_TARG,$vec(0,300,0))
+		setprop ent_me movedir ANG_TO_TARG
+	}
+
+	local L_MY_ANG $get(ent_me,movedir)
+	vectoradd L_MY_ANG y WIGGLE_DIR
+	add WIGGLE_COUNT WIGGLE_DIR
+	if ( WIGGLE_COUNT > 20 )
+	{
+		setvard WIGGLE_DIR -1
+	}
+	if ( WIGGLE_COUNT < -20 )
+	{
+		setvard WIGGLE_DIR 1
+	}
+
+	setprop ent_me movedir WIGGLE_DIR
+}
+
+
+{  projectile_landed
+	//splodie
+	//tempent trail <modelname/spritename> <start> <dest> <count> <life> <scale> <speed> <randomness>
+	setvard IN_FLIGHT 0
+
+	playsound 0 10 ambience/steamburst1.wav
+	svplaysound 2 0 PROJ_LOOP_SOUND
+	effect screenshake $relpos(0,0,0) 100 5 3 500
+
+	local SPLOOSH_POINT $get(ent_me,origin)
+	//vectorset SPLOOSH_POINT z $get_ground_height(SPLOOSH_POINT)
+	local L_AOE $get(ent_expowner,scriptvar,'PROJ_FIRE_BOMB_AOE')
+	if ( L_AOE == 0 ) local L_AOE 256
+
+	clientevent new all items/proj_arrow_phx_cl SPLOOSH_POINT L_AOE
+
+	callexternal ent_expowner ext_fire_bomb $get(ent_me,origin)
+}
+
+//{ game_dodamage //1: Attack Hit (1/0)  2: Entity Attack hit  3:  Start Position  4:  End Position
+//
+//	if PARAM1
+//
+//	local MY_OWNER $get(ent_expowner,id)
+//	local MY_DOT $get(MY_OWNER,scriptvar,'DOT_ACID_BOMB')
+//	if ( $get(MY_OWNER,isplayer) ) setvard MY_DOT $get(MY_OWNER,skill.spellcasting.affliction)
+//
+//	applyeffect PARAM2 effects/effect_acid 10.0 MY_OWNER MY_DOT
+//}

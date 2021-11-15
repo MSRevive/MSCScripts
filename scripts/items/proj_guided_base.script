@@ -1,0 +1,46 @@
+#scope server
+//Should be attachable to near any projectile
+//tempted to make universal, but would add to projectile load time
+
+{ game_tossprojectile
+	if $get(ent_expowner,scriptvar,'PROJ_GUIDED')
+	if ( !$get(ent_expowner,isplayer) )
+	{
+		setvard GPROJ_TARGET $get(ent_expowner,scriptvar,'NPCATK_TARGET')
+	}
+	else
+	{
+		setvard GPROJ_TARGET $get(ent_expowner,scriptvar,'PROJ_GUIDED_TARGET')
+	}
+
+	if ( !$get(GPROJ_TARGET,isplayer) )
+	{
+		setvard GPROJ_TARG_HALF_HEIGHT $get(GPROJ_TARGET,height)
+		multiply GPROJ_TARG_HALF_HEIGHT 0.5
+	}
+	else
+	{
+		setvard GPROJ_TARG_HALF_HEIGHT 0
+	}
+
+	setvard GPROJ_ACTIVE 1
+	callevent 0.1 gproj_home
+}
+
+{ gproj_home
+	if GPROJ_ACTIVE
+	if $get(GPROJ_TARGET,isalive)
+	callevent 0.25 gproj_home
+	//dbg homing on $get(GPROJ_TARGET,name)
+	local L_TARG_ORG $get(GPROJ_TARGET,origin)
+	vectoradd L_TARG_ORG z GPROJ_TARG_HALF_HEIGHT
+	local L_MY_ORG $get(ent_me,origin)
+	local L_ANG_TO_TARG $angles3d(L_MY_ORG,L_TARG_ORG)
+	vectorset L_ANG_TO_TARG x $neg($vec.x(L_ANG_TO_TARG))
+	setprop ent_me velocity $relvel(L_ANG_TO_TARG,$vec(0,300,0))
+	setprop ent_me movedir L_ANG_TO_TARG
+}
+
+{ projectile_landed
+	setvard GPROJ_ACTIVE 0
+}
