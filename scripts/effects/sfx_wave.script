@@ -1,53 +1,190 @@
 //wave that moves forward, reports position to index periodically to owner (currently must be player)
+#scope server
+
 {
+	const FX_DURATION 20.0 //max duration
+	setvar CUR_JUMPS 0
+	//setvar FX_SCRIPT_ID none
+}
+
+{ game_spawn
+
+	name "a|Holy Wave"
+
+	setmodel "null.mdl"
+	race beloved
+	invincible 1
+	height 0
+	width 0
+	setsolid none
+	
+	callevent FX_DURATION end_me_please
+}
+
+{ game_dynamically_created //<owner> <yaw> <speed>
+
+	setvard FX_OWNER PARAM1
+	setvard FX_ORIGIN $get(ent_me,origin)
+	setvard FX_YAW PARAM2
+	setvard FX_SPEED PARAM3
+
+	clientevent new all $get(ent_me,scriptname) FX_ORIGIN FX_YAW FX_SPEED
+	setvard FX_SCRIPT_ID game.script.last_sent_id
+	
+	callevent 0.5 burst_fx
+}
+
+{ burst_fx
+
+	local L_POS FX_ORIGIN
+	vectoradd L_POS $relpos($vec(0,FX_YAW,0),$vec(0,$math(divide,FX_SPEED,2),0))
+	
+	local L_TRACE $get_traceline(FX_ORIGIN,L_POS,worldonly)
+	if ( L_TRACE equals L_POS )
+	{
+		setvard FX_ORIGIN L_POS
+		
+		//Deal damage
+		vectoradd L_POS z 32
+		local L_DMG $get(FX_OWNER,skill.spellcasting.divination)
+		multiply L_DMG 2
+		xdodamage L_POS 128 L_DMG 0 FX_OWNER ent_me spellcasting.divination holy_effect dmgevent:*holywave
+		//<target|(src_origin)> <range|aoe|(dest_origin)|direct> <damage> <cth|fall_off> <attacker> <inflciter> <skill|none> <dmg_type> [flag_string]
+	
+		clientevent update all FX_SCRIPT_ID sfx_wave_explody
+		callevent 0.5 burst_fx
+	}
+	else
+	{
+		callevent end_me_please
+	}
+}
+
+{ holywave_dodamage //PARAM1=hit:0|1 PARAM2=ent_hit PARAM3=(start) PARAM4=(end) PARAM5=DmgType PARAM6=DmgAmt
+
+	if ( $get(PARAM2,relationship,FX_OWNER) equals enemy ) local L_ENEMY 1
+	if ( $get(PARAM2,isplayer) ) local L_ENEMY 0
+	if ( L_ENEMY )
+	{
+		if PARAM1
+		local L_DOT $get(FX_OWNER,skill.spellcasting.divination)
+		multiply L_DOT 0.5
+		applyeffect PARAM2 effects/effect_holy_dmg 5.0 FX_OWNER L_DOT
+	}
+	else
+	{
+		//if !$get(PARAM2,isplayer)
+		callevent ce_wave_do_heal $get(PARAM2,id)
+	}
+}
+
+{ ce_wave_do_heal //<target>
+
+	local L_IS_ME 0
+	local L_ADD_DMG_POINTS 0
+
+	local L_DOT $get(FX_OWNER,skill.spellcasting.divination)
+	multiply L_DOT 4
+	effect glow PARAM1 (0,255,0) 256 0.5 0.5
+
+	if ( $get(FX_OWNER,id) equals $get(PARAM1,id) )
+	{
+		local L_IS_ME 1
+	}
+
+	if ( $get(PARAM1,hp) < $get(PARAM1,maxhp) )
+	{
+		givehp PARAM1 L_DOT
+
+		if ( L_IS_ME )
+		{
+			gplayermessage FX_OWNER Your holy wave heals you for $int(L_DOT) hp
+		}
+		else
+		{
+			gplayermessage FX_OWNER You heal $get(PARAM1,name) for $int(L_DOT) hp
+
+			if ( $get(PARAM1,isplayer) )
+			{
+				local L_ADD_DMG_POINTS 1
+
+				gplayermessage PARAM1 $get(FX_OWNER,name) heals you for $int(L_DOT) hp
+			}
+			else
+			{
+				if ( $get(PARAM1,scriptvar,'NPC_CRITICAL') )
+				{
+					local L_ADD_DMG_POINTS 1
+				}
+			}
+		}
+
+		if ( L_ADD_DMG_POINTS )
+		{
+			callexternal FX_OWNER add_dmg_points L_DOT
+		}
+	}
+	else
+	{
+		if ( L_IS_ME )
+		{
+			gplayermessage FX_OWNER You are at maximum health
+		}
+		else
+		{
+			gplayermessage FX_OWNER $get(PARAM1,name) is at maximum health
+		}
+	}
+}
+
+{ end_me_please
+
+	clientevent update all FX_SCRIPT_ID end_fx
+	deleteme
+}
+
+//------------------------
+//------------CLIENT SIDE
+//------------------------
+
+{ [client]
 	const FX_DURATION 20.0 //max duration
 	const FX_LIGHT_OFS -100
 }
 
-{ client_activate //<owneridx> <start> <yaw> <speed> <type>
-	setvard FX_OWNER PARAM1
-	setvard FX_ORIGIN PARAM2
-	setvard FX_YAW PARAM3
-	setvard FX_SPEED PARAM4
-	setvard FX_TYPE PARAM5
+{ [client] client_activate //<start> <yaw> <speed>
+	setvard FX_ORIGIN PARAM1
+	setvard FX_YAW PARAM2
+	setvard FX_SPEED PARAM3
 
 	setvard FX_RENDER_AMT 180
 
 	setvard FX_ACTIVE 1
 
-	setvard FX_MODEL_BODY 52
-
-	if ( FX_TYPE equals holy )
-	{
-		setcallback render enable
-		setvard FX_COLOR (200,128,0)
-		setvard FX_USE_LIGHT 1
-		setvard FX_MODEL_BODY 75
-	}
+	setcallback render enable //Literally is always holy so hard coding in holy fx
+	setvard FX_COLOR (200,128,0)
+	setvard FX_MODEL_BODY 75
 
 	//vectoradd FX_ORIGIN z 8
 	cleffect tempent model weapons/projectiles.mdl FX_ORIGIN fx_wave_setup fx_wave_update fx_wave_collide
 
-	if ( FX_USE_LIGHT )
-	{
-		setvard FX_LIGHT_POS FX_ORIGIN
-		local L_FX_LIGHT_POS FX_LIGHT_POS
-		vectoradd L_FX_LIGHT_POS $relpos($vec(0,FX_YAW,0),$vec(0,FX_LIGHT_OFS,0))
-		cleffect light new L_FX_LIGHT_POS FX_RENDER_AMT (255,255,255) 0.1
-		setvard FX_LIGHT_ID game.script.last_light_id
-	}
+	setvard FX_LIGHT_POS FX_ORIGIN
+	local L_FX_LIGHT_POS FX_LIGHT_POS
+	vectoradd L_FX_LIGHT_POS $relpos($vec(0,FX_YAW,0),$vec(0,FX_LIGHT_OFS,0))
+	cleffect light new L_FX_LIGHT_POS FX_RENDER_AMT (255,255,255) 0.1
+	setvard FX_LIGHT_ID game.script.last_light_id
 
 	callevent trail_loop
 	callevent FX_DURATION end_fx
 }
 
-{ trail_loop
+{ [client] trail_loop
 	if FX_ACTIVE
 	callevent 0.1 trail_loop
 	cleffect tempent model weapons/projectiles.mdl FX_LIGHT_POS fx_trail_setup
 }
 
-{ game_prerender
+{ [client] game_prerender
 	if FX_ACTIVE
 
 	if ( FX_RENDER_AMT > 220 )
@@ -65,14 +202,14 @@
 	cleffect light FX_LIGHT_ID L_FX_LIGHT_POS FX_RENDER_AMT L_FX_COLOR 0.1
 }
 
-{ fx_wave_update
+{ [client] fx_wave_update
 	if ( FX_ACTIVE )
 	{
 		cleffect tempent set_current_prop velocity $relvel($vec(0,FX_YAW,0),$vec(0,FX_SPEED,0))
 
 		cleffect tempent set_current_prop renderamt FX_RENDER_AMT
 
-		if ( FX_RENDER_AMT > 180 ) subtract FX_RENDER_AMT 5
+		if ( FX_RENDER_AMT > 140 ) subtract FX_RENDER_AMT 5
 
 		local L_MY_POS game.tempent.origin
 
@@ -88,45 +225,24 @@
 		{
 			setvard OLD_POS L_MY_POS
 		}
-
-		local L_NEXT_UPDATE game.tempent.fuser1
-		if game.time > L_NEXT_UPDATE
-		local L_NEXT_UPDATE game.time
-		add L_NEXT_UPDATE 0.5
-		cleffect tempent set_current_prop fuser1 L_NEXT_UPDATE
-
-		setvard FX_RENDER_AMT 255
-
-		sound.play3d magic/hburst_sca_outholy01.wav 5 L_MY_POS 0.8 0 $rand(80,120)
-
-
-		if game.localplayer.index == FX_OWNER
-		cleffect ce player ext_ce_wave $quote(L_MY_POS) FX_TYPE x
 	}
 	else
 	{
-		dbg ** $currentscript - fx_wave_update not_active
 		cleffect tempent set_current_prop origin $vec(20000,20000,-20000)
 	}
 }
 
-{ fx_wave_collide
-	dbg ** $currentscript - fx_wave_collide PARAM1
+{ [client] fx_wave_collide
 	callevent end_fx
 }
 
-{ end_fx
-	dbg ** $currentscript - end_fx
-	setvard FX_ACTIVE 0
-	callevent 1.0 remove_fx
+{ [client] sfx_wave_explody //every 0.5 seconds, called frmo owner
+
+	setvard FX_RENDER_AMT 255
+	sound.play3d magic/hburst_sca_outholy01.wav 5 OLD_POS 0.8 0 $rand(80,120)
 }
 
-{ remove_fx
-	removescript
-}
-
-
-{ fx_wave_setup
+{ [client] fx_wave_setup
 
 	cleffect tempent set_current_prop death_delay FX_DURATION
 	cleffect tempent set_current_prop renderamt	180
@@ -146,7 +262,7 @@
 	cleffect tempent set_current_prop fuser1 L_NEXT_UPDATE
 }
 
-{ fx_trail_setup
+{ [client] fx_trail_setup
 
 	cleffect tempent set_current_prop death_delay 1.0
 	cleffect tempent set_current_prop fadeout lifetime
@@ -161,4 +277,14 @@
 	cleffect tempent set_current_prop framerate 0.01
 	cleffect tempent set_current_prop frames 99999
 	cleffect tempent set_current_prop sequence 0
+}
+
+{ [client] end_fx
+	setvard FX_ACTIVE 0
+	removescript
+}
+
+{ [client] remove_fx
+	setvard FX_ACTIVE 0
+	removescript
 }
