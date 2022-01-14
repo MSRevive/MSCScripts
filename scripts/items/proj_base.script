@@ -1,5 +1,7 @@
 #include items/base_hide_stuff
 
+//Removed CLIENT_PROJECTILE support. (Client side arrows that used "cleffect ce") //greatguys1@JAN2022
+
 //Thothie - These reg's do not match up with the documented Scripting_Items.txt
 //- Not entirely sure if they all work
 //- Adding hitwall function in here (many projtiles using game_hitwall - which turns out to be wrong)
@@ -16,63 +18,39 @@
 	const	MODEL_WORLD	none
 	const	PROJ_MOTIONBLUR	1
 
-	const CL_PROJECTILE_SCRIPT items/proj_arrow_cl
-
 	const CLFX_ARROW_SCRIPT items/proj_simple_cl
 	const CLFX_ARROW_UPDATE_RATE 0.5
 }
 
 {  game_spawn
 
-	movetype	projectile	//Causes the orientation to change based on velocity
+	movetype projectile	//Causes the orientation to change based on velocity
 
-	callevent check_ovrd_clproj
-
-	if ( !CLIENT_PROJECTILE )
+	callevent projectile_spawn
+	if ( !CLFX_ARROW )
 	{
-		callevent 	projectile_spawn
-		if ( !CLFX_ARROW )
+		setworldmodel	MODEL_WORLD
+
+		if ( PROJ_ANIM_IDLE isnot 'PROJ_ANIM_IDLE' ) 
 		{
-			setworldmodel	MODEL_WORLD
-
-			if ( PROJ_ANIM_IDLE isnot 'PROJ_ANIM_IDLE' ) 
-			{
-				if PROJ_ANIM_IDLE isnot none
-				playanim PROJ_ANIM_IDLE
-				setidleanim PROJ_ANIM_IDLE
-			}
-
-			if ( MODEL_BODY_OFS isnot 'MODEL_BODY_OFS' )
-			{
-				////dbg temp setting ofs MODEL_BODY_OFS
-				setmodelbody 0 MODEL_BODY_OFS
-			}
+			if PROJ_ANIM_IDLE isnot none
+			playanim PROJ_ANIM_IDLE
+			setidleanim PROJ_ANIM_IDLE
 		}
-		else
+
+		if ( MODEL_BODY_OFS isnot 'MODEL_BODY_OFS' )
 		{
-			//CLFX_ARROW 1 - creates a client side model for the arrow, but still tracks the arrow server side
-			width 32
-			height 32
-			setbbox npcsize
-			setmodel none
+			////dbg temp setting ofs MODEL_BODY_OFS
+			setmodelbody 0 MODEL_BODY_OFS
 		}
 	}
 	else
 	{
-		//CLIENT_PROJECTILE 1 - this method creates a special client projectile that reports hits on landing
-		//seemed a great idea, but there are reports of it not working on HLDS
-		//still used for proj_mana2, as it uses a scan method
-		//the happy medium is CLFX_ARROW which creates a projectile where the model is client tracked, but the projectile itself is still server-side
-		setworldmodel null.mdl //do we need this?
-		callevent 	projectile_spawn
-		if ( MODEL_BODY_OFS equals 'MODEL_BODY_OFS' )
-		{
-			setvard CL_BODY_OFS ARROW_BODY_OFS
-		}
-		else
-		{
-			setvard CL_BODY_OFS MODEL_BODY_OFS
-		}
+		//CLFX_ARROW 1 - creates a client side model for the arrow, but still tracks the arrow server side
+		width 32
+		height 32
+		setbbox npcsize
+		setmodel none
 	}
 
 	if ( !HITSCAN_BOLT ) local reg.proj.dmg 		PROJ_DAMAGE
@@ -90,61 +68,11 @@
 }
 
 { game_fall
-	callevent check_ovrd_clproj
 	
 	if ( MODEL_BODY_OFS isnot 'MODEL_BODY_OFS' )
 	{
 		////dbg temp setting ofs MODEL_BODY_OFS
-		if ( CLIENT_PROJECTILE ) setworldmodel	MODEL_WORLD
 		setmodelbody 0 MODEL_BODY_OFS
-	}
-}
-
-{ show_cl_projectile
-
-	local L_FX_STRING 0
-	if ( PROJ_MOTIONBLUR ) token.add L_FX_STRING blur
-	if ( PROJ_PASS_FX ) token.add L_FX_STRING PROJ_PASS_FX
-
-	local L_INFO_STR $get(ent_me,origin)
-	token.add L_INFO_STR $get(ent_me,angles) 
-	token.add L_INFO_STR $get(ent_me,velocity)
-	token.add L_INFO_STR $get(ent_me,gravity)
-
-	if ( !$get(ent_expowner,isplayer) )
-	{
-		//partial client side arrow for mobs
-		if ( !CL_PROJECTILE_CUSTOM )
-		{
-			clientevent new all CL_PROJECTILE_SCRIPT L_INFO_STR MODEL_WORLD CL_BODY_OFS 0 none L_FX_STRING $get(ent_me,index)
-		}
-		else
-		{
-			callevent proj_setup_custom_clfx
-			setvard CL_PROJECTILE_IDX game.script.last_sent_id
-		}
-	}
-	else
-	{
-		local L_DMG_STRING PROJ_DAMAGE
-		token.add L_DMG_STRING PROJ_DAMAGE_TYPE
-		token.add L_DMG_STRING $get(MY_XBOW,index)
-		token.add L_DMG_STRING $get(ent_me,itemname)
-		//<basedmg>;<dmgtype>;<weapon_idx>;<proj_itemname>
-		//partial client side arrow for mobs
-		if ( !CL_PROJECTILE_CUSTOM )
-		{
-			clientevent new all CL_PROJECTILE_SCRIPT L_INFO_STR MODEL_WORLD CL_BODY_OFS $get(ent_expowner,index) L_DMG_STRING L_FX_STRING $get(ent_me,index)
-		}
-		else
-		{
-			callevent proj_setup_custom_clfx
-			setvard CL_PROJECTILE_IDX game.script.last_sent_id
-		}
-
-		//from here on we're entirely client side, so go poof (client will tell server what it hit / where it landed)
-		if !CL_PROJECTILE_NO_REMOVE
-		callevent remove_projectile cl_proj
 	}
 }
 
@@ -154,30 +82,18 @@
 	{
 		callevent 0.01 update_clfx_projectile
 	}
-
-	callevent check_ovrd_clproj
 	
 	//dbg game_tossprojectile $get(ent_me,itemname)
 	setvard MY_XBOW $get(ent_expowner,active_item)
-
-	if ( CLIENT_PROJECTILE )
-	{
-		callevent 0.01 show_cl_projectile
-		if $get(ent_expowner,isplayer)
-		useable 0
-		local EXIT_SUB 1
-	}
-	if !EXIT_SUB
 
 	//setvard MY_OWNER $get(ent_expowner,id)
 
 	if ( MODEL_BODY_OFS isnot 'MODEL_BODY_OFS' )
 	{
 		////dbg temp setting ofs MODEL_BODY_OFS
-		if !CLFX_ARROW
-		if ( !CLIENT_PROJECTILE ) setmodelbody 0 MODEL_BODY_OFS
+		if ( !CLFX_ARROW ) setmodelbody 0 MODEL_BODY_OFS
 	}
-	useable		0//Can't be picked up after it's shot/tossed
+	useable 0 //Can't be picked up after it's shot/tossed
 	if( PROJ_MOTIONBLUR )
 	{
 		if !CLFX_ARROW
@@ -213,7 +129,7 @@
 		solidifyprojectile
 	}
 
-	callevent 	projectile_landed
+	callevent projectile_landed
 
 	if ( PROJ_STICK_DURATION == 0 ) callevent remove_projectile landed
 	if ( PROJ_STICK_DURATION > 0 )
@@ -373,8 +289,6 @@
 
 { remove_projectile
 
-	callevent check_ovrd_clproj
-
 	if ( CLFX_ARROW isnot 'CLFX_ARROW' )
 	{
 		setvard CLFX_ARROW_IN_FLIGHT 0
@@ -382,14 +296,6 @@
 		setvard CLFX_ARROW_IDX 'CLFX_ARROW_IDX'
 	}
 
-	//dbg remove_projectile PARAM1
-	if ( CLIENT_PROJECTILE )
-	{
-		if CL_PROJECTILE_IDX isnot 'CL_PROJECTILE_IDX' //case we hit before cl effect initiated
-		if !CL_LANDED
-		setvard CL_LANDED 1
-		clientevent update all CL_PROJECTILE_IDX cl_projectile_landed PROJ_STICK_DURATION
-	}
 	expiretime 0
 	deleteent ent_me
 }
@@ -429,15 +335,4 @@
 { ext_render //<rendermode> <renderamt>
 	setprop ent_me rendermode PARAM1
 	setprop ent_me renderamt PARAM2
-}
-
-{ check_ovrd_clproj
-
-	if ( !$get(ent_expowner,isplayer) )
-	{
-		if $get(ent_expowner,isalive)
-		if CLIENT_PROJECTILE
-		const_ovrd CLIENT_PROJECTILE 0 //projectiles fired by NPCs will not play well with client side arrows, I suspect
-		dbg overriding client projectile
-	}
 }

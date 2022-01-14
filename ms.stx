@@ -1,6 +1,7 @@
 #TITLE=MS
 // MS syntax file written by Michael 'Kuroneko' Miller
-// 'spanded by Thothie (WIP)
+// 'spanded by Thothie
+// further 'spanshion by greatguys1
 
 #DELIMITER=,(){}[]*%/"'~!&|?://.#@;
 #QUOTATION1='
@@ -37,7 +38,7 @@ $float		//(<precision>,<number>)  - Returns <number> as a float with <precision>
 $can_damage	//(<target_ent>,[targetting_ent]) - Returns 1 if <target_ent> can be damaged by [targetting_ent] which is assumed to be the calling script, if ommited  (MAR2008a)
 $filesize	//(<filespec>) return size of a file - path begins at root, use forward slashes, eg. $filesize(maps/edana.bsp)
 $filehash	//(<file>,[hash]) - if [hash] is unprovided, returns the hash for the file, or 0 if not found. If [hash] is provided, returns 1 if hash mathches.
-$func		//(<event>,[params]) - Calls <event> and replaces itself with the result of the return/returndata statement within. (Won't work with delays, but will work with calleventloop's)
+$func		//(<event>,[params]) - Calls <event> and replaces itself with the result of the return statement within. (Won't work with delays, but will work with calleventloop's)
 $getcl_beam	//(<beam_idx>,<property>)  - returns property of beam as described in beam_update above (mostly for debugging)
 $get		//$get(<entity>,<property>,[options]) - get a property from a server side entity (see $get'ables and Scripting_AllDocs.txt for more info), propertie same as $get_by_idx below:
 $get_by_idx	//$get_by_idx(<entity_idx>,<property>,[options])
@@ -312,7 +313,6 @@ cleffect	//Creates effects in client side scripts, lots of uses, see Scripting_A
 		//- cleffect beam_ents <startidx> <attachment#> <endidx> <attachment#> <spritename> <life> <width> <amplitude> <brightness> <speed> <framerate> <clcolor>
 		//- cleffect beam_end <startIdx> <attachidx> <end_vec> <spritename> <life> <width> <amplitude> <brightness> <speed> <framerate> <color>
 		//- cleffect decal <decal_index> <vectrace_start> <vectrace_end> - paints a decal at the collision point
-		//- cleffect ce <player|GM> <event_name> [params...] - calls script event on the server instance of player idx or GM. Be sure to encase vectors to be returned in $quote(), may also need an extra param at the end.
 		//- cleffect spark <origin|model_idx> [attachment_idx] - creates a spark effect at origin or on model
 		//- cleffect clientcmd <cmds> - executes <cmd> as if through client's console, bypassing Steam Pipe "security" restrictions
 		//- cleffect <"tempent"|"frameent"> <"sprite"|"model"> <sprite_file|model_file> <origin> <setup_event> [update_event] [collide_event]
@@ -425,12 +425,11 @@ quest		//<set|unset> <target> <questname> <questdata> - add or remove a quest (r
 race		//sets monster race faction (see \races.script)
 registerarmor	//registers an armor structure  (no documentation, see items/armor_base / source code)
 registerattack	//registers an attack structure (see Scripting_AllDocs.txt)
-removescript	//client side - removes script from client
-returndata	//<float> - adjusts damage multipliers inside certain functions (game_damaged, game_takedamage, game_damaged_other) - can, in theory, be used for other script<->code interaction to return data from events [see also setdmg]
-return		//<vars...> - returns data for use by $func(). Note that this does not terminate execution of the remainder of the procedure.
+removescript	//client side - removes script from client	
+return	//<vars...> - returns data for use by $func(). Note that this does not terminate execution of the remainder of the procedure.
+		//<float> - adjusts damage multipliers inside certain functions (game_damaged, game_takedamage, game_damaged_other) - can, in theory, be used for other script<->code interaction to return data from events [see also setdmg]
 		//if you use multiple returns, they will tokenize their data
 		//returning "**clear" will reset the return data.
-		//using **<func_event_name> matching the calling $func() will create an instanced return, that will only be accessable by that $func(), rather than usuing the entity's local return data, which is shared.
 roam		//<1|0> - Enable/disable wandering when idle
 say		//<word>[delay]... - makes mouth move and (optionally) play sounds, sounds must be in sounds/npc, delay must actually be in [brackets], eg say hi[0.1]there[0.4]
 saytext		//<string> - Causes NPC to say <string> 
@@ -444,7 +443,7 @@ setangle	//<angle> <value> - see Scripting_AllDocs.txt - some functions seem not
 setbbox		//<[mins] [maxs]> or <animsize|npcsize> - set bbox type,  (monters will not walk through, regardless of setting)
 setcallback	//<think/touch/blocked/render> <enable/disable> - see Scripting_AllDocs.txt for details, buggy, some are client-side only
 setdmg		//<hit|dmg|type> <value> allows you to change incoming our outgoing damage flags in certain functions (possibly: game_damaged, game_takedamage, game_damaged_other)
-		//you may have to combine this with returndata <ratio> in some events, to return increased or reduced damage
+		//you may have to combine this with return <ratio> in some events, to return increased or reduced damage
 setenv		//<prop> <value> - (client side) set world environment, see Scripting_AllDocs.txt
 setfollow	//<target|none> [align_bottom] - this is how spider latch works
 setidleanim	//<anim_name> - set NPC default idle animation
@@ -639,12 +638,6 @@ torandomspawn   //<target> - moves to a random ms_player_spawn within 256 units,
 callclitemevent	//<item_id> <event_name> <params...> - calls event on item, only affects owner's client
 clearplayerhits //<monster> <player|all> - clears record of hits on monster (used to calculate xp) from a specific player or all
 decal		//(client side) cleffect decal <decal_index> (<trace_start>) (<trace_end>) OR (server side) effects decal <decal_index> (<origin>) - Decals world brushes - use dev_on commands ". decal <index>" and ". decalcycle" to explore decal indexes
-ce		//cleffect ce <player|GM> <event_name> [params...]
-		//- This is an odd one - it calls an event from the client to the server, sending to the calling player script or the Game Master
-		//- You can use this for client->server events, such as demonstrated in monsters/summon_volcano, where it uses client side projectiles
-		//- Be sure not to call it for all clients present ( use, for instance, if game.localplayer.index == FX_OWNER )
-		//- Origins must be placed in $quotes() to parse proper. Likely similar with any other parameters requiring commas, brackets, parentheses, or semicolons.
-		//- this can also be used, in hacky fashion, to return data on client side cvars (see player/player_cl_effects_special->cl_get_rc_delay)
 drainstamina	//<player> <amt> - drains stamina by <amt> (not so much new, as works now)
 projectiletouch //<1|0> - enables/disables game_touch dynamically on projectiles
 scriptflags	//New flag tracking system, has several formats, depending on desired action:
@@ -1102,7 +1095,7 @@ game_postspawn			//(passes params from msmonster entity on spawn) PARAM1 = (name
 game_struck			//PARAM1=dmg
 game_wear
 game_show			//JAN2010 - called on items when player enters world, use to initate model if it is worn
-game_takedamage			//PARAM1=attacker  PARAM2=inflictor? PARAM3=dmg PARAM4=dmg_type - use returndata to alter incoming damage
+game_takedamage			//PARAM1=attacker  PARAM2=inflictor? PARAM3=dmg PARAM4=dmg_type - use return to alter incoming damage
 game_putinpack
 game_removefromowner
 game_set_takedmg		//<element> <ratio> [adjust] - called with each use of the "takedmg" command. If "adjust" is not include, this resets the base value in the elemental resist system.
@@ -1123,10 +1116,10 @@ game_projectile_hitnpc		//<npc_id> when projectile hits npc
 game_projectile_hitwall		//projectile hit wall
 game_scriptflag_update		//<action> <name> <type> <value> <base_expire_time> - called whenever scriptflags are updated via scriptflags command - do not alter scriptflags here or you may cause an infinite loop (delay 0.1 secs)
 game_applyeffect		//<"applyeffect"|"applyeffectstack"> <target> <effectscript> [params...]
-				//- You can returndata "redirect;<target>" to redirect the applyeffect to another target.
+				//- You can return "redirect;<target>" to redirect the applyeffect to another target.
 				//- ...But don't get ideas about reflecting the DOT damage back to the player this way, as you he'll be trying to damage himself.
 				//- If you wanted to do that, you'd have to change the paramter that contains "who to blame" - for most DOT's, this is the second parameter after <effectscript>. You'd then do another applyeffect from here, with the altered parameters.
-				//- Alternatively, you can stop the applyeffect from being applied with returndata "abort"
+				//- Alternatively, you can stop the applyeffect from being applied with return "abort"
 
 //some of these these should be reconventioned
 game_playerspeak		//(GM Only) PARAM1=player_id PARAM2=speak_type(0-gobal,1-npc,2-party) PARAM3=speak_text
