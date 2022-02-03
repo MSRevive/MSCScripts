@@ -15,7 +15,6 @@
 
 	const PROJ_MOTIONBLUR 0
 
-	const MODEL_BODY_OFS		0
 	const PROJ_DAMAGE			0
 	const PROJ_STICK_DURATION	0
 	const PROJ_SOLIDIFY_ON_WALL	0  //Does not turn solid when a wall is hit
@@ -24,115 +23,80 @@
 	const PROJ_DAMAGE_AOE_FALLOFF	1
 	const PROJ_DAMAGE_TYPE		magic
 
-	const PROJ_COLLIDEHITBOX 1
+	const PROJ_COLLIDEHITBOX 0
 	const PROJ_IGNORENPC 1
 	const PROJ_ANIM_IDLE none
 
-	setvar CLIENT_PROJECTILE 1
-
-	const CL_PROJECTILE_CUSTOM 1
-
-	const CL_PROJECTILE_NO_REMOVE 1
-
-	const CL_PROJECTILE_SCRIPT items/proj_mana2_cl
+	const CLFX_ARROW 1
+	const CLFX_ARROW_SCRIPT items/proj_mana2_cl
+	const CLFX_ARROW_UPDATE_RATE 20 //I dont want this to update, only send info at the start. (mana bolt only lasts 10 seconds)
 }
 
 #include items/proj_arrow_base
 
-{  arrow_spawn
+{ arrow_spawn
 
 	name 	a|Manabolt
 	desc 	Manabolt
+	width 1
+	height 1
 	weight 	0
-	size 	16
 	value	16
-	gravity	0.0001
+	gravity	0
 
-	setmodel none
-
-	callevent 10.0 remove_me
-
-	setvard GAME_PVP game.pvp
-
+	//callevent 10.0 remove_projectile //For some reason, when this is here, the projectile seems to delete itself any time it's been 10 seconds after the map has loaded.
 }
 
-{ [override] game_fall //override base_arrow.  Just do nothing
-
-	dbg game_fall
-}
-
-{ [override] game_projectile_hitwall
-	dbg game_projectile_hitwall
+{ [override] game_projectile_hitwall //override for custom sound fx
 
 	playrandomsound 0 10 SOUND_ZAP1 SOUND_ZAP2 SOUND_ZAP3
-	//expiretime 0
-	callevent remove_projectile custom
 }
-
-{ [override] game_projectile_hitnpc
-	dbg game_projectile_hitnpc $get(PARAM1,name)
-}
-
-{ [override] game_projectile_landed
-	dbg game_projectile_landed
-}
-
-{ proj_setup_custom_clfx
-
-	clientevent new all CL_PROJECTILE_SCRIPT $get(ent_me,origin) $get(ent_me,angles) $get(ent_me,velocity) $get(ent_expowner,index) BALL_SIZE $get(ent_me,index)
-}
-
 
 { game_tossprojectile
 
-	setvard GAME_PVP game.pvp
- 	setvard MY_OWNER $get(ent_expowner,id)
-	setvard OWNER_ISPLAYER $get(MY_OWNER,isplayer)
-	setvard BALL_SIZE $get(MY_OWNER,scriptvar,'BALL_SIZE')
-	setvard F_BALL_DMG $get(MY_OWNER,scriptvar,'BALL_DMG')
-	//setvard F_BALL_TYPE $get(MY_OWNER,scriptvar,'BALL_TYPE')
+	callevent 10.0 remove_projectile
 
-	local F_BALL_VOL $int(F_BALL_SIZE)
+ 	local L_ID $get(ent_expowner,id)
+	if ( $get(L_ID,isplayer) ) local L_ID $get(L_ID,active_item) //active item should be orion bow
+	
+	setvard BALL_SIZE $get(L_ID,scriptvar,'BALL_SIZE')
+	setvard F_BALL_DMG $get(L_ID,scriptvar,'BALL_DMG')
+
+	local F_BALL_VOL $int(BALL_SIZE)
 	capvar F_BALL_VOL 1 10
 	svplaysound 4 F_BALL_VOL SOUND_SHOOT
 
-	width SCAN_SIZE
-	height SCAN_SIZE
-	setbbox animsize
-
-	//setvard SCAN_SIZE 16
-	//multiply SCAN_SIZE F_BALL_SIZE
+	setvard SCAN_SIZE 24
+	multiply SCAN_SIZE BALL_SIZE
+	if ( SCAN_SIZE < 48 ) setvard SCAN_SIZE 48
+	
+	callevent 0.01 scan_cycle
 
 	dbg game_tossprojectile BALL_SIZE PROJ_IGNORENPC
 
 	if ( BALL_SIZE == 0 ) callevent remove_projectile false_start
-
-	//if BALL_SIZE > 0
-
-	//setvard SCALE_SIZE F_BALL_SIZE
-	//multiply SCALE_SIZE 0.75
 }
 
-{ ext_affect_targets //<idx_tokens> from externals
-	setvard TOKEN_TARGS PARAM1
-	dbg ext_affect_targets TOKEN_TARGS
-	calleventloop $get_token_amt(TOKEN_TARGS) zap_targs
-}
-
-{ zap_targs
-	local CUR_TARG $get_token(TOKEN_TARGS,game.script.iteration)
-	local CUR_TARG $get_by_idx(CUR_TARG,id)
-	//check for pvp/nme and zap
-	if ( $get(CUR_TARG,isplayer) )
+{ [override] update_clfx_projectile
+	//these have to be assembled and sent, as there's no actual model for client to grab info from
+	if ( !CLFX_ARROW_INIT )
 	{
-		if !GAME_PVP
-		local EXIT_SUB 1
+		setvard CLFX_ARROW_INIT 1
+		setvard CLFX_ARROW_IN_FLIGHT 1
+
+		clientevent new all CLFX_ARROW_SCRIPT $get(ent_me,origin) $get(ent_me,angles) $get(ent_me,velocity) BALL_SIZE //origin angle velocity ballSize
+		setvard CLFX_ARROW_IDX game.script.last_sent_id
 	}
-	if !EXIT_SUB
-	if $get(CUR_TARG,relationship,ent_expowner) equals enemy
-	dbg zap_targs dmg $get(CUR_TARG,name) for F_BALL_DMG
-	//note: Something about having the projectile cause damage via xdamage causes the projectile to remove - sometimes (v odd)
-	//xdodamage CUR_TARG direct F_BALL_DMG 100% ent_expowner ent_me archery magic
-	//note: thus we are not attributing inflicter:
-	xdodamage CUR_TARG direct F_BALL_DMG 100% ent_expowner ent_expowner archery magic
+}
+
+{ scan_cycle
+	//<target|(src_origin)> <range|aoe|(dest_origin)|direct> <damage> <cth|fall_off> <attacker> <inflciter> <skill|none> <dmg_type> [flag_string]
+	xdodamage $get(ent_me,origin) SCAN_SIZE F_BALL_DMG 0 ent_expowner ent_me archery magic
+	
+	callevent 0.25 scan_cycle
+}
+
+{ game_deleted 
+
+	clientevent update all CLFX_ARROW_IDX end_fx
 }
