@@ -17,6 +17,7 @@
 	const PROJ_IGNORENPC 0
 	const MODEL_WORLD	none
 	const PROJ_MOTIONBLUR	1
+	const PROJ_STICK_ON_NPC 1
 
 	const CLFX_ARROW_SCRIPT items/proj_simple_cl
 	const CLFX_ARROW_UPDATE_RATE 0.5
@@ -53,9 +54,9 @@
 		setmodel none
 	}
 
-	if ( !HITSCAN_BOLT ) local reg.proj.dmg 		PROJ_DAMAGE
+	if ( !HITSCAN_BOLT ) local reg.proj.dmg PROJ_DAMAGE
 	else local reg.proj.dmg 0
-	if ( HEAVY_ONLY ) local reg.proj.dmg 		PROJ_DAMAGE
+	if ( HEAVY_ONLY ) local reg.proj.dmg PROJ_DAMAGE
 	local reg.proj.dmgtype 		PROJ_DAMAGE_TYPE
 	local reg.proj.aoe.range 	PROJ_AOE_RANGE
 	local reg.proj.aoe.falloff 	PROJ_AOE_FALLOFF
@@ -114,8 +115,6 @@
 	if ( CLFX_ARROW )
 	{
 		setvard CLFX_ARROW_IN_FLIGHT 0
-		setmodel MODEL_WORLD
-		setmodelbody 0 MODEL_BODY_OFS
 		clientevent update all CLFX_ARROW_IDX end_fx landed
 		setvard CLFX_ARROW_IDX 'CLFX_ARROW_IDX'
 	}
@@ -128,6 +127,8 @@
 	else
 	{
 		//expiretime PROJ_STICK_DURATION
+		setmodel MODEL_WORLD
+		setmodelbody 0 MODEL_BODY_OFS
 		solidifyprojectile
 	}
 
@@ -161,14 +162,12 @@
 	clientevent update all CLFX_ARROW_IDX ext_touch $get(PARAM1,index)
 }
 
-//This is probably never called
-{ hitwall
+//Event fixed and should now remove arrow properly //greatguys1@FEB2022
+{ game_projectile_hitwall
 
 	playrandomsound game.sound.weapon HITWALL_VOL SOUND_HITWALL1 SOUND_HITWALL2
 
 	if ( PROJ_STICK_DURATION == 0 ) callevent remove_projectile hitwall
-
-	if ( PROJ_STICK_DURATION > 0 ) callevent PROJ_STICK_DURATION remove_projectile hitwall_stickdur
 }
 
 { ext_lighten //param1 = gravity, called externally
@@ -222,7 +221,7 @@
 	local MY_DAMAGE $get(ent_expowner,skill.archery)
 	multiply MY_DAMAGE 0.01
 	multiply MY_DAMAGE PROJ_DAMAGE
-	local DMG_MULTI $get(MY_XBOW,scriptvar,HITSCAN_DMG_MULTI)
+	local DMG_MULTI $get(MY_XBOW,scriptvar,'HITSCAN_DMG_MULTI')
 	if ( DMG_MULTI > 0 ) multiply MY_DAMAGE DMG_MULTI
 
 	if ( !$get(HIT_TARG,isalive) )
@@ -263,7 +262,7 @@
 	local MY_DAMAGE $get(ent_expowner,skill.archery)
 	multiply MY_DAMAGE 0.01
 	multiply MY_DAMAGE PROJ_DAMAGE
-	local DMG_MULTI $get(MY_XBOW,scriptvar,HITSCAN_DMG_MULTI)
+	local DMG_MULTI $get(MY_XBOW,scriptvar,'HITSCAN_DMG_MULTI')
 	if ( DMG_MULTI > 0 ) multiply MY_DAMAGE DMG_MULTI
 	//dbg hit $get(MY_XBOW,name) : $get(PARAM1,name) for MY_DAMAGE with PROJ_DAMAGE_TYPE ( skill $get(MY_OWNER,skill.archery) )
 	xdodamage PARAM1 direct MY_DAMAGE 100% ent_expowner ent_expowner archery PROJ_DAMAGE_TYPE
@@ -299,11 +298,7 @@
 	}
 
 	expiretime 0
-	deleteent ent_me
-}
-
-{ game_projectile_hitwall
-	dbg game_projectile_hitwall
+	deleteme
 }
 
 { update_clfx_projectile
@@ -316,12 +311,13 @@
 		local L_INFO_TOKENS $get(ent_me,origin)
 		token.add L_INFO_TOKENS $get(ent_me,angles)
 		token.add L_INFO_TOKENS $get(ent_me,velocity)
-		token.add L_INFO_TOKENS  $anim_exists(PROJ_ANIM_IDLE)
-		token.add L_INFO_TOKENS  $get(ent_me,gravity)
+		token.add L_INFO_TOKENS $int(PROJ_ANIM_IDLE)
+		token.add L_INFO_TOKENS $get(ent_me,gravity)
+		token.add L_INFO_TOKENS PROJ_STICK_ON_NPC
 
 		local L_MODEL_BODY_OFS MODEL_BODY_OFS
 		if ( MODEL_BODY_OFS equals 'MODEL_BODY_OFS' ) local L_MODEL_BODY_OFS 0
-		dbg game_tossprojectile using clfx - L_ANIM_IDX
+		//dbg game_tossprojectile using clfx - L_ANIM_IDX
 		clientevent new all CLFX_ARROW_SCRIPT $get(ent_me,index) $get(ent_expowner,index) L_INFO_TOKENS MODEL_WORLD L_MODEL_BODY_OFS PROJ_MOTIONBLUR CLFX_ARROW_TAGS
 		setvard CLFX_ARROW_IDX game.script.last_sent_id
 		callevent CLFX_ARROW_UPDATE_RATE update_clfx_projectile
