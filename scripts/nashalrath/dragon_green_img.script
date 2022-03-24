@@ -1,3 +1,9 @@
+//Jaminportlants
+
+// . tele -1278 3221 -347
+// . eventall start_battle
+// . eventall drop_meteor
+
 //Mind you, this was setup before base_chat_array got the ability to play sounds
 //Plus, Jaz's voice plays everywhere on the map, so his sound needs are a bit unique
 
@@ -60,7 +66,7 @@
 	const DG_BASE_RENDERAMT 100
 }
 
-{ fake_precache
+{ fake_precache //I never understood this. Just precache the damn files.
 	//svplaysounds have to be precached in a hacky way
 	svplaysound 1 0 voices/dragons/Jaminporlants_hide1.wav
 	svplaysound 1 0 voices/dragons/Jaminporlants_hide2.wav
@@ -135,9 +141,6 @@
 { do_intro
 	//check players for racial types here (need to work up a system for this)
 
-	setvarg G_ISL_OWNER $get(ent_me,id)
-	setvarg G_LSL_OWNER $get(ent_me,id)
-	setvarg G_FBL_OWNER $get(ent_me,id)
 	setvard FLICKER_BRUSH_ID $get_by_name(brush_storm_lightning2)
 
 	setvard GLOAT_COUNT 0
@@ -561,7 +564,7 @@ repeatdelay 1.0
 	playsound 0 10 SOUND_BREATH_IN 0.1 80
 }
 
-{ frame_storm_breath_start
+{ frame_storm_breath_start //Called from anim
 	playsound 0 10 SOUND_BREATH_OUT 0.1 70
 	clientevent new all nashalrath/dragon_green_img_cl $get(ent_me,index) BREATH_CYCLE
 	setvard CL_BREATH_IDX game.script.last_sent_id
@@ -699,31 +702,23 @@ repeatdelay 1.0
 }
 
 { drop_meteor //called by main think cycle when fire storm active
-	callevent get_control_player
 
 	local L_POS STORM_CENTER
 	local RND_ANG $randf(0,359.99)
 	local RND_DIST $randf(0,STORM_RAD)
 	vectoradd L_POS $relpos($vec(0,RND_ANG,0),$vec(0,RND_DIST,0))
+	local L_DEST $relpos(L_POS,$vec(-10,-10,-100))
+
 	//createnpc monsters/summon/meteor_deployer L_POS $get(ent_me,id) $get(ent_me,id)
-	clientevent new all nashalrath/fire_bomb_cl L_POS $get(CONTROL_PLAYER,index) -3000
+	//<projectile scriptname> <"view"|(src_origin)> <target|(targ_origin)|none> <speed> <damage> <cof> <skill|none>
+	tossprojectile "proj_staff_fire_bomb" L_POS L_DEST 120 DMG_METEOR 0 none
+	//clientevent new all nashalrath/fire_bomb_cl L_POS $get(CONTROL_PLAYER,index) -3000
 }
 
-{ ext_fbl //<origin> - fire bomb landed - called by fire storm CL script and returned by GM
-	dbg ext_fbl
-
-	effect screenshake PARAM1 100 5 3 500
-
-	local SPLOOSH_POINT PARAM1
-	//vectorset SPLOOSH_POINT z $get_ground_height(SPLOOSH_POINT)
-	clientevent new all items/proj_arrow_phx_cl SPLOOSH_POINT 256
-	xdodamage PARAM1 256 DMG_METEOR 0.1 ent_me ent_me none fire_effect dmgevent:fbl	
-}
-
-{ fbl_dodamage
-	if PARAM1
-	if $get(PARAM2,relationship,ent_me) equals enemy
-	applyeffect PARAM2 effects/effect_burn 5.0 $get(ent_me,id) DOT_FIRE
+{ ext_fire_bomb //Called from meteor once landing //PARAM1 = meteor origin
+	//if PARAM1
+	//if $get(PARAM2,relationship,ent_me) equals enemy
+	//applyeffect PARAM2 effects/effect_burn 5.0 $get(ent_me,id) DOT_FIRE
 }
 
 { get_control_player
