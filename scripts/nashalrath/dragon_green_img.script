@@ -48,6 +48,8 @@
 
 	const DMG_LIGHTNING_STRIKE $rand(400,800)
 	const DOT_LIGHTNING 150
+	
+	setvard ATK_POINTS '' //Holds a token of points for lightning or ice to damage at.
 
 	//variable so meteor summoner can read them
 	const DOT_FIRE 100
@@ -66,7 +68,7 @@
 	const DG_BASE_RENDERAMT 100
 }
 
-{ fake_precache //I stand corrected, I guess you ahve to precache svplaysounds this way. -greatguys1@MAR2022
+{ fake_precache //I stand corrected, I guess you have to precache svplaysounds this way. -greatguys1@MAR2022
 	//svplaysounds have to be precached in a hacky way
 	svplaysound 1 0 voices/dragons/Jaminporlants_hide1.wav
 	svplaysound 1 0 voices/dragons/Jaminporlants_hide2.wav
@@ -634,19 +636,6 @@ repeatdelay 1.0
 	xdodamage PARAM1 64 DMG_ICE_SHARD 0.1 ent_me ent_me none cold dmgevent:isl
 }
 
-{ ext_lsl //<origin> - lightning strike landed - called by lightning storm CL script and returned by GM
-	dbg ext_lsl PARAM1
-
-	xdodamage PARAM1 128 DMG_LIGHTNING_STRIKE 0.1 ent_me ent_me none lightning_effect dmgevent:lsl
-}
-
-{ lsl_dodamage
-
-	if PARAM1
-	if $get(ent_me,relationship,PARAM2) equals enemy
-	applyeffect PARAM2 effects/effect_shock_dmg 10.0 $get(ent_me,id) DOT_LIGHTNING
-}
-
 { isl_dodamage
 	if PARAM1
 	if $get(ent_me,relationship,PARAM2) equals enemy
@@ -668,16 +657,26 @@ repeatdelay 1.0
 	local RND_DIST $randf(0,STORM_RAD)
 	vectoradd L_POS $relpos($vec(0,RND_ANG,0),$vec(0,RND_DIST,0))
 	
-	vectorset L_POS z $get_ground_height(L_POS)
+	local L_GROUND L_POS
+	vectorset L_GROUND z $get_ground_height(L_POS)
 	
 	local L_STRIKE_TIME 0 //Strike time 0 means less fx, and no damage
-	if ( $vec.z(L_POS) > -3000 ) //If strike is landing on the island, not below
+	if ( $vec.z(L_GROUND) > -3000 ) //If strike is landing on the island, not below
 	{
 		local L_STRIKE_TIME 3 //Then turn strike time up
-		
+		token.add ATK_POINTS L_GROUND
+		callevent L_STRIKE_TIME lightning_strike
 	}
 
 	clientevent new all nashalrath/lightning_strike_cl L_POS L_STRIKE_TIME
+}
+
+{ lightning_strike
+
+	local L_POS $get_token(ATK_POINTS,0)
+	token.del ATK_POINTS 0
+	
+	xdodamage L_POS 128 DMG_LIGHTNING_STRIKE 0.1 ent_me ent_me none lightning_effect
 }
 
 { lightning_flicker
@@ -734,6 +733,10 @@ repeatdelay 1.0
 	if ( BREATH_CYCLE == 1 ) //meteors
 	{
 		applyeffect PARAM2 effects/effect_burn 5.0 $get(ent_me,id) DOT_FIRE
+	}
+	else if ( BREATH_CYCLE == 2 ) //lightning
+	{
+		applyeffect PARAM2 effects/effect_shock_dmg 10.0 $get(ent_me,id) DOT_LIGHTNING
 	}
 }
 
