@@ -1,21 +1,15 @@
 //strikes below [min_z] are not scanned for
 
-{ client_activate //<pos> <control_player> [min_z]
+{ client_activate //<pos> <time>
+
 	setvard FX_ORIGIN PARAM1
-	setvard FX_CONTROL_PLAYER PARAM2
-	setvard MIN_Z PARAM3
-	if ( MIN_Z startswith PARAM ) setvard NO_MIN_Z 1
+	setvard FX_STRIKE_TIME PARAM2 //Time it takes before lightning strikes
+	
 	setvard FX_GROUND FX_ORIGIN
 	vectorset FX_GROUND z $get_ground_height(FX_GROUND)
 
-	if ( !NO_MIN_Z )
-	{
-		if $vec.z(FX_GROUND) < MIN_Z
-		//bolt is below min z (islands on Nashalrath) - just draw bolt and exit
-		callevent do_strike nohit
-		local EXIT_SUB 1
-	}
-	if !EXIT_SUB
+	callevent FX_STRIKE_TIME do_strike
+	if FX_STRIKE_TIME > 0 //Avoid doing extra fx if the strike time is instant
 
 	setvard GLOW_SIZE 1
 	cleffect light new FX_GROUND 1 (255,255,0) 5.0
@@ -27,7 +21,6 @@
 
 	setvard FX_ACTIVE 1
 	cleffect tempent sprite 3dmflaora.spr FX_GROUND setup_glow_sprite update_glow_sprite
-	callevent 3.0 do_strike
 }
 
 { game_prerender
@@ -45,7 +38,7 @@
 
 	callevent 3.0 remove_fx
 
-	if PARAM1 isnot nohit
+	if FX_STRIKE_TIME > 0
 	sound.play3d weather/lightning.wav 10 FX_GROUND
 
 	cleffect tempent sprite 3dmflaora.spr FX_GROUND setup_spit_sprite
@@ -54,8 +47,8 @@
 	cleffect tempent sprite 3dmflaora.spr FX_GROUND setup_spit_sprite
 	cleffect tempent sprite 3dmflaora.spr FX_GROUND setup_spit_sprite
 
-	if game.localplayer.index == FX_CONTROL_PLAYER
-	cleffect ce GM gm_lsl $quote(FX_GROUND) x
+	//if game.localplayer.index == FX_CONTROL_PLAYER
+	//cleffect ce GM gm_lsl $quote(FX_GROUND) x
 }
 
 { remove_fx

@@ -66,7 +66,7 @@
 	const DG_BASE_RENDERAMT 100
 }
 
-{ fake_precache //I never understood this. Just precache the damn files.
+{ fake_precache //I stand corrected, I guess you ahve to precache svplaysounds this way. -greatguys1@MAR2022
 	//svplaysounds have to be precached in a hacky way
 	svplaysound 1 0 voices/dragons/Jaminporlants_hide1.wav
 	svplaysound 1 0 voices/dragons/Jaminporlants_hide2.wav
@@ -389,6 +389,7 @@ repeatdelay 1.0
 			if game.time > NEXT_BALLS
 			setvard NEXT_BALLS game.time
 			add NEXT_BALLS FREQ_BALLS
+			
 			callevent drop_meteor
 			if $rand(1,2) == 1
 			callevent $randf(0.5,2.0) drop_meteor //somtimes two	
@@ -401,11 +402,10 @@ repeatdelay 1.0
 			if game.time > NEXT_BOLTS
 			setvard NEXT_BOLTS game.time
 			add NEXT_BOLTS FREQ_BOLTS
+			
 			callevent do_lightning_bolt
 			if $rand(1,2) == 1
 			callevent $randf(0.5,2.0) do_lightning_bolt //somtimes two	
-			//if $rand(1,2) == 1
-			//callevent $randf(2.1,4.0) do_lightning_bolt //somtimes three
 		}
 	}
 
@@ -654,7 +654,6 @@ repeatdelay 1.0
 }
 
 { do_lightning_bolt
-	callevent get_control_player
 
 	if ( !LIGHTNING_FLICKERING )
 	{
@@ -668,8 +667,17 @@ repeatdelay 1.0
 	local RND_ANG $randf(0,359.99)
 	local RND_DIST $randf(0,STORM_RAD)
 	vectoradd L_POS $relpos($vec(0,RND_ANG,0),$vec(0,RND_DIST,0))
+	
+	vectorset L_POS z $get_ground_height(L_POS)
+	
+	local L_STRIKE_TIME 0 //Strike time 0 means less fx, and no damage
+	if ( $vec.z(L_POS) > -3000 ) //If strike is landing on the island, not below
+	{
+		local L_STRIKE_TIME 3 //Then turn strike time up
+		
+	}
 
-	clientevent new all nashalrath/lightning_strike_cl L_POS $get(CONTROL_PLAYER,index) -3000
+	clientevent new all nashalrath/lightning_strike_cl L_POS L_STRIKE_TIME
 }
 
 { lightning_flicker
@@ -715,21 +723,17 @@ repeatdelay 1.0
 	//clientevent new all nashalrath/fire_bomb_cl L_POS $get(CONTROL_PLAYER,index) -3000
 }
 
-{ ext_fire_bomb //Called from meteor once landing //PARAM1 = meteor origin
-	//if PARAM1
-	//if $get(PARAM2,relationship,ent_me) equals enemy
-	//applyeffect PARAM2 effects/effect_burn 5.0 $get(ent_me,id) DOT_FIRE
-}
-
-{ get_control_player
-	//player used to report various CL events
-	setvard CONTROL_PLAYER $get(ASPECT_ID,scriptvar,'NPCATK_TARGET') 
-	if ( !$get(L_CONTROL_PLAYER,isplayer) )
+{ game_dodamage //Called from various storm hazards //PARAM1=hit:0|1 PARAM2=ent_hit PARAM3=(start) PARAM4=(end) PARAM5=DmgType PARAM6=DmgAmt
+	
+	messageall yellow PARAM1 $int(PARAM6) $get(PARAM2,name) $get(ent_me,relationship,PARAM2) BREATH_CYCLE
+	
+	if PARAM1
+	if $int(PARAM6)
+	if $get(ent_me,relationship,PARAM2) equals 'enemy' //if the target is an enemy, and was hit
+	
+	if ( BREATH_CYCLE == 1 ) //meteors
 	{
-		local L_PLAYER_LIST ''
-		getplayersnb L_PLAYER_LIST
-		local L_PLAYER_LIST $sort_entlist(L_PLAYER_LIST,range)
-		setvard CONTROL_PLAYER $get_token(L_PLAYER_LIST,0)
+		applyeffect PARAM2 effects/effect_burn 5.0 $get(ent_me,id) DOT_FIRE
 	}
 }
 
