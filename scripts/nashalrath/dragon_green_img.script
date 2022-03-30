@@ -409,6 +409,17 @@ repeatdelay 1.0
 			if $rand(1,2) == 1
 			callevent $randf(0.5,2.0) do_lightning_bolt //somtimes two	
 		}
+		
+		if ( BREATH_CYCLE == 3 )
+		{
+			if game.time > NEXT_BALLS //using meteor ball timer because meh
+			setvard NEXT_BALLS game.time
+			add NEXT_BALLS FREQ_BALLS
+			
+			callevent do_ice_bolt
+			if $rand(1,2) == 1
+			callevent $randf(0.5,2.0) do_ice_bolt //somtimes two
+		}
 	}
 
 	if ( game.time > NEXT_BREATH )
@@ -607,9 +618,8 @@ repeatdelay 1.0
 		usetrigger light_storm_cold
 		callexternal GAME_MASTER gm_set_weather fog_dragon_white 1
 		setvard STORM_BRUSH_ID $get_by_name(brush_storm_cold)
-		callevent get_control_player
 		
-		clientevent new all nashalrath/dragon_ice_storm_cl STORM_CENTER $get(CONTROL_PLAYER,index)
+		clientevent new all nashalrath/dragon_ice_storm_cl STORM_CENTER
 		setvard CL_STORM_IDX game.script.last_sent_id
 	}
 	callexternal STORM_BRUSH_ID storm_fade_in
@@ -631,16 +641,11 @@ repeatdelay 1.0
 	}
 }
 
-{ ext_isl //<origin> - ice shard landed - called by ice storm CL script and returned by GM
-	dbg ext_isl PARAM1
-	xdodamage PARAM1 64 DMG_ICE_SHARD 0.1 ent_me ent_me none cold dmgevent:isl
-}
-
-{ isl_dodamage
-	if PARAM1
-	if $get(ent_me,relationship,PARAM2) equals enemy
-	applyeffect PARAM2 effects/effect_frostbite_dmg 5.0 $get(ent_me,id) DOT_COLD
-}
+//{ isl_dodamage
+//	if PARAM1
+//	if $get(ent_me,relationship,PARAM2) equals enemy
+//	applyeffect PARAM2 effects/effect_frostbite_dmg 5.0 $get(ent_me,id) DOT_COLD
+//}
 
 { do_lightning_bolt
 
@@ -708,6 +713,22 @@ repeatdelay 1.0
 	setvard LIGHTNING_FLICKERING 0
 }
 
+{ do_ice_bolt //called by main think cycle when fire storm active
+
+	local L_POS STORM_CENTER
+	local RND_ANG $randf(0,359.99)
+	local RND_DIST $randf(0,STORM_RAD)
+	vectoradd L_POS $relpos($vec(0,RND_ANG,0),$vec(0,RND_DIST,0))
+	
+	local L_DEST L_POS
+	vectoradd L_DEST z -50
+
+	//<projectile scriptname> <"view"|(src_origin)> <target|(targ_origin)|none> <speed> <damage> <cof> <skill|none>
+	tossprojectile "proj_ice_bolt" L_POS L_DEST 450 DMG_ICE_SHARD 0 none
+	
+	callexternal $get(ent_lastprojectile,id) ext_scale 4
+}
+
 { drop_meteor //called by main think cycle when fire storm active
 
 	local L_POS STORM_CENTER
@@ -723,8 +744,6 @@ repeatdelay 1.0
 }
 
 { game_dodamage //Called from various storm hazards //PARAM1=hit:0|1 PARAM2=ent_hit PARAM3=(start) PARAM4=(end) PARAM5=DmgType PARAM6=DmgAmt
-	
-	messageall yellow PARAM1 $int(PARAM6) $get(PARAM2,name) $get(ent_me,relationship,PARAM2) BREATH_CYCLE
 	
 	if PARAM1
 	if $int(PARAM6)
