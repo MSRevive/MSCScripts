@@ -1,0 +1,554 @@
+//Earth Elemental (basic)
+//- ideas:
+//- locks a target and blocks all attacks from that direction for several seconds
+//- summons rocks from sky, drop on player
+//- creates a fissure in the ground, stunning targets (use firebreaker fx, sans fire)
+//- (greater) Summons rock swarm ala maldora/stone skeles
+//- (greater) Causes earthquake, raining down rock gibs and stunning all in area
+//- (greater) Encase in stone effect
+//- No resistances, save poison and lightning, but heavy armor
+//- Reflects lightning damage
+
+#scope server
+{
+	//base attack/npc/antistuck
+	setvar AS_SUMMON_TELE_CHECK 1
+	setvar ANIM_IDLE idle1
+	setvar ANIM_WALK idle1
+	setvar ANIM_RUN idle1
+	setvard ANIM_ATTACK attack1 //attack1_strike
+	setvard ANIM_DEATH die1
+	setvard NPC_NO_ATTACK 1 //custom attack sequence
+	const ANIM_SEARCH dunno
+
+	const ELEMENTAL_EXP 300
+	setvard NPC_GIVE_EXP ELEMENTAL_EXP
+
+	//base propell
+	const MOVE_FAST 100
+	const MOVE_NORMAL 50
+	setvard NPC_HACKED_MOVE_SPEED MOVE_NORMAL
+
+	//base attack/npc
+	const ELEMENTAL_MOVERANGE 2048
+	setvard ATTACK_RANGE ELEMENTAL_MOVERANGE
+	setvard ATTACK_HITRANGE ELEMENTAL_MOVERANGE
+	setvard ATTACK_MOVERANGE ELEMENTAL_MOVERANGE
+	const SOUND_DEATH garg/gar_die1.wav
+
+	//base struck
+	const NPC_MATERIAL_TYPE stone
+	const NPC_USE_FLINCH 1
+	setvard ANIM_FLINCH flinch
+	const NPC_PITCH_FLINCH 60
+	const SOUND_FLINCH1 debris/bustflesh2.wav	//change to bust stone
+	const SOUND_FLINCH2 agrunt/ag_pain1.wav
+	const SOUND_FLINCH3 agrunt/ag_pain4.wav
+	const NPC_USE_PAIN 1
+	const NPC_PITCH_PAIN 60
+	const SOUND_PAIN1 debris/bustflesh2.wav	//change to bust stone
+	const SOUND_PAIN2 agrunt/ag_pain1.wav
+	const SOUND_PAIN3 agrunt/ag_pain4.wav
+	const NPC_USE_IDLE 1
+	const NPC_PITCH_IDLE 60
+	const SOUND_IDLE1 agrunt/ag_alert1.wav
+	const SOUND_IDLE2 agrunt/ag_die1.wav
+	const SOUND_IDLE3 agrunt/ag_idle1.wav
+
+	//custom
+	const ELEMENTAL_LEVEL 1
+	const SWIPE_RANGE 100
+	const SWIPE_HITRANGE 150
+	const SOUND_ALERT agrunt/ag_alert5.wav
+	const PITCH_LEVEL 60
+	const SOUND_SWIPE_MISS weapons/debris1.wav
+	const SOUND_SWIPE_HIT weapons/cbar_hitbod1.wav
+	const SOUND_SHOCK1 debris/zap8.wav
+	const SOUND_SHOCK2 debris/zap3.wav
+	const SOUND_SHOCK3 debris/zap4.wav
+	const SOUND_EARTHQUAKE_START magic/volcano_start.wav
+	const SOUND_EARTHQUAKE_LOOP magic/volcano_loop.wav
+
+	const FREQ_ROCK 3.0
+	const FREQ_FISSURE $randf(8.0,12.0)
+	const FREQ_LONG $randf(20.0,30.0)
+
+	const NUM_LONGS 1 //3 for greater
+
+	const SHIELD_DURATION 10.0
+	const EARTHQUAKE_DURATION 10.0
+	const EARTHQUAKE_AOE 512	
+
+	const HITCHANCE_SWIPE 80
+	const DMG_SWIPE $rand(60,100)
+	const DMG_ROCK $rand(150,200)
+	const DMG_FISSURE $rand(60,100)
+	const DMG_STORM $rand(75,150) //set as stone guardian (greater only)
+	const DOT_EARTHQUAKE 100 //scales by ratio of dist (greater only)
+
+	const FISSURE_LENGTH 768
+
+	const ANIM_TOCHARGE tocharge //tocharge_done
+	const ANIM_CHARGEIDLE charging //-use as block charge?
+	const ANIM_FROMCHARGE fromcharge
+	const ANIM_ALERT yes
+	const ANIM_ROCK no
+	const ANIM_FIRE_BALL fireball //throw_fireball
+	const ANIM_QUICKBLOCK block //parry_begin parry_end
+
+	//array.create ARRAY_FISSURE_TARGS
+}
+
+{ game_precache
+	precache rockgibs.mdl
+	precache rain_ripple.spr
+}
+
+{ fake_precache
+	svplaysound 0 0 SOUND_SHOCK1
+	svplaysound 0 0 SOUND_SHOCK2
+	svplaysound 0 0 SOUND_SHOCK3
+	svplaysound 0 0 weapons/debris1.wav
+	svplaysound 0 0 SOUND_EARTHQUAKE_START
+	svplaysound 0 0 SOUND_EARTHQUAKE_LOOP
+}
+
+#include monsters/base_monster_new
+#include monsters/base_propelled
+#include monsters/base_struck
+
+{ [shared] npc_spawn
+	callevent elemental_spawn
+}
+
+{ elemental_spawn
+
+	name an|Earth Elemental
+	setmodel monsters/elementals_lesser.mdl
+	hp 500
+	width 32
+	height 96
+	race demon
+	blood none
+	setvard IS_BLOODLESS 1
+	setvard IMMUNE_VAMPIRE 1
+	setvard IS_UNHOLY 1
+	takedmg all 0.30
+	takedmg holy 3.0
+	//takedmg lightning 0.0
+	takedmg poison 0.0
+	roam 1
+	setidleanim ANIM_IDLE
+	setmoveanim ANIM_WALK
+	hearingsensitivity 5
+	setmodelbody 0 3 //maybe different on greater (elder model)
+}
+
+{ npc_targetsighted
+	local L_GAME_TIME game.time
+	if L_GAME_TIME > NEXT_ACTION
+
+	if !SUSPEND_AI
+
+	if ( !DID_ALERT )
+	{
+		playsound 0 10 SOUND_ALERT 0.8 PITCH_LEVEL
+		playanim critical ANIM_ALERT
+		setvard DID_ALERT 1
+		setvard NEXT_ACTION L_GAME_TIME
+		add NEXT_ACTION 0.5
+		local EXIT_SUB 1 //would use exitevent here, but worried what it might do to base
+		setvard ATTACK_CYCLE 0
+		setvard NEXT_ROCK L_GAME_TIME
+		add NEXT_ROCK FREQ_ROCK
+		setvard NEXT_FISSURE L_GAME_TIME
+		add NEXT_FISSURE FREQ_FISSURE
+		setvard NEXT_LONG L_GAME_TIME
+		add NEXT_LONG FREQ_LONG //earthquake, block, storm
+	}
+	if !EXIT_SUB
+
+	if !I_R_FROZEN
+
+	if !SUSPEND_CYCLE
+
+	if ( L_GAME_TIME > NEXT_LONG )
+	{
+		if $get(NPCATK_TARGET,range) < 640
+		setvard DID_SPECIAL 1
+		if ( LONG_SELECT >= NUM_LONGS ) setvard LONG_SELECT 0
+		add LONG_SELECT 1
+		setvard NEXT_LONG L_GAME_TIME
+		add NEXT_LONG FREQ_LONG
+
+		if ( LONG_SELECT == 1 )
+		{
+			setvard NEXT_ACTION L_GAME_TIME
+			add NEXT_ACTION 1.0
+			callevent do_shield
+			local EXIT_SUB 1
+		}
+		else if ( LONG_SELECT == 2 )
+		{
+			callevent do_earthquake
+			local EXIT_SUB 1
+		}
+		else if ( LONG_SELECT == 3 )
+		{
+			setvard NEXT_ACTION L_GAME_TIME
+			add NEXT_ACTION 1.0
+			callevent do_storm
+			local EXIT_SUB 1
+		}
+	}
+	if !EXIT_SUB
+
+	if ( L_GAME_TIME > NEXT_FISSURE )
+	{
+		if $get(NPCATK_TARGET,range) < 640
+		setvard NEXT_FISSURE L_GAME_TIME
+		add NEXT_FISSURE FREQ_FISSURE
+		setvard NEXT_ACTION L_GAME_TIME
+		add NEXT_ACTION 4.0 //despite this, bastard is still tossing rocks right after fissures
+		setvard NEXT_ROCK L_GAME_TIME
+		add NEXT_ROCK 5.0
+		playanim critical ANIM_FIRE_BALL
+		setvard DID_SPECIAL 1
+		callevent do_fissure
+	}
+	if !EXIT_SUB
+
+	//default attack, summon rock from sky, with bit of a delay
+	if ( L_GAME_TIME > NEXT_ROCK )
+	{
+		playanim critical ANIM_ROCK
+		callevent summon_rock $get(NPCATK_TARGET,origin)
+		setvard NEXT_ROCK L_GAME_TIME
+		add NEXT_ROCK FREQ_ROCK
+		setvard DID_SPECIAL 1
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	//if I'm not doing anything else, just punch him
+	if ( $get(NPCATK_TARGET,range) < SWIPE_RANGE )
+	{
+		if DID_SPECIAL
+		setvard NEXT_ROCK L_GAME_TIME
+		add NEXT_ROCK FREQ_ROCK
+		playanim once ANIM_ATTACK
+	}
+}
+
+{ attack1_strike
+	if ( $rand(1,3) == 1 ) setvard DID_SPECIAL 0 //lets the mob alternate between rocks/specials and swipes
+	xdodamage NPCATK_TARGET SWIPE_HITRANGE DMG_SWIPE HITCHANCE_SWIPE ent_me ent_me none blunt dmgevent:swipe
+}
+
+{ swipe_dodamage
+	if ( !PARAM1 ) playsound 0 10 SOUND_SWIPE_MISS 0.8 PITCH_LEVEL
+
+	if PARAM1
+	playsound 0 10 SOUND_SWIPE_HIT 0.8 PITCH_LEVEL
+	if $get(PARAM2,relationship,ent_me) equals enemy
+	if $rand(1,3) == 1
+	if ( ELEMENTAL_LEVEL == 1 )
+	{
+		applyeffect PARAM2 effects/effect_stun 5.0
+	}
+	else
+	{
+		applyeffect PARAM2 effects/heavy_stun 3.0 $get(ent_me,id) 1
+	}
+}
+
+{ summon_rock //loc
+	local L_POS PARAM1
+	local L_TRACE_START L_POS
+	local L_TRACE_END L_POS
+	vectoradd L_TRACE_END z 768
+	local L_TRACE $get_traceline(L_TRACE_START,L_TRACE_END,worldonly)
+	local L_POS L_TRACE
+	if ( L_TRACE isnot L_TRACE_END ) vectoradd L_POS z -64
+	clientevent new all monsters/elemental_earth_cl $get(ent_me,index) spawn_rock $get(NPCATK_TARGET,index) L_POS
+}
+
+{ ext_mob_clreturn //<position> //called from game_master via monsters/elemental_earth_cl
+	//effect tempent gibs rockgibs.mdl PARAM1 1 5 15 20 5
+	local L_GIB_POS PARAM1
+	vectorset L_GIB_POS z $get_ground_height(L_GIB_POS)
+	vectoradd L_GIB_POS z 16 //little off the ground so the models dont get lost
+	effect tempent gibs rockgibs.mdl PARAM1 10.0 $relvel($vec(0,0,0),$vec(0,0,300)) 50 100 5
+	//effect tempent gibs <modelname/spritename> <position> <size> <velocity> <randomness> <amount> <duration>
+	effect screenshake PARAM1 100 5 3 500
+	setvard BURST_POS PARAM1
+	xdodamage PARAM1 128 DMG_ROCK 0.1 ent_me ent_me none blunt_effect dmgevent:rock
+}
+
+{ rock_dodamage
+	if ELEMENTAL_LEVEL > 1
+	if PARAM1
+	if $get(PARAM2,relationship,ent_me) equals enemy
+	local CUR_TARG PARAM2
+	callevent repel_target CUR_TARG $vec(0,500,110) BURST_POS
+}
+
+{ repel_target //<target> <strength> <from_origin>
+	local L_TARG_ORG $get(PARAM1,origin)
+	local L_MY_ORG PARAM3
+	local L_TARG_ANG $angles(L_MY_ORG,L_TARG_ORG)
+	local L_NEW_YAW L_TARG_ANG
+	setvelocity PARAM1 $relvel($vec(0,L_NEW_YAW,0),PARAM2)
+}
+
+{ game_damaged
+	//reflect lightning attacks
+
+	if ( PARAM3 contains lightning )
+	{
+		setdmg dmg 0
+		setdmg hit 0
+		returndata 0
+
+		if $get(PARAM1,relationship,ent_me) equals enemy
+
+		local L_RND_SND $rand(1,3)
+		if ( L_RND_SND == 1 ) svsound.play3d SOUND_SHOCK1 10 $get(PARAM1,origin)
+		else if ( L_RND_SND == 2 ) svsound.play3d SOUND_SHOCK2 10 $get(PARAM1,origin)
+		else if ( L_RND_SND == 3 ) svsound.play3d SOUND_SHOCK3 10 $get(PARAM1,origin)
+
+		playrandomsound 2 10 SOUND_SHOCK1 SOUND_SHOCK2 SOUND_SHOCK3
+
+		if ( game.time > NEXT_SHOCK_MSG )
+		{
+			playermessage PARAM1 $get(ent_me,name) redirects your electrical attacks!
+			setvard NEXT_SHOCK_MSG game.time
+			add NEXT_SHOCK_MSG 5.0
+		}
+
+		xdodamage PARAM1 1024 PARAM2 100% ent_me ent_me lightning_effect dmgevent:zap
+		if game.time > NEXT_BEAM
+		setvard NEXT_BEAM game.time
+		add NEXT_BEAM 0.5
+		//effect beam ents lgtning.spr 30 ent_me 0 PARAM1 $rand(1,3) (128,128,255) 200 10 0.5 //players have no attachments lest in 3rd person or viewing others
+		//effect beam end lgtning.spr 30 $get(PARAM1,origin) ent_me 0 (128,128,255) 200 10 0.5
+		if ( ELEMENTAL_LEVEL > 1 )
+		{
+			//also heals
+			givehp ent_me PARAM2
+			effect glow ent_me (0,255,0) 22 0.5 0.25
+		}
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+	
+	if SHIELD_ACTIVE
+
+	if PARAM3 !contains effect ///don't shield vs. DOT
+
+	local L_ATK_ORG $get(PARAM1,origin)
+	local L_MY_ORG $get(ent_me,origin)
+	local L_MY_ANG $get(ent_me,angles)
+
+	if ( $within_cone2D(L_ATK_ORG,L_MY_ORG,L_MY_ANG,90) )
+	{
+		setdmg dmg 0
+		setdmg hit 0
+		returndata 0
+		local L_BLOCKED 1
+	}
+
+	if L_BLOCKED
+
+	if ( game.time > NEXT_SHIELD_HITFX )
+	{
+		setvard NEXT_SHIELD_HITFX game.time
+		add NEXT_SHIELD_HITFX 0.1
+		clientevent update all CL_SHIELD_IDX shield_hit
+
+		playsound 2 10 player/pl_metal2.wav 0.8 PITCH_LEVEL
+		dplayermessage PARAM1 $get(ent_me,name) blocks your attack.
+	}
+}
+
+{ zap_dodamage
+	if PARAM1
+	effect beam end lgtning.spr 30 $get(PARAM2,origin) ent_me 0 (128,128,255) 200 10 0.5
+}
+
+{ do_fissure
+	setvard AS_ATTACKING game.time
+	add AS_ATTACKING 4.0
+	addvelocity ent_me $relvel(0,-1000,0)
+	setmovedest NPCATK_TARGET 9999
+	callevent 0.5 do_fissure2
+}
+
+{ do_fissure2
+	//fissure attack land
+	dbg attack1_strike
+	local L_MY_YAW $get(ent_me,angles.yaw)
+	local L_FISSURE_END $get(ent_me,origin)
+	vectoradd L_FISSURE_END $relpos($vec(0,L_MY_YAW,0),$vec(0,FISSURE_LENGTH,0))
+	clientevent new all effects/sfx_fissure $get(ent_me,origin) L_MY_YAW L_FISSURE_END FISSURE_LENGTH 0 1
+	//setvard FISSURE_TARGS $get_tsphere(any,1024)
+	//if ( FISSURE_TARGS isnot none ) calleventloop $get_token_amt(FISSURE_TARGS) fissure_affect_targets
+	//xdodamage $relpos(0,0,0) 1536 0 0 ent_me ent_me none target dmgevent:fissure
+	//switch to xdodamage - and note that fissure is going back and forth rather than RL
+	setvard FISSURE_ORG $get(ent_me,origin)
+	setvard FISSURE_ANG $get(ent_me,angles)
+	setvard FISSURE_DIR $dir(FISSURE_ORG,L_FISSURE_END)
+	setvard FISSURE_MOVESTEP $math(multiply,FISSURE_LENGTH,0.1)
+	//if $get_array_amt(ARRAY_FISSURE_TARGS) > 0
+	setvard FISSURE_COUNT 0
+	callevent fissure_travel_loop
+}
+
+{ fissure_travel_loop
+	add FISSURE_COUNT 1
+	local L_FISSURE_CHECK_POS FISSURE_ORG
+	local L_FISSURE_MOVEAMT FISSURE_DIR
+	vectormultiply L_FISSURE_MOVEAMT $math(multiply,FISSURE_MOVESTEP,FISSURE_COUNT)
+	vectoradd L_FISSURE_CHECK_POS L_FISSURE_MOVEAMT
+	vectoradd L_FISSURE_CHECK_POS z 128
+	vectorset L_FISSURE_CHECK_POS z $get_ground_height(L_FISSURE_CHECK_POS)
+	setvard FISSURE_CHECK_POS L_FISSURE_CHECK_POS
+	xdodamage L_FISSURE_CHECK_POS FISSURE_MOVESTEP 0 0 ent_me ent_me none target dmgevent:fissure
+	if ( FISSURE_COUNT < 7 ) callevent 0.20 fissure_travel_loop
+	if ( G_DEVELOPER_MODE )
+	{
+		local L_VEC_UP L_FISSURE_CHECK_POS
+		vectoradd L_VEC_UP z 64
+		effect beam point lgtning.spr 10 L_FISSURE_CHECK_POS L_VEC_UP (255,0,255) 255 0 0.25
+	}
+	svsound.play3d weapons/debris1.wav 10 L_FISSURE_CHECK_POS 0.8 0 30
+}
+
+{ fissure_dodamage
+	if PARAM1
+
+	local CUR_TARG PARAM2
+	local CUR_TARG_POS $get(CUR_TARG,origin)
+	local L_MY_YAW $vec.yaw(FISSURE_ANG)
+	local L_RND_LR $rand(0,1)
+	local L_LR -400
+	if ( L_RND_LR == 1 ) local L_LR 400
+	local L_VEL $vec(L_LR,0,400)
+
+	local CUR_TARG_ANGS $get(CUR_TARG,angles)
+	setvelocity PARAM2 $relvel(FISSURE_ANG,L_VEL)
+	if $get(ent_me,relationship,CUR_TARG) equals enemy
+	applyeffect CUR_TARG effects/heavy_stun 3.0 $get(ent_me,id) 1 
+
+	local L_DMG DMG_ROCK
+	if ( $get(CUR_TARG,nopush) ) multiply L_DMG 5
+
+	xdodamage CUR_TARG direct L_DMG 100% ent_me ent_me none blunt_effect
+}
+
+{ func_inrange //<number_to_check> <base> <+/-range>
+	if ( PARAM1 >= $math(subtract,PARAM2,PARAM3) ) local L_IN_RANGE 1
+	if ( PARAM1 <= $math(add,PARAM2,PARAM3) ) add L_IN_RANGE 1
+	if ( L_IN_RANGE > 1 )
+	{
+		return 1
+	}
+	else
+	{
+		return 0
+	}
+}
+
+{ do_shield
+	setvard SHIELD_TARGET NPCATK_TARGET
+	setvard SHIELD_ACTIVE 1
+	callevent SHIELD_DURATION end_shield
+
+	if ( ELEMENTAL_LEVEL == 1 )
+	{
+		callevent npcatk_suspend_movement ANIM_CHARGEIDLE
+		setvard SUSPEND_CYCLE 1
+		callevent shield_loop //keep facing target
+	}
+	else
+	{
+		//greater variant continues to attack while shield is up, but still locks target
+		playanim critical ANIM_TOCHARGE
+	}
+
+	effect glow ent_me (255,255,255) 16 2 1
+
+	playsound 0 10 magic/spawn.wav 0.8 PITCH_LEVEL
+
+	clientevent new all monsters/elemental_earth_cl $get(ent_me,index) do_shield SHIELD_DURATION
+	setvard CL_SHIELD_IDX game.script.last_sent_id
+}
+
+{ shield_loop
+	if SHIELD_ACTIVE
+	callevent 0.1 shield_loop
+	setmovedest SHIELD_TARGET 9999
+}
+
+{ npc_targetvalidate
+	if SHIELD_ACTIVE
+	if NPCATK_TARGET isnot SHIELD_TARGET
+	setvard NPCATK_TARGET SHIELD_TARGET
+}
+
+{ end_shield
+	if ( ELEMENTAL_LEVEL == 1 ) 
+	{
+		callevent npcatk_resume_movement
+		setvard SUSPEND_CYCLE 0
+	}
+	setvard SHIELD_ACTIVE 0
+}
+
+{ do_storm
+	playanim once ANIM_ALERT
+	playsound 0 10 SOUND_ALERT 0.8 30
+	createnpc monsters/summon/rock_storm $relpos(0,0,0) $get(ent_me,id) 4 DMG_STORM 64 100
+}
+
+{ do_earthquake
+	setvard ATTACK_MOVERANGE 9999
+	setvard EARTHQUAKE_ACTIVE 1
+	callevent npcatk_suspend_movement ANIM_CHARGEIDLE
+	setvard SUSPEND_CYCLE 1
+	svplaysound 1 10 SOUND_EARTHQUAKE_START 0.8 PITCH_LEVEL
+	svplaysound 3 10 SOUND_EARTHQUAKE_LOOP 0.8 PITCH_LEVEL
+	setvard EARTHQUAKE_END_TIME game.time
+	add EARTHQUAKE_END_TIME EARTHQUAKE_DURATION
+	callevent EARTHQUAKE_DURATION earthquake_end
+
+	callevent 0.1 earthquake_loop
+
+	effect screenshake $get(ent_me,origin) 50 10 EARTHQUAKE_DURATION $math(multiply,EARTHQUAKE_AOE,1.5)
+	clientevent new all effects/sfx_quake $get(ent_me,index) 1 EARTHQUAKE_AOE EARTHQUAKE_DURATION
+}
+
+{ earthquake_loop
+	if EARTHQUAKE_ACTIVE
+	callevent 1.0 earthquake_loop
+
+	setvard EARTHQUAKE_TARGS $get_tsphere(enemy,EARTHQUAKE_AOE)
+	if EARTHQUAKE_TARGS isnot none
+	calleventloop $get_token_amt(EARTHQUAKE_TARGS) earthquake_applyeffect
+	//xdodamage $relpos(0,0,0) EARTHQUAKE_AOE 0 100% ent_me ent_me none target dmgevent:earthquake
+}
+
+{ earthquake_applyeffect
+	local CUR_TARG $get_token(EARTHQUAKE_TARGS,game.script.iteration)
+
+	if $get(CUR_TARG,onground)
+	applyeffect CUR_TARG effects/effect_quake $get(ent_me,id) $get(ent_me,id) EARTHQUAKE_AOE DOT_EARTHQUAKE EARTHQUAKE_END_TIME 1
+}
+
+{ earthquake_end
+	setvard ATTACK_MOVERANGE ELEMENTAL_MOVERANGE
+	svplaysound 3 0 SOUND_EARTHQUAKE_LOOP
+	setvard EARTHQUAKE_ACTIVE 0
+	callevent npcatk_resume_movement
+	setvard SUSPEND_CYCLE 0
+}
