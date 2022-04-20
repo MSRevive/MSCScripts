@@ -1,0 +1,65 @@
+#scope client
+{
+	const RIGHT_HAND $getcl(FX_OWNER,attachment0)
+	const LEFT_HAND $getcl(FX_OWNER,attachment1)
+	const GLOW_RAD 128
+	const SPRITE_NAME 3dmflagry.spr
+}
+
+{ client_activate //<owner> <hand> <color> <duration>
+	setcallback render enable
+	setvard FX_OWNER PARAM1
+	setvard FX_HAND PARAM2
+	setvard FX_COLOR PARAM3
+	setvard FX_DURATION PARAM4
+
+	setvard FX_ACTIVE 1
+
+	if ( FX_HAND == 0 ) local L_LIGHT_LOC RIGHT_HAND
+	else local L_LIGHT_LOC LEFT_HAND
+
+	cleffect light new L_LIGHT_LOC GLOW_RAD FX_COLOR FX_DURATION
+	setvard LIGHT_ID game.script.last_light_id
+
+	cleffect tempent sprite SPRITE_NAME L_LIGHT_LOC setup_lantern_sprite update_lantern_sprite
+
+	callevent FX_DURATION end_fx
+}
+
+{ game_prerender
+
+	if FX_ACTIVE
+	if ( FX_HAND == 0 ) local L_LIGHT_LOC RIGHT_HAND
+	else local L_LIGHT_LOC LEFT_HAND
+
+	cleffect light LIGHT_ID L_LIGHT_LOC GLOW_RAD FX_COLOR FX_DURATION
+}
+
+{ end_fx
+	setvard FX_ACTIVE 0
+	cleffect light LIGHT_ID L_LIGHT_LOC GLOW_RAD (0,0,0) 0.1
+	callevent 0.5 remove_fx
+}
+
+{ remove_fx
+	removescript
+}
+
+{ update_lantern_sprite
+	if !FX_ACTIVE
+	cleffect tempent set_current_prop origin $vec(8000,8000,8000)
+}
+
+{ setup_lantern_sprite
+
+	cleffect tempent set_current_prop death_delay FX_DURATION
+	cleffect tempent set_current_prop framerate	4
+	cleffect tempent set_current_prop frames	1
+	cleffect tempent set_current_prop scale 	0.75
+	cleffect tempent set_current_prop gravity 	0
+	cleffect tempent set_current_prop collide 	none
+	cleffect tempent set_current_prop rendermode add
+	cleffect tempent set_current_prop renderamt 100
+	cleffect tempent set_current_prop rendercolor FX_COLOR
+	cleffect tempent set_current_prop follow FX_OWNER FX_HAND
+}

@@ -1,0 +1,764 @@
+//descript/requirements
+//• monsters/worm_abyssal - The Abyssal Worm (hard demon, 128x700, 8000hp, baseXP 3000)
+//- This is a special giant worm monster, that requires various map ents to operate properly.
+//- Intent is to move about a platform in the center of his chamber, and attack players standing thereon.
+//- Requires the following entities:
+//- info_target's with targetnames: worm_telepoint1 worm_telepoint2 worm_telepoint3 and worm_telepoint4
+//-- The worm will periodically submerge and re-emerge at these points in sequence.
+//-- He will do this every ~60 seconds, and when first damaged below 75%, 50%, and 25% of his maximum HP
+//- info_target with targetname: worm_telepoint_final
+//-- Upon falling below 25% health, the worm will submerge, and re-emerge at this point. He will not teleport nor submerge again.
+//-- In this case, the point is at the center of the platform, allowing him to use his stronger, close range attacks, against all targets on the platform.
+//-- He will fire brk_worm as he re-emerges, breaking the stone in the center of the platform, and produce a repulsive field, to prevent players from falling in the resulting hole.
+//-- (In this case, the hole is invisibly sealed, so this can't actually happen, but it prevents the otherwise odd results of walking on air and floating through him - the actual worm is not solid.)
+//- info_target with targetname: worm_repel_point
+//-- This marks the loc from which to generate the aforementioned repulsive field.
+//- trigger_multiple with scriptevent: gm_map_rmines_dinnerbell, with 10 second reset delay, flagged to only work on clients
+//-- This trigger causes the Game Master to alert the worm that there is a player on his platform
+//-- If no player is on the platform for at least 15 seconds, the worm will submerge (is invulnerable while submerged), until new meat is placed on his table.
+//- light with targetname: light_worm (start dark) [optional]
+//-- Triggered on when in final position - in this case, the monster model is popping up through a clip brush, so it needs this light to avoid being rendered as a black silhouette.
+//-- In this instance, the light is turned off again on death, map side.
+//- Known issues: The worm is kinda setup like Undamael, and can be difficult to strike, but improvements to the system mitigate this to a great degree.
+//- Additionally, unlike Undamael, DOT effects used against his "hitbox npc" will pass to the actual mob.
+//- The worm can only be struck about the head area, not the body or arms.
+//- Worm has several different attacks for dealing with targets at various ranges, some of which are AOE. 
+//- He will usually favor the closest target. The closer attacks are stronger, but the longer ranged ones are AOE and apply Dark Damage DOT.
+//- Additionally, he has a stunning eye beam with an AOE effect - though it also a fair amount of warning. He'll favor it, if players try to stay out of reach.
+//- Dark energy will actually heal the Abyssal Worm. His Dark Energy DOT also adds Darkness contamination to players.
+//- This mob uses name_unique for management, thus only one can exist at a time.
+
+//internal notes:
+//Weird stuff happens with models this big - they ignore their normal bbox, and somehow have one that represents their actual size, and even polies.
+//...Which would be great, except it moves with them, causing players to be stuck inside, and thus imobilized.
+//This mysterious secondary hull also does not function as a hitbox, so you can't get close enough to actually hit the mob.
+//Think maybe it's defaulting to animsize when mob is over a certain size, but changing it to a fixed sized bbox doesn't undo it.
+//Anywho... This works around that by removing this mob's collision box, and attaching an NPC that acts as a hitbox (monsters/worm_abyssal_head), which passes damage to this mob.
+//Downside is it blinds the mob, but as seen below, this can be worked around.
+//Given that the mob's "eyes" are at its feat (~600 units below the players) the mob would be basically blind anyways.
+//Some of the work arounds for this involve measuring attacks in Range2D (thus ignoring the height difference), and tracing attacks from its eye attachment, instead of its base.
+
+#scope server
+{
+	//base ai
+	setvard NPC_GIVE_EXP 6000 //we have to double the XP value, as half the hit value goes to the head
+	setvar ANIM_IDLE hide_idle
+	setvar ANIM_WALK idle
+	setvar ANIM_RUN idle2
+	setvard ANIM_DEATH death
+	setvard ANIM_ATTACK attacklow
+	setvard NO_STUCK_CHECKS 1
+	setvard NPC_HBAR_ADJ (0,128,200)
+	setvard ATTACK_RANGE 628
+	setvard ATTACK_HITRANGE 628 //attacks are AOE, so we're not gonna worry about hitrange
+	setvard ATTACK_MOVERANGE 9999 //dun move - will get flagged as ranged though
+	setvard NPC_MUST_SEE_TARGET 0
+	setvard NPC_RANGED 1
+	setvard NPC_IS_TURRET 1
+	const NPC_RANGE_TYPE range2D
+	const NPC_NO_VADJ 1
+	const SOUND_DEATH monsters/aby_worm/death.wav //gonarch/gon_die1.wav
+
+	//base struck
+	const ANIM_FLINCH flinch1
+	
+	//custom
+	const ANIM_RISE rise //frame_rise_done
+	const ANIM_LOWER lower //frame_lower_done
+	const ANIM_IDLE_UP idle2
+	const ANIM_FLINCH1 flinch1
+	const ANIM_FLINCH2 flinch2
+	const ANIM_RAWR scream
+	const ANIM_HIDE hide_idle
+
+	const ANIM_ATTACK_LONG attacklow //frame_claw //range2D ~500 +aoe
+	const ANIM_ATTACK_SHORT attack //frame_claw //range2D ~450 +aoe
+	const ANIM_ATTACK_STRONG attack_strong_close //frame_strong //range2D 230-330 + aoe
+	const ANIM_ATTACK_BITE_MED attack_bite_med //frame_bite frame_maw0-frame_maw2 //range2D 250-325
+	const ANIM_ATTACK_MULTI attack_multi_close //frame_gibber_start frame_multi x4 frame_gibber_end //range2D <280
+	const ANIM_ATTACK_BITE_CLOSE attack_bite_close //frame_bite frame_maw0-frame_maw2  //range2D <250
+	const ANIM_BEAM eyeblast //frame_beam_charge + frame_beam_fire (any range)
+
+	const ATTACH_EYE 0
+	const ATTACH_CLAW 2
+
+	setvard HIDE_MODE 1
+
+	const FREQ_TELEPORT 60.0
+
+	const FREQ_EYEBEAM $randf(30.0,60.0)
+
+	setvard CUR_HIDE_THRESH 0.75
+	//setvard CUR_HIDE_DIDSTAGES ''
+
+	array.create ARRAY_WORM_TELES
+	array.add ARRAY_WORM_TELES worm_telepoint1
+	array.add ARRAY_WORM_TELES worm_telepoint2
+	array.add ARRAY_WORM_TELES worm_telepoint3
+	array.add ARRAY_WORM_TELES worm_telepoint4
+	setvard WORM_TELE_IDX 1
+
+	const DMG_CLAW 100
+	const DMG_STRONG 200
+	const DMG_BITE 300
+	const DMG_MULTI 250
+	const DOT_DMG 30
+
+	const DOT_EFFECT_SCRIPT effects/effect_shadowflames
+
+	const AOE_CLAW 200
+	const AOE_STRONG 128
+	const AOE_BEAM 256
+
+	setvard CL_IDX -1
+	const CL_SCRIPT monsters/worm_abyssal_cl
+	const FREQ_CL_REFRESH 30.0
+
+	//sound set, thinking combo of bigamma and swordspider
+	const SOUND_RAWR1 gonarch/gon_alert1.wav
+	const SOUND_RAWR2 gonarch/gon_alert2.wav
+	const SOUND_RAWR3 gonarch/gon_alert3.wav
+	setvard CUR_RAWR 0
+
+	const SOUND_MULTI monsters/aby_worm/multi_attack.wav
+	const SOUND_BITE monsters/aby_worm/bite.wav
+
+	const SOUND_BEAM_CHARGE monsters/aby_worm/beam_charge.wav
+	const SOUND_BEAM_FIRE monsters/aby_worm/beam_fire.wav
+
+	const SOUND_GIBBER1 monsters/aby_worm/gibber1.wav
+	const SOUND_GIBBER2 monsters/aby_worm/gibber2.wav
+
+	//custom idle-in-combat sys
+	const SOUND_IDLE1 bullchicken/bc_idle1.wav
+	const SOUND_IDLE2 bullchicken/bc_idle2.wav
+	const SOUND_IDLE3 bullchicken/bc_idle3.wav
+	const SOUND_IDLE4 bullchicken/bc_idle4.wav
+	const SOUND_IDLE5 bullchicken/bc_idle5.wav
+	const FREQ_IDLE_SOUND $randf(5.0,10.0)
+
+	//basestruck
+	const NPC_MATERIAL_TYPE carapace
+	const NPC_USE_PAIN 1
+	const NPC_USE_FLINCH 1
+	const SOUND_PAIN1 gonarch/gon_pain2.wav
+	const SOUND_PAIN2 gonarch/gon_pain4.wav
+	const SOUND_PAIN3 gonarch/gon_pain5.wav
+	const SOUND_FLINCH1 gonarch/gon_childdie1.wav
+	const SOUND_FLINCH2 gonarch/gon_childdie2.wav
+	const SOUND_FLINCH3 gonarch/gon_childdie3.wav
+	const NPC_PITCH_PAIN $rand(75,90)
+	const NPC_PITCH_FLINCH $rand(75,90)
+	const NPC_STRUCK_CHANNEL 0
+	const NPC_STRUCK_SOUND_EVENT do_playsound
+}
+
+{ game_precache
+	precache monsters/abyssal_worm_hitbox.mdl
+	precache monsters/zubat_sphere.mdl
+	precache 3dmflagry.spr
+	precachefile CL_SCRIPT
+}
+
+#include monsters/base_monster_new
+#include monsters/base_struck
+
+{ game_spawn
+	setidleanim ANIM_IDLE
+	setmoveanim ANIM_WALK
+	callevent worm_spawn
+}
+
+{ worm_spawn
+	name The|Abyssal Worm
+	name_unique aby_worm
+	setmodel monsters/abyssal_worm.mdl
+	width 128
+	height 700
+	setsolid trigger
+	race demon
+	hp 8000
+	takedmg holy 1.5
+	hearingsensitivity 11
+	callevent npcatk_suspend_ai
+	invincible 1
+}
+
+{ npc_post_spawn
+	callevent as_tele_stuck_check
+	createnpc monsters/worm_abyssal_head $get(ent_me,attachpos,1) $get(ent_me,id)
+	setvard MY_HEAD ent_lastcreated
+
+	if $lcase(game.map.name) equals rmines
+	setvard MAP_RMINES_KEEP_CLEAR 1
+}
+
+//{ game_heardsound
+//	if HIDE_MODE
+//	if game.time > NEXT_UNHIDE
+//	if $get(ent_me,relationship,ent_lastheard) equals enemy
+//	callevent dinner_bell
+//}
+
+{ dinner_bell //called every 10 seconds a player is on the platform
+	setvard NEXT_WORM_CALM_HIDE game.time
+	add NEXT_WORM_CALM_HIDE 15.0
+	if !HIDE_IN_PROGRESS
+	if ( HIDE_MODE )
+	{
+		dbg dinner_bell $get(PARAM1,name) game.time vs. NEXT_UNHIDE
+		if game.time > NEXT_UNHIDE
+		setvard NEXT_EYEBEAM game.time
+		add NEXT_EYEBEAM FREQ_EYEBEAM
+		setvard HIDE_MODE 0
+		playanim critical ANIM_RISE
+		if ( FINAL_TELEPORT ) callevent 0.5 brk_wall
+	}
+	else
+	{
+		//if ( SUSPEND_AI ) callevent npcatk_resume_ai //bad, what if beaming?
+		callevent worm_find_target
+	}
+}
+
+{ brk_wall
+	usetrigger brk_worm
+	local L_REPEL_POINT $get_by_name(worm_repel_point)
+	setvard REPEL_POINT $get(L_REPEL_POINT,origin)
+	setvard WORM_REPEL 1
+}
+
+{ frame_rise_done
+	invincible 0
+	callevent refresh_cl
+	setvard ANIM_IDLE ANIM_IDLE_UP
+	setidleanim ANIM_IDLE_UP
+	setmoveanim ANIM_IDLE_UP
+	setvard ANIM_RUN ANIM_IDLE_UP
+	setvard ANIM_WALK ANIM_IDLE_UP
+	setvard ANIM_IDLE ANIM_IDLE_UP
+	callevent npcatk_resume_ai
+	playanim critical ANIM_RAWR
+	callevent worm_find_target
+	setvard NEXT_TELEPORT game.time
+	add NEXT_TELEPORT FREQ_TELEPORT
+	setvard IDLE_SOUNDS_ACTIVE 1
+	setvard NEXT_IDLE_SOUND game.time
+	add NEXT_IDLE_SOUND FREQ_IDLE_SOUND
+
+	effect screenshake $get(MY_HEAD,origin) 400 10 3 1024
+
+	add CUR_RAWR 1
+	if ( CUR_RAWR == 1 ) callevent do_playsound 0 10 SOUND_RAWR1 0.8 $rand(30,60)
+	if ( CUR_RAWR == 2 ) callevent do_playsound 0 10 SOUND_RAWR2 0.8 $rand(30,60)
+	if ( CUR_RAWR == 3 )
+	{
+		callevent do_playsound 0 10 SOUND_RAWR3 0.8 $rand(30,60)
+		setvard CUR_RAWR 0
+	}
+}
+
+{ worm_find_target
+	local L_TARGS $get_tsphere(enemy,1024)
+	if L_TARGS isnot none
+	local L_TARGS $sort_entlist(L_TARGS,range)
+	callevent npcatk_settarget $get_token(L_TARGS,0)
+}
+
+{ game_applyeffect //<"applyeffect"|"applyeffectstack"> <target> <effectscript> [params...]
+	dbg game_applyeffect PARAM3
+	if ( HIDE_MODE ) returndata abort
+	if ( PARAM3 contains freeze_solid )
+	{
+		if ( $get(PARAM5,isplayer) ) dplayermessage PARAM5 $get(ent_me,name.full) is too large to be encased in ice.
+		returndata abort
+	}
+}
+
+{ game_damaged //PARAM1=attacker PARAM2=dmg PARAM3=dmg_type
+	if $get(ent_me,isalive)
+
+	if ( HIDE_MODE )
+	{
+		setdmg hit 0
+		setdmg dmg 0
+		returndata 0
+	}
+
+	if ( NPCATK_TARGET equals unset )
+	{
+		callevent npcatk_settarget $get(PARAM1,id)
+	}
+	else
+	{
+		if ( !$get(NPCATK_TARGET,isplayer) ) callevent npcatk_settarget $get(PARAM1,id) //prioritize players
+		if ( $get(NPCATK_TARGET,range) > $get(PARAM1,range) ) callevent npcatk_settarget $get(PARAM1,id) //prioritize closest
+	}
+
+	if ( PARAM3 contains dark ) //healed by dark energy
+	{
+		setdmg dmg 0
+		returndata 0
+		local L_HEAL_AMT PARAM2
+		multiply L_HEAL_AMT 2
+		givehp ent_me L_HEAL_AMT
+		if ( game.time > NEXT_GLOW )
+		{
+			setvard NEXT_GLOW game.time
+			add NEXT_GLOW 5.0
+			effect glow ent_me (0,255,0) 30 5.0 5.0
+		}
+		exitevent
+	}
+
+	//check if hide from lack of hp (<75%,<50%,<25% [final])
+	if !FINAL_TELEPORT
+
+	local L_NEXT_HIDE_THRESH $get(ent_me,maxhp)
+	multiply L_NEXT_HIDE_THRESH CUR_HIDE_THRESH
+	local L_CUR_HP $get(ent_me,hp)
+	subtract L_CUR_HP PARAM2
+
+	if ( L_CUR_HP <= L_NEXT_HIDE_THRESH )
+	{
+		//not working, using hacky way
+		//if $get_find_token(CUR_HIDE_DIDSTAGES,CUR_HIDE_THRESH) < 0 
+		//token.add CUR_HIDE_DIDSTAGES CUR_HIDE_THRESH
+		//only do each health based hide stage once, in case we're set boss and regenerating
+
+		//abort over damage to make sure I get these stages off
+		local L_NEW_HP L_NEXT_HIDE_THRESH
+		subtract L_NEW_HP 1
+		hp L_NEW_HP $get(ent_me,maxhp)
+		setdmg 0
+		returndata 0
+
+		dbg game_damaged (body) cur L_CUR_HP hide@ L_NEXT_HIDE_THRESH thrsh CUR_HIDE_THRESH newhp L_NEW_HP
+
+		if ( CUR_HIDE_THRESH == 0.75 )
+		{
+			if DID_HIDE_STAGE1
+			exitevent
+		}
+
+		if ( CUR_HIDE_THRESH == 0.5 )
+		{
+			if DID_HIDE_STAGE2
+			exitevent
+		}
+
+		if ( CUR_HIDE_THRESH == 0.25 )
+		{
+			if DID_HIDE_STAGE3
+			exitevent
+		}
+
+		if ( CUR_HIDE_THRESH == 0.75 ) setvard DID_HIDE_STAGE1 1
+		else if ( CUR_HIDE_THRESH == 0.50 ) setvard DID_HIDE_STAGE2 1
+		else if ( CUR_HIDE_THRESH == 0.25 ) setvard DID_HIDE_STAGE3 1 //shouldnt ever get here agian
+		subtract CUR_HIDE_THRESH 0.25
+		if ( CUR_HIDE_THRESH <= 0 )	setvard FINAL_TELEPORT 1
+		callevent do_teleport
+	} 
+}
+
+{ npcatk_hunt
+
+	if ( game.time > NEXT_CL_REFRESH )
+	{
+		callevent refresh_cl
+	}
+
+	if ( IDLE_SOUNDS_ACTIVE )
+	{
+		if game.time > NEXT_IDLE_SOUND
+		setvard NEXT_IDLE_SOUND game.time
+		setvard DOING_IDLE_SOUND 1
+		add NEXT_IDLE_SOUND FREQ_IDLE_SOUND
+		local L_RND_IDLE $rand(1,5)
+		if ( L_RND_IDLE == 1 ) callevent do_playsound 0 10 SOUND_IDLE1 0.8 $randf(50,70)
+		else if ( L_RND_IDLE == 2 ) callevent do_playsound 0 10 SOUND_IDLE2 0.8 $randf(50,70)
+		else if ( L_RND_IDLE == 3 ) callevent do_playsound 0 10 SOUND_IDLE3 0.8 $randf(50,70)
+		else if ( L_RND_IDLE == 4 ) callevent do_playsound 0 10 SOUND_IDLE4 0.8 $randf(50,70)
+		else if ( L_RND_IDLE == 5 ) callevent do_playsound 0 10 SOUND_IDLE5 0.8 $randf(50,70)
+	}
+
+	if ( !FINAL_TELEPORT )
+	{
+		if !HIDE_MODE
+		//no one's been on the platform for at least 15 seconds, calm and hide
+		if game.time > NEXT_WORM_CALM_HIDE
+		setvard NEXT_TELEPORT game.time
+		add NEXT_TELEPORT FREQ_TELEPORT
+		callevent do_teleport
+	}
+
+	if ( WORM_REPEL )
+	{
+		//push folks away from me so they can't fall into the sealed hole
+		setvard REPEL_TARGS $get_tsphere(any,128,REPEL_POINT)
+		if REPEL_TARGS isnot none
+		calleventloop $get_token_amt(REPEL_TARGS) repel_targets
+	}
+
+	if ( game.time > NEXT_GIBBER )
+	{
+		setvard NEXT_GIBBER game.time
+		add NEXT_GIBBER $randf(10.0,20.0)
+		setvard GIBBER_ACTIVE 1
+		setvard GIBBER_COUNT 0
+		setvard GIBBER_DELAY 0.01
+		if ( $rand(1,2) == 1 ) callevent do_playsound 2 10 SOUND_GIBBER1 0.8 $rand(75,125)
+		else callevent do_playsound 2 10 SOUND_GIBBER2 0.8 $rand(75,125)
+		callevent do_gibber
+		callevent 5.0 end_gibber
+	}
+
+	if !SUSPEND_AI
+
+	if ( !FINAL_TELEPORT )
+	{
+		if game.time > NEXT_TELEPORT
+		setvard NEXT_TELEPORT game.time
+		add NEXT_TELEPORT FREQ_TELEPORT
+		callevent do_teleport
+	}
+
+	if NPCATK_TARGET isnot unset
+
+	setmovedest NPCATK_TARGET ATTACK_MOVERANGE
+
+	if ( $get(NPCATK_TARGET,range2D) > ATTACK_RANGE ) subtract NEXT_EYEBEAM 1.0 //gonna beam more often if cant reach target
+
+	if ( game.time > NEXT_EYEBEAM )
+	{
+		if $get(NPCATK_TARGET,range2D) < 1024
+		setvard NEXT_TELEPORT game.time
+		add NEXT_TELEPORT FREQ_TELEPORT
+		callevent do_eyebeam
+	}
+}
+
+{ refresh_cl
+	if ( CL_IDX > -1 ) clientevent update all CL_IDX end_fx
+	clientevent new all CL_SCRIPT $get(ent_me,index) FREQ_CL_REFRESH
+	setvard CL_IDX game.script.last_sent_id
+	setvard NEXT_CL_REFRESH game.time
+	add NEXT_CL_REFRESH FREQ_CL_REFRESH
+
+	if MAP_RMINES_KEEP_CLEAR
+	callexternal all ext_rmines_clear
+}
+
+{ npc_flinch
+	if ( HIDE_MODE )
+	{
+		setvard NPC_FLINCH_DISABLE_ONCE 1
+		exitevent
+	}
+	if ( SUSPEND_AI ) callevent npcatk_resume_ai
+	if ( $rand(1,2) == 1 ) setvard ANIM_FLINCH ANIM_FLINCH1
+	else setvard ANIM_FLINCH ANIM_FLINCH2
+}
+
+{ do_eyebeam
+	setvard NEXT_EYEBEAM game.time
+	add NEXT_EYEBEAM FREQ_EYEBEAM
+	setvard BEAM_DEST $get(NPCATK_TARGET,origin)
+	if ( !SUSPEND_AI ) callevent npcatk_suspend_ai //albiet, shouldn't have gotten here if AI suspended, but paranoid
+	playanim critical ANIM_BEAM //frame_beam_charge + frame_beam_fire
+	callevent refresh_cl
+}
+
+{ frame_beam_charge
+	callevent do_playsound 0 10 SOUND_BEAM_CHARGE
+	clientevent update all CL_IDX beam_charge BEAM_DEST
+}
+
+{ frame_beam_fire
+	callevent npcatk_resume_ai
+	callevent do_playsound 0 10 SOUND_BEAM_FIRE
+	clientevent update all CL_IDX beam_fire BEAM_DEST
+	//stun everyone around + dark DOT
+	xdodamage BEAM_DEST AOE_BEAM DMG_BEAM 0.01 ent_me ent_me none dark_effect dmgevent:beam
+}
+
+{ beam_dodamage
+	if PARAM1
+	if $get(PARAM2,relationship,ent_me) equals enemy
+	applyeffect PARAM2 DOT_EFFECT_SCRIPT 5.0 $get(ent_me,id) DOT_DMG
+	applyeffect PARAM2 effects/effect_stun 8.0 0 1 $get(ent_me,id)
+}
+
+{ npc_selectattack
+	//horribly complex range of possible attacks, other than eye beam
+	local L_RANGE $get(NPCATK_TARGET,range2D)
+	local L_POSSIBLE_ATTACKS ''
+
+	if ( L_RANGE > 500 ) token.add L_POSSIBLE_ATTACKS ANIM_ATTACK_LONG
+	if ( L_RANGE < 500 )
+	{
+		if ( L_RANGE > 350 ) token.add L_POSSIBLE_ATTACKS ANIM_ATTACK_SHORT
+	}
+	if ( L_RANGE < 425 )
+	{
+		if ( L_RANGE > 230 ) 
+		{
+			token.add L_POSSIBLE_ATTACKS ANIM_ATTACK_STRONG
+		}
+		if ( L_RANGE > 250 )
+		{
+			if L_RANGE < 325
+			token.add L_POSSIBLE_ATTACKS ANIM_ATTACK_BITE_MED
+		}
+
+		if ( L_RANGE < 280 ) token.add L_POSSIBLE_ATTACKS ANIM_ATTACK_MULTI
+
+		if ( L_RANGE < 250 ) token.add L_POSSIBLE_ATTACKS ANIM_ATTACK_BITE_CLOSE
+	}
+
+	//dbg npc_selectattack $int(L_RANGE) L_POSSIBLE_ATTACKS
+
+	local L_NPATKS $get_token_amt(L_POSSIBLE_ATTACKS)
+	subtract L_NPATKS 1
+	local L_RND_ATTACK $rand(0,L_NPATKS)
+	setvard ANIM_ATTACK $get_token(L_POSSIBLE_ATTACKS,L_RND_ATTACK)
+}
+
+{ repel_targets
+	local CUR_TARG $get_token(REPEL_TARGS,game.script.iteration)
+	local TARG_ORG $get(CUR_TARG,origin)
+	local MY_ORG $get(ent_me,origin)
+	local TARG_ANG $angles(MY_ORG,TARG_ORG)
+	local NEW_YAW TARG_ANG
+	addvelocity CUR_TARG $relvel($vec(0,NEW_YAW,0),$vec(0,500,0)) override
+}
+
+{ frame_claw
+	//big AOE
+	callevent npcatk_suspend_attack 2.0 //delay before next attack
+	local L_ATTACK_POS $get(ent_me,attachpos,ATTACH_EYE)
+	local L_MY_YAW $get(ent_me,angles.yaw)
+	vectoradd L_ATTACK_POS $relpos($vec(0,L_MY_YAW,0),$vec(0,64,0))
+	vectorset L_ATTACK_POS z $get_ground_height(L_ATTACK_POS)
+	vectoradd L_ATTACK_POS z 16
+	dbg frame_claw L_ATTACK_POS
+	clientevent update all CL_IDX dark_burst L_ATTACK_POS AOE_CLAW
+	xdodamage L_ATTACK_POS AOE_CLAW DMG_CLAW 0.01 ent_me ent_me none dark dmgevent:burst
+}
+
+{ frame_strong
+	callevent npcatk_suspend_attack 2.0 //delay before next attack
+	local L_ATTACK_POS $get(ent_me,attachpos,ATTACH_EYE) //claw turned out to be off center
+	local L_MY_YAW $get(ent_me,angles.yaw)
+	vectoradd L_ATTACK_POS $relpos($vec(0,L_MY_YAW,0),$vec(0,64,0))
+	vectorset L_ATTACK_POS z $get_ground_height(L_ATTACK_POS)
+	vectoradd L_ATTACK_POS z 16
+	dbg frame_strong L_ATTACK_POS
+	clientevent update all CL_IDX dark_burst L_ATTACK_POS AOE_STRONG
+	xdodamage L_ATTACK_POS AOE_STRONG DMG_STRONG 0.01 ent_me ent_me none dark dmgevent:burst
+}
+
+{ burst_dodamage //PARAM1=hit:0|1 PARAM2=ent_hit PARAM3=(start) PARAM4=(end) PARAM5=DmgType PARAM6=DmgAmt
+	if PARAM1
+	if $get(PARAM2,relationship,ent_me) equals enemy
+	applyeffect PARAM2 DOT_EFFECT_SCRIPT 5.0 $get(ent_me,id) DOT_DMG
+}
+
+{ frame_maw0
+	callevent set_maw 0
+}
+
+{ frame_maw1
+	callevent set_maw 1
+}
+
+{ frame_maw2
+	callevent set_maw 2
+}
+
+{ frame_bite
+	callevent set_maw 3
+	callevent do_playsound 0 10 SOUND_BITE
+	xdodamage $get(ent_me,attachpos,ATTACH_EYE) $get(NPCATK_TARGET,origin) DMG_BITE 90 ent_me ent_me none slash
+	//big damage, direct
+}
+
+{ frame_multi
+	//fairly nasty direct
+	xdodamage $get(ent_me,attachpos,ATTACH_EYE) $get(NPCATK_TARGET,origin) DMG_MULTI 80 ent_me ent_me none pierce
+	if game.time > NEXT_MULTI_SOUND
+	setvard NEXT_MULTI_SOUND game.time
+	add NEXT_MULTI_SOUND 10.0
+	callevent do_playsound 1 10 SOUND_MULTI 0.8 $rand(90,110)
+}
+
+{ frame_gibber_start
+	setvard GIBBER_ACTIVE 1
+	setvard GIBBER_COUNT 0
+	setvard GIBBER_DELAY 0.01
+	setvard NEXT_GIBBER game.time
+	add NEXT_GIBBER $randf(10.0,15.0)
+	callevent do_gibber
+//	if ( $rand(1,2) == 1 ) callevent do_playsound 2 10 SOUND_GIBBER1 0.8 $rand(75,125)
+//	else callevent do_playsound 2 10 SOUND_GIBBER2 0.8 $rand(75,125)
+}
+
+{ frame_gibber_end
+	setprop ent_me skin 0
+	setvard GIBBER_ACTIVE 0
+}
+
+{ set_maw
+	setvard GIBBER_ACTIVE 0
+	setvard NEXT_GIBBER game.time
+	add NEXT_GIBBER $randf(5.0,10.0)
+	setprop ent_me skin PARAM1
+}
+
+{ do_gibber
+	if GIBBER_ACTIVE
+	if ( GIBBER_COUNT == 0 ) setvard GIBBER_DIR 1
+	if ( GIBBER_COUNT == 3 ) setvard GIBBER_DIR -1
+	add GIBBER_COUNT GIBBER_DIR
+	setprop ent_me skin GIBBER_COUNT
+	callevent GIBBER_DELAY do_gibber
+	add GIBBER_DELAY 0.01
+}
+
+{ end_gibber
+	setprop ent_me skin 0
+	setvard GIBBER_ACTIVE 0
+}
+
+{ check_porters
+	//debuggary
+	local L_PORTER $get_by_name(telepoint_abyssal4)
+	dbg check_porters L_PORTER $get(L_PORTER,origin) $get(L_PORTER,angles)
+	local L_START $get(ent_me,origin)
+	local L_END L_START
+	vectoradd L_END z $get(ent_me,height)
+	effect beam point lgtning.spr 30 L_START L_END (255,0,255) 200 0 120.0
+
+	local L_OFS $math(divide,$get(ent_me,width),2)
+	local L_NEG_OFS $neg($math(divide,$get(ent_me,width),2))
+
+	dbg check_porters ofs $vec(L_NEG_OFS,L_NEG_OFS,0) - $vec(L_OFS,L_OFS,0) 
+
+	local L_START $get(ent_me,origin)
+	vectoradd L_START $vec(L_OFS,L_OFS,0)
+	local L_END L_START
+	vectoradd L_END z $get(ent_me,height)
+	effect beam point lgtning.spr 5 L_START L_END (255,255,0) 200 0 120.0
+
+	local L_START $get(ent_me,origin)
+	vectoradd L_START $vec(L_NEG_OFS,L_NEG_OFS,0)
+	local L_END L_START
+	vectoradd L_END z $get(ent_me,height)
+	effect beam point lgtning.spr 5 L_START L_END (255,255,0) 200 0 120.0
+
+	local L_START $get(ent_me,origin)
+	vectoradd L_START $vec(L_NEG_OFS,L_OFS,0)
+	local L_END L_START
+	vectoradd L_END z $get(ent_me,height)
+	effect beam point lgtning.spr 5 L_START L_END (255,255,0) 200 0 120.0
+
+	local L_START $get(ent_me,origin)
+	vectoradd L_START $vec(L_OFS,L_NEG_OFS,0)
+	local L_END L_START
+	vectoradd L_END z $get(ent_me,height)
+	effect beam point lgtning.spr 5 L_START L_END (255,255,0) 200 0 120.0
+}
+
+{ do_teleport
+	clearfx
+	callevent npcatk_suspend_ai
+	setvard HIDE_MODE 1
+	setvard HIDE_IN_PROGRESS 1
+	setmoveanim ANIM_LOWER
+	setidleanim ANIM_LOWER
+	setvard ANIM_RUN ANIM_LOWER
+	setvard ANIM_WALK ANIM_LOWER
+	setvard ANIM_IDLE ANIM_LOWER
+	invincible 1
+	setvard NEXT_UNHIDE game.time
+	add NEXT_UNHIDE 5.0
+	playanim critical ANIM_LOWER
+	setvard NEXT_TELEPORT game.time
+	add NEXT_TELEPORT FREQ_TELEPORT
+
+	local L_RND_SOUND $rand(1,3)
+	if ( L_RND_SOUND == 1 ) callevent do_playsound 0 10 SOUND_FLINCH1 0.8 $randf(40,60)
+	else if ( L_RND_SOUND == 2 ) callevent do_playsound 0 10 SOUND_FLINCH2 0.8 $randf(40,60)
+	else if ( L_RND_SOUND == 3 ) callevent do_playsound 0 10 SOUND_FLINCH3 0.8 $randf(40,60)
+	
+}
+
+{ frame_lower_done
+	setvard HIDE_IN_PROGRESS 0
+	setmoveanim ANIM_HIDE
+	setidleanim ANIM_HIDE
+	setvard ANIM_RUN ANIM_HIDE
+	setvard ANIM_WALK ANIM_HIDE
+	setvard ANIM_IDLE ANIM_HIDE
+
+	if ( !FINAL_TELEPORT )
+	{
+		local L_TELE_NAME $get_array(ARRAY_WORM_TELES,WORM_TELE_IDX)
+	}
+	else
+	{
+		local L_TELE_NAME worm_telepoint_final
+		usetrigger light_worm
+	}
+
+	local L_TELE_ID $get_by_name(L_TELE_NAME)
+
+	setorigin ent_me $get(L_TELE_ID,origin)
+	local L_TELE_YAW $get(L_TELE_ID,angles.yaw)
+	setangle face $vec(0,L_TELE_YAW,0)
+	add WORM_TELE_IDX 1
+	local L_NTELES $get_array_amt(ARRAY_WORM_TELES)
+	subtract L_NTELES 1
+	if ( WORM_TELE_IDX > L_NTELES ) setvard WORM_TELE_IDX 0
+}
+
+//suspend flinch while hiding
+{ npcatk_suspend_ai
+	setvard NPC_FLINCH_DISABLE 1
+}
+
+{ npcatk_resume_ai
+	setvard NPC_FLINCH_DISABLE 0
+}
+
+{ do_playsound //from base struck ala NPC_STRUCK_SOUND_EVENT
+	if ( !DOING_IDLE_SOUND )
+	{
+		local L_NEXT_IDLE NEXT_IDLE_SOUND
+		subtract L_NEXT_IDLE game.time
+		if ( L_NEXT_IDLE < 3 ) add NEXT_IDLE_SOUND $randf(2.0,4.0) //don't want idle sounds overriding primary sounds
+	}
+	setvard DOING_IDLE_SOUND 0
+
+	local L_PASS1 PARAM1 //chan
+	local L_PASS2 PARAM2 //vol
+	local L_PASS3 PARAM3 //sound
+	if ( game.event.params > 3 ) local L_PASS4 PARAM4 //attn
+	if ( game.event.params > 4 ) local L_PASS5 PARAM5 //pitch
+
+	if ( game.event.params > 3 ) callexternal MY_HEAD ext_playsound L_PASS1 L_PASS2 L_PASS3 L_PASS4 L_PASS5
+	else callexternal MY_HEAD ext_playsound L_PASS1 L_PASS2 L_PASS3
+}
+
+{ game_death
+	callexternal GAME_MASTER gm_suspend_mob_spawns 0
+	clientevent update all CL_IDX end_fx
+}
+
+{ game_damaged_other
+	if G_LESSER_DEV_MODE
+	setdmg dmg 0.01
+	returndata 0.01
+}
+

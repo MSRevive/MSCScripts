@@ -1,0 +1,114 @@
+//worm head, acts as hit box for oversized beastie (monsters/worm_abyssal)
+//Weird stuff happens with models this big - they ignore their normal bbox, and somehow have one that represents their actual size, and even polies.
+//...Which would be great, except it moves with them, causing players to be stuck inside, and thus imobilized.
+//This mysterious secondary hull also does not function as a hitbox, so you can't get close enough to actually hit the mob.
+//Think maybe it's defaulting to animsize when mob is over a certain size, but changing it to a fixed sized bbox doesn't undo it.
+//Anywho... This works around that by attaching this NPC, which acts as its hitbox, and passing damage/applyeffects to the actual mob that spawns it (monsters/worm_abyssal).
+//Downside is it blinds the mob, but as seen in (monsters/worm_abyssal), this can be worked around.
+//Given that the Abyssal Worm mob's "eyes" are at its feat (~600 units below the players) it would be basically blind anyways.
+//Some of the work arounds for this involve measuring attacks in Range2D (thus ignoring the height difference), and tracing attacks from its eye attachment, instead of its base.
+//Sounds are also played on this NPC, as they may not be heard from so far down below the players.
+
+#scope server
+{
+	//setcallback touch enable
+	setvard NPC_NO_HEALTH_BAR 1
+}
+
+{ game_dynamically_created //owner
+	setvard MY_OWNER PARAM1
+	//setvard NPC_PASS_APPLYEFFECTS MY_OWNER //added this to the code, lets you pass applyeffects from one mob to another (switched up for game_applyeffect)
+	race $get(MY_OWNER,race)
+	setvard IS_ACTIVE 1
+	callevent snap_loop
+}
+
+{ game_spawn
+	name The|Abyssal Worm
+	setmodel monsters/abyssal_worm_hitbox.mdl
+	width 128
+	height 150
+	fly 1
+	gravity 0
+	hp 999999
+}
+
+{ debug_model
+	setmodelbody 0 1
+}
+
+{ snap_loop
+	if IS_ACTIVE
+	local L_POS $get(MY_OWNER,attachpos,1)
+	vectoradd L_POS z -75
+	setorigin ent_me L_POS
+	if ( G_DEVELOPER_MODE )
+	{
+		local L_BOX_MIN $get(ent_me,absmin)
+		local L_BOX_MAX $get(ent_me,absmax)
+
+		local L_BOX_EDGE1A L_BOX_MIN
+		local L_BOX_EDGE1B $vec($vec.x(L_BOX_MIN),$vec.y(L_BOX_MIN),$vec.z(L_BOX_MAX))
+		local L_BOX_EDGE2A L_BOX_MIN
+		local L_BOX_EDGE2B $vec($vec.x(L_BOX_MAX),$vec.y(L_BOX_MIN),$vec.z(L_BOX_MIN))
+		local L_BOX_EDGE3A L_BOX_MIN
+		local L_BOX_EDGE3B $vec($vec.x(L_BOX_MIN),$vec.y(L_BOX_MAX),$vec.z(L_BOX_MIN))
+		effect beam point lgtning.spr 3 L_BOX_EDGE1A L_BOX_EDGE1B (255,0,255) 200 0 0.1
+		effect beam point lgtning.spr 3 L_BOX_EDGE2A L_BOX_EDGE2B  (255,0,255) 200 0 0.1
+		effect beam point lgtning.spr 3 L_BOX_EDGE3A L_BOX_EDGE3B (255,0,255) 200 0 0.1
+	}
+
+//	if ( game.time > NEXT_TRIG_RESET )
+//	{
+//		if TRIGGER_MODE
+//		setvard TRIGGER_MODE 0
+//		setsolid box
+//	}
+	if ( !$get(MY_OWNER,isalive) )
+	{
+		setvard IS_ACTIVE 0
+		//setcallback touch disable
+		deleteent ent_me
+	}
+	if IS_ACTIVE
+	callevent 0.01 snap_loop
+}
+
+//{ game_touch
+//	if $get(PARAM1,isplayer)
+//	setvard TRIGGER_MODE 1
+//	if ( !TRIGGER_MODE ) setsolid trigger
+//	setvard NEXT_TRIG_RESET game.time
+//	add NEXT_TRIG_RESET 0.1
+//}
+
+{ game_damaged 	//PARAM1=attacker PARAM2=dmg PARAM3=dmg_type PARAM4=accuracy_roll PARAM5=skill PARAM6=inflictor
+	if $get(PARAM1,relationship,ent_me) equals enemy
+
+	bleed ent_me yellow $rand(100,10000)
+
+	local L_HIT_CHANCE PARAM4
+	if ( $get(PARAM6,itemname) startswith proj )
+	{
+		//make sure projectiles don't pass their skill hitchance
+		local L_HIT_CHANCE 100% 
+	}
+	xdodamage MY_OWNER direct PARAM2 L_HIT_CHANCE PARAM1 PARAM1 none PARAM3
+	setdmg dmg 0.0
+	setdmg hit 0.0
+	returndata 0
+}
+
+{ game_applyeffect //<applyeffect|applyeffectstack> <target> <effectscript> [params...]
+	dbg game_applyeffect got PARAM1 PARAM2 PARAM3 PARAM4 PARAM5 PARAM6 PARAM7 PARAM8 PARAM9
+	dbg test game.event.params
+	local L_RETURN redirect
+	token.add L_RETURN MY_OWNER
+	returndata L_RETURN
+}
+
+{ ext_playsound
+	dbg ext_playsound [ game.event.params ] PARAM1 PARAM2 PARAM3 PARAM4 PARAM5
+	if ( game.event.params < 4 ) playsound PARAM1 PARAM2 PARAM3
+	else playsound PARAM1 PARAM2 PARAM3 PARAM4 PARAM5
+}

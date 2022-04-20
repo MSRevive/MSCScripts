@@ -1,0 +1,111 @@
+{
+	const RHAND_IDX attachment0
+	const LHAND_IDX attachment1
+
+	const GLOW_RAD 64
+	const GLOW_COLOR (255,64,0)
+}
+
+{ client_activate //<owner> <duration> <handr_on> <handl_on>
+	setvard FX_OWNER PARAM1
+	setvard FX_DURATION PARAM2
+	setvard FX_ACTIVE 1
+
+	setvard FX_ACTIVATE_TIME game.time
+
+	setvard FX_RACTIVE PARAM3
+	setvard FX_LACTIVE PARAM4
+
+	callevent set_hands FX_RACTIVE FX_LACTIVE
+
+	callevent sparks_loop
+
+	setcallback render enable
+
+	callevent FX_DURATION end_fx
+}
+
+{ sparks_loop
+	if FX_ACTIVE
+	callevent $randf(0.1,0.5) sparks_loop
+	//dbg sparks_loop FX_RACTIVE FX_LACTIVE [ FX_OWNER $getcl(FX_OWNER,RHAND_IDX) ]
+	if ( FX_RACTIVE )
+	{
+		cleffect spark FX_OWNER 0 //$getcl(FX_OWNER,RHAND_IDX)
+	}
+
+	if ( FX_LACTIVE )
+	{
+		cleffect spark FX_OWNER 1 //$getcl(FX_OWNER,LHAND_IDX)
+	}
+}
+
+{ game_prerender
+	if ( FX_ACTIVE )
+	{
+		if ( FX_RACTIVE )
+		{
+			cleffect light LIGHT_RHAND $getcl(FX_OWNER,RHAND_IDX) GLOW_RAD GLOW_COLOR 1.0
+		}
+		else
+		{
+			if LIGHT_RHAND > 0
+			cleffect light LIGHT_RHAND $getcl(FX_OWNER,RHAND_IDX) 0 (0,0,0) 1.0
+			setvard LIGHT_RHAND -1
+		}
+
+		if ( FX_LACTIVE )
+		{
+			cleffect light LIGHT_LHAND $getcl(FX_OWNER,LHAND_IDX) GLOW_RAD GLOW_COLOR 1.0
+		}
+		else
+		{
+			if LIGHT_LHAND > 0
+			cleffect light LIGHT_LHAND $getcl(FX_OWNER,LHAND_IDX) 0 (0,0,0) 1.0
+			setvard LIGHT_LHAND -1
+		}
+	}
+	else
+	{
+		if ( LIGHT_RHAND > 0 )
+		{
+			cleffect light LIGHT_RHAND $getcl(FX_OWNER,RHAND_IDX) 0 (0,0,0) 1.0
+			setvard LIGHT_RHAND -1
+		}
+
+		if ( LIGHT_LHAND > 0 )
+		{
+			cleffect light LIGHT_LHAND $getcl(FX_OWNER,LHAND_IDX) 0 (0,0,0) 1.0
+			setvard LIGHT_LHAND -1
+		}
+	}
+}
+
+{ end_fx
+	setvard FX_ACTIVE 0
+	callevent 1.0 remove_fx
+}
+
+{ remove_fx
+	removescript
+}
+
+
+{ set_hands //<handr_on> <handl_on>
+	setvard FX_RACTIVE PARAM1
+	setvard FX_LACTIVE PARAM2
+
+	if ( FX_RACTIVE )
+	{
+		cleffect light new $getcl(FX_OWNER,RHAND_IDX) GLOW_RAD GLOW_COLOR FX_DURATION
+		setvard LIGHT_RHAND game.script.last_light_id
+	}
+
+	if ( FX_LACTIVE )
+	{
+		cleffect light new $getcl(FX_OWNER,LHAND_IDX) GLOW_RAD GLOW_COLOR FX_DURATION
+		setvard LIGHT_LHAND game.script.last_light_id
+	}
+
+	//dbg **** sethands FX_RACTIVE FX_LACTIVE [ LIGHT_RHAND LIGHT_LHAND ]
+}

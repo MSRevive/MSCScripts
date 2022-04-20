@@ -13,9 +13,10 @@
 	const GOLD_RADIUS 64
 	const GOLD_MAX_BAGS 4
 
-	const SOUND_SHOCK1 debris/zap8.wav
-	const SOUND_SHOCK2 debris/zap3.wav
-	const SOUND_SHOCK3 debris/zap4.wav
+//moved client side
+//	const SOUND_SHOCK1 debris/zap8.wav
+//	const SOUND_SHOCK2 debris/zap3.wav
+//	const SOUND_SHOCK3 debris/zap4.wav
 	const SOUND_LAUGH monsters/skeleton/cal_laugh.wav
 	const SOUND_WARCRY monsters/skeleton/calrain3.wav
 
@@ -71,7 +72,7 @@
 	//<spritename> <width> <startpos> <endpos> <(r,g,b)> <brightness> <noise> <duration>
 	playsound 0 10 weather/lightning.wav
 	effect beam point lgtning.spr 120 MY_CENTER MY_SKY (128,64,255) 200 3.0 1.0
-	callevent 10.0 zap_check
+	callevent ZAP_FREQ zap_check
 	callevent 2.0 stand_complete
 }
 
@@ -92,131 +93,76 @@
 
 { zap_check
 	if $get(ent_me,isalive)
-	callevent FREQ_ZAP zap_check
 	if NPCATK_TARGET isnot unset
-
 	setvard ZAP_LIST $get_tsphere(enemy,ZAP_RANGE)
 	if ZAP_LIST isnot none
-
 	playsound 3 10 SOUND_WARCRY
 	playsound 1 10 SOUND_BARRIER_SPAWN
-
 	callevent npcatk_suspend_ai
-	callevent suspend_movement ANIM_CAST
-
-	clientevent new all effects/sfx_barrier $get(ent_me,index) BARRIER_RAD (255,0,0) DUR_ZAP 1 1
+	callevent npcatk_suspend_movement ANIM_CAST
+	//clientevent new all effects/sfx_barrier $get(ent_me,index) BARRIER_RAD (255,0,0) DUR_ZAP 1 1
+	clientevent new all monsters/skeleton_lightning_cl $get(ent_me,index) BARRIER_RAD (255,0,0) DUR_ZAP 1 1
 	setvard BARRIER_ID game.script.last_sent_id
+
 
 	setvard ZAP_ACTIVE 1
 	callevent DUR_ZAP stop_zapping
-	callevent 0.5 zap_scan_loop
-
-	setvard ZAP_END_TIME game.time
-	add ZAP_END_TIME DUR_ZAP
-	setvard BEAM_LIST ''
-	setvard TOTAL_ZAP_LIST ''
-	calleventloop $get_token_amt(ZAP_LIST) zap_targets
-	setvard TOTAL_ZAP_INDEX ZAP_LIST
-	playrandomsound 2 10 SOUND_SHOCK1 SOUND_SHOCK2 SOUND_SHOCK3
-	//clientevent update all BARRIER_ID zap_targets $get(ent_me,index) ATTACH_WAND ZAP_INDEXES
+	callevent 1.0 zap_scan_loop
+	callevent ZAP_FREQ zap_check
 }
 
 { zap_scan_loop
 	if ZAP_ACTIVE
-	callevent 0.5 zap_scan_loop
-
-	setvard ZAP_LIST $get_tsphere(enemy,ZAP_RANGE)
-	if ZAP_LIST isnot none
-	calleventloop $get_token_amt(ZAP_LIST) zap_targets
-
-	//dodamage $get(ent_me,origin) ZAP_RANGE DMG_ZAP 100% 0 reflective lightning
-
-	//dbg zap_scan_loop ZAP_INDEXES
-
-	setmovedest NPCATK_TARGET 9999
-
-	playrandomsound 0 10 SOUND_SHOCK1 SOUND_SHOCK2 SOUND_SHOCK3
-	//clientevent update all BARRIER_ID zap_targets $get(ent_me,index) ATTACH_WAND ZAP_INDEXES
+	if $get(ent_me,isalive)
+	callevent 1.0 zap_scan_loop
+	local L_ZAP_ORG $get(ent_me,origin)
+	vectoradd L_ZAP_ORG z 32
+	clientevent update all BARRIER_ID clear_beams
+	xdodamage L_ZAP_ORG ZAP_RANGE DMG_ZAP 0 ent_me ent_me none lightning_effect dmgevent:zap
 }
 
-{ zap_targets
-	local CUR_TARG $get_token(ZAP_LIST,game.script.iteration)
-	local TARG_ORG $get(CUR_TARG,origin)
-	//dbg zap_targets range $get(CUR_TARG,name) $get(CUR_TARG,range) vs BARRIER_RAD
+{ zap_dodamage
+	if PARAM1
+	local CUR_TARG PARAM2
+	if $get(CUR_TARG,relationship,ent_me) equals enemy
 
-	if ( $get(CUR_TARG,range) < BARRIER_RAD )
-	{
-		//damage and repell target
-		//dbg zap_targets $get(CUR_TARG,name) in barrier
-		local TARG_ANG $angles(game.monster.origin,TARG_ORG)
-		setvelocity CUR_TARG $relvel($vec(0,TARG_ANG,0),$vec(10,1000,110))
-		local DID_BARRIER_DMG 1
-		playsound 1 10 SOUND_BARRIER_REPELL
-		dodamage CUR_TARG "direct" DMG_BARRIER 100% ent_me magic
-	}
-
-	local TRACE_START $get(ent_me,attachpos,ATTACH_WAND)
-	local TRACE_LINE $get_traceline(TRACE_START,TARG_ORG,worldonly)
-
-	if ( TOTAL_ZAP_LIST contains CUR_TARG ) local DONT_ADD_BEAM 1
-	if ( !DONT_ADD_BEAM )
-	{
-		//add beam if can hit
-		if TRACE_LINE equals TARG_ORG
-		local BEAM_DURATION ZAP_END_TIME
-		subtract BEAM_DURATION game.time
-		effect beam ents lgtning.spr 100 ent_me 1 CUR_TARG 2 (255,200,64) 200 50 BEAM_DURATION
-		token.add ZAP_LIST_HITABLE "1"
-		token.add TOTAL_ZAP_LIST CUR_TARG
-		token.add BEAM_LIST $get(ent_lastcreated,id)
-	}
-
-	if ( TRACE_LINE isnot TARG_ORG )
-	{
-		//remove beam from guy I cant hit anymore
-		if TOTAL_ZAP_LIST contains CUR_TARG
-		local TOKEN_IDX $get_find_token(TOTAL_ZAP_LIST,CUR_TARG)
-		token.del TOTAL_ZAP_LIST TOKEN_IDX
-		effect beam update $get_token(BEAM_LIST,TOKEN_IDX) remove 0.1
-		token.del BEAM_LIST TOKEN_IDX
-	}
-
-	if TRACE_LINE equals TARG_ORG
-	if !DID_BARRIER_DMG
-	//dbg zap_targets $get(CUR_TARG,name) lightning
-	dodamage CUR_TARG "direct" DMG_ZAP 100% ent_me lightning
 	applyeffect CUR_TARG effects/effect_shock_dmg 5.0 $get(ent_me,id) DOT_ZAP
-	addvelocity CUR_TARG $vec(0,-105,0)
+
+	local TARG_ORG $get(CUR_TARG,origin)
+
+//	local L_RND_SND $rand(1,3)
+//	if ( L_RND_SND == 1 ) local L_SOUND SOUND_SHOCK1
+//	if ( L_RND_SND == 2 ) local L_SOUND SOUND_SHOCK2
+//	if ( L_RND_SND == 3 ) local L_SOUND SOUND_SHOCK3
+//
+//	svsound.play3d L_SOUND 10 TARG_ORG 0.8 0 $rand(80,120)
+
+	clientevent update all BARRIER_ID add_beam $get(CUR_TARG,index)
+
+	local MY_ORG $get(ent_me,origin)
+	local TARG_ANG $angles(MY_ORG,TARG_ORG)
+
+	if ( $get(CUR_TARG,range) > BARRIER_RAD )
+	{
+		addvelocity CUR_TARG $relvel($vec(0,TARG_ANG,0),$vec(0,500,0))
+	}
+	else
+	{
+		setvelocity CUR_TARG $relvel($vec(0,TARG_ANG,0),$vec(10,1000,110))
+		playsound 1 10 SOUND_BARRIER_REPELL
+	}
+	
 }
 
 { stop_zapping
 	setvard ZAP_ACTIVE 0
-	clientevent update all BARRIER_ID clear_sprites
+	clientevent update all BARRIER_ID end_fx
 	callevent npcatk_resume_ai
-	callevent resume_movement
+	callevent npcatk_resume_movement
 }
 
-{ suspend_movement //<animtohold>
-	setvard NO_STUCK_CHECKS 1
-	setidleanim PARAM1
-	setmoveanim PARAM1
-	//dbg suspend_movement ANIM_RUN ANIM_WALK ANIM_IDLE
-	setvard OLD_ANIM_RUN ANIM_RUN
-	setvard OLD_ANIM_WALK ANIM_WALK
-	setvard OLD_ANIM_IDLE ANIM_IDLE
-	setvard ANIM_RUN PARAM1
-	setvard ANIM_WALK PARAM1
-	setvard ANIM_IDLE PARAM1
-	roam 0
-}
-
-{ resume_movement
-	setvard NO_STUCK_CHECKS 0
-	setvard ANIM_RUN OLD_ANIM_RUN
-	setvard ANIM_WALK OLD_ANIM_WALK
-	setvard ANIM_IDLE OLD_ANIM_IDLE
-	setidleanim ANIM_IDLE
-	setmoveanim ANIM_RUN
-	//dbg resume_movement ANIM_RUN ANIM_WALK ANIM_IDLE
-	roam 1
+{ game_death
+	if ZAP_ACTIVE
+	clientevent update all BARRIER_ID end_fx
+	clientevent update all BEAMS_ID end_fx
 }

@@ -47,6 +47,8 @@
 	height 32
 	gravity 0 //JUN2010_15
 
+	saytextrange 64000 //we're at @-20000 so...
+
 	if game.serverside
 
 	dbg ***************** Game_Master - Spawned
@@ -58,6 +60,7 @@
 
 	servercmd "echo Game Master Spawned"
 
+	CheatEngineCheck
 	erasefile heartbeat.txt
 
 	setvard PLAYING_DEAD 1
@@ -103,6 +106,7 @@
 
 { [server] time_sync_check
 
+	CheatEngineCheck
 	erasefile heartbeat.txt
 
 	if ( game.players == 0 )
@@ -834,9 +838,13 @@
 
 	setvarg G_WEATHER_LOCK clear
 	setvarg global.map.weather "clear;clear;clear"
-	//etvarg MAP_WEATHER "clear;clear;clear" //conflict with const
 	setvarg G_OVERRIDE_WEATHER_CODE "clear;clear;clear"
 	setvarg G_CUR_WEATHER "clear"
+	setvarg G_IDLE_MUSIC none
+	setvarg G_IDLE_MUSIC_LENGTH 0
+	setvarg G_COMBAT_MUSIC none
+	setvarg G_COMBAT_MUSIC_LENGTH 0
+	setvarg G_MAP_ADDPARAMS 0
 
 	if ( G_SERVER_LOCKED )
 	{
@@ -1805,7 +1813,15 @@
 	setvarg G_COMBAT_MUSIC game.map.music.combat.file
 	setvarg G_COMBAT_MUSIC_LENGTH game.map.music.combat.length
 
-	dbg setup_gm gotmusak idl G_IDLE_MUSIC ln G_IDLE_MUSIC_LENGTH cmb G_COMBAT_MUSIC ln G_COMBAT_MUSIC_LENGTH
+	setvarg G_MAP_ADDPARAMS 0
+
+	if ( $len(game.map.addparams) > 1 )
+	{
+		setvarg G_MAP_ADDPARAMS game.map.addparams
+		if ( $right(G_MAP_ADDPARAMS,1) isnot ';' ) stradd G_MAP_ADDPARAMS ;
+	}
+
+	dbg setup_gm gotaddparams G_MAP_ADDPARAMS
 
 	//get spawn points
 //	local SPAWN_POINTS
@@ -1898,9 +1914,16 @@
 	callevent gm_find_strongest_player
 	local SWORD_LOC PARAM1
 	//Thothie - FEB2010_02 - award to next strongest player if player already has a shard
-	if ( $get_quest_data(THE_CHOSEN_ONE,f) contains sha )
+	if ( $get_quest_data(THE_CHOSEN_ONE,f) equals complete ) local L_INVALID 1
+	if ( $get(THE_CHOSEN_ONE,maxhp) < 700 ) local L_INVALID 1
+	if ( L_INVALID )
 	{
-		if ( $get_token_amt(STRONGEST_PLAYER_LIST) == 1 ) local EXIT_SUB 1 //no valid players remain
+		if ( $get_token_amt(STRONGEST_PLAYER_LIST) == 1 )
+		{
+			infomsg all "One Time Quest" "All valid players present have completed this quest." 
+
+			local EXIT_SUB 1 //no valid players remain
+		}
 		if !EXIT_SUB
 		callevent gm_find_strongest_player
 		setvard GM_TEMP_SWORD_LOC SWORD_LOC
@@ -2000,7 +2023,7 @@
 	}
 	else
 	{
-		custom bm_gold_spew (centers from spawn instead of corpse)
+		//custom bm_gold_spew (centers from spawn instead of corpse)
 		callevent gold_spew 500 2 256 4 16 TITAN_DEATH_POS
 	}
 
@@ -2869,61 +2892,62 @@
 { gm_cat_quest //<player>
 	//moving this here to help reduce likelihood of item delete (maybe system is deleting real item instead of temp item?)
 
-	local L_QUEST_LIST $get_quest_data(PARAM1,f)
-
-	if ( $item_exists(PARAM1,item_s1) )
-	{
-		if $get_find_token(L_QUEST_LIST,sym1) == -1
-		token.add L_QUEST_LIST sym1
-	}
-	if ( $item_exists(PARAM1,item_s2) )
-	{
-		if $get_find_token(L_QUEST_LIST,sym2) == -1
-		token.add L_QUEST_LIST sym2
-	}
-	if ( $item_exists(PARAM1,item_s3) )
-	{
-		if $get_find_token(L_QUEST_LIST,sym3) == -1
-		token.add L_QUEST_LIST sym3
-	}
-	if ( $item_exists(PARAM1,item_s4) )
-	{
-		if $get_find_token(L_QUEST_LIST,sym4) == -1
-		token.add L_QUEST_LIST sym4
-	}
-	if ( $item_exists(PARAM1,item_s5) )
-	{
-		if $get_find_token(L_QUEST_LIST,sym5) == -1
-		token.add L_QUEST_LIST sym5
-	}
-
-	if ( $item_exists(PARAM1,swords_fshard1) )
-	{
-		if $get_find_token(L_QUEST_LIST,sha1) == -1
-		token.add L_QUEST_LIST sha1
-	}
-	if ( $item_exists(PARAM1,swords_fshard2) )
-	{
-		if $get_find_token(L_QUEST_LIST,sha2) == -1
-		token.add L_QUEST_LIST sha2
-	}
-	if ( $item_exists(PARAM1,swords_fshard3) )
-	{
-		if $get_find_token(L_QUEST_LIST,sha3) == -1
-		token.add L_QUEST_LIST sha3
-	}
-	if ( $item_exists(PARAM1,swords_fshard4) )
-	{
-		if $get_find_token(L_QUEST_LIST,sha4) == -1
-		token.add L_QUEST_LIST sha4
-	}
-	if ( $item_exists(PARAM1,swords_fshard5) )
-	{
-		if $get_find_token(L_QUEST_LIST,sha5) == -1
-		token.add L_QUEST_LIST sha5
-	}
-
-	quest set PARAM1 f L_QUEST_LIST
+	//old hacky felewyn bit, no longer in use
+//	local L_QUEST_LIST $get_quest_data(PARAM1,f)
+//
+//	if ( $item_exists(PARAM1,item_s1) )
+//	{
+//		if $get_find_token(L_QUEST_LIST,sym1) == -1
+//		token.add L_QUEST_LIST sym1
+//	}
+//	if ( $item_exists(PARAM1,item_s2) )
+//	{
+//		if $get_find_token(L_QUEST_LIST,sym2) == -1
+//		token.add L_QUEST_LIST sym2
+//	}
+//	if ( $item_exists(PARAM1,item_s3) )
+//	{
+//		if $get_find_token(L_QUEST_LIST,sym3) == -1
+//		token.add L_QUEST_LIST sym3
+//	}
+//	if ( $item_exists(PARAM1,item_s4) )
+//	{
+//		if $get_find_token(L_QUEST_LIST,sym4) == -1
+//		token.add L_QUEST_LIST sym4
+//	}
+//	if ( $item_exists(PARAM1,item_s5) )
+//	{
+//		if $get_find_token(L_QUEST_LIST,sym5) == -1
+//		token.add L_QUEST_LIST sym5
+//	}
+//
+//	if ( $item_exists(PARAM1,swords_fshard1) )
+//	{
+//		if $get_find_token(L_QUEST_LIST,sha1) == -1
+//		token.add L_QUEST_LIST sha1
+//	}
+//	if ( $item_exists(PARAM1,swords_fshard2) )
+//	{
+//		if $get_find_token(L_QUEST_LIST,sha2) == -1
+//		token.add L_QUEST_LIST sha2
+//	}
+//	if ( $item_exists(PARAM1,swords_fshard3) )
+//	{
+//		if $get_find_token(L_QUEST_LIST,sha3) == -1
+//		token.add L_QUEST_LIST sha3
+//	}
+//	if ( $item_exists(PARAM1,swords_fshard4) )
+//	{
+//		if $get_find_token(L_QUEST_LIST,sha4) == -1
+//		token.add L_QUEST_LIST sha4
+//	}
+//	if ( $item_exists(PARAM1,swords_fshard5) )
+//	{
+//		if $get_find_token(L_QUEST_LIST,sha5) == -1
+//		token.add L_QUEST_LIST sha5
+//	}
+//
+//	quest set PARAM1 f L_QUEST_LIST
 }
 
 { gm_sxbow_swap
@@ -2963,8 +2987,8 @@
 	//unlock elf chest
 	local SLEEP_ELF_ID $get_by_name(sleep_elf)
 	callexternal SLEEP_ELF_ID ext_quest_win
-	local QUeST_ELF_ID $get_by_name(telf_quest)
-	callexternal QUeST_ELF_ID ext_quest_win
+	local QUEST_ELF_ID $get_by_name(telf_quest)
+	callexternal QUEST_ELF_ID ext_quest_win
 	usetrigger spawn_win_elf
 	setvard GM_SE_PLAYER_LIST ''
 	getplayersnb GM_SE_PLAYER_LIST
@@ -3371,4 +3395,203 @@
 
 	//Tells the player that it got their clmsg test & the message they passed
 	infomsg $get_by_idx(PARAM1,id) "Got clmsg with msg:" PARAM2
+}
+
+{ gm_ms_text //<npc_name> <text> called by ms_text ent - but should work fine from anywhere
+	dbg gm_ms_text PARAM1 PARAM2
+	local L_NAME PARAM1
+	local L_TEXT PARAM2
+	name L_NAME
+	saytext L_TEXT
+}
+
+{ gm_map_rmines_dinnerbell //<triggerboi>
+	callexternal $get_by_name(aby_worm) dinner_bell
+}
+
+{ gm_map_rmines_killspawns
+	if !GM_DID_KILLSPAWN
+	setvard GM_DID_KILLSPAWN 1
+	setvarg G_TRACK_DEATHS -1
+
+	array.create ARRAY_SPAWNLIST
+	array.add ARRAY_SPAWNLIST boss1
+	array.add ARRAY_SPAWNLIST goblins1
+	array.add ARRAY_SPAWNLIST trolls1
+	array.add ARRAY_SPAWNLIST lshaman1
+	array.add ARRAY_SPAWNLIST goblins1
+	array.add ARRAY_SPAWNLIST pouncer1
+	array.add ARRAY_SPAWNLIST stone_troll1_spawner
+	array.add ARRAY_SPAWNLIST flood_room1_goblins
+	array.add ARRAY_SPAWNLIST flood_room1_zombies
+	array.add ARRAY_SPAWNLIST lshaman2
+	array.add ARRAY_SPAWNLIST lshaman3_spawner
+	array.add ARRAY_SPAWNLIST loading_room_trolls
+	array.add ARRAY_SPAWNLIST loading_room_undead
+	array.add ARRAY_SPAWNLIST loading_room_goblins
+	array.add ARRAY_SPAWNLIST troll_stone2
+	array.add ARRAY_SPAWNLIST lshaman_loading_room
+	array.add ARRAY_SPAWNLIST loading_room_bloat1
+	array.add ARRAY_SPAWNLIST loading_room_bloat2
+	array.add ARRAY_SPAWNLIST flood_room2_goblins
+	array.add ARRAY_SPAWNLIST plat_room1_goblins
+	array.add ARRAY_SPAWNLIST plat_room1_zombies
+	array.add ARRAY_SPAWNLIST plat_room1_slimes
+	array.add ARRAY_SPAWNLIST boss_room1
+	array.add ARRAY_SPAWNLIST bomberxbow1
+	array.add ARRAY_SPAWNLIST zombie_bloat1
+	array.add ARRAY_SPAWNLIST waterslimes1
+	array.add ARRAY_SPAWNLIST slime_boss
+	array.add ARRAY_SPAWNLIST flood_room4
+	array.add ARRAY_SPAWNLIST flood_room2_water
+	array.add ARRAY_SPAWNLIST flood_room2_zombies
+	array.add ARRAY_SPAWNLIST horrors1
+	array.add ARRAY_SPAWNLIST lhorror_spawner
+	array.add ARRAY_SPAWNLIST vampire_bat_spawn
+	array.add ARRAY_SPAWNLIST bats1
+	array.add ARRAY_SPAWNLIST shrieker_spawner
+	array.add ARRAY_SPAWNLIST ogre_stone_spawner
+	array.add ARRAY_SPAWNLIST box_room1_zombies
+	array.add ARRAY_SPAWNLIST box_room1_goblins
+	array.add ARRAY_SPAWNLIST box_room1_random
+	array.add ARRAY_SPAWNLIST loading_room_random
+	array.add ARRAY_SPAWNLIST tunnels1
+	array.add ARRAY_SPAWNLIST tunnels2
+	array.add ARRAY_SPAWNLIST flood_room3
+
+	setvard GM_SPAWNKILL_COUNT 0
+	setvard GM_SPAWNKILL_MAX $get_array_amt(ARRAY_SPAWNLIST)
+	callevent gm_remove_spawns_loop
+}
+
+{ gm_map_fmines_killspawns
+	if !GM_DID_KILLSPAWN
+	setvard GM_DID_KILLSPAWN 1
+	setvarg G_TRACK_DEATHS -1
+
+	array.create ARRAY_SPAWNLIST
+	array.add ARRAY_SPAWNLIST cavespider
+	array.add ARRAY_SPAWNLIST caveshrine
+	array.add ARRAY_SPAWNLIST cave5
+	array.add ARRAY_SPAWNLIST cave6
+	array.add ARRAY_SPAWNLIST mini_boss
+	array.add ARRAY_SPAWNLIST cave2undead
+	array.add ARRAY_SPAWNLIST cave2goblin
+	array.add ARRAY_SPAWNLIST cave2troll
+	array.add ARRAY_SPAWNLIST cave2slime
+	array.add ARRAY_SPAWNLIST cave4aundead
+	array.add ARRAY_SPAWNLIST cave4agoblin
+	array.add ARRAY_SPAWNLIST cavemainslime
+	array.add ARRAY_SPAWNLIST cavemaingoblin
+	array.add ARRAY_SPAWNLIST cave3goblin
+	array.add ARRAY_SPAWNLIST cave3undead
+	array.add ARRAY_SPAWNLIST cave3slime
+	array.add ARRAY_SPAWNLIST cave1bat
+	array.add ARRAY_SPAWNLIST cave1undead
+	array.add ARRAY_SPAWNLIST cave1slime
+	array.add ARRAY_SPAWNLIST cave8goblin
+	array.add ARRAY_SPAWNLIST cave8undead
+	array.add ARRAY_SPAWNLIST cave8slime
+	array.add ARRAY_SPAWNLIST cave7horror
+	array.add ARRAY_SPAWNLIST cave4bgoblin
+	array.add ARRAY_SPAWNLIST cave4bundead
+	array.add ARRAY_SPAWNLIST cavespider
+
+	setvard GM_SPAWNKILL_COUNT 0
+	setvard GM_SPAWNKILL_MAX $get_array_amt(ARRAY_SPAWNLIST)
+	callevent gm_remove_spawns_loop
+}
+
+{ gm_remove_spawns_loop
+	local CUR_SPAWN $get_array(ARRAY_SPAWNLIST,GM_SPAWNKILL_COUNT)
+	deleteent $get_by_name(CUR_SPAWN) remove
+	if GM_SPAWNKILL_COUNT < GM_SPAWNKILL_MAX
+	add GM_SPAWNKILL_COUNT 1
+	callevent 1.0 gm_remove_spawns_loop
+}
+
+{ ext_rmines_clear
+	callevent gm_suspend_mob_spawns 1
+}
+
+{ gm_suspend_mob_spawns //0|1
+	//for temporarily suspending monster spawning (deletes on spawn via base_monster_shared)
+	setvard GM_DISABLE_SPAWNS PARAM1
+}
+
+{ gm_trigger_hpseq_count //<(ignored)> <trigger> activated by trigger relay rly_door_count on orc_for
+	if ( GM_BTROLLS_DEAD equals 'GM_BTROLLS_DEAD' )
+	{
+		setvard GM_BTROLLS_DEAD 1
+	}
+	else
+	{
+		add GM_BTROLLS_DEAD 1
+	}
+	
+	if GM_BTROLLS_DEAD >= GM_TOTAL_TRIGGERED
+	local L_TRIGGER PARAM2
+	usetrigger L_TRIGGER
+}
+
+{ gm_trigger_hpseq //<caller(ignored)> <trigger_prefix> <hpreqs...>
+	//spawn_btrolls_;0;500;1000;1500;2000;3000
+	setvard GM_TRIGGER_PREFIX PARAM2
+	setvard GM_HP_TOKENS PARAM3
+	local L_N_PARAMS game.event.params
+	if ( L_N_PARAMS > 3 ) token.add GM_HP_TOKENS PARAM4
+	if ( L_N_PARAMS > 4 ) token.add GM_HP_TOKENS PARAM5
+	if ( L_N_PARAMS > 5 ) token.add GM_HP_TOKENS PARAM6
+	if ( L_N_PARAMS > 6 ) token.add GM_HP_TOKENS PARAM7
+	if ( L_N_PARAMS > 7 ) token.add GM_HP_TOKENS PARAM8
+	if ( L_N_PARAMS > 8 ) token.add GM_HP_TOKENS PARAM9
+	
+	setvard GM_TOTAL_HP game.playersnb.totalhp
+	setvard GM_TOTAL_TRIGGERED 0
+	calleventloop $get_token_amt(GM_HP_TOKENS) gm_trigger_hpseq_loop
+}
+
+{ gm_trigger_hpseq_loop
+	local CUR_HPREQ $get_token(GM_HP_TOKENS,game.script.iteration)
+	if ( GM_TOTAL_HP >= CUR_HPREQ )
+	{
+		local L_TRIGGER GM_TRIGGER_PREFIX
+		stradd L_TRIGGER CUR_HPREQ
+		usetrigger L_TRIGGER
+		add GM_TOTAL_TRIGGERED 1
+	}
+}
+
+{ gm_mob_clreturn //<owner> <origin>
+	//returns client side hit to specific mob
+	//example usage in monsters/elemental_earth_cl
+	local L_OWNER $get_by_idx(PARAM1,id)
+	//dbg gm_mob_clreturn PARAM1 $get(L_OWNER,name)
+	local L_POS PARAM2
+	callexternal L_OWNER ext_mob_clreturn L_POS
+}
+
+{ game_triggered //<map trigger fired>
+	dbg game_triggered PARAM1
+
+	local L_TRIG PARAM1
+
+	if ( L_TRIG startswith touch_trans_ )
+	{
+		if !VOTE_BUSY
+		if !GM_CHANGELEVEL
+		if game.players > 0
+		local L_VOTEMAP $string_from(L_TRIG,touch_trans_)
+		local L_VOTETITLE "Change map to "
+		stradd L_VOTETITLE L_VOTEMAP
+		getplayers T_PLAYERLIST
+		local L_VOTESTARTER $get_token(T_PLAYERLIST,0)
+		callexternal GAME_MASTER gm_map_vote L_VOTESTARTER L_VOTEMAP L_VOTETITLE 1 1
+	}
+	else if ( L_TRIG startswith force_map_ )
+	{
+		if !GM_CHANGELEVEL
+		local L_FORCEMAP $string_from(L_TRIG,force_map_)
+		callevent gm_manual_map_change L_FORCEMAP
+	}
 }

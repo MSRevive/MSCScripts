@@ -13,13 +13,13 @@
 //r = ring quest stage (integer)
 //l = lighthouse keeper (spider,grave,crystal,food)
 //n = how many times name has been changed
-//s = pet pok�ball state, 1=egged, 2=summoned
-//f = Symbol and shard info (maybe used for other unique quest items)
-//b1 = galat chest bank
+//s = pet pokeball state, 1=egged, 2=summoned [defunct]
+//f = Felwyn Symbol/Shard quest
+//b1-b9 = galat chest bank
 //a = achievments (token #0=sorc_villa)
 //rep = Got reporter reward
 //dhal = halo toggled off if set to 1
-//pnw = pet wolf name
+//pnw = pet wolf name [defunt, pets see below]
 //lc = lodagond chests flag (stops repeated chest exploit)
 //sy = sylphiel's soup available
 //BODY = last submodel body layout (for char select screen)
@@ -38,12 +38,23 @@
 //Player Initialization
 { [server]
 
-	const DONATOR_LIST "STEAM_0:0:4528762;STEAM_0:1:1339151;STEAM_0:0:15435276;STEAM_0:1:5168669;STEAM_0:1:4985228;STEAM_0:1:838591;STEAM_0:0:17717134;STEAM_0:1:1184501"
+	//got too big for token list, see global.script
+	//const DONATOR_LIST "STEAM_0:0:4528762;STEAM_0:1:1339151;STEAM_0:0:15435276;STEAM_0:1:5168669;STEAM_0:1:4985228;STEAM_0:1:838591;STEAM_0:0:17717134;STEAM_0:1:1184501;STEAM_0:0:23328455"
+	//STEAM_0:0:452876 - Thothie
+	//STEAM_0:1:1339151 - Hush 2.0
+	//STEAM_0:0:15435276 - Echo 717
+	//STEAM_0:1:5168669 - Shaftinthecity
+	//STEAM_0:1:4985228 - Dridje
+	//STEAM_0:1:838591 - lafingman0
+	//STEAM_0:0:17717134 - Lucifer Majiskus
+	//STEAM_0:1:1184501 - Older than Dirt
+	//STEAM_0:0:23328455 - Meru
+
 
 	const KELDORN_ID "STEAM_0:0:19648837"
 	const DARK_ID "STEAM_0:1:8122893"
 
-	setvard FREQ_AFK_CHECK 60.0
+	setvar FREQ_AFK_CHECK 60.0
 
 	setvard PLR_2H_REDUCT 1
 	const LEAP_SIDE_DRAIN 30
@@ -83,9 +94,11 @@
 	const SOUND_BEAR_STRUCK1 monsters/bear/c_bear_hit1.wav
 	const SOUND_BEAR_STRUCK2 monsters/bear/c_bear_hit2.wav
 	const SOUND_BEAR_STRUCK3 monsters/bear/c_bear_no.wav
+
+	precache dwarf/reference.mdl
 }
 
-#include [server] player/valid_spawn
+#include [server] player/valid_spawn_new
 #include [server] player/element_resist
 
 // Spawn
@@ -96,8 +109,11 @@
 	if ( !PLR_STARTED_AFK_CHECKS )
 	{
 		setvard PLR_STARTED_AFK_CHECKS 1
-		callevent 60.0 afk_check
+		//callevent 60.0 afk_check
 	}
+
+	//cheat checks
+	CheatEngineCheck
 
 	if ( game.serverside )
 	{
@@ -134,12 +150,6 @@
 	}
 
 	callevent hide_my_stuff $get(ent_me,id)
-
-	local LAST_SPAWN $get_lastmap(ent_me)
-	local NEXT_SPAWN $get_nextmap(ent_me)
-
-	if !INVALID_SPAWN
-	if ( G_VALID_SPAWN != 1 ) callevent validate_spawn LAST_SPAWN $get_map_legit(ent_me)
 
 	//dbg Spawned from LAST_SPAWN ( legit: $get_map_legit(ent_me) validated: G_VALID_SPAWN type: $get_jointype(ent_me) ) 
 
@@ -253,7 +263,7 @@
 		callevent 1.0 hp_max_warn
 	}
 
-	setvard PLR_PRECHEAT_POS $get(ent_me,origin)
+	//setvard PLR_PRECHEAT_POS $get(ent_me,origin)
 	callexternal all ext_activate_items $get(ent_me,id)
 	//wish I thought of this before - use to make sure items activate post spawn
 }
@@ -385,7 +395,7 @@
 	}
 	setvard PLR_DMG 0
 
-	callexternal all bs_global_command $get(ent_me,id) vanish //remove my summons
+	callexternal all bs_global_command $get(ent_me,id) vanish death //remove my summons and report my death
 
 	//callevent hide_my_stuff $get(ent_me,id)
 
@@ -404,6 +414,10 @@
 
 	//setvard VAMPIRE_ON 0 //vampire blood go bye bye
     //setvard DEMON_BLOOD 0 //" "
+	if ( $get(ent_me,scriptvar,'PLR_SHIELD_UP') )
+	{
+		callexternal ent_me ext_shield_up 0
+	}
 
 	if ( $get(ent_me,scriptvar,'PLR_SFAURA_ACTIVE') )
 	{
@@ -443,6 +457,12 @@
 		playsound 0 10 SOUND_DEATH
 	}
 
+	//redundant bear removal
+	if ( $get(PLR_BEAR_IMAGE_ID,exists) )
+	{
+		deleteent PLR_BEAR_IMAGE_ID fade
+	}
+
 	//should we clear cmusak here?
 	scriptflags ent_me cleartype nopush
 	scriptflags ent_me cleartype mana_regen
@@ -460,7 +480,7 @@
 }
 
 { warp_out
-	setorigin ent_me (20000,20000,-20000) //send real body to oblivion so cant be looted
+	setorigin ent_me $vec(20000,20000,-20000) //send real body to oblivion so cant be looted
 }
 
 
@@ -519,22 +539,23 @@
 
 	callevent display_health
 
-	if ( PLR_COMBAT_MUSIC_ACTIVE )
-	{
-		if $get(PARAM1,isalive) //don't want post-mortem DOT's starting up music
-		if PLR_COMBAT_MUSIC_LENGTH != 0
-		if PLR_CURRENT_MUSIC isnot PLR_COMBAT_MUSIC
-		if !$get_scriptflag(ent_me,cmusak,type_exists)
-		if PARAM1 isnot GAME_MASTER
-		if ( !$get(PARAM1,scriptvar,'NPC_CUSTOM_COMBAT_MUSIC') )
-		{
-			callevent ext_music_combat add $get(PARAM1,index)
-		}
-		else
-		{
-			callevent ext_music_combat add $get(PARAM1,index) $get(PARAM1,scriptvar,'NPC_CMUSIC_LENGTH')  $get(PARAM1,scriptvar,'NPC_CMUSIC_FILE')
-		}
-	}
+	//dun do this, ya wont know when to stop
+//	if ( PLR_COMBAT_MUSIC_ACTIVE )
+//	{
+//		if $get(PARAM1,isalive) //don't want post-mortem DOT's starting up music
+//		if PLR_COMBAT_MUSIC_LENGTH != 0
+//		if PLR_CURRENT_MUSIC isnot PLR_COMBAT_MUSIC
+//		if !$get_scriptflag(ent_me,cmusak,type_exists)
+//		if PARAM1 isnot GAME_MASTER
+//		if ( !$get(PARAM1,scriptvar,'NPC_CUSTOM_COMBAT_MUSIC') )
+//		{
+//			callevent ext_music_combat add $get(PARAM1,index)
+//		}
+//		else
+//		{
+//			callevent ext_music_combat add $get(PARAM1,index) $get(PARAM1,scriptvar,'NPC_CMUSIC_LENGTH')  $get(PARAM1,scriptvar,'NPC_CMUSIC_FILE')
+//		}
+//	}
 }
 
 { display_health
@@ -799,29 +820,19 @@
 	{
 		setvarg G_HELP_ON 0
 		consolemsg ent_me Be sure to get more info at: www.msremake.com/forums
-		gplayermessage ent_me You can type �help� again to restore the help panels
+		gplayermessage ent_me You can type help again to restore the help panels
 		usetrigger help_spr
 		local EXIT_SUB 1
 	}
 }
 
-{ [server] game_dodamage //1:AttackHit(1/0)  2:EntityHit  3:StartOrigin  4:EndOrigin
+{ [server] game_dodamage //PARAM1=hit:0|1 PARAM2=ent_hit PARAM3=(start) PARAM4=(end) PARAM5=DmgType PARAM6=DmgAmt
 	
 	//dbg Player_Attacked with PARAM5 for PARAM6
 	if ( PARAM5 equals dark )
 	{
 		//Thothie AUG2010_23 Dark Energy Corruption
-		local OLD_PLR_DARK_LEVEL PLR_DARK_LEVEL
-		add PLR_DARK_LEVEL PARAM6
-		if ( PLR_DARK_LEVEL > PLR_MAX_DARK_LEVEL )
-		{
-			setvard PLR_DARK_LEVEL PLR_MAX_DARK_LEVEL
-		}
-		if ( OLD_PLR_DARK_LEVEL < PLR_DARK_UNHOLY_LEVEL )
-		{
-			if PLR_DARK_LEVEL > PLR_DARK_UNHOLY_LEVEL
-			callevent player_calc_holy_resistance
-		}
+		callevent plr_add_dark $int(PARAM6)
 	}
 	
 	if ( USING_LIGHTNING )
@@ -831,6 +842,20 @@
 		local SHOCK_DAMAGE $get(ent_me,skill.spellcasting.lightning)
 		multiply SHOCK_DAMAGE LIGHTNING_DMG_RATIO
 		applyeffect $get(PARAM2,id) effects/effect_shock_dmg 5 $get(ent_me,id) SHOCK_DAMAGE LIGHTNING_SKILL
+	}
+}
+
+{ plr_add_dark //<amt>
+	local OLD_PLR_DARK_LEVEL PLR_DARK_LEVEL
+	add PLR_DARK_LEVEL PARAM1
+	if ( PLR_DARK_LEVEL > PLR_MAX_DARK_LEVEL )
+	{
+		setvard PLR_DARK_LEVEL PLR_MAX_DARK_LEVEL
+	}
+	if ( OLD_PLR_DARK_LEVEL < PLR_DARK_UNHOLY_LEVEL )
+	{
+		if PLR_DARK_LEVEL > PLR_DARK_UNHOLY_LEVEL
+		callevent player_calc_holy_resistance
 	}
 }
 
@@ -1065,7 +1090,9 @@
 	setvard DISPLAY_HBAR_DELAY 0
 }
 
-{ afk_check
+{
+repeatdelay FREQ_AFK_CHECK
+	if PLR_STARTED_AFK_CHECKS
 
 	local CUR_POS $get(ent_me,origin)
 	if ( $dist(AFK_OLD_POS,CUR_POS) <= 128 )
@@ -1074,9 +1101,14 @@
 		local L_LAST_ATK_TIME PLR_LAST_ATK_TIME
 		add L_LAST_ATK_TIME 60.0
 		if game.time > L_LAST_ATK_TIME //not AFK if hit something <60 seconds ago
+		if ( G_DEVELOPER_MODE )
+		{	
+			if !IS_AFK
+			bplayermessage ent_me "====== FLAGGED AFK!"
+		}
 		setvard IS_AFK 1
 		setvard FREQ_AFK_CHECK 5.0
-		if ( G_DEVELOPER_MODE ) bplayermessage ent_me "====== FLAGGED AFK!"
+
 	}
 	else
 	{
@@ -1119,8 +1151,6 @@
 	//double check sploit spell skills reset
 	//setstat spellcasting.summoning 1
 	//setstat spellcasting.protection 1
-
-	callevent FREQ_AFK_CHECK afk_check
 }
 
 //test these:
@@ -1297,8 +1327,14 @@
 
 
 	//check donator IDs
-	if ( DONATOR_LIST contains $get(ent_me,steamid) ) local L_HAS_HALO 1
-	if ( G_DEVELOPER_MODE ) local L_HAS_HALO 1
+	local L_STEAM $get(ent_me,steamid)
+	if ( $g_get_arrayfind(G_ARRAY_DONATORS,L_STEAM) > -1 )
+	{
+		dbg found donator $g_get_arrayfind(G_ARRAY_DONATORS,L_STEAM)
+		local L_HAS_HALO 1
+	}
+	//if ( DONATOR_LIST contains $get(ent_me,steamid) ) local L_HAS_HALO 1 //got too big for token list, see global.script
+	//if ( G_DEVELOPER_MODE ) local L_HAS_HALO 1
 	if ( L_HAS_HALO )
 	{
 		setvard PLR_HAS_HALO 1
@@ -1350,9 +1386,12 @@
 	if ( !PLR_IN_WORLD ) 
 	{
 		callexternal players ext_reset_model //reinitialize models for all players so new player sees them proper
-		callevent 1.0 alert_world_new_join
+		callevent 1.0 post_first_join
 	}
 	setvard PLR_IN_WORLD 1
+	if ( !$get(ent_me,haseffect,player_sitstand) ) applyeffect ent_me player/emote_sit&stand
+
+	callevent validate_spawn LAST_SPAWN $get_map_legit(ent_me)
 
 	setvard PLR_DARK_LEVEL $get_quest_data(ent_me,dl)
 
@@ -1892,6 +1931,5 @@
 		//dbg game_applyeffect abort spider applyeffect [ p2 $get(PARAM2,name) p5 $get(PARAM5,itemname) ]
 		return abort
 		local L_DID_ABORT 1
-		//exitevent //commented out, as worried may mess with game_applyeffect handling elsewhere.
 	}
 }

@@ -1,26 +1,53 @@
-//struck/material system that really should be part of the base AI, but most mobs do this within their
-//own script and I dun wanna add more overhead globally
-//requires base_self_adjust (or manual call to set_material)
+//struck/material system that really should be part of the base AI, 
+//but most mobs do this within their own script, and I dun wanna add more overhead globally
+//this script can also handle idle sounds
 {
-	const NPC_BASE_MATERIAL_TYPE default //default|stone|metal|glass|bloat|plant|wood|bone|bone_large|bullet|carapace - set in top script
+	const NPC_MATERIAL_TYPE default //default|stone|metal|glass|bloat|plant|wood|bone|bone_large|bullet|carapace - set in top script
+	//if SOUND_STRUCK1 is defined, these sounds override the material type (base assumes there are three ie. SOUND_STRUCK1-3)
 	const NPC_STRUCK_VOL 10	//volume for pain and struck sounds (flinch is maxvol)
 	const NPC_STRUCK_CHANNEL 2 //channel to use for struck sounds (switch if using for sustained sound)
+	//material type can be changed post spawn by calling set_material <type> later
+	const NPC_PITCH_STRUCK 100 //can alter pitch if 8-bit sound
+	const NPC_ATN_STRUCK 0.8 //also atenuation
 
-	setvard NPC_USE_PAIN 0 //0|1 - use material screaming system when <50% health [req: SOUND_PAIN1-3]
+	const NPC_STRUCK_SOUND_EVENT 0 //if you want to redirect sounds, 0 should be replaced with event to be called - paramters will be intended sound - sound will not be played by base script
+
+	const NPC_USE_PAIN 0 //0|1 - use material screaming system when <50% health
 	const NPC_FREQ_PAIN $randf(5.0,10.0) //time between screams (also trigger if >=3x vuln to element)
+	//req: SOUND_PAIN1-3
+	//pain can be disabled post spawn by setting NPC_PAIN_DISABLE 1
+	const NPC_PITCH_PAIN 100 //can alter pitch if 8-bit sound
+	const NPC_ATN_PAIN 0.8 //also atenuation
+	const NPC_FLINCH_ALLOW_SUSPEND_AI 0 //normally a mob will not flinch while AI is suspended
+	const NPC_FLINCH_ALLOW_SUSPEND_MOVEMENT 0 //normally a mob will not flinch while animation movement is locked
 
-	setvard NPC_USE_FLINCH 0 //0|1 - enable use of base_struck alterinative flinch system (requires ANIM_FLINCH, SOUND_FLINCH1-3, returns event npc_flinch)
+	const NPC_USE_FLINCH 0 //0|1 - enable use of base_struck alternative flinch system 
 	const NPC_FREQ_FLINCH 30.0 //min time between flinches
 	const NPC_FLINCH_THRESH 0.1 //min ratio of current HP damage to cause flinch (will also trigger if >=2x vuln to element, but not more often than freq allows)
+	const NPC_FLINCH_TIME 1.5 //time to suspend AI during flinch (0 to disable AI suspension during flinch)
+	//requires ANIM_FLINCH, SOUND_FLINCH1-3, returns callback event npc_flinch
+	//flinch can be disabled post spawn by setting NPC_FLINCH_DISABLE 1
+	//flinch calls back npc_flinch just before the flinch anim plays
+	//- if you  wish to abort, one time, or use a custom flinch sequence, you can setvard NPC_FLINCH_DISABLE_ONCE 1 in npc_flinch
+	const NPC_PITCH_FLINCH 100 //can alter pitch if 8-bit sound
+	const NPC_ATN_FLINCH 0.8 //also attenuation
+
+	const NPC_USE_IDLE 0 //0|1 - enable idle sounds
+	const NPC_FREQ_IDLE $randf(10.0,20.0) //idle sound frequency
+	const NPC_PITCH_IDLE 100 //can change if 8-bit sound
+	const NPC_ATN_IDLE 0.8
+	//idle sounds are assumed to be SOUND_IDLE1-SOUND_IDLE3
+	//idle sounds can be disabled post spawn by setting NPC_IDLE_DISABLE 1
+	//idle sounds periodically play while mob is out of combat
 
 	setvard BS_SOUND_STRUCK1 weapons/cbar_hitbod1.wav
 	setvard BS_SOUND_STRUCK2 weapons/cbar_hitbod2.wav
 	setvard BS_SOUND_STRUCK3 weapons/cbar_hitbod3.wav
 }
 
-{ npcatk_handle_events
+{ game_spawn
 
-	callevent 0.1 set_material
+	callevent 0.5 set_material
 }
 
 { set_material //[type] can also be changed mid combat, or set as add param
@@ -32,87 +59,96 @@
 
 	if ( PARAM1 startswith PARAM )
 	{
-		setvard NPC_MATERIAL_TYPE NPC_BASE_MATERIAL_TYPE
+		setvard NPC_CUR_MATERIAL_TYPE NPC_MATERIAL_TYPE
 	}
 	else
 	{
-		setvard NPC_MATERIAL_TYPE PARAM1
+		setvard NPC_CUR_MATERIAL_TYPE PARAM1
 	}
 
+	if ( SOUND_STRUCK1 isnot 'SOUND_STRUCK1' )
+	{
+		setvard BS_SOUND_STRUCK1 SOUND_STRUCK1
+		setvard BS_SOUND_STRUCK2 SOUND_STRUCK2
+		setvard BS_SOUND_STRUCK3 SOUND_STRUCK3
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
 	//thanks to client side sounds, we don't have to precache all this crap now
-	if ( NPC_MATERIAL_TYPE equals default )
+	if ( NPC_CUR_MATERIAL_TYPE equals default )
 	{
 		setvard BS_SOUND_STRUCK1 weapons/cbar_hitbod1.wav
 		setvard BS_SOUND_STRUCK2 weapons/cbar_hitbod2.wav
 		setvard BS_SOUND_STRUCK3 weapons/cbar_hitbod3.wav
 	}
-	else if ( NPC_MATERIAL_TYPE equals flesh )
+	else if ( NPC_CUR_MATERIAL_TYPE equals flesh )
 	{
 		setvard BS_SOUND_STRUCK1 body/flesh1.wav
 		setvard BS_SOUND_STRUCK2 body/flesh2.wav
 		setvard BS_SOUND_STRUCK3 body/flesh3.wav
 	}
-	else if ( NPC_MATERIAL_TYPE equals stone )
+	else if ( NPC_CUR_MATERIAL_TYPE equals stone )
 	{
 	   setvard BS_SOUND_STRUCK1 weapons/axemetal1.wav
 	   setvard BS_SOUND_STRUCK2 weapons/axemetal2.wav
 	   setvard BS_SOUND_STRUCK3 debris/concrete1.wav
 	}
-	else if ( NPC_MATERIAL_TYPE equals metal )
+	else if ( NPC_CUR_MATERIAL_TYPE equals metal )
 	{
 		setvard BS_SOUND_STRUCK1 doors/doorstop5.wav
 		setvard BS_SOUND_STRUCK2 weapons/axemetal2.wav
 		setvard BS_SOUND_STRUCK3 weapons/axemetal1.wav
 	}
-	else if ( NPC_MATERIAL_TYPE equals glass ) //also good for ice
+	else if ( NPC_CUR_MATERIAL_TYPE equals glass ) //also good for ice
 	{
 		const SOUND_STRUCK debris/glass1.wav
 		const SOUND_PAIN debris/glass2.wav
 		const SOUND_PAIN2 debris/glass3.wav
 	}
-	else if ( NPC_MATERIAL_TYPE equals bloat ) //for really fat, watery-ish things
+	else if ( NPC_CUR_MATERIAL_TYPE equals bloat ) //for really fat, watery-ish things
 	{
 		setvard BS_SOUND_STRUCK1 debris/flesh2.wav
 		setvard BS_SOUND_STRUCK2 debris/flesh5.wav
 		setvard BS_SOUND_STRUCK3 debris/flesh7.wav
 	}
-	else if ( NPC_MATERIAL_TYPE equals plant )
+	else if ( NPC_CUR_MATERIAL_TYPE equals plant )
 	{
 		setvard BS_SOUND_STRUCK1 weapons/xbow_hitbod1.wav
 		setvard BS_SOUND_STRUCK2 weapons/xbow_hitbod2.wav
 		setvard BS_SOUND_STRUCK3 weapons/bustflesh2.wav
 	}
-	else if ( NPC_MATERIAL_TYPE equals bullet )
+	else if ( NPC_CUR_MATERIAL_TYPE equals bullet )
 	{
 		setvard BS_SOUND_STRUCK1 weapons/ric1.wav
 		setvard BS_SOUND_STRUCK2 weapons/ric2.wav
 		setvard BS_SOUND_STRUCK3 weapons/ric3.wav
 	}
-	else if ( NPC_MATERIAL_TYPE equals carpace ) 
+	else if ( NPC_CUR_MATERIAL_TYPE equals carapace ) 
 	{
 		setvard BS_SOUND_STRUCK1 weapons/bustflesh1.wav
 		setvard BS_SOUND_STRUCK2 weapons/bullet_hit2.wav
 		setvard BS_SOUND_STRUCK3 weapons/cbar_hitbod1.wav
 	}
-	else if ( NPC_MATERIAL_TYPE equals wood ) //treants?
+	else if ( NPC_CUR_MATERIAL_TYPE equals wood ) //treants?
 	{
 		setvard BS_SOUND_STRUCK1 debris/wood2.wav
 		setvard BS_SOUND_STRUCK2 debris/wood3.wav
 		setvard BS_SOUND_STRUCK3 debris/wood1.wav
 	}
-	else if ( NPC_MATERIAL_TYPE equals electric ) //energy beings?
+	else if ( NPC_CUR_MATERIAL_TYPE equals electric ) //energy beings?
 	{
 		setvard BS_SOUND_STRUCK1 debris/zap1.wav
 		setvard BS_SOUND_STRUCK2 debris/zap3.wav
 		setvard BS_SOUND_STRUCK3 debris/zap8.wav
 	}
-	else if ( NPC_MATERIAL_TYPE equals bone ) //almost more a pain set
+	else if ( NPC_CUR_MATERIAL_TYPE equals bone ) //almost more a pain set
 	{
 		setvard BS_SOUND_STRUCK1 monsters/undeadz/c_skeleton_hit1.wav
 		setvard BS_SOUND_STRUCK2 monsters/undeadz/c_skeleton_hit2.wav
 		setvard BS_SOUND_STRUCK3 monsters/undeadz/c_hookhorr_hit1.wav
 	}
-	else if ( NPC_MATERIAL_TYPE equals bone_large ) //same issue here
+	else if ( NPC_CUR_MATERIAL_TYPE equals bone_large ) //same issue here
 	{
 		setvard BS_SOUND_STRUCK1 monsters/undeadz/c_golmbone_hit1.wav
 		setvard BS_SOUND_STRUCK2 monsters/undeadz/c_golmbone_slct.wav
@@ -122,35 +158,118 @@
 
 { game_damaged //PARAM1=attacker PARAM2=dmg PARAM3=dmg_type
 
+	if $get(ent_me,isalive)
+	local MY_HP $get(ent_me,hp)
+	subtract MY_HP PARAM2
+	if MY_HP > 0
+
+	dbg $currentscript uf NPC_USE_FLINCH thr NPC_FLINCH_THRESH
+
 	if ( NPC_USE_FLINCH )
 	{
+		if !NPC_FLINCH_DISABLE
 		if game.time > NPC_NEXT_FLINCH
 		local L_MIN_DMG $get(ent_me,hp)
 		multiply L_MIN_DMG NPC_FLINCH_THRESH
-		if ( PARAM2 > L_MIN_DMG ) local L_CAN_FLINCH
+		if ( PARAM2 > L_MIN_DMG ) local L_CAN_FLINCH 1
 		if ( $get_takedmg(ent_me,PARAM3) >= 2 ) local L_CAN_FLINCH 1
+		if ( SUSPEND_AI )
+		{
+			if !NPC_FLINCH_ALLOW_SUSPEND_AI
+			local L_CAN_FLINCH 0
+		}
+		if ( NPC_MOVEMENT_SUSPENDED )
+		{
+			if !NPC_FLINCH_ALLOW_SUSPEND_MOVEMENT
+			local L_CAN_FLINCH 0
+		}
+		dbg $currentscript flinch_check result L_CAN_FLINCH
 		if L_CAN_FLINCH
-		playanim critical ANIM_FLINCH
-		playrandomsound NPC_STRUCK_CHANNEL 10 SOUND_FLINCH1 SOUND_FLINCH2 SOUND_FLINCH3
-		setvard NPC_NEXT_FLINCH game.time
-		add NPC_NEXT_FLINCH NPC_FREQ_FLINCH
-		callevent npc_flinch
-		local EXIT_SUB 1
+		callevent npc_flinch //you can choose the animation, or disable once from here - also might be a good idea to resume the AI, if the mob can flinch while suspended, and relies on an animation completing to come out of suspend
+		if ( !NPC_FLINCH_DISABLE_ONCE )
+		{
+			playanim critical ANIM_FLINCH
+			//playrandomsound NPC_STRUCK_CHANNEL 10 SOUND_FLINCH1 SOUND_FLINCH2 SOUND_FLINCH3
+			local L_RND_SOUND $rand(1,3)
+			if ( NPC_STRUCK_SOUND_EVENT equals 0 )
+			{
+				if ( L_RND_SOUND == 1 ) playsound NPC_STRUCK_CHANNEL NPC_STRUCK_VOL SOUND_FLINCH1 NPC_ATN_STRUCK NPC_PITCH_STRUCK
+				else if ( L_RND_SOUND == 2 ) playsound NPC_STRUCK_CHANNEL NPC_STRUCK_VOL SOUND_FLINCH2 NPC_ATN_STRUCK NPC_PITCH_STRUCK
+				else if ( L_RND_SOUND == 3 ) playsound NPC_STRUCK_CHANNEL NPC_STRUCK_VOL SOUND_FLINCH3 NPC_ATN_STRUCK NPC_PITCH_STRUCK
+			}
+			else
+			{
+				if ( L_RND_SOUND == 1 ) callevent NPC_STRUCK_SOUND_EVENT NPC_STRUCK_CHANNEL NPC_STRUCK_VOL SOUND_FLINCH1 NPC_ATN_STRUCK NPC_PITCH_STRUCK
+				else if ( L_RND_SOUND == 2 ) callevent NPC_STRUCK_SOUND_EVENT NPC_STRUCK_CHANNEL NPC_STRUCK_VOL SOUND_FLINCH2 NPC_ATN_STRUCK NPC_PITCH_STRUCK
+				else if ( L_RND_SOUND == 3 ) callevent NPC_STRUCK_SOUND_EVENT NPC_STRUCK_CHANNEL NPC_STRUCK_VOL SOUND_FLINCH3 NPC_ATN_STRUCK NPC_PITCH_STRUCK
+			}
+			setvard NPC_NEXT_FLINCH game.time
+			add NPC_NEXT_FLINCH NPC_FREQ_FLINCH
+			if ( NPC_FLINCH_TIME > 0 ) callevent npcatk_suspend_ai NPC_FLINCH_TIME //give time for flinch anim to finish
+			local EXIT_SUB 1
+		}
+		else
+		{
+			setvard NPC_FLINCH_DISABLE_ONCE 0
+		}
 	}
 	if !EXIT_SUB
 
+	callevent npc_bs_struck $get(PARAM1,id) //only called if didn't flinch
+
 	if ( NPC_USE_PAIN )
 	{
+		if !NPC_PAIN_DISABLE
+		dbg $currentscript use pain if $get(ent_me,hp) < NPC_BS_HALF_HEALTH
 		if $get(ent_me,hp) < NPC_BS_HALF_HEALTH
 		if ( game.time > NPC_NEXT_PAIN ) local L_CAN_PAIN 1
 		if ( $get_takedmg(ent_me,PARAM3) >= 3 ) local L_CAN_PAIN 1
 		if L_CAN_PAIN
 		setvard NPC_NEXT_PAIN game.time
 		add NPC_NEXT_PAIN NPC_FREQ_PAIN
-		playrandomsound NPC_STRUCK_CHANNEL NPC_STRUCK_VOL SOUND_PAIN1 SOUND_PAIN2 SOUND_PAIN3
+		local L_RND_SOUND $rand(1,3)
+		if ( NPC_STRUCK_SOUND_EVENT equals 0 )
+		{
+			if ( L_RND_SOUND == 1 ) playsound NPC_STRUCK_CHANNEL NPC_STRUCK_VOL SOUND_PAIN1 NPC_ATN_STRUCK NPC_PITCH_STRUCK
+			else if ( L_RND_SOUND == 2 ) playsound NPC_STRUCK_CHANNEL NPC_STRUCK_VOL SOUND_PAIN2 NPC_ATN_STRUCK NPC_PITCH_STRUCK
+			else if ( L_RND_SOUND == 3 ) playsound NPC_STRUCK_CHANNEL NPC_STRUCK_VOL SOUND_PAIN3 NPC_ATN_STRUCK NPC_PITCH_STRUCK
+		}
+		else
+		{
+			if ( L_RND_SOUND == 1 ) callevent NPC_STRUCK_SOUND_EVENT NPC_STRUCK_CHANNEL NPC_STRUCK_VOL SOUND_PAIN1 NPC_ATN_STRUCK NPC_PITCH_STRUCK
+			else if ( L_RND_SOUND == 2 ) callevent NPC_STRUCK_SOUND_EVENT NPC_STRUCK_CHANNEL NPC_STRUCK_VOL SOUND_PAIN2 NPC_ATN_STRUCK NPC_PITCH_STRUCK
+			else if ( L_RND_SOUND == 3 ) callevent NPC_STRUCK_SOUND_EVENT NPC_STRUCK_CHANNEL NPC_STRUCK_VOL SOUND_PAIN3 NPC_ATN_STRUCK NPC_PITCH_STRUCK
+		}
 		local EXIT_SUB 1
 	}
 	if !EXIT_SUB
 
-	playrandomsound NPC_STRUCK_CHANNEL NPC_STRUCK_VOL BS_SOUND_STRUCK1 BS_SOUND_STRUCK2 BS_SOUND_STRUCK3
+	//didnt flinch or pain, use standard stuck set
+	//playrandomsound NPC_STRUCK_CHANNEL NPC_STRUCK_VOL BS_SOUND_STRUCK1 BS_SOUND_STRUCK2 BS_SOUND_STRUCK3
+	local L_RND_SOUND $rand(1,3)
+	if ( NPC_STRUCK_SOUND_EVENT equals 0 )
+	{
+		if ( L_RND_SOUND == 1 ) playsound NPC_STRUCK_CHANNEL NPC_STRUCK_VOL BS_SOUND_STRUCK1 NPC_ATN_STRUCK NPC_PITCH_STRUCK
+		else if ( L_RND_SOUND == 2 ) playsound NPC_STRUCK_CHANNEL NPC_STRUCK_VOL BS_SOUND_STRUCK2 NPC_ATN_STRUCK NPC_PITCH_STRUCK
+		else if ( L_RND_SOUND == 3 ) playsound NPC_STRUCK_CHANNEL NPC_STRUCK_VOL BS_SOUND_STRUCK3 NPC_ATN_STRUCK NPC_PITCH_STRUCK
+	}
+	else
+	{
+		if ( L_RND_SOUND == 1 ) callevent NPC_STRUCK_SOUND_EVENT NPC_STRUCK_CHANNEL NPC_STRUCK_VOL BS_SOUND_STRUCK1 NPC_ATN_STRUCK NPC_PITCH_STRUCK
+		else if ( L_RND_SOUND == 2 ) callevent NPC_STRUCK_SOUND_EVENT NPC_STRUCK_CHANNEL NPC_STRUCK_VOL BS_SOUND_STRUCK2 NPC_ATN_STRUCK NPC_PITCH_STRUCK
+		else if ( L_RND_SOUND == 3 ) callevent NPC_STRUCK_SOUND_EVENT NPC_STRUCK_CHANNEL NPC_STRUCK_VOL BS_SOUND_STRUCK3 NPC_ATN_STRUCK NPC_PITCH_STRUCK
+	}
+}
+
+{ npcatk_hunt
+	if NPC_USE_IDLE
+	if !NPC_IDLE_DISABLE
+	if NPCATK_TARGET equals unset //may fubar on older AI
+	if game.time > NPC_NEXT_IDLE
+	setvard NPC_NEXT_IDLE game.time
+	add NPC_NEXT_IDLE NPC_FREQ_IDLE
+	local L_RND_SOUND $rand(1,3)
+	if ( L_RND_SOUND == 1 ) playsound NPC_STRUCK_CHANNEL 10 SOUND_IDLE1 NPC_ATN_IDLE NPC_PITCH_IDLE
+	if ( L_RND_SOUND == 2 ) playsound NPC_STRUCK_CHANNEL 10 SOUND_IDLE2 NPC_ATN_IDLE NPC_PITCH_IDLE
+	if ( L_RND_SOUND == 3 ) playsound NPC_STRUCK_CHANNEL 10 SOUND_IDLE3 NPC_ATN_IDLE NPC_PITCH_IDLE
 }

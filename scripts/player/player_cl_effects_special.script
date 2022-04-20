@@ -1616,3 +1616,158 @@
 	local SCAN_RESULT $getcl_tsphere(L_PLR_ORG,L_SCAN_RAD,SCAN_FLAGS)
 	dbg s_test SCAN_RESULT
 }
+
+{ cl_set_height
+	dbg cl_set_height PARAM1
+	setvard game.cleffect.view_ofs.z PARAM1
+}
+
+{ ext_sbfollow
+	//. clme ext_sbfollow
+	local L_VIEWMODEL_IDX game.localplayer.viewmodel.active.id
+	local L_ATTACH 1
+	if ( PARAM1 !startswith PARAM ) local L_VIEWMODEL_IDX PARAM1
+	if ( PARAM2 !startswith PARAM ) local L_ATTACH PARAM2
+	cleffect beam_follow L_VIEWMODEL_IDX L_ATTACH lgtning.spr 20.0 30 (1,0,0) 1
+	dbg *** ext_sbfollow PARAM1 PARAM2 [ game.script.last_beam_id ]
+	setvard CYCLE_BEAM game.script.last_beam_id
+}
+
+{ ext_sbent
+	//. clme ext_sbent <ent> <at1> <at2>
+	local L_VIEWMODEL_IDX game.localplayer.viewmodel.active.id
+	local L_ATTACH1 1
+	local L_ATTACH2 2
+	if ( PARAM1 !startswith PARAM ) local L_VIEWMODEL_IDX PARAM1
+	if ( PARAM2 !startswith PARAM ) local L_ATTACH1 PARAM2
+	if ( PARAM3 !startswith PARAM ) local L_ATTACH2 PARAM3
+	cleffect beam_ents L_VIEWMODEL_IDX L_ATTACH1 L_VIEWMODEL_IDX L_ATTACH2 lgtning.spr 20.0 5 1 0.5 100 30 (1,0,1)
+	dbg *** ext_sbent PARAM1 PARAM2 PARAM3 [ game.script.last_beam_id ]
+	setvard CYCLE_BEAM game.script.last_beam_id
+}
+
+{ ext_sbents
+	//. clme ext_sbents <ent> <ent>
+	local L_ENT1 PARAM1
+	local L_ENT2 PARAM2
+	cleffect beam_ents L_ENT1 0 L_ENT2 0 lgtning.spr 120.0 5 1 255 100 30 (255,0,255)
+	dbg *** ext_sbent PARAM1 PARAM2 [ game.script.last_beam_id ] [ GAME_BULLSHIT ]
+	setvard CYCLE_BEAM game.script.last_beam_id
+}
+
+{ edit_beam //<prop> <value>
+	//. clme edit_beam color "(1,0.5,2)"
+	//. clme edit_beam brightness 0.3
+	cleffect beam_update CYCLE_BEAM PARAM1 PARAM2
+}
+
+{ get_beam //<prop>
+	dbg *** beamprop PARAM1 is $getcl_beam(CYCLE_BEAM,PARAM1)
+}
+
+{ clear_beams
+	dbg *** clear_beams
+	cleffect beam_update removeall
+}
+
+{ change_sky //<skyname>
+	//. clme change_sky ax_darkclouds_
+	setenv sky.texture PARAM1
+}
+
+{ cl_show_text //<text_name>
+	
+	localmenu.reset
+
+	local reg.local.menu.title "Test title"
+	registerlocal.menu
+
+	local reg.local.button.text 'Button1'
+	local reg.local.button.closeonclick 0
+	local reg.local.button.enabled 1
+	local reg.local.button.docallback 1
+	local reg.local.button.callback cb_test1
+	registerlocal.button
+
+	local reg.local.button.text 'Button2'
+	local reg.local.button.closeonclick 1
+	local reg.local.button.enabled 0
+	local reg.local.button.docallback 0
+	local reg.local.button.callback cb_test1
+	registerlocal.button
+
+	local reg.local.button.text 'Button3'
+	local reg.local.button.closeonclick 1
+	local reg.local.button.enabled 1
+	local reg.local.button.docallback 0
+	registerlocal.button
+
+	local reg.local.paragraph.source.type 'local'
+	local reg.local.paragraph.source '#LOCALPAGE_TEST1'
+	registerlocal.paragraph
+
+	consolemsg ent_me "OPENING"
+
+	localmenu.open
+}
+
+{ cb_test1
+	localmenu.close
+}
+
+{ cb_test2
+
+}
+
+{ spawn_corpse //<idx> <anim_idx> <renderprops:scale;rendermode;renderamt;bodyidx;skin>
+
+	setvard CORPSE_ANG $getcl(PARAM1,angles)
+
+	setvard CORPSE_ANIM_IDX PARAM2
+
+	setvard CORPSE_SCALE $get_token(PARAM3,0)
+	if ( CORPSE_SCALE == 0 ) setvard CORPSE_SCALE 1
+
+	setvard L_INRENDER $get_token(PARAM3,1)
+	setvard CORPSE_RENDERMODE normal
+	if ( L_INRENDER == 2 ) setvard CORPSE_RENDERMODE texture
+	if ( L_INRENDER == 5 ) setvard CORPSE_RENDERMODE add
+
+	setvard CORPSE_RENDERAMT $get_token(PARAM3,2)
+	if ( CORPSE_RENDERAMT == 0 ) setvard CORPSE_RENDERAMT 255
+
+	setvard CORPSE_BODY_IDX  $get_token(PARAM3,3)
+	setvard CORPSE_SKIN $get_token(PARAM3,4)
+
+	dbg *** clplayer spawn_corpse PARAM1 PARAM2 model: $getcl(PARAM1,model) scale: CORPSE_SCALE rmode: CORPSE_RENDERMODE ramt: CORPSE_RENDERAMT bodyidx: CORPSE_BODY_IDX origin: $getcl(PARAM1,origin)
+
+	cleffect tempent model $getcl(PARAM1,model) $getcl(PARAM1,origin) setup_corpse
+}
+
+{ setup_corpse
+	cleffect tempent set_current_prop death_delay 20.0
+	cleffect tempent set_current_prop scale CORPSE_SCALE
+	cleffect tempent set_current_prop gravity 1
+	cleffect tempent set_current_prop velocity (0,0,-50)
+	cleffect tempent set_current_prop collide world
+	cleffect tempent set_current_prop framerate 1.0
+	cleffect tempent set_current_prop frames 50
+	cleffect tempent set_current_prop body CORPSE_BODY_IDX
+	cleffect tempent set_current_prop sequence CORPSE_ANIM_IDX
+	cleffect tempent set_current_prop angles CORPSE_ANG
+	cleffect tempent set_current_prop rendermode CORPSE_RENDERMODE
+	cleffect tempent set_current_prop renderamt CORPSE_RENDERAMT
+	cleffect tempent set_current_prop skin CORPSE_SKIN
+}
+
+{ cl_array_test
+	if ( !SETUP_TEST_ARRAY )
+	{
+		array.create ARRAY_TEST
+		setvard SETUP_TEST_ARRAY 1
+	}
+
+	array.add ARRAY_TEST "yes"
+
+	dbg *** cl_array_test $get_array(ARRAY_TEST,0) $get_array_amt(ARRAY_TEST)
+}

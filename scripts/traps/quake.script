@@ -1,0 +1,185 @@
+//earth quake trap / effect
+//addparams:
+//set_global //affect all players
+//set_noslow //no applyeffect or damage
+//set_aoe;<rad> //adjust range (default 512)
+//set_dur;<seconds> //adjust duration (default 10.0)
+//damage can be adjusted with dmgmulti (even below 1), if dmgmulti is 0, does no damage (effect only), scales by % of maxhp
+
+#scope server
+
+{
+	setvard QUAKE_AOE 512
+	setvard QUAKE_DURATION 10.0
+	const SOUND_QUAKE_START magic/volcano_start.wav
+	const SOUND_QUAKE_LOOP magic/volcano_loop.wav
+}
+
+{ game_precache
+	precache rockgibs.mdl
+}
+
+{ fake_precache
+	svplaysound 0 0 SOUND_QUAKE_START
+	svplaysound 0 0 SOUND_QUAKE_LOOP
+}
+
+{ game_spawn
+	name an|Earthquake
+	setmodel null.mdl
+	hp 1
+	width 1
+	height 1
+	invincible 1
+	gravity 0
+	fly 1
+	blood none
+	race hated
+	setvard PLAYING_DEAD 1
+	nopush 1
+	callevent 0.2 do_quake
+}
+
+{ game_postspawn
+	setvard DO_EVENTS PARAM4
+
+	if ( DO_EVENTS isnot none )
+	{
+		callevent handle_events
+	}
+
+	if ( PARAM2 == 0 )
+	{
+		setvard NO_DAMAGE 1
+	}
+	else
+	{
+		dmgmulti PARAM2
+	}
+}
+
+{ game_dynamically_created //events <params>
+	dbg game_dynamically_created PARAM1 PARAM2 PARAM3 PARAM4
+	if ( PARAM1 equals events )
+	{
+		setvard DO_EVENTS PARAM2
+		callevent 0.1 handle_events
+	}
+	else
+	{
+		if $get(PARAM1,isalive)
+		setvard DMG_OWNER PARAM1
+		race $get(DMG_OWNER,race)
+	}
+}
+
+{ handle_events
+	calleventloop $get_token_amt(DO_EVENTS) handle_events_loop
+}
+
+{ handle_events_loop
+	local CUR_IDX game.script.iteration
+	local CUR_EVENT $get_token(DO_EVENTS,CUR_IDX)
+	if ( CUR_IDX < $math(subtract,$get_token_amt(DO_EVENTS),1) ) local PARAM_OUT $get_token(DO_EVENTS,$math(add,CUR_IDX,1))
+	callevent CUR_EVENT PARAM_OUT
+}
+
+{ set_aoe
+	dbg set_aoe PARAM1
+	if PARAM1 !startswith PARAM
+	setvard QUAKE_AOE PARAM1
+}
+
+{ set_dur
+	if PARAM1 !startswith PARAM
+	setvard QUAKE_DURATION PARAM1
+	dbg set_dur PARAM1 [ QUAKE_DURATION ]
+}
+
+{ set_global
+	dbg set_global
+	setvard QUAKE_GLOBAL 1
+}
+
+{ set_noslow
+	setvard NO_SLOW 1
+}
+
+{ set_nodamage
+	setvard NO_DAMAGE 1
+}
+
+{ do_quake
+	setvard QUAKE_ACTIVE 1
+
+	dbg do_quake QUAKE_DURATION
+
+	if ( !QUAKE_GLOBAL )
+	{
+		svplaysound 1 10 SOUND_QUAKE_START 0.8 60
+		svplaysound 2 10 SOUND_QUAKE_LOOP 0.8 60
+		setvard QUAKE_AOE 256
+	}
+
+	setvard QUAKE_END_TIME game.time
+	add QUAKE_END_TIME QUAKE_DURATION
+	callevent QUAKE_DURATION quake_end
+
+	if ( !QUAKE_GLOBAL )
+	{
+		callevent 0.1 quake_loop
+		effect screenshake $get(ent_me,origin) 50 10 QUAKE_DURATION $math(multiply,QUAKE_AOE,1.5)
+		clientevent new all effects/sfx_quake $get(ent_me,index) 1 QUAKE_AOE QUAKE_DURATION
+	}
+	else
+	{
+		callexternal players ext_quake_fx QUAKE_DURATION SOUND_QUAKE_START SOUND_QUAKE_LOOP
+		callevent 0.1 global_quake_loop
+	}
+}
+
+{ quake_loop
+	if QUAKE_ACTIVE
+	callevent 1.0 quake_loop
+
+	setvard QUAKE_TARGS $get_tsphere(enemy,QUAKE_AOE)
+	if QUAKE_TARGS isnot none
+	calleventloop $get_token_amt(QUAKE_TARGS) quake_applyeffect
+}
+
+{ global_quake_loop
+	if QUAKE_ACTIVE
+	callevent 1.0 quake_loop
+
+	if game.players > 0
+	getplayers QUAKE_TARGS
+	if QUAKE_TARGS isnot none
+	calleventloop $get_token_amt(QUAKE_TARGS) quake_applyeffect
+}
+
+
+{ quake_applyeffect
+	local CUR_TARG $get_token(QUAKE_TARGS,game.script.iteration)
+
+	if $get(CUR_TARG,onground)
+	local L_DMG $get(CUR_TARG,maxhp)
+	multiply L_DMG 0.01
+
+	if ( NO_DAMAGE ) local L_DMG 0
+
+	if !NO_SLOW
+
+	if ( !QUAKE_GLOBAL )
+	{
+		applyeffect CUR_TARG effects/effect_quake $get(ent_me,id) $get(ent_me,id) QUAKE_AOE L_DMG QUAKE_END_TIME 0
+	}
+	else
+	{
+		applyeffect CUR_TARG effects/effect_quake CUR_TARG $get(ent_me,id) QUAKE_AOE L_DMG QUAKE_END_TIME 0
+	}
+}
+
+{ quake_end
+	if ( !QUAKE_GLOBAL ) svplaysound 2 0 SOUND_QUAKE_LOOP
+	setvard QUAKE_ACTIVE 0
+}	

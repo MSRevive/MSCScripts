@@ -1,0 +1,141 @@
+//astral projection, players only
+//lets viewpoint leave body until damaged or canceled by pressing jump
+
+{ [server]
+	const EFFECT_ID			astral_project
+	const EFFECT_NAME		"Astral Projection"
+	const EFFECT_ACTIONTYPE		nostack
+	const EFFECT_SCRIPT		$currentscript
+}
+
+{ [server] game_precache
+
+	setvard game.effect.id		EFFECT_ID
+	setvard game.effect.displayname	EFFECT_NAME
+	setvard game.effect.type	EFFECT_ACTIONTYPE
+	local reg.effect.name	EFFECT_ID
+	local reg.effect.flags	EFFECT_ACTIONTYPE
+	local reg.effect.script	EFFECT_SCRIPT
+
+	setvard game.effect.removeondeath 1
+
+	registereffect
+
+	setvard game.effect.id		EFFECT_ID
+	setvard game.effect.displayname	EFFECT_NAME
+	setvard game.effect.flags	EFFECT_ACTIONTYPE
+}
+
+{ [server] game_activate
+	setvard game.effect.movespeed 0%
+	setvard game.effect.canjump 0
+	setvard game.effect.canduck 0
+	setvard game.effect.canattack 0
+
+	helptip ent_me generic "Astral Projection" "Right click to stop drifting.|Left click to return to your body."
+
+	clientcmd ent_me thirdperson
+	setvard EFFECT_ACTIVE 1
+	clientevent new ent_me $currentscript $get(ent_me,index) $get(ent_me,viewangles)
+	setvard CL_IDX game.script.last_sent_id
+	callevent key_loop
+}
+
+{ [server] game_damaged
+	callevent effect_die
+}
+
+{ [server] key_loop
+	if EFFECT_ACTIVE
+	callevent 0.1 key_loop
+
+	if ( $get(ent_me,keydown,attack1) )
+	{
+		callevent effect_die
+	}
+	else
+	{
+		clientevent update ent_me CL_IDX key_status $get(ent_me,keydown,forward) $get(ent_me,keydown,back) $get(ent_me,keydown,moveleft) $get(ent_me,keydown,moveright) $get(ent_me,viewangles) $get(ent_me,keydown,attack2)
+	}
+}
+
+{ [server] effect_die
+	clientcmd ent_me thirdperson
+	setvard EFFECT_ACTIVE 0
+	clientevent update ent_me CL_IDX remove_fx
+	removescript
+}
+
+//============ client side
+
+{ [client]
+	const FX_MAXSPEED 30
+	const FX_KEYINC 1
+	const FX_DEC 0.1
+}
+
+{ [client] client_activate //<owner_idx> <viewangs>
+	local L_FX_OWNERPOS $getcl(PARAM1,origin)
+	local L_ZDIST $dist(L_FX_OWNERPOS,$vec(0,0,0))
+	local L_ZDIR $dir(L_FX_OWNERPOS,$vec(0,0,0))
+	setvard FX_POS L_FX_OWNERPOS
+	vectormultiply L_ZDIR L_ZDIST
+	vectoradd FX_POS L_ZDIR
+	setvard FX_VIEWANGLES PARAM2
+	vectoradd FX_POS $relpos(FX_VIEWANGLES,$vec(0,64,16))
+	
+	dbg $currentscript startpos PARAM1 FX_POS
+	setvard game.cleffect.view_ofs.x $vec.x(FX_POS)
+	setvard game.cleffect.view_ofs.y $vec.y(FX_POS)
+	setvard game.cleffect.view_ofs.z $vec.z(FX_POS)
+	setvard FX_ACTIVE 1
+	setvard FB_ACCEL 0
+	setvard RL_ACCEL 0
+	callevent view_loop
+}
+
+{ [client] key_status
+
+	local L_KEY_FORWARD PARAM1
+	local L_KEY_BACKWARD PARAM2
+	local L_KEY_LEFT PARAM3
+	local L_KEY_RIGHT PARAM4
+	setvard FX_VIEWANGLES PARAM5
+
+	if ( L_KEY_FORWARD ) add FB_ACCEL FX_KEYINC
+	if ( L_KEY_BACKWARD ) add FB_ACCEL $neg(FX_KEYINC)
+	if ( L_KEY_RIGHT ) add RL_ACCEL FX_KEYINC
+	if ( L_KEY_LEFT ) add RL_ACCEL $neg(FX_KEYINC)
+
+	if ( PARAM6 )
+	{
+		setvard FB_ACCEL 0
+		setvard RL_ACCEL 0
+	}
+
+	dbg $currentscript key_status f L_KEY_FORWARD b L_KEY_BACKWARD l L_KEY_LEFT r L_KEY_RIGHT fb FB_ACCEL rl RL_ACCEL c PARAM6
+}
+
+{ [client] remove_fx
+	setvard FX_ACTIVE 0
+	removescript
+}
+
+{ [client] view_loop
+	if FX_ACTIVE
+	callevent 0.01 view_loop
+	if ( FB_ACCEL >= FX_DEC ) subtract FB_ACCEL FX_DEC
+	if ( FB_ACCEL <= $neg(FX_DEC) ) add FB_ACCEL FX_DEC
+	if ( RL_ACCEL >= FX_DEC ) subtract RL_ACCEL FX_DEC
+	if ( RL_ACCEL <= $neg(FX_DEC) ) add RL_ACCEL FX_DEC
+
+	if ( FB_ACCEL > FX_MAXSPEED ) setvard FB_ACCEL FX_MAXSPEED
+	if ( FB_ACCEL < $neg(FX_MAXSPEED) ) setvard FB_ACCEL $neg(FX_MAXSPEED)
+	if ( RL_ACCEL > FX_MAXSPEED ) setvard RL_ACCEL FX_MAXSPEED
+	if ( RL_ACCEL < $neg(FX_MAXSPEED) ) setvard RL_ACCEL $neg(FX_MAXSPEED)
+
+	vectoradd FX_POS $relpos(FX_VIEWANGLES,$vec(RL_ACCEL,FB_ACCEL,0))
+	setvard game.cleffect.view_ofs.x $vec.x(FX_POS)
+	setvard game.cleffect.view_ofs.y $vec.y(FX_POS)
+	setvard game.cleffect.view_ofs.z $vec.z(FX_POS)
+}

@@ -1,0 +1,62 @@
+//centralizing this cuz a lotta dwarves are gonna be using it
+{
+	const FREQ_LANTERNCL_REFRESH 30.0
+
+	const LANTERN_HAND_SUBMODEL 1 //different hands for xbow/melee
+	const LANTERN_HAND_INDEX 1 //different attachments for said different hands (pass to CL effect, resolve there)
+	//should be 0=right 1=left, but the anims on this model are mirrored, so not sure
+
+	const LANTERN_COLOR (128,64,0) //maybe use green/blue color, if undead
+}
+
+{ game_precache
+	precache 3dmflagry.spr
+}
+
+{ npcatk_hunt
+	if LANTERN_ON
+	if game.time > NEXT_LANTERNCL_REFRESH
+	setvard NEXT_LANTERNCL_REFRESH game.time
+	add NEXT_LANTERNCL_REFRESH FREQ_LANTERNCL_REFRESH
+
+	if ( !LANTERN_ACTIVE )
+	{
+		setvard LANTERN_ACTIVE 1
+		setmodelbody 2 LANTERN_HAND_SUBMODEL
+	}
+
+	if ( CUSTOM_LANTERN_COLOR isnot 'CUSTOM_LANTERN_COLOR' )
+	{
+		local L_LANTERN_COLOR CUSTOM_LANTERN_COLOR
+	}
+	else
+	{
+		local L_LANTERN_COLOR LANTERN_COLOR
+	}
+	clientevent new all NPCs/dwarf_lantern_cl $get(ent_me,index) LANTERN_HAND_INDEX L_LANTERN_COLOR FREQ_LANTERNCL_REFRESH
+	setvard LANTERN_CL_IDX game.script.last_sent_id
+}
+
+{ set_lantern
+	setvard LANTERN_ON 1
+	setvard LANTERN_SET 1
+	if ( PARAM1 equals 0 )
+	{
+		//so we can turn it back off
+		clientevent update all LANTERN_CL_IDX end_fx
+		setmodelbody 2 0
+		setvard LANTERN_ON 0
+		setvard LANTERN_ACTIVE 0
+	}
+	else
+	{
+		if PARAM1 startswith '('
+		setvard CUSTOM_LANTERN_COLOR PARAM1
+	}
+}
+
+//. createdyn 1 events "set_follower;set_lantern"
+
+{ game_death
+	clientevent update all LANTERN_CL_IDX end_fx
+}

@@ -1,0 +1,146 @@
+//Item debuggary
+//for some reason causing crashes for some players when in base_item_extras
+
+{ [server] item_debug2 //<caller> [type:array|var] <params...>
+
+	if game.time > 5.0 //make sure this doesn't go off during init
+
+	local L_DEBUG_CALLER PARAM1
+	local L_DEBUG_TYPE PARAM2
+
+	if $get(L_DEBUG_CALLER,scriptvar,'PLR_IN_WORLD') //make sure this doesn't go off during init (redundant)
+
+	local L_OUT_MSG $get(ent_me,itemname)
+	stradd L_OUT_MSG "["
+	stradd L_OUT_MSG $get(ent_me,index)
+	stradd L_OUT_MSG "]: "
+
+	if ( L_DEBUG_TYPE equals array )
+	{
+		stradd L_OUT_MSG "Array "
+		stradd L_OUT_MSG PARAM3
+		stradd L_OUT_MSG "#"
+		stradd L_OUT_MSG PARAM4
+		stradd L_OUT_MSG " is "
+		stradd L_OUT_MSG $get_array(PARAM3,PARAM4)
+		local L_PROCESSED 1
+	}
+	if ( L_DEBUG_TYPE equals var )
+	{
+		stradd L_OUT_MSG "var "
+		stradd L_OUT_MSG PARAM3
+		stradd L_OUT_MSG " prop "
+		stradd L_OUT_MSG $get(PARAM3,PARAM4)
+		local L_PROCESSED 1
+	}
+
+	if ( !L_PROCESSED )
+	{
+		//assume val
+		if ( PARAM2 startswith 'PARAM' )
+		{
+			stradd L_OUT_MSG "exists"
+		}
+		else
+		{
+			stradd L_OUT_MSG PARAM2
+			if ( PARAM3 !startswith 'PARAM' )
+			{
+				stradd L_OUT_MSG "->"
+				stradd L_OUT_MSG PARAM3
+				stradd L_OUT_MSG "="
+				stradd L_OUT_MSG $get(PARAM2,PARAM3)
+			}
+			if ( PARAM4 !startswith 'PARAM' )
+			{
+				stradd L_OUT_MSG ","
+				stradd L_OUT_MSG $get(PARAM2,PARAM3)
+				local L_PROP $get(PARAM2,PARAM3)
+				stradd L_OUT_MSG "->"
+				stradd L_OUT_MSG PARAM4
+				stradd L_OUT_MSG "="
+				stradd L_OUT_MSG $get(L_PROP,PARAM4)
+				stradd L_OUT_MSG " (scriptvar:"
+				stradd L_OUT_MSG $get(L_PROP,scriptvar,PARAM4)
+				stradd L_OUT_MSG ")"
+			}
+		}
+	}
+
+	//delay multiple cause to avoid flooding the callexternal message block
+	if ( game.time < G_NEXT_IDEBUG_CALL )
+	{
+		setvard BITEM_DEBUG_OUT L_OUT_MSG
+		setvard BITEM_DEBUG_CALLER L_DEBUG_CALLER
+		add G_NEXT_IDEBUG_CALL 0.1
+		callevent $math(subtract,G_NEXT_IDEBUG_CALL,game.time) item_debug_delay
+	}
+	else
+	{
+		setvarg G_NEXT_IDEBUG_CALL game.time
+		add G_NEXT_IDEBUG_CALL 0.1
+		callexternal L_DEBUG_CALLER ext_debug_que L_OUT_MSG
+	}
+}
+
+{ [server] item_debug_delay
+	callexternal BITEM_DEBUG_CALLER ext_debug_que BITEM_DEBUG_OUT
+}
+
+{ [client] clitem_debug //<caller_idx> [type:array|var] <params...>
+
+	local L_DEBUG_CALLER PARAM1
+	if $getcl(L_DEBUG_CALLER,isplayer) //don't go off during init
+	if game.localplayer.index equals L_DEBUG_CALLER
+
+	local L_DEBUG_TYPE PARAM2
+
+	local L_OUT_MSG "CLIENT:"
+	stradd L_OUT_MSG $currentscript
+	stradd L_OUT_MSG ":"
+
+	//not sure if arrays are available client side
+	if ( L_DEBUG_TYPE equals array )
+	{
+		stradd L_OUT_MSG "Array "
+		stradd L_OUT_MSG PARAM3
+		stradd L_OUT_MSG "#"
+		stradd L_OUT_MSG PARAM4
+		stradd L_OUT_MSG " is "
+		stradd L_OUT_MSG $get_array(PARAM3,PARAM4)
+		local L_PROCESSED 1
+	}
+	if ( L_DEBUG_TYPE equals var )
+	{
+		stradd L_OUT_MSG "var "
+		stradd L_OUT_MSG PARAM3
+		stradd L_OUT_MSG " prop "
+		stradd L_OUT_MSG $getcl(PARAM3,PARAM4)
+		local L_PROCESSED 1
+	}
+
+	if ( !L_PROCESSED )
+	{
+		//assume val
+		if ( PARAM2 startswith 'PARAM' )
+		{
+			stradd L_OUT_MSG "exists"
+		}
+		else
+		{
+			stradd L_OUT_MSG PARAM2
+			if ( PARAM3 !startswith 'PARAM' )
+			{
+				stradd L_OUT_MSG "->"
+				stradd L_OUT_MSG PARAM3
+				stradd L_OUT_MSG "="
+				stradd L_OUT_MSG $getcl(PARAM2,PARAM3)
+			}
+		}
+
+		local L_PROCESSED 1
+	}
+
+	//consolemsg L_DEBUG_CALLER direct: L_OUT_MSG //temporary
+	cleffect ce player ext_debug_que L_OUT_MSG
+}

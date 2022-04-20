@@ -48,6 +48,8 @@
 	const ANIM_DEATH6 die_spin
 	const ANIM_DEATH7 gutshot
 
+	const SOUND_DEATH voices/human/male_die.wav
+
 	precache weapons/bow/bolthit1.wav
 }
 
@@ -108,7 +110,12 @@
 }
 
 { game_precache
-	if ( ELF_IS_ARCHER ) precachefile ELF_XBOW_CL_SCRIPT
+	if ( ELF_IS_ARCHER )
+	{
+		precachefile ELF_XBOW_CL_SCRIPT
+		precache weapons/bows/boltexplosive.mdl //the above didn't catch this
+		precache explode1.spr //think it found this, but just in case
+	}
 	if ( ELF_PALM_ATTACK ) precache rain_ripple.spr
 	if ( ELF_CAN_GUIDED )
 	{
@@ -269,12 +276,15 @@
 		local RND_Y $randf(-64.0,64.0)
 		vectoradd TARG_ORG x RND_X
 		vectoradd TARG_ORG y RND_Y
-		vectorset TARG_ORG z $get_ground_height(TARG_ORG)
 	}
+	
+	if ( ELF_EXPLOSIVE_BOLTS ) vectorset TARG_ORG z $get_ground_height(TARG_ORG)
 
 	setvard ELF_AIM_ANGLES $angles3d(START_LINE,TARG_ORG)
 	dbg before ELF_AIM_ANGLES
-	vectorset ELF_AIM_ANGLES x $neg($vec.x(ELF_AIM_ANGLES))
+	local L_ANG $vec.x(ELF_AIM_ANGLES)
+	local L_ANG $neg(L_ANG)
+	vectorset ELF_AIM_ANGLES x L_ANG
 	dbg after ELF_AIM_ANGLES
 	local END_LINE START_LINE
 	vectoradd END_LINE $relpos(ELF_AIM_ANGLES,$vec(0,2048,0))
@@ -284,17 +294,21 @@
 
 	//if ( G_DEVELOPER_MODE ) effect beam point lgtning.spr 30 START_LINE END_LINE (255,0,0) 255 0 1.0
 	xdodamage START_LINE END_LINE DMG_XBOW 100% ent_me ent_me none pierce
+	setvard ELF_XBOW_REPELL_POINT END_LINE
+	if ( ELF_XBOW_CL_SCRIPT_ID isnot 'ELF_XBOW_CL_SCRIPT_ID' )
+	{
+		clientevent update all ELF_XBOW_CL_SCRIPT_ID fire_bolt START_LINE END_LINE ELF_AIM_ANGLES ELF_EXPLOSIVE_BOLTS
+	}
 	if ( ELF_EXPLOSIVE_BOLTS ) callevent 0.1 elf_do_explode
 }
 
 { elf_do_explode
-	xdodamage ELF_BOLT_LAND 128 DMG_XBOW 0 ent_me ent_me none fire_effect
+	xdodamage ELF_BOLT_LAND 128 DMG_XBOW 0 ent_me ent_me none fire_effect dmgevent:dbolt
 }
 
 { game_dodamage //PARAM1=hit:0|1 PARAM2=ent_hit PARAM3=(start) PARAM4=(end)
 	if ( ELF_XBOW_SHOT )
 	{
-		clientevent new all ELF_XBOW_CL_SCRIPT PARAM3 PARAM4 ELF_AIM_ANGLES ELF_EXPLOSIVE_BOLTS
 		//if ( G_DEVELOPER_MODE ) effect beam point lgtning.spr 30 PARAM3 PARAM4 (0,0,255) 255 0 1.0
 		if ELF_EXPLOSIVE_BOLTS
 		setvard ELF_XBOW_TARGETS $get_tsphere(enemy,128,PARAM4)
@@ -311,8 +325,8 @@
 	}
 }
 
-{ elf_xbow_repell_targs
-	local CUR_TARG $get_token(ELF_XBOW_TARGETS,game.script.iteration)
+{ dbolt_dodamage
+	local CUR_TARG PARAM2
 	local TARG_ORG $get(CUR_TARG,origin)
 	local TARG_ANG $angles(ELF_XBOW_REPELL_POINT,TARG_ORG)
 
@@ -582,4 +596,19 @@
 	if ELF_GUIDED_ACTIVE
 	setvard ELF_GUIDED_ACTIVE 0
 	clientevent update all CFB_FIREBALL_IDX fireball_end
+}
+
+{ npc_targetsighted
+	if ( ELF_XBOW_CL_SCRIPT_ID equals 'ELF_XBOW_CL_SCRIPT_ID' )
+	{
+		clientevent new all ELF_XBOW_CL_SCRIPT 40.0
+		setvard NEXT_SCRIPT_UPDATE game.time
+		add NEXT_SCRIPT_UPDATE 40.0
+		setvard ELF_XBOW_CL_SCRIPT_ID game.script.last_sent_id
+	}
+	else
+	{
+		if game.time > NEXT_SCRIPT_UPDATE
+		setvard ELF_XBOW_CL_SCRIPT_ID 'ELF_XBOW_CL_SCRIPT_ID' //refresh on next sight
+	}
 }

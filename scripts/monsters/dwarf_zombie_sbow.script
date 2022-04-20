@@ -1,28 +1,49 @@
+#scope server
 {
+	const XBOW_TYPE 1
+
+	const ANIM_SXBOW_ATTACK anim_sxbow_shoot //frame_attack_sxbow
+	const ANIM_HXBOW_ATTACK anim_hxbow_shoot_reload //frame_attack_hxbow + frame_reload_hxbow + frame_reload_hxbow_done
+
+	const SOUND_DEATH agrunt/ag_die5.wav //not playing for some reason
+
 	setvar ANIM_WALK walk
-	setvar ANIM_RUN walk
+	const ACT_ANIM_RUN walk
+	setvar ANIM_RUN ACT_ANIM_RUN //living dwarves in NPCs/dwarf_xbow use me as a base, they run - zombies don't
 	setvar ANIM_IDLE idle
 
-	setvar NPC_GIVE_EXP 200
-	setvard DROP_GOLD 1
-	setvard DROP_GOLD_AMT 100
+	if ( XBOW_TYPE == 1 )
+	{
+		setvard NPC_GIVE_EXP 200
+		setvard DROP_GOLD 1
+		setvard DROP_GOLD_AMT 100
+		setvard ANIM_ATTACK ANIM_SXBOW_ATTACK
+	}
+	else
+	{
+		setvard NPC_GIVE_EXP 150
+		setvard DROP_GOLD 1
+		setvard DROP_GOLD_AMT 75
+		setvard ANIM_ATTACK ANIM_HXBOW_ATTACK
+	}
 
-	setvar SOUND_DEATH agrunt/ag_die5.wav
-
-	setvar NPC_RANGED 1
-
-	setvar ATTACK_RANGE 2048
-	setvar ATTACK_HITRANGE 2048
-
-	setvar ANIM_ATTACK anim_sxbow_shoot //frame_attack_sxbow
-
+	//only used for sxbow
 	const ANIM_RELOAD anim_sxbow_reload //frame_reload_sxbow x5
 	const ANIM_RELOAD_DONE anim_sxbow_reload_done //pending - frame_reload_sxbow_done
+
+	const ANIM_DODGE anim_roll_back //frame_roll_back_push x4
+
 	const ANIM_ALERT nod
-	setvar AMMO_TYPE unset
+	setvard AMMO_TYPE unset
+
+	setvard NPC_RANGED 1
+
+	setvard ATTACK_RANGE 2048
+	setvard ATTACK_HITRANGE 2048
+	setvard ATTACK_MOVERANGE 768
 
 	const AMMO_MAX 5
-	setvar AMMO_COUNT 5
+	setvard AMMO_COUNT 5
 
    	const SOUND_TURNED1	ambience/the_horror1.wav
    	const SOUND_TURNED2	ambience/the_horror2.wav
@@ -30,14 +51,6 @@
 	const SOUND_TURNED4	ambience/the_horror4.wav	
 	const SOUND_HOLYPAIN1 agrunt/ag_pain4.wav
 	const SOUND_HOLYPAIN2 agrunt/ag_die3.wav
-
-	const SOUND_IDLE1 agrunt/ag_idle2.wav
-	const SOUND_IDLE2 agrunt/ag_alert3.wav
-	const SOUND_IDLE3 agrunt/ag_idle5.wav
-
-	const SOUND_STRUCK debris/flesh2.wav		//most common
-	const SOUND_PAIN1 agrunt/ag_pain3.wav	//rare > 50%
-	const SOUND_PAIN2 agrunt/ag_pain5.wav	//rare < 50%
 
     const SOUND_ALERT agrunt/ag_alert2.wav
 
@@ -47,20 +60,61 @@
 	const SOUND_XBOW_SHOOT weapons/bow/crossbow.wav
 	const SOUND_BOLT_HIT weapons/bow/bolthit1.wav
 
-	const XBOW_ACCURACY 90
+	const SOUND_RELOAD weapons/357_reload1.wav
+
+	const XBOW_ACCURACY 80
 	const XBOW_CL_SCRIPT monsters/elf_xbow_cl
 	const XBOW_BONE 35
 	const DMG_XBOW 30
+
 	const DOT_POISON 5
+	const PBOLT_DURATION 8.0
+	const PBOLT_AOE 64
+
+	const FREQ_CLIENT_REFRESH 40.0
+
+	//base_struck
+	const SOUND_IDLE1 agrunt/ag_idle2.wav
+	const SOUND_IDLE2 agrunt/ag_alert3.wav
+	const SOUND_IDLE3 agrunt/ag_idle5.wav
+
+	const SOUND_PAIN1 agrunt/ag_pain3.wav
+	const SOUND_PAIN2 agrunt/ag_pain5.wav
+	const SOUND_PAIN3 agrunt/ag_pain2.wav
+
+	const SOUND_FLINCH1 agrunt/ag_pain3.wav
+	const SOUND_FLINCH2 agrunt/ag_pain5.wav
+	const SOUND_FLINCH3 agrunt/ag_pain2.wav
+
+	const ANIM_FLINCH anim_xbow_flinch
+
+	const NPC_MATERIAL_TYPE flesh
+	const NPC_USE_PAIN 1
+	const NPC_USE_IDLE 1
+	const NPC_USE_FLINCH 1
+
+	const LANTERN_HAND_SUBMODEL 2 //different hands for xbow/melee
+	const LANTERN_HAND_INDEX 0 //different attachments for said different hands (pass to CL effect, resolve there)
+	const LANTERN_COLOR (0,64,32)
 }
 
 { game_precache
 	precachefile XBOW_CL_SCRIPT
+	precache weapons/bows/boltexplosive.mdl //the above didn't catch this
+	precache explode1.spr //think it found this, but just in case
+	svplaysound 0 0 agrunt/ag_pain3.wav //fake precache, sound should follow him when he rolls
 }
 
 #include monsters/base_monster_new
+#include monsters/base_struck
+#include NPCs/dwarf_lantern_base
 
-{ game_spawn
+{ npc_spawn
+	callevent darcher_spawn
+	callevent select_ammo
+}
+
+{ darcher_spawn
 	name a|Dwarven Zombie Bowman
 	setmodel dwarf/male1.mdl
 	setmodelbody 0 2
@@ -75,18 +129,123 @@
 	takedmg lightning 0.5
 	takedmg cold 0.5
 	takedmg pierce 0.5
+	takedmg fire 1.25
+	takedmg slash 1.25
 	hearingsensitivity 8
+
+	setvard IS_BLOODLESS 1
+	setvard IMMUNE_VAMPIRE 1
+	setvard IS_UNHOLY 1
 }
 
-{ npc_post_spawn
-	if ( AMMO_TYPE equals unset )
+
+{ npc_targetsighted
+	
+	if ( XBOW_CL_SCRIPT_ID equals 'XBOW_CL_SCRIPT_ID' )
 	{
-		local L_RND_TYPE $rand(1,3)
-		if ( L_RND_TYPE == 1 ) setvard AMMO_TYPE poison
-		if ( L_RND_TYPE == 2 ) setvard AMMO_TYPE explode
-		if ( L_RND_TYPE == 2 ) setvard AMMO_TYPE pierce
+		clientevent new all XBOW_CL_SCRIPT FREQ_CLIENT_REFRESH
+		setvard NEXT_SCRIPT_UPDATE game.time
+		add NEXT_SCRIPT_UPDATE FREQ_CLIENT_REFRESH
+		setvard XBOW_CL_SCRIPT_ID game.script.last_sent_id
+	}
+	else
+	{
+		if game.time > NEXT_SCRIPT_UPDATE
+		//dbg npc_targetsighted refresh cl
+		setvard XBOW_CL_SCRIPT_ID 'XBOW_CL_SCRIPT_ID' //refresh on next sight
 	}
 
+	if ( $get(NPCATK_TARGET,range) < 64 )
+	{
+		//a 'roll away' anim would be sweet here, see if the player dwarf has one, and adjust
+		//well it doesn't - but screw it, I made one
+		if !NPC_IS_TURRET
+		if game.time > NEXT_DZOMB_FLEE
+		setvard NEXT_DZOMB_FLEE game.time
+		add NEXT_DZOMB_FLEE $randf(8,12)
+		setvard AS_ATTACKING game.time
+		add AS_ATTACKING 5.0
+		svplaysound 2 10 SOUND_PAIN1
+		playanim critical ANIM_DODGE
+		addvelocity ent_me $relvel(0,-200,100) 
+//		if !$get(ent_me,race) equals undead //zombs are too slow to bother with running
+//		if game.time > NEXT_DZOMB_FLEE
+//		setvard NEXT_DZOMB_FLEE game.time
+//		add NEXT_DZOMB_FLEE 10.0
+//		callevent npcatk_flee NPCATK_TARGET 128 3.0
+	}
+
+	if !DID_ALERT
+	setvard DID_ALERT 1
+	setvard NEXT_DZOMB_FLEE game.time
+	add NEXT_DZOMB_FLEE $randf(8,12)
+	if game.time > NEXT_ALERT
+	setvard AS_ATTACKING game.time
+	add AS_ATTACKING 5.0
+	playanim critical ANIM_ALERT
+	if ( !NPC_NO_PLAYER_DMG )
+	{
+		playsound 0 10 SOUND_ALERT
+	}
+	else
+	{
+		playrandomsound 0 10 SOUND_ALERT1 SOUND_ALERT2 SOUND_ALERT3
+	}
+
+	setvard NEXT_ALERT game.time
+	add NEXT_ALERT 20.0
+}
+
+{ frame_roll_back_push
+	//cuz freaking LX anim dun work :...(
+	addvelocity ent_me $relvel(0,-100,100)
+}
+
+{ npcatk_clear_targets
+	setvard DID_ALERT 0
+}
+
+{ select_ammo
+
+	if AMMO_TYPE equals unset //somehow we are getting here, even when set_ammo is run :\
+	//^ mental note: game_dynamically_created events apparently go off BEFORE spawn (fixed, maybe)
+
+
+	setvard AMMO_TYPE pierce 
+
+	//fuck this shit, people will create broken encounters if I just let it go random
+//	local L_RND_TYPE $rand(1,3)
+//	if ( L_RND_TYPE == 1 ) setvard AMMO_TYPE poison
+//	if ( L_RND_TYPE == 2 ) setvard AMMO_TYPE explode
+//	if ( L_RND_TYPE == 3 ) setvard AMMO_TYPE pierce
+//
+//	callevent adjust_xp
+
+	//dbg select_ammo AMMO_TYPE
+}
+
+{ set_ammo //addparam
+
+	setvard AMMO_TYPE PARAM1
+
+	if ( PARAM1 startswith poison ) setvard AMMO_TYPE poison 
+	else if ( PARAM1 startswith fire ) setvard AMMO_TYPE explode
+	else if ( PARAM1 startswith pierce ) setvard AMMO_TYPE pierce
+	else setvard AMMO_TYPE unset
+
+	callevent adjust_xp
+
+	if ( AMMO_TYPE equals unset )
+	{
+		local L_TITLE "MAP ERROR - "
+		stradd L_TITLE $get(ent_me,scriptname)
+		infomsg all L_TITLE "Ammo type incorrectly set, options are: set_ammo;poison | fire | pierce"
+	}
+	//dbg set_ammo2 AMMO_TYPE
+}
+
+{ adjust_xp
+	if !ADJUSTED_XP
 	if ( AMMO_TYPE equals explode )
 	{
 		setvard EXPLOSIVE_BOLTS 1
@@ -95,37 +254,33 @@
 
 	if ( AMMO_TYPE equals poison )
 	{
-		add NPC_GIVE_EXP 50
+		add NPC_GIVE_EXP 100
 	}
-
-}
-
-{ set_ammo //addparam
-	if ( PARAM2 startswith poison ) setvard AMMO_TYPE poison 
-	if ( PARAM2 startswith explode ) setvard AMMO_TYPE explode
-	if ( PARAM2 startswith pierce ) setvard AMMO_TYPE pierce
-	if ( AMMO_TYPE equals unset )
-	{
-		local L_TITLE "MAP ERROR - "
-		stradd L_TITLE $get(ent_me,scriptname)
-		infomsg all L_TITLE "Ammo type incorrectly set, options are: set_ammo;poison | explode | pierce"
-	}
+	setvard ADJUSTED_XP 1
 }
 
 { frame_attack_sxbow
-	dbg frame_attack_sxbow
-	if ( AMMO_COUNT > 1 )
+	//dbg frame_attack_sxbow
+	if ( AMMO_COUNT >= 1 )
 	{
 		subtract AMMO_COUNT 1
 		callevent bow_fire
 	}
-
-	if AMMO_COUNT <= 0
-	callevent bow_reload
+	else
+	{
+		if ( !NPC_NO_ATTACK ) callevent npcatk_suspend_attack 1.0
+		//if !IN_RELOAD
+		callevent bow_reload
+	}
 }
 
 { bow_fire
+	//dbg bow_fire
+	if ( AMMO_TYPE equals unset ) callevent select_ammo
+
 	playsound 1 10 SOUND_XBOW_SHOOT
+
+	add MISS_COUNT 1
 
 	local L_START_LINE $get(ent_me,svbonepos,XBOW_BONE)
 	local TARG_ORG $get(NPCATK_TARGET,origin)
@@ -136,46 +291,107 @@
 		local RND_Y $randf(-64.0,64.0)
 		vectoradd TARG_ORG x RND_X
 		vectoradd TARG_ORG y RND_Y
+	}
+
+	if ( AMMO_TYPE isnot pierce )
+	{
+		//try to land the bolt between him and me
+
+		if ( AMMO_TYPE equals poison )
+		{
+			local L_NBOLTS $get_array_amt(PBOLT_ARRAY_NAME)
+			if L_NBOLTS >= 5
+			local EXIT_SUB 1 //unless we're on pbolt cooldown
+		}
+		if !EXIT_SUB 1
+
+		local L_MY_YAW $get(ent_me,angles.yaw)
+		vectoradd TARG_ORG $relpos($vec(0,L_MY_YAW,0),$vec(0,-32,0))
 		vectorset TARG_ORG z $get_ground_height(TARG_ORG)
+
+		setvard XBOW_REPELL_POINT TARG_ORG
+	}
+	else
+	{
+		//if not player, aim up a bit for center, or I'll probably just hit the ground
+		if !$get(NPCATK_TARGET,isplayer)
+		local L_THHEIGHT $get(NPCATK_TARGET,height)
+		multiply L_THHEIGHT 0.5
+		vectoradd TARG_ORG z L_THHEIGHT
 	}
 
 	setvard XBOW_AIM_ANGLES $angles3d(L_START_LINE,TARG_ORG)
-	vectorset XBOW_AIM_ANGLES x $neg($vec.x(XBOW_AIM_ANGLES))
+	local L_ANG_PITCH $vec.x(XBOW_AIM_ANGLES)
+	local L_ANG_PITCH $neg(L_ANG_PITCH)
+	vectorset XBOW_AIM_ANGLES x L_ANG_PITCH
 	local L_END_LINE L_START_LINE
 	vectoradd L_END_LINE $relpos(XBOW_AIM_ANGLES,$vec(0,2048,0))
-	setvard ELF_XBOW_SHOT 1
 	local L_END_LINE $get_traceline(L_START_LINE,L_END_LINE,worldonly)
+
+	setvard XBOW_BOLT_START L_START_LINE
 	setvard XBOW_BOLT_LAND L_END_LINE
 
-	setvard XBOW_REPELL_POINT L_END_LINE
-	vectorset XBOW_REPELL_POINT z $get_ground_height(XBOW_REPELL_POINT)
+//	if ( G_DEVELOPER_MODE )
+//	{
+//		effect beam point lgtning.spr 20 XBOW_BOLT_START XBOW_BOLT_LAND (255,0,255) 200 0 0.2
+//	}
 
-	xdodamage L_START_LINE L_END_LINE DMG_XBOW 100% ent_me ent_me none pierce dmgevent:bolt
+	//setvard XBOW_REPELL_POINT L_END_LINE
+	//vectorset XBOW_REPELL_POINT z $get_ground_height(XBOW_REPELL_POINT)
+
+	//dbg bow_fire XBOW_BOLT_START XBOW_BOLT_LAND
+
+	xdodamage XBOW_BOLT_START XBOW_BOLT_LAND DMG_XBOW 100% ent_me ent_me none pierce dmgevent:bolt
 	if ( EXPLOSIVE_BOLTS ) callevent 0.1 bolt_explode
+	if ( AMMO_TYPE equals poison )
+	{
+		if L_NBOLTS < 5 //max out at 4 clouds
+		callevent 0.1 pbolt_explode
+	}
+
+	if ( XBOW_CL_SCRIPT_ID isnot 'XBOW_CL_SCRIPT_ID' )
+	{
+		local L_LAND_POINT XBOW_BOLT_LAND
+		if ( AMMO_TYPE isnot pierce ) local L_LAND_POINT XBOW_REPELL_POINT 
+		clientevent update all XBOW_CL_SCRIPT_ID fire_bolt XBOW_BOLT_START L_LAND_POINT XBOW_AIM_ANGLES EXPLOSIVE_BOLTS
+	}
+
+	//case we're on the edge of a brush, or somethin
+	if MISS_COUNT > 4
+	setvard MISS_COUNT 0
+	callevent chicken_run 3.0
 }
 
-{ bolt_dodamage
-	clientevent new all XBOW_CL_SCRIPT PARAM3 PARAM4 XBOW_AIM_ANGLES EXPLOSIVE_BOLTS
+{ game_damaged_other
+	setvard MISS_COUNT 0
+}
+
+{ bolt_dodamage //only seems to go off if we hit an NPC, not walls
+	//dbg bolt_dodamage
+
+
 	if PARAM1
+	setvard MISS_COUNT 0
 	if ( AMMO_TYPE equals poison )
 	{
 		if $get(PARAM2,relationship,ent_me) equals enemy
-		applyeffect PARAM2 effects/effect_poison 10.0 $get(ent_me,id) DOT_POISON
+		applyeffect PARAM2 effects/greater_poison 5.0 $get(ent_me,id) DOT_POISON
 	}
 }
 
 { bolt_explode
-
-	xdodamage XBOW_BOLT_LAND 128 DMG_XBOW 0 ent_me ent_me none fire_effect dmgevent:explode
+	//dbg bolt_explode
+	xdodamage XBOW_REPELL_POINT 128 DMG_XBOW 0 ent_me ent_me none fire_effect dmgevent:explode
 }
 
 { explode_dodamage
+	//dbg explode_dodamage
 	local CUR_TARG PARAM2
 	if $get(CUR_TARG,relationship,ent_me) equals enemy
 	local TARG_ORG $get(CUR_TARG,origin)
 	local TARG_ANG $angles(XBOW_REPELL_POINT,TARG_ORG)
 
-	local TARG_DIST $dist(TARG_ORG,ELF_XBOW_REPELL_POINT)
+	local TARG_DIST $dist(TARG_ORG,XBOW_REPELL_POINT)
 	divide TARG_DIST 128
 	local PUSH_STR $ratio(TARG_DIST,500,100)
 	local HALF_PUSH_STR PUSH_STR
@@ -192,9 +408,77 @@
 { frame_reload_sxbow
 	playsound 2 10 SOUND_RELOAD
 	add AMMO_COUNT 1
-	if ( AMMO_COUNT == AMMO_MAX ) playanim critical ANIM_RELOAD_DONE
+	if ( AMMO_COUNT >= AMMO_MAX ) playanim critical ANIM_RELOAD_DONE
 }
 
 { frame_reload_sxbow_done
-	setvard IN_RELOAD 0
+	setvard IN_RELOAD 0 //wish we could depend on this
+}
+
+{ pbolt_explode
+	callevent add_poison_bolt XBOW_REPELL_POINT
+}
+
+{ add_poison_bolt //<origin>
+	//dbg ext_poison_bolt PARAM1
+	local L_PBOLT_LOC PARAM1
+
+	scriptflags ent_me add stack_pbolt pbolt L_PBOLT_LOC PBOLT_DURATION
+	clientevent new all effects/sfx_poison_cloud L_PBOLT_LOC PBOLT_AOE PBOLT_DURATION
+	if !PBOLT_ACTIVE
+	setvard PBOLT_ACTIVE 1
+	setvard PBOLT_COUNTER 0
+	callevent ext_poison_bolt_loop
+}
+
+{ ext_poison_bolt_loop
+	//nice thing about this setup is we shouldn't have to do anything in game_scriptflags
+	if PBOLT_ACTIVE
+
+	setvard PBOLT_ARRAY_NAME $get_scriptflag(ent_me,pbolt,type_array)
+
+	if ( PBOLT_ARRAY_NAME isnot none )
+	{
+		local L_NBOLTS $get_array_amt(PBOLT_ARRAY_NAME)
+		subtract L_NBOLTS 1
+		if ( PBOLT_COUNTER > L_NBOLTS ) setvard PBOLT_COUNTER 0 //bolt expired during last loop, or there's only 1 active bolt
+		setvard CUR_PBOLT_ORG $get_array(PBOLT_ARRAY_NAME,PBOLT_COUNTER)
+		callevent ext_poison_bolt_dmg
+		
+		local L_BOLT_SCAN_SPEED 1.0
+
+		if ( L_NBOLTS > 0 ) divide L_BOLT_SCAN_SPEED L_NBOLTS
+		if ( L_BOLT_SCAN_SPEED < 0.1 ) local L_BOLT_SCAN_SPEED 0.2 //max scans = 1/0.2secs
+
+		add PBOLT_COUNTER 1
+
+		callevent L_BOLT_SCAN_SPEED ext_poison_bolt_loop
+	}
+	else
+	{
+		setvard PBOLT_ACTIVE 0
+	}
+}
+
+{ ext_poison_bolt_dmg
+	local L_SCAN_POINT CUR_PBOLT_ORG
+	vectoradd L_SCAN_POINT z 32 //in case the ground is uneven
+	xdodamage L_SCAN_POINT PBOLT_AOE DMG_XBOW 0.1 ent_me ent_me none poison_effect dmgevent:pbolt_cloud
+	//setvard PLR_PBOLT_TARGS $get_tsphere(enemy,PBOLT_AOE,L_SCAN_POINT)
+	//dbg ext_poison_bolt_dmg PLR_PBOLT_TARGS @ CUR_PBOLT_ORG
+	//if PLR_PBOLT_TARGS isnot none
+	//calleventloop $get_token_amt(PLR_PBOLT_TARGS) ext_poison_bolt_affect
+}
+
+{ pbolt_cloud_dodamage
+	if PARAM1
+	applyeffect PARAM2 effects/greater_poison 5.0 $get(ent_me,id) DOT_POISON
+}
+
+{ game_death
+	if !NPC_NO_DROP //check this
+	local L_CHANCE game.playersnb
+	multiply L_CHANCE 2
+	if $rand(1,100) < L_CHANCE
+	createnpc chests/base_quiver_of proj_bolt_poison 25
 }

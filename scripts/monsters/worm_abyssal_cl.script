@@ -1,0 +1,301 @@
+#scope client
+{
+	const ATTACH_EYE attachment0
+
+	const SPRITE_NAME fire1_fixed.spr
+	const SPRITE_COLOR (255,0,255)
+	const SPRITE_RENDERAMT 200
+	const SPRITE_RENDERMODE add
+	const SPRITE_FRAMERATE 30
+	const SPRITE_NFRAMES 23	
+	const SPRITE_SCALE 2.0
+	const SOUND_BURST magic/boom.wav
+
+	setcallback render enable
+	
+}
+
+{ client_activate //<owner> <duration>
+	setvard FX_OWNER PARAM1
+	setvard FX_DURATION PARAM2
+	setvard FX_ACTIVE 1
+	setvard FX_MAX_SCALE 10.0 //max sphere scale
+	callevent FX_DURATION remove_fx
+}
+
+//================== DARK BURST ATTACK
+
+{ dark_burst //<origin> <radius>
+	setvard FX_CENTER PARAM1
+	setvard FX_RADIUS PARAM2
+	local L_LIGHT_RAD FX_RADIUS
+	multiply L_LIGHT_RAD 1.5
+	cleffect light new FX_CENTER L_LIGHT_RAD SPRITE_COLOR 1.0
+	sound.play3d SOUND_BURST 10 FX_CENTER
+	setvard CYCLE_ANGLE 0
+	calleventloop 17 create_sprites
+}
+
+{ create_sprites
+	local L_SPR_POS FX_CENTER
+	vectoradd L_SPR_POS $relpos($vec(0,CYCLE_ANGLE,0),$vec(0,10,0))
+	cleffect tempent sprite SPRITE_NAME L_SPR_POS setup_ring_sprite
+	add CYCLE_ANGLE 20
+}
+
+{ setup_ring_sprite
+	local L_FADE_DEL 1.0
+	local L_SPRITE_SPEED 100
+
+	if ( FX_RADIUS > 128 )
+	{
+		local L_FADE_DEL 2.0
+		local L_SPRITE_SPEED 400
+	}
+
+	cleffect tempent set_current_prop death_delay L_FADE_DEL
+	cleffect tempent set_current_prop rendercolor SPRITE_COLOR
+	cleffect tempent set_current_prop renderamt SPRITE_RENDERAMT
+	cleffect tempent set_current_prop rendermode SPRITE_RENDERMODE
+	cleffect tempent set_current_prop framerate SPRITE_FRAMERATE
+	cleffect tempent set_current_prop frames SPRITE_NFRAMES
+	cleffect tempent set_current_prop scale SPRITE_SCALE
+	cleffect tempent set_current_prop gravity 0
+	local FLAME_TURN $relvel($vec(0,CYCLE_ANGLE,0),$vec(0,L_SPRITE_SPEED,0))
+	cleffect tempent set_current_prop velocity FLAME_TURN
+	cleffect tempent set_current_prop collide none
+	cleffect tempent set_current_prop fadeout lifetime
+}
+
+//================== BEAM SEQUENCE
+
+{ beam_charge //<target_origin>
+
+	//light begins to grow at target loc as additional warning
+	setvard POS_BEAM_LIGHT PARAM1
+	setvard POS_BEAM_RAD 1
+	setvard BEAM_LIGHT_ACTIVE 1
+	cleffect light new POS_BEAM_LIGHT POS_BEAM_RAD (255,128,255) 3.0
+	setvard BEAM_LIGHT_ID game.script.last_light_id
+
+
+	//setup floaty energy around the maw (might work better as sprite effect, but we'll see...)
+	cleffect beam_update removeall //clear beam data
+
+	cleffect beam_follow FX_OWNER 1 lgtning.spr 10.0 30 (1,0,1) 0.75
+	setvard FOLOW_BEAM_ID1 game.script.last_beam_id
+
+	cleffect beam_follow FX_OWNER 1 lgtning.spr 10.0 5 (1,0.75,1) 0.75
+	setvard FOLOW_BEAM_ID2 game.script.last_beam_id
+
+	setvard FOLLOW_BEAMS_ON 1
+
+	//setup sprite growing on the maw
+	setvard BEAM_SPRITE_ON 1
+	setvard BEAM_SPRITE_GROW 0.02
+	cleffect tempent sprite 3dmflaora.spr $getcl(FX_OWNER,ATTACH_EYE) setup_beam_sprite update_beam_sprite
+}
+
+{ game_prerender
+	//light begins to grow at target loc as additional warning
+	if ( BEAM_LIGHT_ACTIVE )
+	{
+		if ( POS_BEAM_RAD < 384 ) add POS_BEAM_RAD 10
+		cleffect light BEAM_LIGHT_ID POS_BEAM_LIGHT POS_BEAM_RAD (255,128,255) 5.0
+	}
+	else
+	{
+		cleffect light BEAM_LIGHT_ID $vec(10000,10000,10000) POS_BEAM_RAD (0,0,0) 0.1
+	}
+}
+
+{ beam_fire //origin
+	//cone o beams, followed by delayed removal of follow beams and start beam sprite shrink
+	setvard BEAM_SPRITE_START_SHRINK 1 //maw sprite cool down begins
+	setvard BEAM_SPRITE_GROW -0.04 //maw sprite cool down begins
+	setvard BEAM_FADE_COUNT 0.75 //maw follow beam cool down begins
+	callevent fade_beams_loop
+	callevent 2.0 beam_light_off //warning light vanishes, 2 seconds after fire
+
+	setvard BEAM_DEST PARAM1
+	setvard EYE_BEAM_ROT 0
+	setvard TOKEN_BEAMS '' //stores main beams for later fade
+	calleventloop 8 setup_eye_beams //fire main beams
+
+	setvard EYE_BEAM_BRIGHT 1.0
+	callevent 2.0 eye_beam_fade_cycle //main beams fade in 2 seconds
+
+	//setup sphere
+	sound.play3d magic/sff_explsonic.wav 10 BEAM_DEST
+	setvard SPHERE_ACTIVE 1
+	cleffect tempent model monsters/zubat_sphere.mdl BEAM_DEST setup_sphere update_sphere
+	callevent 5.0 end_sphere
+
+	//sprite in sphere to cover beam pattern
+	cleffect tempent sprite 3dmflagry.spr BEAM_DEST setup_beam_end_sprite
+}
+
+{ setup_eye_beams //fire main beams
+ 	//local L_BEAM_START $getcl(FX_OWNER,ATTACH_EYE)
+	local L_BEAM_END BEAM_DEST
+	
+	vectoradd L_BEAM_END $relpos($vec(EYE_BEAM_ROT,0,0),$vec(0,48,0)) //circle around Y axis
+
+	cleffect beam_end FX_OWNER 1 L_BEAM_END lgtning.spr 5.0 30 0 1.0 100 30 (1,0,1)
+	token.add TOKEN_BEAMS game.script.last_beam_id
+	dbg *** addbeam game.script.last_beam_id
+	cleffect beam_end FX_OWNER 1 L_BEAM_END lgtning.spr 5.0 5 0 1.0 100 30 (1,0.5,1)
+	token.add TOKEN_BEAMS game.script.last_beam_id
+	dbg *** addbeam game.script.last_beam_id
+
+	add EYE_BEAM_ROT 45
+}
+
+{ eye_beam_fade_cycle //fade main beams cycle
+	subtract EYE_BEAM_BRIGHT 0.05
+	if ( EYE_BEAM_BRIGHT >= 0 )
+	{
+		dbg *** eye_beam_fade_cycle [ $get_token_amt(TOKEN_BEAMS) ] TOKEN_BEAMS
+		calleventloop $get_token_amt(TOKEN_BEAMS) eye_beam_fade_loop
+		callevent 0.01 eye_beam_fade_cycle
+	}
+}
+
+{ eye_beam_fade_loop //fade main beams individual
+	local CUR_BEAM $get_token(TOKEN_BEAMS,game.script.iteration)
+	dbg *** fadebeam CUR_BEAM
+	cleffect beam_update CUR_BEAM brightness EYE_BEAM_BRIGHT
+}
+
+
+{ beam_light_off //turn warning light off
+	setvard BEAM_LIGHT_ACTIVE 0
+}
+
+{ fade_beams_loop //fade maw follow beams
+	subtract BEAM_FADE_COUNT 0.01
+	if ( BEAM_FADE_COUNT > 0 )
+	{
+		cleffect beam_update FOLOW_BEAM_ID1 brightness BEAM_FADE_COUNT
+		cleffect beam_update FOLOW_BEAM_ID2 brightness BEAM_FADE_COUNT
+		callevent 0.1 fade_beams_loop
+	}
+	else
+	{
+		cleffect beam_update FOLOW_BEAM_ID1 remove
+		cleffect beam_update FOLOW_BEAM_ID2 remove
+		setvard FOLLOW_BEAMS_ON 0
+	}
+}
+
+{ setup_beam_sprite //maw sprite
+	cleffect tempent set_current_prop death_delay 20
+	cleffect tempent set_current_prop rendermode add
+	cleffect tempent set_current_prop rendercolor (255,0,255)
+	cleffect tempent set_current_prop renderamt 200
+	cleffect tempent set_current_prop scale 0.5
+	cleffect tempent set_current_prop gravity    0
+	cleffect tempent set_current_prop collide    none
+	cleffect tempent set_current_prop framerate	30
+	cleffect tempent set_current_prop frames	1
+	cleffect tempent set_current_prop fuser1 0.5
+	cleffect tempent set_current_prop iuser1 200
+	cleffect tempent set_current_prop follow FX_OWNER 0
+}
+
+{ setup_beam_end_sprite //maw sprite
+	cleffect tempent set_current_prop death_delay 8
+	cleffect tempent set_current_prop fadeout lifetime
+	cleffect tempent set_current_prop rendermode add
+	cleffect tempent set_current_prop rendercolor (255,0,255)
+	cleffect tempent set_current_prop renderamt 255
+	cleffect tempent set_current_prop scale 6
+	cleffect tempent set_current_prop gravity    0
+	cleffect tempent set_current_prop collide    none
+	cleffect tempent set_current_prop framerate	30
+	cleffect tempent set_current_prop frames	1
+}
+
+{ update_beam_sprite //shrink or grow maw sprite
+	if ( BEAM_SPRITE_ON )
+	{
+		local L_CUR_SCALE game.tempent.fuser1
+		add L_CUR_SCALE BEAM_SPRITE_GROW
+		if ( BEAM_SPRITE_START_SHRINK )
+		{
+			setvard BEAM_SPRITE_START_SHRINK 0
+			cleffect tempent set_current_prop fade lifetime //if this no workie, try iuser1
+		}
+		if ( L_CUR_SCALE <= 0 )
+		{
+			setvard BEAM_SPRITE_ON 0 //remove next update
+		}
+		else
+		{
+			cleffect tempent set_current_prop scale L_CUR_SCALE
+			cleffect tempent set_current_prop fuser1 L_CUR_SCALE
+		}
+	}
+	else
+	{
+		cleffect tempent set_current_prop origin $vec(10000,1000,1000)
+		cleffect tempent set_current_prop renderamt 0
+		cleffect tempent set_current_prop death_delay 0
+	}
+}
+
+
+//beam sphere
+{ setup_sphere
+	cleffect tempent set_current_prop death_delay 4.0
+	cleffect tempent set_current_prop fadeout 2.0
+	cleffect tempent set_current_prop scale 0.25
+	cleffect tempent set_current_prop gravity 	0
+	cleffect tempent set_current_prop sequence 0 //7
+	cleffect tempent set_current_prop framerate 1.0
+	cleffect tempent set_current_prop frames 999
+	cleffect tempent set_current_prop rendermode 	add
+	cleffect tempent set_current_prop renderamt 	255
+	cleffect tempent set_current_prop rendercolor (64,64,255)
+	cleffect tempent set_current_prop color (64,64,255)
+	cleffect tempent set_current_prop collide 	none
+	//cleffect tempent set_current_prop body 65
+	cleffect tempent set_current_prop fuser1 0.25
+}
+
+{ update_sphere
+	if ( SPHERE_ACTIVE )
+	{
+		local CUR_SCALE game.tempent.fuser1
+		if CUR_SCALE < FX_MAX_SCALE
+		add CUR_SCALE 0.05
+		cleffect tempent set_current_prop scale CUR_SCALE
+		cleffect tempent set_current_prop fuser1 CUR_SCALE
+	}
+	else
+	{
+		cleffect tempent set_current_prop origin $vec(20000,20000,2000) //send off map for removal
+	}
+}
+
+{ end_sphere
+	setvard SPHERE_ACTIVE 0
+}
+
+{ end_fx
+	setvard FX_ACTIVE 0
+	setvard BEAM_LIGHT_ACTIVE 0
+	setvard BEAM_SPRITE_ON 0
+	callevent follow_beams_off
+	callevent 1.0 remove_fx
+}
+
+{ follow_beams_off //case I die before these turn off
+	if FOLLOW_BEAMS_ON
+	cleffect beam_update removeall
+	setvard FOLLOW_BEAMS_ON 0
+}
+
+{ remove_fx
+	removescript
+}

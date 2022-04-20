@@ -1,0 +1,119 @@
+//MiB - Base book script
+//Requires:
+//BOOK_TITLE		- Title of book
+//BOOK_PAGES		- Tokenized string of pages
+//BOOK_PAGES_SRC	- Associated tokenized string of source types
+#include items/base_hide_stuff
+#include items/base_item_extras
+
+{
+  const MODEL_WORLD      	misc/p_misc.mdl
+  const MODEL_HOLD      	misc/p_misc.mdl
+}
+{
+   eventname game_spawn
+
+   weight 	1
+   size 	2
+   setworldmodel MODEL_WORLD
+   sethudsprite hand item
+   sethudsprite trade book
+
+   callevent book_spawn
+}
+
+{ game_deploy
+
+  setviewmodel  none
+  setmodel MODEL_HOLD
+  local L_SUBMODEL 15
+  add	L_SUBMODEL game.item.hand_index
+  setmodelbody 0 L_SUBMODEL
+  setvard MAX_PAGE $get_token_amt(BOOK_PAGES)
+  subtract MAX_PAGE 1
+  setvard CUR_PAGE 0
+}
+
+{ game_fall
+
+	setmodel	MODEL_WORLD
+ 	setmodelbody 	0 17
+  	playanim 	package_floor_idle
+}
+
+{ game_attack1
+	if game.clientside
+	callevent read_book
+}
+
+{ read_book
+	setvard CUR_PAGE 0
+	callevent turn_page
+}
+
+{ turn_page
+
+	localmenu.reset
+
+	local	DISP_PAGE CUR_PAGE
+	add	DISP_PAGE 1
+	local	DISP_MAX MAX_PAGE
+	add	DISP_MAX 1
+
+	local	DISP_TITLE BOOK_TITLE
+	stradd	DISP_TITLE ", Page "
+	stradd	DISP_TITLE $int(DISP_PAGE)
+	stradd	DISP_TITLE "/"
+	stradd	DISP_TITLE $int(DISP_MAX)
+	local	reg.local.menu.title DISP_TITLE
+	registerlocal.menu
+
+	if ( CUR_PAGE > MAX_PAGE ) setvard CUR_PAGE MAX_PAGE
+	if ( CUR_PAGE < 0 ) setvard CUR_PAGE 0
+
+	local reg.local.paragraph.source.type $get_token(BOOK_PAGES_SRC,CUR_PAGE)
+
+	local reg.local.paragraph.source ''
+	if ( reg.local.paragraph.source.type equals 'file' ) stradd reg.local.paragraph.source 'books/'
+	stradd reg.local.paragraph.source $get_token(BOOK_PAGES,CUR_PAGE)
+	
+	registerlocal.paragraph
+
+	local ENABLE_PREV 1
+	if ( CUR_PAGE == 0 ) local ENABLE_PREV 0
+
+	local ENABLE_NEXT 1
+	if ( CUR_PAGE == MAX_PAGE ) local ENABLE_NEXT 0
+
+	local reg.local.button.text 'Previous'
+	local reg.local.button.closeonclick 0
+	local reg.local.button.enabled ENABLE_PREV
+	local reg.local.button.docallback 1
+	local reg.local.button.callback 'prev_page'
+	registerlocal.button
+
+	local reg.local.button.text 'Next'
+	local reg.local.button.closeonclick 0
+	local reg.local.button.enabled ENABLE_NEXT
+	local reg.local.button.docallback 1
+	local reg.local.button.callback 'next_page'
+	registerlocal.button
+
+	localmenu.open
+}
+
+{ next_page
+	add CUR_PAGE 1
+	callevent turn_page
+}
+
+{ prev_page
+	subtract CUR_PAGE 1
+	callevent turn_page
+}
+
+{ game_removefromowner
+	cancelattack
+	if game.clientside
+	localmenu.close
+}

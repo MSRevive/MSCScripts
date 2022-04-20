@@ -90,25 +90,25 @@
 	{
 		local L_FLAG_MUSIC_VALUE $get_scriptflag(ent_me,cmusak,type_first)
 		if L_FLAG_MUSIC_VALUE isnot none
-		dbg game_scriptflag_update found music value L_FLAG_MUSIC_VALUE current PLR_CURRENT_MUSIC
+		//dbg game_scriptflag_update found music value L_FLAG_MUSIC_VALUE current PLR_CURRENT_MUSIC
 		local L_COMBAT_MUSIC $get_token(L_FLAG_MUSIC_VALUE,1)
 		local L_COMBAT_MUSIC_LENGTH $get_token(L_FLAG_MUSIC_VALUE,0)
 		if ( PLR_CURRENT_MUSIC isnot L_COMBAT_MUSIC )
 		{
-			dbg game_scriptflag_update CBM nowplaying L_FLAG_MUSIC_VALUE
+			//dbg game_scriptflag_update CBM nowplaying L_FLAG_MUSIC_VALUE
 			setvard PLR_COMBAT_MUSIC L_COMBAT_MUSIC
 			setvard PLR_COMBAT_MUSIC_LENGTH L_COMBAT_MUSIC_LENGTH
 			playmp3 ent_me L_COMBAT_MUSIC_LENGTH L_COMBAT_MUSIC
 		}
 		else
 		{
-			dbg game_scriptflag_update CBM skippingCBM, alerady playing L_FLAG_MUSIC_VALUE
+			//dbg game_scriptflag_update CBM skippingCBM, alerady playing L_FLAG_MUSIC_VALUE
 		}
 	}
 	else
 	{
 		if PLR_CURRENT_MUSIC equals PLR_COMBAT_MUSIC
-		dbg game_scriptflag_update CBM outofcombatmusic - fading out
+		//dbg game_scriptflag_update CBM outofcombatmusic - fading out
 		callevent ext_fade_music
 	}
 
@@ -116,7 +116,7 @@
 	if ( PARAM1 equals add ) local L_CHECK_EXPIRE 1
 	if ( PARAM1 equals edit )
 	{
-		dbg game_scriptflag_update edit updated expire times
+		//dbg game_scriptflag_update edit updated expire times
 		local L_CHECK_EXPIRE 1
 	}
 	
@@ -172,6 +172,7 @@
 { check_flags_expired
 	dbg check_flags_expired
 	scriptflags ent_me remove_expired
+	callexternal ent_me ext_scriptflag_expired
 }
 
 { ext_remove_status_flag //<name_id>
@@ -1515,12 +1516,12 @@
 	if ( PLR_LEFT_HAND equals PLR_RIGHT_HAND ) local L_NO_REDUCT 1
 	if ( PLR_LEFT_HAND equals 0 ) local L_NO_REDUCT 1 //empty
 	if ( PLR_RIGHT_HAND equals 0 ) local L_NO_REDUCT 1 //empty
-	if ( PLR_LEFT_HAND startswith item ) local L_NO_REDUCT 1 //off hand not a weapon
-	if ( PLR_RIGHT_HAND startswith item ) local L_NO_REDUCT 1 //off hand not a weapon
-	if ( PLR_LEFT_HAND startswith mana ) local L_NO_REDUCT 1 //off hand not a weapon
-	if ( PLR_RIGHT_HAND startswith mana ) local L_NO_REDUCT 1 //off hand not a weapon
-	if ( PLR_LEFT_HAND startswith health ) local L_NO_REDUCT 1 //off hand not a weapon
-	if ( PLR_RIGHT_HAND startswith health ) local L_NO_REDUCT 1 //off hand not a weapon
+	if ( PLR_RIGHT_HAND_TYPE startswith item ) local L_NO_REDUCT 1 //off hand not a weapon
+	if ( PLR_RIGHT_HAND_TYPE startswith item ) local L_NO_REDUCT 1 //off hand not a weapon
+	if ( PLR_RIGHT_HAND_TYPE startswith mana ) local L_NO_REDUCT 1 //off hand not a weapon
+	if ( PLR_RIGHT_HAND_TYPE startswith mana ) local L_NO_REDUCT 1 //off hand not a weapon
+	if ( PLR_RIGHT_HAND_TYPE startswith health ) local L_NO_REDUCT 1 //off hand not a weapon
+	if ( PLR_RIGHT_HAND_TYPE startswith health ) local L_NO_REDUCT 1 //off hand not a weapon
 
 	if ( $get(PLR_RIGHT_HAND,scriptvar,'MATCHED_SET') )
 	{
@@ -1646,7 +1647,19 @@
 
 { game_equipped
 	//dbg game_equipped $get(PARAM1,name) [ in hand PARAM2 ] [ $get(PARAM1,hand_index) ]
+	if ( G_DEVELOPER_MODE ) callevent 1.0 report_hands
 	callevent ext_set_hand_id $get(PARAM1,hand_index) $get(PARAM1,id)
+
+	if G_DEVELOPER_MODE
+	local L_H0 $get(ent_me,hand0)
+	local L_H1 $get(ent_me,hand1)
+
+	local L_H0 $get(L_H0,itemname)
+	local L_H1 $get(L_H1,itemname)
+
+	dbg game_equipped h0: L_H0 h1: L_H1
+	gplayermessage G_DEV_PLAYER h0: L_H0 h1: L_H1
+
 }
 
 { ext_set_hand_id //<hand> <id>
@@ -2526,7 +2539,7 @@
 }
 
 { ext_setmodel //just a test
-	setmodel monsters/skeleton.mdl
+	setmodel dwarf/reference.mdl
 }
 
 { ext_setrender
@@ -3415,7 +3428,7 @@
 	local OUT_MSG "+"
 	stradd OUT_MSG $int(PARAM1)
 	stradd OUT_MSG " damage points "
-	stradd OUT_MSG PARAM2
+	stradd OUT_MSG PARAM2 //eg. "for freeing <player_name>"
 	gplayermessage ent_me OUT_MSG
 }
 
@@ -4433,7 +4446,7 @@
 { set_idle_music //<file> <length> [play_now:0|1]
 	setvard PLR_IDLE_MUSIC PARAM1
 	setvard PLR_IDLE_MUSIC_LENGTH PARAM2
-	dbg set_idle_music PARAM1 PARAM2 PARAM3
+	//dbg set_idle_music PARAM1 PARAM2 PARAM3
 	if PARAM3 == 1
 	if ( $get_scriptflag(ent_me,type_exists,cmusak) )
 	{
@@ -4544,15 +4557,59 @@
 { ext_got_quest_item //<item_code>
 	if ( $get_array_amt(ARRAY_QUEST_ITEMS) == -1 )
 	{
-		array.create ARRAY_QUEST_ITEMS
-		dbg ext_got_quest_item initarray
-		//optional, if has quest array data for this map, re-load from quest data here
+		if ( $get_array_amt(ARRAY_QUEST_ITEMS) == -1 )
+		{
+			array.create ARRAY_QUEST_ITEMS
+			dbg ext_got_quest_item initarray
+			//optional, if has quest array data for this map, re-load from quest data here
+		}
+
+		array.add ARRAY_QUEST_ITEMS PARAM1
+
+		if ( $lcase(game.map.name) startswith rmine )
+		{
+			if !PLR_FOUND_FIRST_STICK
+			setvard PLR_FOUND_FIRST_STICK 1
+			infomsg ent_me " " "Hrmmm... The fuse is broken... But maybe we can use this, somewhere..."
+		}
 	}
 
-	array.add ARRAY_QUEST_ITEMS PARAM1
-	//optional, save quest item here
-
 	dbg ext_got_quest_item added PARAM1
+}
+
+{ ext_quest_items_return //<item_code>
+	setvard PLR_RETURN 0
+	local L_FIND_ITEM $get_arrayfind(ARRAY_QUEST_ITEMS,PARAM1)
+	dbg ext_quest_items_return find s PARAM1 f L_FIND_ITEM
+	if L_FIND_ITEM !equals '[ERROR_NO_ARRAY]'
+	if L_FIND_ITEM > -1
+	setvard PLR_TEMP PARAM1
+	calleventloop $get_array_amt(ARRAY_QUEST_ITEMS) ext_quest_items_return_scan
+}
+
+{ ext_quest_items_return_scan
+	local CUR_IDX game.script.iteration
+	dbg ext_quest_items_return_scan $get_array(ARRAY_QUEST_ITEMS,CUR_IDX) for PLR_TEMP
+	if $get_array(ARRAY_QUEST_ITEMS,CUR_IDX) equals PLR_TEMP
+	add PLR_RETURN 1
+	dbg ext_quest_items_return_scan found! [ PLR_RETURN ]
+}
+
+{ ext_quest_items_strip_type //<item_code> <number>
+	local L_FIND_ITEM $get_arrayfind(ARRAY_QUEST_ITEMS,PARAM1)
+	dbg ext_quest_items_strip_type PARAM1 f L_FIND_ITEM
+	if L_FIND_ITEM !equals '[ERROR_NO_ARRAY]'
+	if L_FIND_ITEM > -1
+	setvard PLR_TEMP PARAM1
+	calleventloop $get_array_amt(ARRAY_QUEST_ITEMS) ext_quest_items_strip_type_scan
+}
+
+{ ext_quest_items_strip_type_scan
+	local CUR_IDX game.script.iteration
+	dbg ext_quest_items_strip_type_scan $get_array(ARRAY_QUEST_ITEMS,CUR_IDX) for PLR_TEMP
+	if $get_array(ARRAY_QUEST_ITEMS,CUR_IDX) equals PLR_TEMP
+	array.set ARRAY_QUEST_ITEMS CUR_IDX "none"
+	dbg ext_quest_items_strip_type_scan found @ CUR_IDX - removed
 }
 
 { ext_dump_quest_items
@@ -4666,8 +4723,7 @@
 	
 }
 
-{ ext_arrow_hit //<idx> <dmgstring> <origin>
-
+{ ext_arrow_hit //<idx|world> <dmgstring> <origin> - from items/proj_arrow_cl
 	//dbg ext_arrow_hit PARAM1 PARAM2 PARAM3
 
 	if ( PARAM1 isnot world )
@@ -4697,15 +4753,65 @@
 
 		local L_SPECIAL_DMG 0
 
+		//if ( L_PROJ_NAME equals blah ) <special handling>
+		//set local L_SPECIAL_DMG 1 if needed to abort local damage
+		if ( L_PROJ_NAME equals proj_arrow_gholy )
+		{
+			local L_HOLY_DMG $get(ent_me,skill.spellcasting.divination)
+			add L_HOLY_DMG 5
+			callexternal L_TARG_ID turn_undead L_HOLY_DMG $get(ent_me,id)
+		}
+		else if ( L_PROJ_NAME equals proj_arrow_fbow )
+		{
+			local L_FREEZE_MANA_COST 10
+			local L_CDOT_DMG $get(ent_me,skill.spellcasting.ice)
+			local L_FDOT_DMG CDOT_DMG
+			divide L_CDOT_DMG 1.8
+			divide L_FDOT_DMG 2
+
+			local L_PROJ_TYPE 0
+			if ( $get(ent_me,mp) >= L_FREEZE_MANA_COST ) 
+			{
+			  local L_PROJ_TYPE $rand(0,1)
+			}
+			if ( !L_PROJ_TYPE )
+			{
+				  applyeffect L_TARG_ID effects/effect_frostbite_dmg $randf(5,10) $get(ent_me,id) L_CDOT_DMG spellcasting.ice
+			}
+			else
+			{
+				  givemp ent_me $neg(FREEZE_MANA_COST)
+				  applyeffect L_TARG_ID effects/freeze_solid 8.0 $get(ent_me,id) L_FDOT_DMG spellcasting.ice
+			}
+		}
+		else if ( L_PROJ_NAME equals proj_arrow_frost )
+		{
+			applyeffect L_TARG_ID effects/effect_frostbite_dmg $rand(5,10) $get(ent_me,id) 5 archery
+		}
+		else if ( L_PROJ_NAME equals proj_arrow_gpoison )
+		{
+			applyeffect L_TARG_ID effects/greater_poison $rand(5,10) $get(ent_me,id) $randf(12,33) archery
+		}
+		else if ( L_PROJ_NAME equals proj_arrow_lightning )
+		{
+			applyeffect L_TARG_ID effects/effect_shock_dmg $rand(5,10) $get(ent_me,id) $randf(10,25) archery
+		}
+		else if ( L_PROJ_NAME equals proj_arrow_poison )
+		{
+			applyeffect L_TARG_ID effects/effect_poison 15 $get(ent_me,id) $randf(2,3) 0 archery
+		}
+
 		if !L_SPECIAL_DMG
-
 		xdodamage L_TARG_ID direct L_FINAL_DMG 100% ent_me L_WEAPON_ID L_BASE_STAT L_BASE_DMG_TYPE
+		//no good, arrow no longer exists
+//		local L_ARROW_IDX $get_by_idx(PARAM4,id)
+//		callexternal L_ARROW_IDX strike_target L_TARG_ID
 	}
-}
-
-{ clmsg_set_local_version //from player_cl_effects_special
-	dbg clmsg_set_local_version PARAM1
-	setvard PLR_DLL_VERSION PARAM1
+	else
+	{
+		//hitworld effects here (same insane if else as above, but atm, no arrows do this, unlike some bolts, which don't use this system.)
+		dbg ext_arrow_hit hit world @ PARAM3
+	}
 }
 
 { ext_reset_bank
@@ -4925,18 +5031,18 @@
 	local L_PBOLT_LOC PARAM1
 
 	//move up a bit, if we hit ground
-	if ( $vec.z(L_PBOLT_LOC) == $get_ground_height(L_PBOLT_LOC) )
-	{
-		local L_HALF_UP L_PBOLT_AOE
-		multiply L_HALF_UP 0.5
-		vectoradd L_PBOLT_LOC z L_HALF_UP
-	}
+//	if ( $vec.z(L_PBOLT_LOC) == $get_ground_height(L_PBOLT_LOC) )
+//	{
+//		local L_HALF_UP L_PBOLT_AOE
+//		multiply L_HALF_UP 0.5
+//		vectoradd L_PBOLT_LOC z L_HALF_UP
+//	}
 
 	scriptflags ent_me add stack_pbolt pbolt L_PBOLT_LOC L_PBOLT_DURATION
 	clientevent new all effects/sfx_poison_cloud L_PBOLT_LOC PLR_PBOLT_AOE L_PBOLT_DURATION
 	if !PLR_PBOLT_ACTIVE
+	setvard GAME_PVP game.pvp
 	setvard PLR_PBOLT_ACTIVE 1
-	setvard PLR_PBOLT_AMT $get_array_amt(PLR_PBOLT_ARRAY)
 	setvard PLR_PBOLT_COUNTER 0
 	setvard PLR_PBOLT_DOT $get(ent_me,skill.spellcasting.affliction)
 	callevent ext_poison_bolt_loop
@@ -4973,7 +5079,13 @@
 
 
 { ext_poison_bolt_dmg
-	setvard PLR_PBOLT_TARGS $get_tsphere(enemy,PLR_PBOLT_AOE,PLR_PBOLT_ORG)
+	local L_SCAN_POINT PLR_PBOLT_ORG
+	vectoradd L_SCAN_POINT z 32 //in case the ground is uneven
+
+	//nice thought, but too mean when stacked
+	//xdodamage L_SCAN_POINT PLR_PBOLT_AOE PLR_PBOLT_DOT 0.1 ent_me ent_me spellcasting.affliction poison_effect dmgevent:pbolt_cloud
+
+	setvard PLR_PBOLT_TARGS $get_tsphere(enemy,PLR_PBOLT_AOE,L_SCAN_POINT)
 	//dbg ext_poison_bolt_dmg PLR_PBOLT_TARGS @ PLR_PBOLT_ORG
 	if PLR_PBOLT_TARGS isnot none
 	calleventloop $get_token_amt(PLR_PBOLT_TARGS) ext_poison_bolt_affect
@@ -4981,6 +5093,12 @@
 
 { ext_poison_bolt_affect
 	local CUR_TARG $get_token(PLR_PBOLT_TARGS,game.script.iteration)
+	if ( $get(CUR_TARG,isplayer) )
+	{
+		if !GAME_PVP
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
 	applyeffect CUR_TARG effects/greater_poison 10.0 $get(ent_me,id) PLR_PBOLT_DOT spellcasting.affliction
 }
 
@@ -5013,6 +5131,155 @@
 //		array.set L_ARRAY_NAME PARAM4 PARAM2
 //	}
 //}
+
+{ npc_suicide
+	//just here so ya know ya got the event
+	dbg got npc_suicide
+}
+
+{ ext_speak //<"text">
+	//saytextrange 2048
+	saytext PARAM1
+}
+
+//spariment
+{ ext_req_viewmodel_idx
+	dbg requesting viewmodel idx...
+	clientevent update ent_me const.localplayer.scriptID ext_svreq_viewmodel_idx
+}
+
+{ ext_rec_viewmodel_idx
+	setvard PLR_ACTIVE_VIEWMODEL PARAM1
+	local L_VIEWMODEL_ID $get_by_idx(PLR_ACTIVE_VIEWMODEL,id)
+	dbg Got viewmodelidx PLR_ACTIVE_VIEWMODEL [ L_VIEWMODEL_ID ]
+	effect beam follow lgtning.spr L_VIEWMODEL_ID 1 30 30.0 200 (255,0,0)
+	setprop L_VIEWMODEL_ID rendermode 5
+	setprop L_VIEWMODEL_ID renderamt 255
+}
+
+{ ext_remove_effect
+	dbg ext_remove_effect PARAM1
+	removeeffect ent_me PARAM1
+}
+
+{ ext_crest_request
+	setvard PLR_LAST_CREST game.time
+	add PLR_LAST_CREST 180.0
+}
+
+{ ext_clientcmd
+	clientevent update ent_me const.localplayer.scriptID ext_cl_clientcmd PARAM1
+}
+
+{ ext_set_fquest
+	local L_FEL_QUEST $get_quest_data(ent_me,f)
+	if ( L_FEL_QUEST equals complete )
+	{
+		helptip ent_me generic "One Time Quest Already Completed" "You cannot obtain another Felewyn Shard by completing this quest again."
+	}
+	else
+	{
+		if ( $get_token(L_FEL_QUEST,0) isnot 1 )
+		{
+			helptip ent_me generic "One Time Quest Acquired" "The Felwyn Shard quest can only be completed one time per character.|The quest is completed upon acquisition of one of the Shards of the Felewyn Blade."
+			quest set ent_me f 1
+		}
+	}
+}
+
+{ ext_debug_que //<msg>
+
+	if ( !$get_array(ARRAY_DEBUG,exists) ) array.create ARRAY_DEBUG
+
+	array.add ARRAY_DEBUG PARAM1
+
+	if !PLR_DEBUG_ARRAY_ACTIVE
+	setvard PLR_DEBUG_ARRAY_ACTIVE 1
+	callevent ext_debug_que_loop
+}
+
+{ ext_debug_que_loop
+	if PLR_DEBUG_ARRAY_ACTIVE
+	local L_OUT $get_array(ARRAY_DEBUG,0)
+	if ( $len(L_OUT) > 100 ) 
+	{
+		local L_LOUT $left(L_OUT,100)
+		stradd L_LOUT *
+	}
+	consolemsg ent_me L_OUT
+	array.del ARRAY_DEBUG 0
+	if ( $get_array_amt(ARRAY_DEBUG) > 0 )
+	{
+		callevent 0.1 ext_debug_que_loop
+	}
+	else
+	{
+		setvard PLR_DEBUG_ARRAY_ACTIVE 0
+	}
+}
+
+{ ext_quake_fx //<duration> //<startsnd> <loopsnd>
+	local L_DUR PARAM1
+	playsound 1 10 magic/volcano_start.wav 0.8 60
+	svplaysound 2 10 magic/volcano_loop.wav 0.8 60
+	clientevent new ent_me effects/sfx_quake $get(ent_me,index) 1 256 L_DUR
+	effect screenshake $get(ent_me,origin) 50 10 L_DUR 512
+	callevent L_DUR ext_quake_fx_end
+}
+
+{ ext_quake_fx_end
+	svplaysound 2 0 magic/volcano_loop.wav
+}
+
+{ ext_teleportdest
+	teleportdest PARAM1 PARAM2
+}
+
+{ ext_iexist_test
+	consolemsg ent_me item_exist_test $item_exists(ent_me,PARAM1,PARAM2)
+}
+
+{ ext_shield_up //0|1
+	if ( PARAM1 )
+	{
+		setvard PLR_SHIELD_UP 1
+		scriptflags ent_me add shieldnp nopush 1 -1 none
+	}
+	else
+	{
+		setvard PLR_SHIELD_UP 0
+		scriptflags ent_me remove shieldnp
+	}
+}
+
+{ ext_debug_draw_circle //<origin> <rad> [dur] [col]
+	setvard DBG_CIRCLE_POS PARAM1
+	setvard DBG_CIRCLE_RAD PARAM2
+	setvard DBG_CIRCLE_ROT 0
+	setvard DBG_CIRCLE_COLOR (255,0,255)
+	setvard DBG_CIRCLE_DUR 20.0
+	if ( PARAM3 !startswith PARAM ) setvard DBG_CIRCLE_DUR PARAM3
+	if ( PARAM4 !startswith PARAM ) setvard DBG_CIRCLE_COLOR PARAM3
+	
+	calleventloop 16 ext_debug_draw_circle_loop
+}
+
+{ ext_debug_draw_circle_loop
+	local L_BEAM_START DBG_CIRCLE_POS
+	vectoradd L_BEAM_START $relpos($vec(0,DBG_CIRCLE_ROT,0),$vec(0,DBG_CIRCLE_RAD,0))
+	add DBG_CIRCLE_ROT 22.5
+
+	local L_BEAM_END DBG_CIRCLE_POS
+	vectoradd L_BEAM_END $relpos($vec(0,DBG_CIRCLE_ROT,0),$vec(0,DBG_CIRCLE_RAD,0))
+	//add DBG_CIRCLE_ROT 22.5
+
+	effect beam point lgtning.spr 20 L_BEAM_START L_BEAM_END DBG_CIRCLE_COLOR 200 0 DBG_CIRCLE_DUR
+}
+
+//{ ext_set_next_circle_heal
+//	setvard NEXT_CIRCLE_HEAL PARAM1
+//}
+
 { ext_dburst //<origin> <rad> <repell:0|1> <sound:0|1>
 	setvard PLR_DBURST_ORG PARAM1
 	setvard PLR_DBURST_AOE PARAM2
@@ -5060,4 +5327,8 @@
 
 { ext_set_last_stun_time
 	setvard DAT_LAST_HEAVY_STUN game.time
+}
+
+{ ext_report_armor
+	consolemsg PARAM2 $get(ent_me,name) Armor: $get_takedmg(ent_me,all) PARAM1 : $get_takedmg(ent_me,PARAM1)
 }

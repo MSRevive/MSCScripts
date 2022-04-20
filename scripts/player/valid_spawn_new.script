@@ -1,0 +1,240 @@
+//force players to travel maps in known gauntlet series
+//at least the first player on the map must come from one of the valid maps
+//other players may still join
+
+//this script only runs on players until one makes a valid spawn
+
+#scope server
+{ [server] validate_spawn
+
+	//problem with this running before map fully loaded
+	dbg validate_spawn enter inworld PLR_IN_WORLD map $lcase(game.map.name)
+	
+	if $get(ent_me,scriptvar,'PLR_IN_WORLD')	
+
+	setvard THIS_MAP $lcase(game.map.name)
+	if THIS_MAP isnot ''
+
+	setvard GAUNTLET_MAP 0
+
+	local L_RMAP_IDX $g_get_arrayfind(G_ARRAY_RMAPS,THIS_MAP)
+
+	if ( L_RMAP_IDX > -1 )
+	{
+		setvard GAUNTLET_MAP 1
+		setvard RMAP_VALID_FROM $g_get_array(G_ARRAY_RMAPS_CONNECTORS,L_RMAP_IDX)
+		local L_RMAP_TYPE $g_get_array(G_ARRAY_RMAPS_TYPES,L_RMAP_IDX)
+		setvard RMAP_TYPE $get_token(L_RMAP_TYPE,0)
+		if ( RMAP_TYPE equals series )
+		{
+			setvard RMAP_SERIES_START $get_token(L_RMAP_TYPE,1)
+			setvard RMAP_SERIES_TITLE $get_token(L_RMAP_TYPE,2)
+		}
+	}
+
+	dbg validate_spawn gidx L_RMAP_IDX g GAUNTLET_MAP t THIS_MAP m $get_quest_data(ent_me,m) mv $get_quest_data(ent_me,mv)
+
+	if GAUNTLET_MAP //if not a gauntlet map, no need to validate
+
+	setvard RMAP_VALIDATED_GAUNTLET 0
+
+	//no need for this - even if the map connects, it's still invalid if the player didn't touch the transition
+	//setvard QUEST_LASTGAUNTLET $get_quest_data(ent_me,mv)
+	//calleventloop $get_token_amt(RMAP_VALID_FROM) check_from_valid //this will set RMAP_VALIDATED_GAUNTLET 1 if legit transition detected
+	//validated from previous gauntlet map
+//	if ( RMAP_VALIDATED_GAUNTLET )
+//	{
+//		callevent map_validated rmv_gaunt
+//		exitevent
+//	}
+
+	//gauntlet map already validated by another player
+	if ( G_VALID_SPAWN )
+	{
+		callevent map_validated other_player
+		exitevent
+	}
+	//valid if dest map is this map, or last valid gauntlet map is this map
+	if ( $get_quest_data(ent_me,m) equals THIS_MAP )
+	{
+		callevent map_validated m_validated_destmap_is_thismap
+		exitevent
+	}
+	if ( $get_quest_data(ent_me,mv) equals THIS_MAP )
+	{
+		callevent map_validated mv_validated_lastgaunt_is_thismap
+		exitevent
+	}
+	//server allows for voting of gauntlet maps
+	if ( game.cvar.msvote_map_type equals nonfn )
+	{
+		callevent map_validated nonfn
+		exitevent
+	}
+
+	if !G_VALID_SPAWN
+
+	if ( RMAP_TYPE equals hidden )
+	{
+		setvard MSG_TITLE "HIDDEN MAP"
+		setvard MSG_TEXT "The entrance to this hidden map must be reached from "
+		setvard VALID_MAP_LIST_ENGLISH ''
+		setvard N_RMAP_VALIDS $get_token_amt(RMAP_VALID_FROM)
+		subtract N_RMAP_VALIDS 1
+		calleventloop $get_token_amt(RMAP_VALID_FROM) make_valid_map_list_english
+		stradd MSG_TEXT VALID_MAP_LIST_ENGLISH
+		stradd MSG_TEXT "."
+	}
+
+	if ( RMAP_TYPE equals series )
+	{
+		setvard MSG_TITLE "GAUNTLET MAP"
+		setvard MSG_TEXT "Series "
+		stradd MSG_TEXT RMAP_SERIES_TITLE
+		stradd MSG_TEXT " begins at "
+		stradd MSG_TEXT RMAP_SERIES_START
+		stradd MSG_TEXT "|"
+		stradd MSG_TEXT THIS_MAP
+		stradd MSG_TEXT " must be reached from "
+		setvard N_RMAP_VALIDS $get_token_amt(RMAP_VALID_FROM)
+		subtract N_RMAP_VALIDS 1
+		setvard VALID_MAP_LIST_ENGLISH ''
+		calleventloop $get_token_amt(RMAP_VALID_FROM) make_valid_map_list_english
+		stradd MSG_TEXT VALID_MAP_LIST_ENGLISH
+		stradd MSG_TEXT "."
+	}
+
+	dbg map_failed_validate RMAP_VALID_FROM
+
+	setvard MSG_COUNTER 0
+	setvard PLR_PRECHEAT_POS $get(ent_me,origin)
+	callevent gauntlet_invalid_loop
+	callevent 0.1 premt_black //to stop the few seconds of HOM effect
+	callevent 300.0 reset_server
+}
+
+{ premt_black
+	effect screenfade ent_me 0.9 5.0 (10,10,10) 255 noblend
+}
+
+{ gauntlet_invalid_loop
+
+	dbg gauntlet_invalid_loop
+
+	//make this an effect
+
+	//dbg Checking against G_VALID_SPAWN 
+
+	if ( G_DEVELOPER_MODE ) setvarg G_VALID_SPAWN 1
+
+	if ( G_VALID_SPAWN )
+	{
+		infomsg ent_me "Redeemed" A player who traveled to this map legally has joined.
+		callevent map_validated redeemed
+		setorigin ent_me PLR_PRECHEAT_POS
+		exitevent
+	}
+
+	applyeffect ent_me effects/cheater_freeze 4.9
+	effect screenfade ent_me 0.9 5.0 (10,10,10) 255 noblend
+	setorigin ent_me (-20000,-20000,-20000)
+
+	add MSG_COUNTER 1
+	if ( MSG_COUNTER == 1 ) 
+	{
+		if ( RMAP_TYPE equals hidden ) playermessage ent_me Hidden Map: you cannot warp here. You must discover the entrance in:
+		if ( RMAP_TYPE equals series ) playermessage ent_me Gauntlet Series: RMAP_SERIES_TITLE begins at RMAP_SERIES_START
+		helptip ent_me generic MSG_TITLE MSG_TEXT
+	}
+	if ( MSG_COUNTER == 2 ) 
+	{
+		setvard MSG_COUNTER 0
+		if ( RMAP_TYPE equals hidden ) playermessage ent_me VALID_MAP_LIST_ENGLISH
+		if ( RMAP_TYPE equals series ) playermessage ent_me You must begin this series at RMAP_SERIES_START
+		helptip ent_me generic MSG_TITLE MSG_TEXT
+		if ( !STARTED_VOTE ) callevent 5.0 start_vote
+	}
+
+	if !G_VALID_SPAWN
+	callevent 5.0 gauntlet_invalid_loop
+}
+
+{ start_vote
+
+	if !G_VALID_SPAWN
+	setvard STARTED_VOTE 1
+	setvard L_VOTE_TRIG touch_trans_
+	if ( RMAP_TYPE equals hidden ) 
+	{
+		setvard VALID_START_MAP $get_token(RMAP_VALID_FROM,0)
+	}
+	if ( RMAP_TYPE equals series )
+	{
+		setvard VALID_START_MAP RMAP_SERIES_START
+	}
+	local L_VOTE_SUFFIX VALID_START_MAP
+	stradd L_VOTE_TRIG L_VOTE_SUFFIX
+	usetrigger L_VOTE_TRIG
+	callevent 60.0 reset_vote
+}
+
+{ reset_vote
+	//vote again every 65 secs
+	setvard STARTED_VOTE 0
+}
+
+{ reset_server
+
+	if !G_VALID_SPAWN
+	//five minutes, either no one is here, or no one has figured it out - reset server via amx
+	usetrigger force_map_edana
+	callevent 10.0 manual_changelevel
+}
+
+{ manual_changelevel
+
+	if !G_VALID_SPAWN
+	//this work?
+	callexternal GAME_MASTER gm_manual_map_change edana
+}
+
+//checks if last valid gauntlet map was one of the connectors to this one
+{ check_from_valid
+	local CUR_MAP $get_token(RMAP_VALID_FROM,game.script.iteration)
+	if CUR_MAP equals QUEST_LASTGAUNTLET
+	setvard RMAP_VALIDATED_GAUNTLET 1
+}
+
+//makes english friendly valid map list, eg. "highlands_msc, skycastle, or orcplace2_beta"
+{ make_valid_map_list_english
+	local L_CUR_IDX game.script.iteration
+	local L_CUR_VMAP $get_token(RMAP_VALID_FROM,L_CUR_IDX)
+	stradd VALID_MAP_LIST_ENGLISH L_CUR_VMAP
+	if N_RMAP_VALIDS > 0
+	if ( N_RMAP_VALIDS > 2 )
+	{
+		if ( L_CUR_IDX < $math(subtract,N_RMAP_VALIDS,1) )
+		{
+			stradd VALID_MAP_LIST_ENGLISH ", "
+		}
+		else
+		{
+			if L_CUR_IDX != N_RMAP_VALIDS
+			stradd VALID_MAP_LIST_ENGLISH ", or "
+		}
+	}
+	else
+	{
+		if ( N_RMAP_VALIDS == 1 )
+		{
+			if L_CUR_IDX == 0
+			stradd VALID_MAP_LIST_ENGLISH " or "
+		}
+	}
+}
+
+{ map_validated
+	dbg map_validated PARAM1
+	setvarg G_VALID_SPAWN 1
+	quest set ent_me mv THIS_MAP
+}

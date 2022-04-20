@@ -1,0 +1,144 @@
+#scope server
+
+//in game format:
+//tdebug (for all mobs) or tdebugt (for current target)
+//tdebug <var> - returns variable
+//tdebug <var> <prop> - returns $get property variable ala $get(<var>,<prop>) [eg. ent_me maxhp]
+//tdebug <var> <prop> <prop> - returns $get property variable ala $get(<var>,<proc>,<prop>) [eg. ent_me scriptvar NPCATK_TARGET]
+//tdebug array <array_name> <idx> - returns array element
+//tdebug garray <array_name> <idx> - returns global array element
+//tdebug darray <array_name> - dumps entire array contents to console
+//tdebug dgarray <array_name> - dumps entire global array contents to console
+
+{ bd_debug //<caller> [type:array|var] <params...>
+
+	local L_DEBUG_CALLER PARAM1
+	local L_DEBUG_TYPE PARAM2
+
+	local L_EXTRA_EVENT none
+
+	local L_OUT_MSG $get(ent_me,name)
+	stradd L_OUT_MSG "["
+	stradd L_OUT_MSG $get(ent_me,index)
+	stradd L_OUT_MSG "]: "
+
+	if ( L_DEBUG_TYPE equals array )
+	{
+		stradd L_OUT_MSG "Array "
+		stradd L_OUT_MSG PARAM3
+		stradd L_OUT_MSG "#"
+		stradd L_OUT_MSG PARAM4
+		stradd L_OUT_MSG " is "
+		stradd L_OUT_MSG $get_array(PARAM3,PARAM4)
+		local L_PROCESSED 1
+	}
+	if ( L_DEBUG_TYPE equals garray )
+	{
+		stradd L_OUT_MSG "g_Array "
+		stradd L_OUT_MSG PARAM3
+		stradd L_OUT_MSG "#"
+		stradd L_OUT_MSG PARAM4
+		stradd L_OUT_MSG " is "
+		stradd L_OUT_MSG $g_get_array(PARAM3,PARAM4)
+		local L_PROCESSED 1
+	}
+	if ( L_DEBUG_TYPE equals darray )
+	{
+		stradd L_OUT_MSG "Dumping Array: "
+		stradd L_OUT_MSG PARAM3
+		setvard DUMP_ARRAY_NAME PARAM3
+		setvard DUMP_ARRAY_GLOBAL 0
+		setvard DUMP_ARRAY_CALLER L_DEBUG_CALLER
+		local L_EXTRA_EVENT dbg_dump_array
+		local L_PROCESSED 1
+	}
+	if ( L_DEBUG_TYPE equals dgarray )
+	{
+		stradd L_OUT_MSG "Dumping Global Array: "
+		stradd L_OUT_MSG PARAM3
+		setvard DUMP_ARRAY_NAME PARAM3
+		setvard DUMP_ARRAY_GLOBAL 1
+		setvard DUMP_ARRAY_CALLER L_DEBUG_CALLER
+		local L_EXTRA_EVENT dbg_dump_array
+		local L_PROCESSED 1
+
+	}
+	if ( L_DEBUG_TYPE equals var )
+	{
+		stradd L_OUT_MSG "var "
+		stradd L_OUT_MSG PARAM3
+		stradd L_OUT_MSG " prop "
+		stradd L_OUT_MSG $get(PARAM3,PARAM4)
+		local L_PROCESSED 1
+	}
+
+	if ( !L_PROCESSED )
+	{
+		//assume val
+		if ( PARAM2 equals 'PARAM2' )
+		{
+			stradd L_OUT_MSG "exists"
+		}
+		else
+		{
+			stradd L_OUT_MSG PARAM2
+			if ( PARAM3 isnot 'PARAM3' )
+			{
+				if PARAM4 equals 'PARAM4'
+				stradd L_OUT_MSG "->"
+				stradd L_OUT_MSG PARAM3
+				stradd L_OUT_MSG "="
+				stradd L_OUT_MSG $get(PARAM2,PARAM3)
+			}
+			if ( PARAM4 isnot 'PARAM4' )
+			{
+				stradd L_OUT_MSG "->"
+				stradd L_OUT_MSG PARAM3
+				stradd L_OUT_MSG "["
+				stradd L_OUT_MSG PARAM4
+				stradd L_OUT_MSG "]="
+				stradd L_OUT_MSG $get(PARAM2,PARAM3,PARAM4)
+//				stradd L_OUT_MSG ","
+//				stradd L_OUT_MSG $get(PARAM2,PARAM3)
+//				local L_PROP $get(PARAM2,PARAM3)
+//				stradd L_OUT_MSG "->"
+//				stradd L_OUT_MSG PARAM4
+//				stradd L_OUT_MSG "="
+//				stradd L_OUT_MSG $get(L_PROP,PARAM4)
+//				stradd L_OUT_MSG " (scriptvar:"
+//				stradd L_OUT_MSG $get(L_PROP,scriptvar,PARAM4)
+//				stradd L_OUT_MSG ")"
+			}
+		}
+
+		local L_PROCESSED 1
+	}
+
+	//consolemsg L_DEBUG_CALLER direct: L_OUT_MSG //temporary
+
+	callexternal L_DEBUG_CALLER ext_debug_que L_OUT_MSG
+	if L_EXTRA_EVENT isnot none
+	callevent L_EXTRA_EVENT
+
+}
+
+{ dbg_dump_array
+	if ( DUMP_ARRAY_GLOBAL  ) local L_N_ELEMENTS $g_get_array_amt(DUMP_ARRAY_NAME)
+	else local L_N_ELEMENTS $get_array_amt(DUMP_ARRAY_NAME)
+
+	dbg dbg_dump_array L_N_ELEMENTS of DUMP_ARRAY_NAME to $get(DUMP_ARRAY_CALLER,name)
+
+	calleventloop L_N_ELEMENTS dbg_dump_array_elements
+}
+
+{ dbg_dump_array_elements
+	local CUR_IDX game.script.iteration
+	if ( DUMP_ARRAY_GLOBAL  ) local L_ELEMENT $g_get_array(DUMP_ARRAY_NAME,CUR_IDX)
+	else local L_ELEMENT $get_array(DUMP_ARRAY_NAME,CUR_IDX)
+	local L_OUT_MSG #
+	stradd L_OUT_MSG $int(CUR_IDX)
+	stradd L_OUT_MSG " "
+	stradd L_OUT_MSG L_ELEMENT
+	callexternal DUMP_ARRAY_CALLER ext_debug_que L_OUT_MSG
+}
+

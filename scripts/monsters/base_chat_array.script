@@ -1,6 +1,16 @@
 //More dynamic, array based chat system JUL2010_11 by Thothie
 
+//callevent chat_now <text> [time] [anim|"none"|"no_convo"] [event|"none"] ["clear_que"] ["add_to_que"] [sound:<file>]
+//- adds line to chat que and speaks line, if not busy, same formatting as chat_add_text above
+//- if the "clear_que" flag is used, the current chat que will be emptied and this entry will replace it.
+//- The "clear_que" parameter can be used in any position after <text>
+//- "add_to_que" will add the chat entry to the current que, even if CHAT_NEVER_INTERRUPT or CHAT_IGNORE_WHILE_BUSY is set
+//- The "add_to_que" parameter can be used in any position after <text>
+//- good for one-liners (or things that may interrupt conversation if you add ["clear_que"]), though it's the simplest general use of the base
+//- [time] [anim|"none"] [event|"none"] must come in order, any other conditions ( ["clear_que"] ["add_to_que"] [sound:<file>] ) can come in any order after that
+
 //callevent chat_add_text <convo_sequence_name> <sentence_string> [time] [anim|"none"] [event] [sound:<file>]
+//- Stores a line in a chat sequence for later use in chat_start_sequence, below.
 //- <convo_sequence_name> conversation sequence to add text to
 //- <sentence_string> text of sentence to say
 //- [time] delay before speaking next line in conversation (defaults to CHAT_DELAY if ommited)
@@ -18,15 +28,6 @@
 //- "prioritize" flag causes NPC to ignore all other chat_start_sequence and chat_now events until chat is no longer busy, unless ["clear_que"] flag is used
 //- "add_to_que" will add the chat entry to the current quei, even if CHAT_NEVER_INTERRUPT or CHAT_IGNORE_WHILE_BUSY is set
 //- The ["clear_que"] ["prioritize"] ["add_to_que"] optional parameters can be in any order, or ommited.
-
-//callevent chat_now <text> [time] [anim|"none"|"no_convo"] [event|"none"] ["clear_que"] ["add_to_que"] [sound:<file>]
-//- adds line to chat que and speaks line, if not busy, same formatting as chat_add_text above
-//- if the "clear_que" flag is used, the current chat que will be emptied and this entry will replace it.
-//- The "clear_que" parameter can be used in any position after <text>
-//- "add_to_que" will add the chat entry to the current quei, even if CHAT_NEVER_INTERRUPT or CHAT_IGNORE_WHILE_BUSY is set
-//- The "add_to_que" parameter can be used in any position after <text>
-//- good for one-liners (or things that may interrupt conversation if you add ["clear_que"])
-//- [time] [anim|"none"] [event|"none"] must come in order, any other conditions ( ["clear_que"] ["add_to_que"] [sound:<file>] ) can come in any order after that
 
 //callevent chat_face_speaker [target]
 //- faces speaker
@@ -50,7 +51,7 @@
 //callevent chat_reseve <time>
 //- Retain the CHAT_BUSY flag for <x> seconds (useful for chat lines done outside of the base_chat_array system.)
 //- This is normally done automatically by chat_start_sequence and chat_now
-//- que will suspend until time expires, unless a chat_start_sequence or chat_now even is called using the 'clearque' flag
+//- que will suspend until time expires, unless a chat_start_sequence or chat_now event is called using the 'clearque' flag
 
 //callevent chat_find_speaker_id
 //- finds the speaker's id (really guesses)
@@ -105,9 +106,9 @@
 
 	const CHAT_MAX_LINE_LEN 192 //max length of chat string <designed to prevent crash>
 
-	const CHAT_DELAY 4.0 //default delay between chat steps
+	const CHAT_DELAY 4.0 //default delay between chat steps, though the system will try to determine chat time by the length of the <text> string, if no time is defined. (1.5-6.0 seconds)
 
-	setvard CHAT_CURRENT_SPEAKER none //speaker will be stored here
+	setvard CHAT_CURRENT_SPEAKER none //speaker entID will be stored here
 }
 
 { game_spawn
@@ -387,17 +388,17 @@
 		if $get(L_LAST_SPOKE,range) < 512
 		setvard CHAT_CURRENT_SPEAKER L_LAST_SPOKE
 	}
-	if ( $get(CHAT_LAST_USED_MENU,isalive) )
+	else if ( $get(CHAT_LAST_USED_MENU,isalive) )
 	{
 		if $get(CHAT_LAST_USED_MENU,range) < 512
 		setvard CHAT_CURRENT_SPEAKER CHAT_LAST_USED_MENU
 	}
-	if ( !$get(CHAT_CURRENT_SPEAKER,isalive) )
+	else if ( !$get(CHAT_CURRENT_SPEAKER,isalive) )
 	{
 		dbg failed to find speaker, wild guess
 		setvard CHAT_CURRENT_SPEAKER $get_insphere(player,512)
 	}
-	if ( !$get(CHAT_CURRENT_SPEAKER,isalive) )
+	else if ( !$get(CHAT_CURRENT_SPEAKER,isalive) )
 	{
 		//final fail safe - unlesss there are no players on the server ^_^
 		getplayersnb PLAYER_LIST

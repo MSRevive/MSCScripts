@@ -1,0 +1,138 @@
+{
+	const SPRITE_EXPLODE bigsmoke.spr
+	const SOUND_EXPLODE weapons/explode3.wav
+
+	const SOUND_FUSE_LOOP monsters/dwarf_bomber/fuse_loop.wav
+}
+
+{ game_dynamically_created //<owner> <vel>
+	setvard MY_OWNER PARAM1
+	setvard START_VEL PARAM2
+	//setvard DMG_MULTI PARAM3 //grab dmg_multi and base dmg from summoner
+	setcallback touch enable
+	setvard IS_ACTIVE 1
+	callevent 0.01 boost_and_scan
+	setvard BOMB_DURATION $randf(5.0,10.0)
+	effect beam follow lgtning.spr ent_me 1 1 BOMB_DURATION 200 (255,0,0)
+	//client effects go here
+	callevent 0.01 setup_fx
+	callevent BOMB_DURATION go_splodie
+}
+
+{ setup_fx
+	clientevent new all monsters/summon/tnt_bomb_cl $get(ent_me,index) BOMB_DURATION
+	dbg setup_fx
+	setvard CL_INDEX game.script.last_sent_id
+	setprop ent_me avelocity $relvel(0,60,0)
+	svplaysound 1 5 SOUND_FUSE_LOOP
+}
+
+{ game_spawn
+	name some|explosives
+	setmodel monsters/dwarf_bomber_tnt.mdl
+	width 8
+	height 8
+	gravity 2
+	setidleanim tnt_idle
+	setprop ent_me movetype const.movetype.bounce
+	setprop ent_me friction 0.2
+	invincible 1
+	race hated
+	setvard PLAYING_DEAD 1
+	setmonsterclip 0
+}
+
+
+{ boost_and_scan
+	addvelocity ent_me START_VEL
+	setvard OLD_SPEED $get(ent_me,speed)
+	setvard N_DMG_TIMES 0
+	setvard GROUND_PULSE 0
+	callevent monitor_speed
+}
+
+{ monitor_speed
+	if IS_ACTIVE
+	callevent 0.1 monitor_speed
+
+	local CUR_SPEED $get(ent_me,speed)
+	if ( CUR_SPEED < 200 )
+	{
+		if OLD_SPEED < 200
+		callevent go_splodie
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	local MY_Z $get(ent_me,origin.z)
+	local MY_GROUND_Z $get_ground_height(game.monster.origin)
+
+	subtract MY_Z MY_GROUND_Z
+
+	if ( MY_Z < 10 )
+	{
+		add GROUND_PULSE 1
+		playsound 0 10 debris/bustmetal2.wav
+		if GROUND_PULSE > 2
+		callevent go_splodie
+	}
+
+	setvard OLD_SPEED CUR_SPEED
+}
+
+{ game_touch
+	//dbg game_touch $get(PARAM1,id) $get(ent_me,speed)
+	if IS_ACTIVE
+	setvard TOUCH_TARG PARAM1
+	callevent 0.01 damage_touched
+}
+
+{ damage_touched
+	if game.time > NEXT_DMG
+	setvard NEXT_DMG game.time
+	add NEXT_DMG 0.25
+	if ( $get(MY_OWNER,relationship,PARAM1) equals enemy
+	callevent 0.1 go_splodie
+}
+
+{ go_splodie
+	if ( CL_INDEX > 0 ) clientevent update all CL_INDEX end_fx
+	svplaysound 1 0 SOUND_FUSE_LOOP
+
+	effect tempent spray SPRITE_EXPLODE game.monster.origin 0 1 0 0
+	setmodel none
+	local DMG_AMT $get(MY_OWNER,scriptvar,'DMG_BOMB')
+	if ( $get(MY_OWNER,dmgmulti) > 0 ) multiply DMG_AMT $get(MY_OWNER,dmgmulti)
+	xdodamage $get(ent_me,origin) 128 DMG_AMT 0 ent_me ent_me none fire_effect dmgevent:push_loop
+	//attachsprite SPRITE_EXPLODE trans 20 1.0
+	playsound 0 10 SOUND_EXPLODE
+	//drop splodie sprite here
+	setvard IS_ACTIVE 0
+	callevent 0.1 remove_me
+}
+
+{ game_damaged_other
+	if ( PARAM1 equals MY_OWNER ) local L_REDUCE 1
+	if ( $get(MY_OWNER,relationship,PARAM1) equals ally ) local L_REDUCE 1
+	if ( !L_REDUCE )
+	{
+		if $get(MY_OWNER,relationship,PARAM1) equals enemy
+		callexternal MY_OWNER ext_hittarget PARAM1
+	}
+	if L_REDUCE
+	setdmg dmg 0.1
+	return 0.1
+}
+
+{ push_loop_dodamage
+	local CUR_TARGET PARAM2
+	//dbg push_loop $get(CUR_TARGET,name) of PUSH_LIST
+	local TARGET_ORG $get(CUR_TARGET,origin)
+	local TARG_ANG $angles(game.monster.origin,TARGET_ORG)
+	setvelocity CUR_TARGET $relvel($vec(0,TARG_ANG,0),$vec(10,1000,110)) //a little to the left too, in case he's stuck up against a wall
+	if ( PARAM2 equals MY_OWNER ) callexternal MY_OWNER friendly_fire
+}
+
+{ remove_me
+	deleteent ent_me
+}

@@ -1,0 +1,113 @@
+{
+	//base ally
+	setvard ALLY_FOLLOW_ON 0
+	const ANIM_ALLY_JUMP anim_roll_back
+	const SOUND_ALLY_JUMP voices/dwarf/vs_nx0drogm_hit2.wav
+	const ALLY_MOVE_AWAY_DIST 128 //we seem to have a habit of landing on player's heads
+
+	//base stuck
+	const NPC_MATERIAL_TYPE flesh
+	const NPC_USE_PAIN 1
+	const NPC_USE_IDLE 0
+	const NPC_USE_FLINCH 1 
+
+	const SOUND_PAIN1 voices/dwarf/vs_ndwarfm1_hit1.wav
+	const SOUND_PAIN2 voices/dwarf/vs_ndwarfm1_bat1.wav
+	const SOUND_PAIN3 voices/dwarf/vs_ndwarfm1_hit3.wav
+
+	const SOUND_FLINCH1 voices/dwarf/vs_nx0drogm_heal.wav
+	const SOUND_FLINCH2 voices/dwarf/vs_nx0drogm_help.wav
+	const SOUND_FLINCH3 voices/dwarf/vs_nx0drogm_hit1.wav
+
+	const SOUND_DEATH voices/dwarf/vs_nx0drogm_hit3.wav
+
+    const SOUND_ALERT1 voices/dwarf/voices/dwarf/vs_nx0drogm_bat3.wav
+    const SOUND_ALERT2 voices/dwarf/voices/dwarf/vs_nx0drogm_bat1.wav
+    const SOUND_ALERT3 voices/dwarf/voices/dwarf/vs_ndwarfm1_bat3.wav
+
+	const SOUND_ATTACK1 voices/dwarf/voices/dwarf/vs_nx0drogm_atk1.wav
+	const SOUND_ATTACK2 voices/dwarf/voices/dwarf/vs_nx0drogm_atk2.wav
+	const SOUND_ATTACK3voices/dwarf/voices/dwarf/vs_nx0drogm_atk3.wav
+
+	const ANIM_FLINCH anim_xbow_flinch
+
+	//base anims
+	setvar ANIM_IDLE idle
+	setvar ANIM_WALK walk
+	setvar ANIM_RUN run
+	setvard ANIM_DEATH death
+	setvard ANIM_ATTACK attack	//alternates between leap and slash
+
+	//base ai
+	const NPC_BASE_EXP 0
+	setvard NPC_NO_PLAYER_DMG 1
+	setvard ATTACK_RANGE 75
+	setvard ATTACK_HITRANGE 100
+	setvard ATTACK_MOVERANGE 48
+
+	//top
+	setvard ATTACK_DAMAGE 50
+	setvard ATTACK2_DAMAGE 150
+	setvard ATTACK2_CHANCE 30
+	const ATTACK_ACCURACY 80
+	const ATTACK2_ACCURACY 90
+}
+
+#include monsters/base_battle_ally
+#include monsters/base_monster_new
+#include monsters/base_struck
+#include NPCs/dwarf_lantern_base
+
+{ game_spawn
+	callevent dwarf_spawn
+}
+
+{ dwarf_spawn
+	name a|Dwarven Miner
+	setmodel dwarf/male1.mdl
+	setprop ent_me skin $rand(0,6)
+	setmodelbody 1 8
+	width 32
+	height 48
+	roam 1
+	hp 400
+	race human
+	hearingsensitivity 8
+}
+
+{ frame_roll_back_push
+	addvelocity ent_me $relvel(0,100,0)
+}
+
+{ attack_1	//called by modelanim attack @frame 6
+
+	//copypasta lazyness from dzomb
+	dodamage NPCATK_TARGET ATTACK_HITRANGE ATTACK_DAMAGE ATTACK_ACCURACY
+	if ( $rand(1,100) < ATTACK2_CHANCE ) setvard ANIM_ATTACK attack2
+}
+
+{ attack_2 //called by modelanim attack2 @frame 9
+
+	playrandomsound 0 10 SOUND_ATTACK1 SOUND_ATTACK2 SOUND_ATTACK3
+
+	//copypasta lazyness from dzomb
+	dodamage NPCATK_TARGET ATTACK_HITRANGE ATTACK2_DAMAGE ATTACK2_ACCURACY
+	setvard ANIM_ATTACK attack
+	if $get(ent_laststruckbyme,range) <= ATTACK_HITRANGE
+	applyeffect $get(ent_laststruckbyme,id) effects/heavy_stun $rand(2,8)
+    applyeffect $get(ent_laststruckbyme,id) effects/effect_push 2 $relvel(10,-200,10) 0
+}
+
+{ set_leader
+	if ( PARAM1 isnot 0 )
+	{
+		//speed up to stay in front
+		movespeed 2.5
+		setanim.movespeed 2.5
+	}
+	else
+	{
+		movespeed 1.0
+		setanim.movespeed 1.0
+	}
+}

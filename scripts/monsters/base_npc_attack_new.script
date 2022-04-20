@@ -95,6 +95,8 @@
 	const CYCLE_TIME_IDLE 2.0
 	const CYCLE_TIME_NPC 0.8
 
+	const NPC_RANGE_TYPE range //you can change this to range2D for special mobs
+
 	const NPC_DELAY_RETALITATE $randf(5.0,10.0)
 }
 
@@ -109,7 +111,6 @@
 	if ( CYCLE_TIME == 0 ) setvard CYCLE_TIME CYCLE_TIME_IDLE //some npc's are pre-cycled
 	if ( HEAR_RANGE_MAX == 0 ) setvard HEAR_RANGE_MAX 1024
 	if ( HEAR_RANGE_PLAYER == 0 ) setvard HEAR_RANGE_PLAYER 800
-	if ( NPC_ALLY_RESPONSE_RANGE == 0 ) setvard NPC_ALLY_RESPONSE_RANGE 1024 //how far away an ally can be for me to want to go help him
 	if ( RETALIATE_CHANCE == 0 ) setvard RETALIATE_CHANCE 75 //chance of monster turning on a new opponent when struck from behind (damage much excede FLINCH_DAMAGE_THRESHOLD)
 	if ( CHASE_RANGE == 0 ) setvard CHASE_RANGE 4000 //max distance to chase opponent
 	setvard NPC_CHASE_RANGE CHASE_RANGE
@@ -286,7 +287,7 @@
 		}
 		else
 		{
-			callevent npcatk_setmovedest NPC_LASTSEEN_POS 1
+			if ( !NPC_IS_TURRET ) callevent npcatk_setmovedest NPC_LASTSEEN_POS 1
 			//reached last known position, unset
 			//dbg hunting_blind dist $dist(MY_ORG,NPC_LASTSEEN_POS) vs. NPC_MOVEPROX
 			if ( $dist(MY_ORG,NPC_LASTSEEN_POS) <= NPC_DBL_MOVEPROX )
@@ -311,7 +312,7 @@
 		{
 			//if I see an enemy closer than my target, make him my new target
 			if CAN_RETALIATE //Thothie FEB2009_13 - but only if I'm smart enough to retaliate
-			if ( $get(NPCATK_TARGET,range) > $get(ent_lastseen,range) )
+			if ( $get(NPCATK_TARGET,NPC_RANGE_TYPE) > $get(ent_lastseen,NPC_RANGE_TYPE) )
 			{
 				if $get(ent_lastseen,isplayer) //and its a player
 				callevent npcatk_settarget $get(ent_lastseen,id)
@@ -322,7 +323,8 @@
 
 	//target maybe in range, attack if so
 	//Thothie JAN2009 - bug fixes/optimize in this conditional
-	local TARG_RANGE $get(NPCATK_TARGET,range)
+	if !NPC_NO_ATTACK
+	local TARG_RANGE $get(NPCATK_TARGET,NPC_RANGE_TYPE)
 	if ( TARG_RANGE < ATTACK_HITRANGE )
 	{
 		//note: when using NPC_MUST_SEE_TARGET 0, creature must do direct damage or AOE
@@ -452,7 +454,7 @@
 		//restore previous target if near and alive
 		if ( $get(OLD_ATTACK_TARGET,isalive) )
 		{
-			if $get(OLD_ATTACK_TARGET,range) < 1024
+			if $get(OLD_ATTACK_TARGET,NPC_RANGE_TYPE) < 1024
 			//FEB2010_04 - Thothie An event cant call itself without delay 
 			//callevent npcatk_settarget OLD_ATTACK_TARGET "bad_new_target-restoring_old"
 			setvard NPCATK_TARGET OLD_ATTACK_TARGET
@@ -460,7 +462,7 @@
 	}
 
 	if NPCATK_TARGET isnot unset
-
+	
 	//Thothie JAN2013_09 - moved cycle up check to after target validated
 	if ( CYCLE_TIME != CYCLE_TIME_BATTLE )
 	{
@@ -470,7 +472,7 @@
 			callevent cycle_up DEBUG_PROC
 			setvard HUNTING_PLAYER 1
 			////dbg temp MONSTER_ID CycledHIGHFor $get(PARAM1,name) ( type: PARAM2 )
-			//if $get(PARAM1,range) < ATTACK_RANGE
+			//if $get(PARAM1,NPC_RANGE_TYPE) < ATTACK_RANGE
 			//callevent npcatk_attack
 		}
 		else
@@ -703,14 +705,14 @@
 //	setvard TWEAKED_DEST ACT_ORIGIN
 //	//local RANDOM_ANGLE $randf(0,359)
 //	local RANDOM_DISTANCE $randf(0,ADV_SEARCH_RADIUS)
-//	setvard NPC_LAST_STORE_DISTANCE $get(NPC_LOST_TARGET,range)
+//	setvard NPC_LAST_STORE_DISTANCE $get(NPC_LOST_TARGET,NPC_RANGE_TYPE)
 //	vectoradd TWEAKED_DEST $relpos($vec(0,ADV_SEARCH_RADIUS,0),$vec(0,RANDOM_DISTANCE,0))
 //	////dbg crash AdvSearch
 //	if ( $dist(game.monster.origin,TWEAKED_DEST) > ATTACK_RANGE ) callevent npcatk_setmovedest TWEAKED_DEST ATTACK_MOVERANGE "advanded_search"
 //	
 //	////dbg AdvSearchChangeAngles called from PARAM1 ( Angls ADV_SEARCH_ANGLE rad ADV_SEARCH_RADIUS )
 //
-//	if ( $get(NPC_LOST_TARGET,range) > CHASE_RANGE ) callevent npcatk_giveup_search "too_far"
+//	if ( $get(NPC_LOST_TARGET,NPC_RANGE_TYPE) > CHASE_RANGE ) callevent npcatk_giveup_search "too_far"
 //}
 
 //{ npcatk_search_checkdist
@@ -721,7 +723,7 @@
 //
 //	if !IS_FLEEING
 //
-//	if ( $get(NPC_LOST_TARGET,range) > NPC_LAST_STORE_DISTANCE ) 
+//	if ( $get(NPC_LOST_TARGET,NPC_RANGE_TYPE) > NPC_LAST_STORE_DISTANCE ) 
 //	{
 //		callevent npcatk_searching "farther_ratherthan_nearer"
 //	}
@@ -749,6 +751,8 @@
 
 //===== Reset targeting
 { npcatk_clear_targets
+
+	if PARAM1 !equals $get(ent_me,id)
 
 	dbg npcatk_clear_targets PARAM1
 
@@ -889,7 +893,7 @@
 		setvard RE_FLEE_DELAY 1
 		callevent 2.5 npcatk_reset_flee_delay
 	}
-	if ( $get(FLEE_TARGET,range) <= ATTACK_RANGE ) //bugger is still close, so I guess I can't get away
+	if ( $get(FLEE_TARGET,NPC_RANGE_TYPE) <= ATTACK_RANGE ) //bugger is still close, so I guess I can't get away
 	{
 		////dbg Re-fleedelay 10.0 never got away from target
 		setvard RE_FLEE_DELAY 1
@@ -995,12 +999,13 @@
 	if !SUSPEND_AI
 	if !IS_FLEEING
 	if CAN_HEAR
+	if !NPC_HEARDSOUND_OVERRIDE
 
 	//see if can make other sound types
 	////dbg temp HEAR Type PARAM1 with PARAM3 From $get(ent_lastheard,name)
 
 	setvard I_HEARD $get(ent_lastheard,id) //prevents relationship hearing issue
-	local HEARD_RANGE $get(ent_lastheard,range)
+	local HEARD_RANGE $get(ent_lastheard,NPC_RANGE_TYPE)
 
 	setvard HEARD_VERIFY 1
 	if ( NPC_VALIDATE_HEARING )
@@ -1211,7 +1216,7 @@
 
 { game_reached_dest
 
-	//dbg reached dest $get(NPCATK_TARGET,name) rng $get(NPCATK_TARGET,range) vs ATTACK_RANGE
+	//dbg reached dest $get(NPCATK_TARGET,name) rng $get(NPCATK_TARGET,NPC_RANGE_TYPE) vs ATTACK_RANGE
 
 	if !SUSPEND_AI
 
@@ -1227,7 +1232,7 @@
 //	{
 //		if !ADVANCED_SEARCHING
 //		if !IS_FLEEING //maybe redundant
-//		if ( $get(NPCATK_TARGET,range) > ATTACK_RANGE ) 
+//		if ( $get(NPCATK_TARGET,NPC_RANGE_TYPE) > ATTACK_RANGE ) 
 //		{
 //			////dbg crash game_reached_dest standard
 //			setvard NPC_LASTSEEN_POS $get(NPCATK_TARGET,origin)
