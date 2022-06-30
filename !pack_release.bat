@@ -9,7 +9,7 @@
 
 @echo off
 
-set version_tag=NOV2015
+set version_tag=APR2022-rc
 
 set script_path=scripts
 set out_path=scriptout
