@@ -102,6 +102,8 @@
 { game_precache
 	precache rockgibs.mdl
 	precache rain_ripple.spr
+	
+	precachefile "monsters/elemental_earth_cl"
 }
 
 { fake_precache
@@ -270,19 +272,30 @@
 	local L_TRACE $get_traceline(L_TRACE_START,L_TRACE_END,worldonly)
 	local L_POS L_TRACE
 	if ( L_TRACE isnot L_TRACE_END ) vectoradd L_POS z -64
-	clientevent new all monsters/elemental_earth_cl $get(ent_me,index) spawn_rock $get(NPCATK_TARGET,index) L_POS
+	clientevent new all monsters/elemental_earth_cl $get(ent_me,index) spawn_rock L_POS
+	
+	local L_GROUND $get_ground_height(L_POS)
+	local L_DROP_DIST $math(subtract,L_GROUND,$vec.z(L_POS))
+	
+	if ( L_DROP_DIST < 0 ) local L_DROP_DIST $neg(L_DROP_DIST)
+	
+	local L_DROP_TIME $math(divide,L_DROP_DIST,600)
+	add L_DROP_TIME 2
+	
+	setvard ROCK_STRIKE_POS $vec($vec.x(L_POS),$vec.y(L_POS),L_GROUND) //used in ext_mob_clreturn
+	callevent L_DROP_TIME ext_mob_clreturn
 }
 
 { ext_mob_clreturn //<position> //called from game_master via monsters/elemental_earth_cl
 	//effect tempent gibs rockgibs.mdl PARAM1 1 5 15 20 5
-	local L_GIB_POS PARAM1
+	local L_GIB_POS ROCK_STRIKE_POS
 	vectorset L_GIB_POS z $get_ground_height(L_GIB_POS)
 	vectoradd L_GIB_POS z 16 //little off the ground so the models dont get lost
-	effect tempent gibs rockgibs.mdl PARAM1 10.0 $relvel($vec(0,0,0),$vec(0,0,300)) 50 100 5
+	effect tempent gibs rockgibs.mdl ROCK_STRIKE_POS 10.0 $relvel($vec(0,0,0),$vec(0,0,300)) 50 100 5
 	//effect tempent gibs <modelname/spritename> <position> <size> <velocity> <randomness> <amount> <duration>
-	effect screenshake PARAM1 100 5 3 500
-	setvard BURST_POS PARAM1
-	xdodamage PARAM1 128 DMG_ROCK 0.1 ent_me ent_me none blunt_effect dmgevent:rock
+	effect screenshake ROCK_STRIKE_POS 100 5 3 500
+	setvard BURST_POS ROCK_STRIKE_POS
+	xdodamage ROCK_STRIKE_POS 128 DMG_ROCK 0.1 ent_me ent_me none blunt_effect dmgevent:rock
 }
 
 { rock_dodamage
