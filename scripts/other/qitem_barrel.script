@@ -7,6 +7,8 @@
 	const SPRITE_EXPLODE bigsmoke.spr
 	const SOUND_EXPLODE weapons/explode3.wav
 	const BARREL_CLOSED_IDX 6
+	
+	setvard ITEMS_TO_TURN_IN 0
 }
 
 { game_spawn
@@ -82,24 +84,26 @@
 	name L_NAME
 }
 
+{ ext_receive_quest_item //PARAM1 = qitem code //Called from game master
+
+	add ITEMS_TO_TURN_IN 1
+	setvard ITEMS_TO_TURN_IN $int(ITEMS_TO_TURN_IN)
+}
+
 { game_menu_getoptions
 
 	if !BARREL_DONE
 
-	callexternal PARAM1 ext_quest_items_return ITEM_TYPE
+	callexternal GAME_MASTER ext_check_quest_item ITEM_TYPE //Collects all items for "turning in"
 
-	local L_ITEMS $get(PARAM1,scriptvar,'PLR_RETURN')
-
-	local L_ITEMS $int(L_ITEMS)
-
-	if ( L_ITEMS > 0 )
+	if ( ITEMS_TO_TURN_IN > 0 )
 	{
 		local reg.mitem.title 	MENU_ADD
 		stradd reg.mitem.title (
-		stradd reg.mitem.title L_ITEMS
+		stradd reg.mitem.title ITEMS_TO_TURN_IN
 		stradd reg.mitem.title )
 		local reg.mitem.type 	callback
-		local reg.mitem.data 	L_ITEMS
+		local reg.mitem.data 	ITEMS_TO_TURN_IN
 		local reg.mitem.callback add_items
 		menuitem.register
 	}
@@ -118,6 +122,8 @@
 
 { add_items
 	add ITEM_COUNT PARAM2
+	setvard ITEMS_TO_TURN_IN 0
+	
 	if ( PARAM2 != 0 ) playsound 0 10 items/ammopickup1.wav
 	callevent update_name
 
@@ -134,7 +140,6 @@
 	if ( $get(PARAM1,isplayer) )
 	{
 		setvard BARREL_PLR PARAM1
-		callexternal PARAM1 ext_quest_items_strip_type ITEM_TYPE
 	}
 
 	if ITEM_COUNT >= ITEM_REQ

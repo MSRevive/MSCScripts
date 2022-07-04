@@ -3555,3 +3555,76 @@
 		callevent gm_manual_map_change L_FORCEMAP
 	}
 }
+
+//---Quest Items
+
+{ ext_got_quest_item //<item_code> //Qitem found, add it to items found
+
+	if ( $get_array_amt(ARRAY_QUEST_ITEMS) == -1 )
+	{
+		array.create ARRAY_QUEST_ITEMS
+	}
+
+	array.add ARRAY_QUEST_ITEMS PARAM1
+
+	if ( $lcase(game.map.name) startswith 'rmine' ) //lame
+	{
+		if !PLR_FOUND_FIRST_STICK
+		setvard PLR_FOUND_FIRST_STICK 1
+		infomsg all "Stick of Dynamite" "Hrmmm... the fuse is broken... but maybe we can use this, somewhere..."
+	}
+}
+
+//TODO: Make this event the only one that should need to be called.
+// It should:
+// Take PARAM1 as the QITEM CODE
+// Take PARAM2 as the calling NPC
+// Check if the item exists
+// If it does, count all of them that exist
+// Delete those entries
+// Call back to the npc that number of times
+
+{ ext_check_quest_item //<item_code> <caller_id> //Called from npc that needs a particular item. Find and removes qitem if found, then call back to the npc.
+
+	setvard QITEM_NAME PARAM1
+	setvard QITEM_CALLER PARAM2
+	
+	local L_FIND_ITEM $get_arrayfind(ARRAY_QUEST_ITEMS,QITEM_NAME)
+
+	if ( L_FIND_ITEM equals '[ERROR_NO_ARRAY]' )
+	{
+		exitevent
+	}
+
+	if ( L_FIND_ITEM > -1 ) //If item was found
+	{
+		calleventloop $get_array_amt(ARRAY_QUEST_ITEMS) find_all_qitems //Finds each qitem, deletes the entry, then calls the NPC
+	}
+}
+
+{ find_all_qitems
+
+	local L_IDX game.script.iteration
+	
+	local L_FIND_ITEM $get_arrayfind(ARRAY_QUEST_ITEMS,QITEM_NAME)
+	
+	if ( L_FIND_ITEM > -1 )
+	{
+		array.del ARRAY_QUEST_ITEMS L_FIND_ITEM
+		callexternal QITEM_CALLER ext_receive_quest_item QITEM_NAME
+	}
+	else
+	{
+		exitevent
+	}
+}
+
+{ ext_dump_quest_items //Dumps all qitems to the console
+	calleventloop $get_array_amt(ARRAY_QUEST_ITEMS) ext_dump_quest_items_loop
+}
+
+{ ext_dump_quest_items_loop
+	dbg $get_array(ARRAY_QUEST_ITEMS,game.script.iteration)
+}
+
+
