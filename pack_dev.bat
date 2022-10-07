@@ -13,9 +13,9 @@ echo { >beta_date.script
 echo 	const BETA_TIMESTAMP "%date%" >>beta_date.script
 echo } >>beta_date.script
 echo Compiling...
-"../ScriptPack.exe"
+cd ../
+cmd /k scriptpack.exe -ve
 move sc.dll "..\"
-cd ..
 echo completed %date% %time%
 
 goto :end
