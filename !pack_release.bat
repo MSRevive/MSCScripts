@@ -15,7 +15,6 @@ set script_path=scripts
 title Packing TEST SC.DLL %date% %time%
 echo.
 echo.
-echo.
 
 echo.
 echo ====================== Setting time stamp... 
