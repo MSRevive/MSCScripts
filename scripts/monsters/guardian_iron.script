@@ -43,6 +43,7 @@
 	setvard NPC_NO_ATTACK 1
 	if ( $lcase(game.map.name) contains shad_pal )
 	{
+		setvard NPC_IS_BOSS 1
 		setvard NPC_GIVE_EXP 10000
 	}
 	else
@@ -55,6 +56,13 @@
 	setvard ATTACK_HITRANGE 300
 
 	//custom stats
+	const GUARDIAN_TYPE 1
+	const GUARDIAN_BEAM_SWORD 1
+	const DMG_ELEF_TYPE lightning_effect
+	const PITCH_SWORD_OFF 100
+	const FREQ_CL_REFRESH 30.0
+	setvard GAME_PUSH_RATIO 0.25
+
 	const MAX_CHARGE_LEVEL 50
 	const CHARGE_DROP_RATE 1.0
 	const GUARDIAN_CL_SCRIPT monsters/guardian_iron_cl
@@ -122,7 +130,12 @@
 
 //======================= INIT
 
-{ [shared] npc_spawn
+{ npc_spawn
+	callevent guardian_spawn
+	catchspeech say_robocop robocop
+}
+
+{ guardian_spawn
 	name an|Iron Guardian
 	hp 10000
 	setmodel monsters/guardian.mdl
@@ -156,8 +169,7 @@
 	setvard CHARGE_LEVEL MAX_CHARGE_LEVEL
 	setvard ANIM_RATE 1.0
 
-	clientevent new all GUARDIAN_CL_SCRIPT $get(ent_me,index)
-	setvard CL_SCRIPT_IDX game.script.last_sent_id
+	callevent refresh_fx
 
 	callevent 0.01 beam_init
 }
@@ -266,7 +278,7 @@
 	playsound 0 10 SOUND_REACH
 	clientevent update all CL_SCRIPT_IDX grab_fx $get(REACH_TARGET,index)
 	setvard ANIM_ATTACK ANIM_ATTACK1
-	dodamage REACH_TARGET 1024 DMG_REACH 100% lightning_effect
+	dodamage REACH_TARGET 1024 DMG_REACH 100% DMG_ELEF_TYPE
 	if $get_takedmg(REACH_TARGET,lightning) < 0.9
 	applyeffect REACH_TARGET effects/effect_shock_dmg 5.0 $get(ent_me,id) DOT_REACH
 	addvelocity REACH_TARGET $relvel(0,-3000,110)
@@ -337,7 +349,7 @@
 { melee_attack
 	setvard IN_SWING 0
 	playsound 0 10 SOUND_SWING
-	dodamage $get(ent_me,attachpos,1) SWIPE_AOE DMG_SWING_ZAP 100% 0 reflective lightning_effect
+	dodamage $get(ent_me,attachpos,1) SWIPE_AOE DMG_SWING_ZAP 100% 0 reflective DMG_ELEF_TYPE
 	dodamage $get(ent_me,attachpos,1) SWIPE_AOE DMG_SWING_BLADE 100% 0 reflective slash
 }
 
@@ -349,7 +361,7 @@
 		effect glow ent_me (0,255,0) 64 1 1
 		if ( $get(ent_me,hp) < $get(ent_me,maxhp) ) givehp PARAM2
 		setdmg dmg 0
-		returndata 0
+		return 0
 		
 		//player just recharged your batteries
 		setvard CHARGE_LEVEL MAX_CHARGE_LEVEL
@@ -393,6 +405,11 @@
 	add AS_ATTACKING 5.0
 	setmovedest NPCATK_TARGET 9999
 	callevent do_intro
+
+	if ( CL_SCRIPT_IDX > -1 )
+	{
+		callevent refresh_fx
+	}
 }
 
 { cycle_down
@@ -406,6 +423,19 @@
 }
 
 { npcatk_hunt
+
+	if ( $get(ent_me,isalive) )
+	{
+		if ( game.time > NEXT_CL_REFRESH ) callevent refresh_fx
+		if ROBOCOP_MODE
+		if game.time > NEXT_ROBOCOP_SOUND
+		setvard NEXT_ROBOCOP_SOUND game.time
+		add NEXT_ROBOCOP_SOUND $randf(3.0,10.0)
+		if ( ROBOCOP_IDX > ROBOCOP_NSOUNDS ) setvard ROBOCOP_IDX 0
+		playsound 0 10 $get_array(ROBOCOP_ARRAY,ROBOCOP_IDX)
+		add ROBOCOP_IDX 1
+	}
+
 	if !SUSPEND_AI
 	if !ATTEMPTING_RECHARGE
 	if !DOING_RECHARGE
@@ -479,6 +509,7 @@
 
 	callevent npcatk_suspend_ai
 	setvard ATTEMPTING_RECHARGE 0
+	callevent refresh_fx
 	callevent do_recharge_fx
 
 //Old buggy version
@@ -646,7 +677,7 @@
 	setvard SWORD_STATE 1
 	callevent sword_flicker_loop
 	playsound 0 10 SOUND_SWORD_DRAW
-	svplaysound 1 5 SOUND_SWORD_IDLE
+	if ( SOUND_SWORD_IDLE isnot none) svplaysound 1 5 SOUND_SWORD_IDLE
 	setvard NPC_NO_ATTACK 0
 }
 
@@ -654,6 +685,7 @@
 	if ( FLICKER_IN_COUNT == 0 )
 	{
 		setmodelbody 1 SWORD_STATE
+		if GUARDIAN_BEAM_SWORD
 		if ( SWORD_STATE )
 		{
 			effect beam update SWORD_BEAM brightness 200
@@ -687,16 +719,19 @@
 	setvard FLICKER_DELAY 0
 	setvard FLICKER_MODE 1
 	callevent sword_flicker_loop
-	playsound 0 10 SOUND_SWORD_OFF
-	svplaysound 1 0 SOUND_SWORD_IDLE
+	playsound 0 10 SOUND_SWORD_OFF 0.8 PITCH_SWORD_OFF
+	if ( SOUND_SWORD_IDLE isnot none ) svplaysound 1 0 SOUND_SWORD_IDLE
 	clientevent update all CL_SCRIPT_IDX sword_flicker_out
 }
 
 { sword_off_instant //for death
 	clientevent update all CL_SCRIPT_IDX sword_flicker_out
-	effect beam update SWORD_BEAM brightness 0
-	effect beam update SWORD_BEAM remove 0.1
-	svplaysound 1 0 SOUND_SWORD_IDLE
+	if ( GUARDIAN_BEAM_SWORD )
+	{
+		effect beam update SWORD_BEAM brightness 0
+		effect beam update SWORD_BEAM remove 0.1
+	}
+	if ( SOUND_SWORD_IDLE isnot none ) svplaysound 1 0 SOUND_SWORD_IDLE
 	setmodelbody 1 0
 	setvard SWORD_STATE 0
 }
@@ -743,18 +778,20 @@ repeatdelay CHARGE_DROP_RATE
 }
 
 //======================= CLIENT FX REFRESH
-{
-repeatdelay 10.0
-
-	if !DOING_RECHARGE //dont refresh during recharge FX
-	if $get(ent_me,isalive)
-	callevent refresh_fx
-}
+//{
+//repeatdelay 10.0
+//
+//	if !DOING_RECHARGE //dont refresh during recharge FX
+//	if $get(ent_me,isalive)
+//	callevent refresh_fx
+//}
 
 { refresh_fx
-	clientevent update all CL_SCRIPT_IDX remove_fx
+	setvard NEXT_CL_REFRESH game.time
+	add NEXT_CL_REFRESH FREQ_CL_REFRESH
 
-	clientevent new all GUARDIAN_CL_SCRIPT $get(ent_me,index) 1 SWORD_STATE
+	clientevent update all CL_SCRIPT_IDX end_fx
+	clientevent new all GUARDIAN_CL_SCRIPT $get(ent_me,index) 1 SWORD_STATE FREQ_CL_REFRESH
 	setvard CL_SCRIPT_IDX game.script.last_sent_id
 }
 
@@ -833,3 +870,34 @@ repeatdelay 5.0
 	if game.time > OVERRIDE_SUSPEND_AI
 	callevent npcatk_resume_ai
 }
+
+{ say_robocop
+	if !ROBOCOP_MODE
+	setvard ROBOCOP_MODE 1
+	playmp3 all 1:05 robocop_remix.mp3
+	array.create ROBOCOP_ARRAY
+	array.add ROBOCOP_ARRAY monsters/guardian/robocop_comequietortrouble.wav
+	array.add ROBOCOP_ARRAY monsters/guardian/robocop_deadoralive.wav
+	array.add ROBOCOP_ARRAY monsters/guardian/robocop_robocop_arrest.wav
+	array.add ROBOCOP_ARRAY monsters/guardian/robocop_dropit.wav
+	array.add ROBOCOP_ARRAY monsters/guardian/robocop_intro.wav
+	array.add ROBOCOP_ARRAY monsters/guardian/robocop_lookingforme.wav
+	array.add ROBOCOP_ARRAY monsters/guardian/robocop_miranda.wav
+	array.add ROBOCOP_ARRAY monsters/guardian/robocop_drop_arrest.wav
+	array.add ROBOCOP_ARRAY monsters/guardian/robocop_stayoutoftrouble.wav
+	array.add ROBOCOP_ARRAY monsters/guardian/robocop_thankyou_gnight.wav
+	array.add ROBOCOP_ARRAY monsters/guardian/robocop_youareunderarrest1.wav
+	array.add ROBOCOP_ARRAY monsters/guardian/robocop_youarewantedformurder.wav
+	array.add ROBOCOP_ARRAY monsters/guardian/robocop_yourmovecreep.wav
+	setvard ROBOCOP_NSOUNDS $get_array_amt(ROBOCOP_ARRAY)
+	setvard ROBOCOP_IDX 0
+	subtract ROBOCOP_NSOUNDS 1
+	setvard NPC_FIGHTS_NPCS 1
+	if ( G_DEVELOPER_MODE )
+	{
+		race human
+		setvard NPC_NO_PLAYER_DMG 1
+	}
+}
+
+//. createdyn 0 events "set_summon_circle;say_robocop"

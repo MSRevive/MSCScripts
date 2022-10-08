@@ -112,6 +112,11 @@
 	callevent do_intro
 }
 
+{ stop_circle
+	if ( CIRCLE_ACTIVE ) setidleanim ANIM_IDLE
+	setvard CIRCLE_ACTIVE 0
+}
+
 { do_intro
 	setvard CHAT_TEMP_NO_AUTO_FACE 1
 	setvard CIRCLE_ACTIVE 1
@@ -120,7 +125,7 @@
 }
 
 { do_intro2
-	setvard CIRCLE_ACTIVE 0
+	callevent stop_circle
 	playanim break
 	setmovedest LOCKED_PLAYER 32
 	callevent chat_now "Oh, sorry..." 2.0 ANIM_BLUSH do_intro3 add_to_que sound:voices/m2_quest/sylphiel_hi.wav
@@ -170,7 +175,7 @@
 
 	if ( CIRCLE_ACTIVE )
 	{
-		setvard CIRCLE_ACTIVE 0
+		callevent stop_circle
 		setvard NEXT_PACE game.time
 		add NEXT_PACE 30.0
 	}
@@ -184,7 +189,7 @@
 
 	if ( SOUP_READY )
 	{
-		setvard CIRCLE_ACTIVE 0
+		callevent stop_circle
 		local L_PLR_INDEX $get(PARAM1,index)
 		dbg game_menu_getoptions L_PLR_INDEX vs SOUP_LIST vs $get_find_token(SOUP_LIST,L_PLR_INDEX)
 		if $get_find_token(SOUP_LIST,L_PLR_INDEX) == -1
@@ -196,7 +201,7 @@
 
 	if ( SECOND_QUEST_READY )
 	{
-		setvard CIRCLE_ACTIVE 0
+		callevent stop_circle
 		local reg.mitem.title 	"One other thing?"
 		local reg.mitem.type 	callback
 		local reg.mitem.callback menu_help
@@ -380,28 +385,23 @@
 
 	setvard QUEST_PLAYER PARAM1
 
-	setvard QUEST_ITEM_SEARCH QCODE_APPLE
-	calleventloop MAX_APPLE check_quest_items
+	callevent check_quest_items QCODE_APPLE
 
-	setvard QUEST_ITEM_SEARCH QCODE_SALT
-	calleventloop MAX_SALT check_quest_items
+	callevent check_quest_items QCODE_SALT
 
-	setvard QUEST_ITEM_SEARCH QCODE_PEPPER
-	calleventloop MAX_PEPPER check_quest_items
+	callevent check_quest_items QCODE_PEPPER
 
-	setvard QUEST_ITEM_SEARCH QCODE_MEAD
-	calleventloop MAX_MEAD check_quest_items
+	callevent check_quest_items QCODE_MEAD
 
-	setvard QUEST_ITEM_SEARCH QCODE_LADEL
-	calleventloop MAX_LADEL check_quest_items
+	callevent check_quest_items QCODE_LADEL
 
 	//check if quest complete
 	local L_QUEST_COMPLETE 1
-	if ( COUNT_APPLE <  MAX_APPLE ) local L_QUEST_COMPLETE 0
-	if ( COUNT_SALT <  MAX_SALT ) local L_QUEST_COMPLETE 0
-	if ( COUNT_PEPPER <  MAX_PEPPER ) local L_QUEST_COMPLETE 0
-	if ( COUNT_MEAD <  MAX_MEAD ) local L_QUEST_COMPLETE 0
-	if ( COUNT_LADEL <  MAX_LADEL ) local L_QUEST_COMPLETE 0
+	if ( COUNT_APPLE < MAX_APPLE ) local L_QUEST_COMPLETE 0
+	if ( COUNT_SALT < MAX_SALT ) local L_QUEST_COMPLETE 0
+	if ( COUNT_PEPPER < MAX_PEPPER ) local L_QUEST_COMPLETE 0
+	if ( COUNT_MEAD < MAX_MEAD ) local L_QUEST_COMPLETE 0
+	if ( COUNT_LADEL < MAX_LADEL ) local L_QUEST_COMPLETE 0
 
 	if ( DO_THANK )
 	{
@@ -434,15 +434,16 @@
 	if L_QUEST_COMPLETE
 	setvard QUEST_COMPLETE 1
 	setvard CHECK_PACING 0
-	setvard CIRCLE_ACTIVE 0
+	callevent stop_circle
 	setidleanim ANIM_IDLE
 	callevent 1.0 do_soup
 
 	//close menu here via clientcmd
 }
 
-{ check_quest_items
-	callexternal QUEST_PLAYER ext_check_quest_item QUEST_ITEM_SEARCH MY_ID
+{ check_quest_items //PARAM1 = qitem code
+	local L_CODE PARAM1
+	callexternal GAME_MASTER ext_check_quest_item L_CODE MY_ID
 }
 
 { ext_receive_quest_item //<item_code>
@@ -452,16 +453,6 @@
 	if ( PARAM1 equals QCODE_MEAD ) add COUNT_MEAD 1
 	if ( PARAM1 equals QCODE_LADEL ) add COUNT_LADEL 1
 	setvard DO_THANK 1
-}
-
-{ check_quest_data //<qitem_code>
-	setvard QUEST_TAG PARAM1
-
-	local QUEST_BANK q
-	stradd QUEST_BANK $int(game.script.iteration)
-	setvard CUR_QUEST_BANK $get_quest_data(QUEST_PLAYER,QUEST_BANK)
-	if CUR_QUEST_BANK isnot 0
-	calleventloop $get_token_amt(CUR_QUEST_BANK) check_quest_bank
 }
 
 { do_soup
@@ -640,7 +631,7 @@ repeatdelay 5.0
 	if $cansee(enemy)
 	setvard NPCATK_TARGET $get(ent_lastseen,id)
 	if $get(NPCATK_TARGET,range) < 128
-	setvard CIRCLE_ACTIVE 0
+	callevent stop_circle
 	setvard NEXT_PACE game.time
 	add NEXT_PACE 30.0
 	setmovedest NPCATK_TARGET 9999
@@ -686,13 +677,7 @@ repeatdelay 5.0
 	setvard ALL_QUESTS_DONE 1
 }
 
-{ [server] bd_debug  //<print_var> <property_printvar> <extra> <extra> <caller_id>
-	//tdebug/tdebugt
-	saytextrange 2048
-	saytext var PARAM1 prop PARAM2 = $get(PARAM1,PARAM2)
-	consolemsg PARAM5 $get(ent_me,name) reports: var PARAM1 pvar $get(PARAM1,PARAM2)
-	dbg PARAM5 $get(ent_me,name) reports: var PARAM1 pvar $get(PARAM1,PARAM2)
-}
+#include [server] monsters/debug
 
 { npc_suicide
 	if ( PARAM1 !equals only_bad ) deleteent ent_me

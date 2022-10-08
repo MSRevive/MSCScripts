@@ -122,11 +122,15 @@
 	setmodel MONSTER_MODEL
 	setmoveanim ANIM_WALK
 
-	if ( $lcase(game.map.name) equals 'the_wall' ) setvard BEAM_FREQ 15.0
+	if ( $lcase(game.map.name) startswith 'the_wall' ) setvard BEAM_FREQ 15.0
 
 	setvard PROJECTILE_AMMO MAX_PROJECTILE_AMMO
 
 	setvard HP_STORAGE game.monster.hp
+
+	setvard NEXT_PROJECTILE game.time
+	add NEXT_PROJECTILE BEAM_FREQ
+
 
 	callevent 1.0 post_spawn
 }
@@ -136,9 +140,8 @@
 	takedmg holy 0.0 //set by race in base_npc - this overrides
 }
 
-{ npcatk_validatetarget //first spot
+{ npc_targetsighted //first spot
 
-	if $get(PARAM1,isplayer)
 	if !DID_WARCRY
 
 	////dbg temp Spotted Target $get(NPCATK_TARGET,name)
@@ -146,6 +149,10 @@
 	playsound 0 10 SOUND_WARCRY
 	setvard DID_WARCRY 1	
 	setvard FIRST_ATTACK 1
+	setvard NEXT_PROJECTILE game.time
+	add NEXT_PROJECTILE 1.0
+	setvard AS_ATTACKING game.time
+	add AS_ATTACKING 5.0
 }
 
 { my_target_died
@@ -159,14 +166,16 @@
 	local RAND_VICT $rand(1,2)
 	if ( RAND_VICT == 1 ) setvard ANIM_VICTORY ANIM_VICTORY1
 	if ( RAND_VICT == 2 ) setvard ANIM_VICTORY ANIM_VICTORY2
-	playanim critical ANIM_VICTORY
+	playanim once ANIM_VICTORY
 	playrandomsound 0 10 SOUND_SEARCH1 SOUND_SEARCH2 SOUND_SEARCH3
 }
 
 { npcatk_hunt
 
+	if !SUSPEND_AI
+	if !I_R_FROZEN
 	if NPCATK_TARGET isnot unset
-	if $get(NPCATK_TARGET,isplayer)
+	//if $get(NPCATK_TARGET,isplayer)
 
 	//lightning blast
 
@@ -176,33 +185,21 @@
 
 	if $cansee(NPCATK_TARGET)
 
-	if ( $get(NPCATK_TARGET,range) > ATTACK_HITRANGE )
+	if ( $get(NPCATK_TARGET,range) > ATTACK_RANGE )
 	{
-		setvard DID_FIRST_BEAM 1
 		setvard BEAM_TARGET NPCATK_TARGET
 		callevent npcatk_faceattacker
 		playsound 0 10 SOUND_BEAMCHARGE
 		setvard AS_ATTACKING game.time
-		add AS_ATTACKING 3.0
-		callevent npcatk_suspend_ai 2.0 //just in case SOMETHING stops it from completing anim
+		add AS_ATTACKING 5.0
+		callevent npcatk_suspend_movement ANIM_PROJECTILE 2.0 //just in case SOMETHING stops it from completing anim
 		playanim critical ANIM_PROJECTILE
 	}
 	else
 	{
-		if ( DID_FIRST_BEAM )
-		{
-			callevent reaver_beam_reposition
-		}
-		else
-		{
-			setvard DID_FIRST_BEAM 1
-			setvard BEAM_TARGET NPCATK_TARGET
-			callevent npcatk_faceattacker
-			playsound 0 10 SOUND_BEAMCHARGE
-			playanim critical ANIM_PROJECTILE
-			setvard AS_ATTACKING game.time
-			callevent npcatk_suspend_ai 2.0 //just in case SOMETHING stops it from completing anim
-		}
+		callevent reaver_beam_reposition
+		setvard NEXT_PROJECTILE game.time
+		add NEXT_PROJECTILE 3.0
 	}
 }
 
@@ -243,7 +240,7 @@
 
 { reaver_beam_reposition
 
-	callevent npcatk_flee NPCATK_TARGET 640 3.0	//run away to beam again
+	callevent npcatk_flee NPCATK_TARGET 640 2.0	//run away to beam again
 }
 
 { npc_selectattack
@@ -302,7 +299,7 @@
 
 	if !SEARCH_ANIM_DELAY
 	setvard NPC_DELAYING_UNSTUCK 10.0
-	playanim critical ANIM_SEARCH
+	playanim once ANIM_SEARCH
 	playrandomsound 0 10 SOUND_SEARCH1 SOUND_SEARCH2 SOUND_SEARCH3
 	setvard SEARCH_ANIM_DELAY 1
 	callevent 5.0 reset_search_anim
@@ -375,5 +372,5 @@
 	local RAND_VICT $rand(1,2)
 	if ( RAND_VICT == 1 ) setvard ANIM_VICTORY ANIM_VICTORY1
 	if ( RAND_VICT == 2 ) setvard ANIM_VICTORY ANIM_VICTORY2
-	playanim critical ANIM_VICTORY
+	playanim once ANIM_VICTORY
 }

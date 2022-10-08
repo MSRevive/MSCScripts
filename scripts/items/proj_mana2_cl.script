@@ -2,45 +2,26 @@
 	const FX_MODEL weapons/projectiles.mdl
 }
 
-{ client_activate //<1:origin> <2:angles> <3:vel> <4:owner> <5:ball_size> <6:projectile_idx>
+{ client_activate //origin angle velocity ballSize
 	setvard FX_ORIGIN PARAM1
-	setvard CUR_ANG PARAM2
-	setvard CUR_VEL PARAM3
-	setvard FX_SHOOTER_IDX PARAM4
-	setvard BALL_SIZE PARAM5
-	setvard PROJ_IDX PARAM6 //we're gonna use the projectile's idx to send the string back to it
-
-	setvard SCALE_SIZE BALL_SIZE
-	multiply SCALE_SIZE 0.75
-
-	setvard SCAN_SIZE 24
-	multiply SCAN_SIZE BALL_SIZE
-	if ( SCAN_SIZE < 48 ) setvard SCAN_SIZE 48
+	setvard FX_ANG PARAM2
+	setvard FX_VEL PARAM3
+	setvard BALL_SIZE PARAM4
 
 	setvard FX_ACTIVE 1
 
 	cleffect tempent model FX_MODEL FX_ORIGIN setup_arrow update_arrow cl_projectile_collide
 
-	//dbg client_activate scale SCALE_SIZE scan SCAN_SIZE vel CUR_VEL idx FX_SHOOTER_IDX org FX_ORIGIN ang CUR_ANG
-
-	dbg client_activate scan SCAN_SIZE
-
-	setvard PREV_TOKEN_SPHERE unset
-
 	callevent 10.0 end_fx //case we fail to collide/land for some reason
-
-	//dbg client_activate game.localplayer.index vs FX_SHOOTER_IDX
-
-	if game.localplayer.index equals FX_SHOOTER_IDX
-	callevent 0.1 scan_cycle	
 }
 
 { end_fx
 	setvard FX_ACTIVE 0
-	callevent 1.0 remove_fx
+	removescript
 }
 
 { remove_fx
+	setvard FX_ACTIVE 0
 	removescript
 }
 
@@ -55,63 +36,15 @@
 	}
 }
 
-{ scan_cycle
-	if game.localplayer.index equals FX_SHOOTER_IDX
-	if FX_ACTIVE
-	callevent 0.25 scan_cycle
-
-	setvard TOKEN_SPHERE ''
-	setvard TOKEN_SPHERE $getcl_tsphere(FX_CUR_ORG,SCAN_SIZE)
-
-	if TOKEN_SPHERE isnot none
-
-	//remove self and player
-	local L_REMOVE $get_find_token(TOKEN_SPHERE,FX_SHOOTER_IDX)
-	if ( L_REMOVE > -1 ) token.del TOKEN_SPHERE L_REMOVE
-	local L_REMOVE $get_find_token(TOKEN_SPHERE,PROJ_IDX)
-	if ( L_REMOVE > -1 ) token.del TOKEN_SPHERE L_REMOVE
-
-	if $len(TOKEN_SPHERE) > 1 //still got tokens
-
-	setvard FINAL_TOKENS ''
-	setvard FOUND_VALID 0
-	if ( PREV_TOKEN_SPHERE isnot unset )
-	{
-		calleventloop $get_token_amt(TOKEN_SPHERE) strip_prev_targets
-	}
-	else
-	{
-		setvard FOUND_VALID 1
-		setvard PREV_TOKEN_SPHERE TOKEN_SPHERE
-		setvard FINAL_TOKENS TOKEN_SPHERE
-	}
-
-	if FOUND_VALID
-	//send targets to player's server script
-	dbg *** scan_cycle FINAL_TOKENS vs PREV_TOKEN_SPHERE
-
-	cleffect ce player ext_proj_mana_cl $quote(FINAL_TOKENS) PROJ_IDX x
-}
-
-{ strip_prev_targets
-	local CUR_TARG $get_token(TOKEN_SPHERE,game.script.iteration)
-	if ( $get_find_token(PREV_TOKEN_SPHERE,CUR_TARG) == -1 )
-	{
-		setvard FOUND_VALID 1
-		token.add FINAL_TOKENS CUR_TARG
-		token.add PREV_TOKEN_SPHERE CUR_TARG
-	}
-}
-
 { setup_arrow
 
 	cleffect tempent set_current_prop origin FX_ORIGIN
 	cleffect tempent set_current_prop bouncefactor 0
-	cleffect tempent set_current_prop death_delay 20.0
-	cleffect tempent set_current_prop scale SCALE_SIZE
+	cleffect tempent set_current_prop death_delay 10.0
+	cleffect tempent set_current_prop scale $math(multiply,BALL_SIZE,0.75)
 	cleffect tempent set_current_prop gravity 0
-	cleffect tempent set_current_prop angles CUR_ANG
-	cleffect tempent set_current_prop velocity CUR_VEL
+	cleffect tempent set_current_prop angles FX_ANG
+	cleffect tempent set_current_prop velocity FX_VEL
 	cleffect tempent set_current_prop collide world;die
 	cleffect tempent set_current_prop body 	13
 	cleffect tempent set_current_prop framerate 1.0

@@ -17,7 +17,7 @@
 //npcatk_flank - flanks random	pos around target (iffy)
 //npcatk_find_distant - find most distant player target (stores in: NPC_MOST_DISTANT)
 //bm_gold_spew //PARAM1=gold_per_bag PARAM2=bags_per_player PARAM3=dist_from_mon PARAM4=min#bags PARAM5 max#bags
-//debug_beam - simplified, point-based beam drawing for debuggary
+//debug_beam - simplified, point-based beam drawing for debuggary (moved to player/externals->ext_debug_beam)
 //npcatk_suspend_movement //<anim> [duration] suspends movement (but not AI) and loops anim until...
 //npcatk_resume_movement //...is called - useful for spell casting and the like
 
@@ -109,6 +109,19 @@
 }
 
 { game_spawn
+	if ( $get(GAME_MASTER,scriptvar,'GM_DISABLE_SPAWNS') )
+	{
+		//allow suspension of spawns
+		setprop ent_me rendermode 5
+		setprop ent_me renderamt 0
+		setorigin ent_me $vec(20000,10000,0)
+		callevent npcatk_suspend_ai
+		setvard NPC_SILENT_SUICIDE 1
+		setvard NPC_INVISIBLE_SUICIDE 1
+		setvard NPC_NO_COUNT 1
+		callevent npc_suicide
+	}
+
 	setvard NPC_SPAWN_TIME game.time
 
 	if ( G_SIEGE_MAP )
@@ -162,6 +175,15 @@
 }
 
 { npc_post_spawn //this was setup before I realized there was a game_postspawn function - this happens 1.0 seconds after npc_spawn, so still useful
+
+	if ( NPC_ALLY_RESPONSE_RANGE equals 'NPC_ALLY_RESPONSE_RANGE' )
+	{
+		setvard NPC_ALLY_RESPONSE_RANGE game.monster.maxhp
+		local L_NPC_ALLY_RANGE_RATIO NPC_ALLY_RESPONSE_RANGE
+		if ( L_NPC_ALLY_RANGE_RATIO > 1000 ) local L_NPC_ALLY_RANGE_RATIO 1000
+		divide L_NPC_ALLY_RANGE_RATIO 1000
+		setvard NPC_ALLY_RESPONSE_RANGE $ratio(L_NPC_ALLY_RANGE_RATIO,256,1024)
+	}
 
 	if ( NPC_NO_AGRO )
 	{
@@ -309,7 +331,7 @@
 
 { [server] npcatk_get_postspawn_properties //moved from base_npc - called before npc_post_spawn
 
-	if ( !$get(GAME_MASTER,exists) ) createnpc game_master $vec(20000,-10000,-20000)
+	//if ( !$get(GAME_MASTER,exists) ) createnpc game_master $vec(20000,-10000,-20000)
 
 	if ( NPC_RANGED equals 'NPC_RANGED' )
 	{
@@ -419,6 +441,7 @@
 
 { game_damaged_other
 
+	setvard NPC_LAST_DAMAGED_OTHER_TIME game.time
 	setvard NPC_ATTACK_MISS 0
 }
 
@@ -462,20 +485,6 @@
 	//dbg temp reached flank pos
 	callevent npcatk_resume_ai
 }
-
-//{ debug_beam //<(start)> [end] [color]
-//	//if [end] not provided, draws a 64 unit beam straight up
-//	//if [color] no provided, beam is purple
-//
-//	if ( PARAM3 equals 'PARAM3' ) local BEAM_COLOR (255,0,255)
-//	if ( PARAM3 isnot 'PARAM3' ) local BEAM_COLOR PARAM3
-//	local BEAM_DURATION 1.0
-//	local BEAM_START PARAM1
-//	if ( PARAM2 equals 'PARAM2' ) local BEAM_END BEAM_START
-//	if ( PARAM2 isnot 'PARAM2' ) local BEAM_END PARAM2
-//	vectoradd BEAM_END $relpos($vec(0,0,0),$vec(0,0,64))
-//	effect beam point laserbeam.spr 20 BEAM_START BEAM_END BEAM_COLOR 255 0.7 BEAM_DURATION
-//}
 
 //{ npcatk_attackenemy //old AI
 //	callevent npcatk_check_miss
@@ -854,6 +863,15 @@
 
 	//new internalized parry system
 
+	if ( PARAM3 contains holy )
+	{
+		//with few exceptions, undeads struck by holy do not rise again
+		setvard SKEL_RESPAWN_TIMES 99
+		setvard MUMMY_LIVES 0
+	}
+
+	setvard NPC_LAST_DAMAGED_TIME game.time
+
 	local SINCE_SPAWN game.time
 	subtract SINCE_SPAWN NPC_SPAWN_TIME
 	if ( SINCE_SPAWN < 2.0 )
@@ -864,7 +882,7 @@
 		if BLOCK_PREMATURE_DAMAGE
 		setdmg dmg 0
 		setdmg hit 0
-		returndata 0
+		return 0
 	}
 
 	if ( NPC_NO_PLAYER_DMG )
@@ -874,7 +892,7 @@
 		if $get(PARAM1,isplayer)
 		setdmg dmg 0
 		setdmg hit 0
-		returndata 0
+		return 0
 	}
 
 	if MONSTER_PARRY > 0
@@ -892,7 +910,7 @@
 	if PARRY_ROLL > ACCU_ROLL
 	local ATTACKER_ID PARAM1
 	callevent game_parry ATTACKER_ID
-	returndata 0
+	return 0
 }
 
 { start_running //external/params call - start running when spawned
@@ -1047,7 +1065,7 @@
 		local IN_DMG PARAM2
 		multiply IN_DMG RESIST_AMT
 		setdmg dmg IN_DMG
-		returndata RESIST_AMT
+		return RESIST_AMT
 		if ( RESIST_AMT <= 0 ) infomsg PARAM1 "Useless..." "Your weapons and spells no longer have any affect."
 	}
 }
@@ -1086,7 +1104,12 @@
 { npcatk_settarget //<target> <debug> <debug>
 
 	if !NPC_ALERTED_ALL
-	if $get(PARAM1,isplayer)
+	if ( !NPC_FIGHTS_NPCS ) //dont alert allies for mob on mob action, unless killing mobs is your thing
+	{
+		if !$get(PARAM1,isplayer)
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
 	local OUT_PARM1 PARAM1
 	callevent npcatk_alert_all_allies OUT_PARM1
 }
@@ -1238,18 +1261,26 @@
 //JAN2010_26 - shared suspend movement functions
 { npcatk_suspend_movement //<idle_anim> [duration]
 
-	setvard NPC_MOVEMENT_SUSPENDED 1
-
 	roam 0
 	setmoveanim PARAM1
 	setidleanim PARAM1
-	setvard NPC_OLD_ANIM_RUN ANIM_RUN
-	setvard NPC_OLD_ANIM_WALK ANIM_WALK
-	setvard NPC_OLD_ANIM_IDLE ANIM_IDLE
+
+	if ( !NPC_MOVEMENT_SUSPENDED )
+	{
+		//case we get two requests
+		setvard NPC_OLD_ANIM_RUN ANIM_RUN
+		setvard NPC_OLD_ANIM_WALK ANIM_WALK
+		setvard NPC_OLD_ANIM_IDLE ANIM_IDLE
+		setvard OLD_NO_STUCK_CHECKS $int(NO_STUCK_CHECKS)
+		setvard NPC_OLD_ROAM $get(ent_me,roam)
+		dbg npcatk_suspend_movement oldroam NPC_OLD_ROAM
+	}
+
+	setvard NPC_MOVEMENT_SUSPENDED 1
+
 	setvard ANIM_RUN PARAM1
 	setvard ANIM_WALK PARAM1
 	setvard ANIM_IDLE PARAM1
-	setvard OLD_NO_STUCK_CHECKS $int(NO_STUCK_CHECKS)
 	setvard NO_STUCK_CHECKS 1
 
 	if ( PARAM2 startswith PARAM ) local EXIT_SUB 1
@@ -1264,7 +1295,7 @@
 
 	dbg npcatk_resume_movement
 
-	roam 1
+	roam NPC_OLD_ROAM
 	setvard ANIM_RUN NPC_OLD_ANIM_RUN
 	setvard ANIM_WALK NPC_OLD_ANIM_WALK
 	setvard ANIM_IDLE NPC_OLD_ANIM_IDLE
@@ -1340,36 +1371,47 @@
 //}
 
 { game_dodamage
+
+	if PARAM1
+
 	if ( NPC_DOT_POISON )
 	{
-		if PARAM1
 		local L_DOT $get(PARAM2,maxhp)
 		multiply L_DOT 0.05
 		multiply L_DOT NPC_DOT_POISON_RATIO
+
+		if ( $get(ent_me,dmgmulti) > 1 ) divide L_DOT $get(ent_me,dmgmulti)
+
 		applyeffect PARAM2 effects/effect_poison 10.0 $get(ent_me,id) L_DOT
 	}
 	if ( NPC_DOT_FIRE )
 	{
-		if PARAM1
 		local L_DOT $get(PARAM2,maxhp)
 		multiply L_DOT 0.15
 		multiply L_DOT NPC_DOT_FIRE_RATIO
+
+		if ( $get(ent_me,dmgmulti) > 1 ) divide L_DOT $get(ent_me,dmgmulti)
+
 		applyeffect PARAM2 effects/effect_burn 5.0 $get(ent_me,id) L_DOT
 	}
 	if ( NPC_DOT_COLD )
 	{
-		if PARAM1
 		local L_DOT $get(PARAM2,maxhp)
 		multiply L_DOT 0.05
 		multiply L_DOT NPC_DOT_COLD_RATIO
+
+		if ( $get(ent_me,dmgmulti) > 1 ) divide L_DOT $get(ent_me,dmgmulti)
+
 		applyeffect PARAM2 effects/effect_frostbite_dmg 5.0 $get(ent_me,id) L_DOT
 	}
 	if ( NPC_DOT_LIGHTNING )
 	{
-		if PARAM1
 		local L_DOT $get(PARAM2,maxhp)
 		multiply L_DOT 0.1
 		multiply L_DOT NPC_DOT_LIGHTNING_RATIO
+
+		if ( $get(ent_me,dmgmulti) > 1 ) divide L_DOT $get(ent_me,dmgmulti)
+
 		applyeffect PARAM2 effects/effect_shock_dmg 5.0 $get(ent_me,id) L_DOT
 	}
 }
@@ -1392,6 +1434,7 @@
 }
 
 { npcatk_suspend_ai
+	if !SUSPEND_AI
 	setvard NPC_LAST_SUSPEND_AI game.time
 	setvard NPC_RESUME_AI_TIME game.time
 	if ( PARAM1 isnot 'PARAM1' )
@@ -1406,6 +1449,7 @@
 }
 
 { npcatk_resume_ai
+	if SUSPEND_AI
 	setvard NPC_NEVER_RESUME 0
 }
 
@@ -1487,9 +1531,8 @@
 	if ( NPC_DO_SPAWN_SOUND ) playsound 0 10 magic/spawn_loud.wav
 }
 
-{ npcatk_handle_events
+{ npcatk_handle_postevents
 	//for param triggered events that happen a split second after spawn
-	dbg npcatk_handle_events NPC_SPRITE_IN
 	if ( NPC_SPRITE_IN == 1 )
 	{
 		callevent npcatk_fx_sprite_in1
@@ -1507,24 +1550,42 @@
 { cycle_down
 	if $get(ent_me,isalive)
 	dbg cycle_down PARAM1
-	callevent 0.5 npcatk_clear_music
+	if ( NPC_WAS_IN_BATTLE ) callevent 0.5 npcatk_clear_music
 	//callevent 3.0 npcatk_music_remove_calm
 }
 
 { npcatk_clear_music
 	if $get(ent_me,isalive)
 	dbg npcatk_clear_music
-	if NPC_WAS_IN_BATTLE 1
+	if NPC_WAS_IN_BATTLE
 	callexternal players ext_untargeted_by_mob $get(ent_me,id)
 }
 
 { game_death
 	if ( NPC_WAS_IN_BATTLE ) callexternal players ext_untargeted_by_mob $get(ent_me,id)
 	setvard NPC_PREV_TARGET unset //in case fake death
+
+	if ( NPC_DO_ON_DIE > 0 )
+	{
+		if ( NPC_SAY_ON_DIE isnot 'NPC_SAY_ON_DIE' )
+		{
+			subtract NPC_DO_ON_DIE 1
+			saytext NPC_SAY_ON_DIE
+		} 
+	}
 }
 
 //calm down if not seen or been near target for awhile
 { npc_targetsighted
+
+	if ( NPC_DO_ON_SPOT > 0 )
+	{
+		if ( NPC_SAY_ON_SPOT isnot 'NPC_SAY_ON_SPOT' )
+		{
+			subtract NPC_DO_ON_SPOT 1
+			saytext NPC_SAY_ON_SPOT
+		} 
+	}
 
 	//NOV2014_12 - moved music/target events here
 	if ( NEW_AI )

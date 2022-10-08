@@ -1,307 +1,326 @@
+//Rewriting a good portion of this. T'is an old script and thus was fucked in strange ways. //greatguys1@FEB2022
+
 //Thothie - Reduced level of Volcano to something obtainable
-//Thothie - No parameters other than owner are passing to this monster for some reason
-//This seems to be giving skill points - but to no paticular skill (keep leveling up null)
 //- (This script has been  effed with waaay too much. ^_^
-//PARAM1 = Owner, PARAM2 = Damage, PARAM3 = Duration
 //Volcano
+
 #scope server
 
 {
-	const VOLCANO_EXT_EVENT ext_volcano_hit
-	const AOE_DMG $get(MY_OWNER,skill.spellcasting.fire)
+	//const VOLCANO_EXT_EVENT ext_volcano_hit
 
-	setvard ANIM_DEATH down	//for base_npc
-	const SOUND_START	magic/volcano_start.wav
-	const SOUND_LOOP	magic/volcano_loop.wav
 	const MODEL_WORLD	misc/volcano.mdl
-	setvard LOOP_DELAY 0
+	setvard ANIM_DEATH down	//for base_npc
+	
+	const SOUND_SHOOT magic/flamelick_cast.wav
+	
+	const FIREBALL_FREQ 0.27
 
-  	precache misc/volcano.mdl
-	precache SOUND_START
-	precache SOUND_LOOP
-
-	const AOE_FREQ 2
+	const AOE_FREQ 1
 	const AOE_RADIUS 32
-
-	setvard I_DO_FIRE_DAMAGE 1 //allows monsters immune to fire to ignore fear radius
+	//setvard AOE_DMG $math(multiply,FIREBALL_DMG,0.12) //Now set in game_dynamically_created 
+	
+	const ANGLE_OFFSET 60 //Max angle offset the fireball can shoot
+	const FORCE_OFFSET 70 //Force of the projectile +/- a random range of this amount
 }
 
 { [shared]
-	const ROCK_START_HEIGHT 66
+
+	const ROCK_START_HEIGHT 40
 }
 
-//nclude monsters/base_npc
-#include monsters/summon/base_aoe
+{ game_precache
+
+	precache misc/volcano.mdl
+}
 
 { game_spawn
 
-   hp 1500
-   invincible 1 //screw it, it has 1500pts anyways - and ya don't want it to report attacks against itself
-   setsolid none //doesnt trap monsters/players inside of it
-   width 32
-   height 64
-   name A Volcano
-   roam 0
-   takedmg ice 2.0
-   takedmg fire 0.0
-   skilllevel 0
-   hearingsensitivity 0
-   setmodel MODEL_WORLD
-   blood none
-   setstat spellcasting 15 15 15
-   playanim hold up
-	setvard PLAYING_DEAD 1
-   callevent 2 volcano_start  		//Start erupting after a delay
-   effect screenshake $relpos(0,0,0) 50 10 6 512
-   playsound 0 7 SOUND_START
+	name "A|volcano"
+	hp 1500
+	invincible 1 //screw it, it has 1500pts anyways - and ya don't want it to report attacks against itself
+	race beloved
+	
+	width 32
+	height 64
+	setsolid none //doesnt trap monsters/players inside of it
+	
+	roam 0
+	hearingsensitivity 0
+	
+	setmodel MODEL_WORLD
+	playanim hold up
+	
+	callevent 2 volcano_start  		//Start erupting after a delay
+	effect screenshake $relpos(0,0,0) 50 10 6 512
 }
 
-{
-   eventname game_dynamically_created //PARAM1=owner PARAM2=IntendedDmg PARAM3=Duration
-
-	////dbg got p1 $get(PARAM1,name) p2 PARAM2 p3 PARAM3
+{ game_dynamically_created //PARAM1=owner PARAM2=IntendedDmg PARAM3=Duration
 
 	//please balance from magic hand end
-
-	setvard CAST_BY_PLAYER $get(PARAM1,isplayer) 
+	
+	setvard MY_OWNER PARAM1
+	setvard FIREBALL_DMG PARAM2
+	setvard AOE_DMG $math(multiply,FIREBALL_DMG,0.12) //Damage is based on a ratio of FIREBALL_DMG, which is got from a dynamic spawn param
+	setvard EFFECT_DURATION PARAM3
+	
+	setvard CAST_BY_PLAYER $get(MY_OWNER,isplayer) 
 
 	//spam control
-	if ( CAST_BY_PLAYER ) add FX_SPAMMERS 2	//this counts as 2, but has priority over other spammers
-   	////dbg Spammers FX_SPAMMERS Max MAX_FX_SPAMMERS
-
-
-	//setdmg
-	setvard DMG_HIGH PARAM2
-	setvard DMG_LOW DMG_HIGH
-	divide DMG_LOW 2
-	if ( DMG_LOW < 0.1 ) setvard DMG_LOW 0.1
-
-
-	setvard MY_OWNER PARAM1
-
-	local DMG_FIRE $get(MY_OWNER,skill.spellcasting.fire)
-
-	//setduration
-	setvard EFFECT_DURATION PARAM3
-	setvard CLIENT_DURATION EFFECT_DURATION
-	subtract CLIENT_DURATION 1 //ensures clients are done before fx is deleted
-
-
-	callevent EFFECT_DURATION volcano_death  	//Die after a delay
-	clientevent persist all $currentscript $get(ent_me,origin) CLIENT_DURATION $get(MY_OWNER,index) VOLCANO_EXT_EVENT
-	setvard VOLCANO_ID game.script.last_sent_id
-
-	if ( CAST_BY_PLAYER )
-	{
-		callexternal MY_OWNER ext_volcano_init AOE_DMG FIXED_VOLCANO
-	}
-
-   	//storeentity ent_expowner PARAM1	//Give any gained exp to the player (fails)
+	if ( CAST_BY_PLAYER ) add FX_SPAMMERS 1
+	
+	//Setup client fx
+	clientevent new all $currentscript $get(ent_me,index) EFFECT_DURATION
+	setvard FX_IDX game.script.last_sent_id
+	
+	callevent EFFECT_DURATION volcano_off  	//Die after a delay
 }
 
 // Start shooting
-{
-   eventname volcano_start
-   setvard ERUPTING 1
-   emitsound $get(ent_me,id) game.monster.origin 64 EFFECT_DURATION danger 128
-	callevent 1.0 aoe_loop
+{ volcano_start
+
+	setvard ERUPTING 1
+	//emitsound ent_me $get(ent_me,origin) 64 EFFECT_DURATION danger 128 //This causes the fear effect and is not fun.
+	
+	clientevent update all FX_IDX fx_start
+	
+	callevent aoe_loop
+	callevent fireball_loop
 }
 
 { aoe_loop
+
 	if ERUPTING
-	local L_DMG AOE_DMG
-	xdodamage $get(ent_me,origin) 128 L_DMG 0.01 MY_OWNER MY_OWNER spellcasting.fire fire
-	callevent 1.0 aoe_loop
+	
+	callevent func_rockspawn //return var: FUNC_ROCKSPAWN_ORIGIN
+	//<target|(src_origin)> <range|aoe|(dest_origin)|direct> <damage> <cth|fall_off> <attacker> <inflciter> <skill|none> <dmg_type> [flag_string]
+	xdodamage FUNC_ROCKSPAWN_ORIGIN 128 AOE_DMG 0.01 MY_OWNER $get(ent_me,id) spellcasting.fire fire "dmgevent:*volcano"
+	callevent AOE_FREQ aoe_loop
 }
 
-{
-   [client] repeatdelay 6
+{ fireball_loop
 
-	playsound CHAN_BODY 7 SOUND_LOOP
+	if ERUPTING
+	
+	callevent func_rockspawn //return var: FUNC_ROCKSPAWN_ORIGIN
+	local L_ORIGIN FUNC_ROCKSPAWN_ORIGIN
+	
+	local L_DIR L_ORIGIN
+	vectoradd L_DIR z 50
+	
+	//The "cone of fire" of the projectile works better for view angles. Distribution of the fireballs using "cof" is not even, so I made my own angle offsets.
+	vectoradd L_DIR x $math(multiply,ANGLE_OFFSET,$randf(-1,1))
+	vectoradd L_DIR y $math(multiply,ANGLE_OFFSET,$randf(-1,1))
+	
+	local L_FORCE 500
+	add L_FORCE $math(multiply,FORCE_OFFSET,$randf(-1,1))
+	
+	//<projectile scriptname> <view|(src_origin)> <target|(targ_origin)> <speed> <damage> <cof> <skill|none>
+	callexternal MY_OWNER ext_tossprojectile "proj_volcano" L_ORIGIN L_DIR L_FORCE FIREBALL_DMG 0 spellcasting.fire
+	
+	//<channel> <volume> <filename> [Attenuation:0.8] [Pitch:100] - plays a wave, use channel 0 for auto
+	playsound CHAN_WEAPON 4 SOUND_SHOOT 0.8
+	
+	callevent FIREBALL_FREQ fireball_loop
 }
 
-// Random shoot rock
-//{
-//   repeatdelay $randf(0.0,0.5)
-//   
-//   if ERUPTING
-//   callevent volcano_shoot
-//}
-//{
-//   repeatdelay $randf(0.0,0.5)
-//   
-//   if ERUPTING
-//   callevent volcano_shoot
-//}
+{ volcano_dodamage //PARAM1=hit:0|1 PARAM2=ent_hit PARAM3=(start) PARAM4=(end) PARAM5=DmgType PARAM6=DmgAmt
 
-// Shoot rock
-//{
-//   eventname volcano_shoot
-//
-//   setvar xangle $rand(50,90)
-//   setvar yangle $rand(-180,180)
-//   setangle view (xangle,yangle,0)
-//
-//   local ATTACK_DAMAGE $randf(DMG_LOW,DMG_HIGH)
-//   //dodamage $relpos(0,0,0) 128 ATTACK_DAMAGE 100% 0 //exploits
-//   tossprojectile view 500 0 0 proj_volcano $vec(0,0,ROCK_START_HEIGHT)
-//   clientevent update all_in_sight VOLCANO_ID volcono_shoot_rock $get(ent_lastprojectile,velocity) $get(ent_lastprojectile,gravity)
-//}
+	local L_TARGET PARAM2
+	local L_DMG PARAM6
+	
+	if PARAM1
+	if $get(L_TARGET,isalive)
+	if L_DMG > 0
+	
+	//Should match dot in items/proj_volcano
+	local L_DMG_FIRE $get(MY_OWNER,skill.spellcasting.fire)
+	multiply L_DMG_FIRE 0.5
+	applyeffect L_TARGET effects/effect_burn 5 MY_OWNER L_DMG_FIRE 1 0 spellcasting.fire
+}
+
+{ volcano_off
+
+	setvard ERUPTING 0
+	playanim hold down
+	callevent 4 volcano_die
+}
 
 // Fade out
-{
-   eventname volcano_death
+{ volcano_die
 
-   if ( CAST_BY_PLAYER ) subtract FX_SPAMMERS 2
-
-   //dbg Spammers FX_SPAMMERS Max MAX_FX_SPAMMERS
-
-   setvard ERUPTING 0
-
-   playanim hold down
-   callevent 3 volcano_fadeout
+	if ( CAST_BY_PLAYER ) subtract FX_SPAMMERS 1
+	clientevent update all FX_IDX fx_die
+	deleteent ent_me fade
 }
 
-{
-   eventname volcano_fadeout
-   playsound CHAN_BODY game.sound.silentvol SOUND_LOOP
-   deleteent ent_me fade
-}
 
 //Client-side
 //===========
 
-{  [client]
-  	const MODEL_WORLD      	weapons/projectiles.mdl
-  	const SPRITE_BURN 	fire1_fixed.spr
-	const LIGHT_RADIUS	64
-	const LIGHT_COLOR	(255,0,0)
-	const LIGHT_DURATION	0.8
+{ [client]
+  	const MODEL_WORLD "weapons/projectiles.mdl"
+  	const SPRITE_BURN "fire1_fixed.spr"
+	const SPRITE_SMOKE "rain_mist.spr"
+	const FLAME_CIRCLE_BODY 51
+	
+	const CHAN_VOLCANO 7
+	const SOUND_START "magic/volcano_start.wav"
+	const SOUND_LOOP "magic/volcano_loop.wav"
+	
+	const LIGHT_RADIUS 250
+	const LIGHT_COLOR "(255,100,100)"
 }
 
-{  [client] client_activate
+{ [client] client_activate //PARAM1 = idx, PARAM2 = duration
 
-	setvard local.cl.origin PARAM1
-	vectoradd local.cl.origin z ROCK_START_HEIGHT
-	local DIE_TIME PARAM2
-	callevent DIE_TIME volcano_done
-	incvar DIE_TIME 10	//Die 10 seconds late, so all rocks have chance to fall
-	callevent DIE_TIME volcano_die
+	setvard MODEL_IDX PARAM1
+	setvard FX_DURATION PARAM2
+	setvard FX_DELAY 0.5
+	
+	callevent FX_DURATION fx_end
+	
+	setvard FX_ACTIVE 0
+	
+	callevent func_rockspawn //return var: FUNC_ROCKSPAWN_ORIGIN
+	//Plays when volcano grows
+	sound.play3d SOUND_START 7 FUNC_ROCKSPAWN_ORIGIN 0.8 CHAN_VOLCANO
+}
 
-	setvard FX_OWNER PARAM3
+{ [client] fx_start //volcano started to shoot fireballs
+
 	setvard FX_ACTIVE 1
-	setvard FX_ORIGIN local.cl.origin
-	setvard FX_SV_EVENT PARAM4
-	callevent volcano_shoot_loop
+	setvard FX_DELAY 0.2
+	
+	cleffect tempent model MODEL_WORLD $getcl(MODEL_IDX,origin) setup_flame_circle update_flame_circle
+	
+	callevent func_rockspawn //return var: FUNC_ROCKSPAWN_ORIGIN
+	//- cleffect light <new|lightid> <origin> <radius> <(r,g,b)> <duration> ["entity"|"dark"]
+	cleffect light new FUNC_ROCKSPAWN_ORIGIN LIGHT_RADIUS LIGHT_COLOR FX_DURATION
+	
+	callevent 6 loop_sfx
 }
 
-{ [client] volcano_shoot_loop
-
+{ [client] loop_sfx
+	//repeatdelay 6
 	if FX_ACTIVE
-	callevent 0.1 volcano_shoot_loop
-
-	local xangle $randf(-50,-140)
-	local yangle $randf(-180,180)
-	local ROCK_ANGS $vec(xangle,yangle,0)
-
-	local ROCK_VEL $relvel(ROCK_ANGS,$vec(0,500,0)) 
-	callevent volcono_shoot_rock ROCK_VEL $randf(0.6,1.2)
-	//dodamage $relpos(0,0,0) 128 ATTACK_DAMAGE 100% 0 //exploits
-	//tossprojectile view 500 0 0 proj_volcano $vec(0,0,ROCK_START_HEIGHT)
-	//clientevent update all_in_sight VOLCANO_ID volcono_shoot_rock $get(ent_lastprojectile,velocity) $get(ent_lastprojectile,gravity)
+	callevent func_rockspawn //return var: FUNC_ROCKSPAWN_ORIGIN
+	sound.play3d SOUND_LOOP 7 FUNC_ROCKSPAWN_ORIGIN 0.8 CHAN_VOLCANO
+	callevent 6 loop_sfx
 }
 
-{ [client] volcano_done
-	setvard FX_ACTIVE 0
-}
-
-{  [client] volcano_die
-
-	setvard FX_ACTIVE 0
-	playsound CHAN_BODY game.sound.silentvol SOUND_LOOP
-	removescript
-}
-
-{  [client] volcono_shoot_rock
-
-	setvard local.cl.velocity PARAM1
-	setvard local.cl.gravity PARAM2
-	cleffect tempent model MODEL_WORLD local.cl.origin volcano_rock_create volcano_rock_update volcano_rock_collide
-	calleventloop 4 makefire_loop local.cl.origin
-}
-
-{  [client] volcano_rock_create
-
-	cleffect tempent set_current_prop death_delay 	10
-	cleffect tempent set_current_prop velocity 	local.cl.velocity
-	cleffect tempent set_current_prop bouncefactor 	0
-	cleffect tempent set_current_prop gravity 	local.cl.gravity
-	cleffect tempent set_current_prop collide 	all
-	cleffect tempent set_current_prop renderfx 	glow
-	cleffect tempent set_current_prop renderamt 	100
-	cleffect tempent set_current_prop rendercolor 	(255,0,0)
-    cleffect light new game.tempent.origin LIGHT_RADIUS LIGHT_COLOR LIGHT_DURATION
-	cleffect tempent set_current_prop iuser1 	game.script.last_light_id
-	//cleffect tempent set_current_prop fuser1 	game.time
-}
-{  [client] volcano_rock_update
-
-	cleffect light game.tempent.iuser1 game.tempent.origin LIGHT_RADIUS LIGHT_COLOR LIGHT_DURATION
-}
-{  [client] volcano_rock_collide
-
-	if ( PARAM1 isnot world ) local L_HIT_DIRECT 1
-
-	cleffect tempent set_current_prop sprite 	SPRITE_BURN
-	cleffect tempent set_current_prop rendermode 	add
-	cleffect tempent set_current_prop renderamt 	255
-	cleffect tempent set_current_prop death_delay 	1
-	cleffect tempent set_current_prop scale 	0.5
-	cleffect tempent set_current_prop collide 	all
-	cleffect tempent set_current_prop framerate	30
-	cleffect tempent set_current_prop frames	23
-
-	if game.localplayer.index equals FX_OWNER
-	if !DELAY_CE //so we dont call too many externals against the player at once
-	setvard DELAY_CE 1
-	callevent 0.1 reset_delay_ce
-	if ( HIT_DIRECT )
+{ [client]
+	repeatdelay FX_DELAY
+	if ( FX_ACTIVE )
 	{
-		cleffect ce player FX_SV_EVENT $quote(game.tempent.origin) x
+		callevent func_rockspawn //return var: FUNC_ROCKSPAWN_ORIGIN
+		cleffect tempent sprite SPRITE_BURN FUNC_ROCKSPAWN_ORIGIN volcano_fire_create
 	}
 	else
 	{
-		local L_FX_SV_EVENT FX_SV_EVENT
-		stradd L_FX_SV_EVENT _single
-		cleffect ce player L_FX_SV_EVENT $int(PARAM1) x
+		callevent func_rockspawn //return var: FUNC_ROCKSPAWN_ORIGIN
+		cleffect tempent sprite SPRITE_SMOKE FUNC_ROCKSPAWN_ORIGIN setup_smoke update_smoke
 	}
 }
 
-{ reset_delay_ce
-	setvard DELAY_CE 0
-}
-
-{  [client] makefire_loop
-
-	cleffect tempent sprite SPRITE_BURN PARAM1 volcano_fire_create
-}
 {  [client] volcano_fire_create
 
-	cleffect tempent set_current_prop death_delay 	2
-	cleffect tempent set_current_prop velocity 	$vec($randf(-200,200),$randf(-200,200),$randf(-200,200))
+	cleffect tempent set_current_prop death_delay 	1.7
+	cleffect tempent set_current_prop velocity 	$vec($randf(-40,40),$randf(-40,40),$randf(230,270))
 	cleffect tempent set_current_prop bouncefactor 	5
 	cleffect tempent set_current_prop scale 	0.5
-	cleffect tempent set_current_prop gravity 	$randf(0.6,1.0)
+	cleffect tempent set_current_prop gravity 	0.5
 	cleffect tempent set_current_prop collide 	all;die
 	cleffect tempent set_current_prop framerate	30
 	cleffect tempent set_current_prop frames	23
 }
 
-{ [server] set_fire_to
-	//dbg volc_extset_fire_to PARAM1
+{ [client] setup_flame_circle
+	cleffect tempent set_current_prop death_delay FX_DURATION
+	cleffect tempent set_current_prop body FLAME_CIRCLE_BODY
+	cleffect tempent set_current_prop framerate 0.5
+	cleffect tempent set_current_prop sequence 8
+	cleffect tempent set_current_prop rendermode add
+	cleffect tempent set_current_prop renderamt 100
+	cleffect tempent set_current_prop scale 7
+	cleffect tempent set_current_prop gravity 0
+	cleffect tempent set_current_prop collide none
+	cleffect tempent set_current_prop frames 11
+	cleffect tempent set_current_prop angles $vec(0,90,0)
+	cleffect tempent set_current_prop velocity $vec(0,0,0)
 }
 
-//{ apply_aoe_effect
-//
-//	applyeffect PARAM1 effects/effect_burn 5 MY_OWNER MY_BASE_DAMAGE 1 0 spellcasting.fire
-//}
+{ [client] update_flame_circle
+	if ( FX_ACTIVE )
+	{
+		cleffect tempent set_current_prop origin $getcl(MODEL_IDX,origin)
+	}
+	else
+	{
+		cleffect tempent set_current_prop origin $vec(10000,10000,10000)
+	}
+}
+
+{ [client] setup_smoke
+	cleffect tempent set_current_prop death_delay 4
+	//cleffect tempent set_current_prop fadeout lifetime
+	cleffect tempent set_current_prop framerate $rand(1,2)
+	cleffect tempent set_current_prop frames 17
+	cleffect tempent set_current_prop bouncefactor 0
+	cleffect tempent set_current_prop scale 0.1
+	cleffect tempent set_current_prop rendermode add
+	cleffect tempent set_current_prop renderamt 240
+	cleffect tempent set_current_prop rendercolor (255,170,170)
+	cleffect tempent set_current_prop gravity -0.055
+	cleffect tempent set_current_prop collide "world;die"
+}
+
+{ [client] update_smoke
+
+	if ( $math(subtract,game.time,game.tempent.fuser1) >= 0.1 ) //seconds
+	{
+		local L_SCALE $math(add,game.tempent.scale,0.04)
+		local L_VEL game.tempent.velocity
+		vectoradd L_VEL y $math(subtract,game.tempent.velocity,1)
+		vectoradd L_VEL x $math(add,game.tempent.velocity,0.3)
+		
+		
+		cleffect tempent set_current_prop scale L_SCALE
+		cleffect tempent set_current_prop velocity L_VEL
+		cleffect tempent set_current_prop fuser1 game.time
+	}
+}
+
+{ [client] fx_end //Stopped shooting fireballs
+
+	setvard FX_ACTIVE 0
+	setvard FX_DELAY 0.5
+	callevent func_rockspawn //return var: FUNC_ROCKSPAWN_ORIGIN
+	sound.play3d SOUND_LOOP 0 FUNC_ROCKSPAWN_ORIGIN 0.8 CHAN_VOLCANO
+	callevent 6.0 fx_die
+}
+
+{ [client] fx_die
+
+	removescript
+}
+
+{ [shared] func_rockspawn //returns the origin of fireball spawn
+
+	//As of the alpha currently, $func is broken for clients. This is a workaround until I get back to making this a func.
+	if ( game.serverside )
+	{
+		local L_ORIGIN $get(ent_me,origin)
+	}
+	else
+	{
+		local L_ORIGIN $getcl(MODEL_IDX,origin)
+	}
+	
+	vectoradd L_ORIGIN z ROCK_START_HEIGHT
+	
+	setvard FUNC_ROCKSPAWN_ORIGIN L_ORIGIN
+	
+	//return **clear
+	//return L_ORIGIN
+}

@@ -9,20 +9,15 @@
 
 @echo off
 
-set version_tag=NOV2015
-
 set script_path=scripts
 set out_path=scriptout
 
 :loop
 title Packing TEST SC.DLL %date% %time%
-echo REMEMBER TO UPDATE VERSION_TAG IN THIS BATCH FILE
-echo Current Version tag: %version_tag%
 echo.
 pause
 echo.
 echo.
-rem if "%1"=="" goto :error_par
 cd .\scripts
 
 echo.
@@ -32,10 +27,9 @@ echo.
 echo.
 echo { >beta_date.script
 echo 	const BETA_TIMESTAMP "DEVELOPER %date% %time%" >>beta_date.script
-echo 	setvarg G_SCRIPT_VERSION %version_tag% >>beta_date.script
 echo } >>beta_date.script
 echo Done.
-cd..
+cd ..
 
 echo.
 echo ====================== Moving developer folder... 
@@ -73,7 +67,7 @@ echo.
 
 copy .\sc.dll ..\
 echo All done!
-cd..
+cd ..
 
 echo.
 echo ====================== Moving developer folder back... 

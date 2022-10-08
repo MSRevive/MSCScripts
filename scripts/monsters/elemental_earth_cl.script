@@ -1,0 +1,170 @@
+//cl effects for earth elemental, instanced
+//burst is weapons/projectiles.mdl #54
+//rock is weapons/projectiles.mdl #4 (smaller one on #5)
+{
+	const SOUND_SPAWN magic/energy1_loud.wav
+	const FX_SHIELD_SPRITE rain_ripple.spr
+	const FX_SHIELD_SPRITE_FRAMES 15
+	const FX_SHIELD_COLOR (255,255,255)
+	const FX_SHIELD_SCALE 2.5
+	const FX_SHIELD_DURATION 1.0
+}
+
+{ client_activate //<owner> <type> [params...]
+
+	setvard FX_OWNER PARAM1
+
+	if ( PARAM2 equals spawn_rock )
+	{
+		setvard FX_POS PARAM3
+		//dbg *** $currentscript client_activate FX_POS
+		setvard FX_ACTIVE 1
+		setvard ROCK_START game.time
+		cleffect tempent model weapons/projectiles.mdl FX_POS setup_rock update_rock collide_rock
+		cleffect tempent model weapons/projectiles.mdl FX_POS setup_burst update_burst
+		sound.play3d SOUND_SPAWN 10 FX_POS
+		callevent 10.0 end_fx
+	}
+
+	if ( PARAM2 equals do_shield )
+	{
+		setvard FX_ACTIVE 1
+		callevent shield_hit
+		callevent PARAM3 end_fx
+	}
+}
+
+{ setup_burst
+	cleffect tempent set_current_prop death_delay 2.0
+	cleffect tempent set_current_prop scale 0.01
+	cleffect tempent set_current_prop gravity 0
+	cleffect tempent set_current_prop velocity 0
+	cleffect tempent set_current_prop collide none
+	cleffect tempent set_current_prop framerate 1.0
+	cleffect tempent set_current_prop frames 50
+	cleffect tempent set_current_prop body 54
+	cleffect tempent set_current_prop sequence 6
+	cleffect tempent set_current_prop rendermode add //additive
+	cleffect tempent set_current_prop color $vec(0,64,255)
+	cleffect tempent set_current_prop renderamt 255
+	cleffect tempent set_current_prop angles $vec(180,0,0)
+	local L_ROCK_START $math(add,ROCK_START,1)
+	cleffect tempent set_current_prop fuser1 L_ROCK_START
+	//cleffect tempent set_current_prop fuser2 0.1
+}
+
+{ update_burst
+	if FX_ACTIVE
+	local CUR_STEP game.time
+	subtract CUR_STEP game.tempent.fuser1
+	//local CUR_SCALE game.tempent.fuser2
+	
+	if ( CUR_STEP < 0.5 )
+	{
+		local CUR_SCALE $ratio(CUR_STEP,0.01,1.0)
+		//cleffect tempent set_current_prop fuser2 CUR_SCALE	
+		cleffect tempent set_current_prop scale CUR_SCALE
+	}
+	else
+	{
+		if ( CUR_STEP < 1.0 )
+		{
+			//fade out
+			local L_REND $ratio(CUR_STEP,512,0)
+			cleffect tempent set_current_prop renderamt L_REND
+		}
+	}
+}
+
+{ setup_rock
+	cleffect tempent set_current_prop death_delay 10.0
+	cleffect tempent set_current_prop scale 1.5
+	cleffect tempent set_current_prop gravity 0
+	cleffect tempent set_current_prop velocity 0
+	cleffect tempent set_current_prop collide world;die
+	cleffect tempent set_current_prop framerate 1.0
+	cleffect tempent set_current_prop frames 50
+	cleffect tempent set_current_prop body 5
+	cleffect tempent set_current_prop sequence 6
+	cleffect tempent set_current_prop rendermode texture
+	cleffect tempent set_current_prop renderamt 0
+	cleffect tempent set_current_prop bounce 0
+	local L_ROCK_START $math(add,ROCK_START,1)
+	cleffect tempent set_current_prop fuser1 L_ROCK_START
+}
+
+{ update_rock
+	if FX_ACTIVE
+	if !ROCK_FALLING
+	local CUR_STEP game.time
+	subtract CUR_STEP game.tempent.fuser1 //should result in 0 to 1
+	//dbg *** $currentscript update_rock CUR_STEP vs game.time [ ROCK_FALLING ]
+	if ( CUR_STEP < 1.0 )
+	{
+		local CUR_REND $ratio(CUR_STEP,0,255)
+		local CUR_REND $int(CUR_REND)
+		cleffect tempent set_current_prop renderamt CUR_REND
+	}
+	else
+	{
+		//dbg *** $currentscript update_rock GRAVITY
+		cleffect tempent set_current_prop renderamt 255
+		cleffect tempent set_current_prop velocity $vec(0,0,-600) //After 2 seconds, it drops at a velocity of 600. no gravity.
+		setvard ROCK_FALLING 1
+	}
+}
+
+{ collide_rock
+
+	sound.play3d fire.wav 10 game.tempent.origin
+	callevent 1.0 end_fx
+}
+
+{ end_fx
+	setvard FX_ACTIVE 0
+	callevent 1.0 remove_fx
+}
+
+{ remove_fx
+	removescript
+}
+
+{ shield_hit
+	local L_POS $getcl(FX_OWNER,origin)
+	local L_OWNER_ANGS $getcl(FX_OWNER,angles)
+	setvard FX_SHIELD_YAW $vec.yaw(L_OWNER_ANGS)
+
+	vectoradd L_POS $relpos($vec(0,FX_SHIELD_YAW,0),$vec(0,32,64))
+	//needs two sprite instances, as somehow this sprite is one sided
+	cleffect tempent sprite FX_SHIELD_SPRITE L_POS setup_shield
+	cleffect tempent sprite FX_SHIELD_SPRITE L_POS setup_shield_negyaw
+}
+
+{ setup_shield
+	cleffect tempent set_current_prop death_delay FX_SHIELD_DURATION
+	cleffect tempent set_current_prop renderamt 255
+	cleffect tempent set_current_prop rendermode add
+	cleffect tempent set_current_prop rendercolor FX_SHIELD_COLOR 
+	cleffect tempent set_current_prop scale FX_SHIELD_SCALE
+	cleffect tempent set_current_prop gravity 0
+	cleffect tempent set_current_prop angles $vec(0,FX_SHIELD_YAW,0)
+	cleffect tempent set_current_prop collide none
+	cleffect tempent set_current_prop framerate	30
+	cleffect tempent set_current_prop frames FX_SHIELD_SPRITE_FRAMES
+}
+
+{ setup_shield_negyaw
+	cleffect tempent set_current_prop death_delay FX_SHIELD_DURATION
+	cleffect tempent set_current_prop renderamt 255
+	cleffect tempent set_current_prop rendermode add
+	cleffect tempent set_current_prop rendercolor FX_SHIELD_COLOR 
+	cleffect tempent set_current_prop scale FX_SHIELD_SCALE
+	cleffect tempent set_current_prop gravity 0
+	local NEG_YAW FX_SHIELD_YAW
+	add NEG_YAW 180
+	if ( NEG_YAW > 359.99 ) subtract NEG_YAW 359.99
+	cleffect tempent set_current_prop angles $vec(0,NEG_YAW,0)
+	cleffect tempent set_current_prop collide none
+	cleffect tempent set_current_prop framerate	30
+	cleffect tempent set_current_prop frames FX_SHIELD_SPRITE_FRAMES
+}

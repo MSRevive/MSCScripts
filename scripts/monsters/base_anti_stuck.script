@@ -160,7 +160,7 @@
 { npcatk_hunt
 	if ( !AS_STARTED )
 	{
-		//dont spawn check until at least 5 seconds post spawn
+		//dont stuck check until at least 5 seconds post spawn
 		local L_SPAWN_TIME NPC_SPAWN_TIME
 		add L_SPAWN_TIME 5.0
 		if game.time > L_SPAWN_TIME
@@ -276,6 +276,31 @@
 		dbg anti-stuck (no progress)
 		add STUCK_COUNT 1
 		if STUCK_COUNT >= 1
+
+		if ( !AS_FIRST_STUCK )
+		{
+			//first time I've been stuck, try tele method, probably spawn stuck
+			//(we'd do this on spawn, but seems that's a bit resource intensive.)
+			dbg base_anti_stuck - first stuck
+			setvard AS_FIRST_STUCK 1
+		
+			local L_ORG $get(ent_me,origin)
+			local L_TESTPOS L_ORG
+			setorigin ent_me L_TESTPOS
+			local reg.npcmove.endpos L_TESTPOS
+			vectoradd reg.npcmove.endpos $relpos($vec(0,0,0),$vec(0,16,0))
+			local reg.npcmove.testonly 1
+			npcmove ent_me
+			if ( game.ret.npcmove.dist == 0 )
+			{
+				//fake move failed, do tele stuck sequence
+				setvard BAST_SPAWNCHECK 1
+				callevent as_tele_stuck_check
+			}
+			local EXIT_SUB 1
+		}
+		if !EXIT_SUB
+
 		if ( AS_CUSTOM_UNSTUCK )
 		{
 			callevent npc_stuck
@@ -528,6 +553,12 @@
 		else
 		{
 			//fuck this shit, try method 2
+			if ( BAST_SPAWNCHECK )
+			{
+				//surrender, dont want to tele to random players on spawn
+				setvard BAST_SPAWNCHECK 0
+				exitevent
+			}
 			setvard BAST_STUCK_DID_INIT 0
 			setvard BAST_PLAYER_LIST 'BAST_PLAYER_LIST' //clear player list, case new ones show up, been a bit
 			callevent as_tele_to_player_loop
@@ -537,6 +568,7 @@
 	{
 		//if ( BAST_WAS_FLIER ) fly 1
 		setvard BAST_STUCK_DID_INIT 0
+		setvard STUCK_COUNT 0 //think we're free
 		if !BAST_FIRST_TEST //wasn't stuck to begin with
 		setorigin ent_me L_TESTPOS
 	}
@@ -590,8 +622,13 @@
 	if ( NPC_TELEHUNT )
 	{
 		if NPC_RANGED
-		dbg as_tele_to_player_loop ranged
-		local L_DIST $randf(384,768) //wanna be pretty far
+		//dbg as_tele_to_player_loop ranged
+		if ( NPC_BATTLE_ALLY )
+		{
+			if ( $get(BAST_TEST_PLAYER,isplayer) ) local EXIT_SUB 1 //dun wanna be far from allies
+		}
+		if !EXIT_SUB
+		local L_DIST $randf(384,768) //wanna be pretty far from enemies
 	}
 	local L_TELE_POINT $get(BAST_TEST_PLAYER,origin)
 	vectoradd L_TELE_POINT $relpos($vec(0,BAST_ROT,0),$vec(0,L_DIST,BAST_MOB_HEIGHT_ADJ))
@@ -630,6 +667,7 @@
 	{
 		//if ( BAST_WAS_FLIER ) fly 1
 		dbg as_tele_to_player_loop success, exiting
+		setvard STUCK_COUNT 0 //think we're free
 		setvard BAST_DID_INIT 0
 		setvard BAST_TELEPORTING 0
 		setorigin ent_me L_TELE_POINT

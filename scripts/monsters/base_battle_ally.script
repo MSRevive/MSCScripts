@@ -1,6 +1,11 @@
 //base ally system
 //- for allies that follow players about and operate as combatants
-//- ALLY_FOLLOW_ON to toggle follow mode
+//- setvard ALLY_FOLLOW_ON 0|1 to toggle follow mode
+//- use callevent set_leader 1 to create a "leader" NPC, that goes where the player is facing, instead of tagging behind (kinda experimental).
+//- Assumes base AI is included above it
+
+//- todo: integrate teleport catch-up system as option
+//- todo: rig up non-combatant option (follows, does not engage, attempts to flee if attacked.)
 
 #scope server
 {
@@ -49,11 +54,11 @@
 
 	if ( GAME_TIME > ALLY_NEXT_FAS_CHECK )
 	{
+		if $get(ALLY_FOLLOW_PLR_ID,isalive)
 		setvard ALLY_NEXT_FAS_CHECK GAME_TIME
 		add ALLY_NEXT_FAS_CHECK 0.5
 		callevent ally_stuck_check
 	}
-	if !SUSPEND_AI //incase AS triggered AI suspend
 
 	//ally auto-regen
 	if ( GAME_TIME > ALLY_NEXT_REGEN )
@@ -65,16 +70,46 @@
 		setvard ALLY_NEXT_REGEN GAME_TIME
 		add ALLY_NEXT_REGEN 1.0
 	}
+	if !SUSPEND_AI //incase Anti-stuck triggered AI suspend
+
+	//pick player to follow
+	if game.players > 0
+
+	if ( GAME_TIME > ALLY_NEXT_FOLLOW_CHECK ) local FIND_NEW_FOLLOW 1
+	if ( !$get(ALLY_FOLLOW_PLR_ID,isalive) ) local FIND_NEW_FOLLOW 1
+
+	if ( FIND_NEW_FOLLOW )
+	{
+		if game.playersnb > 0
+		setvard ALLY_NEXT_FOLLOW_CHECK GAME_TIME
+		add ALLY_NEXT_FOLLOW_CHECK 10.0
+		setvard ALLY_FPLAYER_LIST 0
+		getplayersnb ALLY_FPLAYER_LIST
+		setvard ALLY_FPLAYER_LIST $sort_entlist(ALLY_FPLAYER_LIST,range)
+		setvard ALLY_FOLLOW_PLR_ID $get_token(ALLY_FPLAYER_LIST,0)
+	}
+
+	if $get(ALLY_FOLLOW_PLR_ID,isalive)
+
+	local L_ALLY_RANGE $get(ALLY_FOLLOW_PLR_ID,range)
+	local L_ALLY_ORG $get(ALLY_FOLLOW_PLR_ID,origin)
+	local L_ALLY_RUN_RANGE 200
+	if ( ALLY_IS_LEADER )
+	{
+		local L_ORG $get(ent_me,origin)
+		local L_ALLY_RANGE $dist(L_ORG,ALLY_LEADER_DEST)
+		local L_ALLY_ORG ALLY_LEADER_DEST
+		local L_ALLY_RUN_RANGE 64
+	}
 
 	//jump to players if need be
 	if ( GAME_TIME > NEXT_ALLYJUMP )
 	{
-		if $get(ALLY_FOLLOW_PLR_ID,isalive)
-		if $get(ALLY_FOLLOW_PLR_ID,range) < ALLY_MAX_JUMP_RANGE
+		if L_ALLY_RANGE < ALLY_MAX_JUMP_RANGE
 
 		local MY_Z $get(ent_me,origin.z)
-		local TARG_Z $get(ALLY_FOLLOW_PLR_ID,origin.z)
-		subtract TARG_Z 38 //compensate for origin center
+		local TARG_Z $vec.z(L_ALLY_ORG)
+		if ( !ALLY_IS_LEADER ) subtract TARG_Z 38 //compensate for origin center (leaders are aiming for dest, so they dont do this)
 
 		local Z_DIFF TARG_Z
 		subtract Z_DIFF MY_Z
@@ -89,23 +124,7 @@
 		}
 	}
 
-	//pick player to follow
-	if game.players > 0
-
-	if ( GAME_TIME > ALLY_NEXT_FOLLOW_CHECK ) local FIND_NEW_FOLLOW 1
-	if ( !$get(ALLY_FOLLOW_PLR_ID,isalive) ) local FIND_NEW_FOLLOW 1
-
-	if ( FIND_NEW_FOLLOW )
-	{
-		setvard ALLY_NEXT_FOLLOW_CHECK GAME_TIME
-		add ALLY_NEXT_FOLLOW_CHECK 10.0
-		setvard ALLY_FPLAYER_LIST 0
-		getplayersnb ALLY_FPLAYER_LIST
-		setvard ALLY_FPLAYER_LIST $sort_entlist(ALLY_FPLAYER_LIST,range)
-		setvard ALLY_FOLLOW_PLR_ID $get_token(ALLY_FPLAYER_LIST,0)
-	}
-
-	if ( $get(ALLY_FOLLOW_PLR_ID,range) > 200 )
+	if ( L_ALLY_RANGE > L_ALLY_RUN_RANGE )
 	{
 		setmoveanim ANIM_RUN
 	}
@@ -116,7 +135,42 @@
 
 	if ( $get(ALLY_FOLLOW_PLR_ID,range) > ALLY_MIN_DISTANCE )
 	{
-		setmovedest ALLY_FOLLOW_PLR_ID ALLY_FOLLOW_PLR_DIST
+		//if game.time > ALLY_NEXT_FLEE //sec here, trying to get out of the players way //give me a bit of time to move (not working, also nerfs the function a bit)
+
+		if ( !ALLY_IS_LEADER )
+		{
+			setmovedest ALLY_FOLLOW_PLR_ID ALLY_FOLLOW_PLR_DIST
+		}
+		else
+		{
+			//leader's move to where their target player is facing
+			if ( game.time > ALLY_NEXT_LEADER_UPDATE )
+			{
+				setvard ALLY_NEXT_LEADER_UPDATE game.time
+				add ALLY_NEXT_LEADER_UPDATE 0.5
+				local L_MOVE_DEST $get(ALLY_FOLLOW_PLR_ID,origin)
+				local L_TRACE_START L_MOVE_DEST
+				local L_PLR_VIEW $get(ALLY_FOLLOW_PLR_ID,viewangles)
+				vectoradd L_MOVE_DEST $relpos(L_PLR_VIEW,$vec(0,640,0))
+				local L_MOVE_DEST $get_traceline(L_TRACE_START,L_MOVE_DEST,worldonly)
+				vectorset L_MOVE_DEST z $get_ground_height(L_MOVE_DEST)
+				local L_MY_WIDTH $get(ent_me,width)
+				setmovedest L_MOVE_DEST L_MY_WIDTH
+
+				setvard ALLY_LEADER_DEST L_MOVE_DEST
+
+				//dbg leader L_MOVE_DEST
+				local L_ORG $get(ent_me,origin)
+				if ( $dist(L_MOVE_DEST,L_ORG) <= L_MY_WIDTH ) setangle face.y $vec.y(L_PLR_VIEW)
+
+				if ( G_DEVELOPER_MODE )
+				{
+					local L_BEAM_Z L_MOVE_DEST
+					vectoradd L_BEAM_Z z 32
+					effect beam point lgtning.spr 20 L_MOVE_DEST L_BEAM_Z (255,0,255) 200 0 0.2
+				}
+			}
+		}
 	}
 	else
 	{
@@ -146,7 +200,16 @@
 	if ( ALLY_JUMP_STR > 100 ) callevent 0.5 ally_push_forward
 	multiply ALLY_JUMP_STR 5
 	callevent npcatk_suspend_ai 1.0
-	setvard ALLY_FWD_JUMP_STR $get(ALLY_FOLLOW_PLR_ID,range)
+	if ( !ALLY_IS_LEADER )
+	{
+		setvard ALLY_FWD_JUMP_STR $get(ALLY_FOLLOW_PLR_ID,range)
+	}
+	else
+	{
+		local L_ORG $get(ent_me,origin)
+		setvard ALLY_FWD_JUMP_STR $dist(L_ORG,ALLY_LEADER_DEST)
+		dbg ally_hop fwd ALLY_FWD_JUMP_STR
+	}
 	playanim critical ANIM_ALLY_JUMP
 	callevent 0.1 ally_jump_boost
 }
@@ -156,7 +219,8 @@
 }
 
 { ally_push_forward
-	setmovedest ALLY_FOLLOW_PLR_ID 9999
+	if ( !ALLY_IS_LEADER ) setmovedest ALLY_FOLLOW_PLR_ID 9999
+	else setmovedest ALLY_LEADER_DEST 9999
 	addvelocity ent_me $relvel(0,110,0)
 	local MY_Z $get(ent_me,origin.z)
 	local GROUND_POS $get_ground_height(game.monster.origin)
@@ -201,4 +265,14 @@
 		setvard ALLY_STUCK_COUNT 0
 		//playanim once ANIM_RUN
 	}
+}
+
+{ set_leader //[0|1]
+	setvard ALLY_IS_LEADER 1
+	setvard ALLY_FOLLOW_ON 1
+	if ( PARAM1 equals 0 ) setvard ALLY_IS_LEADER 0
+}
+
+{ set_follower
+	setvard ALLY_FOLLOW_ON 1
 }

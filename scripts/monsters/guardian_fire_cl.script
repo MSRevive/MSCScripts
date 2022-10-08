@@ -1,0 +1,398 @@
+//Thothie - Client effects for Iron Guardian
+
+#scope client
+
+{
+	//dim passive light
+	const PASSIVE_GLOW_COLOR (64,16,0)
+	const PASSIVE_GLOW_RAD 64
+
+	const SWORD_GLOW_RAD 128
+	const SWORD_GLOW_COLOR (255,96,0)
+
+	const CHARGER_GLOW_RAD 640
+	const CHARGER_GLOW_COLOR (255,96,0)
+
+	const CHARGER_SPRITE c-tele1.spr
+	const CHARGER_SPRITE_NFRAMES 25
+
+	const SWORD_SPRITE fire1_fixed.spr
+
+	const SWORD_HILT_INDEX attachment0
+	const SWORD_TIP_INDEX attachment1
+	const RHAND_INDEX attachment2
+	const LHAND_INDEX attachment3
+
+	const SOUND_CHARGER magic/blackhole.wav
+	const SOUND_ZAP magic/sff_explsonic.wav
+	const SOUND_STOMP magic/boom.wav
+
+	const STOMP_SPRITE fire1_fixed.spr
+
+	precache CHARGER_SPRITE
+}
+
+{ client_activate //<model_idx> [re-init:0|1] [sword_state:0|1]
+
+	setvard FX_OWNER PARAM1
+	setvard FX_REINIT PARAM2
+	setvard FX_SWORD_STATE PARAM3
+
+	setcallback render enable
+
+	cleffect light new $getcl(FX_OWNER,origin) PASSIVE_GLOW_RAD PASSIVE_GLOW_COLOR 1.0
+	setvard PASSIVE_LIGHT_ID game.script.last_light_id
+
+	if FX_REINIT
+	if FX_SWORD_STATE
+	callevent sword_on
+}
+
+{ remove_fx
+	removescript
+}
+
+{ game_prerender
+
+	if ( !$getcl(FX_OWNER,exists) )
+	{
+		callevent remove_fx
+	}
+	else
+	{
+		//dim passive light
+		cleffect light PASSIVE_LIGHT_ID $getcl(FX_OWNER,origin) PASSIVE_GLOW_RAD PASSIVE_GLOW_COLOR 1.0
+
+		//sword glow
+		if SWORD_ON
+		//decided using server beam would be better for proper follow
+		//local BEAM_START $getcl(FX_OWNER,attachment0)
+		//local BEAM_END $getcl(FX_OWNER,attachment1)
+		//cleffect beam_points BEAM_START BEAM_END fire1_fixed.spr 0.1 5.0 0.5 255 50 30 (60,60,255)
+		cleffect light SWORD_LIGHT_ID SWORD_ORG SWORD_GLOW_RAD SWORD_GLOW_COLOR 0.5
+
+		if GRAB_SPRITE_ON
+		local BEAM_START $getcl(FX_OWNER,LHAND_INDEX)
+		local RND_BONE $rand(0,15)
+		local BEAM_END $getcl(GRAB_TARG,origin)
+		cleffect beam_points BEAM_START BEAM_END fire1_fixed.spr 0.1 5.0 1.5 255 1 30 (255,64,0)
+	}
+}
+
+{ sword_on //[spit_sprites:0|1]
+	setvard SWORD_ON 1
+	cleffect light new $getcl(FX_OWNER,SWORD_HILT_INDEX) SWORD_GLOW_RAD SWORD_GLOW_COLOR 1.0
+	setvard SWORD_LIGHT_ID game.script.last_light_id
+
+	if PARAM1
+//	setvard LINE_START $getcl(FX_OWNER,SWORD_HILT_INDEX)
+//	local LINE_END $getcl(FX_OWNER,SWORD_TIP_INDEX)
+//
+//	setvard LINE_DIR $dir(LINE_START,LINE_END)
+//	setvard LINE_INC $dist(LINE_START,LINE_END)
+//	multiply LINE_INC 0.10
+//	calleventloop 10 make_sword_sprites
+
+	cleffect tempent sprite SWORD_SPRITE $getcl(FX_OWNER,SWORD_HILT_INDEX) setup_sword_sprite
+	cleffect tempent sprite SWORD_SPRITE $getcl(FX_OWNER,SWORD_HILT_INDEX) setup_sword_sprite
+	cleffect tempent sprite SWORD_SPRITE $getcl(FX_OWNER,SWORD_HILT_INDEX) setup_sword_sprite
+	cleffect tempent sprite SWORD_SPRITE $getcl(FX_OWNER,SWORD_HILT_INDEX) setup_sword_sprite
+	cleffect tempent sprite SWORD_SPRITE $getcl(FX_OWNER,SWORD_TIP_INDEX) setup_sword_sprite
+	cleffect tempent sprite SWORD_SPRITE $getcl(FX_OWNER,SWORD_TIP_INDEX) setup_sword_sprite
+	cleffect tempent sprite SWORD_SPRITE $getcl(FX_OWNER,SWORD_TIP_INDEX) setup_sword_sprite
+}
+
+//nice try
+//{ make_sword_sprites
+//	local L_CUR_POS $getcl(FX_OWNER,SWORD_HILT_INDEX)
+//	local L_CUR_DIR LINE_DIR
+//	local L_CUR_STEP game.script.iteration
+//	multiply L_CUR_STEP LINE_INC
+//	vectormultiply L_CUR_DIR L_CUR_STEP
+//	vectoradd L_CUR_POS L_CUR_DIR
+//	cleffect tempent sprite SWORD_SPRITE L_CUR_STEP setup_sword_sprite
+//}
+
+{ sword_flicker_out
+	setvard FLICKER_COUNT 10
+	callevent sword_flicker_loop
+}
+
+{ sword_flicker_loop
+	subtract FLICKER_COUNT 1
+	if ( FLICKER_COUNT == 1 ) setvard SWORD_ON 0
+	if FLICKER_COUNT > 1
+	callevent 0.1 sword_flicker_loop
+	setvard SWORD_ON $rand(0,1)
+}
+
+{ recharge_fx //<charger_origin>
+	setvard FX_CHARGER_ORG PARAM1
+	cleffect tempent sprite CHARGER_SPRITE FX_CHARGER_ORG setup_charger_sprite
+	cleffect tempent sprite CHARGER_SPRITE $getcl(FX_OWNER,RHAND_INDEX) setup_charger_lhand_sprite update_lhand_sprite
+	cleffect tempent sprite CHARGER_SPRITE $getcl(FX_OWNER,LHAND_INDEX) setup_charger_rhand_sprite update_rhand_sprite
+
+	sound.play3d SOUND_CHARGER 10 FX_CHARGER_ORG
+	setvard CHARGER_ON 1
+
+	cleffect light new FX_CHARGER_ORG CHARGER_GLOW_RAD CHARGER_GLOW_COLOR 8.0
+
+	callevent 8.0 end_charger_fx
+
+	setvard SPIT_SPRITE_DEATH_DELAY 10.0
+	callevent 1.0 recharge_fx_spit_sprite
+	subtract SPIT_SPRITE_DEATH_DELAY 1.0
+	callevent 2.0 recharge_fx_spit_sprite
+	subtract SPIT_SPRITE_DEATH_DELAY 1.0
+	callevent 3.0 recharge_fx_spit_sprite
+	subtract SPIT_SPRITE_DEATH_DELAY 1.0
+	callevent 4.0 recharge_fx_spit_sprite
+	subtract SPIT_SPRITE_DEATH_DELAY 1.0
+	callevent 5.0 recharge_fx_spit_sprite
+
+	callevent charger_fx_loop
+}
+
+{ end_charger_fx
+	setvard CHARGER_ON 0
+}
+
+{ charger_fx_loop
+	if CHARGER_ON
+	callevent 0.1 charger_fx_loop
+
+	local BEAM_START FX_CHARGER_ORG
+	local BEAM_END $getcl(FX_OWNER,RHAND_INDEX)
+	cleffect beam_points BEAM_START BEAM_END fire1_fixed.spr 0.1 10.0 0.5 255 1 30 (255,60,0)
+
+	local BEAM_START FX_CHARGER_ORG
+	local BEAM_END $getcl(FX_OWNER,LHAND_INDEX)
+	cleffect beam_points BEAM_START BEAM_END fire1_fixed.spr 0.1 10.0 0.5 255 1 30 (255,60,0)
+}
+
+{ recharge_fx_spit_sprite
+	sound.play3d SOUND_CHARGER 10 FX_CHARGER_ORG
+	cleffect tempent sprite CHARGER_SPRITE $getcl(FX_OWNER,origin) setup_spit_sprite update_spit_sprite
+}
+
+{ grab_sprite_on
+	cleffect tempent sprite CHARGER_SPRITE $getcl(FX_OWNER,LHAND_INDEX) setup_grab_sprite //update_grab_sprite
+}
+
+{ grab_fx
+	setvard GRAB_SPRITE_ON 1
+	setvard GRAB_TARG PARAM1
+	sound.play3d SOUND_ZAP 10 $getcl(GRAB_TARG,origin)
+	cleffect tempent sprite SWORD_SPRITE $getcl(GRAB_TARG,origin) setup_grab_targ_sprite update_grab_targ_sprite
+	callevent 1.0 grab_fx_off
+}
+
+{ grab_fx_off
+	setvard GRAB_SPRITE_ON 0
+}
+
+{ stomp_fx //<origin>
+	setvard STOMP_ORG PARAM1
+	setvard CYCLE_ANGLE 0
+	setvard BURST_TYPE stomp
+	sound.play3d SOUND_STOMP 10 STOMP_ORG
+	calleventloop 17 make_stomp_flames
+}
+
+{ smash_fx //<origin>
+	setvard STOMP_ORG PARAM1
+	setvard CYCLE_ANGLE 0
+	setvard BURST_TYPE smash
+	sound.play3d SOUND_STOMP 10 STOMP_ORG
+	calleventloop 17 make_stomp_flames
+	dbg *** smash_fx STOMP_ORG
+}
+
+{ make_stomp_flames
+	local FLAME_POS STOMP_ORG
+	vectoradd FLAME_POS $relpos($vec(0,CYCLE_ANGLE,0),$vec(0,10,0))
+	cleffect tempent sprite STOMP_SPRITE FLAME_POS setup_stomp_sprite
+	add CYCLE_ANGLE 20
+}
+
+//{ update_grab_sprite
+//	cleffect tempent set_current_prop origin LHAND_ORG
+//}
+
+{ update_grab_targ_sprite
+	cleffect tempent set_current_prop origin GRAB_TARG_ORG
+}
+
+{ update_spit_sprite
+	local ROTATE_CYCLE game.tempent.fuser1
+	local RAISE_CYCLE game.tempent.fuser2
+
+	add ROTATE_CYCLE 5
+	if ( ROTATE_CYCLE > 359.99 ) local ROTATE_CYCLE 0
+
+	add RAISE_CYCLE 0.5
+
+	//if ( RAISE_CYCLE > 150 ) cleffect tempent set_current_prop death_delay 0.1
+
+	local SPRITE_ORG $getcl(FX_OWNER,origin)
+	vectoradd SPRITE_ORG $relpos($vec(0,ROTATE_CYCLE,0),$vec(0,50,RAISE_CYCLE))
+	
+	cleffect tempent set_current_prop origin SPRITE_ORG
+	cleffect tempent set_current_prop fuser1 ROTATE_CYCLE
+	cleffect tempent set_current_prop fuser2 RAISE_CYCLE
+
+	if CHARGER_ON
+	if $rand(1,20) == 1
+	local BEAM_START FX_CHARGER_ORG
+	local BEAM_END SPRITE_ORG
+	cleffect beam_points BEAM_START BEAM_END fire1_fixed.spr 0.1 2.0 2.0 255 1 30 (255,60,0)
+}
+
+{ update_rhand_sprite
+	cleffect tempent set_current_prop origin RHAND_ORG
+}
+
+{ update_lhand_sprite
+	cleffect tempent set_current_prop origin LHAND_ORG
+}
+
+{ setup_stomp_sprite
+
+	if ( BURST_TYPE equals stomp )
+	{
+		local FADE_DEL 1.5
+		local SPRITE_SPEED 150
+	}
+	else
+	{
+		local FADE_DEL 1.0
+		local SPRITE_SPEED 100
+	}
+
+	cleffect tempent set_current_prop death_delay 	FADE_DEL
+	cleffect tempent set_current_prop rendercolor (255,128,0)
+	cleffect tempent set_current_prop renderamt	200
+	cleffect tempent set_current_prop rendermode add
+	cleffect tempent set_current_prop framerate	30
+	cleffect tempent set_current_prop frames	23
+	cleffect tempent set_current_prop scale 	1.5
+	cleffect tempent set_current_prop gravity 	0
+	local FLAME_TURN $relvel($vec(0,CYCLE_ANGLE,0),$vec(0,SPRITE_SPEED,0))
+	cleffect tempent set_current_prop velocity FLAME_TURN
+	cleffect tempent set_current_prop collide 	none
+	cleffect tempent set_current_prop fadeout lifetime
+}
+
+{ setup_grab_targ_sprite
+	cleffect tempent set_current_prop death_delay 	3.0
+	cleffect tempent set_current_prop fadeout lifetime 
+	cleffect tempent set_current_prop rendercolor (255,64,0)
+	cleffect tempent set_current_prop renderamt	255
+	cleffect tempent set_current_prop rendermode add
+	cleffect tempent set_current_prop framerate	30
+	cleffect tempent set_current_prop frames	1
+	cleffect tempent set_current_prop scale 	3.0
+	cleffect tempent set_current_prop gravity 	0
+}
+
+{ setup_charger_sprite
+	cleffect tempent set_current_prop death_delay 	8.0
+	cleffect tempent set_current_prop rendercolor (255,128,0)
+	cleffect tempent set_current_prop renderamt	255
+	cleffect tempent set_current_prop rendermode add
+	cleffect tempent set_current_prop framerate	30
+	cleffect tempent set_current_prop frames	CHARGER_SPRITE_NFRAMES
+	cleffect tempent set_current_prop scale 	1.0
+	cleffect tempent set_current_prop gravity 	0
+}
+
+{ setup_grab_sprite
+	cleffect tempent set_current_prop death_delay 	4.0
+	cleffect tempent set_current_prop rendercolor (255,64,0)
+	cleffect tempent set_current_prop renderamt	255
+	cleffect tempent set_current_prop rendermode add
+	cleffect tempent set_current_prop framerate	30
+	cleffect tempent set_current_prop frames	CHARGER_SPRITE_NFRAMES
+	cleffect tempent set_current_prop scale 	1.0
+	cleffect tempent set_current_prop gravity 	0
+	cleffect tempent set_current_prop follow FX_OWNER 3
+}
+
+
+{ setup_charger_lhand_sprite
+
+//	cleffect tempent set_current_prop follow 	FX_OWNER
+//	cleffect tempent set_current_prop body 	2
+//	cleffect tempent set_current_prop fuser1 2
+
+	cleffect tempent set_current_prop death_delay 	8.0
+	cleffect tempent set_current_prop rendercolor (255,128,0)
+	cleffect tempent set_current_prop renderamt	255
+	cleffect tempent set_current_prop rendermode add
+	cleffect tempent set_current_prop framerate	30
+	cleffect tempent set_current_prop frames	CHARGER_SPRITE_NFRAMES
+	cleffect tempent set_current_prop scale 	0.5
+	cleffect tempent set_current_prop gravity 	0
+}
+
+{ setup_charger_rhand_sprite
+
+//	cleffect tempent set_current_prop follow 	FX_OWNER
+//	cleffect tempent set_current_prop body 	3
+//	cleffect tempent set_current_prop fuser1 3
+
+	cleffect tempent set_current_prop death_delay 	8.0
+	cleffect tempent set_current_prop rendercolor (255,128,0)
+	cleffect tempent set_current_prop renderamt	255
+	cleffect tempent set_current_prop rendermode add
+	cleffect tempent set_current_prop framerate	30
+	cleffect tempent set_current_prop frames	CHARGER_SPRITE_NFRAMES
+	cleffect tempent set_current_prop scale 	0.5
+	cleffect tempent set_current_prop gravity 	0
+}
+
+{ setup_spit_sprite
+
+	cleffect tempent set_current_prop death_delay 	SPIT_SPRITE_DEATH_DELAY
+	cleffect tempent set_current_prop rendercolor (255,64,0)
+	cleffect tempent set_current_prop renderamt	200
+	cleffect tempent set_current_prop rendermode add
+	cleffect tempent set_current_prop framerate	30
+	cleffect tempent set_current_prop frames	CHARGER_SPRITE_NFRAMES
+	cleffect tempent set_current_prop scale 	0.3
+	cleffect tempent set_current_prop gravity 	0
+	cleffect tempent set_current_prop fuser1 0
+	cleffect tempent set_current_prop fuser2 0
+}
+
+{ setup_sword_sprite
+
+	cleffect tempent set_current_prop death_delay 	2.0
+	cleffect tempent set_current_prop rendercolor (255,64,0)
+	cleffect tempent set_current_prop renderamt	200
+	cleffect tempent set_current_prop rendermode add
+	cleffect tempent set_current_prop framerate	30
+	cleffect tempent set_current_prop frames	1
+	cleffect tempent set_current_prop scale 	0.5
+	cleffect tempent set_current_prop gravity 	1
+	local RND_ANG $randf(0,359)
+	cleffect tempent set_current_prop velocity $relvel($vec(0,RND_ANG,0),$vec(0,30,-50))
+	cleffect tempent set_current_prop collide world
+	cleffect tempent set_current_prop bouncefactor 1
+}
+
+
+{
+repeatdelay 0.01
+	//these have to be updated regularly, as they cannot be acquired in update events (for some weird reason)
+	setvard SWORD_ORG $getcl(FX_OWNER,SWORD_HILT_INDEX)
+	setvard RHAND_ORG $getcl(FX_OWNER,RHAND_INDEX)
+	setvard LHAND_ORG $getcl(FX_OWNER,LHAND_INDEX)
+	if GRAB_SPRITE_ON
+	setvard GRAB_TARG_ORG $getcl(GRAB_TARG,origin)
+}
+
+{ end_fx
+	setvard FX_ACTIVE 0
+	callevent 1.0 remove_fx
+}

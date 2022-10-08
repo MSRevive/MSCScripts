@@ -1,3 +1,9 @@
+//Jaminportlants
+
+// . tele -1278 3221 -347
+// . eventall start_battle
+// . eventall drop_meteor
+
 //Mind you, this was setup before base_chat_array got the ability to play sounds
 //Plus, Jaz's voice plays everywhere on the map, so his sound needs are a bit unique
 
@@ -42,6 +48,8 @@
 
 	const DMG_LIGHTNING_STRIKE $rand(400,800)
 	const DOT_LIGHTNING 150
+	
+	setvard ATK_POINTS '' //Holds a token of points for lightning or ice to damage at.
 
 	//variable so meteor summoner can read them
 	const DOT_FIRE 100
@@ -84,13 +92,7 @@
 #include monsters/base_chat_array
 
 //debug funcs, for we has no externals
-{ bd_debug  //<print_var> <property_printvar> <extra> <extra> <caller_id>
-	//tdebug/tdebugt
-	saytextrange 2048
-	saytext var PARAM1 prop PARAM2 = $get(PARAM1,PARAM2)
-	consolemsg PARAM5 $get(ent_me,name) reports: var PARAM1 pvar $get(PARAM1,PARAM2)
-	dbg PARAM5 $get(ent_me,name) reports: var PARAM1 pvar $get(PARAM1,PARAM2)
-}
+#include [server] monsters/debug
 
 
 { [shared] game_spawn
@@ -135,9 +137,6 @@
 { do_intro
 	//check players for racial types here (need to work up a system for this)
 
-	setvarg G_ISL_OWNER $get(ent_me,id)
-	setvarg G_LSL_OWNER $get(ent_me,id)
-	setvarg G_FBL_OWNER $get(ent_me,id)
 	setvard FLICKER_BRUSH_ID $get_by_name(brush_storm_lightning2)
 
 	setvard GLOAT_COUNT 0
@@ -386,6 +385,7 @@ repeatdelay 1.0
 			if game.time > NEXT_BALLS
 			setvard NEXT_BALLS game.time
 			add NEXT_BALLS FREQ_BALLS
+			
 			callevent drop_meteor
 			if $rand(1,2) == 1
 			callevent $randf(0.5,2.0) drop_meteor //somtimes two	
@@ -398,11 +398,21 @@ repeatdelay 1.0
 			if game.time > NEXT_BOLTS
 			setvard NEXT_BOLTS game.time
 			add NEXT_BOLTS FREQ_BOLTS
+			
 			callevent do_lightning_bolt
 			if $rand(1,2) == 1
 			callevent $randf(0.5,2.0) do_lightning_bolt //somtimes two	
-			//if $rand(1,2) == 1
-			//callevent $randf(2.1,4.0) do_lightning_bolt //somtimes three
+		}
+		
+		if ( BREATH_CYCLE == 3 )
+		{
+			if game.time > NEXT_BALLS //using meteor ball timer because meh
+			setvard NEXT_BALLS game.time
+			add NEXT_BALLS FREQ_BALLS
+			
+			callevent do_ice_bolt
+			if $rand(1,2) == 1
+			callevent $randf(0.5,2.0) do_ice_bolt //somtimes two
 		}
 	}
 
@@ -561,7 +571,7 @@ repeatdelay 1.0
 	playsound 0 10 SOUND_BREATH_IN 0.1 80
 }
 
-{ frame_storm_breath_start
+{ frame_storm_breath_start //Called from anim
 	playsound 0 10 SOUND_BREATH_OUT 0.1 70
 	clientevent new all nashalrath/dragon_green_img_cl $get(ent_me,index) BREATH_CYCLE
 	setvard CL_BREATH_IDX game.script.last_sent_id
@@ -602,9 +612,8 @@ repeatdelay 1.0
 		usetrigger light_storm_cold
 		callexternal GAME_MASTER gm_set_weather fog_dragon_white 1
 		setvard STORM_BRUSH_ID $get_by_name(brush_storm_cold)
-		callevent get_control_player
 		
-		clientevent new all nashalrath/dragon_ice_storm_cl STORM_CENTER $get(CONTROL_PLAYER,index)
+		clientevent new all nashalrath/dragon_ice_storm_cl STORM_CENTER
 		setvard CL_STORM_IDX game.script.last_sent_id
 	}
 	callexternal STORM_BRUSH_ID storm_fade_in
@@ -626,32 +635,13 @@ repeatdelay 1.0
 	}
 }
 
-{ ext_isl //<origin> - ice shard landed - called by ice storm CL script and returned by GM
-	dbg ext_isl PARAM1
-	xdodamage PARAM1 64 DMG_ICE_SHARD 0.1 ent_me ent_me none cold dmgevent:isl
-}
-
-{ ext_lsl //<origin> - lightning strike landed - called by lightning storm CL script and returned by GM
-	dbg ext_lsl PARAM1
-
-	xdodamage PARAM1 128 DMG_LIGHTNING_STRIKE 0.1 ent_me ent_me none lightning_effect dmgevent:lsl
-}
-
-{ lsl_dodamage
-
-	if PARAM1
-	if $get(ent_me,relationship,PARAM2) equals enemy
-	applyeffect PARAM2 effects/effect_shock_dmg 10.0 $get(ent_me,id) DOT_LIGHTNING
-}
-
-{ isl_dodamage
-	if PARAM1
-	if $get(ent_me,relationship,PARAM2) equals enemy
-	applyeffect PARAM2 effects/effect_frostbite_dmg 5.0 $get(ent_me,id) DOT_COLD
-}
+//{ isl_dodamage
+//	if PARAM1
+//	if $get(ent_me,relationship,PARAM2) equals enemy
+//	applyeffect PARAM2 effects/effect_frostbite_dmg 5.0 $get(ent_me,id) DOT_COLD
+//}
 
 { do_lightning_bolt
-	callevent get_control_player
 
 	if ( !LIGHTNING_FLICKERING )
 	{
@@ -665,8 +655,27 @@ repeatdelay 1.0
 	local RND_ANG $randf(0,359.99)
 	local RND_DIST $randf(0,STORM_RAD)
 	vectoradd L_POS $relpos($vec(0,RND_ANG,0),$vec(0,RND_DIST,0))
+	
+	local L_GROUND L_POS
+	vectorset L_GROUND z $get_ground_height(L_POS)
+	
+	local L_STRIKE_TIME 0 //Strike time 0 means less fx, and no damage
+	if ( $vec.z(L_GROUND) > -3000 ) //If strike is landing on the island, not below
+	{
+		local L_STRIKE_TIME 3 //Then turn strike time up
+		token.add ATK_POINTS L_GROUND
+		callevent L_STRIKE_TIME lightning_strike
+	}
 
-	clientevent new all nashalrath/lightning_strike_cl L_POS $get(CONTROL_PLAYER,index) -3000
+	clientevent new all nashalrath/lightning_strike_cl L_POS L_STRIKE_TIME
+}
+
+{ lightning_strike
+
+	local L_POS $get_token(ATK_POINTS,0)
+	token.del ATK_POINTS 0
+	
+	xdodamage L_POS 128 DMG_LIGHTNING_STRIKE 0.1 ent_me ent_me none lightning_effect
 }
 
 { lightning_flicker
@@ -698,43 +707,49 @@ repeatdelay 1.0
 	setvard LIGHTNING_FLICKERING 0
 }
 
-{ drop_meteor //called by main think cycle when fire storm active
-	callevent get_control_player
+{ do_ice_bolt //called by main think cycle when fire storm active
 
 	local L_POS STORM_CENTER
 	local RND_ANG $randf(0,359.99)
 	local RND_DIST $randf(0,STORM_RAD)
 	vectoradd L_POS $relpos($vec(0,RND_ANG,0),$vec(0,RND_DIST,0))
+	
+	local L_DEST L_POS
+	vectoradd L_DEST z -50
+
+	//<projectile scriptname> <"view"|(src_origin)> <target|(targ_origin)|none> <speed> <damage> <cof> <skill|none>
+	tossprojectile "proj_ice_bolt" L_POS L_DEST 450 DMG_ICE_SHARD 0 none
+	
+	callexternal $get(ent_lastprojectile,id) ext_scale 4
+}
+
+{ drop_meteor //called by main think cycle when fire storm active
+
+	local L_POS STORM_CENTER
+	local RND_ANG $randf(0,359.99)
+	local RND_DIST $randf(0,STORM_RAD)
+	vectoradd L_POS $relpos($vec(0,RND_ANG,0),$vec(0,RND_DIST,0))
+	local L_DEST $relpos(L_POS,$vec(-10,-10,-100))
+
 	//createnpc monsters/summon/meteor_deployer L_POS $get(ent_me,id) $get(ent_me,id)
-	clientevent new all nashalrath/fire_bomb_cl L_POS $get(CONTROL_PLAYER,index) -3000
+	//<projectile scriptname> <"view"|(src_origin)> <target|(targ_origin)|none> <speed> <damage> <cof> <skill|none>
+	tossprojectile "proj_staff_fire_bomb" L_POS L_DEST 120 DMG_METEOR 0 none
+	//clientevent new all nashalrath/fire_bomb_cl L_POS $get(CONTROL_PLAYER,index) -3000
 }
 
-{ ext_fbl //<origin> - fire bomb landed - called by fire storm CL script and returned by GM
-	dbg ext_fbl
-
-	effect screenshake PARAM1 100 5 3 500
-
-	local SPLOOSH_POINT PARAM1
-	//vectorset SPLOOSH_POINT z $get_ground_height(SPLOOSH_POINT)
-	clientevent new all items/proj_arrow_phx_cl SPLOOSH_POINT 256
-	xdodamage PARAM1 256 DMG_METEOR 0.1 ent_me ent_me none fire_effect dmgevent:fbl	
-}
-
-{ fbl_dodamage
+{ game_dodamage //Called from various storm hazards //PARAM1=hit:0|1 PARAM2=ent_hit PARAM3=(start) PARAM4=(end) PARAM5=DmgType PARAM6=DmgAmt
+	
 	if PARAM1
-	if $get(PARAM2,relationship,ent_me) equals enemy
-	applyeffect PARAM2 effects/effect_burn 5.0 $get(ent_me,id) DOT_FIRE
-}
-
-{ get_control_player
-	//player used to report various CL events
-	setvard CONTROL_PLAYER $get(ASPECT_ID,scriptvar,'NPCATK_TARGET') 
-	if ( !$get(L_CONTROL_PLAYER,isplayer) )
+	if $int(PARAM6)
+	if $get(ent_me,relationship,PARAM2) equals 'enemy' //if the target is an enemy, and was hit
+	
+	if ( BREATH_CYCLE == 1 ) //meteors
 	{
-		local L_PLAYER_LIST ''
-		getplayersnb L_PLAYER_LIST
-		local L_PLAYER_LIST $sort_entlist(L_PLAYER_LIST,range)
-		setvard CONTROL_PLAYER $get_token(L_PLAYER_LIST,0)
+		applyeffect PARAM2 effects/effect_burn 5.0 $get(ent_me,id) DOT_FIRE
+	}
+	else if ( BREATH_CYCLE == 2 ) //lightning
+	{
+		applyeffect PARAM2 effects/effect_shock_dmg 10.0 $get(ent_me,id) DOT_LIGHTNING
 	}
 }
 

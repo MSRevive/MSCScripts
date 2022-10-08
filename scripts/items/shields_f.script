@@ -3,7 +3,7 @@
 {
 	const NOPUSH_CHANCE 100%
 
-	const MP_DRAIN_RATE 4
+	const MP_DRAIN_RATE 2
 
 	const PARRY_MULTI 1.5
 	const SHIELD_BASE_PARRY 10
@@ -67,26 +67,46 @@
 
 { scan_keys
 	if SCAN_KEYS
-	if ( $get(ent_me,id) equals $get(ent_owner,scriptvar,'PLR_LEFT_HAND') ) local BEW_IS_WEILDED 1
-	if ( $get(ent_me,id) equals $get(ent_owner,scriptvar,'PLR_RIGHT_HAND') ) local BEW_IS_WEILDED 1
-	if BEW_IS_WEILDED
+	if game.item.wielded
 	callevent 0.25 scan_keys
 	//dbg scan_keys use $get(ent_owner,keydown,use) atk game.item.attacking
 	local DO_BREATH 0
-	if ( $get(ent_owner,keydown,use) ) add DO_BREATH 1
-	if ( game.item.attacking ) add DO_BREATH 1
-	if ( $get(ent_owner,mp) > MP_DRAIN_RATE )
+
+//	local L_DBG1 $get(ent_owner,hand0)
+//	local L_DBG1 $get(L_DBG1,itemname)
+//	local L_DBG2 $get(ent_me,itemname)
+//
+//	dbg scan_keys atk1 $get(ent_owner,keydown,attack1) atk2 $get(ent_owner,keydown,attack2) h0 L_DBG1 vs L_DBG2
+
+
+	if ( game.item.attacking )
 	{
-		add DO_BREATH 1
+		if ( $get(ent_owner,keydown,use) ) local DO_BREATH 1
+		local L_ACTIVE $get(ent_owner,active_item)
+		local L_ACTIVE $get(L_ACTIVE,itemname)
+		if ( L_ACTIVE equals $get(ent_me,itemname) )
+		{
+			if $get(ent_owner,keydown,attack2)
+			local DO_BREATH 1
+		}
+		else
+		{
+			if $get(ent_owner,keydown,attack1)
+			local DO_BREATH 1
+		}
+		dbg scan_keys atk1 $get(ent_owner,keydown,attack1) atk2 $get(ent_owner,keydown,attack2) - L_ACTIVE vs $get(ent_me,itemname)
 	}
-	else
+
+	if ( $get(ent_owner,mp) < MP_DRAIN_RATE )
 	{
+		local DO_BREATH 0
 		if game.time > NEXT_MP_WARN
 		setvard NEXT_MP_WARN game.time
-		add NEXT_MP_WARN 10.0
+		add NEXT_MP_WARN 5.0
 		dplayermessage ent_owner Demonshield: Insufficient mana for fire breath
 	}
-	if ( DO_BREATH == 3 )
+
+	if ( DO_BREATH )
 	{
 		if !BREATH_ON
 		callevent start_breath

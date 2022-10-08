@@ -1,0 +1,653 @@
+#scope server
+{
+	setvar ANIM_IDLE anim_idle
+	setvar ANIM_WALK anim_walk
+	setvar ANIM_RUN anim_walk
+	setvar ANIM_FLINCH anim_flinch1
+	setvar ANIM_DEATH anim_death
+	setvar ANIM_ATTACK anim_bite1
+
+	const ANIM_ALERT anim_alert
+	const ANIM_BITE1 anim_bite1 //frame_bite1_start frame_attack_bite1
+	const ANIM_BITE2 anim_bite2 //frame_bite2_start frame_attack_bite2
+	const ANIM_BITE3 anim_bite3 //frame_bite3_start frame_attack_bite3
+
+	const ANIM_BREATH_RAPID anim_breath1 //frame_breath1_begin frame_breath1_strike frame_breath1_done
+	const ANIM_BREATH_CONE anim_breath2 //frame_breath2_begin frame_breath2_start frame_breath2_end frame_breath2_done
+	const ANIM_BREATH_GUIDED anim_breath3 //frame_breath3_begin frame_breath3_strike frame_breath3_done
+
+	const ANIM_HEADWHIP anim_whip_head //frame_headwhip_start frame_attack_headwhip
+	const ANIM_TAILWHIP anim_whip_tail //frame_tailwhip_start frame_attack_tailwhip
+
+	const ANIM_FLINCH1 anim_flinch1
+	const ANIM_FLINCH2 anim_flinch2
+
+	const ATTACH_HEAD_LEFT 0
+	const ATTACH_HEAD_MID 1 
+	const ATTACH_HEAD_RIGHT 2
+	const ATTACH_TAIL 3
+
+	//beam functions index attachments from 1, and don't like it when you use $math(add,<attach>,1) as a parameter
+	const ATTACH_HEAD_LEFT1 1
+	const ATTACH_HEAD_MID1 2 
+	const ATTACH_HEAD_RIGHT1 3
+	const ATTACH_TAIL1 4
+
+	//base code
+	setvard GAME_PUSH_RATIO 0.1
+
+	//base AI
+	const HYDRA_ATTACK_RANGE 246 //varies with size
+	const HYDRA_ATTACK_HITRANGE 280 //varies with size
+	setvard ATTACK_RANGE HYDRA_ATTACK_RANGE
+	setvard ATTACK_HITRANGE HYDRA_ATTACK_HITRANGE
+	setvard NPC_GIVE_EXP 750 //ovrd with const NPC_BASE_EXP
+	const SOUND_DEATH monsters/hydra/death_final.wav
+	setvard IMMUNE_STUN 100%
+
+	//base propelled
+	setvard NPC_HACKED_MOVE_SPEED 50
+
+	//base struck
+	const NPC_USE_PAIN 1
+	const NPC_USE_FLINCH 1
+	const NPC_FLINCH_THRESH 0.01
+	const NPC_USE_IDLE 1
+	const SOUND_IDLE1 monsters/hydra/c_bulette_slct.wav
+	const SOUND_IDLE2 monsters/hydra/c_bulette_dead1.wav
+	const SOUND_IDLE3 monsters/hydra/c_bulette_dead2.wav
+	const SOUND_PAIN1 monsters/hydra/c_bulette_hit1.wav
+	const SOUND_PAIN2 monsters/hydra/c_bulette_hit2.wav
+	const SOUND_PAIN3 monsters/hydra/c_bulette_hit3.wav
+
+	//custom
+	const HYDRA_TYPE fire
+	const HYDRA_SIZE 1
+
+	const HYDRA_RUN_SPEED 150 //varies with size
+	const HYDRA_WALK_SPEED 50  //varies with size
+
+	const AURA_CL_SCRIPT monsters/hydra_fire_lesser_cl //varies with type
+	const AURA_ELEMENT fire_effect //varies with type
+	const FREQ_CL_REFRESH 30.0
+
+	const COL_BEAM1 (255,0,0) //varies with type
+	const COL_BEAM2 (255,128,0) //varies with type
+
+	const DOT_DMG 50
+	const DOT_DUR 5.0
+	const DOT_SCRIPT effects/effect_burn
+	const DOT_EFFECTNAME DOT_fire
+	const DOTALT_DMG 100
+	const DOTALT_DUR 5.0
+	const DOTALT_SCRIPT effects/effect_burn //ice/poison may have freeze_solid/blind atks
+	const DOTALT_EFFECTNAME DOT_fire
+	const DMG_BITE1 150
+	const DMG_BITE2 175
+	const DMG_BITE3 200
+	const DMG_TAIL 600
+	const AOE_TAIL 164 //varies with size
+	const FREQ_BREATH 20.0
+	const FREQ_TAIL_CHECK 10.0
+
+	const DMG_PROJ_RAPID 200 //varies with type
+	const PROJ_RAPID_SCRIPT proj_fire_bomb //varies with type
+
+	const DMG_BREATH_CONE 100
+	const BREATH_CONE_RANGE 256 //varies with size
+	const BREATH_CONE_AOE 256 //varies with size
+
+	const DMG_PROJ_GUIDED 1000
+	const PROJ_GUIDED_SCRIPT proj_elemental_guided
+	const PROJ_GUIDED_ELEMENT fire //varies with type
+
+	const SOUND_COMBAT1 monsters/hydra/c_bulette_bat1.wav
+	const SOUND_COMBAT2 monsters/hydra/c_bulette_bat2.wav
+	const SOUND_COMBAT3 monsters/hydra/c_bulette_dead3.wav
+
+	const SOUND_ATTACK_HEAD1 monsters/hydra/c_bulette_atk1.wav
+	const SOUND_ATTACK_HEAD2 monsters/hydra/c_bulette_atk2.wav
+	const SOUND_ATTACK_HEAD3 monsters/hydra/c_bulette_atk3.wav
+
+	const SOUND_TAIL weapons/swing_huge.wav
+
+	const SOUND_ALERT monsters/hydra/rawr.wav
+
+	const SOUND_BREATH1_START monsters/hydra/c_bulette_bat1.wav
+	const SOUND_BREATH1_STRIKE magic/fireball_large.wav
+
+	const SOUND_BREATH2_START monsters/hydra/c_bulette_bat2.wav
+	const SOUND_BREATH2_STRIKE magic/flame_loop_start.wav
+	const SOUND_BREATH2_LOOP magic/flame_loop.wav
+
+	//for projectiles
+	setvard PROJ_FIRE_BOMB_AOE 128
+	setvard PROJ_FIRE_BOMB_SCALE 0.25
+	setvard PROJ_ELEMENT_TYPE PROJ_GUIDED_ELEMENT
+	setvard PROJ_ELEMENT_SPEED 50
+	setvard PROJ_ELEMENT_MAX_DURATION 30.0
+}
+
+{ game_precache
+	precache explode1.spr
+	precache 3dmflagry.spr
+	precache xfireball3.spr
+	svplaysound 0 0 magic/sps_fogfire.wav
+	svplaysound 0 0 magic/cold_breath.wav
+	svplaysound 0 0 magic/bolt_loop.wav
+	svplaysound 0 0 magic/flame_loop.wav
+}
+
+#include [server] monsters/base_monster_new
+#include [server] monsters/base_propelled //model isn't attached to bone 0 correctly, can't fix
+#include [server] monsters/base_struck
+
+{ npc_spawn
+	callevent hydra_spawn
+}
+
+{ hydra_spawn
+	name a|Lesser Fire Hydra
+	setmodel monsters/hydra_small.mdl
+	hp 5000
+	width 96
+	height 96
+	race demon
+
+	setidleanim ANIM_IDLE
+	setmoveanim ANIM_WALK
+	
+	roam 1
+	hearingsensitivity 4
+
+	takedmg fire 0.0
+	takedmg cold 1.5
+	takedmg holy 1.5
+
+	setvard BREATH_TYPE 0
+
+	callevent 2.0 hydra_finalize
+}
+
+{ hydra_finalize
+	local L_GOLD $get(ent_me,maxhp)
+	local L_GOLD_MULTI 0.5
+	if ( game.central )
+	{
+		local L_PLAYERS game.playersnb
+		if L_PLAYERS > 1
+		multiply L_PLAYERS 0.5
+		add L_GOLD_MULTI L_PLAYERS
+	}
+	multiply L_GOLD L_GOLD_MULTI
+	gold L_GOLD
+}
+
+{ npc_targetsighted
+	if ( !DID_INTRO )
+	{
+		setvard DID_INTRO 1
+		playanim critical ANIM_ALERT
+		playsound 0 10 SOUND_ALERT
+		callevent hydra_init_combat
+		setvard MOVE_SUSPEND_UNTIL game.time
+		add MOVE_SUSPEND_UNTIL 3.0
+		setvard AS_ATTACKING game.time
+		add AS_ATTACKING 5.0
+	}
+}
+
+{ hydra_init_combat
+	setvard HYDRA_DID_INIT 1
+	if ( HYDRA_SIZE == 1 ) setvard AURA_SIZE 128
+
+	callevent refresh_cl_effects
+	setvard NEXT_TAIL_CHECK game.time
+	add NEXT_TAIL_CHECK FREQ_TAIL_CHECK
+	setvard NEXT_BREATH game.time
+	add NEXT_BREATH FREQ_BREATH
+}
+
+{ refresh_cl_effects
+	if ( MY_CL_IDX equals 'MY_CL_IDX' ) local L_REFRESH 1
+	if ( game.time > NEXT_CL_REFRESH ) local L_REFRESH 1
+	
+	if L_REFRESH
+	setvard NEXT_CL_REFRESH game.time
+	add NEXT_CL_REFRESH FREQ_CL_REFRESH
+	dbg refresh_cl_effects
+	clientevent new all AURA_CL_SCRIPT $get(ent_me,index) 30.0 AURA_SIZE fire BREATH_CONE_ON BREATH_CONE_RANGE BREATH_CONE_AOE
+	setvard MY_CL_IDX game.script.last_sent_id
+}
+
+{ game_death
+	clientevent update all MY_CL_IDX end_fx
+}
+
+{ npcatk_hunt
+	local L_GAME_TIME game.time
+
+	if ( NPCATK_TARGET isnot unset )
+	{
+		setvard RESET_CYCLES L_GAME_TIME
+		add RESET_CYCLES 20.0
+		setvard HAD_TARGET 1
+		setvard NPC_HACKED_MOVE_SPEED HYDRA_RUN_SPEED
+	}
+	else
+	{
+		setvard NPC_HACKED_MOVE_SPEED HYDRA_WALK_SPEED
+		if HYDRA_DID_INIT
+		if HAD_TARGET
+		if L_GAME_TIME > RESET_CYCLES
+		//not had a target for awhile, reset cycles
+		callevent hydra_init_combat
+		setvard DID_INTRO 0
+		setvard HAD_TARGET 0
+	}
+
+	if ( L_GAME_TIME < MOVE_SUSPEND_UNTIL ) setvard NPC_HACKED_MOVE_SPEED 0
+
+	if ( L_GAME_TIME > NEXT_CL_REFRESH )
+	{
+		if HYDRA_DID_INIT
+		callevent refresh_cl_effects
+	}
+
+	if ( L_GAME_TIME > NEXT_AURA_SCAN )
+	{
+		setvard NEXT_AURA_SCAN L_GAME_TIME
+		add NEXT_AURA_SCAN 1.0
+		callevent aura_checktargets
+	}
+
+	if ( AM_BREATHING )
+	{
+		playanim once CUR_BREATH_ANIM //case something interrupts my critical breath anim
+	}
+
+	if NPCATK_TARGET isnot unset
+	if !SUSPEND_AI
+	if !AM_BREATHING
+
+	if ( L_GAME_TIME > NEXT_TAIL_CHECK )
+	{
+		setvard NEXT_TAIL_CHECK L_GAME_TIME
+		add NEXT_TAIL_CHECK FREQ_TAIL_CHECK //reset again when tail whip done
+		callevent do_tail_check
+		if DID_TAIL
+		setvard DID_TAIL 0
+		exitevent
+	}
+
+	if ( L_GAME_TIME > NEXT_BREATH )
+	{
+		setvard NEXT_BREATH L_GAME_TIME
+		add NEXT_BREATH FREQ_BREATH //reset again when breath done
+		callevent do_breath
+	}
+}
+
+{ do_breath
+	add BREATH_TYPE 1
+
+	local L_SCAN_POINT $relpos(0,512,32)
+	setvard BREATH_TARGS $get_tsphere(enemy,512,L_SCAN_POINT)
+	if ( G_DEVELOPER_MODE ) callexternal G_DEV_PLAYER ext_debug_draw_circle L_SCAN_POINT 512 5
+	if ( BREATH_TARGS equals none )
+	{
+		//no valid targets in front, try again in a bit
+		subtract BREATH_TYPE 1
+		setvard NEXT_BREATH game.time
+		add NEXT_BREATH 3.0
+	}
+
+	if ( BREATH_TYPE == 1 )
+	{
+		callevent breath_rapid_start
+	}
+
+	if ( BREATH_TYPE == 2 )
+	{
+		callevent breath_cone_start
+	}
+
+	if ( BREATH_TYPE == 3 )
+	{
+		callevent breath_guided_start
+		setvard BREATH_TYPE 0
+	}
+
+	//consider making an alternate version of the alert anim where he tosses 3 projectiles at distant targets
+}
+
+{ breath_end
+	setvard AM_BREATHING 0
+	callevent npcatk_resume_movement
+	callevent npcatk_resume_ai
+	setvard NPC_FLINCH_DISABLE 0
+	setvard MOVE_SUSPEND_UNTIL 0
+	setvard NEXT_BREATH game.time
+	add NEXT_BREATH FREQ_BREATH
+}
+
+//=================== BREATH GUIDED [3]
+
+{ breath_guided_start
+	setvard AM_BREATHING 1
+	setvard SHOT_GUIDED 0
+	setvard CUR_BREATH_ANIM ANIM_BREATH_GUIDED
+	callevent npcatk_suspend_movement ANIM_BREATH_GUIDED
+	callevent npcatk_suspend_ai
+	setvard NPC_FLINCH_DISABLE 1
+	setvard MOVE_SUSPEND_UNTIL game.time
+	add MOVE_SUSPEND_UNTIL 30.0
+}
+
+{ frame_breath3_begin
+	playsound 0 10 SOUND_BREATH3_START
+	token.scramble BREATH_TARGS
+	setvard CUR_BREATH_TARG $get_token(BREATH_TARGS,0)
+	setvard CUR_BREATH_ORG $get(CUR_BREATH_TARG,origin)
+	setmovedest CUR_BREATH_TARG 9999
+	//clientevent update all MY_CL_IDX add_beam 3.0 ATTACH_HEAD_RIGHT COL_BEAM1 COL_BEAM2
+}
+
+{ frame_breath3_strike
+	setvard SHOT_GUIDED 1
+	playsound 0 10 SOUND_BREATH1_STRIKE
+	setvard PROJ_ELEMENT_TARGET CUR_BREATH_TARG
+	tossprojectile CUR_BREATH_TARG PROJ_ELEMENT_SPEED DMG_PROJ_GUIDED 1 PROJ_GUIDED_SCRIPT $get(ent_me,attachpos,ATTACH_HEAD_RIGHT) notoffset
+	
+	if ( HYDRA_TYPE equals fire )
+	{
+		callexternal ent_lastprojectile ext_set_target CUR_BREATH_TARG
+	}
+}
+
+{ frame_breath3_done
+	if ( !SHOT_GUIDED )
+	{
+		playanim once ANIM_BREATH_GUIDED //something went wrong, try again
+	}
+	else
+	{
+		setvard SHOT_GUIDED 0
+		callevent breath_end
+		playanim critical ANIM_IDLE
+	}
+}
+
+//=================== BREATH RAPID [1]
+
+{ breath_rapid_start
+	setvard AM_BREATHING 1
+	setvard RAPID_BREATH_COUNT 0
+	setvard CUR_BREATH_ANIM ANIM_BREATH_RAPID
+	callevent npcatk_suspend_movement ANIM_BREATH_RAPID
+	callevent npcatk_suspend_ai
+	setvard NPC_FLINCH_DISABLE 1
+	setvard MOVE_SUSPEND_UNTIL game.time
+	add MOVE_SUSPEND_UNTIL 30.0
+}
+
+{ frame_breath1_begin
+	playsound 0 10 SOUND_BREATH1_START
+	token.scramble BREATH_TARGS
+	setvard CUR_BREATH_TARG $get_token(BREATH_TARGS,0)
+	setvard CUR_BREATH_ORG $get(CUR_BREATH_TARG,origin)
+	setmovedest CUR_BREATH_TARG 9999
+
+	//clientevent update all MY_CL_IDX add_beam 3.0 ATTACH_HEAD_LEFT COL_BEAM1 COL_BEAM2
+}
+
+{ frame_breath1_strike
+	playsound 0 10 SOUND_BREATH1_STRIKE
+	tossprojectile CUR_BREATH_ORG 200 DMG_PROJ_RAPID 1 PROJ_RAPID_SCRIPT $get(ent_me,attachpos,ATTACH_HEAD_LEFT) notoffset
+	if ( HYDRA_TYPE equals fire )
+	{
+		callexternal ent_lastprojectile ext_lighten 0
+		callexternal ent_lastprojectile ext_scale 0.5
+	}
+}
+
+{ frame_breath1_done
+	add RAPID_BREATH_COUNT 1
+	if ( RAPID_BREATH_COUNT > 3 )
+	{
+		callevent breath_rapid_end
+	}
+	else
+	{
+		playanim once ANIM_BREATH_RAPID
+	}
+}
+
+{ breath_rapid_end
+	callevent breath_end
+}
+
+{ ext_fire_bomb //<land point> - called by proj_fire_bomb
+	setvard FIRE_BOMB_POS PARAM1
+	xdodamage FIRE_BOMB_POS 128 DMG_PROJ_RAPID 0.1 ent_me ent_me none blunt_effect dmgevent:rapid
+}
+
+{ rapid_dodamage
+	if $get(PARAM2,relationship,ent_me) equals enemy
+	callevent apply_dot $get(PARAM2,id)
+
+	local TARG_ORG $get(PARAM2,origin)
+	local MY_ORG FIRE_BOMB_POS
+	local NEW_YAW $angles(MY_ORG,TARG_ORG)
+	addvelocity PARAM2 $relvel($vec(0,NEW_YAW,0),$vec(0,1000,200))
+}
+
+//=================== BREATH CONE [2]
+
+{ frame_breath2_begin
+	playsound 0 10 SOUND_BREATH2_START
+	//clientevent update all MY_CL_IDX add_beam 10.0 ATTACH_HEAD_MID COL_BEAM1 COL_BEAM2
+}
+
+{ breath_cone_start
+	setvard AM_BREATHING 1
+	setvard CUR_BREATH_ANIM ANIM_BREATH_CONE
+	callevent npcatk_suspend_movement ANIM_BREATH_CONE
+	callevent npcatk_suspend_ai
+	setvard NPC_FLINCH_DISABLE 1
+	setvard MOVE_SUSPEND_UNTIL game.time
+	add MOVE_SUSPEND_UNTIL 30.0
+
+	setvard BREATH_CONE_YAW $get(ent_me,angles.yaw)
+	//subtract BREATH_CONE_YAW 45
+	//if ( BREATH_CONE_YAW < 0 ) add BREATH_CONE_YAW 359.99
+	local L_BREATH_POS $get(ent_me,origin)
+	vectoradd L_BREATH_POS $relpos($vec(0,BREATH_CONE_YAW,0),$vec(0,BREATH_CONE_RANGE,0))
+	setmovedest L_BREATH_POS 9999
+	setvard BREATH_CONE_ACTIVE 1
+	setvard BREATH_CONE_ON 0
+	callevent breath_cone_loop
+}
+
+{ breath_cone_loop
+	if BREATH_CONE_ACTIVE
+	callevent 0.1 breath_cone_loop
+
+	local L_BREATH_POS $get(ent_me,origin)
+	vectoradd L_BREATH_POS $relpos($vec(0,BREATH_CONE_YAW,0),$vec(0,BREATH_CONE_RANGE,0))
+	setmovedest L_BREATH_POS 9999
+
+	if ( !BREATH_CONE_ON )
+	{
+		subtract BREATH_CONE_YAW 0.5
+		if ( BREATH_CONE_YAW < 0 ) add BREATH_CONE_YAW 359.99
+	}
+	else
+	{
+		add BREATH_CONE_YAW 1
+		if ( BREATH_CONE_YAW > 359.99 ) subtract BREATH_CONE_YAW 359.99
+		if game.time > NEXT_CONE_SCAN
+		setvard NEXT_CONE_SCAN game.time
+		add NEXT_CONE_SCAN 0.5
+		vectoradd L_BREATH_POS z 32
+		setvard CONE_TARGS $get_tsphere(enemy,BREATH_CONE_AOE,L_BREATH_POS)
+		if CONE_TARGS isnot none
+		calleventloop $get_token_amt(CONE_TARGS) breath_cone_affect_targets
+	}
+}
+
+{ breath_cone_affect_targets
+	local CUR_IDX game.script.iteration
+	local CUR_TARG $get_token(CONE_TARGS,CUR_IDX)
+	xdodamage CUR_TARG direct DMG_BREATH_CONE 100% ent_me ent_me none AURA_ELEMENT dmgevent:cone
+}
+
+{ cone_dodamage
+	callevent apply_dot2 $get(PARAM2,id)
+}
+
+{ frame_breath2_start
+	setvard BREATH_CONE_ON 1
+	playsound 1 10 SOUND_BREATH2_STRIKE
+	playsound 4 10 SOUND_BREATH2_LOOP
+	clientevent update all MY_CL_IDX cone_breath_on BREATH_CONE_RANGE BREATH_CONE_AOE
+}
+
+{ frame_breath2_end
+	setvard BREATH_CONE_ON 0
+	playsound 4 0 SOUND_BREATH2_LOOP
+	clientevent update all MY_CL_IDX cone_breath_off
+}
+
+{ frame_breath2_done
+	callevent breath_cone_end
+}
+
+{ breath_cone_end
+	setvard BREATH_CONE_ACTIVE 0
+	callevent breath_end
+	playanim critical ANIM_IDLE
+}
+
+//other frame events
+{ frame_bite1_start
+	playsound 0 10 SOUND_ATTACK_HEAD1
+}
+
+{ frame_bite2_start
+	playsound 0 10 SOUND_ATTACK_HEAD2
+}
+
+{ frame_bite3_start
+	playsound 0 10 SOUND_ATTACK_HEAD3
+}
+
+{ frame_attack_bite1
+	xdodamage NPCATK_TARGET ATTACK_HITRANGE DMG_BITE1 85% ent_me ent_me none slash dmgevent:bite1
+	setvard ANIM_ATTACK ANIM_BITE2
+}
+{ frame_attack_bite2
+	xdodamage NPCATK_TARGET ATTACK_HITRANGE DMG_BITE2 95% ent_me ent_me none slash dmgevent:bite2
+	setvard ANIM_ATTACK ANIM_BITE3
+}
+{ frame_attack_bite3
+	xdodamage NPCATK_TARGET ATTACK_HITRANGE DMG_BITE3 85% ent_me ent_me none slash dmgevent:bite3
+	setvard ANIM_ATTACK ANIM_BITE1
+}
+
+{ bite1_dodamage
+	if $get(PARAM2,relationship,ent_me) equals enemy
+	addvelocity PARAM2 $relvel(-200,400,110)
+	if PARAM1
+	callevent apply_dot1 $get(PARAM2,id)
+}
+
+{ bite2_dodamage
+	if $get(PARAM2,relationship,ent_me) equals enemy
+	addvelocity PARAM2 $relvel(0,800,110)
+	if PARAM1
+	callevent apply_dot1 $get(PARAM2,id)
+}
+
+{ bite3_dodamage
+	if $get(PARAM2,relationship,ent_me) equals enemy
+	addvelocity PARAM2 $relvel(200,300,110)
+	if PARAM1
+	callevent apply_dot1 $get(PARAM2,id)
+}
+
+{ aura_checktargets
+	xdodamage $relpos(0,0,0) AURA_SIZE DMG_AURA 0 ent_me ent_me none AURA_ELEMENT dmgevent:aura
+}
+
+{ aura_dodamage
+	if PARAM1
+	callevent apply_dot2 $get(PARAM2,id)
+}
+
+{ apply_dot1
+	if !$get(PARAM1,haseffect,DOT_EFFECTNAME)
+	applyeffect PARAM1 DOT_SCRIPT DOT_DUR $get(ent_me,id) DOT_DMG
+}
+
+{ apply_dot2
+	if !$get(PARAM1,haseffect,DOTALT_EFFECTNAME)
+	applyeffect PARAM1 DOTALT_SCRIPT DOTALT_DUR $get(ent_me,id) DOTALT_DMG
+}
+
+{ game_damaged_other //PARAM1=target_hit PARAM2=dmg PARAM3=dmg_type
+
+	//this is cheap, but he needs help
+	if ( HYDRA_TYPE equals fire )
+	{
+		if ( PARAM3 !contains fire ) 
+		{
+			if $get(PARAM1,scriptvar,'IMMUNE_FIRE') == 1
+			local L_INC_DMG 1
+		}
+		if ( $get(PARAM1,nopush) ) local L_INC_DMG 1
+
+		if ( L_INC_DMG )
+		{
+			local L_FIN_DMG PARAM2
+			multiply L_FIN_DMG 3.0
+			setdmg dmg L_FIN_DMG
+			returndata 3.0
+		}
+	}
+}
+
+{ do_tail_check
+	local L_BACK AOE_TAIL
+	local L_BACK $neg(L_BACK)
+	local L_SCAN_POINT $relpos(0,L_BACK,32)
+	setvard TAIL_TARGS $get_tsphere(enemy,AOE_TAIL,L_SCAN_POINT)
+	if ( G_DEVELOPER_MODE ) callexternal G_DEV_PLAYER ext_debug_draw_circle L_SCAN_POINT AOE_TAIL 5
+	if TAIL_TARGS isnot none
+	setvard DID_TAIL 1
+	playanim critical ANIM_TAILWHIP
+}
+
+{ frame_tailwhip_start
+	playsound 0 10 SOUND_TAIL
+	//<model> <target> <attach> <width> <life> <brightness> <color>
+	clientevent update all MY_CL_IDX add_beam 2.0 ATTACH_TAIL COL_BEAM1 COL_BEAM2
+}
+
+{ frame_attack_tailwhip
+	local L_BACK AOE_TAIL
+	local L_BACK $neg(L_BACK)
+	local L_SCAN_POINT $relpos(0,L_BACK,32)
+	xdodamage L_SCAN_POINT AOE_TAIL DMG_TAIL 100% ent_me ent_me none slash dmgevent:tail
+}
+
+{ tail_dodamage
+	if $get(PARAM2,relationship,ent_me) equals enemy
+	addvelocity PARAM2 $relvel(300,-600,220)
+	if PARAM1
+	callevent apply_dot2 $get(PARAM2,id)
+}
+
+{ ext_beam_test
+	clientevent update all MY_CL_IDX add_beam 30.0 ATTACH_HEAD_MID $clcol(COL_BEAM1) $clcol(COL_BEAM2)
+}

@@ -1,7 +1,7 @@
 //statotionary, temporary sprite (why is there no function for this?)
 //- remember to precache sprite
 #scope client
-{ client_activate //<origin> <sprite_name> <render_props> <duration>
+{ client_activate //<origin> <sprite_name> <render_props> <duration|once>
 	//render props format: fadeout:0|1;scale;renderamt;rendermode;rendercolor;framerate;frames
 
 	local SPRITE_POS PARAM1
@@ -9,11 +9,25 @@
 	setvard RENDER_PROPS PARAM3
 	setvard SPRITE_DURATION PARAM4
 	
-	cleffect tempent sprite SPRITE_NAME SPRITE_POS setup_temp_sprite
+	if ( SPRITE_DURATION isnot once )
+	{
+		cleffect tempent sprite SPRITE_NAME SPRITE_POS setup_temp_sprite
+		local F_DURATION SPRITE_DURATION
+		add F_DURATION 0.1
+		callevent F_DURATION remove_me
+	}
+	else
+	{
+		cleffect tempent sprite SPRITE_NAME SPRITE_POS setup_temp_sprite update_temp_sprite
+		add F_DURATION 20.0 //max duration just in case
+		callevent F_DURATION remove_me
+		dbg *** $currentscript playonce started @ game.time
+	}
+}
 
-	local F_DURATION SPRITE_DURATION
-	add F_DURATION 0.1
-	callevent F_DURATION remove_me
+{ update_temp_sprite
+	if game.tempent.frame >= $get_token(RENDER_PROPS,6)
+	callevent remove_me
 }
 
 { remove_me
@@ -21,7 +35,10 @@
 }
 
 { setup_temp_sprite
-	cleffect tempent set_current_prop death_delay SPRITE_DURATION
+
+	//dbg *** $currentscript renderprops: sc $get_token(RENDER_PROPS,1) ra $get_token(RENDER_PROPS,2) rm $get_token(RENDER_PROPS,3) rc $get_token(RENDER_PROPS,4) fr $get_token(RENDER_PROPS,5) fn $get_token(RENDER_PROPS,6)
+
+	if ( SPRITE_DURATION isnot once ) cleffect tempent set_current_prop death_delay SPRITE_DURATION
 	if ( $get_token(RENDER_PROPS,0) == 1 ) cleffect tempent set_current_prop fadeout lifetime
 	cleffect tempent set_current_prop scale $get_token(RENDER_PROPS,1)
 	cleffect tempent set_current_prop renderamt $get_token(RENDER_PROPS,2)

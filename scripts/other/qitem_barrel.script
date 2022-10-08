@@ -1,0 +1,229 @@
+//. createnpc other/qitem_barrel 'tnt;5;brk_boss_entry'
+
+//This script can be filled with quest items until full, then fires a trigger, or explodes
+#scope server
+
+{
+	const SPRITE_EXPLODE bigsmoke.spr
+	const SOUND_EXPLODE weapons/explode3.wav
+	const BARREL_CLOSED_IDX 6
+	
+	setvard ITEMS_TO_TURN_IN 0
+}
+
+{ game_spawn
+	setmodel props/tnt_barrel.mdl
+	width 32
+	height 72
+	setmodelbody 0 0
+	setprop ent_me skin 0 //use skin #1 for non-explosives
+	nopush 1
+	invincible 1
+	setvard PLAYING_DEAD 1
+	name a|Barrel
+	setvard MAIN_NAME 'a|Barrel of Stuff'
+	menu.autoopen 1
+	setvard ITEM_COUNT 0
+}
+
+{ game_postspawn //<unused> <unused> <unused> <params>
+	if !AM_SUMMONED
+	local PARAM_OUT1 PARAM4
+	callevent setup_barrel PARAM_OUT1
+}
+
+{ game_dynamically_created //<item_type;num_required;trigger_event;[repeat]>
+	setvard AM_SUMMONED 1
+	local PARAM_OUT1 PARAM1
+	callevent setup_barrel PARAM_OUT1
+}
+
+{ setup_barrel //<item_type;num_required;trigger_event;[repeat]>
+
+	if ITEM_TYPE equals 'ITEM_TYPE'
+
+	dbg setup_barrel PARAM1
+
+	setvard ITEM_TYPE $get_token(PARAM1,0)
+	setvard ITEM_REQ $get_token(PARAM1,1)
+	setvard BARREL_EVENT $get_token(PARAM1,2)
+	if ( $get_token_amt(PARAM1) >= 4 )
+	{
+		if ( $get_token(PARAM1,3) equals repeat ) setvard BARREL_REPEATS 1
+	}
+
+	if ( ITEM_TYPE contains tnt )
+	{
+		setvard MAIN_NAME "Barrel of Explosives "
+		name_prefix a
+		setprop ent_me skin 0
+		setvard MENU_ADD "Add Explosives "
+		setvard ITEM_NAME explosives
+		setvard BARREL_EXPLODES 1
+		setvard BARREL_USE_SUBMODELS 1
+		setvard BARREL_SUBMODEL_GROUP 0
+		setvard BARREL_SUBMODEL_IDX_MIN 1
+		setvard BARREL_SUBMODEL_IDX_MAX 5
+		callevent update_name
+		local L_TYPE_HANDLED 1
+	}
+
+	if ( !L_TYPE_HANDLED )
+	{
+		dbg $currentscript - Warning! Type ITEM_TYPE not handled!
+	}
+}
+
+{ update_name
+	local L_NAME MAIN_NAME
+	stradd L_NAME (
+	stradd L_NAME $int(ITEM_COUNT)
+	stradd L_NAME /
+	stradd L_NAME $int(ITEM_REQ)
+	stradd L_NAME )
+	name L_NAME
+}
+
+{ ext_receive_quest_item //PARAM1 = qitem code //Called from game master
+
+	add ITEMS_TO_TURN_IN 1
+	setvard ITEMS_TO_TURN_IN $int(ITEMS_TO_TURN_IN)
+}
+
+{ game_menu_getoptions
+
+	if !BARREL_DONE
+
+	callexternal GAME_MASTER ext_check_quest_item ITEM_TYPE //Collects all items for "turning in"
+
+	if ( ITEMS_TO_TURN_IN > 0 )
+	{
+		local reg.mitem.title 	MENU_ADD
+		stradd reg.mitem.title (
+		stradd reg.mitem.title ITEMS_TO_TURN_IN
+		stradd reg.mitem.title )
+		local reg.mitem.type 	callback
+		local reg.mitem.data 	ITEMS_TO_TURN_IN
+		local reg.mitem.callback add_items
+		menuitem.register
+	}
+	else
+	{
+		local L_OUT_MSG "You have no "
+		stradd L_OUT_MSG ITEM_NAME
+		stradd L_OUT_MSG " to add to the "
+		stradd L_OUT_MSG MAIN_NAME
+		infomsg PARAM1 "Quest item required" L_OUT_MSG
+		local reg.mitem.title 	MENU_ADD
+		local reg.mitem.type 	disabled
+		menuitem.register
+	}
+}
+
+{ add_items
+	add ITEM_COUNT PARAM2
+	setvard ITEMS_TO_TURN_IN 0
+	
+	if ( PARAM2 != 0 ) playsound 0 10 items/ammopickup1.wav
+	callevent update_name
+
+	if ( BARREL_USE_SUBMODELS )
+	{
+		local L_FULL_RATIO ITEM_COUNT
+		divide L_FULL_RATIO ITEM_REQ
+		local L_BODY $ratio(L_FULL_RATIO,BARREL_SUBMODEL_IDX_MIN,BARREL_SUBMODEL_IDX_MAX)
+		local L_BODY $int(L_BODY)
+		
+		setmodelbody BARREL_SUBMODEL_GROUP L_BODY
+	}
+
+	if ( $get(PARAM1,isplayer) )
+	{
+		setvard BARREL_PLR PARAM1
+	}
+
+	if ITEM_COUNT >= ITEM_REQ
+	if ( BARREL_USE_SUBMODELS ) setmodelbody BARREL_SUBMODEL_GROUP BARREL_SUBMODEL_IDX_MAX
+	local L_OUT_MSG MAIN_NAME
+	stradd L_OUT_MSG "is full!"
+	helptip BARREL_PLR generic L_OUT_MSG " "
+	callevent do_event
+}
+
+{ ext_setbody
+	dbg ext_setbody PARAM1 PARAM2
+	setmodelbody PARAM1 PARAM2
+}
+
+{ do_event
+	if ( !BARREL_EXPLODES )
+	{
+		usetrigger BARREL_EVENT
+	}
+	else
+	{
+		menu.autoopen 0
+		setvard BARREL_DONE 1
+		callevent do_explode
+	}
+
+	if ( BARREL_REPEATS )
+	{
+		subtract ITEM_COUNT ITEM_REQ
+		if ( ITEM_COUNT >= 0 )
+		{
+			//had more than enough to fill again - do eet again
+			callevent add_items 0 0
+		}
+	}
+	else
+	{
+		menu.autoopen 0
+		setvard BARREL_DONE 1
+		if ( !BARREL_EXPLODES  ) setmodelbody 0 BARREL_CLOSED_IDX
+	}
+}
+
+{ do_explode
+	playsound 0 10 monsters/dwarf_bomber/fuse_lit.wav
+	clientevent new all monsters/summon/tnt_bomb_cl $get(ent_me,index) 5.0
+	callevent 5.0 do_explode2
+}
+
+{ do_explode2
+	usetrigger BARREL_EVENT
+	playsound 0 10 SOUND_EXPLODE
+	effect tempent spray SPRITE_EXPLODE game.monster.origin 0 1 0 0
+	setmodel none
+	xdodamage $get(ent_me,origin) 256 2000 0.9 ent_me ent_me none fire_effect dmgevent:push_loop
+	callevent 0.1 remove_me
+}
+
+{ push_loop_dodamage
+	local CUR_TARGET PARAM2
+	//dbg push_loop $get(CUR_TARGET,name) of PUSH_LIST
+	local TARGET_ORG $get(CUR_TARGET,origin)
+	local TARG_ANG $angles(game.monster.origin,TARGET_ORG)
+	setvelocity CUR_TARGET $relvel($vec(0,TARG_ANG,0),$vec(10,1000,110)) //a little to the left too, in case he's stuck up against a wall
+}
+
+{ remove_me
+	//msmonster_spawn friendly removal
+	setorigin ent_me $vec(20000,0,0)
+	invincible 0
+	race hated
+	dodamage ent_me direct 99999 100 GAME_MASTER target
+}
+
+#include [server] monsters/debug
+
+{ set_scale
+	if PARAM1 > 0
+	setprop ent_me scale PARAM1
+	local MY_WIDTH $get(ent_me,width)
+	local MY_HEIGHT $get(ent_me,height)
+	multiply MY_WIDTH PARAM1
+	multiply MY_HEIGHT PARAM1
+	width MY_WIDTH
+	height MY_WIDTH
+}

@@ -13,13 +13,13 @@
 //r = ring quest stage (integer)
 //l = lighthouse keeper (spider,grave,crystal,food)
 //n = how many times name has been changed
-//s = pet pokéball state, 1=egged, 2=summoned
-//f = Symbol and shard info (maybe used for other unique quest items)
-//b1 = galat chest bank
+//s = pet pokeball state, 1=egged, 2=summoned [defunct]
+//f = Felwyn Symbol/Shard quest
+//b1-b9 = galat chest bank
 //a = achievments (token #0=sorc_villa)
 //rep = Got reporter reward
 //dhal = halo toggled off if set to 1
-//pnw = pet wolf name
+//pnw = pet wolf name [defunt, pets see below]
 //lc = lodagond chests flag (stops repeated chest exploit)
 //sy = sylphiel's soup available
 //BODY = last submodel body layout (for char select screen)
@@ -38,12 +38,23 @@
 //Player Initialization
 { [server]
 
-	const DONATOR_LIST "STEAM_0:0:4528762;STEAM_0:1:1339151;STEAM_0:0:15435276;STEAM_0:1:5168669;STEAM_0:1:4985228;STEAM_0:1:838591;STEAM_0:0:17717134;STEAM_0:1:1184501"
+	//got too big for token list, see global.script
+	//const DONATOR_LIST "STEAM_0:0:4528762;STEAM_0:1:1339151;STEAM_0:0:15435276;STEAM_0:1:5168669;STEAM_0:1:4985228;STEAM_0:1:838591;STEAM_0:0:17717134;STEAM_0:1:1184501;STEAM_0:0:23328455"
+	//STEAM_0:0:452876 - Thothie
+	//STEAM_0:1:1339151 - Hush 2.0
+	//STEAM_0:0:15435276 - Echo 717
+	//STEAM_0:1:5168669 - Shaftinthecity
+	//STEAM_0:1:4985228 - Dridje
+	//STEAM_0:1:838591 - lafingman0
+	//STEAM_0:0:17717134 - Lucifer Majiskus
+	//STEAM_0:1:1184501 - Older than Dirt
+	//STEAM_0:0:23328455 - Meru
+
 
 	const KELDORN_ID "STEAM_0:0:19648837"
 	const DARK_ID "STEAM_0:1:8122893"
 
-	setvard FREQ_AFK_CHECK 60.0
+	setvar FREQ_AFK_CHECK 60.0
 
 	setvard PLR_2H_REDUCT 1
 	const LEAP_SIDE_DRAIN 30
@@ -83,26 +94,23 @@
 	const SOUND_BEAR_STRUCK1 monsters/bear/c_bear_hit1.wav
 	const SOUND_BEAR_STRUCK2 monsters/bear/c_bear_hit2.wav
 	const SOUND_BEAR_STRUCK3 monsters/bear/c_bear_no.wav
+
+	precache dwarf/reference.mdl
 }
 
-#include [server] player/valid_spawn
+#include [server] player/valid_spawn_new
 #include [server] player/element_resist
 
 // Spawn
-{
-	eventname game_spawn //this runs twice, once during character selection (before clicking), and again when character spawns into world
+{ game_spawn //this runs twice, once during character selection (before clicking), and again when character spawns into world
 
 	dbg game_spawn $get(ent_me,hp)
 
 	if ( !PLR_STARTED_AFK_CHECKS )
 	{
 		setvard PLR_STARTED_AFK_CHECKS 1
-		callevent 60.0 afk_check
+		//callevent 60.0 afk_check
 	}
-
-	//cheat checks
-	CheatEngineCheck
-	clientevent update ent_me const.localplayer.scriptID dll_verify G_SCRIPT_VERSION
 
 	if ( game.serverside )
 	{
@@ -115,7 +123,7 @@
 		setvard ICE_SHIELD_TIME 0
 		setvard PLAYING_DEAD 0 //in case died while invalidated
 
-		if ( !$get(GAME_MASTER,exists) ) createnpc game_master $vec(20000,-10000,-20000)
+		//if ( !$get(GAME_MASTER,exists) ) createnpc game_master $vec(20000,-10000,-20000)
 
 		if $get_quest_data(ent_me,h) == 1
 		callevent console_health_toggle 1
@@ -140,12 +148,6 @@
 
 	callevent hide_my_stuff $get(ent_me,id)
 
-	local LAST_SPAWN $get_lastmap(ent_me)
-	local NEXT_SPAWN $get_nextmap(ent_me)
-
-	if !INVALID_SPAWN
-	if ( G_VALID_SPAWN != 1 ) callevent validate_spawn LAST_SPAWN $get_map_legit(ent_me)
-
 	//dbg Spawned from LAST_SPAWN ( legit: $get_map_legit(ent_me) validated: G_VALID_SPAWN type: $get_jointype(ent_me) ) 
 
 	volume 10
@@ -167,8 +169,8 @@
 		//callexternal GAME_MASTER gm_lights_sync $get(ent_me,index)
 		callexternal all player_joined $get(ent_me,id)
 		setvard PLR_LIGHTS_SYNCED 1
-		clientevent update ent_me const.localplayer.scriptID cl_check_version G_SCRIPT_VERSION G_BPATCH_MANDATORY
-		callevent 3.0 check_version
+		
+		//Removed client side dll check. -greatguys1@NOV2021
 	}
 
 	if ( !PLR_FIRST_ACTIVATE )
@@ -258,7 +260,7 @@
 		callevent 1.0 hp_max_warn
 	}
 
-	setvard PLR_PRECHEAT_POS $get(ent_me,origin)
+	//setvard PLR_PRECHEAT_POS $get(ent_me,origin)
 	callexternal all ext_activate_items $get(ent_me,id)
 	//wish I thought of this before - use to make sure items activate post spawn
 }
@@ -390,7 +392,7 @@
 	}
 	setvard PLR_DMG 0
 
-	callexternal all bs_global_command $get(ent_me,id) vanish //remove my summons
+	callexternal all bs_global_command $get(ent_me,id) vanish death //remove my summons and report my death
 
 	//callevent hide_my_stuff $get(ent_me,id)
 
@@ -409,6 +411,10 @@
 
 	//setvard VAMPIRE_ON 0 //vampire blood go bye bye
     //setvard DEMON_BLOOD 0 //" "
+	if ( $get(ent_me,scriptvar,'PLR_SHIELD_UP') )
+	{
+		callexternal ent_me ext_shield_up 0
+	}
 
 	if ( $get(ent_me,scriptvar,'PLR_SFAURA_ACTIVE') )
 	{
@@ -448,6 +454,12 @@
 		playsound 0 10 SOUND_DEATH
 	}
 
+	//redundant bear removal
+	if ( $get(PLR_BEAR_IMAGE_ID,exists) )
+	{
+		deleteent PLR_BEAR_IMAGE_ID fade
+	}
+
 	//should we clear cmusak here?
 	scriptflags ent_me cleartype nopush
 	scriptflags ent_me cleartype mana_regen
@@ -465,7 +477,7 @@
 }
 
 { warp_out
-	setorigin ent_me (20000,20000,-20000) //send real body to oblivion so cant be looted
+	setorigin ent_me $vec(20000,20000,-20000) //send real body to oblivion so cant be looted
 }
 
 
@@ -509,7 +521,7 @@
 //		multiply OUT_DMG DMG_RED_AMT
 //		setdmg hit 1
 //		setdmg dmg OUT_DMG
-//		returndata DMG_RED_AMT
+//		return DMG_RED_AMT
 //		dbg adjusted_damage PARAM2 to OUT_DMG via DMG_RED_AMT
 //	}
 
@@ -524,22 +536,23 @@
 
 	callevent display_health
 
-	if ( PLR_COMBAT_MUSIC_ACTIVE )
-	{
-		if $get(PARAM1,isalive) //don't want post-mortem DOT's starting up music
-		if PLR_COMBAT_MUSIC_LENGTH != 0
-		if PLR_CURRENT_MUSIC isnot PLR_COMBAT_MUSIC
-		if !$get_scriptflag(ent_me,cmusak,type_exists)
-		if PARAM1 isnot GAME_MASTER
-		if ( !$get(PARAM1,scriptvar,'NPC_CUSTOM_COMBAT_MUSIC') )
-		{
-			callevent ext_music_combat add $get(PARAM1,index)
-		}
-		else
-		{
-			callevent ext_music_combat add $get(PARAM1,index) $get(PARAM1,scriptvar,'NPC_CMUSIC_LENGTH')  $get(PARAM1,scriptvar,'NPC_CMUSIC_FILE')
-		}
-	}
+	//dun do this, ya wont know when to stop
+//	if ( PLR_COMBAT_MUSIC_ACTIVE )
+//	{
+//		if $get(PARAM1,isalive) //don't want post-mortem DOT's starting up music
+//		if PLR_COMBAT_MUSIC_LENGTH != 0
+//		if PLR_CURRENT_MUSIC isnot PLR_COMBAT_MUSIC
+//		if !$get_scriptflag(ent_me,cmusak,type_exists)
+//		if PARAM1 isnot GAME_MASTER
+//		if ( !$get(PARAM1,scriptvar,'NPC_CUSTOM_COMBAT_MUSIC') )
+//		{
+//			callevent ext_music_combat add $get(PARAM1,index)
+//		}
+//		else
+//		{
+//			callevent ext_music_combat add $get(PARAM1,index) $get(PARAM1,scriptvar,'NPC_CMUSIC_LENGTH')  $get(PARAM1,scriptvar,'NPC_CMUSIC_FILE')
+//		}
+//	}
 }
 
 { display_health
@@ -686,8 +699,8 @@
 //		local EXIT_SUB 1
 //	}
 //	if !EXIT_SUB
-
-	gplayermessage ent_me PARAM1 PARAM2 PARAM3 PARAM4
+	
+	gplayermessage ent_me "Level awarded to" PARAM1 PARAM2
 
 //	if ( $get(ent_me,isbot) )
 //	{
@@ -695,11 +708,6 @@
 //	}
 //
 	if !$get(ent_me,isbot)
-
-	local SKILL_STRING 'skill.'
-	stradd SKILL_STRING PARAM1
-
-	//dbg temp $get(ent_me,name) gained skill! In PARAM1 , PARAM2 , PARAM3 , PARAM4 $get(ent_me,SKILL_STRING) ( SKILL_STRING )
 
 	local TITLE_STRING $get(ent_me,name)
 	stradd TITLE_STRING " has gained a level!"
@@ -804,29 +812,19 @@
 	{
 		setvarg G_HELP_ON 0
 		consolemsg ent_me Be sure to get more info at: www.msremake.com/forums
-		gplayermessage ent_me You can type “help” again to restore the help panels
+		gplayermessage ent_me You can type help again to restore the help panels
 		usetrigger help_spr
 		local EXIT_SUB 1
 	}
 }
 
-{ [server] game_dodamage //1:AttackHit(1/0)  2:EntityHit  3:StartOrigin  4:EndOrigin
+{ [server] game_dodamage //PARAM1=hit:0|1 PARAM2=ent_hit PARAM3=(start) PARAM4=(end) PARAM5=DmgType PARAM6=DmgAmt
 	
 	//dbg Player_Attacked with PARAM5 for PARAM6
 	if ( PARAM5 equals dark )
 	{
 		//Thothie AUG2010_23 Dark Energy Corruption
-		local OLD_PLR_DARK_LEVEL PLR_DARK_LEVEL
-		add PLR_DARK_LEVEL PARAM6
-		if ( PLR_DARK_LEVEL > PLR_MAX_DARK_LEVEL )
-		{
-			setvard PLR_DARK_LEVEL PLR_MAX_DARK_LEVEL
-		}
-		if ( OLD_PLR_DARK_LEVEL < PLR_DARK_UNHOLY_LEVEL )
-		{
-			if PLR_DARK_LEVEL > PLR_DARK_UNHOLY_LEVEL
-			callevent player_calc_holy_resistance
-		}
+		callevent plr_add_dark $int(PARAM6)
 	}
 	
 	if ( USING_LIGHTNING )
@@ -836,6 +834,20 @@
 		local SHOCK_DAMAGE $get(ent_me,skill.spellcasting.lightning)
 		multiply SHOCK_DAMAGE LIGHTNING_DMG_RATIO
 		applyeffect $get(PARAM2,id) effects/effect_shock_dmg 5 $get(ent_me,id) SHOCK_DAMAGE LIGHTNING_SKILL
+	}
+}
+
+{ plr_add_dark //<amt>
+	local OLD_PLR_DARK_LEVEL PLR_DARK_LEVEL
+	add PLR_DARK_LEVEL PARAM1
+	if ( PLR_DARK_LEVEL > PLR_MAX_DARK_LEVEL )
+	{
+		setvard PLR_DARK_LEVEL PLR_MAX_DARK_LEVEL
+	}
+	if ( OLD_PLR_DARK_LEVEL < PLR_DARK_UNHOLY_LEVEL )
+	{
+		if PLR_DARK_LEVEL > PLR_DARK_UNHOLY_LEVEL
+		callevent player_calc_holy_resistance
 	}
 }
 
@@ -892,9 +904,9 @@
 //		local OUT_DMG_FACTOR 1
 //		subtract OUT_DMG_FACTOR DMG_PENALTY_FACTOR
 //
-//		//I always do both returndata and setdmg, as I've never figured which is used where
+//		//I always do both return and setdmg, as I've never figured which is used where
 //		//seems to vary with the script execution location, but only one is used each time
-//		returndata OUT_DMG_FACTOR
+//		return OUT_DMG_FACTOR
 //		local OUT_DMG PARAM2
 //		multiply OUT_DMG OUT_DMG_FACTOR
 //		setdmg dmg OUT_DMG
@@ -910,7 +922,7 @@
 		multiply IN_DMG PLR_2H_REDUCT
 		set dmg IN_DMG
 		dbg 2hreduct PARAM2 to IN_DMG
-		returndata PLR_2H_REDUCT
+		return PLR_2H_REDUCT
 	}
 	
 	if ( $get(PARAM1,relationship,ent_me) equals enemy )
@@ -930,7 +942,7 @@
 	{
 		if PARAM3 contains fire
 		local ADJ_RATIO $get(ent_me,scriptvar,'PLR_DMG_ADJUST_FIRE')
-		returndata ADJ_RATIO
+		return ADJ_RATIO
 		local IN_DMG PARAM2
 		multiply IN_DMG ADJ_RATIO
 		set dmg IN_DMG
@@ -1070,7 +1082,9 @@
 	setvard DISPLAY_HBAR_DELAY 0
 }
 
-{ afk_check
+{
+repeatdelay FREQ_AFK_CHECK
+	if PLR_STARTED_AFK_CHECKS
 
 	local CUR_POS $get(ent_me,origin)
 	if ( $dist(AFK_OLD_POS,CUR_POS) <= 128 )
@@ -1079,9 +1093,14 @@
 		local L_LAST_ATK_TIME PLR_LAST_ATK_TIME
 		add L_LAST_ATK_TIME 60.0
 		if game.time > L_LAST_ATK_TIME //not AFK if hit something <60 seconds ago
+		if ( G_DEVELOPER_MODE )
+		{	
+			if !IS_AFK
+			bplayermessage ent_me "====== FLAGGED AFK!"
+		}
 		setvard IS_AFK 1
 		setvard FREQ_AFK_CHECK 5.0
-		if ( G_DEVELOPER_MODE ) bplayermessage ent_me "====== FLAGGED AFK!"
+
 	}
 	else
 	{
@@ -1122,10 +1141,8 @@
 	setvard AFK_DID_FIRST_PULSE 1
 
 	//double check sploit spell skills reset
-	setstat spellcasting.summoning 1
-	setstat spellcasting.protection 1
-
-	callevent FREQ_AFK_CHECK afk_check
+	//setstat spellcasting.summoning 1
+	//setstat spellcasting.protection 1
 }
 
 //test these:
@@ -1302,8 +1319,14 @@
 
 
 	//check donator IDs
-	if ( DONATOR_LIST contains $get(ent_me,steamid) ) local L_HAS_HALO 1
-	if ( G_DEVELOPER_MODE ) local L_HAS_HALO 1
+	local L_STEAM $get(ent_me,steamid)
+	if ( $g_get_arrayfind(G_ARRAY_DONATORS,L_STEAM) > -1 )
+	{
+		dbg found donator $g_get_arrayfind(G_ARRAY_DONATORS,L_STEAM)
+		local L_HAS_HALO 1
+	}
+	//if ( DONATOR_LIST contains $get(ent_me,steamid) ) local L_HAS_HALO 1 //got too big for token list, see global.script
+	//if ( G_DEVELOPER_MODE ) local L_HAS_HALO 1
 	if ( L_HAS_HALO )
 	{
 		setvard PLR_HAS_HALO 1
@@ -1355,9 +1378,12 @@
 	if ( !PLR_IN_WORLD ) 
 	{
 		callexternal players ext_reset_model //reinitialize models for all players so new player sees them proper
-		callevent 1.0 alert_world_new_join
+		callevent 1.0 post_first_join
 	}
 	setvard PLR_IN_WORLD 1
+	if ( !$get(ent_me,haseffect,player_sitstand) ) applyeffect ent_me player/emote_sit&stand
+
+	callevent validate_spawn LAST_SPAWN $get_map_legit(ent_me)
 
 	setvard PLR_DARK_LEVEL $get_quest_data(ent_me,dl)
 
@@ -1427,12 +1453,6 @@
 	//summonpets ent_me
 
 	if ( NEW_SPAWN_POS isnot 'NEW_SPAWN_POS' ) callevent 0.1 tele_spawn
-
-	if ( $get(ent_me,maxhp) < 15 )
-	{
-		//load error message
-		infomsg ent_me WARNING! "Your character did not load properly, try exiting the game and reconnecting."
-	}
 }
 
 { setup_weather
@@ -1464,22 +1484,7 @@
 	chatlog archery: $get(ent_me,skill.archery) [ $get(ent_me,skill.archery.proficiency) $get(ent_me,skill.archery.balance) $get(ent_me,skill.archery.power) ]
 	chatlog polearms: $get(ent_me,skill.polearms) [ $get(ent_me,skill.polearms.proficiency) $get(ent_me,skill.polearms.balance) $get(ent_me,skill.polearms.power) ]
 	chatlog spellcasting: $get(ent_me,skill.spellcasting) [ $get(ent_me,skill.spellcasting.fire) $get(ent_me,skill.spellcasting.ice) $get(ent_me,skill.spellcasting.lightning)  $get(ent_me,skill.spellcasting.divination) $get(ent_me,skill.spellcasting.affliction) $get(ent_me,skill.spellcasting.summoning) $get(ent_me,skill.spellcasting.protection) ]
-	if ( $item_exists(ent_me,'pack_boh') )
-	{
-		chatlog Item of Interest: TRUE bag of holding (CHEATER)
-		local IS_CHEATER 1
-	}
-	//this making items vanish for some reason?
-//	if ( $item_exists(ent_me,'swords_fshard1') ) chatlog Item of Interest: Shard of Felewyn 1
-//	if ( $item_exists(ent_me,'swords_fshard2') ) chatlog Item of Interest: Shard of Felewyn 2
-//	if ( $item_exists(ent_me,'swords_fshard3') ) chatlog Item of Interest: Shard of Felewyn 3
-//	if ( $item_exists(ent_me,'swords_fshard4') ) chatlog Item of Interest: Shard of Felewyn 4
-//	if ( $item_exists(ent_me,'swords_fshard5') ) chatlog Item of Interest: Shard of Felewyn 5
-//	if ( $item_exists(ent_me,'axes_golden_ref') ) chatlog Item of Interest: Unbreakable Golden Axe
-//	if ( $item_exists(ent_me,'armor_pheonix55') ) chatlog Item of Interest: Pheonix Armor
-//	if ( $item_exists(ent_me,'item_ring_percept') ) chatlog Item of Interest: Bloodstone Ring
-//	if ( $item_exists(ent_me,'swords_wolvesbane') ) chatlog Item of Interest: Wolvesbane
-//	if ( $item_exists(ent_me,'small_sack') ) chatlog Item of Interest: Small Sack
+
 	chatlog Quest Status - RingStage: $get_quest_data(ent_me,r) Lighthouse: $get_quest_data(ent_me,l) Namestate: $get_quest_data(ent_me,n)
 
 	if game.central
@@ -1487,13 +1492,13 @@
 	local MAX_SKILL_LEVEL G_MAX_SKILL_LEVEL
 	add MAX_SKILL_LEVEL 10 //give some leway until max level raised to 50
 
-	if ( $get(ent_me,skill.swordsmanship) > MAX_SKILL_LEVEL ) local IS_CHEATER 1
-	if ( $get(ent_me,skill.martialarts) > MAX_SKILL_LEVEL ) local IS_CHEATER 1
-	if ( $get(ent_me,skill.smallarms)  > MAX_SKILL_LEVEL ) local IS_CHEATER 1
-	if ( $get(ent_me,skill.axehandling) > MAX_SKILL_LEVEL ) local IS_CHEATER 1
-	if ( $get(ent_me,skill.bluntarms) > MAX_SKILL_LEVEL ) local IS_CHEATER 1
-	if ( $get(ent_me,skill.archery) > MAX_SKILL_LEVEL ) local IS_CHEATER 1
-	if ( $get(ent_me,skill.spellcasting.fire) > MAX_SKILL_LEVEL ) local IS_CHEATER 1
+	//if ( $get(ent_me,skill.swordsmanship) > MAX_SKILL_LEVEL ) local IS_CHEATER 1
+	//if ( $get(ent_me,skill.martialarts) > MAX_SKILL_LEVEL ) local IS_CHEATER 1
+	//if ( $get(ent_me,skill.smallarms)  > MAX_SKILL_LEVEL ) local IS_CHEATER 1
+	//if ( $get(ent_me,skill.axehandling) > MAX_SKILL_LEVEL ) local IS_CHEATER 1
+	//if ( $get(ent_me,skill.bluntarms) > MAX_SKILL_LEVEL ) local IS_CHEATER 1
+	//if ( $get(ent_me,skill.archery) > MAX_SKILL_LEVEL ) local IS_CHEATER 1
+	//if ( $get(ent_me,skill.spellcasting.fire) > MAX_SKILL_LEVEL ) local IS_CHEATER 1
 
 	if IS_CHEATER
 	callevent cheater_kick
@@ -1562,7 +1567,7 @@
 	callevent 0.01 do_motd_loop
 }
 
-//test -works - returndata untested on monsters
+//test -works - return untested on monsters
 { game_damaged_other //PARAM1=target_hit PARAM2=dmg //players only?
 	if PLR_SPECIAL_WEAPON
 
@@ -1571,19 +1576,19 @@
 		local TARG_NAME $get(PARAM1,name)
 		local TARG_NAME $lcase(TARG_NAME)
 		if TARG_NAME contains 'wolf'
-		returndata 2.0
+		return 2.0
 		dbg multi x2
 	}
 }
 
-// - works - but returndata may only work for players
+// - works - but return may only work for players
 //{ game_damaged
-//	returndata 0.01
+//	return 0.01
 //}
 
 //does not work - maybe items only?
 //{ game_takedamage
-//	returndata 0.01
+//	return 0.01
 //}
 
 
@@ -1603,69 +1608,10 @@
 //	callexternal CUR_PET companion_check_spawn
 //}
 
-{ cheater_kick
-	if ( G_CHEATER_IDS equals 'G_CHEATER_IDS' )
-	{
-		setvarg G_CHEATER_IDS ''
-		setvarg G_CHEATER_NAMES ''
-		setvarg G_CHEATER_TYPES ''
-	}
-	token.add G_CHEATER_IDS $get(ent_me,steamid)
-	token.add G_CHEATER_NAMES $get(ent_me,name)
-	token.add G_CHEATER_TYPES 1
-
-	local MSG_TITLE $get(ent_me,name)
-	stradd MSG_TITLE " "
-	stradd MSG_TITLE STEAM_ID
-	stradd MSG_TITLE " IS A CHEATER! (Type I)"
-	infomsg all MSG_TITLE "He has been kicked from the game, and his ID logged."
-	consolemsg all MSG_TITLE
-	consolemsg ent_me You have cheated. Your Steam ID has been logged on FN. ( Type I )
-
-	chatlog $timestamp(>) CHEATER: $get(ent_me,name) $get(ent_me,steamid) (Type I) was KICKED
-	clientcmd ent_me "disconnect"
-}
-
 { list_cheaters
 	if ( $get(ent_me,steamid) equals KELDORN_ID ) callevent 20.0 ext_keldorn_troll
 	if ( $get(ent_me,steamid) equals DARK_ID ) callevent 20.0 ext_keldorn_troll
-
-	if G_CHEATER_IDS isnot 'G_CHEATER_IDS'
-	calleventloop $get_token_amt(G_CHEATER_IDS) announce_cheaters
 }
-
-{ announce_cheaters
-	local CUR_IDX game.script.iteration
-	local CUR_CHEATER_ID $get_token(G_CHEATER_IDS,CUR_IDX)
-	local CUR_CHEATER_NAME $get_token(G_CHEATER_NAMES,CUR_IDX)
-	local CUR_CHEATER_TYPE $get_token(G_CHEATER_TYPES,CUR_IDX)
-
-	local MSG_TITLE "Let it be known that "
-	stradd MSG_TITLE CUR_CHEATER_NAME
-	stradd MSG_TITLE " was caught cheating here recently!"
-	
-	local MSG_TEXT "Please report him on the forums. His ID ("
-	stradd MSG_TEXT CUR_CHEATER_ID
-	stradd MSG_TEXT ") is available in your console."
-
-	infomsg ent_me MSG_TITLE MSG_TEXT
-
-	consolemsg ent_me "CHEATER:" CUR_CHEATER_NAME CUR_CHEATER_ID ( Type: CUR_CHEATER_TYPE )
-	consolemsg ent_me "Report cheaters at http://www.msremake/forums"
-}
-
-//debuggary
-//{ ext_add_fake_cheater
-//	if ( G_CHEATER_IDS equals 'G_CHEATER_IDS' )
-//	{
-//		setvarg G_CHEATER_IDS ''
-//		setvarg G_CHEATER_NAMES ''
-//		setvarg G_CHEATER_TYPES ''
-//	}
-//	token.add G_CHEATER_IDS $get(ent_me,steamid)
-//	token.add G_CHEATER_NAMES $get(ent_me,name)
-//	token.add G_CHEATER_TYPES 3
-//}
 
 { delay_to_ms_player_spawn
 	callevent 0.1 delay_to_ms_player_spawn2
@@ -1757,7 +1703,7 @@
 
 	if ( !$get(ent_me,onground) )
 	{
-		dplayermessage ent_me Can't dodge in mid-air...
+		dplayermessage ent_me "Can't dodge in mid-air..."
 		local EXIT_SUB 1
 	}
 	if !EXIT_SUB
@@ -1768,7 +1714,7 @@
 	if ( !$get(ent_me,canmove) ) local NOT_NOW 1
 	if ( NOT_NOW )
 	{
-		dplayermessage ent_me Can't dodge now...
+		dplayermessage ent_me "Can't dodge now..."
 		local EXIT_SUB 1
 	}
 	if !EXIT_SUB
@@ -1810,7 +1756,7 @@
 
 	if ( !$get(ent_me,onground) )
 	{
-		dplayermessage ent_me Can't dodge in mid-air...
+		dplayermessage ent_me "Can't dodge in mid-air..."
 		local EXIT_SUB 1
 	}
 	if !EXIT_SUB
@@ -1821,7 +1767,7 @@
 	if ( !$get(ent_me,canmove) ) local NOT_NOW 1
 	if ( NOT_NOW )
 	{
-		dplayermessage ent_me Can't dodge now...
+		dplayermessage "ent_me Can't dodge now..."
 		local EXIT_SUB 1
 	}
 	if !EXIT_SUB
@@ -1855,7 +1801,7 @@
 
 	if ( !$get(ent_me,onground) )
 	{
-		dplayermessage ent_me Can't dodge in mid-air...
+		dplayermessage ent_me "Can't dodge in mid-air..."
 		local EXIT_SUB 1
 	}
 	if !EXIT_SUB
@@ -1866,7 +1812,7 @@
 	if ( !$get(ent_me,canmove) ) local NOT_NOW 1
 	if ( NOT_NOW )
 	{
-		dplayermessage ent_me Can't dodge now...
+		dplayermessage ent_me "Can't dodge now..."
 		local EXIT_SUB 1
 	}
 	if !EXIT_SUB
@@ -1888,53 +1834,6 @@
 	svplaysound 4 10 player/hitground1.wav
 }
 
-{ check_version
-	dbg check_version enter
-	local L_PLR_DLL_VERSION $get(ent_me,scriptvar,'PLR_DLL_VERSION')
-	if ( G_BPATCH_MANDATORY )
-	{
-		if ( L_PLR_DLL_VERSION isnot game.cvar.ms_version ) local L_VERSION_MISMATCH 1
-	}
-	else
-	{
-		if ( $left(L_PLR_DLL_VERSION,7) isnot G_SCRIPT_VERSION ) local L_VERSION_MISMATCH 1
-	}
-	if L_VERSION_MISMATCH
-
-	//fail, but no illegal command notice, hrmm...
-	local L_SERVER_VERSION game.cvar.ms_version
-//	local CL_CMD_STR "disconnect;clear;echo Client version does not match servers! "
-//	if ( PLR_DLL_VERSION isnot 'PLR_DLL_VERSION' )
-//	{
-//		stradd CL_CMD_STR "(you:"
-//		stradd CL_CMD_STR PLR_DLL_VERSION
-//		stradd CL_CMD_STR " server:"
-//		stradd CL_CMD_STR L_SERVER_VERSION
-//	}
-//	else
-//	{
-//		stradd CL_CMD_STR "("
-//		stradd CL_CMD_STR L_SERVER_VERSION
-//	}
-//	stradd CL_CMD_STR ");echo .;echo Patch up!;echo www.msremake.com;echo ."
-//	local CL_CMD_STR $quote(CL_CMD_STR)
-	dbg check_version Version Invalid ( L_PLR_DLL_VERSION vs L_SERVER_VERSION [ bmand G_BPATCH_MANDATORY ] )
-//	dbg CL_CMD_STR
-//	clientcmd ent_me CL_CMD_STR
-
-	//nastier version instead :\
-
-	clientcmd ent_me "echo Client out of date!;echo Update at www.msremake.com/download.php;"
-	//local L_SVR_CMD "kick #"
-	//stradd L_SVR_CMD $get(ent_me,index)
-
-	//can't do this - server doesn't realize player has left
-	//local L_MSGBOX "Client out of date - update at http://www.msremake.com/download.php"
-	//clientevent update ent_me const.localplayer.scriptID cl_error L_MSGBOX
-
-}
-
-	
 { game_applyeffect //<applyeffect|applyeffectstack> <target> <effectscript> [params...]
 	if ( $get_scriptflag(ent_me,spider_resist,type_exists) )
 	{
@@ -1942,8 +1841,7 @@
 		if ( $get(PARAM2,itemname) contains spid ) local L_ABORT 1
 		if L_ABORT
 		//dbg game_applyeffect abort spider applyeffect [ p2 $get(PARAM2,name) p5 $get(PARAM5,itemname) ]
-		returndata abort
+		return abort
 		local L_DID_ABORT 1
-		//exitevent //commented out, as worried may mess with game_applyeffect handling elsewhere.
 	}
 }

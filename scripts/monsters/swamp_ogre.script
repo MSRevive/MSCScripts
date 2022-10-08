@@ -59,7 +59,6 @@
 	const LEAP_RANGE_TOOFAR 512 //leap if cloesr than this
 	const LEAP_RANGE_TOOCLOSE 128 //but not if closer than this
 	const LEAP_AWAY_INTERVAL 500 //leap away every time I loose this many HP
-	const NEXT_LEAP_AWAY 1800
 
 	setvard DROP_GOLD 1
 	setvard DROP_GOLD_MIN 30
@@ -218,6 +217,7 @@
 	setvard SWIPE_ATTACK 0
 	if ( PARAM1 )
 	{
+		setvard SWIPE_ATK 0
 		playrandomsound 0 10 SOUND_SWIPEHIT1 SOUND_SWIPEHIT2
 		addvelocity ent_laststruckbyme $relvel(-100,130,120)
 	}
@@ -229,26 +229,34 @@
 	if ( game.monster.hp > WEAK_THRESHOLD )	playrandomsound 0 10 SOUND_STRUCK1 SOUND_STRUCK2 SOUND_PAIN_STRONG
 	if ( game.monster.hp <= WEAK_THRESHOLD ) playrandomsound 0 10 SOUND_STRUCK1 SOUND_STRUCK2 SOUND_PAIN_WEAK
 
-	if ( PARAM1 > 200 )
+	local L_LEAP_THRESH $get(ent_me,maxhp)
+	multiply L_LEAP_THRESH 0.1
+
+	if ( PARAM1 > L_LEAP_THRESH )
 	{
 		//dbg leaping away due to damage
 		if game.time > NEXT_LEAP_AWAY
 		setvard NEXT_LEAP_AWAY game.time
-		add NEXT_LEAP_AWAY $randf(3.0,6.0)
+		add NEXT_LEAP_AWAY $randf(8.0,12.0)
 		callevent leap_away
 		local EXIT_SUB 1
 	}
 	if !EXIT_SUB
 
-	local HP_AFTER game.monster.hp
-	subtract HP_AFTER PARAM1
-
-	if ( HP_AFTER < NEXT_LEAP_AWAY )
+	//changing this system to force a leap away at every -25% health interval
+	if ( NEXT_LEAP_AWAY_HP equals 'NEXT_LEAP_AWAY_HP' )
 	{
-		//dbg leaping away due to interval
-		subtract NEXT_LEAP_AWAY LEAP_AWAY_INTERVAL
-		callevent leap_away
+		setvard NEXT_LEAP_AWAY_HP $get(ent_me,maxhp)
+		multiply NEXT_LEAP_AWAY_HP 0.75
 	}
+	local L_HP_AFTER $get(ent_me,hp)
+	if L_HP_AFTER < NEXT_LEAP_AWAY_HP
+
+	//dbg leaping away due to interval
+	local L_QUARTER $get(ent_me,maxhp)
+	multiply L_QUARTER 0.25
+	subtract NEXT_LEAP_AWAY_HP L_QUARTER
+	callevent leap_away
 }
 
 { leap_away

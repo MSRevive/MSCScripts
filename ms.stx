@@ -1,0 +1,1645 @@
+#TITLE=MS
+// MS syntax file written by Michael 'Kuroneko' Miller
+// 'spanded by Thothie
+// further 'spanshion by greatguys1
+
+#DELIMITER=,(){}[]*%/"'~!&|?://.#@;
+#QUOTATION1='
+#QUOTATION2="
+#CONTINUE_QUOTE=n
+#LINECOMMENT=//
+#ESCAPE=\
+#CASE=n
+//#PREFIX3=$
+#SKIP_QUOTE=y
+#HEREDOC=<<<EOF
+#NUMBER_PATTERN=cpp
+
+#KEYWORD=Built-in functions / commands
+//========== FUNCTIONS ==========
+
+$angles		//(<source_origin>,<dest_origin>) - Returns 2d angle between two origins
+$angles3d	//(<source_origin>,<dest_origin>) - Returns 3d angle between two origins (used to determine angles on a vector to reach target - pitch returns inverted under some circumstances.)
+$anglediff	//(<destang>,<srcang>) - Returns the difference between two angles.  Accounts for 360 degree wrap-around
+$anim_exists	//(<name>) - Checks if anim <name> exists within the calling scripted monster or player and returns the sequence index. Returns -1 if no anim exists.
+$cansee		//(<enemy|ally|player|ID>,[distance]) - Returns 1 if ent type can be seen within [distance] and stores in ent_lastseen
+$clcol		//(<0-255>|<(RRR,GGG,BBB)>) returns standard color format as float for color consistency between certain client/server generated effects (beams/sprites). Unlike the server, the client uses a float color system for these effects. ( eg. $clcol((255,128,0)) returns (1.00,0.50,0,1.00) )
+$cone_dot	//(<point origin>,<cone origin>,<cone angles>) - Returns -1 to 1 indicating how far off the point is from straight forward in the view cone
+$cone_dot2D	//ditto
+$dir		//(<start origin>,<end origin>) - Returns a normalized vector indicating the direction from <start origin> to <end origin> - which can be used with vectormultiply - see also $angles and $angles3d
+		//example usage:
+		//setvard BEAM_END BEAM_START
+		//setvard BEAM_DIR $dir(BEAM_START,FISSURE_END)
+		//vectormultiply BEAM_DIR 48 //48 units towards origin FISSURE_END
+		//vectoradd BEAM_END BEAM_DIR
+$dist		//(<start origin>,<end origin>) - Returns a float indicating the distance between the two points - you can also use this to determine if two vectors in different formats are equal.
+$dist2D		//(<start origin>,<end origin>) - Same diff, but in two dimensions only (note the capitlization!)
+$float		//(<precision>,<number>)  - Returns <number> as a float with <precision> decimal places (normally MSC only carries floats 2 places)
+$can_damage	//(<target_ent>,[targetting_ent]) - Returns 1 if <target_ent> can be damaged by [targetting_ent] which is assumed to be the calling script, if ommited  (MAR2008a)
+$filesize	//(<filespec>) return size of a file - path begins at root, use forward slashes, eg. $filesize(maps/edana.bsp)
+$filehash	//(<file>,[hash]) - if [hash] is unprovided, returns the hash for the file, or 0 if not found. If [hash] is provided, returns 1 if hash mathches.
+$func		//(<event>,[params]) - Calls <event> and replaces itself with the result of the return statement within. (Won't work with delays, but will work with calleventloop's)
+$getcl_beam	//(<beam_idx>,<property>)  - returns property of beam as described in beam_update above (mostly for debugging)
+$get		//$get(<entity>,<property>,[options]) - get a property from a server side entity (see $get'ables and Scripting_AllDocs.txt for more info), propertie same as $get_by_idx below:
+$get_by_idx	//$get_by_idx(<entity_idx>,<property>,[options])
+		//- Gathers propeties from <entity> or <entity_idx>
+		//- Properties far too numerous to list, see code CBaseEntity::GetProp
+		//- Partial properties list follows:
+		//-- [shared by all ents]
+		//-- id - entity pent id (standard target id)
+		//-- index - entity's index (entity_idx)
+		//-- exists - entity exists
+		//-- origin - entity's vector origin (returns centers for players and fliers, foot level for others, does not work for brush entities without origins, nor NPCs without models) (.x/.y/.z can be used for sub components)
+		//-- origin_center - as above, but attempts to return center
+		//-- angles - returns angles as vector (.pitch/.yaw/.roll can be used for sub components)
+		//-- name - entity's display name (sans prefix)
+		//-- model - entity's model, if any, including path (NPCs only)
+		//-- gravity - returns gravity ratio
+		//-- speed - current forward velocity
+		//-- speed2D - current forward velocity, ignoring z unit
+		//-- forwardspeed - current forward velocity, compensating for angles
+		//-- velocity - current velocity, as vector
+		//-- anim.current_frame - returns current animation frame
+		//-- anim.index - returns current animation index
+		//-- anim.name - (bugged/wip: returns nadda)
+		//-- anim.max_frames - (bugged/wip: currently always returns 255)
+		//-- isplayer
+		//-- is_item
+		//-- movetype - current movetype
+		//-- movedir - angle of movement
+		//--
+		//-- [shared by all scripted ents]
+		//-- name.prefix - name_prefix (eg a or an)
+		//-- name.full - full name, with prefix (a barrel of monkeys)
+		//-- name.full.capital - full name, with prefix, first letter capitalized (A barrel of monkeys)
+		//-- scriptname - full script name
+		//-- itemname - script name, sans path
+		//-- invincible
+		//-- dist/dist2D/range/range2D - returns target range from calling entity (bjorks if script has no model nor origin brush), attempts to compensate for bounding boxes on either end
+		//-- scriptvar,'<var>' - returns scriptvar on target script - desired scriptvar should always be in single quotes to avoid conflicts
+		//-- haseffect,<effect_id> - returns 1 if applyeffect with EFFECT_ID is attached to target (see removeeffect command for more information)
+		//-- 
+		//-- [shared by players and monsters]
+		//-- hp/maxhp - health/max health
+		//-- mp/maxmp - manna/max manna
+		//-- height - target height in units
+		//-- width - target width in units
+		//-- onground
+		//-- inwater 0|1
+		//-- waterlevel 0=not in water, 1=up to middle, 2=deeper than middle, 3=fully submerged
+		//-- eyepos - returns vector view position (in theory)
+		//-- viewangles - returns vector view angles (player only)
+		//-- gold - returns amount of gold player, monster, or chest has (in theory, maybe bugged)
+		//-- race
+		//-- relationship,<target> - returns enemy, ally, or neutral
+		//-- nopush - returns 1 if push immune
+		//-- svbonepos,<bone_index> - returns vector origin of bone, if found
+		//-- attachpos,<attachment_index> - returns vector origin of attachment, if found
+		//-- lasthitgroup - supposed to return last hitbox struck, but not currently working
+		//-- dmgmulti
+		//-- hitmulti
+		//-- 
+		//-- [players only]
+		//-- ducking - 0|1
+		//-- canattack - 0|1 (this will return 0 if player is midst attacking)
+		//-- canmove - 0|1
+		//-- canjump - 0|1
+		//-- canrun - 0|1
+		//-- canduck - 0|1
+		//-- sitting 0|1
+		//-- target - player's current target
+		//-- findbolt,[remove] - returns players current selected ammo type, optionally remove (unless proj_bolt_generic is in use)
+		//-- steamid - player's full SteamID
+		//-- playerspawn - player's current spawn
+		//-- nextplayerspawn - player's next spawn (depreciated, we don't use this anymore.)
+		//-- lastmap - last map player was on
+		//-- isbot - various tests to determine if the player is a bot, returns 1 if any test positive
+		//-- gender - returns "male" or "female"
+		//-- ip - returns "localhost" for listenserver host
+		//-- spellname,<idx> - returns memorized spell scriptname in slot <idx> (0 if none found)
+		//-- jumping
+		//-- keydown,<attack1|attack2|use|jump|moveleft|moveright|back|forward|duck>
+		//-- stamina
+		//-- stamina.ratio
+		//-- anim.type - part of the player_animation script that I'd like to move code side
+		//-- anim.uselegs - ditto
+		//-- torso_anim - ditto
+		//-- legs_anim - ditto
+		//-- currentitem.anim_torso - ditto
+		//-- currentitem.anim_legs - ditto
+		//-- in_attack_stance
+		//-- active_item - id of currently active item
+		//-- offhand_item - id of offhand item (returns active item in case of fists_bare or 2 handed)
+		//-- skillavg - average of all skills
+		//-- title - player's current title
+		//-- stat.<statname> - returns stat
+		//-- skill.<skillname>[.substat] - returns skill or substat of skill
+		//-- numitems - total number of inventory items
+		//-- curhand - currently active hand (0=Left, 1=Right, left click activates active hand, right click the other)
+		//--
+		//-- [monsters only]
+		//-- xp/skilllevel - mobs current XP value
+		//-- spawner - entity ID of ms_monsterspawn spawnarea
+		//-- roam - returns 1 if monster's roam function is active
+		//-- movedest.origin - current setmovedest origin
+		//-- moveprox|movedest.prox - current move range
+		//-- movedest.id - target of setmovedest, if an entity and not an origin
+		//-- anim_end - time my current animation will end (likely way off)
+		//-- stepsize - mob's current stepsize
+		//-- hpmulti
+		//-- fly -  returns 1 if movetype is 5 ( MOVETYPE_FLY )
+		//-- walkspeed
+		//-- runspeed
+		//-- movespeed
+		//-- framerate
+		//--
+		//-- [items only]
+		//-- value - base gold value
+		//-- is_projectile
+		//-- is_drinkable
+		//-- is_spell
+		//-- attacking
+		//-- inhand - returns the hand the item goes into, not whether it is in hand or not.
+		//-- is_worn
+		//-- inworld
+		//-- drink_amt (same as quality)
+		//-- quality
+		//-- maxquality
+		//-- quantity
+		//-- hand_index returns current hand: 0=right, 1=left, 2=both [two handed], 3=undroppable
+		//-- handpref as above, but returns item's default hand definition instead of current location
+		//-- owner - owner ID
+		//-- container.open - 1 if container is open
+		//-- container.items - #items in container
+$getcl		//$getcl(<entity idx>,<property>)
+		//- Client side. Gets various properties from client side entities, including:
+		//-- origin
+		//-- center - based on mins/maxs - not always reliable
+		//-- angles
+		//-- velocity
+		//-- height (maxs.z-mins.z)
+		//-- width (maxs.x-mins.x)
+		//-- inwater
+		//-- underwater - returns 1 if completely submerged based on mins/maxs
+		//-- waterorigin - returns current origin, with z set to water level
+		//-- model - model or sprite name
+		//-- ducking (players only)
+		//-- modelidx - precache index of model
+		//-- anim - current animation index
+		//-- frame - current frame
+		//-- framerate - current frame rate (returns ratio, for models)
+		//-- exists
+		//-- gravity
+		//-- scale
+		//-- scaleHD - returns scale x1000 for greater float percision
+		//-- fuser1HD - returns fuser1 x1000 for greater float percision
+		//-- renderfx - current renderfx (16 options, see FGD - notable: 5=slow fade, 6=fast fade, 15=distort, 16=hologram)
+		//-- renderamt - current remderamt 
+		//-- rendermode - current rendermode (0=Normal,1=Color,2=Texture,3=Sprite,4=Solid,5=Additive)
+		//-- rendercolor - vec of current color
+		//-- visible - returns 0 if no draw flag
+		//-- isplayer
+		//-- attachment0-3 - vec origin of attachment0-3
+		//-- iuser1-4 - current int of iuser1-4
+		//-- fuser1-4 - current float of fuser1-4
+		//-- prevstate.iuser1-4 - previous state of iuser1-4
+		//-- prevstate.fuser1-4 - previous state of fuser1-4
+		//-- baseline.iuser1-4 - initial state of iuser1-4
+		//-- baseline.fuser1-4 - initial state of fuser1-4
+		//-- bonepos,<idx> - vec origin of a model bone
+		//-- bonecount - number of bones in model
+		//-- viewangles (players only)
+		//- most of these can also be returned in tempent update or collision events, via game.tempent.<property>
+$get_attackprop		//(<target>,<attack_idx>,<property>) - returns properties of registerattack on a weapon
+$get_contents		//(<origin>) returns contents of a point [both client and server], possible returns are: empty, solid, water, slime, lava, sky, unknown (last usually indicates error)
+$get_by_name		//(<name_string>) - get an id for an entity that has a name_unique property (see name_unique). As of DEC2014, it can also be used to get the ID's of map entities via targetname.
+$get_fileline		//(<filename>,[line#]) - read a file, sequentually or by line. Returns [EOF] and [FILE_NOT_FOUND] respectively
+$get_find_token		//(<token_string>,<search_string>) - returns index of found token, or -1 if not found (binary search)
+$get_random_token	//(<token_string>) - returns an element of the token string at random (careful not to send nulls [''] to this or other token processors)
+$get_insphere		//(<id|player|monster|any>,<radius>,[(origin)]) - returns ID of nearest ent type in radius or "1" if id is present within
+$get_item_table		//(<item_name>,[params...]) - returns values for <item_name> from the master item table (such items do not have all properties set).
+$get_jointype		//(<player>) - returns type of join ("Start Map", "Travel", "Previously Visited", "GM", or "Not Allowed")
+$get_lastmap		//(<player>) - last map player was on (use $get_quest_data(<target>,m) to pull last transition destination)
+$get_map_valid		//(<player>) - returns 1 if transition was valid (players was touching trans going to this map - not always dependable [see above quest_data])
+$get_takedmg		//(<target>,<type>) - Returns ratio of damage taken by a damage type (lightning/fire/blunt/slash/etc)
+$get_traceline		//(<(start)>,<(end)>,[flags:ent|worldonly|tracebox|clworld],[ignore_ent])
+			//- flags: 
+			//- worldonly - returns point at which line intersects world (functions as "tracebox" below when clientside)
+			//- ent - returns id of intersected entity, if any (returns model index, if client side)
+			//- tracebox - (server side only) Creates a traceline stopped by hitboxes. [ignore_ent] can be provided to skip a specific entity's collision box.
+			//- clworld - (client side only) ignores collision boxes, but also ignores map ents, such as func_walls, and is only interrupted by solids.
+$get_tsphere		//(<filter:any|player|monster|enemy|ally>,<radius>,[(origin)]) - makes a token string listing all ents in radius (max 10 tokens)
+$get_isphere		//(<filter:any|player|monster|enemy|ally>,<radius>,[(origin)]) - as tsphere, but returns indexes, instead of ent ID's, allowing you to pack more ents in the limited stringspace (though you'll have to convert it.)
+$get_ground_height	//(<origin>) returns Z coordinate of ground at origin
+$get_quest_data		//(<player>,<string>) returns quest data stored on character (see quest set - see also quest data listings at top of player/player_main.script)
+$get_skill_ratio	//(<ratio(0-1)>,<Min Amt>,<Max Amt>,[inversed]) Returns a number between Min and Max based on the float ratio.
+$ratio			//[as above] (eg. $ratio(0.25,1,100) == 25, $ratio(0.25,1,100,inversed) == 75)
+$get_scriptflag	//$get_scriptflag(<target>,<type>,type_exists) - returns 1 if <type> found
+		//$get_scriptflag(<target>,<type>,type_first) - returns first value of <type> found or "none"
+		//$get_scriptflag(<target>,<type>,type_count) - returns the # of flags of this <type> that exist on the <target> or "none"
+		//$get_scriptflag(<target>,<type>,totalvalue) - returns total value of all <type> flags combined, or "none" (alias type_value)
+		//$get_scriptflag(<target>,<type>,type_array) - returns name of array, created on <target>, with all values of <type> or "none"
+		//$get_scriptflag(<target>,<name>,name_exists) - returns 1 if <name> found
+		//$get_scriptflag(<target>,<name>,name_value) - returns first value of <name> found or "none"
+		//$get_scriptflag(<target>,<name>,name_type) - returns type if <name> found or "none"
+		//$get_scriptflag(<target>,listall) - list all flags [debuggary,developer build only]
+		//- do not use quotes around <name> or <type>
+		//see also: scriptflags command
+$math		//(<add|subtract|multiply|divide|sqrt>,<amt|var>,[amt|var]) - simple math macro (kinda surprised we didn't have this until NOV2014)
+		//("vectoradd|vectormultiply",<vec>,<"x"|"y"|"z"|float|vec>,[value]) - less simple math macro (see vectoradd and vectormultiply), difference being this does not modify vars
+$get_local_prop	//(<player_idx>,<property>) - this client side command lets you pull a bit more information about the player than $getcl() alllows, including:
+		//gender (returns male|female), race
+$min		//$min(<1>,[2]..[n]) - returns the lowest number in a series of floats
+$max		//$max(<1>,[2]..[n]) - returns the highest number in a series of floats
+$get_sky_height	//(<origin>) returns Z coordinate of sky brush - screwy sometimes, $get_traceline is more dependable
+$get_under_sky	//(<origin>) returns if point is under sky (at all - isn't fooled by sloppy brushwork)
+$get_token	//(<token_string>,<idx>) returns an item in a token string
+$get_token_amt	//(<token_string>) returns # of items in a token string (remember, token strings are index 0, but this counts the full amount)
+$getcl_tsphere	//(<origin>,<range>,[flags]) - Clientside, assembles a token string of model indexes in <range> from <origin>.
+		//flags: players (only include players) addbrushes (also include brushes with origins) [system cannot determine the distance of brushes without origins]
+		//limitation: cannot gather cl ents indexed higher than 1024
+$int		//(<var>) Returns <number> as an integer (strips float)
+$indiam		//(<range>,<vec1>,<vec2>) - returns 1 if <vec1> is within range of <vec2> (or visa versa) - not to be confused with $inrange (conditional shortcut over $dist)
+$neg		//(<var>) Returns negative of var
+$pass		//(<var>) for passing PARAMX directly without storing (eg. callevent some_event $pass(PARAM1))
+$rand		//(<min>,<max>) returns random integer from <min> to <max>
+$randf		//(<min>,<max>) returns random float from <min> to <max>
+$random_of_set	//(<params...>) - returns one of the provided parameters selected at random
+$relpos		//(r,f,u)/(<angles>,<offset_vec>) - returns or assembles relative position.
+		//-If no angles are provided, offset is relative to the center of the bouding box. Otherwise it is relative to (0,0,0)
+		
+$relvel		//(r,f,u)/($vec(pitch,yaw,roll),$vec(r,f,u)) - returns or assembles relative velocity - see Scripting_AllDocs.txt
+$vec		//Returns (x,y,z), with all parameters resolved (you can use constants or variables for x, y and z)
+		//use $vec.<pitch|yaw|roll|x|y|z>(<vector>) to pull specific elements from a vector
+		//eg. $vec.yaw(game.monster.angles) would return 90, for someone facing due east
+$veclen		//(<vector>) - Returns the length of a vector
+$veclen2D	//(<vector>) - Returns the length of a vector, excluding the z component
+$within_cone		//(<test_origin>,<cone_origin>,<cone_angles>,<cone_apex_degrees:0.1-180>) - returns 1 if if <test_origin> is within the defined cone. (Cone apex is at distance to <test_origin>, so check $dist first.)
+$within_cone2D		//(<test_origin>,<cone_origin>,<cone_angles>,<cone_apex_degrees:0.1-180>) - returns 1 if if <test_origin> is within the defined cone, two dimensionally (note the capital D).
+
+$get_tbox	//(<filter:any|player|monster|enemy|ally>,<box_size>,[(origin)]) - makes a token string listing all ents in radius (max 10 tokens)
+$get_tbox_abs	//(<filter:any|player|monster|enemy|ally>,<(abs_mins)>,<(abs_max)>) - as $get_tbox - but allows you to define the box proper from two vectors
+$sort_entlist	//(<ent_token_list>,<range|hp|maxhp|mp|maxmp>,[range_origin]) - sorts entities in a token list
+$item_exists	//(<target>,<item_name>,[flags:nohands|noworn|notinpack|partialname|remove|name]) - sees if item exists. Deletes if "remove" flag is used. "name" flag gets the in-game name of the requested item.
+$map_exists	//(<mapname>) returns 1 if map exists on the server (use sans BSP extension)
+$timestamp	//return timestamp as per window date format (you may use $timestamp(<suffix>) to suffix the stamp, eg. $timestamp(>) returns: Fri Feb 01 02:48:38 2008> 
+$within_box	//$within_box(<target|origin>,<testbox_org|0>,<testbox_mins>,<testbox_maxs>)
+		//tests if target's bounding box intersects with test box, or if origin is inside test box
+		//if <testbox_org> is zero, test box origin is calced from mins/maxs, and abs min/max must be supplied
+
+//Extended if conditionals
+$inset_num	//(<var>,<params...>) returns 1 if <var> mathmatically equals any of <params...> (conditional helper)
+$inset_string	//(<var>,<params...>) returns 1 if <var> string-wise equals any of <params...> (conditional helper)
+$and		//(<params...>) returns 1 if all paramters are true - can be embeded with $or() and other functions, but cannot use spaces. (Does not account for !INVERSE_FLAG.)
+$or		//(<params...>) returns 1 if any of the paramters are true - can be embeded with $and() and other functions, but cannot use spaces. (Does not account for !INVERSE_FLAG.)
+$inrange	//(<var>,<low>,<high>) - returns 1 if <var> is from <low> to <high>
+
+//========== COMMANDS ==========
+
+//var makers
+local //<name> <value> - set a local var
+setvar //<name> <value> - set a variable pre and post spawn (never use more than once)
+setvard //<name> <value> - set a variable post-spawn only
+setvarg //<name> <value> - set a variable globally, has issues, server side only
+const //<name> <value> - set a constant (can't be read by higher scripts, overrides const definitions in lower scripts)
+
+addstoreitem	//<store_name> <item_script> <#toadd> <price%> [sell_ratio] [bundle_size]
+addvelocity	//(pitch,yaw,roll) - add speed to a target, see also setvelocity
+blood		//<red|green|none>
+cancelattack	//(items only) cancels/resets current attack
+catchspeech	//<event> <trigger_words...> - calls event when NPC hears any trigger_words from local chat
+cleffect	//Creates effects in client side scripts, lots of uses, see Scripting_All_Docs.txt, examples/props follow:
+		//- cleffect light <new|lightid> <origin> <radius> <(r,g,b)> <duration> ["entity"|"dark"]
+		//-- creates or updates a light, stores light index in game.script.last_light_id
+		//- cleffect beam_points <startpos> <endpos> <spritename> <life> <width> <amplitude> <brightness> <speed> <framerate> <clcolor>
+		//- cleffect beam_ents <startidx> <attachment#> <endidx> <attachment#> <spritename> <life> <width> <amplitude> <brightness> <speed> <framerate> <clcolor>
+		//- cleffect beam_end <startIdx> <attachidx> <end_vec> <spritename> <life> <width> <amplitude> <brightness> <speed> <framerate> <color>
+		//- cleffect decal <decal_index> <vectrace_start> <vectrace_end> - paints a decal at the collision point
+		//- cleffect spark <origin|model_idx> [attachment_idx] - creates a spark effect at origin or on model
+		//- cleffect clientcmd <cmds> - executes <cmd> as if through client's console, bypassing Steam Pipe "security" restrictions
+		//- cleffect <"tempent"|"frameent"> <"sprite"|"model"> <sprite_file|model_file> <origin> <setup_event> [update_event] [collide_event]
+		//-- sets up a tempent or frameent with properties defined in <setup_event>
+		//- cleffect <"tempent"|"frameent"> set_current_prop <property> <value> [value] - sets or updates properties of tempent or frameup created by the above command
+		//- Updates are done in the [update_event] defined in the creation event, which is called each render frame.
+		//- Most tempent properties can be retrieved inside update events via game.tempent.<property>
+		//- properties and values follow:
+		//-- origin <vec>
+		//-- angles <vec>
+		//-- velocity <vec>
+		//-- body <idx> - submodel index (models only) at the moment this is the internal index, not the two part smart index
+		//-- death_delay <secs> - seconds until tempent vanishes, changing in update has no affect
+		//-- follow <idx|none> [attachment] - follow another ent by attachment
+		//-- frame - set specific sprite or animation frame
+		//-- framerate <fps|ratio> - flat fps for sprites, ratio for models
+		//-- gravity <ratio> - can be set negative
+		//-- mins/maxs <vec> - bounding box for collisions
+		//-- model/sprite <filename> - can be used to change model/sprite in update
+		//-- owner <idx> - for following tempents
+		//-- prevstate.fuser1-4 - state of fuser1-4 before the last change
+		//-- prevstate.iuser1-4 - state of iuser1-4 before the last change
+		//-- renderamt <0-255> - amount to use for rendermode
+		//-- rendercolor <vec> - (R,G,B) value to use if rendermode is add or color
+		//-- renderfx <normal|glow|player>
+		//-- rendermode <normal|add|alpha|color|texture|glow>
+		//-- scale <ratio>
+		//-- scaleHD <ratio> - scale *1000 - for fine tuning scale ratios (scripts have 2 dec precision limitations)
+		//-- sequence <animation_index> (models only)
+		//-- skin <idx> - skin index (models only)
+		//-- update - tempents with an update event will automatically run their updates, you can set this to 0 to stop that behavior
+		//-- iuser1 - store integer, can be retrieved in update/collision events via game.tempent.iuser1
+		//-- iuser2 - as above
+		//-- iuser3 - as above
+		//-- iuser4 - as above, but reserved for use with some internal interactions
+		//-- fuser1 - store float, can be retrieved in update/collision events via game.tempent.fuser1
+		//-- fuser2 - as above, on player model, this propagates view pitch
+		//-- fuser3 - as above
+		//-- fuser4 - as above, but reserved for use with some internal interactions
+		//-- fuser1HD <float> - fuser1 *1000 - for dealing with the script's 2 dec precision limitations
+		//-- baseline.fuser1-4 - initial state of fuser1-4
+		//-- baseline.iuser1-4 - initial state of iuser1-4
+		//-- most properties can be retrieved via game.tempent.xxx in any update/collision event
+companion	//<add/remove> <target companion> <target player> - associates/removes pets (defunct)
+consolemsg	//<player> <message> - print message at player's console
+const_ovrd	//<constant_name> <value> - changes the value of a "constant"
+createitem	//<scriptname> <(origin)> - spawns an item (must be in items.txt)
+createnpc	//<scriptname> <(origin)> <PARAMS...> - spawns a monster
+dbg		//<message> console debug message (req developer 5, maybe disabled in non-alphas)
+debugprint	//as dbg, though provides extra stats for scripts running, if done at console
+deleteent	//<target> [fade] - deletes target ent
+deleteme	//delete current script
+dodamage	//<target> <range> <dmg> <cth> [type] - swing at target in range (can be obstructed)
+		//<target> "direct" <dmg> <cth> <dmg source> [type] - direct damage
+		//<(position)> <range> <dmg> <cth> <falloff> <normal|reflective> [type] - AOE damage ("reflective" = damage self - doesn't work)
+effect		//server side effect, various formats: lgtning.spr effect beam
+		//effect beam point <spritename> <width> <startpos> <endpos> <(r,g,b)> <brightness> <noise> <duration>
+		//effect beam end <spritename> <width> <startpos> <target> <attachment index> <(r,g,b)> <brightness> <noise> <duration>
+		//effect beam ents <spritename> <width> <target1> <attach#> <target2> <attach#> <(r,g,b)> <brightness> <noise> <duration> - stores in ent_lastcreated
+		//effect beam vector <spritename> <width> <startpos> <endpos> <(r,g,b)> <brightness> <noise> <duration> - stores in ent_lastcreated
+		//effect beam update <beam_id> <property> <value> [option] - see Scripting_AllDocs.txt for available properties
+		//effect beam follow <model> <target> <attach> <width> <life> <brightness> <color> - hornet style beam follow (does not make a server side entity - but can't be tracked/updated either)
+		//effect tempent gibs <modelname/spritename> <position> <size> <velocity> <randomness> <amount> <duration>
+		//effect tempent spray <modelname/spritename> <position> <direction> <count> <speed> <noise>
+		//effect tempent trail <modelname/spritename> <start> <dest> <count> <life> <scale> <speed> <randomness>
+		//effect glow <target> <(r,g,b)> <amount> <duration> <fadeduration>
+		//screenshake <position> <amplitude> <frequency> <duration> <radius>
+		//screenshake_one <id> <amplitude> <frequency> <duration> - shake screen on specific client only (untested)
+		//screenfade <target/"all"> <duration> <holdtime> <(r,g,b)> <alpha> <fadein|fadeout|noblend|perm>
+emitsound	//<source entity> <origin> <volume> <duration> <type> [danger_radius] - for use with game_heardsound
+endgame		//quits server or client, depending on which end it is called. (Deals with the fact we Valve rigged it so we can't send the "quit" command anymore.)
+eventname	//prefix for events, not required
+drop_to_floor	//<target> drop target to floor - not sure if this works
+float		//<0|1> - Movements outside water are considered invalid if set 1
+fly		//<0|1> - set fly movetype (buggy as hell)
+fov		//field of vision - do not use this, it causes brain death among multiple monsters
+givehp		//<#> give health. Beware of giving creature health when at max, seems to cause crashes
+givemp		//<#> give mana. Beware of giving creature mana when at max, seems to cause crashes
+giveitem	//<itemname> - places item in monster's "drop when dead" inventory 
+gold		//<#> amount of gold monster or chest has
+hearingsensitivity //<float> multiplier for distance monster hears sounds (default: 0 = deaf)
+height		//<#> monster height
+helptip		//<target> <tipname|generic> <title> <text> - unless <tipname> is specified as "generic", each help tip only appears once
+		//carriage returns can be added in help tips with file pipes (|)
+hp		//<#> monster hp
+infomsg		//<target|all> <title> <message> - MSC pop-up message to <target> HUD
+invincible	//<0|1> - flag monster invulnerable ( I see 2 here and there, no clue what that is)
+maxslope	//<#0-90> - max degrees of slope a monster can walk up
+movespeed	//<float> - movespeed multiplier
+name		//<string> sets name, seperate via | to set name prefix (eg. a|Skeleton, an|Orc)
+name_prefix	//<string> changes name prefix (an,a,a pair of, etc.)
+name_unique	//<string> - sets a unique name for use with $get_by_name
+npcmove		//<target> - first set reg.npcmove.endpos <dest_origin> and reg.npcmove.testonly 1, then "npcmove ent_me", to see if a mob can move from its current position to the next, returns game.ret.npcmove.dist for distance was able to move
+offer		//<target> <item|gold:xxx> - give <target> gold or item
+playanim	//<once/hold/critical/break> <animname> - plays an animation
+playviewanim	//<#> - play a view animation index (item only, only valid within client events)
+playrandomsound //<channel> <volume> <filename1> <filename2> <filename3> [...] - plays one of the sounds randomly
+svplayrandomsound //as above, but players random side - use if you need the sound to follow the monster, but beware it adds to precache overhead
+playsound	//<channel> <volume> <filename> [Attenuation:0.8] [Pitch:100] - plays a wave, use channel 0 for auto
+svplaysound	//<channel> <volume> <filename> [Attenuation:0.8] [Pitch:100] - as above, but plays on server entity - use ONLY when you need the sound to "follow" a specific entity, as it adds to the precache count overhead
+		//as of APR2012, waves played by playsound no longer need to be precached, as they were moved clientside
+		//however, waves played by svplaysound, still do...
+		//unfortunately, rather than doing a regex for precache XXX.wav, we just removed the bit where the game catches precache for waves
+		//so, to precache sounds stored in variables with svplaysound (ie. not played directly), you need to make an event that is never called
+		//and play them directly with svplaysound - the game will then find and preache the sounds when it processes the script.
+		//Note that Pitch only operates on 8-bit waves, while most are 16-bit. Pitch range is an integer from 1-300. (The distortion is rather severe.)
+precache	//<file> - precache media, beware, this happens before script loads
+precachefile	//<scriptname> - precache all media in a script - usually only works inside game_precache - it does not work via cascade (ie. a precachefile command in a top script will not catch any precachefile command in the script it precaches, so any such will need to be duplicated in the top script.)
+quest		//<set|unset> <target> <questname> <questdata> - add or remove a quest (remove is buggy - keep short, adds to character size, set to 0 instead)
+race		//sets monster race faction (see \races.script)
+registerarmor	//registers an armor structure  (no documentation, see items/armor_base / source code)
+registerattack	//registers an attack structure (see Scripting_AllDocs.txt)
+removescript	//client side - removes script from client	
+return	//<vars...> - returns data for use by $func(). Note that this does not terminate execution of the remainder of the procedure.
+		//<float> - adjusts damage multipliers inside certain functions (game_damaged, game_takedamage, game_damaged_other) - can, in theory, be used for other script<->code interaction to return data from events [see also setdmg]
+		//if you use multiple returns, they will tokenize their data
+		//returning "**clear" will reset the return data.
+roam		//<1|0> - Enable/disable wandering when idle
+say		//<word>[delay]... - makes mouth move and (optionally) play sounds, sounds must be in sounds/npc, delay must actually be in [brackets], eg say hi[0.1]there[0.4]
+saytext		//<string> - Causes NPC to say <string> 
+saytextrange	//<#> - max range at which NPC's speech can be heard
+setalive	//<0|1> - Marks creature alive or dead. Subsequent events may not run if set dead. This is not always friendly to monsterspawn life counters
+setanimext	//<string> - sets the anim extenstion to be used on the player model ("_" is assumed)
+sethudsprite	//<hand|trade> <spritename> - sprites to use in inventory (no documentation) - think only "trade" is in use
+setworldmodel	//<modelname|none> - world model for items/projectiles
+sethand		//<left|right|any|both|undroppable> - set handedness of weapon (no documentation)
+setangle	//<angle> <value> - see Scripting_AllDocs.txt - some functions seem not to work
+setbbox		//<[mins] [maxs]> or <animsize|npcsize> - set bbox type,  (monters will not walk through, regardless of setting)
+setcallback	//<think/touch/blocked/render> <enable/disable> - see Scripting_AllDocs.txt for details, buggy, some are client-side only
+setdmg		//<hit|dmg|type> <value> allows you to change incoming our outgoing damage flags in certain functions (possibly: game_damaged, game_takedamage, game_damaged_other)
+		//you may have to combine this with return <ratio> in some events, to return increased or reduced damage
+setenv		//<prop> <value> - (client side) set world environment, see Scripting_AllDocs.txt
+setfollow	//<target|none> [align_bottom] - this is how spider latch works
+setidleanim	//<anim_name> - set NPC default idle animation
+setmodel	//<modelname|none> - set model
+setpmodel	//<modelname> - set item's hand model (defunct, items now use setmodel for their p_model)
+setquantity	//<item> <amt> - set item's quantity
+setviewmodel	//<modelname|none> - set item's viewmodel
+setmodelbody	//<#group> <#value> - set model body properties by index
+setmonsterclip	//<1/0> - enable/disable obeying of monsterclips
+setmoveanim	//<anim_name> - set movement animation
+setmovedest	//<target/(origin)> <stopdistance> [flee] - move to/from target
+setwearpos	//<position name> <max slots> - setup wear position names (eg. "fingers" 10), beware, messing with this can lead to character corruption
+setorigin	//<target> <(origin)> - teleports target to origin
+addorigin	//<target> <(origin)> - adjust target origin (this isn't new, but didn't realize it was here until MAR2010)
+setprop		//<target> <property> <value>
+		//- Available properties include:
+		//- speed <ratio>
+		//- skin <idx> - model skins idx from 0
+		//- modelindex <idx> - change global model index - will likely crash
+		//- model <modelname> - change models
+		//- movetype <type> - 0=none,3=player_walk,4=npc_walk,5=fly,6=toss,7=push,8=noclip,9=missile,10=bounce,11=bounce_nograv,12=follow,13=BSP
+		//- solid <type> - 0=none,1=trigger,2=bbox,3=slidebox,4=BSP
+		//- frame <idx> - animation frame index
+		//- framerate <ratio> - animation frame rate
+		//- classname <newclass> - eg. func_wall - will likely crash
+		//- basevelocity <vec>
+		//- avelocity <vec> - angles velocity - for spinning
+		//- velocity <vec> - same as setvelocity
+		//- movedir <vec> - uncertain
+		//- ltime <float> - uncertain
+		//- nextthink <float> - time to next think
+		//- friction <float> - step friction
+		//- animtime <float> - uncertain
+		//- sequence <int> - set current animation sequence by idx
+		//- playerclass <int> - uncertain
+		//- target <string> - entity's target
+		//- targetname <string> - entity's targetname
+		//- netname <string> - entity's unique name
+		//- view_ofs <vec> - view offset - may not work on players
+		//- deadflag <int> - uncertain
+		//- health <float> - entity "health" - may or may not corrispond with hp
+		//- aiment <target> - target for setfollow
+		//- controller0-3 <int> - bone controller positions
+		//- blending0-2 <int> - uncertain
+		//- rendermode <mode> - 0=normal,1=color,2=texture,3=glow,4=solid,5=additive
+		//- renderamt <0-255> - intensity of rendermode
+		//- renderfx <0-16> - as follows:
+		//-- 0=Normal
+		//-- 1=Slow Pulse
+		//-- 2=Fast Pulse
+		//-- 3=Slow Wide Pulse
+		//-- 4=Fast Wide Pulse
+		//-- 5=Slow Fade Away
+		//-- 6=Fast Fade Away
+		//-- 7=Slow Become Solid
+		//-- 8=Fast Become Solid
+		//-- 9=Slow Strobe
+		//-- 10=Fast Strobe
+		//-- 11=Faster Strobe
+		//-- 12=Slow Flicker
+		//-- 13=Fast Flicker
+		//-- 14=Constant Glow
+		//-- 15=Distort
+		//-- 16=Hologram (Distort + fade)
+		//- rendercolor <RRR,GGG,BBB>
+		//- scale <ratio>
+		//- setbody <group> <submodel> - as setmodelbody
+setsolid	//<none/box/slidebox/trigger> - set object solidity (monters will not walk through, regardless of setting)
+setstat		//<skill> <value> - Best used to set monsters parry scores.
+setvelocity	//<target> <(vector)> - Sets the velocity on <target> to the specified value
+skilllevel	//set experience value for monster (Use NPC_GIVE_EXP in monsters/base_monster)
+sound
+play3d		//sound.play3d <sound> <volume> <origin> [attenuation] [channel] [pitch] - client side playsound at origin
+svsound
+play3d		//svsound.play3d <sound> <volume> <origin> [attenuation] [channel] [pitch] - server side playsound at origin (adds to precache overhead)
+sound.pm_play	//uncertain if this works
+sound.setvolume	//uncertain if this works
+stepsize	//<#> - Highest stair height the monster can walk up
+storage		//part of old banking system no longer used
+storeentity	//<type> <target> - not clear on this, see Scripting_AllDocs.txt
+stradd		//<result> <string> or <result> <string1> <string2> - Concatenates strings
+takedmg		//<type|all> <multiplier> [adjust] - set damage resistance/vulnerability, adding 'adjust' tells the elemental resist system not to change the base value, but it's always best to call ext_eresist_adj <element> <value> <duration:-1> [tag] when adjusting resistances after spawn
+token		//(see next)
+add		//token.add <token_string> <string> - adds <string> to <token_string> as new token
+del		//token.del <token_string> <token_index> - removes token #token_index
+sqrt		//$math(sqrt,<num>) - not available as an independant command
+tossprojectile	//<projectile scriptname> <"view"|(src_origin)> <target|(targ_origin)|none> <speed> <damage> <cof> <skill|none>
+		//- the target origin is used for the direction of the projectile
+			//-if the target origin is set to none, the projectile will be tossed from the entity's view angle
+traceline	//this is bugged, use $get_traceline()
+usetrigger	//<triggername1> <triggername2> <triggername3> [...] - fires map events
+vectoradd	//<result> <vector>  or <result> <x/y/z> <value> or <result> <vector1> <vector2>  - add vectors by value or one another
+vectormultiply	//<result> <vector>  or <result> <x/y/z> <value> or <result> <vector1> <vector2> - multiply vectors by value or one another
+vectorset	//<sourcevec> <x/y/z> <value> - Sets x, y, or z of <sourcevec> to <value>
+volume		//<0-10> sets volume of next sound played (obsolete - volume can now be controlled in playsound <chan> <vol> <wave> command)
+wearable	//<0|1> <"slot_names;"> ...Is wearable, free slots required/taken, seperated by semi-colons. eg. wearable 1 "chest;head;neck" see player/play_sh_stats for slot list
+width		//<#> - sets monster width
+applyeffect	//<target> <script> [PARAMS...] - applies an effect script to <target> (see common effects in this doc for a quick list of params)
+applyeffectstack //as applyeffect, but for stackable effects (As of JUL2013, scripts activated without this command do not stack by default)
+playermessage	//<player> <message_text> - displays a white message on combat hud
+		//items have their own handling for this, and always send their message to the owner (thus no <player> target is required)
+playowneranim	//<once|hold|critical|break> <AnimName> [LegAnimName] [TimeHoldLegAnim] - Play anim on the player model
+nosend		//<target> <0|1> - forces server to not send any data about the entity to its clients
+forcesend	//<target> <0|1> - forces server to send data about the entity to its clients
+			// - Allows sending entities with no model, and alternatively, allows entities with a model to not be sent.
+
+//itemset
+desc		//sets item description - careful not to make description too long or will cause HUD redraw error
+weight
+size		//no longer used
+value		//base gold value
+gravity
+quality		//can POSSIBLY be used to store item data numbers - potion charges, for instance, are stored here
+quantity	//quantity count of a groupable item (usually arrows)
+groupable	//found in lots of X - if you set this, the item must be placed in multiples of this inside chests
+syncitem	//<item> <player> - syncs name/desc between server and player (required if you change the name/desc post spawn)
+displaydesc	//<item> <player> - invoke item description display
+
+//basic math
+add		//<var> <val>
+subtract	//<var> <val>
+multiply	//<var> <val>
+divide		//<var> <val>
+inc		//<var> <val>
+mod		//<var> <val>
+capvar		//<var> <min> <max>
+//using a math function on a non-existent var will initialize that var as a setvard
+
+setanim		//.framerate/.movespeed - both are ratio floats - use $get(<target>,framerate/movespeed) to pull current
+addgold		//<amt> - adds gold to script (use external event: ext_addgold, to add gold to others)
+attackprop	//<target> <attack_idx> <property> <value> - changes the property of a registerattack
+bleed		//<target> <red|green|yellow> <amt> - Spew some blood at random vectors
+changelevel	//<mapname> - guess what this does
+chatlog		//<string> - append the server chatlog (writes even if ms_chatlog is 0 - so check that first)
+clearfx		//remove all applyeffect conditions from current monster [not avail for player yet]
+clientcmd	//<player> <commands...> console command direct to client from server
+dmgmulti	//<amt> - multiply monster damage by this amount (applies to dodamage and tossprojectile, but not players)
+drainhp		//<target> <attacker> <amt> - direct HP drainage for when dodamage causes tempent spam
+erasefile	//<filename> - erase a file (path rules same as $filesize)
+errormessage	//<message> - dislays error pop up, then quits
+exit		//exit current nest (think "break" - same as failed open if condition) - not v.useful (need one that exits the whole sub)
+getents		//<player|monster|any> <radius> [(origin)] - (depreciated - use $get_tsphere) stores found ents in GET_ENT1-9 and # in GET_COUNT ($get_tsphere() is newer and better)
+getplayer	//<storevar> <idx> - get a player at a particular status index (for admin tools)
+getplayers	//<store_var> - stores players target ids in  a tokenized string
+getplayersnb	//<store_var> - same diff, but doesnt add bots or spectators
+kick		//<player> - remove player from server (This does not work, use clientcmd <target> "disconnect" instead.)
+kill		//<player> - kills player without XP loss (good for scripted hazards)
+messageall	//<color:red|blue|green|yellow|disable(gray)|white> <message> - combat hud message to all players
+moditem		//<item_id> <mod_string> - sets mods on an item and flags it as modded
+nopush		//<1|0> Immune to push/drunk effects save when [override] is used. Also $get'able (This has no affect on a monsters ability to push itself)
+		//to avoid conflicts - use scriptflags <target> add nopush (see scriptflags)
+		//monsters with base_npc will have this flag added if they start with nopush set
+noxploss	//<target> <0|1> - player takes no XP penalty on death when set to 1 (may make this a multipier later)
+overwritespell	//<target> <spellidx> <new_spell> - changes the spell in a player's memorized list (untested)
+playername	//<target> <name> - changes a player's name
+playmp3		//<target|all> <minutes> <file> [range] - plays music on target or players within [range], path is assumed to be music/ lest otherwise specified
+popup		//<message> - dislays pop up, sans crash (for debuggary)
+rplayermessage	//<target> <message_text> - displays a red message on combat hud
+gplayermessage	//<target> <message_text> - displays a green message on combat hud
+bplayermessage	//<target> <message_text> - displays a blue message on combat hud
+yplayermessage	//<target> <message_text> - displays a yellow(ish) message on combat hud
+dplayermessage	//<target> <message_text> - displays a gray message on combat hud
+resetglobals	//resets certain MSGlobal variables in prep for map change
+scramble	//token.scramble <token_string> - randomize order of entries in a token list
+servercmd	//<commands...> send a command direct to console
+setcvar		//<cvar> <value> - set a server side cvar (maybe client too, untested)
+setlights	//Vexdum style lighting from a-z (m being normal)
+setviewmodelprop //<item> <rendermode|skin|submodel> <value> [value] - alter viewmodel properties
+set		//token.set <token_string> <idx> <new_token> - alter a token
+settrans	//<player> <spawn_name> - tie a player to a specific spawn
+strconc		//<var> <strings or variables...> - simpler string concatenation
+summonpets	//<player> - summons a player's companions (if any) (defunct)
+splayviewanim	//<target_item> <anim_idx> - cause a specific item to play a specific viewanim from the server side
+tospawn		//<player> [spawn_name] - send players to specific spawn points
+ververify	//verifies ms.dll<->sc.dll consistancy and sets DLL_VER to 1 (security, only needed once)
+wipespell	//<target> <spell_idx> - removes a spell from a player's memorized list (use $get(<target>,spellname,<idx>) to id spells)
+writeline	//<filename> <text> [line#] - create or append a file (use $get_fileline to read)
+xdodamage	//<target|(src_origin)> <range|aoe|(dest_origin)|direct> <damage> <cth|fall_off> <attacker> <inflciter> <skill|none> <dmg_type> [flag_string]
+		//fully dynamic damage
+		//- if first and second parameters are both origins, traceline damage between the two points is assumed (sadly, stops at the first impact)
+		//- if first parameter is an origin, and second is a number, AOE (area of effect), chance to hit is 100%, and fall_off is used (0.1 = 10% dmg reduct per 10% distance from center.)
+		//- if second parameter is 'direct' then direct damage occurs to <target> from <attacker>
+		//- if first param is an entity and the second is not 'direct', then auto-aimed hitscan damage, the second param defining the max range of the attack.
+		//- <inflictor> and <attacker> should usually match, save when used in weapons or projectiles, in which case <inflicter> should indicate said items.
+		//[flag_string] - multiple flags can be added, if seperated by semi-colons, flags follow:
+		//= "dmgevent:<prefix>"
+		//- You can use this to setup seperate _dodamage processing events for each attack
+		//- This will call <prefix>_dodamage, in addition to the usual game_dodamage, on the <attacker>
+		//- If prefix begins with * - <prefix>_dodamage will be called on <inflictor> instead of <attacker>, sans the * (for weapons)
+		//= "nodecal"
+		//- Causes trace damage events not to decal walls (note that they still fire hitwall/game_hitworld when calling from an item/weapon script)
+hitmulti	//<target> <ratio> - multiplies hit chances by this ratio (for instilling to-hit penalties)
+torandomspawn   //<target> - moves to a random ms_player_spawn within 256 units, if any
+callclitemevent	//<item_id> <event_name> <params...> - calls event on item, only affects owner's client
+clearplayerhits //<monster> <player|all> - clears record of hits on monster (used to calculate xp) from a specific player or all
+decal		//(client side) cleffect decal <decal_index> (<trace_start>) (<trace_end>) OR (server side) effects decal <decal_index> (<origin>) - Decals world brushes - use dev_on commands ". decal <index>" and ". decalcycle" to explore decal indexes
+drainstamina	//<player> <amt> - drains stamina by <amt> (not so much new, as works now)
+projectiletouch //<1|0> - enables/disables game_touch dynamically on projectiles
+scriptflags	//New flag tracking system, has several formats, depending on desired action:
+		//scriptflags <target> add <name> <type> [value:1] [expiretime:-1] [expiremsg:none]
+		//- adding a scriptflag with a duplicate name resets its value, and its expire time
+		//- unless the name starts with "stack", in which case it should have an expire time set
+		//scriptflags <target> remove <name>
+		//scriptflags <target> cleartype <type> - removes all of <type> from <target>
+		//scriptflags <target> clearall - removes all scriptflags from target ent
+		//scriptflags <target> remove_expired - removes expired flags from <target>
+		//scriptflags <target> edit <name> <type> <value> [expiretime] [msg] - edits properties of first flag found with this name
+		//[expiretime] should be in seconds - actual end time is calculated from the time it is set (-1 indicates never expires, which is the default behavior)
+		//the event { game_scriptflag_update is called whenever scriptflags are changed, and time to expire is handled with this event in monsters/externals and player/externals
+		//see also: $get_scriptflag function
+setquality	//<target_item> <quality> [maxquality] - sets an item's quality
+removeeffect	//<target> <effect_id> - removes an applyeffect - still kinda beta, so beware removing certain effects may cause issues
+spark		//cleffect spark <origin|model_idx> [attachment_idx] - client effect (sparks, no sounds)
+teleportdest	//<info_teleport_destination targetname> - teleports to info_teleport_destination, if found (actually will teleport to any map entity by targetname)
+
+//setanim.
+frame		//setanim.frame <#>
+framerate	//setanim.framerate <ratio>
+movespeed	//setanim.movespeed <ratio>
+
+//menu. entries:
+menu
+autoopen	//menu.autoopen <0|1> - Opens the interact menu with any player that presses "+use" on the NPC
+open		//menu.open <target> - Opens the interact menu with the target player
+
+//npcstore. entries:
+npcstore
+create		//npcstore.create <storename> - remember store names are global, but gold is local to NPC
+additem		//npcstore.additem <storename> <item scriptname> [quantity] [costratio] [sellratio] [bundleamt] - not sure if works, unused
+remove		//npcstore.remove <storename> <item|allitems> - not sure if works
+offer		//npcstore.offer <storename> <player> [buy|sell|inv] [callback_prefix] - offer store to player, callbacks include:
+			//[callback]_success - Called when the player successfully gains access to the store
+			//[callback]_fail - Called if the store doesn't exist
+			//[callback]_busy - Called if the NPC is already in a transaction with another player
+			//[callback]_done - Called when the player has closed the store dialog
+
+//Array functions (FEB2010) [also work client side]
+array		//array.create array.add array.erase array.del array.set
+g_array		//global array, same options and formatting as described below (global arrays are server side - remember to use $g_get_array functions when grabbing global array elements)
+create		//array.create <array_name> - initializes array
+add		//array.add <array_name> <var> - adds element to array
+set		//array.set <array_name> <idx> <var> - set element in array
+erase		//array.erase <array_name> - removes array (potentially buggy)
+del		//array.del <array_name> <idx> - removes element of array, shifts subsequent indexes upwards by 1
+clear		//array.clear <array_name> - clears an array without removing it (safer than erase, which sometimes MDellocs)
+pull		//array.pull <array_name> <target> - copies array from remote target (or adds to local array, if it already exists).
+$get_array	//(<array_name>,<idx>) - returns value of element in array - requesting an index out of range will cause this to return its literal (starting with '$get_array')
+$get_array	//(<array_name>,exists) - returns 1 if array exists, else 0
+$get_array_amt  //(<array_name>) //returns # of indexes in array
+$get_array_exists	//(<array_name>) returns 1 if array exists
+$get_arrayfind  //(<array_name>,<search_string>,[idx_to_start]) //returns -1 if not found (please excuse inconsistant convention)
+$g_get_array	//as above, but for global arrays
+$g_get_array_amt	//as above, but for global arrays
+$g_get_arrayfind	//as above, but for global arrays
+
+//Array Creation Functions (MAY2010a)
+getitemarray	//<player> <array_name> - stores players worn item ID's into an array
+getplayersarray	//<array_name> - stores list of players (sans bots) into array
+
+//hud. commands (largely untested)
+addstatusicon	//hud.addstatusicon <player> <icon(sans.spr)> <name> <duration> [isTGA:true|false]
+addimgicon	//hud.addimgicon <player> <icon> <name> <x> <y> <width> <height> <duration>
+killicons	//hud.killicons <player>
+killstatusicon	//hud.killstatusicon <player> <name>
+killimgicon	//hud.killimgicon <player> <name>
+
+//moar string stuff (most newer)
+$num		//$num(<var>,[safelist]) - strip non-numbers from a string, except those in [safelist]
+$alphanum	//$alphanum(<var>,[safelist]) - strip non-alphanumerics, except those in [safelist] 
+$quote		//$quote(<var>) - put a string in dbl "quotes". If used with no params (eg. "$quote()"), stores a single dbl quote (")
+$len		//$len(<var>) - returns length of a string
+$mid		//$mid(<var>,<start>,[length]) - Returns a substring of <var> starting at <start> and going [length] characters. If [length] ommited, returns substring to end.
+$left		//$left(<var>,<length>) - Returns a substring of size <length> from the left side of <var>
+$right		//$right(<var>,<length>) - Returns a substring of size <length> from the right side of <var>
+$replace	//$replace(<var>,<replace_string>,<start>) - Overwrites a section of <var> with <replace_string> starting at <start>
+$insert		//$insert(<var>,<replace_string>,<start>) - Same, but inserts instead of overwrite
+$search_string	//$search_string(<var>,<search_string>,[start]) - Returns the position of <search_string> in var, or -1 if not found
+$string_upto	//$string_upto(<in_string>,<search_for>,[start]) - Return everything up to <search_for>
+$string_from	//$string_from(<in_string>,<search_for>,[start]) - Return everything after <search_for>
+$cap_first	//$cap_first(<var>) - Capitalize the first character of <var>
+$lcase		//$lcase(<var>) - returns lower case of <var>
+$ucase		//$ucase(<var>) - returns uppper case of <var>
+$subst		//$subst(<var>,<search_word>,<substitute_word>) - replaces <search_word> with <substitute_word> (up to 100 occurances), returns untouched if not found
+$stradd		//(<string1>,<string2>,<string3>) - buggy string concatenation - use stradd or strconc instead
+
+
+#KEYWORD=Reserved words
+//substitutions and constants
+$currentscript
+ent_lastseen
+ent_lastheard
+ent_lastspoke
+ent_lastoffered
+ent_lastgave
+ent_laststole
+ent_lastused
+ent_laststruck
+ent_laststruckbyme
+ent_lastprojectile
+ent_lastcreated
+ent_me
+ent_owner	//Note that ent_owner doesn't work for items in packs - use $get(ent_me,owner)
+ent_creationowner
+ent_target
+ent_expowner
+ent_currentplayer
+
+none		//this is a reserved word, do not use it as a string var
+any
+all		//cleffect tempent set_current_prop collide all [skipentindex]
+
+//quest
+set
+
+light		//cleffect light [new|ID] <origin> <radius> <(r,g,b)> <duration> ["entity"|"dark"]
+persist
+remove
+game
+stat
+menu
+
+//playanim
+break
+once
+critical
+loop
+hold
+
+//deleteent
+fade
+
+//callback
+render
+think
+touch
+blocked
+enable
+disable
+
+//sethudsprite
+trade
+
+//common dmg types
+holy //all but undead/demon immune by default (also players with signfigant darkness contamination)
+dark //damages everything, though some things are resistant
+earth //rarely used, earth damage is blunt unless directly channeled
+cold
+fire
+lightning
+blunt
+slash
+pierce
+poison
+acid
+siege
+training
+apostle
+magic //can't be parried
+target //can't be parried, usually 0 damage for target gathering that's stopped by walls
+
+//setbbox
+animsize
+npcsize
+
+//effect/cleffect elements
+screenshake
+screenshake_one
+screenfade
+beam
+tempent
+fuser1
+fuser2
+fuser3
+fuser4
+iuser1
+iuser2
+iuser3
+iuser4
+frameent
+gibs
+spray
+trail
+sprite
+glow
+point
+ents
+beam_points	//cleffect beam_points <startpos> <endpos> <spritename> <life> <width> <amplitude> <brightness> <speed> <framerate> <color>
+beam_end	//cleffect beam_end <startIdx> <attach> <end_vec> <spritename> <life> <width> <amplitude> <brightness> <speed> <framerate> <color>
+beam_ents	//cleffect beam_ents <startidx> <attach> <endidx> <attachment#> <spritename> <life> <width> <amplitude> <brightness> <speed> <framerate> <color>
+beam_follow	//cleffect beam_follow <idx> <attach> <spritename> <life> <width> <color> <brightness> //stays alive until entity stops moving, even if removed by beam_update
+		//- lgtning.spr
+		//- all beam commands store their index in game.script.last_beam_id when created for use with beam_update and $getcl_beam (below)
+		//- unlike server side beams, colors and brightness are floats, relative to one another (see $clcol)
+beam_update	//cleffect beam_update <beam_idx|removeall> <property> <value> - updates existing client side beams
+		//- last beam created by cleffect beam_xxx is stored in game.script.last_beam_id for use with this and $get_clbeam
+		//- properties include:
+		//-- start <vec>
+		//-- end <vec>
+		//-- delta <vec> 
+		//-- width <units>
+		//-- amplitude <float>
+		//-- color <(R,G,B)> - note that R,G,B are floats in this clentity (>0=on 0=off)
+		//-- brightness <ratio> - this ratio multiplies the color above
+		//-- life <float>
+		//-- speed <float>
+		//-- framerate <float>
+		//-- startent <idx> [attachment]
+		//-- endent <idx> [attachment]
+		//-- sprite <spritename>
+		//-- remove
+		//- removeall in place of beam_idx removes all beams generated by the script and clears the beam tracking array
+play3d		//re: sound.play3d <sound> <volume> <origin> [attenuation (default: 0.8)] [channe:def0-auto] [pitch] - as of MAR2012, this now works both client and server side
+end
+start_target
+end_target
+start_origin
+end_origin
+noise
+brightness
+color
+
+//clientevent
+update
+new
+
+//setangle
+face
+face_origin
+view
+
+//relations
+enemy
+player
+monster
+ally
+item
+entity
+container
+
+direct
+reflective
+
+set_current_prop
+
+#KEYWORD=Variables
+//common variables
+G_DEVELOPER_MODE	//global, this can only be set to 1 under the developer sc.dll
+G_LESSER_DEV_MODE	//set 1 if you activate devcmd pass
+NPCATK_TARGET		//current hunt target
+HUNT_LASTTARGET		//old ai NPCATK_TARGET
+IS_FLEEING		//Monster is currently fleeing (suspends most of ai)
+NPC_FORCED_MOVEDEST	//new ai - set this to 1 if you use setmovedest instead of npcatk_setmovedest
+AS_ATTACKING		//antistuck - set this whenever the monster is going to be in-place for more than 1 cycle, such as when playing an attack animation
+NO_STUCK_CHECKS		//antistuck - set to 1 to suspend stuck checking
+ENTITY_ENEMY		//last validated enemy
+NPC_GIVE_EXP		//skilllevel will be set to this in monsters/base_monster if defined
+NPC_BASE_EXP		//this const overrides settings (useful for #include embeds) - hopefully come up with a better way
+NPC_OVERRIDE_EXP	//...the, hopefully, better way (can be setvard)
+NPC_EXP_SET		//sets to 1 when the base AI has finished finalizing XP (also calls the event npc_adjust_xp just beforehand, where you can make last-second runtime changes.)
+GET_COUNT		//#ents found by getents command
+GET_ENT1		//first ent found by getents (keep in mind that getents is depreciated - $get_tsphere is suprior)
+GET_ENT2		//2nd ent found by getents
+GET_ENT3		//3rd ent found by getents
+GET_ENT4		//4th ent found by getents
+GET_ENT5		//5th ent found by getents
+GET_ENT6		//6th ent found by getents
+GET_ENT7		//7th ent found by getents
+GET_ENT8		//8th ent found by getents
+GET_ENT9		//9th ent found by getents
+PARAM1
+PARAM2
+PARAM3
+PARAM4
+PARAM5
+PARAM6
+PARAM7
+PARAM8
+PARAM9
+PARAM10
+PARAM11
+PARAM12
+PARAM13
+PARAM14
+PARAM15
+PARAM16
+PARAM17
+PARAM18
+PARAM19
+PARAM20
+ANIM_ATTACK		//this anim will be played when monster is in ATTACK_RANGE
+ANIM_IDLE		//idle anim
+ANIM_RUN		//anim used when running
+ANIM_WALK		//anim used when walking
+ANIM_DEATH		//by now you get the idea...
+ANIM_FLINCH
+FLINCH_ANIM		//meh, bloody old convention stuck
+SUSPEND_AI		//1 when AI is suspended
+ATTACK_RANGE		//play ANIM_ATTACK animation at this range
+ATTACK_HITRANGE		//max range that the current attack will actually hit, monster uses this for ATTACK_RANGE if player is above or below to compensate for model height
+ATTACK_HITCHANCE	//%chance to hit (many older scripts use other variants such as: ATTACK_ACCURACY, or different vars for various atk types)
+ATTACK_MOVERANGE	//how close to attempt to get to target
+MOVE_RANGE		//old version of ATTACK_MOVERANGE - there's a bug with this in the new AI, ye may need to set both
+NPC_MOVING_LAST_KNOWN	//monster moving to last known target location (target will be unset during this time)
+GAME_MASTER		//global game master id
+EXIT_SUB		//just a sloppy thing I use a lot ^_^
+EXIT_EVENT		//same diff
+EXIT_IF			//same diff
+CYCLED_UP		//set to 1 when monster is cycled up for players (fully active)
+PLAYING_DEAD		//set to 1 to make monster an invalid target
+DROP_GOLD		//set to 1 to drop gold on death
+DROP_GOLD_AMT		//amt of gold to give on death
+G_CRITICAL_NPCS		//global stores critical NPC's ID's on siege maps
+G_SIEGE_MAP		//global siege map mode flag (1 in 3 monsters ignores players and goes for critical NPCs)
+NPC_CRITICAL		//npc flagged as critical
+NPC_BOSS_REGEN_RATE	//boss regen %/regen pulse (def 0.1 - ie. 10%)
+NPC_BOSS_REGEN_FREQ	//how often to regen (def 60 secs)
+NPC_BOSS_RESTORATION	//boss regen % after killing all players (def 75%)
+G_DEV_PLAYER		//global stores whoever activated developer mode via dev_on
+NPC_IS_BOSS		//inidcates NPC is a boss on this particular map
+NPC_EXP_MULTI		//future use, but hope to replace NPC_BASE_EXP with this
+STORENAME		//treasure syntax storage name
+STORE_NAME		//shop syntax storage name (don't ask me why they are different)
+NPC_HOME_LOC		//monster spawn location
+NPC_HOME_ANG		//monster spawn angles
+NPC_CREATED		//indicates npc was dynamically spawned via createnpc
+BASE_FRAMERATE		//stores the monster's base framerate ratio for later restoration, but has no other affect - set this if monster has an altered frame rate
+BASE_MOVESPEED		//stores the monster's base move speed ratio for later restoration, but has no other affect - set this if monster has an altered movement rate
+BUSY_CHATTING		//monsters/base_chat flag
+CHAT_STEP		//current chat step
+CHAT_STEPS		//total number of chat steps to loop through
+CHAT_STEP1		//text for chat step X
+CHAT_STEP2		//""
+CHAT_STEP3		//""
+CHAT_STEP4		//""
+CHAT_STEP5		//""
+CHAT_STEP6		//""
+CHAT_STEP7		//""
+CHAT_STEP8		//""
+CHAT_STEP9		//""
+CHAT_STEP10		//""
+ANIM_STEP1		//animation to play at chat step X
+ANIM_STEP2		//""
+ANIM_STEP3		//""
+ANIM_STEP4		//""
+ANIM_STEP5		//""
+ANIM_STEP6		//""
+ANIM_STEP7		//""
+ANIM_STEP8		//""
+ANIM_STEP9		//""
+ANIM_STEP10		//""
+CHAT_DELAY_STEP1	//custom pause for specific chat step
+CHAT_DELAY_STEP2	//"
+CHAT_DELAY_STEP3	//"
+CHAT_DELAY_STEP4	//"
+CHAT_DELAY_STEP5	//"
+CHAT_DELAY_STEP6	//"
+CHAT_DELAY_STEP7	//"
+CHAT_DELAY_STEP8	//"
+CHAT_DELAY_STEP9	//"
+CHAT_DELAY_STEP10	//"
+CHAT_EVENT_STEP1	//event to run on chat step
+CHAT_EVENT_STEP2	//"
+CHAT_EVENT_STEP3	//"
+CHAT_EVENT_STEP4	//"
+CHAT_EVENT_STEP5	//"
+CHAT_EVENT_STEP6	//"
+CHAT_EVENT_STEP7	//"
+CHAT_EVENT_STEP8	//"
+CHAT_EVENT_STEP9	//"
+CHAT_EVENT_STEP10	//"
+CHAT_SOUND1		//sound to play on chat step X
+CHAT_SOUND2		//"
+CHAT_SOUND3		//"
+CHAT_SOUND4		//"
+CHAT_SOUND5		//"
+CHAT_SOUND6		//"
+CHAT_SOUND7		//"
+CHAT_SOUND8		//"
+CHAT_SOUND9		//"
+CHAT_SOUND10		//"
+CHAT_DELAY		//default pause between chat steps
+NO_MOUTH_MOVE		//tells base_chat not to move NPC's mouth
+NO_HAIL			//tells base_chat not to auto-register say_hi
+NO_JOB			//tells base_chat not to auto-register say_jobs
+NO_RUMOR		//tells base_chat not to auto-register say_rumor
+NPC_OVERSIZED		//tells Dragonaxe and other weapons NPC is too big to push, but not immune to push
+NPC_NO_PLAYER_DMG	//Monster takes no damage from players while set 1
+IS_BLOODLESS		//flags monster immune to vampiric effects
+CHAT_BUSY		//array chat system
+GAME_PUSH_RATIO         //Reduces push velocity from other sources by <ratio> unless "override" is used in the calling addvelocity/setvelocity command
+NPC_RANGED		//AI flag for dealing with ranged mobs
+NPC_IS_TURRET		//Set this to 1 on mobs that don't move
+NPC_PASS_APPLYEFFECTS	//if set to a target, applyeffects used against script with this var will instead be applied to that target, if it is valid
+EFFECT_IGNORE_CLEARFX   //when set to 1 in an applyeffect script, this setvard prevents removal via clearfx (though can still be removed directly via removeeffect).
+
+//immunes - setting takedmg on any of these will set this var accordingly, automagically (JUN2007a)
+//if takedmg xxx 1.0 - IMMUNE_XXX will be set 0.99 (as IMMUNE_XXX == 1 means total immune, while takedmg xxx 1.0 = 100% dmg)
+//players have an alternate set callsed PIMMUNE_ - so monsters can check immunity of players even if they are immune themselves ( $get(x,scriptvar,y) local conflict)
+//- see newer method: $get_takedmg(<target>,<type>)
+IMMUNE_COLD		//ratio, 1=immune >1=vulnerable <1=resistant
+IMMUNE_FIRE		//ratio, 1=immune >1=vulnerable <1=resistant
+IMMUNE_LIGHTNING	//ratio, 1=immune >1=vulnerable <1=resistant
+IMMUNE_POISON		//ratio, 1=immune >1=vulnerable <1=resistant
+IMMUNE_ACID		//ratio, 1=immune >1=vulnerable <1=resistant
+IMMUNE_MAGIC		//ratio, 1=immune >1=vulnerable <1=resistant
+IMMUNE_HOLY		//ratio, 1=immune >1=vulnerable <1=resistant (creatures are immune to holy by default, exceptions: race undead and race demon)
+
+//special, not affected by takedmg
+IMMUNE_STUN		//this one works 0-100%
+IMMUNE_PUSH		//this is either 1 or 0 (see newer method: nopush 0|1, and $get(<target>,nopush) )
+
+IS_BLOODLESS		//setting 1 indicates mob is immune to vampyric effects
+
+
+//chests
+TC_NPLAYERS		//#players returned by get_players or get_players_by_stat
+GIVE_PRIZE		//returned by get_chance
+GIVE_QUANTITY		//returned by get_quantity
+
+#
+
+#KEYWORD=Event_Hard
+//events called by DLL
+client_activate
+game_deleted			//called when entity removed
+game_touch			//PARAM1=touched, called if setcallback touch enable is on
+game_targeted_by_player		//PARAM1=player, called when player targets npc
+game_damaged			//PARAM1=attacker PARAM2=dmg PARAM3=dmg_type PARAM4=accuracy_roll PARAM5=skill PARAM6=Inflicter
+game_damaged_other		//PARAM1=target_hit PARAM2=dmg PARAM3=dmg_type PARAM4=dmgevent //items return <attack_callback>_damaged_other
+weapon_damaged_other		//as above, generic callback for all weapon attacks
+game_death			//called when slain
+game_predeath			//called before corpse drops (if you want to change properties of the corpse, do so here)
+game_deploy			//called when item put in hands
+game_dodamage			//PARAM1=hit:0|1 PARAM2=ent_hit PARAM3=(start) PARAM4=(end) PARAM5=DmgType PARAM6=DmgAmt
+game_drop			//called when item dropped
+game_dynamically_created	//called whenever createnpc used (possibly createitem as well) - params in createnpc command are passed here
+game_fall			//called when item falls
+game_heardsound			//PARAM1=type:combat|move|danger PARAM2=(origin) PARAM3=danger_radius
+game_heardtext			//PARAM1=text PARAM2=player_id (general catch for local speech)
+game_parry			//PARAM1=attacker PARAM2=dmg PARAM3=dmg_type PARAM4=Parry_Roll PARAM5=Attack_Roll
+game_menu_getoptions		//PARAM1=player activating menu
+game_menu_selected		//<player> <callback> <data> - any menu option selected is reported here (cancel returns "<player> [cancel]")
+game_pickup			//on item pickup
+game_playercmd			//returns console command from player
+game_playerkill			//untested, should go off in PVP
+game_playerused			//called when used by player
+game_prerender			//fires every frame if setcallback render enabled
+game_remove
+game_spawn			//called just prior to being put in the world
+game_postspawn			//(passes params from msmonster entity on spawn) PARAM1 = (name|default), PARAM2 = DmgMulti, PARAM3 = HPMulti, PARAM4 = params string
+game_struck			//PARAM1=dmg
+game_wear
+game_show			//JAN2010 - called on items when player enters world, use to initate model if it is worn
+game_takedamage			//PARAM1=attacker  PARAM2=inflictor? PARAM3=dmg PARAM4=dmg_type - use return to alter incoming damage
+game_putinpack
+game_removefromowner
+game_set_takedmg		//<element> <ratio> [adjust] - called with each use of the "takedmg" command. If "adjust" is not include, this resets the base value in the elemental resist system.
+game_menu_cancel		//called on an npc when his interact menu is canceled
+game_precache			//precachefile events will work here!
+game_transition_entered		//(Player Only) PARAM1=Transition_desc PARAM2=DestBSP PARAM3=LocalSpawn PARAM4=DestSpawn (looks okay here though)
+game_transition_exited          //(Player Only) PARAM1=Transition_desc PARAM2=DestBSP PARAM3=LocalSpawn
+game_attack_cancel		//(Item Only) Called when attack "cancled" or ends - along with attack *attackcallback*_end
+game_viewanimdone		//(Item Only - Client Only) Called when view animation done - *sometimes*
+game_attack1_down		//(Item only) goes off every frame mouse1 is down
+game_-attack1			//(item only) goes off every frame mouse1 is up
+game_attack1			//(item only) goes off once when mouse1 is pressed down
+game_+attack2			//(item only) goes off every frame mouse2 is down
+game_-attack2			//(item only) goes off every frame mouse2 is up
+game_hitnpc			//(item only) goes off when NPC struck (even if miss) [sadly no param to tell you what NPC was hit]
+game_hitworld			//(items only the older convention "hitworld" is also called
+game_projectile_hitnpc		//<npc_id> when projectile hits npc
+game_projectile_hitwall		//projectile hit wall
+game_scriptflag_update		//<action> <name> <type> <value> <base_expire_time> - called whenever scriptflags are updated via scriptflags command - do not alter scriptflags here or you may cause an infinite loop (delay 0.1 secs)
+game_applyeffect		//<"applyeffect"|"applyeffectstack"> <target> <effectscript> [params...]
+				//- You can return "redirect;<target>" to redirect the applyeffect to another target.
+				//- ...But don't get ideas about reflecting the DOT damage back to the player this way, as you he'll be trying to damage himself.
+				//- If you wanted to do that, you'd have to change the paramter that contains "who to blame" - for most DOT's, this is the second parameter after <effectscript>. You'd then do another applyeffect from here, with the altered parameters.
+				//- Alternatively, you can stop the applyeffect from being applied with return "abort"
+
+//some of these these should be reconventioned
+game_playerspeak		//(GM Only) PARAM1=player_id PARAM2=speak_type(0-gobal,1-npc,2-party) PARAM3=speak_text
+game_monsterspawn_removed	//(GM Only) PARAM1=monsterspawn_id - Called when a monster spawn is removed.
+game_transition_triggered       //(GM Only) PARAM1=Transition_desc PARAM2=DestBSP PARAM3=LocalSpawn PARAM4=DestSpawn (this last param looks wrong in the code)
+gm_manual_map_change		//(GM Only) PARAM1=Map - Actvates when level changes (and handles the actual change)
+game_timedout			//(GM Only) Called when there have been no players on the server for ms_timelimit in seconds (ie. server reset and/or return to edana time)
+
+
+#KEYWORD=Event_Soft
+//common base script events
+as_attack		//[duration] tells base-anti stuck to suspend stuck checking as I just attacked
+chicken_run		//<duration> - causes monster to move in a random direction
+bm_gold_spew		//<gold_per_bag> <bags_per_player> <dist_from_monster> <min#bags> <max#bags>
+cycle_down
+cycle_up		//called on spotting a player
+npc_death
+npc_flinch
+npcatk_hunt		//main hunt cycle
+npcatk_suspend_movement //<idle_anim> [duration] - suspend movement (but not AI), and loop anim, until...
+npcatk_resume_movement	//...is called
+npc_post_spawn
+npc_selectattack	//called every time the monster might attack (is within ATTACK_RANGE of NPCATK_TARGET)
+npc_spawn
+npc_struck
+npc_suicide
+npc_targetsighted	//PARAM1=target, called every time the monster spots his hunt target
+npcatk_ally_alert	//PARAM1=target PARAM2=ally_under_attack - called from allys that spot enemies 
+npc_aiding_ally		//<PARAM1 = guy I am aiding> called whenever a monster goes to aid an ally under attack
+npcatk_clear_targets
+npcatk_dodamage		//use instead of dodamage under new AI (no longer required)
+npcatk_faceattacker
+npcatk_flee		//<target/(origin)> <distance> <max_time>
+npcatk_lost_sight
+npcatk_resume_ai
+npcatk_setmovedest
+npcatk_settarget
+npcatk_suspend_ai
+npcatk_suspend_roam	//<time> [FEB2012] - suspends roam and anti-stuck
+npcatk_target
+npcatk_targetvalidate	//called to ensure target is valid
+npc_targetvalidate	//special call for custom validating of targets
+npc_found_new_target	//called whenever a new valid attack target is found
+treasure_spawn
+send_damage		//send damage from one target to another (usually called externally), same params as dodamage
+ext_dodamage		//same thing, new convention
+my_target_died		//PARAM1=target_slain
+chest_additems		//items/base_treasurechest - addstoreitems here
+chest_add_quality_items //on chests/base_treasurechest_array, these only appear if in the top 3/4ths damage points
+chat_loop		//base_chat - start chat loop
+chat_add_text		//<sequence_name> <text_line> [time] [anim|"none"] [event] - see monsters/base_chat_array
+chat_start_sequence	//<sequence_name> - see monsters/base_chat_array
+chat_now		//<chat_now> - see monsters/base_chat_array
+ext_eresist_adj		//<element> <value> <duration:-1> [tag] - change a player or mob's elemental resistances after spawn.
+ext_eresist_remove	//<tag> - remove an element resistance or vulnerability previously set by ext_eresist_adj
+
+//base_treasurechest
+get_quantity		//<min_items> <max_items> <+per_player> [hp_req] //returns GIVE_QUANTITY
+get_chance		//<single_player%> <%chance_per_player> [max_chance] [hp_req] //returns GIVE_PRIZE
+add_gold		//<min_amt> <max_amt> <quant_per_pouch> //add gold pouches to chest (on base_treasurechest_array, this adds a fixed amount to current player's account instead)
+get_players		//[hp_req] //returns TC_NPLAYERS = #players with hp > hp_req (defaults 20) - filters out bots, afks, and players with < hp_req
+get_players_by_stat	//<stat_name> <min_req> //returns TC_NPLAYERS = #players with stat_name > min_req, also requires at least 20hp
+get_chance_uncommon	//<hp_req> - callevent get_chance 5 10 100 HP_REQ
+get_chance_rare		//<hp_req> - callevent get_chance 1 5 100 HP_REQ
+get_chance_ultra_rare	//<hp_req> - callevent get_chance 1 2 50 HP_REQ
+
+
+//common effects
+blind			//<duration>
+effect_burn		//<duration> <inflictor_id> [damage] [noglow_shell-0|1] [nolight-0|1] [xp_skill] //EFFECT_ID DOT_fire
+effect_defile		//<duration> <attacker> [dmg] [ratio] [skill] (increases damage from all sources, dark DOT, generally low but with prolonged duration) //EFFECT_ID DOT_defile
+effect_drunk		//<duration>
+effect_flames		//<duration> - fx only
+effect_freeze		//<duration> <???> - secondary djinn effect (defunct)
+effect_frost		//<duration> [inflictor_id] <dmg> [glow-0|1] [xp_skill] - (djinn_ice version - defunct)
+effect_frostbite	//<duration> [inflictor_id] (slows, no damage)
+effect_frostbite_dmg	//<duration> <inflictor_id> <dmg> [xp_skill]  (slows, generally half damage) //EFFECT_ID DOT_cold
+effect_holy_dmg		//<duration> <inflictor_id> <dmg> [xp_skill]  //EFFECT_ID DOT_holy
+effect_iceshield	//<duration> <dmg_multiplier>
+effect_light		//<duration> <radius> <color>
+effect_poison		//<duration> <inflictor_id> <dmg> <poison/disease-0|1> [xp_skill] (usually double duration, quarter damage) //EFFECT_ID DOT_poison
+effect_push		//<duration> <(vel)> [screenshake-0|1]
+effect_rejuv2		//<heal_amt> [divinaion_skill] [healer_id]
+effect_shadowflames	//<duration> <inflictor_id> [dmg] [xp_skill] (dark damage flames, generally 0.5 damage, adds Darkness Contamination)
+effect_shock_dmg	//<duration> <inflictor_id> [dmg] [xp_skill] (damage is adjusted to 0.75 effect side, decreases accuracy) //EFFECT_ID DOT_lightning
+effect_stun		//<duration> [slow_push-0|1] [cant_attack-0|1] [attacker]
+freeze_solid		//<duration> <inflictor_id> [dot] [xp_skill] [max_hp] (prevents movement and attacking)
+generic_damage		//<dmg> <inflictor_id> [noise-0|1] [dmg_type] [xp_skill] 
+greater_poison		//<duration> <inflictor_id> <dmg> [xp_skill] //EFFECT_ID DOT_gpoison
+poison_spore		//<duration> <inflictor_id> <dmg> [xp_skill] 
+heavy_stun		//<duration> [inflictor_id] [cant_attack:0|1]
+protection		//<duration> <dmg_multiplier>
+sfx_motionblur		//<ent_idx> [duration]
+speed			//<duration> <speed%> <framerate> - not sure if this works 100%
+torch_flame		//<duration> - less sticky than items/base_lighted
+effect_poison_dmg	//convention alias: effect_poison
+effect_fire_dmg		//convention alias: effect_burn
+effect_cold_dmg		//convention alias: effect_frostbite_dmg
+effect_lightning_dmg	//convention alias: effect_shock_dmg
+hold_person		//<duration> <inflictor_id> [dmg] (prevents movement but not attacking)
+effect_webbed		//<cocoon_hp[x10,usually use mons maxhp]> <web_strength[>1 reduces webs needed for cocoon]> [attacker] [duration] [dot]
+effect_poison_blinding //<duration> <inflictor_id> [dmg] [xp_skill]
+
+#KEYWORD=Reserved_attribs
+//most of these can be pulled with $get(<ent>,xx)
+alive		//server only (also isalive)
+angles
+currentitem	//player only
+dist		//same as range, but doesn't check bounding boxes
+ducking		//players only
+exists
+is_entity_type	//is this an entity 0|1
+eyepos		//eye position on model (beware, on players, this is actually at model center)
+forwardspeed	//intended forward speed if unobstructed (use speed/speed2d for actual speed)
+gravity		//level of gravity set on ent
+height		//set height
+hp		//current health
+id		//server only - returns ent id of target
+index		//server - returns client index of model used by ent - client, returns index of model
+inwater		//server - returns 1 for partial submerge, 2 for total submerge, otherwise 0
+underwater	//client only
+waterorigin	//client only
+is_drinkable	//items only
+is_item
+is_projectile
+is_spell	//items only
+is_worn		//items only
+isalive
+isplayer
+inhand		//(items only)
+jumping		//(players only)
+last_frame	//as in cleffect tempent set_current_prop death_delay last_frame
+maxhp		//max health
+maxmp		//max mana
+movedir		//angle of movement
+partialname //eg. $item_exists(ent_lastspoke,"armor_",partialname)
+title		//player title
+velocity	//velocity as vector
+viewangles	//As of AUG2010_04, this also works client side eg. $getcl(game.localplayer.index,viewangles)
+current_music	//game.player.current_music - server side only, current MP3 file playing
+moveprox	//current setmovedest moveprox - or bounding box size, if not set
+mp		//mana (players only)
+onground	//is target on ground 
+origin		//eg. $get(ent_me,origin)
+origin_center	//doesn't seem to work
+race
+range		//$get(<target>,range) - returns range from mob's outer bounding box to <target>'s outer bounding box
+range2D		//note the capitlization!
+relationship	//$get(<target1>,relationship,<target2>) returns enemy,ally,neutral,none based on race relations
+renderamt	//not $get'able, property of setprop and others
+rendermode	//not $get'able, property of setprop
+renderfx	//eg. setprop ent_me renderfx 16 //(for hologram effect)
+scriptvar	//$get(<target>,scriptvar,'<var_name>') - always place the requested var in 'SINGLE_QUOTES' to avoid conflicts with vars in current script
+skillavg
+skin		//setprop ent_me skin <idx>
+speed		//current nominal velocity
+speed2D		//current velocity on X/Y plane only
+bonepos		//client side bone position (not available in some events) $getcl(<idx>,bonepos,<bone#>)
+unset		//this isn't actually reserved, it is rather part of quest set/unset
+world		//eg. cleffect tempent set_current_prop collide world
+absmin		//absolute min corner
+absmax		//absolute max corner
+
+submodelbody	//eg. setviewmodelprop ent_owner submodelbody 1 2
+
+anim		
+current_frame	//anim.current_frame
+max_frames	//anim.max_frames
+
+movedest	//game.monster.movedest
+origin		//game.monster.movedest.origin
+prox		//game.monster.movedest.prox - range, maybe buggy
+
+canjump		//game.effect.canjump
+canduck		//game.effect.canduck
+displayname	//game.effect.displayname
+canattack	//game.effect.canattack / $get(<player>,canattack) / game.localplayer.canattack (last one is for clients as of MAR2012)
+canjump		//game.effect.canjump / $get(<player>,canjump) - $gets are MAR2012
+canduck		//game.effect.canduck / $get(<player>,canduck) - $gets are MAR2012
+canrun		//game.effect.canrun / $get(<player>,canrun) - $gets are MAR2012
+canmove		//game.effect.canmove / $get(<player>,canmove) - $gets are MAR2012
+
+items		//game.container.items
+open		//game.container.open
+
+hand_index	//game.item.hand_index //0=right, 1=left, 2=both [two handed], 3=undroppable [bare_fists]
+
+stamina
+max		//stamina.max
+ratio		//stamina.ratio
+
+waterlevel	//0=dryland, 1=feet_wet, 2=waist_level, 3=swimming
+
+active
+localplayer	//game.localplayer
+viewmodel	//game.localplayer.viewmodel[.left|right|active].id
+script		//game.script.[last_light_id|last_beam_id|last_sent_id|iteration]
+last_light_id	//game.script.last_light_id - special index of last light created on client
+last_sent_id	//game.script.last_sent_id - special index of last client side script created on server
+last_beam_id	//game.script.last_beam_id - special index of last beam created client side
+iteration	//game.script.iteration - number of interations a calleventloop event has run
+serverside	//game.serverside - if script is running server side
+clientside	//game.clientside - if script is running client side
+thirdperson	//game.localplayer.thirdperson - if client is in third person mode
+monster		//game.monster.[property] - any $get'able property
+players		//game.players - #of players on server
+playersnb	//game.playersnb - #of players on server, in world
+map		//game.map.name - bsp name, sans .bsp
+idle		//game.map.music.idle.file 
+file		//game.map.music.idle.length
+length		//game.map.music.combat.file
+combat		//game.map.music.combat.length
+music		//^ dynamic music system
+
+skyname		//game.map.skyname
+sound		//game.sound...
+voice		//game.sound.voice - constant voice channel
+maxvol		//game.sound.maxvol - constant max volume (10)
+time		//game.time - time map has been up in seconds (goes by game ticks, not system clock)
+
+params
+event		//game.event.params - returns # of set PARAMs
+		//game.event.params.token - returns paramters as a tokenized string
+
+//movetype setprops
+movetype	//setprop <target> movetype const.movetype...
+step		//const.movetype.step - normal monster walk
+walk		//const.movetype.walk - may crash
+push		//const.movetype.push - slides through wall based on relvel (maybe useful for spells)
+bounce		//const.movetype.bounce - does what you'd expect (LOL) (may also be useful)
+none		//const.movetype.none - does what you'd expect - useful for freezing in place?
+toss		//const.movetype.toss - works but with odd effects (hard to describe)
+pushstep	//const.movetype.pushstep - acts similar to .toss
+follow		//const.movetype.follow - similar to toss
+noclip		//const.movetype.noclip - pass through most objects, but not solids
+
+//$ratio(ratio,x,y,inversed)
+inversed
+
+//sentenv <xxx> properties
+sky		
+texture		//setenv sky.texture <string>
+lightgamma
+maxviewdist 
+fog		//
+enabled		//setenv fog.enabled <0|1>
+color		//setenv fog.color <(<float-red>,<float-green>,<float-blue>)
+density		//setenv fog.density <value>
+start		//setenv fog.start <distance from client>
+end		//setenv fog.end <distance from client?>
+type		//setenv fog.type <exp|exp2|linear> - only linear seems to be of any use
+tint		//setenv screen.tint (<float-red>,<float-green>,<float-blue>)?(maybe a fourth alpha value, not sure)
+
+//name
+name
+full		//$get(<target>,name.full) / game.monster.name.full ("an Orc")
+capital		//$get(<target>,name.full.capital) / game.monster.name.full.capital ("An Orc")
+
+
+//vecs
+pitch		//eg. $vec.pitch(game.monster.angles)
+yaw
+roll
+x		//eg. $vec.x(game.monster.origin)
+y
+z
+
+//effect
+fadeout
+fadein		//eg. effect screenfade $get(ent_me,id) 2 1 (255,255,0) 200 fadein
+
+//cleffect
+body		//total submodel integer
+scale		//float scale
+death_delay	//time for tempent to die
+sequence	//new FEB2009_19 - animation sequence index for model
+lifetime	//cleffect tempent set_current_prop fadeout lifetime - causes tempent to fade over lifetime set by death_delay
+bouncefactor	//how much to bounce when I hit ground
+collide		//what tempent touches (world|all|none)
+cb_collide	//event to call on collision
+cb_hitwater	//event to call on collision with water
+die		//die when collide, eg. cleffect tempent set_current_prop collide world;die
+rendercolor	//cleffect tempent set_current_prop rendercolor (255,0,0)
+frames		//number of frames in animation sequence or sprite
+
+//$get_traceline((start),(end),<flags>)
+worldonly
+ent
+clworld
+tracebox
+
+//menu
+recvoffer //dated
+
+//reg.mitem. entires:
+reg
+mitem 
+cb_failed	//reg.mitem.cb_failed - callback on menu failure (lack of funds, etc)
+data		//reg.mitem.data - usage varies with type (see menu types)
+callback	//reg.mitem.data - callback to use on selection
+type		//reg.mitem.type <callback|say|payment|disabled>
+
+//menu types (reg.mitem.type)
+disabled	//beware, sometimes still selectable by number keys
+callback	//use reg.mitem.callback on selection, reg.mitem.data as PARAM2
+say		//say reg.mitem.data on selection
+payment		//require reg.mitem.data as payment (can be tokenized)
+
+//menuitem. entries:
+menuitem
+register	//menuitem.regster - should appear after every menu item struct
+remove		//menuitem.remove <reg.mitem.id>
+
+//blood
+red
+green
+yellow
+
+//newer game.
+debug		//game.debug - developer cvar (game.developer should work too, but dont)
+pvp		//game.pvp - cvar ms_pklevel
+central		//game.central - cvar ms_central_enabled
+revision	//game.revision - cvar ms_version (ms.dll version)
+cvar		//game.cvar.<name> - return any server cvar (JUN2007)
+totalhp		//game.players.totalhp - return total max hp of all players combined (or ms_fake_hp)
+avghp		//game.players.avghp - total maxhp of all active players divided by the number of active players
+noafk		//game.players.noafk - return # of players exluding AFK's (or ms_fake_players)
+day		//game.time.day - date (number 1-31)
+month		//game.time.month - month (number 1-12)
+year		//game.time.year - year
+dow		//game.time.dow - day of the week (monday = 2)
+hour		//game.time.hour - current system clock hour (24 format)
+minute		//game.time.minute - current system clock minute
+since		//game.time.since.xxx - time since new years (xxx increments follow)
+seconds		//game.time.since.seconds
+minutes		//game.time.since.minutes
+hours		//game.time.since.hours
+days		//game.time.since.days
+months		//game.time.since.months
+
+
+//scriptflags system
+cleartype	//scriptflags <target> cleartype <type> //clear all of type
+clearall	//scriptflags <target> clearall //clear all flags
+remove_expired	//scriptflags <target> remove_expired //remove expired flags (flag expiration is handled script side in externals)
+type_value	//$get_scriptflag
+type_count	//$get_scriptflag
+type_exists	//$get_scriptflag
+type_first	//$get_scriptflag
+name_exists	//$get_scriptflag
+name_type	//$get_scriptflag
+name_value	//$get_scriptflag
+totalvalue	//$get_scriptflag (old convention)
+first_value	//$get_scriptflag (old convention)
+listall		//$get_scriptflag
+edit		//scriptflag edit //edit values of a flag
+
+removeall	//cleffect beam_update removeall - kills all beams and clears beam data
+
+//newer $get'ables
+renderprops	//returns a token string with "<scale>;<rendermode>;<renderamt>;<bodyidx>;<skin>" - if any of these are unset, they will return 0
+invincible	//returns targets invincible property (seems to always return 1?)
+isbot		//checks various possibilities, including steamid (see ms.dll)
+steamid		//return steam id
+slot		//return character slot
+drink_amt	//#drinks left in a pot (same as quality)
+lastmap		//same as $get_last_map - returns name of last map player was on
+gold		//not working
+active_item	//ID of player's current item
+offhand_item	//ID of player's offhand item
+spellname	//$get(<target>,spellname,<idx>) - return the script name of a memorized spell
+ip		//player's IP
+attachpos	//$get(<target>,attachpos,<idx>) - return origin of an attachment (server)
+attachang	//$get(<target>,attachang,<idx>) - return angles of an attachment (server)
+svbonepos	//$get(<target>,svbonepos,<idx>) - return the origin of a specific bone on the target's model (server)
+scriptname	//returns full path and filename of top script of entity
+itemname	//returns top script name, without path
+modded		//item is modded
+mods		//modification list
+spawner		//entity id of msarea_monsterspawn monster was created by
+attachment0	//$getcl(<ent>,attachment0) - returns vector of attachment (client)
+attachment1	//$getcl(<ent>,attachment1) - returns vector of attachment (client)
+attachment2	//$getcl(<ent>,attachment2) - returns vector of attachment (client)
+attachment3	//$getcl(<ent>,attachment3) - returns vector of attachment (client)
+sitting		//is player sitting 0|1
+canattack	//can player attack 0|1 / use game.localplayer.canattack for client
+keydown		//$get(<player>,keydown,<attack1|attack2|use|jump|moveleft|moveright|back|forward|duck>) - returns 1 if key-command is pressed
+attack1		//for keydown (above)
+attack2		//for keydown (above)
+use		//for keydown (above)
+jump		//for keydown (above)
+moveleft	//for keydown (above)
+moveright	//for keydown (above)
+owner		//$get(<item>,owner) - more reliable for items in packs than ent_owner (which tends to return the container)
+back		//for keydown (above)
+forward		//for keydown (above)
+duck		//for keydown (above)
+inworld		//item is in world (not in container)
+numitems	//number of items on player
+curhand		//player's current main (left click) hand (0=Left, 1=Right)
+lastpush	//time player last pushed by trigger_push
+haseffect	//$get(<target>,haseffect,<effect_id>) - see individual applyeffect scripts for EFFECT_ID's
+playerspawn	//player's current ms_player_spawn (also saved in quest d)
+quality		//item's current quality
+maxquality	//item's current maximum quantity
+bonecount	//(client only) returns # of bones in target model
+wielded		//is this item in either hand, and not worn (finally, a reliable method - though returns 0 for fists_bare).
+hand0		//ID item in left hand (if any - ignores fists_bare)
+hand1		//ID item in right hand (if any - ignores fists_bare)
+xp		//total experience point value as set by skilllevel
+
+//$get_attackprop
+type
+numattacks
+range
+dmg
+multi
+aoe
+energydrain
+mpdrain
+stat
+prof
+exp
+noise
+ofs
+startpos
+aimang
+priority
+keys
+ignore
+hitchance
+delay
+end
+strike
+noautoaim
+ammodrain
+hold_min&max
+
+#KEYWORD=Skillz_and_stats
+archery		//eg. $get(ent_owner,skill.archery)
+axehandling
+bluntarms
+martialarts
+skill
+smallarms
+swordsmanship
+parry
+polearms
+
+awareness
+concentration
+fitness
+strength
+
+balance		//eg. $get(ent_owner,skill.martialarts.balance)
+power
+proficiency
+
+spellcasting	//eg. $get(ent_owner,skill.spellcasting.fire)
+affliction
+divination
+fire
+ice
+lightning
+protection
+summoning
+
+#KEYWORD=races
+hated		//everything will attack this race, including its own members
+beloved		//Nothing will attack this race, nor will it attack any other
+human
+hguard		//for friendlies that can defend themselves against players
+orc		//orcs and goblins do not play nice with undead
+goblin
+spider
+undead
+demon		//demons play nice with both undead and orcs
+wildanimal
+vermin		//wild animals that get along with undead for spooky theme (rats, bats, etc.)
+rogue
+evil
+good
+torkie		//hostile torkie elves
+hostile1
+hostile2
+hostile3
+hostile4
+hostile5
+necro		//necromancers
+
+#KEYWORD=flowcontrol
+include		//#include [server|client|shared] [casual] <script_file> - insert other script at this point. Very useful, but many potential issues.
+scope		//#scope [server|client|shared] - change default execution location
+server		//{ [server] eventname - set all commands in event server side
+client		//{ [client] eventname - set all commands in event client side
+shared		//{ [shared] eventname - share commands between client and server when possible (default behavior - not generally optimal)
+repeatdelay	//<seconds> - repeat everything in this event in infinite loop (until script deleted/removed)
+callevent	//<delay> <event_name> OR <event_name> [params...]
+calleventloop   //<#_of_iterations> <event_name> - loop event_name X times. Progress of loop stored in game.script.iteration - loops can be embedded
+calleventtimed	//same as callevent <delay> <event_name>
+callexternal    //<target|players|all> <event_name> [params...] - calls script on another target
+clientevent	//<new|update|persists> <target|all> <script_file|script_idx> <event_name> [params...] - see client side scripting docs
+override	//{ [override] eventname - override's lower instances of same event, can cause issues when overriding a higher occurance
+exitevent	//Ends execution of commands in the current script event (less need for if !EXIT_SUB)
+breakloop	//terminates a calleventloop in progress
+
+//comparative operators (case sensitive)
+if		//if [(] <condition> [)] dostuffs (remember spaces are parsers), if no parantheses are around ( condition ) execution ends if condition is false
+		//prefixing a variable with an exclamation point (eg. !SOME_VAR ) will create a false condition if var is 1, or true, if unset or 0
+startswith	//(compares strings) also !startswith for doesn't start with
+contains	//(compares strings) also !contains for doesn't contain
+equals		//(compares strings) 
+isnot		//(compares strings) 
+==		//(compares mathmatically) remember = is not valid
+>=		//(compares mathmatically) remember => is not valid
+<=		//(compares mathmatically) remember =< is not valid
+>		//(compares mathmatically) 
+<		//(compares mathmatically) 
+else		//if not previous conditional. "else if ( condition )" is also possible, just remember they have to be on seperate lines

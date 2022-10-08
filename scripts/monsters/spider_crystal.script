@@ -132,6 +132,9 @@
 	takedmg blunt 1.25
 	takedmg holy 1.0
 	takedmg poison 0.0
+
+	setvard TELE_TYPE melee
+	setvard NEXT_TELE_FIX 99999
 }
 
 {
@@ -209,16 +212,18 @@ repeatdelay 5.0
 }
 
 { npc_targetsighted
-	if !DID_INTRO
-	if game.time > NEXT_INTRO
-	setvard DID_INTRO 1
-	playrandomsound 0 10 SOUND_ALERT1 SOUND_ALERT2 SOUND_ALERT3 SOUND_ALERT4
+	if ( !DID_INTRO )
+	{
+		if game.time > NEXT_INTRO
+		setvard DID_INTRO 1
+		playrandomsound 0 10 SOUND_ALERT1 SOUND_ALERT2 SOUND_ALERT3 SOUND_ALERT4
 
-	setvard NEXT_SIDESTEP game.time
-	add NEXT_SIDESTEP $randf(30.0,40.0)
+		setvard NEXT_SIDESTEP game.time
+		add NEXT_SIDESTEP $randf(30.0,40.0)
 
-	setvard NEXT_TELEPORT game.time
-	add NEXT_TELEPORT FREQ_TELEPORT
+		setvard NEXT_TELEPORT game.time
+		add NEXT_TELEPORT FREQ_TELEPORT
+	}
 }
 
 { npcatk_clear_targets
@@ -242,13 +247,31 @@ repeatdelay 5.0
 		gravity 1.0
 	}
 
+	if ( NPCATK_TARGET equals unset )
+	{
+		if DID_TELEPORT
+		if ( GAME_TIME > NEXT_TELE_FIX )
+		{
+			//I teleported, and have not had a target for 30 seconds
+			//just on the off chance I teleported off map, teleport home
+			dbg teleport_fix NEXT_TELE_FIX
+			clientevent new all effects/sfx_sprite_in_fancy $get(ent_me,origin) c-tele1.spr 25 2.0 (255,255,255) 512 magic/teleport.wav
+			setorigin ent_me NPC_HOME_LOC
+			setvard TELE_TYPE melee
+			setvard NEXT_TELE_FIX 99999
+			clientevent new all effects/sfx_sprite_in_fancy NPC_HOME_LOC c-tele1.spr 25 2.0 (255,255,255) 512 magic/teleport.wav
+		}
+	}
+
 
 	if NPCATK_TARGET isnot unset
+
+	setvard NEXT_TELE_FIX GAME_TIME
+	add NEXT_TELE_FIX 20.0
 
 	if ( GAME_TIME > NEXT_TELEPORT )
 	{
 		if $get(NPCATK_TARGET,isplayer)
-		if $cansee(NPCATK_TARGET)
 		callevent check_teleport
 	}
 
@@ -307,7 +330,8 @@ repeatdelay 5.0
 { frame_projectile
 	playrandomsound 0 10 SOUND_QUICK1 SOUND_QUICK2
 	//clientevent new all effects/sfx_ball_lightning $relpos(0,32,V_ADJ) $get(NPCATK_TARGET,origin) 1
-	tossprojectile NPCATK_TARGET 300 0 0.1 proj_sprite $vec(0,32,V_ADJ)
+	//<projectile scriptname> <"view"|(src_origin)> <target|(targ_origin)|none> <speed> <damage> <cof> <skill|none> //Converted to use new tossprojectile //greatguys1@FEB2022
+	tossprojectile "proj_sprite" $relpos(0,32,V_ADJ) NPCATK_TARGET 300 0 0.1 none
 	//effect beam
 	effect beam ents lgtning.spr 10 ent_me 2 ent_me 3 (255,0,255) 200 90 1.0
 }
@@ -357,23 +381,33 @@ repeatdelay 5.0
 
 { check_teleport
 	//if we're close, try to teleport to last position, if far, try to teleport closer
-	local AM_CLOSE 0
-	if ( $get(NPCATK_TARGET,range) < RANGE_CHASE ) local AM_CLOSE 1
+//	local AM_CLOSE 0
+//	if ( $get(NPCATK_TARGET,range) < RANGE_CHASE ) local AM_CLOSE 1
+//
+	local L_CUR_POS $get(ent_me,origin)
 
-	local CUR_POS $get(ent_me,origin)
-
-	if ( !AM_CLOSE )
+	if ( TELE_TYPE equals melee )
 	{
-		//pick area randomly around target
-		local TELE_POINT $get(NPCATK_TARGET,origin)
-		local RND_ANG $randf(0,359.99)
-		vectoradd TELE_POINT $relpos($vec(0,RND_ANG,0),$vec(0,MOVERANGE_NORM,0))
-		vectorset TELE_POINT z $get_ground_height(TELE_POINT)
-		if ( !GROUND_MODE ) vectoradd TELE_POINT z 16 //correct for ground slopes, if tele to ground
-		setvard LAST_TELE_POINT $get(ent_me,origin)
+		if ( $cansee(NPCATK_TARGET) )
+		{
+			//pick area randomly around target
+			local TELE_POINT $get(NPCATK_TARGET,origin)
+			local RND_ANG $randf(0,359.99)
+			vectoradd TELE_POINT $relpos($vec(0,RND_ANG,0),$vec(0,MOVERANGE_NORM,0))
+			vectorset TELE_POINT z $get_ground_height(TELE_POINT)
+			if ( !GROUND_MODE ) vectoradd TELE_POINT z 16 //correct for ground slopes, if tele to ground
+			setvard LAST_TELE_POINT $get(ent_me,origin)
+		}
+		else
+		{
+			//can't see him, try again later
+			setvard NEXT_TELEPORT game.time
+			add NEXT_TELEPORT 3.0
+			exitevent
+		}
 	}
 
-	if ( AM_CLOSE )
+	if ( TELE_TYPE equals ranged )
 	{
 		if ( LAST_TELE_POINT isnot 'LAST_TELE_POINT' )
 		{
@@ -389,43 +423,64 @@ repeatdelay 5.0
 	setorigin ent_me TELE_POINT
 	local L_POS TELE_POINT
 	local reg.npcmove.endpos L_POS
-	vectoradd reg.npcmove.endpos $relpos($vec(0,game.monster.angles.yaw,0),$vec(-16,0,0))
+	local L_WIGGLE_RL $randf(-8,8)
+	local L_WIGGLE_FB $randf(-8,8)
+	vectoradd reg.npcmove.endpos $relpos($vec(0,game.monster.angles.yaw,0),$vec(L_WIGGLE_RL,L_WIGGLE_FB,0))
 	local reg.npcmove.testonly	1
 	npcmove ent_me NPCATK_TARGET
-	if ( game.ret.npcmove.dist <= 0 )
+	if ( game.ret.npcmove.dist <= 0 ) local L_TELE_FAIL  1
+
+	if ( L_TELE_FAIL )
 	{
 		//position failed, go back to where I was, try again next think
-		dbg teleport failed AM_CLOSE game.ret.npcmove.dist TELE_POINT
-		setorigin ent_me CUR_POS
+		dbg teleport failed TELE_TYPE game.ret.npcmove.dist TELE_POINT
+		setorigin ent_me L_CUR_POS
 	}
 	else
 	{
 		//playsound 0 10 SOUND_TELE
 		local SPR_POINT TELE_POINT
-		if ( !AM_CLOSE ) vectoradd SPR_POINT z 32 //presume teleporting to ground, adjust
+		if ( TELE_TYPE equals melee ) vectoradd SPR_POINT z 32 //presume teleporting to ground, adjust
 		clientevent new all effects/sfx_sprite_in_fancy SPR_POINT c-tele1.spr 25 2.0 (255,255,255) 512 magic/teleport.wav
-		clientevent new all effects/sfx_sprite_in_fancy CUR_POS c-tele1.spr 25 2.0 (255,255,255) 512 magic/teleport.wav
+		clientevent new all effects/sfx_sprite_in_fancy L_CUR_POS c-tele1.spr 25 2.0 (255,255,255) 512 magic/teleport.wav
 		setvard NEXT_TELEPORT game.time
 		local L_FREQ_TELEPORT FREQ_TELEPORT
-		if ( !AM_CLOSE ) multiply L_FREQ_TELEPORT 0.5 //favors teleporting away
+		if ( TELE_TYPE equals melee )
+		{
+			multiply L_FREQ_TELEPORT 0.5 //favors teleporting away
+		}
 		add NEXT_TELEPORT L_FREQ_TELEPORT
 
-		if !STAY_ON_GROUND
-
-		if ( !AM_CLOSE )
+		if ( !STAY_ON_GROUND )
 		{
-			//we weren't close before, but should be now, set ground mode
-			//but premtively set ground mode var to prevent climb down animation
-			if ( !GROUND_MODE ) playanim break
-			setvard GROUND_MODE 1
-			callevent ground_mode
+			if ( TELE_TYPE equals melee )
+			{
+				//we weren't close before, but should be now, set ground mode
+				//but premtively set ground mode var to prevent climb down animation
+				if ( !GROUND_MODE ) playanim break
+				setvard GROUND_MODE 1
+				callevent ground_mode
+			}
+			else
+			{
+				//otherwise, visa versa
+				if ( GROUND_MODE ) playanim break
+				setvard GROUND_MODE 0
+				callevent ceiling_mode
+			}
 		}
-		else
+
+		if ( !L_TELE_FAIL )
 		{
-			//otherwise, visa versa
-			if ( GROUND_MODE ) playanim break
-			setvard GROUND_MODE 0
-			callevent ceiling_mode
-		}		
+			setvard DID_TELEPORT 1
+			if ( TELE_TYPE equals melee )
+			{
+				setvard TELE_TYPE ranged
+			}
+			else
+			{
+				setvard TELE_TYPE melee
+			}
+		}
 	}
 }

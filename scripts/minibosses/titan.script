@@ -142,7 +142,7 @@
 	}
 
 	setmodel MONSTER_MODEL
-	hp 10000
+	hp 20000
 	width 200
 	height 600
 	race demon
@@ -178,6 +178,27 @@
 
 	setvard CL_IDX const.localplayer.scriptID
 	clientevent update all CL_IDX titan_setup $get(ent_me,index) CL_TELE_SPR CL_GLOW_SPR
+
+	callevent 0.5 get_map_summon_points
+}
+
+{ get_map_summon_points
+	setvard M_SUMMON_POINT1 $get_by_name(titan_summon_point1)
+	setvard M_SUMMON_POINT2 $get_by_name(titan_summon_point2)
+	setvard M_SUMMON_POINT3 $get_by_name(titan_summon_point3)
+	setvard M_SUMMON_POINT4 $get_by_name(titan_summon_point4)
+	setvard M_SUMMON_POINT1 $get(M_SUMMON_POINT1,origin)
+	setvard M_SUMMON_POINT2 $get(M_SUMMON_POINT2,origin)
+	setvard M_SUMMON_POINT3 $get(M_SUMMON_POINT3,origin)
+	setvard M_SUMMON_POINT4 $get(M_SUMMON_POINT4,origin)
+
+	setvard M_BIRD_ROT 0
+	setvard M_SUMMON_COUNT 0
+	setvard M_SUMMON_POINTS 1
+	if $vec.x(M_SUMMON_POINT1) == 0
+	if $vec.y(M_SUMMON_POINT2) == 0
+	if $vec.z(M_SUMMON_POINT3) == 0
+	setvard M_SUMMON_POINTS 0
 }
 
 { frame_spawn_done
@@ -250,8 +271,10 @@
 	if ( game.players.totalhp > 4000 ) setvard SCORP_SCRIPT SCORP_SCRIPT2
 	
 	add N_SCORPS 1
+	setvard M_SUMMON_BIRDS 0
 	callevent get_summon_point
 	createnpc SCORP_SCRIPT SUM_POINT $get(ent_me,id)
+	callexternal ent_lastcreated ext_delay_target 3.0 enemy
 	if N_SCORPS < 2
 	if ( game.players.totalhp <= 4000 )
 	callevent 0.1 do_scorps3 //delay for t3h l4g
@@ -259,8 +282,10 @@
 
 { do_scorps3
 	add N_SCORPS 1
+	setvard M_SUMMON_BIRDS 0
 	callevent get_summon_point
 	createnpc SCORP_SCRIPT SUM_POINT $get(ent_me,id)
+	callexternal ent_lastcreated ext_delay_target 3.0 enemy
 }
 
 { scorpion_died
@@ -288,7 +313,9 @@
 		local MOVE_DEST game.monster.origin
 		vectoradd MOVE_DEST $relpos($vec(0,ROT_ANG,0),$vec(0,1000,0))
 		setmovedest MOVE_DEST 9999
-		tossprojectile $vec(-90,0,0) 200 DMG_METEOR 0 proj_catapaultball (0,400,650)
+		
+		//<projectile scriptname> <"view"|(src_origin)> <target|(targ_origin)|none> <speed> <damage> <cof> <skill|none> //Converted to use new tossprojectile //greatguys1@FEB2022
+		tossprojectile "proj_catapaultball" $vec(-90,400,650) none 200 DMG_METEOR 0 none
 
 		add METEOR_COUNT 1
 		callevent 0.1 do_meteors_loop
@@ -401,8 +428,10 @@
 }
 
 { do_birds_loop //2 per player, max 12
+	setvard M_SUMMON_BIRDS 1
 	callevent get_summon_point
 	createnpc BIRD_SCRIPT SUM_POINT
+	callexternal ent_lastcreated ext_delay_target 3.0 enemy
 	add N_BIRDS 1
 
 	if N_BIRDS < 12
@@ -473,31 +502,73 @@
 { get_summon_point
 
 	//alternate summon points to opposite ends of arena from one another for maximum coverage
-	if ( ALTERNATE_SUM_POINT == 0 )
+	if ( !M_SUMMON_POINTS )
 	{
-		add T_SUM_ANG 20
-		if ( T_SUM_ANG > 359 ) subtract T_SUM_ANG 359
-		setvard SUM_ANG T_SUM_ANG
-		setvard ALTERNATE_SUM_POINT 1
+		if ( ALTERNATE_SUM_POINT == 0 )
+		{
+			add T_SUM_ANG 20
+			if ( T_SUM_ANG > 359 ) subtract T_SUM_ANG 359
+			setvard SUM_ANG T_SUM_ANG
+			setvard ALTERNATE_SUM_POINT 1
+		}
+		else
+		{
+			setvard SUM_ANG T_SUM_ANG
+			add SUM_ANG 180
+			if ( SUM_ANG > 359 ) subtract SUM_ANG 359
+			setvard ALTERNATE_SUM_POINT 0
+		}
+
+		setvard SUM_POINT NPC_HOME_LOC
+		vectoradd SUM_POINT $relpos($vec(0,SUM_ANG,0),$vec(0,SUM_RAD,SUM_VADJ))
+
+		if ( ALTERNATE_SUM_POINT )
+		{
+			effect beam end lgtning.spr 120 SUM_POINT ent_me R_ARM_ATT_IDX (64,64,255) 200 30 1.0
+			clientevent update all CL_IDX titan_summon_sprite SUM_POINT
+		}
+		else
+		{
+			effect beam end lgtning.spr 120 SUM_POINT ent_me L_ARM_ATT_IDX (64,64,255) 200 30 1.0
+			clientevent update all CL_IDX titan_summon_sprite SUM_POINT
+		}
 	}
 	else
 	{
-		setvard SUM_ANG T_SUM_ANG
-		add SUM_ANG 180
-		if ( SUM_ANG > 359 ) subtract SUM_ANG 359
-		setvard ALTERNATE_SUM_POINT 0
-	}
+		add M_SUMMON_COUNT 1
+		if ( M_SUMMON_COUNT == 1 )
+		{
+			setvard SUM_POINT M_SUMMON_POINT1
+			local L_ARM_IDX R_ARM_ATT_IDX
+		}
+		else if ( M_SUMMON_COUNT == 2 )
+		{
+			setvard SUM_POINT M_SUMMON_POINT2
+			local L_ARM_IDX L_ARM_ATT_IDX
+		}
+		else if ( M_SUMMON_COUNT == 3 )
+		{
+			setvard SUM_POINT M_SUMMON_POINT3
+			local L_ARM_IDX R_ARM_ATT_IDX
+		}
+		else if ( M_SUMMON_COUNT == 4 )
+		{
+			setvard SUM_POINT M_SUMMON_POINT4
+			local L_ARM_IDX L_ARM_ATT_IDX
+			setvard M_SUMMON_COUNT 0
+		}
 
-	setvard SUM_POINT NPC_HOME_LOC
-	vectoradd SUM_POINT $relpos($vec(0,SUM_ANG,0),$vec(0,SUM_RAD,SUM_VADJ))
+		if ( M_SUMMON_BIRDS )
+		{
+			//since there's only 4 summon points, and we can spawn up to 12 birds
+			add M_BIRD_ROT 90
+			if ( M_BIRD_ROT > 359.99 ) setvard M_BIRD_ROT 0
+			vectoradd SUM_POINT $relpos($vec(0,M_BIRD_ROT,0),$vec(0,96,0))
+		}
 
-	if ( ALTERNATE_SUM_POINT )
-	{
-		effect beam end lgtning.spr 120 SUM_POINT ent_me R_ARM_ATT_IDX (64,64,255) 200 30 1.0
-		clientevent update all CL_IDX titan_summon_sprite SUM_POINT
-	}
-	else
-	{
+
+		dbg get_summon_point - using map points SUM_POINT
+
 		effect beam end lgtning.spr 120 SUM_POINT ent_me L_ARM_ATT_IDX (64,64,255) 200 30 1.0
 		clientevent update all CL_IDX titan_summon_sprite SUM_POINT
 	}

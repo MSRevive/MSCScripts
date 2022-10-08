@@ -1,0 +1,259 @@
+//From Fire Armor Aura (items/armor_faura_cl)
+
+#scope client
+
+{ client_activate //<owner> <duration> <aura_radius> <type> <breath_on:0|1> <breath_range> <breath_aoe>
+
+	setcallback render enable
+
+	setvard FX_OWNER PARAM1
+	setvard FX_DURATION PARAM2
+	setvard FX_RADIUS PARAM3
+	setvard FX_TYPE PARAM4
+	setvard FX_BREATH_ON PARAM5
+	setvard FX_BREATH_RANGE PARAM6
+	setvard FX_BREATH_AOE PARAM7
+
+	subtract FX_RADIUS 24 //make up for sprite size
+
+	//assumes scale is at least 48
+	setvard FX_MODEL_SCALE FX_RADIUS
+	divide FX_MODEL_SCALE 48
+	add FX_MODEL_SCALE 2.5
+	
+
+	dbg *** $currentscript Ownr FX_OWNER dur FX_DURATION rad FX_RADIUS type FX_TYPE scal FX_MODEL_SCALE p3 PARAM3
+
+	if ( FX_TYPE equals fire ) setvard GLOW_COLOR (255,128,64)
+
+	callevent FX_DURATION remove_fx //renews on server side
+
+	setvard FX_ORIGIN $getcl(FX_OWNER,origin)
+	setvard FX_ACTIVE 1
+	if ( FX_BREATH_ON ) callevent cone_breath_on FX_BREATH_RANGE FX_BREATH_AOE
+	cleffect tempent sprite weapons/projectiles.mdl FX_ORIGIN setup_flame_circle update_flame_circle
+
+	cleffect light new $getcl(FX_OWNER,origin) GLOW_RAD GLOW_COLOR 1.0
+	setvard FX_LIGHT_ID game.script.last_light_id
+}
+
+{ game_prerender
+
+	if $getcl(FX_OWNER,exists)
+	cleffect light FX_LIGHT_ID $getcl(FX_OWNER,origin) FX_RADIUS GLOW_COLOR 1.0
+
+	if ( FX_BREATH_ON )
+	{
+		local L_BREATH_POS $getcl(FX_OWNER,origin)
+		local L_OWNER_YAW $getcl(FX_OWNER,angles)
+		local L_OWNER_YAW $vec.yaw(L_OWNER_YAW)
+		vectoradd L_BREATH_POS $relpos($vec(0,L_OWNER_YAW,0),$vec(0,FX_BREATH_RANGE,0))
+		cleffect light FX_BREATH_LIGHT_ID L_BREATH_POS FX_BREATH_AOE GLOW_COLOR 1.0
+	}
+}
+
+{ end_fx
+	setvard FX_ACTIVE 0
+	setvard FX_BREATH_ON 0
+	cleffect beam_update removeall
+	callevent 1.0 remove_fx
+}
+
+{ remove_fx
+	removescript
+}
+
+{ update_flame_circle
+	if ( FX_ACTIVE )
+	{
+		setvard FX_ORIGIN $getcl(FX_OWNER,origin)
+		vectoradd FX_ORIGIN z 16
+
+		cleffect tempent set_current_prop origin FX_ORIGIN
+	}
+	else
+	{
+		cleffect tempent set_current_prop rendermode 5
+		cleffect tempent set_current_prop renderamt 0
+		cleffect tempent set_current_prop death_delay $neg(FX_DURATION)
+		cleffect tempent set_current_prop fadeout 0
+		cleffect tempent set_current_prop origin $vec(10000,10000,10000)
+	}
+}
+
+{ setup_flame_circle
+	cleffect tempent set_current_prop death_delay FX_DURATION
+	cleffect tempent set_current_prop body 51
+	cleffect tempent set_current_prop framerate 0.5
+	cleffect tempent set_current_prop sequence 8
+	cleffect tempent set_current_prop rendermode add
+	cleffect tempent set_current_prop renderamt 100
+	cleffect tempent set_current_prop scale FX_MODEL_SCALE
+	cleffect tempent set_current_prop gravity 0
+	cleffect tempent set_current_prop collide none
+
+	cleffect tempent set_current_prop frames 11
+	cleffect tempent set_current_prop angles $vec(0,90,0)
+	cleffect tempent set_current_prop velocity $vec(0,0,0)
+	cleffect tempent set_current_prop movetype 0
+}
+
+{ cone_breath_on //<range> <aoe>
+	if FX_ACTIVE
+	setvard FX_BREATH_ON 1
+	setvard FX_BREATH_RANGE PARAM1
+	setvard FX_BREATH_AOE PARAM2
+	local L_BREATH_POS $getcl(FX_OWNER,origin)
+	local L_OWNER_YAW $getcl(FX_OWNER,angles)
+	local L_OWNER_YAW $vec.yaw(L_OWNER_YAW)
+	vectoradd L_BREATH_POS $relpos($vec(0,L_OWNER_YAW,0),$vec(0,FX_BREATH_RANGE,0))
+	//assumes scale is at least 48
+	setvard FX_BREATH_SCALE FX_BREATH_AOE
+	divide FX_BREATH_SCALE 48
+	add FX_BREATH_SCALE 2.5
+	cleffect tempent sprite weapons/projectiles.mdl FX_ORIGIN setup_breath_circle update_breath_circle
+
+	cleffect light new L_BREATH_POS GLOW_RAD FX_BREATH_AOE 1.0
+	setvard FX_BREATH_LIGHT_ID game.script.last_light_id
+
+	callevent breath_sprites_loop
+}
+
+{ breath_sprites_loop
+
+	if FX_BREATH_ON
+	callevent $randf(0.1,0.3) breath_sprites_loop
+	//shoot sprites from middle head to breath target via $dir
+	local L_BREATH_POS $getcl(FX_OWNER,origin)
+	local L_OWNER_YAW $getcl(FX_OWNER,angles)
+	local L_OWNER_YAW $vec.yaw(L_OWNER_YAW)
+	vectoradd L_BREATH_POS $relpos($vec(0,L_OWNER_YAW,0),$vec(0,FX_BREATH_RANGE,0))
+
+	local L_START $getcl(FX_OWNER,attachment1)
+	local L_END L_BREATH_POS
+
+	local L_BREATH_DIR $dir(L_START,L_END)
+
+	setvard FX_BREATH_SPR_VEL L_BREATH_DIR
+	vectormultiply FX_BREATH_SPR_VEL $randf(200,300)
+	cleffect tempent sprite explode1.spr L_START setup_breath_sprite update_breath_sprite
+	setvard FX_BREATH_SPR_VEL L_BREATH_DIR
+	vectormultiply FX_BREATH_SPR_VEL $randf(200,300)
+	cleffect tempent sprite explode1.spr L_START setup_breath_sprite update_breath_sprite
+}
+
+{ cone_breath_off
+	setvard FX_BREATH_ON 0
+}
+
+{ update_breath_sprite
+	local CUR_SCALE game.tempent.fuser1
+	add CUR_SCALE 0.02
+	cleffect tempent set_current_prop scale CUR_SCALE
+	cleffect tempent set_current_prop fuser1 CUR_SCALE
+}
+
+{ setup_breath_sprite
+	cleffect tempent set_current_prop death_delay 1.0
+	cleffect tempent set_current_prop framerate 10
+	cleffect tempent set_current_prop frames 9
+	cleffect tempent set_current_prop bouncefactor 0
+	cleffect tempent set_current_prop scale 0.1
+	cleffect tempent set_current_prop fuser1 0.1
+	cleffect tempent set_current_prop rendermode add
+	cleffect tempent set_current_prop renderamt 200
+	cleffect tempent set_current_prop rendercolor (0,0,0)
+	cleffect tempent set_current_prop gravity .005
+	cleffect tempent set_current_prop collide none
+	cleffect tempent set_current_prop velocity FX_BREATH_SPR_VEL
+}
+
+{ update_breath_circle
+
+	if ( FX_BREATH_ON )
+	{
+		local L_BREATH_POS $getcl(FX_OWNER,origin)
+		local L_OWNER_YAW $getcl(FX_OWNER,angles)
+		local L_OWNER_YAW $vec.yaw(L_OWNER_YAW)
+		vectoradd L_BREATH_POS $relpos($vec(0,L_OWNER_YAW,0),$vec(0,FX_BREATH_RANGE,0))
+		vectoradd L_BREATH_POS z 16
+
+		cleffect tempent set_current_prop origin L_BREATH_POS
+	}
+	else
+	{
+		cleffect tempent set_current_prop rendermode 5
+		cleffect tempent set_current_prop renderamt 0
+		cleffect tempent set_current_prop death_delay $neg(FX_DURATION)
+		cleffect tempent set_current_prop fadeout 0
+		cleffect tempent set_current_prop origin $vec(10000,10000,10000)
+	}
+}
+
+{ setup_breath_circle
+	cleffect tempent set_current_prop death_delay FX_DURATION
+	cleffect tempent set_current_prop body 51
+	cleffect tempent set_current_prop framerate 0.5
+	cleffect tempent set_current_prop sequence 8
+	cleffect tempent set_current_prop rendermode add
+	cleffect tempent set_current_prop renderamt 100
+	cleffect tempent set_current_prop scale FX_BREATH_SCALE
+	cleffect tempent set_current_prop gravity 0
+	cleffect tempent set_current_prop collide none
+
+	cleffect tempent set_current_prop frames 11
+	cleffect tempent set_current_prop angles $vec(0,90,0)
+	cleffect tempent set_current_prop velocity $vec(0,0,0)
+	cleffect tempent set_current_prop movetype 0
+}
+
+{ add_beam //<duration> <attach_idx> <outer_color> <inner_color>
+
+	dbg *** add_beam dur PARAM1 att PARAM2 col1 PARAM3 col2 PARAM4
+
+	local L_DUR PARAM1
+	local L_ATTACH PARAM2
+	add L_ATTACH 1
+	cleffect beam_follow FX_OWNER L_ATTACH lgtning.spr L_DUR 30 PARAM3 0.75
+	setvard FOLOW_BEAM_ID1 game.script.last_beam_id
+	cleffect beam_follow FX_OWNER L_ATTACH lgtning.spr L_DUR 10 PARAM4 0.75
+	setvard FOLOW_BEAM_ID2 game.script.last_beam_id
+	
+	callevent PARAM1 remove_beams
+//	if !BEAM_FADE_ACTIVE
+//	setvard BEAM_FADE_ACTIVE 1
+//	setvard BEAM_EXPIRE_TIME game.time
+//	add BEAM_EXPIRE_TIME PARAM1
+//	setvard BEAM_DURATION PARAM1
+	//callevent fade_beams
+}
+
+{ remove_beams
+	cleffect beam_update removeall
+}
+
+//dunno why this doesn't work - code and returns look good
+//{ fade_beams
+//	if FX_ACTIVE
+//	if BEAM_FADE_ACTIVE
+//	callevent 0.1 fade_beams
+//
+//	if ( game.time > BEAM_EXPIRE_TIME )
+//	{
+//		cleffect beam_update removeall
+//		setvard BEAM_FADE_ACTIVE 0
+//		exitevent
+//	}
+//
+//	local L_BEAM_TIME_REMAINS BEAM_EXPIRE_TIME
+//	subtract L_BEAM_TIME_REMAINS game.time
+//	local L_BEAM_FADE_RATIO L_BEAM_TIME_REMAINS
+//	divide L_BEAM_FADE_RATIO BEAM_DURATION
+//
+//	local L_BRIGHTNESS $ratio(L_BEAM_FADE_RATIO,0,1)
+//
+//	dbg fade_beams exp BEAM_EXPIRE_TIME rem L_BEAM_TIME_REMAINS rat L_BEAM_FADE_RATIO fin L_BRIGHTNESS b1 $getcl_beam(FOLOW_BEAM_ID1,brightness) b2 $getcl_beam(FOLOW_BEAM_ID1,brightness)
+//
+//	cleffect beam_update FOLOW_BEAM_ID1 color L_BRIGHTNESS
+//	cleffect beam_update FOLOW_BEAM_ID2 color L_BRIGHTNESS
+//}

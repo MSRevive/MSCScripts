@@ -12,6 +12,8 @@
 	setvard CAN_HEAR 1
 	setvard CAN_WANDER 1
 
+	const MAX_TYPE 4
+
 	setvard CAN_RETALIATE 1
 	const RETALIATE_CHANGETARGET_CHANCE 80
 
@@ -87,10 +89,47 @@
 	setvard MONSTER_WIDTH 32	//for anti-stuck
 
 	precache SOUND_DEATH //handled externally
+
+	const LANTERN_COLOR $vec(LNT_R,LNT_G,LNT_B)
+	
+
+	//spookie random colourz
+	local L_RND $rand(1,5)
+	if ( L_RND == 1 )
+	{
+		setvard LNT_R $randf(16,64)
+		setvard LNT_B 0
+		setvard LNT_G 0
+	}
+	else if ( L_RND == 2 )
+	{
+		setvard LNT_R 0
+		setvard LNT_G $randf(16,64)
+		setvard LNT_B 0
+	}
+	else if ( L_RND == 3 )
+	{
+		setvard LNT_R 0
+		setvard LNT_G 0
+		setvard LNT_B $randf(16,64)
+	}
+	else if ( L_RND == 4 )
+	{
+		setvard LNT_R 0
+		setvard LNT_G $randf(16,64)
+		setvard LNT_B $randf(16,64)
+	}
+	else if ( L_RND == 5 )
+	{
+		setvard LNT_R $randf(16,64)
+		setvard LNT_G 0
+		setvard LNT_B $randf(16,64)
+	}
 }
 
 #include monsters/base_monster_new
 #include monsters/base_turn_undead 
+#include NPCs/dwarf_lantern_base
 
 { npc_spawn
 
@@ -113,6 +152,7 @@
 	setmodel dwarf/male1.mdl
 
 	setmodelbody 0 2
+	setmodelbody 2 0
 
 	callevent pick_weapon_type
 
@@ -136,6 +176,11 @@
 		setvard ATTACK2_CHANCE 0
 		setvard DROP_GOLD_MIN 5
 		setvard DROP_GOLD_MAX 15
+		if ( $rand(1,100) < 25 )
+		{
+			if !LANTERN_SET
+			callevent set_lantern
+		}
 	}
 
 	if ( WEAPON_TYPE == 1 )
@@ -154,6 +199,12 @@
 		setvard DROP_GOLD_MAX 20
    		setvard DROP_ITEM1 axes_smallaxe //Used by base_monster
    		setvard DROP_ITEM1_CHANCE 10%
+		if ( $rand(1,100) < 25 )
+		{
+			if !LANTERN_SET
+			callevent set_lantern
+		}
+
 	}
 
 	if ( WEAPON_TYPE == 2 )
@@ -192,6 +243,30 @@
    		setvard DROP_ITEM1_CHANCE 5%
 	}
 
+	if ( WEAPON_TYPE == 4 )
+	{
+		//pickaxe
+		setvard NPC_GIVE_EXP 175
+		hp 300
+		setmodelbody 1 8
+		setvard ATTACK_DAMAGE 50
+		setvard ATTACK2_DAMAGE 150
+		setvard ATTACK_RANGE 125
+		setvard ATTACK_HITRANGE 200
+		setvard MOVE_RAGE 65
+		setvard ATTACK2_CHANCE 30
+		setvard DROP_GOLD_MIN 50
+		setvard DROP_GOLD_MAX 100 //miners has goldz
+		if ( $rand(1,100) < 25 )
+		{
+			if !LANTERN_SET
+			callevent set_lantern
+		}
+
+   		//setvard DROP_ITEM1 swords_bastardsword //Used by base_monster
+   		//setvard DROP_ITEM1_CHANCE 5%
+	}
+
 	setvard WALKING_MY_OLD_POS $get(ent_me,origin)
 	setvard WALK_STEP 1
 	callevent 1.0 walking
@@ -201,18 +276,23 @@
 	//lot of stuck in ceiling crap going on in Gatecity
 	//compensate
 	//npcatk_to_ground
-	local MY_POS game.monster.origin
-	local MY_GROUND $get_ground_height(MY_POS)
-	add MY_GROUND 1
-	local MY_X $vec.x(MY_POS)
-	local MY_Y $vec.y(MY_POS)
-	setorigin ent_me (MY_X,MY_Y,MY_GROUND)
 
-	if ( $lcase(game.map.name) isnot gatecity )
+	if ( $lcase(game.map.name) equals gatecity )
 	{
+		local MY_POS $get(ent_me,origin)
+		local MY_X $vec.x(MY_POS)
+		local MY_Y $vec.y(MY_POS)
+		local MY_GROUND $get_ground_height(MY_POS)
+		//add MY_GROUND 1
+		dbg npcatk_get_postspawn_properties MY_X MY_Y MY_GROUND
+		setorigin ent_me $vec(MY_X,MY_Y,MY_GROUND)
+	}
+
+	//if ( $lcase(game.map.name) isnot gatecity )
+	//{
 		multiply ATTACK_RANGE 0.5
 		multiply ATTACK_HITRANGE 0.5
-	}
+	//}
 }
 
 { attack_1	//called by modelanim attack @frame 6
@@ -328,7 +408,7 @@
 		if ( C_ZOMBIE_COUNT > HALF_WAY ) local MIN_TYPE 2
 		if ( C_ZOMBIE_COUNT > ALMOST_THERE ) local MIN_TYPE 3
 	}
-	setvard WEAPON_TYPE $rand(MIN_TYPE,3)
+	setvard WEAPON_TYPE $rand(MIN_TYPE,MAX_TYPE)
 	//dbg temp mintype MIN_TYPE ( selected WEAPON_TYPE )
 }
 

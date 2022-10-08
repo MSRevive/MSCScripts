@@ -1,0 +1,148 @@
+//Special dynamic quest items, pick up when touched
+//- Quest items without cluttering player inventory.
+//- These track, but don't save (save function via quest data pending)
+
+//current qitem codes:
+//ap - "a|Golden Apple"
+//bs - "a|Bag of Salt"
+//bp - "a|Bag of Pepper"
+//bm - "a|Barrel of Mead"
+//la - "Sylphiel's Ladel"
+//tnt - "a stick of|Dwarven Explosives"
+//gen1 - "a|Package of Something" //(these use the generic item package model)
+//gen2 - "a|Package of Something" //(name intended to be changed via second createdyn param or title property)
+//gen3 - "a|Package of Something"
+//gen3 - "a|Package of Something"
+
+#scope server
+
+{
+	setvard GLOW_COLOR (255,200,0)
+	setcallback touch enable
+}
+
+{ game_spawn
+	setmodel misc/sylphiels_stuff.mdl
+	width 16
+	height 16
+	setsolid trigger
+	invincible 1
+	nopush 1
+	setvard PLAYING_DEAD 1 //not a valid target
+	callevent 1.0 glow_loop
+}
+
+{ glow_loop
+	if IS_ACTIVE
+	callevent 10.0 glow_loop
+	effect glow ent_me GLOW_COLOR 16.0 9.0 -1
+}
+
+{ game_touch
+	if IS_ACTIVE
+	if game.time > NEXT_TOUCH
+	setvard NEXT_TOUCH game.time
+	add NEXT_TOUCH 1.0
+
+	if $get(PARAM1,isplayer)
+	setvard QUEST_PLAYER PARAM1			
+	callevent found_item
+}
+
+{ found_item
+	if IS_ACTIVE
+	setvard IS_ACTIVE 0
+	playsound 0 10 items/ammopickup1.wav
+	local OUT_MSG "You find "
+	stradd OUT_MSG $get(ent_me,name.full)
+	gplayermessage QUEST_PLAYER "You acquire " $get(ent_me,name.full)
+	infomsg all "QUEST ITEM FOUND" OUT_MSG
+	helptip QUEST_PLAYER questitem "QUEST ITEM" "This is a special quest item that will not appear in your inventory."
+	callexternal GAME_MASTER ext_got_quest_item ITEM_TYPE
+	callevent 0.5 remove_me
+}
+
+{ remove_me
+	deleteent ent_me
+}
+
+{ game_postspawn //PARAM1 = (name|default), PARAM2 = DmgMulti, PARAM3 = HPMulti, PARAM4 = pass_params
+
+	if ( !AM_SUMMONED ) callevent set_item_type $lcase(PARAM4)
+}
+
+{ set_item_type
+
+	setvard IS_ACTIVE 1
+	setvard ITEM_TYPE PARAM1
+	if ( ITEM_TYPE equals ap )
+	{
+		name "a|Golden Apple"
+		setmodelbody 0 0
+		local L_DID_INIT 1
+	}
+	
+	if ( ITEM_TYPE equals bs )
+	{
+		name "a|Bag of Salt"
+		setmodelbody 0 1
+		local L_DID_INIT 1
+	}
+	
+	if ( ITEM_TYPE equals bp )
+	{
+		name "a|Bag of Pepper"
+		setmodelbody 0 2
+		local L_DID_INIT 1
+	}
+
+	if ( ITEM_TYPE equals km )
+	{
+		name "a|Barrel of Mead"
+		setmodelbody 0 3
+		local L_DID_INIT 1
+	}
+
+	if ( ITEM_TYPE equals la )
+	{
+		name "Sylphiel's Ladel"
+		setmodelbody 0 4
+		local L_DID_INIT 1
+	}
+
+	if ( ITEM_TYPE equals tnt )
+	{
+		name "a stick of|Dwarven Explosives"
+		setvard GLOW_COLOR $vec(0,255,0)
+		setprop ent_me movetype const.movetype.bounce
+		setvard TNT_MODEL monsters/dwarf_bomber_tnt.mdl //be sure you precach this, if creating tnt
+		setvard SLOW_COUNT 0
+		callevent 0.1 slow_down_loop
+		setmodel TNT_MODEL
+		local L_DID_INIT 1
+		setmonsterclip 0
+	}
+
+	if !L_DID_INIT
+
+	local OUT_MSG "m2_quest/sylphiels_stuff cannot find type: "
+	stradd OUT_MSG ITEM_TYPE
+	infomsg all "MAPPING ERROR" OUT_MSG
+}
+
+{ slow_down_loop
+	local CUR_VEL $get(ent_me,velocity)
+	vectormultiply CUR_VEL $vec(0.5,0.5,0.5)
+	add SLOW_COUNT 1
+	if ( SLOW_COUNT >= 20 ) local CUR_VEL $vec(0,0,0)
+	setvelocity ent_me CUR_VEL
+	if CUR_VEL isnot $vec(0,0,0)
+	callevent 0.5 slow_down_loop
+}
+
+{ game_dynamically_created //<type> [name]
+	setvard AM_SUMMONED 1
+	callevent set_item_type $lcase(PARAM1)
+}
+
+#include [server] monsters/debug

@@ -1,0 +1,566 @@
+//Mad Bomber - runs around, throws bombs, ends in suicide attack
+//- can hurt himself with his own bombs
+#scope server
+{
+	//custom
+	const ANIM_RELOAD_R anim_draw_r //frame_draw_r
+	const ANIM_RELOAD_L anim_draw_l //frame_draw_l
+
+	const ANIM_THROW_R anim_throw_r //frame_release_r (underhand)
+	const ANIM_THROW_L anim_throw_l //frame_release_l (overhand)
+
+	const ANIM_EXPLODE anim_explode //frame_explode_draw + frame_explode_land + frame_explode_prep + frame_explode_fin
+
+	const ANIM_JUMP anim_jump_back //frame_dodge + frame_dodge_up x2 + frame_dodge x2
+	const ANIM_DODGE anim_roll_back //frame_dodge x5
+
+	const FREQ_LEAP_FORWARD $randf(15.0,20.0)
+	const FREQ_DODGE $randf(10.0,15.0)
+
+	const ANIM_ALERT nod
+
+	const MODEL_TNT monsters/dwarf_bomber_tnt.mdl //send to projectile so as to not to add to global precache
+	const PROJ_SCRIPT monsters/summon/tnt_bomb //sadly, can't make proj_ bouncy
+
+	const CL_SCRIPT monsters/dwarf_bomber_cl
+	const FREQ_CL_UPDATE 15.0
+	setvard CL_SCRIPT_IDX -1
+
+	setvard HR_ACTIVE 0
+	setvard HL_ACTIVE 0
+	setvard HR_ATTACH_IDX 1 //for beams, think index from one
+	setvard HL_ATTACH_IDX 2
+	const FREQ_BOMB_DRAW 5.0
+	const HR_CHAN 1 //sound loop channel for right hand
+	const HL_CHAN 3 //sound loop channel for left hand
+
+	const FREQ_RBOMB_BEAM 5.0
+	const FREQ_LBOMB_BEAM 5.0
+	setvard NEXT_RBOMB_BEAM 0
+	setvard NEXT_LBOMB_BEAM 0
+
+	setvard VEC_ENGLISH $vec(0,0,0) //adds to this vector after each throw, resets on hit
+
+	setvard DMG_BOMB 100 //captured by projectile
+
+	const DMG_SUICIDE 300
+
+	const SOUND_FUSE_LOOP monsters/dwarf_bomber/fuse_loop.wav  //loop on channel #1 & #3
+	const SOUND_FUSE_LIGHT monsters/dwarf_bomber/fuse_lit.wav
+	const SOUND_YELP monsters/dwarf_bomber/db_yelp.wav
+	const SOUND_GIGGLE1 monsters/dwarf_bomber/db_giggle1.wav
+	const SOUND_GIGGLE2 monsters/dwarf_bomber/db_giggle2.wav
+	const SOUND_GIGGLE3 monsters/dwarf_bomber/db_giggle3.wav
+	const SOUND_GIGGLE4 monsters/dwarf_bomber/db_giggle4.wav
+	const SOUND_GIGGLE5 monsters/dwarf_bomber/db_giggle5.wav
+	const SOUND_EXPLODE weapons/explode3.wav
+	const SOUND_GLOAT monsters/dwarf_bomber/db_gloat.wav
+	const SOUND_ALERT monsters/dwarf_bomber/db_alert1.wav
+	const SOUND_SUICIDE monsters/dwarf_bomber/db_suicide.wav
+
+	//base ai
+	setvard NPC_GIVE_EXP 300
+	setvard NPC_RANGED 1
+	setvard ATTACK_RANGE 640
+	setvard ATTACK_HITRANGE 640
+	setvard ATTACK_MOVERANGE 512
+	setvard ANIM_ATTACK frame_release_r
+	setvar ANIM_WALK walk
+	setvar ANIM_RUN run
+	setvar ANIM_IDLE idle
+	setvar ANIM_DEATH none //custom
+	const SOUND_DEATH none //custom
+	setvard BASE_MOVESPEED 2.0
+	movespeed BASE_MOVESPEED
+	setanim.movespeed BASE_MOVESPEED
+
+	//base_struck
+	//(need new sounds)
+	const SOUND_IDLE1 monsters/dwarf_bomber/db_idle1.wav
+	const SOUND_IDLE2 monsters/dwarf_bomber/db_idle2.wav
+	const SOUND_IDLE3 monsters/dwarf_bomber/db_idle3.wav
+
+	const SOUND_PAIN1 monsters/dwarf_bomber/db_pain1.wav
+	const SOUND_PAIN2 monsters/dwarf_bomber/db_pain2.wav
+	const SOUND_PAIN3 monsters/dwarf_bomber/db_pain3.wav
+
+	const SOUND_FLINCH1 monsters/dwarf_bomber/db_flinch1.wav
+	const SOUND_FLINCH2 monsters/dwarf_bomber/db_flinch2.wav
+	const SOUND_FLINCH3 monsters/dwarf_bomber/db_flinch3.wav
+
+	const ANIM_FLINCH anim_xbow_flinch //frame_flinch_start + frame_flinch_done
+
+	const NPC_MATERIAL_TYPE flesh
+	const NPC_USE_PAIN 1
+	const NPC_USE_IDLE 1
+	const NPC_USE_FLINCH 1
+}
+
+{ game_precache
+	precache monsters/dwarf_bomber_tnt.mdl
+	precache bigsmoke.spr
+	precachefile CL_SCRIPT
+	precachefile PROJ_SCRIPT
+	precache fleshgibs.mdl
+	precache misc/sylphiels_stuff.mdl
+	svplaysound 0 0 monsters/dwarf_bomber/fuse_loop.wav
+}
+
+#include monsters/base_monster_new
+#include monsters/base_struck
+#include NPCs/dwarf_lantern_base
+
+{ game_spawn
+	setmoveanim ANIM_WALK
+	setidleanim ANIM_IDLE
+	callevent dbomber_spawn
+}
+
+{ dbomber_spawn
+	name a|Mad Dwarven Bomber
+	setmodel monsters/dwarf_bomber.mdl
+	setmodelbody 0 2
+	setmodelbody 1 6
+	setmoveanim ANIM_WALK
+	setidleanim ANIM_IDLE
+	width 32
+	height 48
+	roam 1
+	hp 300
+	race evil
+	hearingsensitivity 8
+}
+
+{ npc_targetsighted
+	if !DID_INTRO
+	setvard DID_INTRO 1
+	setvard NPC_NEXT_FLINCH game.time //so we don't flinch and drop our shit on first blow
+	add NPC_NEXT_FLINCH NPC_FREQ_FLINCH
+
+	if ( game.time > NEXT_ALERT )
+	{
+		playanim critical ANIM_ALERT
+		playsound 0 10 SOUND_ALERT
+		setvard NEXT_ALERT game.time
+		add NEXT_ALERT 20.0
+	}
+
+	setvard NEXT_BOMB_DRAW game.time
+	add NEXT_BOMB_DRAW 1.0
+
+	//don't init cl effects until the first time you see someone
+	if game.time > NEXT_CL_UPDATE
+	if ( CL_SCRIPT_IDX > -1 ) clientevent update all CL_SCRIPT_IDX end_fx
+	setvard CL_SCRIPT_IDX -1
+	callevent update_cl_script
+}
+
+{ cycle_down
+	setvard DID_INTRO 0
+	playanim critical ANIM_ALERT
+	playsound 0 10 SOUND_GLOAT
+	setvard NEXT_ALERT game.time
+	add NEXT_ALERT 20.0
+}
+
+{ npc_selectattack
+	if ( HR_ACTIVE )
+	{
+		setvard ANIM_ATTACK ANIM_THROW_R
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+	if ( HL_ACTIVE )
+	{
+		setvard ANIM_ATTACK ANIM_THROW_L
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	//I'z got no bombs!
+	if ( $rand(1,2) == 1 )
+	{
+		setvard ANIM_ATTACK ANIM_DRAW_R
+	}
+	else
+	{
+		setvard ANIM_ATTACK ANIM_DRAW_L
+	}
+}
+
+{ draw_random_bomb
+	if !SUSPEND_AI //in flinch
+
+	local L_N_ACTIVE $math(add,HR_ACTIVE,HL_ACTIVE)
+
+	if L_N_ACTIVE < 2
+
+	local L_RND_HAND $rand(1,2)
+
+
+	if ( L_RND_HAND == 1 )
+	{
+		if ( !HR_ACTIVE )
+		{
+			local L_DRAWING_BOMB 1
+			playanim critical ANIM_DRAW_R
+		}
+	}
+	else
+	{
+		if ( !HL_ACTIVE )
+		{
+			local L_DRAWING_BOMB 1
+			playanim critical ANIM_DRAW_L
+		}
+	}
+
+	if !L_DRAWING_BOMB //random bomb draw was active, do the other hand
+	if ( !HR_ACTIVE ) playanim critical ANIM_DRAW_R
+	if ( !HL_ACTIVE ) playanim critical ANIM_DRAW_L
+}
+
+
+{ frame_draw_r
+	playsound 0 10 SOUND_FUSE_LIGHT
+	callevent update_submodels activate right
+}
+
+{ frame_draw_l
+	playsound 0 10 SOUND_FUSE_LIGHT
+	callevent update_submodels activate left
+}
+
+{ update_submodels //<activate|deactivate> <left|right|both>
+
+	//screwy, but required to properly set looping sounds and submodels
+
+	if ( PARAM1 equals activate )
+	{
+		if ( PARAM2 equals right )
+		{
+			if ( !HR_ACTIVE )
+			{
+				setvard HR_ACTIVE 1
+				svplaysound HR_CHAN 5 SOUND_FUSE_LOOP
+			}
+		}
+		else if ( PARAM2 equals left )
+		{
+			if ( !HL_ACTIVE )
+			{
+				setvard HL_ACTIVE 1
+				svplaysound HL_CHAN 5 SOUND_FUSE_LOOP
+			}
+		}
+		else if ( PARAM2 equals both )
+		{
+			if ( !HR_ACTIVE )
+			{
+				setvard HR_ACTIVE 1
+				svplaysound HR_CHAN 5 SOUND_FUSE_LOOP
+			}
+			if ( !HL_ACTIVE )
+			{
+				setvard HL_ACTIVE 1
+				svplaysound HL_CHAN 5 SOUND_FUSE_LOOP
+			}
+		}
+	}
+	else if ( PARAM1 equals deactivate )
+	{
+		if ( PARAM2 equals right )
+		{
+			if ( HR_ACTIVE ) svplaysound HR_CHAN 0 SOUND_FUSE_LOOP
+			setvard HR_ACTIVE 0
+		}
+		else if ( PARAM2 equals left )
+		{
+			if ( HL_ACTIVE ) svplaysound HL_CHAN 0 SOUND_FUSE_LOOP
+			setvard HL_ACTIVE 0
+		}
+		else if ( PARAM2 equals both )
+		{
+			if ( HR_ACTIVE ) svplaysound HR_CHAN 0 SOUND_FUSE_LOOP
+			if ( HL_ACTIVE ) svplaysound HL_CHAN 0 SOUND_FUSE_LOOP
+			setvard HR_ACTIVE 0
+			setvard HL_ACTIVE 0
+		}
+	}
+
+	local L_N_ACTIVE $math(add,HR_ACTIVE,HL_ACTIVE)
+
+	if ( L_N_ACTIVE == 2 )
+	{
+		setmodelbody 1 3
+	}
+	else
+	{
+		if ( HR_ACTIVE ) setmodelbody 1 1
+		if ( HL_ACTIVE ) setmodelbody 1 2
+		if ( L_N_ACTIVE == 0 ) setmodelbody 1 0
+	}
+
+	if ( CL_SCRIPT_IDX > -1 ) clientevent update all CL_SCRIPT_IDX set_hands HR_ACTIVE HL_ACTIVE
+}
+
+{ npcatk_hunt
+	local L_GAME_TIME game.time
+
+	if ( NPCATK_TARGET isnot unset )
+	{
+		if !SUSPEND_AI //case I'm in flinch
+
+		if ( $get(NPCATK_TARGET,range) > ATTACK_RANGE )
+		{
+			if !NPC_IS_TURRET
+			if L_GAME_TIME > NEXT_LEAP_FORWARD
+			setvard NEXT_LEAP_FORWARD L_GAME_TIME
+			dbg npcatk_hunt leap forward
+			add NEXT_LEAP_FORWARD FREQ_LEAP_FORWARD
+			setvard ROLL_DIR 200
+			playanim critical ANIM_JUMP
+			playrandomsound 2 10 SOUND_GIGGLE1 SOUND_GIGGLE2 SOUND_GIGGLE3 SOUND_GIGGLE4 SOUND_GIGGLE5
+			local EXIT_SUB 1
+		}
+		if !EXIT_SUB
+
+		if ( $get(NPCATK_TARGET,range) < 96 )
+		{
+			if !NPC_IS_TURRET
+			if L_GAME_TIME > NEXT_DODGE
+			setvard NEXT_DODGE L_GAME_TIME
+			add NEXT_DODGE FREQ_DODGE
+			dbg npcatk_hunt dodge
+			setvard ROLL_DIR -100
+			playrandomsound 2 10 SOUND_GIGGLE1 SOUND_GIGGLE2 SOUND_GIGGLE3 SOUND_GIGGLE4 SOUND_GIGGLE5
+			if ( $rand(1,2) == 1 )
+			{
+				playanim critical ANIM_DODGE
+			}
+			else
+			{
+				playanim critical ANIM_JUMP
+			}
+			local EXIT_SUB 1
+		}
+		if !EXIT_SUB
+
+		if ( L_GAME_TIME > NEXT_BOMB_DRAW )
+		{
+			local L_N_ACTIVE $math(add,HR_ACTIVE,HL_ACTIVE)
+			if L_N_ACTIVE < 2
+			setvard NEXT_BOMB_DRAW L_GAME_TIME
+			add NEXT_BOMB_DRAW FREQ_BOMB_DRAW
+			callevent draw_random_bomb
+		}
+	}
+
+	if ( HR_ACTIVE )
+	{
+		if L_GAME_TIME > NEXT_RBOMB_BEAM
+		setvard NEXT_RBOMB_BEAM L_GAME_TIME
+		add NEXT_RBOMB_BEAM FREQ_RBOMB_BEAM
+		effect beam follow lgtning.spr ent_me HR_ATTACH_IDX 1 4.0 200 (255,0,0)
+	}
+
+	if ( HL_ACTIVE )
+	{
+		if L_GAME_TIME > NEXT_LBOMB_BEAM
+		setvard NEXT_LBOMB_BEAM L_GAME_TIME
+		add NEXT_LBOMB_BEAM FREQ_LBOMB_BEAM
+		effect beam follow lgtning.spr ent_me HL_ATTACH_IDX 1 4.0 200 (255,0,0)
+	}
+
+	if ( CL_SCRIPT_IDX > -1 )
+	{
+		if L_GAME_TIME > NEXT_CL_UPDATE
+		clientevent update all CL_SCRIPT_IDX end_fx
+		setvard CL_SCRIPT_IDX -1
+		callevent update_cl_script
+	}
+}
+
+{ npc_bs_struck
+	if $get(PARAM1,range) < 128
+	if game.time > NEXT_DODGE
+	setvard NEXT_DODGE game.time
+	add NEXT_DODGE FREQ_DODGE
+	dbg npc_bs_struck dodge
+	setvard ROLL_DIR -100
+	if ( $rand(1,2) == 1 ) playanim critical ANIM_DODGE
+	else playanim critical ANIM_JUMP
+}
+
+{ update_cl_script
+	if ( CL_SCRIPT_IDX > 0 )
+	{
+		clientevent update all CL_SCRIPT_IDX set_hands HR_ACTIVE HL_ACTIVE
+	}
+	else
+	{
+		clientevent new all CL_SCRIPT $get(ent_me,index) FREQ_CL_UPDATE HR_ACTIVE HL_ACTIVE
+		setvard CL_SCRIPT_IDX game.script.last_sent_id
+		setvard NEXT_CL_UPDATE game.time
+		add NEXT_CL_UPDATE FREQ_CL_UPDATE
+	}
+}
+
+{ frame_release_r //overhand throw
+	callevent update_submodels deactivate right
+
+	//figure required velocity
+	local L_MY_ORG $get(ent_me,origin)
+	local L_TARG_ORG $get(NPCATK_TARGET,origin)
+	local L_TARG_RANGE $get(NPCATK_TARGET,range)
+	local L_TARG_DIR $dir(L_MY_ORG,L_TARG_ORG)
+	vectormultiply L_TARG_DIR $vec(L_TARG_RANGE,L_TARG_RANGE,L_TARG_RANGE)
+	vectoradd L_TARG_DIR $relpos($vec(0,0,0),$vec(0,0,110)) //overhand
+	if ( $vec.z(L_MY_ORG) < $vec.z(L_TARG_ORG) )
+	{
+		local L_VADJ $math(subtract,$vec.z(L_TARG_ORG),$vec.z(L_MY_ORG))
+		multiply L_VADJ 4.0
+		add L_VADJ L_TARG_RANGE
+		//dbg vadj frame_release_r L_VADJ [ $math(subtract,$vec.z(L_TARG_ORG),$vec.z(L_MY_ORG)) ]
+		vectoradd L_TARG_DIR $relvel($vec(0,0,0),$vec(0,0,L_VADJ))
+	}
+	vectoradd L_TARG_DIR VEC_ENGLISH
+
+	createnpc PROJ_SCRIPT $get(ent_me,attachpos,0) $get(ent_me,id) L_TARG_DIR
+
+	vectoradd VEC_ENGLISH z 25
+}
+
+{ frame_release_l //underhand throw
+	callevent update_submodels deactivate left
+
+	//figure required velocity
+	local L_MY_ORG $get(ent_me,origin)
+	local L_TARG_ORG $get(NPCATK_TARGET,origin)
+	local L_TARG_RANGE $get(NPCATK_TARGET,range)
+	local L_TARG_DIR $dir(L_MY_ORG,L_TARG_ORG)
+	vectormultiply L_TARG_DIR $vec(L_TARG_RANGE,L_TARG_RANGE,L_TARG_RANGE)
+	//vectoradd L_TARG_DIR $relpos($vec(0,0,0),$vec(0,0,0))
+	if ( $vec.z(L_MY_ORG) < $vec.z(L_TARG_ORG) )
+	{
+		local L_VADJ $math(subtract,$vec.z(L_TARG_ORG),$vec.z(L_MY_ORG))
+		multiply L_VADJ 4.0
+		//add L_VADJ L_TARG_RANGE
+		dbg vadj frame_release_l L_VADJ [ $math(subtract,$vec.z(L_TARG_ORG),$vec.z(L_MY_ORG)) ]
+		vectoradd L_TARG_DIR $relvel($vec(0,0,0),$vec(0,0,L_VADJ))
+	}
+	vectoradd L_TARG_DIR VEC_ENGLISH
+
+	createnpc PROJ_SCRIPT $get(ent_me,attachpos,1) $get(ent_me,id) L_TARG_DIR
+
+	vectoradd VEC_ENGLISH z 25
+}
+
+{ ext_hittarget //from monsters/summon/tnt_bomb on struck enemy
+	setvard VEC_ENGLISH $vec(0,0,0) //reset miss adj
+}
+
+{ frame_dodge
+	addvelocity ent_me $relvel(0,ROLL_DIR,0)
+}
+
+{ frame_dodge_up
+	addvelocity ent_me $relvel(0,ROLL_DIR,150)
+}
+
+{ friendly_fire
+	local RND_PITCH $randf(85.00,115.00)
+	//today we learned something - you can only change the pitch of 8-bit unsigned files
+	svplaysound 2 10 SOUND_YELP 0.8 RND_PITCH
+	setvard ROLL_DIR 0
+	if ( $rand(1,2) == 1 ) playanim critical ANIM_DODGE
+	else playanim critical ANIM_JUMP
+}
+
+{ game_death
+
+	if !DID_FAKE_DEATH
+	setvard DID_FAKE_DEATH 1
+	playsound 2 10 SOUND_SUICIDE
+
+	takedmg cold 0
+
+	//reinit clfx
+	clientevent update all CL_SCRIPT_IDX end_fx
+	setvard CL_SCRIPT_IDX -1
+	callevent update_cl_script
+
+	clearfx
+	setalive 1
+	invincible 1
+	hp 1
+	callevent npcatk_suspend_movement ANIM_EXPLODE
+	callevent npcatk_suspend_ai
+	playanim critical ANIM_EXPLODE
+
+	callevent 20.0 remove_me //in case something goes horribly wrong
+}
+
+{ frame_explode_draw
+	playsound 0 10 SOUND_FUSE_LIGHT
+	callevent update_submodels activate both
+}
+
+{ frame_explode_land
+
+}
+
+{ frame_explode_prep
+
+}
+
+{ frame_explode_fin
+	setprop rendermode 5
+	setprop renderamt 0
+	effect tempent gibs fleshgibs.mdl $relpos(0,0,0) 1.0 50 50 15 20.0
+	clientevent update all CL_SCRIPT_IDX end_fx
+	clientevent new all effects/sfx_explode $get(ent_me,origin) 256
+	svplaysound HR_CHAN 0 SOUND_FUSE_LOOP
+	svplaysound HL_CHAN 0 SOUND_FUSE_LOOP
+	xdodamage $relpos(0,0,32) 256 DMG_SUICIDE 0.1 ent_me ent_me none generic dmgevent:suicide
+	callevent 0.1 remove_me
+
+	if ( $lcase(game.map.name) startswith rmine ) setvard DROP_TNT 1
+
+	if ( DROP_TNT )
+	{
+		//if $rand(1,100) <= 50
+		createnpc other/qitem $relpos(0,0,0) tnt
+		local RND_YAW $randf(0,359.99)
+		setvelocity ent_lastcreated $relvel($vec(0,RND_YAW,0),(0,800,120)) override
+		effect beam follow lgtning.spr ent_lastcreated 1 1 8.0 200 (0,255,0)
+	}
+}
+
+{ set_drop_tnt
+	setvard DROP_TNT 1
+}
+
+{ suicide_dodamage
+	local CUR_TARGET PARAM2
+	local TARGET_ORG $get(CUR_TARGET,origin)
+	local TARG_ANG $angles(game.monster.origin,TARGET_ORG)
+	setvelocity CUR_TARGET $relvel($vec(0,TARG_ANG,0),$vec(10,1000,110))
+}
+
+{ remove_me
+	if !DID_FSUICIDE
+	setvard DID_FSUICIDE 1
+	invincible 0
+	setorigin ent_me $vec(20000,-20000,20000)
+	callevent npc_suicide
+}
+
+
+//todo:
+//- projectile
+//- clfx
+//- randomly jump towards (if target distant) or roll/jump away (if target too close)
+//explodie suicide death
+//also want to fumble any held bombs when flinch
+//shiggles
