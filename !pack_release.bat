@@ -35,7 +35,7 @@ echo Done.
 
 echo ====================== Compiling...
 echo.
-cmd /k scriptpack.exe -vre
+cmd /k scriptpack.exe -ref
 echo Done.
 
 echo.

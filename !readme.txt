@@ -18,7 +18,7 @@ It is recommend to use the batch files to pack the scripts as it does everything
 
 USAGE:
 
-   scriptpack  [-ehrv] [--version] [-o <The output directory for packed
+   scriptpack  [-efhprv] [--version] [-o <The output directory for packed
                scripts>]
 
 
@@ -32,10 +32,16 @@ Where:
      Release build, this will clean the scipts then pack them.
 
    -v,  --verbose
-     Turn on/off verbose printing.
+     Verbose printing.
 
    -e,  --errfile
-     Turn on/off error output to file.
+     Print errors to text file.
+
+   -f,  --fail
+     Exit on script error.
+
+   -p,  --pack
+     Turn off script packing.
 
    --,  --ignore_rest
      Ignores the rest of the labeled arguments following this flag.
