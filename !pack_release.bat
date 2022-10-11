@@ -14,7 +14,6 @@ set script_path=scripts
 :loop
 title Packing TEST SC.DLL %date% %time%
 echo.
-echo.
 
 echo.
 echo ====================== Setting time stamp... 
@@ -29,27 +28,15 @@ cd ../
 
 echo.
 echo ====================== Moving developer folder... 
-echo.
 move %cd%\%script_path%\developer %cd%
 echo Done.
 
 echo ====================== Compiling...
-echo.
-cmd /k scriptpack.exe -ref
+start cmd /c scriptpack.exe -ref ^& pause
 echo Done.
 
 echo.
-echo ====================== Propogating...
-echo.
-
-copy .\sc.dll ..\
-echo All done!
-cd ..
-
-echo.
 echo ====================== Moving developer folder back... 
-echo.
-
 move %cd%\developer %cd%\%script_path%
 echo Done.
 

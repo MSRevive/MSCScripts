@@ -7,6 +7,7 @@
 title Packing TEST SC.DLL %date% %time%
 echo Packing not-safe for client test patch
 echo.
+
 cd .\scripts
 echo Setting time stamp.
 echo { >beta_date.script
@@ -14,9 +15,10 @@ echo 	const BETA_TIMESTAMP "%date%" >>beta_date.script
 echo } >>beta_date.script
 echo Compiling...
 cd ../
-cmd /k scriptpack.exe -ve
-move sc.dll "..\"
-echo completed %date% %time%
+
+echo ====================== Compiling...
+start cmd /c scriptpack.exe -ve ^& pause
+echo Completed at %date% %time%
 
 goto :end
 
