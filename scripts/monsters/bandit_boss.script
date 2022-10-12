@@ -177,9 +177,9 @@
 
 	hearingsensitivity 8
 	
-	setvard HEALTH_AMMO 3
-	setvard RESIST_AMMO 3
-	setvard SPECIAL_AMMO 3
+	setvard HEALTH_AMMO 1
+	setvard RESIST_AMMO 2
+	setvard SPECIAL_AMMO 2
 	setvard FIRE_STRUCK 0
 	setvard COLD_STRUCK 0
 	setvard POISON_STRUCK 0
@@ -311,13 +311,6 @@
 	//dbg temp health game.monster.hp PARAM2 PARAM3
 	if game.monster.isalive //no drinking potions post-mortem!
 
-	if ( ON_FIRST_POT )
-	{
-		if game.monster.hp <= HALF_HEALTH
-		setvard ON_FIRST_POT 0
-		callevent end_special_effect
-	}
-
 	if ( PARAM2 > 30 )
 	{
 		//sweep kick all if surrounded (repulse)
@@ -363,20 +356,20 @@
 		callevent drink_pot health
 	}
 
-
-	//monster drinks special potions at 75% health (effect ends at 50%) and 25% health (lasts until death)
+	//monster drinks special potions at 75% health and 25% health (lasts for 60s each)
 	if ( !DID_FIRST_POT )
 	{
 		if !DRINKING_POT
+		if !SPEC_TYPE
 		if game.monster.hp < FIRST_SPEC_POT_HEALTH
 		setvard DID_FIRST_POT 1
-		setvard ON_FIRST_POT 1
 		callevent drink_special
 	}
 
 	if ( !DID_SECOND_POT )
 	{
 		if !DRINKING_POT
+		if !SPEC_TYPE
 		if game.monster.hp < QUARTER_HEALTH
 		setvard DID_SECOND_POT 1
 		callevent drink_special
@@ -406,6 +399,7 @@
 		if PARAM2 > ELEMENT_DMG_THRESH
 		if !AM_INVISIBLE
 		if !DRINKING_POT
+		if !IN_RESIST
 
 		//dbg temp struck_by_type PARAM3 ( FIRE_STRUCK COLD_STRUCK LIGHTNING_STRUCK POISON_STRUCK )
 
@@ -486,44 +480,52 @@
 	{
 		setvard USED_FIRE_POT 1
 		subtract RESIST_AMMO 1
+		setvard IN_RESIST 1
 		local GLOW_COLOR (255,0,0)
-		callevent fire_immune
+		takedmg fire 0.5
+		callevent 60 normal_immune
 		local OUT_MSG game.monster.name
-		stradd OUT_MSG " has drank a potion and is now immune to fire!"
-		infomsg all "POTION OF IMMUNITY TO FIRE" OUT_MSG
+		stradd OUT_MSG " has drank a potion and is now resistant to fire!"
+		infomsg all "POTION OF RESISTANCE TO FIRE" OUT_MSG
 	}
 
 	if ( DRINK_TYPE equals cold )
 	{
 		setvard USED_COLD_POT 1
 		subtract RESIST_AMMO 1
+		setvard IN_RESIST 1
 		local GLOW_COLOR (128,128,255)
-		callevent cold_immune
+		takedmg cold 0.5
+		callevent 60 normal_immune
 		local OUT_MSG game.monster.name
-		stradd OUT_MSG " has drank a potion and is now immune to cold attacks!"
-		infomsg all "POTION OF IMMUNITY TO COLD" OUT_MSG
+		stradd OUT_MSG " has drank a potion and is now resistant to cold!"
+		infomsg all "POTION OF RESISTANCE TO COLD" OUT_MSG
 	}
 
 	if ( DRINK_TYPE equals poison )
 	{
 		setvard USED_POISON_POT 1
 		subtract RESIST_AMMO 1
+		setvard IN_RESIST 1
 		local GLOW_COLOR (0,255,0)
-		callevent poison_immune
+		takedmg poison 0.5
+		callevent 60 normal_immune
 		local OUT_MSG game.monster.name
-		stradd OUT_MSG " has drank a potion and is now immune to poison!"
-		infomsg all "POTION OF IMMUNITY TO POISON" OUT_MSG
+		stradd OUT_MSG " has drank a potion and is now resistant to poison!"
+		infomsg all "POTION OF RESISTANCE TO POISON" OUT_MSG
 	}
 
 	if ( DRINK_TYPE equals lightning )
 	{
 		setvard USED_LIGHTNING_POT 1
 		subtract RESIST_AMMO 1
+		setvard IN_RESIST 1
 		local GLOW_COLOR (255,255,0)
-		callevent lightning_immune
+		takedmg lightning 0.5
+		callevent 60 normal_immune
 		local OUT_MSG game.monster.name.full
-		stradd OUT_MSG " has drank a potion and is now immune to lightning!"
-		infomsg all "POTION OF IMMUNITY TO POISON" OUT_MSG
+		stradd OUT_MSG " has drank a potion and is now resistant to lightning!"
+		infomsg all "POTION OF RESISTANCE TO LIGHTNING" OUT_MSG
 	}
 
 	if ( DRINK_TYPE equals health )
@@ -546,7 +548,7 @@
 		setvard GLOW_LOOP_COLOR (255,255,255)
 		callevent 5.0 glow_loop
 		takedmg all 0.25
-
+		callevent 60 end_special_effect
 		local OUT_MSG game.monster.name.full
 		stradd OUT_MSG " has used a potion of protection!"
 		infomsg all "POTION OF PROTECTION" OUT_MSG
@@ -557,10 +559,9 @@
 	{
 		setvard SPEC_TYPE demon
 		local GLOW_COLOR (255,0,0)
-		setvard DEMON_LEVEL 10
 		setvard DEMON_NOHP_LOSS 1
 		callevent 5.0 demon_blood
-
+		callevent 60 end_special_effect
 		local OUT_MSG game.monster.name.full
 		stradd OUT_MSG " has used a vial of demon blood!"
 		infomsg all "POTION OF DEMON BLOOD" OUT_MSG
@@ -572,6 +573,7 @@
 		setvard SPEC_TYPE speed
 		local GLOW_COLOR (255,0,255)
 		callevent 5.0 turbo_on
+		callevent 60 end_special_effect
 		divide FREQ_ATTACK 2
 		local OUT_MSG game.monster.name.full
 		stradd OUT_MSG " has used a potion of speed!"
@@ -585,10 +587,14 @@
 	setmodelbody 1 ORIG_WEAPON
 }
 
-{ npc_flinch
+{ normal_immune
+	setvard IN_RESIST 0
+}
+
+{ npc_flinch 
 
 	callevent npcatk_resume_ai
-	if ( DRINK_TYPE equals health ) createitem health_spotion $relpos(0,0,0)
+	if ( DRINK_TYPE equals health ) createitem health_spotion $relpos(0,0,0) //This doesn't work
 }
 
 { npcatk_resume_ai
@@ -638,7 +644,7 @@
 
 	if ( SPEC_TYPE equals protection )
 	{
-		takedmg all 0.6
+		takedmg all 0.5
 		setvard GLOW_ON 0
 		local OUT_MSG game.monster.name.full
 		stradd OUT_MSG "'s protection potion has run out."
@@ -653,6 +659,8 @@
 		stradd OUT_MSG "'s speed potion has run out."
 		infomsg all "EFFECTED ENDED" OUT_MSG
 	}
+	
+	setvard SPEC_TYPE 0
 }
 
 { turbo_on
@@ -1073,8 +1081,16 @@
 		setvard NEXT_ATTACK unset
 	}
 
-	callevent npcatk_dodamage NPCATK_TARGET ATTACK_HITRANGE DMG_AXE_FAST ATTACK_HITCHANCE slash
-	setvard NORM_ATTACK 1
+	if ( BOSS_TYPE == 2 )
+	{
+		callevent npcatk_dodamage NPCATK_TARGET ATTACK_HITRANGE DMG_AXE_FAST ATTACK_HITCHANCE dark
+	}
+	else
+	{
+		setvard NORM_ATTACK 1
+		callevent npcatk_dodamage NPCATK_TARGET ATTACK_HITRANGE DMG_AXE_FAST ATTACK_HITCHANCE slash
+	}
+	
 	if ( BOSS_TYPE == 3 )
 	{
 		if $rand(1,10) == 1
@@ -1093,14 +1109,21 @@
 		setvard NEXT_ATTACK unset
 	}
 
-
 	if ( BOSS_TYPE == 3 )
 	{
 		setvard NEXT_ATTACK ANIM_SWING_FAST
 		playsound 0 10 SOUND_SATTACK
 	}
 	if ( BOSS_TYPE != 3 ) setvard NORM_ATTACK 1
-	callevent npcatk_dodamage NPCATK_TARGET ATTACK_HITRANGE DMG_AXE_SLOW ATTACK_HITCHANCE blunt
+	
+	if ( BOSS_TYPE == 2 )
+	{
+		callevent npcatk_dodamage NPCATK_TARGET ATTACK_HITRANGE DMG_AXE_FAST ATTACK_HITCHANCE dark
+	}
+	else
+	{
+		callevent npcatk_dodamage NPCATK_TARGET ATTACK_HITRANGE DMG_AXE_SLOW ATTACK_HITCHANCE blunt
+	}
 }
 
 { sword_fast
@@ -1118,7 +1141,15 @@
 		if $rand(1,10) == 1
 		setvard NEXT_ATTACK ANIM_SWORD_SLOW
 	}
-	callevent npcatk_dodamage NPCATK_TARGET ATTACK_HITRANGE DMG_SWORD_FAST ATTACK_HITCHANCE slash
+	
+	if ( BOSS_TYPE == 2 )
+	{
+		callevent npcatk_dodamage NPCATK_TARGET ATTACK_HITRANGE DMG_AXE_FAST ATTACK_HITCHANCE dark
+	}
+	else
+	{
+		callevent npcatk_dodamage NPCATK_TARGET ATTACK_HITRANGE DMG_SWORD_FAST ATTACK_HITCHANCE slash
+	}
 }
 
 { sword_slow //used by sword and periodically by mace
@@ -1130,15 +1161,18 @@
 		setvard NEXT_ATTACK unset
 	}
 
-
 	if ( BOSS_TYPE == 2 )
 	{
 		setvard STUN_ATTACK 1
 		setvard ANIM_ATTACK ORIG_ATTACK
 		createnpc monsters/summon/stun_burst $relpos(0,0,0) $get(ent_me,id) 256 0 200 //<owner> <range> [toss1|0] [damage]
+		callevent npcatk_dodamage NPCATK_TARGET ATTACK_HITRANGE DMG_AXE_FAST ATTACK_HITCHANCE dark
 	}
-	IF ( BOSS_TYPE != 2 ) setvard NORM_ATTACK 1
-	callevent npcatk_dodamage NPCATK_TARGET ATTACK_HITRANGE DMG_SWORD_SLOW ATTACK_HITCHANCE slash
+	else
+	{
+		callevent npcatk_dodamage NPCATK_TARGET ATTACK_HITRANGE DMG_SWORD_SLOW ATTACK_HITCHANCE slash
+	}
+	if ( BOSS_TYPE != 2 ) setvard NORM_ATTACK 1
 }
 
 { swing_slow
@@ -1151,9 +1185,15 @@
 		setvard NEXT_ATTACK unset
 	}
 
-
 	setvard NORM_ATTACK 1
-	callevent npcatk_dodamage NPCATK_TARGET ATTACK_HITRANGE DMG_SWING_SLOW ATTACK_HITCHANCE slash
+	if ( BOSS_TYPE == 2 )
+	{
+		callevent npcatk_dodamage NPCATK_TARGET ATTACK_HITRANGE DMG_AXE_FAST ATTACK_HITCHANCE dark
+	}
+	else
+	{
+		callevent npcatk_dodamage NPCATK_TARGET ATTACK_HITRANGE DMG_SWING_SLOW ATTACK_HITCHANCE slash
+	}
 }
 
 { swing_fast
@@ -1165,7 +1205,6 @@
 		setvard NEXT_ATTACK unset
 	}
 
-
 	if ( BOSS_TYPE == 3 )
 	{
 		add FAST_SWINGS 1
@@ -1176,7 +1215,15 @@
 		}
 	}
 	setvard NORM_ATTACK 1
-	callevent npcatk_dodamage NPCATK_TARGET ATTACK_HITRANGE DMG_SWING_FAST ATTACK_HITCHANCE slash
+	
+	if ( BOSS_TYPE == 2 )
+	{
+		callevent npcatk_dodamage NPCATK_TARGET ATTACK_HITRANGE DMG_AXE_FAST ATTACK_HITCHANCE dark
+	}
+	else
+	{
+		callevent npcatk_dodamage NPCATK_TARGET ATTACK_HITRANGE DMG_SWING_FAST ATTACK_HITCHANCE slash
+	}
 }
 
 { attack_jab
@@ -1207,6 +1254,10 @@
 			callevent FREQ_FLANK flank_delay_reset
 			callevent npcatk_flank NPCATK_TARGET
 		}
+	}
+	if ( BOSS_TYPE == 2 )
+	{
+		callevent npcatk_dodamage NPCATK_TARGET ATTACK_HITRANGE DMG_AXE_FAST ATTACK_HITCHANCE dark
 	}
 	if ( BOSS_TYPE == 4 )
 	{
@@ -1310,7 +1361,7 @@
 		//createnpc monsters/summon/magic_dart $relpos(0,BALL_OFS,92) $get(ent_me,id) BALL_TARG BALL_SIZE BALL_SPEED BALL_DMG 
 
 		local OFS_ADJ (0,28,36)
-		if ( $get(NPCATK_TARGET,range) < 100 ) local V_ADJ (0,28,-28)
+		if ( $get(NPCATK_TARGET,range) < 100 ) local OFS_ADJ (0,28,-28)
 
 		//<projectile scriptname> <"view"|(src_origin)> <target|(targ_origin)|none> <speed> <damage> <cof> <skill|none> //Converted to use new tossprojectile //greatguys1@FEB2022
 		tossprojectile "proj_mana" $relpos(OFS_ADJ) none BALL_SPEED BALL_DMG 1 none
