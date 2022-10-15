@@ -137,7 +137,7 @@
 	setvard EXT_DAMAGE_ADJUSTMENT 1.0
 	setvard	EXT_HITCHANCE_ADJUSTMENT 1.0
 	setvard NPC_LOST_TARGET unset
-	setvard HUNT_LASTTARGET ¯NONE¯ //backwards compatibility (¯NONE¯ is v. hard to type ^_^)
+	setvard HUNT_LASTTARGET ï¿½NONEï¿½ //backwards compatibility (ï¿½NONEï¿½ is v. hard to type ^_^)
 	//setvard ADVANCED_SEARCHING 0
 	//setvard NPC_MOVING_LAST_KNOWN 0
 }
@@ -761,7 +761,7 @@
 	setvard NPC_LOST_TARGET unset
 	//setvard NPC_MOVING_LAST_KNOWN 0
 	//setvard ADVANCED_SEARCHING 0
-	setvard HUNT_LASTTARGET ¯NONE¯
+	setvard HUNT_LASTTARGET ï¿½NONEï¿½
 	setvard NPC_ROAMING_HOME 1
 	setvard IS_HUNTING 0 //backwards compatibility
 	setvard HUNTING_PLAYER 0
@@ -1090,12 +1090,15 @@
 
 	local INC_PARAM PARAM1
 
-	if ( $get(NPCATK_TARGET,isplayer) ) local L_CHECK_PISSED 1
-	if ( NPCATK_TARGET equals unset ) local L_CHECK_PISSED 1
+	//check if this is first time npc is struck.
+	if ( $get(NPCATK_TARGET,isplayer) ) local L_FIRST_STRUCK 1
+	if ( NPCATK_TARGET equals unset ) local L_FIRST_STRUCK 1
 
-	if ( L_CHECK_PISSED )
+	if ( L_FIRST_STRUCK )
 	{
-		callevent npcatk_pissed INC_PARAM
+		if !IS_FLEEING
+		if $get(ent_laststruck,relationship,ent_me) equals wary
+		callevent npcatk_settarget $get(ent_laststruck,id) "struck_by_enemy"
 	}
 	else
 	{
@@ -1103,26 +1106,9 @@
 		callevent npcatk_retaliate INC_PARAM
 	}
 
-	//JAN2013_09 - switched up so only cycles up if attacking target is valid
-	//- actually, removing this bit, as should be handled by npcatk_pissed
-//	if ( NPCATK_TARGET isnot unset )
-//	{
-//		if CYCLE_TIME != CYCLE_TIME_BATTLE
-//		if $get(ent_laststruck,isplayer)
-//		setvard CYCLED_UP 0
-//		callevent cycle_up "player_struck"
-//	}
-
 	callevent npcatk_checkflee INC_PARAM
 	callevent npcatk_checkflinch INC_PARAM
 	callevent npc_struck INC_PARAM $get(ent_laststruck,id) //used by too many scripts to omit
-}
-
-{ npcatk_pissed //when surprised (first struck) by enemy
-
-	if !IS_FLEEING
-	if $get(ent_laststruck,relationship,ent_me) isnot ally
-	callevent npcatk_settarget $get(ent_laststruck,id) "struck_by_enemy"
 }
 
 { npcatk_retaliate
