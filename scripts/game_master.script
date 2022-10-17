@@ -134,13 +134,6 @@
 	subtract CUR_TIC_TIME game.time.since.minutes
 
 	//infomsg all "TIME_INFO" Tic PRE_SUB vs Sys game.time.since.minutes ( diff CUR_TIC_TIME )
-
-	//anti-speed hack
-	//- if game_master tick counter and system time disagree, something is up	
-	//- allowing 2 minute leeway
-	//- calling it "packet sync error" to throw h4x0rz off the sent
-	//if ( CUR_TIC_TIME > 2 ) errormessage Packet Sync Error ( CUR_TIC_TIME / game.time.since.minutes )
-	//if ( CUR_TIC_TIME < -2 ) errormessage Packet Sync Error ( CUR_TIC_TIME / game.time.since.minutes )
 }
 
 { [server] send_damage //same params as do damage
@@ -383,15 +376,6 @@
 
 { gm_verify_set
 	setvard GM_MAP_VERIFY PARAM1
-}
-
-{ gm_bear_god_death
-	if ( $lcase(game.map.name) equals skycastle ) setvard GM_MAP_VERIFY 1
-	callevent 1.0 gm_bear_god_death2
-}
-
-{ gm_bear_god_death2
-	createnpc monsters/summon/stun_burst $relpos(0,0,0) $get(ent_me,id) 512 0 150 
 }
 
 { worldevent_time
@@ -903,24 +887,6 @@
 	//infomsg all "DEBUG ALERT" "MSAREA_MONSTERSPAWN REMOVED"
 }
 
-{ old_helena_warboss_died
-	callevent gold_spew 25 2 64 8 24 G_WARBOSS_ORIGIN
-	setvard GM_MAP_VERIFY 1
-	infomsg all "Old Helena has been saved!" "Click use on NPCs to purchase rewards."
-}
-
-{ calruin2_trigger_touched
-	add TRIGGER_COUNT 1
-	if TRIGGER_COUNT > 1
-	usetrigger combo_on
-	callevent 30.0 calruin2_reset_triggers
-	setvard TRIGGER_COUNT 0
-}
-
-{ calruin2_reset_triggers
-	callexternal all calruin2_trigger_reset
-}
-
 { game_transition_triggered //1: Transition_desc //2: DestBSP //3: local_spawn //4: dest_spawn
 
 	local MAP_TO_VOTE PARAM2
@@ -1015,96 +981,6 @@
 	stradd WRITE_LOG PARAM3
 	chatlog WRITE_LOG
 }
-
-//Dynamic large files was too laggy/hard to figure - went for static
-//{ set_chatlog_file
-//	if GM_CUR_MONTH != game.time.month
-//	if ( GM_CHATLOG_OPEN )
-//	{
-//		chatlog close G_CHAT_LOG
-//	}
-//	setvard GM_CUR_MONTH game.time.month
-//	local CUR_YEAR game.time.year
-//	local CHAT_FILE "ms_chatlog-"
-//	stradd CHAT_FILE GM_CUR_MONTH
-//	stradd CHAT_FILE "-"
-//	stradd CHAT_FILE CUR_YEAR
-//	stradd CHAT_FILE ".log"
-//	setvarg G_CHAT_LOG CHAT_FILE
-//	setvard GM_CHATLOG_OPEN 1
-//	chatlog open G_CHAT_LOG
-//}
-
-
-//Old Damage Point System
-//{ add_player_steamid //<player>
-//
-//
-//	//ARRAY_PLAYER_IDS - SteamID+Slot
-//	//ARRAY_PLAYER_SCORES - DmgPoints
-//	//ARRAY_PLAYER_ENTS - current ent_id
-//
-//
-//	//assemble id
-//	local PLAYER_ENT PARAM1
-//	local IN_ID $get(PLAYER_ENT,steamid)
-//	stradd IN_ID $get(PLAYER_ENT,slot)
-//	if ( G_DEVELOPER_MODE ) gplayermessage PLAYER_ENT DmgPoints: AddedPlayer - IN_ID [ PLAYER_ENT ]
-//
-//	dbg add_player_steamid PLAYER_ENT == IN_ID
-//
-//	//see if ID in array
-//	local FIND_ID $get_arrayfind(ARRAY_PLAYER_IDS,IN_ID)
-//
-//	if ( FIND_ID > -1 )
-//	{
-//		//found, restore
-//		local CUR_POINTS $get_array(ARRAY_PLAYER_SCORES,FIND_ID)
-//		array.set ARRAY_PLAYER_ENTS FIND_ID PLAYER_ENT
-//
-//		dbg Found IN_ID inslot FIND_ID
-//		if ( G_DEVELOPER_MODE ) gplayermessage PLAYER_ENT DmgPoints: GM Thinks You have $int(CUR_POINTS) x1k dmgpoints inslot FIND_ID
-//
-//
-//		if ( $get(PLAYER_ENT,scriptvar,'PLR_TOTAL_DMG') < CUR_POINTS )
-//		{
-//			callexternal PLAYER_ENT ext_update_score CUR_POINTS
-//			multiply CUR_POINTS 1000
-//			gplayermessage PLAYER_ENT Your damage points have been restored ( $int(CUR_POINTS) )
-//		}
-//	}
-//	else
-//	{
-//		array.add ARRAY_PLAYER_IDS IN_ID
-//		array.add ARRAY_PLAYER_SCORES 0
-//		array.add ARRAY_PLAYER_ENTS PLAYER_ENT
-//		//not found, make new
-//		if ( G_DEVELOPER_MODE ) gplayermessage PLAYER_ENT DmgPoints: GM has added you to dmgpoint array
-//	}
-//}
-
-//old damage point system - debug
-//{ dump_ids
-//	calleventloop $get_array_amt(ARRAY_PLAYER_ENTS) dump_ids_loop
-//}
-
-//old damage point system - debug
-//{ dump_ids_loop
-//	local CUR_IDX game.script.iteration
-//	consolemsg G_DEV_PLAYER # CUR_IDX - id $get_array(ARRAY_PLAYER_IDS,CUR_IDX) score $get_array(ARRAY_PLAYER_SCORES,CUR_IDX) ent $get_array(ARRAY_PLAYER_ENTS,CUR_IDX)
-//}
-
-//Old Damage Point System
-//{ add_score //<id> <points>
-//	local PLAYER_IDX $get_arrayfind(ARRAY_PLAYER_ENTS,PARAM1)
-//	if ( PLAYER_IDX == -1 ) gplayermessage PARAM1 Warning: GM_Error: Damage Points not being saved.
-//
-//	if PLAYER_IDX > -1
-//	local CUR_POINTS $get_array(ARRAY_PLAYER_SCORES,PLAYER_IDX)
-//	add CUR_POINTS PARAM2
-//	array.set ARRAY_PLAYER_SCORES PLAYER_IDX CUR_POINTS
-//	if ( G_DEVELOPER_MODE ) gplayermessage PARAM1 DmgPoints: GM scores you with $get_array(ARRAY_PLAYER_SCORES,PLAYER_IDX) inslot PLAYER_IDX
-//}
 
 { gm_votekick //<target> <caller> - called by sv_admin
 
@@ -1443,58 +1319,6 @@
 	setvard GM_COUNT_DOWN_EVENT ''
 }
 
-{ helena_bandit_chest
-	local OUT_POS PARAM1
-	callevent gm_createnpc 10.0 helena/bandit_boss_chest OUT_POS
-}
-
-//{ set_time //<hour> <minute>
-//
-//	if game.event.params >= 2
-//
-//	mod PARAM1 24
-//	mod PARAM2 60
-//
-//	callevent time_getseconds			//Get the number of seconds passed
-//	local local.mstime.secs global.mstime.secs	//since the beginning of game (MS Time)
-//
-//	local l.secs $int(PARAM1)			//Get the desired time in seconds
-//	multiply l.secs 3600
-//
-//	local l.mins_to_secs $int(PARAM2)
-//	multiply l.mins_to_secs 60
-//	
-//	add l.secs l.mins_to_secs
-//
-//	//Get the time offset from the start of the current day
-//	//Compare it to the requested time of day, to check if I should
-//	//advance to the next day.
-//	//--------------------------------------------------
-//
-//	local l.daystart.secs global.mstime.secs	//Get start of this day
-//	divide l.daystart.secs 86400				
-//	setvard l.daystart.secs $int(l.daystart.secs)
-//	multiply l.daystart.secs 86400
-//
-//	local l.timefromdaystart global.mstime.secs	//Get time offset from start of day
-//	subtract l.timefromdaystart l.daystart.secs
-//
-//	//If Requested time of day is earlier than Current time of day, fast forward a full day
-//
-//	if( l.secs < l.timefromdaystart ) add l.secs 86400
-//
-//	//Add requested time to start of day
-//
-//	local l.newtime l.daystart.secs
-//	add l.newtime l.secs
-//
-//	//Store in global
-//
-//	setvarg global.mstime.secs l.newtime
-//
-//	setvarg global.mstime.updateall 0	//Force update to all
-//}
-
 { set_spawn_point
 
 	local SPAWNS_PER_SET CONST_SPAWNS_PER_SET
@@ -1632,7 +1456,6 @@
 	callexternal PARAM1 ext_send_tele_point GM_SPAWN_POINT
 	//setorigin PARAM1 GM_SPAWN_POINT
 }
-
 
 { dev_cat_points
 
@@ -1873,35 +1696,6 @@
 	}
 }
 
-{ undamael_reward_victor
-	callevent gm_find_strongest_player
-	local SWORD_LOC PARAM1
-	//Thothie - FEB2010_02 - award to next strongest player if player already has a shard
-	if ( $get_quest_data(THE_CHOSEN_ONE,f) equals complete ) local L_INVALID 1
-	if ( $get(THE_CHOSEN_ONE,maxhp) < 700 ) local L_INVALID 1
-	if ( L_INVALID )
-	{
-		if ( $get_token_amt(STRONGEST_PLAYER_LIST) == 1 )
-		{
-			infomsg all "One Time Quest" "All valid players present have completed this quest." 
-
-			local EXIT_SUB 1 //no valid players remain
-		}
-		if !EXIT_SUB
-		callevent gm_find_strongest_player
-		setvard GM_TEMP_SWORD_LOC SWORD_LOC
-		callevent 0.1 undamael_reward_victor2 
-		local EXIT_SUB 1
-	}
-	if !EXIT_SUB
-
-	createnpc monsters/summon/felewyn_shard SWORD_LOC THE_CHOSEN_ONE
-}
-
-{ undamael_reward_victor2
-	callevent undamael_reward_victor GM_TEMP_SWORD_LOC
-}
-
 { set_shad_tele_point //<origin> <index> <trigger> (see mscave/shad_tele_base)
 
 	if ( SHAD_TELEPOINTS equals 'SHAD_TELEPOINTS' ) setvard SHAD_TELEPOINTS "1;2;3;4;5;6;7"
@@ -1923,20 +1717,6 @@
 	{
 		offer PARAM1 PARAM2 PARAM3
 	}
-}
-
-{ bgoblin_chief_died
-
-	local CHIEF_ORG PARAM1
-	callevent gold_spew 500 2 96 4 8 CHIEF_ORG
-	setvard BGOBLIN_CHIEF_SLAIN 1
-}
-
-{ vgoblin_chief_died
-
-	local CHIEF_ORG PARAM1
-	callevent gold_spew 500 2 96 4 8 CHIEF_ORG
-	setvard VGOBLIN_CHIEF_SLAIN 1
 }
 
 { gm_createitem //<delay> <item> <position> [reserve]
@@ -1972,29 +1752,14 @@
 
 { gm_titan_death
 
-	local TITAN_ID PARAM1
-	setvard TITAN_DEATH_POS PARAM2
-	local TITAN_STUN_POS PARAM3
+	local L_TITAN_ID PARAM1
+	local L_TITAN_DEATH_POS PARAM2
+	local L_TITAN_STUN_POS PARAM3
 
-	callevent gm_createnpc 4.0 monsters/summon/stun_burst TITAN_STUN_POS TITAN_ID 512 1 100
-
-	if ( $lcase(game.map.name) contains thanatos )
-	{
-		local CHEST_POS PARAM1
-		vectoradd CHEST_POS z 128
-		callevent 0.2 gm_titan_chest
-	}
-	else
-	{
-		//custom bm_gold_spew (centers from spawn instead of corpse)
-		callevent gold_spew 500 2 256 4 16 TITAN_DEATH_POS
-	}
-
+	callevent gm_createnpc 4.0 monsters/summon/stun_burst L_TITAN_STUN_POS L_TITAN_ID 512 1 100
+	callevent gold_spew 500 2 256 4 16 L_TITAN_DEATH_POS
+	
 	callexternal all ext_unsummon
-}
-
-{ gm_titan_chest
-	createnpc chests/olympus TITAN_DEATH_POS
 }
 
 { gm_set_sorc_point //<origin> - external from other/sorc_telepoint
@@ -2035,10 +1800,6 @@
 	setvarg G_SPAWN_POINTS PARAM1
 }
 
-{ gm_telfl_died
-	add N_TELFL_DEAD 1	
-}
-
 { gm_free_vote_system
 	//external to free up vote system
 	setvard VOTE_BUSY 0
@@ -2054,122 +1815,6 @@
  
 { give_item_delayed2 
      offer GM_ITEM_TARGET GM_ITEM_NAME 
-}
-
-{ gm_sorcv_init //called at shad palace side spawn
-
-	if game.serverside
-
-	//check if friendly via file here
-	if ( $filesize(header.dat) > -1 )
-	{
-		setvarg G_SORCV_FRIENDLY 1
-		callevent 10.0 gm_sorcv_finalize1
-	}
-	else
-	{
-		setvarg G_SORCV_FRIENDLY 0
-	}
-	
-	setvarg G_SORCV_SETUP 1
-
-	dbg gm_sorcv_init friend G_SORCV_FRIENDLY setup G_SORCV_SETUP
-
-	if ( G_SORCV_FRIENDLY )
-	{
-		usetrigger spawn_guard1_friendly GM_friendly_unlock
-	}
-	else
-	{
-		usetrigger setup_hostile spawn_guard1_hostile
-		setvarg G_TRACK_DEATHS 1
-		setvarg G_TRACK_DEATHS_TRIGGER 10
-		setvarg G_TRACK_DEATHS_EVENT gm_sorcv_start_challenge
-	}
-}
-
-{ gm_sorcv_finalize1
-	erasefile header.dat
-	callevent 5.0 gm_sorcv_finalize2
-}
-
-{ gm_sorcv_finalize2
-	erasefile crashed.cfg
-	local OUT_LINE "map "
-	local COMMENT "/"
-	stradd COMMENT "/"
-	strconc OUT_LINE shad_palace COMMENT return from sorc_villa
-	writeline crashed.cfg OUT_LINE
-}
-
-{ gm_sorcv_ogers //called by brush when player falls down well
-	local IN_DA_HOLE PARAM1
-	callexternal all player_ogre_hole IN_DA_HOLE
-}
-
-{ gm_sorcv_a1
-	if ( G_SORCV_FRIENDLY )
-	{
-		usetrigger spawn_f1
-	}
-	else
-	{
-		usetrigger spawn_h1
-	}
-}
-
-{ gm_sorcv_a2
-	if ( G_SORCV_FRIENDLY )
-	{
-		usetrigger spawn_f2
-	}
-	else
-	{
-		usetrigger spawn_h2
-	}
-}
-
-
-{ gm_sorcv_a3
-	if ( !G_SORCV_FRIENDLY ) usetrigger spawn_h3
-}
-
-{ gm_sorcv_shop1
-	if ( G_SORCV_FRIENDLY )
-	{
-		usetrigger spawn_shop_f1
-	}
-	else
-	{
-		usetrigger spawn_shop_h1
-	}
-}
-
-{ gm_sorcv_smith
-	if ( G_SORCV_FRIENDLY )
-	{
-		usetrigger spawn_smith_f1
-	}
-	else
-	{
-		usetrigger spawn_smith_h1
-	}
-}
-
-{ gm_sorcv_horrors1
-	if ( !G_SORCV_FRIENDLY ) usetrigger s_horrors
-}
-
-{ gm_sorcv_horrors2
-	if ( !G_SORCV_FRIENDLY ) usetrigger s_horrors2
-}
-
-{ gm_sorv_north
-	if ( !G_SORCV_FRIENDLY ) usetrigger spawn_archers_north
-}
-
-{ gm_sorcv_shaman1
-	if ( !G_SORCV_FRIENDLY ) usetrigger spawn_shaman1
 }
 
 { gm_add_del_que //<id_to_add> [min_delay]
@@ -2273,146 +1918,6 @@
 	
 
 	callexternal players ext_weather_change G_CURRENT_WEATHER
-}
-
-{ gm_sorcv_give_medal //<player>
-	dbg gm_sorcv_give_medal $get(PARAM1,name)
-	if !$item_exists(PARAM1,item_sorcv)
-	offer PARAM1 item_sorcv
-	callexternal ent_lastcreated ext_set_owner PARAM1
-	local CUR_ACHIEVEMENTS $get_quest_data(PARAM1,a)
-	local CUR_ALEVEL $get_token(CUR_ACHIEVEMENTS,0)
-	if ( CUR_ALEVEL < 1 )
-	{
-		token.set CUR_ACHIEVEMENTS 0 1
-		quest set PARAM1 a CUR_ACHIEVEMENTS
-	}
-}
-
-{ gm_sorcv_start_challenge
-	dbg gm_sorcv_start_challenge
-	if !SORCV_CHALLENGE_STARTED
-	setvard SORCV_CHALLENGE_STARTED 1
-	setvarg G_TRACK_DEATHS_EVENT gm_sorcv_achieve
-	setvarg G_TRACK_DEATHS_TRIGGER 50
-	getplayersarray SORCV_PLAYERS
-	setvard GM_MEDAL_COUNT 0
-	setvard GM_ACHIEVE_LEVEL 1
-	setvard GM_ACHIEVE_NAMES "null;Tin;Bronze;Silver;Gold;Platinum;Diamond;LORELDIAN"
-	setvard SORCV_PLAYER_NAMES "Participating Players:|"
-	calleventloop $get_array_amt(SORCV_PLAYERS) gm_sorcv_make_player_list
-	callevent gm_sorcv_handle_medals
-}
-
-{ gm_sorcv_make_player_list
-	local CUR_PLAYER $get_array(SORCV_PLAYERS,game.script.iteration)
-	stradd SORCV_PLAYER_NAMES $get(CUR_PLAYER,name)
-	stradd SORCV_PLAYER_NAMES "|"
-
-	if ( G_DEVELOPER_MODE )
-	{
-		stradd SORCV_PLAYER_NAMES "Bogus Overflow Test Name"
-		stradd SORCV_PLAYER_NAMES "|"
-		stradd SORCV_PLAYER_NAMES "Bogus Overflow Test Name"
-		stradd SORCV_PLAYER_NAMES "|"
-		stradd SORCV_PLAYER_NAMES "Bogus Overflow Test Name"
-		stradd SORCV_PLAYER_NAMES "|"
-		stradd SORCV_PLAYER_NAMES "Bogus Overflow Test Name"
-		stradd SORCV_PLAYER_NAMES "|"
-		stradd SORCV_PLAYER_NAMES "Bogus Overflow Test Name"
-		stradd SORCV_PLAYER_NAMES "|"
-		stradd SORCV_PLAYER_NAMES "Bogus Overflow Test Name"
-		stradd SORCV_PLAYER_NAMES "|"
-		stradd SORCV_PLAYER_NAMES "Bogus Overflow Test Name"
-		stradd SORCV_PLAYER_NAMES "|"
-		stradd SORCV_PLAYER_NAMES "Bogus Overflow Test Name"
-		stradd SORCV_PLAYER_NAMES "|"
-		stradd SORCV_PLAYER_NAMES "Bogus Overflow Test Name"
-		stradd SORCV_PLAYER_NAMES "|"
-		stradd SORCV_PLAYER_NAMES "Bogus Overflow Test Name"
-		stradd SORCV_PLAYER_NAMES "|"
-		stradd SORCV_PLAYER_NAMES "Bogus Overflow Test Name"
-		stradd SORCV_PLAYER_NAMES "|"
-		stradd SORCV_PLAYER_NAMES "Bogus Overflow Test Name"
-		stradd SORCV_PLAYER_NAMES "|"
-		stradd SORCV_PLAYER_NAMES "Bogus Overflow Test Name"
-		stradd SORCV_PLAYER_NAMES "|"
-		stradd SORCV_PLAYER_NAMES "Bogus Overflow Test Name"
-		stradd SORCV_PLAYER_NAMES "|"
-		stradd SORCV_PLAYER_NAMES "Bogus Overflow Test Name"
-		stradd SORCV_PLAYER_NAMES "|"
-		stradd SORCV_PLAYER_NAMES "Bogus Overflow Test Name"
-		stradd SORCV_PLAYER_NAMES "|"
-		stradd SORCV_PLAYER_NAMES "Bogus Overflow Test Name"
-		stradd SORCV_PLAYER_NAMES "|"
-		stradd SORCV_PLAYER_NAMES "Bogus Overflow Test Name"
-		stradd SORCV_PLAYER_NAMES "|"
-		stradd SORCV_PLAYER_NAMES "Bogus Overflow Test Name"
-		stradd SORCV_PLAYER_NAMES "|"
-		stradd SORCV_PLAYER_NAMES "Bogus Overflow Test Name"
-		stradd SORCV_PLAYER_NAMES "|"
-		stradd SORCV_PLAYER_NAMES "Bogus Overflow Test Name"
-		stradd SORCV_PLAYER_NAMES "|"
-		stradd SORCV_PLAYER_NAMES "Bogus Overflow Test Name"
-		stradd SORCV_PLAYER_NAMES "|"
-	}
-}
-
-{ gm_sorcv_handle_medals
-	local CUR_PLAYER $get_array(SORCV_PLAYERS,GM_MEDAL_COUNT)
-	dbg gm_sorcv_handle_medals $get(CUR_PLAYER,name)
-	stradd SORCV_PLAYER_NAMES "Player list is now locked!"
-	callevent gm_sorcv_give_medal CUR_PLAYER
-	add GM_MEDAL_COUNT 1
-	if ( GM_MEDAL_COUNT < $get_array_amt(SORCV_PLAYERS) ) callevent 1.0 gm_sorcv_handle_medals
-	helptip CUR_PLAYER generic "Shadahar Village Challenge Has Begun!" SORCV_PLAYER_NAMES
-}
-
-{ gm_sorcv_achieve
-	dbg gm_sorcv_achieve GM_ACHIEVE_LEVEL
-	if GM_ACHIEVE_LEVEL < 7
-	add GM_ACHIEVE_LEVEL 1
-	add G_TRACK_DEATHS_TRIGGER 50
-	if ( GM_ACHIEVE_LEVEL == 7 )
-	{
-		setvarg G_TRACK_DEATHS 0
-		callevent 10.0 gm_sorcv_end_challenge
-	}
-	calleventloop $get_array_amt(SORCV_PLAYERS) gm_sorcv_update_achievements
-}
-
-{ gm_sorcv_update_achievements
-	local CUR_PLAYER $get_array(SORCV_PLAYERS,game.script.iteration)
-	if $get(CUR_PLAYER,ip) isnot 0
-	local CUR_ACHIEVEMENTS $get_quest_data(CUR_PLAYER,a)
-	local CUR_ALEVEL $get_token(CUR_ACHIEVEMENTS,0)
-	if ( CUR_ALEVEL < GM_ACHIEVE_LEVEL )
-	{
-		token.set CUR_ACHIEVEMENTS 0 GM_ACHIEVE_LEVEL
-		quest set CUR_PLAYER a CUR_ACHIEVEMENTS
-		local MSG_OUT "You now have achieved "
-		strconc MSG_OUT $get_token(GM_ACHIEVE_NAMES,GM_ACHIEVE_LEVEL) "Status for the Shadahar Village Challenge"
-		infomsg CUR_PLAYER "ACHIEVEMENT LEVEL INCREASED!" MSG_OUT
-	}
-	else
-	{
-		local MSG_OUT "Your team has achieved "
-		if ( CUR_ALEVEL == GM_ACHIEVE_LEVEL ) local MSG_REASON "They are now on your level."
-		if ( CUR_ALEVEL > GM_ACHIEVE_LEVEL ) local MSG_REASON "You have already gone beyond this level."
-		strconc MSG_OUT $get_token(GM_ACHIEVE_NAMES,GM_ACHIEVE_LEVEL) "Status for the Shadahar Village Challenge." MSG_REASON
-		infomsg CUR_PLAYER "ACHIEVEMENT PROGRESS!" MSG_OUT
-	}
-}
-
-//this is okay (deletes spawn), but be nicer to have a tool to stop monster spawns, so monsters wouldnt hafta suicide
-{ gm_sorcv_end_challenge
-	usetrigger end_challenge
-	callevent 1.0 gm_sorcv_end_challenge2
-}
-
-{ gm_sorcv_end_challenge2
-	callexternal all npc_suicide override
-	infomsg all "CHALLENGE COMPLETE" "The village has been cleared!"
 }
 
 { gm_votelock //<caller> - called by sv_admin
@@ -2624,13 +2129,6 @@
 	}
 }
 
-{ gm_orcfor_sham_start
-	dbg gm_orcfor_sham_start by $get(PARAM1,name)
-
-	local SUMMONER_ID $get_by_name(orc_summoner)
-	callexternal SUMMONER_ID ext_players_r_here
-}
-
 { gm_april_fools_mode
 	if ( !G_DEVELOPER_MODE )
 	{
@@ -2692,20 +2190,6 @@
 { gm_recieve_client_info
 	infomsg all "Returned" PARAM1
 	consolemsg GM_PLAYER_REQ CLIENT_INFO_RETURNED: PARAM1
-}
-
-{ gm_the_wall_check
-	//stops forsuth from spawning if you run the_wall2 twice in a row
-
-	if ( $filesize(trans.dat) > -1 )
-	{
-		erasefile trans.dat
-	}
-	else
-	{
-		usetrigger no_spawn_forsuth
-		usetrigger spawn_forsuth_extras
-	}
 }
 
 { gm_newweather_string
@@ -2776,143 +2260,6 @@
 	offer PARAM1 scroll2_trollcano
 }
 
-{ gm_bloodshrine_sorc_check
-	setvard PLAYER_LIST 0
-	getplayers PLAYER_LIST
-	setvard GM_BLOOD_DRINKER_FOUND 0
-	calleventloop $get_token_amt(PLAYER_LIST) search_for_blood_drinker
-	if ( GM_BLOOD_DRINKER_FOUND )
-	{
-		usetrigger spawn_zorcs_friendly
-	}
-	else
-	{
-		usetrigger spawn_zorcs_hostile
-	}
-}
-
-{ gm_bloodshrine_sorc_door
-	if ( GM_BLOOD_DRINKER_FOUND )
-	{
-		usetrigger sorc_door1
-		callexternal all ext_fsorc_init
-	}
-	else
-	{
-		usetrigger sorc_door1
-		usetrigger sorc_door2
-	}
-}
-
-{ search_for_blood_drinker
-   local CUR_IDX game.script.iteration
-   local CUR_PLAYER $get_token(PLAYER_LIST,CUR_IDX)
-   if $item_exists(CUR_PLAYER,swords_blood_drinker)
-   setvard GM_BLOOD_DRINKER_FOUND 1
-}
-
-{ gm_bloodshrine_boss_fx
-	local BOSS_ID $get_by_name(shadowform_boss)
-	if $get(BOSS_ID,isalive)
-	callexternal BOSS_ID ext_cl_fx_update
-}
-
-{ gm_bloodshrine_sfs_dead
-	callexternal all fsorc_unwait
-	setvard GM_SFS_DEAD 1
-}
-
-{ gm_bloodshrine_fsorc_tele
-	if GM_SFS_DEAD
-	if !GM_INIT_TO_TELE
-	local L_SHAMAN_ID $get_by_name(fsorc_shaman)
-	local L_LEADER_ID $get_by_name(fsorc_leader)
-	local L_SECOND_ID $get_by_name(fsorc_second)
-	local TELE_POINT $vec(512,128,-16)
-	
-	local L_ORG $get(L_SHAMAN_ID,origin)
-	if ( $dist(L_ORG,L_ORG) < 600 ) local INIT_MOVE_TO_TELE 1
-
-	local L_ORG $get(L_LEADER_ID,origin)
-	if ( $dist(L_ORG,L_ORG) < 600 ) local INIT_MOVE_TO_TELE 1
-
-	local L_ORG $get(L_SECOND_ID,origin)
-	if ( $dist(L_ORG,L_ORG) < 600 ) local INIT_MOVE_TO_TELE 1
-
-	if INIT_MOVE_TO_TELE
-
-	callexternal all fsorc_move_tele
-}
-
-{ gm_bloodshrine_hold_sfs
-	if !GM_DID_SFS_ALERT
-	local L_SHAMAN $get_by_name(fsorc_shaman)
-	if $get(L_SHAMAN,isalive)
-	setvard GM_DID_SFS_ALERT 1
-	callexternal L_SHAMAN ext_wait_sfs_loop
-}
-
-{ gm_cat_quest //<player>
-	//moving this here to help reduce likelihood of item delete (maybe system is deleting real item instead of temp item?)
-
-	//old hacky felewyn bit, no longer in use
-//	local L_QUEST_LIST $get_quest_data(PARAM1,f)
-//
-//	if ( $item_exists(PARAM1,item_s1) )
-//	{
-//		if $get_find_token(L_QUEST_LIST,sym1) == -1
-//		token.add L_QUEST_LIST sym1
-//	}
-//	if ( $item_exists(PARAM1,item_s2) )
-//	{
-//		if $get_find_token(L_QUEST_LIST,sym2) == -1
-//		token.add L_QUEST_LIST sym2
-//	}
-//	if ( $item_exists(PARAM1,item_s3) )
-//	{
-//		if $get_find_token(L_QUEST_LIST,sym3) == -1
-//		token.add L_QUEST_LIST sym3
-//	}
-//	if ( $item_exists(PARAM1,item_s4) )
-//	{
-//		if $get_find_token(L_QUEST_LIST,sym4) == -1
-//		token.add L_QUEST_LIST sym4
-//	}
-//	if ( $item_exists(PARAM1,item_s5) )
-//	{
-//		if $get_find_token(L_QUEST_LIST,sym5) == -1
-//		token.add L_QUEST_LIST sym5
-//	}
-//
-//	if ( $item_exists(PARAM1,swords_fshard1) )
-//	{
-//		if $get_find_token(L_QUEST_LIST,sha1) == -1
-//		token.add L_QUEST_LIST sha1
-//	}
-//	if ( $item_exists(PARAM1,swords_fshard2) )
-//	{
-//		if $get_find_token(L_QUEST_LIST,sha2) == -1
-//		token.add L_QUEST_LIST sha2
-//	}
-//	if ( $item_exists(PARAM1,swords_fshard3) )
-//	{
-//		if $get_find_token(L_QUEST_LIST,sha3) == -1
-//		token.add L_QUEST_LIST sha3
-//	}
-//	if ( $item_exists(PARAM1,swords_fshard4) )
-//	{
-//		if $get_find_token(L_QUEST_LIST,sha4) == -1
-//		token.add L_QUEST_LIST sha4
-//	}
-//	if ( $item_exists(PARAM1,swords_fshard5) )
-//	{
-//		if $get_find_token(L_QUEST_LIST,sha5) == -1
-//		token.add L_QUEST_LIST sha5
-//	}
-//
-//	quest set PARAM1 f L_QUEST_LIST
-}
-
 { gm_sxbow_swap
 	setvard GM_SXBOW_RECIEVE PARAM1
 	callevent 1.0 gm_sxbow_swap2
@@ -2922,72 +2269,12 @@
 	offer GM_SXBOW_RECIEVE bows_sxbow
 }
 
-{ gm_phobia_tele_bandits
-	local BANDIT_ID $get_by_name(bandit_ralion)
-	if ( $get(BANDIT_ID,isalive) ) setorigin BANDIT_ID $vec(328,2432,-272)
-	local BANDIT_ID $get_by_name(bandit_betor)
-	if ( $get(BANDIT_ID,isalive) ) setorigin BANDIT_ID $vec(448,2560,-272)
-	local BANDIT_ID $get_by_name(bandit_skelr)
-	if ( $get(BANDIT_ID,isalive) ) setorigin BANDIT_ID $vec(208,2560,-272)
-}
-
-{ gm_phobia_bandit_lights
-	callexternal all bandit_ally_lights
-}
-
 { gm_epilepsy_begin
 	callexternal players ext_epilepsy_time_begin
 }
 
 { gm_epilepsy_end
 	callexternal players ext_epilepsy_time_end
-}
-
-{ map_shender_east_dream_win
-	//teleport all players with z < -3168 back to elf house
-	//remove sleeping elf
-	//spawn quest reward elf
-	//unlock elf chest
-	local SLEEP_ELF_ID $get_by_name(sleep_elf)
-	callexternal SLEEP_ELF_ID ext_quest_win
-	local QUEST_ELF_ID $get_by_name(telf_quest)
-	callexternal QUEST_ELF_ID ext_quest_win
-	usetrigger spawn_win_elf
-	setvard GM_SE_PLAYER_LIST ''
-	getplayersnb GM_SE_PLAYER_LIST
-	setvard GM_SHENDER_EAST_TELECOUNT 0
-	callevent 1.0 map_shender_east_win2
-	calleventloop $get_token_amt(GM_SE_PLAYER_LIST) map_shender_east_prepret
-
-}
-
-{ map_shender_east_win2
-	calleventloop $get_token_amt(GM_SE_PLAYER_LIST) map_shender_east_return
-}
-
-{ map_shender_east_prepret
-	local CUR_TARG $get_token(GM_SE_PLAYER_LIST,game.script.iteration)
-	if $get(CUR_TARG,origin.z) < -3168
-	effect screenfade CUR_TARG 3.0 1.0 (255,255,255) 255 fadein
-}
-
-{ map_shender_east_return
-	local CUR_TARG $get_token(GM_SE_PLAYER_LIST,game.script.iteration)
-	if $get(CUR_TARG,origin.z) < -3168
-	if ( GM_SHENDER_EAST_TELECOUNT > 5 ) setvard GM_SHENDER_EAST_TELECOUNT 0
-	add GM_SHENDER_EAST_TELECOUNT 1
-	if ( GM_SHENDER_EAST_TELECOUNT == 1 ) setorigin CUR_TARG $vec(1784,-3568,296)
-	if ( GM_SHENDER_EAST_TELECOUNT == 2 ) setorigin CUR_TARG $vec(1744,-3568,296)
-	if ( GM_SHENDER_EAST_TELECOUNT == 3 ) setorigin CUR_TARG $vec(1704,-3568,296)
-	if ( GM_SHENDER_EAST_TELECOUNT == 4 ) setorigin CUR_TARG $vec(1656,-3568,296)
-	if ( GM_SHENDER_EAST_TELECOUNT == 5 ) setorigin CUR_TARG $vec(1640,-3616,296)
-}
-
-{ gm_shender_east_bunny
-	//dbg gm_shender_east_bunny PARAM1 PARAM2 $get(PARAM1,name)
-	infomsg PARAM1 "HOW COULD YOU!" "Poor bunny!"
-	setvard GM_BUNNY_KILLED 1
-	clientevent new PARAM1 effects/sfx_bunny 
 }
 
 { player_joined //<id> - called from player_main->activate_stuff
@@ -3066,146 +2353,6 @@
 	}
 }
 
-{ gm_soccer_blue_toggle
-	dbg Blue Team Toggle
-	if ( !GMSOC_BLUE_TEAM_ACTIVE )
-	{
-		callexternal all extsoc_del_blue_pushgoal
-		setvard GMSOC_BLUE_TEAM_ACTIVE 1
-		local OUT_MSG $get(PARAM1,name)
-		stradd OUT_MSG " added blue team orcs"
-		infomsg all "BLUE TEAM ACTIVE" OUT_MSG
-		usetrigger spawn_blue_team
-		//callexternal $get_by_name(soc_sayer) team_change blue on
-	}
-	else
-	{
-		setvard GMSOC_BLUE_TEAM_ACTIVE 0
-		local OUT_MSG $get(PARAM1,name)
-		stradd OUT_MSG " removed blue team orcs"
-		infomsg all "BLUE TEAM REMOVED" OUT_MSG
-		callexternal all ext_soc_blue_remove
-		//callexternal $get_by_name(soc_sayer) team_change blue off
-	}
-}
-
-{ gm_soccer_red_toggle
-	dbg Red Team Toggle
-	if ( !GMSOC_RED_TEAM_ACTIVE )
-	{
-		callexternal all extsoc_del_red_pushgoal
-		setvard GMSOC_RED_TEAM_ACTIVE 1
-		local OUT_MSG $get(PARAM1,name)
-		stradd OUT_MSG " added red team orcs"
-		infomsg all "RED TEAM ACTIVE" OUT_MSG
-		usetrigger spawn_red_team
-		//callexternal $get_by_name(soc_sayer) team_change red on
-	}
-	else
-	{
-		setvard GMSOC_RED_TEAM_ACTIVE 0
-		local OUT_MSG $get(PARAM1,name)
-		stradd OUT_MSG " removed red team orcs"
-		infomsg all "BLUE TEAM REMOVED" OUT_MSG
-		callexternal all ext_soc_red_remove
-		//callexternal $get_by_name(soc_sayer) team_change red off
-	}
-}
-
-{ gm_nash_tear
-	callexternal $get_by_name(metal_cave) ext_refresh_cl_fx
-
-	if ( GM_TEAR_TRACKER equals 'GM_TEAR_TRACKER' )
-	{
-		setvard GM_TEAR_TRACKER ''
-	}
-
-	if ( GM_TEAR_TRACKER contains PARAM1 )
-	{
-		gplayermessage PARAM1 "Exiting reality tear..."
-		local L_TOKEN_IDX $get_find_token(GM_TEAR_TRACKER,PARAM1)
-		token.del GM_TEAR_TRACKER L_TOKEN_IDX
-		local EXIT_SUB 1
-	}
-	else
-	{
-		gplayermessage PARAM1 "Entering reality tear..."
-	}
-	if !EXIT_SUB
-
-	token.add GM_TEAR_TRACKER PARAM1
-
-	infomsg PARAM1 "TEAR IN REALITY" "A tear in reality from the Wars of Fate. Apparently, the Lost Loreldians here never mended this one."
-}
-
-{ gm_nash_cryskey_found
-	if ( GM_NASH_KEYS equals 'GM_NASH_KEYS' ) setvard GM_NASH_KEYS 0
-	add GM_NASH_KEYS 1
-	infomsg PARAM1 "ARTIFACT FOUND" "You've found an ancient Loreldian crystal key."
-}
-
-{ gm_crys_key_activate //<user> <key_index:1|2>
-	dbg gm_crys_key_activate PARAM2
-
-	if !GM_NASH_KEYS_DONE
-
-	local L_KEY_IDX PARAM2
-
-	if ( L_KEY_IDX == 1 )
-	{
-		if GM_NASH_KEY1_USED
-		local EXIT_SUB 1
-	}
-
-	if ( L_KEY_IDX == 2 )
-	{
-		if GM_NASH_KEY2_USED
-		local EXIT_SUB 1
-	}
-	if !EXIT_SUB
-
-	if ( GM_NASH_KEYS == 0 )
-	{
-		if ( PARAM1 equals GM_LAST_PLAYER )
-		{
-			//dont spam the same guy
-			if game.time < GM_NEXT_NASH_MSG
-			local EXIT_SUB 1
-		}
-		if !EXIT_SUB
-	
-		setvard GM_NEXT_NASH_MSG game.time
-		add GM_NEXT_NASH_MSG 10.0
-		setvard GM_LAST_PLAYER PARAM1
-
-		infomsg PARAM1 "CRYSTAL SOCKET KEYHOLE" "This appears to be a crystal shaped socket."
-	}
-	else
-	{
-		if ( GM_NASH_KEYS_USED equals 'GM_NASH_KEYS_USED' ) setvard GM_NASH_KEYS_USED 0
-		add GM_NASH_KEYS_USED 1
-		subtract GM_NASH_KEYS 1
-		if ( L_KEY_IDX == 1 )
-		{
-			usetrigger rend_key1_on
-			setvard GM_NASH_KEY1_USED 1
-		}
-		if ( L_KEY_IDX == 2 )
-		{
-			usetrigger rend_key2_on
-			setvard GM_NASH_KEY2_USED 1
-		}
-
-		gplayermessage PARAM1 "You insert the Loreldian crystal into the socket."
-
-		if GM_NASH_KEYS_USED == 2
-		usetrigger brk_lordoor
-		setvard GM_NASH_KEYS_DONE 1
-
-		callexternal $get_by_name(metal_cave) ext_clearout
-	}
-}
-
 { gm_playmp3 //<duration> <mp3name>
 	local OUT_PAR1 PARAM1
 	local OUT_PAR2 PARAM2
@@ -3266,28 +2413,6 @@
 		setvard GM_HANDLE_ACTIVATES 0
 	}
 }
-
-{ gm_map_m2_quest_setmusic //<target>
-	local SYLPH_ID $get_by_name(sylphiel)
-	if ( $get(SYLPH_ID,scriptvar,'DID_FIRST_HELP') )
-	{
-		if ( !$get(SYLPH_ID,scriptvar,'ALL_QUESTS_DONE') )
-		{
-			//player on quest, play questie music
-			callexternal PARAM1 ext_play_music_me 2.0 music/FortFraeyOrch.mp3
-		}
-		else
-		{
-			//quests done, play some ambiance
-			callexternal PARAM1 ext_play_music_me 5.0 idemarks_tower_elegie-in-bb-minor.mp3
-		}
-	}
-}
-
-//{ gm_arrow_test
-//	local TARG_ID $get_by_idx(PARAM1,id)
-//	dbg gm_arrow_test PARAM1 $get(TARG_ID,name) TARG_ID
-//}
 
 { gm_scramble_treasure
 	token.scramble G_NOOB_ITEMS1
@@ -3354,127 +2479,12 @@
 	dbg # CUR_EPIC $g_get_array(G_ARRAY_EPIC,CUR_EPIC)
 }
 
-{ clmsg_test //<index> <message to pass> called from developer/clmsgtest
-
-	//Tells the player that it got their clmsg test & the message they passed
-	infomsg $get_by_idx(PARAM1,id) "Got clmsg with msg:" PARAM2
-}
-
 { gm_ms_text //<npc_name> <text> called by ms_text ent - but should work fine from anywhere
 	dbg gm_ms_text PARAM1 PARAM2
 	local L_NAME PARAM1
 	local L_TEXT PARAM2
 	name L_NAME
 	saytext L_TEXT
-}
-
-{ gm_map_rmines_dinnerbell //<triggerboi>
-	callexternal $get_by_name(aby_worm) dinner_bell
-}
-
-{ gm_map_rmines_killspawns
-	if !GM_DID_KILLSPAWN
-	setvard GM_DID_KILLSPAWN 1
-	setvarg G_TRACK_DEATHS -1
-
-	array.create ARRAY_SPAWNLIST
-	array.add ARRAY_SPAWNLIST boss1
-	array.add ARRAY_SPAWNLIST goblins1
-	array.add ARRAY_SPAWNLIST trolls1
-	array.add ARRAY_SPAWNLIST lshaman1
-	array.add ARRAY_SPAWNLIST goblins1
-	array.add ARRAY_SPAWNLIST pouncer1
-	array.add ARRAY_SPAWNLIST stone_troll1_spawner
-	array.add ARRAY_SPAWNLIST flood_room1_goblins
-	array.add ARRAY_SPAWNLIST flood_room1_zombies
-	array.add ARRAY_SPAWNLIST lshaman2
-	array.add ARRAY_SPAWNLIST lshaman3_spawner
-	array.add ARRAY_SPAWNLIST loading_room_trolls
-	array.add ARRAY_SPAWNLIST loading_room_undead
-	array.add ARRAY_SPAWNLIST loading_room_goblins
-	array.add ARRAY_SPAWNLIST troll_stone2
-	array.add ARRAY_SPAWNLIST lshaman_loading_room
-	array.add ARRAY_SPAWNLIST loading_room_bloat1
-	array.add ARRAY_SPAWNLIST loading_room_bloat2
-	array.add ARRAY_SPAWNLIST flood_room2_goblins
-	array.add ARRAY_SPAWNLIST plat_room1_goblins
-	array.add ARRAY_SPAWNLIST plat_room1_zombies
-	array.add ARRAY_SPAWNLIST plat_room1_slimes
-	array.add ARRAY_SPAWNLIST boss_room1
-	array.add ARRAY_SPAWNLIST bomberxbow1
-	array.add ARRAY_SPAWNLIST zombie_bloat1
-	array.add ARRAY_SPAWNLIST waterslimes1
-	array.add ARRAY_SPAWNLIST slime_boss
-	array.add ARRAY_SPAWNLIST flood_room4
-	array.add ARRAY_SPAWNLIST flood_room2_water
-	array.add ARRAY_SPAWNLIST flood_room2_zombies
-	array.add ARRAY_SPAWNLIST horrors1
-	array.add ARRAY_SPAWNLIST lhorror_spawner
-	array.add ARRAY_SPAWNLIST vampire_bat_spawn
-	array.add ARRAY_SPAWNLIST bats1
-	array.add ARRAY_SPAWNLIST shrieker_spawner
-	array.add ARRAY_SPAWNLIST ogre_stone_spawner
-	array.add ARRAY_SPAWNLIST box_room1_zombies
-	array.add ARRAY_SPAWNLIST box_room1_goblins
-	array.add ARRAY_SPAWNLIST box_room1_random
-	array.add ARRAY_SPAWNLIST loading_room_random
-	array.add ARRAY_SPAWNLIST tunnels1
-	array.add ARRAY_SPAWNLIST tunnels2
-	array.add ARRAY_SPAWNLIST flood_room3
-
-	setvard GM_SPAWNKILL_COUNT 0
-	setvard GM_SPAWNKILL_MAX $get_array_amt(ARRAY_SPAWNLIST)
-	callevent gm_remove_spawns_loop
-}
-
-{ gm_map_fmines_killspawns
-	if !GM_DID_KILLSPAWN
-	setvard GM_DID_KILLSPAWN 1
-	setvarg G_TRACK_DEATHS -1
-
-	array.create ARRAY_SPAWNLIST
-	array.add ARRAY_SPAWNLIST cavespider
-	array.add ARRAY_SPAWNLIST caveshrine
-	array.add ARRAY_SPAWNLIST cave5
-	array.add ARRAY_SPAWNLIST cave6
-	array.add ARRAY_SPAWNLIST mini_boss
-	array.add ARRAY_SPAWNLIST cave2undead
-	array.add ARRAY_SPAWNLIST cave2goblin
-	array.add ARRAY_SPAWNLIST cave2troll
-	array.add ARRAY_SPAWNLIST cave2slime
-	array.add ARRAY_SPAWNLIST cave4aundead
-	array.add ARRAY_SPAWNLIST cave4agoblin
-	array.add ARRAY_SPAWNLIST cavemainslime
-	array.add ARRAY_SPAWNLIST cavemaingoblin
-	array.add ARRAY_SPAWNLIST cave3goblin
-	array.add ARRAY_SPAWNLIST cave3undead
-	array.add ARRAY_SPAWNLIST cave3slime
-	array.add ARRAY_SPAWNLIST cave1bat
-	array.add ARRAY_SPAWNLIST cave1undead
-	array.add ARRAY_SPAWNLIST cave1slime
-	array.add ARRAY_SPAWNLIST cave8goblin
-	array.add ARRAY_SPAWNLIST cave8undead
-	array.add ARRAY_SPAWNLIST cave8slime
-	array.add ARRAY_SPAWNLIST cave7horror
-	array.add ARRAY_SPAWNLIST cave4bgoblin
-	array.add ARRAY_SPAWNLIST cave4bundead
-	array.add ARRAY_SPAWNLIST cavespider
-
-	setvard GM_SPAWNKILL_COUNT 0
-	setvard GM_SPAWNKILL_MAX $get_array_amt(ARRAY_SPAWNLIST)
-	callevent gm_remove_spawns_loop
-}
-
-{ gm_remove_spawns_loop
-	local CUR_SPAWN $get_array(ARRAY_SPAWNLIST,GM_SPAWNKILL_COUNT)
-	deleteent $get_by_name(CUR_SPAWN) remove
-	if GM_SPAWNKILL_COUNT < GM_SPAWNKILL_MAX
-	add GM_SPAWNKILL_COUNT 1
-	callevent 1.0 gm_remove_spawns_loop
-}
-
-{ ext_rmines_clear
-	callevent gm_suspend_mob_spawns 1
 }
 
 { gm_suspend_mob_spawns //0|1

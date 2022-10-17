@@ -1,0 +1,93 @@
+{ gm_nash_tear
+	callexternal $get_by_name(metal_cave) ext_refresh_cl_fx
+
+	if ( GM_TEAR_TRACKER equals 'GM_TEAR_TRACKER' )
+	{
+		setvard GM_TEAR_TRACKER ''
+	}
+
+	if ( GM_TEAR_TRACKER contains PARAM1 )
+	{
+		gplayermessage PARAM1 "Exiting reality tear..."
+		local L_TOKEN_IDX $get_find_token(GM_TEAR_TRACKER,PARAM1)
+		token.del GM_TEAR_TRACKER L_TOKEN_IDX
+		local EXIT_SUB 1
+	}
+	else
+	{
+		gplayermessage PARAM1 "Entering reality tear..."
+	}
+	if !EXIT_SUB
+
+	token.add GM_TEAR_TRACKER PARAM1
+
+	infomsg PARAM1 "TEAR IN REALITY" "A tear in reality from the Wars of Fate. Apparently, the Lost Loreldians here never mended this one."
+}
+
+{ gm_nash_cryskey_found
+	if ( GM_NASH_KEYS equals 'GM_NASH_KEYS' ) setvard GM_NASH_KEYS 0
+	add GM_NASH_KEYS 1
+	infomsg PARAM1 "ARTIFACT FOUND" "You've found an ancient Loreldian crystal key."
+}
+
+{ gm_crys_key_activate //<user> <key_index:1|2>
+	dbg gm_crys_key_activate PARAM2
+
+	if !GM_NASH_KEYS_DONE
+
+	local L_KEY_IDX PARAM2
+
+	if ( L_KEY_IDX == 1 )
+	{
+		if GM_NASH_KEY1_USED
+		local EXIT_SUB 1
+	}
+
+	if ( L_KEY_IDX == 2 )
+	{
+		if GM_NASH_KEY2_USED
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	if ( GM_NASH_KEYS == 0 )
+	{
+		if ( PARAM1 equals GM_LAST_PLAYER )
+		{
+			//dont spam the same guy
+			if game.time < GM_NEXT_NASH_MSG
+			local EXIT_SUB 1
+		}
+		if !EXIT_SUB
+	
+		setvard GM_NEXT_NASH_MSG game.time
+		add GM_NEXT_NASH_MSG 10.0
+		setvard GM_LAST_PLAYER PARAM1
+
+		infomsg PARAM1 "CRYSTAL SOCKET KEYHOLE" "This appears to be a crystal shaped socket."
+	}
+	else
+	{
+		if ( GM_NASH_KEYS_USED equals 'GM_NASH_KEYS_USED' ) setvard GM_NASH_KEYS_USED 0
+		add GM_NASH_KEYS_USED 1
+		subtract GM_NASH_KEYS 1
+		if ( L_KEY_IDX == 1 )
+		{
+			usetrigger rend_key1_on
+			setvard GM_NASH_KEY1_USED 1
+		}
+		if ( L_KEY_IDX == 2 )
+		{
+			usetrigger rend_key2_on
+			setvard GM_NASH_KEY2_USED 1
+		}
+
+		gplayermessage PARAM1 "You insert the Loreldian crystal into the socket."
+
+		if GM_NASH_KEYS_USED == 2
+		usetrigger brk_lordoor
+		setvard GM_NASH_KEYS_DONE 1
+
+		callexternal $get_by_name(metal_cave) ext_clearout
+	}
+}
