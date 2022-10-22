@@ -11,7 +11,7 @@ echo.
 cd .\scripts
 echo Setting time stamp.
 echo { >beta_date.script
-echo 	const BETA_TIMESTAMP "%date%" >>beta_date.script
+echo 	const BETA_TIMESTAMP "CANARY: %date% %time%" >>beta_date.script
 echo } >>beta_date.script
 echo Compiling...
 cd ../

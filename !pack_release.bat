@@ -21,7 +21,7 @@ echo.
 
 cd .\scripts
 echo { >beta_date.script
-echo 	const BETA_TIMESTAMP "DEVELOPER %date% %time%" >>beta_date.script
+echo 	const BETA_TIMESTAMP "RELEASE: %date% %time%" >>beta_date.script
 echo } >>beta_date.script
 echo Done.
 cd ../
