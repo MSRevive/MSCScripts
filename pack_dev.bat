@@ -17,7 +17,7 @@ echo Compiling...
 cd ../
 
 echo ====================== Compiling...
-start cmd /c scriptpack.exe -ve ^& pause
+start cmd /c scriptpack.exe -vef ^& pause
 echo Completed at %date% %time%
 
 goto :end
