@@ -1,17 +1,58 @@
-//Regeneration
+//Regeneration //attempting to optimize (DEC2008) -Thothie
 //(This is constant regen - even while walking/running/fighting.  1 hp/12 sec)
 //(Regen for sitting is in the sitting emote script and is added to this)
 
 {
-	const REGEN_HP_DELAY	12
-	const REGEN_MP_DELAY	12
-	const THOTH_REGEN_RATE 12.0 //attempting to optimize (DEC2008)
-	setvard regen.hp.amt	1
-	setvard regen.mp.amt	1
+	//Base regeneration rates.
+	const BASE_REGEN_RATE 12.0
+	const BASE_REGEN_HP 1
+	const BASE_REGEN_MP 1
+	
+	//Bloodstone ring bonuses
+	setvard BLOODSTONE_EQUIPPED 0 //Bloodstone ring bonus
+	//local L_BLOODSTONE_BONUS_HP $math(divide,$get(ent_me,maxhp),100) //Maxhp / 100, or 1% of maxhp.
+	setvard BLOODSTONE_BONUS_RATE 6.0 //Minus 6 seconds per HP tick
+	
+	//Set up vars for variable rates so items or other things can influence these values.
+	callevent calculate_new_regen
 }
 
-{ thoth_regen
-repeatdelay THOTH_REGEN_RATE
-	givehp ent_me regen.hp.amt
-	givemp ent_me regen.mp.amt
+{ calculate_new_regen
+
+	//Set up vars for variable rates so items or other things can influence these values.
+	setvard FINAL_REGEN_RATE_HP BASE_REGEN_RATE
+	setvard FINAL_REGEN_HP BASE_REGEN_HP
+	
+	setvard FINAL_REGEN_RATE_MP BASE_REGEN_RATE
+	setvard FINAL_REGEN_MP BASE_REGEN_MP
+	
+	if ( BLOODSTONE_EQUIPPED ) callevent calculate_bloodstone_bonus
+}
+
+{ calculate_bloodstone_bonus
+
+	local L_BLOODSTONE_BONUS_HP $math(divide,$get(ent_me,maxhp),100) //Maxhp / 100, or 1% of maxhp.
+
+	subtract FINAL_REGEN_RATE_HP BLOODSTONE_BONUS_RATE
+	add FINAL_REGEN_HP L_BLOODSTONE_BONUS_HP
+}
+
+{ player_regen_hp
+	
+	repeatdelay FINAL_REGEN_RATE_HP
+	
+	givehp ent_me FINAL_REGEN_HP
+}
+
+{ player_regen_mp
+	
+	repeatdelay FINAL_REGEN_RATE_MP
+	
+	givemp ent_me FINAL_REGEN_MP
+}
+
+{ bloodstone_toggle //PARAM1 = <0|1>
+
+	setvard BLOODSTONE_EQUIPPED PARAM1
+	callevent calculate_new_regen
 }

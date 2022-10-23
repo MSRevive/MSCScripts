@@ -10,69 +10,33 @@
 @echo off
 
 set script_path=scripts
-set out_path=scriptout
 
 :loop
 title Packing TEST SC.DLL %date% %time%
 echo.
-pause
-echo.
-echo.
-cd .\scripts
 
 echo.
 echo ====================== Setting time stamp... 
 echo.
 
-echo.
+cd .\scripts
 echo { >beta_date.script
-echo 	const BETA_TIMESTAMP "DEVELOPER %date% %time%" >>beta_date.script
+echo 	const BETA_TIMESTAMP "RELEASE: %date% %time%" >>beta_date.script
 echo } >>beta_date.script
 echo Done.
-cd ..
+cd ../
 
 echo.
 echo ====================== Moving developer folder... 
-echo.
-
 move %cd%\%script_path%\developer %cd%
 echo Done.
 
-echo.
-echo ====================== Clearing output folder... 
-echo.
-
-del %cd%\%out_path%\*.*
-rmdir %cd%\%out_path% /s
-echo Done.
-
-echo.
-echo ====================== Cooking Scripts... 
-echo.
-
-cookscripts.exe %cd%\%script_path%\ %cd%\%out_path%\
-echo Done.
-
 echo ====================== Compiling...
-echo.
-
-copy .\Scriptpack.exe %out_path%
-cd %out_path%
-ScriptPack.exe
+start cmd /c scriptpack.exe -ref ^& pause
 echo Done.
-
-echo.
-echo ====================== Propogating...
-echo.
-
-copy .\sc.dll ..\
-echo All done!
-cd ..
 
 echo.
 echo ====================== Moving developer folder back... 
-echo.
-
 move %cd%\developer %cd%\%script_path%
 echo Done.
 
