@@ -173,9 +173,9 @@
 	setorigin ent_me LATCH_POS
 	setangle face $vec(0,TARG_YAW,0)
 	setfollow LATCH_TARGET align_bottom
+	setvard LATCH_END game.time
+	add LATCH_END 20.0
 	callevent latch_think
-	//setvard LATCH_END game.time
-	//add LATCH_END 20.0
 	applyeffect LATCH_TARGET effects/goblin_latch $get(ent_me,id)
 	if $get(LATCH_TARGET,isplayer)
 	local OUT_TITLE $get(LATCH_TARGET,name)
@@ -195,8 +195,8 @@
 	callevent 0.25 latch_think
 	//not letting go unless either I or the player dies
 	if ( !$get(LATCH_TARGET,isalive) ) callevent end_latch
-	//if AM_LATCHED
-	//if ( game.time > LATCH_END ) callevent end_latch
+	if AM_LATCHED
+	if ( game.time > LATCH_END ) callevent end_latch
 }
 
 { end_latch
@@ -211,11 +211,11 @@
 	add NEXT_LATCH_ATTEMPT FREQ_LEAP
 	callevent exit_ride_mode
 	playsound 0 10 SOUND_LAUGH
-//	if ( $get(LATCH_TARGET,isalive) )
-//	{
-//		callevent npcatk_flee LATCH_TARGET 1024 3.0
-//		addvelocity ent_me $relvel(0,-600,110)
-//	}
+	if ( $get(LATCH_TARGET,isalive) )
+	{
+		callevent npcatk_flee LATCH_TARGET 1024 3.0
+		addvelocity ent_me $relvel(0,-600,110)
+	}
 }
 
 { bs_global_command
@@ -225,11 +225,12 @@
 	callevent end_latch
 }
 
-{ game_damaged
+{ game_damaged //PARAM1=attacker PARAM2=dmg PARAM3=dmg_type PARAM4=accuracy_roll PARAM5=skill
 	if AM_LATCHED
 	dbg game_damaged AM_LATCHED by $get(PARAM1,name) vs $get(LATCH_TARGET,name)
 	if $get(LATCH_TARGET,isalive) //probably redundant, but odd reports
 	if PARAM1 equals LATCH_TARGET
+	if PARAM3 !contains 'effect'
 	setdmg hit 0
 	setdmg dmg 0
 	return 0
@@ -294,6 +295,7 @@
 	if AM_LATCHED
 	if $get(LATCH_TARGET,isalive)
 	dodamage LATCH_TARGET direct DMG_POUND 100% ent_me blunt_effect
+
 	if ( game.time > NEXT_LAUGH )
 	{
 		setvard NEXT_LAUGH game.time
@@ -343,17 +345,4 @@
 	//pick a random player target to ensure anti-stuck keeps pulsing after a ride
 	//in case I fell off map
 	callevent npcatk_settarget RND_PLR "random_select"
-}
-
-//while latched, positive effects pass to latchie
-{ game_applyeffect
-	if AM_LATCHED
-	//<"applyeffect"|"applyeffectstack"> <target> <effectscript> [params...]
-	if ( PARAM3 contains shield ) local L_PASS_EFFECT 1
-	if ( PARAM3 contains heal ) local L_PASS_EFFECT 1
-	if ( PARAM3 contains rejuv ) local L_PASS_EFFECT 1
-	if L_PASS_EFFECT
-	local L_RETURN redirect
-	token.add L_RETURN LATCH_TARGET
-	returndata L_RETURN
 }

@@ -1,0 +1,75 @@
+{ gm_bloodshrine_sorc_check
+	setvard PLAYER_LIST 0
+	getplayers PLAYER_LIST
+	setvard GM_BLOOD_DRINKER_FOUND 0
+	calleventloop $get_token_amt(PLAYER_LIST) search_for_blood_drinker
+	if ( GM_BLOOD_DRINKER_FOUND )
+	{
+		usetrigger spawn_zorcs_friendly
+	}
+	else
+	{
+		usetrigger spawn_zorcs_hostile
+	}
+}
+
+{ gm_bloodshrine_sorc_door
+	if ( GM_BLOOD_DRINKER_FOUND )
+	{
+		usetrigger sorc_door1
+		callexternal all ext_fsorc_init
+	}
+	else
+	{
+		usetrigger sorc_door1
+		usetrigger sorc_door2
+	}
+}
+
+{ search_for_blood_drinker
+   local CUR_IDX game.script.iteration
+   local CUR_PLAYER $get_token(PLAYER_LIST,CUR_IDX)
+   if $item_exists(CUR_PLAYER,swords_blood_drinker)
+   setvard GM_BLOOD_DRINKER_FOUND 1
+}
+
+{ gm_bloodshrine_boss_fx
+	local BOSS_ID $get_by_name(shadowform_boss)
+	if $get(BOSS_ID,isalive)
+	callexternal BOSS_ID ext_cl_fx_update
+}
+
+{ gm_bloodshrine_sfs_dead
+	callexternal all fsorc_unwait
+	setvard GM_SFS_DEAD 1
+}
+
+{ gm_bloodshrine_fsorc_tele
+	if GM_SFS_DEAD
+	if !GM_INIT_TO_TELE
+	local L_SHAMAN_ID $get_by_name(fsorc_shaman)
+	local L_LEADER_ID $get_by_name(fsorc_leader)
+	local L_SECOND_ID $get_by_name(fsorc_second)
+	local TELE_POINT $vec(512,128,-16)
+	
+	local L_ORG $get(L_SHAMAN_ID,origin)
+	if ( $dist(L_ORG,L_ORG) < 600 ) local INIT_MOVE_TO_TELE 1
+
+	local L_ORG $get(L_LEADER_ID,origin)
+	if ( $dist(L_ORG,L_ORG) < 600 ) local INIT_MOVE_TO_TELE 1
+
+	local L_ORG $get(L_SECOND_ID,origin)
+	if ( $dist(L_ORG,L_ORG) < 600 ) local INIT_MOVE_TO_TELE 1
+
+	if INIT_MOVE_TO_TELE
+
+	callexternal all fsorc_move_tele
+}
+
+{ gm_bloodshrine_hold_sfs
+	if !GM_DID_SFS_ALERT
+	local L_SHAMAN $get_by_name(fsorc_shaman)
+	if $get(L_SHAMAN,isalive)
+	setvard GM_DID_SFS_ALERT 1
+	callexternal L_SHAMAN ext_wait_sfs_loop
+}

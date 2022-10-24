@@ -19,14 +19,18 @@
 	setsolid none
 	
 	callevent FX_DURATION end_me_please
+	playsound 2 10 magic/hburst_sco_lgrinholy01.wav
 }
 
-{ game_dynamically_created //<owner> <yaw> <speed>
+{ game_dynamically_created //<owner> <yaw> <level-casted-as> <skill-to-level>
 
 	setvard FX_OWNER PARAM1
-	setvard FX_ORIGIN $get(ent_me,origin)
 	setvard FX_YAW PARAM2
-	setvard FX_SPEED PARAM3
+	setvard FX_LEVEL PARAM3
+	setvard FX_SKILL PARAM4
+	
+	setvard FX_ORIGIN $get(ent_me,origin)
+	setvard FX_SPEED 150
 
 	clientevent new all $get(ent_me,scriptname) FX_ORIGIN FX_YAW FX_SPEED
 	setvard FX_SCRIPT_ID game.script.last_sent_id
@@ -46,9 +50,9 @@
 		
 		//Deal damage
 		vectoradd L_POS z 32
-		local L_DMG $get(FX_OWNER,skill.spellcasting.divination)
+		local L_DMG FX_LEVEL
 		multiply L_DMG 2
-		xdodamage L_POS 128 L_DMG 0 FX_OWNER ent_me spellcasting.divination holy_effect dmgevent:*holywave
+		xdodamage L_POS 128 L_DMG 0 FX_OWNER ent_me FX_SKILL holy_effect dmgevent:*holywave
 		//<target|(src_origin)> <range|aoe|(dest_origin)|direct> <damage> <cth|fall_off> <attacker> <inflciter> <skill|none> <dmg_type> [flag_string]
 	
 		clientevent update all FX_SCRIPT_ID sfx_wave_explody
@@ -62,19 +66,27 @@
 
 { holywave_dodamage //PARAM1=hit:0|1 PARAM2=ent_hit PARAM3=(start) PARAM4=(end) PARAM5=DmgType PARAM6=DmgAmt
 
-	if ( $get(PARAM2,relationship,FX_OWNER) equals enemy ) local L_ENEMY 1
+	local L_RELATIONSHIP $get(PARAM2,relationship,FX_OWNER)
+
+	if ( L_RELATIONSHIP equals enemy ) local L_ENEMY 1
 	if ( $get(PARAM2,isplayer) ) local L_ENEMY 0
 	if ( L_ENEMY )
 	{
 		if PARAM1
-		local L_DOT $get(FX_OWNER,skill.spellcasting.divination)
+		local L_DOT FX_LEVEL
 		multiply L_DOT 0.5
 		applyeffect PARAM2 effects/effect_holy_dmg 5.0 FX_OWNER L_DOT
 	}
-	else
+	else if ( L_RELATIONSHIP equals ally )
 	{
-		//if !$get(PARAM2,isplayer)
-		callevent ce_wave_do_heal $get(PARAM2,id)
+		local L_HEAL 1
+		
+		if ( $get(PARAM2,isplayer) )
+		{
+			if ( game.pvp ) local L_HEAL 0
+		}
+
+		if ( L_HEAL ) callevent ce_wave_do_heal $get(PARAM2,id)
 	}
 }
 
@@ -83,7 +95,7 @@
 	local L_IS_ME 0
 	local L_ADD_DMG_POINTS 0
 
-	local L_DOT $get(FX_OWNER,skill.spellcasting.divination)
+	local L_DOT FX_LEVEL
 	multiply L_DOT 4
 	effect glow PARAM1 (0,255,0) 256 0.5 0.5
 
@@ -122,17 +134,6 @@
 		if ( L_ADD_DMG_POINTS )
 		{
 			callexternal FX_OWNER add_dmg_points L_DOT
-		}
-	}
-	else
-	{
-		if ( L_IS_ME )
-		{
-			gplayermessage FX_OWNER You are at maximum health
-		}
-		else
-		{
-			gplayermessage FX_OWNER $get(PARAM1,name) is at maximum health
 		}
 	}
 }

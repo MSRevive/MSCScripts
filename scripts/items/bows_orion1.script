@@ -74,22 +74,33 @@
 }
 
 { game_attack1_down
+
 	if game.time > NEXT_ATTACK
-	playviewanim ANIM_FIRE
-	if $get(ent_owner,canattack)
 	setvard NEXT_ATTACK game.time
-	add NEXT_ATTACK 0.2
-	if !AM_CHARGING
-	setvard AM_CHARGING 1
-  	//callevent RANGED_PULLTIME ranged_stretchbow
-	if game.serverside
-	setvard BALL_SIZE 0
-	setvard BALL_DMG 0
-  	playowneranim critical bow_pull global.anim.combatwalk
-	if ( !TALLY_ACTIVE )
+	add NEXT_ATTACK 0.75
+	if ( !AM_CHARGING )
 	{
-		setvard TALLY_ACTIVE 1
-		callevent tally_stretch
+		if ( $get(ent_owner,mp) > MP_DRAIN )
+		{
+			playviewanim ANIM_FIRE
+			if $get(ent_owner,canattack)
+			setvard AM_CHARGING 1
+			//callevent RANGED_PULLTIME ranged_stretchbow
+			if game.serverside
+			setvard BALL_SIZE 0
+			setvard BALL_DMG 0
+			playowneranim critical bow_pull global.anim.combatwalk
+			if ( !TALLY_ACTIVE )
+			{
+				setvard TALLY_ACTIVE 1
+				callevent tally_stretch
+			}
+		}
+		else
+		{
+			dplayermessage ent_owner "You lack the mana to start charging a mana ball."
+			cancelattack
+		}
 	}
 }
 
@@ -122,6 +133,8 @@
 		clientevent update all BOW_CL_IDX add_charge
 	}
 	
+	splayviewanim ent_me 2 //Stretch
+	
 	if ( $get(ent_owner,mp) <= MP_DRAIN )
 	{
 		setvard MAX_LEVEL 1
@@ -145,11 +158,18 @@
 
 	setvard BALL_DMG BALL_SIZE
 	multiply BALL_DMG DMG_MULTI
+	
+	if ( $get(ent_owner,skill.archery.proficiency) < BASE_LEVEL_REQ )
+	{
+		setvard MAX_LEVEL 1
+		setvard BALL_DMG 0.1
+	}
 }
 
 { game_-attack1
 
 	//deleteent BALOON_ID
+	playviewanim 0
 
 	if AM_CHARGING
 
