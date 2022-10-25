@@ -1,6 +1,7 @@
 //Flesheater Gauntlets by CrazyMonkeyDude 
 //from blunt_gauntlets_demon and blunt_gauntlets_fire
 
+
 {
 	setvar NO_BANK 1
 
@@ -30,17 +31,17 @@
 	const MELEE_DMG_RANGE      0
 	const MELEE_DMG_TYPE  acid
 	const MELEE_ACCURACY  85%
-	const MELEE_DMG_DELAY 0.3
-	const MELEE_ATK_DURATION 0.9
+	const MELEE_DMG_DELAY 0.35
+	const MELEE_ATK_DURATION 0.45
 	const MELEE_AFFLIC_RATIO 0.5
 	const MELEE_AFFLICDMG_MIN 10
 
 	const GOUGE_MPDRAIN 15
 	const GOUGE_MPSTEAL 10
-	const GOUGE_LIFESTEAL_RATIO 0.06
+	const GOUGE_LIFESTEAL_RATIO 0.10
 
 	const AURA_DOT_RATIO 0.3
-	const AURA_RADIUS 64
+	const AURA_RADIUS 80
 
 	const SOUND_SWIPE zombie/claw_miss1.wav
 	const SOUND_HITWALL1 weapons/cbar_hit1.wav
@@ -56,7 +57,7 @@
 	const MELEE_RANGE 50
 	const REACH_MELEE_RANGE 100
 	const MELEE_ENERGY 1
-	const MELEE_STAT martialarts
+	const MELEE_STAT spellcasting.affliction
 	const MELEE_VIEWANIM_ATK ANIM_ATTACK1
 
 	const MELEE_SOUND SOUND_SWIPE
@@ -67,16 +68,23 @@
 
 	const SOUND_GAS_ON ambience/steamburst1.wav
 	
+	const LAME_VARIANT 1
+	
 }
 
 { game_precache
 	precache poison_cloud.spr
 }
 
+{ game_pickup
+
+	if ( LAME_VARIANT ) callevent 0.6 check_level_vc
+}
+
 #include items/base_melee
 #include items/base_kick
 
-{  weapon_spawn
+{ weapon_spawn
 
    name 	"Flesheater's Claws"
    desc 	Claws have burst from your hands!
@@ -88,9 +96,22 @@
    sethudsprite trade gauntlets
 
 	callevent 0.1 facid_aura
+
 	//callevent 0.1 timer_start
 
 	//callevent 0.1 pot_check
+}
+
+{ check_level_vc 
+
+	if !CHECKED_LEVEL
+	setvard CHECKED_LEVEL 1
+	if ( $get(ent_owner,skill.spellcasting.affliction) >= 27 )
+	{
+		playermessage "Your affliction level strengthens the claws..."
+		createnpc monsters/companion/spell_maker_base $vec(1000,1000,10000) $get(ent_owner,id) blunt_gauntlets_fe2 none none none
+		deleteme
+	}
 }
 
 { [override] melee_start
@@ -104,20 +125,20 @@
 	if ( RND_ATTACK == 4 ) playviewanim  ANIM_ATTACK4
 
 
-  if( PUNCH_ATTACK == 0 )
-  {
-   local l.punch_anim stance_normal_lowjab_r1
-   setvard PUNCH_ATTACK 1
-  }
-  else if( PUNCH_ATTACK == 1 )
-  {
-   local l.punch_anim stance_normal_lowjab_r2
-   setvard PUNCH_ATTACK 0
-  }
+	if( PUNCH_ATTACK == 0 )
+	{
+		local l.punch_anim stance_normal_lowjab_r1
+		setvard PUNCH_ATTACK 1
+	}
+	else if( PUNCH_ATTACK == 1 )
+	{
+		local l.punch_anim stance_normal_lowjab_r2
+		setvard PUNCH_ATTACK 0
+	}
 
-  playowneranim once l.punch_anim global.anim.combatwalk 3
+	playowneranim once l.punch_anim global.anim.combatwalk 3
 
-  playsound const.sound.item 5 SOUND_SWING
+	playsound const.sound.item 5 SOUND_SWING
 }
 
 { game_dodamage //1: Attack Hit (1/0)  2: Entity Attack hit  3:  Start Position  4:  End Position
@@ -146,29 +167,28 @@
 }
 
 { weapon_spawn
-   local CHARGE2_REQ BASE_LEVEL_REQ
-   add CHARGE2_REQ 2
+   local CHARGE2_REQ 22
 
 	//Gouge Attack	
-   local reg.attack.type		strike-land
-   local reg.attack.keys		-attack1
-   local reg.attack.range		REACH_MELEE_RANGE
-   local reg.attack.dmg			0
-   local reg.attack.dmg.range		0
-   local reg.attack.dmg.type		pierce
-   local reg.attack.energydrain		2
-   local reg.attack.stat		martialarts
-   local reg.attack.hitchance		85%
-   local reg.attack.priority		2
-   local reg.attack.delay.strike	0.2
-   local reg.attack.delay.end		0.9
-   local reg.attack.ofs.startpos	MELEE_STARTPOS
-   local reg.attack.ofs.aimang		MELEE_AIMANGLE
-   local reg.attack.callback		gouge
-   local reg.attack.noise		MELEE_NOISE
-   local reg.attack.mpdrain		0
-   local reg.attack.chargeamt		200%
-   local reg.attack.reqskill		CHARGE2_REQ
+   local reg.attack.type strike-land
+   local reg.attack.keys -attack1
+   local reg.attack.range REACH_MELEE_RANGE
+   local reg.attack.dmg 0
+   local reg.attack.dmg.range 0
+   local reg.attack.dmg.type pierce
+   local reg.attack.energydrain 2
+   local reg.attack.stat spellcasting.affliction
+   local reg.attack.hitchance 85%
+   local reg.attack.priority 2
+   local reg.attack.delay.strike 0.2
+   local reg.attack.delay.end 0.9
+   local reg.attack.ofs.startpos MELEE_STARTPOS
+   local reg.attack.ofs.aimang MELEE_AIMANGLE
+   local reg.attack.callback gouge
+   local reg.attack.noise MELEE_NOISE
+   local reg.attack.mpdrain 0
+   local reg.attack.chargeamt 200%
+   local reg.attack.reqskill CHARGE2_REQ
 
 	local reg.spell.castsuccess 100%
 	local reg.spell.preparetime 0
@@ -205,11 +225,11 @@
 	if !EXIT_SUB
 
 	if $can_damage(ent_owner,PARAM3)
-	local DMG_SET $get(ent_owner,skill.martialarts.ratio)
+	local DMG_SET $get(ent_owner,skill.spellcasting.affliction.ratio)
 	multiply DMG_SET MELEE_DMG
-	multiply DMG_SET 6 // 6 = double melee damage (don't really know why, but that's how it works out)
+	multiply DMG_SET 3 // 6 = double melee damage (don't really know why, but that's how it works out)
 	local OWNER_TARG PARAM3
-	xdodamage OWNER_TARG REACH_MELEE_RANGE DMG_SET 85% $get(ent_owner,id) $get(ent_owner,id) martialarts acid
+	xdodamage OWNER_TARG REACH_MELEE_RANGE DMG_SET 85% $get(ent_owner,id) $get(ent_owner,id) spellcasting.affliction acid
 
 	if ( $get(PARAM3,race) isnot undead )
 	{
