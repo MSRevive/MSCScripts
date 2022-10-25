@@ -4,6 +4,8 @@
 // Slinker in Deralia
 // Magnus Damli : Fixed responses dependant on the phase of the quest; Initiation, on-going and result.
 // Magnus Damli : Fixed repeating the quest over and over without having to reload the map.
+//Fixed slinker for the new deralia, uses $cansee instead of range; can now use menu option to say "no"; uses $cansee to determine if he was hailed;
+//...sounds now automatically determine the channel so speech doesn't get cut off. greatguys1@November2018
 {
 	setvard	CAN_ATTACK 0
 	setvard	CAN_HUNT 0
@@ -22,6 +24,7 @@
 	const NO_RUMOR 1
 	const NO_JOB 1
 	const NO_HAIL 1
+	const SEE_RANGE 350
 
 	precache voices/deralia/slinker_ring.wav
 }
@@ -51,74 +54,100 @@
 	catchspeech say_no no nope naw never nah
 	catchspeech say_yes yes sure yea ok
 
-	setvard ASKED 0
+	setvard ASKED -1 //Switches to 0 when someone hails him
 	setvard GAVE_QUEST 2
 }
 
-{ say_job
-	say_hi
-}
+//{ say_job
+
+	//say_hi //Uhh... Just gonna comment that out, I forsee that causing problems.
+//}
 
 {
-repeatdelay 3.0
+	repeatdelay 3.0
 
-  //Thothie - he never does this... pisses me off no end
+	//Thothie - he never does this... pisses me off no end
 
-  if !MISSION_OVER
+	if !MISSION_OVER
 	if !CAN_HUNT
+	if $cansee(player,SEE_RANGE)
 
 	//thothie  6/29/2007 - new method
 
-	//  if $cansee(player,256) //no workie
-	getplayersnb SLINK_PLAYERS
-	setvard PLAYER_NEAR 0
-	setvard SLINKER_LOOP 0
-	calleventloop $get_token_amt(SLINK_PLAYERS) check_near
+	//getplayersnb SLINK_PLAYERS
+	//setvard PLAYER_NEAR 0
+	//setvard SLINKER_LOOP 0
+
+	//calleventloop $get_token_amt(SLINK_PLAYERS) check_near //no need for this anymore, $cansee() works for players now
 	//dbg pulse PLAYER_NEAR SLINK_PLAYERS
-	if PLAYER_NEAR
+	//if PLAYER_NEAR
+
+	setvard PLAYER_SPLOTTED $get(ent_lastseen,id) //why tf is this "splotted?"
+
 	if LAST_SPOKE_TO isnot PLAYER_SPLOTTED
-  setmovedest PLAYER_SPLOTTED 50
-  saytextrange 512
-  saytext Hey, want to make some fast cash?
-	playsound 2 10 voices/deralia/slinker1.wav
+
+	setmovedest PLAYER_SPLOTTED 50
+	saytextrange 512
+	saytext "Hey, want to make some fast cash?"
+	playsound 0 10 voices/deralia/slinker1.wav
 	setvard LAST_SPOKE_TO PLAYER_SPLOTTED
 }
 
-{ check_near
+//{ check_near //This is no longer needed
 	//dbg game.script.iteration //cant remember if this works - I think not
-	local CUR_PLAYER $get_token(SLINK_PLAYERS,SLINKER_LOOP)
-	if ( $get(CUR_PLAYER,range) < 256 )
-	{
-		setvard PLAYER_NEAR 1
-		setvard PLAYER_SPLOTTED CUR_PLAYER
-	}
-	add SLINKER_LOOP 1
-}
+//	local CUR_PLAYER $get_token(SLINK_PLAYERS,SLINKER_LOOP)
+//	if ( $get(CUR_PLAYER,range) < 256 )
+//	{
+//		if ( $get_traceline($get(ent_me,origin),$get(CUR_PLAYER,origin),worldonly) equals $get(CUR_PLAYER,origin) ) //If slinker has line of sight. greatguys1@October2018
+//		{
+//			setvard PLAYER_NEAR 1
+//			setvard PLAYER_SPLOTTED CUR_PLAYER
+//		}
+//	}
+//	add SLINKER_LOOP 1
+//}
 
 { say_hi
+
+	if ( PARAM1 isnot 'PARAM1' )
+	{
+		local L_PLAYER PARAM1
+	}
+	else
+	{
+		local L_PLAYER $get(ent_lastspoke,id)
+	}
+
+	if $cansee(L_PLAYER,SEE_RANGE)
 	if !CAN_HUNT
-	if ASKED equals 0
-	saytext You aren't a goody-two-shoes good guy, are ya?
-	playsound 2 10 voices/deralia/slinker2.wav
-	callevent bchat_mouth_move
-}
-{ say_hi
-	if !CAN_HUNT
-	if ASKED equals 1
-	saytext Well, get goin' already!
-	callevent bchat_mouth_move
-}
-{ say_hi
-	if !CAN_HUNT
-	if T_QUEST_COMPLETE equals 1
-	saytext I've got no further business with you.
-	callevent bchat_mouth_move
-}
+
+	if ( ASKED < 1 )
+	{
+		saytext "You aren't a goody-two-shoes good guy, are ya?"
+		playsound 0 10 voices/deralia/slinker2.wav
+		callevent bchat_mouth_move
+		setvard ASKED 0
+		setvard LAST_SPOKE_TO L_PLAYER
+	}
+
+	if ( ASKED == 1 )
+	{
+		saytext "Well, get goin' already!"
+		callevent bchat_mouth_move
+	}
+
+	if ( T_QUEST_COMPLETE equals 1 )
+	{
+		saytext "I've got no further business with you."
+		callevent bchat_mouth_move
+	}
+}	
 
 { say_no
 	if !CAN_HUNT
-	saytext Alright, here's the scoop. Master Proffund, that snobby nobleman who always hangs out at the bank, owes me a little money.
-	playsound 2 10 voices/deralia/slinker3.wav
+	if ASKED == 0
+	saytext "Alright, here's the scoop. Master Proffund, that snobby nobleman who always hangs out at the bank, owes me a little money."
+	playsound 0 10 voices/deralia/slinker3.wav
 	callevent bchat_auto_mouth_move 9.2
 	setvard ASKED 1
 	calleventtimed 9.2 say_instruct
@@ -126,16 +155,16 @@ repeatdelay 3.0
 
 { say_instruct
 
-	saytext A gambling man, he is, but not a very good one. Anyway, he owes me so much money, I've decided to settle for the deed to one of his nice farm properties.
-	playsound 2 10 voices/deralia/slinker4.wav
+	saytext "A gambling man, he is, but not a very good one. Anyway, he owes me so much money, I've decided to settle for the deed to one of his nice farm properties."
+	playsound 0 10 voices/deralia/slinker4.wav
 	callevent bchat_auto_mouth_move 11.5
 	calleventtimed 11.5 say_instruct2
 }
 
 { say_instruct2
 
-	saytext Go and get that deed from him for me, and I'll pay you handsomely.
-	playsound 2 10 voices/deralia/slinker5.wav
+	saytext "Go and get that deed from him for me, and I'll pay you handsomely."
+	playsound 0 10 voices/deralia/slinker5.wav
 	callexternal $get_by_name(Proffund) quest_start
 }
 
@@ -156,9 +185,9 @@ repeatdelay 3.0
 	if !T_QUEST_COMPLETE
 
 	playanim once yes
-	saytext Nice work, here's your reward.
+	saytext "Nice work, here's your reward."
 	callevent bchat_mouth_move
-	playsound 2 10 voices/deralia/slinker_reward.wav
+	playsound 0 10 voices/deralia/slinker_reward.wav
 	offer QUEST_WINNER gold 15
 	offer QUEST_WINNER health_spotion
 	setvard T_QUEST_COMPLETE 1
@@ -174,19 +203,31 @@ repeatdelay 3.0
 
 { attack_1
 
-   dodamage ent_lastseen ATTACK_RANGE $randf(6.0,9.0) ATTACK_PERCENTAGE
+	dodamage ent_lastseen ATTACK_RANGE $randf(6.0,9.0) ATTACK_PERCENTAGE
 }
 
 { game_menu_getoptions
-	local reg.mitem.title	"Say Hello"
+
+	local reg.mitem.title	"Hail"
 	local reg.mitem.type	say
 
-	local l.say $rand(2,4)
+	local l.say $rand(1,4) //This didn't use all 4 options before. Changed it to use 'em.
 	if( l.say == 1 ) local reg.mitem.data 'Hello'
 	else if( l.say == 2 )	local reg.mitem.data 'Hi'
-	else if( l.say == 3 )	local reg.mitem.data "Hail" 
+	else if( l.say == 3 )	local reg.mitem.data 'Hail'
 	else if( l.say == 4 )	local reg.mitem.data 'Greetings!'
 	menuitem.register
+
+	if ( ASKED == 0 )
+	{
+		if ( PARAM1 equals LAST_SPOKE_TO )
+		{
+			local reg.mitem.title "No"
+			local reg.mitem.type callback
+			local reg.mitem.callback say_no
+			menuitem.register
+		}
+	}
 
 	if( $item_exists(PARAM1,item_deed) )
 	{
