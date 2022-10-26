@@ -1,12 +1,13 @@
 {
 	const AOE_RADIUS 255
-	const AOE_DURATION 20.0
+	//const AOE_DURATION 20.0
 	const AOE_SCAN_FREQ 1.0
 	const AOE_VADJ 32
 	const AOE_AFFECTS_WARY 1
 }
 
 { game_spawn
+
 	setmodel weapons/projectiles.mdl
 	setmodelbody 0 70
 	nopush 1
@@ -20,21 +21,24 @@
 	fly 1
 	invincible 1
 	gravity 0
-	setangle face $vec(270,0,0)
+	//setangle face $vec(270,0,0)
 }
 
 #include monsters/summon/base_aoe2
 
-{ game_dynamically_created //<owner> <origin> <pitch>
+{ game_dynamically_created //<owner> <origin> <pitch> <duration>
 
 	dbg game_dynamically_created $get(PARAM1,name) PARAM2
 
 	setvard MY_OWNER PARAM1
 	local SPAWN_ORG PARAM2
+	setvard AOE_DURATION PARAM4
 	vectoradd SPAWN_ORG z 32
 	setorigin ent_me SPAWN_ORG
 	setidleanim axis_spin
 	playanim once axis_spin
+	
+	scriptflags MY_OWNER add pole_a "Affliction Lance" $get(ent_me,id) AOE_DURATION
 
 	setvard CUR_PITCH $vec.pitch(PARAM3)
 	//subtract CUR_PITCH 360
@@ -48,6 +52,8 @@
 	svplaysound 1 10 ambience/steamjet1.wav
 
 	clientevent new all monsters/summon/affliction_lance_cl $get(ent_me,index) 19.0
+	setvard MY_FX game.script.last_sent_id
+	setvard MY_END_TIME $math(add,game.time,AOE_DURATION)
 }
 
 { fix_pitch_loop
@@ -72,7 +78,30 @@
 	applyeffect PARAM1 effects/effect_poison 5.0 MY_OWNER DOT_POISON
 }
 
-{ aoe_end
-	svplaysound 1 0 ambience/steamjet1.wav
-	deleteent ent_me fade
+{ [override] aoe_end
+
+	if ( game.time >= MY_END_TIME )
+	{
+		setvard AOE_ACTIVE 0
+		svplaysound 1 0 ambience/steamjet1.wav
+		deleteent ent_me fade
+	}
+	else
+	{
+		callevent 1 aoe_end
+	}
+}
+
+{ transfer_location //<newLocationVector>
+
+	local L_NEW_POS PARAM1
+	
+	setvard MY_END_TIME $math(add,game.time,AOE_DURATION) //Resets the duration
+	clientevent update all MY_FX keep_on //Resets duration of client effect
+	
+	vectoradd L_NEW_POS z 32
+	setorigin ent_me L_NEW_POS
+	
+	scriptflags MY_OWNER edit pole_a "Affliction Lance" $get(ent_me,id) AOE_DURATION
+	//scriptflags <target> edit <name> <type> <value> [expiretime] [msg] - edits properties of first flag found with this name
 }
