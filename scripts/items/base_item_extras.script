@@ -75,7 +75,7 @@
 			quest set ent_owner QUEST_ITEM_CAT QUEST_CAT_DATA
 		}
 	}
-
+	
 	//Anti-Dup System
 	callevent 0.01 bitem_set_owner
 }
@@ -175,34 +175,9 @@
 
 	chatlog WRITE_LOG
 }
-
-{ bweapon_effect_remove
-	local L_HAND $get(ent_me,hand_index)
-	
-	local L_SET_ID 0
-	if ( $get(ent_owner,scriptvar,'PLR_LEFT_HAND') equals L_HAND ) local L_LHAND 1
-	if ( $get(ent_owner,scriptvar,'PLR_RIGHT_HAND') equals L_HAND ) local L_RHAND 1
-	
-	if ( L_HAND equals 0 ) //Right hand
-	{
-		if L_RHAND
-		local L_SET_ID 1
-	}
-	else if ( L_HAND equals 1 ) //Left hand
-	{
-		if L_LHAND
-		local L_SET_ID 1
-	}
-	else if ( L_HAND equals 2 ) //Two handed
-	{
-		if L_LHAND
-		if L_RHAND
-		local L_SET_ID 1
-	}
-	
-	if L_SET_ID
-	callexternal ent_owner ext_set_hand_id 0
 }
+
+
 
 //============= Wielded
 //include for weapons/items that have an effect only while weilded
@@ -215,10 +190,9 @@
 	if BEW_IS_WEILDED
 	callevent bweapon_effect_activate
 }
-{ [server] game_deploy
-	if game.serverside
 
-	//dbg base_effect_wielded $get(ent_owner,scriptvar,'PLR_IN_WORLD')
+{ [server] game_deploy
+	
 	if $get(ent_owner,scriptvar,'PLR_IN_WORLD')
 	callevent bweapon_effect_activate
 
@@ -280,59 +254,9 @@
 	playowneranim PARAM1 PARAM2 PARAM3 PARAM4
 }
 
-//============= Damage adjusts
-// This works here, but also works in player_main->game_damaged_other - so moved there
-//{ game_dodamage //PARAM1=hit:0|1 PARAM2=ent_hit PARAM3=(start) PARAM4=(end) DmgType DmgAmt
-//
-//	if PARAM1
-//
-//  //This does NOT work here
-//	if ( $get(ent_owner,scriptvar,'PLR_DMG_ADJUST_FIRE') > 0 )
-//	{
-//		if PARAM5 contains fire
-//		local ADJ_RATIO $get(ent_owner,scriptvar,'PLR_DMG_ADJUST_FIRE')
-//		return ADJ_RATIO
-//		local IN_DMG PARAM6
-//		multiply IN_DMG ADJ_RATIO
-//		set dmg ADJ_RATIO
-//	}
-//
-//	//This does
-//	if ( $get(ent_owner,scriptvar,'PLR_ADD_FIRE_DOT') > 0 )
-//	{
-//		local DOT_RATIO $get(ent_owner,scriptvar,'PLR_ADD_FIRE_DOT')
-//		local OWNER_SKILL $get(ent_owner,skill.spellcasting.fire)
-//		multiply OWNER_SKILL DOT_RATIO
-//		applyeffect PARAM2 effects/effect_burn 5.0 $get(ent_owner,id) OWNER_SKILL
-//	}
-//}
-
-//{ game_opencontainer
-//	dbg game_opencontainer
-//}
-
-//optimal debuggary
-//{
-//	dbg OPT_DEBUG: item:init game.time
-//}
-//
-//{ game_spawn
-//	dbg OPT_DEBUG: item:game_spawn game.time
-//}
-//
-//{ game_postspawn
-//	dbg OPT_DEBUG: item:game_postspawn game.time
-//}
-//
-//{ ext_activate_items
-//	dbg OPT_DEBUG: item:ext_activate_items game.time
-//}
-
 { item_banked
 	//dbg item_banked
-	callevent game_putinpack //Dunno what these do really
-	array.create PICKUP_ALLOW_LIST //Prevents anyone from picking this item up, should it somehow be dropped while banking.
-	array.add PICKUP_ALLOW_LIST no-one
+	callevent game_putinpack
 }
 
 { ext_item_swift_blade //<base_speed|remove> <base_stike_delay>
@@ -385,4 +309,30 @@
 
 { game_spawn
 	if ( FRESH_PLAYER ) setorigin ent_me (20000,20000,20000)
+}
+
+{ bweapon_effect_activate
+}
+
+{ bweapon_effect_remove //When item is removed from players hands
+	
+	local L_SET_ID 0
+	local L_HAND -1
+	
+	local L_ID $get(ent_owner,scriptvar,'PLR_LEFT_HAND') //Get if item is left hand
+	if ( L_ID equals $get(ent_me,id) )
+	{
+		if ( $get(L_ID,hand_index) equals $get(ent_me,hand_index) ) local L_HAND $get(L_ID,hand_index)
+	}
+	
+	local L_ID $get(ent_owner,scriptvar,'PLR_RIGHT_HAND')  //Get if item is Right hand
+	if ( L_ID equals $get(ent_me,id) )
+	{
+		if ( $get(L_ID,hand_index) equals $get(ent_me,hand_index) ) local L_HAND $get(L_ID,hand_index)
+	}
+	
+	if L_HAND >= 0 //If item is still wielded then it will have a hand value
+	if L_HAND <= 3 //This is a valid range of hand values
+
+	callexternal ent_owner ext_set_hand_id L_HAND 0 //remove hand value
 }
