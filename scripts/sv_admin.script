@@ -76,8 +76,8 @@
 	{
 		if $get_find_token(MAPS_UNCONNECTED1,MAP_TO_VOTE) == -1
 		if !G_DEVELOPER_MODE
-		yplayermessage VOTE_CALLER VOTE MAP SYSTEM: You cannot start a map vote for the first $int(MAP_VOTE_DELAY) seconds, except by transition.
-		consolemsg VOTE_CALLER VOTE MAP SYSTEM: You cannot start a map vote for the first MAP_VOTE_DELAY seconds, except by transition.
+		yplayermessage VOTE_CALLER "VOTE MAP SYSTEM: You cannot start a map vote for the first " $int(MAP_VOTE_DELAY) " seconds, except by transition."
+		consolemsg VOTE_CALLER "VOTE MAP SYSTEM: You cannot start a map vote for the first " $int(MAP_VOTE_DELAY) " seconds, except by transition."
 		local EXIT_SUB 1
 	}
 	if !EXIT_SUB
@@ -105,7 +105,7 @@
 		if ( FROM_CONSOLE )
 		{
 			consolemsg VOTE_CALLER Vote map system: You can vote for specific maps by typing votemap [mapname] in main chat.
-			consolemsg VOTE_CALLER Here's a list of maps you may vote for that are not otherwise reachable:
+			consolemsg VOTE_CALLER "Here's a list of maps you may vote for that are not otherwise reachable:"
 		}
 		setvard CUSTOM_COUNT 0
 		//clientcmd VOTE_CALLER clear
@@ -244,17 +244,14 @@
 	if !VOTE_MAP_VOTE_IN_PROGRESS
 	setvard VOTE_MAP_VOTE_IN_PROGRESS 1
 
-	local MSG_TITLE $get(VOTE_CALLER,name)
-	stradd MSG_TITLE " has started a map vote for "
-	stradd MSG_TITLE MAP_TO_VOTE
-	infomsg all MSG_TITLE "Voting begins now!"
-
 	local VOTE_TITLE "Change to "
 	stradd VOTE_TITLE MAP_TO_VOTE
 	stradd VOTE_TITLE "?"
+	
+	local L_OPTIONS "Yes!:" MAP_TO_VOTE ";No!:" 0 //Im kinda shocked that this works. It concatenates each value to each other in L_OPTIONS
 
 	callexternal players ext_set_vote_delay 20.0
-	callexternal GAME_MASTER gm_map_vote VOTE_CALLER MAP_TO_VOTE VOTE_TITLE 1 1
+	callexternal GAME_MASTER gm_create_vote gm_votemap L_OPTIONS VOTE_TITLE "Voting begins now!" 0
 }
 
 { list_custom_maps
@@ -1046,14 +1043,22 @@
 	if !EXIT_SUB
 
 	setvard VOTE_CALLER PARAM1
-	setvard GAME_PVP game.pvp //might need to change this function to pull the rule instead of the var
 	callexternal VOTE_CALLER ext_set_vote_delay
-
-	if ( GAME_PVP > 1 )
+	
+	if ( !game.pvp )
 	{
-		callexternal GAME_MASTER gm_votepvp VOTE_CALLER 0
+		local L_TITLE "ACTIVATE PVP MODE"
+		local L_OPTIONS "Yes!:1;No!:0"
+		local L_DESCRIPT $get(VOTE_CALLER,name) " has started a vote to enable player vs player combat!"
 	}
-	else callexternal GAME_MASTER gm_votepvp VOTE_CALLER  1
+	else
+	{
+		local L_TITLE "DEACTIVATE PVP MODE"
+		local L_OPTIONS "Yes!:0;No!:1"
+		local L_DESCRIPT $get(VOTE_CALLER,name) " has started a vote to end player vs player combat."
+	}
+	
+	callexternal GAME_MASTER gm_create_vote gm_votepvp L_TITLE L_OPTIONS L_DESCRIPT 0 //<caller_event> <token_option:data> <title> [descript] [silent:0|1]
 }
 
 { admin_listadmins
@@ -1151,33 +1156,10 @@
 	if !EXIT_SUB
 
 	setvard CALLING_LOCKER PARAM1
-
 	callexternal CALLING_LOCKER ext_set_vote_delay 60.0
-	callexternal GAME_MASTER gm_votelock CALLING_LOCKER
-	callevent 20.0 player_votelock2
+	
+	//gm_create_vote //<caller_event> <token_option:data> <title> [descript] [silent:0|1]
+	local L_TITLE "Lock the server?"
+	local L_DESC $get(CALLING_LOCKER,name) " has started a vote to lock the server."
+	callexternal GAME_MASTER gm_create_vote gm_votelock "Yes!:1;No!:0" L_TITLE L_DESC 0
 }
-
-//{ player_votelock2
-//
-//	dbg player_votelock2
-//
-//	local L_VOTE_PASSED $get(GAME_MASTER,scriptvar,'VOTE_RESULT')
-//	if ( L_VOTE_PASSED equals '[failed]' )
-//	{
-//		local MSG_TITLE "Vote Lock has failed."
-//		local MSG_DESC "No one voted."
-//		infomsg all MSG_TITLE MSG_DESC
-//		local EXIT_SUB 1
-//	}
-//	if ( L_VOTE_PASSED equals 'No' )
-//	{
-//		local MSG_TITLE "Vote Lock has failed.
-//		local MSG_DESC "Voted down."
-//		infomsg all MSG_TITLE MSG_DESC	
-//		local EXIT_SUB 1
-//	}
-//	if !EXIT_SUB
-//
-//	callevent lock_server
-//}
-
