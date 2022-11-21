@@ -11,18 +11,6 @@
 	const SHOW_CONSOLE_COMMANDS 0
 	const DEV_PASSWORD dammitjm
 	const SUPER_DEV_PASSWORD wargwable
-	setvarg G_BPATCH_MANDATORY 0 //set to 1 to make b patches mandatory
-
-	//you can precache multiple monsters here (ala ms_dynamicnpc) - but be sure to comment it out before you distro
-	//otherwise clients will be precaching unessisary data, making edict crashes more likely
-	//const SCRIPT_TOKENS "monsters/zorc_warrior1;monsters/zorc_archer2;monsters/skeleton_archer_lightning2;monsters/skeleton_archer_poison2;monsters/skeleton_archer_ice1;monsters/skeleton_archer_ice2;monsters/skeleton_archer_fire2"
-	if ( game.central )
-	{
-		if ( ALPHA_PACK ) errormessage "Cannot use Alphapack on FN"
-
-		if game.cvar.maxplayers > 10
-		errormessage "10 Player Max on FN"
-	}
 
 	setvard TIMESET_DELAY 0
 	setvard WEATHERSET_DELAY 0
@@ -189,10 +177,6 @@
 		if SHOW_CONSOLE_COMMANDS
 		if PARAM1 isnot 'atx' //don't want atk command showing up in dev vids
 
-		if !ALPHA_PACK //don't show internal console commands to alpha pack folks
-
-		if !EXIT_SUB
-
 		local OUT_LIST $get(ent_currentplayer,name)
 		stradd OUT_LIST ">"
 		stradd OUT_LIST PARAM1
@@ -299,9 +283,7 @@
 		if ( PARAM1 equals 'admin_unban' ) callevent admin_unban ADMIN_PAR1
 		if ( PARAM1 equals 'admin_listbans' ) callevent admin_listbans
 		if ( PARAM1 equals 'admin_say' ) callevent admin_say ADMIN_PAR1 ADMIN_PAR2
-		if ( PARAM1 equals 'admin_votemap' ) callevent admin_votemap ADMIN_PAR1
 		if ( PARAM1 equals 'admin_map' ) callevent admin_map ADMIN_PAR1 ADMIN_PAR2
-		if ( PARAM1 equals 'admin_vote' ) callevent admin_vote ADMIN_PAR1 ADMIN_PAR2 ADMIN_PAR3
 		if ( PARAM1 equals 'admin_help' ) callevent admin_help CAN_RCON CAN_CVAR
 		if ( PARAM1 equals 'admin_gag' ) callevent admin_gag ADMIN_PAR1 ADMIN_PAR2
 		if ( PARAM1 equals 'admin_ungag' ) callevent admin_ungag ADMIN_PAR1
@@ -384,7 +366,13 @@
 
 	if ( $lcase(PARAM1) equals 'motd' ) callexternal ent_currentplayer force_motd
 	else if ( $lcase(PARAM3) equals 'motd' ) callexternal ent_currentplayer force_motd
-
+	
+	if ( PARAM1 equals 'teststuff' )
+	{
+		infomsg all "literally gonna cry" $get($get(ent_currentplayer,target),index)
+		infomsg all $get(ent_currentplayer,glowcolor) game.cvar.ms_crashcfg
+	}
+		
 	if ( PARAM1 equals 'listmaps' )
 	{
 		//dbg listmaps LISTMAPS_TARGET
@@ -2194,15 +2182,6 @@
 	{
 		callexternal players ext_reset_names
 	}
-	if ( PARAM1 equals 'vote' )
-	{
-		//<caller_id> <token_options> <title> [descript] [silent:0|1]
-		local DE_OPTIONS PARAM2
-		local DE_TITLE PARAM3
-		local DE_DESC PARAM4
-		consolemsg ent_currentplayer vote, opt: DE_OPTIONS title: DE_TITLE desc: DE_DESC
-		callexternal GAME_MASTER gm_generic_vote $get(ent_currentplayer) DE_OPTIONS DE_TITLE DE_DESC
-	}
 	if ( PARAM1 equals 'event' )
 	{
 		//if G_DEVELOPER_MODE
@@ -2628,11 +2607,6 @@
 	{
 		consolemsg ent_currentplayer Giving PARAM2 hp
 		callexternal ent_currentplayer give_hp PARAM2
-	}
-	if ( PARAM1 equals 'mapver' )
-	{
-		consolemsg ent_currentplayer Setting map as verified
-		callexternal GAME_MASTER gm_verify_map_hax
 	}
 	if ( PARAM1 equals 'applyeffect' )
 	{
@@ -3439,48 +3413,48 @@
 		callevent player_votepvp $get(ent_currentplayer,id) VOTE_FROM_CONSOLE
 	}
 
-	if ( PARAM1 equals 'votekick' )
-	{
-		if ( game.players < 3 )
-		{
-			if !G_DEVELOPER_MODE
-			dplayermessage ent_currentplayer VOTEKICK: Need at least three players to start a kick vote
-			local EXIT_SUB 1
-		}
-		if !EXIT_SUB
+	//if ( PARAM1 equals 'votekick' )
+	//{
+	//	if ( game.players < 3 )
+	//	{
+	//		if !G_DEVELOPER_MODE
+	//		dplayermessage ent_currentplayer VOTEKICK: Need at least three players to start a kick vote
+	//		local EXIT_SUB 1
+	//	}
+	//	if !EXIT_SUB
+//
+	//	local ALLOW_KICKVOTE game.cvar.msvote_kick_enable 
+	//	if ( !ALLOW_KICKVOTE )
+	//	{
+	//		local OUT_MSG "VOTEKICK: This server does not allow kickvotes."
+	//		consolemsg ent_currentplayer OUT_MSG
+	//		dplayermessage ent_currentplayer OUT_MSG
+	//	}
+	//	if ALLOW_KICKVOTE
+	//	local L_PLAYER_NAME PARAM2
+	//	if ( L_PLAYER_NAME startswith 'PARAM' ) local L_PLAYER_NAME 'PARAMETER' //weirdness voting from console
+	//	local L_CALLER $get(ent_currentplayer,id)
+	//	callevent player_votekick L_PLAYER_NAME L_CALLER
+	//}
 
-		local ALLOW_KICKVOTE game.cvar.msvote_kick_enable 
-		if ( !ALLOW_KICKVOTE )
-		{
-			local OUT_MSG "VOTEKICK: This server does not allow kickvotes."
-			consolemsg ent_currentplayer OUT_MSG
-			dplayermessage ent_currentplayer OUT_MSG
-		}
-		if ALLOW_KICKVOTE
-		local L_PLAYER_NAME PARAM2
-		if ( L_PLAYER_NAME startswith 'PARAM' ) local L_PLAYER_NAME 'PARAMETER' //weirdness voting from console
-		local L_CALLER $get(ent_currentplayer,id)
-		callevent player_votekick L_PLAYER_NAME L_CALLER
-	}
-
-	if ( PARAM1 equals 'voteban' )
-	{
-		if ( game.players < 3 )
-		{
-			if !G_DEVELOPER_MODE
-			dplayermessage ent_currentplayer VOTEBAN: Need at least three players to start a ban vote
-			local EXIT_SUB 1
-		}
-		if !EXIT_SUB
-
-		local ALLOW_BANVOTE game.cvar.msvote_ban_enable 
-		if ( !ALLOW_BANVOTE ) consolemsg ent_currentplayer VOTEBAN: This server does not allow ban votes.
-		if ALLOW_BANVOTE
-		local L_PLAYER_NAME PARAM2
-		if ( L_PLAYER_NAME startswith 'PARAM' ) local L_PLAYER_NAME 'PARAMETER' //weirdness voting from console
-		local L_CALLER $get(ent_currentplayer,id)
-		callevent player_voteban L_PLAYER_NAME L_CALLER
-	}
+	//if ( PARAM1 equals 'voteban' )
+	//{
+	//	if ( game.players < 3 )
+	//	{
+	//		if !G_DEVELOPER_MODE
+	//		dplayermessage ent_currentplayer VOTEBAN: Need at least three players to start a ban vote
+	//		local EXIT_SUB 1
+	//	}
+	//	if !EXIT_SUB
+//
+	//	local ALLOW_BANVOTE game.cvar.msvote_ban_enable 
+	//	if ( !ALLOW_BANVOTE ) consolemsg ent_currentplayer VOTEBAN: This server does not allow ban votes.
+	//	if ALLOW_BANVOTE
+	//	local L_PLAYER_NAME PARAM2
+	//	if ( L_PLAYER_NAME startswith 'PARAM' ) local L_PLAYER_NAME 'PARAMETER' //weirdness voting from console
+	//	local L_CALLER $get(ent_currentplayer,id)
+	//	callevent player_voteban L_PLAYER_NAME L_CALLER
+	//}
 
 	if ( PARAM1 equals 'votelock' )
 	{
@@ -3773,14 +3747,14 @@
 		array.add ARRAY_CREST_OWNERS "STEAM_0:1:3695755" //crest_tdk           
 		array.add ARRAY_CREST_OWNERS "none" //crest_torkie        
 		array.add ARRAY_CREST_OWNERS "none" //crest_cloak_blue        
-		array.add ARRAY_CREST_OWNERS "none" //crest_noweed        
+		array.add ARRAY_CREST_OWNERS "STEAM_0:1:18944283" //crest_noweed        
 		array.add ARRAY_CREST_OWNERS "STEAM_0:1:8122893" //crest_wotn 
 		array.add ARRAY_CREST_OWNERS "STEAM_0:1:7087443" //crest_w_2 
 	}
 
 	setvard CREST_SELECTION $func(func_guilds_leading,$get(PARAM1,id))
 	
-	if ( CREST_SELECTION isnot '' )
+	if ( CREST_SELECTION isnot '0' )
 	{
 		createnpc crest_dealer $vec(10000,10000,10000) $get(PARAM1,id) CREST_SELECTION
 	}
@@ -3788,7 +3762,7 @@
 
 { func_guilds_leading //<playerId>
 
-	setvard LEADING_GUILDS ''
+	setvard LEADING_GUILDS 0
 	local L_STEAM_ID $get(PARAM1,steamid)
 	
 	calleventloop $get_array_amt(ARRAY_CRESTS) loop_guilds_leading L_STEAM_ID
@@ -3803,6 +3777,10 @@
 	
 	if ( L_LEADERS contains PARAM1 )
 	{
-		token.add LEADING_GUILDS $get_array(ARRAY_CRESTS,game.script.iteration)
+		if ( LEADING_GUILDS equals '0' )
+		{
+			setvard LEADING_GUILDS $get_array(ARRAY_CRESTS,game.script.iteration)
+		}
+		else token.add LEADING_GUILDS $get_array(ARRAY_CRESTS,game.script.iteration)
 	}
 }
