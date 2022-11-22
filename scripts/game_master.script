@@ -37,6 +37,7 @@
 #include [casual] $currentmap_game_master
 
 //Game master modules
+#include game_master/map_transitions
 #include game_master/vote_generic
 
 { game_spawn
@@ -104,13 +105,6 @@
 	callevent 0.1 setup_gm
 	callevent 1.0 gm_setup_weather
 	callevent 60.0 time_sync_check
-	
-	//Crash file name configuration
-	setvarg G_CRASHCFG game.cvar.ms_crashcfg
-	if ( G_CRASHCFG !contains '.cfg' )
-	{
-		stradd G_CRASHCFG ".cfg"
-	}
 }
 
 { [server] time_sync_check
@@ -149,7 +143,6 @@
 	
 	dodamage PARAM1 PARAM2 PARAM3 PARAM4 PARAM5 PARAM6 PARAM7
 }
-
 
 //Spawn gold bag post-mortem - 
 { [server] gold_spew //PARAM1=gold_per_bag PARAM2=bags_player PARAM3=dist_from_mon PARAM4=min#bags PARAM5 max#bags
@@ -474,69 +467,6 @@
 	}
 }
 
-{ gm_manual_map_change //[map] [destspawn]
-
-	//redundancy, but maybe a bit late
-	setvard GM_DISABLE_TRANSITIONS 1 //tells msarea_transitions to disable code side, so they don't change spawns
-	if ( PARAM2 !startswith PARAM ) setvard GM_DEST_TRANS PARAM2
-	if ( GM_DEST_TRANS isnot 'GM_DEST_TRANS' ) callexternal players ext_setspawn GM_DEST_TRANS
-	//saveallnow
-
-	local L_MAP_NAME MAP_NAME
-	if ( PARAM1 isnot 'PARAM1' ) local L_MAP_NAME PARAM1
-	messageall green Traveling to L_MAP_NAME
-	setvard F_MAP_NAME L_MAP_NAME
-
-	erasefile G_CRASHCFG
-	local OUT_LINE "map "
-	local COMMENT "/"
-	stradd COMMENT "/"
-	strconc OUT_LINE F_MAP_NAME COMMENT written from MSC
-	writeline G_CRASHCFG OUT_LINE
-	local SRV_COMMAND "echo Changelevel: "
-	stradd SRV_COMMAND F_MAP_NAME
-	servercmd SRV_COMMAND
-
-	setvarg G_WEATHER_LOCK clear
-	setvarg global.map.weather "clear;clear;clear"
-	setvarg G_OVERRIDE_WEATHER_CODE "clear;clear;clear"
-	setvarg G_CUR_WEATHER "clear"
-	setvarg G_IDLE_MUSIC none
-	setvarg G_IDLE_MUSIC_LENGTH 0
-	setvarg G_COMBAT_MUSIC none
-	setvarg G_COMBAT_MUSIC_LENGTH 0
-	setvarg G_MAP_ADDPARAMS 0
-
-	if ( G_SERVER_LOCKED )
-	{
-		local SV_CMD "sv_password "
-		stradd SV_CMD $quote()
-		stradd SV_CMD $quote()
-		servercmd SV_CMD
-	}	
-
-	if ( game.players > 0 )
-	{
-		callexternal players ext_changelevel_prep
-	}
-
-	//this used to be a 0.1 delay
-	//but I wanted to give more time for the ext_changelevel_prep to set the player's wait delays
-
-	setvard GM_CHANGELEVEL 1
-
-	callevent 1.0 gm_manual_map_change2
-}
-
-{ gm_manual_map_change2
-	callevent 2.0 gm_manual_map_change3
-}
-
-{ gm_manual_map_change3
-	setvard VOTE_IN_PROGRESS 0
-	changelevel F_MAP_NAME
-}
-
 { gm_find_highest
 
 	local CUR_VOTE_IDX game.script.iteration
@@ -566,57 +496,6 @@
 	//infomsg all "DEBUG ALERT" "MSAREA_MONSTERSPAWN REMOVED"
 }
 
-{ game_transition_triggered //1: Transition_desc //2: DestBSP //3: local_spawn //4: dest_spawn
-
-	local MAP_TO_VOTE PARAM2
-	local MAP_DESC PARAM1
-	local LOCAL_TRANS PARAM3
-	local DEST_TRANS PARAM4
-	setvard GM_DEST_TRANS PARAM4
-
-	local L_PLAYER_LIST ''
-
-	if ( !$map_exists(MAP_TO_VOTE) )
-	{
-		messageall green MAP_TO_VOTE does not exist on this server. Perhaps this is a future transition point?
-		local EXIT_SUB 1
-	}
-	if !EXIT_SUB
-
-	getplayers L_PLAYER_LIST //using this method instead of game.players so we can test with bots
-
-	callexternal players ext_set_map MAP_TO_VOTE LOCAL_TRANS DEST_TRANS //mark map quest data
-
-	if ( $get_token_amt(L_PLAYER_LIST) > 1 )
-	{
-		local MSG_TITLE "Travel to "
-		stradd MSG_TITLE MAP_DESC
-		infomsg all MSG_TITLE "Vote now..."
-
-		local VOTE_TITLE "Travel to "
-		stradd VOTE_TITLE MAP_DESC
-		stradd VOTE_TITLE "?"
-
-		local VOTE_CALLER $get(ent_me,id)
-
-		callevent gm_map_vote VOTE_CALLER MAP_TO_VOTE VOTE_TITLE 1
-	}
-
-	if ( $get_token_amt(L_PLAYER_LIST) == 1 )
-	{
-		setvard MAP_NAME MAP_TO_VOTE
-		local AMX_STRING force_map_
-		stradd AMX_STRING MAP_NAME
-		usetrigger AMX_STRING
-
-		setvard GM_DISABLE_TRANSITIONS 1 //tells msarea_transitions to disable code side, so they don't change spawns
-		if ( GM_DEST_TRANS isnot 'GM_DEST_TRANS' ) callexternal players ext_setspawn GM_DEST_TRANS
-		//saveallnow
-
-		callevent 5.0 gm_manual_map_change
-	}
-}
-
 { reset_server
 
 	dbg *** reset_server check: var game.cvar.ms_reset_if_empty plrs game.players
@@ -629,12 +508,6 @@
 
 	if ( game.cvar.ms_chatlog > 0 ) chatlog $timestamp(>)  "SERVER_SHUTDOWN: reason: ms_reset_if_empty 1"
 
-	erasefile G_CRASHCFG
-	local OUT_LINE "map "
-	local COMMENT "/"
-	stradd COMMENT "/"
-	strconc OUT_LINE edana COMMENT written from MSC
-	writeline G_CRASHCFG OUT_LINE
 	callevent 0.1 exit_server
 }
 
@@ -660,8 +533,6 @@
 	stradd WRITE_LOG PARAM3
 	chatlog WRITE_LOG
 }
-
-
 
 { player_left
 	if ( game.cvar.ms_chatlog )
@@ -706,24 +577,18 @@
 { manual_edana
 	//this changes to edana when no players are present (sending clientcmd with no players causes errors)
 	if ( game.players > 0 ) callexternal all game_playercmd_setweather clear 0.01 0.01 //just in case of weirdness
-	erasefile G_CRASHCFG
-	local OUT_LINE "map "
-	local COMMENT "/"
-	stradd COMMENT "/"
-	strconc OUT_LINE edana COMMENT written from MSC
-	writeline G_CRASHCFG OUT_LINE
 	if ( game.cvar.ms_chatlog > 0 ) chatlog $timestamp(>)  "Server empty, switching to Edana via ms_timelimit."
-	callevent 1.0 manual_edana2
+	setvard DEST_MAP edana
+	callevent 1.0 delay_changelevel
 }
 
-{ manual_edana2
-	changelevel edana
+{ delay_changelevel //Uses var DEST_MAP to change level. Intended for delays
+	changelevel DEST_MAP
 }
 
 { gm_setname
 	name PARAM1
 }
-
 
 //==================================== POTION OF FORGETFUNLESS - BEGIN
 
@@ -2038,30 +1903,9 @@
 	}
 }
 
-{ game_triggered //<map trigger fired>
-	dbg game_triggered PARAM1
-
-	local L_TRIG PARAM1
-
-	if ( L_TRIG startswith touch_trans_ )
-	{
-		if !VOTE_BUSY
-		if !GM_CHANGELEVEL
-		if game.players > 0
-		local L_VOTEMAP $string_from(L_TRIG,touch_trans_)
-		local L_VOTETITLE "Change map to "
-		stradd L_VOTETITLE L_VOTEMAP
-		getplayers T_PLAYERLIST
-		local L_VOTESTARTER $get_token(T_PLAYERLIST,0)
-		callexternal GAME_MASTER gm_map_vote L_VOTESTARTER L_VOTEMAP L_VOTETITLE 1 1
-	}
-	else if ( L_TRIG startswith force_map_ )
-	{
-		if !GM_CHANGELEVEL
-		local L_FORCEMAP $string_from(L_TRIG,force_map_)
-		callevent gm_manual_map_change L_FORCEMAP
-	}
-}
+//{ game_triggered //<map trigger fired>
+//
+//}
 
 //---Quest Items
 
@@ -2133,5 +1977,3 @@
 { ext_dump_quest_items_loop
 	dbg $get_array(ARRAY_QUEST_ITEMS,game.script.iteration)
 }
-
-
