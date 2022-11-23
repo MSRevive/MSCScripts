@@ -1,46 +1,49 @@
+//Circle of death, cast by gold forged skeletons.
+
 #scope server
+
 {
 	const SOUND_PULSE ambience/pulsemachine.wav
-	const AOE_SCAN_TYPE tsphere
-}
-
-{ game_precache
-	precache skull.spr
-	precache weapons/magic/seals.mdl
+	const AOE_SCAN_TYPE rsphere
+	const AOE_SCAN_FREQ 1
 }
 
 #include monsters/summon/base_aoe2
 
-{ game_spawn
-	nopush 1
-	invincible 1
-	setvard PLAYING_DEAD 1
+{ game_precache
+
+	precache skull.spr
+	precache weapons/magic/seals.mdl
 }
 
-{ game_dynamically_created //PARAM1 = owner PARAM2 = duration PARAM3 = damage
-	setvard MY_OWNER PARAM1
-	setvard AOE_DURATION PARAM2
-	setvard AOE_RADIUS 180
-	setvard MY_BASE_DAMAGE PARAM3
+{ game_dynamically_created //PARAM1=Owner PARAM2=radius PARAM3=Damage PARAM4=Duration [PARAM5=skill]
+
+	setvard AOE_OWNER PARAM1
+	setvard AOE_RADIUS PARAM2
+	setvard DMG_BASE PARAM3
+	setvard AOE_DURATION PARAM4
+	setvard ACTIVE_SKILL PARAM5
 	setvard AOE_AFFECTS_WARY 1
+	
+	if ( ACTIVE_SKILL startswith PARAM ) setvard ACTIVE_SKILL spellcasting.affliction
+	
 	playsound 1 10 SOUND_PULSE
 
-	local MY_GROUND $get(ent_me,origin)
-	local CUR_GROUND_Z $get_ground_height(MY_GROUND)
-	vectorset MY_GROUND z CUR_GROUND_Z
-	setorigin ent_me MY_GROUND
-
-	if ( !$get(ent_me,isplayer) ) setvard MY_SKILL none
+	local L_GROUND $get(ent_me,origin)
+	vectorset L_GROUND z $get_ground_height(L_GROUND)
+	setorigin ent_me L_GROUND
 	
-	clientevent new all monsters/summon/circle_of_death_cl $get(ent_me,origin) AOE_DURATION
+	clientevent new all monsters/summon/circle_of_death_cl L_GROUND AOE_DURATION
 }
 
-{ aoe_affect_target
+{ aoe_affect_target //<target>
+
 	local CUR_TARG PARAM1
-	xdodamage CUR_TARG direct MY_BASE_DAMAGE 100% MY_OWNER MY_OWNER MY_SKILL magic
+	xdodamage CUR_TARG direct DMG_BASE 100% AOE_OWNER ent_me ACTIVE_SKILL magic_effect //<target|(src_origin)> <range|aoe|(dest_origin)|direct> <damage> <cth|fall_off> <attacker> <inflciter> <skill|none> <dmg_type> [flag_string]
 }
 
 { aoe_end
+
 	playsound 1 0 SOUND_PULSE
 	deleteent ent_me
 }
