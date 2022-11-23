@@ -1420,31 +1420,33 @@
 }
 
 { ext_set_hand_id //<hand> <id> //Called by game_equipped above. Also called by base_item_extras when items are removed from the players hands. 
+	
+	local L_HAND_DEST PARAM1 //Hand index to where the item is trying to go
+	local L_ITEM_ID PARAM2
+	
+	local L_HANDPREF $get(L_ITEM_ID,handpref) //0: item wants to go in left hand. 1: item wants to go in right hand. 2: fist_bare. 3: arrow or potion (1 handed). 4: two handed item
+	
+	if ( L_HAND_DEST == 0 ) //Left hand
+	{
+		setvard PLR_LEFT_HAND L_ITEM_ID
+	}
+	else if ( L_HAND_DEST == 1 ) //Right hand / Two handed
+	{
+		setvard PLR_RIGHT_HAND L_ITEM_ID
+		
+		//In this case, it might be two handed, so check handpref too.
+		if ( L_HANDPREF == 4 ) //Is two handed?
+		{
+			setvard PLR_LEFT_HAND 0
+		}
+	}
+	else if ( L_HAND_DEST == 2 ) //fist_bare
+	{
+		setvard PLR_LEFT_HAND L_ITEM_ID
+		setvard PLR_RIGHT_HAND L_ITEM_ID
+	}
 
-	if ( PARAM1 equals 0 ) //Left hand
-	{
-		setvard PLR_RIGHT_HAND PARAM2
-		callexternal PLR_LEFT_HAND ext_off_hand_change PLR_RIGHT_HAND
-	}
-	else if ( PARAM1 equals 1 ) //Right hand
-	{
-		setvard PLR_LEFT_HAND PARAM2
-		callexternal PLR_RIGHT_HAND ext_off_hand_change PLR_LEFT_HAND
-	}
-	else if ( PARAM1 equals 2 ) //Two-handed
-	{
-		setvard PLR_LEFT_HAND PARAM2
-		setvard PLR_RIGHT_HAND PARAM2
-		callexternal PLR_RIGHT_HAND ext_off_hand_change PLR_LEFT_HAND
-	}
-	else if ( PARAM1 equals 3 ) //fist_bare
-	{
-		setvard PLR_LEFT_HAND PARAM2
-		setvard PLR_RIGHT_HAND PARAM2
-		callexternal PLR_RIGHT_HAND ext_off_hand_change PLR_LEFT_HAND
-	}
-
-	setvard PLR_ACTIVE_WEAPON PARAM2
+	setvard PLR_ACTIVE_WEAPON L_ITEM_ID
 	if ( $get(PLR_ACTIVE_WEAPON,scriptvar,'SPECIAL_WEAPON') )
 	{
 		setvard PLR_SPECIAL_WEAPON 1
@@ -1469,7 +1471,7 @@
 	local LEFT_PARRY $get(ent_me,LEFT_PARRY_SKILL)
 	//dbg lefthand hpref $get(PLR_LEFT_HAND,handpref) val LEFT_PARRY
 	if ( $get(PLR_LEFT_HAND,handpref) == 2 ) local LEFT_PARRY 0 //is bare fist
-	if ( $get(PLR_LEFT_HAND,handpref) == 4 )
+	if ( $get(PLR_LEFT_HAND,handpref) == 4 ) //If is two handed
 	{
 		if LEFT_PARRY_SKILL isnot skill.martialarts
 		multiply LEFT_PARRY 1.5 //is two handed and not gauntlet
@@ -1529,23 +1531,15 @@
 	local L_NO_REDUCT $func(func_get_dualwield_reduct,PLR_LEFT_HAND_TYPE) //Get if there should be dual wield reduction
 	if ( !L_NO_REDUCT ) local L_NO_REDUCT $func(func_get_dualwield_reduct,PLR_RIGHT_HAND_TYPE) //Same for other item in other hand
 
+	setvard PLR_HAS_MATCHED_SET 0
 	if ( $get(PLR_RIGHT_HAND,scriptvar,'MATCHED_SET') )
 	{
 		local L_MATCHED_SET_TYPE $get(PLR_RIGHT_HAND,scriptvar,'MATCHED_SET_TYPE')
 		if ( $get(PLR_LEFT_HAND,scriptvar,'MATCHED_SET_TYPE') equals L_MATCHED_SET_TYPE )
 		{
-			local L_MATCHED_SET 1
 			local L_NO_REDUCT 1
 			setvard PLR_HAS_MATCHED_SET 1
 		}
-		else
-		{
-			setvard PLR_HAS_MATCHED_SET 0
-		}
-	}
-	else
-	{
-		setvard PLR_HAS_MATCHED_SET 0
 	}
 
 	if ( !L_NO_REDUCT )
