@@ -1,0 +1,137 @@
+//Head Guard
+
+{
+const NO_RUMOR 1
+const NO_JOB 1
+}
+
+#include monsters/base_npc
+#include monsters/base_chat
+//#include NPCs/human_guard
+
+{ npc_spawn
+
+hp 300
+invincible 1
+width 32
+height 72
+race human
+name Head Guard
+roam 0
+
+setmodel npc/guard1.mdl
+setidleanim c1a0_catwalkidle
+setmoveanim walk
+
+catchspeech say_sus suspicious sus no nope negative
+catchspeech say_help help assist job task quest
+
+setvar StartGuardQuest 0
+setvar GuardQuestFinished 0
+}
+
+{ game_menu_getoptions
+
+if ( StartGuardQuest == 1 )
+{
+if ( $item_exists(PARAM1,drink_mead) )
+	{
+		local reg.mitem.title 	"Show Note"
+		local reg.mitem.type 	payment
+		local reg.mitem.data 	drink_mead
+		local reg.mitem.callback hand_note
+		menuitem.register
+		}			
+}
+}
+
+{
+repeatdelay 3.0
+
+if ( GuardQuest == 0 ) 
+{
+
+getplayersnb PLAYER_SUSPECTS
+setvard PLAYER_NEAR 0
+setvard GUARD_LOOP 0
+calleventloop $get_token_amt(PLAYER_SUSPECTS) check_near
+
+if PLAYER_NEAR
+if LAST_SPOKE_TO isnot PLAYER_SPLOTTED 
+	
+	setmovedest PLAYER_SPLOTTED 50
+	saytextrange 512
+	saytext You there! STOP!
+	setvard LAST_SPOKE_TO PLAYER_SPLOTTED
+}	
+}
+	
+{ check_near
+	local CUR_PLAYER $get_token(PLAYER_SUSPECTS,GUARD_LOOP)
+	if ( $get(CUR_PLAYER,range) < 256 )
+	{
+		setvard PLAYER_NEAR 1
+		setvard PLAYER_SPLOTTED CUR_PLAYER
+	}
+	add GUARD_LOOP 1
+}
+
+
+
+
+
+
+{ say_hi
+
+if ( GuardQuestFinished == 0 )
+{
+	saytext You there! Have you seen anyone [suspicious] around the city?
+}
+
+if ( GuardQuestFinished == 1 )
+{	
+	saytext Thanks for your help, adventurer.
+}
+
+}
+
+
+{ say_sus
+
+	setvard CHAT_STEPS 3
+	setvard CHAT_STEP 0
+	setvard BUSY_CHATTING 1
+	setvard CHAT_STEP1 "I'm investigating a report of a mysterious individual sneaking around the city in the dead of night."
+	setvard CHAT_STEP2 "I've questioned many walking the streets at that time and have no leads."
+	setvard CHAT_STEP3 "You seem like a resourceful adventurer.  How would you like to [help] me?"
+	callevent chat_loop
+}
+
+{ say_help
+
+	setvard CHAT_STEPS 3
+	setvard CHAT_STEP 0
+	setvard BUSY_CHATTING 1
+	setvard CHAT_STEP1 "Since the investigation seems to be at a standstill, we should start from the beginning."
+	setvard CHAT_STEP2 "Drayke, who lives opposite the fountain, made the report."
+	setvard CHAT_STEP3 "See him and inquire about any further details which could help us."
+	callevent chat_loop
+	usetrigger questdoordrayke
+	setvard StartGuardQuest 1
+}
+
+{ hand_note
+	setvard CHAT_STEPS 4
+	setvard CHAT_STEP 0
+	setvard BUSY_CHATTING 1
+	setvard CHAT_STEP1 "What's this?"
+	setvard CHAT_STEP2 "This letter is signed by a 'Rudolf'."
+	setvard CHAT_STEP3 "Find this person and inquire about Drayke's whereabouts."
+	setvard CHAT_STEP4 "Ask around if you can't find him yourself."
+	callevent chat_loop
+	}
+	
+	
+
+
+
