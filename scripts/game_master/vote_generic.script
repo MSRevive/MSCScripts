@@ -11,6 +11,7 @@
 	{
 		if game.playersnb > 0
 		setvard VOTE_BUSY 1
+		setvard VOTE_TALLY 0 //Reset vote tally options
 
 		//Required params
 		setvard VOTE_EVENT PARAM1
@@ -35,18 +36,20 @@
 
 	infomsg all VOTE_TITLE VOTE_DESC
 	
+	setvard TOTAL_VOTES 0
+	setvard TOTAL_BALLOTS game.playersnb
+	
 	callevent 0.1 gm_send_ballots //Gets player list and sends the menu
-	callevent 15.0 gm_tally_votes //Default expire timer for voting. Will also expire after enough people have voted.
+	callevent 10.0 gm_send_ballots //Send menu again, just in case player closed it.
+	callevent 20.0 gm_tally_votes //Default expire timer for voting. Will also expire after enough people have voted.
 }
 
 { gm_send_ballots //Gets player list and sends the menu
 
-	setvard TOTAL_VOTES 0
-	setvard TOTAL_BALLOTS game.playersnb
-	
+	if VOTE_BUSY
+	setvard GM_PLAYER_LIST none
 	getplayersnb GM_PLAYER_LIST
 	calleventloop $get_token_amt(GM_PLAYER_LIST) send_menu GM_PLAYER_LIST
-	name "The Game Master"
 }
 
 { send_menu
@@ -61,18 +64,13 @@
 
 { gm_build_ballot //Creates options for voting
 
-	if ( game.script.iteration == 0 ) //Create token for tracking votes
-	{
-		setvard VOTE_TALLY 0
-	}
-	else
+	if ( $get_token_amt(VOTE_TALLY) < $get_token_amt(VOTE_OPTIONS) ) //Create token for tracking votes
 	{
 		token.add VOTE_TALLY 0
 	}
 
 	local L_STR $get_token(VOTE_OPTIONS,game.script.iteration)
 	local L_OPTION $string_upto(L_STR,':')
-	//local L_DATA $string_from(L_STR,':')
 
 	local reg.mitem.title L_OPTION
 	local reg.mitem.type callback
@@ -124,6 +122,8 @@
 { gm_tally_votes
 
 	if VOTE_BUSY
+	setvard VOTE_BUSY 0
+	
 	local L_TITLE "The people have spoken!"
 	local L_WINNER $func(func_get_vote_winner) //Returns index of the VOTE_OPTIONS winner
 	
@@ -131,15 +131,14 @@
 	local L_VOTE_DATA $string_from(L_WINNER,':')
 	
 	infomsg all L_TITLE L_VOTE_TITLE
-	
+
 	callevent VOTE_EVENT L_VOTE_TITLE L_VOTE_DATA
-	setvard VOTE_BUSY 0
 }
 
 { func_get_vote_winner
 
 	setvard VOTE_WINNERS none
-	setvard VOTE_WINNER_COUNT 0 //Number of votes cast for this/these options.
+	setvard VOTE_WINNER_COUNT -1 //Number of votes cast for this/these options.
 	calleventloop $get_token_amt(VOTE_TALLY) get_vote_winner
 	
 	local L_WINNER_AMT $get_token_amt(VOTE_WINNERS)
@@ -258,8 +257,6 @@
 
 { gm_votekick //<target> <caller> - called by sv_admin
 
-	setvard VOTE_BUSY 1
-
 	setvard GM_SKIP_VOTE_ID PARAM1
 	local VOTE_STARTER PARAM2
 	local L_VOTE_TITLE "KICK: "
@@ -272,8 +269,6 @@
 }
 
 { gm_voteban //<target> <caller> - called by sv_admin
-
-	setvard VOTE_BUSY 1
 
 	setvard GM_SKIP_VOTE_ID PARAM1
 	local VOTE_STARTER PARAM2
