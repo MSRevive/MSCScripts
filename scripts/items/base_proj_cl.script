@@ -1,0 +1,194 @@
+//Creates basic client-side projectile. Looks better than server-side tracking.
+
+{ client_activate //<origin;velocity;gravity> <model;body;animation> <none|(R,G,B);range> <motion_blur:0|1;stick_in_enemy:0|1>
+
+	//Set up variables for reference later
+	setvard FX_ORIGIN $get_token(PARAM1,0)
+	setvard FX_VELOCITY $get_token(PARAM1,1)
+	setvard FX_GRAVITY $get_token(PARAM1,2)
+	
+	setvard FX_MODEL $get_token(PARAM2,0)
+	setvard FX_MODEL_BODY $get_token(PARAM2,1)
+	setvard FX_ANIM $get_token(PARAM2,2)
+	
+	setvard FX_LIGHT_COLOR $get_token(PARAM3,0)
+	setvard FX_LIGHT_RADIUS $get_token(PARAM3,1)
+	
+	setvard FX_MOTION_BLUR $get_token(PARAM4,0)
+	setvard FX_STICK $get_token(PARAM4,1)
+	setvard FX_STUCK_TO none
+
+	//Create projectile model
+	cleffect tempent model FX_MODEL FX_ORIGIN proj_make proj_update
+	
+	callevent 15.0 fx_die //Remove in case projectile gets hung up somewhere.
+}
+
+{ proj_make
+	
+	//Make the tempent
+	cleffect tempent set_current_prop death_delay 15
+
+	cleffect tempent set_current_prop body FX_MODEL_BODY
+
+	cleffect tempent set_current_prop framerate 1.0 //Required to animate the model
+	cleffect tempent set_current_prop frames 1000000 //By default, models die after their animation is up. This should help it not die.
+	
+	cleffect tempent set_current_prop sequence FX_ANIM
+
+	cleffect tempent set_current_prop velocity FX_VELOCITY
+	cleffect tempent set_current_prop gravity FX_GRAVITY
+
+	cleffect tempent set_current_prop collide world //Setting this to all will likely make it collide with the thing it comes out of.
+	cleffect tempent set_current_prop cb_collide proj_collide
+	
+	//Make the light
+	//<new|lightid> <origin> <radius> <(r,g,b)> <duration> ["entity"|"dark"]
+	cleffect light new FX_ORIGIN FX_LIGHT_RADIUS FX_LIGHT_COLOR 2
+	setvard FX_LIGHT_ID game.script.last_light_id
+}
+
+{ proj_update
+
+	if ( !FX_REMOVE ) //If not flagged to be removed
+	{
+		//Update light position
+		if ( FX_LIGHT_ID ) cleffect light FX_LIGHT_ID game.tempent.origin FX_LIGHT_RADIUS FX_LIGHT_COLOR 2
+		
+		//Create motion blur effect
+		if ( FX_MOTION_BLUR )
+		{
+			cleffect tempent model FX_MODEL game.tempent.origin motion_blur_make
+			setvard FX_MBLUR_ANGLES game.tempent.angles //This var is used to set the angle of the new motion blur tempent
+		}
+		
+		//If stuck to something
+		if ( FX_STICK )
+		{
+			if ( FX_STUCK_TO isnot 'none' )
+			{
+				cleffect tempent set_current_prop framerate 0
+				cleffect tempent set_current_prop velocity (0,0,0) //stop the tempent in its tracks
+				cleffect tempent set_current_prop gravity 0 //can still change tempent properties as long as the update event calls the event trying to update it
+				cleffect tempent set_current_prop collide none
+				setvard FX_MOTION_BLUR 0 //Turn off motion blur in case its on 
+		
+				//Track movement on struck npc
+				if ( FX_STUCK_TO isnot 'world' )
+				{
+					local L_STICK_POINT $getcl(FX_STUCK_TO,bonepos,FX_USE_BONE)
+
+					setvard FX_STICK_ANGS $getcl(FX_STUCK_TO,angles)
+
+					local L_TARG_YAW $vec.y(FX_STICK_ANGS)
+					subtract L_TARG_YAW $vec.y(FX_OLD_STICK_ANGS)
+					local L_TARG_ANG $math(vectoradd,game.tempent.angles,$vec(0,L_TARG_YAW,0))
+					
+					cleffect tempent set_current_prop angles L_TARG_ANG
+					cleffect tempent set_current_prop origin L_STICK_POINT
+					
+					setvard FX_OLD_STICK_ANGS FX_STICK_ANGS
+				}
+			}
+		}
+	}
+	else //If flagged to remove
+	{
+		//Remove tempent
+		cleffect tempent set_current_prop origin $vec(10000,10000,10000) //effect is removed by moving it out of the world. it dies because it is no longer in sight
+	}
+}
+
+{ proj_collide //assume it hit world
+
+	setvard FX_STUCK_TO world
+}
+
+{ motion_blur_make
+	
+	//Model body and angles of motion blur effect
+	cleffect tempent set_current_prop body FX_MODEL_BODY
+	cleffect tempent set_current_prop angles FX_MBLUR_ANGLES
+	
+	//Sets the animation, since sometimes the animation makes the model offset
+	cleffect tempent set_current_prop framerate 1.0
+	cleffect tempent set_current_prop frames 1000000 //By default, models die after their animation is up. This should help it not die.
+	cleffect tempent set_current_prop sequence FX_ANIM
+
+	cleffect tempent set_current_prop death_delay 0.1 //Low death delay
+	cleffect tempent set_current_prop fadeout lifetime //fades out over its lifetime
+	cleffect tempent set_current_prop gravity 0 //No gravity
+	cleffect tempent set_current_prop collide none //Should not die or collide with anything. Should stay static in the air.
+	
+	//Sets model to be transparent - no longer used
+	//cleffect tempent set_current_prop rendermode alpha
+	//cleffect tempent set_current_prop renderamt 50
+}
+
+{ ext_hitnpc //<entIndex> <strikePosition>
+
+	if ( FX_STICK )
+	{
+		setvard FX_STUCK_TO PARAM1 //Ent index of thing that was struck
+		setvard FX_ORIGIN PARAM2 //Position that the projectile landed at
+		
+		setvard FX_OLD_STICK_ANGS $getcl(FX_STUCK_TO,angles) //Start tracking stick angles
+		
+		local L_BONES $getcl(FX_STUCK_TO,bonecount) //Gets number of bones of the model
+		calleventloop L_BONES find_nearest_bone //Finds nearest bone compared to point struck on enemy
+		
+		if FX_USE_BONE equals 'none' //If no bones were found, then just kill the projectile
+		callevent fx_die
+	}
+	else
+	{
+		callevent fx_die
+	}
+}
+
+{ ext_hitwall //<strikePosition>
+
+	if ( !FX_STICK ) callevent fx_die //If not sticking, do not delete
+}
+
+{ find_nearest_bone //Sets FX_USE_BONE to the bone index of the closest bone to FX_ORIGIN
+
+	if ( game.script.iteration == 0 ) 
+	{
+		setvard FX_USE_BONE none
+		setvard BEST_BONE_DIST 1000
+	}
+	else //Bone 0 is always the origin of the monster, so start the index at 1
+	{
+		local L_CUR_BONE game.script.iteration
+		
+		local L_CUR_BONE_POS $getcl(FX_STUCK_TO,bonepos,L_CUR_BONE) //Gets position of the bone of the index L_CUR_BONE
+		local L_CUR_BONE_DIST $dist(FX_ORIGIN,L_CUR_BONE_POS)
+
+		if ( L_CUR_BONE_DIST < BEST_BONE_DIST )
+		{
+			setvard FX_USE_BONE L_CUR_BONE
+			setvard BEST_BONE_DIST L_CUR_BONE_DIST
+		}
+	}
+}
+
+{ fx_die
+	
+	//Kill the light, if there is one
+	if ( FX_LIGHT_ID )
+	{
+		cleffect light FX_LIGHT_ID game.tempent.origin FX_LIGHT_RADIUS FX_LIGHT_COLOR 0
+		setvard FX_LIGHT_ID 0
+	}
+	
+	//No need to kill the motion blur if there is any.
+	//It should linger after the original projectile is gone.
+	
+	setvard FX_REMOVE 1 //flag tempent for removal
+	callevent 0.5 fx_remove //remove script after tempent is gone
+}
+
+{ fx_remove
+	removescript
+}
