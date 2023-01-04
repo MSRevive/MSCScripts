@@ -1,0 +1,84 @@
+//Thothie - 'all your concentration' - as wiki says, 'disambiguation'.
+
+//Tome Base
+//Handles learning spells permanently on the character.
+
+//As a tip for naming tomes, name them "SpellName Tome" instead of "Tome of SpellName".
+//This makes the spellname not get cut off if the name of the tome is too long
+
+//The "magic hands" or the spell itself should have the level requirements and this script should check the global item table to see if the player should be able to learn it
+
+//Requires:
+//SPELL_SCRIPT
+
+{
+	const SPELL_SCRIPT "magic_hand_fire_dart"
+	const BASE_LEARN_SUCCESS "You learn to cast a weak fireball."
+
+	const MODEL_WORLD "misc/p_misc.mdl"
+	const MODEL_BODY 16
+
+	setvar READING 0
+	setvard SCROLL_WARNING_LEVEL 0
+}
+
+#include items/base_item_extras
+
+{ game_spawn
+
+	weight 1
+	size 2
+	
+	setworldmodel MODEL_WORLD
+	setmodelbody 0 MODEL_BODY
+	
+	sethudsprite hand item
+	sethudsprite trade book
+}
+
+{ game_attack1
+
+	if READING == 0
+
+	setvard READING 1
+	playermessage "You study the tome carefully..."
+	callevent 3 learn_spell
+}
+
+{ learn_spell
+
+	if READING == 1
+
+	learnspell SPELL_SCRIPT
+	setvard READING 0
+}
+
+{ game_removefromowner
+
+	setvard READING 0
+}
+
+{ game_learnspell_success
+
+	playermessage BASE_LEARN_SUCCESS
+}
+
+{ game_learnspell_failed
+
+	playermessage "Your spell casting skills are not yet sufficient to memorize this tome."
+}
+
+{ [client] game_deploy
+
+	callevent tome_warn
+	callevent 1.0 tome_warn
+}
+
+{ [client] tome_warn
+
+	if ( SCROLL_WARNING_LEVEL == 0 ) infomsg ent_owner "TOMES vs SCROLLS" "TOMES can be used to memorize spells permanently."
+	if ( SCROLL_WARNING_LEVEL == 1 ) infomsg ent_owner "TOMES vs SCROLLS" "SCROLLS... are more expensive..."
+	add SCROLL_WARNING_LEVEL 1
+	
+	if ( SCROLL_WARNING_LEVEL > 1 ) setvard SCROLL_WARNING_LEVEL 0
+}
