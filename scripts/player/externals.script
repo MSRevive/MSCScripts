@@ -691,8 +691,8 @@
 
 	add SCROLL_WARNING_LEVEL 1
 	if ( SCROLL_WARNING_LEVEL > 3 ) setvard SCROLL_WARNING_LEVEL 3
-	if ( SCROLL_WARNING_LEVEL == 1 ) infomsg ent_me "TOMES vs SCROLLS" "TOMES can be used to memorize spells permanently, however you can only memorize 8 such spells."
-	if ( SCROLL_WARNING_LEVEL == 2 ) infomsg ent_me "TOMES vs SCROLLS" "SCROLLS can be used to bypass this limit, but they are more expensive."
+	if ( SCROLL_WARNING_LEVEL == 1 ) infomsg ent_me "TOMES vs SCROLLS" "TOMES can be used to memorize spells permanently."
+	if ( SCROLL_WARNING_LEVEL == 2 ) infomsg ent_me "TOMES vs SCROLLS" "SCROLLS... are more expensive..."
 }
 
 { set_stun_prot
@@ -1004,12 +1004,6 @@
 { ext_playsound2
 	//dbg playing external req EXTPLAY_SOUND
 	playsound 0 10 EXTPLAY_SOUND
-}
-
-{ using_lightning //Flags player to use shock_dmg with atks, PARAM1 - on off, PARAM2 - dmg multiplier
-	setvard USING_LIGHTNING PARAM1
-	setvard LIGHTNING_DMG_RATIO PARAM2
-	setvard LIGHTNING_SKILL PARAM3
 }
 
 { ext_push_targ //PARAM1=target PARAM2=vel
@@ -1339,6 +1333,7 @@
 }
 
 { spider_protect_end
+	if PLR_SPIDER_PROT
 	setvard PLR_SPIDER_PROT 0
 	playermessage ent_me The protection from spider magic fades.
 }
@@ -1416,10 +1411,57 @@
 
 //new parry system
 //on hold, code work to be done
+{ ext_set_swift_blade
+	setvard PLR_SWIFT_BLADE PARAM1
+}
+
+{ game_equipped //<handIdx> <itemID> //Called from code when a player puts an item in their hands, or when active item hands are swapped.
+	callevent ext_set_hand_id $get(PARAM1,hand_index) $get(PARAM1,id)
+}
+
+{ ext_set_hand_id //<hand> <id> //Called by game_equipped above. Also called by base_item_extras when items are removed from the players hands. 
+	
+	local L_HAND_DEST PARAM1 //Hand index to where the item is trying to go
+	local L_ITEM_ID PARAM2
+	
+	local L_HANDPREF $get(L_ITEM_ID,handpref) //0: item wants to go in left hand. 1: item wants to go in right hand. 2: fist_bare. 3: arrow or potion (1 handed). 4: two handed item
+	
+	if ( L_HAND_DEST == 0 ) //Left hand
+	{
+		setvard PLR_LEFT_HAND L_ITEM_ID
+	}
+	else if ( L_HAND_DEST == 1 ) //Right hand / Two handed
+	{
+		setvard PLR_RIGHT_HAND L_ITEM_ID
+		
+		//In this case, it might be two handed, so check handpref too.
+		if ( L_HANDPREF == 4 ) //Is two handed?
+		{
+			setvard PLR_LEFT_HAND 0
+		}
+	}
+	else if ( L_HAND_DEST == 2 ) //fist_bare
+	{
+		setvard PLR_LEFT_HAND L_ITEM_ID
+		setvard PLR_RIGHT_HAND L_ITEM_ID
+	}
+
+	setvard PLR_ACTIVE_WEAPON L_ITEM_ID
+	if ( $get(PLR_ACTIVE_WEAPON,scriptvar,'SPECIAL_WEAPON') )
+	{
+		setvard PLR_SPECIAL_WEAPON 1
+	}
+	else
+	{
+		setvard PLR_SPECIAL_WEAPON 0
+	}
+
+	callevent update_parry //Update parry
+	callevent set_two_hand //Update dual-wield penalty
+	callevent 0.25 set_swift_blade //Set item swift blade, if active
+}
 
 { update_parry
-
-	//dbg update_parry
 
 	local PARRY_MULTI 1.0
 
@@ -1429,7 +1471,7 @@
 	local LEFT_PARRY $get(ent_me,LEFT_PARRY_SKILL)
 	//dbg lefthand hpref $get(PLR_LEFT_HAND,handpref) val LEFT_PARRY
 	if ( $get(PLR_LEFT_HAND,handpref) == 2 ) local LEFT_PARRY 0 //is bare fist
-	if ( $get(PLR_LEFT_HAND,handpref) == 4 )
+	if ( $get(PLR_LEFT_HAND,handpref) == 4 ) //If is two handed
 	{
 		if LEFT_PARRY_SKILL isnot skill.martialarts
 		multiply LEFT_PARRY 1.5 //is two handed and not gauntlet
@@ -1477,13 +1519,8 @@
 	local OLD_PARRY PL_PARRY
 	setvard PL_PARRY TOTAL_PARRY
 
-
-	consolemsg ent_me Parry_Value: ( left_v: $int(LEFT_PARRY) ) ( right_v: $int(RIGHT_PARRY) ) ( multi: PARRY_MULTI ) = TOTAL_PARRY
 	if ( OLD_PARRY != PL_PARRY ) yplayermessage ent_me Your Parry value is now TOTAL_PARRY
 	setstat parry TOTAL_PARRY
-
-	callevent 0.5 set_two_hand
-	callevent 1.0 set_swift_blade
 }
 
 { set_two_hand
@@ -1491,46 +1528,18 @@
 	local PLR_LEFT_HAND_TYPE $get(PLR_LEFT_HAND,itemname)
 	local PLR_RIGHT_HAND_TYPE $get(PLR_RIGHT_HAND,itemname)
 	
-	dbg set_two_hand r PLR_LEFT_HAND_TYPE l PLR_RIGHT_HAND_TYPE
-	if ( PLR_LEFT_HAND_TYPE startswith bows_ )
-	{
-		if PLR_RIGHT_HAND_TYPE startswith bows_
-		local L_NO_REDUCT 1
-	}
-	if ( PLR_LEFT_HAND_TYPE startswith shield ) local L_NO_REDUCT 1
-	if ( PLR_RIGHT_HAND_TYPE startswith shield ) local L_NO_REDUCT 1
-	if ( PLR_RIGHT_HAND_TYPE startswith magic_hand_ ) local L_NO_REDUCT 1
-	if ( PLR_LEFT_HAND_TYPE startswith magic_hand_ ) local L_NO_REDUCT 1
-	if ( $get(PLR_LEFT_HAND,handpref) == 2 ) local L_NO_REDUCT 1 //bare fist
-	if ( $get(PLR_RIGHT_HAND,handpref) == 2 ) local L_NO_REDUCT 1 //bare fist
-	if ( PLR_RIGHT_HAND_TYPE contains gauntlet ) local L_NO_REDUCT 1
-	if ( PLR_LEFT_HAND equals PLR_RIGHT_HAND ) local L_NO_REDUCT 1
-	if ( PLR_LEFT_HAND equals 0 ) local L_NO_REDUCT 1 //empty
-	if ( PLR_RIGHT_HAND equals 0 ) local L_NO_REDUCT 1 //empty
-	if ( PLR_RIGHT_HAND_TYPE startswith item ) local L_NO_REDUCT 1 //off hand not a weapon
-	if ( PLR_RIGHT_HAND_TYPE startswith item ) local L_NO_REDUCT 1 //off hand not a weapon
-	if ( PLR_RIGHT_HAND_TYPE startswith mana ) local L_NO_REDUCT 1 //off hand not a weapon
-	if ( PLR_RIGHT_HAND_TYPE startswith mana ) local L_NO_REDUCT 1 //off hand not a weapon
-	if ( PLR_RIGHT_HAND_TYPE startswith health ) local L_NO_REDUCT 1 //off hand not a weapon
-	if ( PLR_RIGHT_HAND_TYPE startswith health ) local L_NO_REDUCT 1 //off hand not a weapon
+	local L_NO_REDUCT $func(func_get_dualwield_reduct,PLR_LEFT_HAND_TYPE) //Get if there should be dual wield reduction
+	if ( !L_NO_REDUCT ) local L_NO_REDUCT $func(func_get_dualwield_reduct,PLR_RIGHT_HAND_TYPE) //Same for other item in other hand
 
+	setvard PLR_HAS_MATCHED_SET 0
 	if ( $get(PLR_RIGHT_HAND,scriptvar,'MATCHED_SET') )
 	{
 		local L_MATCHED_SET_TYPE $get(PLR_RIGHT_HAND,scriptvar,'MATCHED_SET_TYPE')
 		if ( $get(PLR_LEFT_HAND,scriptvar,'MATCHED_SET_TYPE') equals L_MATCHED_SET_TYPE )
 		{
-			local L_MATCHED_SET 1
 			local L_NO_REDUCT 1
 			setvard PLR_HAS_MATCHED_SET 1
 		}
-		else
-		{
-			setvard PLR_HAS_MATCHED_SET 0
-		}
-	}
-	else
-	{
-		setvard PLR_HAS_MATCHED_SET 0
 	}
 
 	if ( !L_NO_REDUCT )
@@ -1575,6 +1584,26 @@
 			setvard PLR_HAD_MATCHED_SET 0
 		}
 	}
+}
+
+{ func_get_dualwield_reduct //<scriptname> //Returns 1 or 0 depending on whether or not the weapon has dual wield penalty
+
+	local L_ITEM PARAM1
+	local L_NO_REDUCT 0
+	
+	if ( L_ITEM startswith 'bows_' ) local L_NO_REDUCT 1
+	else if ( L_ITEM startswith 'shield' ) local L_NO_REDUCT 1
+	else if ( L_ITEM startswith 'armor_' ) local L_NO_REDUCT 1
+	else if ( L_ITEM startswith 'magic_hand_' ) local L_NO_REDUCT 1
+	else if ( L_ITEM startswith 'fist_' ) local L_NO_REDUCT 1 //bare fist
+	else if ( L_ITEM contains 'gauntlet' ) local L_NO_REDUCT 1
+	else if ( L_ITEM equals '0' ) local L_NO_REDUCT 1 //empty
+	else if ( L_ITEM startswith 'item' ) local L_NO_REDUCT 1 //off hand not a weapon
+	else if ( L_ITEM startswith 'mana' ) local L_NO_REDUCT 1 //off hand not a weapon
+	else if ( L_ITEM startswith 'health' ) local L_NO_REDUCT 1 //off hand not a weapon
+
+	return **clear
+	return L_NO_REDUCT
 }
 
 { set_swift_blade
@@ -1630,73 +1659,6 @@
 
 	attackprop ACTIVE_WEAPON 0 delay.end CUR_SPEED
 	attackprop ACTIVE_WEAPON 0 delay.strike CUR_STRIKE
-}
-
-{ ext_set_swift_blade
-	setvard PLR_SWIFT_BLADE PARAM1
-}
-
-{ game_equipped
-	//dbg game_equipped $get(PARAM1,name) [ in hand PARAM2 ] [ $get(PARAM1,hand_index) ]
-	if ( G_DEVELOPER_MODE ) callevent 1.0 report_hands
-	callevent ext_set_hand_id $get(PARAM1,hand_index) $get(PARAM1,id)
-
-	if G_DEVELOPER_MODE
-	local L_H0 $get(ent_me,hand0)
-	local L_H1 $get(ent_me,hand1)
-
-	local L_H0 $get(L_H0,itemname)
-	local L_H1 $get(L_H1,itemname)
-
-	dbg game_equipped h0: L_H0 h1: L_H1
-	gplayermessage G_DEV_PLAYER h0: L_H0 h1: L_H1
-
-}
-
-{ ext_set_hand_id //<hand> <id>
-
-	//dbg ext_set_hand_id PL_ACTIVE_SKILL
-
-	//dbg ext_set_hand_id $get(PARAM2,itemname)
-
-	//dbg Got_hand PARAM1 id PARAM2
-	setvard PL_ACTIVE_SKILL $get(PARAM2,scriptvar,'WEAPON_PRIMARY_SKILL')
-	if ( PARAM1 equals 0 )
-	{
-		setvard PLR_RIGHT_HAND PARAM2
-		callexternal PLR_LEFT_HAND ext_off_hand_change PLR_RIGHT_HAND
-	}
-	if ( PARAM1 equals 1 )
-	{
-		setvard PLR_LEFT_HAND PARAM2
-		callexternal PLR_RIGHT_HAND ext_off_hand_change PLR_LEFT_HAND
-	}
-	if ( PARAM1 equals 2 )
-	{
-		setvard PLR_LEFT_HAND PARAM2
-		setvard PLR_RIGHT_HAND PARAM2
-		callexternal PLR_RIGHT_HAND ext_off_hand_change
-	}
-
-	if ( PARAM1 equals 3 )
-	{
-		if ( PLR_LEFT_HAND isnot PLR_RIGHT_HAND ) callexternal PLR_RIGHT_HAND ext_off_hand_change PLR_RIGHT_HAND
-		if ( PLR_RIGHT_HAND isnot PLR_LEFT_HAND ) callexternal PLR_LEFT_HAND ext_off_hand_change PLR_RIGHT_HAND
-	}
-
-	//dbg ext_set_hand_id PL_ACTIVE_SKILL SPECIAL_WEAPON
-	setvard PLR_ACTIVE_WEAPON PARAM2
-	if ( $get(PLR_ACTIVE_WEAPON,scriptvar,'SPECIAL_WEAPON') )
-	{
-		setvard PLR_SPECIAL_WEAPON 1
-	}
-	else
-	{
-		setvard PLR_SPECIAL_WEAPON 0
-	}
-
-	//dbg ext_set_hand_id update_parry
-	callevent 0.1 update_parry
 }
 
 { ext_sphere_token_x //TYPE_SCAN SCAN_RANGE
@@ -4435,7 +4397,7 @@
 	setvard PLR_IDLE_MUSIC_LENGTH PARAM2
 	//dbg set_idle_music PARAM1 PARAM2 PARAM3
 	if PARAM3 == 1
-	if ( $get_scriptflag(ent_me,type_exists,cmusak) )
+	if ( $get_scriptflag(ent_me,cmusak,type_exists) )
 	{
 		callevent set_end_combat_music
 	}

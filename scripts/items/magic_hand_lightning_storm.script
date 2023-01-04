@@ -1,166 +1,77 @@
 //Thothie-lightning storm
 {
-	const DRAIN_RATE -1.0
+	//magic_hand_base
+	const MELEE_TYPE strike-land
+	const MELEE_RANGE 1000
+	const MELEE_HITCHANCE 100
+	const MELEE_ATK_DURATION 1
+	const MELEE_NOAUTOAIM 1
+	setvar SPELL_SKILL_REQUIRED	10
+	const SCRIPT_SFX_PREP "items/magic_hand_lightning_weak_cl"
+	const SPELL_DAMAGE_TYPE	lightning
+	const SPELL_MPDRAIN 30
+	const SPELL_STAT spellcasting.lightning
 
-	const SOUND_LOOP magic/shock_noloop.wav
-	const SOUND_CHARGE none
-  //const SOUND_CHARGE      	magic/shock_noloop.wav
-  const SOUND_SHOOT1      	debris/zap1.wav
-  const SOUND_SHOOT2      	debris/zap2.wav
-  const SOUND_SHOOT3      	debris/zap3.wav
-  const SOUND_SHOOT      	debris/beamstart14.wav
+	//-------------------------------------------------------
+	const SOUND_LOOP "magic/shock_noloop.wav"
+	const SOUND_SHOOT "debris/beamstart14.wav"
+	const SOUND_SHOOT1 "debris/zap1.wav"
+	const SOUND_SHOOT2 "debris/zap2.wav"
+	const SOUND_SHOOT3 "debris/zap3.wav"
 
-  const MELEE_RANGE		1000
-  const MELEE_HITCHANCE 	100%
-  const MELEE_ATK_DURATION 	1
+	const SCRIPT_SFX_CAST "effects/sfx_lightning"
+	
+	setvard DRAIN_COUNT 0
+}
 
-  //Only defining these because this magic does instant traceline damage
-  const MELEE_TYPE 		strike-land
-  const MELEE_DMG 		0
-  const MELEE_DMG_RANGE		0
-  const MELEE_NOAUTOAIM		1
-  const MELEE_DMG_DELAY		0.4
-  //-------------------------------------------------------
-
-  setvar SPELL_SKILL_REQUIRED	10
-  const SPELL_FIZZLE_TIME	30
-  const SPELL_CAST_SUCCESS	90%
- // const SPELL_PREPARE_TIME	2
-  const SPELL_DAMAGE_TYPE	lightning
-  const SPELL_ENERGYDRAIN	10
-  const SPELL_MPDRAIN		5
-  const SPELL_STAT		spellcasting.lightning
-
-  const SCRIPT_SFX_CAST		effects/sfx_lightning
-  precachefile 			SCRIPT_SFX_CAST
-  const SCRIPT_SFX_PREP		items/magic_hand_lightning_weak_cl
-  const SCRIPT_SFX_DURATION	0.5
-  const LIGHT_COLOR		(30,30,253)
+{ game_precache
+	precachefile SCRIPT_SFX_CAST
 }
 
 #include items/magic_hand_base
 
-{  spell_spawn
+{ spell_spawn
 
-   name 		Lightning Storm
-   desc 		Lightning Storm - A massive electrical storm
-}
-
-{  cast_start
-
-	if ( STORM_UP )
-	{
-		local OWNER_ORG $get(ent_owner,origin)
-		local OWNER_ANG $get(ent_owner,angles)
-		local OWNER_PITCH $vec.pitch(OWNER_ANG)
-		if ( OWNER_PITCH < 0 ) add OWNER_PITCH 359
-		local OWNER_PITCH $neg(OWNER_PITCH)
-		local OWNER_YAW $vec.yaw(OWNER_ANG)
-		local OWNER_ROLL $vec.roll(OWNER_ANG)
-		local OWNER_DEST OWNER_ORG
-		vectoradd OWNER_DEST $relpos($vec(OWNER_PITCH,OWNER_YAW,OWNER_ROLL),$vec(0,MELEE_RANGE,0))
-		local LSTORM_MOVETO $get_traceline(OWNER_ORG,OWNER_DEST,worldonly)
-		effect beam point lgtning.spr 200 OWNER_ORG OWNER_DEST (255,255,0) 64 10 0.5
-		svplayrandomsound 0 8 SOUND_SHOOT1 SOUND_SHOOT2 SOUND_SHOOT3
-	
-		setorigin STORM_ID LSTORM_MOVETO
-		callexternal STORM_ID sustain_storm
-	}
-
-	if ( !STORM_UP )
-	{
-		svplaysound 0 10 SOUND_SHOOT
-		local MY_OWNER $get(ent_owner,id)
-		setvard EFFECT_DMG 	$get(MY_OWNER,skill.spellcasting.lightning)
-		multiply EFFECT_DMG 1.5
-		local EFFECT_DURATION_STAT $get(MY_OWNER,stat.concentration.ratio)
-		local EFFECT_MAXDURATION 	5
-		local EFFECT_MINDURATION 	5
-		local EFFECT_DURATION 		$get_skill_ratio(EFFECT_DURATION_STAT,EFFECT_MINDURATION,EFFECT_MAXDURATION)
-		createnpc monsters/summon/summon_lightning_storm PARAM2 MY_OWNER $get(MY_OWNER,angles.y) EFFECT_DMG EFFECT_DURATION spellcasting.lightning
-		setvard STORM_ID $get(ent_lastcreated,id)
-		setvard STORM_UP 1
-	}
+	name "Lightning Storm"
+	desc "A massive electrical storm"
 }
 
 { spell_casted //PARAM1: "none"/"npc"/"world"   2: Attack end Position   3: Entity hit (if any)
 
-	if ( !SUSTAIN_START )
-	{
-		setvard DRAIN_COUNT 0
-		setvard SUSTAIN_START 1
-		callevent 0.5 sustain_spell
-	}
+	local L_ATK_POS PARAM2
+	setvard DRAIN_COUNT 0
 
 	if ( STORM_UP )
 	{
-		local OWNER_ORG $get(ent_owner,origin)
-		//since moved to spell_casted, this is not needed, but good for reference
-		//local OWNER_ANG $get(ent_owner,angles)
-		//local OWNER_PITCH $vec.pitch(OWNER_ANG)
-		//local OWNER_PITCH $neg(OWNER_PITCH)
-		//local OWNER_YAW $vec.yaw(OWNER_ANG)
-		//local OWNER_ROLL $vec.roll(OWNER_ANG)
-		//local OWNER_DEST OWNER_ORG
-		//vectoradd OWNER_DEST $relpos($vec(OWNER_PITCH,OWNER_YAW,OWNER_ROLL),$vec(0,MELEE_RANGE,0))
-		local LSTORM_MOVETO PARAM2 //$get_traceline(OWNER_ORG,OWNER_DEST,worldonly)
-		svplayrandomsound 0 8 SOUND_SHOOT1 SOUND_SHOOT2 SOUND_SHOOT3
-	
-		setorigin STORM_ID LSTORM_MOVETO
-		callexternal STORM_ID sustain_storm
+		effect beam point lgtning.spr 200 $get(ent_owner,origin) L_ATK_POS (255,255,0) 64 10 0.5
+		callexternal STORM_ID sustain_storm L_ATK_POS
 	}
-
-}
-
-{ sustain_spell
-
-	callevent 0.5 sustain_spell
-
-	if STORM_UP
-
-	if ( $get(ent_owner,mp) <= 2 )
+	else //no storm up
 	{
-		playermessage Out of mana!
-		setvard CUST_MESSAGE 1
-		callexternal STORM_ID lstorm_end
-		callevent 0.1 spell_end
+		local MY_OWNER $get(ent_owner,id)
+		
+		setvard EFFECT_DMG $get(MY_OWNER,skill.spellcasting.lightning)
+		multiply EFFECT_DMG 1.5
+		
+		createnpc monsters/summon/summon_lightning_storm L_ATK_POS $get(ent_me,id) $get(MY_OWNER,angles.y) EFFECT_DMG 15 spellcasting.lightning
+		setvard STORM_ID $get(ent_lastcreated,id)
+		setvard STORM_UP 1
 	}
 
-	local OWNER_ORG $get(ent_owner,origin)
-	callexternal STORM_ID sustain_storm
-	givemp DRAIN_RATE
+	svplayrandomsound 0 8 SOUND_SHOOT1 SOUND_SHOOT2 SOUND_SHOOT3
 
-	if game.serverside
-	add DRAIN_COUNT 1
-	if ( DRAIN_COUNT == 10 )
-	{
-		setvard DRAIN_COUNT 0
-		callexternal ent_owner mana_drain //update mana on player hud readout, if using hud feedback
-	}
+	local L_POS PARAM2
+	callexternal STORM_ID sustain_storm L_POS
 }
 
-{  spell_end
-
-	if ( STORM_UP ) callexternal STORM_ID lstorm_end
+{ storm_ended
+	setvard STORM_UP 0
 }
-
-//This maybe fuxing with the storm issue
-//{ game_dodamage //1:AttackHit(1/0)  2:EntityHit  3:StartOrigin  4:EndOrigin
-//
-//	////dbg hit game_dodamage
-//
-//	if PARAM1
-//	local SHOCK_DAMAGE EFFECT_DMG
-//	multiply SHOCK_DAMAGE 0.2
-//	//applyeffect $get(PARAM2,id) effects/effect_shock_dmg 5 MY_OWNER SHOCK_DAMAGE
-//}
 
 { repeatdelay 9.8
 	playsound 0 5 SOUND_LOOP
 }
 
 { fake_precache
-	svplaysound 0 0 SOUND_CHARGE
 	svplaysound 0 0 SOUND_SHOOT
-	svplayrandomsound 0 0 SOUND_SHOOT1 SOUND_SHOOT2 SOUND_SHOOT3
 }

@@ -1,4 +1,4 @@
-//Need a script shared by both base_item and base_miscitem, this be it.
+
 //ITEM_RESERVE_FOR_STRONGEST 1 - this item can only be picked up by the player with the most damage points when it first drops into the world
 //PICKUP_ALLOW_LIST - array stores players allowed to pick up item (if this array exists, item pickup is restricted code side)
 //
@@ -13,6 +13,19 @@
 }
 
 #include items/item_debug
+
+{ game_spawn
+	callevent 0.1 vanish_item //Item owner is propogated 0.1 seconds after player is put in world
+}
+
+{ [server] vanish_item
+
+	local L_OWNER $get(ent_me,owner) //Can't use ent_owner, since item hasn't been placed in players hands yet
+	if ( $get(L_OWNER,exists) )
+	{
+		setorigin ent_me $vec(20000,20000,20000)
+	}
+}
 
 { game_fall
 	if game.serverside
@@ -75,109 +88,6 @@
 			quest set ent_owner QUEST_ITEM_CAT QUEST_CAT_DATA
 		}
 	}
-
-	//Anti-Dup System
-	callevent 0.01 bitem_set_owner
-}
-
-//{ [server] list_items
-//	consolemsg G_DEV_PLAYER $get(ent_me,itemname)
-//}
-
-//============= Anti-Dup System
-{ bitem_set_owner
-	if game.serverside
-	if ( $get(ent_owner,isplayer) ) setvard ITEM_WAS_OWNED_BY_PLAYER 1
-	if ( ITEM_OWNER equals 'ITEM_OWNER' )
-	{
-		setvard ITEM_OWNER $get(ent_owner,id)
-		callevent log_item_exchange ITEM_OWNER $get(ent_owner,id)
-		setvard ITEM_PREV_OWNER ITEM_OWNER
-		setvard ITEM_EXCHANGE_CONFIRM_TIME game.time
-		add ITEM_EXCHANGE_CONFIRM_TIME 10.0
-		
-	}
-	else
-	{
-		if $get(ent_owner,id) isnot ITEM_OWNER
-		setvard NOOB_LOOP 0
-		gplayermessage ITEM_OWNER $get(ent_me,name) has been picked up by $get(ent_owner,name) - please allow at least 10 seconds for ownership transfer.
-		gplayermessage ent_owner This item is owned by $get(ITEM_OWNER,name) - please allow at least 10 seconds for ownership to be transfered to you.
-		callevent log_item_exchange ITEM_OWNER $get(ent_owner,id)
-		setvard ITEM_OWNER $get(ent_owner,id)
-		setvard ITEM_IN_EXCHANGE 1
-		callevent 5.0 clear_item_exchange
-	}
-}
-
-{ clear_item_exchange
-	setvard ITEM_IN_EXCHANGE 0
-}
-
-{ player_left
-	if ITEM_WAS_OWNED_BY_PLAYER
-	if ( ITEM_OWNER equals PARAM1 ) callevent 1.0 bitem_player_left
-
-	//delete all unowned items
-	if ( !$get(ent_owner,exists) )
-	{
-		if $get(ent_me,inworld) //not in containers
-		local ITEM_RESERVER $get_array(PICKUP_ALLOW_LIST,0)
-		if !$get(ITEM_RESERVER,exists)
-		callevent 1.0 bitem_player_left
-	}
-	//dbg *DELETE-ITEM* player_left
-	//deleteent ent_me
-
-	if ( game.time < ITEM_EXCHANGE_CONFIRM_TIME )
-	{
-		if ( !$get(ITEM_PREV_OWNER,exists) ) callevent 1.0 bitem_player_left
-	}
-}
-
-{ bitem_player_left
-	dbg *DELETE-ITEM* player_left
-	if !ITEM_NEVER_DELETE //hacks for steam bow
-	if ( game.cvar.ms_chatlog )
-	{
-		local WRITE_LOG $timestamp(>)
-		strconc WRITE_LOG ITEM_DELETE $get(ent_me,name) has no owner on server ( $get(ent_owner,name) )
-		chatlog WRITE_LOG
-	}
-
-	deleteent ent_me
-}
-
-{ log_item_exchange
-	if game.serverside
-
-	if game.cvar.ms_chatlog
-
-	local OLD_OWNER PARAM1
-	local NEW_OWNER PARAM2
-
-	if ( $get(ent_me,scriptname) contains 'magic_hand_' ) local EXIT_SUB 1
-	if !EXIT_SUB
-	
-	if OLD_OWNER isnot NEW_OWNER
-
-
-	if ( $get(OLD_OWNER,isplayer) )
-	{
-		local WRITE_LOG $timestamp(>)
-		strconc WRITE_LOG PLAYER_EXCHANGE $get(NEW_OWNER,name) [ $get(NEW_OWNER,steamid) ] received_from $get(OLD_OWNER,name) [  $get(OLD_OWNER,steamid) ] $get(ent_me,name)
-	}
-	else
-	{
-		local WRITE_LOG $timestamp(>)
-		strconc WRITE_LOG PLAYER_EXCHANGE $get(NEW_OWNER,name) [ $get(NEW_OWNER,steamid) ] received_from *WORLD* $get(ent_me,name)
-	}
-
-	chatlog WRITE_LOG
-}
-
-{ bweapon_effect_remove
-	callexternal ent_owner ext_set_hand_id $get(ent_me,hand_index) $get(ent_owner,scriptvar,'PLR_FISTS_ID')
 }
 
 //============= Wielded
@@ -191,10 +101,9 @@
 	if BEW_IS_WEILDED
 	callevent bweapon_effect_activate
 }
-{ [server] game_deploy
-	if game.serverside
 
-	//dbg base_effect_wielded $get(ent_owner,scriptvar,'PLR_IN_WORLD')
+{ [server] game_deploy
+	
 	if $get(ent_owner,scriptvar,'PLR_IN_WORLD')
 	callevent bweapon_effect_activate
 
@@ -256,59 +165,9 @@
 	playowneranim PARAM1 PARAM2 PARAM3 PARAM4
 }
 
-//============= Damage adjusts
-// This works here, but also works in player_main->game_damaged_other - so moved there
-//{ game_dodamage //PARAM1=hit:0|1 PARAM2=ent_hit PARAM3=(start) PARAM4=(end) DmgType DmgAmt
-//
-//	if PARAM1
-//
-//  //This does NOT work here
-//	if ( $get(ent_owner,scriptvar,'PLR_DMG_ADJUST_FIRE') > 0 )
-//	{
-//		if PARAM5 contains fire
-//		local ADJ_RATIO $get(ent_owner,scriptvar,'PLR_DMG_ADJUST_FIRE')
-//		return ADJ_RATIO
-//		local IN_DMG PARAM6
-//		multiply IN_DMG ADJ_RATIO
-//		set dmg ADJ_RATIO
-//	}
-//
-//	//This does
-//	if ( $get(ent_owner,scriptvar,'PLR_ADD_FIRE_DOT') > 0 )
-//	{
-//		local DOT_RATIO $get(ent_owner,scriptvar,'PLR_ADD_FIRE_DOT')
-//		local OWNER_SKILL $get(ent_owner,skill.spellcasting.fire)
-//		multiply OWNER_SKILL DOT_RATIO
-//		applyeffect PARAM2 effects/effect_burn 5.0 $get(ent_owner,id) OWNER_SKILL
-//	}
-//}
-
-//{ game_opencontainer
-//	dbg game_opencontainer
-//}
-
-//optimal debuggary
-//{
-//	dbg OPT_DEBUG: item:init game.time
-//}
-//
-//{ game_spawn
-//	dbg OPT_DEBUG: item:game_spawn game.time
-//}
-//
-//{ game_postspawn
-//	dbg OPT_DEBUG: item:game_postspawn game.time
-//}
-//
-//{ ext_activate_items
-//	dbg OPT_DEBUG: item:ext_activate_items game.time
-//}
-
 { item_banked
 	//dbg item_banked
-	callevent game_putinpack //Dunno what these do really
-	array.create PICKUP_ALLOW_LIST //Prevents anyone from picking this item up, should it somehow be dropped while banking.
-	array.add PICKUP_ALLOW_LIST no-one
+	callevent game_putinpack
 }
 
 { ext_item_swift_blade //<base_speed|remove> <base_stike_delay>
@@ -359,6 +218,28 @@
 	infomsg PARAM1 "Item Restricted" OUT_MSG
 }
 
-{ game_spawn
-	if ( FRESH_PLAYER ) setorigin ent_me (20000,20000,20000)
+{ bweapon_effect_activate
+}
+
+{ bweapon_effect_remove //When item is removed from players hands
+	
+	local L_SET_ID 0
+	local L_HAND -1
+	
+	local L_ID $get(ent_owner,scriptvar,'PLR_LEFT_HAND') //Get if item is left hand
+	if ( L_ID equals $get(ent_me,id) )
+	{
+		if ( $get(L_ID,hand_index) equals $get(ent_me,hand_index) ) local L_HAND $get(L_ID,hand_index)
+	}
+	
+	local L_ID $get(ent_owner,scriptvar,'PLR_RIGHT_HAND')  //Get if item is Right hand
+	if ( L_ID equals $get(ent_me,id) )
+	{
+		if ( $get(L_ID,hand_index) equals $get(ent_me,hand_index) ) local L_HAND $get(L_ID,hand_index)
+	}
+	
+	if L_HAND >= 0 //If item is still wielded then it will have a hand value
+	if L_HAND <= 3 //This is a valid range of hand values
+
+	callexternal ent_owner ext_set_hand_id L_HAND 0 //remove hand value
 }

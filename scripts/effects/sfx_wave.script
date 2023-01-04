@@ -1,4 +1,4 @@
-//wave that moves forward, reports position to index periodically to owner (currently must be player)
+//wave that moves forward and deals bursts of holy damage and healing.
 #scope server
 
 {
@@ -12,7 +12,6 @@
 	name "a|Holy Wave"
 
 	setmodel "null.mdl"
-	race beloved
 	invincible 1
 	height 0
 	width 0
@@ -30,12 +29,12 @@
 	setvard FX_SKILL PARAM4
 	
 	setvard FX_ORIGIN $get(ent_me,origin)
-	setvard FX_SPEED 150
+	setvard FX_SPEED 200
 
 	clientevent new all $get(ent_me,scriptname) FX_ORIGIN FX_YAW FX_SPEED
 	setvard FX_SCRIPT_ID game.script.last_sent_id
 	
-	callevent 0.5 burst_fx
+	callevent 0.6 burst_fx
 }
 
 { burst_fx
@@ -69,7 +68,12 @@
 	local L_RELATIONSHIP $get(PARAM2,relationship,FX_OWNER)
 
 	if ( L_RELATIONSHIP equals enemy ) local L_ENEMY 1
-	if ( $get(PARAM2,isplayer) ) local L_ENEMY 0
+	if ( L_RELATIONSHIP equals wary ) local L_ENEMY 1
+	if ( $get(PARAM2,isplayer) ) 
+	{
+		if ( !game.pvp ) local L_ENEMY 0
+	}
+	
 	if ( L_ENEMY )
 	{
 		if PARAM1
@@ -77,20 +81,13 @@
 		multiply L_DOT 0.5
 		applyeffect PARAM2 effects/effect_holy_dmg 5.0 FX_OWNER L_DOT
 	}
-	else if ( L_RELATIONSHIP equals ally )
+	else
 	{
-		local L_HEAL 1
-		
-		if ( $get(PARAM2,isplayer) )
-		{
-			if ( game.pvp ) local L_HEAL 0
-		}
-
-		if ( L_HEAL ) callevent ce_wave_do_heal $get(PARAM2,id)
+		callevent ce_wave_do_heal $get(PARAM2,id)
 	}
 }
 
-{ ce_wave_do_heal //<target>
+{ ce_wave_do_heal //<target> //Called when holy wave wants to heal a target
 
 	local L_IS_ME 0
 	local L_ADD_DMG_POINTS 0
@@ -110,11 +107,11 @@
 
 		if ( L_IS_ME )
 		{
-			gplayermessage FX_OWNER Your holy wave heals you for $int(L_DOT) hp
+			gplayermessage FX_OWNER "Your holy wave heals you for" $int(L_DOT) "hp"
 		}
 		else
 		{
-			gplayermessage FX_OWNER You heal $get(PARAM1,name) for $int(L_DOT) hp
+			gplayermessage FX_OWNER "You heal" $get(PARAM1,name) "for" $int(L_DOT) "hp"
 
 			if ( $get(PARAM1,isplayer) )
 			{

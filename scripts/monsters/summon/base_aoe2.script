@@ -1,5 +1,7 @@
 //Thothie MAR2010_15
-//- Yet another attempt to make a dependable base_aoe script
+
+//- Dependable base_aoe script
+//-
 //- These vars MUST be set in game_dynamically_created
 //- AOE_OWNER - id of owner (will use value of MY_OWNER if set)
 //- AOE_RADIUS - radius of AOE effect (can also be const)
@@ -14,8 +16,6 @@
 //- AOE_VADJ 0 (vertically adjust scan point for dodamage scans)
 //
 //- Set by base
-//- AOE_ISPLAYER - 1 if owner is player
-//- AOE_PVP - 1 if PVP is on
 //- AOE_ACTIVE - 1 while active
 //
 //- Calls to be handled by top script
@@ -31,117 +31,110 @@
 	const AOE_VADJ 0
 }
 
-{ game_dynamically_created
+{ game_spawn
+
+	if !AOE_VULNERABLE
+	setmodel "null.mdl"
+	invincible 1
+	race beloved
+	nopush 1
+	gravity 0
+	setvard PLAYING_DEAD 1
+}
+
+{ game_dynamically_created //<owner> <radius> <duration> <affects_wary>
 	callevent 0.01 aoe_start
 }
 
-{ game_spawn
-	if !AOE_VULNERABLE
-	invincible 1
-	setvard PLAYING_DEAD 1
-	nopush 1
-	gravity 0
-}
-
 { aoe_start
-	if ( $get(MY_OWNER,isalive) ) setvard AOE_OWNER MY_OWNER
-	race $get(AOE_OWNER,race)
-	setvard AOE_PVP game.pvp
-	setvard AOE_ISPLAYER $get(AOE_OWNER,isplayer)
+
+	if ( $get(MY_OWNER,isalive) ) setvard AOE_OWNER MY_OWNER //Small adaption for older scripts
+	if ( !AOE_VULNERABLE ) race $get(AOE_OWNER,race) //If this is vulnerable, set appropriate race so it can be targeted
+	
 	setvard AOE_ACTIVE 1
-	callevent aoe_scan_loop
-
-	local L_AOE_DURATION AOE_DURATION
-	subtract AOE_DURATION 0.01 //for accurate end time
-
-	callevent L_AOE_DURATION aoe_end
+	callevent aoe_scan_loop //Start scanning
+	callevent AOE_DURATION aoe_end //Set timer to end aoe
 }
 
 { aoe_scan_loop
+
 	if AOE_ACTIVE
-	callevent AOE_SCAN_FREQ aoe_scan_loop
-	if ( AOE_SCAN_TYPE equals dodamage )
+	repeatdelay AOE_SCAN_FREQ //call loop again
+	
+	if ( AOE_SCAN_TYPE equals 'dodamage' )
 	{
 		dodamage $relpos(0,0,AOE_VADJ) AOE_RADIUS 0 100% 0 reflective target
 	}
 
-	if ( AOE_SCAN_TYPE contains sphere )
+	if ( AOE_SCAN_TYPE contains 'sphere' )
 	{
-		if ( !AOE_FRIENDLY )
-		{
-			setvard AOE_TARGET_LIST $get_tsphere(enemy,AOE_RADIUS)
-		}
-		else
-		{
-			setvard AOE_TARGET_LIST $get_tsphere(ally,AOE_RADIUS)
-		}
+		if ( AOE_FRIENDLY ) setvard AOE_TARGET_LIST $get_isphere(ally,AOE_RADIUS) //Get list to affect friendlies
+		else setvard AOE_TARGET_LIST $get_isphere(any,AOE_RADIUS) //Get list to affect enemies
+
 		if AOE_TARGET_LIST isnot none
 		calleventloop $get_token_amt(AOE_TARGET_LIST) aoe_affect_targets
 	}
+}
+
+{ aoe_affect_targets
+
+	local L_TARG $get_token(AOE_TARGET_LIST,game.script.iteration)
+	local L_TARG $get_by_idx(L_TARG,id)
+
+	local L_DO_EFFECT $func(func_filter_targs,L_TARG)
+	
+	if L_DO_EFFECT
+	callevent aoe_affect_target L_TARG //affect target
+}
+
+{ game_dodamage //PARAM1=hit:0|1 PARAM2=ent_hit PARAM3=(start) PARAM4=(end) //This gets called when using the 'dodamage' scan type
+
+	local L_TARG PARAM2
+	local L_DO_EFFECT $func(func_filter_targs,L_TARG)
+ 	
+	if L_DO_EFFECT
+	callevent aoe_affect_target L_TARG
 }
 
 { aoe_end
 	setvard AOE_ACTIVE 0
 }
 
-{ aoe_affect_targets
-	local CURAOE_TARG $get_token(AOE_TARGET_LIST,game.script.iteration)
+{ func_filter_targs //<targId> //returns 0 or 1 depending on whether or not this aoe should affect the given target
 
-	local DO_EFFECT 1
+	local L_TARG PARAM1
+	local L_DO_EFFECT 1
 
-	if ( AOE_ISPLAYER )
+	if ( !AOE_FRIENDLY ) //If not a friendly aoe
 	{
-		if ( !AOE_FRIENDLY )
+		if ( $get(AOE_OWNER,isplayer) )
 		{
-			if ( !AOE_PVP )
+			if ( $get(L_TARG,isplayer) ) //if player is trying to affect player
 			{
-				if $get(CURAOE_TARG,isplayer)
-				local DO_EFFECT 0
+				if ( !game.pvp ) local L_DO_EFFECT 0 //If not pvp, then dont affect target
 			}
 		}
+		
+		//Only check relationships if its not a friendly aoe, since getting non-friendly list here does not auto-filter relationships.
+		local L_RELATE $get(AOE_OWNER,relationship,L_TARG)
+		if ( L_RELATE equals ally ) local L_DO_EFFECT 0
+		else if ( L_RELATE equals neutral ) local L_DO_EFFECT 0
+		
+		if !AOE_AFFECTS_WARY
+		if ( L_RELATE equals wary ) local L_DO_EFFECT 0
 	}
 
-	if ( AOE_SCAN_TYPE equals rsphere )
+	if ( AOE_SCAN_TYPE equals 'rsphere' )
 	{
-		//uses tsphere, but require no world brushes be blocking
+		//Check for line of sight
 		local TRACE_START $get(ent_me,origin)
-		local TRACE_END $get(CURAOE_TARG,origin)
+		local TRACE_END $get(L_TARG,origin)
 		local TRACE_LINE $get_traceline(TRACE_START,TRACE_END,worldonly)
+		
 		if TRACE_LINE isnot TRACE_END
-		local DO_EFFECT 0
+		local L_DO_EFFECT 0 //There is a wall in the way!
 	}
-
-	if DO_EFFECT
-	callevent aoe_affect_target CURAOE_TARG	
-}
-
-{ game_dodamage //PARAM1=hit:0|1 PARAM2=ent_hit PARAM3=(start) PARAM4=(end)
-	if $get(PARAM2,exists)
-
-	if ( !AOE_FRIENDLY )
-	{
-		local L_RELATIONSHIP $get(PARAM2,relationship,AOE_OWNER)
-		if ( L_RELATIONSHIP !equals ally )
-		{
-			if ( L_RELATIONSHIP !equals neutral ) local DO_EFFECT 1
-			
-			if ( AOE_AFFECTS_WARY )
-			{
-				if ( L_RELATIONSHIP equals wary ) local DO_EFFECT 1
-			}
-		}
-		if ( !AOE_PVP )
-		{
-			if ( AOE_ISPLAYER )
-			{
-				if $get(PARAM2,isplayer)
-				local DO_EFFECT 0
-			}
-		}
-	}
-
- 	if ( $get(PARAM2,scriptvar,'PLAYING_DEAD') ) local DO_EFFECT 0
- 	
-	if DO_EFFECT
-	callevent aoe_affect_target $get(PARAM2,id)
+	
+	return **clear
+	return L_DO_EFFECT
 }

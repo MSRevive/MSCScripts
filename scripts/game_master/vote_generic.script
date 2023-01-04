@@ -1,0 +1,310 @@
+//Handles voting system on the game master.
+//-Votes can inlcude votemap change, votekick, voteban, vote lock...
+
+#scope server
+
+{ gm_create_vote //<caller_event> <token_option:data> <title> [descript] [silent:0|1] //Calls back to the caller_event with the index of the option voted for.
+	//If votes tie, the last menu option will be selected as the "winner", assuning it is equivalent to a "no" option. For example, in a yes/no vote, no will be picked if it ties, because it is the last option in the list of options.
+	//If all players vote, the voting will end early and and vote tally will be counted.
+
+	if ( !VOTE_BUSY ) //If not already voting
+	{
+		if game.playersnb > 0
+		setvard VOTE_BUSY 1
+		setvard VOTE_TALLY 0 //Reset vote tally options
+
+		//Required params
+		setvard VOTE_EVENT PARAM1
+		setvard VOTE_OPTIONS PARAM2
+		setvard VOTE_TITLE PARAM3
+		
+		//Optional
+		setvard VOTE_DESC PARAM4
+		setvard VOTE_SILENT PARAM5
+
+		if ( VOTE_DESC equals 'PARAM4' ) setvard VOTE_DESC " "
+		if ( VOTE_SILENT equals 'PARAM5' ) setvard VOTE_SILENT 0
+		
+		callexternal players ext_set_vote_delay 20.0
+		callevent gm_send_vote
+	}
+}
+
+{ gm_send_vote
+
+	name VOTE!
+
+	infomsg all VOTE_TITLE VOTE_DESC
+	
+	setvard TOTAL_VOTES 0
+	setvard TOTAL_BALLOTS game.playersnb
+	
+	callevent 0.1 gm_send_ballots //Gets player list and sends the menu
+	callevent 5.0 gm_send_ballots //Send menu again, just in case player closed it.
+	callevent 20.0 gm_tally_votes //Default expire timer for voting. Will also expire after enough people have voted.
+}
+
+{ gm_send_ballots //Gets player list and sends the menu
+
+	if VOTE_BUSY
+	setvard GM_PLAYER_LIST none
+	getplayersnb GM_PLAYER_LIST
+	calleventloop $get_token_amt(GM_PLAYER_LIST) send_menu GM_PLAYER_LIST
+}
+
+{ send_menu
+	setvard MENU_TARGET $get_token(GM_PLAYER_LIST,game.script.iteration) //Menu is sent from send_menu in the actual game_master
+}
+
+{ game_menu_getoptions
+
+	if VOTE_BUSY
+	calleventloop $get_token_amt(VOTE_OPTIONS) gm_build_ballot //Build ballot menu
+}
+
+{ gm_build_ballot //Creates options for voting
+
+	if ( $get_token_amt(VOTE_TALLY) < $get_token_amt(VOTE_OPTIONS) ) //Create token for tracking votes
+	{
+		token.add VOTE_TALLY 0
+	}
+
+	local L_STR $get_token(VOTE_OPTIONS,game.script.iteration)
+	local L_OPTION $string_upto(L_STR,':')
+
+	local reg.mitem.title L_OPTION
+	local reg.mitem.type callback
+	local reg.mitem.data L_STR
+	local reg.mitem.callback gm_gvote_count
+	menuitem.register
+	
+	//token.set VOTE_OPTIONS game.script.iteration 
+}
+
+{ game_menu_cancel //<playerId> //Player does not wish to participate in vote.
+
+	if VOTE_BUSY
+	subtract TOTAL_BALLOTS 1
+	
+	if ( TOTAL_VOTES == TOTAL_BALLOTS ) //Everyone voted, so accelerate ending the vote.
+	{
+		callevent gm_tally_votes
+	}
+}
+
+{ gm_gvote_count //<VoterId> <optionData>
+
+	if VOTE_BUSY
+	
+	local L_VOTE_TITLE $string_upto(PARAM2,':')
+	local L_VOTE_DATA $string_from(PARAM2,':')
+	
+	local L_OPTION_IDX $get_find_token(VOTE_OPTIONS,PARAM2)
+	
+	local L_VOTES $get_token(VOTE_TALLY,L_OPTION_IDX)
+	add L_VOTES 1
+	add TOTAL_VOTES 1
+	
+	token.set VOTE_TALLY L_OPTION_IDX $int(L_VOTES)
+
+	if ( !VOTE_SILENT )
+	{
+		local L_STR $get(PARAM1,name) " votes " L_VOTE_TITLE
+		messageall green L_STR
+	}
+	
+	if ( TOTAL_VOTES == TOTAL_BALLOTS ) //Everyone voted, so accelerate ending the vote.
+	{
+		callevent gm_tally_votes
+	}
+}
+
+{ gm_tally_votes
+
+	if VOTE_BUSY
+	setvard VOTE_BUSY 0
+	
+	local L_TITLE "The people have spoken!"
+	local L_WINNER $func(func_get_vote_winner) //Returns index of the VOTE_OPTIONS winner
+	
+	local L_VOTE_TITLE $string_upto(L_WINNER,':')
+	local L_VOTE_DATA $string_from(L_WINNER,':')
+	
+	infomsg all L_TITLE L_VOTE_TITLE
+
+	callevent VOTE_EVENT L_VOTE_TITLE L_VOTE_DATA
+}
+
+{ func_get_vote_winner
+
+	setvard VOTE_WINNERS none
+	setvard VOTE_WINNER_COUNT -1 //Number of votes cast for this/these options.
+	calleventloop $get_token_amt(VOTE_TALLY) get_vote_winner
+	
+	local L_WINNER_AMT $get_token_amt(VOTE_WINNERS)
+	local L_OPTION_AMT $get_token_amt(VOTE_OPTIONS)
+	
+	if ( VOTE_WINNERS equals none ) local L_CHOOSE_LAST 1 //Choose last option if there are no votes or if there is a tie amongst all options. Equivalent of choosing "no"
+	else if ( L_WINNER_AMT == L_OPTION_AMT ) local L_CHOOSE_LAST 1
+	
+	if ( L_CHOOSE_LAST )
+	{
+		setvard VOTE_WINNERS $int($math(subtract,L_OPTION_AMT,1)) //Gets index of last vote option
+	}
+	
+	if ( L_WINNER_AMT > 1 ) //If there is a tie, choose a random winner
+	{
+		setvard VOTE_WINNERS $get_token(VOTE_WINNERS,$rand(0,$math(subtract,L_WINNER_AMT,1)))
+	}
+	
+	return **clear
+	return $get_token(VOTE_OPTIONS,VOTE_WINNERS)
+}
+
+{ get_vote_winner
+
+	local L_VOTE_COUNT $get_token(VOTE_TALLY,game.script.iteration)
+	local L_OPTION_IDX game.script.iteration
+	
+	if ( L_VOTE_COUNT > VOTE_WINNER_COUNT )
+	{
+		setvard VOTE_WINNERS L_OPTION_IDX //sets option title to vote winner since this one has new most votes
+		setvard VOTE_WINNER_COUNT L_VOTE_COUNT
+	}
+	else if ( L_VOTE_COUNT == VOTE_WINNER_COUNT )
+	{
+		token.add VOTE_WINNERS L_OPTION_IDX
+	}
+}
+
+{ gm_votemap //<optionTitle> <0|mapDestination> //Called once a votemap vote is completed
+
+	local L_MAP PARAM2
+	if ( L_MAP isnot '0' )
+	{
+		callevent gm_manual_map_change L_MAP
+	}
+}
+
+{ gm_votepvp //<optionTitle> <0|1> //0 for pvp off, 1 for pvp on.
+
+	if ( PARAM2 == 1 )
+	{
+		if !game.pvp
+		infomsg all "PVP VOTE PASSED" "PvP mode will begin in 10 seconds..."
+		setvard GM_COUNT_DOWN_TO 9
+		setvard GM_COUNT_MESSAGE "seconds before PvP begins!"
+		setvard GM_COUNT_DOWN_EVENT gm_pvp
+		callevent 1.0 gm_count_down
+	}
+
+	if ( PARAM2 == 0 )
+	{
+		if game.pvp
+		infomsg all "PVP VOTE PASSED" "PvP mode will end in 60 seconds..."
+		setvard GM_COUNT_DOWN_TO 59
+		setvard GM_COUNT_MESSAGE "seconds before PvP ends..."
+		setvard GM_COUNT_DOWN_EVENT gm_pvp
+		callevent 1.0 gm_count_down
+	}
+}
+
+{ gm_pvp
+	if ( !game.pvp )
+	{
+		infomsg all "PvP MODE IS ACIVE!" "Players may now damage one another."
+		setpvp 1
+	}
+	else
+	{
+		infomsg all "PvP MODE DEACTIVATED" "Players may no longer damage one another."
+		setpvp 0
+	}
+}
+
+{ gm_votelock //<optionTitle> <0|1>
+
+	if ( PARAM2 == 1 )
+	{
+		//generate random password (4 nums, not real secure, but need something easy to copy-pasta or remember)
+		setvard L_SV_LOCK_PASSWORD $rand(0,9) $rand(0,9) $rand(0,9) $rand(0,9)
+
+		setvarg G_SERVER_LOCKER CALLING_LOCKER
+		setvarg G_SERVER_LOCKED 1
+
+		servercmd sv_password L_SV_LOCK_PASSWORD
+
+		local CL_CMD_STR "password "
+		stradd CL_CMD_STR L_SV_LOCK_PASSWORD
+		clientcmd all CL_CMD_STR
+
+		local MSG_DESC "Password is: "
+		stradd MSG_DESC L_SV_LOCK_PASSWORD
+		consolemsg all MSG_DESC
+		stradd MSG_DESC "|This has been sent to your console (copy it)."
+		stradd MSG_DESC "|Server will remain locked until enough"
+		stradd MSG_DESC "|people disconnect or map changes."
+
+		helptip all generic "SERVER HAS BEEN LOCKED" MSG_DESC
+	}
+	else
+	{
+		local MSG_TITLE "Vote Lock has failed."
+		local MSG_DESC " "
+		infomsg all MSG_TITLE MSG_DESC	
+	}
+}
+
+{ gm_votekick //<target> <caller> - called by sv_admin
+
+	setvard GM_SKIP_VOTE_ID PARAM1
+	local VOTE_STARTER PARAM2
+	local L_VOTE_TITLE "KICK: "
+	stradd L_VOTE_TITLE $get(GM_SKIP_VOTE_ID,name)
+	local L_VOTE_DESC $get(VOTE_STARTER,name)
+	strconc L_VOTE_DESC " " has started a kick vote against $get(GM_SKIP_VOTE_ID,name)
+	infomsg all L_VOTE_TITLE L_VOTE_DESC
+	callevent gm_ynvote $get(VOTE_STARTER,id) 1.01
+	//callevent gm_generic_vote $get(VOTE_STARTER,id) "Yes;No" L_VOTE_TITLE L_VOTE_DESC 1
+}
+
+{ gm_voteban //<target> <caller> - called by sv_admin
+
+	setvard GM_SKIP_VOTE_ID PARAM1
+	local VOTE_STARTER PARAM2
+	local L_VOTE_TITLE "BAN: "
+	stradd L_VOTE_TITLE $get(GM_SKIP_VOTE_ID,name)
+	local L_VOTE_DESC $get(VOTE_STARTER,name)
+	strconc L_VOTE_DESC " " has started a ban vote against $get(GM_SKIP_VOTE_ID,name)
+	callevent gm_ynvote $get(VOTE_STARTER,id) 1.01
+	//callevent gm_generic_vote $get(VOTE_STARTER,id) "Yes;No" L_VOTE_TITLE L_VOTE_DESC 1
+}
+
+{ gm_got_yes_vote
+
+	if ( VOTE_OVER ) dplayermessage PARAM1 Sorry, voting has already ended.
+
+	if !VOTE_OVER
+
+	add TOTAL_VOTES 1
+	add YES_VOTES 1
+
+	local MSG_STRING $get(PARAM1,name)
+	stradd MSG_STRING " votes yes."
+	if ( !VOTE_QUIET_MODE ) infomsg all MSG_STRING " "
+	if ( VOTE_QUIET_MODE ) messageall green MSG_STRING
+}
+
+{ gm_got_no_vote
+
+	if ( VOTE_OVER ) dplayermessage PARAM1 Sorry, voting has already ended.
+
+	if !VOTE_OVER
+
+	add TOTAL_VOTES 1
+	add NO_VOTES 1
+	local MSG_STRING $get(PARAM1,name)
+	stradd MSG_STRING " votes no."
+	if ( !VOTE_QUIET_MODE ) infomsg all MSG_STRING " "
+	if ( VOTE_QUIET_MODE ) messageall green MSG_STRING
+}

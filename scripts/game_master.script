@@ -36,6 +36,10 @@
 #include [casual] test_scripts/game_master
 #include [casual] $currentmap_game_master
 
+//Game master modules
+#include game_master/map_transitions
+#include game_master/vote_generic
+
 { game_spawn
 	name The Game Master
 	hp 1
@@ -122,7 +126,6 @@
 		setvard GM_SCRAMBLE_COUNT 0
 		callevent gm_scramble_treasure
 	}
-	
 
 	callevent 60.0 time_sync_check
 	add G_MAP_UPTIME 1 //game master minute ticks (global initiated at map start)
@@ -141,7 +144,6 @@
 	dodamage PARAM1 PARAM2 PARAM3 PARAM4 PARAM5 PARAM6 PARAM7
 }
 
-
 //Spawn gold bag post-mortem - 
 { [server] gold_spew //PARAM1=gold_per_bag PARAM2=bags_player PARAM3=dist_from_mon PARAM4=min#bags PARAM5 max#bags
 
@@ -159,7 +161,7 @@
 
 	//incvar [ loc (878.41,3579.85,-395.97) ] Gld 50 BgsPP 2 dst 100 minbags 1 mxbags 30
 
-	setvard NUM_BAGS game.playersbn
+	setvard NUM_BAGS game.playersnb
 
 	multiply NUM_BAGS BAGS_PER_PLAYER
 
@@ -352,7 +354,7 @@
 
 { gm_worm_gold
 	setvard WORM_ID $get(PARAM1,id)
-	setvard WORM_GOLD game.playersbn
+	setvard WORM_GOLD game.playersnb
 	multiply WORM_GOLD 2
 	setvard WORM_COUNT 0
 	setvard WORM_ITEM PARAM2
@@ -364,18 +366,6 @@
 	add	WORM_COUNT 1
 	createnpc WORM_ITEM $get(WORM_ID,origin)
 	callevent 0.5 gm_worm_gold_loop
-}
-
-{ gm_verify_map
-	if ( $lcase(game.map.name) equals PARAM1 ) setvard GM_MAP_VERIFY 1
-}
-
-{ gm_verify_map_hax
-	setvard GM_MAP_VERIFY 1
-}
-
-{ gm_verify_set
-	setvard GM_MAP_VERIFY PARAM1
 }
 
 { worldevent_time
@@ -417,7 +407,7 @@
 		callexternal players ext_weather_change G_WEATHER_LOCK
 	}
 
-	if( G_CHRISTMAS_MODE )
+	if ( G_CHRISTMAS_MODE )
 	{
 		local L_MAP_NAME $lcase(game.map.name)
 		if ( L_MAP_NAME equals edana ) local XMASS_WEATHER 1
@@ -477,382 +467,6 @@
 	}
 }
 
-{ gm_generic_vote  //<caller_id> <token_options> <title> [descript] [silent:0|1]
-
-	name VOTE!
-
-	setvard VOTE_BUSY 1
-
-	setvard VOTE_OVER 0
-	setvard VOTE_STARTER PARAM1
-	setvard VOTE_OPTIONS PARAM2
-	setvard VOTE_TITLE PARAM3
-	setvard VOTE_DESC PARAM4
-	setvard VOTE_SILENT PARAM5
-	setvard VOTE_WINNAR_IDX 0
-	setvard VOTE_WINNAR_COUNT 0
-	if ( VOTE_DESC equals 'PARAM4' ) setvard VOTE_DESC " "
-
-	setvard VOTE_TALLY ''
-	calleventloop $get_token_amt(VOTE_OPTIONS) gm_clear_ballots
-	if ( $get_token_amt(VOTE_TALLY) >  $get_token_amt(VOTE_OPTIONS) ) token.del VOTE_TALLY 0
-
-
-	infomsg all VOTE_TITLE VOTE_DESC
-
-	setvard MENU_MODE vote_generic
-
-	getplayers GM_PLAYER_LIST
-	calleventloop $get_token_amt(GM_PLAYER_LIST) gm_send_ballots
-	setvard VOTE_IN_PROGRESS 1
-	callevent 15.0 gm_tally_votes
-}
-
-{ gm_ynvote //<caller_id> <ratio_req> [gm_event_yes] [gm_event_no] - sets gmvar VOTE_PASSED -1|0|1 (notevotes)|voted_down|passed
-	//simplified yes no vote calls a gm master side event if yn ratio > PARAM2
-
-	name VOTE!
-
-	setvard VOTE_QUIET_MODE 1
-
-	setvard VOTE_BUSY 1
-
-	setvard VOTE_OVER 0
-	setvard VOTE_STARTER PARAM1
-	setvard VOTE_REQ PARAM2
-	setvard EXEC_YES PARAM3
-	setvard EXEC_NO PARAM4
-
-	dbg gm: $get(VOTE_STARTER,name) started_mapvote: VOTE_TITLE ( MAP_NAME ) fast QUICK_CHANGE
-
-	setvard YES_VOTES 0
-	setvard NO_VOTES 0
-	setvard TOTAL_VOTES 0
-	setvard TOTAL_VOTES 0
-
-	setvard MENU_MODE yn
-
-	getplayers GM_PLAYER_LIST
-	//if ( G_DEVELOPER_MODE ) messageall g sending message to GM_PLAYER_LIST MENU_MODE
-	calleventloop $get_token_amt(GM_PLAYER_LIST) gm_send_ballots
-	setvard VOTE_IN_PROGRESS 1
-	callevent 15.0 gm_tally_votes
-}
-
-{ gm_clear_ballots
-	stradd VOTE_TALLY "0;"
-}
-
-{ [server] gm_map_vote //<caller_id> [map] [title] <change_map_from_here:1|0> <quiet:0|1>
-
-	setvard VOTE_FAILED 0
-	setvard VOTE_BUSY 1
-	setvard VOTE_TYPE map
-	setvard VOTE_OVER 0
-	setvard VOTE_STARTER PARAM1
-	setvard MAP_NAME PARAM2
-	setvard VOTE_TITLE PARAM3
-	setvard QUICK_CHANGE PARAM4 //gm will change map
-	setvard VOTE_QUIET_MODE PARAM5 //don't spam infomsg - use hud
-
-	name VOTE_TITLE
-
-	dbg gm: $get(VOTE_STARTER,name) started_mapvote: VOTE_TITLE ( MAP_NAME ) fast QUICK_CHANGE
-
-	setvard YES_VOTES 0
-	setvard NO_VOTES 0
-	setvard TOTAL_VOTES 0
-	setvard TOTAL_VOTES 0
-
-	setvard MENU_MODE votemap
-
-	getplayers GM_PLAYER_LIST
-	//if ( G_DEVELOPER_MODE ) messageall g sending message to GM_PLAYER_LIST MENU_MODE
-	calleventloop $get_token_amt(GM_PLAYER_LIST) gm_send_ballots
-	setvard VOTE_IN_PROGRESS 1
-	callevent 15.0 gm_tally_votes
-}
-
-{ gm_send_ballots
-
-	local CUR_PLAYER $get_token(GM_PLAYER_LIST,game.script.iteration)
-	//if GM_SKIP_VOTE_ID isnot CUR_PLAYER //for kic/ban votes - target does not get to vote
-	menu.open CUR_PLAYER
-}
-
-{ game_menu_getoptions
-
-	if ( MENU_MODE equals votemap )
-	{
-		local reg.mitem.title 	"Yes!"
-		local reg.mitem.type 	callback
-		local reg.mitem.callback gm_got_yes_vote
-		menuitem.register
-
-		local reg.mitem.title 	"No!"
-		local reg.mitem.type 	callback
-		local reg.mitem.callback gm_got_no_vote
-		menuitem.register
-	}
-
-	if ( MENU_MODE equals yn )
-	{
-		local reg.mitem.title 	"Yes!"
-		local reg.mitem.type 	callback
-		local reg.mitem.callback gm_got_yes_vote
-		menuitem.register
-
-		local reg.mitem.title 	"No!"
-		local reg.mitem.type 	callback
-		local reg.mitem.callback gm_got_no_vote
-		menuitem.register
-	}
-
-	if ( MENU_MODE equals vote_generic )
-	{
-		calleventloop $get_token_amt(VOTE_OPTIONS) gm_build_ballot
-	}
-
-}
-
-{ gm_build_ballot
-
-	local OPTION_N game.script.iteration
-
-	local CUR_OPTION $get_token(VOTE_OPTIONS,OPTION_N)
-
-
-	local reg.mitem.title 	CUR_OPTION
-	local reg.mitem.type 	callback
-	local reg.mitem.data	OPTION_N
-	local reg.mitem.callback gm_gvote_count
-	menuitem.register
-}
-
-{ gm_gvote_count
-
-	if ( VOTE_OVER ) dplayermessage PARAM1 Sorry, voting has already ended.
-
-	if !VOTE_OVER
-
-	local VOTE_INDEX PARAM2
-	local CURIDX_COUNT $get_token(VOTE_TALLY,VOTE_INDEX)
-	add CURIDX_COUNT 1
-	token.set VOTE_TALLY VOTE_INDEX CURIDX_COUNT
-
-	if ( !VOTE_QUIET_MODE )
-	{
-		local MSG_STRING $get(PARAM1,name)
-		stradd MSG_STRING " says "
-		stradd MSG_STRING $get_token(VOTE_OPTIONS,VOTE_INDEX)
-		infomsg all MSG_STRING " "
-	}
-
-	if ( VOTE_QUIET_MODE )
-	{
-		local MSG_STRING $get(PARAM1,name)
-		stradd MSG_STRING " votes for "
-		stradd MSG_STRING $get_token(VOTE_OPTIONS,VOTE_INDEX)
-		messageall green MSG_STRING
-	}
-}
-
-{ gm_got_yes_vote
-
-	if ( VOTE_OVER ) dplayermessage PARAM1 Sorry, voting has already ended.
-
-	if !VOTE_OVER
-
-	add TOTAL_VOTES 1
-	add YES_VOTES 1
-
-	local MSG_STRING $get(PARAM1,name)
-	stradd MSG_STRING " votes yes."
-	if ( !VOTE_QUIET_MODE ) infomsg all MSG_STRING " "
-	if ( VOTE_QUIET_MODE ) messageall green MSG_STRING
-}
-
-{ gm_got_no_vote
-
-	if ( VOTE_OVER ) dplayermessage PARAM1 Sorry, voting has already ended.
-
-	if !VOTE_OVER
-
-	add TOTAL_VOTES 1
-	add NO_VOTES 1
-	local MSG_STRING $get(PARAM1,name)
-	stradd MSG_STRING " votes no."
-	if ( !VOTE_QUIET_MODE ) infomsg all MSG_STRING " "
-	if ( VOTE_QUIET_MODE ) messageall green MSG_STRING
-}
-
-{ gm_tally_votes
-
-	setvard GM_SKIP_VOTE_ID 0
-	if ( VOTE_TYPE isnot 'map' ) setvard VOTE_IN_PROGRESS 0
-
-	name The Game Master
-	setvard VOTE_OVER 1
-	setvard VOTE_BUSY 0
-	setvard VOTE_IN_PROGRESS 0
-
-	if ( MENU_MODE equals votemap )
-	{
-		if ( TOTAL_VOTES == 0 )
-		{
-			infomsg all "Vote Failed" "No one voted."
-			setvard VOTE_IN_PROGRESS 0
-			setvard VOTE_FAILED 1
-		}
-
-		multiply NO_VOTES 2
-		if ( NO_VOTES > YES_VOTES )
-		{
-			infomsg all "Vote Failed" "Too many nay sayers."
-			setvard VOTE_IN_PROGRESS 0
-			setvard VOTE_FAILED 1
-		}
-
-		if ( VOTE_FAILED ) callexternal VOTE_STARTER vote_failed
-
-		if !VOTE_FAILED
-		callexternal VOTE_STARTER vote_passed
-
-		if QUICK_CHANGE
-
-		local MSG_TITLE "TRAVELING TO "
-		stradd MSG_TITLE MAP_NAME
-		infomsg all MSG_TITLE "You will be reconnected shortly."
-		local AMX_STRING force_map_
-		stradd AMX_STRING MAP_NAME
-		usetrigger AMX_STRING
-		setvard GM_DISABLE_TRANSITIONS 1 //tells msarea_transitions to disable code side, so they don't change spawns
-		if ( GM_DEST_TRANS isnot 'GM_DEST_TRANS' ) callexternal players ext_setspawn GM_DEST_TRANS
-		//saveallnow was removed
-		callevent 5.0 gm_manual_map_change
-	}
-
-	if ( MENU_MODE equals yn )
-	{
-
-		if ( G_DEVELOPER_MODE ) messageall green gm_ynvote: votes TOTAL_VOTES yes YES_VOTES no NO_VOTES
-		if ( TOTAL_VOTES == 0 )
-		{
-			infomsg all "Vote Failed" "No one voted."
-			setvard VOTE_FAILED 1
-			setvard VOTE_PASSED -1
-		}
-
-		setvard VOTE_RATIO YES_VOTES
-		if ( NO_VOTES > 0 ) divide VOTE_RATIO NO_VOTES
-		if ( VOTE_RATIO >= VOTE_REQ )
-		{
-			setvard VOTE_PASSED 1
-			if ( EXEC_YES startswith 'PARAM' ) local NO_EXEC 1
-			if !NO_EXEC
-			callevent EXEC_YES
-		}
-		if ( VOTE_RATIO < VOTE_REQ )
-		{
-			setvard VOTE_PASSED 0
-			if ( EXEC_YES startswith 'PARAM' ) local NO_EXEC 1
-			if !NO_EXEC
-			callevent EXEC_NO
-		}
-	}
-
-	if ( MENU_MODE equals vote_generic )
-	{
-		setvard CUR_HIGH 0
-		calleventloop $get_token_amt(VOTE_TALLY) gm_find_highest
-		if ( VOTE_WINNAR_COUNT == 0 ) setvard VOTE_FAILED 1
-
-		if ( !VOTE_FAILED )
-		{
-			setvard VOTE_RESULT $get_token(VOTE_OPTIONS,VOTE_WINNAR_IDX)
-			callexternal VOTE_STARTER vote_passed $get_token(VOTE_OPTIONS,VOTE_WINNAR_IDX)
-		}
-		if ( VOTE_FAILED ) 
-		{
-			setvard VOTE_RESULT "[failed]"
-			callexternal VOTE_STARTER vote_failed "no_votes"
-		}
-
-		if !VOTE_SILENT
-		if ( !VOTE_FAILED )
-		{
-			infomsg all $get_token(VOTE_OPTIONS,VOTE_WINNAR_IDX) "Has won the vote!"
-		}
-		else
-		{
-			infomsg all "VOTE FAILED" "No one voted."
-		}
-	}
-}
-
-{ gm_manual_map_change //[map] [destspawn]
-
-	//redundancy, but maybe a bit late
-	setvard GM_DISABLE_TRANSITIONS 1 //tells msarea_transitions to disable code side, so they don't change spawns
-	if ( PARAM2 !startswith PARAM ) setvard GM_DEST_TRANS PARAM2
-	if ( GM_DEST_TRANS isnot 'GM_DEST_TRANS' ) callexternal players ext_setspawn GM_DEST_TRANS
-	//saveallnow
-
-	local L_MAP_NAME MAP_NAME
-	if ( PARAM1 isnot 'PARAM1' ) local L_MAP_NAME PARAM1
-	messageall green Traveling to L_MAP_NAME
-	setvard F_MAP_NAME L_MAP_NAME
-
-	erasefile crashed.cfg
-	local OUT_LINE "map "
-	local COMMENT "/"
-	stradd COMMENT "/"
-	strconc OUT_LINE F_MAP_NAME COMMENT written from MSC
-	writeline crashed.cfg OUT_LINE
-	local SRV_COMMAND "echo Changelevel: "
-	stradd SRV_COMMAND F_MAP_NAME
-	servercmd SRV_COMMAND
-
-	setvarg G_WEATHER_LOCK clear
-	setvarg global.map.weather "clear;clear;clear"
-	setvarg G_OVERRIDE_WEATHER_CODE "clear;clear;clear"
-	setvarg G_CUR_WEATHER "clear"
-	setvarg G_IDLE_MUSIC none
-	setvarg G_IDLE_MUSIC_LENGTH 0
-	setvarg G_COMBAT_MUSIC none
-	setvarg G_COMBAT_MUSIC_LENGTH 0
-	setvarg G_MAP_ADDPARAMS 0
-
-	if ( G_SERVER_LOCKED )
-	{
-		local SV_CMD "sv_password "
-		stradd SV_CMD $quote()
-		stradd SV_CMD $quote()
-		servercmd SV_CMD
-	}	
-
-	if ( game.players > 0 )
-	{
-		callexternal players ext_changelevel_prep
-	}
-
-	//this used to be a 0.1 delay
-	//but I wanted to give more time for the ext_changelevel_prep to set the player's wait delays
-
-	setvard GM_CHANGELEVEL 1
-
-	callevent 1.0 gm_manual_map_change2
-}
-
-{ gm_manual_map_change2
-	callevent 2.0 gm_manual_map_change3
-}
-
-{ gm_manual_map_change3
-	setvard VOTE_IN_PROGRESS 0
-	changelevel F_MAP_NAME
-}
-
 { gm_find_highest
 
 	local CUR_VOTE_IDX game.script.iteration
@@ -882,57 +496,6 @@
 	//infomsg all "DEBUG ALERT" "MSAREA_MONSTERSPAWN REMOVED"
 }
 
-{ game_transition_triggered //1: Transition_desc //2: DestBSP //3: local_spawn //4: dest_spawn
-
-	local MAP_TO_VOTE PARAM2
-	local MAP_DESC PARAM1
-	local LOCAL_TRANS PARAM3
-	local DEST_TRANS PARAM4
-	setvard GM_DEST_TRANS PARAM4
-
-	local L_PLAYER_LIST ''
-
-	if ( !$map_exists(MAP_TO_VOTE) )
-	{
-		messageall green MAP_TO_VOTE does not exist on this server. Perhaps this is a future transition point?
-		local EXIT_SUB 1
-	}
-	if !EXIT_SUB
-
-	getplayers L_PLAYER_LIST //using this method instead of game.players so we can test with bots
-
-	callexternal players ext_set_map MAP_TO_VOTE LOCAL_TRANS DEST_TRANS //mark map quest data
-
-	if ( $get_token_amt(L_PLAYER_LIST) > 1 )
-	{
-		local MSG_TITLE "Travel to "
-		stradd MSG_TITLE MAP_DESC
-		infomsg all MSG_TITLE "Vote now..."
-
-		local VOTE_TITLE "Travel to "
-		stradd VOTE_TITLE MAP_DESC
-		stradd VOTE_TITLE "?"
-
-		local VOTE_CALLER $get(ent_me,id)
-
-		callevent gm_map_vote VOTE_CALLER MAP_TO_VOTE VOTE_TITLE 1
-	}
-
-	if ( $get_token_amt(L_PLAYER_LIST) == 1 )
-	{
-		setvard MAP_NAME MAP_TO_VOTE
-		local AMX_STRING force_map_
-		stradd AMX_STRING MAP_NAME
-		usetrigger AMX_STRING
-
-		setvard GM_DISABLE_TRANSITIONS 1 //tells msarea_transitions to disable code side, so they don't change spawns
-		if ( GM_DEST_TRANS isnot 'GM_DEST_TRANS' ) callexternal players ext_setspawn GM_DEST_TRANS
-		//saveallnow
-
-		callevent 5.0 gm_manual_map_change
-	}
-}
-
 { reset_server
 
 	dbg *** reset_server check: var game.cvar.ms_reset_if_empty plrs game.players
@@ -945,12 +508,6 @@
 
 	if ( game.cvar.ms_chatlog > 0 ) chatlog $timestamp(>)  "SERVER_SHUTDOWN: reason: ms_reset_if_empty 1"
 
-	erasefile crashed.cfg
-	local OUT_LINE "map "
-	local COMMENT "/"
-	stradd COMMENT "/"
-	strconc OUT_LINE edana COMMENT written from MSC
-	writeline crashed.cfg OUT_LINE
 	callevent 0.1 exit_server
 }
 
@@ -975,35 +532,6 @@
 	stradd WRITE_LOG "): "
 	stradd WRITE_LOG PARAM3
 	chatlog WRITE_LOG
-}
-
-{ gm_votekick //<target> <caller> - called by sv_admin
-
-	setvard VOTE_BUSY 1
-
-	setvard GM_SKIP_VOTE_ID PARAM1
-	local VOTE_STARTER PARAM2
-	local L_VOTE_TITLE "KICK: "
-	stradd L_VOTE_TITLE $get(GM_SKIP_VOTE_ID,name)
-	local L_VOTE_DESC $get(VOTE_STARTER,name)
-	strconc L_VOTE_DESC " " has started a kick vote against $get(GM_SKIP_VOTE_ID,name)
-	infomsg all L_VOTE_TITLE L_VOTE_DESC
-	callevent gm_ynvote $get(VOTE_STARTER,id) 1.01
-	//callevent gm_generic_vote $get(VOTE_STARTER,id) "Yes;No" L_VOTE_TITLE L_VOTE_DESC 1
-}
-
-{ gm_voteban //<target> <caller> - called by sv_admin
-
-	setvard VOTE_BUSY 1
-
-	setvard GM_SKIP_VOTE_ID PARAM1
-	local VOTE_STARTER PARAM2
-	local L_VOTE_TITLE "BAN: "
-	stradd L_VOTE_TITLE $get(GM_SKIP_VOTE_ID,name)
-	local L_VOTE_DESC $get(VOTE_STARTER,name)
-	strconc L_VOTE_DESC " " has started a ban vote against $get(GM_SKIP_VOTE_ID,name)
-	callevent gm_ynvote $get(VOTE_STARTER,id) 1.01
-	//callevent gm_generic_vote $get(VOTE_STARTER,id) "Yes;No" L_VOTE_TITLE L_VOTE_DESC 1
 }
 
 { player_left
@@ -1049,24 +577,18 @@
 { manual_edana
 	//this changes to edana when no players are present (sending clientcmd with no players causes errors)
 	if ( game.players > 0 ) callexternal all game_playercmd_setweather clear 0.01 0.01 //just in case of weirdness
-	erasefile crashed.cfg
-	local OUT_LINE "map "
-	local COMMENT "/"
-	stradd COMMENT "/"
-	strconc OUT_LINE edana COMMENT written from MSC
-	writeline crashed.cfg OUT_LINE
 	if ( game.cvar.ms_chatlog > 0 ) chatlog $timestamp(>)  "Server empty, switching to Edana via ms_timelimit."
-	callevent 1.0 manual_edana2
+	setvard DEST_MAP edana
+	callevent 1.0 delay_changelevel
 }
 
-{ manual_edana2
-	changelevel edana
+{ delay_changelevel //Uses var DEST_MAP to change level. Intended for delays
+	changelevel DEST_MAP
 }
 
 { gm_setname
 	name PARAM1
 }
-
 
 //==================================== POTION OF FORGETFUNLESS - BEGIN
 
@@ -1078,6 +600,8 @@
 	setvard SPELL_ERASE 1
 	setvard MENU_TARGET PARAM1
 	setvard POTION_ID PARAM2
+	
+	name a|Potion of Forgetfulness
 	callevent 0.1 send_menu
 }
 
@@ -1197,7 +721,6 @@
 }
 
 { send_menu
-	name a|Potion of Forgetfulness
 	menu.open MENU_TARGET
 }
 
@@ -1213,72 +736,6 @@
 	effect screenfade MENU_TARGET 0.1 3 (10,10,10) 255 fadeout
 }
 //==================================== POTION OF FORGETFUNLESS - END
-
-{ gm_votepvp //<caller> <0|1>
-
-	if ( PARAM2 == 1 )
-	{
-		local VOTE_STARTER PARAM1
-		local L_VOTE_TITLE "ACTIVATE PVP MODE"
-		local L_VOTE_DESC $get(VOTE_STARTER,name)
-		strconc L_VOTE_DESC " " has started a vote to enable player vs player combat
-		setvard GM_VOTE_MODE "pvp_on"
-		infomsg all L_VOTE_TITLE L_VOTE_DESC
-		callevent gm_ynvote $get(VOTE_STARTER,id) 1.01 vote_pvp_yes vote_pvp_no
-	}
-
-	if ( PARAM2 == 0 )
-	{
-		local VOTE_STARTER PARAM1
-		local L_VOTE_TITLE "DEACTIVATE PVP MODE"
-		local L_VOTE_DESC $get(VOTE_STARTER,name)
-		strconc L_VOTE_DESC " " has started a vote to end player vs player combat
-		setvard GM_VOTE_MODE "pvp_off"
-		infomsg all L_VOTE_TITLE L_VOTE_DESC
-		callevent gm_ynvote $get(VOTE_STARTER,id) 1.01 vote_pvp_yes vote_pvp_no
-	}
-
-	setvard VOTE_BUSY 1
-}
-
-{ vote_pvp_yes
-
-	setvard VOTE_BUSY 0
-	setvard VOTE_IN_PROGRESS 0
-
-	if ( GM_VOTE_MODE equals 'pvp_on' )
-	{
-		infomsg all "PVP VOTE PASSED" "PvP mode will begin in 10 seconds..."
-		callevent gm_start_pvp
-	}
-
-	if ( GM_VOTE_MODE equals 'pvp_off' )
-	{
-		infomsg all "PVP VOTE PASSED" "PvP mode will end in 60 seconds..."
-		callevent gm_end_pvp
-	}
-}
-
-{ vote_pvp_no
-	setvard VOTE_BUSY 0
-	setvard VOTE_IN_PROGRESS 0
-	if ( VOTE_PASSED == 0 ) infomsg all "PVP VOTE FAILED" "Too many nay sayers."
-	if ( VOTE_PASSED == -1 ) infomsg all "PVP VOTE FAILED" "No votes gathered."
-}
-
-{ gm_start_pvp
-	setvard GM_COUNT_DOWN_TO 10
-	setvard GM_COUNT_MESSAGE "seconds before PvP begins!"
-	setvard GM_COUNT_DOWN_EVENT gm_pvp_on
-	callevent 1.0 gm_count_down
-}
-
-{ gm_end_pvp
-	setvard GM_COUNT_DOWN_TO 60
-	setvard GM_COUNT_MESSAGE "seconds before PvP ends..."
-	setvard GM_COUNT_DOWN_EVENT gm_pvp_off
-	callevent 1.0 gm_count_down
-}
 
 { gm_count_down
 	if GM_COUNT_DOWN_TO >= 0
@@ -1300,18 +757,6 @@
 	if GM_COUNT_DOWN_TO > 0
 	subtract GM_COUNT_DOWN_TO 1
 	callevent 1.0 gm_count_down
-}
-
-{ gm_pvp_on
-	infomsg all "PvP MODE IS ACIVE!" "Players may now damage one another."
-	setpvp 1
-	setvard GM_COUNT_DOWN_EVENT ''
-}
-
-{ gm_pvp_off
-	infomsg all "PvP MODE DEACTIVATED" "Players may no longer damage one another."
-	setpvp 0
-	setvard GM_COUNT_DOWN_EVENT ''
 }
 
 { set_spawn_point
@@ -1750,18 +1195,6 @@
 	callevent gold_spew 500 2 72 4 8 HOLLOW_ONE_POS
 }
 
-{ gm_titan_death
-
-	local L_TITAN_ID PARAM1
-	local L_TITAN_DEATH_POS PARAM2
-	local L_TITAN_STUN_POS PARAM3
-
-	callevent gm_createnpc 4.0 monsters/summon/stun_burst L_TITAN_STUN_POS L_TITAN_ID 512 1 100
-	callevent gold_spew 500 2 256 4 16 L_TITAN_DEATH_POS
-	
-	callexternal all ext_unsummon
-}
-
 { gm_set_sorc_point //<origin> - external from other/sorc_telepoint
 
 	if ( G_SORC_TELE_POINTS equals 'G_SORC_TELE_POINTS' ) setvarg G_SORC_TELE_POINTS 0
@@ -1798,12 +1231,6 @@
 
 { game_get_spawns
 	setvarg G_SPAWN_POINTS PARAM1
-}
-
-{ gm_free_vote_system
-	//external to free up vote system
-	setvard VOTE_BUSY 0
-	setvard VOTE_IN_PROGRESS 0
 }
 
 //JUN2010_13 - delayed item give (to give potion time to delete before granting new ability item)
@@ -1918,65 +1345,6 @@
 	
 
 	callexternal players ext_weather_change G_CURRENT_WEATHER
-}
-
-{ gm_votelock //<caller> - called by sv_admin
-
-	setvard VOTE_BUSY 1
-
-	local VOTE_STARTER PARAM1
-	local L_VOTE_TITLE "Lock the server?"
-	local L_VOTE_DESC $get(PARAM1,name)
-	stradd L_VOTE_DESC " has started a vote to lock the server."
-	infomsg all L_VOTE_TITLE L_VOTE_DESC
-	setvard CALLING_LOCKER PARAM1
-	callevent gm_ynvote $get(VOTE_STARTER,id) 0.5 gm_lock_server_yes gm_lock_server_no
-}
-
-{ gm_lock_server_yes
-	dbg lock_server
-
-	//generate random password (4 nums, not real secure, but need something easy to copy-pasta or remember)
-	setvard SV_LOCK_PASSWORD $rand(0,9)
-	stradd SV_LOCK_PASSWORD $rand(0,9)
-	stradd SV_LOCK_PASSWORD $rand(0,9)
-	stradd SV_LOCK_PASSWORD $rand(0,9)
-
-	setvarg G_SERVER_LOCKER CALLING_LOCKER
-	setvarg G_SERVER_LOCKED 1
-
-	servercmd sv_password SV_LOCK_PASSWORD
-
-	local CL_CMD_STR "password "
-	stradd CL_CMD_STR SV_LOCK_PASSWORD
-	clientcmd all CL_CMD_STR
-
-	local MSG_DESC "Password is: "
-	stradd MSG_DESC SV_LOCK_PASSWORD
-	consolemsg all MSG_DESC
-	stradd MSG_DESC "|This has been sent to your console (copy it)."
-	stradd MSG_DESC "|Server will remain locked until "
-	stradd MSG_DESC $get(G_SERVER_LOCKER,name)
-	stradd MSG_DESC " disconnects"
-	stradd MSG_DESC "|or map changes."
-
-	helptip all generic "SERVER HAS BEEN LOCKED" MSG_DESC
-}
-
-{ gm_lock_server_no
-	if ( VOTE_RESULT equals '[failed]' )
-	{
-		local MSG_TITLE "Vote Lock has failed."
-		local MSG_DESC "No one voted."
-		infomsg all MSG_TITLE MSG_DESC
-	}
-	if ( VOTE_RESULT equals 'No' )
-	{
-		local MSG_TITLE "Vote Lock has failed."
-		local MSG_DESC "Voted down."
-		infomsg all MSG_TITLE MSG_DESC	
-		local EXIT_SUB 1
-	}
 }
 
 { gm_test_trig
@@ -2535,30 +1903,9 @@
 	}
 }
 
-{ game_triggered //<map trigger fired>
-	dbg game_triggered PARAM1
-
-	local L_TRIG PARAM1
-
-	if ( L_TRIG startswith touch_trans_ )
-	{
-		if !VOTE_BUSY
-		if !GM_CHANGELEVEL
-		if game.players > 0
-		local L_VOTEMAP $string_from(L_TRIG,touch_trans_)
-		local L_VOTETITLE "Change map to "
-		stradd L_VOTETITLE L_VOTEMAP
-		getplayers T_PLAYERLIST
-		local L_VOTESTARTER $get_token(T_PLAYERLIST,0)
-		callexternal GAME_MASTER gm_map_vote L_VOTESTARTER L_VOTEMAP L_VOTETITLE 1 1
-	}
-	else if ( L_TRIG startswith force_map_ )
-	{
-		if !GM_CHANGELEVEL
-		local L_FORCEMAP $string_from(L_TRIG,force_map_)
-		callevent gm_manual_map_change L_FORCEMAP
-	}
-}
+//{ game_triggered //<map trigger fired>
+//
+//}
 
 //---Quest Items
 
@@ -2630,5 +1977,3 @@
 { ext_dump_quest_items_loop
 	dbg $get_array(ARRAY_QUEST_ITEMS,game.script.iteration)
 }
-
-
