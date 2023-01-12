@@ -1,0 +1,83 @@
+//Thothie - Base for spell scrolls
+
+{
+	const BASE_SPELL_SCRIPT "magic_hand_fire_dart"
+	const BASE_SUMMON_TEXT "You conjure the Fire Dart spell."
+	const BASE_SUMMON_TEXT_FAILED "You lack the arcane skills to control this scroll's magic."
+	
+	const BASE_REQUIRED_SKILL skill.spellcasting.fire
+	const BASE_REQUIRED_LEVEL 0
+	
+	const MODEL_BODY 8
+}
+
+#include items/base_tome
+
+{ game_precache
+
+	precachefile SPELL_MAKER_SCRIPT
+}
+
+{ game_spawn
+
+	name "Dire Fart Tome"
+	desc "*eats all your apples* oooh~ brrrt!"
+	value 1
+	weight 1
+
+	sethudsprite trade letter
+
+	callevent scroll_spawn
+	callevent ext_scroll_time
+}
+
+{ game_pickup
+
+	setvar JUST_GOT 1	//stop from activating on pick-up
+}
+
+{ [override] game_attack1
+
+	if ( SCROLL_TIME > game.time )
+	{
+		//don't allow use of scroll for 2 seconds after pulling from chest
+		//this is more to stop accidental casting than anything else
+		//playermessage "The magic needs a moment to recharge."
+	}
+	else if ( $get(ent_owner,scriptvar,PLR_NEXT_SCROLL) > game.time )
+	{
+		//only can use one scroll every 5 seconds (or so)
+		//this is to stop 'chaining' of scrolls, resulting in server crash due to multiple firewalls or volcanos
+		playermessage "The magic needs a moment to recharge."
+	}
+	else if ( $get(ent_owner,numitems) >= G_MAX_ITEMS )
+	{
+		dplayermessage ent_owner "Cannot activate scrolls when inventory is full."
+	}
+	else
+	{
+		callevent ext_scroll_time
+		if ( !BASE_CAN_SUMMON ) playermessage BASE_SUMMON_TEXT_FAILED
+		else callevent grant_spell
+	}
+}
+
+{ grant_spell
+
+	local SPELL_SPAWNER_LOC $relpos(0,0,SPELL_MAKER_HEIGHT)
+
+	if ( SPELL_MAKER_SCRIPT isnot 'SPELL_MAKER_SCRIPT' ) createnpc SPELL_MAKER_SCRIPT SPELL_SPAWNER_LOC $get(ent_owner,id) BASE_SPELL_SCRIPT $get(ent_me,itemname) SPELL_MAKER_HEIGHT $get(ent_me,id)
+	//let spell maker choose when to remove scroll
+	//callevent 0.1 clear_hands
+}
+
+{ clear_hands
+
+	callevent game_wear	//This doesn't do anything currently
+	deleteme //Clear item to make way for spell (otherwise spell drops to floor)
+}
+
+{ ext_scroll_time
+	setvard SCROLL_TIME game.time
+	add SCROLL_TIME 2
+}

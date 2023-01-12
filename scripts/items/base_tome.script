@@ -1,4 +1,4 @@
-//Thothie - 'all your concentration' - as wiki says, 'disambiguation'.
+//"'all your concentration' - as wiki says, 'disambiguation'." - Thothie
 
 //Tome Base
 //Handles learning spells permanently on the character.
@@ -7,36 +7,64 @@
 //This makes the spellname not get cut off if the name of the tome is too long
 
 //The "magic hands" or the spell itself should have the level requirements and this script should check the global item table to see if the player should be able to learn it
+//Can check the var BASE_CAN_SUMMON to see if the player can summon the spell
 
 //Requires:
-//SPELL_SCRIPT
+//BASE_SPELL_SCRIPT
 
 {
-	const SPELL_SCRIPT "magic_hand_fire_dart"
-	const BASE_LEARN_SUCCESS "You learn to cast a weak fireball."
+	const BASE_SPELL_SCRIPT "magic_hand_fire_dart"
+	const BASE_SUMMON_TEXT "You learn to cast a weak fireball."
+	const BASE_SUMMON_TEXT_FAILED "Your spell casting skills are not yet sufficient to memorize this tome."
+	
+	const BASE_REQUIRED_SKILL skill.spellcasting.fire
+	const BASE_REQUIRED_LEVEL 0
+	
+	const BASE_CAN_SUMMON $func(func_base_can_wield)
 
 	const MODEL_WORLD "misc/p_misc.mdl"
-	const MODEL_BODY 16
+	const MODEL_BODY 5
 
-	setvar READING 0
-	setvard SCROLL_WARNING_LEVEL 0
+	setvar READING 0 //0 - readable; 1 - reading; -1 - put away while reading
 }
 
 #include items/base_item_extras
 
 { game_spawn
-
-	weight 1
-	size 2
 	
-	setworldmodel MODEL_WORLD
-	setmodelbody 0 MODEL_BODY
+	name "Dire Fart Tome"
+	desc "im gonna learn you a oooh~ brrrt!"
+	value 1
+	weight 1
+	//Height and width are for npcs, and are not set here.
 	
 	sethudsprite hand item
 	sethudsprite trade book
 }
 
-{ game_attack1
+//Models
+{ game_deploy
+
+	//Shows the model in the player's hands
+	setmodel MODEL_WORLD //Model must be set again, since the item gets hidden
+	
+	local L_SUB_MODEL $math(subtract,MODEL_BODY,2) //Hand models are two submodels behind the world
+	add L_SUB_MODEL game.item.hand_index 
+	
+	setmodelbody 0 L_SUB_MODEL
+}
+
+//Models
+{ game_fall
+
+	//World model
+	setmodel MODEL_WORLD
+	setmodelbody 0 MODEL_BODY
+	playanim oldbook_floor_idle //Idle animation offsets the model to the floor
+}
+
+//Tome Stuff
+{ game_attack1 //Attempt to learn spell on click
 
 	if READING == 0
 
@@ -45,40 +73,43 @@
 	callevent 3 learn_spell
 }
 
+//Tome Stuff
 { learn_spell
 
-	if READING == 1
-
-	learnspell SPELL_SCRIPT
+	if ( READING == 1 )
+	{
+		if ( BASE_CAN_SUMMON ) learnspell BASE_SPELL_SCRIPT
+		else callevent game_learnspell_failed
+	}
+	
 	setvard READING 0
 }
 
+//Tome Stuff
 { game_removefromowner
 
-	setvard READING 0
+	if ( READING ) setvard READING -1 //Stop attempting to read of moved inventory slots or dropped
 }
 
 { game_learnspell_success
 
-	playermessage BASE_LEARN_SUCCESS
+	playermessage BASE_SUMMON_TEXT
 }
 
 { game_learnspell_failed
 
-	playermessage "Your spell casting skills are not yet sufficient to memorize this tome."
+	playermessage BASE_SUMMON_TEXT_FAILED
 }
 
 { [client] game_deploy
 
-	callevent tome_warn
-	callevent 1.0 tome_warn
+	//If the model body is not 5, then assume that this item is a scroll, not a tome.
+	if ( MODEL_BODY == 5 ) infomsg ent_owner "TOMES" "Tomes can be used to memorize spells permanently."
 }
 
-{ [client] tome_warn
+{ func_base_can_wield //Returns 1 if the player has the skill to summon the spell, otherwise it returns 0
 
-	if ( SCROLL_WARNING_LEVEL == 0 ) infomsg ent_owner "TOMES vs SCROLLS" "TOMES can be used to memorize spells permanently."
-	if ( SCROLL_WARNING_LEVEL == 1 ) infomsg ent_owner "TOMES vs SCROLLS" "SCROLLS... are more expensive..."
-	add SCROLL_WARNING_LEVEL 1
-	
-	if ( SCROLL_WARNING_LEVEL > 1 ) setvard SCROLL_WARNING_LEVEL 0
+	local OWNER_SKILL $get(ent_owner,BASE_REQUIRED_SKILL)
+	if ( OWNER_SKILL >= BASE_REQUIRED_LEVEL ) return 1
+	else return 0
 }
