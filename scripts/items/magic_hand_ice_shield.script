@@ -1,67 +1,46 @@
-//Thothie
-//- This has been removed from the weapon registration system to prevent some odd bugs
+//Ice Shield
+//Level req: 5
+//50% damage reduction
 
 {
 	const NO_REGISTER 1
-
 	const SOUND_SHOOT      	magic/cast.wav
 
-	const MELEE_RANGE		600
-	const MELEE_HITCHANCE 	100%
 	const MELEE_ATK_DURATION 	2
-	const MELEE_DMG_DELAY 1
 
-	const CSKILL_REQ 5
-	setvar SPELL_SKILL_REQUIRED	CSKILL_REQ
-	const SPELL_FIZZLE_TIME	25
-	const SPELL_CAST_SUCCESS	95%
-	const SPELL_PREPARE_TIME	1
-	const SPELL_DAMAGE_TYPE	cold
-	const SPELL_ENERGYDRAIN	50
-	const SPELL_MPDRAIN 0 //was 50
 	const MANA_COST	50 //special internal handling
-	const SPELL_STAT		none	//this does not report XP proper, so removing XP registration
+	const ICESHIELD_FORMULA 	0.5 //50% damage reduction
 
-	const EFFECT_MAXDURATION 	30 //original 180
-	const EFFECT_MINDURATION 	30 //original 10 (insane variance)
-	const EFFECT_DURATION_STAT	$get(ent_owner,stat.concentration.ratio)
-	const EFFECT_DURATION_FORMULA $get_skill_ratio(EFFECT_DURATION_STAT,EFFECT_MINDURATION,EFFECT_MAXDURATION)
-	const ICESHIELD_MAX_TAKEDMG 	1	//does nothing under new formula
-	const ICESHIELD_MIN_TAKEDMG 	0.1	//does nothing under new formula
-	const ICESHIELD_SKILL		$get(ent_owner,skill.spellcasting.protection.ratio)
-	const ICESHIELD_FORMULA 	0.5
-	//original
-	///onst ICESHIELD_FORMULA 	$get_skill_ratio(ICESHIELD_SKILL,ICESHIELD_MIN_TAKEDMG,ICESHIELD_MAX_TAKEDMG,inversed)
-
-	const SPELL_SCRIPT		effects/effect_iceshield
-	precachefile 			SPELL_SCRIPT
+	const SPELL_SCRIPT effects/effect_iceshield
+	precachefile SPELL_SCRIPT
 }
 
 #include items/magic_hand_base
 
-{  spell_spawn
+{ spell_spawn
 
-   name 		Ice Shield
-   desc 		Provides 50% damage reduction for you or allies, for a time
+   name "Ice Shield"
+   desc "Provides 50% damage reduction for you or allies, for a time."
+   
+   setvard LAST_ATTACK $math(add,game.time,MELEE_ATK_DURATION)
 }
 
 { game_attack1
 
-	//if game.serverside
-
 	local TIME_DIFF game.time
 	subtract TIME_DIFF LAST_ATTACK
+	
 	if TIME_DIFF > MELEE_ATK_DURATION
 
 	setvard LAST_ATTACK game.time
 
-	playviewanim	ANIM_CAST
-	playowneranim	critical PLAYERANIM_PREPARE squatwalk1
+	playviewanim ANIM_CAST
+	playowneranim critical PLAYERANIM_PREPARE squatwalk1
 
-	if ( $get(ent_owner,mp) < MANA_COST ) dplayermessage ent_owner Insufficient mana.
+	if ( $get(ent_owner,mp) < MANA_COST ) dplayermessage ent_owner "Insufficient mana."
 	if $get(ent_owner,mp) >= MANA_COST
 
-	playsound	game.sound.item game.sound.maxvol SOUND_CHARGE
+	playsound game.sound.item game.sound.maxvol SOUND_CHARGE
 
 	local SPELL_TARGET $get(ent_owner,target)
 
@@ -73,121 +52,23 @@
 		local SPELL_TARGET $get(ent_owner,id)
 	}
 
-	//is target already shielded
-	//callexternal SPELL_TARGET ice_shield_check
-	//if ( ICE_SHIELD_CHECK ) local ALREADY_SHIELDED 1
-	
-	local ALREADY_SHIELDED $get(SPELL_TARGET,haseffect,effect_iceshield)
-
-	if ( ALREADY_SHIELDED )
-	{
-		bplayermessage ent_owner "Target is already shielded"
-		//local SHIELD_TIME_OLD $get(SPELL_TARGET,scriptvar,ICE_SHIELD_TIME)
-		//local MIN_RECHARGE FINAL_DURATION
-////		subtract MIN_RECHARGE 10
-//		//if ( SHIELD_TIME_OLD < MIN_RECHARGE ) local RECHARGE_SHIELD 1
-//		if ( !RECHARGE_SHIELD ) bplayermessage ent_owner "Target is already shielded"
-//		if RECHARGE_SHIELD
-//		givemp $neg(MANA_COST)
-//		callexternal ent_owner mana_drain //update mana on player hud readout, if using hud feedback
-//		//callexternal SPELL_TARGET ice_shield_on FINAL_DURATION
-//		local SHIELD_TIME_NEW $get(SPELL_TARGET,scriptvar,ICE_SHIELD_TIME)
-//		bplayermessage ent_owner Charging $int(FINAL_DURATION) secs to ice shield on $get(SPELL_TARGET,name)
-		local EXIT_SUB 1
-	}
-	if !EXIT_SUB
-
 	local FINAL_DURATION EFFECT_DURATION_FORMULA
 	add FINAL_DURATION 45
-
-	if ( SPELL_TARGET isnot $get(ent_owner,id) )
-	{
-		if ( $get(SPELL_TARGET,isplayer) )
-		{
-			gplayermessage ent_owner You shield $get(SPELL_TARGET,name)
-			gplayermessage SPELL_TARGET $get(ent_owner,name) has protected you with a shield of ice.
-			local ADD_BONUS 1
-			add FINAL_DURATION 200
-		}
-		if ( $get(SPELL_TARGET,scriptvar,'NPC_CRITICAL') ) local ADD_BONUS 1
-		if ADD_BONUS
-		local L_BONUS_MSG "for shielding "
-		stradd L_BONUS_MSG $get(SPELL_TARGET,name)
-		callexternal ent_owner ext_dmgpoint_bonus 1000 L_BONUS_MSG
-	}
+	if ( $get(SPELL_TARGET,id) isnot $get(ent_owner,id) ) local FINAL_DURATION 200
 
 	givemp $neg(MANA_COST)
 	callexternal ent_owner mana_drain //update mana on player hud readout, if using hud feedback
-	applyeffect SPELL_TARGET SPELL_SCRIPT FINAL_DURATION ICESHIELD_FORMULA
+	
+	local ALREADY_SHIELDED $get(SPELL_TARGET,haseffect,effect_iceshield)
+	if ( ALREADY_SHIELDED ) //If target is already shielded, refresh their duration.
+	{
+		callexternal SPELL_TARGET ext_refresh_ice_shield FINAL_DURATION $get(ent_owner,id) //<duration> <shielder>
+	}
+	else
+	{
+		applyeffect SPELL_TARGET SPELL_SCRIPT FINAL_DURATION ICESHIELD_FORMULA $get(ent_owner,id) //<duration> <damage_reduction> <shielder>
+	}
 }
-
-
-//Old system
-//{  spell_casted	//PARAM1: "none"/"npc"/"world"   2: Attack end Position   3: Entity hit (if any)
-//
-//	callevent 0.2 check_did
-//
-//	//Cast on owner... unless an ally is hit.  Then cast on ally
-//	local SPELL_TARGET $get(ent_owner,id)
-//	local ACT_TARGET $get(PARAM3,id)
-//	if ( ACT_TARGET isnot SPELL_TARGET )
-//	{
-//		//dbg temp ActTarget is not Owner ( $get(SPELL_TARGET,name) vs $get(ACT_TARGET,name) )
-//		if ( $get(PARAM3,name) equals 0 ) local INVALID_TARGET 1
-//		if ( $get(ent_owner,relationship,ACT_TARGET) equals ally ) local SPELL_TARGET ACT_TARGET
-//		if ( $get(PARAM3,isplayer) ) local SPELL_TARGET ACT_TARGET
-//		if ( $get(PARAM3,scriptvar,IAM_PLAYER) ) local SPELL_TARGET ACT_TARGET
-//		if ( $get(ACT_TARGET,race) equals hguard ) local SPELL_TARGET ACT_TARGET
-//		if ( INVALID_TARGET )
-//		{
-//			setvard DID_SHIELD 0
-//			callevent check_did
-//			local EXIT_SUB 1
-//		}
-//	}
-//	if !EXIT_SUB
-//
-//	local FINAL_DURATION EFFECT_DURATION_FORMULA
-//	add FINAL_DURATION 45
-//
-//	//refund mana if already cast on target
-//	local TARGET_ID SPELL_TARGET
-//	//local ALREADY_SHIELDED $get(TARGET_ID,scriptvar,ICE_SHIELDED)	//wtf won't this work? ><
-//
-//	setvarg ICE_SHIELD_CHECK 0
-//	callexternal TARGET_ID ice_shield_check //work around for above wtf
-//
-//	if ( ICE_SHIELD_CHECK ) local ALREADY_SHIELDED 1
-//
-//	setvard DID_SHIELD 1
-//	
-//	if ( ALREADY_SHIELDED )
-//	{
-//		bplayermessage ent_owner "Target is already shielded"
-//		givemp SPELL_MPDRAIN
-//	}
-//
-//	////dbg AlreadySheilded ALREADY_SHIELDED shieldcheck ICE_SHIELD_CHECK
-//
-//	if !ALREADY_SHIELDED
-//
-//	callexternal TARGET_ID ice_shield_on
-//
-//	applyeffect SPELL_TARGET SPELL_SCRIPT FINAL_DURATION ICESHIELD_FORMULA
-//}
-//
-//{ check_did
-//	if ( DID_SHIELD == 1 )
-//	{
-//		setvard DID_SHIELD 0
-//		local EXIT_SUB 1
-//	}
-//	if !EXIT_SUB
-//
-//	//shield failed for some reason, refund
-//	dplayermessage ent_owner "Failed to shield target - the mana returns"
-//	givemp SPELL_MPDRAIN
-//}
 
 { fake_precache
 	svplaysound 0 0 SOUND_CHARGE

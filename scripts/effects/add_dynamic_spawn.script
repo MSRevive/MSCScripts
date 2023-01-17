@@ -55,12 +55,11 @@
 	callexternal ent_me npcatk_suspend_ai
 	setvard PLAYING_DEAD 1
 
-
 	if ( !DYNS_GLOBAL )
 	{
 		setvard DYN_SPAWNER $get(ent_me,spawner)
 		setvard DYN_SPAWNER_MINS $get(DYN_SPAWNER,absmin)
-		setvard DYN_SPAWNER_MAXS $get(DYN_SPAWNER,absmax)
+		setvard DYN_SPAWNER_MAXS $get(DYN_SPAWNER,absmax) //So glad these work :)
 		//dbg $currentscript mins DYN_SPAWNER_MINS maxs DYN_SPAWNER_MAXS
 	}
 
@@ -147,9 +146,9 @@
 		//pick spot behind player view, up 32-128 units + my width		
 		local L_PLAYER $get_token(DYNS_VALID_TARGETS,L_PLAYER_IDX)
 		local L_PLAYER_VIEW $get(L_PLAYER,viewangles)
-		local L_PLAYER_VIEW_YAW $vec.yaw(L_PLAYER_VIEW_YAW)
-		subtract L_PLAYER_VIEW 180
-		if ( L_PLAYER_VIEW < 0 ) add L_PLAYER_VIEW 180
+		local L_PLAYER_VIEW_YAW $vec.yaw(L_PLAYER_VIEW)
+		subtract L_PLAYER_VIEW_YAW 180
+		if ( L_PLAYER_VIEW_YAW < 0 ) add L_PLAYER_VIEW_YAW 360
 		vectorset L_PLAYER_VIEW y L_PLAYER_VIEW_YAW
 		local L_PLAYER_POS $get(L_PLAYER,origin)
 		local L_PLAYER_BACK $randf(32,128)
@@ -183,7 +182,7 @@
 		callexternal ent_me npcatk_resume_ai
 		setvard DYNS_ACTIVE 0
 		callexternal ent_me set_home_loc $get(ent_me,origin)
-		dbg dyns_finalize @ $get(ent_me,origin)
+		
 		removescript
 	}
 	else
@@ -204,7 +203,7 @@
 
 { dyns_find_validate
 	local L_CUR_TARG $get_token(DYNS_TARGETS,game.script.iteration)
-	if $within_box(L_CUR_TARG,$vec(0,0,0),DYN_SPAWNER_MINS,DYN_SPAWNER_MAXS)
+	if $within_box(L_CUR_TARG,0,DYN_SPAWNER_MINS,DYN_SPAWNER_MAXS)
 	setvard DYNS_FOUND_VALID 1
 	token.add DYNS_VALID_TARGETS L_CUR_TARG
 }
@@ -221,35 +220,38 @@
 		local L_MY_HEIGHT $get(ent_me,height)
 		local L_TRACE_END $math(vectoradd,DYNS_CHECK_SIGHT,z,L_MY_HEIGHT) //trace to head
 		local L_TRACE_LINE $get_traceline(L_TRACE_START,L_TRACE_END,worldonly)
-		if ( L_TRACE_LINE equals L_TRACE_END )
+		
+		if ( L_TRACE_LINE isnot L_TRACE_END )
 		{
-			local L_DEBUG invew-YES-not_blocked
-		}
-		else
-		{
-			//vision might be blocked by something, give benefit of doubt
-			//dbg dyns_check_inview invew-NO-blocked
+			//vision blocked by something
 			exitevent
 		}
 	}
 	else
 	{
-		//dbg dyns_check_inview invew-NO-notinfov
 		exitevent //not in FOV
 	}
-	//dbg dyns_check_inview L_DEBUG
+
+	//Within sight
 	setvard DYNS_IN_VIEW 1
 }
 
 { func_dyns_test_point
-	local L_TELE_POINT PARAM1
+
 	local L_OLD_ORG $get(ent_me,origin)
+	local L_TELE_POINT PARAM1
+	
 	setorigin ent_me L_TELE_POINT
+	
 	local reg.npcmove.endpos L_TELE_POINT
+	
 	local L_MY_ANG $get(ent_me,angles.yaw)
 	vectoradd reg.npcmove.endpos $relpos($vec(0,L_MY_ANG,0),$vec(-16,0,0))
+	
 	local reg.npcmove.testonly	1
+	
 	npcmove ent_me
+	
 	local L_IS_LEGIT 1
 	if ( game.ret.npcmove.dist == 0 )
 	{
@@ -258,20 +260,24 @@
 	}
 	if ( !DYNS_GLOBAL )
 	{
-		if !$within_box(L_TELE_POINT,$vec(0,0,0),DYN_SPAWNER_MINS,DYN_SPAWNER_MAXS)
-		local L_IS_LEGIT 0
-		local L_DEBUG not_in_box
+		//if !$within_box(L_TELE_POINT,0,DYN_SPAWNER_MINS,DYN_SPAWNER_MAXS) //Flooring enemies can cause them to move out of the box. This will cause enemies to never pop back in.
+		//local L_IS_LEGIT 0
+		//local L_DEBUG not_in_box
 	}
 
 	if ( !L_IS_LEGIT )
 	{
 		dbg func_dyns_test_point L_DEBUG
 		setorigin ent_me L_OLD_ORG
+		
+		return **clear
 		return 0
 	}
 	else
 	{
 		dbg func_dyns_test_point valid
+		
+		return **clear
 		return 1
 	}
 }
@@ -280,7 +286,7 @@
 
 	if ( game.players == 1 )
 	{
-		local L_PLAYER $get_token(DYNS_TARGETS,0)
+		local L_PLAYER $get_token(DYNS_VALID_TARGETS,0)
 	}
 	else
 	{
@@ -288,19 +294,18 @@
 		{
 			//*shrug* it's 50/50
 			local L_RND $rand(0,1)
-			local L_PLAYER $get_token(DYNS_TARGETS,L_RND)
+			local L_PLAYER $get_token(DYNS_VALID_TARGETS,L_RND)
 		}
 		else
 		{
 			//find the most popular player, based on his proximity to all the others
 			setvard DYNS_LOWEST_TRANGE 9999
-			setvard DYNS_WINNER $get_token(DYNS_TARGETS,0)
-			setvard DYNS_NPLAYERS $get_token_amt(DYNS_TARGETS)
+			setvard DYNS_WINNER $get_token(DYNS_VALID_TARGETS,0)
+			setvard DYNS_NPLAYERS $get_token_amt(DYNS_VALID_TARGETS)
 			calleventloop DYNS_NPLAYERS dyns_find_popular_eloop
 			local L_PLAYER DYNS_WINNER
 		}
 	}
-
 
 	local L_SPAWN_POINT $get(L_PLAYER,origin)
 	if ( $math(subtract,game.time,DYNS_STARTED) < 3 )
@@ -323,12 +328,13 @@
 
 	//dbg func_dyns_findspawnpoint select $get(L_PLAYER,name) @ L_SPAWN_POINT
 
+	return **clear
 	return L_SPAWN_POINT
 }
 
 { dyns_find_popular_eloop
 	local L_IDX game.script.iteration
-	setvard DYNS_TEST_PLAYER $get_token(DYNS_PLAYERS,L_IDX)
+	setvard DYNS_TEST_PLAYER $get_token(DYNS_VALID_TARGETS,L_IDX)
 	setvard DYNS_TEST_PLAYER_TRANGE 0
 	calleventloop DYNS_NPLAYERS dyns_test_popular_eeloop
 	if ( DYNS_TEST_PLAYER_TRANGE < DYNS_LEAST_AUTISTIC )
@@ -340,7 +346,7 @@
 }
 
 { dyns_test_popular_eeloop
-	local L_TEST_AGAINST $get_token(DYNS_PLAYERS,game.script.iteration)
+	local L_TEST_AGAINST $get_token(DYNS_VALID_TARGETS,game.script.iteration)
 	local L_TEST_SUBJECT_ORG $get(DYNS_TEST_PLAYER,origin)
 	local L_TEST_TARGET_ORG $get(L_TEST_AGAINST,origin)
 	add DYNS_TEST_PLAYER_TRANGE $dist(L_TEST_SUBJECT_ORG,L_TEST_TARGET_ORG)
