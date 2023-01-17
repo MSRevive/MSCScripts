@@ -1,0 +1,85 @@
+//Ice lance, from the hoarfrost shard.
+
+{
+	const NO_REGISTER 1 //Register myself since im using weapon charge system
+	
+	const ANIM_PREPARE 7 //quick lift anim
+	const ANIM_CAST 17 //bigblast
+
+	const SOUND_CHARGE none
+	const SOUND_SHOOT magic/ice_strike.wav
+	
+	const MELEE_RANGE 0
+	const MELEE_HITCHANGE 100
+	const MELEE_ATK_DURATION 4.6
+	
+	const SPELL_NOISE 500 //Quiet
+	const SPELL_PREPARE_TIME 1.5
+	const SPELL_DAMAGE_TYPE lightning
+	const SPELL_MPDRAIN 20
+	const SPELL_STAT spellcasting.lightning
+	
+	const SPELL_BASE_SPEED 600
+	const SPELL_SPEED_ADJ 450 //Can add up to this amt depending on charge %
+	
+	const SPELL_BASE_DMG $math(multiply,1.5,$get(ent_owner,skill.spellcasting.lightning)) //1.5 * owner spellcasting.lightning
+	const SPELL_DMG_ADJ 0.5
+	
+}
+
+#include items/magic_hand_base
+
+{ spell_spawn
+
+	name "Erratic Disc"
+	desc "its like, HD and shit"
+}
+
+{ setup_attack //Need to add charge 1 to upgrade the attack
+
+	local reg.attack.type			MELEE_TYPE
+	local reg.attack.range			MELEE_RANGE
+	local reg.attack.dmg			MELEE_DMG
+	local reg.attack.dmg.range		MELEE_DMG_RANGE
+	local reg.attack.dmg.type		SPELL_DAMAGE_TYPE
+	local reg.attack.keys		 	-attack1
+	local reg.attack.chargeamt		100%
+	local reg.attack.hitchance		MELEE_HITCHANCE
+	local reg.attack.priority		1
+	local reg.attack.delay.strike	MELEE_DMG_DELAY
+	local reg.attack.delay.end		MELEE_ATK_DURATION
+	local reg.attack.noise			SPELL_NOISE
+	local reg.attack.energydrain	SPELL_ENERGYDRAIN
+	local reg.attack.mpdrain		SPELL_MPDRAIN
+	local reg.attack.stat			SPELL_STAT
+	local reg.attack.callback		cast
+	local reg.attack.noautoaim		MELEE_NOAUTOAIM
+	local reg.attack.reqskill 0
+	registerattack
+}
+
+{ cast_strike	//PARAM1: "none"/"npc"/"world"	2: Attack end Position	3: Entity hit (if any)
+
+	local L_SPEED SPELL_BASE_SPEED
+	add L_SPEED $math(multiply,CHARGE_MULT,SPELL_SPEED_ADJ) //get spell speed from charge amt
+	
+	local L_MULT $math(multiply,CHARGE_MULT,SPELL_DMG_ADJ)
+	add L_MULT 1
+	
+	local L_DMG $math(multiply,SPELL_BASE_DMG,L_MULT)
+	
+	local L_VEL $relvel($get(ent_owner,viewangles),$vec(0,L_SPEED,10))
+	//<owner> <vec> <level Cast as> <skill to level>
+	createnpc "effects/lightning_disc" $relpos(0,20,-5) $get(ent_owner,id) L_VEL L_DMG spellcasting.lightning
+	svplaysound game.sound.item game.sound.maxvol SOUND_SHOOT
+}
+
+{ fake_precache
+	svplaysound 0 0 SOUND_SHOOT
+	svplaysound 0 0 ambient/alien_frantic.wav
+	svplaysound 0 0 magic/bolt_end.wav
+}
+
+{ game_setchargepercent
+	setvard CHARGE_MULT PARAM1
+}
