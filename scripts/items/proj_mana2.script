@@ -10,41 +10,40 @@
 
 	name a|Manabolt
 	desc Manabolt
-	width 1
-	height 1
-	setbbox npcsize
+	width 0
+	height 0
 	weight 	0
 	gravity	0
 	setmonsterclip 0
 	invincible 1
 	race beloved
 	
-	setmodel null.mdl
+	setmodel none
 	
-	setprop ent_me movetype 11
-	setprop ent_me friction 1
-	setprop ent_me solid 0
-	
-	callevent 10.0 fx_remove
+	callevent 10.0 remove_projectile
 }
 
 { game_dynamically_created //<owner> <vec> <ballSize> <damage> <skill to level>
 
 	setvard FX_OWNER PARAM1
-	local L_VEC PARAM2
+	setvard FX_VEL PARAM2 //Kept to check to see if it changes
 	setvard FX_SIZE PARAM3
 	setvard FX_DAMAGE PARAM4
 	setvard FX_SKILL PARAM5
 	
 	setvard SCAN_SIZE $func(func_get_scan_size)
 
-	setvelocity ent_me L_VEC
-	svplaysound 4 4 SOUND_SHOOT
+	setvelocity ent_me FX_VEL
+	svsound.play3d SOUND_SHOOT 2.5 $get(ent_me,origin) 0 4
 
 	setvard PREV_SCAN $get(ent_me,origin)
 	callevent 0.3 scan_cycle
 
 	callevent create_clfx
+	
+	setprop ent_me movetype 11
+	setprop ent_me friction 10000
+	setprop ent_me solid 0
 }
 
 { create_clfx
@@ -61,12 +60,12 @@
 
 { scan_cycle
 
-	local L_ORIGIN $get(ent_me,origin) 
-	if ( PREV_SCAN isnot L_ORIGIN ) //The projectile has moved
+	local L_VEL $get(ent_me,velocity)
+	//infomsg all FX_VEL $get(ent_me,velocity)
+	if ( FX_VEL equals L_VEL ) //The projectile has moved
 	{
-		setvard PREV_SCAN L_ORIGIN
 		//<target|(src_origin)> <range|aoe|(dest_origin)|direct> <damage> <cth|fall_off> <attacker> <inflciter> <skill|none> <dmg_type> [flag_string]
-		xdodamage L_ORIGIN SCAN_SIZE FX_DAMAGE 0 FX_OWNER ent_me FX_SKILL magic dmgevent:*ball
+		xdodamage $get(ent_me,origin) SCAN_SIZE FX_DAMAGE 0 FX_OWNER ent_me FX_SKILL magic dmgevent:*ball
 		callevent 0.3 scan_cycle
 	}
 	else
@@ -92,7 +91,7 @@
 
 { remove_projectile 
 
-	svsound.play3d SOUND_ZAP 10 PREV_SCAN 0 4
+	svsound.play3d SOUND_ZAP 4 $get(ent_me,origin) 0 4
 	clientevent update all CLFX_ARROW_IDX end_fx
 	deleteme
 }
