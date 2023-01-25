@@ -1,0 +1,65 @@
+//Copied from effect_shock_damage. By greatguys1
+
+//Any npc
+//Param1 - Duration
+//Param2 - My Attacker
+//Param3 - Damage
+//Param4 - XP Skill
+//Param5 - Damage Type
+
+#scope server
+
+{ [server]
+	const EFFECT_ID			DOT_pierce
+	const EFFECT_NAME		"Bleed Debuff"
+	const EFFECT_ACTIONTYPE		nostack
+	const EFFECT_SCRIPT		$currentscript
+	const ATTACK_DAMAGE_TYPE	DMG_TYPE
+
+	setvard game.effect.id		EFFECT_ID
+	setvard game.effect.displayname	EFFECT_NAME
+	setvard game.effect.type	EFFECT_ACTIONTYPE
+
+	const DOT_EFFECT 1
+	const DOT_TYPE DMG_TYPE
+	const DOT_DMG BLEED_DMG
+	const DOT_FREQ 1
+	const DOT_ATTACKER MY_ATTACKER
+	const DOT_SKILL ACTIVE_SKILL
+}
+
+#include effects/effect_base allowduplicate //Unfortunately I have to use effect_dot for resist checks
+
+{ [server] game_activate //<duration> <attacker> <damage> [activeSkill] [dmg type]
+
+	setvard local.effect.duration PARAM1
+	setvard MY_ATTACKER PARAM2
+	setvard BLEED_DMG PARAM3
+
+	setvard ACTIVE_SKILL swordsmanship
+	if ( PARAM4 isnot 'PARAM4' ) setvard ACTIVE_SKILL PARAM4
+
+	setvard DMG_TYPE pierce
+	if ( PARAM5 isnot 'PARAM5' ) setvard DMG_TYPE PARAM5
+
+	//=== Check Immunities //Have to check after final damage type is determined
+	callevent resist_check DMG_TYPE $get(PARAM2,id)
+	if RESISTED_EFFECT < 2
+	//=== End Check Immunities
+
+	if ( RESISTED_EFFECT < 1 )
+	{
+		if ( $get(ent_me,isplayer) )
+		{
+			playermessage $get(ent_me,id) You are bleeding!//BE_RESIST_STRING //No resist string, player shouldn't have special resist to pierce
+		}
+	}
+
+	callevent local.effect.duration effect_die
+}
+
+{
+repeatdelay DOT_FREQ
+	if BE_EFFECT_ACTIVE
+	callevent dot_effect
+}
