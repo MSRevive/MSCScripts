@@ -8,56 +8,12 @@
 // to bleed, and cause the chunk of flesh to burst, damaging and bleeding other nearby enemies. Finishing off enemies
 // that are bleeding causes various innards to burst out, also exploding, damaging and bleeding nearby enemies. 
 //
-//-Bleed dot always lasts for 5 seconds before expiring
-//-Bleed Damage is:
-//	--( swordLevel - 40 ) * 2  + 40
-//	--It is calculated in ext_inflict_gb in player/externals
-//-Enemy death gib amount calculation is:
-//	--( monsterHeight + monsterWidth ) / 200 * 7
-//	--Gibs are capped at 7
-//	--It is calculated in clmsg_dmg_gb in player/externals
-//	--It is also calculated in effects/sfx_gb2
-//	--Make sure the algorithms match if you change something!
-//-Gibs always damage within 145 units
-//-Gib Burst Damage is:
-//	--( 755 / gibAmt ) * ( 755 / 1500 * monsterMaxHp / 755 )
-//	--If monsterMaxHp is higher than 1500, it is treated as 1500
-//	--Single gibs from simply attacking are still subject to running the gib amt calculation for damage
-//		---This means that hitting high max hp, small enemies do the most single gib damage
-//
-//
 //----------
-//
-//Files directly related with the Gut Buster:
-//
-//effects/
-//	gut_buster.script
-//	sfx_gb1.script
-//	sfx_gb2.script
-//	sfx_gb2_single.script
-//
-//items/
-//	swords_gb.script
-//
-//player/
-//	externals.script
-//		-The following events are related to the GB:
-//			--ext_inflict_gb
-//			--clmsg_dmg_gb
-//			--ext_gb_dodamage
-//
-//----------
-
-//Events:
-//	weapon_spawn		-Sets item properties, and registers brutalize
-//	game_precache		-Precaches models and sprites for GB client fx
-//	weapon_damaged_other	-Utilized to apply the gut_buster effect on struck enemies
-//	game_fall		-???
 
 #scope shared
 
 {
-	const BASE_LEVEL_REQ	36
+	const BASE_LEVEL_REQ	37
 	const ANIM_LIFT1	0
 	const ANIM_IDLE1	1
 	const ANIM_ATTACK1	2
@@ -80,17 +36,16 @@
 	const PLAYERANIM_AIM		axe_twohand
   	const PLAYERANIM_SWING		axe_twohand_swing
 
-
 	//Used in base_melee
 	//------------------
-	const MELEE_RANGE 180
+	const MELEE_RANGE 170
 	const MELEE_DMG_DELAY 0.6
 	const MELEE_ATK_DURATION 1.4
 	const MELEE_ENERGY 10
-	const MELEE_DMG 550
-	const MELEE_DMG_RANGE 200
+	const MELEE_DMG 570
+	const MELEE_DMG_RANGE 150
 	const MELEE_DMG_TYPE slash
-	const MELEE_ACCURACY 72%
+	const MELEE_ACCURACY 75%
 	const MELEE_STAT swordsmanship
 	const MELEE_ALIGN_BASE 4,-6 
 	const MELEE_ALIGN_TIP 0,6
@@ -134,16 +89,22 @@
 	precache char_breath.spr
 }
 
-{ weapon_damaged_other
+{ weapon_damaged_other //PARAM1=target_hit PARAM2=dmg PARAM3=dmg_type PARAM4=dmgevent
 
 	if PARAM2 > 0
 	//Apply the special gut buster effect that creates additional gibs on death. Gib damage is calculated on the gib.
 	callevent inflict_bleed $pass(PARAM1)
-	//Throw a single gib
 	
+	local L_BLOOD $get(PARAM1,blood)
+	if L_BLOOD isnot 'none'
+	
+	local L_SOUND "leech/leech_bite" $rand(1,2) ".wav"
+	playsound 0 10 L_SOUND
+	
+	//Throw a single gib
 	local L_VEL $relvel($get(ent_owner,viewangles),$vec(-35,50,350))
 	//<owner> <velocity> <damage> <skill> <"green"|"red"> <sword_id>
-	createnpc effects/swords_gb/gb_gib_explode $get(PARAM1,origin) $get(ent_owner,id) L_VEL GIB_EXPLODE_DAMAGE swordsmanship red $get(ent_me,id)
+	createnpc effects/swords_gb/gb_gib_explode $get(PARAM1,origin) $get(ent_owner,id) L_VEL GIB_EXPLODE_DAMAGE swordsmanship L_BLOOD $get(ent_me,id)
 }
 
 { gib_dodamage //Called from effects/swords_gb/gb_gib_explode
