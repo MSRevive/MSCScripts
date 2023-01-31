@@ -1,0 +1,107 @@
+{
+	const SOUND_DEATH player/hitground2.wav
+	const SOUND_STRUCK1 player/hitground2.wav
+	const SOUND_STRUCK2 player/hitground2.wav
+	const SOUND_ATTACK1 player/hitground1.wav
+	const SOUND_ATTACK2 player/hitground1.wav
+	precache SOUND_DEATH
+	
+	setvar ANIM_IDLE walk
+	setvar ANIM_RUN run
+	setvar ANIM_WALK	walk
+	setvard ANIM_ATTACK attack
+	setvard ANIM_DEATH die
+	setvard MOVE_RANGE 10
+	setvard ATTACK_RANGE 80
+	setvard ATTACK_HITRANGE 120
+	const ATTACK_HITCHANCE	70%
+	const ATTACK_DAMAGE $randf(25,50)
+
+	setvard NPC_MUST_SEE_TARGET 0
+
+	setvard IMMUNE_STUN 100
+
+	setvard IMMUNE_PUSH 1
+
+	setvard IMMUNE_LIGHTNING 1
+
+	setvard NO_SPAWN_STUCK_CHECK 1
+
+	const NPC_BASE_EXP 10
+}
+
+#include monsters/base_monster_new
+
+{ npc_spawn
+	
+	name a| small Mud Pie
+	hp 333
+	width 40
+	height 64
+	setmodel dwarvencave/slime_ecave.mdl
+	setmodelbody 0 11
+	race wildanimal //greater version should be demon for ease of placement
+	roam 1
+	setsolid none
+	setbbox trigger
+	setvard NPC_GIVE_EXP 225
+
+	hearingsensitivity 8
+
+	callevent 0.5 slime_cycle
+
+	takedmg pierce 0.2
+	takedmg slash 0.4
+	takedmg blunt 0.8
+	takedmg cold 0.6
+	takedmg fire 0.6
+}
+
+
+{ bite1 //called from model
+
+	callevent npcatk_dodamage HUNT_LASTTARGET ATTACK_HITRANGE ATTACK_DAMAGE ATTACK_HITCHANCE fire
+}
+
+{ game_damaged_other
+
+	playrandomsound 0 10 SOUND_ATTACK1 SOUND_ATTACK2
+}
+
+{ game_struck
+
+	playrandomsound 0 10 SOUND_STRUCK1 SOUND_STRUCK2
+}
+
+{ game_dynamically_created //PARAM1=movedest PARAM2=motherkiller
+
+	setvard MOMMY_KILLER PARAM2
+	callevent npcatk_suspend_ai 0.5
+	setmovedest PARAM1 1
+	callevent 0.75 avenge_mommy PARAM2
+}
+
+{ avenge_mommy
+
+	callevent npcatk_settarget MOMMY_KILLER "he_killed_mommy!"
+}
+
+{ slime_cycle
+	
+	////dbg temp Slimetarget $get(NPCATK_TARGET,name)
+
+	if ( NPCATK_TARGET equals unset ) 
+	{
+		if $rand(1,10) == 1
+		playsound 0 10 SOUND_IDLE
+	}
+
+	if ( NPCATK_TARGET isnot unset )
+	{
+		if $get(NPCATK_TARGET,range) < ATTACK_RANGE
+		if $rand(1,3) == 1
+		callevent chicken_run 1.0 "combat_reposition"
+	}
+
+	callevent 2.0 slime_cycle
+}

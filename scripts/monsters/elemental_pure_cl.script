@@ -1,0 +1,130 @@
+{
+	const MAX_BONE 17
+}
+
+{ client_activate //$get(ent_me,index) ELM_COLOR ELM_TYPE FREQ_CL_REFRESH
+	setvard FX_OWNER PARAM1
+	setvard FX_COLOR PARAM2
+	setvard FX_TYPE PARAM3
+	setvard FX_DURATION PARAM4
+	setvard FX_ACTIVE 1
+
+	dbg $currentscript client_activate own FX_OWNER col FX_COLOR typ FX_TYPE dur FX_DURATION
+
+	setcallback render enable
+
+	cleffect light new $getcl(FX_OWNER,origin) 64 FX_COLOR 0.1	
+	setvard FX_LIGHT game.script.last_light_id
+
+	callevent skeleton_sprite
+
+	callevent FX_DURATION end_fx
+}
+
+{ end_fx
+	setvard FX_ACTIVE 0
+	callevent 1.0 remove_fx
+}
+
+{ remove_fx
+	removescript
+}
+
+{ owner_death
+	setvard OWNER_DIED 1
+	callevent 3.0 end_fx
+}
+
+{ game_prerender
+	if FX_LIGHT > 0
+	cleffect light FX_LIGHT $getcl(FX_OWNER,origin) 64 AU_COLOR 0.1
+}
+
+{ skeleton_sprite
+	if ( FX_TYPE equals fire )
+	{
+		array.create ARRAY_BONEPOS
+		calleventloop MAX_BONE light_bones_fire
+		//callevent keep_bone_pos
+	}
+	//other elements use different sprites, save lightning, which uses beams
+}
+
+{ light_bones_fire
+	dbg light_bones_fire
+	setvard BONE_IDX game.script.iteration
+	local L_POS $getcl(FX_OWNER,bonepos,BONE_IDX)
+	cleffect tempent sprite 3dmflaora.spr L_POS setup_bone_sprite update_bone_sprite
+	//array.add ARRAY_BONEPOS $getcl(FX_OWNER,bonepos,BONE_IDX)
+}
+
+{ setup_bone_sprite
+	cleffect tempent set_current_prop death_delay FX_DURATION
+	cleffect tempent set_current_prop renderamt	150
+	cleffect tempent set_current_prop rendercolor (255,255,255)
+	cleffect tempent set_current_prop rendermode add
+	cleffect tempent set_current_prop framerate	30
+	cleffect tempent set_current_prop frames 1
+	cleffect tempent set_current_prop scale 0.5
+	cleffect tempent set_current_prop gravity 0
+	cleffect tempent set_current_prop collide none
+	cleffect tempent set_current_prop iuser1 BONE_IDX
+	local L_CREATE_TIME game.time
+	cleffect tempent set_current_prop fuser1 $math(add,L_CREATE_TIME,0.1)
+}
+
+//{ keep_bone_pos
+//	if FX_ACTIVE
+//	if !OWNER_DIED
+//	callevent 0.01 keep_bone_pos
+//	calleventloop MAX_BONE store_bone_pos
+//}
+//
+//{ store_bone_pos
+//	local L_IDX $int(game.script.iteration)
+//	array.set ARRAY_BONEPOS L_IDX $getcl(FX_OWNER,bonepos,L_IDX)
+//}
+
+{ update_bone_sprite
+	if ( FX_ACTIVE )
+	{
+		if ( !OWNER_DIED )
+		{
+			local L_IDX game.tempent.iuser1
+			local L_POS $getcl(FX_OWNER,bonepos,L_IDX) //$get_array(ARRAY_BONEPOS,L_IDX)
+			//dbg update_bone_sprite L_POS
+			//dbg update_bone_sprite FX_OWNER L_IDX L_POS
+			cleffect tempent set_current_prop origin L_POS
+			local L_NEXT_UPDATE game.tempent.fuser1
+			local L_TIME game.time
+			if L_TIME > L_NEXT_UPDATE //drip a sprite every 0.1 secs
+			cleffect tempent set_current_prop fuser1 $math(add,L_TIME,0.1)
+			cleffect tempent sprite 3dmflaora.spr L_POS setup_drip_sprite
+		}
+		else
+		{
+			cleffect tempent set_current_prop velocity $vec(0,0,-100)
+			cleffect tempent set_current_prop gravity 1
+			cleffect tempent set_current_prop collide world
+			cleffect tempent set_current_prop bouncefactor 5
+		}
+	}
+	else
+	{
+		cleffect tempent set_current_prop origin $vec(20000,20000,20000)
+
+	}
+}
+
+{ setup_drip_sprite
+	cleffect tempent set_current_prop death_delay 0.25
+	cleffect tempent set_current_prop fadeout lifetime
+	cleffect tempent set_current_prop renderamt	150
+	cleffect tempent set_current_prop rendermode add
+	cleffect tempent set_current_prop rendercolor (255,255,255)
+	cleffect tempent set_current_prop framerate	30
+	cleffect tempent set_current_prop frames 1
+	cleffect tempent set_current_prop scale 0.25
+	cleffect tempent set_current_prop gravity 1
+	cleffect tempent set_current_prop collide none
+}

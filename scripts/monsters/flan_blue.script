@@ -1,0 +1,129 @@
+{
+	const SOUND_DEATH monsters/sludge/bio.wav
+	const SOUND_STRUCK1 barnacle/bcl_bite3.wav
+	const SOUND_STRUCK2 barnacle/bcl_die3.wav
+	const SOUND_IDLE barnacle/bcl_alert2.wav
+	const SOUND_ATTACK1 barnacle/bcl_tongue1.wav
+	const SOUND_ATTACK2 barnacle/bcl_chew3.wav
+	precache SOUND_DEATH
+	
+	setvar ANIM_IDLE Idle1
+	setvar ANIM_RUN Idle2
+	setvar ANIM_WALK	move
+	setvard ANIM_ATTACK Move
+	setvard ANIM_DEATH die
+	setvard MOVE_RANGE 20
+	setvard ATTACK_RANGE 60
+	setvard ATTACK_HITRANGE 120
+	const ATTACK_HITCHANCE	75%
+	const ATTACK_DAMAGE $randf(12,36)
+
+	setvard NO_SPAWN_STUCK_CHECK 1
+
+	//h4x
+	const MOVE_FAST 200
+	const MOVE_NORMAL 100
+	setvard NPC_HACKED_MOVE_SPEED MOVE_NORMAL
+	const ATTACK_RATE 1.0
+}
+
+#include monsters/base_monster_new
+
+{ npc_spawn
+	
+	name a|Blue Flan
+	hp 240
+	width 20
+	blood green
+	height 20
+	hearingsensitivity 4
+	setmodel monsters/slime_ceirux.mdl
+	setmodelbody 0 1
+	race demon
+	if ( !ME_NO_WANDER ) roam 1
+	if ( ME_NO_WANDER ) roam 0
+	setsolid none
+	setvard NPC_GIVE_EXP 250
+
+	takedmg cold 0.0
+
+	setvar IS_BLOODLESS 1
+
+
+	callevent 2.0 slime_cycle
+}
+
+{ bite1 //called from model
+
+	callevent npcatk_dodamage HUNT_LASTTARGET ATTACK_HITRANGE ATTACK_DAMAGE ATTACK_HITCHANCE magic
+}
+
+{ game_damaged_other
+
+	playrandomsound 0 10 SOUND_ATTACK1 SOUND_ATTACK2
+}
+
+{ game_struck
+
+	playrandomsound 0 10 SOUND_STRUCK1 SOUND_STRUCK2
+}
+
+
+{ slime_cycle
+	
+	////dbg temp Slimetarget $get(NPCATK_TARGET,name)
+
+	if ( NPCATK_TARGET equals unset ) 
+	{
+		if $rand(1,5) == 1
+		playsound 0 10 SOUND_IDLE
+	}
+
+	if ( NPCATK_TARGET isnot unset )
+	{
+		if $rand(1,3) == 1
+		callevent chicken_run 1.0 "combat_reposition"
+	}
+
+	callevent 2.0 slime_cycle
+}
+
+//movement hack
+{  [server] game_movingto_dest		//Hack in movement because the model anims are missing it
+
+	setvard NPC_HACKED_MOVE_SPEED MOVE_FAST
+	if ( SHIELD_ON ) setvard NPC_HACKED_MOVE_SPEED MOVE_NORMAL
+	if ( NPCATK_TARGET equals unset ) setvard NPC_HACKED_MOVE_SPEED MOVE_NORMAL
+	if ( PLAYING_STAB ) setvard NPC_HACKED_MOVE_SPEED 0
+	if ( AM_SUMMONING ) setvard NPC_HACKED_MOVE_SPEED 0
+	setanim.movespeed NPC_HACKED_MOVE_SPEED	//Force move, since the animation doesn't have the required movement
+}
+
+{  [server] game_stopmoving
+
+   setanim.movespeed 0				//Force Stop
+}
+
+//attack hack
+{ [override] npcatk_attack
+
+	if !DELAY_ATTACK
+	setvard DELAY_ATTACK 1
+	playanim critical Attack1
+	callevent bite1
+	callevent ATTACK_RATE attack_delay_reset
+}
+
+{ attack_delay_reset
+
+	setvard DELAY_ATTACK 0
+}
+
+{ npc_death
+
+	callevent npc_fade_away //maybe not monster spawn friendly, but prevents loop
+}
+
+{ cycle_up
+	if ( ME_NO_WANDER ) roam 1
+}

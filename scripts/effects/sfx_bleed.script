@@ -1,0 +1,65 @@
+//Selects a random bone and spurts blood from there, or at the center of the bbox if no bone is found
+
+#scope client
+
+{ client_activate //<owner index> <sprite_name> <render_props> <duration>
+	//render props format: fadeout:0|1;scale;renderamt;rendermode;rendercolor;framerate;frames
+
+	setvard SFX_OWNER PARAM1
+	setvard SPRITE_NAME PARAM2
+	setvard RENDER_PROPS PARAM3
+	setvard SPRITE_DURATION PARAM4
+
+	setvard BONE_AMT $math(subtract,$getcl(SFX_OWNER,bonecount),1)
+	setvard BONE_IDX $rand(1,BONE_AMT) //Don't wanna use bone 0, I think that's used as the "initial" bone, controls the whole model not really a part of it, if you get what I'm saying. 
+
+	callevent 0.01 spurt_blood
+	callevent SPRITE_DURATION remove_me
+}
+
+{ spurt_blood
+
+	if ( BONE_AMT > 0 )
+	{
+		local L_POS $getcl(SFX_OWNER,bonepos,BONE_IDX)
+	}
+	else
+	{
+		local L_POS $getcl(SFX_OWNER,center)
+	}
+
+	cleffect tempent sprite SPRITE_NAME L_POS setup_temp_sprite
+	callevent 0.1 spurt_blood
+}
+
+{ setup_temp_sprite
+
+	local L_SPURT_ANG $angles($getcl(SFX_OWNER,origin),$getcl(SFX_OWNER,bonepos,BONE_IDX))
+
+	local L_ANG $vec(0,L_SPURT_ANG,0)
+	local L_VEL1 $vec(0,40,20)
+
+	local L_VEL2 $relvel(L_ANG,L_VEL1)
+
+	local L_VEL3 $getcl(SFX_OWNER,velocity)
+	vectormultiply L_VEL3 0.05
+	vectoradd L_VEL2 L_VEL3
+
+	cleffect tempent set_current_prop death_delay 1
+	if ( $get_token(RENDER_PROPS,0) == 1 ) cleffect tempent set_current_prop fadeout lifetime
+	cleffect tempent set_current_prop scale $get_token(RENDER_PROPS,1)
+	cleffect tempent set_current_prop renderamt $get_token(RENDER_PROPS,2)
+	cleffect tempent set_current_prop rendermode $get_token(RENDER_PROPS,3)
+	cleffect tempent set_current_prop rendercolor $get_token(RENDER_PROPS,4)
+	cleffect tempent set_current_prop framerate $get_token(RENDER_PROPS,5)
+	cleffect tempent set_current_prop frames $get_token(RENDER_PROPS,6)
+	cleffect tempent set_current_prop velocity L_VEL2
+	cleffect tempent set_current_prop gravity 0.6
+	cleffect tempent set_current_prop collide world;die
+	cleffect tempent set_current_prop update 1
+}
+
+{ remove_me
+
+	removescript
+}

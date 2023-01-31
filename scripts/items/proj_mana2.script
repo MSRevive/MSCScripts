@@ -1,102 +1,111 @@
-//magic bolt that varies with size by the energy put into it
+//Magic bolt that varies with size by the energy put into it
 {
-	const MODEL_HANDS      		none
-	const MODEL_WORLD      		none
-	const ARROW_BODY_OFS		6
-
 	const SOUND_SHOOT ambience/alienflyby1.wav
-	const SOUND_ZAP1 debris/beamstart14.wav
-	const SOUND_ZAP2 debris/beamstart14.wav
-	const SOUND_ZAP3 debris/zap1.wav
+	const SOUND_ZAP debris/zap1.wav
 
-	const ARROW_SOLIDIFY_ON_WALL 0
-
-	const HITWALL_VOL 2
-
-	const PROJ_MOTIONBLUR 0
-
-	const PROJ_DAMAGE			0
-	const PROJ_STICK_DURATION	0
-	const PROJ_SOLIDIFY_ON_WALL	0  //Does not turn solid when a wall is hit
-
-	const PROJ_DAMAGE_AOE_RANGE	0
-	const PROJ_DAMAGE_AOE_FALLOFF	1
-	const PROJ_DAMAGE_TYPE		magic
-
-	const PROJ_COLLIDEHITBOX 0
-	const PROJ_IGNORENPC 1
-	const PROJ_ANIM_IDLE none
-
-	const CLFX_ARROW 1
 	const CLFX_ARROW_SCRIPT items/proj_mana2_cl
-	const CLFX_ARROW_UPDATE_RATE 20 //I dont want this to update, only send info at the start. (mana bolt only lasts 10 seconds)
 }
 
-#include items/proj_arrow_base
+{ game_spawn
 
-{ arrow_spawn
-
-	name 	a|Manabolt
-	desc 	Manabolt
-	width 1
-	height 1
+	name a|Manabolt
+	desc Manabolt
+	width 0
+	height 0
 	weight 	0
-	value	16
 	gravity	0
-
-	//callevent 10.0 remove_projectile //For some reason, when this is here, the projectile seems to delete itself any time it's been 10 seconds after the map has loaded.
-}
-
-{ [override] game_projectile_hitwall //override for custom sound fx
-
-	playrandomsound 0 10 SOUND_ZAP1 SOUND_ZAP2 SOUND_ZAP3
-}
-
-{ game_tossprojectile
-
+	setmonsterclip 0
+	invincible 1
+	race beloved
+	
+	setmodel none
+	
 	callevent 10.0 remove_projectile
-
- 	local L_ID $get(ent_expowner,id)
-	if ( $get(L_ID,isplayer) ) local L_ID $get(L_ID,active_item) //active item should be orion bow
-	
-	setvard BALL_SIZE $get(L_ID,scriptvar,'BALL_SIZE')
-	setvard F_BALL_DMG $get(L_ID,scriptvar,'BALL_DMG')
-
-	local F_BALL_VOL $int(BALL_SIZE)
-	capvar F_BALL_VOL 1 10
-	svplaysound 4 F_BALL_VOL SOUND_SHOOT
-
-	setvard SCAN_SIZE 24
-	multiply SCAN_SIZE BALL_SIZE
-	if ( SCAN_SIZE < 48 ) setvard SCAN_SIZE 48
-	
-	callevent 0.01 scan_cycle
-
-	dbg game_tossprojectile BALL_SIZE PROJ_IGNORENPC
-
-	if ( BALL_SIZE == 0 ) callevent remove_projectile false_start
 }
 
-{ [override] update_clfx_projectile
+{ game_dynamically_created //<owner> <vec> <ballSize> <damage> <skill to level>
+
+	setvard FX_OWNER PARAM1
+	setvard FX_VEL PARAM2 //Kept to check to see if it changes
+	setvard FX_SIZE PARAM3
+	setvard FX_DAMAGE PARAM4
+	setvard FX_SKILL PARAM5
+	
+	setvard SCAN_SIZE $func(func_get_scan_size)
+
+	setvelocity ent_me FX_VEL
+	svsound.play3d SOUND_SHOOT 2.5 $get(ent_me,origin) 0 4
+
+	setvard PREV_SCAN $get(ent_me,origin)
+	callevent 0.3 scan_cycle
+
+	callevent create_clfx
+	
+	setprop ent_me movetype 11
+	setprop ent_me friction 10000
+	setprop ent_me solid 0
+}
+
+{ create_clfx
 	//these have to be assembled and sent, as there's no actual model for client to grab info from
 	if ( !CLFX_ARROW_INIT )
 	{
 		setvard CLFX_ARROW_INIT 1
 		setvard CLFX_ARROW_IN_FLIGHT 1
 
-		clientevent new all CLFX_ARROW_SCRIPT $get(ent_me,origin) $get(ent_me,angles) $get(ent_me,velocity) BALL_SIZE //origin angle velocity ballSize
+		clientevent new all CLFX_ARROW_SCRIPT $get(ent_me,origin) $get(ent_me,angles) $get(ent_me,velocity) FX_SIZE //origin angle velocity ballSize
 		setvard CLFX_ARROW_IDX game.script.last_sent_id
 	}
 }
 
 { scan_cycle
-	//<target|(src_origin)> <range|aoe|(dest_origin)|direct> <damage> <cth|fall_off> <attacker> <inflciter> <skill|none> <dmg_type> [flag_string]
-	xdodamage $get(ent_me,origin) SCAN_SIZE F_BALL_DMG 0 ent_expowner ent_me archery magic
-	
-	callevent 0.25 scan_cycle
+
+	local L_VEL $get(ent_me,velocity)
+	//infomsg all FX_VEL $get(ent_me,velocity)
+	if ( FX_VEL equals L_VEL ) //The projectile has moved
+	{
+		//<target|(src_origin)> <range|aoe|(dest_origin)|direct> <damage> <cth|fall_off> <attacker> <inflciter> <skill|none> <dmg_type> [flag_string]
+		xdodamage $get(ent_me,origin) SCAN_SIZE FX_DAMAGE 0 FX_OWNER ent_me FX_SKILL magic dmgevent:*ball
+		callevent 0.3 scan_cycle
+	}
+	else
+	{
+		callevent remove_projectile
+	}
 }
 
-{ game_deleted 
+{ ball_dodamage //PARAM1=hit:0|1 PARAM2=ent_hit PARAM3=(start) PARAM4=(end) PARAM5=DmgType PARAM6=DmgAmt
+	
+	if PARAM1
+	if PARAM6 > 0
 
+	subtract FX_SIZE 1
+	if ( FX_SIZE > 0 )
+	{
+		setvard SCAN_SIZE $func(func_get_scan_size)
+		
+		clientevent update all CLFX_ARROW_IDX reduce_size //huevito
+	}
+	else callevent remove_projectile
+}
+
+{ remove_projectile 
+
+	svsound.play3d SOUND_ZAP 4 $get(ent_me,origin) 0 4
 	clientevent update all CLFX_ARROW_IDX end_fx
+	deleteme
+}
+
+{ fake_precache
+
+	svplaysound 4 0 SOUND_ZAP
+}
+
+{ func_get_scan_size
+
+	local L_SCAN_SIZE 24
+	multiply L_SCAN_SIZE FX_SIZE
+	capvar L_SCAN_SIZE 55 140
+	return **clear
+	return L_SCAN_SIZE
 }
