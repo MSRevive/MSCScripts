@@ -3,56 +3,60 @@
 
 //GET IT? FLAME LICK -> THIS?! LOLOLOL. I'll stop now.
 
+//redux by Age
+
 {
 	const BASE_LEVEL_REQ 23
 
 	const CUSTOM_REGISTER_SECONDARY 1
 
-  //These give "names" to animations, models and sounds for later reference
-  //const MODEL_VIEW        weapons/smallarms/lichtongue_rview.mdl
-  const MODEL_VIEW        viewmodels/v_smallarms.mdl
+	//These give "names" to animations, models and sounds for later reference
+	//const MODEL_VIEW        weapons/smallarms/lichtongue_rview.mdl
+	const MODEL_VIEW viewmodels/v_smallarms.mdl
 	const MODEL_VIEW_IDX 6
 
-  	const ANIM_LIFT1 31
-  	const ANIM_IDLE1 32
-  	const ANIM_IDLE_TOTAL 1
-  	const ANIM_WIELD 31
-  	const ANIM_UNWIELD 38
-  	const ANIM_WIELDEDIDLE1 32
-  	const ANIM_ATTACK1 33
-  	const ANIM_ATTACK2 34
-  	const ANIM_ATTACK3 35
-  	const ANIM_ATTACK4 36
-  	const ANIM_ATTACK5 37
+	const ANIM_LIFT1 31
+	const ANIM_IDLE1 32
+	const ANIM_IDLE_TOTAL 1
+	const ANIM_WIELD 31
+	const ANIM_UNWIELD 38
+	const ANIM_WIELDEDIDLE1 32
+	const ANIM_ATTACK1 33
+	const ANIM_ATTACK2 34
+	const ANIM_ATTACK3 35
+	const ANIM_ATTACK4 36
+	const ANIM_ATTACK5 37
 	const MELEE_VIEWANIM_ATK $rand(ANIM_ATTACK1,ANIM_ATTACK5)
 
-const MODEL_HANDS weapons/p_weapons3.mdl
-const MODEL_WORLD weapons/p_weapons3.mdl
+	const MODEL_HANDS weapons/p_weapons3.mdl
+	const MODEL_WORLD weapons/p_weapons3.mdl
 
 	const MELEE_DMG_TYPE cold
 
-  //Used in base_melee
-  //------------------
-  const MELEE_RANGE  50
-  const MELEE_DMG_DELAY  0.2
-  const MELEE_ATK_DURATION 0.9
-  const MELEE_ENERGY  0.6
-  const MELEE_DMG  275
-  const MELEE_DMG_RANGE      50
-  const MELEE_ACCURACY  85%
-  const MELEE_ALIGN_BASE 3.6,-6
-  const MELEE_ALIGN_TIP  0,0 
+	//Used in base_melee
+	//------------------
+	const MELEE_RANGE  50
+	const MELEE_DMG_DELAY  0.2
+	const MELEE_ATK_DURATION 0.9
+	const MELEE_ENERGY  0.6
+	const MELEE_DMG  275 // this is just a percentage based multiplier, e.g. MELEE_DMG 200 at 25 skill will deal 50 damage
+	const MELEE_DMG_RANGE 20 // percentage based multiplier added to the damage value as up/down variance, e.g. 10 damage range at 25 skill will add or subtract 2.5 to MELEE_DMG result (so a range of 47.5 - 52.5)
+	const MELEE_ACCURACY  100%
+	const MELEE_ALIGN_BASE 3.6,-6
+	const MELEE_ALIGN_TIP  0,0
 
-  const MELEE_SOUND_DELAY      MELEE_DMG_DELAY
-  const MELEE_PARRY_CHANCE      25%
+	const MELEE_SOUND_DELAY      MELEE_DMG_DELAY
+	const MELEE_PARRY_CHANCE      25%
 
-  const PLAYERANIM_AIM  knife
-  const PLAYERANIM_SWING swing_knife
-  const SOUND_HITWALL1 debris/glass1.wav
-  const SOUND_HITWALL2 debris/glass2.wav
+	const PLAYERANIM_AIM  knife
+	const PLAYERANIM_SWING swing_knife
+	const SOUND_HITWALL1 debris/glass1.wav
+	const SOUND_HITWALL2 debris/glass2.wav
 
-const MODEL_BODY_OFS 17
-  const ANIM_PREFIX  standard
+	const MODEL_BODY_OFS 17
+	const ANIM_PREFIX  standard
+
+	const CUSTOM_REGISTER_CHARGE1 1
 }
 
 //Include important base info that makes the dagger function
@@ -61,94 +65,112 @@ const MODEL_BODY_OFS 17
 
 //Called whenever the dagger spawns
 //Setup the basic info specific to this weapon
-{  weapon_spawn
+{ weapon_spawn
 
-   name  a|Litch Tongue	
-   desc  A dagger carved from the bones of an ancient ice mage
-	//if ( $rand(1,2) == 1 ) desc  Get over iT.
-   weight  3
-   size  3
-   value 2500
-   sethudsprite hand 128
-   sethudsprite trade 128
+	name "a|Litch Tongue"
+	desc "A dagger carved from the bones of an ancient ice mage."
+	weight 3
+	size 3
+	value 2500
+	sethudsprite hand 128
+	sethudsprite trade 128
 }
 
 { game_dodamage //1: Attack Hit (1/0)  2: Entity Attack hit  3:  Start Position  4:  End Position
 
- if PARAM1
-
- if $rand(1,5) == 1
-
- local FREEZE_DAMAGE $get(ent_owner,skill.spellcasting.ice)
- divide FREEZE_DAMAGE 3
- add FREEZE_DAMAGE $randf(1,3)
- if ( FREEZE_DAMAGE < 5 ) local FREEZE_DAMAGE 5
-	playsound 0 10 magic/frost_reverse.wav
-   applyeffect PARAM2 effects/effect_frostbite_dmg 5 $get(ent_owner,id) FREEZE_DAMAGE smallarms
+	if PARAM1
+	if $rand(1,5) == 1
+	if !BITEM_UNDERSKILLED //Not underskilled to use the weapon
+	
+	//okay this is hard to read but, it's taking 66% of Smallarms, adding it to 34% of Ice, and multiplying that by 2 to create a linear scaling ratio that has varying contribution from each considered skill
+	local FREEZE_DAMAGE $math(multiply,$math(add,$math(multiply,$get(ent_owner,skill.smallarms),0.66),$math(multiply,$get(ent_owner,skill.spellcasting.ice),0.34)),2)
+	add FREEZE_DAMAGE $randf(1,$math(divide,$get(ent_owner,skill.spellcasting.ice),4))
+	if ( FREEZE_DAMAGE < 5 ) local FREEZE_DAMAGE 5
+	playsound 0 10 magic/frost_reverse.wav 0.8 50
+	applyeffect PARAM2 effects/effect_frostbite_dmg 3 $get(ent_owner,id) FREEZE_DAMAGE smallarms
 }
 
 { register_secondary
 
 	local reg.attack.type  strike-land
 	local reg.attack.keys  -attack1
+	local reg.attack.dmg  550
 	local reg.attack.range  MELEE_RANGE
-	local reg.attack.dmg  1
 	local reg.attack.dmg.range 1
-	local reg.attack.dmg.type ice
-	local reg.attack.energydrain 9999
-	local reg.attack.stat  spellcasting.ice
+	local reg.attack.dmg.type cold
+	local reg.attack.energydrain 0
+	local reg.attack.stat smallarms
 	local reg.attack.hitchance MELEE_ACCURACY
 	local reg.attack.priority 2
-	local reg.attack.delay.strike 1.0
-	local reg.attack.delay.end 1.2
+	local reg.attack.delay.strike 0.25
+	local reg.attack.delay.end 1.3
 	local reg.attack.ofs.startpos MELEE_STARTPOS
 	local reg.attack.ofs.aimang MELEE_AIMANGLE
 	local reg.attack.callback special_02
 	local reg.attack.noise  1000
-	local reg.attack.chargeamt 200%
-	local reg.attack.reqskill 1
-	local reg.attack.dmg.ignore 1
-	local reg.attack.mpdrain 100
+	local reg.attack.chargeamt 100%
+	local reg.attack.reqskill 25
+	local reg.attack.dmg.ignore 0
+	local reg.attack.mpdrain 0
 
 	registerattack
 }
 
 { [override] special_02_start
-
-	playsound 0 10 magic/frost_reverse.wav
-
-
-	if ( FX_FLAMES < MAX_FX_FLAMES ) effect glow ent_me (0,75,255) 128 5.0 5.0
+	playviewanim ANIM_ATTACK1
+	effect glow ent_me (0,75,255) 128 5.0 5.0
 }
 
 { [override] special_02_strike
-
-
 	//createnpc monsters/summon/ice_burst $relpos(0,0,-32) $get(ent_owner,id) ICE_BURST_DAMAGE smallarms
-	clientevent new all monsters/summon/ice_burst_cl $get(ent_owner,index)
 
-	setvard BURST_DAMAGE $get(ent_owner,skill.spellcasting.ice)
+	// check time since last "litch burst" to create a "cooldown"
+	// cleaner cooldown code
+	if ( game.time <= NEXT_LITCH_BURST ) dplayermessage ent_owner Special attack is on cooldown
+	if game.time > NEXT_LITCH_BURST
+
+	// scan area and populate token list, then assign token list to variable
 	callexternal ent_owner ext_sphere_token_x enemy 256
 	setvard TARG_LIST $get(ent_owner,scriptvar,'PLR_SCAN_TOKEN')
-	if TARG_LIST isnot none
-	calleventloop $get_token_amt(TARG_LIST) burst_affect_targets
+
+	// check if assigned token list is empty
+	if ( TARG_LIST equals none ) {
+		dplayermessage ent_owner No targets in range, cooldown reset
+		playsound 0 10 magic/frost_pulse.wav 0.8 $rand(20,60)
+	}
+	else { // release attack if assigned token list is not empty (note the if-else relationship with above)
+		playsound 0 10 magic/frost_reverse.wav
+		clientevent new all monsters/summon/ice_burst_cl $get(ent_owner,index)
+
+		// check which hand this weapon is in, and display appropriate sprite (without this, dual wielding will cause the "cooldown" sprite to be overwritten constantly)
+		if ( $get(ent_me,hand_index) == 1 )	hud.addstatusicon ent_owner alpha_specialcooldownright litchcooldownright 20
+		else hud.addstatusicon ent_owner alpha_specialcooldownleft litchcooldownleft 20
+
+		// scale special attack damage dynamically both smallarms and ice
+		setvard BURST_DAMAGE $math(multiply,$math(add,$math(multiply,$get(ent_owner,skill.smallarms),0.60),$math(multiply,$get(ent_owner,skill.spellcasting.ice),0.40)),2.5)
+
+		setvard NEXT_LITCH_BURST game.time
+		// set special attack cooldown here vvv -- REMEMBER TO CHANGE HUD ICON TIMER AS WELL
+		add NEXT_LITCH_BURST 20.0
+		setvard TARG_LIST $sort_entlist(TARG_LIST,range,$get(ent_owner,origin))
+		setvard TARGETS_AFFECTED 0
+		calleventloop $get_token_amt(TARG_LIST) burst_affect_targets
+	}
 }
+
+// can't use specific quantity for this eventloop because the enemy scan might pick up "Deadly" players and count them toward the loop iterations
+// instead, use $get_token_amt on TARG_LIST and add a counter to the eventloop that will breakloop when exceeded
 
 { burst_affect_targets
 	local CUR_TARG $get_token(TARG_LIST,game.script.iteration)
 
-	if ( !GAME_PVP )
+	if ( !game.pvp )
 	{
-		if $get(CUR_TARG,isplayer)
-		local EXIT_SUB 1
+		if ( $get(CUR_TARG,isplayer) ) exitevent
 	}
-	if !EXIT_SUB
+	// should only iterate TARGETS_AFFECTED if no "Deadly" player is detected, and stop looping after 3 iterations - basically calleventloop 3 but more complicated
+	add TARGETS_AFFECTED 1
+	if ( TARGETS_AFFECTED == 3 ) breakloop
 
-	local FREEZE_ON_CHANCE $rand(1,2)
-	if ( FREEZE_ON_CHANCE == 1 ) applyeffect CUR_TARG effects/effect_frostbite_dmg 10 $get(ent_owner,id) $rand(10,BURST_DAMAGE) smallarms
-	if ( FREEZE_ON_CHANCE == 2 ) 
-	{
-		if ( $get(CUR_TARG,hp) > 1500 ) applyeffect CUR_TARG effects/effect_frostbite_dmg 10 MY_OWNER $rand(10,BURST_DAMAGE) smallarms
-		if ( $get(CUR_TARG,hp) <= 1500 ) applyeffect CUR_TARG effects/freeze_solid 5 $get(ent_owner,id) $rand(10,20)
-	}
+	applyeffect CUR_TARG effects/effect_frostbite_dmg 7 $get(ent_owner,id) BURST_DAMAGE smallarms
 }
