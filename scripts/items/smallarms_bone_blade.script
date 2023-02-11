@@ -3,108 +3,76 @@
 {
 	const BASE_LEVEL_REQ 15
 
-  const MELEE_DMG  180
-  const MELEE_DMG_RANGE      70
-  const MELEE_RANGE  35
-  const MELEE_ACCURACY  77%
+	const MELEE_DMG  180
+	const MELEE_DMG_RANGE      70
+	const MELEE_RANGE  35
+	const MELEE_ACCURACY  77%
 
-  const MODEL_VIEW        viewmodels/v_1hswordssb.mdl
+	const MODEL_VIEW        viewmodels/v_1hswordssb.mdl
 	const MODEL_VIEW_IDX 7
 
-   const ANIM_LIFT1 0
-   const ANIM_IDLE1 1
-   const ANIM_IDLE_TOTAL 1
-   const ANIM_WIELD 0
-   const ANIM_UNWIELD 0
-   const ANIM_WIELDEDIDLE1 1
-   const ANIM_ATTACK1 2
-   const ANIM_ATTACK2 3
-// const ANIM_IDLE_DELAY_LOW 0
-// const ANIM_IDLE_DELAY_HIGH 0
+	const ANIM_LIFT1 0
+	const ANIM_IDLE1 1
+	const ANIM_IDLE_TOTAL 1
+	const ANIM_WIELD 0
+	const ANIM_UNWIELD 0
+	const ANIM_WIELDEDIDLE1 1
+	const ANIM_ATTACK1 2
+	const ANIM_ATTACK2 3
+	// const ANIM_IDLE_DELAY_LOW 0
+	// const ANIM_IDLE_DELAY_HIGH 0
 
 
-const MODEL_WORLD weapons/p_weapons2.mdl
-const MODEL_HANDS weapons/p_weapons2.mdl
+	const MODEL_WORLD weapons/p_weapons2.mdl
+	const MODEL_HANDS weapons/p_weapons2.mdl
 
-  //Used in base_melee
-  //------------------
-  const MELEE_DMG_DELAY  0.2
-  const MELEE_ATK_DURATION 0.9
-  const MELEE_ENERGY  0.6
-  const MELEE_ALIGN_BASE 4,-6 
-  const MELEE_ALIGN_TIP  0,6
-  const MELEE_PARRY_CHANCE      30%
+	//Used in base_melee
+	//------------------
+	const MELEE_DMG_DELAY  0.2
+	const MELEE_ATK_DURATION 0.9
+	const MELEE_ENERGY  0.6
+	const MELEE_ALIGN_BASE 4,-6 
+	const MELEE_ALIGN_TIP  0,6
+	const MELEE_PARRY_CHANCE      30%
 
-const MODEL_BODY_OFS 28
- const ANIM_PREFIX khopesh
-
+	const MODEL_BODY_OFS 28
+	const ANIM_PREFIX khopesh
 }
+
+#include items/smallarms_base
+#include [server] items/base_varied_attacks
+#include items/base_vampire
 
 {  weapon_spawn
 
-   name  a|Bone Blade
-   desc  A wicked blade of cursed bone
-   weight  3
-   size  2
-   value 1000
-   sethudsprite hand 106
-   sethudsprite trade 106
+	name  a|Bone Blade
+	desc  A wicked blade of cursed bone
+	weight  3
+	size  2
+	value 1000
+	sethudsprite hand 106
+	sethudsprite trade 106
 }
 
-{ game_dodamage
+{ game_dodamage //PARAM1=hit:0|1 PARAM2=ent_hit PARAM3=(start) PARAM4=(end) PARAM5=DmgType PARAM6=DmgAmt
 
- //would use game_damaged_other, but doesnt return proper when used in weapons
+	//would use game_damaged_other, but doesnt return proper when used in weapons
 
 	if PARAM1
 
-	if $get(PARAM2,relationship,ent_owner) equals enemy
+	local HEAL_AMT $get(ent_laststruckbyme,scriptvar,'LAST_STRUCK_FOR')
+	divide HEAL_AMT 5
+	if ( HEAL_AMT > 20 ) local HEAL_AMT 20
 
-	if ( $get(PARAM2,race) equals undead ) local IS_IMMUNE 1
-
-	if ( !IS_IMMUNE ) local IS_IMMUNE $get(PARAM2,scriptvar,IMMUNE_VAMPIRE)
-	if ( IS_IMMUNE ) dplayermessage ent_owner Bone Bladee $get(PARAM2,name) is immune to vampyric effects.
-	if !IS_IMMUNE
-
- local HEAL_AMT $get(ent_laststruckbyme,scriptvar,LAST_STRUCK_FOR)
- divide HEAL_AMT 5
-
- //dbg temp Dodamage $get(PARAM2,name) for HEAL_AMT
-
- local OWNER_HP_AFTER_HEAL $get(ent_owner,hp)
- add OWNER_HP_AFTER_HEAL HEAL_MT
-
- if OWNER_HP_AFTER_HEAL <= $get(ent_owner,maxhp)
-
- if ( HEAL_AMT > 20 ) local HEAL_AMT 20
-
- //dbg temp Healing HEAL_AMT
-
- if ( FX_SPAMMERS < MAX_FX_SPAMMERS )
- {
-  effect glow ent_owner (0,100,0) 60 1 1
-  playsound 0 10 player/heartbeat_noloop.wav
- }
-
- givehp HEAL_AMT
+	effect glow ent_owner (0,100,0) 60 1 1
+	playsound 0 10 player/heartbeat_noloop.wav
+	
+	callevent try_vampire_target $get(ent_owner,id) $get(PARAM2,id) HEAL_AMT
 }
-
-//Thothie JUN2007b
-//This is one of those weird cases where I seem to have to put this at the bototm rather than
-//just after the const's are defined
-#include items/smallarms_base
-#include [server] items/base_varied_attacks
 
 { [override] melee_start
 
-//  local SWING $rand(1,ATTACK_ANIMS)
-//  local SWING_ANIM ANIM_ATTACK1
-//  if( SWING == 2 ) setvard SWING_ANIM ANIM_ATTACK2
-//  else if( SWING == 3 ) setvard SWING_ANIM ANIM_ATTACK3
-//  else if( SWING == 4 ) setvard SWING_ANIM ANIM_ATTACK4
-//  else if( SWING == 5 ) setvard SWING_ANIM ANIM_ATTACK5
-
 	playsound 1 10 SOUND_SWIPE
-
 
 	if game.serverside
 	playowneranim once sword_swing //global.anim.combatwalk 3

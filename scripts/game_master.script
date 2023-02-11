@@ -111,14 +111,6 @@
 
 	erasefile heartbeat.txt
 
-	if ( game.players == 0 )
-	{
-		//server's been empty awhile, check if we need to reset it
-		local L_CHECK_EMPTY_DELAY game.cvar.ms_timelimit
-		multiply L_CHECK_EMPTY_DELAY 60.0
-		callevent L_CHECK_EMPTY_DELAY game_timedout
-	}
-
 	//scramble the global treasure lists ever few minutes to make them more "random"
 	add GM_SCRAMBLE_COUNT 1
 	if ( GM_SCRAMBLE_COUNT > $rand(2,5) )
@@ -407,7 +399,7 @@
 		callexternal players ext_weather_change G_WEATHER_LOCK
 	}
 
-	if( G_CHRISTMAS_MODE )
+	if ( G_CHRISTMAS_MODE )
 	{
 		local L_MAP_NAME $lcase(game.map.name)
 		if ( L_MAP_NAME equals edana ) local XMASS_WEATHER 1
@@ -496,25 +488,6 @@
 	//infomsg all "DEBUG ALERT" "MSAREA_MONSTERSPAWN REMOVED"
 }
 
-{ reset_server
-
-	dbg *** reset_server check: var game.cvar.ms_reset_if_empty plrs game.players
-
-	if GM_HAD_PLAYER
-
-	if game.cvar.ms_reset_if_empty
-
-	if game.players == 0
-
-	if ( game.cvar.ms_chatlog > 0 ) chatlog $timestamp(>)  "SERVER_SHUTDOWN: reason: ms_reset_if_empty 1"
-
-	callevent 0.1 exit_server
-}
-
-{ exit_server
-	servercmd "quit"
-}
-
 { game_playerspeak //<player> <type> <text>
 	if ( G_DEVELOPER_MODE )
 	{
@@ -539,47 +512,6 @@
 	{
 		chatlog $timestamp(>) PLAYER_LEFT: $get(PARAM1,name) [ $get(PARAM1,steamid) ] [ PlayerCountNow: game.players [ game.playersnb active ] ]
 	}
-
-	if game.players <= 1 //if last player leaves, still comes up as 1 at this point
-
-	local L_CHECK_EMPTY_DELAY game.cvar.ms_timelimit
-	multiply L_CHECK_EMPTY_DELAY 60.0
-	callevent L_CHECK_EMPTY_DELAY game_timedout //code side version of this seems broken
-}
-
-{ game_timedout
-	//ms_timelimit says map's been empty for ms_timelimit# seconds, switch to Edana or Reset
-	//this event may not be dependalbe, may need to remove it from the hard code and do it manually here
-	
-	//dbg *** game_timedout var game.cvar.ms_reset_if_empty plrs game.players
-
-	if game.players == 0
-
-	if game.time > GM_NEXT_SERVER_RESET
-	setvard GM_NEXT_SERVER_RESET game.time
-	add GM_NEXT_SERVER_RESET game.cvar.ms_timelimit
-
-	//if $lcase(game.map.name) isnot edana
-
-	if ( game.cvar.ms_reset_if_empty == 0 )
-	{
-		if game.cvar.ms_timelimit > 0
-		if L_MAP_NAME isnot edana
-		//manual map change due to not using client drop bit
-		callevent manual_edana
-	}
-	else
-	{
-		callevent reset_server
-	}
-}
-
-{ manual_edana
-	//this changes to edana when no players are present (sending clientcmd with no players causes errors)
-	if ( game.players > 0 ) callexternal all game_playercmd_setweather clear 0.01 0.01 //just in case of weirdness
-	if ( game.cvar.ms_chatlog > 0 ) chatlog $timestamp(>)  "Server empty, switching to Edana via ms_timelimit."
-	setvard DEST_MAP edana
-	callevent 1.0 delay_changelevel
 }
 
 { delay_changelevel //Uses var DEST_MAP to change level. Intended for delays

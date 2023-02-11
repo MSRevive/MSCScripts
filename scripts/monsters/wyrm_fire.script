@@ -1,0 +1,1410 @@
+#scope server
+//current issues:
+//need to test with just edges and with no setting
+//plug in final damage numbers
+
+//• Lava Wyrm (hard demon, 80x256, 5000hp, Base 750xp)
+//- Wyrms are large, dragon-like worms that create tunnels throughout the underworld of Leane. Some were harnessesd by Lor Malgoriand to create underground paths through which his armies could move unseen and bypass portions of The Wall. Dwarves, while they have yet to harness them directly, will sometimes herd groups of smaller wyrms to create tunnels faster, though such efforts are desperate and dangerous.
+//- Wyrms come in a staggering variey of types and sizes. This paticular wyrm is a moderately sized Lava Wyrm, capable of swimming through solid rock as if it were water.
+//-
+//- Placement: Intended to be semi mobile around edges of a large platform, with holes he can pop up through or placed in a pit of appropriately themed deadly element.
+//- 
+//- optional entities:
+//-- info_target: wyrm_edge1 (up to ...20)
+//--- Teleport points around the edge of the platfrom the mob can emerge at and float between.
+//--- There should be a clear line of movement between these points in logical order, similar to looping func_train tracks.
+//-- info_target: wyrm_pit1 (up to ...20)
+//-- Pits in the platform or scattered across the level that the mob can tunnel up and emerge at.
+//-
+//- If none of these entities exist, mob will float around randomly near its spawn point, hopefully obeying monster clips.
+//When mobile, mob's movement is independent of his aim target, either floating from wyrm_edgeX points or randomly until blocked.
+//While at wyrm_pitX points, wyrm remains stationary, wyrm periodically submerges and re-emerges at wyrm_pitX point closest to target.
+//-
+//- Attack pattern consists of four AOE melee attacks, one of which is stun, and another a heavy repulse via uncoiling.
+//If no targets are in melee range, the Lava Wyrm will continue to fire projectiles, half of which are guided, all of which explode on impact, applying force and DOT.
+//After every fourth or fifth projectile, the Lava Wyrm will pause to roar and create an earthquake. This will cause flaming rocks to dislodge from the ceiling.
+//These do signifigant damage, but can be fairly easily avoided by continuous movement.
+//- 
+//- other addparams:
+//-- set_noquakes
+//--- If you are using more than one lava wyrm, or lava wyrms combined with Earth Elementals, this is recomended, as the tempent spam from multiple quakes is rough.
+//--- Wyrms set set_noquake will spit projectiles more often.
+//-- set_pithunt
+//--- Changes behavior so that the wyrm will constantly look among its pits for a random player target and emerge there
+//--- Whenever losing more than 25% health, wyrm will flee to a random pit.
+//--- Beware this may make him nigh indestructible if he's boss flagged, and thus regenerates while in retreat.
+//--- (Unless you have very few pits and a player waiting at each.)
+//--- Use set_endpithunt via msnpc_script to end this behavior.
+//--- This type of behavior requires pit points, and it is suggested that only pit points are used
+//-- set_edge_prefix;<name>
+//-- set_pit_prefix;<name>
+//--- Allows you to change the info_target set used for pits and edges. (Useful when using multiple wyrms.)
+//--- For instance, if you used set_pit_prefix;my_pit - you would place info_targets named my_pit1, my_pit2, etc.
+//--- Without this, there's a good chance multiple wyrms will appear at the same pit or edge point
+//- Creature is initially hidden, and wont react until it hears a target within 384 units.
+//- Not the toughest thing ever, but a fairly self-sufficient boss, whose mobility gives him some staying power.
+//- XP maybe adjusted based on mobility
+//- Other flavors and sizes easily available upon request.
+
+//<nixed>
+//Lava Wyrms, or other wyrms set in deadly pits, will need a targetname to be healed by their pits
+//the pit should have a trigger_multiple with the scriptedevent: gm_map_feedpit;<wyrm_targetname>;<dmg_type>
+//(Handled dmg_types are: fire, cold, poison, and dark - other types will still do damage of type but not apply DOT)
+//creatures in this pit will take heavy dmg_type damage and DOT (based on victim's maxhp), feeding the wyrm for the HP lost during each tick
+//reset delay should be 1 second, and individual cooldowns set to "Scriptevent Only" [1]
+//the pit will not affect creatures allied with the wyrm (unless the wyrm is dead, though immunities still apply)
+//- Multiple wyrms in the same pit will probably not heal reliably (even if they all share the same targetname and link).
+
+
+
+{
+	//custom
+	setvard WYRM_EDGE_PREFIX wyrm_edge
+	setvard WYRM_PIT_PREFIX wyrm_pit
+	
+	const WYRM_TYPE fire //**
+	const WYRM_SKIN 0 //**
+	const WYRM_SIZE 1 //**
+	const MONSTER_MODEL monsters/wyrms_medium.mdl
+	setvard WYRM_SPEED 100
+	setvard WYRM_MOVEDEST unset
+
+	const ANIM_APPEAR anim_appear //frame_appear_start frame_appear_end
+	const ANIM_RETRACT anim_retract //frame_retract_start frame_retract_end
+	const ANIM_RAWR anim_blong //frame_blong_start frame_blong_open frame_blong_close frame_blong_end
+	const ANIM_BITE1 anim_bite1 //frame_bite1_start frame_bite1_strike frame_bite1_end
+	const ANIM_BITE2 anim_bite2 //frame_bite2_start frame_bite2_strike frame_bite2_end
+	const ANIM_SPIT anim_spit //frame_spit_start frame_spit_strike frame_spit_end
+	const ANIM_SWIPE anim_swipe //frame_swipe_start frame_swipe_strike frame_swipe_end //large AOE repel
+	const ANIM_HEADBUTT anim_hbutt //frame_hbutt_start frame_hbutt_strike frame_hbutt_end //stunning swipe with left to right push
+	const ANIM_FLINCH1 anim_flinch1 //frame_flinch_start frame_flinch_end
+	const ANIM_FLINCH2 anim_flinch2 //frame_flinch_start frame_flinch_end
+	const ANIM_HIDDEN anim_hidden
+
+	const ATTACK_RANGE_BITE 245
+	const ATTACK_RANGE_SPIT 4096
+
+	setvard NPC_NO_ATTACK 1 //attacks are handled via target sighted
+
+	const FREQ_SWIPE $randf(3.0,5.0)
+	const FREQ_MODE_SWITCH $randf(20.0,30.0)
+	const FREQ_PIT_SEARCH $randf(10.0,20.0)
+
+	const PROJ_SPEED 300
+	const PROJ_DMG 50
+	const PROJ_COF 5
+	const PROJ_SCRIPT proj_fire_bomb_sm //**
+	setvard PROJ_LOOP_SOUND ambient/animals/rattle_long.wav //** for proj_fire_bomb_sm
+	const FREQ_SPIT $randf(2.0,3.0)
+
+	const ATT_MOUTH 0
+
+	const SOUND_SPIT_PREP magic/fireball_large.wav	//**
+	const SOUND_SPIT_STRIKE weapons/rocketfire1.wav	//**
+	const SOUND_ALERT1 monsters/wyrm/c_x0stgwar_bat1.wav
+	const SOUND_ALERT2 monsters/wyrm/c_x0stgwar_bat2.wav
+	const SOUND_BITE monsters/wyrm/8bit/c_x0stgwar_atk1.wav
+	const SOUND_HBUTT monsters/wyrm/c_x0stgwar_atk2.wav
+	const SOUND_SWIPE monsters/wyrm/c_x0stgwar_atk3.wav
+	const SOUND_SWIPE_LARGE weapons/swinghuge.wav
+	const SOUND_SPLASH_DOWN monsters/wyrm/lava_splash_rev.wav
+	const SOUND_SPLASH_UP amb/lava_splash.wav
+	const SOUND_LAVA_LOOP amb/lava_loop.wav
+
+	const SOUND_PASSIVE1 monsters/wyrm/idle1.wav
+	const SOUND_PASSIVE2 monsters/wyrm/idle2.wav
+	const SOUND_PASSIVE3 monsters/wyrm/idle3.wav
+	const SOUND_PASSIVE4 monsters/wyrm/idle4.wav
+	const FREQ_PASSIVE $randf(7.0,10.0)
+	setvard CUR_PASSIVE 0
+
+	const DUR_QUAKE 7.0 //** other types may want to replace this with another ability (see start_quake event)
+
+	const AOE_HBUTT 80
+	const AOE_SWIPE 128
+
+	const DMG_HBUTT 75
+	const DMG_BITE 65
+	const DMG_FROCK 100 //**
+	const DMG_SWIPE 50
+
+	const FREQ_SWIPE 20.0
+
+	//lava wyrm uses same DOT effect for all attacks, but an ice wyrm, for instance, my swap between frostbite and freeze
+	const DOT_SCRIPT effects/effect_burn	//**
+	const DOT_EFFECTNAME DOT_fire	//**
+	const DOT_DMG 25 //**
+	const DOT_DUR 5.0
+
+	const DOT_SCRIPT2 effects/effect_burn	//**
+	const DOT_EFFECTNAME2 DOT_fire	//**
+	const DOT_DMG2 25 //**
+	const DOT_DUR2 5.0
+
+
+	const WYRM_GLOW_COLOR (64,32,0) //**
+
+	//** Liable to change by type
+
+	setvard WYRM_CUR_PIT_IDX 0
+
+	//base AI
+	setvar ANIM_IDLE anim_idle
+	setvar ANIM_WALK anim_idle
+	setvar ANIM_RUN anim_idle
+	setvard ANIM_ATTACK ANIM_BITE1
+	setvard ANIM_DEATH anim_death
+	const NPC_NO_MOVE 1
+	setvar CANT_TURN 1
+	const CANT_FLEE 1
+	setvar NPC_GIVE_EXP 1000
+	setvard NO_STUCK_CHECKS 1
+	setvard ATTACK_RANGE 256 //not used, but AI might need it
+	setvard ATTACK_HITRANGE 256 //not used, but AI might need it
+	const SOUND_DEATH monsters/wyrm/c_x0stgwar_dead.wav
+
+
+	//base struck
+	const NPC_USE_FLINCH 1
+	const NPC_USE_PAIN 1
+	const NPC_USE_IDLE 0
+	const NPC_FLINCH_HEALTH_RATIO 0.5
+	setvard ANIM_FLINCH anim_flinch1
+	const NPC_MATERIAL_TYPE carapace
+	const SOUND_PAIN1 monsters/wyrm/c_x0stgwar_hit1.wav
+	const SOUND_PAIN2 monsters/wyrm/c_x0stgwar_hit2.wav
+	const SOUND_PAIN3 monsters/wyrm/c_x0stgwar_hit2.wav
+	const SOUND_FLINCH1 monsters/wyrm/c_x0stgwar_hit1.wav
+	const SOUND_FLINCH2 monsters/wyrm/c_x0stgwar_hit2.wav
+	const SOUND_FLINCH3 monsters/wyrm/c_x0stgwar_hit2.wav
+}
+
+{ fake_precache
+	svplaysound 0 0 ambient/animals/rattle_long.wav
+	svplaysound 0 0 monsters/wyrm/idle1.wav
+	svplaysound 0 0 monsters/wyrm/idle2.wav
+	svplaysound 0 0 monsters/wyrm/idle3.wav
+	svplaysound 0 0 monsters/wyrm/idle4.wav
+	svplaysound 0 0 amb/lava_loop.wav
+}
+
+{ game_precache
+	precache xfire.spr
+	precache rockgibs.mdl
+	precache xfireball3.spr
+}
+
+#include [server] monsters/base_monster_new
+#include [server] monsters/base_struck
+
+{ [shared] npc_spawn
+	callevent wyrm_spawn
+	if game.serverside
+	callevent 2.0 wyrm_finalize
+}
+
+{ [shared] wyrm_spawn //override this for other types
+
+	name a|Lava Wyrm
+
+	setmodel MONSTER_MODEL
+
+	setvard GAME_PUSH_RATIO 0.1
+
+	if ( WYRM_SIZE == 1 )
+	{
+		width 80
+		height 256
+	}
+
+	if game.serverside
+	race demon
+	blood red
+	setprop ent_me skin WYRM_SKIN
+
+	hp 5000
+	takedmg all 0.5
+	takedmg fire 0.0
+	takedmg cold 1.5
+
+	hearingsensitivity 11
+	setvard CAN_SPIT 1
+
+	setidleanim ANIM_HIDDEN
+	setmoveanim ANIM_HIDDEN
+
+	setvard WYRM_UNHIDE_RANGE 384 //might set higher for larger wyrms
+	callevent 0.1 wyrm_hide
+
+	//make sure initiated before pit hunting
+	setvard NEXT_PITHUNT game.time
+	add NEXT_PITHUNT 20.0
+}
+
+{ wyrm_finalize
+	if !WYRM_FINALIZED
+	setvard WYRM_FINALIZED 1 //case this gets called twice for some weird reason
+	array.create ARRAY_EDGE_POINTS
+	array.create ARRAY_PIT_POINTS
+	local L_EDGE1_NAME WYRM_EDGE_PREFIX
+	stradd L_EDGE1_NAME 1
+	local L_EDGE1 $get_by_name(L_EDGE1_NAME)
+	if ( $get(L_EDGE1,exists) )
+	{
+		dbg wyrm_finalize found edge1
+		setvard WYRM_USE_EDGES 1
+		setvard N_EDGE_POINTS 0
+		calleventloop 20 wyrm_get_edges_loop
+	}
+	local L_PIT1_NAME WYRM_PIT_PREFIX
+	stradd L_PIT1_NAME 1
+	local L_PIT1 $get_by_name(L_PIT1_NAME)
+	if ( $get(L_PIT1,exists) )
+	{
+		dbg wyrm_finalize found pit1
+		setvard WYRM_USE_PITS 1
+		setvard N_PIT_POINTS 0
+		calleventloop 20 wyrm_get_pits_loop
+	}
+
+	if ( WYRM_USE_EDGES )
+	{
+		setvard WYRM_CUR_PIT_IDX 0
+		setvard WYRM_CUR_PIT $get_array(ARRAY_PIT_POINTS,WYRM_CUR_PIT_IDX)
+
+		if WYRM_USE_PITS
+		if ( WYRM_MMODE equals 'WYRM_MMODE' )
+		{
+			setvard WYRM_MMODE pits //should toggle to edges by default if has both
+		}
+		setvard WYRM_USE_BOTH 1
+	}
+
+	if ( !WYRM_USE_EDGES )
+	{
+		if !WYRM_USE_PITS
+		setvard WYRM_MMODE none
+	}
+
+	dbg wyrm_finalize
+
+	if ( WYRM_MMODE isnot none )
+	{
+		callevent wyrm_pick_movement_mode init
+	}
+	else
+	{
+		local L_XP $get(ent_me,xp)
+		multiply L_XP 0.5
+		skilllevel L_XP
+	}
+}
+
+{ wyrm_get_edges_loop
+	if !WYRM_GOT_ALL_EDGE_POINTS
+	add N_EDGE_POINTS 1
+	local L_EDGE_NAME WYRM_EDGE_PREFIX
+	stradd L_EDGE_NAME $int(N_EDGE_POINTS)
+	local L_EDGE_ID $get_by_name(L_EDGE_NAME)
+	if ( $get(L_EDGE_ID,exists) )
+	{
+		array.add ARRAY_EDGE_POINTS L_EDGE_ID
+		dbg added edge @ $get(L_EDGE_ID,origin)
+	}
+	else
+	{
+		setvard WYRM_GOT_ALL_EDGE_POINTS 1
+	}
+}
+
+{ wyrm_get_pits_loop
+	if !WYRM_GOT_ALL_PIT_POINTS
+	add N_PIT_POINTS 1
+	local L_PIT_NAME WYRM_PIT_PREFIX
+	stradd L_PIT_NAME $int(N_PIT_POINTS)
+	local L_PIT_ID $get_by_name(L_PIT_NAME)
+	if ( $get(L_PIT_ID,exists) )
+	{
+		array.add ARRAY_PIT_POINTS L_PIT_ID
+		dbg added pit @ $get(L_PIT_ID,origin)
+	}
+	else
+	{
+		setvard WYRM_GOT_ALL_PIT_POINTS 1
+	}
+}
+
+{ wyrm_hide
+	//note: bugger here, is if someone with fire immunity is in my destin pit, I'm going to be stuck inside him
+	//so make sure to use a push burst with override 1 sec before teleport
+	callevent glow_toggle 0
+	setvard NPCATK_TARGET unset
+	setvard WYRM_OLD_TARGET NPCATK_TARGET
+	setvard WYRM_HIDE_MODE 1
+	setvard WYRM_UNHIDE_TIME game.time
+	add WYRM_UNHIDE_TIME 5.0
+	invincible 1
+	setvard NPC_FLINCH_DISABLE 1
+	callevent npcatk_suspend_movement ANIM_HIDDEN
+	if ( !SUSPEND_AI ) callevent npcatk_suspend_ai
+	setvard WYRM_MOVEDEST unset
+	removefx
+	setvard LAVA_VOLUME 3
+	callevent 0.1 loop_lava
+}
+
+{ game_heardsound
+	if WYRM_HIDE_MODE
+	if game.time > WYRM_UNHIDE_TIME
+	if !WYRM_TELEPORTING
+	if !WYRM_SUBMERGING
+	local L_HEARD_ID $get(ent_lastheard,id)
+	if $get(L_HEARD_ID,relationship,ent_me) equals enemy
+	if $get(L_HEARD_ID,range) < WYRM_UNHIDE_RANGE
+	callevent wyrm_appear L_HEARD_ID heard_sound
+}
+
+{ wyrm_appear //[atk target] [dbg_reason]
+	dbg wyrm_appear PARAM2
+
+	local L_GAME_TIME game.time
+
+	setvard NEXT_GIVEUP L_GAME_TIME
+	add NEXT_GIVEUP 20.0
+
+	//h4x
+	setvard WYRM_TELEPORTING 0
+	setvard WYRM_SUBMERGING 0
+
+	setvard LAVA_VOLUME 10
+	callevent 0.1 loop_lava
+
+	callevent glow_toggle 1
+
+	setvard WYRM_HIDE_MODE 0
+	setvard WYRM_UNHIDE_TIME L_GAME_TIME
+	add WYRM_UNHIDE_TIME 5.0
+	invincible 0
+	setvard NPC_FLINCH_DISABLE 0
+	callevent npcatk_resume_movement
+	callevent npcatk_resume_ai
+
+	callevent wyrm_appear_fx
+
+	setmoveanim ANIM_WALK
+	setidleanim ANIM_IDLE
+
+	playanim critical ANIM_APPEAR
+
+	setvard NEXT_SWIPE_CHECK L_GAME_TIME
+	add NEXT_SWIPE_CHECK FREQ_SWIPE
+	setvard NEXT_MODE_SWITCH L_GAME_TIME
+	add NEXT_MODE_SWITCH FREQ_MODE_SWITCH
+	setvard NEXT_PIT_SEARCH L_GAME_TIME
+	add NEXT_PIT_SEARCH FREQ_PIT_SEARCH
+
+	if ( $get(WYRM_OLD_TARGET,isalive) )
+	{
+		if ( $get(WYRM_OLD_TARGET,range) < $get(PARAM1,range) )
+		{
+			//old target is closer, use it
+			callevent npcatk_settarget WYRM_OLD_TARGET
+		}
+		else
+		{
+			//target I raised for is closer than my old target, switch
+			callevent npcatk_settarget $get(PARAM1,id)
+		}
+	}
+	else
+	{
+		//I ain't got no old target, eat this guy
+		callevent npcatk_settarget $get(PARAM1,id)
+	}
+}
+
+{ intro_done
+	setvard INTRO_STAGE 2
+	if !WYRM_HIDE_MODE //not sure how we'd wind up hidden mid-intro, but just in case, don't re-enable flinch
+	setvard NPC_FLINCH_DISABLE 0
+}
+
+{ npc_found_new_target
+	setvard WYRM_COMBAT_INITIATED 1 //this is so we don't pit-teleport to targets before they first find us
+	//setvard NEXT_MODE_SWITCH $randf(20.0,40.0)
+	//add NEXT_MODE_SWITCH game.time
+}
+
+//====================================================================== Main Hunt Cycle - Start
+{ npcatk_hunt
+
+	local L_GAME_TIME game.time
+
+	if ( L_GAME_TIME > NEXT_PASSIVE )
+	{
+		add CUR_PASSIVE 1
+		if ( CUR_PASSIVE == 1 ) svplaysound 2 10 SOUND_PASSIVE1
+		if ( CUR_PASSIVE == 2 ) svplaysound 2 10 SOUND_PASSIVE2
+		if ( CUR_PASSIVE == 3 ) svplaysound 2 10 SOUND_PASSIVE3
+		if ( CUR_PASSIVE == 4 )
+		{
+			svplaysound 2 10 SOUND_PASSIVE4
+			setvard CUR_PASSIVE 0
+		}
+		setvard NEXT_PASSIVE L_GAME_TIME
+		add NEXT_PASSIVE FREQ_PASSIVE
+
+		//dbg passive_sound CUR_PASSIVE
+	}
+
+	if ( L_GAME_TIME > NEXT_LOOP_LAVA )
+	{
+		if ( WYRM_HIDE_MODE )
+		{
+			setvard LAVA_VOLUME 3
+			callevent loop_lava
+		}
+		else
+		{
+			setvard LAVA_VOLUME 10
+			callevent loop_lava
+		}
+	}
+
+	if ( NPCATK_TARGET equals unset )
+	{
+		if ( !WYRM_HIDE_MODE )
+		{
+			if L_GAME_TIME > NEXT_WORM_HIDE
+			setvard NEXT_WORM_HIDE 99999
+			callevent do_submerge 1 lack_of_target
+			dbg hiding from lack of target
+		}
+		else
+		{
+			if ( L_GAME_TIME > NEXT_LOCAL_SCAN )
+			{
+				if L_GAME_TIME > WYRM_UNHIDE_TIME
+				setvard NEXT_LOCAL_SCAN L_GAME_TIME
+				add NEXT_LOCAL_SCAN 0.5
+				local L_SPHERE $get_tsphere(enemy,512)
+				if L_SPHERE isnot none
+				callevent wyrm_appear $get_token(L_SPHERE,0) local_scan
+				exitevent
+			}
+			if WYRM_PITHUNTER
+			if L_GAME_TIME > NEXT_PITHUNT
+			setvard NEXT_PITHUNT L_GAME_TIME
+			add NEXT_PITHUNT 10.0
+			setvard WYRM_PORTING_TO pit
+			callevent find_next_pit randomtarg
+			callevent wyrm_teleport pit_hunt
+		}
+	}
+
+	if ( WYRM_LIGHT_ACTIVE )
+	{
+		if L_GAME_TIME > NEXT_LIGHT_REFRESH
+		callevent glow_toggle 1
+	}
+
+	if ( !WYRM_HIDE_MODE )
+	{
+		if WYRM_MOVEDEST isnot unset
+		local L_MY_ORG $get(ent_me,origin)
+		local L_YAW $angles(L_MY_ORG,WYRM_MOVEDEST)
+		local L_YAW $vec.yaw(L_YAW)
+		setvelocity ent_me $relvel($vec(0,L_YAW,0),$vec(0,WYRM_SPEED,0))
+
+		if G_DEVELOPER_MODE
+		if ( L_GAME_TIME > NEXT_DEBUG_SPAM )
+		{
+			setvard NEXT_DEBUG_SPAM L_GAME_TIME
+			add NEXT_DEBUG_SPAM 5.0
+			//dbg cansee: $cansee(NPCATK_TARGET)
+			callevent G_DEV_PLAYER ext_debug_beam WYRM_MOVEDEST
+		}
+	}
+
+	if !WYRM_HIDE_MODE
+	if NPCATK_TARGET isnot unset
+
+	if ( L_GAME_TIME > NEXT_GIVEUP )
+	{
+		//I've not seen nor hit anything for 20 seconds, give up, I'll move to next pit, if I have one
+		dbg idle too long, giving up target...
+		setvard NPCATK_TARGET unset
+	}
+
+	setmovedest NPCATK_TARGET 9999
+
+	local L_GAME_TIME L_GAME_TIME
+
+	setvard NEXT_WORM_HIDE L_GAME_TIME
+	add NEXT_WORM_HIDE 20.0
+
+	//perodically switch between pits and floating between edge waypoints, if we have both
+	if ( WYRM_USE_BOTH )
+	{
+		if L_GAME_TIME > NEXT_MODE_SWITCH
+		setvard NEXT_MODE_SWITCH FREQ_MODE_SWITCH
+		add NEXT_MODE_SWITCH L_GAME_TIME
+		if !WYRM_HIDE_MODE
+		dbg picking new movement mode
+		callevent wyrm_pick_movement_mode npcatk_hunt
+	}
+
+	if ( WYRM_MMODE equals edges )
+	{
+		local L_EDGE_ORG $get_array(ARRAY_EDGE_POINTS,WYRM_NEXT_EDGE_IDX)
+		setvard WYRM_MOVEDEST $get(L_EDGE_ORG,origin)
+		local L_MY_POS $get(ent_me,origin)
+		if ( $dist(L_MY_POS,WYRM_MOVEDEST) < 16 )
+		{
+			callevent find_next_edge //next think cycle we'll have new edge waypoint
+		}
+	}
+
+	if ( WYRM_MMODE equals pits )
+	{
+		//keep slowly moving to pit center in case we get kocked about
+		local L_PIT_ORG $get_array(ARRAY_PIT_POINTS,WYRM_CUR_PIT)
+		//dbg WYRM_MOVEDEST setto WYRM_MOVEDEST idx WYRM_CUR_PIT id $get_array(ARRAY_PIT_POINTS,WYRM_CUR_PIT)
+		setvard WYRM_MOVEDEST $get(L_PIT_ORG,origin)
+	}
+
+	if ( WYRM_MMODE equals none )
+	{
+		//float around - hope monsterclip stops me from leaving lava pit
+		if ( L_GAME_TIME > NEXT_WYRM_FLOAT )
+		{
+			setvard NEXT_WYRM_FLOAT L_GAME_TIME
+			add NEXT_WYRM_FLOAT $randf(3.0,7.0)
+			local L_MOVE_YAW $randf(0,359.99)
+			local L_MOVE_TO $get(ent_me,origin)
+			vectoradd L_MOVE_TO $relpos($vec(0,L_MOVE_YAW,0),$vec(0,256,0)
+			setvard WYRM_SPEED 20
+			setvard WYRM_MOVEDEST L_MOVE_TO
+		}
+	}
+}
+
+{ bs_global_command //player I was attacking died
+	dbg bs_global_command $get(PARAM1,name) PARAM2 PARAM3
+	if PARAM1 equals NPCATK_TARGET
+	setvard NPCATK_TARGET unset
+	if PARAM3 equals death
+	callevent 3.0 anger_sated
+}
+
+{ anger_sated
+	dbg anger_sated
+	if NPCATK_TARGET equals unset
+	if !WYRM_HIDE_MODE
+	if !WYRM_TELEPORTING
+	if WYRM_MMODE isnot edges //we should just keep going, but don't seem to
+	callevent do_submerge 1 anger_sated
+}
+
+//====================================================================== Main Hunt Cycle - End
+
+//====================================================================== Attack Cycle - Start
+//- this would normally be done under npc_select_attack, but we got funky
+{ npc_targetsighted
+	if ( !DID_INTRO )
+	{
+		setvard DID_INTRO 1
+		setvard NPC_FLINCH_DISABLE 1
+		setvard INTRO_STAGE 1
+		playanim critical ANIM_RAWR
+		callevent 3.0 intro_done //in case frame_blong_end doesn't complete
+	}
+	if INTRO_STAGE > 1 //attack cycle suspended until intro done
+
+	//dbg range $get(NPCATK_TARGET,range)
+
+	local L_GAME_TIME game.time
+
+	if ( $get(NPCATK_TARGET,range) <= ATTACK_RANGE_BITE )
+	{
+		playanim once ANIM_ATTACK
+	}
+	else
+	{
+		if L_GAME_TIME > NEXT_SPIT
+		setvard NEXT_SPIT game.time
+		add NEXT_SPIT FREQ_SPIT
+		add WYRM_SPIT_COUNT 1
+		if ( WYRM_SPIT_COUNT >= 5 )
+		{
+			//give a bit of a breather
+			add NEXT_SPIT 10.0
+			setvard WYRM_SPIT_COUNT 0
+			setvard DO_QUAKE 1
+			playanim critical ANIM_RAWR
+			exitevent
+		}
+		playanim once ANIM_SPIT
+	}
+}
+//====================================================================== Attack Cycle - End
+
+//====================================================================== Movement selection - Start
+
+{ wyrm_pick_movement_mode //[dbg_reason]
+	//toggle movement mode and find nearest to target, if any
+
+	dbg wyrm_pick_movement_mode was WYRM_MMODE PARAM1
+
+	if ( WYRM_MMODE equals pits )
+	{
+		if WYRM_USE_EDGES
+		setvard WYRM_MMODE edges
+		callevent find_next_edge
+		setvard WYRM_PORTING_TO edge
+		callevent wyrm_teleport switch_modes_to_edge
+	}
+	else
+	{
+		if WYRM_USE_PITS
+		setvard WYRM_MMODE pits
+		callevent find_next_pit //teleport is handled here, as pithunter uses this direct
+		setvard WYRM_PORTING_TO pit
+		callevent wyrm_teleport switch_modes_to_pits
+	}
+
+	dbg wyrm_pick_movement_mode is WYRM_MMODE PARAM1
+
+	//if neither, we do nadda
+}
+
+{ find_next_edge
+
+	if ( !WYRM_EDGE_INIT )
+	{
+		add WYRM_EDGE_INIT 1
+		setvard T_NEAREST 9999
+		calleventloop $get_array_amt(ARRAY_EDGE_POINTS) find_nearest_edge //pick edge point closest to initial placement
+		dbg nearest edge WYRM_NEXT_EDGE_IDX
+
+		local L_EDGE_ORG $get_array(ARRAY_EDGE_POINTS,WYRM_NEXT_EDGE_IDX)
+		local L_EDGE_ORG $get(L_EDGE_ORG,origin)
+		dbg find_next_edge init
+		setorigin ent_me L_EDGE_ORG
+	}
+	else
+	{
+		add WYRM_NEXT_EDGE_IDX 1
+		if ( WYRM_NEXT_EDGE_IDX >= $math(subtract,$get_array_amt(ARRAY_EDGE_POINTS),1) )
+		{
+			dbg find_next_edge hit last edge
+			setvard WYRM_NEXT_EDGE_IDX 0
+		}
+	}
+}
+
+{ find_nearest_edge
+	local L_CUR_EDGE $get_array(ARRAY_EDGE_POINTS,game.script.iteration)
+	local L_CUR_EDGE_ORG $get(L_CUR_EDGE,origin)
+	local L_MY_POS $get(ent_me,origin)
+	local L_DIST $dist(L_MY_POS,L_CUR_EDGE_ORG)
+	dbg find_nearest_edge # game.script.iteration @ L_DIST vs T_NEAREST
+	if L_DIST < T_NEAREST
+	setvard WYRM_NEXT_EDGE_IDX game.script.iteration
+	setvard T_NEAREST L_DIST
+}
+
+{ find_next_pit //[flee|randomtarg]
+
+	dbg find_next_pit PARAM1
+
+	if ( PARAM1 isnot flee )
+	{
+		if ( NPCATK_TARGET equals unset )
+		{
+			dbg find_next_pit no target, choosing...
+			if ( game.players > 0 )
+			{
+				dbg find_next_pit getplayers...
+				getplayers PIT_TARGET
+				dbg find_next_pit sort by range...
+				setvard PIT_TARGET $sort_entlist(PIT_TARGET,range)
+				dbg find_next_pit survived sort by range...
+
+				if ( PARAM2 equals randomtarg )
+				{
+					dbg find_next_pit PARAM2 picking random...
+					setvard PIT_TARGET $get_token(PIT_TARGET,$rand(0,$math(subtract,$get_token_amt(PIT_TARGET),1))
+				}
+				else
+				{
+					dbg find_next_pit picking nearest...
+					setvard PIT_TARGET $get_token(PIT_TARGET,0)
+				}
+
+				if ( $rand(1,5) == 1 )
+				{
+					if !WYRM_PITHUNTER
+					local L_PICK_RANDOM 1 //every now and again we'll change nonsensically to mysteriously vanish
+				}
+				dbg find_next_pit target $get(PIT_TARGET,name) rnd L_PICK_RANDOM typ PARAM2
+			}
+			else
+			{
+				dbg find_next_pit Ain't no one here, 
+				local L_PICK_RANDOM 1 //no one's here, pick random
+			}
+		}
+		else
+		{
+			//I have a target, but may or may not be at the nearest pit
+			setvard PIT_TARGET NPCATK_TARGET
+			if ( $rand(1,5) == 1 ) local L_PICK_RANDOM 1 //every now and again we'll change nonsensically to mysteriously vanish
+			dbg find_next_pit curtarget $get(PIT_TARGET,name) rnd L_PICK_RANDOM
+		}
+	}
+	else
+	{
+		local L_PICK_RANDOM 1 //feeing - anywhere but here
+	}
+
+	if ( L_PICK_RANDOM )
+	{
+		dbg find_next_pit picking random...
+		setvard MOVE_TO_PIT_IDX $rand(0,$math(subtract,$get_array_amt(ARRAY_PIT_POINTS),1))
+		setvard MOVE_TO_PIT $get_array(ARRAY_PIT_POINTS,MOVE_TO_PIT_IDX)
+		
+		if ( MOVE_TO_PIT_IDX == WYRM_CUR_PIT_IDX )
+		{
+			add MOVE_TO_PIT_IDX 1
+			if ( MOVE_TO_PIT_IDX >= $math(subtract,$get_array_amt(ARRAY_PIT_POINTS),1) ) setvard MOVE_TO_PIT_IDX 0
+			setvard MOVE_TO_PIT $get_array(ARRAY_PIT_POINTS,MOVE_TO_PIT_IDX)
+		}
+		setvard WYRM_CUR_PIT_IDX MOVE_TO_PIT_IDX
+
+		dbg find_next_pit random WYRM_CUR_PIT_IDX [ MOVE_TO_PIT ]
+	}
+	else
+	{
+		//find pit closest to selected pit target
+		setvard T_LEAST_DIST 9999
+		calleventloop $get_array_amt(ARRAY_PIT_POINTS) find_pit_nearest_target 
+		dbg find_next_pit nearest2targ to $get(PIT_TARGET,name) $get(PIT_TARGET,origin) MOVE_TO_PIT_IDX [ MOVE_TO_PIT ]
+	}
+}
+
+{ find_pit_nearest_target
+	local L_CUR_PIT $get_array(ARRAY_PIT_POINTS,game.script.iteration)
+	local L_CUT_PIT_ORG $get(L_CUR_PIT,origin)
+	local L_PIT_TARG_ORG $get(PIT_TARGET,origin)
+	local L_PIT_DIST_FROM_TARG $dist(L_CUT_PIT_ORG,L_PIT_TARG_ORG)
+	dbg find_pit_nearest_target # game.script.iteration dist L_PIT_DIST_FROM_TARG
+	if L_PIT_DIST_FROM_TARG < T_LEAST_DIST
+	setvard T_LEAST_DIST L_PIT_DIST_FROM_TARG
+	setvard MOVE_TO_PIT_IDX game.script.iteration
+	setvard MOVE_TO_PIT $get_array(ARRAY_PIT_POINTS,MOVE_TO_PIT_IDX)
+}
+
+{ wyrm_teleport //[dbg_reason] three steps: retract, repel targets at dest, if edge dest appear
+	//this animation calls wyrm_teleport2 on completion
+	dbg wyrm_teleport PARAM1
+	setvard WYRM_TELEPORTING 1
+	setvard WYRM_TELE_STAGE2 1
+	if ( !WYRM_HIDE_MODE )
+	{
+		callevent do_submerge 0 teleporting
+	}
+	else
+	{
+		callevent wyrm_teleport2
+	}
+	//callevent 5.0 wyrm_teleport2 //failsafe, otherwise called by anim (handled in do_submerge)
+}
+
+{ wyrm_teleport2 //called by ANIM_RETRACT or failsafe
+	//create a burst at MOVE_TO_PIT org and move there
+	if WYRM_TELE_STAGE2
+	setvard WYRM_TELE_STAGE2 0
+	dbg wyrm_teleport2 WYRM_TELEPORTING WYRM_PORTING_TO
+	local L_WIDTH $get(ent_me,width)
+	multiply L_WIDTH 1.5
+	dbg wyrm_teleport2 width L_WIDTH
+	if ( WYRM_PORTING_TO equals pit )
+	{
+		setvard REPELL_POS $get(MOVE_TO_PIT,origin)
+	}
+	if ( WYRM_PORTING_TO equals edge )
+	{
+		local L_EDGE_ORG $get_array(ARRAY_EDGE_POINTS,WYRM_NEXT_EDGE_IDX)
+		setvard REPELL_POS $get(L_EDGE_ORG,origin)
+	}
+	dbg wyrm_teleport2 repellpos REPELL_POS
+	vectoradd REPELL_POS z 32
+	setvard T_SPHERE $get_tsphere(any,L_WIDTH,REPELL_POS)
+	if ( T_SPHERE isnot none )
+	{
+		calleventloop $get_token_amt(T_SPHERE) pitrepell_affect_targets
+	}
+	dbg wyrm_teleport2 nextstage...
+	callevent 0.5 wyrm_teleport3
+}
+
+{ pitrepell_affect_targets //repells targets from pit teleport loc
+	local L_CUR_TARG $get_token(T_SPHERE,game.script.iteration)
+	local L_TARG_ORG $get(L_CUR_TARG,origin)
+	local L_MY_ORG $get(REPELL_POS,origin)
+	local L_REPEL_YAW $angles(L_MY_ORG,L_TARG_ORG)
+	setvelocity L_CUR_TARG $relvel($vec(0,L_REPEL_YAW,0),$vec(200,1000,200)) override
+}
+
+{ wyrm_teleport3
+
+	dbg wyrm_teleport3 WYRM_PORTING_TO
+
+	setvard WYRM_TELEPORTING 0
+	if ( WYRM_PORTING_TO equals pit )
+	{
+		setorigin ent_me $get(MOVE_TO_PIT,origin)
+		setvard WYRM_CUR_PIT MOVE_TO_PIT
+		setvard WYRM_CUR_PIT_IDX MOVE_TO_PIT_IDX
+		if WYRM_PITHUNTER //otherwise stays hidden until target spotted
+		getplayers TARGET_LIST
+		local L_TARGET $sort_entlist(TARGET_LIST,range)
+		local L_TARGET $get_token(L_TARGET,0)
+		callevent wyrm_appear L_TARGET teleport2pit
+	}
+	if ( WYRM_PORTING_TO equals edge )
+	{
+		local L_EDGE_ORG $get_array(ARRAY_EDGE_POINTS,WYRM_NEXT_EDGE_IDX)
+		local L_EDGE_ORG $get(L_EDGE_ORG,origin)
+		dbg wyrm_teleport3 WYRM_PORTING_TO WYRM_NEXT_EDGE_IDX L_EDGE_ORG
+		setorigin ent_me L_EDGE_ORG
+		//set nearest player as target and appear
+		getplayers TARGET_LIST
+		local L_TARGET $sort_entlist(TARGET_LIST,range)
+		local L_TARGET $get_token(L_TARGET,0)
+		callevent wyrm_appear L_TARGET teleport2edge
+	}
+}
+
+//====================================================================== Movement selection - End
+
+
+//====================================================================== Frame events
+{ frame_spit_start //ANIM_SPIT anim_spit
+	playsound 1 10 SOUND_SPIT_PREP
+	playsound 2 10 monsters/wyrm/8bit/c_x0stgwar_hit2.wav 0.8 $rand(80,110)
+}
+
+{ frame_spit_strike //ANIM_SPIT anim_spit
+	if $get(NPCATK_TARGET,isalive) //case he died/invalidated between frames
+	playsound 0 10 SOUND_SPIT_STRIKE
+	local L_TARG_ORG $get(NPCATK_TARGET,origin)
+	vectorset L_TARG_ORG z $get_ground_height(L_TARG_ORG)
+	if ( $rand(1,2) == 1 ) //guided, sometimes
+	{
+		setvard PROJ_TARGET NPCATK_TARGET
+	}
+	else
+	{
+		setvard PROJ_TARGET unset
+	}
+
+	tossprojectile L_TARG_ORG PROJ_SPEED PROJ_DMG PROJ_COF PROJ_SCRIPT $get(ent_me,attachpos,ATT_MOUTH) notoffset
+//	if ( WYRM_TYPE equals fire )
+//	{
+//		callexternal ent_lastprojectile ext_lighten 0
+//		callexternal ent_lastprojectile ext_scale 0.1
+//	}
+}
+
+{ frame_blong_start
+	if ( !DO_QUAKE )
+	{
+		playrandomsound 0 10 SOUND_ALERT1 SOUND_ALERT2
+	}
+	else
+	{
+		playsound 0 10 monsters/wyrm/quake_rawr.wav
+	}
+
+	if DO_QUAKE
+	//clientevent new all drip flames from mouth and add another glow
+	callevent start_quake
+}
+
+{ frame_blong_end //ANIM_RAWR anim_blong
+	if ( INTRO_STAGE < 2 )
+	{
+		//this prevents this anim from attacking until intro complete
+		callevent intro_done
+		exitevent
+	}
+	//this may also be used as a breath weapon outside the intro here
+}
+
+{ frame_hbutt_start //ANIM_HEADBUTT anim_hbutt
+	playsound 0 10 SOUND_HBUTT
+}
+
+{ frame_hbutt_strike //ANIM_HEADBUTT anim_hbutt
+	setvard ANIM_ATTACK ANIM_BITE1
+	setvard DID_BITE 0
+
+	playsound 0 10 SOUND_SWIPE_LARGE
+	local L_YAW $get(ent_me,angles.yaw)
+	local L_BURST_POS $get(ent_me,origin)
+	vectoradd L_BURST_POS $relpos($vec(0,L_YAW,0),$vec(0,$math(multiply,AOE_HBUTT,0.95),0))
+	vectorset L_BURST_POS z $get(NPCATK_TARGET,origin.z)
+	vectoradd L_BURST_POS z 32 //rough terrain adj
+	xdodamage L_BURST_POS AOE_HBUTT DMG_HBUTT 0.1 ent_me ent_me none blunt_effect dmgevent:hbutt
+	if ( G_DEVELOPER_MODE ) callexternal G_DEV_PLAYER ext_debug_draw_circle L_BURST_POS AOE_HBUTT 3
+	dbg frame_hbutt_strike yaw L_YAW org L_BURST_POS
+}
+
+{ frame_swipe_start //ANIM_SWIPE anim_swipe
+	playsound 0 10 SOUND_SWIPE
+}
+
+{ frame_swipe_strike //ANIM_SWIPE anim_swipe
+	setvard ANIM_ATTACK ANIM_BITE2
+	setvard DID_BITE 0
+
+	playsound 0 10 SOUND_SWIPE_LARGE
+	local L_YAW $get(ent_me,angles.yaw)
+	local L_BURST_POS $get(ent_me,origin)
+	vectoradd L_BURST_POS $relpos($vec(0,L_YAW,0),$vec(0,$math(multiply,AOE_SWIPE,0.5),0))
+	vectorset L_BURST_POS z $get(NPCATK_TARGET,origin.z)
+	vectoradd L_BURST_POS z 32 //rough terrain adj
+	xdodamage L_BURST_POS AOE_SWIPE DMG_SWIPE 0.1 ent_me ent_me none blunt_effect dmgevent:bigswipe
+	if ( G_DEVELOPER_MODE ) callexternal G_DEV_PLAYER ext_debug_draw_circle L_BURST_POS AOE_SWIPE 3
+	dbg frame_swipe_strike yaw L_YAW org L_BURST_POS
+}
+
+{ frame_retract_start //ANIM_RETRACT anim_retract
+	playsound 0 10 SOUND_SPLASH_DOWN
+}
+
+{ submerge_failsafe //in case we don't get the last frame
+	if !WYRM_SUBMERGE_GOT_ENDFRAME
+	dbg submerge_failsafe !
+	callevent frame_retract_end
+}
+
+{ frame_retract_end //ANIM_RETRACT anim_retract
+	dbg frame_retract_end notep WYRM_NO_TELEPORT_FLAG
+
+	setvard WYRM_SUBMERGE_GOT_ENDFRAME 1
+	setvard WYRM_SUBMERGING 0
+	callevent wyrm_hide
+	if ( WYRM_NO_TELEPORT_FLAG )
+	{
+		setvard WYRM_NO_TELEPORT_FLAG 0
+		exitevent
+	}
+	callevent wyrm_teleport2
+}
+
+{ frame_bite1_start
+	playsound 0 10 SOUND_BITE
+}
+
+{ frame_bite2_start
+	playsound 0 10 SOUND_BITE
+}
+
+{ frame_bite1_strike //ANIM_BITE1 anim_bite1
+	local L_YAW $get(ent_me,angles.yaw)
+	local L_BURST_POS $get(ent_me,origin)
+	vectoradd L_BURST_POS $relpos($vec(0,L_YAW,0),$vec(0,$math(multiply,AOE_HBUTT,0.95),0)) //bite & hbutt have same AOE
+	vectorset L_BURST_POS z $get(NPCATK_TARGET,origin.z)
+	vectoradd L_BURST_POS z 32 //rough terrain adj
+	xdodamage L_BURST_POS AOE_HBUTT DMG_BITE 0.1 ent_me ent_me none pierce dmgevent:bite1
+	if ( G_DEVELOPER_MODE ) callexternal G_DEV_PLAYER ext_debug_draw_circle L_BURST_POS AOE_HBUTT 3
+	callevent select_melee
+}
+
+{ frame_bite2_strike //ANIM_BITE2 anim_bite2
+	local L_YAW $get(ent_me,angles.yaw)
+	local L_BURST_POS $get(ent_me,origin)
+	vectoradd L_BURST_POS $relpos($vec(0,L_YAW,0),$vec(0,$math(multiply,AOE_HBUTT,0.95),0)) //bite & hbutt have same AOE
+	vectorset L_BURST_POS z $get(NPCATK_TARGET,origin.z)
+	vectoradd L_BURST_POS z 32 //rough terrain adj
+	xdodamage L_BURST_POS AOE_HBUTT DMG_BITE 0.1 ent_me ent_me none pierce dmgevent:bite2
+	if ( G_DEVELOPER_MODE ) callexternal G_DEV_PLAYER ext_debug_draw_circle L_BURST_POS AOE_HBUTT 3
+	callevent select_melee
+}
+
+{ select_melee //after every 4-5th standard bite we will do a swipe or headbutt
+	add DID_BITE 1
+	if ( DID_BITE > $rand(3,4) )
+	{
+		if ( $rand(1,3) == 1 )
+		{
+			setvard ANIM_ATTACK ANIM_SWIPE
+		}
+		else
+		{
+			setvard ANIM_ATTACK ANIM_HBUTT
+		}
+	}
+}
+
+{ frame_appear_start //ANIM_APPEAR anim_appear
+	playsound 0 10 SOUND_SPLASH_UP
+}
+
+//====================================================================== Outgoing Damage events
+
+{ hbutt_dodamage //from frame_hbutt_strike, toss and stun
+	//the "headbutt" animation is actually a sideways sweeping motion
+	if PARAM1
+	if $get(PARAM2,relationship,ent_me) equals enemy
+
+	//we should probably do extra damage to push immune here
+	//not sure if dmgevent also calls _damaged_other - testing below
+
+	addvelocity PARAM2 $relvel(400,0,300) 
+	applyeffect PARAM2 effects/effect_stun 5.0
+}
+
+{ bite1_dodamage //from frame_bite1_strike, nudge slightly
+	addvelocity PARAM2 $relvel(100,0,200) 
+}
+
+{ bite2_dodamage //from frame_bite2_strike, nudge slightly
+	addvelocity PARAM2 $relvel(-100,0,200) 
+}
+
+
+{ hbutt_damaged_other //test
+	dbg hbutt_damaged_other $get(PARAM1,name)
+}
+
+{ bigswipe_dodamage //from frame_swipe_strike, larger AOE, toss far
+	//this is a large sweeping curl repelling nearby targets
+	if PARAM1
+	if $get(PARAM2,relationship,ent_me) equals enemy
+
+	//we should probably do extra damage to push immune here
+	//not sure if dmgevent also calls _damaged_other - testing below
+
+	local L_TARG_ORG $get(PARAM2,origin)
+	local L_MY_ORG $get(ent_me,origin)
+	local L_REPEL_YAW $angles(L_MY_ORG,L_TARG_ORG)
+	setvelocity PARAM2 $relvel($vec(0,L_REPEL_YAW,0),$vec(-800,1000,200))
+
+}
+
+{ swipe_damaged_other
+	dbg swipe_damaged_other $get(PARAM1,name)
+}
+
+{ ext_fire_bomb //<land point> - called by proj_fire_bomb
+	dbg ext_fire_bomb PARAM1
+	setvard FIRE_BOMB_POS PARAM1
+	xdodamage FIRE_BOMB_POS 128 DMG_PROJ_RAPID 0.1 ent_me ent_me none blunt_effect dmgevent:spit
+}
+
+{ spit_dodamage
+	if $get(PARAM2,relationship,ent_me) equals enemy
+
+	if ( $get(PARAM2,isplayer) )
+	{
+		if !$get(PARAM2,onground)
+		exitevent
+	}
+
+	callevent apply_dot1 $get(PARAM2,id)
+
+	local L_TARG_ORG $get(L_TARG_ORG,origin)
+	local L_MY_ORG FIRE_BOMB_POS
+	local L_REPEL_YAW $angles(L_MY_ORG,L_TARG_ORG)
+	addvelocity PARAM2 $relvel($vec(0,L_REPEL_YAW,0),$vec(0,500,100))
+}
+
+{ apply_dot1
+	if !$get(PARAM1,haseffect,DOT_EFFECTNAME) //idear: one could tweak this to upgrade frostbite to freeze
+	applyeffect PARAM1 DOT_SCRIPT DOT_DUR $get(ent_me,id) DOT_DMG
+}
+
+{ apply_dot2
+	if !$get(PARAM1,haseffect,DOT_EFFECTNAME2)
+	applyeffect PARAM1 DOT_SCRIPT2 DOT_DUR2 $get(ent_me,id) DOT_DMG2
+}
+
+{ frock_dodamage
+	if PARAM1
+	if $get(PARAM2,relationship,ent_me) equals enemy
+	callevent apply_dot1 $get(PARAM2,id)
+	dbg frock_dodamage $get(PARAM2,name)
+}
+
+{ game_damaged_other //PARAM1=target_hit PARAM2=dmg PARAM3=dmg_type
+
+	setvard NEXT_GIVEUP game.time
+	add NEXT_GIVEUP 20.0
+
+	//this is cheap, but he needs help
+	if ( $get(PARAM1,nopush) ) local L_INC_DMG 1
+
+	if ( L_INC_DMG )
+	{
+		local L_FIN_DMG PARAM2
+		multiply L_FIN_DMG 4.0
+		setdmg dmg L_FIN_DMG
+		returndata 4.0
+
+		if ( $get(PARAM1,isplayer) )
+		{
+			setvard NEXT_PUSH_ALERT 10.0
+			add NEXT_PUSH_ALERT game.time
+			rplayermessage PARAM1 Your push immunity causes you to absorb the $get(ent_me,name) 's sheer strength as extra damage!
+		}
+	}
+}
+
+{ game_damaged
+
+	if ( WYRM_PITHUNTER )
+	{
+		//pit hunters refresh flee stats in case of regeneration from boss tag
+		if ( $get(ent_me,hp) >= $math(multiply,$get(ent_me,maxhp),0.75) ) setvard DID_FLEE1 0
+		if ( $get(ent_me,hp) >= $math(multiply,$get(ent_me,maxhp),0.50) ) setvard DID_FLEE2 0
+		if ( $get(ent_me,hp) >= $math(multiply,$get(ent_me,maxhp),0.25) ) setvard DID_FLEE3 0
+	}
+
+	if ( $get(ent_me,hp) < $math(multiply,$get(ent_me,maxhp),0.75) )
+	{
+		if !DID_FLEE1
+		setvard DID_FLEE1 1
+		setvard NEXT_PITHUNT game.time
+		add NEXT_PITHUNT 20.0
+		callevent do_flee
+	}
+
+	if ( $get(ent_me,hp) < $math(multiply,$get(ent_me,maxhp),0.5) )
+	{
+		if !DID_FLEE2
+		setvard DID_FLEE2 1
+		setvard NEXT_PITHUNT game.time
+		add NEXT_PITHUNT 20.0
+		callevent do_flee
+	}
+
+	if ( $get(ent_me,hp) < $math(multiply,$get(ent_me,maxhp),0.25) )
+	{
+		if !DID_FLEE3
+		setvard DID_FLEE3 1
+		setvard NEXT_PITHUNT game.time
+		add NEXT_PITHUNT 20.0
+		callevent do_flee
+	}
+}
+
+//====================================================================== Type Specific
+
+{ wyrm_appear_fx
+	if ( WYRM_TYPE equals fire )
+	{
+		clientevent new all effects/sfx_sprite $get(ent_me,origin) xfire.spr "0;5.0;100;add;(255,255,255);20;20" once
+
+		bleed ent_me yellow $rand(100,10000)
+		bleed ent_me yellow $rand(100,10000)
+		bleed ent_me yellow $rand(100,10000)
+		bleed ent_me yellow $rand(100,10000)
+		bleed ent_me yellow $rand(100,10000)
+		bleed ent_me yellow $rand(100,10000)
+	}
+
+	playrandomsound 0 10 SOUND_ALERT1 SOUND_ALERT2
+}
+
+{ loop_lava //<vol>
+
+	svplaysound 3 0 SOUND_LAVA_LOOP
+	callevent 0.1 loop_lava_act
+
+	setvard NEXT_LOOP_LAVA game.time
+	add NEXT_LOOP_LAVA $rand(20,75.0)
+}
+
+{ loop_lava_act
+	svplaysound 3 LAVA_VOLUME SOUND_LAVA_LOOP
+}
+
+{ start_quake //activated by ANIM_RAWR during fireball pauses
+	effect glow ent_me (255,128,64) 128 DUR_QUAKE DUR_QUAKE
+	setvard DO_QUAKE 0
+	getplayers TARGET_LIST
+	calleventloop $get_token_amt(TARGET_LIST) quake_filter_range
+	dbg start_quake targetlist TARGET_LIST
+	calleventloop $get_token_amt(TARGET_LIST) quake_apply
+}
+
+{ quake_filter_range
+	local L_CUR_PLR $get_token(TARGET_LIST,game.script.iteration)
+	local L_PLR_ORG $get(L_CUR_PLR,origin)
+	local L_MY_ORG $get(ent_me,origin)
+	if $dist(L_MY_ORG,L_PLR_ORG) > 1024
+	token.set TARGET_LIST game.script.iteration 0
+}
+
+{ quake_apply
+	local L_CUR_PLR $get_token(TARGET_LIST,game.script.iteration)
+	if L_CUR_PLR isnot 0
+	dbg quake_apply $get(L_CUR_PLR,name)
+	callexternal L_CUR_PLR ext_quake_fx_volc DUR_QUAKE $get(ent_me,index)
+}
+
+//flaming rock from volcanic quake
+{ ext_frock_hit //<plr_index>, from effects/sfx_quake->player/externals->ext_cl_callback
+	local L_PLR $get_by_idx(PARAM1,id)
+	dbg ext_frock_hit PARAM1 $get(L_PLR,name)
+	xdodamage L_PLR direct DMG_FROCK 100% ent_me ent_me none blunt_effect dmgevent:frock
+}
+
+//====================================================================== Other and Debug
+
+{ glow_toggle //0|1
+	if ( PARAM1 )
+	{
+		if ( WYRM_LIGHT_CLIDX isnot 'WYRM_LIGHT_CLIDX' )
+		{
+			clientevent update all WYRM_LIGHT_CLIDX remove_light
+		}
+		clientevent new all effects/sfx_follow_glow_cl $get(ent_me,index) WYRM_GLOW_COLOR 32 30.0
+		setvard WYRM_LIGHT_CLIDX game.script.last_sent_id
+		setvard NEXT_LIGHT_REFRESH game.time
+		add NEXT_LIGHT_REFRESH 30.0
+		setvard WYRM_LIGHT_ACTIVE 1
+	}
+	else
+	{
+		if ( WYRM_LIGHT_CLIDX isnot 'WYRM_LIGHT_CLIDX' )
+		{
+			clientevent update all WYRM_LIGHT_CLIDX remove_light
+			setvard WYRM_LIGHT_CLIDX 'WYRM_LIGHT_CLIDX'
+			setvard WYRM_LIGHT_ACTIVE 0
+		}
+	}
+}
+
+{ mmode_switch //debuggary
+	setvard NEXT_MODE_SWITCH 0
+}
+
+{ do_flee
+
+	setvard NPCATK_TARGET unset
+	if ( !SUSPEND_AI ) callevent npcatk_suspend_ai
+
+	dbg do_flee WYRM_MMODE
+
+	//if I have both available, my flee method is to change movement modes
+	if ( WYRM_USE_BOTH )
+	{
+		setvard NEXT_MODE_SWITCH FREQ_MODE_SWITCH
+		add NEXT_MODE_SWITCH game.time
+		callevent wyrm_pick_movement_mode flee
+		exitevent
+	}
+
+	if ( WYRM_MMODE equals pits )
+	{
+		playanim break
+		setvard WYRM_PORTING_TO pit
+		callevent find_next_pit flee
+		callevent wyrm_teleport pitflee
+	}
+
+	if ( WYRM_MMODE equals edges )
+	{
+		setvard WYRM_NEXT_EDGE_IDX $rand(0,$math(subtract,$get_array_amt(ARRAY_EDGE_POINTS),1)) //prob should find furthest instead, but I'm getting sick of this thing's BS
+		setvard WYRM_PORTING_TO edge
+		callevent do_submerge 0 flee
+	}
+
+	//can't flee if stationary
+}
+
+//====================================================================== Additional Parameters
+
+{ set_mmode //external/addparam: <pits|edges|none>
+	if PARAM1 !startswith PARAM
+	dbg set_mmode PARAM1
+	setvard WYRM_MMODE PARAM1
+	if ( WYRM_MMODE equals pits )
+	{
+		local L_PARAM_CORRECT 1
+		callevent find_next_pit
+	}
+	if ( WYRM_MMODE equals edges )
+	{
+		local L_PARAM_CORRECT 1
+		callevent find_next_edge
+	}
+	if ( WYRM_MMODE equals none )
+	{
+		local L_PARAM_CORRECT 1
+		if ( NPC_HOME_LOC isnot 'NPC_HOME_LOC' ) setorigin ent_me NPC_HOME_LOC
+	}
+	callevent 0.1 wyrm_hide
+
+	dbg set_mmode WYRM_MMODE
+
+	if !L_PARAM_CORRECT
+	local L_OUTSG $get(ent_me,itemname)
+	stradd L_OUTSG ": addparam set_mmode - must be pits, edges, or none"
+	infomsg all "MAP ERROR" L_OUTSG
+	chatlog $timestamp() MAP ERROR: L_OUTSG
+}
+
+{ set_noquakes //dont cause earthquakes
+	setvard NO_QUAKES 1
+}
+
+{ set_pithunt //set to hunt pits actively, flee whenever lose %25 health
+	setvard WYRM_PITHUNTER 1
+}
+
+{ set_endpithunt
+	setvard WYRM_PITHUNTER 0
+}
+
+{ set_edge_prefix
+	if PARAM1 !startswith PARAM
+	setvard WYRM_EDGE_PREFIX PARAM1
+}
+
+{ set_pit_prefix
+	if PARAM1 !startswith PARAM
+	setvard WYRM_PIT_PREFIX PARAM1
+}
+
+//====================================================================== To be sorted
+
+{ npc_targetvalidate
+	if ( WYRM_TELEPORTING ) setvard NPCATK_TARGET unset
+	if ( WYRM_SUBMERGING ) setvard NPCATK_TARGET unset
+	if ( NPCATK_TARGET equals unset ) dbg targetinvalidcuz: tele WYRM_TELEPORTING sub WYRM_SUBMERGING
+	if WYRM_HIDE_MODE
+	if $get(NPCATK_TARGET,range) > 256
+	setvard NPCATK_TARGET unset
+}
+
+{ do_submerge //<1=no teleport> [dbg_reason]
+	dbg do_submerge PARAM1 PARAM2
+
+	setvard WYRM_SUBMERGING 1
+	setvard WYRM_SUBMERGE_GOT_ENDFRAME 0
+	setvard NPC_FLINCH_DISABLE 1
+	setvard WYRM_NO_TELEPORT_FLAG PARAM1
+	invincible 1
+	if !WYRM_HIDE_MODE
+	setvard NPCATK_TARGET unset
+	if ( !SUSPEND_AI ) callevent npcatk_suspend_ai
+	playanim critical ANIM_RETRACT
+	callevent 3.0 submerge_failsafe
+}
+

@@ -1,3 +1,10 @@
+//New Sylphiel's Soup
+
+//Still full HP & Mana heal upon slurp
+//Regen is still 3 minutes, but it's for both mana and health
+//Regen starts at 10 per tick for the first 30 seconds, then 5 per tick for the next 30 seconds and then 2 per tick for the last 2 minutes
+//(Numbers still subject to change in case it either gives too much HP or MP)
+
 {
 	const ANIM_LIFT1 21
 	const ANIM_IDLE1 21
@@ -18,25 +25,20 @@
 	const SOUND_USE magic/slurp.wav
 
 	const NO_IDLE 1
-
 }
 
 #include items/base_item
 
 { game_spawn
 
-	name a|Sylphiel's Soup
-	desc Sylphiel's Applemead Soup provides temporary health and mana regen
+	name "a|Sylphiel's Soup"
+	desc "Sylphiel's Applemead Soup provides temporary health and mana regen."
 	weight 1
 	size 1
 	value 200
 	sethand both
 	sethudsprite hand 88
 	sethudsprite trade 88
-
-	setmodel MODEL_WORLD
-	setworldmodel MODEL_WORLD
- 	setmodelbody 0 MODEL_BODY_OFS
 }
 
 { game_fall
@@ -46,12 +48,12 @@
 }
 
 { game_deploy
-	setanimext	soup
+	setanimext soup
 
-	setviewmodel  	MODEL_VIEW
-	setmodel	MODEL_HANDS
+	setviewmodel MODEL_VIEW
+	setmodel MODEL_HANDS
 	playanim ANIM_HAND_IDLE
- 	setmodelbody 	0 MODEL_BODY_OFS
+ 	setmodelbody 0 MODEL_BODY_OFS
 
 	if game.serverside
 	playowneranim once OWNER_ANIM_IDLE global.anim.combatwalk 3
@@ -79,20 +81,34 @@
 
 { use_effect
 	callevent 2.0 use_complete
-	callexternal ent_owner ext_set_status_flag mana_soup mana_regen 1 180 "Ah, that soup was good while it lasted..."
-	gplayermessage ent_owner Sylphiel's Soup: All your health has been restored.
-	gplayermessage ent_owner Sylphiel's Soup: Three minutes of rapid magic regen.
-
-	local L_OWNER_HP $get(ent_owner,hp)
-	local L_OWNER_MAXHP $get(ent_owner,maxhp)
-	if ( L_OWNER_HP < L_OWNER_MAXHP )
+	
+	local L_POOPY 0
+	if ( $rand(0,99) == 0 ) local L_POOPY 1
+	
+	if ( !$get(ent_owner,haseffect,'soup') )
 	{
-		subtract L_OWNER_MAXHP L_OWNER_HP
-		givehp ent_owner L_OWNER_MAXHP
+		applyeffect ent_owner "effects/soup" 180 L_POOPY //If it doesn't have the effect, apply it
 	}
+	else 
+	{
+		removeeffect ent_owner 'soup' //<target> <effect_id> //Otherwise flag for deletion and apply it again on the end step.
+		setvard APPLY_LATER 1
+	}
+	
+	givehp ent_owner $math(subtract,$get(ent_owner,maxhp),$get(ent_owner,hp)) 
+	givemp ent_owner $math(subtract,$get(ent_owner,maxmp),$get(ent_owner,mp))
 }
 
 { use_complete
+
+	local L_POOPY 0
+	if ( $rand(0,99) == 0 ) local L_POOPY 1
+	
+	gplayermessage ent_owner "All your health and mana has been restored."
+	gplayermessage ent_owner "Three minutes of health and mana regen."
+
+	if ( APPLY_LATER ) applyeffect ent_owner "effects/soup" 180 L_POOPY //If it doesn't have the effect, apply it
+
 	removescript
 	deleteent ent_me
 }
@@ -116,5 +132,4 @@
 		playowneranim once OWNER_ANIM_IDLE global.anim.combatwalk 3
 		callevent 1.0 item_idle
 	}
-	
 }

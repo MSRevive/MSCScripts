@@ -1,0 +1,118 @@
+//Copied from effect_shock_damage. By greatguys1
+//Main effect for the Gut Buster sword, handles the sounds, sfx, dot, and causes gibs on death
+
+//PARAMS:
+//	PARAM1 = <duration>
+//	PARAM2 = <attacker>
+//	PARAM3 = <damage>
+//	PARAM4 = <activeSkill>
+//	PARAM5 = <dmg type>
+//	PARAM6 = <gut buster sword id>
+
+#scope server
+
+{ [server]
+
+	//Tracks if the gibs have been bursted
+	setvard DID_PROC 0
+	const NUM_GIBS $func(get_num_gibs)
+}
+
+#include effects/dot_bleed
+
+{ [server] game_activate //<duration> <attacker> <damage> <activeSkill> <dmg type> <sword_id>
+//-Applies bleed fx and vars
+
+	setvard SWORD_ID PARAM6
+
+	if ( !DOT_ABORT )
+	{
+		//Apply blood fx
+		setvard MY_BLOOD $get(ent_me,blood)
+		bleed ent_me MY_BLOOD 10000
+		//playrandomsound 0 10 weapons/headshot2.wav weapons/headshot3.wav
+
+		//Create an exploding gib? gib?
+		if ( $get(ent_me,alive) )
+		{
+			clientevent new all effects/swords_gb/sfx_gb1 $get(ent_me,index) MY_BLOOD //SFX_BLEED and SFX_GIB_THROW are consolidated in this, and provided with hard coded values for optimization.
+			setvard SFX_BLEED game.script.last_sent_id
+		}
+		else
+		{
+			//Proc gib burst
+			callevent proc_death
+		}
+	}
+}
+
+{ effect_die //-Kills bleed client fx
+
+	//If the bleed client fx are active
+	if ( SFX_BLEED isnot 'SFX_BLEED' )
+	{
+		//kill them
+		clientevent update all SFX_BLEED remove_me
+	}
+}
+
+{ game_death //-Causes gib burst proc
+
+	if ( !DOT_ABORT )
+	{
+		//Cause gib burst
+		callevent proc_death
+	}
+}
+
+{ proc_death //-Causes gib burst and applies relating fx
+
+	if ( !DID_PROC )
+	{
+		setvard DID_PROC 1
+
+		calleventloop NUM_GIBS create_gib
+
+		//And apply some fx
+		playsound 0 10 common/bodysplat.wav
+
+		//Monsters with a combined height and width of greater than 230 will not go invisible on death.
+		if ( !$get(ent_me,alive) ) //Some enemies come back alive, double check if they did. In those events, I still want gibs, but the enemy shouldn't turn invisible.
+		{
+			if ( $math(add,$get(ent_me,height),$get(ent_me,width)) < 150 )
+			{
+				setprop ent_me rendermode 5
+				setprop ent_me renderamt 0
+			}
+		}
+	}
+}
+
+{ create_gib //for looping
+
+	local L_ANG $vec($randf(70,95),$rand(0,359),0)
+	local L_FORCE $math(multiply,400,game.script.iteration)
+	add L_FORCE 400
+
+	local L_VEC $relvel(L_ANG,$vec(0,L_FORCE,0))
+	//<owner> <velocity> <damage> <skill> <"green"|"red"> <sword_id>
+	createnpc effects/swords_gb/gb_gib_explode $get(ent_me,origin) MY_ATTACKER L_VEC 0 swordsmanship MY_BLOOD SWORD_ID
+}
+
+{ get_num_gibs
+
+	//Size can add up to 2 additional gibs
+	local L_NUM_GIBS $math(add,$get(ent_me,height),$get(ent_me,width)) //height + width
+	divide L_NUM_GIBS 150 //1 gib per each 150 units
+	capvar L_NUM_GIBS 0 2
+	
+	//Health can add up to 3 additional gibs
+	add L_HP_GIBS $math(divide,$get(ent_me,maxhp),1750) //additional gib per 1750 hp
+	capvar L_HP_GIBS 0 3
+	
+	add L_NUM_GIBS L_HP_GIBS
+	add L_NUM_GIBS 1
+
+	return **clear
+	return L_NUM_GIBS
+}

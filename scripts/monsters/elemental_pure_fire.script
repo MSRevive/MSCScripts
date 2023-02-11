@@ -1,0 +1,358 @@
+#scope server
+//cheap sprite based monster based on fire elemental
+//immune to physical damage
+//other flavors pending
+
+{
+	setvar AS_SUMMON_TELE_CHECK 1
+
+	setvard EFFECT_NO_GLOW_SHELLS 1
+
+	//base anims
+	setvar ANIM_IDLE idle1
+	setvar ANIM_WALK idle1
+	setvar ANIM_RUN idle1
+	setvard ANIM_ATTACK attack1
+	setvard ANIM_FLINCH flinch
+	setvard ANIM_DEATH die1
+	setvard ANIM_ATTACK attack1
+
+	//custom anims
+	const ANIM_PROJECTILE fireball
+
+	//base stats
+	setvar IS_UNHOLY 1
+	setvar IS_BLOODLESS 1
+	setvard IMMUNE_VAMPIRE 1
+	setvard ATTACK_RANGE 1024
+	setvard ATTACK_HITRANGE 1024
+	setvard MOVE_RANGE 512
+	setvard NPC_HACKED_MOVE_SPEED 100
+
+	//custom stats
+	const MOVESPEED_SLOW 100
+	const MOVESPEED_FAST 200
+	const DMG_STRIKE $rand(175,250)
+	const DOT_STRIKE $rand(60,80)
+	const ACCURACY_STRIKE 80%
+	const DMG_AMB_BURN $rand(30,60)
+	setvard FREQ_SPECIAL 5.0
+	const DMG_FIRE_BALL 100
+	const DMG_FIRE_BOLT 20
+
+	//sounds
+	const SOUND_FIRECHARGE magic/fireball_powerup.wav
+	const SOUND_FIRESHOOT magic/fireball_strike.wav
+	const SOUND_FIRESHOOT2 weapons/rocketfire1.wav
+	const SOUND_IDLE1 agrunt/ag_alert1.wav
+	const SOUND_IDLE2 agrunt/ag_die1.wav
+	const SOUND_IDLE3 agrunt/ag_idle1.wav
+	const SOUND_SWIPE weapons/debris1.wav
+	const SOUND_SWIPEHIT ambience/steamburst1.wav
+	const SOUND_DEATH garg/gar_die1.wav
+	const SOUND_PAIN1 debris/bustflesh2.wav		//most common
+	const SOUND_PAIN2 agrunt/ag_pain1.wav	//rare > 50%
+	const SOUND_PAIN3 agrunt/ag_pain4.wav	//rare < 50%
+	const SOUND_GLOAT x/x_laugh1.wav
+
+	//struck
+	const NPC_PITCH_PAIN 1
+	const SOUND_STRUCK1 bullchicken/bc_acid1.wav
+	const SOUND_STRUCK2 bullchicken/bc_acid1.wav
+	const SOUND_STRUCK3 ambience/flameburst1.wav
+	const NPC_USE_FLINCH 1
+	const NPC_FLINCH_HEALTH_RATIO 0.5
+	setvard ANIM_FLINCH flinch
+	
+
+	//unsorted custom
+	const FREQ_CL_REFRESH 5.0
+	const ELM_COLOR (255,128,0)
+	const ELM_TYPE fire
+
+	const MELEE_RANGE 96
+
+	const CL_FX_SCRIPT monsters/elemental_pure_cl
+
+	const ELEMENTAL_EXP 500
+	setvard NPC_GIVE_EXP ELEMENTAL_EXP
+
+	const DMG_BASE 100
+
+	const DOT1_SCRIPT effects/effect_burn
+	const DOT1_ID DOT_fire
+	const DOT1_DURATION 5.0
+	const DOT1_DMG $math(multiply,DMG_BASE,0.15)
+
+	//other elemental types will use different applyeffect for seal
+	const DOT2_SCRIPT effects/effect_burn
+	const DOT2_ID DOT_fire
+	const DOT2_DURATION 5.0
+	const DOT2_DMG $math(multiply,DMG_BASE,0.15)
+
+	setvard DOT_STACK 0 //at 4 stacks, applies DOT2
+
+	const PROJECTILE1_SCRIPT proj_fire_ball
+	const PROJECTILE2_SCRIPT proj_fire_xolt
+
+	const DMG_PROJ DMG_BASE
+
+	setvard PROJ_GUIDED 1
+	setvard PROJ_NO_SPRITES 1
+
+	setvard GAME_NO_CORPSE 1
+}
+
+#include monsters/base_monster_new
+#include monsters/base_propelled
+#include monsters/base_struck
+#include monsters/base_flyer_grav
+
+{ game_spawn
+	callevent p_elemental_spawn
+}
+
+{ p_elemental_spawn
+
+	name a|Pyron Archon
+	hp 2500
+	width 48
+	height 80
+	race demon
+	takedmg holy 2.0
+	takedmg cold 1.5
+	takedmg fire 0.0
+	takedmg poison 0.0
+
+	roam 1
+	setidleanim ANIM_IDLE
+	setmoveanim ANIM_WALK
+	hearingsensitivity 5
+	setmodel monsters/elementals_greater.mdl
+	setprop ent_me rendermode 5
+	setprop ent_me renderamt 1
+	setmodelbody 0 0
+	setvard NPC_GIVE_EXP 500
+	blood none
+
+	if ( ELM_TYPE equals fire )
+	{
+		setvard ELEMENT_SEAL_IDX 32
+	}
+	else if ( ELM_TYPE equals cold )
+	{
+		setvard ELEMENT_SEAL_IDX 33
+	}
+	else if ( ELM_TYPE equals lightning )
+	{
+		setvard ELEMENT_SEAL_IDX 34
+	}
+
+	callevent cl_refresh
+}
+
+{ npc_targetsighted
+	if ( !DID_INTRO )
+	{
+		setvard NEXT_SEAL L_GAME_TIME
+		add NEXT_SEAL $randf(20.0,30.0)
+		setvard DID_INTRO 1
+		callevent cl_refresh
+	}
+}
+
+{ bs_global_command //player I was attacking died
+	dbg bs_global_command $get(PARAM1,name) PARAM2 PARAM3
+	if PARAM1 equals NPCATK_TARGET
+	if PARAM3 equals death
+	playsound 0 10 SOUND_GLOAT
+	playanim critical yes
+	setvard DID_INTRO 0
+}
+
+{ npcatk_hunt
+	local L_GAME_TIME game.time
+
+	if ( $get(ent_me,isalive) )
+	{
+		setprop ent_me rendermode 5
+		setprop ent_me renderamt 1
+	}
+
+	if ( L_GAME_TIME > NEXT_CL_REFRESH ) callevent cl_refresh
+
+	if ( L_GAME_TIME > NEXT_LOOP_SOUND )
+	{
+		setvard NEXT_LOOP_SOUND L_GAME_TIME
+		add NEXT_LOOP_SOUND 6.0
+		svplaysound 2 0 ambience/alien_powernode.wav
+		svplaysound 2 10 ambience/alien_powernode.wav
+	}
+
+	if NPCATK_TARGET isnot unset
+	if NPC_CANSEE_TARGET
+	if !I_R_FROZEN
+
+	if ( L_GAME_TIME > NEXT_SEAL )
+	{
+		if DID_INTRO
+		setvard NEXT_SEAL L_GAME_TIME
+		add NEXT_SEAL $randf(20.0,30.0)
+		callevent do_seal
+	}
+
+	if ( $get(NPCATK_TARGET,range) < MELEE_RANGE )
+	{
+		setvard ANIM_ATTACK attack1 //attack1_strike
+	}
+	else
+	{
+		setvard ANIM_ATTACK fireball //throw_fireball
+	}
+
+	//I have a habit of sticking people in place by sitting on their heads
+	//see if this helps
+	if $get(NPCATK_TARGET,range) < 24
+	addvelocity ent_me $relvel(0,-110,110)
+}
+
+//================================================ Frame Events
+
+{ throw_fireball
+	add ARCH_COUNT_GUIDED 1
+	if ( ARCH_COUNT_GUIDED > 4 )
+	{
+		playsound 0 10 SOUND_FIRESHOOT2
+		setvard ARCH_COUNT_GUIDED 0
+		tossprojectile view 300 DMG_PROJ 30 PROJECTILE2_SCRIPT (0,0,64) 
+		callexternal ent_lastprojectile ext_render 5 255
+	}
+	else
+	{
+		//borrowed from elemental_fire1
+		playsound 0 10 SOUND_FIRESHOOT
+
+		local AIM_ANGLE $get(NPCATK_TARGET,dist)
+		dbg throw_fireball AIM_ANGLE
+		divide AIM_ANGLE 50
+		setangle add_view.x AIM_ANGLE
+		
+		tossprojectile view 500 DMG_PROJ 2 PROJECTILE1_SCRIPT (0,48,48)
+		callexternal ent_lastprojectile lighten DOT1_DMG
+		callexternal ent_lastprojectile ext_render 5 255
+	}
+}
+
+{ attack1_strike
+	xdodamage NPCATK_TARGET 128 DMG_SWIPE 90 ent_me ent_me none fire_effect dmgevent:fist 
+}
+
+//================================================ Damage Events
+
+{ fist_dodamage
+	if PARAM1
+	if $get(PARAM2,relationship,ent_me) equals enemy
+
+	addvelocity PARAM2 $relvel(0,400,110)
+	if ( DOT_STACK >= 4 )
+	{
+		setvard DOT_STACK 0
+		callevent apply_dot2 $get(PARAM2,id)
+	}
+	else
+	{
+		callevent apply_dot1 $get(PARAM2,id)
+	}
+}
+
+{ apply_dot1 //<target>
+	if ( $get(PARAM1,haseffect,DOT1_ID) )
+	{
+		add DOT_STACK 1
+	}
+	else
+	{
+		applyeffect PARAM1 DOT1_SCRIPT DOT1_DURATION $get(ent_me,id) DOT1_DMG
+	}
+}
+
+{ apply_dot2 //<target>
+	if !$get(PARAM1,haseffect,DOT2_ID)
+	applyeffect PARAM1 DOT2_SCRIPT DOT2_DURATION $get(ent_me,id) DOT2_DMG
+}
+
+//================================================ Other / Unsorted
+
+{ cl_refresh
+	if ( CL_IDX equals 'CL_IDX' )
+	{
+		clientevent new all CL_FX_SCRIPT $get(ent_me,index) ELM_COLOR ELM_TYPE FREQ_CL_REFRESH
+		setvard CL_IDX game.script.last_sent_id
+	}
+	else
+	{
+		clientevent update all CL_IDX end_fx
+		clientevent new all CL_FX_SCRIPT $get(ent_me,index) ELM_COLOR ELM_TYPE FREQ_CL_REFRESH
+		setvard CL_IDX game.script.last_sent_id
+	}
+
+	setvard NEXT_CL_REFRESH game.time
+	add NEXT_CL_REFRESH FREQ_CL_REFRESH
+}
+
+{ game_damaged //PARAM1=attacker PARAM2=dmg PARAM3=dmg_type PARAM4=accuracy_roll PARAM5=skill PARAM6=Inflicter
+	if ( PARAM3 contains slash ) local L_NO_DMG 1
+	if ( PARAM3 contains blunt ) local L_NO_DMG 1
+	if ( PARAM3 contains pierce ) local L_NO_DMG 1
+	if ( PARAM3 contains generic ) local L_NO_DMG 1
+
+	if L_NO_DMG
+	setdmg dmg 0
+	returndata 0.0
+	if ( $get(PARAM1,isplayer) ) dplayermessage PARAM1 $get(ent_me,name) is immune to physical attacks!
+}
+
+{ game_predeath
+	clientevent update all CL_IDX owner_death
+	setprop ent_me rendermode 5
+	setprop ent_me renderamt 0
+	setmodel null.mdl
+	svplaysound 2 0 ambience/alien_powernode.wav
+}
+
+{ do_seal
+	callevent npcatk_suspend_ai
+	callevent npcatk_suspend_movement charging
+	playsound 0 10 weapons/egon_windup2.wav
+	setvard NPC_NO_ATTACK 1
+	callevent cl_refresh
+	setvard SEAL_POS $get(NPCATK_TARGET,origin)
+	vectorset SEAL_POS z $get_ground_height(SEAL_POS)
+	clientevent new all effects/sfx_seal_warning SEAL_POS ELM_TYPE 128 ELEMENT_SEAL_IDX 2.0
+	callevent 2.0 do_seal2
+}
+
+{ do_seal2
+	clientevent new all effects/sfx_seal_instant SEAL_POS ELM_TYPE 128 ELEMENT_SEAL_IDX
+	local L_DMG_TYPE ELM_TYPE
+	stradd L_DMG_TYPE _effect
+	xdodamage $math(vectoradd,SEAL_POS,z,32) 128 DMG_BASE 0.0 ent_me ent_me none L_DMG_TYPE dmgevent:seal
+
+	callevent npcatk_resume_ai
+	callevent npcatk_resume_movement
+	setvard NPC_NO_ATTACK 0
+}
+
+{ seal_dodamage
+	if PARAM1
+	if $get(PARAM2,relationship,ent_me) equals enemy
+	callevent apply_dot2 $get(PARAM2,id)
+	if ( $inset_string(ELM_TYPE,fire,lightning) )
+	{
+		local L_TARG_ORG $get(PARAM2,origin)
+		local L_MY_ORG SEAL_POS
+		local L_REPEL_YAW $angles(L_MY_ORG,L_TARG_ORG)
+		addvelocity PARAM2 $relvel($vec(0,L_REPEL_YAW,0),$vec(0,600,600))
+	}
+}
+

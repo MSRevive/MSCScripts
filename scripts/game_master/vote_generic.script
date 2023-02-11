@@ -1,6 +1,10 @@
 //Handles voting system on the game master.
 //-Votes can inlcude votemap change, votekick, voteban, vote lock...
 
+{ 
+	array.create A_VOTERS //Array will be populated with list of players that can vote in the current ballot
+}
+
 #scope server
 
 { gm_create_vote //<caller_event> <token_option:data> <title> [descript] [silent:0|1] //Calls back to the caller_event with the index of the option voted for.
@@ -9,8 +13,10 @@
 
 	if ( !VOTE_BUSY ) //If not already voting
 	{
-		if game.playersnb > 0
+		if game.players > 0
 		setvard VOTE_BUSY 1
+		setvard VOTE_TALLY 0 //Reset vote tally options
+		setvard WHO_VOTED "" //keeps indexes of players who voted
 
 		//Required params
 		setvard VOTE_EVENT PARAM1
@@ -35,22 +41,42 @@
 
 	infomsg all VOTE_TITLE VOTE_DESC
 	
+	callevent get_voters //Populates array with list of potential voters
+	setvard VOTES_CASTED 0 //Track number of votes casted
+	setvard TOTAL_BALLOTS $get_array_amt(A_VOTERS)
+	
 	callevent 0.1 gm_send_ballots //Gets player list and sends the menu
-	callevent 15.0 gm_tally_votes //Default expire timer for voting. Will also expire after enough people have voted.
+	callevent 5.1 gm_send_ballots //Send menu again, just in case player closed it.
+	callevent 20.0 gm_tally_votes //Default expire timer for voting. Will also expire after enough people have voted.
+}
+
+{ get_voters //Gets all players, filters them, and stores them in an array.
+
+	array.clear A_VOTERS
+	getplayersarray A_VOTERS
+	calleventloop $get_array_amt(A_VOTERS) get_voters_filter
+}
+
+{ get_voters_filter
+
+	if ( game.script.iteration == 0 ) setvard VOTES_REMOVED 0
+	
+	local L_PLAYER $get_array(A_VOTERS,$math(subtract,game.script.iteration,VOTES_REMOVED))
+	if ( !$get(L_PLAYER,scriptvar,'PLR_IN_WORLD') )
+	{
+		array.remove A_VOTERS game.script.iteration
+		add VOTES_REMOVED 1
+	}
 }
 
 { gm_send_ballots //Gets player list and sends the menu
 
-	setvard TOTAL_VOTES 0
-	setvard TOTAL_BALLOTS game.playersnb
-	
-	getplayersnb GM_PLAYER_LIST
-	calleventloop $get_token_amt(GM_PLAYER_LIST) send_menu GM_PLAYER_LIST
-	name "The Game Master"
+	if VOTE_BUSY
+	calleventloop $get_array_amt(A_VOTERS) send_menus
 }
 
-{ send_menu
-	setvard MENU_TARGET $get_token(GM_PLAYER_LIST,game.script.iteration) //Menu is sent from send_menu in the actual game_master
+{ send_menus
+	menu.open $get_array(A_VOTERS,game.script.iteration) //Menu is sent from send_menu in the actual game_master
 }
 
 { game_menu_getoptions
@@ -61,18 +87,13 @@
 
 { gm_build_ballot //Creates options for voting
 
-	if ( game.script.iteration == 0 ) //Create token for tracking votes
-	{
-		setvard VOTE_TALLY 0
-	}
-	else
+	if ( $get_token_amt(VOTE_TALLY) < $get_token_amt(VOTE_OPTIONS) ) //Create token for tracking votes
 	{
 		token.add VOTE_TALLY 0
 	}
 
 	local L_STR $get_token(VOTE_OPTIONS,game.script.iteration)
 	local L_OPTION $string_upto(L_STR,':')
-	//local L_DATA $string_from(L_STR,':')
 
 	local reg.mitem.title L_OPTION
 	local reg.mitem.type callback
@@ -85,10 +106,16 @@
 
 { game_menu_cancel //<playerId> //Player does not wish to participate in vote.
 
-	if VOTE_BUSY
-	subtract TOTAL_BALLOTS 1
+	local L_VOTER PARAM1
+	local L_IDX $get_arrayfind(A_VOTERS,PARAM1)
 	
-	if ( TOTAL_VOTES == TOTAL_BALLOTS ) //Everyone voted, so accelerate ending the vote.
+	if VOTE_BUSY
+	if L_IDX != -1
+	
+	array.remove A_VOTERS L_IDX //Remove player from eligible voters
+	add VOTES_CASTED 1
+	
+	if ( VOTES_CASTED == TOTAL_BALLOTS ) //Everyone voted, so accelerate ending the vote.
 	{
 		callevent gm_tally_votes
 	}
@@ -96,16 +123,20 @@
 
 { gm_gvote_count //<VoterId> <optionData>
 
+	local L_VOTER PARAM1
+	local L_IDX $get_arrayfind(A_VOTERS,PARAM1)
+	
 	if VOTE_BUSY
+	if L_IDX != -1
+	
+	array.remove A_VOTERS L_IDX //Remove player from eligible voters
+	add VOTES_CASTED 1 //Adds another vote casted to the counter
 	
 	local L_VOTE_TITLE $string_upto(PARAM2,':')
-	local L_VOTE_DATA $string_from(PARAM2,':')
 	
 	local L_OPTION_IDX $get_find_token(VOTE_OPTIONS,PARAM2)
-	
 	local L_VOTES $get_token(VOTE_TALLY,L_OPTION_IDX)
 	add L_VOTES 1
-	add TOTAL_VOTES 1
 	
 	token.set VOTE_TALLY L_OPTION_IDX $int(L_VOTES)
 
@@ -115,7 +146,7 @@
 		messageall green L_STR
 	}
 	
-	if ( TOTAL_VOTES == TOTAL_BALLOTS ) //Everyone voted, so accelerate ending the vote.
+	if ( VOTES_CASTED == TOTAL_BALLOTS ) //Everyone voted, so accelerate ending the vote.
 	{
 		callevent gm_tally_votes
 	}
@@ -124,6 +155,8 @@
 { gm_tally_votes
 
 	if VOTE_BUSY
+	setvard VOTE_BUSY 0
+	
 	local L_TITLE "The people have spoken!"
 	local L_WINNER $func(func_get_vote_winner) //Returns index of the VOTE_OPTIONS winner
 	
@@ -131,15 +164,14 @@
 	local L_VOTE_DATA $string_from(L_WINNER,':')
 	
 	infomsg all L_TITLE L_VOTE_TITLE
-	
+
 	callevent VOTE_EVENT L_VOTE_TITLE L_VOTE_DATA
-	setvard VOTE_BUSY 0
 }
 
 { func_get_vote_winner
 
 	setvard VOTE_WINNERS none
-	setvard VOTE_WINNER_COUNT 0 //Number of votes cast for this/these options.
+	setvard VOTE_WINNER_COUNT -1 //Number of votes cast for this/these options.
 	calleventloop $get_token_amt(VOTE_TALLY) get_vote_winner
 	
 	local L_WINNER_AMT $get_token_amt(VOTE_WINNERS)
@@ -258,8 +290,6 @@
 
 { gm_votekick //<target> <caller> - called by sv_admin
 
-	setvard VOTE_BUSY 1
-
 	setvard GM_SKIP_VOTE_ID PARAM1
 	local VOTE_STARTER PARAM2
 	local L_VOTE_TITLE "KICK: "
@@ -272,8 +302,6 @@
 }
 
 { gm_voteban //<target> <caller> - called by sv_admin
-
-	setvard VOTE_BUSY 1
 
 	setvard GM_SKIP_VOTE_ID PARAM1
 	local VOTE_STARTER PARAM2
@@ -291,7 +319,7 @@
 
 	if !VOTE_OVER
 
-	add TOTAL_VOTES 1
+	add VOTES_CASTED 1
 	add YES_VOTES 1
 
 	local MSG_STRING $get(PARAM1,name)
@@ -306,7 +334,7 @@
 
 	if !VOTE_OVER
 
-	add TOTAL_VOTES 1
+	add VOTES_CASTED 1
 	add NO_VOTES 1
 	local MSG_STRING $get(PARAM1,name)
 	stradd MSG_STRING " votes no."

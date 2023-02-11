@@ -1,0 +1,160 @@
+{
+	const SOUND_DEATH player/hitground2.wav
+	const SOUND_STRUCK1 player/hitground2.wav
+	const SOUND_STRUCK2 player/hitground2.wav
+	const SOUND_ATTACK1 player/hitground1.wav
+	const SOUND_ATTACK2 player/hitground1.wav	
+	precache SOUND_DEATH
+	
+	setvar ANIM_IDLE walk
+	setvar ANIM_RUN run
+	setvar ANIM_WALK	walk
+	setvard ANIM_ATTACK attack
+	setvard ANIM_DEATH die
+	setvard MOVE_RANGE 30
+	setvard ATTACK_RANGE 100
+	setvard ATTACK_HITRANGE 120
+	const ATTACK_HITCHANCE	70%
+	const ATTACK_DAMAGE $randf(40,80)
+
+	setvard NPC_MUST_SEE_TARGET 0
+
+	const CHILD_SCRIPT  test_scripts/example_scripts/monsters/slime_mud_small
+
+	const CHILD_DIST 20
+
+	setvard IMMUNE_STUN 100
+
+	setvard IMMUNE_PUSH 1
+	
+	setvard IMMUNE_LIGHTNING 1
+
+	precache dwarvencave/slime_ecave.mdl //cache summon
+	setvard NO_SPAWN_STUCK_CHECK 1
+}
+
+#include monsters/base_monster_new
+
+{ npc_spawn
+	
+	name a|Mud Pie
+	hp 666
+	width 40
+	height 44
+	setmodel dwarvencave/slime_ecave.mdl
+	setmodelbody 0 11
+	hearingsensitivity 7
+	race wildanimal //greater version should be demon for ease of placement
+	if ( ME_NO_WANDER ) roam 1
+	if ( !ME_NO_WANDER ) roam 0
+	setvard NPC_GIVE_EXP 600
+	setbbox none
+
+	callevent 1.0 slime_cycle
+
+	setsolid none
+
+	takedmg pierce 0.2
+	takedmg slash 0.4
+	takedmg blunt 0.8
+	takedmg cold 0.6
+	takedmg fire 0.6
+}
+
+{ bite1 //called from model
+
+	callevent npcatk_dodamage HUNT_LASTTARGET ATTACK_HITRANGE ATTACK_DAMAGE ATTACK_HITCHANCE fire
+}
+
+{ game_damaged_other
+
+	playrandomsound 0 10 SOUND_ATTACK1 SOUND_ATTACK2
+}
+
+{ game_struck
+
+	playrandomsound 0 10 SOUND_STRUCK1 SOUND_STRUCK2
+}
+
+{ game_death
+
+	callevent spawn_children
+}
+
+{ spawn_children
+
+	local MY_KILLER $get(ent_laststruck,id)
+
+	local CHILD_MOVE_DEST game.monster.origin
+	local LOC_OFFSET $relpos(0,-20,0)
+	vectoradd CHILD_MOVE_DEST $relpos($vec(0,45,0),$vec(0,128,0))
+	callexternal GAME_MASTER gm_createnpc 0.1 CHILD_SCRIPT $relpos(0,-20,0) CHILD_MOVE_DEST MY_KILLER NPC_DMG_MULTI NPC_HP_MULTI
+
+	local CHILD_MOVE_DEST game.monster.origin
+	local LOC_OFFSET $relpos(0,20,0)
+	vectoradd CHILD_MOVE_DEST $relpos($vec(0,135,0),$vec(0,128,0))
+	callexternal GAME_MASTER gm_createnpc2 0.2 CHILD_SCRIPT LOC_OFFSET CHILD_MOVE_DEST MY_KILLER NPC_DMG_MULTI NPC_HP_MULTI
+
+	local CHILD_MOVE_DEST game.monster.origin
+	local LOC_OFFSET $relpos(20,0,0)
+	vectoradd CHILD_MOVE_DEST $relpos($vec(0,225,0),$vec(0,128,0))
+	callexternal GAME_MASTER gm_createnpc3 0.3 CHILD_SCRIPT LOC_OFFSET CHILD_MOVE_DEST MY_KILLER NPC_DMG_MULTI NPC_HP_MULTI
+
+	local CHILD_MOVE_DEST game.monster.origin
+	local LOC_OFFSET $relpos(-20,0,0)
+	vectoradd CHILD_MOVE_DEST $relpos($vec(0,315,0),$vec(0,128,0))
+	callexternal GAME_MASTER gm_createnpc4 0.4 CHILD_SCRIPT $relpos(-20,0,0) CHILD_MOVE_DEST MY_KILLER NPC_DMG_MULTI NPC_HP_MULTI
+}
+
+{ slime_cycle
+	
+	////dbg temp Slimetarget $get(NPCATK_TARGET,name)
+
+	if ( NPCATK_TARGET equals unset ) 
+	{
+		if $rand(1,10) == 1
+		playsound 0 10 SOUND_IDLE
+	}
+
+	if ( NPCATK_TARGET isnot unset )
+	{
+		if !NO_COMBAT_REPOS
+		if $get(NPCATK_TARGET,range) < ATTACK_RANGE
+		if $rand(1,3) == 1
+		local DEST_POS $get(NPCATK_TARGET,origin)
+		callevent npcatk_suspend_ai 1.0 "combat_reposition"
+		setvard NPC_FORCED_MOVEDEST 1
+		local RND_ANG $rand(0,359)
+		vectoradd DEST_POS $relpos($vec(0,RND_ANG,0),$vec(0,ATTACK_RANGE,0))
+		setmovedest DEST_POS 1
+	}
+
+	callevent 2.0 slime_cycle
+}
+
+{ game_dynamically_created //PARAM1=movedest PARAM2=motherkiller Param3=NPC_DMG_MULTI Param4=NPC_HP_MULTI
+
+	setvard MOMMY_KILLER PARAM2
+	callevent npcatk_suspend_ai 0.5
+	setmovedest PARAM1 1
+	callevent 0.75 avenge_mommy PARAM2
+
+	setvard NPC_DMG_MULTI PARAM3
+	setvard NPC_HP_MULTI PARAM4
+
+	if (  NPC_DMG_MULTI > 0 )
+	{
+		dmgmulti PARAM4
+	}
+	//hpmulti should be covered by base_npc's npcatk_get_postspawn_properties
+}
+
+{ avenge_mommy
+
+	callevent npcatk_settarget MOMMY_KILLER "he_killed_mommy!"
+}
+
+{ cycle_up
+
+	if ( ME_NO_WANDER ) roam 1
+}
