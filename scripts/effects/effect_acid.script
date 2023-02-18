@@ -1,118 +1,63 @@
-//Thothie - minor syntax problems generating errors, fixed
-//ACID
-//Any npc
-//PARAM1 == Duration
-//PARAM2 == Damge Source (entity)
-//PARAM3 == Damage per second
-//PARAM4 == Flag to 1 for "diseased" instead of "poisoned"
-//PARAM5 == XP Skill
+//Acid - By Thothie
+allowduplicate
+#scope server
 
-{ 	[server]
-	const EFFECT_ID			DOT_acid
-	const EFFECT_NAME		"Acid"
-	const EFFECT_ACTIONTYPE		nostack
-	const EFFECT_SCRIPT		$currentscript
-
-	setvard game.effect.id		EFFECT_ID
-	setvard game.effect.displayname	EFFECT_NAME
-	setvard game.effect.type	EFFECT_ACTIONTYPE
-
-	const DOT_EFFECT 1
+{
+	const DOT_NAME $rand(0,999)
+	
 	const DOT_TYPE acid
-	const DOT_DMG local.effect.damage
-	const DOT_FREQ $randf(0.9,1.1)
-	const DOT_ATTACKER local.effect.dmgsource
-	const DOT_SKILL ACTIVE_SKILL
+	
+	const DOT_RESISTED $get(ent_me,name) " resists the acid burn!"
+	const DOT_AFFLICTED "You have been acid burned!"
+	const DOT_END "The acid burns out."
 }
 
-#include effects/effect_base	allowduplicate
+#include effects/base_dot	allowduplicate
 
-{ 	[server] game_activate
+{ [override] dot_start //Overridden since this increases the dot duration.
 
-	setvard EFFECT_DESC "acid burn!"
-	setvard EFFECT_DESC_ED "acid burned!"
-
-
-	//=== Check Immunities
-	callevent resist_check acid $get(PARAM2,id)
-	if RESISTED_EFFECT < 2
-	//=== End Check Immunities
-
-	setvard local.effect.duration 	PARAM1
-	setvard local.effect.dmgsource 	PARAM2
-	setvard local.effect.damage 	PARAM3
-
-	local DUR_RATIO $get(PARAM2,scriptvar,'PLR_CORRODE_DURATION')
+	local DUR_RATIO $get(DOT_AFFLICTER,scriptvar,'PLR_CORRODE_DURATION')
 	if ( DUR_RATIO != 0 )
 	{
-		multiply local.effect.duration DUR_RATIO
+		multiply DOT_DURATION DUR_RATIO
 	}
-
-	//if ( IAM_IMMUNE > 0 ) multiply local.effect.damage IAM_IMMUNE
-
+	
+	if ( !$get(ent_me,scriptvar,IS_LURE) ) effect glow ent_me (75,215,0) 72 DOT_DURATION DOT_DURATION
+	
 	if ( $get(ent_me,isplayer) )
 	{
-		clientevent new ent_me $currentscript local.effect.duration
-		setvard local.effect.clientscript game.script.last_sent_id
+		clientevent new ent_me $currentscript DOT_DURATION
+		svplaysound game.sound.body game.sound.maxvol $get(ent_me,scriptvar,'PLR_SOUND_STOMACHHIT1')
 	}
-
-	if ( !$get(ent_me,scriptvar,IS_LURE) ) effect glow ent_me (75,215,0) 72 local.effect.duration local.effect.duration
-
-	if( $get(ent_me,isplayer) ) svplaysound game.sound.body game.sound.maxvol $get(ent_me,scriptvar,'PLR_SOUND_STOMACHHIT1')
-
-	playermessage $get(ent_me,id) You have been EFFECT_DESC_ED BE_RESIST_STRING
-
-	callevent local.effect.duration effect_die
-
-
-	if ( PARAM5 startswith 'PARAM' )
-	{
-		setvard ACTIVE_SKILL spellcasting.affliction
-	}
-	else
-	{
-		setvard ACTIVE_SKILL PARAM5
-	}
+	
+	callevent DOT_FREQ dot_effect
+	callevent DOT_DURATION effect_die
 }
 
-{ 	[server] game_damaged
+{ game_damaged //PARAM1=attacker PARAM2=dmg PARAM3=dmg_type PARAM4=accuracy_roll PARAM5=skill PARAM6=Inflicter
 
 	//take 150% damage while under this effect, if not resisted
+	if PARAM2
 	return 1.5
-
-	if PARAM2 > 0
-
-	if RESISTED_EFFECT < 1
 }
-
-{ 	[shared] effect_die
-
-	setvard local.effect.damage 0
-    if RESISTED_EFFECT < 2
-	if ( $get(ent_me,isplayer) ) 
-	{
-		playermessage $get(ent_me,id) The acid burns out.
-	}
-}
-
 
 // ===========
 // Client Side
 // ===========
 
-{	[client]
+{ [client]
 	const POISON_SCREEN_DELAY		0.2
 	const POISON_SCREEN_ALPHA		30
 }
 
-{	[client] client_activate
+{ [client] client_activate
 
-	callevent PARAM1 effect_die
+	local L_DURATION PARAM1
+	callevent L_DURATION effect_die
 }
 
-{	[client]
+{ [client]
 	repeatdelay POISON_SCREEN_DELAY
-
 
 	setvard game.cleffect.screenfade.newfade 1
 	setvard game.cleffect.screenfade.alphalimit POISON_SCREEN_ALPHA	//Only use this fade if current fade is under this limit
@@ -121,10 +66,4 @@
 	setvard game.cleffect.screenfade.duration POISON_SCREEN_DELAY
 	setvard game.cleffect.screenfade.blendduration POISON_SCREEN_DELAY
 	setvard game.cleffect.screenfade.type fadein
-}
-
-{
-repeatdelay DOT_FREQ
-	if BE_EFFECT_ACTIVE
-	callevent dot_effect
 }
