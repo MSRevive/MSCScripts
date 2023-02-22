@@ -93,16 +93,12 @@
 		local L_FLAG_MUSIC_VALUE $get_scriptflag(ent_me,cmusak,type_first)
 		if L_FLAG_MUSIC_VALUE isnot none
 		//dbg game_scriptflag_update found music value L_FLAG_MUSIC_VALUE current PLR_CURRENT_MUSIC
-		local L_COMBAT_MUSIC $get_token(L_FLAG_MUSIC_VALUE,1)
+		local L_COMBAT_MUSIC L_FLAG_MUSIC_VALUE
 		if ( PLR_CURRENT_MUSIC isnot L_COMBAT_MUSIC )
 		{
 			//dbg game_scriptflag_update CBM nowplaying L_FLAG_MUSIC_VALUE
 			setvard PLR_COMBAT_MUSIC L_COMBAT_MUSIC
 			playmp3 ent_me L_COMBAT_MUSIC
-		}
-		else
-		{
-			//dbg game_scriptflag_update CBM skippingCBM, alerady playing L_FLAG_MUSIC_VALUE
 		}
 	}
 	else
@@ -990,48 +986,15 @@
 	name PARAM1
 }
 
-{ ext_play_music //<target|all> <minutes> <file> [range]
-	dbg ext_play_music playmp3 PARAM1 PARAM2 PARAM3 PARAM4
-	//playmp3 <target|all> <minutes> <file> [range]
-	local RANGE_RESULT PARAM4
-	if ( PARAM4 equals 'PARAM4' ) local RANGE_RESULT 0
-	if ( PARAM2 isnot stop.mp3 )
-	{
-		playmp3 PARAM1 PARAM2 PARAM3 RANGE_RESULT
-	}
-	else
-	{
-		playmp3 all stop.mp3
-		//clientcmd PARAM1 "cd fadeout"
-	}
+{ ext_play_music //<file>
+
+	playmp3 ent_me PARAM1 
 }
 
-{ ext_play_music_me //<minutes> <file>
+{ ext_play_music_me //<file>
 	//dbg ext_play_music playmp3 PARAM1 PARAM2 PARAM3 PARAM4
 	//playmp3 <target|all> <minutes> <file> [range]
-	if ( PARAM2 isnot stop.mp3 )
-	{
-		playmp3 ent_me PARAM1
-	}
-	else
-	{
-		playmp3 ent_me stop.mp3
-		//clientcmd ent_me "cd fadeout"
-	}
-}
-
-//other ranged based music seems screwy, so...
-{ ext_play_music_range //<minutes> <file> <id> <range>
-	if $get(PARAM3,range) < PARAM4
-	if ( PARAM2 isnot stop.mp3 )
-	{
-		playmp3 ent_me PARAM1
-	}
-	else
-	{
-		playmp3 ent_me stop.mp3
-		//clientcmd ent_me "cd fadeout"
-	}
+	playmp3 ent_me PARAM1
 }
 
 { ext_scan_radius //as getents (debuggary)
@@ -3208,7 +3171,7 @@
 
 { ext_stop_music
 	dbg ext_stop_music
-	playmp3 ent_me stop.mp3
+	//playmp3 ent_me stop.mp3
 }
 
 { ext_svilla_hostile
@@ -3474,14 +3437,14 @@
 		local MY_ORG $get(ent_me,origin)
 		local BOSS_ORG PARAM2
 		if $dist(MY_ORG,BOSS_ORG) < 768
-		playmp3 ent_me stop.mp3
+		//playmp3 ent_me stop.mp3
 	}
 }
 
 { ext_gabe_musak //<stage> [boss_org]
 	if ( PARAM1 equals stop )
 	{
-		playmp3 ent_me stop.mp3
+		//playmp3 ent_me stop.mp3
 		playsound 0 10 gabe_loop.wav
 	}
 	else
@@ -4219,16 +4182,16 @@
 	}
 }
 
-{ ext_music_combat //<add|remove> <caller_index> [music_length] [music_file]
+{ ext_music_combat //<add|remove> <caller_index> [music_file]
 	setvard PLR_COMBAT_MUSIC_ACTIVE 1
 	//dbg ext_music_combat globals G_COMBAT_MUSIC G_COMBAT_MUSIC setvards PLR_COMBAT_MUSIC PLR_COMBAT_MUSIC_LENGTH
 	local L_CALLER $get_by_idx(PARAM2,id)
-	dbg ext_music_combat PARAM1 PARAM2 PARAM3 PARAM4 ( from $get(L_CALLER,name) )
+	dbg ext_music_combat PARAM1 PARAM2 PARAM3 ( from $get(L_CALLER,name) )
 	local FLAG_NAME cmusak
 	stradd FLAG_NAME $int(PARAM2)
 
 	//shouldn't happen, but checking
-	if ( PARAM4 equals none )
+	if ( PARAM3 equals none )
 	{
 		dbg ext_music_combat got none!
 	}
@@ -4237,31 +4200,15 @@
 	{
 		if ( !$get_scriptflag(ent_me,FLAG_NAME,name_exists) )
 		{
-			local L_MUSIC_LENGTH PARAM3
-			local L_MUSIC_FILE PARAM4
-			if ( PARAM3 startswith 'PARAM' )
-			{
-				//no combat music supplied, see if we have some, if not, use globals
-				//if globals aren't set either, we're fucktarded
-				if ( PLR_COMBAT_MUSIC_LENGTH == 0 )
-				{
-					dbg ext_music_combat usingglobals
-					setvard PLR_COMBAT_MUSIC_LENGTH G_COMBAT_MUSIC_LENGTH
-					setvard PLR_COMBAT_MUSIC G_COMBAT_MUSIC
-				}
+			local L_MUSIC_FILE PARAM3
 
-				local L_MUSIC_LENGTH PLR_COMBAT_MUSIC_LENGTH
-				local L_MUSIC_FILE PLR_COMBAT_MUSIC
-			}
-			local L_MUSIC_VALUE L_MUSIC_LENGTH
-			stradd L_MUSIC_VALUE ";"
-			stradd L_MUSIC_VALUE L_MUSIC_FILE
+			local L_MUSIC_VALUE L_MUSIC_FILE
 			dbg ext_music_combat add FLAG_NAME value L_MUSIC_VALUE
 			scriptflags ent_me add FLAG_NAME cmusak L_MUSIC_VALUE
 		}
 		else
 		{
-			dbg ext_music_combat already have music tag FLAG_NAME [ PARAM4 ]
+			dbg ext_music_combat already have music tag FLAG_NAME
 		}
 	}
 	else
@@ -4273,10 +4220,8 @@
 }
 
 { ext_fade_music
-	setvard PLR_FADING_MUSIC 0
-	//if ( $get_scriptflag(ent_me,cmusak,type_exists) ) dbg ext_fade_music CBM abort fade to idle, re-entered combat
+
 	if !$get_scriptflag(ent_me,cmusak,type_exists) //case we got into combat again
-	//clientcmd ent_me "cd fadeout"
 	if ( PLR_IDLE_MUSIC isnot PLR_CURRENT_MUSIC )
 	{
 		dbg ext_fade_music fading music in prep for idle
@@ -4286,25 +4231,16 @@
 }
 
 { ext_music_idle
-	dbg ext_music_idle
-	//if ( $get_scriptflag(ent_me,cmusak,type_exists) ) dbg ext_music_idle CBM abort idle, re-entered combat
+
 	if !$get_scriptflag(ent_me,cmusak,type_exists) //case we got into combat again
-	if ( PLR_IDLE_MUSIC_LENGTH != 0 )
+	if ( PLR_IDLE_MUSIC isnot PLR_CURRENT_MUSIC )
 	{
-		if ( PLR_IDLE_MUSIC isnot PLR_CURRENT_MUSIC )
-		{
-			dbg ext_music_idle playing PLR_IDLE_MUSIC
-			playmp3 ent_me PLR_IDLE_MUSIC
-		}
-		else
-		{
-			dbg ext_music_idle abort, already plying PLR_IDLE_MUSIC
-		}
+		dbg ext_music_idle playing PLR_IDLE_MUSIC
+		playmp3 ent_me PLR_IDLE_MUSIC
 	}
 	else
 	{
-		dbg ext_music_idle zero length idle, stopping music
-		playmp3 ent_me stop.mp3
+		dbg ext_music_idle abort, already plying PLR_IDLE_MUSIC
 	}
 }
 
@@ -4320,14 +4256,11 @@
 	conflictcheck dumpvars
 }
 
-{ set_music //<idle_file> <idle_length> <combat_file> <combat_length> [play_now:0=neither|1=idle|2=combat]
+{ set_music //<idle_file> <combat_file> [play_now:0=neither|1=idle|2=combat]
 	setvard PLR_IDLE_MUSIC PARAM1
-	setvard PLR_IDLE_MUSIC_LENGTH PARAM2
-	setvard PLR_COMBAT_MUSIC PARAM3
-	setvard PLR_COMBAT_MUSIC_LENGTH PARAM4
-	dbg set_music PARAM1 PARAM2 PARAM3 PARAM4 PARAM5
+	setvard PLR_COMBAT_MUSIC PARAM2
 
-	if ( PARAM5 == 1 )
+	if ( PARAM3 == 1 )
 	{
 		if ( $get_scriptflag(ent_me,type_exists,cmusak) )
 		{
@@ -4335,50 +4268,24 @@
 		}
 		else
 		{
-			if ( PLR_IDLE_MUSIC_LENGTH != 0 )
-			{
-				callevent ext_music_idle
-			}
-		}
-	}
-
-	if ( PARAM5 == 2 ) playmp3 ent_me PLR_COMBAT_MUSIC
-}
-
-{ set_combat_music //<file> <length> [forcenow:0|1]
-	//can't have a "play_now" option, as it wouldn't know when to stop
-	setvard PLR_COMBAT_MUSIC PARAM1
-	setvard PLR_COMBAT_MUSIC_LENGTH PARAM2
-	dbg set_combat_music PLR_COMBAT_MUSIC
-	if PARAM3
-	if PLR_CURRENT_MUSIC isnot PLR_COMBAT_MUSIC
-	callevent ext_play_music $get(ent_me,id) PLR_COMBAT_MUSIC_LENGTH PLR_COMBAT_MUSIC
-}
-
-{ set_cbm //alias for set_combat_music
-	dbg set_cbm
-	local L_PASS1 PARAM1
-	local L_PASS2 PARAM2
-	local L_PASS3 PARAM3
-	callevent set_combat_music L_PASS1 L_PASS2 L_PASS3
-}
-
-{ set_idle_music //<file> <length> [play_now:0|1]
-	setvard PLR_IDLE_MUSIC PARAM1
-	setvard PLR_IDLE_MUSIC_LENGTH PARAM2
-	//dbg set_idle_music PARAM1 PARAM2 PARAM3
-	if PARAM3 == 1
-	if ( $get_scriptflag(ent_me,cmusak,type_exists) )
-	{
-		callevent set_end_combat_music
-	}
-	else
-	{
-		if ( PLR_IDLE_MUSIC_LENGTH != 0 )
-		{
 			callevent ext_music_idle
 		}
 	}
+
+	if ( PARAM3 == 2 ) playmp3 ent_me PLR_COMBAT_MUSIC
+}
+
+{ set_combat_music //<file> [forcenow:0|1]
+	//can't have a "play_now" option, as it wouldn't know when to stop
+	setvard PLR_COMBAT_MUSIC PARAM1
+
+	if PARAM2
+	if PLR_CURRENT_MUSIC isnot PLR_COMBAT_MUSIC
+	callevent ext_play_music $get(ent_me,id) PLR_COMBAT_MUSIC
+}
+
+{ set_idle_music //<file>
+	setvard PLR_IDLE_MUSIC PARAM1
 }
 
 { set_end_combat_music
@@ -4482,22 +4389,11 @@
 	}
 }
 
-{ game_music //<song> <length> [1=from msarea_music]
+{ game_music //<song>
 
-	if ( PLR_CURRENT_MUSIC !equals PLR_PREV_MUSIC )
-	{
-		setvard PLR_PREV_MUSIC PLR_CURRENT_MUSIC
-		setvard PLR_PREV_MUSIC_LENGTH PLR_CURRENT_MUSIC_LENGTH
-	}
+	infomsg all PLR_PREV_MUSIC PARAM1
+	setvard PLR_PREV_MUSIC PLR_CURRENT_MUSIC
 	setvard PLR_CURRENT_MUSIC PARAM1
-	setvard PLR_CURRENT_MUSIC_LENGTH PARAM2
-
-	dbg game_music PARAM1 PARAM2 PARAM3 PARAM4 PARAM5
-
-	if PARAM3
-	dbg game_music msarea_music
-	setvard PLR_IDLE_MUSIC PLR_CURRENT_MUSIC
-	setvard PLR_IDLE_MUSIC_LENGTH PLR_CURRENT_MUSIC_LENGTH
 }
 
 //{ ext_beam_follow_test
@@ -4645,7 +4541,6 @@
 		quest set ent_me b8 0
 		quest set ent_me b9 0
 		consolemsg ent_me Your Galat Chest bank strings have been reset.
-		consolemsg ent_me Please wait a few moments before disconnecting.
 	}
 }
 
@@ -4665,7 +4560,6 @@
 		if $get_scriptflag(ent_me,combat,type_exists)
 		hud.addstatusicon ent_me PLR_COMBAT_ICON combat 9999
 		bplayermessage ent_me "!!!!!! entered combat !!!!!!"
-
 	}
 
 	setvard PLR_IN_COMBAT 1
@@ -4676,7 +4570,6 @@
 	{
 		local L_NPC_HAS_CUSTOM 1
 		setvard PLR_COMBAT_MUSIC $get(L_NPC,scriptvar,'NPC_CMUSIC_FILE')
-		setvard PLR_COMBAT_MUSIC_LENGTH $get(L_NPC,scriptvar,'NPC_CMUSIC_LENGTH')
 		if ( PLR_CURRENT_MUSIC isnot PLR_COMBAT_MUSIC )
 		{
 			callevent set_end_combat_music
@@ -4702,7 +4595,6 @@
 			{
 				if PLR_COMBAT_MUSIC equals none
 				setvard PLR_COMBAT_MUSIC G_COMBAT_MUSIC
-				setvard PLR_COMBAT_MUSIC_LENGTH G_COMBAT_MUSIC_LENGTH
 			}
 			if ( PLR_COMBAT_MUSIC isnot none )
 			{
@@ -4736,7 +4628,7 @@
 	if !EXIT_SUB
 
 	if PLR_COMBAT_MUSIC isnot none
-	callevent ext_music_combat add $get(L_NPC,index) PLR_COMBAT_MUSIC_LENGTH PLR_COMBAT_MUSIC
+	callevent ext_music_combat add $get(L_NPC,index) PLR_COMBAT_MUSIC
 }
 
 { ext_untargeted_by_mob //<targeter>
