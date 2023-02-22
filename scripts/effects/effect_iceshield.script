@@ -18,10 +18,11 @@
 
 #include effects/base_dot
 
-{ game_activate //FINAL_DURATION ICESHIELD_FORMULA
+{ game_activate //<who_applied> <FINAL_DURATION> <ICESHIELD_FORMULA>
 
-	setvard local.effect.duration PARAM1
-	setvard local.effect.damage PARAM2 //*damage reduct
+	local WHO_CASTED PARAM1
+	setvard local.effect.duration PARAM2
+	setvard local.effect.damage PARAM3 //*damage reduct
 	
 	setvard FX_END_TIME $math(add,game.time,local.effect.duration)
 
@@ -34,10 +35,23 @@
 	if ( $get(ent_me,isplayer) )
 	{
 		hud.addstatusicon ent_me alpha_iceshield iceshield local.effect.duration
+		
+		gplayermessage ent_me "You are protected by a shield of ice."
+		bplayermessage ent_me "Ice shield" $int(local.effect.duration) "seconds remain."
 	}
 
-	gplayermessage ent_me "You are protected by a shield of ice."
-	bplayermessage ent_me "Ice shield" $int(local.effect.duration) "seconds remain."
+	if ( WHO_CASTED isnot $get(ent_me,id) )
+	{
+		if $get(WHO_CASTED,isplayer)
+		
+		gplayermessage WHO_CASTED "You shield" $get(ent_me,name) "for" local.effect.duration "seconds." //Tell shielder that they shielded a player
+		
+		local L_BONUS_MSG "for shielding "
+		stradd L_BONUS_MSG $get(ent_me,name)
+		
+		local L_DMGPOINT_ADD 1000 //Max damage points that can be added with no prior ice shield applied
+		callexternal L_SHIELDER ext_dmgpoint_bonus L_DMGPOINT_ADD L_BONUS_MSG //Add bonus soda to healer
+	}
 
 	callevent local.effect.duration effect_die
 }
@@ -64,11 +78,13 @@
 	{
 		if ( $get(ent_me,isplayer) ) //If I am a player
 		{
-			gplayermessage L_SHIELDER "You shield" $get(ent_me,name) "for" $int(L_TIME_DIFF) "more seconds." //Tell shielder that they shielded a player
 			gplayermessage ent_me $get(L_SHIELDER,name) "has protected you with a shield of ice." //Tell me that a player so graciously shielded me (and possibly increased my duration)
+			bplayermessage ent_me "Added" $int(L_TIME_DIFF) "seconds to Ice Shield."
 			
 			local ADD_BONUS 1
 		}
+		
+		gplayermessage L_SHIELDER "You shield" $get(ent_me,name) "for" $int(L_TIME_DIFF) "more seconds." //Tell shielder that they shielded a player
 		
 		if ( $get(ent_me,scriptvar,'NPC_CRITICAL') ) local ADD_BONUS 1 //If I am a critical npc, then add damage point bonus
 		
@@ -76,13 +92,12 @@
 		local L_BONUS_MSG "for shielding "
 		stradd L_BONUS_MSG $get(ent_me,name)
 		
-		local L_DMGPOINT_ADD 1000 //Max damage points that can be added (full duration (200 seconds) with no prior ice shield applied)
-		local L_DMGPOINT_ADD $math(divide,L_TIME_DIFF,L_DMGPOINT_ADD)
+		local L_DMGPOINT_ADD $math(multiply,$math(divide,L_TIME_DIFF,412),1000) // ( time_diff / 412 seconds ) * 1000
 		
 		callexternal L_SHIELDER ext_dmgpoint_bonus L_DMGPOINT_ADD L_BONUS_MSG //Add bonus soda to healer
+		
+		
 	}
-	
-	bplayermessage ent_me "Added" $int(L_TIME_DIFF) "seconds to Ice Shield."
 }
 
 { game_damaged
@@ -91,7 +106,7 @@
 
 	clientevent update ent_me local.effect.clientscript shield_absorb
 	
-	playsound 0 3 "player/pl_metal2.wav"
+	playsound 0 3 player/pl_metal2.wav
 	
 	return local.effect.damage
 }
