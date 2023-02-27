@@ -1,25 +1,12 @@
+//Includes functionality relating to players attempting to vote via console or chat
+
 //Player (chat or console) votes:
 //votemap
+//votelock
 //votekick
 //voteban
 
-//admin commands:
-//admin_help - list commands
-//admin_listbans - list permanent bans
-//admin_unban - <steamid|playername> - removes ban line from .cfgs and banlist
-//admin_ban - <player|steamid|#statusidx> [minutes] [reason]
-//admin_kick - <player|steamid|#statusidx> [reason]
-//admin_map - changelevel (any map)
-//admin_say - speech infomsg through the Game Master
-//admin_vote - multi-purpouse vote
-//admin_votemap - Votemap (any map)
-//
-//admin SteamID's are stored in admins.txt (loaded in player/player_main)
-
-//related cvars:
 //ms_admin_contact - e-mail contact for kick/banned players
-//ms_ban_to_cfg - 1|0 - append server/listenserver.cfg with permanent bans
-//ms_chatlog - log events/chat
 //msvote_map_type - all|root|nonfn - all legit maps|root towns only|all+illegit (def: all)
 //msvote_farm_all_day - 0|1 - disable|enable voting for current map
 //msvote_pvp_enable - 1|0 - enable|disable voting for PvP
@@ -27,10 +14,151 @@
 //msvote_kick_enable - 1|0 - enable|disable kick votes
 //msvote_ban_enable - 1|0 - enable|disable ban votes
 //msvote_ban_time - Amount of time a voteban bans a player (def:60 minutes)
-//
-//for optimization, commands are processed in sv_world_commands
+
+#scope server
+
 {
 	setvard MAP_VOTE_DELAY 20
+}
+
+{ game_playercmd
+
+	local VOTE_PARAM1 PARAM1
+	local VOTE_PARAM2 PARAM2
+	local VOTE_PARAM3 PARAM3
+	local VOTE_PARAM4 PARAM4
+	local VOTE_PARAM5 PARAM5
+	if ( VOTE_PARAM1 equals 'say_text' )
+	{
+		local VOTE_PARAM1 PARAM3
+		local VOTE_PARAM2 PARAM4
+		local VOTE_PARAM3 PARAM5
+		local VOTE_PARAM4 PARAM6
+		local VOTE_PARAM5 PARAM7
+	}
+	
+	if ( VOTE_PARAM1 startswith 'vote' )
+	{
+		//dbg check_vote_options VOTE_PARAM1 VOTE_PARAM2 VOTE_PARAM3 VOTE_PARAM4 VOTE_PARAM5 VOTE_PARAM6 VOTE_PARAM7
+		callevent check_vote_options VOTE_PARAM1 VOTE_PARAM2 VOTE_PARAM3 VOTE_PARAM4 VOTE_PARAM5 VOTE_PARAM6 VOTE_PARAM7
+	}
+}
+
+{ check_vote_options
+
+	setvard CAN_VOTE 0
+	callevent check_can_vote $get(ent_currentplayer,id) //Sets CAN_VOTE to 1 if some checks are passed
+	if CAN_VOTE
+
+	if ( PARAM1 equals 'votemap' )
+	{
+		local ALLOW_MAPVOTE game.cvar.msvote_map_enable 
+		if ( !ALLOW_MAPVOTE )
+		{
+			local OUT_MSG "VOTEMAP: This server does not allow map votes."
+			consolemsg ent_currentplayer OUT_MSG
+			dplayermessage ent_currentplayer OUT_MSG
+		}
+		if ALLOW_MAPVOTE
+		local MAP_TO_VOTE PARAM2
+		callevent player_votemap $get(ent_currentplayer,id) MAP_TO_VOTE
+	}
+
+	if ( PARAM1 equals 'votepvp' )
+	{
+		local ALLOW_PVPVOTE game.cvar.msvote_pvp_enable 
+		if ( !ALLOW_PVPVOTE )
+		{
+			local OUT_MSG "VOTEPVP: This server does not allow PVP votes."
+			consolemsg ent_currentplayer OUT_MSG
+			dplayermessage ent_currentplayer OUT_MSG
+		}
+		if ALLOW_PVPVOTE
+		if ( game.players < 2 )
+		{
+			if !G_DEVELOPER_MODE
+			local OUT_MSG "VOTEPVP: Requires at least 2 players to vote for PVP."
+			consolemsg ent_currentplayer OUT_MSG
+			dplayermessage ent_currentplayer OUT_MSG
+			local EXIT_SUB 1
+		}
+		if !EXIT_SUB
+		callevent player_votepvp $get(ent_currentplayer,id)
+	}
+
+	//if ( PARAM1 equals 'votekick' )
+	//{
+	//	if ( game.players < 3 )
+	//	{
+	//		if !G_DEVELOPER_MODE
+	//		dplayermessage ent_currentplayer VOTEKICK: Need at least three players to start a kick vote
+	//		local EXIT_SUB 1
+	//	}
+	//	if !EXIT_SUB
+//
+	//	local ALLOW_KICKVOTE game.cvar.msvote_kick_enable 
+	//	if ( !ALLOW_KICKVOTE )
+	//	{
+	//		local OUT_MSG "VOTEKICK: This server does not allow kickvotes."
+	//		consolemsg ent_currentplayer OUT_MSG
+	//		dplayermessage ent_currentplayer OUT_MSG
+	//	}
+	//	if ALLOW_KICKVOTE
+	//	local L_PLAYER_NAME PARAM2
+	//	if ( L_PLAYER_NAME startswith 'PARAM' ) local L_PLAYER_NAME 'PARAMETER' //weirdness voting from console
+	//	local L_CALLER $get(ent_currentplayer,id)
+	//	callevent player_votekick L_PLAYER_NAME L_CALLER
+	//}
+
+	//if ( PARAM1 equals 'voteban' )
+	//{
+	//	if ( game.players < 3 )
+	//	{
+	//		if !G_DEVELOPER_MODE
+	//		dplayermessage ent_currentplayer VOTEBAN: Need at least three players to start a ban vote
+	//		local EXIT_SUB 1
+	//	}
+	//	if !EXIT_SUB
+//
+	//	local ALLOW_BANVOTE game.cvar.msvote_ban_enable 
+	//	if ( !ALLOW_BANVOTE ) consolemsg ent_currentplayer VOTEBAN: This server does not allow ban votes.
+	//	if ALLOW_BANVOTE
+	//	local L_PLAYER_NAME PARAM2
+	//	if ( L_PLAYER_NAME startswith 'PARAM' ) local L_PLAYER_NAME 'PARAMETER' //weirdness voting from console
+	//	local L_CALLER $get(ent_currentplayer,id)
+	//	callevent player_voteban L_PLAYER_NAME L_CALLER
+	//}
+
+	if ( PARAM1 equals 'votelock' )
+	{
+		if ( G_SERVER_LOCKED )
+		{
+			dplayermessage ent_currentplayer Server is already vote locked. ( Password: game.cvar.sv_password )
+			consolemsg ent_currentplayer Server is already vote locked.  ( Password: game.cvar.sv_password )
+
+			local EXIT_SUB 1
+		}
+		if !EXIT_SUB
+
+		if ( !game.cvar.msvote_lock_enable )
+		{
+			dplayermessage ent_currentplayer This server does not allow votes to lock the server.
+			consolemsg ent_currentplayer This server does not allow votes to lock the server.
+			local EXIT_SUB 1
+		}
+		if !EXIT_SUB
+
+		if ( game.players < 3 )
+		{
+			if !G_DEVELOPER_MODE
+			dplayermessage ent_currentplayer Need at least three players to start a vote to lock the server.
+			consolemsg ent_currentplayer Need at least three players to start a vote to lock the server.
+			local EXIT_SUB 1
+		}
+		if !EXIT_SUB
+
+		callevent player_votelock $get(ent_currentplayer,id)
+	}
 }
 
 //Map voting (standard player option)
@@ -218,35 +346,6 @@
 	callevent 0.1 list_custom_maps
 }
 
-{ list_custom_maps2
-	local TOTAL_MAPS $get_token_amt(MAPS_UNCONNECTED2)
-	subtract TOTAL_MAPS 1
-//	if ( CUSTOM_COUNT == TOTAL_MAPS )
-//	{
-//		if MAPS_UNCONNECTEDS > 2
-//		setvard CUSTOM_COUNT 0
-//		callevent 0.1 list_custom_maps3
-//		local EXIT_SUB 1
-//	}
-//	if !EXIT_SUB
-	if CUSTOM_COUNT <= TOTAL_MAPS
-	local CUST_MAP $get_token(MAPS_UNCONNECTED2,CUSTOM_COUNT)
-	if ( $map_exists(CUST_MAP) ) consolemsg L_VOTE_CALLER CUST_MAP
-	if ( CUSTOM_COUNT == TOTAL_MAPS )
-	{
-		consolemsg L_VOTE_CALLER ===================================
-		consolemsg L_VOTE_CALLER Type listmaps for a listing of maps by difficulty
-		consolemsg L_VOTE_CALLER Or type maps * for a listing of all maps on your client
-	}
-	add CUSTOM_COUNT 1
-	callevent 0.1 list_custom_maps2
-}
-
-{ log_event
-	if game.cvar.ms_chatlog
-	chatlog PARAM1
-}
-
 { player_votepvp
 
 	if ( $get(GAME_MASTER,scriptvar,'VOTE_BUSY') )
@@ -287,10 +386,10 @@
 	}
 	if !EXIT_SUB
 
-	setvard CALLING_LOCKER PARAM1
+	local L_LOCKER PARAM1
 	
 	//gm_create_vote //<caller_event> <token_option:data> <title> [descript] [silent:0|1]
 	local L_TITLE "Lock the server?"
-	local L_DESC $get(CALLING_LOCKER,name) " has started a vote to lock the server."
+	local L_DESC $get(L_LOCKER,name) " has started a vote to lock the server."
 	callexternal GAME_MASTER gm_create_vote gm_votelock "Yes!:1;No!:0" L_TITLE L_DESC 0
 }
