@@ -1,35 +1,12 @@
 //Manages the game world
-//
 //Useful for controlling ongoing global events
-//
-//Thothie - this is now used for central map configs
-
-//include weather/sv_weather_control
-#include sv_world_commands
-#include sv_world_time
-#include sv_world_vote
-
-#include world/player_vote
-#include world/help
-
-#include secondary_globals
 
 {
-	setvarg MAPS_HIDDEN "challs;keledrosruins;nashalrath;rmines;fmines;underpath;undercliffs"
-	setvarg MAPS_MAZE "goblintown"
-	setvarg MAPS_GAUNTLET "highlands_msc;lostcastle_msc;skycastle;orcplace2_beta;ww2b;ww3d;old_helena;lodagond-2;lodagond-3;lodagond-4;nashalrath;the_wall2"
-	setvarg MAPS_GAUNTLET_START "lowlands;lodagond-1;ww1;the_wall;old_helena;nashalrath"
-
-	setvarg MAPS_UNCONNECTEDS 2
-	setvarg MAPS_UNCONNECTED1 "ms_quest;char_recover;guildmaster;cleicert;foutpost;lodagond-1;island1;lostcaverns;ms_underworldv2;orc_arena;pvp_archery;pvp_arena;unrest;unrest2;unrest2_beta1;ww1;pvp_canyons;canyons;ocean_crossing;smugglers_cove;isles_dread1;"
-	setvarg MAPS_UNCONNECTED2 "kfortress;gertenheld_cave;islesofdread2_old;the_wall;catacombs;bloodshrine;ms_soccer;shender_east;nightmare_edana;m2_quest;gertenhell"
-
-	//^ also note that global array in \globals.script
-
-	setvarg G_NOT_ON_FN "test_scripts"
-
 	//reset globals
-	//NOV2009_07 - Thothie, moving this up here to prevent overriding of map_startup files
+	//spam control
+	setvarg MAX_SUMMONS 10
+	setvarg CURRENT_SUMMONS 0
+	setvarg G_VALID_SPAWN 0
 	setvarg global.map.weather "clear;clear;clear" //FEB2009_17 - default to clear weather
 	setvarg G_OVERRIDE_WEATHER_CODE 0 //NOV2009_07 - Weather issues
 	setvarg G_NO_STEP_ADJ 0 //no step size adjustment for monsters on this map when set 1
@@ -79,121 +56,28 @@
 	setvarg G_ALERT_CYCLE 0 //stops some monsters from using the same alert anim/sound at same time
 	setvarg G_SPECIAL_COMMANDS 0 //special commands for special maps
 	setvarg G_CHEST_TRACKER 0 //for number of self-adjust chests found on a map
+	
+	setvarg G_MAP_NAME game.map.title
+	setvarg G_MAP_DESC game.map.desc
+	setvarg G_WARN_HP game.map.hpwarn
 }
 
 { game_spawn
 
-	//xmass mode
-	if ( game.time.month == 12 )
+	//FEB2009_17 (also 21) - attempts to fix the last of the sticky weather bugs
+	if ( G_OVERRIDE_WEATHER_CODE isnot '0' ) local OVERRIDE_WEATHER 1
+	if ( G_OVERRIDE_WEATHER_CODE equals 'G_OVERRIDE_WEATHER_CODE' ) local OVERRIDE_WEATHER 0
+	if ( OVERRIDE_WEATHER )
 	{
-		//Thothie JAN2010_11 - Extending Xmass mode to all of December
-		setvarg G_CHRISTMAS_MODE 1
+		setvarg global.map.weather G_OVERRIDE_WEATHER_CODE
+	}
+	else
+	{
+		setvarg global.map.weather game.map.weather
 	}
 
-	//set global map settings based on world_spawn entity
-	if ( game.map.title isnot 0 )
-	{
-		if game.map.title isnot none
-		if ( G_MAP_NAME equals 'G_MAP_NAME' ) setvarg G_MAP_NAME game.map.title
-	}
-	if ( game.map.desc isnot 0 )
-	{
-		if game.map.desc isnot none
-		if ( G_MAP_DESC equals 'G_MAP_DESC' ) setvarg G_MAP_DESC game.map.desc
-	}
-	if ( game.map.hpwarn isnot 0 ) setvarg G_WARN_HP game.map.hpwarn
-	if ( game.map.weather isnot 0 )
-	{
-		//FEB2009_17 (also 21) - attempts to fix the last of the sticky weather bugs
-		if ( G_OVERRIDE_WEATHER_CODE isnot '0' ) local OVERRIDE_WEATHER 1
-		if ( G_OVERRIDE_WEATHER_CODE equals 'G_OVERRIDE_WEATHER_CODE' ) local OVERRIDE_WEATHER 0
-		if ( OVERRIDE_WEATHER )
-		{
-			setvarg global.map.weather G_OVERRIDE_WEATHER_CODE
-		}
-		else
-		{
-			setvarg global.map.weather game.map.weather
-		}
-	}
-
-	//reset game master
-	setvarg G_MAP_UPTIME 0
-	setvarg G_NGAME_MASTERS 0
-	setvarg GAME_MASTER 0
-	local GAME_MASTER_CLEANUP $get_by_name(game_master)
-	local GAME_MASTER_CLEANUP_ID $get(GAME_MASTER_CLEANUP,id)
-	if ( $get(GAME_MASTER_CLEANUP_ID,exists) ) deleteent GAME_MASTER_CLEANUP_ID
-
-	//causes crash here
-	//if ( !$get(GAME_MASTER,exists) ) createnpc game_master $vec(20000,-10000,-20000)
-	
-
-	//reload globals
-	callevent load_globals
-
-	//===================================== HANDLE INDIVIDUAL MAP SETTINGS [BEGIN]
-	//(in some cases easier than going through each map_startup.cfg)
 	local L_MAP_NAME $lcase(game.map.name)
-
-	setvarg G_EXP_MULTI 1.0 //not currently used by any maps, but available
-
-	if ( L_MAP_NAME equals cleicert ) setvarg G_DARKEN_BLOOM 6
-	if ( L_MAP_NAME equals oceancrossing ) setvarg G_DARKEN_BLOOM 6
-	if ( L_MAP_NAME equals ms_snow ) setvarg G_DARKEN_BLOOM 20
-	if ( L_MAP_NAME equals char_recover ) setvarg G_DARKEN_BLOOM 6
-	if ( L_MAP_NAME equals catacombs ) setvarg G_DARKEN_BLOOM 0
-	if ( L_MAP_NAME equals sfor ) setvarg G_DARKEN_BLOOM 0
-	if ( L_MAP_NAME equals orc_for ) setvarg G_DARKEN_BLOOM 0
-	if ( L_MAP_NAME equals calruin2 ) setvarg G_DARKEN_BLOOM 0
-	if ( L_MAP_NAME equals bcastle ) setvarg G_DARKEN_BLOOM 0
-	if ( L_MAP_NAME equals nightmare_thornlands ) setvarg G_DARKEN_BLOOM 6
-	if ( L_MAP_NAME equals dragooncaves ) setvarg G_DARKEN_BLOOM 0
-	if ( L_MAP_NAME equals the_keep ) setvarg G_DARKEN_BLOOM 0
-
-	if ( L_MAP_NAME equals deraliasewers ) setvarg G_TRACK_HP 1
-	
-
-	if ( L_MAP_NAME equals ms_underworldv2 )
-	{
-		setvarg G_FORCE_SPAWN_WEATHER 'fog_red'
-	}
-
-	if ( L_MAP_NAME equals old_helena )
-	{
-		setvarg G_NO_DROP 1
-		setvarg G_EXP_MULTI 1
-		setvarg G_SIEGE_MAP 1 //1 in 3 monsters set to ignore players
-	}
-
 	if ( L_MAP_NAME startswith 'pvp' ) callevent 5.0 set_pvp
-
-	if ( L_MAP_NAME equals 'ms_soccer' )
-	{
-		setvarg G_SPECIAL_COMMANDS 1
-		//callevent 5.0 set_pvp
-	}
-
-	if ( L_MAP_NAME equals 'nashalrath' )
-	{
-		setvarg G_DARKEN_BLOOM 0
-	}
-
-	if ( L_MAP_NAME equals 'rmines' )
-	{
-		setvarg G_TRACK_DEATHS 1
-		setvarg G_TRACK_DEATHS_TRIGGER 200
-		setvarg G_TRACK_DEATHS_EVENT gm_map_rmines_killspawns
-	}
-
-	if ( L_MAP_NAME equals 'fmines' )
-	{
-		setvarg G_TRACK_DEATHS 1
-		setvarg G_TRACK_DEATHS_TRIGGER 200
-		setvarg G_TRACK_DEATHS_EVENT gm_map_fmines_killspawns
-	}
-
-	//===================================== HANDLE INDIVIDUAL MAP SETTINGS [END]
 }
 
 { set_pvp
@@ -202,19 +86,8 @@
 	setpvp 1
 }
 
-// Called when map ends
-
-{ game_end
-
-	//this does not fire
-	//errors in code
-	//MSGameEnd --> Call MSGlobals::EndMap
-	//MSGlobals::NewMap --> MSGlobals::GameScript already allocated!
-	//dbg sv_world game_end game.map.name PARAM1 PARAM2 PARAM3 PARAM4
-}
 
 // Called when a player joins
-
 { game_playerjoin //PARAM1=PlayerID
 
 	//set global HP
@@ -253,9 +126,3 @@
 		servercmd SV_CMD
 	}
 }
-
-//(Not in use)
-//{ game_singletouch
-//	//sparimenting
-//	////dbg game_singletouch(sv_world) $get(PARAM1,name) PARAM2 PARAM3 PARAM4
-//}
