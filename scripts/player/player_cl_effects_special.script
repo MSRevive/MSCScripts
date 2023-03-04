@@ -1,30 +1,16 @@
-//In theory, any CL effect event in this script can be called simply by using:
+//Any CL effect event in this script can be called simply by using:
 //clientevent update all const.localplayer.scriptID <eventname> <params>
-//Also (again in theory) this CL effect is self-sustaining, and thus won't "burn out"
-//the way some client effects seem to
+//Also this script stays alive for the duration of the map.
 //
-//The downside is that you cannot remove this script. Sprites must be remove manually
-
+//You cannot remove this script.
 
 //Kaz Elder effects were moved to independant script - Kaz Hollow One is still here though
 
-
-//==========================================
-//DLL Consistency Check
-
-#include player/player_cl_effects_weather
-
 {
-	const DLL_VERSION_PREFIX NOV2015
-	const DLL_VERSION_FULL NOV2015a
 	const LIGHTSYS_N_LIGHTS 16
 
 	const PLAYER_MODEL human/reference.mdl
 	const CL_HBAR_SPRITE health_bar.spr
-
-	setvard SFX_HALO_LIST ''
-	setvard SFX_HALO_FRAME 0
-	setvard SFX_TRACKING_HALOS 0
 
 	//array.create ARRAY_LIGHT_OWNERLIST
 	array.create ARRAY_LIGHT_COLOR
@@ -32,11 +18,8 @@
 	array.create ARRAY_LIGHT_IDLIST
 }
 
-{ client_activate
-	setvard DLL_FAILED_VERIFY 0
-	callevent 10.0 r_decals_set
-	callevent 180.0 dll_check
-}
+#include player/client/halos
+#include player/player_cl_effects_weather
 
 { ext_cl_clientcmd //<commands>
 	dbg *** ext_cl_clientcmd $quote(PARAM1)
@@ -46,34 +29,9 @@
 }
 
 { game_prerender
-	if ( SFX_TRACKING_HALOS )
-	{
-		if ( SFX_HALO_FRAME > 1000 ) setvard SFX_HALO_FRAME 0
-		calleventloop $get_token_amt(SFX_HALO_LIST) cl_track_halos
-		add SFX_HALO_FRAME 1
-	}
 
-	if ( LIGHTSYS_TRACK_LIGHTS )
-	{
-		calleventloop LIGHTSYS_N_LIGHTS lightsys_render_lights
-	}
-
+	if ( LIGHTSYS_TRACK_LIGHTS ) calleventloop LIGHTSYS_N_LIGHTS lightsys_render_lights
 	if ( SFX_METAL_CAVE_LIGHT_ACTIVE ) callevent cl_metal_cave_cycle
-}
-
-{ r_decals_set
-	dbg *** r_decals_set game.cvar.r_decals
-	local R_DECALS game.cvar.r_decals
-	if R_DECALS == 4096
-	dbg *** r_decals_set RESET
-	cleffect clientcmd "r_decals 300"
-}
-
-{ dll_clone_loop
-	local L_PLAYER game.localplayer.index
-	local CLONE_ORG $getcl(L_PLAYER,origin)
-	vectoradd CLONE_ORG $relpos($vec(0,$randf(0,359.99),0),$vec(0,$randf(0,1000),0))
-	cleffect tempent model PLAYER_MODEL CLONE_ORG dll_setup_clone
 }
 
 //==========================================
@@ -841,60 +799,6 @@
 	cleffect tempent set_current_prop fadeout lifetime
 }
 
-//=================== FELEWYN RING SYSTEM
-// WAAAAY too complicated - abandoned for simpler, if uglier, system.
-//{
-//	setvard FRING_ON_OFF "0;0;0;0;0;0;0;0;0;0;"
-//	setvard FRING_LIGHT_ID "0;0;0;0;0;0;0;0;0;0;"
-//	setvard FRING_ATT "0;0;0;0;0;0;0;0;0;0;"
-//	const FRING_COLOR (255,250,128) 
-//	const FRING_RAD 196
-//}
-//
-//{ fring_on //<owner_idx> <ring_idx> <on_finger:1|0>
-//	local OWNER_IDX PARAM1
-//	local RING_IDX PARAM2
-//	local ON_FINGER PARAM3
-//
-//	if ( $get_token(FRING_LIGHT_ID,OWNER_IDX) == 0 )
-//	{
-//		cleffect light new $getcl(OWNER_IDX,origin) FRING_RAD FRING_COLOR 5.0
-//		token.set FRING_LIGHT_ID OWNER_IDX game.script.last_light_id
-//		token.set FRING_ON_OFF OWNER_IDX 1
-//	}
-//	else
-//	{
-//		token.set FRING_ON_OFF OWNER_IDX 1
-//	}
-//
-//	if ( ON_FINGER )
-//	{
-//		token.set FRING_ATT OWNER_IDX OWNER_IDX
-//	}
-//	else
-//	{
-//		token.set FRING_ATT OWNER_IDX RING_IDX
-//	}
-//}
-//
-//{ fring_off //<owner_idx>
-//	token.set FRING_ON_OFF PARAM1 0
-//}
-//
-//{ game_prerender
-//	calleventloop $get_token_amt(FRING_ON_OFF) fring_maintain_lights
-//}
-//
-//{ fring_maintain_lights
-//	local CUR_FRING game.script.iteration
-//	local CUR_FRING_LIGHT_ON $get_token(FRING_ON_OFF,CUR_FRING)
-//	if CUR_FRING_LIGHT_ON
-//	local CUR_FRING_ATT $get_token(FRING_ATT,CUR_FRING)
-//	local CUR_FRING_LIGHT_ID  $get_token(FRING_LIGHT_ID,CUR_FRING)
-//	cleffect light CUR_FRING_LIGHT_ID $getcl(CUR_FRING_ATT,origin) FRING_RAD FRING_COLOR 1.0
-//}
-
-
 { set_view_dist
 	setenv maxviewdist PARAM1
 }
@@ -1170,8 +1074,6 @@
 	playsound 0 10 PARAM1
 }
 
-
-
 //moving health bar system here MAR2012
 { show_hbar //<origin> <frame> <scale> [index]
 	//dbg show_hbar PARAM1 PARAM2 PARAM3 PARAM4
@@ -1215,16 +1117,6 @@
 	cleffect tempent set_current_prop collide 		none
 }
 
-{ game_leapleft
-	dbg game_leapleft
-}
-{ game_leapright
-	dbg game_leapleft
-}
-{ game_leapback
-	dbg game_leapleft
-}
-
 //
 { set_test_beam
 	//cleffect beam_points <startpos> <endpos> <spritename> <life> <width> <amplitude> <brightness> <speed> <framerate> <color>
@@ -1254,37 +1146,6 @@
 { game_cl_playsound
 	dbg *** game_cl_playsound PARAM3 PARAM2 PARAM4 PARAM1
 	sound.play3d PARAM3 PARAM2 PARAM4 PARAM1
-}
-
-{ cl_set_halo //<on:1|off:0> <player_index>
-
-	if ( PARAM1 == 1 )
-	{
-		setvard SFX_TRACKING_HALOS 1
-		if ( $get_find_token(SFX_HALO_LIST,PARAM2) > -1 ) local EXIT_SUB 1 //already active
-		if !EXIT_SUB
-		token.add SFX_HALO_LIST PARAM2
-		//dbg halo_list SFX_HALO_LIST
-	}
-	if !EXIT_SUB
-
-	if ( PARAM1 == 0 )
-	{
-		local L_HALO_TO_REMOVE $get_find_token(SFX_HALO_LIST,PARAM2)
-		if ( L_HALO_TO_REMOVE > -1 )
-		{
-			token.del SFX_HALO_LIST L_HALO_TO_REMOVE
-			if $get_token_amt(SFX_HALO_LIST) == 0
-			setvard SFX_TRACKING_HALOS 0
-		}
-	}
-
-	if ( $get_token_amt(SFX_HALO_LIST) > 0 )
-	{
-		setvard SFX_TRACKING_HALOS 1
-	}
-
-	//dbg tracking_halos SFX_TRACKING_HALOS
 }
 
 { lightsys_render_lights
@@ -1404,6 +1265,7 @@
 	array.set ARRAY_LIGHT_IDLIST CUR_IDX 0
 }
 
+<<<<<<< Updated upstream
 { cl_track_halos
 	local CUR_HALO $get_token(SFX_HALO_LIST,game.script.iteration)
 	if ( CUR_HALO equals game.localplayer.index )
@@ -1475,6 +1337,8 @@
 //	cleffect tempent set_current_prop fuser1 CL_TELE1_ANG
 //}
 
+=======
+>>>>>>> Stashed changes
 { cl_tele1_fx //<origin> (from player/externals for teleport-in fx)
 	setvard CL_TELE1_ORG PARAM1
 	sound.play3d debris/beamstart1.wav 10 CL_TELE1_ORG
@@ -1489,7 +1353,6 @@
 { cl_tele1_fx_go
 	cleffect tempent model weapons/projectiles.mdl CL_TELE1_ORG cl_tele1_fx_sprite
 }
-
 
 { cl_tele1_fx_sprite
 	cleffect tempent set_current_prop death_delay 1.0
@@ -1516,7 +1379,6 @@
 	if !SFX_METAL_CAVE_LIGHT_ACTIVE //already setup
 
 	setvard SFX_METAL_CAVE_MDL PARAM1
-
 
 	setvard SFX_R_CYCLE 254
 	setvard SFX_G_CYCLE 1
@@ -1748,6 +1610,4 @@
 	}
 
 	array.add ARRAY_TEST "yes"
-
-	dbg *** cl_array_test $get_array(ARRAY_TEST,0) $get_array_amt(ARRAY_TEST)
 }
