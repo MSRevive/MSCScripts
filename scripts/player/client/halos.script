@@ -1,0 +1,104 @@
+#scope client
+
+{
+	setvard SFX_HALO_LIST ''
+	
+	setvard SFX_DUMMIES_FOR_DUMB_PEOPLE ''
+	
+	setvard SFX_HALO_FRAME 0
+	setvard SFX_TRACKING_HALOS 0
+}
+
+{ game_prerender
+
+	if ( SFX_TRACKING_HALOS )
+	{
+		if ( SFX_HALO_FRAME > 1000 ) setvard SFX_HALO_FRAME 0
+		calleventloop $get_token_amt(SFX_HALO_LIST) cl_track_halos
+		add SFX_HALO_FRAME 1
+	}
+}
+
+{ cl_set_halo //<on:1|off:0 or 2:dev halo> <player_index>
+
+	if ( PARAM1 == 2 )
+	{
+		setvard SFX_TRACKING_HALOS 1
+		if ( $get_find_token(SFX_DUMMIES_FOR_DUMB_PEOPLE,PARAM2) > -1 ) exitevent
+		token.add SFX_DUMMIES_FOR_DUMB_PEOPLE PARAM2
+		
+		if ( $get_find_token(SFX_HALO_LIST,PARAM2) > -1 ) exitevent //Already tracking
+		token.add SFX_HALO_LIST PARAM2
+	}
+
+	if ( PARAM1 == 1 )
+	{
+		setvard SFX_TRACKING_HALOS 1
+		if ( $get_find_token(SFX_HALO_LIST,PARAM2) > -1 ) exitevent //Already tracking
+		token.add SFX_HALO_LIST PARAM2
+		//dbg halo_list SFX_HALO_LIST
+		
+		if ( $get_find_token(SFX_DUMMIES_FOR_DUMB_PEOPLE,PARAM2) > -1 )
+		{
+			token.del SFX_DUMMIES_FOR_DUMB_PEOPLE $get_find_token(SFX_DUMMIES_FOR_DUMB_PEOPLE,PARAM2)
+		}
+	}
+
+	if ( PARAM1 == 0 )
+	{
+		local L_HALO_TO_REMOVE $get_find_token(SFX_HALO_LIST,PARAM2)
+		if ( L_HALO_TO_REMOVE > -1 )
+		{
+			token.del SFX_HALO_LIST L_HALO_TO_REMOVE
+			if $get_token_amt(SFX_HALO_LIST) == 0
+			setvard SFX_TRACKING_HALOS 0
+		}
+		
+		local L_HALO_TO_REMOVE $get_find_token(SFX_DUMMIES_FOR_DUMB_PEOPLE,PARAM2)
+		if ( L_HALO_TO_REMOVE > -1 ) token.del SFX_DUMMIES_FOR_DUMB_PEOPLE L_HALO_TO_REMOVE
+	}
+
+	if ( $get_token_amt(SFX_HALO_LIST) > 0 )
+	{
+		setvard SFX_TRACKING_HALOS 1
+	}
+}
+
+{ cl_track_halos
+	local CUR_HALO $get_token(SFX_HALO_LIST,game.script.iteration)
+	if ( CUR_HALO equals game.localplayer.index )
+	{
+		if !game.localplayer.thirdperson
+		//don't render own halo in first person
+		exitevent
+	}
+
+	local L_HALO_ORG $getcl(CUR_HALO,bonepos,14)
+	vectoradd L_HALO_ORG z 6
+	
+	//funky halo
+	if ( $get_find_token(SFX_DUMMIES_FOR_DUMB_PEOPLE,CUR_HALO) > -1 )
+	{
+		cleffect frameent sprite weapons/magic/seals.mdl L_HALO_ORG setup_cool
+	}
+	else //regular halo
+	{
+		cleffect frameent sprite weapons/magic/seals.mdl L_HALO_ORG setup_halo
+	}
+}
+
+{ setup_cool
+
+	cleffect frameent set_current_prop frame SFX_HALO_FRAME
+	cleffect frameent set_current_prop body 37
+	cleffect frameent set_current_prop scale 2.0
+	//cleffect frameent set_current_prop rendermode add
+	//cleffect frameent set_current_prop renderamt 255
+	cleffect frameent set_current_prop rendercolor (0,0,255)
+}
+
+{ setup_halo
+	cleffect frameent set_current_prop frame SFX_HALO_FRAME
+	cleffect frameent set_current_prop body 31
+	cleffect frameent set_current_prop scale 2.0
+}

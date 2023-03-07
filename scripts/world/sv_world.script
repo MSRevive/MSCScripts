@@ -1,0 +1,75 @@
+//Manages the game world
+//Useful for controlling ongoing global events
+
+#scope server
+
+{
+	setvarg G_MAP_NAME game.map.title
+	setvarg G_MAP_DESC game.map.desc
+	setvarg G_WARN_HP game.map.hpwarn
+}
+
+{ game_spawn
+
+	//FEB2009_17 (also 21) - attempts to fix the last of the sticky weather bugs
+	if ( G_OVERRIDE_WEATHER_CODE isnot '0' ) local OVERRIDE_WEATHER 1
+	if ( G_OVERRIDE_WEATHER_CODE equals 'G_OVERRIDE_WEATHER_CODE' ) local OVERRIDE_WEATHER 0
+	if ( OVERRIDE_WEATHER )
+	{
+		setvarg global.map.weather G_OVERRIDE_WEATHER_CODE
+	}
+	else
+	{
+		setvarg global.map.weather game.map.weather
+	}
+
+	local L_MAP_NAME $lcase(game.map.name)
+	if ( L_MAP_NAME startswith 'pvp' ) callevent 5.0 set_pvp
+}
+
+{ set_pvp
+	dbg set_pvp 1
+	setcvar ms_pklevel 1
+	setpvp 1
+}
+
+
+// Called when a player joins
+{ game_playerjoin //PARAM1=PlayerID
+
+	//set global HP
+	//if ms_difficulty is set to 1, difficulty is determined by total HP of players on server
+	//every 400 hp's ramps difficulty by 1 by default
+	//on maps that have an HP warning, every HP_WARNING hp will ramp the diff by one
+	local HP_TICK G_WARN_HP
+	if ( G_WARN_HP == 0 ) local HP_TICK 400
+	local TOTAL_HP game.players.totalhp //check hard code
+	divide TOTAL_HP HP_TICK
+	setvarg G_HP_RAMP $int(TOTAL_HP)
+	dbg $get(PARAM1,name) joined, HP total is now TOTAL_HP ramp G_HP_RAMP
+
+	//code side ramping
+	//set ramplevel here
+	//use ramplevel to multiply hp under the hp command
+	//and set dmgmulti if == 0
+}
+
+{ game_playerleave
+
+	dbg sv_world game_playerleave $get(PARAM1,name)
+	callexternal all player_left $get(PARAM1,id)
+
+	if ( G_SERVER_LOCKED )
+	{
+		if game.players == 4 //will become 3 after this player leave finishes, i think
+		setvarg G_SERVER_LOCKED 0
+		local MSG_DESC $get(PARAM1,name)
+		stradd MSG_DESC " has left the server."
+		infomsg all "SERVER IS NO LONGER LOCKED" MSG_DESC
+
+		local SV_CMD "sv_password "
+		stradd SV_CMD $quote()
+		stradd SV_CMD $quote()
+		servercmd SV_CMD
+	}
+}
