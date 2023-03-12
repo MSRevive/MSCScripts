@@ -26,18 +26,7 @@ echo } >>beta_date.script
 echo Done.
 cd ../
 
-echo.
-echo ====================== Moving developer folder... 
-move %cd%\%script_path%\developer %cd%
-echo Done.
-
 echo ====================== Compiling...
-start cmd /c scriptpack.exe -ref ^& pause
+scriptpack.exe -refv
 echo Done.
-
-echo.
-echo ====================== Moving developer folder back... 
-move %cd%\developer %cd%\%script_path%
-echo Done.
-
 pause
