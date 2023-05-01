@@ -322,11 +322,7 @@
 { game_death
 
 	clearfx //may not work on players yet
-
-	//reset to global music, if any
-	//music will actually reset on spawn (putinworld)
-	setvard PLR_COMBAT_MUSIC G_COMBAT_MUSIC
-	setvard PLR_IDLE_MUSIC G_IDLE_MUSIC
+	
 	setvard PLR_CORRODE_DURATION 0
 
 	callexternal ent_me ext_darkenbloom G_DARKEN_BLOOM
@@ -431,7 +427,6 @@
 		deleteent PLR_BEAR_IMAGE_ID fade
 	}
 
-	//should we clear cmusak here?
 	scriptflags ent_me cleartype nopush
 	scriptflags ent_me cleartype mana_regen
 	scriptflags ent_me cleartype combat
@@ -1031,7 +1026,7 @@ repeatdelay FREQ_AFK_CHECK
 
 { christmas_mode
 	callexternal ent_me ext_weather_manual_change snow
-	playmp3 all 2 xmass.mp3
+	playmp3 all system xmass.mp3
 	setvarg global.map.weather "snow;snow;snow"
 }
 
@@ -1110,20 +1105,6 @@ repeatdelay FREQ_AFK_CHECK
 
 { game_player_putinworld //goes off when player spawns, rather than during character selection (as with game_spawn)
 
-	setvard PLR_IDLE_MUSIC G_IDLE_MUSIC
-	setvard PLR_COMBAT_MUSIC G_COMBAT_MUSIC
-
-	dbg game_player_putinworld gotmusak idl PLR_IDLE_MUSIC cmb PLR_COMBAT_MUSIC
-
-	if ( $get_scriptflag(ent_me,cmusak,type_exists) )
-	{
-		scriptflags ent_me cleartype cmusak //should reset to global idle musak (if any)
-	}
-	else
-	{
-		callevent ext_music_idle
-	}
-
 	if ( G_CHRISTMAS_MODE )
 	{
 		local L_MAP_NAME $lcase(game.map.name)
@@ -1134,16 +1115,6 @@ repeatdelay FREQ_AFK_CHECK
 
 	//move to random spawn point, if in range
 	torandomspawn ent_me
-
-	//special stats tracker
-	if ( !PLR_TRACKED_STATS )
-	{
-		setvard PLR_TRACKED_STATS 1
-		callevent 0.1 stamp_stats
-	}
-
-	//SKILL CAPS
-	//if ( $get(ent_me,skill.parry) > game.maxlevel ) setstat parry game.maxlevel
 
 	settrans ent_me $get_quest_data(ent_me,d)
 	tospawn ent_me $get_quest_data(ent_me,d)
@@ -1199,10 +1170,6 @@ repeatdelay FREQ_AFK_CHECK
 	{
 		callexternal ent_me ext_weather_change G_FORCE_SPAWN_WEATHER
 	}
-//	else
-//	{
-//		//callevent 1.0 setup_weather
-//	}
 
 	//Thothie AUG2010_23 Dark Energy Corruption
 	callevent player_calc_holy_resistance
@@ -1236,48 +1203,6 @@ repeatdelay FREQ_AFK_CHECK
 	if $get(ent_me,scriptvar,'PLR_WEATHER') isnot G_CURRENT_WEATHER
 	callexternal ent_me ext_weather_change G_CURRENT_WEATHER
 }
-
-//{ fix_weather
-//	//clientevent remove ent_me G_WEATHER_SCRIPT_ID
-//	//clientevent ent_me update const.localplayer.scriptID reset_tod
-//	if !G_WEATHER_LOCK
-//	if ( global.map.weather contains G_CUR_WEATHER ) local VALID_WEATHER 1
-//	if ( !VALID_WEATHER ) callexternal all game_playercmd_setweather $get_token(global.map.weather,0) 1 1
-//	//applyeffect ent_me G_WEATHER_SCRIPT 1 G_CUR_WEATHER
-//}
-
-{ stamp_stats
-	if game.cvar.ms_chatlog
-
-	chatlog STAT_TRACKER: $get(ent_me,name.full) [ $get(ent_me,steamid) ] ( $timestamp() )
-
-	chatlog hp: $get(ent_me,maxhp) mana: $get(ent_me,maxmp)
-	chatlog swordsmanship: $get(ent_me,skill.swordsmanship) [ $get(ent_me,skill.swordsmanship.proficiency) $get(ent_me,skill.swordsmanship.balance) $get(ent_me,skill.swordsmanship.power) ]
-	chatlog martialarts: $get(ent_me,skill.martialarts) [ $get(ent_me,skill.martialarts.proficiency) $get(ent_me,skill.martialarts.balance) $get(ent_me,skill.martialarts.power) ]
-	chatlog smallarms: $get(ent_me,skill.smallarms) [ $get(ent_me,skill.smallarms.proficiency) $get(ent_me,skill.smallarms.balance) $get(ent_me,skill.smallarms.power) ]
-	chatlog axehandling: $get(ent_me,skill.axehandling) [ $get(ent_me,skill.axehandling.proficiency) $get(ent_me,skill.axehandling.balance) $get(ent_me,skill.axehandling.power) ]
-	chatlog bluntarms: $get(ent_me,skill.bluntarms) [ $get(ent_me,skill.bluntarms.proficiency) $get(ent_me,skill.bluntarms.balance) $get(ent_me,skill.bluntarms.power) ]
-	chatlog archery: $get(ent_me,skill.archery) [ $get(ent_me,skill.archery.proficiency) $get(ent_me,skill.archery.balance) $get(ent_me,skill.archery.power) ]
-	chatlog polearms: $get(ent_me,skill.polearms) [ $get(ent_me,skill.polearms.proficiency) $get(ent_me,skill.polearms.balance) $get(ent_me,skill.polearms.power) ]
-	chatlog spellcasting: $get(ent_me,skill.spellcasting) [ $get(ent_me,skill.spellcasting.fire) $get(ent_me,skill.spellcasting.ice) $get(ent_me,skill.spellcasting.lightning)  $get(ent_me,skill.spellcasting.divination) $get(ent_me,skill.spellcasting.affliction) ]
-
-	chatlog Quest Status - RingStage: $get_quest_data(ent_me,r) Lighthouse: $get_quest_data(ent_me,l) Namestate: $get_quest_data(ent_me,n)
-}
-
-//{ check_pets
-//	if ( $get(ent_me,companions) > 0 ) summonpets ent_me
-//	callevent do_motd
-//}
-//
-//	callevent player_summon_pets
-////	if ( $get(ent_me,companions) > 0 )
-////	{
-////		local PET_STATE $get_quest_data(ent_me,s)
-////		if ( PET_STATE == 0 ) callevent player_summon_pets //only happens for people with pets under old system
-////		if ( PET_STATE == 2 ) callevent player_summon_pets
-////	}
-//	callevent do_motd
-//}
 
 { do_motd
 		setvard MOTD_TXT1 ''

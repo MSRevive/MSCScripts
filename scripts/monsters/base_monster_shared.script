@@ -1500,21 +1500,18 @@
 }
 
 { cycle_down
-	if $get(ent_me,isalive)
-	dbg cycle_down PARAM1
-	if ( NPC_WAS_IN_BATTLE ) callevent 0.5 npcatk_clear_music
-	//callevent 3.0 npcatk_music_remove_calm
+	callevent npcatk_clear_music
 }
 
 { npcatk_clear_music
-	if $get(ent_me,isalive)
-	dbg npcatk_clear_music
-	if NPC_WAS_IN_BATTLE
-	callexternal players ext_untargeted_by_mob $get(ent_me,id)
+	if NPC_CUSTOM_COMBAT_MUSIC
+	playmp3 all stop
 }
 
 { game_death
 	if ( NPC_WAS_IN_BATTLE ) callexternal players ext_untargeted_by_mob $get(ent_me,id)
+	callevent cycle_down
+	
 	setvard NPC_PREV_TARGET unset //in case fake death
 
 	if ( NPC_DO_ON_DIE > 0 )
@@ -1539,14 +1536,12 @@
 		} 
 	}
 
-	//NOV2014_12 - moved music/target events here
 	if ( NEW_AI )
 	{
 		if ( NPCATK_TARGET isnot NPC_PREV_TARGET )
 		{
 			setvard NPC_PREV_TARGET NPCATK_TARGET
 			if $get(NPCATK_TARGET,isplayer)
-			dbg npcatk_targetvalidate send_musak
 			setvard NPC_WAS_IN_BATTLE 1
 			callexternal NPCATK_TARGET ext_targeted_by_mob $get(ent_me,id)
 		}
@@ -1557,11 +1552,13 @@
 		{
 			setvard NPC_PREV_TARGET HUNT_LASTTARGET
 			if $get(HUNT_LASTTARGET,isplayer)
-			dbg npcatk_targetvalidate (old) sendmusic
 			setvard NPC_WAS_IN_BATTLE 1
 			callexternal HUNT_LASTTARGET ext_targeted_by_mob $get(ent_me,id) 
 		}
 	}
+
+	if NPC_CUSTOM_COMBAT_MUSIC
+	playmp3 NPC_PREV_TARGET combat NPC_CMUSIC_FILE
 
 	if !NPC_NEVER_UNAGRO
 	setvard NPC_LASTSEEN_ENEMY_TIME game.time
@@ -1599,7 +1596,7 @@
 			if !EXIT_SUB
 
 			setvard NPC_LASTSEEN_ENEMY_TIME 0
-			//so we can recheck for music if we re-aquire
+			
 			if ( NEW_AI )
 			{
 				setvard NPC_PREV_TARGET unset
