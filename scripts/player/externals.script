@@ -57,13 +57,6 @@
 
 	array.create ARRAY_JUMP_BEAM_IDS
 	array.create ARRAY_JUMP_BEAM_TARGS
-
-	setvard PLR_IDLE_MUSIC none
-	setvard PLR_IDLE_MUSIC_LENGTH 0
-	setvard PLR_COMBAT_MUSIC none
-	setvard PLR_COMBAT_MUSIC_LENGTH 0
-
-	setvard PLR_CURRENT_MUSIC none //set code side, but has to be init here
 }
 
 #include [casual] test_scripts/player_externals
@@ -85,27 +78,6 @@
 	else
 	{
 		nopush 0
-	}
-
-	//combat music stack
-	if ( $get_scriptflag(ent_me,cmusak,type_exists) )
-	{
-		local L_FLAG_MUSIC_VALUE $get_scriptflag(ent_me,cmusak,type_first)
-		if L_FLAG_MUSIC_VALUE isnot none
-		//dbg game_scriptflag_update found music value L_FLAG_MUSIC_VALUE current PLR_CURRENT_MUSIC
-		local L_COMBAT_MUSIC L_FLAG_MUSIC_VALUE
-		if ( PLR_CURRENT_MUSIC isnot L_COMBAT_MUSIC )
-		{
-			//dbg game_scriptflag_update CBM nowplaying L_FLAG_MUSIC_VALUE
-			setvard PLR_COMBAT_MUSIC L_COMBAT_MUSIC
-			playmp3 ent_me L_COMBAT_MUSIC
-		}
-	}
-	else
-	{
-		if PLR_CURRENT_MUSIC equals PLR_COMBAT_MUSIC
-		//dbg game_scriptflag_update CBM outofcombatmusic - fading out
-		callevent ext_fade_music
 	}
 
 	//handle check for expire
@@ -143,26 +115,16 @@
 
 { ext_set_status_flag //<name_id> <type> <value> <expires:secs|-1> <message:msg|none>
 
-	dbg ext_set_status_flag nam PARAM1 typ PARAM2 val PARAM3 exp PARAM4 msg PARAM5
-
-	//this bit is now handled by code event game_scriptflag_added
-//	if ( PARAM4 > -1 )
-//	{
-//		local L_CHECK_TIME PARAM4
-//		add L_CHECK_TIME 0.1
-//		callevent L_CHECK_TIME check_flags_expired
-//	}
-
 	scriptflags ent_me add PARAM1 PARAM2 PARAM3 PARAM4 PARAM5
 	callevent check_flags
 }
 
 { check_flags
+
 	if ( $get_scriptflag(ent_me,mana_regen,type_exists) )
 	{
 		callevent ext_mana_regen_loop
 	}
-
 }
 
 { check_flags_expired
@@ -988,13 +950,11 @@
 
 { ext_play_music //<file>
 
-	playmp3 ent_me PARAM1 
+	playmp3 ent_me combat PARAM1 
 }
 
 { ext_play_music_me //<file>
-	//dbg ext_play_music playmp3 PARAM1 PARAM2 PARAM3 PARAM4
-	//playmp3 <target|all> <minutes> <file> [range]
-	playmp3 ent_me PARAM1
+	playmp3 ent_me combat PARAM1
 }
 
 { ext_scan_radius //as getents (debuggary)
@@ -3138,11 +3098,11 @@
 	if ( G_SORCV_FRIENDLY )
 	{
 		//haunted_desert.mp3
-		playmp3 ent_me music/PathAnubis.mp3
+		playmp3 ent_me combat music/PathAnubis.mp3
 	}
 	else
 	{
-		playmp3 ent_me music/crimson_field.mp3
+		playmp3 ent_me combat music/crimson_field.mp3
 	}
 }
 
@@ -3151,17 +3111,17 @@
 
 	if ( G_SORCV_FRIENDLY )
 	{
-		playmp3 ent_me music/haunted_desert.mp3
+		playmp3 ent_me combat music/haunted_desert.mp3
 	}
 	else
 	{
-		playmp3 ent_me music/crimson_field.mp3
+		playmp3 ent_me combat music/crimson_field.mp3
 	}
 }
 
 { ext_stop_music
-	dbg ext_stop_music
-	//playmp3 ent_me stop.mp3
+
+	playmp3 ent_me stop
 }
 
 { ext_svilla_hostile
@@ -3412,14 +3372,14 @@
 	if ( PARAM1 == 1 )
 	{
 		setvard PLR_ORCFOR_MUSIC 1
-		playmp3 ent_me music/seruboss1.mp3
+		playmp3 ent_me combat music/seruboss1.mp3
 	}
 
 	if ( PARAM1 == 2 )
 	{
 		if PLR_ORCFOR_MUSIC != 2
 		setvard PLR_ORCFOR_MUSIC 2
-		playmp3 ent_me music/seruboss2.mp3
+		playmp3 ent_me combat music/seruboss2.mp3
 	}
 
 	if ( PARAM1 == 3 )
@@ -3427,19 +3387,18 @@
 		local MY_ORG $get(ent_me,origin)
 		local BOSS_ORG PARAM2
 		if $dist(MY_ORG,BOSS_ORG) < 768
-		//playmp3 ent_me stop.mp3
+		playmp3 ent_me stop
 	}
 }
 
 { ext_gabe_musak //<stage> [boss_org]
 	if ( PARAM1 equals stop )
 	{
-		//playmp3 ent_me stop.mp3
-		playsound 0 10 gabe_loop.wav
+		playmp3 ent_me stop
 	}
 	else
 	{
-		playmp3 ent_me music/gabe1.mp3
+		playmp3 ent_me combat music/gabe1.mp3
 	}
 }
 
@@ -3817,7 +3776,7 @@
 	setvard PLR_EPILEPSY_ACTIVE 1
 	setvard PLR_EPILEPSY_COUNT 0
 	setvard PLR_EPILEPSY_DELAY 0.5
-	playmp3 ent_me music/b-b-b-beetlejuice.mp3
+	playmp3 ent_me combat music/b-b-b-beetlejuice.mp3
 	callevent 0.25 epilepsy_loop
 	hud.addimgicon ent_me bepilepsy1 bepilepsy1 15 20 75 60 4.0
 }
@@ -3842,7 +3801,7 @@
 }
 
 { ext_epilepsy_time_end
-	playmp3 ent_me UndeadX1Fortress.mp3
+	playmp3 ent_me combat UndeadX1Fortress.mp3
 }
 
 { ext_summon_register_pet //<id>
@@ -4064,32 +4023,6 @@
 	hud.addimgicon ent_me PARAM1 PARAM2 PARAM3 PARAM4 PARAM5 PARAM6 PARAM7
 }
 
-//checks out fine here *shrug*
-//{ ext_tracetest
-//	dbg ext_tracetest enter
-//	local TRACE_START $get(ent_me,origin)
-//	local TRACE_END TRACE_START
-//	local VIEW_ANGS $get(ent_me,viewangles)
-//	vectoradd TRACE_END $relpos(VIEW_ANGS,$vec(0,1000,0))
-//	local TRACE_DIR $dir(TRACE_START,TRACE_END)
-//	vectormultiply TRACE_DIR 64
-//	vectoradd TRACE_START TRACE_DIR
-//
-//	local DO_TRACE $get_traceline(TRACE_START,TRACE_END,ent)
-//	effect beam point lgtning.spr 20 TRACE_START TRACE_END (255,0,255) 200 0 1.0
-//	dbg ext_tracetest DO_TRACE $get(DO_TRACE,name)
-//}
-//
-//{ ext_test_rep
-//	gplayermessage ent_me "������"
-//	consolemsg ent_me "������"
-//	infomsg ent_me "������" "������"
-//}
-//
-//{ ext_retest //<effect_id>
-//	removeeffect ent_me effect_iceshield
-//}
-
 { ext_shender_telfdoor
 	dbg ext_shender_telfdoor PLR_DID_SHENDER_EVENT
 	callevent ext_darkenbloom 2
@@ -4103,68 +4036,6 @@
 	}
 }
 
-{ ext_music_combat //<add|remove> <caller_index> [music_file]
-	setvard PLR_COMBAT_MUSIC_ACTIVE 1
-	//dbg ext_music_combat globals G_COMBAT_MUSIC G_COMBAT_MUSIC setvards PLR_COMBAT_MUSIC PLR_COMBAT_MUSIC_LENGTH
-	local L_CALLER $get_by_idx(PARAM2,id)
-	dbg ext_music_combat PARAM1 PARAM2 PARAM3 ( from $get(L_CALLER,name) )
-	local FLAG_NAME cmusak
-	stradd FLAG_NAME $int(PARAM2)
-
-	//shouldn't happen, but checking
-	if ( PARAM3 equals none )
-	{
-		dbg ext_music_combat got none!
-	}
-
-	if ( PARAM1 equals add )
-	{
-		if ( !$get_scriptflag(ent_me,FLAG_NAME,name_exists) )
-		{
-			local L_MUSIC_FILE PARAM3
-
-			local L_MUSIC_VALUE L_MUSIC_FILE
-			dbg ext_music_combat add FLAG_NAME value L_MUSIC_VALUE
-			scriptflags ent_me add FLAG_NAME cmusak L_MUSIC_VALUE
-		}
-		else
-		{
-			dbg ext_music_combat already have music tag FLAG_NAME
-		}
-	}
-	else
-	{
-		local L_VALUE $get_scriptflag(ent_me,FLAG_NAME,name_value)
-		dbg ext_music_combat delayremove FLAG_NAME L_VALUE
-		scriptflags ent_me edit FLAG_NAME cmusak L_VALUE 8.0
-	}
-}
-
-{ ext_fade_music
-
-	if !$get_scriptflag(ent_me,cmusak,type_exists) //case we got into combat again
-	if ( PLR_IDLE_MUSIC isnot PLR_CURRENT_MUSIC )
-	{
-		dbg ext_fade_music fading music in prep for idle
-		playmp3 ent_me stop.mp3
-	}
-	callevent 3.0 ext_music_idle
-}
-
-{ ext_music_idle
-
-	if !$get_scriptflag(ent_me,cmusak,type_exists) //case we got into combat again
-	if ( PLR_IDLE_MUSIC isnot PLR_CURRENT_MUSIC )
-	{
-		dbg ext_music_idle playing PLR_IDLE_MUSIC
-		playmp3 ent_me PLR_IDLE_MUSIC
-	}
-	else
-	{
-		dbg ext_music_idle abort, already plying PLR_IDLE_MUSIC
-	}
-}
-
 { ext_conflict
 	conflictcheck
 }
@@ -4175,43 +4046,6 @@
 
 { ext_dumpvars
 	conflictcheck dumpvars
-}
-
-{ set_music //<idle_file> <combat_file> [play_now:0=neither|1=idle|2=combat]
-	setvard PLR_IDLE_MUSIC PARAM1
-	setvard PLR_COMBAT_MUSIC PARAM2
-
-	if ( PARAM3 == 1 )
-	{
-		if ( $get_scriptflag(ent_me,type_exists,cmusak) )
-		{
-			callevent set_end_combat_music
-		}
-		else
-		{
-			callevent ext_music_idle
-		}
-	}
-
-	if ( PARAM3 == 2 ) playmp3 ent_me PLR_COMBAT_MUSIC
-}
-
-{ set_combat_music //<file> [forcenow:0|1]
-	//can't have a "play_now" option, as it wouldn't know when to stop
-	setvard PLR_COMBAT_MUSIC PARAM1
-
-	if PARAM2
-	if PLR_CURRENT_MUSIC isnot PLR_COMBAT_MUSIC
-	callevent ext_play_music $get(ent_me,id) PLR_COMBAT_MUSIC
-}
-
-{ set_idle_music //<file>
-	setvard PLR_IDLE_MUSIC PARAM1
-}
-
-{ set_end_combat_music
-	dbg set_end_combat_music
-	scriptflags ent_me cleartype cmusak
 }
 
 { ext_svplaysound_kiss
@@ -4305,20 +4139,6 @@
 		givemp L_MAX_MP
 	}
 }
-
-{ game_music //<song>
-
-	setvard PLR_PREV_MUSIC PLR_CURRENT_MUSIC
-	setvard PLR_CURRENT_MUSIC PARAM1
-}
-
-//{ ext_beam_follow_test
-//	dbg beam_follow_test
-//	effect beam follow lgtning.spr ent_me 0 1 10.0 255 (255,0,0)
-//	effect beam follow lgtning.spr ent_me 1 1 10.0 255 (255,0,255)
-//	effect beam follow lgtning.spr ent_me 2 1 10.0 255 (255,255,0)
-//	effect beam follow lgtning.spr ent_me 3 1 10.0 255 (255,255,255)
-//}
 
 { ext_seal_test //<type>
 	local L_SEAL_ORG $get(ent_me,origin)
@@ -4479,72 +4299,6 @@
 	}
 
 	setvard PLR_IN_COMBAT 1
-
-	if !$get(L_NPC,scriptvar,'NPC_NOT_MUSICAL')
-
-	if ( $get(L_NPC,scriptvar,'NPC_CUSTOM_COMBAT_MUSIC') )
-	{
-		local L_NPC_HAS_CUSTOM 1
-		setvard PLR_COMBAT_MUSIC $get(L_NPC,scriptvar,'NPC_CMUSIC_FILE')
-		if ( PLR_CURRENT_MUSIC isnot PLR_COMBAT_MUSIC )
-		{
-			callevent set_end_combat_music
-		}
-		setvard PLR_CBM_CUSTOM PLR_COMBAT_MUSIC
-		setvard PLR_CBM_CUSTOM_STARTER L_NPC
-	}
-
-	if ( PLR_CURRENT_MUSIC isnot PLR_COMBAT_MUSIC )
-	{
-		//new combat music, clear previous tags
-		if !L_NPC_HAS_CUSTOM //Ive already added my custom music, no need to go here
-
-		if ( PLR_CBM_CUSTOM equals PLR_CURRENT_MUSIC )
-		{
-			if $get(PLR_CBM_CUSTOM_STARTER,isalive)
-			local L_NO_REDEFINE 1 //custom music mob is alive and playing, don't change music
-		}
-
-		if ( !L_NO_REDEFINE )
-		{
-			if ( G_COMBAT_MUSIC isnot none )
-			{
-				if PLR_COMBAT_MUSIC equals none
-				setvard PLR_COMBAT_MUSIC G_COMBAT_MUSIC
-			}
-			if ( PLR_COMBAT_MUSIC isnot none )
-			{
-				dbg ext_targeted_by_mob plr music is not current combat music, clearing
-				callevent set_end_combat_music
-			}
-			else
-			{
-				dbg ext_targeted_by_mob no combat music defined on player or map, aborting
-				local EXIT_SUB 1
-			}
-		}
-		else
-		{
-			dbg ext_targeted_by_mob plr is playing custom mob music, no clearing
-		}
-	}
-	if !EXIT_SUB
-
-	if ( $get(PLR_CBM_CUSTOM_STARTER,isalive) )
-	{
-		//abort new combat music, if current custom from living custom mob
-		if !L_NPC_HAS_CUSTOM //no need to go here if I added custom combat music
-		if ( PLR_CURRENT_MUSIC equals PLR_CBM_CUSTOM )
-		{
-			//don't add my tag, if player is currently playing custom cbm music
-			dbg ext_targeted_by_mob player using custom combat music from marked npc, but I not marked, not adding
-			local EXIT_SUB 1
-		}
-	}
-	if !EXIT_SUB
-
-	if PLR_COMBAT_MUSIC isnot none
-	callevent ext_music_combat add $get(L_NPC,index) PLR_COMBAT_MUSIC
 }
 
 { ext_untargeted_by_mob //<targeter>
@@ -4562,21 +4316,6 @@
 			hud.killstatusicon ent_me combat
 		}		
 		setvard PLR_IN_COMBAT 0
-	}
-
-	dbg ext_untargeted_by_mob $get(PARAM1,name)
-
-	if !$get(L_NPC,scriptvar,'NPC_NOT_MUSICAL')
-
-	local L_MUSIC_TAG cmusak
-	stradd L_MUSIC_TAG $int($get(L_NPC,index))
-	if ( $get_scriptflag(ent_me,L_MUSIC_TAG,name_exists) )
-	{
-		callevent ext_music_combat remove $get(L_NPC,index)
-	}
-	else
-	{
-		dbg ext_untargeted_by_mob not found L_MUSIC_TAG
 	}
 }
 
