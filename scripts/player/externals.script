@@ -25,8 +25,7 @@
 	setvard PLR_PET_IDS ''
 
 	setvard EXT_EFFECT_LIST 0
-
-	const DEMON_BLOOD_LOSS -5
+	
 	const VAMPIRE_MULTI 0.35 //what ratio of damage inflicted the player gets back as health under the influence of vampire blood
 
 	const PLR_FAURA_CL_RATE 10.0 //how often to refresh the fire aura cl fx
@@ -200,20 +199,6 @@
 	}
 }
 
-{ ext_sflag_test
-	scriptflags ent_me add test1 cold 1 5.00 "Test1-Cold+1 Expired"
-	scriptflags ent_me add test2 cold 2 10.00 "Test2-Cold+2 Expired"
-	scriptflags ent_me add test3 fire 4 5.0 "Test3-Fire+3 Expired"
-	scriptflags ent_me add test4 fire -1 11.0 "Test4-Fire-1 Expired"
-	callevent ext_sflag_test_loop
-}
-
-{ ext_sflag_test_loop
-	if $get_scriptflag(ent_me,fire,exists)
-	gplayermessage ent_me cold $get_scriptflag(ent_me,cold,totalvalue) fire  $get_scriptflag(ent_me,fire,totalvalue)
-	callevent 1.0 ext_sflag_test_loop
-}
-
 { ext_set_status_flag //<name_id> <type> <value> <expires:secs|-1> <message:msg|none>
 
 	scriptflags ent_me add PARAM1 PARAM2 PARAM3 PARAM4 PARAM5
@@ -256,7 +241,7 @@
 	if ( PARAM1 equals lleg ) svplaysound 2 10 PLR_SOUND_LEGHIT1
 }
 
-{ game_fallpain_sound
+{ game_fall
 	//dbg game_fallpain_sound
 	svplayrandomsound 2 10 PLR_SOUND_FALLPAIN1 PLR_SOUND_FALLPAIN2 PLR_SOUND_FALLPAIN3 PLR_SOUND_FALLPAIN4
 }
@@ -267,21 +252,6 @@
 	//this method never really seemed to work, it may no longer be in use
 	setvard MY_GLOW_ID PARAM1
 	//dbg GlowID set to MY_GLOW_ID vs EXTERNAL_LIGHT_ID
-}
-
-{ ice_shield_check
-
-	if ( ICE_SHIELDED ) setvarg ICE_SHIELD_CHECK 1
-	if ( !ICE_SHIELDED ) setvarg ICE_SHIELD_CHECK 0
-	//dbg Ice Shield Check says ( ICE_SHIELD_CHECK )
-}
-
-{ tome_warn
-
-	add SCROLL_WARNING_LEVEL 1
-	if ( SCROLL_WARNING_LEVEL > 3 ) setvard SCROLL_WARNING_LEVEL 3
-	if ( SCROLL_WARNING_LEVEL == 1 ) infomsg ent_me "TOMES vs SCROLLS" "TOMES can be used to memorize spells permanently."
-	if ( SCROLL_WARNING_LEVEL == 2 ) infomsg ent_me "TOMES vs SCROLLS" "SCROLLS... are more expensive..."
 }
 
 { set_stun_prot
@@ -297,73 +267,7 @@
 	setvard NEW_SPAWN_POS PARAM1
 }
 
-{ demon_blood
 
-	setvard DEMON_BLOOD_END_TIME game.time
-	add DEMON_BLOOD_END_TIME PARAM1
-
-	effect screenfade ent_me 0.5 3 (255,0,0) 255 fadeout
-	gplayermessage ent_me The demonic soul fills your heart with rage!
-	playsound 0 10 monsters/troll/trollidle2.wav
-
-	setvard MAKE_NOISE 2
-	setvard DEMON_BLOOD 1
-
-	//callevent PARAM1 end_demon_blood
-
-	callevent 1.0 demon_blood_loop
-}
-
-{ end_demon_blood
-	if DEMON_BLOOD
-	setvard DEMON_BLOOD 0
-	gplayermessage ent_me "The demon blood fades."
-}
-
-{ demon_blood_loop
-
-	if DEMON_BLOOD
-
-	if ( game.time >= DEMON_BLOOD_END_TIME )
-	{
-		callevent end_demon_blood
-		local EXIT_SUB 1
-	}
-	if !EXIT_SUB
-
-	//setprop ent_me rendermode 5
-	//setprop ent_me renderamt 255
-
-	effect glow ent_me (255,0,0) 256 1.9 1.9
-
-	callevent 2.0 demon_blood_loop
-
-//	if ( $get(ent_me,hp) <= 0 )
-//	{
-//		givehp DEMON_BLOOD_LOSS
-//		setvard DEMON_BLOOD 0
-//		dodamage ent_me "direct" 1000 world
-//		playermessage ent_me The demon blood fades.
-//		local EXIT_SUB 1
-//	}
-//	if !EXIT_SUB
-//
-//	if $get(ent_me,hp) > 11
-
-	add MAKE_NOISE 1	
-	if ( MAKE_NOISE > 5 )
-	{
-		playrandomsound 0 10 monsters/troll/trollidle2.wav monsters/troll/trollidle.wav
-		setvard MAKE_NOISE 0
-	}
-
-	givehp DEMON_BLOOD_LOSS
-	effect screenfade ent_me 0.5 1 (255,0,0) 150 fadeout
-	effect screenshake $relpos(0,0,0) 32 10 1 32
-	if ( MAKE_NOISE > 0 ) playsound 0 10 player/heartbeat_noloop.wav
-
-	if ( $get(ent_me,hp) <= 0 ) kill ent_me
-}
 
 { register_body //param1 body ent to register
 
@@ -522,24 +426,6 @@
 		givehp DMG_INFLICTED
 
 		callevent try_vampire_target $get(ent_me,id) $get(PARAM1,id) DMG_INFLICTED  //<owner> <target> <healAmt>
-	}
-
-	if ( DEMON_BLOOD )
-	{
-		if $get(PARAM1,isalive)
-		if $get(PARAM1,relationship,ent_me) equals enemy
-
-		local DEMON_BLOOD_DAMAGE $get(ent_me,skill.spellcasting)
-		multiply DEMON_BLOOD_DAMAGE 10
-
-		if $rand(1,3) == 1
-
-		if game.time > NEXT_DEMON_BLOOD_DMG
-		setvard NEXT_DEMON_BLOOD_DMG game.time
-		add NEXT_DEMON_BLOOD_DMG 1.0
-
-		applyeffect PARAM1 effects/generic_damage DEMON_BLOOD_DAMAGE $get(ent_me,id) 1 magic PL_ACTIVE_SKILL
-		playrandomsound 0 10 monsters/troll/trollpain.wav monsters/troll/trollattack.wav
 	}
 }
 
