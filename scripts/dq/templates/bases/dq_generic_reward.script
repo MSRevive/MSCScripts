@@ -1,0 +1,136 @@
+//By greatguys1
+//Best viewed in EditPlus with the ms.stx applied
+
+#scope server
+
+{
+	setvard USING_GENERIC_REWARD 1
+
+	array.create A_QUEST_PARTICIPANTS //The A_ stands for array. Jus tryin' out some prefixes to see if it looks more gooder
+}
+
+{ quest_activate //Called from dq/quests/bases/dq_base_quests
+
+	if ( QUEST_REWARD_ALL )
+	{
+		local L_PLAYERS ''
+		getplayersnb L_PLAYERS
+		calleventloop $get_token_amt(L_PLAYERS) get_quest_participants_loop L_PLAYERS
+	}
+}
+
+{ quest_taker_updated
+
+	if ( !QUEST_REWARD_ALL )
+	{
+		local L_ARRAY_AMT $get_array_amt(A_QUEST_PARTICIPANTS)
+		if ( L_ARRAY_AMT > 0 )
+		{
+			calleventloop L_ARRAY_AMT clear_array_loop
+		}
+		callevent add_quest_participant QUEST_TAKER
+	}
+}
+
+{ quest_complete
+
+	local L_PLAYER PARAM1
+	local L_PLAYER_IDX $get_arrayfind(A_QUEST_PARTICIPANTS,L_PLAYER)
+
+	if ( L_PLAYER_IDX != -1 )
+	{
+		array.del A_QUEST_PARTICIPANTS L_PLAYER_IDX
+		
+		if ( !QUEST_REWARD_ALL )
+		{
+			if ( !QUEST_REWARD_TAKEN )
+			{
+				setvard QUEST_REWARD_TAKEN 1
+				callevent quest_reward L_PLAYER
+			}
+		}
+		else
+		{
+			callevent quest_reward L_PLAYER
+		}
+	}
+}
+
+{ quest_reward //PARAM1 = PlayerID
+
+	local L_PLAYER PARAM1
+
+	if ( QUEST_REWARD_TYPE equals 'map' )
+	{
+		usetrigger QUEST_REWARD_EVENT
+	}
+	else if ( QUEST_REWARD_TYPE equals 'script' )
+	{
+		callevent QUEST_REWARD_EVENT L_PLAYER
+	}
+	else if ( QUEST_REWARD_TYPE equals 'gm' )
+	{
+		callexternal GAME_MASTER QUEST_REWARD_EVENT L_PLAYER
+	}
+
+	if ( $get_array_amt(A_QUEST_PARTICIPANTS) == 0 )
+	{
+		menu.autoopen 0
+		callevent delete_fade_me //This event is in dq/quests/bases/dq_base_quests
+	}
+}
+
+{ game_menu_getoptions
+
+	local L_PLAYER PARAM1
+
+	if ( QUEST_MODE equals QUEST_COMPLETE )
+	{
+		if ( !QUEST_REWARD_ALL )
+		{
+			if ( !QUEST_REWARD_TAKEN )
+			{
+				if ( L_PLAYER equals QUEST_TAKER )
+				{
+					callevent build_quest_complete_menu L_PLAYER
+				}
+			}
+		}
+		else
+		{
+			if ( $get_arrayfind(A_QUEST_PARTICIPANTS,L_PLAYER_ID) != -1 ) //The A_QUEST_PARTICIPANTS is from dq_base
+			{
+				callevent build_quest_complete_menu L_PLAYER
+			}
+		}
+	}
+}
+
+//Stock events
+{ get_quest_participants_loop
+
+	local L_PLAYER $get_token(PARAM1,game.script.iteration)
+	callevent add_quest_participant L_PLAYER
+}
+
+{ add_quest_participant
+
+	local L_PLAYER PARAM1
+	array.add A_QUEST_PARTICIPANTS L_PLAYER
+}
+
+{ build_quest_complete_menu
+
+	local L_PLAYER_ID PARAM1
+
+	local reg.mitem.title QUEST_COMPLETE_TEXT
+	local reg.mitem.type callback
+	local reg.mitem.data L_PLAYER_ID
+	local reg.mitem.callback quest_complete
+	menuitem.register
+}
+
+{ clear_array_loop
+
+	array.del A_QUEST_PARTICIPANTS 0
+}

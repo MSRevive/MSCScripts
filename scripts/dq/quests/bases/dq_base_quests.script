@@ -1,0 +1,355 @@
+//By greatguys1
+//Best viewed in EditPlus with the ms.stx applied
+
+//This keeps track of quest progress through QUEST_MODE, and notifies quest participants of quest completion.
+
+//Functions:
+	//init_basic_npc_vars		Vars that only need to be activated once.
+	//init_post_spawn_vars		Vars that may need to be reapplied after the quest finishes.
+	//activate_vars			Vars that are only activated once the quest starts.
+	//disable_vars			Vars that must be disabled after the quest is finished.
+	//quest_taker_updated		is an event called when the quest_taker is moved to someone else. This can happen from the quest taker leaving the server and someone else talking to the npc.
+	//quest_taker_maxhp_updated	Called when the maxhp of the quest taker is updated. It's called directly from quest_taker_updated.
+
+//Dynamic Quest Vars:
+	//QUEST_REWARD_TYPE	<"map">|<"script">|<"gm"> Map event, script event, or game master event. If it's a game master event, make it to the map it's on only via the casual include on game_master if you've got a custom reward
+	//QUEST_REWARD_EVENT	The function used to dish out the reward. If the quest giver is dynamically created, it will assume the reward is script based.
+	//QUEST_REWARD_ALL	Do we reward all of the people that were present at the start of the quest?
+	//QUEST_TAKER		The id of who got the quest. If he leaves the game after taking it, it'll be assigned to whoever else talks to the guy first.
+	//QUEST_TAKER_MAXHP	The maxhp of the quest_taker
+	//SET_SIEGE_MODE 0|1 (dwarf will become a CRITICAL_NPC target for all mobs on map when quest activated - default for defend_me.)
+	//QUEST_FADE_ON_COMPLETE <0>|<fade>|<walk_fade> //on quest complete, fade away in spot, or attempt to walk away, and fade as I do?
+
+//Vars that affect the npc directly:
+	//const QUEST_GIVER_NAME <string> - change name from default "a|Dwarven Miner"
+	//const NEW_RACE <race> - set beloved if you don't want attacked, defaults to human
+	//const AM_INVINCIBLE <0|1> - invulerable (might not be targeted as a result)
+	//const NEW_WIDTH <change width>
+	//const NEW_HEIGHT <change height>
+	//const MONSTER_MODEL <new model> (must be precached - must have matching animations or the anims must be redefined in top script)	Pending removal
+	//const SUBMODEL_GROUPS "<group>;<subgroup>" (can define multiple pairs by repeating)
+	//const USE_SKIN <#> (New skin to use on the model)
+
+//Vars for monsters/base_monster_new:
+	//const QUEST_COMBATANT 0|1	//do I engage in combat, cower/flee?
+	//const QUEST_ACTIVE_COMBATANT 0|1 //if combatant, fight before quest activation (may die before players meet him)
+	//const COMBAT_STRIKE_EVENT <eventname> (for use with new model with different anims - this is the eventname tied to the attack frame)
+		
+//Vars for monsters/base_battle_ally:
+	//const QUEST_FOLLOWER 1|0	//do I follow my activator or stay here? (required for escort)
+	//const IS_LEADER 0|1 - instead of following player, will try to roam ahead to where he is facing (requires QUEST_FOLLOW 1)
+
+//Vars for the quest_dwarf script only:
+	//const USE_LANTERN <0|1> - has lantern
+	//const LANTERN_COLOR <(R,G,B)> defaults to: (128,64,0)
+	//setvard INIT_IDLE_MODE <sitting|wounded|standing> - defaults to <wounded> for non-combatants, and <sitting> for combatants based on QUEST_COMBATANT setting
+	//const QUEST_EXPERT_COMBATANT 0|1 //if combatant, unlocks special stun attack
+
+#scope server
+
+{
+	setvard USING_BASE_QUEST 1
+
+	const QUEST_WAITING "waiting"
+	const QUEST_ASKING "asking"
+	const QUEST_ACTIVE "active"
+	const QUEST_COMPLETE "complete"
+	const QUEST_FAILED "failed"
+
+	setvard QUEST_MODE QUEST_WAITING
+
+	setvard ALLY_FOLLOW_ON 0
+	setvard QUEST_CURRENTLY_COMBATING 0
+
+	//setvard NO_STUCK_CHECKS 1 //Thothie - might wanna set this based on waiting animation
+	//roam 0 //Thothie - that didn't cut it, going to try to enforce
+	//This stuff is handled further below
+}
+
+{ game_spawn
+
+	callevent 1.1 init_basic_npc_vars
+}
+
+{ quest_intro_check //PARAM1 = PlayerID //To prevent exploits by another player keeping a menu open.
+
+	if ( QUEST_MODE equals QUEST_WAITING )
+	{
+		callevent quest_intro
+		setvard OFFER_MENU_ID PARAM1
+		callevent 0.1 offer_menu
+	}
+}
+
+{ quest_intro
+
+	setvard QUEST_MODE QUEST_ASKING
+}
+
+{ quest_activate_check //PARAM1 = PlayerID
+
+	if ( QUEST_MODE equals QUEST_ASKING )
+	{
+		callevent quest_activate PARAM1
+	}
+}
+
+{ quest_activate
+
+	local L_PLAYER PARAM1
+
+	setvard QUEST_TAKER L_PLAYER
+	callevent quest_taker_updated
+
+	callevent activate_vars
+
+	setvard QUEST_MODE QUEST_ACTIVE
+}
+
+{ quest_finished_check
+
+	if ( QUEST_MODE equals QUEST_ACTIVE )
+	{
+		callevent quest_finished
+	}
+}
+
+{ quest_finished
+
+	callevent init_post_spawn_vars
+	callevent disable_vars
+
+	setvard QUEST_MODE QUEST_COMPLETE
+	callevent inform_quest_finished
+}
+
+{ inform_quest_finished
+
+	local L_STRING "Please return to "
+	stradd L_STRING $get(ent_me,name.full)
+	infomsg all "Quest Complete" L_STRING
+}
+
+{ game_death
+
+	setvard QUEST_MODE QUEST_FAILED
+}
+
+{ game_menu_getoptions //PARAM1 = PlayerID of who opened the menu
+
+	if ( QUEST_MODE isnot QUEST_WAITING )
+	{
+		if ( QUEST_MODE isnot QUEST_ASKING )
+		{
+			if ( !$get(QUEST_TAKER,exists) )
+			{
+				setvard QUEST_TAKER PARAM1
+				callevent quest_taker_updated
+			}
+		}
+	}
+}
+
+{ quest_taker_updated //Is called when the quest_taker var is changed
+
+	setvard QUEST_TAKER_MAXHP $get(QUEST_TAKER,maxhp)
+	callevent quest_taker_maxhp_updated
+
+	if ( QUEST_MODE isnot QUEST_COMPLETE )
+	{
+		if ( QUEST_FOLLOWER )
+		{
+			setvard ALLY_FOLLOW_PLR_ID QUEST_TAKER
+		}
+	}
+}
+
+//{ quest_taker_maxhp_updated	//Right now just a placeholder.
+//
+//}
+
+{ init_basic_npc_vars 
+//Stuffs done after initializing the npc so these can be applied properly. Also things that never need to be applied more than once. I don't like this 'cuz its on a timer. :(
+//Also everything needs to be filled out. All templates need to have something for all the vars!
+
+	//QUEST_GIVER_NAME
+	name QUEST_GIVER_NAME
+
+	//NEW_WIDTH
+	width NEW_WIDTH
+
+	//NEW_HEIGHT
+	height NEW_HEIGHT
+
+	setsolid box
+	setbbox npcsize
+
+	//MONSTER_MODEL
+	if ( MONSTER_MODEL isnot '0' )
+	{
+		setmodel MONSTER_MODEL
+	}
+	
+	//SUBMODEL_GROUPS
+	//Thothie edit: making this so you can switch up more submodel groups
+	//- very few, if any, mobs use more than 4
+	setmodelbody 0 $get_token(SUBMODEL_GROUPS,0)
+	if ( $get_token_amt(SUBMODEL_GROUPS) >= 2 ) setmodelbody 1 $get_token(SUBMODEL_GROUPS,1)
+	if ( $get_token_amt(SUBMODEL_GROUPS) >= 3 ) setmodelbody 2 $get_token(SUBMODEL_GROUPS,2)
+	if ( $get_token_amt(SUBMODEL_GROUPS) >= 4 ) setmodelbody 3 $get_token(SUBMODEL_GROUPS,3)
+
+	//USE_SKIN
+	setprop ent_me skin USE_SKIN
+
+	callevent init_post_spawn_vars
+}
+
+{ init_post_spawn_vars //Mostly things that need to be reapplied after the quest is finished
+
+	//NEW_RACE
+	race NEW_RACE
+
+	//AM_INVINCIBLE
+	invincible AM_INVINCIBLE
+	if ( AM_INVINCIBLE )
+	{
+		callevent do_target_me 0
+	}
+
+	//QUEST_ACTIVE_COMBATANT
+	setvard QUEST_CURRENTLY_COMBATING QUEST_ACTIVE_COMBATANT
+	if ( QUEST_CURRENTLY_COMBATING )
+	{
+		callevent do_roam 1
+	}
+	else
+	{
+		callevent do_roam 0
+	}
+}
+
+{ activate_vars //Called when quest_activate is called
+
+	if ( SET_SIEGE_MODE == 1 )
+	{
+		callevent critical_npc //Event already sets invincibility 0
+		callevent do_target_me 1
+	}
+
+	if ( QUEST_COMBATANT == 1 ) 
+	{
+		setvard QUEST_CURRENTLY_COMBATING 1
+		callevent do_roam 1
+		callevent do_target_me 1
+	}
+
+	if ( QUEST_FOLLOWER == 1 )
+	{
+		callevent set_follower 1
+		callevent do_roam 1
+	}
+
+	if ( IS_LEADER == 1 )
+	{
+		callevent set_leader 1
+		callevent do_roam 1
+	}
+}
+
+{ disable_vars //Called when quest_finished is called
+
+	local L_STOP_ROAM 0
+
+	if ( IS_LEADER == 1 )
+	{
+		callevent set_leader 0 //Became a problem when it activated the follow just for a second
+		local L_STOP_ROAM 1
+	}
+
+	if ( QUEST_FOLLOWER == 1 )
+	{
+		setvard ALLY_FOLLOW_ON 0 //From monsters/base_battle_ally
+		local L_STOP_ROAM 1
+	}
+
+	if ( QUEST_COMBATANT == 1 )
+	{
+		if ( QUEST_ACTIVE_COMBATANT == 0 )
+		{
+			setvard QUEST_CURRENTLY_COMBATING 0
+			local L_STOP_ROAM 1
+		}
+	}
+
+	if ( L_STOP_ROAM == 1 )
+	{
+		callevent npcatk_clear_targets
+		callevent do_roam 0
+		playanim critical ANIM_IDLE
+	}
+}
+
+{ npc_targetvalidate
+
+	if ( !QUEST_CURRENTLY_COMBATING )
+	{
+		setvard NPCATK_TARGET unset //Only works with monsters/base_monster_new
+	}
+}
+
+{ delete_fade_me
+
+	if ( QUEST_FADE_ON_COMPLETE equals 'fade' )
+	{
+		callevent do_delete_fade_bit
+	}
+	else if ( QUEST_FADE_ON_COMPLETE equals 'walk_fade' )
+	{
+		setmovedest ent_me 9999 flee //Thanks Thothie!
+		callevent do_roam 1
+		callevent 5.0 do_delete_fade_bit
+	}
+}
+
+{ do_delete_fade_bit //Thanks Thothie!
+
+	deleteent ent_me "fade"
+}
+
+{ do_roam //PARAM1 = <0|1>
+
+	if ( PARAM1 == 1 )
+	{
+		roam 1
+		setvard NO_STUCK_CHECKS 0
+	}
+	else
+	{
+		roam 0
+		setvard NO_STUCK_CHECKS 1
+	}
+}
+
+{ do_target_me //PARAM1 = <0|1>
+
+	if ( PARAM1 == 0 )
+	{
+		race beloved
+		setvard PLAYING_DEAD 1
+	}
+	else
+	{
+		race NEW_RACE
+		setvard PLAYING_DEAD 0
+	}
+}
+
+{ game_dynamically_created //PARAM1 = facing angle of info_target //Thanks Thothie!
+
+	setangle face $vec(0,$vec.yaw(PARAM1),0)
+}
+
+{ offer_menu //This is so I can put it on a timer.
+
+	menu.open OFFER_MENU_ID
+}
