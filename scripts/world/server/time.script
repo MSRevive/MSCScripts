@@ -1,0 +1,126 @@
+//Thothie - Changing default time to noon (tired of starting in the dark)
+
+//Manages the game world
+//
+//Useful for controlling ongoing global events
+//
+
+//World Time
+//==========
+
+//Configuration
+//-------------
+
+{
+	setvarg TIME_RATIO 20			//Pass X minutes in-game to every one real minute
+	const TIME_UPDATE_INTERVAL 30		//Update world every X mintues (game time)
+}
+
+//The workings
+//------------
+{
+	if CURRENT_TIME equals 'CURRENT_TIME'
+
+	//Spam crash control system
+	setvarg CURRENT_TIME_HOUR 0
+	setvarg CURRENT_TIME_MIN 0
+	setvarg global.mstime.secs	 0	
+	setvarg global.mstime.lastupdate 0	//Reset update time
+	setvarg global.mstime.updateall  0	//Reset world update time
+	
+	setvarg global.mstime.secs 215940 //Reset time to NOON
+}
+
+	//Calculate the time
+{
+	repeatdelay 1
+
+	callevent global_time_update				//Update MS time
+
+	local l.dayofs.secs global.mstime.secs			//Only calculate for 24 hours
+	mod l.dayofs.secs 86400					//(Find seconds passed from start of day)
+
+	setvarg CURRENT_TIME_HOUR l.dayofs.secs			//Get hours
+	divide CURRENT_TIME_HOUR 3600
+	setvarg CURRENT_TIME_HOUR $int(CURRENT_TIME_HOUR)
+
+	setvarg CURRENT_TIME_MIN l.dayofs.secs			//Get minutes
+	mod CURRENT_TIME_MIN 3600
+	divide CURRENT_TIME_MIN 60
+	setvarg CURRENT_TIME_MIN $int(CURRENT_TIME_MIN)
+
+	callevent format_time CURRENT_TIME_HOUR CURRENT_TIME_MIN //Get HH:MM Format
+
+	////dbg CURRENT_TIME | H: CURRENT_TIME_HOUR | M: CURRENT_TIME_MIN
+
+	if global.mstime.secs >= global.mstime.updateall
+
+	callexternal all worldevent_time CURRENT_TIME_HOUR CURRENT_TIME_MIN TIME_RATIO //Update the world every so often
+	
+	local l.intervalsecs TIME_UPDATE_INTERVAL
+	multiply l.intervalsecs 60
+
+	local local.lastupdatetime global.mstime.secs
+	divide local.lastupdatetime l.intervalsecs
+	setvard local.lastupdatetime $int(local.lastupdatetime)
+	multiply local.lastupdatetime l.intervalsecs
+	
+	setvarg global.mstime.updateall local.lastupdatetime	//Set the next update
+	add global.mstime.updateall l.intervalsecs
+}
+
+{ global_time_update	//Updates MS time and stores it in global.mstime.secs
+
+	local l.time_elapsed game.time			//Find out real time passed since last update
+	subtract l.time_elapsed global.mstime.lastupdate
+	
+	local l.secs l.time_elapsed			//Scale it to game time
+	multiply l.secs TIME_RATIO
+
+	add global.mstime.secs l.secs
+
+	setvarg global.mstime.lastupdate game.time
+}
+
+{ format_time	//Get this into HH:MM format
+
+	setvarg CURRENT_TIME ''
+	if( PARAM1 < 10 ) setvarg CURRENT_TIME '0'
+	stradd CURRENT_TIME $int(PARAM1)	
+		
+	if( PARAM2 < 10 ) local local.mins '0'
+	else local local.mins ''
+	stradd local.mins $int(PARAM2)
+
+	stradd CURRENT_TIME :
+	stradd CURRENT_TIME local.mins
+}
+
+// Called when map start
+
+{ game_spawn
+
+	setvarg global.mstime.lastupdate 0
+	
+	//xmass mode
+	if ( game.time.month == 12 )
+	{
+		//Thothie JAN2010_11 - Extending Xmass mode to all of December
+		setvarg G_CHRISTMAS_MODE 1
+	}
+}
+
+// Inform clients of the time
+
+{ [shared] game_playerjoin
+	callevent world_updateplayertime
+}
+
+{ worldevent_time  //1: HOUR  2: MIN  3: TIME RATIO
+	callevent world_updateplayertime
+}
+
+{ world_updateplayertime
+	clientevent update all const.localplayer.scriptID recv_time CURRENT_TIME_HOUR CURRENT_TIME_MIN TIME_RATIO global.map.allownight
+	//callevent recv_time CURRENT_TIME_HOUR CURRENT_TIME_MIN TIME_RATIO
+}

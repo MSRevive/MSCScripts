@@ -1,6 +1,4 @@
 ::This batch file will automatically update the beta_date.script and compile the scripts for for dev testing
-::Takes one argument which is the version string prefix you wish to compile for (Like "NOV2015", not "NOV2015a")
-::The version string should still match with the other scripts though. Otherwise risk auto-disconnecting.
 
 @ECHO OFF
 :loop
@@ -17,10 +15,5 @@ echo Compiling...
 cd ../
 
 echo ====================== Compiling...
-start cmd /c scriptpack.exe -vef ^& pause
-echo Completed at %date% %time%
-
-goto :end
-
-:end
+scriptpack.exe -vef
 pause

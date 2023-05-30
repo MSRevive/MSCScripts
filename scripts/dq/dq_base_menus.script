@@ -1,0 +1,87 @@
+//By greatguys1
+//Best viewed in EditPlus with the ms.stx applied
+//This is meant to be included in the templates for dynamic quests.
+
+#scope server
+
+{ game_menu_getoptions
+
+	local L_PLAYER_ID PARAM1
+	
+	if ( QUEST_MODE equals 'waiting' )
+	{
+		local reg.mitem.title QUEST_WAITING_TEXT
+		local reg.mitem.type callback
+		local reg.mitem.callback quest_intro
+		menuitem.register
+	}
+	if ( QUEST_MODE equals 'asking' )
+	{
+		local reg.mitem.title QUEST_ASKING_TEXT
+		local reg.mitem.type callback
+		local reg.mitem.data L_PLAYER_ID
+		local reg.mitem.callback quest_activate
+		menuitem.register
+	}
+	if ( QUEST_MODE equals 'active' )
+	{
+		//Thothie edit: Rigging this up so you can use formatting codes to enumerate progress
+		local L_QT QUEST_ACTIVE_TEXT
+		if ( QUEST_ACTIVE_TEXT contains '%n' ) local L_QT $func(func_replace_string,L_QT,'%n',$int(QITEMS_FOUND))
+		if ( QUEST_ACTIVE_TEXT contains '%r' ) local L_QT $func(func_replace_string,L_QT,'%r',$int(QITEM_ORIGIN_AMT))
+		local reg.mitem.title L_QT
+		local reg.mitem.type disabled
+		menuitem.register
+	}
+	if ( !QUEST_REWARD_ALL )
+	{
+		if ( QUEST_MODE equals 'complete' )
+		{
+			if ( !QUEST_REWARD_TAKEN )
+			{
+				callevent build_quest_complete_menu L_PLAYER_ID
+			}
+		}
+	}
+	else
+	{
+		if ( QUEST_MODE equals 'complete' )
+		{
+			if ( $get_array(A_QUEST_PARTICIPANTS,exists) ) //Without this, on an array thats not created, getarrayfind seems to return not -1.
+			{
+				if ( $get_arrayfind(A_QUEST_PARTICIPANTS,L_PLAYER_ID) != -1 ) //The A_QUEST_PARTICIPANTS is from dq_base
+				{
+					callevent build_quest_complete_menu L_PLAYER_ID
+				}
+			}
+		}
+	}
+}
+
+{ build_quest_complete_menu
+
+	local L_PLAYER_ID PARAM1
+
+	local reg.mitem.title QUEST_COMPLETE_TEXT
+	local reg.mitem.type callback
+	local reg.mitem.data L_PLAYER_ID
+	local reg.mitem.callback quest_complete
+	menuitem.register
+}
+
+{ func_replace_string //<string> <search_string> <replace_with>
+	//if this method doesnt work, try an upto/from approach, with two parsers
+	local L_STRING PARAM1
+	local L_SEARCH PARAM2
+	local L_REPLACE PARAM3
+
+	local L_STRING1 $string_upto(L_STRING,L_SEARCH)
+	local L_STRING2 $string_from(L_STRING,L_SEARCH)
+
+	stradd L_STRING1 L_REPLACE
+
+	local L_STRING_OUT L_STRING1
+	stradd L_STRING_OUT L_STRING2
+
+	return L_STRING_OUT
+}

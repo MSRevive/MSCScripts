@@ -18,7 +18,7 @@
 //b1-b9 = galat chest bank
 //a = achievments (token #0=sorc_villa)
 //rep = Got reporter reward
-//dhal = halo toggled off if set to 1
+//dhal = halo toggled off if set to 1 because default value for unset quests is 0
 //pnw = pet wolf name [defunt, pets see below]
 //sy = sylphiel's soup available
 //BODY = last submodel body layout (for char select screen)
@@ -36,9 +36,6 @@
 
 //Player Initialization
 { [server]
-
-	const KELDORN_ID "STEAM_0:0:19648837"
-	const DARK_ID "STEAM_0:1:8122893"
 
 	setvar FREQ_AFK_CHECK 60.0
 
@@ -85,7 +82,7 @@
 }
 
 #include [server] player/valid_spawn_new
-#include [server] player/element_resist
+#include player/server/element_resist
 
 // Spawn
 { game_spawn //this runs twice, once during character selection (before clicking), and again when character spawns into world
@@ -98,22 +95,18 @@
 		//callevent 60.0 afk_check
 	}
 
-	if ( game.serverside )
-	{
-		hud.killicons ent_me
+	hud.killicons ent_me
 
-		if ( DEMON_BLOOD ) callevent end_demon_blood
-		setvard PLR_SPEED 100
+	if ( DEMON_BLOOD ) callevent end_demon_blood
+	setvard PLR_SPEED 100
 
-		setvard ICE_SHIELDED 0
-		setvard ICE_SHIELD_TIME 0
-		setvard PLAYING_DEAD 0 //in case died while invalidated
+	setvard ICE_SHIELDED 0
+	setvard ICE_SHIELD_TIME 0
+	setvard PLAYING_DEAD 0 //in case died while invalidated
 
-		//if ( !$get(GAME_MASTER,exists) ) createnpc game_master $vec(20000,-10000,-20000)
+	//if ( !$get(GAME_MASTER,exists) ) createnpc game_master $vec(20000,-10000,-20000)
 
-		if $get_quest_data(ent_me,h) == 1
-		callevent console_health_toggle 1
-	}
+	if ( $get_quest_data(ent_me,h) == 1 ) callevent console_health_toggle 1
 
 	race human
 
@@ -290,7 +283,6 @@
 	playsound 0 10 magic/spawn.wav
 	setorigin ent_me NEW_SPAWN_POS
 	setvard OWNER_POS NEW_SPAWN_POS
-	if FX_SPAMMERS < MAX_FX_SPAMMERS
 	calleventloop 18 beam_fx
 }
 
@@ -308,21 +300,19 @@
 
 
 // Main think... called every frame
-{
-	eventname game_think
+{ game_think
 }
 
 
 // Player jump
-{
-	eventname game_jump
+{ game_jump
 
 	//dbg temp Jimmune IMMUNE_LIGHTNING
 
 	playanim once ANIM_JUMP
 }
-{
-	eventname game_jump_land
+
+{ game_jump_land
 
 	playanim break
 }
@@ -332,13 +322,7 @@
 { game_death
 
 	clearfx //may not work on players yet
-
-	//reset to global music, if any
-	//music will actually reset on spawn (putinworld)
-	setvard PLR_COMBAT_MUSIC G_COMBAT_MUSIC
-	setvard PLR_COMBAT_MUSIC_LENGTH G_COMBAT_MUSIC_LENGTH
-	setvard PLR_IDLE_MUSIC G_IDLE_MUSIC
-	setvard PLR_IDLE_MUSIC_LENGTH G_IDLE_MUSIC_LENGTH
+	
 	setvard PLR_CORRODE_DURATION 0
 
 	callexternal ent_me ext_darkenbloom G_DARKEN_BLOOM
@@ -443,7 +427,6 @@
 		deleteent PLR_BEAR_IMAGE_ID fade
 	}
 
-	//should we clear cmusak here?
 	scriptflags ent_me cleartype nopush
 	scriptflags ent_me cleartype mana_regen
 	scriptflags ent_me cleartype combat
@@ -501,24 +484,6 @@
 	if PARAM2 > 0
 
 	callevent display_health
-
-	//dun do this, ya wont know when to stop
-//	if ( PLR_COMBAT_MUSIC_ACTIVE )
-//	{
-//		if $get(PARAM1,isalive) //don't want post-mortem DOT's starting up music
-//		if PLR_COMBAT_MUSIC_LENGTH != 0
-//		if PLR_CURRENT_MUSIC isnot PLR_COMBAT_MUSIC
-//		if !$get_scriptflag(ent_me,cmusak,type_exists)
-//		if PARAM1 isnot GAME_MASTER
-//		if ( !$get(PARAM1,scriptvar,'NPC_CUSTOM_COMBAT_MUSIC') )
-//		{
-//			callevent ext_music_combat add $get(PARAM1,index)
-//		}
-//		else
-//		{
-//			callevent ext_music_combat add $get(PARAM1,index) $get(PARAM1,scriptvar,'NPC_CMUSIC_LENGTH')  $get(PARAM1,scriptvar,'NPC_CMUSIC_FILE')
-//		}
-//	}
 }
 
 { display_health
@@ -647,32 +612,9 @@
 //}
 
 { game_learnskill //1: Skill name (buggy-keeps spaces)  2: Subskill name 3: Skill value (buggy-oft returns 0)
-
-	//SKILL CAPS
-//	local MAX_LEVEL $int(game.maxlevel)
-//
-//	if ( $lcase(PARAM1) contains parry )
-//	{
-//		if ( $get(ent_me,skill.parry) == MAX_LEVEL )
-//		{
-//			local OUT_MSG "You have reached Maximum Parry Skill ("
-//			stradd OUT_MSG MAX_LEVEL
-//			stradd OUT_MSG ")"
-//			
-//			infomsg ent_me OUT_MSG
-//		}
-//		if ( $get(ent_me,skill.parry) > MAX_LEVEL ) setstat parry MAX_LEVEL
-//		local EXIT_SUB 1
-//	}
-//	if !EXIT_SUB
 	
 	gplayermessage ent_me "Level awarded to" PARAM1 PARAM2
 
-//	if ( $get(ent_me,isbot) )
-//	{
-//		dbg bot gaining levels?
-//	}
-//
 	if !$get(ent_me,isbot)
 
 	local TITLE_STRING $get(ent_me,name)
@@ -701,10 +643,6 @@
 
 { game_transition_entered
 	//dbg game_transition_entered(Player_Main) PARAM1 PARAM2 PARAM3 PARAM4
-	//this works, but more dependable to set on trans side
-	//if $dist(game.monster.origin,MY_HOME) > 640
-	//dbg set map to PARAM2 distance
-	//quest set $get(ent_me,id) map_trans PARAM2
 }
 
 { game_xpgain //PARAM1=XP amt
@@ -714,20 +652,8 @@
 	//setvard LAST_XP XP_GAIN
 }
 
-{ game_fx_spawn
-	add G_TOTAL_FX 1
-	//dbg Fx Spawned G_TOTAL_FX
-	callevent 3.0 reduce_flood
-}
-
-{ reduce_flood
-	subtract G_TOTAL_FX 1
-	if G_TOTAL_FX <= 0
-	setvarg G_TOTAL_FX 0
-	//dbg FX clear ( G_TOTAL_FX )
-}
-
 { give_map_intro
+
 	infomsg ent_me G_MAP_NAME G_MAP_DESC
 	local L_PET_LIST $get_quest_data(ent_me,pets)
 	if ( L_PET_LIST isnot 0 )
@@ -738,6 +664,7 @@
 }
 
 { pet_notice
+
 	local L_PET_LIST $get_quest_data(ent_me,pets)
 	if ( L_PET_LIST isnot 0 )
 	{
@@ -756,13 +683,8 @@
 	//callevent 1.0 give_server_settings
 	if ( G_MAP_DIFF isnot 'G_MAP_DIFF' ) infomsg ent_me "Intended Difficulty" G_MAP_DIFF
 	if game.monster.maxhp >= 5
-	if ( game.monster.maxhp < G_WARN_HP ) infomsg ent_me "WARNING" "This area maybe too difficult at your level! - Votemap elsewhere?"
+	if ( game.monster.maxhp < G_WARN_HP ) infomsg ent_me "WARNING" "This area maybe too difficult at your level!"
 }
-
-//{ give_server_settings
-//	if G_CVAR_DIFF > 0
-//	infomsg ent_me "Monster Ramping Active" "Server has activated monster ramping. HP and XP value of monsters will increase with player strength."
-//}
 
 { help_toggle
 	if ( !G_HELP_ON )
@@ -808,11 +730,6 @@
 	}
 }
 
-{ debug_scantarg
-
-	consolemsg ent_me $get(DEBUG_CUR_TAR,name) in PARAM1 units? ( $get_insphere(DEBUG_CUR_TAR,PARAM1,$relpos(0,200,0)) )
-}
-
 { game_helptip
 	//dbg temp got Helptip PARAM1 PARAM2
 	playsound 0 10 magic/converted_magic13.wav
@@ -822,54 +739,6 @@
 
 	setvard IS_AFK 0
 	setvard PLR_LAST_ATK_TIME game.time
-
-//	if ( $get(PLR_ACTIVE_WEAPON,scriptvar,'IS_POLEARM') )
-//	{
-//		if $get(PARAM1,isalive)
-//
-//		local OPTIMUM_RANGE $get(PLR_ACTIVE_WEAPON,scriptvar,'POLEARM_OPTIMUM_RANGE')
-//		local DMG_FALLOFF $get(PLR_ACTIVE_WEAPON,scriptvar,'POLEARM_DMG_FALLOFF')
-//
-//		local TARG_RANGE $get(PARAM1,range)
-//
-//		if TARG_RANGE != OPTIMUM_RANGE
-//		//missed, adjust damage accordingly
-//
-//		//hack hack (can't remember if scripts have an ABS or ratio function that'd work for this)
-//		if ( TARG_RANGE > OPTIMUM_RANGE )
-//		{
-//			local MISSED_AMT TARG_RANGE
-//			subtract MISSED_AMT OPTIMUM_RANGE
-//			local TOO_CLOSE 0
-//		}
-//		if ( TARG_RANGE < OPTIMUM_RANGE )
-//		{
-//			local MISSED_AMT OPTIMUM_RANGE
-//			subtract MISSED_AMT TARG_RANGE
-//			local TOO_CLOSE 1
-//		}
-//
-//		local DMG_PENALTY_FACTOR DMG_FALLOFF
-//		multiply DMG_PENALTY_FACTOR MISSED_AMT
-//
-//		if ( DMG_PENALTY_FACTOR >= 1 )
-//		{
-//			local DMG_PENALTY_FACTOR 0.9 //completely out of range, do min damage
-//			if ( TOO_CLOSE ) playermessage ent_owner You are too close to attack with this polearm! //not intuitive IMO
-//		}
-//
-//		local OUT_DMG_FACTOR 1
-//		subtract OUT_DMG_FACTOR DMG_PENALTY_FACTOR
-//
-//		//I always do both return and setdmg, as I've never figured which is used where
-//		//seems to vary with the script execution location, but only one is used each time
-//		return OUT_DMG_FACTOR
-//		local OUT_DMG PARAM2
-//		multiply OUT_DMG OUT_DMG_FACTOR
-//		setdmg dmg OUT_DMG
-//
-//		if ( G_DEVELOPER_MODE ) gplayermessage ent_me DEBUG: Missed by MISSED_AMT units [ adjust: OUT_DMG_FACTOR pen: DMG_PENALTY_FACTOR falloff: DMG_FALLOFF dmg: OUT_DMG ]
-//	}
 
 	if ( PLR_2H_REDUCT < 1 )
 	{
@@ -927,10 +796,6 @@
 	}
 	if !EXIT_SUB
 	if ( PARAM1 !startswith PARAM ) setvard HBAR_TARGET PARAM1
-//	callevent 0.1 show_hbar_monster
-//}
-//
-//{ [server] show_hbar_monster
 
 	if game.time > PLR_LAST_HBAR_SHOW
 	setvard DISPLAY_HBAR_DELAY 1
@@ -1161,7 +1026,7 @@ repeatdelay FREQ_AFK_CHECK
 
 { christmas_mode
 	callexternal ent_me ext_weather_manual_change snow
-	playmp3 all 3.0 xmass.mp3
+	playmp3 all system xmass.mp3
 	setvarg global.map.weather "snow;snow;snow"
 }
 
@@ -1240,58 +1105,6 @@ repeatdelay FREQ_AFK_CHECK
 
 { game_player_putinworld //goes off when player spawns, rather than during character selection (as with game_spawn)
 
-//	if ( !FIRST_RND_SPAWN )
-//	{
-//		settrans ent_me G_FIRST_TRANS G_FIRST_TRANS
-//		setvard FIRST_RND_SPAWN 1
-//	}
-
-	setvard PLR_IDLE_MUSIC G_IDLE_MUSIC
-	setvard PLR_IDLE_MUSIC_LENGTH G_IDLE_MUSIC_LENGTH
-	setvard PLR_COMBAT_MUSIC G_COMBAT_MUSIC
-	setvard PLR_COMBAT_MUSIC_LENGTH G_COMBAT_MUSIC_LENGTH
-
-	dbg game_player_putinworld gotmusak idl PLR_IDLE_MUSIC ln PLR_IDLE_MUSIC_LENGTH cmb PLR_COMBAT_MUSIC ln PLR_COMBAT_MUSIC_LENGTH
-
-	if ( $get_scriptflag(ent_me,cmusak,type_exists) )
-	{
-		scriptflags ent_me cleartype cmusak //should reset to global idle musak (if any)
-	}
-	else
-	{
-		if ( PLR_IDLE_MUSIC_LENGTH != 0 )
-		{
-			dbg game_player_putinworld default idle musak PLR_IDLE_MUSIC
-			callevent ext_music_idle
-		}
-	}
-
-
-	//check donator IDs
-	local L_STEAM $get(ent_me,steamid)
-	if ( $g_get_arrayfind(G_ARRAY_DONATORS,L_STEAM) > -1 )
-	{
-		dbg found donator $g_get_arrayfind(G_ARRAY_DONATORS,L_STEAM)
-		local L_HAS_HALO 1
-	}
-	//if ( DONATOR_LIST contains $get(ent_me,steamid) ) local L_HAS_HALO 1 //got too big for token list, see global.script
-	//if ( G_DEVELOPER_MODE ) local L_HAS_HALO 1
-	if ( L_HAS_HALO )
-	{
-		setvard PLR_HAS_HALO 1
-		if ( $get_quest_data(ent_me,dhal) == 1 )
-		{
-			setvard PLR_HALO_ON 0
-			clientevent update all const.localplayer.scriptID cl_set_halo 0 $get(ent_me,index)
-		}
-		else
-		{
-			setvard PLR_HALO_ON 1
-			clientevent update all const.localplayer.scriptID cl_set_halo 1 $get(ent_me,index)
-		}
-	}
-
-
 	if ( G_CHRISTMAS_MODE )
 	{
 		local L_MAP_NAME $lcase(game.map.name)
@@ -1303,16 +1116,6 @@ repeatdelay FREQ_AFK_CHECK
 	//move to random spawn point, if in range
 	torandomspawn ent_me
 
-	//special stats tracker
-	if ( !PLR_TRACKED_STATS )
-	{
-		setvard PLR_TRACKED_STATS 1
-		callevent 0.1 stamp_stats
-	}
-
-	//SKILL CAPS
-	//if ( $get(ent_me,skill.parry) > game.maxlevel ) setstat parry game.maxlevel
-
 	settrans ent_me $get_quest_data(ent_me,d)
 	tospawn ent_me $get_quest_data(ent_me,d)
 	
@@ -1323,13 +1126,13 @@ repeatdelay FREQ_AFK_CHECK
 	//dbg temp dest map reads $get_quest_data(ent_me,m) vs. thismap game.map.name
 	if game.serverside
 
-
 	if ( !PLR_IN_WORLD ) 
 	{
 		callexternal players ext_reset_model //reinitialize models for all players so new player sees them proper
 		callevent 1.0 post_first_join
+		setvard PLR_IN_WORLD 1
 	}
-	setvard PLR_IN_WORLD 1
+	
 	if ( !$get(ent_me,haseffect,player_sitstand) ) applyeffect ent_me player/emote_sit&stand
 
 	callevent validate_spawn LAST_SPAWN $get_map_legit(ent_me)
@@ -1351,8 +1154,6 @@ repeatdelay FREQ_AFK_CHECK
 		clientevent update ent_me const.localplayer.scriptID set_view_dist 16384
 	}
 
-	callevent 2.0 list_cheaters
-
 //	if ( $filesize(motd.txt) > 0 )
 //	{
 //		callevent do_motd
@@ -1360,9 +1161,8 @@ repeatdelay FREQ_AFK_CHECK
 
 	if ( !GAVE_MAP_INTRO )
 	{
-		if !INVALID_SPAWN
-		setvard GAVE_MAP_INTRO 1
 		if G_MAP_NAME isnot 'G_MAP_NAME'
+		setvard GAVE_MAP_INTRO 1
 		callevent 10.0 give_map_intro
 	}
 
@@ -1370,10 +1170,6 @@ repeatdelay FREQ_AFK_CHECK
 	{
 		callexternal ent_me ext_weather_change G_FORCE_SPAWN_WEATHER
 	}
-//	else
-//	{
-//		//callevent 1.0 setup_weather
-//	}
 
 	//Thothie AUG2010_23 Dark Energy Corruption
 	callevent player_calc_holy_resistance
@@ -1407,64 +1203,6 @@ repeatdelay FREQ_AFK_CHECK
 	if $get(ent_me,scriptvar,'PLR_WEATHER') isnot G_CURRENT_WEATHER
 	callexternal ent_me ext_weather_change G_CURRENT_WEATHER
 }
-
-//{ fix_weather
-//	//clientevent remove ent_me G_WEATHER_SCRIPT_ID
-//	//clientevent ent_me update const.localplayer.scriptID reset_tod
-//	if !G_WEATHER_LOCK
-//	if ( global.map.weather contains G_CUR_WEATHER ) local VALID_WEATHER 1
-//	if ( !VALID_WEATHER ) callexternal all game_playercmd_setweather $get_token(global.map.weather,0) 1 1
-//	//applyeffect ent_me G_WEATHER_SCRIPT 1 G_CUR_WEATHER
-//}
-
-{ stamp_stats
-	if game.cvar.ms_chatlog
-
-	chatlog STAT_TRACKER: $get(ent_me,name.full) [ $get(ent_me,steamid) ] ( $timestamp() )
-
-	chatlog hp: $get(ent_me,maxhp) mana: $get(ent_me,maxmp)
-	chatlog swordsmanship: $get(ent_me,skill.swordsmanship) [ $get(ent_me,skill.swordsmanship.proficiency) $get(ent_me,skill.swordsmanship.balance) $get(ent_me,skill.swordsmanship.power) ]
-	chatlog martialarts: $get(ent_me,skill.martialarts) [ $get(ent_me,skill.martialarts.proficiency) $get(ent_me,skill.martialarts.balance) $get(ent_me,skill.martialarts.power) ]
-	chatlog smallarms: $get(ent_me,skill.smallarms) [ $get(ent_me,skill.smallarms.proficiency) $get(ent_me,skill.smallarms.balance) $get(ent_me,skill.smallarms.power) ]
-	chatlog axehandling: $get(ent_me,skill.axehandling) [ $get(ent_me,skill.axehandling.proficiency) $get(ent_me,skill.axehandling.balance) $get(ent_me,skill.axehandling.power) ]
-	chatlog bluntarms: $get(ent_me,skill.bluntarms) [ $get(ent_me,skill.bluntarms.proficiency) $get(ent_me,skill.bluntarms.balance) $get(ent_me,skill.bluntarms.power) ]
-	chatlog archery: $get(ent_me,skill.archery) [ $get(ent_me,skill.archery.proficiency) $get(ent_me,skill.archery.balance) $get(ent_me,skill.archery.power) ]
-	chatlog polearms: $get(ent_me,skill.polearms) [ $get(ent_me,skill.polearms.proficiency) $get(ent_me,skill.polearms.balance) $get(ent_me,skill.polearms.power) ]
-	chatlog spellcasting: $get(ent_me,skill.spellcasting) [ $get(ent_me,skill.spellcasting.fire) $get(ent_me,skill.spellcasting.ice) $get(ent_me,skill.spellcasting.lightning)  $get(ent_me,skill.spellcasting.divination) $get(ent_me,skill.spellcasting.affliction) ]
-
-	chatlog Quest Status - RingStage: $get_quest_data(ent_me,r) Lighthouse: $get_quest_data(ent_me,l) Namestate: $get_quest_data(ent_me,n)
-
-	if game.central
-
-	local MAX_SKILL_LEVEL G_MAX_SKILL_LEVEL
-	add MAX_SKILL_LEVEL 10 //give some leway until max level raised to 50
-
-	//if ( $get(ent_me,skill.swordsmanship) > MAX_SKILL_LEVEL ) local IS_CHEATER 1
-	//if ( $get(ent_me,skill.martialarts) > MAX_SKILL_LEVEL ) local IS_CHEATER 1
-	//if ( $get(ent_me,skill.smallarms)  > MAX_SKILL_LEVEL ) local IS_CHEATER 1
-	//if ( $get(ent_me,skill.axehandling) > MAX_SKILL_LEVEL ) local IS_CHEATER 1
-	//if ( $get(ent_me,skill.bluntarms) > MAX_SKILL_LEVEL ) local IS_CHEATER 1
-	//if ( $get(ent_me,skill.archery) > MAX_SKILL_LEVEL ) local IS_CHEATER 1
-	//if ( $get(ent_me,skill.spellcasting.fire) > MAX_SKILL_LEVEL ) local IS_CHEATER 1
-
-	if IS_CHEATER
-	callevent cheater_kick
-}
-
-//{ check_pets
-//	if ( $get(ent_me,companions) > 0 ) summonpets ent_me
-//	callevent do_motd
-//}
-//
-//	callevent player_summon_pets
-////	if ( $get(ent_me,companions) > 0 )
-////	{
-////		local PET_STATE $get_quest_data(ent_me,s)
-////		if ( PET_STATE == 0 ) callevent player_summon_pets //only happens for people with pets under old system
-////		if ( PET_STATE == 2 ) callevent player_summon_pets
-////	}
-//	callevent do_motd
-//}
 
 { do_motd
 		setvard MOTD_TXT1 ''
@@ -1526,11 +1264,6 @@ repeatdelay FREQ_AFK_CHECK
 		return 2.0
 		dbg multi x2
 	}
-}
-
-{ list_cheaters
-	if ( $get(ent_me,steamid) equals KELDORN_ID ) callevent 20.0 ext_keldorn_troll
-	if ( $get(ent_me,steamid) equals DARK_ID ) callevent 20.0 ext_keldorn_troll
 }
 
 { delay_to_ms_player_spawn
@@ -1609,6 +1342,7 @@ repeatdelay FREQ_AFK_CHECK
 	dbg game_leapback PARAM1 PARAM2 vs. $get(ent_me,stamina.max)
 
 	//if game.time > NEXT_DODGE //Restoring the dodge-jump "exploit"
+	if !$get(ent_me,keydown,forward)
 	if game.time > NEXT_LEAPBACK
 
 	if !$get(ent_me,scriptvar,'PLR_BEAR_MODE')
@@ -1663,6 +1397,7 @@ repeatdelay FREQ_AFK_CHECK
 { game_leapleft //<stamina>
 
 	//if game.time > NEXT_DODGE //Restoring the dodge-jump "exploit"
+	if !$get(ent_me,keydown,forward)
 	if game.time > NEXT_LEAPLEFT
 	if !$get(ent_me,scriptvar,'PLR_BEAR_MODE')
 
@@ -1708,6 +1443,7 @@ repeatdelay FREQ_AFK_CHECK
 { game_leapright //<stamina>
 
 	//if game.time > NEXT_DODGE //Restoring the dodge-jump "exploit"
+	if !$get(ent_me,keydown,forward)
 	if game.time > NEXT_LEAPRIGHT
 	if !$get(ent_me,scriptvar,'PLR_BEAR_MODE')
 

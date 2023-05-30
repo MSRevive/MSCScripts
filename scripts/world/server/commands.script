@@ -1,0 +1,618 @@
+#scope server
+
+{
+	setvard TIMESET_DELAY 0
+	setvard WEATHERSET_DELAY 0
+	const FREQ_WEATHER 10.0 //time delay between allowed time changes
+
+	//precache
+	const WEATHER_SPRITE rain.spr
+	const SPRITE_SPLASH rain_splash.spr
+	const SPRITE_MIST rain_mist.spr
+	const SPRITE_RIPPLE rain_ripple.spr
+	const SOUND_RAIN weather/rain.wav
+  	const SCRIPT_SFX1 effects/sfx_lightning
+	const LTNG_SND weather/Storm_exclamation.wav
+	precache SCRIPT_SFX1
+	precache LTNG_SND		
+	precache WEATHER_SPRITE
+	precache SPRITE_SPLASH
+	precache SPRITE_MIST
+	precache SPRITE_RIPPLE
+	precache SOUND_RAIN
+	precache snow1.spr
+	precache amb/wind.wav
+	precache char_breath.spr
+	//recache FN2.spr //tga loader doesn't need 'recaches
+}
+
+#include [casual] developer/devcmds //New devcmd script -greatguys1@NOV2021
+
+{ game_precache
+	if SCRIPT_TOKENS isnot 'SCRIPT_TOKENS'
+	calleventloop $get_token_amt(SCRIPT_TOKENS) dev_precache
+}
+
+{ dev_precache
+	local SCRIPT_FILE $get_token(SCRIPT_TOKENS,game.script.iteration)
+	precachefile SCRIPT_FILE
+}
+
+{ game_playercmd //returns console command from player (only works on world script)
+
+	if ( G_SPECIAL_COMMANDS )
+	{
+		if ( $lcase(game.map.name) equals ms_soccer )
+		{
+			if ( PARAM3 startswith 'score' )
+			{
+				callexternal $get_by_name(soccer_ball) ext_say_scores
+				exitevent
+			}
+			if ( PARAM3 startswith 'ball' )
+			{
+				callexternal $get_by_name(soccer_ball) ext_send_menu $get(ent_currentplayer,id)
+				exitevent
+			}
+		}
+	}
+
+	if ( PARAM1 startswith '/' )
+	{
+		local IS_SLASH 1
+		local SLASH_COMMAND $lcase(PARAM1)
+	}
+
+	if ( IS_SLASH )
+	{
+		if ( SLASH_COMMAND equals '/stuck' )
+		{
+			local SPAWN_POINT $get(ent_currentplayer,scriptvar,'MY_HOME')
+			local CUR_LOC $get(ent_currentplayer,origin)
+			if ( $dist(CUR_LOC,SPAWN_POINT) > 256 )
+			{
+				dplayermessage ent_currentplayer "[/STUCK]: You are too far from your spawn point to use /stuck."
+				consolemsg ent_currentplayer "[/STUCK]: You are too far from your spawn point to use /stuck."
+				callexternal ent_currentplayer ext_stuck_adj
+			}
+			else
+			{
+				local SPAWN_NAME $get_quest_data(ent_currentplayer,d)
+				tospawn ent_currentplayer SPAWN_NAME
+				playermessage ent_currentplayer "Moving you to another spawn point..."
+				consolemsg ent_currentplayer "Moving you to another spawn point..."
+				callexternal ent_currentplayer delay_to_ms_player_spawn
+			}
+		}
+
+		if ( SLASH_COMMAND equals '/halo' ) callexternal ent_currentplayer toggle_halo
+		if ( SLASH_COMMAND equals '/devlo' ) callexternal ent_currentplayer toggle_dev_halo
+
+		exitevent
+	}
+
+	if ( $lcase(PARAM1) equals 'motd' ) callexternal ent_currentplayer force_motd
+	else if ( PARAM1 equals 'resetbank' )
+	{
+		consolemsg ent_currentplayer Reset bank command recieved...
+		callexternal ent_currentplayer ext_reset_bank
+	}
+	else if ( PARAM1 equals 'petname' )
+	{
+		local PET_TYPES $get_quest_data(ent_currentplayer,pets)
+		if ( PET_TYPES equals 0 )
+		{
+			consolemsg ent_currentplayer PETNAME: You have no pets.
+			local EXIT_SUB 1
+		}
+		if !EXIT_SUB
+
+		if ( PARAM2 startswith 'PARAM' )
+		{
+			consolemsg ent_currentplayer PETNAME: Usage1: petname <name>
+			consolemsg ent_currentplayer PETNAME: Usage2: petname <pet_type> <name>
+			consolemsg ent_currentplayer PETNAME: Available Pet Types: PET_TYPES
+			consolemsg ent_currentplayer PETNAME: - Use alphanumerics only!
+			consolemsg ent_currentplayer PETNAME: - If desired name requires spaces, use $quote(quotes)
+			local EXIT_SUB 1
+		}
+		if !EXIT_SUB
+
+		if ( PARAM3 startswith 'PARAM' )
+		{
+			local L_NEW_NAME PARAM2
+			local PET_TYPE_TO_NAME $get_token(PET_TYPES,0)
+		}
+		else
+		{
+			local PET_TYPE_TO_NAME PARAM2
+			local L_NEW_NAME PARAM3
+		}
+
+		//case player defines invalid name
+		if ( PET_TYPES contains PET_TYPE_TO_NAME ) local L_TYPE_VALID 1
+		if ( !L_TYPE_VALID )
+		{
+			consolemsg ent_currentplayer PETNAME: You have no pets of this type. ( PET_TYPE_TO_NAME )
+			consolemsg ent_currentplayer PETNAME: Available Pet Types: PET_TYPES
+			local EXIT_SUB 1
+		}
+		if !EXIT_SUB
+
+		if ( L_NEW_NAME contains % ) local L_INVALID_NAME 1
+		if ( L_NEW_NAME contains / ) local L_INVALID_NAME 1
+		if ( L_NEW_NAME contains \ ) local L_INVALID_NAME 1
+		if ( L_INVALID_NAME ) consolemsg ent_currentplayer PETNAME: Inavalid name - alphanumerics and spaces only, please
+		if !L_INVALID_NAME
+		
+		local Q_NAME PET_TYPE_TO_NAME
+		stradd Q_NAME _name
+		quest set ent_currentplayer Q_NAME L_NEW_NAME
+		consolemsg ent_currentplayer PETNAME: PET_TYPE_TO_NAME new name is: L_NEW_NAME
+		callexternal all ext_companion_update_name
+	}
+	else if ( PARAM1 equals 'listpoints' )
+	{
+		setvard CALLING_PLAYER $get(ent_currentplayer,id)
+		callevent do_list_points
+	}
+	else if ( PARAM1 equals 'listresist' )
+	{
+		setvard CALLING_PLAYER $get(ent_currentplayer,id)
+		callevent do_list_resists
+	}
+	else if ( PARAM1 equals 'flip' )
+	{
+		local MY_NAME $get(ent_currentplayer,name)
+		stradd MY_NAME " Flips a Gold Piece"
+		local DIE_ROLL $rand(1,2)
+		if ( DIE_ROLL == 1 )
+		{
+			infomsg all MY_NAME "It comes up HEADS"
+			consolemsg ent_currentplayer Your coin comes up HEADS
+		}
+		if ( DIE_ROLL == 2 )
+		{
+			infomsg all MY_NAME "It comes up TAILS"
+			consolemsg ent_currentplayer Your coin comes up TAILS
+		}
+	}
+	else if ( PARAM1 equals 'roll' )
+	{
+		local D_SIDES PARAM2
+		if ( D_SIDES equals 'PARAM2' ) local D_SIDES 20
+		callevent roll_die D_SIDES
+	}
+	else if ( PARAM1 equals 'day' )
+	{
+		//setvard PARAM1 settime
+		//setvard PARAM2 12
+		callexternal ent_currentplayer ext_tod_lock day
+		consolemsg ent_currentplayer Shifting your time of day effects to day.
+		consolemsg ent_currentplayer This does not affect world time nor other players.
+		clientevent update ent_currentplayer const.localplayer.scriptID environment_change day
+	}
+	else if ( PARAM1 equals 'help' )
+	{
+		if PARAM2 equals 'PARAM2'
+		callexternal ent_currentplayer help_toggle
+	}
+	else if ( PARAM1 equals 'dusk' )
+	{
+		callexternal ent_currentplayer ext_tod_lock aft
+		consolemsg ent_currentplayer Shifting your time of day effects to dusk.
+		consolemsg ent_currentplayer This does not affect world time nor other players.
+		clientevent update ent_currentplayer const.localplayer.scriptID environment_change aft
+	}
+	else if ( PARAM1 equals 'night' )
+	{
+		callexternal ent_currentplayer ext_tod_lock night
+		consolemsg ent_currentplayer Shifting your time of day effects to night.
+		consolemsg ent_currentplayer This does not affect world time nor other players.
+		clientevent update ent_currentplayer const.localplayer.scriptID environment_change night
+	}
+	else if ( PARAM1 equals 'clearsky' )
+	{
+		//callexternal all game_playercmd_setweather clear 1 1
+		if ( G_WEATHER_LOCK isnot 0 ) consolemsg ent_currentplayer Weather is currently locked.
+		if G_WEATHER_LOCK equals 0
+		callexternal ent_currentplayer ext_weather_set_clear
+	}
+	else if( PARAM1 equals 'setweather' )
+	{
+		if ( G_WEATHER_LOCK isnot 0 ) consolemsg ent_currentplayer Weather is currently locked.
+		if G_WEATHER_LOCK equals 0
+		callexternal ent_currentplayer ext_weather_manual_change PARAM2
+	}
+	else if( PARAM1 equals 'time' )
+	{
+		consolemsg ent_currentplayer == TIME: CURRENT_TIME == 
+		playermessage ent_currentplayer == TIME: CURRENT_TIME ==
+		if ( G_DEVELOPER_MODE ) local L_DO_FN_TIME 1
+		if ( game.central ) local L_DO_FN_TIME 1
+		if L_DO_FN_TIME
+		local L_MONTH game.time.month
+		local L_DAY game.time.day
+		local L_YEAR game.time.year
+		local L_HOUR game.time.hour
+		local L_MIN game.time.minute
+		local L_OUT_MSG "(FN Time: "
+		stradd L_OUT_MSG $get_token('???;JAN;FEB;MAR;APR;MAY;JUN;JUL;AUG;SEP;OCT;NOV;DEC',L_MONTH)
+		stradd L_OUT_MSG L_YEAR
+		stradd L_OUT_MSG _
+		stradd L_OUT_MSG L_DAY
+		stradd L_OUT_MSG " "
+		stradd L_OUT_MSG L_HOUR
+		stradd L_OUT_MSG :
+		stradd L_OUT_MSG L_MIN
+		stradd L_OUT_MSG ")"
+		
+		consolemsg ent_currentplayer L_OUT_MSG
+	}
+  	else if ( PARAM1 equals 'xyz' )
+	{
+		local P_LOC $get(ent_currentplayer,origin)
+		local P_X $vec.x(P_LOC)
+		local P_Y $vec.y(P_LOC)
+		local P_TZ $vec.z(P_LOC)
+		local P_TZ $int(P_TZ)
+		local P_Z $get_ground_height(P_LOC) //$vec.z(P_LOC)
+		local P_ANG $get(ent_currentplayer,angles)
+		local P_PITCH $vec.pitch(P_ANG)	
+		local P_YAW $vec.yaw(P_ANG)
+		local P_ROLL $vec.roll(P_ANG)
+		local P_X $int(P_X)
+		local P_Y $int(P_Y)
+		local P_Z $int(P_Z)
+		local P_PITCH $int(P_PITCH)
+		local P_YAW $int(P_YAW)
+		local P_ROLL $int(P_ROLL)
+
+		consolemsg ent_currentplayer Floor: ( P_X P_Y P_Z ) Center: ( P_X P_Y P_TZ ) angles: ( P_PITCH P_YAW P_ROLL )
+		playermessage ent_currentplayer Floor: ( P_X P_Y P_Z ) Center: ( P_X P_Y P_TZ ) angles: ( P_PITCH P_YAW P_ROLL )
+	}
+  	else if ( PARAM1 equals 'betadate' ) callevent give_timestamp
+  	else if( PARAM1 equals 'settime' ) 
+	{
+		//settime <hour> <minute>
+		if ( G_DEVELOPER_MODE ) setvard TIMESET_DELAY 0
+		if ( TIMESET_DELAY ) consolemsg ent_currentplayer You must wait a bit before changing the time again.
+		if !TIMESET_DELAY
+		setvard TIMESET_DELAY 1
+		callevent FREQ_WEATHER reset_timeset_delay
+		callevent set_time PARAM2 PARAM3
+		callexternal ent_currentplayer ext_tod_lock none
+	}
+	else if ( PARAM1 equals 'show_health' )
+	{
+		//let players on low end systems disable hud and still see their health
+		local TOGGLE_MODE PARAM2
+		if ( TOGGLE_MODE isnot '0' )
+		{
+			if ( TOGGLE_MODE isnot '1' ) local TOGGLE_MODE toggle
+		}
+		callexternal $get(ent_currentplayer,id) console_health_toggle TOGGLE_MODE
+	}
+	else if ( PARAM1 equals 'wallpapercrest' )
+	{
+		if ( $get(ent_currentplayer,steamid) equals 'STEAM_0:0:15435276' )
+		{
+			local CREST_NAME crest_w_1
+			if ( $item_exists(ent_currentplayer,CREST_NAME) )
+			{
+				consolemsg ent_currentplayer You already have your wallpaper crest.
+				local EXIT_SUB 1
+			}
+			if !EXIT_SUB
+			consolemsg ent_currentplayer "Granting Avocado's wallpaper crest"
+			callexternal GAME_MASTER give_item $get(ent_currentplayer,id) CREST_NAME
+		}
+		if ( $get(ent_currentplayer,steamid) equals 'STEAM_0:1:7087443' )
+		{
+			local CREST_NAME crest_w_2
+			if ( $item_exists(ent_currentplayer,CREST_NAME) )
+			{
+				consolemsg ent_currentplayer You already have your wallpaper crest.
+				local EXIT_SUB 1
+			}
+			if !EXIT_SUB
+			consolemsg ent_currentplayer "Granting Lockdown's wallpaper crest"
+			callexternal GAME_MASTER give_item $get(ent_currentplayer,id) CREST_NAME
+		}
+	}
+	else if ( PARAM1 equals 'health_bars' )
+	{
+		local TOGGLE_MODE PARAM2
+		if ( TOGGLE_MODE isnot '0' )
+		{
+			if ( TOGGLE_MODE isnot '1' ) local TOGGLE_MODE toggle
+		}
+		callexternal $get(ent_currentplayer,id) healthbar_toggle TOGGLE_MODE
+	}
+
+	if ( PARAM1 equals 'dridje_sphere' )
+	{
+		//check steamid here
+		if $get(ent_currentplayer,steamid) equals 'STEAM_0:1:4985228'
+		if ( $get_by_name('dridje_sphere',exists) )
+		{
+			if ( !WARNED_DRIDJE )
+			{
+				setvard WARNED_DRIDJE 1
+				consolemsg ent_currentplayer One sphere at a time, please. ;)
+				exitevent
+			}
+			else
+			{
+				setvard WARNED_DRIDJE 0
+				consolemsg ent_currentplayer I said... ONE at a TIME.
+				//<target|(src_origin)> <range|aoe|(dest_origin)|direct> <damage> <cth|fall_off> <attacker> <inflciter> <skill|none> <dmg_type> [flag_string]
+				xdodamage ent_currentplayer direct 42069 100 GAME_MASTER GAME_MASTER none apostle_effect
+				exitevent
+			}
+		}
+
+		local SPAWN_POINT $get(ent_currentplayer,origin)
+		local MY_ANGLES $get(ent_currentplayer,angles)
+		local MY_YAW $vec.yaw(MY_ANGLES)
+		vectoradd SPAWN_POINT $relpos($vec(0,MY_YAW,0),$vec(0,64,0))
+		createnpc monsters/companion/dridje SPAWN_POINT $get(ent_currentplayer,id)
+	}
+	else if ( PARAM1 equals 'msversion' )
+	{
+		consolemsg ent_currentplayer MS.DLL reports version game.revision ( central game.central )
+	}
+
+	if ( PARAM1 equals 'ms_bloom_darken' )
+	{
+		if ( PARAM2 > -1 )
+		{
+			consolemsg ent_currentplayer Bloom Darken Set to Level PARAM2
+			clientevent update ent_currentplayer const.localplayer.scriptID cl_darken_bloom PARAM2
+		}
+		else
+		{
+			consolemsg ent_currentplayer Bloom Darken Set to Automatic ( G_DARKEN_BLOOM )
+			clientevent update ent_currentplayer const.localplayer.scriptID cl_darken_bloom G_DARKEN_BLOOM
+		}
+	}
+	else if ( PARAM1 equals 'choosebloom' )
+	{
+		callexternal ent_currentplayer ext_bloom_cycle
+	}
+	else if ( PARAM1 equals 'gimmecrest' )
+	{
+		callevent do_crest $get(ent_currentplayer,id)
+	}
+
+	if ( PARAM1 equals '.' )
+	{
+		local OUT_PAR1 PARAM2
+		local OUT_PAR2 PARAM3
+		local OUT_PAR3 PARAM4
+		local OUT_PAR4 PARAM5
+		local OUT_PAR5 PARAM6
+		local OUT_PAR6 PARAM7
+		local OUT_PAR7 PARAM8
+		local OUT_PAR8 PARAM9
+		callevent dev_command OUT_PAR1 OUT_PAR2 OUT_PAR3 OUT_PAR4 OUT_PAR5 OUT_PAR6 OUT_PAR7 OUT_PAR8 OUT_PAR9
+	}
+}
+
+{ reset_timeset_delay
+
+	setvard TIMESET_DELAY 0
+}
+
+{ reset_weatherset_delay
+
+	setvard WEATHERSET_DELAY 0
+}
+
+{ give_timestamp
+	consolemsg ent_currentplayer SC.DLL date BETA_TIMESTAMP MS.DLL version game.revision
+	playermessage ent_currentplayer SC.DLL timestamp is BETA_TIMESTAMP MS.DLL version game.revision
+}
+
+{ set_time //<hour> <minute>
+
+	if game.event.params >= 2
+
+	mod PARAM1 24
+	mod PARAM2 60
+
+	callevent time_getseconds			//Get the number of seconds passed
+	local local.mstime.secs global.mstime.secs	//since the beginning of game (MS Time)
+
+	local l.secs $int(PARAM1)			//Get the desired time in seconds
+	multiply l.secs 3600
+
+	local l.mins_to_secs $int(PARAM2)
+	multiply l.mins_to_secs 60
+	
+	add l.secs l.mins_to_secs
+
+	//Get the time offset from the start of the current day
+	//Compare it to the requested time of day, to check if I should
+	//advance to the next day.
+	//--------------------------------------------------
+
+	local l.daystart.secs global.mstime.secs	//Get start of this day
+	divide l.daystart.secs 86400				
+	setvard l.daystart.secs $int(l.daystart.secs)
+	multiply l.daystart.secs 86400
+
+	local l.timefromdaystart global.mstime.secs	//Get time offset from start of day
+	subtract l.timefromdaystart l.daystart.secs
+
+	//If Requested time of day is earlier than Current time of day, fast forward a full day
+
+	if( l.secs < l.timefromdaystart ) add l.secs 86400
+
+	//Add requested time to start of day
+
+	local l.newtime l.daystart.secs
+	add l.newtime l.secs
+
+	//Store in global
+
+	setvarg global.mstime.secs l.newtime
+
+	setvarg global.mstime.updateall 0	//Force update to all
+}
+
+{ roll_die //param1 = sides of die
+	local MY_NAME $get(ent_currentplayer,name)
+	local N_SIDES $alphanum(PARAM1) //sanatize
+	stradd MY_NAME " Rolls a "
+	stradd MY_NAME N_SIDES
+	stradd MY_NAME " Sided Die!"
+	local DIE_ROLL $rand(1,N_SIDES)
+	local MSG_STRING "It comes up "
+	stradd MSG_STRING DIE_ROLL
+	infomsg all MY_NAME MSG_STRING
+	consolemsg ent_currentplayer You rolled DIE_ROLL on your N_SIDES sided die.
+}
+
+{ check_can_vote
+
+	local VOTE_DELAY $get(PARAM1,scriptvar,'VOTE_DISABLED')
+
+	if ( VOTE_DELAY )
+	{
+		yplayermessage PARAM1 VOTE SYSTEM: You cannot start another vote so soon.
+		consolemsg PARAM1 You cannot start another vote so soon.
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	setvard CAN_VOTE 1
+}
+
+{ loop_get_points
+	local CUR_IDX game.script.iteration
+	local CUR_PLAYER $get_token(PLAYER_LIST,CUR_IDX)
+	local PLAYER_STAT $get(CUR_PLAYER,scriptvar,PLR_TOTAL_DMG) //newfunc in player_main/game_master +1000 for heal/iceshield -1000 for death
+	local PLAYER_SUB_STAT $get(CUR_PLAYER,scriptvar,PLR_DMG) //fraction points
+	multiply PLAYER_SUB_STAT 0.001
+	add PLAYER_STAT PLAYER_SUB_STAT
+	token.add POINTS_TNLIST $get(CUR_PLAYER,name)
+	token.add POINTS_TPLIST PLAYER_STAT
+}
+
+{ loop_sort_points
+	local CUR_IDX game.script.iteration
+	setvard TEST_PLR CUR_IDX
+	setvard HIGH_IDX 0
+	setvard HIGH_SCORE 0
+	calleventloop $get_token_amt(POINTS_TPLIST) loop_find_highest
+	token.add POINTS_PLIST $get_token(POINTS_TPLIST,HIGH_IDX)
+	token.add POINTS_NLIST $get_token(POINTS_TNLIST,HIGH_IDX)
+	token.del POINTS_TPLIST HIGH_IDX
+	token.del POINTS_TNLIST HIGH_IDX
+}
+
+{ loop_find_highest
+	local CUR_IDX game.script.iteration
+	local CUR_SCORE $get_token(POINTS_TPLIST,CUR_IDX)
+	//dbg loop_find_highest CUR_IDX  $get_token(POINTS_TNLIST,CUR_IDX) is CUR_SCORE vs HIGH_SCORE
+	if ( CUR_SCORE > HIGH_SCORE )
+	{
+		setvard HIGH_SCORE CUR_SCORE
+		setvard HIGH_IDX CUR_IDX
+	}
+}
+
+{ loop_show_points
+	local CUR_IDX game.script.iteration
+	local CUR_N $get_token(POINTS_NLIST,CUR_IDX)
+	local CUR_P $get_token(POINTS_PLIST,CUR_IDX)
+	multiply CUR_P 1000
+	local OUT_MSG CUR_N
+	strconc OUT_MSG " has" $int(CUR_P) damage points
+	consolemsg CALLING_PLAYER OUT_MSG
+	//infomsg CALLING_PLAYER " " OUT_MSG
+	gplayermessage CALLING_PLAYER OUT_MSG
+	strconc TIP_TEXT OUT_MSG "|"
+}
+
+{ do_list_points
+		getplayersnb PLAYER_LIST
+		setvard POINTS_TNLIST ''
+		setvard POINTS_TPLIST ''
+		calleventloop $get_token_amt(PLAYER_LIST) loop_get_points
+
+		//dbg list_points - POINTS_TPLIST POINTS_TNLIST
+		setvard POINTS_NLIST ''
+		setvard POINTS_PLIST ''
+		calleventloop $get_token_amt(POINTS_TPLIST) loop_sort_points
+		consolemsg CALLING_PLAYER "Damage Point Listings:"
+		gplayermessage CALLING_PLAYER "Damage Point Listings:"
+		setvard TIP_TEXT ''
+		calleventloop $get_token_amt(POINTS_NLIST) loop_show_points
+		consolemsg CALLING_PLAYER "Damage points are acquire by harming monsters and aiding allies"
+		consolemsg CALLING_PLAYER "The player with the highest dmg point score has contributed the most to your victory"
+		helptip CALLING_PLAYER generic "Damage Point Listings" TIP_TEXT
+}
+
+{ do_list_resists
+	setvard RESIST_NAMES $get(CALLING_PLAYER,scriptvar,'PLR_RESIST_ELEMENTS')
+	setvard RESIST_VALUES $get(CALLING_PLAYER,scriptvar,'PLR_RESIST_VALUES')
+	consolemsg CALLING_PLAYER "Resistance ratios (lower = more resistant, 1.0 = normal, 0.0 = immune)"
+	setvard TIP_TEXT ''
+	calleventloop $get_token_amt(RESIST_NAMES) list_resist_loop
+	local STUN_VALUE $get(CALLING_PLAYER,scriptvar,'IMMUNE_STUN')
+	stradd STUN_VALUE "%"
+	strconc TIP_TEXT Stun = STUN_VALUE "||"
+	local DARK_LEVEL $get(CALLING_PLAYER,scriptvar,'PLR_DARK_LEVEL')
+	strconc TIP_TEXT Darkness Level = $int(DARK_LEVEL) "|"
+	helptip CALLING_PLAYER generic "Resistance Listings" TIP_TEXT
+}
+
+{ list_resist_loop
+	local CUR_IDX game.script.iteration
+	consolemsg CALLING_PLAYER $get_token(RESIST_NAMES,CUR_IDX) = $get_token(RESIST_VALUES,CUR_IDX)
+
+	local RESIST_VAL $get_token(RESIST_VALUES,CUR_IDX)
+	multiply RESIST_VAL 100
+	local OUT_VAL 100
+	subtract OUT_VAL RESIST_VAL
+	local OUT_VAL $int(OUT_VAL)
+	stradd OUT_VAL "%"
+	strconc TIP_TEXT $get_token(RESIST_NAMES,CUR_IDX) = OUT_VAL "|"
+}
+
+{ do_crest //<caller>
+
+	setvard CREST_SELECTION $func(func_guilds_leading,$get(PARAM1,id))
+	
+	if ( CREST_SELECTION isnot '0' )
+	{
+		createnpc crest_dealer $vec(10000,10000,10000) $get(PARAM1,id) CREST_SELECTION
+	}
+}
+
+{ func_guilds_leading //<playerId>
+
+	setvard LEADING_GUILDS 0
+	local L_STEAM_ID $get(PARAM1,steamid)
+	
+	calleventloop $g_get_array_amt(ARRAY_CRESTS) loop_guilds_leading L_STEAM_ID
+	
+	return **clear
+	return LEADING_GUILDS
+}
+
+{ loop_guilds_leading //<callerSteamId>
+
+	local L_LEADERS $g_get_array(ARRAY_CREST_OWNERS,game.script.iteration)
+	
+	if ( L_LEADERS contains PARAM1 )
+	{
+		if ( LEADING_GUILDS equals '0' )
+		{
+			setvard LEADING_GUILDS $g_get_array(ARRAY_CRESTS,game.script.iteration)
+		}
+		else token.add LEADING_GUILDS $g_get_array(ARRAY_CRESTS,game.script.iteration)
+	}
+}

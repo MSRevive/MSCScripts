@@ -18,7 +18,6 @@
 	setvard MALDORA_LIST ''
 	setvard DEMON_RAGE_USERS ''
 	setvard DEMON_RAGE_USES ''
-	setvard N_TELFL_DEAD 0
 
 	const LIGHTSYS_N_LIGHTS 16
 	array.create ARRAY_LIGHT_OWNERLIST
@@ -39,6 +38,8 @@
 //Game master modules
 #include game_master/map_transitions
 #include game_master/vote_generic
+
+#include dq/externals/dq_game_master //IM SORRY THIS IS SHIT
 
 { game_spawn
 	name The Game Master
@@ -63,8 +64,6 @@
 	//array.create ARRAY_PLAYER_ENTS
 
 	servercmd "echo Game Master Spawned"
-
-	erasefile heartbeat.txt
 
 	setvard PLAYING_DEAD 1
 	setvarg GAME_MASTER $get(ent_me,id)
@@ -108,16 +107,6 @@
 }
 
 { [server] time_sync_check
-
-	erasefile heartbeat.txt
-
-	if ( game.players == 0 )
-	{
-		//server's been empty awhile, check if we need to reset it
-		local L_CHECK_EMPTY_DELAY game.cvar.ms_timelimit
-		multiply L_CHECK_EMPTY_DELAY 60.0
-		callevent L_CHECK_EMPTY_DELAY game_timedout
-	}
 
 	//scramble the global treasure lists ever few minutes to make them more "random"
 	add GM_SCRAMBLE_COUNT 1
@@ -496,25 +485,6 @@
 	//infomsg all "DEBUG ALERT" "MSAREA_MONSTERSPAWN REMOVED"
 }
 
-{ reset_server
-
-	dbg *** reset_server check: var game.cvar.ms_reset_if_empty plrs game.players
-
-	if GM_HAD_PLAYER
-
-	if game.cvar.ms_reset_if_empty
-
-	if game.players == 0
-
-	if ( game.cvar.ms_chatlog > 0 ) chatlog $timestamp(>)  "SERVER_SHUTDOWN: reason: ms_reset_if_empty 1"
-
-	callevent 0.1 exit_server
-}
-
-{ exit_server
-	servercmd "quit"
-}
-
 { game_playerspeak //<player> <type> <text>
 	if ( G_DEVELOPER_MODE )
 	{
@@ -539,47 +509,6 @@
 	{
 		chatlog $timestamp(>) PLAYER_LEFT: $get(PARAM1,name) [ $get(PARAM1,steamid) ] [ PlayerCountNow: game.players [ game.playersnb active ] ]
 	}
-
-	if game.players <= 1 //if last player leaves, still comes up as 1 at this point
-
-	local L_CHECK_EMPTY_DELAY game.cvar.ms_timelimit
-	multiply L_CHECK_EMPTY_DELAY 60.0
-	callevent L_CHECK_EMPTY_DELAY game_timedout //code side version of this seems broken
-}
-
-{ game_timedout
-	//ms_timelimit says map's been empty for ms_timelimit# seconds, switch to Edana or Reset
-	//this event may not be dependalbe, may need to remove it from the hard code and do it manually here
-	
-	//dbg *** game_timedout var game.cvar.ms_reset_if_empty plrs game.players
-
-	if game.players == 0
-
-	if game.time > GM_NEXT_SERVER_RESET
-	setvard GM_NEXT_SERVER_RESET game.time
-	add GM_NEXT_SERVER_RESET game.cvar.ms_timelimit
-
-	//if $lcase(game.map.name) isnot edana
-
-	if ( game.cvar.ms_reset_if_empty == 0 )
-	{
-		if game.cvar.ms_timelimit > 0
-		if L_MAP_NAME isnot edana
-		//manual map change due to not using client drop bit
-		callevent manual_edana
-	}
-	else
-	{
-		callevent reset_server
-	}
-}
-
-{ manual_edana
-	//this changes to edana when no players are present (sending clientcmd with no players causes errors)
-	if ( game.players > 0 ) callexternal all game_playercmd_setweather clear 0.01 0.01 //just in case of weirdness
-	if ( game.cvar.ms_chatlog > 0 ) chatlog $timestamp(>)  "Server empty, switching to Edana via ms_timelimit."
-	setvard DEST_MAP edana
-	callevent 1.0 delay_changelevel
 }
 
 { delay_changelevel //Uses var DEST_MAP to change level. Intended for delays
@@ -665,7 +594,6 @@
 	local reg.mitem.title	L_SPELL_NAME
 	local reg.mitem.type 	callback
 	local reg.mitem.data 	CUR_IDX
-	local reg.mitem.cb_failed erase_spell_no
 	local reg.mitem.callback 	confirm_forget_spell
 	if ( reg.mitem.title isnot 0 ) menuitem.register
 }
@@ -1028,16 +956,6 @@
 }
 
 { setup_gm
-
-	setvarg G_IDLE_MUSIC none
-	setvarg G_IDLE_MUSIC_LENGTH 0
-	setvarg G_COMBAT_MUSIC none
-	setvarg G_COMBAT_MUSIC_LENGTH 0
-
-	setvarg G_IDLE_MUSIC game.map.music.idle.file
-	setvarg G_IDLE_MUSIC_LENGTH game.map.music.idle.length
-	setvarg G_COMBAT_MUSIC game.map.music.combat.file
-	setvarg G_COMBAT_MUSIC_LENGTH game.map.music.combat.length
 
 	setvarg G_MAP_ADDPARAMS 0
 
@@ -1721,59 +1639,7 @@
 	}
 }
 
-{ gm_playmp3 //<duration> <mp3name>
-	local OUT_PAR1 PARAM1
-	local OUT_PAR2 PARAM2
-	callexternal players ext_play_music_me OUT_PAR1 OUT_PAR2
-}
-
-{ gm_playmp3_on_player //<target> <mp3name> <duration>
-	local OUT_SONG PARAM2
-	local OUT_TIME PARAM3
-	callexternal PARAM1 ext_play_music_me OUT_TIME OUT_SONG
-}
-
-//these are map scriptevents, so the first param would be the triggering player
-{ gm_set_combat_music //<ignored> <file> <length> [play_now:0|1]
-	setvarg G_COMBAT_MUSIC PARAM2
-	setvarg G_COMBAT_MUSIC_LENGTH PARAM3
-	dbg gm_set_combat_music G_COMBAT_MUSIC G_COMBAT_MUSIC_LENGTH
-	if PARAM5
-	callexternal players set_combat_music G_COMBAT_MUSIC G_COMBAT_MUSIC_LENGTH 1
-}
-
-{ gm_set_idle_music //<ignored> <file> <length> [play_now:0|1|3]
-	setvarg G_IDLE_MUSIC PARAM2
-	setvarg G_IDLE_MUSIC_LENGTH PARAM3
-	dbg gm_set_idle_music G_IDLE_MUSIC G_IDLE_MUSIC_LENGTH
-	local L_PASS PARAM4
-	if ( L_PASS == 3 )
-	{
-		//mstrig called - also end combat music
-		local L_PASS 1
-		callexternal players set_end_combat_music
-	}
-	callexternal players set_idle_music G_IDLE_MUSIC G_IDLE_MUSIC_LENGTH L_PASS
-	//if PARAM4 == 1
-	//callexternal players ext_music_idle
-}
-
-{ gm_set_music //<ignored> <idle_file> <idle_length> <combat_file> <combat_length> [play_now:0|1=idle|2=combat]
-	setvarg G_IDLE_MUSIC PARAM2
-	setvarg G_IDLE_MUSIC_LENGTH PARAM3
-	setvarg G_COMBAT_MUSIC PARAM4
-	setvarg G_COMBAT_MUSIC_LENGTH PARAM5
-	dbg gm_set_music G_IDLE_MUSIC G_COMBAT_MUSIC PARAM6
-
-	local L_PASS PARAM6
-	callexternal players set_music G_IDLE_MUSIC G_IDLE_MUSIC_LENGTH G_COMBAT_MUSIC G_COMBAT_MUSIC_LENGTH L_PASS
-}
-
-{ gm_end_combat_music
-	callexternal players set_end_combat_music
-}
-
-{ ext_activate_items
+{ ext_activate_items //This is an m2_quest only function...
 	if GM_HANDLE_ACTIVATES
 	if ( $lcase(game.map.name) startswith m2_quest )
 	{

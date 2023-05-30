@@ -66,10 +66,6 @@
 //NPC_BASE_EXP - only used for monsters that are built using includes of other monsters, prevents them from having the same xp
 #scope server
 
-//{ game_precache
-//	if !I_R_PET
-//	add G_PRECACHE 1
-//}
 
 {
 	//boss regen rate and total heal ratios
@@ -1019,16 +1015,25 @@
 }
 
 { npcatk_boss_regen
+
 	if NPC_BOSS_REGEN_RATE > 0
-	//bosses passively regen 10%[def] of their current hp/minute
-	callevent NPC_BOSS_REGEN_FREQ npcatk_boss_regen
-	if !NPC_BOSS_PAUSE_REGEN
-	if $get(ent_me,isalive)
-	if $get(ent_me,hp) > 0
-	local HP_TO_GIVE $get(ent_me,hp)
-	multiply HP_TO_GIVE NPC_BOSS_REGEN_RATE
-	givehp HP_TO_GIVE
-	//dbg regen_pulse HP_TO_GIVE
+	local L_DIFF $math(subtract,game.time,NPC_LAST_DAMAGED_TIME)
+	if ( L_DIFF > 240 ) //4 minutes (240 seconds)
+	{
+		//bosses passively regen 10%[def] of their current hp/minute
+		callevent NPC_BOSS_REGEN_FREQ npcatk_boss_regen
+		if !NPC_BOSS_PAUSE_REGEN
+		if $get(ent_me,isalive)
+		if $get(ent_me,hp) > 0
+		local HP_TO_GIVE $get(ent_me,hp)
+		multiply HP_TO_GIVE NPC_BOSS_REGEN_RATE
+		givehp HP_TO_GIVE
+		//dbg regen_pulse HP_TO_GIVE
+	}
+	else
+	{
+		callevent L_DIFF npcatk_boss_regen
+	}
 }
 
 { [server] game_damaged //PARAM1=attacker PARAM2=dmg PARAM3=dmg_type
@@ -1448,54 +1453,6 @@
 	setvard NPC_NEVER_RESUME 0
 }
 
-//moved to player ext_targeted_by_mob
-//{ npcatk_music_check //<target> called whenever monster validates a new player for the first time
-//	dbg npcatk_music_check
-//
-//	callexternal NPCATK_TARGET ext_targeted_by_mob
-//
-//	if NPC_HAS_COMBAT_MUSIC
-//
-//	if ( !NPC_CUSTOM_COMBAT_MUSIC )
-//	{
-//		if $get(NPCATK_TARGET,scriptvar,'PLR_COMBAT_MUSIC_LENGTH') != 0
-//		setvard NPC_COMBAT_MUSIC_ON 1
-//		dbg npcatk_music_check sent
-//		callexternal PARAM1 ext_music_combat add $get(ent_me,index)
-//	}
-//	else
-//	{
-//		//if $get(NPCATK_TARGET,scriptvar,'PLR_MUSIC_FILE') isnot NPC_CMUSIC_FILE
-//		setvard NPC_COMBAT_MUSIC_ON 1
-//		dbg npcatk_music_check sent_custom [ NPC_CMUSIC_FILE ]
-//		callexternal PARAM1 ext_music_combat add $get(ent_me,index) NPC_CMUSIC_LENGTH NPC_CMUSIC_FILE
-//	}
-//}
-
-//{ npcatk_music_remove_calm
-//	if NPC_HAS_COMBAT_MUSIC
-//	if NPCATK_TARGET equals unset
-//	setvard NPC_COMBAT_MUSIC_ON 0
-//	dbg npcatk_music_remove $get(ent_me,index)
-//	callexternal players ext_music_combat remove $get(ent_me,index)
-//}
-
-
-//{ npcatk_music_remove
-//	if NPC_HAS_COMBAT_MUSIC
-//	setvard NPC_COMBAT_MUSIC_ON 0
-//	dbg npcatk_music_remove $get(ent_me,index)
-//	//callexternal players ext_music_combat remove $get(ent_me,index)
-//	if ( !NPC_CUSTOM_COMBAT_MUSIC )
-//	{
-//		callexternal players ext_music_combat_spinout $get(ent_me,index) default default
-//	}
-//	else
-//	{
-//		callexternal players ext_music_combat_spinout $get(ent_me,index) NPC_CMUSIC_LENGTH NPC_CMUSIC_FILE
-//	}
-//}
-
 { npcatk_fx_sprite_in1 //fancier
 	if ( $get(ent_me,height) <= 64 ) local SPRITE_SCALE 1.0
 	if ( $get(ent_me,height) > 128 ) local SPRITE_SCALE 2.0
@@ -1543,21 +1500,18 @@
 }
 
 { cycle_down
-	if $get(ent_me,isalive)
-	dbg cycle_down PARAM1
-	if ( NPC_WAS_IN_BATTLE ) callevent 0.5 npcatk_clear_music
-	//callevent 3.0 npcatk_music_remove_calm
+	callevent npcatk_clear_music
 }
 
 { npcatk_clear_music
-	if $get(ent_me,isalive)
-	dbg npcatk_clear_music
-	if NPC_WAS_IN_BATTLE
-	callexternal players ext_untargeted_by_mob $get(ent_me,id)
+	if NPC_CUSTOM_COMBAT_MUSIC
+	playmp3 all stop
 }
 
 { game_death
 	if ( NPC_WAS_IN_BATTLE ) callexternal players ext_untargeted_by_mob $get(ent_me,id)
+	callevent cycle_down
+	
 	setvard NPC_PREV_TARGET unset //in case fake death
 
 	if ( NPC_DO_ON_DIE > 0 )
@@ -1582,14 +1536,12 @@
 		} 
 	}
 
-	//NOV2014_12 - moved music/target events here
 	if ( NEW_AI )
 	{
 		if ( NPCATK_TARGET isnot NPC_PREV_TARGET )
 		{
 			setvard NPC_PREV_TARGET NPCATK_TARGET
 			if $get(NPCATK_TARGET,isplayer)
-			dbg npcatk_targetvalidate send_musak
 			setvard NPC_WAS_IN_BATTLE 1
 			callexternal NPCATK_TARGET ext_targeted_by_mob $get(ent_me,id)
 		}
@@ -1600,11 +1552,13 @@
 		{
 			setvard NPC_PREV_TARGET HUNT_LASTTARGET
 			if $get(HUNT_LASTTARGET,isplayer)
-			dbg npcatk_targetvalidate (old) sendmusic
 			setvard NPC_WAS_IN_BATTLE 1
 			callexternal HUNT_LASTTARGET ext_targeted_by_mob $get(ent_me,id) 
 		}
 	}
+
+	if NPC_CUSTOM_COMBAT_MUSIC
+	playmp3 NPC_PREV_TARGET combat NPC_CMUSIC_FILE
 
 	if !NPC_NEVER_UNAGRO
 	setvard NPC_LASTSEEN_ENEMY_TIME game.time
@@ -1642,7 +1596,7 @@
 			if !EXIT_SUB
 
 			setvard NPC_LASTSEEN_ENEMY_TIME 0
-			//so we can recheck for music if we re-aquire
+			
 			if ( NEW_AI )
 			{
 				setvard NPC_PREV_TARGET unset

@@ -1,0 +1,327 @@
+//Chumtoad by greatguys1
+//This doens't follow the original concept of it from hl1 what-so-ever.
+//The idea is to have it like "zerg" where they're most effective in numbers, having damage scale higher the more it attacks, and even more when more are attacking the same target.
+
+#scope server
+
+{
+	//Settings for base monster new
+	setvar ANIM_RUN "hop_1"
+	setvar ANIM_WALK "hop_1"
+	setvar ANIM_IDLE "idle"
+	setvard ANIM_ATTACK "flinch2"
+
+	setvard NPC_NO_ATTACK 0
+	
+	setvard ATTACK_MOVERANGE 10
+	setvard ATTACK_RANGE 50
+	setvard ATTACK_HITRANGE 70
+	const ATTACK_HITCHANCE 80
+
+	const FLEE_HEALTH 0
+	const FLEE_CHANCE 0
+
+	setvard CANT_FLEE 1
+	setvard CAN_RETALIATE 1
+	setvard CAN_FLINCH 0
+
+	//Monster explode
+	const EXPLOSION_DAMAGE 65
+
+	//Other stuff particular to this script
+	const ANIM_CHARGE "idle2"
+	const ANIM_SUICIDE "flinch1"
+	setvard ANIM_IDLE3_CHANCE 5 //% chance to use the idle3 animation, slower but more damage
+	const LONG_ATTACK 35 //Not long range, but taking longer to strike.
+	const SHORT_ATTACK 15
+
+	const MONSTER_HEALTH $get(ent_me,maxhp) //I think this'll grab it again should it change.
+
+	const GIB_BURSTER_SCRIPT "effects/sfx_gib_burst"
+	const GIB_BURSTER_FORCE 200
+
+	const EXPLOSION_SFX "effects/sfx_sprite"
+	const EXPLOSION_SPRITE "oculus/exp_green.spr"
+	const EXPLOSION_SFX_SOUND "monsters/tube/Tube_ExplodingDeath.wav"
+
+	const IDLE_SOUND1 "monsters/ogre_welp/bc_idle2.wav"
+	const IDLE_SOUND2 "monsters/ogre_welp/bc_idle3.wav"
+	const IDLE_SOUND3 "monsters/ogre_welp/bc_idle4.wav"
+
+	const DEATH_SOUND1 "monsters/bat/pain1.wav"
+	const DEATH_SOUND2 "monsters/bat/pain2.wav"
+	const DEATH_SOUND3 "monsters/beetle/idle.wav2"
+	const DEATH_SOUND4 "monsters/beetle/idle3.wav"
+
+	const PAIN_SOUND1 "monsters/ogre_welp/bc_pain1.wav"
+	const PAIN_SOUND2 "monsters/ogre_welp/bc_pain2.wav"
+	const PAIN_SOUND3 "monsters/ogre_welp/bc_pain3.wav"
+
+	const HIT_SOUNDS "monsters/tube/TubeCritter_Hit1.wav;monsters/tube/TuberCritter_Hit2.wav;monsters/tube/TubeCritter_Hit3.wav"
+
+	const PITCH_MIN 30
+	const PITCH_MAX 200
+
+	setvard SUICIDE_CHANCE 5 //% chance
+	const SUICIDE_THRESHOLD 0.7 //Multiplier of what health I need to be under before I check against chance to explode
+	const SUICIDE_DISTANCE 100 //Distance affected by explosion
+	setvard SUICIDING 0
+	setvard TRIED_SUICIDE 0
+
+	const BLINK_FREQ 5
+	const BLINK_DUR 0.2 //For each step
+	setvard BLINK_STEP 0
+	const BLINK_MAX 2 //Two other than the idle, eye open state.
+	setvard BLINK_CYCLE 1 //1 for up, -1 for down
+
+	setvard HACKING_ATK_DIST 0
+
+	setvard DO_IDLE_NOISES 1
+	const IDLE_NOISE_FREQ 5
+
+	setvard NPC_GIVE_EXP 200
+}
+
+#include monsters/base_monster_new
+#include monsters/base_monster_explode
+#include monsters/base_damage_stack
+
+{ game_precache
+
+	precache monsters/chumtoad.mdl
+	precache EXPLOSION_SPRITE
+	precache agibs.mdl
+}
+
+{ npc_spawn
+
+	name "a|Chumtoad"
+	race vermin
+	hp 300
+	setmodel "monsters/chumtoad.mdl"
+	width 20
+	height 8
+	setmoveanim ANIM_RUN
+	setidleanim ANIM_IDLE
+	blood green
+	roam 0
+
+	playanim once ANIM_IDLE
+	setvard SOUND_CHANNEL CHAN_VOICE
+
+	callevent BLINK_FREQ do_blinking
+	callevent IDLE_NOISE_FREQ play_idle
+}
+
+{ play_idle
+
+	if ( DO_IDLE_NOISES )
+	{
+		playrandomsound SOUND_CHANNEL 10 IDLE_SOUND1 IDLE_SOUND2 IDLE_SOUND3
+	}
+
+	callevent IDLE_NOISE_FREQ play_idle
+}
+
+{ do_blinking
+
+	local L_PROPS $get(ent_me,renderprops)
+	local L_SKIN $get_token(L_PROPS,4)
+
+	setvard BLINK_STEP $math(add,BLINK_STEP,BLINK_CYCLE)
+
+	if ( BLINK_STEP >= BLINK_MAX )
+	{
+		setvard BLINK_CYCLE -1
+	}
+	else if ( BLINK_STEP <= 0 )
+	{
+		setvard BLINK_CYCLE 1
+	}
+
+	if ( L_SKIN < 3 ) //In case a mapper changes the skin
+	{
+		setprop ent_me skin BLINK_STEP
+	}
+
+	if ( BLINK_STEP == 0 )
+	{
+		callevent BLINK_FREQ do_blinking
+	}
+	else
+	{
+		callevent BLINK_DUR do_blinking
+	}
+}
+
+{ game_damaged
+
+	local L_HP $get(ent_me,hp)
+
+	if ( L_HP <= $math(multiply,MONSTER_HEALTH,SUICIDE_THRESHOLD) )
+	{
+		if ( !TRIED_SUICIDE )
+		{
+			setvard TRIED_SUICIDE 1
+
+			if ( $rand(1,100) <= SUICIDE_CHANCE )
+			{
+				callevent do_suicide_charge
+			}
+		}
+	}
+
+	playrandomsound SOUND_CHANNEL 10 PAIN_SOUND1 PAIN_SOUND2 PAIN_SOUND3
+}
+
+{ dmgstk_dodamage //PARAM1=hit:0|1 PARAM2=ent_hit PARAM3=(start) PARAM4=(end) PARAM5=DmgType PARAM6=DmgAmt
+//Thanks Thothie for most of this event
+
+	if ( PARAM1 ) //I hit
+	{
+		local L_TARGET PARAM2
+
+		setvard HACKING_ATK_DIST 1
+
+		local L_MULT $get_scriptflag(L_TARGET,STACK_FLAG_NAME,name_value)
+		subtract L_MULT 0.1 //Upon the first attack, the get scriptflag will always return 1.1, 'cuz the system added it already. I did a 1.0 attack though. Compensating here.
+		local L_PITCH $ratio($math(divide,L_MULT,STACK_MULT_MAX),PITCH_MIN,PITCH_MAX) //The math gets a number between 0-1 depending on how much it stacked already.
+
+		playsound SOUND_CHANNEL 10 $get_random_token(HIT_SOUNDS) 0.8 L_PITCH
+	}
+}
+
+{ game_damaged_other //PARAM1=target_hit PARAM2=dmg PARAM3=dmg_type
+
+	dbg chumtoad-game_damaged_other PARAM4
+
+	if ( HACKING_ATK_DIST ) //Unfortunately, I don't think this will have effect on the damage stacker without adding another flag. I already have too many. If it missed here, it likely added a stack. Hopefully shouldn't be too detrimental
+	{
+		local L_HACK_START $get(ent_me,origin)
+		local L_HACK_END $get(PARAM1,origin)
+
+		local L_HACK_HITRANGE ATTACK_HITRANGE //Unfortunately need to hack hitrange because of varying enemies width.
+		add L_HACK_HITRANGE $math(divide,$get(PARAM1,width),2)
+
+		if ( $get(PARAM1,isplayer) ) //Hack in extra distance with a player because their origin is in the middle of the ent while others are at their feet.
+		{
+			add L_HACK_HITRANGE $math(divide,$get(PARAM1,height),2)
+		}
+
+		if ( $dist(L_HACK_START,L_HACK_END) >= L_HACK_HITRANGE )
+		{
+			return 0
+		}
+		else if ( $get_traceline(L_HACK_START,L_HACK_END,worldonly) )
+		{
+			return 0
+		}
+
+		setvard HACKING_ATK_DIST 0
+	}
+}
+
+{ game_death
+
+	playrandomsound SOUND_CHANNEL 10 DEATH_SOUND1 DEATH_SOUND2 DEATH_SOUND3 DEATH_SOUND4
+}
+
+{ do_suicide_charge
+
+	callevent npcatk_suspend_ai
+	playanim critical ANIM_CHARGE
+	setvard SUICIDING 1
+}
+
+{ finish_charge //Called from the model
+
+	playanim critical ANIM_SUICIDE
+}
+
+{ finish_suicide //Called from the model
+
+	setprop ent_me rendermode 5
+	setprop ent_me renderamt 0
+
+	callevent do_explode
+	callevent npc_suicide
+}
+
+{ do_explode
+
+	local L_VEC $get(ent_me,origin)
+	vectoradd L_VEC $vec(0,0,30)
+
+	local L_COL $clcol(0,0,0)
+	local L_STR "0;3;255;add;"
+	stradd L_STR L_COL
+	stradd L_STR ";20;10"
+
+	clientevent new all EXPLOSION_SFX L_VEC EXPLOSION_SPRITE L_STR 0.5
+
+	//<origin> <model_name;model_name> <submodel;submodel> <render_props> <amt> <force> <duration>
+	//render props format: fadeout:0|1;scale;renderamt;rendermode
+	clientevent new all GIB_BURSTER_SCRIPT L_VEC "agibs.mdl" "0;1;2;3" "1;0.5;255;normal" 4 GIB_BURSTER_FORCE 5
+	playsound 0 10 EXPLOSION_SFX_SOUND
+}
+
+{ beam_dodamage //PARAM1=hit:0|1 PARAM2=ent_hit PARAM3=(start) PARAM4=(end) PARAM5=DmgType PARAM6=DmgAmt
+
+	if ( PARAM1 ) //Hack for explosion to do stack damage. Really getting tired of ""hacking"" all this. This script is gonna turn out a mess.
+	{
+		local L_TARGET PARAM2
+
+		if ( $get(L_TARGET,relationship,ent_me) equals enemy ) 
+		{
+			local L_PASS_PARAM PARAM6
+			callevent do_stack L_TARGET L_PASS_PARAM
+		}
+	}
+}
+
+{ npc_selectattack
+
+	if ( $rand(0,100) <= ANIM_IDLE3_CHANCE )
+	{
+		setvard ANIM_ATTACK idle3
+	}
+	else
+	{
+		setvard ANIM_ATTACK flinch2
+	}
+}
+
+{ attack_1 //Called from the model
+
+	callevent do_attack LONG_ATTACK
+}
+
+{ attack_2 //Called from the model
+
+	callevent do_attack SHORT_ATTACK
+}
+
+{ do_attack //PARAM1 = damage
+
+	xdodamage NPCATK_TARGET direct PARAM1 ATTACK_HITCHANCE ent_me ent_me none pierce dmgevent:dmgstk
+	//Doing direct damage so chumtoads can hit through each other.
+}
+
+{ dmgstk_damaged_other
+	dbg dmgstk_damaged_other PARAM1 PARAM2 PARAM3
+}
+
+{ cycle_up
+
+	setvard DO_IDLE_NOISES 0
+}
+
+{ cycle_down
+
+	setvard DO_IDLE_NOISES 1
+}
+
+{ ext_suicide_chance //PARAM1 = new suicide chance //Intended to be called via the map.
+
+	setvard SUICIDE_CHANCE PARAM1
+}

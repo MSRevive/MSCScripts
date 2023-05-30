@@ -1,0 +1,395 @@
+//Includes functionality relating to players attempting to vote via console or chat
+
+//Player (chat or console) votes:
+//votemap
+//votelock
+//votekick
+//voteban
+
+//ms_admin_contact - e-mail contact for kick/banned players
+//msvote_map_type - all|root|nonfn - all legit maps|root towns only|all+illegit (def: all)
+//msvote_farm_all_day - 0|1 - disable|enable voting for current map
+//msvote_pvp_enable - 1|0 - enable|disable voting for PvP
+//msvote_map_enable - 1|0 - enable|disable map votes
+//msvote_kick_enable - 1|0 - enable|disable kick votes
+//msvote_ban_enable - 1|0 - enable|disable ban votes
+//msvote_ban_time - Amount of time a voteban bans a player (def:60 minutes)
+
+#scope server
+
+{
+	setvard MAP_VOTE_DELAY 20
+}
+
+{ game_playercmd
+
+	local VOTE_PARAM1 PARAM1
+	local VOTE_PARAM2 PARAM2
+	local VOTE_PARAM3 PARAM3
+	local VOTE_PARAM4 PARAM4
+	local VOTE_PARAM5 PARAM5
+	if ( VOTE_PARAM1 equals 'say_text' )
+	{
+		local VOTE_PARAM1 PARAM3
+		local VOTE_PARAM2 PARAM4
+		local VOTE_PARAM3 PARAM5
+		local VOTE_PARAM4 PARAM6
+		local VOTE_PARAM5 PARAM7
+	}
+	
+	if ( VOTE_PARAM1 startswith 'vote' )
+	{
+		//dbg check_vote_options VOTE_PARAM1 VOTE_PARAM2 VOTE_PARAM3 VOTE_PARAM4 VOTE_PARAM5 VOTE_PARAM6 VOTE_PARAM7
+		callevent check_vote_options VOTE_PARAM1 VOTE_PARAM2 VOTE_PARAM3 VOTE_PARAM4 VOTE_PARAM5 VOTE_PARAM6 VOTE_PARAM7
+	}
+}
+
+{ check_vote_options
+
+	setvard CAN_VOTE 0
+	callevent check_can_vote $get(ent_currentplayer,id) //Sets CAN_VOTE to 1 if some checks are passed
+	if CAN_VOTE
+
+	if ( PARAM1 equals 'votemap' )
+	{
+		local ALLOW_MAPVOTE game.cvar.msvote_map_enable 
+		if ( !ALLOW_MAPVOTE )
+		{
+			local OUT_MSG "VOTEMAP: This server does not allow map votes."
+			consolemsg ent_currentplayer OUT_MSG
+			dplayermessage ent_currentplayer OUT_MSG
+		}
+		if ALLOW_MAPVOTE
+		local MAP_TO_VOTE PARAM2
+		callevent player_votemap $get(ent_currentplayer,id) MAP_TO_VOTE
+	}
+
+	if ( PARAM1 equals 'votepvp' )
+	{
+		local ALLOW_PVPVOTE game.cvar.msvote_pvp_enable 
+		if ( !ALLOW_PVPVOTE )
+		{
+			local OUT_MSG "VOTEPVP: This server does not allow PVP votes."
+			consolemsg ent_currentplayer OUT_MSG
+			dplayermessage ent_currentplayer OUT_MSG
+		}
+		if ALLOW_PVPVOTE
+		if ( game.players < 2 )
+		{
+			if !G_DEVELOPER_MODE
+			local OUT_MSG "VOTEPVP: Requires at least 2 players to vote for PVP."
+			consolemsg ent_currentplayer OUT_MSG
+			dplayermessage ent_currentplayer OUT_MSG
+			local EXIT_SUB 1
+		}
+		if !EXIT_SUB
+		callevent player_votepvp $get(ent_currentplayer,id)
+	}
+
+	//if ( PARAM1 equals 'votekick' )
+	//{
+	//	if ( game.players < 3 )
+	//	{
+	//		if !G_DEVELOPER_MODE
+	//		dplayermessage ent_currentplayer VOTEKICK: Need at least three players to start a kick vote
+	//		local EXIT_SUB 1
+	//	}
+	//	if !EXIT_SUB
+//
+	//	local ALLOW_KICKVOTE game.cvar.msvote_kick_enable 
+	//	if ( !ALLOW_KICKVOTE )
+	//	{
+	//		local OUT_MSG "VOTEKICK: This server does not allow kickvotes."
+	//		consolemsg ent_currentplayer OUT_MSG
+	//		dplayermessage ent_currentplayer OUT_MSG
+	//	}
+	//	if ALLOW_KICKVOTE
+	//	local L_PLAYER_NAME PARAM2
+	//	if ( L_PLAYER_NAME startswith 'PARAM' ) local L_PLAYER_NAME 'PARAMETER' //weirdness voting from console
+	//	local L_CALLER $get(ent_currentplayer,id)
+	//	callevent player_votekick L_PLAYER_NAME L_CALLER
+	//}
+
+	//if ( PARAM1 equals 'voteban' )
+	//{
+	//	if ( game.players < 3 )
+	//	{
+	//		if !G_DEVELOPER_MODE
+	//		dplayermessage ent_currentplayer VOTEBAN: Need at least three players to start a ban vote
+	//		local EXIT_SUB 1
+	//	}
+	//	if !EXIT_SUB
+//
+	//	local ALLOW_BANVOTE game.cvar.msvote_ban_enable 
+	//	if ( !ALLOW_BANVOTE ) consolemsg ent_currentplayer VOTEBAN: This server does not allow ban votes.
+	//	if ALLOW_BANVOTE
+	//	local L_PLAYER_NAME PARAM2
+	//	if ( L_PLAYER_NAME startswith 'PARAM' ) local L_PLAYER_NAME 'PARAMETER' //weirdness voting from console
+	//	local L_CALLER $get(ent_currentplayer,id)
+	//	callevent player_voteban L_PLAYER_NAME L_CALLER
+	//}
+
+	if ( PARAM1 equals 'votelock' )
+	{
+		if ( G_SERVER_LOCKED )
+		{
+			dplayermessage ent_currentplayer Server is already vote locked. ( Password: game.cvar.sv_password )
+			consolemsg ent_currentplayer Server is already vote locked.  ( Password: game.cvar.sv_password )
+
+			local EXIT_SUB 1
+		}
+		if !EXIT_SUB
+
+		if ( !game.cvar.msvote_lock_enable )
+		{
+			dplayermessage ent_currentplayer This server does not allow votes to lock the server.
+			consolemsg ent_currentplayer This server does not allow votes to lock the server.
+			local EXIT_SUB 1
+		}
+		if !EXIT_SUB
+
+		if ( game.players < 3 )
+		{
+			if !G_DEVELOPER_MODE
+			dplayermessage ent_currentplayer Need at least three players to start a vote to lock the server.
+			consolemsg ent_currentplayer Need at least three players to start a vote to lock the server.
+			local EXIT_SUB 1
+		}
+		if !EXIT_SUB
+
+		callevent player_votelock $get(ent_currentplayer,id)
+	}
+}
+
+//Map voting (standard player option)
+{ player_votemap //PARAM3 = fromconsole? 
+	
+	local L_VOTE_CALLER PARAM1
+	local L_MAP_TO_VOTE $lcase(PARAM2)
+	local VOTE_TYPE_CVAR game.cvar.msvote_map_type
+	
+	local L_VOTE_BUSY $get(GAME_MASTER,scriptvar,'VOTE_BUSY')
+
+	if ( L_VOTE_BUSY )
+	{
+		consolemsg L_VOTE_CALLER "Votemap: Vote system is busy."
+		rplayermessage L_VOTE_CALLER "Votemap: Vote system is busy."
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	if ( game.time < MAP_VOTE_DELAY )
+	{
+		if !G_DEVELOPER_MODE
+		yplayermessage L_VOTE_CALLER "Votemap: You cannot start a map vote for the first" $int(MAP_VOTE_DELAY) "seconds, except by transition."
+		consolemsg L_VOTE_CALLER "Votemap: You cannot start a map vote for the first" $int(MAP_VOTE_DELAY) "seconds, except by transition."
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	if ( L_MAP_TO_VOTE startswith 'param' )
+	{
+		gplayermessage L_VOTE_CALLER "Votemap: You can vote for specific maps by typing votemap [mapname] in main chat."
+		gplayermessage L_VOTE_CALLER "Check your console (~) for a list of maps not connected to the world."
+		
+		consolemsg L_VOTE_CALLER "Votemap: You can vote for specific maps by typing votemap [mapname] in main chat."
+		consolemsg L_VOTE_CALLER "Here's a list of maps you may vote for that are not otherwise reachable:"
+
+		setvard CUSTOM_COUNT 0
+		consolemsg L_VOTE_CALLER "=========== DISCONNECTED MAPS ==========="
+		callevent 0.1 list_custom_maps
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	local LEGAL_FN_MAP 0
+
+	local SEARCH_SET MAPS_FN1
+	local SEARCH_IDX $get_find_token(SEARCH_SET,L_MAP_TO_VOTE)
+	if ( SEARCH_IDX > -1 )
+	{
+		if $get_token(SEARCH_SET,SEARCH_IDX) equals L_MAP_TO_VOTE
+		local LEGAL_FN_MAP 1
+	}
+	local SEARCH_SET MAPS_FN2
+	local SEARCH_IDX $get_find_token(SEARCH_SET,L_MAP_TO_VOTE)
+	if ( SEARCH_IDX > -1 )
+	{
+		if $get_token(SEARCH_SET,SEARCH_IDX) equals L_MAP_TO_VOTE
+		local LEGAL_FN_MAP 1
+	}
+	local SEARCH_SET MAPS_FN3
+	local SEARCH_IDX $get_find_token(SEARCH_SET,L_MAP_TO_VOTE)
+	if ( SEARCH_IDX > -1 )
+	{
+		if $get_token(SEARCH_SET,SEARCH_IDX) equals L_MAP_TO_VOTE
+		local LEGAL_FN_MAP 1
+	}
+	local SEARCH_SET MAPS_FN4
+	local SEARCH_IDX $get_find_token(SEARCH_SET,L_MAP_TO_VOTE)
+	if ( SEARCH_IDX > -1 )
+	{
+		if $get_token(SEARCH_SET,SEARCH_IDX) equals L_MAP_TO_VOTE
+		local LEGAL_FN_MAP 1
+	}
+
+	if ( game.central )
+	{
+		if $get_find_token(G_NOT_ON_FN,L_MAP_TO_VOTE) > -1
+		local LEGAL_FN_MAP 0
+		dplayermessage L_VOTE_CALLER "Votemap:" L_MAP_TO_VOTE "is a special utility map that cannot be used on [FN]"
+		consolemsg L_VOTE_CALLER "Votemap:" L_MAP_TO_VOTE "is a special utility map that cannot be used on [FN]"
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	if ( VOTE_TYPE_CVAR equals 'root' )
+	{
+		local ALLOW_VOTE 0
+		if ( L_MAP_TO_VOTE equals edana ) local ALLOW_VOTE 1
+		if ( L_MAP_TO_VOTE equals deralia ) local ALLOW_VOTE 1
+		if ( L_MAP_TO_VOTE equals helena ) local ALLOW_VOTE 1
+		if ( $get_find_token(MAPS_UNCONNECTED1,L_MAP_TO_VOTE) > -1 ) local ALLOW_VOTE 1
+		//add when needed:
+		//if ( $get_find_token(MAPS_UNCONNECTED2,L_MAP_TO_VOTE) > -1 ) local ALLOW_VOTE 1
+		if !ALLOW_VOTE
+		yplayermessage L_VOTE_CALLER "Votemap: You may only vote for root towns (edana, deralia, helena) and disconnected maps on this server."
+		consolemsg L_VOTE_CALLER "You may only vote for root towns (edana, deralia, helena) and disconnected maps on this server."
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	if ( $get_find_token(MAPS_HIDDEN,L_MAP_TO_VOTE) > -1 )
+	{
+		yplayermessage L_VOTE_CALLER "Votemap:" L_MAP_TO_VOTE "is a hidden map, you must find the entrance."
+		consolemsg L_VOTE_CALLER L_MAP_TO_VOTE "is a hidden map, you must find the entrance."
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	if ( $get_find_token(MAPS_MAZE,L_MAP_TO_VOTE) > -1 )
+	{
+		if ( $get_quest_data(L_VOTE_CALLER,m) equals L_MAP_TO_VOTE )
+		{
+			local L_NO_GAUNLET_MESSAGE 1
+			gplayermessage L_VOTE_CALLER "Votemap: You can vote for this hidden map as you still qualify."
+		}
+		else
+		{
+			yplayermessage L_VOTE_CALLER "Votemap:" L_MAP_TO_VOTE "is hidden within a maze, you must navigate the maze to find its entrance."
+			consolemsg L_VOTE_CALLER L_MAP_TO_VOTE "is hidden within a maze, you must navigate the maze to find its entrance."
+			local EXIT_SUB 1
+		}
+	}
+	if !EXIT_SUB
+
+	if ( $get_find_token(MAPS_GAUNTLET,L_MAP_TO_VOTE) > -1 )
+	{
+		if ( $get_quest_data(L_VOTE_CALLER,m) equals L_MAP_TO_VOTE )
+		{
+			if !L_NO_GAUNLET_MESSAGE
+			if $get_quest_data(L_VOTE_CALLER,mv) equals L_MAP_TO_VOTE
+			//last validated map, and his destination map match gauntlet, so let him vote for it
+			gplayermessage L_VOTE_CALLER "Votemap: You can vote for this gauntlet map as you still qualify."
+		}
+		else
+		{
+			yplayermessage L_VOTE_CALLER "Votemap:" L_MAP_TO_VOTE "is part of a gauntlet series, you must begin at the start of the series."
+			consolemsg L_VOTE_CALLER "Votemap:" L_MAP_TO_VOTE "is part of a gauntlet series, you must begin at the start of the series."
+			local EXIT_SUB 1
+		}
+	}
+	if !EXIT_SUB
+
+	if ( !$map_exists(L_MAP_TO_VOTE) )
+	{
+		yplayermessage L_VOTE_CALLER "Votemap:" L_MAP_TO_VOTE "is not found on this server."
+		consolemsg L_VOTE_CALLER L_MAP_TO_VOTE "is not found on this server."
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	if ( $lcase(game.map.name) equals L_MAP_TO_VOTE )
+	{
+		if !game.cvar.msvote_farm_all_day 
+		yplayermessage L_VOTE_CALLER "Votemap: You cannot vote for the map you are currently on."
+		consolemsg L_VOTE_CALLER "You cannot vote for the map you are currently on."
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	local VOTE_TITLE "Change to "
+	stradd VOTE_TITLE L_MAP_TO_VOTE
+	stradd VOTE_TITLE "?"
+	
+	local L_OPTIONS "Yes!:" L_MAP_TO_VOTE ";No!:" 0 //Im kinda shocked that this works. It concatenates each value to each other in L_OPTIONS
+
+	callexternal GAME_MASTER gm_create_vote gm_votemap L_OPTIONS VOTE_TITLE "Voting begins now!" 0
+}
+
+{ list_custom_maps
+	local TOTAL_MAPS $get_token_amt(MAPS_UNCONNECTED1)
+	subtract TOTAL_MAPS 1
+	if ( CUSTOM_COUNT == TOTAL_MAPS )
+	{
+		if MAPS_UNCONNECTEDS > 1
+		setvard CUSTOM_COUNT 0
+		callevent 0.1 list_custom_maps2
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+	if CUSTOM_COUNT <= TOTAL_MAPS
+	local CUST_MAP $get_token(MAPS_UNCONNECTED1,CUSTOM_COUNT)
+	if ( $map_exists(CUST_MAP) ) consolemsg L_VOTE_CALLER CUST_MAP
+	//if ( CUSTOM_COUNT == TOTAL_MAPS ) consolemsg L_VOTE_CALLER ===================================
+	add CUSTOM_COUNT 1
+	callevent 0.1 list_custom_maps
+}
+
+{ player_votepvp
+
+	if ( $get(GAME_MASTER,scriptvar,'VOTE_BUSY') )
+	{
+		consolemsg PARAM1 votepvp - Vote system is busy.
+		rplayermessage PARAM1 votepvp - Vote system is busy.
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	setvard L_VOTE_CALLER PARAM1
+	
+	if ( !game.pvp )
+	{
+		local L_TITLE "ACTIVATE PVP MODE"
+		local L_OPTIONS "Yes!:1;No!:0"
+		local L_DESCRIPT $get(L_VOTE_CALLER,name) " has started a vote to enable player vs player combat!"
+	}
+	else
+	{
+		local L_TITLE "DEACTIVATE PVP MODE"
+		local L_OPTIONS "Yes!:0;No!:1"
+		local L_DESCRIPT $get(L_VOTE_CALLER,name) " has started a vote to end player vs player combat."
+	}
+	
+	callexternal GAME_MASTER gm_create_vote gm_votepvp L_OPTIONS L_TITLE L_DESCRIPT 0 //<caller_event> <token_option:data> <title> [descript] [silent:0|1]
+}
+
+{ player_votelock //<caller>
+
+	dbg player_votelock
+
+	if ( $get(GAME_MASTER,scriptvar,'VOTE_BUSY') )
+	{
+		consolemsg PARAM1 votelock - Vote system is busy.
+		rplayermessage PARAM1 votelock - Vote system is busy.
+		local EXIT_SUB 1
+	}
+	if !EXIT_SUB
+
+	local L_LOCKER PARAM1
+	
+	//gm_create_vote //<caller_event> <token_option:data> <title> [descript] [silent:0|1]
+	local L_TITLE "Lock the server?"
+	local L_DESC $get(L_LOCKER,name) " has started a vote to lock the server."
+	callexternal GAME_MASTER gm_create_vote gm_votelock "Yes!:1;No!:0" L_TITLE L_DESC 0
+}

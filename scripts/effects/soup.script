@@ -1,0 +1,100 @@
+{ //soup soup soup soup soup soup soup soup soup soup soup soup soup soup soup 
+	local reg.effect.name 'soup' //soup soup soup soup soup soup soup soup 
+	setvard game.effect.id	'soup' //dumb variable is required
+	local reg.effect.flags nostack //soup soup soup soup soup soup soup soup 
+	local reg.effect.script	$currentscript //soup soup soup soup soup soup 
+	//soup soup soup soup soup soup soup soup soup soup soup soup soup soup 
+	setvard game.effect.removeondeath 1 //soup soup soup soup soup soup soup 
+	//soup soup soup soup soup soup soup soup soup soup soup soup soup soup 
+	registereffect //soup soup soup soup soup soup soup soup soup soup soup 
+	//soup soup soup soup soup soup soup soup soup soup soup soup soup soup 
+	const SOUP_TICKRATE 0.5 //2 times a second. Hud updates only twice a second so really no need to update it more.
+	//soup soup soup soup soup soup soup soup soup soup soup soup soup soup 
+} //soup soup soup soup soup soup soup soup soup soup soup soup soup soup soup 
+
+{ game_activate //<duration> <0|1:occasionally drop a brap>
+
+	setvard FX_DURATION PARAM1
+	//setvard FX_END_TIME $math(add,game.time,FX_DURATION)
+	setvard FX_POOPY PARAM2
+	
+	setvard HP_AMT 38
+	setvard MP_AMT 58
+	
+	setvard NERF_TICK 9
+
+	callevent FX_DURATION soup_duration_end
+	callevent NERF_TICK nerf_soup
+}
+
+{ nerf_soup
+
+	divide HP_AMT 2
+	divide MP_AMT 2
+	
+	multiply NERF_TICK 2
+	
+	if ( FX_POOPY )
+	{
+		playsound 0 10 "fart.wav" $randf(0.6,1.0) $rand(50,150) //[Attenuation:0.8] [Pitch:100]
+		
+		playermessage ent_me "Oh no. You let one squeak out."
+		xdodamage $get(ent_me,origin) 65 10 0 ent_me ent_me spellcasting.affliction poison_effect dmgevent:poopy
+		//<target|(src_origin)> <range|aoe|(dest_origin)|direct> <damage> <cth|fall_off> <attacker> <inflciter> <skill|none> <dmg_type> [flag_string]
+		
+		clientevent new all "effects/sfx_poison_cloud" $get(ent_me,origin) 20 1 0 //<loc> <aoe> <duration> [playsound:0|1]
+	}
+	
+	callevent NERF_TICK nerf_soup
+}
+
+{ poopy_dodamage //PARAM1=hit:0|1 PARAM2=ent_hit PARAM3=(start) PARAM4=(end) PARAM5=DmgType PARAM6=DmgAmt
+
+	if PARAM1
+	if $get_takedmg(PARAM2,poison) > 0
+	
+	applyeffect PARAM2 effects/effect_poison 6 $get(ent_me,id) 10 0 spellcasting.affliction
+	
+	if $rand(0,3) == 0
+	if $get(PARAM2,race) isnot vermin
+	if $get(PARAM2,race) isnot wildanimal
+	if $get(PARAM2,race) isnot spider
+	if $get(PARAM2,race) !contains ant_
+	
+	local L_STR "Ewww! What's that smell?;" "What is that *foul* magic!?;" "I can... taste... apples?;" "Ack! It got on me!;" "What in the world did Torkalath let loose!?;"
+	callexternal PARAM2 ext_speak $get_random_token(L_STR)
+}
+
+{ 
+	repeatdelay SOUP_TICKRATE
+	
+	givehp HP_AMT
+	givemp MP_AMT
+}
+
+{ soup_duration_end
+
+	gplayermessage ent_me "Ah, that soup was good while it lasted..."
+	callevent effect_die
+}
+
+{ effect_die //standardized event name apparently. ahahahahahaha
+
+	removescript
+}
+
+{ game_death
+
+	setvard FX_END_TIME 0
+	callevent soup_duration_end
+}
+
+{ ext_resetsoup
+
+	setvard HP_AMT 28
+	setvard MP_AMT 58
+	
+	setvard NERF_TICK 9
+	
+	setvard FX_END_TIME $math(add,game.time,FX_DURATION)
+}

@@ -1,0 +1,62 @@
+//By greatguys1
+//Best viewed in EditPlus with the ms.stx applied
+
+//This quest is kill_type. The player must kill a certain amount of a monster type. If the quest giver dies, the quest fails. Once the required enemies are dead, the quest is complete.
+
+//Vars:
+//	const QUEST_DATA1		- <"#;monster name|all"> How many monsters do you need to kill? Which monsters count towards the death counter?
+//	const DQ_KILL_NUM		- How many monsters are required to be killed?
+//	const DQ_KILL_WHO		- Who counts towards DQ_KILLED?
+//	setvard DQ_KILLED		- How many enemies were killed?
+
+//Functions:
+//	quest_activate			- Adds itself to the game_masters monster death callback list.
+//	ext_quest_monster_killed	- Called from the game_master when a monster is killed.
+//	do_the_monster_killed_bit	- If the recently killed monster was who we were looking for, add it to the counter.
+//	game_death			- Remove ourselves from the game_master's monster death callback list if we die.
+
+#scope server
+
+{
+	setvard DQ_KILL_NUM $get_token(QUEST_DATA1,0) //setvard because higher scripts cant see lower script cosnts.
+	const DQ_KILL_WHO $lcase($get_token(QUEST_DATA1,1))
+	
+	setvard DQ_KILLED 0
+}
+
+#include dq/quests/bases/dq_base_quests
+
+{ quest_activate
+
+	callexternal GAME_MASTER gm_dq_add_counter $get(ent_me,id) //This tells the game_master to add this id to the monster death callback list
+}
+
+{ ext_quest_monster_killed
+
+	local L_MONSTER_KILLED_NAME $lcase($get(GAME_MASTER,scriptvar,'DQ_MONSTER_KILLED_NAME'))
+
+	if ( L_MONSTER_KILLED_NAME contains DQ_KILL_WHO )
+	{
+		callevent do_the_monster_killed_bit
+	}
+	else if ( DQ_KILL_WHO equals 'all' )
+	{
+		callevent do_the_monster_killed_bit
+	}
+}
+
+{ do_the_monster_killed_bit
+
+	setvard DQ_KILLED $math(add,DQ_KILLED,1)
+
+	if ( DQ_KILLED >= DQ_KILL_NUM )
+	{
+		callevent quest_finished //To say the text for "you're done m8"
+		callexternal GAME_MASTER gm_dq_perish_counter $get(ent_me,id)
+	}
+}
+
+{ game_death
+
+	callexternal GAME_MASTER gm_dq_perish_counter $get(ent_me,id) //If the counter was already perished, the game_master won't perish a counter it shouldn't
+}

@@ -1,0 +1,65 @@
+{
+	const GIB_INFLICTER $get(ent_me,id)
+	const EXPLODE_RADIUS 200
+}
+
+//Throws a bouncing exploding gib. Takes owner, velocity, damage, and blood color.
+{ game_spawn
+
+	invincible 1
+	race beloved
+
+	gravity 0.75
+
+	height 10
+	width 10
+	
+	setprop ent_me movetype 10
+	setprop ent_me friction 0.4 //Just reduces bounce factor, doesnt reduce velocity if gliding on ground
+	setprop ent_me solid 0
+	setangle face $vec($rand(0,359),$rand(0,359),$rand(0,359)) //Sets a random angle when thrown. Gets set again by the game when it hits the ground, makes for a nice effect
+}
+
+{ game_dynamically_created //<owner> <velocity> <damage> <skill> <"green"|"red">
+
+	setvard FX_OWNER PARAM1
+	setvelocity ent_me PARAM2
+	setvard FX_DAMAGE PARAM3
+	setvard FX_SKILL PARAM4
+	setvard FX_BLOOD_COLOR PARAM5
+
+	//Check the blood color and set appropriate model chunks and colors
+	if ( FX_BLOOD_COLOR equals 'green' ) //If green, set to green
+	{
+		setmodel "agibs.mdl"
+		setmodelbody 0 $rand(0,3) //Random body
+	}
+	else //In any other case, set to red.
+	{
+		setmodel $get_random_token('gib_b_bone.mdl;gib_b_gib.mdl;gib_lung.mdl;gib_legbone.mdl')
+	}
+	
+	callevent $randf(1.0,2.4) stop_bounce
+	callevent $randf(2.5,3.5) explode
+}
+
+{ explode
+
+	local L_SOUND "leech/leech_bite" $rand(1,2) ".wav"
+	playsound 0 10 L_SOUND
+	//<target|(src_origin)> <range|aoe|(dest_origin)|direct> <damage> <cth|fall_off> <attacker> <inflciter> <skill|none> <dmg_type> [flag_string]
+	xdodamage $get(ent_me,origin) EXPLODE_RADIUS FX_DAMAGE 0 FX_OWNER GIB_INFLICTER FX_SKILL dark dmgevent:*gib
+	clientevent new all effects/swords_gb/sfx_gib_explode $get(ent_me,origin) FX_BLOOD_COLOR
+	
+	setmodel null.mdl //Takes a whole frame to get deleted, so set invisible
+	callevent 0.1 remove_fx //delayed removal so gib_dodamage can do its thing
+}
+
+{ remove_fx
+	deleteme
+}
+
+{ stop_bounce //Sets the movetype to something thatll make it stop gliding around
+	
+	setprop ent_me movetype 13
+}

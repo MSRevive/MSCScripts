@@ -1,0 +1,248 @@
+//By greatguys1
+//Best viewed in EditPlus with the ms.stx applied
+
+//This quest is get_item_from_hands. The npc will ask for an item from the player's inventory, which the player must either give it to him or search for the item.
+
+//Vars:
+//	const QUEST_DATA1		- <"item scriptname;item name"> Which item will the NPC request? The item name is for informational dialogue and menus, it doesn't directly reflect the item being given.
+//	const QUEST_DATA2		- <quantity> How many of the item? Please have at least 1.
+//	const QUEST_DATA3		- <quality> Does the item have to have a "quality"? If set to 0, it will be ignored.
+
+//Functions:
+//	give_item			- PARAM1 = PlayerID, PARAM2 = ItemID	Function called from a menu when player has appropriate item. Redundancy check for proper item is made in here.
+//	delete_item			- PARAM1 = ItemID	Calls the appropriate functions on the item before deleting it for a smooth transaction,
+//	func_check_item			- PARAM1 = PlayerID, PARAM2 = ItemID	Function called to check that the item is the appropriate one.
+//	func_check_ammo_strings		- PARAM1 = ScriptName	Checks if the scriptname contains any string associated with ammo.
+
+#scope server
+
+{
+	const DQ_ITEM_REQUIREMENT $get_token(QUEST_DATA1,0) 
+	setvard DQ_ITEM_NAME $get_token(QUEST_DATA1,1) //setvard because higher scripts cant see lower script consts.
+	setvard DQ_AMMO_REQUIREMENT QUEST_DATA2 //setvard because higher scripts cant see lower script consts.
+	const DQ_QUALITY_REQUIREMENT QUEST_DATA3
+
+	const DQ_AMMO_STRINGS "proj_;item_lockpick" //These will be checked to see if the item is ammo based. Some ammo based items dont go by the proj_ conventions, one being the lockpick.
+
+	setvard DQ_AMMO_CUR 0
+	setvard DQ_IS_AMMO 0
+}
+
+#include dq/quests/bases/dq_base_quests
+
+{ game_menu_getoptions //PARAM1 = PlayerId
+
+	setvard DQ_IS_AMMO $func(func_check_ammo_strings,DQ_ITEM_REQUIREMENT)
+
+	local L_PLAYER PARAM1
+
+	if ( QUEST_MODE equals QUEST_ACTIVE )
+	{
+		local L_ITEM 0
+
+		local L_HAND_LEFT $get(L_PLAYER,scriptvar,'PLR_LEFT_HAND')
+		local L_HAND_RIGHT $get(L_PLAYER,scriptvar,'PLR_RIGHT_HAND')
+
+		local L_FAILURE_LEFT $func(func_check_failure,L_PLAYER,L_HAND_LEFT)
+		local L_FAILURE_RIGHT $func(func_check_failure,L_PLAYER,L_HAND_RIGHT)
+
+		local L_TITLE DQ_ITEM_NAME
+
+		if ( DQ_AMMO_REQUIREMENT > 1 )
+		{
+			stradd L_TITLE " ("
+			stradd L_TITLE $int(DQ_AMMO_CUR)
+			stradd L_TITLE "/"
+			stradd L_TITLE DQ_AMMO_REQUIREMENT
+			stradd L_TITLE ")"
+		}
+
+		if ( !L_FAILURE_LEFT )
+		{
+			local reg.mitem.title L_TITLE
+			local reg.mitem.type callback
+			local reg.mitem.data L_HAND_LEFT
+			local reg.mitem.callback give_item
+			menuitem.register
+		}
+		else if ( !L_FAILURE_RIGHT )
+		{
+			local reg.mitem.title L_TITLE
+			local reg.mitem.type callback
+			local reg.mitem.data L_HAND_RIGHT
+			local reg.mitem.callback give_item
+			menuitem.register
+		}
+		else if ( L_FAILURE_LEFT > L_FAILURE_RIGHT )
+		{
+			callevent report_failed L_FAILURE_LEFT
+		}
+		else
+		{
+			callevent report_failed L_FAILURE_RIGHT
+		}
+
+		if ( L_FAILURE_LEFT )
+		{
+			if ( L_FAILURE_RIGHT )
+			{
+				local reg.mitem.title L_TITLE
+				local reg.mitem.type disabled
+				menuitem.register
+			}
+		}
+	}
+}
+
+{ give_item //PARAM1 = PlayerID	PARAM2 = ItemID
+
+	local L_PLAYER PARAM1
+	local L_ITEM PARAM2
+
+	local L_FAILURE $func(func_check_failure,L_PLAYER,L_ITEM)
+	if ( !L_FAILURE )
+	{
+		saytext DQ_IS_AMMO
+		if ( !DQ_IS_AMMO ) //Normal item give routine
+		{
+			setvard DQ_AMMO_CUR $math(add,DQ_AMMO_CUR,1)
+			callevent delete_item L_ITEM
+		}
+		else //Ammo give routine
+		{
+			local L_AMMO $get(L_ITEM,quantity)
+			saytext L_AMMO
+			local L_DIFF $math(subtract,L_AMMO,DQ_AMMO_REQUIREMENT)
+
+			if ( L_DIFF <= 0 )
+			{
+				setvard DQ_AMMO_CUR $math(add,DQ_AMMO_CUR,L_AMMO)
+				callevent delete_item L_ITEM
+			}
+			else
+			{
+				setvard DQ_AMMO_CUR DQ_AMMO_REQUIREMENT
+				setquantity L_ITEM L_DIFF
+			}
+		}
+
+		if ( DQ_AMMO_CUR == DQ_AMMO_REQUIREMENT )
+		{
+			callevent quest_finished_check
+			callevent 0.1 open_menu
+		}
+	}
+	else
+	{
+		callevent report_failed L_FAILURE
+	}
+}
+
+{ open_menu
+
+	menu.open QUEST_TAKER
+}
+
+{ report_failed //PARAM1 = Level to report
+
+	local L_LEVEL PARAM1
+
+	if ( L_LEVEL == 1 )
+	{
+		callevent failed_exists
+	}
+	else if ( L_LEVEL == 2 )
+	{
+		callevent failed_owner
+	}
+	else if ( L_LEVEL == 3 )
+	{
+		callevent failed_scriptname
+	}
+	else if ( L_LEVEL == 4 )
+	{
+		callevent failed_quality
+	}
+	else if ( L_LEVEL == 5 )
+	{
+		callevent failed_quantity
+	}
+}
+
+{ delete_item //PARAM1 = ItemID //Pulled from galat's
+
+	local L_ITEM_ID PARAM1
+	
+	callexternal L_ITEM_ID item_banked //Gotta call these so it looks nice on the client
+	callclitemevent L_ITEM_ID game_putinpack
+	deleteent L_ITEM_ID //Delete the ent
+}
+
+{ func_check_failure //PARAM1 = PlayerID	PARAM2 = ItemID	//Returns 0 if no failure found, returns failure level otherwise.
+
+	local L_PLAYER PARAM1
+	local L_ITEM PARAM2
+
+	local L_FAILED 0
+
+	return **clear**
+
+	if ( !$get(L_ITEM,exists) )
+	{
+		local L_FAILED 1
+	}
+	else if ( $get(L_ITEM,owner) !equals L_PLAYER )
+	{
+		local L_FAILED 2
+	}
+	else if ( $get(L_ITEM,scriptname) !equals DQ_ITEM_REQUIREMENT )
+	{
+		local L_FAILED 3
+	}
+
+	if ( !L_FAILED )
+	{
+		if ( DQ_QUALITY_REQUIREMENT != 0 )
+		{
+			if ( $get(L_ITEM,quality) != DQ_QUALITY_REQUIREMENT )
+			{
+				local L_FAILED 4
+			}
+		}
+	}
+
+	if ( !L_FAILED )
+	{
+		if ( DQ_IS_AMMO ) //This will fail items that don't have a quantity, for example, arrows with no ammo in it, which can be accomplished by taking arrows out of another player's hands.
+		{
+			if ( $get(L_ITEM,quantity) == 0 )
+			{
+				local L_FAILED 5
+			}
+		}
+	}
+
+	return L_FAILED
+}
+
+{ func_check_ammo_strings //PARAM1 = ScriptName	//Checks if required item is ammo
+
+	local L_ITEM_SCRIPTNAME PARAM1
+	setvard FUNC_IS_AMMO 0
+
+	calleventloop $get_token_amt(DQ_AMMO_STRINGS) check_ammo_strings L_ITEM_SCRIPTNAME
+
+	return **clear**
+	return FUNC_IS_AMMO
+}
+
+{ check_ammo_strings //PARAM1 = ScriptName
+
+	local L_ITEM_SCRIPTNAME PARAM1
+	local L_AMMO $get_token(DQ_AMMO_STRINGS,game.script.iteration)
+
+	if ( L_ITEM_SCRIPTNAME contains L_AMMO )
+	{
+		setvard FUNC_IS_AMMO 1
+	}
+}

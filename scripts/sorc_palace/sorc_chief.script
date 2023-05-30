@@ -9,12 +9,6 @@
 
 	const CHAT_DELAY 6.0
 
-	setvard NPC_PROX_ACTIVATE 1 //suspend AI on spawn, wait for player to come..
-	setvard NPC_PROXACT_RANGE 256 //within this range then activate...
-	setvard NPC_PROXACT_EVENT player_nears //this event.
-	setvard NPC_PROXACT_IFSEEN 0 //activate if a player can see me, or targets me, regardless of range
-	setvard NPC_PROXACT_FOV 0 //Require player must be in field of vision to activate
-
 	const NO_CHAT 1
 
 	setvard COMBAT_MODE 0
@@ -23,10 +17,10 @@
 	const DMG_BARRIER 100
 
 	const SOUND_DRAW_WEAPON weapons/swords/sworddraw.wav
-}
+	
+	setvard NPC_PROX_ACTIVATE 1 //suspend AI on spawn, wait for player to come..
 
 //From monsters/sorc_chief1
-{
 	const MIN_TELEPORT_DELAY 15.0
 
 	const NPC_BOSS_REGEN_RATE 0
@@ -201,18 +195,20 @@
 }
 
 { check_for_blood
+
 	getplayersnb BD_PLAYER_LIST
 	setvard N_BLOOD_DRINKERS 0
+	
 	calleventloop $get_token_amt(BD_PLAYER_LIST) check_inventories
-	if ( N_BLOOD_DRINKERS == 0 )
-	{
-		callevent 0.1 still_in_prison
-		usetrigger spawn_chief_out
-	}
-	else
+	if ( N_BLOOD_DRINKERS != 0 )
 	{
 		setvarg G_SORC_CHIEF_PRESENT 1
-		usetrigger spawn_chief_escort
+		
+		//setvard NPC_PROX_ACTIVATE 1 //suspend AI on spawn, wait for player to come..
+		setvard NPC_PROXACT_RANGE 256 //within this range then activate...
+		setvard NPC_PROXACT_EVENT player_nears //this event.
+		setvard NPC_PROXACT_IFSEEN 0 //activate if a player can see me, or targets me, regardless of range
+		setvard NPC_PROXACT_FOV 0 //Require player must be in field of vision to activate
 	}
 }
 
@@ -231,15 +227,11 @@
 
 }
 
-{ still_in_prison
-	deleteent ent_me
-}
-
 { player_nears
 	setvard CHAT_STEP1 "I remember "
 	if ( N_BLOOD_DRINKERS > 1 ) local REF_RESCUE "some of you"
-	if ( game.players == 1 ) local REF_RESCUE "you"
-	if ( N_BLOOD_DRINKERS == 1 ) local REF_RESCUE $get(BLOOD_ID,name)
+	else if ( game.players == 1 ) local REF_RESCUE "you"
+	else if ( N_BLOOD_DRINKERS == 1 ) local REF_RESCUE $get(BLOOD_ID,name)
 	stradd REF_RESCUE "... Aiding... In my escape from Lodagond."
 	stradd CHAT_STEP1 REF_RESCUE
 	setvard CHAT_STEP2 "So, before I decide whether or not to slay you here and now."
@@ -305,8 +297,6 @@
 	setvard FRIEND_FOE_ANSWERED 1
 	setvard FF_ANSWER foe
 
-	writeline header.dat x
-
 	setvard CHAT_STEP1 "Very well then..."
 	setvard CHAT_STEP2 "I suppose I should be upset that you slaughtered the palace guard..."
 	setvard CHAT_STEP3 "But, if they couldn't stop you, I suppose they weren't up to the job."
@@ -320,13 +310,15 @@
 	add CHAT_DELAY_TOTAL 4.0
 
 	callevent CHAT_DELAY_TOTAL announce_visitors
+	
+	setvarg G_SORCV_FRIENDLY 1
 }
 
 { announce_visitors
 	if ( BUSY_CHATTING ) callevent 0.1 announce_visitors
 	if !BUSY_CHATTING
 
-	playmp3 all 7 haunted_desert.mp3
+	playmp3 all combat haunted_desert.mp3
 
 	callevent stand_up
 	setvard CHAT_STEP1 "Let it be known that "
@@ -370,6 +362,7 @@
 }
 
 { ext_tell_approach //called via map trigger
+	if N_BLOOD_DRINKERS > 0
 	if ( game.players > 1 )
 	{
 		saytext Humans! Approach the throne of Runegahr. I wish to speak with thee.
@@ -398,8 +391,6 @@
 	multiply CHAT_DELAY_TOTAL CHAT_DELAY
 	add CHAT_DELAY_TOTAL 1.0
 	callevent CHAT_DELAY_TOTAL begin_the_attack
-
-	erasefile header.dat
 }
 
 { begin_the_attack
@@ -525,13 +516,14 @@
 	callevent npcatk_resume_ai
 	invincible 0
 	playsound 0 10 SOUND_WARCY
-	saytext NOW IT'S MY TURN!
+	saytext "NOW IT'S MY TURN!"
 	movespeed 1.5
 	setanim.movespeed 1.5
 	setanim.framerate 1.5
 	setvard BASE_MOVESPEED 1.5
 	setvard BASE_FRAMERATE 1.5
 	usetrigger spawn_throne_escort
+	setvarg G_SORCV_FRIENDLY 0
 }
 
 { warcry_done

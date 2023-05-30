@@ -1,20 +1,193 @@
+{ game_playercmd
 
+	if ( PARAM1 equals 'dev_on' )
+	{
+		if PARAM2 equals 'wargwable'
+		consolemsg ent_currentplayer "Developer Mode ON"
+		infomsg all "DEVELOPER MODE" "Developer mode is on."
+		setvarg G_DEVELOPER_MODE 1
+	}
+	else if ( PARAM1 equals 'dev_off' )
+	{
+		if G_DEVELOPER_MODE
+		consolemsg ent_currentplayer "Developer Mode OFF"
+		infomsg all "DEVELOPER MODE" "Developer mode is off."
+		setvarg G_DEVELOPER_MODE 0
+	}
+} 
 
-{ dev_command
+{ dev_command //<eventname> [params]
 
-	if !game.central
+	if !game.central //This script is not included in the release pack, but here anyways...
 	if G_DEVELOPER_MODE
 
-	if ( PARAM1 equals 'helloworld' )
+	callevent $pass(PARAM1) $pass(PARAM2) $pass(PARAM3) $pass(PARAM4) $pass(PARAM5) $pass(PARAM6) $pass(PARAM7) $pass(PARAM8)
+}
+
+{ mp3 //<target|all> <mode:stop|combat|system> <file> - plays music on target or players within, path is assumed to be in music directory
+
+	playmp3 PARAM1 PARAM2 PARAM3
+}
+
+{ tele //<x> <y> <z> - Teleport to a particular destination
+	local X_DEST PARAM1
+	local Y_DEST PARAM2
+	local Z_DEST PARAM3
+	
+	local L_STR "Teleportion to:" PARAM1 PARAM2 PARAM3
+	consolemsg ent_currentplayer L_STR
+	setorigin ent_currentplayer $vec(X_DEST,Y_DEST,Z_DEST)
+}
+
+{ teledest //<unique_name> - Teleports to an entity with that name. Teleports to map objects too
+
+	local L_ENT $get_by_name(PARAM1,id)
+	if ( $get(L_ENT,exists) ) setorigin ent_currentplayer $get(L_ENT,origin)
+}
+
+{ slayall //<0|1> - Slays all monsters, or only "evil" monsters
+
+	local RACE_PARAMS PARAM1
+	if ( RACE_PARAMS )
 	{
-		if ( game.serverside )
-		{
-			clientcmd ent_currentplayer "echo Hello world!"
-			infomsg ent_currentplayer "Hello" "world!"
-		}
+		consolemsg ent_currentplayer "Slaying Bad Guys"
+		callexternal all npc_suicide only_bad
 	}
-	else if ( PARAM1 equals 'func' ) //Uses a func then displays the results
+	else
 	{
-		clientevent new ent_currentplayer developer/rex/func_test
+		consolemsg ent_currentplayer "Slaying all"
+		callexternal all npc_suicide
 	}
+}
+
+{ usetrig //<trigger> - Fires a particular trigger
+	consolemsg ent_currentplayer "Fire map event:" PARAM1
+	usetrigger PARAM1
+}
+
+{ dumpquest //<quest> - Shows what information is stored on a particular quest
+
+	local L_QUEST PARAM1
+	consolemsg ent_currentplayer Quest L_QUEST is: $get_quest_data(ent_currentplayer,L_QUEST)
+}
+
+{ newnpc //<scriptname> [params] - Creates a given npc 
+	consolemsg "Got command newnpc"
+	
+	local SPAWN_POINT $get(ent_currentplayer,origin)
+	local MY_ANGLES $get(ent_currentplayer,angles)
+	local MY_YAW $vec.yaw(MY_ANGLES)
+	vectoradd SPAWN_POINT $relpos($vec(0,MY_YAW,0),$vec(0,128,0))
+
+	createnpc PARAM1 SPAWN_POINT PARAM2 PARAM3 PARAM4 PARAM5 PARAM6 PARAM7 PARAM8
+}
+
+{ newdyn //<idx> [params] - Creates an npc from the given index from ms_dynamicnpc
+	consolemsg ent_currentplayer "Got command newdyn"
+	
+	local L_IDX PARAM1
+	if ( L_IDX startswith 'PARAM' ) local L_IDX 0	
+	local L_SCRIPT $get_token(game.cvar.ms_dynamicnpc,L_IDX)
+	
+	callevent newnpc L_SCRIPT $pass(PARAM2) $pass(PARAM3) $pass(PARAM4) $pass(PARAM5) $pass(PARAM6) $pass(PARAM7) $pass(PARAM8)
+}
+
+{ newitem //<item_scriptname> [params] - Creates a given item with given parameters.
+	consolemsg ent_currentplayer "Got command newitem"
+
+	local SPAWN_POINT $get(ent_currentplayer,origin)
+	local MY_ANGLES $get(ent_currentplayer,angles)
+	local MY_YAW $vec.yaw(MY_ANGLES)
+	vectoradd SPAWN_POINT $relpos($vec(0,MY_YAW,0),$vec(0,64,0))
+	
+	createitem PARAM1 SPAWN_POINT PARAM2 PARAM3 PARAM4 PARAM5 PARAM6 PARAM7 PARAM8
+}
+
+{ eventtarg //<script_event> [params] - Runs a script event on the player's current target
+	callexternal $get(ent_currentplayer,target) PARAM1 $pass(PARAM2) $pass(PARAM3) $pass(PARAM4) $pass(PARAM5) $pass(PARAM6) $pass(PARAM7) $pass(PARAM8)
+}
+
+{ eventme //<script_event> [params] - Runs a script event on the player
+	callexternal ent_currentplayer PARAM1 $pass(PARAM2) $pass(PARAM3) $pass(PARAM4) $pass(PARAM5) $pass(PARAM6) $pass(PARAM7) $pass(PARAM8)
+}
+
+{ eventplayers //<script_event> [params] - Runs a script event on all players
+	callexternal players PARAM1 $pass(PARAM2) $pass(PARAM3) $pass(PARAM4) $pass(PARAM5) $pass(PARAM6) $pass(PARAM7) $pass(PARAM8)
+}
+
+{ eventgm //<script_event> [params] - Runs a script event on the game master
+	callexternal GAME_MASTER PARAM1 $pass(PARAM2) $pass(PARAM3) $pass(PARAM4) $pass(PARAM5) $pass(PARAM6) $pass(PARAM7) $pass(PARAM8)
+}
+
+{ eventall //<script_event> [params] - Runs a script event on all scripted entities
+	callexternal all PARAM1 $pass(PARAM2) $pass(PARAM3) $pass(PARAM4) $pass(PARAM5) $pass(PARAM6) $pass(PARAM7) $pass(PARAM8)
+}
+
+{ blamb //[radius] [damage] [type] - Damages enemies near the player
+	
+	local L_RADIUS 300
+	local L_DMG 300
+	local L_TYPE dark_effect
+
+	if ( PARAM1 !startswith 'PARAM' ) local L_RADIUS PARAM1
+	if ( PARAM2 !startswith 'PARAM' ) local L_DMG PARAM2
+	if ( PARAM3 !startswith 'PARAM' ) local L_TYPE PARAM3
+	
+	consolemsg ent_currentplayer Blamb! AOE: L_RADIUS  DMG: L_DMG  Type: L_TYPE
+
+	//XDODAMAGE <target|(origin)> <range|aoe|direct> <damage> <cth|fall_off> <attacker> <inflciter> <skill|none> <dmg_type> [flag_string]
+	xdodamage $get(ent_currentplayer,origin) L_RADIUS L_DMG 0 $get(ent_currentplayer,id) $get(ent_currentplayer,id) none L_TYPE none
+}
+
+{ setquest //<quest> <value> - Sets a given quest to a given value
+
+	local L_QUEST PARAM1
+	local L_DATA PARAM2
+	
+	consolemsg ent_currentplayer Setting Quest: L_QUEST to L_DATA
+
+	quest set $get(ent_currentplayer,id) L_QUEST L_DATA
+}
+
+{ setgold //<amt> - Sets gold to a given amount
+	callexternal ent_currentplayer ext_setgold $pass(PARAM1)
+}
+
+{ addhp //<amt> - Add the given hp to the player
+	callexternal ent_currentplayer give_hp $pass(PARAM1)
+}
+
+{ addmp //<amt> - Add the given mp to the player
+	callexternal ent_currentplayer give_mp $pass(PARAM1)
+}
+
+{ rat 
+	consolemsg ent_currentplayer Spawning Rat
+	local SPAWN_POINT $get(ent_currentplayer,origin)
+	local MY_ANGLES $get(ent_currentplayer,angles)
+	local MY_YAW $vec.yaw(MY_ANGLES)
+	vectoradd SPAWN_POINT $relpos($vec(0,MY_YAW,0),$vec(0,128,0))
+	
+	createnpc monsters/giantrat SPAWN_POINT
+}
+
+{ skele
+	consolemsg ent_currentplayer Spawning skele
+	local SPAWN_POINT $get(ent_currentplayer,origin)
+	local MY_ANGLES $get(ent_currentplayer,angles)
+	local MY_YAW $vec.yaw(MY_ANGLES)
+	vectoradd SPAWN_POINT $relpos($vec(0,MY_YAW,0),$vec(0,128,0))
+
+	createnpc monsters/skeleton SPAWN_POINT
+}
+
+{ teleforward
+
+	local DIST_FORWARD PARAM1
+	consolemsg ent_currentplayer Teleporting Forward DIST_FORWARD units
+	
+	local MY_POS $get(ent_currentplayer,origin)
+	local MY_ANG $get(ent_currentplayer,viewangles)
+	vectoradd MY_POS $relpos(MY_ANG,$vec(0,DIST_FORWARD,0))
+	setorigin ent_currentplayer MY_POS
 }

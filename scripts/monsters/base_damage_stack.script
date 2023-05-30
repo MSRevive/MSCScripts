@@ -1,0 +1,101 @@
+//Increasing damage from the same monster via a multiplier. Originally built for the chumtoad. By greatguys1
+//Huge contributions from Thothie, thanks
+
+//Damage that you want to stack must have the flag: dmgevent:dmgstk
+//Otherwise, this will default to game_damaged, which will stack dots potentially added from addparams from the mapper.
+
+//Accepts params:
+//const STACK_FLAG_NAME "stackdmg_generic" //What name will be stored under the scriptflag
+//const STACK_MULT_ADD 0.1 //Increment factor for multiplier
+//const STACK_MULT_MAX 10 //Max multiplier incrementing can achieve
+//const STACK_EXPIRE 5 //How long till the scriptflag expires
+
+#scope server
+
+{
+	const STACK_FLAG_NAME "stackdmg_generic"
+	const STACK_MULT_ADD 0.1
+	const STACK_MULT_MAX 10
+	const STACK_EXPIRE 5
+
+	const STACK_ID "stackdmg"
+
+	setvard CALLING_DMGSTK 0
+	setvard STACK_ADJUST_DMG 0
+
+	setvard STACK_SETDMG 0
+	setvard STACK_RETURNDATA 0
+}
+
+{ dmgstk_dodamage //PARAM1=hit:0|1 PARAM2=ent_hit PARAM3=(start) PARAM4=(end) PARAM5=DmgType PARAM6=DmgAmt
+
+	setvard CALLING_DMGSTK 1
+	dbg "Using dmgstk_dodamage for stack."
+
+	if ( PARAM1 )
+	{
+		local L_TARGET PARAM2
+
+		if ( $get(L_TARGET,relationship,ent_me) equals enemy ) //didn't hit one of my friends
+		{
+			local L_PASS_PARAM PARAM6
+			callevent do_stack L_TARGET L_PASS_PARAM
+		}
+	}
+}
+
+{ game_dodamage //PARAM1=hit:0|1 PARAM2=ent_hit PARAM3=(start) PARAM4=(end) PARAM5=DmgType PARAM6=DmgAmt
+
+	if ( !CALLING_DMGSTK )
+	{
+		dbg "Using game_dodamage for stack; potentially unwanted; potential problems."
+
+		if ( PARAM1 )
+		{
+			local L_TARGET PARAM2
+
+			if ( $get(L_TARGET,relationship,ent_me) equals enemy ) //didn't hit one of my friends
+			{
+				local L_PASS_PARAM PARAM6
+				callevent do_stack L_TARGET L_PASS_PARAM
+			}
+		}
+	}
+}
+
+{ game_damaged_other //PARAM1=target_hit PARAM2=dmg PARAM3=dmg_type
+
+	if ( STACK_ADJUST_DMG > 0 )
+	{
+		setdmg PARAM3 STACK_SETDMG
+		return STACK_RETURNDATA
+
+		subtract STACK_ADJUST_DMG 1
+	}
+}
+
+{ do_stack //PARAM1 = Target PARAM2 = dmgamt
+
+	local L_TARGET PARAM1
+	local L_DMG PARAM2
+
+	add STACK_ADJUST_DMG 1 //Hopefully will take care of the case of AoE attacks.
+
+	if ( !$get_scriptflag(L_TARGET,STACK_FLAG_NAME,name_exists) )
+	{
+		scriptflags L_TARGET add STACK_FLAG_NAME STACK_ID 1 STACK_EXPIRE none 
+	}
+
+	local L_CUR_MULT $get_scriptflag(L_TARGET,STACK_FLAG_NAME,name_value) //find the total value of STACK_FLAG_NAME
+
+	capvar L_CUR_MULT 1 STACK_MULT_MAX //Clamp
+	
+	setvard STACK_SETDMG $math(multiply,L_DMG,L_CUR_MULT)
+	setvard STACK_RETURNDATA L_CUR_MULT
+
+	dbg do_stack STACK_RETURNDATA
+
+	add L_CUR_MULT STACK_MULT_ADD
+	scriptflags L_TARGET edit STACK_FLAG_NAME STACK_ID L_CUR_MULT STACK_EXPIRE none //add stack that decays
+	//scriptflags <target> add <name> <type> [value:1] [expiretime:-1] [expiremsg:none]
+}

@@ -1,0 +1,162 @@
+//The Gut Buster
+//This sickly sword thrives on flesh.
+//By greatguys1 and Darkfox
+//
+//----------
+//
+//The Gut Buster is a two-handed massive sword that has a taste for blood. Chopping limbs off of your foe causes them
+// to bleed, and cause the chunk of flesh to burst, damaging and bleeding other nearby enemies. Finishing off enemies
+// that are bleeding causes various innards to burst out, also exploding, damaging and bleeding nearby enemies. 
+//
+//----------
+
+#scope shared
+
+{
+	const BASE_LEVEL_REQ	37
+	const ANIM_LIFT1	0
+	const ANIM_IDLE1	1
+	const ANIM_ATTACK1	2
+	const ANIM_ATTACK2	2
+	const ANIM_ATTACK3	2
+	const ANIM_SHEATH	5
+	const MODEL_VIEW	viewmodels/v_2haxesgreat.mdl
+	const MODEL_VIEW_IDX	10
+	const MODEL_HANDS	weapons/p_weapons4.mdl
+	const MODEL_WORLD	weapons/p_weapons4.mdl
+	const MODEL_BODY_OFS	62
+	const PMODEL_IDX_FLOOR 63 //cuz models are weird i guess
+	//63 playermodel
+	//64 world model
+	//setvar MODEL_BLOCK	armor/shields/p_shields.md/
+	const SOUND_SWIPE	weapons/swingsmall.wav
+	const SOUND_SHOUT	$get(ent_owner,scriptvar,'PLR_SOUND_SHOUT1')
+	const ANIM_PREFIX	standard
+
+	const PLAYERANIM_AIM		axe_twohand
+  	const PLAYERANIM_SWING		axe_twohand_swing
+
+	//Used in base_melee
+	//------------------
+	const MELEE_RANGE 100
+	const MELEE_DMG_DELAY 0.6
+	const MELEE_ATK_DURATION 1.4
+	const MELEE_ENERGY 10
+	const MELEE_DMG 540
+	const MELEE_DMG_RANGE 150
+	const MELEE_DMG_TYPE slash
+	const MELEE_ACCURACY 75%
+	const MELEE_STAT swordsmanship
+	const MELEE_ALIGN_BASE 4,-6 
+	const MELEE_ALIGN_TIP 0,6
+	const MELEE_VIEWANIM_ATK ANIM_ATTACK1
+
+	const MELEE_SOUND SOUND_SWIPE
+	const MELEE_SOUND_DELAY MELEE_DMG_DELAY
+	const MELEE_PARRY_CHANCE 15%
+
+	const SWORD_MANUAL_PARRY 0
+	
+	//dot effect stuff
+	const DOT_DAMAGE $func(func_dot_damage)
+	const GIB_EXPLODE_DAMAGE $func(func_gib_damage)
+}
+
+#include items/swords_base_onehanded
+//Yeah, I know this is one handed... but the two handed swords base isn't pretty :(
+
+{ weapon_spawn
+
+	name "the|Gut Buster"
+	desc "The sickly sword thrives on flesh."
+	weight 90
+	size 5
+	value 2500
+	sethudsprite trade 199
+	sethand both
+}
+
+{ game_precache
+
+	//Precache models and sprites that various effects in the gb use
+	precache gib_b_bone.mdl
+	precache gib_b_gib.mdl
+	precache gib_lung.mdl
+	precache gib_legbone.mdl
+	precache agibs.mdl
+
+	precache bloodspray.spr
+	precache char_breath.spr
+}
+
+{ weapon_damaged_other //PARAM1=target_hit PARAM2=dmg PARAM3=dmg_type PARAM4=dmgevent
+
+	if PARAM2 > 0
+	
+	//check if we're actually allowed to damage the target through some vars. this needs to be centralized somehow.
+	if !$get(PARAM1,scriptvar,'I_R_COMPANION') //companions shouldnt be damaged
+	if !$get(PARAM1,scriptvar,'NPC_NO_PLAYER_DMG') //those flagged no dmg should not be damaged
+	
+	//Apply the special gut buster effect that creates additional gibs on death
+	callevent inflict_bleed $pass(PARAM1)
+	
+	local L_BLOOD $get(PARAM1,blood)
+	if L_BLOOD isnot 'none'
+	
+	local L_SOUND "leech/leech_bite" $rand(1,2) ".wav"
+	playsound 0 10 L_SOUND
+	
+	//Throw a single gib
+	local L_VEL $relvel($get(ent_owner,viewangles),$vec(-35,50,350))
+	//<owner> <velocity> <damage> <skill> <"green"|"red"> <sword_id>
+	createnpc effects/swords_gb/gb_gib_explode $get(PARAM1,origin) $get(ent_owner,id) L_VEL GIB_EXPLODE_DAMAGE swordsmanship L_BLOOD $get(ent_me,id)
+}
+
+{ gib_dodamage //Called from effects/swords_gb/gb_gib_explode
+
+	if PARAM1
+	if PARAM6
+	//<duration> <attacker> <damage> [activeSkill] [dmg type]
+	callevent inflict_bleed $pass(PARAM2) //Apply the special gut buster effect that creates additional gibs on death
+}
+
+{ inflict_bleed //<target> //Apply the special gut buster effect that creates additional gibs on death
+
+	local L_BLOOD $get(PARAM1,blood)
+	if L_BLOOD isnot 'none'
+	
+	//<duration> <attacker> <damage> <activeSkill> <dmg type> <sword_id>
+	applyeffect PARAM1 effects/swords_gb/gut_buster 5 $get(ent_owner,id) DOT_DAMAGE swordsmanship pierce_effect $get(ent_me,id)
+}
+
+{ func_dot_damage //Dot damage calculation
+
+	local L_DMG $get(ent_owner,skill.swordsmanship)
+	subtract L_DMG BASE_LEVEL_REQ //Get resulting levels left
+	local L_DMG $math(multiply,L_DMG,4) //Resulting level * 2 will give the dmg buff for surpassed level
+	local L_DMG $math(add,L_DMG,55) //Add the base dmg
+	
+	return **clear
+	return L_DMG
+}
+
+{ func_gib_damage //gib damage calculation
+
+	local L_DMG $get(ent_owner,skill.swordsmanship)
+	multiply L_DMG 2.75
+	
+	setvard POTENTIALLY_INACCURATE_GIB_DAMAGE L_DMG
+
+	return **clear
+	return L_DMG
+}
+
+{ special_01_start
+
+	playviewanim 8
+}
+
+{ game_fall
+
+	setmodelbody 0 PMODEL_IDX_FLOOR
+}

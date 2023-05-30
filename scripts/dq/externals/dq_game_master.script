@@ -1,0 +1,44 @@
+//By greatguys1
+//Best viewed in EditPlus with the ms.stx applied
+
+//This is supposed to be included into the game master! This does not work on its own!
+//It adds new callback commands to call to scripts when a monster dies.
+
+#scope server
+
+{
+	setvard DQ_DEATH_CALLBACK_ARRAY_CREATED 0
+}
+
+{ gm_dq_add_counter //PARAM1 = ID that you wanna call back	greatguys1 July2016
+	
+	if ( !DQ_DEATH_CALLBACK_ARRAY_CREATED )
+	{
+		setvard DQ_DEATH_CALLBACK_ARRAY_CREATED 1
+		array.create DQ_DEATH_CALLBACK_IDS
+	}
+	array.add DQ_DEATH_CALLBACK_IDS PARAM1
+}
+
+{ gm_dq_perish_counter //PARAM1 = ID that you want to perish the counter with
+
+	local L_DEL_IDX $get_arrayfind(DQ_DEATH_CALLBACK_IDS,PARAM1)
+	
+	if ( L_DEL_IDX != -1 )
+	{
+		array.del DQ_DEATH_CALLBACK_IDS L_DEL_IDX 
+	}
+}
+
+{ gm_dq_add_death //PARAM1 = name of monster PARAM2 = MonsterOrigin	greatguys1 July2016
+
+	setvard DQ_MONSTER_KILLED_NAME PARAM1
+	setvard DQ_MONSTER_KILLED_ORIGIN PARAM2
+
+	calleventloop $get_array_amt(DQ_DEATH_CALLBACK_IDS) gm_dq_monster_death_callbacks
+}
+
+{ gm_dq_monster_death_callbacks
+
+	callexternal $get_array(DQ_DEATH_CALLBACK_IDS,game.script.iteration) ext_quest_monster_killed
+}
