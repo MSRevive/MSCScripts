@@ -262,11 +262,13 @@
 }
 
 { npcatk_set_skill
+
 	if game.serverside
 
 	if ( NPC_BASE_EXP isnot 'NPC_BASE_EXP' ) setvard NPC_GIVE_EXP NPC_BASE_EXP //this is to deal with setvar/d conflicts
 	if ( NPC_GIVE_EXP equals 'NPC_GIVE_EXP' ) setvard NPC_GIVE_EXP $get(ent_me,xp)
 	if ( NPC_EXP_MULTI isnot 'NPC_EXP_MULTI' ) multiply NPC_GIVE_EXP NPC_EXP_MULTI //pre-multiplier
+	
 	//Adjust skill for multipliers and special conditions
 	if ( $get(ent_me,xp) == 0 )
 	{
@@ -280,7 +282,6 @@
 	}
 	
 	if NPC_GIVE_EXP > 0 //if this mob has no XP, skip this shit
-
 
 	setvard NPC_ALL_XP_ADJ 1
 
@@ -390,7 +391,7 @@
 			if ( NPC_MOVE_SPEED_ADJ < 1 )
 			{
 				//really need to rethink how expadj works, too easy to get negatives, too difficult to figure down ratios
-.				//maybe postive ratios increase by an amount, and negative ones subtract
+				//maybe postive ratios increase by an amount, and negative ones subtract
 
 				//also I suck at basic math these days
 				local L_ADJ 0
@@ -469,7 +470,6 @@
 		local L_N_PLAYER_ADJ game.playersnb.noafk
 		local L_DEBUG "FN+Players>1:"
 		add L_DEBUG L_N_PLAYER_ADJ
-		if ( DROP_GOLD_AMT isnot 'DROP_GOLD_AMT' ) multiply DROP_GOLD_AMT N_PLAYERS
 
 		if ( NPC_IS_BOSS )
 		{
@@ -499,186 +499,6 @@
 	}
 
 }
-
-//backup of old system
-//{ npcatk_set_skill
-//	if game.serverside
-//
-//	//Adjust skill for multipliers and special conditions
-//
-//	if ( NPC_BASE_EXP isnot 'NPC_BASE_EXP' ) setvard NPC_GIVE_EXP NPC_BASE_EXP //this is to deal with setvar/d conflicts
-//	//if ( L_MAP_NAME contains old_helena ) multiply NPC_GIVE_EXP 0.5 //orcs only - handled in orc_base
-//	if ( NPC_EXP_MULTI isnot 'NPC_EXP_MULTI' ) multiply NPC_GIVE_EXP NPC_EXP_MULTI
-//
-//	//setvard NPC_EXP_ADJ NPC_GIVE_EXP
-//
-//	//FN XP multi applies even on NO_EXP_MULTI mobs - eg. rats
-//	if ( game.central )
-//	{
-//		multiply NPC_GIVE_EXP 2.0 //+200% XP on FN
-//		//+50% XP/player beyond the first
-//		local L_N_PLAYER_ADJ game.playersnb.noafk
-//		if L_N_PLAYER_ADJ > 1
-//		subtract L_N_PLAYER_ADJ 1
-//		multiply L_N_PLAYER_ADJ 0.5
-//		local L_ADD_XP NPC_GIVE_EXP
-//		multiply L_ADD_XP L_N_PLAYER_ADJ
-//		add NPC_GIVE_EXP L_ADD_XP
-//	}
-//
-//	if ( NO_EXP_MULTI )
-//	{
-//		if ( NPC_EXP_REDUCT isnot 'NPC_EXP_REDUCT' ) multiply NPC_GIVE_EXP NPC_EXP_REDUCT
-//		skilllevel NPC_GIVE_EXP
-//	}
-//
-//	if !NO_EXP_MULTI
-//	//if ( game.central ) local EXIT_SUB 1 //FEB2009 - prevent hp/dmgmulti XP bonus without map authentication
-//	//if ( G_DEVELOPER_MODE ) local EXIT_SUB 0 //MAR2009 - abort exit if developer mode (easier to test XP multi)
-//	//if !EXIT_SUB
-//	local TOTAL_MULTI 0
-//	if ( NPC_DMG_MULTI > 1 )
-//	{
-//		add TOTAL_MULTI NPC_DMG_MULTI //add extra xp for added hp
-//		subtract TOTAL_MULTI 1
-//	}
-//	if ( NPC_HP_MULTI > 1 )
-//	{
-//		add TOTAL_MULTI NPC_HP_MULTI //add extra xp for added dmg
-//		subtract TOTAL_MULTI 1
-//	}
-//	if ( TOTAL_MULTI > 0 ) multiply TOTAL_MULTI 0.5 //divide by two
-//	add TOTAL_MULTI G_EXP_MULTI //add global multiplier
-//	//dbg npcatk_set_skill expmulti NPC_EXP_MULTI gbl G_EXP_MULTI tot TOTAL_MULTI
-//
-//	//APR2009 make sure dmgmulti/hpmulti are close to one another (anti-cheat)
-//	//NPC_DMG_MULTI
-//	//NPC_HP_MULTI
-//	if ( NPC_DMG_MULTI >= NPC_HP_MULTI )
-//	{
-//		local ADJ_RATIO NPC_HP_MULTI
-//		divide ADJ_RATIO NPC_DMG_MULTI
-//	}
-//	else
-//	{
-//		local ADJ_RATIO NPC_DMG_MULTI
-//		divide ADJ_RATIO NPC_HP_MULTI
-//	}
-//	//dbg npcatk_set_skill ADJ_RATIO dmgmulti NPC_DMG_MULTI hpmulti NPC_HP_MULTI
-//	if ( ADJ_RATIO < 0.25 ) local OVER_ADJUST 1
-//
-//	if ( OVER_ADJUST )
-//	{
-//		local MSG_TITLE "MAP ERROR: "
-//		stradd MSG_TITLE $get(ent_me,name)
-//		infomsg all MSG_TITLE "HP/DMG multipliers cannot be more than 4x one another, or XP will not be adjusted"
-//		local EXIT_SUB 1
-//	}
-//	if !EXIT_SUB
-//
-//	//JAN2010_28 - Adjust XP for special features
-//	local L_PENALTIES 1.0
-//	if ( NPC_ADJ_FLAGS isnot 'NPC_ADJ_FLAGS' )
-//	{
-//		if ( NPC_ADJ_FLAGS contains telehunt )
-//		{
-//			if ( NPC_TELEHUNT_FREQ > 30 ) add TOTAL_MULTI 0.5
-//			else if ( NPC_TELEHUNT_FREQ >= 20 ) add TOTAL_MULTI 1.0
-//			else if ( EXT_DEMON_BLOOD_RATIO >= 10 ) add TOTAL_MULTI 1.5
-//			else if ( NPC_TELEHUNT_FREQ >= 6 ) add TOTAL_MULTI 1.75
-//			else if ( NPC_TELEHUNT_FREQ >= 0 ) add TOTAL_MULTI 2.0
-//		}
-//		if ( NPC_ADJ_FLAGS contains speed_x2 ) add TOTAL_MULTI 1
-//		if ( NPC_ADJ_FLAGS contains speed_x3 ) add TOTAL_MULTI 1.5
-//		if ( NPC_ADJ_FLAGS contains speed_x4 ) add TOTAL_MULTI 2
-//		if ( NPC_ADJ_FLAGS contains demon_blood )
-//		{
-//			if ( EXT_DEMON_BLOOD_RATIO >= 5 ) add TOTAL_MULTI 2
-//			else if ( EXT_DEMON_BLOOD_RATIO >= 4 ) add TOTAL_MULTI 1.5
-//			else if ( EXT_DEMON_BLOOD_RATIO >= 3 ) add TOTAL_MULTI 1.0
-//			else if ( EXT_DEMON_BLOOD_RATIO >= 2 ) add TOTAL_MULTI 0.5
-//		}
-//		if ( NPC_ADJ_FLAGS contains mspeed )
-//		{
-//			if ( NPC_MOVE_SPEED_ADJ > 1 )
-//			{
-//				local L_TO_ADD 0.25
-//				local L_TIMES_TO_ADD NPC_MOVE_SPEED_ADJ
-//				capvar L_TIMES_TO_ADD 1 5
-//				multiply L_TO_ADD L_TIMES_TO_ADD
-//				dbg npcatk_set_skill mspeed + L_TO_ADD
-//				add TOTAL_MULTI L_TO_ADD
-//			}
-//			if ( NPC_MOVE_SPEED_ADJ < 1 )
-//			{
-//				if ( NPC_MOVE_SPEED_ADJ >= 0.75 ) subtract TOTAL_MULTI 0.2
-//				else if ( NPC_MOVE_SPEED_ADJ >= 0.5 ) subtract TOTAL_MULTI 0.5
-//				else if ( NPC_MOVE_SPEED_ADJ >= 0.25 ) subtract TOTAL_MULTI 0.75
-//				else if ( NPC_MOVE_SPEED_ADJ < 0.25 ) subtract TOTAL_MULTI 1.0
-//			}
-//		}
-//	}
-//	if ( NPC_DOT_POISON )
-//	{
-//		local L_TOTAL_MULTI_TO_ADD 0.25
-//		multiply L_TOTAL_MULTI_TO_ADD NPC_DOT_POISON_RATIO
-//		add TOTAL_MULTI L_TOTAL_MULTI_TO_ADD
-//	}
-//	if ( NPC_DOT_FIRE )
-//	{
-//		local L_TOTAL_MULTI_TO_ADD 0.25
-//		multiply L_TOTAL_MULTI_TO_ADD NPC_DOT_FIRE_RATIO
-//		add TOTAL_MULTI L_TOTAL_MULTI_TO_ADD
-//	}
-//	if ( NPC_DOT_COLD )
-//	{
-//		local L_TOTAL_MULTI_TO_ADD 0.25
-//		multiply L_TOTAL_MULTI_TO_ADD NPC_DOT_COLD_RATIO
-//		add TOTAL_MULTI L_TOTAL_MULTI_TO_ADD
-//	}
-//	if ( NPC_DOT_LIGHTNING )
-//	{
-//		local L_TOTAL_MULTI_TO_ADD 0.25
-//		multiply L_TOTAL_MULTI_TO_ADD NPC_DOT_LIGHTNING_RATIO
-//		add TOTAL_MULTI L_TOTAL_MULTI_TO_ADD
-//	}
-//
-//	if ( L_PENALTIES < 1 )
-//	{
-//		multiply TOTAL_MULTI L_PENALTIES
-//	}
-//
-//	//if ( TOTAL_MULTI > 1 )
-//	//{
-//	dbg npcatk_set_skill warning, xp penalties: TOTAL_MULTI < 1
-//	multiply NPC_GIVE_EXP TOTAL_MULTI
-//	setvard NPC_TOTAL_MULTI TOTAL_MULTI
-//	if ( DROP_GOLD_AMT isnot 'DROP_GOLD_AMT' ) multiply DROP_GOLD_AMT TOTAL_MULTI
-//	//}
-//
-//	if ( NPC_IS_BOSS )
-//	{
-//		//increase XP per player for bosses (on FN)
-//		if game.central
-//		local N_PLAYERS game.playersnb.noafk
-//		if N_PLAYERS > 1
-//		if ( N_PLAYERS > 4 ) local N_PLAYERS 4
-//		multiply NPC_GIVE_EXP N_PLAYERS
-//		if ( DROP_GOLD_AMT isnot 'DROP_GOLD_AMT' ) multiply DROP_GOLD_AMT N_PLAYERS
-//	}
-//
-//	if ( NPC_GIVE_EXP != 0 )
-//	{
-//		if ( NPC_CAP_EXP > 0 )
-//		{
-//			if ( NPC_GIVE_EXP > NPC_CAP_EXP ) setvard NPC_GIVE_EXP NPC_CAP_EXP
-//		}
-//		if ( NPC_EXP_REDUCT isnot 'NPC_EXP_REDUCT' ) multiply NPC_GIVE_EXP NPC_EXP_REDUCT
-//		skilllevel NPC_GIVE_EXP
-//	}
-//
-//	setvard NPC_EXP_FINAL NPC_GIVE_EXP
-//}
 
 { game_dynamically_created
 	if PARAM1 equals events
