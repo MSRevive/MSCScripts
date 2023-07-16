@@ -1,0 +1,74 @@
+//Base effect
+
+//Handles effects applied to players or monsters
+//Removes itself when target dies or when time is up
+
+//PARAM1 = duration. 0 will stay until death, or manual removal.
+
+#scope server
+
+{
+	const EFFECT_ID "base_effect" //Unique name to check if the effect is registered, applied, or needs to be removed.
+	const EFFECT_FLAGS 'EFFECT_FLAGS' //<"nostack"|"player_action">
+	//The flag "nostack" ensures that another instance of this effect cannot be applied on the target.
+	//
+	//If the flag includes "player_action", it must always be precached, and with the [full] flag.
+	// The player action can be activated from the player's "v" menu, and calls the event, "game_player_activate"
+	// The name of the action is determined by the variable, "game.effect.displayname".
+	//
+	//If the name of the effect (game.effect.displayname) changes, you can update the again player with:
+	// setvard game.effect.updateplayer 1
+	//  It will set itself to 0 after it updates the player.
+	
+	const EFFECT_SCRIPT $currentscript //Must be copied, as is, at the top script!
+
+	const game.effect.removeondeath 1 //Used by c++ code to remove the script on death.
+		//"clearfx" will check this to see if it is 1 before removing the script, and will not if it is not set to 1.
+		//If "player_action" is used in the flags, ensure that this is set to 0.
+		//
+		//If this is set to 1, but you want "clearfx" to ignore the effect, EFFECT_IGNORE_CLEARFX can be set to 1 also.
+	
+	//The following can be turned on or off at will to influence the target:
+	// setvard game.effect.canmove
+	// setvard game.effect.canrun
+	// setvard game.effect.canduck
+	// setvard game.effect.canattack
+	// setvard game.effect.movespeed
+	// setvard game.effect.anim.framerate
+	
+	setvar game.effect.id EFFECT_ID //Used to tell if this script is an effect. Clients tell the server this id when a player action is used, and will call "game_player_activate" on the effect.
+	
+	const game.effect.flags EFFECT_FLAGS //Only "nostack" works here. Should match "reg.effect.flags". Some c++ code is lame.
+}
+
+{ game_precache //Effects are, unusually, registered in game_precache.
+
+	local reg.effect.script	EFFECT_SCRIPT //Not clear what it does, but is required, and must be correct.
+	local reg.effect.name EFFECT_ID
+	local reg.effect.flags EFFECT_FLAGS
+
+	registereffect
+}
+
+{ game_activate //PARAM1 = duration
+
+	setvard EFFECT_DURATION PARAM1
+	
+	if EFFECT_DURATION //If there is a duration on this effect
+	callevent EFFECT_DURATION effect_duration_ended
+}
+
+{ effect_duration_ended
+
+	removescript //will automatically call effect_die.
+}
+
+{ effect_die //Gets called when effect dies or is removed.
+
+	
+}
+
+{ game_duplicated //Gets called by c++ code whenever the effect successfully stacks
+
+	
+}

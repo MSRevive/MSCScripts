@@ -7,21 +7,15 @@
 
 
 { [server]
-	const EFFECT_ID			effect_stun
-	const EFFECT_NAME		"Stun"
-	const EFFECT_ACTIONTYPE		nostack
-	const EFFECT_SCRIPT		$currentscript
+	const EFFECT_ID "effect_stun"
+	const EFFECT_FLAGS nostack
 
 	const EFFECT_BLOCK_RESISTS 1
-
-	setvard game.effect.id		EFFECT_ID
-	setvard game.effect.displayname	EFFECT_NAME
-	setvard game.effect.type	EFFECT_ACTIONTYPE
 
 	const SOUND_RESIST body/armour3.wav
 }
 
-#include effects/effect_base	allowduplicate
+#include effects/base_effect	allowduplicate
 
 { [server] game_activate //<duration> [push] [cantattak] [attacker]
 
@@ -106,4 +100,67 @@
 { game_duplicated
 
 	callevent game_death
+}
+
+{ do_something_with_this_later
+
+	if ( DOT_TYPE equals 'stun' )
+	{
+		if ( $get(ent_me,isplayer) )
+		{
+			if EFFECT_BLOCK_RESISTS
+			local CUR_WEAPON $get(ent_me,scriptvar,'PLR_ACTIVE_WEAPON')
+			if ( $get(CUR_WEAPON,scriptvar,'POLE_IN_BLOCK') == 1 ) local BLOCKED_ATTACK 1
+			if ( $get(CUR_WEAPON,scriptvar,'PARRY_ON') == 1 ) local BLOCKED_ATTACK 1
+			if ( BLOCKED_ATTACK )
+			{
+				callevent be_resist_effect "blocked"
+				playermessage ent_me $get(CUR_WEAPON,name) blocked stun impact.
+			}
+		}
+		if !RESISTED_EFFECT
+
+		local HE_RESISTS_STRING "resists the stun attack"
+		local HE_IMMUNE_STRING "is immune to stun attacks!"
+		local YOU_RESIST_STRING "You resist being stunned!"
+		local IMMUNE_RATIO $get(ent_me,scriptvar,'IMMUNE_STUN')
+
+		local RESISTANCE $get(ent_me,scriptvar,'IMMUNE_STUN')
+		if ( $get(ent_me,nopush) ) local RESISTANCE 100 //nopush mons/plrs are immune to stun as well
+
+		local STUN_ROLL $rand(1,100) 
+
+		if ( RESISTANCE isnot 'IMMUNE_STUN' )
+		{
+			//is immune, flag
+			if ( RESISTANCE == 100 )
+			{
+				local RESISTED_STUN 1
+				if ( !$get(ent_me,scriptvar,'IS_SOCCER_BALL') ) playermessage PARAM2 MY_NAME HE_IMMUNE_STRING
+				setvard RESISTED_EFFECT 1
+			}
+			if !RESISTED_STUN
+
+			//has resistance, roll
+			if STUN_ROLL <= RESISTANCE
+			//saytext HA HA! I RESIST! $get(PARAM2,name)
+			playsound 0 10 SOUND_RESIST
+			setvard BE_RESIST_STRING "( "
+			strconc BE_RESIST_STRING STUN_ROLL /  $int(RESISTANCE) )
+			setvard RESISTED_EFFECT 1
+			gplayermessage ent_me YOU_RESIST_STRING BE_RESIST_STRING
+			dplayermessage PARAM2 MY_NAME HE_RESISTS_STRING BE_RESIST_STRING
+			local RESISTED_STUN 1
+		}
+		else
+		{
+			local RESISTANCE 0
+		}
+		//resisted
+		if ( RESISTED_STUN ) callevent be_resist_effect "stun_resist_roll" stun
+		if !RESISTED_STUN
+		playermessage ent_me You have been stunned! ( STUN_ROLL / RESISTANCE )
+	
+		exitevent
+	}
 }

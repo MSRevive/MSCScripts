@@ -1,0 +1,157 @@
+//Base dot by greatguys1
+
+//Includes functions to help the top script deal damage over time. 
+//Supports stacking DoTs.
+//DoTs of the same element from the same attacker do not stack.
+
+//PARAM1 = duration. 0, or less than 0 will stay until death.
+
+#scope server
+
+{
+	const EFFECT_ID "base_dot" //Unique name to check if the effect is registered, applied, or needs to be removed.
+	//const EFFECT_FLAGS nostack //<"nostack"|"player_action">
+	
+	const EFFECT_SCRIPT $currentscript //Must be copied, as is, at the top script!
+	
+	const DOT_TYPE fire_effect //Type of damage to do over time
+	
+	setvard DOT_RESISTED 0 //Checks will set this to 1 if the target should not get the dot affects
+
+	const DOT_IM_AFFECTED "You are on base_dot!" //Player recieves affect and is afflicted
+	
+	const DOT_IM_RESIST "The base_dot leaves you unharmed." //Player recieves the affect, but resists / immune it.
+	const DOT_HE_IMMUNE "is not harmed by the base_dot." //Target recieves the affect, but resists / immune it
+}
+
+#include effects/base_effect	allowduplicate
+
+{ game_activate
+
+	setvard DOT_ATTACKER PARAM2
+	setvard DOT_DMG PARAM3
+	setvard DOT_SKILL PARAM4
+	
+	//$funcs will call the event on every applied dot. A callevent with a var that gets set should suffice.
+	callevent dot_fiendly_check
+	if ( !DOT_RESISTED )
+	{
+		callevent dot_resist_check
+		if ( !DOT_RESISTED )
+		{
+			callevent dot_start //Starts up the dot effect loop
+		}
+		else removescript
+	}
+	else removescript
+}
+
+{ dot_start //Helps begin any fx on the DoT
+
+	callevent 0.5 dot_effect
+}
+
+{ dot_effect //requires DOT_TYPE DOT_DMG DOT_ATTACKER DOT_SKILL
+
+	//<target> <direct> <damage> <chance to hit> <attacker> <inflciter> <skill|none> <dmg_type> [flag_string]
+	xdodamage $get(ent_me,id) direct DOT_DMG 100 DOT_ATTACKER DOT_ATTACKER DOT_SKILL DOT_TYPE
+	callevent 1.0 dot_effect
+}
+
+{ dot_fiendly_check //Returns 1 if I am friendly
+	
+	//$can_damage doesnt seem to be working correctly. Just check if they're immune until fix.
+	//if ( !$get(ent_me,invincible) ) //cannot be damaged by attacker
+	//{
+	//	//infomsg all "Can damage: " $can_damage(DOT_ATTACKER)
+	//	return 1
+	//	exitevent
+	//}
+	//Okay. Invincible checks dont work either. Nix this check all together until fix.
+	
+	if ( $get(DOT_ATTACKER,id) equals $get(ent_me,id) ) //cannot afflict myself
+	{
+		infomsg all MYSELF no
+		setvard DOT_RESISTED 1
+		exitevent
+	}
+	
+	if ( $get(ent_me,isplayer) ) //cannot affect players if pvp is off
+	{
+		if ( $get(DOT_ATTACKER,isplayer) )
+		{
+			if ( !game.pvp )
+			{
+				infomsg all PVP no
+				setvard DOT_RESISTED 1
+				exitevent
+			}
+		}
+	}
+	
+	if ( $get(ent_me,relationship,DOT_ATTACKER) equals ally ) //cannot be affected by allies
+	{
+		infomsg all RELATIONS no
+		setvard DOT_RESISTED 1
+		exitevent
+	}
+}
+
+{ dot_resist_check //returns 1 if resisted / immune
+
+	//if player resisted hit this effect within the last 10 seconds let the resistance carry over
+	local L_DOT_TYPE DOT_TYPE
+	if ( L_DOT_TYPE contains '_effect' )
+	{
+		local L_DOT_TYPE $string_upto(L_DOT_TYPE,'_') //Removes "_effect" from the damage type for the $get_takedmg test.
+	}
+	
+	local IMMUNE_RATIO $get_takedmg(ent_me,L_DOT_TYPE) //Test damage resistance
+
+	if ( IMMUNE_RATIO == 0 )
+	{
+		gplayermessage ent_me DOT_IM_RESIST
+		dplayermessage DOT_ATTACKER $get(ent_me,name) DOT_HE_IMMUNE
+		
+		setvard DOT_RESISTED 1
+		exitevent
+	}
+
+	local L_ROLL $rand(1,100)
+	local L_RESISTANCE $int($math(multiply,IMMUNE_RATIO,100))
+	capvar L_RESISTANCE 0 100
+	
+	setvard BE_RESIST_STRING " ( " L_ROLL " / " L_RESISTANCE " )"
+
+	if ( L_ROLL > L_RESISTANCE ) //Resisted
+	{
+		gplayermessage ent_me DOT_IM_RESIST BE_RESIST_STRING
+		dplayermessage DOT_ATTACKER $get(ent_me,name) "resists the" L_DOT_TYPE "magic." BE_RESIST_STRING
+		
+		setvard DOT_RESISTED 1
+		exitevent
+	}
+	
+	local HE_RESISTS_STRING "is not harmed by holy magic."
+	local YOU_RESIST_STRING "The holy magic leaves you unharmed."
+
+	local HE_RESISTS_STRING "is immune to cold attacks!"
+	local YOU_RESIST_STRING "You resist being frozen."
+
+	local HE_RESISTS_STRING "is immune to electrical attacks!"
+	local YOU_RESIST_STRING "You resist the lightning magic's deleterious effects."
+
+	local HE_RESISTS_STRING "is immune to fire!"
+	local YOU_RESIST_STRING "You resist the fire magic."
+
+	local HE_RESISTS_STRING "is immune to poison!"
+	local YOU_RESIST_STRING "You resist the poison."
+
+	local HE_RESISTS_STRING "is immune to acid!"
+	local YOU_RESIST_STRING "You resist the acid attack."
+}
+
+{ game_duplicated
+
+	
+}
