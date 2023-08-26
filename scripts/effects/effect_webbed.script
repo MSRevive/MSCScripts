@@ -1,150 +1,175 @@
-//Speed decreases until target is cocooned
+//Webbed npcs are slowed. Continuous webbing cocoons the target.
+//Stacked webbed effects increase the intensity of the web.
+
+//Large enemies take more web to cocoon
+//Small enemies dont take as much web to cocoon
+
+//. effectmestack effects/effect_webbed 10 GAME_MASTER
+
+#scope server
+
 {
-	const EFFECT_ID			webbed
-	const EFFECT_FLAGS		nostack
+	const EFFECT_ID webbed
+	const EFFECT_SCRIPT $currentscript //Must be copied, as is, at the top script!
+	
+	const PLAYER_WEB_TILL_COCOON 10 //Number of webs it takes to cocoon a player.
+	//WEB_PER_SIZE will not be used if effect is on a player!
+	
+	const WEB_PER_CUBE 16 //Volume of monster / x = amt of web it takes to cocoon
+	
+	setvard WEBS_ATTACHED 0
+	setvard WEBS_TILL_COCOON 0 //Set in game_activate
+	
+	setvar WEB_DECAY_TIME 0 //Largest decay time will override any subsequent smaller ones
 }
 
 #include effects/base_effect	allowduplicate
 
-{ [server] game_activate //<cocoon_hp[x10,usually use mons maxhp]> <web_strength> [attacker] [duration] [dot]
-	dbg WEB game_activate chp PARAM1 wstr PARAM2 atkr $get(PARAM3,name) dur PARAM4 dot PARAM5
+{ game_activate //PARAM1 = Single web decay time; PARAM2 = Webber
 
-	setvard game.effect.canjump 0
+	local L_DECAY_TIME PARAM1 //Largest decay time will override any smaller ones
 
-	if ( $get(ent_me,scriptvar,'COCOON_ATTACHED') )
+	if ( $get_scriptflag(ent_me,spider_resist,type_exists) ) //Get immunity
 	{
-		//no "double cocoons"
-		setvard RESISTED_EFFECT 2
-		callevent effect_die
+		playermessage PARAM2 $get(ent_me,name) "is immune to webs!"
+		
+		setvard EFFECT_DUPLICATED 1 //Helps prevent silliness
+		removescript
 		exitevent
 	}
-
-	setvard WEBBER_ID PARAM3
-
-	if ( $get(WEBBER_ID,isplayer) )
+	
+	if ( !EFFECT_DUPLICATED ) //First instance of web
 	{
-		local L_RESIST_STR $get(ent_me,name)
-		stradd L_RESIST_STR " is too large to be encased in webs!"
-		if ( $get(ent_me,width) >= 64 ) setvard RESISTED_EFFECT 1
-		if ( $get(ent_me,height) > 96 ) setvard RESISTED_EFFECT 1
-
-		//figured more fun to be able to turn the tables on em
-		//	if ( $get(ent_me,itemname) contains spid )
-		//	{
-		//		local L_RESIST_STR "Spiders cannot be encased in webs."
-		//		setvard RESISTED_EFFECT 1
-		//	}
-
-		local L_MAX_WEB_STR $get(WEBBER_ID,maxhp)
-		multiply L_MAX_WEB_STR 3
-		if $get(ent_me,hp) > L_MAX_WEB_STR
-		stradd L_RESIST_STR " is too strong to be encased in webs!"
-		setvard RESISTED_EFFECT 1
-	}
-	if ( $get_scriptflag(ent_me,spider_resist,type_exists) )
-	{
-		local L_RESIST_STR $get(ent_me,name)
-		local L_RESIST_STR " is immune to webs!"
-		setvard RESISTED_EFFECT 1
-	}
-	if ( RESISTED_EFFECT )
-	{
-		if ( $get(WEBBER_ID,isplayer) ) playermessage WEBBER_ID L_RESIST_STR
-		callevent effect_die
-	}
-	if !RESISTED_EFFECT
-
-	setvard game.effect.canjump 0
-
-	setvard EFFECT_ACTIVE 1
-	if ( $get(ent_me,isplayer) )
-	{
-		setvard OLD_WEBS $get(ent_me,scriptvar,'WEBS_ATTACHED')
-		clientevent update ent_me const.localplayer.scriptID web_effect $get(ent_me,index) OLD_WEBS
-		playermessage ent_me You have been webbed!
-	}
-	setvard COCOON_STRENGTH PARAM1
-	setvard WEB_STRENGTH PARAM2
-	setvard COCOON_START 11
-	subtract COCOON_START WEB_STRENGTH
-	setvard COC_DURATION PARAM4
-	setvard COC_DOT PARAM5
-
-	local L_CUR_ANIM_RATE $get(ent_me,scriptvar,'BASE_FRAMERATE')
-	if ( L_CUR_ANIM_RATE == 0 ) local L_CUR_ANIM_RATE 1.0
-	if ( $get(ent_me,isplayer) ) local L_CUR_ANIM_RATE 1.0
-	setvard ORIG_FRAMERATE L_CUR_ANIM_RATE
-
-	callexternal $get(ent_me,id) ext_set_slowed 1 //A monster only external
-	callevent effect_loop
-}
-
-{ [server] effect_loop
-	if EFFECT_ACTIVE
-	callevent 0.25 effect_loop
-
-	local WEB_COUNT $get(ent_me,scriptvar,'WEBS_ATTACHED')
-
-	//dbg effect_loop WEB_COUNT aliv $get(ent_me,isalive)
-
-	if ( WEB_COUNT == 0 )
-	{
-		callevent effect_die
-		local EXIT_SUB 1
-	}
-	if !EXIT_SUB
-
-	if ( WEB_COUNT >= COCOON_START )
-	{
-		local COCOON_ORG $get(ent_me,origin)
-		if ( $get(ent_me,isplayer) ) vectoradd COCOON_ORG z -30
-		setvard DID_COCOON 1
-		createnpc monsters/summon/cocoon COCOON_ORG $get(ent_me,id) COCOON_STRENGTH COC_DURATION COC_DOT WEBBER_ID
-		setvard RESISTED_EFFECT 0
-		callevent effect_die
-		local EXIT_SUB 1
-	}
-	if !EXIT_SUB
-
-	if ( !$get(ent_me,isalive) )
-	{
-		callevent effect_die
-	}
-
-	local SPEED_REDUCE WEB_COUNT
-	multiply SPEED_REDUCE 10
-	local CUR_SPEED 100
-	subtract CUR_SPEED SPEED_REDUCE
-
-
-	local L_SLOW_RATIO $math(divide,WEB_COUNT,10)
-	local L_SLOW_RATIO $math(subtract,1,L_SLOW_RATIO)
-	local L_CUR_ANIM_RATE ORIG_FRAMERATE
-	multiply L_CUR_ANIM_RATE L_SLOW_RATIO
-	//dbg web effect_loop L_CUR_ANIM_RATE
-
-	setvard game.effect.movespeed CUR_SPEED
-	setvard game.effect.canjump 0
-	setvard game.effect.anim.framerate L_CUR_ANIM_RATE
-}
-
-{ [server] effect_die
-	dbg effect_webbed effect_die PARAM1 RESISTED_EFFECT
-
-	callexternal ent_me ext_webs_remove
-
-	if ( !RESISTED_EFFECT )
-	{
-		setvard EFFECT_ACTIVE 0
-		setvard game.effect.movespeed 100%
-		setvard game.effect.canjump 1
-		setvard game.effect.anim.framerate ORIG_FRAMERATE
-		callexternal $get(ent_me,id) ext_set_slowed 0
+		//set up fx
+		//clientevent new all effects/sfx_webbed $get(ent_me,index) WEBS_ATTACHED
+		
+		callevent set_cocoon_amt //Get amt of webs until cocoon
+		
+		setvard game.effect.canjump 0 //No jump allowed while webbed
+		setvard game.effect.canrun 0 //No running, the movespeed change will make run ineffective anyways
+		
 		if ( $get(ent_me,isplayer) )
 		{
-			clientevent update ent_me const.localplayer.scriptID fx_web_set_webs 0
-			if ( !DID_COCOON ) playermessage ent_me The webs have fallen away.
+			playermessage ent_me "You have been webbed!"
+			//clientevent update ent_me const.localplayer.scriptID web_effect $get(ent_me,index) 1
 		}
 	}
-	removescript
+
+	infomsg all EFFECT_DUPLICATED "web"
+	callexternal $get(ent_me,id) ext_webbed L_DECAY_TIME //Apply a web
+}
+
+{ set_cocoon_amt //sets WEBS_TILL_COCOON by either player, or volume
+
+	if ( $get(ent_me,isplayer) )
+	{
+		setvard WEBS_TILL_COCOON PLAYER_WEB_TILL_COCOON
+	}
+	else
+	{
+		local L_MY_VOLUME $get(ent_me,height)
+		multiply L_MY_VOLUME $get(ent_me,width)
+		multiply L_MY_VOLUME $get(ent_me,width)
+		
+		divide L_MY_VOLUME WEB_PER_CUBE
+		
+		setvard WEBS_TILL_COCOON $int(L_MY_VOLUME)
+	}
+}
+
+{ ext_webbed
+
+	if !EFFECT_DUPLICATED
+	
+	infomsg all "ext_webbed" "ext_webbed" 
+	if ( PARAM1 > WEB_DECAY_TIME ) //Keep longest web decay time applied
+	{
+		setvard WEB_DECAY_TIME PARAM1
+	}
+	
+	add WEBS_ATTACHED 1 //Attach a web
+	
+	if ( WEBS_ATTACHED < WEBS_TILL_COCOON )
+	{
+		//Override original effect end time
+		setvard EFFECT_STARTED game.time
+		setvard EFFECT_DURATION $math(multiply,WEB_DECAY_TIME,WEBS_ATTACHED)
+		
+		//Set next decay timer
+		setvard NEXT_DECAY $math(add,game.time,WEB_DECAY_TIME)
+		callevent NEXT_DECAY web_decay
+		
+		//Update slowness and web fx intensity
+		callevent web_update
+		
+		playsound 0 10 bullchicken/bc_acid2.wav
+	}
+	else
+	{
+		createnpc monsters/summon/cocoon COCOON_ORG $get(ent_me,id) COCOON_STRENGTH COC_DURATION COC_DOT WEBBER_ID
+	}
+}
+
+{ web_decay
+
+	if ( game.time >= NEXT_DECAY )
+	{
+		playermessage ent_me "Some of the webs loosen."
+		subtract WEBS_ATTACHED 1
+		
+		//Set next decay timer
+		setvard NEXT_DECAY $math(add,game.time,WEB_DECAY_TIME)
+		callevent NEXT_DECAY web_decay
+		
+		callevent web_update
+	}
+}
+
+{ web_update
+
+	local L_SPEED 100 
+	subtract L_SPEED $math(multiply,5,WEBS_ATTACHED)
+
+	setvard game.effect.movespeed L_SPEED
+	setvard game.effect.anim.framerate $math(divide,L_SPEED,100)
+}
+
+{ effect_die
+
+	if !EFFECT_DUPLICATED
+	if ( $get(ent_me,isplayer) )
+	{
+		//clientevent update ent_me const.localplayer.scriptID fx_web_set_webs 0
+		if ( !DID_COCOON ) playermessage ent_me "The webs have fallen away."
+	}
+}
+
+{ ext_set_cocooned
+
+	if ( PARAM1 )
+	{
+		setvard I_R_FROZEN 1
+		setvard IN_ICECAGE 1
+		setvard CANT_TURN 1
+		setvard NO_STUCK_CHECKS 1
+		setvard NPC_ORIG_ROAM $get(ent_me,roam)
+		roam 0
+	}
+	else
+	{
+		setvard I_R_FROZEN 0
+		setvard IN_ICECAGE 0
+		setvard CANT_TURN 0
+		setvard NO_STUCK_CHECKS 0
+		roam NPC_ORIG_ROAM
+	}
+}
+
+{ game_duplicated //Gets called before game_activate
+
+	if ( !EFFECT_DUPLICATED )
+	{
+		setvard EFFECT_DUPLICATED 1
+		removescript
+	}
 }

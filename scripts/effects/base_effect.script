@@ -23,7 +23,7 @@
 	const EFFECT_SCRIPT $currentscript //Must be copied, as is, at the top script!
 
 	const game.effect.removeondeath 1 //Used by c++ code to remove the script on death.
-		//"clearfx" will check this to see if it is 1 before removing the script, and will not if it is not set to 1.
+		//"clearfx" will check this to see if it is 1 before removing the script, and will not if it is set to 0.
 		//If "player_action" is used in the flags, ensure that this is set to 0.
 		//
 		//If this is set to 1, but you want "clearfx" to ignore the effect, EFFECT_IGNORE_CLEARFX can be set to 1 also.
@@ -35,6 +35,8 @@
 	// setvard game.effect.canattack
 	// setvard game.effect.movespeed
 	// setvard game.effect.anim.framerate
+	//
+	//  They do not need to be set back to the original value at effect death
 	
 	setvar game.effect.id EFFECT_ID //Used to tell if this script is an effect. Clients tell the server this id when a player action is used, and will call "game_player_activate" on the effect.
 	
@@ -52,6 +54,7 @@
 
 { game_activate //PARAM1 = duration
 
+	setvard EFFECT_STARTED game.time
 	setvard EFFECT_DURATION PARAM1
 	
 	if EFFECT_DURATION //If there is a duration on this effect
@@ -60,7 +63,22 @@
 
 { effect_duration_ended
 
-	removescript //will automatically call effect_die.
+	local L_END_TIME $math(add,EFFECT_STARTED,EFFECT_DURATION)
+
+	if ( game.time >= L_END_TIME ) //Check if duration was increased
+	{
+		removescript //will automatically call effect_die.
+	}
+	else //Reset end timer if duration was increased
+	{
+		local L_TIME_REMAINING $math(subtract,L_END_TIME,game.time)
+		callevent L_TIME_REMAINING effect_duration_ended
+	}
+}
+
+{ effect_increase_duration //Increases duration by a number of seconds. Cannot lower duration. Must be called by the effect script.
+
+	add EFFECT_DURATION PARAM1
 }
 
 { effect_die //Gets called when effect dies or is removed.

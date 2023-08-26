@@ -819,11 +819,6 @@
 	setvard NPC_WINKED_OUT 0
 }
 
-{ ext_set_slowed
-	setvard I_R_SLOWED PARAM1
-}
-
-
 { make_boss
 	dbg make_boss
 	setvard NPC_IS_BOSS 1
@@ -1234,17 +1229,6 @@
 	if ( SCARABS_ATTACHED < 0 ) setvard SCARABS_ATTACHED 0
 }
 
-{ ext_hold_person //<duration>
-	setvard I_R_HELD 1
-	local L_HOLD_TIME PARAM1
-	scriptflags ent_me add hold_person nopush 1 PARAM1 none
-	callevent PARAM1 hold_person_end
-}
-
-{ hold_person_end
-	setvard I_R_HELD 0
-}
-
 { ext_playanim
 	dbg ext_playanim PARAM1
 	playanim critical PARAM1
@@ -1372,94 +1356,6 @@
 	local TRIG_DMG_TYPE PARAM3
 	stradd TRIG_DMG_TYPE _effect
 	xdodamage ent_me direct TRIG_DMG 100% GAME_MASTER GAME_MASTER none TRIG_DMG_TYPE
-}
-
-{ ext_webbed //webber
-	//consider this an attack
-	xdodamage ent_me direct 1.0 100% PARAM1 PARAM1 spellcasting.affliction magic
-
-	if ( WEBS_ATTACHED == 0 )
-	{
-		setvard WEBS_ATTACHED 0 //init
-		callevent 5.0 ext_webs_decay
-	}
-	if ( !$get_scriptflag(ent_me,spider_resist,type_exists) ) add WEBS_ATTACHED 1
-	if ( !NPC_WEB_REFRESH_LOOP )
-	{
-		setvard NPC_WEB_REFRESH_LOOP 1
-		callevent web_update_loop
-	}
-
-	playsound 0 10 bullchicken/bc_acid2.wav
-}
-
-{ web_update_loop
-	if NPC_WEB_REFRESH_LOOP
-	callevent 1.0 web_update_loop
-
-	if ( game.time > NPC_NEXT_WEB_CL_REFRESH ) local L_REFRESH 1
-	if ( NPC_WEB_CL_IDX equals 'NPC_WEB_CL_IDX' ) local L_REFRESH 1
-
-	if ( L_REFRESH )
-	{
-		clientevent new all effects/sfx_webbed $get(ent_me,index) WEBS_ATTACHED
-		setvard NPC_WEB_CL_IDX game.script.last_sent_id
-		setvard NPC_NEXT_WEB_CL_REFRESH game.time
-		add NPC_NEXT_WEB_CL_REFRESH 19.0
-	}
-	else
-	{
-		if NPC_OLD_WEBS != WEBS_ATTACHED
-		clientevent update all NPC_WEB_CL_IDX fx_web_set_webs WEBS_ATTACHED
-		setvard NPC_OLD_WEBS WEBS_ATTACHED
-	}
-}
-
-{ ext_webs_remove
-	setvard WEBS_ATTACHED 0
-	setvard NPC_WEB_REFRESH_LOOP 0
-	if ( NPC_WEB_CL_IDX isnot 'NPC_WEB_CL_IDX' ) 
-	{
-		clientevent update all NPC_WEB_CL_IDX end_fx
-		setvard NPC_WEB_CL_IDX 'NPC_WEB_CL_IDX'
-	}
-}
-
-{ ext_webs_decay
-	//dbg ext_webs_decay WEBS_ATTACHED
-	subtract WEBS_ATTACHED 1
-	if ( WEBS_ATTACHED > 0 )
-	{
-		callevent 5.0 ext_webs_decay
-		clientevent update all NPC_WEB_CL_IDX fx_web_set_webs WEBS_ATTACHED
-	}
-	else
-	{
-		callevent ext_webs_remove
-	}
-}
-
-{ ext_set_cocooned
-	//dbg ext_set_cocooned PARAM1
-	callevent ext_webs_remove
-	setvard COCOON_ATTACHED PARAM1
-	if ( PARAM1 )
-	{
-		setvard I_R_FROZEN 1
-		setvard IN_ICECAGE 1
-		setvard CANT_TURN 1
-		setvard NO_STUCK_CHECKS 1
-		setvard NPC_ORIG_ROAM $get(ent_me,roam)
-		roam 0
-	}
-	else
-	{
-		setvard I_R_FROZEN 0
-		setvard IN_ICECAGE 0
-		setvard CANT_TURN 0
-		setvard NO_STUCK_CHECKS 0
-		roam NPC_ORIG_ROAM
-	}
 }
 
 { set_self_adj //[adj_down]
