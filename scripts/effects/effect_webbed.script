@@ -15,7 +15,7 @@
 	const PLAYER_WEB_TILL_COCOON 10 //Number of webs it takes to cocoon a player.
 	//WEB_PER_SIZE will not be used if effect is on a player!
 	
-	const WEB_PER_CUBE 16 //Volume of monster / x = amt of web it takes to cocoon
+	const WEB_FOR_SIZE 30 //(height + width) / x = amt of web it takes to cocoon
 	
 	setvard WEBS_ATTACHED 0
 	setvard WEBS_TILL_COCOON 0 //Set in game_activate
@@ -48,14 +48,9 @@
 		setvard game.effect.canjump 0 //No jump allowed while webbed
 		setvard game.effect.canrun 0 //No running, the movespeed change will make run ineffective anyways
 		
-		if ( $get(ent_me,isplayer) )
-		{
-			playermessage ent_me "You have been webbed!"
-			//clientevent update ent_me const.localplayer.scriptID web_effect $get(ent_me,index) 1
-		}
+		playermessage ent_me "You have been webbed!"
 	}
 
-	infomsg all EFFECT_DUPLICATED "web"
 	callexternal $get(ent_me,id) ext_webbed L_DECAY_TIME //Apply a web
 }
 
@@ -67,27 +62,28 @@
 	}
 	else
 	{
-		local L_MY_VOLUME $get(ent_me,height)
-		multiply L_MY_VOLUME $get(ent_me,width)
-		multiply L_MY_VOLUME $get(ent_me,width)
+		local L_MY_SIZE $get(ent_me,height)
+		add L_MY_SIZE $get(ent_me,width)
 		
-		divide L_MY_VOLUME WEB_PER_CUBE
+		divide L_MY_SIZE WEB_FOR_SIZE
 		
-		setvard WEBS_TILL_COCOON $int(L_MY_VOLUME)
+		setvard WEBS_TILL_COCOON $int(L_MY_SIZE)
 	}
 }
 
 { ext_webbed
 
 	if !EFFECT_DUPLICATED
+	if !DID_COCOON
 	
-	infomsg all "ext_webbed" "ext_webbed" 
 	if ( PARAM1 > WEB_DECAY_TIME ) //Keep longest web decay time applied
 	{
 		setvard WEB_DECAY_TIME PARAM1
 	}
 	
 	add WEBS_ATTACHED 1 //Attach a web
+	
+	infomsg all WEBS_ATTACHED WEBS_TILL_COCOON 
 	
 	if ( WEBS_ATTACHED < WEBS_TILL_COCOON )
 	{
@@ -97,7 +93,7 @@
 		
 		//Set next decay timer
 		setvard NEXT_DECAY $math(add,game.time,WEB_DECAY_TIME)
-		callevent NEXT_DECAY web_decay
+		callevent WEB_DECAY_TIME web_decay
 		
 		//Update slowness and web fx intensity
 		callevent web_update
@@ -106,12 +102,25 @@
 	}
 	else
 	{
-		createnpc monsters/summon/cocoon COCOON_ORG $get(ent_me,id) COCOON_STRENGTH COC_DURATION COC_DOT WEBBER_ID
+		callevent start_cocoon
+	}
+	
+	//Client fx
+	if ( !CLFX_ID )
+	{
+		clientevent new all "effects/sfx_webbed" WEB_DECAY_TIME $get(ent_me,index) WEBS_TILL_COCOON
+		setvard CLFX_ID game.script.last_sent_id
+	}
+	else
+	{
+		clientevent update all CLFX_ID ext_webbed WEB_DECAY_TIME
 	}
 }
 
 { web_decay
 
+	if !DID_COCOON
+	infomsg all game.time NEXT_DECAY
 	if ( game.time >= NEXT_DECAY )
 	{
 		playermessage ent_me "Some of the webs loosen."
@@ -127,11 +136,55 @@
 
 { web_update
 
-	local L_SPEED 100 
-	subtract L_SPEED $math(multiply,5,WEBS_ATTACHED)
+	local L_SPEED_FACTOR $math(divide,WEBS_ATTACHED,WEBS_TILL_COCOON)
+	
+	local L_SPEED $math(multiply,50,L_SPEED_FACTOR)
+	
+	setvard game.effect.movespeed $math(subtract,100,L_SPEED)
+	setvard game.effect.anim.framerate $math(subtract,1,L_SPEED_FACTOR)
+}
 
-	setvard game.effect.movespeed L_SPEED
-	setvard game.effect.anim.framerate $math(divide,L_SPEED,100)
+{ start_cocoon
+
+	setvard DID_COCOON 1
+	
+	playermessage ent_me "The sticky web envelopes you in a cocoon, rendering you immovable."
+	playsound 0 10 debris/bustflesh1.wav
+	scriptflags ent_me add cocooned nopush 1 -1 none
+	
+	setvard game.effect.canattack 0
+	setvard game.effect.canduck 0
+	setvard game.effect.movespeed 0.001
+	setvard game.effect.anim.framerate 0.001
+	
+	if ( !$get(ent_me,isplayer) )
+	{
+		//For npcs
+		callexternal ent_me freeze_solid_start 15
+	}
+	
+	callevent 15 end_cocoon
+}
+
+{ end_cocoon
+
+	scriptflags ent_me remove cocooned
+	playsound 0 10 debris/bustflesh1.wav
+	
+	removescript
+}
+
+{ game_death
+
+	setvard game.effect.canattack 1
+	setvard game.effect.canduck 1
+	setvard game.effect.movespeed 100
+	setvard game.effect.anim.framerate 1
+	
+	if ( CLFX_ID )
+	{
+		clientevent update all CLFX_ID game_death
+	}
 }
 
 { effect_die
@@ -139,29 +192,8 @@
 	if !EFFECT_DUPLICATED
 	if ( $get(ent_me,isplayer) )
 	{
-		//clientevent update ent_me const.localplayer.scriptID fx_web_set_webs 0
 		if ( !DID_COCOON ) playermessage ent_me "The webs have fallen away."
-	}
-}
-
-{ ext_set_cocooned
-
-	if ( PARAM1 )
-	{
-		setvard I_R_FROZEN 1
-		setvard IN_ICECAGE 1
-		setvard CANT_TURN 1
-		setvard NO_STUCK_CHECKS 1
-		setvard NPC_ORIG_ROAM $get(ent_me,roam)
-		roam 0
-	}
-	else
-	{
-		setvard I_R_FROZEN 0
-		setvard IN_ICECAGE 0
-		setvard CANT_TURN 0
-		setvard NO_STUCK_CHECKS 0
-		roam NPC_ORIG_ROAM
+		else playermessage ent_me "You struggle your way out of the cocoon."
 	}
 }
 
