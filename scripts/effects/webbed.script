@@ -4,7 +4,7 @@
 //Large enemies take more web to cocoon
 //Small enemies dont take as much web to cocoon
 
-//. effectmestack effects/effect_webbed 10 GAME_MASTER
+//. effectmestack effects/webbed 10 GAME_MASTER
 
 #scope server
 
@@ -15,7 +15,7 @@
 	const PLAYER_WEB_TILL_COCOON 10 //Number of webs it takes to cocoon a player.
 	//WEB_PER_SIZE will not be used if effect is on a player!
 	
-	const WEB_FOR_SIZE 30 //(height + width) / x = amt of web it takes to cocoon
+	const WEB_FOR_SIZE 17 //(height + width) / x = amt of web it takes to cocoon
 	
 	setvard WEBS_ATTACHED 0
 	setvard WEBS_TILL_COCOON 0 //Set in game_activate
@@ -68,6 +68,7 @@
 		divide L_MY_SIZE WEB_FOR_SIZE
 		
 		setvard WEBS_TILL_COCOON $int(L_MY_SIZE)
+		capvar WEBS_TILL_COCOON 2 20
 	}
 }
 
@@ -82,8 +83,6 @@
 	}
 	
 	add WEBS_ATTACHED 1 //Attach a web
-	
-	infomsg all WEBS_ATTACHED WEBS_TILL_COCOON 
 	
 	if ( WEBS_ATTACHED < WEBS_TILL_COCOON )
 	{
@@ -120,7 +119,6 @@
 { web_decay
 
 	if !DID_COCOON
-	infomsg all game.time NEXT_DECAY
 	if ( game.time >= NEXT_DECAY )
 	{
 		playermessage ent_me "Some of the webs loosen."
@@ -128,7 +126,7 @@
 		
 		//Set next decay timer
 		setvard NEXT_DECAY $math(add,game.time,WEB_DECAY_TIME)
-		callevent NEXT_DECAY web_decay
+		callevent WEB_DECAY_TIME web_decay
 		
 		callevent web_update
 	}
@@ -160,10 +158,10 @@
 	if ( !$get(ent_me,isplayer) )
 	{
 		//For npcs
-		callexternal ent_me freeze_solid_start 15
+		callexternal ent_me freeze_solid_start WEB_DECAY_TIME
 	}
 	
-	callevent 15 end_cocoon
+	callevent WEB_DECAY_TIME end_cocoon
 }
 
 { end_cocoon
@@ -174,17 +172,15 @@
 	removescript
 }
 
-{ game_death
+{ game_predeath
 
 	setvard game.effect.canattack 1
 	setvard game.effect.canduck 1
 	setvard game.effect.movespeed 100
 	setvard game.effect.anim.framerate 1
+	callexternal ent_me freeze_solid_end 1
 	
-	if ( CLFX_ID )
-	{
-		clientevent update all CLFX_ID game_death
-	}
+	callevent end_cocoon
 }
 
 { effect_die
@@ -194,6 +190,11 @@
 	{
 		if ( !DID_COCOON ) playermessage ent_me "The webs have fallen away."
 		else playermessage ent_me "You struggle your way out of the cocoon."
+	}
+	
+	if ( CLFX_ID )
+	{
+		clientevent update all CLFX_ID fx_die
 	}
 }
 

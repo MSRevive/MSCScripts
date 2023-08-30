@@ -38,7 +38,7 @@
 	else
 	{
 		setvard FX_COCOONED 1
-		callevent 15 effect_die
+		callevent 15 fx_die
 	}
 }
 
@@ -51,14 +51,14 @@
 		
 		if ( FX_CUR_WEBS < 1 )
 		{
-			callevent effect_die
+			callevent fx_die
 		}
 		else callevent FX_DECAY web_decay
 	}
 }
 
 { web_setup
-	cleffect tempent set_current_prop death_delay 1000
+	cleffect tempent set_current_prop death_delay FX_DECAY
 	cleffect tempent set_current_prop body 6
 	cleffect tempent set_current_prop framerate 0
 	cleffect tempent set_current_prop sequence 0
@@ -68,7 +68,16 @@
 	cleffect tempent set_current_prop collide none
 	cleffect tempent set_current_prop frames 999
 	cleffect tempent set_current_prop movetype 0
-	cleffect tempent set_current_prop scale 1
+	
+	local L_MAXS $getcl(FX_WEB_TARGET,maxs)
+	if ( $getcl(FX_WEB_TARGET,isplayer) ) vectormultiply L_MAXS 2
+	local L_SIZE $vec.x(L_MAXS)
+	add L_SIZE $vec.y(L_MAXS)
+	add L_SIZE $vec.z(L_MAXS)
+	divide L_SIZE 104
+	
+	cleffect tempent set_current_prop scale L_SIZE
+	
 	cleffect tempent set_current_prop angles $vec(0,90,0)
 	cleffect tempent set_current_prop velocity $vec(0,0,0)
 }
@@ -83,6 +92,8 @@
 		local L_WEB_RATIO FX_CUR_WEBS
 		multiply L_WEB_RATIO 0.1
 		cleffect tempent set_current_prop renderamt $ratio(WEB_RATIO,50,255)
+		
+		cleffect tempent set_current_prop death_delay FX_DECAY
 	}
 	else
 	{
@@ -94,27 +105,39 @@
 	{
 		cleffect tempent set_current_prop renderamt 255
 	}
+	
+	if ( FX_DIE )
+	{
+		cleffect tempent set_current_prop death_delay 0.01
+		cleffect tempent set_current_prop renderamt 0
+		setvard FX_CUR_WEBS 0
+		setvard FX_COCOONED 0
+		callevent effect_die
+	}
 }
 
-{ game_death
-	setvard FX_CUR_WEBS 0
-	setvard FX_COCOONED 0
-	callevent 0.01 effect_die
+{ fx_die
+	setvard FX_DIE 1
+	callevent 1.0 effect_die
 }
 
 { effect_die
-
-	setvard FX_CUR_WEBS 0
-	setvard FX_COCOONED 0
 	removescript
 }
 
 { func_get_new_pos
 
-	if ( $getcl(FX_WEB_TARGET,isplayer) ) local L_WEB_POS $getcl(FX_WEB_TARGET,origin)
-	else local L_WEB_POS $getcl(FX_WEB_TARGET,bonepos,0) //getting bone pos is much smoother than getting origin
-	vectoradd L_WEB_POS z $vec.z($getcl(FX_WEB_TARGET,mins))
-	vectoradd L_WEB_POS z 5 //Raise slightly so model doesn't disappear in the ground
+	if ( $getcl(FX_WEB_TARGET,isplayer) )
+	{
+		local L_WEB_POS $getcl(FX_WEB_TARGET,origin)
+		vectoradd L_WEB_POS z $vec.z($getcl(FX_WEB_TARGET,mins))
+	}
+	else
+	{
+		local L_WEB_POS $getcl(FX_WEB_TARGET,bonepos,0) //getting bone pos is much smoother than getting origin
+		vectorset L_WEB_POS z $vec.z($getcl(FX_WEB_TARGET,origin))
+	}
+	vectoradd L_WEB_POS z 8 //Raise slightly so model doesn't disappear in the ground
 	
 	return **clear
 	return L_WEB_POS
