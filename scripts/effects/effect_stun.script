@@ -1,162 +1,128 @@
-//Stun
+//Stun - Slows afflicted npcs and stops players from attacking
 //Any npc
 //Param1 - Duration
-//Param2 - slowpush (?)
-//Param3 - can't attack while stunned if set to 1
-//Param4 - attacker
+//Param2 - attacker
 
+// . effectmestack effects/effect_stun 10 GAME_MASTER
 
-{ [server]
+#scope server
+
+{
 	const EFFECT_ID "effect_stun"
 	const EFFECT_FLAGS nostack
-
-	const EFFECT_BLOCK_RESISTS 1
+	const EFFECT_SCRIPT $currentscript //Must be copied, as is, at the top script!
 
 	const SOUND_RESIST body/armour3.wav
 }
 
-#include effects/base_effect	allowduplicate
-
-{ [server] game_activate //<duration> [push] [cantattak] [attacker]
-
-	//dbg stun game_activate
-
-	if ( $get(ent_me,nopush) )
-	{
-		if !$get(ent_me,scriptvar,'NPC_CAN_BE_STUNNED') //a few monsters can't be pushed, but can still be stunned
-		gplayermessage ent_me You are immune to the stun effect. //those immune to push are immune to stun
-		dplayermessage PARAM4 $get(ent_me,name) is immune to stun effects.
-		local EXIT_SUB 1
-	}
-	if !EXIT_SUB
-	if !$get(ent_me,scriptvar,IS_LURE) //do not stun lures
-	//dbg stun resist_check
-	callevent resist_check stun $get(PARAM4,id) //cant get attacker on standard stun, need way to pull
-
-	if !RESISTED_EFFECT
-
-	//playermessage ent_me You have been stunned! BE_RESIST_STRING
-
-	setvard local.effect.duration 	PARAM1
-
-	if ( $get(ent_me,isplayer) )
-	{
-		local L_LAST_STUN $get(ent_me,scriptvar,'DAT_LAST_HEAVY_STUN')
-		if ( $math(add,L_LAST_STUN,10.0) > game.time ) //If it hasn't been 10 seconds since the last stun
-		{
-			//silent abort
-			setvard EFFECT_ABORTED 1
-			callevent effect_die
-			exitevent			
-		}
-		else
-		{
-			callexternal ent_me ext_set_last_stun_time
-		}
-
-		if local.effect.duration > 5
-		setvard local.effect.duration 5
-	}
-
-	setvard game.effect.movespeed 30%
-	setvard game.effect.canjump 0
-	setvard game.effect.anim.framerate 0.4
-
-	//dbg stun apply... ( dur local.effect.duration )
-
-	local slowduration $randf(0.2,local.effect.duration)
-	if( PARAM2 equals 1 ) applyeffect ent_me effects/effect_push slowduration (0,0,0) 1 1
-	if( PARAM3 equals 1 ) setvard game.effect.canattack 0
-	
-	if ( $get(ent_me,isplayer) )
-	{
-		//effect screenshake_one ent_me 16 20 local.effect.duration //It appears that this doesn't work, and effect_push only does screen shake anyways. -greatguys1 SEP2021
-		hud.addstatusicon ent_me alpha_stun stun local.effect.duration
-	}
-
-	clientevent new all effects/sfx_stunring $get(ent_me,index) local.effect.duration $get(ent_me,height)
-
-	callevent local.effect.duration effect_die
-}
-
-{ effect_die
-
-}
-
 { game_precache
-
 	precachefile effects/sfx_stunring
 }
 
-{ game_death
-	//deleteent script.stunring	//Delete the ring from here, because skellys stay 'alive' after death
-	callevent effect_die
-}
+#include effects/base_effect	allowduplicate
 
-{ game_duplicated
+{ game_activate //<duration> <attacker>
 
-	callevent game_death
-}
+	setvard DOT_ATTACKER PARAM2
 
-{ do_something_with_this_later
-
-	if ( DOT_TYPE equals 'stun' )
-	{
-		if ( $get(ent_me,isplayer) )
-		{
-			if EFFECT_BLOCK_RESISTS
-			local CUR_WEAPON $get(ent_me,scriptvar,'PLR_ACTIVE_WEAPON')
-			if ( $get(CUR_WEAPON,scriptvar,'POLE_IN_BLOCK') == 1 ) local BLOCKED_ATTACK 1
-			if ( $get(CUR_WEAPON,scriptvar,'PARRY_ON') == 1 ) local BLOCKED_ATTACK 1
-			if ( BLOCKED_ATTACK )
-			{
-				callevent be_resist_effect "blocked"
-				playermessage ent_me $get(CUR_WEAPON,name) blocked stun impact.
-			}
-		}
-		if !RESISTED_EFFECT
-
-		local HE_RESISTS_STRING "resists the stun attack"
-		local HE_IMMUNE_STRING "is immune to stun attacks!"
-		local YOU_RESIST_STRING "You resist being stunned!"
-		local IMMUNE_RATIO $get(ent_me,scriptvar,'IMMUNE_STUN')
-
-		local RESISTANCE $get(ent_me,scriptvar,'IMMUNE_STUN')
-		if ( $get(ent_me,nopush) ) local RESISTANCE 100 //nopush mons/plrs are immune to stun as well
-
-		local STUN_ROLL $rand(1,100) 
-
-		if ( RESISTANCE isnot 'IMMUNE_STUN' )
-		{
-			//is immune, flag
-			if ( RESISTANCE == 100 )
-			{
-				local RESISTED_STUN 1
-				if ( !$get(ent_me,scriptvar,'IS_SOCCER_BALL') ) playermessage PARAM2 MY_NAME HE_IMMUNE_STRING
-				setvard RESISTED_EFFECT 1
-			}
-			if !RESISTED_STUN
-
-			//has resistance, roll
-			if STUN_ROLL <= RESISTANCE
-			//saytext HA HA! I RESIST! $get(PARAM2,name)
-			playsound 0 10 SOUND_RESIST
-			setvard BE_RESIST_STRING "( "
-			strconc BE_RESIST_STRING STUN_ROLL /  $int(RESISTANCE) )
-			setvard RESISTED_EFFECT 1
-			gplayermessage ent_me YOU_RESIST_STRING BE_RESIST_STRING
-			dplayermessage PARAM2 MY_NAME HE_RESISTS_STRING BE_RESIST_STRING
-			local RESISTED_STUN 1
-		}
-		else
-		{
-			local RESISTANCE 0
-		}
-		//resisted
-		if ( RESISTED_STUN ) callevent be_resist_effect "stun_resist_roll" stun
-		if !RESISTED_STUN
-		playermessage ent_me You have been stunned! ( STUN_ROLL / RESISTANCE )
+	setvard STUN_RESISTANCE $get(ent_me,scriptvar,'IMMUNE_STUN')
+	if ( STUN_RESISTANCE equals 'IMMUNE_STUN' ) setvard STUN_RESISTANCE 0
 	
+	callevent check_immune_stun
+	if !DOT_RESISTED
+	callevent check_block_stun
+	if !DOT_RESISTED
+	callevent check_resist_stun
+	if !DOT_RESISTED
+
+	setvard game.effect.movespeed 45
+	setvard game.effect.anim.framerate 0.4
+	setvard game.effect.canjump 0
+	setvard game.effect.canattack 0
+	
+	if ( $get(ent_me,isplayer) )
+	{
+		//effect screenshake_one ent_me 16 20 EFFECT_DURATION //It appears that this doesn't work, and effect_push only does screen shake anyways. -greatguys1 SEP2021
+		hud.addstatusicon ent_me alpha_stun stun EFFECT_DURATION
+	}
+
+	clientevent new all effects/sfx_stunring $get(ent_me,index) EFFECT_DURATION $get(ent_me,height)
+}
+
+{ check_immune_stun
+	
+	if ( STUN_RESISTANCE >= 100 ) //Immunity
+	{
+		gplayermessage ent_me "You are immune to stun effects." //those immune to push are immune to stun
+		dplayermessage DOT_ATTACKER $get(ent_me,name) "is immune to stun effects."
+		
+		setvard DOT_RESISTED 1
 		exitevent
+		removescript
+	}
+	
+	if ( $get(ent_me,nopush) ) //Immunity
+	{
+		gplayermessage ent_me "You are immune to stun effects." //those immune to push are immune to stun
+		dplayermessage DOT_ATTACKER $get(ent_me,name) "is immune to stun effects."
+		
+		setvard DOT_RESISTED 1
+		exitevent
+		removescript
+	}
+}
+
+{ check_block_stun
+
+	if ( $get(ent_me,isplayer) ) //Blocked with item
+	{
+		local CUR_WEAPON $get(ent_me,scriptvar,'PLR_LEFT_HAND') //Gets item id in hand
+		if ( $get(CUR_WEAPON,scriptvar,'POLE_IN_BLOCK') == 1 ) local BLOCKED_ATTACK 1
+		if ( $get(CUR_WEAPON,scriptvar,'PARRY_ON') == 1 ) local BLOCKED_ATTACK 1
+		
+		if ( BLOCKED_ATTACK )
+		{
+			playermessage ent_me $get(CUR_WEAPON,name) "blocked stun impact."
+			
+			setvard DOT_RESISTED 1
+			exitevent
+			removescript
+		}
+		
+		local CUR_WEAPON $get(ent_me,scriptvar,'PLR_RIGHT_HAND')
+		if ( $get(CUR_WEAPON,scriptvar,'POLE_IN_BLOCK') == 1 ) local BLOCKED_ATTACK 1
+		if ( $get(CUR_WEAPON,scriptvar,'PARRY_ON') == 1 ) local BLOCKED_ATTACK 1
+		
+		if ( BLOCKED_ATTACK )
+		{
+			playermessage ent_me $get(CUR_WEAPON,name) "blocked stun impact."
+			
+			setvard DOT_RESISTED 1
+			exitevent
+			removescript
+		}
+	}
+}
+
+{ check_resist_stun
+
+	local STUN_ROLL $rand(1,100) 
+
+	if ( STUN_ROLL <= STUN_RESISTANCE ) //Resisted
+	{
+		playsound 0 10 SOUND_RESIST
+		
+		setvard BE_RESIST_STRING "( " STUN_ROLL " / " $int(STUN_RESISTANCE) " )"
+		
+		gplayermessage ent_me "You resist being stunned!" BE_RESIST_STRING
+		dplayermessage DOT_ATTACKER $get(ent_me,name) "resists the stun effect." BE_RESIST_STRING
+		
+		setvard DOT_RESISTED 1
+		exitevent
+		removescript
+	}
+	else 
+	{
+		playermessage ent_me You have been stunned! ( STUN_ROLL / STUN_RESISTANCE )
 	}
 }
