@@ -32,6 +32,8 @@
 	setvard DOT_DMG PARAM3
 	setvard DOT_SKILL PARAM4
 	
+	setvard DOT_FLAG_NAME DOT_TYPE ';' $get(DOT_ATTACKER,index) //example: fire_effect;1
+	
 	//$funcs will call the event on every applied dot. A callevent with a var that gets set should suffice.
 	callevent dot_check_canapply
 	if ( !DOT_RESISTED )
@@ -45,8 +47,8 @@
 
 	playermessage ent_me DOT_IM_AFFECTED
 	
-	local L_FLAG_NAME DOT_TYPE ';' $get(DOT_ATTACKER,index)
-	scriptflags ent_me add L_FLAG_NAME "dot" DOT_DMG EFFECT_DURATION
+	scriptflags ent_me add DOT_FLAG_NAME "dot" DOT_DMG EFFECT_DURATION
+	
 	callevent 0.5 dot_effect
 }
 
@@ -64,9 +66,8 @@
 	if !DOT_RESISTED //checks can send players info, dont run additional checks if theyre not necessary
 	callevent dot_resist_check
 	
-	
-	local L_FLAG_NAME DOT_TYPE ';' $get(DOT_ATTACKER,index)
-	infomsg all L_FLAG_NAME $get_scriptflag(ent_me,L_FLAG_NAME,name_value)
+	if !DOT_RESISTED
+	callevent dot_scriptflag_check
 }
 
 { dot_fiendly_check //Returns 1 if I am friendly
@@ -141,13 +142,26 @@
 	}
 }
 
-{ game_duplicated
+{ dot_scriptflag_check
 
+	local L_VALUE $get_scriptflag(ent_me,DOT_FLAG_NAME,name_value)
 	
+	if ( L_VALUE isnot 'none' )
+	{
+		setvard DOT_RESISTED 1 //Flag that it's already on 
+		
+		if ( L_VALUE < DOT_DMG ) local L_VALUE DOT_DMG
+		
+		scriptflags ent_me edit DOT_FLAG_NAME "dot" L_VALUE EFFECT_DURATION //increase damage / duration
+	}
 }
 
-{ game_scriptflag_update
+{ game_scriptflag_update //<action> <name> <type> <value> <base_expire_time>
 
-	local L_FLAG_NAME DOT_TYPE ';' $get(DOT_ATTACKER,index)
-	infomsg all "name value" $get_scriptflag(ent_me,L_FLAG_NAME,name_value)
+	if PARAM1 equals 'edit'
+	if PARAM2 equals DOT_FLAG_NAME
+	
+	setvard DOT_DMG PARAM4
+	callevent effect_set_duration $pass(PARAM5)
+	infomsg all PARAM4 PARAM5
 }
