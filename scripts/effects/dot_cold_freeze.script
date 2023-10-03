@@ -1,0 +1,58 @@
+//Freeze solid by Thothie
+
+//Alternative to dot_cold, in which this freezes the target still for the duration.
+
+//Any npc
+//Param1 - Freeze Duration
+//Param2 - Who to blame
+//Param3 - Dot DMG
+//Param4 - Skill
+//Param5 - most hp it can affect (def: 1500)
+
+// . effectmestack effects/dot_cold_freeze 10 GAME_MASTER 0.5 spellcasting.cold 1500
+
+{ 
+	const EFFECT_SCRIPT $currentscript //Must be copied, as is, at the top script!
+
+	const DOT_IM_AFFECTED "You have been encased in ice!" //Player recieves affect and is afflicted
+
+	const DOT_IM_RESIST "You resist being frozen." //Player recieves the affect, but resists / immune it.
+	const DOT_HE_IMMUNE "is immune to cold magic!" //Target recieves the affect, but resists / immune it
+}
+
+{ game_activate //This is above the include intentionally
+
+	setvard MAX_HP PARAM5 //Sets the max_hp var before dot_check_canapply is called from the include below
+	if ( !PARAM5 ) setvard MAX_HP 1500
+}
+
+//Use dot_cold as a base.
+#include effects/dot_cold	allowduplicate
+
+{ dot_check_canapply
+
+	if ( $get(ent_me,width) > 256 ) local L_TOO_BIG 1
+	if ( $get(ent_me,height) > 256 ) local L_TOO_BIG 1
+	if ( L_TOO_BIG )
+	{
+		playermessage DOT_ATTACKER $get(ent_me,name) is too large to be encased in ice.
+
+		setvard DOT_RESISTED 1
+		removescript
+		exitevent
+	}
+
+	if ( $get(ent_me,hp) > MAX_HP )
+	{
+		playermessage DOT_ATTACKER $get(ent_me,name) is too strong to be encased in ice. ( > $int(MAX_HP) )
+
+		setvard DOT_RESISTED 1
+		removescript
+		exitevent
+	}
+}
+
+{ dot_start
+
+	applyeffect ent_me effects/debuff_freeze EFFECT_DURATION
+}
