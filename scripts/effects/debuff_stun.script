@@ -3,12 +3,12 @@
 //Param1 - Duration
 //Param2 - attacker
 
-// . effectmestack effects/effect_stun 10 GAME_MASTER
+// . effectmestack effects/debuff_stun 10 GAME_MASTER
 
 #scope server
 
 {
-	const EFFECT_ID "effect_stun"
+	const EFFECT_ID "debuff_stun"
 	const EFFECT_FLAGS nostack
 	const EFFECT_SCRIPT $currentscript //Must be copied, as is, at the top script!
 
@@ -19,9 +19,7 @@
 	precachefile effects/sfx_stunring
 }
 
-#include effects/base_effect	allowduplicate
-
-{ game_activate //<duration> <attacker>
+{ game_activate //<duration> <attacker> //This is above the include on purpose
 
 	setvard DOT_ATTACKER PARAM2
 
@@ -29,11 +27,15 @@
 	if ( STUN_RESISTANCE equals 'IMMUNE_STUN' ) setvard STUN_RESISTANCE 0
 	
 	callevent check_immune_stun
-	if !DOT_RESISTED
+	if !DEBUFF_SCRIPTFLAG
 	callevent check_block_stun
-	if !DOT_RESISTED
+	if !DEBUFF_SCRIPTFLAG
 	callevent check_resist_stun
-	if !DOT_RESISTED
+}
+
+#include effects/base_debuff
+
+{ debuff_start
 
 	setvard game.effect.movespeed 45
 	setvard game.effect.anim.framerate 0.4
@@ -47,6 +49,7 @@
 	}
 
 	clientevent new all effects/sfx_stunring $get(ent_me,index) EFFECT_DURATION $get(ent_me,height)
+	setvard CL_FX game.script.last_sent_id
 }
 
 { check_immune_stun
@@ -56,7 +59,7 @@
 		gplayermessage ent_me "You are immune to stun effects." //those immune to push are immune to stun
 		dplayermessage DOT_ATTACKER $get(ent_me,name) "is immune to stun effects."
 		
-		setvard DOT_RESISTED 1
+		setvard DEBUFF_SCRIPTFLAG 1
 		exitevent
 		removescript
 	}
@@ -66,7 +69,7 @@
 		gplayermessage ent_me "You are immune to stun effects." //those immune to push are immune to stun
 		dplayermessage DOT_ATTACKER $get(ent_me,name) "is immune to stun effects."
 		
-		setvard DOT_RESISTED 1
+		setvard DEBUFF_SCRIPTFLAG 1
 		exitevent
 		removescript
 	}
@@ -84,7 +87,7 @@
 		{
 			playermessage ent_me $get(CUR_WEAPON,name) "blocked stun impact."
 			
-			setvard DOT_RESISTED 1
+			setvard DEBUFF_SCRIPTFLAG 1
 			exitevent
 			removescript
 		}
@@ -95,9 +98,9 @@
 		
 		if ( BLOCKED_ATTACK )
 		{
-			playermessage ent_me $get(CUR_WEAPON,name) "blocked stun impact."
+			playermessage ent_me $get(CUR_WEAPON,name) "blocked the stun impact."
 			
-			setvard DOT_RESISTED 1
+			setvard DEBUFF_SCRIPTFLAG 1
 			exitevent
 			removescript
 		}
@@ -117,7 +120,7 @@
 		gplayermessage ent_me "You resist being stunned!" BE_RESIST_STRING
 		dplayermessage DOT_ATTACKER $get(ent_me,name) "resists the stun effect." BE_RESIST_STRING
 		
-		setvard DOT_RESISTED 1
+		setvard DEBUFF_SCRIPTFLAG 1
 		exitevent
 		removescript
 	}
@@ -125,4 +128,9 @@
 	{
 		playermessage ent_me You have been stunned! ( STUN_ROLL / STUN_RESISTANCE )
 	}
+}
+
+{ effect_die
+
+	if ( CL_FX ) clientevent update all CL_FX end_fx
 }
