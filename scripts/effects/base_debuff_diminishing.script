@@ -1,0 +1,96 @@
+//Debuff with adjustable diminishing return values
+//by greatguys1
+
+//This type of diminishing return uses a "pool" of seconds to pull from.
+// Different effects have different pools. Pool is based on effect_id.
+// If no time remains in the pool, the effect will not be applied.
+// Pool regenerates slowly.
+
+//Intended for heavy cc effects
+
+// . effectmestack effects/base_debuff_diminishing 2
+
+{
+	const EFFECT_ID "base_debuff" //Also used to help track diminishing returns via scriptflags
+	const EFFECT_SCRIPT $currentscript //Must be copied, as is, at the top script!
+
+	const POOL_CAP 21 //Max number of seconds available in pool
+	const POOL_REGEN 3 //Regen 1 second in the pool per number of POOL_REGEN seconds
+
+	setvar POOL_REMAINING POOL_CAP
+	setvar POOL_FLAG_NAME EFFECT_ID "_diminishing"
+}
+
+{ debuff_check_scriptflag //above the include so this runs before the base's function
+	//sets variables for scriptflags or disables applying if no time left in pool
+	if !DEBUFF_SCRIPTFLAG
+	
+	local L_ACTION "add"
+	local L_TIME_USED EFFECT_DURATION
+	
+	if ( $get_scriptflag(ent_me,POOL_FLAG_NAME,name_exists) )
+	{
+		callevent pool_get_available
+		local L_ACTION "edit"
+	}
+	capvar L_TIME_USED 0 POOL_REMAINING
+	
+	if ( L_TIME_USED == 0 ) //no time left
+	{
+		setvard DEBUFF_SCRIPTFLAG 1 //stops and removes the effect
+		exitevent
+	}
+	
+	callevent effect_set_duration L_TIME_USED
+	
+	local L_POOL_USED $math(subtract,POOL_CAP,POOL_REMAINING)
+	local L_REGEN_TIME L_TIME_USED
+	add L_REGEN_TIME L_POOL_USED
+	multiply L_REGEN_TIME POOL_REGEN
+
+	local L_TYPE $math(add,game.time,L_TIME_USED) ";" $math(add,L_TIME_USED,L_POOL_USED)
+
+	scriptflags ent_me L_ACTION POOL_FLAG_NAME L_TYPE L_REGEN_TIME L_REGEN_TIME
+	//<name> <type> <value> <duration>
+}
+
+#include effects/base_debuff
+
+{ game_activate
+
+	callevent debugme
+}
+
+{ debugme
+	
+	callevent pool_get_available
+	infomsg all POOL_FLAG_NAME POOL_REMAINING
+	callevent 2.0 debugme
+}
+
+{ pool_get_available //Gets number of seconds left available in the pool
+
+	local L_VALUE $get_scriptflag(ent_me,POOL_FLAG_NAME,name_type)
+	
+	infomsg all "value" L_VALUE
+	
+	if ( L_VALUE equals 'none' )
+	{
+		setvard POOL_REMAINING POOL_CAP
+		exitevent
+	}
+	
+	local L_END_TIME $get_token(L_VALUE,0)
+	local L_REMAINING $math(subtract,POOL_CAP,$get_token(L_VALUE,1))
+	
+	local L_RECOVERED $math(subtract,game.time,L_END_TIME)
+	divide L_RECOVERED POOL_REGEN
+	capvar L_RECOVERED 0 999 //No negative values
+	local L_RECOVERED $int(L_RECOVERED) //Round down
+	
+	infomsg all recovered: L_RECOVERED
+	
+	add L_REMAINING L_RECOVERED
+	
+	setvard POOL_REMAINING L_REMAINING
+}
