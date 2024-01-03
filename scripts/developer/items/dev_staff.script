@@ -4,23 +4,27 @@
 //Holding use and clicking right mouse button will copy the target and overwrite the lmb to paste it
 //Trying to copy no target clears the selection and returns the lmb to normal control
 
-//Holding use and double clicking right mouse will open a menu with more options
+//Holding use and clicking left mouse will open a menu with more options
 
 {
 	//anims
 	const ANIM_USE 6
+	setvar LAST_ANIM 0
 }
 
 { 
-	setvar NPC_CLIPBOARD none
-	setvar NPC_PHYSGUN none
+	setvar BEAM_TYPE 0 //0 = physgun; 1 = remover; 2 = afflicter; 
+	setvar BEAM_TARGET none
 	
-	const PHYS_KEEP_DIST 300
-	setvar PHYS_LAST_ANIM 0
-	
-	const CLIPBOARD_KEEP_DIST 300
-	setvar CLIPBOARD_ADD_DIST 0
+	setvar MENU_ID none
 }
+
+#include items/base_item_extras
+
+#include developer/items/dev_staff/physgun
+#include developer/items/dev_staff/copypaste
+#include developer/items/dev_staff/remover
+#include developer/items/dev_staff/afflicter
 
 { game_spawn
 
@@ -33,147 +37,121 @@
 	sethudsprite hand item
 	sethudsprite trade 21
 
+	setmodel weapons/p_weapons1.mdl
+	setmodelbody 0 20
+	
 	setviewmodel viewmodels/v_1hblunts.mdl
-	setviewmodelprop ent_me submodel 1 6
 
 	sethand both
 }
 
+{ bweapon_effect_activate
+	callevent 0.1 submodel_me_baby
+
+	if MENU_ID equals none
+	createnpc developer/items/dev_staff/menus/main '(0,0,0)' $get(ent_owner,id) $get(ent_me,id)
+	setvard MENU_ID $get(ent_lastcreated,id)
+}
+
+{ bweapon_effect_remove
+	//callevent 0.1 wmodel_me_baby
+	
+	deleteent MENU_ID
+	setvard MENU_ID none
+}
+
 { game_pickup
 
-	setvard PICKING_UP
 	playviewanim 0
 }
 
 { game_attack1 //Paste npc
 
-	if ( NPC_CLIPBOARD isnot none )
+	if ( $get(ent_owner,keydown,use) )
 	{
-		local L_KEEP_DIST CLIPBOARD_KEEP_DIST
-		add L_KEEP_DIST CLIPBOARD_ADD_DIST
-		
-		local L_POS $relpos($get(ent_owner,viewangles),$vec(0,L_KEEP_DIST,0))
-		vectoradd L_POS $get(ent_owner,eyepos)
-		
-		local L_SPAWN_POINT $get_traceline($get(ent_owner,eyepos),L_POS,worldonly)
-		createnpc NPC_CLIPBOARD L_SPAWN_POINT
+		callexternal MENU_ID ext_menu_main
+	}
+	else if ( NPC_CLIPBOARD isnot none )
+	{
+		callevent paste_target
 	}
 }
 
-{ game_attack1_down //Physgun
+{ game_attack1_down
 
-	if ( NPC_CLIPBOARD equals none )
+	if ( !$get(ent_owner,keydown,use) )
 	{
-		callevent try_physgun_anim
-		
-		if ( NPC_PHYSGUN equals none )
+		if ( NPC_CLIPBOARD equals none )
 		{
-			callevent find_physgun_target
-		}
-		else
-		{
-			if ( $get(NPC_PHYSGUN,isalive) ) callevent update_physgun_target
-			else setvard NPC_PHYSGUN none
+			if ( BEAM_TYPE == 0 ) callevent try_physgun
+			if ( BEAM_TYPE == 1 ) callevent try_remove
+			if ( BEAM_TYPE == 2 ) callevent try_applyeffect
 		}
 	}
-}
-
-{ game_-attack1
-	setvard NPC_PHYSGUN none
-}
-
-{ try_physgun_anim
-
-	if ( $math(subtract,game.time,PHYS_LAST_ANIM) > 0.8 )
-	{
-		playviewanim ANIM_USE
-		setvard PHYS_LAST_ANIM game.time
-	}
-}
-
-{ find_physgun_target
-
-	local L_START $get(ent_owner,eyepos)
-	
-	local L_END $relpos($get(ent_owner,viewangles),$vec(0,10000,0))
-	vectoradd L_END L_START
-	
-	local L_TARGET $get_traceline(L_START,L_END,ent,$get(ent_owner,id))
-	if ( $get(L_TARGET,exists) )
-	{
-		if ( $get(L_TARGET,isalive) )
-		{
-			if ( !$get(L_TARGET,isplayer) )
-			{
-				if ( $get(L_TARGET,origin) isnot '(0,0,0)' )
-				{
-					setvard NPC_PHYSGUN L_TARGET
-					bplayermessage ent_owner "Linked physgun to" $get(L_TARGET,name)
-				}
-			}
-		}
-	}
-}
-
-{ update_physgun_target
-
-	local L_KEEP_DIST PHYS_KEEP_DIST
-	add L_KEEP_DIST $math(divide,$get(NPC_PHYSGUN,width),2)
-	
-	local L_TARG_POS $relpos($get(ent_owner,viewangles),$vec(0,L_KEEP_DIST,0))
-	vectoradd L_TARG_POS $get(ent_owner,eyepos)
-	
-	setorigin NPC_PHYSGUN L_TARG_POS
-	setvelocity NPC_PHYSGUN $vec(0,0,0)
-	
-	effect glow NPC_PHYSGUN (50,50,255) 72 0.2 0.2
 }
 
 { game_attack2
 
 	if ( $get(ent_owner,keydown,use) )
 	{
-		callevent find_copy_target
+		callevent copy_target
 	}
-	else
+	else //No keydown
 	{
-		//No keydown = teleport forward
-		local L_TELE_POS $relpos($get(ent_owner,viewangles),$vec(0,400,0))
-		vectoradd L_TELE_POS $get(ent_owner,origin)
-		
-		setorigin ent_owner L_TELE_POS
+		if ( $get(ent_owner,haseffect,'noclip') )
+		{
+			bplayermessage ent_owner "Noclip OFF"
+			callexternal ent_owner ext_remove_noclip
+		}
+		else
+		{
+			bplayermessage ent_owner "Noclip ON"
+			applyeffect ent_owner developer/effects/noclip
+		}
 	}
 }
 
-{ find_copy_target
+{ [server] find_beam_target
 
 	local L_START $get(ent_owner,eyepos)
 	
 	local L_END $relpos($get(ent_owner,viewangles),$vec(0,10000,0))
 	vectoradd L_END L_START
 	
+	setvard BEAM_TARGET none
 	local L_TARGET $get_traceline(L_START,L_END,ent,$get(ent_owner,id))
 	if ( $get(L_TARGET,exists) )
 	{
 		if ( $get(L_TARGET,isalive) )
 		{
-			if ( !$get(L_TARGET,isplayer) )
-			{
-				if ( $get(L_TARGET,origin) isnot '(0,0,0)' )
-				{
-					setvard NPC_CLIPBOARD $get(L_TARGET,scriptname)
-					setvard CLIPBOARD_ADD_DIST $math(divide,$get(L_TARGET,width),2)
-					bplayermessage ent_owner "Copied" $get(L_TARGET,name)
-				}
-			}
+			setvard BEAM_TARGET L_TARGET
 		}
 	}
 }
 
+{ game_attack1_down //anims
+	callevent try_anim
+}
 
+{ try_anim
 
-{ game_viewanimdone
+	if ( $math(subtract,game.time,LAST_ANIM) > 0.8 )
+	{
+		playviewanim ANIM_USE
+		setvard LAST_ANIM game.time
+	}
+}
 
-	//if ( PICKING_UP ) playviewanim 1
-	playviewanim 1
+{ set_beam_type
+	setvard BEAM_TYPE PARAM1
+}
+
+{ submodel_me_baby
+
+	setviewmodelprop ent_me submodel 0 6
+}
+
+{ wmodel_me_baby
+
+	//setmodelprop ent_me submodel 0 6
 }
