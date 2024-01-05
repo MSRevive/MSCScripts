@@ -39,12 +39,18 @@
 	if ( !DOT_RESISTED )
 	{
 		playermessage ent_me DOT_IM_AFFECTED
-		scriptflags ent_me add DOT_FLAG_NAME "dot" DOT_DMG EFFECT_DURATION
+		scriptflags ent_me add DOT_FLAG_NAME EFFECT_ID DOT_DMG EFFECT_DURATION
 		
 		callevent dot_start //For higher script use
 		callevent 0.5 dot_effect
 	}
 	else removescript
+}
+
+{ game_death //Gets called when npc dies
+
+	if !DOT_RESISTED
+	scriptflags ent_me remove DOT_FLAG_NAME
 }
 
 { dot_start //Begin any fx or additional commands on the DoT
@@ -106,9 +112,14 @@
 	}
 }
 
-{ dot_resist_check //returns 1 if resisted / immune
+{ dot_resist_check //
 
-	//if player resisted hit this effect within the last 10 seconds let the resistance carry over
+	if ( $get(ent_me,scriptvar,'PLAYING_DEAD') ) 
+	{
+		setvard DOT_RESISTED 1
+		exitevent
+	}
+
 	local L_DOT_TYPE DOT_TYPE
 	if ( L_DOT_TYPE contains '_effect' )
 	{
@@ -154,7 +165,14 @@
 		
 		if ( L_VALUE < DOT_DMG ) local L_VALUE DOT_DMG
 		
-		scriptflags ent_me edit DOT_FLAG_NAME "dot" L_VALUE EFFECT_DURATION //increase damage / duration
+		scriptflags ent_me edit DOT_FLAG_NAME EFFECT_ID L_VALUE EFFECT_DURATION //increase damage / duration
+	}
+	else if ( $get(ent_me,isplayer) )
+	{
+		if ( $get_scriptflag(ent_me,EFFECT_ID,type_exists) )
+		{
+			setvard DOT_RESISTED 1 //players dont get stacked dots from monsters.
+		}
 	}
 }
 
