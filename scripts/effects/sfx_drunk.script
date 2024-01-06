@@ -1,0 +1,116 @@
+//Drunk.
+
+#scope client
+
+{
+	const MIN_STUMBLEAMT 	-10
+	const MAX_STUMBLEAMT 	 10
+	const STUMBLE_RIGHT_MAX 	 80
+	const STUMBLE_LEFT_MAX 		-80
+	const STUMBLE_RIGHT_TRESHHOLD 	 30
+	const STUMBLE_LEFT_TRESHHOLD 	-30
+	const STUMBLE_FORWARD_MAX 	 40
+	const STUMBLE_BACK_MAX 		-50
+	const STUMBLE_FORWARD_T 	 20
+	const STUMBLE_BACK_T 		-20
+	const MAX_SWAY 		 10
+	const MIN_SWAY 		-10
+	const MAX_SWAY_T 	 8
+	const MIN_SWAY_T 	-8
+	const MAX_SWAY_RATE 	 1
+	const MIN_SWAY_RATE 	-1
+	const MAX_SWAY_AMT       0.1
+	const MIN_SWAY_AMT      -0.1
+}
+
+{ client_activate
+
+	callevent PARAM1 effect_die
+}
+
+{ //screen fade
+	repeatdelay 2.0 
+	
+	setvard game.cleffect.screenfade.newfade 1
+	setvard game.cleffect.screenfade.alphalimit 200	//Only use this fade if current fade is under this limit
+	setvard game.cleffect.screenfade.color (10,10,10)
+	setvard game.cleffect.screenfade.alpha $rand(100,200)
+	setvard game.cleffect.screenfade.duration $randf(1,3)
+	setvard game.cleffect.screenfade.blendduration $randf(1,3)
+	setvard game.cleffect.screenfade.type fadein
+}
+
+{ //Movement impairment
+	repeatdelay 0.3
+
+	callevent drunk_stumble
+	callevent drunk_sway
+}
+
+{ //View roll
+	repeatdelay 0.01
+
+	inc DRUNK_SWAY_FORWARD DRUNK_SWAY_RATE_F
+	capvar DRUNK_SWAY_FORWARD MIN_SWAY MAX_SWAY
+	setvard game.cleffect.view_ofs.pitch DRUNK_SWAY_FORWARD
+
+	inc DRUNK_SWAY_SIDE DRUNK_SWAY_RATE
+	capvar DRUNK_SWAY_SIDE MIN_SWAY MAX_SWAY
+	setvard game.cleffect.view_ofs.roll DRUNK_SWAY_SIDE
+
+	setvard game.cleffect.move_ofs.forward DRUNK_FORWARDMOVE
+	setvard game.cleffect.move_ofs.right DRUNK_SIDEMOVE
+}
+
+{ drunk_sway
+
+	//Side Sway
+	inc DRUNK_SWAY_RATE $randf(MIN_SWAY_AMT,MAX_SWAY_AMT)
+	capvar DRUNK_SWAY_RATE MIN_SWAY_RATE MAX_SWAY_RATE
+
+	//Correction
+	if( DRUNK_SWAY_SIDE >= MAX_SWAY_T ) dec DRUNK_SWAY_RATE MAX_SWAY_AMT
+	if( DRUNK_SWAY_SIDE <= MIN_SWAY_T ) inc DRUNK_SWAY_RATE MAX_SWAY_AMT
+	
+	//Forward Sway
+	inc DRUNK_SWAY_RATE_F $randf(MIN_SWAY_AMT,MAX_SWAY_AMT)
+	capvar DRUNK_SWAY_RATE_F MIN_SWAY_RATE MAX_SWAY_RATE
+
+	//Correction
+	if( DRUNK_SWAY_FORWARD >= MAX_SWAY_T ) dec DRUNK_SWAY_RATE_F MAX_SWAY_AMT
+	if( DRUNK_SWAY_FORWARD <= MIN_SWAY_T ) inc DRUNK_SWAY_RATE_F MAX_SWAY_AMT
+}
+
+{ drunk_stumble
+
+
+	//Forward move
+	inc DRUNK_FORWARDMOVE $rand(MIN_STUMBLEAMT,MAX_STUMBLEAMT)
+	capvar DRUNK_FORWARDMOVE STUMBLE_BACK_MAX STUMBLE_FORWARD_MAX
+
+	//Correction
+	if( DRUNK_FORWARDMOVE >= STUMBLE_FORWARD_T ) dec DRUNK_FORWARDMOVE $rand(0,MAX_STUMBLEAMT)
+	if( DRUNK_FORWARDMOVE <= STUMBLE_BACK_T ) inc DRUNK_FORWARDMOVE $rand(0,MAX_STUMBLEAMT)
+	
+	//Side move
+	setvard DRUNK_SIDEMOVE 	DRUNK_SWAY_SIDE
+	multiply DRUNK_SIDEMOVE	$rand(0,20)
+	capvar DRUNK_SIDEMOVE 	STUMBLE_LEFT_MAX STUMBLE_RIGHT_MAX
+
+	//Correction
+	if( DRUNK_SIDEMOVE >= STUMBLE_RIGHT_TRESHHOLD ) dec DRUNK_SIDEMOVE $rand(0,MAX_STUMBLEAMT)
+	if( DRUNK_SIDEMOVE <= STUMBLE_LEFT_TRESHHOLD ) inc DRUNK_SIDEMOVE $rand(0,MAX_STUMBLEAMT)
+
+	callevent drunk_randomize_keys
+}
+
+{ drunk_randomize_keys
+	
+	setvard game.cleffect.move_scale.forward -1
+	setvard game.cleffect.move_scale.right -1
+}
+
+{ effect_die
+
+	removescript
+}

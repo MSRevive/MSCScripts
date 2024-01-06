@@ -1,0 +1,57 @@
+//Holds player/npc in place.
+
+#scope server
+
+{
+	const EFFECT_ID "debuff_hold"
+	const EFFECT_FLAGS nostack
+	const EFFECT_SCRIPT $currentscript //Must be copied, as is, at the top script!
+}
+
+{ game_activate	//PARAM2 = 0/1	0 uses lightning cage, 1 uses beam cage
+
+	setvard CAGE_TYPE PARAM2
+}
+
+#include effects/base_debuff_diminishing
+
+{ debuff_start
+
+	setvard game.effect.movespeed 0
+	setvard game.effect.canjump 0
+	setvard game.effect.canduck 0
+	setvard game.effect.anim.framerate 0
+	
+	setvelocity ent_me $vec(0,0,0)
+	
+	scriptflags ent_me add hold_person nopush 1 EFFECT_DURATION none
+	
+	hud.addstatusicon ent_me hud/status/alpha_debuff_hold EFFECT_ID EFFECT_DURATION
+	
+	callexternal $get(ent_me,id) ext_set_frozen EFFECT_DURATION
+	
+	if ( CAGE_TYPE == 0 )
+	{
+		local L_POS $get(ent_me,origin) 
+		if ( !$get(ent_me,isplayer) ) vectoradd L_POS z $math(divide,$get(ent_me,height),2)
+		
+		clientevent new all effects/sfx_lightning_cage EFFECT_DURATION L_POS
+		
+		playsound 0 10 magic/bolt_start.wav
+		
+	}
+	else
+	{
+		clientevent new all effects/sfx_beam_cage $get(ent_me,index) EFFECT_DURATION
+		
+		playsound 0 10 magic/freeze.wav
+	}
+}
+
+{ effect_die
+
+	if !DEBUFF_SCRIPTFLAG
+	callexternal $get(ent_me,id) ext_set_unfrozen
+	
+	playsound 0 10 magic/energy1_loud.wav
+}

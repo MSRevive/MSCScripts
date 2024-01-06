@@ -6,7 +6,6 @@
 #include dq/externals/dq_monster_externals //IM SORRY THIS IS SHIT
 
 {
-	setvard SCARABS_ATTACHED 0
 	const NPC_FADE_IN_SPEED 0.1
 	setvard EXT_DEMON_BLOOD_RATIO 5.0
 }
@@ -72,33 +71,25 @@
 { lightning_immune
 
 	takedmg lightning 0.0
-	setvard IMMUNE_LIGHTNING 1
 }
 
 { fire_immune
 
 	takedmg fire 0.0
-	setvard IMMUNE_FIRE 1
 }
 
 { poison_immune
 
 	takedmg poison 0.0
-	setvard IMMUNE_POISON 1
 }
 
 { cold_immune
 
 	takedmg cold 0.0
-	setvard IMMUNE_COLD 1
 }
 
 { normal_immune
 
-	setvard IMMUNE_COLD 0
-	setvard IMMUNE_FIRE 0
-	setvard IMMUNE_LIGHTNING 0
-	setvard IMMUNE_POISON 0
 	takedmg cold 1.0
 	takedmg fire 1.0
 	takedmg lightning 1.0
@@ -199,23 +190,6 @@
 	hp CURRENT_HP
 }
 
-{ ice_shield_on
-	//dbg Ice Shield Applied
-	setvard ICE_SHIELDED 1
-}
-
-{ ice_shield_off
-	//dbg Ice Shield Removed
-	setvard ICE_SHIELDED 0
-}
-
-{ ice_shield_check
-
-	if ( ICE_SHIELDED ) setvarg ICE_SHIELD_CHECK 1
-	if ( !ICE_SHIELDED ) setvarg ICE_SHIELD_CHECK 0
-	//dbg Ice Shield is now ( ICE_SHIELD_CHECK ) ( Was ICE_SHIELDED )
-}
-
 { npc_fade_away
 
 	//not always monster spawn friendly
@@ -232,7 +206,7 @@
 }
 
 { set_stun_prot
-	setvard IMMUNE_STUN PARAM1
+	takedmg stun PARAM1
 }
 
 { npc_suicide
@@ -494,7 +468,7 @@
 
 	//dbg temp got rebuke PARAM1 PARAM2
 
-	if IMMUNE_HOLY != 1
+	if $get_takedmg(ent_me,holy) != 0
 
 	local EXT_INC_HOLY_DMG PARAM1
 	local EXT_THE_EXCORCIST PARAM2
@@ -648,7 +622,7 @@
 	if ( !$get(FIRST_TOKEN,isalive) ) token.del G_CRITICAL_NPCS 0 //fix buggy token creation
 }
 
-//prevents DOT effects from stacking into crash (see effects/effect_base)
+//prevents DOT effects from stacking into crash (see effects/base_effect)
 { ext_set_effect_lastdmg
 	setvard EXT_LAST_EFFECT_DMG game.time
 }
@@ -818,11 +792,6 @@
 	setorigin ent_me NPC_WINK_IN_POINT
 	setvard NPC_WINKED_OUT 0
 }
-
-{ ext_set_slowed
-	setvard I_R_SLOWED PARAM1
-}
-
 
 { make_boss
 	dbg make_boss
@@ -1229,22 +1198,6 @@
 	stepsize PARAM1
 }
 
-{ ext_scarab_latch
-	add SCARABS_ATTACHED PARAM1
-	if ( SCARABS_ATTACHED < 0 ) setvard SCARABS_ATTACHED 0
-}
-
-{ ext_hold_person //<duration>
-	setvard I_R_HELD 1
-	local L_HOLD_TIME PARAM1
-	scriptflags ent_me add hold_person nopush 1 PARAM1 none
-	callevent PARAM1 hold_person_end
-}
-
-{ hold_person_end
-	setvard I_R_HELD 0
-}
-
 { ext_playanim
 	dbg ext_playanim PARAM1
 	playanim critical PARAM1
@@ -1374,94 +1327,6 @@
 	xdodamage ent_me direct TRIG_DMG 100% GAME_MASTER GAME_MASTER none TRIG_DMG_TYPE
 }
 
-{ ext_webbed //webber
-	//consider this an attack
-	xdodamage ent_me direct 1.0 100% PARAM1 PARAM1 spellcasting.affliction magic
-
-	if ( WEBS_ATTACHED == 0 )
-	{
-		setvard WEBS_ATTACHED 0 //init
-		callevent 5.0 ext_webs_decay
-	}
-	if ( !$get_scriptflag(ent_me,spider_resist,type_exists) ) add WEBS_ATTACHED 1
-	if ( !NPC_WEB_REFRESH_LOOP )
-	{
-		setvard NPC_WEB_REFRESH_LOOP 1
-		callevent web_update_loop
-	}
-
-	playsound 0 10 bullchicken/bc_acid2.wav
-}
-
-{ web_update_loop
-	if NPC_WEB_REFRESH_LOOP
-	callevent 1.0 web_update_loop
-
-	if ( game.time > NPC_NEXT_WEB_CL_REFRESH ) local L_REFRESH 1
-	if ( NPC_WEB_CL_IDX equals 'NPC_WEB_CL_IDX' ) local L_REFRESH 1
-
-	if ( L_REFRESH )
-	{
-		clientevent new all effects/sfx_webbed $get(ent_me,index) WEBS_ATTACHED
-		setvard NPC_WEB_CL_IDX game.script.last_sent_id
-		setvard NPC_NEXT_WEB_CL_REFRESH game.time
-		add NPC_NEXT_WEB_CL_REFRESH 19.0
-	}
-	else
-	{
-		if NPC_OLD_WEBS != WEBS_ATTACHED
-		clientevent update all NPC_WEB_CL_IDX fx_web_set_webs WEBS_ATTACHED
-		setvard NPC_OLD_WEBS WEBS_ATTACHED
-	}
-}
-
-{ ext_webs_remove
-	setvard WEBS_ATTACHED 0
-	setvard NPC_WEB_REFRESH_LOOP 0
-	if ( NPC_WEB_CL_IDX isnot 'NPC_WEB_CL_IDX' ) 
-	{
-		clientevent update all NPC_WEB_CL_IDX end_fx
-		setvard NPC_WEB_CL_IDX 'NPC_WEB_CL_IDX'
-	}
-}
-
-{ ext_webs_decay
-	//dbg ext_webs_decay WEBS_ATTACHED
-	subtract WEBS_ATTACHED 1
-	if ( WEBS_ATTACHED > 0 )
-	{
-		callevent 5.0 ext_webs_decay
-		clientevent update all NPC_WEB_CL_IDX fx_web_set_webs WEBS_ATTACHED
-	}
-	else
-	{
-		callevent ext_webs_remove
-	}
-}
-
-{ ext_set_cocooned
-	//dbg ext_set_cocooned PARAM1
-	callevent ext_webs_remove
-	setvard COCOON_ATTACHED PARAM1
-	if ( PARAM1 )
-	{
-		setvard I_R_FROZEN 1
-		setvard IN_ICECAGE 1
-		setvard CANT_TURN 1
-		setvard NO_STUCK_CHECKS 1
-		setvard NPC_ORIG_ROAM $get(ent_me,roam)
-		roam 0
-	}
-	else
-	{
-		setvard I_R_FROZEN 0
-		setvard IN_ICECAGE 0
-		setvard CANT_TURN 0
-		setvard NO_STUCK_CHECKS 0
-		roam NPC_ORIG_ROAM
-	}
-}
-
 { set_self_adj //[adj_down]
 	dbg set_self_adj PARAM1
 	if !NPC_SELF_ADJUST
@@ -1522,10 +1387,6 @@
 	callevent npcatk_suspend_ai
 }
 
-{ ext_set_goblin_latched
-	setvard I_R_GOBLIN_LATCHED PARAM1
-}
-
 { setfx_sprite_in
 	//make sure c-tele1.spr is precached somewhere on the map or scripts - it isn't precached by default
 	setvard NPC_USES_HANDLE_EVENTS 1
@@ -1574,10 +1435,6 @@
 	vectoradd BEAM_END z 512
 	effect beam point lgtning.spr 90 BEAM_START BEAM_END (64,128,255) 200 20 2.0
 	playsound 0 10 weather/Storm_exclamation.wav
-}
-
-{ set_push_resist
-	setvard MSC_PUSH_RESIST PARAM1
 }
 
 //nerf powers monster's XP to reach max over time (case big xp mob close to start) [cals from map start]
@@ -1931,7 +1788,7 @@
 
 { ext_remove_effect
 	//. eventall ext_remove_effect freeze_solid
-	//. eventall ext_remove_effect effect_iceshield
+	//. eventall ext_remove_effect iceshield
 	dbg ext_remove_effect PARAM1
 	removeeffect ent_me PARAM1
 }

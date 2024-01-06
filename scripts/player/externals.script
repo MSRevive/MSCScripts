@@ -2,7 +2,7 @@
 #scope server
 
 {
-	const PLR_COMBAT_ICON alpha_poison_immune
+	const PLR_COMBAT_ICON hud/status/alpha_poison_immune
 
 	setvard PLR_HAND_SET 0 //future use, determines arm indexes of viewmodels
 	setvard PLR_UNIQUE_SUMMONS ''
@@ -15,9 +15,7 @@
 	const PLR_2HPEN_HEAVY 0.6
 	const PLR_2HPEN_HEAVY_REPORT 40%
 
-	setvard ICE_SHIELDED 0
 	setvard SCROLL_WARNING_LEVEL 0
-	setvard ICE_SHIELD_TIME 0
 
 	setvard PLR_BLOOM_CYCLE 0
 
@@ -36,9 +34,6 @@
 	const PLR_SFAURA_GROWTH_RATE 2 //Shadow Fire Aura Growth Rate
 
 	setvard IAM_PLAYER 1 //since $get(ent_xx,isplayer) doesn't seem to work for items
-
-	setvard SCARABS_ATTACHED 0
-	setvard WEBS_ATTACHED 0
 
 	array.create ARRAY_JUMP_BEAM_IDS
 	array.create ARRAY_JUMP_BEAM_TARGS
@@ -255,10 +250,7 @@
 }
 
 { set_stun_prot
-
-	if !PL_STABILITY_POTION
-	setvard IMMUNE_STUN PARAM1
-	setvard PL_IMMUNE_STUN PARAM1
+	takedmg stun PARAM1
 }
 
 { set_spawn_point
@@ -404,7 +396,7 @@
 
 		callexternal GAME_MASTER gm_setname "The light of the sun"
 		xdodamage ent_me direct SUN_DAMAGE 100% GAME_MASTER GAME_MASTER none magic_effect
-		//applyeffect ent_me effects/effect_burn 5.0 BURNER_ID SUN_DAMAGE 1
+		//applyeffect ent_me effects/dot_fire 5.0 BURNER_ID SUN_DAMAGE 1
 	}
 	callevent 5.1 vampire_suncheck
 }
@@ -452,13 +444,6 @@
 { ext_playsound2
 	//dbg playing external req EXTPLAY_SOUND
 	playsound 0 10 EXTPLAY_SOUND
-}
-
-{ ext_push_targ //PARAM1=target PARAM2=vel
-
-	//all addvelocity events for player should be handled through here
-	if $get(PARAM1,scriptvar,'IMMUNE_PUSH') != 1
-	addvelocity PARAM1 PARAM2
 }
 
 { ext_rename_me
@@ -549,14 +534,6 @@
 	//dbg thaw
 	setvard I_R_FROZEN 0
 	setvard PL_I_R_FROZEN 0
-}
-
-{ [server] ext_remove_lock
-	setvard EXT_REMOVE_EFFECT lock
-}
-
-{ [server] ext_remove_nojump
-	setvard EXT_REMOVE_EFFECT nojump
 }
 
 { [server] ext_removed_effects
@@ -893,7 +870,7 @@
 	//dbg ext_box_token PLR_SCAN_TOKEN
 }
 
-//prevents DOT effects from stacking into crash (see effects/effect_base)
+//prevents DOT effects from stacking into crash (see effects/base_effect)
 { ext_set_effect_lastdmg
 	setvard EXT_LAST_EFFECT_DMG game.time
 }
@@ -986,19 +963,12 @@
 
 	if ( PARAM1 equals end )
 	{
-		setvard IMMUNE_STUN 0
-		setvard PL_IMMUNE_STUN 0
-		setvard IMMUNE_PUSH 0
-		setvard PL_IMMUNE_PUSH 0
-		setvard PL_STABILITY_POTION 0
+		takedmg stun 1
 	}
-	if PARAM1 isnot end 
-	setvard IMMUNE_STUN 100
-	setvard IMMUNE_PUSH 1
-	setvard PL_IMMUNE_PUSH 1
-	setvard PL_STABILITY_POTION 0
-
-	//PL_IMMUNE_PUSH/STUN aren't in use yet, but will likely need to be as a result of this
+	else
+	{
+		takedmg stun 0
+	}
 }
 
 { ext_set_vote_delay
@@ -1355,7 +1325,7 @@
 		local EXIT_SUB 1
 	}
 	if !EXIT_SUB
-	if ( !IS_AFK ) applyeffect CUR_TARG effects/effect_burn 5.0 $get(ent_me,id) PLR_FAURA_DOT 1 1 spellcasting.fire
+	if ( !IS_AFK ) applyeffect CUR_TARG effects/dot_fire 5.0 $get(ent_me,id) PLR_FAURA_DOT spellcasting.fire
 }
 
 { ext_fire_aura_remove
@@ -1411,7 +1381,7 @@
 		local EXIT_SUB 1
 	}
 	if !EXIT_SUB
-	if ( !IS_AFK ) applyeffect CUR_TARG effects/effect_poison 5.0 $get(ent_me,id) PLR_PAURA_DOT 1 spellcasting.affliction
+	if ( !IS_AFK ) applyeffect CUR_TARG effects/dot_poison 5.0 $get(ent_me,id) PLR_PAURA_DOT 1 spellcasting.affliction
 }
 
 { ext_poison_aura_remove
@@ -1734,7 +1704,7 @@
 
 { ext_bear_mode_end
 	if PLR_BEAR_MODE
-	//callevent ext_remove_lock
+
 	setvard PLR_BEAR_MODE 0
 
 	callevent ext_visible
@@ -1781,11 +1751,6 @@
 	if ( PARAM1 equals reset ) setvard PLR_OLOF_STATUS 'PLR_OLOF_STATUS' //debuggary
 }
 
-{ ext_scarab_latch
-	add SCARABS_ATTACHED PARAM1
-	if ( SCARABS_ATTACHED < 0 ) setvard SCARABS_ATTACHED 0
-}
-
 //external for redisplaying model when new players connect
 { ext_reset_model
 //	if ( PLR_BEAR_MODE )
@@ -1811,11 +1776,6 @@
 	setprop ent_me rendermode 0
 	setprop ent_me renderamt 255
 	callexternal all ext_render_items $get(ent_me,id) 0 255
-}
-
-{ ext_hold_person //<duration>
-	scriptflags ent_me add hold_person nopush 1 PARAM1 none
-	//callevent PARAM1 hold_person_end
 }
 
 //{ hold_person_end
@@ -1868,7 +1828,7 @@
 		local EXIT_SUB 1
 	}
 	if !EXIT_SUB
-	if ( !IS_AFK ) applyeffect CUR_TARG effects/effect_acid 5.0 $get(ent_me,id) PLR_FEAURA_DOT 1 spellcasting.affliction
+	if ( !IS_AFK ) applyeffect CUR_TARG effects/dot_acid 5.0 $get(ent_me,id) PLR_FEAURA_DOT spellcasting.affliction
 }
 
 { ext_acid_feaura_remove
@@ -1959,7 +1919,7 @@
 	{
 		local SHADOW_DMG $get(ent_me,skill.spellcasting.affliction)
 		//multiply SHADOW_DMG 0.25
-		applyeffect CUR_TARG effects/effect_shadowflames 5 $get(ent_me,id) SHADOW_DMG
+		applyeffect CUR_TARG effects/dot_dark 5 $get(ent_me,id) SHADOW_DMG swordsmanship
 	}
 
 	local TARG_HP $get(CUR_TARG,hp)
@@ -2066,7 +2026,7 @@
 	local TRACE_LINE $get_traceline(TRACE_START,TRACE_END,worldonly)
 	if TRACE_LINE equals TRACE_END
 
-	applyeffect CUR_TARG effects/effect_burn 5.0 $get(ent_me,id) PLR_SFAURA_DOT 1 1
+	applyeffect CUR_TARG effects/dot_fire 5.0 $get(ent_me,id) PLR_SFAURA_DOT swordsmanship
 
 	local RESIST_ROLL 1.0
 	subtract RESIST_ROLL $randf(0,1.0)
@@ -2173,7 +2133,7 @@
 
 	if ( HEAL_TARGET )
 	{
-		applyeffect CUR_TARG effects/effect_rejuv2 PLR_HAURA_POWER $get(ent_me,skill.spellcasting.divination) $get(ent_me,id)
+		applyeffect CUR_TARG effects/effect_rejuv2 0 PLR_HAURA_POWER $get(ent_me,id)
 		local EXIT_SUB 1
 	}
 	if !EXIT_SUB
@@ -2263,7 +2223,7 @@
 	local PUSH_STR PLR_PLSHIELD_PUSH
 	multiply PUSH_STR $get_takedmg(CUR_TARGET,lightning)
 	addvelocity CUR_TARGET $relpos($vec(0,OWNER_YAW,0),$vec(0,PUSH_STR,10))
-	applyeffect CUR_TARGET effects/effect_shock_dmg 5.0 $get(ent_me,id) PLR_PLSHIELD_DOT
+	applyeffect CUR_TARGET effects/dot_lightning 5.0 $get(ent_me,id) PLR_PLSHIELD_DOT
 
 	if ( game.time > NEXT_PLSHIELD_SOUND )
 	{
@@ -2406,43 +2366,6 @@
 	xdodamage ent_me direct TRIG_DMG 100% GAME_MASTER GAME_MASTER none TRIG_DMG_TYPE
 }
 
-{ ext_webbed
-	//dbg ext_webbed WEBS_ATTACHED
-	if ( WEBS_ATTACHED == 0 )
-	{
-		callevent 10.0 ext_webs_decay
-	}
-	if ( !$get_scriptflag(ent_me,spider_resist,type_exists) ) add WEBS_ATTACHED 1
-	if ( WEBS_ATTACHED > 0 ) clientevent update ent_me const.localplayer.scriptID fx_web_set_webs WEBS_ATTACHED
-}
-
-{ ext_web_reset
-	setvard WEBS_ATTACHED 0
-}
-
-{ ext_webs_remove
-	setvard WEBS_ATTACHED 0
-}
-
-{ ext_webs_decay
-	subtract WEBS_ATTACHED 1
-	if ( WEBS_ATTACHED > 0 )
-	{
-		playermessage ent_me The webs loosen a bit.
-		callevent 10.0 ext_webs_decay
-	}
-	else if ( WEBS_ATTACHED == 0 )
-	{
-		playermessage ent_me You are free of webbing.
-	}
-	clientevent update ent_me const.localplayer.scriptID fx_web_set_webs WEBS_ATTACHED
-}
-
-{ ext_set_cocooned
-	setvard COCOON_ATTACHED PARAM1
-	if ( COCOON_ATTACHED ) setvard WEBS_ATTACHED 0
-}
-
 //For adding damage points for special events (such as rescuing player from goblin pouncer)
 { ext_dmgpoint_bonus //<amt> <msg>
 	callevent add_dmg_points $int(PARAM1)
@@ -2549,10 +2472,6 @@
 	playrandomsound PARAM1 PARAM2 PARAM3 PARAM4 PARAM5 PARAM6 PARAM7 PARAM8 PARAM9
 }
 
-{ ext_set_goblin_latched
-	setvard I_R_GOBLIN_LATCHED PARAM1
-}
-
 { ext_orcfor_boss_musak //<stage> [boss_org]
 	if ( PARAM1 == 1 )
 	{
@@ -2592,12 +2511,12 @@
 }
 
 { ext_bank_lock
-	applyeffect ent_me effects/effect_templock $get(ent_me,id)
+	applyeffect ent_me effects/effect_templock
 	callevent 1.0 ext_bank_lock_release
 }
 
 { ext_bank_lock_release
-	callevent ext_remove_lock
+	callexternal ent_me ext_end_templock
 }
 
 { ext_alance_init
@@ -2617,7 +2536,7 @@
 	}
 	if !EXIT_SUB
 
-	applyeffect PARAM2 effects/effect_poison 5.0 $get(ent_me,id) AFL_BURST_DOT
+	applyeffect PARAM2 effects/dot_poison 5.0 $get(ent_me,id) AFL_BURST_DOT
 
 	local TARG_HP $get(PARAM2,hp)
 	local MY_HP_X $get(ent_me,maxhp)
@@ -2927,7 +2846,7 @@
 	if !EXIT_SUB
 
 	if $get(ent_me,relationship,PARAM2) equals enemy
-	applyeffect PARAM2 effects/effect_burn 5.0 $get(ent_me,id) FISSURE_DMG
+	applyeffect PARAM2 effects/dot_fire 5.0 $get(ent_me,id) FISSURE_DMG
 
 	local TARG_HP $get(PARAM2,hp)
 	local MAX_HP_PUSH $get(ent_me,maxhp)
@@ -2949,11 +2868,6 @@
 { ext_unsummon_unique //<tag>
 	local TOKEN_IDX $get_find_token(PLR_UNIQUE_SUMMONS,PARAM1)
 	token.del PLR_UNIQUE_SUMMONS TOKEN_IDX
-}
-
-{ ext_reset_nomove //<0|1> removes no move applyeffect (effects/effect_tempnomove) if set to 1
-	//dbg ext_reset_nomove PARAM1
-	setvard PLR_EFFECT_REMOVE_NOMOVE PARAM1
 }
 
 { ext_epilepsy_time_begin
@@ -3083,18 +2997,14 @@
 //	callclitemevent PLR_FISTS_ID kickatk_start
 //}
 
-{ set_push_resist
-	setvard MSC_PUSH_RESIST PARAM1
-}
-
 { ext_lesser_leadfoot
-	setvard MSC_PUSH_RESIST PARAM1
-	setvard IMMUNE_STUN PARAM2
-	setvard PLR_IMMUNE_STUN PARAM2
+	takedmg stun PARAM1
 	setvard PLR_LESSER_LEADFOOT 1
-	//setvard PLR_LESSER_LEADFOOT_RATIO PARAM1 //not used, but ucomment if you need it
-	setvard PLR_LESSER_LEADFOOT_STUN PARAM2 
-	if ( !$get(ent_me,nopush) ) gplayermessage ent_owner Your stun resistance is now PLR_IMMUNE_STUN
+	setvard PLR_LESSER_LEADFOOT_STUN PARAM1
+	
+	local L_STR $math(multiply,PLR_LESSER_LEADFOOT_STUN,100)
+	local L_STR $int($math(subtract,100,L_STR)) "%"
+	if ( !$get(ent_me,nopush) ) gplayermessage ent_owner Your stun resistance is now L_STR
 }
 
 { ext_delay_playsound //<delay> <chan> <vol> <wave>
@@ -3243,16 +3153,9 @@
 	quest set ent_me m 0
 }
 
-{ ext_chill_stack_add //<#toadd>
-
-	local STACK_SIZE PARAM1
-	multiply STACK_SIZE $get_takedmg(ent_me,cold)
-	add EXT_CHILL_STACKS STACK_SIZE
-}
-
-{ ext_haste_cooldown
+{ ext_haste_cooldown //<cooldown>
 	setvard PLR_NEXT_HASTE game.time
-	add PLR_NEXT_HASTE 20.0
+	add PLR_NEXT_HASTE PARAM1
 }
 
 { ext_register_corrode
@@ -3332,29 +3235,29 @@
 			}
 			if ( !L_PROJ_TYPE )
 			{
-				  applyeffect L_TARG_ID effects/effect_frostbite_dmg $randf(5,10) $get(ent_me,id) L_CDOT_DMG spellcasting.ice
+				  applyeffect L_TARG_ID effects/dot_cold $randf(5,10) $get(ent_me,id) L_CDOT_DMG spellcasting.ice
 			}
 			else
 			{
 				  givemp ent_me $neg(FREEZE_MANA_COST)
-				  applyeffect L_TARG_ID effects/freeze_solid 8.0 $get(ent_me,id) L_FDOT_DMG spellcasting.ice
+				  applyeffect L_TARG_ID effects/dot_cold_freeze 8.0 $get(ent_me,id) L_FDOT_DMG spellcasting.ice
 			}
 		}
 		else if ( L_PROJ_NAME equals proj_arrow_frost )
 		{
-			applyeffect L_TARG_ID effects/effect_frostbite_dmg $rand(5,10) $get(ent_me,id) 5 archery
+			applyeffect L_TARG_ID effects/dot_cold $rand(5,10) $get(ent_me,id) 5 archery
 		}
 		else if ( L_PROJ_NAME equals proj_arrow_gpoison )
 		{
-			applyeffect L_TARG_ID effects/greater_poison $rand(5,10) $get(ent_me,id) $randf(12,33) archery
+			applyeffect L_TARG_ID effects/dot_poison $rand(5,10) $get(ent_me,id) $randf(12,33) archery
 		}
 		else if ( L_PROJ_NAME equals proj_arrow_lightning )
 		{
-			applyeffect L_TARG_ID effects/effect_shock_dmg $rand(5,10) $get(ent_me,id) $randf(10,25) archery
+			applyeffect L_TARG_ID effects/dot_lightning $rand(5,10) $get(ent_me,id) $randf(10,25) archery
 		}
 		else if ( L_PROJ_NAME equals proj_arrow_poison )
 		{
-			applyeffect L_TARG_ID effects/effect_poison 15 $get(ent_me,id) $randf(2,3) 0 archery
+			applyeffect L_TARG_ID effects/dot_poison 15 $get(ent_me,id) $randf(2,3) 0 archery
 		}
 
 		if !L_SPECIAL_DMG
@@ -3570,7 +3473,7 @@
 		local EXIT_SUB 1
 	}
 	if !EXIT_SUB
-	applyeffect CUR_TARG effects/greater_poison 10.0 $get(ent_me,id) PLR_PBOLT_DOT spellcasting.affliction
+	applyeffect CUR_TARG effects/dot_poison 10.0 $get(ent_me,id) PLR_PBOLT_DOT spellcasting.affliction
 }
 
 //while this is possible, turned out to be no good in the desired context, as calling script events in a loop, causes only the first script event to be recieved
@@ -3606,6 +3509,10 @@
 { ext_speak //<"text">
 	//saytextrange 2048
 	saytext PARAM1
+}
+
+{ ext_saytextrange //<value>
+	saytextrange PARAM1
 }
 
 //spariment
@@ -3740,7 +3647,7 @@
 		exitevent
 	}
 	if $get(PARAM2,relationship,ent_me) equals enemy
-	applyeffect PARAM2 effects/effect_defile 15.0 $get(ent_me,id) PLR_DBURST_DOT 0.5
+	applyeffect PARAM2 effects/dot_dark 15.0 $get(ent_me,id) PLR_DBURST_DOT spellcasting.affliction
 
 	if PLR_DBURST_PUSH
 
@@ -3752,8 +3659,4 @@
 	local TARG_ORG $get(CUR_TARG,origin)
 	local TARG_ANG $angles(PLR_DBURST_ORG,TARG_ORG)
 	setvelocity CUR_TARG $relvel($vec(0,TARG_ANG,0),$vec(0,1000,0))
-}
-
-{ ext_set_last_stun_time
-	setvard DAT_LAST_HEAVY_STUN game.time
 }

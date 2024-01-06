@@ -306,7 +306,7 @@ setvarg //<name> <value> - set a variable globally, has issues, server side only
 const //<name> <value> - set a constant (can't be read by higher scripts, overrides const definitions in lower scripts)
 
 addstoreitem	//<store_name> <item_script> <#toadd> <price%> [sell_ratio] [bundle_size]
-addvelocity	//(pitch,yaw,roll) - add speed to a target, see also setvelocity
+addvelocity	//(pitch,yaw,roll) [override] - add speed to a target, see also setvelocity. Push resist == stun resist, it is automatically adjusted unless override is specified. 
 blood		//<red|green|none>
 cancelattack	//(items only) cancels/resets current attack
 catchspeech	//<event> <trigger_words...> - calls event when NPC hears any trigger_words from local chat
@@ -518,7 +518,7 @@ setprop		//<target> <property> <value>
 		//- setbody <group> <submodel> - as setmodelbody
 setsolid	//<none/box/slidebox/trigger> - set object solidity (monters will not walk through, regardless of setting)
 setstat		//<skill> <value> - Best used to set monsters parry scores.
-setvelocity	//<target> <(vector)> - Sets the velocity on <target> to the specified value
+setvelocity	//<target> <(vector)> [override] - Sets the velocity on <target> to the specified value. Stun resist == push resist, it is automatically adjusted unless override is specified
 skilllevel	//set experience value for monster (Use NPC_GIVE_EXP in monsters/base_monster)
 sound
 play3d		//sound.play3d <sound> <volume> <origin> [attenuation] [channel] [pitch] - client side playsound at origin
@@ -621,7 +621,6 @@ strconc		//<var> <strings or variables...> - simpler string concatenation
 summonpets	//<player> - summons a player's companions (if any) (defunct)
 splayviewanim	//<target_item> <anim_idx> - cause a specific item to play a specific viewanim from the server side
 tospawn		//<player> [spawn_name] - send players to specific spawn points
-ververify	//verifies ms.dll<->sc.dll consistancy and sets DLL_VER to 1 (security, only needed once)
 wipespell	//<target> <spell_idx> - removes a spell from a player's memorized list (use $get(<target>,spellname,<idx>) to id spells)
 xdodamage	//<target|(src_origin)> <range|aoe|(dest_origin)|direct> <damage> <cth|fall_off> <attacker> <inflciter> <skill|none> <dmg_type> [flag_string]
 		//fully dynamic damage
@@ -637,7 +636,7 @@ xdodamage	//<target|(src_origin)> <range|aoe|(dest_origin)|direct> <damage> <cth
 		//- If prefix begins with * - <prefix>_dodamage will be called on <inflictor> instead of <attacker>, sans the * (for weapons)
 		//= "nodecal"
 		//- Causes trace damage events not to decal walls (note that they still fire hitwall/game_hitworld when calling from an item/weapon script)
-hitmulti	//<target> <ratio> - multiplies hit chances by this ratio (for instilling to-hit penalties)
+hitmulti	//<target> <ratio> - multiplies hit chances by this ratio (for instilling to-hit penalties) (0 returns hitmulti to normal)
 torandomspawn   //<target> - moves to a random ms_player_spawn within 256 units, if any
 callclitemevent	//<item_id> <event_name> <params...> - calls event on item, only affects owner's client
 clearplayerhits //<monster> <player|all> - clears record of hits on monster (used to calculate xp) from a specific player or all
@@ -790,21 +789,32 @@ trade
 
 //common dmg types
 holy //all but undead/demon immune by default (also players with signfigant darkness contamination)
+holy_effect
 dark //damages everything, though some things are resistant
+dark_effect
 earth //rarely used, earth damage is blunt unless directly channeled
 cold
+cold_effect
 fire
+fire_effect
 lightning
+lightning_effect
 blunt
+blunt_effect
 slash
+slash_effect
 pierce
+pierce_effect
 poison
+poison_effect
 acid
+acid_effect
 siege
 training
 apostle
 magic //can't be parried
 target //can't be parried, usually 0 damage for target gathering that's stopped by walls
+stun //while not a dmgtype, still used with $get_takedmg() to determine stun resistance
 
 //setbbox
 animsize
@@ -1043,24 +1053,7 @@ NPC_IS_TURRET		//Set this to 1 on mobs that don't move
 NPC_PASS_APPLYEFFECTS	//if set to a target, applyeffects used against script with this var will instead be applied to that target, if it is valid
 EFFECT_IGNORE_CLEARFX   //when set to 1 in an applyeffect script, this setvard prevents removal via clearfx (though can still be removed directly via removeeffect).
 
-//immunes - setting takedmg on any of these will set this var accordingly, automagically (JUN2007a)
-//if takedmg xxx 1.0 - IMMUNE_XXX will be set 0.99 (as IMMUNE_XXX == 1 means total immune, while takedmg xxx 1.0 = 100% dmg)
-//players have an alternate set callsed PIMMUNE_ - so monsters can check immunity of players even if they are immune themselves ( $get(x,scriptvar,y) local conflict)
-//- see newer method: $get_takedmg(<target>,<type>)
-IMMUNE_COLD		//ratio, 1=immune >1=vulnerable <1=resistant
-IMMUNE_FIRE		//ratio, 1=immune >1=vulnerable <1=resistant
-IMMUNE_LIGHTNING	//ratio, 1=immune >1=vulnerable <1=resistant
-IMMUNE_POISON		//ratio, 1=immune >1=vulnerable <1=resistant
-IMMUNE_ACID		//ratio, 1=immune >1=vulnerable <1=resistant
-IMMUNE_MAGIC		//ratio, 1=immune >1=vulnerable <1=resistant
-IMMUNE_HOLY		//ratio, 1=immune >1=vulnerable <1=resistant (creatures are immune to holy by default, exceptions: race undead and race demon)
-
-//special, not affected by takedmg
-IMMUNE_STUN		//this one works 0-100%
-IMMUNE_PUSH		//this is either 1 or 0 (see newer method: nopush 0|1, and $get(<target>,nopush) )
-
 IS_BLOODLESS		//setting 1 indicates mob is immune to vampyric effects
-
 
 //chests
 TC_NPLAYERS		//#players returned by get_players or get_players_by_stat
@@ -1114,6 +1107,7 @@ game_viewanimdone		//(Item Only - Client Only) Called when view animation done -
 game_attack1_down		//(Item only) goes off every frame mouse1 is down
 game_-attack1			//(item only) goes off every frame mouse1 is up
 game_attack1			//(item only) goes off once when mouse1 is pressed down
+game_attack2			//(item only) goes off once when mouse2 is pressed down
 game_+attack2			//(item only) goes off every frame mouse2 is down
 game_-attack2			//(item only) goes off every frame mouse2 is up
 game_hitnpc			//(item only) goes off when NPC struck (even if miss) [sadly no param to tell you what NPC was hit]
@@ -1194,40 +1188,19 @@ get_chance_ultra_rare	//<hp_req> - callevent get_chance 1 2 50 HP_REQ
 
 
 //common effects
-blind			//<duration>
-effect_burn		//<duration> <inflictor_id> [damage] [noglow_shell-0|1] [nolight-0|1] [xp_skill] //EFFECT_ID DOT_fire
-effect_defile		//<duration> <attacker> [dmg] [ratio] [skill] (increases damage from all sources, dark DOT, generally low but with prolonged duration) //EFFECT_ID DOT_defile
-effect_drunk		//<duration>
-effect_flames		//<duration> - fx only
-effect_freeze		//<duration> <???> - secondary djinn effect (defunct)
-effect_frost		//<duration> [inflictor_id] <dmg> [glow-0|1] [xp_skill] - (djinn_ice version - defunct)
-effect_frostbite	//<duration> [inflictor_id] (slows, no damage)
-effect_frostbite_dmg	//<duration> <inflictor_id> <dmg> [xp_skill]  (slows, generally half damage) //EFFECT_ID DOT_cold
-effect_holy_dmg		//<duration> <inflictor_id> <dmg> [xp_skill]  //EFFECT_ID DOT_holy
-effect_iceshield	//<duration> <dmg_multiplier>
-effect_light		//<duration> <radius> <color>
-effect_poison		//<duration> <inflictor_id> <dmg> <poison/disease-0|1> [xp_skill] (usually double duration, quarter damage) //EFFECT_ID DOT_poison
-effect_push		//<duration> <(vel)> [screenshake-0|1]
-effect_rejuv2		//<heal_amt> [divinaion_skill] [healer_id]
-effect_shadowflames	//<duration> <inflictor_id> [dmg] [xp_skill] (dark damage flames, generally 0.5 damage, adds Darkness Contamination)
-effect_shock_dmg	//<duration> <inflictor_id> [dmg] [xp_skill] (damage is adjusted to 0.75 effect side, decreases accuracy) //EFFECT_ID DOT_lightning
-effect_stun		//<duration> [slow_push-0|1] [cant_attack-0|1] [attacker]
-freeze_solid		//<duration> <inflictor_id> [dot] [xp_skill] [max_hp] (prevents movement and attacking)
-generic_damage		//<dmg> <inflictor_id> [noise-0|1] [dmg_type] [xp_skill] 
-greater_poison		//<duration> <inflictor_id> <dmg> [xp_skill] //EFFECT_ID DOT_gpoison
-poison_spore		//<duration> <inflictor_id> <dmg> [xp_skill] 
-heavy_stun		//<duration> [inflictor_id] [cant_attack:0|1]
-protection		//<duration> <dmg_multiplier>
-sfx_motionblur		//<ent_idx> [duration]
-speed			//<duration> <speed%> <framerate> - not sure if this works 100%
-torch_flame		//<duration> - less sticky than items/base_lighted
-effect_poison_dmg	//convention alias: effect_poison
-effect_fire_dmg		//convention alias: effect_burn
-effect_cold_dmg		//convention alias: effect_frostbite_dmg
-effect_lightning_dmg	//convention alias: effect_shock_dmg
-hold_person		//<duration> <inflictor_id> [dmg] (prevents movement but not attacking)
-effect_webbed		//<cocoon_hp[x10,usually use mons maxhp]> <web_strength[>1 reduces webs needed for cocoon]> [attacker] [duration] [dot]
-effect_poison_blinding //<duration> <inflictor_id> [dmg] [xp_skill]
+debuff_hold			//<duration> <cage_type:0|1> - 0 == lightning cage, 1 == beam cage
+debuff_stun			//<duration> <attacker>
+dot_acid			//<duration> <attacker> <dps> <skill>
+dot_bleed			//<duration> <attacker> <dps> <skill>
+dot_cold			//<duration> <attacker> <dps> <skill>
+dot_cold_freeze		//<duration> <attacker> <dps> <skill> [maxhp] - monster must be at or below maxhp in order to freeze
+dot_dark			//<duration> <attacker> <dps> <skill>
+dot_fire			//<duration> <attacker> <dps> <skill>
+dot_holy			//<duration> <attacker> <dps> <skill>
+dot_lightning		//<duration> <attacker> <dps> <skill>
+dot_lightning_cage	//<duration> <attacker> <dps> <skill> [maxhp]
+dot_poison			//<duration> <attacker> <dps> <skill>
+dot_poison_blind	//<duration> <attacker> <dps> <skill>
 
 #KEYWORD=Reserved_attribs
 //most of these can be pulled with $get(<ent>,xx)
@@ -1627,7 +1600,7 @@ callevent	//<delay> <event_name> OR <event_name> [params...]
 calleventloop   //<#_of_iterations> <event_name> - loop event_name X times. Progress of loop stored in game.script.iteration - loops can be embedded
 calleventtimed	//same as callevent <delay> <event_name>
 callexternal    //<target|players|all> <event_name> [params...] - calls script on another target
-clientevent	//<new|update|persists> <target|all> <script_file|script_idx> <event_name> [params...] - see client side scripting docs
+clientevent	//<new|update|persists|remove> <target|all> <script_file|script_idx> <event_name> [params...] - see client side scripting docs //"remove" stops the effect from persisting, but does not remove any active scripts.
 override	//{ [override] eventname - override's lower instances of same event, can cause issues when overriding a higher occurance
 exitevent	//Ends execution of commands in the current script event (less need for if !EXIT_SUB)
 breakloop	//terminates a calleventloop in progress
