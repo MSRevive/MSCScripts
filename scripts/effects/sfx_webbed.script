@@ -1,65 +1,144 @@
-//players do this via play_cl_effects_special
+//Webbed. Fully opaque when cocooned.
 
-{ client_activate //<owner_idx> <#webs>
-
-	setvard FX_WEB_TARGET PARAM1
-	setvard FX_NUM_WEBS PARAM2
-	setvard FX_DURATION 20.0
-
-	local WEB_POS $getcl(FX_WEB_TARGET,origin)
-	//vectoradd WEB_POS z -30
-	if !FX_WEB_ACTIVE
-	setvard FX_WEB_ACTIVE 1
-	cleffect tempent model misc/treasure.mdl WEB_POS fx_web_setup fx_web_update
-	callevent FX_DURATION end_fx //max duration for NPC is 20 seconds, after which they should refresh this effect
+{
+	const WEB_RATIO $math(divide,FX_CUR_WEBS,FX_WEBS_TILL_COCOON)
 }
 
-{ fx_web_set_webs //<#webs>
-	setvard FX_NUM_WEBS PARAM1
+#scope client
+
+{ client_activate //<decay time> <target_idx> <webs_till_cocoon>
+	//the number of webs till a cocoon should not change for the same npc, so the opacity should be able to be derived reliably
+	
+	setvard FX_DECAY PARAM1 //Duration is the decay time * num of webs applied
+	setvard FX_NEXT_DECAY $math(add,FX_DECAY,game.time)
+	
+	setvard FX_WEB_TARGET PARAM2
+	
+	setvard FX_CUR_WEBS 1 //always 1 when this gets applied
+	setvard FX_WEBS_TILL_COCOON PARAM3
+
+	cleffect tempent model misc/treasure.mdl $func(func_get_new_pos) web_setup web_update
+
+	callevent FX_DECAY web_decay
 }
 
-{ fx_web_update
-	local WEB_POS $getcl(FX_WEB_TARGET,origin)
-	//vectoradd WEB_POS z -30
-	cleffect tempent set_current_prop origin WEB_POS
-	cleffect tempent set_current_prop body 6
+{ ext_webbed //<new decay> 
 
-	if ( FX_NUM_WEBS > 0 )
+	if !FX_COCOONED
+	
+	add FX_CUR_WEBS 1
+	
+	if ( FX_CUR_WEBS < FX_WEBS_TILL_COCOON )
 	{
-		local L_WEB_RATIO FX_NUM_WEBS
-		multiply L_WEB_RATIO 0.1
-		cleffect tempent set_current_prop renderamt $ratio(L_WEB_RATIO,50,255)
+		setvard FX_DECAY PARAM1
+		setvard FX_NEXT_DECAY $math(add,FX_DECAY,game.time)
+		
+		callevent FX_DECAY web_decay
 	}
 	else
 	{
-		cleffect tempent set_current_prop renderamt 0
+		setvard FX_COCOONED 1
+		callevent 15 fx_die
 	}
 }
 
-{ fx_web_setup
-	cleffect tempent set_current_prop death_delay FX_DURATION
+{ web_decay
+
+	if !FX_COCOONED
+	if ( game.time >= FX_NEXT_DECAY )
+	{
+		subtract FX_CUR_WEBS 1
+		
+		if ( FX_CUR_WEBS < 1 )
+		{
+			callevent fx_die
+		}
+		else callevent FX_DECAY web_decay
+	}
+}
+
+{ web_setup
+	cleffect tempent set_current_prop death_delay FX_DECAY
 	cleffect tempent set_current_prop body 6
-	cleffect tempent set_current_prop framerate 0.1
+	cleffect tempent set_current_prop framerate 0
 	cleffect tempent set_current_prop sequence 0
 	cleffect tempent set_current_prop rendermode add
-	local L_WEB_RATIO FX_NUM_WEBS
-	multiply L_WEB_RATIO 0.1
-	cleffect tempent set_current_prop renderamt $ratio(L_WEB_RATIO,50,255)
+	cleffect tempent set_current_prop renderamt $ratio(WEB_RATIO,50,255)
 	cleffect tempent set_current_prop gravity 0
 	cleffect tempent set_current_prop collide none
 	cleffect tempent set_current_prop frames 999
 	cleffect tempent set_current_prop movetype 0
-	cleffect tempent set_current_prop scale 1
+	
+	local L_MAXS $getcl(FX_WEB_TARGET,maxs)
+	if ( $getcl(FX_WEB_TARGET,isplayer) ) vectormultiply L_MAXS 2
+	local L_SIZE $vec.x(L_MAXS)
+	add L_SIZE $vec.y(L_MAXS)
+	add L_SIZE $vec.z(L_MAXS)
+	divide L_SIZE 104
+	
+	cleffect tempent set_current_prop scale L_SIZE
+	
 	cleffect tempent set_current_prop angles $vec(0,90,0)
 	cleffect tempent set_current_prop velocity $vec(0,0,0)
 }
 
-{ end_fx
-	setvard FX_WEB_ACTIVE 0
-	setvard FX_NUM_WEBS 0
-	callevent 1.0 remove_fx
+
+{ web_update
+
+	if ( FX_CUR_WEBS > 0 )
+	{
+		cleffect tempent set_current_prop origin $func(func_get_new_pos)
+	
+		local L_WEB_RATIO FX_CUR_WEBS
+		multiply L_WEB_RATIO 0.1
+		cleffect tempent set_current_prop renderamt $ratio(WEB_RATIO,50,255)
+		
+		cleffect tempent set_current_prop death_delay FX_DECAY
+	}
+	else
+	{
+		cleffect tempent set_current_prop death_delay 0.01
+		cleffect tempent set_current_prop renderamt 0
+	}
+	
+	if ( FX_COCOONED )
+	{
+		cleffect tempent set_current_prop renderamt 255
+	}
+	
+	if ( FX_DIE )
+	{
+		cleffect tempent set_current_prop death_delay 0.01
+		cleffect tempent set_current_prop renderamt 0
+		setvard FX_CUR_WEBS 0
+		setvard FX_COCOONED 0
+		callevent effect_die
+	}
 }
 
-{ remove_fx
+{ fx_die
+	setvard FX_DIE 1
+	callevent 1.0 effect_die
+}
+
+{ effect_die
 	removescript
+}
+
+{ func_get_new_pos
+
+	if ( $getcl(FX_WEB_TARGET,isplayer) )
+	{
+		local L_WEB_POS $getcl(FX_WEB_TARGET,origin)
+		vectoradd L_WEB_POS z $vec.z($getcl(FX_WEB_TARGET,mins))
+	}
+	else
+	{
+		local L_WEB_POS $getcl(FX_WEB_TARGET,bonepos,0) //getting bone pos is much smoother than getting origin
+		vectorset L_WEB_POS z $vec.z($getcl(FX_WEB_TARGET,origin))
+	}
+	vectoradd L_WEB_POS z 8 //Raise slightly so model doesn't disappear in the ground
+	
+	return **clear
+	return L_WEB_POS
 }

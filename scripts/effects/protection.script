@@ -5,78 +5,37 @@
 {
 	const SOUND_CHARGE turret/tu_die2.wav
 	precache SOUND_CHARGE
+
+	const EFFECT_ID			"effect_protect"
+	const EFFECT_FLAGS		nostack
+	const EFFECT_SCRIPT $currentscript //Must be copied, as is, at the top script!
 }
 
-{ 	[server]
-	const EFFECT_ID			effect_protect
-	const EFFECT_NAME		"Protection"
-	const EFFECT_ACTIONTYPE		nostack
-	const EFFECT_SCRIPT		$currentscript
+#include effects/base_effect
 
-	setvard game.effect.id		EFFECT_ID
-	setvard game.effect.displayname	EFFECT_NAME
-	setvard game.effect.type	EFFECT_ACTIONTYPE
-}
+{ game_activate
 
-#include effects/effect_base
-
-{ 	[server] game_activate
-
-	setvard local.effect.duration 	PARAM1
 	setvard local.effect.damage 	PARAM2
 
-	if ( $get(ent_me,isplayer) ) clientevent new ent_me $currentscript local.effect.duration
-	setvard local.effect.clientscript game.script.last_sent_id
-
-	effect glow ent_me (255,255,255) 96 local.effect.duration local.effect.duration
+	effect glow ent_me (255,255,255) 96 EFFECT_DURATION EFFECT_DURATION
 	playsound game.sound.item game.sound.maxvol magic/heal_strike.wav
 
-	playermessage $get(ent_me,id) You are protected by a magical barrier.
-
-	callevent local.effect.duration effect_die
+	playermessage $get(ent_me,id) "You are protected by a magical barrier."
 }
 
-{ 	[server] game_damaged
+{ game_damaged
 
 	if PARAM2 > 0
 	
-	clientevent update ent_me local.effect.clientscript shield_absorb
+	effect screenfade ent_me 0.5 0 (255,255,255) 40 fadein
 	return local.effect.damage
-
-	volume 5
-	playsound 2 player/pl_metal2.wav
+	
+	playsound 2 5 player/pl_metal2.wav
 }
 
-{ 	[shared] effect_die
+{ effect_die
 
-	volume 5
 	playsound 0 8 SOUND_CHARGE
 	effect tempent trail lgtning.spr $relpos(0,0,0) $relpos(0,0,80) 10 2 5 10 20
-	playermessage $get(ent_me,id) Your protection spell has expired!
-}
-
-
-// ===========
-// Client Side
-// ===========
-
-{	[client]
-	const BURN_SCREEN_DELAY		0.5
-	const BURN_SCREEN_ALPHA		40
-}
-
-{	[client] client_activate
-
-	callevent PARAM1 effect_die
-}
-
-{	[client] shield_absorb
-
-	setvard game.cleffect.screenfade.newfade 1
-	setvard game.cleffect.screenfade.alphalimit BURN_SCREEN_ALPHA	//Only use this fade if current fade is under this limit
-	setvard game.cleffect.screenfade.color (255,255,255)
-	setvard game.cleffect.screenfade.alpha BURN_SCREEN_ALPHA
-	setvard game.cleffect.screenfade.duration BURN_SCREEN_DELAY
-	setvard game.cleffect.screenfade.blendduration BURN_SCREEN_DELAY
-	setvard game.cleffect.screenfade.type fadein
+	playermessage $get(ent_me,id) "Your protection spell has expired!"
 }

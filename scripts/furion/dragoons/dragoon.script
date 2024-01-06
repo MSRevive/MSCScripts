@@ -269,7 +269,7 @@
 	}
 	else
 	{
-	  dodamage NPCATK_TARGET ATTACK_HITRANGE ATTACK1_DAMAGE ATTACK_PERCENTAGE
+		xdodamage NPCATK_TARGET ATTACK_HITRANGE ATTACK1_DAMAGE ATTACK_PERCENTAGE ent_me ent_me none slash dmgevent:attack
 	}
 }
 
@@ -413,7 +413,7 @@
 	if !IS_BUFFING
 	if CYCLED_UP
 	if $get(ALLY_CHECK_ID,race) equals $get(ent_me,race) //switched from ally, as he'd shield beloveds and such
-	callexternal ALLY_CHECK_ID ice_shield_check 
+	setvard ICE_SHIELD_CHECK $get(ALLY_CHECK_ID,haseffect,'iceshield')
 	callevent 0.1 check_can_shield2
 }
 
@@ -422,7 +422,6 @@
 	setvard AS_ATTACKING game.time
 	
 	if ICE_SHIELD_CHECK != 1
-	callexternal ALLY_CHECK_ID ice_shield_on
 	//yes, I can shield this guy
 	setvard IS_BUFFING 1
 	playanim critical ANIM_PREP_SPELL
@@ -441,7 +440,7 @@
 { cast_shield
 	setvard IS_BUFFING 0
 	playsound 0 10 magic/cast.wav
-	applyeffect ALLY_CHECK_ID effects/effect_iceshield $get(ent_me,id) 20 0.5 //<who_applied> <FINAL_DURATION> <ICESHIELD_FORMULA>
+	applyeffect ALLY_CHECK_ID effects/iceshield 20 $get(ent_me,id) 0.5 
 }
 
 { scan_for_allies
@@ -461,37 +460,41 @@ repeatdelay 2.0
 	if ( !SUSPEND_AI ) setvard BD_COUNT 0
 	if ( BD_COUNT > 10 ) callevent npcatk_resume_ai
 }
+
 { do_spell
    if NPCATK_TARGET isnot unset //in case target dies before spell completed
    if $get(ent_me,isalive) //in case I die before spell completed
    createnpc SPELL_SCRIPT $get(NPCATK_TARGET,origin) $get(ent_me,id) $get(ent_me,angles.y) SPELL_DOT SPELL_DURATION
 }
-{ game_dodamage //PARAM1=hit:0|1 PARAM2=ent_hit PARAM3=(start) PARAM4=(end) DmgType DmgAmt
-   if PARAM1
-   setvard SPECIAL_EFFECT_CHANCE $rand(0,100)
-   if ( SPECIAL_EFFECT_CHANCE < 30 ) 
-   //Crude chance of effect snippet, If player is resistant to element, it runs this and their resistence checks
-   //30% of doing effect, subject to increase if players escape it too frequently.
-   {
-	if ( ELEMENT == 0 ) //set in spawn
+
+{ attack_dodamage //PARAM1=hit:0|1 PARAM2=ent_hit PARAM3=(start) PARAM4=(end) DmgType DmgAmt
+
+	if PARAM1
+	
+	setvard SPECIAL_EFFECT_CHANCE $rand(0,100)
+	if ( SPECIAL_EFFECT_CHANCE < 30 ) 
+	//Crude chance of effect snippet, If player is resistant to element, it runs this and their resistence checks
+	//30% of doing effect, subject to increase if players escape it too frequently.
 	{
-	applyeffect PARAM2 effects/effect_frostbite_dmg 10.0 $get(ent_me,id) $rand(5.0,15.0)
-	//^ Freezes target with WEAPON_DOT/DPS for 10 seconds
+		if ( ELEMENT == 0 ) //set in spawn
+		{
+			applyeffect PARAM2 effects/dot_cold 10.0 $get(ent_me,id) $rand(5.0,15.0)
+			//^ Freezes target with WEAPON_DOT/DPS for 10 seconds
+		}
+		if ( ELEMENT == 1 ) //set in spawn
+		{
+			applyeffect PARAM2 effects/dot_poison 10.0 $get(ent_me,id) $rand(5.0,15.0)
+			//^ Poisons target with WEAPON_DOT/DPS for 10 seconds
+		} 
+		if ( ELEMENT == 2 ) //set in spawn
+		{
+			applyeffect PARAM2 effects/dot_fire 10.0 $get(ent_me,id) $rand(5.0,15.0)
+			//^ Burns target with WEAPON_DOT/DPS for 10 seconds
+		} 
+		if ( ELEMENT == 3 ) //set in spawn
+		{
+			applyeffect PARAM2 effects/dot_lightning 10.0 $get(ent_me,id) $rand(5.0,15.0)
+			//^ Shocks target with WEAPON_DOT/DPS for 10 seconds
+		}
 	}
-	if ( ELEMENT == 1 ) //set in spawn
-	{
-	applyeffect PARAM2 effects/effect_poison_dmg 10.0 $get(ent_me,id) $rand(5.0,15.0)
-	//^ Poisons target with WEAPON_DOT/DPS for 10 seconds
-	} 
-	if ( ELEMENT == 2 ) //set in spawn
-	{
-	applyeffect PARAM2 effects/effect_burn 10.0 $get(ent_me,id) $rand(5.0,15.0) 1 1
-	//^ Burns target with WEAPON_DOT/DPS for 10 seconds
-	} 
-	if ( ELEMENT == 3 ) //set in spawn
-	{
-	applyeffect PARAM2 effects/effect_shock_dmg 10.0 $get(ent_me,id) $rand(5.0,15.0)
-	//^ Shocks target with WEAPON_DOT/DPS for 10 seconds
-	}
-    }
 }

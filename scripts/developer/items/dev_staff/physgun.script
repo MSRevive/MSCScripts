@@ -1,0 +1,53 @@
+
+{
+	setvar PHYSGUN_ON 0
+	setvar PHYS_KEEP_DIST 0
+}
+
+{ try_physgun
+
+	if ( !PHYSGUN_ON )
+	{
+		callevent find_beam_target
+		if ( BEAM_TARGET isnot none )
+		{
+			if ( $get(BEAM_TARGET,origin) isnot '(0.00,0.00,0.00)' )
+			{
+				setvard PHYSGUN_ON 1
+				setvard PHYS_KEEP_DIST $dist($get(ent_owner,origin),$get(BEAM_TARGET,origin))
+				
+				bplayermessage ent_owner "Linked physgun to" $get(BEAM_TARGET,name)
+				callevent update_physgun_target
+			}
+		}
+	}
+	else callevent update_physgun_target
+}
+
+{ update_physgun_target
+
+	if ( !$get(BEAM_TARGET,isalive) )
+	{
+		setvard BEAM_TARGET none
+		setvard PHYSGUN_ON 0
+		exitevent
+	}
+	
+	local L_TARG_POS $relpos($get(ent_owner,viewangles),$vec(0,PHYS_KEEP_DIST,0))
+	vectoradd L_TARG_POS $get(ent_owner,eyepos)
+	
+	setorigin BEAM_TARGET L_TARG_POS
+	setvelocity BEAM_TARGET $vec(0,0,0)
+	
+	effect glow BEAM_TARGET (50,50,255) 72 0.2 0.2
+}
+
+{ target_freeze
+
+}
+
+{ game_-attack1
+	if PHYSGUN_ON
+	setvard PHYSGUN_ON 0
+	setvard BEAM_TARGET none
+}

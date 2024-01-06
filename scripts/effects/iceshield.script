@@ -1,0 +1,111 @@
+//Ice Shield
+//Any npc
+//PARAM1 == Duration
+//PARAM2 == Damage multiplier
+
+#scope server
+
+{
+	const EFFECT_ID "iceshield"
+	const EFFECT_FLAGS nostack
+	const EFFECT_SCRIPT $currentscript //Must be copied, as is, at the top script!
+}
+
+#include effects/base_effect
+
+{ game_activate //<duration> <who_applied> <damage_multiplier>
+
+	local L_SHIELDER PARAM2
+	setvard DAMAGE_MULTIPLIER PARAM3 //*damage reduct
+	
+	effect glow $get(ent_me,id) (0,0,192) 72 EFFECT_DURATION EFFECT_DURATION
+	
+	playsound game.sound.item game.sound.maxvol magic/heal_strike.wav
+
+	if ( $get(ent_me,isplayer) )
+	{
+		hud.addstatusicon ent_me hud/status/alpha_iceshield iceshield EFFECT_DURATION
+		
+		gplayermessage ent_me "You are protected by a shield of ice."
+		bplayermessage ent_me "Ice shield" $int(EFFECT_DURATION) "seconds remain."
+	}
+
+	if ( L_SHIELDER isnot $get(ent_me,id) )
+	{
+		if $get(L_SHIELDER,isplayer)
+		
+		gplayermessage L_SHIELDER "You shield" $get(ent_me,name) "for" EFFECT_DURATION "seconds." //Tell shielder that they shielded a player
+		
+		local L_BONUS_MSG "for shielding "
+		stradd L_BONUS_MSG $get(ent_me,name)
+		
+		local L_DMGPOINT_ADD 1000 //Max damage points that can be added with no prior ice shield applied
+		callexternal L_SHIELDER ext_dmgpoint_bonus L_DMGPOINT_ADD L_BONUS_MSG //Add bonus soda to healer
+	}
+
+	callevent EFFECT_DURATION effect_die
+}
+
+{ ext_refresh_ice_shield //<duration> <shielder> //If a smaller duration is supplied, it will ignore it and refresh the longer duration instead.
+
+	local L_SHIELDER PARAM2
+	if ( PARAM1 > EFFECT_DURATION ) setvard EFFECT_DURATION PARAM1
+	
+	local L_TIME_DIFF $math(subtract,EFFECT_DURATION,EFFECT_TIME_LEFT) //Get how many seconds were added
+	
+	callevent effect_set_duration EFFECT_DURATION //Reset expire timer
+	
+	//FX
+	hud.addstatusicon ent_me hud/status/alpha_iceshield iceshield EFFECT_DURATION //set ice shield icon
+	
+	effect glow $get(ent_me,id) (0,0,192) 72 EFFECT_DURATION EFFECT_DURATION
+	playsound game.sound.item game.sound.maxvol magic/heal_strike.wav
+	
+	//Player stuff
+	if ( L_SHIELDER isnot $get(ent_me,id) ) //If not shielding self
+	{
+		if ( $get(ent_me,isplayer) ) //If I am a player
+		{
+			gplayermessage ent_me $get(L_SHIELDER,name) "has protected you with a shield of ice." //Tell me that a player so graciously shielded me (and possibly increased my duration)
+			bplayermessage ent_me "Added" $int(L_TIME_DIFF) "seconds to Ice Shield."
+			
+			local ADD_BONUS 1
+		}
+		
+		gplayermessage L_SHIELDER "You shield" $get(ent_me,name) "for" $int(L_TIME_DIFF) "more seconds." //Tell shielder that they shielded a player
+		
+		if ( $get(ent_me,scriptvar,'NPC_CRITICAL') ) local ADD_BONUS 1 //If I am a critical npc, then add damage point bonus
+		
+		if ADD_BONUS
+		local L_BONUS_MSG "for shielding "
+		stradd L_BONUS_MSG $get(ent_me,name)
+		
+		local L_DMGPOINT_ADD $math(multiply,$math(divide,L_TIME_DIFF,412),1000) // ( time_diff / 412 seconds ) * 1000
+		
+		callexternal L_SHIELDER ext_dmgpoint_bonus L_DMGPOINT_ADD L_BONUS_MSG //Add bonus soda to healer
+	}
+	else
+	{
+		bplayermessage ent_me "Added" $int(L_TIME_DIFF) "seconds to Ice Shield."
+	}
+}
+
+{ game_damaged
+
+	if PARAM2 > 0
+
+	effect screenfade ent_me 0.5 0 (0,0,192) 40 fadein
+	
+	playsound 0 3 player/pl_metal2.wav
+	
+	return DAMAGE_MULTIPLIER
+}
+
+{ effect_die
+
+	hud.killstatusicon ent_me iceshield
+	svplaysound 0 2 "debris/bustglass2.wav"
+	
+	effect tempent trail blueflare1.spr $relpos(0,0,0) $relpos(0,0,40) 10 2 5 10 20
+	bplayermessage $get(ent_me,id) "Your ice shield has collapsed!"
+}

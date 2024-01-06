@@ -2,16 +2,23 @@
 //Main effect for the Gut Buster sword, handles the sounds, sfx, dot, and causes gibs on death
 
 //PARAMS:
-//	PARAM1 = <duration>
-//	PARAM2 = <attacker>
-//	PARAM3 = <damage>
-//	PARAM4 = <activeSkill>
-//	PARAM5 = <dmg type>
-//	PARAM6 = <gut buster sword id>
+//	PARAM5 = <gut buster sword id>
 
 #scope server
 
 { [server]
+
+	const EFFECT_ID "gb"
+	const EFFECT_SCRIPT $currentscript //Must be copied, as is, at the top script!
+	
+	const EFFECT_FLAGS nostack //<"nostack"|"player_action">
+	
+	const DOT_TYPE pierce_effect
+	
+	const DOT_IM_AFFECTED "Your flesh is defiled by the evil sword." //Player recieves affect and is afflicted
+	
+	const DOT_IM_RESIST "Your armor prevents the attack from piercing through your skin." //Player recieves the affect, but resists / immune it.
+	const DOT_HE_IMMUNE "cannot bleed." //Target recieves the affect, but resists / immune it
 
 	//Tracks if the gibs have been bursted
 	setvard DID_PROC 0
@@ -20,49 +27,22 @@
 
 #include effects/dot_bleed
 
-{ [server] game_activate //<duration> <attacker> <damage> <activeSkill> <dmg type> <sword_id>
+{ game_activate //<duration> <attacker> <damage> <activeSkill> <sword_id>
 //-Applies bleed fx and vars
 
-	setvard SWORD_ID PARAM6
-
-	if ( !DOT_ABORT )
-	{
-		//Apply blood fx
-		setvard MY_BLOOD $get(ent_me,blood)
-		bleed ent_me MY_BLOOD 10000
-		//playrandomsound 0 10 weapons/headshot2.wav weapons/headshot3.wav
-
-		//Create an exploding gib? gib?
-		if ( $get(ent_me,alive) )
-		{
-			clientevent new all effects/swords_gb/sfx_gb1 $get(ent_me,index) MY_BLOOD //SFX_BLEED and SFX_GIB_THROW are consolidated in this, and provided with hard coded values for optimization.
-			setvard SFX_BLEED game.script.last_sent_id
-		}
-		else
-		{
-			//Proc gib burst
-			callevent proc_death
-		}
-	}
+	setvard SWORD_ID PARAM5
+	setvard MY_BLOOD $get(ent_me,blood)
 }
 
-{ effect_die //-Kills bleed client fx
-
-	//If the bleed client fx are active
-	if ( SFX_BLEED isnot 'SFX_BLEED' )
-	{
-		//kill them
-		clientevent update all SFX_BLEED remove_me
-	}
+{ dot_start
+	//Apply blood fx
+	bleed ent_me MY_BLOOD 10000
 }
 
 { game_death //-Causes gib burst proc
 
-	if ( !DOT_ABORT )
-	{
-		//Cause gib burst
-		callevent proc_death
-	}
+	//Cause gib burst
+	callevent proc_death
 }
 
 { proc_death //-Causes gib burst and applies relating fx
@@ -96,7 +76,7 @@
 
 	local L_VEC $relvel(L_ANG,$vec(0,L_FORCE,0))
 	//<owner> <velocity> <damage> <skill> <"green"|"red"> <sword_id>
-	createnpc effects/swords_gb/gb_gib_explode $get(ent_me,origin) MY_ATTACKER L_VEC 0 swordsmanship MY_BLOOD SWORD_ID
+	createnpc effects/swords_gb/gb_gib_explode $get(ent_me,origin) DOT_ATTACKER L_VEC 0 swordsmanship MY_BLOOD SWORD_ID
 }
 
 { get_num_gibs
