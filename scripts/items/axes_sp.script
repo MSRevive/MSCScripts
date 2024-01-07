@@ -37,7 +37,7 @@
 
 	const RANGED_MP 5
 	const THROW_ATTACK_DELAY 0.5
-	const MP_CIRCLE_OF_WEBS 200
+	const MP_CIRCLE_OF_WEBS 90
 }
 
 #include items/axes_base_twohanded
@@ -126,8 +126,7 @@
 
 { spider_defile
 	local L_DOT $get(ent_owner,skill.spellcasting.affliction)
-	capvar L_DOT 5 10
-	applyeffect PARAM1 effects/effect_defile 30.0 $get(ent_owner,id) 10 0.25 L_DOT
+	applyeffect PARAM1 effects/dot_dark 30.0 $get(ent_owner,id) L_DOT axehandling
 }
 
 
@@ -139,21 +138,18 @@
 
 	if game.time > NEXT_WEB
 	setvard NEXT_WEB game.time
-	add NEXT_WEB 1.0
+	add NEXT_WEB 1.2
 
+	if ( $get(ent_owner,skill.axehandling.proficiency) < 25 )
+	{
+		exitevent
+	}
+	
 	if ( $get(ent_owner,mp) < RANGED_MP )
 	{
 		dplayermessage ent_owner Spider Axe: Not enough mana for web projectile (5)
-		local EXIT_SUB 1
+		exitevent
 	}
-
-	if ( $get(ent_owner,skill.spellcasting.affliction) < 5 )
-	{
-		dplayermessage ent_owner Spider Axe: Insufficient affliction talent for web projectile (5)
-		local EXIT_SUB 1
-	}
-
-	if !EXIT_SUB
 
 	givemp ent_owner $neg(RANGED_MP)
 
@@ -166,22 +162,23 @@
 }
 
 { do_web
+
 	playsound 0 10 bullchicken/bc_attack2.wav 0.8 $rand(80,120)
 	
 	//<projectile scriptname> <"view"|(src_origin)> <target|(targ_origin)> <speed> <damage> <cof> <skill|none>
-	callexternal ent_owner ext_tossprojectile "proj_web" view none 150 0 0.1 axehandling //Converted to use new tossprojectile //greatguys1@FEB2022
+	callexternal ent_owner ext_tossprojectile proj_web view none 700 $randf(50,60) 0 axehandling //proj_web
 }
 
 { weapon_spawn
 
-	local reg.attack.type  strike-land
-	local reg.attack.keys  -attack1
-	local reg.attack.range  0
-	local reg.attack.dmg  0
+	local reg.attack.type strike-land
+	local reg.attack.keys -attack1
+	local reg.attack.range 0
+	local reg.attack.dmg 0
 	local reg.attack.dmg.range 0
 	local reg.attack.dmg.type none
 	local reg.attack.energydrain 0
-	local reg.attack.stat  spellcasting.affliction
+	local reg.attack.stat axehandling
 	local reg.attack.hitchance 100
 	local reg.attack.priority 3
 	local reg.attack.delay.strike 1.5
@@ -190,8 +187,8 @@
 	local reg.attack.ofs.aimang MELEE_AIMANGLE
 	local reg.attack.callback makewebs
 	local reg.attack.noise  1000
-	local reg.attack.chargeamt 300
-	local reg.attack.reqskill 10
+	local reg.attack.chargeamt 200
+	local reg.attack.reqskill 27
 	local reg.attack.mpdrain MP_CIRCLE_OF_WEBS
 
 	registerattack
@@ -233,9 +230,9 @@
 
 { makewebs_strike
 	if game.serverside
-	createnpc monsters/summon/circle_of_lolth $get(ent_owner,origin) $get(ent_owner,id) 30.0
+	createnpc monsters/summon/circle_of_lolth $get(ent_owner,origin) $get(ent_owner,id) 5.0
 	setvard NEXT_CIRCLE game.time
-	add NEXT_CIRCLE 30.0
+	add NEXT_CIRCLE 5.0
 }
 
 { bweapon_effect_remove

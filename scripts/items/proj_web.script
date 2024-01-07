@@ -1,76 +1,73 @@
+#scope server
+
+{
+	const MODEL_HANDS      		none
+	const SOUND_HITWALL1		none //weapons/bow/arrowhit1.wav
+	const SOUND_HITWALL2		none //weapons/bow/arrowhit1.wav
+	
+	const MODEL_WORLD weapons/projectiles.mdl
+	const MODEL_BODY_OFS 62
+	const PROJ_ANIM_IDLE axis_spin
+	
+	const PROJ_DAMAGE_TYPE magic
+	const PROJ_DAMAGE 100
+	
+	const CLFX_ARROW 0
+	const CLFX_ARROW_NOSTICK 1
+	const PROJ_STICK_ON_NPC 0 //Don't stick in enemies
+	const PROJ_STICK_DURATION 0
+	const PROJ_MOTIONBLUR 0
+	const PROJ_STICK_ON_WALL_NEW 0
+}
+
+#include items/proj_base
+
 { game_spawn
 	name a|Web
 	desc "Ew, it's sticky"
 
-	setmodel weapons/projectiles.mdl
-	setmodelbody 0 62
-	playanim axis_spin
-	setidleanim axis_spin
-
-	projectilesize 32 //not helping
-
-	if game.serverside
-	local reg.proj.dmg 0
-	local reg.proj.dmgtype none
-	local reg.proj.aoe.range 0
-	local reg.proj.aoe.falloff 0
-	local reg.proj.stick.duration 0
-	local reg.proj.collidehitbox 1 //not helping
-	local reg.proj.ignorenpc 0
-	registerprojectile
-	setmonsterclip 0
-
-	gravity 0
+	gravity 0.07
 	setvard SCALE_SIZE 0.1
 	setprop ent_me scale 0.1
-	
-	usable 0
 }
 
 { game_tossprojectile
-	setvard IS_ACTIVE 1
+
+	//playanim loop PROJ_ANIM_IDLE
+	//setidleanim PROJ_ANIM_IDLE
 	callevent expand_loop
 }
 
 { expand_loop
-	if IS_ACTIVE
 	if SCALE_SIZE < 1
 	add SCALE_SIZE 0.01
 	setprop ent_me scale SCALE_SIZE
 	callevent 0.1 expand_loop
 }
 
-{ game_projectile_hitwall
-	setvard IS_ACTIVE 0
-}
-
 { game_projectile_hitnpc
-	if ( $get(PARAM1,isplayer) ) local L_PVP game.pvp
+	
 	if ( $get(ent_expowner,isplayer) )
 	{
-		if ( !L_PVP ) exitevent
+		local L_DUR $get(ent_expowner,skill.spellcasting.affliction)
+		divide L_DUR 30
+		capvar L_DUR 0 1
+		local L_DUR $ratio(L_DUR,1.5,2.5)
+	
+		if ( $get(PARAM1,isplayer) )
+		{
+			if ( !game.pvp ) exitevent
+		}
 	}
-
-	if $get(ent_expowner,relationship,PARAM1) equals enemy
-	if !$get(PARAM1,scriptvar,'COCOON_ATTACHED')
-	local L_DOT -1
-	local L_DUR -1
-	local L_WEB_STR $get(ent_expowner,scriptvar,'WEB_STRENGTH')
-	if ( $get(ent_expowner,isplayer) )
+	else
 	{
-		local L_DOT $get(ent_expowner,skill.spellcasting.affliction)
-		multiply L_DOT 0.1
-		local L_DUR 20.0
-		local L_WEB_STR 1
+		local L_DUR 2.5
 	}
-	callexternal PARAM1 ext_webbed $get(ent_expowner,id)
-	applyeffect PARAM1 effects/effect_webbed $get(ent_expowner,maxhp) L_WEB_STR $get(ent_expowner,id) L_DUR L_DOT
-}
 
-{ game_projectile_landed
+	local L_RELATIONSHIP $get(ent_expowner,relationship,PARAM1)
+	if L_RELATIONSHIP isnot ally
+	if L_RELATIONSHIP isnot neutral
+	if L_RELATIONSHIP isnot none
 
-	setvard IS_ACTIVE 0
-	movetype	none	//Back to normal movement
-	expiretime 	0
-	deleteent ent_me
+	applyeffect PARAM1 effects/webbed L_DUR $get(ent_expowner,id)
 }

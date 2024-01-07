@@ -1,0 +1,78 @@
+{
+	setvar LISTENING_FOR_TRIGGER 0
+	
+	//catchspeech trigger
+}
+
+{ menu_trigger
+
+	setvard LISTENING_FOR_TRIGGER 1
+	callevent 10.0 stop_listening
+	
+	callexternal MY_OWNER ext_saytextrange 10000
+	
+	local reg.mitem.title "Speak the [trigger]"
+	local reg.mitem.type disabled
+	menuitem.register
+	
+	setvard TRIG_QUEST "trig_" $lcase(game.map.name)
+	setvard RECENT_TRIGGERS $get_quest_data(MY_OWNER,TRIG_QUEST)
+	
+	if ( RECENT_TRIGGERS equals '0' ) setvard RECENT_TRIGGERS ''
+	if ( RECENT_TRIGGERS equals '' ) exitevent
+	
+	calleventloop $get_token_amt(RECENT_TRIGGERS) loop_trigger_history
+}
+
+{ loop_trigger_history
+
+	local L_TRIG $get_token(RECENT_TRIGGERS,game.script.iteration)
+	
+	local reg.mitem.title L_TRIG
+	local reg.mitem.type callback
+	local reg.mitem.callback use_trigger
+	local reg.mitem.data L_TRIG
+	menuitem.register
+}
+
+{ use_trigger
+
+	usetrigger PARAM2
+	setvard LISTENING_FOR_TRIGGER 0
+	
+	setvard MENU_TYPE 11
+	callevent 0.1 ext_menu_open
+	
+	callexternal MY_OWNER ext_playsound_kiss 0 5 weapons/357_cock1.wav
+}
+
+{ game_heardtext 
+
+	if LISTENING_FOR_TRIGGER
+	if PARAM2 equals MY_OWNER
+	
+	local L_IDX $get_find_token(RECENT_TRIGGERS,PARAM1)
+	if ( L_IDX == -1 ) //Trig not saved, save it.
+	{
+		if ( $get_token_amt(RECENT_TRIGGERS) >= 6 ) //If saved trigs is filling up too much
+		{
+			token.del RECENT_TRIGGERS 0 //Remove the oldest one
+		}
+		
+		token.add RECENT_TRIGGERS PARAM1
+		
+		quest set MY_OWNER TRIG_QUEST RECENT_TRIGGERS
+	}
+	
+	callevent use_trigger MY_OWNER $pass(PARAM1)
+}
+
+{ stop_listening
+	setvard LISTENING_FOR_TRIGGER 0
+}
+
+{ menu_trigger_successful
+	local reg.mitem.title "Trigger Fired!"
+	local reg.mitem.type disabled
+	menuitem.register
+}

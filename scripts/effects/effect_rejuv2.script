@@ -1,77 +1,64 @@
 //Rejuvenate2 by Thothie
+
 //Any npc
-//PARAM1 == hp to heal
-//PARAM2 == Casters Divination Skill (unused thus far, but ideas be cookin)
+//PARAM1 == duration (useless)
+//PARAM2 == hp to heal
 //PARAM3 == Caster
+
 //- The original rejuvinate method lagged the systme to hell and back
 //- in addition, it became completely unbalanced once the ability to raise Divination skill was restored
 //- finally the formula was too hard to predict
-//- Thus we have this simple, one-shot meathod
+//- Thus we have this simple, one-shot method
 
+// . effectmestack effects/effect_rejuv2 0 100 GAME_MASTER
 
-{ [server]
+#scope server
 
-	const EFFECT_ID			effect_rejuvenate
-	const EFFECT_NAME		"Rejuvenation"
-	const EFFECT_ACTIONTYPE		normal
-	const EFFECT_SCRIPT		$currentscript
-
-	setvard game.effect.id		EFFECT_ID
-	setvard game.effect.displayname	EFFECT_NAME
-	setvard game.effect.type	EFFECT_ACTIONTYPE
+{
+	const EFFECT_ID "effect_rejuvenate"
+	const EFFECT_SCRIPT $currentscript //Must be copied, as is, at the top script!
 }
 
-#include effects/effect_base
+#include effects/base_effect
 
-{ [server] game_activate
+{ game_activate
 
-	local L_DO_EFFECT 1 //lazy h4x
+	local HEAL_AMT PARAM2
+	local CASTER_ID PARAM3
 
-	if ( L_DO_EFFECT )
+	local MY_ID $get(ent_me,id)
+	
+	local MY_MAX_HEALTH $get(MY_ID,maxhp)
+	local MY_CUR_HEALTH $get(MY_ID,hp)
+
+	if ( MY_ID isnot CASTER_ID ) local HEALING_OTHER 1
+
+	if ( MY_CUR_HEALTH < MY_MAX_HEALTH )
 	{
-		if !$get(ent_me,scriptvar,'IS_LURE') //do not allow healing of lures
-		//if !$get(ent_me,scriptvar,'IMMUNE_VAMPIRE') //don't heal undeads
-
-		local HEAL_AMT PARAM1
-		local CASTER_ID PARAM3
-
-
-		local MY_ID $get(ent_me,id)
+		givehp HEAL_AMT
+		effect glow ent_me (0,255,0) 256 1 1
 		
-		local MY_MAX_HEALTH $get(MY_ID,maxhp)
-		local MY_CUR_HEALTH $get(MY_ID,hp)
-
-		if ( MY_ID isnot CASTER_ID ) local HEALING_OTHER 1
-
-		if ( MY_CUR_HEALTH < MY_MAX_HEALTH )
+		if ( HEALING_OTHER )
 		{
-			givehp HEAL_AMT
-			local HEALED 1
-			if ( HEALING_OTHER )
-			{
-				gplayermessage CASTER_ID You heal $get(MY_ID,name) for HEAL_AMT hp
-				gplayermessage MY_ID $get(CASTER_ID,name) heals you for HEAL_AMT hp
-			}
-			else
-			{
-				gplayermessage CASTER_ID You heal yourself for HEAL_AMT hp
-			}
+			gplayermessage CASTER_ID You heal $get(MY_ID,name) for HEAL_AMT hp
+			gplayermessage MY_ID $get(CASTER_ID,name) heals you for HEAL_AMT hp
 		}
 		else
 		{
-			if ( HEALING_OTHER )
-			{
-				gplayermessage CASTER_ID $get(MY_ID,name) is at maximum health
-			}
-			else
-			{
-				gplayermessage MY_ID You are at maximum health
-			}
+			gplayermessage CASTER_ID You heal yourself for HEAL_AMT hp
 		}
-
-		if HEALED
-
-		effect glow ent_me (0,255,0) 256 1 1
 	}
-	callevent effect_die
+	else
+	{
+		if ( HEALING_OTHER )
+		{
+			gplayermessage CASTER_ID $get(MY_ID,name) is at maximum health
+		}
+		else
+		{
+			gplayermessage MY_ID You are at maximum health
+		}
+	}
+
+	removescript
 }

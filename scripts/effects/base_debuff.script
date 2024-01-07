@@ -1,0 +1,67 @@
+//Base debuff by greatguys1
+//Allows replenishing a single instance of a debuff by stacking the effect
+
+{
+	const EFFECT_ID "base_debuff" //Also used as the name of the scriptflag
+	const EFFECT_SCRIPT $currentscript //Must be copied, as is, at the top script!
+	
+	setvar DEBUFF_INTENSITY 1 //Only really necessary if the debuff has variable intensity
+	setvar DEBUFF_SCRIPTFLAG 0 //Flag that gets set to 1 if this debuff already exists
+	setvar DEBUFF_STARTED 0 //Flag that gets set to 1 when the debuff successfully starts
+}
+
+#include effects/base_effect
+
+{ game_activate 
+
+	callevent debuff_check_scriptflag
+	
+	if ( $get(ent_me,scriptvar,'PLAYING_DEAD') ) setvard DEBUFF_SCRIPTFLAG 1
+	
+	if ( !DEBUFF_SCRIPTFLAG )
+	{
+		callevent debuff_start
+	}
+	else removescript
+}
+
+{ debuff_start //Use this event to set vars for debuffs
+
+	setvard DEBUFF_STARTED 1
+	scriptflags ent_me add EFFECT_ID "debuff" DEBUFF_INTENSITY EFFECT_DURATION
+}
+
+{ game_death //Gets called when npc dies
+
+	scriptflags ent_me remove EFFECT_ID
+}
+
+{ debuff_check_scriptflag
+
+	scriptflags ent_me remove_expired //Remove potentially expired dots
+
+	local L_INTENSITY $get_scriptflag(ent_me,EFFECT_ID,name_value)
+	
+	if L_INTENSITY isnot 'none' //Scriptflag exists
+	if !DEBUFF_SCRIPTFLAG
+	
+	setvard DEBUFF_SCRIPTFLAG 1
+	scriptflags ent_me edit EFFECT_ID "debuff" DEBUFF_INTENSITY EFFECT_DURATION
+}
+
+{ game_scriptflag_update //<action> <name> <type> <value> <base_expire_time>
+
+	if !DEBUFF_SCRIPTFLAG
+	if PARAM1 equals 'edit'
+	if PARAM2 equals EFFECT_ID
+	
+	callevent debuff_scriptflag_update $pass(PARAM4) $pass(PARAM5)
+}
+
+{ debuff_scriptflag_update
+
+	if ( PARAM1 > DEBUFF_INTENSITY ) setvard DEBUFF_INTENSITY PARAM1
+	
+	//No effective way to check if new time is less than time remaining, so just set it.
+	callevent effect_set_duration $pass(PARAM2)
+}

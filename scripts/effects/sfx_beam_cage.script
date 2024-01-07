@@ -1,0 +1,73 @@
+{
+	setvard ROCK_CLIMB_STEP 1.0
+}
+
+#scope client
+{ client_activate //<target> <duration> 
+
+	local L_WIDTH $getcl(PARAM1,width)
+	local L_HEIGHT $getcl(PARAM1,height)
+
+	setvard COIL_POS $getcl(PARAM1,origin)
+	if ( $getcl(PARAM1,isplayer) )
+	{
+		vectoradd COIL_POS z -32
+	}
+	setvard COIL_DURATION PARAM2
+	setvard ROT_COUNT 0
+
+	setvard COIL_WIDTH $math(multiply,L_WIDTH,0.75)
+	setvard COIL_WIDTH_MIN $math(multiply,L_WIDTH,0.4) //prob 0.65
+	setvard COIL_WIDTH_MAX COIL_WIDTH
+	setvard COIL_HEIGHT L_HEIGHT
+	setvard COIL_Z_START $vec.z(COIL_POS)
+	setvard COIL_Z_MAX COIL_Z_START
+	add COIL_Z_MAX COIL_HEIGHT
+	dbg *** $currentscript client_activate COIL_POS w COIL_WIDTH h COIL_HEIGHT zm COIL_Z_MAX
+
+	if ( COIL_HEIGHT > 96 )
+	{
+		if ( COIL_HEIGHT > 200 ) setvard COIL_HEIGHT 200 //don't go bigger than this (too many rocks)
+		local L_MAX_HEIGHT_RATIO $math(divide,COIL_HEIGHT,200)
+		add ROCK_CLIMB_STEP $ratio(L_MAX_HEIGHT_RATIO,0.2,2.0)
+	}
+
+	setvard COIL_START_TIME game.time
+	
+	calleventloop 100 draw_coil_loop
+	callevent COIL_DURATION end_fx
+}
+
+{ draw_coil_loop
+	//dbg **** Draw Coil ROT_COUNT COIL_HEIGHT
+
+	//cleffect beam_points <startpos> <endpos> <spritename> <life> <width> <amplitude> <brightness> <speed> <framerate> <color>
+	//if FX_ACTIVE
+	local L_COIL_CUR_Z $vec.z(COIL_POS)
+	if L_COIL_CUR_Z < COIL_Z_MAX
+	//callevent 0.01 draw_coil_loop
+
+	local L_COMP_RATIO_MAX $math(subtract,COIL_Z_MAX,COIL_Z_START)
+	local L_COMP_RATIO_CUR $math(subtract,COIL_Z_MAX,L_COIL_CUR_Z)
+	local L_COMP_RATIO $math(divide,L_COMP_RATIO_CUR,L_COMP_RATIO_MAX)
+	setvard COIL_WIDTH $ratio(L_COMP_RATIO,COIL_WIDTH_MIN,COIL_WIDTH_MAX)
+
+	local BEAM_START COIL_POS
+	vectoradd BEAM_START $relpos($vec(0,ROT_COUNT,0),$vec(0,COIL_WIDTH,0))
+	//add COIL_HEIGHT 1
+	vectoradd COIL_POS z ROCK_CLIMB_STEP
+	add ROT_COUNT 20
+	if ( ROT_COUNT > 359 ) subtract ROT_COUNT 359
+	local BEAM_END COIL_POS
+	vectoradd BEAM_END $relpos($vec(0,ROT_COUNT,0),$vec(0,COIL_WIDTH,0))
+	cleffect beam_points BEAM_START BEAM_END lgtning.spr COIL_DURATION 2 0.1 0.9 0.1 30 (255,255,255) //(1,0.5,2)
+
+}
+
+{ end_fx
+	callevent 5.0 remove_fx
+}
+
+{ remove_fx
+	removescript
+}

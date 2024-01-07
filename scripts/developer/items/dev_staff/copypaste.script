@@ -1,0 +1,51 @@
+
+{
+	setvar NPC_CLIPBOARD none
+	setvar CLIPBOARD_NAME none
+	setvar CLIPBOARD_DMGMULTI 1
+	setvar CLIPBOARD_HPMULTI 1
+	setvar CLIPBOARD_ADDPARAMS none
+	
+	const CLIPBOARD_KEEP_DIST 500
+	setvar CLIPBOARD_ADD_DIST 0
+}
+
+{ copy_target
+
+	callevent find_beam_target
+	
+	if ( BEAM_TARGET equals none ) local L_NOTARG 1
+	if ( $get(BEAM_TARGET,isplayer) ) local L_NOTARG 1
+	
+	if ( L_NOTARG )
+	{
+		if ( NPC_CLIPBOARD isnot none ) bplayermessage ent_owner "Clipboard cleared."
+		setvard NPC_CLIPBOARD none
+		exitevent
+	}
+	
+	setvard NPC_CLIPBOARD $get(BEAM_TARGET,scriptname)
+	setvard CLIPBOARD_NAME $get(BEAM_TARGET,scriptvar,'NEW_NAME')
+	setvard CLIPBOARD_DMGMULTI $get(BEAM_TARGET,scriptvar,'NPC_DMG_MULTI')
+	setvard CLIPBOARD_HPMULTI $get(BEAM_TARGET,scriptvar,'NPC_HP_MULTI')
+	setvard CLIPBOARD_ADDPARAMS $get(BEAM_TARGET,scriptvar,'NPC_DO_EVENTS')
+	
+	setvard CLIPBOARD_ADD_DIST $math(divide,$get(BEAM_TARGET,width),2)
+	
+	bplayermessage ent_owner "Copied" $get(BEAM_TARGET,name)
+}
+
+{ paste_target
+
+	if NPC_CLIPBOARD isnot none
+	local L_KEEP_DIST CLIPBOARD_KEEP_DIST
+	add L_KEEP_DIST CLIPBOARD_ADD_DIST
+	
+	local L_POS $relpos($get(ent_owner,viewangles),$vec(0,L_KEEP_DIST,0))
+	vectoradd L_POS $get(ent_owner,eyepos)
+	
+	local L_SPAWN_POINT $get_traceline($get(ent_owner,eyepos),L_POS,worldonly)
+	createnpc NPC_CLIPBOARD L_SPAWN_POINT
+	
+	callexternal $get(ENT_LASTCREATED,id) game_postspawn CLIPBOARD_NAME CLIPBOARD_DMGMULTI CLIPBOARD_HPMULTI CLIPBOARD_ADDPARAMS
+}
