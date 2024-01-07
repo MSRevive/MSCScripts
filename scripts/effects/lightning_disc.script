@@ -1,0 +1,73 @@
+{ game_spawn
+
+	name a|laserdisc
+	setmodel weapons/magic/seals.mdl
+	setmodelbody 0 31
+	
+	setprop ent_me movetype 11
+	setprop ent_me friction 0.1
+	setprop ent_me scale 10
+	setprop ent_me solid 0
+	
+	width 5
+	height 1
+	//setbbox none
+	
+	invincible 1
+	race beloved
+
+	callevent 10.0 fx_die
+	
+	clientevent persist all monsters/lighted_cl $get(ent_me,index) (255,255,40) 96
+	setvard MY_LIGHT_SCRIPT game.script.last_sent_id
+	
+	setmonsterclip 0
+}
+
+{ game_dynamically_created //<owner> <vec> <damage> <skill to level>
+
+	setvard FX_OWNER PARAM1
+	setvard FX_VELOCITY PARAM2
+	setvard FX_DMG PARAM3
+	setvard FX_SKILL PARAM4
+	
+	setvard FX_WOBBLE_SEQ "0;1;2;3;2;1;0;-1;-2;-3;-2;-1"
+	setvard SEQ_IDX 0
+	
+	setvard FX_WOBBLE_MULT 0.07
+	callevent 0.05 wobble
+	
+	setvelocity ent_me FX_VELOCITY
+	svplaysound 3 4 ambient/alien_frantic.wav
+}
+
+{ //scan damage
+	repeatdelay 0.2
+	
+	xdodamage $get(ent_me,origin) 120 FX_DMG 0 FX_OWNER $get(ent_me,id) FX_SKILL lightning
+}
+
+{ wobble //Should wobble faster the longer the duration
+	
+	local L_IDX $get_token(FX_WOBBLE_SEQ,SEQ_IDX)
+	add SEQ_IDX 1
+	if ( SEQ_IDX >= $get_token_amt(FX_WOBBLE_SEQ) ) setvard SEQ_IDX 0
+	
+	local L_ANG $get(ent_me,angles)
+	vectoradd L_ANG $vec($math(multiply,L_IDX,FX_WOBBLE_MULT),7,0)
+	setangle face L_ANG
+	
+	add FX_WOBBLE_MULT 0.03
+	
+	callevent 0.05 wobble
+}
+
+{ fx_die //explode fx when die
+
+	clientevent new all "effects/sfx_prism_blast" $get(ent_me,origin) 100 lightning
+	svplaysound 3 10 magic/bolt_end.wav
+	setmodel none
+	deleteme
+
+	clientevent remove all MY_LIGHT_SCRIPT
+}

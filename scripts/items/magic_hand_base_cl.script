@@ -1,56 +1,45 @@
 //Magic (client-side special effects)
 
 {
-	const GLOW_DURATION		1
-	precache 			SPRITE_1
-	const OFS_POS			0.2
-	const OFS_NEG			-0.2
-  	const LIGHT_RADIUS		128
-	const LIGHT_COLOR		(255,255,128)		//maybe redifned in spell?
+	const GLOW_DURATION 1
+	const OFS_POS 5
+	const OFS_NEG -5
+  	const LIGHT_RADIUS 128
+	const LIGHT_COLOR (255,255,128) 
+}
+
+{ game_precache
 
 	//all possible sprites must be precached here
 	precache 3dmflaora.spr
-	precache blueflare1.spr
-	precache lgtning.spr
 }
 
-{ client_activate
+{ client_activate //<ownerIdx> <prepTime>
 
-	setvard script.modelid PARAM1
-	setvard script.duration PARAM2
-	setvard script.islocal 0
-	if( $getcl(script.modelid,exists) )
-	{
-		callevent script.duration effect_die
+	setvard FX_OWNER PARAM1
+	setvard FX_DURATION $math(add,PARAM2,5)
 
-		callevent create_light $getcl(script.modelid,origin)
-	}
-	else callevent effect_die
+	setcallback render enable
+	callevent FX_DURATION effect_die
+	callevent create_light $getcl(FX_OWNER,origin)
 }
-{ effect_die
-
-	removescript 
-}
-
 
 {
-	repeatdelay $randf(0.15,0.25)
-
-	setvard script.islocal 0
-	if( script.modelid == game.localplayer.index )
+	repeatdelay $randf(0.10,0.25)
+	
+	setvard FX_FIRSTPERSON 0
+	if ( FX_OWNER == game.localplayer.index )
 	{
+		//Watching self cast in thir
 		if !game.localplayer.thirdperson
-		setvard script.islocal 1
+		setvard FX_FIRSTPERSON 1
 	}
-
-	if( !script.islocal )
+	
+	if ( !FX_FIRSTPERSON )
 	{
 		//Watching other player cast spell
-		callevent make_sprite_1 $getcl(script.modelid,bonepos,21)
-		callevent make_sprite_1 $getcl(script.modelid,bonepos,38)
-
-		////dbg 'script.modelid' - script.modelid
-		////dbg bone 21 -- $getcl(script.modelid,bonepos,21)
+		callevent make_sprite_1 $getcl(FX_OWNER,bonepos,21)
+		callevent make_sprite_1 $getcl(FX_OWNER,bonepos,38)
 	}
 	else
 	{
@@ -63,29 +52,28 @@
 
 { make_sprite_1
 
-	if PARAM1 isnot '0'
+	local SPRITE_1 3dmflaora.spr
 
-	setvard SPRITE_1 3dmflaora.spr
-
-	local l.pos PARAM1
-	vectoradd l.pos $vec($rand(OFS_NEG,OFS_POS),$rand(OFS_NEG,OFS_POS),$rand(OFS_NEG,OFS_POS))
-	cleffect tempent sprite SPRITE_1 l.pos setup_sprite_1
+	local L_POS PARAM1
+	vectoradd L_POS $vec(0,$randf(OFS_NEG,OFS_POS),$randf(OFS_NEG,OFS_POS))
+	cleffect tempent sprite SPRITE_1 L_POS setup_sprite_1
 }
 
-{  setup_sprite_1
+{ setup_sprite_1
 
-
-   cleffect tempent set_current_prop death_delay 	GLOW_DURATION
-   cleffect tempent set_current_prop bouncefactor 	0.1
-   cleffect tempent set_current_prop scale 		0.1
-   cleffect tempent set_current_prop gravity 		$randf(0.2,0.1)
-   cleffect tempent set_current_prop collide 		world|die
+	cleffect tempent set_current_prop death_delay GLOW_DURATION
+	cleffect tempent set_current_prop bouncefactor 0.1
+	cleffect tempent set_current_prop scale 0.1
+	cleffect tempent set_current_prop gravity $randf(0.2,0.1)
+	cleffect tempent set_current_prop collide world
 }
 
 { create_light
 
-	if PARAM1 isnot '0'
+	cleffect light new PARAM1 LIGHT_RADIUS LIGHT_COLOR FX_DURATION
+}
 
-	cleffect light new PARAM1 LIGHT_RADIUS LIGHT_COLOR script.duration
-	//setvard local.lightid game.script.last_light_id
+{ effect_die
+
+	removescript 
 }
