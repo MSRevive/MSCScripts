@@ -4,8 +4,7 @@
 {
 	setvar NO_BANK 1
 
-	const CLAW_DURATION 600.0 //was 160
-
+	const SPELL_SKILL_REQUIRED 20
 	const BASE_LEVEL_REQ 20
 
 	const ANIM_HANDS_DOWN 20
@@ -29,18 +28,18 @@
 	const MELEE_DMG  200
 	const MELEE_DMG_RANGE      0
 	const MELEE_DMG_TYPE  acid
-	const MELEE_ACCURACY  85%
-	const MELEE_DMG_DELAY 0.3
-	const MELEE_ATK_DURATION 0.9
+	const MELEE_ACCURACY  100
+	const MELEE_DMG_DELAY 0.35
+	const MELEE_ATK_DURATION 0.45
 	const MELEE_AFFLIC_RATIO 0.5
 	const MELEE_AFFLICDMG_MIN 10
 
 	const GOUGE_MPDRAIN 15
 	const GOUGE_MPSTEAL 10
-	const GOUGE_LIFESTEAL_RATIO 0.06
+	const GOUGE_LIFESTEAL_RATIO 0.10
 
 	const AURA_DOT_RATIO 0.3
-	const AURA_RADIUS 64
+	const AURA_RADIUS 80
 
 	const SOUND_SWIPE zombie/claw_miss1.wav
 	const SOUND_HITWALL1 weapons/cbar_hit1.wav
@@ -56,7 +55,7 @@
 	const MELEE_RANGE 50
 	const REACH_MELEE_RANGE 100
 	const MELEE_ENERGY 1
-	const MELEE_STAT martialarts
+	const MELEE_STAT spellcasting.affliction
 	const MELEE_VIEWANIM_ATK ANIM_ATTACK1
 
 	const MELEE_SOUND SOUND_SWIPE
@@ -72,14 +71,18 @@
 	precache poison_cloud.spr
 }
 
+{ game_pickup
+
+	callevent 0.1 facid_aura
+}
+
 #include items/base_melee
-#include items/base_kick
 #include items/base_vampire
 
 { weapon_spawn
 
-	name 	"Flesheater's Claws"
-	desc 	Claws have burst from your hands!
+	name 	"Venom Claws"
+	desc 	Vicious claws have burst from your hands!
 	weight 	3
 	size 	1
 	value	1500
@@ -87,7 +90,11 @@
 	sethudsprite hand gauntlets
 	sethudsprite trade gauntlets
 
-	callevent 0.1 facid_aura
+	local	reg.spell.reqskill	BASE_LEVEL_REQ
+	local	reg.spell.fizzletime	99999 //Practically no fizzle time. fizzle time is not fun.
+	local	reg.spell.castsuccess	100%
+	local	reg.spell.preparetime	1
+	registerspell
 }
 
 { [override] melee_start
@@ -143,35 +150,29 @@
 }
 
 { weapon_spawn
-	local CHARGE2_REQ BASE_LEVEL_REQ
-	add CHARGE2_REQ 2
+	local CHARGE2_REQ 22
 
 	//Gouge Attack	
-	local reg.attack.type		strike-land
-	local reg.attack.keys		-attack1
-	local reg.attack.range		REACH_MELEE_RANGE
-	local reg.attack.dmg			0
-	local reg.attack.dmg.range		0
-	local reg.attack.dmg.type		pierce
-	local reg.attack.energydrain		2
-	local reg.attack.stat		martialarts
-	local reg.attack.hitchance		85%
-	local reg.attack.priority		2
-	local reg.attack.delay.strike	0.2
-	local reg.attack.delay.end		0.9
-	local reg.attack.ofs.startpos	MELEE_STARTPOS
-	local reg.attack.ofs.aimang		MELEE_AIMANGLE
-	local reg.attack.callback		gouge
-	local reg.attack.noise		MELEE_NOISE
-	local reg.attack.mpdrain		0
-	local reg.attack.chargeamt		200%
-	local reg.attack.reqskill		CHARGE2_REQ
-
-	local reg.spell.castsuccess 100%
-	local reg.spell.preparetime 0
-	local reg.spell.fizzletime 99999
+	local reg.attack.type strike-land
+	local reg.attack.keys -attack1
+	local reg.attack.range REACH_MELEE_RANGE
+	local reg.attack.dmg 0
+	local reg.attack.dmg.range 0
+	local reg.attack.dmg.type pierce
+	local reg.attack.energydrain 2
+	local reg.attack.stat spellcasting.affliction
+	local reg.attack.hitchance 100
+	local reg.attack.priority 2
+	local reg.attack.delay.strike 0.2
+	local reg.attack.delay.end 0.9
+	local reg.attack.ofs.startpos MELEE_STARTPOS
+	local reg.attack.ofs.aimang MELEE_AIMANGLE
+	local reg.attack.callback gouge
+	local reg.attack.noise MELEE_NOISE
+	local reg.attack.mpdrain 0
+	local reg.attack.chargeamt 100%
+	local reg.attack.reqskill CHARGE2_REQ
 	registerattack
-	registerspell
 }
 
 { gouge_start
@@ -202,11 +203,11 @@
 	if !EXIT_SUB
 
 	if $can_damage(ent_owner,PARAM3)
-	local DMG_SET $get(ent_owner,skill.martialarts.ratio)
+	local DMG_SET $get(ent_owner,skill.spellcasting.affliction.ratio)
 	multiply DMG_SET MELEE_DMG
-	multiply DMG_SET 6 // 6 = double melee damage (don't really know why, but that's how it works out)
+	multiply DMG_SET 3 // 6 = double melee damage (don't really know why, but that's how it works out)
 	local OWNER_TARG PARAM3
-	xdodamage OWNER_TARG REACH_MELEE_RANGE DMG_SET 85% $get(ent_owner,id) $get(ent_owner,id) martialarts acid
+	xdodamage OWNER_TARG REACH_MELEE_RANGE DMG_SET 100% $get(ent_owner,id) $get(ent_owner,id) spellcasting.affliction acid
 
 	if ( $func(func_can_vampire,$get(ent_owner,id),PARAM3) )
 	{

@@ -1,0 +1,112 @@
+//"'all your concentration' - as wiki says, 'disambiguation'." - Thothie
+
+//Tome Base
+//Handles learning spells permanently on the character.
+
+//As a tip for naming tomes, name them "SpellName Tome" instead of "Tome of SpellName".
+//This makes the spellname not get cut off if the name of the tome is too long
+
+//Requires:
+//BASE_SPELL_SCRIPT
+
+{
+	const BASE_SPELL_SCRIPT "magic_hand_fire_dart"
+	const BASE_SUMMON_TEXT "You learn to cast a weak fireball."
+	const BASE_SUMMON_TEXT_FAILED "Your spell casting skills are not yet sufficient to memorize this tome."
+	
+	const BASE_REQUIRED_SKILL skill.spellcasting.fire
+	const BASE_REQUIRED_LEVEL 0
+	
+	const BASE_CAN_SUMMON $func(func_base_can_wield)
+
+	const MODEL_WORLD "misc/p_misc.mdl"
+	const MODEL_BODY 5
+
+	setvar READING 0 //0 - readable; 1 - reading; -1 - put away while reading
+}
+
+#include items/base_item_extras
+
+{ game_spawn
+	
+	name "Dire Fart Tome"
+	desc "im gonna learn you a oooh~ brrrt!"
+	value 1
+	weight 1
+	//Height and width are for npcs, and are not set here.
+	
+	sethudsprite hand item
+	sethudsprite trade book
+}
+
+//Models
+{ game_deploy
+
+	//Shows the model in the player's hands
+	setmodel MODEL_WORLD //Model must be set again, since the item gets hidden
+	
+	local L_SUB_MODEL $math(subtract,MODEL_BODY,2) //Hand models are two submodels behind the world
+	add L_SUB_MODEL game.item.hand_index 
+	
+	setmodelbody 0 L_SUB_MODEL
+}
+
+//Models
+{ game_fall
+
+	//World model
+	setmodel MODEL_WORLD
+	setmodelbody 0 MODEL_BODY
+	playanim oldbook_floor_idle //Idle animation offsets the model to the floor
+}
+
+//Tome Stuff
+{ game_attack1 //Attempt to learn spell on click
+
+	if READING == 0
+
+	setvard READING 1
+	playermessage "You study the tome carefully..."
+	callevent 3 learn_spell
+}
+
+//Tome Stuff
+{ learn_spell
+
+	if ( READING == 1 )
+	{
+		if ( BASE_CAN_SUMMON ) learnspell BASE_SPELL_SCRIPT
+		else callevent game_learnspell_failed
+	}
+	
+	setvard READING 0
+}
+
+//Tome Stuff
+{ game_removefromowner
+
+	if ( READING ) setvard READING -1 //Stop attempting to read of moved inventory slots or dropped
+}
+
+{ game_learnspell_success
+
+	playermessage BASE_SUMMON_TEXT
+}
+
+{ game_learnspell_failed
+
+	playermessage BASE_SUMMON_TEXT_FAILED
+}
+
+{ [client] game_deploy
+
+	//If the model body is not 5, then assume that this item is a scroll, not a tome.
+	if ( MODEL_BODY == 5 ) infomsg ent_owner "TOMES" "Tomes can be used to memorize spells permanently."
+}
+
+{ func_base_can_wield //Returns 1 if the player has the skill to summon the spell, otherwise it returns 0
+
+	local OWNER_SKILL $get(ent_owner,BASE_REQUIRED_SKILL)
+	if ( OWNER_SKILL >= BASE_REQUIRED_LEVEL ) return 1
+	else return 0
+}
