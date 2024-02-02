@@ -1,0 +1,74 @@
+{ withdraw_items //<playerID> -Generates the galat storemenu and offers it to the player
+
+	if ( !PLAYER_WITHDRAWING )
+	{
+		setvard PLAYER_WITHDRAWING PARAM1
+
+		setvard STORENAME "galat_" BANK_PREFIX "_" $get(PARAM1,steamid)
+		createstore STORENAME
+
+		calleventloop BANK_MAX build_stores $get(PARAM1,id)
+		offerstore STORENAME $get(PARAM1,id) inv trade
+	}
+	else
+	{
+		local L_MSG $get(ent_me,name) ": Cannot withdraw while the chest is in use."
+		dplayermessage $get(PARAM1,id) L_MSG
+	}
+}
+
+{ build_stores //<playerId>
+
+	local L_BANK $get_token(BANK_STRINGS,game.script.iteration)
+
+	local L_BANK_CONTENTS $get_quest_data(PARAM1,L_BANK)
+	if ( $len(L_BANK_CONTENTS) > 1 )
+	{
+		calleventloop $get_token_amt(L_BANK_CONTENTS) add_to_chest L_BANK_CONTENTS
+	}
+}
+
+{ add_to_chest //<bankStr>
+
+	local L_BANK_CONTENTS PARAM1
+	local L_ITEM $get_token(L_BANK_CONTENTS,game.script.iteration)
+	
+	local L_QUANTITY $func(func_get_stored_quantity,L_BANK_CONTENTS,$pass(game.script.iteration))
+	addstoreitem STORENAME L_ITEM L_QUANTITY 0 0 L_QUANTITY
+}
+
+{ ext_player_got_item //<item_id> <owner> -called when player clicks an item in their bank menu
+
+	local L_ITEM PARAM1
+	local L_ITEM_SCRIPTNAME $get(L_ITEM,itemname)
+	local L_PLAYER PARAM2
+
+	local L_ITEM_FOUND $func(func_check_bank_has,L_PLAYER,L_ITEM_SCRIPTNAME)
+
+	if ( L_ITEM_FOUND isnot '0' )
+	{
+		local L_BANK $get_token(L_ITEM_FOUND,0)
+		local L_BANK_STR $get_quest_data(L_PLAYER,L_BANK)
+		local L_ITEM_IDX $get_token(L_ITEM_FOUND,1)
+		
+		local L_QUANTITY $func(func_get_stored_quantity,L_BANK_STR,L_ITEM_IDX)
+		
+		token.del L_BANK_STR L_ITEM_IDX
+		if ( L_QUANTITY > 1 )
+		{
+			token.del L_BANK_STR L_ITEM_IDX //Items shifted down, so dont adjust the index
+		}
+		
+		//Fixes withdrawing potions with 1 swig left giving max quantity.
+		if ( $get(L_ITEM,is_projectile) ) setquantity L_ITEM L_QUANTITY
+		else if ( $get(L_ITEM,is_drinkable) ) setquality L_ITEM L_QUANTITY
+		
+		quest set L_PLAYER L_BANK L_BANK_STR
+	}
+	else
+	{
+		dbg "Couldn't find item!"
+		callexternal L_ITEM item_banked //tell item we've been removed
+		deleteent L_ITEM
+	}
+}

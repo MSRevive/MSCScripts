@@ -19,6 +19,9 @@
 
 	const MAX_BANK_STRING 255 //255 is the largest safest string that can be stored in a quest.
 
+	const MAX_AMMO_IN_ONE_SLOT 1500
+	const MAX_SWIGS_IN_ONE_SLOT 20
+
 	setvard NPC_ECHO_ITEMS 1 //flags for c++ code??
 	setvard NPC_NO_REPORT_ITEMS 1
 
@@ -26,6 +29,8 @@
 }
 
 #include chests/bank1/filter
+#include chests/bank1/deposit
+#include chests/bank1/withdraw
 
 { game_spawn
 
@@ -134,99 +139,6 @@
 	menuitem.register
 }
 
-{ deposit_item //<owner> <item_id>
-	//Should re-check if the item can be accepted
-
-	local L_PLAYER PARAM1
-	local L_ITEM PARAM2
-
-	local L_ITEM $func(func_filter_items,L_PLAYER,L_ITEM) //Check if item is rejected
-
-	if ( L_ITEM isnot '0' )
-	{
-		local L_FREE_BANK $func(func_get_free_bank,L_PLAYER,L_ITEM) //Check for next free space in the bank
-		if ( L_FREE_BANK isnot '0' )
-		{
-			callexternal L_ITEM item_banked //tell item we've been banked
-
-			local L_BANK_CONTENTS $get_quest_data(L_PLAYER,L_FREE_BANK)
-			
-			if ( L_BANK_CONTENTS equals '0' ) local L_BANK_CONTENTS $get(L_ITEM,itemname) //If the quest var is uninitialized
-			else token.add L_BANK_CONTENTS $get(L_ITEM,itemname)
-
-			local L_MSG "Your " $get(L_ITEM,name) " has been added to the Galat Chest."
-			infomsg L_PLAYER $get(ent_me,name) L_MSG
-
-			callevent 0.1 open_chest
-			callevent 0.45 close_chest
-
-			quest set L_PLAYER L_FREE_BANK L_BANK_CONTENTS
-			deleteent L_ITEM
-		}
-	}
-}
-
-{ withdraw_items //<playerID> -Generates the galat storemenu and offers it to the player
-
-	if ( !PLAYER_WITHDRAWING )
-	{
-		setvard PLAYER_WITHDRAWING PARAM1
-
-		setvard STORENAME "galat_" BANK_PREFIX "_" $get(PARAM1,steamid)
-		createstore STORENAME
-
-		calleventloop BANK_MAX build_stores $get(PARAM1,id)
-		offerstore STORENAME $get(PARAM1,id) inv trade
-	}
-	else
-	{
-		local L_MSG $get(ent_me,name) ": Cannot withdraw while the chest is in use."
-		dplayermessage $get(PARAM1,id) L_MSG
-	}
-}
-
-{ build_stores //<playerId>
-
-	local L_BANK $get_token(BANK_STRINGS,game.script.iteration)
-
-	local L_BANK_STR $get_quest_data(PARAM1,L_BANK)
-	if ( $len(L_BANK_STR) > 1 )
-	{
-		calleventloop $get_token_amt(L_BANK_STR) add_to_chest L_BANK_STR
-	}
-}
-
-{ add_to_chest //<bankStr>
-
-	local L_ITEM $get_token(PARAM1,game.script.iteration)
-	addstoreitem STORENAME L_ITEM 1 0
-}
-
-{ ext_player_got_item //<item_id> <owner> -called when player clicks an item in their bank menu
-
-	local L_ITEM PARAM1
-	local L_ITEM_SCRIPTNAME $get(L_ITEM,itemname)
-	local L_PLAYER PARAM2
-
-	local L_ITEM_FOUND $func(func_check_bank_has,L_PLAYER,L_ITEM_SCRIPTNAME)
-
-	if ( L_ITEM_FOUND isnot '0' )
-	{
-		local L_BANK $get_token(L_ITEM_FOUND,0)
-		local L_BANK_STR $get_quest_data(L_PLAYER,L_BANK)
-		local L_ITEM_IDX $get_token(L_ITEM_FOUND,1)
-
-		token.del L_BANK_STR L_ITEM_IDX
-		quest set L_PLAYER L_BANK L_BANK_STR
-	}
-	else
-	{
-		dbg "Couldn't find item!"
-		callexternal L_ITEM item_banked //tell item we've been removed
-		deleteent L_ITEM
-	}
-}
-
 { trade_success
 	callevent open_chest
 }
@@ -311,7 +223,7 @@
 	local L_PLAYER PARAM1
 	local L_ITEM PARAM2
 	
-	local L_ITEM_STRING $get(L_ITEM,itemname)
+	local L_ITEM_STRING $func(func_make_string,L_ITEM)
 	
 	calleventloop BANK_MAX free_bank_looper L_PLAYER L_ITEM_STRING
 	
