@@ -31,10 +31,34 @@
 { add_to_chest //<bankStr>
 
 	local L_BANK_CONTENTS PARAM1
-	local L_ITEM $get_token(L_BANK_CONTENTS,game.script.iteration)
 	
+	local L_ITEM_SCRIPTNAME $get_token(L_BANK_CONTENTS,game.script.iteration)
 	local L_QUANTITY $func(func_get_stored_quantity,L_BANK_CONTENTS,$pass(game.script.iteration))
-	addstoreitem STORENAME L_ITEM L_QUANTITY 0 0 L_QUANTITY
+	
+	if ( L_QUANTITY > 1 )
+	{
+		if ( $get_item_table(L_ITEM_SCRIPTNAME,is_projectile) ) local L_MAX_STACK MAX_IN_ONE_TRANSACTION
+		else local L_MAX_STACK $get_item_table(L_ITEM_SCRIPTNAME,quality)
+		
+		local L_STACKS $math(divide,L_QUANTITY,L_MAX_STACK)
+		if ( L_STACKS > $int(L_STACKS) ) //If There exists a non-full stack
+		{
+			mod L_QUANTITY L_MAX_STACK //Gets remainder
+			addstoreitem STORENAME L_ITEM_SCRIPTNAME L_QUANTITY 0 0 L_QUANTITY //Stack remainder in first.
+		}
+		
+		calleventloop $int(L_STACKS) add_stack_to_chest L_ITEM_SCRIPTNAME L_MAX_STACK
+		
+	}
+	else
+	{
+		addstoreitem STORENAME L_ITEM_SCRIPTNAME L_QUANTITY 0 0 L_QUANTITY
+	}
+}
+
+{ add_stack_to_chest //<scriptname> <quantity>
+
+	addstoreitem STORENAME PARAM1 PARAM2 0 0 PARAM2
 }
 
 { ext_player_got_item //<item_id> <owner> -called when player clicks an item in their bank menu
@@ -51,17 +75,35 @@
 		local L_BANK_STR $get_quest_data(L_PLAYER,L_BANK)
 		local L_ITEM_IDX $get_token(L_ITEM_FOUND,1)
 		
-		local L_QUANTITY $func(func_get_stored_quantity,L_BANK_STR,L_ITEM_IDX)
+		local L_QUANTITY_STORED $func(func_get_stored_quantity,L_BANK_STR,L_ITEM_IDX)
+		local L_QUANTITY_WITHDRAWING L_QUANTITY_STORED
 		
-		token.del L_BANK_STR L_ITEM_IDX
-		if ( L_QUANTITY > 1 )
+		if ( L_QUANTITY_STORED > 1 )
 		{
-			token.del L_BANK_STR L_ITEM_IDX //Items shifted down, so dont adjust the index
+			local L_MAX_TRANSACTION MAX_IN_ONE_TRANSACTION //Assume projectile storage, then check for potion storage.
+			if ( $get(L_ITEM,is_drinkable) ) local L_MAX_TRANSACTION $get(L_ITEM,quality) //Potion withdraw amt can only be as high as the max swig.
+			
+			if ( L_QUANTITY_WITHDRAWING > L_MAX_TRANSACTION ) local L_QUANTITY_WITHDRAWING L_MAX_TRANSACTION
+			
+			subtract L_QUANTITY_STORED L_QUANTITY_WITHDRAWING
+			
+			if ( L_QUANTITY_STORED > 1 ) token.set L_BANK_STR $math(add,L_ITEM_IDX,1) $int(L_QUANTITY_STORED) //Edit quantity stored
+			else if ( L_QUANTITY_STORED == 1 ) token.del L_BANK_STR $math(add,L_ITEM_IDX,1) //Delete quantity indicator
+			else
+			{
+				token.del L_BANK_STR L_ITEM_IDX
+				token.del L_BANK_STR L_ITEM_IDX
+			}
 		}
+		else token.del L_BANK_STR L_ITEM_IDX
 		
 		//Fixes withdrawing potions with 1 swig left giving max quantity.
-		if ( $get(L_ITEM,is_projectile) ) setquantity L_ITEM L_QUANTITY
-		else if ( $get(L_ITEM,is_drinkable) ) setquality L_ITEM L_QUANTITY
+		if ( $get(L_ITEM,is_projectile) ) setquantity L_ITEM L_QUANTITY_WITHDRAWING
+		else if ( $get(L_ITEM,is_drinkable) )
+		{
+			setquality L_ITEM L_QUANTITY_WITHDRAWING
+			setquantity L_ITEM 1 //Fixes item pickup constantly showing multiple potions in one stack.
+		}
 		
 		quest set L_PLAYER L_BANK L_BANK_STR
 	}

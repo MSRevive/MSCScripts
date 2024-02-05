@@ -19,6 +19,7 @@
 
 	const MAX_BANK_STRING 255 //255 is the largest safest string that can be stored in a quest.
 
+	const MAX_IN_ONE_TRANSACTION 100 //Max number of arrows allowed to store in one deposit transaction
 	const MAX_AMMO_IN_ONE_SLOT 1500
 	const MAX_SWIGS_IN_ONE_SLOT 20
 
@@ -70,8 +71,6 @@
 
 	local L_PLAYER PARAM1
 	
-	infomsg L_PLAYER "Galat's wondrous Chest of Storage" "Be sure to place any items you wish to store in your hands."
-
 //Depositing functions
 	//Get items in hand
 	local L_ITEMS $get(L_PLAYER,scriptvar,'PLR_LEFT_HAND') //Gets item id in hand
@@ -80,9 +79,10 @@
 	//Filter the items, returns only valid items. 
 	local L_ITEMS $func(func_filter_items,L_PLAYER,L_ITEMS) //<player> <item_id_in_token>
 	
-	
 	if ( L_ITEMS equals '0' ) 
 	{
+		infomsg L_PLAYER "Galat's wondrous Chest of Storage" "Be sure to place any items you wish to store in your hands."
+		
 		if ( NUM_REMOVED > 0 ) //using flag from { filter_by_space to determine if items were invalidated due to not enough bank space
 		{
 			local reg.mitem.title "Chest is Full"
@@ -132,6 +132,15 @@
 
 	local L_ITEM $get_token(PARAM1,game.script.iteration)
 	local L_ITEM_TITLE "Deposit " $get(L_ITEM,name)
+	
+	local L_SCRIPTNAME_STRING $func(func_make_string,L_ITEM)
+	local L_DEPOSIT_AMT $get_token(L_SCRIPTNAME_STRING,1)
+	if ( L_DEPOSIT_AMT > 0 )
+	{
+		stradd L_ITEM_TITLE " ("
+		stradd L_ITEM_TITLE L_DEPOSIT_AMT
+		stradd L_ITEM_TITLE ")"
+	}
 
 	local reg.mitem.title L_ITEM_TITLE
 	local reg.mitem.type callback
@@ -224,9 +233,7 @@
 	local L_PLAYER PARAM1
 	local L_ITEM PARAM2
 	
-	local L_ITEM_STRING $func(func_make_string,L_ITEM)
-	
-	calleventloop BANK_MAX free_bank_looper L_PLAYER L_ITEM_STRING
+	calleventloop BANK_MAX free_bank_looper L_PLAYER L_ITEM
 	
 	return **clear
 	return FREE_BANK
@@ -240,19 +247,32 @@
 	}
 	
 	local L_PLAYER PARAM1
-	local L_ITEM_STRING PARAM2
-	local L_ITEM_STRING_LEN $len(L_ITEM_STRING)
+	local L_ITEM PARAM2
+	
+	local L_ITEM_SCRIPTNAME $get(PARAM2,itemname)
+	local L_ITEM_STRING $func(func_make_string,L_ITEM)
 	
 	local L_BANK $get_token(BANK_STRINGS,game.script.iteration)
 	local L_BANK_CONTENTS $get_quest_data(L_PLAYER,L_BANK)
 	
-	local L_RESULT $math(add,$len(L_BANK_CONTENTS),L_ITEM_STRING_LEN)
-	add L_RESULT 1 //will automatically incur another char by adding it to a token (;)
-	
-	if ( L_RESULT <= MAX_BANK_STRING )
+	//See if item is a quantity that can stack in an existing slot
+	local L_NEW_BANK_CONTENTS $func(func_stack_quantity,L_BANK_CONTENTS,L_ITEM_STRING)
+	if ( L_NEW_BANK_CONTENTS isnot L_BANK_CONTENTS ) //If new bank contents change, then a stack was allowed.
 	{
 		setvard FREE_BANK L_BANK
 		breakloop
+	}
+	else
+	{
+		//Add
+		local L_RESULT $math(add,$len(L_BANK_CONTENTS),$len(L_ITEM_STRING))
+		add L_RESULT 1 //will automatically incur another char by adding it to a token (;)
+		
+		if ( L_RESULT <= MAX_BANK_STRING )
+		{
+			setvard FREE_BANK L_BANK
+			breakloop
+		}
 	}
 }
 
@@ -312,4 +332,112 @@
 		setvard BANK_HAS L_BANK_SLOT ";" L_IDX
 		breakloop
 	}
+}
+
+{ func_stack_quantity //<bankContents> <func_make_string> -Attempts to stack the made string in the bank 
+//contents string. Returns bank contents and sets a variable to flag the remainder
+
+	local L_BANK_CONTENTS PARAM1
+	local L_SCRIPTNAME_STRING PARAM2
+	
+	setvard STACK_REMAINDER $get_token(L_SCRIPTNAME_STRING,1)
+	if ( STACK_REMAINDER == 0 ) setvard STACK_REMAINDER 1
+	
+	local L_ITEM_SCRIPTNAME $get_token(L_SCRIPTNAME_STRING,0)
+	
+	local L_MAX_QUANTITY 1
+	if ( $get_item_table(L_ITEM_SCRIPTNAME,is_projectile) ) local L_MAX_QUANTITY MAX_AMMO_IN_ONE_SLOT
+	else if ( $get_item_table(L_ITEM_SCRIPTNAME,is_drinkable) ) local L_MAX_QUANTITY MAX_SWIGS_IN_ONE_SLOT
+	
+	if ( L_MAX_QUANTITY > 1 )
+	{
+		local L_EXISTING_IDX $get_find_token(L_BANK_CONTENTS,L_ITEM_SCRIPTNAME)
+		if ( L_EXISTING_IDX != -1 ) //If the item exists in this bank slot
+		{
+			local L_EXISTING_QUANTITY $func(func_get_stored_quantity,L_BANK_CONTENTS,L_EXISTING_IDX)
+			
+			if ( L_EXISTING_QUANTITY < L_MAX_QUANTITY )
+			{
+				//Flag inserting the quantity variable in the contents if necessary
+				local L_INSERT_QUANTITY 1
+				local L_EXISTING_SCRIPTNAME_STRING L_ITEM_SCRIPTNAME //Make the string so we can test its length later
+				if ( L_EXISTING_QUANTITY != 1 ) 
+				{
+					local L_INSERT_QUANTITY 0
+					token.add L_EXISTING_SCRIPTNAME_STRING $get_token(L_BANK_CONTENTS,$math(add,L_EXISTING_IDX,1))
+				}
+				
+				//Add up stacks and set remainder
+				add L_EXISTING_QUANTITY STACK_REMAINDER
+				local L_REMAINDER 0
+				if ( L_EXISTING_QUANTITY > L_MAX_QUANTITY )
+				{
+					local L_REMAINDER $math(subtract,L_EXISTING_QUANTITY,L_MAX_QUANTITY)
+					local L_EXISTING_QUANTITY L_MAX_QUANTITY
+				}
+				
+				//Build new string
+				local L_NEW_SCRIPTNAME_STRING L_ITEM_SCRIPTNAME ";" $int(L_EXISTING_QUANTITY)
+				//Test the fit
+				local L_BANK_CONTENTS_LEN $len(L_BANK_CONTENTS)
+				subtract L_BANK_CONTENTS_LEN $len(L_EXISTING_SCRIPTNAME_STRING)
+				add L_BANK_CONTENTS_LEN $len(L_NEW_SCRIPTNAME_STRING)
+				
+				//If bank string will be valid
+				if ( L_BANK_CONTENTS_LEN <= MAX_BANK_STRING )
+				{
+					//Set appropriate quantity inside of bank
+					if ( L_INSERT_QUANTITY ) token.set L_BANK_CONTENTS L_EXISTING_IDX L_NEW_SCRIPTNAME_STRING
+					else token.set L_BANK_CONTENTS $math(add,L_EXISTING_IDX,1) $int(L_EXISTING_QUANTITY)
+				
+					//Properly flag remainder
+					setvard STACK_REMAINDER L_REMAINDER
+				}
+			}
+		}
+	}
+
+	return **clear
+	return L_BANK_CONTENTS
+}
+
+{ func_make_string //<itemId> //Puts item in a paired token with its quantity, and returns the string.
+
+	local L_ITEM PARAM1
+	local L_ITEM_SCRIPTNAME $get(PARAM1,itemname)
+	
+	local L_QUANTITY 1
+	
+	if ( $get(L_ITEM,is_projectile) )
+	{
+		local L_QUANTITY $get(L_ITEM,quantity)
+		if ( L_QUANTITY > MAX_IN_ONE_TRANSACTION ) local L_QUANTITY MAX_IN_ONE_TRANSACTION
+	}
+	else if ( $get(L_ITEM,is_drinkable) ) //Item wont be both
+	{
+		local L_QUANTITY $get(L_ITEM,quality)
+	}
+	
+	if ( L_QUANTITY > 1 ) token.add L_ITEM_SCRIPTNAME L_QUANTITY
+	
+	return **clear
+	return L_ITEM_SCRIPTNAME
+}
+
+{ func_get_stored_quantity //<bankContents> <idx> //Returns the number of items in that slot, and the one after if the item holds a quantity
+
+	local L_BANK_CONTENTS PARAM1
+	
+	local L_QUANTITY $math(add,PARAM2,1)
+	local L_QUANTITY $get_token(L_BANK_CONTENTS,L_QUANTITY)
+	
+	//Algorithm to detect if the item in the bank has quantity
+	if ( L_QUANTITY equals $num(L_QUANTITY) )
+	{
+		if ( L_QUANTITY == 0 ) local L_QUANTITY 1
+	}
+	else local L_QUANTITY 1
+	
+	return **clear
+	return L_QUANTITY
 }
