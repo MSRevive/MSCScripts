@@ -1,15 +1,8 @@
 //This is a special chest that allows players to store inventory as quest data
 //(thus removing weight and hopefully reducing likelihood of overflow)
 
-//POSSIBLE EXPLOIT: Weapons with elemental resist will not remove their resistances from the player when put in the chest
-//- going to have to work out an external call to fix this, and maybe delay delete a split second
-//- attempted (test)
-
 //Remade by greatguys1
-//Fixes exploits, makes it easier to use, increases size
-//Lets people independently withdraw and deposit
-//Withdrawing is still limited to one at a time, due to the amount of lag in can cause
-//TODO: Add ability to store quantity & quality items
+//Stores ammo and potions.
 
 #scope server
 
@@ -18,24 +11,27 @@
 	const ANIM_CLOSE "close"
 	const ANIM_OPEN "open"
 
-	//can't take expendables, decayables, or stacked items, as would reset quality
-	const REJECT_ITEMS "mana_bravery;fist_bare;mana_mpotion;health_apple;health_mpotion;health_lpotion;health_spotion;proj_;pack_;sheath_;magic_hand_;item_tk_"
-
 	//Takes a prefix and max amt, then generates that many quest slots to store items in, starting at 0.
 	const BANK_PREFIX "b"
 	const BANK_MAX 10
 	//This would produce "b0;b1;b2;b3;b4;b5;b6;b7;b8;b9" in BANK_STRINGS
 	//It is generated so other galat bank chests can be made simply by changing the bank_prefix const
 
-	const MAX_BANK_STRING_SIZE 255 //255 should be the safest length this can be.
+	const MAX_BANK_STRING 255 //255 is the largest safest string that can be stored in a quest.
 
-	setvard GALAT_CHEST 1
+	const MAX_IN_ONE_TRANSACTION 100 //Max number of arrows allowed to store in one deposit transaction
+	const MAX_AMMO_IN_ONE_SLOT 1500
+	const MAX_SWIGS_IN_ONE_SLOT 20
 
-	setvard NPC_ECHO_ITEMS 1
+	setvard NPC_ECHO_ITEMS 1 //flags for c++ code??
 	setvard NPC_NO_REPORT_ITEMS 1
 
-	setvard PLAYER_WITHDRAWING 0 //Switches to either a player id or 0 dependin on whether a player is withdrawing. 2 players cannot withdraw at the same time
+	setvard PLAYER_WITHDRAWING 0 //Switches to either a player id or 0 depending on whether a player is withdrawing. 2 players cannot withdraw at the same time
 }
+
+#include chests/bank1/filter
+#include chests/bank1/deposit
+#include chests/bank1/withdraw
 
 { game_spawn
 
@@ -73,48 +69,39 @@
 
 { game_menu_getoptions //PARAM1=player activating menu
 
-	setvard CUR_USER PARAM1
-	setvard CHEST_USER PARAM1
-
-	setvard N_REJECTED_ITEMS 0
-	setvard N_NO_SPACE_ITEMS 0
+	local L_PLAYER PARAM1
 	
-	//We must get the scriptnames of the items in the players hands, check if they are allowed to be stored, and see if either of them will fit.
-
-	//---Left hand checks
-	local L_CUR_ITEM_ID $get(PARAM1,scriptvar,'PLR_LEFT_HAND') //Gets item id in hand
-	callevent check_item $get(PARAM1,id) L_CUR_ITEM_ID //Changes a var to see if the item is allowed to be deposited
-	if ( ITEM_OK ) //REJECTED_ITEM will be 1 if this item is rejected
+//Depositing functions
+	//Get items in hand
+	local L_ITEMS $get(L_PLAYER,scriptvar,'PLR_LEFT_HAND') //Gets item id in hand
+	token.add L_ITEMS $get(L_PLAYER,scriptvar,'PLR_RIGHT_HAND')
+	
+	//Filter the items, returns only valid items. 
+	local L_ITEMS $func(func_filter_items,L_PLAYER,L_ITEMS) //<player> <item_id_in_token>
+	
+	if ( L_ITEMS equals '0' ) 
 	{
-		callevent add_deposit_option L_CUR_ITEM_ID //Item in hand can be stored, so add it to the menu list
-	}
-
-	//---Right Hand checks
-	local L_CUR_ITEM_ID $get(PARAM1,scriptvar,'PLR_RIGHT_HAND') //Gets item id in hand
-	callevent check_item $get(PARAM1,id) L_CUR_ITEM_ID //Changes a var to see if the item is allowed to be deposited
-	if ( ITEM_OK ) //REJECTED_ITEM will be 1 if this item is rejected
-	{
-		callevent add_deposit_option L_CUR_ITEM_ID //Item in hand can be stored, so add it to the menu list
-	}
-
-	if ( N_REJECTED_ITEMS == 2 )
-	{
-		infomsg PARAM1 "Galat's wondrous Chest of Storage" "Be sure to place any items you wish to store in your hands."
-	}
-	else if ( N_NO_SPACE_ITEMS == 2 ) 
-	{
-		local reg.mitem.title "Chest is Full"
-		local reg.mitem.type disabled
-		menuitem.register
-	}
-
-	//Check if there's anything in the bank at all
-	calleventloop $get_token_amt(BANK_STRINGS) check_bank_has_item PARAM1
-	if ( HAS_ITEM )
-	{
-		if ( $get(PARAM1,numitems) >= G_MAX_ITEMS )
+		infomsg L_PLAYER "Galat's wondrous Chest of Storage" "Be sure to place any items you wish to store in your hands."
+		
+		if ( NUM_REMOVED > 0 ) //using flag from { filter_by_space to determine if items were invalidated due to not enough bank space
 		{
-			infomsg PARAM1 "Can't Withdaw Items" "Your inventory is full."
+			local reg.mitem.title "Chest is Full"
+			local reg.mitem.type disabled
+			menuitem.register
+		}
+	}
+	else
+	{
+		calleventloop $get_token_amt(L_ITEMS) add_deposit_options L_ITEMS
+	}
+
+//Withdrawing functions
+	//Check if there's anything in the bank at all
+	if ( $func(func_check_bank_has,L_PLAYER) )
+	{
+		if ( $get(L_PLAYER,numitems) >= G_MAX_ITEMS )
+		{
+			infomsg L_PLAYER "Can't Withdaw Items" "Your inventory is full."
 			local reg.mitem.title "(Inventory Full)"
 			local reg.mitem.type disabled
 			menuitem.register
@@ -130,9 +117,8 @@
 			}
 			else
 			{
-				local L_MSG $get(ent_me,name)
-				stradd L_MSG ": Cannot withdraw while the chest is in use."
-				dplayermessage $get(PARAM1,id) L_MSG
+				local L_MSG $get(ent_me,name) ": Cannot withdraw while the chest is in use."
+				dplayermessage $get(L_PLAYER,id) L_MSG
 
 				local reg.mitem.title "Withdraw Items"
 				local reg.mitem.type disabled
@@ -142,290 +128,25 @@
 	}
 }
 
-{ check_item //<playerId> <itemId>
+{ add_deposit_options //<token_of_item_ids>
 
-	setvard ITEM_OK 0
-
-	local L_PLAYER PARAM1
-	local L_ITEM PARAM2
-
-	//Check item reject
-	calleventloop $get_token_amt(REJECT_ITEMS) check_reject_item L_ITEM
-	if ( REJECT_ITEM )
+	local L_ITEM $get_token(PARAM1,game.script.iteration)
+	local L_ITEM_TITLE "Deposit " $get(L_ITEM,name)
+	
+	local L_SCRIPTNAME_STRING $func(func_make_string,L_ITEM)
+	local L_DEPOSIT_AMT $get_token(L_SCRIPTNAME_STRING,1)
+	if ( L_DEPOSIT_AMT > 0 )
 	{
-		local L_ITEMNAME $get(L_ITEM,itemname)
-		if ( L_ITEMNAME isnot 'fist_bare' )
-		{
-			local L_RETURN_STR "Galat Chest: Cannot deposit expendable, perishable, ammunition, ticket, or container item: ("
-			stradd L_RETURN_STR $get(L_ITEM,name)
-			stradd L_RETURN_STR ")"
-			//No other string concatenation is reliable...
-
-			dplayermessage L_PLAYER L_RETURN_STR
-		}
-
-		add N_REJECTED_ITEMS 1 //These are tracked so info can be reported back to the player about their item
-		add N_NO_SPACE_ITEMS 1
+		stradd L_ITEM_TITLE " ("
+		stradd L_ITEM_TITLE L_DEPOSIT_AMT
+		stradd L_ITEM_TITLE ")"
 	}
-	else //If item was rejected, no need to check space.
-	{
-		//Check free space
-		calleventloop BANK_MAX find_free_bank L_PLAYER L_ITEM
-		if ( FREE_BANK equals '0' )
-		{
-			add N_NO_SPACE_ITEMS 1
-		}
-		else
-		{
-			setvard ITEM_OK 1
-		}
-	}
-}
-
-{ check_reject_item //<itemId> - Checks the reject string to see if the item is allowed to be banked. Also checks NO_BANK scriptvar.
-
-	//Reset var if this is the first check
-	if ( game.script.iteration == 0 )
-	{
-		setvard REJECT_ITEM 0
-	}
-
-	//If item reject hasn't been found already
-	if ( !REJECT_ITEM )
-	{
-		if ( !$get(PARAM1,exists) ) //If item doesn't exist
-		{
-			setvard REJECT_ITEM 1
-			exitevent
-		}
-
-		local L_ITEMNAME $get(PARAM1,itemname)
-		local L_REJECT $get_token(REJECT_ITEMS,game.script.iteration)
-
-		if ( $get(PARAM1,scriptvar,'NO_BANK') ) //If script specifically specifies no banking
-		{
-			setvard REJECT_ITEM 1
-			exitevent
-		}
-		if ( L_ITEMNAME contains L_REJECT )
-		{
-			setvard REJECT_ITEM 1
-		}
-	}
-}
-
-{ find_free_bank //<playerId> <itemId> - Attempts to find the next free space for the given item
-
-	//infomsg all $get(PARAM1,name) $get(PARAM2,itemname)
-
-	if ( game.script.iteration == 0 )
-	{
-		setvard FREE_BANK 0 //This var will be set to 'b0' 'b1' or something else (depending on the prefix and which slot has enough space, if any). Stays 0 if no space.
-	}
-
-	if ( FREE_BANK equals '0' )
-	{
-		local L_PLAYER PARAM1
-		local L_ITEMNAME $get(PARAM2,itemname)
-
-		local L_BANK $get_token(BANK_STRINGS,game.script.iteration)
-		local L_BANK_STR $get_quest_data(L_PLAYER,L_BANK)
-
-		if ( L_BANK_STR equals '0' ) //If this equals 0, then this quest has never been used, so it is all free.
-		{
-			setvard FREE_BANK L_BANK
-			exitevent
-		}
-
-		local L_TOTAL_LEN $len(L_BANK_STR) //Take length of this quest
-
-		if ( L_TOTAL_LEN > 0 )
-		{
-			add L_TOTAL_LEN 1 //Add 1 to account for token separator, if there is currently and other data there. No token separator is added if there is only one item in this bank.
-		}
-
-		add L_TOTAL_LEN $len(L_ITEMNAME) //Add the item name length
-		
-		if ( L_TOTAL_LEN <= MAX_BANK_STRING_SIZE ) //If the resulting string size would be small enough to be stored, then this bank compartment has enough space.
-		{
-			setvard FREE_BANK L_BANK
-			exitevent
-		}
-	}
-}
-
-{ add_deposit_option //<itemid>
-
-	local L_ITEM_TITLE "Deposit "
-	stradd L_ITEM_TITLE $get(PARAM1,name)
 
 	local reg.mitem.title L_ITEM_TITLE
 	local reg.mitem.type callback
-	local reg.mitem.data $get(PARAM1,id)
+	local reg.mitem.data L_ITEM
 	local reg.mitem.callback deposit_item
 	menuitem.register
-}
-
-{ check_bank_has_item //<playerId> -Checks if the player has any items in their bank
-
-	if ( game.script.iteration == 0 )
-	{
-		setvard HAS_ITEM 0
-	}
-
-	if ( !HAS_ITEM )
-	{
-		local L_BANK $get_token(BANK_STRINGS,game.script.iteration)
-		local L_BANK_STR $get_quest_data(PARAM1,L_BANK)
-
-		if ( $len(L_BANK_STR) ) //If it's not empty
-		{
-			if ( L_BANK_STR isnot '0' ) //Is not uninitialized
-			{
-				setvard HAS_ITEM 1
-			}
-		}
-	}
-}
-
-{ deposit_item //<owner> <item_id>
-	//Should re-check if the item can be accepted
-	//If it can, then deposit it
-
-	local L_PLAYER PARAM1
-	local L_ITEM PARAM2
-
-	calleventloop $get_token_amt(REJECT_ITEMS) check_reject_item $get(L_ITEM,id) //Check if item is rejected
-	if ( !REJECT_ITEM )
-	{
-		calleventloop $get_token_amt(BANK_STRINGS) find_free_bank L_PLAYER L_ITEM //Check for next free space in the bank
-		if ( FREE_BANK isnot '0' )
-		{
-			callexternal L_ITEM item_banked //tell item we've been banked
-
-			local L_BANK_STR $get_quest_data(L_PLAYER,FREE_BANK)
-			if ( L_BANK_STR equals '0' ) //If the quest var is uninitialized
-			{
-				local L_BANK_STR $get(L_ITEM,itemname)
-			}
-			else
-			{
-				token.add L_BANK_STR $get(L_ITEM,itemname)
-			}
-
-			local L_MSG "Your "
-			stradd L_MSG $get(L_ITEM,name)
-			stradd L_MSG " has been added to the Galat Chest."
-			infomsg L_PLAYER $get(ent_me,name) L_MSG
-
-			callevent open_chest
-			callevent 0.3 close_chest
-
-			quest set L_PLAYER FREE_BANK L_BANK_STR
-			deleteent L_ITEM
-		}
-	}
-}
-
-{ open_chest
-
-	playsound 2 10 Items/creak.wav
-	playanim hold ANIM_OPEN
-}
-
-{ close_chest
-
-	playanim once ANIM_CLOSE
-}
-
-{ withdraw_items //<playerID> -Generates the galat storemenu and offers it to the player
-
-	if ( !PLAYER_WITHDRAWING )
-	{
-		setvard PLAYER_WITHDRAWING PARAM1
-
-		setvard STORENAME "galat_"
-		stradd STORENAME BANK_PREFIX
-		stradd STORENAME "_"
-		stradd STORENAME $get(PARAM1,steamid)
-		createstore STORENAME
-
-		calleventloop $get_token_amt(BANK_STRINGS) build_stores $get(PARAM1,id)
-		offerstore STORENAME $get(PARAM1,id) inv trade
-	}
-	else
-	{
-		local L_MSG $get(ent_me,name)
-		stradd L_MSG ": Cannot withdraw while the chest is in use."
-		dplayermessage $get(PARAM1,id) L_MSG
-	}
-}
-
-{ build_stores //<playerId>
-
-	local L_BANK $get_token(BANK_STRINGS,game.script.iteration)
-
-	local L_BANK_STR $get_quest_data(PARAM1,L_BANK)
-	if ( $len(L_BANK_STR) > 0 )
-	{
-		if ( L_BANK_STR isnot '0' )
-		{
-			calleventloop $get_token_amt(L_BANK_STR) add_to_chest L_BANK_STR
-		}
-	}
-}
-
-{ add_to_chest //<bankStr>
-
-	local L_ITEM $get_token(PARAM1,game.script.iteration)
-	addstoreitem STORENAME L_ITEM 1 0
-}
-
-{ ext_player_got_item //<item_id> <owner> -called when player clicks an item in their bank menu
-
-	local L_ITEM PARAM1
-	local L_ITEM_SCRIPTNAME $get(L_ITEM,itemname)
-	local L_PLAYER PARAM2
-
-	calleventloop $get_token_amt(BANK_STRINGS) locate_bank_item L_PLAYER L_ITEM_SCRIPTNAME
-
-	if ( ITEM_FOUND isnot '0' )
-	{
-		local L_BANK $get_token(ITEM_FOUND,0)
-		local L_BANK_STR $get_quest_data(L_PLAYER,L_BANK)
-		local L_ITEM_IDX $get_token(ITEM_FOUND,1)
-
-		token.del L_BANK_STR L_ITEM_IDX
-		quest set L_PLAYER L_BANK L_BANK_STR
-	}
-	else
-	{
-		dbg "Couldn't find item!"
-		callexternal L_ITEM game_putinpack //tell item we've been removed
-		callclitemevent L_ITEM game_putinpack //client side as well
-		deleteent L_ITEM
-	}
-}
-
-{ locate_bank_item //<playerid> <itemScriptname> -Sets ITEM_FOUND to a token, <questName>;<index> for the item scriptname location
-
-	if ( game.script.iteration == 0 )
-	{
-		setvard ITEM_FOUND 0
-	}
-
-	if ( !ITEM_FOUND )
-	{
-		local L_BANK $get_token(BANK_STRINGS,game.script.iteration)
-		local L_BANK_STR $get_quest_data(PARAM1,L_BANK)
-		local L_ITEM_IDX $get_find_token(L_BANK_STR,PARAM2) //Returns the index of a found string in a token
-
-		if ( L_ITEM_IDX > -1 ) //Index of greater than -1 means that one was found
-		{
-			setvard ITEM_FOUND L_BANK
-			token.add ITEM_FOUND L_ITEM_IDX
-		}
-	}
 }
 
 { trade_success
@@ -445,35 +166,41 @@
 
 { game_dynamically_created //<summoner>
 
-	local SUMMONER_YAW $get(PARAM1,angles.yaw)
+	local L_YAW $get(PARAM1,angles.yaw)
+	setsolid none //don't let players use their scrolls to stick monsters
 
-	if ( !$get(PARAM1,isplayer) ) setangle face $vec(0,SUMMONER_YAW,0)
-
-	if ( $get(PARAM1,isplayer) )
+	if ( !$get(PARAM1,isplayer) )
 	{
-		playsound 0 10 magic/spawn.wav
-
-		setangle face $vec(0,$neg(SUMMONER_YAW),0)
-
-		callexternal GAME_MASTER gm_fade_in $get(ent_me,id) 5
-
-		//don't let players use their scrolls to stick monsters
-
+		callevent spawn_in L_YAW
+	}
+	else
+	{
 		local OTHER_CHEST $get_by_name(galat_bank1)
 		if ( $get(OTHER_CHEST,exists) )
 		{
 			setorigin OTHER_CHEST $get(ent_me,origin)
+			callexternal OTHER_CHEST spawn_in $neg(L_YAW)
 			deleteent ent_me
 		}
 		else
 		{
 			name_unique galat_bank1
-			setsolid none
-			setvard SCAN_AREA $get_tsphere(any,64)
-			if SCAN_AREA isnot none
-			calleventloop $get_token_amt(SCAN_AREA) move_monsters 
+			callevent spawn_in $neg(L_YAW)
 		}
 	}
+}
+
+{ spawn_in
+
+	local L_YAW PARAM1
+
+	playsound 0 7 magic/spawn.wav
+	setangle face $vec(0,L_YAW,0)
+	callexternal GAME_MASTER gm_fade_in $get(ent_me,id) 5
+	
+	setvard SCAN_AREA $get_tsphere(any,64)
+	if SCAN_AREA isnot none
+	calleventloop $get_token_amt(SCAN_AREA) move_monsters 
 }
 
 { move_monsters
@@ -488,4 +215,229 @@
 { fade_in_done //from gm
 	setprop ent_me rendermode 0
 	setprop ent_me renderamt 255
+}
+
+{ open_chest
+
+	playsound 2 10 Items/creak.wav
+	playanim hold ANIM_OPEN
+}
+
+{ close_chest
+
+	playanim once ANIM_CLOSE
+}
+
+{ func_get_free_bank //<playerId> <itemId> - Returns a quest that has enough space to store the item, or 0 if there is no space.
+
+	local L_PLAYER PARAM1
+	local L_ITEM PARAM2
+	
+	calleventloop BANK_MAX free_bank_looper L_PLAYER L_ITEM
+	
+	return **clear
+	return FREE_BANK
+}
+
+{ free_bank_looper
+
+	if ( game.script.iteration == 0 )
+	{
+		setvard FREE_BANK 0
+	}
+	
+	local L_PLAYER PARAM1
+	local L_ITEM PARAM2
+	
+	local L_ITEM_SCRIPTNAME $get(PARAM2,itemname)
+	local L_ITEM_STRING $func(func_make_string,L_ITEM)
+	
+	local L_BANK $get_token(BANK_STRINGS,game.script.iteration)
+	local L_BANK_CONTENTS $get_quest_data(L_PLAYER,L_BANK)
+	
+	//See if item is a quantity that can stack in an existing slot
+	local L_NEW_BANK_CONTENTS $func(func_stack_quantity,L_BANK_CONTENTS,L_ITEM_STRING)
+	if ( L_NEW_BANK_CONTENTS isnot L_BANK_CONTENTS ) //If new bank contents change, then a stack was allowed.
+	{
+		setvard FREE_BANK L_BANK
+		breakloop
+	}
+	else
+	{
+		//Add
+		local L_RESULT $math(add,$len(L_BANK_CONTENTS),$len(L_ITEM_STRING))
+		add L_RESULT 1 //will automatically incur another char by adding it to a token (;)
+		
+		if ( L_RESULT <= MAX_BANK_STRING )
+		{
+			setvard FREE_BANK L_BANK
+			breakloop
+		}
+	}
+}
+
+{ func_check_bank_has //<playerId> [itemScriptname]
+//Returns 1 if there is anything deposited in the players bank at all.
+//Returns 0 if there is nothing.
+//Returns a bank slot and index in a token if a scriptname is provided, and that item is found.
+//Returns 0 if a scriptname is provided and that item is not found in the players bank.
+
+	local L_PLAYER PARAM1
+	local L_ITEM_SCRIPTNAME PARAM2
+	
+	if ( L_ITEM_SCRIPTNAME equals 'PARAM2' )
+	{
+		calleventloop BANK_MAX bank_has_anything_loop L_PLAYER
+	}
+	else
+	{
+		calleventloop BANK_MAX bank_has_item_loop L_PLAYER L_ITEM_SCRIPTNAME
+	}
+	
+	return **clear
+	return BANK_HAS
+}
+
+{ bank_has_anything_loop //<playerId>
+
+	if ( game.script.iteration == 0 )
+	{
+		setvard BANK_HAS 0
+	}
+	
+	local L_BANK_SLOT $get_token(BANK_STRINGS,game.script.iteration)
+	local L_BANK_CONTENTS $get_quest_data(PARAM1,L_BANK_SLOT)
+	
+	if ( $len(L_BANK_CONTENTS) > 1 )
+	{
+		setvard BANK_HAS 1
+		breakloop
+	}
+}
+
+{ bank_has_item_loop //<playerId> <itemScriptName>
+
+	if ( game.script.iteration == 0 )
+	{
+		setvard BANK_HAS 0
+	}
+	
+	local L_BANK_SLOT $get_token(BANK_STRINGS,game.script.iteration)
+	local L_BANK_CONTENTS $get_quest_data(PARAM1,L_BANK_SLOT)
+	
+	local L_IDX $get_find_token(L_BANK_CONTENTS,PARAM2)
+	
+	if ( L_IDX != -1 )
+	{
+		setvard BANK_HAS L_BANK_SLOT ";" L_IDX
+		breakloop
+	}
+}
+
+{ func_stack_quantity //<bankContents> <func_make_string> -Attempts to stack the made string in the bank 
+//contents string. Returns bank contents and sets a variable to flag the remainder
+
+	local L_BANK_CONTENTS PARAM1
+	local L_SCRIPTNAME_STRING PARAM2
+	
+	setvard STACK_REMAINDER $get_token(L_SCRIPTNAME_STRING,1)
+	if ( STACK_REMAINDER == 0 ) setvard STACK_REMAINDER 1
+	
+	local L_ITEM_SCRIPTNAME $get_token(L_SCRIPTNAME_STRING,0)
+	
+	local L_MAX_QUANTITY 1
+	if ( $get_item_table(L_ITEM_SCRIPTNAME,is_projectile) ) local L_MAX_QUANTITY MAX_AMMO_IN_ONE_SLOT
+	else if ( $get_item_table(L_ITEM_SCRIPTNAME,is_drinkable) ) local L_MAX_QUANTITY MAX_SWIGS_IN_ONE_SLOT
+	
+	if ( L_MAX_QUANTITY > 1 )
+	{
+		local L_EXISTING_IDX $get_find_token(L_BANK_CONTENTS,L_ITEM_SCRIPTNAME)
+		if ( L_EXISTING_IDX != -1 ) //If the item exists in this bank slot
+		{
+			local L_EXISTING_QUANTITY $func(func_get_stored_quantity,L_BANK_CONTENTS,L_EXISTING_IDX)
+			
+			if ( L_EXISTING_QUANTITY < L_MAX_QUANTITY )
+			{
+				//Flag inserting the quantity variable in the contents if necessary
+				local L_INSERT_QUANTITY 1
+				local L_EXISTING_SCRIPTNAME_STRING L_ITEM_SCRIPTNAME //Make the string so we can test its length later
+				if ( L_EXISTING_QUANTITY != 1 ) 
+				{
+					local L_INSERT_QUANTITY 0
+					token.add L_EXISTING_SCRIPTNAME_STRING $get_token(L_BANK_CONTENTS,$math(add,L_EXISTING_IDX,1))
+				}
+				
+				//Add up stacks and set remainder
+				add L_EXISTING_QUANTITY STACK_REMAINDER
+				local L_REMAINDER 0
+				if ( L_EXISTING_QUANTITY > L_MAX_QUANTITY )
+				{
+					local L_REMAINDER $math(subtract,L_EXISTING_QUANTITY,L_MAX_QUANTITY)
+					local L_EXISTING_QUANTITY L_MAX_QUANTITY
+				}
+				
+				//Build new string
+				local L_NEW_SCRIPTNAME_STRING L_ITEM_SCRIPTNAME ";" $int(L_EXISTING_QUANTITY)
+				//Test the fit
+				local L_BANK_CONTENTS_LEN $len(L_BANK_CONTENTS)
+				subtract L_BANK_CONTENTS_LEN $len(L_EXISTING_SCRIPTNAME_STRING)
+				add L_BANK_CONTENTS_LEN $len(L_NEW_SCRIPTNAME_STRING)
+				
+				//If bank string will be valid
+				if ( L_BANK_CONTENTS_LEN <= MAX_BANK_STRING )
+				{
+					//Set appropriate quantity inside of bank
+					if ( L_INSERT_QUANTITY ) token.set L_BANK_CONTENTS L_EXISTING_IDX L_NEW_SCRIPTNAME_STRING
+					else token.set L_BANK_CONTENTS $math(add,L_EXISTING_IDX,1) $int(L_EXISTING_QUANTITY)
+				
+					//Properly flag remainder
+					setvard STACK_REMAINDER L_REMAINDER
+				}
+			}
+		}
+	}
+
+	return **clear
+	return L_BANK_CONTENTS
+}
+
+{ func_make_string //<itemId> //Puts item in a paired token with its quantity, and returns the string.
+
+	local L_ITEM PARAM1
+	local L_ITEM_SCRIPTNAME $get(PARAM1,itemname)
+	
+	local L_QUANTITY 1
+	
+	if ( $get(L_ITEM,is_projectile) )
+	{
+		local L_QUANTITY $get(L_ITEM,quantity)
+		if ( L_QUANTITY > MAX_IN_ONE_TRANSACTION ) local L_QUANTITY MAX_IN_ONE_TRANSACTION
+	}
+	else if ( $get(L_ITEM,is_drinkable) ) //Item wont be both
+	{
+		local L_QUANTITY $get(L_ITEM,quality)
+	}
+	
+	if ( L_QUANTITY > 1 ) token.add L_ITEM_SCRIPTNAME L_QUANTITY
+	
+	return **clear
+	return L_ITEM_SCRIPTNAME
+}
+
+{ func_get_stored_quantity //<bankContents> <idx> //Returns the number of items in that slot, and the one after if the item holds a quantity
+
+	local L_BANK_CONTENTS PARAM1
+	
+	local L_QUANTITY $math(add,PARAM2,1)
+	local L_QUANTITY $get_token(L_BANK_CONTENTS,L_QUANTITY)
+	
+	//Algorithm to detect if the item in the bank has quantity
+	if ( L_QUANTITY equals $num(L_QUANTITY) )
+	{
+		if ( L_QUANTITY == 0 ) local L_QUANTITY 1
+	}
+	else local L_QUANTITY 1
+	
+	return **clear
+	return L_QUANTITY
 }

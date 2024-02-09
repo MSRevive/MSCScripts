@@ -1,0 +1,96 @@
+{
+	//No default items, no packs, no tickets.
+	const FILTER_REJECTS "fist_bare;pack_;sheath_;magic_hand_;item_tk_"
+}
+
+{ func_filter_items //<playerId> <itemIds_in_token>
+
+	local L_PLAYER PARAM1
+	local L_ITEMS PARAM2
+
+	//Check item reject
+	calleventloop $get_token_amt(L_ITEMS) filter_by_reject L_ITEMS //No need to pass verbose or player since its only checking hard-stop no storage items
+	local L_ITEMS FILTER_RESULT
+	setvard NUM_REMOVED 0 //Reset flag
+	
+	if ( !$len(L_ITEMS) ) //If an item was removed from the filter
+	{
+		dplayermessage L_PLAYER "Galat's Storage cannot deposit tickets or containers."
+	}
+	
+	//Check free bank space
+	calleventloop $get_token_amt(L_ITEMS) filter_by_space L_PLAYER L_ITEMS
+	local L_ITEMS FILTER_RESULT
+		
+	return **clear
+	return L_ITEMS
+}
+
+{ filter_by_reject
+
+	local L_ITEM_IDX game.script.iteration
+
+	if ( L_ITEM_IDX == 0 )
+	{
+		setvard FILTER_RESULT PARAM1
+		setvard NUM_REMOVED 0
+	}
+	
+	calleventloop $get_token_amt(FILTER_REJECTS) reject_looper L_ITEM_IDX //will use FILTER_RESULT
+}
+
+{ reject_looper //<item_idx_from_FILTER_RESULT> Run by filter_by_reject
+
+	local L_REMOVE 0
+
+	local L_IDX PARAM1
+	subtract L_IDX NUM_REMOVED
+	
+	local L_ITEM_SCRIPTNAME $get_token(FILTER_RESULT,L_IDX)
+	
+	//Hard checks to see if item properties make it invalid
+	if ( !$get(L_ITEM_SCRIPTNAME,exists) ) local L_REMOVE 1
+	if ( $get(L_ITEM_SCRIPTNAME,scriptvar,'NO_BANK') ) local L_REMOVE 1
+	
+	local L_ITEM_SCRIPTNAME $get(L_ITEM_SCRIPTNAME,itemname)
+	
+	local L_FILTER $get_token(FILTER_REJECTS,game.script.iteration)
+	
+	if ( L_ITEM_SCRIPTNAME contains L_FILTER ) local L_REMOVE 1
+	
+	if ( L_REMOVE )
+	{
+		token.del FILTER_RESULT L_IDX
+		add NUM_REMOVED 1
+		breakloop
+	}
+}
+
+{ filter_by_space
+
+	local L_ITEM_IDX game.script.iteration
+
+	if ( L_ITEM_IDX == 0 )
+	{
+		setvard FILTER_RESULT PARAM2
+		setvard NUM_REMOVED 0
+	}
+	
+	subtract L_ITEM_IDX NUM_REMOVED
+
+	local L_REMOVE 0
+	
+	local L_PLAYER PARAM1
+	local L_ITEM $get_token(FILTER_RESULT,L_ITEM_IDX)
+	
+	local L_BANK $func(func_get_free_bank,L_PLAYER,L_ITEM)
+	
+	if ( L_BANK equals '0' )
+	{
+		local L_STR "Your bank is too full to fit " $get(L_ITEM,name) "."
+		dplayermessage L_PLAYER L_STR
+		
+		token.del FILTER_RESULT L_ITEM_IDX
+		add NUM_REMOVED 1
+	}
+}
