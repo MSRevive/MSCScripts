@@ -87,7 +87,7 @@
 	callevent chat_add_text player_has_ring "The magics have long since dissipated as the focusing lenses have gone missing, alongside its base structure."
 	callevent chat_add_text player_has_ring "Perhaps you may find them and restore the [ring] to its former glory?" CHAT_DELAY none !do_flicker
 	callevent chat_add_text player_has_ring "I fear Venevus has removed the focusing lenses and its original base, and scattered them across the world."
-	callevent chat_add_text player_has_ring "Give me a moment, I may be able to channel the last remaining energy in the ring to find the missing artifacts." //call event to play fx or something
+	callevent chat_add_text player_has_ring "Give me a moment, I may be able to channel the last remaining energy in the ring to find the missing artifacts." CHAT_DELAY none say_locations //call event to play fx or something
 	
 	callevent chat_add_text artifact_locations "It seems one has made its way into the cursed coffers of a crystal-protected bandit’s stronghold, nestled deep in a lush grove. Follow the dragonflies." //(Cursed bludgeon method, Kroush – Drops: The Amplifying Gem)
 	callevent chat_add_text artifact_locations "Another was given to a powerful crystalline wizard who was so apt at the arcane, they could split their very being into elemental fragments." // (Culrak, Hemlock – Drops: The Focusing Stone)
@@ -131,16 +131,8 @@
 
 	if ( !DID_INTRO )
 	{
-		if !ATHOLO_DEAD
 		callevent say_hi
 		setvard DID_INTRO 1
-	}
-
-	if ( ATHOLO_DEAD )
-	{
-		////dbg spotted player, doing final exit
-		setvard DOING_EXIT 1
-		callevent 0.1 do_exit
 	}
 }
 
@@ -167,20 +159,50 @@
 { game_menu_getoptions
 
 	if DID_INTRO
-	if !ATHOLO_DEAD
-	
-	if ( GAVE_CRYSTALS < 4 )
+	if ( !ATHOLO_DEAD )
 	{
-		callevent chat_start_sequence crystal_mention
+		if ( GAVE_CRYSTALS < 4 )
+		{
+			callevent chat_start_sequence crystal_mention
+		}
+		
+		if $item_exists(PARAM1,item_crystal_return)
+		
+		local reg.mitem.title	"Enchant my crystal"
+		local reg.mitem.type	payment
+		local reg.mitem.data	item_crystal_return
+		local reg.mitem.callback got_crystal
+		menuitem.register
 	}
-	
-	if $item_exists(PARAM1,item_crystal_return)
-	
-	local reg.mitem.title	"Enchant my crystal"
-	local reg.mitem.type	payment
-	local reg.mitem.data	item_crystal_return
-	local reg.mitem.callback got_crystal
-	menuitem.register
+	else
+	{
+		local L_QUEST $get_quest_data(PARAM1,'manaring')
+		if $item_exists(PARAM1,'item_ring_ryza')
+		if L_QUEST equals '0' //must be incomplete
+		
+		local reg.mitem.title	"Show Ryza's Trinket"
+		local reg.mitem.type	callback
+		local reg.mitem.callback say_ring
+		menuitem.register
+	}
+}
+
+{ say_ring
+
+	if ( !JUST_MENTION_LOCATION )
+	{
+		callevent chat_start_sequence player_has_ring
+		setvard JUST_MENTION_LOCATION 1
+	}
+	else
+	{
+		callevent say_locations
+	}
+} 
+
+{ say_locations
+
+	callevent chat_start_sequence artifact_locations
 }
 
 { got_crystal
