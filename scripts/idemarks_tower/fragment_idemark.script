@@ -1,0 +1,96 @@
+{
+	const CHAT_AUTO_HAIL 1
+	const CHAT_USE_CONV_ANIMS 0
+	const CHAT_FACE_ON_USE 0
+	const CHAT_AUTO_FACE 0
+}
+
+#include monsters/base_chat_array
+
+{ game_spawn
+
+	name "a fragment of|Idemark"
+	name_unique idemark
+	
+	hp 100
+	nopush 1
+	
+	saytextrange 1000
+	
+	invincible 1
+	race beloved
+	
+	setmodel npc/femhuman2.mdl
+	width 32
+	height 72
+	
+	setprop ent_me rendermode 5
+	setprop ent_me renderfx 3
+	setprop ent_me renderamt 225
+	//playanim hold 71
+	setidleanim sitting2
+	setmoveanim sitting2
+	
+	menu.autoopen 1
+	
+	setvard CHAPEL_WALK_POINT $get_by_name('chapel_target2')
+}
+
+{ game_precache
+
+	//precache ""
+}
+
+{ say_hi
+	if !CHAT_BUSY
+	callevent chat_now "Who goes there? Are you of the Lost?" 3 none none
+	callevent chat_now "I have retreated to the confines of this chapel, where I have just enough power to keep their leader sealed in another plane of reality." 7 none none
+	callevent chat_now "You must seek out one of my guard, should they still exist among us. They have each sworn an oath to me, serving me even in death. They can help you." 9 none none
+}
+
+{ ext_chapel_start
+
+	saytextrange 2000
+	
+	local L_ORIGIN $get(ent_me,origin)
+	vectoradd L_ORIGIN $relpos($get(ent_me,angles),$vec(0,25,25))
+	setorigin ent_me L_ORIGIN
+	
+	setidleanim idle1
+	setmoveanim walk
+	playanim critical 87
+	setmovedest CHAPEL_WALK_POINT 5
+	setvard ISHMEEA_ID $get_by_name('ishmeea')
+	setvard CHAT_MENU_ON 0
+}
+
+{ game_reached_dest
+
+	setorigin ent_me $get(CHAPEL_WALK_POINT,origin)
+	setangle face $get(CHAPEL_WALK_POINT,angles)
+}
+
+{ ext_chapel_speech
+
+	if ( !CHAPEL_CHAT_STEP ) callevent chat_now "Ishme'Ea. No, I played a small part in all this. I am just as much a prisoner in this chapel as the monstrosity that I restrain." 8 none ext_chapel_speech 
+	if ( CHAPEL_CHAT_STEP == 1 ) callevent chat_now "Yourself and Leofing were essential parts of the series of protective rituals that I have cast in and around the tower." 6 none ext_chapel_speech 
+	if ( CHAPEL_CHAT_STEP == 2 ) callevent chat_now "I also counted on your curiosity and eagerness to help the world. In hopes that you would return with the knowledge to aid us." 7 none do_ishmeea_line 
+	if ( CHAPEL_CHAT_STEP == 3 ) callevent chat_now "Goodbye, Ishme'Ea. I will not survive the ritual. It was an honor to serve as Apostle to Pathos." 6  none ext_chapel_speech 
+	if ( CHAPEL_CHAT_STEP == 4 )
+	{
+		callevent chat_now "And an honor to be your first teacher. Benevolent visitor, may your steel strike true, and your magic flow freely." 7 none do_ishmeea_line 
+		callevent 10 ded
+	}
+
+	add CHAPEL_CHAT_STEP 1
+}
+
+{ do_ishmeea_line 
+
+	callexternal ISHMEEA_ID ext_chapel_start
+}
+
+{ ded
+
+	deleteent ent_me fade
+}
