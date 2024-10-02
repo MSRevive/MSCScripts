@@ -30,7 +30,7 @@
 
 	//playanim hold 71
 	setidleanim sitting2
-	setmoveanim sitting2
+	setmoveanim walk
 	
 	catchspeech say_gems gem lens
 	catchspeech say_ring ring
@@ -85,6 +85,7 @@
 
 { say_hi
 	if !CHAT_BUSY
+	if CHAT_MENU_ON
 	callevent chat_now "Who goes there? Are you of the Lost?" 3 none none
 	callevent chat_now "I have retreated to the confines of this chapel, where I have just enough power to keep their leader sealed in another plane of reality." 7 none none
 	callevent chat_now "You must seek out one of my guard, should they still exist among us. They have each sworn an oath to me, serving me even in death. They can help you." 9 none none
@@ -92,6 +93,7 @@
 
 { say_ring_nogems
 	if !CHAT_BUSY
+	if CHAT_MENU_ON
 	callevent chat_now "Is that?... no. Not here. It wouldn't make sense."
 	callevent chat_now "Please tell me the magical bindings of Atholo have not failed! Unless..."
 	callevent chat_now "You've defeated him? It has been centuries since I devised the ensorcelled device."
@@ -103,12 +105,14 @@
 
 { say_not_enough_gem
 	if !CHAT_BUSY
+	if CHAT_MENU_ON
 	callevent chat_now "It seems you are on the right track, seeker. However, the device, the ring, and its focusing gems are useless without each other."
 	callevent chat_now "Return to me with the [ring] and all three [gems] and I will attempt to restore its power for you."
 }
 
 { say_gems
 	if !CHAT_BUSY
+	if CHAT_MENU_ON
 	callevent chat_now "It seems one has made its way into the cursed coffers of a crystal-protected bandit's stronghold, nestled deep in a lush grove."
 	callevent chat_now "You may need to find yet more crystals, however."
 	callevent chat_now "Another was given to a powerful crystalline wizard who was so apt at the arcane, they could split their very being into elemental fragments."
@@ -117,12 +121,12 @@
 }
 
 { say_ring
-	if !CHAT_BUSY
 	callevent say_gems
 }
 
 { fix_ring_and_return
 	if !CHAT_BUSY
+	if CHAT_MENU_ON
 	
 	local L_GEM_COUNT 0
 	add L_GEM_COUNT $item_exists(PARAM1,'item_ring_ryza')
@@ -143,12 +147,7 @@
 		
 		callevent chat_now "By Felewyn's Light. You've done it! The awe-inspiring power of this magical construct shall resonate once again."
 		callevent chat_now "Give me a moment, as I attempt to restore the ring to its former glory."
-		callevent chat_now "Just need to recite the ancient incantations..."
-		callevent chat_now "...set the focusing gems within their sockets..."
-		callevent chat_now "...and finally bind their magical properties back within the ring..."
-		callevent chat_now "...there it is. A wonder to behold. An ancient artifact born anew. Its latent energies manifest once more! The arcane shall now flow through you readily." none none !give_manaring
-		callevent chat_now "Thank you, adventurer, for restoring this great power. For being a champion of its rebirth. Its mana stones shall restore your magical powers, just as you have done for it."
-		callevent chat_now "May Felewyn forever be by your side."
+		callevent chat_now "Just need to recall the ancient incantations..." none none make_ring
 	}
 }
 
@@ -156,20 +155,60 @@
 
 	quest set MANARING_TARGET manaring 1
 	offer MANARING_TARGET item_ring_mana
+	setvard MANARING_TARGET 'MANARING_TARGET'
+}
+
+{ make_ring
+
+	playsound 0 10 magic/energy1_loud.wav
+
+	if ( !RING_STEP )
+	{
+		playanim critical sitting3
+		playsound 0 10 magic/shock_noloop.wav
+		clientevent new all effects/sfx_light_fade $get(ent_me,svbonepos,19) '(255,0,0)' 200 0
+	}
+	else if ( RING_STEP == 1 ) clientevent new all effects/sfx_light_fade $get(ent_me,svbonepos,19) '(255,0,255)' 200 0
+	else if ( RING_STEP == 2 ) clientevent new all effects/sfx_light_fade $get(ent_me,svbonepos,19) '(0,255,0)' 200 0
+	else if ( RING_STEP == 3 )
+	{
+		clientevent new all effects/sfx_light_fade $get(ent_me,svbonepos,19) '(255,255,255)' 200 0
+		setvard RING_STEP 0
+		callevent done_ring
+		exitevent
+	}
+	
+	add RING_STEP 1
+	callevent 2.4 make_ring
+}
+
+{ done_ring
+	if $get(MANARING_TARGET,exists) //Chat can end early if someone starts the maps end sequence. Just check that the ring wasnt given away already
+	
+	callevent chat_now "...there it is. A wonder to behold. An ancient artifact born anew. Its latent energies manifest once more! The arcane shall now flow through you readily." none none !give_manaring
+	callevent chat_now "Thank you, adventurer, for restoring this great power. For being a champion of its rebirth. Its mana stones shall restore your magical powers, just as you have done for it."
+	callevent chat_now "May Felewyn forever be by your side."
 }
 
 { ext_chapel_start
 
+	callevent chat_clear_que //Stop talking
+	
+	if ( $get(MANARING_TARGET,exists) ) //Someone was in the middle of making a ring
+	{
+		callevent give_manaring //Just give it to them. We don't need to finish speaking.
+	}
+
 	saytextrange 2000
 	
-	local L_ORIGIN $get(ent_me,origin)
-	vectoradd L_ORIGIN $relpos($get(ent_me,angles),$vec(0,25,25))
-	setorigin ent_me L_ORIGIN
+	//local L_ORIGIN $get(ent_me,origin)
+	//vectoradd L_ORIGIN $relpos($get(ent_me,angles),$vec(0,25,25))
+	//setorigin ent_me L_ORIGIN
 	
 	setidleanim idle1
-	setmoveanim walk
-	playanim critical 87
+	
 	setmovedest CHAPEL_WALK_POINT 5
+	playanim critical sitstand
   
 	setvard ISHMEEA_ID $get_by_name('ishmeea')
 	setvard CHAT_MENU_ON 0
@@ -177,7 +216,10 @@
 
 { game_reached_dest
 
-	setorigin ent_me $get(CHAPEL_WALK_POINT,origin)
+	local L_ORIGIN $get(CHAPEL_WALK_POINT,origin)
+	vectorset L_ORIGIN z $get(ent_me,origin.z)
+	
+	setorigin ent_me L_ORIGIN
 	setangle face $get(CHAPEL_WALK_POINT,angles)
 }
 
