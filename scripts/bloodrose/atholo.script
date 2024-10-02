@@ -71,6 +71,11 @@
 	setvard NPC_MUST_SEE_TARGET 0
 }
 
+{ game_precache
+
+	precachefile "kfortress/nh_appear_cl"
+}
+
 #include [server] monsters/base_monster
 
 { [server] game_dynamically_created
@@ -346,6 +351,34 @@
 { [server] game_death
 
 	clientevent remove all MY_LIGHT_SCRIPT
+	
+	local L_ORIGIN "(63,1776,-3519)"
+	
+	calleventloop game.players get_chosen_one
+	
+	if ( CHOSEN_ONE isnot 'CHOSEN_ONE' )
+	{
+		clientevent new all "kfortress/nh_appear_cl" L_ORIGIN 0
+		createitem item_ring_ryza L_ORIGIN
+		callexternal ent_lastcreated bitem_reserve CHOSEN_ONE
+	}
+}
+
+{ get_chosen_one
+
+	if ( game.script.iteration == 0 ) callexternal GAME_MASTER gm_find_strongest_reset
+	else callexternal GAME_MASTER gm_find_strongest_player
+	
+	local L_STRONGEST $get(GAME_MASTER,scriptvar,'THE_CHOSEN_ONE')
+	local L_QUEST $get_quest_data(L_STRONGEST,'manaring')
+	local L_ITEM $item_exists(L_STRONGEST,'item_ring_ryza')
+	
+	if ( L_QUEST isnot '0' ) exitevent
+	if ( L_ITEM ) exitevent
+	
+	setvard CHOSEN_ONE L_STRONGEST
+	infomsg all L_QUEST L_ITEM
+	breakloop
 }
 
 { [server] light_on

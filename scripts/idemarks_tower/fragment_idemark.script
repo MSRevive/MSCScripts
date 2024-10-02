@@ -27,25 +27,135 @@
 	setprop ent_me rendermode 5
 	setprop ent_me renderfx 3
 	setprop ent_me renderamt 225
+
 	//playanim hold 71
 	setidleanim sitting2
 	setmoveanim sitting2
+	
+	catchspeech say_gems gem lens
+	catchspeech say_ring ring
 	
 	menu.autoopen 1
 	
 	setvard CHAPEL_WALK_POINT $get_by_name('chapel_target2')
 }
 
-{ game_precache
+{ game_menu_getoptions
 
-	//precache ""
-}
+	if CHAT_MENU_ON
+	
+	local L_QUEST $get_quest_data(PARAM1,'manaring')
+	local L_ITEM $item_exists(PARAM1,'item_ring_ryza')
+	
+	infomsg all L_QUEST L_ITEM
+	
+	if L_QUEST equals '0'
+	if L_ITEM
+	
+	local L_GEM_COUNT 0
+	add L_GEM_COUNT $item_exists(PARAM1,'item_ring_ryza_gem1')
+	add L_GEM_COUNT $item_exists(PARAM1,'item_ring_ryza_gem2')
+	add L_GEM_COUNT $item_exists(PARAM1,'item_ring_ryza_gem3')
+	add L_GEM_COUNT $item_exists(PARAM1,'ring_light2')
+	
+	if ( L_GEM_COUNT == 0 )
+	{
+		local reg.mitem.title	"Show Ryza's Trinket"
+		local reg.mitem.type	callback
+		local reg.mitem.callback say_ring_nogems
+		menuitem.register
+	}
+	else if ( L_GEM_COUNT < 4 )
+	{
+		local reg.mitem.title	"Show Ryza's Artifacts"
+		local reg.mitem.type	callback
+		local reg.mitem.callback say_not_enough_gem
+		menuitem.register
+	}
+	else
+	{
+		local reg.mitem.title	"Give Ryza's Artifacts"
+		local reg.mitem.type	callback
+		local reg.mitem.callback fix_ring_and_return
+		menuitem.register
+	}
+	
+	
+} 
 
 { say_hi
 	if !CHAT_BUSY
 	callevent chat_now "Who goes there? Are you of the Lost?" 3 none none
 	callevent chat_now "I have retreated to the confines of this chapel, where I have just enough power to keep their leader sealed in another plane of reality." 7 none none
 	callevent chat_now "You must seek out one of my guard, should they still exist among us. They have each sworn an oath to me, serving me even in death. They can help you." 9 none none
+}
+
+{ say_ring_nogems
+	if !CHAT_BUSY
+	callevent chat_now "Is that?... no. Not here. It wouldn't make sense."
+	callevent chat_now "Please tell me the magical bindings of Atholo have not failed! Unless..."
+	callevent chat_now "You've defeated him? It has been centuries since I devised the ensorcelled device."
+	callevent chat_now "To allow a great power to remain on your plane whose sole purpose was to bind Atholo."
+	callevent chat_now "Ryza was a devoted supporter and believed in the strength of humanity. Her sacrifice will echo in eternity. I am forever grateful of her divine act to preserve this plane."
+	callevent chat_now "The device, however, seems to be missing its three focusing [lenses], as well as the empowering body to which it is attuned."
+	callevent chat_now "If you are able to find such and return them to me, I may be able to scrounge up the arcane power of this tower to restore this artifact to its former glory."
+}
+
+{ say_not_enough_gem
+	if !CHAT_BUSY
+	callevent chat_now "It seems you are on the right track, seeker. However, the device, the ring, and its focusing gems are useless without each other."
+	callevent chat_now "Return to me with the [ring] and all three [gems] and I will attempt to restore its power for you."
+}
+
+{ say_gems
+	if !CHAT_BUSY
+	callevent chat_now "It seems one has made its way into the cursed coffers of a crystal-protected bandit's stronghold, nestled deep in a lush grove."
+	callevent chat_now "You may need to find yet more crystals, however."
+	callevent chat_now "Another was given to a powerful crystalline wizard who was so apt at the arcane, they could split their very being into elemental fragments."
+	callevent chat_now "The final jewel has recessed deep under the cliffs, to the possession of a dimensional arachnid."
+	callevent chat_now "The base of the trinket was once a gift to Felewyn's devout followers to light their way during dark times."
+}
+
+{ say_ring
+	if !CHAT_BUSY
+	callevent say_gems
+}
+
+{ fix_ring_and_return
+	if !CHAT_BUSY
+	
+	local L_GEM_COUNT 0
+	add L_GEM_COUNT $item_exists(PARAM1,'item_ring_ryza')
+	add L_GEM_COUNT $item_exists(PARAM1,'item_ring_ryza_gem1')
+	add L_GEM_COUNT $item_exists(PARAM1,'item_ring_ryza_gem2')
+	add L_GEM_COUNT $item_exists(PARAM1,'item_ring_ryza_gem3')
+	add L_GEM_COUNT $item_exists(PARAM1,'ring_light2')
+	
+	if ( L_GEM_COUNT == 5 )
+	{
+		add L_GEM_COUNT $item_exists(PARAM1,'item_ring_ryza',remove)
+		add L_GEM_COUNT $item_exists(PARAM1,'item_ring_ryza_gem1',remove)
+		add L_GEM_COUNT $item_exists(PARAM1,'item_ring_ryza_gem2',remove)
+		add L_GEM_COUNT $item_exists(PARAM1,'item_ring_ryza_gem3',remove) //doesn't add? but will remove them.
+		add L_GEM_COUNT $item_exists(PARAM1,'ring_light2',remove)
+
+		setvard MANARING_TARGET PARAM1
+		
+		callevent chat_now "By Felewyn's Light. You've done it! The awe-inspiring power of this magical construct shall resonate once again."
+		callevent chat_now "Give me a moment, as I attempt to restore the ring to its former glory."
+		callevent chat_now "Just need to recite the ancient incantations..."
+		callevent chat_now "...set the focusing gems within their sockets..."
+		callevent chat_now "...and finally bind their magical properties back within the ring..."
+		callevent chat_now "...there it is. A wonder to behold. An ancient artifact born anew. Its latent energies manifest once more! The arcane shall now flow through you readily." none none !give_manaring
+		callevent chat_now "Thank you, adventurer, for restoring this great power. For being a champion of its rebirth. Its mana stones shall restore your magical powers, just as you have done for it."
+		callevent chat_now "May Felewyn forever be by your side."
+	}
+}
+
+{ give_manaring
+
+	quest set MANARING_TARGET manaring 1
+	offer MANARING_TARGET item_ring_mana
 }
 
 { ext_chapel_start
@@ -60,6 +170,7 @@
 	setmoveanim walk
 	playanim critical 87
 	setmovedest CHAPEL_WALK_POINT 5
+  
 	setvard ISHMEEA_ID $get_by_name('ishmeea')
 	setvard CHAT_MENU_ON 0
 }
@@ -94,3 +205,4 @@
 
 	deleteent ent_me fade
 }
+
