@@ -1,0 +1,111 @@
+//Thothie - Dmg Point system
+//- PLR_TOTAL_DMG is pulled from the quest data dp (formally GM), each point = 1k dmg
+//- PLR_DMG is local to the player (0-999) - at 1k it resets, and updates the quest data
+//- in some commentary these are referred to as 'Whole' and 'Fraction' Damage Points, which is how chests treat it
+//- Players gain massive points for aiding one another, and lose points for death
+
+//Quests:
+//dp = damage points/1000
+//dm = Code to restore dmgpoints. If it matches, then it restores it.
+
+{
+	setvar PLR_TOTAL_DMG 0
+}
+
+{ activate_stuff //Basically just entered the map with this character
+
+	if ( INIT_DMGPOINTS ) exitevent
+	setvard INIT_DMGPOINTS 1
+	
+	if ( G_DM_CODE equals $get_quest_data(ent_me,dm) ) //I already have dmgpoints on this map/gauntlet
+	{
+		callevent restore_dmg_points
+	}
+	else
+	{
+		quest set ent_me dm G_DM_CODE //I do not have points. Set the DM code incase I disconnect
+		callevent store_dmg_points //Reset points in quest (should always be 0 at this point)
+		
+		//At the start of the gauntlet, grant some bonus points
+		local L_MAP_NAME $lcase(game.map.name)
+		if ( $get_find_token(MAPS_GAUNTLET_START,L_MAP_NAME) == -1 ) exitevent
+
+		if ( game.time < 180 )
+		{
+			setvard PLR_TOTAL_DMG 10
+			gplayermessage ent_me Bonus 10,000 damage points for starting gauntlet.
+			callevent store_dmg_points
+		}
+	}
+}
+
+{ game_death
+
+	//subtract 1000 damage points and zero out fractions if player has at least 2k dmgpoints
+	if ( PLR_TOTAL_DMG > 1 )
+	{
+		//callexternal GAME_MASTER add_score $get(ent_me,id) -1
+		subtract PLR_TOTAL_DMG 1
+		setvard PLR_DMG 0
+		callevent store_dmg_points
+	}
+}
+
+{ game_damaged_other
+
+	if ( $get(PARAM1,relationship,ent_me) equals enemy ) local L_IS_ENEMY 1
+	if ( $get(PARAM1,relationship,ent_me) equals wary ) local L_IS_ENEMY 1
+	
+	if ( L_IS_ENEMY )
+	{
+		if !$get(PARAM1,scriptvar,'AM_INVISIBLE') //Thothie FEB2009
+		if !$get(PARAM1,isplayer)
+		local DMG_DONE PARAM2
+		local NME_HP $get(PARAM1,hp)
+		if ( NME_HP < DMG_DONE )
+		{
+			local DMG_DONE NME_HP //so we don't get 1000 dmg points for darksword'ing a rat
+		}
+		callevent add_dmg_points DMG_DONE
+	}
+}
+
+{ restore_dmg_points
+	setvard PLR_TOTAL_DMG $get_quest_data(ent_me,dp)
+
+	if PLR_TOTAL_DMG > 0
+	local L_OUT_MSG $int(PLR_TOTAL_DMG) 000
+	gplayermessage ent_me Restored L_OUT_MSG damage points.
+}
+
+{ store_dmg_points //puts the points into the quest. Happens every 1k dmgpoints
+	quest set ent_me dp PLR_TOTAL_DMG
+}
+
+{ add_dmg_points //<points>
+	add PLR_DMG PARAM1
+	if ( PLR_DMG >= 1000 )
+	{
+		add PLR_TOTAL_DMG $int($math(divide,PLR_DMG,1000)) //Add all multiples of 1k to the total
+		mod PLR_DMG 1000 //Store the remainder back
+
+		callevent store_dmg_points
+	}
+}
+
+//For adding damage points for special events (such as rescuing player from goblin pouncer)
+{ ext_dmgpoint_bonus //<amt> <msg>
+	callevent add_dmg_points $int(PARAM1)
+
+	local OUT_MSG "+"
+	stradd OUT_MSG $int(PARAM1)
+	stradd OUT_MSG " damage points "
+	stradd OUT_MSG PARAM2 //eg. "for freeing <player_name>"
+	gplayermessage ent_me OUT_MSG
+}
+
+{ ext_get_dmgpoints
+
+	setvard EXT_DMGPOINTS PLR_TOTAL_DMG
+	add EXT_DMGPOINTS $math(multiply,PLR_DMG,0.001)
+}
