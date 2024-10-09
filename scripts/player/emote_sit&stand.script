@@ -4,37 +4,33 @@
 
 #scope server
 
+{
+	const EFFECT_ID player_sitstand
+	const EFFECT_FLAGS player_action
+	
+	const EFFECT_SCRIPT $currentscript
+	const game.effect.removeondeath 0
+	
+	const TEXT_SIT 		#ACTION_SIT
+	const TEXT_STAND 	#ACTION_STAND
+	setvar game.effect.displayname TEXT_SIT
+
+	setvard AM_SITTING 0
+	
+	setvard FULL_ALERT 0
+	setvard PLR_SPEED_SPEED_RATIO 1.0
+}
+
 { [shared]
 
 	const VIEW_LOWERTIME 1
 	const VIEW_RAISETIME 1
-	setvard FULL_ALERT 0
-
-	setvard PLR_SPEED_SPEED_RATIO 1.0
 }
 
-{
-	const EFFECT_REMOVE_ON_DEATH 0
-
-	const TEXT_SIT 		#ACTION_SIT
-	const TEXT_STAND 	#ACTION_STAND
-	const EFFECT_ID		player_sitstand
-	const EFFECT_ACTIONTYPE	player_action
-	const EFFECT_SCRIPT	$currentscript
-
-	setvard game.effect.id		EFFECT_ID
-	setvard game.effect.displayname	TEXT_SIT
-	setvard game.effect.type	EFFECT_ACTIONTYPE
-	setvard game.effect.removeondeath 0
-
-	setvard local.sit.active 0
-}
-
-#include [server] effects/effect_base	allowduplicate
+#include effects/base_effect	allowduplicate
 
 { game_activate
 	
-	//quest set ent_me emote_sitting 0//Start off
 	callevent 0.5 send_emote	//I need this delay
 }
 
@@ -46,31 +42,31 @@
 
 { game_player_activate
 
-	if ( !$get(ent_me,canattack) )
+	if ( !AM_SITTING )
 	{
-		if !local.sit.active
-		dplayermessage ent_me "Can't use this emote while unable to attack."
-		local EXIT_SUB 1
-	}
-	if !EXIT_SUB
-
-
-	if ( !local.sit.active )
-	{
+		if ( !$get(ent_me,canattack) )
+		{
+			dplayermessage ent_me "Can't use this emote while unable to attack."
+			exitevent
+		}
+		
 		callexternal ent_me emote_stop	//Stop other emotes
 		playanim hold sitdown
+		
 		callexternal $get(ent_me,scriptvar,'PLR_ACTIVE_WEAPON') ext_player_sit //tell weapon I'm sitting
+		
 		setvard game.effect.canmove 0
 		setvard game.effect.canattack 0
 		setvard game.effect.canrun 0
 		setvard game.effect.canjump 0
 		setvard game.effect.canduck 0
-		//quest set ent_me emote_sitting 1
+		
 		setstatus add sitting
-
-		setvard local.sit.active 1
-		setvard game.effect.displayname TEXT_STAND
+		setvard AM_SITTING 1
+		
 		clientevent update ent_me SCRIPT_ID view_change 1
+		
+		setvard game.effect.displayname TEXT_STAND
 		setvard game.effect.updateplayer 1
 	}
 	else
@@ -90,7 +86,7 @@
 
 	if ( STRUCK_TIME <= 1 )
 	{
-		if ( local.sit.active )
+		if ( AM_SITTING )
 		{
 			local DEMON_ON $get(ent_me,scriptvar,DEMON_BLOOD)
 			if !DEMON_ON
@@ -112,7 +108,7 @@
 		}
 		else setvard regen.hp.amt 1
 
-		if ( local.sit.active ) //Gain mana
+		if ( AM_SITTING ) //Gain mana
 		{
 			setvard MAX_MANA $get(ent_me,maxmp)
 			setvard MANA_RATE 0.20
@@ -156,14 +152,14 @@
 	setvard game.effect.canduck 1
 	//quest set ent_me emote_sitting 0
 
-	setvard local.sit.active 0
+	setvard AM_SITTING 0
 	setvard game.effect.displayname TEXT_SIT
 	setvard game.effect.updateplayer 1
 }
 
 { game_death
 
-	if local.sit.active //if sitting
+	if AM_SITTING //if sitting
 	clientevent update ent_me SCRIPT_ID view_change 0 //Then set view height back to standing
 }
 

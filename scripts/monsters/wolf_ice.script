@@ -18,7 +18,7 @@
 	const DMG_BITE $rand(50,200)
 	const DMG_CLAW $rand(50,75)
 
-	const FREQ_COMBAT_HOWL $randf(10,15)
+	const FREQ_COMBAT_HOWL $randf(15,20)
 
 	const CHANCE_BURN 30%
 
@@ -46,16 +46,12 @@
 }
 
 { do_combat_howl
-
-	//ice blast howl
-	if ( CYCLED_UP )
-	{
-		setvard DOING_HOWL 1
-		playanim critical ANIM_HOWL
-		playrandomsound 0 10 SOUND_HOWL1 SOUND_HOWL2
-		dodamage $relpos(0,0,0) 256 0 100% 0.0 reflective target
-		effect screenshake $relpos(0,0,0) 190 20 1 384
-	}
+	//stunning howl
+	if !I_R_FROZEN
+	setvard DOING_HOWL 1
+	playanim critical ANIM_HOWL
+	playrandomsound 0 10 SOUND_HOWL1 SOUND_HOWL2
+	dodamage $get(ent_me,origin) 200 0 100% 0.0 normal target
 	callevent 0.1 end_combat_howl
 }
 
@@ -65,21 +61,25 @@
 	callevent FREQ_COMBAT_HOWL do_combat_howl
 }
 
-{ game_dodamage
+{ wolfatk_dodamage
 
 	if ( PARAM1 )
 	{
-		if !DOING_HOWL
 		if $rand(1,100) < CHANCE_BURN
 		if $get(PARAM2,relationship,ent_me) equals enemy
-		applyeffect PARAM2 effects/effect_frostbite_dmg 10 $get(ent_me,id) DOT_BURN
+		applyeffect PARAM2 effects/dot_cold 10 $get(ent_me,id) DOT_BURN
 		playsound 0 10 SOUND_BURN
 		effect glow ent_me (0,75,255) 128 1 1
 	}
+}
+
+{ game_dodamage
 
 	if DOING_HOWL
 	if $get(PARAM2,relationship,ent_me) equals enemy
-	applyeffect PARAM2 effects/freeze_solid 5 1 1
+	playermessage PARAM2 You hear a chilling howl!
+	applyeffect PARAM2 effects/dot_cold_freeze 5 1 1
+	setvard DOING_HOWL 0
 }
 
 { cycle_up

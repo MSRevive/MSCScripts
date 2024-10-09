@@ -40,11 +40,7 @@
 { weapon_spawn
 
    	sethand right
-	if ( SMALLARMS_LAST_SPEC equals 'SMALLARMS_LAST_SPEC' )
-	{
-		setvard SMALLARMS_LAST_SPEC game.time
-		subtract SMALLARMS_LAST_SPEC 60
-	}
+
 	callevent register_secondary //adding this so it can be changed externally
 }
 
@@ -72,26 +68,29 @@
 {  special_02_strike
 
 	if game.serverside
+	
+	local NEXT_HASTE $get(ent_owner,scriptvar,'PLR_NEXT_HASTE')
+	if ( game.time < NEXT_HASTE )
+	{
+		local HASTE_DELAY NEXT_HASTE
+		subtract HASTE_DELAY game.time
+		
+		local HASTE_DELAY $int(HASTE_DELAY) " s"
 
-	if !$get(ent_owner,haseffect,player_haste)
-
-	local TIME_DIFF game.time
-	subtract TIME_DIFF SMALLARMS_LAST_SPEC
-	if ( TIME_DIFF < 40 ) dplayermessage ent_owner Too exhausted for another speed attack
-	if TIME_DIFF >= 40
+		dplayermessage ent_owner "Cannot repeat haste attack yet." ( HASTE_DELAY )
+		exitevent
+	}
 
 	//Thothie FEB2010_01 - Urdual/smallarms haste exploit prevention
 	local URDUAL_CHECK $get(ent_owner,scriptvar,'PLR_URDUAL_RELEASE_TIME')
 	if game.time > URDUAL_CHECK
 
-	setvard SMALLARMS_LAST_SPEC game.time
+	local SPEC_DURATION $get_skill_ratio($get(ent_owner,skill.smallarms.prof.ratio),15,30)
 
-	local SPEC_DURATION $get_skill_ratio($get(ent_owner,skill.smallarms.prof.ratio),20,40)
-
-	callevent ent_owner ext_haste_cooldown
-	applyeffect ent_owner effects/specialattack_haste SPEC_DURATION 0 $get(ent_me,id)
+	applyeffect ent_owner effects/specialattack_haste SPEC_DURATION $get(ent_me,id)
 	callevent turbo_on
-	//callevent SPEC_DURATION turbo_off //called bgy effect
+
+	callexternal ent_owner ext_haste_cooldown $math(add,SPEC_DURATION,35)
 }
 
 { [server] turbo_on
@@ -116,6 +115,8 @@
 
 	if SMALLARMS_TURBO_ON
 	setvard SMALLARMS_TURBO_ON 0
+	
+	if ( $get(ent_owner,haseffect,player_haste) ) removeeffect ent_owner player_haste
 
 	attackprop ent_me 0 delay.strike MELEE_DMG_DELAY
 	attackprop ent_me 0 delay.end MELEE_ATK_DURATION
@@ -166,4 +167,9 @@
 	dbg activate_items $get(PARAM1,name) vs $get(ent_owner,name)
 	if $get(PARAM1,name) equals $get(ent_owner,name)
 	callevent 1.0 turbo_off
+}
+
+{ bweapon_effect_remove
+
+	callevent turbo_off
 }

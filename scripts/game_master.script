@@ -18,7 +18,6 @@
 	setvard MALDORA_LIST ''
 	setvard DEMON_RAGE_USERS ''
 	setvard DEMON_RAGE_USES ''
-	setvard N_TELFL_DEAD 0
 
 	const LIGHTSYS_N_LIGHTS 16
 	array.create ARRAY_LIGHT_OWNERLIST
@@ -34,11 +33,15 @@
 }
 
 #include [casual] test_scripts/game_master
+#include [casual] developer/game_master
 #include [casual] $currentmap_game_master
 
 //Game master modules
+#include game_master/dmgpoints
 #include game_master/map_transitions
 #include game_master/vote_generic
+
+#include dq/externals/dq_game_master //IM SORRY THIS IS SHIT
 
 { game_spawn
 	name The Game Master
@@ -593,7 +596,6 @@
 	local reg.mitem.title	L_SPELL_NAME
 	local reg.mitem.type 	callback
 	local reg.mitem.data 	CUR_IDX
-	local reg.mitem.cb_failed erase_spell_no
 	local reg.mitem.callback 	confirm_forget_spell
 	if ( reg.mitem.title isnot 0 ) menuitem.register
 }
@@ -1018,40 +1020,6 @@
 
 { set_wizard_center
 	setvard WIZARD_CENTER PARAM1
-}
-
-{ gm_find_strongest_player
-
-	dbg gm_find_strongest_player
-
-	setvard STRONGEST_IDX 0
-	setvard STRONGEST_STAT_LEVEL 0
-	if ( STRONGEST_PLAYER_LIST equals 'STRONGEST_PLAYER_LIST' ) getplayersnb STRONGEST_PLAYER_LIST
-	calleventloop $get_token_amt(STRONGEST_PLAYER_LIST) find_strongest_player_loop
-	setvard THE_CHOSEN_ONE $get_token(STRONGEST_PLAYER_LIST,STRONGEST_IDX)
-	setvard THE_CHOSEN_ONE_IDX STRONGEST_IDX
-	token.del PLAYER_LIST STRONGEST_IDX
-	//callevent inform_player //SEP2009 event not used (probably hold over from arti-chest)
-}
-
-{ gm_find_strongest_reset
-	setvard STRONGEST_PLAYER_LIST 'STRONGEST_PLAYER_LIST'
-	callevent gm_find_strongest_player
-}
-
-{ find_strongest_player_loop
-
-	local CUR_IDX game.script.iteration
-	local CUR_PLAYER $get_token(STRONGEST_PLAYER_LIST,CUR_IDX)
-	local PLAYER_STAT $get(CUR_PLAYER,scriptvar,'PLR_TOTAL_DMG') //newfunc in player_main/game_master +1000 for heal/iceshield -1000 for death
-	local PLAYER_SUB_STAT $get(CUR_PLAYER,scriptvar,'PLR_DMG') //fraction points
-	multiply PLAYER_SUB_STAT 0.001 //note: this will drop fractions < 0.01
-	add PLAYER_STAT PLAYER_SUB_STAT
-	if ( PLAYER_STAT > STRONGEST_STAT_LEVEL )
-	{
-		setvard STRONGEST_STAT_LEVEL PLAYER_STAT
-		setvard STRONGEST_IDX CUR_IDX
-	}
 }
 
 { set_shad_tele_point //<origin> <index> <trigger> (see mscave/shad_tele_base)

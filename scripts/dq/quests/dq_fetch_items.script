@@ -1,0 +1,150 @@
+//By greatguys1
+//Best viewed in EditPlus with the ms.stx applied
+
+//This quest is fetch_items. When the quest is activated, you either must look for a bunch of items, or one item in a randomly spawned location. Bringing back the items will complete the quest.
+
+//Vars:
+//	const QUEST_DATA1		- <"info_target prefix"|"(x,y,z);(x,y,z)"> Where do the qitems spawn?
+//	const QUEST_DATA2		- <"qitem code;qitem name"> Which qitem do you use? What do you wanna name the qitem?
+//	const QUEST_DATA3		- <0|1> Spawn one item at available random locations, rather than one item at each location.
+//	const INFO_TARGET_PREFIX	- Inherited from QUEST_DATA1.
+//	const QITEM_CODE		- The qitem code.
+//	const QITEM_NAME		- The qitem name.
+//	setvard QITEM_ORIGIN_AMT	- How many different spawn positions are there?
+//	setvard QITEMS_FOUND		- How many qitems are found?
+//	array QITEM_SPAWN_ORIGINS	- The array containing all of the different vectors for spawn points available for qitems.
+
+//Functions:
+//	The pre-cache thing		- Pre-caches the qitems. I'm not sure if I can safely spell pre-cache :I
+//	quest_activate			- Calls the event quest_begin_handle_origins
+//	game_menu_getoptions		- Checks to see if the player has any qitems.
+//	ext_receive_quest_item		- Called from the game_master when a matching qitem is found.
+//	quest_begin_handle_origins	- Sees if it's dealing with info_targets or vectors as spawn points for the qitems.
+//	quest_handle_info_targets	- quest_begin_handle_origins determined that there's info_targets being used as the vectors for qitems to spawn at.
+//	quest_handle_vectors		- quest_begin_handle_origins determined that straight vectors were being used as the spawn points for qitems.
+//	quest_populate_origins_loop	- Spawns all the qitems around the map.
+
+#scope server
+
+{
+	const INFO_TARGET_PREFIX QUEST_DATA1
+	const QITEM_CODE $get_token(QUEST_DATA2,0)
+	const QITEM_NAME $get_token(QUEST_DATA2,1)
+	const ITEM_DROP_MODE QUEST_DATA3
+
+	setvard QITEM_ORIGIN_AMT 0
+	setvard QITEMS_FOUND 0
+}
+
+#include dq/quests/bases/dq_base_quests
+
+{ game_precache
+	precachefile other/qitem
+}
+
+{ quest_activate //The player id of the menu owner must be passed though to this
+
+	callevent quest_begin_handle_origins
+}
+
+{ game_menu_getoptions //PARAM1 = PlayerID	This will run a check on the array ARRAY_QUEST_ITEMS to check if we have the required amount to complete the quest
+
+	local L_PLAYER_ID PARAM1
+
+	if ( QUEST_MODE equals 'active' )
+	{
+		callexternal GAME_MASTER ext_check_quest_item QITEM_CODE $get(ent_me,id)  //Checks if the qitems are found
+	}
+}
+
+{ ext_receive_quest_item
+	
+	if ( QUEST_TYPE equals 'fetch_items' )
+	{
+		if ( QUEST_MODE equals 'active' )
+		{
+			setvard QITEMS_FOUND $math(add,QITEMS_FOUND,1)
+			
+			if ( QITEMS_FOUND == QITEM_ORIGIN_AMT )
+			{
+				callevent quest_finished
+			}
+		}
+	}
+}
+
+{ quest_begin_handle_origins //Most of the function is influenced from Thothie's fire wyrm pit getter. Thenks bruh
+
+	array.create QITEM_SPAWN_ORIGINS
+
+	local L_INFO_TARGET_NAME INFO_TARGET_PREFIX
+	stradd L_INFO_TARGET_NAME '1' //This is just a tester to see if it should look for info targets or just take vectors
+
+	local L_INFO_TARGET_ID $get_by_name(L_INFO_TARGET_NAME)
+
+	if ( $get(L_INFO_TARGET_ID,exists) )
+	{
+		callevent quest_handle_info_targets //This cant be on a loop because we don't know exactly how much info_targets they are until we find one that doesn't exist
+	}
+	else if ( QUEST_DATA1 startswith '(' ) //If it starts with that it has to be vectors
+	{
+		setvard QITEM_ORIGIN_AMT $get_token_amt(QUEST_DATA1)
+		calleventloop QITEM_ORIGIN_AMT quest_handle_vectors //I can call this on a loop because I can see how many tokens are in quest_data1
+	}
+	else
+	{
+		dbg "No proper origins were found, fetch_items cannot spawn qitems!"
+	}
+}
+
+{ quest_handle_info_targets //For organization
+
+	local L_INFO_TARGET_NAME INFO_TARGET_PREFIX
+	local L_QITEM_ORIGIN_AMT QITEM_ORIGIN_AMT
+	local L_QITEM_ORIGIN_AMT $int($math(add,L_QITEM_ORIGIN_AMT,1)) //$math tends to add .00 at the end. It'll try to look for .00 in the info target if I don't do $int
+	stradd L_INFO_TARGET_NAME L_QITEM_ORIGIN_AMT
+
+	local L_INFO_TARGET_ID $get_by_name(L_INFO_TARGET_NAME)
+
+	if ( $get(L_INFO_TARGET_ID,exists) )
+	{
+		array.add QITEM_SPAWN_ORIGINS $get(L_INFO_TARGET_ID,origin)
+		setvard QITEM_ORIGIN_AMT $math(add,QITEM_ORIGIN_AMT,1)
+
+		callevent 0.1 quest_handle_info_targets
+	}
+	else
+	{
+		callevent quest_populate_origins
+	}
+}
+
+{ quest_handle_vectors //For organization
+
+	array.add QITEM_SPAWN_ORIGINS $get_token(QUEST_DATA1,game.script.iteration)
+
+	if ( $math(add,game.script.iteration,1) == QITEM_ORIGIN_AMT )
+	{
+		callevent quest_populate_origins
+	}
+}
+
+{ quest_populate_origins //Checks the "mode" to see if one should be placed at a random location, or all at all locations
+
+	if ( ITEM_DROP_MODE == 1 ) //This means drop 1 item at a random location
+	{
+		local L_ORIGIN $rand(0,$math(subtract,QITEM_ORIGIN_AMT,1)) //The subtract because 0 is an index and QITEM_ORIGIN_AMT doesn't account for this
+		createnpc other/qitem L_ORIGIN QITEM_CODE QITEM_NAME
+		setvard QITEM_ORIGIN_AMT 1 //So the checking the required items works out alright
+	}
+	else if ( ITEM_DROP_MODE == 0 )
+	{
+		calleventloop QITEM_ORIGIN_AMT quest_populate_origins_loop
+	}
+}
+
+{ quest_populate_origins_loop
+
+	local L_ORIGIN $get_array(QITEM_SPAWN_ORIGINS,game.script.iteration)
+	createnpc other/qitem L_ORIGIN QITEM_CODE QITEM_NAME
+}

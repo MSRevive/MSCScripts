@@ -1,0 +1,81 @@
+{ deposit_item //<owner> <item_id>
+	//Should re-check if the item can be accepted
+
+	local L_PLAYER PARAM1
+	local L_ITEM PARAM2
+
+	local L_ITEM $func(func_filter_items,L_PLAYER,L_ITEM) //Check if item is rejected
+
+	if ( L_ITEM isnot '0' )
+	{
+		local L_FREE_BANK $func(func_get_free_bank,L_PLAYER,L_ITEM) //Check for next free space in the bank
+		if ( L_FREE_BANK isnot '0' )
+		{
+			//callexternal L_ITEM item_banked //tell item we've been banked
+
+			local L_BANK_CONTENTS $get_quest_data(L_PLAYER,L_FREE_BANK)
+			if ( $len(L_BANK_CONTENTS) == 0 ) local L_BANK_CONTENTS 0
+			
+			local L_ITEM_SCRIPTNAME_STRING $func(func_make_string,L_ITEM)
+			
+			//Set new bank contents if stackable
+			local L_NEW_BANK_CONTENTS $func(func_stack_quantity,L_BANK_CONTENTS,L_ITEM_SCRIPTNAME_STRING)
+			if ( L_NEW_BANK_CONTENTS isnot L_BANK_CONTENTS )
+			{
+				local L_BANK_CONTENTS L_NEW_BANK_CONTENTS
+				
+				//Stack size and deletion is handled below
+			}
+			else //Otherwise append it.
+			{
+				//Write bank contents
+				if ( L_BANK_CONTENTS equals '0' ) local L_BANK_CONTENTS L_ITEM_SCRIPTNAME_STRING //If the quest var is uninitialized
+				else token.add L_BANK_CONTENTS L_ITEM_SCRIPTNAME_STRING
+			}
+			
+			//Set stack size in hand or delete item
+			local L_NUM_STORING $get_token(L_ITEM_SCRIPTNAME_STRING,1) //Number of items attempted to store
+			if ( L_NUM_STORING == 0 ) local L_NUM_STORING 1
+			
+			if ( STACK_REMAINDER != L_NUM_STORING ) local L_NUM_STORING $math(subtract,L_NUM_STORING,STACK_REMAINDER) //If item was stacked, do math to get the number of items stored in that slot in this transaction
+
+			if ( $get(L_ITEM,is_projectile) )
+			{
+				local L_FINAL_AMT $get(L_ITEM,quantity)
+				subtract L_FINAL_AMT L_NUM_STORING
+				
+				local L_STR "You add " $int(L_NUM_STORING) " of your " $get(L_ITEM,name) "s to the Galat Chest."
+				dplayermessage L_PLAYER L_STR
+				
+				if ( L_FINAL_AMT > 0 ) setquantity L_ITEM L_FINAL_AMT
+				else deleteent L_ITEM
+			}
+			else if ( $get(L_ITEM,is_drinkable) )
+			{
+				local L_FINAL_AMT $get(L_ITEM,quality)
+				subtract L_FINAL_AMT L_NUM_STORING
+				
+				local L_SWIGS "swig"
+				if ( L_NUM_STORING > 1 ) stradd L_SWIGS 's'
+				
+				local L_STR "You add " $int(L_NUM_STORING) " " L_SWIGS " of your " $get(L_ITEM,name) " to the Galat Chest."
+				dplayermessage L_PLAYER L_STR
+				
+				if ( L_FINAL_AMT > 0 ) setquality L_ITEM L_FINAL_AMT
+				else deleteent L_ITEM
+			}
+			else
+			{
+				deleteent L_ITEM
+			}
+
+			quest set L_PLAYER L_FREE_BANK L_BANK_CONTENTS
+
+			local L_MSG "You add your " $get(L_ITEM,name) " to the Galat Chest."
+			infomsg L_PLAYER $get(ent_me,name) L_MSG
+
+			callevent 0.1 open_chest
+			callevent 0.55 close_chest
+		}
+	}
+}

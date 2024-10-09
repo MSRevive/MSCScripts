@@ -319,20 +319,6 @@
 			consolemsg ent_currentplayer "Granting Lockdown's wallpaper crest"
 			callexternal GAME_MASTER give_item $get(ent_currentplayer,id) CREST_NAME
 		}
-
-		if G_DEVELOPER_MODE
-		if ( $get(ent_currentplayer,steamid) equals 'STEAM_ID_LAN' )
-		{
-			local CREST_NAME crest_w_1
-			if ( $item_exists(ent_currentplayer,CREST_NAME) )
-			{
-				consolemsg ent_currentplayer You already have your wallpaper crest
-				local EXIT_SUB 1
-			}
-			if !EXIT_SUB
-			consolemsg ent_currentplayer "Granting Lockdown's wallpaper crest"
-			callexternal GAME_MASTER give_item $get(ent_currentplayer,id) CREST_NAME
-		}
 	}
 	else if ( PARAM1 equals 'health_bars' )
 	{
@@ -348,7 +334,8 @@
 	{
 		//check steamid here
 		if $get(ent_currentplayer,steamid) equals 'STEAM_0:1:4985228'
-		if ( $get_by_name('dridje_sphere',exists) )
+		local L_SPHERE $get_by_name('dridje_sphere')
+		if ( $get(L_SPHERE,exists) )
 		{
 			if ( !WARNED_DRIDJE )
 			{
@@ -377,26 +364,22 @@
 		consolemsg ent_currentplayer MS.DLL reports version game.revision ( central game.central )
 	}
 
-	if ( PARAM1 equals 'ms_bloom_darken' )
-	{
-		if ( PARAM2 > -1 )
-		{
-			consolemsg ent_currentplayer Bloom Darken Set to Level PARAM2
-			clientevent update ent_currentplayer const.localplayer.scriptID cl_darken_bloom PARAM2
-		}
-		else
-		{
-			consolemsg ent_currentplayer Bloom Darken Set to Automatic ( G_DARKEN_BLOOM )
-			clientevent update ent_currentplayer const.localplayer.scriptID cl_darken_bloom G_DARKEN_BLOOM
-		}
-	}
-	else if ( PARAM1 equals 'choosebloom' )
-	{
-		callexternal ent_currentplayer ext_bloom_cycle
-	}
-	else if ( PARAM1 equals 'gimmecrest' )
+	if ( PARAM1 equals 'gimmecrest' )
 	{
 		callevent do_crest $get(ent_currentplayer,id)
+	}
+	else if ( PARAM1 equals 'gimmestaff' )
+	{
+		if ( game.central )
+		{
+			local L_ME $get(ent_currentplayer,steamid)
+			if ( G_DEVSTAFF_OWNERS !contains L_ME )
+			{
+				exitevent
+			}
+		}
+		
+		callexternal GAME_MASTER give_item $get(ent_currentplayer,id) dev_staff
 	}
 
 	if ( PARAM1 equals '.' )
@@ -575,7 +558,9 @@
 	consolemsg CALLING_PLAYER "Resistance ratios (lower = more resistant, 1.0 = normal, 0.0 = immune)"
 	setvard TIP_TEXT ''
 	calleventloop $get_token_amt(RESIST_NAMES) list_resist_loop
-	local STUN_VALUE $get(CALLING_PLAYER,scriptvar,'IMMUNE_STUN')
+	local STUN_VALUE $get_takedmg(CALLING_PLAYER,stun)
+	multiply STUN_VALUE 100
+	local STUN_VALUE $int($math(subtract,100,STUN_VALUE))
 	stradd STUN_VALUE "%"
 	strconc TIP_TEXT Stun = STUN_VALUE "||"
 	local DARK_LEVEL $get(CALLING_PLAYER,scriptvar,'PLR_DARK_LEVEL')

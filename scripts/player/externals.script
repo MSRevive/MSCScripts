@@ -2,7 +2,7 @@
 #scope server
 
 {
-	const PLR_COMBAT_ICON alpha_poison_immune
+	const PLR_COMBAT_ICON hud/status/alpha_poison_immune
 
 	setvard PLR_HAND_SET 0 //future use, determines arm indexes of viewmodels
 	setvard PLR_UNIQUE_SUMMONS ''
@@ -15,32 +15,13 @@
 	const PLR_2HPEN_HEAVY 0.6
 	const PLR_2HPEN_HEAVY_REPORT 40%
 
-	setvard ICE_SHIELDED 0
 	setvard SCROLL_WARNING_LEVEL 0
-	setvard ICE_SHIELD_TIME 0
-
-	setvard PLR_BLOOM_CYCLE 0
-
-	setvard IMMUNE_COLD 0.99
-	setvard IMMUNE_FIRE 0.99
-	setvard IMMUNE_LIGHTNING 0.99
-	setvard IMMUNE_POISON 0.99
-	setvard IMMUNE_STUN 0
-
-	setvard PIMMUNE_COLD IMMUNE_COLD
-	setvard PIMMUNE_FIRE IMMUNE_FIRE
-	setvard PIMMUNE_LIGHTNING IMMUNE_LIGHTNING
-	setvard PIMMUNE_POISON IMMUNE_POISON
-
-	setvard PLR_DMG_MULTI '' //<source>;<type>;<multi>;...
-	setvard PLR_DMG_RESIST '' //<source>;<type>;<amt>;...
 
 	setvard PLR_PET_TYPES ''
 	setvard PLR_PET_IDS ''
 
 	setvard EXT_EFFECT_LIST 0
-
-	const DEMON_BLOOD_LOSS -5
+	
 	const VAMPIRE_MULTI 0.35 //what ratio of damage inflicted the player gets back as health under the influence of vampire blood
 
 	const PLR_FAURA_CL_RATE 10.0 //how often to refresh the fire aura cl fx
@@ -52,100 +33,10 @@
 
 	setvard IAM_PLAYER 1 //since $get(ent_xx,isplayer) doesn't seem to work for items
 
-	setvard SCARABS_ATTACHED 0
-	setvard WEBS_ATTACHED 0
-
 	array.create ARRAY_JUMP_BEAM_IDS
 	array.create ARRAY_JUMP_BEAM_TARGS
-}
-
-#include [casual] test_scripts/player_externals
-#include [casual] developer/player/externals
-#include [casual] $currentmap_player_externals
-
-#include items/base_vampire //Normally for items, but can be used here too for the vampire potion.
-
-{ game_scriptflag_update //<action> <name> [type] [value] [base_expire_time]
-
-	dbg game_scriptflag_update PARAM1 PARAM2 PARAM3 PARAM4 PARAM5
-
-	//handle flags
-	//nopush
-	if ( $get_scriptflag(ent_me,nopush,type_exists) )
-	{
-		nopush 1
-	}
-	else
-	{
-		nopush 0
-	}
-
-	//handle check for expire
-	if ( PARAM1 equals add ) local L_CHECK_EXPIRE 1
-	if ( PARAM1 equals edit )
-	{
-		//dbg game_scriptflag_update edit updated expire times
-		local L_CHECK_EXPIRE 1
-	}
-	
-	if L_CHECK_EXPIRE
-
-	local L_CHECK_EXPTIME PARAM5
-
-	if ( L_CHECK_EXPTIME > -1 )
-	{
-		add L_CHECK_EXPTIME 0.1
-		callevent L_CHECK_EXPTIME check_flags_expired
-	}
-}
-
-{ ext_sflag_test
-	scriptflags ent_me add test1 cold 1 5.00 "Test1-Cold+1 Expired"
-	scriptflags ent_me add test2 cold 2 10.00 "Test2-Cold+2 Expired"
-	scriptflags ent_me add test3 fire 4 5.0 "Test3-Fire+3 Expired"
-	scriptflags ent_me add test4 fire -1 11.0 "Test4-Fire-1 Expired"
-	callevent ext_sflag_test_loop
-}
-
-{ ext_sflag_test_loop
-	if $get_scriptflag(ent_me,fire,exists)
-	gplayermessage ent_me cold $get_scriptflag(ent_me,cold,totalvalue) fire  $get_scriptflag(ent_me,fire,totalvalue)
-	callevent 1.0 ext_sflag_test_loop
-}
-
-{ ext_set_status_flag //<name_id> <type> <value> <expires:secs|-1> <message:msg|none>
-
-	scriptflags ent_me add PARAM1 PARAM2 PARAM3 PARAM4 PARAM5
-	callevent check_flags
-}
-
-{ check_flags
-
-	if ( $get_scriptflag(ent_me,mana_regen,type_exists) )
-	{
-		callevent ext_mana_regen_loop
-	}
-}
-
-{ check_flags_expired
-	dbg check_flags_expired
-	scriptflags ent_me remove_expired
-	callexternal ent_me ext_scriptflag_expired
-}
-
-{ ext_remove_status_flag //<name_id>
-	scriptflags ent_me remove PARAM1
-	//callevent check_flags
-}
-
-{ ext_remove_status_flags_type //<type>
-	dbg ext_remove_status_flags_type PARAM1
-	scriptflags ent_me cleartype PARAM1
-	//callevent check_flags
-}
 
 //sound sets
-{
 	const SOUNDSET_HM_SWORDREADY player/swordready.wav
 	const SOUNDSET_HM_SHOUT1 player/shout1.wav
 	const SOUNDSET_HM_JAB1 player/jab1.wav
@@ -261,6 +152,76 @@
 	svplaysound 1 0 SOUNDSET_HF_FALLPAIN4
 }
 
+#include [casual] test_scripts/player_externals
+#include [casual] developer/player/externals
+#include [casual] $currentmap_player_externals
+
+#include items/base_vampire //Normally for items, but can be used here too for the vampire potion.
+
+{ game_scriptflag_update //<action> <name> [type] [value] [base_expire_time]
+
+	dbg game_scriptflag_update PARAM1 PARAM2 PARAM3 PARAM4 PARAM5
+
+	//handle flags
+	//nopush
+	if ( $get_scriptflag(ent_me,nopush,type_exists) )
+	{
+		nopush 1
+	}
+	else
+	{
+		nopush 0
+	}
+
+	//handle check for expire
+	if ( PARAM1 equals add ) local L_CHECK_EXPIRE 1
+	if ( PARAM1 equals edit )
+	{
+		//dbg game_scriptflag_update edit updated expire times
+		local L_CHECK_EXPIRE 1
+	}
+	
+	if L_CHECK_EXPIRE
+
+	local L_CHECK_EXPTIME PARAM5
+
+	if ( L_CHECK_EXPTIME > -1 )
+	{
+		add L_CHECK_EXPTIME 0.1
+		callevent L_CHECK_EXPTIME check_flags_expired
+	}
+}
+
+{ ext_set_status_flag //<name_id> <type> <value> <expires:secs|-1> <message:msg|none>
+
+	scriptflags ent_me add PARAM1 PARAM2 PARAM3 PARAM4 PARAM5
+	callevent check_flags
+}
+
+{ check_flags
+
+	if ( $get_scriptflag(ent_me,mana_regen,type_exists) )
+	{
+		callevent ext_mana_regen_loop
+	}
+}
+
+{ check_flags_expired
+	dbg check_flags_expired
+	scriptflags ent_me remove_expired
+	callexternal ent_me ext_scriptflag_expired
+}
+
+{ ext_remove_status_flag //<name_id>
+	scriptflags ent_me remove PARAM1
+	//callevent check_flags
+}
+
+{ ext_remove_status_flags_type //<type>
+	dbg ext_remove_status_flags_type PARAM1
+	scriptflags ent_me cleartype PARAM1
+	//callevent check_flags
+}
 
 { game_hitbodypart //<generic|head|chest|stomach|larm|rarm|rleg|lleg>
 	dbg game_hitbodypart PARAM1
@@ -273,7 +234,7 @@
 	if ( PARAM1 equals lleg ) svplaysound 2 10 PLR_SOUND_LEGHIT1
 }
 
-{ game_fallpain_sound
+{ game_fall
 	//dbg game_fallpain_sound
 	svplayrandomsound 2 10 PLR_SOUND_FALLPAIN1 PLR_SOUND_FALLPAIN2 PLR_SOUND_FALLPAIN3 PLR_SOUND_FALLPAIN4
 }
@@ -286,378 +247,8 @@
 	//dbg GlowID set to MY_GLOW_ID vs EXTERNAL_LIGHT_ID
 }
 
-{ ice_shield_check
-
-	if ( ICE_SHIELDED ) setvarg ICE_SHIELD_CHECK 1
-	if ( !ICE_SHIELDED ) setvarg ICE_SHIELD_CHECK 0
-	//dbg Ice Shield Check says ( ICE_SHIELD_CHECK )
-}
-
-{ effect_damage
-
-	////dbg Effect_damage Delay EFFECT_DAMAGE_DELAY Dmg PARAM1 Durat PARAM3 Type PARAM4 skill PARAM5
-
-	if !EFFECT_DAMAGE_DELAY
-	setvard EFFECT_DAMAGE_DELAY 1
-	callevent 0.9 reset_effect_damage
-	//Dmg PARAM1 Src PARAM2 Durat PARAM3 Type PARAM4
-	dodamage ent_me direct PARAM1 100% PARAM2 PARAM4 PARAM5
-}
-
-{ reset_effect_damage
-
-	setvard EFFECT_DAMAGE_DELAY 0
-}
-
-//for all xxx_immune, PARAM1 = duration before reset to normal
-//- laziness means that if any immunity runs out, they all do
-{ lightning_immune
-
-	//dbg ********** SHOCK IMMUNE ACTIVE ***********
-	gplayermessage ent_me You are now immune to lightning.
-	takedmg lightning 0.0
-	setvard IMMUNE_LIGHTNING 1
-	callevent set_player_immunes
-	callevent PARAM1 lightning_normal
-}
-{ fire_immune
-
-	gplayermessage ent_me You are now immune to fire.
-	takedmg fire 0.0
-	setvard IMMUNE_FIRE 1
-	callevent set_player_immunes
-	callevent PARAM1 fire_normal
-}
-{ poison_immune
-
-	gplayermessage ent_me You are now immune to poison.
-	takedmg poison 0.0
-	setvard IMMUNE_POISON 1
-	callevent set_player_immunes
-	callevent PARAM1 poison_normal
-}
-{ cold_immune
-
-	gplayermessage ent_me You are now immune to cold effects.
-	takedmg cold 0.0
-	takedmg ice 0.0
-	//setvard IMMUNE_COLD 1
-	//dbg setting cold immune IMMUNE_COLD
-	callevent set_player_immunes
-	callevent PARAM1 cold_normal
-}
-
-{ fire_resist
-
-	gplayermessage ent_me You are now resistant to fire damage. ( 75% )
-	takedmg fire 0.25
-	setvard IMMUNE_FIRE 0.25
-	callevent set_player_immunes
-	callevent PARAM1 fire_normal //if no param is given, permanent
-}
-
-{ [server] fire_resist_adj //PARAM1 = AMT PARAM2 = Duration
-
-	local RETURN_PARAM 100
-	local INC_PARAM PARAM1
-	multiply INC_PARAM 100
-	subtract RETURN_PARAM INC_PARAM
-
-	local RETURN_PARAM $int(RETURN_PARAM)
-	stradd RETURN_PARAM '%'
-
-	if ( PARAM1 == 0 )
-	{
-		callevent fire_normal
-		local EXIT_SUB 1
-	}
-	if !EXIT_SUB
-
-
-	if ( PARAM1 < 1.0 ) 
-	{
-		if PARAM1 > 0
-		gplayermessage ent_me You are now more resistant to fire. ( RETURN_PARAM )
-		local DAMAGE_REDUCT PARAM1
-	}
-	if ( PARAM1 > 1.0 )
-	{
-		playermessage ent_me You are now more vulnerable to fire damage! ( RETURN_PARAM )
-		local DAMAGE_REDUCT PARAM1
-	}
-	if ( PARAM1 == 1.0 )
-	{
-		gplayermessage ent_me You are now immuned to fire damage!
-		local DAMAGE_REDUCT 0.0
-	}
-	//dbg takemdg fire set to DAMAGE_REDUCT ( inc was PARAM1 )
-	//takedmg fire 0.0
-	takedmg fire DAMAGE_REDUCT
-	//setvard IMMUNE_FIRE PARAM1
-	callevent set_player_immunes
-	callevent PARAM2 fire_normal //if no param is given, permanent
-}
-
-{ [server] lightning_resist_adj //PARAM1 = AMT (float) PARAM2 = Duration
-
-	local RETURN_PARAM 100
-	local INC_PARAM PARAM1
-	multiply INC_PARAM 100
-	subtract RETURN_PARAM INC_PARAM
-
-	local RETURN_PARAM $int(RETURN_PARAM)
-	stradd RETURN_PARAM '%'
-
-	if ( PARAM1 == 0 )
-	{
-		callevent lightning_normal
-		local EXIT_SUB 1
-	}
-	if !EXIT_SUB
-
-
-	if ( PARAM1 < 1.0 ) 
-	{
-		if PARAM1 > 0
-		gplayermessage ent_me You are now more resistant to electricity. ( RETURN_PARAM )
-		local DAMAGE_REDUCT PARAM1
-	}
-	if ( PARAM1 > 1.0 )
-	{
-		playermessage ent_me You are now more vulnerable electricity! ( RETURN_PARAM )
-		local DAMAGE_REDUCT PARAM1
-	}
-	if ( PARAM1 == 1.0 )
-	{
-		gplayermessage ent_me You are now immuned to electricity!
-		local DAMAGE_REDUCT 0.0
-	}
-	//dbg takemdg fire set to DAMAGE_REDUCT ( inc was PARAM1 )
-	//takedmg fire 0.0
-	takedmg lightning DAMAGE_REDUCT
-	callevent set_player_immunes
-	callevent PARAM2 lightning_normal //if no param is given, permanent
-}
-
-{ [server] cold_resist_adj //PARAM1 = AMT PARAM2 = Duration
-
-	local RETURN_PARAM 100
-	local INC_PARAM PARAM1
-	multiply INC_PARAM 100
-	subtract RETURN_PARAM INC_PARAM
-
-	local RETURN_PARAM $int(RETURN_PARAM)
-	stradd RETURN_PARAM '%'
-
-	if ( PARAM1 == 0 )
-	{
-		callevent cold_normal
-		local EXIT_SUB 1
-	}
-	if !EXIT_SUB
-
-	if ( PARAM1 < 1.0 ) 
-	{
-		if PARAM1 > 0
-		gplayermessage ent_me You are now more resistant to cold. ( RETURN_PARAM )
-		local DAMAGE_REDUCT PARAM1
-	}
-	if ( PARAM1 > 1.0 )
-	{
-		playermessage ent_me You are now more vulnerable to cold damage! ( RETURN_PARAM )
-		local DAMAGE_REDUCT PARAM1
-	}
-	if ( PARAM1 == 1.0 )
-	{
-		gplayermessage ent_me You are now immuned to ice magic!
-		local DAMAGE_REDUCT 0.0
-	}
-	//dbg takemdg cold set to DAMAGE_REDUCT ( inc was PARAM1 )
-	//takedmg cold 0.0
-	takedmg cold DAMAGE_REDUCT
-	takedmg ice DAMAGE_REDUCT
-	setvard IMMUNE_COLD PARAM1
-	callevent set_player_immunes
-	callevent PARAM2 cold_normal //if no param is given, permanent
-}
-
-{ cold_resist
-
-	gplayermessage ent_me You feel more resistant to the effects of extreme cold. ( 75% )
-	takedmg cold 0.25
-	takedmg ice 0.25
-	setvard IMMUNE_COLD 0.25
-	callevent set_player_immunes
-	callevent PARAM1 cold_normal
-}
-
-{ [server] poison_resist_adj //PARAM1 = AMT PARAM2 = Duration
-
-	local RETURN_PARAM 100
-	local INC_PARAM PARAM1
-	multiply INC_PARAM 100
-	subtract RETURN_PARAM INC_PARAM
-
-	local RETURN_PARAM $int(RETURN_PARAM)
-	stradd RETURN_PARAM '%'
-
-	if ( PARAM1 == 0 )
-	{
-		callevent cold_normal
-		local EXIT_SUB 1
-	}
-	if !EXIT_SUB
-
-	if ( PARAM1 < 1.0 ) 
-	{
-		if PARAM1 > 0
-		gplayermessage ent_me You are now more resistant to poisons. ( RETURN_PARAM )
-		local DAMAGE_REDUCT PARAM1
-	}
-	if ( PARAM1 > 1.0 )
-	{
-		playermessage ent_me You are now more vulnerable to poison! ( RETURN_PARAM )
-		local DAMAGE_REDUCT PARAM1
-	}
-	if ( PARAM1 == 1.0 )
-	{
-		gplayermessage ent_me You are now immuned to poison!
-		local DAMAGE_REDUCT 0.0
-	}
-	//dbg takedmg poison set to DAMAGE_REDUCT ( inc was PARAM1 )
-	//takedmg poison 0.0
-	takedmg poison DAMAGE_REDUCT
-	setvard IMMUNE_POISON PARAM1
-	callevent set_player_immunes
-	callevent PARAM2 poison_normal //if no param is given, permanent
-}
-
-{ normal_immune
-
-	if ( IMMUNE_COLD > 0 ) playermessage ent_me Your have lost your resistance to cold!
-	if ( IMMUNE_FIRE > 0 ) playermessage ent_me Your have lost your resistance to fire!
-	if ( IMMUNE_POISON > 0 ) playermessage ent_me Your have lost your resistance to poison!
-	if ( IMMUNE_LIGHTNING > 0 ) playermessage ent_me Your have lost your resistance to lightning!
-
-	setvard IMMUNE_COLD 0
-	setvard IMMUNE_FIRE 0
-	setvard IMMUNE_LIGHTNING 0
-	setvard IMMUNE_POISON 0
-	takedmg cold 1.0
-	takedmg fire 1.0
-	takedmg lightning 1.0
-	takedmg poison 1.0
-	takedmg ice 1.0
-	callevent set_player_immunes
-}
-
-{ cold_normal
-	takedmg cold 1.0
-	callevent set_player_immunes
-}
-
-{ fire_normal
-	takedmg fire 1.0
-	callevent set_player_immunes
-}
-
-{ lightning_normal
-	takedmg lightning 1.0
-	callevent set_player_immunes
-}
-
-{ poison_normal
-	takedmg poison 1.0
-	callevent set_player_immunes
-}
-
-{ set_player_immunes
-
-	//work around due to scriptvar not being able to read vars that are also on caller
-	//dbg set_player_immunes cold IMMUNE_COLD vs PIMMUNE_COLD fire IMMUNE_FIRE vs PIMMUNE_FIRE lightning IMMUNE_LIGHTNING vs PIMMUNE_LIGHTNING poison IMMUNE_POISON vs PIMMUNE_POISON
-
-	//PIMMUNE_XXX will have older value until this event is done
-
-	//lost partial resist
-	if ( IMMUNE_COLD > PIMMUNE_COLD )
-	{
-		if IMMUNE_COLD < 1
-		dplayermessage ent_me You lose your resistance to cold.
-	}
-	if ( IMMUNE_FIRE > PIMMUNE_FIRE )
-	{
-		if IMMUNE_FIRE < 1
-		dplayermessage ent_me You lose your resistance to fire.
-	}
-	if ( IMMUNE_LIGHTNING > PIMMUNE_LIGHTNING )
-	{
-		if IMMUNE_LIGHTNING < 1
-		dplayermessage ent_me You lose your resistance to lightning.
-	}
-	if ( IMMUNE_POISON > PIMMUNE_POISON )
-	{
-		if IMMUNE_POISON < 1
-		dplayermessage ent_me You lose your resistance to poison.
-	}
-
-	//lost immunity
-	if ( PIMMUNE_COLD == 1 )
-	{
-		if IMMUNE_COLD < 1
-		dplayermessage ent_me You lose your immunity to cold.
-	}
-	if ( PIMMUNE_FIRE == 1 )
-	{
-		if IMMUNE_FIRE < 1
-		dplayermessage ent_me You lose your immunity to fire.
-	}
-	if ( PIMMUNE_LIGHTNING == 1 )
-	{
-		if IMMUNE_LIGHTNING < 1
-		dplayermessage ent_me You lose your immunity to lightning.
-	}
-	if ( PIMMUNE_POISON == 1 )
-	{
-		if IMMUNE_POISON < 1
-		dplayermessage ent_me You lose your immunity to poison.
-	}
-
-	setvard PIMMUNE_COLD IMMUNE_COLD
-	setvard PIMMUNE_FIRE IMMUNE_FIRE
-	setvard PIMMUNE_LIGHTNING IMMUNE_LIGHTNING
-	setvard PIMMUNE_POISON IMMUNE_POISON
-}
-
-{ tome_warn
-
-	add SCROLL_WARNING_LEVEL 1
-	if ( SCROLL_WARNING_LEVEL > 3 ) setvard SCROLL_WARNING_LEVEL 3
-	if ( SCROLL_WARNING_LEVEL == 1 ) infomsg ent_me "TOMES vs SCROLLS" "TOMES can be used to memorize spells permanently."
-	if ( SCROLL_WARNING_LEVEL == 2 ) infomsg ent_me "TOMES vs SCROLLS" "SCROLLS... are more expensive..."
-}
-
 { set_stun_prot
-
-	if !PL_STABILITY_POTION
-	setvard IMMUNE_STUN PARAM1
-	setvard PL_IMMUNE_STUN PARAM1
-}
-
-
-{ toggle_light
-
-	//dbg ToggleLight from IR_GLOWING
-
-	if ( IR_GLOWING == 1 ) 
-	{
-		setvard IR_GLOWING 0
-		local EXIT_SUB 1
-	}
-	if !EXIT_SUB
-
-	if ( IR_GLOWING == 0 ) setvard IR_GLOWING 1
-
-	if ( IR_GLOWING equals 'IR_GLOWING' ) setvard IR_GLOWING 1
+	takedmg stun PARAM1
 }
 
 { set_spawn_point
@@ -666,73 +257,7 @@
 	setvard NEW_SPAWN_POS PARAM1
 }
 
-{ demon_blood
 
-	setvard DEMON_BLOOD_END_TIME game.time
-	add DEMON_BLOOD_END_TIME PARAM1
-
-	effect screenfade ent_me 0.5 3 (255,0,0) 255 fadeout
-	gplayermessage ent_me The demonic soul fills your heart with rage!
-	playsound 0 10 monsters/troll/trollidle2.wav
-
-	setvard MAKE_NOISE 2
-	setvard DEMON_BLOOD 1
-
-	//callevent PARAM1 end_demon_blood
-
-	callevent 1.0 demon_blood_loop
-}
-
-{ end_demon_blood
-	if DEMON_BLOOD
-	setvard DEMON_BLOOD 0
-	gplayermessage ent_me "The demon blood fades."
-}
-
-{ demon_blood_loop
-
-	if DEMON_BLOOD
-
-	if ( game.time >= DEMON_BLOOD_END_TIME )
-	{
-		callevent end_demon_blood
-		local EXIT_SUB 1
-	}
-	if !EXIT_SUB
-
-	//setprop ent_me rendermode 5
-	//setprop ent_me renderamt 255
-
-	effect glow ent_me (255,0,0) 256 1.9 1.9
-
-	callevent 2.0 demon_blood_loop
-
-//	if ( $get(ent_me,hp) <= 0 )
-//	{
-//		givehp DEMON_BLOOD_LOSS
-//		setvard DEMON_BLOOD 0
-//		dodamage ent_me "direct" 1000 world
-//		playermessage ent_me The demon blood fades.
-//		local EXIT_SUB 1
-//	}
-//	if !EXIT_SUB
-//
-//	if $get(ent_me,hp) > 11
-
-	add MAKE_NOISE 1	
-	if ( MAKE_NOISE > 5 )
-	{
-		playrandomsound 0 10 monsters/troll/trollidle2.wav monsters/troll/trollidle.wav
-		setvard MAKE_NOISE 0
-	}
-
-	givehp DEMON_BLOOD_LOSS
-	effect screenfade ent_me 0.5 1 (255,0,0) 150 fadeout
-	effect screenshake $relpos(0,0,0) 32 10 1 32
-	if ( MAKE_NOISE > 0 ) playsound 0 10 player/heartbeat_noloop.wav
-
-	if ( $get(ent_me,hp) <= 0 ) kill ent_me
-}
 
 { register_body //param1 body ent to register
 
@@ -869,7 +394,7 @@
 
 		callexternal GAME_MASTER gm_setname "The light of the sun"
 		xdodamage ent_me direct SUN_DAMAGE 100% GAME_MASTER GAME_MASTER none magic_effect
-		//applyeffect ent_me effects/effect_burn 5.0 BURNER_ID SUN_DAMAGE 1
+		//applyeffect ent_me effects/dot_fire 5.0 BURNER_ID SUN_DAMAGE 1
 	}
 	callevent 5.1 vampire_suncheck
 }
@@ -891,24 +416,6 @@
 		givehp DMG_INFLICTED
 
 		callevent try_vampire_target $get(ent_me,id) $get(PARAM1,id) DMG_INFLICTED  //<owner> <target> <healAmt>
-	}
-
-	if ( DEMON_BLOOD )
-	{
-		if $get(PARAM1,isalive)
-		if $get(PARAM1,relationship,ent_me) equals enemy
-
-		local DEMON_BLOOD_DAMAGE $get(ent_me,skill.spellcasting)
-		multiply DEMON_BLOOD_DAMAGE 10
-
-		if $rand(1,3) == 1
-
-		if game.time > NEXT_DEMON_BLOOD_DMG
-		setvard NEXT_DEMON_BLOOD_DMG game.time
-		add NEXT_DEMON_BLOOD_DMG 1.0
-
-		applyeffect PARAM1 effects/generic_damage DEMON_BLOOD_DAMAGE $get(ent_me,id) 1 magic PL_ACTIVE_SKILL
-		playrandomsound 0 10 monsters/troll/trollpain.wav monsters/troll/trollattack.wav
 	}
 }
 
@@ -937,13 +444,6 @@
 	playsound 0 10 EXTPLAY_SOUND
 }
 
-{ ext_push_targ //PARAM1=target PARAM2=vel
-
-	//all addvelocity events for player should be handled through here
-	if $get(PARAM1,scriptvar,'IMMUNE_PUSH') != 1
-	addvelocity PARAM1 PARAM2
-}
-
 { ext_rename_me
 	name PARAM1
 }
@@ -957,67 +457,15 @@
 	playmp3 ent_me combat PARAM1
 }
 
-{ ext_scan_radius //as getents (debuggary)
-
-	consolemsg ent_me ext_scan_radius getents PARAM1 PARAM2
-	getents PARAM1 PARAM2
-	setvard LOOP_COUNT 0
-	setvard ENT_LIST "Names:"
-	calleventloop GET_COUNT scan_loop
-	consolemsg ent_me ent_count GET_COUNT list( ENT_LIST ) @ $get(GET_ENT1,range)
-}
-
-{ scan_loop
-
-	add LOOP_COUNT 1
-	stradd ENT_LIST LOOP_COUNT
-	stradd ENT_LIST "-"
-	if ( LOOP_COUNT == 1 ) stradd ENT_LIST $get(GET_ENT1,name)
-	if ( LOOP_COUNT == 2 ) stradd ENT_LIST $get(GET_ENT2,name)
-	if ( LOOP_COUNT == 3 ) stradd ENT_LIST $get(GET_ENT3,name)
-	if ( LOOP_COUNT == 4 ) stradd ENT_LIST $get(GET_ENT4,name)
-	if ( LOOP_COUNT == 5 ) stradd ENT_LIST $get(GET_ENT5,name)
-	if ( LOOP_COUNT == 6 ) stradd ENT_LIST $get(GET_ENT6,name)
-	if ( LOOP_COUNT == 7 ) stradd ENT_LIST $get(GET_ENT7,name)
-	if ( LOOP_COUNT == 8 ) stradd ENT_LIST $get(GET_ENT8,name)
-	if ( LOOP_COUNT == 9 ) stradd ENT_LIST $get(GET_ENT9,name)
-
-	stradd ENT_LIST ","
-}
-
 { ext_setangle //PARAMS as setangle
 	//dbg got PARAM1 PARAM2
 	setangle PARAM1 PARAM2
 	//setangle PARAM1 PARAM2
 }
 
-{ ext_hit_manaball
-
-	if !HIT_BY_MANABALL
-	setvard HIT_BY_MANABALL 1
-	callevent 1.0 reset_hit_by_manaball
-}
-
-{ reset_hit_by_manaball
-	setvard HIT_BY_MANABALL 0
-}
-
-{ ext_get_sphere_test
-
-	setvard SPHERE_GOT $get_insphere(PARAM1,PARAM2,PARAM3)
-	consolemsg ent_me sphere [ PARAM1 PARAM2 PARAM3 ] got $get(SPHERE_GOT,name) id: $get(SPHERE_GOT,id)
-}
-
-//{ ext_bolt_test
-//	if G_DEVELOPER_MODE
-//	createnpc monsters/summon/shock_burst $relpos(0,0,0) $get(ent_me,id) 10 512 2
-//}
-
 { ext_quest //PARAM1=quest_name PARAM2=quest_data
 	//useful when you need to set a quest for all players
-
 	quest set ent_me PARAM1 PARAM2
-	savenow ent_me
 }
 
 { ext_addgold
@@ -1036,25 +484,6 @@
 	//setvard SEND_DMG_DELAY 1
 	//callevent 0.2 reset_send_dmg_delay
 	dodamage PARAM1 PARAM2 PARAM3 PARAM4 PARAM5 PARAM6 PARAM7
-}
-
-{ [server] ext_chest_lastused //PARAM1 = chest_id
-	//used to prevent treasure whores
-	consolemsg ent_me treasure chest used.
-	setvard PL_LAST_CHEST PARAM1
-	callevent 2.0 reset_pl_last_chest
-}
-
-{ [server] reset_pl_last_chest
-	setvard PL_LAST_CHEST unset
-}
-
-{ ext_fake_time
-	setvard IS_AFK 0
-	setvard AFK_TIME 0
-	setvard IN_WORLD 1
-	setvard PL_TIME 999
-	setvard PL_BEEN_ATTACKED 1
 }
 
 { give_hp //PARAM1 = amount to give, can be negative
@@ -1080,77 +509,6 @@
 	dodamage PARAM1 PARAM2 PARAM3 PARAM4 PARAM5 PARAM6 PARAM7
 }
 
-//All fail
-//{ [server] ext_set_freeze_amt
-//	//this is used to determine the current amount of freeze magic on the target
-//	setvard EFFECT_FREEZE_AMT PARAM1
-//}
-//
-//{ [server] ext_freeze_slow
-//	//alternate freeze magic method
-//	setvard PLR_SPEED PARAM1
-//	
-//	if ( !PLR_FREEZING ) callevent 1.0 thaw_loop
-//	setvard PLR_FREEZING 1
-//
-//	local ANIM_RATE PLR_SPEED
-//	divide ANIM_RATE 100
-//	setvard game.effect.movespeed PLR_SPEED
-//	setvard game.effect.anim.framerate ANIM_RATE
-//}
-//
-//{ [server] thaw_loop
-//	
-//	if ( PLR_SPEED < 100 ) add PLR_SPEED 1
-//	if ( PLR_SPEED == 100 ) setvard PLR_FREEZING 0
-//	if ( PLR_SPEED != 100 ) callevent 1.0 thaw_loop
-//
-//	local ANIM_RATE PLR_SPEED
-//	divide ANIM_RATE 100
-//	setvard game.effect.movespeed PLR_SPEED
-//	setvard game.effect.anim.framerate ANIM_RATE
-//}
-
-//Remember this lesson: you can stop a sound on a specific channel, by playing that same sound again on said channel at volume 0
-//{ [server] ext_temp
-//	playsound 2 10 magic/bolt_loop.wav
-//}
-//
-//{ [server] ext_temp2
-//	playsound 0 10 magic/spawn.wav
-//}
-//
-//{ [server] ext_stopsound
-//	playsound 2 0 magic/bolt_loop.wav
-//}
-
-//Fail, again
-//{ [server] ext_alter_velocity //<multiply%> <duration>
-//
-//
-//	if ( EXT_VELOCITY_LOOP ) setvard MY_VEL $get(ent_me,velocity)
-//	dbg temp was MY_VEL
-//	vectormultiply MY_VEL (PARAM1,PARAM1,PARAM1)
-//	dbg temp now MY_VEL
-//	setvelocity ent_me MY_VEL
-//
-//	if !EXT_VELOCITY_LOOP
-//	callevent velocity_loop
-//	setvard EXT_VELOCITY_LOOP 1
-//	callevent PARAM2 reset_ext_velocity_loop
-//}
-//
-//{ [server] reset_ext_velocity_loop
-//	dbg temp vel reset
-//	setvard EXT_VELOCITY_LOOP 0
-//}
-//
-//{ [server] velocity_loop
-//	if EXT_VELOCITY_LOOP
-//	setvelocity ent_me MY_VEL
-//	callevent 0.1 velocity_loop
-//}
-
 { [server] freeze_solid_start //PARAM1 = duration to freeze
 	//this is to tell monsters that change their move/anim speeds not to do so while frozen
 	setvard I_R_FROZEN 1
@@ -1165,40 +523,8 @@
 	setvard PL_I_R_FROZEN 0
 }
 
-{ [server] ext_remove_lock
-	setvard EXT_REMOVE_EFFECT lock
-}
-
-{ [server] ext_remove_nojump
-	setvard EXT_REMOVE_EFFECT nojump
-}
-
 { [server] ext_removed_effects
 	setvard EXT_REMOVE_EFFECT unset
-}
-
-{ [server] ext_setstat
-	setstat PARAM1 PARAM2 PARAM3 PARAM4 PARAM5 PARAM6 PARAM7 PARAM8
-}
-
-{ [server] ext_vistoggle
-
-
-	if ( PLR_VIS_ON )
-	{
-		//if game.clientside
-		//setprop ent_me rendermode 0
-		//dbg toggle vis on
-		//dbg toggle_vis 0
-		setvard PLR_VIS_ON 0
-	}
-	else
-	{
- 		//setprop ent_me rendermode 5
-		//setprop ent_me rendermode 255
-		//dbg toggle_vis 1
-		setvard PLR_VIS_ON 1
-	}
 }
 
 { ext_spider_protect //<duration> <amt> <tag>
@@ -1245,45 +571,6 @@
 	//- for Kharaztorant throwing knives, and possibly for future quest
 	setvard ALCO_TYPE PARAM1
 	setvard ALCO_SPAWN_ITEM PARAM2
-}
-
-{ [server] element_resist //PARAM1=AMT PARAM2=Type (all permanent)
-
-	if ( PARAM2 equals 'fire' ) local CUR_PROTECT IMMUNE_FIRE
-	if ( PARAM2 equals 'cold' ) local CUR_PROTECT IMMUNE_COLD
-	if ( PARAM2 equals 'poison' ) local CUR_PROTECT IMMUNE_POISON
-	if ( PARAM2 equals 'acid' ) local CUR_PROTECT IMMUNE_ACID
-	if ( PARAM2 equals 'lightning' ) local CUR_PROTECT IMMUNE_LIGHTNING
-
-	local OLD_PROTECT CUR_PROTECT
-	local IN_RECDUCT PARAM1
-
-	local NEW_PROTECT CUR_PROTECT
-	subtract NEW_PROTECT IN_RECDUCT
-
-	if ( NEW_PROTECT < 0 ) local FINAL_REDUCT 0.0
-
-	callevent float_to_percent FINAL_REDUCT
-
-	if ( CUR_PROTECT < OLD_PROTECT ) 
-	{
-		if PARAM1 > 0
-		gplayermessage ent_me You are now more resistant to PARAM2 ( FLOAT_RETURN )
-		local DAMAGE_REDUCT FINAL_REDUCT
-	}
-	if ( CUR_PROTECT > OLD_PROTECT )
-	{
-		playermessage ent_me You are now more vulnerable to PARAM2 damage! ( FLOAT_RETURN )
-		local DAMAGE_REDUCT FINAL_REDUCT
-	}
-	if ( PARAM1 <= 0 )
-	{
-		gplayermessage ent_me You are now immuned to PARAM2 damage!
-		local DAMAGE_REDUCT 0.0
-	}
-
-	takedmg PARAM2 DAMAGE_REDUCT
-	callevent set_player_immunes
 }
 
 { ext_flash_bang //PARAM1 = origin PARAM2 = radius PARAM3 = source_owner
@@ -1570,145 +857,6 @@
 	//dbg ext_box_token PLR_SCAN_TOKEN
 }
 
-{ ext_tokentest_set //IDX,VALUE
-
-	if ( TOKEN_TEST equals 'TOKEN_TEST' ) setvard TOKEN_TEST "test1;test2;test3;test4;test5;"
-	setvard OLD_TOKEN $get_token(TOKEN_TEST,PARAM1) 
-	setvard TOKEN_IDX PARAM1
-	token.set TOKEN_TEST PARAM1 PARAM2
-	callevent 0.1 ext_toktentest_display
-}
-
-{ ext_tokentest_scramble //IDX,VALUE
-
-	if ( TOKEN_TEST equals 'TOKEN_TEST' ) setvard TOKEN_TEST "test1;test2;test3;test4;test5;"
-	token.scramble TOKEN_TEST
-	consolemsg ent_me resetting token set now: TOKEN_TEST
-}
-
-{ ext_toktentest_display
-	consolemsg ent_me changed OLD_TOKEN to $get_token(TOKEN_TEST,TOKEN_IDX) string: TOKEN_TEST
-}
-
-{ ext_tokentest_reset
-	consolemsg ent_me resetting token test string
-	setvard TOKEN_TEST "test1;test2;test3;test4;test5;"
-}
-
-{ ext_tokentest_find //<search_string>
-	local TOKEN_FIND $get_find_token(TOKEN_TEST,PARAM1)
-	if ( TOKEN_FIND > -1 ) consolemsg ent_me Token PARAM1 found at index TOKEN_FIND
-	if ( TOKEN_FIND == -1 ) consolemsg ent_me Token PARAM1 not found in TOKEN_TEST
-}
-
-//prevents DOT effects from stacking into crash (see effects/effect_base)
-{ ext_set_effect_lastdmg
-	setvard EXT_LAST_EFFECT_DMG game.time
-}
-
-//eventually this will allow increasing/decreasing of damage types dynamically for items/titles
-//{ ext_set_dmg_multi //<type> <from> <amt>
-//
-//	//increase/decrease damage types based on item or title
-//
-//	local DMG_TYPE PARAM1
-//	local SRC_TYPE PARAM2
-//	local DMG_MULTI PARAM3
-//
-//	local SRC_IDX $get_find_token(PLR_DMG_MULTI,SRC_TYPE) //new function, returns idx of search string, -1 if not found
-//	if ( SRC_IDX == -1 )
-//	{
-//		token.add PLR_DMG_MULTI SRC_TYPE
-//		token.add PLR_DMG_MULTI DMG_TYPE
-//		token.add PLR_DMG_MULTI DMG_MULTI
-//	}
-//	else
-//	{
-//		local TYPE_IDX SRC_IDX
-//		add TYPE_IDX 1
-//		local MULTI_IDX SRC_IDX
-//		add MULTI_IDX 2
-//		token.set PLR_DMG_MULTI TYPE_IDX DMG_TYPE
-//		token.set PLR_DMG_MULTI MULTI_IDX DMG_MULTI
-//	}
-//	callevent update_dmg_multi
-//}
-//
-//{ update_dmg_multi
-//	local N_MULTI $get_token_amt(PLR_DMG_MULTI) //need a $len() function to prevent overflow
-//	if N_MULTI > 0
-//	calleventloop update_dmg_multi_loop
-//}
-//
-//{ update_dmg_multi_loop
-//	local CUR_IDX game.script.iteration
-//	local NEXT_IDX CUR_IDX
-//	add NEXT_IDX 1
-//	local CUR_TOKEN $get_token(PLR_DMG_MULTI,CUR_IDX)
-//	if ( NEXT_IDX < $get_token_amt(PLR_DMG_MULTI) ) local NEXT_TOKEN $get_token(PLR_DMG_MULTI,NEXT_IDX)
-//
-//	local SET_TYPE 0
-//	if ( CUR_TOKEN equals acid ) local SET_TYPE 1
-//	if ( CUR_TOKEN equals cold ) local SET_TYPE 1
-//	if ( CUR_TOKEN equals earth ) local SET_TYPE 1
-//	if ( CUR_TOKEN equals fire ) local SET_TYPE 1
-//	if ( CUR_TOKEN equals holy ) local SET_TYPE 1
-//	if ( CUR_TOKEN equals lightning ) local SET_TYPE 1
-//	if ( CUR_TOKEN equals poison ) local SET_TYPE 1
-//	if ( CUR_TOKEN equals slash ) local SET_TYPE 1
-//	if ( CUR_TOKEN equals blunt ) local SET_TYPE 1
-//	if ( CUR_TOKEN equals pierce ) local SET_TYPE 1
-//
-//	if SET_TYPE
-//
-//	local OLD_AMT $get_givedmg(CUR_TOKEN)
-//	if ( NEXT_TOKEN == 1 ) local NEXT_TOKEN 1.0
-//	givedmg CUR_TOKEN NEXT_TOKEN
-//	if ( OLD_AMT < NEXT_TOKEN )
-//	{
-//		if ( OLD_AMT == 0 ) local OLD_AMT 1
-//		multiply OLD_AMT 100
-//		multiply NEXT_TOKEN 100
-//		local OLT_AMT $int(OLD_AMT)
-//		local NEXT_TOKEN $int(NEXT_TOKEN)
-//		stradd NEXT_TOKEN '%'
-//		stradd OLD_AMT '%'
-//		gplayermessage ent_me Your CUR_TOKEN power has increased from OLD_AMT to NEXT_TOKEN
-//	}
-//	else
-//	{
-//		if OLD_AMT < NEXT_TOKEN
-//		multiply OLD_AMT 100
-//		multiply NEXT_TOKEN 100
-//		local OLT_AMT $int(OLD_AMT)
-//		local NEXT_TOKEN $int(NEXT_TOKEN)
-//		stradd NEXT_TOKEN '%'
-//		stradd OLD_AMT '%'
-//		if ( NEXT_TOKEN < 100 ) dplayermessage ent_me Your CUR_TOKEN power has decreased from OLD_AMT to NEXT_TOKEN
-//		if ( NEXT_TOKEN == 100 ) playermessage ent_me Your CUR_TOKEN power has returned to normal.
-//	}
-//}
-//
-
-{ ext_potion_stability
-
-	if ( PARAM1 equals end )
-	{
-		setvard IMMUNE_STUN 0
-		setvard PL_IMMUNE_STUN 0
-		setvard IMMUNE_PUSH 0
-		setvard PL_IMMUNE_PUSH 0
-		setvard PL_STABILITY_POTION 0
-	}
-	if PARAM1 isnot end 
-	setvard IMMUNE_STUN 100
-	setvard IMMUNE_PUSH 1
-	setvard PL_IMMUNE_PUSH 1
-	setvard PL_STABILITY_POTION 0
-
-	//PL_IMMUNE_PUSH/STUN aren't in use yet, but will likely need to be as a result of this
-}
-
 { ext_set_vote_delay
 	setvard VOTE_DISABLED 1
 	callevent 20.0 reset_vote_delay
@@ -1720,49 +868,6 @@
 
 { ext_reset_names
 	quest set ent_me n 0
-}
-
-{ ext_update_score //<score_from_game_master>
-	setvard PLR_TOTAL_DMG PARAM1
-}
-
-//old system - moved to player_main "add_damage_points"
-//{ ext_add_damage_points //<points>
-//
-//	local L_OUT PARAM1
-//	callevent add_dmg_points L_OUT
-//}
-
-{ ext_last_artie_used //<artie's ID>
-	setvard PLR_LAST_ARTIE PARAM1
-}
-
-{ ext_player_gag
-	gagplayer $get(ent_me,id) 1
-	if ( PARAM1 startswith PARAM )
-	{
-		local MUTE_FOREVAH 1
-		local TIME_STR " "
-	}
-	else
-	{
-		local TIME_STR "Your speech will be restored in "
-		strconc TIME_STR $int(PARAM1) minutes
-	}
-	
-	gplayermessage ent_me The admin gods have sewn your lips shut!
-	infomsg ent_me "The admin gods have sewn your lips shut!" TIME_STR
-	playsound 0 10 scientist/shutup.wav
-	if !MUTE_FOREVAH
-	
-	local MINUTES_TO_UNGAG PARAM1
-	multiply MINUTES_TO_UNGAG 60
-	callevent MINUTES_TO_UNGAG ext_player_ungag
-}
-
-{ ext_player_ungag
-	gplayermessage ent_me The admin gods have chosen to restore your speech.
-	gagplayer $get(ent_me,id) 0
 }
 
 { ext_send_tele_point //(origin)
@@ -1786,21 +891,6 @@
 	add BEAM_ROT 20
 }
 
-//external used for preventing requiring multiple resistance tests in a short period of time
-//only used by lightning at the moment, but should likely be extended to others
-{ ext_set_last_resist
-	setvard PLR_LAST_RESIST_TIME game.time
-	setvard PLR_LAST_RESIST_ELM PARAM1
-}
-
-//external for marking/unmarking trouble makers
-{ ext_trouble
-	setvard PLR_IS_TROUBLE_MAKER 1
-}
-{ ext_trouble_off
-	setvard PLR_IS_TROUBLE_MAKER 0
-}
-
 { ext_set_next_scroll
 	//external used by scrolls to mark next time scrolls will be allowed to be used
 	setvard PLR_NEXT_SCROLL game.time
@@ -1814,11 +904,6 @@
 { game_drain_death //PARAM1 = drainer
 	//dbg DRAIN DEATH
 	dodamage ent_me direct 100 100% PARAM1 target
-}
-
-{ ext_dmgmulti
-	//just to test - yes, this does work on players, but only for dodamage commands
-	dmgmulti PARAM1
 }
 
 //use ext_set_status_flag instead
@@ -1838,30 +923,7 @@
 //{ ext_nopush_off
 //	playermessage The stability magic fades...
 //	nopush 0
-//}
-
-{ ext_hoptest
-	addvelocity ent_me $relvel(0,200,1000)
-}
-
-{ ext_setviewmodel
-	setviewmodelprop PLR_ACTIVE_WEAPON submodel PARAM1 PARAM2
-}
-
-{ ext_token_range_test
-	setvard ENT_LIST $get_tsphere(any,1024)
-	if ENT_LIST isnot none
-	setvard ENT_LIST $sort_entlist(ENT_LIST,'range')
-	//dbg ext_token_range_test ENT_LIST
-	consolemsg ent_me Nearest to farthest
-	calleventloop $get_token_amt(ENT_LIST) ext_token_range_test_list
-}
-
-{ ext_token_range_test_list
-	local CUR_IDX game.script.iteration
-	local CUR_ENT $get_token(ENT_LIST,CUR_IDX)
-	consolemsg ent_me # CUR_IDX $get(CUR_ENT,name)
-}
+//
 
 { ext_set_map //mapname local_spawn dest_spawn
 
@@ -1887,11 +949,6 @@
 	//dbg settrans PLR_CUR_TRANS PLR_NEXT_TRANS
 	if PLR_IN_WORLD
 	settrans ent_me PLR_CUR_TRANS
-}
-
-
-{ ext_trans_info
-	//settrans ent_me PARAM1 PARAM2
 }
 
 //{ ext_add_pet //type, ID
@@ -2051,10 +1108,6 @@
 //	setvard CFB_FIREBALL_ACTIVE 0
 //}
 
-//Thothie FEB2009_18 - external for setting hit chance penalties
-{ ext_hit_chance
-	hitmulti ent_me PARAM1
-}
 
 //Thothie FEB2009_19 - allow frozen status from things other than freeze_solid
 { ext_set_frozen //<duration>
@@ -2080,7 +1133,7 @@
 	}
 	else
 	{
-		playermessage ent_me You have left the influence of the dark foce.
+		playermessage ent_me You have left the influence of the dark force.
 	}
 }
 
@@ -2147,7 +1200,7 @@
 		local EXIT_SUB 1
 	}
 	if !EXIT_SUB
-	if ( !IS_AFK ) applyeffect CUR_TARG effects/effect_burn 5.0 $get(ent_me,id) PLR_FAURA_DOT 1 1 spellcasting.fire
+	if ( !IS_AFK ) applyeffect CUR_TARG effects/dot_fire 5.0 $get(ent_me,id) PLR_FAURA_DOT spellcasting.fire
 }
 
 { ext_fire_aura_remove
@@ -2203,7 +1256,7 @@
 		local EXIT_SUB 1
 	}
 	if !EXIT_SUB
-	if ( !IS_AFK ) applyeffect CUR_TARG effects/effect_poison 5.0 $get(ent_me,id) PLR_PAURA_DOT 1 spellcasting.affliction
+	if ( !IS_AFK ) applyeffect CUR_TARG effects/dot_poison 5.0 $get(ent_me,id) PLR_PAURA_DOT 1 spellcasting.affliction
 }
 
 { ext_poison_aura_remove
@@ -2526,7 +1579,7 @@
 
 { ext_bear_mode_end
 	if PLR_BEAR_MODE
-	//callevent ext_remove_lock
+
 	setvard PLR_BEAR_MODE 0
 
 	callevent ext_visible
@@ -2573,11 +1626,6 @@
 	if ( PARAM1 equals reset ) setvard PLR_OLOF_STATUS 'PLR_OLOF_STATUS' //debuggary
 }
 
-{ ext_scarab_latch
-	add SCARABS_ATTACHED PARAM1
-	if ( SCARABS_ATTACHED < 0 ) setvard SCARABS_ATTACHED 0
-}
-
 //external for redisplaying model when new players connect
 { ext_reset_model
 //	if ( PLR_BEAR_MODE )
@@ -2603,11 +1651,6 @@
 	setprop ent_me rendermode 0
 	setprop ent_me renderamt 255
 	callexternal all ext_render_items $get(ent_me,id) 0 255
-}
-
-{ ext_hold_person //<duration>
-	scriptflags ent_me add hold_person nopush 1 PARAM1 none
-	//callevent PARAM1 hold_person_end
 }
 
 //{ hold_person_end
@@ -2660,19 +1703,12 @@
 		local EXIT_SUB 1
 	}
 	if !EXIT_SUB
-	if ( !IS_AFK ) applyeffect CUR_TARG effects/effect_acid 5.0 $get(ent_me,id) PLR_FEAURA_DOT 1 spellcasting.affliction
+	if ( !IS_AFK ) applyeffect CUR_TARG effects/dot_acid 5.0 $get(ent_me,id) PLR_FEAURA_DOT spellcasting.affliction
 }
 
 { ext_acid_feaura_remove
 	setvard PLR_FEAURA 0
 	clientevent update all PLR_FEAURA_CLIDX remove_me
-}
-
-//JUN2010_25 - callclitemevent only works in player scripts
-//(edit: actually, we fixed it so it does, but this may yet be useful, so leaving it here.)
-{ ext_force_itemevent //<item_id> <event_name>
-
-	callclitemevent PARAM1 PARAM2
 }
 
 { ext_weather_change
@@ -2750,7 +1786,7 @@
 	{
 		local SHADOW_DMG $get(ent_me,skill.spellcasting.affliction)
 		//multiply SHADOW_DMG 0.25
-		applyeffect CUR_TARG effects/effect_shadowflames 5 $get(ent_me,id) SHADOW_DMG
+		applyeffect CUR_TARG effects/dot_dark 5 $get(ent_me,id) SHADOW_DMG swordsmanship
 	}
 
 	local TARG_HP $get(CUR_TARG,hp)
@@ -2792,25 +1828,6 @@
 		
 	tossprojectile PARAM1 PARAM2 PARAM3 PARAM4 PARAM5 PARAM6 PARAM7 PARAM8 PARAM9 //last two parms here for no particular reason
 	setvard PLR_LAST_PROJECTILE $get(ent_lastprojectile,id)
-}
-
-{ ext_dbg
-	if ( PARAM1 isnot off )
-	{
-		setvard PLR_DEBUG_PARAM PARAM1
-		setvard PLR_DBG_LOOP_ON 1
-		callevent ext_dbg_loop
-	}
-	else
-	{
-		setvard PLR_DBG_LOOP_ON 0
-	}
-}
-
-{ ext_dbg_loop
-	if PLR_DBG_LOOP_ON
-	callevent 0.1 ext_dbg_loop
-	dbg $get(ent_me,PLR_DEBUG_PARAM)
 }
 
 //Shadowfire aura for blade of same name (slowly expands, pushes targs away)
@@ -2876,7 +1893,7 @@
 	local TRACE_LINE $get_traceline(TRACE_START,TRACE_END,worldonly)
 	if TRACE_LINE equals TRACE_END
 
-	applyeffect CUR_TARG effects/effect_burn 5.0 $get(ent_me,id) PLR_SFAURA_DOT 1 1
+	applyeffect CUR_TARG effects/dot_fire 5.0 $get(ent_me,id) PLR_SFAURA_DOT swordsmanship
 
 	local RESIST_ROLL 1.0
 	subtract RESIST_ROLL $randf(0,1.0)
@@ -2983,7 +2000,7 @@
 
 	if ( HEAL_TARGET )
 	{
-		applyeffect CUR_TARG effects/effect_rejuv2 PLR_HAURA_POWER $get(ent_me,skill.spellcasting.divination) $get(ent_me,id)
+		applyeffect CUR_TARG effects/effect_rejuv2 0 PLR_HAURA_POWER $get(ent_me,id)
 		local EXIT_SUB 1
 	}
 	if !EXIT_SUB
@@ -3073,7 +2090,7 @@
 	local PUSH_STR PLR_PLSHIELD_PUSH
 	multiply PUSH_STR $get_takedmg(CUR_TARGET,lightning)
 	addvelocity CUR_TARGET $relpos($vec(0,OWNER_YAW,0),$vec(0,PUSH_STR,10))
-	applyeffect CUR_TARGET effects/effect_shock_dmg 5.0 $get(ent_me,id) PLR_PLSHIELD_DOT
+	applyeffect CUR_TARGET effects/dot_lightning 5.0 $get(ent_me,id) PLR_PLSHIELD_DOT
 
 	if ( game.time > NEXT_PLSHIELD_SOUND )
 	{
@@ -3098,11 +2115,11 @@
 	if ( G_SORCV_FRIENDLY )
 	{
 		//haunted_desert.mp3
-		playmp3 ent_me combat music/PathAnubis.mp3
+		playmp3 ent_me combat PathAnubis.mp3
 	}
 	else
 	{
-		playmp3 ent_me combat music/crimson_field.mp3
+		playmp3 ent_me combat crimson_field.mp3
 	}
 }
 
@@ -3111,11 +2128,11 @@
 
 	if ( G_SORCV_FRIENDLY )
 	{
-		playmp3 ent_me combat music/haunted_desert.mp3
+		playmp3 ent_me combat haunted_desert.mp3
 	}
 	else
 	{
-		playmp3 ent_me combat music/crimson_field.mp3
+		playmp3 ent_me combat crimson_field.mp3
 	}
 }
 
@@ -3180,7 +2197,6 @@
 { ext_bravery
 	gplayermessage ent_me You will take no penalty for your next death
 	setvard PLR_BRAVERY 1
-	noxploss ent_me 1
 	playsound 0 10 voices/human/male_guard_hail.wav
 }
 
@@ -3207,11 +2223,6 @@
 //	givemp ent_me PLR_MANA_FONT_AMT
 //}
 
-{ set_self_adjusting
-	//auto-adjust by totalhp
-	setvard NPC_SELF_ADJUST 1
-}
-
 { trig_damage //<name>;<dmg>;<dmg_type> - called by a map brush with scriptevent
 	//infomsg ent_me trig_damage $stradd(PARAM1,-,PARAM2,-,PARAM3)
 	local TRIG_NAME PARAM1
@@ -3220,109 +2231,6 @@
 	stradd TRIG_DMG_TYPE _effect
 	callexternal GAME_MASTER gm_setname TRIG_NAME
 	xdodamage ent_me direct TRIG_DMG 100% GAME_MASTER GAME_MASTER none TRIG_DMG_TYPE
-}
-
-{ ext_webbed
-	//dbg ext_webbed WEBS_ATTACHED
-	if ( WEBS_ATTACHED == 0 )
-	{
-		callevent 10.0 ext_webs_decay
-	}
-	if ( !$get_scriptflag(ent_me,spider_resist,type_exists) ) add WEBS_ATTACHED 1
-	if ( WEBS_ATTACHED > 0 ) clientevent update ent_me const.localplayer.scriptID fx_web_set_webs WEBS_ATTACHED
-}
-
-{ ext_web_reset
-	setvard WEBS_ATTACHED 0
-}
-
-{ ext_webs_remove
-	setvard WEBS_ATTACHED 0
-}
-{ ext_webs_decay
-	subtract WEBS_ATTACHED 1
-	if ( WEBS_ATTACHED > 0 )
-	{
-		playermessage ent_me The webs loosen a bit.
-		callevent 10.0 ext_webs_decay
-	}
-	else if ( WEBS_ATTACHED == 0 )
-	{
-		playermessage ent_me You are free of webbing.
-	}
-	clientevent update ent_me const.localplayer.scriptID fx_web_set_webs WEBS_ATTACHED
-}
-
-{ ext_set_cocooned
-	setvard COCOON_ATTACHED PARAM1
-	if ( COCOON_ATTACHED ) setvard WEBS_ATTACHED 0
-}
-
-//For adding damage points for special events (such as rescuing player from goblin pouncer)
-{ ext_dmgpoint_bonus //<amt> <msg>
-	callevent add_dmg_points $int(PARAM1)
-
-	local OUT_MSG "+"
-	stradd OUT_MSG $int(PARAM1)
-	stradd OUT_MSG " damage points "
-	stradd OUT_MSG PARAM2 //eg. "for freeing <player_name>"
-	gplayermessage ent_me OUT_MSG
-}
-
-{ ext_darkenbloom
-	dbg ext_darkenbloom PARAM1
-	setvard PLR_DARKEN_BLOOM PARAM1
-	clientevent update ent_me const.localplayer.scriptID cl_darken_bloom PARAM1
-}
-
-
-{ ext_bloom_cycle
-	add PLR_BLOOM_CYCLE	1
-	if ( PLR_BLOOM_CYCLE == 1 )
-	{
-		clientcmd ent_me "ms_bloom_darken -1"
-		clientcmd ent_me "ms_bloom_level 4"
-		clientevent update ent_me const.localplayer.scriptID cl_darken_bloom PLR_DARKEN_BLOOM
-		gplayermessage ent_me Bloom Level: Auto ( PLR_DARKEN_BLOOM )
-		consolemsg ent_me bloom cvars: ms_bloom_darken -1 ms_bloom_level 4
-	}
-	if ( PLR_BLOOM_CYCLE == 2 )
-	{
-		clientcmd ent_me "ms_bloom_darken 0"
-		clientcmd ent_me "ms_bloom_level 4"
-		consolemsg ent_me bloom cvars: ms_bloom_darken 0 ms_bloom_level 4
-		gplayermessage ent_me Bloom Level: Max (0)
-	}
-	if ( PLR_BLOOM_CYCLE == 3 )
-	{
-		clientcmd ent_me "ms_bloom_darken 1"
-		clientcmd ent_me "ms_bloom_level 4"
-		gplayermessage ent_me Bloom Level: Dim I (4)
-		consolemsg ent_me bloom cvars: ms_bloom_darken 1 ms_bloom_level 4
-	}
-	if ( PLR_BLOOM_CYCLE == 4 )
-	{
-		clientcmd ent_me "ms_bloom_darken 6"
-		clientcmd ent_me "ms_bloom_level 4"
-		gplayermessage ent_me Bloom Level: Dim II (6)
-		consolemsg ent_me bloom cvars: ms_bloom_darken 6 ms_bloom_level 4
-	}
-	if ( PLR_BLOOM_CYCLE == 5 )
-	{
-		clientcmd ent_me "ms_bloom_darken 20"
-		clientcmd ent_me "ms_bloom_level 4"
-		gplayermessage ent_me Bloom Level: Dim III (20)
-		consolemsg ent_me bloom cvars: ms_bloom_darken 20 ms_bloom_level 4
-	}
-	if ( PLR_BLOOM_CYCLE == 6 )
-	{
-		clientcmd ent_me "ms_bloom_darken -1"
-		clientcmd ent_me "ms_bloom_level 0"
-		gplayermessage ent_me Bloom Level: Off
-		consolemsg ent_me bloom cvars: ms_bloom_darken -1 ms_bloom_level 0
-		setvard PLR_BLOOM_CYCLE 0
-	}
-
 }
 
 { ext_playrandomsound
@@ -3364,22 +2272,18 @@
 	playrandomsound PARAM1 PARAM2 PARAM3 PARAM4 PARAM5 PARAM6 PARAM7 PARAM8 PARAM9
 }
 
-{ ext_set_goblin_latched
-	setvard I_R_GOBLIN_LATCHED PARAM1
-}
-
 { ext_orcfor_boss_musak //<stage> [boss_org]
 	if ( PARAM1 == 1 )
 	{
 		setvard PLR_ORCFOR_MUSIC 1
-		playmp3 ent_me combat music/seruboss1.mp3
+		playmp3 ent_me combat seruboss1.mp3
 	}
 
 	if ( PARAM1 == 2 )
 	{
 		if PLR_ORCFOR_MUSIC != 2
 		setvard PLR_ORCFOR_MUSIC 2
-		playmp3 ent_me combat music/seruboss2.mp3
+		playmp3 ent_me combat seruboss2.mp3
 	}
 
 	if ( PARAM1 == 3 )
@@ -3398,7 +2302,7 @@
 	}
 	else
 	{
-		playmp3 ent_me combat music/gabe1.mp3
+		playmp3 ent_me combat gabe1.mp3
 	}
 }
 
@@ -3407,12 +2311,12 @@
 }
 
 { ext_bank_lock
-	applyeffect ent_me effects/effect_templock $get(ent_me,id)
+	applyeffect ent_me effects/effect_templock
 	callevent 1.0 ext_bank_lock_release
 }
 
 { ext_bank_lock_release
-	callevent ext_remove_lock
+	callexternal ent_me ext_end_templock
 }
 
 { ext_alance_init
@@ -3432,7 +2336,7 @@
 	}
 	if !EXIT_SUB
 
-	applyeffect PARAM2 effects/effect_poison 5.0 $get(ent_me,id) AFL_BURST_DOT
+	applyeffect PARAM2 effects/dot_poison 5.0 $get(ent_me,id) AFL_BURST_DOT
 
 	local TARG_HP $get(PARAM2,hp)
 	local MY_HP_X $get(ent_me,maxhp)
@@ -3742,7 +2646,7 @@
 	if !EXIT_SUB
 
 	if $get(ent_me,relationship,PARAM2) equals enemy
-	applyeffect PARAM2 effects/effect_burn 5.0 $get(ent_me,id) FISSURE_DMG
+	applyeffect PARAM2 effects/dot_fire 5.0 $get(ent_me,id) FISSURE_DMG
 
 	local TARG_HP $get(PARAM2,hp)
 	local MAX_HP_PUSH $get(ent_me,maxhp)
@@ -3766,17 +2670,12 @@
 	token.del PLR_UNIQUE_SUMMONS TOKEN_IDX
 }
 
-{ ext_reset_nomove //<0|1> removes no move applyeffect (effects/effect_tempnomove) if set to 1
-	//dbg ext_reset_nomove PARAM1
-	setvard PLR_EFFECT_REMOVE_NOMOVE PARAM1
-}
-
 { ext_epilepsy_time_begin
 	hud.addimgicon ent_me bepilepsy2 bepilepsy2 15 20 75 60 0.25 
 	setvard PLR_EPILEPSY_ACTIVE 1
 	setvard PLR_EPILEPSY_COUNT 0
 	setvard PLR_EPILEPSY_DELAY 0.5
-	playmp3 ent_me combat music/b-b-b-beetlejuice.mp3
+	playmp3 ent_me combat b-b-b-beetlejuice.mp3
 	callevent 0.25 epilepsy_loop
 	hud.addimgicon ent_me bepilepsy1 bepilepsy1 15 20 75 60 4.0
 }
@@ -3898,18 +2797,14 @@
 //	callclitemevent PLR_FISTS_ID kickatk_start
 //}
 
-{ set_push_resist
-	setvard MSC_PUSH_RESIST PARAM1
-}
-
 { ext_lesser_leadfoot
-	setvard MSC_PUSH_RESIST PARAM1
-	setvard IMMUNE_STUN PARAM2
-	setvard PLR_IMMUNE_STUN PARAM2
+	takedmg stun PARAM1
 	setvard PLR_LESSER_LEADFOOT 1
-	//setvard PLR_LESSER_LEADFOOT_RATIO PARAM1 //not used, but ucomment if you need it
-	setvard PLR_LESSER_LEADFOOT_STUN PARAM2 
-	if ( !$get(ent_me,nopush) ) gplayermessage ent_owner Your stun resistance is now PLR_IMMUNE_STUN
+	setvard PLR_LESSER_LEADFOOT_STUN PARAM1
+	
+	local L_STR $math(multiply,PLR_LESSER_LEADFOOT_STUN,100)
+	local L_STR $int($math(subtract,100,L_STR)) "%"
+	if ( !$get(ent_me,nopush) ) gplayermessage ent_owner Your stun resistance is now L_STR
 }
 
 { ext_delay_playsound //<delay> <chan> <vol> <wave>
@@ -4040,12 +2935,12 @@
 	conflictcheck
 }
 
-{ ext_showflags
-	local L_TEST $get_scriptflag(ent_me,listall)
-}
-
 { ext_dumpvars
 	conflictcheck dumpvars
+}
+
+{ ext_showflags
+	local L_TEST $get_scriptflag(ent_me,listall)
 }
 
 { ext_svplaysound_kiss
@@ -4058,62 +2953,9 @@
 	quest set ent_me m 0
 }
 
-{ ext_dump_bank
-	dbg ===== Dumping bank for $get(ent_me,name) ...
-	calleventloop 9 ext_dump_bank_loop
-	dbg ===== Dump Complete.
-}
-
-{ ext_dump_bank_loop
-	local CUR_BANK b
-	stradd CUR_BANK $int(game.script.iteration)
-	setvard PLR_TEMP $get_quest_data(ent_me,CUR_BANK)
-	setvard PLR_TEMP2 CUR_BANK
-	dbg bank # PLR_TEMP2 ...
-	calleventloop $get_token_amt(PLR_TEMP) ext_dump_bank_loop2
-}
-
-{ ext_dump_bank_loop2
-	dbg bank # PLR_TEMP2 item # $int(game.script.iteration) = $get_token(PLR_TEMP,game.script.iteration)
-}
-
-//{ ext_backgag
-//	add GAG_STEP 1
-//	if ( GAG_STEP == 1 ) playsound 0 10 scientist/hellothere.wav
-//	if ( GAG_STEP == 2 ) playsound 0 10 scientist/cantbeserious.wav
-//	if ( GAG_STEP == 3 ) playsound 0 10 scientist/chaostheory.wav
-//	if ( GAG_STEP == 4 ) playsound 0 10 scientist/cascade.wav
-//	if ( GAG_STEP == 5 )
-//	{
-//		setvard DEATH_POS $get(ent_me,origin)
-//		xdodamage ent_me direct 10000 100% GAME_MASTER GAME_MASTER none target none
-//		setvard GAG_STEP 0
-//	}
-//}
-
-//{ ext_afk_test
-//	dbg plrs game.players noafk game.players.noafk meafk IS_AFK totalhp game.players.totalhp avghp game.players.avghp
-//}
-
-{ ext_btest
-	local SPAWN_POINT $get(ent_me,origin)
-	local MY_ANGLES $get(ent_me,angles)
-	local MY_YAW $vec.yaw(MY_ANGLES)
-	vectoradd SPAWN_POINT $relpos($vec(0,MY_YAW,0),$vec(0,128,0))
-	dbg bat @ SPAWN_POINT
-	clientevent new all monsters/bat_large_corpse_cl SPAWN_POINT 2
-}
-
-{ ext_chill_stack_add //<#toadd>
-
-	local STACK_SIZE PARAM1
-	multiply STACK_SIZE $get_takedmg(ent_me,cold)
-	add EXT_CHILL_STACKS STACK_SIZE
-}
-
-{ ext_haste_cooldown
+{ ext_haste_cooldown //<cooldown>
 	setvard PLR_NEXT_HASTE game.time
-	add PLR_NEXT_HASTE 20.0
+	add PLR_NEXT_HASTE PARAM1
 }
 
 { ext_register_corrode
@@ -4138,31 +2980,6 @@
 		subtract L_MAX_MP L_CUR_MP
 		givemp L_MAX_MP
 	}
-}
-
-{ ext_seal_test //<type>
-	local L_SEAL_ORG $get(ent_me,origin)
-	vectorset L_SEAL_ORG z $get_ground_height(L_SEAL_ORG)
-	clientevent new all effects/sfx_seal_instant L_SEAL_ORG PARAM1 140 35
-}
-
-
-//{ ext_proj_test //<type>
-//	local L_TARGS $get_tsphere(enemy,1024)
-//	setvard PROJ_ELEMENT_TARGET $get_token(L_TARGS,0)
-//	setvard PROJ_ELEMENT_TYPE PARAM1
-//
-//	tossprojectile view 200 0 1 proj_elemental_guided $get(ent_me,origin) notoffset
-//}
-
-{ ext_contents_test
-	local TRACE_START $get(ent_me,origin)
-	local TRACE_END TRACE_START
-	vectoradd TRACE_END $relpos($vec(0,game.monster.angles.yaw,0),$vec(0,64,0))
-	local TRACE_LINE $get_traceline(TRACE_START,TRACE_END,contents)
-	gplayermessage ent_me cont $get_contents(TRACE_END) trace TRACE_LINE
-	effect beam point lgtning.spr 5 TRACE_START TRACE_END (255,255,0) 255 0 1
-	
 }
 
 { ext_arrow_hit //<idx|world> <dmgstring> <origin> - from items/proj_arrow_cl
@@ -4218,29 +3035,29 @@
 			}
 			if ( !L_PROJ_TYPE )
 			{
-				  applyeffect L_TARG_ID effects/effect_frostbite_dmg $randf(5,10) $get(ent_me,id) L_CDOT_DMG spellcasting.ice
+				  applyeffect L_TARG_ID effects/dot_cold $randf(5,10) $get(ent_me,id) L_CDOT_DMG spellcasting.ice
 			}
 			else
 			{
 				  givemp ent_me $neg(FREEZE_MANA_COST)
-				  applyeffect L_TARG_ID effects/freeze_solid 8.0 $get(ent_me,id) L_FDOT_DMG spellcasting.ice
+				  applyeffect L_TARG_ID effects/dot_cold_freeze 8.0 $get(ent_me,id) L_FDOT_DMG spellcasting.ice
 			}
 		}
 		else if ( L_PROJ_NAME equals proj_arrow_frost )
 		{
-			applyeffect L_TARG_ID effects/effect_frostbite_dmg $rand(5,10) $get(ent_me,id) 5 archery
+			applyeffect L_TARG_ID effects/dot_cold $rand(5,10) $get(ent_me,id) 5 archery
 		}
 		else if ( L_PROJ_NAME equals proj_arrow_gpoison )
 		{
-			applyeffect L_TARG_ID effects/greater_poison $rand(5,10) $get(ent_me,id) $randf(12,33) archery
+			applyeffect L_TARG_ID effects/dot_poison $rand(5,10) $get(ent_me,id) $randf(12,33) archery
 		}
 		else if ( L_PROJ_NAME equals proj_arrow_lightning )
 		{
-			applyeffect L_TARG_ID effects/effect_shock_dmg $rand(5,10) $get(ent_me,id) $randf(10,25) archery
+			applyeffect L_TARG_ID effects/dot_lightning $rand(5,10) $get(ent_me,id) $randf(10,25) archery
 		}
 		else if ( L_PROJ_NAME equals proj_arrow_poison )
 		{
-			applyeffect L_TARG_ID effects/effect_poison 15 $get(ent_me,id) $randf(2,3) 0 archery
+			applyeffect L_TARG_ID effects/dot_poison 15 $get(ent_me,id) $randf(2,3) 0 archery
 		}
 
 		if !L_SPECIAL_DMG
@@ -4332,7 +3149,7 @@
 		local L_TITLE $string_from(L_TITLE,_)
 	}
 
-	local L_DESC "Press Use (E) to activate." //$get(ent_me,keybind,+use) would be nice here
+	local L_DESC "Push (Enter) to activate." //$get(ent_me,keybind,+use) would be nice here
 	if ( PARAM3 )
 	{
 		//if game.players.noafk > 1
@@ -4456,7 +3273,7 @@
 		local EXIT_SUB 1
 	}
 	if !EXIT_SUB
-	applyeffect CUR_TARG effects/greater_poison 10.0 $get(ent_me,id) PLR_PBOLT_DOT spellcasting.affliction
+	applyeffect CUR_TARG effects/dot_poison 10.0 $get(ent_me,id) PLR_PBOLT_DOT spellcasting.affliction
 }
 
 //while this is possible, turned out to be no good in the desired context, as calling script events in a loop, causes only the first script event to be recieved
@@ -4494,6 +3311,10 @@
 	saytext PARAM1
 }
 
+{ ext_saytextrange //<value>
+	saytextrange PARAM1
+}
+
 //spariment
 { ext_req_viewmodel_idx
 	dbg requesting viewmodel idx...
@@ -4512,11 +3333,6 @@
 { ext_remove_effect
 	dbg ext_remove_effect PARAM1
 	removeeffect ent_me PARAM1
-}
-
-{ ext_crest_request
-	setvard PLR_LAST_CREST game.time
-	add PLR_LAST_CREST 180.0
 }
 
 { ext_clientcmd
@@ -4600,34 +3416,6 @@
 	}
 }
 
-{ ext_debug_draw_circle //<origin> <rad> [dur] [col]
-	setvard DBG_CIRCLE_POS PARAM1
-	setvard DBG_CIRCLE_RAD PARAM2
-	setvard DBG_CIRCLE_ROT 0
-	setvard DBG_CIRCLE_COLOR (255,0,255)
-	setvard DBG_CIRCLE_DUR 20.0
-	if ( PARAM3 !startswith PARAM ) setvard DBG_CIRCLE_DUR PARAM3
-	if ( PARAM4 !startswith PARAM ) setvard DBG_CIRCLE_COLOR PARAM3
-	
-	calleventloop 16 ext_debug_draw_circle_loop
-}
-
-{ ext_debug_draw_circle_loop
-	local L_BEAM_START DBG_CIRCLE_POS
-	vectoradd L_BEAM_START $relpos($vec(0,DBG_CIRCLE_ROT,0),$vec(0,DBG_CIRCLE_RAD,0))
-	add DBG_CIRCLE_ROT 22.5
-
-	local L_BEAM_END DBG_CIRCLE_POS
-	vectoradd L_BEAM_END $relpos($vec(0,DBG_CIRCLE_ROT,0),$vec(0,DBG_CIRCLE_RAD,0))
-	//add DBG_CIRCLE_ROT 22.5
-
-	effect beam point lgtning.spr 20 L_BEAM_START L_BEAM_END DBG_CIRCLE_COLOR 200 0 DBG_CIRCLE_DUR
-}
-
-//{ ext_set_next_circle_heal
-//	setvard NEXT_CIRCLE_HEAL PARAM1
-//}
-
 { ext_dburst //<origin> <rad> <repell:0|1> <sound:0|1>
 	setvard PLR_DBURST_ORG PARAM1
 	setvard PLR_DBURST_AOE PARAM2
@@ -4659,7 +3447,7 @@
 		exitevent
 	}
 	if $get(PARAM2,relationship,ent_me) equals enemy
-	applyeffect PARAM2 effects/effect_defile 15.0 $get(ent_me,id) PLR_DBURST_DOT 0.5
+	applyeffect PARAM2 effects/dot_dark 15.0 $get(ent_me,id) PLR_DBURST_DOT spellcasting.affliction
 
 	if PLR_DBURST_PUSH
 
@@ -4673,10 +3461,13 @@
 	setvelocity CUR_TARG $relvel($vec(0,TARG_ANG,0),$vec(0,1000,0))
 }
 
-{ ext_set_last_stun_time
-	setvard DAT_LAST_HEAVY_STUN game.time
+{ ext_environment_change
+
+	callevent ext_tod_lock $pass(PARAM1)
+	clientevent update ent_me const.localplayer.scriptID environment_change $pass(PARAM1)
 }
 
-{ ext_report_armor
-	consolemsg PARAM2 $get(ent_me,name) Armor: $get_takedmg(ent_me,all) PARAM1 : $get_takedmg(ent_me,PARAM1)
+{ ext_change_sky
+	clientevent update ent_me const.localplayer.scriptID change_sky $pass(PARAM1)
 }
+

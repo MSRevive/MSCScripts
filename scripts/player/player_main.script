@@ -6,8 +6,6 @@
 //d = destination spawn of last transition touched
 //mv = last gauntlet map I validly spawned in
 //dl = darkness contamination level
-//dp = damage points/1000
-//dm = last map on which dmg points were recorded
 //h = show_health toggle
 //p = health_bars toggle
 //r = ring quest stage (integer)
@@ -27,12 +25,6 @@
 //<pet_script> = pet XP
 //<pet_script>_hp = Current Pet HP
 //<pet_script>_name = Current Name
-
-//Thothie - Dmg Point system
-//- PLR_TOTAL_DMG is pulled from the quest data dp (formally GM), each point = 1k dmg
-//- PLR_DMG is local to the player (0-999) - at 1k it resets, and updates the quest data
-//- in some commentary these are referred to as 'Whole' and 'Fraction' Damage Points, which is how chests treat it
-//- Players gain massive points for aiding one another, and lose points for death
 
 //Player Initialization
 { [server]
@@ -82,7 +74,8 @@
 }
 
 #include [server] player/valid_spawn_new
-#include [server] player/element_resist
+#include player/server/dmgpoints
+#include player/server/element_resist
 
 // Spawn
 { game_spawn //this runs twice, once during character selection (before clicking), and again when character spawns into world
@@ -100,8 +93,6 @@
 	if ( DEMON_BLOOD ) callevent end_demon_blood
 	setvard PLR_SPEED 100
 
-	setvard ICE_SHIELDED 0
-	setvard ICE_SHIELD_TIME 0
 	setvard PLAYING_DEAD 0 //in case died while invalidated
 
 	//if ( !$get(GAME_MASTER,exists) ) createnpc game_master $vec(20000,-10000,-20000)
@@ -151,83 +142,10 @@
 		//Removed client side dll check. -greatguys1@NOV2021
 	}
 
-	if ( !PLR_FIRST_ACTIVATE )
-	{
-		setvard PLR_FIRST_ACTIVATE 1
-		local L_MAP_NAME $lcase(game.map.name)
-		if ( $get_find_token(MAPS_GAUNTLET,L_MAP_NAME) > -1 ) local L_IS_GAUNTLET 1
-		if ( $get_find_token(MAPS_GAUNTLET_START,L_MAP_NAME) > -1 ) local L_IS_GAUNTLET 1
-
-		dbg activate_stuff dmg_points gaunt $get_find_token(MAPS_GAUNTLET_START,L_MAP_NAME) L_IS_GAUNTLET
-	
-		if ( L_IS_GAUNTLET )
-		{
-			if ( $get_find_token(MAPS_GAUNTLET_START,L_MAP_NAME) > -1 )
-			{
-				local L_START_GAUNTLET 1
-				if ( game.time < 180 )
-				{
-					if ( $get_quest_data(ent_me,dp) < 500 )
-					{
-						setvard PLR_TOTAL_DMG 500
-						gplayermessage ent_me Bonus 500,000 damage points for starting gauntlet.
-						callevent store_dmg_points start_gaunt
-					}
-					else
-					{
-						//early reconnect, or came from another server on the same map
-						if ( L_MAP_NAME equals $get_quest_data(ent_me,dm) )
-						{
-							callevent restore_dmg_points
-							callevent store_dmg_points start_gaunt_recon
-						}
-						else
-						{
-							//not a rejoin, just store 0
-							setvard PLR_TOTAL_DMG 0
-							callevent store_dmg_points start_gaunt_new
-						}
-					}
-				}
-				else
-				{
-					//joined late, but maybe a rejoin, so restore points, if on same map
-					setvard PLR_TOTAL_DMG 0
-					if ( L_MAP_NAME equals $get_quest_data(ent_me,dm) )
-					{
-						callevent restore_dmg_points
-						callevent store_dmg_points start_gaunt_late_rejoin
-					}
-					else
-					{
-						//not a rejoin, just store 0
-						setvard PLR_TOTAL_DMG 0
-						callevent store_dmg_points start_gaunt_late_new
-					}
-				}
-			}
-			if !L_START_GAUNTLET
-			//not at gauntlet start, just restore previous points
-			callevent restore_dmg_points
-			callevent store_dmg_points gaunt_non_start
-		}
-		else
-		{
-			setvard PLR_TOTAL_DMG 0
-			if ( L_MAP_NAME equals $get_quest_data(ent_me,dm) )	callevent restore_dmg_points
-			callevent store_dmg_points non_gaunt
-		}
-	}
-
 	if ( $get(ent_me,companions) > 0 ) summonpets ent_me
 
 	drainstamina ent_me -1000 //restore stamina on spawn 
 	clientcmd ent_me "room_type 0;wait;switchhand 1;wait;switchhand 1" //reset EAX and fix hand display
-
-	if ( G_DARKEN_BLOOM > 0 ) callexternal ent_me ext_darkenbloom G_DARKEN_BLOOM
-
-	//old damage point system
-	//callexternal GAME_MASTER add_player_steamid $get(ent_me,id)
 
 	//infomsg all "DEBUG" "activate_stuff"
 	dbg activate_stuff
@@ -241,37 +159,6 @@
 	//setvard PLR_PRECHEAT_POS $get(ent_me,origin)
 	callexternal all ext_activate_items $get(ent_me,id)
 	//wish I thought of this before - use to make sure items activate post spawn
-}
-
-{ restore_dmg_points
-	setvard PLR_TOTAL_DMG 0
-	local L_CUR_DMG_POINTS $get_quest_data(ent_me,dp)
-	if L_CUR_DMG_POINTS > 0
-	setvard PLR_TOTAL_DMG L_CUR_DMG_POINTS
-	local L_OUT_MSG $int(PLR_TOTAL_DMG)
-	stradd L_OUT_MSG 000
-	gplayermessage ent_me Restored L_OUT_MSG damage points.
-}
-
-{ store_dmg_points //[debug]
-	dbg store_dmg_points ( PLR_TOTAL_DMG + PLR_DMG ) PARAM1
-	quest set ent_me dp PLR_TOTAL_DMG
-	if !PLR_DMG_POINT_SETMAP
-	setvard PLR_DMG_POINT_SETMAP 1
-	quest set ent_me dm $lcase(game.map.name)
-}
-
-{ add_dmg_points //<points>
-	add PLR_DMG PARAM1
-	if ( PLR_DMG >= 1000 )
-	{
-		subtract PLR_DMG 1000
-		add PLR_TOTAL_DMG 1
-		if game.time > PLR_NEXT_DMG_STORE //delay storage in case we get to a point where we're doing multiples of 1000 pts in seconds
-		setvard PLR_NEXT_DMG_STORE game.time
-		add PLR_NEXT_DMG_STORE 5.0
-		callevent store_dmg_points hitmob
-	}
 }
 
 //{ send_recon_line3
@@ -325,8 +212,6 @@
 	
 	setvard PLR_CORRODE_DURATION 0
 
-	callexternal ent_me ext_darkenbloom G_DARKEN_BLOOM
-
 	setvard PLR_SWIFT_BLADE 0
 	setvard MSC_PUSH_RESIST 0
 	setvard PLR_LESSER_LEADFOOT 0
@@ -352,22 +237,7 @@
 
 	setvard PLR_MANA_FONT 0 //disable mana font
 
-	//subtract 1000 damage points and zero out fractions
-	if ( PLR_TOTAL_DMG > 0 )
-	{
-		//callexternal GAME_MASTER add_score $get(ent_me,id) -1
-		subtract PLR_TOTAL_DMG 1
-		callevent store_dmg_points died
-	}
-	setvard PLR_DMG 0
-
 	callexternal all bs_global_command $get(ent_me,id) vanish death //remove my summons and report my death
-
-	//remove 2007
-
-	//callevent animate_death
-
-	//createnpc player/player_corpse $relpos(0,0,0) ARMOR_TYPE ARMOR_OFS CREST_OFS HELM_OFS
 
 	setvard IR_GLOWING 0 //toggle internal glow off
 	//remove external potion effects
@@ -750,19 +620,6 @@
 		dbg 2hreduct PARAM2 to IN_DMG
 		return PLR_2H_REDUCT
 	}
-	
-	if ( $get(PARAM1,relationship,ent_me) equals enemy )
-	{
-		if !$get(PARAM1,scriptvar,'AM_INVISIBLE') //Thothie FEB2009
-		if !$get(PARAM1,isplayer)
-		local DMG_DONE PARAM2
-		local NME_HP $get(PARAM1,hp)
-		if ( NME_HP < DMG_DONE )
-		{
-			local DMG_DONE NME_HP //so we don't get 1000 dmg points for darksword'ing a rat
-		}
-		callevent add_dmg_points DMG_DONE
-	}
 
 	if ( $get(ent_me,scriptvar,'PLR_DMG_ADJUST_FIRE') > 0 )
 	{
@@ -780,7 +637,7 @@
 		local DOT_RATIO $get(ent_me,scriptvar,'PLR_ADD_FIRE_DOT')
 		local OWNER_SKILL $get(ent_me,skill.spellcasting.fire)
 		multiply OWNER_SKILL DOT_RATIO
-		applyeffect PARAM1 effects/effect_burn 5.0 $get(ent_me,id) OWNER_SKILL
+		applyeffect PARAM1 effects/dot_fire 5.0 $get(ent_me,id) OWNER_SKILL spellcasting.fire
 	}
 
 	if DISPLAY_TARG_HP
@@ -1175,9 +1032,7 @@ repeatdelay FREQ_AFK_CHECK
 	callevent player_calc_holy_resistance
 
 	//JAN2011_28 remove negative attachments
-	setvard WEBS_ATTACHED 0
 	setvard SCARABS_ATTACHED 0
-	setvard COCOON_ATTACHED 0
 
 	callevent 1.0 activate_stuff
 
@@ -1339,9 +1194,8 @@ repeatdelay FREQ_AFK_CHECK
 }
 
 { game_leapback //<stamina>
-	dbg game_leapback PARAM1 PARAM2 vs. $get(ent_me,stamina.max)
-
-	//if game.time > NEXT_DODGE //Restoring the dodge-jump "exploit"
+	
+	if game.time > NEXT_DODGE
 	if !$get(ent_me,keydown,forward)
 	if game.time > NEXT_LEAPBACK
 
@@ -1381,8 +1235,8 @@ repeatdelay FREQ_AFK_CHECK
 
 	helptip ent_me firstleapback "Congratulations! You can dodge!" "From Martialarts 15+, you can make short backwards dodges by holding shift and the back key."
 
-	//setvard NEXT_DODGE 0.25 //Restoring the dodge-jump "exploit"
-	//add NEXT_DODGE game.time
+	setvard NEXT_DODGE 0.25
+	add NEXT_DODGE game.time
 
 	setvard NEXT_LEAPBACK game.time
 	add NEXT_LEAPBACK 3.0
@@ -1396,7 +1250,7 @@ repeatdelay FREQ_AFK_CHECK
 
 { game_leapleft //<stamina>
 
-	//if game.time > NEXT_DODGE //Restoring the dodge-jump "exploit"
+	if game.time > NEXT_DODGE 
 	if !$get(ent_me,keydown,forward)
 	if game.time > NEXT_LEAPLEFT
 	if !$get(ent_me,scriptvar,'PLR_BEAR_MODE')
@@ -1427,8 +1281,8 @@ repeatdelay FREQ_AFK_CHECK
 
 	helptip ent_me firstleap "Congratulations! You can dodge!" "From Martialarts 10+, you can make short dodges to the left or right by holding shift with a strafe key.|At 15, you'll be able to leap backwards."
 
-	//setvard NEXT_DODGE 0.25 //Restoring the dodge-jump "exploit"
-	//add NEXT_DODGE game.time
+	setvard NEXT_DODGE 0.25
+	add NEXT_DODGE game.time
 
 	setvard NEXT_LEAPLEFT game.time
 	add NEXT_LEAPLEFT 3.0
@@ -1442,7 +1296,7 @@ repeatdelay FREQ_AFK_CHECK
 
 { game_leapright //<stamina>
 
-	//if game.time > NEXT_DODGE //Restoring the dodge-jump "exploit"
+	if game.time > NEXT_DODGE
 	if !$get(ent_me,keydown,forward)
 	if game.time > NEXT_LEAPRIGHT
 	if !$get(ent_me,scriptvar,'PLR_BEAR_MODE')
@@ -1473,8 +1327,8 @@ repeatdelay FREQ_AFK_CHECK
 
 	helptip ent_me firstleap "Congratulations! You can dodge!" "From Martialarts 10+, you can make short dodges to the left or right by holding shift with a strafe key.|At 15, you'll be able to leap backwards."
 
-	//setvard NEXT_DODGE 0.25
-	//add NEXT_DODGE game.time
+	setvard NEXT_DODGE 0.25
+	add NEXT_DODGE game.time
 
 	setvard NEXT_LEAPRIGHT game.time
 	add NEXT_LEAPRIGHT 3.0
@@ -1486,7 +1340,7 @@ repeatdelay FREQ_AFK_CHECK
 	svplaysound 4 10 player/hitground1.wav
 }
 
-{ game_applyeffect //<applyeffect|applyeffectstack> <target> <effectscript> [params...]
+{ game_applyeffect //<applyeffect|applyeffect> <target> <effectscript> [params...]
 	if ( $get_scriptflag(ent_me,spider_resist,type_exists) )
 	{
 		if ( $get(PARAM5,itemname) contains spid ) local L_ABORT 1

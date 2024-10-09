@@ -1,0 +1,54 @@
+//By greatguys1
+//Best viewed in EditPlus with the ms.stx applied
+
+//This quest is escort_to. You must guide an npc to a certain spot. The quest is complete when the npc arrives at the certain spot. The quest is failed if the npc dies.
+
+//Vars: 
+//	const QUEST_DATA1		- <"(x,y,z)"|"info_target name"> Either the info_target name or the vector at which you must guide the npc.
+//	setvard DQ_ARRIVAL_POINT	- At what point do you have to guide the npc to beat the quest?
+//	const DQ_CHECK_POS_INTERVAL	- How often do you wanna check the npc position in relation to DQ_ARRIVAL_POINT?
+
+//Functions:
+//	quest_activate			- Sets the npc to be able to die, and calls handle_pos and check_pos.
+//	handle_pos			- Checks to see if an info_target is being used as DQ_ARRIVAL_POINT.
+//	check_pos			- Checks the npc's position in relation to DQ_ARRIVAL_POINT. If he's close enough, finish the quest, otherwise try again in DQ_CHECK_POS_INTERVAL
+
+{
+	setvard DQ_ARRIVAL_POINT QUEST_DATA1
+	const DQ_CHECK_POS_INTERVAL 2.0
+}
+
+#include dq/quests/bases/dq_base_quests
+
+{ quest_activate
+
+	invincible 0 //So he can die. You're welcome
+	race human //So he can die. You're welcome
+	callevent handle_pos
+	callevent check_pos
+}
+
+{ handle_pos
+
+	local L_INFO_TARGET $get_by_name(DQ_ARRIVAL_POINT)
+
+	if ( $get(L_INFO_TARGET,exists) )
+	{
+		setvard DQ_ARRIVAL_POINT $get(L_INFO_TARGET,origin)
+	}
+}
+
+{ check_pos
+
+	if ( QUEST_MODE equals QUEST_ACTIVE )
+	{
+		if ( $dist($get(ent_me,origin),DQ_ARRIVAL_POINT) <= 128 )
+		{
+			callevent quest_finished
+		}
+		else
+		{
+			callevent DQ_CHECK_POS_INTERVAL check_pos
+		}
+	}
+}

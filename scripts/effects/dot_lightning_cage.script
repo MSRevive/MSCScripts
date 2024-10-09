@@ -1,0 +1,62 @@
+//Lightning cage by Thothie
+
+//Any npc
+//Param1 - Hold Duration
+//Param2 - Who to blame
+//Param3 - Dmg, if any
+//Param4 - Skill to give dmg to
+//Param5 - most hp it can affect (def: 1500)
+
+// . effectme effects/dot_lightning_cage 10 GAME_MASTER 0.5 spellcasting.cold 1500
+
+{ 
+	const EFFECT_ID "dot_lightning_cage"
+	const EFFECT_FLAGS nostack
+	const EFFECT_SCRIPT $currentscript //Must be copied, as is, at the top script!
+	
+	const DOT_IM_AFFECTED "You are held in a lightning field!" //Player recieves affect and is afflicted
+	
+	const DOT_IM_RESIST "You resist being held in a lightning field." //Player recieves the affect, but resists / immune it.
+	const DOT_HE_IMMUNE "is immune to lightning magic!" //Target recieves the affect, but resists / immune it
+}
+
+{ game_activate //This is above the include intentionally
+
+	setvard MAX_HP PARAM5 //Sets the max_hp var before dot_check_canapply is called from the include below
+	if ( !PARAM5 ) setvard MAX_HP 1500
+}
+
+#include effects/dot_lightning	allowduplicate
+
+{ dot_check_canapply //<duration> <afflicter> <dot> <skill> <hpmax>
+	
+	if ( $get(ent_me,hp) > MAX_HP )
+	{
+		playermessage DOT_ATTACKER $get(ent_me,name) is too strong for a lightning field.
+		
+		setvard DOT_RESISTED 1
+		removescript
+		exitevent
+	}
+}
+
+{ dot_start
+
+	playsound 0 10 SOUND_FREEZE
+
+	applyeffect ent_me effects/debuff_hold EFFECT_DURATION 0
+	
+	if ( CL_FX ) clientevent update all CL_FX end_fx
+	clientevent new all effects/sfx_lightning_cage $get(ent_me,index) EFFECT_DURATION
+	setvard CL_FX game.script.last_sent_id
+}
+
+{ effect_die
+
+	if !DOT_RESISTED
+	playermessage ent_me "The lightning field dissipates."
+	
+	if ( CL_FX ) clientevent update all CL_FX end_fx
+
+	playsound 0 10 magic/energy1_loud.wav
+}

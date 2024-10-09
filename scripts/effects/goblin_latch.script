@@ -1,159 +1,24 @@
-//Drunk
+#scope server
 
-{ 	[server]
-	const EFFECT_ID			goblin_latch
-	const EFFECT_ACTIONTYPE		nostack
-	const EFFECT_SCRIPT		$currentscript
-
-	setvard game.effect.id		EFFECT_ID
-	setvard game.effect.displayname	"goblin_latch"
-	setvard game.effect.type	EFFECT_ACTIONTYPE
-
-	setvard local.effect.duration 	0
+{
+	const EFFECT_ID	"goblin_latch"
+	const EFFECT_FLAGS nostack
+	const EFFECT_SCRIPT $currentscript //Must be copied, as is, at the top script!
 }
 
-#include effects/effect_base	allowduplicate
+#include effects/base_effect	allowduplicate
 
-{ 	[server] game_activate
+{ game_activate
 
-	setvard GOBLIN_ID PARAM1
-	setvard IS_ACTIVE 1
-
-	dbg game_activate $get(GOBLIN_ID,name)
+	setvard GOBLIN_ID PARAM2
+	
+	setvard game.effect.movespeed 90 //Prevents running
 
 	if ( $get(ent_me,isplayer) )
 	{
-		clientevent new ent_me $currentscript local.effect.duration
-		setvard local.effect.clientscript game.script.last_sent_id
+		clientevent new ent_me effects/sfx_drunk EFFECT_DURATION
+		setvard CL_FX game.script.last_sent_id
 	}
-
-	callexternal ent_me ext_set_goblin_latched 1
-
-	callevent drunk_twitch
-}
-
-{ 	[server] drunk_twitch
-
-	if IS_ACTIVE
-
-	callevent 3.0 drunk_twitch
-
-	if ( !$get(ent_me,isalive) ) callevent effect_die
-	if ( !$get(GOBLIN_ID,isalive) ) callevent effect_die
-
-	if ( !$get(ent_me,isplayer) )
-	{
-		local RND_DIR $randf(0,359.99)
-		local RND_DIST $randf(100,400)
-
-		addvelocity ent_me $relpos($vec(0,RND_DIR,0),$vec(0,RND_DIST,0))
-	}
-}
-
-{ 	[shared] effect_die
-	setvard IS_ACTIVE 0
-
-	if game.serverside
-	effect screenfade ent_me 0 0 0 0 fadein
-	callexternal ent_me ext_set_goblin_latched 0
-}
-
-
-// ===========
-// Client Side
-// ===========
-{ 	[client]
-	const MIN_STUMBLEAMT 	-10
-	const MAX_STUMBLEAMT 	 10
-	const STUMBLE_RIGHT_MAX 	 80
-	const STUMBLE_LEFT_MAX 		-80
-	const STUMBLE_RIGHT_TRESHHOLD 	 30
-	const STUMBLE_LEFT_TRESHHOLD 	-30
-	const STUMBLE_FORWARD_MAX 	 40
-	const STUMBLE_BACK_MAX 		-50
-	const STUMBLE_FORWARD_T 	 20
-	const STUMBLE_BACK_T 		-20
-	const MAX_SWAY 		 20
-	const MIN_SWAY 		-20
-	const MAX_SWAY_T 	 8
-	const MIN_SWAY_T 	-8
-	const MAX_SWAY_RATE 	 1
-	const MIN_SWAY_RATE 	-1
-	const MAX_SWAY_AMT       0.1
-	const MIN_SWAY_AMT      -0.1
-}
-
-{	[client]
-	repeatdelay 0.3
-
-	if game.clientside
-
-	callevent drunk_stumble
-	callevent drunk_sway
-}
-{	[client]
-	repeatdelay 0.01
-
-	if game.clientside
-
-	inc DRUNK_SWAY_FORWARD DRUNK_SWAY_RATE_F
-	capvar DRUNK_SWAY_FORWARD MIN_SWAY MAX_SWAY
-	setvard game.cleffect.view_ofs.pitch DRUNK_SWAY_FORWARD
-
-	inc DRUNK_SWAY_SIDE DRUNK_SWAY_RATE
-	capvar DRUNK_SWAY_SIDE MIN_SWAY MAX_SWAY
-	setvard game.cleffect.view_ofs.roll DRUNK_SWAY_SIDE
-
-	setvard game.cleffect.move_ofs.forward DRUNK_FORWARDMOVE
-	setvard game.cleffect.move_ofs.right DRUNK_SIDEMOVE
-}
-
-{	[client] drunk_sway
-
-	//Side Sway
-	inc DRUNK_SWAY_RATE $randf(MIN_SWAY_AMT,MAX_SWAY_AMT)
-	capvar DRUNK_SWAY_RATE MIN_SWAY_RATE MAX_SWAY_RATE
-
-	//Correction
-	if( DRUNK_SWAY_SIDE >= MAX_SWAY_T ) dec DRUNK_SWAY_RATE MAX_SWAY_AMT
-	if( DRUNK_SWAY_SIDE <= MIN_SWAY_T ) inc DRUNK_SWAY_RATE MAX_SWAY_AMT
-	
-	//Forward Sway
-	inc DRUNK_SWAY_RATE_F $randf(MIN_SWAY_AMT,MAX_SWAY_AMT)
-	capvar DRUNK_SWAY_RATE_F MIN_SWAY_RATE MAX_SWAY_RATE
-
-	//Correction
-	if( DRUNK_SWAY_FORWARD >= MAX_SWAY_T ) dec DRUNK_SWAY_RATE_F MAX_SWAY_AMT
-	if( DRUNK_SWAY_FORWARD <= MIN_SWAY_T ) inc DRUNK_SWAY_RATE_F MAX_SWAY_AMT
-}
-
-{	[client] drunk_stumble
-
-
-	//Forward move
-	inc DRUNK_FORWARDMOVE $rand(MIN_STUMBLEAMT,MAX_STUMBLEAMT)
-	capvar DRUNK_FORWARDMOVE STUMBLE_BACK_MAX STUMBLE_FORWARD_MAX
-
-	//Correction
-	if( DRUNK_FORWARDMOVE >= STUMBLE_FORWARD_T ) dec DRUNK_FORWARDMOVE $rand(0,MAX_STUMBLEAMT)
-	if( DRUNK_FORWARDMOVE <= STUMBLE_BACK_T ) inc DRUNK_FORWARDMOVE $rand(0,MAX_STUMBLEAMT)
-	
-	//Side move
-	setvard DRUNK_SIDEMOVE 	DRUNK_SWAY_SIDE
-	multiply DRUNK_SIDEMOVE	$rand(0,20)
-	capvar DRUNK_SIDEMOVE 	STUMBLE_LEFT_MAX STUMBLE_RIGHT_MAX
-
-	//Correction
-	if( DRUNK_SIDEMOVE >= STUMBLE_RIGHT_TRESHHOLD ) dec DRUNK_SIDEMOVE $rand(0,MAX_STUMBLEAMT)
-	if( DRUNK_SIDEMOVE <= STUMBLE_LEFT_TRESHHOLD ) inc DRUNK_SIDEMOVE $rand(0,MAX_STUMBLEAMT)
-
-	callevent drunk_randomize_keys
-}
-
-{	[client] drunk_randomize_keys
-	
-	setvard game.cleffect.move_scale.forward $randf(-1,1)
-	setvard game.cleffect.move_scale.right $randf(-1,1)
 }
 
 //pass damage intended for goblin
@@ -161,23 +26,24 @@
 	if $get(PARAM1,relationship,GOBLIN_ID) equals enemy
 
 	local L_ACTIVE_SKILL none
-	if ( $get(PARAM1,isplayer) )
-	{
-		local L_ACTIVE_SKILL PARAM5
-	}
+	if ( $get(PARAM1,isplayer) ) local L_ACTIVE_SKILL PARAM5
+	
 	xdodamage GOBLIN_ID direct PARAM2 PARAM4 PARAM1 PARAM1 L_ACTIVE_SKILL PARAM3
 }
 
 //redirect damaging applyeffects to goblin
-{ game_applyeffect //<"applyeffect"|"applyeffectstack"> <target> <effectscript> [params...]
+{ game_applyeffect //<"applyeffect"|"applyeffect"> <target> <effectscript> [params...]
 
-	//if $get(PARAM2,isnot,ent_me)
-
-	if ( PARAM3 contains shield ) local L_NO_PASS_EFFECT 1
-	if ( PARAM3 contains heal ) local L_NO_PASS_EFFECT 1
-	if ( PARAM3 contains rejuv ) local L_NO_PASS_EFFECT 1
-	if !L_NO_PASS_EFFECT
+	if PARAM3 contains 'dot_'
 	local L_RETURN redirect
 	token.add L_RETURN GOBLIN_ID
 	return L_RETURN
+}
+
+{ effect_die
+	if ( CL_FX ) clientevent update ent_me CL_FX effect_die
+}
+
+{ ext_goblin_died
+	removescript
 }

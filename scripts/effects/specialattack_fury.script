@@ -1,48 +1,34 @@
 //Two-handed axe charge up attack (200%) - Duck, then Lunge forward
 
-{ 	[server]
-	const EFFECT_ID			player_fury
-	const EFFECT_NAME		"Fury"
-	const EFFECT_ACTIONTYPE		nostack
-	const EFFECT_SCRIPT		$currentscript
+#scope server
 
-	setvard game.effect.id		EFFECT_ID
-	setvard game.effect.displayname	EFFECT_NAME
-	setvard game.effect.type	EFFECT_ACTIONTYPE
+{
+	const EFFECT_ID			"player_fury"
+	const EFFECT_FLAGS		nostack
+	const EFFECT_SCRIPT $currentscript //Must be copied, as is, at the top script!
 }
 
-{	//Shared constants
-	const EFFECT_DURATION	2.5
+{ [shared]
+
 	const DUCK_DURATION	1.0
 }
 
-#include effects/effect_base	allowduplicate
+#include effects/base_effect	allowduplicate
 
-{ 	[server] game_activate
+{ game_activate
+
+	setvard EFFECT_DURATION 2.5
+	callevent EFFECT_DURATION effect_duration_ended
 
 	clientevent new ent_me $currentscript
-	setvard local.effect.clientscript game.script.last_sent_id
 
-	callevent effect_start
-	callevent EFFECT_DURATION effect_die
-}
-
-{ 	[shared] effect_die
-
-	if( game.serverside ) effect screenfade ent_me 0 0 0 0 fadein
-}
-
-
-{ [server] effect_start
-
-	//setvard game.effect.movespeed 0%
 	setvard game.effect.canattack 0
 	setvard game.effect.canjump 0
 	effect screenfade ent_me 1 2 (200,10,10) 100 fadein
 	callevent DUCK_DURATION effect_jump
 }
 
-{ [server] effect_jump
+{ effect_jump
 
 	local l.forwardangles $get(ent_me,angles)
 	local l.forwardangles $vec(0,$vec.y(l.forwardangles),0)
@@ -52,7 +38,7 @@
 	addvelocity ent_me $vec($vec.x(l.vel),$vec.y(l.vel),l.up)
 }
 
-{ [server] game_dodamage  //1: Hit (1/0)  2: <Ent hit>/"none"   3: Attack origin  4: Attack Endpos
+{ game_dodamage  //1: Hit (1/0)  2: <Ent hit>/"none"   3: Attack origin  4: Attack Endpos
 
 	if PARAM1
 	if PARAM2 isnot 'none'
@@ -60,23 +46,26 @@
 	local l.dir $dir($get(ent_me,origin),$get(PARAM2,origin))
 	vectormultiply l.dir 300
 
-	if $get(PARAM2,maxhp) < 1500 //no tossing bosses into pits ><
 	addvelocity PARAM2 $vec($vec.x(l.dir),$vec.y(l.dir),200)
 }
 
-{ game_duplicated
+{ effect_die
 
-	callevent effect_die
+	effect screenfade ent_me 0 0 0 0 fadein
 }
 
 // ===========
 // Client Side
 // ===========
 
-{	[client] client_activate
+{ [client] client_activate
 
 	setvard game.cleffect.move_ofs.forward    	-100
 	setvard game.cleffect.move_scale.forward 	0
 	setvard game.cleffect.move_scale.right 		0
 	callevent DUCK_DURATION effect_die
+}
+
+{ [client] effect_die
+	removescript
 }

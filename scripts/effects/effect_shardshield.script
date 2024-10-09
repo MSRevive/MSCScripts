@@ -3,95 +3,39 @@
 //PARAM1 == Duration
 //PARAM2 == Damage accept ratio (1.0: accept all 0.0: Accept none)
 
-{ 	[server]
-	const EFFECT_ID			effect_shardshield
-	const EFFECT_NAME		"Felewyn Shield"
-	const EFFECT_ACTIONTYPE		nostack
-	const EFFECT_SCRIPT		$currentscript
-
-	setvard game.effect.id		EFFECT_ID
-	setvard game.effect.displayname	EFFECT_NAME
-	setvard game.effect.type	EFFECT_ACTIONTYPE
+{
+	const EFFECT_ID "effect_shardshield"
+	const EFFECT_FLAGS nostack
 }
 
-#include effects/effect_base
+#include effects/base_effect
 
-{ 	[server] game_activate
+{ game_activate
 
-	setvard local.effect.duration 	PARAM1
-	setvard local.effect.damage 	PARAM2
-	setvard game.effect.movespeed 50%
+	setvard local.effect.damage PARAM2
+	setvard game.effect.movespeed 90
 	setvard game.effect.canjump 0
 	setvard game.effect.anim.framerate 0.9
 	setvard game.effect.canattack 0
 
-	clientevent new ent_me $currentscript local.effect.duration
-	setvard local.effect.clientscript game.script.last_sent_id
-
-	local GLOW_TARG $get(ent_me,id)
-	//if ( $get(GLOW_TARG,isplayer) ) local GLOW_TARG $get(ent_me,scriptvar,MY_BODY)
-	effect glow GLOW_TARG (255,192,128) 128 local.effect.duration local.effect.duration
+	effect glow ent_me (255,192,128) 72 EFFECT_DURATION EFFECT_DURATION
+	
 	playsound game.sound.item game.sound.maxvol magic/cast.wav
 
 	gplayermessage $get(ent_me,id) You are protected by divine shield.
-
-	callevent local.effect.duration effect_die
-}
-
-{ check_death
-
-	local TIME_REMAIN $get(ent_me,scriptvar,ICE_SHIELD_TIME)
-	if ( TIME_REMAIN > 1 )
-	{
-		add TIME_REMAIN 1
-		callevent TIME_REMAIN check_death
-	}
-	if TIME_REMAIN <= 1
-	callevent effect_die
 }
 
 { 	[server] game_damaged
 
-	if PARAM2 > 0
-
-	clientevent update ent_me local.effect.clientscript shield_absorb
+	playsound 2 5 magic/converted_magic13.wav
+	
+	//screenfade <target/"all"> <duration> <holdtime> <(r,g,b)> <alpha> <fadein|fadeout|noblend|perm>
+	effect screenfade ent_me 0.5 0 (255,192,128) 40 fadein
 	return local.effect.damage
-
-	volume 5
-	playsound 2 magic/converted_magic13.wav
 }
 
+{ 	[server] effect_die
 
-
-{ 	[shared] effect_die
-
-	volume 5
-	playsound 2 magic/frost_reverse.wav
-	bplayermessage $get(ent_me,id) The divine shield fades.
-}
-
-
-// ===========
-// Client Side
-// ===========
-
-{	[client]
-	const BURN_SCREEN_DELAY		0.5
-	const BURN_SCREEN_ALPHA		40
-}
-
-{	[client] client_activate
-
-	callevent PARAM1 effect_die
-}
-
-{	[client] shield_absorb
-
-	setvard game.cleffect.screenfade.newfade 1
-	setvard game.cleffect.screenfade.alphalimit BURN_SCREEN_ALPHA	//Only use this fade if current fade is under this limit
-	setvard game.cleffect.screenfade.color (255,192,128)
-	setvard game.cleffect.screenfade.alpha BURN_SCREEN_ALPHA
-	setvard game.cleffect.screenfade.duration BURN_SCREEN_DELAY
-	setvard game.cleffect.screenfade.blendduration BURN_SCREEN_DELAY
-	setvard game.cleffect.screenfade.type fadein
+	playsound 2 5 magic/frost_reverse.wav
+	playermessage ent_me The divine shield fades.
 }

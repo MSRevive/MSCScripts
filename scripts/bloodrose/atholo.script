@@ -71,6 +71,11 @@
 	setvard NPC_MUST_SEE_TARGET 0
 }
 
+{ game_precache
+
+	precachefile "kfortress/nh_appear_cl"
+}
+
 #include [server] monsters/base_monster
 
 { [server] game_dynamically_created
@@ -171,7 +176,11 @@
 	}
 
 	//callevent npcatk_dodamage NPCATK_TARGET ATTACK_HITRANGE DAMAGE_ATTACK1 ATTACK_HITCHANCE
-	if ( $get(HUNT_LASTTARGET,range) < ATTACK_HITRANGE ) dodamage HUNT_LASTTARGET direct DAMAGE_ATTACK1 ATTACK_HITCHANCE $get(ent_me,id) slash
+	if ( $get(HUNT_LASTTARGET,range) < ATTACK_HITRANGE ) 
+	{
+		xdodamage HUNT_LASTTARGET direct DAMAGE_ATTACK1 ATTACK_HITCHANCE $get(ent_me,id) $get(ent_me,id) none slash dmgevent:swing
+	}
+	
 	setvard FIRE_ATTACK 1
 
 	add SWIPES_COUNT 1
@@ -191,7 +200,10 @@
 	}
 
 	//callevent npcatk_dodamage NPCATK_TARGET ATTACK_HITRANGE DAMAGE_ATTACK2 ATTACK_HITCHANCE
-	if ( $get(HUNT_LASTTARGET,range) < ATTACK_HITRANGE ) dodamage HUNT_LASTTARGET direct DAMAGE_ATTACK2 ATTACK_HITCHANCE $get(ent_me,id)  slash
+	if ( $get(HUNT_LASTTARGET,range) < ATTACK_HITRANGE )
+	{
+		xdodamage HUNT_LASTTARGET direct DAMAGE_ATTACK1 ATTACK_HITCHANCE $get(ent_me,id) $get(ent_me,id) none slash dmgevent:swing
+	}
 
 	setvard FIRE_ATTACK 2
 	setvard ANIM_ATTACK ANIM_SLASH
@@ -293,19 +305,19 @@
 	roam 1
 }
 
-{ [server] game_dodamage //1:AttackHit(1/0)  2:EntityHit  3:StartOrigin  4:EndOrigin
+{ [server] swing_dodamage //1:AttackHit(1/0)  2:EntityHit  3:StartOrigin  4:EndOrigin
 
 	setvard MISS_ATTACK 0
 	
 	if PARAM1
 	if ( FIRE_ATTACK == 1 )
 	{
-	   	applyeffect PARAM2 effects/effect_burn FIRE_DURATION $get(ent_me,id) FIRE_DAMAGE
+	   	applyeffect PARAM2 effects/dot_fire FIRE_DURATION $get(ent_me,id) FIRE_DAMAGE 
 	}
 
 	if ( FIRE_ATTACK == 2 )
 	{
-	   	applyeffect PARAM2 effects/freeze_solid FREEZE_DURATION $get(ent_me,id) FREEZE_DAMAGE
+	   	applyeffect PARAM2 effects/dot_cold_freeze FREEZE_DURATION $get(ent_me,id) FREEZE_DAMAGE
 	}
 	setvard FIRE_ATTACK 0
 }
@@ -339,6 +351,33 @@
 { [server] game_death
 
 	clientevent remove all MY_LIGHT_SCRIPT
+	
+	local L_ORIGIN "(63,1776,-3519)"
+	
+	calleventloop game.players get_chosen_one
+	
+	if ( CHOSEN_ONE isnot 'CHOSEN_ONE' )
+	{
+		clientevent new all "kfortress/nh_appear_cl" L_ORIGIN 0
+		createitem item_ring_ryza L_ORIGIN
+		callexternal ent_lastcreated bitem_reserve CHOSEN_ONE
+	}
+}
+
+{ get_chosen_one
+
+	if ( game.script.iteration == 0 ) callexternal GAME_MASTER gm_find_strongest_reset
+	else callexternal GAME_MASTER gm_find_strongest_player
+	
+	local L_STRONGEST $get(GAME_MASTER,scriptvar,'THE_CHOSEN_ONE')
+	local L_QUEST $get_quest_data(L_STRONGEST,'manaring')
+	local L_ITEM $item_exists(L_STRONGEST,'item_ring_ryza')
+	
+	if ( L_QUEST isnot '0' ) exitevent
+	if ( L_ITEM ) exitevent
+	
+	setvard CHOSEN_ONE L_STRONGEST
+	breakloop
 }
 
 { [server] light_on

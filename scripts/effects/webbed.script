@@ -1,0 +1,208 @@
+//Webbed npcs are slowed. Continuous webbing cocoons the target.
+//Stacked webbed effects increase the intensity of the web.
+
+//Large enemies take more web to cocoon
+//Small enemies dont take as much web to cocoon
+
+//. effectmestack effects/webbed 10 GAME_MASTER
+
+#scope server
+
+{
+	const EFFECT_ID webbed
+	const EFFECT_SCRIPT $currentscript //Must be copied, as is, at the top script!
+	
+	const PLAYER_WEB_TILL_COCOON 10 //Number of webs it takes to cocoon a player.
+	//WEB_PER_SIZE will not be used if effect is on a player!
+	
+	const WEB_FOR_SIZE 17 //(height + width) / x = amt of web it takes to cocoon
+	
+	setvard WEBS_ATTACHED 0
+	setvard WEBS_TILL_COCOON 0 //Set in game_activate
+	
+	setvar WEB_DECAY_TIME 0 //Largest decay time will override any subsequent smaller ones
+}
+
+#include effects/base_effect	allowduplicate
+
+{ game_activate //PARAM1 = Single web decay time; PARAM2 = Webber
+
+	local L_DECAY_TIME PARAM1 //Largest decay time will override any smaller ones
+
+	if ( $get_scriptflag(ent_me,spider_resist,type_exists) ) //Get immunity
+	{
+		playermessage PARAM2 $get(ent_me,name) "is immune to webs!"
+		
+		setvard EFFECT_DUPLICATED 1 //Helps prevent silliness
+		removescript
+		exitevent
+	}
+	
+	if ( !EFFECT_DUPLICATED ) //First instance of web
+	{
+		//set up fx
+		//clientevent new all effects/sfx_webbed $get(ent_me,index) WEBS_ATTACHED
+		
+		callevent set_cocoon_amt //Get amt of webs until cocoon
+		
+		setvard game.effect.canjump 0 //No jump allowed while webbed
+		setvard game.effect.canrun 0 //No running, the movespeed change will make run ineffective anyways
+		
+		playermessage ent_me "You have been webbed!"
+	}
+
+	callexternal $get(ent_me,id) ext_webbed L_DECAY_TIME //Apply a web
+}
+
+{ set_cocoon_amt //sets WEBS_TILL_COCOON by either player, or volume
+
+	if ( $get(ent_me,isplayer) )
+	{
+		setvard WEBS_TILL_COCOON PLAYER_WEB_TILL_COCOON
+	}
+	else
+	{
+		local L_MY_SIZE $get(ent_me,height)
+		add L_MY_SIZE $get(ent_me,width)
+		
+		divide L_MY_SIZE WEB_FOR_SIZE
+		
+		setvard WEBS_TILL_COCOON $int(L_MY_SIZE)
+		capvar WEBS_TILL_COCOON 2 20
+	}
+}
+
+{ ext_webbed
+
+	if !EFFECT_DUPLICATED
+	if !DID_COCOON
+	
+	if ( PARAM1 > WEB_DECAY_TIME ) //Keep longest web decay time applied
+	{
+		setvard WEB_DECAY_TIME PARAM1
+	}
+	
+	add WEBS_ATTACHED 1 //Attach a web
+	
+	if ( WEBS_ATTACHED < WEBS_TILL_COCOON )
+	{
+		//Override original effect end time
+		setvard EFFECT_STARTED game.time
+		setvard EFFECT_DURATION $math(multiply,WEB_DECAY_TIME,WEBS_ATTACHED)
+		
+		//Set next decay timer
+		setvard NEXT_DECAY $math(add,game.time,WEB_DECAY_TIME)
+		callevent WEB_DECAY_TIME web_decay
+		
+		//Update slowness and web fx intensity
+		callevent web_update
+		
+		playsound 0 10 bullchicken/bc_acid2.wav
+	}
+	else
+	{
+		callevent start_cocoon
+	}
+	
+	//Client fx
+	if ( !CLFX_ID )
+	{
+		clientevent new all "effects/sfx_webbed" WEB_DECAY_TIME $get(ent_me,index) WEBS_TILL_COCOON
+		setvard CLFX_ID game.script.last_sent_id
+	}
+	else
+	{
+		clientevent update all CLFX_ID ext_webbed WEB_DECAY_TIME
+	}
+}
+
+{ web_decay
+
+	if !DID_COCOON
+	if ( game.time >= NEXT_DECAY )
+	{
+		playermessage ent_me "Some of the webs loosen."
+		subtract WEBS_ATTACHED 1
+		
+		//Set next decay timer
+		setvard NEXT_DECAY $math(add,game.time,WEB_DECAY_TIME)
+		callevent WEB_DECAY_TIME web_decay
+		
+		callevent web_update
+	}
+}
+
+{ web_update
+
+	local L_SPEED_FACTOR $math(divide,WEBS_ATTACHED,WEBS_TILL_COCOON)
+	
+	local L_SPEED $math(multiply,50,L_SPEED_FACTOR)
+	
+	setvard game.effect.movespeed $math(subtract,100,L_SPEED)
+	setvard game.effect.anim.framerate $math(subtract,1,L_SPEED_FACTOR)
+}
+
+{ start_cocoon
+
+	setvard DID_COCOON 1
+	
+	playermessage ent_me "The sticky web envelopes you in a cocoon, rendering you immovable."
+	playsound 0 10 debris/bustflesh1.wav
+	scriptflags ent_me add cocooned nopush 1 -1 none
+	
+	setvard game.effect.canattack 0
+	setvard game.effect.canduck 0
+	setvard game.effect.movespeed 0.001
+	setvard game.effect.anim.framerate 0.001
+	
+	if ( !$get(ent_me,isplayer) )
+	{
+		//For npcs
+		callexternal ent_me freeze_solid_start WEB_DECAY_TIME
+	}
+	
+	callevent WEB_DECAY_TIME end_cocoon
+}
+
+{ end_cocoon
+
+	scriptflags ent_me remove cocooned
+	playsound 0 10 debris/bustflesh1.wav
+	
+	removescript
+}
+
+{ game_predeath
+
+	setvard game.effect.canattack 1
+	setvard game.effect.canduck 1
+	setvard game.effect.movespeed 100
+	setvard game.effect.anim.framerate 1
+	callexternal ent_me freeze_solid_end 1
+	
+	callevent end_cocoon
+}
+
+{ effect_die
+
+	if !EFFECT_DUPLICATED
+	if ( $get(ent_me,isplayer) )
+	{
+		if ( !DID_COCOON ) playermessage ent_me "The webs have fallen away."
+		else playermessage ent_me "You struggle your way out of the cocoon."
+	}
+	
+	if ( CLFX_ID )
+	{
+		clientevent update all CLFX_ID fx_die
+	}
+}
+
+{ game_duplicated //Gets called before game_activate
+
+	if ( !EFFECT_DUPLICATED )
+	{
+		setvard EFFECT_DUPLICATED 1
+		removescript
+	}
+}

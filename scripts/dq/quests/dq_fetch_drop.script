@@ -1,0 +1,108 @@
+//By greatguys1
+//Best viewed in EditPlus with the ms.stx applied
+
+//This quest is fetch_drop. You must pick up qitems dropped from specific npcs on their death.
+
+//Vars:
+//	const QUEST_DATA1		- <"# of items required;monster name|all"> How many items need to be picked up, and which monster drops them?
+//	const QUEST_DATA2		- <"qitem code;qitem name"> Which qitem do you use? What do you wanna name the qitem?
+//	const DQ_FIND_NUM		- How many qitems need to be found?
+//	const DQ_KILL_WHO		- The partial name of who you need to kill in order for the qitem to drop off of them.
+//	const QITEM_CODE		- The qitem code.
+//	const QITEM_NAME		- The qitem name.
+//	setvard QITEMS_FOUND		- How many qitems are found currently? It only counts when they're actually turned into the npc.
+//	setvard QITEMS_DROPPED		- How many qitems have been dropped?
+
+//Functions:
+//	The pre-cache thing		- Pre-caches the file. I'm not sure if I can safely spell pre-cache properly. :I
+//	quest_activate			- Adds itself to the callback list of the game_masters monster death tracker.
+//	game_menu_getoptions		- Checks to see if the player has any qitems.
+//	quest_check_qitems		- Ditto, but it loops :o
+//	ext_quest_monster_killed	- The callback from the game_master once an enemy has been killed.
+//	quest_create_qitem		- Creates the qitem
+//	ext_receive_quest_item		- Callback from the player external if the correct qitem is found.
+//	game_death			- Cleanup. It removes itself from the monster death callback counter from the game_master
+
+#scope server
+
+{
+	setvard DQ_FIND_NUM $get_token(QUEST_DATA1,0) //setvard because higher scripts cant see lower script cosnts.
+	const DQ_KILL_WHO $lcase($get_token(QUEST_DATA1,1))
+
+	const QITEM_CODE $get_token(QUEST_DATA2,0)
+	const QITEM_NAME $get_token(QUEST_DATA2,1)
+
+	setvard QITEMS_FOUND 0
+	setvard QITEMS_DROPPED 0
+}
+
+#include dq/quests/bases/dq_base_quests
+
+{ game_precache
+	precachefile other/qitem
+}
+
+{ quest_activate //The player id of the menu owner must be passed though to this
+
+	callexternal GAME_MASTER gm_dq_add_counter $get(ent_me,id)
+}
+
+{ game_menu_getoptions
+
+	local L_PLAYER_ID PARAM1
+
+	if ( QUEST_MODE equals 'active' )
+	{
+		callexternal GAME_MASTER ext_check_quest_item QITEM_CODE $get(ent_me,id)  //Checks if the qitems are found
+	}
+}
+
+{ ext_quest_monster_killed
+
+	if ( QUEST_MODE equals 'active' )
+	{
+		local L_MONSTER_KILLED_NAME $lcase($get(GAME_MASTER,scriptvar,'DQ_MONSTER_KILLED_NAME'))
+
+		if ( L_MONSTER_KILLED_NAME contains DQ_KILL_WHO )
+		{
+			callevent quest_create_qitem
+		}
+		else if ( DQ_KILL_WHO equals 'all' )
+		{
+			callevent quest_create_qitem
+		}
+	}
+}
+
+{ quest_create_qitem
+
+	if ( QITEMS_DROPPED >= DQ_FIND_NUM )
+	{
+		callexternal GAME_MASTER gm_dq_perish_counter $get(ent_me,id) //Dont drop extra qitems if enough has dropped for the quest to be finished already
+	}
+	else
+	{
+		local L_QITEM_ORIGIN $get(GAME_MASTER,scriptvar,'DQ_MONSTER_KILLED_ORIGIN')
+		createnpc other/qitem L_QITEM_ORIGIN QITEM_CODE QITEM_NAME
+		setvard QITEMS_DROPPED $math(add,QITEMS_DROPPED,1)
+	}
+}
+
+{ ext_receive_quest_item
+	
+	if ( QUEST_MODE equals 'active' )
+	{
+		setvard QITEMS_FOUND $math(add,QITEMS_FOUND,1)
+
+		if ( QITEMS_FOUND >= DQ_FIND_NUM )
+		{
+			callevent quest_finished
+			callexternal GAME_MASTER gm_dq_perish_counter $get(ent_me,id)
+		}
+	}
+}
+
+{ game_death
+
+	callexternal GAME_MASTER gm_dq_perish_counter $get(ent_me,id) //If the counter was already perished, the game_master won't perish a counter it shouldn't
+}	

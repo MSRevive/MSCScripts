@@ -71,20 +71,21 @@
 
    	roam 1
 	setvard STRUCK_HOLY 0
-	callevent 0.1 skel_setup_body
+	
 
 	if ( SLEEPER )
 	{
 		callevent make_sleeper
 		if ( !DEEP_SLEEPER ) hearingsensitivity 10 //light sleepers need to be able to hear approach
 	}
-
-	if ( $lcase(game.map.name) equals the_wall ) setvard SKELE_DIRECT_DAMAGE 1 //deal with water trap on the_wall
-
-	if !SLEEPER
-   	race undead
-   	setmoveanim ANIM_WALK
-	callevent skeleton_attribs
+	else
+	{
+		race undead
+		setmoveanim ANIM_WALK
+		callevent skeleton_attribs
+	}
+	
+	callevent skel_setup_body
 }
 
 { npc_post_spawn
@@ -413,6 +414,7 @@
 }
 
 { skel_fake_death
+
 	setalive 1
 	setsolid box
 	setbbox npcsize
@@ -426,7 +428,12 @@
 	callevent npcatk_suspend_movement ANIM_RESPAWN_DEADIDLE
 	setvard NO_STUCK_CHECKS 1
 	setvard PLAYING_DEAD 1
-	callevent $rand(3.0,5.0) skel_rebirth
+	
+	local L_REBIRTH_TIME $rand(3.0,5.0)
+	local L_GLOW_TIME $math(add,L_REBIRTH_TIME,1)
+	
+	effect glow ent_me (0,0,0) 72 L_GLOW_TIME L_GLOW_TIME
+	callevent L_REBIRTH_TIME skel_rebirth
 }
 
 { skel_rebirth
@@ -436,14 +443,14 @@
 
 	divide NPC_GIVE_EXP 2
 	skilllevel NPC_GIVE_EXP
-
-	setvard PLAYING_DEAD 0
+	
 	setvard SKELE_TEMP_DEATH 0
 }
 
 { skel_rebirth2
 	invincible 0
 	playanim critical ANIM_GETUP
+	setvard PLAYING_DEAD 0
 	callevent 1.0 npcatk_resume_movement
 	callevent 1.0 npcatk_resume_ai
 	callevent 1.1 skel_rebirth3
@@ -471,14 +478,6 @@
 
    	playrandomsound 1 5 SOUND_ATTACK1 SOUND_ATTACK2 none none
 
-	if ( !SKELE_DIRECT_DAMAGE )
-	{
-   		dodamage HUNT_LASTTARGET ATTACK_HITRANGE $randf(ATTACK_DAMAGE_LOW,ATTACK_DAMAGE_HIGH) ATTACK_HITCHANCE slash
-	}
-	else
-	{
-		if $get(HUNT_LASTTARGET,range) < ATTACK_HITRANGE
-   		dodamage HUNT_LASTTARGET direct $randf(ATTACK_DAMAGE_LOW,ATTACK_DAMAGE_HIGH) ATTACK_HITCHANCE slash
-	}
+   	xdodamage HUNT_LASTTARGET ATTACK_HITRANGE $randf(ATTACK_DAMAGE_LOW,ATTACK_DAMAGE_HIGH) ATTACK_HITCHANCE ent_me ent_me none slash dmgevent:skele_swing
 }
 

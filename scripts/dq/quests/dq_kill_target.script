@@ -1,0 +1,101 @@
+//By greatguys1
+//Best viewed in EditPlus with the ms.stx applied
+
+//This quest is kill_target. When the quest is activated, it will spawn a buffed version of a monster. When the monster is killed, the quest is complete. If the quest giver dies, the quest is
+//failed.
+
+//Vars:
+//	const QUEST_DATA1			- <"scriptname;Custom boss name"> Which monster will become a miniboss, and what should I name it?
+//	const QUEST_DATA2			- <"info_target name"|"(x,y,z)"> Where do I spawn the monster? At this info target, or at a vector?
+//	const QUEST_DATA3			- <0|1> Should I adjust the monsters stats depending on who took the quest?
+//	const QUEST_MONSTER_SCRIPT		- The scriptname of the miniboss.
+//	const QUEST_MONSTER_NAME		- The miniboss' name.
+//	const QUEST_INFO_TARGET_NAME		- QUEST_DATA2
+//	const DQ_SELF_ADJUST			- QUEST_DATA3, used to see if the monster should adjust based on the quest taker's maxhp
+//	const QUEST_TARGET_HP_MULT		- Multiply QUEST_TAKER_MAXHP by this and set it to the miniboss' hp.
+//	const QUEST_TARGET_XP_MULT		- Multiply QUEST_TAKER_MAXHP by this and set it to the miniboss' xp.
+//	setvard QUEST_INFO_TARGET_ID		- The ID of the info_target, if it exists.
+//	setvard QUEST_MONSTER_SPAWN_POINT	- The origin at where the miniboss spawns. Not always the info_target origin.
+//	setvard QUEST_MONSTER_ID		- The id of the miniboss.
+
+//Functions:
+//	quest_activate				- Handles the spawn point, applies externals to the miniboss, and calls dq_apply_externals
+//	dq_apply_externals			- Applies various effects and/or externals to the monster.
+//	ext_effected_monster_killed		- Called from dq/externals/dq_apply_callback_on_death when the monster it's applied to dies.
+
+#scope server
+
+{
+	const QUEST_MONSTER_SCRIPT $get_token(QUEST_DATA1,0)
+	const QUEST_MONSTER_NAME $get_token(QUEST_DATA1,1)
+
+	const QUEST_INFO_TARGET_NAME QUEST_DATA2
+	const DQ_SELF_ADJUST QUEST_DATA3
+	const DQ_MONSTER_PARAMS QUEST_DATA4
+
+	const QUEST_TARGET_HP_MULT 5
+	const QUEST_TARGET_XP_MULT 2
+
+	setvard QUEST_INFO_TARGET_YAW (0,0,0)
+}
+
+#include dq/quests/bases/dq_base_quests
+
+{ quest_activate
+
+	if ( $get($get_by_name(QUEST_INFO_TARGET_NAME),exists) )
+	{
+		setvard QUEST_INFO_TARGET_ID $get_by_name(QUEST_INFO_TARGET_NAME)
+		setvard QUEST_MONSTER_SPAWN_POINT $get(QUEST_INFO_TARGET_ID,origin)
+		setvard QUEST_INFO_TARGET_YAW $get(QUEST_INFO_TARGET_ID,angles.yaw)
+	}
+	else
+	{
+		setvard QUEST_MONSTER_SPAWN_POINT QUEST_INFO_TARGET_NAME
+	}
+
+	if ( DQ_MONSTER_PARAMS )
+	{
+		createnpc QUEST_MONSTER_SCRIPT QUEST_MONSTER_SPAWN_POINT addparams DQ_MONSTER_PARAMS //Create the monster at the correct position
+	}
+	else
+	{
+		createnpc QUEST_MONSTER_SCRIPT QUEST_MONSTER_SPAWN_POINT //Just in case empty add params would cause issues, though I hardly think they would.
+	}
+
+	setvard QUEST_MONSTER_ID $get(ent_lastcreated,id) //Get monster id
+
+	callexternal QUEST_MONSTER_ID ext_setangle $vec(0,QUEST_INFO_TARGET_YAW,0)
+	
+	callexternal QUEST_MONSTER_ID set_name QUEST_MONSTER_NAME //Set monster name
+
+	callexternal QUEST_MONSTER_ID make_boss //Call the event to make the monster a boss
+
+	callexternal QUEST_MONSTER_ID set_quest_miniboss 1 //Flag the entity as a miniboss for DOT adjustments
+
+	callevent 1.1 dq_apply_externals //Because I *think* applying effects will only work after 1.1 seconds after the monster is created. I don't remember how I came to that conclusion
+}
+
+{ dq_apply_externals //Everything event in this will only work after the monster is initialized
+
+	//The DOT adjustments are done via effects/base_effect. All it requires is the QUEST_MINIBOSS var set to 1, done via
+	//callexternal MONSTERID set_quest_miniboss 1
+
+	applyeffect QUEST_MONSTER_ID dq/externals/dq_apply_callback_on_death $get(ent_me,id)
+
+	if ( DQ_SELF_ADJUST )
+	{
+		applyeffect QUEST_MONSTER_ID dq/externals/dq_adjust_damage
+
+		local L_QUEST_MONSTER_HP $math(multiply,QUEST_TAKER_MAXHP,QUEST_TARGET_HP_MULT) //Get the monster hp to set
+		callexternal QUEST_MONSTER_ID ext_set_health L_QUEST_MONSTER_HP L_QUEST_MONSTER_HP //Set the monster hp
+
+		local L_QUEST_MONSTER_XP $math(multiply,QUEST_TAKER_MAXHP,QUEST_TARGET_XP_MULT) //Get the monster xp to set
+		callexternal QUEST_MONSTER_ID set_xp L_QUEST_MONSTER_XP //Set the monster xp
+	}
+}
+
+{ ext_effected_monster_killed //Called from dq/externals/dq_apply_callback_on_death
+
+	callevent quest_finished_check
+}
