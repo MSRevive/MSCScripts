@@ -10,7 +10,7 @@
 // . effectme effects/dot_lightning_cage 10 GAME_MASTER 0.5 spellcasting.cold 1500
 
 { 
-	const EFFECT_ID "dot_lightning_cage"
+	const EFFECT_ID "+"
 	const EFFECT_FLAGS nostack
 	const EFFECT_SCRIPT $currentscript //Must be copied, as is, at the top script!
 	
@@ -42,13 +42,21 @@
 
 { dot_start
 
-	playsound 0 10 SOUND_FREEZE
-
-	applyeffect ent_me effects/debuff_hold EFFECT_DURATION 0
+	setvard game.effect.movespeed 0
+	setvard game.effect.canjump 0
+	setvard game.effect.canduck 0
+	setvard game.effect.anim.framerate 0
 	
-	if ( CL_FX ) clientevent update all CL_FX end_fx
-	clientevent new all effects/sfx_lightning_cage $get(ent_me,index) EFFECT_DURATION
-	setvard CL_FX game.script.last_sent_id
+	scriptflags ent_me add light_cage nopush 1 -1 none
+
+	playsound 0 10 magic/bolt_start.wav
+
+	local L_POS $get(ent_me,origin) 
+	if ( !$get(ent_me,isplayer) ) vectoradd L_POS z $math(divide,$get(ent_me,height),2)
+	
+	if ( CL_CAGE ) clientevent update all CL_CAGE effect_die
+	clientevent new all effects/sfx_lightning_cage 60 L_POS //It would be *shocking* if a player lasted 60 seconds in this
+	setvard CL_CAGE game.script.last_sent_id
 }
 
 { effect_die
@@ -56,7 +64,9 @@
 	if !DOT_RESISTED
 	playermessage ent_me "The lightning field dissipates."
 	
-	if ( CL_FX ) clientevent update all CL_FX end_fx
+	scriptflags ent_me remove light_cage
+	
+	if ( CL_CAGE ) clientevent update all CL_CAGE end_fx
 
 	playsound 0 10 magic/energy1_loud.wav
 }
