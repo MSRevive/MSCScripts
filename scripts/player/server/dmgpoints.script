@@ -53,20 +53,42 @@
 
 { game_damaged_other
 
-	if ( $get(PARAM1,relationship,ent_me) equals enemy ) local L_IS_ENEMY 1
+	if ( $get(PARAM1,relationship,ent_me) equals enemy ) local L_IS_ENEMY 1 
 	if ( $get(PARAM1,relationship,ent_me) equals wary ) local L_IS_ENEMY 1
+	 
+	//TODO: Catch misses, properly calculate polearm damage, identify critical hits
+	//Translate <status>_effect damage type 
+	local L_DAMAGE_TYPE PARAM3
+	if ( L_DAMAGE_TYPE contains '_effect' )
+	{
+		local L_DAMAGE_TYPE $string_upto(L_DAMAGE_TYPE,'_effect')
+	}
+
+	if ( L_DAMAGE_TYPE equals holy )
+	{
+		if ( $get(PARAM1,race) equals undead ) local L_CAN_DAMAGE 1
+		if ( $get(PARAM1,race) equals demon ) local L_CAN_DAMAGE 1
+		if ( !L_CAN_DAMAGE ) exitevent //If not undead or demon, stop execution
+	}
 	
+	//$get(PARAM1,scriptvar,'LAST_STRUCK_FOR') //potentially dangerous and also doesn't work immediately
+
 	if ( L_IS_ENEMY )
 	{
 		if !$get(PARAM1,scriptvar,'AM_INVISIBLE') //Thothie FEB2009
 		if !$get(PARAM1,isplayer)
-		local DMG_DONE PARAM2
-		local NME_HP $get(PARAM1,hp)
-		if ( NME_HP < DMG_DONE )
+		local L_DMG_DONE PARAM2
+		local L_NME_HP $get(PARAM1,hp)
+		local L_DMG_IMMUNE_RATIO $get_takedmg(PARAM1,L_DAMAGE_TYPE)
+		local L_NME_ARMOR $get(PARAM1,scriptvar,'MSC_ARMOR_ALL')
+		multiply L_DMG_DONE L_DMG_IMMUNE_RATIO
+		if ( L_NME_ARMOR > 0 ) multiply L_DMG_DONE L_NME_ARMOR
+		if ( L_NME_HP < L_DMG_DONE )
 		{
-			local DMG_DONE NME_HP //so we don't get 1000 dmg points for darksword'ing a rat
+			local L_DMG_DONE L_NME_HP //so we don't get 1000 dmg points for darksword'ing a rat
 		}
-		callevent add_dmg_points DMG_DONE
+		//gplayermessage ent_me Added L_DMG_DONE damage points. //Debug
+		callevent add_dmg_points L_DMG_DONE
 	}
 }
 
