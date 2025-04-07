@@ -1,5 +1,5 @@
 //descript/requirements
-//• monsters/worm_abyssal - The Abyssal Worm (hard demon, 128x700, 8000hp, baseXP 3000)
+//ï¿½ monsters/worm_abyssal - The Abyssal Worm (hard demon, 128x700, 8000hp, baseXP 3000)
 //- This is a special giant worm monster, that requires various map ents to operate properly.
 //- Intent is to move about a platform in the center of his chamber, and attack players standing thereon.
 //- Requires the following entities:
@@ -41,6 +41,7 @@
 #scope server
 {
 	//base ai
+	setvar NPC_IS_BOSS 1
 	setvard NPC_GIVE_EXP 6000 //we have to double the XP value, as half the hit value goes to the head
 	setvar ANIM_IDLE hide_idle
 	setvar ANIM_WALK idle
@@ -211,6 +212,7 @@
 		setvard NEXT_EYEBEAM game.time
 		add NEXT_EYEBEAM FREQ_EYEBEAM
 		setvard HIDE_MODE 0
+		setvard WORM_UNHIDING 1
 		playanim critical ANIM_RISE
 		if ( FINAL_TELEPORT ) callevent 0.5 brk_wall
 	}
@@ -223,13 +225,11 @@
 
 { brk_wall
 	usetrigger brk_worm
-	local L_REPEL_POINT $get_by_name(worm_repel_point)
-	setvard REPEL_POINT $get(L_REPEL_POINT,origin)
-	setvard WORM_REPEL 1
 }
 
 { frame_rise_done
 	invincible 0
+	setvard NPC_NO_ATTACK 0
 	callevent refresh_cl
 	setvard ANIM_IDLE ANIM_IDLE_UP
 	setidleanim ANIM_IDLE_UP
@@ -245,6 +245,7 @@
 	setvard IDLE_SOUNDS_ACTIVE 1
 	setvard NEXT_IDLE_SOUND game.time
 	add NEXT_IDLE_SOUND FREQ_IDLE_SOUND
+	setvard WORM_UNHIDING 0
 
 	effect screenshake $get(MY_HEAD,origin) 400 10 3 1024
 
@@ -265,7 +266,7 @@
 	callevent npcatk_settarget $get_token(L_TARGS,0)
 }
 
-{ game_applyeffect //<"applyeffect"|"applyeffect"> <target> <effectscript> [params...]
+{ game_applyeffect //<"applyeffect"|"applyeffectstack"> <target> <effectscript> [params...]
 	dbg game_applyeffect PARAM3
 	if ( HIDE_MODE ) returndata abort
 	if ( PARAM3 contains freeze_solid )
@@ -487,7 +488,7 @@
 	if PARAM1
 	if $get(PARAM2,relationship,ent_me) equals enemy
 	applyeffect PARAM2 DOT_EFFECT_SCRIPT 5.0 $get(ent_me,id) DOT_DMG
-	applyeffect PARAM2 effects/debuff_stun 8.0 $get(ent_me,id)
+	applyeffect PARAM2 effects/effect_stun 8.0 0 1 $get(ent_me,id)
 }
 
 { npc_selectattack
@@ -701,6 +702,7 @@
 	setvard ANIM_RUN ANIM_HIDE
 	setvard ANIM_WALK ANIM_HIDE
 	setvard ANIM_IDLE ANIM_HIDE
+	setvard NPC_NO_ATTACK 1
 
 	if ( !FINAL_TELEPORT )
 	{
@@ -710,6 +712,9 @@
 	{
 		local L_TELE_NAME worm_telepoint_final
 		usetrigger light_worm
+		local L_REPEL_POINT $get_by_name(worm_repel_point)
+		setvard REPEL_POINT $get(L_REPEL_POINT,origin)
+		setvard WORM_REPEL 1
 	}
 
 	local L_TELE_ID $get_by_name(L_TELE_NAME)
@@ -754,5 +759,11 @@
 { game_death
 	callexternal GAME_MASTER gm_suspend_mob_spawns 0
 	clientevent update all CL_IDX end_fx
+}
+
+{ game_damaged_other
+	if G_LESSER_DEV_MODE
+	setdmg dmg 0.01
+	returndata 0.01
 }
 
