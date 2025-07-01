@@ -8,11 +8,11 @@
  * This should be called from GameMasterInit.as to ensure proper initialization order.
  */
 
-#include "EntityCommunicationSystem.as"
-#include "CallExternalBridge.as"
-#include "QuestTracker.as"
-#include "CriticalNPCManager.as"
-#include "AdvancedTriggerSystem.as"
+#include "admin/EntityCommunicationSystem.as"
+#include "admin/CallExternalBridge.as"
+#include "player/QuestTracker.as"
+#include "world/CriticalNPCManager.as"
+#include "triggers/AdvancedTriggerSystem.as"
 
 namespace MS
 {

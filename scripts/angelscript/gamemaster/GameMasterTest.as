@@ -6,10 +6,10 @@
  */
 
 // Include all GameMaster files
-#include "GameMasterData.as"
-#include "GameMasterEvents.as" 
-#include "GameMasterUtils.as"
-#include "GameMaster.as"
+#include "gamemaster/GameMasterData.as"
+#include "gamemaster/GameMasterEvents.as" 
+#include "gamemaster/GameMasterUtils.as"
+#include "gamemaster/GameMaster.as"
 
 /**
  * Test function to verify GameMaster functionality

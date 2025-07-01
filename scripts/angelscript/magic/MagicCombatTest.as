@@ -5,9 +5,9 @@
  * Shows how the converted magic hand spell system and potion of forgetfulness work.
  */
 
-#include "GameMasterUtils.as"
-#include "MagicSystem.as"
-#include "CombatSystem.as"
+#include "gamemaster/GameMasterUtils.as"
+#include "magic/MagicSystem.as"
+#include "combat/CombatSystem.as"
 
 namespace MS
 {

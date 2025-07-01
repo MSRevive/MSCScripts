@@ -5,9 +5,9 @@
  * This file demonstrates how to use the Potion of Forgetfulness system
  */
 
-#include "MagicSystem.as"
-#include "SpellRegistry.as"
-#include "GameMasterData.as"
+#include "magic/MagicSystem.as"
+#include "magic/SpellRegistry.as"
+#include "gamemaster/GameMasterData.as"
 
 namespace MSTest
 {

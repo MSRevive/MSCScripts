@@ -11,8 +11,8 @@
  * - Configurable HP thresholds and spawn sequences
  */
 
-#include "AdvancedTriggerSystem.as"
-#include "EntitySpawner.as"
+#include "triggers/AdvancedTriggerSystem.as"
+#include "world/EntitySpawner.as"
 
 namespace MS
 {

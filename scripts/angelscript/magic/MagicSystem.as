@@ -6,10 +6,10 @@
  * Converted from game_master.script magic hand spell system (lines 4-11).
  */
 
-#include "GameMasterData.as"
-#include "GameMasterUtils.as"
-#include "SpellRegistry.as"
-#include "CombatSystem.as"
+#include "gamemaster/GameMasterData.as"
+#include "gamemaster/GameMasterUtils.as"
+#include "magic/SpellRegistry.as"
+#include "combat/CombatSystem.as"
 
 // LogMessage function - provided by engine
 void LogMessage(const string &in message);

@@ -9,7 +9,7 @@
 
 // Include directives now supported with pak file integration
 // Using simplified data for initial testing
-#include "GameMasterData_simple.as"
+#include "gamemaster/GameMasterData_simple.as"
 // TODO: Re-enable these when advanced systems are ready
 // #include "GameMasterUtils.as" 
 // #include "GameMasterEvents.as"

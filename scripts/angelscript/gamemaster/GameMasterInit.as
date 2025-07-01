@@ -6,7 +6,7 @@
  * connects it to the game engine.
  */
 
-#include "GameMaster.as"
+#include "gamemaster/GameMaster.as"
 
 namespace MS
 {
@@ -46,6 +46,9 @@ namespace MS
         {
             // Initialize the GameMaster
             g_pGameMaster.Spawn();
+            
+            // Register engine event handlers
+            RegisterGameMasterEngineEvents();
             
             LogInfo("GameMaster system initialized successfully");
         }
@@ -97,6 +100,26 @@ namespace MS
     bool GameMasterUtils_IsInitialized()
     {
         return g_pGameMaster !is null;
+    }
+    
+    // ========================================
+    // Engine Event Registration
+    // ========================================
+    
+    /**
+     * Register GameMaster event handlers with the engine event system
+     */
+    void RegisterGameMasterEngineEvents()
+    {
+        LogInfo("GameMaster: Registering engine event handlers...");
+        
+        // Register the GameMaster engine event handlers
+        RegisterEngineEvent("OnEnginePlayerConnect", OnEnginePlayerConnect);
+        RegisterEngineEvent("OnEnginePlayerDisconnect", OnEnginePlayerDisconnect);
+        RegisterEngineEvent("OnEngineMonsterKilled", OnEngineMonsterKilled);
+        RegisterEngineEvent("OnEngineTreasureSpawned", OnEngineTreasureSpawned);
+        
+        LogInfo("GameMaster: Engine event handlers registered successfully!");
     }
     
     // ========================================
