@@ -1,0 +1,114 @@
+//Test script to verify AngelScript integration
+//This will attempt to call AngelScript functions from the legacy script system
+{
+    eventname game_spawn
+    setvard AS_TEST_STAGE 0
+    
+    callevent 1.0 test_angelscript_init
+}
+
+{ game_spawn
+    name AS Integration Tester
+    hp 1
+    race beloved
+    width 1
+    height 1
+    gravity 0
+    invincible 1
+    invisible 1
+    
+    infomessage all "Testing AngelScript Integration..."
+}
+
+{ test_angelscript_init
+    setvard AS_TEST_STAGE 1
+    servercmd "echo === Testing AngelScript Module System ==="
+    
+    //Check if AngelScript is initialized
+    if ( game.script.angelscript_initialized )
+    {
+        servercmd "echo [PASS] AngelScript engine is initialized"
+        callevent test_modules
+    }
+    else
+    {
+        servercmd "echo [FAIL] AngelScript engine NOT initialized!"
+        servercmd "echo Please ensure ASBindings::RegisterAll() was called during server startup"
+    }
+}
+
+{ test_modules
+    setvard AS_TEST_STAGE 2
+    servercmd "echo === Testing AngelScript Modules ==="
+    
+    //Test if modules can be loaded
+    callevent as_load_module "GameMaster.as"
+    callevent 0.5 as_load_module "PlayerManager.as"
+    callevent 1.0 as_load_module "MagicSystem.as"
+    callevent 1.5 as_load_module "WorldSystem.as"
+    
+    callevent 3.0 test_functions
+}
+
+{ as_load_module
+    local L_MODULE_NAME PARAM1
+    servercmd "echo Testing module: L_MODULE_NAME"
+    
+    //This would need to call into the AngelScript system
+    //For now, we'll check if the module exists in the file system
+    if ( game.script.module_exists L_MODULE_NAME )
+    {
+        servercmd "echo [PASS] Module found: L_MODULE_NAME"
+    }
+    else
+    {
+        servercmd "echo [FAIL] Module NOT found: L_MODULE_NAME"
+    }
+}
+
+{ test_functions
+    setvard AS_TEST_STAGE 3
+    servercmd "echo === Testing AngelScript Functions ==="
+    
+    //Test calling AngelScript functions
+    //These would need C++ bindings to actually work
+    servercmd "echo Testing MS::InitializeGameMaster()..."
+    callevent as_call_function "MS::InitializeGameMaster"
+    
+    servercmd "echo Testing MS::GetMagicHandScripts()..."
+    callevent 0.5 as_call_function "MS::GetMagicHandScripts" 1
+    
+    callevent 2.0 test_complete
+}
+
+{ as_call_function
+    local L_FUNC_NAME PARAM1
+    local L_PARAM PARAM2
+    
+    servercmd "echo Calling AngelScript function: L_FUNC_NAME"
+    
+    //This would need actual C++ integration
+    //For testing, we'll simulate the call
+    if ( L_FUNC_NAME contains "Initialize" )
+    {
+        servercmd "echo [SIMULATED] Function would initialize system"
+    }
+    else if ( L_FUNC_NAME contains "GetMagic" )
+    {
+        servercmd "echo [SIMULATED] Function would return magic hand scripts"
+    }
+}
+
+{ test_complete
+    servercmd "echo === AngelScript Integration Test Complete ==="
+    servercmd "echo Test stages completed: AS_TEST_STAGE / 3"
+    
+    infomessage all "AngelScript test complete - check server console for results"
+    
+    //Clean up
+    callevent 2.0 removeme
+}
+
+{ removeme
+    deleteent ent_me
+}
