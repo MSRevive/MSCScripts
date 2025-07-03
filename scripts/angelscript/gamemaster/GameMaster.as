@@ -19,6 +19,9 @@
 #include "gamemaster/GameMasterMapTransitions.as"
 #include "gamemaster/GameMasterPlayerCommands.as"
 
+// Command processing system
+#include "commands/CommandModule.as"
+
 module GameMaster
 {
     // Core properties
@@ -96,6 +99,9 @@ module GameMaster
         // Initialize new integrated systems
         InitializeVotingSystem();
         InitializeTransitionSystem();
+        
+        // Initialize player command manager (must be before PlayerCommandSystem)
+        MS::InitializePlayerCommands();
         InitializePlayerCommandSystem();
         
         // Initialize supporting systems
@@ -103,6 +109,9 @@ module GameMaster
         InitializeHPSequenceTrigger();
         InitializeEntitySpawner();
         InitializeEntityCommunications();
+        
+        // Initialize command processing system
+        InitializeCommands();
         
         LogInfo("GameMaster: All systems initialized successfully");
         
@@ -121,7 +130,9 @@ module GameMaster
         LogInfo("Shutting down GameMaster system...");
         
         // Shutdown new systems first
+        ShutdownCommands();
         ShutdownPlayerCommandSystem();
+        MS::ShutdownPlayerCommands();
         ShutdownTransitionSystem();
         ShutdownVotingSystem();
         
@@ -383,26 +394,36 @@ module GameMaster
         LogMessage("[DEBUG] GameMaster: About to register event handlers");
         
         // First test with a simple function to verify registration works
+        LogMessage("[REGISTER] Registering TestSimpleFunction");
         RegisterEngineEvent("TestSimpleFunction", TestSimpleFunction);
-        LogMessage("[DEBUG] GameMaster: Registered TestSimpleFunction handler");
+        LogMessage("[REGISTER] TestSimpleFunction registration completed");
         
         // Register GameMaster's event handlers directly with the engine
+        LogMessage("[REGISTER] Registering OnEnginePlayerConnect -> OnEnginePlayerConnect");
         RegisterEngineEvent("OnEnginePlayerConnect", OnEnginePlayerConnect);
-        LogMessage("[DEBUG] GameMaster: Registered OnEnginePlayerConnect handler");
+        LogMessage("[REGISTER] OnEnginePlayerConnect registration completed");
         
+        LogMessage("[REGISTER] Registering OnEnginePlayerDisconnect -> OnEnginePlayerDisconnect");
         RegisterEngineEvent("OnEnginePlayerDisconnect", OnEnginePlayerDisconnect);
-        LogMessage("[DEBUG] GameMaster: Registered OnEnginePlayerDisconnect handler");
+        LogMessage("[REGISTER] OnEnginePlayerDisconnect registration completed");
         
+        LogMessage("[REGISTER] Registering OnEngineMonsterKilled -> OnEngineMonsterKilled");
         RegisterEngineEvent("OnEngineMonsterKilled", OnEngineMonsterKilled);
-        LogMessage("[DEBUG] GameMaster: Registered OnEngineMonsterKilled handler");
+        LogMessage("[REGISTER] OnEngineMonsterKilled registration completed");
         
+        LogMessage("[REGISTER] Registering OnEngineTreasureSpawned -> OnEngineTreasureSpawned");
         RegisterEngineEvent("OnEngineTreasureSpawned", OnEngineTreasureSpawned);
-        LogMessage("[DEBUG] GameMaster: Registered OnEngineTreasureSpawned handler");
+        LogMessage("[REGISTER] OnEngineTreasureSpawned registration completed");
+        
+        LogMessage("[REGISTER] Registering OnEnginePlayerSayText -> OnEnginePlayerSayText");
+        RegisterEngineEvent("OnEnginePlayerSayText", OnEnginePlayerSayText);
+        LogMessage("[REGISTER] OnEnginePlayerSayText registration completed");
         
         LogInfo("GameMaster: Engine event handlers registered successfully!");
         LogMessage("[DEBUG] GameMaster: All event handlers registration complete");
         
         // Log the registered engine event handlers
+        LogMessage("[DEBUG] GameMaster: Calling LogEngineEventHandlers() to verify registration");
         LogEngineEventHandlers();
     }
     
@@ -672,6 +693,83 @@ void OnEngineTreasureSpawned(const string &in szTreasureType, const Vector3 &in 
     if (gm !is null)
     {
         gm.OnTreasureSpawned(szTreasureType);
+    }
+}
+
+/**
+ * Called when a player sends a chat message
+ * Server has already validated this is a vote command
+ * Enhanced with comprehensive null/empty validation to prevent crashes
+ */
+void OnEnginePlayerSayText(const string &in szPlayerName, const string &in szSteamID, const string &in szText)
+{
+    LogMessage("[ANGELSCRIPT] OnEnginePlayerSayText called - starting validation...");
+    
+    // Comprehensive parameter validation to prevent crashes
+    // Check for empty/null player name
+    if (szPlayerName.isEmpty())
+    {
+        LogMessage("[ANGELSCRIPT] ERROR: OnEnginePlayerSayText received empty player name - blocking");
+        return;
+    }
+    
+    // Check for empty/null Steam ID  
+    if (szSteamID.isEmpty())
+    {
+        LogMessage("[ANGELSCRIPT] ERROR: OnEnginePlayerSayText received empty Steam ID - blocking");
+        return;
+    }
+    
+    // Check for empty/null text (most critical)
+    if (szText.isEmpty())
+    {
+        LogMessage("[ANGELSCRIPT] ERROR: OnEnginePlayerSayText received empty text - blocking");
+        return;
+    }
+    
+    // Additional validation for reasonable parameter lengths
+    if (szPlayerName.length() > 255)
+    {
+        LogMessage("[ANGELSCRIPT] ERROR: OnEnginePlayerSayText player name too long (" + formatInt(szPlayerName.length()) + ") - blocking");
+        return;
+    }
+    
+    if (szSteamID.length() > 127)
+    {
+        LogMessage("[ANGELSCRIPT] ERROR: OnEnginePlayerSayText Steam ID too long (" + formatInt(szSteamID.length()) + ") - blocking");
+        return;
+    }
+    
+    if (szText.length() > 511)
+    {
+        LogMessage("[ANGELSCRIPT] ERROR: OnEnginePlayerSayText text too long (" + formatInt(szText.length()) + ") - blocking");
+        return;
+    }
+    
+    // Additional safety checks for valid string content
+    // Check if strings contain only valid printable characters (basic validation)
+    for (uint i = 0; i < szText.length(); i++)
+    {
+        uint8 c = szText[i];
+        if (c < 32 && c != 9 && c != 10 && c != 13) // Allow tab, newline, carriage return
+        {
+            LogMessage("[ANGELSCRIPT] ERROR: OnEnginePlayerSayText text contains invalid character (" + formatInt(c) + ") at position " + formatInt(i) + " - blocking");
+            return;
+        }
+    }
+    
+    // Log successful validation
+    LogMessage("[ANGELSCRIPT] OnEnginePlayerSayText validation passed for " + szPlayerName + ": '" + szText + "'");
+    
+    // Route to the HandlePlayerSayText function in PlayerCommands with additional safety
+    try
+    {
+        HandlePlayerSayText(szSteamID, szPlayerName, szText);
+        LogMessage("[ANGELSCRIPT] OnEnginePlayerSayText completed successfully");
+    }
+    catch
+    {
+        LogMessage("[ANGELSCRIPT] ERROR: Exception in HandlePlayerSayText - player: " + szPlayerName + ", text: " + szText);
     }
 }
 

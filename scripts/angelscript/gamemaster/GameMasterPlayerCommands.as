@@ -641,6 +641,55 @@ namespace MS
     }
     
     // ========================================
+    // Bridge Functions for Command System Integration
+    // ========================================
+    
+    /**
+     * Bridge function for command system integration
+     * Processes a single command with parsed arguments
+     */
+    void ProcessPlayerCommandBridge(const string &in playerID, const string &in playerName, 
+                                   const string &in command, const array<string> &in args)
+    {
+        if (g_PlayerCommandManager is null)
+        {
+            LogError("ProcessPlayerCommandBridge: PlayerCommandManager not initialized");
+            return;
+        }
+        
+        // Build full arguments array with command as first element
+        array<string> fullArgs;
+        fullArgs.insertLast(command);
+        for (uint i = 0; i < args.length(); i++)
+        {
+            fullArgs.insertLast(args[i]);
+        }
+        
+        g_PlayerCommandManager.HandlePlayerCommand(playerID, playerName, fullArgs);
+    }
+    
+    /**
+     * Check if the player command system is ready
+     */
+    bool IsPlayerCommandSystemReady()
+    {
+        return g_PlayerCommandManager !is null;
+    }
+    
+    /**
+     * Get player voting eligibility
+     */
+    bool CanPlayerVoteNow(const string &in playerID)
+    {
+        if (g_PlayerCommandManager is null)
+            return false;
+            
+        // This would check the player's voting record and permissions
+        // For now, return true as a basic implementation
+        return true;
+    }
+    
+    // ========================================
     // Player Command Handler Class (Compatibility Wrapper)
     // ========================================
     
@@ -742,19 +791,119 @@ void HandlePlayerCommand(string playerID, string playerName, string command,
 /**
  * Handle player commands from chat
  * This handles the say_text command routing
+ * Enhanced with comprehensive validation to prevent crashes
  */
 void HandlePlayerSayText(string playerID, string playerName, string text)
 {
-    // Split the text into command and parameters
-    array<string> tokens = text.split(" ");
-    if (tokens.length() > 0 && tokens[0].substr(0, 4) == "vote")
+    LogMessage("[VOTE] HandlePlayerSayText called - validating parameters...");
+    
+    // Enhanced parameter validation
+    if (playerID.isEmpty())
     {
-        HandlePlayerCommand(playerID, playerName, tokens[0],
-                          tokens.length() > 1 ? tokens[1] : "",
-                          tokens.length() > 2 ? tokens[2] : "",
-                          tokens.length() > 3 ? tokens[3] : "",
-                          tokens.length() > 4 ? tokens[4] : "",
-                          tokens.length() > 5 ? tokens[5] : "");
+        LogMessage("[VOTE] ERROR: HandlePlayerSayText received empty playerID - blocking");
+        return;
+    }
+    
+    if (playerName.isEmpty())
+    {
+        LogMessage("[VOTE] ERROR: HandlePlayerSayText received empty playerName - blocking");
+        return;
+    }
+    
+    if (text.isEmpty())
+    {
+        LogMessage("[VOTE] ERROR: HandlePlayerSayText received empty text - blocking");
+        return;
+    }
+    
+    // Additional length validation
+    if (playerID.length() > 127)
+    {
+        LogMessage("[VOTE] ERROR: HandlePlayerSayText playerID too long (" + formatInt(playerID.length()) + ") - blocking");
+        return;
+    }
+    
+    if (playerName.length() > 255)
+    {
+        LogMessage("[VOTE] ERROR: HandlePlayerSayText playerName too long (" + formatInt(playerName.length()) + ") - blocking");
+        return;
+    }
+    
+    if (text.length() > 511)
+    {
+        LogMessage("[VOTE] ERROR: HandlePlayerSayText text too long (" + formatInt(text.length()) + ") - blocking");
+        return;
+    }
+    
+    LogMessage("[VOTE] HandlePlayerSayText validation passed for " + playerName + ": '" + text + "'");
+    
+    // Safe text processing with exception handling
+    array<string> tokens;
+    try
+    {
+        // Split the text into command and parameters
+        tokens = text.split(" ");
+        if (tokens.length() == 0)
+        {
+            LogMessage("[VOTE] ERROR: HandlePlayerSayText text split resulted in empty array - blocking");
+            return;
+        }
+    }
+    catch
+    {
+        LogMessage("[VOTE] ERROR: Exception during text.split() in HandlePlayerSayText - text: '" + text + "'");
+        return;
+    }
+    
+    // Validate that we have a command
+    if (tokens.length() > 0)
+    {
+        string command = tokens[0];
+        if (command.length() < 4)
+        {
+            LogMessage("[VOTE] HandlePlayerSayText command too short: '" + command + "'");
+            return;
+        }
+        
+        // Check if this is a vote command with safe substring operation
+        string commandPrefix;
+        try
+        {
+            commandPrefix = command.substr(0, 4);
+        }
+        catch
+        {
+            LogMessage("[VOTE] ERROR: Exception during command.substr() in HandlePlayerSayText - command: '" + command + "'");
+            return;
+        }
+        
+        if (commandPrefix == "vote")
+        {
+            LogMessage("[VOTE] Processing vote command: " + command + " from " + playerName);
+            
+            try
+            {
+                HandlePlayerCommand(playerID, playerName, tokens[0],
+                                  tokens.length() > 1 ? tokens[1] : "",
+                                  tokens.length() > 2 ? tokens[2] : "",
+                                  tokens.length() > 3 ? tokens[3] : "",
+                                  tokens.length() > 4 ? tokens[4] : "",
+                                  tokens.length() > 5 ? tokens[5] : "");
+                LogMessage("[VOTE] HandlePlayerCommand completed successfully");
+            }
+            catch
+            {
+                LogMessage("[VOTE] ERROR: Exception in HandlePlayerCommand - player: " + playerName + ", command: " + command);
+            }
+        }
+        else
+        {
+            LogMessage("[VOTE] HandlePlayerSayText command not a vote command: '" + commandPrefix + "'");
+        }
+    }
+    else
+    {
+        LogMessage("[VOTE] HandlePlayerSayText no tokens found in text: '" + text + "'");
     }
 }
 
