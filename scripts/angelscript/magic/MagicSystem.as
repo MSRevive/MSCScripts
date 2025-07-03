@@ -6,7 +6,7 @@
  * Converted from game_master.script magic hand spell system (lines 4-11).
  */
 
-#include "gamemaster/GameMasterData.as"
+#include "gamemaster/GameMasterDataStructures.as"
 #include "gamemaster/GameMasterUtils.as"
 #include "magic/SpellRegistry.as"
 #include "combat/CombatSystem.as"
@@ -363,39 +363,6 @@ namespace MS
             MS::RegisterPotionHandler(szPlayerID, potionHandler);
             
             return potionHandler.ShowSpellForgetMenu();
-        }
-        
-        /**
-         * Get player Steam ID (helper function)
-         */
-        string GetPlayerSteamID(CBasePlayer@ pPlayer)
-        {
-            if (pPlayer is null)
-                return "";
-            // This should connect to the actual Steam ID function from the engine
-            return "STEAM_ID_" + pPlayer.entindex(); // Placeholder implementation
-        }
-        
-        /**
-         * Send message to player (helper function)
-         */
-        void SendPlayerMessage(CBasePlayer@ pPlayer, const string &in szMessage)
-        {
-            if (pPlayer is null)
-                return;
-            LogInfo("Message to " + pPlayer.GetName() + ": " + szMessage);
-            // This should connect to actual player messaging system
-        }
-        
-        /**
-         * Show info message dialog to player (helper function)
-         */
-        void ShowInfoMessage(CBasePlayer@ pPlayer, const string &in szTitle, const string &in szMessage)
-        {
-            if (pPlayer is null)
-                return;
-            LogInfo("InfoMsg to " + pPlayer.GetName() + " [" + szTitle + "]: " + szMessage);
-            // This should connect to actual info dialog system
         }
         
         private bool ExecuteSpellCast(CBasePlayer@ pPlayer, SpellData@ pSpell, const Vector3 &in vecTarget)

@@ -6,7 +6,7 @@
  * Integrates with the magic system for spell damage and effects.
  */
 
-#include "gamemaster/GameMasterData.as"
+#include "gamemaster/GameMasterDataStructures.as"
 #include "gamemaster/GameMasterUtils.as"
 #include "magic/SpellRegistry.as"
 

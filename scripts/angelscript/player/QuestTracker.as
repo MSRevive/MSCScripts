@@ -25,10 +25,10 @@ namespace MS
      * Send a message to a specific player
      * Displays informational messages about quest items
      */
-    void SendPlayerMessage(const string &in szPlayerID, const string &in szTitle, const string &in szMessage)
+    void SendQuestPlayerMessage(const string &in szPlayerID, const string &in szTitle, const string &in szMessage)
     {
         // Call the real C++ SendPlayerMessage function
-        ::SendPlayerMessage(szPlayerID, szTitle, szMessage);
+        ::SendQuestPlayerMessage(szPlayerID, szTitle, szMessage);
         
         // Also log for debugging/tracking
         LogMessage("[QUEST MSG] Sent to " + szPlayerID + " - " + szTitle + ": " + szMessage);
@@ -354,7 +354,7 @@ namespace MS
                 mapName = lowerMapName;
                 if (mapName.substr(0, 5) == "rmine") // Starts with 'rmine'
                 {
-                    SendPlayerMessage(szPlayerID, "Stick of Dynamite", 
+                    SendQuestPlayerMessage(szPlayerID, "Stick of Dynamite", 
                                     "Hrmmm... the fuse is broken... but maybe we can use this, somewhere...");
                 }
             }

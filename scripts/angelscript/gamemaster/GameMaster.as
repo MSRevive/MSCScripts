@@ -9,11 +9,15 @@
  */
 
 // Include directives now supported with pak file integration
-// Using simplified data for initial testing
-#include "gamemaster/GameMasterData.as"
-// TODO: Re-enable these when advanced systems are ready
-#include "gamemaster/GameMasterUtils.as" 
+// Core data structures and utilities
+#include "gamemaster/GameMasterDataStructures.as"
+#include "gamemaster/GameMasterUtils.as"
 #include "gamemaster/GameMasterEvents.as"
+
+// New voting and transition systems
+#include "gamemaster/GameMasterVoting.as"
+#include "gamemaster/GameMasterMapTransitions.as"
+#include "gamemaster/GameMasterPlayerCommands.as"
 
 module GameMaster
 {
@@ -24,6 +28,11 @@ module GameMaster
     
     // Entity tracking
     EntityHandle m_hSelf;
+    
+    // New integrated systems
+    MS::VoteManager@ m_VoteManager = null;
+    MS::MapTransitionManager@ m_TransitionManager = null;
+    MS::PlayerCommandHandler@ m_CommandHandler = null;
 
     // ========================================
     // Simplified Logging Functions
@@ -84,16 +93,18 @@ module GameMaster
             @m_GameMaster = null;
         }
         
-        // Initialize supporting systems first
-        // TODO: Re-enable these systems once they are fully tested
-        // InitializeAdvancedTriggerSystem();
-        // InitializeHPSequenceTrigger();
-        // InitializeEntitySpawner();
+        // Initialize new integrated systems
+        InitializeVotingSystem();
+        InitializeTransitionSystem();
+        InitializePlayerCommandSystem();
         
-        // Initialize entity communication system
-        // InitializeEntityCommunications();
+        // Initialize supporting systems
+        InitializeAdvancedTriggerSystem();
+        InitializeHPSequenceTrigger();
+        InitializeEntitySpawner();
+        InitializeEntityCommunications();
         
-        LogInfo("GameMaster: Skipping advanced systems initialization for now");
+        LogInfo("GameMaster: All systems initialized successfully");
         
         // Initialize other systems that don't require the instance
         RegisterGameMasterEngineEvents();
@@ -109,6 +120,11 @@ module GameMaster
     {
         LogInfo("Shutting down GameMaster system...");
         
+        // Shutdown new systems first
+        ShutdownPlayerCommandSystem();
+        ShutdownTransitionSystem();
+        ShutdownVotingSystem();
+        
         if (m_GameMaster !is null)
         {
             // Clean shutdown
@@ -121,11 +137,10 @@ module GameMaster
         }
         
         // Shutdown supporting systems
-        // TODO: Re-enable these shutdowns when systems are active
-        // ShutdownEntityCommunications();
-        // ShutdownHPSequenceTrigger();
-        // ShutdownAdvancedTriggerSystem();
-        // ShutdownEntitySpawner();
+        ShutdownEntityCommunications();
+        ShutdownHPSequenceTrigger();
+        ShutdownAdvancedTriggerSystem();
+        ShutdownEntitySpawner();
     }
     
     /**
@@ -143,6 +158,92 @@ module GameMaster
     bool GameMasterUtils_IsInitialized()
     {
         return m_GameMaster !is null;
+    }
+    
+    // ========================================
+    // New System Initialization Functions
+    // ========================================
+    
+    /**
+     * Initialize the voting system
+     */
+    void InitializeVotingSystem()
+    {
+        @m_VoteManager = MS::VoteManager();
+        LogInfo("GameMaster: Voting system initialized");
+    }
+    
+    /**
+     * Initialize the map transition system
+     */
+    void InitializeTransitionSystem()
+    {
+        @m_TransitionManager = MS::MapTransitionManager();
+        LogInfo("GameMaster: Map transition system initialized");
+    }
+    
+    /**
+     * Initialize the player command system
+     */
+    void InitializePlayerCommandSystem()
+    {
+        @m_CommandHandler = MS::PlayerCommandHandler();
+        if (m_VoteManager !is null && m_TransitionManager !is null)
+        {
+            m_CommandHandler.SetVoteManager(m_VoteManager);
+            m_CommandHandler.SetTransitionManager(m_TransitionManager);
+        }
+        LogInfo("GameMaster: Player command system initialized");
+    }
+    
+    // ========================================
+    // System Shutdown Functions
+    // ========================================
+    
+    void ShutdownVotingSystem()
+    {
+        if (m_VoteManager !is null)
+        {
+            @m_VoteManager = null;
+            LogInfo("GameMaster: Voting system shut down");
+        }
+    }
+    
+    void ShutdownTransitionSystem()
+    {
+        if (m_TransitionManager !is null)
+        {
+            @m_TransitionManager = null;
+            LogInfo("GameMaster: Transition system shut down");
+        }
+    }
+    
+    void ShutdownPlayerCommandSystem()
+    {
+        if (m_CommandHandler !is null)
+        {
+            @m_CommandHandler = null;
+            LogInfo("GameMaster: Player command system shut down");
+        }
+    }
+    
+    // ========================================
+    // Public API for External Access
+    // ========================================
+    
+    MS::VoteManager@ GetVoteManager()
+    {
+        return m_VoteManager;
+    }
+    
+    MS::MapTransitionManager@ GetTransitionManager()
+    {
+        return m_TransitionManager;
+    }
+    
+    MS::PlayerCommandHandler@ GetCommandHandler()
+    {
+        return m_CommandHandler;
     }
     
     // ========================================
@@ -625,5 +726,61 @@ void RequestEntityFade(EntityHandle hTarget, int nRenderMode = 5, uint nStartAmo
     else
     {
         LogMessage("[ERROR] Cannot fade entity: GameMaster not initialized");
+    }
+}
+
+// ========================================
+// Integration Helper Functions
+// ========================================
+
+/**
+ * Handle player commands - integrated with new command system
+ */
+void HandlePlayerCommand(const string &in szPlayerName, const string &in szCommand, const array<string> &in args)
+{
+    GameMaster@ gm = GetGameMaster();
+    if (gm !is null && gm.GetCommandHandler() !is null)
+    {
+        gm.GetCommandHandler().ProcessPlayerCommand(szPlayerName, szCommand, args);
+    }
+}
+
+/**
+ * Handle map transition triggers - integrated with new transition system
+ */
+void HandleMapTransition(const string &in szDestName, const string &in szDestMap, const string &in szLocalSpawn, const string &in szDestSpawn)
+{
+    GameMaster@ gm = GetGameMaster();
+    if (gm !is null && gm.GetTransitionManager() !is null)
+    {
+        gm.GetTransitionManager().GameTransitionTriggered(szDestName, szDestMap, szLocalSpawn, szDestSpawn);
+    }
+}
+
+/**
+ * Legacy script compatibility functions
+ */
+void game_transition_triggered(const string &in szDestName, const string &in szDestMap, const string &in szLocalSpawn, const string &in szDestSpawn)
+{
+    HandleMapTransition(szDestName, szDestMap, szLocalSpawn, szDestSpawn);
+}
+
+void game_playercmd(const string &in szPlayerName, const string &in szCommand)
+{
+    array<string> args;
+    // Split command into parts for processing
+    HandlePlayerCommand(szPlayerName, szCommand, args);
+}
+
+/**
+ * Legacy compatibility function for delayed changelevel
+ */
+void delay_changelevel()
+{
+    GameMaster@ gm = GetGameMaster();
+    if (gm !is null && gm.GetTransitionManager() !is null)
+    {
+        // Get DEST_MAP from legacy variable and execute change
+        gm.GetTransitionManager().DelayedChangeLevel();
     }
 }

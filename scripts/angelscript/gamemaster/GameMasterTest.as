@@ -6,7 +6,7 @@
  */
 
 // Include all GameMaster files
-#include "gamemaster/GameMasterData.as"
+#include "gamemaster/GameMasterDataStructures.as"
 #include "gamemaster/GameMasterEvents.as" 
 #include "gamemaster/GameMasterUtils.as"
 #include "gamemaster/GameMaster.as"

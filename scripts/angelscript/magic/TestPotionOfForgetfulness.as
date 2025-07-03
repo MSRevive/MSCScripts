@@ -7,7 +7,7 @@
 
 #include "magic/MagicSystem.as"
 #include "magic/SpellRegistry.as"
-#include "gamemaster/GameMasterData.as"
+#include "gamemaster/GameMasterDataStructures.as"
 
 namespace MSTest
 {

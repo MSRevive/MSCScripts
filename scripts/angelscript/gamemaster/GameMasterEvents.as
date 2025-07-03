@@ -5,6 +5,7 @@
  * Provides a structured way to handle game-wide events and notifications.
  */
 
+
 namespace MS
 {
     // ========================================
@@ -114,8 +115,8 @@ namespace MS
         PlayerConnectionEvent(CBasePlayer@ player)
         {
             @pPlayer = player;
-            szSteamID = player.GetSteamID();
-            szIPAddress = player.GetIPAddress();
+            szSteamID = GetSteamID(player);
+            szIPAddress = GetClientAddress(player);
             flConnectTime = GetGameTime();
         }
     }
@@ -281,6 +282,29 @@ namespace MS
         }
         
         /**
+         * Register a vote event listener
+         */
+        void RegisterVoteListener(IVoteEvents@ listener)
+        {
+            if (listener !is null && m_VoteListeners.find(listener) < 0)
+            {
+                m_VoteListeners.insertLast(listener);
+            }
+        }
+        
+        /**
+         * Unregister a vote event listener
+         */
+        void UnregisterVoteListener(IVoteEvents@ listener)
+        {
+            int index = m_VoteListeners.find(listener);
+            if (index >= 0)
+            {
+                m_VoteListeners.removeAt(index);
+            }
+        }
+        
+        /**
          * Fire player connection event
          */
         void FirePlayerConnect(CBasePlayer@ pPlayer)
@@ -363,7 +387,7 @@ namespace MS
         {
             if (players[i] !is null)
             {
-                players[i].SendMessage(szMessage, bReliable);
+                SendPlayerMessage(GetDisplayName(players[i]), "", szMessage);
             }
         }
     }
@@ -378,7 +402,8 @@ namespace MS
         {
             if (players[i] !is null)
             {
-                players[i].EmitSound(szSound, flVolume);
+                // TODO: Connect to real sound system
+                LogMessage("[SOUND] " + GetDisplayName(players[i]) + ": " + szSound);
             }
         }
     }
