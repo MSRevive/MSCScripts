@@ -169,30 +169,26 @@ namespace MS
                     GameMasterPlayerUtils::SendPlayerMessage(playerID, "You are not allowed to vote at this time.");
                     return;
                 }
-                
-                // Split the command into its arguments using space as delimiter
-                string fullCommand = args[1]; // This would be "votemap edana" for example
-                array<string> commandArgs = Split(fullCommand, " ");
-
+            
                 string command = args[1];
-                LogInfo("PlayerCommandManager: Processing vote command: " + command);
-                
-                if (command == "votemap")
+                if (command == "votemap" && args.length() == 3)
                 {
+                    LogInfo("PlayerCommandManager: Processing vote command: " + command + " " + args[2]);
+
                     LogInfo("PlayerCommandManager: Calling HandleVoteMapCommand");
-                    HandleVoteMapCommand(playerID, playerName, commandArgs);
+                    HandleVoteMapCommand(playerID, playerName, args);
                     LogInfo("PlayerCommandManager: HandleVoteMapCommand completed");
                 }
                 else if (command == "votepvp")
                 {
                     LogInfo("PlayerCommandManager: Calling HandleVotePvpCommand");
-                    HandleVotePvpCommand(playerID, playerName, commandArgs);
+                    HandleVotePvpCommand(playerID, playerName, args);
                     LogInfo("PlayerCommandManager: HandleVotePvpCommand completed");
                 }
                 else if (command == "votelock")
                 {
                     LogInfo("PlayerCommandManager: Calling HandleVoteLockCommand");
-                    HandleVoteLockCommand(playerID, playerName, commandArgs);
+                    HandleVoteLockCommand(playerID, playerName, args);
                     LogInfo("PlayerCommandManager: HandleVoteLockCommand completed");
                 }
                 else
@@ -202,11 +198,11 @@ namespace MS
                 // Note: votekick and voteban are commented out in original script
                 // else if (command == "votekick")
                 // {
-                //     HandleVoteKickCommand(playerID, playerName, commandArgs);
+                //     HandleVoteKickCommand(playerID, playerName, args);
                 // }
                 // else if (command == "voteban")
                 // {
-                //     HandleVoteBanCommand(playerID, playerName, commandArgs);
+                //     HandleVoteBanCommand(playerID, playerName, args);
                 // }
             }
             catch
@@ -249,13 +245,6 @@ namespace MS
                                formatInt(int(MAP_VOTE_DELAY)) + " seconds, except by transition.";
                 GameMasterPlayerUtils::SendPlayerMessage(playerID, message);
                 GameMasterPlayerUtils::SendConsoleMessage(playerID, message);
-                return;
-            }
-            
-            // Check if map name was provided
-            if (args.length() < 2 || args[2].substr(0, 5) == "param")
-            {
-                ShowMapList(playerID);
                 return;
             }
             
