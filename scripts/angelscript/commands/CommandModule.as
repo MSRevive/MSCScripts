@@ -103,6 +103,11 @@ namespace MS
         bool helpRegistered = registry.RegisterCommand("help", helpHandler);
         LogMessage("[CommandModule] Help command registration: " + (helpRegistered ? "SUCCESS" : "FAILED"));
         
+        // Register reload scripts command (developer only)
+        ReloadScriptsCommandHandler@ reloadHandler = ReloadScriptsCommandHandler();
+        bool reloadRegistered = registry.RegisterCommand("reload_scripts", reloadHandler);
+        LogMessage("[CommandModule] Reload scripts command registration: " + (reloadRegistered ? "SUCCESS" : "FAILED"));
+        
         LogMessage("[CommandModule] Basic command handler registration complete");
     }
     
@@ -396,6 +401,129 @@ class HelpCommandHandler : MS::BaseCommandHandler
     string GetDescription()
     {
         return "Show help for commands or list all available commands";
+    }
+}
+
+/**
+ * Reload Scripts command handler for developer hot-reload functionality
+ */
+class ReloadScriptsCommandHandler : MS::BaseCommandHandler
+{
+    MS::CommandResult Execute(CBasePlayer@ player, const array<string> &in args)
+    {
+        LogMessage("[ReloadScriptsCommand] Reload scripts command executed by " + player.GetName());
+        
+        // Validate developer permission
+        if (!HasDeveloperPermission(player))
+        {
+            player.SendInfoMsg("Error: This command requires developer permissions.");
+            LogMessage("[ReloadScriptsCommand] Permission denied for " + player.GetName());
+            return MS::CMD_NO_PERMISSION;
+        }
+        
+        // Check if development mode is enabled
+        if (!IsDevelopmentModeEnabled())
+        {
+            player.SendInfoMsg("Error: Development mode must be enabled (ms_dev_mode 1).");
+            LogMessage("[ReloadScriptsCommand] Development mode not enabled");
+            return MS::CMD_FAILED;
+        }
+        
+        player.SendInfoMsg("Initiating script hot-reload...");
+        LogMessage("[ReloadScriptsCommand] Starting script hot-reload process");
+        
+        // Call the native C++ hot-reload functionality
+        bool reloadSuccess = CallNativeScriptReload();
+        
+        if (reloadSuccess)
+        {
+            player.SendInfoMsg("Script hot-reload completed successfully!");
+            LogMessage("[ReloadScriptsCommand] Script hot-reload completed successfully");
+            
+            // Send notification to all players
+            array<CBasePlayer@> players = GetAllPlayers();
+            for (uint i = 0; i < players.length(); i++)
+            {
+                if (players[i] !is null && players[i] !is player)
+                {
+                    players[i].SendInfoMsg("Server scripts have been reloaded by " + player.GetName());
+                }
+            }
+            
+            return MS::CMD_SUCCESS;
+        }
+        else
+        {
+            player.SendInfoMsg("Script hot-reload failed! Check server console for details.");
+            LogMessage("[ReloadScriptsCommand] Script hot-reload failed");
+            return MS::CMD_FAILED;
+        }
+    }
+    
+    bool HasPermission(CBasePlayer@ player)
+    {
+        return HasDeveloperPermission(player);
+    }
+    
+    string GetUsage()
+    {
+        return "reload_scripts";
+    }
+    
+    string GetDescription()
+    {
+        return "Hot-reload all AngelScript modules from scripts.pak (Developer only)";
+    }
+    
+    /**
+     * Check if player has developer permissions
+     */
+    private bool HasDeveloperPermission(CBasePlayer@ player)
+    {
+        if (player is null)
+            return false;
+            
+        // Check for your specific Steam ID
+        string steamId = player.GetSteamID();
+        if (steamId == "STEAM_0:1:630973602")
+        {
+            LogMessage("[ReloadScriptsCommand] Developer permission granted for Steam ID: " + steamId);
+            return true;
+        }
+        
+        // Additional check: If player has elite/GM status, allow reload
+        if (player.IsElite())
+        {
+            LogMessage("[ReloadScriptsCommand] Developer permission granted for elite player: " + player.GetName());
+            return true;
+        }
+        
+        LogMessage("[ReloadScriptsCommand] Developer permission denied for " + player.GetName() + " (Steam ID: " + steamId + ")");
+        return false;
+    }
+    
+    /**
+     * Check if development mode is enabled via cvar
+     */
+    private bool IsDevelopmentModeEnabled()
+    {
+        // This would check the ms_dev_mode cvar - for now return true in debug builds
+        // In actual implementation, this would call a native function to check the cvar
+        return true; // TODO: Implement cvar check
+    }
+    
+    /**
+     * Call the native C++ function to perform script reload
+     */
+    private bool CallNativeScriptReload()
+    {
+        // This will call the C++ function we'll implement in ASModuleSystem
+        // For now, return true as placeholder
+        LogMessage("[ReloadScriptsCommand] Calling native script reload function...");
+        
+        // TODO: This needs to be bound to a native C++ function
+        // Return true for now to test the command structure
+        return ReloadAllScriptModules(); // This function will be implemented in C++
     }
 }
 

@@ -112,16 +112,42 @@ namespace MS
         void HandlePlayerCommand(const string &in playerID, const string &in playerName, 
                                const array<string> &in args)
         {
-            if (args.length() < 1)
-                return;
-                
-            LogInfo("PlayerCommandManager: Processing command from " + playerName + 
-                   " - " + args[0]);
-            
-            // Check if this is a vote command
-            if (args[0].substr(0, 4) == "vote")
+            try
             {
-                ProcessVoteCommand(playerID, playerName, args);
+                if (args.length() < 1)
+                {
+                    LogInfo("PlayerCommandManager: No arguments provided");
+                    return;
+                }
+
+                string steamID = args[0];
+                if (steamID.isEmpty())
+                {
+                    LogWarning("PlayerCommandManager: Command call from seemingly no one. Steam ID is empty.");
+                    return;
+                }
+
+                string command = args[1];
+                    
+                LogInfo("PlayerCommandManager: Processing command from " + playerName + 
+                       " - " + steamID);
+                
+                // Check if this is a vote command
+                if (command.length() >= 4 && command.substr(0, 4) == "vote")
+                {
+                    LogInfo("PlayerCommandManager: Calling ProcessVoteCommand");
+                    ProcessVoteCommand(playerID, playerName, args);
+                    LogInfo("PlayerCommandManager: ProcessVoteCommand completed");
+                }
+                else
+                {
+                    LogInfo("PlayerCommandManager: Command '" + args[0] + "' is not a vote command");
+                }
+            }
+            catch
+            {
+                LogError("PlayerCommandManager: Exception in HandlePlayerCommand - player: " + playerName + 
+                        ", args: " + (args.length() > 0 ? args[0] : "none"));
             }
         }
         
@@ -132,36 +158,62 @@ namespace MS
         private void ProcessVoteCommand(const string &in playerID, const string &in playerName,
                                       const array<string> &in args)
         {
-            // First check if player can vote at all
-            if (!CanPlayerVote(playerID))
+            try
             {
-                GameMasterPlayerUtils::SendPlayerMessage(playerID, "You are not allowed to vote at this time.");
-                return;
+                LogInfo("PlayerCommandManager: ProcessVoteCommand started for " + playerName);
+                
+                // First check if player can vote at all
+                if (!CanPlayerVote(playerID))
+                {
+                    LogInfo("PlayerCommandManager: Player " + playerName + " cannot vote");
+                    GameMasterPlayerUtils::SendPlayerMessage(playerID, "You are not allowed to vote at this time.");
+                    return;
+                }
+                
+                // Split the command into its arguments using space as delimiter
+                string fullCommand = args[1]; // This would be "votemap edana" for example
+                array<string> commandArgs = Split(fullCommand, " ");
+
+                string command = args[1];
+                LogInfo("PlayerCommandManager: Processing vote command: " + command);
+                
+                if (command == "votemap")
+                {
+                    LogInfo("PlayerCommandManager: Calling HandleVoteMapCommand");
+                    HandleVoteMapCommand(playerID, playerName, commandArgs);
+                    LogInfo("PlayerCommandManager: HandleVoteMapCommand completed");
+                }
+                else if (command == "votepvp")
+                {
+                    LogInfo("PlayerCommandManager: Calling HandleVotePvpCommand");
+                    HandleVotePvpCommand(playerID, playerName, commandArgs);
+                    LogInfo("PlayerCommandManager: HandleVotePvpCommand completed");
+                }
+                else if (command == "votelock")
+                {
+                    LogInfo("PlayerCommandManager: Calling HandleVoteLockCommand");
+                    HandleVoteLockCommand(playerID, playerName, commandArgs);
+                    LogInfo("PlayerCommandManager: HandleVoteLockCommand completed");
+                }
+                else
+                {
+                    LogInfo("PlayerCommandManager: Unknown vote command: " + command);
+                }
+                // Note: votekick and voteban are commented out in original script
+                // else if (command == "votekick")
+                // {
+                //     HandleVoteKickCommand(playerID, playerName, commandArgs);
+                // }
+                // else if (command == "voteban")
+                // {
+                //     HandleVoteBanCommand(playerID, playerName, commandArgs);
+                // }
             }
-            
-            string command = args[0];
-            
-            if (command == "votemap")
+            catch
             {
-                HandleVoteMapCommand(playerID, playerName, args);
+                LogError("PlayerCommandManager: Exception in ProcessVoteCommand - player: " + playerName + 
+                        ", command: " + (args.length() > 0 ? args[0] : "none"));
             }
-            else if (command == "votepvp")
-            {
-                HandleVotePvpCommand(playerID, playerName, args);
-            }
-            else if (command == "votelock")
-            {
-                HandleVoteLockCommand(playerID, playerName, args);
-            }
-            // Note: votekick and voteban are commented out in original script
-            // else if (command == "votekick")
-            // {
-            //     HandleVoteKickCommand(playerID, playerName, args);
-            // }
-            // else if (command == "voteban")
-            // {
-            //     HandleVoteBanCommand(playerID, playerName, args);
-            // }
         }
         
         /**
@@ -201,13 +253,13 @@ namespace MS
             }
             
             // Check if map name was provided
-            if (args.length() < 2 || args[1].substr(0, 5) == "param")
+            if (args.length() < 2 || args[2].substr(0, 5) == "param")
             {
                 ShowMapList(playerID);
                 return;
             }
             
-            string mapName = MS::ToLower(args[1]);
+            string mapName = MS::ToLower(args[2]);
             
             // Validate the requested map
             MapValidationResult validation = ValidateMapForVoting(mapName, playerID);
@@ -776,17 +828,31 @@ void HandlePlayerCommand(string playerID, string playerName, string command,
         return;
     }
     
-    // Build argument array
-    array<string> args;
-    args.insertLast(command);
-    if (!param1.isEmpty()) args.insertLast(param1);
-    if (!param2.isEmpty()) args.insertLast(param2);
-    if (!param3.isEmpty()) args.insertLast(param3);
-    if (!param4.isEmpty()) args.insertLast(param4);
-    if (!param5.isEmpty()) args.insertLast(param5);
-    
-    MS::g_PlayerCommandManager.HandlePlayerCommand(playerID, playerName, args);
+    try
+    {
+        // Build argument array
+        array<string> args;
+        args.insertLast(command);
+        if (!param1.isEmpty()) args.insertLast(param1);
+        if (!param2.isEmpty()) args.insertLast(param2);
+        if (!param3.isEmpty()) args.insertLast(param3);
+        if (!param4.isEmpty()) args.insertLast(param4);
+        if (!param5.isEmpty()) args.insertLast(param5);
+        
+        LogMessage("[VOTE] Calling PlayerCommandManager.HandlePlayerCommand with " + formatInt(args.length()) + " args");
+        MS::g_PlayerCommandManager.HandlePlayerCommand(playerID, playerName, args);
+        LogMessage("[VOTE] PlayerCommandManager.HandlePlayerCommand completed successfully");
+    }
+    catch
+    {
+        LogMessage("[ERROR] Exception in HandlePlayerCommand - player: " + playerName + ", command: " + command);
+        LogMessage("[ERROR] Parameters: param1='" + param1 + "', param2='" + param2 + "', param3='" + param3 + "'");
+    }
 }
+
+// Recursion protection for HandlePlayerSayText
+int g_HandleSayTextDepth = 0;
+const int MAX_SAY_TEXT_DEPTH = 2;
 
 /**
  * Handle player commands from chat
@@ -795,24 +861,43 @@ void HandlePlayerCommand(string playerID, string playerName, string command,
  */
 void HandlePlayerSayText(string playerID, string playerName, string text)
 {
+    // Recursion protection
+    g_HandleSayTextDepth++;
+    
+    if (g_HandleSayTextDepth > MAX_SAY_TEXT_DEPTH)
+    {
+        LogMessage("[VOTE] ERROR: HandlePlayerSayText recursion detected (depth=" + formatInt(g_HandleSayTextDepth) + ") - blocking to prevent infinite loop");
+        LogMessage("[VOTE] Player: " + playerName + ", Text: '" + text + "'");
+        g_HandleSayTextDepth--;
+        return;
+    }
+    
+    if (g_HandleSayTextDepth > 1)
+    {
+        LogMessage("[VOTE] WARNING: HandlePlayerSayText nested call detected (depth=" + formatInt(g_HandleSayTextDepth) + ") for player " + playerName);
+    }
+    
     LogMessage("[VOTE] HandlePlayerSayText called - validating parameters...");
     
     // Enhanced parameter validation
     if (playerID.isEmpty())
     {
         LogMessage("[VOTE] ERROR: HandlePlayerSayText received empty playerID - blocking");
+        g_HandleSayTextDepth--;
         return;
     }
     
     if (playerName.isEmpty())
     {
         LogMessage("[VOTE] ERROR: HandlePlayerSayText received empty playerName - blocking");
+        g_HandleSayTextDepth--;
         return;
     }
     
     if (text.isEmpty())
     {
         LogMessage("[VOTE] ERROR: HandlePlayerSayText received empty text - blocking");
+        g_HandleSayTextDepth--;
         return;
     }
     
@@ -820,18 +905,21 @@ void HandlePlayerSayText(string playerID, string playerName, string text)
     if (playerID.length() > 127)
     {
         LogMessage("[VOTE] ERROR: HandlePlayerSayText playerID too long (" + formatInt(playerID.length()) + ") - blocking");
+        g_HandleSayTextDepth--;
         return;
     }
     
     if (playerName.length() > 255)
     {
         LogMessage("[VOTE] ERROR: HandlePlayerSayText playerName too long (" + formatInt(playerName.length()) + ") - blocking");
+        g_HandleSayTextDepth--;
         return;
     }
     
     if (text.length() > 511)
     {
         LogMessage("[VOTE] ERROR: HandlePlayerSayText text too long (" + formatInt(text.length()) + ") - blocking");
+        g_HandleSayTextDepth--;
         return;
     }
     
@@ -846,12 +934,14 @@ void HandlePlayerSayText(string playerID, string playerName, string text)
         if (tokens.length() == 0)
         {
             LogMessage("[VOTE] ERROR: HandlePlayerSayText text split resulted in empty array - blocking");
+            g_HandleSayTextDepth--;
             return;
         }
     }
     catch
     {
         LogMessage("[VOTE] ERROR: Exception during text.split() in HandlePlayerSayText - text: '" + text + "'");
+        g_HandleSayTextDepth--;
         return;
     }
     
@@ -862,6 +952,7 @@ void HandlePlayerSayText(string playerID, string playerName, string text)
         if (command.length() < 4)
         {
             LogMessage("[VOTE] HandlePlayerSayText command too short: '" + command + "'");
+            g_HandleSayTextDepth--;
             return;
         }
         
@@ -874,6 +965,7 @@ void HandlePlayerSayText(string playerID, string playerName, string text)
         catch
         {
             LogMessage("[VOTE] ERROR: Exception during command.substr() in HandlePlayerSayText - command: '" + command + "'");
+            g_HandleSayTextDepth--;
             return;
         }
         
@@ -883,12 +975,7 @@ void HandlePlayerSayText(string playerID, string playerName, string text)
             
             try
             {
-                HandlePlayerCommand(playerID, playerName, tokens[0],
-                                  tokens.length() > 1 ? tokens[1] : "",
-                                  tokens.length() > 2 ? tokens[2] : "",
-                                  tokens.length() > 3 ? tokens[3] : "",
-                                  tokens.length() > 4 ? tokens[4] : "",
-                                  tokens.length() > 5 ? tokens[5] : "");
+                HandlePlayerCommand(playerID, playerName, tokens);
                 LogMessage("[VOTE] HandlePlayerCommand completed successfully");
             }
             catch
@@ -905,6 +992,9 @@ void HandlePlayerSayText(string playerID, string playerName, string text)
     {
         LogMessage("[VOTE] HandlePlayerSayText no tokens found in text: '" + text + "'");
     }
+    
+    // Decrement recursion counter
+    g_HandleSayTextDepth--;
 }
 
 /**
