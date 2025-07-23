@@ -1,0 +1,187 @@
+//Test map script for AngelScript integration
+//This script attempts to interact with the converted AngelScript modules
+#scope server
+
+{
+    eventname game_spawn
+    setvard TEST_COMPLETE 0
+    setvard TEST_RESULTS ''
+}
+
+{ game_spawn
+    name AngelScript Test Entity
+    hp 1
+    race beloved
+    width 32
+    height 32
+    gravity 0
+    setorigin @-20000 -20000 -20000 //Out of the way
+    invincible 1
+    invisible 1
+    
+    callevent 2.0 run_angelscript_tests
+}
+
+{ run_angelscript_tests
+    servercmd "echo ================================================"
+    servercmd "echo MASTER SWORD REBIRTH - ANGELSCRIPT MODULE TEST"
+    servercmd "echo ================================================"
+    servercmd "echo "
+    
+    //Test 1: Check if AngelScript is available
+    servercmd "echo [TEST 1] Checking AngelScript availability..."
+    
+    if ( game.script.angelscript )
+    {
+        servercmd "echo PASS: AngelScript system detected"
+        setvard TEST_RESULTS "TEST1:PASS;"
+    }
+    else
+    {
+        servercmd "echo FAIL: AngelScript system NOT detected"
+        servercmd "echo - Ensure ASBindings::RegisterAll() is called in server init"
+        servercmd "echo - Check that AngelScript is compiled into ms.dll"
+        setvard TEST_RESULTS "TEST1:FAIL;"
+    }
+    
+    callevent 1.0 test_magic_hand_data
+}
+
+{ test_magic_hand_data
+    //Test 2: Check if magic hand data is accessible
+    servercmd "echo "
+    servercmd "echo [TEST 2] Testing Magic Hand Script Arrays..."
+    
+    //In the original game_master.script, these were:
+    //setvard MAGIC_HAND_SCRIPTS1 "magic_hand_acid_bolt;magic_hand_blizzard;..."
+    //const MAGIC_HAND_NAMES1 "Acidic Bolt;Blizzard;..."
+    
+    //Check if we can access the converted data
+    if ( game.script.magic_hand_scripts1 )
+    {
+        servercmd "echo PASS: Magic hand scripts accessible"
+        stradd TEST_RESULTS "TEST2:PASS;"
+        
+        //Try to get first spell
+        local FIRST_SPELL $get_token(game.script.magic_hand_scripts1,0)
+        servercmd "echo - First spell: FIRST_SPELL"
+    }
+    else
+    {
+        servercmd "echo FAIL: Magic hand scripts NOT accessible"
+        servercmd "echo - GameMasterData.as may not be loaded"
+        stradd TEST_RESULTS "TEST2:FAIL;"
+    }
+    
+    callevent 1.0 test_light_system
+}
+
+{ test_light_system
+    //Test 3: Check light system initialization
+    servercmd "echo "
+    servercmd "echo [TEST 3] Testing Light System..."
+    
+    //Original had: const LIGHTSYS_N_LIGHTS 16
+    if ( game.script.lightsys_n_lights )
+    {
+        servercmd "echo PASS: Light system constants found"
+        servercmd "echo - Number of lights: game.script.lightsys_n_lights"
+        stradd TEST_RESULTS "TEST3:PASS;"
+    }
+    else
+    {
+        servercmd "echo FAIL: Light system constants NOT found"
+        stradd TEST_RESULTS "TEST3:FAIL;"
+    }
+    
+    callevent 1.0 test_spawn_system
+}
+
+{ test_spawn_system
+    //Test 4: Check spawn system
+    servercmd "echo "
+    servercmd "echo [TEST 4] Testing Spawn System..."
+    
+    //Try to interact with spawn system
+    if ( game.script.spawn_system )
+    {
+        servercmd "echo PASS: Spawn system detected"
+        stradd TEST_RESULTS "TEST4:PASS;"
+        
+        //Try to add a test spawn point
+        callevent game.script.spawn_system.add_spawn $vec(100,200,50)
+        servercmd "echo - Attempted to add spawn point at (100,200,50)"
+    }
+    else
+    {
+        servercmd "echo FAIL: Spawn system NOT detected"
+        servercmd "echo - SpawnSystem.as may not be loaded"
+        stradd TEST_RESULTS "TEST4:FAIL;"
+    }
+    
+    callevent 1.0 test_quest_tracker
+}
+
+{ test_quest_tracker
+    //Test 5: Check quest tracker
+    servercmd "echo "
+    servercmd "echo [TEST 5] Testing Quest Tracker..."
+    
+    //Original had ext_got_quest_item, ext_check_quest_item functions
+    if ( game.script.quest_tracker )
+    {
+        servercmd "echo PASS: Quest tracker detected"
+        stradd TEST_RESULTS "TEST5:PASS;"
+    }
+    else
+    {
+        servercmd "echo FAIL: Quest tracker NOT detected"
+        servercmd "echo - QuestTracker.as may not be loaded"
+        stradd TEST_RESULTS "TEST5:FAIL;"
+    }
+    
+    callevent 1.0 test_complete
+}
+
+{ test_complete
+    servercmd "echo "
+    servercmd "echo ================================================"
+    servercmd "echo TEST SUMMARY:"
+    servercmd "echo TEST_RESULTS"
+    servercmd "echo ================================================"
+    
+    local N_TESTS 5
+    local N_PASSED 0
+    
+    if ( TEST_RESULTS contains 'TEST1:PASS' ) add N_PASSED 1
+    if ( TEST_RESULTS contains 'TEST2:PASS' ) add N_PASSED 1
+    if ( TEST_RESULTS contains 'TEST3:PASS' ) add N_PASSED 1
+    if ( TEST_RESULTS contains 'TEST4:PASS' ) add N_PASSED 1
+    if ( TEST_RESULTS contains 'TEST5:PASS' ) add N_PASSED 1
+    
+    servercmd "echo TESTS PASSED: N_PASSED / N_TESTS"
+    
+    if ( N_PASSED == 0 )
+    {
+        servercmd "echo "
+        servercmd "echo CRITICAL: No AngelScript modules detected!"
+        servercmd "echo Check that:"
+        servercmd "echo 1. AngelScript is compiled into the server"
+        servercmd "echo 2. ASBindings::RegisterAll() is called during init"
+        servercmd "echo 3. The .as files are in scripts.pak"
+        servercmd "echo 4. Module loading code is implemented"
+    }
+    else if ( N_PASSED < N_TESTS )
+    {
+        servercmd "echo "
+        servercmd "echo WARNING: Some modules failed to load"
+        servercmd "echo Check server logs for AngelScript errors"
+    }
+    else
+    {
+        servercmd "echo "
+        servercmd "echo SUCCESS: All AngelScript modules loaded!"
+    }
+    
+    setvard TEST_COMPLETE 1
+}
