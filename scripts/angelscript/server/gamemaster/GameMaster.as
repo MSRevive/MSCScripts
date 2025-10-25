@@ -183,7 +183,26 @@ module GameMaster
     void InitializeVotingSystem()
     {
         @m_VoteManager = MS::VoteManager();
+        m_VoteManager.Initialize();
         LogInfo("GameMaster: Voting system initialized");
+        
+        // Start the voting system update loop
+        StartVotingThinkLoop();
+    }
+    
+    /**
+     * Start the periodic voting system think loop
+     */
+    void StartVotingThinkLoop()
+    {
+        if (m_VoteManager !is null)
+        {
+            m_VoteManager.Think();
+        }
+        
+        // Schedule next think in 0.1 seconds (10 times per second)
+        // Note: This is a placeholder - needs proper timer/coroutine implementation
+        // For now, we'll rely on external calls
     }
     
     /**

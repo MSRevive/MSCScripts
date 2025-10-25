@@ -22,7 +22,7 @@ namespace MS
      * Central vote management system
      * Handles all aspects of vote lifecycle from creation to completion
      */
-    class VoteManager : IVoteEvents
+    class VoteManager
     {
         private VoteData@ m_pCurrentVote;           // Active vote data
         private dictionary m_PlayerRecords;         // Player voting history
@@ -64,8 +64,8 @@ namespace MS
                 
             LogInfo("VoteManager: Initializing voting system...");
             
-            // Register with event manager
-            GetEventManager().RegisterVoteListener(this);
+            // Note: VoteManager doesn't need to register with event manager
+            // It has its own event methods that are called directly
             
             // Clear any existing state
             @m_pCurrentVote = null;
@@ -797,16 +797,19 @@ namespace MS
                 BroadcastMessage(m_pCurrentVote.szTitle, m_pCurrentVote.szDescription);
             }
             
-            // Send initial ballot
-            ScheduleDelayedAction("send_ballots", 0.1f, array<string>());
+            // Send initial ballot immediately instead of using delayed action system
+            // This is a workaround until we have proper periodic Think() calls
+            LogInfo("VoteManager: Sending ballots immediately to " + m_pCurrentVote.aEligibleVoters.length() + " players");
+            SendBallotsToPlayers();
             
-            // Resend ballot (in case players closed menu)
+            // Also schedule for later (in case players close menu)
+            // Note: These delayed actions won't work without periodic Think() calls
             ScheduleDelayedAction("send_ballots", 5.1f, array<string>());
             
             // Schedule vote end
             ScheduleDelayedAction("end_vote", m_pCurrentVote.flDuration, array<string>());
             
-            LogInfo("VoteManager: Vote sent to " + m_pCurrentVote.aEligibleVoters.length() + " players");
+            LogInfo("VoteManager: Vote sent to players");
             return true;
         }
         
@@ -901,12 +904,50 @@ namespace MS
         
         private void SendVoteMenuToPlayer(const string &in szPlayerID)
         {
-            // This would integrate with the actual menu system
-            // For now, log the action
-            LogDebug("VoteManager: Sending vote menu to player " + szPlayerID);
+            LogInfo("VoteManager: SendVoteMenuToPlayer called for " + szPlayerID);
             
-            // In a real implementation, this would call the menu system
-            // Example: MenuSystem::OpenVoteMenu(szPlayerID, m_pCurrentVote);
+            if (!IsVoteActive())
+            {
+                LogWarning("VoteManager: No active vote when SendVoteMenuToPlayer called");
+                return;
+            }
+                
+            // Find the player by Steam ID
+            CBasePlayer@ pPlayer = null;
+            array<CBasePlayer@> players = GetAllPlayers();
+            LogInfo("VoteManager: Searching through " + formatInt(players.length()) + " players");
+            for (uint i = 0; i < players.length(); i++)
+            {
+                if (players[i] !is null && GetSteamID(players[i]) == szPlayerID)
+                {
+                    @pPlayer = players[i];
+                    LogInfo("VoteManager: Found player " + GetDisplayName(pPlayer));
+                    break;
+                }
+            }
+            
+            if (pPlayer is null)
+            {
+                LogWarning("VoteManager: Could not find player " + szPlayerID + " to send vote menu");
+                return;
+            }
+            
+            // Build the menu title
+            string menuTitle = m_pCurrentVote.szTitle;
+            LogInfo("VoteManager: Menu title: " + menuTitle);
+            
+            // Build the options array
+            array<string> menuOptions;
+            for (uint i = 0; i < m_pCurrentVote.aOptionTitles.length(); i++)
+            {
+                menuOptions.insertLast(m_pCurrentVote.aOptionTitles[i]);
+            }
+            LogInfo("VoteManager: Built " + formatInt(menuOptions.length()) + " menu options");
+            
+            // Open the vote menu on the client
+            LogInfo("VoteManager: About to call OpenVoteMenu for " + GetDisplayName(pPlayer));
+            OpenVoteMenu(pPlayer, menuTitle, menuOptions);
+            LogInfo("VoteManager: OpenVoteMenu call completed for player " + GetDisplayName(pPlayer));
         }
         
         private void ExecuteVoteCallback(const string &in szEvent, const string &in szTitle,
