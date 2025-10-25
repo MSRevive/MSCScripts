@@ -406,9 +406,9 @@ void OnEngineTreasureSpawned(const string &in type, const Vector3 &in pos)
 The system supports pak file integration for script modularity:
 
 ```cpp
-#include "gamemaster/GameMasterData.as"
-#include "magic/SpellRegistry.as"
-#include "combat/CombatSystem.as"
+#include "server/gamemaster/GameMasterData.as"
+#include "server/magic/SpellRegistry.as"
+#include "server/combat/CombatSystem.as"
 ```
 
 This allows for:
