@@ -1,0 +1,97 @@
+#pragma context server
+
+// Server-side module example
+// This script can only run on the server build
+
+module ServerExample {
+    private int playerCount = 0;
+    
+    // Constructor - automatically called when module loads
+    ServerExample() {
+        LogMessage("ServerExample module initialized on SERVER");
+        MS_ANGEL_INFO("Server-side initialization complete");
+    }
+    
+    // Server-only functionality - player management
+    void OnPlayerConnect(CBasePlayer@ player) {
+        if (player is null) {
+            MS_ANGEL_ERROR("OnPlayerConnect: null player!");
+            return;
+        }
+        
+        playerCount++;
+        
+        string steamID = player.GETPLAYERAUTHID();
+        string displayName = player.DisplayName();
+        
+        MS_ANGEL_INFO("Player connected: " + displayName + " (SteamID: " + steamID + ")");
+        
+        // Store connection time
+        SetPlayerQuestData(steamID, "last_connect", GetTimestamp());
+        SetPlayerQuestData(steamID, "total_connections", 
+            GetPlayerQuestData(steamID, "total_connections") + "1");
+        
+        // Send welcome message
+        player.SendInfoMsg("Welcome to the server, " + displayName + "!");
+        
+        // Broadcast to all players
+        SendInfoMessageToAll("Player Joined", 
+            displayName + " has joined the server!");
+    }
+    
+    void OnPlayerDisconnect(CBasePlayer@ player) {
+        if (player is null) return;
+        
+        playerCount--;
+        
+        string displayName = player.DisplayName();
+        MS_ANGEL_INFO("Player disconnected: " + displayName);
+        
+        // Broadcast to all players
+        SendInfoMessageToAll("Player Left", 
+            displayName + " has left the server.");
+    }
+    
+    // Server-only: Entity spawning
+    EntityHandle SpawnMonster(const string &in monsterType, const Vector3 &in position) {
+        MS_ANGEL_INFO("Spawning monster: " + monsterType);
+        
+        EntityHandle handle = CreateEntity(monsterType);
+        if (!handle.IsValid()) {
+            MS_ANGEL_ERROR("Failed to create entity: " + monsterType);
+            return EntityHandle(0);
+        }
+        
+        SetEntityName(handle, monsterType + "_" + GetGameTime());
+        
+        // Set the position
+        CBaseEntity@ entity = handle.GetEntity();
+        if (entity !is null) {
+            entity.SetOrigin(position);
+        }
+        
+        return handle;
+    }
+    
+    // Server-only: Quest management
+    void GiveQuestReward(CBasePlayer@ player, int gold, int experience) {
+        if (player is null) return;
+        
+        string steamID = player.GETPLAYERAUTHID();
+        string currentGold = GetPlayerQuestData(steamID, "gold");
+        string currentXP = GetPlayerQuestData(steamID, "experience");
+        
+        // In a real implementation, you'd parse these as integers and add to them
+        MS_ANGEL_INFO("Giving quest reward to " + player.DisplayName() + 
+                     ": " + gold + " gold, " + experience + " XP");
+        
+        player.SendInfoMsg("Quest Complete! You received " + gold + 
+                          " gold and " + experience + " experience!");
+    }
+    
+    // Server state query
+    int GetPlayerCount() {
+        return playerCount;
+    }
+}
+
