@@ -1018,9 +1018,6 @@ namespace MS
             LogInfo("VoteManager: Sending ballots immediately to " + formatInt(m_pCurrentVote.aEligibleVoters.length()) + " players");
             SendBallotsToPlayers();
             
-            // Also schedule for later (in case players close menu)
-            ScheduleDelayedAction("send_ballots", 5.1f, array<string>());
-            
             // Schedule vote end
             ScheduleDelayedAction("end_vote", m_pCurrentVote.flDuration, array<string>());
             
