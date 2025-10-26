@@ -267,6 +267,11 @@ namespace MS
          */
         bool ShouldEndEarly()
         {
+            // Don't end early if there are no eligible voters (vote is invalid)
+            if (aEligibleVoters.length() == 0)
+                return false;
+                
+            // End early if all eligible voters have voted
             return GetTotalVotesCast() >= aEligibleVoters.length();
         }
         

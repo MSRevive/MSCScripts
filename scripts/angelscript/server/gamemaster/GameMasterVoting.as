@@ -12,8 +12,117 @@
  * Author: Agent 1 - Voting Framework Architect
  */
 
+// Include the shared scheduler system
+#include "shared/Scheduler.as"
+
 namespace MS
 {
+    // ========================================
+    // Scheduler Callback Handler
+    // ========================================
+    
+    /**
+     * Handles scheduled callbacks from the scheduler system
+     */
+    class VoteSchedulerCallbackHandler : ISchedulerCallback
+    {
+        void OnScheduledCallback(const string &in szCallbackName, const array<string> &in params)
+        {
+            LogMessage("[VoteSchedulerCallback] Executing: " + szCallbackName);
+            
+            if (szCallbackName == "ExecuteMapChange")
+            {
+                if (params.length() > 0)
+                    ExecuteMapChangeNow(params[0]);
+            }
+            else if (szCallbackName == "ExecutePvpChange")
+            {
+                if (params.length() > 0)
+                    ExecutePvpChangeNow(params[0]);
+            }
+            else if (szCallbackName == "ExecuteKickPlayer")
+            {
+                if (params.length() >= 2)
+                    ExecuteKickPlayerNow(params[0], params[1]);
+            }
+            else if (szCallbackName == "ExecuteBanPlayer")
+            {
+                if (params.length() >= 2)
+                    ExecuteBanPlayerNow(params[0], params[1]);
+            }
+        }
+        
+        // Actual execution functions
+        private void ExecuteMapChangeNow(const string &in szMap)
+        {
+            LogMessage("[VoteSchedulerCallback] Changing map to: " + szMap);
+            SendMessageToAllPlayers("00FF00", "Map changing to " + szMap + " NOW!");
+            
+            string szCommand = "changelevel " + szMap + "\n";
+            ExecuteServerCommand(szCommand);
+        }
+        
+        private void ExecutePvpChangeNow(const string &in szEnabled)
+        {
+            bool bEnable = (szEnabled == "1" || szEnabled == "true");
+            string szCommand = "ms_pklevel " + (bEnable ? "1" : "0") + "\n";
+            ExecuteServerCommand(szCommand);
+            
+            SendMessageToAllPlayers("00FF00", "PvP mode is now " + (bEnable ? "ENABLED" : "DISABLED") + "!");
+        }
+        
+        private void ExecuteKickPlayerNow(const string &in szPlayerID, const string &in szPlayerName)
+        {
+            CBasePlayer@ pPlayer = FindPlayerBySteamID(szPlayerID);
+            if (pPlayer is null)
+            {
+                int nIndex = parseUInt(szPlayerID);
+                if (nIndex > 0)
+                    @pPlayer = PlayerByIndex(nIndex);
+            }
+            
+            if (pPlayer !is null)
+            {
+                int nIndex = pPlayer.GetEntIndex();
+                string szCommand = "kick #" + nIndex + "\n";
+                ExecuteServerCommand(szCommand);
+                
+                SendMessageToAllPlayers("FF0000", "Player " + szPlayerName + " has been kicked from the server");
+            }
+        }
+        
+        private void ExecuteBanPlayerNow(const string &in szSteamID, const string &in szPlayerName)
+        {
+            string szCommand = "banid 0 " + szSteamID + " kick\n";
+            ExecuteServerCommand(szCommand);
+            ExecuteServerCommand("writeid\n");
+            
+            SendMessageToAllPlayers("FF0000", "Player " + szPlayerName + " has been banned from the server");
+        }
+        
+        private CBasePlayer@ FindPlayerBySteamID(const string &in szSteamID)
+        {
+            if (szSteamID.isEmpty())
+                return null;
+            
+            int nPlayerCount = GetPlayerCount();
+            for (int i = 1; i <= nPlayerCount; i++)
+            {
+                CBasePlayer@ pPlayer = PlayerByIndex(i);
+                if (pPlayer !is null && IsConnected(pPlayer))
+                {
+                    if (GetSteamID(pPlayer) == szSteamID)
+                        return pPlayer;
+                }
+            }
+            
+            return null;
+        }
+    }
+    
+    // Global callback handler instance
+    VoteSchedulerCallbackHandler g_VoteCallbackHandler;
+    
     // ========================================
     // Core Vote Manager Class
     // ========================================
@@ -60,17 +169,40 @@ namespace MS
         bool Initialize()
         {
             if (m_bInitialized)
+            {
+                LogInfo("VoteManager: Already initialized, skipping re-initialization");
                 return true;
+            }
                 
             LogInfo("VoteManager: Initializing voting system...");
+            
+            // Initialize the scheduler system
+            if (!InitializeScheduler())
+            {
+                LogError("VoteManager: Failed to initialize scheduler");
+                return false;
+            }
+            
+            // Register our callback handler with the scheduler
+            GetScheduler().RegisterCallbackHandler(@g_VoteCallbackHandler);
+            LogInfo("VoteManager: Registered callback handler with scheduler");
             
             // Note: VoteManager doesn't need to register with event manager
             // It has its own event methods that are called directly
             
-            // Clear any existing state
-            @m_pCurrentVote = null;
-            m_PlayerRecords.deleteAll();
-            m_DelayedActions.resize(0);
+            // IMPORTANT: Only clear state on first initialization
+            // Don't clear if there's an active vote (could happen during reconnect)
+            if (!IsVoteActive())
+            {
+                @m_pCurrentVote = null;
+                m_PlayerRecords.deleteAll();
+                m_DelayedActions.resize(0);
+                LogInfo("VoteManager: Cleared existing state (no active vote)");
+            }
+            else
+            {
+                LogInfo("VoteManager: Preserving active vote during initialization");
+            }
             
             m_bInitialized = true;
             LogInfo("VoteManager: Voting system initialized successfully");
@@ -92,6 +224,10 @@ namespace MS
             {
                 CancelVote("System shutdown");
             }
+            
+            // Shutdown scheduler
+            ShutdownScheduler();
+            LogInfo("VoteManager: Scheduler shutdown complete");
             
             // Clear all data
             @m_pCurrentVote = null;
@@ -117,6 +253,9 @@ namespace MS
                 return;
                 
             m_flLastThinkTime = currentTime;
+            
+            // Update scheduler system
+            UpdateScheduler();
             
             // Process active vote
             if (IsVoteActive())
@@ -483,9 +622,14 @@ namespace MS
         void TallyVotes()
         {
             if (!IsVoteActive())
+            {
+                LogError("VoteManager: TallyVotes() called but no active vote!");
                 return;
+            }
                 
-            LogInfo("VoteManager: Tallying votes for '" + m_pCurrentVote.szTitle + "'");
+            LogInfo("VoteManager: TallyVotes() called for '" + m_pCurrentVote.szTitle + "'");
+            LogInfo("VoteManager:   Total votes cast: " + formatInt(m_pCurrentVote.GetTotalVotesCast()));
+            LogInfo("VoteManager:   Eligible voters: " + formatInt(m_pCurrentVote.aEligibleVoters.length()));
             
             // Finalize the vote
             VoteResult result = m_pCurrentVote.Finalize();
@@ -519,10 +663,9 @@ namespace MS
             }
             
             // Clean up
+            LogInfo("VoteManager: Vote completed with result: " + formatInt(int(result)) + " - CLEARING m_pCurrentVote");
             m_flLastVoteEndTime = GetGameTime();
             @m_pCurrentVote = null;
-            
-            LogInfo("VoteManager: Vote completed with result: " + int(result));
         }
         
         // ========================================
@@ -556,30 +699,68 @@ namespace MS
          */
         bool ProcessMenuSelection(const string &in szPlayerID, const string &in szOptionData)
         {
-            if (!IsVoteActive())
-                return false;
+            LogInfo("VoteManager: ProcessMenuSelection called for player " + szPlayerID + " with option '" + szOptionData + "'");
+            
+            // Debug vote state
+            if (m_pCurrentVote is null)
+            {
+                LogError("VoteManager: m_pCurrentVote is null!");
                 
-            // Find option index by data
+                // Notify player that the vote has ended
+                CBasePlayer@ pPlayer = GetPlayerBySteamID(szPlayerID);
+                if (pPlayer !is null)
+                {
+                    SendMessageToAllPlayers("yellow", GetDisplayName(pPlayer) + ": That vote has already ended.");
+                }
+                
+                return false;
+            }
+            
+            LogInfo("VoteManager: Current vote exists, result = " + formatInt(m_pCurrentVote.eResult));
+            
+            if (!IsVoteActive())
+            {
+                LogError("VoteManager: Vote is not active (result != VOTE_PENDING)");
+                
+                // Notify player that the vote has expired
+                CBasePlayer@ pPlayer = GetPlayerBySteamID(szPlayerID);
+                if (pPlayer !is null)
+                {
+                    SendMessageToAllPlayers("yellow", GetDisplayName(pPlayer) + ": That vote has expired.");
+                }
+                
+                return false;
+            }
+            
+            LogInfo("VoteManager: Active vote found, checking " + formatInt(m_pCurrentVote.aOptionTitles.length()) + " options");
+                
+            // Find option index by matching the title (what the menu displays)
+            // The menu sends back the title that was shown to the player
             uint optionIndex = 0;
             bool found = false;
             
-            for (uint i = 0; i < m_pCurrentVote.aVoteOptions.length(); i++)
+            for (uint i = 0; i < m_pCurrentVote.aOptionTitles.length(); i++)
             {
-                if (m_pCurrentVote.aVoteOptions[i] == szOptionData)
+                LogInfo("VoteManager: Option " + formatInt(i) + " title='" + m_pCurrentVote.aOptionTitles[i] + "' data='" + m_pCurrentVote.aOptionData[i] + "'");
+                if (m_pCurrentVote.aOptionTitles[i] == szOptionData)
                 {
                     optionIndex = i;
                     found = true;
+                    LogInfo("VoteManager: Found matching option at index " + formatInt(optionIndex));
                     break;
                 }
             }
             
             if (!found)
             {
-                LogError("VoteManager: Invalid menu option data: " + szOptionData);
+                LogError("VoteManager: Invalid menu option data: '" + szOptionData + "' - no match found in titles");
                 return false;
             }
             
-            return CastVote(szPlayerID, optionIndex);
+            LogInfo("VoteManager: Calling CastVote for player " + szPlayerID + " with option " + formatInt(optionIndex));
+            bool result = CastVote(szPlayerID, optionIndex);
+            LogInfo("VoteManager: CastVote returned " + (result ? "true" : "false"));
+            return result;
         }
         
         // ========================================
@@ -642,6 +823,14 @@ namespace MS
         bool IsVoteActive()
         {
             return m_pCurrentVote !is null && m_pCurrentVote.eResult == VOTE_PENDING;
+        }
+        
+        /**
+         * Check if VoteManager is initialized
+         */
+        bool IsInitialized()
+        {
+            return m_bInitialized;
         }
         
         /**
@@ -764,17 +953,34 @@ namespace MS
             m_pCurrentVote.aEligibleVoters.resize(0);
             
             array<CBasePlayer@> players = GetAllPlayers();
+            LogInfo("VoteManager: PopulateEligibleVoters - found " + formatInt(players.length()) + " players");
+            
             for (uint i = 0; i < players.length(); i++)
             {
                 CBasePlayer@ player = players[i];
                 if (player !is null && IsConnected(player))
                 {
                     string playerID = GetSteamID(player);
-                    if (CanPlayerVote(playerID))
+                    bool canVote = CanPlayerVote(playerID);
+                    LogInfo("VoteManager:   Player " + GetDisplayName(player) + " (ID: " + playerID + ") - canVote: " + (canVote ? "YES" : "NO"));
+                    
+                    if (canVote)
                     {
                         m_pCurrentVote.aEligibleVoters.insertLast(playerID);
                     }
                 }
+                else
+                {
+                    LogInfo("VoteManager:   Player at index " + formatInt(i) + " is " + (player is null ? "NULL" : "NOT CONNECTED"));
+                }
+            }
+            
+            LogInfo("VoteManager: PopulateEligibleVoters - total eligible: " + formatInt(m_pCurrentVote.aEligibleVoters.length()));
+            
+            // CRITICAL: If no eligible voters, the vote is invalid
+            if (m_pCurrentVote.aEligibleVoters.length() == 0)
+            {
+                LogError("VoteManager: CRITICAL ERROR - No eligible voters found! Vote will fail.");
             }
         }
         
@@ -784,12 +990,23 @@ namespace MS
             
             m_pCurrentVote.nMinVoters = max(uint(1), eligibleCount / 2);  // At least half must vote
             m_pCurrentVote.nRequiredVotes = max(uint(1), uint(eligibleCount * m_flPassThreshold));
+            
+            LogInfo("VoteManager: CalculateVoteRequirements - eligible: " + formatInt(eligibleCount) + 
+                    ", minVoters: " + formatInt(m_pCurrentVote.nMinVoters) + 
+                    ", requiredVotes: " + formatInt(m_pCurrentVote.nRequiredVotes));
         }
         
         private bool SendVoteToPlayers()
         {
             if (!IsVoteActive())
                 return false;
+            
+            LogInfo("VoteManager: SendVoteToPlayers() - Initial vote state:");
+            LogInfo("VoteManager:   Title: " + m_pCurrentVote.szTitle);
+            LogInfo("VoteManager:   Eligible voters: " + formatInt(m_pCurrentVote.aEligibleVoters.length()));
+            LogInfo("VoteManager:   Votes already cast: " + formatInt(m_pCurrentVote.GetTotalVotesCast()));
+            LogInfo("VoteManager:   Duration: " + formatFloat(m_pCurrentVote.flDuration) + "s");
+            LogInfo("VoteManager:   End time: " + formatFloat(m_pCurrentVote.flEndTime));
                 
             // Announce vote start
             if (!m_pCurrentVote.bSilent)
@@ -798,12 +1015,10 @@ namespace MS
             }
             
             // Send initial ballot immediately instead of using delayed action system
-            // This is a workaround until we have proper periodic Think() calls
-            LogInfo("VoteManager: Sending ballots immediately to " + m_pCurrentVote.aEligibleVoters.length() + " players");
+            LogInfo("VoteManager: Sending ballots immediately to " + formatInt(m_pCurrentVote.aEligibleVoters.length()) + " players");
             SendBallotsToPlayers();
             
             // Also schedule for later (in case players close menu)
-            // Note: These delayed actions won't work without periodic Think() calls
             ScheduleDelayedAction("send_ballots", 5.1f, array<string>());
             
             // Schedule vote end
@@ -817,10 +1032,17 @@ namespace MS
         {
             if (!IsVoteActive())
                 return;
+            
+            LogInfo("VoteManager: UpdateActiveVote() checking vote status...");
+            LogInfo("VoteManager:   Eligible voters: " + formatInt(m_pCurrentVote.aEligibleVoters.length()));
+            LogInfo("VoteManager:   Votes cast: " + formatInt(m_pCurrentVote.GetTotalVotesCast()));
+            LogInfo("VoteManager:   End time: " + formatInt(int(m_pCurrentVote.flEndTime)));
+            LogInfo("VoteManager:   Current time: " + formatInt(int(GetGameTime())));
                 
             // Check for expiration
             if (m_pCurrentVote.HasExpired())
             {
+                LogInfo("VoteManager: Vote has EXPIRED - calling TallyVotes()");
                 TallyVotes();
                 return;
             }
@@ -828,9 +1050,12 @@ namespace MS
             // Check for early completion
             if (m_pCurrentVote.ShouldEndEarly())
             {
+                LogInfo("VoteManager: Vote should END EARLY - calling TallyVotes()");
                 TallyVotes();
                 return;
             }
+            
+            LogInfo("VoteManager: Vote is still active, no action needed");
         }
         
         private void UpdateDelayedActions()
@@ -1077,16 +1302,321 @@ namespace MS
             }
         }
         
-        // Placeholder functions for game integration
-        private string GetPlayerName(const string &in szPlayerID) { return "Player"; }
-        private string GetPlayerIP(const string &in szPlayerID) { return "127.0.0.1"; }
-        private void ScheduleMapChange(const string &in szMap) { LogInfo("Map change scheduled: " + szMap); }
-        private void SchedulePvpChange(bool bEnable) { LogInfo("PvP change scheduled: " + bEnable); }
-        private void LockServer() { LogInfo("Server lock scheduled"); }
-        private void KickPlayer(const string &in szPlayerID) { LogInfo("Player kick scheduled: " + szPlayerID); }
-        private void BanPlayer(const string &in szPlayerID) { LogInfo("Player ban scheduled: " + szPlayerID); }
-        private void BroadcastMessage(const string &in szMessage, const string &in szDetails = "") { 
-            LogInfo("BROADCAST: " + szMessage + (szDetails.isEmpty() ? "" : " - " + szDetails)); 
+        // ========================================
+        // Game Integration Functions
+        // ========================================
+        
+        /**
+         * Get player name by Steam ID or player index
+         */
+        private string GetPlayerName(const string &in szPlayerID) 
+        {
+            // Try to find player by Steam ID first
+            CBasePlayer@ pPlayer = FindPlayerBySteamID(szPlayerID);
+            if (pPlayer !is null)
+            {
+                return GetDisplayName(pPlayer);
+            }
+            
+            // Try to parse as player index
+            int nIndex = parseUInt(szPlayerID);
+            if (nIndex > 0)
+            {
+                @pPlayer = PlayerByIndex(nIndex);
+                if (pPlayer !is null)
+                {
+                    return GetDisplayName(pPlayer);
+                }
+            }
+            
+            return "Player";
+        }
+        
+        /**
+         * Get player IP address
+         */
+        private string GetPlayerIP(const string &in szPlayerID) 
+        {
+            CBasePlayer@ pPlayer = FindPlayerBySteamID(szPlayerID);
+            if (pPlayer !is null)
+            {
+                return GetClientAddress(pPlayer);
+            }
+            
+            int nIndex = parseUInt(szPlayerID);
+            if (nIndex > 0)
+            {
+                @pPlayer = PlayerByIndex(nIndex);
+                if (pPlayer !is null)
+                {
+                    return GetClientAddress(pPlayer);
+                }
+            }
+            
+            return "Unknown";
+        }
+        
+        /**
+         * Schedule a map change after a brief delay
+         */
+        private void ScheduleMapChange(const string &in szMap) 
+        {
+            if (szMap.isEmpty())
+            {
+                LogError("ScheduleMapChange: Empty map name");
+                return;
+            }
+            
+            LogInfo("Scheduling map change to: " + szMap);
+            
+            // Broadcast initial map change message
+            BroadcastMessage("Map will change to " + szMap + " in 10 seconds!");
+            
+            // Schedule the actual changelevel command with countdown
+            array<string> params;
+            params.insertLast(szMap);
+            
+            // Countdown at 10, 5, 3, 2, 1 seconds
+            array<float> countdownTimes = {10.0f, 5.0f, 3.0f, 2.0f, 1.0f};
+            
+            string szTaskID = GetScheduler().ScheduleTaskWithCountdown(
+                10.0f,                      // Delay
+                "ExecuteMapChange",         // Callback name
+                params,                     // Parameters
+                countdownTimes,             // Countdown times
+                true                        // Server only
+            );
+            
+            if (!szTaskID.isEmpty())
+            {
+                LogInfo("Map change scheduled with task ID: " + szTaskID);
+            }
+            else
+            {
+                LogError("Failed to schedule map change");
+            }
+        }
+        
+        /**
+         * Schedule PvP mode change
+         */
+        private void SchedulePvpChange(bool bEnable) 
+        {
+            LogInfo("Scheduling PvP change: " + (bEnable ? "ENABLED" : "DISABLED"));
+            
+            string szMessage = "PvP mode will be " + (bEnable ? "enabled" : "disabled") + " in 5 seconds!";
+            BroadcastMessage(szMessage);
+            
+            // Schedule PvP change with countdown
+            array<string> params;
+            params.insertLast(bEnable ? "1" : "0");
+            
+            array<float> countdownTimes = {5.0f, 3.0f, 2.0f, 1.0f};
+            
+            string szTaskID = GetScheduler().ScheduleTaskWithCountdown(
+                5.0f,
+                "ExecutePvpChange",
+                params,
+                countdownTimes,
+                true
+            );
+            
+            if (!szTaskID.isEmpty())
+            {
+                LogInfo("PvP change scheduled with task ID: " + szTaskID);
+            }
+        }
+        
+        /**
+         * Lock the server with a random password
+         */
+        private void LockServer() 
+        {
+            LogInfo("Locking server...");
+            
+            // Generate a simple random password
+            string szPassword = GenerateRandomPassword(8);
+            
+            // Set server password
+            string szCommand = "sv_password " + szPassword + "\n";
+            ServerCommand(szCommand);
+            
+            LogInfo("Server locked with password: " + szPassword);
+            
+            // Broadcast to admins only (for now broadcast to all)
+            BroadcastMessage("Server has been locked. Password: " + szPassword);
+        }
+        
+        /**
+         * Generate a random password
+         */
+        private string GenerateRandomPassword(int nLength)
+        {
+            string szChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+            string szPassword = "";
+            
+            for (int i = 0; i < nLength; i++)
+            {
+                int nIndex = int(Random(0, float(szChars.length() - 1)));
+                szPassword += szChars[nIndex];
+            }
+            
+            return szPassword;
+        }
+        
+        /**
+         * Kick a player from the server
+         */
+        private void KickPlayer(const string &in szPlayerID) 
+        {
+            LogInfo("Kicking player: " + szPlayerID);
+            
+            CBasePlayer@ pPlayer = FindPlayerBySteamID(szPlayerID);
+            if (pPlayer is null)
+            {
+                // Try parsing as index
+                int nIndex = parseUInt(szPlayerID);
+                if (nIndex > 0)
+                {
+                    @pPlayer = PlayerByIndex(nIndex);
+                }
+            }
+            
+            if (pPlayer !is null)
+            {
+                string szPlayerName = GetDisplayName(pPlayer);
+                
+                BroadcastMessage("Player " + szPlayerName + " will be kicked in 3 seconds!");
+                
+                // Schedule kick with countdown
+                array<string> params;
+                params.insertLast(szPlayerID);
+                params.insertLast(szPlayerName);
+                
+                array<float> countdownTimes = {3.0f, 2.0f, 1.0f};
+                
+                string szTaskID = GetScheduler().ScheduleTaskWithCountdown(
+                    3.0f,
+                    "ExecuteKickPlayer",
+                    params,
+                    countdownTimes,
+                    true
+                );
+                
+                if (!szTaskID.isEmpty())
+                {
+                    LogInfo("Kick scheduled for player " + szPlayerName + " with task ID: " + szTaskID);
+                }
+            }
+            else
+            {
+                LogError("KickPlayer: Could not find player with ID: " + szPlayerID);
+            }
+        }
+        
+        /**
+         * Ban a player from the server
+         */
+        private void BanPlayer(const string &in szPlayerID) 
+        {
+            LogInfo("Banning player: " + szPlayerID);
+            
+            CBasePlayer@ pPlayer = FindPlayerBySteamID(szPlayerID);
+            if (pPlayer is null)
+            {
+                // Try parsing as index
+                int nIndex = parseUInt(szPlayerID);
+                if (nIndex > 0)
+                {
+                    @pPlayer = PlayerByIndex(nIndex);
+                }
+            }
+            
+            if (pPlayer !is null)
+            {
+                string szPlayerName = GetDisplayName(pPlayer);
+                string szSteamID = GetSteamID(pPlayer);
+                
+                BroadcastMessage("Player " + szPlayerName + " will be banned in 3 seconds!");
+                
+                // Schedule ban with countdown
+                array<string> params;
+                params.insertLast(szSteamID);
+                params.insertLast(szPlayerName);
+                
+                array<float> countdownTimes = {3.0f, 2.0f, 1.0f};
+                
+                string szTaskID = GetScheduler().ScheduleTaskWithCountdown(
+                    3.0f,
+                    "ExecuteBanPlayer",
+                    params,
+                    countdownTimes,
+                    true
+                );
+                
+                if (!szTaskID.isEmpty())
+                {
+                    LogInfo("Ban scheduled for player " + szPlayerName + " with task ID: " + szTaskID);
+                }
+            }
+            else
+            {
+                LogError("BanPlayer: Could not find player with ID: " + szPlayerID);
+            }
+        }
+        
+        /**
+         * Broadcast a message to all players
+         */
+        private void BroadcastMessage(const string &in szMessage, const string &in szDetails = "") 
+        {
+            string szFullMessage = szMessage;
+            if (!szDetails.isEmpty())
+            {
+                szFullMessage += " - " + szDetails;
+            }
+            
+            LogInfo("BROADCAST: " + szFullMessage);
+            
+            // Send message to all players
+            SendMessageToAllPlayers("FFFFFF", szFullMessage);
+        }
+        
+        /**
+         * Helper function to find player by Steam ID
+         */
+        private CBasePlayer@ FindPlayerBySteamID(const string &in szSteamID)
+        {
+            if (szSteamID.isEmpty())
+            {
+                return null;
+            }
+            
+            int nPlayerCount = GetPlayerCount();
+            for (int i = 1; i <= nPlayerCount; i++)
+            {
+                CBasePlayer@ pPlayer = PlayerByIndex(i);
+                if (pPlayer !is null && IsConnected(pPlayer))
+                {
+                    if (GetSteamID(pPlayer) == szSteamID)
+                    {
+                        return pPlayer;
+                    }
+                }
+            }
+            
+            return null;
+        }
+        
+        /**
+         * Execute a server command
+         * Wrapper for the engine's ExecuteServerCommand function
+         */
+        private void ServerCommand(const string &in szCommand)
+        {
+            // Call the engine's ExecuteServerCommand function
+            // This is now properly exposed via ASBuiltinFunctions
+            ExecuteServerCommand(szCommand);
         }
     }
     

@@ -129,7 +129,31 @@ namespace MS
                     return;
                 }
 
+                // Check if this is args.length() == 1 (just steam ID) - skip silently
+                if (args.length() < 2)
+                {
+                    return;
+                }
+
                 string command = args[1];
+                
+                // Special handling for menu option commands from vote menus
+                // These come from the C++ engine when a player clicks a vote menu option
+                if (command == "menuoption")
+                {
+                    // menuoption format: args[0]=steamID, args[1]="menuoption", args[2]=entityIndex, args[3]=optionIndex
+                    // The C++ side will also call game_vote_menu_callback with the option data
+                    // We let it pass through to the C++ system which will trigger the callback
+                    LogInfo("PlayerCommandManager: menuoption command received - letting C++ handle callback");
+                    return;
+                }
+                
+                // Other legacy menu commands
+                if (command == "menuselect" || command == "closemenu")
+                {
+                    // Silently ignore these - they're handled by the legacy script system
+                    return;
+                }
                     
                 LogInfo("PlayerCommandManager: Processing command from " + playerName + 
                        " - " + steamID);
@@ -143,7 +167,7 @@ namespace MS
                 }
                 else
                 {
-                    LogInfo("PlayerCommandManager: Command '" + args[0] + "' is not a vote command");
+                    LogInfo("PlayerCommandManager: Command '" + command + "' is not a vote command (ignored)");
                 }
             }
             catch

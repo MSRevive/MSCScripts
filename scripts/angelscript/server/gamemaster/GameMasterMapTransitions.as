@@ -195,7 +195,7 @@ namespace MS
     void GameTransitionTriggered(const string &in szMapTitle, const string &in szDestMap,
                                 const string &in szLocalSpawn, const string &in szDestSpawn)
     {
-        MS::LogInfo("GameTransitionTriggered: " + szMapTitle + " -> " + szDestMap);
+        LogInfo("GameTransitionTriggered: " + szMapTitle + " -> " + szDestMap);
         
         // Create transition data
         MapTransitionData transData(szMapTitle, szDestMap, szLocalSpawn, szDestSpawn);
@@ -208,7 +208,7 @@ namespace MS
         {
             string errorMsg = szDestMap + " does not exist on this server. Perhaps this is a future transition point?";
             SendMessageToAllPlayers("green", errorMsg);
-            MS::LogWarning("Map does not exist: " + szDestMap);
+            LogWarning("Map does not exist: " + szDestMap);
             return;
         }
         
@@ -217,7 +217,7 @@ namespace MS
         {
             string errorMsg = "Access to " + szDestMap + " is restricted.";
             SendMessageToAllPlayers("red", errorMsg);
-            MS::LogWarning("Map access denied: " + szDestMap);
+            LogWarning("Map access denied: " + szDestMap);
             return;
         }
         
@@ -247,11 +247,11 @@ namespace MS
     {
         if (g_bChangeLevel)
         {
-            MS::LogWarning("Map change already in progress, ignoring request");
+            LogWarning("Map change already in progress, ignoring request");
             return;
         }
         
-        MS::LogInfo("ExecuteManualMapChange: " + szDestMap + " spawn: " + szDestSpawn);
+        LogInfo("ExecuteManualMapChange: " + szDestMap + " spawn: " + szDestSpawn);
         
         // Disable transitions to prevent code-side spawn changes
         g_bDisableTransitions = true;
@@ -283,7 +283,7 @@ namespace MS
         }
         
         // Prepare all players for level change
-        int nPlayerCount = MS::GetActivePlayerCount();
+        int nPlayerCount = GetActivePlayerCount();
         if (nPlayerCount > 0)
         {
             PrepareAllPlayersForTransition();
@@ -307,11 +307,11 @@ namespace MS
      */
     void GameTriggered(const string &in szTriggerName)
     {
-        MS::LogInfo("GameTriggered: " + szTriggerName);
+        LogInfo("GameTriggered: " + szTriggerName);
         
         if (g_bChangeLevel)
         {
-            MS::LogInfo("Map change in progress, ignoring trigger: " + szTriggerName);
+            LogInfo("Map change in progress, ignoring trigger: " + szTriggerName);
             return;
         }
         
@@ -331,12 +331,12 @@ namespace MS
         {
             string szForceMap = szTriggerName.substr(10); // Remove "force_map_" prefix
             
-            MS::LogInfo("Force map change to: " + szForceMap);
+            LogInfo("Force map change to: " + szForceMap);
             ExecuteManualMapChange(szForceMap);
         }
         else
         {
-            MS::LogWarning("Unknown trigger type: " + szTriggerName);
+            LogWarning("Unknown trigger type: " + szTriggerName);
         }
     }
     
@@ -366,7 +366,7 @@ namespace MS
         // Cache result
         g_MapExistsCache[szMapName] = bExists;
         
-        MS::LogInfo("Map existence check: " + szMapName + " = " + (bExists ? "true" : "false"));
+        LogInfo("Map existence check: " + szMapName + " = " + (bExists ? "true" : "false"));
         return bExists;
     }
     
@@ -392,21 +392,21 @@ namespace MS
         if (IsFNServerMap(szMapName) && !IsPlayerAllowedFNAccess())
         {
             bAllowed = false;
-            MS::LogInfo("FN server access denied for map: " + szMapName);
+            LogInfo("FN server access denied for map: " + szMapName);
         }
         
         // Check for hidden map restrictions
         if (IsHiddenMap(szMapName) && !IsPlayerAllowedHiddenAccess())
         {
             bAllowed = false;
-            MS::LogInfo("Hidden map access denied for map: " + szMapName);
+            LogInfo("Hidden map access denied for map: " + szMapName);
         }
         
         // Check for gauntlet restrictions
         if (IsGauntletMap(szMapName) && !ValidateGauntletAccess(szMapName))
         {
             bAllowed = false;
-            MS::LogInfo("Gauntlet access denied for map: " + szMapName);
+            LogInfo("Gauntlet access denied for map: " + szMapName);
         }
         
         // Cache result
@@ -485,10 +485,10 @@ namespace MS
      */
     void SetAllPlayersTransitionData(const string &in szDestMap, const string &in szLocalSpawn, const string &in szDestSpawn)
     {
-        MS::LogInfo("Setting transition data for all players: " + szDestMap);
+        LogInfo("Setting transition data for all players: " + szDestMap);
         
         // Get all active players
-        array<string> playerList = MS::GetAllPlayerSteamIDs();
+        array<string> playerList = GetAllPlayerSteamIDs();
         
         for (uint i = 0; i < playerList.length(); i++)
         {
@@ -522,7 +522,7 @@ namespace MS
         // Call external player function to set map quest data
         CallPlayerExternal(szSteamID, "ext_set_map", {szDestMap, szLocalSpawn, szDestSpawn});
         
-        MS::LogInfo("Set transition data for player " + szSteamID + ": " + szDestMap);
+        LogInfo("Set transition data for player " + szSteamID + ": " + szDestMap);
     }
     
     /**
@@ -530,9 +530,9 @@ namespace MS
      */
     void SetAllPlayersSpawn(const string &in szSpawnPoint)
     {
-        MS::LogInfo("Setting spawn point for all players: " + szSpawnPoint);
+        LogInfo("Setting spawn point for all players: " + szSpawnPoint);
         
-        array<string> playerList = MS::GetAllPlayerSteamIDs();
+        array<string> playerList = GetAllPlayerSteamIDs();
         
         for (uint i = 0; i < playerList.length(); i++)
         {
@@ -545,9 +545,9 @@ namespace MS
      */
     void PrepareAllPlayersForTransition()
     {
-        MS::LogInfo("Preparing all players for transition");
+        LogInfo("Preparing all players for transition");
         
-        array<string> playerList = MS::GetAllPlayerSteamIDs();
+        array<string> playerList = GetAllPlayerSteamIDs();
         
         for (uint i = 0; i < playerList.length(); i++)
         {
@@ -579,11 +579,11 @@ namespace MS
     {
         if (g_bVoteInProgress)
         {
-            MS::LogWarning("Vote already in progress, cannot start map transition vote");
+            LogWarning("Vote already in progress, cannot start map transition vote");
             return;
         }
         
-        MS::LogInfo("Starting map transition vote for: " + transData.szMapTitle);
+        LogInfo("Starting map transition vote for: " + transData.szMapTitle);
         
         string szVoteTitle = "Travel to " + transData.szMapTitle + "?";
         array<string> voteOptions = {
@@ -606,7 +606,7 @@ namespace MS
      */
     void HandleMapVoteResult(const string &in szOptionTitle, const string &in szMapDestination)
     {
-        MS::LogInfo("Map vote result: " + szOptionTitle + " -> " + szMapDestination);
+        LogInfo("Map vote result: " + szOptionTitle + " -> " + szMapDestination);
         
         g_bVoteInProgress = false;
         
@@ -618,7 +618,7 @@ namespace MS
         else
         {
             // Vote failed - stay on current map
-            MS::LogInfo("Map transition vote failed");
+            LogInfo("Map transition vote failed");
         }
     }
     
@@ -628,7 +628,7 @@ namespace MS
     void StartGenericVote(const string &in szCallbackEvent, const array<string> &in voteOptions,
                          const string &in szTitle, const string &in szDescription)
     {
-        MS::LogInfo("Starting generic vote: " + szTitle);
+        LogInfo("Starting generic vote: " + szTitle);
         
         // Build options string
         string szOptionsString = "";
@@ -651,7 +651,7 @@ namespace MS
      */
     void ResetWeatherForTransition()
     {
-        MS::LogInfo("Resetting weather for transition");
+        LogInfo("Resetting weather for transition");
         
         // Clear weather lock
         SetGlobalVariable("G_WEATHER_LOCK", DEFAULT_WEATHER);
@@ -680,7 +680,7 @@ namespace MS
      */
     void UnlockServer()
     {
-        MS::LogInfo("Unlocking server for map transition");
+        LogInfo("Unlocking server for map transition");
         
         // Clear server password
         ExecuteServerCommand("sv_password \"\"");
@@ -697,17 +697,17 @@ namespace MS
     {
         if (!g_bChangeLevel)
         {
-            MS::LogWarning("DelayedChangeLevel called but change level flag is false");
+            LogWarning("DelayedChangeLevel called but change level flag is false");
             return;
         }
         
         if (g_szDestMap.length() == 0)
         {
-            MS::LogError("DelayedChangeLevel called but destination map is empty");
+            LogError("DelayedChangeLevel called but destination map is empty");
             return;
         }
         
-        MS::LogInfo("Executing delayed changelevel to: " + g_szDestMap);
+        LogInfo("Executing delayed changelevel to: " + g_szDestMap);
         
         // Execute the actual changelevel command
         ExecuteServerCommand("changelevel " + g_szDestMap);
@@ -724,90 +724,252 @@ namespace MS
     // ========================================
     
     /**
-     * Schedule a delayed event
+     * Schedule a delayed event using the global scheduler
+     * 
+     * @param flDelay Delay in seconds before execution
+     * @param szEventName Name of the event function to call
+     * 
+     * Uses the MS::Scheduler system to schedule delayed function execution.
+     * The callback function must be accessible in the global scope.
      */
     void ScheduleDelayedEvent(float flDelay, const string &in szEventName)
     {
-        // TODO: Implement event scheduling
-        // This would use the engine's event scheduling system
-        MS::LogInfo("Scheduling delayed event: " + szEventName + " in " + flDelay + " seconds");
+        LogInfo("Scheduling delayed event: " + szEventName + " in " + flDelay + " seconds");
+        
+        // Use the MS Scheduler system to schedule the event
+        // The scheduler will call the named function after the delay
+        array<string> emptyParams;
+        string taskID = MS::g_Scheduler.ScheduleTask(flDelay, szEventName, emptyParams, true);
+        
+        if (taskID.length() > 0)
+        {
+            LogInfo("Event scheduled successfully with task ID: " + taskID);
+        }
+        else
+        {
+            LogError("Failed to schedule event: " + szEventName);
+        }
     }
     
-    // Note: GetCurrentTime function removed - using MS::GetGameTime() instead
+    // Note: GetCurrentTime function removed - using GetGameTime() instead
     
-    // Note: GetActivePlayerCount function removed - using MS::GetPlayerCount() instead
+    // Note: GetActivePlayerCount function removed - using GetPlayerCount() instead
     
     // Note: GetAllPlayerSteamIDs function removed - using MS::GetAllPlayerSteamIDs() instead
     
     // ========================================
-    // Engine Interface Functions (Stubs)
+    // Engine Interface Functions
     // ========================================
     
     /**
      * Check if map exists via engine
+     * 
+     * @param szMapName Map name to check (without .bsp extension)
+     * @return True if map exists on server
+     * 
+     * Calls the C++ engine function to check if the map file exists
+     * in the maps/ directory on the server.
      */
     bool EngineMapExists(const string &in szMapName)
     {
-        // TODO: Implement engine map existence check
-        // This would call the engine's $map_exists function
-        return true;
+        LogInfo("EngineMapExists: Checking " + szMapName);
+        
+        // Call the global AngelScript function exposed from C++
+        // This checks the actual file system for the map file
+        bool exists = ::EngineMapExists(szMapName);
+        
+        LogInfo("EngineMapExists: Map '" + szMapName + "' " + (exists ? "exists" : "does not exist"));
+        return exists;
     }
     
     /**
      * Execute a server command
+     * 
+     * @param szCommand Server console command to execute
+     * 
+     * Security Note: This function is protected by the C++ implementation
+     * which blocks dangerous commands like quit, exit, and rcon_password
      */
     void ExecuteServerCommand(const string &in szCommand)
     {
-        MS::LogInfo("Server command: " + szCommand);
-        // TODO: Implement server command execution
+        LogInfo("Executing server command: " + szCommand);
+        
+        // Call the global AngelScript function exposed from C++
+        // This is registered in ASBuiltinFunctions.cpp as AS_ExecuteServerCommand
+        ::ExecuteServerCommand(szCommand);
     }
     
     /**
      * Call external function on a player
+     * 
+     * @param szSteamID Player's Steam ID
+     * @param szFunction Name of the player script function to call
+     * @param args Array of string arguments to pass to the function
      */
     void CallPlayerExternal(const string &in szSteamID, const string &in szFunction, const array<string> &in args)
     {
-        MS::LogInfo("Player external call: " + szSteamID + " -> " + szFunction);
-        // TODO: Implement player external function calls
+        LogInfo("Player external call: " + szSteamID + " -> " + szFunction);
+        
+        // Call the global AngelScript function exposed from C++
+        // This is registered in ASBuiltinFunctions.cpp as AS_CallPlayerExternal
+        ::CallPlayerExternal(szSteamID, szFunction, @args);
     }
     
     /**
      * Call external function on GameMaster
+     * 
+     * @param szFunction Name of the GameMaster script function to call
+     * @param args Array of string arguments to pass to the function
      */
     void CallGameMasterExternal(const string &in szFunction, const array<string> &in args)
     {
-        MS::LogInfo("GameMaster external call: " + szFunction);
-        // TODO: Implement GameMaster external function calls
+        LogInfo("GameMaster external call: " + szFunction);
+        
+        // Call the global AngelScript function exposed from C++
+        // This is registered in ASBuiltinFunctions.cpp as AS_CallGameMasterExternal
+        ::CallGameMasterExternal(szFunction, @args);
     }
     
     /**
-     * Send message to all players
+     * Send colored message to all players
+     * 
+     * @param szColor Color name (red, green, blue, yellow, etc.)
+     * @param szMessage Message text to send
      */
     void SendMessageToAllPlayers(const string &in szColor, const string &in szMessage)
     {
-        MS::LogInfo("Message to all [" + szColor + "]: " + szMessage);
-        // TODO: Implement message sending
+        LogInfo("Sending message to all players [" + szColor + "]: " + szMessage);
+        
+        // Call the global AngelScript function exposed from C++
+        // This is registered in ASBuiltinFunctions.cpp as AS_SendMessageToAllPlayers
+        ::SendMessageToAllPlayers(szColor, szMessage);
     }
     
     /**
-     * Send info message to all players
+     * Send info message to all players (with title)
+     * 
+     * @param szTitle Title of the info message
+     * @param szMessage Message body text
      */
     void SendInfoMessageToAll(const string &in szTitle, const string &in szMessage)
     {
-        MS::LogInfo("Info message [" + szTitle + "]: " + szMessage);
-        // TODO: Implement info message sending
+        LogInfo("Sending info message to all: " + szTitle + " - " + szMessage);
+        
+        // Call the global AngelScript function exposed from C++
+        // This is registered in ASBuiltinFunctions.cpp as AS_SendInfoMessageToAll
+        ::SendInfoMessageToAll(szTitle, szMessage);
     }
     
     /**
-     * Set global variable
+     * Set global game variable
+     * 
+     * @param szVarName Name of the global variable
+     * @param szValue Value to set (as string)
+     * 
+     * Note: This sets variables in the global script system that persist
+     * across map changes and are accessible by all scripts
      */
     void SetGlobalVariable(const string &in szVarName, const string &in szValue)
     {
-        MS::LogInfo("Set global var: " + szVarName + " = " + szValue);
-        // TODO: Implement global variable setting
+        LogInfo("Setting global variable: " + szVarName + " = " + szValue);
+        
+        // Use the quest data system to set global variables
+        // The $set system variables are stored in the global game script
+        // We can use SetPlayerQuestData with a special prefix for global vars
+        // Or use the GameMaster external system to set global variables
+        
+        array<string> args = {szVarName, szValue};
+        CallGameMasterExternal("gm_set_global_var", args);
     }
     
-    // Note: LogInfo, LogWarning, LogError functions removed - using MS:: namespace functions instead
+    // ========================================
+    // Helper Utility Functions
+    // ========================================
+    
+    /**
+     * Get all player Steam IDs
+     * 
+     * @return Array of Steam IDs for all connected players
+     */
+    array<string> GetAllPlayerSteamIDs()
+    {
+        array<string> steamIDs;
+        
+        // Get all players from the engine
+        array<CBasePlayer@>@ players = GetAllPlayers();
+        
+        if (players is null)
+        {
+            LogWarning("GetAllPlayerSteamIDs: GetAllPlayers returned null");
+            return steamIDs;
+        }
+        
+        // Extract Steam IDs from player objects
+        for (uint i = 0; i < players.length(); i++)
+        {
+            CBasePlayer@ player = players[i];
+            if (player !is null && player.IsConnected())
+            {
+                string steamID = player.GETPLAYERAUTHID();
+                if (steamID.length() > 0)
+                {
+                    steamIDs.insertLast(steamID);
+                }
+            }
+        }
+        
+        LogInfo("GetAllPlayerSteamIDs: Found " + steamIDs.length() + " players");
+        return steamIDs;
+    }
+    
+    // ========================================
+    // MS Namespace Helper Functions
+    // ========================================
+    
+    /**
+     * Log info message
+     */
+    void LogInfo(const string &in szMessage)
+    {
+        // Use the global logging function from AngelScript
+        ::LogMessage("[MapTransitions] " + szMessage);
+    }
+    
+    /**
+     * Log warning message
+     */
+    void LogWarning(const string &in szMessage)
+    {
+        // Use the global logging function from AngelScript
+        ::LogMessage("[MapTransitions WARNING] " + szMessage);
+    }
+    
+    /**
+     * Log error message
+     */
+    void LogError(const string &in szMessage)
+    {
+        // Use the global logging function from AngelScript
+        ::LogMessage("[MapTransitions ERROR] " + szMessage);
+    }
+    
+    /**
+     * Get active player count
+     */
+    int GetActivePlayerCount()
+    {
+        // Use the global player count function
+        return ::GetPlayerCount();
+    }
+    
+    /**
+     * Get current game time
+     */
+    float GetGameTime()
+    {
+        // Use the global game time function
+        return ::GetGameTime();
+    }
     
     // ========================================
     // External API Functions
@@ -818,7 +980,7 @@ namespace MS
      */
     void Initialize()
     {
-        MS::LogInfo("Initializing GameMaster Map Transitions system");
+        LogInfo("Initializing GameMaster Map Transitions system");
         
         // Clear state
         g_bChangeLevel = false;
@@ -832,7 +994,7 @@ namespace MS
         g_MapRestrictionsCache.deleteAll();
         g_PlayerTransitions.deleteAll();
         
-        MS::LogInfo("GameMaster Map Transitions system initialized");
+        LogInfo("GameMaster Map Transitions system initialized");
     }
     
     /**
@@ -840,14 +1002,14 @@ namespace MS
      */
     void Shutdown()
     {
-        MS::LogInfo("Shutting down GameMaster Map Transitions system");
+        LogInfo("Shutting down GameMaster Map Transitions system");
         
         // Clear all state
         g_PlayerTransitions.deleteAll();
         g_MapExistsCache.deleteAll();
         g_MapRestrictionsCache.deleteAll();
         
-        MS::LogInfo("GameMaster Map Transitions system shut down");
+        LogInfo("GameMaster Map Transitions system shut down");
     }
     
     /**
