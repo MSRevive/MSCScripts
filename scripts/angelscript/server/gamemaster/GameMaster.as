@@ -21,9 +21,6 @@
 #include "server/gamemaster/GameMasterMapTransitions.as"
 #include "server/gamemaster/GameMasterPlayerCommands.as"
 
-// Command processing system
-#include "server/commands/CommandModule.as"
-
 module GameMaster
 {
     // Core properties
