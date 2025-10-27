@@ -50,6 +50,11 @@ namespace MS
                 if (params.length() >= 2)
                     ExecuteBanPlayerNow(params[0], params[1]);
             }
+            else if (szCallbackName == "DelayedChangeLevel")
+            {
+                // Call the global DelayedChangeLevel function which handles map transitions
+                ::DelayedChangeLevel();
+            }
         }
         
         // Actual execution functions
