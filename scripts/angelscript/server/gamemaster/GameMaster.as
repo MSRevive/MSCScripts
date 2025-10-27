@@ -109,6 +109,9 @@ module GameMaster
         InitializeEntitySpawner();
         InitializeEntityCommunications();
         
+        // Initialize command processing system
+        InitializeCommands();
+        
         LogInfo("GameMaster: All systems initialized successfully");
         
         // Initialize other systems that don't require the instance
@@ -126,6 +129,7 @@ module GameMaster
         LogInfo("Shutting down GameMaster system...");
         
         // Shutdown new systems first
+        ShutdownCommands();
         ShutdownPlayerCommandSystem();
         MS::ShutdownPlayerCommands();
         ShutdownTransitionSystem();

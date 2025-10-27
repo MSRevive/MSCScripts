@@ -270,7 +270,7 @@ namespace MS
         // Set spawn points for all players
         SetAllPlayersSpawn(szFinalSpawn);
         
-        // Log changelevel to server console
+        // Log changelevel to server
         ExecuteServerCommand("echo Changelevel: " + szDestMap);
         
         // Reset weather system
@@ -497,7 +497,7 @@ namespace MS
     }
     
     /**
-     * Set transition data for a specific player using AngelScript quest data
+     * Set transition data for a specific player
      */
     void SetPlayerTransitionData(const string &in szSteamID, const string &in szDestMap, 
                                const string &in szLocalSpawn, const string &in szDestSpawn)
@@ -519,26 +519,14 @@ namespace MS
         state.bInTransition = true;
         state.flTransitionTime = GetGameTime();
         
-        // Save map and spawn data to player quest data (AngelScript version of ext_set_map)
-        // This replaces: quest set ent_me m <mapname>
-        string szMapLower = ToLower(szDestMap);
-        SetPlayerQuestData(szSteamID, "m", szMapLower);
+        // Call external player function to set map quest data
+        CallPlayerExternal(szSteamID, "ext_set_map", {szDestMap, szLocalSpawn, szDestSpawn});
         
-        // This replaces: quest set ent_me d <spawn>
-        SetPlayerQuestData(szSteamID, "d", szLocalSpawn);
-        
-        // Set the next transition spawn point for after map change
-        SetPlayerQuestData(szSteamID, "next_trans", szDestSpawn);
-        
-        // Call external player function to set the actual transition point (settrans command)
-        // This is still needed because settrans is a C++ command that moves the player spawn
-        CallPlayerExternal(szSteamID, "ext_setspawn", {szLocalSpawn});
-        
-        LogInfo("Set transition data for player " + szSteamID + ": " + szDestMap + " -> " + szLocalSpawn);
+        LogInfo("Set transition data for player " + szSteamID + ": " + szDestMap);
     }
     
     /**
-     * Set spawn point for all players using AngelScript quest data
+     * Set spawn point for all players
      */
     void SetAllPlayersSpawn(const string &in szSpawnPoint)
     {
@@ -548,10 +536,6 @@ namespace MS
         
         for (uint i = 0; i < playerList.length(); i++)
         {
-            // Save spawn point to player quest data (replaces: quest set ent_me d <spawn>)
-            SetPlayerQuestData(playerList[i], "d", szSpawnPoint);
-            
-            // Call external player function to set the actual transition point (settrans command)
             CallPlayerExternal(playerList[i], "ext_setspawn", {szSpawnPoint});
         }
     }
@@ -639,14 +623,14 @@ namespace MS
     }
     
     /**
-     * Start a generic vote using the AngelScript VoteManager
+     * Start a generic vote
      */
     void StartGenericVote(const string &in szCallbackEvent, const array<string> &in voteOptions,
                          const string &in szTitle, const string &in szDescription)
     {
         LogInfo("Starting generic vote: " + szTitle);
         
-        // Build options string (semicolon-separated)
+        // Build options string
         string szOptionsString = "";
         for (uint i = 0; i < voteOptions.length(); i++)
         {
@@ -654,14 +638,8 @@ namespace MS
             szOptionsString += voteOptions[i];
         }
         
-        // Call AngelScript voting system
-        bool success = MS::gm_create_vote(szCallbackEvent, szOptionsString, szTitle, szDescription, false);
-        
-        if (!success)
-        {
-            LogError("Failed to create vote: " + szTitle);
-            g_bVoteInProgress = false;
-        }
+        // Call external vote system
+        CallGameMasterExternal("gm_create_vote", {szCallbackEvent, szOptionsString, szTitle, szDescription, "0"});
     }
     
     // ========================================
@@ -731,8 +709,8 @@ namespace MS
         
         LogInfo("Executing delayed changelevel to: " + g_szDestMap);
         
-        // Execute the actual changelevel command (newline required by engine)
-        ExecuteServerCommand("changelevel " + g_szDestMap + "\n");
+        // Execute the actual changelevel command
+        ExecuteServerCommand("changelevel " + g_szDestMap);
         
         // Reset state
         g_bChangeLevel = false;
@@ -1071,13 +1049,26 @@ void InitializeMapTransitions()
     MS::Initialize();
 }
 
-// ========================================
-// Global Wrapper Functions for C++ Integration
-// ========================================
+// Note: game_transition_triggered function is defined in GameMaster.as to avoid conflicts
+
+/**
+ * Handle manual map change
+ */
+void gm_manual_map_change(const string &in szDestMap, const string &in szDestSpawn = "")
+{
+    MS::ExecuteManualMapChange(szDestMap, szDestSpawn);
+}
+
+/**
+ * Handle game triggered event
+ */
+void game_triggered(const string &in szTriggerName)
+{
+    MS::GameTriggered(szTriggerName);
+}
 
 /**
  * Handle map vote result
- * Called from voting system when vote completes
  */
 void gm_votemap(const string &in szOptionTitle, const string &in szMapDestination)
 {
@@ -1085,7 +1076,7 @@ void gm_votemap(const string &in szOptionTitle, const string &in szMapDestinatio
 }
 
 /**
- * Check if map exists (utility function)
+ * Check if map exists
  */
 bool MapExists(const string &in szMapName)
 {
@@ -1093,46 +1084,9 @@ bool MapExists(const string &in szMapName)
 }
 
 /**
- * Check if transitions are disabled (utility function)
+ * Check if transitions are disabled
  */
 bool TransitionsDisabled()
 {
     return MS::AreTransitionsDisabled();
-}
-
-/**
- * Global wrapper for GameTransitionTriggered (PascalCase version)
- * Called from C++ when msarea_transition is activated
- */
-void GameTransitionTriggered(const string &in szMapTitle, const string &in szDestMap,
-                             const string &in szLocalSpawn, const string &in szDestSpawn)
-{
-    MS::GameTransitionTriggered(szMapTitle, szDestMap, szLocalSpawn, szDestSpawn);
-}
-
-/**
- * Global wrapper for ExecuteManualMapChange (PascalCase version)
- * Called from C++ when trigger_changelevel or mstrig_changelevel is activated
- */
-void ExecuteManualMapChange(const string &in szDestMap, const string &in szDestSpawn = "")
-{
-    MS::ExecuteManualMapChange(szDestMap, szDestSpawn);
-}
-
-/**
- * Global wrapper for GameTriggered (PascalCase version)
- * Called from C++ when FireTargets is called with special trigger names
- */
-void GameTriggered(const string &in szTriggerName)
-{
-    MS::GameTriggered(szTriggerName);
-}
-
-/**
- * Global wrapper for DelayedChangeLevel
- * Called after delay when map change is scheduled
- */
-void DelayedChangeLevel()
-{
-    MS::DelayedChangeLevel();
 }
