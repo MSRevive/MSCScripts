@@ -223,7 +223,7 @@ namespace MSTest
                     parameters.insertLast("test_param1");
                     parameters.insertLast("test_param2");
                     
-                    EntityHandle testEntity = EntityHandle();
+                    CBaseEntity@ testEntity = null;
                     
                     // This should fail since no handler is registered for TEST_TARGET
                     bool result = system.ProcessCommunication("TEST_TARGET", "test_function", parameters, testEntity, "test_sender");
@@ -247,7 +247,7 @@ namespace MSTest
                         tooManyParams.insertLast("param_" + i);
                     }
                     
-                    EntityHandle testEntity = EntityHandle();
+                    CBaseEntity@ testEntity = null;
                     
                     bool result1 = system.ProcessCommunication("TEST", "func", emptyParams, testEntity);
                     bool result2 = system.ProcessCommunication("TEST", "func", validParams, testEntity);
@@ -265,7 +265,7 @@ namespace MSTest
                     array<string> params;
                     params.insertLast("valid_param");
                     
-                    EntityHandle testEntity = EntityHandle();
+                    CBaseEntity@ testEntity = null;
                     
                     // Empty target
                     bool result1 = system.ProcessCommunication("", "test_function", params, testEntity);
@@ -290,7 +290,7 @@ namespace MSTest
                     }
                     largeParams.insertLast(largeParam);
                     
-                    EntityHandle testEntity = EntityHandle();
+                    CBaseEntity@ testEntity = null;
                     
                     bool result = system.ProcessCommunication("TEST", "func", largeParams, testEntity);
                     
@@ -315,7 +315,7 @@ namespace MSTest
                     if (system is null) return false;
                     
                     array<string> params;
-                    EntityHandle testEntity = EntityHandle();
+                    CBaseEntity@ testEntity = null;
                     
                     // Invalid target names
                     bool result1 = system.ProcessCommunication("invalid-target", "func", params, testEntity);
@@ -333,7 +333,7 @@ namespace MSTest
                     if (system is null) return false;
                     
                     array<string> params;
-                    EntityHandle testEntity = EntityHandle();
+                    CBaseEntity@ testEntity = null;
                     
                     // Invalid function names
                     bool result1 = system.ProcessCommunication("TEST", "invalid-function", params, testEntity);
@@ -354,7 +354,7 @@ namespace MSTest
                     system.SetRateLimit(1.0f); // 1 second between messages
                     
                     array<string> params;
-                    EntityHandle testEntity = EntityHandle();
+                    CBaseEntity@ testEntity = null;
                     string senderID = "rate_limit_test_sender";
                     
                     // First message should go through (but fail due to no handler)
@@ -381,7 +381,7 @@ namespace MSTest
                     system.SetSecurityEnabled(false);
                     
                     array<string> params;
-                    EntityHandle testEntity = EntityHandle();
+                    CBaseEntity@ testEntity = null;
                     
                     // Invalid names should now pass validation (but still fail due to no handler)
                     bool result1 = system.ProcessCommunication("invalid-target", "func", params, testEntity);
@@ -403,7 +403,7 @@ namespace MSTest
                     params.insertLast("<script>alert('xss')</script>");
                     params.insertLast("../../../etc/passwd");
                     
-                    EntityHandle testEntity = EntityHandle();
+                    CBaseEntity@ testEntity = null;
                     
                     // Should handle injection attempts gracefully
                     bool result = system.ProcessCommunication("TEST", "func", params, testEntity);
@@ -427,7 +427,7 @@ namespace MSTest
                 function() {
                     try
                     {
-                        EntityHandle testEntity = EntityHandle();
+                        CBaseEntity@ testEntity = null;
                         
                         // Basic CallExternal calls (should fail gracefully without handlers)
                         bool result1 = CallExternal("GAME_MASTER", "test_function", "param1", "", "", "", testEntity);
@@ -446,7 +446,7 @@ namespace MSTest
                 function() {
                     try
                     {
-                        EntityHandle testEntity = EntityHandle();
+                        CBaseEntity@ testEntity = null;
                         
                         // Test with different parameter counts
                         bool result1 = CallExternal("TEST", "func1", "", "", "", "", testEntity);
@@ -472,7 +472,7 @@ namespace MSTest
                         params.insertLast("array_param2");
                         params.insertLast("array_param3");
                         
-                        EntityHandle testEntity = EntityHandle();
+                        CBaseEntity@ testEntity = null;
                         
                         bool result1 = CallExternalArray("TEST", "array_func", params, testEntity);
                         bool result2 = CallExternalArray("TEST", "array_func", params, testEntity, "custom_sender");
@@ -492,7 +492,7 @@ namespace MSTest
                 function() {
                     try
                     {
-                        EntityHandle testEntity = EntityHandle();
+                        CBaseEntity@ testEntity = null;
                         
                         // Empty string parameters
                         bool result1 = CallExternal("", "func", "", "", "", "", testEntity);
@@ -520,8 +520,8 @@ namespace MSTest
                     try
                     {
                         // Test with different entity handle states
-                        EntityHandle nullEntity = EntityHandle();
-                        EntityHandle validEntity = EntityHandle(); // Would be a real entity in practice
+                        CBaseEntity@ nullEntity = null;
+                        CBaseEntity@ validEntity = null; // Would be a real entity in practice
                         
                         bool result1 = CallExternal("TEST", "func", "param1", "", "", "", nullEntity);
                         bool result2 = CallExternal("TEST", "func", "param1", "", "", "", validEntity);
@@ -571,7 +571,7 @@ namespace MSTest
                 function() {
                     try
                     {
-                        EntityHandle testEntity = EntityHandle();
+                        CBaseEntity@ testEntity = null;
                         
                         // Multiple rapid calls
                         for (uint i = 0; i < 100; i++)
@@ -619,7 +619,7 @@ namespace MSTest
                     try
                     {
                         // This should be handled in CallExternal functions
-                        EntityHandle testEntity = EntityHandle();
+                        CBaseEntity@ testEntity = null;
                         bool result = CallExternal("TEST", "func", "", "", "", "", testEntity);
                         
                         return true; // Should not crash even if system has issues
@@ -634,7 +634,7 @@ namespace MSTest
                 function() {
                     try
                     {
-                        EntityHandle invalidEntity = EntityHandle();
+                        CBaseEntity@ invalidEntity = null;
                         
                         bool result = CallExternal("TEST", "func", "param1", "", "", "", invalidEntity);
                         
@@ -650,7 +650,7 @@ namespace MSTest
                 function() {
                     try
                     {
-                        EntityHandle testEntity = EntityHandle();
+                        CBaseEntity@ testEntity = null;
                         
                         // Maximum length target/function names
                         string maxTarget = "";
@@ -678,7 +678,7 @@ namespace MSTest
                 function() {
                     try
                     {
-                        EntityHandle testEntity = EntityHandle();
+                        CBaseEntity@ testEntity = null;
                         
                         // Various special characters in parameters
                         bool result1 = CallExternal("TEST", "func", "param with spaces", "", "", "", testEntity);
@@ -705,7 +705,7 @@ namespace MSTest
                 function() {
                     try
                     {
-                        EntityHandle testEntity = EntityHandle();
+                        CBaseEntity@ testEntity = null;
                         
                         // Flood the system with messages
                         for (uint i = 0; i < 500; i++)
@@ -735,7 +735,7 @@ namespace MSTest
                         EntityCommunicationSystem@ system = GetEntityCommunicationSystem();
                         if (system is null) return false;
                         
-                        EntityHandle testEntity = EntityHandle();
+                        CBaseEntity@ testEntity = null;
                         
                         // Simulate concurrent operations
                         for (uint i = 0; i < 100; i++)
@@ -775,7 +775,7 @@ namespace MSTest
                 function() {
                     try
                     {
-                        EntityHandle testEntity = EntityHandle();
+                        CBaseEntity@ testEntity = null;
                         
                         // Create messages with large parameter arrays
                         for (uint i = 0; i < 20; i++)

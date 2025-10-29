@@ -19,7 +19,7 @@ namespace AdvancedTriggerSystem
      * Placeholder IsValidEntityLocal implementation
      * Moved out of MS namespace to avoid conflicts with engine registration
      */
-    bool IsValidEntityLocal(EntityHandle hEntity)
+    bool IsValidEntityLocal(CBaseEntity@ hEntity)
     {
         // In a real implementation, this would check if the entity handle is valid
         return true;  // Placeholder

@@ -530,10 +530,6 @@ namespace MS
         // Set the next transition spawn point for after map change
         SetPlayerQuestData(szSteamID, "next_trans", szDestSpawn);
         
-        // Call external player function to set the actual transition point (settrans command)
-        // This is still needed because settrans is a C++ command that moves the player spawn
-        CallPlayerExternal(szSteamID, "ext_setspawn", {szLocalSpawn});
-        
         LogInfo("Set transition data for player " + szSteamID + ": " + szDestMap + " -> " + szLocalSpawn);
     }
     
@@ -550,9 +546,6 @@ namespace MS
         {
             // Save spawn point to player quest data (replaces: quest set ent_me d <spawn>)
             SetPlayerQuestData(playerList[i], "d", szSpawnPoint);
-            
-            // Call external player function to set the actual transition point (settrans command)
-            CallPlayerExternal(playerList[i], "ext_setspawn", {szSpawnPoint});
         }
     }
     
@@ -828,13 +821,13 @@ namespace MS
      * @param szFunction Name of the player script function to call
      * @param args Array of string arguments to pass to the function
      */
-    void CallPlayerExternal(const string &in szSteamID, const string &in szFunction, const array<string> &in args)
+    void CallPlayerExternal(const string &in szSteamID, const string &in szFunction, array<string>@ args)
     {
         LogInfo("Player external call: " + szSteamID + " -> " + szFunction);
         
         // Call the global AngelScript function exposed from C++
         // This is registered in ASBuiltinFunctions.cpp as AS_CallPlayerExternal
-        ::CallPlayerExternal(szSteamID, szFunction, @args);
+        ::CallPlayerExternal(szSteamID, szFunction, args);
     }
     
     /**
@@ -843,13 +836,13 @@ namespace MS
      * @param szFunction Name of the GameMaster script function to call
      * @param args Array of string arguments to pass to the function
      */
-    void CallGameMasterExternal(const string &in szFunction, const array<string> &in args)
+    void CallGameMasterExternal(const string &in szFunction, array<string>@ args)
     {
         LogInfo("GameMaster external call: " + szFunction);
         
         // Call the global AngelScript function exposed from C++
         // This is registered in ASBuiltinFunctions.cpp as AS_CallGameMasterExternal
-        ::CallGameMasterExternal(szFunction, @args);
+        ::CallGameMasterExternal(szFunction, args);
     }
     
     /**
@@ -932,10 +925,14 @@ namespace MS
             CBasePlayer@ player = players[i];
             if (player !is null && player.IsConnected())
             {
-                string steamID = player.GETPLAYERAUTHID();
-                if (steamID.length() > 0)
+                string steamID = player.GetSteamID();
+                if (steamID.length() > 0 && steamID != "STEAM_ID_INVALID")
                 {
                     steamIDs.insertLast(steamID);
+                }
+                else if (steamID == "STEAM_ID_INVALID")
+                {
+                    LogWarning("GetAllPlayerSteamIDs: Skipping player with invalid Steam ID");
                 }
             }
         }

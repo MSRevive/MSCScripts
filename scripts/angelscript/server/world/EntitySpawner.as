@@ -17,7 +17,7 @@ namespace MS
     /**
      * Check if entity handle is valid (stub implementation)
      */
-    bool IsValidEntity(EntityHandle hEntity)
+    bool IsValidEntity(CBaseEntity@ hEntity)
     {
         // Placeholder implementation - in real system would check handle validity
         return true;  // Assume all handles are valid for now
@@ -26,16 +26,16 @@ namespace MS
     /**
      * Create an entity (stub implementation)
      */
-    EntityHandle CreateEntity(const string &in szScript, float fPosX, float fPosY, float fPosZ, float fAngX, float fAngY, float fAngZ)
+    CBaseEntity@ CreateEntity(const string &in szScript, float fPosX, float fPosY, float fPosZ, float fAngX, float fAngY, float fAngZ)
     {
         MS_ANGEL_INFO("CreateEntity stub called: " + szScript + " at (" + fPosX + "," + fPosY + "," + fPosZ + ")");
-        return EntityHandle(); // Return invalid handle for now
+        return null; // Return invalid handle for now
     }
     
     /**
      * Set entity name (stub implementation)
      */
-    void SetEntityName(EntityHandle hEntity, const string &in szName)
+    void SetEntityName(CBaseEntity@ hEntity, const string &in szName)
     {
         MS_ANGEL_INFO("SetEntityName stub called: " + szName);
     }
@@ -43,7 +43,7 @@ namespace MS
     /**
      * Set entity target name (stub implementation)
      */
-    void SetEntityTargetName(EntityHandle hEntity, const string &in szTargetName)
+    void SetEntityTargetName(CBaseEntity@ hEntity, const string &in szTargetName)
     {
         MS_ANGEL_INFO("SetEntityTargetName stub called: " + szTargetName);
     }
@@ -51,7 +51,7 @@ namespace MS
     /**
      * Set entity health (stub implementation)
      */
-    void SetEntityHealth(EntityHandle hEntity, float flHealth)
+    void SetEntityHealth(CBaseEntity@ hEntity, float flHealth)
     {
         MS_ANGEL_INFO("SetEntityHealth stub called: " + flHealth);
     }
@@ -60,7 +60,7 @@ namespace MS
      * Check if entity is dead (stub implementation)
      * Moved to avoid conflicts with engine registration
      */
-    bool EntitySpawner_IsEntityDead(EntityHandle hEntity)
+    bool EntitySpawner_IsEntityDead(CBaseEntity@ hEntity)
     {
         MS_ANGEL_DEBUG("EntitySpawner_IsEntityDead stub called - returning false");
         return false; // Return false for now (entity is alive)
@@ -111,7 +111,7 @@ namespace MS
         bool bActive;                 // Whether this slot is in use
         float flSpawnTime;            // Time when entity should spawn
         EntitySpawnData SpawnData;    // Data for the entity to spawn
-        EntityHandle hSpawnedEntity;  // Handle to spawned entity (for tracking)
+        CBaseEntity@ hSpawnedEntity;  // Handle to spawned entity (for tracking)
         uint nSpawnedCount;           // How many times this has spawned
         
         SpawnSlot()
@@ -119,7 +119,7 @@ namespace MS
             bActive = false;
             flSpawnTime = 0.0f;
             SpawnData = EntitySpawnData();
-            hSpawnedEntity = EntityHandle();
+            // Note: hSpawnedEntity defaults to null for handle types
             nSpawnedCount = 0;
         }
     }
@@ -131,7 +131,7 @@ namespace MS
     {
         string szGroupName;           // Name of this spawn group
         array<EntitySpawnData> Entities; // Entities in this group
-        array<EntityHandle> SpawnedEntities; // Currently spawned entities
+        array<CBaseEntity@> SpawnedEntities; // Currently spawned entities
         float flGroupSpawnDelay;      // Delay between entity spawns in group
         bool bSpawnSequentially;      // Spawn all at once or sequentially
         bool bAllMustDie;             // All must die before respawn
@@ -257,19 +257,19 @@ namespace MS
          * @param SpawnData Entity spawn data
          * @return Handle to spawned entity, or invalid handle if failed
          */
-        EntityHandle SpawnEntityImmediate(const EntitySpawnData &in SpawnData)
+        CBaseEntity@ SpawnEntityImmediate(const EntitySpawnData &in SpawnData)
         {
             if (!m_bSpawningEnabled)
             {
                 MS_ANGEL_ERROR("EntitySpawner: Spawning is disabled");
-                return EntityHandle();
+                return null;
             }
             
             MS_ANGEL_INFO("EntitySpawner: Spawning " + SpawnData.szScript + " at " + 
                    SpawnData.fPositionX + "," + SpawnData.fPositionY + "," + SpawnData.fPositionZ);
             
             // Create the entity (this would call the actual engine spawn function)
-            EntityHandle hEntity = CreateEntity(SpawnData.szScript, SpawnData.fPositionX, SpawnData.fPositionY, SpawnData.fPositionZ, SpawnData.fAnglesX, SpawnData.fAnglesY, SpawnData.fAnglesZ);
+            CBaseEntity@ hEntity = CreateEntity(SpawnData.szScript, SpawnData.fPositionX, SpawnData.fPositionY, SpawnData.fPositionZ, SpawnData.fAnglesX, SpawnData.fAnglesY, SpawnData.fAnglesZ);
             
             if (IsValidEntity(hEntity))
             {
@@ -385,7 +385,7 @@ namespace MS
                 else
                 {
                     // Spawn immediately
-                    EntityHandle hEntity = SpawnEntityImmediate(group.Entities[i]);
+                    CBaseEntity@ hEntity = SpawnEntityImmediate(group.Entities[i]);
                     if (IsValidEntity(hEntity))
                     {
                         group.SpawnedEntities.insertLast(hEntity);
@@ -411,7 +411,7 @@ namespace MS
                 if (m_SpawnSlots[i].bActive && flCurrentTime >= m_SpawnSlots[i].flSpawnTime)
                 {
                     // Time to spawn this entity
-                    EntityHandle hEntity = SpawnEntityImmediate(m_SpawnSlots[i].SpawnData);
+                    CBaseEntity@ hEntity = SpawnEntityImmediate(m_SpawnSlots[i].SpawnData);
                     
                     if (IsValidEntity(hEntity))
                     {
@@ -467,7 +467,7 @@ namespace MS
                         {
                             // Entity died, schedule respawn
                             m_SpawnSlots[i].flSpawnTime = GetGameTime() + m_SpawnSlots[i].SpawnData.flRespawnDelay;
-                            m_SpawnSlots[i].hSpawnedEntity = EntityHandle(); // Clear dead handle
+                            m_SpawnSlots[i].hSpawnedEntity = null; // Clear dead handle
                             m_nCurrentlyAlive--;
                             
                             MS_ANGEL_INFO("EntitySpawner: Entity " + m_SpawnSlots[i].SpawnData.szScript + 
@@ -478,7 +478,7 @@ namespace MS
                     {
                         // Entity was removed/deleted, schedule respawn
                         m_SpawnSlots[i].flSpawnTime = GetGameTime() + m_SpawnSlots[i].SpawnData.flRespawnDelay;
-                        m_SpawnSlots[i].hSpawnedEntity = EntityHandle();
+                        m_SpawnSlots[i].hSpawnedEntity = null;
                         m_nCurrentlyAlive--;
                         
                         MS_ANGEL_INFO("EntitySpawner: Entity " + m_SpawnSlots[i].SpawnData.szScript + 

@@ -17,14 +17,14 @@ namespace MS
      */
     class LightSlot
     {
-        EntityHandle hOwner;      // Owner entity handle
+        CBaseEntity@ hOwner;      // Owner entity handle
         Color cColor;             // Light color (-1 = inactive)
         float flRadius;           // Light radius (-1 = inactive)
         bool bActive;             // Whether this slot is active
         
         LightSlot()
         {
-            hOwner = EntityHandle();
+            // Note: hOwner defaults to null for handle types
             cColor = Color(-1, -1, -1);
             flRadius = -1.0f;
             bActive = false;
@@ -90,7 +90,7 @@ namespace MS
         
         // System state
         bool m_bInitialized;
-        EntityHandle m_hSelf;
+        CBaseEntity@ m_hSelf;
         
     public:
         /**
@@ -141,7 +141,7 @@ namespace MS
          * @param flRadius Light radius
          * @return Light slot index, or -1 if no slots available
          */
-        int RegisterLight(EntityHandle hOwner, const Color &in cColor, float flRadius)
+        int RegisterLight(CBaseEntity@ hOwner, const Color &in cColor, float flRadius)
         {
             if (!m_bInitialized)
             {

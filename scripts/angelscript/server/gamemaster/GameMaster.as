@@ -29,7 +29,7 @@ module GameMaster
     uint m_nMapUptime;
     
     // Entity tracking
-    EntityHandle m_hSelf;
+    CBaseEntity@ m_hSelf;
     
     // New integrated systems
     MS::VoteManager@ m_VoteManager = null;
@@ -389,7 +389,7 @@ module GameMaster
     /**
      * Fades an entity
      */
-    void FadeEntity(EntityHandle hTarget, int nRenderMode = 5, uint nStartAmount = 255)
+    void FadeEntity(CBaseEntity@ hTarget, int nRenderMode = 5, uint nStartAmount = 255)
     {
         LogInfo("GameMaster: Entity fade requested");
         // TODO: Implement actual entity fading
@@ -530,6 +530,65 @@ void CreateGameMasterInstance()
 // Global Functions for Engine Integration
 // (Outside module scope for global accessibility)
 // ========================================
+
+/**
+ * Called by the engine when ServerActivate fires
+ * This is the new entry point for spawning the game_master NPC entity
+ */
+void ServerActivate()
+{
+    LogMessage("[ANGELSCRIPT] ===== ServerActivate() CALLED =====");
+    MS_ANGEL_INFO("ServerActivate: Spawning game_master NPC entity...");
+    
+    // Spawn the game_master NPC at far coordinates (same as legacy C++ code)
+    CBaseEntity@ pGameMaster = SpawnNPC("game_master", Vector3(20000, -10000, -20000));
+    
+    if (pGameMaster !is null)
+    {
+        MS_ANGEL_INFO("ServerActivate: game_master NPC spawned successfully");
+        LogMessage("[ANGELSCRIPT] game_master entity spawned: " + pGameMaster.GetClassName());
+        
+        // Configure game_master properties after spawn
+        MS_ANGEL_INFO("ServerActivate: Configuring game_master entity properties...");
+        
+        // Set netname AFTER Spawn (required for entity lookups by C++)
+        pGameMaster.SetNetName("-game_master");
+        LogMessage("[ANGELSCRIPT] Set netname to: " + pGameMaster.GetNetName());
+        
+        // Set health values
+        pGameMaster.SetHealth(1.0f);
+        
+        // Set render properties (invisible)
+        pGameMaster.SetRenderMode(kRenderTransTexture);
+        pGameMaster.SetRenderAmount(0);
+        
+        // Set god mode and damage properties
+        pGameMaster.SetGodMode(true);
+        pGameMaster.SetTakeDamage(DAMAGE_NO);
+        
+        MS_ANGEL_INFO("ServerActivate: game_master entity fully configured");
+        LogMessage("[ANGELSCRIPT] game_master entity ready for C++ to find via netname: " + pGameMaster.GetNetName());
+    }
+    else
+    {
+        MS_ANGEL_ERROR("ServerActivate: CRITICAL - Failed to spawn game_master NPC!");
+        LogMessage("[ANGELSCRIPT] ERROR: Failed to spawn game_master entity!");
+    }
+    
+    // After spawning the entity, initialize the GameMaster AngelScript module if needed
+    if (g_GameMasterInstance is null)
+    {
+        LogMessage("[ANGELSCRIPT] ServerActivate: Creating GameMaster module instance...");
+        @g_GameMasterInstance = GameMaster();
+        LogMessage("[ANGELSCRIPT] ServerActivate: GameMaster module instance created");
+    }
+    else
+    {
+        LogMessage("[ANGELSCRIPT] ServerActivate: GameMaster module instance already exists");
+    }
+    
+    LogMessage("[ANGELSCRIPT] ===== ServerActivate() COMPLETED =====");
+}
 
 /**
  * Called by the engine when the map starts
@@ -829,7 +888,7 @@ void RequestDelayedNPC(float flDelay, const string &in szScript, const Vector3 &
 /**
  * Request entity fade
  */
-void RequestEntityFade(EntityHandle hTarget, int nRenderMode = 5, uint nStartAmount = 255)
+void RequestEntityFade(CBaseEntity@ hTarget, int nRenderMode = 5, uint nStartAmount = 255)
 {
     GameMaster@ gm = GetGameMaster();
     if (gm !is null)
@@ -984,7 +1043,7 @@ void game_vote_menu_callback(const string &in szPlayerEntity, const string &in s
     LogMessage("[ANGELSCRIPT]   Option Data: " + szOptionData);
     
     // Extract player entity index from format "ent:#index"
-    if (!szPlayerEntity.starts_with("ent:"))
+    if (szPlayerEntity.length() < 4 || szPlayerEntity.substr(0, 4) != "ent:")
     {
         LogMessage("[ANGELSCRIPT] ERROR: Invalid player entity format: " + szPlayerEntity);
         return;

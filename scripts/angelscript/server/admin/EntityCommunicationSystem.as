@@ -25,7 +25,7 @@ namespace MS
         string szTarget;              // Target system (GAME_MASTER, etc.)
         string szFunction;            // Function to call
         array<string> szParameters;   // Function parameters
-        EntityHandle hSender;         // Entity that sent the message
+        CBaseEntity@ hSender;         // Entity that sent the message
         string szSenderID;            // Sender identifier
         float flTimestamp;            // When message was sent
         uint nPriority;               // Message priority (1=high, 5=low)
@@ -34,7 +34,7 @@ namespace MS
         {
             szTarget = "";
             szFunction = "";
-            hSender = EntityHandle();
+            hSender = CBaseEntity@();
             szSenderID = "";
             flTimestamp = GetGameTime();
             nPriority = 3; // Normal priority
@@ -44,7 +44,7 @@ namespace MS
         {
             szTarget = target;
             szFunction = function;
-            hSender = EntityHandle();
+            hSender = CBaseEntity@();
             szSenderID = "";
             flTimestamp = GetGameTime();
             nPriority = 3;
@@ -141,7 +141,7 @@ namespace MS
          * @return True if message was processed successfully
          */
         bool ProcessCommunication(const string &in szTarget, const string &in szFunction, 
-                                 const array<string> &in parameters, EntityHandle hSender, 
+                                 const array<string> &in parameters, CBaseEntity@ hSender, 
                                  const string &in szSenderID = "")
         {
             m_nTotalMessages++;
@@ -473,7 +473,7 @@ namespace MS
         /**
          * Generate a sender ID from entity handle
          */
-        string GenerateSenderID(EntityHandle hEntity)
+        string GenerateSenderID(CBaseEntity@ hEntity)
         {
             if (!hEntity.IsValid())
                 return "unknown";
@@ -600,7 +600,7 @@ namespace MS
     bool CallExternal(const string &in szTarget, const string &in szFunction, 
                      const string &in szParam1 = "", const string &in szParam2 = "",
                      const string &in szParam3 = "", const string &in szParam4 = "",
-                     EntityHandle hSender = EntityHandle())
+                     CBaseEntity@ hSender = CBaseEntity@())
     {
         EntityCommunicationSystem@ pSystem = GetEntityCommunicationSystem();
         if (pSystem is null)
@@ -623,7 +623,7 @@ namespace MS
      * Extended entry point for external entity communications with array parameters
      */
     bool CallExternalArray(const string &in szTarget, const string &in szFunction, 
-                          const array<string> &in parameters, EntityHandle hSender = EntityHandle(),
+                          const array<string> &in parameters, CBaseEntity@ hSender = CBaseEntity@(),
                           const string &in szSenderID = "")
     {
         EntityCommunicationSystem@ pSystem = GetEntityCommunicationSystem();

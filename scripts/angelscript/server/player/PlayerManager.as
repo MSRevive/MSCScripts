@@ -32,7 +32,7 @@ namespace MS
         
         // Player tracking
         bool m_bHadPlayer = false;
-        array<EntityHandle> m_PlayerList;
+        array<CBasePlayer@> m_PlayerList;
         
         // Light system synchronization
         uint m_nLightSyncPlayer = 0;
@@ -77,10 +77,9 @@ namespace MS
             m_bHadPlayer = true;
             
             // Add to player list if not already present
-            EntityHandle hPlayer = EntityHandle(pPlayer);
-            if (m_PlayerList.find(hPlayer) < 0)
+            if (m_PlayerList.find(pPlayer) < 0)
             {
-                m_PlayerList.insertLast(hPlayer);
+                m_PlayerList.insertLast(pPlayer);
             }
             
             // Sync lighting system for new player
@@ -107,8 +106,7 @@ namespace MS
             if (pPlayer is null) return;
             
             // Remove from player list
-            EntityHandle hPlayer = EntityHandle(pPlayer);
-            int index = m_PlayerList.find(hPlayer);
+            int index = m_PlayerList.find(pPlayer);
             if (index >= 0)
             {
                 m_PlayerList.removeAt(index);
