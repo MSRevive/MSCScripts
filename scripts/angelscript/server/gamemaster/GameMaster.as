@@ -196,7 +196,7 @@ module GameMaster
             LogInfo("GameMaster: Using existing VoteManager instance (preserves active votes)");
         }
         
-        LogInfo("GameMaster: VoteManager Think() will be called automatically via game_think()");
+        LogInfo("GameMaster: VoteManager Think() will be called automatically via GameThink()");
     }
     
     /**
@@ -973,16 +973,16 @@ bool g_bInGameThink = false;
  * Used to update the VoteManager and other systems that need periodic updates
  * Note: This is called once per player, so we throttle it to run once per frame
  */
-void game_think()
+void GameThink() // This will be moved and renamed in the future
 {
     // Prevent recursive calls (can happen during GameMaster recreation)
     if (g_bInGameThink)
     {
-        LogMessage("[ANGELSCRIPT] game_think: Recursive call detected - skipping");
+        LogMessage("[ANGELSCRIPT] GameThink: Recursive call detected - skipping");
         return;
     }
     
-    // Set the flag to indicate we're inside game_think
+    // Set the flag to indicate we're inside GameThink
     g_bInGameThink = true;
     
     // Only run once per frame, not once per player
@@ -1000,18 +1000,18 @@ void game_think()
     if (gm is null)
     {
         // GameMaster was destroyed (probably by level change) - recreate it
-        LogMessage("[ANGELSCRIPT] game_think: GameMaster is null - recreating instance!");
+        LogMessage("[ANGELSCRIPT] GameThink: GameMaster is null - recreating instance!");
         CreateGameMasterInstance();
         @gm = GetGameMaster();
         
         if (gm is null)
         {
-            LogMessage("[ANGELSCRIPT] game_think: ERROR - Failed to recreate GameMaster!");
+            LogMessage("[ANGELSCRIPT] GameThink: ERROR - Failed to recreate GameMaster!");
             g_bInGameThink = false;
             return;
         }
         
-        LogMessage("[ANGELSCRIPT] game_think: GameMaster successfully recreated!");
+        LogMessage("[ANGELSCRIPT] GameThink: GameMaster successfully recreated!");
     }
         
     // Update VoteManager
