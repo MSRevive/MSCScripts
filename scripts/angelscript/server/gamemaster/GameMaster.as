@@ -541,7 +541,8 @@ void ServerActivate()
     MS_ANGEL_INFO("ServerActivate: Spawning game_master NPC entity...");
     
     // Spawn the game_master NPC at far coordinates (same as legacy C++ code)
-    CBaseEntity@ pGameMaster = SpawnNPC("game_master", Vector3(20000, -10000, -20000));
+    // Using Angel mode to avoid requiring a legacy MSCScript file
+    CBaseEntity@ pGameMaster = SpawnNPC("game_master", Vector3(20000, -10000, -20000), null, Angel);
     
     if (pGameMaster !is null)
     {
