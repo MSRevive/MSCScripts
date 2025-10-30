@@ -387,9 +387,10 @@ namespace MS
         array<CBasePlayer@> players = GetAllPlayers();
         for (uint i = 0; i < players.length(); i++)
         {
-            if (players[i] !is null)
+            if (players[i] !is null && players[i].IsConnected())
             {
-                SendPlayerMessage(GetDisplayName(players[i]), "", szMessage);
+                // Use SendColoredMessage for consistent messaging
+                players[i].SendColoredMessage(MessageColor::White, szMessage);
             }
         }
     }

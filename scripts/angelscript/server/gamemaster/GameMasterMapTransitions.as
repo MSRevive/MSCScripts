@@ -290,7 +290,7 @@ namespace MS
         }
         
         // Display transition message
-        string szMessage = "TRAVELING TO " + szDestMap;
+        string szMessage = "Traveling to " + szDestMap + "!";
         SendInfoMessageToAll(szMessage, "You will be reconnected shortly.");
         
         // Clear vote state
@@ -846,6 +846,30 @@ namespace MS
     }
     
     /**
+     * Convert color string to MessageColor enum
+     * 
+     * @param szColor Color name (red, green, blue, yellow, white, gray)
+     * @return MessageColor enum value
+     */
+    MessageColor StringToMessageColor(const string &in szColor)
+    {
+        string colorLower = ToLower(szColor);
+        
+        if (colorLower == "red")
+            return MessageColor::Red;
+        else if (colorLower == "green")
+            return MessageColor::Green;
+        else if (colorLower == "blue")
+            return MessageColor::Blue;
+        else if (colorLower == "yellow")
+            return MessageColor::Yellow;
+        else if (colorLower == "gray" || colorLower == "grey")
+            return MessageColor::Gray;
+        else
+            return MessageColor::White; // Default to white
+    }
+    
+    /**
      * Send colored message to all players
      * 
      * @param szColor Color name (red, green, blue, yellow, etc.)
@@ -855,9 +879,26 @@ namespace MS
     {
         LogInfo("Sending message to all players [" + szColor + "]: " + szMessage);
         
-        // Call the global AngelScript function exposed from C++
-        // This is registered in ASBuiltinFunctions.cpp as AS_SendMessageToAllPlayers
-        ::SendMessageToAllPlayers(szColor, szMessage);
+        // Convert color string to enum
+        MessageColor color = StringToMessageColor(szColor);
+        
+        // Get all players and send message to each
+        array<CBasePlayer@>@ players = GetAllPlayers();
+        
+        if (players is null)
+        {
+            LogWarning("SendMessageToAllPlayers: GetAllPlayers returned null");
+            return;
+        }
+        
+        for (uint i = 0; i < players.length(); i++)
+        {
+            CBasePlayer@ player = players[i];
+            if (player !is null && player.IsConnected())
+            {
+                player.SendColoredMessage(color, szMessage);
+            }
+        }
     }
     
     /**
@@ -870,9 +911,26 @@ namespace MS
     {
         LogInfo("Sending info message to all: " + szTitle + " - " + szMessage);
         
-        // Call the global AngelScript function exposed from C++
-        // This is registered in ASBuiltinFunctions.cpp as AS_SendInfoMessageToAll
-        ::SendInfoMessageToAll(szTitle, szMessage);
+        // Get all players and send message to each
+        array<CBasePlayer@>@ players = GetAllPlayers();
+        
+        if (players is null)
+        {
+            LogWarning("SendInfoMessageToAll: GetAllPlayers returned null");
+            return;
+        }
+        
+        for (uint i = 0; i < players.length(); i++)
+        {
+            CBasePlayer@ player = players[i];
+            if (player !is null && player.IsConnected())
+            {
+                // Send title in yellow
+                player.SendColoredMessage(MessageColor::Yellow, szTitle);
+                // Send message in white
+                player.SendColoredMessage(MessageColor::White, szMessage);
+            }
+        }
     }
     
     /**
@@ -1123,6 +1181,29 @@ void ExecuteManualMapChange(const string &in szDestMap, const string &in szDestS
 void GameTriggered(const string &in szTriggerName)
 {
     MS::GameTriggered(szTriggerName);
+}
+
+void OnPlayerTransitionEntered(const string &in szPlayerName, const string &in szDestName, const string &in szDestMap, const string &in szDestSpawn, const string &in szDestTrans, const string &in szSteamID)
+{
+    CBasePlayer@ player = PlayerBySteamID(szSteamID);
+    if (player !is null)
+    {
+        string message = "You have entered the transition to " + szDestName + "!";
+        string voteMessage = "If you wish to ";
+        int nPlayerCount = GetPlayerCount();
+
+        if (nPlayerCount > 1)
+        {
+            voteMessage += "initiate a vote to transition press (enter) to begin.";
+        }
+        else
+        {
+            voteMessage += "transition press (enter).";
+        }
+        
+        player.SendColoredMessage(MessageColor::Yellow, message);
+        player.SendColoredMessage(MessageColor::Yellow, voteMessage);
+    }
 }
 
 /**
