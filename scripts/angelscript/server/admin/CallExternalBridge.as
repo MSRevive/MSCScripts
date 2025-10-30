@@ -578,7 +578,7 @@ namespace MS
         /**
          * Convert entity handle to player ID
          */
-        string GetPlayerIDFromEntity(EntityHandle hEntity)
+        string GetPlayerIDFromEntity(CBaseEntity@ hEntity)
         {
             if (!hEntity.IsValid())
                 return "unknown";
@@ -676,7 +676,7 @@ namespace MS
      * Enhanced callexternal with entity context
      */
     bool callexternal_entity(const string &in szTarget, const string &in szFunction, 
-                            EntityHandle hSender,
+                            CBaseEntity@ hSender,
                             const string &in szParam1 = "", const string &in szParam2 = "",
                             const string &in szParam3 = "", const string &in szParam4 = "")
     {
@@ -686,7 +686,7 @@ namespace MS
     /**
      * Wrapper for common quest item patterns
      */
-    bool quest_item_found(const string &in szItemType, EntityHandle hPlayer = EntityHandle())
+    bool quest_item_found(const string &in szItemType, CBaseEntity@ hPlayer = CBaseEntity@())
     {
         return CallExternal("GAME_MASTER", "ext_got_quest_item", szItemType, "", "", "", hPlayer);
     }
@@ -702,7 +702,7 @@ namespace MS
     /**
      * Wrapper for common admin command patterns
      */
-    bool admin_command(const string &in szCommand, const array<string> &in args, EntityHandle hPlayer = EntityHandle())
+    bool admin_command(const string &in szCommand, const array<string> &in args, CBaseEntity@ hPlayer = CBaseEntity@())
     {
         return CallExternalArray("GAME_MASTER", "admin_command", args, hPlayer);
     }

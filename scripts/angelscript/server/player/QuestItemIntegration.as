@@ -199,7 +199,7 @@ namespace MS
             
             // TODO: Create the actual quest item entity
             // This would use CreateNPC or similar to spawn the quest item
-            // Example: CreateNPC("other/qitem", vecPosition, Vector3(), EntityHandle(), EntityHandle(), 0.0f, 0.0f);
+            // Example: CreateNPC("other/qitem", vecPosition, Vector3(), null, null, 0.0f, 0.0f);
             
             m_ActiveQuestItems.insertLast(szItemCode);
         }

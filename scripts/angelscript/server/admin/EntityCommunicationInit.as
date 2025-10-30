@@ -113,7 +113,7 @@ namespace MS
         // Test basic functionality
         array<string> testParams = { "test_item" };
         bool testResult = commSystem.ProcessCommunication("GAME_MASTER", "ext_got_quest_item", 
-                                                          testParams, EntityHandle(), "validation_test");
+                                                          testParams, null, "validation_test");
         
         if (testResult)
         {
@@ -152,7 +152,7 @@ namespace MS
         // Test 1: Quest item found
         nTestsTotal++;
         array<string> questParams = { "test_item_1" };
-        if (commSystem.ProcessCommunication("GAME_MASTER", "ext_got_quest_item", questParams, EntityHandle(), "test_player_1"))
+        if (commSystem.ProcessCommunication("GAME_MASTER", "ext_got_quest_item", questParams, CBaseEntity@(), "test_player_1"))
         {
             nTestsPassed++;
             LogMessage("[INFO] Test 1 PASSED: Quest item found");
@@ -165,7 +165,7 @@ namespace MS
         // Test 2: Critical NPC death
         nTestsTotal++;
         array<string> npcParams = { "test_npc_1", "test_player_1" };
-        if (commSystem.ProcessCommunication("GAME_MASTER", "gm_crit_npc_died", npcParams, EntityHandle(), "test_npc_1"))
+        if (commSystem.ProcessCommunication("GAME_MASTER", "gm_crit_npc_died", npcParams, CBaseEntity@(), "test_npc_1"))
         {
             nTestsPassed++;
             LogMessage("[INFO] Test 2 PASSED: Critical NPC death");
@@ -178,7 +178,7 @@ namespace MS
         // Test 3: Invalid target (should fail)
         nTestsTotal++;
         array<string> invalidParams = { "test" };
-        if (!commSystem.ProcessCommunication("INVALID_TARGET", "test_function", invalidParams, EntityHandle(), "test_sender"))
+        if (!commSystem.ProcessCommunication("INVALID_TARGET", "test_function", invalidParams, CBaseEntity@(), "test_sender"))
         {
             nTestsPassed++;
             LogMessage("[INFO] Test 3 PASSED: Invalid target properly rejected");
@@ -193,8 +193,8 @@ namespace MS
         commSystem.SetRateLimit(1.0f); // 1 second rate limit
         
         array<string> rateParams = { "rate_test_1" };
-        bool firstResult = commSystem.ProcessCommunication("GAME_MASTER", "ext_got_quest_item", rateParams, EntityHandle(), "rate_test_sender");
-        bool secondResult = commSystem.ProcessCommunication("GAME_MASTER", "ext_got_quest_item", rateParams, EntityHandle(), "rate_test_sender");
+        bool firstResult = commSystem.ProcessCommunication("GAME_MASTER", "ext_got_quest_item", rateParams, CBaseEntity@(), "rate_test_sender");
+        bool secondResult = commSystem.ProcessCommunication("GAME_MASTER", "ext_got_quest_item", rateParams, CBaseEntity@(), "rate_test_sender");
         
         if (firstResult && !secondResult)
         {
@@ -335,7 +335,7 @@ namespace MS
      */
     bool SendQuestItemFound(const string &in szItemType, const string &in szPlayerID)
     {
-        return CallExternal("GAME_MASTER", "ext_got_quest_item", szItemType, "", "", "", EntityHandle());
+        return CallExternal("GAME_MASTER", "ext_got_quest_item", szItemType, "", "", "", CBaseEntity@());
     }
     
     /**
@@ -351,7 +351,7 @@ namespace MS
      */
     bool SendAdminCommand(const string &in szCommand, const array<string> &in args)
     {
-        return CallExternalArray("GAME_MASTER", "admin_command", args, EntityHandle());
+        return CallExternalArray("GAME_MASTER", "admin_command", args, CBaseEntity@());
     }
     
     /**

@@ -21,9 +21,6 @@
 #include "server/gamemaster/GameMasterMapTransitions.as"
 #include "server/gamemaster/GameMasterPlayerCommands.as"
 
-// Command processing system
-#include "server/commands/CommandModule.as"
-
 module GameMaster
 {
     // Core properties
@@ -32,7 +29,7 @@ module GameMaster
     uint m_nMapUptime;
     
     // Entity tracking
-    EntityHandle m_hSelf;
+    CBaseEntity@ m_hSelf;
     
     // New integrated systems
     MS::VoteManager@ m_VoteManager = null;
@@ -112,9 +109,6 @@ module GameMaster
         InitializeEntitySpawner();
         InitializeEntityCommunications();
         
-        // Initialize command processing system
-        InitializeCommands();
-        
         LogInfo("GameMaster: All systems initialized successfully");
         
         // Initialize other systems that don't require the instance
@@ -132,7 +126,6 @@ module GameMaster
         LogInfo("Shutting down GameMaster system...");
         
         // Shutdown new systems first
-        ShutdownCommands();
         ShutdownPlayerCommandSystem();
         MS::ShutdownPlayerCommands();
         ShutdownTransitionSystem();
@@ -182,8 +175,28 @@ module GameMaster
      */
     void InitializeVotingSystem()
     {
-        @m_VoteManager = MS::VoteManager();
-        LogInfo("GameMaster: Voting system initialized");
+        // Use the global singleton VoteManager instead of creating a new instance
+        // This ensures votes persist across GameMaster recreation (e.g. after level changes)
+        @m_VoteManager = MS::GetVoteManager();
+        
+        if (m_VoteManager is null)
+        {
+            LogError("GameMaster: CRITICAL - Failed to get global VoteManager instance!");
+            return;
+        }
+        
+        // Only initialize if not already initialized (preserves existing votes)
+        if (!m_VoteManager.IsInitialized())
+        {
+            m_VoteManager.Initialize();
+            LogInfo("GameMaster: Voting system initialized for the first time");
+        }
+        else
+        {
+            LogInfo("GameMaster: Using existing VoteManager instance (preserves active votes)");
+        }
+        
+        LogInfo("GameMaster: VoteManager Think() will be called automatically via GameThink()");
     }
     
     /**
@@ -376,7 +389,7 @@ module GameMaster
     /**
      * Fades an entity
      */
-    void FadeEntity(EntityHandle hTarget, int nRenderMode = 5, uint nStartAmount = 255)
+    void FadeEntity(CBaseEntity@ hTarget, int nRenderMode = 5, uint nStartAmount = 255)
     {
         LogInfo("GameMaster: Entity fade requested");
         // TODO: Implement actual entity fading
@@ -517,6 +530,66 @@ void CreateGameMasterInstance()
 // Global Functions for Engine Integration
 // (Outside module scope for global accessibility)
 // ========================================
+
+/**
+ * Called by the engine when ServerActivate fires
+ * This is the new entry point for spawning the game_master NPC entity
+ */
+void ServerActivate()
+{
+    LogMessage("[ANGELSCRIPT] ===== ServerActivate() CALLED =====");
+    MS_ANGEL_INFO("ServerActivate: Spawning game_master NPC entity...");
+    
+    // Spawn the game_master NPC at far coordinates (same as legacy C++ code)
+    // Using Angel mode to avoid requiring a legacy MSCScript file
+    CBaseEntity@ pGameMaster = SpawnNPC("game_master", Vector3(20000, -10000, -20000), null, Angel);
+    
+    if (pGameMaster !is null)
+    {
+        MS_ANGEL_INFO("ServerActivate: game_master NPC spawned successfully");
+        LogMessage("[ANGELSCRIPT] game_master entity spawned: " + pGameMaster.GetClassName());
+        
+        // Configure game_master properties after spawn
+        MS_ANGEL_INFO("ServerActivate: Configuring game_master entity properties...");
+        
+        // Set netname AFTER Spawn (required for entity lookups by C++)
+        pGameMaster.SetNetName("-game_master");
+        LogMessage("[ANGELSCRIPT] Set netname to: " + pGameMaster.GetNetName());
+        
+        // Set health values
+        pGameMaster.SetHealth(1.0f);
+        
+        // Set render properties (invisible)
+        pGameMaster.SetRenderMode(kRenderTransTexture);
+        pGameMaster.SetRenderAmount(0);
+        
+        // Set god mode and damage properties
+        pGameMaster.SetGodMode(true);
+        pGameMaster.SetTakeDamage(DAMAGE_NO);
+        
+        MS_ANGEL_INFO("ServerActivate: game_master entity fully configured");
+        LogMessage("[ANGELSCRIPT] game_master entity ready for C++ to find via netname: " + pGameMaster.GetNetName());
+    }
+    else
+    {
+        MS_ANGEL_ERROR("ServerActivate: CRITICAL - Failed to spawn game_master NPC!");
+        LogMessage("[ANGELSCRIPT] ERROR: Failed to spawn game_master entity!");
+    }
+    
+    // After spawning the entity, initialize the GameMaster AngelScript module if needed
+    if (g_GameMasterInstance is null)
+    {
+        LogMessage("[ANGELSCRIPT] ServerActivate: Creating GameMaster module instance...");
+        @g_GameMasterInstance = GameMaster();
+        LogMessage("[ANGELSCRIPT] ServerActivate: GameMaster module instance created");
+    }
+    else
+    {
+        LogMessage("[ANGELSCRIPT] ServerActivate: GameMaster module instance already exists");
+    }
+    
+    LogMessage("[ANGELSCRIPT] ===== ServerActivate() COMPLETED =====");
+}
 
 /**
  * Called by the engine when the map starts
@@ -816,7 +889,7 @@ void RequestDelayedNPC(float flDelay, const string &in szScript, const Vector3 &
 /**
  * Request entity fade
  */
-void RequestEntityFade(EntityHandle hTarget, int nRenderMode = 5, uint nStartAmount = 255)
+void RequestEntityFade(CBaseEntity@ hTarget, int nRenderMode = 5, uint nStartAmount = 255)
 {
     GameMaster@ gm = GetGameMaster();
     if (gm !is null)
@@ -882,5 +955,186 @@ void delay_changelevel()
     {
         // Get DEST_MAP from legacy variable and execute change
         gm.GetTransitionManager().DelayedChangeLevel();
+    }
+}
+
+// ========================================
+// Game Think Loop
+// ========================================
+
+// Static variable to track last think time (once per frame, not per player)
+float g_flLastGameThinkTime = 0.0f;
+
+// Static flag to prevent recursive calls
+bool g_bInGameThink = false;
+
+/**
+ * Called every frame by the engine for each player
+ * Used to update the VoteManager and other systems that need periodic updates
+ * Note: This is called once per player, so we throttle it to run once per frame
+ */
+void GameThink() // This will be moved and renamed in the future
+{
+    // Prevent recursive calls (can happen during GameMaster recreation)
+    if (g_bInGameThink)
+    {
+        LogMessage("[ANGELSCRIPT] GameThink: Recursive call detected - skipping");
+        return;
+    }
+    
+    // Set the flag to indicate we're inside GameThink
+    g_bInGameThink = true;
+    
+    // Only run once per frame, not once per player
+    float currentTime = GetGameTime();
+    if (currentTime <= g_flLastGameThinkTime)
+    {
+        g_bInGameThink = false;
+        return;
+    }
+    
+    g_flLastGameThinkTime = currentTime;
+    
+    // CRITICAL: Check if GameMaster exists, recreate if needed (after level change)
+    GameMaster@ gm = GetGameMaster();
+    if (gm is null)
+    {
+        // GameMaster was destroyed (probably by level change) - recreate it
+        LogMessage("[ANGELSCRIPT] GameThink: GameMaster is null - recreating instance!");
+        CreateGameMasterInstance();
+        @gm = GetGameMaster();
+        
+        if (gm is null)
+        {
+            LogMessage("[ANGELSCRIPT] GameThink: ERROR - Failed to recreate GameMaster!");
+            g_bInGameThink = false;
+            return;
+        }
+        
+        LogMessage("[ANGELSCRIPT] GameThink: GameMaster successfully recreated!");
+    }
+        
+    // Update VoteManager
+    MS::VoteManager@ voteManager = gm.GetVoteManager();
+    if (voteManager !is null)
+    {
+        voteManager.Think();
+    }
+    
+    // Update other systems that need periodic ticks here
+    
+    // Clear the flag before returning
+    g_bInGameThink = false;
+}
+
+// ========================================
+// Vote Menu Callback Handler
+// ========================================
+
+/**
+ * Called when a player selects an option from the vote menu
+ * This is called by the C++ menu system when MOT_CALLBACK type menus are selected
+ * @param szPlayerEntity Entity string for the player (format: "ent:#index")
+ * @param szOptionData The Data field from the menu option (option title in vote menus)
+ */
+void game_vote_menu_callback(const string &in szPlayerEntity, const string &in szOptionData)
+{
+    LogMessage("[ANGELSCRIPT] game_vote_menu_callback called!");
+    LogMessage("[ANGELSCRIPT]   Player Entity: " + szPlayerEntity);
+    LogMessage("[ANGELSCRIPT]   Option Data: " + szOptionData);
+    
+    // Extract player entity index from format "ent:#index"
+    if (szPlayerEntity.length() < 4 || szPlayerEntity.substr(0, 4) != "ent:")
+    {
+        LogMessage("[ANGELSCRIPT] ERROR: Invalid player entity format: " + szPlayerEntity);
+        return;
+    }
+    
+    // Parse entity index
+    int entityIndex = -1;
+    string indexStr = szPlayerEntity.substr(4); // Skip "ent:"
+    
+    // Convert string to int manually since we don't have atoi in AngelScript
+    for (uint i = 0; i < indexStr.length(); i++)
+    {
+        uint8 c = indexStr[i];
+        if (c >= 48 && c <= 57) // '0' to '9'
+        {
+            if (entityIndex == -1)
+                entityIndex = 0;
+            entityIndex = entityIndex * 10 + int(c - 48);
+        }
+        else
+        {
+            break;
+        }
+    }
+    
+    if (entityIndex < 0)
+    {
+        LogMessage("[ANGELSCRIPT] ERROR: Could not parse entity index from: " + szPlayerEntity);
+        return;
+    }
+    
+    LogMessage("[ANGELSCRIPT] Parsed entity index: " + formatInt(entityIndex));
+    
+    // Get the player from the entity index
+    CBasePlayer@ pPlayer = PlayerByIndex(entityIndex);
+    if (pPlayer is null)
+    {
+        LogMessage("[ANGELSCRIPT] ERROR: Could not find player at index " + formatInt(entityIndex));
+        return;
+    }
+    
+    string playerSteamID = GetSteamID(pPlayer);
+    string playerName = GetDisplayName(pPlayer);
+    
+    LogMessage("[ANGELSCRIPT] Player found: " + playerName + " (SteamID: " + playerSteamID + ")");
+    LogMessage("[ANGELSCRIPT] Selected option: " + szOptionData);
+    
+    // Check if option data is empty (menu expired)
+    if (szOptionData.isEmpty())
+    {
+        LogMessage("[ANGELSCRIPT] Empty option data - menu has expired");
+        SendMessageToAllPlayers("yellow", playerName + ": That vote has already ended.");
+        return;
+    }
+    
+    // Forward to the VoteManager to process the vote
+    GameMaster@ gm = GetGameMaster();
+    if (gm is null)
+    {
+        // GameMaster was destroyed (probably by level change) - try to recreate it
+        LogMessage("[ANGELSCRIPT] game_vote_menu_callback: GameMaster is null - attempting to recreate!");
+        CreateGameMasterInstance();
+        @gm = GetGameMaster();
+        
+        if (gm is null)
+        {
+            LogMessage("[ANGELSCRIPT] ERROR: GameMaster instance is null and could not be recreated!");
+            return;
+        }
+        
+        LogMessage("[ANGELSCRIPT] game_vote_menu_callback: GameMaster successfully recreated!");
+    }
+    
+    MS::VoteManager@ voteManager = gm.GetVoteManager();
+    if (voteManager !is null)
+    {
+        LogMessage("[ANGELSCRIPT] Forwarding vote to VoteManager...");
+        bool success = voteManager.ProcessMenuSelection(playerSteamID, szOptionData);
+        
+        if (success)
+        {
+            LogMessage("[ANGELSCRIPT] Vote processed successfully!");
+        }
+        else
+        {
+            LogMessage("[ANGELSCRIPT] ERROR: Vote processing failed!");
+        }
+    }
+    else
+    {
+        LogMessage("[ANGELSCRIPT] ERROR: VoteManager is null!");
     }
 }

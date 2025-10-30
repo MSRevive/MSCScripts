@@ -688,8 +688,28 @@ namespace MS
          */
         void SendMessageToAllPlayers(const string &in title, const string &in message)
         {
-            // TODO: Connect to actual player messaging system
             LogMessage("[BROADCAST] " + title + ": " + message);
+            
+            // Get all players and send message to each
+            array<CBasePlayer@>@ players = GetAllPlayers();
+            
+            if (players is null)
+            {
+                LogMessage("[CriticalNPCManager] SendMessageToAllPlayers: GetAllPlayers returned null");
+                return;
+            }
+            
+            for (uint i = 0; i < players.length(); i++)
+            {
+                CBasePlayer@ player = players[i];
+                if (player !is null && player.IsConnected())
+                {
+                    // Send title in red for critical alerts
+                    player.SendColoredMessage(MessageColor::Red, title);
+                    // Send message in yellow
+                    player.SendColoredMessage(MessageColor::Yellow, message);
+                }
+            }
         }
         
         /**
@@ -699,8 +719,13 @@ namespace MS
         {
             if (pPlayer is null) return;
             
-            // TODO: Connect to actual player messaging system
             LogMessage("[MSG to " + pPlayer.GetName() + "] " + message);
+            
+            // Send message in yellow
+            if (pPlayer.IsConnected())
+            {
+                pPlayer.SendColoredMessage(MessageColor::Yellow, message);
+            }
         }
     }
     

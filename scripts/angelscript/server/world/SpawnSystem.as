@@ -41,7 +41,7 @@ namespace MS
         Vector3 m_vLastSpawnPoint;  // GM_SPAWN_POINT from original
         
         // Developer commands
-        EntityHandle m_hDevTarget;
+        CBaseEntity@ m_hDevTarget;
         
     public:
         SpawnSystem()

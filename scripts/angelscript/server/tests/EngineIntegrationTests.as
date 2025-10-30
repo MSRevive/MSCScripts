@@ -78,7 +78,7 @@ namespace MSTest
         
     private:
         /**
-         * Test core AngelScript types (Vector3, Color, EntityHandle)
+         * Test core AngelScript types (Vector3, Color, CBaseEntity@)
          */
         void RunCoreTypeTests()
         {
@@ -127,14 +127,14 @@ namespace MSTest
                            m_Framework.AssertEqual(int(c2.a), 32, "Color alpha component");
                 });
             
-            // EntityHandle tests
-            m_Framework.RunTest("entityhandle_creation", "EntityHandle creation and validation",
+            // CBaseEntity@ tests
+            m_Framework.RunTest("entity_reference", "CBaseEntity@ reference handling",
                 function() {
-                    EntityHandle h1;
-                    EntityHandle h2 = EntityHandle();
+                    CBaseEntity@ entity1 = null;
+                    CBaseEntity@ entity2 = null;
                     
-                    // Test basic creation (specific validation depends on implementation)
-                    return true; // Placeholder - actual implementation depends on EntityHandle methods
+                    // Test basic null reference handling
+                    return true; // Placeholder - actual entity tests require spawned entities
                 });
         }
         
@@ -400,7 +400,7 @@ namespace MSTest
             
             m_Framework.RunTest("entity_validation", "Entity validation functions",
                 function() {
-                    EntityHandle nullHandle = EntityHandle();
+                    CBaseEntity@ nullHandle = null;
                     bool isValid = IsValidEntity(nullHandle);
                     
                     // This depends on implementation, but should not crash
@@ -417,7 +417,7 @@ namespace MSTest
                 function() {
                     try
                     {
-                        EntityHandle entity = CreateEntity("test_entity");
+                        CBaseEntity@ entity = CreateEntity("test_entity");
                         // Should not crash, may return null for unknown entities
                         return true;
                     }

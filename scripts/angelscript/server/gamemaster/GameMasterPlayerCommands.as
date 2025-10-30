@@ -129,7 +129,31 @@ namespace MS
                     return;
                 }
 
+                // Check if this is args.length() == 1 (just steam ID) - skip silently
+                if (args.length() < 2)
+                {
+                    return;
+                }
+
                 string command = args[1];
+                
+                // Special handling for menu option commands from vote menus
+                // These come from the C++ engine when a player clicks a vote menu option
+                if (command == "menuoption")
+                {
+                    // menuoption format: args[0]=steamID, args[1]="menuoption", args[2]=entityIndex, args[3]=optionIndex
+                    // The C++ side will also call game_vote_menu_callback with the option data
+                    // We let it pass through to the C++ system which will trigger the callback
+                    LogInfo("PlayerCommandManager: menuoption command received - letting C++ handle callback");
+                    return;
+                }
+                
+                // Other legacy menu commands
+                if (command == "menuselect" || command == "closemenu")
+                {
+                    // Silently ignore these - they're handled by the legacy script system
+                    return;
+                }
                     
                 LogInfo("PlayerCommandManager: Processing command from " + playerName + 
                        " - " + steamID);
@@ -143,7 +167,7 @@ namespace MS
                 }
                 else
                 {
-                    LogInfo("PlayerCommandManager: Command '" + args[0] + "' is not a vote command");
+                    LogInfo("PlayerCommandManager: Command '" + command + "' is not a vote command (ignored)");
                 }
             }
             catch
@@ -475,14 +499,26 @@ namespace MS
             
             LogInfo("PlayerCommandManager: Creating map vote for " + mapName + " initiated by " + playerName);
             
-            // Call the GameMaster voting system
-            // This would call the equivalent of "callexternal GAME_MASTER gm_create_vote gm_votemap"
-            GameMaster@ gm = GetGameMaster();
-            if (gm !is null)
+            // Call the GameMaster voting system via the VoteManager
+            MS::VoteManager@ voteManager = MS::GetVoteManager();
+            if (voteManager !is null)
             {
-                CreateVote("gm_votemap", voteOptions, voteTitle, "Voting begins now!", false);
-                m_bVoteBusy = true;
-                m_szCurrentVoteID = "map_" + formatInt(int(GetGameTime()));
+                bool success = voteManager.CreateMapVote(playerID, mapName);
+                if (success)
+                {
+                    m_bVoteBusy = true;
+                    m_szCurrentVoteID = "map_" + formatInt(int(GetGameTime()));
+                    LogInfo("PlayerCommandManager: Map vote created successfully");
+                }
+                else
+                {
+                    LogError("PlayerCommandManager: Failed to create map vote");
+                    GameMasterPlayerUtils::SendPlayerMessage(playerID, "Failed to create vote. Try again later.");
+                }
+            }
+            else
+            {
+                LogError("PlayerCommandManager: VoteManager is null!");
             }
         }
         
@@ -491,30 +527,30 @@ namespace MS
          */
         private void CreatePvpVote(const string &in playerID, const string &in playerName)
         {
-            string voteTitle, voteOptions, description;
+            bool bEnablePvp = !IsServerPvpEnabled();
             
-            if (!IsServerPvpEnabled())
+            LogInfo("PlayerCommandManager: Creating PvP vote initiated by " + playerName + " (enable: " + bEnablePvp + ")");
+            
+            // Call the GameMaster voting system via the VoteManager
+            MS::VoteManager@ voteManager = MS::GetVoteManager();
+            if (voteManager !is null)
             {
-                voteTitle = "ACTIVATE PVP MODE";
-                voteOptions = "Yes!:1;No!:0";
-                description = playerName + " has started a vote to enable player vs player combat!";
+                bool success = voteManager.CreatePvpVote(playerID, bEnablePvp);
+                if (success)
+                {
+                    m_bVoteBusy = true;
+                    m_szCurrentVoteID = "pvp_" + formatInt(int(GetGameTime()));
+                    LogInfo("PlayerCommandManager: PvP vote created successfully");
+                }
+                else
+                {
+                    LogError("PlayerCommandManager: Failed to create PvP vote");
+                    GameMasterPlayerUtils::SendPlayerMessage(playerID, "Failed to create vote. Try again later.");
+                }
             }
             else
             {
-                voteTitle = "DEACTIVATE PVP MODE";
-                voteOptions = "Yes!:0;No!:1";
-                description = playerName + " has started a vote to end player vs player combat.";
-            }
-            
-            LogInfo("PlayerCommandManager: Creating PvP vote initiated by " + playerName);
-            
-            // Call the GameMaster voting system
-            GameMaster@ gm = GetGameMaster();
-            if (gm !is null)
-            {
-                CreateVote("gm_votepvp", voteOptions, voteTitle, description, false);
-                m_bVoteBusy = true;
-                m_szCurrentVoteID = "pvp_" + formatInt(int(GetGameTime()));
+                LogError("PlayerCommandManager: VoteManager is null!");
             }
         }
         
@@ -523,19 +559,28 @@ namespace MS
          */
         private void CreateServerLockVote(const string &in playerID, const string &in playerName)
         {
-            string voteTitle = "Lock the server?";
-            string description = playerName + " has started a vote to lock the server.";
-            string voteOptions = "Yes!:1;No!:0";
-            
             LogInfo("PlayerCommandManager: Creating server lock vote initiated by " + playerName);
             
-            // Call the GameMaster voting system
-            GameMaster@ gm = GetGameMaster();
-            if (gm !is null)
+            // Call the GameMaster voting system via the VoteManager
+            MS::VoteManager@ voteManager = MS::GetVoteManager();
+            if (voteManager !is null)
             {
-                CreateVote("gm_votelock", voteOptions, voteTitle, description, false);
-                m_bVoteBusy = true;
-                m_szCurrentVoteID = "lock_" + formatInt(int(GetGameTime()));
+                bool success = voteManager.CreateServerLockVote(playerID);
+                if (success)
+                {
+                    m_bVoteBusy = true;
+                    m_szCurrentVoteID = "lock_" + formatInt(int(GetGameTime()));
+                    LogInfo("PlayerCommandManager: Server lock vote created successfully");
+                }
+                else
+                {
+                    LogError("PlayerCommandManager: Failed to create server lock vote");
+                    GameMasterPlayerUtils::SendPlayerMessage(playerID, "Failed to create vote. Try again later.");
+                }
+            }
+            else
+            {
+                LogError("PlayerCommandManager: VoteManager is null!");
             }
         }
         
@@ -1086,12 +1131,12 @@ namespace GameMasterPlayerUtils
 
     void SendPlayerMessage(const string &in playerID, const string &in message)
     {
-        SendPlayerMessage(playerID, message);
+        ::SendPlayerMessage(playerID, message);  // Call global scope function to avoid recursion
     }
 
     void SendConsoleMessage(const string &in playerID, const string &in message)
     {
-        SendConsoleMessage(playerID, message);
+        ::SendConsoleMessage(playerID, message);  // Call global scope function to avoid recursion
     }
 }
 

@@ -94,7 +94,7 @@ namespace MS
         float flStrength;           // Effect strength/intensity
         float flTickRate;           // How often effect applies (for DoT)
         float flLastTick;           // Last time effect was applied
-        EntityHandle hSource;       // Entity that caused the effect
+        CBaseEntity@ hSource;       // Entity that caused the effect
         string szEffectName;        // Display name of effect
         
         StatusEffect()
@@ -104,7 +104,7 @@ namespace MS
             flStrength = 0.0f;
             flTickRate = 1.0f;
             flLastTick = 0.0f;
-            hSource = EntityHandle();
+            // Note: hSource defaults to null for handle types
             szEffectName = "";
         }
         
@@ -115,7 +115,7 @@ namespace MS
             flStrength = strength;
             flTickRate = 1.0f;
             flLastTick = 0.0f;
-            hSource = EntityHandle();
+            // Note: hSource defaults to null for handle types
             szEffectName = name;
         }
     }
@@ -189,8 +189,8 @@ namespace MS
         EDamageType eDamageType;    // Type of damage
         Vector3 vecDamageOrigin;    // Origin point of damage
         Vector3 vecDamageForce;     // Force applied by damage
-        EntityHandle hAttacker;     // Entity that caused damage
-        EntityHandle hWeapon;       // Weapon or spell entity
+        CBaseEntity@ hAttacker;     // Entity that caused damage
+        CBaseEntity@ hWeapon;       // Weapon or spell entity
         string szDamageSource;      // Source description (spell name, weapon name)
         bool bIsCritical;           // Whether this was a critical hit
         bool bIsSpellDamage;        // Whether this is from a spell
@@ -205,8 +205,7 @@ namespace MS
             eDamageType = DAMAGE_TYPE_NONE;
             vecDamageOrigin = Vector3();
             vecDamageForce = Vector3();
-            hAttacker = EntityHandle();
-            hWeapon = EntityHandle();
+            // Note: hAttacker and hWeapon default to null for handle types
             szDamageSource = "";
             bIsCritical = false;
             bIsSpellDamage = false;
@@ -267,8 +266,8 @@ namespace MS
     {
         ECombatEvent eEventType;    // Type of combat event
         float flTimestamp;          // When the event occurred
-        EntityHandle hSource;       // Source entity
-        EntityHandle hTarget;       // Target entity
+        CBaseEntity@ hSource;       // Source entity
+        CBaseEntity@ hTarget;       // Target entity
         float flValue;              // Damage amount or other value
         string szDescription;       // Event description
         
@@ -276,8 +275,7 @@ namespace MS
         {
             eEventType = COMBAT_EVENT_DAMAGE_DEALT;
             flTimestamp = 0.0f;
-            hSource = EntityHandle();
-            hTarget = EntityHandle();
+            // Note: hSource and hTarget default to null for handle types
             flValue = 0.0f;
             szDescription = "";
         }
@@ -343,7 +341,7 @@ namespace MS
             
             // Log combat event
             LogCombatEvent(COMBAT_EVENT_DAMAGE_DEALT, damageInfo.hAttacker, 
-                          EntityHandle(pTarget), flFinalDamage, 
+                          pTarget, flFinalDamage, 
                           "Damage: " + flFinalDamage + " (" + damageInfo.szDamageSource + ")");
             
             LogMessage("[DEBUG] Damage processed: " + flFinalDamage + " to " + pTarget.GetName());
@@ -362,7 +360,7 @@ namespace MS
             DamageInfo damageInfo;
             damageInfo.flDamage = flBaseDamage;
             damageInfo.eDamageType = GetDamageTypeFromString(pSpell.szDamageType);
-            damageInfo.hAttacker = EntityHandle(pCaster);
+            damageInfo.hAttacker = pCaster;
             damageInfo.szDamageSource = pSpell.szDisplayName;
             damageInfo.bIsSpellDamage = true;
             damageInfo.vecDamageOrigin = pCaster.GetOrigin();
@@ -417,13 +415,13 @@ namespace MS
                 pKillerStats.nKills++;
                 pKillerStats.flLastCombatTime = GetGameTime();
                 
-                LogCombatEvent(COMBAT_EVENT_KILL, EntityHandle(pKillerPlayer), 
-                              EntityHandle(pPlayer), 1.0f, 
+                LogCombatEvent(COMBAT_EVENT_KILL, pKillerPlayer, 
+                              pPlayer, 1.0f, 
                               pKillerPlayer.GetName() + " killed " + pPlayer.GetName());
             }
             
-            LogCombatEvent(COMBAT_EVENT_DEATH, EntityHandle(pPlayer), 
-                          EntityHandle(pKiller), 1.0f, 
+            LogCombatEvent(COMBAT_EVENT_DEATH, pPlayer, 
+                          pKiller, 1.0f, 
                           pPlayer.GetName() + " died");
             
             LogMessage("[INFO] Player death: " + pPlayer.GetName());
@@ -442,8 +440,8 @@ namespace MS
             pStats.nSpellsCast++;
             pStats.flLastCombatTime = GetGameTime();
             
-            LogCombatEvent(COMBAT_EVENT_SPELL_CAST, EntityHandle(pPlayer), 
-                          EntityHandle(), 1.0f, 
+            LogCombatEvent(COMBAT_EVENT_SPELL_CAST, pPlayer, 
+                          null, 1.0f, 
                           pPlayer.GetName() + " cast " + pSpell.szDisplayName);
             
             LogMessage("[DEBUG] Spell cast: " + pPlayer.GetName() + " -> " + pSpell.szDisplayName);
@@ -663,7 +661,7 @@ namespace MS
             }
         }
         
-        private void LogCombatEvent(ECombatEvent eEventType, EntityHandle hSource, EntityHandle hTarget, 
+        private void LogCombatEvent(ECombatEvent eEventType, CBaseEntity@ hSource, CBaseEntity@ hTarget, 
                                    float flValue, const string &in szDescription)
         {
             CombatEvent event;
@@ -734,7 +732,7 @@ namespace MS
         DamageInfo damageInfo;
         damageInfo.flDamage = flDamage;
         damageInfo.eDamageType = GetDamageTypeFromString(pSpell.szDamageType);
-        damageInfo.hAttacker = EntityHandle(pCaster);
+        damageInfo.hAttacker = CBaseEntity@(pCaster);
         damageInfo.szDamageSource = pSpell.szDisplayName;
         damageInfo.bIsSpellDamage = true;
         damageInfo.vecDamageOrigin = (vecOrigin == Vector3()) ? pCaster.GetOrigin() : vecOrigin;

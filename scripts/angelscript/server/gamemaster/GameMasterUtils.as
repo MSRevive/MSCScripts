@@ -55,50 +55,6 @@ namespace MS
         return null;
     }
     
-    /**
-     * Get number of active players (alias for GetPlayerCount for clarity)
-     */
-    int GetActivePlayerCount()
-    {
-        return GetPlayerCount();
-    }
-    
-    // ============================================================================
-    // Logging Functions
-    // ============================================================================
-    
-    /**
-     * Log info message
-     */
-    void LogInfo(const string &in message)
-    {
-        LogMessage("[INFO] " + message);
-    }
-    
-    /**
-     * Log error message
-     */
-    void LogError(const string &in message)
-    {
-        LogMessage("[ERROR] " + message);
-    }
-    
-    /**
-     * Log debug message
-     */
-    void LogDebug(const string &in message)
-    {
-        DeveloperMessage(1, "[DEBUG] " + message);
-    }
-    
-    /**
-     * Log warning message
-     */
-    void LogWarning(const string &in message)
-    {
-        LogMessage("[WARNING] " + message);
-    }
-    
     // ============================================================================
     // String Helper Functions (from Legacy Scripts)
     // ============================================================================
@@ -594,26 +550,7 @@ namespace MS
                 return false;
             return IsAdmin(player);
         }
-        
-        /**
-         * Get all connected player Steam IDs
-         * @return Array of Steam IDs for all connected players
-         */
-     array<string> GetAllPlayerSteamIDs()
-    {
-            array<string> steamIDs;
-            array<CBasePlayer@>@ players = GetAllPlayers();
-            
-            for (uint i = 0; i < players.length(); i++)
-        {
-                if (IsValidPlayer(players[i]))
-            {
-                    steamIDs.insertLast(GetPlayerSteamID(players[i]));
-                }
-            }
-            
-            return steamIDs;
-        }
+
         
         /**
          * Get all connected player display names
@@ -694,7 +631,7 @@ namespace MS
      */
     void setvard(const string &in name, float value)
     {
-        LogDebug("setvard: " + name + " = " + value);
+        LogMessage("[GameMasterUtils] setvard: " + name + " = " + value);
     }
     
     /**
@@ -702,7 +639,7 @@ namespace MS
      */
     void setvarg(const string &in name, const string &in value)
     {
-        LogDebug("setvarg: " + name + " = " + value);
+        LogMessage("[GameMasterUtils] setvarg: " + name + " = " + value);
     }
     
     // ============================================================================
@@ -716,7 +653,8 @@ namespace MS
      */
     string GenerateUniqueID(const string &in prefix = "")
     {
-        string timestamp = formatFloat(GetGameTime(), "", 0, 6);
+        // Use formatInt instead of formatFloat to avoid exponent overflow with large game times
+        string timestamp = formatInt(int(GetGameTime() * 1000.0f));
         string random = formatInt(RandomInt(1000, 9999));
         
         if (prefix.isEmpty())

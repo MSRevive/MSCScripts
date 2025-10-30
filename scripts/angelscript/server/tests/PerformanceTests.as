@@ -413,7 +413,7 @@ namespace MSTest
                     
                     try
                     {
-                        EntityHandle testEntity = EntityHandle();
+                        CBaseEntity@ testEntity = CBaseEntity@();
                         
                         // Many communication calls
                         for (uint i = 0; i < 2000; i++)
@@ -513,7 +513,7 @@ namespace MSTest
                             // Communication
                             if (i % 7 == 0)
                             {
-                                CallExternal("INTEGRATION", "test_func", player, item, "", "", EntityHandle());
+                                CallExternal("INTEGRATION", "test_func", player, item, "", "", CBaseEntity@());
                             }
                         }
                         
@@ -621,7 +621,7 @@ namespace MSTest
                                 
                                 if (i % 10 == 0)
                                 {
-                                    CallExternal("BURST", "burst_func", player, "", "", "", EntityHandle());
+                                    CallExternal("BURST", "burst_func", player, "", "", "", CBaseEntity@());
                                 }
                             }
                         }

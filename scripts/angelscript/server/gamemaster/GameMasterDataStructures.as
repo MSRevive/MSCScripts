@@ -267,6 +267,11 @@ namespace MS
          */
         bool ShouldEndEarly()
         {
+            // Don't end early if there are no eligible voters (vote is invalid)
+            if (aEligibleVoters.length() == 0)
+                return false;
+                
+            // End early if all eligible voters have voted
             return GetTotalVotesCast() >= aEligibleVoters.length();
         }
         
@@ -330,7 +335,7 @@ namespace MS
         // Transition trigger information
         string szTriggerName;              // Name of trigger that initiated transition
         string szTriggerType;              // Type of trigger (touch_trans_, force_map_, etc.)
-        EntityHandle hTriggerEntity;       // Handle to triggering entity
+        CBaseEntity@ hTriggerEntity;       // Handle to triggering entity
         
         // Player state management
         array<string> aTransferringPlayers; // Steam IDs of players being transferred
@@ -372,7 +377,7 @@ namespace MS
             
             szTriggerName = "";
             szTriggerType = "";
-            hTriggerEntity = EntityHandle();
+            // Note: hTriggerEntity defaults to null for handle types
             
             bForceTransition = false;
             bPreserveInventory = true;
