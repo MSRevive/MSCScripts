@@ -47,8 +47,6 @@ The GameMaster system serves as the central coordinator for all server-wide game
 #### Engine Integration Points:
 ```cpp
 // Called by C++ engine
-void game_master_init()        // Map start
-void game_master_shutdown()    // Map end
 void game_spawn()             // Legacy compatibility
 ```
 
@@ -388,8 +386,6 @@ Vector3 CreateVector(float x, float y, float z)
 #### AngelScript to Engine Events:
 ```cpp
 // Map Lifecycle
-void game_master_init()          // Called when map starts
-void game_master_shutdown()      // Called when map ends
 void game_spawn()               // Legacy compatibility
 
 // Player Events
