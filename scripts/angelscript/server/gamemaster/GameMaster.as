@@ -594,6 +594,11 @@ void ServerActivate()
     LogMessage("[ANGELSCRIPT] ===== ServerActivate() COMPLETED =====");
 }
 
+/**
+ * Called by the engine when the map starts
+ * Maintained for backward compatibility with legacy code
+ * Note: The new module system auto-instantiates, but this provides fallback
+
 
 /**
  * Legacy compatibility function
