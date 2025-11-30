@@ -542,11 +542,12 @@ void ServerActivate()
     
     // Spawn the game_master NPC at far coordinates (same as legacy C++ code)
     // Using Angel mode to avoid requiring a legacy MSCScript file
-    CBaseEntity@ pGameMaster = SpawnNPC("game_master", Vector3(20000, -10000, -20000), null, Angel);
+    // SpawnNPC now directly returns CMSMonster@ for MS-specific functionality
+    CMSMonster@ pGameMaster = SpawnNPC("game_master", Vector3(20000, -10000, -20000), null, Angel);
     
     if (pGameMaster !is null)
     {
-        MS_ANGEL_INFO("ServerActivate: game_master NPC spawned successfully");
+        MS_ANGEL_INFO("ServerActivate: game_master NPC spawned successfully as CMSMonster");
         LogMessage("[ANGELSCRIPT] game_master entity spawned: " + pGameMaster.GetClassName());
         
         // Configure game_master properties after spawn
@@ -567,13 +568,15 @@ void ServerActivate()
         pGameMaster.SetGodMode(true);
         pGameMaster.SetTakeDamage(DAMAGE_NO);
         
+        pGameMaster.m_Menu_Autoopen = false;
+        
         MS_ANGEL_INFO("ServerActivate: game_master entity fully configured");
         LogMessage("[ANGELSCRIPT] game_master entity ready for C++ to find via netname: " + pGameMaster.GetNetName());
     }
     else
     {
-        MS_ANGEL_ERROR("ServerActivate: CRITICAL - Failed to spawn game_master NPC!");
-        LogMessage("[ANGELSCRIPT] ERROR: Failed to spawn game_master entity!");
+        MS_ANGEL_ERROR("ServerActivate: CRITICAL - Failed to spawn game_master NPC or cast to CMSMonster!");
+        LogMessage("[ANGELSCRIPT] ERROR: Failed to spawn game_master entity or entity is not an MSMonster!");
     }
     
     // After spawning the entity, initialize the GameMaster AngelScript module if needed
@@ -595,47 +598,7 @@ void ServerActivate()
  * Called by the engine when the map starts
  * Maintained for backward compatibility with legacy code
  * Note: The new module system auto-instantiates, but this provides fallback
- */
-void game_master_init()
-{
-    LogMessage("[ANGELSCRIPT] game_master_init() called from C++ engine!");
-    
-    // Check if instance already exists
-    if (g_GameMasterInstance is null)
-    {
-        LogMessage("[ANGELSCRIPT] GameMaster instance not found - creating new instance");
-        @g_GameMasterInstance = GameMaster();
-        LogMessage("[ANGELSCRIPT] GameMaster instance created!");
-    }
-    else
-    {
-        LogMessage("[ANGELSCRIPT] GameMaster instance already exists!");
-    }
-    
-    // Verify the instance is accessible via GetGameMaster()
-    GameMaster@ gm = GetGameMaster();
-    if (gm !is null)
-    {
-        LogMessage("[ANGELSCRIPT] GameMaster instance verified and accessible!");
-    }
-    else
-    {
-        LogMessage("[ANGELSCRIPT] ERROR: GameMaster instance is null after verification!");
-    }
-    
-    // Debug all instance states
-    DebugGameMasterInstances();
-}
 
-/**
- * Called by the engine when the map ends
- * Maintained for backward compatibility with legacy code
- */
-void game_master_shutdown()
-{
-    LogMessage("[ANGELSCRIPT] game_master_shutdown() called");
-    @g_GameMasterInstance = null;
-}
 
 /**
  * Legacy compatibility function
