@@ -15,4 +15,6 @@ echo Compiling...
 cd ../
 
 echo ====================== Compiling...
-scriptpack.exe -vef
+scriptpack.exe -f
+echo Done.
+pause

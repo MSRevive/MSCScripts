@@ -27,6 +27,6 @@ echo Done.
 cd ../
 
 echo ====================== Compiling...
-scriptpack.exe -refv
+scriptpack.exe -rf
 echo Done.
 pause
