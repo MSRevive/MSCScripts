@@ -21,7 +21,7 @@ namespace MS
     /**
      * Map vote delay constant (in seconds)
      */
-    const float MAP_VOTE_DELAY = 20.0f;
+    const float MAP_VOTE_DELAY = 10.0f;
     
     /**
      * Map list constants - these would normally be loaded from server config
