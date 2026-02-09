@@ -31,7 +31,7 @@ namespace MS
     {
         // Hidden maps that require finding entrances
         const array<string> HIDDEN_MAPS = {
-            "challs", "keledrosruins", "nashalrath", "rmines", "fmines", "underpath", "undercliffs"
+            "challs", "keledrosruins", "nashalrath", "undermines", "underpath", "undercliffs"
         };
         
         // Maze maps that require navigation
