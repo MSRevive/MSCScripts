@@ -1,0 +1,162 @@
+#pragma context server
+
+#include "monsters/base_monster_new.as"
+#include "monsters/base_propelled.as"
+#include "monsters/base_fish2.as"
+
+namespace MS
+{
+
+class FishKillie : CGameScript
+{
+	string ANIM_ATTACK;
+	string ANIM_DEATH;
+	string ANIM_FLINCH;
+	string ANIM_IDLE;
+	string ANIM_RUN;
+	string ANIM_WALK;
+	int ATTACK_HITRANGE;
+	int ATTACK_MOVERANGE;
+	int ATTACK_RANGE;
+	string NPCATK_TARGET;
+	int NPC_GIVE_EXP;
+	int NPC_HACKED_MOVE_SPEED;
+	string PLAYER_LIST;
+	int PLAYING_DEAD;
+
+	FishKillie()
+	{
+		const int NPC_EXTRA_VALIDATIONS = 1;
+		PLAYING_DEAD = 1;
+		const int DELETE_ON_DEATH = 1;
+		ANIM_IDLE = "idle";
+		ANIM_WALK = "swim";
+		ANIM_RUN = "thrust";
+		ANIM_DEATH = "die1";
+		const string ANIM_ATK_BIG = "srattack1";
+		const string ANIM_ATK_RIGHT = "bite_r";
+		const string ANIM_ATK_LEFT = "bite_l";
+		ANIM_FLINCH = "bgflinch";
+		const string SOUND_IDLE1 = "ichy/ichy_idle1.wav";
+		const string SOUND_IDLE2 = "ichy/ichy_idle2.wav";
+		const string SOUND_ATTACK1 = "ichy/ichy_bite1.wav";
+		const string SOUND_ATTACK2 = "ichy/ichy_bite2.wav";
+		const string SOUND_STRUCK1 = "ichy/ichy_pain2.wav";
+		const string SOUND_STRUCK2 = "ichy/ichy_pain3.wav";
+		const string SOUND_STRUCK3 = "ichy/ichy_pain5.wav";
+		const string SOUND_STRUCK4 = "ichy/ichy_pain3.wav";
+		const string SOUND_STRUCK5 = "ichy/ichy_pain5.wav";
+		const string SOUND_DEATH = "ichy/ichy_die2.wav";
+		ATTACK_MOVERANGE = 64;
+		ATTACK_RANGE = 120;
+		ATTACK_HITRANGE = 180;
+		const float ATTACK_HITCHANCE = 0.75;
+		NPC_HACKED_MOVE_SPEED = 250;
+		NPC_GIVE_EXP = 1000;
+		const float ATK_DMG_LOW = 200.0;
+		const float ATK_DMG_HIGH = 500.0;
+	}
+
+	void OnRepeatTimer()
+	{
+		SetRepeatDelay(1.0);
+		PLAYER_LIST = "";
+		GetAllPlayers(PLAYER_LIST);
+		for (int i = 0; i < GetTokenCount(PLAYER_LIST, ";"); i++)
+		{
+			water_check();
+		}
+		if (m_hAttackTarget == "unset")
+		{
+		}
+		if (Distance(GetMonsterProperty("origin"), NPC_HOME_LOC) > 512)
+		{
+		}
+		npcatk_setmovedest(NPC_HOME_LOC, 32);
+	}
+
+	void OnSpawn() override
+	{
+		SetHealth(2000);
+		SetWidth(64);
+		SetHeight(32);
+		SetName("Nightmare Orca");
+		SetHearingSensitivity(10);
+		SetRoam(true);
+		SetRace("demon");
+		SetInvincible(true);
+		SetNoPush(true);
+		SetModel("monsters/killie.mdl");
+	}
+
+	void npc_selectattack()
+	{
+		string NEXT_ATTACK = RandomInt(0, 2);
+		if (NEXT_ATTACK == 0)
+		{
+			ANIM_ATTACK = ANIM_ATK_BIG;
+		}
+		else
+		{
+			if (NEXT_ATTACK == 1)
+			{
+				ANIM_ATTACK = ANIM_ATK_LEFT;
+			}
+			else
+			{
+				if (NEXT_ATTACK == 2)
+				{
+					ANIM_ATTACK = ANIM_ATK_RIGHT;
+				}
+			}
+		}
+	}
+
+	void frame_attack()
+	{
+		// PlayRandomSound from: SOUND_ATTACK1, SOUND_ATTACK2
+		array<string> sounds = {SOUND_ATTACK1, SOUND_ATTACK2};
+		EmitSound(GetOwner(), 0, sounds[RandomInt(0, sounds.length() - 1)], 10);
+		DoDamage(m_hAttackTarget, ATTACK_HITRANGE, Random(ATK_DMG_LOW, ATK_DMG_HIGH), ATTACK_HITCHANCE, "slash");
+	}
+
+	void OnDamagedOther(CBaseEntity@ victim, int damage) override
+	{
+		Effect("screenfade", param1, 5, 1, Vector3(255, 0, 0), 255);
+		string SPAWN_NAME = GetPlayerQuestData(param1, "d");
+		// TODO: tospawn PARAM1 SPAWN_NAME
+		NPCATK_TARGET = "unset";
+	}
+
+	void npc_targetvalidate()
+	{
+		if (!(IsValidPlayer(m_hAttackTarget)))
+		{
+			NPCATK_TARGET = "unset";
+		}
+		if (IsInWater(m_hAttackTarget) < 1)
+		{
+			NPCATK_TARGET = "unset";
+		}
+	}
+
+	void OnHuntTarget(CBaseEntity@ target)
+	{
+		if (!(m_hAttackTarget != "unset")) return;
+		if (IsInWater(m_hAttackTarget) == 0)
+		{
+			NPCATK_TARGET = "unset";
+		}
+	}
+
+	void water_check()
+	{
+		if (!(m_hAttackTarget == "unset")) return;
+		string CUR_TARG = GetToken(PLAYER_LIST, i, ";");
+		if (!(IsInWater(CUR_TARG) > 0)) return;
+		npcatk_settarget(CUR_TARG);
+	}
+
+}
+
+}

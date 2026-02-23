@@ -1,0 +1,145 @@
+#pragma context server
+
+#include "items/base_weapon.as"
+
+namespace MS
+{
+
+class BowsCrossbowLight : CGameScript
+{
+	int STRETCHED;
+	string WEAPON_PRIMARY_SKILL;
+	int XBOW_RELOADING;
+
+	BowsCrossbowLight()
+	{
+		const int NO_PARRY = 1;
+		const int ANIM_IDLE = 0;
+		const int ANIM_DEPLOY = 8;
+		const int ANIM_RELOAD = 7;
+		const int ANIM_FIRE = 4;
+		const string MODEL_VIEW = "viewmodels/v_xbows.mdl";
+		const string MODEL_HANDS = "weapons/p_weapons2.mdl";
+		const string MODEL_WORLD = "weapons/p_weapons2.mdl";
+		const string MODEL_WEAR = "weapons/p_weapons2.mdl";
+		const string SOUND_SHOOT = "weapons/bow/crossbow.wav";
+		const string ITEM_NAME = "xbow";
+		const int MODEL_BODY_OFS = 52;
+		const int NO_WORLD_MODEL = 1;
+		const float XBOW_RELOAD_TIME = 2.0;
+		const string ANIM_PREFIX = "orcbow";
+		const string RANGED_PROJECTILE = "bolt";
+		const string RANGED_HOLD_MINMAX = "0;0";
+		const float RANGED_ATK_DURATION = 0.0;
+		const string RANGED_DMG_TYPE = "pierce";
+		const string RANGED_STAT = "archery";
+		const Vector3 RANGED_AIMANGLE = Vector3(0, 0, 0);
+		const float RANGED_DMG_DELAY = 0.0;
+		const int RANGED_NOISE = 10;
+		const int RANGED_ENERGY = 20;
+		WEAPON_PRIMARY_SKILL = RANGED_STAT;
+		const Vector3 RANGED_STARTPOS = Vector3(2, 12, -8);
+		const string RANGED_ACCURACY = "0;0";
+		const int RANGED_FORCE = 1000;
+	}
+
+	void weapon_spawn()
+	{
+		SetName("Crossbow");
+		SetDescription("An accurate , long range crossbow");
+		SetWeight(1);
+		SetSize(3);
+		SetValue(300);
+		SetWearable(0);
+		SetAnimExt("bow");
+		SetWorldModel(MODEL_WORLD);
+		SetViewModel(MODEL_VIEW);
+		SetPlayerModel(MODEL_HANDS);
+		SetHand("both");
+		SetHUDSprite("hand", "bow");
+		SetHUDSprite("trade", "xbow");
+		register_bow();
+		SetModelBody(0, 0);
+		Precache(MODEL_VIEW);
+	}
+
+	void OnDeploy() override
+	{
+		if (!(false)) return;
+		PlayViewAnim(ANIM_IDLE);
+	}
+
+	void register_bow()
+	{
+		string reg.attack.type = "charge-throw-projectile";
+		string reg.attack.keys = "+attack1";
+		string reg.attack.hold_min&max = "0.1;0.1";
+		string reg.attack.dmg.type = "pierce";
+		int reg.attack.range = 400;
+		int reg.attack.energydrain = 0;
+		string reg.attack.stat = "archery";
+		int reg.attack.COF = 0;
+		string reg.attack.projectile = "bolt";
+		int reg.attack.priority = 10;
+		float reg.attack.delay.strike = 0.0;
+		string reg.attack.delay.end = XBOW_RELOAD_TIME;
+		string reg.attack.ofs.startpos = RANGED_STARTPOS;
+		string reg.attack.ofs.aimang = RANGED_AIMANGLE;
+		string reg.attack.callback = "ranged";
+		int reg.attack.noise = 10;
+		RegisterAttack();
+	}
+
+	void ranged_start()
+	{
+		if ((XBOW_RELOADING)) return;
+		PlayOwnerAnim("hold", "xbow_idle");
+	}
+
+	void ranged_toss()
+	{
+		PlayViewAnim(ANIM_FIRE);
+		EmitSound(GetOwner(), "game.sound.weapon", SOUND_SHOOT, "game.sound.maxvol");
+		PlayOwnerAnim("critical", "xbow_reload");
+		STRETCHED = 0;
+		ScheduleDelayedEvent(0.2, "reload_now");
+		string HEAVYONE = GetEntityProperty("ent_lastprojectile", "scriptvar");
+		if (HEAVYONE == "HEAVY_BOLT")
+		{
+			CallExternal("ent_lastprojectile", "ext_lighten", 0.01);
+		}
+		if (HEAVYONE > 0)
+		{
+			CallExternal("ent_lastprojectile", "ext_lighten", HEAVYONE);
+		}
+	}
+
+	void reload_now()
+	{
+		PlayViewAnim(ANIM_RELOAD);
+	}
+
+	void ranged_end()
+	{
+		done_reload();
+	}
+
+	void done_reload()
+	{
+		PlayViewAnim(ANIM_IDLE);
+		XBOW_RELOADING = 0;
+	}
+
+	void ranged_returnstanding()
+	{
+		if (("game.item.attacking")) return;
+		PlayOwnerAnim("critical", "bow_aim_to_stand");
+	}
+
+	void ranged_noammo()
+	{
+	}
+
+}
+
+}

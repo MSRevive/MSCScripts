@@ -1,0 +1,41 @@
+#pragma context server
+
+#include "monsters/bear_base.as"
+
+namespace MS
+{
+
+class BearCubBrown : CGameScript
+{
+	int ATTACK_HITRANGE;
+	int ATTACK_RANGE;
+	string DROP_ITEM1;
+	float DROP_ITEM1_CHANCE;
+	int MOVE_RANGE;
+
+	BearCubBrown()
+	{
+		MOVE_RANGE = 60;
+		ATTACK_RANGE = 70;
+		ATTACK_HITRANGE = 120;
+		const string ATTACK_DAMAGE = "$rand(2.5,6)";
+		const float ATTACK_HITCHANCE = 0.6;
+		const int NPC_BASE_EXP = 20;
+		DROP_ITEM1 = "skin_bear";
+		DROP_ITEM1_CHANCE = 0.5;
+	}
+
+	void OnSpawn() override
+	{
+		SetHealth(50);
+		SetWidth(40);
+		SetHeight(80);
+		SetName("Brown bear cub");
+		SetHearingSensitivity(2);
+		SetModel("monsters/bearcub.mdl");
+		SetModelBody(0, 1);
+	}
+
+}
+
+}

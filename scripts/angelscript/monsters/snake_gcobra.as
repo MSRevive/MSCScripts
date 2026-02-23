@@ -1,0 +1,300 @@
+#pragma context server
+
+#include "monsters/base_monster_new.as"
+
+namespace MS
+{
+
+class SnakeGcobra : CGameScript
+{
+	string ANIM_ATTACK;
+	string ANIM_DEATH;
+	string ANIM_IDLE;
+	string ANIM_RUN;
+	string ANIM_WALK;
+	int ATTACK_DELAY;
+	int ATTACK_HITRANGE;
+	int ATTACK_MOVERANGE;
+	int ATTACK_RANGE;
+	int BITE_SOUND;
+	int CLOUD_COUNT;
+	string CLOUD_TARGS;
+	string CL_IDX;
+	string CUR_ANG;
+	int DID_ALERT;
+	int DOING_SPECIAL;
+	int GAS_AMMO;
+	string NEXT_SCAN;
+	int NO_SLEEP;
+	int NO_STUCK_CHECKS;
+	int NPC_GIVE_EXP;
+	int SLEEP_MODE;
+
+	SnakeGcobra()
+	{
+		const string ANIM_BREATH = "breath";
+		const int GAS_RANGE = 200;
+		ANIM_WALK = "walk";
+		ANIM_RUN = "walk";
+		ANIM_DEATH = "diesimple";
+		ANIM_IDLE = "idle1";
+		const string ANIM_IDLE_NORM = "idle1";
+		const string ANIM_SLEEP = "idle2";
+		ANIM_ATTACK = "attack1";
+		ATTACK_RANGE = 120;
+		ATTACK_HITRANGE = 150;
+		ATTACK_MOVERANGE = 60;
+		const float ATTACK_HITCHANCE = 0.8;
+		const string ATTACK_DAMAGE = "$randf(20,50)";
+		const string POISON_DAMAGE = "$randf(10,20)";
+		const string POISON_DURATION = "$rand(10,20)";
+		NPC_GIVE_EXP = 200;
+		const string SOUND_ALERT = "monsters/gsnake_idle1.wav";
+		const string SOUND_IDLE = "monsters/gsnake_idle1.wav";
+		const string SOUND_ATTACK = "agrunt/ag_attack2.wav";
+		const string SOUND_POISON = "monsters/snakeman/sm_alert1.wav";
+		const string SOUND_STRUCK = "debris/flesh3.wav";
+		const string SOUND_PAIN1 = "agrunt/ag_attack3.wav";
+		const string SOUND_PAIN2 = "agrunt/ag_idle2.wav";
+		const string SOUND_DEATH = "agrunt/ag_die2.wav";
+		const string DMG_EFFECT_SCRIPT = "effects/dot_poison";
+		const string BREATH_EFFECT_SCRIPT = "effects/dot_poison_blind";
+		const string CL_SCRIPT = "monsters/snake_gcobra_cl";
+		const string MONSTER_MODEL = "monsters/gcobra.mdl";
+	}
+
+	void OnSpawn() override
+	{
+		SetName("Giant Cobra");
+		SetHealth(800);
+		SetWidth(64);
+		SetHeight(32);
+		SetRoam(false);
+		SetRace("demon");
+		SetModel(MONSTER_MODEL);
+		SetHearingSensitivity(0);
+		ScheduleDelayedEvent(0.2, "post_spawn_props");
+		ScheduleDelayedEvent(1.0, "idle_sounds");
+		GAS_AMMO = 1;
+	}
+
+	void OnDeath(CBaseEntity@ attacker) override
+	{
+		if ((DOING_SPECIAL))
+		{
+			ClientEvent("update", "all", CL_IDX, "end_fx");
+		}
+		if (!(FIRE_BREATH))
+		{
+			// svplaysound: if ( !FIRE_BREATH ) svplaysound 1 0 ambience/steamjet1.wav
+			EmitSound(1, 0, "ambience/steamjet1.wav");
+		}
+	}
+
+	void idle_sounds()
+	{
+		EmitSound(GetOwner(), 0, SOUND_IDLE, 10);
+		Random(5, 10)("idle_sounds");
+	}
+
+	void post_spawn_props()
+	{
+		SetDamageResistance("holy", 0.0);
+	}
+
+	void OnPostSpawn() override
+	{
+		if ((NO_SLEEP)) return;
+		sleep_mode();
+	}
+
+	void set_nosleep()
+	{
+		NO_SLEEP = 1;
+	}
+
+	void attack1()
+	{
+		BITE_SOUND = 1;
+		npcatk_dodamage(m_hAttackTarget, ATTACK_HITRANGE, ATTACK_DAMAGE, ATTACK_HITCHANCE, GetOwner());
+	}
+
+	void OnDamagedOther(CBaseEntity@ victim, int damage) override
+	{
+		if (!(BITE_SOUND)) return;
+		BITE_SOUND = 0;
+		if (!(RandomInt(1, 2) == 1)) return;
+		EmitSound(GetOwner(), 0, SOUND_POISON, 10);
+		ApplyEffect(param1, DMG_EFFECT_SCRIPT, POISON_DURATION, GetEntityIndex(GetOwner()), POISON_DAMAGE);
+	}
+
+	void OnHitByAttack(CBaseEntity@ attacker, int damage) override
+	{
+		// PlayRandomSound from: SOUND_PAIN1, SOUND_PAIN2, SOUND_STRUCK, SOUND_STRUCK
+		array<string> sounds = {SOUND_PAIN1, SOUND_PAIN2, SOUND_STRUCK, SOUND_STRUCK};
+		EmitSound(GetOwner(), 0, sounds[RandomInt(0, sounds.length() - 1)], 10);
+	}
+
+	void OnTargetValidate(CBaseEntity@ target)
+	{
+		if (!(IsEntityAlive(param1))) return;
+		if (!(GetRelationship(param1) == "enemy")) return;
+		if ((DID_ALERT)) return;
+		EmitSound(GetOwner(), 0, SOUND_ALERT, 10);
+		wake_up();
+		DID_ALERT = 1;
+	}
+
+	void my_target_died()
+	{
+		GAS_AMMO = 1;
+		SetMoveDest(NPC_SPAWN_LOC);
+		idle_sounds();
+		DID_ALERT = 0;
+		LogDebug("my_target_died");
+		ScheduleDelayedEvent(1.0, "npcatk_go_home");
+	}
+
+	void npc_made_it_home()
+	{
+		sleep_mode();
+	}
+
+	void reset_attack_delay()
+	{
+		ATTACK_DELAY = 0;
+	}
+
+	void sleep_mode()
+	{
+		SLEEP_MODE = 1;
+		NO_STUCK_CHECKS = 1;
+		SetRoam(false);
+		SetIdleAnim(ANIM_SLEEP);
+		SetMoveAnim(ANIM_SLEEP);
+		ANIM_IDLE = ANIM_SLEEP;
+		SetHearingSensitivity(0);
+	}
+
+	void wake_up()
+	{
+		SLEEP_MODE = 0;
+		NO_STUCK_CHECKS = 0;
+		SetIdleAnim(ANIM_IDLE_NORM);
+		SetMoveAnim(ANIM_WALK);
+		ANIM_IDLE = ANIM_IDLE_NORM;
+		SetRoam(true);
+		SetHearingSensitivity(4);
+	}
+
+	void npc_targetsighted()
+	{
+		if (!(GAS_AMMO > 0)) return;
+		if (!(GetEntityRange(m_hAttackTarget) < GAS_RANGE)) return;
+		GAS_AMMO = 0;
+		do_cloud();
+	}
+
+	void do_cloud()
+	{
+		if (!(FIRE_BREATH))
+		{
+			// svplaysound: svplaysound 1 10 ambience/steamjet1.wav
+			EmitSound(1, 10, "ambience/steamjet1.wav");
+		}
+		else
+		{
+			EmitSound(GetOwner(), 0, "monsters/goblin/sps_fogfire.wav", 10);
+		}
+		npcatk_suspend_ai();
+		SetRoam(false);
+		DOING_SPECIAL = 1;
+		PlayAnim("critical", ANIM_BREATH);
+		SetMoveAnim(ANIM_BREATH);
+		SetIdleAnim(ANIM_BREATH);
+		SetMoveDest(m_hAttackTarget);
+		CUR_ANG = GetEntityProperty(GetOwner(), "angles.yaw");
+		CLOUD_COUNT = 0;
+		ScheduleDelayedEvent(0.01, "adj_angles");
+	}
+
+	void adj_angles()
+	{
+		CUR_ANG -= 45;
+		if (CUR_ANG < 0)
+		{
+			CUR_ANG += 359;
+		}
+		string FACE_POS = GetMonsterProperty("origin");
+		FACE_POS += /* TODO: $relpos */ $relpos(Vector3(0, CUR_ANG, 0), Vector3(0, 1000, 0));
+		SetMoveDest(FACE_POS);
+		ClientEvent("new", "all", CL_SCRIPT, GetEntityIndex(GetOwner()));
+		CL_IDX = "game.script.last_sent_id";
+		ScheduleDelayedEvent(0.01, "do_cloud_loop");
+	}
+
+	void do_cloud_loop()
+	{
+		if (!(IsEntityAlive(GetOwner()))) return;
+		if (CLOUD_COUNT == 45)
+		{
+			npcatk_resume_ai();
+			DOING_SPECIAL = 0;
+			SetIdleAnim(ANIM_IDLE_NORM);
+			SetMoveAnim(ANIM_WALK);
+			if (!(AM_TURRET))
+			{
+				SetRoam(true);
+			}
+			if (!(FIRE_BREATH))
+			{
+				// svplaysound: if ( !FIRE_BREATH ) svplaysound 1 0 ambience/steamjet1.wav
+				EmitSound(1, 0, "ambience/steamjet1.wav");
+			}
+			ClientEvent("update", "all", CL_IDX, "end_fx");
+		}
+		if (!(CLOUD_COUNT < 45)) return;
+		ScheduleDelayedEvent(0.1, "do_cloud_loop");
+		CLOUD_COUNT += 1;
+		CUR_ANG += 2;
+		if (CUR_ANG > 359)
+		{
+			CUR_ANG -= 359;
+		}
+		string FACE_POS = GetMonsterProperty("origin");
+		FACE_POS += /* TODO: $relpos */ $relpos(Vector3(0, CUR_ANG, 0), Vector3(0, 1000, 0));
+		SetMoveDest(FACE_POS);
+		if (CLOUD_TARGS != "none")
+		{
+			for (int i = 0; i < GetTokenCount(CLOUD_TARGS, ";"); i++)
+			{
+				poison_targets();
+			}
+		}
+		if (!(GetGameTime() > NEXT_SCAN)) return;
+		NEXT_SCAN = GetGameTime();
+		NEXT_SCAN += 0.5;
+		string SCAN_POINT = /* TODO: $relpos */ $relpos(0, 96, 0);
+		CLOUD_TARGS = /* TODO: $get_tbox */ $get_tbox("enemy", 96, SCAN_POINT);
+		if (!(FIRE_BREATH))
+		{
+			// svplaysound: if ( !FIRE_BREATH ) svplaysound 1 10 ambience/steamjet1.wav
+			EmitSound(1, 10, "ambience/steamjet1.wav");
+		}
+	}
+
+	void poison_targets()
+	{
+		string CUR_TARGET = GetToken(CLOUD_TARGS, i, ";");
+		if (!(IsEntityAlive(CUR_TARGET))) return;
+		string TARG_ORG = GetEntityOrigin(CUR_TARGET);
+		if (!(WithinCone2D(TARG_ORG, GetMonsterProperty("origin"), GetMonsterProperty("angles")))) return;
+		if (!(GetEntityRange(CUR_TARGET) < 256)) return;
+		ApplyEffect(CUR_TARGET, BREATH_EFFECT_SCRIPT, POISON_DURATION, GetEntityIndex(GetOwner()), POISON_DAMAGE);
+		if (!(PUSH_BREATH)) return;
+		AddVelocity(CUR_TARGET, /* TODO: $relvel */ $relvel(0, 1000, 110));
+	}
+
+}
+
+}

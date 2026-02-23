@@ -1,0 +1,868 @@
+#pragma context server
+
+#include "monsters/base_monster_new.as"
+#include "monsters/base_lightning_shield.as"
+
+namespace MS
+{
+
+class ColdOne : CGameScript
+{
+	string ANIM_ATTACK;
+	string ANIM_DEATH;
+	string ANIM_IDLE;
+	string ANIM_RUN;
+	string ANIM_WALK;
+	string AS_ATTACKING;
+	int ATTACK_HITRANGE;
+	int ATTACK_MOVERANGE;
+	int ATTACK_RANGE;
+	string BALL_TYPE;
+	string CFB_EST_ANG;
+	string CFB_EST_ORG;
+	int CFB_FIREBALL_ACTIVE;
+	string CFB_FIREBALL_IDX;
+	int CFB_FIRST_TARGET_FOUND;
+	string CFB_FORCE_END;
+	string CFB_LIST;
+	string CFB_NEXT_SCAN;
+	string DEF_ANIM_IDLE;
+	string DEF_ANIM_RUN;
+	string DEF_ANIM_WALK;
+	string DUCK_MODE;
+	string FREEZE_LIST;
+	string FREEZE_SCRIPT_IDX;
+	int ICE_BREATH_ON;
+	int IS_UNHOLY;
+	string LSHIELD_TARGET;
+	string NEXT_DODGE;
+	string NEXT_FREEZE;
+	string NEXT_SPECIAL;
+	string NEXT_TOUCH_ZAP;
+	int NO_HEAD;
+	int NPC_FORCED_MOVEDEST;
+	int NPC_GIVE_EXP;
+	int NPC_NO_ATTACK;
+	int PALPATINE_ON;
+	string PALPATINE_TARGETS;
+	float PROJ_HOLD_DURATION;
+	string REPULSE_LIST;
+	int SKELE_MODE;
+	int SPECIAL_CYCLE;
+	string SPECIAL_OVERRIDE;
+	string SPIN_ANG;
+	int SPIN_ON;
+	int STAGE_ONE_DONE;
+	string STAGE_ONE_THRESH;
+	int STAGE_TWO_DONE;
+	string STAGE_TWO_THRESH;
+	int SWIPE_ATTACK;
+
+	ColdOne()
+	{
+		ANIM_WALK = "walk";
+		ANIM_RUN = "walk";
+		ANIM_IDLE = "idle";
+		ANIM_DEATH = "die_forwards2";
+		const string ANIM_RUN_SKELE_MODE = "run";
+		const string ANIM_JUMP = "jump";
+		const string ANIM_LONG_JUMP = "long_jump";
+		const string ANIM_THROW = "ref_shoot_crowbar";
+		const string ANIM_SHOOT = "ref_shoot_smartgun";
+		const string ANIM_DEPLOY = "ref_shoot_grenade";
+		const string ANIM_SKELE_SWIPE = "ref_shoot_crowbar";
+		const string ANIM_SKELE_DUCK_SWIPE = "crouch_shoot_crowbar";
+		const string ANIM_LIMP_WRIST = "ref_aim_crowbar";
+		const string ANIM_PREP_DEPLOY = "ref_aim_trip";
+		const string ANIM_RELEASE_DEPLOY = "ref_shoot_trip";
+		const string ANIM_MIRROR_PREP = "ref_aim_grenade";
+		const string ANIM_ICE_SPIRAL = "ref_shoot_smartgun";
+		const string ANIM_ICE_BREATH = "float";
+		const string ANIM_DUCK_IDLE = "crouch_idle";
+		const string ANIM_DUCK_MOVE = "crawl";
+		const string ANIM_DUCK_BEAM = "crouch_shoot_smartgun";
+		const string ANIM_DUCK_THROW = "crouch_shoot_grenade";
+		const string ANIM_DUCK_ATTACK = "crouch_shoot_crowbar";
+		const string ANIM_DUCK_RPG = "crouch_shoot_rpg";
+		const string ANIM_DUCK_SPELL = "crouch_shoot_trip";
+		IS_UNHOLY = 1;
+		ATTACK_RANGE = 768;
+		ATTACK_MOVERANGE = 768;
+		ATTACK_HITRANGE = 768;
+		NPC_NO_ATTACK = 1;
+		NPC_GIVE_EXP = 9000;
+		const string LSHIELD_CLFX_SCRIPT = "monsters/cold_one_lshield_cl";
+		const int LSHIELD_RADIUS = 64;
+		SPECIAL_CYCLE = 0;
+		const int N_SPECIALS = 4;
+		PROJ_HOLD_DURATION = 20.0;
+		const string CL_PRIMARY_SCRIPT = "monsters/cold_one_cl";
+		const int ATTACK_RANGE_MELEE = 96;
+		const int ATTACK_HITRANGE_MELEE = 160;
+		const int ATTACK_MOVERANGE_MELEE = 64;
+		const int ATTACK_MOVERANGE_LONG = 768;
+		const int LHAND_ATCH = 1;
+		const int RHAND_ATCH = 2;
+		const int MOUTH_ATCH = 3;
+		const float FREQ_DODGE = 4.0;
+		const int DOT_ICE_BALL = 50;
+		const int DMG_ICE_BALL = 400;
+		const int DOT_ICE_CAGE = 50;
+		const int DMG_PALPATINE = 75;
+		const int DMG_SWIPE = 200;
+		const int DOT_FROST = 75;
+		const string FREQ_JUMP = Random(5.0, 15.0);
+		const string FREQ_DUCK_SWITCH = Random(10.0, 20.0);
+		const string SOUND_ICEBALL_RELEASE = "ambience/alienflyby1.wav";
+		const string SOUND_ICE_PREP = "magic/spookie1.wav";
+		const string SOUND_DODGE = "magic/frost_reverse.wav";
+		const string SOUND_BREATH = "monsters/goblin/sps_fogfire.wav";
+		const string SOUND_ZAP_LOOP = "magic/bolt_loop.wav";
+		const string SOUND_ZAP_START = "magic/bolt_end.wav";
+		const string SOUND_SCREAM = "monsters/spooky_scream.wav";
+		const string SOUND_SWIPE1 = "zombie/claw_miss1.wav";
+		const string SOUND_SWIPE2 = "zombie/claw_miss2.wav";
+		const string SOUND_SWIPE3 = "monsters/goblin/c_gargoyle_atk1.wav";
+		const string SOUND_SWIPE4 = "monsters/goblin/c_gargoyle_atk2.wav";
+		const string SOUND_DEATH = "monsters/goblin/c_gargoyle_dead.wav";
+		const string SOUND_PAIN1 = "monsters/goblin/c_gargoyle_hit1.wav";
+		const string SOUND_PAIN2 = "monsters/goblin/c_gargoyle_hit2.wav";
+		const string SOUND_SKELE_LAUGH1 = "monsters/goblin/c_gargoyle_bat1.wav";
+		const string SOUND_SKELE_LAUGH2 = "monsters/goblin/c_gargoyle_bat2.wav";
+		const string SOUND_FREEZE_SLAP = "monsters/goblin/c_gargoyle_atk3.wav";
+		SetCallback("touch", "enable");
+	}
+
+	void game_precache()
+	{
+		Precache("monsters/summon/client_side_iceball");
+		Precache("effects/sfx_motionblur_perm");
+		Precache("monsters/cold_one_cl");
+	}
+
+	void OnSpawn() override
+	{
+		SetName("Cold One");
+		SetRace("demon");
+		SetWidth(32);
+		SetHeight(80);
+		SetModel("monsters/hollow_one.mdl");
+		SetRoam(false);
+		SetHealth(9000);
+		SetDamageResistance("all", 0.5);
+		SetDamageResistance("fire", 1.25);
+		SetDamageResistance("cold", 0.0);
+		SetDamageResistance("poison", 0.0);
+		SetDamageResistance("holy", 1.0);
+		SetProp(GetOwner(), "skin", 1);
+		SetHearingSensitivity(10);
+		DEF_ANIM_WALK = ANIM_WALK;
+		DEF_ANIM_RUN = ANIM_RUN;
+		DEF_ANIM_IDLE = ANIM_IDLE;
+		STAGE_ONE_DONE = 0;
+		STAGE_TWO_DONE = 0;
+	}
+
+	void OnPostSpawn() override
+	{
+		STAGE_ONE_THRESH = GetEntityMaxHealth(GetOwner());
+		STAGE_ONE_THRESH *= 0.5;
+		STAGE_TWO_THRESH = GetEntityMaxHealth(GetOwner());
+		STAGE_TWO_THRESH *= 0.25;
+	}
+
+	void cycle_up()
+	{
+		SetRoam(true);
+		if (!(SKELE_MODE)) return;
+		// PlayRandomSound from: SOUND_SKELE_LAUGH1, SOUND_SKELE_LAUGH2
+		array<string> sounds = {SOUND_SKELE_LAUGH1, SOUND_SKELE_LAUGH2};
+		EmitSound(GetOwner(), 0, sounds[RandomInt(0, sounds.length() - 1)], 10);
+	}
+
+	void OnHuntTarget(CBaseEntity@ target)
+	{
+		if (!(m_hAttackTarget != "unset")) return;
+		if (GetGameTime() > NEXT_SPECIAL)
+		{
+			do_special();
+		}
+		if ((SKELE_MODE))
+		{
+			if (GetGameTime() > NEXT_JUMP)
+			{
+				if (!(PALPATINE_ON))
+				{
+				}
+				NEXT_JUMP = GetGameTime();
+				NEXT_JUMP += FREQ_JUMP;
+				leap_away();
+			}
+			if (GetGameTime() > NEXT_DUCK_SWITCH)
+			{
+				NEXT_DUCK_SWITCH = GetGameTime();
+				NEXT_DUCK_SWITCH += FREQ_DUCK_SWITCH;
+				toggle_duck_mode();
+			}
+		}
+		if ((SKELE_MODE)) return;
+		if (GetGameTime() > NEXT_DODGE)
+		{
+			if (GetEntityRange(m_hAttackTarget) < 96)
+			{
+			}
+			shadow_shift();
+		}
+	}
+
+	void resume_movement()
+	{
+		if (!(FLIGHT_MODE))
+		{
+			ANIM_WALK = DEF_ANIM_WALK;
+			ANIM_RUN = DEF_ANIM_RUN;
+			ANIM_IDLE = DEF_ANIM_IDLE;
+			SetMoveAnim(ANIM_RUN);
+			SetIdleAnim(ANIM_IDLE);
+			SetRoam(true);
+		}
+		else
+		{
+			SetMoveAnim(ANIM_FLOAT);
+			SetIdleAnim(ANIM_FLOAT);
+		}
+	}
+
+	void suspend_movement()
+	{
+		if (!(FLIGHT_MODE))
+		{
+			ANIM_WALK = param1;
+			ANIM_RUN = param1;
+			ANIM_IDLE = param1;
+			SetMoveAnim(param1);
+			SetIdleAnim(param1);
+			SetRoam(false);
+		}
+	}
+
+	void do_special()
+	{
+		if (!(IsEntityAlive(GetOwner()))) return;
+		SPECIAL_CYCLE += 1;
+		if (SPECIAL_CYCLE > N_SPECIALS)
+		{
+			SPECIAL_CYCLE = 1;
+		}
+		if ((G_DEVELOPER_MODE))
+		{
+			if (SPECIAL_OVERRIDE > 0)
+			{
+			}
+			SPECIAL_CYCLE = SPECIAL_OVERRIDE;
+		}
+		if (SPECIAL_CYCLE == 1)
+		{
+			LogDebug("do_special: iceball");
+			if (!(SKELE_MODE))
+			{
+			}
+			prep_iceball();
+			NEXT_SPECIAL = GetGameTime();
+			NEXT_SPECIAL += 25.0;
+		}
+		if (SPECIAL_CYCLE == 2)
+		{
+			if (!(NO_HEAD))
+			{
+			}
+			if (!(SKELE_MODE))
+			{
+			}
+			do_ice_breath();
+			NEXT_SPECIAL = GetGameTime();
+			NEXT_SPECIAL += 10.0;
+		}
+		if (SPECIAL_CYCLE == 3)
+		{
+			prep_hold_person();
+			NEXT_SPECIAL = GetGameTime();
+			NEXT_SPECIAL += 5.0;
+		}
+		if (SPECIAL_CYCLE == 4)
+		{
+			if (!(DUCK_MODE))
+			{
+			}
+			do_palpatine();
+			NEXT_SPECIAL = GetGameTime();
+			NEXT_SPECIAL += 10.0;
+		}
+		if ((SKELE_MODE))
+		{
+			NEXT_SPECIAL += 10.0;
+		}
+	}
+
+	void prep_iceball()
+	{
+		ScheduleDelayedEvent(2.0, "prep_iceball2");
+		npcatk_suspend_ai();
+		PlayAnim("critical", ANIM_PREP_DEPLOY);
+		SetIdleAnim(ANIM_PREP_DEPLOY);
+		SetMoveAnim(ANIM_PREP_DEPLOY);
+		Effect("beam", "ents", "lgtning.spr", 30, GetOwner(), LHAND_ATCH, GetOwner(), RHAND_ATCH, Vector3(128, 164, 255), 200, 200, 2.0);
+		EmitSound(GetOwner(), 0, SOUND_ICE_PREP, 10);
+	}
+
+	void prep_iceball2()
+	{
+		PlayAnim("critical", ANIM_RELEASE_DEPLOY);
+		EmitSound(GetOwner(), 0, SOUND_ICEBALL_RELEASE, 10);
+		npcatk_resume_ai();
+		resume_movement();
+		BALL_TYPE = "ice";
+		start_ball();
+	}
+
+	void start_ball()
+	{
+		if ((CFB_FIREBALL_ACTIVE)) return;
+		CFB_FIREBALL_ACTIVE = 1;
+		CFB_FIRST_TARGET_FOUND = 0;
+		CFB_EST_ORG = /* TODO: $relpos */ $relpos(0, 32, 0);
+		string START_ANGS = GetEntityAngles(GetOwner());
+		CFB_EST_ANG = START_ANGS;
+		ClientEvent("new", "all", "monsters/summon/client_side_iceball", CFB_EST_ORG, START_ANGS);
+		CFB_FIREBALL_IDX = "game.script.last_sent_id";
+		ScheduleDelayedEvent(0.1, "cfb_fireball_loop");
+		CFB_FORCE_END = GetGameTime();
+		CFB_FORCE_END += 20.0;
+	}
+
+	void cfb_fireball_loop()
+	{
+		if (!(CFB_FIREBALL_ACTIVE)) return;
+		ScheduleDelayedEvent(0.5, "cfb_fireball_loop");
+		if (GetGameTime() > CFB_NEXT_SCAN)
+		{
+			CFB_NEXT_SCAN = GetGameTime();
+			CFB_NEXT_SCAN += 2.0;
+			if (!(IsEntityAlive(CFB_TARGET)))
+			{
+				string OWNER_ORG = GetEntityOrigin(GetOwner());
+				string TARGET_TOKENS = FindEntitiesInSphere("enemy", 512);
+				if (TARGET_TOKENS != "none")
+				{
+				}
+				if (GetTokenCount(TARGET_TOKENS, ";") > 1)
+				{
+					ScrambleTokens(TARGET_TOKENS, ";");
+				}
+				string TEST_TARG = GetToken(TARGET_TOKENS, 0, ";");
+				if ((IsEntityAlive(TEST_TARG)))
+				{
+				}
+				if (!(GetEntityProperty(TEST_TARG, "scriptvar")))
+				{
+				}
+				CFB_TARGET = TEST_TARG;
+				if (!(CFB_FIRST_TARGET_FOUND))
+				{
+				}
+				CFB_FIRST_TARGET_FOUND = 1;
+				string ANG_TO_TARG = /* TODO: $angles3d */ $angles3d(CFB_EST_ORG, TARG_ORG);
+			}
+			else
+			{
+				string SCAN_DOWN = CFB_EST_ORG;
+				string TARGET_TOKENS = FindEntitiesInSphere("enemy", 96);
+				if (TARGET_TOKENS != "none")
+				{
+				}
+				cfb_explode("hit_nme");
+			}
+		}
+		if (!(CFB_FIREBALL_ACTIVE)) return;
+		if ((IsEntityAlive(CFB_TARGET)))
+		{
+			string TARG_ORG = GetEntityOrigin(CFB_TARGET);
+			if (!(IsValidPlayer(CFB_TARGET)))
+			{
+				TARG_ORG += "z";
+			}
+			string ANG_TO_TARG = /* TODO: $angles3d */ $angles3d(CFB_EST_ORG, TARG_ORG);
+			ANG_TO_TARG = "x";
+			ClientEvent("update", "all", CFB_FIREBALL_IDX, "svr_update_fireball_vec", ANG_TO_TARG, CFB_EST_ORG);
+			CFB_EST_ANG = ANG_TO_TARG;
+			CFB_EST_ORG += /* TODO: $relvel */ $relvel(ANG_TO_TARG, Vector3(0, 60, 0));
+		}
+		else
+		{
+			CFB_EST_ORG += /* TODO: $relvel */ $relvel(CFB_EST_ANG, Vector3(0, 60, 0));
+		}
+		string TRACE_DEST = CFB_EST_ORG;
+		TRACE_DEST += /* TODO: $relvel */ $relvel(CFB_EST_ANG, Vector3(0, 60, 0));
+		string TRACE_RESULT = TraceLine(CFB_EST_ORG, TRACE_DEST);
+		if (TRACE_RESULT != TRACE_DEST)
+		{
+			cfb_explode("hitwall");
+		}
+		if (!(CFB_FIREBALL_ACTIVE)) return;
+		if (!(GetGameTime() > CFB_FORCE_END)) return;
+		cfb_explode("time_out");
+	}
+
+	void cfb_explode()
+	{
+		NEXT_SPECIAL = GetGameTime();
+		NEXT_SPECIAL += 1.0;
+		CFB_FIREBALL_ACTIVE = 0;
+		ClientEvent("update", "all", CFB_FIREBALL_IDX, "fireball_explode");
+		ScheduleDelayedEvent(0.1, "cfb_fireball_release");
+		CFB_LIST = FindEntitiesInSphere("enemy", 128);
+		if (!(CFB_LIST != "none")) return;
+		if (!(GetTokenCount(CFB_LIST, ";") > 0)) return;
+		XDoDamage(CFB_EST_ORG, 128, DMG_ICE_BALL, 0, GetOwner(), GetOwner(), "none", "cold_effect");
+		for (int i = 0; i < GetTokenCount(CFB_LIST, ";"); i++)
+		{
+			cfb_affect_targets();
+		}
+	}
+
+	void cfb_affect_targets()
+	{
+		string CHECK_ENT = GetToken(CFB_LIST, i, ";");
+		string TARGET_ORG = GetEntityOrigin(CHECK_ENT);
+		string TARG_ANG = /* TODO: $angles */ $angles(CFB_EST_ORG, TARGET_ORG);
+		string NEW_YAW = TARG_ANG;
+		SetVelocity(CHECK_ENT, /* TODO: $relvel */ $relvel(Vector3(0, NEW_YAW, 0), Vector3(0, 1000, 0)));
+		ApplyEffect(CHECK_ENT, "effects/dot_cold", 5.0, GetEntityIndex(GetOwner()), DOT_ICE_BALL);
+	}
+
+	void cfb_fireball_end()
+	{
+		LogDebug("cfb_fireball_end");
+		ClientEvent("update", "all", CFB_FIREBALL_IDX, "fireball_end");
+		ScheduleDelayedEvent(0.1, "cfb_fireball_release");
+	}
+
+	void cfb_fireball_release()
+	{
+		LogDebug("cfb_fireball_release");
+		CFB_FIREBALL_ACTIVE = 0;
+	}
+
+	void prep_hold_person()
+	{
+		ScheduleDelayedEvent(2.0, "prep_hold_person2");
+		npcatk_suspend_ai();
+		PlayAnim("critical", ANIM_PREP_DEPLOY);
+		SetIdleAnim(ANIM_PREP_DEPLOY);
+		SetMoveAnim(ANIM_PREP_DEPLOY);
+		ClientEvent("new", "all", CL_PRIMARY_SCRIPT, "hand_sprites", GetEntityIndex(GetOwner()), 2.0, Vector3(64, 64, 255));
+		EmitSound(GetOwner(), 0, SOUND_ICE_PREP, 10);
+	}
+
+	void prep_hold_person2()
+	{
+		PlayAnim("critical", ANIM_RELEASE_DEPLOY);
+		EmitSound(GetOwner(), 0, SOUND_ICEBALL_RELEASE, 10);
+		npcatk_resume_ai();
+		resume_movement();
+		TossProjectile("proj_hold_person", /* TODO: $relpos */ $relpos(0, 0, 24), m_hAttackTarget, 50, 0, 0, "none");
+	}
+
+	void shadow_shift()
+	{
+		if (!(GetGameTime() > NEXT_DODGE)) return;
+		NEXT_DODGE = GetGameTime();
+		NEXT_DODGE += FREQ_DODGE;
+		ClientEvent("persist", "all", "effects/sfx_motionblur_temp", GetEntityIndex(GetOwner()), 0, 1, 3.0);
+		string RND_ANG = Random(0, 359);
+		AddVelocity(GetOwner(), /* TODO: $relvel */ $relvel(Vector3(0, RND_ANG, 0), Vector3(0, 1000, 0)));
+		EmitSound(GetOwner(), 0, SOUND_DODGE, 10);
+		ScheduleDelayedEvent(0.25, "stop_shadow_shift");
+	}
+
+	void stop_shadow_shift()
+	{
+		SetVelocity(GetOwner(), /* TODO: $relvel */ $relvel(0, 0, 0));
+	}
+
+	void OnDamage(int damage) override
+	{
+		LogDebug("game_damaged stg1 STAGE_ONE_DONE stg2 STAGE_TWO_DONE hp GetEntityHealth(GetOwner()) vs STAGE_TWO_THRESH");
+		if ((SKELE_MODE))
+		{
+			// PlayRandomSound from: SOUND_PAIN1, SOUND_PAIN2
+			array<string> sounds = {SOUND_PAIN1, SOUND_PAIN2};
+			EmitSound(GetOwner(), 0, sounds[RandomInt(0, sounds.length() - 1)], 10);
+			if (GetEntityRange(param1) > 128)
+			{
+			}
+			if (param2 > 40)
+			{
+			}
+			if (RandomInt(1, 3) == 1)
+			{
+			}
+			leap_away(GetEntityIndex(param1));
+		}
+		if ((PALPATINE_ON))
+		{
+			if (GetEntityRange(param1) < 256)
+			{
+			}
+			SetMoveDest(param1);
+		}
+		if (!(STAGE_ONE_DONE))
+		{
+			if (GetEntityHealth(GetOwner()) < STAGE_ONE_THRESH)
+			{
+			}
+			SetDamage("dmg");
+			SetDamage("hit");
+			return;
+			SetHealth(STAGE_ONE_THRESH);
+			STAGE_ONE_DONE = 1;
+			pop_head_off();
+		}
+		if (!(STAGE_TWO_DONE))
+		{
+			if ((STAGE_ONE_DONE))
+			{
+			}
+			if (GetEntityHealth(GetOwner()) < STAGE_TWO_THRESH)
+			{
+			}
+			SetDamage("dmg");
+			SetDamage("hit");
+			return;
+			SetHealth(STAGE_ONE_THRESH);
+			STAGE_TWO_DONE = 1;
+			set_skele_mode();
+			if (StringToLower(GetMapName()) == "the_wall")
+			{
+				UseTrigger("co_final_stage");
+			}
+		}
+		if ((PALPATINE_ON)) return;
+		if ((SKELE_MODE)) return;
+		if (!(GetEntityRange(param1) > 128)) return;
+		if (!(param2 > 75)) return;
+		shadow_shift();
+	}
+
+	void OnTouch(CBaseEntity@ other) override
+	{
+		if (!(LSHIELD_PASSIVE_ENABLE)) return;
+		if (!(GetGameTime() > NEXT_TOUCH_ZAP)) return;
+		NEXT_TOUCH_ZAP = GetGameTime();
+		NEXT_TOUCH_ZAP += 0.1;
+		if (!(GetRelationship(GetOwner()) == "enemy")) return;
+		LSHIELD_TARGET = param1;
+		lshield_passive_zap_target();
+	}
+
+	void do_ice_breath()
+	{
+		npcatk_suspend_ai();
+		suspend_movement(ANIM_ICE_BREATH);
+		PlayAnim("critical", ANIM_ICE_BREATH);
+		SPIN_ANG = GetEntityProperty(GetOwner(), "angles.yaw");
+		SPIN_ON = 1;
+		SPIN_ANG -= 45;
+		if (SPIN_ANG < 0)
+		{
+			SPIN_ANG += 359;
+		}
+		EmitSound(GetOwner(), 1, SOUND_BREATH, 10);
+		ClientEvent("new", "all", CL_PRIMARY_SCRIPT, "ice_breath", GetEntityIndex(GetOwner()), 8.0);
+		FREEZE_SCRIPT_IDX = "game.script.last_sent_id";
+		ice_breath_spin();
+		ScheduleDelayedEvent(8.0, "stop_ice_breath_spin");
+		ICE_BREATH_ON = 1;
+	}
+
+	void stop_ice_breath_spin()
+	{
+		EmitSound(GetOwner(), 1, SOUND_BREATH, 0);
+		ClientEvent("update", "all", FREEZE_SCRIPT_IDX, "ice_breath_off");
+		SPIN_ON = 0;
+		resume_movement();
+		npcatk_resume_ai();
+		NEXT_SPECIAL = GetGameTime();
+		NEXT_SPECIAL += 1.0;
+		ICE_BREATH_ON = 0;
+	}
+
+	void ice_breath_spin()
+	{
+		if (!(SPIN_ON)) return;
+		ScheduleDelayedEvent(0.05, "ice_breath_spin");
+		string FACE_POS = GetEntityOrigin(GetOwner());
+		FACE_POS += /* TODO: $relpos */ $relpos(Vector3(0, SPIN_ANG, 0), Vector3(0, 100, 0));
+		SetMoveDest(FACE_POS);
+		if (GetGameTime() > NEXT_FREEZE)
+		{
+			NEXT_FREEZE = GetGameTime();
+			NEXT_FREEZE += 0.5;
+			FREEZE_LIST = FindEntitiesInSphere("enemy", 512);
+			if (FREEZE_LIST != "none")
+			{
+			}
+			for (int i = 0; i < GetTokenCount(FREEZE_LIST, ";"); i++)
+			{
+				freeze_targets();
+			}
+		}
+		SPIN_ANG += 10;
+		if (SPIN_ANG > 359)
+		{
+			SPIN_ANG -= 359;
+		}
+	}
+
+	void freeze_targets()
+	{
+		string CUR_TARGET = GetToken(FREEZE_LIST, i, ";");
+		if (!(IsEntityAlive(CUR_TARGET))) return;
+		string TARG_ORG = GetEntityOrigin(CUR_TARGET);
+		if (!(WithinCone2D(TARG_ORG, GetMonsterProperty("origin"), GetMonsterProperty("angles")))) return;
+		if (!(GetEntityRange(CUR_TARGET) < 256)) return;
+		if (!(GetEntityHeight(CUR_TARGET) > 36)) return;
+		LogDebug("freeze_targets GetEntityName(CUR_TARGET)");
+		ApplyEffect(CUR_TARGET, "effects/dot_cold_freeze", 10.0, GetEntityIndex(GetOwner()), DOT_ICE_CAGE);
+	}
+
+	void do_palpatine()
+	{
+		ATTACK_MOVERANGE = ATTACK_MOVERANGE_LONG;
+		SetMoveDest(m_hAttackTarget);
+		NPC_FORCED_MOVEDEST = 1;
+		npcatk_suspend_ai();
+		suspend_movement(ANIM_PREP_DEPLOY);
+		ClientEvent("new", "all", CL_PRIMARY_SCRIPT, "palpatine", GetEntityIndex(GetOwner()), 8.0);
+		EmitSound(GetOwner(), 0, SOUND_ZAP_START, 10);
+		// svplaysound: svplaysound 1 10 SOUND_ZAP_LOOP
+		EmitSound(1, 10, SOUND_ZAP_LOOP);
+		PALPATINE_ON = 1;
+		ScheduleDelayedEvent(8.0, "palpatine_end");
+		palpatine_loop();
+	}
+
+	void palpatine_end()
+	{
+		if ((SKELE_MODE))
+		{
+			ATTACK_MOVERANGE = ATTACK_MOVERANGE_MELEE;
+		}
+		PALPATINE_ON = 0;
+		npcatk_resume_ai();
+		resume_movement();
+		// svplaysound: svplaysound 1 0 SOUND_ZAP_LOOP
+		EmitSound(1, 0, SOUND_ZAP_LOOP);
+	}
+
+	void palpatine_loop()
+	{
+		if (!(PALPATINE_ON)) return;
+		ScheduleDelayedEvent(0.1, "palpatine_loop");
+		PALPATINE_TARGETS = FindEntitiesInSphere("enemy", 256);
+		if (!(PALPATINE_TARGETS != "none")) return;
+		for (int i = 0; i < GetTokenCount(PALPATINE_TARGETS, ";"); i++)
+		{
+			palpatine_shock_targs();
+		}
+	}
+
+	void palpatine_shock_targs()
+	{
+		string CUR_TARG = GetToken(PALPATINE_TARGETS, i, ";");
+		if (!(IsEntityAlive(CUR_TARG))) return;
+		string TARG_ORG = GetEntityOrigin(CUR_TARG);
+		if (!(WithinCone2D(TARG_ORG, GetMonsterProperty("origin"), GetMonsterProperty("angles")))) return;
+		if (!(GetEntityHeight(CUR_TARG) > 36)) return;
+		DoDamage(CUR_TARG, "direct", DMG_PALPATINE, 1.0, GetOwner());
+		AddVelocity(CUR_TARG, /* TODO: $relvel */ $relvel(0, 200, 110));
+	}
+
+	void game_dynamically_created()
+	{
+		if (!(param1 > 0)) return;
+		SPECIAL_OVERRIDE = param1;
+	}
+
+	void pop_head_off()
+	{
+		ClientEvent("new", "all", CL_PRIMARY_SCRIPT, "head_burn", GetEntityIndex(GetOwner()));
+		SetModelBody(1, 1);
+		EmitSound(GetOwner(), 0, SOUND_SCREAM, 10);
+		NO_HEAD = 1;
+	}
+
+	void set_skele_mode()
+	{
+		ClientEvent("new", "all", CL_PRIMARY_SCRIPT, "body_burn", GetEntityIndex(GetOwner()));
+		Effect("screenshake", /* TODO: $relpos */ $relpos(0, 0, 0), 255, 30, 10.0, 1024);
+		EmitSound(GetOwner(), 0, SOUND_SCREAM, 10);
+		SetModelBody(1, 3);
+		SetModelBody(0, 1);
+		SKELE_MODE = 1;
+		ATTACK_RANGE = ATTACK_RANGE_MELEE;
+		ATTACK_HITRANGE = ATTACK_HITRANGE_MELEE;
+		ATTACK_MOVERANGE = ATTACK_MOVERANGE_MELEE;
+		ANIM_ATTACK = ANIM_SKELE_SWIPE;
+		DEF_ANIM_RUN = "run";
+		DEF_ANIM_WALK = ANIM_WALK;
+		DEF_ANIM_RUN = ANIM_RUN;
+		DEF_ANIM_IDLE = ANIM_IDLE;
+		SetMoveAnim(ANIM_RUN);
+		SetIdleAnim(ANIM_RUN);
+		NPC_NO_ATTACK = 0;
+	}
+
+	void toggle_duck_mode()
+	{
+		if ((DUCK_MODE))
+		{
+			DUCK_MODE = 1;
+			ANIM_ATTACK = ANIM_SKELE_DUCK_SWIPE;
+			ANIM_WALK = ANIM_DUCK_MOVE;
+			ANIM_RUN = ANIM_DUCK_MOVE;
+			ANIM_IDLE = ANIM_DUCK_IDLE;
+			DEF_ANIM_WALK = ANIM_WALK;
+			DEF_ANIM_RUN = ANIM_RUN;
+			DEF_ANIM_IDLE = ANIM_IDLE;
+			SetMoveAnim(ANIM_RUN);
+			SetIdleAnim(ANIM_IDLE);
+			int EXIT_SUB = 1;
+		}
+		if ((EXIT_SUB)) return;
+		if (!(DUCK_MODE))
+		{
+			DUCK_MODE = 0;
+			ANIM_ATTACK = ANIM_SKELE_SWIPE;
+			ANIM_WALK = "walk";
+			ANIM_RUN = "run";
+			ANIM_IDLE = "idle";
+			DEF_ANIM_WALK = ANIM_WALK;
+			DEF_ANIM_RUN = ANIM_RUN;
+			DEF_ANIM_IDLE = ANIM_IDLE;
+			SetMoveAnim(ANIM_RUN);
+			SetIdleAnim(ANIM_IDLE);
+		}
+	}
+
+	void leap_away()
+	{
+		npcatk_suspend_ai(2.0);
+		ScheduleDelayedEvent(2.0, "force_leap_end");
+		suspend_movement(ANIM_LONG_JUMP);
+		AS_ATTACKING = GetGameTime();
+		AS_ATTACKING += 5.0;
+		if (!(IsEntityAlive(param1)))
+		{
+			SetMoveDest(m_hAttackTarget);
+		}
+		else
+		{
+			SetMoveDest(param1);
+		}
+		NPC_FORCED_MOVEDEST = 1;
+		PlayAnim("critical", ANIM_LONG_JUMP);
+		repulse_area(GetEntityOrigin(GetOwner()));
+		ScheduleDelayedEvent(0.1, "leap_away_boost");
+	}
+
+	void leap_away_boost()
+	{
+		AddVelocity(GetOwner(), /* TODO: $relvel */ $relvel(0, 1000, 800));
+	}
+
+	void frame_long_jump_land()
+	{
+		npcatk_resume_ai();
+		resume_movement();
+	}
+
+	void force_leap_end()
+	{
+		npcatk_resume_ai();
+		resume_movement();
+	}
+
+	void repulse_area()
+	{
+		EmitSound(GetOwner(), 0, "magic/boom.wav", 10);
+		ClientEvent("new", "all", CL_PRIMARY_SCRIPT, "repulse", GetEntityOrigin(GetOwner()), 128);
+		REPULSE_LIST = FindEntitiesInSphere("any", 128);
+		if (!(REPULSE_LIST != "none")) return;
+		for (int i = 0; i < GetTokenCount(REPULSE_LIST, ";"); i++)
+		{
+			repulse_targets();
+		}
+	}
+
+	void repulse_targets()
+	{
+		string CUR_TARG = GetToken(REPULSE_LIST, i, ";");
+		string TARG_ORG = GetEntityOrigin(CUR_TARG);
+		string TARG_ANG = /* TODO: $angles */ $angles(GetMonsterProperty("origin"), TARG_ORG);
+		SetVelocity(CUR_TARG, /* TODO: $relvel */ $relvel(Vector3(0, TARG_ANG, 0), Vector3(10, 1000, 10)));
+	}
+
+	void frame_castspell()
+	{
+		if (!(SKELE_MODE)) return;
+		skele_swipe();
+	}
+
+	void frame_crouch_slap()
+	{
+		if (!(SKELE_MODE)) return;
+		skele_swipe();
+	}
+
+	void skele_swipe()
+	{
+		SWIPE_ATTACK = 1;
+		// PlayRandomSound from: SOUND_SWIPE1, SOUND_SWIPE2, SOUND_SWIPE1, SOUND_SWIPE2, SOUND_SWIPE3, SOUND_SWIPE4
+		array<string> sounds = {SOUND_SWIPE1, SOUND_SWIPE2, SOUND_SWIPE1, SOUND_SWIPE2, SOUND_SWIPE3, SOUND_SWIPE4};
+		EmitSound(GetOwner(), 0, sounds[RandomInt(0, sounds.length() - 1)], 10);
+		DoDamage(m_hAttackTarget, ATTACK_HITRANGE_MELEE, DMG_SWIPE, 0.9, "slash");
+	}
+
+	void my_target_died()
+	{
+		if (!(SKELE_MODE)) return;
+		// PlayRandomSound from: SOUND_SKELE_LAUGH1, SOUND_SKELE_LAUGH2
+		array<string> sounds = {SOUND_SKELE_LAUGH1, SOUND_SKELE_LAUGH2};
+		EmitSound(GetOwner(), 0, sounds[RandomInt(0, sounds.length() - 1)], 10);
+	}
+
+	void game_dodamage()
+	{
+		if ((SWIPE_ATTACK))
+		{
+			if (RandomInt(1, 3) == 1)
+			{
+			}
+			if ((param1))
+			{
+			}
+			if (GetRelationship(param2) == "enemy")
+			{
+			}
+			// PlayRandomSound from: SOUND_FREEZE_SLAP
+			array<string> sounds = {SOUND_FREEZE_SLAP};
+			EmitSound(GetOwner(), 2, sounds[RandomInt(0, sounds.length() - 1)], 10);
+			ApplyEffect(param2, "effects/dot_cold", 5.0, GetEntityIndex(GetOwner()), DOT_FROST);
+			SWIPE_ATTACK = 0;
+		}
+	}
+
+}
+
+}

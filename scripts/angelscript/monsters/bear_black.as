@@ -1,0 +1,42 @@
+#pragma context server
+
+#include "monsters/bear_base.as"
+
+namespace MS
+{
+
+class BearBlack : CGameScript
+{
+	int ATTACK_HITRANGE;
+	int ATTACK_RANGE;
+	string DROP_ITEM1;
+	float DROP_ITEM1_CHANCE;
+	int MOVE_RANGE;
+
+	BearBlack()
+	{
+		MOVE_RANGE = 70;
+		ATTACK_RANGE = 90;
+		ATTACK_HITRANGE = 200;
+		const string ATTACK_DAMAGE = "$rand(5,7)";
+		const float ATTACK_HITCHANCE = 0.6;
+		const int NPC_BASE_EXP = 40;
+		const float RETALIATE_CHANGETARGET_CHANCE = 0.5;
+		DROP_ITEM1 = "skin_bear";
+		DROP_ITEM1_CHANCE = 0.75;
+	}
+
+	void OnSpawn() override
+	{
+		SetHealth(140);
+		SetWidth(64);
+		SetHeight(95);
+		SetName("Black bear");
+		SetHearingSensitivity(3);
+		SetModel("monsters/bear.mdl");
+		SetModelBody(0, 2);
+	}
+
+}
+
+}
