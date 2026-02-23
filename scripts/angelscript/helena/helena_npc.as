@@ -21,6 +21,8 @@ class HelenaNpc : CGameScript
 	void OnHitByAttack(CBaseEntity@ attacker, int damage) override
 	{
 		helena_flee(GetEntityIndex(m_hLastStruck), "struck");
+		if ((DEFAULT_HUMAN)) return;
+		call_for_help(GetEntityIndex(m_hLastStruck));
 	}
 
 	void OnHeardSound(CBaseEntity@ source, Vector3 origin) override
@@ -149,12 +151,6 @@ class HelenaNpc : CGameScript
 			SayText("Thank you again , please , consider everything on discount.");
 		}
 		Say("[.56] [.4] [.58] [.66]");
-	}
-
-	void OnHitByAttack(CBaseEntity@ attacker, int damage) override
-	{
-		if ((DEFAULT_HUMAN)) return;
-		call_for_help(GetEntityIndex(m_hLastStruck));
 	}
 
 	void call_for_help()

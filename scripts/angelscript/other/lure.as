@@ -45,6 +45,12 @@ class Lure : CGameScript
 	void OnDeath(CBaseEntity@ attacker) override
 	{
 		UseTrigger("lure_died");
+		if (!(NPC_CRITICAL)) return;
+		string INFO_TITLE = "A CRITICAL OBJECT HAS BEEN DESTROYED!";
+		string INFO_MSG = GetEntityName(GetOwner());
+		INFO_MSG += " has been destroyed! ";
+		SendInfoMsg("all", "INFO_TITLE INFO_MSG");
+		CallExternal(GAME_MASTER, "gm_crit_npc_died", GetEntityIndex(GetOwner()), GetEntityIndex(m_hLastStruck));
 	}
 
 	void OnHitByAttack(CBaseEntity@ attacker, int damage) override
@@ -52,6 +58,18 @@ class Lure : CGameScript
 		SetEntityOrigin(GetOwner(), LURE_HOME_POS);
 		if (!(IsValidPlayer(m_hLastStruck) == 1)) return;
 		HealEntity(GetOwner(), param1);
+		if ((NPC_CRITICAL))
+		{
+			if (!(NPC_CRIT_WARN_DELAY))
+			{
+				NPC_CRIT_WARN_DELAY = 1;
+				NPC_FREQ_WARN("npcatk_reset_warn_delay");
+				string INFO_TITLE = "Critical Object Under Attack!";
+				string INFO_MSG = GetEntityName(GetOwner());
+				INFO_MSG += " is under attack!";
+				SendInfoMsg("all", "INFO_TITLE INFO_MSG");
+			}
+		}
 	}
 
 	void OnTakeDamage(CBaseEntity@ inflictor, CBaseEntity@ attacker, int damage, int damageType) override
@@ -115,32 +133,6 @@ class Lure : CGameScript
 		for (int i = 0; i < GetTokenCount(NPC_DO_EVENTS, ";"); i++)
 		{
 			npcatk_do_events();
-		}
-	}
-
-	void OnDeath(CBaseEntity@ attacker) override
-	{
-		if (!(NPC_CRITICAL)) return;
-		string INFO_TITLE = "A CRITICAL OBJECT HAS BEEN DESTROYED!";
-		string INFO_MSG = GetEntityName(GetOwner());
-		INFO_MSG += " has been destroyed! ";
-		SendInfoMsg("all", "INFO_TITLE INFO_MSG");
-		CallExternal(GAME_MASTER, "gm_crit_npc_died", GetEntityIndex(GetOwner()), GetEntityIndex(m_hLastStruck));
-	}
-
-	void OnHitByAttack(CBaseEntity@ attacker, int damage) override
-	{
-		if ((NPC_CRITICAL))
-		{
-			if (!(NPC_CRIT_WARN_DELAY))
-			{
-				NPC_CRIT_WARN_DELAY = 1;
-				NPC_FREQ_WARN("npcatk_reset_warn_delay");
-				string INFO_TITLE = "Critical Object Under Attack!";
-				string INFO_MSG = GetEntityName(GetOwner());
-				INFO_MSG += " is under attack!";
-				SendInfoMsg("all", "INFO_TITLE INFO_MSG");
-			}
 		}
 	}
 

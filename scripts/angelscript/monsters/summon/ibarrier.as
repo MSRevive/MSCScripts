@@ -159,6 +159,7 @@ class Ibarrier : CGameScript
 			ClientEvent("remove", "all", BARRIER_SCRIPT_IDX);
 		}
 		ScheduleDelayedEvent(0.1, "remove_me2");
+		RemoveScript();
 	}
 
 	void remove_me2()
@@ -224,11 +225,6 @@ class Ibarrier : CGameScript
 	{
 		GO_AWAY = 1;
 		sprite_update();
-	}
-
-	void remove_me()
-	{
-		RemoveScript();
 	}
 
 }

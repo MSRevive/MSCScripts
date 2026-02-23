@@ -57,6 +57,9 @@ class BaseWeapon : CGameScript
 			PlayAnim("once", L_ANIM);
 		}
 		weapon_deploy();
+		if (!(true)) return;
+		if (!(MODEL_VIEW_IDX > 0)) return;
+		ScheduleDelayedEvent(0.01, "bw_setup_model");
 	}
 
 	void game_fall()
@@ -80,13 +83,6 @@ class BaseWeapon : CGameScript
 		}
 		PlayAnim("once", L_ANIM);
 		weapon_fall();
-	}
-
-	void OnDeploy() override
-	{
-		if (!(true)) return;
-		if (!(MODEL_VIEW_IDX > 0)) return;
-		ScheduleDelayedEvent(0.01, "bw_setup_model");
 	}
 
 	void bw_setup_model()

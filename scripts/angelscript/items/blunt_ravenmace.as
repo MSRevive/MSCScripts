@@ -80,6 +80,27 @@ class BluntRavenmace : CGameScript
 		SetHand("both");
 		SetHUDSprite("hand", 101);
 		SetHUDSprite("trade", 101);
+		string reg.attack.type = "strike-land";
+		string reg.attack.keys = "-attack1";
+		string reg.attack.range = MELEE_RANGE;
+		string reg.attack.dmg = MELEE_DMG;
+		string reg.attack.dmg.range = MELEE_DMG_RANGE;
+		string reg.attack.dmg.type = MELEE_DMG_TYPE;
+		string reg.attack.energydrain = MELEE_ENERGY;
+		reg.attack.energydrain *= 2;
+		string reg.attack.stat = MELEE_STAT;
+		string reg.attack.hitchance = MELEE_ACCURACY;
+		reg.attack.hitchance += 0.1;
+		int reg.attack.priority = 2;
+		float reg.attack.delay.strike = 1.5;
+		float reg.attack.delay.end = 2.0;
+		string reg.attack.ofs.startpos = MELEE_STARTPOS;
+		string reg.attack.ofs.aimang = MELEE_AIMANGLE;
+		string reg.attack.callback = "special_02";
+		int reg.attack.noise = 1000;
+		float reg.attack.chargeamt = 2.0;
+		int reg.attack.reqskill = 4;
+		RegisterAttack();
 	}
 
 	void bweapon_effect_activate()
@@ -121,31 +142,6 @@ class BluntRavenmace : CGameScript
 		MELEE_VIEWANIM_ATK = RandomInt(FIRST_ATK_ANIM, LAST_ATK_ANIM);
 	}
 
-	void weapon_spawn()
-	{
-		string reg.attack.type = "strike-land";
-		string reg.attack.keys = "-attack1";
-		string reg.attack.range = MELEE_RANGE;
-		string reg.attack.dmg = MELEE_DMG;
-		string reg.attack.dmg.range = MELEE_DMG_RANGE;
-		string reg.attack.dmg.type = MELEE_DMG_TYPE;
-		string reg.attack.energydrain = MELEE_ENERGY;
-		reg.attack.energydrain *= 2;
-		string reg.attack.stat = MELEE_STAT;
-		string reg.attack.hitchance = MELEE_ACCURACY;
-		reg.attack.hitchance += 0.1;
-		int reg.attack.priority = 2;
-		float reg.attack.delay.strike = 1.5;
-		float reg.attack.delay.end = 2.0;
-		string reg.attack.ofs.startpos = MELEE_STARTPOS;
-		string reg.attack.ofs.aimang = MELEE_AIMANGLE;
-		string reg.attack.callback = "special_02";
-		int reg.attack.noise = 1000;
-		float reg.attack.chargeamt = 2.0;
-		int reg.attack.reqskill = 4;
-		RegisterAttack();
-	}
-
 	void special_02_start()
 	{
 		PlayViewAnim(ANIM_CHARGE);
@@ -160,7 +156,7 @@ class BluntRavenmace : CGameScript
 	{
 		string maxstun = GetSkillLevel(GetOwner(), "bluntarms.prof");
 		maxstun += 1;
-		maxstun = max(1, min(35, maxstun));
+		// TODO: capvar maxstun 1 35
 		string stuntime = Random(1, GetSkillLevel(GetOwner(), "bluntarms.prof"));
 		ApplyEffect(param1, EFFECT_SCRIPT, stuntime, 0, 0, GetEntityIndex(GetOwner()));
 	}

@@ -163,10 +163,6 @@ class BluntLrod11 : CGameScript
 	{
 		PlayViewAnim(5);
 		EmitSound(GetOwner(), 0, SOUND_CHARGE, 10);
-	}
-
-	void repulse_start()
-	{
 		PlayViewAnim(5);
 		PlayOwnerAnim("critical", "bow_release");
 		SpawnNPC("monsters/summon/lightning_repulse", GetEntityOrigin(GetOwner()), ScriptMode::Legacy); // params: GetEntityIndex(GetOwner()), 512, 3.0, 0, "spellcasting.lightning"

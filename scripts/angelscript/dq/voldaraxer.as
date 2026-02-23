@@ -43,22 +43,6 @@ class Voldaraxer : CGameScript
 	{
 		SetWidth(40);
 		SetHeight(90);
-	}
-
-	void swing_axe()
-	{
-		baseorc_yell();
-		string L_DMG = Random(ATTACK_DMG_LOW, ATTACK_DMG_HIGH);
-		XDoDamage(m_hLastSeen, ATTACK_HITRANGE, L_DMG, ATTACK_ACCURACY, GetOwner(), GetOwner(), "none", "slash", "dmgevent:swing");
-	}
-
-	void swing_sword()
-	{
-		swing_axe();
-	}
-
-	void orc_spawn()
-	{
 		SetProp(GetOwner(), "skin", 3);
 		SetHealth(400);
 		SetWidth(32);
@@ -72,6 +56,18 @@ class Voldaraxer : CGameScript
 		SetModelBody(0, 0);
 		SetModelBody(1, 4);
 		SetModelBody(2, 1);
+	}
+
+	void swing_axe()
+	{
+		baseorc_yell();
+		string L_DMG = Random(ATTACK_DMG_LOW, ATTACK_DMG_HIGH);
+		XDoDamage(m_hLastSeen, ATTACK_HITRANGE, L_DMG, ATTACK_ACCURACY, GetOwner(), GetOwner(), "none", "slash", "dmgevent:swing");
+	}
+
+	void swing_sword()
+	{
+		swing_axe();
 	}
 
 	void swing_dodamage()

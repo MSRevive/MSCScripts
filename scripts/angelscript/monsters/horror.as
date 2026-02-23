@@ -361,6 +361,10 @@ class Horror : CGameScript
 	void OnDeath(CBaseEntity@ attacker) override
 	{
 		AddVelocity(GetOwner(), /* TODO: $relvel */ $relvel(0, 0, -200));
+		if ((AM_SUMMONED))
+		{
+			CallExternal(MY_OWNER, "horror_died");
+		}
 	}
 
 	void OnDeath(CBaseEntity@ attacker) override
@@ -459,14 +463,6 @@ class Horror : CGameScript
 		else
 		{
 			as_tele_stuck_check();
-		}
-	}
-
-	void OnDeath(CBaseEntity@ attacker) override
-	{
-		if ((AM_SUMMONED))
-		{
-			CallExternal(MY_OWNER, "horror_died");
 		}
 	}
 

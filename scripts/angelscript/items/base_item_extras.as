@@ -38,6 +38,11 @@ class BaseItemExtras : CGameScript
 		if (!(true)) return;
 		if (!(ITEM_RESERVE_FOR_STRONGEST)) return;
 		bitem_reserve_for_strongest();
+		if (!(IS_CONTAINER)) return;
+		if ((IS_RESERVED)) return;
+		IS_RESERVED = 1;
+		array<string> PICKUP_ALLOW_LIST;
+		PICKUP_ALLOW_LIST.insertLast(GetEntityIndex(GetOwner()));
 	}
 
 	void bitem_reserve_for_strongest()
@@ -55,6 +60,12 @@ class BaseItemExtras : CGameScript
 		string ITEM_RESERVER = /* TODO: $get_array */ $get_array(PICKUP_ALLOW_LIST, 0);
 		OUT_MSG += GetEntityName(ITEM_RESERVER);
 		SendInfoMsg(param1, "Item Damagepoint Restricted OUT_MSG");
+		if (!(IS_CONTAINER)) return;
+		if (!(IS_RESERVED)) return;
+		string OUT_MSG = "This container is reserved for ";
+		string ITEM_RESERVER = /* TODO: $get_array */ $get_array(PICKUP_ALLOW_LIST, 0);
+		OUT_MSG += GetEntityName(ITEM_RESERVER);
+		SendInfoMsg(param1, "Item Restricted OUT_MSG");
 	}
 
 	void bitem_reserve()
@@ -102,6 +113,14 @@ class BaseItemExtras : CGameScript
 				SetPlayerQuestData(GetOwner(), QUEST_ITEM_CAT);
 			}
 		}
+		if (!(GetEntityProperty(GetOwner(), "scriptvar"))) return;
+		bweapon_effect_activate();
+		ScheduleDelayedEvent(0.01, "bweapon_fixprops");
+		if (!(IS_CONTAINER)) return;
+		if ((IS_RESERVED)) return;
+		IS_RESERVED = 1;
+		array<string> PICKUP_ALLOW_LIST;
+		PICKUP_ALLOW_LIST.insertLast(GetEntityIndex(GetOwner()));
 	}
 
 	void ext_activate_items()
@@ -119,13 +138,6 @@ class BaseItemExtras : CGameScript
 		}
 		if (!(BEW_IS_WEILDED)) return;
 		bweapon_effect_activate();
-	}
-
-	void OnDeploy() override
-	{
-		if (!(GetEntityProperty(GetOwner(), "scriptvar"))) return;
-		bweapon_effect_activate();
-		ScheduleDelayedEvent(0.01, "bweapon_fixprops");
 	}
 
 	void bweapon_fixprops()
@@ -224,34 +236,6 @@ class BaseItemExtras : CGameScript
 	{
 		LogDebug("ext_viewanim_test");
 		// TODO: setviewmodelprop ent_me animspeed 5.0
-	}
-
-	void OnDeploy() override
-	{
-		if (!(IS_CONTAINER)) return;
-		if ((IS_RESERVED)) return;
-		IS_RESERVED = 1;
-		array<string> PICKUP_ALLOW_LIST;
-		PICKUP_ALLOW_LIST.insertLast(GetEntityIndex(GetOwner()));
-	}
-
-	void game_fall()
-	{
-		if (!(IS_CONTAINER)) return;
-		if ((IS_RESERVED)) return;
-		IS_RESERVED = 1;
-		array<string> PICKUP_ALLOW_LIST;
-		PICKUP_ALLOW_LIST.insertLast(GetEntityIndex(GetOwner()));
-	}
-
-	void game_restricted()
-	{
-		if (!(IS_CONTAINER)) return;
-		if (!(IS_RESERVED)) return;
-		string OUT_MSG = "This container is reserved for ";
-		string ITEM_RESERVER = /* TODO: $get_array */ $get_array(PICKUP_ALLOW_LIST, 0);
-		OUT_MSG += GetEntityName(ITEM_RESERVER);
-		SendInfoMsg(param1, "Item Restricted OUT_MSG");
 	}
 
 	void bweapon_effect_activate()

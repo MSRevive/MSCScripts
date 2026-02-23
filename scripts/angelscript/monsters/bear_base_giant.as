@@ -56,9 +56,9 @@ class BearBaseGiant : CGameScript
 		const string SOUND_UPSTEP1 = "monsters/bear/giantbearstep1.wav";
 		const string SOUND_UPSTEP2 = "monsters/bear/giantbearstep2.wav";
 		const int NPC_AUTO_DEATH = 0;
-		// TODO: UNCONVERTED: removesetvar ANIM_IDLE
-		// TODO: UNCONVERTED: removesetvar ANIM_RUN
-		// TODO: UNCONVERTED: removesetvar ANIM_WALK
+		// TODO: removesetvar ANIM_IDLE
+		// TODO: removesetvar ANIM_RUN
+		// TODO: removesetvar ANIM_WALK
 		// TODO: UNCONVERTED: removesetvard ANIM_ATTACK
 	}
 

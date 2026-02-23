@@ -28,8 +28,8 @@ class PlayerClEffects : CGameScript
 		GROUNDBOB_DIP = L_DIP;
 		GROUNDBOB_STARTTIME = GetGameTime();
 		if (!(GROUNDBOB_DIP >= 12)) return;
-		GROUNDBOB_DURATION = max(0, min(MAX_BOB_DURATION, GROUNDBOB_DURATION));
-		GROUNDBOB_DIP = max(0, min(MAX_BOB_DIP, GROUNDBOB_DIP));
+		// TODO: capvar GROUNDBOB_DURATION 0 MAX_BOB_DURATION
+		// TODO: capvar GROUNDBOB_DIP 0 MAX_BOB_DIP
 		player_hitground_adjview();
 		GROUNDBOB_DURATION("player_hitground_fixview");
 	}
@@ -39,7 +39,7 @@ class PlayerClEffects : CGameScript
 		if (!(GROUNDBOB_STARTTIME)) return;
 		string LCL_BOBTIME = GetGameTime();
 		LCL_BOBTIME -= GROUNDBOB_STARTTIME;
-		LCL_BOBTIME = max(0, min(MAX_BOB_DURATION, LCL_BOBTIME));
+		// TODO: capvar LCL_BOBTIME 0 MAX_BOB_DURATION
 		if (!(LCL_BOBAMT <= GROUNDBOB_DURATION)) return;
 		string LCL_BOBAMT = LCL_BOBTIME;
 		int LCL_TIMESCALE = 2;

@@ -72,9 +72,13 @@ class SetVarTranslator(CommandTranslator):
             value = '""'
 
         if self.var_type == "const":
-            # Try to infer type from value
-            type_str = _infer_type_from_value(value)
-            w.line(f"const {type_str} {var_name} = {value};")
+            # In constructor context (no named event), consts promoted to class members
+            # — emit as plain assignment rather than re-declaring with const
+            if not ctx.current_event and var_name in ctx.member_vars:
+                w.line(f"{var_name} = {value};")
+            else:
+                type_str = _infer_type_from_value(value)
+                w.line(f"const {type_str} {var_name} = {value};")
         elif self.var_type == "local":
             type_str = _infer_type_from_value(value)
             ctx.register_local(var_name, type_str)
@@ -98,6 +102,20 @@ def _infer_type_from_value(value: str) -> str:
     # Check for Vector3
     if stripped.startswith("Vector3("):
         return "Vector3"
+
+    # Translated forms from DollarFunc translation (e.g. $rand → RandomInt, $randf → Random)
+    if stripped.startswith("RandomInt("):
+        return "int"
+    if stripped.startswith("Random("):
+        return "float"
+    if stripped.startswith("int("):
+        return "int"
+    if stripped.startswith("float("):
+        return "float"
+    if stripped.startswith("Distance(") or stripped.startswith("Distance2D("):
+        return "float"
+    if stripped.startswith("GetGameTime("):
+        return "float"
 
     # Check for quoted string
     if stripped.startswith('"') or stripped.startswith("'"):

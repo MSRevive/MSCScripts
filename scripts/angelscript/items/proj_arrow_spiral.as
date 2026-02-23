@@ -74,6 +74,7 @@ class ProjArrowSpiral : CGameScript
 	void game_projectile_hitwall()
 	{
 		remove_me();
+		remove_me();
 	}
 
 	void game_tossprojectile()
@@ -106,11 +107,6 @@ class ProjArrowSpiral : CGameScript
 		if (!(IS_ACTIVE)) return;
 		ScheduleDelayedEvent(0.1, "damage_area");
 		XDoDamage(GetEntityOrigin(GetOwner()), 128, DMG_AMT, 0, "ent_expowner", "ent_expowner", USE_SKILL, DMG_TYPE, "dmgevent:spiral");
-	}
-
-	void game_projectile_hitwall()
-	{
-		remove_me();
 	}
 
 	void remove_me()

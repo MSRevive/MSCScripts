@@ -31,7 +31,7 @@ class BaseDebuffDiminishing : CGameScript
 			pool_get_available();
 			string L_ACTION = "edit";
 		}
-		L_TIME_USED = max(0, min(POOL_REMAINING, L_TIME_USED));
+		// TODO: capvar L_TIME_USED 0 POOL_REMAINING
 		if (L_TIME_USED == 0)
 		{
 			DEBUFF_SCRIPTFLAG = 1;
@@ -59,7 +59,7 @@ class BaseDebuffDiminishing : CGameScript
 		string L_REMAINING = /* TODO: $math(subtract) */ POOL_CAP;
 		string L_RECOVERED = /* TODO: $math(subtract) */ GetGameTime();
 		L_RECOVERED /= POOL_REGEN;
-		L_RECOVERED = max(0, min(999, L_RECOVERED));
+		// TODO: capvar L_RECOVERED 0 999
 		string L_RECOVERED = int(L_RECOVERED);
 		L_REMAINING += L_RECOVERED;
 		POOL_REMAINING = L_REMAINING;

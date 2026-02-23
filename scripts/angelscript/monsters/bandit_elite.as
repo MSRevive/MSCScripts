@@ -252,6 +252,8 @@ class BanditElite : CGameScript
 		// PlayRandomSound from: SOUND_PAIN, SOUND_PAIN2
 		array<string> sounds = {SOUND_PAIN, SOUND_PAIN2};
 		EmitSound(GetOwner(), 2, sounds[RandomInt(0, sounds.length() - 1)], 10);
+		if (!(WEAPON == 0)) return;
+		if (!(IsValidPlayer(m_hLastStruck) + "add" + CHANGE_POSITION + 1)) return;
 	}
 
 	void OnDeath(CBaseEntity@ attacker) override
@@ -287,12 +289,6 @@ class BanditElite : CGameScript
 		}
 	}
 
-	void OnStruck(CBaseEntity@ attacker, int damage)
-	{
-		if (!(WEAPON == 0)) return;
-		if (!(IsValidPlayer(m_hLastStruck) + "add" + CHANGE_POSITION + 1)) return;
-	}
-
 	void npc_targetsighted()
 	{
 		if (WEAPON == 0)
@@ -305,6 +301,27 @@ class BanditElite : CGameScript
 			}
 			AS_ATTACKING = GetGameTime();
 			PlayAnim("once", ANIM_ATTACK);
+		}
+		if (!(BANDIT_TYPE != "bow")) return;
+		if ((LEAP_UP_DELAY)) return;
+		LEAP_UP_DELAY = 1;
+		ScheduleDelayedEvent(2.0, "reset_leap_up_delay");
+		string TARG_POS = GetEntityOrigin(HUNT_LASTTARGET);
+		string MY_Z = (GetMonsterProperty("origin")).z;
+		string TARG_Z = (TARG_POS).z;
+		string Z_DIFF = TARG_Z;
+		MY_Z += PLAYER_HALFHEIGHT;
+		Z_DIFF -= MY_Z;
+		if (Z_DIFF < 0)
+		{
+			string Z_DIFF = /* TODO: $neg */ $neg(Z_DIFF);
+		}
+		if (Z_DIFF > 96)
+		{
+			if (Z_DIFF < 300)
+			{
+				leap_at(GetEntityIndex(HUNT_LASTTARGET));
+			}
 		}
 	}
 
@@ -785,31 +802,6 @@ class BanditElite : CGameScript
 			{
 			}
 			leap_away(GetEntityIndex(m_hLastStruck));
-		}
-	}
-
-	void npc_targetsighted()
-	{
-		if (!(BANDIT_TYPE != "bow")) return;
-		if ((LEAP_UP_DELAY)) return;
-		LEAP_UP_DELAY = 1;
-		ScheduleDelayedEvent(2.0, "reset_leap_up_delay");
-		string TARG_POS = GetEntityOrigin(HUNT_LASTTARGET);
-		string MY_Z = (GetMonsterProperty("origin")).z;
-		string TARG_Z = (TARG_POS).z;
-		string Z_DIFF = TARG_Z;
-		MY_Z += PLAYER_HALFHEIGHT;
-		Z_DIFF -= MY_Z;
-		if (Z_DIFF < 0)
-		{
-			string Z_DIFF = /* TODO: $neg */ $neg(Z_DIFF);
-		}
-		if (Z_DIFF > 96)
-		{
-			if (Z_DIFF < 300)
-			{
-				leap_at(GetEntityIndex(HUNT_LASTTARGET));
-			}
 		}
 	}
 

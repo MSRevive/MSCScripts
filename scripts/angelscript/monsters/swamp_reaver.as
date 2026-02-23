@@ -217,6 +217,21 @@ class SwampReaver : CGameScript
 		{
 			refresh_client_fx();
 		}
+		if (GetEntityRange(m_hAttackTarget) > ATTACK_RANGE)
+		{
+			string LAST_FIRE = REAVER_LAST_FIRE_BALL;
+			LAST_FIRE += FREQ_FIRE_BALL;
+			if (!(DOING_BREATH))
+			{
+			}
+			if (!(DOING_ACID_BOMB))
+			{
+			}
+			if (GetGameTime() > LAST_FIRE)
+			{
+				do_fireballs();
+			}
+		}
 	}
 
 	void my_target_died()
@@ -235,25 +250,6 @@ class SwampReaver : CGameScript
 		// PlayRandomSound from: SOUND_SEARCH1, SOUND_SEARCH2, SOUND_SEARCH3
 		array<string> sounds = {SOUND_SEARCH1, SOUND_SEARCH2, SOUND_SEARCH3};
 		EmitSound(GetOwner(), 0, sounds[RandomInt(0, sounds.length() - 1)], 10);
-	}
-
-	void npc_targetsighted()
-	{
-		if (GetEntityRange(m_hAttackTarget) > ATTACK_RANGE)
-		{
-			string LAST_FIRE = REAVER_LAST_FIRE_BALL;
-			LAST_FIRE += FREQ_FIRE_BALL;
-			if (!(DOING_BREATH))
-			{
-			}
-			if (!(DOING_ACID_BOMB))
-			{
-			}
-			if (GetGameTime() > LAST_FIRE)
-			{
-				do_fireballs();
-			}
-		}
 	}
 
 	void attack_mele1()

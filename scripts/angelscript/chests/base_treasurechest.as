@@ -631,10 +631,6 @@ class BaseTreasurechest : CGameScript
 		if (!(param1 == "events")) return;
 		NPC_DO_EVENTS = param2;
 		ScheduleDelayedEvent(0.01, "npcatk_setup_addparams");
-	}
-
-	void game_dynamically_created()
-	{
 		if (param1 == "events")
 		{
 			LogDebug("game_dynamically_created events PARAM2");

@@ -11,10 +11,6 @@ class TestAngelscriptIntegration : CGameScript
 	{
 		AS_TEST_STAGE = 0;
 		ScheduleDelayedEvent(1.0, "test_angelscript_init");
-	}
-
-	void OnSpawn() override
-	{
 		SetName("AS Integration Tester");
 		SetHealth(1);
 		SetRace("beloved");

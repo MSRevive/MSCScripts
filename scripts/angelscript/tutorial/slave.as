@@ -50,7 +50,7 @@ class Slave : CGameScript
 		SetWidth(30);
 		SetHeight(96);
 		SetSayTextRange(1024);
-		// TODO: UNCONVERTED: menu.autopen 1
+		// TODO: menu.autopen 1
 		ScheduleDelayedEvent(0.1, "be_scared");
 	}
 

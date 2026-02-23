@@ -85,7 +85,7 @@ class ArmorBaseHybrid : CGameScript
 			SetModel(ARMOR_MODEL);
 			SetModelBody(ARMOR_GROUP, ARMOR_BODY);
 		}
-		// TODO: UNCONVERTED: playermessagecl ARMOR_TEXT
+		// TODO: playermessagecl ARMOR_TEXT
 		register_armor();
 		if ((IS_HELM)) return;
 		set_armor_body();

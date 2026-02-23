@@ -38,6 +38,10 @@ class BaseTome : CGameScript
 		string L_SUB_MODEL = /* TODO: $math(subtract) */ MODEL_BODY;
 		L_SUB_MODEL += "game.item.hand_index";
 		SetModelBody(0, L_SUB_MODEL);
+		if (MODEL_BODY == 5)
+		{
+			SendInfoMsg(GetOwner(), "TOMES Tomes can be used to memorize spells permanently.");
+		}
 	}
 
 	void game_fall()
@@ -87,14 +91,6 @@ class BaseTome : CGameScript
 	void game_learnspell_failed()
 	{
 		SendPlayerMessage(GetOwner(), "BASE_SUMMON_TEXT_FAILED");
-	}
-
-	void OnDeploy() override
-	{
-		if (MODEL_BODY == 5)
-		{
-			SendInfoMsg(GetOwner(), "TOMES Tomes can be used to memorize spells permanently.");
-		}
 	}
 
 	void func_base_can_wield()

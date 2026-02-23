@@ -169,7 +169,7 @@ class EmoteSit&stand : CGameScript
 			game.effect.canrun = 0;
 			game.effect.canjump = 0;
 			game.effect.canduck = 0;
-			// TODO: UNCONVERTED: setstatus add sitting
+			// TODO: setstatus add sitting
 			AM_SITTING = 1;
 			ClientEvent("update", GetOwner(), SCRIPT_ID, "view_change", 1);
 			game.effect.displayname = TEXT_STAND;
@@ -179,7 +179,7 @@ class EmoteSit&stand : CGameScript
 		{
 			ClientEvent("update", GetOwner(), SCRIPT_ID, "view_change", 0);
 			VIEW_RAISETIME("player_sit_freedom");
-			// TODO: UNCONVERTED: setstatus remove sitting
+			// TODO: setstatus remove sitting
 		}
 	}
 
@@ -222,7 +222,7 @@ class EmoteSit&stand : CGameScript
 		L_TIMEDELTA -= VIEW_STARTTIME;
 		string L_RATIO = L_TIMEDELTA;
 		L_RATIO /= VIEW_LOWERTIME;
-		L_RATIO = max(0, min(1, L_RATIO));
+		// TODO: capvar L_RATIO 0 1
 		string L_HEIGHTOFS = L_RATIO;
 		if (!(VIEW_DIRECTION))
 		{

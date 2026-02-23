@@ -65,10 +65,6 @@ class SwordsRuneGreen : CGameScript
 		SetSize(5);
 		SetValue(3500);
 		SetHUDSprite("trade", 116);
-	}
-
-	void weapon_spawn()
-	{
 		string reg.attack.type = "charge-throw-projectile";
 		string reg.attack.hold_min&max = "2;2";
 		string reg.attack.dmg.type = "acid";

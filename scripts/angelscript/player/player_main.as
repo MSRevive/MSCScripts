@@ -680,6 +680,17 @@ class PlayerMain : CGameScript
 		if (!(DISPLAY_TARG_HP)) return;
 		HBAR_TARGET = param1;
 		ScheduleDelayedEvent(0.1, "ext_show_hbar_monster", GetEntityIndex(param1));
+		if (!(PLR_SPECIAL_WEAPON)) return;
+		if (GetEntityProperty(PLR_ACTIVE_WEAPON, "scriptvar") == "wolf")
+		{
+			string TARG_NAME = GetEntityName(param1);
+			string TARG_NAME = StringToLower(TARG_NAME);
+			if ((TARG_NAME).findFirst("wolf") >= 0)
+			{
+			}
+			return;
+			LogDebug("multi x2");
+		}
 	}
 
 	void ext_show_hbar_monster()
@@ -709,12 +720,12 @@ class PlayerMain : CGameScript
 		HBAR_FRAME *= PERC_HP;
 		string HBAR_FRAME = int(HBAR_FRAME);
 		string HBAR_HEIGHT = GetEntityHeight(TARG_HIT);
-		HBAR_HEIGHT = max(32, min(512, HBAR_HEIGHT));
+		// TODO: capvar HBAR_HEIGHT 32 512
 		string HBAR_POS = GetEntityOrigin(TARG_HIT);
 		HBAR_POS += "z";
 		string HBAR_SCALE = TARG_MAXHP;
 		HBAR_SCALE /= 4000;
-		HBAR_SCALE = max(0.05, min(0.75, HBAR_SCALE));
+		// TODO: capvar HBAR_SCALE 0.05 0.75
 		if (!(IsEntityAlive(TARG_HIT)))
 		{
 			int HBAR_FRAME = 0;
@@ -1076,21 +1087,6 @@ class PlayerMain : CGameScript
 			MOTD_TXT7 = (MOTD_LINE).substr(0, 180) + "|";
 		}
 		ScheduleDelayedEvent(0.01, "do_motd_loop");
-	}
-
-	void OnDamagedOther(CBaseEntity@ victim, int damage) override
-	{
-		if (!(PLR_SPECIAL_WEAPON)) return;
-		if (GetEntityProperty(PLR_ACTIVE_WEAPON, "scriptvar") == "wolf")
-		{
-			string TARG_NAME = GetEntityName(param1);
-			string TARG_NAME = StringToLower(TARG_NAME);
-			if ((TARG_NAME).findFirst("wolf") >= 0)
-			{
-			}
-			return;
-			LogDebug("multi x2");
-		}
 	}
 
 	void delay_to_ms_player_spawn()

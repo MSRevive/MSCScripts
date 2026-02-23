@@ -229,6 +229,8 @@ class MaldoraImage : CGameScript
 	void maldoraf_died()
 	{
 		ScheduleDelayedEvent(1.0, "check_owner");
+		if (!(param1 == MY_MASTER)) return;
+		DeleteEntity(GetOwner());
 	}
 
 	void check_owner()
@@ -246,12 +248,6 @@ class MaldoraImage : CGameScript
 
 	void remove_me()
 	{
-		DeleteEntity(GetOwner());
-	}
-
-	void maldoraf_died()
-	{
-		if (!(param1 == MY_MASTER)) return;
 		DeleteEntity(GetOwner());
 	}
 

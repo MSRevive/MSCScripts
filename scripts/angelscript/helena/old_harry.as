@@ -128,7 +128,7 @@ class OldHarry : CGameScript
 	void recv_enoughgold()
 	{
 		OFFER_AMT = ">=";
-		// TODO: UNCONVERTED: DLLFunc recvoffer accept
+		// TODO: DLLFunc recvoffer accept
 		SayText("Last time Erkold was here , he said he was looking for someone to take care of his [armor] .");
 		PlayAnim("once", "yes");
 	}
@@ -136,7 +136,7 @@ class OldHarry : CGameScript
 	void recv_notenoughgold()
 	{
 		OFFER_AMT = "<";
-		// TODO: UNCONVERTED: DLLFunc recvoffer reject
+		// TODO: DLLFunc recvoffer reject
 		SayText("I am quite well off without your charity.");
 		PlayAnim("once", "no");
 	}

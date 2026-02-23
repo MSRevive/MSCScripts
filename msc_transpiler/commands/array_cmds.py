@@ -20,17 +20,24 @@ class ArrayCreateTranslator(CommandTranslator):
 
 
 class ArrayAddTranslator(CommandTranslator):
-    def __init__(self, is_global: bool = False):
+    def __init__(self, is_global: bool = False, unique: bool = False):
         self.is_global = is_global
+        self.unique = unique
 
     def translate(self, cmd, ctx, w):
         if len(cmd.args) >= 2:
             name = ctx.expr_raw(cmd.args[0])
             val = ctx.translate_expr(cmd.args[1])
             if self.is_global:
-                w.line(f'GlobalArrayAdd("{name}", {val});')
+                if self.unique:
+                    w.line(f'GlobalArrayAddUnique("{name}", {val});')
+                else:
+                    w.line(f'GlobalArrayAdd("{name}", {val});')
             else:
-                w.line(f"{name}.insertLast({val});")
+                if self.unique:
+                    w.line(f"ArrayAddUnique({name}, {val});")
+                else:
+                    w.line(f"{name}.insertLast({val});")
         return True
 
 
@@ -94,6 +101,26 @@ class ArrayCopyTranslator(CommandTranslator):
         return True
 
 
+class ArrayRemoveTranslator(CommandTranslator):
+    """Remove element by value (find index first, then removeAt)."""
+    def __init__(self, is_global: bool = False):
+        self.is_global = is_global
+
+    def translate(self, cmd, ctx, w):
+        if len(cmd.args) >= 2:
+            name = ctx.expr_raw(cmd.args[0])
+            val = ctx.translate_expr(cmd.args[1])
+            if self.is_global:
+                w.line(f'GlobalArrayRemove("{name}", {val});')
+            else:
+                # Find and remove: int idx = ArrayFind(arr, val, 0); if (idx >= 0) arr.removeAt(idx);
+                w.line("{")
+                w.line(f"    int _rmIdx = ArrayFind({name}, {val}, 0);")
+                w.line(f"    if (_rmIdx >= 0) {name}.removeAt(_rmIdx);")
+                w.line("}")
+        return True
+
+
 class ArrayEraseTranslator(CommandTranslator):
     def __init__(self, is_global: bool = False):
         self.is_global = is_global
@@ -112,19 +139,21 @@ def register_commands():
     # Local arrays
     register("array.create", ArrayCreateTranslator(False))
     register("array.add", ArrayAddTranslator(False))
-    register("array.add_unique", ArrayAddTranslator(False))  # TODO: unique check
+    register("array.add_unique", ArrayAddTranslator(False, unique=True))
     register("array.set", ArraySetTranslator(False))
     register("array.del", ArrayDelTranslator(False))
     register("array.clear", ArrayClearTranslator(False))
     register("array.copy", ArrayCopyTranslator(False))
+    register("array.remove", ArrayRemoveTranslator(False))
     register("array.erase", ArrayEraseTranslator(False))
 
     # Global arrays
     register("g_array.create", ArrayCreateTranslator(True))
     register("g_array.add", ArrayAddTranslator(True))
-    register("g_array.add_unique", ArrayAddTranslator(True))
+    register("g_array.add_unique", ArrayAddTranslator(True, unique=True))
     register("g_array.set", ArraySetTranslator(True))
     register("g_array.del", ArrayDelTranslator(True))
     register("g_array.clear", ArrayClearTranslator(True))
     register("g_array.copy", ArrayCopyTranslator(True))
+    register("g_array.remove", ArrayRemoveTranslator(True))
     register("g_array.erase", ArrayEraseTranslator(True))

@@ -141,7 +141,7 @@ class MagicHandBase : CGameScript
 		int reg.spell.fizzletime = 9999999;
 		int reg.spell.castsuccess = 100;
 		string reg.spell.preparetime = SPELL_PREPARE_TIME;
-		// TODO: UNCONVERTED: registerspell
+		// TODO: registerspell
 	}
 
 	void game_prepare_success()

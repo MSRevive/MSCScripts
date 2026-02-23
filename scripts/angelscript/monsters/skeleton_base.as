@@ -192,6 +192,30 @@ class SkeletonBase : CGameScript
 		{
 			SetHearingSensitivity(10);
 		}
+		SLEEPER = 1;
+		DEEP_SLEEPER = 1;
+		SetAnimFrameRate(0.0);
+		ScheduleDelayedEvent(0.2, "hide_name");
+		SetRoam(false);
+		PLAYING_DEAD = 1;
+		if (!(STONE_SKELETON))
+		{
+			SetMoveAnim(ANIM_RESPAWN_DEADIDLE);
+			SetIdleAnim(ANIM_RESPAWN_DEADIDLE);
+		}
+		if ((STONE_SKELETON))
+		{
+			SetMoveAnim(ANIM_IDLE);
+			SetIdleAnim(ANIM_IDLE);
+		}
+		SetInvincible(true);
+		SetHearingSensitivity(0);
+		npcatk_suspend_ai();
+		NO_STUCK_CHECKS = 1;
+		if (!(DEEP_SLEEPER))
+		{
+			SetHearingSensitivity(10);
+		}
 	}
 
 	void set_summon_circle2()
@@ -272,6 +296,11 @@ class SkeletonBase : CGameScript
 		if (!(IsValidPlayer("ent_lastheard"))) return;
 		if (!(GetEntityRange("ent_lastheard") < 128)) return;
 		skeleton_wakeup_call();
+		if (!(SLEEPER)) return;
+		if ((DEEP_SLEEPER)) return;
+		if (!(IsValidPlayer("ent_lastheard"))) return;
+		if (!(GetEntityRange("ent_lastheard") < 128)) return;
+		skeleton_wakeup_call();
 	}
 
 	void skeleton_wakeup_call()
@@ -319,46 +348,9 @@ class SkeletonBase : CGameScript
 		npcatk_resume_ai();
 	}
 
-	void OnHeardSound(CBaseEntity@ source, Vector3 origin) override
-	{
-		if (!(SLEEPER)) return;
-		if ((DEEP_SLEEPER)) return;
-		if (!(IsValidPlayer("ent_lastheard"))) return;
-		if (!(GetEntityRange("ent_lastheard") < 128)) return;
-		skeleton_wakeup_call();
-	}
-
 	void make_sleeper()
 	{
 		SLEEPER = 1;
-		SetAnimFrameRate(0.0);
-		ScheduleDelayedEvent(0.2, "hide_name");
-		SetRoam(false);
-		PLAYING_DEAD = 1;
-		if (!(STONE_SKELETON))
-		{
-			SetMoveAnim(ANIM_RESPAWN_DEADIDLE);
-			SetIdleAnim(ANIM_RESPAWN_DEADIDLE);
-		}
-		if ((STONE_SKELETON))
-		{
-			SetMoveAnim(ANIM_IDLE);
-			SetIdleAnim(ANIM_IDLE);
-		}
-		SetInvincible(true);
-		SetHearingSensitivity(0);
-		npcatk_suspend_ai();
-		NO_STUCK_CHECKS = 1;
-		if (!(DEEP_SLEEPER))
-		{
-			SetHearingSensitivity(10);
-		}
-	}
-
-	void make_deep_sleeper()
-	{
-		SLEEPER = 1;
-		DEEP_SLEEPER = 1;
 		SetAnimFrameRate(0.0);
 		ScheduleDelayedEvent(0.2, "hide_name");
 		SetRoam(false);

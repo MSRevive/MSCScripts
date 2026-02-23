@@ -174,16 +174,8 @@ class Dorfgan : CGameScript
 	{
 		if (!(RandomInt(1, 2) == 1)) return;
 		AddStoreItem(STORE_NAME, "swords_longsword", 1, 200);
-	}
-
-	void addrandomitems()
-	{
 		if (!(RandomInt(1, 2) == 1)) return;
 		AddStoreItem(STORE_NAME, "swords_scimitar", 1, 100);
-	}
-
-	void addrandomitems()
-	{
 		if (!(RandomInt(1, 2) == 1)) return;
 		AddStoreItem(STORE_NAME, "axes_battleaxe", 1, 200);
 	}

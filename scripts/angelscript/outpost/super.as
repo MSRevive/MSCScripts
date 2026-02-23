@@ -78,7 +78,7 @@ class Super : CGameScript
 		SetMoveAnim("walk");
 		SetSkillLevel(0);
 		SetStepSize(0);
-		// TODO: UNCONVERTED: maxslope 10
+		// TODO: maxslope 10
 		SetDamageResistance("all", 0.5);
 		REQ_QUEST_NOTDONE = 1;
 		SetGlobalVar("WARBOSS_DEAD", 0);

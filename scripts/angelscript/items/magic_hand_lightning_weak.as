@@ -72,7 +72,7 @@ class MagicHandLightningWeak : CGameScript
 		l.end += Vector3(0, 0, 4096);
 		string l.widthratio = GetSkillLevel(GetOwner(), "spellcasting.lightning.ratio");
 		l.widthratio *= 3;
-		l.widthratio = max(0, min(1, l.widthratio));
+		// TODO: capvar l.widthratio 0 1
 		ClientEvent("new", "all_in_sight", SCRIPT_SFX_CAST, param2, l.end, SCRIPT_SFX_DURATION, l.widthratio);
 		if (param1 == "npc")
 		{

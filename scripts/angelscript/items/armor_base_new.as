@@ -34,7 +34,7 @@ class ArmorBaseNew : CGameScript
 		ARMOR_PROTECTION = 0;
 		ARMOR_PROTECTION_AREA = BARMOR_PROTECTION_AREA;
 		ARMOR_REPLACE_BODYPARTS = BARMOR_PROTECTION_AREA;
-		// TODO: UNCONVERTED: registerarmor
+		// TODO: registerarmor
 		SetModelBody(0, NEW_ARMOR_OFS);
 		hide_body_parts();
 		if (!(true)) return;
@@ -67,7 +67,7 @@ class ArmorBaseNew : CGameScript
 	{
 		SetModel(NEW_ARMOR_MODEL);
 		SetModelBody(0, NEW_ARMOR_OFS);
-		// TODO: UNCONVERTED: playermessagecl ARMOR_TEXT ( BARMOR_PROTECTION )
+		// TODO: playermessagecl ARMOR_TEXT BARMOR_PROTECTION
 		if (!(true)) return;
 		hide_body_parts();
 		if (!(GetStat(GetOwner(), "strength") < ARMOR_STR_REQ)) return;

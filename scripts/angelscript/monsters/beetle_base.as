@@ -227,6 +227,90 @@ class BeetleBase : CGameScript
 			BBET_NEXT_FLY_LEAP += FREQ_FLY_LEAP;
 			bbet_fly_leap();
 		}
+		if (!(BBET_FLYING)) return;
+		if (!(IsEntityAlive(GetOwner()))) return;
+		if (m_hAttackTarget != "unset")
+		{
+			if (!(BBET_FLY_LEAP))
+			{
+				string MY_Z = GetEntityProperty(GetOwner(), "origin.z");
+				string TARG_Z = GetEntityProperty(m_hAttackTarget, "origin.z");
+				if ((IsValidPlayer(m_hAttackTarget)))
+				{
+					TARG_Z -= 38;
+				}
+				string Z_DIFF = TARG_Z;
+				Z_DIFF -= MY_Z;
+				if (Z_DIFF > 64)
+				{
+					if (Z_DIFF < 384)
+					{
+						SetGravity(0);
+						string RND_LR = Random(-10, 10);
+						int FWD_SPEED = 110;
+						if (GetEntityRange(m_hAttackTarget) > 400)
+						{
+							int FWD_SPEED = 210;
+						}
+						AddVelocity(GetOwner(), /* TODO: $relvel */ $relvel(RND_LR, FWD_SPEED, 200));
+					}
+					else
+					{
+						SetGravity(0.5);
+						if (GetEntityRange(m_hAttackTarget) < ATTACK_RANGE)
+						{
+							bbet_end_flight();
+						}
+						else
+						{
+							string MY_GROUND = /* TODO: $get_ground_height */ $get_ground_height(GetMonsterProperty("origin"));
+							if ((GetMonsterProperty("origin")).z == MY_GROUND)
+							{
+							}
+							AddVelocity(GetOwner(), /* TODO: $relvel */ $relvel(0, 110, 200));
+						}
+					}
+				}
+				else
+				{
+					SetGravity(0.5);
+					if (GetEntityRange(m_hAttackTarget) < ATTACK_RANGE)
+					{
+						bbet_end_flight();
+					}
+					else
+					{
+						string MY_GROUND = /* TODO: $get_ground_height */ $get_ground_height(GetMonsterProperty("origin"));
+						if ((GetMonsterProperty("origin")).z == MY_GROUND)
+						{
+						}
+						LogDebug("stuck_ground");
+						AddVelocity(GetOwner(), /* TODO: $relvel */ $relvel(0, 110, 150));
+					}
+				}
+			}
+			else
+			{
+				if (GetEntityRange(m_hAttackTarget) < ATTACK_RANGE)
+				{
+					bbet_end_flight();
+				}
+				else
+				{
+					LogDebug("leap_flight");
+					SetGravity(0.5);
+					string RND_LR = Random(-10, 10);
+					AddVelocity(GetOwner(), /* TODO: $relvel */ $relvel(RND_LR, 150, 200));
+				}
+			}
+		}
+		else
+		{
+			bbet_end_flight();
+		}
+		if (!(BBET_FLYING)) return;
+		if (!(STUCK_COUNT >= 1)) return;
+		bbet_end_flight();
 	}
 
 	void npc_selectattack()
@@ -551,94 +635,6 @@ class BeetleBase : CGameScript
 		NPC_NO_ATTACK = 1;
 		// svplaysound: svplaysound 2 10 SOUND_FLY_LOOP
 		EmitSound(2, 10, SOUND_FLY_LOOP);
-	}
-
-	void OnHuntTarget(CBaseEntity@ target)
-	{
-		if (!(BBET_FLYING)) return;
-		if (!(IsEntityAlive(GetOwner()))) return;
-		if (m_hAttackTarget != "unset")
-		{
-			if (!(BBET_FLY_LEAP))
-			{
-				string MY_Z = GetEntityProperty(GetOwner(), "origin.z");
-				string TARG_Z = GetEntityProperty(m_hAttackTarget, "origin.z");
-				if ((IsValidPlayer(m_hAttackTarget)))
-				{
-					TARG_Z -= 38;
-				}
-				string Z_DIFF = TARG_Z;
-				Z_DIFF -= MY_Z;
-				if (Z_DIFF > 64)
-				{
-					if (Z_DIFF < 384)
-					{
-						SetGravity(0);
-						string RND_LR = Random(-10, 10);
-						int FWD_SPEED = 110;
-						if (GetEntityRange(m_hAttackTarget) > 400)
-						{
-							int FWD_SPEED = 210;
-						}
-						AddVelocity(GetOwner(), /* TODO: $relvel */ $relvel(RND_LR, FWD_SPEED, 200));
-					}
-					else
-					{
-						SetGravity(0.5);
-						if (GetEntityRange(m_hAttackTarget) < ATTACK_RANGE)
-						{
-							bbet_end_flight();
-						}
-						else
-						{
-							string MY_GROUND = /* TODO: $get_ground_height */ $get_ground_height(GetMonsterProperty("origin"));
-							if ((GetMonsterProperty("origin")).z == MY_GROUND)
-							{
-							}
-							AddVelocity(GetOwner(), /* TODO: $relvel */ $relvel(0, 110, 200));
-						}
-					}
-				}
-				else
-				{
-					SetGravity(0.5);
-					if (GetEntityRange(m_hAttackTarget) < ATTACK_RANGE)
-					{
-						bbet_end_flight();
-					}
-					else
-					{
-						string MY_GROUND = /* TODO: $get_ground_height */ $get_ground_height(GetMonsterProperty("origin"));
-						if ((GetMonsterProperty("origin")).z == MY_GROUND)
-						{
-						}
-						LogDebug("stuck_ground");
-						AddVelocity(GetOwner(), /* TODO: $relvel */ $relvel(0, 110, 150));
-					}
-				}
-			}
-			else
-			{
-				if (GetEntityRange(m_hAttackTarget) < ATTACK_RANGE)
-				{
-					bbet_end_flight();
-				}
-				else
-				{
-					LogDebug("leap_flight");
-					SetGravity(0.5);
-					string RND_LR = Random(-10, 10);
-					AddVelocity(GetOwner(), /* TODO: $relvel */ $relvel(RND_LR, 150, 200));
-				}
-			}
-		}
-		else
-		{
-			bbet_end_flight();
-		}
-		if (!(BBET_FLYING)) return;
-		if (!(STUCK_COUNT >= 1)) return;
-		bbet_end_flight();
 	}
 
 	void bbet_end_flight()

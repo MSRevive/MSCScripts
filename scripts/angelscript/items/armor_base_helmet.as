@@ -154,7 +154,7 @@ class ArmorBaseHelmet : CGameScript
 	void ext_setrender()
 	{
 		LogDebug("got ext_setrender PARAM1");
-		// TODO: UNCONVERTED: setrender PARAM1
+		// TODO: setrender PARAM1
 	}
 
 }

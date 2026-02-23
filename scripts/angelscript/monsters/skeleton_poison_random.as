@@ -218,6 +218,13 @@ class SkeletonPoisonRandom : CGameScript
 		array<string> sounds = {SOUND_BOLT1, SOUND_BOLT2};
 		EmitSound(GetOwner(), 0, sounds[RandomInt(0, sounds.length() - 1)], 10);
 		TossProjectile("proj_poison_spit2", /* TODO: $relpos */ $relpos(0, 15, 8), "none", 300, BOLT_DAMAGE, 0.5, "none");
+		if ((POISON_BLADE))
+		{
+			APPLY_EFFECT = "effects/dot_poison";
+			POISON_ATTACK = 1;
+		}
+		DoDamage(m_hLastSeen, ATTACK_RANGE, ATTACK_DAMAGE_HIGH, ATTACK_HITCHANCE, "slash");
+		ANIM_ATTACK = "attack1";
 	}
 
 	void OnStruck(CBaseEntity@ attacker, int damage)
@@ -290,13 +297,11 @@ class SkeletonPoisonRandom : CGameScript
 		HealEntity(GetOwner(), HP_TO_GIVE);
 		Effect("glow", GetOwner(), Vector3(0, 255, 0), 80, 0.5, 0.5);
 		EmitSound(GetOwner(), 0, "player/heartbeat_noloop.wav", 10);
-	}
-
-	void OnDamagedOther(CBaseEntity@ victim, int damage) override
-	{
 		if (!(POISON_ATTACK)) return;
 		ApplyEffect(GetEntityIndex(param1), APPLY_EFFECT, RandomInt(10, 15), GetEntityIndex(GetOwner()), Random(1, 4));
 		POISON_ATTACK = 0;
+		if (!(I_R_SUMMONED)) return;
+		SUMMON_DELAY_STUCK_CHECK = 5;
 	}
 
 	void attack_1()
@@ -318,17 +323,6 @@ class SkeletonPoisonRandom : CGameScript
 		}
 		attack_snd();
 		DoDamage(m_hLastSeen, ATTACK_RANGE, Random(ATTACK_DAMAGE_LOW, ATTACK_DAMAGE_HIGH), ATTACK_HITCHANCE, "slash");
-	}
-
-	void attack_2()
-	{
-		if ((POISON_BLADE))
-		{
-			APPLY_EFFECT = "effects/dot_poison";
-			POISON_ATTACK = 1;
-		}
-		DoDamage(m_hLastSeen, ATTACK_RANGE, ATTACK_DAMAGE_HIGH, ATTACK_HITCHANCE, "slash");
-		ANIM_ATTACK = "attack1";
 	}
 
 	void do_fart()
@@ -382,12 +376,6 @@ class SkeletonPoisonRandom : CGameScript
 	}
 
 	void npc_selectattack()
-	{
-		if (!(I_R_SUMMONED)) return;
-		SUMMON_DELAY_STUCK_CHECK = 5;
-	}
-
-	void OnDamagedOther(CBaseEntity@ victim, int damage) override
 	{
 		if (!(I_R_SUMMONED)) return;
 		SUMMON_DELAY_STUCK_CHECK = 5;

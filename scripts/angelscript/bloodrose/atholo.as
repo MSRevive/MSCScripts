@@ -181,7 +181,7 @@ class Atholo : CGameScript
 		ANIM_ATTACK = "attack1";
 		SetMoveSpeed(1.0);
 		SetStepSize(64);
-		// TODO: UNCONVERTED: maxslope 90
+		// TODO: maxslope 90
 		EmitSound(GetOwner(), 0, SOUND_TAUNT, 10);
 		SWIPES_COUNT = 0;
 		ScheduleDelayedEvent(2.0, "rt_adj_stepsize");

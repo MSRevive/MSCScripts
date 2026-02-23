@@ -222,6 +222,7 @@ class BearGodRandom : CGameScript
 		STOMP_DELAY = 1;
 		FREQ_STOMP("bg_reset_stomp_delay");
 		ScheduleDelayedEvent(0.5, "repulse_stomp");
+		BG_PUSH_ATK = 1;
 	}
 
 	void repulse_stomp()
@@ -256,6 +257,7 @@ class BearGodRandom : CGameScript
 		BEAR_ISSTOMPATK = 0;
 		if (!(GetEntityRange(HUNT_LASTTARGET) < ATTACK_HITRANGE)) return;
 		DoDamage(m_hLastSeen, "direct", ATTACK_DAMAGE, ATTACK_HITCHANCE, "slash");
+		BG_PUSH_ATK = 1;
 	}
 
 	void npc_selectattack()
@@ -295,16 +297,6 @@ class BearGodRandom : CGameScript
 		if (!(BG_PUSH_ATK)) return;
 		AddVelocity(m_hLastStruckByMe, /* TODO: $relvel */ $relvel(SIDEPUSH, FORWARDPUSH, UPPUSH));
 		BG_PUSH_ATK = 0;
-	}
-
-	void frame_attack1()
-	{
-		BG_PUSH_ATK = 1;
-	}
-
-	void bear_stomp()
-	{
-		BG_PUSH_ATK = 1;
 	}
 
 	void OnDeath(CBaseEntity@ attacker) override

@@ -52,6 +52,7 @@ class ProjServerArrow : CGameScript
 			ClientEvent("new", "all_in_sight", "effects/sfx_motionblur", GetEntityIndex(GetOwner()));
 		}
 		game_fall();
+		game_fall();
 	}
 
 	void game_projectile_landed()
@@ -90,11 +91,6 @@ class ProjServerArrow : CGameScript
 		MB_TEMP += ARROW_BODY_OFS;
 		SetModelBody(0, MB_TEMP);
 		arrow_deploy();
-	}
-
-	void game_tossprojectile()
-	{
-		game_fall();
 	}
 
 	void game_fall()

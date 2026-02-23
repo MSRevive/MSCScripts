@@ -114,10 +114,6 @@ class KayrathCl : CGameScript
 	void update_source_rhand()
 	{
 		ClientEffect("tempent", "set_current_prop", "origin", ATTACH_RHAND);
-	}
-
-	void update_source_rhand()
-	{
 		ClientEffect("tempent", "set_current_prop", "origin", ATTACH_LHAND);
 	}
 

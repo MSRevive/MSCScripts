@@ -74,9 +74,9 @@ class GutBuster : CGameScript
 	{
 		string L_NUM_GIBS = /* TODO: $math(add) */ GetEntityHeight(GetOwner());
 		L_NUM_GIBS /= 150;
-		L_NUM_GIBS = max(0, min(2, L_NUM_GIBS));
+		// TODO: capvar L_NUM_GIBS 0 2
 		L_HP_GIBS += /* TODO: $math(divide) */ GetEntityMaxHealth(GetOwner());
-		L_HP_GIBS = max(0, min(3, L_HP_GIBS));
+		// TODO: capvar L_HP_GIBS 0 3
 		L_NUM_GIBS += L_HP_GIBS;
 		L_NUM_GIBS += 1;
 		return;

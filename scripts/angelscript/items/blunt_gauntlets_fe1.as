@@ -90,7 +90,28 @@ class BluntGauntletsFe1 : CGameScript
 		int reg.spell.fizzletime = 99999;
 		float reg.spell.castsuccess = 1.0;
 		int reg.spell.preparetime = 1;
-		// TODO: UNCONVERTED: registerspell
+		// TODO: registerspell
+		int CHARGE2_REQ = 22;
+		string reg.attack.type = "strike-land";
+		string reg.attack.keys = "-attack1";
+		string reg.attack.range = REACH_MELEE_RANGE;
+		int reg.attack.dmg = 0;
+		int reg.attack.dmg.range = 0;
+		string reg.attack.dmg.type = "pierce";
+		int reg.attack.energydrain = 2;
+		string reg.attack.stat = "spellcasting.affliction";
+		int reg.attack.hitchance = 100;
+		int reg.attack.priority = 2;
+		float reg.attack.delay.strike = 0.2;
+		float reg.attack.delay.end = 0.9;
+		string reg.attack.ofs.startpos = MELEE_STARTPOS;
+		string reg.attack.ofs.aimang = MELEE_AIMANGLE;
+		string reg.attack.callback = "gouge";
+		string reg.attack.noise = MELEE_NOISE;
+		int reg.attack.mpdrain = 0;
+		float reg.attack.chargeamt = 1.0;
+		string reg.attack.reqskill = CHARGE2_REQ;
+		RegisterAttack();
 	}
 
 	void melee_start()
@@ -158,31 +179,6 @@ class BluntGauntletsFe1 : CGameScript
 			string AFFLIC_DAMAGE = MELEE_AFFLICDMG_MIN;
 		}
 		ApplyEffect(param1, "effects/dot_poison", 5, GetEntityIndex(GetOwner()), AFFLIC_DAMAGE, "spellcasting.affliction");
-	}
-
-	void weapon_spawn()
-	{
-		int CHARGE2_REQ = 22;
-		string reg.attack.type = "strike-land";
-		string reg.attack.keys = "-attack1";
-		string reg.attack.range = REACH_MELEE_RANGE;
-		int reg.attack.dmg = 0;
-		int reg.attack.dmg.range = 0;
-		string reg.attack.dmg.type = "pierce";
-		int reg.attack.energydrain = 2;
-		string reg.attack.stat = "spellcasting.affliction";
-		int reg.attack.hitchance = 100;
-		int reg.attack.priority = 2;
-		float reg.attack.delay.strike = 0.2;
-		float reg.attack.delay.end = 0.9;
-		string reg.attack.ofs.startpos = MELEE_STARTPOS;
-		string reg.attack.ofs.aimang = MELEE_AIMANGLE;
-		string reg.attack.callback = "gouge";
-		string reg.attack.noise = MELEE_NOISE;
-		int reg.attack.mpdrain = 0;
-		float reg.attack.chargeamt = 1.0;
-		string reg.attack.reqskill = CHARGE2_REQ;
-		RegisterAttack();
 	}
 
 	void gouge_start()

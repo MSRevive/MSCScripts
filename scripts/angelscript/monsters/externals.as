@@ -953,6 +953,10 @@ class Externals : CGameScript
 			Effect("glow", GetOwner(), NPC_GLOW, 64, 20, 0);
 			ScheduleDelayedEvent(10.1, "npcatk_reset_glow");
 		}
+		if (!(NPC_ATTACK_UNTIL_SPOTTED)) return;
+		npcatk_attack_till_spotted();
+		if (!(GetEntityProperty(GetOwner(), "nopush"))) return;
+		SetScriptFlags(GetOwner(), "add", "npspawn", "nopush");
 	}
 
 	void npcatk_reset_glow()
@@ -1134,7 +1138,7 @@ class Externals : CGameScript
 	void ext_setrender()
 	{
 		LogDebug("got ext_setrender PARAM1");
-		// TODO: UNCONVERTED: setrender PARAM1
+		// TODO: setrender PARAM1
 	}
 
 	void set_scale_nr()
@@ -1280,12 +1284,6 @@ class Externals : CGameScript
 	void set_attack_until_spotted()
 	{
 		NPC_ATTACK_UNTIL_SPOTTED = 1;
-	}
-
-	void OnPostSpawn() override
-	{
-		if (!(NPC_ATTACK_UNTIL_SPOTTED)) return;
-		npcatk_attack_till_spotted();
 	}
 
 	void npcatk_attack_till_spotted()
@@ -1760,12 +1758,6 @@ class Externals : CGameScript
 	{
 		SetScriptFlags(GetOwner(), "remove_expired");
 		CallExternal(GetOwner(), "ext_scriptflag_expired");
-	}
-
-	void OnPostSpawn() override
-	{
-		if (!(GetEntityProperty(GetOwner(), "nopush"))) return;
-		SetScriptFlags(GetOwner(), "add", "npspawn", "nopush");
 	}
 
 	void set_cbm_file()

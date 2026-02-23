@@ -169,6 +169,8 @@ class PolearmsBase : CGameScript
 	void OnDrop() override
 	{
 		item_drop();
+		string RL_HAND = "game.item.hand_index";
+		CallExternal(GetOwner(), "ext_set_hand_id", RL_HAND, 0);
 	}
 
 	void game_switchhands()
@@ -497,6 +499,21 @@ class PolearmsBase : CGameScript
 		string TARGET_HIT = param1;
 		string DMG_DONE = param2;
 		pole_adjust_damage(TARGET_HIT, DMG_DONE);
+		if (!(BWEAPON_CHARGE_PERCENT < 1)) return;
+		if (BWEAPON_CHARGE_PERCENT > 0.25)
+		{
+			BWEAPON_CHARGE_PERCENT -= 0.25;
+			string L_CHARGE_RATIO = /* TODO: $ratio */ $ratio(BWEAPON_CHARGE_PERCENT, 1.25, BWEAPON_DBL_CHARGE_ADJ);
+			string NEW_DMG = param2;
+			NEW_DMG *= L_CHARGE_RATIO;
+			SetDamage("dmg");
+			return;
+			LogDebug("Adjusted dmg x L_CHARGE_RATIO");
+			BWEAPON_CHARGE_PERCENT = 0;
+			string CUR_DRAIN = MELEE_ENERGY;
+			CUR_DRAIN *= BWEAPON_CHARGE_PERCENT;
+			DrainStamina(GetOwner());
+		}
 	}
 
 	void attack_poke2_damaged_other()
@@ -1055,12 +1072,6 @@ class PolearmsBase : CGameScript
 		POLE_THROW_PREPPING = 0;
 	}
 
-	void OnDrop() override
-	{
-		string RL_HAND = "game.item.hand_index";
-		CallExternal(GetOwner(), "ext_set_hand_id", RL_HAND, 0);
-	}
-
 	void ext_player_sit()
 	{
 		LogDebug("ext_player_sit");
@@ -1077,25 +1088,6 @@ class PolearmsBase : CGameScript
 	void game_setchargepercent()
 	{
 		BWEAPON_CHARGE_PERCENT = param1;
-	}
-
-	void attack_poke1_damaged_other()
-	{
-		if (!(BWEAPON_CHARGE_PERCENT < 1)) return;
-		if (BWEAPON_CHARGE_PERCENT > 0.25)
-		{
-			BWEAPON_CHARGE_PERCENT -= 0.25;
-			string L_CHARGE_RATIO = /* TODO: $ratio */ $ratio(BWEAPON_CHARGE_PERCENT, 1.25, BWEAPON_DBL_CHARGE_ADJ);
-			string NEW_DMG = param2;
-			NEW_DMG *= L_CHARGE_RATIO;
-			SetDamage("dmg");
-			return;
-			LogDebug("Adjusted dmg x L_CHARGE_RATIO");
-			BWEAPON_CHARGE_PERCENT = 0;
-			string CUR_DRAIN = MELEE_ENERGY;
-			CUR_DRAIN *= BWEAPON_CHARGE_PERCENT;
-			DrainStamina(GetOwner());
-		}
 	}
 
 }

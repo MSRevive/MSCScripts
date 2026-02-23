@@ -57,10 +57,6 @@ class MapStartup : CGameScript
 			SetGlobalVar("global.mstime.updateall", 0);
 		}
 		LogDebug("game_newlevel PARAM1 MAP_ALLOWNIGHT MAP_WEATHER");
-	}
-
-	void game_newlevel()
-	{
 		if (!(param1 == MAP_NAME)) return;
 		SetGlobalVar("global.map.allownight", MAP_ALLOWNIGHT);
 		LogDebug("***** game_newlevel PARAM1 MAP_ALLOWNIGHT");

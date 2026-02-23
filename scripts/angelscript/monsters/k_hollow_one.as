@@ -141,10 +141,6 @@ class KHollowOne : CGameScript
 	{
 		Precache("monsters/summon/client_side_fireball");
 		Precache("monsters/summon/client_side_iceball");
-	}
-
-	void game_precache()
-	{
 		Precache("effects/sfx_motionblur_perm");
 	}
 
@@ -250,6 +246,70 @@ class KHollowOne : CGameScript
 				zap_scan();
 			}
 		}
+		if ((IsEntityAlive(ZAP_TARGET)))
+		{
+			if (GetEntityRange(ZAP_TARGET) <= SHIELD_RANGE)
+			{
+				if (!(ZAP_ON))
+				{
+					// svplaysound: svplaysound 2 10 SOUND_ZAP_LOOP
+					EmitSound(2, 10, SOUND_ZAP_LOOP);
+					EmitSound(GetOwner(), 0, SOUND_ZAP_START, 10);
+					ZAP_TARG_RESIST = /* TODO: $get_takedmg */ $get_takedmg(ZAP_TARGET, "lightning");
+					ClientEvent("update", "all", CL_IDX, "kh_zap_target_on", GetEntityIndex(ZAP_TARGET));
+				}
+				ZAP_ON = 1;
+				DoDamage(ZAP_TARGET, "direct", DMG_ZAP, 1.0, GetOwner());
+				if (Random(0.0, 1.0) < ZAP_TARG_RESIST)
+				{
+				}
+				string TARGET_ORG = GetEntityOrigin(ZAP_TARGET);
+				string TARG_ANG = /* TODO: $angles */ $angles(GetMonsterProperty("origin"), TARGET_ORG);
+				string NEW_YAW = TARG_ANG;
+				AddVelocity(ZAP_TARGET, /* TODO: $relvel */ $relvel(Vector3(0, NEW_YAW, 0), Vector3(0, 200, 110)));
+			}
+			else
+			{
+				ZAP_ON = 0;
+				// svplaysound: svplaysound 2 0 SOUND_ZAP_LOOP
+				EmitSound(2, 0, SOUND_ZAP_LOOP);
+				ClientEvent("update", "all", CL_IDX, "kh_zap_target_off");
+			}
+		}
+		else
+		{
+			if ((ZAP_ON))
+			{
+			}
+			ZAP_ON = 0;
+			// svplaysound: svplaysound 2 0 SOUND_ZAP_LOOP
+			EmitSound(2, 0, SOUND_ZAP_LOOP);
+			ClientEvent("update", "all", CL_IDX, "kh_zap_target_off");
+		}
+		if (!(FLIGHT_MODE)) return;
+		string MY_POS = GetEntityOrigin(GetOwner());
+		string MY_UP = MY_POS;
+		MY_UP += "z";
+		string MY_DOWN = MY_POS;
+		MY_DOWN += "z";
+		string SCAN_UP = TraceLine(MY_POS, MY_UP);
+		string SCAN_DOWN = TraceLine(MY_POS, MY_DOWN);
+		FLOAT_DIR = 1;
+		if (SCAN_UP != MY_UP)
+		{
+			FLOAT_DIR = -25;
+		}
+		if (SCAN_DOWN != MY_DOWN)
+		{
+			FLOAT_DIR = 25;
+		}
+		string MAX_HEIGHT = /* TODO: $get_ground_height */ $get_ground_height(MY_POS);
+		MAX_HEIGHT += 384;
+		if ((MY_POS).z >= MAX_HEIGHT)
+		{
+			FLOAT_DIR = -25;
+		}
+		AddVelocity(GetOwner(), /* TODO: $relvel */ $relvel(0, 0, FLOAT_DIR));
 	}
 
 	void do_special()
@@ -973,50 +1033,6 @@ class KHollowOne : CGameScript
 		ZAP_TARGET = GetToken(ZAP_LIST, 0, ";");
 	}
 
-	void OnHuntTarget(CBaseEntity@ target)
-	{
-		if ((IsEntityAlive(ZAP_TARGET)))
-		{
-			if (GetEntityRange(ZAP_TARGET) <= SHIELD_RANGE)
-			{
-				if (!(ZAP_ON))
-				{
-					// svplaysound: svplaysound 2 10 SOUND_ZAP_LOOP
-					EmitSound(2, 10, SOUND_ZAP_LOOP);
-					EmitSound(GetOwner(), 0, SOUND_ZAP_START, 10);
-					ZAP_TARG_RESIST = /* TODO: $get_takedmg */ $get_takedmg(ZAP_TARGET, "lightning");
-					ClientEvent("update", "all", CL_IDX, "kh_zap_target_on", GetEntityIndex(ZAP_TARGET));
-				}
-				ZAP_ON = 1;
-				DoDamage(ZAP_TARGET, "direct", DMG_ZAP, 1.0, GetOwner());
-				if (Random(0.0, 1.0) < ZAP_TARG_RESIST)
-				{
-				}
-				string TARGET_ORG = GetEntityOrigin(ZAP_TARGET);
-				string TARG_ANG = /* TODO: $angles */ $angles(GetMonsterProperty("origin"), TARGET_ORG);
-				string NEW_YAW = TARG_ANG;
-				AddVelocity(ZAP_TARGET, /* TODO: $relvel */ $relvel(Vector3(0, NEW_YAW, 0), Vector3(0, 200, 110)));
-			}
-			else
-			{
-				ZAP_ON = 0;
-				// svplaysound: svplaysound 2 0 SOUND_ZAP_LOOP
-				EmitSound(2, 0, SOUND_ZAP_LOOP);
-				ClientEvent("update", "all", CL_IDX, "kh_zap_target_off");
-			}
-		}
-		else
-		{
-			if ((ZAP_ON))
-			{
-			}
-			ZAP_ON = 0;
-			// svplaysound: svplaysound 2 0 SOUND_ZAP_LOOP
-			EmitSound(2, 0, SOUND_ZAP_LOOP);
-			ClientEvent("update", "all", CL_IDX, "kh_zap_target_off");
-		}
-	}
-
 	void do_poison_breath()
 	{
 		stop_movement();
@@ -1218,34 +1234,6 @@ class KHollowOne : CGameScript
 		NEXT_FLIGHT = GetGameTime();
 		NEXT_FLIGHT += FREQ_FLIGHT;
 		ClientEvent("update", "all", CL_IDX, "kh_flight_sprites", 0);
-	}
-
-	void OnHuntTarget(CBaseEntity@ target)
-	{
-		if (!(FLIGHT_MODE)) return;
-		string MY_POS = GetEntityOrigin(GetOwner());
-		string MY_UP = MY_POS;
-		MY_UP += "z";
-		string MY_DOWN = MY_POS;
-		MY_DOWN += "z";
-		string SCAN_UP = TraceLine(MY_POS, MY_UP);
-		string SCAN_DOWN = TraceLine(MY_POS, MY_DOWN);
-		FLOAT_DIR = 1;
-		if (SCAN_UP != MY_UP)
-		{
-			FLOAT_DIR = -25;
-		}
-		if (SCAN_DOWN != MY_DOWN)
-		{
-			FLOAT_DIR = 25;
-		}
-		string MAX_HEIGHT = /* TODO: $get_ground_height */ $get_ground_height(MY_POS);
-		MAX_HEIGHT += 384;
-		if ((MY_POS).z >= MAX_HEIGHT)
-		{
-			FLOAT_DIR = -25;
-		}
-		AddVelocity(GetOwner(), /* TODO: $relvel */ $relvel(0, 0, FLOAT_DIR));
 	}
 
 	void game_movingto_dest()

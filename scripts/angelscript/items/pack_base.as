@@ -32,7 +32,7 @@ class PackBase : CGameScript
 		string reg.container.accept_mask = TRUE_ACCEPT;
 		string reg.container.reject_mask = CONTAINER_ITEM_REJECT;
 		string reg.container.maxitem = CONTAINER_MAXITEMS;
-		// TODO: UNCONVERTED: registercontainer
+		// TODO: registercontainer
 	}
 
 	void OnDeploy() override

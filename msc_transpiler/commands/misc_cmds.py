@@ -319,3 +319,36 @@ def register_commands():
     register("kick", CommandTranslator())
     register("playername", CommandTranslator())
     register("playertitle", CommandTranslator())
+
+    # Registration/definition commands — emit as TODO comments
+    register("reg", CommandTranslator())
+    register("registerarmor", CommandTranslator())
+    register("registercontainer", CommandTranslator())
+    register("registerspell", CommandTranslator())
+
+    # Movement/AI commands
+    register("movetype", CommandTranslator())
+    register("setgaitspeed", CommandTranslator())
+    register("maxslope", CommandTranslator())
+    register("roamdelay", CommandTranslator())
+    register("tospawn", CommandTranslator())
+
+    # Player/entity state
+    register("setstatus", CommandTranslator())
+    register("setrender", CommandTranslator())
+    register("removesetvar", CommandTranslator())
+    register("setrvard", CommandTranslator())
+
+    # Item/projectile
+    register("projectiletouch", CommandTranslator())
+
+    # Sound
+    register("playmp3", CommandTranslator())
+    register("splayviewanim", CommandTranslator())
+    register("playermessagecl", CommandTranslator())
+
+    # DLLFunc
+    register("dllfunc", CommandTranslator())
+
+    # Menu
+    register("menu.autopen", CommandTranslator())

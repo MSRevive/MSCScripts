@@ -99,7 +99,7 @@ class BluntBaseOnehanded : CGameScript
 		if ((BLUNT_NO_STUN)) return;
 		string maxstun = GetSkillLevel(GetOwner(), "bluntarms.prof");
 		maxstun += 1;
-		maxstun = max(1, min(45, maxstun));
+		// TODO: capvar maxstun 1 45
 		string stuntime = Random(1, maxstun);
 		ApplyEffect(param1, EFFECT_SCRIPT, stuntime, GetEntityIndex(GetOwner()));
 	}

@@ -161,6 +161,9 @@ class Innkeeper : CGameScript
 	{
 		PlayAnim("once", "pondering");
 		SayText("Rumour has it that this place has rooms real cheap , get my drift?");
+		PlayAnim("once", "pondering");
+		SayText("I ve heard from travelers coming to this tavern, telling about places outside of this village.");
+		ScheduleDelayedEvent(3, "say_rumour2");
 	}
 
 	void vendor_used()
@@ -237,13 +240,6 @@ class Innkeeper : CGameScript
 	{
 		PlayAnim("critical", "give_shot");
 		SayText("You can find Cathain inside the barracks - just left of the castle. Usually pacing a wear in the floor.");
-	}
-
-	void say_rumour()
-	{
-		PlayAnim("once", "pondering");
-		SayText("I ve heard from travelers coming to this tavern, telling about places outside of this village.");
-		ScheduleDelayedEvent(3, "say_rumour2");
 	}
 
 	void say_rumour2()

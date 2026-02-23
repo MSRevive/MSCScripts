@@ -27,6 +27,7 @@ class BaseGlow : CGameScript
 	{
 		ClientEffect("remove", "all", MY_LIGHT);
 		ClientEffect("remove", "all", MY_LIGHT_SCRIPT);
+		ClientEffect("remove", SKEL_LIGHT_ID);
 	}
 
 	void client_activate()
@@ -42,11 +43,6 @@ class BaseGlow : CGameScript
 		if (!(GetMonsterProperty("isalive") == 1)) return;
 		string L_POS = /* TODO: $getcl */ $getcl(SKEL_ID, "origin");
 		ClientEffect("light", SKEL_LIGHT_ID, L_POS, 256, Vector3(0, 255, 0), 5.0);
-	}
-
-	void OnDeath(CBaseEntity@ attacker) override
-	{
-		ClientEffect("remove", SKEL_LIGHT_ID);
 	}
 
 }

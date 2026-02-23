@@ -402,6 +402,7 @@ class PetWolf : CGameScript
 	{
 		EmitSound(GetOwner(), 0, SOUND_ATK2, 10);
 		sitmode_off();
+		bs_set_defend_mode();
 	}
 
 	void bs_set_follow_mode()
@@ -414,11 +415,6 @@ class PetWolf : CGameScript
 	{
 		EmitSound(GetOwner(), 0, SOUND_ATK2, 10);
 		sitmode_off();
-	}
-
-	void bs_set_hunt_mode()
-	{
-		bs_set_defend_mode();
 	}
 
 	void basesummon_say_report()

@@ -495,6 +495,9 @@ class Forsuth : CGameScript
 			SayText("We ll be havin none of that in here!");
 			EmitSound(GetOwner(), 0, "voices/ms_snow/forsuth/well_be_having.wav", 10);
 		}
+		if ((IS_HUNTING)) return;
+		if (!(GetEntityRange(param1) > 100)) return;
+		HUNT_LASTTARGET = �NONE�;
 	}
 
 	void OnStruck(CBaseEntity@ attacker, int damage)
@@ -567,13 +570,6 @@ class Forsuth : CGameScript
 	void restore_rotate()
 	{
 		NO_ROTATE = 0;
-	}
-
-	void OnTargetValidate(CBaseEntity@ target)
-	{
-		if ((IS_HUNTING)) return;
-		if (!(GetEntityRange(param1) > 100)) return;
-		HUNT_LASTTARGET = �NONE�;
 	}
 
 	void npcatk_faceattacker()

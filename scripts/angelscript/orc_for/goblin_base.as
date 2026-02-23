@@ -323,6 +323,9 @@ class GoblinBase : CGameScript
 	void cycle_up()
 	{
 		gob_cycle_up();
+		if ((CYCLES_STARTED)) return;
+		CYCLES_STARTED = 1;
+		jump_check();
 	}
 
 	void gob_cycle_up()
@@ -445,13 +448,6 @@ class GoblinBase : CGameScript
 		if (!(GetGameTime() > L_NEXT_GOB_HOP)) return;
 		NEXT_GOB_HOP = GetGameTime();
 		NEXT_GOB_HOP += 2.0;
-	}
-
-	void cycle_up()
-	{
-		if ((CYCLES_STARTED)) return;
-		CYCLES_STARTED = 1;
-		jump_check();
 	}
 
 	void gob_hop_zdiff()

@@ -275,15 +275,6 @@ class Flesheater : CGameScript
 		PlayAnim("once", ANIM_CLOUDCAST);
 		CLOUD_DELAY = 1;
 		ScheduleDelayedEvent(10.0, "reset_cloud_delay");
-	}
-
-	void reset_cloud_delay()
-	{
-		CLOUD_DELAY = 0;
-	}
-
-	void OnTargetValidate(CBaseEntity@ target)
-	{
 		if ((GONE_ROAM)) return;
 		GONE_ROAM = 1;
 		SetRoam(true);
@@ -292,6 +283,11 @@ class Flesheater : CGameScript
 		{
 			light_loop();
 		}
+	}
+
+	void reset_cloud_delay()
+	{
+		CLOUD_DELAY = 0;
 	}
 
 	void light_loop()

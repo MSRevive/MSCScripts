@@ -126,10 +126,6 @@ class BaseFlyer : CGameScript
 			MY_PITCH -= 359;
 		}
 		NEW_DEST = /* TODO: $relpos */ $relpos(Vector3(0, MY_PITCH, 0), Vector3(0, 1000, 0));
-	}
-
-	void do_one_eighty2()
-	{
 		string MY_YAW = /* TODO: $vec.yaw */ $vec.yaw(GetMonsterProperty("angles"));
 		MY_YAW += 180;
 		if (MY_YAW > 359)

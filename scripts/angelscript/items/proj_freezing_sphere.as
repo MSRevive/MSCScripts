@@ -69,6 +69,10 @@ class ProjFreezingSphere : CGameScript
 	void game_projectile_hitwall()
 	{
 		remove_me();
+		// PlayRandomSound from: SOUND_ZAP1, SOUND_ZAP2, SOUND_ZAP3
+		array<string> sounds = {SOUND_ZAP1, SOUND_ZAP2, SOUND_ZAP3};
+		EmitSound(GetOwner(), 0, sounds[RandomInt(0, sounds.length() - 1)], 10);
+		remove_me();
 	}
 
 	void game_tossprojectile()
@@ -81,14 +85,6 @@ class ProjFreezingSphere : CGameScript
 		EmitSound(2, 10, SOUND_LOOP);
 		IS_ACTIVE = 1;
 		ScheduleDelayedEvent(0.01, "scan_targets");
-	}
-
-	void game_projectile_hitwall()
-	{
-		// PlayRandomSound from: SOUND_ZAP1, SOUND_ZAP2, SOUND_ZAP3
-		array<string> sounds = {SOUND_ZAP1, SOUND_ZAP2, SOUND_ZAP3};
-		EmitSound(GetOwner(), 0, sounds[RandomInt(0, sounds.length() - 1)], 10);
-		remove_me();
 	}
 
 	void scan_targets()

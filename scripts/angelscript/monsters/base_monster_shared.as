@@ -336,7 +336,7 @@ class BaseMonsterShared : CGameScript
 		}
 		if ((EXIT_SUB))
 		{
-			// TODO: UNCONVERTED: maxslope 90
+			// TODO: maxslope 90
 			SetStepSize(1000);
 		}
 		if ((EXIT_SUB)) return;
@@ -392,6 +392,8 @@ class BaseMonsterShared : CGameScript
 	void npcatk_resume_ai()
 	{
 		AM_FLANKING = 0;
+		if (!(SUSPEND_AI)) return;
+		NPC_NEVER_RESUME = 0;
 	}
 
 	void game_reached_dest()
@@ -413,7 +415,7 @@ class BaseMonsterShared : CGameScript
 		}
 		string TARGET_HALFHEIGHT = GetEntityHeight(TARG);
 		TARGET_HALFHEIGHT /= 2;
-		TARGET_HALFHEIGHT = max(37, min(2000, TARGET_HALFHEIGHT));
+		// TODO: capvar TARGET_HALFHEIGHT 37 2000
 		ADJ_RANGE = ATTACK_RANGE;
 		if (!(ATTACK_RANGE < 256)) return;
 		string TARG_POS = GetEntityOrigin(TARG);
@@ -722,6 +724,34 @@ class BaseMonsterShared : CGameScript
 		string ATTACKER_ID = param1;
 		game_parry(ATTACKER_ID);
 		return;
+		if (!(NPC_IS_BOSS)) return;
+		if (!(IsValidPlayer(param1))) return;
+		string PLAYER_ID = GetPlayerAuthId(param1);
+		string PLAYER_ID = (PLAYER_ID).substr((PLAYER_ID).length() - 6);
+		string KNOW_IDX = FindToken(NPC_BOSS_KNOWS, PLAYER_ID, ";");
+		if (KNOW_IDX > -1)
+		{
+			string N_KNOWS = GetTokenCount(NPC_BOSS_KNOWS, ";");
+			string N_KNOWS_AMTS = GetTokenCount(NPC_BOSS_KNOWS_AMTS, ";");
+			if (N_KNOWS != N_KNOWS_AMTS)
+			{
+				NPC_BOSS_KNOWS = "";
+				NPC_BOSS_KNOWS_AMTS = "";
+				int EXIT_SUB = 1;
+			}
+			if (!(EXIT_SUB))
+			{
+			}
+			string RESIST_AMT = GetToken(NPC_BOSS_KNOWS_AMTS, KNOW_IDX, ";");
+			string IN_DMG = param2;
+			IN_DMG *= RESIST_AMT;
+			SetDamage("dmg");
+			return;
+			if (RESIST_AMT <= 0)
+			{
+				SendInfoMsg(param1, "Useless... Your weapons and spells no longer have any affect.");
+			}
+		}
 	}
 
 	void start_running()
@@ -836,38 +866,6 @@ class BaseMonsterShared : CGameScript
 		}
 	}
 
-	void OnDamage(int damage) override
-	{
-		if (!(NPC_IS_BOSS)) return;
-		if (!(IsValidPlayer(param1))) return;
-		string PLAYER_ID = GetPlayerAuthId(param1);
-		string PLAYER_ID = (PLAYER_ID).substr((PLAYER_ID).length() - 6);
-		string KNOW_IDX = FindToken(NPC_BOSS_KNOWS, PLAYER_ID, ";");
-		if (KNOW_IDX > -1)
-		{
-			string N_KNOWS = GetTokenCount(NPC_BOSS_KNOWS, ";");
-			string N_KNOWS_AMTS = GetTokenCount(NPC_BOSS_KNOWS_AMTS, ";");
-			if (N_KNOWS != N_KNOWS_AMTS)
-			{
-				NPC_BOSS_KNOWS = "";
-				NPC_BOSS_KNOWS_AMTS = "";
-				int EXIT_SUB = 1;
-			}
-			if (!(EXIT_SUB))
-			{
-			}
-			string RESIST_AMT = GetToken(NPC_BOSS_KNOWS_AMTS, KNOW_IDX, ";");
-			string IN_DMG = param2;
-			IN_DMG *= RESIST_AMT;
-			SetDamage("dmg");
-			return;
-			if (RESIST_AMT <= 0)
-			{
-				SendInfoMsg(param1, "Useless... Your weapons and spells no longer have any affect.");
-			}
-		}
-	}
-
 	void npcatk_settarget()
 	{
 		if ((NPC_ALERTED_ALL)) return;
@@ -956,6 +954,7 @@ class BaseMonsterShared : CGameScript
 		if (!(NPC_NO_AGRO == 2)) return;
 		NPC_NO_AGRO = 1;
 		npcatk_suspend_ai();
+		npcatk_clear_music();
 	}
 
 	void OnAttackDoDamage(CBaseEntity@ target)
@@ -1059,6 +1058,9 @@ class BaseMonsterShared : CGameScript
 		NPC_NEXT_RHOME_WIGGLE += Random(10.0, 20.0);
 		LogDebug("npcatk_clear_targets returning home");
 		ScheduleDelayedEvent(1.0, "npcatk_go_home_loop");
+		if (!(NPC_NO_AGRO == 2)) return;
+		NPC_NO_AGRO = 1;
+		npcatk_suspend_ai();
 	}
 
 	void npcatk_go_home_loop()
@@ -1158,13 +1160,6 @@ class BaseMonsterShared : CGameScript
 		}
 	}
 
-	void npcatk_clear_targets()
-	{
-		if (!(NPC_NO_AGRO == 2)) return;
-		NPC_NO_AGRO = 1;
-		npcatk_suspend_ai();
-	}
-
 	void npcatk_suspend_roam()
 	{
 		SetRoam(false);
@@ -1192,12 +1187,6 @@ class BaseMonsterShared : CGameScript
 			NPC_NEVER_RESUME_AI = 1;
 			NPC_RESUME_AI_TIME = 999;
 		}
-	}
-
-	void npcatk_resume_ai()
-	{
-		if (!(SUSPEND_AI)) return;
-		NPC_NEVER_RESUME = 0;
 	}
 
 	void npcatk_fx_sprite_in1()
@@ -1276,11 +1265,6 @@ class BaseMonsterShared : CGameScript
 				}
 			}
 		}
-	}
-
-	void cycle_down()
-	{
-		npcatk_clear_music();
 	}
 
 	void npcatk_clear_music()

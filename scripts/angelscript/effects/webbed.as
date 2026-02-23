@@ -66,7 +66,7 @@ class Webbed : CGameScript
 			L_MY_SIZE += GetEntityWidth(GetOwner());
 			L_MY_SIZE /= WEB_FOR_SIZE;
 			WEBS_TILL_COCOON = int(L_MY_SIZE);
-			WEBS_TILL_COCOON = max(2, min(20, WEBS_TILL_COCOON));
+			// TODO: capvar WEBS_TILL_COCOON 2 20
 		}
 	}
 

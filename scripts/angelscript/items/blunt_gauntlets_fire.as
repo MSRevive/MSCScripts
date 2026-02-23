@@ -134,10 +134,6 @@ class BluntGauntletsFire : CGameScript
 			int BURN_DAMAGE = 5;
 		}
 		ApplyEffect(param1, DOT_EFFECT, 5, GetEntityIndex(GetOwner()), BURN_DAMAGE, "martialarts");
-	}
-
-	void gaunt_damaged_other()
-	{
 		if ((BWEAPON_NO_PERCENT_CHARGE)) return;
 		if (BWEAPON_CHARGE_PERCENT > 0.25)
 		{

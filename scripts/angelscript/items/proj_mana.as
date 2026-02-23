@@ -56,7 +56,7 @@ class ProjMana : CGameScript
 		SetModel("none");
 		ScheduleDelayedEvent(10.0, "remove_me");
 		GAME_PVP = "game.pvp";
-		// TODO: UNCONVERTED: projectiletouch 1
+		// TODO: projectiletouch 1
 	}
 
 	void OnTouch(CBaseEntity@ other) override
@@ -83,6 +83,8 @@ class ProjMana : CGameScript
 		SCAN_ON = 0;
 		RemoveScript();
 		DeleteEntity(GetOwner());
+		// svplaysound: svplaysound 4 0 SOUND_SHOOT
+		EmitSound(4, 0, SOUND_SHOOT);
 	}
 
 	void game_projectile_hitnpc()
@@ -105,7 +107,7 @@ class ProjMana : CGameScript
 		F_BALL_TYPE = GetEntityProperty(MY_OWNER, "scriptvar");
 		DAMAGE_LIST = "";
 		string F_BALL_VOL = int(F_BALL_SIZE);
-		F_BALL_VOL = max(1, min(10, F_BALL_VOL));
+		// TODO: capvar F_BALL_VOL 1 10
 		// svplaysound: svplaysound 4 F_BALL_VOL SOUND_SHOOT
 		EmitSound(4, F_BALL_VOL, SOUND_SHOOT);
 		LogDebug("game_tossprojectile F_BALL_SIZE F_BALL_DMG F_BALL_TYPE GetEntityName(MY_OWNER)");
@@ -209,12 +211,6 @@ class ProjMana : CGameScript
 	void remove_me()
 	{
 		DeleteEntity(GetOwner());
-	}
-
-	void game_projectile_hitwall()
-	{
-		// svplaysound: svplaysound 4 0 SOUND_SHOOT
-		EmitSound(4, 0, SOUND_SHOOT);
 	}
 
 }

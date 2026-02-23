@@ -215,6 +215,8 @@ class IceMage : CGameScript
 		light_me();
 		Effect("beam", "ents", "lgtning.spr", 10, GetOwner(), 1, GetOwner(), 2, Vector3(200, 200, 255), 0, 0, -1);
 		BEAM_ID = GetEntityIndex(m_hLastCreated);
+		ClientEvent("persist", "all", "monsters/lighted_cl", GetEntityIndex(GetOwner()), LIGHT_COLOR, LIGHT_RAD);
+		MY_LIGHT_SCRIPT = "game.script.last_sent_id";
 	}
 
 	void OnDeath(CBaseEntity@ attacker) override
@@ -261,6 +263,10 @@ class IceMage : CGameScript
 		{
 			ANIM_DEATH = ANIM_DEATH7;
 		}
+		// svplaysound: svplaysound 2 0 SOUND_FREEZE_BEAM
+		EmitSound(2, 0, SOUND_FREEZE_BEAM);
+		ClientEvent("remove", "all", MY_LIGHT_SCRIPT);
+		ClientEvent("update", "all", MY_LIGHT_SCRIPT, "remove_me");
 	}
 
 	void OnHuntTarget(CBaseEntity@ target)
@@ -272,6 +278,23 @@ class IceMage : CGameScript
 			}
 			Effect("beam", "update", BEAM_ID, "brightness", 0);
 			BEAM_ON = 0;
+		}
+		if (!(false))
+		{
+			ATTACK_MOVERANGE = GetMonsterProperty("moveprox");
+		}
+		if ((false))
+		{
+			ATTACK_MOVERANGE = 300;
+		}
+		if (!(GetEntityIndex(G_BEAMER) == GetEntityIndex(GetOwner()))) return;
+		if (GetEntityRange(m_hAttackTarget) > FBEAM_RANGE)
+		{
+			SetGlobalVar("G_BEAMER", "unset");
+		}
+		if (!(false))
+		{
+			SetGlobalVar("G_BEAMER", "unset");
 		}
 	}
 
@@ -333,27 +356,6 @@ class IceMage : CGameScript
 		npcatk_dodamage(m_hAttackTarget, FBEAM_RANGE, DMG_BEAM, 1.0, "cold");
 	}
 
-	void OnHuntTarget(CBaseEntity@ target)
-	{
-		if (!(false))
-		{
-			ATTACK_MOVERANGE = GetMonsterProperty("moveprox");
-		}
-		if ((false))
-		{
-			ATTACK_MOVERANGE = 300;
-		}
-		if (!(GetEntityIndex(G_BEAMER) == GetEntityIndex(GetOwner()))) return;
-		if (GetEntityRange(m_hAttackTarget) > FBEAM_RANGE)
-		{
-			SetGlobalVar("G_BEAMER", "unset");
-		}
-		if (!(false))
-		{
-			SetGlobalVar("G_BEAMER", "unset");
-		}
-	}
-
 	void reset_freeze_sound_delay()
 	{
 		// svplaysound: svplaysound 2 0 SOUND_FREEZE_BEAM
@@ -392,20 +394,6 @@ class IceMage : CGameScript
 	void reset_freeze_target()
 	{
 		NEW_FREEZE_TARGET = "unset";
-	}
-
-	void OnPostSpawn() override
-	{
-		ClientEvent("persist", "all", "monsters/lighted_cl", GetEntityIndex(GetOwner()), LIGHT_COLOR, LIGHT_RAD);
-		MY_LIGHT_SCRIPT = "game.script.last_sent_id";
-	}
-
-	void OnDeath(CBaseEntity@ attacker) override
-	{
-		// svplaysound: svplaysound 2 0 SOUND_FREEZE_BEAM
-		EmitSound(2, 0, SOUND_FREEZE_BEAM);
-		ClientEvent("remove", "all", MY_LIGHT_SCRIPT);
-		ClientEvent("update", "all", MY_LIGHT_SCRIPT, "remove_me");
 	}
 
 	void OnHitByAttack(CBaseEntity@ attacker, int damage) override

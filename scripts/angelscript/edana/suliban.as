@@ -75,19 +75,15 @@ class Suliban : CGameScript
 		if (!(BRIBED == 0)) return;
 		SayText("Old fellow Erkold? What ye need from him? Did [edrin] send you?");
 		PlayAnim("once", "talkright");
+		if (!(BRIBED == 1)) return;
+		SayText("I already told you what I know.");
+		PlayAnim("once", "talkright");
 	}
 
 	void say_edrin()
 	{
 		SayText("I don t speak with just anyone, nor do I speak for free. If you can offer me enough, I ll tell you everything.");
 		CAN_BRIBE = 1;
-	}
-
-	void say_mayor()
-	{
-		if (!(BRIBED == 1)) return;
-		SayText("I already told you what I know.");
-		PlayAnim("once", "talkright");
 	}
 
 	void bribe()

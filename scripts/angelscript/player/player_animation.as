@@ -31,7 +31,7 @@ class PlayerAnimation : CGameScript
 
 	void game_animate()
 	{
-		// TODO: UNCONVERTED: setstatus remove swimming
+		// TODO: setstatus remove swimming
 		string L_WATERLEVEL = GetMonsterProperty("waterlevel");
 		if (L_WATERLEVEL == 0)
 		{
@@ -60,7 +60,7 @@ class PlayerAnimation : CGameScript
 		}
 		if ((anim.underwater))
 		{
-			// TODO: UNCONVERTED: if ( anim.underwater ) setstatus add swimming
+			// TODO: setstatus add swimming
 		}
 		// TODO: UNCONVERTED: gaitframerate 0
 		if (GetMonsterProperty("anim.type") == ANIM_TYPE_WALK)
@@ -157,7 +157,7 @@ class PlayerAnimation : CGameScript
 				{
 					TORSO_ANIM = ANIM_SWIM;
 					LEGS_ANIM = 0;
-					// TODO: UNCONVERTED: setstatus add swimming
+					// TODO: setstatus add swimming
 				}
 			}
 		}

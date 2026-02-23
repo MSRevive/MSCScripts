@@ -161,6 +161,8 @@ class OgreCaveWelp : CGameScript
 			}
 			ScheduleDelayedEvent(1.0, "enable_leap");
 		}
+		if ((false)) return;
+		ORC_JUMPING = 0;
 	}
 
 	void enable_leap()
@@ -377,12 +379,6 @@ class OgreCaveWelp : CGameScript
 		EmitSound(GetOwner(), 0, SOUND_LEAP, 10);
 		string JUMP_HEIGHT = RandomInt(550, 650);
 		AddVelocity(GetOwner(), /* TODO: $relvel */ $relvel(0, 250, JUMP_HEIGHT));
-	}
-
-	void my_target_died()
-	{
-		if ((false)) return;
-		ORC_JUMPING = 0;
 	}
 
 }

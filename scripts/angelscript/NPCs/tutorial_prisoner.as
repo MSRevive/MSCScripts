@@ -40,7 +40,7 @@ class TutorialPrisoner : CGameScript
 		SetSayTextRange(1024);
 		SetHearingSensitivity(10);
 		CatchSpeech("say_hi", "hail");
-		// TODO: UNCONVERTED: menu.autopen 1
+		// TODO: menu.autopen 1
 		ScheduleDelayedEvent(0.1, "face_player");
 	}
 

@@ -78,7 +78,7 @@ class BaseCrest : CGameScript
 	void register_armor()
 	{
 		ARMOR_MODEL_BODY = -1;
-		// TODO: UNCONVERTED: registerarmor
+		// TODO: registerarmor
 	}
 
 	void OnDeploy() override
@@ -152,7 +152,7 @@ class BaseCrest : CGameScript
 		string FINAL_CREST_OFS = MODEL_CREST_OFS;
 		FINAL_CREST_OFS -= 1;
 		SetModelBody(0, FINAL_CREST_OFS);
-		// TODO: UNCONVERTED: playermessagecl You place the crest over your head.
+		// TODO: playermessagecl You place the crest over your head.
 		crest_remove();
 	}
 

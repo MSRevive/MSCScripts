@@ -35,6 +35,7 @@ class SpecialattackHaste : CGameScript
 	void effect_die()
 	{
 		CallExternal(CALLING_WEAPON, "turbo_off");
+		RemoveScript();
 	}
 
 	void client_activate()
@@ -42,11 +43,6 @@ class SpecialattackHaste : CGameScript
 		game.cleffect.move_scale.forward = 3;
 		game.cleffect.move_scale.right = 3;
 		PARAM1("effect_die");
-	}
-
-	void effect_die()
-	{
-		RemoveScript();
 	}
 
 }

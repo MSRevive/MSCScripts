@@ -38,6 +38,8 @@ class ProjVolcanoSvr : CGameScript
 		SetWidth(32);
 		SetHeight(32);
 		SetModel("none");
+		ClientEvent("new", "all", currentscript, GetEntityOrigin(GetOwner()), LIGHT_RADIUS, LIGHT_COLOR, LIGHT_DURATION);
+		MY_LIGHT_IDX = "game.script.last_sent_id";
 	}
 
 	void projectile_landed()
@@ -95,12 +97,6 @@ class ProjVolcanoSvr : CGameScript
 			}
 		}
 		ClientEvent("remove", "all", MY_LIGHT_IDX);
-	}
-
-	void projectile_spawn()
-	{
-		ClientEvent("new", "all", currentscript, GetEntityOrigin(GetOwner()), LIGHT_RADIUS, LIGHT_COLOR, LIGHT_DURATION);
-		MY_LIGHT_IDX = "game.script.last_sent_id";
 	}
 
 	void client_activate()

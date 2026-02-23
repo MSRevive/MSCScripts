@@ -136,21 +136,17 @@ class Barwench : CGameScript
 		CallExternal(FindEntityByName("bryan"), "cider");
 		stoproam();
 		ScheduleDelayedEvent(4, "reset");
-	}
-
-	void reset()
-	{
-		cider_1 = 1;
-	}
-
-	void say_job()
-	{
 		if (!(cider_1 == 1)) return;
 		SayText("Didn t I ask you to check with Bryan on that cider shipment? Get on with it then!");
 		SetMoveDest("ent_lastspoke");
 		PlayAnim("once", "converse1");
 		stoproam();
 		ScheduleDelayedEvent(2, "stop_converse_anim");
+	}
+
+	void reset()
+	{
+		cider_1 = 1;
 	}
 
 	void say_cider()
@@ -161,6 +157,14 @@ class Barwench : CGameScript
 		PlayAnim("once", "converse1");
 		stoproam();
 		ScheduleDelayedEvent(2, "stop_converse_anim");
+		if (!(cider_1 == 3)) return;
+		SetMoveDest("ent_lastspoke");
+		PlayAnim("once", "converse1");
+		SayText("Look , I still haven t gotten that cider shipment, maybe you should check with Bryan again.");
+		cider_1 = 1;
+		CallExternal(FindEntityByName("bryan"), "cider3");
+		stoproam();
+		say_reward();
 	}
 
 	void stop_converse_anim()
@@ -179,22 +183,6 @@ class Barwench : CGameScript
 		cider_1 = 3;
 	}
 
-	void say_cider()
-	{
-		if (!(cider_1 == 3)) return;
-		SetMoveDest("ent_lastspoke");
-		PlayAnim("once", "converse1");
-		SayText("Look , I still haven t gotten that cider shipment, maybe you should check with Bryan again.");
-		cider_1 = 1;
-		CallExternal(FindEntityByName("bryan"), "cider3");
-		stoproam();
-	}
-
-	void say_cider()
-	{
-		say_reward();
-	}
-
 	void ciderreward()
 	{
 		cider_2 = 3;
@@ -210,6 +198,15 @@ class Barwench : CGameScript
 		PlayAnim("once", "converse1");
 		ScheduleDelayedEvent(2, "say_reward2");
 		stoproam();
+		if (!(cider_2 == 3)) return;
+		if (!(cider_3 == 0)) return;
+		cider_3 = 1;
+		SayText("Well , you ve done more than your share. Seeing as how I don t have any cider to give you...");
+		SetRoam(false);
+		SetMoveDest("ent_lastspoke");
+		PlayAnim("once", "converse1");
+		stoproam();
+		ScheduleDelayedEvent(3, "say_reward2_1");
 	}
 
 	void say_reward2()
@@ -228,19 +225,6 @@ class Barwench : CGameScript
 		cider_1 = 99;
 		cider_2 = 2;
 		PlayAnim("critical", "pull_needle");
-	}
-
-	void say_reward()
-	{
-		if (!(cider_2 == 3)) return;
-		if (!(cider_3 == 0)) return;
-		cider_3 = 1;
-		SayText("Well , you ve done more than your share. Seeing as how I don t have any cider to give you...");
-		SetRoam(false);
-		SetMoveDest("ent_lastspoke");
-		PlayAnim("once", "converse1");
-		stoproam();
-		ScheduleDelayedEvent(3, "say_reward2_1");
 	}
 
 	void say_reward2_1()

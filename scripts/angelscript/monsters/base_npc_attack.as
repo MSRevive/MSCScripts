@@ -514,7 +514,7 @@ class BaseNpcAttack : CGameScript
 		IS_HUNTING = 1;
 		NPC_TARG_HALFHEIGHT = GetEntityHeight(HUNT_LASTTARGET);
 		NPC_TARG_HALFHEIGHT /= 2;
-		NPC_TARG_HALFHEIGHT = max(37, min(2000, NPC_TARG_HALFHEIGHT));
+		// TODO: capvar NPC_TARG_HALFHEIGHT 37 2000
 	}
 
 	void my_target_died()
@@ -796,7 +796,7 @@ class BaseNpcAttack : CGameScript
 		{
 			NPC_ALLY_RESPONSE_RANGE = GetMonsterMaxHP();
 			NPC_ALLY_RESPONSE_RANGE *= 10;
-			NPC_ALLY_RESPONSE_RANGE = max(96, min(1024, NPC_ALLY_RESPONSE_RANGE));
+			// TODO: capvar NPC_ALLY_RESPONSE_RANGE 96 1024
 		}
 		if (FLINCH_DMG_REQ == "FLINCH_DMG_REQ")
 		{

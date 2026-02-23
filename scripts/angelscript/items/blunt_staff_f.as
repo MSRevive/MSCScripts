@@ -231,7 +231,7 @@ class BluntStaffF : CGameScript
 			}
 			string MAX_HP = GetEntityMaxHealth(GetOwner());
 			MAX_HP *= 3;
-			MAX_HP = max(2000, min(10000, MAX_HP));
+			// TODO: capvar MAX_HP 2000 10000
 			if (GetEntityHealth(param2) < MAX_HP)
 			{
 			}

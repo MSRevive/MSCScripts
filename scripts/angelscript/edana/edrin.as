@@ -257,10 +257,6 @@ class Edrin : CGameScript
 		THIEF_1 = 3;
 		Say("suspicious");
 		SayText("If you see anything suspicious around here , you let me know.");
-	}
-
-	void say_thief()
-	{
 		if (!(THIEF_1 == 3)) return;
 		THIEF_1 = 4;
 		SayText("If you see any thieves , try bribing them for information , or give threats that I will lock them up for good.");

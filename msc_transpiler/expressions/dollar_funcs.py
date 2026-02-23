@@ -184,7 +184,37 @@ def _get_random_token(name, args):
     return '""'
 
 
+def _pass(name, args):
+    """$pass(value) → passthrough: returns the first argument as-is."""
+    return args[0] if args else ""
+
+
+def _func(name, args):
+    """$func(funcname, arg1, arg2, ...) → funcname(arg1, arg2, ...)"""
+    if args:
+        return f"{args[0]}({', '.join(args[1:])})"
+    return ""
+
+
 def _math(name, args):
+    if len(args) >= 3:
+        func = args[0].strip('"').lower()
+        a, b = args[1], args[2]
+        binary_map = {
+            "add":      f"({a} + {b})",
+            "subtract": f"({a} - {b})",
+            "multiply": f"({a} * {b})",
+            "divide":   f"({a} / {b})",
+            "modulo":   f"({a} % {b})",
+            "mod":      f"({a} % {b})",
+            "pow":      f"pow({a}, {b})",
+            "max":      f"max({a}, {b})",
+            "min":      f"min({a}, {b})",
+        }
+        result = binary_map.get(func)
+        if result:
+            return result
+        # Unknown binary op — fall through to unary handling with first operand
     if len(args) >= 2:
         func = args[0].strip('"').lower()
         val = args[1]
@@ -361,6 +391,74 @@ def _currentmap(name, args):
     return "GetMapName()"
 
 
+# ── $get_array / $g_get_array — local & global array access ──
+
+def _get_array(name, args):
+    """$get_array(array_name, idx) → array_name[int(idx)]"""
+    if len(args) >= 2:
+        arr = args[0]
+        idx = args[1]
+        return f"{arr}[int({idx})]"
+    return '""'
+
+
+def _get_arrayfind(name, args):
+    """$get_arrayfind(array_name, search, [start_idx]) → ArrayFind(array, search, start)"""
+    if len(args) >= 3:
+        return f"ArrayFind({args[0]}, {args[1]}, int({args[2]}))"
+    if len(args) >= 2:
+        return f"ArrayFind({args[0]}, {args[1]}, 0)"
+    return "-1"
+
+
+def _get_array_amt(name, args):
+    """$get_array_amt(array_name) → int(array_name.length())"""
+    if args:
+        return f"int({args[0]}.length())"
+    return "0"
+
+
+def _get_array_exists(name, args):
+    """$get_array_exists(array_name) → ArrayExists(array_name)
+    For local arrays this is always true if the variable is declared,
+    but we emit a function call for safety."""
+    if args:
+        return f"({args[0]}.length() >= 0)"
+    return "false"
+
+
+def _g_get_array(name, args):
+    """$g_get_array(array_name, idx) → GetGlobalArray("name", int(idx))"""
+    if len(args) >= 2:
+        arr_name = args[0]
+        idx = args[1]
+        return f"GetGlobalArray({arr_name}, int({idx}))"
+    return '""'
+
+
+def _g_get_arrayfind(name, args):
+    """$g_get_arrayfind(array_name, search, [start_idx]) → FindInGlobalArray(name, search, start)"""
+    if len(args) >= 3:
+        return f"FindInGlobalArray({args[0]}, {args[1]}, int({args[2]}))"
+    if len(args) >= 2:
+        return f"FindInGlobalArray({args[0]}, {args[1]}, 0)"
+    return "-1"
+
+
+def _g_get_array_amt(name, args):
+    """$g_get_array_amt(array_name) → GetGlobalArrayLength("name")"""
+    if args:
+        return f"GetGlobalArrayLength({args[0]})"
+    return "0"
+
+
+def _g_get_array_exists(name, args):
+    """$g_get_array_exists(array_name) → GlobalArrayExists("name")"""
+    if args:
+        return f"GlobalArrayExists({args[0]})"
+    return "false"
+
+
 def register_all():
     """Register all $function translators."""
     register_dollar_func("rand", _rand)
@@ -405,6 +503,22 @@ def register_all():
     register_dollar_func("get_traceline", _get_traceline)
     register_dollar_func("currentmap", _currentmap)
     register_dollar_func("random_of_set", _random_of_set)
+
+    # Local array access functions
+    register_dollar_func("get_array", _get_array)
+    register_dollar_func("get_arrayfind", _get_arrayfind)
+    register_dollar_func("get_array_amt", _get_array_amt)
+    register_dollar_func("get_array_exists", _get_array_exists)
+
+    # Global array access functions
+    register_dollar_func("g_get_array", _g_get_array)
+    register_dollar_func("g_get_arrayfind", _g_get_arrayfind)
+    register_dollar_func("g_get_array_amt", _g_get_array_amt)
+    register_dollar_func("g_get_array_exists", _g_get_array_exists)
+
+    # Passthrough / indirect call
+    register_dollar_func("pass", _pass)
+    register_dollar_func("func", _func)
 
 
 # Auto-register on import

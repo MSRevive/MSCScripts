@@ -252,11 +252,11 @@ def generate(script: ScriptFile, errors: ErrorCollector) -> str:
     # Script class name from filename
     class_name = _class_name_from_file(script.filename)
 
-    # First pass: collect member variables from init blocks
+    # First pass: collect member variables from init blocks (including consts)
     for event in script.init_blocks:
-        _collect_members(event, ctx)
+        _collect_members(event, ctx, collect_consts=True)
 
-    # Also collect from named events (setvard commands)
+    # Also collect from named events (setvard commands, but not consts — local scope)
     for event in script.named_events:
         _collect_members(event, ctx)
 
@@ -304,8 +304,9 @@ def generate(script: ScriptFile, errors: ErrorCollector) -> str:
         w.line("}")
         w.blank()
 
-    # Event methods
-    for event in script.named_events:
+    # Event methods — merge duplicates (same event name → combine bodies)
+    merged_events = _merge_duplicate_events(script.named_events)
+    for event in merged_events:
         _emit_event(event, ctx, w)
         w.blank()
 
@@ -316,6 +317,25 @@ def generate(script: ScriptFile, errors: ErrorCollector) -> str:
     w.raw_line("}")  # namespace
 
     return w.build()
+
+
+def _merge_duplicate_events(events: list[EventBlock]) -> list[EventBlock]:
+    """Merge events with duplicate names by combining their bodies.
+
+    In MSCScript, the same event can appear multiple times (e.g. from
+    included files or multiple definitions). We merge them into one.
+    """
+    seen: dict[str, EventBlock] = {}
+    merged: list[EventBlock] = []
+    for event in events:
+        key = event.name.lower()
+        if key in seen:
+            # Append body to the existing event
+            seen[key].body.extend(event.body)
+        else:
+            seen[key] = event
+            merged.append(event)
+    return merged
 
 
 def _emit_event(event: EventBlock, ctx: CodeGenContext, w: CodeWriter):
@@ -441,12 +461,16 @@ def _translate_condition(cond: Condition, ctx: CodeGenContext, negate: bool = Fa
     return translate_condition_op(cond.operator, left, right, negated)
 
 
-def _collect_members(event: EventBlock, ctx: CodeGenContext):
+def _collect_members(event: EventBlock, ctx: CodeGenContext, collect_consts: bool = False):
     """Pre-scan event body to collect member variable declarations."""
+    collect_names = {"setvard", "setvar"}
+    if collect_consts:
+        collect_names.add("const")
+
     for stmt in event.body:
         if isinstance(stmt, Command):
             name_lower = stmt.name.lower()
-            if name_lower in ("setvard", "setvar"):
+            if name_lower in collect_names:
                 if stmt.args:
                     var_name = ctx.expr_raw(stmt.args[0])
                     # Try to infer type from value
@@ -459,12 +483,12 @@ def _collect_members(event: EventBlock, ctx: CodeGenContext):
         elif isinstance(stmt, IfBlock):
             # Recurse into if bodies
             for s in stmt.body:
-                if isinstance(s, Command) and s.name.lower() in ("setvard", "setvar"):
+                if isinstance(s, Command) and s.name.lower() in collect_names:
                     if s.args:
                         var_name = ctx.expr_raw(s.args[0])
                         ctx.register_member(var_name)
             for s in stmt.else_body:
-                if isinstance(s, Command) and s.name.lower() in ("setvard", "setvar"):
+                if isinstance(s, Command) and s.name.lower() in collect_names:
                     if s.args:
                         var_name = ctx.expr_raw(s.args[0])
                         ctx.register_member(var_name)
@@ -472,6 +496,21 @@ def _collect_members(event: EventBlock, ctx: CodeGenContext):
 
 def _infer_member_type(value: str) -> str:
     """Infer type from a raw value string."""
+    # Translated forms (expr_raw translates DollarFunc nodes)
+    if value.startswith("RandomInt("):
+        return "int"
+    if value.startswith("Random("):
+        return "float"
+    if value.startswith("int("):
+        return "int"
+    if value.startswith("float("):
+        return "float"
+    if value.startswith("Distance(") or value.startswith("Distance2D("):
+        return "float"
+    if value.startswith("GetGameTime("):
+        return "float"
+
+    # Legacy $-prefix checks (keep for safety)
     if value.startswith("$rand(") or value.startswith("$randf("):
         return "float" if "randf" in value else "int"
 

@@ -69,7 +69,7 @@ class ProjStaffIcelance : CGameScript
 		XDoDamage(ENEMY_HIT, "direct", DIR_DMG, 1.0, MY_OWNER, GetOwner(), "spellcasting.ice", "cold");
 		EFFECT_DURATION = GetSkillLevel(MY_OWNER, "spellcasting.ice");
 		EFFECT_DURATION *= 0.25;
-		EFFECT_DURATION = max(3, min(5, EFFECT_DURATION));
+		// TODO: capvar EFFECT_DURATION 3 5
 		string RND_EFFECT = RandomInt(1, 2);
 		string FROST_DMG = GetSkillLevel(MY_OWNER, "spellcasting.ice");
 		FROST_DMG *= 0.5;

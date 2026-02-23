@@ -75,7 +75,7 @@ class BaseDamageStack : CGameScript
 			SetScriptFlags(L_TARGET, "add", STACK_FLAG_NAME, STACK_ID, 1, STACK_EXPIRE, "none");
 		}
 		string L_CUR_MULT = /* TODO: $get_scriptflag */ $get_scriptflag(L_TARGET, STACK_FLAG_NAME, "name_value");
-		L_CUR_MULT = max(1, min(STACK_MULT_MAX, L_CUR_MULT));
+		// TODO: capvar L_CUR_MULT 1 STACK_MULT_MAX
 		STACK_SETDMG = /* TODO: $math(multiply) */ L_DMG;
 		STACK_RETURNDATA = L_CUR_MULT;
 		LogDebug("do_stack STACK_RETURNDATA");

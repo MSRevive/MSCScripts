@@ -97,6 +97,10 @@ class OrcChatter1 : CGameScript
 		if ((IN_COMBAT)) return;
 		if (!(false)) return;
 		start_combat();
+		if (ORC_BUDDY_ID == "ORC_BUDDY_ID")
+		{
+			ORC_BUDDY_ID = FindEntityByName("orc_chatter2");
+		}
 	}
 
 	void start_combat()
@@ -180,14 +184,6 @@ class OrcChatter1 : CGameScript
 	{
 		if (!(IsEntityAlive(GetOwner()))) return;
 		CallExternal(ORC_BUDDY_ID, "ext_gender_gag3");
-	}
-
-	void OnHuntTarget(CBaseEntity@ target)
-	{
-		if (ORC_BUDDY_ID == "ORC_BUDDY_ID")
-		{
-			ORC_BUDDY_ID = FindEntityByName("orc_chatter2");
-		}
 	}
 
 	void turn_mclip_on()

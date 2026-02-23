@@ -233,6 +233,39 @@ class DoomPlant : CGameScript
 		string MY_YAW = /* TODO: $vec.yaw */ $vec.yaw(GetMonsterProperty("angles"));
 		SetAngles("face");
 		AddVelocity(param2, /* TODO: $relvel */ $relvel(0, 1000, 100));
+		if (PLANT_LEVEL == 1)
+		{
+			if ((param1))
+			{
+			}
+			EmitSound(GetOwner(), 0, SOUND_SCRATCH, 10);
+		}
+		if (PLANT_LEVEL == 2)
+		{
+			if ((param1))
+			{
+			}
+			if ((SHOOTING))
+			{
+			}
+			if (GetEntityRange(ATTACK_TARGET) < MELE_RANGE)
+			{
+			}
+			EmitSound(GetOwner(), 0, SOUND_SCRATCH, 10);
+		}
+		if (PLANT_LEVEL == 3)
+		{
+			if ((param1))
+			{
+			}
+			if ((SHOOTING))
+			{
+			}
+			if (GetEntityRange(ATTACK_TARGET) < MELE_RANGE)
+			{
+			}
+			EmitSound(GetOwner(), 0, SOUND_SCRATCH, 10);
+		}
 	}
 
 	void setup_plant_level1()
@@ -419,43 +452,6 @@ class DoomPlant : CGameScript
 		SPORE_DAMAGE *= 4;
 		SPORE_POISON_DMG = MY_DMG;
 		TossProjectile("proj_spore", /* TODO: $relpos */ $relpos(0, 32, 16), ATTACK_TARGET, 500, SPORE_DAMAGE, 0.1, "none");
-	}
-
-	void game_dodamage()
-	{
-		if (PLANT_LEVEL == 1)
-		{
-			if ((param1))
-			{
-			}
-			EmitSound(GetOwner(), 0, SOUND_SCRATCH, 10);
-		}
-		if (PLANT_LEVEL == 2)
-		{
-			if ((param1))
-			{
-			}
-			if ((SHOOTING))
-			{
-			}
-			if (GetEntityRange(ATTACK_TARGET) < MELE_RANGE)
-			{
-			}
-			EmitSound(GetOwner(), 0, SOUND_SCRATCH, 10);
-		}
-		if (PLANT_LEVEL == 3)
-		{
-			if ((param1))
-			{
-			}
-			if ((SHOOTING))
-			{
-			}
-			if (GetEntityRange(ATTACK_TARGET) < MELE_RANGE)
-			{
-			}
-			EmitSound(GetOwner(), 0, SOUND_SCRATCH, 10);
-		}
 	}
 
 	void reset_spore_delay()

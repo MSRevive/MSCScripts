@@ -148,7 +148,7 @@ class Serrold : CGameScript
 	void recv_enoughgold()
 	{
 		OFFER_AMT = ">=";
-		// TODO: UNCONVERTED: DLLFunc recvoffer accept
+		// TODO: DLLFunc recvoffer accept
 		SayText("I know Harry knows something...");
 		PlayAnim("once", "yes");
 	}
@@ -156,7 +156,7 @@ class Serrold : CGameScript
 	void recv_notenoughgold()
 	{
 		OFFER_AMT = "<";
-		// TODO: UNCONVERTED: DLLFunc recvoffer reject
+		// TODO: DLLFunc recvoffer reject
 		SayText("I am quite well off without your charity.");
 		PlayAnim("once", "no");
 	}

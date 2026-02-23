@@ -33,7 +33,7 @@ class MagicHandHolyHammer : CGameScript
 		int reg.spell.fizzletime = 9999999;
 		float reg.spell.castsuccess = 1.0;
 		int reg.spell.preparetime = 3;
-		// TODO: UNCONVERTED: registerspell
+		// TODO: registerspell
 	}
 
 	void weapon_spawn()

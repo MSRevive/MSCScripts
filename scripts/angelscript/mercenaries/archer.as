@@ -199,10 +199,6 @@ class Archer : CGameScript
 	{
 		if (!(RandomInt(0, 100) >= 40)) return;
 		GiveItem("proj_arrow_iron", 30);
-	}
-
-	void dropstuff()
-	{
 		if (!(RandomInt(0, 100) >= 10)) return;
 		GiveItem(GetOwner(), "bows_shortbow");
 	}

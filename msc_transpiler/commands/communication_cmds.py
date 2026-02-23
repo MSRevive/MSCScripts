@@ -5,6 +5,51 @@ from __future__ import annotations
 from .registry import register, CommandTranslator
 
 
+def _build_message_expr(args, ctx) -> str:
+    """Build a concatenated message expression that correctly handles variable
+    references and $func calls as unquoted expressions rather than string literals.
+
+    Examples:
+      [VariableRef("OFFER_TEXT")]              → OFFER_TEXT
+      [Lit("Lead"), Lit("on,"), VarRef("FOO")] → "Lead on, " + FOO
+      [Lit("I"), Lit("have"), DFunc("int",...), Lit("hp")] → "I have " + int(HP) + " hp"
+    """
+    from ..ast_nodes import VariableRef, DollarFunc
+
+    def _is_dynamic(arg) -> bool:
+        if isinstance(arg, VariableRef):
+            name = arg.name
+            return name.isupper() or (name.upper() == name and "_" in name)
+        return isinstance(arg, DollarFunc)
+
+    result_parts: list[str] = []
+    pending_strings: list[str] = []
+    prev_was_dynamic = False
+
+    for arg in args:
+        if _is_dynamic(arg):
+            if pending_strings:
+                # Flush accumulated string tokens with trailing space separator
+                text = " ".join(pending_strings) + " "
+                result_parts.append(f'"{text}"')
+                pending_strings = []
+            result_parts.append(ctx.translate_expr(arg))
+            prev_was_dynamic = True
+        else:
+            pending_strings.append(ctx.expr_raw(arg))
+            prev_was_dynamic = False
+
+    if pending_strings:
+        text = " ".join(pending_strings)
+        if result_parts:
+            text = " " + text  # Leading space after a dynamic part
+        result_parts.append(f'"{text}"')
+
+    if not result_parts:
+        return '""'
+    return " + ".join(result_parts)
+
+
 class PlayerMessageTranslator(CommandTranslator):
     """playermessage/rplayermessage/etc TARGET MESSAGE."""
     def __init__(self, func: str = "SendPlayerMessage"):
@@ -13,13 +58,11 @@ class PlayerMessageTranslator(CommandTranslator):
     def translate(self, cmd, ctx, w):
         if len(cmd.args) >= 2:
             target = ctx.translate_expr(cmd.args[0])
-            msg_parts = [ctx.expr_raw(a) for a in cmd.args[1:]]
-            msg = " ".join(msg_parts)
-            w.line(f'{self.func}({target}, "{msg}");')
+            msg = _build_message_expr(cmd.args[1:], ctx)
+            w.line(f'{self.func}({target}, {msg});')
         elif cmd.args:
-            msg_parts = [ctx.expr_raw(a) for a in cmd.args]
-            msg = " ".join(msg_parts)
-            w.line(f'{self.func}(GetOwner(), "{msg}");')
+            msg = _build_message_expr(cmd.args, ctx)
+            w.line(f'{self.func}(GetOwner(), {msg});')
         return True
 
 
@@ -28,46 +71,40 @@ class InfoMsgTranslator(CommandTranslator):
     def translate(self, cmd, ctx, w):
         if len(cmd.args) >= 2:
             target = ctx.translate_expr(cmd.args[0])
-            msg_parts = [ctx.expr_raw(a) for a in cmd.args[1:]]
-            msg = " ".join(msg_parts)
-            w.line(f'SendInfoMsg({target}, "{msg}");')
+            msg = _build_message_expr(cmd.args[1:], ctx)
+            w.line(f'SendInfoMsg({target}, {msg});')
         elif cmd.args:
-            msg_parts = [ctx.expr_raw(a) for a in cmd.args]
-            msg = " ".join(msg_parts)
-            w.line(f'SendInfoMsg(GetOwner(), "{msg}");')
+            msg = _build_message_expr(cmd.args, ctx)
+            w.line(f'SendInfoMsg(GetOwner(), {msg});')
         return True
 
 
 class MessageAllTranslator(CommandTranslator):
     def translate(self, cmd, ctx, w):
-        msg_parts = [ctx.expr_raw(a) for a in cmd.args]
-        msg = " ".join(msg_parts)
-        w.line(f'SendInfoMessageToAll("{msg}");')
+        msg = _build_message_expr(cmd.args, ctx)
+        w.line(f'SendInfoMessageToAll({msg});')
         return True
 
 
 class SayTextTranslator(CommandTranslator):
     def translate(self, cmd, ctx, w):
         if cmd.args:
-            msg_parts = [ctx.expr_raw(a) for a in cmd.args]
-            msg = " ".join(msg_parts)
-            w.line(f'SayText("{msg}");')
+            msg = _build_message_expr(cmd.args, ctx)
+            w.line(f'SayText({msg});')
         return True
 
 
 class ConsoleMsgTranslator(CommandTranslator):
     def translate(self, cmd, ctx, w):
-        msg_parts = [ctx.expr_raw(a) for a in cmd.args]
-        msg = " ".join(msg_parts)
-        w.line(f'LogMessage("{msg}");')
+        msg = _build_message_expr(cmd.args, ctx)
+        w.line(f'LogMessage({msg});')
         return True
 
 
 class ErrorMessageTranslator(CommandTranslator):
     def translate(self, cmd, ctx, w):
-        msg_parts = [ctx.expr_raw(a) for a in cmd.args]
-        msg = " ".join(msg_parts)
-        w.line(f'LogError("{msg}");')
+        msg = _build_message_expr(cmd.args, ctx)
+        w.line(f'LogError({msg});')
         return True
 
 

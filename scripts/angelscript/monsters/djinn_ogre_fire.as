@@ -182,6 +182,8 @@ class DjinnOgreFire : CGameScript
 			}
 			ScheduleDelayedEvent(1.0, "enable_leap");
 		}
+		if ((false)) return;
+		ORC_JUMPING = 0;
 	}
 
 	void enable_leap()
@@ -422,12 +424,6 @@ class DjinnOgreFire : CGameScript
 		AddVelocity(GetOwner(), /* TODO: $relvel */ $relvel(0, 250, JUMP_HEIGHT));
 	}
 
-	void my_target_died()
-	{
-		if ((false)) return;
-		ORC_JUMPING = 0;
-	}
-
 	void bo_zombie_mode()
 	{
 		npc_suicide();
@@ -437,6 +433,9 @@ class DjinnOgreFire : CGameScript
 	{
 		NEXT_SPECIAL = GetGameTime();
 		NEXT_SPECIAL += FREQ_SPECIAL;
+		if ((CL_REFRESH_LOOP_ON)) return;
+		CL_REFRESH_LOOP_ON = 1;
+		refresh_cl_loop();
 	}
 
 	void npc_targetsighted()
@@ -619,13 +618,6 @@ class DjinnOgreFire : CGameScript
 		{
 			ClientEvent("update", "all", CL_IDX, "end_fx");
 		}
-	}
-
-	void cycle_up()
-	{
-		if ((CL_REFRESH_LOOP_ON)) return;
-		CL_REFRESH_LOOP_ON = 1;
-		refresh_cl_loop();
 	}
 
 	void refresh_cl_loop()

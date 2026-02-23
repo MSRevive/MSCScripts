@@ -21,7 +21,7 @@ class BaseSheath : CGameScript
 		SetWorldModel(MODEL_WORLD);
 		SetHand("any");
 		sheath_spawn();
-		// TODO: UNCONVERTED: registercontainer
+		// TODO: registercontainer
 	}
 
 	void OnDeploy() override

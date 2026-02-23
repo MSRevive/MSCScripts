@@ -72,6 +72,9 @@ class Vendor : CGameScript
 		STORE_TYPE = RandomInt(1, 6);
 		OVERCHARGE = RandomInt(90, 160);
 		SELL_RATIO = Random(0.5, 0.9);
+		CatchSpeech("npc_say_store", STORE_TRIGGERTEXT);
+		NpcStoreCreate(STORE_NAME);
+		vendor_addstoreitems();
 	}
 
 	void vendor_addstoreitems()
@@ -231,13 +234,6 @@ class Vendor : CGameScript
 		{
 			SayText("Come again soon!");
 		}
-	}
-
-	void OnSpawn() override
-	{
-		CatchSpeech("npc_say_store", STORE_TRIGGERTEXT);
-		NpcStoreCreate(STORE_NAME);
-		vendor_addstoreitems();
 	}
 
 	void game_menu_getoptions()

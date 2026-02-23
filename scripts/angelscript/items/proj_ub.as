@@ -65,6 +65,7 @@ class ProjUb : CGameScript
 	void game_projectile_hitwall()
 	{
 		remove_me();
+		remove_me();
 	}
 
 	void game_tossprojectile()
@@ -93,11 +94,6 @@ class ProjUb : CGameScript
 		if (!(IS_ACTIVE)) return;
 		ScheduleDelayedEvent(0.2, "damage_area");
 		XDoDamage(GetEntityOrigin(GetOwner()), SCAN_RANGE, DMG_AMT, 0.1, "ent_expowner", WEAPON_ID, "swordsmanship", "dark");
-	}
-
-	void game_projectile_hitwall()
-	{
-		remove_me();
 	}
 
 	void remove_me()

@@ -248,6 +248,8 @@ class OrcSniper : CGameScript
 		ANIM_WALK = ANIM_IDLE;
 		NO_STUCK_CHECKS = 1;
 		SetRoam(false);
+		if (!(SPAWN_SPEECH != "SPAWN_SPEECH")) return;
+		SPAWN_SPEECH_DELAY("say_spawn_speech");
 	}
 
 	void npc_targetsighted()
@@ -256,12 +258,6 @@ class OrcSniper : CGameScript
 		DID_SPOT_SPEECH = 1;
 		if (!(SPOT_SPEECH != "SPOT_SPEECH")) return;
 		SayText("SPOT_SPEECH");
-	}
-
-	void OnPostSpawn() override
-	{
-		if (!(SPAWN_SPEECH != "SPAWN_SPEECH")) return;
-		SPAWN_SPEECH_DELAY("say_spawn_speech");
 	}
 
 	void say_spawn_speech()

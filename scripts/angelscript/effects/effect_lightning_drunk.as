@@ -33,10 +33,10 @@ class EffectLightningDrunk : CGameScript
 	{
 		SetRepeatDelay(0.01);
 		DRUNK_SWAY_FORWARD++;
-		DRUNK_SWAY_FORWARD = max(MIN_SWAY, min(MAX_SWAY, DRUNK_SWAY_FORWARD));
+		// TODO: capvar DRUNK_SWAY_FORWARD MIN_SWAY MAX_SWAY
 		game.cleffect.view_ofs.pitch = DRUNK_SWAY_FORWARD;
 		DRUNK_SWAY_SIDE++;
-		DRUNK_SWAY_SIDE = max(MIN_SWAY, min(MAX_SWAY, DRUNK_SWAY_SIDE));
+		// TODO: capvar DRUNK_SWAY_SIDE MIN_SWAY MAX_SWAY
 		game.cleffect.view_ofs.roll = DRUNK_SWAY_SIDE;
 		game.cleffect.move_ofs.forward = DRUNK_FORWARDMOVE;
 		game.cleffect.move_ofs.right = DRUNK_SIDEMOVE;
@@ -56,7 +56,7 @@ class EffectLightningDrunk : CGameScript
 	void drunk_sway()
 	{
 		DRUNK_SWAY_RATE++;
-		DRUNK_SWAY_RATE = max(MIN_SWAY_RATE, min(MAX_SWAY_RATE, DRUNK_SWAY_RATE));
+		// TODO: capvar DRUNK_SWAY_RATE MIN_SWAY_RATE MAX_SWAY_RATE
 		if (DRUNK_SWAY_SIDE >= MAX_SWAY_T)
 		{
 			DRUNK_SWAY_RATE--;
@@ -66,7 +66,7 @@ class EffectLightningDrunk : CGameScript
 			DRUNK_SWAY_RATE++;
 		}
 		DRUNK_SWAY_RATE_F++;
-		DRUNK_SWAY_RATE_F = max(MIN_SWAY_RATE, min(MAX_SWAY_RATE, DRUNK_SWAY_RATE_F));
+		// TODO: capvar DRUNK_SWAY_RATE_F MIN_SWAY_RATE MAX_SWAY_RATE
 		if (DRUNK_SWAY_FORWARD >= MAX_SWAY_T)
 		{
 			DRUNK_SWAY_RATE_F--;

@@ -79,6 +79,7 @@ class SorcJuggernaut : CGameScript
 		AddVelocity(m_hLastSeen, /* TODO: $relvel */ $relvel(-120, 120, 150));
 		if (!(RandomInt(1, 10) == 1)) return;
 		ANIM_ATTACK = "kick";
+		EmitSound(GetOwner(), 2, SOUND_SWINGMISS, 10);
 	}
 
 	void npc_targetsighted()
@@ -154,11 +155,6 @@ class SorcJuggernaut : CGameScript
 	{
 		EmitSound(GetOwner(), 2, SOUND_WALK1, 8);
 		Effect("screenshake", /* TODO: $relpos */ $relpos(0, 0, 0), 128, 10, 1, 256);
-	}
-
-	void swing_axe()
-	{
-		EmitSound(GetOwner(), 2, SOUND_SWINGMISS, 10);
 	}
 
 	void swing_start()

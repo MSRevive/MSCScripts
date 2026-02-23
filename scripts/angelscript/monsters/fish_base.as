@@ -58,7 +58,7 @@ class FishBase : CGameScript
 
 	void npc_targetsighted()
 	{
-		// TODO: UNCONVERTED: roamdelay 2
+		// TODO: roamdelay 2
 		if (GetEntityRange(HUNT_LASTTARGET) < MOVE_RANGE)
 		{
 			SetMoveDest("none");
@@ -99,7 +99,7 @@ class FishBase : CGameScript
 	{
 		SetTurnRate(".175");
 		SetAngles("face.x");
-		// TODO: UNCONVERTED: roamdelay 0
+		// TODO: roamdelay 0
 		FISH_WANDER_DEST = GetMonsterProperty("movedest.origin");
 		FISH_WANDER_DEST += Vector3(0, 0, Random(32, 256));
 		SetMoveDest(FISH_WANDER_DEST);

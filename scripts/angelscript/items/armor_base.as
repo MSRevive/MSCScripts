@@ -34,7 +34,7 @@ class ArmorBase : CGameScript
 		ARMOR_PROTECTION = 0;
 		ARMOR_PROTECTION_AREA = BARMOR_PROTECTION_AREA;
 		ARMOR_REPLACE_BODYPARTS = BARMOR_PROTECTION_AREA;
-		// TODO: UNCONVERTED: registerarmor
+		// TODO: registerarmor
 		hide_body_parts();
 		if (!(true)) return;
 		L_PERC_TO_FLOAT = BARMOR_PROTECTION;
@@ -51,6 +51,7 @@ class ArmorBase : CGameScript
 	void barmor_effect_activate()
 	{
 		CallExternal(GetOwner(), "ext_register_armor", GetEntityIndex(GetOwner()));
+		CallExternal(GetOwner(), "ext_setbodytype", BARMOR_TYPE, GetEntityIndex(GetOwner()));
 	}
 
 	void show_body_parts()
@@ -81,7 +82,7 @@ class ArmorBase : CGameScript
 		L_ARMOR_TEXT += " (";
 		L_ARMOR_TEXT += BARMOR_PROTECTION;
 		L_ARMOR_TEXT += ")";
-		// TODO: UNCONVERTED: playermessagecl L_ARMOR_TEXT
+		// TODO: playermessagecl L_ARMOR_TEXT
 		if (!(true)) return;
 		hide_body_parts();
 		if (!(GetStat(GetOwner(), "strength") < ARMOR_STR_REQ)) return;
@@ -157,11 +158,6 @@ class ArmorBase : CGameScript
 	{
 		if (!(GetEntityProperty(GetOwner(), "scriptvar") != "normal")) return;
 		show_body_parts();
-	}
-
-	void barmor_effect_activate()
-	{
-		CallExternal(GetOwner(), "ext_setbodytype", BARMOR_TYPE, GetEntityIndex(GetOwner()));
 	}
 
 	void failed_str_req_loop()

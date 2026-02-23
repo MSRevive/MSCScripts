@@ -539,6 +539,13 @@ class DemonwingGiantIce : CGameScript
 		PlayAnim("once", ANIM_RUN);
 		string RND_UD = Random(-200, 200);
 		AddVelocity(GetOwner(), /* TODO: $relvel */ $relvel(0, 0, RND_UD));
+		if (!(ACTIVE_BABIES > 0)) return;
+		KILL_BABBIES = FindEntitiesInSphere("ally", 128);
+		if (!(KILL_BABBIES != "none")) return;
+		for (int i = 0; i < GetTokenCount(KILL_BABBIES, ";"); i++)
+		{
+			remove_babbies();
+		}
 	}
 
 	void do_spit_cycle()
@@ -844,17 +851,6 @@ class DemonwingGiantIce : CGameScript
 		if (Distance(TARG_ORG, RADIAL_CENTER) > RADIAL_RANGE)
 		{
 			HEARD_VERIFY = 0;
-		}
-	}
-
-	void npc_stuck()
-	{
-		if (!(ACTIVE_BABIES > 0)) return;
-		KILL_BABBIES = FindEntitiesInSphere("ally", 128);
-		if (!(KILL_BABBIES != "none")) return;
-		for (int i = 0; i < GetTokenCount(KILL_BABBIES, ";"); i++)
-		{
-			remove_babbies();
 		}
 	}
 

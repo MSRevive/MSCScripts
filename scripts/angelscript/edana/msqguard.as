@@ -89,10 +89,6 @@ class Msqguard : CGameScript
 		if (!(QUEST_1 == 2)) return;
 		SayText("Thanks for helping us out.");
 		PlayAnim("once", "yes");
-	}
-
-	void say_mayor()
-	{
 		if (!(QUEST_1 == 0)) return;
 		SayText("I know that old man is up to something...");
 		PlayAnim("once", "no");
@@ -191,10 +187,6 @@ class Msqguard : CGameScript
 		THIEF_QUEST = 3;
 		Say("suspicious");
 		SayText("If you see anything suspicious around here , you let me know.");
-	}
-
-	void say_thief()
-	{
 		if (!(THIEF_QUEST == 3)) return;
 		THIEF_QUEST = 6;
 		SayText("If you see any thieves , try bribing them for information , or give threats that I will lock them up for good.");

@@ -117,7 +117,7 @@ class BaseDot : CGameScript
 		}
 		string L_ROLL = RandomInt(1, 100);
 		string L_RESISTANCE = int(/* TODO: $math(multiply) */ IMMUNE_RATIO);
-		L_RESISTANCE = max(0, min(100, L_RESISTANCE));
+		// TODO: capvar L_RESISTANCE 0 100
 		BE_RESIST_STRING = " ( ";
 		if (L_ROLL > L_RESISTANCE)
 		{

@@ -248,6 +248,10 @@ class MaldoraGminionRandom : CGameScript
 	void OnDeath(CBaseEntity@ attacker) override
 	{
 		CallExternal(MY_MASTER, "skele_died");
+		ClientEvent("remove", "all", MY_LIGHT_SCRIPT);
+		if ((MINION_SUMMONED)) return;
+		if ((NPC_NO_DROPS)) return;
+		bm_gold_spew(25, 1, 32, 2, 4);
 	}
 
 	void client_activate()
@@ -266,14 +270,6 @@ class MaldoraGminionRandom : CGameScript
 	{
 		string L_POS = /* TODO: $getcl */ $getcl(SKEL_ID, "origin");
 		ClientEffect("light", SKEL_LIGHT_ID, L_POS, GLOW_RAD, GLOW_COLOR, 1.0);
-	}
-
-	void OnDeath(CBaseEntity@ attacker) override
-	{
-		ClientEvent("remove", "all", MY_LIGHT_SCRIPT);
-		if ((MINION_SUMMONED)) return;
-		if ((NPC_NO_DROPS)) return;
-		bm_gold_spew(25, 1, 32, 2, 4);
 	}
 
 	void light_on()

@@ -110,6 +110,8 @@ class AnimArcher : CGameScript
 		if (!(LASTSEEN_ENEMY != LAST_ENEMY)) return;
 		EmitSound(GetOwner(), CHAN_VOICE, SOUND_ATTACK2, 5);
 		LAST_ENEMY = LASTSEEN_ENEMY;
+		AS_ATTACKING = GetGameTime();
+		AS_ATTACKING += 1.0;
 	}
 
 	void reset_attack_delay()
@@ -122,12 +124,6 @@ class AnimArcher : CGameScript
 		// PlayRandomSound from: "game.sound.maxvol", SOUND_PAIN, SOUND_STRUCK2, SOUND_PAIN
 		array<string> sounds = {"game.sound.maxvol", SOUND_PAIN, SOUND_STRUCK2, SOUND_PAIN};
 		EmitSound(GetOwner(), CHAN_VOICE, sounds[RandomInt(0, sounds.length() - 1)], 10);
-	}
-
-	void npc_targetsighted()
-	{
-		AS_ATTACKING = GetGameTime();
-		AS_ATTACKING += 1.0;
 	}
 
 	void OnDamagedOther(CBaseEntity@ victim, int damage) override
@@ -179,10 +175,6 @@ class AnimArcher : CGameScript
 	{
 		SetGlobalVar("ONE_IS_DEAD", 0);
 		I_AM_ONE = 1;
-	}
-
-	void two_was_summoned()
-	{
 		SetGlobalVar("TWO_IS_DEAD", 0);
 		I_AM_TWO = 1;
 	}

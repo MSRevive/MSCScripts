@@ -105,10 +105,6 @@ class Rudolf : CGameScript
 	{
 		SayText("Well , you enter in here , then go across the bridge , then a right...");
 		ScheduleDelayedEvent(3, "say_where2");
-	}
-
-	void say_where()
-	{
 		if ((recievedit)) return;
 		SayText("There'll will be those things... I hope you're strong enough... here, take these.");
 		// TODO: offer ent_lastspoke health_mpotion

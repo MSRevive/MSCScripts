@@ -186,6 +186,9 @@ class DjinnLightningTroll : CGameScript
 		if ((DID_WARCRY)) return;
 		PlayAnim("critical", ANIM_WARCRY);
 		DID_WARCRY = 1;
+		if (!(SPOT_SPEECH != "SPOT_SPEECH")) return;
+		SayText("SPOT_SPEECH");
+		SPOT_SPEECH = "SPOT_SPEECH";
 	}
 
 	void OnHuntTarget(CBaseEntity@ target)
@@ -296,6 +299,7 @@ class DjinnLightningTroll : CGameScript
 	void warcry()
 	{
 		EmitSound(GetOwner(), 2, SOUND_IDLE, 10);
+		EmitSound(GetOwner(), 2, SOUND_IDLE, 10);
 	}
 
 	void my_target_died()
@@ -350,22 +354,10 @@ class DjinnLightningTroll : CGameScript
 		SpawnNPC(BALL_SCRIPT, GetEntityProperty(GetOwner(), "attachpos"), ScriptMode::Legacy); // params: GetEntityIndex(GetOwner()), DMG_BALL, 256, 20.0
 	}
 
-	void warcry()
-	{
-		EmitSound(GetOwner(), 2, SOUND_IDLE, 10);
-	}
-
 	void set_sorcpal_djinn1()
 	{
 		SetSayTextRange(2048);
 		SPOT_SPEECH = "You say smash? ME SMASH!!";
-	}
-
-	void cycle_up()
-	{
-		if (!(SPOT_SPEECH != "SPOT_SPEECH")) return;
-		SayText("SPOT_SPEECH");
-		SPOT_SPEECH = "SPOT_SPEECH";
 	}
 
 }

@@ -1290,6 +1290,9 @@ class Externals : CGameScript
 		LogDebug("ext_setspawn PARAM1");
 		SetTransition(GetOwner(), param1);
 		SetPlayerQuestData(GetOwner(), "d");
+		LogDebug("ext_setspawn PARAM1");
+		SetTransition(GetOwner(), param1);
+		SetPlayerQuestData(GetOwner(), "d");
 	}
 
 	void ext_set_transitions()
@@ -1584,7 +1587,7 @@ class Externals : CGameScript
 
 	void ext_setrender()
 	{
-		// TODO: UNCONVERTED: setrender PARAM1
+		// TODO: setrender PARAM1
 	}
 
 	void ext_tod_lock()
@@ -3307,13 +3310,6 @@ class Externals : CGameScript
 		{
 			ScheduleDelayedEvent(1.0, "loop_check_local_trans");
 		}
-	}
-
-	void ext_setspawn()
-	{
-		LogDebug("ext_setspawn PARAM1");
-		SetTransition(GetOwner(), param1);
-		SetPlayerQuestData(GetOwner(), "d");
 	}
 
 	void ext_remove_afk()

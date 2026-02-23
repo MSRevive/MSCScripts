@@ -310,6 +310,7 @@ class SwordsSf : CGameScript
 		{
 			end_faura();
 		}
+		PARRY_ON = 0;
 	}
 
 	void exit_parry()
@@ -370,11 +371,6 @@ class SwordsSf : CGameScript
 		IN_DMG *= 0.5;
 		SetDamage("dmg");
 		return;
-	}
-
-	void bweapon_effect_remove()
-	{
-		PARRY_ON = 0;
 	}
 
 	void special_01_strike()

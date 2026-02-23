@@ -89,6 +89,12 @@ class FishLeech : CGameScript
 		SetGravity(0.02);
 		SetModel("monsters/leech.mdl");
 		SetBBox(Vector3(-5, -5, -5), Vector3(5, 5, 5));
+		SetRace("wildanimal");
+		SetRoam(true);
+		SetHearingSensitivity(3);
+		1 = float(1);
+		SetIdleAnim(ANIM_IDLE);
+		SetMoveAnim(ANIM_WALK);
 	}
 
 	void OnPostSpawn() override
@@ -105,16 +111,6 @@ class FishLeech : CGameScript
 		DoDamage(m_hLastSeen, ATTACK_HITRANGE, Random(ATK_DMG_LOW, ATK_DMG_HIGH), ATTACK_HITCHANCE, "slash");
 	}
 
-	void OnSpawn() override
-	{
-		SetRace("wildanimal");
-		SetRoam(true);
-		SetHearingSensitivity(3);
-		1 = float(1);
-		SetIdleAnim(ANIM_IDLE);
-		SetMoveAnim(ANIM_WALK);
-	}
-
 	void OnStruck(CBaseEntity@ attacker, int damage)
 	{
 		// PlayRandomSound from: "game.sound.maxvol", SOUND_STRUCK1, SOUND_STRUCK2, SOUND_STRUCK3, SOUND_STRUCK4, SOUND_STRUCK5
@@ -124,7 +120,7 @@ class FishLeech : CGameScript
 
 	void npc_targetsighted()
 	{
-		// TODO: UNCONVERTED: roamdelay 2
+		// TODO: roamdelay 2
 		if ((CanSee(NPC_MOVE_TARGET, ATTACK_RANGE)))
 		{
 			SetMoveDest("none");

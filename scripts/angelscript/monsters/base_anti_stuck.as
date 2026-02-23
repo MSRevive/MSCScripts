@@ -309,6 +309,8 @@ class BaseAntiStuck : CGameScript
 	void game_dynamically_created()
 	{
 		NO_SPAWN_STUCK_CHECK = 1;
+		if (!(AS_SUMMON_TELE_CHECK)) return;
+		as_tele_stuck_check();
 	}
 
 	void OnDamagedOther(CBaseEntity@ victim, int damage) override
@@ -424,12 +426,6 @@ class BaseAntiStuck : CGameScript
 			AS_CAN_MOVE = 1;
 		}
 		if ((AS_CAN_MOVE)) return;
-	}
-
-	void game_dynamically_created()
-	{
-		if (!(AS_SUMMON_TELE_CHECK)) return;
-		as_tele_stuck_check();
 	}
 
 	void as_tele_stuck_check()

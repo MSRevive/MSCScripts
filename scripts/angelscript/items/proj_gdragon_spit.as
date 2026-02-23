@@ -43,7 +43,7 @@ class ProjGdragonSpit : CGameScript
 
 	void game_tossprojectile()
 	{
-		// TODO: UNCONVERTED: projectiletouch 1
+		// TODO: projectiletouch 1
 		PlayAnim("critical", "spin_vertical_fast");
 		ClientEvent("new", "all", "items/proj_slime_jet_cl", GetEntityIndex(GetOwner()), "xfireball3.spr", 5.0, 3.0);
 		// svplaysound: svplaysound 2 10 ambience/alienflyby1.wav

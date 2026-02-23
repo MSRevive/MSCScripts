@@ -37,7 +37,7 @@ class PackSack : CGameScript
 
 	void pack_wear()
 	{
-		// TODO: UNCONVERTED: playermessagecl You attach your sack to your belt.
+		// TODO: playermessagecl You attach your sack to your belt.
 	}
 
 }

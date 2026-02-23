@@ -116,6 +116,27 @@ class VgoblinChief : CGameScript
 		array<string> sounds = {SOUND_ATTACK1, SOUND_ATTACK2, SOUND_ATTACK3};
 		EmitSound(GetOwner(), 0, sounds[RandomInt(0, sounds.length() - 1)], 10);
 		DoDamage(m_hAttackTarget, ATTACK_HITRANGE, DMG_AXE, ATTACK_HITCHANCE, "blunt");
+		AXE_SWING = 1;
+		// PlayRandomSound from: SOUND_ATTACK1, SOUND_ATTACK2, SOUND_ATTACK3
+		array<string> sounds = {SOUND_ATTACK1, SOUND_ATTACK2, SOUND_ATTACK3};
+		EmitSound(GetOwner(), 0, sounds[RandomInt(0, sounds.length() - 1)], 10);
+		DoDamage(m_hAttackTarget, ATTACK_HITRANGE, DMG_AXE, ATTACK_HITCHANCE, "slash");
+		if (!(RND_SPECIAL > 0)) return;
+		string BURST_POS = /* TODO: $relpos */ $relpos(0, 64, -16);
+		stunburst_go(BURST_POS, 256, 1, DMG_CHARGE);
+		if (RND_SPECIAL == 1)
+		{
+			ScheduleDelayedEvent(0.2, "summon_chew_skulls");
+		}
+		if (RND_SPECIAL == 2)
+		{
+			ScheduleDelayedEvent(0.2, "summon_splodie_skulls");
+		}
+		if (RND_SPECIAL == 3)
+		{
+			ScheduleDelayedEvent(0.2, "summon_dewm");
+		}
+		RND_SPECIAL = 0;
 	}
 
 	void swing_dodamage()
@@ -200,31 +221,6 @@ class VgoblinChief : CGameScript
 	{
 		FREQ_SPECIAL("set_special");
 		RND_SPECIAL = RandomInt(1, 3);
-	}
-
-	void swing_axe()
-	{
-		AXE_SWING = 1;
-		// PlayRandomSound from: SOUND_ATTACK1, SOUND_ATTACK2, SOUND_ATTACK3
-		array<string> sounds = {SOUND_ATTACK1, SOUND_ATTACK2, SOUND_ATTACK3};
-		EmitSound(GetOwner(), 0, sounds[RandomInt(0, sounds.length() - 1)], 10);
-		DoDamage(m_hAttackTarget, ATTACK_HITRANGE, DMG_AXE, ATTACK_HITCHANCE, "slash");
-		if (!(RND_SPECIAL > 0)) return;
-		string BURST_POS = /* TODO: $relpos */ $relpos(0, 64, -16);
-		stunburst_go(BURST_POS, 256, 1, DMG_CHARGE);
-		if (RND_SPECIAL == 1)
-		{
-			ScheduleDelayedEvent(0.2, "summon_chew_skulls");
-		}
-		if (RND_SPECIAL == 2)
-		{
-			ScheduleDelayedEvent(0.2, "summon_splodie_skulls");
-		}
-		if (RND_SPECIAL == 3)
-		{
-			ScheduleDelayedEvent(0.2, "summon_dewm");
-		}
-		RND_SPECIAL = 0;
 	}
 
 	void summon_chew_skulls()

@@ -114,7 +114,7 @@ class ProjMana2 : CGameScript
 	{
 		int L_SCAN_SIZE = 24;
 		L_SCAN_SIZE *= FX_SIZE;
-		L_SCAN_SIZE = max(55, min(140, L_SCAN_SIZE));
+		// TODO: capvar L_SCAN_SIZE 55 140
 		return;
 		return;
 	}

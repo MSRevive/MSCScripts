@@ -139,10 +139,6 @@ class Mayorguard : CGameScript
 		THIEF_1 = 6;
 		EmitSound(GetOwner(), "npc/suspicious.wav");
 		SayText("If you see anything suspicious around here , you let me know.");
-	}
-
-	void say_thief()
-	{
 		if (!(THIEF_1 == 6)) return;
 		THIEF_1 = 7;
 		SayText("If you see any thieves , try bribing them for information , or give threats that I will lock them up for good.");

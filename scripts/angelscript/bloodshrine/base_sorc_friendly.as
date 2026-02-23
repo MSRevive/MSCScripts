@@ -202,6 +202,14 @@ class BaseSorcFriendly : CGameScript
 		if (!(GetRelationship(param1) == "enemy")) return;
 		NEXT_REGEN = GetGameTime();
 		NEXT_REGEN += 20.0;
+		if (param1 == SBOSS_ID)
+		{
+			FSORC_HIT_BY_BOSS = 1;
+		}
+		if (GetEntityRange(SBOSS_ID) < 256)
+		{
+			FSORC_HIT_BY_BOSS = 1;
+		}
 	}
 
 	void bfsorc_follow_close()
@@ -257,18 +265,6 @@ class BaseSorcFriendly : CGameScript
 		if (FSORC_DMG_POINTS > 10000)
 		{
 			FSORC_DMG_POINTS = 10000;
-		}
-	}
-
-	void OnDamage(int damage) override
-	{
-		if (param1 == SBOSS_ID)
-		{
-			FSORC_HIT_BY_BOSS = 1;
-		}
-		if (GetEntityRange(SBOSS_ID) < 256)
-		{
-			FSORC_HIT_BY_BOSS = 1;
 		}
 	}
 

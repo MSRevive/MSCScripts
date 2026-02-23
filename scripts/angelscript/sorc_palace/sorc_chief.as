@@ -292,6 +292,11 @@ class SorcChief : CGameScript
 		NEW_ORG += /* TODO: $relpos */ $relpos(Vector3(0, GetMonsterProperty("angles.yaw"), 0), Vector3(0, 4, 0));
 		SetMoveDest(NEW_ORG);
 		SetEntityOrigin(GetOwner(), NEW_ORG);
+		HALF_HEALTH = GetMonsterMaxHP();
+		HALF_HEALTH /= 2;
+		string L_MAP_NAME = StringToLower(GetMapName());
+		if (!(L_MAP_NAME == "lodagond-1")) return;
+		ON_LODAGOND = 1;
 	}
 
 	void check_for_blood()
@@ -479,6 +484,28 @@ class SorcChief : CGameScript
 		SetDamage("dmg");
 		SetDamage("hit");
 		return;
+		if (!(COMBAT_MODE)) return;
+		if (GetMonsterHP() < HALF_HEALTH)
+		{
+			JUMP_FWD_DIST = 500;
+			FREQ_LEAP = 0.1;
+		}
+		string HIT_BY = GetEntityIndex(param1);
+		if (param2 > 30)
+		{
+			if (GetEntityRange(HIT_BY) < ATTACK_HITRANGE)
+			{
+			}
+			if (RandomInt(1, 3) == 1)
+			{
+			}
+			if (!(LEAP_DELAY))
+			{
+			}
+			LEAP_DELAY = 1;
+			FREQ_LEAP("leap_delay_reset");
+			leap_away(HIT_BY);
+		}
 	}
 
 	void ext_tell_approach()
@@ -660,6 +687,11 @@ class SorcChief : CGameScript
 		if ((SWORD_DRAWN)) return;
 		SetModelBody(2, 8);
 		EmitSound(GetOwner(), 0, SOUND_DRAW_WEAPON, 10);
+		CAN_FLINCH = 1;
+		if ((SUSPEND_AI))
+		{
+			npcatk_resume_ai();
+		}
 	}
 
 	void OnHeardSound(CBaseEntity@ source, Vector3 origin) override
@@ -788,32 +820,6 @@ class SorcChief : CGameScript
 		// PlayRandomSound from: SOUND_ATTACK1, SOUND_ATTACK2, SOUND_ATTACK3
 		array<string> sounds = {SOUND_ATTACK1, SOUND_ATTACK2, SOUND_ATTACK3};
 		EmitSound(GetOwner(), 0, sounds[RandomInt(0, sounds.length() - 1)], 10);
-	}
-
-	void OnDamage(int damage) override
-	{
-		if (!(COMBAT_MODE)) return;
-		if (GetMonsterHP() < HALF_HEALTH)
-		{
-			JUMP_FWD_DIST = 500;
-			FREQ_LEAP = 0.1;
-		}
-		string HIT_BY = GetEntityIndex(param1);
-		if (param2 > 30)
-		{
-			if (GetEntityRange(HIT_BY) < ATTACK_HITRANGE)
-			{
-			}
-			if (RandomInt(1, 3) == 1)
-			{
-			}
-			if (!(LEAP_DELAY))
-			{
-			}
-			LEAP_DELAY = 1;
-			FREQ_LEAP("leap_delay_reset");
-			leap_away(HIT_BY);
-		}
 	}
 
 	void leap_delay_reset()
@@ -984,15 +990,6 @@ class SorcChief : CGameScript
 			{
 				LOC_LSTORM2 = TARG_ORG;
 			}
-		}
-	}
-
-	void warcry_done()
-	{
-		CAN_FLINCH = 1;
-		if ((SUSPEND_AI))
-		{
-			npcatk_resume_ai();
 		}
 	}
 
@@ -1213,15 +1210,6 @@ class SorcChief : CGameScript
 		ScheduleDelayedEvent(0.1, "flicker_in");
 		SetProp(GetOwner(), "rendermode", 5);
 		SetProp(GetOwner(), "renderamt", RENDER_COUNT);
-	}
-
-	void OnPostSpawn() override
-	{
-		HALF_HEALTH = GetMonsterMaxHP();
-		HALF_HEALTH /= 2;
-		string L_MAP_NAME = StringToLower(GetMapName());
-		if (!(L_MAP_NAME == "lodagond-1")) return;
-		ON_LODAGOND = 1;
 	}
 
 	void do_tornado()

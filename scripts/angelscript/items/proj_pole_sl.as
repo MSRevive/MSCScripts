@@ -53,7 +53,7 @@ class ProjPoleSl : CGameScript
 	{
 		ClientEvent("new", "all", "effects/sfx_follow_glow_cl", GetEntityIndex(GetOwner()), Vector3(255, 0, 255), 128, 1.5);
 		MY_LIGHT_IDX = "game.script.last_sent_id";
-		// TODO: UNCONVERTED: projectiletouch 0
+		// TODO: projectiletouch 0
 	}
 
 	void game_projectile_landed()

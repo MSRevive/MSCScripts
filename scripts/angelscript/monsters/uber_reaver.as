@@ -254,7 +254,7 @@ class UberReaver : CGameScript
 
 	void reset_search_anim()
 	{
-		// TODO: UNCONVERTED: setrvard SEARCH_ANIM_DELAY 0
+		// TODO: setrvard SEARCH_ANIM_DELAY 0
 	}
 
 	void game_dodamage()

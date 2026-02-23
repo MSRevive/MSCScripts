@@ -281,6 +281,12 @@ class Bryan : CGameScript
 		PlayAnim("once", "converse1");
 		CallExternal(FindEntityByName("wench"), "cider2");
 		ScheduleDelayedEvent(1, "say_cider_2");
+		if (!(CIDER == 2)) return;
+		SayText("Oh! She still hasn t gotten it? Well then you must head over to Krythos in the Merchant s Square immediately!");
+		CallExternal(FindEntityByName("krythos"), "cider4");
+		ScheduleDelayedEvent(1, "say_cider_2");
+		if (!(CIDER == 3)) return;
+		SayText("Well? You should get going!");
 	}
 
 	void say_cider_2()
@@ -291,20 +297,6 @@ class Bryan : CGameScript
 	void cider3()
 	{
 		CIDER = 2;
-	}
-
-	void say_cider()
-	{
-		if (!(CIDER == 2)) return;
-		SayText("Oh! She still hasn t gotten it? Well then you must head over to Krythos in the Merchant s Square immediately!");
-		CallExternal(FindEntityByName("krythos"), "cider4");
-		ScheduleDelayedEvent(1, "say_cider_2");
-	}
-
-	void say_cider()
-	{
-		if (!(CIDER == 3)) return;
-		SayText("Well? You should get going!");
 	}
 
 	void say_rumor()

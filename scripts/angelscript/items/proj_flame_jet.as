@@ -75,6 +75,7 @@ class ProjFlameJet : CGameScript
 	void game_projectile_hitwall()
 	{
 		remove_me();
+		remove_me();
 	}
 
 	void game_tossprojectile()
@@ -104,11 +105,6 @@ class ProjFlameJet : CGameScript
 		NEXT_SCAN = FREQ_SCAN;
 		NEXT_SCAN += FREQ_SCAN;
 		TARGET_LIST = FindEntitiesInSphere("any", 64);
-	}
-
-	void game_projectile_hitwall()
-	{
-		remove_me();
 	}
 
 	void affect_targets()

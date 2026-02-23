@@ -146,6 +146,8 @@ class Thief : CGameScript
 		if (!(THIEF == 0)) return;
 		THIEF = 1;
 		SayText("I don t know what you re talking about.");
+		if (!(THIEF == 3)) return;
+		SayText("Go away.");
 	}
 
 	void say_gold2()
@@ -168,12 +170,6 @@ class Thief : CGameScript
 	{
 		SayText("It s a map of where the band is. I m just a nobody among those. If you want to catch real thieves , go for them , not me.");
 		// TODO: offer ent_lastspoke item_thiefmap
-	}
-
-	void say_gold()
-	{
-		if (!(THIEF == 3)) return;
-		SayText("Go away.");
 	}
 
 }

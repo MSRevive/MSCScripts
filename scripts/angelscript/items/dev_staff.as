@@ -121,6 +121,7 @@ class DevStaff : CGameScript
 				}
 			}
 		}
+		try_anim();
 	}
 
 	void game_attack2()
@@ -160,11 +161,6 @@ class DevStaff : CGameScript
 				BEAM_TARGET = L_TARGET;
 			}
 		}
-	}
-
-	void game_attack1_down()
-	{
-		try_anim();
 	}
 
 	void try_anim()

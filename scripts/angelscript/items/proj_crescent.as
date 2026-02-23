@@ -126,7 +126,7 @@ class ProjCrescent : CGameScript
 			CRE_EFFECT_NAME = "DOT_poison";
 			CRE_EFFECT_DURATION = 10.0;
 		}
-		// TODO: UNCONVERTED: projectiletouch 1
+		// TODO: projectiletouch 1
 		SetProp(GetOwner(), "rendermode", 5);
 		SetProp(GetOwner(), "renaderamt", 0);
 		IS_ACTIVE = 1;

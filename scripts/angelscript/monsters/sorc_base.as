@@ -499,6 +499,10 @@ class SorcBase : CGameScript
 	{
 		if (!(SPAWN_SPEECH != "SPAWN_SPEECH")) return;
 		SPAWN_SPEECH_DELAY("say_spawn_speech");
+		if (!(KNEEL_MODE)) return;
+		SetIdleAnim(ANIM_KNEEL);
+		SetMoveAnim(ANIM_KNEEL);
+		SetRoam(false);
 	}
 
 	void say_spawn_speech()
@@ -623,14 +627,6 @@ class SorcBase : CGameScript
 			npcatk_suspend_ai();
 			SetRoam(false);
 		}
-	}
-
-	void OnPostSpawn() override
-	{
-		if (!(KNEEL_MODE)) return;
-		SetIdleAnim(ANIM_KNEEL);
-		SetMoveAnim(ANIM_KNEEL);
-		SetRoam(false);
 	}
 
 	void sorcs_confirm_order()

@@ -340,7 +340,7 @@ class SpiderWebber : CGameScript
 		if (NPC_ADJ_LEVEL > 0)
 		{
 			string ADD_TO_WS = NPC_ADJ_LEVEL;
-			ADD_TO_WS = max(1, min(7, ADD_TO_WS));
+			// TODO: capvar ADD_TO_WS 1 7
 			WEB_STRENGTH += ADD_TO_WS;
 		}
 	}

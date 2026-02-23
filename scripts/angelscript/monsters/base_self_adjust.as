@@ -76,6 +76,9 @@ class BaseSelfAdjust : CGameScript
 		{
 			npcatk_setup_addparams();
 		}
+		if (!(param1 == "events")) return;
+		NPC_DO_EVENTS = param2;
+		ScheduleDelayedEvent(0.01, "npcatk_setup_addparams");
 	}
 
 	void npcatk_setup_addparams()
@@ -511,7 +514,7 @@ class BaseSelfAdjust : CGameScript
 					float L_TO_ADD = 0.25;
 					string L_TIMES_TO_ADD = NPC_MOVE_SPEED_ADJ;
 					L_TO_ADD *= L_TIMES_TO_ADD;
-					L_TO_ADD = max(0.25, min(2, L_TO_ADD));
+					// TODO: capvar L_TO_ADD 0.25 2
 					L_TO_ADD += 1;
 					LogDebug("expadj L_TO_ADD noscale mspeed+");
 					L_ADJ += L_TO_ADD;
@@ -646,13 +649,6 @@ class BaseSelfAdjust : CGameScript
 				DROP_GOLD_AMT *= L_TOTAL_XP_ADJ;
 			}
 		}
-	}
-
-	void game_dynamically_created()
-	{
-		if (!(param1 == "events")) return;
-		NPC_DO_EVENTS = param2;
-		ScheduleDelayedEvent(0.01, "npcatk_setup_addparams");
 	}
 
 }

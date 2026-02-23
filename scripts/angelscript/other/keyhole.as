@@ -42,10 +42,6 @@ class Keyhole : CGameScript
 			string reg.mitem.data = "item_key_rusty";
 			string reg.mitem.callback = "rusty_use_the_key";
 		}
-	}
-
-	void game_menu_getoptions()
-	{
 		if ((ItemExists(param1, "item_storageroomkey")))
 		{
 			string reg.mitem.title = "Use the storage key";

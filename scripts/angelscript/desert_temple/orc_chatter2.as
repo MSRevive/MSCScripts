@@ -30,6 +30,31 @@ class OrcChatter2 : CGameScript
 
 	void start_combat()
 	{
+		if ((IN_COMBAT)) return;
+		IN_COMBAT = 1;
+		chat_clear_que();
+		ScheduleDelayedEvent(3.0, "start_combat2");
+		npcatk_resume_ai();
+		SetHearingSensitivity(4);
+		if (param1 == "game_damaged")
+		{
+			npcatk_settarget(GetEntityIndex(m_hLastStruck));
+		}
+		else
+		{
+			if ((IsEntityAlive(param1)))
+			{
+				npcatk_settarget(GetEntityIndex(param1));
+			}
+			else
+			{
+				npcatk_settarget(GetEntityIndex(m_hLastSeen));
+			}
+		}
+		if (!(GetEntityProperty(ORC_BUDDY_ID, "scriptvar")))
+		{
+			CallExternal(ORC_BUDDY_ID, "start_combat", m_hAttackTarget);
+		}
 	}
 
 	void ext_do_chat_step()
@@ -92,34 +117,9 @@ class OrcChatter2 : CGameScript
 		if ((IN_COMBAT)) return;
 		if (!(false)) return;
 		start_combat();
-	}
-
-	void start_combat()
-	{
-		if ((IN_COMBAT)) return;
-		IN_COMBAT = 1;
-		chat_clear_que();
-		ScheduleDelayedEvent(3.0, "start_combat2");
-		npcatk_resume_ai();
-		SetHearingSensitivity(4);
-		if (param1 == "game_damaged")
+		if (ORC_BUDDY_ID == "ORC_BUDDY_ID")
 		{
-			npcatk_settarget(GetEntityIndex(m_hLastStruck));
-		}
-		else
-		{
-			if ((IsEntityAlive(param1)))
-			{
-				npcatk_settarget(GetEntityIndex(param1));
-			}
-			else
-			{
-				npcatk_settarget(GetEntityIndex(m_hLastSeen));
-			}
-		}
-		if (!(GetEntityProperty(ORC_BUDDY_ID, "scriptvar")))
-		{
-			CallExternal(ORC_BUDDY_ID, "start_combat", m_hAttackTarget);
+			ORC_BUDDY_ID = FindEntityByName("orc_chatter1");
 		}
 	}
 
@@ -150,14 +150,6 @@ class OrcChatter2 : CGameScript
 	void ext_gender_gag3()
 	{
 		SayText("Just shut up and fight!");
-	}
-
-	void OnHuntTarget(CBaseEntity@ target)
-	{
-		if (ORC_BUDDY_ID == "ORC_BUDDY_ID")
-		{
-			ORC_BUDDY_ID = FindEntityByName("orc_chatter1");
-		}
 	}
 
 	void OnDeath(CBaseEntity@ attacker) override

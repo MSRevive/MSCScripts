@@ -1086,6 +1086,7 @@ class PlayerClEffectsSpecial : CGameScript
 	void cl_playsound()
 	{
 		EmitSound(GetOwner(), 0, param1, 10);
+		EmitSound3D(param1, param2, param3);
 	}
 
 	void show_hbar()
@@ -1129,11 +1130,6 @@ class PlayerClEffectsSpecial : CGameScript
 	void set_test_beam()
 	{
 		ClientEffect("beam_ents", param1, 1, param2, 1, "lgtning.spr", 60.0, 10, 0.1, 0.3, 0.1, 30, Vector3(2, 1.5, 0.25));
-	}
-
-	void cl_playsound()
-	{
-		EmitSound3D(param1, param2, param3);
 	}
 
 	void cl_svplaysound()

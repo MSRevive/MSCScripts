@@ -78,7 +78,7 @@ class Prisoner : CGameScript
 		SetHeight(96);
 		SetSayTextRange(1024);
 		CatchSpeech("say_hi", "hail");
-		// TODO: UNCONVERTED: menu.autopen 1
+		// TODO: menu.autopen 1
 		if (!(true)) return;
 		ScheduleDelayedEvent(0.1, "face_player");
 	}

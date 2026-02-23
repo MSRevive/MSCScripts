@@ -73,6 +73,7 @@ class ProjFlameJet2 : CGameScript
 	void game_projectile_hitwall()
 	{
 		remove_me();
+		remove_me();
 	}
 
 	void game_tossprojectile()
@@ -98,11 +99,6 @@ class ProjFlameJet2 : CGameScript
 		ScheduleDelayedEvent(0.1, "damage_area");
 		LogDebug("damage_area DMG_AMT");
 		XDoDamage(GetEntityOrigin(GetOwner()), 96, DMG_AMT, 0.2, "ent_expowner", "ent_expowner", USE_SKILL, "fire", "dmgevent:flamejet");
-	}
-
-	void game_projectile_hitwall()
-	{
-		remove_me();
 	}
 
 	void remove_me()

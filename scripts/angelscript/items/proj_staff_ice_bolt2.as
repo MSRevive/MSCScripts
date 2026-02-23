@@ -138,7 +138,7 @@ class ProjStaffIceBolt2 : CGameScript
 		string DOT_ICE = GetSkillLevel(MY_OWNER, "spellcasting.ice");
 		EFFECT_DURATION *= 0.5;
 		DOT_ICE *= 0.5;
-		EFFECT_DURATION = max(3, min(5, EFFECT_DURATION));
+		// TODO: capvar EFFECT_DURATION 3 5
 		ApplyEffect(ENT_HIT, "effects/dot_cold", EFFECT_DURATION, MY_OWNER, DOT_ICE, "spellcasting.ice");
 	}
 

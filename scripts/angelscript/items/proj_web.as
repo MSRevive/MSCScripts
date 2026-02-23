@@ -55,7 +55,7 @@ class ProjWeb : CGameScript
 		{
 			string L_DUR = GetSkillLevel("ent_expowner", "spellcasting.affliction");
 			L_DUR /= 30;
-			L_DUR = max(0, min(1, L_DUR));
+			// TODO: capvar L_DUR 0 1
 			string L_DUR = /* TODO: $ratio */ $ratio(L_DUR, 1.5, 2.5);
 			if ((IsValidPlayer(param1)))
 			{

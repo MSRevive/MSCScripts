@@ -19,6 +19,7 @@
 
 #include <cstring>
 #include <cstdio>
+#include <string>
 
 // ── Dummy generic callback used for every binding ────────────────────────
 static void DummyGeneric(asIScriptGeneric*) {}
@@ -67,6 +68,12 @@ static const int g_kRenderTransAdd    = 5;
 static const int g_DAMAGE_NO  = 0;
 static const int g_DAMAGE_YES = 1;
 static const int g_DAMAGE_AIM = 2;
+
+// Dummy storage for param globals (string parameters passed to events)
+static std::string g_param1, g_param2, g_param3, g_param4;
+static std::string g_param5, g_param6, g_param7, g_param8;
+// currentscript global
+static std::string g_currentscript;
 
 //==========================================================================
 // Step 2: Vector3 & Color value types  (from ASCoreTypes.cpp)
@@ -800,6 +807,284 @@ static void RegisterEngineEvents(asIScriptEngine* engine)
 }
 
 //==========================================================================
+// Step 13: Transpiler-emitted global functions
+//
+// These are functions that MSCScript commands translate into. In the real
+// game they are either methods on CScriptedEnt or global helpers. For the
+// linter they need to be registered as global functions so the AS compiler
+// can resolve them in transpiled scripts (which call them on 'this' via
+// CGameScript base class methods, or as free functions).
+//==========================================================================
+static void RegisterTranspilerFunctions(asIScriptEngine* engine)
+{
+    int r;
+
+    // ── ClientEffect (variadic — register multiple overloads) ────
+    // Most common: ClientEffect("type", "subtype", "param", ...)
+    REG_GLOBAL_FUNC("void ClientEffect(const string &in)");
+    REG_GLOBAL_FUNC("void ClientEffect(const string &in, const string &in)");
+    REG_GLOBAL_FUNC("void ClientEffect(const string &in, const string &in, const string &in)");
+    REG_GLOBAL_FUNC("void ClientEffect(const string &in, const string &in, const string &in, const string &in)");
+    REG_GLOBAL_FUNC("void ClientEffect(const string &in, const string &in, const string &in, const string &in, const string &in)");
+    REG_GLOBAL_FUNC("void ClientEffect(const string &in, const string &in, const string &in, const string &in, const string &in, const string &in)");
+    REG_GLOBAL_FUNC("void ClientEffect(const string &in, const string &in, const string &in, Vector3)");
+    REG_GLOBAL_FUNC("void ClientEffect(const string &in, const string &in, const string &in, Vector3, const string &in)");
+    REG_GLOBAL_FUNC("void ClientEffect(const string &in, const string &in, const string &in, Vector3, const string &in, const string &in)");
+    REG_GLOBAL_FUNC("void ClientEffect(const string &in, const string &in, const string &in, float)");
+    REG_GLOBAL_FUNC("void ClientEffect(const string &in, const string &in, const string &in, int)");
+    REG_GLOBAL_FUNC("void ClientEffect(const string &in, const string &in, const string &in, const string &in, float)");
+    REG_GLOBAL_FUNC("void ClientEffect(const string &in, const string &in, const string &in, const string &in, int)");
+    REG_GLOBAL_FUNC("void ClientEffect(const string &in, const string &in, const string &in, const string &in, Vector3)");
+    REG_GLOBAL_FUNC("void ClientEffect(const string &in, const string &in, const string &in, const string &in, const string &in, const string &in, const string &in)");
+    REG_GLOBAL_FUNC("void ClientEffect(const string &in, const string &in, const string &in, const string &in, const string &in, const string &in, const string &in, const string &in)");
+
+    // ── ScheduleDelayedEvent ─────────────────────────────────────
+    REG_GLOBAL_FUNC("void ScheduleDelayedEvent(float, const string &in)");
+    REG_GLOBAL_FUNC("void ScheduleDelayedEvent(int, const string &in)");
+    REG_GLOBAL_FUNC("void ScheduleDelayedEvent(float, const string &in, const string &in)");
+    REG_GLOBAL_FUNC("void ScheduleDelayedEvent(float, const string &in, const string &in, const string &in)");
+    REG_GLOBAL_FUNC("void ScheduleDelayedEvent(float, const string &in, const string &in, const string &in, const string &in)");
+
+    // ── SayText ──────────────────────────────────────────────────
+    REG_GLOBAL_FUNC("void SayText(const string &in)");
+    REG_GLOBAL_FUNC("void SayText(CBaseEntity@, const string &in)");
+    REG_GLOBAL_FUNC("void SayText(const string &in, const string &in)");
+
+    // ── Say ──────────────────────────────────────────────────────
+    REG_GLOBAL_FUNC("void Say(const string &in)");
+    REG_GLOBAL_FUNC("void Say(CBaseEntity@, const string &in)");
+
+    // ── SetProp ──────────────────────────────────────────────────
+    REG_GLOBAL_FUNC("void SetProp(CBaseEntity@, const string &in, const string &in)");
+    REG_GLOBAL_FUNC("void SetProp(CBaseEntity@, const string &in, float)");
+    REG_GLOBAL_FUNC("void SetProp(CBaseEntity@, const string &in, int)");
+    REG_GLOBAL_FUNC("void SetProp(const string &in, const string &in, const string &in)");
+    REG_GLOBAL_FUNC("void SetProp(const string &in, const string &in)");
+
+    // ── CallExternal ─────────────────────────────────────────────
+    REG_GLOBAL_FUNC("void CallExternal(CBaseEntity@, const string &in)");
+    REG_GLOBAL_FUNC("void CallExternal(CBaseEntity@, const string &in, const string &in)");
+    REG_GLOBAL_FUNC("void CallExternal(CBaseEntity@, const string &in, const string &in, const string &in)");
+    REG_GLOBAL_FUNC("void CallExternal(CBaseEntity@, const string &in, const string &in, const string &in, const string &in)");
+    REG_GLOBAL_FUNC("void CallExternal(CBaseEntity@, const string &in, const string &in, const string &in, const string &in, const string &in)");
+    REG_GLOBAL_FUNC("void CallExternal(const string &in, const string &in)");
+    REG_GLOBAL_FUNC("void CallExternal(const string &in, const string &in, const string &in)");
+    REG_GLOBAL_FUNC("void CallExternal(const string &in, const string &in, const string &in, const string &in)");
+
+    // ── Precache ─────────────────────────────────────────────────
+    REG_GLOBAL_FUNC("void Precache(const string &in)");
+    REG_GLOBAL_FUNC("void PrecacheFile(const string &in)");
+
+    // ── CatchSpeech ──────────────────────────────────────────────
+    REG_GLOBAL_FUNC("void CatchSpeech(const string &in, const string &in)");
+    REG_GLOBAL_FUNC("void CatchSpeech(const string &in, const string &in, const string &in)");
+
+    // ── DeleteEntity ─────────────────────────────────────────────
+    REG_GLOBAL_FUNC("void DeleteEntity(CBaseEntity@)");
+    REG_GLOBAL_FUNC("void DeleteEntity(CBaseEntity@, bool)");
+    REG_GLOBAL_FUNC("void DeleteEntity(const string &in)");
+
+    // ── LogDebug ─────────────────────────────────────────────────
+    REG_GLOBAL_FUNC("void LogDebug(const string &in)");
+    REG_GLOBAL_FUNC("void LogInfo(const string &in)");
+    REG_GLOBAL_FUNC("void LogWarning(const string &in)");
+    REG_GLOBAL_FUNC("void LogError(const string &in)");
+
+    // ── Token functions ──────────────────────────────────────────
+    REG_GLOBAL_FUNC("int GetTokenCount(const string &in, const string &in)");
+    REG_GLOBAL_FUNC("int GetTokenCount(const string &in)");
+    REG_GLOBAL_FUNC("string GetToken(const string &in, int, const string &in)");
+    REG_GLOBAL_FUNC("string GetToken(const string &in, int)");
+
+    // ── UseTrigger ───────────────────────────────────────────────
+    REG_GLOBAL_FUNC("void UseTrigger(const string &in)");
+    REG_GLOBAL_FUNC("void UseTrigger(CBaseEntity@)");
+
+    // ── ClientEvent ──────────────────────────────────────────────
+    REG_GLOBAL_FUNC("void ClientEvent(const string &in)");
+    REG_GLOBAL_FUNC("void ClientEvent(const string &in, const string &in)");
+    REG_GLOBAL_FUNC("void ClientEvent(const string &in, const string &in, const string &in)");
+    REG_GLOBAL_FUNC("void ClientEvent(const string &in, const string &in, const string &in, Vector3)");
+    REG_GLOBAL_FUNC("void ClientEvent(const string &in, const string &in, const string &in, Vector3, const string &in)");
+    REG_GLOBAL_FUNC("void ClientEvent(const string &in, const string &in, const string &in, Vector3, const string &in, const string &in)");
+    REG_GLOBAL_FUNC("void ClientEvent(const string &in, const string &in, const string &in, const string &in)");
+    REG_GLOBAL_FUNC("void ClientEvent(const string &in, const string &in, const string &in, const string &in, const string &in)");
+
+    // ── EmitSound3D ──────────────────────────────────────────────
+    REG_GLOBAL_FUNC("void EmitSound3D(const string &in, Vector3, float)");
+    REG_GLOBAL_FUNC("void EmitSound3D(const string &in, Vector3)");
+    REG_GLOBAL_FUNC("void EmitSound3D(CBaseEntity@, const string &in, float)");
+    REG_GLOBAL_FUNC("void EmitSound3D(CBaseEntity@, int, const string &in, float)");
+    REG_GLOBAL_FUNC("void EmitSound3D(CBaseEntity@, const string &in)");
+    // EmitSound overloads with int channel (transpiled scripts use these)
+    REG_GLOBAL_FUNC("void EmitSound(CBaseEntity@, int, const string &in, float)");
+    REG_GLOBAL_FUNC("void EmitSound(CBaseEntity@, int, const string &in, int)");
+
+    // ── Entity property access ───────────────────────────────────
+    REG_GLOBAL_FUNC("int GetEntityIndex(CBaseEntity@)");
+    REG_GLOBAL_FUNC("string GetEntityProperty(CBaseEntity@, const string &in)");
+    REG_GLOBAL_FUNC("string GetEntityProperty(const string &in, const string &in)");
+    REG_GLOBAL_FUNC("string GetEntityName(CBaseEntity@)");
+    REG_GLOBAL_FUNC("string GetEntityRace(CBaseEntity@)");
+    REG_GLOBAL_FUNC("string GetEntityRace(const string &in)");
+
+    // ── Effect ───────────────────────────────────────────────────
+    REG_GLOBAL_FUNC("void Effect(const string &in)");
+    REG_GLOBAL_FUNC("void Effect(const string &in, const string &in)");
+    REG_GLOBAL_FUNC("void Effect(const string &in, const string &in, const string &in)");
+    REG_GLOBAL_FUNC("void Effect(const string &in, const string &in, const string &in, const string &in)");
+
+    // ── ApplyEffect ──────────────────────────────────────────────
+    REG_GLOBAL_FUNC("void ApplyEffect(CBaseEntity@, const string &in, float)");
+    REG_GLOBAL_FUNC("void ApplyEffect(CBaseEntity@, const string &in, float, CBaseEntity@)");
+    REG_GLOBAL_FUNC("void ApplyEffect(CBaseEntity@, const string &in, float, CBaseEntity@, const string &in)");
+    REG_GLOBAL_FUNC("void ApplyEffect(CBaseEntity@, const string &in, float, const string &in, const string &in)");
+    REG_GLOBAL_FUNC("void ApplyEffect(const string &in, const string &in, float, const string &in, const string &in)");
+    REG_GLOBAL_FUNC("void ApplyEffect(const string &in, const string &in, float)");
+
+    // ── Store commands ───────────────────────────────────────────
+    REG_GLOBAL_FUNC("void AddStoreItem(const string &in)");
+    REG_GLOBAL_FUNC("void AddStoreItem(const string &in, const string &in)");
+    REG_GLOBAL_FUNC("void AddStoreItem(const string &in, const string &in, const string &in)");
+    REG_GLOBAL_FUNC("void CreateStore(const string &in)");
+    REG_GLOBAL_FUNC("void OfferStore(CBaseEntity@)");
+
+    // ── FindEntity functions ─────────────────────────────────────
+    REG_GLOBAL_FUNC("CBaseEntity@ FindEntityByName(const string &in)");
+    REG_GLOBAL_FUNC("string FindEntitiesInSphere(const string &in, float)");
+    REG_GLOBAL_FUNC("string FindEntitiesInSphere(const string &in, int)");
+
+    // ── SetGlobalVar ─────────────────────────────────────────────
+    REG_GLOBAL_FUNC("void SetGlobalVar(const string &in, const string &in)");
+    REG_GLOBAL_FUNC("void SetGlobalVar(const string &in, float)");
+    REG_GLOBAL_FUNC("void SetGlobalVar(const string &in, int)");
+    REG_GLOBAL_FUNC("string GetGlobalVar(const string &in)");
+
+    // ── SendInfoMsg ──────────────────────────────────────────────
+    REG_GLOBAL_FUNC("void SendInfoMsg(CBaseEntity@, const string &in)");
+    REG_GLOBAL_FUNC("void SendInfoMsg(CBaseEntity@, const string &in, const string &in)");
+    REG_GLOBAL_FUNC("void SendInfoMsg(const string &in, const string &in)");
+    REG_GLOBAL_FUNC("void SendInfoMsgLong(CBaseEntity@, const string &in, const string &in)");
+
+    // ── SendColoredMessage (global overloads) ────────────────────
+    REG_GLOBAL_FUNC("void SendColoredMessage(CBaseEntity@, const string &in)");
+    REG_GLOBAL_FUNC("void SendColoredMessage(CBaseEntity@, const string &in, const string &in)");
+
+    // ── ItemExists ───────────────────────────────────────────────
+    REG_GLOBAL_FUNC("bool ItemExists(const string &in)");
+    REG_GLOBAL_FUNC("bool ItemExists(CBaseEntity@, const string &in)");
+
+    // ── Misc transpiler-emitted functions ────────────────────────
+    REG_GLOBAL_FUNC("void GiveExp(CBaseEntity@, int)");
+    REG_GLOBAL_FUNC("void GiveExp(CBaseEntity@, const string &in, int)");
+    REG_GLOBAL_FUNC("void GiveGold(CBaseEntity@, int)");
+    REG_GLOBAL_FUNC("void SetSkillLevel(int)");
+    REG_GLOBAL_FUNC("void SetSkillLevel(const string &in)");
+    REG_GLOBAL_FUNC("void ClientCommand(CBaseEntity@, const string &in)");
+    REG_GLOBAL_FUNC("void ServerCommand(const string &in)");
+    REG_GLOBAL_FUNC("void SetCvar(const string &in, const string &in)");
+    REG_GLOBAL_FUNC("void SetTransition(const string &in)");
+    REG_GLOBAL_FUNC("void SetTransition(const string &in, const string &in)");
+    REG_GLOBAL_FUNC("void SetTransition(const string &in, const string &in, const string &in)");
+    REG_GLOBAL_FUNC("void SetPvP(bool)");
+    REG_GLOBAL_FUNC("void SetPvP(int)");
+    REG_GLOBAL_FUNC("void SetPvP(const string &in)");
+    REG_GLOBAL_FUNC("void GagPlayer(CBaseEntity@)");
+    REG_GLOBAL_FUNC("void GagPlayer(const string &in)");
+    REG_GLOBAL_FUNC("void SetEnvironment(const string &in)");
+    REG_GLOBAL_FUNC("void SetEnvironment(const string &in, const string &in)");
+    REG_GLOBAL_FUNC("void SetLights(const string &in)");
+    REG_GLOBAL_FUNC("void SetPlayerQuestData(const string &in, const string &in)");
+
+    // ── Parsing helpers ─────────────────────────────────────────────
+    // NOTE: parseFloat/parseInt are already registered by scriptstdstring addon
+    // with signatures: double parseFloat(string, uint &out) and int64 parseInt(string, uint, uint &out)
+    // Do NOT re-register them here to avoid ambiguity.
+    REG_GLOBAL_FUNC("string formatInt(int, const string &in, int)");
+
+    // ── Movement ─────────────────────────────────────────────────
+    REG_GLOBAL_FUNC("void SetOrigin(CBaseEntity@, const Vector3 &in)");
+    REG_GLOBAL_FUNC("void MoveToOrigin(CBaseEntity@, const Vector3 &in, float)");
+    REG_GLOBAL_FUNC("void FaceTarget(CBaseEntity@, CBaseEntity@)");
+    REG_GLOBAL_FUNC("void FaceTarget(CBaseEntity@, const Vector3 &in)");
+
+    // ── Creation ─────────────────────────────────────────────────
+    REG_GLOBAL_FUNC("CBaseEntity@ CreateItem(const string &in, const Vector3 &in)");
+    REG_GLOBAL_FUNC("CBaseEntity@ CreateNPC(const string &in, const Vector3 &in)");
+
+    // ── Misc entity ──────────────────────────────────────────────
+    REG_GLOBAL_FUNC("void StripLineBreaks(string &inout)");
+    REG_GLOBAL_FUNC("string ReplaceString(const string &in, const string &in, const string &in)");
+    REG_GLOBAL_FUNC("int StringToInt(const string &in)");
+    REG_GLOBAL_FUNC("float StringToFloat(const string &in)");
+    REG_GLOBAL_FUNC("string IntToString(int)");
+    REG_GLOBAL_FUNC("string FloatToString(float)");
+
+    // ── Property setters emitted by transpiler ───────────────────
+    REG_GLOBAL_FUNC("void SetDescription(const string &in)");
+    REG_GLOBAL_FUNC("void SetGold(int)");
+    REG_GLOBAL_FUNC("void SetGold(CBaseEntity@, int)");
+    REG_GLOBAL_FUNC("void SetWeight(float)");
+    REG_GLOBAL_FUNC("void SetWeight(int)");
+    REG_GLOBAL_FUNC("void SetVolume(float)");
+    REG_GLOBAL_FUNC("void SetVolume(int)");
+    REG_GLOBAL_FUNC("void SetMoveSpeed(float)");
+    REG_GLOBAL_FUNC("void SetMoveSpeed(int)");
+    REG_GLOBAL_FUNC("void SetStepSize(float)");
+    REG_GLOBAL_FUNC("void SetStepSize(int)");
+    REG_GLOBAL_FUNC("void SetSayTextRange(float)");
+    REG_GLOBAL_FUNC("void SetSayTextRange(int)");
+    REG_GLOBAL_FUNC("void SetHearingSensitivity(float)");
+    REG_GLOBAL_FUNC("void SetInvisible(bool)");
+    REG_GLOBAL_FUNC("void SetInvisible(int)");
+    REG_GLOBAL_FUNC("void SetBlind(bool)");
+    REG_GLOBAL_FUNC("void Respawn()");
+    REG_GLOBAL_FUNC("void SetAlive(bool)");
+    REG_GLOBAL_FUNC("void SetAlive(int)");
+    REG_GLOBAL_FUNC("void SetAlive(const string &in)");
+    REG_GLOBAL_FUNC("void ShowPopup(const string &in)");
+    REG_GLOBAL_FUNC("void ShowPopup(CBaseEntity@, const string &in)");
+    REG_GLOBAL_FUNC("void ShowHelpTip(const string &in)");
+    REG_GLOBAL_FUNC("void ShowHelpTip(CBaseEntity@, const string &in)");
+    REG_GLOBAL_FUNC("void SetSoundVolume(float)");
+    REG_GLOBAL_FUNC("void SetSoundVolume(int)");
+    REG_GLOBAL_FUNC("void CallClientItemEvent(const string &in)");
+    REG_GLOBAL_FUNC("void CallClientItemEvent(const string &in, const string &in)");
+
+    // ── SpawnNPC overloads the transpiler emits ──────────────────
+    REG_GLOBAL_FUNC("CMSMonster@ SpawnNPC(const string &in, const Vector3 &in, ScriptMode)");
+    REG_GLOBAL_FUNC("CMSMonster@ SpawnNPC(const string &in, const string &in, ScriptMode)");
+
+    // ── SendInfoMessageToAll single-arg overload ─────────────────
+    REG_GLOBAL_FUNC("void SendInfoMessageToAll(const string &in)");
+
+    // ── GetOrigin as a standalone function ────────────────────────
+    REG_GLOBAL_FUNC("Vector3 GetOrigin()");
+    REG_GLOBAL_FUNC("Vector3 GetEntityOrigin(const string &in)");
+}
+
+//==========================================================================
+// Step 14: Global parameter variables
+//
+// MSCScript passes event parameters as param1..param8 string globals.
+// Transpiled scripts reference these directly.
+//==========================================================================
+static void RegisterParamGlobals(asIScriptEngine* engine)
+{
+    int r;
+    r = engine->RegisterGlobalProperty("string param1", &g_param1);
+    r = engine->RegisterGlobalProperty("string param2", &g_param2);
+    r = engine->RegisterGlobalProperty("string param3", &g_param3);
+    r = engine->RegisterGlobalProperty("string param4", &g_param4);
+    r = engine->RegisterGlobalProperty("string param5", &g_param5);
+    r = engine->RegisterGlobalProperty("string param6", &g_param6);
+    r = engine->RegisterGlobalProperty("string param7", &g_param7);
+    r = engine->RegisterGlobalProperty("string param8", &g_param8);
+    r = engine->RegisterGlobalProperty("string currentscript", &g_currentscript);
+    (void)r;
+}
+
+//==========================================================================
 // Master registration — mirrors ASBindings::RegisterAll() order exactly
 //==========================================================================
 void RegisterAllBindings(asIScriptEngine* engine)
@@ -851,6 +1136,12 @@ void RegisterAllBindings(asIScriptEngine* engine)
 
     // Step 12: Engine events
     RegisterEngineEvents(engine);
+
+    // Step 13: Transpiler-emitted functions
+    RegisterTranspilerFunctions(engine);
+
+    // Step 14: Param globals
+    RegisterParamGlobals(engine);
 
     fprintf(stderr, "Linter: All bindings registered successfully.\n");
 }

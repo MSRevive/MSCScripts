@@ -81,6 +81,8 @@ class ManaForget : CGameScript
 		L_SUBMODEL += "game.item.hand_index";
 		SetModelBody(0, L_SUBMODEL);
 		drink_deploy();
+		if (!(MODEL_VIEW_IDX > 0)) return;
+		ScheduleDelayedEvent(0.1, "bw_setup_model");
 	}
 
 	void game_fall()
@@ -91,12 +93,6 @@ class ManaForget : CGameScript
 		string L_ANIM = ANIM_PREFIX;
 		L_ANIM += "_floor_idle";
 		PlayAnim("once", L_ANIM);
-	}
-
-	void OnDeploy() override
-	{
-		if (!(MODEL_VIEW_IDX > 0)) return;
-		ScheduleDelayedEvent(0.1, "bw_setup_model");
 	}
 
 	void bw_setup_model()

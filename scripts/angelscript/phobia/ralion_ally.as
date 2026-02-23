@@ -265,10 +265,6 @@ class RalionAlly : CGameScript
 	void bandit_ally_fire_spawn()
 	{
 		ScheduleDelayedEvent(5.0, "bandit_ally_fire_spawn2");
-	}
-
-	void bandit_ally_fire_spawn()
-	{
 		chat_now("Oh, I was afraid Cethin would show her ugly self after we killed that damned bear of hers...", 3.0, "none", "aim_punch1", "clear_que");
 		chat_now("You know the plan men, drink up!", 2.0, "none", "none", "clear_que");
 		ScheduleDelayedEvent(5.0, "bandit_ally_fire_spawn3");

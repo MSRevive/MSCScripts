@@ -283,15 +283,6 @@ class IceReaver : CGameScript
 		string OUT_PAR4 = param4;
 		string OUT_PAR5 = param5;
 		mele_attack(OUT_PAR1, OUT_PAR2, OUT_PAR3, OUT_PAR4, OUT_PAR5);
-	}
-
-	void attack_mele2()
-	{
-		XDoDamage(m_hAttackTarget, SMASH_HITRANGE, SMASH_DAMAGE, SMASH_HITCHANCE, GetOwner(), GetOwner(), "none", "slash", "dmgevent:smash");
-	}
-
-	void slash_dodamage()
-	{
 		STUN_ATTACK = 1;
 		SOUND_ATTACKHIT = SOUND_SMASHHIT;
 		SOUND_ATTACKMISS = SOUND_SMASHMISS;
@@ -303,6 +294,11 @@ class IceReaver : CGameScript
 		string OUT_PAR4 = param4;
 		string OUT_PAR5 = param5;
 		mele_attack(OUT_PAR1, OUT_PAR2, OUT_PAR3, OUT_PAR4, OUT_PAR5);
+	}
+
+	void attack_mele2()
+	{
+		XDoDamage(m_hAttackTarget, SMASH_HITRANGE, SMASH_DAMAGE, SMASH_HITCHANCE, GetOwner(), GetOwner(), "none", "slash", "dmgevent:smash");
 	}
 
 	void npcatk_search_init_advanced()
@@ -319,7 +315,7 @@ class IceReaver : CGameScript
 
 	void reset_search_anim()
 	{
-		// TODO: UNCONVERTED: setrvard SEARCH_ANIM_DELAY 0
+		// TODO: setrvard SEARCH_ANIM_DELAY 0
 	}
 
 	void mele_attack()

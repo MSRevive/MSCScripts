@@ -379,6 +379,7 @@ class GloamSlayer : CGameScript
 		if (!(OFFERING_REWARD == param1)) return;
 		SayText("I see. A noble warrior for whom the battle is reward enough. Good show.");
 		CallExternal(OFFERING_REWARD, "ext_set_reward", 1);
+		CONVO_TYPE = "none";
 	}
 
 	void give_selected_reward()
@@ -574,11 +575,6 @@ class GloamSlayer : CGameScript
 		SetMoveAnim("walk");
 		SetIdleAnim("idle1");
 		PlayAnim("once", "idle1");
-	}
-
-	void game_menu_cancel()
-	{
-		CONVO_TYPE = "none";
 	}
 
 	void attack_1()

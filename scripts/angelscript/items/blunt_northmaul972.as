@@ -60,6 +60,7 @@ class BluntNorthmaul972 : CGameScript
 	void OnDeploy() override
 	{
 		ATTACK_MODE = "cold";
+		IN_PACK = 0;
 	}
 
 	void game_+attack2()
@@ -281,11 +282,6 @@ class BluntNorthmaul972 : CGameScript
 		{
 			// TODO: splayviewanim ent_me ANIM_PIERCE_IDLE
 		}
-	}
-
-	void OnDeploy() override
-	{
-		IN_PACK = 0;
 	}
 
 	void game_putinpack()

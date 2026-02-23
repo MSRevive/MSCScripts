@@ -52,6 +52,7 @@ class NpcPoisonCloudOld : CGameScript
 	void smokes_start()
 	{
 		STORMING = 1;
+		STORMING = 1;
 	}
 
 	void game_dynamically_created()
@@ -141,11 +142,6 @@ class NpcPoisonCloudOld : CGameScript
 	{
 		STORMING = 0;
 		RemoveScript();
-	}
-
-	void smokes_start()
-	{
-		STORMING = 1;
 	}
 
 	void smokes_shoot()

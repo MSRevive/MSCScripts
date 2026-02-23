@@ -20,42 +20,6 @@ class AxesBaseTwohanded : CGameScript
 	void OnSpawn() override
 	{
 		SetHand("both");
-	}
-
-	void special_02_start()
-	{
-		Effect("screenfade", GetOwner(), 1, 2, Vector3(200, 10, 10), 100, "fadein");
-		// svplaysound: svplaysound 2 10 $get(ent_owner,scriptvar,'PLR_SOUND_SWORDREADY')
-		EmitSound(2, 10, GetEntityProperty(GetOwner(), "scriptvar"));
-		ScheduleDelayedEvent(1, "swing_in_air");
-	}
-
-	void swing_in_air()
-	{
-		PlayViewAnim(MELEE_VIEWANIM_ATK);
-		PlayOwnerAnim("once", PLAYERANIM_SWING);
-		if ((IsOnGround(GetOwner())))
-		{
-			string l.forwardangles = GetEntityAngles(GetOwner());
-			Vector3 l.forwardangles = Vector3(0, (l.forwardangles).y, 0);
-			string l.vel = /* TODO: $relvel */ $relvel(l.forwardangles, Vector3(0, 430, 0));
-			int l.up = 240;
-			AddVelocity(GetOwner(), Vector3((l.vel).x, (l.vel).y, l.up));
-		}
-		// svplaysound: svplaysound 2 10 $get(ent_owner,scriptvar,'PLR_SOUND_SHOUT1')
-		EmitSound(2, 10, GetEntityProperty(GetOwner(), "scriptvar"));
-	}
-
-	void special_02_strike()
-	{
-		if (!(param1 == "npc")) return;
-		string l.dir = (GetEntityOrigin(param3) - GetEntityOrigin(GetOwner())).Normalize();
-		l.dir *= 300;
-		AddVelocity(param3, Vector3((l.dir).x, (l.dir).y, 200));
-	}
-
-	void OnSpawn() override
-	{
 		string reg.attack.type = "strike-land";
 		string reg.attack.keys = "-attack1";
 		string reg.attack.range = MELEE_RANGE;
@@ -110,6 +74,38 @@ class AxesBaseTwohanded : CGameScript
 			reg.attack.reqskill += BASE_LEVEL_REQ;
 		}
 		RegisterAttack();
+	}
+
+	void special_02_start()
+	{
+		Effect("screenfade", GetOwner(), 1, 2, Vector3(200, 10, 10), 100, "fadein");
+		// svplaysound: svplaysound 2 10 $get(ent_owner,scriptvar,'PLR_SOUND_SWORDREADY')
+		EmitSound(2, 10, GetEntityProperty(GetOwner(), "scriptvar"));
+		ScheduleDelayedEvent(1, "swing_in_air");
+	}
+
+	void swing_in_air()
+	{
+		PlayViewAnim(MELEE_VIEWANIM_ATK);
+		PlayOwnerAnim("once", PLAYERANIM_SWING);
+		if ((IsOnGround(GetOwner())))
+		{
+			string l.forwardangles = GetEntityAngles(GetOwner());
+			Vector3 l.forwardangles = Vector3(0, (l.forwardangles).y, 0);
+			string l.vel = /* TODO: $relvel */ $relvel(l.forwardangles, Vector3(0, 430, 0));
+			int l.up = 240;
+			AddVelocity(GetOwner(), Vector3((l.vel).x, (l.vel).y, l.up));
+		}
+		// svplaysound: svplaysound 2 10 $get(ent_owner,scriptvar,'PLR_SOUND_SHOUT1')
+		EmitSound(2, 10, GetEntityProperty(GetOwner(), "scriptvar"));
+	}
+
+	void special_02_strike()
+	{
+		if (!(param1 == "npc")) return;
+		string l.dir = (GetEntityOrigin(param3) - GetEntityOrigin(GetOwner())).Normalize();
+		l.dir *= 300;
+		AddVelocity(param3, Vector3((l.dir).x, (l.dir).y, 200));
 	}
 
 }

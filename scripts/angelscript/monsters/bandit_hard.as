@@ -229,6 +229,8 @@ class BanditHard : CGameScript
 		// PlayRandomSound from: SOUND_PAIN, SOUND_PAIN2
 		array<string> sounds = {SOUND_PAIN, SOUND_PAIN2};
 		EmitSound(GetOwner(), 2, sounds[RandomInt(0, sounds.length() - 1)], 10);
+		if (!(WEAPON == 0)) return;
+		if (!(IsValidPlayer(m_hLastStruck) + "add" + CHANGE_POSITION + 1)) return;
 	}
 
 	void OnDeath(CBaseEntity@ attacker) override
@@ -282,12 +284,6 @@ class BanditHard : CGameScript
 				CHANGE_POSITION = 0;
 			}
 		}
-	}
-
-	void OnStruck(CBaseEntity@ attacker, int damage)
-	{
-		if (!(WEAPON == 0)) return;
-		if (!(IsValidPlayer(m_hLastStruck) + "add" + CHANGE_POSITION + 1)) return;
 	}
 
 	void npc_targetsighted()

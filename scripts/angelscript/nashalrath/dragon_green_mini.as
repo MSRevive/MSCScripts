@@ -226,6 +226,7 @@ class DragonGreenMini : CGameScript
 	void frame_slct_next_attack()
 	{
 		dist_select_attack();
+		EmitSound(GetOwner(), 0, SOUND_SWING, 10);
 	}
 
 	void dist_select_attack()
@@ -366,11 +367,31 @@ class DragonGreenMini : CGameScript
 	void OnDeath(CBaseEntity@ attacker) override
 	{
 		CallExternal(MASTER_ID, "ext_image_died");
-	}
-
-	void frame_slct_next_attack()
-	{
-		EmitSound(GetOwner(), 0, SOUND_SWING, 10);
+		ANIM_DEATH = "anim_die_far";
+		if (ATTACK_MODE == "close")
+		{
+			ANIM_DEATH = "anim_die_close";
+		}
+		if (ATTACK_MODE == "far")
+		{
+			ANIM_DEATH = "anim_die_far";
+		}
+		if (GetEntityRange(m_hLastStruck) > 384)
+		{
+			ANIM_DEATH = "anim_die_vfar";
+		}
+		if ((BREATH_ON))
+		{
+			ClientEvent("update", "all", CL_BREATH_IDX, "end_fx");
+			if ((BREATH_HOVER))
+			{
+				ClientEvent("update", "all", CL_WIND_IDX, "end_fx");
+			}
+			if ((BREATH_LOOP_SOUND))
+			{
+				EmitSound(GetOwner(), 4, SOUND_BREATH_LOOP, 0);
+			}
+		}
 	}
 
 	void OnHitByAttack(CBaseEntity@ attacker, int damage) override
@@ -761,35 +782,6 @@ class DragonGreenMini : CGameScript
 		else
 		{
 			FORCE_BREATH = param1;
-		}
-	}
-
-	void OnDeath(CBaseEntity@ attacker) override
-	{
-		ANIM_DEATH = "anim_die_far";
-		if (ATTACK_MODE == "close")
-		{
-			ANIM_DEATH = "anim_die_close";
-		}
-		if (ATTACK_MODE == "far")
-		{
-			ANIM_DEATH = "anim_die_far";
-		}
-		if (GetEntityRange(m_hLastStruck) > 384)
-		{
-			ANIM_DEATH = "anim_die_vfar";
-		}
-		if ((BREATH_ON))
-		{
-			ClientEvent("update", "all", CL_BREATH_IDX, "end_fx");
-			if ((BREATH_HOVER))
-			{
-				ClientEvent("update", "all", CL_WIND_IDX, "end_fx");
-			}
-			if ((BREATH_LOOP_SOUND))
-			{
-				EmitSound(GetOwner(), 4, SOUND_BREATH_LOOP, 0);
-			}
 		}
 	}
 
