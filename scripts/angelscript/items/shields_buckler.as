@@ -7,25 +7,39 @@ namespace MS
 
 class ShieldsBuckler : CGameScript
 {
+	int BLOCK_CHANCE_DOWN;
+	int BLOCK_CHANCE_UP;
+	float DMG_BLOCK_UP;
+	float MELEE_ACCURACY;
+	int MELEE_ENERGY;
+	int MODEL_BODY_OFS;
+	string MODEL_VIEW;
+	int MODEL_VIEW_IDX;
+	float NOPUSH_CHANCE;
+	float PARRY_MULTI;
+	int SHIELD_BASE_PARRY;
 	int SHIELD_HEALTH;
+	int SHIELD_IMMORTAL;
+	int SHIELD_MAXHEALTH;
+	string SOUND_BLOCK;
 
 	ShieldsBuckler()
 	{
-		const float NOPUSH_CHANCE = 0.25;
-		const float PARRY_MULTI = 1.3;
-		const int SHIELD_BASE_PARRY = 10;
-		const string MODEL_VIEW = "viewmodels/v_shields.mdl";
-		const int MODEL_VIEW_IDX = 1;
-		const int MODEL_BODY_OFS = 61;
-		const int MELEE_ENERGY = 15;
-		const float MELEE_ACCURACY = 0.9;
-		const int BLOCK_CHANCE_UP = 100;
-		const float DMG_BLOCK_UP = 0.4;
-		const int BLOCK_CHANCE_DOWN = 15;
-		const int SHIELD_MAXHEALTH = 500;
-		const int SHIELD_IMMORTAL = 0;
+		NOPUSH_CHANCE = 0.25;
+		PARRY_MULTI = 1.3;
+		SHIELD_BASE_PARRY = 10;
+		MODEL_VIEW = "viewmodels/v_shields.mdl";
+		MODEL_VIEW_IDX = 1;
+		MODEL_BODY_OFS = 61;
+		MELEE_ENERGY = 15;
+		MELEE_ACCURACY = 0.9;
+		BLOCK_CHANCE_UP = 100;
+		DMG_BLOCK_UP = 0.4;
+		BLOCK_CHANCE_DOWN = 15;
+		SHIELD_MAXHEALTH = 500;
+		SHIELD_IMMORTAL = 0;
 		SHIELD_HEALTH = 500;
-		const string SOUND_BLOCK = "debris/metal3.wav";
+		SOUND_BLOCK = "debris/metal3.wav";
 		Precache(SOUND_BLOCK);
 	}
 

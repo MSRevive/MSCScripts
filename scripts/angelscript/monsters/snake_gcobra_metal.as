@@ -8,11 +8,16 @@ namespace MS
 class SnakeGcobraMetal : CGameScript
 {
 	string ANIM_ATTACK;
+	string ANIM_BREATH;
 	string ANIM_DEATH;
 	string ANIM_IDLE;
+	string ANIM_IDLE_NORM;
 	string ANIM_RUN;
+	string ANIM_SLEEP;
 	string ANIM_WALK;
+	float ATTACK_DAMAGE;
 	int ATTACK_DELAY;
+	float ATTACK_HITCHANCE;
 	int ATTACK_HITRANGE;
 	int ATTACK_MOVERANGE;
 	int ATTACK_RANGE;
@@ -20,47 +25,62 @@ class SnakeGcobraMetal : CGameScript
 	int CLOUD_COUNT;
 	string CLOUD_TARGS;
 	string CL_IDX;
+	string CL_SCRIPT;
 	string CUR_ANG;
 	int DID_ALERT;
 	int DOING_SPECIAL;
 	int GAS_AMMO;
+	int GAS_RANGE;
 	int IS_UNHOLY;
+	string MONSTER_MODEL;
 	string NEXT_SCAN;
 	int NO_STUCK_CHECKS;
 	int NPC_GIVE_EXP;
+	float POISON_DAMAGE;
+	int POISON_DURATION;
 	int SLEEP_MODE;
+	string SOUND_ALERT;
+	string SOUND_ATTACK;
+	string SOUND_DEATH;
+	string SOUND_IDLE;
+	string SOUND_PAIN1;
+	string SOUND_PAIN2;
+	string SOUND_POISON;
+	string SOUND_STRUCK1;
+	string SOUND_STRUCK2;
+	string SOUND_STRUCK3;
 
 	SnakeGcobraMetal()
 	{
-		const string ANIM_BREATH = "breath";
-		const int GAS_RANGE = 200;
+		ANIM_BREATH = "breath";
+		GAS_RANGE = 200;
 		ANIM_WALK = "walk";
 		ANIM_RUN = "walk";
 		ANIM_DEATH = "diesimple";
 		ANIM_IDLE = ANIM_SLEEP;
-		const string ANIM_IDLE_NORM = "idle1";
-		const string ANIM_SLEEP = "idle2";
+		ANIM_IDLE_NORM = "idle1";
+		ANIM_SLEEP = "idle2";
 		ANIM_ATTACK = "attack1";
 		ATTACK_RANGE = 120;
 		ATTACK_HITRANGE = 150;
 		ATTACK_MOVERANGE = 60;
-		const float ATTACK_HITCHANCE = 0.8;
-		const string ATTACK_DAMAGE = "$randf(20,50)";
-		const string POISON_DAMAGE = "$randf(10,20)";
-		const string POISON_DURATION = "$rand(10,20)";
+		ATTACK_HITCHANCE = 0.8;
+		ATTACK_DAMAGE = "$randf(20,50)";
+		POISON_DAMAGE = "$randf(10,20)";
+		POISON_DURATION = "$rand(10,20)";
 		NPC_GIVE_EXP = 200;
-		const string SOUND_ALERT = "monsters/gsnake_idle1.wav";
-		const string SOUND_IDLE = "monsters/gsnake_idle1.wav";
-		const string SOUND_ATTACK = "agrunt/ag_attack2.wav";
-		const string SOUND_POISON = "monsters/snakeman/sm_alert1.wav";
-		const string SOUND_STRUCK1 = "weapons/axemetal1.wav";
-		const string SOUND_STRUCK2 = "weapons/axemetal2.wav";
-		const string SOUND_STRUCK3 = "doors/doorstop5.wav";
-		const string SOUND_PAIN1 = "agrunt/ag_attack3.wav";
-		const string SOUND_PAIN2 = "agrunt/ag_idle2.wav";
-		const string SOUND_DEATH = "agrunt/ag_die2.wav";
-		const string CL_SCRIPT = "monsters/snake_gcobra_cl";
-		const string MONSTER_MODEL = "monsters/gcobra.mdl";
+		SOUND_ALERT = "monsters/gsnake_idle1.wav";
+		SOUND_IDLE = "monsters/gsnake_idle1.wav";
+		SOUND_ATTACK = "agrunt/ag_attack2.wav";
+		SOUND_POISON = "monsters/snakeman/sm_alert1.wav";
+		SOUND_STRUCK1 = "weapons/axemetal1.wav";
+		SOUND_STRUCK2 = "weapons/axemetal2.wav";
+		SOUND_STRUCK3 = "doors/doorstop5.wav";
+		SOUND_PAIN1 = "agrunt/ag_attack3.wav";
+		SOUND_PAIN2 = "agrunt/ag_idle2.wav";
+		SOUND_DEATH = "agrunt/ag_die2.wav";
+		CL_SCRIPT = "monsters/snake_gcobra_cl";
+		MONSTER_MODEL = "monsters/gcobra.mdl";
 	}
 
 	void OnSpawn() override

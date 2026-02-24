@@ -7,19 +7,31 @@ namespace MS
 
 class ProjArrowFbow : CGameScript
 {
+	int ARROW_BODY_OFS;
+	int ARROW_EXPIRE_DELAY;
+	int ARROW_SOLIDIFY_ON_WALL;
+	int CLFX_ARROW;
+	int FREEZE_MANA_COST;
+	int MODEL_BODY_OFS;
+	string MODEL_HANDS;
+	string MODEL_WORLD;
+	int PROJ_DAMAGE;
+	string PROJ_DAMAGE_TYPE;
+	string SPRITE_ARROW_TRADE;
+
 	ProjArrowFbow()
 	{
-		const int CLFX_ARROW = 1;
-		const string MODEL_WORLD = "weapons/projectiles.mdl";
-		const string MODEL_HANDS = "weapons/projectiles.mdl";
-		const string SPRITE_ARROW_TRADE = "silverarrow";
-		const int ARROW_BODY_OFS = 47;
-		const int MODEL_BODY_OFS = 47;
-		const string PROJ_DAMAGE_TYPE = "cold";
-		const int FREEZE_MANA_COST = 10;
-		const string PROJ_DAMAGE = RandomInt(250, 325);
-		const int ARROW_SOLIDIFY_ON_WALL = 0;
-		const int ARROW_EXPIRE_DELAY = 10;
+		CLFX_ARROW = 1;
+		MODEL_WORLD = "weapons/projectiles.mdl";
+		MODEL_HANDS = "weapons/projectiles.mdl";
+		SPRITE_ARROW_TRADE = "silverarrow";
+		ARROW_BODY_OFS = 47;
+		MODEL_BODY_OFS = 47;
+		PROJ_DAMAGE_TYPE = "cold";
+		FREEZE_MANA_COST = 10;
+		PROJ_DAMAGE = RandomInt(250, 325);
+		ARROW_SOLIDIFY_ON_WALL = 0;
+		ARROW_EXPIRE_DELAY = 10;
 	}
 
 	void arrow_spawn()
@@ -44,7 +56,7 @@ class ProjArrowFbow : CGameScript
 		int PROJ_TYPE = 0;
 		if (GetEntityMP(MY_OWNER) >= FREEZE_MANA_COST)
 		{
-			string PROJ_TYPE = RandomInt(0, 1);
+			int PROJ_TYPE = RandomInt(0, 1);
 		}
 		if (!(PROJ_TYPE))
 		{

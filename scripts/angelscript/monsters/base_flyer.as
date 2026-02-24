@@ -5,7 +5,10 @@ namespace MS
 
 class BaseFlyer : CGameScript
 {
+	float BF_CHECK_FREQ;
 	int BF_NO_STUCK;
+	float BF_RETREAT_TIME;
+	string BF_UNSTUCK_ADJ;
 	string BOUNCED;
 	string FLIGHT_CHECK_FREQ;
 	int FLIGHT_SCANNING;
@@ -15,9 +18,9 @@ class BaseFlyer : CGameScript
 
 	BaseFlyer()
 	{
-		const float BF_CHECK_FREQ = 0.2;
-		const float BF_RETREAT_TIME = 1.0;
-		const string BF_UNSTUCK_ADJ = /* TODO: $relvel */ $relvel(0, 50, 0);
+		BF_CHECK_FREQ = 0.2;
+		BF_RETREAT_TIME = 1.0;
+		BF_UNSTUCK_ADJ = /* TODO: $relvel */ $relvel(0, 50, 0);
 		FLIGHT_CHECK_FREQ = BF_CHECK_FREQ;
 		NO_STUCK_CHECKS = 1;
 	}
@@ -41,7 +44,7 @@ class BaseFlyer : CGameScript
 
 	void flight_check()
 	{
-		string FLY_MOVED = Distance(FLY_OLD_POS, GetMonsterProperty("origin"));
+		float FLY_MOVED = Distance(FLY_OLD_POS, GetMonsterProperty("origin"));
 		string HIT_WALL = TraceLine(GetMonsterProperty("origin"), GetMonsterProperty("movedest"));
 		if (HIT_WALL != GetMonsterProperty("movedest"))
 		{
@@ -149,9 +152,9 @@ class BaseFlyer : CGameScript
 
 	void do_rand_tweedee()
 	{
-		string MY_PITCH = RandomInt(0, 359);
-		string MY_YAW = RandomInt(0, 359);
-		string MY_ROLL = RandomInt(0, 359);
+		int MY_PITCH = RandomInt(0, 359);
+		int MY_YAW = RandomInt(0, 359);
+		int MY_ROLL = RandomInt(0, 359);
 		NEW_DEST = /* TODO: $relpos */ $relpos(Vector3(MY_PITCH, MY_YAW, MY_ROLL), Vector3(0, 1000, 0));
 	}
 

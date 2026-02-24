@@ -11,6 +11,12 @@ class Sorc1 : CGameScript
 	int AM_LEADER;
 	string ANIM_ATTACK;
 	string ANIM_IDLE;
+	string ANIM_JUMP;
+	string ANIM_KICK;
+	string ANIM_ROUND_LOST1;
+	string ANIM_ROUND_LOST2;
+	string ANIM_ROUND_WIN1;
+	string ANIM_ROUND_WIN2;
 	string ANIM_RUN;
 	string ANIM_WALK;
 	int ATTACK_HITRANGE;
@@ -18,25 +24,27 @@ class Sorc1 : CGameScript
 	int ATTACK_RANGE;
 	int DOING_JUMP;
 	int MOVE_RANGE;
+	int NPC_FIGHTS_NPCS;
+	string SOUND_DEATH;
 
 	Sorc1()
 	{
 		ANIM_IDLE = "idle1";
 		ANIM_WALK = "walk";
 		ANIM_RUN = "run";
-		const string ANIM_JUMP = "jump_hop";
-		const string ANIM_KICK = "kick";
+		ANIM_JUMP = "jump_hop";
+		ANIM_KICK = "kick";
 		ANIM_ATTACK = "kick";
-		const string ANIM_ROUND_WIN1 = "warcry";
-		const string ANIM_ROUND_WIN2 = "nod_yes";
-		const string ANIM_ROUND_LOST1 = "neigh";
-		const string ANIM_ROUND_LOST2 = "kneel";
+		ANIM_ROUND_WIN1 = "warcry";
+		ANIM_ROUND_WIN2 = "nod_yes";
+		ANIM_ROUND_LOST1 = "neigh";
+		ANIM_ROUND_LOST2 = "kneel";
 		ATTACK_MOVERANGE = 20;
 		MOVE_RANGE = 20;
 		ATTACK_RANGE = 30;
 		ATTACK_HITRANGE = 48;
-		const string SOUND_DEATH = "voices/orc/die.wav";
-		const int NPC_FIGHTS_NPCS = 1;
+		SOUND_DEATH = "voices/orc/die.wav";
+		NPC_FIGHTS_NPCS = 1;
 	}
 
 	void OnSpawn() override
@@ -86,9 +94,9 @@ class Sorc1 : CGameScript
 		if (!(DOING_JUMP)) return;
 		string BALL_ORG = GetEntityOrigin(BALL_ID);
 		string MY_ORG = GetEntityOrigin(GetOwner());
-		string BALL_FROM_GOAL = Distance(BALL_ORG, NME_GOAL_LOC);
+		float BALL_FROM_GOAL = Distance(BALL_ORG, NME_GOAL_LOC);
 		int KEEP_GOING = 0;
-		string MY_FROM_GOAL = Distance(MY_ORG, NME_GOAL_LOC);
+		float MY_FROM_GOAL = Distance(MY_ORG, NME_GOAL_LOC);
 		if (MY_FROM_GOAL < BALL_FROM_GOAL)
 		{
 			int KEEP_GOING = 1;

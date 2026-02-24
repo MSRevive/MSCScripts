@@ -15,6 +15,11 @@ class Super : CGameScript
 	string ANIM_RUN;
 	string ANIM_WALK;
 	string ATTACK_ALERT;
+	int ATTACK_DAMAGE;
+	float ATTACK_HITCHANCE;
+	int ATTACK_HITRANGE;
+	int ATTACK_RANGE;
+	int BG_ROAM;
 	int CAN_TALK;
 	string DID_PAINCRY;
 	string DID_WARCRY;
@@ -22,14 +27,26 @@ class Super : CGameScript
 	int GIVE_INTRO_STEP;
 	int GOING_HOME;
 	string MADE_IT_HOME;
+	int MOVE_RANGE;
 	string NO_HAIL;
+	int NO_JOB;
+	int NO_RUMOR;
 	int NO_STUCK_CHECKS;
 	string NPCATK_TARGET;
 	int OH_IT_IS_ON;
+	int PATROL_RANGE;
 	string QUEST_WINNER;
 	int RECIEVED_HEAD;
 	int REQ_QUEST_NOTDONE;
 	int REWARD_STEP;
+	string SOUND_ATTACK;
+	string SOUND_DEATH;
+	string SOUND_PAINCRY1;
+	string SOUND_PAINCRY2;
+	string SOUND_PAINCRY3;
+	string SOUND_PAINCRY4;
+	string SOUND_PAINCRY5;
+	string SOUND_WARCRY;
 	int WAR_INPROGRESS;
 
 	Super()
@@ -38,25 +55,25 @@ class Super : CGameScript
 		ANIM_RUN = "run";
 		ANIM_IDLE = "idle1";
 		ANIM_ATTACK = "swordswing1_L";
-		const string SOUND_ATTACK = "weapons/cbar_miss1.wav";
+		SOUND_ATTACK = "weapons/cbar_miss1.wav";
 		ANIM_DEATH = "dieforward";
-		const int ATTACK_RANGE = 85;
-		const int MOVE_RANGE = 75;
-		const int ATTACK_HITRANGE = 150;
-		const float ATTACK_HITCHANCE = 0.9;
-		const int ATTACK_DAMAGE = 35;
-		const string SOUND_WARCRY = "scientist/cough.wav";
-		const string SOUND_DEATH = "scientist/scream21.wav";
-		const string SOUND_PAINCRY1 = "scientist/sci_fear7.wav";
-		const string SOUND_PAINCRY2 = "scientist/sci_fear11.wav";
-		const string SOUND_PAINCRY3 = "scientist/sci_fear5.wav";
-		const string SOUND_PAINCRY4 = "scientist/scream01.wav";
-		const string SOUND_PAINCRY5 = "scientist/canttakemore.wav";
-		const int PATROL_RANGE = 384;
-		const int BG_ROAM = 0;
+		ATTACK_RANGE = 85;
+		MOVE_RANGE = 75;
+		ATTACK_HITRANGE = 150;
+		ATTACK_HITCHANCE = 0.9;
+		ATTACK_DAMAGE = 35;
+		SOUND_WARCRY = "scientist/cough.wav";
+		SOUND_DEATH = "scientist/scream21.wav";
+		SOUND_PAINCRY1 = "scientist/sci_fear7.wav";
+		SOUND_PAINCRY2 = "scientist/sci_fear11.wav";
+		SOUND_PAINCRY3 = "scientist/sci_fear5.wav";
+		SOUND_PAINCRY4 = "scientist/scream01.wav";
+		SOUND_PAINCRY5 = "scientist/canttakemore.wav";
+		PATROL_RANGE = 384;
+		BG_ROAM = 0;
 		Precache(SOUND_DEATH);
-		const int NO_RUMOR = 1;
-		const int NO_JOB = 1;
+		NO_RUMOR = 1;
+		NO_JOB = 1;
 		CAN_TALK = 1;
 		GIVE_INTRO_STEP = 0;
 		NO_STUCK_CHECKS = 1;
@@ -321,7 +338,7 @@ class Super : CGameScript
 		HURT_THRESHOLD *= 0.75;
 		if (!(ATTACK_ALERT))
 		{
-			SendInfoMsg("all", "CRITICAL_NPC The outpost supervisor is under attack! Save him!");
+			SendInfoMsg("all", CRITICAL_NPC + " The outpost supervisor is under attack! Save him!");
 			ATTACK_ALERT = 1;
 			ScheduleDelayedEvent(5.0, "reset_attack_alert");
 		}
@@ -360,7 +377,7 @@ class Super : CGameScript
 
 	void OnDeath(CBaseEntity@ attacker) override
 	{
-		SendInfoMsg("all", "FAILURE! THE OUTPOST SUPERVISOR HAS DIED! You will not be allowed to proceed to the next area.");
+		SendInfoMsg("all", FAILURE! + THE + OUTPOST + SUPERVISOR + HAS + DIED! + " You will not be allowed to proceed to the next area.");
 	}
 
 	void npcatk_clear_targets()

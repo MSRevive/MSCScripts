@@ -7,9 +7,11 @@ namespace MS
 
 class GoldPouch200 : CGameScript
 {
+	int GOLD_AMT;
+
 	GoldPouch200()
 	{
-		const int GOLD_AMT = 200;
+		GOLD_AMT = 200;
 	}
 
 }

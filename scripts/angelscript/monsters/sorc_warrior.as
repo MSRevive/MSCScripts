@@ -10,16 +10,32 @@ class SorcWarrior : CGameScript
 {
 	string ANIM_ATTACK;
 	string ANIM_AXE;
+	string ANIM_KICK;
 	string ANIM_SWORD;
 	string AS_ATTACKING;
+	float ATTACK_ACCURACY;
+	float CHANCE_KICK;
+	float CHANCE_SHOCK;
+	int DMG_KICK;
+	int DMG_SWORD;
+	int DMG_THROW;
+	float DOT_SHOCK;
+	float DOT_THROW_SHOCK;
 	int DROP_GOLD;
-	string DROP_GOLD_AMT;
+	int DROP_GOLD_AMT;
 	float FLINCH_CHANCE;
+	float FREQ_KICK;
+	float FREQ_THROW;
 	int KICK_ATTACK;
 	string KICK_DELAY;
 	string MY_AXE;
 	int NPC_GIVE_EXP;
 	int ORC_JUMPER;
+	float SORC_LRESIST;
+	float SORC_PRESIST;
+	string SOUND_SHOCK1;
+	string SOUND_SHOCK2;
+	string SOUND_SHOCK3;
 	int THROWING_AXE;
 	int THROW_DELAY;
 
@@ -27,28 +43,28 @@ class SorcWarrior : CGameScript
 	{
 		DROP_GOLD = 1;
 		DROP_GOLD_AMT = RandomInt(20, 80);
-		const int DMG_THROW = 25;
+		DMG_THROW = 25;
 		NPC_GIVE_EXP = 300;
 		ANIM_SWORD = "swordswing1_L";
 		ANIM_AXE = "battleaxe_swing1_L";
 		FLINCH_CHANCE = 0.25;
 		ANIM_ATTACK = "battleaxe_swing1_L";
-		const float ATTACK_ACCURACY = 0.8;
-		const string DMG_SWORD = RandomInt(50, 200);
-		const float DOT_THROW_SHOCK = 40.0;
-		const float DOT_SHOCK = 15.0;
-		const string DMG_KICK = RandomInt(20, 50);
-		const string ANIM_KICK = "kick";
-		const string SOUND_SHOCK1 = "debris/zap8.wav";
-		const string SOUND_SHOCK2 = "debris/zap3.wav";
-		const string SOUND_SHOCK3 = "debris/zap4.wav";
+		ATTACK_ACCURACY = 0.8;
+		DMG_SWORD = RandomInt(50, 200);
+		DOT_THROW_SHOCK = 40.0;
+		DOT_SHOCK = 15.0;
+		DMG_KICK = RandomInt(20, 50);
+		ANIM_KICK = "kick";
+		SOUND_SHOCK1 = "debris/zap8.wav";
+		SOUND_SHOCK2 = "debris/zap3.wav";
+		SOUND_SHOCK3 = "debris/zap4.wav";
 		ORC_JUMPER = 1;
-		const float CHANCE_SHOCK = 0.1;
-		const float CHANCE_KICK = 0.3;
-		const string FREQ_KICK = Random(5, 15);
-		const string FREQ_THROW = Random(7, 15);
-		const float SORC_LRESIST = 0.65;
-		const float SORC_PRESIST = 1.15;
+		CHANCE_SHOCK = 0.1;
+		CHANCE_KICK = 0.3;
+		FREQ_KICK = Random(5, 15);
+		FREQ_THROW = Random(7, 15);
+		SORC_LRESIST = 0.65;
+		SORC_PRESIST = 1.15;
 	}
 
 	void orc_spawn()
@@ -179,7 +195,7 @@ class SorcWarrior : CGameScript
 			{
 			}
 			AddVelocity(param2, /* TODO: $relvel */ $relvel(0, 200, 30));
-			string NO_ATK = RandomInt(0, 1);
+			int NO_ATK = RandomInt(0, 1);
 			ApplyEffect(param2, "effects/debuff_stun", RandomInt(2, 5), GetEntityIndex(GetOwner()));
 		}
 		if (!(THROWING_AXE)) return;

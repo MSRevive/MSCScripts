@@ -5,14 +5,17 @@ namespace MS
 
 class HpTriggerBase : CGameScript
 {
+	string EVENT_NAME;
 	int FOUND_ONE;
 	string HOME_LOC;
+	int TRIGGER_RANGE;
+	int TRIGGER_REQ;
 
 	HpTriggerBase()
 	{
-		const int TRIGGER_RANGE = 256;
-		const int TRIGGER_REQ = 300;
-		const string EVENT_NAME = "found_300";
+		TRIGGER_RANGE = 256;
+		TRIGGER_REQ = 300;
+		EVENT_NAME = "found_300";
 	}
 
 	void OnSpawn() override

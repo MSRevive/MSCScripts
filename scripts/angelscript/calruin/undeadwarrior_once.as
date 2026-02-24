@@ -7,17 +7,21 @@ namespace MS
 
 class UndeadwarriorOnce : CGameScript
 {
-	string DROP_GOLD;
+	int ATTACK_DAMAGE_HIGH;
+	int ATTACK_DAMAGE_LOW;
+	float ATTACK_HITCHANCE;
+	int DROP_GOLD;
 	int DROP_GOLD_MAX;
 	int DROP_GOLD_MIN;
 	int NPC_GIVE_EXP;
+	int SKEL_HP;
 
 	UndeadwarriorOnce()
 	{
-		const int SKEL_HP = 350;
-		const float ATTACK_HITCHANCE = 1.0;
-		const int ATTACK_DAMAGE_LOW = 10;
-		const int ATTACK_DAMAGE_HIGH = 13;
+		SKEL_HP = 350;
+		ATTACK_HITCHANCE = 1.0;
+		ATTACK_DAMAGE_LOW = 10;
+		ATTACK_DAMAGE_HIGH = 13;
 		NPC_GIVE_EXP = 80;
 		DROP_GOLD = RandomInt(0, 1);
 		DROP_GOLD_MIN = 10;

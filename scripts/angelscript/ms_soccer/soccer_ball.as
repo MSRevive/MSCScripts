@@ -12,6 +12,7 @@ class SoccerBall : CGameScript
 	int AM_HOME;
 	string ATK_ANG;
 	string ATK_ID;
+	string BALL_WEIGHTS;
 	string BLUE_SCORE_TOKENS;
 	int COUNT_DOWN;
 	string COUNT_DOWN_ABORT;
@@ -42,6 +43,17 @@ class SoccerBall : CGameScript
 	int SB_RED3;
 	int SB_RED4;
 	int SB_RED5;
+	int SENSE_RANGE;
+	string SOUND_IDLE1;
+	string SOUND_IDLE2;
+	string SOUND_IDLE3;
+	string SOUND_IDLE4;
+	string SOUND_STRUCK1;
+	string SOUND_STRUCK2;
+	string SOUND_STRUCK3;
+	string SOUND_STRUCK4;
+	string SOUND_STRUCK5;
+	string SOUND_STRUCK6;
 	string TRACK_TARGET;
 	string TWAL_TEAM_SUFFIX;
 
@@ -50,10 +62,10 @@ class SoccerBall : CGameScript
 		NPC_ATTACK_INVULN = 1;
 		POINTS_RED = 0;
 		POINTS_BLUE = 0;
-		const string BALL_WEIGHTS = "0.1;0.25;0.5;1.0;2.0";
+		BALL_WEIGHTS = "0.1;0.25;0.5;1.0;2.0";
 		NEXT_BALL_WEIGHT = 4;
 		IS_SOCCER_BALL = 1;
-		const int SENSE_RANGE = 128;
+		SENSE_RANGE = 128;
 		SB_BLUE0 = 0;
 		SB_BLUE1 = 0;
 		SB_BLUE2 = 0;
@@ -68,16 +80,16 @@ class SoccerBall : CGameScript
 		SB_RED3 = 0;
 		SB_RED4 = 0;
 		SB_RED5 = 0;
-		const string SOUND_IDLE1 = "houndeye/he_idle4.wav";
-		const string SOUND_IDLE2 = "houndeye/he_pain1.wav";
-		const string SOUND_IDLE3 = "houndeye/he_pain3.wav";
-		const string SOUND_IDLE4 = "houndeye/he_alert2.wav";
-		const string SOUND_STRUCK1 = "houndeye/he_die1.wav";
-		const string SOUND_STRUCK2 = "houndeye/he_die2.wav";
-		const string SOUND_STRUCK3 = "houndeye/he_pain2.wav";
-		const string SOUND_STRUCK4 = "houndeye/he_pain4.wav";
-		const string SOUND_STRUCK5 = "houndeye/he_pain5.wav";
-		const string SOUND_STRUCK6 = "houndeye/he_alert3.wav";
+		SOUND_IDLE1 = "houndeye/he_idle4.wav";
+		SOUND_IDLE2 = "houndeye/he_pain1.wav";
+		SOUND_IDLE3 = "houndeye/he_pain3.wav";
+		SOUND_IDLE4 = "houndeye/he_alert2.wav";
+		SOUND_STRUCK1 = "houndeye/he_die1.wav";
+		SOUND_STRUCK2 = "houndeye/he_die2.wav";
+		SOUND_STRUCK3 = "houndeye/he_pain2.wav";
+		SOUND_STRUCK4 = "houndeye/he_pain4.wav";
+		SOUND_STRUCK5 = "houndeye/he_pain5.wav";
+		SOUND_STRUCK6 = "houndeye/he_alert3.wav";
 	}
 
 	void OnRepeatTimer()
@@ -310,7 +322,7 @@ class SoccerBall : CGameScript
 	{
 		string OUT_MSG = GetEntityName(param1);
 		OUT_MSG += " reset sorc positions";
-		SendInfoMsg("all", "SORCS RESET OUT_MSG");
+		SendInfoMsg("all", "SORCS RESET " + OUT_MSG);
 		CallExternal("all", "extsoc_reset");
 	}
 
@@ -318,7 +330,7 @@ class SoccerBall : CGameScript
 	{
 		string OUT_MSG = GetEntityName(param1);
 		OUT_MSG += " called time out";
-		SendInfoMsg("all", "TIME OUT! OUT_MSG");
+		SendInfoMsg("all", "TIME OUT! " + OUT_MSG);
 		CallExternal("all", "ext_soccer_timeout");
 		pause_game();
 	}
@@ -327,7 +339,7 @@ class SoccerBall : CGameScript
 	{
 		string OUT_MSG = GetEntityName(param1);
 		OUT_MSG += " called time in";
-		SendInfoMsg("all", "TIME IN! OUT_MSG");
+		SendInfoMsg("all", "TIME IN! " + OUT_MSG);
 		CallExternal("all", "ext_soccer_timein");
 		unpause_game();
 	}
@@ -336,7 +348,7 @@ class SoccerBall : CGameScript
 	{
 		string OUT_MSG = GetEntityName(param1);
 		OUT_MSG += " sent the ball home";
-		SendInfoMsg("all", "BALL RESET OUT_MSG");
+		SendInfoMsg("all", "BALL RESET " + OUT_MSG);
 		AM_HOME = 0;
 		SetEntityOrigin(GetOwner(), Vector3(5000, 5000, -5000));
 		SetVelocity(GetOwner(), Vector3(0, 0, 0));
@@ -349,7 +361,7 @@ class SoccerBall : CGameScript
 	{
 		string OUT_MSG = GetEntityName(param1);
 		OUT_MSG += " reset the scores";
-		SendInfoMsg("all", "SCORES RESET OUT_MSG");
+		SendInfoMsg("all", "SCORES RESET " + OUT_MSG);
 		POINTS_BLUE = 0;
 		POINTS_RED = 0;
 		update_scoreboards();
@@ -361,7 +373,7 @@ class SoccerBall : CGameScript
 		string OUT_MSG = GetEntityName(param1);
 		OUT_MSG += " changed ball weight to ";
 		OUT_MSG += GetToken(BALL_WEIGHTS, NEXT_BALL_WEIGHT, ";");
-		SendInfoMsg("all", "BALL WEIGHT CHANGE OUT_MSG");
+		SendInfoMsg("all", "BALL WEIGHT CHANGE " + OUT_MSG);
 		NEXT_BALL_WEIGHT += 1;
 		if (NEXT_BALL_WEIGHT >= GetTokenCount(BALL_WEIGHTS, ";"))
 		{
@@ -377,7 +389,7 @@ class SoccerBall : CGameScript
 			AM_BOUNCY = 1;
 			string OUT_MSG = GetEntityName(param1);
 			OUT_MSG += " made the ball bouncier!";
-			SendInfoMsg("all", "BOUNCY BALL OUT_MSG");
+			SendInfoMsg("all", "BOUNCY BALL " + OUT_MSG);
 			SetProp(GetOwner(), "movetype", 10);
 		}
 		else
@@ -385,7 +397,7 @@ class SoccerBall : CGameScript
 			AM_BOUNCY = 0;
 			string OUT_MSG = GetEntityName(param1);
 			OUT_MSG += " restored the ball to normal.";
-			SendInfoMsg("all", "NOT SO BOUNCY BALL OUT_MSG");
+			SendInfoMsg("all", "NOT SO BOUNCY BALL " + OUT_MSG);
 			SetProp(GetOwner(), "movetype", 4);
 		}
 	}
@@ -417,11 +429,11 @@ class SoccerBall : CGameScript
 		OUT_MSG += int(POINTS_BLUE);
 		if (param1 == "red")
 		{
-			SendInfoMsg("all", "RED SCORES OUT_MSG");
+			SendInfoMsg("all", "RED SCORES " + OUT_MSG);
 		}
 		if (param1 == "blue")
 		{
-			SendInfoMsg("all", "BLUE SCORES OUT_MSG");
+			SendInfoMsg("all", "BLUE SCORES " + OUT_MSG);
 		}
 		if (POINTS_RED == 5)
 		{
@@ -477,9 +489,9 @@ class SoccerBall : CGameScript
 		}
 		if ((COUNT_DOWN_ABORT)) return;
 		CallExternal("players", "ext_hud_icon", int(COUNT_DOWN), "cnt", 40, 0, 20, 30, 0.75);
-		string OUT_MSG = int(COUNT_DOWN);
+		int OUT_MSG = int(COUNT_DOWN);
 		OUT_MSG += "...";
-		SendInfoMessageToAll("green OUT_MSG");
+		SendInfoMessageToAll("green " + OUT_MSG);
 		COUNT_DOWN -= 1;
 		if (COUNT_DOWN <= 0)
 		{
@@ -613,7 +625,7 @@ class SoccerBall : CGameScript
 
 	void update_twals()
 	{
-		string CUR_IDX = int(i);
+		int CUR_IDX = int(i);
 		string TWAL_NAME = "twal_score_";
 		TWAL_NAME += TWAL_TEAM_SUFFIX;
 		TWAL_NAME += CUR_IDX;

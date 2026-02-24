@@ -7,20 +7,28 @@ namespace MS
 
 class DqDefendMe : CGameScript
 {
+	string DQ_DEFEND_ME_DEFENSE_POINT;
 	int DQ_MONSTERS_AVAILABLE;
 	int DQ_MONSTERS_KILLED;
+	float DQ_MONSTER_HP_MULT;
+	string DQ_MONSTER_LIMIT;
+	string DQ_MONSTER_LIST;
+	float DQ_MONSTER_SPAWN_TIME;
+	float DQ_MONSTER_XP_MULT;
+	string DQ_SELF_ADJUST;
+	string DQ_SPAWN_POINTS;
 	string MONSTER_ORIGIN_AMT;
 
 	DqDefendMe()
 	{
-		const string DQ_DEFEND_ME_DEFENSE_POINT = GetEntityOrigin(GetOwner());
-		const string DQ_MONSTER_LIST = QUEST_DATA1;
-		const string DQ_MONSTER_LIMIT = GetToken(QUEST_DATA2, 0, ";");
-		const string DQ_SELF_ADJUST = GetToken(QUEST_DATA2, 1, ";");
-		const string DQ_SPAWN_POINTS = QUEST_DATA3;
-		const float DQ_MONSTER_HP_MULT = 0.5;
-		const float DQ_MONSTER_XP_MULT = 0.5;
-		const float DQ_MONSTER_SPAWN_TIME = 2.0;
+		DQ_DEFEND_ME_DEFENSE_POINT = GetEntityOrigin(GetOwner());
+		DQ_MONSTER_LIST = QUEST_DATA1;
+		DQ_MONSTER_LIMIT = GetToken(QUEST_DATA2, 0, ";");
+		DQ_SELF_ADJUST = GetToken(QUEST_DATA2, 1, ";");
+		DQ_SPAWN_POINTS = QUEST_DATA3;
+		DQ_MONSTER_HP_MULT = 0.5;
+		DQ_MONSTER_XP_MULT = 0.5;
+		DQ_MONSTER_SPAWN_TIME = 2.0;
 		DQ_MONSTERS_AVAILABLE = 5;
 		DQ_MONSTERS_KILLED = 0;
 	}
@@ -67,13 +75,13 @@ class DqDefendMe : CGameScript
 	{
 		string L_INFO_TARGET_NAME = DQ_SPAWN_POINTS;
 		string L_MONSTER_ORIGIN_AMT = MONSTER_ORIGIN_AMT;
-		string L_MONSTER_ORIGIN_AMT = int(/* TODO: $math(add) */ L_MONSTER_ORIGIN_AMT);
+		int L_MONSTER_ORIGIN_AMT = int((L_MONSTER_ORIGIN_AMT + 1));
 		L_INFO_TARGET_NAME += L_MONSTER_ORIGIN_AMT;
 		string L_INFO_TARGET_ID = FindEntityByName(L_INFO_TARGET_NAME);
 		if (((L_INFO_TARGET_ID !is null)))
 		{
 			MONSTER_SPAWN_ORIGINS.insertLast(GetEntityOrigin(L_INFO_TARGET_ID));
-			MONSTER_ORIGIN_AMT = /* TODO: $math(add) */ MONSTER_ORIGIN_AMT;
+			MONSTER_ORIGIN_AMT = (MONSTER_ORIGIN_AMT + 1);
 			ScheduleDelayedEvent(0.1, "quest_handle_info_targets");
 		}
 	}
@@ -91,17 +99,17 @@ class DqDefendMe : CGameScript
 			{
 				if (DQ_SPAWN_POINTS == "random")
 				{
-					string L_R_DIST = Random(128, 256);
-					string L_R_YAW = Random(0, 359.99);
+					float L_R_DIST = Random(128, 256);
+					float L_R_YAW = Random(0, 359.99);
 					string L_POS = DQ_DEFEND_ME_DEFENSE_POINT;
 					L_POS += /* TODO: $relpos */ $relpos(Vector3(0, L_R_YAW, 0), Vector3(0, L_R_DIST, 0));
 				}
 				else
 				{
-					string L_IDX = RandomInt(0, /* TODO: $math(subtract) */ /* TODO: $get_array_amt */ $get_array_amt(MONSTER_SPAWN_ORIGINS));
-					string L_POS = /* TODO: $get_array */ $get_array(MONSTER_SPAWN_ORIGINS, L_IDX);
+					int L_IDX = RandomInt(0, (int(MONSTER_SPAWN_ORIGINS.length()) - 1));
+					string L_POS = MONSTER_SPAWN_ORIGINS[int(L_IDX)];
 				}
-				string L_R_SCRIPT = RandomInt(0, /* TODO: $math(subtract) */ GetTokenCount(DQ_MONSTER_LIST, ";"));
+				int L_R_SCRIPT = RandomInt(0, (GetTokenCount(DQ_MONSTER_LIST, ";") - 1));
 				SpawnNPC(GetToken(DQ_MONSTER_LIST, L_R_SCRIPT, ";"), L_POS, ScriptMode::Legacy);
 				EFFECT_ME = GetEntityIndex(m_hLastCreated);
 				if (DQ_SPAWN_POINTS == "random")
@@ -109,11 +117,11 @@ class DqDefendMe : CGameScript
 					CallExternal(EFFECT_ME, "as_tele_stuck_check");
 				}
 				ScheduleDelayedEvent(1.1, "dq_apply_externals");
-				DQ_MONSTERS_AVAILABLE = /* TODO: $math(subtract) */ DQ_MONSTERS_AVAILABLE;
+				DQ_MONSTERS_AVAILABLE = (DQ_MONSTERS_AVAILABLE - 1);
 			}
 			if (CAN_POPULATE_AGAIN <= GetGameTime())
 			{
-				CAN_POPULATE_AGAIN = /* TODO: $math(add) */ GetGameTime();
+				CAN_POPULATE_AGAIN = (GetGameTime() + DQ_MONSTER_SPAWN_TIME);
 				DQ_MONSTER_SPAWN_TIME("populate_area");
 			}
 		}
@@ -126,16 +134,16 @@ class DqDefendMe : CGameScript
 		if ((DQ_SELF_ADJUST))
 		{
 			ApplyEffect(EFFECT_ME, "dq/externals/dq_adjust_damage", GetEntityIndex(GetOwner()));
-			CallExternal(EFFECT_ME, "set_xp", /* TODO: $math(multiply) */ QUEST_TAKER_MAXHP);
-			string L_HEALTH = /* TODO: $math(multiply) */ QUEST_TAKER_MAXHP;
+			CallExternal(EFFECT_ME, "set_xp", (QUEST_TAKER_MAXHP * DQ_MONSTER_XP_MULT));
+			string L_HEALTH = (QUEST_TAKER_MAXHP * DQ_MONSTER_HP_MULT);
 			CallExternal(EFFECT_ME, "ext_set_health", L_HEALTH, L_HEALTH);
 		}
 	}
 
 	void ext_effected_monster_killed()
 	{
-		DQ_MONSTERS_KILLED = /* TODO: $math(add) */ DQ_MONSTERS_KILLED;
-		DQ_MONSTERS_AVAILABLE = /* TODO: $math(add) */ DQ_MONSTERS_AVAILABLE;
+		DQ_MONSTERS_KILLED = (DQ_MONSTERS_KILLED + 1);
+		DQ_MONSTERS_AVAILABLE = (DQ_MONSTERS_AVAILABLE + 1);
 		if (DQ_MONSTERS_KILLED >= DQ_MONSTER_LIMIT)
 		{
 			quest_finished_check();
@@ -144,7 +152,7 @@ class DqDefendMe : CGameScript
 		{
 			if (CAN_POPULATE_AGAIN < GetGameTime())
 			{
-				CAN_POPULATE_AGAIN = /* TODO: $math(add) */ GetGameTime();
+				CAN_POPULATE_AGAIN = (GetGameTime() + DQ_MONSTER_SPAWN_TIME);
 				DQ_MONSTER_SPAWN_TIME("populate_area");
 			}
 		}

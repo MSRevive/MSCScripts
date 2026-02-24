@@ -13,9 +13,17 @@ class Oldman : CGameScript
 {
 	int CANCHAT;
 	int CAN_ASKPOTION;
+	int NO_RUMOR;
 	int QUEST_BOAR;
+	string SOUND_DEATH;
+	string SOUND_IDLE1;
+	string SOUND_IDLE2;
+	string SOUND_IDLE3;
+	string SOUND_POTION;
 	string STORENAME;
+	string STORE_NAME;
 	string STORE_TRIGGERTEXT;
+	int VENDOR_NOT_ON_USE;
 	int letter;
 	int quest.ledger;
 	string quest.ledger.target;
@@ -23,16 +31,16 @@ class Oldman : CGameScript
 
 	Oldman()
 	{
-		const string SOUND_IDLE1 = "voices/human/male_oldidle.wav";
-		const string SOUND_IDLE2 = "voices/human/male_oldidle2.wav";
-		const string SOUND_IDLE3 = "voices/human/male_oldidle3.wav";
-		const string SOUND_POTION = "voices/human/male_oldpotion.wav";
-		const int NO_RUMOR = 1;
-		const string SOUND_DEATH = "none";
-		const string STORE_NAME = "edana_merchant_2";
+		SOUND_IDLE1 = "voices/human/male_oldidle.wav";
+		SOUND_IDLE2 = "voices/human/male_oldidle2.wav";
+		SOUND_IDLE3 = "voices/human/male_oldidle3.wav";
+		SOUND_POTION = "voices/human/male_oldpotion.wav";
+		NO_RUMOR = 1;
+		SOUND_DEATH = "none";
+		STORE_NAME = "edana_merchant_2";
 		STORE_TRIGGERTEXT = "store trade buy sell purchase sale offer";
-		const int NO_RUMOR = 1;
-		const int VENDOR_NOT_ON_USE = 1;
+		NO_RUMOR = 1;
+		VENDOR_NOT_ON_USE = 1;
 	}
 
 	void OnRepeatTimer()
@@ -53,7 +61,7 @@ class Oldman : CGameScript
 		if ((CAN_ASKPOTION))
 		{
 		}
-		string POTION_CHAT = RandomInt(1, 3);
+		int POTION_CHAT = RandomInt(1, 3);
 		if (POTION_CHAT == 1)
 		{
 			SayText("How about a [potion] ?");
@@ -69,7 +77,7 @@ class Oldman : CGameScript
 			{
 				if (POTION_CHAT == 3)
 				{
-					SayText("I ve got something that ll heal you up.");
+					SayText(I + " ve got something that ll heal you up.");
 				}
 			}
 		}
@@ -102,7 +110,7 @@ class Oldman : CGameScript
 	void say_hi()
 	{
 		PlayAnim("once", "talkleft");
-		SayText("New folk around here , eh? And the adventerous kind , I see.");
+		SayText("New folk around here , eh? And the adventerous kind , " + I + " see.");
 		Say("[.3] [.1] [.2] [.3] [.4] [.2] [.2] [.3] [.1]");
 		ScheduleDelayedEvent(3, "say_hi2");
 	}
@@ -181,7 +189,7 @@ class Oldman : CGameScript
 		quest.ledger = 2;
 		quest.ledger.target = GetEntityIndex("ent_lastspoke");
 		PlayAnim("once", "pondering2");
-		SayText("Hmmm... I think I have that ledger around here somewhere...");
+		SayText("Hmmm... " + I + "think " + I + " have that ledger around here somewhere...");
 		ScheduleDelayedEvent(4, "quest_ledger_done");
 	}
 
@@ -221,7 +229,7 @@ class Oldman : CGameScript
 		{
 			if (QUEST_BOAR == 1)
 			{
-				SayText("Head out back and train up. I don  mind.");
+				SayText("Head out back and train up. " + I + " don  mind.");
 				Say("[.20] [.10] [.10] [.10] [.10] [.10] [.15] [.10]");
 			}
 			else
@@ -239,7 +247,7 @@ class Oldman : CGameScript
 
 	void say_boar2()
 	{
-		SayText("I just send people there so they can train their skills.");
+		SayText(I + " just send people there so they can train their skills.");
 		Say("[.30] [.20] [.30] [.40] [.20] [.20] [.30] [.10]");
 		ScheduleDelayedEvent(4, "say_boar3");
 	}
@@ -274,7 +282,7 @@ class Oldman : CGameScript
 	{
 		if (!(CAN_ASKPOTION)) return;
 		CAN_ASKPOTION = 0;
-		SayText("I m sorry, was I bothering you?");
+		SayText(I + " m sorry, was I bothering you?");
 		PlayAnim("once", "panic");
 		Say("[.3] [.1] [.4] [.1] [.1] [.7] [.7] [.7] [.4]");
 	}

@@ -9,6 +9,9 @@ class MaldoraGminionRandom : CGameScript
 {
 	int AM_RISING;
 	string ANIM_RUN;
+	int ATTACK_DAMAGE_HIGH;
+	int ATTACK_DAMAGE_LOW;
+	float ATTACK_HITCHANCE;
 	int ATTRIBS_SET;
 	string FIRST_TARGET;
 	int FOUND_GROUND;
@@ -26,20 +29,24 @@ class MaldoraGminionRandom : CGameScript
 	string MY_MASTER;
 	int NO_SPAWN_STUCK_CHECK;
 	int NO_STUCK_CHECKS;
+	float NPC_FADE_IN_SPEED;
 	string NPC_GIVE_EXP;
 	int PLAYING_DEAD;
 	string SET_GREEK;
+	int SKEL_HP;
 	string SKEL_ID;
 	string SKEL_LIGHT_ID;
+	float SKEL_RESPAWN_CHANCE;
+	int SKEL_RESPAWN_LIVES;
 
 	MaldoraGminionRandom()
 	{
-		const float NPC_FADE_IN_SPEED = 0.02;
+		NPC_FADE_IN_SPEED = 0.02;
 		ANIM_RUN = "run";
-		const int SKEL_HP = 1000;
-		const float ATTACK_HITCHANCE = 0.85;
-		const int ATTACK_DAMAGE_LOW = 30;
-		const int ATTACK_DAMAGE_HIGH = 40;
+		SKEL_HP = 1000;
+		ATTACK_HITCHANCE = 0.85;
+		ATTACK_DAMAGE_LOW = 30;
+		ATTACK_DAMAGE_HIGH = 40;
 		if (StringToLower(GetMapName()) == "lodagond-2")
 		{
 			NPC_GIVE_EXP = 100;
@@ -48,8 +55,8 @@ class MaldoraGminionRandom : CGameScript
 		{
 			NPC_GIVE_EXP = 600;
 		}
-		const float SKEL_RESPAWN_CHANCE = 0.0;
-		const int SKEL_RESPAWN_LIVES = 0;
+		SKEL_RESPAWN_CHANCE = 0.0;
+		SKEL_RESPAWN_LIVES = 0;
 		Precache("monsters/skeleton_boss1.mdl");
 	}
 
@@ -175,7 +182,7 @@ class MaldoraGminionRandom : CGameScript
 
 	void pop_off_masters_head()
 	{
-		string RND_ANG = Random(0, 359.99);
+		float RND_ANG = Random(0, 359.99);
 		AddVelocity(GetOwner(), /* TODO: $relvel */ $relvel(Vector3(0, RND_ANG, 0), Vector3(0, 500, 0)));
 	}
 

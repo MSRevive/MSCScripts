@@ -8,10 +8,11 @@ class StoneTrap : CGameScript
 	int DID_INTRO;
 	int GAVE_ANSWER;
 	int SKELS_ON;
+	int TRIGGER_RANGE;
 
 	StoneTrap()
 	{
-		const int TRIGGER_RANGE = 256;
+		TRIGGER_RANGE = 256;
 	}
 
 	void OnSpawn() override

@@ -12,18 +12,25 @@ class ProjBase : CGameScript
 	string CLFX_ARROW_IDX;
 	string CLFX_ARROW_INIT;
 	string CLFX_ARROW_IN_FLIGHT;
+	string CLFX_ARROW_SCRIPT;
+	float CLFX_ARROW_UPDATE_RATE;
+	string MODEL_WORLD;
 	string MY_XBOW;
+	int PROJ_COLLIDEHITBOX;
 	string PROJ_DELETING;
+	int PROJ_IGNORENPC;
+	int PROJ_MOTIONBLUR;
+	int PROJ_STICK_ON_NPC;
 
 	ProjBase()
 	{
-		const int PROJ_COLLIDEHITBOX = 1;
-		const int PROJ_IGNORENPC = 0;
-		const string MODEL_WORLD = "none";
-		const int PROJ_MOTIONBLUR = 1;
-		const int PROJ_STICK_ON_NPC = 1;
-		const string CLFX_ARROW_SCRIPT = "items/proj_simple_cl";
-		const float CLFX_ARROW_UPDATE_RATE = 0.5;
+		PROJ_COLLIDEHITBOX = 1;
+		PROJ_IGNORENPC = 0;
+		MODEL_WORLD = "none";
+		PROJ_MOTIONBLUR = 1;
+		PROJ_STICK_ON_NPC = 1;
+		CLFX_ARROW_SCRIPT = "items/proj_simple_cl";
+		CLFX_ARROW_UPDATE_RATE = 0.5;
 	}
 
 	void OnSpawn() override
@@ -127,7 +134,7 @@ class ProjBase : CGameScript
 		{
 			SetModel(MODEL_WORLD);
 			SetModelBody(0, MODEL_BODY_OFS);
-			// TODO: UNCONVERTED: solidifyprojectile
+			SolidifyProjectile(GetOwner());
 		}
 		projectile_landed();
 		if (PROJ_STICK_DURATION == 0)

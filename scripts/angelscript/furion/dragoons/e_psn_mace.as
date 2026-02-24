@@ -7,10 +7,13 @@ namespace MS
 
 class EPsnMace : CGameScript
 {
+	int ELEMENT;
+	int WEAPON;
+
 	EPsnMace()
 	{
-		const int WEAPON = 5;
-		const int ELEMENT = 1;
+		WEAPON = 5;
+		ELEMENT = 1;
 	}
 
 }

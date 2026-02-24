@@ -7,9 +7,11 @@ namespace MS
 
 class EIceRand : CGameScript
 {
+	int ELEMENT;
+
 	EIceRand()
 	{
-		const int ELEMENT = 0;
+		ELEMENT = 0;
 	}
 
 }

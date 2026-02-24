@@ -8,24 +8,38 @@ namespace MS
 
 class ArmorPaura : CGameScript
 {
+	int ARMOR_BODY;
+	int ARMOR_GROUP;
+	string ARMOR_MODEL;
+	int ARMOR_STR_REQ;
+	string ARMOR_TEXT;
+	float BARMOR_PROTECTION;
+	string BARMOR_PROTECTION_AREA;
+	string BARMOR_REPLACE_BODYPARTS;
+	string BARMOR_TYPE;
+	int ELM_AMT;
+	string ELM_NAME;
+	string ELM_TYPE;
+	int NEW_ARMOR_OFS;
 	int PHOENIX_ACTIVE;
+	string SOUND_GAS_ON;
 
 	ArmorPaura()
 	{
-		const string ARMOR_MODEL = "armor/p_armorvest2.mdl";
-		const int ARMOR_GROUP = 4;
-		const int ARMOR_BODY = 7;
-		const string ARMOR_TEXT = "You assemble the the acid plate armor.";
-		const string BARMOR_TYPE = "platemail";
-		const float BARMOR_PROTECTION = 0.5;
-		const string BARMOR_PROTECTION_AREA = "chest;arms;legs";
-		const string BARMOR_REPLACE_BODYPARTS = BARMOR_PROTECTION_AREA;
-		const string ELM_NAME = "aarmr";
-		const string ELM_TYPE = "poison";
-		const int ELM_AMT = 50;
-		const int ARMOR_STR_REQ = 30;
-		const string SOUND_GAS_ON = "ambience/steamburst1.wav";
-		const int NEW_ARMOR_OFS = 17;
+		ARMOR_MODEL = "armor/p_armorvest2.mdl";
+		ARMOR_GROUP = 4;
+		ARMOR_BODY = 7;
+		ARMOR_TEXT = "You assemble the the acid plate armor.";
+		BARMOR_TYPE = "platemail";
+		BARMOR_PROTECTION = 0.5;
+		BARMOR_PROTECTION_AREA = "chest;arms;legs";
+		BARMOR_REPLACE_BODYPARTS = BARMOR_PROTECTION_AREA;
+		ELM_NAME = "aarmr";
+		ELM_TYPE = "poison";
+		ELM_AMT = 50;
+		ARMOR_STR_REQ = 30;
+		SOUND_GAS_ON = "ambience/steamburst1.wav";
+		NEW_ARMOR_OFS = 17;
 		Precache("poison_cloud.spr");
 	}
 

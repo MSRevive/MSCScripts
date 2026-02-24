@@ -7,9 +7,11 @@ namespace MS
 
 class ZapRandom : CGameScript
 {
+	int ELEMENT;
+
 	ZapRandom()
 	{
-		const int ELEMENT = 3;
+		ELEMENT = 3;
 	}
 
 }

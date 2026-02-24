@@ -7,17 +7,27 @@ namespace MS
 
 class ProjArrowFrost : CGameScript
 {
+	float ARROW_BREAK_CHANCE;
+	int ARROW_EXPIRE_DELAY;
+	int ARROW_SOLIDIFY_ON_WALL;
+	int ARROW_STICK_DURATION;
+	int CLFX_ARROW;
+	int MODEL_BODY_OFS;
+	int PROJ_DAMAGE;
+	string PROJ_DAMAGE_TYPE;
+	string SPRITE_ARROW_TRADE;
+
 	ProjArrowFrost()
 	{
-		const int CLFX_ARROW = 1;
-		const string SPRITE_ARROW_TRADE = "silverarrow";
-		const int MODEL_BODY_OFS = 6;
-		const string PROJ_DAMAGE_TYPE = "cold";
-		const string PROJ_DAMAGE = "$rand(60,100)";
-		const int ARROW_STICK_DURATION = 25;
-		const int ARROW_SOLIDIFY_ON_WALL = 0;
-		const float ARROW_BREAK_CHANCE = 0.5;
-		const int ARROW_EXPIRE_DELAY = 10;
+		CLFX_ARROW = 1;
+		SPRITE_ARROW_TRADE = "silverarrow";
+		MODEL_BODY_OFS = 6;
+		PROJ_DAMAGE_TYPE = "cold";
+		PROJ_DAMAGE = "$rand(60,100)";
+		ARROW_STICK_DURATION = 25;
+		ARROW_SOLIDIFY_ON_WALL = 0;
+		ARROW_BREAK_CHANCE = 0.5;
+		ARROW_EXPIRE_DELAY = 10;
 	}
 
 	void arrow_spawn()
@@ -42,12 +52,12 @@ class ProjArrowFrost : CGameScript
 			L_DOT *= 0.5;
 			if (L_DOT < 5)
 			{
-				string L_DOT = RandomInt(5, 10);
+				int L_DOT = RandomInt(5, 10);
 			}
 		}
 		else
 		{
-			string L_DOT = RandomInt(5, 10);
+			int L_DOT = RandomInt(5, 10);
 		}
 		ApplyEffect(param2, "effects/dot_cold", L_DOT, MY_OWNER, 5, "archery");
 	}

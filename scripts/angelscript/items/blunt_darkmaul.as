@@ -7,35 +7,60 @@ namespace MS
 
 class BluntDarkmaul : CGameScript
 {
+	int ANIM_ATTACK1;
+	int ANIM_ATTACK2;
+	int ANIM_ATTACK3;
+	int ANIM_IDLE1;
+	int ANIM_IDLE_TOTAL;
+	int ANIM_LIFT1;
+	string ANIM_PREFIX;
+	int ANIM_SHEATH;
+	int BASE_LEVEL_REQ;
+	float MELEE_ACCURACY;
+	float MELEE_ATK_DURATION;
+	int MELEE_DMG;
+	int MELEE_DMG_RANGE;
+	string MELEE_DMG_TYPE;
+	int MELEE_ENERGY;
+	string MELEE_VIEWANIM_ATK;
+	int MODEL_BODY_OFS;
+	string MODEL_HANDS;
+	string MODEL_VIEW;
+	int MODEL_VIEW_IDX;
+	string MODEL_WORLD;
+	string PLAYERANIM_SWING;
+	string SOUND_HITWALL1;
+	string SOUND_HITWALL2;
+
 	BluntDarkmaul()
 	{
-		const int BASE_LEVEL_REQ = 15;
-		const int ANIM_LIFT1 = 0;
-		const int ANIM_IDLE1 = 1;
-		const int ANIM_IDLE_TOTAL = 1;
-		const int ANIM_ATTACK1 = 2;
-		const int ANIM_ATTACK2 = 3;
-		const int ANIM_ATTACK3 = 2;
-		const int ANIM_SHEATH = 0;
-		const string MELEE_VIEWANIM_ATK = ANIM_ATTACK1;
-		const string PLAYERANIM_SWING = "swing_bluntdouble";
-		const string MELEE_DMG_TYPE = "dark";
-		const string MODEL_VIEW = "viewmodels/v_2hblunts.mdl";
-		const int MODEL_VIEW_IDX = 4;
-		const string MODEL_WORLD = "weapons/p_weapons1.mdl";
-		const string MODEL_HANDS = "weapons/p_weapons1.mdl";
-		const int MODEL_BODY_OFS = 62;
-		const string ANIM_PREFIX = "darkmaul";
+		BASE_LEVEL_REQ = 15;
+		ANIM_LIFT1 = 0;
+		ANIM_IDLE1 = 1;
+		ANIM_IDLE_TOTAL = 1;
+		ANIM_ATTACK1 = 2;
+		ANIM_ATTACK2 = 3;
+		ANIM_ATTACK3 = 2;
+		ANIM_SHEATH = 0;
+		MELEE_VIEWANIM_ATK = ANIM_ATTACK1;
+		PLAYERANIM_SWING = "swing_bluntdouble";
+		MELEE_DMG_TYPE = "dark";
+		MODEL_VIEW = "viewmodels/v_2hblunts.mdl";
+		MODEL_VIEW_IDX = 4;
+		MODEL_WORLD = "weapons/p_weapons1.mdl";
+		MODEL_HANDS = "weapons/p_weapons1.mdl";
+		MODEL_BODY_OFS = 62;
+		ANIM_PREFIX = "darkmaul";
 		Precache(MODEL_VIEW);
 		Precache(MODEL_WORLD);
 		Precache(MODEL_HANDS);
-		const int MELEE_DMG = 240;
-		const int MELEE_DMG_RANGE = 150;
-		const int MELEE_ENERGY = 5;
-		const float MELEE_ATK_DURATION = 1.5;
-		const float MELEE_ACCURACY = 0.7;
-		const string SOUND_HITWALL1 = "debris/metal6.wav";
-		const string SOUND_HITWALL2 = "ambience/steamburst1.wav";
+		MELEE_DMG = 240;
+		MELEE_DMG_RANGE = 150;
+		MELEE_ENERGY = 5;
+		MELEE_ATK_DURATION = 1.5;
+		MELEE_ACCURACY = 0.7;
+		SOUND_HITWALL1 = "debris/metal6.wav";
+		SOUND_HITWALL2 = "ambience/steamburst1.wav";
 	}
 
 	void weapon_spawn()

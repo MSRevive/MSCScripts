@@ -5,30 +5,42 @@ namespace MS
 
 class BaseLightningShield : CGameScript
 {
+	int CHANNEL_ZAP_LOOP;
+	int CHANNEL_ZAP_START;
+	int DMG_LSHIELD;
 	int LSHIELD_ACTIVE;
+	string LSHIELD_CLFX_SCRIPT;
 	string LSHIELD_CL_IDX;
+	string LSHIELD_DMG_TYPE;
 	string LSHIELD_DURATION;
+	float LSHIELD_FREQ_UPDATE;
 	int LSHIELD_FX_ON;
 	string LSHIELD_NEXT_SCAN;
 	string LSHIELD_NEXT_UPDATE;
+	int LSHIELD_PASSIVE;
 	int LSHIELD_PASSIVE_ENABLE;
+	int LSHIELD_RADIUS;
+	int LSHIELD_REPELL_STRENGTH;
 	string LSHIELD_TARGET;
+	int LSHIELD_V_CENTER;
+	string SOUND_ZAP_LOOP;
+	string SOUND_ZAP_START;
 
 	BaseLightningShield()
 	{
 		LSHIELD_PASSIVE_ENABLE = 1;
-		const int LSHIELD_PASSIVE = 1;
-		const int LSHIELD_RADIUS = 96;
-		const int DMG_LSHIELD = 100;
-		const int LSHIELD_REPELL_STRENGTH = 1000;
-		const int LSHIELD_V_CENTER = 36;
-		const int CHANNEL_ZAP_START = 3;
-		const int CHANNEL_ZAP_LOOP = 1;
-		const string LSHIELD_CLFX_SCRIPT = "effects/sfx_lightning_shield";
-		const string LSHIELD_DMG_TYPE = "lightning_effect";
-		const float LSHIELD_FREQ_UPDATE = 0.5;
-		const string SOUND_ZAP_LOOP = "magic/bolt_loop.wav";
-		const string SOUND_ZAP_START = "magic/bolt_end.wav";
+		LSHIELD_PASSIVE = 1;
+		LSHIELD_RADIUS = 96;
+		DMG_LSHIELD = 100;
+		LSHIELD_REPELL_STRENGTH = 1000;
+		LSHIELD_V_CENTER = 36;
+		CHANNEL_ZAP_START = 3;
+		CHANNEL_ZAP_LOOP = 1;
+		LSHIELD_CLFX_SCRIPT = "effects/sfx_lightning_shield";
+		LSHIELD_DMG_TYPE = "lightning_effect";
+		LSHIELD_FREQ_UPDATE = 0.5;
+		SOUND_ZAP_LOOP = "magic/bolt_loop.wav";
+		SOUND_ZAP_START = "magic/bolt_end.wav";
 	}
 
 	void OnHuntTarget(CBaseEntity@ target)
@@ -73,7 +85,7 @@ class BaseLightningShield : CGameScript
 		}
 		DoDamage(LSHIELD_TARGET, "direct", DMG_LSHIELD, 1.0, GetOwner());
 		string ZAP_TARG_RESIST = /* TODO: $get_takedmg */ $get_takedmg(LSHIELD_TARGET, "lightning");
-		string ZAP_ROLL = Random(0.0, 2.0);
+		float ZAP_ROLL = Random(0.0, 2.0);
 		if (!(ZAP_ROLL < ZAP_TARG_RESIST)) return;
 		string TARG_ORG = GetEntityOrigin(LSHIELD_TARGET);
 		string TARG_ANG = /* TODO: $angles */ $angles(GetMonsterProperty("origin"), TARG_ORG);
@@ -163,7 +175,7 @@ class BaseLightningShield : CGameScript
 		if (!(GetEntityRange(LSHIELD_TARGET) <= LSHIELD_RADIUS)) return;
 		DoDamage(LSHIELD_TARGET, "direct", DMG_LSHIELD, 1.0, GetOwner());
 		string ZAP_TARG_RESIST = /* TODO: $get_takedmg */ $get_takedmg(LSHIELD_TARGET, "lightning");
-		string ZAP_ROLL = Random(0.0, 2.0);
+		float ZAP_ROLL = Random(0.0, 2.0);
 		LogDebug("lshield_loop ZAP_ROLL vs ZAP_TARG_RESIST");
 		if (!(ZAP_ROLL < ZAP_TARG_RESIST)) return;
 		string TARG_ORG = GetEntityOrigin(LSHIELD_TARGET);

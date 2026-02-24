@@ -190,11 +190,15 @@ def _pass(name, args):
 
 
 def _func(name, args):
-    """$func(funcname, arg1, arg2, ...) → funcname(arg1, arg2, ...)"""
+    """$func(funcname, arg1, arg2, ...) ? funcname(arg1, arg2, ...)"""
     if args:
-        return f"{args[0]}({', '.join(args[1:])})"
+        # First arg is the target function name. It may arrive quoted when
+        # parsed as a lowercase identifier; strip only matching wrapper quotes.
+        target = args[0].strip()
+        if len(target) >= 2 and target[0] == target[-1] and target[0] in ('"', "'"):
+            target = target[1:-1]
+        return f"{target}({', '.join(args[1:])})"
     return ""
-
 
 def _math(name, args):
     if len(args) >= 3:

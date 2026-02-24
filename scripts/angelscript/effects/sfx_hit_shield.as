@@ -9,12 +9,14 @@ class SfxHitShield : CGameScript
 	string FX_DURATION;
 	string FX_ORIGIN;
 	string FX_SCALE;
+	string FX_SPRITE;
+	int FX_SPRITE_FRAMES;
 	string FX_YAW;
 
 	SfxHitShield()
 	{
-		const string FX_SPRITE = "rain_ripple.spr";
-		const int FX_SPRITE_FRAMES = 15;
+		FX_SPRITE = "rain_ripple.spr";
+		FX_SPRITE_FRAMES = 15;
 	}
 
 	void client_activate()

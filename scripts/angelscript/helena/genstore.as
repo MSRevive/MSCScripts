@@ -13,25 +13,29 @@ class Genstore : CGameScript
 {
 	string ANIM_DEATH;
 	int CANCHAT;
+	int NO_CHAT;
 	float OVERCHARGE;
 	int SELL_WEAPON_LEVEL;
+	string SOUND_DEATH;
 	string STORE_NAME;
 	string STORE_TRIGGERTEXT;
+	int VEND_CONTAINERS;
 	int VEND_NEWBIE;
+	int VEND_WEAPONS;
 
 	Genstore()
 	{
-		const string SOUND_DEATH = "none";
+		SOUND_DEATH = "none";
 		STORE_TRIGGERTEXT = "store trade buy sell purchase sale offer";
 		STORE_NAME = "helena_arthur_store";
 		CANCHAT = 1;
 		OVERCHARGE = 1.5;
 		ANIM_DEATH = "dieforward";
-		const int NO_CHAT = 1;
+		NO_CHAT = 1;
 		SELL_WEAPON_LEVEL = 6;
 		VEND_NEWBIE = 1;
-		const int VEND_WEAPONS = 1;
-		const int VEND_CONTAINERS = 1;
+		VEND_WEAPONS = 1;
+		VEND_CONTAINERS = 1;
 	}
 
 	void OnSpawn() override

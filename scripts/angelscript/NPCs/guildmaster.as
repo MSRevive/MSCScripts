@@ -52,14 +52,14 @@ class Guildmaster : CGameScript
 	{
 		if (!("game.central" == 0)) return;
 		if ((G_DEVELOPER_MODE)) return;
-		SendInfoMsg("all", "FENRIN_FN_ONLY You must be connected to [FN] to use the Guild Master");
+		SendInfoMsg("all", FENRIN_FN_ONLY + " You must be connected to [FN] to use the Guild Master");
 		DeleteEntity(GetOwner());
 	}
 
 	void say_hi()
 	{
 		SetVolume(10);
-		SayText("Greetings , I am Fenrin , the Master of Guilds.");
+		SayText("Greetings , " + I + " am Fenrin , the Master of Guilds.");
 		PlayAnim("once", "talkleft");
 		ScheduleDelayedEvent(5, "say_hi2");
 	}
@@ -75,7 +75,7 @@ class Guildmaster : CGameScript
 			return;
 		}
 		SetVolume(10);
-		SayText("Or I was , now I just kinda sit here looking over this gaudy map fragment.");
+		SayText("Or " + I + "was , now " + I + " just kinda sit here looking over this gaudy map fragment.");
 		ScheduleDelayedEvent(5.0, "say_hi3");
 	}
 

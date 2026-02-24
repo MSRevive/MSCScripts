@@ -12,20 +12,21 @@ class SfxWebbed : CGameScript
 	string FX_NEXT_DECAY;
 	string FX_WEBS_TILL_COCOON;
 	string FX_WEB_TARGET;
+	string WEB_RATIO;
 
 	SfxWebbed()
 	{
-		const string WEB_RATIO = /* TODO: $math(divide) */ FX_CUR_WEBS;
+		WEB_RATIO = (FX_CUR_WEBS / FX_WEBS_TILL_COCOON);
 	}
 
 	void client_activate()
 	{
 		FX_DECAY = param1;
-		FX_NEXT_DECAY = /* TODO: $math(add) */ FX_DECAY;
+		FX_NEXT_DECAY = (FX_DECAY + GetGameTime());
 		FX_WEB_TARGET = param2;
 		FX_CUR_WEBS = 1;
 		FX_WEBS_TILL_COCOON = param3;
-		ClientEffect("tempent", "model", "misc/treasure.mdl", /* TODO: $func */ $func("func_get_new_pos"), "web_setup", "web_update");
+		ClientEffect("tempent", "model", "misc/treasure.mdl", "func_get_new_pos"(), "web_setup", "web_update");
 		FX_DECAY("web_decay");
 	}
 
@@ -36,7 +37,7 @@ class SfxWebbed : CGameScript
 		if (FX_CUR_WEBS < FX_WEBS_TILL_COCOON)
 		{
 			FX_DECAY = param1;
-			FX_NEXT_DECAY = /* TODO: $math(add) */ FX_DECAY;
+			FX_NEXT_DECAY = (FX_DECAY + GetGameTime());
 			FX_DECAY("web_decay");
 		}
 		else
@@ -93,7 +94,7 @@ class SfxWebbed : CGameScript
 	{
 		if (FX_CUR_WEBS > 0)
 		{
-			ClientEffect("tempent", "set_current_prop", "origin", /* TODO: $func */ $func("func_get_new_pos"));
+			ClientEffect("tempent", "set_current_prop", "origin", "func_get_new_pos"());
 			string L_WEB_RATIO = FX_CUR_WEBS;
 			L_WEB_RATIO *= 0.1;
 			ClientEffect("tempent", "set_current_prop", "renderamt", /* TODO: $ratio */ $ratio(WEB_RATIO, 50, 255));

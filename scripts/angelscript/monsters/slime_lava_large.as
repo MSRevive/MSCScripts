@@ -12,8 +12,12 @@ class SlimeLavaLarge : CGameScript
 	string ANIM_IDLE;
 	string ANIM_RUN;
 	string ANIM_WALK;
+	float ATTACK_DAMAGE;
+	float ATTACK_HITCHANCE;
 	int ATTACK_HITRANGE;
 	int ATTACK_RANGE;
+	int CHILD_DIST;
+	string CHILD_SCRIPT;
 	string MOMMY_KILLER;
 	int MOVE_RANGE;
 	int NO_SPAWN_STUCK_CHECK;
@@ -22,15 +26,21 @@ class SlimeLavaLarge : CGameScript
 	int NPC_GIVE_EXP;
 	string NPC_HP_MULTI;
 	int NPC_MUST_SEE_TARGET;
+	string SOUND_ATTACK1;
+	string SOUND_ATTACK2;
+	string SOUND_DEATH;
+	string SOUND_IDLE;
+	string SOUND_STRUCK1;
+	string SOUND_STRUCK2;
 
 	SlimeLavaLarge()
 	{
-		const string SOUND_DEATH = "monsters/sludge/bio.wav";
-		const string SOUND_STRUCK1 = "barnacle/bcl_bite3.wav";
-		const string SOUND_STRUCK2 = "barnacle/bcl_die3.wav";
-		const string SOUND_IDLE = "barnacle/bcl_alert2.wav";
-		const string SOUND_ATTACK1 = "barnacle/bcl_tongue1.wav";
-		const string SOUND_ATTACK2 = "barnacle/bcl_chew3.wav";
+		SOUND_DEATH = "monsters/sludge/bio.wav";
+		SOUND_STRUCK1 = "barnacle/bcl_bite3.wav";
+		SOUND_STRUCK2 = "barnacle/bcl_die3.wav";
+		SOUND_IDLE = "barnacle/bcl_alert2.wav";
+		SOUND_ATTACK1 = "barnacle/bcl_tongue1.wav";
+		SOUND_ATTACK2 = "barnacle/bcl_chew3.wav";
 		Precache(SOUND_DEATH);
 		ANIM_IDLE = "walk";
 		ANIM_RUN = "run";
@@ -40,11 +50,11 @@ class SlimeLavaLarge : CGameScript
 		MOVE_RANGE = 30;
 		ATTACK_RANGE = 100;
 		ATTACK_HITRANGE = 120;
-		const float ATTACK_HITCHANCE = 0.85;
-		const string ATTACK_DAMAGE = Random(55, 99);
+		ATTACK_HITCHANCE = 0.85;
+		ATTACK_DAMAGE = Random(55, 99);
 		NPC_MUST_SEE_TARGET = 0;
-		const string CHILD_SCRIPT = "test_scripts/example_scripts/monsters/slime_lava_small";
-		const int CHILD_DIST = 20;
+		CHILD_SCRIPT = "test_scripts/example_scripts/monsters/slime_lava_small";
+		CHILD_DIST = 20;
 		Precache("dwarvencave/slime_ecave.mdl");
 		NO_SPAWN_STUCK_CHECK = 1;
 	}
@@ -147,7 +157,7 @@ class SlimeLavaLarge : CGameScript
 			string DEST_POS = GetEntityOrigin(m_hAttackTarget);
 			npcatk_suspend_ai(1.0, "combat_reposition");
 			NPC_FORCED_MOVEDEST = 1;
-			string RND_ANG = RandomInt(0, 359);
+			int RND_ANG = RandomInt(0, 359);
 			DEST_POS += /* TODO: $relpos */ $relpos(Vector3(0, RND_ANG, 0), Vector3(0, ATTACK_RANGE, 0));
 			SetMoveDest(DEST_POS);
 		}

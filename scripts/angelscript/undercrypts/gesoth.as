@@ -7,18 +7,24 @@ namespace MS
 
 class Gesoth : CGameScript
 {
+	int CHAT_AUTO_FACE;
+	string CHAT_CONV_ANIMS;
+	int CHAT_FACE_ON_USE;
+	int CHAT_NEVER_INTERRUPT;
+	int CHAT_USE_CONV_ANIMS;
 	string CONVO_IDX;
 	string NEXT_NAY;
 	int PLAYING_DEAD;
+	int QUEST_REWARD_ALL;
 
 	Gesoth()
 	{
-		const int CHAT_AUTO_FACE = 0;
-		const int CHAT_FACE_ON_USE = 0;
-		const int CHAT_NEVER_INTERRUPT = 1;
-		const string CHAT_CONV_ANIMS = "anim_sit_convo;anim_sit_idle_lantern";
-		const int CHAT_USE_CONV_ANIMS = 1;
-		const int QUEST_REWARD_ALL = 1;
+		CHAT_AUTO_FACE = 0;
+		CHAT_FACE_ON_USE = 0;
+		CHAT_NEVER_INTERRUPT = 1;
+		CHAT_CONV_ANIMS = "anim_sit_convo;anim_sit_idle_lantern";
+		CHAT_USE_CONV_ANIMS = 1;
+		QUEST_REWARD_ALL = 1;
 	}
 
 	void OnSpawn() override

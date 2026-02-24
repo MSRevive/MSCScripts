@@ -7,27 +7,43 @@ namespace MS
 
 class ProjPoisonSpell : CGameScript
 {
+	int ARROW_BODY_OFS;
 	string EFFECT_DURATION;
+	string ITEM_NAME;
+	int MODEL_BODY_OFS;
+	string MODEL_HANDS;
+	string MODEL_WORLD;
 	string POISON_DAMAGE;
+	string PROJ_ANIM_IDLE;
+	int PROJ_AOE_FALLOFF;
+	int PROJ_AOE_RANGE;
+	int PROJ_COLLIDEHITBOX;
+	int PROJ_DAMAGE;
+	string PROJ_DAMAGESTAT;
+	string PROJ_DAMAGE_TYPE;
+	int PROJ_STICK_DURATION;
+	string SOUND_BURN;
+	string SOUND_HITWALL1;
+	string SOUND_HITWALL2;
 
 	ProjPoisonSpell()
 	{
-		const string MODEL_HANDS = "none";
-		const string MODEL_WORLD = "weapons/projectiles.mdl";
-		const int MODEL_BODY_OFS = 8;
-		const int ARROW_BODY_OFS = 8;
-		const string SOUND_HITWALL1 = "bullchicken/bc_acid1.wav";
-		const string SOUND_HITWALL2 = "bullchicken/bc_acid1.wav";
-		const string SOUND_BURN = "bullchicken/bc_acid1.wav";
-		const string ITEM_NAME = "watermana";
-		const string PROJ_DAMAGE_TYPE = "poison";
-		const string PROJ_DAMAGESTAT = "spellcasting.affliction";
-		const string PROJ_ANIM_IDLE = "idle_icebolt";
-		const int PROJ_DAMAGE = 50;
-		const int PROJ_AOE_RANGE = 30;
-		const int PROJ_AOE_FALLOFF = 0;
-		const int PROJ_STICK_DURATION = 0;
-		const int PROJ_COLLIDEHITBOX = 32;
+		MODEL_HANDS = "none";
+		MODEL_WORLD = "weapons/projectiles.mdl";
+		MODEL_BODY_OFS = 8;
+		ARROW_BODY_OFS = 8;
+		SOUND_HITWALL1 = "bullchicken/bc_acid1.wav";
+		SOUND_HITWALL2 = "bullchicken/bc_acid1.wav";
+		SOUND_BURN = "bullchicken/bc_acid1.wav";
+		ITEM_NAME = "watermana";
+		PROJ_DAMAGE_TYPE = "poison";
+		PROJ_DAMAGESTAT = "spellcasting.affliction";
+		PROJ_ANIM_IDLE = "idle_icebolt";
+		PROJ_DAMAGE = 50;
+		PROJ_AOE_RANGE = 30;
+		PROJ_AOE_FALLOFF = 0;
+		PROJ_STICK_DURATION = 0;
+		PROJ_COLLIDEHITBOX = 32;
 	}
 
 	void projectile_spawn()

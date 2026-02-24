@@ -7,12 +7,17 @@ namespace MS
 
 class ScrollPoisonCloud : CGameScript
 {
+	int BASE_REQUIRED_LEVEL;
+	string BASE_REQUIRED_SKILL;
+	string BASE_SPELL_SCRIPT;
+	string BASE_SUMMON_TEXT;
+
 	ScrollPoisonCloud()
 	{
-		const string BASE_SPELL_SCRIPT = "magic_hand_poison_cloud";
-		const string BASE_SUMMON_TEXT = "You learn to create poisonous clouds.";
-		const string BASE_REQUIRED_SKILL = "skill.spellcasting.affliction";
-		const int BASE_REQUIRED_LEVEL = 15;
+		BASE_SPELL_SCRIPT = "magic_hand_poison_cloud";
+		BASE_SUMMON_TEXT = "You learn to create poisonous clouds.";
+		BASE_REQUIRED_SKILL = "skill.spellcasting.affliction";
+		BASE_REQUIRED_LEVEL = 15;
 	}
 
 	void OnSpawn() override

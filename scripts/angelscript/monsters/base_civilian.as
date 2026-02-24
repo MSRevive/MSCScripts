@@ -13,7 +13,7 @@ class BaseCivilian : CGameScript
 	void call_for_help()
 	{
 		SetSayTextRange(1024);
-		string RAND_SCREAM = RandomInt(1, 4);
+		int RAND_SCREAM = RandomInt(1, 4);
 		if (RAND_SCREAM == 1)
 		{
 			SayText("Help! Help!");
@@ -28,7 +28,7 @@ class BaseCivilian : CGameScript
 		}
 		if (RAND_SCREAM == 4)
 		{
-			SayText("Help! Help! I m being repressed!");
+			SayText("Help! Help! " + I + " m being repressed!");
 		}
 		CallExternal("all", "civilian_attacked", param1, IsValidPlayer(param1));
 	}

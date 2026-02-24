@@ -7,9 +7,11 @@ namespace MS
 
 class Jacob : CGameScript
 {
+	int DERALIA_CHATTER;
+
 	Jacob()
 	{
-		const int DERALIA_CHATTER = 0;
+		DERALIA_CHATTER = 0;
 	}
 
 	void OnSpawn() override

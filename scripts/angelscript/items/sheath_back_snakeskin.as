@@ -9,10 +9,12 @@ class SheathBackSnakeskin : CGameScript
 {
 	int CONTAINER_CANCLOSE;
 	string CONTAINER_ITEM_ACCEPT;
+	string CONTAINER_ITEM_REJECT;
 	int CONTAINER_LOCK_STRENGTH;
 	int CONTAINER_MAXITEMS;
 	int CONTAINER_SPACE;
 	string CONTAINER_TYPE;
+	int MODEL_BODY_OFS;
 
 	SheathBackSnakeskin()
 	{
@@ -22,8 +24,8 @@ class SheathBackSnakeskin : CGameScript
 		CONTAINER_CANCLOSE = 0;
 		CONTAINER_LOCK_STRENGTH = 0;
 		CONTAINER_ITEM_ACCEPT = "swords";
-		const string CONTAINER_ITEM_REJECT = "item_tk_";
-		const int MODEL_BODY_OFS = 3;
+		CONTAINER_ITEM_REJECT = "item_tk_";
+		MODEL_BODY_OFS = 3;
 	}
 
 	void sheath_spawn()

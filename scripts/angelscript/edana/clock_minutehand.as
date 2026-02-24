@@ -7,9 +7,11 @@ namespace MS
 
 class ClockMinutehand : CGameScript
 {
+	int local.updateminutehand;
+
 	ClockMinutehand()
 	{
-		const int local.updateminutehand = 1;
+		local.updateminutehand = 1;
 	}
 
 }

@@ -7,18 +7,25 @@ namespace MS
 
 class ProjBoltSteel : CGameScript
 {
+	float ARROW_BREAK_CHANCE;
+	int ARROW_SOLIDIFY_ON_WALL;
 	float HEAVY_BOLT;
+	int HEAVY_ONLY;
+	int HITSCAN_BOLT;
+	int MODEL_BODY_OFS;
 	string MY_XBOW;
+	int PROJ_DAMAGE;
+	int PROJ_STICK_DURATION;
 
 	ProjBoltSteel()
 	{
-		const int HITSCAN_BOLT = 1;
-		const int HEAVY_ONLY = 1;
-		const int MODEL_BODY_OFS = 0;
-		const int PROJ_DAMAGE = 400;
-		const int PROJ_STICK_DURATION = 25;
-		const int ARROW_SOLIDIFY_ON_WALL = 0;
-		const float ARROW_BREAK_CHANCE = 0.2;
+		HITSCAN_BOLT = 1;
+		HEAVY_ONLY = 1;
+		MODEL_BODY_OFS = 0;
+		PROJ_DAMAGE = 400;
+		PROJ_STICK_DURATION = 25;
+		ARROW_SOLIDIFY_ON_WALL = 0;
+		ARROW_BREAK_CHANCE = 0.2;
 		HEAVY_BOLT = 0.5;
 	}
 

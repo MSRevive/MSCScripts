@@ -7,6 +7,14 @@ namespace MS
 
 class SwordsMsword : CGameScript
 {
+	int ACCURACY_NORMAL;
+	int ANIM_ATTACK1;
+	int ANIM_ATTACK2;
+	int ANIM_ATTACK3;
+	int ANIM_IDLE1;
+	int ANIM_LIFT1;
+	string ANIM_PREFIX;
+	int ANIM_SHEATH;
 	string ATTACK_ACCURACYDEFAULT;
 	string ATTACK_ACCURACYSTAT;
 	int ATTACK_ALIGN_BASE;
@@ -24,30 +32,43 @@ class SwordsMsword : CGameScript
 	int ATTACK_PRIORITY;
 	string ATTACK_RANGE;
 	string ATTACK_TYPE;
+	int BASE_LEVEL_REQ;
+	string ITEM_NAME;
+	string MODEL_BLOCK;
+	int MODEL_BODY_OFS;
+	string MODEL_HANDS;
+	string MODEL_VIEW;
+	string MODEL_WORLD;
+	string SOUND_SWIPE;
+	int SWING_DAMAGE;
+	int SWING_DAMAGE_RANGE;
+	int SWING_DELAY;
+	float SWING_ENERGY;
+	int SWING_RANGE;
 
 	SwordsMsword()
 	{
-		const int BASE_LEVEL_REQ = 15;
-		const int ANIM_LIFT1 = 0;
-		const int ANIM_IDLE1 = 1;
-		const int ANIM_ATTACK1 = 2;
-		const int ANIM_ATTACK2 = 3;
-		const int ANIM_ATTACK3 = 4;
-		const int ANIM_SHEATH = 5;
-		const string MODEL_VIEW = "weapons/swords/shortsword_rview.mdl";
-		const string MODEL_HANDS = "weapons/swords/p_swords.mdl";
-		const string MODEL_WORLD = "weapons/swords/p_swords.mdl";
-		const string MODEL_BLOCK = "armor/shields/p_shields.mdl";
-		const string SOUND_SWIPE = "weapons/swingsmall.wav";
-		const int SWING_DELAY = 1;
-		const float SWING_ENERGY = 0.4;
-		const int SWING_RANGE = 60;
-		const int ACCURACY_NORMAL = 80;
-		const int SWING_DAMAGE = 290;
-		const int SWING_DAMAGE_RANGE = 160;
-		const string ITEM_NAME = "shortsword";
-		const int MODEL_BODY_OFS = 28;
-		const string ANIM_PREFIX = "shortsword";
+		BASE_LEVEL_REQ = 15;
+		ANIM_LIFT1 = 0;
+		ANIM_IDLE1 = 1;
+		ANIM_ATTACK1 = 2;
+		ANIM_ATTACK2 = 3;
+		ANIM_ATTACK3 = 4;
+		ANIM_SHEATH = 5;
+		MODEL_VIEW = "weapons/swords/shortsword_rview.mdl";
+		MODEL_HANDS = "weapons/swords/p_swords.mdl";
+		MODEL_WORLD = "weapons/swords/p_swords.mdl";
+		MODEL_BLOCK = "armor/shields/p_shields.mdl";
+		SOUND_SWIPE = "weapons/swingsmall.wav";
+		SWING_DELAY = 1;
+		SWING_ENERGY = 0.4;
+		SWING_RANGE = 60;
+		ACCURACY_NORMAL = 80;
+		SWING_DAMAGE = 290;
+		SWING_DAMAGE_RANGE = 160;
+		ITEM_NAME = "shortsword";
+		MODEL_BODY_OFS = 28;
+		ANIM_PREFIX = "shortsword";
 	}
 
 	void weapon_spawn()

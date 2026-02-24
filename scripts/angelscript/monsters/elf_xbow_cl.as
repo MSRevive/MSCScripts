@@ -10,13 +10,17 @@ class ElfXbowCl : CGameScript
 	string BOLT_EXPLODE;
 	int BOLT_SPEED;
 	string BOLT_START;
+	string MODEL_BOLT;
+	string SOUND_BOLT_HIT;
+	string SOUND_EXPLODE;
+	string SPRITE_EXPLODE;
 
 	ElfXbowCl()
 	{
-		const string SPRITE_EXPLODE = "explode1.spr";
-		const string SOUND_BOLT_HIT = "weapons/bow/bolthit1.wav";
-		const string SOUND_EXPLODE = "weapons/explode3.wav";
-		const string MODEL_BOLT = "weapons/bows/boltexplosive.mdl";
+		SPRITE_EXPLODE = "explode1.spr";
+		SOUND_BOLT_HIT = "weapons/bow/bolthit1.wav";
+		SOUND_EXPLODE = "weapons/explode3.wav";
+		MODEL_BOLT = "weapons/bows/boltexplosive.mdl";
 		Precache(MODEL_BOLT);
 		Precache(SPRITE_EXPLODE);
 		Precache(SOUND_BOLT_HIT);

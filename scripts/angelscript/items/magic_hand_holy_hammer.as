@@ -7,24 +7,41 @@ namespace MS
 
 class MagicHandHolyHammer : CGameScript
 {
+	string ANIM_PREFIX;
+	int BASE_LEVEL_REQ;
+	float MELEE_ACCURACY;
+	float MELEE_ATK_DURATION;
+	int MELEE_DMG;
+	float MELEE_DMG_DELAY;
+	int MELEE_DMG_RANGE;
+	string MELEE_DMG_TYPE;
+	int MELEE_ENERGY;
+	float MELEE_PARRY_AUGMENT;
+	int MELEE_RANGE;
+	string MELEE_STAT;
+	int MODEL_BODY_OFS;
+	string MODEL_VIEW;
+	int MODEL_VIEW_IDX;
+	int SPELL_SKILL_REQUIRED;
+
 	MagicHandHolyHammer()
 	{
-		const int SPELL_SKILL_REQUIRED = 5;
-		const int BASE_LEVEL_REQ = 5;
-		const string MELEE_STAT = "spellcasting.divination";
-		const string MODEL_VIEW = "viewmodels/v_1hblunts.mdl";
-		const int MODEL_VIEW_IDX = 2;
-		const int MODEL_BODY_OFS = 71;
-		const string ANIM_PREFIX = "maul";
-		const int MELEE_RANGE = 80;
-		const float MELEE_DMG_DELAY = 0.8;
-		const float MELEE_ATK_DURATION = 1.3;
-		const int MELEE_ENERGY = 2;
-		const int MELEE_DMG = 102;
-		const int MELEE_DMG_RANGE = 5;
-		const float MELEE_ACCURACY = 0.65;
-		const float MELEE_PARRY_AUGMENT = 0.1;
-		const string MELEE_DMG_TYPE = "holy";
+		SPELL_SKILL_REQUIRED = 5;
+		BASE_LEVEL_REQ = 5;
+		MELEE_STAT = "spellcasting.divination";
+		MODEL_VIEW = "viewmodels/v_1hblunts.mdl";
+		MODEL_VIEW_IDX = 2;
+		MODEL_BODY_OFS = 71;
+		ANIM_PREFIX = "maul";
+		MELEE_RANGE = 80;
+		MELEE_DMG_DELAY = 0.8;
+		MELEE_ATK_DURATION = 1.3;
+		MELEE_ENERGY = 2;
+		MELEE_DMG = 102;
+		MELEE_DMG_RANGE = 5;
+		MELEE_ACCURACY = 0.65;
+		MELEE_PARRY_AUGMENT = 0.1;
+		MELEE_DMG_TYPE = "holy";
 	}
 
 	void OnSpawn() override

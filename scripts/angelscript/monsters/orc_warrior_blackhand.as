@@ -9,12 +9,16 @@ namespace MS
 class OrcWarriorBlackhand : CGameScript
 {
 	string ANIM_ATTACK;
+	float ATTACK_ACCURACY;
+	int ATTACK_DMG_HIGH;
+	int ATTACK_DMG_LOW;
 	int DROP_GOLD;
-	string DROP_GOLD_AMT;
+	int DROP_GOLD_AMT;
 	string DROP_ITEM1;
 	float DROP_ITEM1_CHANCE;
 	float FLINCH_CHANCE;
 	int NPC_GIVE_EXP;
+	int ORC_SHIELD;
 
 	OrcWarriorBlackhand()
 	{
@@ -25,10 +29,10 @@ class OrcWarriorBlackhand : CGameScript
 		DROP_ITEM1_CHANCE = 0.3;
 		ANIM_ATTACK = "battleaxe_swing1_L";
 		FLINCH_CHANCE = 0.45;
-		const float ATTACK_ACCURACY = 0.7;
-		const int ATTACK_DMG_LOW = 10;
-		const int ATTACK_DMG_HIGH = 20;
-		const string ORC_SHIELD = RandomInt(0, 1);
+		ATTACK_ACCURACY = 0.7;
+		ATTACK_DMG_LOW = 10;
+		ATTACK_DMG_HIGH = 20;
+		ORC_SHIELD = RandomInt(0, 1);
 	}
 
 	void orc_spawn()

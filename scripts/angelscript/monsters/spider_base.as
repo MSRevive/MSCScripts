@@ -9,10 +9,11 @@ class SpiderBase : CGameScript
 {
 	string ATTACK_HITRANGE;
 	int CAN_HEAR;
+	string PARRY_TYPE;
 
 	SpiderBase()
 	{
-		const string PARRY_TYPE = "dodged!";
+		PARRY_TYPE = "dodged!";
 		CAN_HEAR = 1;
 		if (ATTACK_HITRANGE == "ATTACK_HITRANGE")
 		{
@@ -42,7 +43,7 @@ class SpiderBase : CGameScript
 
 	void frame_bite1()
 	{
-		string ATTACK_DAMAGE = Random(ATTACK_DAMAGE_LOW, ATTACK_DAMAGE_HIGH);
+		float ATTACK_DAMAGE = Random(ATTACK_DAMAGE_LOW, ATTACK_DAMAGE_HIGH);
 		XDoDamage(m_hLastSeen, ATTACK_HITRANGE, ATTACK_DAMAGE, ATTACK_ACCURACY, GetOwner(), GetOwner(), "none", "pierce", "dmgevent:bite");
 	}
 

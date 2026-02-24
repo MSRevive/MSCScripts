@@ -12,8 +12,15 @@ class Generalstore : CGameScript
 {
 	int CANCHAT;
 	int JOB;
+	int NO_CHAT;
+	int NO_RUMOR;
+	int NPC_REACTS;
+	float SELL_RATIO;
 	int SELL_WEAPON_LEVEL;
+	string SOUND_DEATH;
 	int STORE_CLOSED;
+	string STORE_NAME;
+	int STORE_SELLMENU;
 	string STORE_TRIGGERTEXT;
 	int VEND_ARMORER;
 	int VEND_CONTAINERS;
@@ -22,20 +29,20 @@ class Generalstore : CGameScript
 
 	Generalstore()
 	{
-		const string SOUND_DEATH = "none";
+		SOUND_DEATH = "none";
 		STORE_CLOSED = 0;
-		const string STORE_NAME = "gatecity_generalstore";
+		STORE_NAME = "gatecity_generalstore";
 		STORE_TRIGGERTEXT = "store trade buy sell purchase sale offer";
-		const int STORE_SELLMENU = 1;
-		const float SELL_RATIO = 0.75;
-		const int NO_RUMOR = 1;
+		STORE_SELLMENU = 1;
+		SELL_RATIO = 0.75;
+		NO_RUMOR = 1;
 		SELL_WEAPON_LEVEL = 3;
 		VEND_NEWBIE = 1;
 		VEND_WEAPONS = 1;
 		VEND_CONTAINERS = 1;
 		VEND_ARMORER = 0;
-		const int NO_CHAT = 1;
-		const int NPC_REACTS = 1;
+		NO_CHAT = 1;
+		NPC_REACTS = 1;
 	}
 
 	void OnSpawn() override
@@ -80,19 +87,19 @@ class Generalstore : CGameScript
 		{
 			if (GetEntityDist("ent_lastspoke") <= 90)
 			{
-				SayText("Can I get something for you?");
+				SayText("Can " + I + " get something for you?");
 			}
 		}
 	}
 
 	void say_job()
 	{
-		SayText("Sorry , I have no need to hire anyone.");
+		SayText("Sorry , " + I + " have no need to hire anyone.");
 	}
 
 	void say_rumor()
 	{
-		SayText("I heard a fellow merchant from this city has gone missing.");
+		SayText(I + " heard a fellow merchant from this city has gone missing.");
 	}
 
 	void vendor_addstoreitems()

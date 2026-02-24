@@ -7,11 +7,12 @@ namespace MS
 
 class WolfAlpha : CGameScript
 {
+	int AM_ALPHA;
 	int NPC_GIVE_EXP;
 
 	WolfAlpha()
 	{
-		const int AM_ALPHA = 1;
+		AM_ALPHA = 1;
 		NPC_GIVE_EXP = 35;
 	}
 

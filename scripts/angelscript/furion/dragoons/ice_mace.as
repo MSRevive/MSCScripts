@@ -7,10 +7,13 @@ namespace MS
 
 class IceMace : CGameScript
 {
+	int ELEMENT;
+	int WEAPON;
+
 	IceMace()
 	{
-		const int WEAPON = 5;
-		const int ELEMENT = 0;
+		WEAPON = 5;
+		ELEMENT = 0;
 	}
 
 }

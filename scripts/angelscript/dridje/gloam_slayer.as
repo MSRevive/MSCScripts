@@ -12,12 +12,17 @@ class GloamSlayer : CGameScript
 	string ANIM_DEATH;
 	string ANIM_IDLE;
 	string ANIM_RUN;
+	string ANIM_SPELL_OTHER;
+	string ANIM_SPELL_SELF;
 	string ANIM_WALK;
+	float ATTACK_DAMAGE;
+	float ATTACK_HITCHANCE;
 	int ATTACK_HITRANGE;
 	int ATTACK_RANGE;
 	int BATTLE_OVER;
 	int BATTLLE_OVER;
 	string BUSY_CHATTING;
+	float CHAT_DELAY;
 	string CHAT_STEP;
 	string CHAT_STEP1;
 	string CHAT_STEP2;
@@ -29,19 +34,26 @@ class GloamSlayer : CGameScript
 	string CHAT_STEP8;
 	string CHAT_STEPS;
 	string CONVO_TYPE;
+	string CONV_ANIMS;
 	string CURRENT_SPEAKER;
 	string DID_INTRO;
 	string DONE_WARNING;
 	string ESCORT_TARGET;
 	int FORCED_MOVE_DEST;
+	float FREQ_FF_WARN;
+	float FREQ_GLOAM;
+	float FREQ_ICE_SHIELD;
 	int IN_BATTLE;
 	string LAST_DAMAGED;
+	string MAGIC_LIST;
 	int MAX_REWARDS_TOGIVE;
 	string MENU_TARGET;
 	int MISSION_ACCEPTED;
 	int MOVE_RANGE;
 	string NEXT_FF_WARNING;
 	int NO_HAIL;
+	int NO_JOB;
+	int NO_RUMOR;
 	int NO_STUCK_CHECKS;
 	int NPC_FORCED_MOVEDEST;
 	int NPC_GIVE_EXP;
@@ -49,25 +61,29 @@ class GloamSlayer : CGameScript
 	int N_REWARDS_GIVEN;
 	string OFFERING_REWARD;
 	string QUEST_WINNER;
+	string REWARD_LIST;
+	string REWARD_NAMES;
 	int SCHAT_STEP;
 	string SCHAT_STEP1;
 	string SCHAT_STEP2;
 	string SCHAT_STEP3;
 	int SCHAT_STEPS;
+	string SOUND_DEATH;
+	string SOUND_STRUCK;
 
 	GloamSlayer()
 	{
-		const float FREQ_GLOAM = 120.0;
-		const string CONV_ANIMS = "converse2;talkleft;talkright;lean;pondering2;pondering3;yes;c1a0_catwalkidle;quicklook";
-		const string MAGIC_LIST = "fire;ice;lightning;earth;poison;acid;magic;";
-		const float FREQ_FF_WARN = 10.0;
-		const float CHAT_DELAY = 5.5;
-		const string REWARD_LIST = "scroll2_lightning_storm;blunt_granitemace;blunt_darkmaul;blunt_gauntlets_serpant;mana_leadfoot;armor_helm_golden;item_charm_w3;";
-		const string REWARD_NAMES = "a Lightning Storm Scroll;a Granite Mace;a Dark Maul;Serpant Gauntlets;a Potion of Stability;a Golden Helm;a Shadow Wolf Charm;";
+		FREQ_GLOAM = 120.0;
+		CONV_ANIMS = "converse2;talkleft;talkright;lean;pondering2;pondering3;yes;c1a0_catwalkidle;quicklook";
+		MAGIC_LIST = "fire;ice;lightning;earth;poison;acid;magic;";
+		FREQ_FF_WARN = 10.0;
+		CHAT_DELAY = 5.5;
+		REWARD_LIST = "scroll2_lightning_storm;blunt_granitemace;blunt_darkmaul;blunt_gauntlets_serpant;mana_leadfoot;armor_helm_golden;item_charm_w3;";
+		REWARD_NAMES = "a Lightning Storm Scroll;a Granite Mace;a Dark Maul;Serpant Gauntlets;a Potion of Stability;a Golden Helm;a Shadow Wolf Charm;";
 		N_REWARDS_GIVEN = 0;
 		MAX_REWARDS_TOGIVE = 0;
-		const string SOUND_STRUCK = "body/flesh1.wav";
-		const string SOUND_DEATH = "voices/human/male_die.wav";
+		SOUND_STRUCK = "body/flesh1.wav";
+		SOUND_DEATH = "voices/human/male_die.wav";
 		ANIM_IDLE = "idle1";
 		ANIM_RUN = "run";
 		ANIM_WALK = "walk";
@@ -76,15 +92,15 @@ class GloamSlayer : CGameScript
 		MOVE_RANGE = 32;
 		ATTACK_RANGE = 96;
 		ATTACK_HITRANGE = 120;
-		const float ATTACK_HITCHANCE = 0.85;
-		const string ATTACK_DAMAGE = "$randf(50,200)";
+		ATTACK_HITCHANCE = 0.85;
+		ATTACK_DAMAGE = "$randf(50,200)";
 		NPC_GIVE_EXP = 0;
-		const int NO_JOB = 1;
-		const int NO_RUMOR = 1;
+		NO_JOB = 1;
+		NO_RUMOR = 1;
 		NO_HAIL = 1;
-		const string ANIM_SPELL_SELF = "return_needle";
-		const string ANIM_SPELL_OTHER = "give_shot";
-		const float FREQ_ICE_SHIELD = 60.0;
+		ANIM_SPELL_SELF = "return_needle";
+		ANIM_SPELL_OTHER = "give_shot";
+		FREQ_ICE_SHIELD = 60.0;
 	}
 
 	void OnRepeatTimer()
@@ -99,7 +115,7 @@ class GloamSlayer : CGameScript
 		if ((IN_BATTLE))
 		{
 		}
-		string TIME_DIFF = GetGameTime();
+		float TIME_DIFF = GetGameTime();
 		TIME_DIFF -= LAST_DAMAGED;
 		if (TIME_DIFF > FREQ_GLOAM)
 		{
@@ -192,7 +208,7 @@ class GloamSlayer : CGameScript
 			{
 				string NAME_PRE = GetEntityName(param1);
 				NAME_PRE += "!";
-				SayText("NAME_PRE Check your targets!");
+				SayText(NAME_PRE + " Check your targets!");
 			}
 		}
 		if (!(IS_SPELL))
@@ -203,7 +219,7 @@ class GloamSlayer : CGameScript
 			}
 			else
 			{
-				SayText("GetEntityName(param1) , watch your targets!");
+				SayText(GetEntityName(param1) + " , watch your targets!");
 			}
 		}
 	}
@@ -377,7 +393,7 @@ class GloamSlayer : CGameScript
 	{
 		LogDebug("game_menu_cancel CONVO_TYPE GetEntityName(param1)");
 		if (!(OFFERING_REWARD == param1)) return;
-		SayText("I see. A noble warrior for whom the battle is reward enough. Good show.");
+		SayText(I + "see. " + A + " noble warrior for whom the battle is reward enough. Good show.");
 		CallExternal(OFFERING_REWARD, "ext_set_reward", 1);
 		CONVO_TYPE = "none";
 	}
@@ -442,15 +458,15 @@ class GloamSlayer : CGameScript
 		CHAT_DELAY("special_chat_loop");
 		if (SCHAT_STEP == 1)
 		{
-			SayText("SCHAT_STEP1");
+			SayText(SCHAT_STEP1);
 		}
 		if (SCHAT_STEP == 2)
 		{
-			SayText("SCHAT_STEP2");
+			SayText(SCHAT_STEP2);
 		}
 		if (SCHAT_STEP == 3)
 		{
-			SayText("SCHAT_STEP3");
+			SayText(SCHAT_STEP3);
 			DONE_WARNING = 1;
 		}
 	}
@@ -489,7 +505,7 @@ class GloamSlayer : CGameScript
 		}
 		else
 		{
-			SayText("Oh NOW you want to hear about the gloams!? A bit busy at the moment! You ll learn anything I could have taught you the hard way soon enough!");
+			SayText("Oh " + NOW + "you want to hear about the gloams!? " + A + " bit busy at the moment! You ll learn anything I could have taught you the hard way soon enough!");
 		}
 	}
 
@@ -540,7 +556,7 @@ class GloamSlayer : CGameScript
 	{
 		if (N_REWARDS_GIVEN >= MAX_REWARDS_TOGIVE)
 		{
-			SayText("Sorry , I ve nothing left to offer.");
+			SayText("Sorry , " + I + " ve nothing left to offer.");
 			int EXIT_SUB = 1;
 		}
 		if ((EXIT_SUB)) return;

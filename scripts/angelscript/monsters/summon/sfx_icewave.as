@@ -5,13 +5,14 @@ namespace MS
 
 class SfxIcewave : CGameScript
 {
+	int TILT_SPEED;
 	int rheight;
 	string script.owner;
 	int script.tilt;
 
 	SfxIcewave()
 	{
-		const int TILT_SPEED = 70;
+		TILT_SPEED = 70;
 	}
 
 	void OnRepeatTimer()

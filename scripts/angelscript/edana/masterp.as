@@ -10,10 +10,16 @@ namespace MS
 class Masterp : CGameScript
 {
 	int CHANGING_NAME;
+	int CHAT_AUTO_HAIL;
+	int CHAT_AUTO_JOB;
+	int CHAT_AUTO_RUMOR;
+	float CHAT_DELAY;
 	int CHAT_MENU_ON;
+	int CHAT_NEVER_INTERRUPT;
 	int DID_CHANGE_INTRO;
 	int DID_INTRO;
 	int EVIDENCE_FOUND;
+	string IDLE_ANIMLIST;
 	int IS_REPORTER;
 	string NAME_REQ_ID;
 	string REPORTER_ID;
@@ -24,16 +30,17 @@ class Masterp : CGameScript
 	string RING_EXPLAINED;
 	int SENDING_YN;
 	string USER_ID;
+	int XMASS_OLD_GUY;
 
 	Masterp()
 	{
-		const string IDLE_ANIMLIST = "idle1;idle3;idle4;idle5;idle6;idle7";
-		const float CHAT_DELAY = 5.0;
-		const int CHAT_AUTO_HAIL = 1;
-		const int CHAT_AUTO_JOB = 1;
-		const int CHAT_AUTO_RUMOR = 1;
-		const int CHAT_NEVER_INTERRUPT = 1;
-		const int XMASS_OLD_GUY = 1;
+		IDLE_ANIMLIST = "idle1;idle3;idle4;idle5;idle6;idle7";
+		CHAT_DELAY = 5.0;
+		CHAT_AUTO_HAIL = 1;
+		CHAT_AUTO_JOB = 1;
+		CHAT_AUTO_RUMOR = 1;
+		CHAT_NEVER_INTERRUPT = 1;
+		XMASS_OLD_GUY = 1;
 		array<string> ARRAY_REPORTER_NAMES;
 		array<string> ARRAY_REPORTER_IDS;
 		array<string> ARRAY_REPORTER_SLOTS;
@@ -164,7 +171,7 @@ class Masterp : CGameScript
 		}
 		string N_IDLES = GetTokenCount(IDLE_ANIMLIST, ";");
 		N_IDLES -= 1;
-		string RND_IDLE = RandomInt(0, N_IDLES);
+		int RND_IDLE = RandomInt(0, N_IDLES);
 		string RND_IDLE_ANIM = GetToken(IDLE_ANIMLIST, RND_IDLE, ";");
 		PlayAnim("once", RND_IDLE_ANIM);
 	}
@@ -569,7 +576,7 @@ class Masterp : CGameScript
 	void say_unquest()
 	{
 		PlayAnim("critical", "magic");
-		SendInfoMsg("ent_lastspoke", "DEBUG Quests data is being removed from your character.");
+		SendInfoMsg("ent_lastspoke", DEBUG + " Quests data is being removed from your character.");
 		// quest unset "ent_lastspoke" "emote_sitting"
 		// quest unset "ent_lastspoke" "quest_ring"
 	}
@@ -615,14 +622,14 @@ class Masterp : CGameScript
 
 	void check_reporters()
 	{
-		string CUR_ID = /* TODO: $get_array */ $get_array(ARRAY_REPORTER_IDS, i);
-		string CUR_SLOT = /* TODO: $get_array */ $get_array(ARRAY_REPORTER_SLOTS, i);
-		string CUR_LEVEL = /* TODO: $get_array */ $get_array(ARRAY_REPORTER_LEVELS, i);
+		string CUR_ID = ARRAY_REPORTER_IDS[int(i)];
+		string CUR_SLOT = ARRAY_REPORTER_SLOTS[int(i)];
+		string CUR_LEVEL = ARRAY_REPORTER_LEVELS[int(i)];
 		if ((G_DEVELOPER_MODE))
 		{
 			string CUR_ID = GetPlayerAuthId(USER_ID);
 			int CUR_SLOT = 1;
-			string CUR_LEVEL = /* TODO: $get_array */ $get_array(ARRAY_REPORTER_LEVELS, 0);
+			string CUR_LEVEL = ARRAY_REPORTER_LEVELS[int(0)];
 		}
 		if (!(CUR_ID == GetPlayerAuthId(USER_ID))) return;
 		if (!(CUR_SLOT == GetEntityProperty(USER_ID, "slot"))) return;
@@ -631,7 +638,7 @@ class Masterp : CGameScript
 		if ((IS_REPORTER)) return;
 		if (!(REPRESS_COUNT))
 		{
-			SayText("You have int(CUR_LEVEL) rewards pending.");
+			SayText("You have " + int(CUR_LEVEL) + " rewards pending.");
 		}
 		IS_REPORTER = 1;
 	}
@@ -647,7 +654,7 @@ class Masterp : CGameScript
 		else
 		{
 			REPRESS_COUNT = 0;
-			for (int i = 0; i < /* TODO: $get_array_amt */ $get_array_amt(ARRAY_REPORTER_IDS); i++)
+			for (int i = 0; i < int(ARRAY_REPORTER_IDS.length()); i++)
 			{
 				check_reporters();
 			}
@@ -663,7 +670,7 @@ class Masterp : CGameScript
 		}
 		if ((REPORTER_REWARD_MODE))
 		{
-			for (int i = 0; i < /* TODO: $get_array_amt */ $get_array_amt(ARRAY_REPORTER_IDS); i++)
+			for (int i = 0; i < int(ARRAY_REPORTER_IDS.length()); i++)
 			{
 				check_reporters();
 			}
@@ -706,9 +713,9 @@ class Masterp : CGameScript
 				string reg.mitem.data = "swords_ub";
 				string reg.mitem.callback = "give_reporter_reward";
 				string reg.mitem.title = "[Other ";
-				reg.mitem.title += int(/* TODO: $math(add) */ REWARD_IDX);
+				reg.mitem.title += int((REWARD_IDX + 1));
 				reg.mitem.title += "/";
-				reg.mitem.title += int(/* TODO: $math(add) */ REWARD_MAXIDX);
+				reg.mitem.title += int((REWARD_MAXIDX + 1));
 				reg.mitem.title += "]";
 				string reg.mitem.type = "callback";
 				string reg.mitem.data = "special_other";
@@ -745,9 +752,9 @@ class Masterp : CGameScript
 				string reg.mitem.data = "smallarms_eth";
 				string reg.mitem.callback = "give_reporter_reward";
 				string reg.mitem.title = "[Other ";
-				reg.mitem.title += int(/* TODO: $math(add) */ REWARD_IDX);
+				reg.mitem.title += int((REWARD_IDX + 1));
 				reg.mitem.title += "/";
-				reg.mitem.title += int(/* TODO: $math(add) */ REWARD_MAXIDX);
+				reg.mitem.title += int((REWARD_MAXIDX + 1));
 				reg.mitem.title += "]";
 				string reg.mitem.type = "callback";
 				string reg.mitem.data = "special_other";
@@ -831,7 +838,7 @@ class Masterp : CGameScript
 			string reg.mitem.data = "gold:";
 			string reg.mitem.callback = "change_name_yes";
 			string reg.mitem.cb_failed = "change_name_payment_failed";
-			SayText("The fee for this service , in your case , would be CHANGE_NAME_FEE gold.");
+			SayText("The fee for this service , in your case , would be " + CHANGE_NAME_FEE + " gold.");
 			string reg.mitem.title = "no";
 			string reg.mitem.type = "callback";
 			string reg.mitem.callback = "change_name_no";
@@ -867,31 +874,31 @@ class Masterp : CGameScript
 		if (!(CHANGING_NAME)) return;
 		if ((G_DEVELOPER_MODE))
 		{
-			SendColoredMessage(GetEntityIndex(param2), "Zomg GetEntityName(param2) spoke to me! GetEntityName("ent_lastspoke")");
+			SendColoredMessage(GetEntityIndex(param2), "Zomg " + GetEntityName(param2) + "spoke to me! " + GetEntityName("ent_lastspoke"));
 		}
 		if (GetEntityIndex(param2) != NAME_REQ_ID)
 		{
-			SayText("Shush , GetEntityName(NAME_REQ_ID) here is going to provide me with his new name.");
+			SayText("Shush , " + GetEntityName(NAME_REQ_ID) + " here is going to provide me with his new name.");
 		}
 		if (!(GetEntityIndex(param2) == NAME_REQ_ID)) return;
 		string L_NEW_NAME = param1;
 		string L_SPACE = " ";
 		if ((L_NEW_NAME).substr(0, 1) == L_SPACE)
 		{
-			SayText("I m sorry, but you cannot begin your name with a space.");
+			SayText(I + " m sorry, but you cannot begin your name with a space.");
 			int EXIT_SUB = 1;
 		}
 		if ((EXIT_SUB)) return;
 		if (L_NEW_NAME != /* TODO: $alphanum */ $alphanum(L_NEW_NAME, L_SPACE))
 		{
-			SayText("I m sorry, but your name seems to have some characters in it that will not fit in the paperwork.");
+			SayText(I + " m sorry, but your name seems to have some characters in it that will not fit in the paperwork.");
 			SendInfoMsg(NAME_REQ_ID, "Alphanumerics and Spaces Only Please Otherwise, bad things would happen.");
 			int EXIT_SUB = 1;
 		}
 		if ((EXIT_SUB)) return;
 		if ((L_NEW_NAME).length() > 30)
 		{
-			SayText("I m sorry, but your name is too long.");
+			SayText(I + " m sorry, but your name is too long.");
 			SendInfoMsg(NAME_REQ_ID, "Name must be under 30 characters Otherwise, bad things would happen.");
 			int EXIT_SUB = 1;
 		}
@@ -916,7 +923,7 @@ class Masterp : CGameScript
 		}
 		string L_NEW_NAME = /* TODO: $alphanum */ $alphanum(L_NEW_NAME, L_SPACE);
 		string CHANGE_NAME_TIMES = GetPlayerQuestData(NAME_REQ_ID, "n");
-		string CHANGE_NAME_TIMES = int(CHANGE_NAME_TIMES);
+		int CHANGE_NAME_TIMES = int(CHANGE_NAME_TIMES);
 		CHANGE_NAME_TIMES += 1;
 		SetPlayerQuestData(NAME_REQ_ID, "n");
 		string OLD_NAME = GetEntityName(NAME_REQ_ID);
@@ -926,7 +933,7 @@ class Masterp : CGameScript
 		MSG_TXT += " shall now be known as ";
 		MSG_TXT += L_NEW_NAME;
 		MSG_TXT += "!";
-		SendInfoMsg("all", "A PROCLOMATION RINGS THROUGHOUT THE LAND! MSG_TXT");
+		SendInfoMsg("all", "A PROCLOMATION RINGS THROUGHOUT THE LAND! " + MSG_TXT);
 		PlayAnim("critical", "talkright");
 		string OUT_STR = "Very well, from this day forth your name shall be ";
 		OUT_STR += L_NEW_NAME;

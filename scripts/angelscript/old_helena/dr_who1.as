@@ -10,6 +10,7 @@ class DrWho1 : CGameScript
 	string ANIM_STEP2;
 	string ANIM_STEP3;
 	int BUSY_CHATTING;
+	float CHAT_DELAY;
 	int CHAT_STEP;
 	string CHAT_STEP1;
 	string CHAT_STEP2;
@@ -19,6 +20,8 @@ class DrWho1 : CGameScript
 	int DID_INTRO;
 	int DOING_VOTE;
 	int NO_HAIL;
+	int NO_JOB;
+	int NO_RUMOR;
 	int NO_TALKIE;
 	int STORE_CLOSED;
 	string STORE_NAME;
@@ -27,14 +30,15 @@ class DrWho1 : CGameScript
 	int TALLY_YES_VOTES;
 	int VENDOR_MENU_OFF;
 	int VENDOR_NOT_ON_USE;
+	int VEND_INDIVIDUAL;
 
 	DrWho1()
 	{
-		const int NO_JOB = 1;
-		const int NO_RUMOR = 1;
-		const float CHAT_DELAY = 4.0;
+		NO_JOB = 1;
+		NO_RUMOR = 1;
+		CHAT_DELAY = 4.0;
 		STORE_NAME = "tom_bakers_shop";
-		const int VEND_INDIVIDUAL = 1;
+		VEND_INDIVIDUAL = 1;
 		VENDOR_NOT_ON_USE = 1;
 	}
 
@@ -163,7 +167,7 @@ class DrWho1 : CGameScript
 		TALLY_YES_VOTES += 1;
 		TALLY_VOTES += 1;
 		PlayAnim("critical", "yes");
-		SayText("GetEntityName(param1) seems ready to go.");
+		SayText(GetEntityName(param1) + " seems ready to go.");
 	}
 
 	void wtf_vote_no()
@@ -172,7 +176,7 @@ class DrWho1 : CGameScript
 		TALLY_NO_VOTES += 1;
 		TALLY_VOTES += 1;
 		PlayAnim("critical", "no");
-		SayText("GetEntityName(param1) seems to still be shopping , or... Looting corpses.");
+		SayText(GetEntityName(param1) + " seems to still be shopping , or... Looting corpses.");
 	}
 
 	void wtf_count_votes()

@@ -5,16 +5,19 @@ namespace MS
 
 class KeledrosClCast : CGameScript
 {
+	float OFS_NEG;
+	float OFS_POS;
+	string SPRITE_1;
 	string script.boneidx;
 	string script.duration;
 	string script.modelid;
 
 	KeledrosClCast()
 	{
-		const string SPRITE_1 = "3dmflaora.spr";
+		SPRITE_1 = "3dmflaora.spr";
 		Precache(SPRITE_1);
-		const float OFS_POS = 0.2;
-		const float OFS_NEG = -0.2;
+		OFS_POS = 0.2;
+		OFS_NEG = -0.2;
 	}
 
 	void OnRepeatTimer()

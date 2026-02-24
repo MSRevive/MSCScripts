@@ -8,14 +8,16 @@ namespace MS
 class Melanion : CGameScript
 {
 	int B_QUEST_DONE;
+	int NO_JOB;
+	int NO_RUMOR;
 	string QUEST_COMPLETER;
 	int TALKED_SALANDRIA;
 	int TOLD_STORY;
 
 	Melanion()
 	{
-		const int NO_JOB = 1;
-		const int NO_RUMOR = 1;
+		NO_JOB = 1;
+		NO_RUMOR = 1;
 		B_QUEST_DONE = 0;
 		TALKED_SALANDRIA = 0;
 	}
@@ -55,12 +57,12 @@ class Melanion : CGameScript
 		if (!(B_QUEST_DONE))
 		{
 			PlayAnim("once", "no");
-			SayText("I will loose my job...and the whole transaction will fail...please leave me alone.");
+			SayText(I + " will loose my job...and the whole transaction will fail...please leave me alone.");
 		}
 		if ((B_QUEST_DONE))
 		{
 			string WINNER_NAME = GetEntityName(QUEST_COMPLETER);
-			SayText("Hello! I m so happy now that WINNER_NAME has returned my documents!");
+			SayText("Hello! " + I + " m so happy now that WINNER_NAME has returned my documents!");
 		}
 	}
 
@@ -83,21 +85,21 @@ class Melanion : CGameScript
 	void say_bothered1a()
 	{
 		PlayAnim("once", "no");
-		SayText("..I am a diplomat from Kray Eldorad , i had some documents..");
+		SayText(..I + " am a diplomat from Kray Eldorad , i had some documents..");
 		ScheduleDelayedEvent(4, "story");
 	}
 
 	void story()
 	{
 		PlayAnim("once", "converse1");
-		SayText("We were planning a diplomatic meeting. I came all the way from Kray Eldorad.");
+		SayText("We were planning a diplomatic meeting. " + I + " came all the way from Kray Eldorad.");
 		ScheduleDelayedEvent(5, "say_story2");
 	}
 
 	void say_story2()
 	{
 		PlayAnim("critial", "talkright");
-		SayText("I was walking in the garden , when a man came by , he stole my documents!.");
+		SayText(I + " was walking in the garden , when a man came by , he stole my documents!.");
 		ScheduleDelayedEvent(5, "say_story3");
 	}
 
@@ -111,7 +113,7 @@ class Melanion : CGameScript
 	void say_story4()
 	{
 		PlayAnim("once", "converse1");
-		SayText("I was then startled by many spiders , and had to flee , thoose documents MUST be back before the meeting , please help me.");
+		SayText(I + "was then startled by many spiders , and had to flee , thoose documents " + MUST + " be back before the meeting , please help me.");
 		ScheduleDelayedEvent(6, "say_story5");
 	}
 
@@ -125,7 +127,7 @@ class Melanion : CGameScript
 	void say_story6()
 	{
 		PlayAnim("once", "converse1");
-		SayText("I tried talking to Edrin but he said his guards were far too busy and that he could not spare one.");
+		SayText(I + " tried talking to Edrin but he said his guards were far too busy and that he could not spare one.");
 		ScheduleDelayedEvent(5, "say_story7");
 	}
 

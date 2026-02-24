@@ -7,10 +7,14 @@ namespace MS
 
 class SkeletonIce : CGameScript
 {
+	string ANIM_BLAST;
 	float ATTACK_DAMAGE_HIGH;
 	float ATTACK_DAMAGE_LOW;
+	float ATTACK_HITCHANCE;
 	int BOLTS_ON;
 	int BOLT_CHECKING;
+	int BOLT_DAMAGE;
+	float BOLT_FREQUENCY;
 	int DROP_GOLD;
 	int DROP_GOLD_MAX;
 	int DROP_GOLD_MIN;
@@ -19,24 +23,28 @@ class SkeletonIce : CGameScript
 	string NO_STUCK_CHECKS;
 	int NPC_GIVE_EXP;
 	string SET_GREEK;
+	int SKEL_HP;
+	float SKEL_RESPAWN_CHANCE;
+	int SKEL_RESPAWN_LIVES;
+	string SOUND_BOLT;
 
 	SkeletonIce()
 	{
-		const int SKEL_HP = 700;
-		const float ATTACK_HITCHANCE = 0.85;
+		SKEL_HP = 700;
+		ATTACK_HITCHANCE = 0.85;
 		ATTACK_DAMAGE_LOW = 10.5;
 		ATTACK_DAMAGE_HIGH = 15.5;
 		NPC_GIVE_EXP = 120;
 		DROP_GOLD = 1;
 		DROP_GOLD_MIN = 20;
 		DROP_GOLD_MAX = 35;
-		const float SKEL_RESPAWN_CHANCE = 0.5;
-		const int SKEL_RESPAWN_LIVES = 1;
+		SKEL_RESPAWN_CHANCE = 0.5;
+		SKEL_RESPAWN_LIVES = 1;
 		MOVE_RANGE = 300;
-		const string ANIM_BLAST = "castspell";
-		const string SOUND_BOLT = "magic/ice_strike.wav";
-		const float BOLT_FREQUENCY = 3.0;
-		const int BOLT_DAMAGE = 60;
+		ANIM_BLAST = "castspell";
+		SOUND_BOLT = "magic/ice_strike.wav";
+		BOLT_FREQUENCY = 3.0;
+		BOLT_DAMAGE = 60;
 		Precache("items/proj_ice_bolt");
 		Precache("monsters/skeleton_boss1.mdl");
 	}
@@ -123,7 +131,7 @@ class SkeletonIce : CGameScript
 
 	void cycle_down()
 	{
-		// TODO: UNCONVERTED: setvarad BOLT_CHECKING 0
+		BOLT_CHECKING = 0;
 	}
 
 	void OnDeath(CBaseEntity@ attacker) override

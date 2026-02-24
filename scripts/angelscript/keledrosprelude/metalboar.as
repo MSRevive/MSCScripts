@@ -7,16 +7,27 @@ namespace MS
 
 class Metalboar : CGameScript
 {
+	float ATTACK_HITPERCENT;
+	int BOAR_CAN_CHARGE;
+	int BOAR_CHARGE_DMG;
 	int CAN_FLEE;
 	int CAN_STTACK;
 	float DROP_ITEM1_CHANCE;
+	int GORE_FORWARD_DAMAGE;
+	float GORE_SIDE_DAMAGE;
 	int HIT_COUNT;
 	int IMMUNE_VAMPIRE;
 	int IS_FLEEING;
 	string NPCATK_FLEE_RESTORETARGET;
+	int NPC_BASE_EXP;
+	int NPC_BOSS_REGEN_RATE;
+	int NPC_BOSS_RESTORATION;
 	int NPC_GIVE_EXP;
 	string NPC_IS_BOSS;
 	string PUSH_VEL;
+	string SOUND_STRUCK1;
+	string SOUND_STRUCK2;
+	string SOUND_STRUCK3;
 
 	Metalboar()
 	{
@@ -24,18 +35,18 @@ class Metalboar : CGameScript
 		{
 			NPC_IS_BOSS = 1;
 		}
-		const int NPC_BOSS_REGEN_RATE = 0;
-		const int NPC_BOSS_RESTORATION = 0;
-		const int GORE_FORWARD_DAMAGE = 15;
-		const float GORE_SIDE_DAMAGE = 8.5;
-		const float ATTACK_HITPERCENT = 0.85;
-		const int BOAR_CAN_CHARGE = 1;
-		const int BOAR_CHARGE_DMG = 25;
+		NPC_BOSS_REGEN_RATE = 0;
+		NPC_BOSS_RESTORATION = 0;
+		GORE_FORWARD_DAMAGE = 15;
+		GORE_SIDE_DAMAGE = 8.5;
+		ATTACK_HITPERCENT = 0.85;
+		BOAR_CAN_CHARGE = 1;
+		BOAR_CHARGE_DMG = 25;
 		NPC_GIVE_EXP = 500;
-		const int NPC_BASE_EXP = 200;
-		const string SOUND_STRUCK1 = "weapons/axemetal1.wav";
-		const string SOUND_STRUCK2 = "weapons/axemetal2.wav";
-		const string SOUND_STRUCK3 = "doors/doorstop5.wav";
+		NPC_BASE_EXP = 200;
+		SOUND_STRUCK1 = "weapons/axemetal1.wav";
+		SOUND_STRUCK2 = "weapons/axemetal2.wav";
+		SOUND_STRUCK3 = "doors/doorstop5.wav";
 		Precache(SOUND_STRUCK1);
 		Precache(SOUND_STRUCK2);
 		Precache(SOUND_STRUCK3);

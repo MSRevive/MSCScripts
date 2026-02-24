@@ -7,6 +7,9 @@ class ProjSlimeJetCl : CGameScript
 {
 	string CL_LIGHT_ID;
 	int FX_ACTIVE;
+	string GLOW_COLOR;
+	int GLOW_RAD;
+	float MAX_DURATION;
 	string MY_OWNER;
 	string PASS_SPRITE;
 	int ROT_COUNT;
@@ -14,9 +17,9 @@ class ProjSlimeJetCl : CGameScript
 
 	ProjSlimeJetCl()
 	{
-		const int GLOW_RAD = 96;
-		const Vector3 GLOW_COLOR = Vector3(255, 128, 64);
-		const float MAX_DURATION = 2.0;
+		GLOW_RAD = 96;
+		GLOW_COLOR = Vector3(255, 128, 64);
+		MAX_DURATION = 2.0;
 	}
 
 	void client_activate()

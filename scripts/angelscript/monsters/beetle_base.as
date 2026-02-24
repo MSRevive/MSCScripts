@@ -7,13 +7,32 @@ namespace MS
 
 class BeetleBase : CGameScript
 {
+	string ANIM_ALERT;
 	string ANIM_ATTACK;
+	string ANIM_ATTACK_CLAW;
+	string ANIM_ATTACK_GORE;
+	string ANIM_ATTACK_LEAP;
+	string ANIM_ATTACK_SLAM;
+	string ANIM_BACK_TO_FEET;
 	string ANIM_DEATH;
+	string ANIM_DEATH_NORMAL;
+	string ANIM_DEATH_ONBACK;
 	string ANIM_FLINCH;
+	string ANIM_FLY;
 	string ANIM_IDLE;
+	string ANIM_IDLE_DEFAULT;
+	string ANIM_IDLE_ONBACK;
+	string ANIM_RAWR;
+	string ANIM_RISE_FROM_GROUND;
 	string ANIM_RUN;
+	string ANIM_RUN_DEFAULT;
+	string ANIM_SPECIAL;
+	string ANIM_TO_BACK;
 	string ANIM_WALK;
+	string ANIM_WALK_DEFAULT;
+	int AOE_GORE;
 	string AS_ATTACKING;
+	float ATTACK_HITCHANCE;
 	string ATTACK_HITRANGE;
 	string ATTACK_HITRANGE_CLAW;
 	string ATTACK_HITRANGE_GORE;
@@ -25,22 +44,42 @@ class BeetleBase : CGameScript
 	string ATTACK_RANGE_LEAP;
 	int BBET_BURROWER;
 	string BBET_BURROW_CLOUD_RADIUS;
+	int BBET_CAN_FLY;
+	int BBET_CAN_LEAP;
+	int BBET_CAN_SLAM;
+	string BBET_CL_SCRIPT;
 	int BBET_DID_FAKE_DEATH;
 	int BBET_DID_GROWL;
+	int BBET_FAKE_DEATH;
 	int BBET_FLYING;
 	int BBET_FLY_LEAP;
 	string BBET_GIANT_MODEL;
+	int BBET_GORE_PUSH_STR;
 	string BBET_HALF_HP;
+	int BBET_HORN;
 	string BBET_LARGE_MODEL;
+	float BBET_MAX_FLY_TIME;
 	string BBET_NEXT_FLY;
 	string BBET_NEXT_FLY_LEAP;
 	int BBET_ONBACK;
 	int BBET_RENDERAMT;
 	int BBET_RISE_FINALIZED;
+	int BBET_SIZE;
 	string BBET_SLAM_RADIUS;
 	int BBET_WAITING_TO_DROP;
 	string BBET_WILL_FAKE_DEATH;
 	string BBET_WINGS_CL_IDX;
+	string DMGTYPE_GORE;
+	int DMG_GORE;
+	int DMG_LEAP;
+	int DMG_SLAM;
+	int DMG_SLASH;
+	float FREQ_ALERT;
+	float FREQ_FLY;
+	float FREQ_FLY_LEAP;
+	float FREQ_FORCE_GORE;
+	float FREQ_SEARCH;
+	float FREQ_SLAM;
 	int GORE_ATTACK;
 	int LEAP_ATTACK;
 	string NEXT_ALERT;
@@ -48,6 +87,31 @@ class BeetleBase : CGameScript
 	string NEXT_SEARCH;
 	string NEXT_SLAM;
 	int NPC_NO_ATTACK;
+	string SOUND_ATTACK1;
+	string SOUND_ATTACK2;
+	string SOUND_ATTACK3;
+	string SOUND_CHITTER_LOOP;
+	string SOUND_DEATH;
+	string SOUND_DIG1;
+	string SOUND_DIG2;
+	string SOUND_DIGWARN;
+	string SOUND_FLY_LOOP;
+	string SOUND_GIBBED;
+	string SOUND_GROWL;
+	string SOUND_IDLE1;
+	string SOUND_IDLE2;
+	string SOUND_IDLE3;
+	string SOUND_IDLE4;
+	string SOUND_IDLE5;
+	string SOUND_LAND;
+	string SOUND_PAIN1;
+	string SOUND_PAIN2;
+	string SOUND_SLAM;
+	string SOUND_STRUCK1;
+	string SOUND_STRUCK2;
+	string SOUND_STRUCK3;
+	string SOUND_STRUCK4;
+	string SOUND_SWIPE;
 
 	BeetleBase()
 	{
@@ -57,72 +121,72 @@ class BeetleBase : CGameScript
 		ANIM_ATTACK = "bug_leapatk";
 		ANIM_DEATH = "bug_death";
 		ANIM_FLINCH = "bug_flinch";
-		const string ANIM_RUN_DEFAULT = "bug_run";
-		const string ANIM_WALK_DEFAULT = "bug_walk";
-		const string ANIM_IDLE_DEFAULT = "bug_idle";
-		const string ANIM_ATTACK_LEAP = "bug_leapatk";
-		const string ANIM_ATTACK_CLAW = "bug_claw_up";
-		const string ANIM_ATTACK_GORE = "bug_gore";
-		const string ANIM_ATTACK_SLAM = "bug_slam";
-		const string ANIM_TO_BACK = "bug_toback";
-		const string ANIM_BACK_TO_FEET = "bug_backtofeet";
-		const string ANIM_IDLE_ONBACK = "bug_onback";
-		const string ANIM_DEATH_ONBACK = "bug_back_to_death";
-		const string ANIM_DEATH_NORMAL = "bug_death";
-		const string ANIM_FLY = "bug_jump";
-		const string ANIM_SPECIAL = "bug_conjure";
-		const string ANIM_RISE_FROM_GROUND = "bug_rise";
-		const string ANIM_RAWR = "bug_rawr";
-		const string ANIM_ALERT = "bug_alert";
+		ANIM_RUN_DEFAULT = "bug_run";
+		ANIM_WALK_DEFAULT = "bug_walk";
+		ANIM_IDLE_DEFAULT = "bug_idle";
+		ANIM_ATTACK_LEAP = "bug_leapatk";
+		ANIM_ATTACK_CLAW = "bug_claw_up";
+		ANIM_ATTACK_GORE = "bug_gore";
+		ANIM_ATTACK_SLAM = "bug_slam";
+		ANIM_TO_BACK = "bug_toback";
+		ANIM_BACK_TO_FEET = "bug_backtofeet";
+		ANIM_IDLE_ONBACK = "bug_onback";
+		ANIM_DEATH_ONBACK = "bug_back_to_death";
+		ANIM_DEATH_NORMAL = "bug_death";
+		ANIM_FLY = "bug_jump";
+		ANIM_SPECIAL = "bug_conjure";
+		ANIM_RISE_FROM_GROUND = "bug_rise";
+		ANIM_RAWR = "bug_rawr";
+		ANIM_ALERT = "bug_alert";
 		BBET_LARGE_MODEL = "monsters/beetles.mdl";
 		BBET_GIANT_MODEL = "monsters/beetles_giant.mdl";
-		const int BBET_SIZE = 1;
-		const int BBET_CAN_FLY = 1;
-		const int BBET_CAN_LEAP = 1;
-		const int BBET_CAN_SLAM = 0;
-		const int BBET_GORE_PUSH_STR = 400;
-		const string BBET_FAKE_DEATH = RandomInt(0, 1);
-		const float BBET_MAX_FLY_TIME = 8.0;
-		const int BBET_HORN = 0;
-		const float FREQ_ALERT = 10.0;
-		const float FREQ_SEARCH = 10.0;
-		const float FREQ_FORCE_GORE = 15.0;
-		const string FREQ_SLAM = Random(10.0, 20.0);
-		const string FREQ_FLY = Random(5.0, 15.0);
-		const string FREQ_FLY_LEAP = Random(20.0, 60.0);
-		const int AOE_GORE = 96;
-		const int DMG_SLASH = 60;
-		const int DMG_GORE = 120;
-		const int DMG_LEAP = 300;
-		const int DMG_SLAM = 400;
-		const float ATTACK_HITCHANCE = 0.9;
-		const string DMGTYPE_GORE = "pierce";
-		const string BBET_CL_SCRIPT = "monsters/beetle_base_cl";
-		const string SOUND_ATTACK1 = "monsters/beetle/attack_single1.wav";
-		const string SOUND_ATTACK2 = "monsters/beetle/attack_single2.wav";
-		const string SOUND_ATTACK3 = "monsters/beetle/attack_single3.wav";
-		const string SOUND_SWIPE = "zombie/claw_miss1.wav";
-		const string SOUND_GROWL = "monsters/beetle/distract1.wav";
-		const string SOUND_DIG1 = "monsters/beetle/dig1.wav";
-		const string SOUND_DIG2 = "monsters/beetle/dig2.wav";
-		const string SOUND_DIGWARN = "monsters/beetle/rumble1.wav";
-		const string SOUND_IDLE1 = "monsters/beetle/idle1.wav";
-		const string SOUND_IDLE2 = "monsters/beetle/idle2.wav";
-		const string SOUND_IDLE3 = "monsters/beetle/idle3.wav";
-		const string SOUND_IDLE4 = "monsters/beetle/idle4.wav";
-		const string SOUND_IDLE5 = "monsters/beetle/idle5.wav";
-		const string SOUND_FLY_LOOP = "monsters/beetle/fly1.wav";
-		const string SOUND_CHITTER_LOOP = "monsters/beetle/charge_loop1.wav";
-		const string SOUND_LAND = "monsters/beetle/land1.wav";
-		const string SOUND_SLAM = "magic/boom.wav";
-		const string SOUND_PAIN1 = "monsters/beetle/pain1.wav";
-		const string SOUND_PAIN2 = "monsters/beetle/pain2.wav";
-		const string SOUND_STRUCK1 = "monsters/beetle/shell_impact1.wav";
-		const string SOUND_STRUCK2 = "monsters/beetle/shell_impact2.wav";
-		const string SOUND_STRUCK3 = "monsters/beetle/shell_impact3.wav";
-		const string SOUND_STRUCK4 = "monsters/beetle/shell_impact4.wav";
-		const string SOUND_GIBBED = "monsters/beetle/squashed.wav";
-		const string SOUND_DEATH = "monsters/beetle/pain2.wav";
+		BBET_SIZE = 1;
+		BBET_CAN_FLY = 1;
+		BBET_CAN_LEAP = 1;
+		BBET_CAN_SLAM = 0;
+		BBET_GORE_PUSH_STR = 400;
+		BBET_FAKE_DEATH = RandomInt(0, 1);
+		BBET_MAX_FLY_TIME = 8.0;
+		BBET_HORN = 0;
+		FREQ_ALERT = 10.0;
+		FREQ_SEARCH = 10.0;
+		FREQ_FORCE_GORE = 15.0;
+		FREQ_SLAM = Random(10.0, 20.0);
+		FREQ_FLY = Random(5.0, 15.0);
+		FREQ_FLY_LEAP = Random(20.0, 60.0);
+		AOE_GORE = 96;
+		DMG_SLASH = 60;
+		DMG_GORE = 120;
+		DMG_LEAP = 300;
+		DMG_SLAM = 400;
+		ATTACK_HITCHANCE = 0.9;
+		DMGTYPE_GORE = "pierce";
+		BBET_CL_SCRIPT = "monsters/beetle_base_cl";
+		SOUND_ATTACK1 = "monsters/beetle/attack_single1.wav";
+		SOUND_ATTACK2 = "monsters/beetle/attack_single2.wav";
+		SOUND_ATTACK3 = "monsters/beetle/attack_single3.wav";
+		SOUND_SWIPE = "zombie/claw_miss1.wav";
+		SOUND_GROWL = "monsters/beetle/distract1.wav";
+		SOUND_DIG1 = "monsters/beetle/dig1.wav";
+		SOUND_DIG2 = "monsters/beetle/dig2.wav";
+		SOUND_DIGWARN = "monsters/beetle/rumble1.wav";
+		SOUND_IDLE1 = "monsters/beetle/idle1.wav";
+		SOUND_IDLE2 = "monsters/beetle/idle2.wav";
+		SOUND_IDLE3 = "monsters/beetle/idle3.wav";
+		SOUND_IDLE4 = "monsters/beetle/idle4.wav";
+		SOUND_IDLE5 = "monsters/beetle/idle5.wav";
+		SOUND_FLY_LOOP = "monsters/beetle/fly1.wav";
+		SOUND_CHITTER_LOOP = "monsters/beetle/charge_loop1.wav";
+		SOUND_LAND = "monsters/beetle/land1.wav";
+		SOUND_SLAM = "magic/boom.wav";
+		SOUND_PAIN1 = "monsters/beetle/pain1.wav";
+		SOUND_PAIN2 = "monsters/beetle/pain2.wav";
+		SOUND_STRUCK1 = "monsters/beetle/shell_impact1.wav";
+		SOUND_STRUCK2 = "monsters/beetle/shell_impact2.wav";
+		SOUND_STRUCK3 = "monsters/beetle/shell_impact3.wav";
+		SOUND_STRUCK4 = "monsters/beetle/shell_impact4.wav";
+		SOUND_GIBBED = "monsters/beetle/squashed.wav";
+		SOUND_DEATH = "monsters/beetle/pain2.wav";
 	}
 
 	void OnRepeatTimer()
@@ -246,7 +310,7 @@ class BeetleBase : CGameScript
 					if (Z_DIFF < 384)
 					{
 						SetGravity(0);
-						string RND_LR = Random(-10, 10);
+						float RND_LR = Random(-10, 10);
 						int FWD_SPEED = 110;
 						if (GetEntityRange(m_hAttackTarget) > 400)
 						{
@@ -299,7 +363,7 @@ class BeetleBase : CGameScript
 				{
 					LogDebug("leap_flight");
 					SetGravity(0.5);
-					string RND_LR = Random(-10, 10);
+					float RND_LR = Random(-10, 10);
 					AddVelocity(GetOwner(), /* TODO: $relvel */ $relvel(RND_LR, 150, 200));
 				}
 			}
@@ -369,7 +433,7 @@ class BeetleBase : CGameScript
 		NEXT_ALERT = GetGameTime();
 		NEXT_ALERT += FREQ_ALERT;
 		AS_ATTACKING = GetGameTime();
-		string RND_ANIM = RandomInt(1, 2);
+		int RND_ANIM = RandomInt(1, 2);
 		if (RND_ANIM == 1)
 		{
 			PlayAnim("critical", ANIM_ALERT);
@@ -386,7 +450,7 @@ class BeetleBase : CGameScript
 		if ((BBET_DID_GROWL)) return;
 		BBET_DID_GROWL = 1;
 		AS_ATTACKING = GetGameTime();
-		string RND_ANIM = RandomInt(1, 2);
+		int RND_ANIM = RandomInt(1, 2);
 		if (RND_ANIM == 1)
 		{
 			PlayAnim("critical", ANIM_ALERT);

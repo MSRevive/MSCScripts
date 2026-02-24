@@ -7,12 +7,17 @@ namespace MS
 
 class ItemLetter : CGameScript
 {
+	string ANIM_PREFIX;
+	int MODEL_BODY_OFS;
+	string MODEL_HANDS;
+	string MODEL_WORLD;
+
 	ItemLetter()
 	{
-		const string MODEL_WORLD = "garbagegibs.mdl";
-		const string MODEL_HANDS = "misc/p_misc.mdl";
-		const int MODEL_BODY_OFS = 4;
-		const string ANIM_PREFIX = "oldbook";
+		MODEL_WORLD = "garbagegibs.mdl";
+		MODEL_HANDS = "misc/p_misc.mdl";
+		MODEL_BODY_OFS = 4;
+		ANIM_PREFIX = "oldbook";
 	}
 
 	void miscitem_spawn()

@@ -5,11 +5,17 @@ namespace MS
 
 class PhlameCl : CGameScript
 {
+	string ATTACH_EYE;
+	string ATTACH_HAND;
+	string ATTACH_STAFF;
 	string CLOUD_YAW;
+	string CONTACT_SPRITE;
 	string EYEBEAM_ON;
 	string EYE_POS;
+	string EYE_SPRITE;
 	string FIREBREATH_ON;
 	int FUNNEL_ON;
+	int FUNNEL_SPRITE_START_DIST;
 	int FX_ACTIVE;
 	string FX_DELAY_REMOVE;
 	string FX_OWNER;
@@ -19,17 +25,18 @@ class PhlameCl : CGameScript
 	int ROT_POINT;
 	string SKEL_LIGHT_ID;
 	string STAFF_POS;
+	string STAFF_SPRITE;
 	string TRANSFORM_CENTER;
 
 	PhlameCl()
 	{
-		const string ATTACH_HAND = "attachment0";
-		const string ATTACH_STAFF = "attachment1";
-		const string ATTACH_EYE = "attachment2";
-		const string EYE_SPRITE = "red_aura_8bit.spr";
-		const string STAFF_SPRITE = "firemagic_8bit.spr";
-		const string CONTACT_SPRITE = "3dmflaora.spr";
-		const int FUNNEL_SPRITE_START_DIST = 250;
+		ATTACH_HAND = "attachment0";
+		ATTACH_STAFF = "attachment1";
+		ATTACH_EYE = "attachment2";
+		EYE_SPRITE = "red_aura_8bit.spr";
+		STAFF_SPRITE = "firemagic_8bit.spr";
+		CONTACT_SPRITE = "3dmflaora.spr";
+		FUNNEL_SPRITE_START_DIST = 250;
 	}
 
 	void OnRepeatTimer()
@@ -99,7 +106,7 @@ class PhlameCl : CGameScript
 	{
 		if (!(FX_ACTIVE)) return;
 		string L_POS = /* TODO: $getcl */ $getcl(FX_OWNER, "origin");
-		string INT_LIGHT_B = int(LIGHT_B);
+		int INT_LIGHT_B = int(LIGHT_B);
 		ClientEffect("light", SKEL_LIGHT_ID, L_POS, 128, Vector3(LIGHT_R, LIGHT_G, INT_LIGHT_B), 1.0);
 		LIGHT_R += 1;
 		LIGHT_G += 1;
@@ -358,9 +365,9 @@ class PhlameCl : CGameScript
 		ClientEffect("tempent", "set_current_prop", "rendercolor", Vector3(128, 0, 255));
 		ClientEffect("tempent", "set_current_prop", "scale", Random(1.0, 3.0));
 		ClientEffect("tempent", "set_current_prop", "gravity", 1);
-		string RND_ROT = Random(0, 359.99);
-		string RND_FWD = Random(0, 100.0);
-		string RND_UD = Random(0, 600);
+		float RND_ROT = Random(0, 359.99);
+		float RND_FWD = Random(0, 100.0);
+		float RND_UD = Random(0, 600);
 		ClientEffect("tempent", "set_current_prop", "velocity", /* TODO: $relvel */ $relvel(Vector3(0, RND_ROT, 0), Vector3(0, RND_FWD, RND_UD)));
 		ClientEffect("tempent", "set_current_prop", "collide", "none");
 	}
@@ -376,7 +383,7 @@ class PhlameCl : CGameScript
 
 	void setup_fire_cloud()
 	{
-		string START_SCALE = Random(0.25, 0.5);
+		float START_SCALE = Random(0.25, 0.5);
 		ClientEffect("tempent", "set_current_prop", "death_delay", 1.0);
 		ClientEffect("tempent", "set_current_prop", "framerate", 10);
 		ClientEffect("tempent", "set_current_prop", "frames", 9);
@@ -392,8 +399,8 @@ class PhlameCl : CGameScript
 		ClientEffect("tempent", "set_current_prop", "gravity", ".005");
 		ClientEffect("tempent", "set_current_prop", "collide", "none");
 		ClientEffect("tempent", "set_current_prop", "fuser1", START_SCALE);
-		string RND_RL = Random(-20, 20);
-		string RND_UD = Random(-50, -100);
+		float RND_RL = Random(-20, 20);
+		float RND_UD = Random(-50, -100);
 		string CLOUD_VEL = /* TODO: $relvel */ $relvel(Vector3(20, CLOUD_YAW, 0), Vector3(RND_RL, Random(300, 400), RND_UD));
 		ClientEffect("tempent", "set_current_prop", "velocity", CLOUD_VEL);
 	}

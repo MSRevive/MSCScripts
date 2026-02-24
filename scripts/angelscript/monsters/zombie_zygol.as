@@ -14,27 +14,62 @@ class ZombieZygol : CGameScript
 	string ANIM_DEATH3;
 	string ANIM_DEATH4;
 	string ANIM_DEATH5;
+	string ANIM_DISEASE;
 	string ANIM_IDLE;
 	string ANIM_RUN;
+	string ANIM_SWIPE;
 	string ANIM_WALK;
+	float ATTACK_DAMAGE;
+	int ATTACK_HITCHANCE;
 	int ATTACK_HITRANGE;
 	int ATTACK_MOVERANGE;
 	int ATTACK_RANGE;
 	float BASE_FRAMERATE;
 	float BASE_MOVERATE;
+	float BEAM_DUR;
 	int CAN_FLINCH;
 	int DID_WARCRY;
 	int DISEASE_DELAY;
+	float DISEASE_DMG;
+	int DISEASE_DUR;
+	float DISEASE_FREQ;
+	int EYE_HP;
+	int EYE_POWER;
 	string FLINCH_ANIM;
 	int FLINCH_CHANCE;
+	float FREQ_TBEAM;
 	int HEAR_RANGE_MAX;
 	int HEAR_RANGE_PLAYER;
 	int I_ATTACKING;
 	int I_DISEASE;
+	int ME_NO_WANDER;
+	string MONSTER_MODEL;
+	float NPC_BOSS_REGEN_RATE;
+	float NPC_BOSS_RESTORATION;
 	int NPC_GIVE_EXP;
 	string NPC_IS_BOSS;
 	int N_EYES;
 	int PAIN_DELAY;
+	string SOUND_DEATH;
+	string SOUND_HIT1;
+	string SOUND_HIT2;
+	string SOUND_IDLE1;
+	string SOUND_IDLE2;
+	string SOUND_IDLE3;
+	string SOUND_IDLE4;
+	string SOUND_MISS1;
+	string SOUND_MISS2;
+	string SOUND_PAIN1;
+	string SOUND_PAIN2;
+	string SOUND_PAIN3;
+	string SOUND_RAGE1;
+	string SOUND_RAGE2;
+	string SOUND_STRUCK1;
+	string SOUND_STRUCK2;
+	string SOUND_STRUCK3;
+	string SOUND_WARCRY1;
+	string SOUND_WARCRY2;
+	string SOUND_WARCRY3;
 	int TBEAM_DELAY;
 	string TBEAM_IDX;
 	string TBEAM_LASTFX;
@@ -48,16 +83,16 @@ class ZombieZygol : CGameScript
 		{
 			NPC_IS_BOSS = 1;
 		}
-		const float NPC_BOSS_REGEN_RATE = 0.1;
-		const float NPC_BOSS_RESTORATION = 0.5;
-		const float FREQ_TBEAM = 30.0;
-		const float BEAM_DUR = 15.0;
-		const int EYE_HP = 1000;
-		const int EYE_POWER = 50;
+		NPC_BOSS_REGEN_RATE = 0.1;
+		NPC_BOSS_RESTORATION = 0.5;
+		FREQ_TBEAM = 30.0;
+		BEAM_DUR = 15.0;
+		EYE_HP = 1000;
+		EYE_POWER = 50;
 		ANIM_WALK = "walk";
 		ANIM_RUN = "walk";
-		const string ANIM_SWIPE = "attack1";
-		const string ANIM_DISEASE = "attack2";
+		ANIM_SWIPE = "attack1";
+		ANIM_DISEASE = "attack2";
 		ANIM_ATTACK = ANIM_SWIPE;
 		ANIM_DEATH = "diesimple";
 		ANIM_IDLE = "idle1";
@@ -69,39 +104,39 @@ class ZombieZygol : CGameScript
 		ANIM_DEATH = ANIM_DEATH1;
 		CAN_FLINCH = 1;
 		FLINCH_CHANCE = 30;
-		const string SOUND_IDLE1 = "garg/gar_breathe1.wav";
-		const string SOUND_IDLE2 = "garg/gar_breathe2.wav";
-		const string SOUND_IDLE3 = "garg/gar_breathe3.wav";
-		const string SOUND_IDLE4 = "garg/gar_idle4.wav";
-		const string SOUND_PAIN1 = "garg/gar_idle1.wav";
-		const string SOUND_PAIN2 = "garg/gar_idle2.wav";
-		const string SOUND_PAIN3 = "garg/gar_idle3.wav";
-		const string SOUND_STRUCK1 = "weapons/cbar_hitbod1.wav";
-		const string SOUND_STRUCK2 = "weapons/cbar_hitbod2.wav";
-		const string SOUND_STRUCK3 = "weapons/cbar_hitbod3.wav";
-		const string SOUND_WARCRY1 = "garg/gar_alert1.wav";
-		const string SOUND_WARCRY2 = "garg/gar_alert2.wav";
-		const string SOUND_WARCRY3 = "garg/gar_alert3.wav";
-		const string SOUND_RAGE1 = "garg/gar_attack1.wav";
-		const string SOUND_RAGE2 = "garg/gar_attack2.wav";
-		const string SOUND_DEATH = "garg/gar_die1.wav";
-		const string SOUND_MISS1 = "zombie/claw_miss1.wav";
-		const string SOUND_MISS2 = "zombie/claw_miss2.wav";
-		const string SOUND_HIT1 = "zombie/claw_strike1.wav";
-		const string SOUND_HIT2 = "zombie/claw_strike2.wav";
+		SOUND_IDLE1 = "garg/gar_breathe1.wav";
+		SOUND_IDLE2 = "garg/gar_breathe2.wav";
+		SOUND_IDLE3 = "garg/gar_breathe3.wav";
+		SOUND_IDLE4 = "garg/gar_idle4.wav";
+		SOUND_PAIN1 = "garg/gar_idle1.wav";
+		SOUND_PAIN2 = "garg/gar_idle2.wav";
+		SOUND_PAIN3 = "garg/gar_idle3.wav";
+		SOUND_STRUCK1 = "weapons/cbar_hitbod1.wav";
+		SOUND_STRUCK2 = "weapons/cbar_hitbod2.wav";
+		SOUND_STRUCK3 = "weapons/cbar_hitbod3.wav";
+		SOUND_WARCRY1 = "garg/gar_alert1.wav";
+		SOUND_WARCRY2 = "garg/gar_alert2.wav";
+		SOUND_WARCRY3 = "garg/gar_alert3.wav";
+		SOUND_RAGE1 = "garg/gar_attack1.wav";
+		SOUND_RAGE2 = "garg/gar_attack2.wav";
+		SOUND_DEATH = "garg/gar_die1.wav";
+		SOUND_MISS1 = "zombie/claw_miss1.wav";
+		SOUND_MISS2 = "zombie/claw_miss2.wav";
+		SOUND_HIT1 = "zombie/claw_strike1.wav";
+		SOUND_HIT2 = "zombie/claw_strike2.wav";
 		Precache(SOUND_DEATH);
-		const string ATTACK_DAMAGE = Random(100, 200);
+		ATTACK_DAMAGE = Random(100, 200);
 		ATTACK_RANGE = 120;
 		ATTACK_HITRANGE = 150;
-		const int ATTACK_HITCHANCE = 80;
+		ATTACK_HITCHANCE = 80;
 		ATTACK_MOVERANGE = 80;
-		const float DISEASE_FREQ = 5.0;
-		const string DISEASE_DMG = Random(13, 16);
-		const string DISEASE_DUR = RandomInt(20, 25);
+		DISEASE_FREQ = 5.0;
+		DISEASE_DMG = Random(13, 16);
+		DISEASE_DUR = RandomInt(20, 25);
 		NPC_GIVE_EXP = 1000;
-		const string MONSTER_MODEL = "monsters/zombie_huge.mdl";
+		MONSTER_MODEL = "monsters/zombie_huge.mdl";
 		Precache(MONSTER_MODEL);
-		const int ME_NO_WANDER = 1;
+		ME_NO_WANDER = 1;
 		HEAR_RANGE_MAX = 200;
 		HEAR_RANGE_PLAYER = 200;
 	}
@@ -228,7 +263,7 @@ class ZombieZygol : CGameScript
 			array<string> sounds = {SOUND_RAGE1, SOUND_RAGE2};
 			EmitSound(GetOwner(), 0, sounds[RandomInt(0, sounds.length() - 1)], 5);
 		}
-		string NEXT_SOUND = Random(4, 15);
+		float NEXT_SOUND = Random(4, 15);
 		NEXT_SOUND("idle_sounds");
 	}
 
@@ -264,7 +299,7 @@ class ZombieZygol : CGameScript
 
 	void OnDeath(CBaseEntity@ attacker) override
 	{
-		string PICK_DEATH = RandomInt(1, 5);
+		int PICK_DEATH = RandomInt(1, 5);
 		if (PICK_DEATH == 1)
 		{
 			ANIM_DEATH = ANIM_DEATH1;
@@ -315,7 +350,7 @@ class ZombieZygol : CGameScript
 
 	void OnFlinch()
 	{
-		string R_FLINCH = RandomInt(1, 4);
+		int R_FLINCH = RandomInt(1, 4);
 		if (R_FLINCH == 1)
 		{
 			FLINCH_ANIM = "flinchsmall";
@@ -438,7 +473,7 @@ class ZombieZygol : CGameScript
 				TBEAM_VIS = 1;
 				ClientEvent("update", "all", TBEAM_IDX, "dbeam_target", GetEntityIndex(TBEAM_TARG));
 			}
-			string DIFF_TIME = GetGameTime();
+			float DIFF_TIME = GetGameTime();
 			DIFF_TIME -= TBEAM_LASTFX;
 			if (DIFF_TIME > 5.0)
 			{

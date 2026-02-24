@@ -7,14 +7,21 @@ namespace MS
 
 class ArmorHelmBronze : CGameScript
 {
+	int ARMOR_BODY;
+	string ARMOR_MODEL;
+	string ARMOR_TEXT;
+	float BARMOR_PROTECTION;
+	string BARMOR_TYPE;
+	float STUN_PROTECTION;
+
 	ArmorHelmBronze()
 	{
-		const string ARMOR_MODEL = "armor/p_helmets.mdl";
-		const int ARMOR_BODY = 9;
-		const string ARMOR_TEXT = "You put on a bronze helmet.";
-		const string BARMOR_TYPE = "platemail";
-		const float BARMOR_PROTECTION = 0.25;
-		const float STUN_PROTECTION = 0.85;
+		ARMOR_MODEL = "armor/p_helmets.mdl";
+		ARMOR_BODY = 9;
+		ARMOR_TEXT = "You put on a bronze helmet.";
+		BARMOR_TYPE = "platemail";
+		BARMOR_PROTECTION = 0.25;
+		STUN_PROTECTION = 0.85;
 	}
 
 	void OnSpawn() override

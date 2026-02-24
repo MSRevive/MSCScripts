@@ -12,16 +12,28 @@ class SnakeCursed : CGameScript
 	string ANIM_IDLE;
 	string ANIM_RUN;
 	string ANIM_WALK;
+	float ATTACK_DAMAGE;
 	int ATTACK_DELAY;
+	float ATTACK_HITCHANCE;
 	int ATTACK_HITRANGE;
 	int ATTACK_MOVERANGE;
 	int ATTACK_RANGE;
 	int BITE_SOUND;
 	int DID_ALERT;
 	int IS_UNHOLY;
+	string MONSTER_MODEL;
 	int NO_SPAWN_STUCK_CHECK;
 	string NPC_DELAYING_UNSTUCK;
 	int NPC_GIVE_EXP;
+	float POISON_DAMAGE;
+	int POISON_DURATION;
+	string SOUND_ALERT;
+	string SOUND_ATTACK;
+	string SOUND_IDLE;
+	string SOUND_PAIN1;
+	string SOUND_PAIN2;
+	string SOUND_POISON;
+	string SOUND_STRUCK;
 
 	SnakeCursed()
 	{
@@ -34,20 +46,20 @@ class SnakeCursed : CGameScript
 		ATTACK_RANGE = 80;
 		ATTACK_HITRANGE = 120;
 		ATTACK_MOVERANGE = 35;
-		const float ATTACK_HITCHANCE = 0.8;
-		const string ATTACK_DAMAGE = "$randf(5,20)";
-		const string POISON_DAMAGE = "$randf(10,50)";
-		const string POISON_DURATION = "$rand(10,20)";
-		const string SOUND_ALERT = "monsters/snake_idle1.wav";
-		const string SOUND_IDLE = "monsters/snake_idle2.wav";
-		const string SOUND_ATTACK = "bullchicken/bc_bite2.wav";
-		const string SOUND_PAIN1 = "monsters/snake_pain1.wav";
-		const string SOUND_PAIN2 = "monsters/snake_pain2.wav";
-		const string SOUND_POISON = "monsters/snakeman/sm_alert1.wav";
-		const string SOUND_STRUCK = "debris/flesh2.wav";
+		ATTACK_HITCHANCE = 0.8;
+		ATTACK_DAMAGE = "$randf(5,20)";
+		POISON_DAMAGE = "$randf(10,50)";
+		POISON_DURATION = "$rand(10,20)";
+		SOUND_ALERT = "monsters/snake_idle1.wav";
+		SOUND_IDLE = "monsters/snake_idle2.wav";
+		SOUND_ATTACK = "bullchicken/bc_bite2.wav";
+		SOUND_PAIN1 = "monsters/snake_pain1.wav";
+		SOUND_PAIN2 = "monsters/snake_pain2.wav";
+		SOUND_POISON = "monsters/snakeman/sm_alert1.wav";
+		SOUND_STRUCK = "debris/flesh2.wav";
 		NPC_GIVE_EXP = 5;
 		NO_SPAWN_STUCK_CHECK = 1;
-		const string MONSTER_MODEL = "monsters/csnake.mdl";
+		MONSTER_MODEL = "monsters/csnake.mdl";
 	}
 
 	void OnSpawn() override

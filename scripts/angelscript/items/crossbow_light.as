@@ -7,9 +7,11 @@ namespace MS
 
 class CrossbowLight : CGameScript
 {
+	int DRINK_AMOUNT;
+
 	CrossbowLight()
 	{
-		const int DRINK_AMOUNT = 1;
+		DRINK_AMOUNT = 1;
 	}
 
 	void drink_spawn()

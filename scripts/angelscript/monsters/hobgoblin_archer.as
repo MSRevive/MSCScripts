@@ -15,31 +15,48 @@ class HobgoblinArcher : CGameScript
 	int CAN_STUN;
 	float CONTAINER_DROP_CHANCE;
 	string CONTAINER_SCRIPT;
+	int DMG_AXE;
+	int DMG_BOW;
+	int DMG_CHARGE;
+	int DMG_KICK;
 	int DROPS_CONTAINER;
 	int DROP_GOLD;
-	string DROP_GOLD_AMT;
+	int DROP_GOLD_AMT;
+	float FREQ_KICK;
+	int GOB_CHARGER;
+	int GOB_JUMPER;
 	int KICK_ATTACK;
+	int KICK_HITCHANCE;
+	int KICK_RANGE;
 	int MOVE_RANGE;
 	string NEXT_KICK;
+	int NPC_BASE_EXP;
 	int NPC_RANGED;
+	string SOUND_ATTACK1;
+	string SOUND_ATTACK2;
+	string SOUND_ATTACK3;
+	string SOUND_BOW;
+	string SOUND_BREATH;
+	string SOUND_DEATH;
+	int STEP_SIZE_NORM;
 
 	HobgoblinArcher()
 	{
-		const int NPC_BASE_EXP = 150;
-		const string SOUND_ATTACK1 = "monsters/goblin/c_gargoyle_atk1.wav";
-		const string SOUND_ATTACK2 = "monsters/goblin/c_gargoyle_atk2.wav";
-		const string SOUND_ATTACK3 = "monsters/goblin/c_gargoyle_atk3.wav";
-		const string SOUND_BREATH = "monsters/goblin/sps_fogfire.wav";
-		const int STEP_SIZE_NORM = 36;
-		const string SOUND_BOW = "weapons/bow/bow.wav";
+		NPC_BASE_EXP = 150;
+		SOUND_ATTACK1 = "monsters/goblin/c_gargoyle_atk1.wav";
+		SOUND_ATTACK2 = "monsters/goblin/c_gargoyle_atk2.wav";
+		SOUND_ATTACK3 = "monsters/goblin/c_gargoyle_atk3.wav";
+		SOUND_BREATH = "monsters/goblin/sps_fogfire.wav";
+		STEP_SIZE_NORM = 36;
+		SOUND_BOW = "weapons/bow/bow.wav";
 		CAN_STUN = 0;
-		const int GOB_JUMPER = 0;
-		const int GOB_CHARGER = 0;
-		const string DMG_BOW = RandomInt(75, 150);
-		const string DMG_KICK = RandomInt(10, 20);
-		const int KICK_RANGE = 128;
-		const int KICK_HITCHANCE = 90;
-		const float FREQ_KICK = 10.0;
+		GOB_JUMPER = 0;
+		GOB_CHARGER = 0;
+		DMG_BOW = RandomInt(75, 150);
+		DMG_KICK = RandomInt(10, 20);
+		KICK_RANGE = 128;
+		KICK_HITCHANCE = 90;
+		FREQ_KICK = 10.0;
 		CAN_FIREBALL = 0;
 		NPC_RANGED = 1;
 		DROPS_CONTAINER = 1;
@@ -48,10 +65,10 @@ class HobgoblinArcher : CGameScript
 		DROP_GOLD = 1;
 		DROP_GOLD_AMT = RandomInt(20, 40);
 		ANIM_ATTACK = "shootorcbow";
-		const string DMG_AXE = RandomInt(40, 75);
-		const int DMG_CHARGE = 50;
+		DMG_AXE = RandomInt(40, 75);
+		DMG_CHARGE = 50;
 		ATTACK_HITCHANCE = 0.95;
-		const string SOUND_DEATH = "monsters/goblin/c_goblin_dead.wav";
+		SOUND_DEATH = "monsters/goblin/c_goblin_dead.wav";
 		Precache(SOUND_DEATH);
 	}
 

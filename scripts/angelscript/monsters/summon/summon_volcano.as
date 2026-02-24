@@ -5,40 +5,56 @@ namespace MS
 
 class SummonVolcano : CGameScript
 {
+	int ANGLE_OFFSET;
 	string ANIM_DEATH;
 	string AOE_DMG;
+	int AOE_FREQ;
+	int AOE_RADIUS;
 	string CAST_BY_PLAYER;
+	int CHAN_VOLCANO;
 	string EFFECT_DURATION;
 	int ERUPTING;
 	string FIREBALL_DMG;
+	float FIREBALL_FREQ;
+	int FLAME_CIRCLE_BODY;
+	int FORCE_OFFSET;
 	string FUNC_ROCKSPAWN_ORIGIN;
 	int FX_ACTIVE;
 	float FX_DELAY;
 	string FX_DURATION;
 	string FX_IDX;
+	string LIGHT_COLOR;
+	int LIGHT_RADIUS;
 	string MODEL_IDX;
+	string MODEL_WORLD;
 	string MY_OWNER;
+	int ROCK_START_HEIGHT;
+	string SOUND_LOOP;
+	string SOUND_SHOOT;
+	string SOUND_START;
+	string SPRITE_BURN;
+	string SPRITE_SMOKE;
 
 	SummonVolcano()
 	{
-		const string MODEL_WORLD = "misc/volcano.mdl";
+		MODEL_WORLD = "misc/volcano.mdl";
 		ANIM_DEATH = "down";
-		const string SOUND_SHOOT = "magic/flamelick_cast.wav";
-		const float FIREBALL_FREQ = 0.27;
-		const int AOE_FREQ = 1;
-		const int AOE_RADIUS = 32;
-		const int ANGLE_OFFSET = 60;
-		const int FORCE_OFFSET = 70;
-		const int ROCK_START_HEIGHT = 40;
-		const string MODEL_WORLD = "weapons/projectiles.mdl";
-		const string SPRITE_BURN = "fire1_fixed.spr";
-		const string SPRITE_SMOKE = "rain_mist.spr";
-		const int FLAME_CIRCLE_BODY = 51;
-		const int CHAN_VOLCANO = 7;
-		const string SOUND_START = "magic/volcano_start.wav";
-		const string SOUND_LOOP = "magic/volcano_loop.wav";
-		const int LIGHT_RADIUS = 250;
-		const string LIGHT_COLOR = "(255,100,100)";
+		SOUND_SHOOT = "magic/flamelick_cast.wav";
+		FIREBALL_FREQ = 0.27;
+		AOE_FREQ = 1;
+		AOE_RADIUS = 32;
+		ANGLE_OFFSET = 60;
+		FORCE_OFFSET = 70;
+		ROCK_START_HEIGHT = 40;
+		MODEL_WORLD = "weapons/projectiles.mdl";
+		SPRITE_BURN = "fire1_fixed.spr";
+		SPRITE_SMOKE = "rain_mist.spr";
+		FLAME_CIRCLE_BODY = 51;
+		CHAN_VOLCANO = 7;
+		SOUND_START = "magic/volcano_start.wav";
+		SOUND_LOOP = "magic/volcano_loop.wav";
+		LIGHT_RADIUS = 250;
+		LIGHT_COLOR = "(255,100,100)";
 	}
 
 	void OnRepeatTimer()
@@ -82,7 +98,7 @@ class SummonVolcano : CGameScript
 	{
 		MY_OWNER = param1;
 		FIREBALL_DMG = param2;
-		AOE_DMG = /* TODO: $math(multiply) */ FIREBALL_DMG;
+		AOE_DMG = (FIREBALL_DMG * 0.12);
 		EFFECT_DURATION = param3;
 		CAST_BY_PLAYER = IsValidPlayer(MY_OWNER);
 		ClientEvent("new", "all", currentscript, GetEntityIndex(GetOwner()), EFFECT_DURATION);
@@ -116,7 +132,7 @@ class SummonVolcano : CGameScript
 		L_DIR += "x";
 		L_DIR += "y";
 		int L_FORCE = 500;
-		L_FORCE += /* TODO: $math(multiply) */ FORCE_OFFSET;
+		L_FORCE += (FORCE_OFFSET * Random(-1, 1));
 		CallExternal(MY_OWNER, "ext_tossprojectile", "proj_volcano", L_ORIGIN, L_DIR, L_FORCE, FIREBALL_DMG, 0, "spellcasting.fire");
 		EmitSound(GetOwner(), CHAN_WEAPON, SOUND_SHOOT, 4);
 		FIREBALL_FREQ("fireball_loop");
@@ -232,9 +248,9 @@ class SummonVolcano : CGameScript
 
 	void update_smoke()
 	{
-		if (/* TODO: $math(subtract) */ GetGameTime() >= 0.1)
+		if ((GetGameTime() - "game.tempent.fuser1") >= 0.1)
 		{
-			string L_SCALE = /* TODO: $math(add) */ "game.tempent.scale";
+			string L_SCALE = ("game.tempent.scale" + 0.04);
 			string L_VEL = "game.tempent.velocity";
 			L_VEL += "y";
 			L_VEL += "x";

@@ -12,23 +12,34 @@ class SlimeGreen : CGameScript
 	string ANIM_IDLE;
 	string ANIM_RUN;
 	string ANIM_WALK;
+	float ATTACK_DAMAGE;
+	float ATTACK_HITCHANCE;
 	int ATTACK_HITRANGE;
 	int ATTACK_MOVERANGE;
 	int ATTACK_RANGE;
+	float FREQ_SPIT;
 	int MOVE_RANGE;
 	int NPC_GIVE_EXP;
 	int NPC_RANGED;
+	float POISON_DAMAGE;
+	string SOUND_ATTACK1;
+	string SOUND_ATTACK2;
+	string SOUND_DEATH;
+	string SOUND_IDLE;
+	string SOUND_STRUCK1;
+	string SOUND_STRUCK2;
+	int SPIT_DAMAGE;
 	int SPIT_DELAY;
 	string SPIT_TARGET;
 
 	SlimeGreen()
 	{
-		const string SOUND_DEATH = "monsters/sludge/bio.wav";
-		const string SOUND_STRUCK1 = "barnacle/bcl_bite3.wav";
-		const string SOUND_STRUCK2 = "barnacle/bcl_die3.wav";
-		const string SOUND_IDLE = "barnacle/bcl_alert2.wav";
-		const string SOUND_ATTACK1 = "barnacle/bcl_tongue1.wav";
-		const string SOUND_ATTACK2 = "barnacle/bcl_chew3.wav";
+		SOUND_DEATH = "monsters/sludge/bio.wav";
+		SOUND_STRUCK1 = "barnacle/bcl_bite3.wav";
+		SOUND_STRUCK2 = "barnacle/bcl_die3.wav";
+		SOUND_IDLE = "barnacle/bcl_alert2.wav";
+		SOUND_ATTACK1 = "barnacle/bcl_tongue1.wav";
+		SOUND_ATTACK2 = "barnacle/bcl_chew3.wav";
 		Precache(SOUND_DEATH);
 		ANIM_IDLE = "walk";
 		ANIM_RUN = "run";
@@ -40,11 +51,11 @@ class SlimeGreen : CGameScript
 		ANIM_DEATH = "die";
 		ATTACK_RANGE = 40;
 		ATTACK_HITRANGE = 120;
-		const float ATTACK_HITCHANCE = 0.75;
-		const string ATTACK_DAMAGE = Random(5, 15);
-		const string POISON_DAMAGE = Random(1, 5);
-		const float FREQ_SPIT = 2.0;
-		const string SPIT_DAMAGE = RandomInt(5, 20);
+		ATTACK_HITCHANCE = 0.75;
+		ATTACK_DAMAGE = Random(5, 15);
+		POISON_DAMAGE = Random(1, 5);
+		FREQ_SPIT = 2.0;
+		SPIT_DAMAGE = RandomInt(5, 20);
 	}
 
 	void OnRepeatTimer()

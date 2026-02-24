@@ -9,34 +9,53 @@ class MagicHandDivGlow : CGameScript
 {
 	string CAST_DELAY;
 	string CAST_STARTED;
+	string EFFECT_DURATION_FORMULA;
+	string EFFECT_DURATION_STAT;
+	int EFFECT_MAXDURATION;
+	int EFFECT_MINDURATION;
+	int EFFECT_STACK;
+	float FREQ_INC_LIGHT;
+	string LIGHTRNG_FORMULA;
+	int LIGHTRNG_MAX;
+	int LIGHTRNG_MIN;
+	string LIGHTRNG_SKILL;
 	string LIGHT_POWER;
 	string MAX_LIGHT_POWER;
+	float MELEE_ATK_DURATION;
+	float MELEE_HITCHANCE;
+	int MELEE_RANGE;
 	string NEXT_LIGHT_UPDATE;
+	string SOUND_SHOOT;
+	string SPELL_DAMAGE_TYPE;
+	int SPELL_ENERGYDRAIN;
+	int SPELL_MPDRAIN;
+	float SPELL_PREPARE_TIME;
 	int SPELL_SKILL_REQUIRED;
+	string SPELL_STAT;
 
 	MagicHandDivGlow()
 	{
-		const string SOUND_SHOOT = "magic/cast.wav";
-		const int MELEE_RANGE = 1024;
-		const float MELEE_HITCHANCE = 1.0;
-		const float MELEE_ATK_DURATION = 0.5;
+		SOUND_SHOOT = "magic/cast.wav";
+		MELEE_RANGE = 1024;
+		MELEE_HITCHANCE = 1.0;
+		MELEE_ATK_DURATION = 0.5;
 		SPELL_SKILL_REQUIRED = 1;
-		const float SPELL_PREPARE_TIME = 0.5;
-		const string SPELL_DAMAGE_TYPE = "generic";
-		const int SPELL_ENERGYDRAIN = 5;
-		const int SPELL_MPDRAIN = 1;
-		const string SPELL_STAT = "none";
-		const int EFFECT_MAXDURATION = 240;
-		const int EFFECT_MINDURATION = 60;
-		const string EFFECT_DURATION_STAT = GetStat(GetOwner(), "concentration");
+		SPELL_PREPARE_TIME = 0.5;
+		SPELL_DAMAGE_TYPE = "generic";
+		SPELL_ENERGYDRAIN = 5;
+		SPELL_MPDRAIN = 1;
+		SPELL_STAT = "none";
+		EFFECT_MAXDURATION = 240;
+		EFFECT_MINDURATION = 60;
+		EFFECT_DURATION_STAT = GetStat(GetOwner(), "concentration");
 		EFFECT_DURATION_STAT /= 100;
-		const string EFFECT_DURATION_FORMULA = /* TODO: $get_skill_ratio */ $get_skill_ratio(EFFECT_DURATION_STAT, EFFECT_MINDURATION, EFFECT_MAXDURATION);
-		const int LIGHTRNG_MAX = 384;
-		const int LIGHTRNG_MIN = 96;
-		const string LIGHTRNG_SKILL = "l.skillratio";
-		const string LIGHTRNG_FORMULA = /* TODO: $get_skill_ratio */ $get_skill_ratio(LIGHTRNG_SKILL, LIGHTRNG_MIN, LIGHTRNG_MAX);
-		const int EFFECT_STACK = 1;
-		const float FREQ_INC_LIGHT = 0.2;
+		EFFECT_DURATION_FORMULA = /* TODO: $get_skill_ratio */ $get_skill_ratio(EFFECT_DURATION_STAT, EFFECT_MINDURATION, EFFECT_MAXDURATION);
+		LIGHTRNG_MAX = 384;
+		LIGHTRNG_MIN = 96;
+		LIGHTRNG_SKILL = "l.skillratio";
+		LIGHTRNG_FORMULA = /* TODO: $get_skill_ratio */ $get_skill_ratio(LIGHTRNG_SKILL, LIGHTRNG_MIN, LIGHTRNG_MAX);
+		EFFECT_STACK = 1;
+		FREQ_INC_LIGHT = 0.2;
 	}
 
 	void spell_spawn()
@@ -159,11 +178,11 @@ class MagicHandDivGlow : CGameScript
 			string DISP_POWER = "(";
 			string L_LIGHT_POWER = LIGHT_POWER;
 			L_LIGHT_POWER *= 100;
-			string L_LIGHT_POWER = int(L_LIGHT_POWER);
+			int L_LIGHT_POWER = int(L_LIGHT_POWER);
 			DISP_POWER += L_LIGHT_POWER;
 			DISP_POWER += "%";
 			DISP_POWER += ")";
-			SendPlayerMessage("Glow:", "Charge set DISP_POWER");
+			SendPlayerMessage("Glow:", "Charge set " + DISP_POWER);
 		}
 		DeleteEntity(GetOwner());
 	}

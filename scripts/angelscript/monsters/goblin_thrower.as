@@ -7,21 +7,40 @@ namespace MS
 
 class GoblinThrower : CGameScript
 {
+	int AIM_RATIO;
 	string ANIM_ATTACK;
 	string ANIM_DEATH;
 	string ANIM_RUN;
 	string ANIM_WALK;
+	int ATTACK_CONE_OF_FIRE;
 	int ATTACK_HITRANGE;
 	int ATTACK_RANGE;
+	int ATTACK_SPEED;
 	int CAN_FLEE;
 	int CAN_HUNT;
-	string DROP_GOLD;
+	int DROP_GOLD;
 	int DROP_GOLD_MAX;
 	int DROP_GOLD_MIN;
 	int HUNT_AGRO;
 	string LAST_ENEMY;
 	int MOVE_RANGE;
 	float RETALIATE_CHANCE;
+	string SOUND_ATTACK1;
+	string SOUND_ATTACK2;
+	string SOUND_ATTACK3;
+	string SOUND_DEATH;
+	string SOUND_DEATH2;
+	string SOUND_HELP;
+	string SOUND_HIT;
+	string SOUND_HIT1;
+	string SOUND_HIT2;
+	string SOUND_PAINYELL;
+	string SOUND_STRUCK1;
+	string SOUND_STRUCK2;
+	string SOUND_STRUCK3;
+	string SOUND_WARCRY1;
+	int STONE_DAMAGE_HIGH;
+	int STONE_DAMAGE_LOW;
 
 	GoblinThrower()
 	{
@@ -32,25 +51,25 @@ class GoblinThrower : CGameScript
 		MOVE_RANGE = 300;
 		ATTACK_RANGE = 400;
 		ATTACK_HITRANGE = 400;
-		const int STONE_DAMAGE_LOW = 4;
-		const int STONE_DAMAGE_HIGH = 7;
-		const int ATTACK_CONE_OF_FIRE = 0;
-		const int AIM_RATIO = 50;
-		const int ATTACK_SPEED = 1000;
-		const string SOUND_STRUCK1 = "body/flesh1.wav";
-		const string SOUND_STRUCK2 = "body/flesh2.wav";
-		const string SOUND_STRUCK3 = "body/flesh3.wav";
-		const string SOUND_HIT = "monsters/goblin/c_gargoyle_hit1.wav";
-		const string SOUND_HIT1 = "monsters/goblin/c_gargoyle_hit1.wav";
-		const string SOUND_HIT2 = "monsters/goblin/c_gargoyle_hit2.wav";
-		const string SOUND_PAINYELL = "monsters/orc/pain.wav";
-		const string SOUND_WARCRY1 = "monsters/goblin/c_goblin_bat1.wav";
-		const string SOUND_ATTACK1 = "monsters/goblin/c_goblin_atk1.wav";
-		const string SOUND_ATTACK2 = "monsters/goblin/c_goblin_atk2.wav";
-		const string SOUND_ATTACK3 = "monsters/goblin/c_goblin_atk3.wav";
-		const string SOUND_DEATH = "monsters/goblin/c_goblin_dead.wav";
-		const string SOUND_DEATH2 = "monsters/goblin/c_goblin_dead.wav";
-		const string SOUND_HELP = "monsters/goblin/c_goblin_bat2.wav";
+		STONE_DAMAGE_LOW = 4;
+		STONE_DAMAGE_HIGH = 7;
+		ATTACK_CONE_OF_FIRE = 0;
+		AIM_RATIO = 50;
+		ATTACK_SPEED = 1000;
+		SOUND_STRUCK1 = "body/flesh1.wav";
+		SOUND_STRUCK2 = "body/flesh2.wav";
+		SOUND_STRUCK3 = "body/flesh3.wav";
+		SOUND_HIT = "monsters/goblin/c_gargoyle_hit1.wav";
+		SOUND_HIT1 = "monsters/goblin/c_gargoyle_hit1.wav";
+		SOUND_HIT2 = "monsters/goblin/c_gargoyle_hit2.wav";
+		SOUND_PAINYELL = "monsters/orc/pain.wav";
+		SOUND_WARCRY1 = "monsters/goblin/c_goblin_bat1.wav";
+		SOUND_ATTACK1 = "monsters/goblin/c_goblin_atk1.wav";
+		SOUND_ATTACK2 = "monsters/goblin/c_goblin_atk2.wav";
+		SOUND_ATTACK3 = "monsters/goblin/c_goblin_atk3.wav";
+		SOUND_DEATH = "monsters/goblin/c_goblin_dead.wav";
+		SOUND_DEATH2 = "monsters/goblin/c_goblin_dead.wav";
+		SOUND_HELP = "monsters/goblin/c_goblin_bat2.wav";
 		CAN_HUNT = 1;
 		HUNT_AGRO = 1;
 		RETALIATE_CHANCE = 0.5;
@@ -85,7 +104,7 @@ class GoblinThrower : CGameScript
 		string AIM_ANGLE = GetEntityDist(m_hLastSeen);
 		AIM_ANGLE /= AIM_RATIO;
 		SetAngles("add_view.x");
-		string LCL_ATKDMG = Random(STONE_DAMAGE_LOW, STONE_DAMAGE_HIGH);
+		float LCL_ATKDMG = Random(STONE_DAMAGE_LOW, STONE_DAMAGE_HIGH);
 		TossProjectile("proj_stone", /* TODO: $relpos */ $relpos(0, 0, 18), "none", ATTACK_SPEED, LCL_ATKDMG, ATTACK_CONE_OF_FIRE, "none");
 		attack_sound();
 	}

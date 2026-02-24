@@ -71,8 +71,8 @@ class IceSpikes : CGameScript
 	void spawn_spikes()
 	{
 		string SPIKE_POS = CENTER_POINT;
-		string F_ADJ = RandomInt(0, CL_RADIUS);
-		string YAW_ADJ = RandomInt(0, 359);
+		int F_ADJ = RandomInt(0, CL_RADIUS);
+		int YAW_ADJ = RandomInt(0, 359);
 		SPIKE_POS += /* TODO: $relpos */ $relpos(Vector3(0, YAW_ADJ, 0), Vector3(0, F_ADJ, 0));
 		ClientEffect("tempent", "sprite", "glassgibs.mdl", SPIKE_POS, "setup_spike");
 	}
@@ -80,11 +80,11 @@ class IceSpikes : CGameScript
 	void setup_spike()
 	{
 		int PITCH_ADJ = 0;
-		string YAW_ADJ = RandomInt(0, 359);
-		string ROLL_ADJ = RandomInt(200, 320);
-		string SCALE_ADJ = Random(5.0, 20.0);
+		int YAW_ADJ = RandomInt(0, 359);
+		int ROLL_ADJ = RandomInt(200, 320);
+		float SCALE_ADJ = Random(5.0, 20.0);
 		Vector3 ANGLE_ADJ = Vector3(PITCH_ADJ, YAW_ADJ, ROLL_ADJ);
-		string BODY_ADJ = RandomInt(0, 7);
+		int BODY_ADJ = RandomInt(0, 7);
 		ClientEffect("tempent", "set_current_prop", "death_delay", 4.7);
 		ClientEffect("tempent", "set_current_prop", "rendercolor", Vector3(255, 255, 255));
 		ClientEffect("tempent", "set_current_prop", "renderamt", 255);

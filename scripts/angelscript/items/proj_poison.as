@@ -7,23 +7,39 @@ namespace MS
 
 class ProjPoison : CGameScript
 {
+	int ARROW_BODY_OFS;
+	float ARROW_BREAK_CHANCE;
+	int MODEL_BODY_OFS;
+	string MODEL_HANDS;
+	string MODEL_WORLD;
+	string PROJ_ANIM_IDLE;
+	int PROJ_DAMAGE;
+	int PROJ_DAMAGE_AOE_FALLOFF;
+	int PROJ_DAMAGE_AOE_RANGE;
+	string PROJ_DAMAGE_TYPE;
+	int PROJ_SOLIDIFY_ON_WALL;
+	int PROJ_STICK_DURATION;
+	string SOUND_HITWALL1;
+	string SOUND_HITWALL2;
+	string SPRITE;
+
 	ProjPoison()
 	{
-		const string MODEL_HANDS = "weapons/projectiles.mdl";
-		const string MODEL_WORLD = "weapons/projectiles.mdl";
-		const int ARROW_BODY_OFS = 6;
-		const string PROJ_ANIM_IDLE = "idle_icebolt";
-		const string SOUND_HITWALL1 = "weapons/bow/arrowhit1.wav";
-		const string SOUND_HITWALL2 = "weapons/bow/arrowhit1.wav";
-		const int MODEL_BODY_OFS = 6;
-		const string SPRITE = "poison.spr";
-		const string PROJ_DAMAGE = RandomInt(4, 6);
-		const int PROJ_STICK_DURATION = 0;
-		const int PROJ_SOLIDIFY_ON_WALL = 0;
-		const float ARROW_BREAK_CHANCE = 0.2;
-		const int PROJ_DAMAGE_AOE_RANGE = 32;
-		const int PROJ_DAMAGE_AOE_FALLOFF = 1;
-		const string PROJ_DAMAGE_TYPE = "poison";
+		MODEL_HANDS = "weapons/projectiles.mdl";
+		MODEL_WORLD = "weapons/projectiles.mdl";
+		ARROW_BODY_OFS = 6;
+		PROJ_ANIM_IDLE = "idle_icebolt";
+		SOUND_HITWALL1 = "weapons/bow/arrowhit1.wav";
+		SOUND_HITWALL2 = "weapons/bow/arrowhit1.wav";
+		MODEL_BODY_OFS = 6;
+		SPRITE = "poison.spr";
+		PROJ_DAMAGE = RandomInt(4, 6);
+		PROJ_STICK_DURATION = 0;
+		PROJ_SOLIDIFY_ON_WALL = 0;
+		ARROW_BREAK_CHANCE = 0.2;
+		PROJ_DAMAGE_AOE_RANGE = 32;
+		PROJ_DAMAGE_AOE_FALLOFF = 1;
+		PROJ_DAMAGE_TYPE = "poison";
 		Precache(SPRITE);
 	}
 
@@ -51,7 +67,7 @@ class ProjPoison : CGameScript
 	void game_dodamage()
 	{
 		if (!(param1)) return;
-		string random = RandomInt(0, 1);
+		int random = RandomInt(0, 1);
 		string MY_OWNER = GetEntityIndex("ent_expowner");
 		if (random == 1)
 		{

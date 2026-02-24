@@ -65,8 +65,8 @@ class DragonGreenMiniCl : CGameScript
 		ClientEffect("tempent", "set_current_prop", "rendercolor", Vector3(0, 0, 0));
 		ClientEffect("tempent", "set_current_prop", "gravity", 1.0);
 		ClientEffect("tempent", "set_current_prop", "collide", "world;die");
-		string RND_RL = Random(-10, 10);
-		string RND_UD = Random(-420, -280);
+		float RND_RL = Random(-10, 10);
+		float RND_UD = Random(-420, -280);
 		string CLOUD_VEL = /* TODO: $relvel */ $relvel(Vector3(20, CLOUD_ANG, 0), Vector3(RND_RL, 400, RND_UD));
 		ClientEffect("tempent", "set_current_prop", "velocity", CLOUD_VEL);
 	}
@@ -75,9 +75,9 @@ class DragonGreenMiniCl : CGameScript
 	{
 		ClientEffect("tempent", "set_current_prop", "death_delay", 0.75);
 		ClientEffect("tempent", "set_current_prop", "scale", Random(0.5, 3.0));
-		string RND_RL = Random(-30, 30);
-		string RND_UD = Random(-420, -280);
-		string RND_PITCH = Random(20.0, 45.0);
+		float RND_RL = Random(-30, 30);
+		float RND_UD = Random(-420, -280);
+		float RND_PITCH = Random(20.0, 45.0);
 		string CLOUD_VEL = /* TODO: $relvel */ $relvel(Vector3(RND_PITCH, CLOUD_ANG, 0), Vector3(RND_RL, 1000, RND_UD));
 		ClientEffect("tempent", "set_current_prop", "gravity", 1.0);
 		ClientEffect("tempent", "set_current_prop", "velocity", CLOUD_VEL);
@@ -90,8 +90,8 @@ class DragonGreenMiniCl : CGameScript
 		ClientEffect("tempent", "set_current_prop", "rendermode", "texture");
 		ClientEffect("tempent", "set_current_prop", "renderamt", 255);
 		ClientEffect("tempent", "set_current_prop", "rendercolor", Vector3(0, 255, 0));
-		string RND_PITCH = Random(0.0, 359.99);
-		string RND_YAW = Random(0.0, 359.99);
+		float RND_PITCH = Random(0.0, 359.99);
+		float RND_YAW = Random(0.0, 359.99);
 		ClientEffect("tempent", "set_current_prop", "angles", Vector3(RND_PITCH, RND_YAW, 0));
 	}
 

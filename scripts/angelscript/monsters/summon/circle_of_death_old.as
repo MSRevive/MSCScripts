@@ -8,21 +8,36 @@ namespace MS
 class CircleOfDeathOld : CGameScript
 {
 	int CIRCLE_ON;
+	int CIRCLE_RADIUS;
 	string CIRCLE_TARGETS;
 	string CIRCLE_UP;
 	string DID_WINDUP;
+	string FX_SPRITE;
 	string GAME_PVP;
 	string LAST_LIGHT;
+	float LIGHT_DIE;
+	float LIGHT_DROPPED_SCALE;
+	float LIGHT_PLAYER_SCALE;
 	string MY_BASE_DAMAGE;
 	string MY_DURATION;
 	string MY_OWNER;
 	string MY_OWNER_RACE;
 	string MY_SKILL;
+	int OFSZ_NEG;
+	int OFSZ_POS;
+	int OFS_NEG;
+	int OFS_POS;
 	string OWNER_ISPLAYER;
 	int PLAYING_DEAD;
+	float PULSE_PLAYTIME;
 	int RAIN_SPRITES;
 	int ROT_COUNT;
 	int SEAL_DROP_COUNTER;
+	string SEAL_MODEL;
+	int SEAL_OFS;
+	string SOUND_FADE;
+	string SOUND_MANIFEST;
+	string SOUND_PULSE;
 	string THIS_SCRIPT_CLIENT_ID;
 	string sfx.duration;
 	string sfx.npcid;
@@ -30,22 +45,22 @@ class CircleOfDeathOld : CGameScript
 
 	CircleOfDeathOld()
 	{
-		const string SEAL_MODEL = "weapons/magic/seals.mdl";
-		const int SEAL_OFS = 4;
-		const string SOUND_MANIFEST = "magic/temple.wav";
-		const string SOUND_PULSE = "magic/pulsemachine_noloop.wav";
-		const string SOUND_FADE = "magic/frost_reverse.wav";
-		const string FX_SPRITE = "skull.spr";
-		const float PULSE_PLAYTIME = 1.7;
-		const int CIRCLE_RADIUS = 180;
-		const float LIGHT_DIE = 1.6;
+		SEAL_MODEL = "weapons/magic/seals.mdl";
+		SEAL_OFS = 4;
+		SOUND_MANIFEST = "magic/temple.wav";
+		SOUND_PULSE = "magic/pulsemachine_noloop.wav";
+		SOUND_FADE = "magic/frost_reverse.wav";
+		FX_SPRITE = "skull.spr";
+		PULSE_PLAYTIME = 1.7;
+		CIRCLE_RADIUS = 180;
+		LIGHT_DIE = 1.6;
 		Precache(FX_SPRITE);
-		const int OFS_POS = 128;
-		const int OFS_NEG = -128;
-		const int OFSZ_POS = 256;
-		const int OFSZ_NEG = -10;
-		const float LIGHT_PLAYER_SCALE = 0.3;
-		const float LIGHT_DROPPED_SCALE = 0.5;
+		OFS_POS = 128;
+		OFS_NEG = -128;
+		OFSZ_POS = 256;
+		OFSZ_NEG = -10;
+		LIGHT_PLAYER_SCALE = 0.3;
+		LIGHT_DROPPED_SCALE = 0.5;
 	}
 
 	void game_dynamically_created()
@@ -99,7 +114,7 @@ class CircleOfDeathOld : CGameScript
 		string SEAL_Z = (SEAL_POS).z;
 		string GROUND_DIST = GROUND_Z;
 		GROUND_DIST -= SEAL_Z;
-		// TODO: UNCONVERTED: subract GROUND_DIST 2
+		GROUND_DIST -= 2;
 		SEAL_POS += /* TODO: $relpos */ $relpos(Vector3(0, 0, 0), Vector3(0, 0, GROUND_DIST));
 		SpawnNPC("monsters/summon/seal_maker", SEAL_POS, ScriptMode::Legacy); // params: SEAL_MODEL, MY_DURATION, SEAL_OFS
 	}

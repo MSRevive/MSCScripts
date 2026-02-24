@@ -8,42 +8,73 @@ namespace MS
 
 class FistBare : CGameScript
 {
+	int ANIM_ATTACK1;
+	int ANIM_HANDS_DOWN;
+	int ANIM_IDLE1;
+	int ANIM_IDLE_TOTAL;
+	int ANIM_LIFT1;
+	int ANIM_LOWER;
+	string ANIM_PREFIX;
+	int ANIM_SHEATH;
 	string FISTS_LAST_ATTACK;
+	float MELEE_ACCURACY;
+	float MELEE_ATK_DURATION;
+	int MELEE_DMG;
+	float MELEE_DMG_DELAY;
+	int MELEE_DMG_RANGE;
+	string MELEE_DMG_TYPE;
+	int MELEE_ENERGY;
+	float MELEE_PARRY_CHANCE;
+	int MELEE_RANGE;
+	string MELEE_SOUND;
+	string MELEE_SOUND_DELAY;
+	string MELEE_STAT;
+	string MELEE_VIEWANIM_ATK;
+	int MODEL_BODY_OFS;
+	string MODEL_HANDS;
+	string MODEL_VIEW;
+	string MODEL_WORLD;
+	int NO_IDLE;
+	int NO_PARRY;
+	string PLAYERANIM_AIM;
 	string PUNCH_ATTACK;
+	string SOUND_HITWALL1;
+	string SOUND_HITWALL2;
+	string SOUND_SWIPE;
 
 	FistBare()
 	{
-		const int NO_PARRY = 1;
-		const int NO_IDLE = 1;
-		const int ANIM_HANDS_DOWN = 3;
-		const int ANIM_LIFT1 = 2;
-		const int ANIM_LOWER = 3;
-		const int ANIM_IDLE1 = 1;
-		const int ANIM_IDLE_TOTAL = 1;
-		const int ANIM_ATTACK1 = 4;
-		const int ANIM_SHEATH = 3;
-		const string MODEL_VIEW = "viewmodels/v_martialarts.mdl";
-		const string MODEL_HANDS = "none";
-		const string MODEL_WORLD = "none";
-		const string SOUND_SWIPE = "weapons/swingsmall.wav";
-		const string SOUND_HITWALL1 = "weapons/cbar_hitbod1.wav";
-		const string SOUND_HITWALL2 = "weapons/cbar_hitbod2.wav";
-		const int MODEL_BODY_OFS = 0;
-		const string ANIM_PREFIX = "fists";
-		const int MELEE_RANGE = 50;
-		const float MELEE_DMG_DELAY = 0.3;
-		const float MELEE_ATK_DURATION = 0.9;
-		const int MELEE_ENERGY = 1;
-		const int MELEE_DMG = 60;
-		const int MELEE_DMG_RANGE = 0;
-		const string MELEE_DMG_TYPE = "blunt";
-		const float MELEE_ACCURACY = 0.7;
-		const string MELEE_STAT = "martialarts";
-		const string MELEE_VIEWANIM_ATK = ANIM_ATTACK1;
-		const string MELEE_SOUND = SOUND_SWIPE;
-		const string MELEE_SOUND_DELAY = MELEE_DMG_DELAY;
-		const float MELEE_PARRY_CHANCE = 0.0;
-		const string PLAYERANIM_AIM = "fists";
+		NO_PARRY = 1;
+		NO_IDLE = 1;
+		ANIM_HANDS_DOWN = 3;
+		ANIM_LIFT1 = 2;
+		ANIM_LOWER = 3;
+		ANIM_IDLE1 = 1;
+		ANIM_IDLE_TOTAL = 1;
+		ANIM_ATTACK1 = 4;
+		ANIM_SHEATH = 3;
+		MODEL_VIEW = "viewmodels/v_martialarts.mdl";
+		MODEL_HANDS = "none";
+		MODEL_WORLD = "none";
+		SOUND_SWIPE = "weapons/swingsmall.wav";
+		SOUND_HITWALL1 = "weapons/cbar_hitbod1.wav";
+		SOUND_HITWALL2 = "weapons/cbar_hitbod2.wav";
+		MODEL_BODY_OFS = 0;
+		ANIM_PREFIX = "fists";
+		MELEE_RANGE = 50;
+		MELEE_DMG_DELAY = 0.3;
+		MELEE_ATK_DURATION = 0.9;
+		MELEE_ENERGY = 1;
+		MELEE_DMG = 60;
+		MELEE_DMG_RANGE = 0;
+		MELEE_DMG_TYPE = "blunt";
+		MELEE_ACCURACY = 0.7;
+		MELEE_STAT = "martialarts";
+		MELEE_VIEWANIM_ATK = ANIM_ATTACK1;
+		MELEE_SOUND = SOUND_SWIPE;
+		MELEE_SOUND_DELAY = MELEE_DMG_DELAY;
+		MELEE_PARRY_CHANCE = 0.0;
+		PLAYERANIM_AIM = "fists";
 	}
 
 	void weapon_spawn()
@@ -86,7 +117,7 @@ class FistBare : CGameScript
 	{
 		SetRepeatDelay(1);
 		if (!(FISTS_LAST_ATTACK)) return;
-		string l_elapsedtime = GetGameTime();
+		float l_elapsedtime = GetGameTime();
 		l_elapsedtime -= FISTS_LAST_ATTACK;
 		if (!(l_elapsedtime > 5)) return;
 		PlayViewAnim(ANIM_LOWER);

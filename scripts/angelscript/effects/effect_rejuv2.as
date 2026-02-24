@@ -7,10 +7,13 @@ namespace MS
 
 class EffectRejuv2 : CGameScript
 {
+	string EFFECT_ID;
+	string EFFECT_SCRIPT;
+
 	EffectRejuv2()
 	{
-		const string EFFECT_ID = "effect_rejuvenate";
-		const string EFFECT_SCRIPT = currentscript;
+		EFFECT_ID = "effect_rejuvenate";
+		EFFECT_SCRIPT = currentscript;
 	}
 
 	void game_activate()
@@ -30,19 +33,19 @@ class EffectRejuv2 : CGameScript
 			Effect("glow", GetOwner(), Vector3(0, 255, 0), 256, 1, 1);
 			if ((HEALING_OTHER))
 			{
-				SendColoredMessage(CASTER_ID, "You heal GetEntityName(MY_ID) for HEAL_AMT hp");
-				SendColoredMessage(MY_ID, "GetEntityName(CASTER_ID) heals you for HEAL_AMT hp");
+				SendColoredMessage(CASTER_ID, "You heal " + GetEntityName(MY_ID) + "for " + HEAL_AMT + " hp");
+				SendColoredMessage(MY_ID, GetEntityName(CASTER_ID) + "heals you for " + HEAL_AMT + " hp");
 			}
 			else
 			{
-				SendColoredMessage(CASTER_ID, "You heal yourself for HEAL_AMT hp");
+				SendColoredMessage(CASTER_ID, "You heal yourself for " + HEAL_AMT + " hp");
 			}
 		}
 		else
 		{
 			if ((HEALING_OTHER))
 			{
-				SendColoredMessage(CASTER_ID, "GetEntityName(MY_ID) is at maximum health");
+				SendColoredMessage(CASTER_ID, GetEntityName(MY_ID) + " is at maximum health");
 			}
 			else
 			{

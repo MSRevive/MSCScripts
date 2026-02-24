@@ -5,12 +5,13 @@ namespace MS
 
 class Filter : CGameScript
 {
+	string FILTER_REJECTS;
 	string FILTER_RESULT;
 	int NUM_REMOVED;
 
 	Filter()
 	{
-		const string FILTER_REJECTS = "fist_bare;pack_;sheath_;magic_hand_;item_tk_";
+		FILTER_REJECTS = "fist_bare;pack_;sheath_;magic_hand_;item_tk_";
 	}
 
 	void func_filter_items()
@@ -90,11 +91,11 @@ class Filter : CGameScript
 		int L_REMOVE = 0;
 		string L_PLAYER = param1;
 		string L_ITEM = GetToken(FILTER_RESULT, L_ITEM_IDX, ";");
-		string L_BANK = /* TODO: $func */ $func("func_get_free_bank", L_PLAYER, L_ITEM);
+		string L_BANK = "func_get_free_bank"(L_PLAYER, L_ITEM);
 		if (L_BANK == "0")
 		{
 			string L_STR = "Your bank is too full to fit ";
-			SendColoredMessage(L_PLAYER, "L_STR");
+			SendColoredMessage(L_PLAYER, L_STR);
 			RemoveToken(FILTER_RESULT, L_ITEM_IDX, ";");
 			NUM_REMOVED += 1;
 		}

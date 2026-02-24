@@ -7,17 +7,19 @@ namespace MS
 
 class Voldararcher : CGameScript
 {
+	string ARROW_TYPE;
 	float CONTAINER_DROP_CHANCE;
 	string CONTAINER_SCRIPT;
 	int DOING_KICK;
 	int DROPS_CONTAINER;
 	int IS_ARROW;
 	int KICK_TYPE;
+	string NPC_DEATH_MSG;
 
 	Voldararcher()
 	{
-		const string ARROW_TYPE = "proj_arrow_gpoison";
-		const string NPC_DEATH_MSG = "You have slain one of Voldar's rangers";
+		ARROW_TYPE = "proj_arrow_gpoison";
+		NPC_DEATH_MSG = "You have slain one of Voldar's rangers";
 	}
 
 	void orc_spawn()
@@ -58,7 +60,7 @@ class Voldararcher : CGameScript
 		FINAL_TARGET += /* TODO: $relpos */ $relpos(Vector3(0, 0, 0), Vector3(0, 0, TARGET_DIST));
 		TARGET_DIST /= 100;
 		SetAngles("add_view.pitch");
-		string LCL_ATKDMG = Random(ARROW_DAMAGE_LOW, ARROW_DAMAGE_HIGH);
+		float LCL_ATKDMG = Random(ARROW_DAMAGE_LOW, ARROW_DAMAGE_HIGH);
 		IS_ARROW = 1;
 		TossProjectile(ARROW_TYPE, /* TODO: $relpos */ $relpos(0, 0, 18), m_hLastSeen, ATTACK_SPEED, LCL_ATKDMG, ATTACK_CONE_OF_FIRE, "none");
 		CallExternal(GetEntityIndex("ent_lastprojectile"), "ext_lighten", 0.4);

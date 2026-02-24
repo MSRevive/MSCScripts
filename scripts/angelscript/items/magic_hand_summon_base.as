@@ -7,29 +7,48 @@ namespace MS
 
 class MagicHandSummonBase : CGameScript
 {
+	string EFFECT_DMG;
+	string EFFECT_DURATION;
+	string EFFECT_DURATION_STAT;
+	int EFFECT_MAXDURATION;
+	int EFFECT_MAX_DMG;
+	int EFFECT_MINDURATION;
+	float EFFECT_MIN_DMG;
+	string EFFECT_SCRIPT;
+	int MELEE_ATK_DURATION;
+	float MELEE_HITCHANCE;
+	int MELEE_RANGE;
+	string SOUND_SHOOT;
+	string SPELL_DAMAGE_TYPE;
+	string SPELL_DESC;
+	int SPELL_ENERGYDRAIN;
+	int SPELL_MPDRAIN;
+	string SPELL_NAME;
+	int SPELL_PREPARE_TIME;
+	string SPELL_STAT;
 	int baseitem.canidle;
 
 	MagicHandSummonBase()
 	{
-		const string SPELL_NAME = "Some Spell";
-		const string SPELL_DESC = "Some Description";
-		const string SOUND_SHOOT = "magic/cast.wav";
-		const int MELEE_RANGE = 200;
-		const float MELEE_HITCHANCE = 1.0;
-		const int MELEE_ATK_DURATION = 1;
-		const int SPELL_PREPARE_TIME = 2;
-		const string SPELL_DAMAGE_TYPE = "summon";
-		const int SPELL_ENERGYDRAIN = 20;
-		const int SPELL_MPDRAIN = 1;
-		const string SPELL_STAT = "none";
-		const int EFFECT_MAXDURATION = 180;
-		const int EFFECT_MINDURATION = 10;
-		const string EFFECT_DURATION_STAT = GetStat(GetOwner(), "concentration.ratio");
-		const string EFFECT_DURATION = /* TODO: $get_skill_ratio */ $get_skill_ratio(EFFECT_DURATION_STAT, EFFECT_MINDURATION, EFFECT_MAXDURATION);
-		const int EFFECT_MAX_DMG = 10;
-		const float EFFECT_MIN_DMG = 0.1;
-		const string EFFECT_DMG = GetSkillLevel(GetOwner(), "spellcasting.ratio");
-		const string EFFECT_SCRIPT = "EFFECT_SCRIPT needs to be defined!";
+		SPELL_NAME = "Some Spell";
+		SPELL_DESC = "Some Description";
+		SOUND_SHOOT = "magic/cast.wav";
+		MELEE_RANGE = 200;
+		MELEE_HITCHANCE = 1.0;
+		MELEE_ATK_DURATION = 1;
+		SPELL_PREPARE_TIME = 2;
+		SPELL_DAMAGE_TYPE = "summon";
+		SPELL_ENERGYDRAIN = 20;
+		SPELL_MPDRAIN = 1;
+		SPELL_STAT = "none";
+		EFFECT_MAXDURATION = 180;
+		EFFECT_MINDURATION = 10;
+		EFFECT_DURATION_STAT = GetStat(GetOwner(), "concentration.ratio");
+		EFFECT_DURATION = /* TODO: $get_skill_ratio */ $get_skill_ratio(EFFECT_DURATION_STAT, EFFECT_MINDURATION, EFFECT_MAXDURATION);
+		EFFECT_MAX_DMG = 10;
+		EFFECT_MIN_DMG = 0.1;
+		EFFECT_DMG = GetSkillLevel(GetOwner(), "spellcasting.ratio");
+		EFFECT_SCRIPT = "EFFECT_SCRIPT needs to be defined!";
 		Precache(EFFECT_SCRIPT);
 	}
 

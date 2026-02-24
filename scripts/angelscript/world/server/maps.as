@@ -15,7 +15,7 @@ class Maps : CGameScript
 		SetGlobalVar("MAPS_UNCONNECTED1", "ms_quest;char_recover;guildmaster;cleicert;foutpost;lodagond-1;island1;lostcaverns;ms_underworldv2;orc_arena;pvp_archery;pvp_arena;unrest;unrest2;unrest2_beta1;ww1;pvp_canyons;canyons;ocean_crossing;smugglers_cove;isles_dread1;");
 		SetGlobalVar("MAPS_UNCONNECTED2", "kfortress;gertenheld_cave;islesofdread2_old;the_wall;catacombs;bloodshrine;ms_soccer;shender_east;nightmare_edana;m2_quest;gertenhell");
 		SetGlobalVar("G_NOT_ON_FN", "test_scripts");
-		if (/* TODO: $g_get_array_amt */ $g_get_array_amt(G_ARRAY_RMAPS) == -1)
+		if (GetGlobalArrayLength(G_ARRAY_RMAPS) == -1)
 		{
 			CreateGlobalArray("G_ARRAY_RMAPS");
 			CreateGlobalArray("G_ARRAY_RMAPS_TYPES");

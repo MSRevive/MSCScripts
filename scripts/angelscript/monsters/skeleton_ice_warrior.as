@@ -8,39 +8,51 @@ namespace MS
 class SkeletonIceWarrior : CGameScript
 {
 	string ANIM_ATTACK;
+	string ANIM_BLAST;
+	string ANIM_SMASH;
+	string ANIM_SWIPE;
 	float ATTACK_DAMAGE_HIGH;
 	float ATTACK_DAMAGE_LOW;
+	float ATTACK_HITCHANCE;
 	int BOLT_CHECKING;
+	int BOLT_DAMAGE;
+	float BOLT_FREQUENCY;
 	int DROP_GOLD;
 	int DROP_GOLD_MAX;
 	int DROP_GOLD_MIN;
 	string DROP_ITEM1;
 	float DROP_ITEM1_CHANCE;
 	string FREEZE_ATTACK;
+	float FREEZE_CHANCE;
 	int ICE_BLASTING;
 	int NPC_GIVE_EXP;
+	int SKEL_HP;
+	float SKEL_RESPAWN_CHANCE;
+	int SKEL_RESPAWN_LIVES;
+	int SMASH_DAMAGE;
+	string SOUND_BOLT;
 
 	SkeletonIceWarrior()
 	{
-		const int SKEL_HP = 1000;
-		const float ATTACK_HITCHANCE = 0.85;
+		SKEL_HP = 1000;
+		ATTACK_HITCHANCE = 0.85;
 		ATTACK_DAMAGE_LOW = 20.5;
 		ATTACK_DAMAGE_HIGH = 30.5;
 		NPC_GIVE_EXP = 120;
-		const string SMASH_DAMAGE = "$rand(50,100)";
+		SMASH_DAMAGE = "$rand(50,100)";
 		ANIM_ATTACK = "attack1";
-		const string ANIM_SWIPE = "attack1";
-		const string ANIM_SMASH = "attack2";
+		ANIM_SWIPE = "attack1";
+		ANIM_SMASH = "attack2";
 		DROP_GOLD = 1;
 		DROP_GOLD_MIN = 20;
 		DROP_GOLD_MAX = 35;
-		const float SKEL_RESPAWN_CHANCE = 0.5;
-		const int SKEL_RESPAWN_LIVES = 1;
-		const string ANIM_BLAST = "rlflinch";
-		const string SOUND_BOLT = "magic/ice_strike.wav";
-		const float BOLT_FREQUENCY = 10.0;
-		const int BOLT_DAMAGE = 30;
-		const float FREEZE_CHANCE = 0.5;
+		SKEL_RESPAWN_CHANCE = 0.5;
+		SKEL_RESPAWN_LIVES = 1;
+		ANIM_BLAST = "rlflinch";
+		SOUND_BOLT = "magic/ice_strike.wav";
+		BOLT_FREQUENCY = 10.0;
+		BOLT_DAMAGE = 30;
+		FREEZE_CHANCE = 0.5;
 		DROP_ITEM1 = "swords_liceblade";
 		DROP_ITEM1_CHANCE = 0.1;
 		Precache("items/proj_ice_bolt");
@@ -95,7 +107,7 @@ class SkeletonIceWarrior : CGameScript
 		}
 		if ((FREEZE_ATTACK))
 		{
-			string FREEZE_ROLL = RandomInt(1, 100);
+			int FREEZE_ROLL = RandomInt(1, 100);
 			if (FREEZE_ROLL <= FREEZE_CHANCE)
 			{
 				ApplyEffect(GetEntityIndex(m_hLastStruckByMe), "effects/dot_cold_freeze", 10, GetEntityIndex(GetOwner()));

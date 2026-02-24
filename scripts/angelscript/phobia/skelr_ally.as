@@ -8,7 +8,10 @@ namespace MS
 
 class SkelrAlly : CGameScript
 {
+	string AI_NO_TARGET_STRING;
 	int ALLY_FOLLOW_ON;
+	int ALLY_JUMP_THRESHOLD;
+	string ANIM_ALLY_JUMP;
 	string ANIM_ATTACK;
 	string ATTACK1_DAMAGE;
 	float ATTACK_PERCENTAGE;
@@ -19,25 +22,29 @@ class SkelrAlly : CGameScript
 	int HOSTILE_MODE;
 	int MADE_DEAL;
 	int MOVE_RANGE;
+	string MY_SKILL;
 	string NO_STUCK_CHECKS;
 	int NPC_BATTLE_ALLY;
 	int NPC_NO_PLAYER_DMG;
 	string ORIG_ATTACK;
+	int OVERRIDE_BANDIT_SPAWN;
 	int REWARD_MODE;
+	string SOUND_ALLY_JUMP;
 	int TC_AVG_DMG_PTS;
 	string TC_HALF_AVG_DMG_PTS;
 	int TC_QUAL_PLAYERS;
 	int USER_QUALIFIES;
+	int WEAPON;
 
 	SkelrAlly()
 	{
-		const string MY_SKILL = "smallarms";
-		const int WEAPON = 1;
-		const int OVERRIDE_BANDIT_SPAWN = 1;
-		const string AI_NO_TARGET_STRING = �NONE�;
-		const string ANIM_ALLY_JUMP = "long_jump";
-		const string SOUND_ALLY_JUMP = "player/shout1.wav";
-		const int ALLY_JUMP_THRESHOLD = 150;
+		MY_SKILL = "smallarms";
+		WEAPON = 1;
+		OVERRIDE_BANDIT_SPAWN = 1;
+		AI_NO_TARGET_STRING = �NONE�;
+		ANIM_ALLY_JUMP = "long_jump";
+		SOUND_ALLY_JUMP = "player/shout1.wav";
+		ALLY_JUMP_THRESHOLD = 150;
 	}
 
 	void game_precache()
@@ -114,7 +121,7 @@ class SkelrAlly : CGameScript
 		}
 		string OUT_TITLE = GetEntityName(GetOwner());
 		OUT_TITLE += " has quaffed a potion of fire resistance.";
-		SendInfoMsg("all", "OUT_TITLE  ");
+		SendInfoMsg("all", OUT_TITLE + "  ");
 		SetDamageResistance("fire", 0.25);
 		SetDamageResistance("all", 0.4);
 		EmitSound(GetOwner(), 0, "items/drink.wav", 10);
@@ -163,7 +170,7 @@ class SkelrAlly : CGameScript
 		if (!(USER_QUALIFIES))
 		{
 			PlayAnim("critical", "look_idle");
-			SayText("Judging by your performance out there , or rather the lack there of , I don t think you re ready for what I could teach you.");
+			SayText("Judging by your performance out there , or rather the lack there of , " + I + "don t think you re ready for what " + I + " could teach you.");
 		}
 		if (!(USER_QUALIFIES)) return;
 		string USER_STEAM = GetPlayerAuthId(param1);
@@ -179,12 +186,12 @@ class SkelrAlly : CGameScript
 		if (!(IsEntityAlive(RALION_ID)))
 		{
 			PlayAnim("critical", "look_idle");
-			SayText("Ralion maybe dead , but I ll stick to his deal... I ll show you what I know.");
+			SayText("Ralion maybe dead , but " + I + "ll stick to his deal... I ll show you what " + I + " know.");
 		}
 		else
 		{
 			PlayAnim("critical", "look_idle");
-			SayText("Alright... I ll show you what I know.");
+			SayText("Alright... " + I + " ll show you what I know.");
 		}
 		int XP_GAIN = 20000;
 		string PLR_ADJ = GetPlayerCount();
@@ -193,14 +200,14 @@ class SkelrAlly : CGameScript
 		PLR_ADJ += 1;
 		XP_GAIN *= PLR_ADJ;
 		GiveExp(param1, MY_SKILL, int(XP_GAIN));
-		SendColoredMessage(param1, "* int(XP_GAIN) XP Awarded MY_SKILL");
+		SendColoredMessage(param1, "* " + int(XP_GAIN) + XP + "Awarded " + MY_SKILL);
 		if (G_REWARD_LIST.length() > 0) G_REWARD_LIST += ";";
 		G_REWARD_LIST += USER_STEAM;
 		string OUT_MSG = "You recieve ";
 		OUT_MSG += MY_SKILL;
 		OUT_MSG += " from ";
 		OUT_MSG += GetEntityName(GetOwner());
-		SendInfoMsg(param1, "Training Recieved OUT_MSG");
+		SendInfoMsg(param1, "Training Recieved " + OUT_MSG);
 	}
 
 	void game_menu_getoptions()

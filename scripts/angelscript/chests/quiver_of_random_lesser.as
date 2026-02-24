@@ -24,7 +24,7 @@ class QuiverOfRandomLesser : CGameScript
 
 	void pick_random_type()
 	{
-		string ARROW_QUALITY = RandomInt(1, 3);
+		int ARROW_QUALITY = RandomInt(1, 3);
 		if (ARROW_QUALITY < 3)
 		{
 			string ARROW_LIST = G_NOOB_ARROWS;
@@ -35,7 +35,7 @@ class QuiverOfRandomLesser : CGameScript
 		}
 		string N_ARROWS = GetTokenCount(ARROW_LIST, ";");
 		N_ARROWS -= 1;
-		string RND_ARROW = RandomInt(0, N_ARROWS);
+		int RND_ARROW = RandomInt(0, N_ARROWS);
 		BQ_QUIVER_TYPE = GetToken(ARROW_LIST, RND_ARROW, ";");
 	}
 

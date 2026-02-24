@@ -11,8 +11,13 @@ class Merc2 : CGameScript
 	string ANIM_ATTACK;
 	string ANIM_IDLE;
 	string ANIM_RUN;
+	string ANIM_SITIDLE;
 	string ANIM_WALK;
+	int ARROW_DAMAGE_HIGH;
+	int ARROW_DAMAGE_LOW;
+	int ATTACK_CONE_OF_FIRE;
 	int ATTACK_RANGE;
+	int ATTACK_SPEED;
 	int CAN_ATTACK;
 	int CAN_FLEE;
 	int CAN_FLINCH;
@@ -22,51 +27,66 @@ class Merc2 : CGameScript
 	int CONVERSE_PLAYER;
 	string FLINCH_ANIM;
 	float FLINCH_CHANCE;
-	string HIRE_PRICE;
+	int HIRE_PRICE;
 	int IS_HIRED;
 	string MASTER_NAME;
 	int MERC_RESTING;
 	int MOVE_RANGE;
+	float RETALIATE_CHANGETARGET_CHANCE;
 	int SEE_ENEMY;
 	int SEE_PLAYER_NOW;
+	string SOUND_ALERT1;
+	string SOUND_PAIN;
+	string SOUND_PAIN2;
+	string SOUND_STRUCK1;
+	string SOUND_STRUCK2;
+	string SOUND_STRUCK3;
 	string SUMMON_MASTER;
+	int SUMMON_VICINITY;
+	string SUM_REPORT_SUFFIX;
+	string SUM_SAY_ATTACK;
+	string SUM_SAY_COME;
+	string SUM_SAY_DEATH;
+	string SUM_SAY_DEFEND;
+	string SUM_SAY_HUNT;
+	int VOLUME;
 
 	Merc2()
 	{
-		const string SUM_SAY_COME = "Whaddya need?";
-		const string SUM_SAY_ATTACK = "Right! Have at it then!";
-		const string SUM_SAY_HUNT = "Hunt... Hunt... Hunt...";
-		const string SUM_SAY_DEFEND = "Got your back - dunno who has mine though...";
-		const string SUM_SAY_DEATH = "Gads! I knew I shoulda been a shop keeper!";
-		const string SUM_REPORT_SUFFIX = ", boss.";
-		const string ANIM_SITIDLE = "sitidle";
+		SUM_SAY_COME = "Whaddya need?";
+		SUM_SAY_ATTACK = "Right! Have at it then!";
+		SUM_SAY_HUNT = "Hunt... Hunt... Hunt...";
+		SUM_SAY_DEFEND = "Got your back - dunno who has mine though...";
+		SUM_SAY_DEATH = "Gads! I knew I shoulda been a shop keeper!";
+		SUM_REPORT_SUFFIX = ", boss.";
+		ANIM_SITIDLE = "sitidle";
 		ANIM_IDLE = "idle1";
 		ANIM_WALK = "walk";
 		ANIM_RUN = "run";
 		ANIM_ATTACK = "shootorcbow";
 		MOVE_RANGE = 600;
 		ATTACK_RANGE = 650;
-		const int ATTACK_SPEED = 1200;
-		const int ARROW_DAMAGE_LOW = 7;
-		const int ARROW_DAMAGE_HIGH = 15;
-		const int ATTACK_CONE_OF_FIRE = 2;
-		const string SOUND_ALERT1 = "npc/prepdie.wav";
-		const string SOUND_STRUCK1 = "weapons/cbar_hitbod1.wav";
-		const string SOUND_STRUCK2 = "weapons/cbar_hitbod2.wav";
-		const string SOUND_STRUCK3 = "weapons/cbar_hitbod3.wav";
-		const string SOUND_PAIN = "player/chesthit1.wav";
-		const string SOUND_PAIN2 = "player/armhit1.wav";
-		const int VOLUME = 5;
+		ATTACK_SPEED = 1200;
+		ARROW_DAMAGE_LOW = 7;
+		ARROW_DAMAGE_HIGH = 15;
+		ATTACK_CONE_OF_FIRE = 2;
+		SOUND_ALERT1 = "npc/prepdie.wav";
+		SOUND_STRUCK1 = "weapons/cbar_hitbod1.wav";
+		SOUND_STRUCK2 = "weapons/cbar_hitbod2.wav";
+		SOUND_STRUCK3 = "weapons/cbar_hitbod3.wav";
+		SOUND_PAIN = "player/chesthit1.wav";
+		SOUND_PAIN2 = "player/armhit1.wav";
+		VOLUME = 5;
 		CAN_RETALIATE = 1;
 		CAN_ATTACK = 0;
-		const float RETALIATE_CHANGETARGET_CHANCE = 0.75;
+		RETALIATE_CHANGETARGET_CHANCE = 0.75;
 		CAN_FLEE = 0;
 		CAN_HUNT = 0;
 		CAN_HEAR = 1;
 		CAN_FLINCH = 1;
 		FLINCH_ANIM = "raflinch";
 		FLINCH_CHANCE = 0.1;
-		const int SUMMON_VICINITY = 360;
+		SUMMON_VICINITY = 360;
 	}
 
 	void OnRepeatTimer()
@@ -125,7 +145,7 @@ class Merc2 : CGameScript
 		CAN_HUNT = 1;
 		CAN_ATTACK = 1;
 		SetRace("human");
-		SayText("Lead on , MASTER_NAME");
+		SayText("Lead on , " + MASTER_NAME);
 		SetIdleAnim(ANIM_IDLE);
 		PlayAnim("once", "yes");
 	}
@@ -155,7 +175,7 @@ class Merc2 : CGameScript
 		string AIM_ANGLE = GetEntityDist(m_hLastSeen);
 		AIM_ANGLE /= AIM_RATIO;
 		SetAngles("add_view.x");
-		string LCL_ATKDMG = Random(ARROW_DAMAGE_LOW, ARROW_DAMAGE_HIGH);
+		float LCL_ATKDMG = Random(ARROW_DAMAGE_LOW, ARROW_DAMAGE_HIGH);
 		TossProjectile("proj_arrow_npc", /* TODO: $relpos */ $relpos(0, 0, 16), "none", ATTACK_SPEED, LCL_ATKDMG, ATTACK_CONE_OF_FIRE, "none");
 		SetModelBody(3, 0);
 		EmitSound(GetOwner(), SND_BOW);
@@ -196,7 +216,7 @@ class Merc2 : CGameScript
 
 	void offer_2()
 	{
-		SayText("I ll show you around these plains, if you pay me $int(HIRE_PRICE) gold");
+		SayText(I + " ll show you around these plains, if you pay me $int(HIRE_PRICE) gold");
 		Say("[30] [30] [30] [30] [30] [30] [30] [30] [30]");
 		PlayAnim("once", "yes");
 		ScheduleDelayedEvent(5, "sitdown");
@@ -286,7 +306,7 @@ class Merc2 : CGameScript
 				if ("game.offer.gold" < HIRE_PRICE)
 				{
 					ReceiveOffer("reject");
-					SayText("I will not be persuaded for a lower price! int(HIRE_PRICE) . Nothing more , nothing less.");
+					SayText(I + "will not be persuaded for a lower price! " + int(HIRE_PRICE) + " . Nothing more , nothing less.");
 					Say("[10] [10] [10] [6] [12] [4] [20] [10] [10]");
 					PlayAnim("once", "no");
 				}

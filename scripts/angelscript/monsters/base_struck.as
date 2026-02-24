@@ -8,36 +8,58 @@ class BaseStruck : CGameScript
 	string BS_SOUND_STRUCK1;
 	string BS_SOUND_STRUCK2;
 	string BS_SOUND_STRUCK3;
+	float NPC_ATN_FLINCH;
+	float NPC_ATN_IDLE;
+	float NPC_ATN_PAIN;
+	float NPC_ATN_STRUCK;
 	string NPC_BS_HALF_HEALTH;
 	string NPC_CUR_MATERIAL_TYPE;
+	int NPC_FLINCH_ALLOW_SUSPEND_AI;
+	int NPC_FLINCH_ALLOW_SUSPEND_MOVEMENT;
+	float NPC_FLINCH_THRESH;
+	float NPC_FLINCH_TIME;
+	float NPC_FREQ_FLINCH;
+	float NPC_FREQ_IDLE;
+	float NPC_FREQ_PAIN;
+	string NPC_MATERIAL_TYPE;
 	string NPC_NEXT_IDLE;
 	string NPC_NEXT_PAIN;
 	string NPC_PAIN_LEVEL;
+	int NPC_PITCH_FLINCH;
+	int NPC_PITCH_IDLE;
+	int NPC_PITCH_PAIN;
+	int NPC_PITCH_STRUCK;
+	int NPC_STRUCK_CHANNEL;
+	int NPC_STRUCK_SOUND_EVENT;
+	int NPC_STRUCK_VOL;
+	int NPC_USE_FLINCH;
+	int NPC_USE_IDLE;
+	int NPC_USE_PAIN;
 
 	BaseStruck()
 	{
-		const string NPC_MATERIAL_TYPE = "default";
-		const int NPC_STRUCK_VOL = 10;
-		const int NPC_STRUCK_CHANNEL = 2;
-		const int NPC_PITCH_STRUCK = 100;
-		const float NPC_ATN_STRUCK = 0.8;
-		const int NPC_STRUCK_SOUND_EVENT = 0;
-		const int NPC_USE_PAIN = 0;
-		const string NPC_FREQ_PAIN = Random(5.0, 10.0);
-		const int NPC_PITCH_PAIN = 100;
-		const float NPC_ATN_PAIN = 0.8;
-		const int NPC_FLINCH_ALLOW_SUSPEND_AI = 0;
-		const int NPC_FLINCH_ALLOW_SUSPEND_MOVEMENT = 0;
-		const int NPC_USE_FLINCH = 0;
-		const float NPC_FREQ_FLINCH = 30.0;
-		const float NPC_FLINCH_THRESH = 0.1;
-		const float NPC_FLINCH_TIME = 1.5;
-		const int NPC_PITCH_FLINCH = 100;
-		const float NPC_ATN_FLINCH = 0.8;
-		const int NPC_USE_IDLE = 0;
-		const string NPC_FREQ_IDLE = Random(10.0, 20.0);
-		const int NPC_PITCH_IDLE = 100;
-		const float NPC_ATN_IDLE = 0.8;
+		NPC_MATERIAL_TYPE = "default";
+		NPC_STRUCK_VOL = 10;
+		NPC_STRUCK_CHANNEL = 2;
+		NPC_PITCH_STRUCK = 100;
+		NPC_ATN_STRUCK = 0.8;
+		NPC_STRUCK_SOUND_EVENT = 0;
+		NPC_USE_PAIN = 0;
+		NPC_FREQ_PAIN = Random(5.0, 10.0);
+		NPC_PITCH_PAIN = 100;
+		NPC_ATN_PAIN = 0.8;
+		NPC_FLINCH_ALLOW_SUSPEND_AI = 0;
+		NPC_FLINCH_ALLOW_SUSPEND_MOVEMENT = 0;
+		NPC_USE_FLINCH = 0;
+		NPC_FREQ_FLINCH = 30.0;
+		NPC_FLINCH_THRESH = 0.1;
+		NPC_FLINCH_TIME = 1.5;
+		NPC_PITCH_FLINCH = 100;
+		NPC_ATN_FLINCH = 0.8;
+		NPC_USE_IDLE = 0;
+		NPC_FREQ_IDLE = Random(10.0, 20.0);
+		NPC_PITCH_IDLE = 100;
+		NPC_ATN_IDLE = 0.8;
 		BS_SOUND_STRUCK1 = "weapons/cbar_hitbod1.wav";
 		BS_SOUND_STRUCK2 = "weapons/cbar_hitbod2.wav";
 		BS_SOUND_STRUCK3 = "weapons/cbar_hitbod3.wav";
@@ -232,7 +254,7 @@ class BaseStruck : CGameScript
 			if (!(NPC_FLINCH_DISABLE_ONCE))
 			{
 				PlayAnim("critical", ANIM_FLINCH);
-				string L_RND_SOUND = RandomInt(1, 3);
+				int L_RND_SOUND = RandomInt(1, 3);
 				if (NPC_STRUCK_SOUND_EVENT == 0)
 				{
 					if (L_RND_SOUND == 1)
@@ -312,7 +334,7 @@ class BaseStruck : CGameScript
 			}
 			NPC_NEXT_PAIN = GetGameTime();
 			NPC_NEXT_PAIN += NPC_FREQ_PAIN;
-			string L_RND_SOUND = RandomInt(1, 3);
+			int L_RND_SOUND = RandomInt(1, 3);
 			if (NPC_STRUCK_SOUND_EVENT == 0)
 			{
 				if (L_RND_SOUND == 1)
@@ -358,7 +380,7 @@ class BaseStruck : CGameScript
 			int EXIT_SUB = 1;
 		}
 		if ((EXIT_SUB)) return;
-		string L_RND_SOUND = RandomInt(1, 3);
+		int L_RND_SOUND = RandomInt(1, 3);
 		if (NPC_STRUCK_SOUND_EVENT == 0)
 		{
 			if (L_RND_SOUND == 1)
@@ -411,7 +433,7 @@ class BaseStruck : CGameScript
 		if (!(GetGameTime() > NPC_NEXT_IDLE)) return;
 		NPC_NEXT_IDLE = GetGameTime();
 		NPC_NEXT_IDLE += NPC_FREQ_IDLE;
-		string L_RND_SOUND = RandomInt(1, 3);
+		int L_RND_SOUND = RandomInt(1, 3);
 		if (L_RND_SOUND == 1)
 		{
 			EmitSound(GetOwner(), NPC_STRUCK_CHANNEL, SOUND_IDLE1, 10);

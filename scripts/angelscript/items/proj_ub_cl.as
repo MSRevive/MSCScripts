@@ -5,10 +5,13 @@ namespace MS
 
 class ProjUbCl : CGameScript
 {
+	string SPRITE_NAME;
+	int SPRITE_NFRAMES;
+
 	ProjUbCl()
 	{
-		const string SPRITE_NAME = "xflare1.spr";
-		const int SPRITE_NFRAMES = 20;
+		SPRITE_NAME = "xflare1.spr";
+		SPRITE_NFRAMES = 20;
 	}
 
 	void client_activate()

@@ -8,6 +8,9 @@ namespace MS
 class SpecialattackHaste : CGameScript
 {
 	string CALLING_WEAPON;
+	string EFFECT_FLAGS;
+	string EFFECT_ID;
+	string EFFECT_SCRIPT;
 	int game.cleffect.move_scale.forward;
 	int game.cleffect.move_scale.right;
 	float game.effect.anim.framerate;
@@ -17,9 +20,9 @@ class SpecialattackHaste : CGameScript
 
 	SpecialattackHaste()
 	{
-		const string EFFECT_ID = "player_haste";
-		const string EFFECT_FLAGS = "nostack";
-		const string EFFECT_SCRIPT = currentscript;
+		EFFECT_ID = "player_haste";
+		EFFECT_FLAGS = "nostack";
+		EFFECT_SCRIPT = currentscript;
 	}
 
 	void game_activate()

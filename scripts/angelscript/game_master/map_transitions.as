@@ -19,7 +19,7 @@ class MapTransitions : CGameScript
 		GM_DEST_TRANS = param4;
 		if (!(ValidateMapName(L_MAP)))
 		{
-			SendInfoMessageToAll("green L_MAP  does not exist on this server. Perhaps this is a future transition point?");
+			SendInfoMessageToAll("green " + L_MAP + "  does not exist on this server. Perhaps this is a future transition point?");
 		}
 		else
 		{
@@ -66,7 +66,7 @@ class MapTransitions : CGameScript
 			CallExternal("players", "ext_changelevel_prep");
 		}
 		string L_STR = "TRAVELING TO ";
-		SendInfoMsg("all", "L_STR You will be reconnected shortly.");
+		SendInfoMsg("all", L_STR + " You will be reconnected shortly.");
 		VOTE_IN_PROGRESS = 0;
 		ScheduleDelayedEvent(5.0, "delay_changelevel");
 	}

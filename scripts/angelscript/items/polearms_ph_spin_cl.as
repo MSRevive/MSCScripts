@@ -20,11 +20,11 @@ class PolearmsPhSpinCl : CGameScript
 		string OWNER_VANG = /* TODO: $getcl */ $getcl(FX_OWNER, "viewangles");
 		BEAM_START += /* TODO: $relpos */ $relpos(OWNER_VANG, Vector3(0, 32, 0));
 		string BEAM_END = BEAM_START;
-		string RND_ANG = Random(0.0, 359.99);
+		float RND_ANG = Random(0.0, 359.99);
 		BEAM_END += /* TODO: $relpos */ $relpos(Vector3(RND_ANG, 0, 0), Vector3(0, 64, 0));
 		ClientEffect("beam_points", BEAM_START, BEAM_END, "lgtning.spr", Random(0.25, 0.5), 2.0, 3.0, 255, 50, 30, Vector3(255, 255, 0));
 		string BEAM_END = BEAM_START;
-		string RND_ANG = Random(0.0, 359.99);
+		float RND_ANG = Random(0.0, 359.99);
 		BEAM_END += /* TODO: $relpos */ $relpos(Vector3(RND_ANG, 0, 0), Vector3(0, 64, 0));
 		ClientEffect("beam_points", BEAM_START, BEAM_END, "lgtning.spr", Random(0.25, 0.5), 2.0, 3.0, 255, 50, 30, Vector3(255, 255, 0));
 	}

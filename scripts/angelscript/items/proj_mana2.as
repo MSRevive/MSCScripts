@@ -8,6 +8,7 @@ class ProjMana2 : CGameScript
 	string CLFX_ARROW_IDX;
 	string CLFX_ARROW_INIT;
 	string CLFX_ARROW_IN_FLIGHT;
+	string CLFX_ARROW_SCRIPT;
 	string FX_DAMAGE;
 	string FX_OWNER;
 	string FX_SIZE;
@@ -15,12 +16,14 @@ class ProjMana2 : CGameScript
 	string FX_VEL;
 	string PREV_SCAN;
 	string SCAN_SIZE;
+	string SOUND_SHOOT;
+	string SOUND_ZAP;
 
 	ProjMana2()
 	{
-		const string SOUND_SHOOT = "ambience/alienflyby1.wav";
-		const string SOUND_ZAP = "debris/zap1.wav";
-		const string CLFX_ARROW_SCRIPT = "items/proj_mana2_cl";
+		SOUND_SHOOT = "ambience/alienflyby1.wav";
+		SOUND_ZAP = "debris/zap1.wav";
+		CLFX_ARROW_SCRIPT = "items/proj_mana2_cl";
 	}
 
 	void OnSpawn() override
@@ -45,7 +48,7 @@ class ProjMana2 : CGameScript
 		FX_SIZE = param3;
 		FX_DAMAGE = param4;
 		FX_SKILL = param5;
-		SCAN_SIZE = /* TODO: $func */ $func("func_get_scan_size");
+		SCAN_SIZE = "func_get_scan_size"();
 		SetVelocity(GetOwner(), FX_VEL);
 		EmitSound3D(SOUND_SHOOT, 2.5, GetEntityOrigin(GetOwner()), 0, 4);
 		PREV_SCAN = GetEntityOrigin(GetOwner());
@@ -88,7 +91,7 @@ class ProjMana2 : CGameScript
 		FX_SIZE -= 1;
 		if (FX_SIZE > 0)
 		{
-			SCAN_SIZE = /* TODO: $func */ $func("func_get_scan_size");
+			SCAN_SIZE = "func_get_scan_size"();
 			ClientEvent("update", "all", CLFX_ARROW_IDX, "reduce_size");
 		}
 		else
@@ -114,7 +117,7 @@ class ProjMana2 : CGameScript
 	{
 		int L_SCAN_SIZE = 24;
 		L_SCAN_SIZE *= FX_SIZE;
-		// TODO: capvar L_SCAN_SIZE 55 140
+		L_SCAN_SIZE = max(55, min(140, L_SCAN_SIZE));
 		return;
 		return;
 	}

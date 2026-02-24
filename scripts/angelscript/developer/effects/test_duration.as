@@ -7,23 +7,25 @@ namespace MS
 
 class TestDuration : CGameScript
 {
+	string EFFECT_ID;
+	string EFFECT_SCRIPT;
 	float game.effect.movespeed;
 
 	TestDuration()
 	{
-		const string EFFECT_ID = "test_duration";
-		const string EFFECT_SCRIPT = currentscript;
+		EFFECT_ID = "test_duration";
+		EFFECT_SCRIPT = currentscript;
 	}
 
 	void game_activate()
 	{
-		SendInfoMsg("all", "Duration:  EFFECT_DURATION");
+		SendInfoMsg("all", "Duration:  " + EFFECT_DURATION);
 		game.effect.movespeed = 0.01;
 	}
 
 	void duration_ended()
 	{
-		SendInfoMsg("all", "game.time /* TODO: $math(add) */ EFFECT_STARTED");
+		SendInfoMsg("all", "game.time " + (EFFECT_STARTED + EFFECT_DURATION));
 	}
 
 	void effect_die()

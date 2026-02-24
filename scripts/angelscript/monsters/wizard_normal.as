@@ -7,9 +7,11 @@ namespace MS
 
 class WizardNormal : CGameScript
 {
+	int AM_GENERIC;
+
 	WizardNormal()
 	{
-		const int AM_GENERIC = 1;
+		AM_GENERIC = 1;
 	}
 
 	void do_ale_intro()

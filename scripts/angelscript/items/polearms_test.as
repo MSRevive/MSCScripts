@@ -7,63 +7,110 @@ namespace MS
 
 class PolearmsTest : CGameScript
 {
+	int ANIM_ATTACK1;
+	int ANIM_IDLE1;
+	int ANIM_LIFT;
+	int ANIM_PARRY;
+	int ANIM_POKE;
+	string ANIM_PREFIX;
+	int ANIM_SHEATH;
+	int ANIM_SMASH;
+	int ANIM_SWIPE;
+	int ANIM_TRIP;
+	int ANIM_UNSHEATH;
+	int ATTACK_ANIMS;
+	int BASE_LEVEL_REQ;
 	string GAME_PVP;
+	float MELEE_ACCURACY;
+	float MELEE_ACCURACY2;
+	int MELEE_ALIGN_BASE;
+	int MELEE_ALIGN_TIP;
+	float MELEE_ATK_DURATION;
+	float MELEE_ATK_DURATION_LONG;
+	int MELEE_DMG;
+	float MELEE_DMG_DELAY;
+	float MELEE_DMG_DELAY_LONG;
+	int MELEE_DMG_RANGE;
+	string MELEE_DMG_TYPE;
+	int MELEE_ENERGY;
+	float MELEE_PARRY_CHANCE;
+	int MELEE_RANGE;
+	string MELEE_SOUND;
+	string MELEE_SOUND_DELAY;
+	string MELEE_STAT;
+	string MELEE_VIEWANIM_ATK;
+	int MODEL_BODY_OFS;
+	string MODEL_HANDS;
+	string MODEL_VIEW;
+	int MODEL_VIEW_IDX;
+	string MODEL_WORLD;
 	string NEXT_PARRY;
 	string OWNER_ANG;
 	string OWNER_ORG;
 	int PARRY_MODE;
+	string PLAYERANIM_AIM;
+	string PLAYERANIM_SWING;
+	float POLEARM_DMG_FALLOFF;
+	int POLEARM_OPTIMUM_RANGE;
+	int RANGE_SWIPE;
+	string SOUND_DRAW;
+	string SOUND_HITWALL1;
+	string SOUND_HITWALL2;
+	string SOUND_PARRY;
+	string SOUND_SHOUT;
+	string SOUND_SWIPE;
 	string SWIPE_LIST;
 	int game.effect.canattack;
 
 	PolearmsTest()
 	{
-		const int BASE_LEVEL_REQ = 0;
-		const int RANGE_SWIPE = 64;
-		const int POLEARM_OPTIMUM_RANGE = 80;
-		const float POLEARM_DMG_FALLOFF = 0.05;
-		const string SOUND_PARRY = "weapons/parry.wav";
-		const int ANIM_LIFT = 1;
-		const int ANIM_IDLE1 = 0;
-		const int ANIM_ATTACK1 = 2;
-		const int ATTACK_ANIMS = 1;
-		const int ANIM_UNSHEATH = 1;
-		const int ANIM_SHEATH = 1;
-		const int ANIM_SWIPE = 6;
-		const int ANIM_SMASH = 5;
-		const int ANIM_POKE = 4;
-		const int ANIM_TRIP = 3;
-		const int ANIM_PARRY = 7;
-		const string MODEL_VIEW = "viewmodels/v_polearms.mdl";
-		const int MODEL_VIEW_IDX = 4;
-		const string MODEL_HANDS = "weapons/p_weapons2.mdl";
-		const string MODEL_WORLD = "weapons/p_weapons2.mdl";
-		const string SOUND_SWIPE = "weapons/swingsmall.wav";
-		const string SOUND_HITWALL1 = "weapons/cbar_hit1.wav";
-		const string SOUND_HITWALL2 = "weapons/cbar_hit2.wav";
-		const string SOUND_DRAW = "weapons/swords/sworddraw.wav";
-		const string SOUND_SHOUT = GetEntityProperty(GetOwner(), "scriptvar");
-		const int MODEL_BODY_OFS = 104;
-		const string ANIM_PREFIX = "khopesh";
-		const int MELEE_RANGE = 100;
-		const float MELEE_DMG_DELAY = 0.4;
-		const float MELEE_ATK_DURATION = 1.1;
-		const float MELEE_DMG_DELAY_LONG = 1.0;
-		const float MELEE_ATK_DURATION_LONG = 1.4;
-		const int MELEE_ENERGY = 1;
-		const int MELEE_DMG = 500;
-		const int MELEE_DMG_RANGE = 0;
-		const string MELEE_DMG_TYPE = "generic";
-		const float MELEE_ACCURACY = 0.75;
-		const float MELEE_ACCURACY2 = 0.9;
-		const string MELEE_STAT = "swordsmanship";
-		const int MELEE_ALIGN_BASE = 3;
-		const int MELEE_ALIGN_TIP = 0;
-		const string MELEE_VIEWANIM_ATK = ANIM_ATTACK1;
-		const string MELEE_SOUND = SOUND_SWIPE;
-		const string MELEE_SOUND_DELAY = MELEE_DMG_DELAY;
-		const float MELEE_PARRY_CHANCE = 0.6;
-		const string PLAYERANIM_AIM = "sword_double_idle";
-		const string PLAYERANIM_SWING = "sword_double_swing";
+		BASE_LEVEL_REQ = 0;
+		RANGE_SWIPE = 64;
+		POLEARM_OPTIMUM_RANGE = 80;
+		POLEARM_DMG_FALLOFF = 0.05;
+		SOUND_PARRY = "weapons/parry.wav";
+		ANIM_LIFT = 1;
+		ANIM_IDLE1 = 0;
+		ANIM_ATTACK1 = 2;
+		ATTACK_ANIMS = 1;
+		ANIM_UNSHEATH = 1;
+		ANIM_SHEATH = 1;
+		ANIM_SWIPE = 6;
+		ANIM_SMASH = 5;
+		ANIM_POKE = 4;
+		ANIM_TRIP = 3;
+		ANIM_PARRY = 7;
+		MODEL_VIEW = "viewmodels/v_polearms.mdl";
+		MODEL_VIEW_IDX = 4;
+		MODEL_HANDS = "weapons/p_weapons2.mdl";
+		MODEL_WORLD = "weapons/p_weapons2.mdl";
+		SOUND_SWIPE = "weapons/swingsmall.wav";
+		SOUND_HITWALL1 = "weapons/cbar_hit1.wav";
+		SOUND_HITWALL2 = "weapons/cbar_hit2.wav";
+		SOUND_DRAW = "weapons/swords/sworddraw.wav";
+		SOUND_SHOUT = GetEntityProperty(GetOwner(), "scriptvar");
+		MODEL_BODY_OFS = 104;
+		ANIM_PREFIX = "khopesh";
+		MELEE_RANGE = 100;
+		MELEE_DMG_DELAY = 0.4;
+		MELEE_ATK_DURATION = 1.1;
+		MELEE_DMG_DELAY_LONG = 1.0;
+		MELEE_ATK_DURATION_LONG = 1.4;
+		MELEE_ENERGY = 1;
+		MELEE_DMG = 500;
+		MELEE_DMG_RANGE = 0;
+		MELEE_DMG_TYPE = "generic";
+		MELEE_ACCURACY = 0.75;
+		MELEE_ACCURACY2 = 0.9;
+		MELEE_STAT = "swordsmanship";
+		MELEE_ALIGN_BASE = 3;
+		MELEE_ALIGN_TIP = 0;
+		MELEE_VIEWANIM_ATK = ANIM_ATTACK1;
+		MELEE_SOUND = SOUND_SWIPE;
+		MELEE_SOUND_DELAY = MELEE_DMG_DELAY;
+		MELEE_PARRY_CHANCE = 0.6;
+		PLAYERANIM_AIM = "sword_double_idle";
+		PLAYERANIM_SWING = "sword_double_swing";
 	}
 
 	void weapon_spawn()
@@ -311,10 +358,10 @@ class PolearmsTest : CGameScript
 		SetDamage("dmg");
 		if (DMG_BLOCKED > 0)
 		{
-			string DMG_BLOCKED = int(DMG_BLOCKED);
+			int DMG_BLOCKED = int(DMG_BLOCKED);
 		}
 		DMG_BLOCKED += "pts";
-		SendPlayerMessage("Polearm", "blocked DMG_BLOCKED damage.");
+		SendPlayerMessage("Polearm", "blocked " + DMG_BLOCKED + " damage.");
 	}
 
 	void item_idle()

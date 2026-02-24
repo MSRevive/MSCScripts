@@ -8,15 +8,21 @@ namespace MS
 class DotFire : CGameScript
 {
 	string CL_FX;
+	string DOT_HE_IMMUNE;
+	string DOT_IM_AFFECTED;
+	string DOT_IM_RESIST;
+	string DOT_TYPE;
+	string EFFECT_ID;
+	string EFFECT_SCRIPT;
 
 	DotFire()
 	{
-		const string EFFECT_ID = "DOT_fire";
-		const string EFFECT_SCRIPT = currentscript;
-		const string DOT_TYPE = "fire_effect";
-		const string DOT_IM_AFFECTED = "You are on fire!";
-		const string DOT_IM_RESIST = "You resist the fire magic.";
-		const string DOT_HE_IMMUNE = "is immune to fire!";
+		EFFECT_ID = "DOT_fire";
+		EFFECT_SCRIPT = currentscript;
+		DOT_TYPE = "fire_effect";
+		DOT_IM_AFFECTED = "You are on fire!";
+		DOT_IM_RESIST = "You resist the fire magic.";
+		DOT_HE_IMMUNE = "is immune to fire!";
 	}
 
 	void dot_start()

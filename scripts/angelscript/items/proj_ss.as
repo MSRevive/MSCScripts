@@ -8,31 +8,48 @@ namespace MS
 class ProjSs : CGameScript
 {
 	string ACTIVE_SKILL;
+	int ARROW_BODY_OFS;
+	int ARROW_SOLIDIFY_ON_WALL;
 	string DMG_AMT;
+	int HITWALL_VOL;
 	int IS_ACTIVE;
+	int MODEL_BODY_OFS;
+	string MODEL_HANDS;
+	string MODEL_WORLD;
+	string PROJ_ANIM_IDLE;
+	int PROJ_COLLIDEHITBOX;
+	int PROJ_DAMAGE;
+	int PROJ_DAMAGE_AOE_FALLOFF;
+	int PROJ_DAMAGE_AOE_RANGE;
+	string PROJ_DAMAGE_TYPE;
+	int PROJ_IGNORENPC;
+	int PROJ_MOTIONBLUR;
+	int PROJ_SOLIDIFY_ON_WALL;
+	int PROJ_STICK_DURATION;
+	int SCAN_RANGE;
 	string WEAPON_ID;
 
 	ProjSs()
 	{
-		const string MODEL_HANDS = "weapons/projectiles.mdl";
-		const string MODEL_WORLD = "weapons/projectiles.mdl";
-		const int ARROW_BODY_OFS = 55;
-		const string PROJ_ANIM_IDLE = "spin_horizontal_fast";
-		const int ARROW_SOLIDIFY_ON_WALL = 0;
-		const int HITWALL_VOL = 2;
-		const int PROJ_MOTIONBLUR = 0;
-		const int MODEL_BODY_OFS = 55;
-		const int PROJ_DAMAGE = 0;
-		const int PROJ_STICK_DURATION = 0;
-		const int PROJ_SOLIDIFY_ON_WALL = 0;
-		const int PROJ_DAMAGE = 0;
-		const int PROJ_DAMAGE_AOE_RANGE = 0;
-		const int PROJ_DAMAGE_AOE_FALLOFF = 0;
-		const string PROJ_DAMAGE_TYPE = "dark";
-		const int PROJ_COLLIDEHITBOX = 1;
-		const int PROJ_IGNORENPC = 1;
-		const string PROJ_ANIM_IDLE = "spin_vertical_fast";
-		const int SCAN_RANGE = 64;
+		MODEL_HANDS = "weapons/projectiles.mdl";
+		MODEL_WORLD = "weapons/projectiles.mdl";
+		ARROW_BODY_OFS = 55;
+		PROJ_ANIM_IDLE = "spin_horizontal_fast";
+		ARROW_SOLIDIFY_ON_WALL = 0;
+		HITWALL_VOL = 2;
+		PROJ_MOTIONBLUR = 0;
+		MODEL_BODY_OFS = 55;
+		PROJ_DAMAGE = 0;
+		PROJ_STICK_DURATION = 0;
+		PROJ_SOLIDIFY_ON_WALL = 0;
+		PROJ_DAMAGE = 0;
+		PROJ_DAMAGE_AOE_RANGE = 0;
+		PROJ_DAMAGE_AOE_FALLOFF = 0;
+		PROJ_DAMAGE_TYPE = "dark";
+		PROJ_COLLIDEHITBOX = 1;
+		PROJ_IGNORENPC = 1;
+		PROJ_ANIM_IDLE = "spin_vertical_fast";
+		SCAN_RANGE = 64;
 	}
 
 	void arrow_spawn()

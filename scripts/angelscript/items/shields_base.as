@@ -8,38 +8,62 @@ namespace MS
 class ShieldsBase : CGameScript
 {
 	int AM_SHIELD;
+	int ANIM_IDLE1;
+	int ANIM_IDLE_TOTAL;
+	int ANIM_LIFT1;
+	string ANIM_PREFIX;
+	int ANIM_RETRACT1;
+	int ANIM_THRUST1;
+	int BASEWEAPON_NO_HAND_IDLE;
 	string EXIT_BLOCK;
 	int IS_DEPLOYED;
+	int MELEE_ACCURACY;
+	float MELEE_ATK_DURATION;
+	string MELEE_CALLBACK;
+	float MELEE_DMG_DELAY;
+	int MELEE_NOISE;
+	int MELEE_SOUND_DELAY;
+	string MELEE_STAT;
+	string MELEE_VIEWANIM_ATK;
+	string MODEL_HANDS;
+	string MODEL_WEAR;
+	string MODEL_WORLD;
 	string PARRY_MULTI_OUT;
+	string PLAYERANIM_AIM;
+	string SHIELD_BREAK_SOUND;
+	float SHIELD_TAKEDMG;
+	string SOUND_BLOCK;
+	string SOUND_SWIPE;
+	string SOUND_THRUST;
 
 	ShieldsBase()
 	{
 		AM_SHIELD = 1;
-		const int ANIM_IDLE1 = 0;
-		const int ANIM_IDLE_TOTAL = 1;
-		const int ANIM_LIFT1 = 0;
-		const int ANIM_THRUST1 = 1;
-		const int ANIM_RETRACT1 = 2;
-		const string MELEE_VIEWANIM_ATK = ANIM_THRUST1;
-		const int BASEWEAPON_NO_HAND_IDLE = 1;
-		const string MODEL_WORLD = "weapons/p_weapons2.mdl";
-		const string MODEL_HANDS = "weapons/p_weapons2.mdl";
-		const string MODEL_WEAR = "weapons/p_weapons2.mdl";
-		const string ANIM_PREFIX = "allshields";
-		const string PLAYERANIM_AIM = "battleaxe";
-		const string MELEE_STAT = "parry";
-		const int MELEE_ACCURACY = 40;
-		const float MELEE_DMG_DELAY = 0.1;
-		const float MELEE_ATK_DURATION = 1.0;
-		const int MELEE_ACCURACY = 40;
-		const string MELEE_CALLBACK = "melee";
-		const int MELEE_NOISE = 400;
-		const int MELEE_SOUND_DELAY = 0;
-		const float SHIELD_TAKEDMG = 0.5;
-		const string SHIELD_BREAK_SOUND = "debris/bustmetal1.wav";
-		const string SOUND_THRUST = "weapons/cbar_miss1.wav";
-		const string SOUND_SWIPE = SOUND_THRUST;
-		const string SOUND_BLOCK = "body/armour3.wav";
+		ANIM_IDLE1 = 0;
+		ANIM_IDLE_TOTAL = 1;
+		ANIM_LIFT1 = 0;
+		ANIM_THRUST1 = 1;
+		ANIM_RETRACT1 = 2;
+		MELEE_VIEWANIM_ATK = ANIM_THRUST1;
+		BASEWEAPON_NO_HAND_IDLE = 1;
+		MODEL_WORLD = "weapons/p_weapons2.mdl";
+		MODEL_HANDS = "weapons/p_weapons2.mdl";
+		MODEL_WEAR = "weapons/p_weapons2.mdl";
+		ANIM_PREFIX = "allshields";
+		PLAYERANIM_AIM = "battleaxe";
+		MELEE_STAT = "parry";
+		MELEE_ACCURACY = 40;
+		MELEE_DMG_DELAY = 0.1;
+		MELEE_ATK_DURATION = 1.0;
+		MELEE_ACCURACY = 40;
+		MELEE_CALLBACK = "melee";
+		MELEE_NOISE = 400;
+		MELEE_SOUND_DELAY = 0;
+		SHIELD_TAKEDMG = 0.5;
+		SHIELD_BREAK_SOUND = "debris/bustmetal1.wav";
+		SOUND_THRUST = "weapons/cbar_miss1.wav";
+		SOUND_SWIPE = SOUND_THRUST;
+		SOUND_BLOCK = "body/armour3.wav";
 	}
 
 	void weapon_spawn()

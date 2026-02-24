@@ -70,7 +70,7 @@ class GabeNewell : CGameScript
 		GetAllPlayers(PLAYER_LIST);
 		string N_PLAYERS = GetTokenCount(PLAYER_LIST, ";");
 		N_PLAYERS -= 1;
-		string RND_PLAYER = RandomInt(0, N_PLAYERS);
+		int RND_PLAYER = RandomInt(0, N_PLAYERS);
 		CHOSEN_PLAYER = GetToken(PLAYER_LIST, RND_PLAYER, ";");
 		if (CHOSEN_PLAYER == G_LAST_GABE_TARGET)
 		{
@@ -80,7 +80,7 @@ class GabeNewell : CGameScript
 		string OUT_TITLE = "Gabe Newell is out to eat ";
 		OUT_TITLE += GetEntityName(CHOSEN_PLAYER);
 		string OUT_MSG = "If he catches you, he will deleted your character!";
-		SendInfoMsg("all", "OUT_MSG OUT_TITLE");
+		SendInfoMsg("all", OUT_MSG + OUT_TITLE);
 		SetGlobalVar("G_LAST_GABE_TARGET", CHOSEN_PLAYER);
 		CallExternal("players", "ext_gabe_musak");
 	}
@@ -125,8 +125,8 @@ class GabeNewell : CGameScript
 			if ((AS_LAST_POS_SET))
 			{
 			}
-			string RND_DIR = Random(0, 359.99);
-			string RND_UD = Random(-200, 200);
+			float RND_DIR = Random(0, 359.99);
+			float RND_UD = Random(-200, 200);
 			AddVelocity(GetOwner(), /* TODO: $relpos */ $relpos(Vector3(0, RND_DIR, 0), Vector3(0, 500, RND_UD)));
 		}
 		AS_LAST_POS = MY_ORG;

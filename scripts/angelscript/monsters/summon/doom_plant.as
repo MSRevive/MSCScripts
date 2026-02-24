@@ -11,44 +11,63 @@ class DoomPlant : CGameScript
 	string ANIM_DEATH;
 	string ANIM_IDLE;
 	string ATTACK_TARGET;
+	string BUSH_IDLE_ANIMS;
 	int FIRST_SET_DONE;
+	float FREQ_GROW;
+	float FREQ_SHOOT;
+	float FREQ_SPORE;
 	string GAME_PVP;
+	string GIB_MODEL;
 	int GROWING;
 	int IAM_SUMMONED;
+	int MELE_RANGE;
+	string MODEL_LEVEL1;
+	string MODEL_LEVEL2;
+	string MODEL_LEVEL3;
 	string MY_DMG;
 	string MY_DURATION;
 	string MY_OWNER;
 	string NEXT_GROW;
 	string OWNER_ISPLAYER;
+	int PLANT_HITCHANCE;
 	int PLANT_LEVEL;
 	int REPULSE;
 	int SCAN_RANGE;
 	int SHOOTING;
 	int SHOOT_DELAY;
+	string SHRUB_IDLE_ANIMS;
+	string SOUND_GIB;
+	string SOUND_GROW;
+	string SOUND_SCRATCH;
+	string SOUND_SLASH;
+	string SOUND_SPORE;
+	string SOUND_STRUCK1;
+	string SOUND_STRUCK2;
 	int SPORE_DELAY;
 	string SPORE_POISON_DMG;
+	string TREE_IDLE_ANIMS;
 
 	DoomPlant()
 	{
-		const int PLANT_HITCHANCE = 95;
-		const string SHRUB_IDLE_ANIMS = "thornplant2_idle1_1;thornplant2_idle1_2;thornplant2_idle3_1;thornplant2_idle3_2;";
-		const string BUSH_IDLE_ANIMS = "thornplant2_2_idle1;thornplant2_2_idle2;thornplant2_2_idle3;thornplant2_2_idle4_1;thornplant2_2_idle4_2;";
-		const string TREE_IDLE_ANIMS = "thornplant2_3_idle1;thornplant2_3_idle2;thornplant2_3_idle3;thornplant2_3_idle4;thornplant2_3_idle5;";
-		const int MELE_RANGE = 96;
-		const float FREQ_GROW = 40.0;
-		const float FREQ_SHOOT = 1.0;
-		const float FREQ_SPORE = 10.0;
-		const string MODEL_LEVEL1 = "monsters/dewm_shrub.mdl";
-		const string MODEL_LEVEL2 = "monsters/dewm_bush.mdl";
-		const string MODEL_LEVEL3 = "monsters/dewm_tree.mdl";
-		const string GIB_MODEL = "cactusgibs.mdl";
-		const string SOUND_GIB = "debris/bustflesh1.wav";
-		const string SOUND_SLASH = "zombie/claw_miss1.wav";
-		const string SOUND_SCRATCH = "headcrab/hc_attack1.wav";
-		const string SOUND_SPORE = "weapons/bow/crossbow.wav";
-		const string SOUND_GROW = "weapons/bow/stretch.wav";
-		const string SOUND_STRUCK1 = "weapons/xbow_hitbod1.wav";
-		const string SOUND_STRUCK2 = "weapons/xbow_hitbod2.wav";
+		PLANT_HITCHANCE = 95;
+		SHRUB_IDLE_ANIMS = "thornplant2_idle1_1;thornplant2_idle1_2;thornplant2_idle3_1;thornplant2_idle3_2;";
+		BUSH_IDLE_ANIMS = "thornplant2_2_idle1;thornplant2_2_idle2;thornplant2_2_idle3;thornplant2_2_idle4_1;thornplant2_2_idle4_2;";
+		TREE_IDLE_ANIMS = "thornplant2_3_idle1;thornplant2_3_idle2;thornplant2_3_idle3;thornplant2_3_idle4;thornplant2_3_idle5;";
+		MELE_RANGE = 96;
+		FREQ_GROW = 40.0;
+		FREQ_SHOOT = 1.0;
+		FREQ_SPORE = 10.0;
+		MODEL_LEVEL1 = "monsters/dewm_shrub.mdl";
+		MODEL_LEVEL2 = "monsters/dewm_bush.mdl";
+		MODEL_LEVEL3 = "monsters/dewm_tree.mdl";
+		GIB_MODEL = "cactusgibs.mdl";
+		SOUND_GIB = "debris/bustflesh1.wav";
+		SOUND_SLASH = "zombie/claw_miss1.wav";
+		SOUND_SCRATCH = "headcrab/hc_attack1.wav";
+		SOUND_SPORE = "weapons/bow/crossbow.wav";
+		SOUND_GROW = "weapons/bow/stretch.wav";
+		SOUND_STRUCK1 = "weapons/xbow_hitbod1.wav";
+		SOUND_STRUCK2 = "weapons/xbow_hitbod2.wav";
 	}
 
 	void OnRepeatTimer()
@@ -480,7 +499,7 @@ class DoomPlant : CGameScript
 		}
 		string NIDLE_ANIMS = GetTokenCount(IDLE_ANIMS, ";");
 		NIDLE_ANIMS -= 1;
-		string RND_IDLE = RandomInt(0, NIDLE_ANIMS);
+		int RND_IDLE = RandomInt(0, NIDLE_ANIMS);
 		ANIM_IDLE = GetToken(IDLE_ANIMS, RND_IDLE, ";");
 	}
 

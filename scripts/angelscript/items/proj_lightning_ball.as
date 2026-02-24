@@ -7,36 +7,53 @@ namespace MS
 
 class ProjLightningBall : CGameScript
 {
+	int ARROW_BODY_OFS;
 	string F_BALL_DMG;
 	string F_BALL_SIZE;
 	string F_BALL_TYPE;
 	int HIT_SOMETHING;
 	int LOOP_COUNT;
+	int MODEL_BODY_OFS;
+	string MODEL_HANDS;
+	string MODEL_WORLD;
 	string MY_OWNER;
 	string MY_SCRIPT_IDX;
 	string OWNER_ISPLAYER;
+	string PROJ_ANIM_IDLE;
+	int PROJ_DAMAGE;
+	int PROJ_DAMAGE_AOE_FALLOFF;
+	int PROJ_DAMAGE_AOE_RANGE;
+	string PROJ_DAMAGE_TYPE;
+	int PROJ_IGNORENPC;
+	int PROJ_MOTIONBLUR;
+	int PROJ_SOLIDIFY_ON_WALL;
+	int PROJ_STICK_DURATION;
 	int SCAN_ON;
 	int SCAN_SIZE;
+	string SOUND_SHOOT;
+	string SOUND_ZAP1;
+	string SOUND_ZAP2;
+	string SOUND_ZAP3;
 
 	ProjLightningBall()
 	{
-		const int PROJ_IGNORENPC = 0;
-		const string MODEL_HANDS = "none";
-		const string MODEL_WORLD = "none";
-		const int ARROW_BODY_OFS = 6;
-		const string SOUND_SHOOT = "ambience/alienflyby1.wav";
-		const string SOUND_ZAP1 = "debris/beamstart14.wav";
-		const string SOUND_ZAP2 = "debris/beamstart14.wav";
-		const string SOUND_ZAP3 = "debris/zap1.wav";
-		const int PROJ_MOTIONBLUR = 0;
-		const string PROJ_ANIM_IDLE = "none";
-		const int MODEL_BODY_OFS = 0;
-		const int PROJ_DAMAGE = 0;
-		const int PROJ_STICK_DURATION = 0;
-		const int PROJ_SOLIDIFY_ON_WALL = 0;
-		const int PROJ_DAMAGE_AOE_RANGE = 32;
-		const int PROJ_DAMAGE_AOE_FALLOFF = 1;
-		const string PROJ_DAMAGE_TYPE = "lightning";
+		PROJ_IGNORENPC = 0;
+		MODEL_HANDS = "none";
+		MODEL_WORLD = "none";
+		ARROW_BODY_OFS = 6;
+		SOUND_SHOOT = "ambience/alienflyby1.wav";
+		SOUND_ZAP1 = "debris/beamstart14.wav";
+		SOUND_ZAP2 = "debris/beamstart14.wav";
+		SOUND_ZAP3 = "debris/zap1.wav";
+		PROJ_MOTIONBLUR = 0;
+		PROJ_ANIM_IDLE = "none";
+		MODEL_BODY_OFS = 0;
+		PROJ_DAMAGE = 0;
+		PROJ_STICK_DURATION = 0;
+		PROJ_SOLIDIFY_ON_WALL = 0;
+		PROJ_DAMAGE_AOE_RANGE = 32;
+		PROJ_DAMAGE_AOE_FALLOFF = 1;
+		PROJ_DAMAGE_TYPE = "lightning";
 	}
 
 	void OnSpawn() override
@@ -101,9 +118,9 @@ class ProjLightningBall : CGameScript
 		SetModel("weapons/projectiles.mdl");
 		SetIdleAnim("idle_standard");
 		SetMoveAnim("idle_standard");
-		string SUB_MODEL = int(F_BALL_SIZE);
+		int SUB_MODEL = int(F_BALL_SIZE);
 		SUB_MODEL += 12;
-		string SUB_MODEL = int(SUB_MODEL);
+		int SUB_MODEL = int(SUB_MODEL);
 		SetModelBody(0, SUB_MODEL);
 		if (F_BALL_TYPE == "holy")
 		{

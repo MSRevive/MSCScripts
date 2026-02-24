@@ -11,7 +11,10 @@ class ElementalAir1 : CGameScript
 	int BALL_SIZE;
 	string BALL_TARGETS;
 	int DMG_BALL;
+	int DMG_CIRCLE;
 	string FIRE_BALL_AMMO;
+	float FREQ_CIRCLE;
+	float FREQ_LIGHTING_BALLS;
 	int I_JUST_SPAWNED;
 	string MY_HURT_STAGE;
 	int NEXT_LIGHTNING_BALL;
@@ -22,9 +25,9 @@ class ElementalAir1 : CGameScript
 		AS_SUMMON_TELE_CHECK = 1;
 		BALL_SIZE = 3;
 		DMG_BALL = 60;
-		const float FREQ_CIRCLE = 60.0;
-		const int DMG_CIRCLE = 100;
-		const string FREQ_LIGHTING_BALLS = Random(20, 45);
+		FREQ_CIRCLE = 60.0;
+		DMG_CIRCLE = 100;
+		FREQ_LIGHTING_BALLS = Random(20, 45);
 	}
 
 	void OnSpawn() override

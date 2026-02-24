@@ -7,28 +7,43 @@ namespace MS
 
 class ProjFireBall : CGameScript
 {
+	string ITEM_NAME;
 	string LOCK_BURN_DAMAGE;
+	string MODEL_HANDS;
+	string MODEL_WORLD;
 	string MY_OWNER;
+	int PROJ_AOE_FALLOFF;
+	int PROJ_AOE_RANGE;
+	int PROJ_COLLIDEHITBOX;
+	int PROJ_DAMAGE;
+	string PROJ_DAMAGESTAT;
+	string PROJ_DAMAGE_TYPE;
+	int PROJ_SOLIDIFY_ON_WALL;
+	int PROJ_STICK_DURATION;
+	string SCRIPT_1;
 	string SCRIPT_1_ID;
+	string SOUND_BURN;
+	string SPRITE_BURN;
+	string SPRITE_FIRE;
 
 	ProjFireBall()
 	{
-		const string MODEL_HANDS = "none";
-		const string MODEL_WORLD = "weapons/projectiles.mdl";
-		const string SOUND_BURN = "items/torch1.wav";
-		const string SPRITE_FIRE = "3dmflaora.spr";
-		const string SPRITE_BURN = "fire1_fixed.spr";
-		const string ITEM_NAME = "firemana";
-		const string PROJ_DAMAGE_TYPE = "fire";
-		const string PROJ_DAMAGESTAT = "spellcasting";
-		const string PROJ_DAMAGE = RandomInt(75, 200);
-		const int PROJ_AOE_RANGE = 250;
-		const int PROJ_AOE_FALLOFF = 0;
-		const int PROJ_STICK_DURATION = 0;
-		const int PROJ_SOLIDIFY_ON_WALL = 0;
-		const int PROJ_COLLIDEHITBOX = 64;
+		MODEL_HANDS = "none";
+		MODEL_WORLD = "weapons/projectiles.mdl";
+		SOUND_BURN = "items/torch1.wav";
+		SPRITE_FIRE = "3dmflaora.spr";
+		SPRITE_BURN = "fire1_fixed.spr";
+		ITEM_NAME = "firemana";
+		PROJ_DAMAGE_TYPE = "fire";
+		PROJ_DAMAGESTAT = "spellcasting";
+		PROJ_DAMAGE = RandomInt(75, 200);
+		PROJ_AOE_RANGE = 250;
+		PROJ_AOE_FALLOFF = 0;
+		PROJ_STICK_DURATION = 0;
+		PROJ_SOLIDIFY_ON_WALL = 0;
+		PROJ_COLLIDEHITBOX = 64;
 		Precache(SPRITE_BURN);
-		const string SCRIPT_1 = "items/proj_fire_dart_cl";
+		SCRIPT_1 = "items/proj_fire_dart_cl";
 		Precache(SCRIPT_1);
 		Precache("rjet1.spr");
 		Precache(MODEL_WORLD);

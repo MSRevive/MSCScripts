@@ -7,25 +7,32 @@ namespace MS
 
 class CrystalKeeper : CGameScript
 {
+	string ANIM_GIVE;
+	string ANIM_MAGIC;
+	float CHAT_SPEED;
+	string DUNGEON_NAME;
 	int GAVE_KEY;
 	int IN_CHAT;
 	string JOB_STEP;
+	string MONSTER_MODEL;
+	int NO_RUMOR;
 	string PLAYER_NAME;
 	string QUEST_WINNER;
 	string SHARDS_LEFT;
 	int SHARDS_RECIEVED;
+	int SHARDS_REQ;
 	string SHARD_SUFFIX;
 
 	CrystalKeeper()
 	{
-		const int SHARDS_REQ = 10;
-		const string ANIM_MAGIC = "kneel";
-		const string ANIM_GIVE = "gluonshow";
-		const string DUNGEON_NAME = "Crows dungeon name";
-		const string MONSTER_MODEL = "npc/balancepriest1.mdl";
+		SHARDS_REQ = 10;
+		ANIM_MAGIC = "kneel";
+		ANIM_GIVE = "gluonshow";
+		DUNGEON_NAME = "Crows dungeon name";
+		MONSTER_MODEL = "npc/balancepriest1.mdl";
 		Precache(MONSTER_MODEL);
-		const float CHAT_SPEED = 5.0;
-		const int NO_RUMOR = 1;
+		CHAT_SPEED = 5.0;
+		NO_RUMOR = 1;
 	}
 
 	void OnSpawn() override
@@ -67,19 +74,19 @@ class CrystalKeeper : CGameScript
 		}
 		if (JOB_STEP == 3)
 		{
-			SayText("I have some of the shards... I think if I had the rest I could re-forge the key.");
+			SayText(I + "have some of the shards... " + I + "think if " + I + "had the rest " + I + " could re-forge the key.");
 		}
 		if (JOB_STEP == 4)
 		{
-			SayText("They are scattered throughout DUNGEON_NAME but I lack the power to gather the rest.");
+			SayText("They are scattered throughout " + DUNGEON_NAME + "but " + I + " lack the power to gather the rest.");
 		}
 		if (JOB_STEP == 5)
 		{
-			SayText("If you can bring me SHARDS_REQ shards , I can re-forge magical key that opens this door.");
+			SayText("If you can bring me " + SHARDS_REQ + "shards , " + I + " can re-forge magical key that opens this door.");
 		}
 		if (JOB_STEP == 6)
 		{
-			SayText("Be sure to bring them to me all at once , for I must have all the pieces on hand at the same time.");
+			SayText("Be sure to bring them to me all at once , for " + I + " must have all the pieces on hand at the same time.");
 		}
 		if (JOB_STEP < 6)
 		{
@@ -97,12 +104,12 @@ class CrystalKeeper : CGameScript
 		if ((IN_CHAT)) return;
 		if (SHARDS_RECIEVED > 0)
 		{
-			SayText("I still need SHARDS_LEFT shards to re-forge the key to the temple door.");
+			SayText(I + "still need " + SHARDS_LEFT + " shards to re-forge the key to the temple door.");
 		}
 		if (!(SHARDS_RECIEVED == 0)) return;
 		if (!(GAVE_KEY))
 		{
-			SayText("Greetings warrior , I am Tal thul, priest of Felewyn.");
+			SayText("Greetings warrior , " + I + " am Tal thul, priest of Felewyn.");
 		}
 		if ((GAVE_KEY))
 		{
@@ -114,7 +121,7 @@ class CrystalKeeper : CGameScript
 	void say_where()
 	{
 		if ((IN_CHAT)) return;
-		SayText("I am uncertain as to where exactally , I only barely survived finding the first three pieces in DUNGEON_NAME.");
+		SayText(I + "am uncertain as to where exactally , " + I + "only barely survived finding the first three pieces in " + DUNGEON_NAME.);
 	}
 
 	void gave_shard()
@@ -136,22 +143,22 @@ class CrystalKeeper : CGameScript
 			give_key();
 		}
 		if (!(SHARDS_LEFT > 0)) return;
-		string RANDOM_CHAT = RandomInt(1, 4);
+		int RANDOM_CHAT = RandomInt(1, 4);
 		if (RANDOM_CHAT == 1)
 		{
-			SayText("Excellent , PLAYER_NAME I only need SHARDS_LEFT more SHARD_SUFFIX");
+			SayText("Excellent , " + PLAYER_NAME + I + "only need " + SHARDS_LEFT + "more " + SHARD_SUFFIX);
 		}
 		if (RANDOM_CHAT == 2)
 		{
-			SayText("Good work , PLAYER_NAME I only need SHARDS_LEFT more SHARD_SUFFIX");
+			SayText("Good work , " + PLAYER_NAME + I + "only need " + SHARDS_LEFT + "more " + SHARD_SUFFIX);
 		}
 		if (RANDOM_CHAT == 3)
 		{
-			SayText("Keep them coming , PLAYER_NAME I only need SHARDS_LEFT more SHARD_SUFFIX");
+			SayText("Keep them coming , " + PLAYER_NAME + I + "only need " + SHARDS_LEFT + "more " + SHARD_SUFFIX);
 		}
 		if (RANDOM_CHAT == 4)
 		{
-			SayText("Alright , PLAYER_NAME I only need SHARDS_LEFT more SHARD_SUFFIX");
+			SayText("Alright , " + PLAYER_NAME + I + "only need " + SHARDS_LEFT + "more " + SHARD_SUFFIX);
 		}
 	}
 
@@ -170,7 +177,7 @@ class CrystalKeeper : CGameScript
 
 	void give_key()
 	{
-		SayText("Truly you are a warrior of the light PLAYER_NAME one moment while I perform the incantation.");
+		SayText("Truly you are a warrior of the light " + PLAYER_NAME + "one moment while " + I + " perform the incantation.");
 		SpawnNPC("monsters/companion/spell_maker_divination", /* TODO: $relpos */ $relpos(0, 0, 40), ScriptMode::Legacy); // params: GetEntityIndex(GetOwner()), "none", "none", 50
 		PlayAnim("once", ANIM_MAGIC);
 		ScheduleDelayedEvent(2.0, "give_key2");
@@ -187,13 +194,13 @@ class CrystalKeeper : CGameScript
 
 	void return_home()
 	{
-		SayText("I ve done all I can here, so I am using my return scroll s magic now.");
+		SayText(I + " ve done all I can here, so I am using my return scroll s magic now.");
 		ScheduleDelayedEvent(2.0, "return_home2");
 	}
 
 	void return_home2()
 	{
-		SayText("I wish you luck in your quest!");
+		SayText(I + " wish you luck in your quest!");
 		ScheduleDelayedEvent(0.1, "npc_fade_away");
 	}
 

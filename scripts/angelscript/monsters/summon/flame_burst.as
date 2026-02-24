@@ -11,10 +11,11 @@ class FlameBurst : CGameScript
 	string MY_OWNER;
 	string ONE_SHOT;
 	string OWNER_ISPLAYER;
+	int SCAN_RANGE;
 
 	FlameBurst()
 	{
-		const int SCAN_RANGE = 256;
+		SCAN_RANGE = 256;
 	}
 
 	void game_dynamically_created()
@@ -39,7 +40,7 @@ class FlameBurst : CGameScript
 
 	void effect_die()
 	{
-		// TODO: UNCONVERTED: clienteffect remove all BURST_SCRIPT_IDX
+		ClientEffect("remove", "all", BURST_SCRIPT_IDX);
 		DeleteEntity(GetOwner());
 	}
 

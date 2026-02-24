@@ -7,10 +7,11 @@ class Rock : CGameScript
 {
 	string FIRE_ROCK;
 	string ROCK_OWNER;
+	int ROCK_SPEED;
 
 	Rock()
 	{
-		const int ROCK_SPEED = 1000;
+		ROCK_SPEED = 1000;
 	}
 
 	void OnSpawn() override

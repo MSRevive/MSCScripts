@@ -8,11 +8,15 @@ namespace MS
 
 class ItemFeather : CGameScript
 {
+	string MODEL_HANDS;
+	string MODEL_OFS;
+	string MODEL_WORLD;
+
 	ItemFeather()
 	{
-		const string MODEL_WORLD = "misc/p_misc.mdl";
-		const string MODEL_HANDS = "misc/p_misc.mdl";
-		const string MODEL_OFS = OFS_GENERIC;
+		MODEL_WORLD = "misc/p_misc.mdl";
+		MODEL_HANDS = "misc/p_misc.mdl";
+		MODEL_OFS = OFS_GENERIC;
 	}
 
 	void miscitem_spawn()

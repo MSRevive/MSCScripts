@@ -7,11 +7,15 @@ namespace MS
 
 class BluntHammerDorfgan : CGameScript
 {
+	int MELEE_DMG;
+	int MELEE_DMG_RANGE;
+	int MELEE_ENERGY;
+
 	BluntHammerDorfgan()
 	{
-		const int MELEE_ENERGY = 2;
-		const int MELEE_DMG = 110;
-		const int MELEE_DMG_RANGE = 90;
+		MELEE_ENERGY = 2;
+		MELEE_DMG = 110;
+		MELEE_DMG_RANGE = 90;
 	}
 
 	void weapon_spawn()

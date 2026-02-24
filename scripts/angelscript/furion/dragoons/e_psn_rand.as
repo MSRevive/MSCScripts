@@ -7,9 +7,11 @@ namespace MS
 
 class EPsnRand : CGameScript
 {
+	int ELEMENT;
+
 	EPsnRand()
 	{
-		const int ELEMENT = 1;
+		ELEMENT = 1;
 	}
 
 }

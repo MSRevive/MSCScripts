@@ -14,7 +14,7 @@ class Thief : CGameScript
 	int IS_FLEEING;
 	int SEE_ENEMY;
 	int STEAL;
-	string STEALING;
+	int STEALING;
 	int THIEF;
 
 	Thief()
@@ -145,7 +145,7 @@ class Thief : CGameScript
 	{
 		if (!(THIEF == 0)) return;
 		THIEF = 1;
-		SayText("I don t know what you re talking about.");
+		SayText(I + " don t know what you re talking about.");
 		if (!(THIEF == 3)) return;
 		SayText("Go away.");
 	}
@@ -154,7 +154,7 @@ class Thief : CGameScript
 	{
 		if (!(THIEF == 1)) return;
 		THIEF = 2;
-		SayText("Look , I don t know what you re talking about. With guards around , nobody would dare to steal.");
+		SayText("Look , " + I + " don t know what you re talking about. With guards around , nobody would dare to steal.");
 	}
 
 	void say_thief()

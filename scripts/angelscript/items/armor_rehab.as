@@ -7,23 +7,34 @@ namespace MS
 
 class ArmorRehab : CGameScript
 {
+	int ARMOR_BODY;
+	string ARMOR_MODEL;
+	string ARMOR_TEXT;
+	float BARMOR_PROTECTION;
+	string BARMOR_PROTECTION_AREA;
+	string BARMOR_REPLACE_BODYPARTS;
+	string BARMOR_TYPE;
 	string DID_INIT;
+	int ELM_AMT;
+	string ELM_NAME;
+	float FREQ_CHANGE;
 	int IS_ACTIVE;
-	string RND_ELE;
+	int NEW_ARMOR_OFS;
+	int RND_ELE;
 
 	ArmorRehab()
 	{
-		const string ARMOR_MODEL = "armor/p_armorvest.mdl";
-		const int ARMOR_BODY = 5;
-		const string ARMOR_TEXT = "You work your way into the visual nightmare.";
-		const string BARMOR_TYPE = "leather";
-		const float BARMOR_PROTECTION = 0.4;
-		const string BARMOR_PROTECTION_AREA = "chest";
-		const string BARMOR_REPLACE_BODYPARTS = "chest";
-		const float FREQ_CHANGE = 90.0;
-		const int NEW_ARMOR_OFS = 19;
-		const string ELM_NAME = "rehab";
-		const int ELM_AMT = 100;
+		ARMOR_MODEL = "armor/p_armorvest.mdl";
+		ARMOR_BODY = 5;
+		ARMOR_TEXT = "You work your way into the visual nightmare.";
+		BARMOR_TYPE = "leather";
+		BARMOR_PROTECTION = 0.4;
+		BARMOR_PROTECTION_AREA = "chest";
+		BARMOR_REPLACE_BODYPARTS = "chest";
+		FREQ_CHANGE = 90.0;
+		NEW_ARMOR_OFS = 19;
+		ELM_NAME = "rehab";
+		ELM_AMT = 100;
 	}
 
 	void OnSpawn() override
@@ -118,7 +129,7 @@ class ArmorRehab : CGameScript
 			string ICON_NAME = "hud/status/alpha_";
 			// TODO: hud.addstatusicon ent_owner ICON_NAME rehab FREQ_CHANGE
 			ClientEvent("new", "all", "items/armor_rehab_cl", GetEntityIndex(GetOwner()), RND_ELE);
-			SendColoredMessage(GetOwner(), "Chromatic vest has chosen to protect you from ELM_TYPE");
+			SendColoredMessage(GetOwner(), "Chromatic vest has chosen to protect you from " + ELM_TYPE);
 			// svplaysound: svplaysound 2 10 magic/energy1.wav
 			EmitSound(2, 10, "magic/energy1.wav");
 		}

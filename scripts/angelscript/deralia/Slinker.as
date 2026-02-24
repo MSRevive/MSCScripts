@@ -26,9 +26,13 @@ class Slinker : CGameScript
 	string LAST_SPOKE_TO;
 	int MISSION_OVER;
 	int MOVE_RANGE;
+	int NO_HAIL;
+	int NO_JOB;
+	int NO_RUMOR;
 	string PLAYER_SPLOTTED;
 	string QUEST_WINNER;
 	int REQ_QUEST_NOTDONE;
+	int SEE_RANGE;
 	int T_QUEST_COMPLETE;
 
 	Slinker()
@@ -47,10 +51,10 @@ class Slinker : CGameScript
 		ANIM_WALK = "walk";
 		ANIM_RUN = "run";
 		ANIM_ATTACK = "beatdoor";
-		const int NO_RUMOR = 1;
-		const int NO_JOB = 1;
-		const int NO_HAIL = 1;
-		const int SEE_RANGE = 350;
+		NO_RUMOR = 1;
+		NO_JOB = 1;
+		NO_HAIL = 1;
+		SEE_RANGE = 350;
 		Precache("voices/deralia/slinker_ring.wav");
 	}
 
@@ -198,7 +202,7 @@ class Slinker : CGameScript
 	{
 		string reg.mitem.title = "Hail";
 		string reg.mitem.type = "say";
-		string l.say = RandomInt(1, 4);
+		int l.say = RandomInt(1, 4);
 		if (l.say == 1)
 		{
 			string reg.mitem.data = "Hello";

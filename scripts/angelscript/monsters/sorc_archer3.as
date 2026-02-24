@@ -7,25 +7,33 @@ namespace MS
 
 class SorcArcher3 : CGameScript
 {
+	int AM_SORC;
+	int ARROW_DAMAGE_HIGH;
+	int ARROW_DAMAGE_LOW;
 	int ARROW_MISSED;
 	string ARROW_TARGET_LIST;
+	string ARROW_TYPE;
+	string CONTAINER_BASE;
+	int DMG_AOE;
 	int DOING_KICK;
-	string DROP_GOLD_AMT;
+	int DROP_GOLD_AMT;
+	string DROP_ITEM_BASE1;
+	int FIN_EXP;
 	int IS_ARROW;
 	int KICK_TYPE;
 	int MELEE_ATK;
 
 	SorcArcher3()
 	{
-		const string ARROW_TYPE = "proj_arrow_npc_dyn";
-		const int FIN_EXP = 400;
+		ARROW_TYPE = "proj_arrow_npc_dyn";
+		FIN_EXP = 400;
 		DROP_GOLD_AMT = RandomInt(20, 60);
-		const string DROP_ITEM_BASE1 = "bows_swiftbow";
-		const string CONTAINER_BASE = "chests/quiver_of_lightning";
-		const int DMG_AOE = 200;
-		const int ARROW_DAMAGE_LOW = 100;
-		const int ARROW_DAMAGE_HIGH = 200;
-		const int AM_SORC = 1;
+		DROP_ITEM_BASE1 = "bows_swiftbow";
+		CONTAINER_BASE = "chests/quiver_of_lightning";
+		DMG_AOE = 200;
+		ARROW_DAMAGE_LOW = 100;
+		ARROW_DAMAGE_HIGH = 200;
+		AM_SORC = 1;
 		Precache("magic/lightning_strike2.wav");
 	}
 

@@ -7,12 +7,13 @@ namespace MS
 
 class Cavebat : CGameScript
 {
+	float ATTACK_DAMAGE;
 	float ATTACK_HITCHANCE;
 	int NPC_GIVE_EXP;
 
 	Cavebat()
 	{
-		const string ATTACK_DAMAGE = "$randf(5,15)";
+		ATTACK_DAMAGE = "$randf(5,15)";
 	}
 
 	void bat_spawn()

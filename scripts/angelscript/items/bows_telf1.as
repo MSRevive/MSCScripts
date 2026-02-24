@@ -7,29 +7,48 @@ namespace MS
 
 class BowsTelf1 : CGameScript
 {
+	string ANIM_PREFIX;
+	int BASE_LEVEL_REQ;
+	int CUSTOM_ATTACK;
+	string DAMAGE_TYPE;
+	float DMG_ADJ;
+	string ITEM_NAME;
+	int MODEL_BODY_OFS;
+	string MODEL_HANDS;
+	string MODEL_VIEW;
+	int MODEL_VIEW_IDX;
+	string MODEL_WEAR;
+	string MODEL_WORLD;
+	string RANGED_AIMANGLE;
+	float RANGED_ATK_DURATION;
+	string RANGED_HOLD_MINMAX;
+	float RANGED_POSTFIRE_DELAY;
+	float RANGED_PULLTIME;
+	string RANGED_STAT;
+	string SOUND_SHOOT;
 	string TORKIE_BOW_TYPE;
 
 	BowsTelf1()
 	{
-		const int BASE_LEVEL_REQ = 30;
-		const int MODEL_VIEW_IDX = 9;
-		const string MODEL_VIEW = "viewmodels/v_bows.mdl";
-		const string MODEL_HANDS = "weapons/p_weapons3.mdl";
-		const string MODEL_WORLD = "weapons/p_weapons3.mdl";
-		const string MODEL_WEAR = "weapons/p_weapons3.mdl";
-		const string SOUND_SHOOT = "weapons/bow/bow.wav";
-		const string ITEM_NAME = "longbow";
-		const string ANIM_PREFIX = "standard";
-		const int MODEL_BODY_OFS = 54;
-		const float RANGED_POSTFIRE_DELAY = 1.0;
-		const float RANGED_ATK_DURATION = 1.0;
-		const Vector3 RANGED_AIMANGLE = Vector3(0, 0, 0);
-		const int CUSTOM_ATTACK = 1;
-		const string DAMAGE_TYPE = "fire_effect";
-		const string RANGED_HOLD_MINMAX = "1.1;1.3";
-		const string RANGED_STAT = "archery";
-		const float RANGED_PULLTIME = 1.0;
-		const float DMG_ADJ = 0.65;
+		BASE_LEVEL_REQ = 30;
+		MODEL_VIEW_IDX = 9;
+		MODEL_VIEW = "viewmodels/v_bows.mdl";
+		MODEL_HANDS = "weapons/p_weapons3.mdl";
+		MODEL_WORLD = "weapons/p_weapons3.mdl";
+		MODEL_WEAR = "weapons/p_weapons3.mdl";
+		SOUND_SHOOT = "weapons/bow/bow.wav";
+		ITEM_NAME = "longbow";
+		ANIM_PREFIX = "standard";
+		MODEL_BODY_OFS = 54;
+		RANGED_POSTFIRE_DELAY = 1.0;
+		RANGED_ATK_DURATION = 1.0;
+		RANGED_AIMANGLE = Vector3(0, 0, 0);
+		CUSTOM_ATTACK = 1;
+		DAMAGE_TYPE = "fire_effect";
+		RANGED_HOLD_MINMAX = "1.1;1.3";
+		RANGED_STAT = "archery";
+		RANGED_PULLTIME = 1.0;
+		DMG_ADJ = 0.65;
 	}
 
 	void bow_spawn()

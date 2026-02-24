@@ -10,14 +10,16 @@ class Proffund : CGameScript
 {
 	int DEED;
 	int GIVEREWARD;
+	int NO_JOB;
+	int NO_RUMOR;
 	int OFFER;
 	int OVER;
 	int SLINKER;
 
 	Proffund()
 	{
-		const int NO_JOB = 1;
-		const int NO_RUMOR = 1;
+		NO_JOB = 1;
+		NO_RUMOR = 1;
 	}
 
 	void OnSpawn() override
@@ -67,11 +69,11 @@ class Proffund : CGameScript
 		if (SLINKER == 0)
 		{
 			DEED = 1;
-			SayText("A property deed? What nonsense is this? ... who sent you?");
+			SayText(A + " property deed? What nonsense is this? ... who sent you?");
 		}
 		else
 		{
-			SayText("Oh really? A deed to one of my farm properties , I suppose. Well , he ll have to try harder than you, if he s planning on");
+			SayText("Oh really? " + A + "deed to one of my farm properties , " + I + " suppose. Well , he ll have to try harder than you, if he s planning on");
 			SayText("intimidating me into giving him a property deed!");
 			ScheduleDelayedEvent(3, "say_helpme");
 		}
@@ -94,7 +96,7 @@ class Proffund : CGameScript
 
 	void say_helpme()
 	{
-		SayText("However , maybe you can help me out. I d like Slinker, shall we say, removed from the picture. Will you help me by, uhm, taking care of him?");
+		SayText("However , maybe you can help me out. " + I + " d like Slinker, shall we say, removed from the picture. Will you help me by, uhm, taking care of him?");
 		OFFER = 1;
 	}
 
@@ -102,7 +104,7 @@ class Proffund : CGameScript
 	{
 		if (!(OVER == 0)) return;
 		if (!(OFFER == 1)) return;
-		SayText("Excellent. When you return , I shall reward you...");
+		SayText("Excellent. When you return , " + I + " shall reward you...");
 		CallExternal(FindEntityByName("Slinker"), "mortal");
 		OVER = 1;
 	}
@@ -111,7 +113,7 @@ class Proffund : CGameScript
 	{
 		if (!(OVER == 0)) return;
 		if (!(OFFER == 1)) return;
-		SayText("Are..are you sure? I mean... please don t hurt me. Here, here! Take it!");
+		SayText("Are..are you sure? " + I + " mean... please don t hurt me. Here, here! Take it!");
 		// TODO: offer ent_lastspoke item_deed
 		OFFER = 0;
 		OVER = 1;

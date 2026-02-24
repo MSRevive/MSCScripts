@@ -8,11 +8,13 @@ namespace MS
 class CrestW1 : CGameScript
 {
 	int IS_RESERVED;
+	int MODEL_CREST_OFS;
+	string MODEL_WEAR;
 
 	CrestW1()
 	{
-		const int MODEL_CREST_OFS = 31;
-		const string MODEL_WEAR = "armor/p_gowns.mdl";
+		MODEL_CREST_OFS = 31;
+		MODEL_WEAR = "armor/p_gowns.mdl";
 	}
 
 	void crest_spawn()
@@ -40,9 +42,9 @@ class CrestW1 : CGameScript
 	void game_restricted()
 	{
 		string OUT_MSG = "This crest is reserved for ";
-		string ITEM_RESERVER = /* TODO: $get_array */ $get_array(PICKUP_ALLOW_LIST, 0);
+		string ITEM_RESERVER = PICKUP_ALLOW_LIST[int(0)];
 		OUT_MSG += GetEntityName(ITEM_RESERVER);
-		SendInfoMsg(param1, "Item Restricted OUT_MSG");
+		SendInfoMsg(param1, "Item Restricted " + OUT_MSG);
 	}
 
 }

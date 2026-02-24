@@ -7,10 +7,13 @@ namespace MS
 
 class EPsnSpear : CGameScript
 {
+	int ELEMENT;
+	int WEAPON;
+
 	EPsnSpear()
 	{
-		const int WEAPON = 6;
-		const int ELEMENT = 1;
+		WEAPON = 6;
+		ELEMENT = 1;
 	}
 
 }

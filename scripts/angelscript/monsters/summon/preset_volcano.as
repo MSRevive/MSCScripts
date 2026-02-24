@@ -7,11 +7,15 @@ namespace MS
 
 class PresetVolcano : CGameScript
 {
+	int AOE_DMG;
+	int FIXED_VOLCANO;
+	string VOLCANO_EXT_EVENT;
+
 	PresetVolcano()
 	{
-		const string VOLCANO_EXT_EVENT = "ext_volcano_hit";
-		const int AOE_DMG = 25;
-		const int FIXED_VOLCANO = 1;
+		VOLCANO_EXT_EVENT = "ext_volcano_hit";
+		AOE_DMG = 25;
+		FIXED_VOLCANO = 1;
 	}
 
 }

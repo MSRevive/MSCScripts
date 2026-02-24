@@ -11,15 +11,19 @@ class DwarfBomberCl : CGameScript
 	string FX_LACTIVE;
 	string FX_OWNER;
 	string FX_RACTIVE;
+	string GLOW_COLOR;
+	int GLOW_RAD;
+	string LHAND_IDX;
 	string LIGHT_LHAND;
 	string LIGHT_RHAND;
+	string RHAND_IDX;
 
 	DwarfBomberCl()
 	{
-		const string RHAND_IDX = "attachment0";
-		const string LHAND_IDX = "attachment1";
-		const int GLOW_RAD = 64;
-		const Vector3 GLOW_COLOR = Vector3(255, 64, 0);
+		RHAND_IDX = "attachment0";
+		LHAND_IDX = "attachment1";
+		GLOW_RAD = 64;
+		GLOW_COLOR = Vector3(255, 64, 0);
 	}
 
 	void client_activate()

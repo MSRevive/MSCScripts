@@ -7,7 +7,7 @@ namespace MS
 
 class RandomRandomNm : CGameScript
 {
-	string WEAPON;
+	int WEAPON;
 
 	RandomRandomNm()
 	{

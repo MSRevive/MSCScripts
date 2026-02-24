@@ -7,14 +7,21 @@ namespace MS
 
 class ArmorHelmUndead : CGameScript
 {
+	int ARMOR_BODY;
+	string ARMOR_MODEL;
+	string ARMOR_TEXT;
+	float BARMOR_PROTECTION;
+	string BARMOR_TYPE;
+	float STUN_PROTECTION;
+
 	ArmorHelmUndead()
 	{
-		const string ARMOR_MODEL = "armor/p_helmets.mdl";
-		const int ARMOR_BODY = 12;
-		const string ARMOR_TEXT = "You gain resistance to damage from undead.";
-		const string BARMOR_TYPE = "platemail";
-		const float BARMOR_PROTECTION = 0.0;
-		const float STUN_PROTECTION = 0.7;
+		ARMOR_MODEL = "armor/p_helmets.mdl";
+		ARMOR_BODY = 12;
+		ARMOR_TEXT = "You gain resistance to damage from undead.";
+		BARMOR_TYPE = "platemail";
+		BARMOR_PROTECTION = 0.0;
+		STUN_PROTECTION = 0.7;
 	}
 
 	void OnSpawn() override

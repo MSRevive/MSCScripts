@@ -8,12 +8,13 @@ namespace MS
 class TutorialNpcReqItem : CGameScript
 {
 	string ANIM_IDLE;
+	string ANIM_OPEN_DOOR;
 	int GOT_RAT_SKULL;
 
 	TutorialNpcReqItem()
 	{
 		ANIM_IDLE = "idle1";
-		const string ANIM_OPEN_DOOR = "gluonshow";
+		ANIM_OPEN_DOOR = "gluonshow";
 	}
 
 	void OnSpawn() override
@@ -50,7 +51,7 @@ class TutorialNpcReqItem : CGameScript
 		}
 		else
 		{
-			SayText("No one gets by this door until I get my [pretty]");
+			SayText("No one gets by this door until " + I + " get my [pretty]");
 			move_mouth();
 			string reg.mitem.title = "Your pretty?";
 			string reg.mitem.type = "callback";
@@ -62,12 +63,12 @@ class TutorialNpcReqItem : CGameScript
 	{
 		if (!(GOT_RAT_SKULL))
 		{
-			SayText("No one gets by this door until I get my [pretty]");
+			SayText("No one gets by this door until " + I + " get my [pretty]");
 			move_mouth();
 		}
 		else
 		{
-			SayText("Thank you for returning my pretty... I ll be sure to keep it safe, this time.");
+			SayText("Thank you for returning my pretty... " + I + " ll be sure to keep it safe, this time.");
 		}
 	}
 
@@ -76,12 +77,12 @@ class TutorialNpcReqItem : CGameScript
 		if (!(GOT_RAT_SKULL))
 		{
 			SayText("Yes! My golden rat skull. Bloody thing grew legs and wandered off... Again!");
-			SayText("Find it for me , and I ll open this door - but not before!");
+			SayText("Find it for me , and " + I + " ll open this door - but not before!");
 			move_mouth();
 		}
 		else
 		{
-			SayText("Thank you. I ve got my good eye on it now... It ll not wander off again.");
+			SayText("Thank you. " + I + " ve got my good eye on it now... It ll not wander off again.");
 		}
 	}
 

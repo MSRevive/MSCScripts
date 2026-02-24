@@ -13,8 +13,10 @@ class TelfNecro : CGameScript
 	int ATTACK_MOVERANGE;
 	int ATTACK_RANGE;
 	int BARRIER_ON;
+	int BARRIER_RAD;
 	string BARRIER_TARGS;
 	int CYCLES_ON;
+	int DMG_BARRIER;
 	int ELF_BEAM_ATTACK;
 	string ELF_BEAM_COLOR;
 	int ELF_BEAM_DMG;
@@ -23,20 +25,28 @@ class TelfNecro : CGameScript
 	float ELF_BEAM_DUR;
 	string ELF_BEAM_EFFECT;
 	string ELF_BEAM_PUSH_VEL;
+	int ELF_BEAM_RANGE;
+	float FREQ_BARRIER;
+	float FREQ_BEAM_CHANGE;
 	string NEXT_BARRIER;
 	string NExT_BEAM_CHANGE;
 	string NPC_GIVE_EXP;
 	string NPC_IS_BOSS;
 	int NPC_RETURN_HOME;
 	float RETALIATE_CHANCE;
+	string SOUND_BARRIER_RAISE;
+	string SOUND_BARRIER_REPELL;
+	string SOUND_BEAM_LOOP_FROST;
+	string SOUND_BEAM_LOOP_HOLD;
+	string SOUND_BEAM_LOOP_LIGHTNING;
 
 	TelfNecro()
 	{
-		const float FREQ_BARRIER = 30.0;
-		const int DMG_BARRIER = 200;
-		const int BARRIER_RAD = 96;
-		const string FREQ_BEAM_CHANGE = Random(10.0, 20.0);
-		const int ELF_BEAM_RANGE = 1024;
+		FREQ_BARRIER = 30.0;
+		DMG_BARRIER = 200;
+		BARRIER_RAD = 96;
+		FREQ_BEAM_CHANGE = Random(10.0, 20.0);
+		ELF_BEAM_RANGE = 1024;
 		RETALIATE_CHANCE = 0.1;
 		if (StringToLower(GetMapName()) == "the_wall")
 		{
@@ -48,11 +58,11 @@ class TelfNecro : CGameScript
 			NPC_GIVE_EXP = 5000;
 		}
 		NPC_RETURN_HOME = 1;
-		const string SOUND_BEAM_LOOP_HOLD = "ambience/dronemachine1.wav";
-		const string SOUND_BEAM_LOOP_LIGHTNING = "magic/bolt_loop.wav";
-		const string SOUND_BEAM_LOOP_FROST = "magic/freezeray_loop.wav";
-		const string SOUND_BARRIER_RAISE = "magic/spawn.wav";
-		const string SOUND_BARRIER_REPELL = "doors/aliendoor3.wav";
+		SOUND_BEAM_LOOP_HOLD = "ambience/dronemachine1.wav";
+		SOUND_BEAM_LOOP_LIGHTNING = "magic/bolt_loop.wav";
+		SOUND_BEAM_LOOP_FROST = "magic/freezeray_loop.wav";
+		SOUND_BARRIER_RAISE = "magic/spawn.wav";
+		SOUND_BARRIER_REPELL = "doors/aliendoor3.wav";
 	}
 
 	void game_precache()
@@ -99,7 +109,7 @@ class TelfNecro : CGameScript
 		PlayAnim("critical", "ref_shoot_trip");
 		UseTrigger("spawn_aod");
 		AS_ATTACKING = GetGameTime();
-		string GAME_TIME = GetGameTime();
+		float GAME_TIME = GetGameTime();
 		NEXT_BARRIER = GAME_TIME;
 		NEXT_BARRIER += FREQ_BARRIER;
 		NExT_BEAM_CHANGE = GAME_TIME;
@@ -108,7 +118,7 @@ class TelfNecro : CGameScript
 
 	void OnHuntTarget(CBaseEntity@ target)
 	{
-		string GAME_TIME = GetGameTime();
+		float GAME_TIME = GetGameTime();
 		if (GAME_TIME > NEXT_BEAM_CHANGE)
 		{
 			if (!(ELF_BEAM_ON))

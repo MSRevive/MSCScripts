@@ -9,10 +9,20 @@ class KLarva : CGameScript
 {
 	int AM_EATING;
 	string ANIM_ATTACK;
+	string ANIM_CLAW1;
+	string ANIM_CLAW2;
 	string ANIM_DEATH;
 	string ANIM_FLINCH;
 	string ANIM_IDLE;
+	string ANIM_IDLE1;
+	string ANIM_IDLE2;
+	string ANIM_LICK;
 	string ANIM_RUN;
+	string ANIM_RUN_FAST;
+	string ANIM_RUN_NORM;
+	string ANIM_SEARCH;
+	string ANIM_VICTORY;
+	string ANIM_VICTORY_LOOP;
 	string ANIM_WALK;
 	string AS_ATTACKING;
 	int ATTACK_HITCHANCE;
@@ -21,16 +31,46 @@ class KLarva : CGameScript
 	int ATTACK_RANGE;
 	string ATTACK_TYPE;
 	int CAN_FLINCH;
+	int CHANCE_LICK_STUN;
 	int DID_WARCRY;
+	int DMG_CLAW1;
+	int DMG_CLAW2;
+	int DMG_LICK;
 	int DROP_GOLD;
-	string DROP_GOLD_AMT;
+	int DROP_GOLD_AMT;
 	int FLINCH_CHANCE;
 	int FLINCH_DAMAGE_THRESHOLD;
 	float FLINCH_DELAY;
 	int FLINCH_HEALTH;
+	float FREQ_IDLE;
+	float FREQ_LOOK;
 	int IS_UNHOLY;
 	int NPC_GIVE_EXP;
 	string SEARCH_DELAY;
+	string SOUND_ANGRY1;
+	string SOUND_ANGRY2;
+	string SOUND_ANGRY3;
+	string SOUND_CLAW_HIT1;
+	string SOUND_CLAW_HIT2;
+	string SOUND_CRAWL1;
+	string SOUND_CRAWL2;
+	string SOUND_DEATH;
+	string SOUND_EAT;
+	string SOUND_GETUP;
+	string SOUND_IDLE1;
+	string SOUND_IDLE2;
+	string SOUND_IDLE3;
+	string SOUND_IDLE4;
+	string SOUND_IDLE5;
+	string SOUND_IDLE6;
+	string SOUND_LICK_HIT;
+	string SOUND_MISS1;
+	string SOUND_MISS2;
+	string SOUND_SEARCH1;
+	string SOUND_SEARCH2;
+	string SOUND_STRUCK1;
+	string SOUND_STRUCK2;
+	string SOUND_WARCRY;
 
 	KLarva()
 	{
@@ -41,16 +81,16 @@ class KLarva : CGameScript
 		ANIM_ATTACK = "attack1";
 		ANIM_DEATH = "diesimple";
 		ANIM_FLINCH = "flinch";
-		const string ANIM_IDLE1 = "idle1";
-		const string ANIM_IDLE2 = "idle2";
-		const string ANIM_SEARCH = "idle1";
-		const string ANIM_LICK = "attack1";
-		const string ANIM_CLAW1 = "attack2";
-		const string ANIM_CLAW2 = "attack3";
-		const string ANIM_RUN_FAST = "runshort";
-		const string ANIM_RUN_NORM = "runlong";
-		const string ANIM_VICTORY = "victoryeat1";
-		const string ANIM_VICTORY_LOOP = "eat_loop";
+		ANIM_IDLE1 = "idle1";
+		ANIM_IDLE2 = "idle2";
+		ANIM_SEARCH = "idle1";
+		ANIM_LICK = "attack1";
+		ANIM_CLAW1 = "attack2";
+		ANIM_CLAW2 = "attack3";
+		ANIM_RUN_FAST = "runshort";
+		ANIM_RUN_NORM = "runlong";
+		ANIM_VICTORY = "victoryeat1";
+		ANIM_VICTORY_LOOP = "eat_loop";
 		ATTACK_RANGE = 60;
 		ATTACK_HITRANGE = 120;
 		ATTACK_MOVERANGE = 50;
@@ -63,36 +103,36 @@ class KLarva : CGameScript
 		FLINCH_DAMAGE_THRESHOLD = 30;
 		FLINCH_DELAY = 30.0;
 		ATTACK_HITCHANCE = 80;
-		const string DMG_LICK = RandomInt(20, 40);
-		const string DMG_CLAW1 = RandomInt(30, 80);
-		const string DMG_CLAW2 = RandomInt(30, 80);
-		const string FREQ_IDLE = Random(5, 10);
-		const int CHANCE_LICK_STUN = 50;
-		const float FREQ_LOOK = 10.0;
-		const string SOUND_LICK_HIT = "barnacle/bcl_tongue1.wav";
-		const string SOUND_WARCRY = "barnacle/bcl_alert2.wav";
-		const string SOUND_MISS1 = "zombie/claw_miss1.wav";
-		const string SOUND_MISS2 = "zombie/claw_miss2.wav";
-		const string SOUND_CLAW_HIT1 = "zombie/claw_strike1.wav";
-		const string SOUND_CLAW_HIT2 = "zombie/claw_strike2.wav";
-		const string SOUND_IDLE1 = "bullchicken/bc_idle1.wav";
-		const string SOUND_IDLE2 = "bullchicken/bc_idle3.wav";
-		const string SOUND_IDLE3 = "bullchicken/bc_idle4.wav";
-		const string SOUND_IDLE4 = "bullchicken/bc_idle5.wav";
-		const string SOUND_IDLE5 = "houndeye/he_die2.wav";
-		const string SOUND_IDLE6 = "houndeye/he_die3.wav";
-		const string SOUND_SEARCH1 = "bullchicken/bc_die3.wav";
-		const string SOUND_SEARCH2 = "houndeye/he_alert2.wav";
-		const string SOUND_EAT = "monsters/gonome/gonome_eat.wav";
-		const string SOUND_CRAWL1 = "barnacle/bcl_chew1.wav";
-		const string SOUND_CRAWL2 = "barnacle/bcl_chew2.wav";
-		const string SOUND_ANGRY1 = "agrunt/ag_alert2.wav";
-		const string SOUND_ANGRY2 = "agrunt/ag_alert3.wav";
-		const string SOUND_ANGRY3 = "agrunt/ag_alert4.wav";
-		const string SOUND_STRUCK1 = "debris/flesh1.wav";
-		const string SOUND_STRUCK2 = "debris/flesh2.wav";
-		const string SOUND_GETUP = "bullchicken/bc_pain4.wav";
-		const string SOUND_DEATH = "agrunt/ag_die2.wav";
+		DMG_LICK = RandomInt(20, 40);
+		DMG_CLAW1 = RandomInt(30, 80);
+		DMG_CLAW2 = RandomInt(30, 80);
+		FREQ_IDLE = Random(5, 10);
+		CHANCE_LICK_STUN = 50;
+		FREQ_LOOK = 10.0;
+		SOUND_LICK_HIT = "barnacle/bcl_tongue1.wav";
+		SOUND_WARCRY = "barnacle/bcl_alert2.wav";
+		SOUND_MISS1 = "zombie/claw_miss1.wav";
+		SOUND_MISS2 = "zombie/claw_miss2.wav";
+		SOUND_CLAW_HIT1 = "zombie/claw_strike1.wav";
+		SOUND_CLAW_HIT2 = "zombie/claw_strike2.wav";
+		SOUND_IDLE1 = "bullchicken/bc_idle1.wav";
+		SOUND_IDLE2 = "bullchicken/bc_idle3.wav";
+		SOUND_IDLE3 = "bullchicken/bc_idle4.wav";
+		SOUND_IDLE4 = "bullchicken/bc_idle5.wav";
+		SOUND_IDLE5 = "houndeye/he_die2.wav";
+		SOUND_IDLE6 = "houndeye/he_die3.wav";
+		SOUND_SEARCH1 = "bullchicken/bc_die3.wav";
+		SOUND_SEARCH2 = "houndeye/he_alert2.wav";
+		SOUND_EAT = "monsters/gonome/gonome_eat.wav";
+		SOUND_CRAWL1 = "barnacle/bcl_chew1.wav";
+		SOUND_CRAWL2 = "barnacle/bcl_chew2.wav";
+		SOUND_ANGRY1 = "agrunt/ag_alert2.wav";
+		SOUND_ANGRY2 = "agrunt/ag_alert3.wav";
+		SOUND_ANGRY3 = "agrunt/ag_alert4.wav";
+		SOUND_STRUCK1 = "debris/flesh1.wav";
+		SOUND_STRUCK2 = "debris/flesh2.wav";
+		SOUND_GETUP = "bullchicken/bc_pain4.wav";
+		SOUND_DEATH = "agrunt/ag_die2.wav";
 	}
 
 	void OnRepeatTimer()
@@ -121,7 +161,7 @@ class KLarva : CGameScript
 		// PlayRandomSound from: SOUND_IDLE1, SOUND_IDLE2, SOUND_IDLE3, SOUND_IDLE4, SOUND_IDLE5, SOUND_IDLE6
 		array<string> sounds = {SOUND_IDLE1, SOUND_IDLE2, SOUND_IDLE3, SOUND_IDLE4, SOUND_IDLE5, SOUND_IDLE6};
 		EmitSound(GetOwner(), 0, sounds[RandomInt(0, sounds.length() - 1)], 10);
-		string RND_IDLE = RandomInt(1, 2);
+		int RND_IDLE = RandomInt(1, 2);
 		if (RND_IDLE == 1)
 		{
 			PlayAnim("critical", ANIM_IDLE1);
@@ -211,7 +251,7 @@ class KLarva : CGameScript
 
 	void npc_selectattack()
 	{
-		string RND_ATK = RandomInt(1, 6);
+		int RND_ATK = RandomInt(1, 6);
 		if (RND_ATK <= 2)
 		{
 			ANIM_ATTACK = ANIM_CLAW1;

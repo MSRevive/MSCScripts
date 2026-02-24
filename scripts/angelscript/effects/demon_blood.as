@@ -8,15 +8,18 @@ namespace MS
 class DemonBlood : CGameScript
 {
 	int DEMON_BLOOD;
+	string EFFECT_FLAGS;
+	string EFFECT_ID;
+	string EFFECT_SCRIPT;
 	string FX_DURATION;
 	string FX_INTENSITY;
 	int MAKE_NOISE;
 
 	DemonBlood()
 	{
-		const string EFFECT_SCRIPT = currentscript;
-		const string EFFECT_ID = "demon_blood";
-		const string EFFECT_FLAGS = "nostack";
+		EFFECT_SCRIPT = currentscript;
+		EFFECT_ID = "demon_blood";
+		EFFECT_FLAGS = "nostack";
 	}
 
 	void game_activate()
@@ -69,7 +72,7 @@ class DemonBlood : CGameScript
 			{
 			}
 			string DEMON_BLOOD_DAMAGE = GetSkillLevel(GetOwner(), "spellcasting");
-			DEMON_BLOOD_DAMAGE *= /* TODO: $math(multiply) */ 2;
+			DEMON_BLOOD_DAMAGE *= (2 * /* TODO: $neg */ $neg(FX_INTENSITY));
 			if (RandomInt(1, 3) == 1)
 			{
 			}

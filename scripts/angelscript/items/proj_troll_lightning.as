@@ -7,23 +7,36 @@ namespace MS
 
 class ProjTrollLightning : CGameScript
 {
+	int ARROW_BODY_OFS;
+	float ARROW_BREAK_CHANCE;
+	int ARROW_SOLIDIFY_ON_WALL;
+	int MODEL_BODY_OFS;
+	string MODEL_WORLD;
+	string PROJ_ANIM_IDLE;
+	int PROJ_AOE_FALLOFF;
+	int PROJ_AOE_RANGE;
+	int PROJ_DAMAGE;
+	string PROJ_DAMAGE_TYPE;
+	int PROJ_IGNORENPC;
+	int PROJ_MOTIONBLUR;
+	int PROJ_STICK_DURATION;
 	string SHOCK_TARGETS;
 
 	ProjTrollLightning()
 	{
-		const string MODEL_WORLD = "weapons/projectiles.mdl";
-		const int ARROW_BODY_OFS = 20;
-		const int MODEL_BODY_OFS = 20;
-		const string PROJ_ANIM_IDLE = "idle_standard";
-		const int PROJ_STICK_DURATION = 0;
-		const int ARROW_SOLIDIFY_ON_WALL = 0;
-		const float ARROW_BREAK_CHANCE = 1.0;
-		const int PROJ_MOTIONBLUR = 0;
-		const string PROJ_DAMAGE_TYPE = "lightning";
-		const string PROJ_DAMAGE = RandomInt(200, 300);
-		const int PROJ_AOE_RANGE = 200;
-		const int PROJ_AOE_FALLOFF = 0;
-		const int PROJ_IGNORENPC = 1;
+		MODEL_WORLD = "weapons/projectiles.mdl";
+		ARROW_BODY_OFS = 20;
+		MODEL_BODY_OFS = 20;
+		PROJ_ANIM_IDLE = "idle_standard";
+		PROJ_STICK_DURATION = 0;
+		ARROW_SOLIDIFY_ON_WALL = 0;
+		ARROW_BREAK_CHANCE = 1.0;
+		PROJ_MOTIONBLUR = 0;
+		PROJ_DAMAGE_TYPE = "lightning";
+		PROJ_DAMAGE = RandomInt(200, 300);
+		PROJ_AOE_RANGE = 200;
+		PROJ_AOE_FALLOFF = 0;
+		PROJ_IGNORENPC = 1;
 	}
 
 	void game_precache()

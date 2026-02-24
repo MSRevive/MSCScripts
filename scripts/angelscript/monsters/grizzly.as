@@ -7,22 +7,25 @@ namespace MS
 
 class Grizzly : CGameScript
 {
+	int ATTACK_DAMAGE;
+	float ATTACK_HITCHANCE;
 	int ATTACK_HITRANGE;
 	int ATTACK_RANGE;
 	string DROP_ITEM1;
 	float DROP_ITEM1_CHANCE;
 	int MOVE_RANGE;
 	int NPC_GIVE_EXP;
+	float RETALIATE_CHANGETARGET_CHANCE;
 
 	Grizzly()
 	{
 		MOVE_RANGE = 70;
 		ATTACK_RANGE = 90;
 		ATTACK_HITRANGE = 130;
-		const string ATTACK_DAMAGE = "$rand(15,20)";
-		const float ATTACK_HITCHANCE = 0.6;
+		ATTACK_DAMAGE = "$rand(15,20)";
+		ATTACK_HITCHANCE = 0.6;
 		NPC_GIVE_EXP = 55;
-		const float RETALIATE_CHANGETARGET_CHANCE = 0.5;
+		RETALIATE_CHANGETARGET_CHANCE = 0.5;
 		DROP_ITEM1 = "skin_bear";
 		DROP_ITEM1_CHANCE = 0.75;
 	}

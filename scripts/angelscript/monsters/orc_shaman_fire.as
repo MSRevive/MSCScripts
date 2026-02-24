@@ -8,57 +8,81 @@ namespace MS
 
 class OrcShamanFire : CGameScript
 {
+	int AIM_RATIO;
 	string ANIM_ATTACK;
+	string ANIM_FIRE;
+	string ANIM_SWIPE;
+	string ANIM_WARCRY;
+	int ATTACK_ACCURACY;
+	int ATTACK_CONE_OF_FIRE;
 	int ATTACK_RANGE;
+	int ATTACK_SPEED;
+	int BASE_BURN_DAMAGE;
 	string BURN_DAMAGE;
+	string DEATH_SCRIPT;
 	int DID_WARCRY;
 	int DROP_GOLD;
-	string DROP_GOLD_AMT;
+	int DROP_GOLD_AMT;
 	string FIRE_BALL_DAMAGE;
+	int FIRE_BALL_DAMAGE_ALT;
+	int FIRE_BALL_DAMAGE_NORM;
 	int FIRE_BALL_DELAY;
+	float FIRE_BALL_FREQ;
+	string FIRE_FIST_SCRIPT;
 	float FLINCH_CHANCE;
+	int MELE_HITRANGE;
+	int MELE_RANGE;
 	int MOVE_RANGE;
 	string MY_CL_SCRIPT_IDX;
 	int NPC_GIVE_EXP;
 	int NPC_IGNORE_PLAYERS;
 	string POISON_TARGS;
+	string PROJECTILE_SCRIPT;
+	string SOUND_FIRECHARGE;
+	string SOUND_FIRESHOOT;
+	string SOUND_MELEHIT;
+	string SOUND_MELEMISS;
+	string SOUND_WARCRY1;
+	string SOUND_WARCRY2;
+	int SWIPE_DAMAGE;
 	int SWIPE_SOUNDS;
 	string WEAK_ATTACK;
+	int WEAK_SWIPE_DAMAGE;
 
 	OrcShamanFire()
 	{
-		const string PROJECTILE_SCRIPT = "proj_fire_ball";
+		PROJECTILE_SCRIPT = "proj_fire_ball";
 		DROP_GOLD = 1;
 		DROP_GOLD_AMT = RandomInt(15, 30);
 		NPC_GIVE_EXP = 200;
 		ANIM_ATTACK = "swordswing1_L";
 		FLINCH_CHANCE = 0.45;
-		const int AIM_RATIO = 50;
+		AIM_RATIO = 50;
 		MOVE_RANGE = 256;
 		ATTACK_RANGE = 5500;
-		const int ATTACK_SPEED = 500;
-		const int ATTACK_CONE_OF_FIRE = 2;
-		const string FIRE_BALL_DAMAGE_NORM = "$rand(75,100)";
-		const string FIRE_BALL_DAMAGE_ALT = "$rand(5,10)";
-		const int MELE_RANGE = 96;
-		const int MELE_HITRANGE = 128;
-		const int ATTACK_ACCURACY = 80;
-		const string ANIM_SWIPE = "swordswing1_L";
-		const string ANIM_FIRE = "swordswing1_L";
-		const string ANIM_WARCRY = "warcry";
-		const string SWIPE_DAMAGE = "$rand(25,65)";
-		const string WEAK_SWIPE_DAMAGE = "$rand(5,20)";
-		const string SOUND_MELEMISS = "zombie/claw_miss1.wav";
-		const string SOUND_MELEHIT = "zombie/claw_strike3.wav";
-		const string SOUND_FIRECHARGE = "magic/fireball_powerup.wav";
-		const string SOUND_FIRESHOOT = "magic/fireball_strike.wav";
-		const string SOUND_WARCRY1 = "monsters/orc/attack1.wav";
-		const string SOUND_WARCRY2 = "monsters/orc/attack3.wav";
-		const int BASE_BURN_DAMAGE = 15;
+		ATTACK_SPEED = 500;
+		ATTACK_CONE_OF_FIRE = 2;
+		FIRE_BALL_DAMAGE_NORM = "$rand(75,100)";
+		FIRE_BALL_DAMAGE_ALT = "$rand(5,10)";
+		MELE_RANGE = 96;
+		MELE_HITRANGE = 128;
+		ATTACK_ACCURACY = 80;
+		ANIM_SWIPE = "swordswing1_L";
+		ANIM_FIRE = "swordswing1_L";
+		ANIM_WARCRY = "warcry";
+		SWIPE_DAMAGE = "$rand(25,65)";
+		WEAK_SWIPE_DAMAGE = "$rand(5,20)";
+		SOUND_MELEMISS = "zombie/claw_miss1.wav";
+		SOUND_MELEHIT = "zombie/claw_strike3.wav";
+		SOUND_FIRECHARGE = "magic/fireball_powerup.wav";
+		SOUND_FIRESHOOT = "magic/fireball_strike.wav";
+		SOUND_WARCRY1 = "monsters/orc/attack1.wav";
+		SOUND_WARCRY2 = "monsters/orc/attack3.wav";
+		BASE_BURN_DAMAGE = 15;
 		BURN_DAMAGE = BASE_BURN_DAMAGE;
-		const float FIRE_BALL_FREQ = 3.0;
-		const string DEATH_SCRIPT = "traps/fire_wall2";
-		const string FIRE_FIST_SCRIPT = "monsters/fire_fist_cl";
+		FIRE_BALL_FREQ = 3.0;
+		DEATH_SCRIPT = "traps/fire_wall2";
+		FIRE_FIST_SCRIPT = "monsters/fire_fist_cl";
 		Precache(DEATH_SCRIPT);
 	}
 
@@ -206,10 +230,10 @@ class OrcShamanFire : CGameScript
 		{
 			npcatk_dodamage(param1, MELE_HITRANGE, WEAK_SWIPE_DAMAGE, ATTACK_ACCURACY);
 		}
-		string DOT_FIRE = RandomInt(20, 40);
+		int DOT_FIRE = RandomInt(20, 40);
 		if ((BO_ZOMBIE_MODE))
 		{
-			string DOT_FIRE = RandomInt(40, 100);
+			int DOT_FIRE = RandomInt(40, 100);
 		}
 		ApplyEffect(param1, "effects/dot_fire", RandomInt(5, 10), GetOwner(), DOT_FIRE);
 	}

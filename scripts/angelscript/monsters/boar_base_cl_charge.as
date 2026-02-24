@@ -6,6 +6,9 @@ namespace MS
 class BoarBaseClCharge : CGameScript
 {
 	int IS_ACTIVE;
+	int OFS_NEG;
+	int OFS_POS;
+	string SPRITE_1;
 	string l.charging;
 	int script.boneidx1;
 	int script.boneidx2;
@@ -13,9 +16,9 @@ class BoarBaseClCharge : CGameScript
 
 	BoarBaseClCharge()
 	{
-		const string SPRITE_1 = "bigsmoke.spr";
-		const int OFS_POS = 8;
-		const int OFS_NEG = -8;
+		SPRITE_1 = "bigsmoke.spr";
+		OFS_POS = 8;
+		OFS_NEG = -8;
 	}
 
 	void OnRepeatTimer()

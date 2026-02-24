@@ -27,12 +27,12 @@ class ValidSpawnNew : CGameScript
 		THIS_MAP = StringToLower(GetMapName());
 		if (!(THIS_MAP != "")) return;
 		GAUNTLET_MAP = 0;
-		string L_RMAP_IDX = /* TODO: $g_get_arrayfind */ $g_get_arrayfind(G_ARRAY_RMAPS, THIS_MAP);
+		string L_RMAP_IDX = FindInGlobalArray(G_ARRAY_RMAPS, THIS_MAP, 0);
 		if (L_RMAP_IDX > -1)
 		{
 			GAUNTLET_MAP = 1;
-			RMAP_VALID_FROM = /* TODO: $g_get_array */ $g_get_array(G_ARRAY_RMAPS_CONNECTORS, L_RMAP_IDX);
-			string L_RMAP_TYPE = /* TODO: $g_get_array */ $g_get_array(G_ARRAY_RMAPS_TYPES, L_RMAP_IDX);
+			RMAP_VALID_FROM = GetGlobalArray(G_ARRAY_RMAPS_CONNECTORS, int(L_RMAP_IDX));
+			string L_RMAP_TYPE = GetGlobalArray(G_ARRAY_RMAPS_TYPES, int(L_RMAP_IDX));
 			RMAP_TYPE = GetToken(L_RMAP_TYPE, 0, ";");
 			if (RMAP_TYPE == "series")
 			{
@@ -120,7 +120,7 @@ class ValidSpawnNew : CGameScript
 		}
 		if ((G_VALID_SPAWN))
 		{
-			SendInfoMsg(GetOwner(), "Redeemed A player who traveled to this map legally has joined.");
+			SendInfoMsg(GetOwner(), "Redeemed " + A + " player who traveled to this map legally has joined.");
 			map_validated("redeemed");
 			SetEntityOrigin(GetOwner(), PLR_PRECHEAT_POS);
 			return;
@@ -137,7 +137,7 @@ class ValidSpawnNew : CGameScript
 			}
 			if (RMAP_TYPE == "series")
 			{
-				SendPlayerMessage(GetOwner(), "Gauntlet Series: RMAP_SERIES_TITLE begins at RMAP_SERIES_START");
+				SendPlayerMessage(GetOwner(), "Gauntlet Series: " + RMAP_SERIES_TITLE + "begins at " + RMAP_SERIES_START);
 			}
 			ShowHelpTip(GetOwner(), "generic", MSG_TITLE, MSG_TEXT);
 		}
@@ -146,11 +146,11 @@ class ValidSpawnNew : CGameScript
 			MSG_COUNTER = 0;
 			if (RMAP_TYPE == "hidden")
 			{
-				SendPlayerMessage(GetOwner(), "VALID_MAP_LIST_ENGLISH");
+				SendPlayerMessage(GetOwner(), VALID_MAP_LIST_ENGLISH);
 			}
 			if (RMAP_TYPE == "series")
 			{
-				SendPlayerMessage(GetOwner(), "You must begin this series at RMAP_SERIES_START");
+				SendPlayerMessage(GetOwner(), "You must begin this series at " + RMAP_SERIES_START);
 			}
 			ShowHelpTip(GetOwner(), "generic", MSG_TITLE, MSG_TEXT);
 			if (!(STARTED_VOTE))
@@ -214,7 +214,7 @@ class ValidSpawnNew : CGameScript
 		if (!(N_RMAP_VALIDS > 0)) return;
 		if (N_RMAP_VALIDS > 2)
 		{
-			if (L_CUR_IDX < /* TODO: $math(subtract) */ N_RMAP_VALIDS)
+			if (L_CUR_IDX < (N_RMAP_VALIDS - 1))
 			{
 				VALID_MAP_LIST_ENGLISH += ", ";
 			}

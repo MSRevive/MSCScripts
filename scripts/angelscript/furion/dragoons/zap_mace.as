@@ -7,10 +7,13 @@ namespace MS
 
 class ZapMace : CGameScript
 {
+	int ELEMENT;
+	int WEAPON;
+
 	ZapMace()
 	{
-		const int WEAPON = 5;
-		const int ELEMENT = 3;
+		WEAPON = 5;
+		ELEMENT = 3;
 	}
 
 }

@@ -11,20 +11,39 @@ class DragonflyQueen : CGameScript
 {
 	string ANIM_ATTACK;
 	string ANIM_IDLE;
+	string ANIM_IDLE_FLY;
+	string ANIM_IDLE_HANG;
 	string ANIM_RUN;
 	string ANIM_WALK;
 	int AS_ATTACKING;
+	float ATTACK_HITCHANCE;
 	int ATTACK_HITRANGE;
 	int ATTACK_RANGE;
+	int BAT_SUMMON_AMT;
+	int BAT_SUMMON_HEIGHT;
 	string BAT_SUMMON_NUM;
+	int DMG_BITE;
+	float DMG_SUMMON;
 	string FLIGHT_STUCK;
+	float FREQ_RETURN;
+	float FREQ_SOUND_HOVER;
+	float FREQ_SUMMON;
 	string LAST_POS;
-	string LAST_PROG;
+	float LAST_PROG;
 	int MOVE_RAGE;
 	int NPC_GIVE_EXP;
 	string OLD_TARG;
 	string RETURNING_HOME;
+	int ROAM_RADIUS;
+	string SOUND_DEATH;
+	string SOUND_HOVER;
+	string SOUND_STRUCK1;
+	string SOUND_STRUCK2;
+	string SOUND_STRUCK3;
 	int STARTED_CYCLES;
+	int SUMMON_HEALTH;
+	float SUMMON_LIFETIME;
+	string SUMMON_SCRIPT;
 
 	DragonflyQueen()
 	{
@@ -36,25 +55,25 @@ class DragonflyQueen : CGameScript
 		ATTACK_RANGE = 100;
 		ATTACK_HITRANGE = 125;
 		MOVE_RAGE = 40;
-		const float ATTACK_HITCHANCE = 0.8;
-		const string DMG_BITE = RandomInt(25, 35);
-		const string ANIM_IDLE_HANG = "flapping";
-		const string ANIM_IDLE_FLY = "fly";
-		const string FREQ_RETURN = Random(5, 10);
-		const string FREQ_SUMMON = Random(15, 30);
-		const int ROAM_RADIUS = 1024;
-		const int SUMMON_HEALTH = 30;
-		const string SUMMON_SCRIPT = "monsters/summon/dragonfly";
-		const string DMG_SUMMON = Random(5, 10);
-		const float SUMMON_LIFETIME = 15.0;
-		const int BAT_SUMMON_HEIGHT = 300;
-		const int BAT_SUMMON_AMT = 8;
-		const string SOUND_STRUCK1 = "weapons/cbar_hitbod1.wav";
-		const string SOUND_STRUCK2 = "weapons/cbar_hitbod2.wav";
-		const string SOUND_STRUCK3 = "weapons/cbar_hitbod3.wav";
-		const string SOUND_HOVER = "monsters/dragonfly_queen.wav";
-		const float FREQ_SOUND_HOVER = 9.5;
-		const string SOUND_DEATH = "none";
+		ATTACK_HITCHANCE = 0.8;
+		DMG_BITE = RandomInt(25, 35);
+		ANIM_IDLE_HANG = "flapping";
+		ANIM_IDLE_FLY = "fly";
+		FREQ_RETURN = Random(5, 10);
+		FREQ_SUMMON = Random(15, 30);
+		ROAM_RADIUS = 1024;
+		SUMMON_HEALTH = 30;
+		SUMMON_SCRIPT = "monsters/summon/dragonfly";
+		DMG_SUMMON = Random(5, 10);
+		SUMMON_LIFETIME = 15.0;
+		BAT_SUMMON_HEIGHT = 300;
+		BAT_SUMMON_AMT = 8;
+		SOUND_STRUCK1 = "weapons/cbar_hitbod1.wav";
+		SOUND_STRUCK2 = "weapons/cbar_hitbod2.wav";
+		SOUND_STRUCK3 = "weapons/cbar_hitbod3.wav";
+		SOUND_HOVER = "monsters/dragonfly_queen.wav";
+		FREQ_SOUND_HOVER = 9.5;
+		SOUND_DEATH = "none";
 	}
 
 	void OnRepeatTimer()
@@ -121,7 +140,7 @@ class DragonflyQueen : CGameScript
 		if (GetEntityRange(m_hAttackTarget) > ATTACK_RANGE)
 		{
 		}
-		string CUR_PROG = Distance(GetMonsterProperty("origin"), TARG_POS);
+		float CUR_PROG = Distance(GetMonsterProperty("origin"), TARG_POS);
 		if (LAST_PROG >= CUR_PROG)
 		{
 			FLIGHT_STUCK += 1;
@@ -238,8 +257,8 @@ class DragonflyQueen : CGameScript
 		if (!(BAT_SUMMON_NUM)) return;
 		BAT_SUMMON_NUM -= 1;
 		string L_TARGETPOS = GetEntityOrigin(GetOwner());
-		string L_OFS_X = RandomInt(-100, 100);
-		string L_OFS_Y = RandomInt(-100, 100);
+		int L_OFS_X = RandomInt(-100, 100);
+		int L_OFS_Y = RandomInt(-100, 100);
 		L_TARGETPOS += Vector3(L_OFS_X, L_OFS_Y, -64);
 		SpawnNPC(SUMMON_SCRIPT, L_TARGETPOS, ScriptMode::Legacy); // params: GetEntityIndex(GetOwner()), DMG_SUMMON, SUMMON_HEALTH, SUMMON_LIFETIME, HUNT_LASTTARGET
 		ScheduleDelayedEvent(0.1, "bat_summon_loop");

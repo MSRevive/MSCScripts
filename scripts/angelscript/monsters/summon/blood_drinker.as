@@ -9,16 +9,21 @@ class BloodDrinker : CGameScript
 {
 	int AM_HOVERING;
 	int AM_RETURNING;
+	int BEAM_BRIGHTNESS;
 	string BEAM_ID;
 	string BLADE_DURATION;
 	string CUR_DEST;
 	string CUR_TARGET;
 	string DMG_BASE;
 	string FIRST_TARGET;
+	float FREQ_GLOW;
+	float FREQ_NEW_TARGET;
+	float FREQ_SOUND;
 	int FWD_SPEED;
 	string GAME_PVP;
 	int GLOW_DELAY;
 	int IS_ACTIVE;
+	int MOVE_RANGE;
 	string MY_OWNER;
 	string MY_SKILL;
 	int NEW_TARG_DELAY;
@@ -28,18 +33,19 @@ class BloodDrinker : CGameScript
 	string OWNER_ISPLAYER;
 	int PLAYING_DEAD;
 	string RETURN_ID;
+	string SOUND_SPIN;
 	string TARG_HEIGHT;
 
 	BloodDrinker()
 	{
 		NPC_HACKED_MOVE_SPEED = 1;
 		FWD_SPEED = 20;
-		const int MOVE_RANGE = 40;
-		const float FREQ_NEW_TARGET = 5.0;
-		const float FREQ_SOUND = 0.5;
-		const float FREQ_GLOW = 1.0;
-		const string SOUND_SPIN = "zombie/claw_miss2.wav";
-		const int BEAM_BRIGHTNESS = 50;
+		MOVE_RANGE = 40;
+		FREQ_NEW_TARGET = 5.0;
+		FREQ_SOUND = 0.5;
+		FREQ_GLOW = 1.0;
+		SOUND_SPIN = "zombie/claw_miss2.wav";
+		BEAM_BRIGHTNESS = 50;
 		SetCallback("touch", "enable");
 	}
 

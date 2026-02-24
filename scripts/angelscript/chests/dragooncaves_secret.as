@@ -7,10 +7,13 @@ namespace MS
 
 class DragooncavesSecret : CGameScript
 {
+	string EPIC_POTION_LIST;
+	string GOOD_POTION_LIST;
+
 	DragooncavesSecret()
 	{
-		const string EPIC_POTION_LIST = "mana_faura;mana_paura;mana_speed;mana_gprotection;mana_immune_cold;mana_immune_fire;mana_immune_poison;mana_demon_blood;mana_regen;mana_leadfoot;mana_immune_lightning";
-		const string GOOD_POTION_LIST = "mana_resist_cold;mana_resist_cold;mana_resist_fire;mana_vampire;mana_prot_spiders";
+		EPIC_POTION_LIST = "mana_faura;mana_paura;mana_speed;mana_gprotection;mana_immune_cold;mana_immune_fire;mana_immune_poison;mana_demon_blood;mana_regen;mana_leadfoot;mana_immune_lightning";
+		GOOD_POTION_LIST = "mana_resist_cold;mana_resist_cold;mana_resist_fire;mana_vampire;mana_prot_spiders";
 	}
 
 	void chest_additems()
@@ -21,7 +24,7 @@ class DragooncavesSecret : CGameScript
 		dra_add_random_pot();
 		string N_POTIONS = GetTokenCount(EPIC_POTION_LIST, ";");
 		N_POTIONS -= 1;
-		string RND_POTION = RandomInt(0, N_POTIONS);
+		int RND_POTION = RandomInt(0, N_POTIONS);
 		AddStoreItem(STORENAME, GetToken(EPIC_POTION_LIST, RND_POTION, ";"), 1, 0);
 		if (!(RandomInt(1, 3) == 1)) return;
 		dra_add_random_pot();
@@ -31,7 +34,7 @@ class DragooncavesSecret : CGameScript
 	{
 		string N_POTIONS = GetTokenCount(GOOD_POTION_LIST, ";");
 		N_POTIONS -= 1;
-		string RND_POTION = RandomInt(0, N_POTIONS);
+		int RND_POTION = RandomInt(0, N_POTIONS);
 		AddStoreItem(STORENAME, GetToken(GOOD_POTION_LIST, RND_POTION, ";"), 1, 0);
 	}
 

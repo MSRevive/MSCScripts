@@ -7,22 +7,30 @@ namespace MS
 
 class DrinkForsuth : CGameScript
 {
+	int ANIM_DRINK;
+	int ANIM_IDLE;
 	int DRINK_AMOUNT;
 	int DRINK_EFFECTAMT;
 	int DRINK_GULP_DELAY;
 	int DRINK_TIME;
 	string DRINK_TYPE;
+	int ITEM_MODEL_VIEW_IDX;
+	int MODEL_BODY_OFS;
+	string MODEL_HANDS;
+	string MODEL_VIEW;
+	string MODEL_WORLD;
+	string SOUND_DRINK;
 
 	DrinkForsuth()
 	{
-		const int ANIM_IDLE = 0;
-		const int ANIM_DRINK = 3;
-		const string MODEL_HANDS = "misc/p_misc.mdl";
-		const string MODEL_WORLD = "misc/p_misc.mdl";
-		const string MODEL_VIEW = "viewmodels/v_misc.mdl";
-		const int ITEM_MODEL_VIEW_IDX = 4;
-		const string SOUND_DRINK = "items/drink.wav";
-		const int MODEL_BODY_OFS = 18;
+		ANIM_IDLE = 0;
+		ANIM_DRINK = 3;
+		MODEL_HANDS = "misc/p_misc.mdl";
+		MODEL_WORLD = "misc/p_misc.mdl";
+		MODEL_VIEW = "viewmodels/v_misc.mdl";
+		ITEM_MODEL_VIEW_IDX = 4;
+		SOUND_DRINK = "items/drink.wav";
+		MODEL_BODY_OFS = 18;
 		DRINK_TYPE = "getdrunk";
 		DRINK_EFFECTAMT = 50;
 		DRINK_AMOUNT = 1;

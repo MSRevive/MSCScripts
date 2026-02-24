@@ -7,15 +7,20 @@ namespace MS
 
 class ItemRingRyza : CGameScript
 {
+	string ANIM_PREFIX;
+	int EFFECT_DELAY;
+	int MODEL_BODY_OFS;
+	string MODEL_HANDS;
+	string MODEL_WORLD;
 	string NEXT_EFFECT;
 
 	ItemRingRyza()
 	{
-		const string MODEL_WORLD = "misc/p_misc.mdl";
-		const string MODEL_HANDS = "misc/p_misc.mdl";
-		const int MODEL_BODY_OFS = 28;
-		const string ANIM_PREFIX = "ring";
-		const int EFFECT_DELAY = 25;
+		MODEL_WORLD = "misc/p_misc.mdl";
+		MODEL_HANDS = "misc/p_misc.mdl";
+		MODEL_BODY_OFS = 28;
+		ANIM_PREFIX = "ring";
+		EFFECT_DELAY = 25;
 	}
 
 	void game_precache()
@@ -37,7 +42,7 @@ class ItemRingRyza : CGameScript
 	{
 		if (GetGameTime() >= NEXT_EFFECT)
 		{
-			NEXT_EFFECT = /* TODO: $math(add) */ GetGameTime();
+			NEXT_EFFECT = (GetGameTime() + 1);
 		}
 	}
 
@@ -45,7 +50,7 @@ class ItemRingRyza : CGameScript
 	{
 		if (GetGameTime() >= NEXT_EFFECT)
 		{
-			NEXT_EFFECT = /* TODO: $math(add) */ GetGameTime();
+			NEXT_EFFECT = (GetGameTime() + EFFECT_DELAY);
 			portal_effects();
 		}
 	}

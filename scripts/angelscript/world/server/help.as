@@ -133,7 +133,7 @@ class Help : CGameScript
 				if (LISTMAPS_TARGET != GetEntityIndex("ent_currentplayer"))
 				{
 				}
-				LogMessage("ent_currentplayer One moment , listmaps system is helping GetEntityName(LISTMAPS_TARGET)");
+				LogMessage("ent_currentplayer One moment , listmaps system is helping " + GetEntityName(LISTMAPS_TARGET));
 			}
 			if ((param2).findFirst(PARAM) == 0)
 			{
@@ -170,7 +170,7 @@ class Help : CGameScript
 					}
 				}
 				int L_LISTING_CUSTOM = 1;
-				LogMessage("ent_currentplayer Listing maps recommended for your character level: LISTMAPS_START to LISTMAPS_STOP");
+				LogMessage("ent_currentplayer Listing maps recommended for your character level: " + LISTMAPS_START + "to " + LISTMAPS_STOP);
 				LogMessage("ent_currentplayer To list more maps , try listmaps [difficulty] or listmaps all");
 			}
 			else
@@ -214,7 +214,7 @@ class Help : CGameScript
 				{
 					if (param2 == "all")
 					{
-						LogMessage("ent_currentplayer Listing maps recomended for LISTMAPS_START levels");
+						LogMessage("ent_currentplayer Listing maps recomended for " + LISTMAPS_START + " levels");
 					}
 					else
 					{
@@ -227,7 +227,7 @@ class Help : CGameScript
 			else
 			{
 				LISTMAPS_TARGET = "LISTMAPS_TARGET";
-				LogMessage("ent_currentplayer listmaps , unrecognized parameter: PARAM2");
+				LogMessage("ent_currentplayer listmaps , unrecognized parameter: " + param2);
 				LogMessage("ent_currentplayer listmaps [low|medium|hard|vhard|epic|all]");
 			}
 		}
@@ -264,37 +264,37 @@ class Help : CGameScript
 		LISTMAPS_COUNT = 0;
 		if (LISTMAPS_START == "low")
 		{
-			LogMessage("LISTMAPS_TARGET LISTMAPS_MSG_LOW");
+			LogMessage(LISTMAPS_TARGET + LISTMAPS_MSG_LOW);
 			ScheduleDelayedEvent(0.1, "do_listmaps_low");
 		}
 		if (LISTMAPS_START == "medium")
 		{
-			LogMessage("LISTMAPS_TARGET LISTMAPS_MSG_MED");
+			LogMessage(LISTMAPS_TARGET + LISTMAPS_MSG_MED);
 			ScheduleDelayedEvent(0.1, "do_listmaps_medium");
 		}
 		if (LISTMAPS_START == "hard")
 		{
-			LogMessage("LISTMAPS_TARGET LISTMAPS_MSG_HAR");
+			LogMessage(LISTMAPS_TARGET + LISTMAPS_MSG_HAR);
 			ScheduleDelayedEvent(0.1, "do_listmaps_hard");
 		}
 		if (LISTMAPS_START == "vhard")
 		{
-			LogMessage("LISTMAPS_TARGET LISTMAPS_MSG_VHR");
+			LogMessage(LISTMAPS_TARGET + LISTMAPS_MSG_VHR);
 			ScheduleDelayedEvent(0.1, "do_listmaps_vhard");
 		}
 		if (LISTMAPS_START == "epic")
 		{
-			LogMessage("LISTMAPS_TARGET LISTMAPS_MSG_EPC");
+			LogMessage(LISTMAPS_TARGET + LISTMAPS_MSG_EPC);
 			ScheduleDelayedEvent(0.1, "do_listmaps_epic");
 		}
 	}
 
 	void do_listmaps_low()
 	{
-		if (!(LISTMAPS_COUNT < /* TODO: $get_array_amt */ $get_array_amt(ARRAY_MAPLIST_LOW))) return;
-		LogMessage("LISTMAPS_TARGET /* TODO: $get_array */ $get_array(ARRAY_MAPLIST_LOW, LISTMAPS_COUNT)");
+		if (!(LISTMAPS_COUNT < int(ARRAY_MAPLIST_LOW.length()))) return;
+		LogMessage(LISTMAPS_TARGET + ARRAY_MAPLIST_LOW[int(LISTMAPS_COUNT)]);
 		LISTMAPS_COUNT += 1;
-		if (LISTMAPS_COUNT < /* TODO: $get_array_amt */ $get_array_amt(ARRAY_MAPLIST_LOW))
+		if (LISTMAPS_COUNT < int(ARRAY_MAPLIST_LOW.length()))
 		{
 			ScheduleDelayedEvent(0.1, "do_listmaps_low");
 		}
@@ -303,7 +303,7 @@ class Help : CGameScript
 			if (LISTMAPS_STOP != "low")
 			{
 				LISTMAPS_COUNT = 0;
-				LogMessage("LISTMAPS_TARGET LISTMAPS_MSG_MED");
+				LogMessage(LISTMAPS_TARGET + LISTMAPS_MSG_MED);
 				do_listmaps_medium();
 			}
 			else
@@ -315,10 +315,10 @@ class Help : CGameScript
 
 	void do_listmaps_medium()
 	{
-		if (!(LISTMAPS_COUNT < /* TODO: $get_array_amt */ $get_array_amt(ARRAY_MAPLIST_MEDIUM))) return;
-		LogMessage("LISTMAPS_TARGET /* TODO: $get_array */ $get_array(ARRAY_MAPLIST_MEDIUM, LISTMAPS_COUNT)");
+		if (!(LISTMAPS_COUNT < int(ARRAY_MAPLIST_MEDIUM.length()))) return;
+		LogMessage(LISTMAPS_TARGET + ARRAY_MAPLIST_MEDIUM[int(LISTMAPS_COUNT)]);
 		LISTMAPS_COUNT += 1;
-		if (LISTMAPS_COUNT < /* TODO: $get_array_amt */ $get_array_amt(ARRAY_MAPLIST_MEDIUM))
+		if (LISTMAPS_COUNT < int(ARRAY_MAPLIST_MEDIUM.length()))
 		{
 			ScheduleDelayedEvent(0.1, "do_listmaps_medium");
 		}
@@ -327,7 +327,7 @@ class Help : CGameScript
 			if (LISTMAPS_STOP != "medium")
 			{
 				LISTMAPS_COUNT = 0;
-				LogMessage("LISTMAPS_TARGET LISTMAPS_MSG_HAR");
+				LogMessage(LISTMAPS_TARGET + LISTMAPS_MSG_HAR);
 				do_listmaps_hard();
 			}
 			else
@@ -339,10 +339,10 @@ class Help : CGameScript
 
 	void do_listmaps_hard()
 	{
-		if (!(LISTMAPS_COUNT < /* TODO: $get_array_amt */ $get_array_amt(ARRAY_MAPLIST_HARD))) return;
-		LogMessage("LISTMAPS_TARGET /* TODO: $get_array */ $get_array(ARRAY_MAPLIST_HARD, LISTMAPS_COUNT)");
+		if (!(LISTMAPS_COUNT < int(ARRAY_MAPLIST_HARD.length()))) return;
+		LogMessage(LISTMAPS_TARGET + ARRAY_MAPLIST_HARD[int(LISTMAPS_COUNT)]);
 		LISTMAPS_COUNT += 1;
-		if (LISTMAPS_COUNT < /* TODO: $get_array_amt */ $get_array_amt(ARRAY_MAPLIST_HARD))
+		if (LISTMAPS_COUNT < int(ARRAY_MAPLIST_HARD.length()))
 		{
 			ScheduleDelayedEvent(0.1, "do_listmaps_hard");
 		}
@@ -351,7 +351,7 @@ class Help : CGameScript
 			if (LISTMAPS_STOP != "hard")
 			{
 				LISTMAPS_COUNT = 0;
-				LogMessage("LISTMAPS_TARGET LISTMAPS_MSG_VHR");
+				LogMessage(LISTMAPS_TARGET + LISTMAPS_MSG_VHR);
 				do_listmaps_vhard();
 			}
 			else
@@ -363,10 +363,10 @@ class Help : CGameScript
 
 	void do_listmaps_vhard()
 	{
-		if (!(LISTMAPS_COUNT < /* TODO: $get_array_amt */ $get_array_amt(ARRAY_MAPLIST_VHARD))) return;
-		LogMessage("LISTMAPS_TARGET /* TODO: $get_array */ $get_array(ARRAY_MAPLIST_VHARD, LISTMAPS_COUNT)");
+		if (!(LISTMAPS_COUNT < int(ARRAY_MAPLIST_VHARD.length()))) return;
+		LogMessage(LISTMAPS_TARGET + ARRAY_MAPLIST_VHARD[int(LISTMAPS_COUNT)]);
 		LISTMAPS_COUNT += 1;
-		if (LISTMAPS_COUNT < /* TODO: $get_array_amt */ $get_array_amt(ARRAY_MAPLIST_VHARD))
+		if (LISTMAPS_COUNT < int(ARRAY_MAPLIST_VHARD.length()))
 		{
 			ScheduleDelayedEvent(0.1, "do_listmaps_vhard");
 		}
@@ -375,7 +375,7 @@ class Help : CGameScript
 			if (LISTMAPS_STOP != "vhard")
 			{
 				LISTMAPS_COUNT = 0;
-				LogMessage("LISTMAPS_TARGET LISTMAPS_MSG_EPC");
+				LogMessage(LISTMAPS_TARGET + LISTMAPS_MSG_EPC);
 				do_listmaps_epic();
 			}
 			else
@@ -387,10 +387,10 @@ class Help : CGameScript
 
 	void do_listmaps_epic()
 	{
-		if (!(LISTMAPS_COUNT < /* TODO: $get_array_amt */ $get_array_amt(ARRAY_MAPLIST_EPIC))) return;
-		LogMessage("LISTMAPS_TARGET /* TODO: $get_array */ $get_array(ARRAY_MAPLIST_EPIC, LISTMAPS_COUNT)");
+		if (!(LISTMAPS_COUNT < int(ARRAY_MAPLIST_EPIC.length()))) return;
+		LogMessage(LISTMAPS_TARGET + ARRAY_MAPLIST_EPIC[int(LISTMAPS_COUNT)]);
 		LISTMAPS_COUNT += 1;
-		if (LISTMAPS_COUNT < /* TODO: $get_array_amt */ $get_array_amt(ARRAY_MAPLIST_EPIC))
+		if (LISTMAPS_COUNT < int(ARRAY_MAPLIST_EPIC.length()))
 		{
 			ScheduleDelayedEvent(0.1, "do_listmaps_epic");
 		}
@@ -408,13 +408,13 @@ class Help : CGameScript
 		string CUST_MAP = GetToken(MAPS_UNCONNECTED2, CUSTOM_COUNT, ";");
 		if ((ValidateMapName(CUST_MAP)))
 		{
-			LogMessage("L_VOTE_CALLER CUST_MAP");
+			LogMessage(L_VOTE_CALLER + CUST_MAP);
 		}
 		if (CUSTOM_COUNT == TOTAL_MAPS)
 		{
-			LogMessage("L_VOTE_CALLER == == == == == == == == == == == == == == == == == =");
-			LogMessage("L_VOTE_CALLER Type listmaps for a listing of maps by difficulty");
-			LogMessage("L_VOTE_CALLER Or type maps * for a listing of all maps on your client");
+			LogMessage(L_VOTE_CALLER + " == == == == == == == == == == == == == == == == == =");
+			LogMessage(L_VOTE_CALLER + " Type listmaps for a listing of maps by difficulty");
+			LogMessage(L_VOTE_CALLER + " Or type maps * for a listing of all maps on your client");
 		}
 		CUSTOM_COUNT += 1;
 		ScheduleDelayedEvent(0.1, "list_custom_maps2");

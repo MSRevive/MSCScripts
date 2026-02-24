@@ -7,17 +7,20 @@ namespace MS
 
 class SorcChiefImage : CGameScript
 {
+	int CHAT_AUTO_FACE;
 	int CHAT_MENU_ON;
+	int CHAT_NO_CLOSE_MOUTH;
+	int CHAT_USE_CONV_ANIMS;
 	int FADE_COUNT;
 	string NEAREST_PLAYER;
 	string POT_GUY_ID;
 
 	SorcChiefImage()
 	{
-		const int CHAT_USE_CONV_ANIMS = 0;
+		CHAT_USE_CONV_ANIMS = 0;
 		CHAT_MENU_ON = 0;
-		const int CHAT_AUTO_FACE = 0;
-		const int CHAT_NO_CLOSE_MOUTH = 1;
+		CHAT_AUTO_FACE = 0;
+		CHAT_NO_CLOSE_MOUTH = 1;
 	}
 
 	void OnSpawn() override

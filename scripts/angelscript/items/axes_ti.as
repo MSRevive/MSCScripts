@@ -7,10 +7,13 @@ namespace MS
 
 class AxesTi : CGameScript
 {
+	string MELEE_DMG_TYPE;
+	int TOM_SKIN;
+
 	AxesTi()
 	{
-		const string MELEE_DMG_TYPE = "cold";
-		const int TOM_SKIN = 1;
+		MELEE_DMG_TYPE = "cold";
+		TOM_SKIN = 1;
 	}
 
 	void weapon_spawn()

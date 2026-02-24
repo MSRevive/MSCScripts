@@ -5,28 +5,41 @@ namespace MS
 
 class ClientSideFireball : CGameScript
 {
+	string EMITTER_SPRITE;
 	string FB_ORG;
+	int FIREBALL_SPEED;
+	string FIREBALL_SPRITE;
+	float FREQ_LOOP_SOUND;
 	int IS_ACTIVE;
+	int IS_COLORED;
 	string IS_DESTROYED;
+	string NEW_COLOR;
 	int RND_FB;
+	string SOUND_KABOOM;
+	string SOUND_LOOP;
+	int SPRITE_FRAMES_LARGE;
+	int SPRITE_FRAMES_SMALL;
+	float SPRITE_SCALE_KABOOM;
+	float SPRITE_SCALE_LARGE;
+	float SPRITE_SCALE_SMALL;
 	string START_ANG;
 	string VEL_ANGLES;
 
 	ClientSideFireball()
 	{
-		const int FIREBALL_SPEED = 120;
-		const string FIREBALL_SPRITE = "3dmflaora.spr";
-		const string EMITTER_SPRITE = "3dmflaora.spr";
-		const string SOUND_KABOOM = "weapons/explode3.wav";
-		const string SOUND_LOOP = "items/torch1.wav";
-		const float FREQ_LOOP_SOUND = 6.1;
-		const int IS_COLORED = 0;
-		const Vector3 NEW_COLOR = Vector3(255, 255, 255);
-		const int SPRITE_FRAMES_SMALL = 1;
-		const int SPRITE_FRAMES_LARGE = 1;
-		const float SPRITE_SCALE_SMALL = 0.5;
-		const float SPRITE_SCALE_LARGE = 2.0;
-		const float SPRITE_SCALE_KABOOM = 3.0;
+		FIREBALL_SPEED = 120;
+		FIREBALL_SPRITE = "3dmflaora.spr";
+		EMITTER_SPRITE = "3dmflaora.spr";
+		SOUND_KABOOM = "weapons/explode3.wav";
+		SOUND_LOOP = "items/torch1.wav";
+		FREQ_LOOP_SOUND = 6.1;
+		IS_COLORED = 0;
+		NEW_COLOR = Vector3(255, 255, 255);
+		SPRITE_FRAMES_SMALL = 1;
+		SPRITE_FRAMES_LARGE = 1;
+		SPRITE_SCALE_SMALL = 0.5;
+		SPRITE_SCALE_LARGE = 2.0;
+		SPRITE_SCALE_KABOOM = 3.0;
 	}
 
 	void OnRepeatTimer()
@@ -118,8 +131,8 @@ class ClientSideFireball : CGameScript
 
 	void setup_kaboom()
 	{
-		string RND_YAW = Random(0, 359);
-		string RND_PITCH = Random(0, 359);
+		float RND_YAW = Random(0, 359);
+		float RND_PITCH = Random(0, 359);
 		ClientEffect("tempent", "set_current_prop", "death_delay", 0.5);
 		ClientEffect("tempent", "set_current_prop", "fadeout", 0.5);
 		ClientEffect("tempent", "set_current_prop", "velocity", /* TODO: $relvel */ $relvel(Vector3(RND_PITCH, RND_YAW, 0), Vector3(0, RND_FB, 0)));

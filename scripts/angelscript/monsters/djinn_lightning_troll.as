@@ -7,55 +7,86 @@ namespace MS
 
 class DjinnLightningTroll : CGameScript
 {
+	int AIM_RATIO;
 	string ANIM_ATTACK;
+	string ANIM_DBLPUNCH;
 	string ANIM_DEATH;
 	string ANIM_IDLE;
+	string ANIM_PUNCH;
 	string ANIM_RUN;
+	string ANIM_THROW;
 	string ANIM_WALK;
+	string ANIM_WARCRY;
 	string AS_ATTACKING;
 	int ATTACK_HITRANGE;
 	int ATTACK_RANGE;
+	int ATTACK_SPEED;
+	float BALL_DURATION;
+	string BALL_SCRIPT;
 	int CAN_FLINCH;
 	int CAN_HUNT;
 	int COMBAT_REPOS;
 	int DID_WARCRY;
+	int DMG_BALL;
+	int DMG_DBL_PUNCH;
+	int DMG_GUIDED;
+	int DMG_PUNCH;
+	int DOT_PUNCH;
 	int DROP_GOLD;
 	int DROP_GOLD_MAX;
 	int DROP_GOLD_MIN;
 	string FLINCH_ANIM;
 	int FLINCH_CHANCE;
 	float FLINCH_DELAY;
+	float FREQ_GUIDED;
 	int HUNT_AGRO;
 	int LAUNCH_GUIDED_COUNT;
+	int LEFT_FIST_INDEX;
+	int MELEE_RANGE;
 	int MELEE_STIKE;
 	int MELEE_STRIKE;
+	int MELE_HITRANGE;
+	int MELE_RANGE;
 	int MOVE_RANGE;
 	string NEXT_GUIDED;
 	int NPC_GIVE_EXP;
 	int PROJ_SHOCK_DMG;
 	int PROJ_SHOCK_DOT;
 	string PUSH_VEL;
+	int RIGHT_FIST_INDEX;
+	int ROCK_DAMAGE;
+	int ROCK_RANGE;
+	string SOUND_ATTACK;
+	string SOUND_DEATH;
+	string SOUND_IDLE;
+	string SOUND_PAIN;
+	string SOUND_STRUCK1;
+	string SOUND_STRUCK2;
+	string SOUND_STRUCK3;
+	string SOUND_WALK1;
+	string SOUND_WALK2;
 	string SPOT_SPEECH;
+	int SWING_RANGE;
 
 	DjinnLightningTroll()
 	{
-		const string FREQ_GUIDED = Random(15.0, 30.0);
-		const int DMG_GUIDED = 300;
-		const int DOT_PUNCH = 100;
-		const int DMG_PUNCH = 200;
-		const int DMG_DBL_PUNCH = 100;
+		FREQ_GUIDED = Random(15.0, 30.0);
+		DMG_GUIDED = 300;
+		DOT_PUNCH = 100;
+		DMG_PUNCH = 200;
+		DMG_DBL_PUNCH = 100;
 		NPC_GIVE_EXP = 3000;
-		const int LEFT_FIST_INDEX = 0;
-		const int RIGHT_FIST_INDEX = 1;
-		const string SOUND_STRUCK1 = "weapons/cbar_hitbod1.wav";
-		const string SOUND_STRUCK2 = "weapons/cbar_hitbod1.wav";
-		const string SOUND_STRUCK3 = "weapons/cbar_hitbod1.wav";
-		const string SOUND_PAIN = "monsters/troll/trollpain.wav";
-		const string SOUND_ATTACK = "monsters/troll/trollattack.wav";
-		const string SOUND_DEATH = "monsters/troll/trolldeath.wav";
-		const string SOUND_WALK1 = "monsters/troll/step1.wav";
-		const string SOUND_WALK2 = "monsters/troll/step2.wav";
-		const string SOUND_IDLE = "monsters/troll/trollidle2.wav";
+		LEFT_FIST_INDEX = 0;
+		RIGHT_FIST_INDEX = 1;
+		SOUND_STRUCK1 = "weapons/cbar_hitbod1.wav";
+		SOUND_STRUCK2 = "weapons/cbar_hitbod1.wav";
+		SOUND_STRUCK3 = "weapons/cbar_hitbod1.wav";
+		SOUND_PAIN = "monsters/troll/trollpain.wav";
+		SOUND_ATTACK = "monsters/troll/trollattack.wav";
+		SOUND_DEATH = "monsters/troll/trolldeath.wav";
+		SOUND_WALK1 = "monsters/troll/step1.wav";
+		SOUND_WALK2 = "monsters/troll/step2.wav";
+		SOUND_IDLE = "monsters/troll/trollidle2.wav";
 		DROP_GOLD = 1;
 		DROP_GOLD_MIN = 500;
 		DROP_GOLD_MAX = 600;
@@ -64,32 +95,32 @@ class DjinnLightningTroll : CGameScript
 		ANIM_WALK = "walk";
 		ANIM_DEATH = "die_fall";
 		ANIM_ATTACK = "throw_rock";
-		const string ANIM_PUNCH = "hit_down";
-		const string ANIM_DBLPUNCH = "double_punch";
-		const string ANIM_THROW = "throw_rock";
-		const int ROCK_RANGE = 800;
-		const int SWING_RANGE = 130;
+		ANIM_PUNCH = "hit_down";
+		ANIM_DBLPUNCH = "double_punch";
+		ANIM_THROW = "throw_rock";
+		ROCK_RANGE = 800;
+		SWING_RANGE = 130;
 		ATTACK_RANGE = 800;
 		ATTACK_HITRANGE = 200;
 		MOVE_RANGE = 400;
-		const int MELE_RANGE = 128;
-		const int MELE_HITRANGE = 164;
+		MELE_RANGE = 128;
+		MELE_HITRANGE = 164;
 		CAN_FLINCH = 1;
 		FLINCH_CHANCE = 33;
 		FLINCH_ANIM = "flinch2";
 		FLINCH_DELAY = 2.0;
 		CAN_HUNT = 1;
 		HUNT_AGRO = 1;
-		const int AIM_RATIO = 25;
-		const int ATTACK_SPEED = 500;
-		const string ROCK_DAMAGE = "$rand(400,600)";
+		AIM_RATIO = 25;
+		ATTACK_SPEED = 500;
+		ROCK_DAMAGE = "$rand(400,600)";
 		PROJ_SHOCK_DOT = 100;
 		PROJ_SHOCK_DMG = 400;
-		const string BALL_SCRIPT = "monsters/summon/guided_lball_alt";
-		const float BALL_DURATION = 10.0;
-		const string ANIM_WARCRY = "idle2";
-		const int MELEE_RANGE = 200;
-		const int DMG_BALL = 400;
+		BALL_SCRIPT = "monsters/summon/guided_lball_alt";
+		BALL_DURATION = 10.0;
+		ANIM_WARCRY = "idle2";
+		MELEE_RANGE = 200;
+		DMG_BALL = 400;
 		Precache(SOUND_DEATH);
 	}
 
@@ -136,7 +167,7 @@ class DjinnLightningTroll : CGameScript
 		}
 		else
 		{
-			string RND_MELEE = RandomInt(1, 2);
+			int RND_MELEE = RandomInt(1, 2);
 			if (RND_MELEE == 1)
 			{
 				ANIM_ATTACK = "hit_down";
@@ -187,7 +218,7 @@ class DjinnLightningTroll : CGameScript
 		PlayAnim("critical", ANIM_WARCRY);
 		DID_WARCRY = 1;
 		if (!(SPOT_SPEECH != "SPOT_SPEECH")) return;
-		SayText("SPOT_SPEECH");
+		SayText(SPOT_SPEECH);
 		SPOT_SPEECH = "SPOT_SPEECH";
 	}
 
@@ -272,7 +303,7 @@ class DjinnLightningTroll : CGameScript
 		if ((IS_HUNTING)) return;
 		if ((false)) return;
 		if ((IS_FLEEING)) return;
-		string ANIM_SELECT = RandomInt(0, 3);
+		int ANIM_SELECT = RandomInt(0, 3);
 		if (ANIM_SELECT == 0)
 		{
 			ANIM_IDLE = "idle0";

@@ -7,11 +7,15 @@ namespace MS
 
 class ItemRolandLetter : CGameScript
 {
+	int MODEL_BODY_OFS;
+	string MODEL_HANDS;
+	string MODEL_WORLD;
+
 	ItemRolandLetter()
 	{
-		const string MODEL_WORLD = "misc/p_misc.mdl";
-		const string MODEL_HANDS = "misc/p_misc.mdl";
-		const int MODEL_BODY_OFS = 45;
+		MODEL_WORLD = "misc/p_misc.mdl";
+		MODEL_HANDS = "misc/p_misc.mdl";
+		MODEL_BODY_OFS = 45;
 	}
 
 	void miscitem_spawn()

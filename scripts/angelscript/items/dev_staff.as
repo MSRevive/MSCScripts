@@ -12,16 +12,18 @@ namespace MS
 
 class DevStaff : CGameScript
 {
+	int ANIM_USE;
 	string BEAM_TARGET;
 	int BEAM_TYPE;
 	int LAST_ANIM;
 	string MENU_ID;
+	int NO_BANK;
 
 	DevStaff()
 	{
-		const int ANIM_USE = 6;
+		ANIM_USE = 6;
 		LAST_ANIM = 0;
-		const int NO_BANK = 1;
+		NO_BANK = 1;
 		BEAM_TYPE = 0;
 		BEAM_TARGET = "none";
 		MENU_ID = "none";
@@ -165,7 +167,7 @@ class DevStaff : CGameScript
 
 	void try_anim()
 	{
-		if (/* TODO: $math(subtract) */ GetGameTime() > 0.8)
+		if ((GetGameTime() - LAST_ANIM) > 0.8)
 		{
 			PlayViewAnim(ANIM_USE);
 			LAST_ANIM = GetGameTime();

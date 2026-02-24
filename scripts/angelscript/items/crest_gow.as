@@ -7,10 +7,13 @@ namespace MS
 
 class CrestGow : CGameScript
 {
+	int MODEL_CREST_OFS;
+	string MODEL_WEAR;
+
 	CrestGow()
 	{
-		const int MODEL_CREST_OFS = 18;
-		const string MODEL_WEAR = "armor/p_gowns.mdl";
+		MODEL_CREST_OFS = 18;
+		MODEL_WEAR = "armor/p_gowns.mdl";
 	}
 
 	void OnSpawn() override

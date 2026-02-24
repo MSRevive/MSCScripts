@@ -12,8 +12,14 @@ class Hunter : CGameScript
 {
 	int CANCHAT;
 	int JOB;
+	int NO_CHAT;
+	int NPC_REACTS;
+	float SELL_RATIO;
 	int SELL_WEAPON_LEVEL;
+	string SOUND_DEATH;
 	int STORE_CLOSED;
+	string STORE_NAME;
+	int STORE_SELLMENU;
 	string STORE_TRIGGERTEXT;
 	int VEND_ARMORER;
 	int VEND_CONTAINERS;
@@ -22,19 +28,19 @@ class Hunter : CGameScript
 
 	Hunter()
 	{
-		const string SOUND_DEATH = "none";
+		SOUND_DEATH = "none";
 		STORE_CLOSED = 0;
-		const string STORE_NAME = "gatecity_huntery";
+		STORE_NAME = "gatecity_huntery";
 		STORE_TRIGGERTEXT = "store trade buy sell purchase sale offer";
-		const int STORE_SELLMENU = 1;
-		const float SELL_RATIO = 0.75;
+		STORE_SELLMENU = 1;
+		SELL_RATIO = 0.75;
 		SELL_WEAPON_LEVEL = 3;
 		VEND_NEWBIE = 1;
 		VEND_WEAPONS = 1;
 		VEND_CONTAINERS = 1;
 		VEND_ARMORER = 0;
-		const int NO_CHAT = 1;
-		const int NPC_REACTS = 1;
+		NO_CHAT = 1;
+		NPC_REACTS = 1;
 	}
 
 	void OnSpawn() override
@@ -84,7 +90,7 @@ class Hunter : CGameScript
 
 	void say_job()
 	{
-		SayText("I have everything I need right now.");
+		SayText(I + "have everything " + I + " need right now.");
 	}
 
 	void say_rumor()
@@ -138,7 +144,7 @@ class Hunter : CGameScript
 
 	void vendor_say_closed()
 	{
-		SayText("Sorry , I m closed. I will reopen at seven in the morning.");
+		SayText("Sorry , " + I + " m closed. I will reopen at seven in the morning.");
 	}
 
 }

@@ -8,8 +8,13 @@ class OrcBaseMelee : CGameScript
 	int ATTACK_HITRANGE;
 	int ATTACK_RANGE;
 	int MOVE_RANGE;
+	int ORC_HOP_DELAY;
 	int ORC_JUMPER;
 	int ORC_JUMPING;
+	int ORC_JUMP_CUTOFF;
+	int ORC_JUMP_POWER;
+	int ORC_JUMP_RANGE;
+	int ORC_JUMP_THRESH;
 	int ORC_SUPERJUMPER;
 	string TARGET_Z_DIFFERENCE;
 
@@ -18,11 +23,11 @@ class OrcBaseMelee : CGameScript
 		MOVE_RANGE = 32;
 		ATTACK_RANGE = 60;
 		ATTACK_HITRANGE = 120;
-		const int ORC_JUMP_RANGE = 512;
-		const int ORC_JUMP_CUTOFF = 400;
-		const string ORC_JUMP_POWER = RandomInt(350, 450);
-		const string ORC_HOP_DELAY = RandomInt(2, 4);
-		const int ORC_JUMP_THRESH = 80;
+		ORC_JUMP_RANGE = 512;
+		ORC_JUMP_CUTOFF = 400;
+		ORC_JUMP_POWER = RandomInt(350, 450);
+		ORC_HOP_DELAY = RandomInt(2, 4);
+		ORC_JUMP_THRESH = 80;
 	}
 
 	void orc_spawn()
@@ -35,7 +40,7 @@ class OrcBaseMelee : CGameScript
 	void swing_axe()
 	{
 		baseorc_yell();
-		string L_DMG = Random(ATTACK_DMG_LOW, ATTACK_DMG_HIGH);
+		float L_DMG = Random(ATTACK_DMG_LOW, ATTACK_DMG_HIGH);
 		XDoDamage(m_hLastSeen, ATTACK_HITRANGE, L_DMG, ATTACK_ACCURACY, GetOwner(), GetOwner(), "none", "slash", "dmgevent:swing");
 	}
 
@@ -89,7 +94,7 @@ class OrcBaseMelee : CGameScript
 		string JUMP_HEIGHT = ORC_JUMP_POWER;
 		if ((GetMapName()).findFirst("helena") >= 0)
 		{
-			string JUMP_HEIGHT = RandomInt(450, 550);
+			int JUMP_HEIGHT = RandomInt(450, 550);
 		}
 		int FWD_BOOST = 250;
 		if ((ORC_SUPERJUMPER))

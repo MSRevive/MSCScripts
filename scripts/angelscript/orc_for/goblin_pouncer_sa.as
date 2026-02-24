@@ -10,44 +10,61 @@ class GoblinPouncerSa : CGameScript
 	int AM_LATCHED;
 	string ANIM_ATTACK;
 	string ANIM_IDLE;
+	string ANIM_LEAP;
+	string ANIM_LEAP_READY;
+	string ANIM_LEAP_RIDE;
 	string ANIM_RUN;
 	string ANIM_WALK;
+	int AS_CUSTOM_UNSTUCK;
 	float ATTACK_HITCHANCE;
 	string DID_WARNING;
+	int DMG_POUND;
+	int DMG_SWORD;
+	float FREQ_LAUGH;
+	float FREQ_LEAP;
+	int GOBLIN_SELF_ADJUST;
 	int IN_LEAP;
 	string LATCH_END;
 	string LATCH_TARGET;
 	int LEAP_MODE;
+	int LEAP_RANGE;
 	string LEAP_TARGET;
 	string NEXT_LATCH_ATTEMPT;
 	string NEXT_LAUGH;
+	string NPC_ADJ_DMG_MUTLI_TOKENS;
+	string NPC_ADJ_HP_MUTLI_TOKENS;
+	string NPC_ADJ_TIERS;
+	int NPC_BASE_EXP;
 	int NPC_FORCED_MOVEDEST;
 	string NPC_SELF_ADJUST;
 	int PICKED_RANDOM;
+	string SOUND_LAUGH;
+	string SOUND_LEAP_GO;
+	string SOUND_LEAP_READY;
 	int WAS_LATCHED;
 
 	GoblinPouncerSa()
 	{
-		const string ANIM_LEAP_READY = "pounce_ready";
-		const string ANIM_LEAP = "pounce_fly";
-		const string ANIM_LEAP_RIDE = "pounce_latch";
+		ANIM_LEAP_READY = "pounce_ready";
+		ANIM_LEAP = "pounce_fly";
+		ANIM_LEAP_RIDE = "pounce_latch";
 		ANIM_ATTACK = "swordswing1_L";
-		const int AS_CUSTOM_UNSTUCK = 1;
-		const int GOBLIN_SELF_ADJUST = 1;
+		AS_CUSTOM_UNSTUCK = 1;
+		GOBLIN_SELF_ADJUST = 1;
 		NPC_SELF_ADJUST = GOBLIN_SELF_ADJUST;
-		const string NPC_ADJ_TIERS = "0;750;1500;2000;3000;5000";
-		const string NPC_ADJ_DMG_MUTLI_TOKENS = "1.0;1.5;2.0;5.0;7.5;10.0;";
-		const string NPC_ADJ_HP_MUTLI_TOKENS = "1.0;2.0;3.0;5.0;7.5;10.0;";
-		const int NPC_BASE_EXP = 200;
+		NPC_ADJ_TIERS = "0;750;1500;2000;3000;5000";
+		NPC_ADJ_DMG_MUTLI_TOKENS = "1.0;1.5;2.0;5.0;7.5;10.0;";
+		NPC_ADJ_HP_MUTLI_TOKENS = "1.0;2.0;3.0;5.0;7.5;10.0;";
+		NPC_BASE_EXP = 200;
 		ATTACK_HITCHANCE = 0.9;
-		const int LEAP_RANGE = 500;
-		const float FREQ_LEAP = 15.0;
-		const int DMG_SWORD = 15;
-		const int DMG_POUND = 5;
-		const string FREQ_LAUGH = Random(5.0, 10.0);
-		const string SOUND_LEAP_READY = "monsters/goblin/c_gargoyle_bat1.wav";
-		const string SOUND_LEAP_GO = "monsters/goblin/c_gargoyle_atk3.wav";
-		const string SOUND_LAUGH = "monsters/goblin/c_gargoyle_bat2.wav";
+		LEAP_RANGE = 500;
+		FREQ_LEAP = 15.0;
+		DMG_SWORD = 15;
+		DMG_POUND = 5;
+		FREQ_LAUGH = Random(5.0, 10.0);
+		SOUND_LEAP_READY = "monsters/goblin/c_gargoyle_bat1.wav";
+		SOUND_LEAP_GO = "monsters/goblin/c_gargoyle_atk3.wav";
+		SOUND_LAUGH = "monsters/goblin/c_gargoyle_bat2.wav";
 	}
 
 	void goblin_spawn()
@@ -211,7 +228,7 @@ class GoblinPouncerSa : CGameScript
 		if (!(IsValidPlayer(LATCH_TARGET))) return;
 		string OUT_TITLE = GetEntityName(LATCH_TARGET);
 		string OUT_MSG = "Has been pounced!";
-		SendInfoMsg("all", "OUT_TITLE OUT_MSG");
+		SendInfoMsg("all", OUT_TITLE + OUT_MSG);
 	}
 
 	void player_left()

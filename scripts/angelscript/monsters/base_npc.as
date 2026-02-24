@@ -15,27 +15,31 @@ class BaseNpc : CGameScript
 	string IMMUNE_VAMPIRE;
 	string IN_ICECAGE;
 	string IS_BLOODLESS;
+	int NPC_AUTO_DEATH;
 	int NPC_CRIT_WARN_DELAY;
+	string NPC_DEATH_MSG;
 	int NPC_DID_DEATH;
 	string NPC_FIGHTS_NPCS;
+	float NPC_FREQ_WARN;
 	string NPC_FRIENDLY;
 	string NPC_GAVE_XP_MSG;
 	string NPC_REACT_CANSEETARGET;
 	string NPC_REACT_LAST_TARGET;
 	string NPC_REACT_RESET_TARGET_TIME;
+	string SOUND_DEATH;
 
 	BaseNpc()
 	{
-		const float NPC_FREQ_WARN = 5.0;
+		NPC_FREQ_WARN = 5.0;
 		HAS_INCLUDE_NPC = 1;
-		const string NPC_DEATH_MSG = "unset";
-		const int NPC_AUTO_DEATH = 1;
-		const string SOUND_DEATH = "none";
+		NPC_DEATH_MSG = "unset";
+		NPC_AUTO_DEATH = 1;
+		SOUND_DEATH = "none";
 	}
 
 	void display_timing()
 	{
-		SendInfoMsg("all", "PARAM1 PARAM2");
+		SendInfoMsg("all", param1 + param2);
 	}
 
 	void OnSpawn() override
@@ -184,7 +188,7 @@ class BaseNpc : CGameScript
 			string INFO_TITLE = "A CRITICAL NPC HAS DIED!";
 			string INFO_MSG = GetEntityName(GetOwner());
 			INFO_MSG += " has been slain! ";
-			SendInfoMsg("all", "INFO_TITLE INFO_MSG");
+			SendInfoMsg("all", INFO_TITLE + INFO_MSG);
 			CallExternal(GAME_MASTER, "gm_crit_npc_died", GetEntityIndex(GetOwner()), GetEntityIndex(m_hLastStruck));
 		}
 		npc_death();
@@ -225,7 +229,7 @@ class BaseNpc : CGameScript
 			{
 				string OUT_MSG = NPC_DEATH_MSG;
 			}
-			SendColoredMessage(GetEntityIndex(m_hLastStruck), "OUT_MSG");
+			SendColoredMessage(GetEntityIndex(m_hLastStruck), OUT_MSG);
 		}
 		CallExternal(GetOwner(), "effect_die", "base_npc");
 		ClearFX();
@@ -247,7 +251,7 @@ class BaseNpc : CGameScript
 				string INFO_TITLE = "Critical NPC Under Attack!";
 				string INFO_MSG = GetEntityName(GetOwner());
 				INFO_MSG += " is under attack!";
-				SendInfoMsg("all", "INFO_TITLE INFO_MSG");
+				SendInfoMsg("all", INFO_TITLE + INFO_MSG);
 			}
 		}
 	}

@@ -8,6 +8,8 @@ class ProjArrowSpiralCl : CGameScript
 	string CL_LIGHT_ID;
 	int FX_ACTIVE;
 	string GLOW_COLOR;
+	int GLOW_RAD;
+	float MAX_DURATION;
 	string MY_OWNER;
 	int ROT_COUNT;
 	string SPRITE_COLOR;
@@ -17,8 +19,8 @@ class ProjArrowSpiralCl : CGameScript
 
 	ProjArrowSpiralCl()
 	{
-		const int GLOW_RAD = 256;
-		const float MAX_DURATION = 10.0;
+		GLOW_RAD = 256;
+		MAX_DURATION = 10.0;
 	}
 
 	void client_activate()

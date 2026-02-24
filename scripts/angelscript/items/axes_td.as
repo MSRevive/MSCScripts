@@ -7,40 +7,69 @@ namespace MS
 
 class AxesTd : CGameScript
 {
+	int ANIM_ATTACK1;
+	int ANIM_ATTACK2;
+	int ANIM_ATTACK3;
+	int ANIM_IDLE1;
+	int ANIM_LIFT1;
+	string ANIM_PREFIX;
+	int ANIM_SHEATH;
 	int AXE_RESTORED;
+	int BASE_LEVEL_REQ;
+	float MELEE_ACCURACY;
+	float MELEE_ATK_DURATION;
+	int MELEE_DMG;
+	float MELEE_DMG_DELAY;
+	int MELEE_DMG_RANGE;
+	string MELEE_DMG_TYPE;
+	float MELEE_ENERGY;
+	float MELEE_PARRY_CHANCE;
+	int MELEE_RANGE;
+	string MELEE_SOUND;
+	string MELEE_SOUND_DELAY;
+	string MELEE_STAT;
+	int MELEE_VIEWANIM_ATK;
+	int MODEL_BODY_OFS;
+	string MODEL_HANDS;
+	string MODEL_VIEW;
+	int MODEL_VIEW_IDX;
+	string MODEL_WORLD;
+	int NO_IDLE;
+	string SOUND_SWIPE;
 	int THROWING_AXE;
+	int TOM_SKIN;
 
 	AxesTd()
 	{
-		const int BASE_LEVEL_REQ = 25;
-		const int NO_IDLE = 1;
-		const int ANIM_LIFT1 = 0;
-		const int ANIM_IDLE1 = 1;
-		const int ANIM_ATTACK1 = 9;
-		const int ANIM_ATTACK2 = 10;
-		const int ANIM_ATTACK3 = 11;
-		const int ANIM_SHEATH = 5;
-		const int MELEE_VIEWANIM_ATK = 9;
-		const string MODEL_VIEW = "viewmodels/v_1haxes.mdl";
-		const int MODEL_VIEW_IDX = 5;
-		const int TOM_SKIN = 4;
-		const string MODEL_HANDS = "weapons/p_weapons3.mdl";
-		const string MODEL_WORLD = "weapons/p_weapons3.mdl";
-		const int MODEL_BODY_OFS = 20;
-		const string SOUND_SWIPE = "weapons/swingsmall.wav";
-		const string ANIM_PREFIX = "standard";
-		const int MELEE_RANGE = 80;
-		const float MELEE_DMG_DELAY = 0.6;
-		const float MELEE_ATK_DURATION = 0.7;
-		const float MELEE_ENERGY = 0.1;
-		const int MELEE_DMG = 180;
-		const int MELEE_DMG_RANGE = 70;
-		const string MELEE_DMG_TYPE = "dark";
-		const float MELEE_ACCURACY = 0.75;
-		const string MELEE_STAT = "axehandling";
-		const string MELEE_SOUND = SOUND_SWIPE;
-		const string MELEE_SOUND_DELAY = MELEE_DMG_DELAY;
-		const float MELEE_PARRY_CHANCE = 0.25;
+		BASE_LEVEL_REQ = 25;
+		NO_IDLE = 1;
+		ANIM_LIFT1 = 0;
+		ANIM_IDLE1 = 1;
+		ANIM_ATTACK1 = 9;
+		ANIM_ATTACK2 = 10;
+		ANIM_ATTACK3 = 11;
+		ANIM_SHEATH = 5;
+		MELEE_VIEWANIM_ATK = 9;
+		MODEL_VIEW = "viewmodels/v_1haxes.mdl";
+		MODEL_VIEW_IDX = 5;
+		TOM_SKIN = 4;
+		MODEL_HANDS = "weapons/p_weapons3.mdl";
+		MODEL_WORLD = "weapons/p_weapons3.mdl";
+		MODEL_BODY_OFS = 20;
+		SOUND_SWIPE = "weapons/swingsmall.wav";
+		ANIM_PREFIX = "standard";
+		MELEE_RANGE = 80;
+		MELEE_DMG_DELAY = 0.6;
+		MELEE_ATK_DURATION = 0.7;
+		MELEE_ENERGY = 0.1;
+		MELEE_DMG = 180;
+		MELEE_DMG_RANGE = 70;
+		MELEE_DMG_TYPE = "dark";
+		MELEE_ACCURACY = 0.75;
+		MELEE_STAT = "axehandling";
+		MELEE_SOUND = SOUND_SWIPE;
+		MELEE_SOUND_DELAY = MELEE_DMG_DELAY;
+		MELEE_PARRY_CHANCE = 0.25;
 	}
 
 	void weapon_spawn()
@@ -67,7 +96,7 @@ class AxesTd : CGameScript
 
 	void bw_setup_model()
 	{
-		// TODO: UNCONVERTED: setmodelskin TOM_SKIN
+		SetEntityModelSkin(GetOwner(), TOM_SKIN);
 		// TODO: setviewmodelprop ent_me skin TOM_SKIN
 		SetProp(GetOwner(), "skin", TOM_SKIN);
 	}

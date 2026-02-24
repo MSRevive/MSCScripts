@@ -12,6 +12,9 @@ class AnimWarrior : CGameScript
 	string ANIM_IDLE;
 	string ANIM_RUN;
 	string ANIM_WALK;
+	float ATTACK_ACCURACY;
+	int ATTACK_DMG_HIGH;
+	int ATTACK_DMG_LOW;
 	int ATTACK_HITRANGE;
 	int ATTACK_RANGE;
 	int CAN_FLEE;
@@ -19,7 +22,7 @@ class AnimWarrior : CGameScript
 	int CAN_HEAR;
 	int CAN_HUNT;
 	int DROP_GOLD;
-	string DROP_GOLD_AMT;
+	int DROP_GOLD_AMT;
 	int HUNT_AGRO;
 	int IMMUNE_VAMPIRE;
 	int IS_UNHOLY;
@@ -27,23 +30,34 @@ class AnimWarrior : CGameScript
 	string LAST_ENEMY;
 	int MOVE_RANGE;
 	int NPC_GIVE_EXP;
+	string SOUND_ATTACK1;
+	string SOUND_ATTACK2;
+	string SOUND_ATTACK3;
+	string SOUND_DEATH;
+	string SOUND_HIT;
+	string SOUND_HIT2;
+	string SOUND_HIT3;
+	string SOUND_PAIN;
+	string SOUND_STRUCK1;
+	string SOUND_STRUCK2;
+	string SOUND_STRUCK3;
 	string SPAWNER;
 
 	AnimWarrior()
 	{
 		IS_UNHOLY = 1;
 		IMMUNE_VAMPIRE = 1;
-		const string SOUND_STRUCK1 = "body/armour1.wav";
-		const string SOUND_STRUCK2 = "body/armour2.wav";
-		const string SOUND_STRUCK3 = "body/armour3.wav";
-		const string SOUND_HIT = "body/armour3.wav";
-		const string SOUND_HIT2 = "body/armour2.wav";
-		const string SOUND_HIT3 = "body/armour1.wav";
-		const string SOUND_PAIN = "body/armour1.wav";
-		const string SOUND_ATTACK1 = "none";
-		const string SOUND_ATTACK2 = "none";
-		const string SOUND_ATTACK3 = "none";
-		const string SOUND_DEATH = "none";
+		SOUND_STRUCK1 = "body/armour1.wav";
+		SOUND_STRUCK2 = "body/armour2.wav";
+		SOUND_STRUCK3 = "body/armour3.wav";
+		SOUND_HIT = "body/armour3.wav";
+		SOUND_HIT2 = "body/armour2.wav";
+		SOUND_HIT3 = "body/armour1.wav";
+		SOUND_PAIN = "body/armour1.wav";
+		SOUND_ATTACK1 = "none";
+		SOUND_ATTACK2 = "none";
+		SOUND_ATTACK3 = "none";
+		SOUND_DEATH = "none";
 		ANIM_RUN = "run";
 		ANIM_IDLE = "idle1";
 		ANIM_WALK = "walk";
@@ -61,9 +75,9 @@ class AnimWarrior : CGameScript
 		DROP_GOLD_AMT = RandomInt(20, 40);
 		NPC_GIVE_EXP = 65;
 		ANIM_ATTACK = "battleaxe_swing1_L";
-		const float ATTACK_ACCURACY = 0.85;
-		const int ATTACK_DMG_LOW = 15;
-		const int ATTACK_DMG_HIGH = 25;
+		ATTACK_ACCURACY = 0.85;
+		ATTACK_DMG_LOW = 15;
+		ATTACK_DMG_HIGH = 25;
 		IMMUNE_VAMPIRE = 1;
 		I_AM_TURNABLE = 0;
 	}
@@ -132,7 +146,7 @@ class AnimWarrior : CGameScript
 
 	void swing_axe()
 	{
-		string L_DMG = Random(ATTACK_DMG_LOW, ATTACK_DMG_HIGH);
+		float L_DMG = Random(ATTACK_DMG_LOW, ATTACK_DMG_HIGH);
 		DoDamage(m_hLastSeen, ATTACK_HITRANGE, L_DMG, ATTACK_ACCURACY, "slash");
 	}
 

@@ -8,11 +8,12 @@ class BeetleVenomCl : CGameScript
 	int FX_ACTIVE;
 	string FX_OWNER;
 	string SPRITE_NAME;
+	int SPRITE_NFRAMES;
 
 	BeetleVenomCl()
 	{
 		SPRITE_NAME = "poison_cloud.spr";
-		const int SPRITE_NFRAMES = 17;
+		SPRITE_NFRAMES = 17;
 	}
 
 	void client_activate()

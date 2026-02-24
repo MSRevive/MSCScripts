@@ -24,13 +24,15 @@ class AddDynamicSpawn : CGameScript
 	string DYN_SPAWNER;
 	string DYN_SPAWNER_MAXS;
 	string DYN_SPAWNER_MINS;
+	string EFFECT_FLAGS;
+	string EFFECT_ID;
 	int EFFECT_IGNORE_CLEARFX;
 	int PLAYING_DEAD;
 
 	AddDynamicSpawn()
 	{
-		const string EFFECT_ID = "dynamic_spawn";
-		const string EFFECT_FLAGS = "nostack";
+		EFFECT_ID = "dynamic_spawn";
+		EFFECT_FLAGS = "nostack";
 		EFFECT_IGNORE_CLEARFX = 1;
 	}
 
@@ -105,7 +107,7 @@ class AddDynamicSpawn : CGameScript
 		}
 		if (!(DYNS_FOUND_VALID)) return;
 		LogDebug("dyns_hunt_find_location");
-		string L_RND = RandomInt(1, 5);
+		int L_RND = RandomInt(1, 5);
 		if ((DYNS_GLOBAL))
 		{
 			int L_RND = 1;
@@ -114,14 +116,14 @@ class AddDynamicSpawn : CGameScript
 		{
 			if (!(DYNS_GLOBAL))
 			{
-				string L_X = Random((DYN_SPAWNER_MINS).x, (DYN_SPAWNER_MAXS).x);
-				string L_Y = Random((DYN_SPAWNER_MINS).y, (DYN_SPAWNER_MAXS).y);
-				string L_Z = Random((DYN_SPAWNER_MINS).z, (DYN_SPAWNER_MAXS).z);
+				float L_X = Random((DYN_SPAWNER_MINS).x, (DYN_SPAWNER_MAXS).x);
+				float L_Y = Random((DYN_SPAWNER_MINS).y, (DYN_SPAWNER_MAXS).y);
+				float L_Z = Random((DYN_SPAWNER_MINS).z, (DYN_SPAWNER_MAXS).z);
 				DYNS_CHECK_SIGHT = Vector3(L_X, L_Y, L_Z);
 			}
 			else
 			{
-				DYNS_CHECK_SIGHT = /* TODO: $func */ $func("func_dyns_findspawnpoint");
+				DYNS_CHECK_SIGHT = "func_dyns_findspawnpoint"();
 			}
 			if (DYNS_CHECK_SIGHT == "none")
 			{
@@ -140,14 +142,14 @@ class AddDynamicSpawn : CGameScript
 			{
 			}
 			DYNS_SPAWN_POINT = DYNS_CHECK_SIGHT;
-			string L_LEGIT = /* TODO: $func */ $func("func_dyns_test_point", DYNS_SPAWN_POINT);
+			string L_LEGIT = "func_dyns_test_point"(DYNS_SPAWN_POINT);
 		}
 		else
 		{
 			string L_N_TARGS = GetTokenCount(DYNS_VALID_TARGETS, ";");
 			if (L_N_TARGS > 1)
 			{
-				string L_PLAYER_IDX = RandomInt(0, /* TODO: $math(subtract) */ L_N_TARGS);
+				int L_PLAYER_IDX = RandomInt(0, (L_N_TARGS - 1));
 			}
 			else
 			{
@@ -163,7 +165,7 @@ class AddDynamicSpawn : CGameScript
 			}
 			L_PLAYER_VIEW = "y";
 			string L_PLAYER_POS = GetEntityOrigin(L_PLAYER);
-			string L_PLAYER_BACK = Random(32, 128);
+			float L_PLAYER_BACK = Random(32, 128);
 			L_PLAYER_BACK += GetEntityWidth(GetOwner());
 			L_PLAYER_POS += /* TODO: $relpos */ $relpos(L_PLAYER_VIEW, Vector3(0, L_PLAYER_BACK, 0));
 			DYNS_CHECK_SIGHT = L_PLAYER_POS;
@@ -180,7 +182,7 @@ class AddDynamicSpawn : CGameScript
 			{
 			}
 			DYNS_SPAWN_POINT = DYNS_CHECK_SIGHT;
-			string L_LEGIT = /* TODO: $func */ $func("func_dyns_test_point", DYNS_SPAWN_POINT);
+			string L_LEGIT = "func_dyns_test_point"(DYNS_SPAWN_POINT);
 		}
 		if (!(L_LEGIT)) return;
 		dyns_finalize();
@@ -286,11 +288,11 @@ class AddDynamicSpawn : CGameScript
 		}
 		else
 		{
-			string L_RND = RandomInt(0, GetPlayerCount());
+			int L_RND = RandomInt(0, GetPlayerCount());
 			string L_PLAYER = GetToken(DYNS_VALID_TARGETS, L_RND, ";");
 		}
 		string L_SPAWN_POINT = GetEntityOrigin(L_PLAYER);
-		if (/* TODO: $math(subtract) */ GetGameTime() < 3)
+		if ((GetGameTime() - DYNS_STARTED) < 3)
 		{
 			string L_ANG = GetEntityProperty(L_PLAYER, "viewangles");
 			string L_ANG = /* TODO: $vec.yaw */ $vec.yaw(L_ANG);
@@ -298,12 +300,12 @@ class AddDynamicSpawn : CGameScript
 		}
 		else
 		{
-			string L_ANG = Random(0, 359.99);
+			float L_ANG = Random(0, 359.99);
 		}
 		string L_DIST = GetEntityWidth(GetOwner());
 		L_DIST *= 2.0;
 		L_DIST += Random(0, DYNS_SRADIUS);
-		string L_Z = Random(0, 64);
+		float L_Z = Random(0, 64);
 		L_SPAWN_POINT += /* TODO: $relpos */ $relpos(Vector3(0, L_ANG, 0), Vector3(0, L_DIST, L_Z));
 		return;
 		return;

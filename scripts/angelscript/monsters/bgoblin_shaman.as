@@ -12,51 +12,69 @@ class BgoblinShaman : CGameScript
 	float ATTACK_HITCHANCE;
 	int ATTACK_MOVERANGE;
 	int CAN_FIREBALL;
+	string DEATH_SCRIPT;
+	int DMG_FIREBALL;
+	int DMG_FIREBALL_DOT;
+	int DMG_FIREWALL;
+	int DMG_FIST;
+	int DOT_FIST;
 	int DROP_GOLD;
-	string DROP_GOLD_AMT;
+	int DROP_GOLD_AMT;
+	string FIREWALL_SCRIPT;
+	string FIRE_FIST_SCRIPT;
 	int FLAME_FIST;
+	float FREQ_FIREBALL;
+	float FREQ_FIREWALL;
+	float FREQ_FLEE;
+	float FREQ_SUMMON;
+	int GOB_CHARGER;
+	int GOB_JUMPER;
 	int GOB_JUMP_SCANNING;
 	string LAST_STRUCK;
+	int MIN_FIREBALL_DIST;
 	int MOVE_RANGE;
 	string MY_CL_SCRIPT_IDX;
+	int NEW_MODEL;
 	string NEXT_FIREBALL;
 	string NEXT_FIREWALL;
 	string NEXT_FLEE;
 	string NEXT_SUMMON;
 	int NO_DEATH_EVENT;
 	int NO_SUMMONS;
+	int NPC_BASE_EXP;
 	int SUMMON_ALIVE;
 	string SUMMON_POS;
+	string SUMMON_SCRIPT;
 	string TOSS_FIREBALL;
 
 	BgoblinShaman()
 	{
-		const int NEW_MODEL = 1;
-		const int GOB_JUMPER = 0;
-		const int GOB_CHARGER = 0;
+		NEW_MODEL = 1;
+		GOB_JUMPER = 0;
+		GOB_CHARGER = 0;
 		CAN_FIREBALL = 1;
-		const float FREQ_FIREBALL = 3.0;
-		const int DMG_FIREBALL = 150;
-		const int DMG_FIREBALL_DOT = 25;
-		const float FREQ_FIREBALL = 20.0;
-		const int DMG_FIST = 10;
-		const int DOT_FIST = 50;
-		const int DMG_FIREWALL = 100;
+		FREQ_FIREBALL = 3.0;
+		DMG_FIREBALL = 150;
+		DMG_FIREBALL_DOT = 25;
+		FREQ_FIREBALL = 20.0;
+		DMG_FIST = 10;
+		DOT_FIST = 50;
+		DMG_FIREWALL = 100;
 		ATTACK_HITCHANCE = 0.75;
-		const int NPC_BASE_EXP = 800;
+		NPC_BASE_EXP = 800;
 		DROP_GOLD = 1;
 		DROP_GOLD_AMT = RandomInt(50, 75);
 		ATTACK_MOVERANGE = 800;
 		MOVE_RANGE = 800;
-		const float FREQ_FLEE = 20.0;
-		const float FREQ_FIREWALL = 18.0;
-		const float FREQ_SUMMON = 15.0;
-		const int MIN_FIREBALL_DIST = 70;
-		const string FIRE_FIST_SCRIPT = "monsters/fire_fist_cl";
+		FREQ_FLEE = 20.0;
+		FREQ_FIREWALL = 18.0;
+		FREQ_SUMMON = 15.0;
+		MIN_FIREBALL_DIST = 70;
+		FIRE_FIST_SCRIPT = "monsters/fire_fist_cl";
 		ANIM_ATTACK = "swordswing1_L";
-		const string SUMMON_SCRIPT = "monsters/elemental_fire1";
-		const string DEATH_SCRIPT = "monsters/elemental_fire2";
-		const string FIREWALL_SCRIPT = "traps/fire_wall2";
+		SUMMON_SCRIPT = "monsters/elemental_fire1";
+		DEATH_SCRIPT = "monsters/elemental_fire2";
+		FIREWALL_SCRIPT = "traps/fire_wall2";
 	}
 
 	void goblin_spawn()
@@ -194,7 +212,7 @@ class BgoblinShaman : CGameScript
 			npcatk_suspend_ai(1.5);
 			EmitSound(GetOwner(), 0, SOUND_SHAM_ALERT, 10);
 			string FIREWALL_POS = GetEntityOrigin(m_hAttackTarget);
-			string FIREWALL_OFS = RandomInt(1, 4);
+			int FIREWALL_OFS = RandomInt(1, 4);
 			if (FIREWALL_OFS == 1)
 			{
 				FIREWALL_POS += "x";
@@ -262,7 +280,7 @@ class BgoblinShaman : CGameScript
 		}
 		if ((false))
 		{
-			string STRUCK_CHECK = GetGameTime();
+			float STRUCK_CHECK = GetGameTime();
 			STRUCK_CHECK -= 5.0;
 			if (STRUCK_CHECK > LAST_STRUCK)
 			{

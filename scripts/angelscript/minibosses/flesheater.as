@@ -8,25 +8,45 @@ namespace MS
 class Flesheater : CGameScript
 {
 	string ANIM_ATTACK;
+	string ANIM_CLOUDCAST;
 	string ANIM_DEATH;
 	string ANIM_IDLE;
+	string ANIM_RESPAWN_DEADIDLE;
 	string ANIM_RUN;
 	string ANIM_WALK;
+	int ATTACK_DAMAGE;
+	float ATTACK_HITCHANCE;
 	int ATTACK_HITRANGE;
 	int ATTACK_RANGE;
 	int CAN_HEAR;
+	int CLOUD_DAMAGE;
 	int CLOUD_DELAY;
+	int CLOUD_DURATION;
 	int DIED_ONCE;
 	int DROP_GOLD;
 	int DROP_GOLD_MAX;
 	int DROP_GOLD_MIN;
 	string GONE_ROAM;
 	int I_AM_TURNABLE;
+	string MONSTER_MODEL;
 	int MOVE_RANGE;
 	string MY_LIGHT_SCRIPT;
 	string MY_SCRIPT_ID;
 	int NPC_GIVE_EXP;
 	int PLAYING_DEAD;
+	int POISON_CLAW_DMG;
+	int SKEL_HP;
+	float SKEL_RESPAWN_CHANCE;
+	string SOUND_ATTACK1;
+	string SOUND_ATTACK2;
+	string SOUND_DEATH1;
+	string SOUND_DEATH2;
+	string SOUND_IDLE;
+	string SOUND_PAIN;
+	string SOUND_SPAWN;
+	string SOUND_STRUCK1;
+	string SOUND_STRUCK2;
+	string SOUND_STRUCK3;
 
 	Flesheater()
 	{
@@ -34,36 +54,36 @@ class Flesheater : CGameScript
 		ANIM_WALK = "walk";
 		ANIM_RUN = "walk";
 		ANIM_ATTACK = "attack1";
-		const string ANIM_CLOUDCAST = "attack2";
-		const string ATTACK_DAMAGE = RandomInt(15, 25);
+		ANIM_CLOUDCAST = "attack2";
+		ATTACK_DAMAGE = RandomInt(15, 25);
 		ATTACK_RANGE = 120;
 		MOVE_RANGE = 80;
 		ATTACK_HITRANGE = 200;
-		const float ATTACK_HITCHANCE = 0.85;
-		const string SOUND_STRUCK1 = "controller/con_pain3.wav";
-		const string SOUND_STRUCK2 = "controller/con_pain3.wav";
-		const string SOUND_STRUCK3 = "controller/con_pain2.wav";
-		const string SOUND_PAIN = "zombie/zo_pain2.wav";
-		const string SOUND_ATTACK1 = "controller/con_attack1.wav";
-		const string SOUND_ATTACK2 = "controller/con_attack2.wav";
-		const string SOUND_DEATH1 = "zombie/zo_pain1.wav";
-		const string SOUND_DEATH2 = "monsters/troll/trolldeath.wav";
-		const string SOUND_IDLE = "controller/con_attack3.wav";
-		const string SOUND_SPAWN = "monsters/skeleton/calrian2.wav";
+		ATTACK_HITCHANCE = 0.85;
+		SOUND_STRUCK1 = "controller/con_pain3.wav";
+		SOUND_STRUCK2 = "controller/con_pain3.wav";
+		SOUND_STRUCK3 = "controller/con_pain2.wav";
+		SOUND_PAIN = "zombie/zo_pain2.wav";
+		SOUND_ATTACK1 = "controller/con_attack1.wav";
+		SOUND_ATTACK2 = "controller/con_attack2.wav";
+		SOUND_DEATH1 = "zombie/zo_pain1.wav";
+		SOUND_DEATH2 = "monsters/troll/trolldeath.wav";
+		SOUND_IDLE = "controller/con_attack3.wav";
+		SOUND_SPAWN = "monsters/skeleton/calrian2.wav";
 		DROP_GOLD = 1;
 		DROP_GOLD_MIN = 100;
 		DROP_GOLD_MAX = 150;
-		const float SKEL_RESPAWN_CHANCE = 1.0;
-		const int SKEL_HP = 3000;
-		const string POISON_CLAW_DMG = RandomInt(13, 20);
-		const int CLOUD_DURATION = 10;
-		const int CLOUD_DAMAGE = 20;
+		SKEL_RESPAWN_CHANCE = 1.0;
+		SKEL_HP = 3000;
+		POISON_CLAW_DMG = RandomInt(13, 20);
+		CLOUD_DURATION = 10;
+		CLOUD_DAMAGE = 20;
 		Precache("poison_cloud.spr");
-		const string MONSTER_MODEL = "monsters/flesheater.mdl";
+		MONSTER_MODEL = "monsters/flesheater.mdl";
 		Precache(MONSTER_MODEL);
 		Precache("ambience/steamburst1.wav");
 		Precache(SOUND_DEATH);
-		const string ANIM_RESPAWN_DEADIDLE = "dead_on_stomach";
+		ANIM_RESPAWN_DEADIDLE = "dead_on_stomach";
 	}
 
 	void OnSpawn() override
@@ -164,7 +184,7 @@ class Flesheater : CGameScript
 		PlayAnim("critical", ANIM_DEATH);
 		PLAYING_DEAD = 1;
 		EmitSound(GetOwner(), 0, SOUND_DEATH1, 10);
-		string L_DEATHANIM = RandomInt(0, 1);
+		int L_DEATHANIM = RandomInt(0, 1);
 		ANIM_DEATH = "diesimple";
 		if (LCL_DEATHANIM == 1)
 		{
@@ -187,7 +207,7 @@ class Flesheater : CGameScript
 		string MAP_NAME = StringToLower(GetMapName());
 		if (MAP_NAME != "bloodrose")
 		{
-			SayText("I shall return one day! ...and then your flesh shall adorn my bones!");
+			SayText(I + " shall return one day! ...and then your flesh shall adorn my bones!");
 		}
 		if (MAP_NAME == "bloodrose")
 		{

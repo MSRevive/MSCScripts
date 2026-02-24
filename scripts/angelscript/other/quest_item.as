@@ -63,8 +63,8 @@ class QuestItem : CGameScript
 		EmitSound(GetOwner(), 0, "items/ammopickup1.wav", 10);
 		string OUT_MSG = "You find ";
 		OUT_MSG += GetEntityProperty(GetOwner(), "name.full");
-		SendColoredMessage(QUEST_PLAYER, "You acquire  GetEntityProperty(GetOwner(), "name.full")");
-		SendInfoMsg(QUEST_PLAYER, "QUEST ITEM FOUND OUT_MSG");
+		SendColoredMessage(QUEST_PLAYER, "You acquire  " + GetEntityProperty(GetOwner(), "name.full"));
+		SendInfoMsg(QUEST_PLAYER, "QUEST ITEM FOUND " + OUT_MSG);
 		ShowHelpTip(QUEST_PLAYER, "questitem", "QUEST ITEM", "This is a special quest item that will not appear in your inventory.");
 		for (int i = 0; i < 9; i++)
 		{

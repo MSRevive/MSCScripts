@@ -7,17 +7,23 @@ namespace MS
 
 class DotColdFreeze : CGameScript
 {
+	string DOT_HE_IMMUNE;
+	string DOT_IM_AFFECTED;
+	string DOT_IM_RESIST;
 	string DOT_RESISTED;
+	string EFFECT_FLAGS;
+	string EFFECT_ID;
+	string EFFECT_SCRIPT;
 	string MAX_HP;
 
 	DotColdFreeze()
 	{
-		const string EFFECT_ID = "dot_cold_freeze";
-		const string EFFECT_FLAGS = "nostack";
-		const string EFFECT_SCRIPT = currentscript;
-		const string DOT_IM_AFFECTED = "You have been encased in ice!";
-		const string DOT_IM_RESIST = "You resist being frozen.";
-		const string DOT_HE_IMMUNE = "is immune to cold magic!";
+		EFFECT_ID = "dot_cold_freeze";
+		EFFECT_FLAGS = "nostack";
+		EFFECT_SCRIPT = currentscript;
+		DOT_IM_AFFECTED = "You have been encased in ice!";
+		DOT_IM_RESIST = "You resist being frozen.";
+		DOT_HE_IMMUNE = "is immune to cold magic!";
 	}
 
 	void game_activate()
@@ -41,14 +47,14 @@ class DotColdFreeze : CGameScript
 		}
 		if ((L_TOO_BIG))
 		{
-			SendPlayerMessage(DOT_ATTACKER, "GetEntityName(GetOwner()) is too large to be encased in ice.");
+			SendPlayerMessage(DOT_ATTACKER, GetEntityName(GetOwner()) + " is too large to be encased in ice.");
 			DOT_RESISTED = 1;
 			RemoveScript();
 			return;
 		}
 		if (GetEntityHealth(GetOwner()) > MAX_HP)
 		{
-			SendPlayerMessage(DOT_ATTACKER, "GetEntityName(GetOwner()) is too strong to be encased in ice. > int(MAX_HP)");
+			SendPlayerMessage(DOT_ATTACKER, GetEntityName(GetOwner()) + " is too strong to be encased in ice. > int(MAX_HP)");
 			DOT_RESISTED = 1;
 			RemoveScript();
 			return;

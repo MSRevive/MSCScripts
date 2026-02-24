@@ -7,11 +7,15 @@ namespace MS
 
 class ArmorDTest : CGameScript
 {
+	string ARMOR_TEXT;
+	float BARMOR_PROTECTION;
+	string BARMOR_TYPE;
+
 	ArmorDTest()
 	{
-		const string ARMOR_TEXT = "No one tosses a dwarf.";
-		const string BARMOR_TYPE = "dwarf_normal";
-		const float BARMOR_PROTECTION = 0.1;
+		ARMOR_TEXT = "No one tosses a dwarf.";
+		BARMOR_TYPE = "dwarf_normal";
+		BARMOR_PROTECTION = 0.1;
 	}
 
 	void OnSpawn() override

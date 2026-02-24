@@ -8,13 +8,14 @@ class DragonGuardBreathCl : CGameScript
 	int BREATH_ON;
 	string BREATH_TYPE;
 	string CLOUD_ANG;
+	float FX_DURATION;
 	string FX_OWNER;
 	string SPR_EVENT;
 	string SPR_NAME;
 
 	DragonGuardBreathCl()
 	{
-		const float FX_DURATION = 5.0;
+		FX_DURATION = 5.0;
 	}
 
 	void client_activate()
@@ -77,8 +78,8 @@ class DragonGuardBreathCl : CGameScript
 		ClientEffect("tempent", "set_current_prop", "gravity", ".005");
 		ClientEffect("tempent", "set_current_prop", "collide", "none");
 		ClientEffect("tempent", "set_current_prop", "fuser1", 0.01);
-		string RND_RL = Random(-20, 20);
-		string RND_UD = Random(-20, 20);
+		float RND_RL = Random(-20, 20);
+		float RND_UD = Random(-20, 20);
 		string CLOUD_VEL = /* TODO: $relvel */ $relvel(Vector3(0, CLOUD_ANG, 0), Vector3(RND_RL, Random(300, 400), RND_UD));
 		ClientEffect("tempent", "set_current_prop", "velocity", CLOUD_VEL);
 	}
@@ -111,8 +112,8 @@ class DragonGuardBreathCl : CGameScript
 		ClientEffect("tempent", "set_current_prop", "gravity", ".005");
 		ClientEffect("tempent", "set_current_prop", "collide", "none");
 		ClientEffect("tempent", "set_current_prop", "fuser1", 0.2);
-		string RND_RL = Random(-20, 20);
-		string RND_UD = Random(-20, 20);
+		float RND_RL = Random(-20, 20);
+		float RND_UD = Random(-20, 20);
 		string CLOUD_VEL = /* TODO: $relvel */ $relvel(Vector3(0, CLOUD_ANG, 0), Vector3(RND_RL, Random(300, 400), RND_UD));
 		ClientEffect("tempent", "set_current_prop", "velocity", CLOUD_VEL);
 	}
@@ -130,8 +131,8 @@ class DragonGuardBreathCl : CGameScript
 		ClientEffect("tempent", "set_current_prop", "gravity", ".005");
 		ClientEffect("tempent", "set_current_prop", "collide", "none");
 		ClientEffect("tempent", "set_current_prop", "fuser1", 0.1);
-		string RND_RL = Random(-20, 20);
-		string RND_UD = Random(-20, 20);
+		float RND_RL = Random(-20, 20);
+		float RND_UD = Random(-20, 20);
 		string CLOUD_VEL = /* TODO: $relvel */ $relvel(Vector3(0, CLOUD_ANG, 0), Vector3(RND_RL, Random(300, 400), RND_UD));
 		ClientEffect("tempent", "set_current_prop", "velocity", CLOUD_VEL);
 	}

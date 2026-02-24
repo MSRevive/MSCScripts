@@ -12,6 +12,8 @@ class Bloodreaverminion : CGameScript
 	string ANIM_IDLE;
 	string ANIM_RUN;
 	string ANIM_WALK;
+	int ATTACK_DAMAGE;
+	float ATTACK_HITCHANCE;
 	int ATTACK_HITRANGE;
 	int ATTACK_RANGE;
 	int CAN_FLEE;
@@ -24,6 +26,14 @@ class Bloodreaverminion : CGameScript
 	int NPC_GIVE_EXP;
 	float RETALIATE_CHANCE;
 	string SET_GREEK;
+	string SOUND_ATTACK1;
+	string SOUND_ATTACK2;
+	string SOUND_DEATH;
+	string SOUND_IDLE1;
+	string SOUND_PAIN;
+	string SOUND_STRUCK1;
+	string SOUND_STRUCK2;
+	string SOUND_STRUCK3;
 
 	Bloodreaverminion()
 	{
@@ -33,18 +43,18 @@ class Bloodreaverminion : CGameScript
 		ANIM_IDLE = "idle1";
 		CAN_HUNT = 1;
 		ANIM_ATTACK = "attack1";
-		const int ATTACK_DAMAGE = 30;
+		ATTACK_DAMAGE = 30;
 		ATTACK_RANGE = 100;
 		ATTACK_HITRANGE = 200;
-		const float ATTACK_HITCHANCE = 0.85;
-		const string SOUND_STRUCK1 = "controller/con_pain3.wav";
-		const string SOUND_STRUCK2 = "controller/con_pain3.wav";
-		const string SOUND_STRUCK3 = "zombie/zo_pain2.wav";
-		const string SOUND_PAIN = "zombie/zo_pain2.wav";
-		const string SOUND_ATTACK1 = "controller/con_attack1.wav";
-		const string SOUND_ATTACK2 = "controller/con_attack2.wav";
-		const string SOUND_DEATH = "controller/con_die2.wav";
-		const string SOUND_IDLE1 = "controller/con_attack3.wav";
+		ATTACK_HITCHANCE = 0.85;
+		SOUND_STRUCK1 = "controller/con_pain3.wav";
+		SOUND_STRUCK2 = "controller/con_pain3.wav";
+		SOUND_STRUCK3 = "zombie/zo_pain2.wav";
+		SOUND_PAIN = "zombie/zo_pain2.wav";
+		SOUND_ATTACK1 = "controller/con_attack1.wav";
+		SOUND_ATTACK2 = "controller/con_attack2.wav";
+		SOUND_DEATH = "controller/con_die2.wav";
+		SOUND_IDLE1 = "controller/con_attack3.wav";
 		MY_ENEMY = "enemy";
 		RETALIATE_CHANCE = 0.75;
 		CAN_FLEE = 0;
@@ -105,18 +115,18 @@ class Bloodreaverminion : CGameScript
 
 	void OnDeath(CBaseEntity@ attacker) override
 	{
-		string TAUNT_COMMENT = RandomInt(1, 3);
+		int TAUNT_COMMENT = RandomInt(1, 3);
 		if (TAUNT_COMMENT == 1)
 		{
 			SayText("Rejoice not! My master awaits...");
 		}
 		if (TAUNT_COMMENT == 2)
 		{
-			SayText("I die easily , but my master , not so much so.");
+			SayText(I + " die easily , but my master , not so much so.");
 		}
 		if (TAUNT_COMMENT == 3)
 		{
-			SayText("Dead I maybe , but my master will have you join me soon.");
+			SayText("Dead " + I + " maybe , but my master will have you join me soon.");
 		}
 	}
 

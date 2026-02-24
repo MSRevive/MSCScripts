@@ -59,7 +59,7 @@ class SvGlobals : CGameScript
 		SetGlobalVar("G_ALERT_CYCLE", 0);
 		SetGlobalVar("G_SPECIAL_COMMANDS", 0);
 		SetGlobalVar("G_CHEST_TRACKER", 0);
-		if (/* TODO: $g_get_array_amt */ $g_get_array_amt(G_ARRAY_DONATORS) == -1)
+		if (GetGlobalArrayLength(G_ARRAY_DONATORS) == -1)
 		{
 			CreateGlobalArray("G_ARRAY_DONATORS");
 			GlobalArrayAdd("G_ARRAY_DONATORS", "STEAM_0:0:452876");
@@ -83,7 +83,7 @@ class SvGlobals : CGameScript
 			GlobalArrayAdd("G_ARRAY_DONATORS", "STEAM_0:0:7019991");
 			GlobalArrayAdd("G_ARRAY_DONATORS", "STEAM_0:0:69835");
 		}
-		if (/* TODO: $g_get_array_amt */ $g_get_array_amt(ARRAY_CRESTS) == -1)
+		if (GetGlobalArrayLength(ARRAY_CRESTS) == -1)
 		{
 			CreateGlobalArray("ARRAY_CRESTS");
 			GlobalArrayAdd("ARRAY_CRESTS", "crest_crow");
@@ -154,7 +154,7 @@ class SvGlobals : CGameScript
 			GlobalArrayAdd("ARRAY_CREST_OWNERS", "STEAM_0:0:5900395");
 			GlobalArrayAdd("ARRAY_CREST_OWNERS", "STEAM_0:0:10987306");
 		}
-		if (/* TODO: $g_get_array_amt */ $g_get_array_amt(G_ARRAY_DEVELOPERS) == -1)
+		if (GetGlobalArrayLength(G_ARRAY_DEVELOPERS) == -1)
 		{
 			CreateGlobalArray("G_ARRAY_DEVELOPERS");
 			GlobalArrayAdd("G_ARRAY_DEVELOPERS", "STEAM_0:1:3967789");

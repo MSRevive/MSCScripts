@@ -11,6 +11,11 @@ class Murmur : CGameScript
 	string ANIM_IDLE;
 	string ANIM_RUN;
 	string ANIM_WALK;
+	float ATTACK_HITCHANCE;
+	int ATTACK_NORMAL_DAMAGE;
+	float ATTACK_STANDING_DAMAGE;
+	int ATTACK_STOMPDMG;
+	int ATTACK_STOMPRANGE;
 	int NPC_GIVE_EXP;
 
 	Murmur()
@@ -19,11 +24,11 @@ class Murmur : CGameScript
 		ANIM_WALK = "walk";
 		ANIM_RUN = "run";
 		ANIM_ATTACK = "attack";
-		const int ATTACK_NORMAL_DAMAGE = 40;
-		const string ATTACK_STANDING_DAMAGE = Random(28, 30);
-		const int ATTACK_STOMPRANGE = 250;
-		const int ATTACK_STOMPDMG = 80;
-		const float ATTACK_HITCHANCE = 0.7;
+		ATTACK_NORMAL_DAMAGE = 40;
+		ATTACK_STANDING_DAMAGE = Random(28, 30);
+		ATTACK_STOMPRANGE = 250;
+		ATTACK_STOMPDMG = 80;
+		ATTACK_HITCHANCE = 0.7;
 		NPC_GIVE_EXP = 110;
 	}
 

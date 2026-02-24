@@ -9,6 +9,7 @@ class Copypaste : CGameScript
 	int CLIPBOARD_ADD_DIST;
 	int CLIPBOARD_DMGMULTI;
 	int CLIPBOARD_HPMULTI;
+	int CLIPBOARD_KEEP_DIST;
 	string CLIPBOARD_NAME;
 	string NPC_CLIPBOARD;
 
@@ -19,7 +20,7 @@ class Copypaste : CGameScript
 		CLIPBOARD_DMGMULTI = 1;
 		CLIPBOARD_HPMULTI = 1;
 		CLIPBOARD_ADDPARAMS = "none";
-		const int CLIPBOARD_KEEP_DIST = 500;
+		CLIPBOARD_KEEP_DIST = 500;
 		CLIPBOARD_ADD_DIST = 0;
 	}
 
@@ -48,8 +49,8 @@ class Copypaste : CGameScript
 		CLIPBOARD_DMGMULTI = GetEntityProperty(BEAM_TARGET, "scriptvar");
 		CLIPBOARD_HPMULTI = GetEntityProperty(BEAM_TARGET, "scriptvar");
 		CLIPBOARD_ADDPARAMS = GetEntityProperty(BEAM_TARGET, "scriptvar");
-		CLIPBOARD_ADD_DIST = /* TODO: $math(divide) */ GetEntityWidth(BEAM_TARGET);
-		SendColoredMessage(GetOwner(), "Copied GetEntityName(BEAM_TARGET) GetScriptName(BEAM_TARGET)");
+		CLIPBOARD_ADD_DIST = (GetEntityWidth(BEAM_TARGET) / 2);
+		SendColoredMessage(GetOwner(), "Copied " + GetEntityName(BEAM_TARGET) + GetScriptName(BEAM_TARGET));
 	}
 
 	void paste_target()

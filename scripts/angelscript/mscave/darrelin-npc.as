@@ -32,15 +32,18 @@ class DarrelinNpc : CGameScript
 	string CHAT_STEP9;
 	int CHAT_STEPS;
 	string NEXT_CHAT_WARN;
+	int NO_HAIL;
+	int NO_JOB;
 	int NO_MOUTH_MOVE;
+	int NO_RUMOR;
 	string QUEST_COMPLETER;
 	int REQ_QUEST_NOTDONE;
 
 	DarrelinNpc()
 	{
-		const int NO_JOB = 1;
-		const int NO_RUMOR = 1;
-		const int NO_HAIL = 1;
+		NO_JOB = 1;
+		NO_RUMOR = 1;
+		NO_HAIL = 1;
 	}
 
 	void OnSpawn() override
@@ -276,7 +279,7 @@ class DarrelinNpc : CGameScript
 	{
 		string reg.mitem.title = "Say Hello";
 		string reg.mitem.type = "say";
-		string l.say = RandomInt(1, 4);
+		int l.say = RandomInt(1, 4);
 		if (l.say == 1)
 		{
 			string reg.mitem.data = "Hello";

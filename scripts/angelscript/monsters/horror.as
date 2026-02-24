@@ -10,14 +10,28 @@ class Horror : CGameScript
 {
 	int AM_SUMMONED;
 	string ANIM_ATTACK;
+	string ANIM_BITE;
+	string ANIM_BREATH;
+	string ANIM_DEAD;
 	string ANIM_DEATH;
+	string ANIM_FLY;
+	string ANIM_GORE;
+	string ANIM_HOVER;
 	string ANIM_IDLE;
 	string ANIM_RUN;
+	string ANIM_SPIRAL;
+	string ANIM_SPIT;
 	string ANIM_WALK;
 	int AS_SUMMON_TELE_CHECK;
+	float ATTACK_ACCURACY;
+	int ATTACK_BLIND_RANGE;
+	int ATTACK_DAMAGE;
 	int ATTACK_HITRANGE;
 	int ATTACK_RANGE;
 	int BREATH_AMMO;
+	int BREATH_DAMAGE_MAX;
+	int BREATH_DAMAGE_MIN;
+	string BREATH_SPRITE;
 	int CAN_ATTACK;
 	int CAN_FLEE;
 	int CAN_FLINCH;
@@ -30,7 +44,9 @@ class Horror : CGameScript
 	int DROP_GOLD_MAX;
 	int DROP_GOLD_MIN;
 	string FIRE_DELAY;
+	int FLEE_CHANCE;
 	int FLEE_DISTANCE;
+	int FLEE_HEALTH;
 	int FLIGHT_SCANNING;
 	string FLIGHT_STUCK;
 	string FLINCH_ANIM;
@@ -40,25 +56,45 @@ class Horror : CGameScript
 	int IS_UNHOLY;
 	int I_FLY;
 	string LAST_POS;
-	string LAST_PROG;
+	float LAST_PROG;
 	string LAST_TARGET;
 	int MONSTER_WIDTH;
+	int MOVE_RAGE;
 	string MOVE_RANGE;
 	string MY_OWNER;
 	string NEXT_HSTUCK_CHECK;
 	int NO_SPAWN_STUCK_CHECK;
 	int NO_STUCK_CHECKS;
 	int NPC_GIVE_EXP;
+	int NPC_NO_END_FLY;
 	string OLD_HSTUCK_POS;
+	int RETALIATE_CHANGETARGET_CHANCE;
+	string SOUND_ATTACK1;
+	string SOUND_ATTACK2;
+	string SOUND_ATTACK3;
+	string SOUND_DEATH;
+	string SOUND_FLAP1;
+	string SOUND_FLAP2;
+	string SOUND_IDLE1;
+	string SOUND_IDLE2;
+	string SOUND_IDLE3;
+	string SOUND_LAND;
+	string SOUND_PAIN0;
+	string SOUND_PAIN1;
+	string SOUND_PAIN2;
+	string SOUND_SPIT1;
+	string SOUND_SPIT2;
+	string SOUND_SPRAY;
 	string SPAWNED_ORG;
 	string SPITTING;
 	int SPIT_AMMO;
+	int SPIT_DAMAGE;
 	int SPRAYING_GAS;
 
 	Horror()
 	{
 		AS_SUMMON_TELE_CHECK = 1;
-		const int NPC_NO_END_FLY = 1;
+		NPC_NO_END_FLY = 1;
 		IS_UNHOLY = 1;
 		CAN_ATTACK = 1;
 		CAN_HUNT = 1;
@@ -66,60 +102,60 @@ class Horror : CGameScript
 		CAN_FLY = 1;
 		CAN_HEAR = 1;
 		CAN_WANDER = 1;
-		const int ATTACK_BLIND_RANGE = 200;
+		ATTACK_BLIND_RANGE = 200;
 		CAN_RETALIATE = 1;
-		const int RETALIATE_CHANGETARGET_CHANCE = 100;
+		RETALIATE_CHANGETARGET_CHANCE = 100;
 		CAN_FLINCH = 1;
 		FLINCH_CHANCE = 10;
 		FLINCH_ANIM = "bite2";
 		FLINCH_DELAY = 1;
 		CAN_FLEE = 1;
-		const int FLEE_HEALTH = 25;
-		const int FLEE_CHANCE = 25;
+		FLEE_HEALTH = 25;
+		FLEE_CHANCE = 25;
 		FLEE_DISTANCE = 2048;
 		ATTACK_RANGE = 100;
 		ATTACK_HITRANGE = 125;
-		const int MOVE_RAGE = 30;
-		const float ATTACK_ACCURACY = 0.8;
-		const int ATTACK_DAMAGE = 100;
-		const int SPIT_DAMAGE = 50;
-		const int BREATH_DAMAGE_MIN = 10;
-		const int BREATH_DAMAGE_MAX = 20;
+		MOVE_RAGE = 30;
+		ATTACK_ACCURACY = 0.8;
+		ATTACK_DAMAGE = 100;
+		SPIT_DAMAGE = 50;
+		BREATH_DAMAGE_MIN = 10;
+		BREATH_DAMAGE_MAX = 20;
 		ANIM_IDLE = "hover";
 		ANIM_WALK = "fly1";
-		const string ANIM_SPIRAL = "fly2";
-		const string ANIM_FLY = "fly1";
+		ANIM_SPIRAL = "fly2";
+		ANIM_FLY = "fly1";
 		ANIM_RUN = "fly2";
-		const string ANIM_HOVER = "hover";
+		ANIM_HOVER = "hover";
 		ANIM_ATTACK = "bite1";
-		const string ANIM_SPIT = "bite1";
-		const string ANIM_BITE = "bite1";
-		const string ANIM_GORE = "bite2";
-		const string ANIM_BREATH = "breath";
+		ANIM_SPIT = "bite1";
+		ANIM_BITE = "bite1";
+		ANIM_GORE = "bite2";
+		ANIM_BREATH = "breath";
 		ANIM_DEATH = "die";
-		const string ANIM_DEAD = "dead";
-		const string SOUND_IDLE1 = "controller/con_idle1.wav";
-		const string SOUND_IDLE2 = "controller/con_idle2.wav";
-		const string SOUND_IDLE3 = "controller/con_idle3.wav";
-		const string SOUND_ATTACK1 = "controller/con_attack1.wav";
-		const string SOUND_ATTACK2 = "controller/con_attack2.wav";
-		const string SOUND_ATTACK3 = "controller/con_attack3.wav";
-		const string SOUND_DEATH = "controller/con_die1.wav";
-		const string SOUND_PAIN0 = "debris/bustflesh2.wav";
-		const string SOUND_PAIN1 = "controller/con_pain1.wav";
-		const string SOUND_PAIN2 = "controller/con_die2.wav";
-		const string SOUND_SPIT1 = "bullchicken/bc_attack3.wav";
-		const string SOUND_SPIT2 = "bullchicken/bc_attack2.wav";
-		const string SOUND_SPRAY = "ambience/steamburst1.wav";
-		const string SOUND_FLAP1 = "monsters/bat/flap_big1.wav";
-		const string SOUND_FLAP2 = "monsters/bat/flap_big2.wav";
-		const string SOUND_LAND = "player/pl_fallpain1.wav";
+		ANIM_DEAD = "dead";
+		SOUND_IDLE1 = "controller/con_idle1.wav";
+		SOUND_IDLE2 = "controller/con_idle2.wav";
+		SOUND_IDLE3 = "controller/con_idle3.wav";
+		SOUND_ATTACK1 = "controller/con_attack1.wav";
+		SOUND_ATTACK2 = "controller/con_attack2.wav";
+		SOUND_ATTACK3 = "controller/con_attack3.wav";
+		SOUND_DEATH = "controller/con_die1.wav";
+		SOUND_PAIN0 = "debris/bustflesh2.wav";
+		SOUND_PAIN1 = "controller/con_pain1.wav";
+		SOUND_PAIN2 = "controller/con_die2.wav";
+		SOUND_SPIT1 = "bullchicken/bc_attack3.wav";
+		SOUND_SPIT2 = "bullchicken/bc_attack2.wav";
+		SOUND_SPRAY = "ambience/steamburst1.wav";
+		SOUND_FLAP1 = "monsters/bat/flap_big1.wav";
+		SOUND_FLAP2 = "monsters/bat/flap_big2.wav";
+		SOUND_LAND = "player/pl_fallpain1.wav";
 		DROP_GOLD = 1;
 		DROP_GOLD_MIN = 10;
 		DROP_GOLD_MAX = 40;
 		SPIT_AMMO = 8;
 		BREATH_AMMO = 1;
-		const string BREATH_SPRITE = "poison_cloud.spr";
+		BREATH_SPRITE = "poison_cloud.spr";
 		Precache(BREATH_SPRITE);
 		MONSTER_WIDTH = 48;
 		NO_STUCK_CHECKS = 1;
@@ -186,7 +222,7 @@ class Horror : CGameScript
 		if (GetEntityRange(m_hAttackTarget) > ATTACK_RANGE)
 		{
 		}
-		string CUR_PROG = Distance(GetMonsterProperty("origin"), TARG_POS);
+		float CUR_PROG = Distance(GetMonsterProperty("origin"), TARG_POS);
 		if (LAST_PROG >= CUR_PROG)
 		{
 			FLIGHT_STUCK += 1;
@@ -288,7 +324,7 @@ class Horror : CGameScript
 		}
 		if ((EXIT_SUB)) return;
 		ANIM_RUN = ANIM_FLY;
-		string BITE_TYPE = RandomInt(1, 4);
+		int BITE_TYPE = RandomInt(1, 4);
 		if (BITE_TYPE > 1)
 		{
 			ANIM_ATTACK = ANIM_BITE;
@@ -425,7 +461,7 @@ class Horror : CGameScript
 
 	void idle_sounds()
 	{
-		string NEXT_SOUND = Random(3, 10);
+		float NEXT_SOUND = Random(3, 10);
 		NEXT_SOUND("idle_sounds");
 		if (!(HUNT_LASTTARGET == �NONE�)) return;
 		// PlayRandomSound from: SOUND_IDLE1, SOUND_IDLE2, SOUND_IDLE3
@@ -519,9 +555,9 @@ class Horror : CGameScript
 			else
 			{
 				CUR_SOLUTION = 0;
-				string RND_LEFT = Random(-1000, 1000);
-				string RND_FWD = Random(-2000, 1000);
-				string RND_UP = Random(-1000, 1000);
+				float RND_LEFT = Random(-1000, 1000);
+				float RND_FWD = Random(-2000, 1000);
+				float RND_UP = Random(-1000, 1000);
 				LogDebug("solution #2 RND_LEFT RND_FWD RND_UP");
 				SetVelocity(GetOwner(), /* TODO: $relvel */ $relvel(RND_LEFT, RND_FWD, RND_UP));
 			}

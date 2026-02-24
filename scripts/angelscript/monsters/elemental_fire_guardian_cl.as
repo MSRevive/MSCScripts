@@ -6,6 +6,8 @@ namespace MS
 class ElementalFireGuardianCl : CGameScript
 {
 	int DEATH_MODE;
+	string DRESS_SPRITE;
+	int DRESS_SPRITE_NFRAMES;
 	int FX_ACTIVE;
 	string FX_OWNER;
 	string OWNER_VEL;
@@ -21,8 +23,8 @@ class ElementalFireGuardianCl : CGameScript
 
 	ElementalFireGuardianCl()
 	{
-		const string DRESS_SPRITE = "explode1.spr";
-		const int DRESS_SPRITE_NFRAMES = 8;
+		DRESS_SPRITE = "explode1.spr";
+		DRESS_SPRITE_NFRAMES = 8;
 	}
 
 	void client_activate()
@@ -201,8 +203,8 @@ class ElementalFireGuardianCl : CGameScript
 		ClientEffect("tempent", "set_current_prop", "fuser1", 0.05);
 		if (!(DEATH_MODE))
 		{
-			string RND_PITCH = Random(70, 110);
-			string RND_ANG = Random(0, 359.99);
+			float RND_PITCH = Random(70, 110);
+			float RND_ANG = Random(0, 359.99);
 			ClientEffect("tempent", "set_current_prop", "angles", Vector3(RND_PITCH, RND_ANG, 0));
 			string CLOUD_VEL = OWNER_VEL;
 			CLOUD_VEL += /* TODO: $relvel */ $relvel(Vector3(RND_PITCH, RND_ANG, 0), Vector3(0, 10, 0));
@@ -210,8 +212,8 @@ class ElementalFireGuardianCl : CGameScript
 		}
 		else
 		{
-			string RND_ANG = Random(0, 359.99);
-			string RND_PITCH = Random(0, 359.99);
+			float RND_ANG = Random(0, 359.99);
+			float RND_PITCH = Random(0, 359.99);
 			ClientEffect("tempent", "set_current_prop", "angles", Vector3(RND_PITCH, RND_ANG, 0));
 			string CLOUD_VEL = OWNER_VEL;
 			CLOUD_VEL += /* TODO: $relvel */ $relvel(Vector3(RND_PITCH, RND_ANG, 0), Vector3(0, 50, 0));

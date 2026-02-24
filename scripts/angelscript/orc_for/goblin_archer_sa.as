@@ -12,24 +12,34 @@ class GoblinArcherSa : CGameScript
 	int ATTACK_HITRANGE;
 	int ATTACK_RANGE;
 	int CAN_FIREBALL;
-	string DROP_GOLD_AMT;
+	int DMG_BOW;
+	int DMG_KICK;
+	int DROP_GOLD_AMT;
+	float FREQ_KICK;
+	int GOB_CHARGER;
+	int GOB_JUMPER;
 	int KICK_ATTACK;
+	int KICK_HITCHANCE;
+	int KICK_RANGE;
 	int MOVE_RANGE;
 	string NEXT_KICK;
+	int NPC_BASE_EXP;
+	int NPC_CAP_EXP;
 	int NPC_RANGED;
+	string SOUND_BOW;
 
 	GoblinArcherSa()
 	{
-		const int NPC_CAP_EXP = 500;
-		const int NPC_BASE_EXP = 50;
-		const string SOUND_BOW = "weapons/bow/bow.wav";
-		const int GOB_JUMPER = 0;
-		const int GOB_CHARGER = 0;
-		const int DMG_BOW = 20;
-		const int DMG_KICK = 10;
-		const int KICK_RANGE = 64;
-		const int KICK_HITCHANCE = 90;
-		const float FREQ_KICK = 10.0;
+		NPC_CAP_EXP = 500;
+		NPC_BASE_EXP = 50;
+		SOUND_BOW = "weapons/bow/bow.wav";
+		GOB_JUMPER = 0;
+		GOB_CHARGER = 0;
+		DMG_BOW = 20;
+		DMG_KICK = 10;
+		KICK_RANGE = 64;
+		KICK_HITCHANCE = 90;
+		FREQ_KICK = 10.0;
 		CAN_FIREBALL = 0;
 		NPC_RANGED = 1;
 		ANIM_ATTACK = "shootorcbow";

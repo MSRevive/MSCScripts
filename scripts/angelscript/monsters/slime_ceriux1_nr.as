@@ -7,9 +7,11 @@ namespace MS
 
 class SlimeCeriux1Nr : CGameScript
 {
+	int ME_NO_WANDER;
+
 	SlimeCeriux1Nr()
 	{
-		const int ME_NO_WANDER = 1;
+		ME_NO_WANDER = 1;
 	}
 
 }

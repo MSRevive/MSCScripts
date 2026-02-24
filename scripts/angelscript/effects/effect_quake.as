@@ -7,6 +7,9 @@ namespace MS
 
 class EffectQuake : CGameScript
 {
+	string EFFECT_FLAGS;
+	string EFFECT_ID;
+	string EFFECT_SCRIPT;
 	int QUAKE_ACTIVE;
 	string QUAKE_AOE;
 	string QUAKE_DMG;
@@ -21,9 +24,9 @@ class EffectQuake : CGameScript
 
 	EffectQuake()
 	{
-		const string EFFECT_ID = "DOT_quake";
-		const string EFFECT_FLAGS = "nostack";
-		const string EFFECT_SCRIPT = currentscript;
+		EFFECT_ID = "DOT_quake";
+		EFFECT_FLAGS = "nostack";
+		EFFECT_SCRIPT = currentscript;
 	}
 
 	void game_activate()
@@ -68,11 +71,11 @@ class EffectQuake : CGameScript
 			string L_QPOS = QUAKE_ORIGIN;
 		}
 		string L_MY_POS = GetEntityOrigin(GetOwner());
-		string L_QUAKE_DIST = Distance(L_QPOS, L_MY_POS);
+		float L_QUAKE_DIST = Distance(L_QPOS, L_MY_POS);
 		if ((QUAKE_FALLOFF))
 		{
 			int L_DIST_RATIO = 1;
-			L_DIST_RATIO -= /* TODO: $math(divide) */ L_QUAKE_DIST;
+			L_DIST_RATIO -= (L_QUAKE_DIST / QUAKE_AOE);
 		}
 		if (L_QUAKE_DIST <= QUAKE_AOE)
 		{
@@ -98,7 +101,7 @@ class EffectQuake : CGameScript
 			{
 				string L_SLOW = /* TODO: $ratio */ $ratio(L_DIST_RATIO, 0.9, 0.1);
 			}
-			game.effect.movespeed = /* TODO: $math(multiply) */ 100;
+			game.effect.movespeed = (100 * L_SLOW);
 			game.effect.anim.framerate = L_SLOW;
 		}
 		else

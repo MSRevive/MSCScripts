@@ -7,17 +7,19 @@ namespace MS
 
 class TriggerBase : CGameScript
 {
+	float HOME_DELAY;
 	string HOME_POS;
 	int IAM_ON;
 	int PLAYING_DEAD;
+	float RESET_DELAY;
 	int TAKE_IT;
 	string TRIGGER_STRING;
 	string TRIG_DELAY;
 
 	TriggerBase()
 	{
-		const string HOME_DELAY = Random(10, 20);
-		const float RESET_DELAY = 30.0;
+		HOME_DELAY = Random(10, 20);
+		RESET_DELAY = 30.0;
 	}
 
 	void OnSpawn() override
@@ -156,7 +158,7 @@ class TriggerBase : CGameScript
 
 	void OnDeath(CBaseEntity@ attacker) override
 	{
-		SendInfoMsg("all", "OMFG_WTF MAJOR MAP ERROR - AN A ELEMENTAL CRYSTAL DIED! WTF!?");
+		SendInfoMsg("all", OMFG_WTF + " MAJOR MAP ERROR - AN A ELEMENTAL CRYSTAL DIED! WTF!?");
 	}
 
 }

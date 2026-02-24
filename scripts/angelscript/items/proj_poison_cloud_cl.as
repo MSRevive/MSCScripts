@@ -5,21 +5,29 @@ namespace MS
 
 class ProjPoisonCloudCl : CGameScript
 {
+	float GLOW_DURATION;
+	string LIGHT_COLOR;
+	int LIGHT_RADIUS;
+	int OFS_NEG;
+	int OFS_POS;
+	int SPD_NEG;
+	int SPD_POS;
+	string SPRITE_1;
 	int script.duration;
 	string script.lightid;
 	string script.modelid;
 
 	ProjPoisonCloudCl()
 	{
-		const string SPRITE_1 = "poison_cloud.spr";
-		const string GLOW_DURATION = "$randf(1,2)";
+		SPRITE_1 = "poison_cloud.spr";
+		GLOW_DURATION = "$randf(1,2)";
 		Precache(SPRITE_1);
-		const int OFS_POS = 15;
-		const int OFS_NEG = -15;
-		const int SPD_POS = 60;
-		const int SPD_NEG = -60;
-		const int LIGHT_RADIUS = 128;
-		const Vector3 LIGHT_COLOR = Vector3(0, 255, 0);
+		OFS_POS = 15;
+		OFS_NEG = -15;
+		SPD_POS = 60;
+		SPD_NEG = -60;
+		LIGHT_RADIUS = 128;
+		LIGHT_COLOR = Vector3(0, 255, 0);
 		SetCallback("render", "enable");
 	}
 

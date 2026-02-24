@@ -7,9 +7,11 @@ namespace MS
 
 class MaldoraGminionVenom : CGameScript
 {
+	int MINION_TYPE;
+
 	MaldoraGminionVenom()
 	{
-		const int MINION_TYPE = 4;
+		MINION_TYPE = 4;
 	}
 
 }

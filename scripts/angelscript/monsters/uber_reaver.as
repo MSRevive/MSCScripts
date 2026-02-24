@@ -7,6 +7,7 @@ namespace MS
 
 class UberReaver : CGameScript
 {
+	string ANIM_ALERT;
 	string ANIM_ATTACK;
 	string ANIM_DEATH;
 	string ANIM_DEATH1;
@@ -14,36 +15,97 @@ class UberReaver : CGameScript
 	string ANIM_DEATH3;
 	string ANIM_FLINCH;
 	string ANIM_IDLE;
+	string ANIM_PROJECTILE;
 	string ANIM_RUN;
+	string ANIM_SEARCH;
+	string ANIM_SLASH;
+	string ANIM_SMASH;
 	string ANIM_VICTORY;
+	string ANIM_VICTORY1;
+	string ANIM_VICTORY2;
 	string ANIM_WALK;
 	string AS_ATTACKING;
 	int ATTACK_HITRANGE;
 	int ATTACK_MOVERANGE;
 	int ATTACK_RANGE;
+	int BEAM_DAMAGE;
+	float BEAM_FREQ;
 	int CAN_FLINCH;
+	int CHANCE_FREEZE;
 	int DID_WARCRY;
+	float DMG_FROST;
+	float DMG_SHOCK_BURST;
+	float DMG_STORM;
+	int DOSMASH_CHANCE;
 	int DO_ICEBLAST;
 	int DO_SMASH_DELAY;
 	int FIRST_ATTACK;
 	int FLINCH_CHANCE;
 	int FLINCH_HEALTH;
+	float FREEZE_DURATION;
+	float FREQ_ICE_BLAST;
+	float FREQ_SHOCK_BURST;
+	float FREQ_SMASH;
 	int HP_STORAGE;
 	int IS_UNHOLY;
+	string LIGHTNING_SPRITE;
+	string LODAGOND_LOC;
+	int MAX_PROJECTILE_AMMO;
+	string MONSTER_MODEL;
 	int MOVE_RANGE;
+	int NEAR_DEATH_THRESHOLD;
+	float NPC_BOSS_REGEN_RATE;
+	float NPC_BOSS_RESTORATION;
 	float NPC_DELAYING_UNSTUCK;
 	int NPC_GIVE_EXP;
 	string NPC_IS_BOSS;
 	int NPC_OVERSIZED;
 	int ON_LODAGOND;
+	int PROJECTILE_RANGE;
 	string PUSH_VEL;
 	int SEARCH_ANIM_DELAY;
+	int SHOCK_CONE_RANGE;
+	int SHOCK_DAMAGE;
+	int SHOCK_DURATION;
 	int SKELS_ON;
+	int SLASH_DAMAGE;
+	float SLASH_HITCHANCE;
+	int SMASH_DAMAGE;
+	float SMASH_HITCHANCE;
+	int SMASH_HITRANGE;
+	float SMASH_STUN_CHANCE;
 	string SOUND_ATTACKHIT;
 	string SOUND_ATTACKMISS;
+	string SOUND_BEAMCHARGE;
+	string SOUND_BEAMFIRE;
+	string SOUND_DEATH;
+	string SOUND_PAIN_NEAR_DEATH;
+	string SOUND_PAIN_STRONG;
+	string SOUND_PAIN_WEAK;
+	string SOUND_RUN1;
+	string SOUND_RUN2;
+	string SOUND_RUN3;
+	string SOUND_SEARCH1;
+	string SOUND_SEARCH2;
+	string SOUND_SEARCH3;
+	string SOUND_SLASHHIT;
+	string SOUND_SLASHMISS;
+	string SOUND_SMASHHIT;
+	string SOUND_SMASHMISS;
+	string SOUND_STRUCK1;
+	string SOUND_STRUCK2;
+	string SOUND_WALK1;
+	string SOUND_WALK2;
+	string SOUND_WALK3;
+	string SOUND_WALK4;
+	string SOUND_WARCRY;
 	int STARTED_SPELLS;
+	float STORM_DUR;
+	int STORM_RAD;
+	int STRONG_THRESHOLD;
 	int STUN_ATTACK;
 	int SWING_ATTACK;
+	int WEAK_THRESHOLD;
 
 	UberReaver()
 	{
@@ -52,43 +114,43 @@ class UberReaver : CGameScript
 		{
 			NPC_IS_BOSS = 1;
 		}
-		const float NPC_BOSS_REGEN_RATE = 0.1;
-		const float NPC_BOSS_RESTORATION = 0.5;
-		const float FREQ_ICE_BLAST = 30.0;
-		const float FREQ_SHOCK_BURST = 45.0;
-		const float FREQ_SMASH = 10.0;
-		const float DMG_FROST = 60.0;
-		const float DMG_SHOCK_BURST = 20.0;
-		const int CHANCE_FREEZE = 2;
-		const float DMG_STORM = 20.0;
-		const float STORM_DUR = 60.0;
-		const int STORM_RAD = 800;
-		const Vector3 LODAGOND_LOC = Vector3(-1728, 2176, -576);
-		const float FREEZE_DURATION = 15.0;
-		const int SHOCK_CONE_RANGE = 1024;
-		const string SOUND_WALK1 = "common/npc_step1.wav";
-		const string SOUND_WALK2 = "common/npc_step2.wav";
-		const string SOUND_WALK3 = "common/npc_step3.wav";
-		const string SOUND_WALK4 = "common/npc_step4.wav";
-		const string SOUND_RUN1 = "gonarch/gon_step1.wav";
-		const string SOUND_RUN2 = "gonarch/gon_step2.wav";
-		const string SOUND_RUN3 = "gonarch/gon_step3.wav";
-		const string SOUND_DEATH = "gonarch/gon_die1.wav";
-		const string SOUND_WARCRY = "gonarch/gon_alert1.wav";
-		const string SOUND_STRUCK1 = "gonarch/gon_sack1.wav";
-		const string SOUND_STRUCK2 = "gonarch/gon_sack2.wav";
-		const string SOUND_PAIN_STRONG = "gonarch/gon_pain2.wav";
-		const string SOUND_PAIN_WEAK = "gonarch/gon_pain4.wav";
-		const string SOUND_PAIN_NEAR_DEATH = "gonarch/gon_pain5.wav";
-		const string SOUND_SLASHHIT = "zombie/claw_strike1.wav";
-		const string SOUND_SMASHHIT = "zombie/claw_strike2.wav";
-		const string SOUND_SLASHMISS = "zombie/claw_miss1.wav";
-		const string SOUND_SMASHMISS = "zombie/claw_miss2.wav";
-		const string SOUND_BEAMCHARGE = "debris/beamstart2.wav";
-		const string SOUND_BEAMFIRE = "debris/beamstart9.wav";
-		const string SOUND_SEARCH1 = "gonarch/gon_childdie3.wav";
-		const string SOUND_SEARCH2 = "gonarch/gon_childdie2.wav";
-		const string SOUND_SEARCH3 = "gonarch/gon_childdie1.wav";
+		NPC_BOSS_REGEN_RATE = 0.1;
+		NPC_BOSS_RESTORATION = 0.5;
+		FREQ_ICE_BLAST = 30.0;
+		FREQ_SHOCK_BURST = 45.0;
+		FREQ_SMASH = 10.0;
+		DMG_FROST = 60.0;
+		DMG_SHOCK_BURST = 20.0;
+		CHANCE_FREEZE = 2;
+		DMG_STORM = 20.0;
+		STORM_DUR = 60.0;
+		STORM_RAD = 800;
+		LODAGOND_LOC = Vector3(-1728, 2176, -576);
+		FREEZE_DURATION = 15.0;
+		SHOCK_CONE_RANGE = 1024;
+		SOUND_WALK1 = "common/npc_step1.wav";
+		SOUND_WALK2 = "common/npc_step2.wav";
+		SOUND_WALK3 = "common/npc_step3.wav";
+		SOUND_WALK4 = "common/npc_step4.wav";
+		SOUND_RUN1 = "gonarch/gon_step1.wav";
+		SOUND_RUN2 = "gonarch/gon_step2.wav";
+		SOUND_RUN3 = "gonarch/gon_step3.wav";
+		SOUND_DEATH = "gonarch/gon_die1.wav";
+		SOUND_WARCRY = "gonarch/gon_alert1.wav";
+		SOUND_STRUCK1 = "gonarch/gon_sack1.wav";
+		SOUND_STRUCK2 = "gonarch/gon_sack2.wav";
+		SOUND_PAIN_STRONG = "gonarch/gon_pain2.wav";
+		SOUND_PAIN_WEAK = "gonarch/gon_pain4.wav";
+		SOUND_PAIN_NEAR_DEATH = "gonarch/gon_pain5.wav";
+		SOUND_SLASHHIT = "zombie/claw_strike1.wav";
+		SOUND_SMASHHIT = "zombie/claw_strike2.wav";
+		SOUND_SLASHMISS = "zombie/claw_miss1.wav";
+		SOUND_SMASHMISS = "zombie/claw_miss2.wav";
+		SOUND_BEAMCHARGE = "debris/beamstart2.wav";
+		SOUND_BEAMFIRE = "debris/beamstart9.wav";
+		SOUND_SEARCH1 = "gonarch/gon_childdie3.wav";
+		SOUND_SEARCH2 = "gonarch/gon_childdie2.wav";
+		SOUND_SEARCH3 = "gonarch/gon_childdie1.wav";
 		SOUND_ATTACKHIT = "unset";
 		SOUND_ATTACKMISS = "unset";
 		Precache(SOUND_SLASHMISS);
@@ -103,44 +165,44 @@ class UberReaver : CGameScript
 		ATTACK_HITRANGE = 250;
 		ATTACK_MOVERANGE = 150;
 		MOVE_RANGE = 150;
-		const int STRONG_THRESHOLD = 5000;
-		const int WEAK_THRESHOLD = 2000;
-		const int NEAR_DEATH_THRESHOLD = 1000;
-		const int PROJECTILE_RANGE = 256;
-		const int MAX_PROJECTILE_AMMO = 1;
-		const string SLASH_DAMAGE = "$rand(50,100)";
-		const string SMASH_DAMAGE = "$rand(100,250)";
-		const float SLASH_HITCHANCE = 0.9;
-		const float SMASH_HITCHANCE = 1.0;
-		const int SMASH_HITRANGE = 200;
-		const float SMASH_STUN_CHANCE = 0.5;
-		const float BEAM_FREQ = 45.0;
-		const int BEAM_DAMAGE = 200;
-		const int SHOCK_DAMAGE = 100;
-		const string SHOCK_DURATION = RandomInt(5, 10);
+		STRONG_THRESHOLD = 5000;
+		WEAK_THRESHOLD = 2000;
+		NEAR_DEATH_THRESHOLD = 1000;
+		PROJECTILE_RANGE = 256;
+		MAX_PROJECTILE_AMMO = 1;
+		SLASH_DAMAGE = "$rand(50,100)";
+		SMASH_DAMAGE = "$rand(100,250)";
+		SLASH_HITCHANCE = 0.9;
+		SMASH_HITCHANCE = 1.0;
+		SMASH_HITRANGE = 200;
+		SMASH_STUN_CHANCE = 0.5;
+		BEAM_FREQ = 45.0;
+		BEAM_DAMAGE = 200;
+		SHOCK_DAMAGE = 100;
+		SHOCK_DURATION = RandomInt(5, 10);
 		ANIM_WALK = "walk";
 		ANIM_RUN = "run";
 		ANIM_IDLE = "idle1";
-		const string ANIM_SEARCH = "idle2";
+		ANIM_SEARCH = "idle2";
 		ANIM_FLINCH = "turnl";
-		const string ANIM_SMASH = "mattack3";
-		const string ANIM_SLASH = "mattack2";
-		const string ANIM_PROJECTILE = "distanceattack";
-		const string ANIM_ALERT = "distanceattack";
+		ANIM_SMASH = "mattack3";
+		ANIM_SLASH = "mattack2";
+		ANIM_PROJECTILE = "distanceattack";
+		ANIM_ALERT = "distanceattack";
 		ANIM_DEATH1 = "dieforward";
 		ANIM_DEATH2 = "diesimple";
 		ANIM_DEATH3 = "diesideways";
-		const string ANIM_VICTORY1 = "victoryeat";
-		const string ANIM_VICTORY2 = "victorysniff";
+		ANIM_VICTORY1 = "victoryeat";
+		ANIM_VICTORY2 = "victorysniff";
 		ANIM_VICTORY = "victoryeat";
 		ANIM_DEATH = "dieforward";
 		ANIM_ATTACK = "mattack3";
 		CAN_FLINCH = 1;
 		FLINCH_HEALTH = 500;
 		FLINCH_CHANCE = 30;
-		const int DOSMASH_CHANCE = 20;
-		const string LIGHTNING_SPRITE = "lgtning.spr";
-		const string MONSTER_MODEL = "monsters/abominable_huge.mdl";
+		DOSMASH_CHANCE = 20;
+		LIGHTNING_SPRITE = "lgtning.spr";
+		MONSTER_MODEL = "monsters/abominable_huge.mdl";
 		Precache(LIGHTNING_SPRITE);
 		Precache(SOUND_DEATH);
 	}
@@ -188,7 +250,7 @@ class UberReaver : CGameScript
 		ice_reaver_beam_reload();
 		SetHealth(HP_STORAGE);
 		if ((false)) return;
-		string RAND_VICT = RandomInt(1, 2);
+		int RAND_VICT = RandomInt(1, 2);
 		if (RAND_VICT == 1)
 		{
 			ANIM_VICTORY = ANIM_VICTORY1;
@@ -206,7 +268,7 @@ class UberReaver : CGameScript
 	void attack_mele1()
 	{
 		SWING_ATTACK = 1;
-		string RANDOM_PUSH = RandomInt(100, 175);
+		int RANDOM_PUSH = RandomInt(100, 175);
 		PUSH_VEL = /* TODO: $relvel */ $relvel(-100, RANDOM_PUSH, 120);
 		SOUND_ATTACKHIT = SOUND_SLASHHIT;
 		SOUND_ATTACKMISS = SOUND_SLASHMISS;
@@ -229,7 +291,7 @@ class UberReaver : CGameScript
 		SWING_ATTACK = 1;
 		SOUND_ATTACKHIT = SOUND_SMASHHIT;
 		SOUND_ATTACKMISS = SOUND_SMASHMISS;
-		string RANDOM_PUSH = RandomInt(200, 400);
+		int RANDOM_PUSH = RandomInt(200, 400);
 		PUSH_VEL = /* TODO: $relvel */ $relvel(-100, RANDOM_PUSH, 120);
 		if (GetEntityRange(m_hAttackTarget) < ATTACK_HITRANGE)
 		{
@@ -332,7 +394,7 @@ class UberReaver : CGameScript
 
 	void OnDeath(CBaseEntity@ attacker) override
 	{
-		string RAND_DEATH = RandomInt(1, 3);
+		int RAND_DEATH = RandomInt(1, 3);
 		if (RAND_DEATH == 1)
 		{
 			ANIM_DEATH = ANIM_DEATH1;
@@ -357,7 +419,7 @@ class UberReaver : CGameScript
 		if (!(m_hAttackTarget == "unset")) return;
 		if (!(NPC_LOST_TARGET == "unset")) return;
 		if ((false)) return;
-		string RAND_VICT = RandomInt(1, 2);
+		int RAND_VICT = RandomInt(1, 2);
 		if (RAND_VICT == 1)
 		{
 			ANIM_VICTORY = ANIM_VICTORY1;

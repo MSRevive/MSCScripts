@@ -5,14 +5,16 @@ namespace MS
 
 class BluntStaffACl : CGameScript
 {
+	float BEAM_AMP;
+	float BEAM_WIDTH;
 	int FX_ACTIVE;
 	string FX_OWNER;
 	string NEXT_SPARK;
 
 	BluntStaffACl()
 	{
-		const float BEAM_WIDTH = 10.0;
-		const float BEAM_AMP = 0.01;
+		BEAM_WIDTH = 10.0;
+		BEAM_AMP = 0.01;
 	}
 
 	void client_activate()
@@ -41,7 +43,7 @@ class BluntStaffACl : CGameScript
 			{
 			}
 			ClientEffect("spark", TRACE_LINE);
-			string RND_SPARK = RandomInt(1, 3);
+			int RND_SPARK = RandomInt(1, 3);
 			if (RND_SPARK == 1)
 			{
 				EmitSound3D("buttons/spark1.wav", 5, TRACE_LINE);

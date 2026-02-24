@@ -7,10 +7,13 @@ namespace MS
 
 class ItemGalatNote10 : CGameScript
 {
+	string MODEL_HANDS;
+	string MODEL_WORLD;
+
 	ItemGalatNote10()
 	{
-		const string MODEL_WORLD = "garbagegibs.mdl";
-		const string MODEL_HANDS = "misc/p_misc.mdl";
+		MODEL_WORLD = "garbagegibs.mdl";
+		MODEL_HANDS = "misc/p_misc.mdl";
 	}
 
 	void OnSpawn() override

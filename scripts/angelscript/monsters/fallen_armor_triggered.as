@@ -8,7 +8,7 @@ namespace MS
 class FallenArmorTriggered : CGameScript
 {
 	string FIRST_TARGET;
-	string TOSHIELD_DELAY;
+	float TOSHIELD_DELAY;
 	int WAITING_FOR_PLAYER;
 
 	void armor_spawn()

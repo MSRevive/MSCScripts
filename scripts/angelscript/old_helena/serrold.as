@@ -17,13 +17,15 @@ class Serrold : CGameScript
 	int GAVE_REWARD;
 	int HELENA_SAVED;
 	int INN_CLOSED;
+	int NO_JOB;
+	string PREF_LOCATION;
 	int RETURN_PREF;
 	int SEE_ENEMY;
 
 	Serrold()
 	{
-		const int NO_JOB = 1;
-		const Vector3 PREF_LOCATION = Vector3(64, 176, 0);
+		NO_JOB = 1;
+		PREF_LOCATION = Vector3(64, 176, 0);
 	}
 
 	void OnRepeatTimer()
@@ -152,19 +154,19 @@ class Serrold : CGameScript
 	void say_erkold()
 	{
 		PlayAnim("once", "yes");
-		SayText("The man at the burnt down house. He and his family used to supply the village with food , but I am not sure how it will go now when the family has been kidnapped..");
+		SayText("The man at the burnt down house. He and his family used to supply the village with food , but " + I + " am not sure how it will go now when the family has been kidnapped..");
 	}
 
 	void say_serrold()
 	{
 		PlayAnim("once", "yes");
-		SayText("I am Serrold , the town elder.");
+		SayText(I + " am Serrold , the town elder.");
 	}
 
 	void say_harry()
 	{
 		PlayAnim("once", "no");
-		SayText("That man is good for nothing. I closed down his Inn but I still get the feeling that something is going on in there..");
+		SayText("That man is good for nothing. " + I + "closed down his Inn but " + I + " still get the feeling that something is going on in there..");
 	}
 
 	void say_thanks()
@@ -195,12 +197,12 @@ class Serrold : CGameScript
 		{
 			PlayAnim("critical", "lean");
 			bchat_mouth_move();
-			SayText("I wish I had more to give , but I ll need what s left to help rebuild the town.");
+			SayText(I + "wish " + I + "had more to give , but " + I + " ll need what s left to help rebuild the town.");
 		}
 		if ((GAVE_REWARD)) return;
 		GAVE_REWARD = 1;
 		bchat_mouth_move();
-		SayText("I can t believe it! You saved us! Take this as a reward!");
+		SayText(I + " can t believe it! You saved us! Take this as a reward!");
 		// TODO: offer PARAM1 pack_boh_lesser
 	}
 

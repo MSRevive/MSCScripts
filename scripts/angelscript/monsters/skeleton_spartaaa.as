@@ -7,12 +7,14 @@ namespace MS
 
 class SkeletonSpartaaa : CGameScript
 {
+	int FORCE_GERIC;
+	int NPC_BASE_EXP;
 	int SET_GREEK;
 
 	SkeletonSpartaaa()
 	{
-		const int FORCE_GERIC = 1;
-		const int NPC_BASE_EXP = 1000;
+		FORCE_GERIC = 1;
+		NPC_BASE_EXP = 1000;
 		SET_GREEK = 1;
 	}
 

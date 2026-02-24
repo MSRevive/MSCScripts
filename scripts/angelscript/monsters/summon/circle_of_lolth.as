@@ -10,16 +10,19 @@ class CircleOfLolth : CGameScript
 	int AOE_AFFECTS_WARY;
 	string AOE_DURATION;
 	int AOE_RADIUS;
+	float AOE_SCAN_FREQ;
+	string AOE_SCAN_TYPE;
 	string MY_CL_IDX;
 	string MY_OWNER;
 	string MY_SKILL;
 	int PLAYING_DEAD;
+	string SOUND_PULSE;
 
 	CircleOfLolth()
 	{
-		const string SOUND_PULSE = "bullchicken/bc_acid2.wav";
-		const string AOE_SCAN_TYPE = "dodamage";
-		const float AOE_SCAN_FREQ = 1.0;
+		SOUND_PULSE = "bullchicken/bc_acid2.wav";
+		AOE_SCAN_TYPE = "dodamage";
+		AOE_SCAN_FREQ = 1.0;
 	}
 
 	void game_precache()

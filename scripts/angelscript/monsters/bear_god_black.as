@@ -8,10 +8,11 @@ namespace MS
 class BearGodBlack : CGameScript
 {
 	int BEAR_TYPE;
+	int OVERRIDE_BEAR;
 
 	BearGodBlack()
 	{
-		const int OVERRIDE_BEAR = 1;
+		OVERRIDE_BEAR = 1;
 		BEAR_TYPE = 3;
 	}
 

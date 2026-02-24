@@ -7,10 +7,13 @@ namespace MS
 
 class ScarabVenom : CGameScript
 {
+	float EFFECT_DURATION;
+	string EFFECT_SCRIPT;
+
 	ScarabVenom()
 	{
-		const string EFFECT_SCRIPT = "effects/dot_poison";
-		const float EFFECT_DURATION = 10.0;
+		EFFECT_SCRIPT = "effects/dot_poison";
+		EFFECT_DURATION = 10.0;
 	}
 
 	void scarab_spawn()

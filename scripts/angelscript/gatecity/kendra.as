@@ -40,11 +40,11 @@ class Kendra : CGameScript
 	{
 		if (QUEST_GOBLINPRISONER == 0)
 		{
-			SayText("I m too [upset] to talk right now.");
+			SayText(I + " m too [upset] to talk right now.");
 		}
 		if (QUEST_GOBLINPRISONER == 1)
 		{
-			SayText("Thank you Adventurer , I couldn t be happier!");
+			SayText("Thank you Adventurer , " + I + " couldn t be happier!");
 		}
 	}
 
@@ -56,7 +56,7 @@ class Kendra : CGameScript
 		}
 		if (QUEST_GOBLINPRISONER == 1)
 		{
-			SayText("I haven t been out much recently.");
+			SayText(I + " haven t been out much recently.");
 		}
 	}
 
@@ -77,7 +77,7 @@ class Kendra : CGameScript
 
 	void say_upset3()
 	{
-		SayText("I wish there was some way to know that he is safe.");
+		SayText(I + " wish there was some way to know that he is safe.");
 	}
 
 	void game_menu_getoptions()

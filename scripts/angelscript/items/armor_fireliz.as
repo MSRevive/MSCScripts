@@ -8,19 +8,31 @@ namespace MS
 
 class ArmorFireliz : CGameScript
 {
+	int ARMOR_BODY;
+	string ARMOR_MODEL;
+	string ARMOR_TEXT;
+	float BARMOR_PROTECTION;
+	string BARMOR_PROTECTION_AREA;
+	string BARMOR_REPLACE_BODYPARTS;
+	string BARMOR_TYPE;
+	int ELM_AMT;
+	string ELM_NAME;
+	string ELM_TYPE;
+	int NEW_ARMOR_OFS;
+
 	ArmorFireliz()
 	{
-		const string ARMOR_MODEL = "armor/p_armorvest.mdl";
-		const int ARMOR_BODY = 7;
-		const string ARMOR_TEXT = "You work your way into some fire lizard skins.";
-		const string BARMOR_TYPE = "leather";
-		const float BARMOR_PROTECTION = 0.45;
-		const string BARMOR_PROTECTION_AREA = "chest";
-		const string BARMOR_REPLACE_BODYPARTS = "chest";
-		const string ELM_NAME = "firel";
-		const string ELM_TYPE = "fire";
-		const int ELM_AMT = 75;
-		const int NEW_ARMOR_OFS = 8;
+		ARMOR_MODEL = "armor/p_armorvest.mdl";
+		ARMOR_BODY = 7;
+		ARMOR_TEXT = "You work your way into some fire lizard skins.";
+		BARMOR_TYPE = "leather";
+		BARMOR_PROTECTION = 0.45;
+		BARMOR_PROTECTION_AREA = "chest";
+		BARMOR_REPLACE_BODYPARTS = "chest";
+		ELM_NAME = "firel";
+		ELM_TYPE = "fire";
+		ELM_AMT = 75;
+		NEW_ARMOR_OFS = 8;
 	}
 
 	void OnSpawn() override

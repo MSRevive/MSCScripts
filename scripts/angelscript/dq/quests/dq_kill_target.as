@@ -7,20 +7,27 @@ namespace MS
 
 class DqKillTarget : CGameScript
 {
+	string DQ_MONSTER_PARAMS;
+	string DQ_SELF_ADJUST;
 	string QUEST_INFO_TARGET_ID;
+	string QUEST_INFO_TARGET_NAME;
 	string QUEST_INFO_TARGET_YAW;
 	string QUEST_MONSTER_ID;
+	string QUEST_MONSTER_NAME;
+	string QUEST_MONSTER_SCRIPT;
 	string QUEST_MONSTER_SPAWN_POINT;
+	int QUEST_TARGET_HP_MULT;
+	int QUEST_TARGET_XP_MULT;
 
 	DqKillTarget()
 	{
-		const string QUEST_MONSTER_SCRIPT = GetToken(QUEST_DATA1, 0, ";");
-		const string QUEST_MONSTER_NAME = GetToken(QUEST_DATA1, 1, ";");
-		const string QUEST_INFO_TARGET_NAME = QUEST_DATA2;
-		const string DQ_SELF_ADJUST = QUEST_DATA3;
-		const string DQ_MONSTER_PARAMS = QUEST_DATA4;
-		const int QUEST_TARGET_HP_MULT = 5;
-		const int QUEST_TARGET_XP_MULT = 2;
+		QUEST_MONSTER_SCRIPT = GetToken(QUEST_DATA1, 0, ";");
+		QUEST_MONSTER_NAME = GetToken(QUEST_DATA1, 1, ";");
+		QUEST_INFO_TARGET_NAME = QUEST_DATA2;
+		DQ_SELF_ADJUST = QUEST_DATA3;
+		DQ_MONSTER_PARAMS = QUEST_DATA4;
+		QUEST_TARGET_HP_MULT = 5;
+		QUEST_TARGET_XP_MULT = 2;
 		QUEST_INFO_TARGET_YAW = Vector3(0, 0, 0);
 	}
 
@@ -58,9 +65,9 @@ class DqKillTarget : CGameScript
 		if ((DQ_SELF_ADJUST))
 		{
 			ApplyEffect(QUEST_MONSTER_ID, "dq/externals/dq_adjust_damage");
-			string L_QUEST_MONSTER_HP = /* TODO: $math(multiply) */ QUEST_TAKER_MAXHP;
+			string L_QUEST_MONSTER_HP = (QUEST_TAKER_MAXHP * QUEST_TARGET_HP_MULT);
 			CallExternal(QUEST_MONSTER_ID, "ext_set_health", L_QUEST_MONSTER_HP, L_QUEST_MONSTER_HP);
-			string L_QUEST_MONSTER_XP = /* TODO: $math(multiply) */ QUEST_TAKER_MAXHP;
+			string L_QUEST_MONSTER_XP = (QUEST_TAKER_MAXHP * QUEST_TARGET_XP_MULT);
 			CallExternal(QUEST_MONSTER_ID, "set_xp", L_QUEST_MONSTER_XP);
 		}
 	}

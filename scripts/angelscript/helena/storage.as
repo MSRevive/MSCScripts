@@ -11,12 +11,15 @@ namespace MS
 
 class Storage : CGameScript
 {
+	string ANIM_CHAT;
 	string ANIM_IDLE;
+	string ANIM_NO;
 	string ANIM_RUN;
 	string ANIM_STEP1;
 	string ANIM_STEP2;
 	string ANIM_STEP3;
 	string ANIM_STEP4;
+	string ANIM_STORE;
 	string ANIM_WALK;
 	int CHATTING;
 	float CHAT_DELAY_STEP1;
@@ -37,33 +40,48 @@ class Storage : CGameScript
 	int CHAT_STEPS;
 	int DID_HELLO;
 	float FEE_HP_RATIO;
+	string GALA_CHEST_POS;
 	int IS_FLEEING;
+	int NO_HAIL;
+	int NO_JOB;
 	int RAID_ON;
+	string SAYTEXT_GIVETICKET;
+	string SAYTEXT_HAND_WARN;
+	string SAYTEXT_ITEMS_HANDS;
+	string SAYTEXT_NOITEM;
+	string SAYTEXT_NOSTORABLES;
+	string SAYTEXT_NOTICKET;
+	string SAYTEXT_REDEEMTICKET;
+	string SAYTEXT_REFUND;
+	string SAYTEXT_SELECT_ITEM;
+	string SAYTEXT_SELECT_TICKET;
+	string SAYTEXT_wondrous_NOFUNDS;
+	string SAYTEXT_wondrous_PURCHASED;
 	int STORE_CLOSED;
 
 	Storage()
 	{
-		const string GALA_CHEST_POS = /* TODO: $relpos */ $relpos(0, 64, 64);
-		const string ANIM_CHAT = "pondering3";
-		const string ANIM_NO = "no";
-		const string ANIM_STORE = "return_needle";
+		GALA_CHEST_POS = /* TODO: $relpos */ $relpos(0, 64, 64);
+		ANIM_CHAT = "pondering3";
+		ANIM_NO = "no";
+		ANIM_STORE = "return_needle";
 		ANIM_IDLE = "idle1";
 		ANIM_RUN = "run";
 		ANIM_WALK = "walk_scared";
-		const string SAYTEXT_REFUND = "Ummm Okay... Here's yer fee back. Come back anytime.";
-		const string SAYTEXT_SELECT_ITEM = "What would you like to store?";
-		const string SAYTEXT_NOITEM = "Er, sorry, I didn't get the the thing you were going to store.";
-		const string SAYTEXT_NOTICKET = "Sorry, I didn't get your ticket.";
-		const string SAYTEXT_NOSTORABLES = "Sorry, I'm afraid you have nothing I can store for you.";
-		const string SAYTEXT_GIVETICKET = "Here's your ticket! Remember, ya can redeem that at any Galat outlet.";
-		const string SAYTEXT_SELECT_TICKET = "Which ticket would do you like to redeem?";
-		const string SAYTEXT_HAND_WARN = "Please place your tickets in your hands so I can redeem them for you.";
-		const string SAYTEXT_REDEEMTICKET = "Th.. th... Thank you for using Galat Storage... Please come again! ...SOON!";
-		const string SAYTEXT_ITEMS_HANDS = "Please hold forth any items you wish to store in your hands.";
-		const string SAYTEXT_wondrous_NOFUNDS = "Eh, look, I can't take less than that for it. Sorry, but I need this job.";
-		const string SAYTEXT_wondrous_PURCHASED = "Here you go. Careful not to summon it into any walls. Remember: no refunds!";
-		const int NO_HAIL = 1;
-		const int NO_JOB = 1;
+		SAYTEXT_REFUND = "Ummm Okay... Here's yer fee back. Come back anytime.";
+		SAYTEXT_SELECT_ITEM = "What would you like to store?";
+		SAYTEXT_NOITEM = "Er, sorry, I didn't get the the thing you were going to store.";
+		SAYTEXT_NOTICKET = "Sorry, I didn't get your ticket.";
+		SAYTEXT_NOSTORABLES = "Sorry, I'm afraid you have nothing I can store for you.";
+		SAYTEXT_GIVETICKET = "Here's your ticket! Remember, ya can redeem that at any Galat outlet.";
+		SAYTEXT_SELECT_TICKET = "Which ticket would do you like to redeem?";
+		SAYTEXT_HAND_WARN = "Please place your tickets in your hands so I can redeem them for you.";
+		SAYTEXT_REDEEMTICKET = "Th.. th... Thank you for using Galat Storage... Please come again! ...SOON!";
+		SAYTEXT_ITEMS_HANDS = "Please hold forth any items you wish to store in your hands.";
+		SAYTEXT_wondrous_NOFUNDS = "Eh, look, I can't take less than that for it. Sorry, but I need this job.";
+		SAYTEXT_wondrous_PURCHASED = "Here you go. Careful not to summon it into any walls. Remember: no refunds!";
+		NO_HAIL = 1;
+		NO_JOB = 1;
 	}
 
 	void OnSpawn() override
@@ -132,7 +150,7 @@ class Storage : CGameScript
 	{
 		PlayAnim("critical", "panic");
 		bchat_auto_mouth_move(3.0);
-		SayText("I m hoping to get promoted to the Deralia branch - IT ISN T SAFE HERE!");
+		SayText(I + "m hoping to get promoted to the Deralia branch - IT ISN " + T + SAFE + HERE!);
 		EmitSound(GetOwner(), 0, "voices/helena/smivel/im_hoping_to_get_promoted.wav", 10);
 	}
 

@@ -5,7 +5,7 @@ namespace MS
 
 class DeathImage : CGameScript
 {
-	string DIST_VORTEX;
+	float DIST_VORTEX;
 	int FOUNTAIN_ACTIVE;
 	int FOUNTAIN_MODE;
 	int IS_ACTIVE;
@@ -61,7 +61,7 @@ class DeathImage : CGameScript
 
 	void say_stuff1()
 	{
-		SayText("Ahck! No! I m too weak to maintain phase in this time!");
+		SayText("Ahck! No! " + I + " m too weak to maintain phase in this time!");
 		UseTrigger("timeroom_death");
 		ScheduleDelayedEvent(3.0, "say_stuff2");
 	}
@@ -133,7 +133,7 @@ class DeathImage : CGameScript
 			IS_ACTIVE = 0;
 			spinout_done();
 		}
-		string RND_AMT = RandomInt(128, 255);
+		int RND_AMT = RandomInt(128, 255);
 		SetProp(GetOwner(), "renderamt", RND_AMT);
 		SetEntityOrigin(GetOwner(), VEC_DEST);
 	}

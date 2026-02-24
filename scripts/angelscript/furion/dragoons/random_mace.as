@@ -7,9 +7,11 @@ namespace MS
 
 class RandomMace : CGameScript
 {
+	int WEAPON;
+
 	RandomMace()
 	{
-		const int WEAPON = 5;
+		WEAPON = 5;
 	}
 
 }

@@ -11,6 +11,10 @@ class DebuffStun : CGameScript
 	string CL_FX;
 	string DEBUFF_SCRIPTFLAG;
 	string DOT_ATTACKER;
+	string EFFECT_FLAGS;
+	string EFFECT_ID;
+	string EFFECT_SCRIPT;
+	string SOUND_RESIST;
 	string STUN_RESISTANCE;
 	float game.effect.anim.framerate;
 	int game.effect.canattack;
@@ -19,10 +23,10 @@ class DebuffStun : CGameScript
 
 	DebuffStun()
 	{
-		const string EFFECT_ID = "debuff_stun";
-		const string EFFECT_FLAGS = "nostack";
-		const string EFFECT_SCRIPT = currentscript;
-		const string SOUND_RESIST = "body/armour3.wav";
+		EFFECT_ID = "debuff_stun";
+		EFFECT_FLAGS = "nostack";
+		EFFECT_SCRIPT = currentscript;
+		SOUND_RESIST = "body/armour3.wav";
 	}
 
 	void game_precache()
@@ -60,7 +64,7 @@ class DebuffStun : CGameScript
 		if (STUN_RESISTANCE <= 0)
 		{
 			SendColoredMessage(GetOwner(), "You are immune to stun effects.");
-			SendColoredMessage(DOT_ATTACKER, "GetEntityName(GetOwner()) is immune to stun effects.");
+			SendColoredMessage(DOT_ATTACKER, GetEntityName(GetOwner()) + " is immune to stun effects.");
 			DEBUFF_SCRIPTFLAG = 1;
 			return;
 			RemoveScript();
@@ -68,7 +72,7 @@ class DebuffStun : CGameScript
 		if ((GetEntityProperty(GetOwner(), "nopush")))
 		{
 			SendColoredMessage(GetOwner(), "You are immune to stun effects.");
-			SendColoredMessage(DOT_ATTACKER, "GetEntityName(GetOwner()) is immune to stun effects.");
+			SendColoredMessage(DOT_ATTACKER, GetEntityName(GetOwner()) + " is immune to stun effects.");
 			DEBUFF_SCRIPTFLAG = 1;
 			return;
 			RemoveScript();
@@ -90,7 +94,7 @@ class DebuffStun : CGameScript
 			}
 			if ((BLOCKED_ATTACK))
 			{
-				SendPlayerMessage(GetOwner(), "GetEntityName(CUR_WEAPON) blocked stun impact.");
+				SendPlayerMessage(GetOwner(), GetEntityName(CUR_WEAPON) + " blocked stun impact.");
 				DEBUFF_SCRIPTFLAG = 1;
 				return;
 				RemoveScript();
@@ -106,7 +110,7 @@ class DebuffStun : CGameScript
 			}
 			if ((BLOCKED_ATTACK))
 			{
-				SendPlayerMessage(GetOwner(), "GetEntityName(CUR_WEAPON) blocked the stun impact.");
+				SendPlayerMessage(GetOwner(), GetEntityName(CUR_WEAPON) + " blocked the stun impact.");
 				DEBUFF_SCRIPTFLAG = 1;
 				return;
 				RemoveScript();
@@ -116,15 +120,15 @@ class DebuffStun : CGameScript
 
 	void check_resist_stun()
 	{
-		string STUN_ROLL = RandomInt(1, 100);
-		string L_STUN_RESIST_PERCENT = /* TODO: $math(multiply) */ STUN_RESISTANCE;
-		string L_STUN_RESIST_PERCENT = int(/* TODO: $math(subtract) */ 100);
+		int STUN_ROLL = RandomInt(1, 100);
+		string L_STUN_RESIST_PERCENT = (STUN_RESISTANCE * 100);
+		int L_STUN_RESIST_PERCENT = int((100 - L_STUN_RESIST_PERCENT));
 		if (STUN_ROLL <= L_STUN_RESIST_PERCENT)
 		{
 			EmitSound(GetOwner(), 0, SOUND_RESIST, 10);
 			BE_RESIST_STRING = "( ";
-			SendColoredMessage(GetOwner(), "You resist being stunned! BE_RESIST_STRING");
-			SendColoredMessage(DOT_ATTACKER, "GetEntityName(GetOwner()) resists the stun effect. BE_RESIST_STRING");
+			SendColoredMessage(GetOwner(), "You resist being stunned! " + BE_RESIST_STRING);
+			SendColoredMessage(DOT_ATTACKER, GetEntityName(GetOwner()) + "resists the stun effect. " + BE_RESIST_STRING);
 			DEBUFF_SCRIPTFLAG = 1;
 			return;
 			RemoveScript();

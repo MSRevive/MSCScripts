@@ -39,7 +39,7 @@ class IceWave : CGameScript
 		string SEAL_Z = (SEAL_POS).z;
 		string GROUND_DIST = GROUND_Z;
 		GROUND_DIST -= SEAL_Z;
-		// TODO: UNCONVERTED: subract GROUND_DIST 2
+		GROUND_DIST -= 2;
 		SEAL_POS += /* TODO: $relpos */ $relpos(Vector3(0, 0, 0), Vector3(0, 0, GROUND_DIST));
 		SetEntityOrigin(GetOwner(), SEAL_POS);
 		string OWNER_ANGLES = GetEntityAngles(MY_OWNER);

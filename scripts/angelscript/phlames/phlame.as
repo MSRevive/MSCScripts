@@ -9,13 +9,32 @@ class Phlame : CGameScript
 {
 	int AM_TRANSFORMED;
 	string ANIM_ATTACK;
+	string ANIM_BEAM;
+	string ANIM_BOULDERS;
+	string ANIM_DODGE;
+	string ANIM_FIRE_BREATH;
+	string ANIM_GUIDED_BURST;
 	string ANIM_IDLE;
+	string ANIM_IDLE_DEF;
+	string ANIM_LEAP;
+	string ANIM_LOOK;
+	string ANIM_METEOR;
 	string ANIM_MODE;
+	string ANIM_REPULSE;
 	string ANIM_RUN;
+	string ANIM_RUN_DEF;
+	string ANIM_SEARCH;
+	string ANIM_SUMMON;
+	string ANIM_TRANSFORM;
 	string ANIM_WALK;
+	string ANIM_WALK_DEF;
+	int ATTACH_EYE;
+	int ATTACH_HAND;
+	int ATTACH_STAFF;
 	int ATTACK_HITRANGE;
 	int ATTACK_MOVERANGE;
 	int ATTACK_RANGE;
+	string BIRD_SCRIPT;
 	string BREATH_TARGS;
 	string BREATH_YAW;
 	int CAN_HEAR;
@@ -23,11 +42,22 @@ class Phlame : CGameScript
 	int CL_FX_ON;
 	string CREATE_POINT;
 	int DID_SUMMON;
+	int DMG_EYE_BEAM;
+	int DMG_REPULSE;
+	int DMG_ROCKS;
+	int DMG_STAFF;
+	int DOT_FIRE;
 	string EYE_BEAM_ID;
 	int EYE_BEAM_ON;
 	string EYE_BEAM_TARGET;
 	int FIRE_BREATH_ON;
 	string FIRST_SUMMON;
+	float FREQ_CL_REFRESH;
+	float FREQ_GLOAT;
+	float FREQ_LOOK;
+	float FREQ_PAIN;
+	float FREQ_REPELL;
+	float FREQ_SPECIAL;
 	string HEALTH_25;
 	string HEALTH_50;
 	string HEALTH_75;
@@ -51,12 +81,34 @@ class Phlame : CGameScript
 	string NEXT_SPECIAL;
 	int NO_SPAWN_STUCK_CHECK;
 	int NO_STUCK_CHECKS;
+	float NPC_BOSS_REGEN_FREQ;
+	float NPC_BOSS_REGEN_RATE;
 	int NPC_GIVE_EXP;
 	int NPC_IS_BOSS;
 	int NPC_NO_AUTO_ACTIVATE;
 	int RENDER_AMT;
 	string REPULSE_ATTACK;
 	int REPULSE_ATTACK_MODE;
+	string SOUND_BREATH_START;
+	string SOUND_DEATH;
+	string SOUND_EYE_BEAM_FIRE;
+	string SOUND_EYE_BEAM_LOOP;
+	string SOUND_EYE_BEAM_OFF;
+	string SOUND_EYE_BEAM_PREP;
+	string SOUND_GLOAT1;
+	string SOUND_GLOAT2;
+	string SOUND_GLOAT3;
+	string SOUND_GLOAT4;
+	string SOUND_PAIN1;
+	string SOUND_PAIN_HEALTHY;
+	string SOUND_PAIN_WEAK;
+	string SOUND_STRONG_SWING1;
+	string SOUND_STRONG_SWING2;
+	string SOUND_STRUCK1;
+	string SOUND_STRUCK2;
+	string SOUND_SUMMON;
+	string SOUND_SWING1;
+	string SOUND_SWING2;
 	int SPECIAL_ATTACK;
 	int STAFF_STRIKE;
 	int SUMMON_CYCLE;
@@ -70,64 +122,64 @@ class Phlame : CGameScript
 		ANIM_WALK = "walk2handed";
 		ANIM_RUN = "run2";
 		ANIM_ATTACK = "staff_strike";
-		const string ANIM_RUN_DEF = "run2";
-		const string ANIM_WALK_DEF = "walk2handed";
-		const string ANIM_IDLE_DEF = "idle";
-		const string ANIM_TRANSFORM = "crouch_aim_dualmagicmissile";
-		const string ANIM_SEARCH = "look_idle";
-		const string ANIM_LOOK = "look_idle";
-		const string ANIM_SUMMON = "summon";
-		const string ANIM_METEOR = "cieling_strike";
-		const string ANIM_BOULDERS = "cieling_strike";
-		const string ANIM_REPULSE = "fdeploy_strike";
-		const string ANIM_DODGE = "staff_aim";
-		const string ANIM_BEAM = "staff_aim";
-		const string ANIM_FIRE_BREATH = "aim_1";
-		const string ANIM_GUIDED_BURST = "shoot_1";
-		const string ANIM_LEAP = "long_jump";
+		ANIM_RUN_DEF = "run2";
+		ANIM_WALK_DEF = "walk2handed";
+		ANIM_IDLE_DEF = "idle";
+		ANIM_TRANSFORM = "crouch_aim_dualmagicmissile";
+		ANIM_SEARCH = "look_idle";
+		ANIM_LOOK = "look_idle";
+		ANIM_SUMMON = "summon";
+		ANIM_METEOR = "cieling_strike";
+		ANIM_BOULDERS = "cieling_strike";
+		ANIM_REPULSE = "fdeploy_strike";
+		ANIM_DODGE = "staff_aim";
+		ANIM_BEAM = "staff_aim";
+		ANIM_FIRE_BREATH = "aim_1";
+		ANIM_GUIDED_BURST = "shoot_1";
+		ANIM_LEAP = "long_jump";
 		NPC_IS_BOSS = 1;
-		const float NPC_BOSS_REGEN_RATE = 0.1;
-		const float NPC_BOSS_REGEN_FREQ = 40.0;
+		NPC_BOSS_REGEN_RATE = 0.1;
+		NPC_BOSS_REGEN_FREQ = 40.0;
 		NPC_GIVE_EXP = 15000;
 		MOVE_RANGE = 512;
 		ATTACK_MOVERANGE = 512;
 		ATTACK_RANGE = 200;
 		ATTACK_HITRANGE = 250;
-		const float FREQ_LOOK = 15.0;
-		const string FREQ_GLOAT = Random(30.0, 60.0);
-		const string FREQ_PAIN = Random(20.0, 30.0);
-		const float FREQ_SPECIAL = 15.0;
-		const float FREQ_CL_REFRESH = 30.0;
-		const float FREQ_REPELL = 20.0;
-		const int DMG_STAFF = 100;
-		const int DOT_FIRE = 100;
-		const int DMG_ROCKS = 400;
-		const int DMG_EYE_BEAM = 200;
-		const int DMG_REPULSE = 100;
-		const int ATTACH_HAND = 1;
-		const int ATTACH_STAFF = 2;
-		const int ATTACH_EYE = 3;
-		const string BIRD_SCRIPT = "phlames/phlame_bird";
-		const string SOUND_GLOAT1 = "voices/phlame/vs_nx0headm_haha.wav";
-		const string SOUND_GLOAT2 = "voices/phlame/vs_nx0headm_attk.wav";
-		const string SOUND_GLOAT3 = "voices/phlame/vs_nx0headm_bat1.wav";
-		const string SOUND_GLOAT4 = "voices/phlame/vs_nx0headm_bat3.wav";
-		const string SOUND_SUMMON = "voices/phlame/vs_nx0headm_bat2.wav";
-		const string SOUND_PAIN1 = "voices/phlame/vs_nx0headm_atk1.wav";
-		const string SOUND_PAIN_HEALTHY = "voices/phlame/vs_nx0headm_yes.wav";
-		const string SOUND_PAIN_WEAK = "voices/phlame/vs_nx0headm_no.wav";
-		const string SOUND_STRUCK1 = "debris/flesh1.wav";
-		const string SOUND_STRUCK2 = "debris/flesh2.wav";
-		const string SOUND_SWING1 = "zombie/claw_miss1.wav";
-		const string SOUND_SWING2 = "zombie/claw_miss2.wav";
-		const string SOUND_STRONG_SWING1 = "zombie/claw_strike1.wav";
-		const string SOUND_STRONG_SWING2 = "zombie/claw_strike2.wav";
-		const string SOUND_EYE_BEAM_PREP = "weapons/egon_windup2.wav";
-		const string SOUND_EYE_BEAM_LOOP = "weapons/egon_run3.wav";
-		const string SOUND_EYE_BEAM_FIRE = "debris/beamstart1.wav";
-		const string SOUND_EYE_BEAM_OFF = "debris/beamstart1.wav";
-		const string SOUND_BREATH_START = "monsters/goblin/sps_fogfire.wav";
-		const string SOUND_DEATH = "voices/phlame/vs_nx0headm_hit1.wav";
+		FREQ_LOOK = 15.0;
+		FREQ_GLOAT = Random(30.0, 60.0);
+		FREQ_PAIN = Random(20.0, 30.0);
+		FREQ_SPECIAL = 15.0;
+		FREQ_CL_REFRESH = 30.0;
+		FREQ_REPELL = 20.0;
+		DMG_STAFF = 100;
+		DOT_FIRE = 100;
+		DMG_ROCKS = 400;
+		DMG_EYE_BEAM = 200;
+		DMG_REPULSE = 100;
+		ATTACH_HAND = 1;
+		ATTACH_STAFF = 2;
+		ATTACH_EYE = 3;
+		BIRD_SCRIPT = "phlames/phlame_bird";
+		SOUND_GLOAT1 = "voices/phlame/vs_nx0headm_haha.wav";
+		SOUND_GLOAT2 = "voices/phlame/vs_nx0headm_attk.wav";
+		SOUND_GLOAT3 = "voices/phlame/vs_nx0headm_bat1.wav";
+		SOUND_GLOAT4 = "voices/phlame/vs_nx0headm_bat3.wav";
+		SOUND_SUMMON = "voices/phlame/vs_nx0headm_bat2.wav";
+		SOUND_PAIN1 = "voices/phlame/vs_nx0headm_atk1.wav";
+		SOUND_PAIN_HEALTHY = "voices/phlame/vs_nx0headm_yes.wav";
+		SOUND_PAIN_WEAK = "voices/phlame/vs_nx0headm_no.wav";
+		SOUND_STRUCK1 = "debris/flesh1.wav";
+		SOUND_STRUCK2 = "debris/flesh2.wav";
+		SOUND_SWING1 = "zombie/claw_miss1.wav";
+		SOUND_SWING2 = "zombie/claw_miss2.wav";
+		SOUND_STRONG_SWING1 = "zombie/claw_strike1.wav";
+		SOUND_STRONG_SWING2 = "zombie/claw_strike2.wav";
+		SOUND_EYE_BEAM_PREP = "weapons/egon_windup2.wav";
+		SOUND_EYE_BEAM_LOOP = "weapons/egon_run3.wav";
+		SOUND_EYE_BEAM_FIRE = "debris/beamstart1.wav";
+		SOUND_EYE_BEAM_OFF = "debris/beamstart1.wav";
+		SOUND_BREATH_START = "monsters/goblin/sps_fogfire.wav";
+		SOUND_DEATH = "voices/phlame/vs_nx0headm_hit1.wav";
 		Precache("c-tele1.spr");
 		Precache("firemagic_8bit.spr");
 		Precache("laserbeam.spr");
@@ -251,7 +303,7 @@ class Phlame : CGameScript
 		if (!(GetGameTime() > NEXT_GLOBAL_GLOAT)) return;
 		NEXT_GLOBAL_GLOAT = GetGameTime();
 		NEXT_GLOBAL_GLOAT += 15.0;
-		string RND_GLOAT = RandomInt(1, 4);
+		int RND_GLOAT = RandomInt(1, 4);
 		if (RND_GLOAT == 1)
 		{
 			UseTrigger("snd_gloat1");
@@ -369,7 +421,7 @@ class Phlame : CGameScript
 
 	void frame_staff_strike()
 	{
-		string RND_STRENGTH = RandomInt(1, 2);
+		int RND_STRENGTH = RandomInt(1, 2);
 		if (RND_STRENGTH == 1)
 		{
 			// PlayRandomSound from: SOUND_SWING1, SOUND_SWING2
@@ -409,7 +461,7 @@ class Phlame : CGameScript
 
 	void OnHuntTarget(CBaseEntity@ target)
 	{
-		string GAME_TIME = GetGameTime();
+		float GAME_TIME = GetGameTime();
 		if ((CL_FX_ON))
 		{
 			if (!(SUSPEND_CL_FX))
@@ -526,7 +578,7 @@ class Phlame : CGameScript
 			{
 			}
 			string N_NEARBY_NMES = GetTokenCount(NEARBY_NMES, ";");
-			string DO_REPULSE_CHANCE = RandomInt(1, 3);
+			int DO_REPULSE_CHANCE = RandomInt(1, 3);
 			LogDebug("repulse_check nmes N_NEARBY_NMES vs DO_REPULSE_CHANCE");
 			if (DO_REPULSE_CHANCE < N_NEARBY_NMES)
 			{

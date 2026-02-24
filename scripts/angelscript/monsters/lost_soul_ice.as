@@ -10,18 +10,23 @@ class LostSoulIce : CGameScript
 	int AM_DEAD;
 	int AM_SUMMONED;
 	int COUNT_ATK;
+	int CUSTOM_DAMAGE;
 	int DEATH_ATTACK;
 	string DEATH_TIME;
+	int DMG_SPLODIE;
+	int DOT_COLD;
 	int IMMUNE_VAMPIRE;
+	int MONSTER_HP;
 	string MY_OWNER;
+	int NO_DIVE;
 
 	LostSoulIce()
 	{
-		const int MONSTER_HP = 500;
-		const int DMG_SPLODIE = 200;
-		const int DOT_COLD = 30;
-		const int CUSTOM_DAMAGE = 1;
-		const int NO_DIVE = 1;
+		MONSTER_HP = 500;
+		DMG_SPLODIE = 200;
+		DOT_COLD = 30;
+		CUSTOM_DAMAGE = 1;
+		NO_DIVE = 1;
 	}
 
 	void skull_spawn()

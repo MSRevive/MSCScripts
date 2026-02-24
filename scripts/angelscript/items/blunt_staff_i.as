@@ -7,49 +7,78 @@ namespace MS
 
 class BluntStaffI : CGameScript
 {
+	string ANIM_PREFIX;
+	int BASE_LEVEL_REQ;
 	string CL_ICEMAN_FX_INDEX;
 	int CONSEC_ATTACKS;
+	int CUSTOM_REGISTER_CHARGE1;
+	float DEMON_ATK_DURATION;
+	float DEMON_DMG_DELAY;
+	float DOT_RATIO;
 	string GAME_PVP;
+	int ICEMAN_MP;
 	int ICEMAN_ON;
 	string ICEMAN_YAW;
+	float MELEE_ACCURACY;
+	float MELEE_ATK_DURATION;
 	string MELEE_ATTACK;
+	string MELEE_CALLBACK;
+	int MELEE_DMG;
+	float MELEE_DMG_DELAY;
+	int MELEE_DMG_RANGE;
+	string MELEE_DMG_TYPE;
+	int MELEE_ENERGY;
+	float MELEE_PARRY_AUGMENT;
+	int MELEE_RANGE;
+	string MELEE_STAT;
 	string MELEE_TARG;
+	int MODEL_BODY_OFS;
+	string MODEL_VIEW;
+	int MODEL_VIEW_IDX;
+	string MODEL_WORLD;
 	string NEXT_ICEMAN;
 	string OLD_MELEE_TARG;
 	string OWNER_SKILL;
+	string PLAYERANIM_AIM;
+	string PLAYERANIM_SWING;
 	int SLOW_LOOP_ACTIVE;
+	string SPECIAL_02_CALLBACK;
+	float SPECIAL_02_DELAY_END;
+	float SPECIAL_02_DELAY_STRIKE;
+	int SPECIAL_02_MP;
+	int SPECIAL_02_RANGE;
 
 	BluntStaffI()
 	{
-		const int BASE_LEVEL_REQ = 25;
-		const int ICEMAN_MP = 1;
-		const float DOT_RATIO = 0.5;
-		const int MELEE_RANGE = 80;
-		const float MELEE_DMG_DELAY = 0.4;
-		const float MELEE_ATK_DURATION = 0.9;
-		const float DEMON_DMG_DELAY = 0.25;
-		const float DEMON_ATK_DURATION = 0.7;
-		const int MELEE_ENERGY = 2;
-		const int MELEE_DMG = 200;
-		const int MELEE_DMG_RANGE = 20;
-		const float MELEE_ACCURACY = 0.8;
-		const float MELEE_PARRY_AUGMENT = 0.2;
-		const string MELEE_DMG_TYPE = "cold";
-		const string MELEE_STAT = "spellcasting.ice";
-		const string MODEL_VIEW = "viewmodels/v_2hblunts.mdl";
-		const int MODEL_VIEW_IDX = 11;
-		const string MODEL_WORLD = "weapons/p_weapons4.mdl";
-		const int MODEL_BODY_OFS = 25;
-		const string ANIM_PREFIX = "standard";
-		const string SPECIAL_02_CALLBACK = "attack_lance";
-		const float SPECIAL_02_DELAY_STRIKE = 0.4;
-		const float SPECIAL_02_DELAY_END = 0.9;
-		const int SPECIAL_02_MP = 30;
-		const int SPECIAL_02_RANGE = 0;
-		const int CUSTOM_REGISTER_CHARGE1 = 1;
-		const string MELEE_CALLBACK = "attack_bolt";
-		const string PLAYERANIM_AIM = "sword_double_idle";
-		const string PLAYERANIM_SWING = "pole_swing";
+		BASE_LEVEL_REQ = 25;
+		ICEMAN_MP = 1;
+		DOT_RATIO = 0.5;
+		MELEE_RANGE = 80;
+		MELEE_DMG_DELAY = 0.4;
+		MELEE_ATK_DURATION = 0.9;
+		DEMON_DMG_DELAY = 0.25;
+		DEMON_ATK_DURATION = 0.7;
+		MELEE_ENERGY = 2;
+		MELEE_DMG = 200;
+		MELEE_DMG_RANGE = 20;
+		MELEE_ACCURACY = 0.8;
+		MELEE_PARRY_AUGMENT = 0.2;
+		MELEE_DMG_TYPE = "cold";
+		MELEE_STAT = "spellcasting.ice";
+		MODEL_VIEW = "viewmodels/v_2hblunts.mdl";
+		MODEL_VIEW_IDX = 11;
+		MODEL_WORLD = "weapons/p_weapons4.mdl";
+		MODEL_BODY_OFS = 25;
+		ANIM_PREFIX = "standard";
+		SPECIAL_02_CALLBACK = "attack_lance";
+		SPECIAL_02_DELAY_STRIKE = 0.4;
+		SPECIAL_02_DELAY_END = 0.9;
+		SPECIAL_02_MP = 30;
+		SPECIAL_02_RANGE = 0;
+		CUSTOM_REGISTER_CHARGE1 = 1;
+		MELEE_CALLBACK = "attack_bolt";
+		PLAYERANIM_AIM = "sword_double_idle";
+		PLAYERANIM_SWING = "pole_swing";
 	}
 
 	void weapon_spawn()
@@ -220,7 +249,7 @@ class BluntStaffI : CGameScript
 		ICEMAN_ON = 1;
 		if (GetEntityMP(GetOwner()) < ICEMAN_MP)
 		{
-			SendColoredMessage(GetOwner(), "Ice Staff: Not enough MP for Ice Slide ICEMAN_MP");
+			SendColoredMessage(GetOwner(), "Ice Staff: Not enough " + MP + "for Ice Slide " + ICEMAN_MP);
 			int EXIT_SUB = 1;
 		}
 		if ((EXIT_SUB)) return;

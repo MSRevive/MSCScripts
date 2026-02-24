@@ -10,16 +10,21 @@ class ProjArrowFireCl : CGameScript
 	int FX_ORIGIN_FIXED;
 	string FX_OWNER;
 	int FX_SMOKES_ON;
+	string LIGHT_COLOR;
+	int LIGHT_RADIUS;
+	int N_FRAMES;
 	int OWNER_TRANSFERED;
 	string SKEL_LIGHT_ID;
+	string SPR_FIRE;
+	string SPR_SMOKE1;
 
 	ProjArrowFireCl()
 	{
-		const string SPR_FIRE = "fire1_fixed.spr";
-		const string SPR_SMOKE1 = "xsmoke3.spr";
-		const int N_FRAMES = 20;
-		const int LIGHT_RADIUS = 256;
-		const Vector3 LIGHT_COLOR = Vector3(255, 96, 32);
+		SPR_FIRE = "fire1_fixed.spr";
+		SPR_SMOKE1 = "xsmoke3.spr";
+		N_FRAMES = 20;
+		LIGHT_RADIUS = 256;
+		LIGHT_COLOR = Vector3(255, 96, 32);
 	}
 
 	void client_activate()

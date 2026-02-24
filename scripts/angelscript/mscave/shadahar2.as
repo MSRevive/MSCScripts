@@ -9,11 +9,17 @@ class Shadahar2 : CGameScript
 {
 	int AM_MOBILE;
 	string ANIM_ATTACK;
+	string ANIM_CAST;
 	string ANIM_DEATH;
 	string ANIM_IDLE;
 	string ANIM_MOVE;
 	string ANIM_RUN;
+	string ANIM_SMASH;
+	string ANIM_SWIPE;
 	string ANIM_WALK;
+	int ATTACH_IDX_EYE1;
+	int ATTACH_IDX_EYE2;
+	int ATTACH_IDX_WAND;
 	int ATTACK_HITCHANCE;
 	int ATTACK_HITRANGE;
 	string ATTACK_PUSH;
@@ -27,8 +33,13 @@ class Shadahar2 : CGameScript
 	string CUR_TRIG;
 	string DID_ORC_COMMENT;
 	string DID_WARCRY;
+	int DMG_BEAM;
+	int DMG_FIRE_BOLT;
+	int DMG_SMASH;
+	int DMG_SWIPE;
 	int DOING_SPECIAL;
 	int EYE_BEAM_WARMUP;
+	float FREQ_SPECIAL;
 	int IS_UNHOLY;
 	string LAST_RETURN_TIME;
 	int MAX_EYES;
@@ -44,6 +55,23 @@ class Shadahar2 : CGameScript
 	string N_TELE_POINTS;
 	string PLAYER_ORGS;
 	int SET_TELE_POINTS;
+	string SOUND_ATTACK1;
+	string SOUND_ATTACK2;
+	string SOUND_BEAM_FIRE;
+	string SOUND_DEATH;
+	string SOUND_HOLY_STRIKE;
+	string SOUND_LAUGH;
+	string SOUND_STRUCK1;
+	string SOUND_STRUCK2;
+	string SOUND_STRUCK3;
+	string SOUND_STRUCK4;
+	string SOUND_STRUCK5;
+	string SOUND_STUN;
+	string SOUND_TURNED1;
+	string SOUND_TURNED2;
+	string SOUND_TURNED3;
+	string SOUND_TURNED4;
+	string SOUND_WARCRY;
 	string STARTED_CYCLES;
 	string STAY_NEAR_HOME;
 	int STUN_ATTACK;
@@ -51,6 +79,8 @@ class Shadahar2 : CGameScript
 	int SUMMON_WARMUP;
 	int SWIPE_ATTACK;
 	int TELEPORT_SEQUENCE;
+	int WAND_LIT;
+	int WAND_UNLIT;
 
 	Shadahar2()
 	{
@@ -65,38 +95,38 @@ class Shadahar2 : CGameScript
 		ATTACK_HITRANGE = 127;
 		IS_UNHOLY = 1;
 		NO_STUCK_CHECKS = 1;
-		const string ANIM_SWIPE = "attack1";
-		const string ANIM_SMASH = "attack3";
-		const string ANIM_CAST = "castspell";
+		ANIM_SWIPE = "attack1";
+		ANIM_SMASH = "attack3";
+		ANIM_CAST = "castspell";
 		ANIM_MOVE = "walk";
 		ATTACK_HITCHANCE = 70;
-		const string DMG_SWIPE = RandomInt(100, 150);
-		const string DMG_SMASH = RandomInt(75, 100);
-		const string DMG_FIRE_BOLT = RandomInt(50, 100);
-		const int ATTACH_IDX_WAND = 0;
-		const int ATTACH_IDX_EYE1 = 1;
-		const int ATTACH_IDX_EYE2 = 2;
-		const int DMG_BEAM = 300;
-		const int WAND_UNLIT = 8;
-		const int WAND_LIT = 9;
-		const string SOUND_STRUCK1 = "weapons/cbar_hitbod1.wav";
-		const string SOUND_STRUCK2 = "weapons/cbar_hitbod2.wav";
-		const string SOUND_STRUCK3 = "weapons/cbar_hitbod3.wav";
-		const string SOUND_STRUCK4 = "zombie/zo_pain2.wav";
-		const string SOUND_STRUCK5 = "zombie/zo_pain2.wav";
-		const string SOUND_ATTACK1 = "zombie/claw_miss1.wav";
-		const string SOUND_ATTACK2 = "zombie/claw_miss2.wav";
-		const string SOUND_DEATH = "zombie/zo_pain1.wav";
-		const string SOUND_STUN = "debris/glass2.wav";
-		const string SOUND_BEAM_FIRE = "debris/beamstart1.wav";
-		const string SOUND_TURNED1 = "ambience/the_horror1.wav";
-		const string SOUND_TURNED2 = "ambience/the_horror2.wav";
-		const string SOUND_TURNED3 = "ambience/the_horror3.wav";
-		const string SOUND_TURNED4 = "ambience/the_horror4.wav";
-		const string SOUND_HOLY_STRIKE = "doors/aliendoor1.wav";
-		const string SOUND_LAUGH = "monsters/skeleton/cal_laugh.wav";
-		const string SOUND_WARCRY = "monsters/skeleton/calrain3.wav";
-		const string FREQ_SPECIAL = Random(10, 15);
+		DMG_SWIPE = RandomInt(100, 150);
+		DMG_SMASH = RandomInt(75, 100);
+		DMG_FIRE_BOLT = RandomInt(50, 100);
+		ATTACH_IDX_WAND = 0;
+		ATTACH_IDX_EYE1 = 1;
+		ATTACH_IDX_EYE2 = 2;
+		DMG_BEAM = 300;
+		WAND_UNLIT = 8;
+		WAND_LIT = 9;
+		SOUND_STRUCK1 = "weapons/cbar_hitbod1.wav";
+		SOUND_STRUCK2 = "weapons/cbar_hitbod2.wav";
+		SOUND_STRUCK3 = "weapons/cbar_hitbod3.wav";
+		SOUND_STRUCK4 = "zombie/zo_pain2.wav";
+		SOUND_STRUCK5 = "zombie/zo_pain2.wav";
+		SOUND_ATTACK1 = "zombie/claw_miss1.wav";
+		SOUND_ATTACK2 = "zombie/claw_miss2.wav";
+		SOUND_DEATH = "zombie/zo_pain1.wav";
+		SOUND_STUN = "debris/glass2.wav";
+		SOUND_BEAM_FIRE = "debris/beamstart1.wav";
+		SOUND_TURNED1 = "ambience/the_horror1.wav";
+		SOUND_TURNED2 = "ambience/the_horror2.wav";
+		SOUND_TURNED3 = "ambience/the_horror3.wav";
+		SOUND_TURNED4 = "ambience/the_horror4.wav";
+		SOUND_HOLY_STRIKE = "doors/aliendoor1.wav";
+		SOUND_LAUGH = "monsters/skeleton/cal_laugh.wav";
+		SOUND_WARCRY = "monsters/skeleton/calrain3.wav";
+		FREQ_SPECIAL = Random(10, 15);
 		Precache("bonegibs.mdl");
 	}
 
@@ -306,7 +336,7 @@ class Shadahar2 : CGameScript
 		}
 		if (CUR_TELE_POINT == 2)
 		{
-			SayText("I m sure you can find me again...");
+			SayText(I + " m sure you can find me again...");
 		}
 		if (CUR_TELE_POINT == 3)
 		{
@@ -396,10 +426,10 @@ class Shadahar2 : CGameScript
 		if ((DOING_SPECIAL)) return;
 		if ((TELEPORT_SEQUENCE)) return;
 		if (!(IsEntityAlive(m_hAttackTarget))) return;
-		string PICK_SPECIAL = RandomInt(1, 2);
+		int PICK_SPECIAL = RandomInt(1, 2);
 		if (N_EYES < MAX_EYES)
 		{
-			string PICK_SPECIAL = RandomInt(1, 3);
+			int PICK_SPECIAL = RandomInt(1, 3);
 		}
 		if (PICK_SPECIAL == 1)
 		{
@@ -581,7 +611,7 @@ class Shadahar2 : CGameScript
 		PlayAnim("critical", ANIM_CAST);
 		EmitSound(GetOwner(), 0, SOUND_LAUGH, 10);
 		SetModelBody(1, WAND_LIT);
-		string RND_ANG = Random(0, 359);
+		float RND_ANG = Random(0, 359);
 		string SUMMON_ADJ = /* TODO: $relpos */ $relpos(Vector3(0, RND_ANG, 0), Vector3(0, 64, 32));
 		SUMMON_POS = GetMonsterProperty("origin");
 		SUMMON_POS += SUMMON_ADJ;
@@ -676,7 +706,7 @@ class Shadahar2 : CGameScript
 			{
 				string PRO_NOUN = "yourself.";
 			}
-			SayText("Filthy Orcs! More useful dead than alive. Much like PRO_NOUN");
+			SayText("Filthy Orcs! More useful dead than alive. Much like " + PRO_NOUN);
 		}
 		if ((AM_MOBILE)) return;
 		resume_movement();

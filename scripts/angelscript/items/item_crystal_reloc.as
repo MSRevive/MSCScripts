@@ -9,11 +9,13 @@ class ItemCrystalReloc : CGameScript
 {
 	int BEAM_ROT;
 	string OWNER_POS;
+	int SKILL_LEVEL_REQ;
+	string SKILL_TYPE;
 
 	ItemCrystalReloc()
 	{
-		const int SKILL_LEVEL_REQ = 0;
-		const string SKILL_TYPE = "skill.spellcasting";
+		SKILL_LEVEL_REQ = 0;
+		SKILL_TYPE = "skill.spellcasting";
 	}
 
 	void crystal_spawn()

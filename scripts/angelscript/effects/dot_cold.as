@@ -8,15 +8,21 @@ namespace MS
 class DotCold : CGameScript
 {
 	string CL_FX;
+	string DOT_HE_IMMUNE;
+	string DOT_IM_AFFECTED;
+	string DOT_IM_RESIST;
+	string DOT_TYPE;
+	string EFFECT_ID;
+	string EFFECT_SCRIPT;
 
 	DotCold()
 	{
-		const string EFFECT_ID = "DOT_cold";
-		const string EFFECT_SCRIPT = currentscript;
-		const string DOT_TYPE = "cold_effect";
-		const string DOT_IM_AFFECTED = "You have been frozen!";
-		const string DOT_IM_RESIST = "You resist the debilitating cold.";
-		const string DOT_HE_IMMUNE = "is immune to cold attacks!";
+		EFFECT_ID = "DOT_cold";
+		EFFECT_SCRIPT = currentscript;
+		DOT_TYPE = "cold_effect";
+		DOT_IM_AFFECTED = "You have been frozen!";
+		DOT_IM_RESIST = "You resist the debilitating cold.";
+		DOT_HE_IMMUNE = "is immune to cold attacks!";
 	}
 
 	void dot_start()

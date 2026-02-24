@@ -7,12 +7,17 @@ namespace MS
 
 class ScrollLightningDisc : CGameScript
 {
+	int BASE_REQUIRED_LEVEL;
+	string BASE_REQUIRED_SKILL;
+	string BASE_SPELL_SCRIPT;
+	string BASE_SUMMON_TEXT;
+
 	ScrollLightningDisc()
 	{
-		const string BASE_SPELL_SCRIPT = "magic_hand_lightning_disc";
-		const string BASE_SUMMON_TEXT = "You learn to create lightning discs.";
-		const string BASE_REQUIRED_SKILL = "skill.spellcasting.lightning";
-		const int BASE_REQUIRED_LEVEL = 25;
+		BASE_SPELL_SCRIPT = "magic_hand_lightning_disc";
+		BASE_SUMMON_TEXT = "You learn to create lightning discs.";
+		BASE_REQUIRED_SKILL = "skill.spellcasting.lightning";
+		BASE_REQUIRED_LEVEL = 25;
 	}
 
 	void OnSpawn() override

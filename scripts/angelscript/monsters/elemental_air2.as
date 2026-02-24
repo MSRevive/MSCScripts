@@ -25,11 +25,22 @@ class ElementalAir2 : CGameScript
 	int CAN_FLINCH;
 	string CHAIN_TARGETS;
 	int CYCLES_ON;
+	int DMG_BALL;
+	int DMG_CHAIN_DOT;
+	int DMG_CHAIN_DRAIN;
 	string FLINCH_ANIM;
 	int FLINCH_CHANCE;
+	float FREQ_BALLS;
+	float FREQ_CHAIN;
+	float FREQ_GLOAT;
+	float FREQ_TELEPORT;
+	float FREQ_TORNADO;
 	string HOVER_LOOP_DELAY;
+	float HURT_THRESHOLD;
 	int IMMUNE_VAMPIRE;
 	int IS_UNHOLY;
+	int MOVESPEED_FAST;
+	int MOVESPEED_SLOW;
 	int MOVE_RANGE;
 	string MY_HURT_STAGE;
 	string NEXT_GLOAT;
@@ -39,7 +50,24 @@ class ElementalAir2 : CGameScript
 	int NPC_HACKED_MOVE_SPEED;
 	string NPC_MOVE_DEST;
 	string OLD_POS;
+	float PLAYTIME_HOVER;
 	int ROAM_ROT;
+	string SOUND_DEATH;
+	string SOUND_GLOAT;
+	string SOUND_HOVER;
+	string SOUND_IDLE1;
+	string SOUND_IDLE2;
+	string SOUND_IDLE3;
+	string SOUND_PAIN0;
+	string SOUND_PAIN1;
+	string SOUND_PAIN2;
+	string SOUND_SHOCK1;
+	string SOUND_SHOCK2;
+	string SOUND_SHOCK3;
+	string SOUND_SWIPE;
+	string SOUND_SWIPEHIT;
+	string SOUND_THUNDER;
+	string SOUND_THUNDER_CHARGE;
 	int TELEPORT_ENABLED;
 
 	ElementalAir2()
@@ -60,34 +88,34 @@ class ElementalAir2 : CGameScript
 		ATTACK_HITRANGE = 150;
 		MOVE_RANGE = 65;
 		NPC_HACKED_MOVE_SPEED = 100;
-		const int MOVESPEED_SLOW = 100;
-		const int MOVESPEED_FAST = 200;
-		const string FREQ_CHAIN = Random(10, 15);
-		const float FREQ_GLOAT = 10.0;
-		const float FREQ_BALLS = 30.0;
-		const string FREQ_TORNADO = Random(45, 120);
-		const int DMG_CHAIN_DOT = 100;
-		const int DMG_CHAIN_DRAIN = 50;
-		const int DMG_BALL = 200;
-		const string FREQ_TELEPORT = Random(20.0, 30.0);
-		const string SOUND_THUNDER = "magic/bolt_end.wav";
-		const string SOUND_THUNDER_CHARGE = "magic/bolt_start.wav";
-		const string SOUND_SHOCK1 = "debris/zap8.wav";
-		const string SOUND_SHOCK2 = "debris/zap3.wav";
-		const string SOUND_SHOCK3 = "debris/zap4.wav";
-		const string SOUND_IDLE1 = "agrunt/ag_alert1.wav";
-		const string SOUND_IDLE2 = "agrunt/ag_die1.wav";
-		const string SOUND_IDLE3 = "agrunt/ag_idle1.wav";
-		const string SOUND_SWIPE = "weapons/debris1.wav";
-		const string SOUND_SWIPEHIT = "ambience/steamburst1.wav";
-		const string SOUND_DEATH = "garg/gar_die1.wav";
-		const string SOUND_PAIN0 = "debris/bustflesh2.wav";
-		const string SOUND_PAIN1 = "agrunt/ag_pain1.wav";
-		const string SOUND_PAIN2 = "agrunt/ag_pain4.wav";
-		const string SOUND_GLOAT = "x/x_laugh1.wav";
-		const string SOUND_HOVER = "fans/fan4on.wav";
-		const float HURT_THRESHOLD = 0.5;
-		const float PLAYTIME_HOVER = 3.0;
+		MOVESPEED_SLOW = 100;
+		MOVESPEED_FAST = 200;
+		FREQ_CHAIN = Random(10, 15);
+		FREQ_GLOAT = 10.0;
+		FREQ_BALLS = 30.0;
+		FREQ_TORNADO = Random(45, 120);
+		DMG_CHAIN_DOT = 100;
+		DMG_CHAIN_DRAIN = 50;
+		DMG_BALL = 200;
+		FREQ_TELEPORT = Random(20.0, 30.0);
+		SOUND_THUNDER = "magic/bolt_end.wav";
+		SOUND_THUNDER_CHARGE = "magic/bolt_start.wav";
+		SOUND_SHOCK1 = "debris/zap8.wav";
+		SOUND_SHOCK2 = "debris/zap3.wav";
+		SOUND_SHOCK3 = "debris/zap4.wav";
+		SOUND_IDLE1 = "agrunt/ag_alert1.wav";
+		SOUND_IDLE2 = "agrunt/ag_die1.wav";
+		SOUND_IDLE3 = "agrunt/ag_idle1.wav";
+		SOUND_SWIPE = "weapons/debris1.wav";
+		SOUND_SWIPEHIT = "ambience/steamburst1.wav";
+		SOUND_DEATH = "garg/gar_die1.wav";
+		SOUND_PAIN0 = "debris/bustflesh2.wav";
+		SOUND_PAIN1 = "agrunt/ag_pain1.wav";
+		SOUND_PAIN2 = "agrunt/ag_pain4.wav";
+		SOUND_GLOAT = "x/x_laugh1.wav";
+		SOUND_HOVER = "fans/fan4on.wav";
+		HURT_THRESHOLD = 0.5;
+		PLAYTIME_HOVER = 3.0;
 	}
 
 	void OnRepeatTimer()
@@ -129,9 +157,9 @@ class ElementalAir2 : CGameScript
 		{
 			if (Distance(OLD_POS, GetMonsterProperty("origin")) < 5)
 			{
-				string RND_RL = RandomInt(-100, 100);
-				string RND_FB = RandomInt(-100, 100);
-				string RND_UD = RandomInt(-100, 100);
+				int RND_RL = RandomInt(-100, 100);
+				int RND_FB = RandomInt(-100, 100);
+				int RND_UD = RandomInt(-100, 100);
 				AddVelocity(GetOwner(), /* TODO: $relvel */ $relvel(RND_RL, RND_FB, RND_UD));
 			}
 			OLD_POS = GetMonsterProperty("origin");
@@ -198,7 +226,7 @@ class ElementalAir2 : CGameScript
 		{
 			NPC_MOVE_DEST = GetEntityOrigin(m_hAttackTarget);
 			NPC_MOVE_DEST += "z";
-			string RND_FB = Random(-128, 128);
+			float RND_FB = Random(-128, 128);
 			NPC_MOVE_DEST += "x";
 		}
 	}
@@ -471,7 +499,7 @@ class ElementalAir2 : CGameScript
 
 	void idle_sounds()
 	{
-		string NEXT_SOUND = Random(5, 15);
+		float NEXT_SOUND = Random(5, 15);
 		NEXT_SOUND("idle_sounds");
 		// PlayRandomSound from: SOUND_IDLE1, SOUND_IDLE2, SOUND_IDLE3
 		array<string> sounds = {SOUND_IDLE1, SOUND_IDLE2, SOUND_IDLE3};
@@ -495,7 +523,7 @@ class ElementalAir2 : CGameScript
 		}
 		if (!(L_TELE_CHECK)) return;
 		string L_TELE_POINT = GetEntityOrigin(m_hAttackTarget);
-		string RND_ANG = Random(0, 359.99);
+		float RND_ANG = Random(0, 359.99);
 		L_TELE_POINT += /* TODO: $relpos */ $relpos(Vector3(0, RND_ANG, 0), Vector3(0, 192, 34));
 		string CUR_POS = GetEntityOrigin(GetOwner());
 		SetEntityOrigin(GetOwner(), L_TELE_POINT);

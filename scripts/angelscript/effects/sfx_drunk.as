@@ -6,15 +6,33 @@ namespace MS
 class SfxDrunk : CGameScript
 {
 	string DRUNK_SIDEMOVE;
+	int MAX_STUMBLEAMT;
+	int MAX_SWAY;
+	float MAX_SWAY_AMT;
+	int MAX_SWAY_RATE;
+	int MAX_SWAY_T;
+	int MIN_STUMBLEAMT;
+	int MIN_SWAY;
+	float MIN_SWAY_AMT;
+	int MIN_SWAY_RATE;
+	int MIN_SWAY_T;
+	int STUMBLE_BACK_MAX;
+	int STUMBLE_BACK_T;
+	int STUMBLE_FORWARD_MAX;
+	int STUMBLE_FORWARD_T;
+	int STUMBLE_LEFT_MAX;
+	int STUMBLE_LEFT_TRESHHOLD;
+	int STUMBLE_RIGHT_MAX;
+	int STUMBLE_RIGHT_TRESHHOLD;
 	string game.cleffect.move_ofs.forward;
 	string game.cleffect.move_ofs.right;
 	int game.cleffect.move_scale.forward;
 	int game.cleffect.move_scale.right;
-	string game.cleffect.screenfade.alpha;
+	int game.cleffect.screenfade.alpha;
 	int game.cleffect.screenfade.alphalimit;
-	string game.cleffect.screenfade.blendduration;
+	float game.cleffect.screenfade.blendduration;
 	string game.cleffect.screenfade.color;
-	string game.cleffect.screenfade.duration;
+	float game.cleffect.screenfade.duration;
 	int game.cleffect.screenfade.newfade;
 	string game.cleffect.screenfade.type;
 	string game.cleffect.view_ofs.pitch;
@@ -22,24 +40,24 @@ class SfxDrunk : CGameScript
 
 	SfxDrunk()
 	{
-		const int MIN_STUMBLEAMT = -10;
-		const int MAX_STUMBLEAMT = 10;
-		const int STUMBLE_RIGHT_MAX = 80;
-		const int STUMBLE_LEFT_MAX = -80;
-		const int STUMBLE_RIGHT_TRESHHOLD = 30;
-		const int STUMBLE_LEFT_TRESHHOLD = -30;
-		const int STUMBLE_FORWARD_MAX = 40;
-		const int STUMBLE_BACK_MAX = -50;
-		const int STUMBLE_FORWARD_T = 20;
-		const int STUMBLE_BACK_T = -20;
-		const int MAX_SWAY = 10;
-		const int MIN_SWAY = -10;
-		const int MAX_SWAY_T = 8;
-		const int MIN_SWAY_T = -8;
-		const int MAX_SWAY_RATE = 1;
-		const int MIN_SWAY_RATE = -1;
-		const float MAX_SWAY_AMT = 0.1;
-		const float MIN_SWAY_AMT = -0.1;
+		MIN_STUMBLEAMT = -10;
+		MAX_STUMBLEAMT = 10;
+		STUMBLE_RIGHT_MAX = 80;
+		STUMBLE_LEFT_MAX = -80;
+		STUMBLE_RIGHT_TRESHHOLD = 30;
+		STUMBLE_LEFT_TRESHHOLD = -30;
+		STUMBLE_FORWARD_MAX = 40;
+		STUMBLE_BACK_MAX = -50;
+		STUMBLE_FORWARD_T = 20;
+		STUMBLE_BACK_T = -20;
+		MAX_SWAY = 10;
+		MIN_SWAY = -10;
+		MAX_SWAY_T = 8;
+		MIN_SWAY_T = -8;
+		MAX_SWAY_RATE = 1;
+		MIN_SWAY_RATE = -1;
+		MAX_SWAY_AMT = 0.1;
+		MIN_SWAY_AMT = -0.1;
 	}
 
 	void OnRepeatTimer()
@@ -65,10 +83,10 @@ class SfxDrunk : CGameScript
 	{
 		SetRepeatDelay(0.01);
 		DRUNK_SWAY_FORWARD++;
-		// TODO: capvar DRUNK_SWAY_FORWARD MIN_SWAY MAX_SWAY
+		DRUNK_SWAY_FORWARD = max(MIN_SWAY, min(MAX_SWAY, DRUNK_SWAY_FORWARD));
 		game.cleffect.view_ofs.pitch = DRUNK_SWAY_FORWARD;
 		DRUNK_SWAY_SIDE++;
-		// TODO: capvar DRUNK_SWAY_SIDE MIN_SWAY MAX_SWAY
+		DRUNK_SWAY_SIDE = max(MIN_SWAY, min(MAX_SWAY, DRUNK_SWAY_SIDE));
 		game.cleffect.view_ofs.roll = DRUNK_SWAY_SIDE;
 		game.cleffect.move_ofs.forward = DRUNK_FORWARDMOVE;
 		game.cleffect.move_ofs.right = DRUNK_SIDEMOVE;
@@ -82,7 +100,7 @@ class SfxDrunk : CGameScript
 	void drunk_sway()
 	{
 		DRUNK_SWAY_RATE++;
-		// TODO: capvar DRUNK_SWAY_RATE MIN_SWAY_RATE MAX_SWAY_RATE
+		DRUNK_SWAY_RATE = max(MIN_SWAY_RATE, min(MAX_SWAY_RATE, DRUNK_SWAY_RATE));
 		if (DRUNK_SWAY_SIDE >= MAX_SWAY_T)
 		{
 			DRUNK_SWAY_RATE--;
@@ -92,7 +110,7 @@ class SfxDrunk : CGameScript
 			DRUNK_SWAY_RATE++;
 		}
 		DRUNK_SWAY_RATE_F++;
-		// TODO: capvar DRUNK_SWAY_RATE_F MIN_SWAY_RATE MAX_SWAY_RATE
+		DRUNK_SWAY_RATE_F = max(MIN_SWAY_RATE, min(MAX_SWAY_RATE, DRUNK_SWAY_RATE_F));
 		if (DRUNK_SWAY_FORWARD >= MAX_SWAY_T)
 		{
 			DRUNK_SWAY_RATE_F--;
@@ -106,7 +124,7 @@ class SfxDrunk : CGameScript
 	void drunk_stumble()
 	{
 		DRUNK_FORWARDMOVE++;
-		// TODO: capvar DRUNK_FORWARDMOVE STUMBLE_BACK_MAX STUMBLE_FORWARD_MAX
+		DRUNK_FORWARDMOVE = max(STUMBLE_BACK_MAX, min(STUMBLE_FORWARD_MAX, DRUNK_FORWARDMOVE));
 		if (DRUNK_FORWARDMOVE >= STUMBLE_FORWARD_T)
 		{
 			DRUNK_FORWARDMOVE--;
@@ -117,7 +135,7 @@ class SfxDrunk : CGameScript
 		}
 		DRUNK_SIDEMOVE = DRUNK_SWAY_SIDE;
 		DRUNK_SIDEMOVE *= RandomInt(0, 20);
-		// TODO: capvar DRUNK_SIDEMOVE STUMBLE_LEFT_MAX STUMBLE_RIGHT_MAX
+		DRUNK_SIDEMOVE = max(STUMBLE_LEFT_MAX, min(STUMBLE_RIGHT_MAX, DRUNK_SIDEMOVE));
 		if (DRUNK_SIDEMOVE >= STUMBLE_RIGHT_TRESHHOLD)
 		{
 			DRUNK_SIDEMOVE--;

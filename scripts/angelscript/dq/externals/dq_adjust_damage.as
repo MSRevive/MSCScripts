@@ -5,11 +5,15 @@ namespace MS
 
 class DqAdjustDamage : CGameScript
 {
+	float DAMAGE_MULTIPLIER;
+	string DQ_WHERE_IS_THE_CREATOR;
+	string MAX_DMG;
+
 	DqAdjustDamage()
 	{
-		const float DAMAGE_MULTIPLIER = 0.5;
-		const string DQ_WHERE_IS_THE_CREATOR = GetEntityIndex("ent_creationowner");
-		const string MAX_DMG = /* TODO: $math(multiply) */ GetEntityProperty(DQ_WHERE_IS_THE_CREATOR, "scriptvar");
+		DAMAGE_MULTIPLIER = 0.5;
+		DQ_WHERE_IS_THE_CREATOR = GetEntityIndex("ent_creationowner");
+		MAX_DMG = (GetEntityProperty(DQ_WHERE_IS_THE_CREATOR, "scriptvar") * DAMAGE_MULTIPLIER);
 	}
 
 	void OnDamagedOther(CBaseEntity@ victim, int damage) override
@@ -24,7 +28,7 @@ class DqAdjustDamage : CGameScript
 				if (L_DMG > MAX_DMG)
 				{
 					SetDamage("dmg");
-					ReturnData(/* TODO: $math(divide) */ MAX_DMG);
+					ReturnData((MAX_DMG / L_DMG));
 				}
 			}
 		}

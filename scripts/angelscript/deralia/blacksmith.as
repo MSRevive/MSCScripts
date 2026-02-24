@@ -19,6 +19,7 @@ class Blacksmith : CGameScript
 	string CHECK_PLAYER;
 	string CURRENT_THIEF;
 	string GAXE_TARGET;
+	int NO_JOB;
 	int OFFER_SET;
 	int SELL_WEAPON_LEVEL;
 	string STORE_NAME;
@@ -34,7 +35,7 @@ class Blacksmith : CGameScript
 		STORE_NAME = "deralia_merchant_2";
 		STORE_TRIGGERTEXT = "store trade buy sell purchase sale offer";
 		STORE_SELLMENU = 1;
-		const int NO_JOB = 1;
+		NO_JOB = 1;
 		SELL_WEAPON_LEVEL = 3;
 		VEND_NEWBIE = 1;
 		VEND_WEAPONS = 1;
@@ -198,7 +199,7 @@ class Blacksmith : CGameScript
 
 	void say_letter2()
 	{
-		SayText("Hmmm... I have one , but these things are so damned rare. It ll cost you about...");
+		SayText("Hmmm... " + I + " have one , but these things are so damned rare. It ll cost you about...");
 		SetIdleAnim("pondering");
 		PlayAnim("once", "pondering");
 		ScheduleDelayedEvent(4.0, "say_letter3");
@@ -215,13 +216,13 @@ class Blacksmith : CGameScript
 	{
 		SetIdleAnim("pondering");
 		PlayAnim("once", "pondering");
-		SayText("He sent you to me , because he knows I m the only one around who makes these...");
+		SayText("He sent you to me , because he knows " + I + " m the only one around who makes these...");
 		ScheduleDelayedEvent(4.0, "say_letter5");
 	}
 
 	void say_letter5()
 	{
-		SayText("They take me about five years a piece to make , so I don t install them cheap!");
+		SayText("They take me about five years a piece to make , so " + I + " don t install them cheap!");
 		ScheduleDelayedEvent(4.0, "say_letter6");
 	}
 

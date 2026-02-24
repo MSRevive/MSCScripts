@@ -12,23 +12,34 @@ class FlanGreen : CGameScript
 	string ANIM_IDLE;
 	string ANIM_RUN;
 	string ANIM_WALK;
+	float ATTACK_DAMAGE;
+	float ATTACK_HITCHANCE;
 	int ATTACK_HITRANGE;
 	int ATTACK_RANGE;
+	float ATTACK_RATE;
 	int DELAY_ATTACK;
 	int IS_BLOODLESS;
+	int MOVE_FAST;
+	int MOVE_NORMAL;
 	int MOVE_RANGE;
 	int NO_SPAWN_STUCK_CHECK;
 	int NPC_GIVE_EXP;
 	string NPC_HACKED_MOVE_SPEED;
+	string SOUND_ATTACK1;
+	string SOUND_ATTACK2;
+	string SOUND_DEATH;
+	string SOUND_IDLE;
+	string SOUND_STRUCK1;
+	string SOUND_STRUCK2;
 
 	FlanGreen()
 	{
-		const string SOUND_DEATH = "monsters/sludge/bio.wav";
-		const string SOUND_STRUCK1 = "barnacle/bcl_bite3.wav";
-		const string SOUND_STRUCK2 = "barnacle/bcl_die3.wav";
-		const string SOUND_IDLE = "barnacle/bcl_alert2.wav";
-		const string SOUND_ATTACK1 = "barnacle/bcl_tongue1.wav";
-		const string SOUND_ATTACK2 = "barnacle/bcl_chew3.wav";
+		SOUND_DEATH = "monsters/sludge/bio.wav";
+		SOUND_STRUCK1 = "barnacle/bcl_bite3.wav";
+		SOUND_STRUCK2 = "barnacle/bcl_die3.wav";
+		SOUND_IDLE = "barnacle/bcl_alert2.wav";
+		SOUND_ATTACK1 = "barnacle/bcl_tongue1.wav";
+		SOUND_ATTACK2 = "barnacle/bcl_chew3.wav";
 		Precache(SOUND_DEATH);
 		ANIM_IDLE = "Idle1";
 		ANIM_RUN = "Idle2";
@@ -38,13 +49,13 @@ class FlanGreen : CGameScript
 		MOVE_RANGE = 20;
 		ATTACK_RANGE = 60;
 		ATTACK_HITRANGE = 120;
-		const float ATTACK_HITCHANCE = 0.75;
-		const string ATTACK_DAMAGE = Random(10, 30);
+		ATTACK_HITCHANCE = 0.75;
+		ATTACK_DAMAGE = Random(10, 30);
 		NO_SPAWN_STUCK_CHECK = 1;
-		const int MOVE_FAST = 200;
-		const int MOVE_NORMAL = 100;
+		MOVE_FAST = 200;
+		MOVE_NORMAL = 100;
 		NPC_HACKED_MOVE_SPEED = MOVE_NORMAL;
-		const float ATTACK_RATE = 1.0;
+		ATTACK_RATE = 1.0;
 	}
 
 	void OnSpawn() override

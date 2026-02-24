@@ -7,11 +7,15 @@ namespace MS
 
 class MapStartup : CGameScript
 {
+	int MAP_ALLOWNIGHT;
+	string MAP_NAME;
+	string MAP_WEATHER;
+
 	MapStartup()
 	{
-		const string MAP_NAME = "ms_snow";
-		const string MAP_WEATHER = "snow;snow;snow";
-		const int MAP_ALLOWNIGHT = 1;
+		MAP_NAME = "ms_snow";
+		MAP_WEATHER = "snow;snow;snow";
+		MAP_ALLOWNIGHT = 1;
 		SetGlobalVar("G_MAP_NAME", "The Frozen Summit by Avoozl & P.Barnum");
 		SetGlobalVar("G_MAP_DESC", "Great evil lies in the frozen North. Its cold tendrils have sapped this once rich land.");
 		SetGlobalVar("G_MAP_DIFF", "Levels 25-35 / 400-700hp");

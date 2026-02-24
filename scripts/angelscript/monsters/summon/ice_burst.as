@@ -13,10 +13,11 @@ class IceBurst : CGameScript
 	string MY_BASE_DAMAGE;
 	string MY_OWNER;
 	string OWNER_ISPLAYER;
+	int SCAN_RANGE;
 
 	IceBurst()
 	{
-		const int SCAN_RANGE = 256;
+		SCAN_RANGE = 256;
 	}
 
 	void game_dynamically_created()
@@ -38,7 +39,7 @@ class IceBurst : CGameScript
 
 	void effect_die()
 	{
-		// TODO: UNCONVERTED: clienteffect remove all BURST_SCRIPT_IDX
+		ClientEffect("remove", "all", BURST_SCRIPT_IDX);
 		DeleteEntity(GetOwner());
 	}
 
@@ -50,7 +51,7 @@ class IceBurst : CGameScript
 
 	void apply_aoe_effect()
 	{
-		string FREEZE_ON_CHANCE = RandomInt(1, 2);
+		int FREEZE_ON_CHANCE = RandomInt(1, 2);
 		if (FREEZE_ON_CHANCE == 1)
 		{
 			ApplyEffect(param1, "effects/dot_cold", 10, MY_OWNER, RandomInt(10, MY_BASE_DAMAGE), ACTIVE_SKILL);

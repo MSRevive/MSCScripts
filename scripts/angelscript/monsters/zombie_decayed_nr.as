@@ -7,9 +7,11 @@ namespace MS
 
 class ZombieDecayedNr : CGameScript
 {
+	int ME_NO_WANDER;
+
 	ZombieDecayedNr()
 	{
-		const int ME_NO_WANDER = 1;
+		ME_NO_WANDER = 1;
 	}
 
 }

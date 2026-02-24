@@ -6,13 +6,15 @@ namespace MS
 class AxesCCl : CGameScript
 {
 	string CAXE_SPRITE_COLOR;
+	string EFFECT_COLORS;
+	string EFFECT_ELEMENTS;
 	string PREV_POS;
 	int SPRITE_ACTIVE;
 
 	AxesCCl()
 	{
-		const string EFFECT_ELEMENTS = "acid;fire;cold;poison;dark;lightning;holy";
-		const string EFFECT_COLORS = "(64,255,64);(255,64,0);(128,128,255);(0,255,0);(255,0,255);(255,255,0);(255,255,255)";
+		EFFECT_ELEMENTS = "acid;fire;cold;poison;dark;lightning;holy";
+		EFFECT_COLORS = "(64,255,64);(255,64,0);(128,128,255);(0,255,0);(255,0,255);(255,255,0);(255,255,255)";
 	}
 
 	void client_activate()

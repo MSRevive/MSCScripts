@@ -12,24 +12,42 @@ class SlimeGreenLarge : CGameScript
 	string ANIM_IDLE;
 	string ANIM_RUN;
 	string ANIM_WALK;
+	float ATTACK_DAMAGE;
+	float ATTACK_HITCHANCE;
 	int ATTACK_HITRANGE;
 	int ATTACK_RANGE;
+	int CLOUD_DAMAGE;
+	float CLOUD_DELAY;
+	float CLOUD_DURATION;
+	float FREQ_CLOUD;
+	float FREQ_SPIT;
+	float FREQ_SPIT_SCAN;
 	string NEXT_CLOUD;
 	string NEXT_SPIT;
 	string NEXT_SPIT_SCAN;
 	int NPC_GIVE_EXP;
 	string N_SPIT_TARGETS;
+	float POISON_DAMAGE;
+	string SOUND_ATTACK1;
+	string SOUND_ATTACK2;
+	string SOUND_DEATH;
+	string SOUND_IDLE;
+	string SOUND_STRUCK1;
+	string SOUND_STRUCK2;
+	int SPIT_DAMAGE;
+	int SPIT_RANGE;
+	float SPIT_ROF;
 	string SPIT_TARGET;
 	string SPIT_TARGETS;
 
 	SlimeGreenLarge()
 	{
-		const string SOUND_DEATH = "monsters/sludge/bio.wav";
-		const string SOUND_STRUCK1 = "barnacle/bcl_bite3.wav";
-		const string SOUND_STRUCK2 = "barnacle/bcl_die3.wav";
-		const string SOUND_IDLE = "barnacle/bcl_alert2.wav";
-		const string SOUND_ATTACK1 = "barnacle/bcl_tongue1.wav";
-		const string SOUND_ATTACK2 = "barnacle/bcl_chew3.wav";
+		SOUND_DEATH = "monsters/sludge/bio.wav";
+		SOUND_STRUCK1 = "barnacle/bcl_bite3.wav";
+		SOUND_STRUCK2 = "barnacle/bcl_die3.wav";
+		SOUND_IDLE = "barnacle/bcl_alert2.wav";
+		SOUND_ATTACK1 = "barnacle/bcl_tongue1.wav";
+		SOUND_ATTACK2 = "barnacle/bcl_chew3.wav";
 		Precache(SOUND_DEATH);
 		ANIM_IDLE = "walk";
 		ANIM_RUN = "run";
@@ -38,18 +56,18 @@ class SlimeGreenLarge : CGameScript
 		ANIM_DEATH = "die";
 		ATTACK_RANGE = 60;
 		ATTACK_HITRANGE = 120;
-		const float ATTACK_HITCHANCE = 0.75;
-		const string ATTACK_DAMAGE = Random(35, 55);
-		const string POISON_DAMAGE = Random(10, 15);
-		const int SPIT_RANGE = 1024;
-		const float SPIT_ROF = 2.0;
-		const string SPIT_DAMAGE = RandomInt(30, 50);
-		const float CLOUD_DELAY = 15.0;
-		const string CLOUD_DAMAGE = RandomInt(10, 30);
-		const float CLOUD_DURATION = 10.0;
-		const float FREQ_SPIT = 1.0;
-		const float FREQ_SPIT_SCAN = 2.0;
-		const float FREQ_CLOUD = 30.0;
+		ATTACK_HITCHANCE = 0.75;
+		ATTACK_DAMAGE = Random(35, 55);
+		POISON_DAMAGE = Random(10, 15);
+		SPIT_RANGE = 1024;
+		SPIT_ROF = 2.0;
+		SPIT_DAMAGE = RandomInt(30, 50);
+		CLOUD_DELAY = 15.0;
+		CLOUD_DAMAGE = RandomInt(10, 30);
+		CLOUD_DURATION = 10.0;
+		FREQ_SPIT = 1.0;
+		FREQ_SPIT_SCAN = 2.0;
+		FREQ_CLOUD = 30.0;
 		if (m_hAttackTarget == "unset")
 		{
 		}
@@ -99,7 +117,7 @@ class SlimeGreenLarge : CGameScript
 		{
 			string N_MINUS = N_SPIT_TARGETS;
 			N_MINUS -= 1;
-			string RND_TARGET = RandomInt(0, N_MINUS);
+			int RND_TARGET = RandomInt(0, N_MINUS);
 			SPIT_TARGET = GetToken(SPIT_TARGETS, RND_TARGET, ";");
 		}
 		else

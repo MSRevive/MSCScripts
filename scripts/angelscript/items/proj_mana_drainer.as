@@ -5,15 +5,19 @@ namespace MS
 
 class ProjManaDrainer : CGameScript
 {
+	string CL_SCRIPT;
 	string F_MP_DRAIN_RATE;
+	string HOVER_SOUND;
 	string MP_DRAIN_OVERRIDE;
+	int MP_DRAIN_RATE;
+	string SOUND_POP;
 
 	ProjManaDrainer()
 	{
-		const int MP_DRAIN_RATE = 1;
-		const string CL_SCRIPT = "items/proj_mana_drainer_cl";
-		const string HOVER_SOUND = "ambience/labdrone2.wav";
-		const string SOUND_POP = "turret/tu_die2.wav";
+		MP_DRAIN_RATE = 1;
+		CL_SCRIPT = "items/proj_mana_drainer_cl";
+		HOVER_SOUND = "ambience/labdrone2.wav";
+		SOUND_POP = "turret/tu_die2.wav";
 	}
 
 	void OnRepeatTimer()

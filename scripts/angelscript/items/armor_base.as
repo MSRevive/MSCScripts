@@ -8,20 +8,25 @@ namespace MS
 
 class ArmorBase : CGameScript
 {
+	int ARMOR_HUMAN_FEMALE_OFS_ADJ;
 	int ARMOR_PROTECTION;
 	string ARMOR_PROTECTION_AREA;
 	string ARMOR_REPLACE_BODYPARTS;
 	string ARMOR_TYPE;
 	int DMG_REDUCT;
 	string L_PERC_TO_FLOAT;
+	string MODEL_HANDS;
+	string MODEL_VIEW;
+	string MODEL_WORLD;
+	string NEW_ARMOR_MODEL;
 
 	ArmorBase()
 	{
-		const string MODEL_HANDS = "misc/p_misc.mdl";
-		const string MODEL_WORLD = "misc/p_misc.mdl";
-		const string MODEL_VIEW = "none";
-		const int ARMOR_HUMAN_FEMALE_OFS_ADJ = 20;
-		const string NEW_ARMOR_MODEL = "armor/p_armorvest_new.mdl";
+		MODEL_HANDS = "misc/p_misc.mdl";
+		MODEL_WORLD = "misc/p_misc.mdl";
+		MODEL_VIEW = "none";
+		ARMOR_HUMAN_FEMALE_OFS_ADJ = 20;
+		NEW_ARMOR_MODEL = "armor/p_armorvest_new.mdl";
 	}
 
 	void OnSpawn() override
@@ -168,7 +173,7 @@ class ArmorBase : CGameScript
 		string ALRT_STR = "You are too weak to move freely in this armor. (Min Strength ";
 		ALRT_STR += ARMOR_STR_REQ;
 		ALRT_STR += ")";
-		SendInfoMsg(GetOwner(), "Insufficient Strength for Armor ALRT_STR");
+		SendInfoMsg(GetOwner(), "Insufficient Strength for Armor " + ALRT_STR);
 		ApplyEffect(GetOwner(), "effects/effect_slow", 10.0, 0.5, GetEntityIndex(GetOwner()));
 	}
 

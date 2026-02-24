@@ -7,6 +7,9 @@ class KElderCl : CGameScript
 {
 	string KE_BEAM_ON;
 	int KE_END_KNIFE_SPRITE;
+	string KE_GLOW_SPRITE;
+	float KE_GLOW_SPRITE_LARGE;
+	float KE_GLOW_SPRITE_SMALL;
 	string KE_OWNER_SKEL;
 	string KE_RENDER_ON;
 	string KE_SPRITE_TARGET;
@@ -15,9 +18,9 @@ class KElderCl : CGameScript
 
 	KElderCl()
 	{
-		const string KE_GLOW_SPRITE = "3dmflaora.spr";
-		const float KE_GLOW_SPRITE_LARGE = 0.5;
-		const float KE_GLOW_SPRITE_SMALL = 0.1;
+		KE_GLOW_SPRITE = "3dmflaora.spr";
+		KE_GLOW_SPRITE_LARGE = 0.5;
+		KE_GLOW_SPRITE_SMALL = 0.1;
 		Precache(KE_GLOW_SPRITE);
 	}
 

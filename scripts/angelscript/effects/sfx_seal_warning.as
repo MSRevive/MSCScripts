@@ -12,13 +12,14 @@ class SfxSealWarning : CGameScript
 	string FX_ORIGIN;
 	string SEAL_BODY;
 	string SEAL_COLOR;
+	string SEAL_MODEL;
 	int SEAL_PITCH;
 	string SEAL_RAD;
 	string SEAL_TYPE;
 
 	SfxSealWarning()
 	{
-		const string SEAL_MODEL = "weapons/magic/seals.mdl";
+		SEAL_MODEL = "weapons/magic/seals.mdl";
 	}
 
 	void client_activate()
@@ -94,8 +95,8 @@ class SfxSealWarning : CGameScript
 	{
 		if ((FX_ACTIVE))
 		{
-			string L_RENDER_RATIO = /* TODO: $math(subtract) */ FX_END_TIME;
-			string L_RENDER_RATIO = /* TODO: $math(divide) */ L_RENDER_RATIO;
+			string L_RENDER_RATIO = (FX_END_TIME - GetGameTime());
+			string L_RENDER_RATIO = (L_RENDER_RATIO / FX_DURATION);
 			string L_RENDER_AMT = /* TODO: $ratio */ $ratio(L_RENDER_RATIO, 255, 10);
 		}
 		else
@@ -107,10 +108,10 @@ class SfxSealWarning : CGameScript
 
 	void game_prerender()
 	{
-		string L_RENDER_RATIO = /* TODO: $math(subtract) */ FX_END_TIME;
-		string L_RENDER_RATIO = /* TODO: $math(divide) */ L_RENDER_RATIO;
+		string L_RENDER_RATIO = (FX_END_TIME - GetGameTime());
+		string L_RENDER_RATIO = (L_RENDER_RATIO / FX_DURATION);
 		string L_RENDER_RADIUS = /* TODO: $ratio */ $ratio(L_RENDER_RATIO, SEAL_RAD, 10);
-		string L_RENDER_RADIUS = /* TODO: $math(multiply) */ L_RENDER_RADIUS;
+		string L_RENDER_RADIUS = (L_RENDER_RADIUS * 1.11);
 		ClientEffect("light", FX_LIGHT_ID, FX_ORIGIN, L_RENDER_RADIUS, SEAL_COLOR, 0.1);
 	}
 

@@ -7,9 +7,11 @@ namespace MS
 
 class BanditUnarmed : CGameScript
 {
+	int WEAPON;
+
 	BanditUnarmed()
 	{
-		const int WEAPON = 2;
+		WEAPON = 2;
 	}
 
 }

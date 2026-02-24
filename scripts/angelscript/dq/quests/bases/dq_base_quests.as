@@ -10,20 +10,25 @@ class DqBaseQuests : CGameScript
 	string NPCATK_TARGET;
 	string OFFER_MENU_ID;
 	string PLAYING_DEAD;
+	string QUEST_ACTIVE;
+	string QUEST_ASKING;
+	string QUEST_COMPLETE;
 	int QUEST_CURRENTLY_COMBATING;
+	string QUEST_FAILED;
 	string QUEST_MODE;
 	string QUEST_TAKER;
 	string QUEST_TAKER_MAXHP;
+	string QUEST_WAITING;
 	int USING_BASE_QUEST;
 
 	DqBaseQuests()
 	{
 		USING_BASE_QUEST = 1;
-		const string QUEST_WAITING = "waiting";
-		const string QUEST_ASKING = "asking";
-		const string QUEST_ACTIVE = "active";
-		const string QUEST_COMPLETE = "complete";
-		const string QUEST_FAILED = "failed";
+		QUEST_WAITING = "waiting";
+		QUEST_ASKING = "asking";
+		QUEST_ACTIVE = "active";
+		QUEST_COMPLETE = "complete";
+		QUEST_FAILED = "failed";
 		QUEST_MODE = QUEST_WAITING;
 		ALLY_FOLLOW_ON = 0;
 		QUEST_CURRENTLY_COMBATING = 0;
@@ -86,7 +91,7 @@ class DqBaseQuests : CGameScript
 	{
 		string L_STRING = "Please return to ";
 		L_STRING += GetEntityProperty(GetOwner(), "name.full");
-		SendInfoMsg("all", "Quest Complete L_STRING");
+		SendInfoMsg("all", "Quest Complete " + L_STRING);
 	}
 
 	void OnDeath(CBaseEntity@ attacker) override

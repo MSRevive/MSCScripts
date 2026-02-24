@@ -11,14 +11,18 @@ class SorcGuard : CGameScript
 	string ANIM_ATTACK;
 	string ANIM_ATTACK1;
 	string ANIM_ATTACK2;
+	float ATTACK_ACCURACY;
 	int DID_LEAPSTUN;
+	int DMG_SWORD;
 	int DROP_GOLD;
-	string DROP_GOLD_AMT;
+	int DROP_GOLD_AMT;
 	float FLINCH_CHANCE;
+	float FREQ_LUNGE;
 	int LEAPING;
 	string LEAP_END;
 	string LEAP_TARGET;
 	int LUNGE_DELAY;
+	int LUNGE_RANGE;
 	int NPC_FORCED_MOVEDEST;
 	int NPC_GIVE_EXP;
 	int ORC_JUMPER;
@@ -32,11 +36,11 @@ class SorcGuard : CGameScript
 		ANIM_ATTACK2 = "battleaxe_swing1_L";
 		FLINCH_CHANCE = 0.25;
 		ANIM_ATTACK = ANIM_ATTACK1;
-		const float ATTACK_ACCURACY = 0.7;
-		const string DMG_SWORD = RandomInt(30, 150);
+		ATTACK_ACCURACY = 0.7;
+		DMG_SWORD = RandomInt(30, 150);
 		ORC_JUMPER = 1;
-		const float FREQ_LUNGE = 10.0;
-		const int LUNGE_RANGE = 256;
+		FREQ_LUNGE = 10.0;
+		LUNGE_RANGE = 256;
 	}
 
 	void orc_spawn()

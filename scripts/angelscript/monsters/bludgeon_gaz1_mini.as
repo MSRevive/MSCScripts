@@ -7,10 +7,13 @@ namespace MS
 
 class BludgeonGaz1Mini : CGameScript
 {
+	int AM_MINI;
+	string MONSTER_MODEL;
+
 	BludgeonGaz1Mini()
 	{
-		const string MONSTER_MODEL = "monsters/bludgeon_gaz_mini.mdl";
-		const int AM_MINI = 1;
+		MONSTER_MODEL = "monsters/bludgeon_gaz_mini.mdl";
+		AM_MINI = 1;
 	}
 
 }

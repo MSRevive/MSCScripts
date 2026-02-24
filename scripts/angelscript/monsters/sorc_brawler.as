@@ -10,8 +10,16 @@ class SorcBrawler : CGameScript
 {
 	string ANIM_ATTACK;
 	string ANIM_ATTACK1;
+	string ANIM_KICK;
+	string ANIM_SLAP;
+	string ANIM_SMASH;
+	string ANIM_SWIPE1;
+	string ANIM_WARCRY;
 	int ATTACKING;
-	string ATTACK_DAMAGE;
+	float ATTACK_ACCURACY;
+	int ATTACK_DAMAGE;
+	int ATTACK_DMG_HIGH;
+	int ATTACK_DMG_LOW;
 	int ATTACK_HITRANGE;
 	int ATTACK_MOVERANGE;
 	string ATTACK_PUSH;
@@ -21,13 +29,27 @@ class SorcBrawler : CGameScript
 	int CHARGE_DELAY;
 	int DONE_WARCRY;
 	int DROP_GOLD;
-	string DROP_GOLD_AMT;
+	int DROP_GOLD_AMT;
 	float FLINCH_CHANCE;
+	float KICK_DMG_DELAY;
 	int MOVE_RANGE;
 	string MY_SCRIPT_IDX;
 	string NEXT_ATTACK;
 	int NPC_FORCED_MOVEDEST;
 	int NPC_GIVE_EXP;
+	float SLAP_DMG_DELAY;
+	string SOUND_KICK;
+	string SOUND_KICKHIT;
+	string SOUND_SLAP;
+	string SOUND_SLAPHIT;
+	string SOUND_TELE;
+	string SOUND_WALK1;
+	string SOUND_WALK2;
+	string SOUND_WARCRY;
+	string SOUND_ZAP1;
+	string SOUND_ZAP2;
+	string SOUND_ZAP3;
+	float STUCK_CHECK_FREQUENCY;
 
 	SorcBrawler()
 	{
@@ -36,34 +58,34 @@ class SorcBrawler : CGameScript
 		NPC_GIVE_EXP = 500;
 		BASE_MOVESPEED = 2.0;
 		ANIM_ATTACK1 = "swordswing1_L";
-		const string ANIM_SMASH = "battleaxe_swing1_L";
-		const string ANIM_SWIPE1 = "swordswing1_L";
-		const string ANIM_SLAP = "deflectcounter";
-		const string ANIM_KICK = "kick";
-		const string ANIM_WARCRY = "warcry";
-		const float KICK_DMG_DELAY = 0.5;
-		const float SLAP_DMG_DELAY = 0.5;
+		ANIM_SMASH = "battleaxe_swing1_L";
+		ANIM_SWIPE1 = "swordswing1_L";
+		ANIM_SLAP = "deflectcounter";
+		ANIM_KICK = "kick";
+		ANIM_WARCRY = "warcry";
+		KICK_DMG_DELAY = 0.5;
+		SLAP_DMG_DELAY = 0.5;
 		FLINCH_CHANCE = 0.45;
-		const float ATTACK_ACCURACY = 0.7;
+		ATTACK_ACCURACY = 0.7;
 		ATTACK_DAMAGE = RandomInt(50, 100);
-		const int ATTACK_DMG_LOW = 10;
-		const int ATTACK_DMG_HIGH = 20;
+		ATTACK_DMG_LOW = 10;
+		ATTACK_DMG_HIGH = 20;
 		ATTACK_RANGE = 150;
 		ATTACK_HITRANGE = 200;
 		ATTACK_MOVERANGE = 50;
 		MOVE_RANGE = 50;
-		const string SOUND_KICK = "zombie/claw_miss1.wav";
-		const string SOUND_SLAP = "zombie/claw_miss2.wav";
-		const string SOUND_KICKHIT = "zombie/claw_strike2.wav";
-		const string SOUND_SLAPHIT = "zombie/claw_strike3.wav";
-		const string SOUND_WARCRY = "monsters/troll/trollidle.wav";
-		const string SOUND_ZAP1 = "debris/beamstart14.wav";
-		const string SOUND_ZAP2 = "debris/beamstart14.wav";
-		const string SOUND_ZAP3 = "debris/zap1.wav";
-		const string SOUND_WALK1 = "monsters/troll/step1.wav";
-		const string SOUND_WALK2 = "monsters/troll/step2.wav";
-		const string SOUND_TELE = "magic/teleport.wav";
-		const float STUCK_CHECK_FREQUENCY = 2.0;
+		SOUND_KICK = "zombie/claw_miss1.wav";
+		SOUND_SLAP = "zombie/claw_miss2.wav";
+		SOUND_KICKHIT = "zombie/claw_strike2.wav";
+		SOUND_SLAPHIT = "zombie/claw_strike3.wav";
+		SOUND_WARCRY = "monsters/troll/trollidle.wav";
+		SOUND_ZAP1 = "debris/beamstart14.wav";
+		SOUND_ZAP2 = "debris/beamstart14.wav";
+		SOUND_ZAP3 = "debris/zap1.wav";
+		SOUND_WALK1 = "monsters/troll/step1.wav";
+		SOUND_WALK2 = "monsters/troll/step2.wav";
+		SOUND_TELE = "magic/teleport.wav";
+		STUCK_CHECK_FREQUENCY = 2.0;
 	}
 
 	void orc_spawn()

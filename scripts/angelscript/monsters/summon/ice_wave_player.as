@@ -8,8 +8,11 @@ namespace MS
 
 class IceWavePlayer : CGameScript
 {
+	float AOE_FREQ;
+	int AOE_RADIUS;
 	int FADE_AMT;
 	string FREEZE_DURATION;
+	int FWD_SPEED;
 	int IS_FADING;
 	string MY_DURATION;
 	string MY_OWNER;
@@ -18,9 +21,9 @@ class IceWavePlayer : CGameScript
 
 	IceWavePlayer()
 	{
-		const float AOE_FREQ = 0.1;
-		const int AOE_RADIUS = 128;
-		const int FWD_SPEED = 20;
+		AOE_FREQ = 0.1;
+		AOE_RADIUS = 128;
+		FWD_SPEED = 20;
 	}
 
 	void OnSpawn() override

@@ -11,31 +11,39 @@ namespace MS
 class SorcShamanFriendly : CGameScript
 {
 	string BALL_TYPE;
+	int CHAT_NEVER_INTERRUPT;
+	int CHAT_NO_CLOSE_MOUTH;
+	int CHAT_USE_CONV_ANIMS;
 	int DID_SHADOWFORM;
 	int DOING_SWITCH_PAGE;
 	int FOLLOW_PLR_DIST;
 	string FOLLOW_PLR_ID;
+	int FROST_BOLT_DAMAGE;
+	int FROST_STRIKE_DAMAGE;
 	string LEADER_ID;
+	int NO_SUMMON;
 	string PLAYERS_TO_REWARD;
 	int REWARDS_LEFT;
 	string SECOND_ID;
 	string SETUP_QUALIFICATIONS;
 	string SFORC_MENU_TARGET;
+	string SFS_ENTRANCE_POINT;
 	int SKILL_PAGE;
+	int SWIPE_DAMAGE;
 	string T_LEADER_ID;
 	string T_SECOND_ID;
 
 	SorcShamanFriendly()
 	{
-		const int CHAT_USE_CONV_ANIMS = 0;
-		const int CHAT_NO_CLOSE_MOUTH = 1;
-		const int CHAT_NEVER_INTERRUPT = 1;
-		const int NO_SUMMON = 1;
-		const string SWIPE_DAMAGE = "$rand(50,120)";
-		const string FROST_BOLT_DAMAGE = "$rand(80,175)";
-		const string FROST_STRIKE_DAMAGE = "$rand(60,120)";
+		CHAT_USE_CONV_ANIMS = 0;
+		CHAT_NO_CLOSE_MOUTH = 1;
+		CHAT_NEVER_INTERRUPT = 1;
+		NO_SUMMON = 1;
+		SWIPE_DAMAGE = "$rand(50,120)";
+		FROST_BOLT_DAMAGE = "$rand(80,175)";
+		FROST_STRIKE_DAMAGE = "$rand(60,120)";
 		FOLLOW_PLR_DIST = 256;
-		const Vector3 SFS_ENTRANCE_POINT = Vector3(1584, -1152, -128);
+		SFS_ENTRANCE_POINT = Vector3(1584, -1152, -128);
 		SKILL_PAGE = 1;
 	}
 
@@ -310,7 +318,7 @@ class SorcShamanFriendly : CGameScript
 			PLR_ADJ += 1;
 			XP_GAIN *= PLR_ADJ;
 			GiveExp(param1, param2, int(XP_GAIN));
-			SendColoredMessage(param1, "* int(XP_GAIN) XP Awarded PARAM2");
+			SendColoredMessage(param1, "* " + int(XP_GAIN) + XP + "Awarded " + param2);
 		}
 		else
 		{
@@ -321,7 +329,7 @@ class SorcShamanFriendly : CGameScript
 			PLR_ADJ += 1;
 			XP_GAIN *= PLR_ADJ;
 			GiveExp(param1, param2, int(XP_GAIN));
-			SendColoredMessage(param1, "* int(XP_GAIN) XP Awarded PARAM2");
+			SendColoredMessage(param1, "* " + int(XP_GAIN) + XP + "Awarded " + param2);
 		}
 		if (!(REWARDS_LEFT == 0)) return;
 		ScheduleDelayedEvent(6.0, "ready_to_go");

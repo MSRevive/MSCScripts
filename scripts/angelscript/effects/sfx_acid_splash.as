@@ -8,17 +8,25 @@ class SfxAcidSplash : CGameScript
 	int CYCLE_ANGLE;
 	string FX_CENTER;
 	string FX_RADIUS;
+	string SOUND_BURST;
+	string SPRITE_COLOR;
+	int SPRITE_FRAMERATE;
+	string SPRITE_NAME;
+	int SPRITE_NFRAMES;
+	int SPRITE_RENDERAMT;
+	string SPRITE_RENDERMODE;
+	float SPRITE_SCALE;
 
 	SfxAcidSplash()
 	{
-		const string SPRITE_NAME = "bloodspray.spr";
-		const Vector3 SPRITE_COLOR = Vector3(0, 255, 0);
-		const int SPRITE_RENDERAMT = 255;
-		const string SPRITE_RENDERMODE = "texture";
-		const int SPRITE_FRAMERATE = 10;
-		const int SPRITE_NFRAMES = 10;
-		const float SPRITE_SCALE = 3.0;
-		const string SOUND_BURST = "gonarch/gon_birth1.wav";
+		SPRITE_NAME = "bloodspray.spr";
+		SPRITE_COLOR = Vector3(0, 255, 0);
+		SPRITE_RENDERAMT = 255;
+		SPRITE_RENDERMODE = "texture";
+		SPRITE_FRAMERATE = 10;
+		SPRITE_NFRAMES = 10;
+		SPRITE_SCALE = 3.0;
+		SOUND_BURST = "gonarch/gon_birth1.wav";
 		Precache(SOUND_BURST);
 	}
 

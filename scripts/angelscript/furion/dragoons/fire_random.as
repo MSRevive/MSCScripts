@@ -7,9 +7,11 @@ namespace MS
 
 class FireRandom : CGameScript
 {
+	int ELEMENT;
+
 	FireRandom()
 	{
-		const int ELEMENT = 2;
+		ELEMENT = 2;
 	}
 
 }

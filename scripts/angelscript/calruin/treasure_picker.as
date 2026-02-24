@@ -14,7 +14,7 @@ class TreasurePicker : CGameScript
 		SetSolid("none");
 		SetRoam(false);
 		SetModel("none");
-		string TRES_CHOICE = RandomInt(1, 100);
+		int TRES_CHOICE = RandomInt(1, 100);
 		if (TRES_CHOICE > 50)
 		{
 			SendInfoMsg("all", "CRITICAL_ITEM_DROPPED The hellforge has summoned forth a Granite Maul");

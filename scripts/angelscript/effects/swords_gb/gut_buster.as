@@ -8,20 +8,28 @@ namespace MS
 class GutBuster : CGameScript
 {
 	int DID_PROC;
+	string DOT_HE_IMMUNE;
+	string DOT_IM_AFFECTED;
+	string DOT_IM_RESIST;
+	string DOT_TYPE;
+	string EFFECT_FLAGS;
+	string EFFECT_ID;
+	string EFFECT_SCRIPT;
 	string MY_BLOOD;
+	string NUM_GIBS;
 	string SWORD_ID;
 
 	GutBuster()
 	{
-		const string EFFECT_ID = "gb";
-		const string EFFECT_SCRIPT = currentscript;
-		const string EFFECT_FLAGS = "nostack";
-		const string DOT_TYPE = "pierce_effect";
-		const string DOT_IM_AFFECTED = "Your flesh is defiled by the evil sword.";
-		const string DOT_IM_RESIST = "Your armor prevents the attack from piercing through your skin.";
-		const string DOT_HE_IMMUNE = "cannot bleed.";
+		EFFECT_ID = "gb";
+		EFFECT_SCRIPT = currentscript;
+		EFFECT_FLAGS = "nostack";
+		DOT_TYPE = "pierce_effect";
+		DOT_IM_AFFECTED = "Your flesh is defiled by the evil sword.";
+		DOT_IM_RESIST = "Your armor prevents the attack from piercing through your skin.";
+		DOT_HE_IMMUNE = "cannot bleed.";
 		DID_PROC = 0;
-		const string NUM_GIBS = /* TODO: $func */ $func("get_num_gibs");
+		NUM_GIBS = "get_num_gibs"();
 	}
 
 	void game_activate()
@@ -52,7 +60,7 @@ class GutBuster : CGameScript
 			EmitSound(GetOwner(), 0, "common/bodysplat.wav", 10);
 			if (!(GetEntityProperty(GetOwner(), "alive")))
 			{
-				if (/* TODO: $math(add) */ GetEntityHeight(GetOwner()) < 150)
+				if ((GetEntityHeight(GetOwner()) + GetEntityWidth(GetOwner())) < 150)
 				{
 					SetProp(GetOwner(), "rendermode", 5);
 					SetProp(GetOwner(), "renderamt", 0);
@@ -64,7 +72,7 @@ class GutBuster : CGameScript
 	void create_gib()
 	{
 		Vector3 L_ANG = Vector3(Random(70, 95), RandomInt(0, 359), 0);
-		string L_FORCE = /* TODO: $math(multiply) */ 400;
+		string L_FORCE = (400 * i);
 		L_FORCE += 400;
 		string L_VEC = /* TODO: $relvel */ $relvel(L_ANG, Vector3(0, L_FORCE, 0));
 		SpawnNPC("effects/swords_gb/gb_gib_explode", GetEntityOrigin(GetOwner()), ScriptMode::Legacy); // params: DOT_ATTACKER, L_VEC, 0, "swordsmanship", MY_BLOOD, SWORD_ID
@@ -72,11 +80,11 @@ class GutBuster : CGameScript
 
 	void get_num_gibs()
 	{
-		string L_NUM_GIBS = /* TODO: $math(add) */ GetEntityHeight(GetOwner());
+		string L_NUM_GIBS = (GetEntityHeight(GetOwner()) + GetEntityWidth(GetOwner()));
 		L_NUM_GIBS /= 150;
-		// TODO: capvar L_NUM_GIBS 0 2
-		L_HP_GIBS += /* TODO: $math(divide) */ GetEntityMaxHealth(GetOwner());
-		// TODO: capvar L_HP_GIBS 0 3
+		L_NUM_GIBS = max(0, min(2, L_NUM_GIBS));
+		L_HP_GIBS += (GetEntityMaxHealth(GetOwner()) / 1750);
+		L_HP_GIBS = max(0, min(3, L_HP_GIBS));
 		L_NUM_GIBS += L_HP_GIBS;
 		L_NUM_GIBS += 1;
 		return;

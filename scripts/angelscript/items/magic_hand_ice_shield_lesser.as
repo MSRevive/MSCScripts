@@ -7,13 +7,19 @@ namespace MS
 
 class MagicHandIceShieldLesser : CGameScript
 {
+	int CSKILL_REQ;
+	float ICESHIELD_FORMULA;
+	int MANA_COST;
+	int SPELL_ENERGYDRAIN;
+	int SPELL_MPDRAIN;
+
 	MagicHandIceShieldLesser()
 	{
-		const int CSKILL_REQ = 1;
-		const int SPELL_ENERGYDRAIN = 25;
-		const int SPELL_MPDRAIN = 20;
-		const int MANA_COST = 20;
-		const float ICESHIELD_FORMULA = 0.75;
+		CSKILL_REQ = 1;
+		SPELL_ENERGYDRAIN = 25;
+		SPELL_MPDRAIN = 20;
+		MANA_COST = 20;
+		ICESHIELD_FORMULA = 0.75;
 	}
 
 	void spell_spawn()

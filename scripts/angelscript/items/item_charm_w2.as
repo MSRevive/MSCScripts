@@ -7,15 +7,23 @@ namespace MS
 
 class ItemCharmW2 : CGameScript
 {
+	string PET_FAIL_MESSAGE;
+	int PET_MAXHP;
+	string PET_SEARCH;
+	string PET_TYPE;
+	string PET_YAY_MESSAGE;
+	int SKILL_LEVEL_REQ;
+	string SKILL_TYPE;
+
 	ItemCharmW2()
 	{
-		const int SKILL_LEVEL_REQ = 15;
-		const string SKILL_TYPE = "skill.spellcasting";
-		const string PET_TYPE = "wolf";
-		const string PET_SEARCH = "wolf_ice";
-		const int PET_MAXHP = 1000;
-		const string PET_FAIL_MESSAGE = "No weakened winter wolves in range.";
-		const string PET_YAY_MESSAGE = "You now have a new pet winter wolf!";
+		SKILL_LEVEL_REQ = 15;
+		SKILL_TYPE = "skill.spellcasting";
+		PET_TYPE = "wolf";
+		PET_SEARCH = "wolf_ice";
+		PET_MAXHP = 1000;
+		PET_FAIL_MESSAGE = "No weakened winter wolves in range.";
+		PET_YAY_MESSAGE = "You now have a new pet winter wolf!";
 	}
 
 	void crystal_spawn()

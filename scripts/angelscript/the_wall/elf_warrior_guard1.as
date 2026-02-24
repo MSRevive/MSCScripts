@@ -11,21 +11,27 @@ class ElfWarriorGuard1 : CGameScript
 	string ANIM_ATTACK;
 	string CHAT_STEP1;
 	string CHAT_STEPS;
+	int DMG_MELEE;
+	string DMG_TYPE;
+	int NO_CHAT;
+	int NPC_BATTLE_ALLY;
 	int NPC_GIVE_EXP;
 	int NPC_NO_PLAYER_DMG;
 	int NPC_RETURN_HOME;
+	string SOUND_HELLO;
+	string SOUND_VELEND;
 
 	ElfWarriorGuard1()
 	{
 		NPC_GIVE_EXP = 0;
-		const string DMG_TYPE = "pierce";
-		const int DMG_MELEE = 800;
+		DMG_TYPE = "pierce";
+		DMG_MELEE = 800;
 		NPC_NO_PLAYER_DMG = 1;
 		NPC_RETURN_HOME = 1;
-		const int NO_CHAT = 1;
-		const int NPC_BATTLE_ALLY = 1;
-		const string SOUND_HELLO = "npc/elvenfemale/vs_nnwnobf1_hi.wav";
-		const string SOUND_VELEND = "npc/elvenfemale/vs_nnwnobf1_warn.wav";
+		NO_CHAT = 1;
+		NPC_BATTLE_ALLY = 1;
+		SOUND_HELLO = "npc/elvenfemale/vs_nnwnobf1_hi.wav";
+		SOUND_VELEND = "npc/elvenfemale/vs_nnwnobf1_warn.wav";
 	}
 
 	void elf_spawn()
@@ -86,7 +92,7 @@ class ElfWarriorGuard1 : CGameScript
 		}
 		else
 		{
-			SayText("Seeker Varon maybe dead , but I must still stand guard , as I await our reinforcements.");
+			SayText("Seeker Varon maybe dead , but " + I + "must still stand guard , as " + I + " await our reinforcements.");
 		}
 	}
 

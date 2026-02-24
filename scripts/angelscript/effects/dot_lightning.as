@@ -8,15 +8,21 @@ namespace MS
 class DotLightning : CGameScript
 {
 	string CL_FX;
+	string DOT_HE_IMMUNE;
+	string DOT_IM_AFFECTED;
+	string DOT_IM_RESIST;
+	string DOT_TYPE;
+	string EFFECT_ID;
+	string EFFECT_SCRIPT;
 
 	DotLightning()
 	{
-		const string EFFECT_ID = "DOT_lightning";
-		const string EFFECT_SCRIPT = currentscript;
-		const string DOT_TYPE = "lightning_effect";
-		const string DOT_IM_AFFECTED = "You are being electrocuted!";
-		const string DOT_IM_RESIST = "You resist the lightning magic's deleterious effects.";
-		const string DOT_HE_IMMUNE = "is immune to electrical attacks!";
+		EFFECT_ID = "DOT_lightning";
+		EFFECT_SCRIPT = currentscript;
+		DOT_TYPE = "lightning_effect";
+		DOT_IM_AFFECTED = "You are being electrocuted!";
+		DOT_IM_RESIST = "You resist the lightning magic's deleterious effects.";
+		DOT_HE_IMMUNE = "is immune to electrical attacks!";
 	}
 
 	void dot_start()

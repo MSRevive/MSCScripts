@@ -11,27 +11,37 @@ class Fangtooth : CGameScript
 	string ANIM_DEATH;
 	string ANIM_IDLE;
 	string ANIM_RUN;
+	string ANIM_RUN_BASE;
 	string ANIM_WALK;
+	string ANIM_WALK_BASE;
 	float ATTACK_HITCHANCE;
 	int ATTACK_HITRANGE;
 	int ATTACK_RANGE;
 	float BASE_FRAMERATE;
 	float BASE_MOVESPEED;
 	int MOVE_RANGE;
+	int SUMMON_CIRCLE_INDEX;
+	string SUM_REPORT_SUFFIX;
+	string SUM_SAY_ATTACK;
+	string SUM_SAY_COME;
+	string SUM_SAY_DEATH;
+	string SUM_SAY_DEFEND;
+	string SUM_SAY_GUARD;
+	string SUM_SAY_HUNT;
 	string TRICK_ANIM;
 
 	Fangtooth()
 	{
-		const int SUMMON_CIRCLE_INDEX = 12;
-		const string SUM_SAY_COME = "*squirk!*";
-		const string SUM_SAY_ATTACK = "*squeek!* *squeek!*";
-		const string SUM_SAY_HUNT = "*squirk...*";
-		const string SUM_SAY_DEFEND = "*squeekie!*";
-		const string SUM_SAY_DEATH = "*SQUEEK!*";
-		const string SUM_SAY_GUARD = "*gasp!*";
-		const string SUM_REPORT_SUFFIX = "..er, I mean, *squirk*!?";
-		const string ANIM_WALK_BASE = "walk";
-		const string ANIM_RUN_BASE = "run";
+		SUMMON_CIRCLE_INDEX = 12;
+		SUM_SAY_COME = "*squirk!*";
+		SUM_SAY_ATTACK = "*squeek!* *squeek!*";
+		SUM_SAY_HUNT = "*squirk...*";
+		SUM_SAY_DEFEND = "*squeekie!*";
+		SUM_SAY_DEATH = "*SQUEEK!*";
+		SUM_SAY_GUARD = "*gasp!*";
+		SUM_REPORT_SUFFIX = "..er, I mean, *squirk*!?";
+		ANIM_WALK_BASE = "walk";
+		ANIM_RUN_BASE = "run";
 		ANIM_IDLE = "idle1";
 		ANIM_WALK = "walk";
 		ANIM_RUN = "run";

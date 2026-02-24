@@ -8,12 +8,13 @@ namespace MS
 
 class Appatruth : CGameScript
 {
+	int CHAT_NEVER_INTERRUPT;
 	int PLAYING_DEAD;
 	string TORCH_TRIGGER;
 
 	Appatruth()
 	{
-		const int CHAT_NEVER_INTERRUPT = 1;
+		CHAT_NEVER_INTERRUPT = 1;
 	}
 
 	void OnSpawn() override

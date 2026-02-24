@@ -8,21 +8,25 @@ namespace MS
 
 class FishBase : CGameScript
 {
+	string ANIM_TURN_LEFT;
+	string ANIM_TURN_RIGHT;
 	int CAN_RETALIATE;
 	string FISH_LASTYAW;
 	string FISH_WANDER_DEST;
 	string L_ANIM;
 	string L_NEGATIVE;
 	int NPC_MUST_SEE_TARGET;
+	float RETALIATE_CHANGETARGET_CHANCE;
+	int TURN_ANIM_THRESHOLD;
 
 	FishBase()
 	{
 		NPC_MUST_SEE_TARGET = 0;
-		const string ANIM_TURN_RIGHT = "rturn";
-		const string ANIM_TURN_LEFT = "lturn";
-		const int TURN_ANIM_THRESHOLD = 90;
+		ANIM_TURN_RIGHT = "rturn";
+		ANIM_TURN_LEFT = "lturn";
+		TURN_ANIM_THRESHOLD = 90;
 		CAN_RETALIATE = 1;
-		const float RETALIATE_CHANGETARGET_CHANCE = 0.75;
+		RETALIATE_CHANGETARGET_CHANCE = 0.75;
 	}
 
 	void OnRepeatTimer()

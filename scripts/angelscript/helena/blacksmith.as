@@ -13,6 +13,7 @@ class Blacksmith : CGameScript
 {
 	string ANIM_ATTACK;
 	string ANIM_DEATH;
+	int BG_MAX_HEAR_CIV;
 	int CANCHAT;
 	string CHAT_STEP1;
 	string CHAT_STEP2;
@@ -20,10 +21,12 @@ class Blacksmith : CGameScript
 	string CHAT_STEP4;
 	int CHAT_STEPS;
 	int COUNT;
+	int CUSTOM_GUARD;
 	float DELAY;
 	int HELENA_SAVED;
 	int MADE_IT_HOME;
 	string NEXT_DAGGER_CHAT;
+	int NO_CHAT;
 	float OVERCHARGE;
 	int REST;
 	string SELL_RATIO;
@@ -32,19 +35,20 @@ class Blacksmith : CGameScript
 	string STORE_NAME;
 	int STORE_SELLMENU;
 	string STORE_TRIGGERTEXT;
+	int VEND_ARMORER;
 
 	Blacksmith()
 	{
-		const int CUSTOM_GUARD = 1;
+		CUSTOM_GUARD = 1;
 		ANIM_DEATH = "dieforward";
 		ANIM_ATTACK = "beatdoor";
-		const int BG_MAX_HEAR_CIV = 400;
+		BG_MAX_HEAR_CIV = 400;
 		MADE_IT_HOME = 1;
 		COUNT = 0;
 		REST = 10;
 		DELAY = 1.05;
 		Precache("amb/fx_anvil.wav");
-		const int NO_CHAT = 1;
+		NO_CHAT = 1;
 		STORE_NAME = "helena_bs";
 		STORE_SELLMENU = 1;
 		STORE_TRIGGERTEXT = "store trade buy sell purchase sale offer";
@@ -52,9 +56,9 @@ class Blacksmith : CGameScript
 		CANCHAT = 1;
 		OVERCHARGE = 1.5;
 		ANIM_DEATH = "dieforward";
-		const int NO_CHAT = 1;
+		NO_CHAT = 1;
 		SELL_WEAPON_LEVEL = 6;
-		const int VEND_ARMORER = 1;
+		VEND_ARMORER = 1;
 	}
 
 	void OnRepeatTimer()

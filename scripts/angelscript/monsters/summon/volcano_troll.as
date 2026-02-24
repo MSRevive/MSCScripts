@@ -8,15 +8,25 @@ namespace MS
 class VolcanoTroll : CGameScript
 {
 	string ANIM_DEATH;
+	int AOE_FREQ;
+	int AOE_RADIUS;
 	string CAST_BY_PLAYER;
 	string CLIENT_DURATION;
 	int EFFECT_DURATION;
 	int ERUPTING;
 	int FX_ACTIVE;
 	string FX_ORIGIN;
+	string LIGHT_COLOR;
+	float LIGHT_DURATION;
+	int LIGHT_RADIUS;
 	int LOOP_DELAY;
+	string MODEL_WORLD;
 	string MY_OWNER;
 	int PLAYING_DEAD;
+	int ROCK_START_HEIGHT;
+	string SOUND_LOOP;
+	string SOUND_START;
+	string SPRITE_BURN;
 	string local.cl.gravity;
 	string local.cl.origin;
 	string local.cl.velocity;
@@ -24,23 +34,23 @@ class VolcanoTroll : CGameScript
 	VolcanoTroll()
 	{
 		ANIM_DEATH = "down";
-		const string SOUND_START = "magic/volcano_start.wav";
-		const string SOUND_LOOP = "magic/volcano_loop.wav";
-		const string MODEL_WORLD = "misc/volcano.mdl";
+		SOUND_START = "magic/volcano_start.wav";
+		SOUND_LOOP = "magic/volcano_loop.wav";
+		MODEL_WORLD = "misc/volcano.mdl";
 		LOOP_DELAY = 0;
 		Precache("misc/volcano.mdl");
 		Precache(SOUND_START);
 		Precache(SOUND_LOOP);
-		const int AOE_FREQ = 2;
-		const int AOE_RADIUS = 32;
-		const int ROCK_START_HEIGHT = 66;
+		AOE_FREQ = 2;
+		AOE_RADIUS = 32;
+		ROCK_START_HEIGHT = 66;
 		// TODO: UNCONVERTED: [client] repeatdelay 6
 		EmitSound(GetOwner(), CHAN_BODY, SOUND_LOOP, 7);
-		const string MODEL_WORLD = "weapons/projectiles.mdl";
-		const string SPRITE_BURN = "fire1_fixed.spr";
-		const int LIGHT_RADIUS = 64;
-		const Vector3 LIGHT_COLOR = Vector3(255, 0, 0);
-		const float LIGHT_DURATION = 0.8;
+		MODEL_WORLD = "weapons/projectiles.mdl";
+		SPRITE_BURN = "fire1_fixed.spr";
+		LIGHT_RADIUS = 64;
+		LIGHT_COLOR = Vector3(255, 0, 0);
+		LIGHT_DURATION = 0.8;
 	}
 
 	void OnSpawn() override
@@ -109,8 +119,8 @@ class VolcanoTroll : CGameScript
 	{
 		if (!(FX_ACTIVE)) return;
 		ScheduleDelayedEvent(0.25, "volcano_shoot_loop");
-		string xangle = Random(-50, -90);
-		string yangle = Random(-180, 180);
+		float xangle = Random(-50, -90);
+		float yangle = Random(-180, 180);
 		Vector3 ROCK_ANGS = Vector3(xangle, yangle, 0);
 		string ROCK_VEL = /* TODO: $relvel */ $relvel(ROCK_ANGS, Vector3(0, 500, 0));
 		volcono_shoot_rock(ROCK_VEL, Random(0.5, 0.8));

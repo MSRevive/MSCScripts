@@ -7,13 +7,16 @@ namespace MS
 
 class KeyholeSummon : CGameScript
 {
+	string KEYHOLE_NAME;
+	string KEYHOLE_TITLE;
+	string KEY_NAME;
 	int RETURN_KEY;
 
 	KeyholeSummon()
 	{
-		const string KEY_NAME = "item_summon_crystal";
-		const string KEYHOLE_NAME = "Crystal Holder";
-		const string KEYHOLE_TITLE = "Place the Summoning Crystal";
+		KEY_NAME = "item_summon_crystal";
+		KEYHOLE_NAME = "Crystal Holder";
+		KEYHOLE_TITLE = "Place the Summoning Crystal";
 		RETURN_KEY = 0;
 	}
 

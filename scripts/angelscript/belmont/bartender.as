@@ -14,10 +14,11 @@ class Bartender : CGameScript
 	int NO_RUMOR;
 	int QUESTS_ACTIVE;
 	int SKEL_RESPAWN_TIMES;
+	string SOUND_DEATH;
 
 	Bartender()
 	{
-		const string SOUND_DEATH = "xxx";
+		SOUND_DEATH = "xxx";
 		NO_HAIL = 1;
 		NO_JOB = 1;
 		NO_RUMOR = 1;
@@ -52,32 +53,32 @@ class Bartender : CGameScript
 	{
 		if (!(QUESTS_ACTIVE)) return;
 		convo_anim();
-		SayText("I m glad you saved me and all, but he has a lot of nasty friends who will follow.");
+		SayText(I + " m glad you saved me and all, but he has a lot of nasty friends who will follow.");
 		ScheduleDelayedEvent(3.0, "say_hi2");
 	}
 
 	void say_hi2()
 	{
 		convo_anim();
-		SayText("I d just get up and leave here, but they have all my money.");
+		SayText(I + " d just get up and leave here, but they have all my money.");
 		ScheduleDelayedEvent(3.0, "say_hi2b");
 	}
 
 	void say_hi2b()
 	{
-		SayText("It was all sealed in a magic coffer. I doubt they ll be able to open it anytime soon. But so long as they have it, I can t go anywhere.");
+		SayText("It was all sealed in a magic coffer. " + I + " doubt they ll be able to open it anytime soon. But so long as they have it, I can t go anywhere.");
 		ScheduleDelayedEvent(3.0, "say_hi3");
 	}
 
 	void say_hi3()
 	{
 		convo_anim();
-		SayText("If you could get it back for me , I d be sure to give you a handsom portion before I run off to Deralia!");
+		SayText("If you could get it back for me , " + I + " d be sure to give you a handsom portion before I run off to Deralia!");
 	}
 
 	void ext_harass1()
 	{
-		SayText("For the last time , I told you , we don t have that kind of money. You already took everything we had!");
+		SayText("For the last time , " + I + " told you , we don t have that kind of money. You already took everything we had!");
 		PlayAnim("critical", "converse1");
 	}
 
@@ -89,7 +90,7 @@ class Bartender : CGameScript
 
 	void ext_harass3()
 	{
-		SayText("NO! PLEASE DON T!!!");
+		SayText(NO! + PLEASE + DON + " T!!!");
 		PlayAnim("critical", "fear");
 	}
 
@@ -150,7 +151,7 @@ class Bartender : CGameScript
 
 	void return_coffer()
 	{
-		SayText("Thank you so very much! Now maybe I can setup some place more reputable...");
+		SayText("Thank you so very much! Now maybe " + I + " can setup some place more reputable...");
 		UseTrigger("coffer_returned");
 		// TODO: offer PARAM1 gold 200
 		ScheduleDelayedEvent(3.0, "next_quest");

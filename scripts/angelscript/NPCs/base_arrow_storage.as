@@ -5,20 +5,29 @@ namespace MS
 
 class BaseArrowStorage : CGameScript
 {
+	string ANIM_CHAT;
+	string ANIM_NO;
+	string ANIM_YES;
+	string ARROW_NAMES;
+	string BOLT_NAMES;
 	int CHECK_LOOP;
 	string CUSTOMER_ID;
+	string SAYTEXT_GIVE_TICKET;
+	string SAYTEXT_NOTICKET;
+	string SAYTEXT_NOT_ENOUGH;
+	string SAYTEXT_REDEEMTICKET;
 
 	BaseArrowStorage()
 	{
-		const string ARROW_NAMES = "proj_arrow_bluntwooden;proj_arrow_broadhead;proj_arrow_fire;proj_arrow_frost;proj_arrow_gholy;proj_arrow_holy;proj_arrow_jagged;proj_arrow_poison;proj_arrow_silvertipped;proj_arrow_wooden;";
-		const string BOLT_NAMES = "proj_bolt_fire;proj_bolt_iron;proj_bolt_silver;proj_bolt_steel;proj_bolt_wooden";
-		const string SAYTEXT_GIVE_TICKET = "There you go. You can redeem that ticket with most any fletcher in the land.";
-		const string SAYTEXT_REDEEMTICKET = "Okay, here's your ammo.";
-		const string SAYTEXT_NOT_ENOUGH = "Sorry, you don't have enough of those for me to sell you the ticket.";
-		const string SAYTEXT_NOTICKET = "Sorry, I did not recieve the ticket.";
-		const string ANIM_CHAT = "none";
-		const string ANIM_YES = "none";
-		const string ANIM_NO = "none";
+		ARROW_NAMES = "proj_arrow_bluntwooden;proj_arrow_broadhead;proj_arrow_fire;proj_arrow_frost;proj_arrow_gholy;proj_arrow_holy;proj_arrow_jagged;proj_arrow_poison;proj_arrow_silvertipped;proj_arrow_wooden;";
+		BOLT_NAMES = "proj_bolt_fire;proj_bolt_iron;proj_bolt_silver;proj_bolt_steel;proj_bolt_wooden";
+		SAYTEXT_GIVE_TICKET = "There you go. You can redeem that ticket with most any fletcher in the land.";
+		SAYTEXT_REDEEMTICKET = "Okay, here's your ammo.";
+		SAYTEXT_NOT_ENOUGH = "Sorry, you don't have enough of those for me to sell you the ticket.";
+		SAYTEXT_NOTICKET = "Sorry, I did not recieve the ticket.";
+		ANIM_CHAT = "none";
+		ANIM_YES = "none";
+		ANIM_NO = "none";
 	}
 
 	void game_menu_getoptions()
@@ -136,7 +145,7 @@ class BaseArrowStorage : CGameScript
 		// TODO: UNCONVERTED: addstr TICKET_NAME ITEM_TYPE
 		// TODO: offer CUSTOMER_ID TICKET_NAME
 		PlayAnim("critical", ANIM_YES);
-		SayText("SAYTEXT_GIVE_TICKET");
+		SayText(SAYTEXT_GIVE_TICKET);
 	}
 
 	void list_tickets()
@@ -164,11 +173,11 @@ class BaseArrowStorage : CGameScript
 			string METHOD_HACK = ItemExists(param1, TICKET_NAME);
 			// TODO: offer PARAM1 ITEM_IN:150
 			PlayAnim("critical", ANIM_YES);
-			SayText("SAYTEXT_REDEEMTICKET");
+			SayText(SAYTEXT_REDEEMTICKET);
 		}
 		else
 		{
-			SayText("SAYTEXT_NOTICKET");
+			SayText(SAYTEXT_NOTICKET);
 			PlayAnim("critical", ANIM_NO);
 		}
 	}
@@ -176,7 +185,7 @@ class BaseArrowStorage : CGameScript
 	void not_enough_arrows()
 	{
 		PlayAnim("critical", ANIM_NO);
-		SayText("SAYTEXT_NOT_ENOUGH");
+		SayText(SAYTEXT_NOT_ENOUGH);
 	}
 
 	void check_for_item()

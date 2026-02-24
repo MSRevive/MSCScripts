@@ -7,6 +7,8 @@ namespace MS
 
 class EffectShardshield : CGameScript
 {
+	string EFFECT_FLAGS;
+	string EFFECT_ID;
 	float game.effect.anim.framerate;
 	int game.effect.canattack;
 	int game.effect.canjump;
@@ -15,8 +17,8 @@ class EffectShardshield : CGameScript
 
 	EffectShardshield()
 	{
-		const string EFFECT_ID = "effect_shardshield";
-		const string EFFECT_FLAGS = "nostack";
+		EFFECT_ID = "effect_shardshield";
+		EFFECT_FLAGS = "nostack";
 	}
 
 	void game_activate()

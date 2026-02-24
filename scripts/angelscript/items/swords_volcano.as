@@ -7,47 +7,84 @@ namespace MS
 
 class SwordsVolcano : CGameScript
 {
+	int ANIM_ATTACK1;
+	int ANIM_ATTACK2;
+	int ANIM_ATTACK3;
+	int ANIM_IDLE1;
+	int ANIM_LIFT1;
+	string ANIM_PREFIX;
+	int ANIM_SHEATH;
+	int BASE_LEVEL_REQ;
+	float LEVEL_INC;
 	int LOOP_SOUND;
+	float MELEE_ACCURACY;
+	int MELEE_ALIGN_BASE;
+	int MELEE_ALIGN_TIP;
+	float MELEE_ATK_DURATION;
+	int MELEE_DMG;
+	float MELEE_DMG_DELAY;
+	int MELEE_DMG_RANGE;
+	string MELEE_DMG_TYPE;
+	float MELEE_ENERGY;
+	float MELEE_PARRY_CHANCE;
+	int MELEE_RANGE;
+	string MELEE_SOUND;
+	string MELEE_SOUND_DELAY;
+	string MELEE_STAT;
+	string MELEE_VIEWANIM_ATK;
+	int MODEL_BODY_OFS;
+	string MODEL_HANDS;
+	string MODEL_VIEW;
+	int MODEL_VIEW_IDX;
+	string MODEL_WORLD;
+	int MP_REQ1;
+	int MP_REQ2;
+	int MP_REQ3;
+	int MP_REQ4;
+	int MP_REQ5;
+	int SECONDARY_DMG;
+	string SOUND_SHOUT;
+	string SOUND_SWIPE;
 
 	SwordsVolcano()
 	{
-		const int MP_REQ1 = 5;
-		const int MP_REQ2 = 10;
-		const int MP_REQ3 = 15;
-		const int MP_REQ4 = 20;
-		const int MP_REQ5 = 30;
-		const float LEVEL_INC = 1.5;
-		const int BASE_LEVEL_REQ = 10;
-		const int ANIM_LIFT1 = 0;
-		const int ANIM_IDLE1 = 1;
-		const int ANIM_ATTACK1 = 2;
-		const int ANIM_ATTACK2 = 3;
-		const int ANIM_ATTACK3 = 4;
-		const int ANIM_SHEATH = 5;
-		const string MODEL_VIEW = "viewmodels/v_1hswords.mdl";
-		const int MODEL_VIEW_IDX = 5;
-		const string MODEL_HANDS = "weapons/p_weapons1.mdl";
-		const string MODEL_WORLD = "weapons/p_weapons1.mdl";
-		const string SOUND_SWIPE = "weapons/swingsmall.wav";
-		const string SOUND_SHOUT = GetEntityProperty(GetOwner(), "scriptvar");
-		const int MODEL_BODY_OFS = 110;
-		const string ANIM_PREFIX = "darksword";
-		const int MELEE_RANGE = 64;
-		const float MELEE_DMG_DELAY = 0.6;
-		const float MELEE_ATK_DURATION = 1.1;
-		const float MELEE_ENERGY = 0.3;
-		const int MELEE_DMG = 240;
-		const int SECONDARY_DMG = 500;
-		const int MELEE_DMG_RANGE = 10;
-		const string MELEE_DMG_TYPE = "slash";
-		const float MELEE_ACCURACY = 0.77;
-		const string MELEE_STAT = "swordsmanship";
-		const int MELEE_ALIGN_BASE = 4;
-		const int MELEE_ALIGN_TIP = 0;
-		const string MELEE_VIEWANIM_ATK = ANIM_ATTACK1;
-		const string MELEE_SOUND = SOUND_SWIPE;
-		const string MELEE_SOUND_DELAY = MELEE_DMG_DELAY;
-		const float MELEE_PARRY_CHANCE = 0.3;
+		MP_REQ1 = 5;
+		MP_REQ2 = 10;
+		MP_REQ3 = 15;
+		MP_REQ4 = 20;
+		MP_REQ5 = 30;
+		LEVEL_INC = 1.5;
+		BASE_LEVEL_REQ = 10;
+		ANIM_LIFT1 = 0;
+		ANIM_IDLE1 = 1;
+		ANIM_ATTACK1 = 2;
+		ANIM_ATTACK2 = 3;
+		ANIM_ATTACK3 = 4;
+		ANIM_SHEATH = 5;
+		MODEL_VIEW = "viewmodels/v_1hswords.mdl";
+		MODEL_VIEW_IDX = 5;
+		MODEL_HANDS = "weapons/p_weapons1.mdl";
+		MODEL_WORLD = "weapons/p_weapons1.mdl";
+		SOUND_SWIPE = "weapons/swingsmall.wav";
+		SOUND_SHOUT = GetEntityProperty(GetOwner(), "scriptvar");
+		MODEL_BODY_OFS = 110;
+		ANIM_PREFIX = "darksword";
+		MELEE_RANGE = 64;
+		MELEE_DMG_DELAY = 0.6;
+		MELEE_ATK_DURATION = 1.1;
+		MELEE_ENERGY = 0.3;
+		MELEE_DMG = 240;
+		SECONDARY_DMG = 500;
+		MELEE_DMG_RANGE = 10;
+		MELEE_DMG_TYPE = "slash";
+		MELEE_ACCURACY = 0.77;
+		MELEE_STAT = "swordsmanship";
+		MELEE_ALIGN_BASE = 4;
+		MELEE_ALIGN_TIP = 0;
+		MELEE_VIEWANIM_ATK = ANIM_ATTACK1;
+		MELEE_SOUND = SOUND_SWIPE;
+		MELEE_SOUND_DELAY = MELEE_DMG_DELAY;
+		MELEE_PARRY_CHANCE = 0.3;
 	}
 
 	void weapon_spawn()
@@ -222,7 +259,7 @@ class SwordsVolcano : CGameScript
 	{
 		if (GetEntityMP(GetOwner()) < param1)
 		{
-			SendColoredMessage(GetOwner(), "Dark Sword: Not enough MP for Soul Pierce PARAM2");
+			SendColoredMessage(GetOwner(), "Dark Sword: Not enough " + MP + "for Soul Pierce " + param2);
 		}
 		if (!(GetEntityMP(GetOwner()) >= param1)) return;
 		// TODO: splayviewanim ent_me 2

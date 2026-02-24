@@ -7,10 +7,13 @@ namespace MS
 
 class FinalChest : CGameScript
 {
+	string SCROLL_LIST;
+	string TOME_LIST;
+
 	FinalChest()
 	{
-		const string TOME_LIST = "scroll_fire_wall;scroll_lightning_storm;scroll_acid_xolt;scroll_ice_blast;scroll_volcano;scroll_healing_wave";
-		const string SCROLL_LIST = "scroll2_fire_wall;scroll2_lightning_storm;scroll2_acid_xolt;scroll2_ice_blast;scroll2_volcano;scroll2_healing_wave";
+		TOME_LIST = "scroll_fire_wall;scroll_lightning_storm;scroll_acid_xolt;scroll_ice_blast;scroll_volcano;scroll_healing_wave";
+		SCROLL_LIST = "scroll2_fire_wall;scroll2_lightning_storm;scroll2_acid_xolt;scroll2_ice_blast;scroll2_volcano;scroll2_healing_wave";
 	}
 
 	void chest_additems()
@@ -44,7 +47,7 @@ class FinalChest : CGameScript
 
 	void add_random_spell()
 	{
-		string L_LIST = RandomInt(0, 1);
+		int L_LIST = RandomInt(0, 1);
 		if (L_LIST == 0)
 		{
 			string L_LIST = TOME_LIST;
@@ -55,7 +58,7 @@ class FinalChest : CGameScript
 		}
 		string N_SCROLLS = GetTokenCount(L_LIST, ";");
 		N_SCROLLS -= 1;
-		string RND_PICK = RandomInt(0, N_SCROLLS);
+		int RND_PICK = RandomInt(0, N_SCROLLS);
 		string SCROLL_NAME = GetToken(L_LIST, RND_PICK, ";");
 		AddStoreItem(STORENAME, SCROLL_NAME, 1, 0);
 	}

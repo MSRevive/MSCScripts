@@ -7,15 +7,20 @@ namespace MS
 
 class TrollLobber : CGameScript
 {
+	int AIM_RATIO;
 	string ANIM_ATTACK;
+	string ANIM_DBLPUNCH;
 	string ANIM_DEATH;
 	string ANIM_IDLE;
+	string ANIM_PUNCH;
 	string ANIM_RUN;
+	string ANIM_THROW;
 	string ANIM_WALK;
 	string AS_ATTACKING;
 	int ATTACK_HITRANGE;
 	string ATTACK_MOVERANGE;
 	string ATTACK_RANGE;
+	int ATTACK_SPEED;
 	int CAN_FLINCH;
 	int CAN_HUNT;
 	int COMBAT_REPOS;
@@ -28,25 +33,43 @@ class TrollLobber : CGameScript
 	float FLINCH_DELAY;
 	int HUNT_AGRO;
 	int MELEE_RANGE;
+	int MELE_HITRANGE;
+	int MELE_RANGE;
 	int MOVE_RANGE;
 	string NPC_GIVE_EXP;
+	string PROJ_SCRIPT;
 	string PUSH_VEL;
+	int ROCK_DAMAGE;
+	int ROCK_RANGE;
+	string SOUND_ATTACK;
+	string SOUND_DEATH;
+	string SOUND_IDLE;
+	string SOUND_PAIN;
+	string SOUND_STRUCK1;
+	string SOUND_STRUCK2;
+	string SOUND_STRUCK3;
+	string SOUND_WALK1;
+	string SOUND_WALK2;
+	int SWING_RANGE;
+	int TROLL_EXP;
+	string TROLL_MODEL;
+	string TROLL_NAME;
 
 	TrollLobber()
 	{
-		const int TROLL_EXP = 150;
-		const string TROLL_NAME = "Troll";
-		const string PROJ_SCRIPT = "proj_troll_rock";
-		const string TROLL_MODEL = "monsters/troll.mdl";
-		const string SOUND_STRUCK1 = "weapons/cbar_hitbod1.wav";
-		const string SOUND_STRUCK2 = "weapons/cbar_hitbod1.wav";
-		const string SOUND_STRUCK3 = "weapons/cbar_hitbod1.wav";
-		const string SOUND_PAIN = "monsters/troll/trollpain.wav";
-		const string SOUND_ATTACK = "monsters/troll/trollattack.wav";
-		const string SOUND_DEATH = "monsters/troll/trolldeath.wav";
-		const string SOUND_WALK1 = "monsters/troll/step1.wav";
-		const string SOUND_WALK2 = "monsters/troll/step2.wav";
-		const string SOUND_IDLE = "monsters/troll/trollidle2.wav";
+		TROLL_EXP = 150;
+		TROLL_NAME = "Troll";
+		PROJ_SCRIPT = "proj_troll_rock";
+		TROLL_MODEL = "monsters/troll.mdl";
+		SOUND_STRUCK1 = "weapons/cbar_hitbod1.wav";
+		SOUND_STRUCK2 = "weapons/cbar_hitbod1.wav";
+		SOUND_STRUCK3 = "weapons/cbar_hitbod1.wav";
+		SOUND_PAIN = "monsters/troll/trollpain.wav";
+		SOUND_ATTACK = "monsters/troll/trollattack.wav";
+		SOUND_DEATH = "monsters/troll/trolldeath.wav";
+		SOUND_WALK1 = "monsters/troll/step1.wav";
+		SOUND_WALK2 = "monsters/troll/step2.wav";
+		SOUND_IDLE = "monsters/troll/trollidle2.wav";
 		DROP_GOLD = 1;
 		DROP_GOLD_MIN = 20;
 		DROP_GOLD_MAX = 40;
@@ -55,26 +78,26 @@ class TrollLobber : CGameScript
 		ANIM_WALK = "walk";
 		ANIM_DEATH = "die_fall";
 		ANIM_ATTACK = "throw_rock";
-		const string ANIM_PUNCH = "hit_down";
-		const string ANIM_DBLPUNCH = "double_punch";
-		const string ANIM_THROW = "throw_rock";
-		const int ROCK_RANGE = 800;
-		const int SWING_RANGE = 130;
+		ANIM_PUNCH = "hit_down";
+		ANIM_DBLPUNCH = "double_punch";
+		ANIM_THROW = "throw_rock";
+		ROCK_RANGE = 800;
+		SWING_RANGE = 130;
 		MELEE_RANGE = 100;
 		ATTACK_RANGE = ROCK_RANGE;
 		ATTACK_HITRANGE = 300;
 		MOVE_RANGE = 400;
-		const int MELE_RANGE = 128;
-		const int MELE_HITRANGE = 164;
+		MELE_RANGE = 128;
+		MELE_HITRANGE = 164;
 		CAN_FLINCH = 1;
 		FLINCH_CHANCE = 33;
 		FLINCH_ANIM = "flinch2";
 		FLINCH_DELAY = 2.0;
 		CAN_HUNT = 1;
 		HUNT_AGRO = 1;
-		const int AIM_RATIO = 25;
-		const int ATTACK_SPEED = 500;
-		const string ROCK_DAMAGE = "$rand(200,300)";
+		AIM_RATIO = 25;
+		ATTACK_SPEED = 500;
+		ROCK_DAMAGE = "$rand(200,300)";
 		Precache(SOUND_DEATH);
 		Precache("monsters/base_monster");
 		Precache("monsters/base_npc_attack");
@@ -107,7 +130,7 @@ class TrollLobber : CGameScript
 	void debug_props()
 	{
 		SetSayTextRange(1024);
-		SayText("I is hunting IS_HUNTING my target GetEntityName(HUNT_LASTTARGET)");
+		SayText(I + "is hunting " + IS_HUNTING + "my target " + GetEntityName(HUNT_LASTTARGET));
 	}
 
 	void npc_targetsighted()
@@ -229,7 +252,7 @@ class TrollLobber : CGameScript
 		if ((IS_HUNTING)) return;
 		if ((false)) return;
 		if ((IS_FLEEING)) return;
-		string ANIM_SELECT = RandomInt(0, 3);
+		int ANIM_SELECT = RandomInt(0, 3);
 		if (ANIM_SELECT == 0)
 		{
 			ANIM_IDLE = "idle0";

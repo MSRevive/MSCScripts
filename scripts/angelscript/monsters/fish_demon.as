@@ -7,20 +7,40 @@ namespace MS
 
 class FishDemon : CGameScript
 {
+	string ANIM_ATK1;
+	string ANIM_ATK2;
+	string ANIM_ATK_BIG;
 	string ANIM_ATTACK;
 	string ANIM_DEATH;
 	string ANIM_IDLE;
 	string ANIM_RUN;
 	string ANIM_WALK;
+	int ATTACK_HITCHANCE;
 	int ATTACK_HITRANGE;
 	int ATTACK_RANGE;
+	float CHANCE_SWALLOW;
 	int CYCLES_ON;
+	int DMG_BITE;
+	int DMG_BITE2;
+	int DMG_BITE3;
 	string FLIGHT_STUCK;
+	float FREQ_SWALLOW;
 	string LAST_POS;
-	string LAST_PROG;
+	float LAST_PROG;
 	int MOVE_RANGE;
 	int NPC_GIVE_EXP;
 	int NPC_HACKED_MOVE_SPEED;
+	int PUSH_RANGE;
+	string SOUND_ATTACK1;
+	string SOUND_ATTACK2;
+	string SOUND_DEATH;
+	string SOUND_IDLE1;
+	string SOUND_IDLE2;
+	string SOUND_STRUCK1;
+	string SOUND_STRUCK2;
+	string SOUND_STRUCK3;
+	string SOUND_STRUCK4;
+	string SOUND_STRUCK5;
 
 	FishDemon()
 	{
@@ -29,26 +49,26 @@ class FishDemon : CGameScript
 		ANIM_RUN = "thrust";
 		ANIM_DEATH = "die1";
 		ANIM_ATTACK = "bite_r";
-		const string ANIM_ATK_BIG = "srattack1";
-		const string ANIM_ATK1 = "bite_r";
-		const string ANIM_ATK2 = "bite_l";
-		const float CHANCE_SWALLOW = 0.1;
-		const string DMG_BITE = RandomInt(25, 60);
-		const string DMG_BITE2 = RandomInt(50, 100);
-		const string DMG_BITE3 = RandomInt(100, 200);
-		const int PUSH_RANGE = 140;
-		const string FREQ_SWALLOW = Random(20, 30);
-		const int ATTACK_HITCHANCE = 70;
-		const string SOUND_IDLE1 = "ichy/ichy_idle1.wav";
-		const string SOUND_IDLE2 = "ichy/ichy_idle2.wav";
-		const string SOUND_ATTACK1 = "ichy/ichy_bite1.wav";
-		const string SOUND_ATTACK2 = "ichy/ichy_bite2.wav";
-		const string SOUND_STRUCK1 = "ichy/ichy_pain2.wav";
-		const string SOUND_STRUCK2 = "ichy/ichy_pain3.wav";
-		const string SOUND_STRUCK3 = "ichy/ichy_pain5.wav";
-		const string SOUND_STRUCK4 = "ichy/ichy_pain3.wav";
-		const string SOUND_STRUCK5 = "ichy/ichy_pain5.wav";
-		const string SOUND_DEATH = "ichy/ichy_die2.wav";
+		ANIM_ATK_BIG = "srattack1";
+		ANIM_ATK1 = "bite_r";
+		ANIM_ATK2 = "bite_l";
+		CHANCE_SWALLOW = 0.1;
+		DMG_BITE = RandomInt(25, 60);
+		DMG_BITE2 = RandomInt(50, 100);
+		DMG_BITE3 = RandomInt(100, 200);
+		PUSH_RANGE = 140;
+		FREQ_SWALLOW = Random(20, 30);
+		ATTACK_HITCHANCE = 70;
+		SOUND_IDLE1 = "ichy/ichy_idle1.wav";
+		SOUND_IDLE2 = "ichy/ichy_idle2.wav";
+		SOUND_ATTACK1 = "ichy/ichy_bite1.wav";
+		SOUND_ATTACK2 = "ichy/ichy_bite2.wav";
+		SOUND_STRUCK1 = "ichy/ichy_pain2.wav";
+		SOUND_STRUCK2 = "ichy/ichy_pain3.wav";
+		SOUND_STRUCK3 = "ichy/ichy_pain5.wav";
+		SOUND_STRUCK4 = "ichy/ichy_pain3.wav";
+		SOUND_STRUCK5 = "ichy/ichy_pain5.wav";
+		SOUND_DEATH = "ichy/ichy_die2.wav";
 		Precache(SOUND_DEATH);
 		MOVE_RANGE = 40;
 		ATTACK_RANGE = 140;
@@ -110,7 +130,7 @@ class FishDemon : CGameScript
 		if (GetEntityRange(m_hAttackTarget) > ATTACK_RANGE)
 		{
 		}
-		string CUR_PROG = Distance(GetMonsterProperty("origin"), TARG_POS);
+		float CUR_PROG = Distance(GetMonsterProperty("origin"), TARG_POS);
 		if (LAST_PROG >= CUR_PROG)
 		{
 			FLIGHT_STUCK += 1;

@@ -18,6 +18,12 @@ class ZyEye : CGameScript
 	string MY_OWNER;
 	int NPC_GIVE_EXP;
 	int RENDER_AMT;
+	int RUN_REQ;
+	int SHOCK_DMG;
+	float SHOCK_DUR;
+	string SOUND_SHOCK1;
+	string SOUND_SHOCK2;
+	string SOUND_SHOCK3;
 
 	ZyEye()
 	{
@@ -27,12 +33,12 @@ class ZyEye : CGameScript
 		ANIM_WALK = "spin_horizontal_slow";
 		ANIM_RUN = "spin_horizontal_slow";
 		ANIM_ATTACK = "spin_horizontal_slow";
-		const string SOUND_SHOCK1 = "debris/zap8.wav";
-		const string SOUND_SHOCK2 = "debris/zap3.wav";
-		const string SOUND_SHOCK3 = "debris/zap4.wav";
-		const int SHOCK_DMG = 100;
-		const float SHOCK_DUR = 5.0;
-		const int RUN_REQ = 30;
+		SOUND_SHOCK1 = "debris/zap8.wav";
+		SOUND_SHOCK2 = "debris/zap3.wav";
+		SOUND_SHOCK3 = "debris/zap4.wav";
+		SHOCK_DMG = 100;
+		SHOCK_DUR = 5.0;
+		RUN_REQ = 30;
 		NPC_GIVE_EXP = 200;
 	}
 

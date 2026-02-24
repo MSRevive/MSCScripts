@@ -9,11 +9,13 @@ class BaseReact : CGameScript
 	string NPC_REACT_CANSEETARGET;
 	string NPC_REACT_LAST_TARGET;
 	string NPC_REACT_RESET_TARGET_TIME;
+	string NPC_REACT_SEETARGET;
+	int NPC_REACT_SEETARGET_RANGE;
 
 	BaseReact()
 	{
-		const string NPC_REACT_SEETARGET = "player";
-		const int NPC_REACT_SEETARGET_RANGE = 128;
+		NPC_REACT_SEETARGET = "player";
+		NPC_REACT_SEETARGET_RANGE = 128;
 		NPC_REACTS = 1;
 	}
 

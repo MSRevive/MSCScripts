@@ -7,13 +7,19 @@ namespace MS
 
 class SwordsSkullblade4 : CGameScript
 {
+	int BASE_LEVEL_REQ;
+	float MELEE_ACCURACY;
+	int MELEE_DMG;
+	int MELEE_DMG_RANGE;
+	int MELEE_ENERGY;
+
 	SwordsSkullblade4()
 	{
-		const int BASE_LEVEL_REQ = 10;
-		const int MELEE_ENERGY = 10;
-		const int MELEE_DMG = 350;
-		const int MELEE_DMG_RANGE = 10;
-		const float MELEE_ACCURACY = 0.65;
+		BASE_LEVEL_REQ = 10;
+		MELEE_ENERGY = 10;
+		MELEE_DMG = 350;
+		MELEE_DMG_RANGE = 10;
+		MELEE_ACCURACY = 0.65;
 	}
 
 	void weapon_spawn()

@@ -8,36 +8,47 @@ namespace MS
 class Volcano : CGameScript
 {
 	string ANIM_DEATH;
+	int DMG_HIGH;
+	int DMG_LOW;
 	int ERUPTING;
+	string LIGHT_COLOR;
+	float LIGHT_DURATION;
+	int LIGHT_RADIUS;
 	int LOOP_DELAY;
+	string MODEL_WORLD;
+	int ROCK_START_HEIGHT;
+	string SOUND_LOOP;
+	string SOUND_START;
+	string SPRITE_BURN;
+	int TIME_LIVE;
 	string VOLCANO_ID;
 	string local.cl.gravity;
 	string local.cl.origin;
 	string local.cl.velocity;
-	string xangle;
-	string yangle;
+	int xangle;
+	int yangle;
 
 	Volcano()
 	{
-		const int DMG_HIGH = 100;
-		const int DMG_LOW = 50;
+		DMG_HIGH = 100;
+		DMG_LOW = 50;
 		ANIM_DEATH = "down";
-		const int TIME_LIVE = 30;
-		const string SOUND_START = "magic/volcano_start.wav";
-		const string SOUND_LOOP = "magic/volcano_loop.wav";
-		const string MODEL_WORLD = "misc/volcano.mdl";
+		TIME_LIVE = 30;
+		SOUND_START = "magic/volcano_start.wav";
+		SOUND_LOOP = "magic/volcano_loop.wav";
+		MODEL_WORLD = "misc/volcano.mdl";
 		LOOP_DELAY = 0;
 		Precache("misc/volcano.mdl");
 		Precache(SOUND_START);
 		Precache(SOUND_LOOP);
-		const int ROCK_START_HEIGHT = 66;
+		ROCK_START_HEIGHT = 66;
 		// TODO: UNCONVERTED: [client] repeatdelay 7
 		EmitSound(GetOwner(), CHAN_BODY, SOUND_LOOP, 7);
-		const string MODEL_WORLD = "weapons/projectiles.mdl";
-		const string SPRITE_BURN = "fire1.spr";
-		const int LIGHT_RADIUS = 64;
-		const Vector3 LIGHT_COLOR = Vector3(255, 0, 0);
-		const float LIGHT_DURATION = 0.8;
+		MODEL_WORLD = "weapons/projectiles.mdl";
+		SPRITE_BURN = "fire1.spr";
+		LIGHT_RADIUS = 64;
+		LIGHT_COLOR = Vector3(255, 0, 0);
+		LIGHT_DURATION = 0.8;
 	}
 
 	void OnRepeatTimer()
@@ -96,7 +107,7 @@ class Volcano : CGameScript
 		xangle = RandomInt(50, 90);
 		yangle = RandomInt(-180, 180);
 		SetAngles("view");
-		string ATTACK_DAMAGE = Random(DMG_LOW, DMG_HIGH);
+		float ATTACK_DAMAGE = Random(DMG_LOW, DMG_HIGH);
 		DoDamage(/* TODO: $relpos */ $relpos(0, 0, 0), 128, ATTACK_DAMAGE, 1.0, 0);
 		TossProjectile("proj_volcano", /* TODO: $relpos */ $relpos(0, 0, ROCK_START_HEIGHT), "none", 500, ATTACK_DAMAGE, 0, "none");
 		ClientEvent("update", "all_in_sight", VOLCANO_ID, "volcono_shoot_rock", GetEntityVelocity("ent_lastprojectile"), GetEntityProperty("ent_lastprojectile", "gravity"));

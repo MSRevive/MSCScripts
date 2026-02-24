@@ -7,7 +7,7 @@ class Chestmaker : CGameScript
 {
 	void OnSpawn() override
 	{
-		string rand = RandomInt(0, 5);
+		int rand = RandomInt(0, 5);
 		if (rand == 0)
 		{
 			SpawnNPC("daragoth/chest_great", GetEntityOrigin(GetOwner()), ScriptMode::Legacy);

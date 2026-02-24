@@ -7,9 +7,11 @@ namespace MS
 
 class RandGreat : CGameScript
 {
+	string ITEM_EVENT;
+
 	RandGreat()
 	{
-		const string ITEM_EVENT = "add_great_item";
+		ITEM_EVENT = "add_great_item";
 	}
 
 	void chest_additems()

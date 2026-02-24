@@ -7,10 +7,13 @@ namespace MS
 
 class UnknownItem : CGameScript
 {
+	string MODEL_HOLD;
+	string MODEL_WORLD;
+
 	UnknownItem()
 	{
-		const string MODEL_WORLD = "misc/p_misc.mdl";
-		const string MODEL_HOLD = "misc/p_misc.mdl";
+		MODEL_WORLD = "misc/p_misc.mdl";
+		MODEL_HOLD = "misc/p_misc.mdl";
 	}
 
 	void miscitem_spawn()

@@ -11,11 +11,12 @@ class BoarLavaCl : CGameScript
 	string FX_OWNER;
 	string OWNER_YAW;
 	string RL_OFS;
+	string SPRITE_NAME;
 	string START_SCALE;
 
 	BoarLavaCl()
 	{
-		const string SPRITE_NAME = "fire1_fixed2.spr";
+		SPRITE_NAME = "fire1_fixed2.spr";
 	}
 
 	void client_activate()

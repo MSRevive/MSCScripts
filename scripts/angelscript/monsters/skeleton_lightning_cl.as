@@ -14,15 +14,18 @@ class SkeletonLightningCl : CGameScript
 	int FX_ACTIVE;
 	int GO_AWAY;
 	string OWNER_IDX;
+	string SOUND_SHOCK1;
+	string SOUND_SHOCK2;
+	string SOUND_SHOCK3;
 	string SPRITE_SCALE;
 	int TOTAL_OFS;
 	int TURN_INC;
 
 	SkeletonLightningCl()
 	{
-		const string SOUND_SHOCK1 = "debris/zap8.wav";
-		const string SOUND_SHOCK2 = "debris/zap3.wav";
-		const string SOUND_SHOCK3 = "debris/zap4.wav";
+		SOUND_SHOCK1 = "debris/zap8.wav";
+		SOUND_SHOCK2 = "debris/zap3.wav";
+		SOUND_SHOCK3 = "debris/zap4.wav";
 	}
 
 	void client_activate()
@@ -138,7 +141,7 @@ class SkeletonLightningCl : CGameScript
 	{
 		ClientEffect("beam_ents", OWNER_IDX, 1, param1, 2, "lgtning.spr", 1.0, 1, 1, 255, 100, 30, Vector3(1, 1, 0));
 		ClientEffect("spark", OWNER_IDX, 2);
-		string L_RND_SND = RandomInt(1, 3);
+		int L_RND_SND = RandomInt(1, 3);
 		if (L_RND_SND == 1)
 		{
 			string L_SOUND = SOUND_SHOCK1;

@@ -33,8 +33,8 @@ class SfxBeamCage : CGameScript
 		}
 		COIL_DURATION = param2;
 		ROT_COUNT = 0;
-		COIL_WIDTH = /* TODO: $math(multiply) */ L_WIDTH;
-		COIL_WIDTH_MIN = /* TODO: $math(multiply) */ L_WIDTH;
+		COIL_WIDTH = (L_WIDTH * 0.75);
+		COIL_WIDTH_MIN = (L_WIDTH * 0.4);
 		COIL_WIDTH_MAX = COIL_WIDTH;
 		COIL_HEIGHT = L_HEIGHT;
 		COIL_Z_START = (COIL_POS).z;
@@ -47,7 +47,7 @@ class SfxBeamCage : CGameScript
 			{
 				COIL_HEIGHT = 200;
 			}
-			string L_MAX_HEIGHT_RATIO = /* TODO: $math(divide) */ COIL_HEIGHT;
+			string L_MAX_HEIGHT_RATIO = (COIL_HEIGHT / 200);
 			ROCK_CLIMB_STEP += /* TODO: $ratio */ $ratio(L_MAX_HEIGHT_RATIO, 0.2, 2.0);
 		}
 		COIL_START_TIME = GetGameTime();
@@ -62,9 +62,9 @@ class SfxBeamCage : CGameScript
 	{
 		string L_COIL_CUR_Z = (COIL_POS).z;
 		if (!(L_COIL_CUR_Z < COIL_Z_MAX)) return;
-		string L_COMP_RATIO_MAX = /* TODO: $math(subtract) */ COIL_Z_MAX;
-		string L_COMP_RATIO_CUR = /* TODO: $math(subtract) */ COIL_Z_MAX;
-		string L_COMP_RATIO = /* TODO: $math(divide) */ L_COMP_RATIO_CUR;
+		string L_COMP_RATIO_MAX = (COIL_Z_MAX - COIL_Z_START);
+		string L_COMP_RATIO_CUR = (COIL_Z_MAX - L_COIL_CUR_Z);
+		string L_COMP_RATIO = (L_COMP_RATIO_CUR / L_COMP_RATIO_MAX);
 		COIL_WIDTH = /* TODO: $ratio */ $ratio(L_COMP_RATIO, COIL_WIDTH_MIN, COIL_WIDTH_MAX);
 		string BEAM_START = COIL_POS;
 		BEAM_START += /* TODO: $relpos */ $relpos(Vector3(0, ROT_COUNT, 0), Vector3(0, COIL_WIDTH, 0));

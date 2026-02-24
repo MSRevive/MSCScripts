@@ -21,11 +21,14 @@ class BaseNpcAttackNew : CGameScript
 	int CKN_STUCK_COUNTER;
 	int CYCLED_UP;
 	string CYCLE_TIME;
+	float CYCLE_TIME_BATTLE;
+	float CYCLE_TIME_IDLE;
+	float CYCLE_TIME_NPC;
 	string ENTITY_ENEMY;
 	float EXT_DAMAGE_ADJUSTMENT;
 	float EXT_HITCHANCE_ADJUSTMENT;
 	string FLEESTUCK_OLDPOS;
-	string FLEE_DIR;
+	int FLEE_DIR;
 	string FLEE_DISTANCE;
 	string FLEE_STUCKCHECK_FREQ;
 	int FLEE_STUCK_COUNT;
@@ -37,6 +40,8 @@ class BaseNpcAttackNew : CGameScript
 	string FLINCH_DELAY;
 	string FLINCH_DMG_REQ;
 	string FLINCH_HEALTH;
+	float HACK_ATTACK_DELAY;
+	float HACK_DAMAGE_DELAY;
 	int HACK_DELAYING_ATTACK;
 	int HAS_AI;
 	int HAVE_TARGET;
@@ -49,7 +54,8 @@ class BaseNpcAttackNew : CGameScript
 	int IS_FLEEING;
 	int IS_HUNTING;
 	string I_HEARD;
-	string MONSTER_ID;
+	float MAX_ADV_SEARCHTIME;
+	int MONSTER_ID;
 	string MONSTER_WIDTH;
 	int NEW_AI;
 	string NPCATK_TARGET;
@@ -58,8 +64,10 @@ class BaseNpcAttackNew : CGameScript
 	string NPC_CLOSEIN_RANGE;
 	string NPC_COULD_SEE_TARGET;
 	string NPC_DBL_MOVEPROX;
+	float NPC_DELAY_RETALITATE;
 	int NPC_DID_STEP_ADJ;
 	int NPC_FORCED_MOVEDEST;
+	int NPC_FRUST_THRESHOLD;
 	string NPC_HALF_HEIGHT;
 	string NPC_HALF_WIDTH;
 	string NPC_HAS_TARGET;
@@ -74,8 +82,11 @@ class BaseNpcAttackNew : CGameScript
 	string NPC_MOVEPROX;
 	string NPC_MUST_SEE_TARGET;
 	string NPC_RANGED;
+	string NPC_RANGE_TYPE;
 	int NPC_RETALIATING;
 	int NPC_ROAMING_HOME;
+	float NPC_SPAWN_PRED1;
+	float NPC_SPAWN_PRED2;
 	string NPC_STOREHUNTSTATE_ADVANCED;
 	string NPC_STOREHUNTSTATE_MLK;
 	string NPC_STORE_HP;
@@ -84,6 +95,7 @@ class BaseNpcAttackNew : CGameScript
 	int NPC_STUCK_TELEPORT;
 	string NPC_VANISHED_AT;
 	string NPC_VANISH_RETURN_TIME;
+	int NPC_WANDER_RANGE;
 	string ORIG_MOVERANGE;
 	string RETALIATE_CHANCE;
 	string RE_FLEE_DELAY;
@@ -95,18 +107,18 @@ class BaseNpcAttackNew : CGameScript
 	{
 		NEW_AI = 1;
 		HAS_AI = 1;
-		const int NPC_FRUST_THRESHOLD = 4;
-		const float MAX_ADV_SEARCHTIME = 45.0;
-		const float HACK_ATTACK_DELAY = 1.0;
-		const float HACK_DAMAGE_DELAY = 0.1;
-		const int NPC_WANDER_RANGE = 1024;
-		const float NPC_SPAWN_PRED1 = 0.5;
-		const float NPC_SPAWN_PRED2 = 0.75;
-		const float CYCLE_TIME_BATTLE = 0.1;
-		const float CYCLE_TIME_IDLE = 2.0;
-		const float CYCLE_TIME_NPC = 0.8;
-		const string NPC_RANGE_TYPE = "range";
-		const string NPC_DELAY_RETALITATE = Random(5.0, 10.0);
+		NPC_FRUST_THRESHOLD = 4;
+		MAX_ADV_SEARCHTIME = 45.0;
+		HACK_ATTACK_DELAY = 1.0;
+		HACK_DAMAGE_DELAY = 0.1;
+		NPC_WANDER_RANGE = 1024;
+		NPC_SPAWN_PRED1 = 0.5;
+		NPC_SPAWN_PRED2 = 0.75;
+		CYCLE_TIME_BATTLE = 0.1;
+		CYCLE_TIME_IDLE = 2.0;
+		CYCLE_TIME_NPC = 0.8;
+		NPC_RANGE_TYPE = "range";
+		NPC_DELAY_RETALITATE = Random(5.0, 10.0);
 	}
 
 	void npcatk_post_load()
@@ -759,7 +771,7 @@ class BaseNpcAttackNew : CGameScript
 	void chicken_run_stuckcheck()
 	{
 		if (!(CHICKEN_RUN)) return;
-		string CKN_MOVE_DIST = Distance(GetMonsterProperty("origin"), CKN_MY_OLD_POS);
+		float CKN_MOVE_DIST = Distance(GetMonsterProperty("origin"), CKN_MY_OLD_POS);
 		if (CKN_MOVE_DIST == 0)
 		{
 			FLEE_DIR = RandomInt(1, 359);

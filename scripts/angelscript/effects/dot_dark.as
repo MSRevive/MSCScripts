@@ -8,15 +8,21 @@ namespace MS
 class DotDark : CGameScript
 {
 	string CL_FX;
+	string DOT_HE_IMMUNE;
+	string DOT_IM_AFFECTED;
+	string DOT_IM_RESIST;
+	string DOT_TYPE;
+	string EFFECT_ID;
+	string EFFECT_SCRIPT;
 
 	DotDark()
 	{
-		const string EFFECT_ID = "DOT_defile";
-		const string EFFECT_SCRIPT = currentscript;
-		const string DOT_TYPE = "dark_effect";
-		const string DOT_IM_AFFECTED = "You are being defiled by dark magics!";
-		const string DOT_IM_RESIST = "You resist the dark magic.";
-		const string DOT_HE_IMMUNE = "is immune to dark magic!";
+		EFFECT_ID = "DOT_defile";
+		EFFECT_SCRIPT = currentscript;
+		DOT_TYPE = "dark_effect";
+		DOT_IM_AFFECTED = "You are being defiled by dark magics!";
+		DOT_IM_RESIST = "You resist the dark magic.";
+		DOT_HE_IMMUNE = "is immune to dark magic!";
 	}
 
 	void dot_start()

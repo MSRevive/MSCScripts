@@ -8,33 +8,53 @@ namespace MS
 
 class DwarfSbow : CGameScript
 {
+	string ACT_ANIM_RUN;
 	int ALLY_FOLLOW_ON;
+	int ALLY_MIN_DISTANCE;
+	int ALLY_MOVE_AWAY_DIST;
+	string ANIM_ALLY_JUMP;
+	string LANTERN_COLOR;
+	int LANTERN_HAND_INDEX;
+	int LANTERN_HAND_SUBMODEL;
+	int NPC_BASE_EXP;
 	int NPC_NO_PLAYER_DMG;
+	int NPC_USE_IDLE;
+	string SOUND_ALERT1;
+	string SOUND_ALERT2;
+	string SOUND_ALERT3;
+	string SOUND_ALLY_JUMP;
+	string SOUND_DEATH;
+	string SOUND_FLINCH1;
+	string SOUND_FLINCH2;
+	string SOUND_FLINCH3;
+	string SOUND_PAIN1;
+	string SOUND_PAIN2;
+	string SOUND_PAIN3;
 
 	DwarfSbow()
 	{
-		const int NPC_BASE_EXP = 0;
+		NPC_BASE_EXP = 0;
 		NPC_NO_PLAYER_DMG = 1;
 		ALLY_FOLLOW_ON = 0;
-		const string ANIM_ALLY_JUMP = "anim_roll_back";
-		const int NPC_USE_IDLE = 0;
-		const string SOUND_ALLY_JUMP = "voices/dwarf/vs_nx0drogm_hit2.wav";
-		const int ALLY_MOVE_AWAY_DIST = 128;
-		const int ALLY_MIN_DISTANCE = 64;
-		const string ACT_ANIM_RUN = "run";
-		const string SOUND_PAIN1 = "voices/dwarf/vs_ndwarfm1_hit1.wav";
-		const string SOUND_PAIN2 = "voices/dwarf/vs_ndwarfm1_bat1.wav";
-		const string SOUND_PAIN3 = "voices/dwarf/vs_ndwarfm1_hit3.wav";
-		const string SOUND_FLINCH1 = "voices/dwarf/vs_nx0drogm_heal.wav";
-		const string SOUND_FLINCH2 = "voices/dwarf/vs_nx0drogm_help.wav";
-		const string SOUND_FLINCH3 = "voices/dwarf/vs_nx0drogm_hit1.wav";
-		const string SOUND_DEATH = "voices/dwarf/vs_nx0drogm_hit3.wav";
-		const string SOUND_ALERT1 = "voices/dwarf/voices/dwarf/vs_nx0drogm_bat3.wav";
-		const string SOUND_ALERT2 = "voices/dwarf/voices/dwarf/vs_nx0drogm_bat1.wav";
-		const string SOUND_ALERT3 = "voices/dwarf/voices/dwarf/vs_ndwarfm1_bat3.wav";
-		const int LANTERN_HAND_SUBMODEL = 2;
-		const int LANTERN_HAND_INDEX = 0;
-		const Vector3 LANTERN_COLOR = Vector3(100, 75, 0);
+		ANIM_ALLY_JUMP = "anim_roll_back";
+		NPC_USE_IDLE = 0;
+		SOUND_ALLY_JUMP = "voices/dwarf/vs_nx0drogm_hit2.wav";
+		ALLY_MOVE_AWAY_DIST = 128;
+		ALLY_MIN_DISTANCE = 64;
+		ACT_ANIM_RUN = "run";
+		SOUND_PAIN1 = "voices/dwarf/vs_ndwarfm1_hit1.wav";
+		SOUND_PAIN2 = "voices/dwarf/vs_ndwarfm1_bat1.wav";
+		SOUND_PAIN3 = "voices/dwarf/vs_ndwarfm1_hit3.wav";
+		SOUND_FLINCH1 = "voices/dwarf/vs_nx0drogm_heal.wav";
+		SOUND_FLINCH2 = "voices/dwarf/vs_nx0drogm_help.wav";
+		SOUND_FLINCH3 = "voices/dwarf/vs_nx0drogm_hit1.wav";
+		SOUND_DEATH = "voices/dwarf/vs_nx0drogm_hit3.wav";
+		SOUND_ALERT1 = "voices/dwarf/voices/dwarf/vs_nx0drogm_bat3.wav";
+		SOUND_ALERT2 = "voices/dwarf/voices/dwarf/vs_nx0drogm_bat1.wav";
+		SOUND_ALERT3 = "voices/dwarf/voices/dwarf/vs_ndwarfm1_bat3.wav";
+		LANTERN_HAND_SUBMODEL = 2;
+		LANTERN_HAND_INDEX = 0;
+		LANTERN_COLOR = Vector3(100, 75, 0);
 	}
 
 	void darcher_spawn()

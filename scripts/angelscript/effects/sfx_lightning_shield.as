@@ -42,27 +42,27 @@ class SfxLightningShield : CGameScript
 		ScheduleDelayedEvent(0.1, "lshield_loop");
 		if (GetGameTime() > ZAP_FX_NERF)
 		{
-			string EXIT_SUB = RandomInt(0, 1);
+			int EXIT_SUB = RandomInt(0, 1);
 		}
 		if ((EXIT_SUB)) return;
 		string BEAM_START = /* TODO: $getcl */ $getcl(SHIELD_OWNER, "origin");
 		string BEAM_END = /* TODO: $getcl */ $getcl(SHIELD_OWNER, "origin");
 		BEAM_START += "z";
-		string RND_PITCH = Random(0, 359);
-		string RND_YAW = Random(0, 359);
+		float RND_PITCH = Random(0, 359);
+		float RND_YAW = Random(0, 359);
 		L_SHIELD_RADIUS = SHIELD_RADIUS;
 		L_SHIELD_RADIUS *= 0.5;
 		BEAM_START += /* TODO: $relpos */ $relpos(Vector3(RND_PITCH, RND_YAW, 0), Vector3(0, L_SHIELD_RADIUS, 0));
-		string RND_PITCH = Random(0, 359);
-		string RND_YAW = Random(0, 359);
+		float RND_PITCH = Random(0, 359);
+		float RND_YAW = Random(0, 359);
 		BEAM_END += /* TODO: $relpos */ $relpos(Vector3(RND_PITCH, RND_YAW, 0), Vector3(0, L_SHIELD_RADIUS, 0));
 		ClientEffect("beam_points", BEAM_START, BEAM_END, "lgtning.spr", 0.2, 2, 9, 0.3, 0.1, 30, SHIELD_COLOR);
 		if (!(SHIELD_RADIUS > 128)) return;
 		string BEAM_START = /* TODO: $getcl */ $getcl(SHIELD_OWNER, "origin");
 		string BEAM_END = /* TODO: $getcl */ $getcl(SHIELD_OWNER, "origin");
 		BEAM_START += /* TODO: $relpos */ $relpos(Vector3(RND_PITCH, RND_YAW, 0), Vector3(0, L_SHIELD_RADIUS, 0));
-		string RND_PITCH = Random(0, 359);
-		string RND_YAW = Random(0, 359);
+		float RND_PITCH = Random(0, 359);
+		float RND_YAW = Random(0, 359);
 		BEAM_END += /* TODO: $relpos */ $relpos(Vector3(RND_PITCH, RND_YAW, 0), Vector3(0, L_SHIELD_RADIUS, 0));
 		ClientEffect("beam_points", BEAM_START, BEAM_END, "lgtning.spr", 0.2, 2, 9, 0.3, 0.1, 30, SHIELD_COLOR);
 	}

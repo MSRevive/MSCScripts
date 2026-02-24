@@ -7,13 +7,16 @@ namespace MS
 
 class KeyholeIce : CGameScript
 {
+	string KEYHOLE_NAME;
+	string KEYHOLE_TITLE;
+	string KEY_NAME;
 	int RETURN_KEY;
 
 	KeyholeIce()
 	{
-		const string KEY_NAME = "key_blue";
-		const string KEYHOLE_NAME = "Ice Encrusted Keyhole";
-		const string KEYHOLE_TITLE = "Use the Ice key";
+		KEY_NAME = "key_blue";
+		KEYHOLE_NAME = "Ice Encrusted Keyhole";
+		KEYHOLE_TITLE = "Use the Ice key";
 		RETURN_KEY = 0;
 	}
 

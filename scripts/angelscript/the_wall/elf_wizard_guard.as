@@ -12,6 +12,7 @@ class ElfWizardGuard : CGameScript
 	string ANIM_STEP1;
 	string ANIM_STEP3;
 	int ATTACK_HITRANGE;
+	int ATTACK_HITRANGE_MELEE;
 	int ATTACK_RANGE;
 	float CHAT_DELAY_STEP1;
 	float CHAT_DELAY_STEP2;
@@ -42,8 +43,14 @@ class ElfWizardGuard : CGameScript
 	string CHAT_STEP8;
 	string CHAT_STEP9;
 	int CHAT_STEPS;
+	int DMG_MELEE;
+	int DMG_SHOCK;
+	int DOT_SHOCK;
+	int ELF_LIGHTNING_WIZARD;
 	string INTRO_ID;
 	string NEXT_DMG_ALERT;
+	int NO_CHAT;
+	int NPC_BATTLE_ALLY;
 	int NPC_NO_PLAYER_DMG;
 	string NPC_PROXACT_EVENT;
 	int NPC_PROXACT_IFSEEN;
@@ -61,6 +68,8 @@ class ElfWizardGuard : CGameScript
 	string REWARD_LIST4;
 	string REWARD_NAMES4;
 	string REWARED_SYMBOL;
+	string SOUND_ELF_BEAM_LOOP;
+	string SOUND_ELF_BEAM_START;
 
 	ElfWizardGuard()
 	{
@@ -69,21 +78,21 @@ class ElfWizardGuard : CGameScript
 		REWARD_LIST3 = "armor_helm_gaz1;mana_immune_fire;mana_vampire;item_gwond;axes_dragon;scroll_fire_wall;swords_novablade12;blunt_gauntlets_fire";
 		REWARD_LIST4 = "mana_leadfoot;axes_gthunder11;axes_vaxe;blunt_gauntlets_demon;mana_forget;mana_speed;mana_regen;polearms_nag";
 		REWARD_NAMES4 = "Leadfoot Potion;Greater Thunderaxe;Blood Axe;Demon Gauntlets;Forgetfulness Potion;Speed Potion;Regeneration Potion;Elven Glaive";
-		const int ELF_LIGHTNING_WIZARD = 1;
-		const int DMG_SHOCK = 100;
-		const int DOT_SHOCK = 50;
-		const int DMG_MELEE = 300;
-		const int NO_CHAT = 1;
+		ELF_LIGHTNING_WIZARD = 1;
+		DMG_SHOCK = 100;
+		DOT_SHOCK = 50;
+		DMG_MELEE = 300;
+		NO_CHAT = 1;
 		NPC_NO_PLAYER_DMG = 1;
 		NPC_RETURN_HOME = 1;
 		NPC_PROX_ACTIVATE = 1;
 		NPC_PROXACT_RANGE = 256;
 		NPC_PROXACT_EVENT = "do_intro";
 		NPC_PROXACT_IFSEEN = 0;
-		const string SOUND_ELF_BEAM_LOOP = "magic/bolt_loop.wav";
-		const string SOUND_ELF_BEAM_START = "magic/bolt_start.wav";
-		const int NPC_BATTLE_ALLY = 1;
-		const int ATTACK_HITRANGE_MELEE = 128;
+		SOUND_ELF_BEAM_LOOP = "magic/bolt_loop.wav";
+		SOUND_ELF_BEAM_START = "magic/bolt_start.wav";
+		NPC_BATTLE_ALLY = 1;
+		ATTACK_HITRANGE_MELEE = 128;
 	}
 
 	void game_precache()
@@ -464,7 +473,7 @@ class ElfWizardGuard : CGameScript
 			REWARED_SYMBOL = 1;
 			string CUR_ITEM_NAME = "Symbol of Felewyn ";
 			string CUR_ITEM = "item_s";
-			string RAND_SYMB = RandomInt(1, 5);
+			int RAND_SYMB = RandomInt(1, 5);
 			if (RAND_SYMB == 1)
 			{
 				string NAME_ADD = "I";
@@ -653,7 +662,7 @@ class ElfWizardGuard : CGameScript
 		LogDebug("reward_random_item step1");
 		string N_REWARDS = GetTokenCount(REWARD_LIST, ";");
 		N_REWARDS -= 1;
-		string RND_REWARD = RandomInt(0, N_REWARDS);
+		int RND_REWARD = RandomInt(0, N_REWARDS);
 		LogDebug("reward_random_item step2");
 		string RND_ITEM = GetToken(REWARD_LIST, RND_REWARD, ";");
 		LogDebug("reward_random_item step3");

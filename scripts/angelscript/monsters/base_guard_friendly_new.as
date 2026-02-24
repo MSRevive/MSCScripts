@@ -5,6 +5,11 @@ namespace MS
 
 class BaseGuardFriendlyNew : CGameScript
 {
+	float BG_BASESPEED;
+	int BG_HOME_RANGE;
+	int BG_MAX_HEAR_CIV;
+	int BG_NO_GO_HOME;
+	int BG_ROAM;
 	int CHECKING_CLEAR;
 	string HOME_YAW;
 	int MADE_IT_HOME;
@@ -16,11 +21,11 @@ class BaseGuardFriendlyNew : CGameScript
 
 	BaseGuardFriendlyNew()
 	{
-		const float BG_BASESPEED = 1.0;
-		const int BG_ROAM = 0;
-		const int BG_NO_GO_HOME = 0;
-		const int BG_MAX_HEAR_CIV = 2048;
-		const int BG_HOME_RANGE = 10;
+		BG_BASESPEED = 1.0;
+		BG_ROAM = 0;
+		BG_NO_GO_HOME = 0;
+		BG_MAX_HEAR_CIV = 2048;
+		BG_HOME_RANGE = 10;
 		NO_STUCK_CHECKS = 1;
 	}
 
@@ -154,14 +159,14 @@ class BaseGuardFriendlyNew : CGameScript
 		npcatk_settarget(param1);
 		if (!(false)) return;
 		SetSayTextRange(1024);
-		string RAND_HALT = RandomInt(1, 4);
+		int RAND_HALT = RandomInt(1, 4);
 		if (RAND_HALT == 1)
 		{
 			SayText("Hey you! Leave him alone!");
 		}
 		if (RAND_HALT == 2)
 		{
-			SayText("You there , leave him be I said!");
+			SayText("You there , leave him be " + I + " said!");
 		}
 		if (RAND_HALT == 3)
 		{

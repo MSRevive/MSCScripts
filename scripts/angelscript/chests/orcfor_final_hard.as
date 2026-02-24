@@ -9,7 +9,7 @@ class OrcforFinalHard : CGameScript
 {
 	void chest_additems()
 	{
-		add_gold(/* TODO: $math(multiply) */ 500);
+		add_gold((500 * G_GAVE_ARTI1));
 		if (G_GAVE_ARTI1 == 1)
 		{
 			add_great_item();

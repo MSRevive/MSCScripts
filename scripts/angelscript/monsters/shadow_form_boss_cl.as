@@ -13,10 +13,11 @@ class ShadowFormBossCl : CGameScript
 	string OWNER_ORG;
 	float ROT_DIR;
 	float START_SCALE;
+	int V_ADJ;
 
 	ShadowFormBossCl()
 	{
-		const int V_ADJ = 48;
+		V_ADJ = 48;
 	}
 
 	void client_activate()

@@ -10,14 +10,19 @@ class ArmorBaseHelmet : CGameScript
 {
 	string CUR_STUN_PROT;
 	int HELM_EFFECT_ACTIVE;
+	int HELM_HIDES_HEAD;
+	int IS_HELM;
+	string MODEL_HANDS;
+	string MODEL_VIEW;
+	string MODEL_WORLD;
 
 	ArmorBaseHelmet()
 	{
-		const string MODEL_HANDS = "misc/p_misc.mdl";
-		const string MODEL_WORLD = "misc/p_misc.mdl";
-		const string MODEL_VIEW = "none";
-		const int IS_HELM = 1;
-		const int HELM_HIDES_HEAD = 0;
+		MODEL_HANDS = "misc/p_misc.mdl";
+		MODEL_WORLD = "misc/p_misc.mdl";
+		MODEL_VIEW = "none";
+		IS_HELM = 1;
+		HELM_HIDES_HEAD = 0;
 	}
 
 	void OnSpawn() override
@@ -85,11 +90,11 @@ class ArmorBaseHelmet : CGameScript
 
 	void display_stun_info()
 	{
-		string L_STR = /* TODO: $math(multiply) */ CUR_STUN_PROT;
-		string L_STR = int(/* TODO: $math(subtract) */ 100);
+		string L_STR = (CUR_STUN_PROT * 100);
+		int L_STR = int((100 - L_STR));
 		if (CUR_STUN_PROT < 1)
 		{
-			SendColoredMessage(GetOwner(), "Your stun resistance is now L_STR");
+			SendColoredMessage(GetOwner(), "Your stun resistance is now " + L_STR);
 		}
 		if (CUR_STUN_PROT == 1)
 		{
@@ -112,7 +117,7 @@ class ArmorBaseHelmet : CGameScript
 		{
 			CUR_STUN_PROT = GetEntityProperty(GetOwner(), "scriptvar");
 			int SAME_PROTECT = 1;
-			SendColoredMessage(GetOwner(), "Your stun resistance remains STUN_PROTECTION due to Lesser Leadfoot Potion");
+			SendColoredMessage(GetOwner(), "Your stun resistance remains " + STUN_PROTECTION + " due to Lesser Leadfoot Potion");
 		}
 		if (OLD_PROT != STUN_PROTECTION)
 		{
@@ -138,7 +143,7 @@ class ArmorBaseHelmet : CGameScript
 		if ((POT_CHECK))
 		{
 			string L_STUN_RESIST = GetEntityProperty(GetOwner(), "scriptvar");
-			SendColoredMessage(GetOwner(), "Your stun resistance remains L_STUN_RESIST due to Lesser Leadfoot Potion");
+			SendColoredMessage(GetOwner(), "Your stun resistance remains " + L_STUN_RESIST + " due to Lesser Leadfoot Potion");
 		}
 		if ((POT_CHECK)) return;
 		string OLD_PROT = /* TODO: $get_takedmg */ $get_takedmg(GetOwner(), "stun");

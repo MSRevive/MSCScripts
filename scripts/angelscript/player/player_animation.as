@@ -5,6 +5,20 @@ namespace MS
 
 class PlayerAnimation : CGameScript
 {
+	string ANIM_CROUCH;
+	string ANIM_CROUCHMOVE;
+	string ANIM_DEATH;
+	string ANIM_DEATH2;
+	string ANIM_JUMP;
+	string ANIM_RUN;
+	string ANIM_STAND;
+	string ANIM_STAND_IDLE;
+	string ANIM_SWIM;
+	string ANIM_TREAD;
+	int ANIM_TYPE_HOLD;
+	int ANIM_TYPE_ONCE;
+	int ANIM_TYPE_WALK;
+	string ANIM_WALK;
 	string CURRENT_DEATH_ANIM;
 	string LEGS_ANIM;
 	string TORSO_ANIM;
@@ -12,20 +26,20 @@ class PlayerAnimation : CGameScript
 
 	PlayerAnimation()
 	{
-		const string ANIM_STAND = "stand";
-		const string ANIM_STAND_IDLE = "idle";
-		const string ANIM_CROUCH = "crouch_idle";
-		const string ANIM_CROUCHMOVE = "crawl";
-		const string ANIM_WALK = "walk_slow";
-		const string ANIM_RUN = "run";
-		const string ANIM_JUMP = "jump";
-		const string ANIM_TREAD = "treadwater";
-		const string ANIM_SWIM = "swim";
-		const string ANIM_DEATH = "die_simple";
-		const string ANIM_DEATH2 = "die_forwards";
-		const int ANIM_TYPE_WALK = 0;
-		const int ANIM_TYPE_ONCE = 1;
-		const int ANIM_TYPE_HOLD = 2;
+		ANIM_STAND = "stand";
+		ANIM_STAND_IDLE = "idle";
+		ANIM_CROUCH = "crouch_idle";
+		ANIM_CROUCHMOVE = "crawl";
+		ANIM_WALK = "walk_slow";
+		ANIM_RUN = "run";
+		ANIM_JUMP = "jump";
+		ANIM_TREAD = "treadwater";
+		ANIM_SWIM = "swim";
+		ANIM_DEATH = "die_simple";
+		ANIM_DEATH2 = "die_forwards";
+		ANIM_TYPE_WALK = 0;
+		ANIM_TYPE_ONCE = 1;
+		ANIM_TYPE_HOLD = 2;
 		anim.underwater = 0;
 	}
 
@@ -62,7 +76,7 @@ class PlayerAnimation : CGameScript
 		{
 			// TODO: setstatus add swimming
 		}
-		// TODO: UNCONVERTED: gaitframerate 0
+		SetGaitFrameRate(GetOwner(), 0);
 		if (GetMonsterProperty("anim.type") == ANIM_TYPE_WALK)
 		{
 			walk_animate();
@@ -183,7 +197,7 @@ class PlayerAnimation : CGameScript
 			}
 		}
 		// TODO: UNCONVERTED: setanimtorso TORSO_ANIM
-		// TODO: UNCONVERTED: setanimlegs LEGS_ANIM
+		SetAnimLegs(GetOwner(), LEGS_ANIM);
 	}
 
 	void once_animate()
@@ -191,7 +205,7 @@ class PlayerAnimation : CGameScript
 		if ((GetMonsterProperty("anim.uselegs")))
 		{
 			legs_animate();
-			// TODO: UNCONVERTED: setanimlegs LEGS_ANIM
+			SetAnimLegs(GetOwner(), LEGS_ANIM);
 		}
 		if (GetMonsterProperty("anim.current_frame") >= GetMonsterProperty("anim.max_frames"))
 		{
@@ -255,7 +269,7 @@ class PlayerAnimation : CGameScript
 			{
 				LEGS_ANIM = ANIM_TREAD;
 				CUSTOM_EXT = "tread_";
-				// TODO: UNCONVERTED: gaitframerate -0.1
+				SetGaitFrameRate(GetOwner(), -0.1);
 			}
 		}
 		CUSTOM_LEGS_ANIM += CUSTOM_EXT;

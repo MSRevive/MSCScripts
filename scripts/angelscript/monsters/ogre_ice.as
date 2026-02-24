@@ -9,30 +9,39 @@ namespace MS
 class OgreIce : CGameScript
 {
 	string ANIM_ATTACK;
+	float CHANCE_FREEZE;
+	int DOT_FREEZE;
 	int DROP_GOLD;
 	int DROP_GOLD_MAX;
 	int DROP_GOLD_MIN;
 	int FLINCH_HEALTH;
+	int HEADBUTT_DAMAGE;
 	string HEADBUTT_ON;
+	int LEAP_DAMAGE;
+	int NPC_BASE_EXP;
 	int RUN_STEP;
+	string SOUND_DEATH;
+	string SOUND_FREEZE;
 	int SWIPE_ATTACK;
+	int SWIPE_DAMAGE;
+	int WEAK_THRESHOLD;
 
 	OgreIce()
 	{
-		const int NPC_BASE_EXP = 450;
-		const string SOUND_DEATH = "bullchicken/bc_die1.wav";
+		NPC_BASE_EXP = 450;
+		SOUND_DEATH = "bullchicken/bc_die1.wav";
 		Precache(SOUND_DEATH);
-		const int WEAK_THRESHOLD = 1500;
-		const string SWIPE_DAMAGE = "$rand(50,90)";
-		const string HEADBUTT_DAMAGE = "$rand(50,90)";
-		const string LEAP_DAMAGE = "$rand(20,40)";
-		const float CHANCE_FREEZE = 0.25;
-		const int DOT_FREEZE = 30;
+		WEAK_THRESHOLD = 1500;
+		SWIPE_DAMAGE = "$rand(50,90)";
+		HEADBUTT_DAMAGE = "$rand(50,90)";
+		LEAP_DAMAGE = "$rand(20,40)";
+		CHANCE_FREEZE = 0.25;
+		DOT_FREEZE = 30;
 		DROP_GOLD = 1;
 		DROP_GOLD_MIN = 40;
 		DROP_GOLD_MAX = 60;
 		FLINCH_HEALTH = 2000;
-		const string SOUND_FREEZE = "magic/frost_reverse.wav";
+		SOUND_FREEZE = "magic/frost_reverse.wav";
 	}
 
 	void OnSpawn() override

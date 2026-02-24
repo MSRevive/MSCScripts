@@ -9,12 +9,21 @@ namespace MS
 
 class DwarfZombieSbow : CGameScript
 {
+	string ACT_ANIM_RUN;
 	int ADJUSTED_XP;
 	int AMMO_COUNT;
+	int AMMO_MAX;
 	string AMMO_TYPE;
+	string ANIM_ALERT;
 	string ANIM_ATTACK;
+	string ANIM_DODGE;
+	string ANIM_FLINCH;
+	string ANIM_HXBOW_ATTACK;
 	string ANIM_IDLE;
+	string ANIM_RELOAD;
+	string ANIM_RELOAD_DONE;
 	string ANIM_RUN;
+	string ANIM_SXBOW_ATTACK;
 	string ANIM_WALK;
 	string AS_ATTACKING;
 	int ATTACK_HITRANGE;
@@ -22,37 +31,74 @@ class DwarfZombieSbow : CGameScript
 	int ATTACK_RANGE;
 	string CUR_PBOLT_ORG;
 	int DID_ALERT;
+	int DMG_XBOW;
+	int DOT_POISON;
 	string DROP_GOLD;
 	string DROP_GOLD_AMT;
 	string EXPLOSIVE_BOLTS;
+	float FREQ_CLIENT_REFRESH;
 	int IMMUNE_VAMPIRE;
 	int IN_RELOAD;
 	int IS_BLOODLESS;
 	int IS_UNHOLY;
 	int I_AM_TURNABLE;
+	string LANTERN_COLOR;
+	int LANTERN_HAND_INDEX;
+	int LANTERN_HAND_SUBMODEL;
 	int MISS_COUNT;
 	string NEXT_ALERT;
 	string NEXT_DZOMB_FLEE;
 	string NEXT_SCRIPT_UPDATE;
 	string NPC_GIVE_EXP;
+	string NPC_MATERIAL_TYPE;
 	int NPC_RANGED;
+	int NPC_USE_FLINCH;
+	int NPC_USE_IDLE;
+	int NPC_USE_PAIN;
 	int PBOLT_ACTIVE;
+	int PBOLT_AOE;
 	string PBOLT_ARRAY_NAME;
 	int PBOLT_COUNTER;
+	float PBOLT_DURATION;
+	string SOUND_ALERT;
+	string SOUND_BOLT_HIT;
+	string SOUND_DEATH;
+	string SOUND_FLINCH1;
+	string SOUND_FLINCH2;
+	string SOUND_FLINCH3;
+	string SOUND_HOLYPAIN1;
+	string SOUND_HOLYPAIN2;
+	string SOUND_IDLE1;
+	string SOUND_IDLE2;
+	string SOUND_IDLE3;
+	string SOUND_PAIN1;
+	string SOUND_PAIN2;
+	string SOUND_PAIN3;
+	string SOUND_RELOAD;
+	string SOUND_TURNED1;
+	string SOUND_TURNED2;
+	string SOUND_TURNED3;
+	string SOUND_TURNED4;
+	string SOUND_XBOW_SHOOT;
+	string SOUND_XBOW_STRETCH;
+	int XBOW_ACCURACY;
 	string XBOW_AIM_ANGLES;
 	string XBOW_BOLT_LAND;
 	string XBOW_BOLT_START;
+	int XBOW_BONE;
+	string XBOW_CL_SCRIPT;
 	string XBOW_CL_SCRIPT_ID;
 	string XBOW_REPELL_POINT;
+	int XBOW_TYPE;
 
 	DwarfZombieSbow()
 	{
-		const int XBOW_TYPE = 1;
-		const string ANIM_SXBOW_ATTACK = "anim_sxbow_shoot";
-		const string ANIM_HXBOW_ATTACK = "anim_hxbow_shoot_reload";
-		const string SOUND_DEATH = "agrunt/ag_die5.wav";
+		XBOW_TYPE = 1;
+		ANIM_SXBOW_ATTACK = "anim_sxbow_shoot";
+		ANIM_HXBOW_ATTACK = "anim_hxbow_shoot_reload";
+		SOUND_DEATH = "agrunt/ag_die5.wav";
 		ANIM_WALK = "walk";
-		const string ACT_ANIM_RUN = "walk";
+		ACT_ANIM_RUN = "walk";
 		ANIM_RUN = ACT_ANIM_RUN;
 		ANIM_IDLE = "idle";
 		if (XBOW_TYPE == 1)
@@ -69,54 +115,54 @@ class DwarfZombieSbow : CGameScript
 			DROP_GOLD_AMT = 75;
 			ANIM_ATTACK = ANIM_HXBOW_ATTACK;
 		}
-		const string ANIM_RELOAD = "anim_sxbow_reload";
-		const string ANIM_RELOAD_DONE = "anim_sxbow_reload_done";
-		const string ANIM_DODGE = "anim_roll_back";
-		const string ANIM_ALERT = "nod";
+		ANIM_RELOAD = "anim_sxbow_reload";
+		ANIM_RELOAD_DONE = "anim_sxbow_reload_done";
+		ANIM_DODGE = "anim_roll_back";
+		ANIM_ALERT = "nod";
 		AMMO_TYPE = "unset";
 		NPC_RANGED = 1;
 		ATTACK_RANGE = 2048;
 		ATTACK_HITRANGE = 2048;
 		ATTACK_MOVERANGE = 768;
-		const int AMMO_MAX = 5;
+		AMMO_MAX = 5;
 		AMMO_COUNT = 5;
-		const string SOUND_TURNED1 = "ambience/the_horror1.wav";
-		const string SOUND_TURNED2 = "ambience/the_horror2.wav";
-		const string SOUND_TURNED3 = "ambience/the_horror3.wav";
-		const string SOUND_TURNED4 = "ambience/the_horror4.wav";
-		const string SOUND_HOLYPAIN1 = "agrunt/ag_pain4.wav";
-		const string SOUND_HOLYPAIN2 = "agrunt/ag_die3.wav";
-		const string SOUND_ALERT = "agrunt/ag_alert2.wav";
+		SOUND_TURNED1 = "ambience/the_horror1.wav";
+		SOUND_TURNED2 = "ambience/the_horror2.wav";
+		SOUND_TURNED3 = "ambience/the_horror3.wav";
+		SOUND_TURNED4 = "ambience/the_horror4.wav";
+		SOUND_HOLYPAIN1 = "agrunt/ag_pain4.wav";
+		SOUND_HOLYPAIN2 = "agrunt/ag_die3.wav";
+		SOUND_ALERT = "agrunt/ag_alert2.wav";
 		I_AM_TURNABLE = 1;
-		const string SOUND_XBOW_STRETCH = "weapons/bow/stretch.wav";
-		const string SOUND_XBOW_SHOOT = "weapons/bow/crossbow.wav";
-		const string SOUND_BOLT_HIT = "weapons/bow/bolthit1.wav";
-		const string SOUND_RELOAD = "weapons/357_reload1.wav";
-		const int XBOW_ACCURACY = 80;
-		const string XBOW_CL_SCRIPT = "monsters/elf_xbow_cl";
-		const int XBOW_BONE = 35;
-		const int DMG_XBOW = 30;
-		const int DOT_POISON = 5;
-		const float PBOLT_DURATION = 8.0;
-		const int PBOLT_AOE = 64;
-		const float FREQ_CLIENT_REFRESH = 40.0;
-		const string SOUND_IDLE1 = "agrunt/ag_idle2.wav";
-		const string SOUND_IDLE2 = "agrunt/ag_alert3.wav";
-		const string SOUND_IDLE3 = "agrunt/ag_idle5.wav";
-		const string SOUND_PAIN1 = "agrunt/ag_pain3.wav";
-		const string SOUND_PAIN2 = "agrunt/ag_pain5.wav";
-		const string SOUND_PAIN3 = "agrunt/ag_pain2.wav";
-		const string SOUND_FLINCH1 = "agrunt/ag_pain3.wav";
-		const string SOUND_FLINCH2 = "agrunt/ag_pain5.wav";
-		const string SOUND_FLINCH3 = "agrunt/ag_pain2.wav";
-		const string ANIM_FLINCH = "anim_xbow_flinch";
-		const string NPC_MATERIAL_TYPE = "flesh";
-		const int NPC_USE_PAIN = 1;
-		const int NPC_USE_IDLE = 1;
-		const int NPC_USE_FLINCH = 1;
-		const int LANTERN_HAND_SUBMODEL = 2;
-		const int LANTERN_HAND_INDEX = 0;
-		const Vector3 LANTERN_COLOR = Vector3(0, 64, 32);
+		SOUND_XBOW_STRETCH = "weapons/bow/stretch.wav";
+		SOUND_XBOW_SHOOT = "weapons/bow/crossbow.wav";
+		SOUND_BOLT_HIT = "weapons/bow/bolthit1.wav";
+		SOUND_RELOAD = "weapons/357_reload1.wav";
+		XBOW_ACCURACY = 80;
+		XBOW_CL_SCRIPT = "monsters/elf_xbow_cl";
+		XBOW_BONE = 35;
+		DMG_XBOW = 30;
+		DOT_POISON = 5;
+		PBOLT_DURATION = 8.0;
+		PBOLT_AOE = 64;
+		FREQ_CLIENT_REFRESH = 40.0;
+		SOUND_IDLE1 = "agrunt/ag_idle2.wav";
+		SOUND_IDLE2 = "agrunt/ag_alert3.wav";
+		SOUND_IDLE3 = "agrunt/ag_idle5.wav";
+		SOUND_PAIN1 = "agrunt/ag_pain3.wav";
+		SOUND_PAIN2 = "agrunt/ag_pain5.wav";
+		SOUND_PAIN3 = "agrunt/ag_pain2.wav";
+		SOUND_FLINCH1 = "agrunt/ag_pain3.wav";
+		SOUND_FLINCH2 = "agrunt/ag_pain5.wav";
+		SOUND_FLINCH3 = "agrunt/ag_pain2.wav";
+		ANIM_FLINCH = "anim_xbow_flinch";
+		NPC_MATERIAL_TYPE = "flesh";
+		NPC_USE_PAIN = 1;
+		NPC_USE_IDLE = 1;
+		NPC_USE_FLINCH = 1;
+		LANTERN_HAND_SUBMODEL = 2;
+		LANTERN_HAND_INDEX = 0;
+		LANTERN_COLOR = Vector3(0, 64, 32);
 	}
 
 	void game_precache()
@@ -259,7 +305,7 @@ class DwarfZombieSbow : CGameScript
 		{
 			string L_TITLE = "MAP ERROR - ";
 			L_TITLE += GetScriptName(GetOwner());
-			SendInfoMsg("all", "L_TITLE Ammo type incorrectly set, options are: set_ammo;poison | fire | pierce");
+			SendInfoMsg("all", L_TITLE + " Ammo type incorrectly set, options are: set_ammo;poison | fire | pierce");
 		}
 	}
 
@@ -307,8 +353,8 @@ class DwarfZombieSbow : CGameScript
 		string TARG_ORG = GetEntityOrigin(m_hAttackTarget);
 		if (RandomInt(1, 100) > XBOW_ACCURACY)
 		{
-			string RND_X = Random(-64.0, 64.0);
-			string RND_Y = Random(-64.0, 64.0);
+			float RND_X = Random(-64.0, 64.0);
+			float RND_Y = Random(-64.0, 64.0);
 			TARG_ORG += "x";
 			TARG_ORG += "y";
 		}
@@ -316,7 +362,7 @@ class DwarfZombieSbow : CGameScript
 		{
 			if (AMMO_TYPE == "poison")
 			{
-				string L_NBOLTS = /* TODO: $get_array_amt */ $get_array_amt(PBOLT_ARRAY_NAME);
+				int L_NBOLTS = int(PBOLT_ARRAY_NAME.length());
 				if (L_NBOLTS >= 5)
 				{
 				}
@@ -403,7 +449,7 @@ class DwarfZombieSbow : CGameScript
 		if (!(GetRelationship(CUR_TARG) == "enemy")) return;
 		string TARG_ORG = GetEntityOrigin(CUR_TARG);
 		string TARG_ANG = /* TODO: $angles */ $angles(XBOW_REPELL_POINT, TARG_ORG);
-		string TARG_DIST = Distance(TARG_ORG, XBOW_REPELL_POINT);
+		float TARG_DIST = Distance(TARG_ORG, XBOW_REPELL_POINT);
 		TARG_DIST /= 128;
 		string PUSH_STR = /* TODO: $ratio */ $ratio(TARG_DIST, 500, 100);
 		string HALF_PUSH_STR = PUSH_STR;
@@ -454,13 +500,13 @@ class DwarfZombieSbow : CGameScript
 		PBOLT_ARRAY_NAME = /* TODO: $get_scriptflag */ $get_scriptflag(GetOwner(), "pbolt", "type_array");
 		if (PBOLT_ARRAY_NAME != "none")
 		{
-			string L_NBOLTS = /* TODO: $get_array_amt */ $get_array_amt(PBOLT_ARRAY_NAME);
+			int L_NBOLTS = int(PBOLT_ARRAY_NAME.length());
 			L_NBOLTS -= 1;
 			if (PBOLT_COUNTER > L_NBOLTS)
 			{
 				PBOLT_COUNTER = 0;
 			}
-			CUR_PBOLT_ORG = /* TODO: $get_array */ $get_array(PBOLT_ARRAY_NAME, PBOLT_COUNTER);
+			CUR_PBOLT_ORG = PBOLT_ARRAY_NAME[int(PBOLT_COUNTER)];
 			ext_poison_bolt_dmg();
 			float L_BOLT_SCAN_SPEED = 1.0;
 			if (L_NBOLTS > 0)

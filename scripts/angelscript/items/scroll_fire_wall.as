@@ -7,12 +7,17 @@ namespace MS
 
 class ScrollFireWall : CGameScript
 {
+	int BASE_REQUIRED_LEVEL;
+	string BASE_REQUIRED_SKILL;
+	string BASE_SPELL_SCRIPT;
+	string BASE_SUMMON_TEXT;
+
 	ScrollFireWall()
 	{
-		const string BASE_SPELL_SCRIPT = "magic_hand_fire_wall";
-		const string BASE_SUMMON_TEXT = "You learn to create walls of flame.";
-		const string BASE_REQUIRED_SKILL = "skill.spellcasting.fire";
-		const int BASE_REQUIRED_LEVEL = 13;
+		BASE_SPELL_SCRIPT = "magic_hand_fire_wall";
+		BASE_SUMMON_TEXT = "You learn to create walls of flame.";
+		BASE_REQUIRED_SKILL = "skill.spellcasting.fire";
+		BASE_REQUIRED_LEVEL = 13;
 	}
 
 	void OnSpawn() override

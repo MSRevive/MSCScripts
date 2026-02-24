@@ -7,9 +7,11 @@ namespace MS
 
 class UndercliffsSekrat : CGameScript
 {
+	int BC_SPRITE_IN;
+
 	UndercliffsSekrat()
 	{
-		const int BC_SPRITE_IN = 1;
+		BC_SPRITE_IN = 1;
 	}
 
 	void OnSpawn() override
@@ -38,7 +40,7 @@ class UndercliffsSekrat : CGameScript
 
 	void add_items_self_adj()
 	{
-		string L_RAND = RandomInt(1, 5);
+		int L_RAND = RandomInt(1, 5);
 		if (L_RAND == 1)
 		{
 			add_great_item();

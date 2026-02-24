@@ -7,29 +7,36 @@ namespace MS
 
 class MagicHandIceShield : CGameScript
 {
+	float ICESHIELD_FORMULA;
+	int ICESHIELD_RANGE;
 	string LAST_ATTACK;
+	int MANA_COST;
+	float MELEE_ATK_DURATION;
+	int NO_REGISTER;
+	string SOUND_SHOOT;
+	string SPELL_SCRIPT;
 
 	MagicHandIceShield()
 	{
-		const int NO_REGISTER = 1;
-		const string SOUND_SHOOT = "magic/cast.wav";
-		const int ICESHIELD_RANGE = 389;
-		const float MELEE_ATK_DURATION = 0.65;
-		const int MANA_COST = 50;
-		const float ICESHIELD_FORMULA = 0.5;
-		const string SPELL_SCRIPT = "effects/iceshield";
+		NO_REGISTER = 1;
+		SOUND_SHOOT = "magic/cast.wav";
+		ICESHIELD_RANGE = 389;
+		MELEE_ATK_DURATION = 0.65;
+		MANA_COST = 50;
+		ICESHIELD_FORMULA = 0.5;
+		SPELL_SCRIPT = "effects/iceshield";
 	}
 
 	void spell_spawn()
 	{
 		SetName("Ice Shield");
 		SetDescription("Provides 50% damage reduction for you or allies, for a time.");
-		LAST_ATTACK = /* TODO: $math(add) */ GetGameTime();
+		LAST_ATTACK = (GetGameTime() + MELEE_ATK_DURATION);
 	}
 
 	void game_attack1()
 	{
-		string TIME_DIFF = GetGameTime();
+		float TIME_DIFF = GetGameTime();
 		TIME_DIFF -= LAST_ATTACK;
 		if (!(TIME_DIFF > MELEE_ATK_DURATION)) return;
 		LAST_ATTACK = GetGameTime();
@@ -40,7 +47,7 @@ class MagicHandIceShield : CGameScript
 			SendColoredMessage(GetOwner(), "Insufficient mana.");
 		}
 		if (!(GetEntityMP(GetOwner()) >= MANA_COST)) return;
-		string SPELL_TARGET = /* TODO: $func */ $func("func_get_ray_target", GetOwner(), ICESHIELD_RANGE);
+		string SPELL_TARGET = "func_get_ray_target"(GetOwner(), ICESHIELD_RANGE);
 		if (!(IsEntityAlive(SPELL_TARGET)))
 		{
 			string SPELL_TARGET = GetEntityIndex(GetOwner());

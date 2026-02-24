@@ -7,12 +7,17 @@ namespace MS
 
 class ScrollTurnUndead : CGameScript
 {
+	int BASE_REQUIRED_LEVEL;
+	string BASE_REQUIRED_SKILL;
+	string BASE_SPELL_SCRIPT;
+	string BASE_SUMMON_TEXT;
+
 	ScrollTurnUndead()
 	{
-		const string BASE_SPELL_SCRIPT = "magic_hand_turn_undead";
-		const string BASE_SUMMON_TEXT = "You learn to rebuke undead.";
-		const string BASE_REQUIRED_SKILL = "skill.spellcasting.divination";
-		const int BASE_REQUIRED_LEVEL = 0;
+		BASE_SPELL_SCRIPT = "magic_hand_turn_undead";
+		BASE_SUMMON_TEXT = "You learn to rebuke undead.";
+		BASE_REQUIRED_SKILL = "skill.spellcasting.divination";
+		BASE_REQUIRED_LEVEL = 0;
 	}
 
 	void OnSpawn() override

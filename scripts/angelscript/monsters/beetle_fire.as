@@ -7,30 +7,44 @@ namespace MS
 
 class BeetleFire : CGameScript
 {
+	string ANIM_SPECIAL;
 	string AS_ATTACKING;
+	int BBET_CAN_FLY;
+	int BBET_CAN_LEAP;
+	int BBET_CAN_SLAM;
+	int BBET_FAKE_DEATH;
+	int BBET_GORE_PUSH_STR;
+	int BBET_SIZE;
+	int DMG_BURST;
+	int DMG_GORE;
+	int DMG_LEAP;
+	int DMG_SLASH;
+	float DOT_POISON;
 	int FLAME_JET_DMG;
 	int FLAME_JET_DOT;
+	float FREQ_SPIT;
 	string NEXT_SPIT;
 	int NPC_GIVE_EXP;
 	string POISON_TARGS;
+	string SOUND_POISON_BURST;
 
 	BeetleFire()
 	{
 		NPC_GIVE_EXP = 1200;
-		const int BBET_SIZE = 1;
-		const int BBET_CAN_FLY = 1;
-		const int BBET_CAN_LEAP = 1;
-		const int BBET_CAN_SLAM = 0;
-		const int BBET_GORE_PUSH_STR = 300;
-		const int BBET_FAKE_DEATH = 1;
-		const int DMG_SLASH = 80;
-		const int DMG_GORE = 120;
-		const int DMG_LEAP = 150;
-		const float DOT_POISON = 100.0;
-		const int DMG_BURST = 400;
-		const string ANIM_SPECIAL = "bug_conjure";
-		const string FREQ_SPIT = Random(5.0, 10.0);
-		const string SOUND_POISON_BURST = "weapons/explode3.wav";
+		BBET_SIZE = 1;
+		BBET_CAN_FLY = 1;
+		BBET_CAN_LEAP = 1;
+		BBET_CAN_SLAM = 0;
+		BBET_GORE_PUSH_STR = 300;
+		BBET_FAKE_DEATH = 1;
+		DMG_SLASH = 80;
+		DMG_GORE = 120;
+		DMG_LEAP = 150;
+		DOT_POISON = 100.0;
+		DMG_BURST = 400;
+		ANIM_SPECIAL = "bug_conjure";
+		FREQ_SPIT = Random(5.0, 10.0);
+		SOUND_POISON_BURST = "weapons/explode3.wav";
 		FLAME_JET_DMG = 100;
 		FLAME_JET_DOT = 100;
 	}

@@ -7,9 +7,11 @@ namespace MS
 
 class DoomPlant2 : CGameScript
 {
+	int START_STAGE;
+
 	DoomPlant2()
 	{
-		const int START_STAGE = 2;
+		START_STAGE = 2;
 	}
 
 }

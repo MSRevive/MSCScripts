@@ -7,10 +7,11 @@ class Remover : CGameScript
 {
 	string BEAM_TARGET;
 	string LAST_REMOVE;
+	float REMOVE_DELAY;
 
 	Remover()
 	{
-		const float REMOVE_DELAY = 0.15;
+		REMOVE_DELAY = 0.15;
 	}
 
 	void try_remove()
@@ -26,10 +27,10 @@ class Remover : CGameScript
 		}
 		else
 		{
-			SendColoredMessage(GetOwner(), "Removed GetEntityProperty(BEAM_TARGET, "name.full")");
+			SendColoredMessage(GetOwner(), "Removed " + GetEntityProperty(BEAM_TARGET, "name.full"));
 			DeleteEntity(BEAM_TARGET);
 		}
-		LAST_REMOVE = /* TODO: $math(add) */ GetGameTime();
+		LAST_REMOVE = (GetGameTime() + REMOVE_DELAY);
 		BEAM_TARGET = "none";
 	}
 

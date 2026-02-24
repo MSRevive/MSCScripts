@@ -5,6 +5,7 @@ namespace MS
 
 class WormAbyssalCl : CGameScript
 {
+	string ATTACH_EYE;
 	string BEAM_DEST;
 	float BEAM_FADE_COUNT;
 	int BEAM_LIGHT_ACTIVE;
@@ -26,20 +27,28 @@ class WormAbyssalCl : CGameScript
 	string FX_RADIUS;
 	string POS_BEAM_LIGHT;
 	int POS_BEAM_RAD;
+	string SOUND_BURST;
 	int SPHERE_ACTIVE;
+	string SPRITE_COLOR;
+	int SPRITE_FRAMERATE;
+	string SPRITE_NAME;
+	int SPRITE_NFRAMES;
+	int SPRITE_RENDERAMT;
+	string SPRITE_RENDERMODE;
+	float SPRITE_SCALE;
 	string TOKEN_BEAMS;
 
 	WormAbyssalCl()
 	{
-		const string ATTACH_EYE = "attachment0";
-		const string SPRITE_NAME = "fire1_fixed.spr";
-		const Vector3 SPRITE_COLOR = Vector3(255, 0, 255);
-		const int SPRITE_RENDERAMT = 200;
-		const string SPRITE_RENDERMODE = "add";
-		const int SPRITE_FRAMERATE = 30;
-		const int SPRITE_NFRAMES = 23;
-		const float SPRITE_SCALE = 2.0;
-		const string SOUND_BURST = "magic/boom.wav";
+		ATTACH_EYE = "attachment0";
+		SPRITE_NAME = "fire1_fixed.spr";
+		SPRITE_COLOR = Vector3(255, 0, 255);
+		SPRITE_RENDERAMT = 200;
+		SPRITE_RENDERMODE = "add";
+		SPRITE_FRAMERATE = 30;
+		SPRITE_NFRAMES = 23;
+		SPRITE_SCALE = 2.0;
+		SOUND_BURST = "magic/boom.wav";
 		SetCallback("render", "enable");
 	}
 

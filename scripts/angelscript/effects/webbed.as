@@ -11,11 +11,15 @@ class Webbed : CGameScript
 	int DID_COCOON;
 	string EFFECT_DUPLICATED;
 	string EFFECT_DURATION;
+	string EFFECT_ID;
+	string EFFECT_SCRIPT;
 	string EFFECT_STARTED;
 	string NEXT_DECAY;
+	int PLAYER_WEB_TILL_COCOON;
 	int WEBS_ATTACHED;
 	int WEBS_TILL_COCOON;
 	int WEB_DECAY_TIME;
+	int WEB_FOR_SIZE;
 	string game.effect.anim.framerate;
 	int game.effect.canattack;
 	int game.effect.canduck;
@@ -25,10 +29,10 @@ class Webbed : CGameScript
 
 	Webbed()
 	{
-		const string EFFECT_ID = "webbed";
-		const string EFFECT_SCRIPT = currentscript;
-		const int PLAYER_WEB_TILL_COCOON = 10;
-		const int WEB_FOR_SIZE = 17;
+		EFFECT_ID = "webbed";
+		EFFECT_SCRIPT = currentscript;
+		PLAYER_WEB_TILL_COCOON = 10;
+		WEB_FOR_SIZE = 17;
 		WEBS_ATTACHED = 0;
 		WEBS_TILL_COCOON = 0;
 		WEB_DECAY_TIME = 0;
@@ -39,7 +43,7 @@ class Webbed : CGameScript
 		string L_DECAY_TIME = param1;
 		if ((/* TODO: $get_scriptflag */ $get_scriptflag(GetOwner(), "spider_resist", "type_exists")))
 		{
-			SendPlayerMessage(param2, "GetEntityName(GetOwner()) is immune to webs!");
+			SendPlayerMessage(param2, GetEntityName(GetOwner()) + " is immune to webs!");
 			EFFECT_DUPLICATED = 1;
 			RemoveScript();
 			return;
@@ -66,7 +70,7 @@ class Webbed : CGameScript
 			L_MY_SIZE += GetEntityWidth(GetOwner());
 			L_MY_SIZE /= WEB_FOR_SIZE;
 			WEBS_TILL_COCOON = int(L_MY_SIZE);
-			// TODO: capvar WEBS_TILL_COCOON 2 20
+			WEBS_TILL_COCOON = max(2, min(20, WEBS_TILL_COCOON));
 		}
 	}
 
@@ -82,8 +86,8 @@ class Webbed : CGameScript
 		if (WEBS_ATTACHED < WEBS_TILL_COCOON)
 		{
 			EFFECT_STARTED = GetGameTime();
-			EFFECT_DURATION = /* TODO: $math(multiply) */ WEB_DECAY_TIME;
-			NEXT_DECAY = /* TODO: $math(add) */ GetGameTime();
+			EFFECT_DURATION = (WEB_DECAY_TIME * WEBS_ATTACHED);
+			NEXT_DECAY = (GetGameTime() + WEB_DECAY_TIME);
 			WEB_DECAY_TIME("web_decay");
 			web_update();
 			EmitSound(GetOwner(), 0, "bullchicken/bc_acid2.wav", 10);
@@ -110,7 +114,7 @@ class Webbed : CGameScript
 		{
 			SendPlayerMessage(GetOwner(), "Some of the webs loosen.");
 			WEBS_ATTACHED -= 1;
-			NEXT_DECAY = /* TODO: $math(add) */ GetGameTime();
+			NEXT_DECAY = (GetGameTime() + WEB_DECAY_TIME);
 			WEB_DECAY_TIME("web_decay");
 			web_update();
 		}
@@ -118,10 +122,10 @@ class Webbed : CGameScript
 
 	void web_update()
 	{
-		string L_SPEED_FACTOR = /* TODO: $math(divide) */ WEBS_ATTACHED;
-		string L_SPEED = /* TODO: $math(multiply) */ 50;
-		game.effect.movespeed = /* TODO: $math(subtract) */ 100;
-		game.effect.anim.framerate = /* TODO: $math(subtract) */ 1;
+		string L_SPEED_FACTOR = (WEBS_ATTACHED / WEBS_TILL_COCOON);
+		string L_SPEED = (50 * L_SPEED_FACTOR);
+		game.effect.movespeed = (100 - L_SPEED);
+		game.effect.anim.framerate = (1 - L_SPEED_FACTOR);
 	}
 
 	void start_cocoon()

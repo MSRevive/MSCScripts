@@ -7,10 +7,13 @@ namespace MS
 
 class NpcAcidCloud : CGameScript
 {
+	string AOE_SCAN_TYPE;
+	string SPRITE_COLOR;
+
 	NpcAcidCloud()
 	{
-		const string AOE_SCAN_TYPE = "noscan";
-		const Vector3 SPRITE_COLOR = Vector3(255, 8, 30);
+		AOE_SCAN_TYPE = "noscan";
+		SPRITE_COLOR = Vector3(255, 8, 30);
 	}
 
 	void aoe_scan_loop()

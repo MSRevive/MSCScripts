@@ -7,11 +7,15 @@ namespace MS
 
 class MapStartup : CGameScript
 {
+	int MAP_ALLOWNIGHT;
+	string MAP_NAME;
+	string MAP_WEATHER;
+
 	MapStartup()
 	{
-		const string MAP_NAME = "edana";
-		const string MAP_WEATHER = "clear;clear;clear;clear;rain;clear";
-		const int MAP_ALLOWNIGHT = 1;
+		MAP_NAME = "edana";
+		MAP_WEATHER = "clear;clear;clear;clear;rain;clear";
+		MAP_ALLOWNIGHT = 1;
 		SetGlobalVar("G_MAP_NAME", "The Village of Edana");
 		SetGlobalVar("G_MAP_DESC", "This village grew around the temple of Urdual of the southern frontier.");
 		SetGlobalVar("G_MAP_DIFF", "(Beginner/Safe Area)");

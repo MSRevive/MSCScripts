@@ -6,7 +6,11 @@ namespace MS
 class GuardianIronCl : CGameScript
 {
 	string BURST_TYPE;
+	string CHARGER_GLOW_COLOR;
+	int CHARGER_GLOW_RAD;
 	int CHARGER_ON;
+	string CHARGER_SPRITE;
+	int CHARGER_SPRITE_NFRAMES;
 	int CYCLE_ANGLE;
 	int FLICKER_COUNT;
 	int FX_ACTIVE;
@@ -17,34 +21,47 @@ class GuardianIronCl : CGameScript
 	int GRAB_SPRITE_ON;
 	string GRAB_TARG;
 	string GRAB_TARG_ORG;
+	string LHAND_INDEX;
 	string LHAND_ORG;
+	string PASSIVE_GLOW_COLOR;
+	int PASSIVE_GLOW_RAD;
 	string PASSIVE_LIGHT_ID;
+	string RHAND_INDEX;
 	string RHAND_ORG;
+	string SOUND_CHARGER;
+	string SOUND_STOMP;
+	string SOUND_ZAP;
 	float SPIT_SPRITE_DEATH_DELAY;
 	string STOMP_ORG;
+	string STOMP_SPRITE;
+	string SWORD_GLOW_COLOR;
+	int SWORD_GLOW_RAD;
+	string SWORD_HILT_INDEX;
 	string SWORD_LIGHT_ID;
 	int SWORD_ON;
 	string SWORD_ORG;
+	string SWORD_SPRITE;
+	string SWORD_TIP_INDEX;
 
 	GuardianIronCl()
 	{
-		const Vector3 PASSIVE_GLOW_COLOR = Vector3(128, 128, 128);
-		const int PASSIVE_GLOW_RAD = 64;
-		const int SWORD_GLOW_RAD = 128;
-		const Vector3 SWORD_GLOW_COLOR = Vector3(128, 128, 255);
-		const int CHARGER_GLOW_RAD = 640;
-		const Vector3 CHARGER_GLOW_COLOR = Vector3(196, 196, 255);
-		const string CHARGER_SPRITE = "c-tele1.spr";
-		const int CHARGER_SPRITE_NFRAMES = 25;
-		const string SWORD_SPRITE = "flare1.spr";
-		const string SWORD_HILT_INDEX = "attachment0";
-		const string SWORD_TIP_INDEX = "attachment1";
-		const string RHAND_INDEX = "attachment2";
-		const string LHAND_INDEX = "attachment3";
-		const string SOUND_CHARGER = "magic/blackhole.wav";
-		const string SOUND_ZAP = "magic/bolt_end.wav";
-		const string SOUND_STOMP = "magic/boom.wav";
-		const string STOMP_SPRITE = "fire1_fixed.spr";
+		PASSIVE_GLOW_COLOR = Vector3(128, 128, 128);
+		PASSIVE_GLOW_RAD = 64;
+		SWORD_GLOW_RAD = 128;
+		SWORD_GLOW_COLOR = Vector3(128, 128, 255);
+		CHARGER_GLOW_RAD = 640;
+		CHARGER_GLOW_COLOR = Vector3(196, 196, 255);
+		CHARGER_SPRITE = "c-tele1.spr";
+		CHARGER_SPRITE_NFRAMES = 25;
+		SWORD_SPRITE = "flare1.spr";
+		SWORD_HILT_INDEX = "attachment0";
+		SWORD_TIP_INDEX = "attachment1";
+		RHAND_INDEX = "attachment2";
+		LHAND_INDEX = "attachment3";
+		SOUND_CHARGER = "magic/blackhole.wav";
+		SOUND_ZAP = "magic/bolt_end.wav";
+		SOUND_STOMP = "magic/boom.wav";
+		STOMP_SPRITE = "fire1_fixed.spr";
 		Precache(CHARGER_SPRITE);
 	}
 
@@ -95,7 +112,7 @@ class GuardianIronCl : CGameScript
 			{
 			}
 			string BEAM_START = /* TODO: $getcl */ $getcl(FX_OWNER, LHAND_INDEX);
-			string RND_BONE = RandomInt(0, 15);
+			int RND_BONE = RandomInt(0, 15);
 			string BEAM_END = /* TODO: $getcl */ $getcl(GRAB_TARG, "origin");
 			ClientEffect("beam_points", BEAM_START, BEAM_END, "lgtning.spr", 0.1, 5.0, 1.5, 255, 50, 30, Vector3(255, 255, 255));
 		}
@@ -385,7 +402,7 @@ class GuardianIronCl : CGameScript
 		ClientEffect("tempent", "set_current_prop", "frames", 1);
 		ClientEffect("tempent", "set_current_prop", "scale", 0.5);
 		ClientEffect("tempent", "set_current_prop", "gravity", 1);
-		string RND_ANG = Random(0, 359);
+		float RND_ANG = Random(0, 359);
 		ClientEffect("tempent", "set_current_prop", "velocity", /* TODO: $relvel */ $relvel(Vector3(0, RND_ANG, 0), Vector3(0, 30, -50)));
 		ClientEffect("tempent", "set_current_prop", "collide", "world");
 		ClientEffect("tempent", "set_current_prop", "bouncefactor", 1);

@@ -9,14 +9,34 @@ class DragoonBossBase : CGameScript
 {
 	int AM_LEAPING;
 	string ANIM_ATTACK;
+	string ANIM_AXE_FAST;
+	string ANIM_AXE_SLOW;
+	string ANIM_BOW;
+	string ANIM_CAST;
 	string ANIM_DEATH;
+	string ANIM_DRINK;
 	string ANIM_FLINCH;
+	string ANIM_HOP;
+	string ANIM_JAB;
+	string ANIM_KICK_HIGH;
+	string ANIM_KICK_LOW;
+	string ANIM_LEAP;
+	string ANIM_MOVE_SLOW;
+	string ANIM_PARRY;
 	string ANIM_RUN;
 	string ANIM_RUN_NORM;
+	string ANIM_SPELL;
+	string ANIM_SWING_FAST;
+	string ANIM_SWING_SLOW;
+	string ANIM_SWORD_FAST;
+	string ANIM_SWORD_SLOW;
 	string ANIM_WALK;
 	string ANIM_WALK_NORM;
+	int ARROW_SPEED;
+	int AS_ATK_VALUE;
 	string AS_ATTACKING;
 	string ATTACK_ANIMINDEX;
+	float ATTACK_HITCHANCE;
 	int ATTACK_HITRANGE;
 	int ATTACK_MOVERANGE;
 	int ATTACK_RANGE;
@@ -28,6 +48,7 @@ class DragoonBossBase : CGameScript
 	float BASE_MOVESPEED;
 	int BB_IN_ATTACK;
 	string BD_COUNT;
+	string BEAM_SPRITE;
 	int CAN_FLINCH;
 	int COLD_STRUCK;
 	int CYCLES_ON;
@@ -35,18 +56,30 @@ class DragoonBossBase : CGameScript
 	string DEMON_NOHP_LOSS;
 	string DID_FIRST_POT;
 	string DID_SECOND_POT;
+	int DMG_DAGGER;
+	int DMG_KICK;
 	int DOING_NOVA;
 	int DOING_PULL;
 	int DRINKING_POT;
 	string DRINK_TYPE;
+	int ELEMENT_DMG_THRESH;
+	int ELEMENT_LIMIT;
 	int FAST_SWINGS;
 	int FIRE_STRUCK;
 	string FIRST_SPEC_POT_HEALTH;
 	string FLANK_DELAY;
 	string FLINCH_ANIM;
 	int FLINCH_CHANCE;
+	int FLINCH_DAMAGE_THRESHOLD;
 	int FREEZE_ATTACK;
 	float FREQ_ATTACK;
+	float FREQ_AVOID;
+	float FREQ_FLANK;
+	float FREQ_HEALTH;
+	int FREQ_INVIS;
+	int FREQ_KICK;
+	float FREQ_PULL;
+	float FREQ_SPECIAL;
 	string GLOW_LOOP_COLOR;
 	string GLOW_ON;
 	string HALF_HEALTH;
@@ -57,11 +90,14 @@ class DragoonBossBase : CGameScript
 	string LEAP_TARGET;
 	int LEGAL_ACT;
 	int LIGHTNING_STRUCK;
+	string MONSTER_MODEL;
 	int MOVE_RANGE;
 	string NEXT_ATTACK;
 	int NORM_ATTACK;
 	string NOVA_ATTACK;
 	int NOVA_PICK_ATK;
+	float NPC_BOSS_REGEN_RATE;
+	float NPC_BOSS_RESTORATION;
 	int NPC_FORCED_MOVEDEST;
 	string NPC_IS_BOSS;
 	int NPC_NO_MOVE;
@@ -77,6 +113,20 @@ class DragoonBossBase : CGameScript
 	int RESIST_AMMO;
 	string SCATTER_COUNT;
 	string SCATTER_SHOT;
+	string SOUND_BOW_SHOOT;
+	string SOUND_BOW_STRETCH;
+	string SOUND_DEATH;
+	string SOUND_LEAP;
+	string SOUND_PAIN;
+	string SOUND_PAIN2;
+	string SOUND_PARRY;
+	string SOUND_POWERUP;
+	string SOUND_SATTACK;
+	string SOUND_SWING_FAST;
+	string SOUND_SWING_SLOW1;
+	string SOUND_SWING_SLOW2;
+	string SOUND_TAUNT1;
+	string SOUND_TAUNT2;
 	int SPECIAL_AMMO;
 	string SPEC_TYPE;
 	int STUN_ATTACK;
@@ -88,73 +138,73 @@ class DragoonBossBase : CGameScript
 
 	DragoonBossBase()
 	{
-		const float NPC_BOSS_REGEN_RATE = 0.1;
-		const float NPC_BOSS_RESTORATION = 0.25;
+		NPC_BOSS_REGEN_RATE = 0.1;
+		NPC_BOSS_RESTORATION = 0.25;
 		if (StringToLower(GetMapName()) == "dragooncaves")
 		{
 			NPC_IS_BOSS = 1;
 		}
-		const string ANIM_DRINK = "swordready1_R";
-		const string ANIM_AXE_FAST = "battleaxe_swing1_R";
-		const string ANIM_AXE_SLOW = "battleaxe_swing1_L";
-		const string ANIM_SWORD_FAST = "longsword_swipe_R";
-		const string ANIM_SWORD_SLOW = "longsword_swipe_L";
-		const string ANIM_BOW = "shootbow";
-		const string ANIM_SWING_SLOW = "swordswing1_R";
-		const string ANIM_SWING_FAST = "swordswing2_R";
-		const string ANIM_JAB = "swordjab1_R";
-		const string ANIM_KICK_HIGH = "stance_normal_highkick_r1";
-		const string ANIM_KICK_LOW = "stance_normal_lowkick_r1";
-		const string ANIM_PARRY = "longsword_parry";
-		const string ANIM_SPELL = "prepare_fireball";
-		const string ANIM_CAST = "throw_fireball_R";
+		ANIM_DRINK = "swordready1_R";
+		ANIM_AXE_FAST = "battleaxe_swing1_R";
+		ANIM_AXE_SLOW = "battleaxe_swing1_L";
+		ANIM_SWORD_FAST = "longsword_swipe_R";
+		ANIM_SWORD_SLOW = "longsword_swipe_L";
+		ANIM_BOW = "shootbow";
+		ANIM_SWING_SLOW = "swordswing1_R";
+		ANIM_SWING_FAST = "swordswing2_R";
+		ANIM_JAB = "swordjab1_R";
+		ANIM_KICK_HIGH = "stance_normal_highkick_r1";
+		ANIM_KICK_LOW = "stance_normal_lowkick_r1";
+		ANIM_PARRY = "longsword_parry";
+		ANIM_SPELL = "prepare_fireball";
+		ANIM_CAST = "throw_fireball_R";
 		ANIM_FLINCH = ANIM_PARRY;
 		ANIM_WALK_NORM = "walk2";
 		ANIM_RUN_NORM = "run";
-		const string ANIM_MOVE_SLOW = "run_squatwalk1_R";
+		ANIM_MOVE_SLOW = "run_squatwalk1_R";
 		ANIM_WALK = "walk2";
 		ANIM_RUN = "run";
-		const string ANIM_HOP = "jump";
-		const string ANIM_LEAP = "long_jump";
+		ANIM_HOP = "jump";
+		ANIM_LEAP = "long_jump";
 		ANIM_DEATH = "die_backwards1";
-		const string SOUND_PARRY = "weapons/parry.wav";
-		const string SOUND_POWERUP = "voices/big_swordready.wav";
-		const string SOUND_LEAP = "voices/big_shout1.wav";
-		const string SOUND_SATTACK = "voices/big_shout1.wav";
-		const string SOUND_TAUNT1 = "voices/big_yeah1.wav";
-		const string SOUND_TAUNT2 = "voices/big_taunt1.wav";
-		const string SOUND_SWING_FAST = "weapons/cbar_miss1.wav";
-		const string SOUND_SWING_SLOW1 = "zombie/claw_miss1.wav";
-		const string SOUND_SWING_SLOW2 = "zombie/claw_miss2.wav";
-		const string SOUND_DEATH = "voices/big_death.wav";
-		const string SOUND_BOW_STRETCH = "weapons/bow/stretch.wav";
-		const string SOUND_BOW_SHOOT = "weapons/bow/crossbow.wav";
-		const string SOUND_PAIN = "voices/big_chesthit1.wav";
-		const string SOUND_PAIN2 = "voices/big_armhit1.wav";
-		const float FREQ_HEALTH = 50.0;
-		const float FREQ_PULL = 10.0;
-		const string FREQ_KICK = RandomInt(10, 30);
-		const string FREQ_SPECIAL = Random(15, 30);
-		const string FREQ_INVIS = RandomInt(30, 120);
-		const float FREQ_FLANK = 5.0;
-		const float FREQ_AVOID = 10.0;
+		SOUND_PARRY = "weapons/parry.wav";
+		SOUND_POWERUP = "voices/big_swordready.wav";
+		SOUND_LEAP = "voices/big_shout1.wav";
+		SOUND_SATTACK = "voices/big_shout1.wav";
+		SOUND_TAUNT1 = "voices/big_yeah1.wav";
+		SOUND_TAUNT2 = "voices/big_taunt1.wav";
+		SOUND_SWING_FAST = "weapons/cbar_miss1.wav";
+		SOUND_SWING_SLOW1 = "zombie/claw_miss1.wav";
+		SOUND_SWING_SLOW2 = "zombie/claw_miss2.wav";
+		SOUND_DEATH = "voices/big_death.wav";
+		SOUND_BOW_STRETCH = "weapons/bow/stretch.wav";
+		SOUND_BOW_SHOOT = "weapons/bow/crossbow.wav";
+		SOUND_PAIN = "voices/big_chesthit1.wav";
+		SOUND_PAIN2 = "voices/big_armhit1.wav";
+		FREQ_HEALTH = 50.0;
+		FREQ_PULL = 10.0;
+		FREQ_KICK = RandomInt(10, 30);
+		FREQ_SPECIAL = Random(15, 30);
+		FREQ_INVIS = RandomInt(30, 120);
+		FREQ_FLANK = 5.0;
+		FREQ_AVOID = 10.0;
 		CAN_FLINCH = 1;
-		const int FLINCH_DAMAGE_THRESHOLD = 75;
+		FLINCH_DAMAGE_THRESHOLD = 75;
 		FLINCH_CHANCE = 50;
 		FLINCH_ANIM = "longsword_parry";
 		ATTACK_RANGE = 100;
 		ATTACK_HITRANGE = 180;
-		const float ATTACK_HITCHANCE = 0.85;
+		ATTACK_HITCHANCE = 0.85;
 		ATTACK_MOVERANGE = 90;
 		MOVE_RANGE = 90;
-		const string DMG_KICK = RandomInt(50, 100);
-		const string DMG_DAGGER = RandomInt(30, 80);
-		const int ELEMENT_LIMIT = 5;
-		const int ELEMENT_DMG_THRESH = 30;
-		const int ARROW_SPEED = 1200;
-		const int AS_ATK_VALUE = 10;
-		const string BEAM_SPRITE = "lgtning.spr";
-		const string MONSTER_MODEL = "fur/npcs/dragoonlord.mdl";
+		DMG_KICK = RandomInt(50, 100);
+		DMG_DAGGER = RandomInt(30, 80);
+		ELEMENT_LIMIT = 5;
+		ELEMENT_DMG_THRESH = 30;
+		ARROW_SPEED = 1200;
+		AS_ATK_VALUE = 10;
+		BEAM_SPRITE = "lgtning.spr";
+		MONSTER_MODEL = "fur/npcs/dragoonlord.mdl";
 		Precache(MONSTER_MODEL);
 		Precache("nhth1.spr");
 		Precache("ambience/alienflyby1.wav");
@@ -316,11 +366,11 @@ class DragoonBossBase : CGameScript
 			PULL_TARGET = param1;
 			if (param2 > 20)
 			{
-				string PULL_CHANCE = RandomInt(1, 10);
+				int PULL_CHANCE = RandomInt(1, 10);
 			}
 			if (param2 > 60)
 			{
-				string PULL_CHANCE = RandomInt(1, 2);
+				int PULL_CHANCE = RandomInt(1, 2);
 			}
 			if (!(PULL_DELAY))
 			{
@@ -417,7 +467,7 @@ class DragoonBossBase : CGameScript
 
 	void drink_special()
 	{
-		string RND_POT = RandomInt(1, 3);
+		int RND_POT = RandomInt(1, 3);
 		if (RND_POT == 1)
 		{
 			drink_pot("demon");
@@ -467,7 +517,7 @@ class DragoonBossBase : CGameScript
 			IN_RESIST = 1;
 			string OUT_MSG = GetMonsterProperty("name");
 			OUT_MSG += " has drank a potion and is now resistant to fire!";
-			SendInfoMsg("all", "POTION OF RESISTANCE TO FIRE OUT_MSG");
+			SendInfoMsg("all", "POTION OF RESISTANCE TO FIRE " + OUT_MSG);
 		}
 		if (DRINK_TYPE == "cold")
 		{
@@ -479,7 +529,7 @@ class DragoonBossBase : CGameScript
 			IN_RESIST = 1;
 			string OUT_MSG = GetMonsterProperty("name");
 			OUT_MSG += " has drank a potion and is now resistant to cold!";
-			SendInfoMsg("all", "POTION OF RESISTANCE TO COLD OUT_MSG");
+			SendInfoMsg("all", "POTION OF RESISTANCE TO COLD " + OUT_MSG);
 		}
 		if (DRINK_TYPE == "poison")
 		{
@@ -491,7 +541,7 @@ class DragoonBossBase : CGameScript
 			IN_RESIST = 1;
 			string OUT_MSG = GetMonsterProperty("name");
 			OUT_MSG += " has drank a potion and is now resistant to poison!";
-			SendInfoMsg("all", "POTION OF RESISTANCE TO POISON OUT_MSG");
+			SendInfoMsg("all", "POTION OF RESISTANCE TO POISON " + OUT_MSG);
 		}
 		if (DRINK_TYPE == "lightning")
 		{
@@ -503,7 +553,7 @@ class DragoonBossBase : CGameScript
 			IN_RESIST = 1;
 			string OUT_MSG = GetMonsterProperty("name.full");
 			OUT_MSG += " has drank a potion and is now resistant to lightning!";
-			SendInfoMsg("all", "POTION OF RESISTANCE TO LIGHTNING OUT_MSG");
+			SendInfoMsg("all", "POTION OF RESISTANCE TO LIGHTNING " + OUT_MSG);
 		}
 		if (DRINK_TYPE == "health")
 		{
@@ -514,7 +564,7 @@ class DragoonBossBase : CGameScript
 			HealEntity(GetOwner(), HP_GIVE);
 			string OUT_MSG = GetMonsterProperty("name.full");
 			OUT_MSG += " has used a potion of health!";
-			SendInfoMsg("all", "POTION OF HEALTH OUT_MSG");
+			SendInfoMsg("all", "POTION OF HEALTH " + OUT_MSG);
 		}
 		if (DRINK_TYPE == "protection")
 		{
@@ -527,7 +577,7 @@ class DragoonBossBase : CGameScript
 			ScheduleDelayedEvent(60, "end_special_effect");
 			string OUT_MSG = GetMonsterProperty("name.full");
 			OUT_MSG += " has used a potion of protection!";
-			SendInfoMsg("all", "POTION OF PROTECTION OUT_MSG");
+			SendInfoMsg("all", "POTION OF PROTECTION " + OUT_MSG);
 		}
 		if (DRINK_TYPE == "demon")
 		{
@@ -538,7 +588,7 @@ class DragoonBossBase : CGameScript
 			ScheduleDelayedEvent(90, "end_special_effect");
 			string OUT_MSG = GetMonsterProperty("name.full");
 			OUT_MSG += " has used a vial of demon blood!";
-			SendInfoMsg("all", "POTION OF DEMON BLOOD OUT_MSG");
+			SendInfoMsg("all", "POTION OF DEMON BLOOD " + OUT_MSG);
 		}
 		if (DRINK_TYPE == "speed")
 		{
@@ -549,7 +599,7 @@ class DragoonBossBase : CGameScript
 			FREQ_ATTACK /= 2;
 			string OUT_MSG = GetMonsterProperty("name.full");
 			OUT_MSG += " has used a potion of speed!";
-			SendInfoMsg("all", "POTION OF SPEED OUT_MSG");
+			SendInfoMsg("all", "POTION OF SPEED " + OUT_MSG);
 		}
 		Effect("glow", GetOwner(), GLOW_COLOR, 128, 5, 5);
 		DRINK_TYPE = "unset";
@@ -610,7 +660,7 @@ class DragoonBossBase : CGameScript
 			DEMON_BLOOD = 0;
 			string OUT_MSG = GetMonsterProperty("name.full");
 			OUT_MSG += "'s demon blood potion has run out.";
-			SendInfoMsg("all", "EFFECT ENDED OUT_MSG");
+			SendInfoMsg("all", "EFFECT ENDED " + OUT_MSG);
 		}
 		if (SPEC_TYPE == "protection")
 		{
@@ -618,7 +668,7 @@ class DragoonBossBase : CGameScript
 			GLOW_ON = 0;
 			string OUT_MSG = GetMonsterProperty("name.full");
 			OUT_MSG += "'s protection potion has run out.";
-			SendInfoMsg("all", "EFFECTED ENDED OUT_MSG");
+			SendInfoMsg("all", "EFFECTED ENDED " + OUT_MSG);
 		}
 		if (SPEC_TYPE == "speed")
 		{
@@ -626,7 +676,7 @@ class DragoonBossBase : CGameScript
 			turbo_off();
 			string OUT_MSG = GetMonsterProperty("name.full");
 			OUT_MSG += "'s speed potion has run out.";
-			SendInfoMsg("all", "EFFECTED ENDED OUT_MSG");
+			SendInfoMsg("all", "EFFECTED ENDED " + OUT_MSG);
 		}
 	}
 
@@ -728,7 +778,7 @@ class DragoonBossBase : CGameScript
 			}
 			if ((FREEZE_ATTACK))
 			{
-				string FREEZE_CHANCE = RandomInt(1, 4);
+				int FREEZE_CHANCE = RandomInt(1, 4);
 				if (FREEZE_CHANCE < 4)
 				{
 					EmitSound(GetOwner(), 0, "playsound", 10);
@@ -828,7 +878,7 @@ class DragoonBossBase : CGameScript
 		FREQ_KICK("do_kick");
 		check_legal_act();
 		if (!(LEGAL_ACT)) return;
-		string KICK_TYPE = RandomInt(1, 3);
+		int KICK_TYPE = RandomInt(1, 3);
 		if (KICK_TYPE <= 2)
 		{
 			NEXT_ATTACK = ANIM_KICK_HIGH;
@@ -867,7 +917,7 @@ class DragoonBossBase : CGameScript
 			ScheduleDelayedEvent(0.1, "do_scatter_shot");
 		}
 		EmitSound(GetOwner(), 0, SOUND_BOW_SHOOT, 10);
-		string RND_ARROW = RandomInt(1, 3);
+		int RND_ARROW = RandomInt(1, 3);
 		string FIN_DMG = DMG_ARROW;
 		if (RND_ARROW == 1)
 		{
@@ -1145,7 +1195,7 @@ class DragoonBossBase : CGameScript
 
 	void bandit_hop()
 	{
-		string JUMP_HEIGHT = RandomInt(350, 450);
+		int JUMP_HEIGHT = RandomInt(350, 450);
 		AddVelocity(GetOwner(), /* TODO: $relvel */ $relvel(0, 250, JUMP_HEIGHT));
 	}
 

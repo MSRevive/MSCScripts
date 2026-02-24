@@ -8,15 +8,18 @@ namespace MS
 class BaseFlyerAgro : CGameScript
 {
 	int AS_ATTACKING;
+	int BF_BOOST_SPEED;
+	int BF_CRUISE_SPEED;
+	int BF_FLIGHT_STUCK_LIMIT;
 	string FLIGHT_STUCK;
 	string LAST_POS;
-	string LAST_PROG;
+	float LAST_PROG;
 
 	BaseFlyerAgro()
 	{
-		const int BF_CRUISE_SPEED = 200;
-		const int BF_BOOST_SPEED = 500;
-		const int BF_FLIGHT_STUCK_LIMIT = 4;
+		BF_CRUISE_SPEED = 200;
+		BF_BOOST_SPEED = 500;
+		BF_FLIGHT_STUCK_LIMIT = 4;
 	}
 
 	void bf_agrofly_loop()
@@ -55,7 +58,7 @@ class BaseFlyerAgro : CGameScript
 		if ((IS_FLEEING)) return;
 		if ((SPITTING)) return;
 		if (!(GetEntityRange(HUNT_LASTTARGET) > ATTACK_RANGE)) return;
-		string CUR_PROG = Distance(GetMonsterProperty("origin"), TARG_POS);
+		float CUR_PROG = Distance(GetMonsterProperty("origin"), TARG_POS);
 		if (LAST_PROG >= CUR_PROG)
 		{
 			FLIGHT_STUCK += 1;

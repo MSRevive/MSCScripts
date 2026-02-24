@@ -6,10 +6,11 @@ namespace MS
 class BasePropelled : CGameScript
 {
 	string NPC_HACKED_MOVE_SPEED;
+	int NPC_PROPELLED;
 
 	BasePropelled()
 	{
-		const int NPC_PROPELLED = 1;
+		NPC_PROPELLED = 1;
 	}
 
 	void OnPostSpawn() override

@@ -8,6 +8,7 @@ namespace MS
 class DrWho : CGameScript
 {
 	string BUSY_CHATTING;
+	float CHAT_DELAY;
 	string CHAT_STEP;
 	string CHAT_STEP1;
 	string CHAT_STEP2;
@@ -21,6 +22,8 @@ class DrWho : CGameScript
 	string DID_CONFUSED;
 	int DID_INTRO;
 	int HEARD_APPLE;
+	int NO_JOB;
+	int NO_RUMOR;
 	int PORTAL_OPEN;
 	int RANT_STEP;
 	int RESPONDED_NO;
@@ -28,9 +31,9 @@ class DrWho : CGameScript
 
 	DrWho()
 	{
-		const int NO_JOB = 1;
-		const int NO_RUMOR = 1;
-		const float CHAT_DELAY = 4.0;
+		NO_JOB = 1;
+		NO_RUMOR = 1;
+		CHAT_DELAY = 4.0;
 		SetName("Torwhodoc Sa thraz, Keeper of Time");
 		SetHealth(1);
 		SetInvincible(true);
@@ -124,7 +127,7 @@ class DrWho : CGameScript
 	{
 		string NAME_STR = GetEntityName(param1);
 		NAME_STR += "!";
-		SayText("Quickly NAME_STR This time portal , it will not last long!");
+		SayText("Quickly " + NAME_STR + " This time portal , it will not last long!");
 		RANT_STEP = 0;
 		ScheduleDelayedEvent(20.0, "timer_rant_loop");
 		SetProp(GetOwner(), "rendermode", 5);
@@ -153,21 +156,21 @@ class DrWho : CGameScript
 	void payment_failed()
 	{
 		PlayAnim("critical", "no");
-		string RND_RESP = RandomInt(1, 2);
+		int RND_RESP = RandomInt(1, 2);
 		if (RND_RESP == 1)
 		{
 			SayText("Come now , the last of the time wizards deserves better food than that will buy.");
 		}
 		if (RND_RESP == 2)
 		{
-			SayText("Now what sort of apples am I going to buy with that sort of cash? Bryan s of Edana, mayhaps?");
+			SayText("Now what sort of apples am " + I + " going to buy with that sort of cash? Bryan s of Edana, mayhaps?");
 		}
 	}
 
 	void timer_rant_loop()
 	{
 		SetSayTextRange(200);
-		string RND_DELAY = Random(40, 80);
+		float RND_DELAY = Random(40, 80);
 		RND_DELAY("timer_rant_loop");
 		RANT_STEP += 1;
 		if (RANT_STEP > 9)
@@ -178,11 +181,11 @@ class DrWho : CGameScript
 		convo_anim();
 		if (RANT_STEP == 1)
 		{
-			SayText("Actually , now that I think of it.... Take your time.");
+			SayText("Actually , now that " + I + " think of it.... Take your time.");
 		}
 		if (RANT_STEP == 2)
 		{
-			SayText("I mean , cannot run out of time. After all , time is infinite...");
+			SayText(I + " mean , cannot run out of time. After all , time is infinite...");
 		}
 		if (RANT_STEP == 3)
 		{
@@ -190,7 +193,7 @@ class DrWho : CGameScript
 		}
 		if (RANT_STEP == 4)
 		{
-			SayText("Do you know I had five brothers?");
+			SayText("Do you know " + I + " had five brothers?");
 		}
 		if (RANT_STEP == 5)
 		{
@@ -202,7 +205,7 @@ class DrWho : CGameScript
 		}
 		if (RANT_STEP == 7)
 		{
-			SayText("So , you see , how I am become so very easily confused...");
+			SayText("So , you see , how " + I + " am become so very easily confused...");
 		}
 		if (RANT_STEP == 8)
 		{
@@ -210,7 +213,7 @@ class DrWho : CGameScript
 		}
 		if (RANT_STEP == 9)
 		{
-			SayText("Wow , you re still here!? Comeon I gotta eat sometime!");
+			SayText("Wow , you re still here!? Comeon " + I + " gotta eat sometime!");
 		}
 	}
 

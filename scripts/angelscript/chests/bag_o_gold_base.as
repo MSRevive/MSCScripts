@@ -5,7 +5,9 @@ namespace MS
 
 class BagOGoldBase : CGameScript
 {
+	string ANIM_CLOSE;
 	string ANIM_IDLE;
+	string ANIM_OPEN;
 	string GOLD_AMT;
 	string NEW_NAME;
 	string NPC_DO_EVENTS;
@@ -13,8 +15,8 @@ class BagOGoldBase : CGameScript
 
 	BagOGoldBase()
 	{
-		const string ANIM_OPEN = "idle";
-		const string ANIM_CLOSE = "idle";
+		ANIM_OPEN = "idle";
+		ANIM_CLOSE = "idle";
 		ANIM_IDLE = "idle";
 	}
 

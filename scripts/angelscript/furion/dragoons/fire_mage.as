@@ -7,10 +7,13 @@ namespace MS
 
 class FireMage : CGameScript
 {
+	int ELEMENT;
+	int WEAPON;
+
 	FireMage()
 	{
-		const int WEAPON = 6;
-		const int ELEMENT = 2;
+		WEAPON = 6;
+		ELEMENT = 2;
 	}
 
 }

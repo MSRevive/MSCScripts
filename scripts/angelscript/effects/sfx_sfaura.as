@@ -9,19 +9,27 @@ class SfxSfaura : CGameScript
 	int FX_ACTIVE;
 	string FX_DURATION;
 	string FX_OWNER;
+	string GLOW_COLOR;
+	int GLOW_RAD;
 	float GROWTH_RATE;
 	string LIGHT_ID;
+	int MAX_GLOW_SIZE;
+	float MAX_SIZE;
+	int MIN_GLOW_SIZE;
+	float MIN_SIZE;
+	int V_OFS;
+	int V_OFS_DUCK;
 
 	SfxSfaura()
 	{
-		const float MIN_SIZE = 2.0;
-		const float MAX_SIZE = 9.0;
-		const int MIN_GLOW_SIZE = 64;
-		const int MAX_GLOW_SIZE = 368;
-		const int V_OFS = -34;
-		const int V_OFS_DUCK = 24;
-		const int GLOW_RAD = 128;
-		const Vector3 GLOW_COLOR = Vector3(255, 128, 64);
+		MIN_SIZE = 2.0;
+		MAX_SIZE = 9.0;
+		MIN_GLOW_SIZE = 64;
+		MAX_GLOW_SIZE = 368;
+		V_OFS = -34;
+		V_OFS_DUCK = 24;
+		GLOW_RAD = 128;
+		GLOW_COLOR = Vector3(255, 128, 64);
 	}
 
 	void OnRepeatTimer()

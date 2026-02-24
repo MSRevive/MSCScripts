@@ -12,6 +12,8 @@ class TrollFire : CGameScript
 	string ANIM_IDLE;
 	string ANIM_RUN;
 	string ANIM_WALK;
+	float ATTACK1_DAMAGE;
+	float ATTACK2_DAMAGE;
 	int ATTACK_HITRANGE;
 	int ATTACK_RANGE;
 	int CAN_FLINCH;
@@ -21,6 +23,7 @@ class TrollFire : CGameScript
 	int DROP_GOLD_MIN;
 	string DROP_ITEM1;
 	string DROP_ITEM1_CHANCE;
+	int FIRE_DAMAGE;
 	int HUNT_AGRO;
 	int I_AM_TURNABLE;
 	int I_R_SUMMONED;
@@ -28,21 +31,32 @@ class TrollFire : CGameScript
 	string MY_MASTER;
 	int NPC_GIVE_EXP;
 	string PUSH_VEL;
+	string SOUND_ATTACK1;
+	string SOUND_ATTACK2;
+	string SOUND_DEATH;
+	string SOUND_IDLE;
+	string SOUND_PAIN;
+	string SOUND_STRUCK1;
+	string SOUND_STRUCK2;
+	string SOUND_STRUCK3;
+	string SOUND_WALK;
+	string SOUND_WALK1;
+	string SOUND_WALK2;
 	string STEP_COUNT;
 
 	TrollFire()
 	{
-		const string SOUND_STRUCK1 = "weapons/cbar_hitbod1.wav";
-		const string SOUND_STRUCK2 = "monsters/troll/trollpain.wav";
-		const string SOUND_STRUCK3 = "monsters/troll/trollpain.wav";
-		const string SOUND_PAIN = "monsters/troll/trollpain.wav";
-		const string SOUND_ATTACK1 = "monsters/troll/trollattack.wav";
-		const string SOUND_ATTACK2 = "monsters/troll/trollattack.wav";
-		const string SOUND_DEATH = "monsters/troll/trolldeath.wav";
-		const string SOUND_WALK = "monsters/troll/trollidle.wav";
-		const string SOUND_WALK1 = "monsters/troll/step1.wav";
-		const string SOUND_WALK2 = "monsters/troll/step2.wav";
-		const string SOUND_IDLE = "monsters/troll/trollidle.wav";
+		SOUND_STRUCK1 = "weapons/cbar_hitbod1.wav";
+		SOUND_STRUCK2 = "monsters/troll/trollpain.wav";
+		SOUND_STRUCK3 = "monsters/troll/trollpain.wav";
+		SOUND_PAIN = "monsters/troll/trollpain.wav";
+		SOUND_ATTACK1 = "monsters/troll/trollattack.wav";
+		SOUND_ATTACK2 = "monsters/troll/trollattack.wav";
+		SOUND_DEATH = "monsters/troll/trolldeath.wav";
+		SOUND_WALK = "monsters/troll/trollidle.wav";
+		SOUND_WALK1 = "monsters/troll/step1.wav";
+		SOUND_WALK2 = "monsters/troll/step2.wav";
+		SOUND_IDLE = "monsters/troll/trollidle.wav";
 		DROP_GOLD = 1;
 		DROP_GOLD_MIN = 10;
 		DROP_GOLD_MAX = 35;
@@ -57,9 +71,9 @@ class TrollFire : CGameScript
 		MOVE_RANGE = 100;
 		CAN_HUNT = 1;
 		HUNT_AGRO = 1;
-		const string FIRE_DAMAGE = "$rand(20,100)";
-		const string ATTACK1_DAMAGE = "$randf(30,80)";
-		const string ATTACK2_DAMAGE = "$randf(100,300)";
+		FIRE_DAMAGE = "$rand(20,100)";
+		ATTACK1_DAMAGE = "$randf(30,80)";
+		ATTACK2_DAMAGE = "$randf(100,300)";
 	}
 
 	void OnSpawn() override
@@ -159,7 +173,7 @@ class TrollFire : CGameScript
 	{
 		string MY_LOC = GetEntityOrigin(GetOwner());
 		string MY_MASTER_LOC = GetEntityOrigin("ent_creationowner");
-		string MASTER_DISTANCE = Distance(MY_LOC, MY_MASTER_LOC);
+		float MASTER_DISTANCE = Distance(MY_LOC, MY_MASTER_LOC);
 		if (MASTER_DISTANCE > 80)
 		{
 			SetSolid("box");

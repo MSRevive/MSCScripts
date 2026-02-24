@@ -7,12 +7,16 @@ namespace MS
 
 class MapStartup : CGameScript
 {
+	int MAP_ALLOWNIGHT;
+	string MAP_NAME;
+	string MAP_WEATHER;
+
 	MapStartup()
 	{
-		const string MAP_NAME = "tutorial";
-		const string MAP_WEATHER = "clear;clear;clear;clear;clear;clear";
+		MAP_NAME = "tutorial";
+		MAP_WEATHER = "clear;clear;clear;clear;clear;clear";
 		SetGlobalVar("global.map.allownight", 0);
-		const int MAP_ALLOWNIGHT = 0;
+		MAP_ALLOWNIGHT = 0;
 		SetGlobalVar("G_NO_STEP_ADJ", 1);
 	}
 

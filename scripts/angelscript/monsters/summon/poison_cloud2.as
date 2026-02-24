@@ -12,12 +12,14 @@ class PoisonCloud2 : CGameScript
 	string AOE_DURATION;
 	string AOE_OWNER;
 	string AOE_RADIUS;
+	string AOE_SCAN_TYPE;
 	string DMG_BASE;
+	string SOUND_SPAWN;
 
 	PoisonCloud2()
 	{
-		const string AOE_SCAN_TYPE = "rsphere";
-		const string SOUND_SPAWN = "ambience/steamburst1.wav";
+		AOE_SCAN_TYPE = "rsphere";
+		SOUND_SPAWN = "ambience/steamburst1.wav";
 	}
 
 	void game_precache()

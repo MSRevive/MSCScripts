@@ -7,7 +7,36 @@ namespace MS
 
 class MagicHandBase : CGameScript
 {
+	int ANIM_CAST;
+	string ANIM_IDLE1;
+	int ANIM_IDLE_DELAY_HIGH;
+	int ANIM_IDLE_DELAY_LOW;
+	int ANIM_IDLE_TOTAL;
+	int ANIM_LIFT1;
+	int ANIM_PREPARE;
+	int ANIM_PREPARE_IDLE;
 	int IS_MAGIC_HAND;
+	int MELEE_DMG;
+	string MELEE_DMG_DELAY;
+	int MELEE_DMG_RANGE;
+	int MELEE_NOAUTOAIM;
+	string MELEE_TYPE;
+	string MODEL_HANDS;
+	string MODEL_VIEW;
+	string MODEL_WORLD;
+	string PLAYERANIM_AIM;
+	string PLAYERANIM_CAST;
+	string PLAYERANIM_PREPARE;
+	string RANGED_COF;
+	float RANGED_DMG_DELAY;
+	string RANGED_HOLD_MINMAX;
+	string RANGED_TYPE;
+	string SCRIPT_SFX_PREP;
+	string SOUND_CHARGE;
+	string SOUND_SHOOT;
+	int SPELL_ENERGYDRAIN;
+	int SPELL_NOISE;
+	float SPELL_PREPARE_TIME;
 	string WEAPON_PRIMARY_SKILL;
 	int baseitem.canidle;
 	string spell.prepscript.id;
@@ -15,35 +44,35 @@ class MagicHandBase : CGameScript
 	MagicHandBase()
 	{
 		IS_MAGIC_HAND = 1;
-		const int ANIM_LIFT1 = 7;
-		const int ANIM_PREPARE = 9;
-		const int ANIM_PREPARE_IDLE = 11;
-		const int ANIM_CAST = 12;
-		const string ANIM_IDLE1 = ANIM_PREPARE_IDLE;
-		const int ANIM_IDLE_TOTAL = 1;
-		const int ANIM_IDLE_DELAY_LOW = 0;
-		const int ANIM_IDLE_DELAY_HIGH = 0;
-		const string MODEL_VIEW = "viewmodels/v_martialarts.mdl";
-		const string MODEL_HANDS = "none";
-		const string MODEL_WORLD = "none";
-		const string SOUND_CHARGE = "none";
-		const string SOUND_SHOOT = "magic/cast.wav";
-		const int SPELL_NOISE = 650;
-		const int SPELL_ENERGYDRAIN = 0;
-		const float SPELL_PREPARE_TIME = 5.5;
-		const string RANGED_TYPE = "charge-throw-projectile";
-		const float RANGED_DMG_DELAY = 0.4;
-		const string RANGED_HOLD_MINMAX = "2;2";
-		const string RANGED_COF = "0;0";
-		const string MELEE_TYPE = "target";
-		const string MELEE_DMG_DELAY = RANGED_DMG_DELAY;
-		const int MELEE_DMG = 0;
-		const int MELEE_DMG_RANGE = 0;
-		const int MELEE_NOAUTOAIM = 0;
-		const string PLAYERANIM_AIM = "fireball";
-		const string PLAYERANIM_PREPARE = "prepare_fireball";
-		const string PLAYERANIM_CAST = "throw_fireball";
-		const string SCRIPT_SFX_PREP = "items/magic_hand_base_cl";
+		ANIM_LIFT1 = 7;
+		ANIM_PREPARE = 9;
+		ANIM_PREPARE_IDLE = 11;
+		ANIM_CAST = 12;
+		ANIM_IDLE1 = ANIM_PREPARE_IDLE;
+		ANIM_IDLE_TOTAL = 1;
+		ANIM_IDLE_DELAY_LOW = 0;
+		ANIM_IDLE_DELAY_HIGH = 0;
+		MODEL_VIEW = "viewmodels/v_martialarts.mdl";
+		MODEL_HANDS = "none";
+		MODEL_WORLD = "none";
+		SOUND_CHARGE = "none";
+		SOUND_SHOOT = "magic/cast.wav";
+		SPELL_NOISE = 650;
+		SPELL_ENERGYDRAIN = 0;
+		SPELL_PREPARE_TIME = 5.5;
+		RANGED_TYPE = "charge-throw-projectile";
+		RANGED_DMG_DELAY = 0.4;
+		RANGED_HOLD_MINMAX = "2;2";
+		RANGED_COF = "0;0";
+		MELEE_TYPE = "target";
+		MELEE_DMG_DELAY = RANGED_DMG_DELAY;
+		MELEE_DMG = 0;
+		MELEE_DMG_RANGE = 0;
+		MELEE_NOAUTOAIM = 0;
+		PLAYERANIM_AIM = "fireball";
+		PLAYERANIM_PREPARE = "prepare_fireball";
+		PLAYERANIM_CAST = "throw_fireball";
+		SCRIPT_SFX_PREP = "items/magic_hand_base_cl";
 	}
 
 	void game_precache()

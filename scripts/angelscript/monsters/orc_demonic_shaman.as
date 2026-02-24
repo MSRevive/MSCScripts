@@ -7,15 +7,23 @@ namespace MS
 
 class OrcDemonicShaman : CGameScript
 {
+	int DMG_DEATH_BURST;
+	int DOT_DMG;
 	int DROP_GOLD;
-	string DROP_GOLD_AMT;
+	int DROP_GOLD_AMT;
 	string FIRE_BALL_DAMAGE;
+	int FIRE_BALL_DAMAGE_ALT;
+	int FIRE_BALL_DAMAGE_NORM;
 	int FIRE_BALL_DELAY;
 	int IS_UNHOLY;
 	string MY_CL_SCRIPT_IDX;
 	int NPC_GIVE_EXP;
+	int ORC_SHAMAN_CUSTOM_DEATH;
+	int ORC_SHAMAN_CUSTOM_FIREBALL;
+	string PROJECTILE_SCRIPT;
 	string PROJ_ELEMENT_TARGET;
 	string PROJ_ELEMENT_TYPE;
+	string SOUND_DEATH;
 	string SPLODIE_TARGS;
 
 	OrcDemonicShaman()
@@ -23,15 +31,15 @@ class OrcDemonicShaman : CGameScript
 		DROP_GOLD = 1;
 		DROP_GOLD_AMT = RandomInt(50, 100);
 		NPC_GIVE_EXP = 300;
-		const string FIRE_BALL_DAMAGE_NORM = "$rand(100,150)";
-		const string FIRE_BALL_DAMAGE_ALT = "$rand(5,10)";
-		const int DOT_DMG = 50;
-		const int DMG_DEATH_BURST = 400;
-		const int ORC_SHAMAN_CUSTOM_DEATH = 1;
-		const int ORC_SHAMAN_CUSTOM_FIREBALL = 1;
-		const string PROJECTILE_SCRIPT = "proj_elemental_guided";
+		FIRE_BALL_DAMAGE_NORM = "$rand(100,150)";
+		FIRE_BALL_DAMAGE_ALT = "$rand(5,10)";
+		DOT_DMG = 50;
+		DMG_DEATH_BURST = 400;
+		ORC_SHAMAN_CUSTOM_DEATH = 1;
+		ORC_SHAMAN_CUSTOM_FIREBALL = 1;
+		PROJECTILE_SCRIPT = "proj_elemental_guided";
 		PROJ_ELEMENT_TYPE = "fire_jet";
-		const string SOUND_DEATH = "weapons/explode3.wav";
+		SOUND_DEATH = "weapons/explode3.wav";
 	}
 
 	void game_precache()

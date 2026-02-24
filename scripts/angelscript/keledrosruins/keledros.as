@@ -7,11 +7,13 @@ namespace MS
 
 class Keledros : CGameScript
 {
+	int AIM_RATIO;
 	int ALLOW_CHANGE;
 	int AM_SKELE;
 	string ANIM_ATTACK;
 	string ANIM_DEATH;
 	string ANIM_IDLE;
+	string ANIM_RESPAWN_DEADIDLE;
 	string ANIM_RUN;
 	string ANIM_WALK;
 	string AS_ATTACKING;
@@ -28,6 +30,7 @@ class Keledros : CGameScript
 	int CAN_HEAR;
 	int CAN_HUNT;
 	string CAN_RETALIATE;
+	string CAST_SCRIPT;
 	string DID_ALE_INTRO;
 	int FIRE_BALL_DELAY;
 	int FIRE_PULSE;
@@ -35,15 +38,21 @@ class Keledros : CGameScript
 	int FLEE_CHANCE;
 	int FLEE_DISTANCE;
 	int FLEE_HEALTH;
+	int HIGHER_THAN_ME_THRESHOLD;
 	int INTRODUCED;
 	int IS_UNHOLY;
+	int I_AM_TURNABLE;
 	int I_DIED;
 	string KSPELL_TARGET;
 	string LIGHTNING_SPRITE;
 	int MOVE_RANGE;
 	string NEXT_TARGET;
 	string NEXT_TARGET_ID;
+	int NPC_AUTO_DEATH;
+	float NPC_BOSS_REGEN_RATE;
+	float NPC_BOSS_RESTORATION;
 	int NPC_GIVE_EXP;
+	int NPC_HEARDSOUND_OVERRIDE;
 	string NPC_IS_BOSS;
 	string NPC_MOVE_TARGET;
 	string PLAYING_DEAD;
@@ -53,29 +62,39 @@ class Keledros : CGameScript
 	int RETAL_DELAY;
 	string RE_REBUKING;
 	int SCANNING_TARGETS;
+	int SKEL_HP;
+	float SKEL_RESPAWN_CHANCE;
+	int SKEL_RESPAWN_LIVES;
 	string SOUND_ATTACK1;
+	string SOUND_ATTACK2;
+	string SOUND_BOOM;
+	string SOUND_DEATH;
+	string SOUND_POISON;
 	string SOUND_STRUCK1;
 	string SOUND_STRUCK2;
 	string SOUND_STRUCK3;
+	string SOUND_STRUCK4;
+	string SOUND_STRUCK5;
 	int SPAWNED;
+	float SPELL_FREQ;
 	string START_TARG;
 	int TOTAL_GUARDS;
 	int kele.recharging;
 
 	Keledros()
 	{
-		const int I_AM_TURNABLE = 0;
+		I_AM_TURNABLE = 0;
 		if ((StringToLower(GetMapName())).findFirst("keledros") == 0)
 		{
 			NPC_IS_BOSS = 1;
 		}
-		const float NPC_BOSS_REGEN_RATE = 0.1;
-		const float NPC_BOSS_RESTORATION = 0.5;
+		NPC_BOSS_REGEN_RATE = 0.1;
+		NPC_BOSS_RESTORATION = 0.5;
 		IS_UNHOLY = 1;
-		const int NPC_HEARDSOUND_OVERRIDE = 1;
-		const int NPC_AUTO_DEATH = 0;
-		const float SKEL_RESPAWN_CHANCE = 1.0;
-		const int SKEL_RESPAWN_LIVES = 1;
+		NPC_HEARDSOUND_OVERRIDE = 1;
+		NPC_AUTO_DEATH = 0;
+		SKEL_RESPAWN_CHANCE = 1.0;
+		SKEL_RESPAWN_LIVES = 1;
 		SetGlobalVar("DEAD_GUARDS", 2);
 		TOTAL_GUARDS = 2;
 		SetGlobalVar("TWO_IS_DEAD", 1);
@@ -87,33 +106,33 @@ class Keledros : CGameScript
 		ANIM_WALK = "walk";
 		ANIM_RUN = "walk";
 		ANIM_ATTACK = "castspell";
-		const string ANIM_RESPAWN_DEADIDLE = "lying_on_stomach";
-		const int SKEL_HP = 2750;
-		const string CAST_SCRIPT = "keledrosruins/keledros_cl_cast";
-		const int HIGHER_THAN_ME_THRESHOLD = 140;
-		const int AIM_RATIO = 80;
+		ANIM_RESPAWN_DEADIDLE = "lying_on_stomach";
+		SKEL_HP = 2750;
+		CAST_SCRIPT = "keledrosruins/keledros_cl_cast";
+		HIGHER_THAN_ME_THRESHOLD = 140;
+		AIM_RATIO = 80;
 		INTRODUCED = 0;
 		ALLOW_CHANGE = 0;
 		MOVE_RANGE = 30;
 		ATTACK_RANGE = 2000;
 		ATTACK_HITRANGE = 130;
-		const string SOUND_STRUCK1 = "voices/human/male_hit2.wav";
-		const string SOUND_STRUCK2 = "voices/human/male_hit1.wav";
-		const string SOUND_STRUCK3 = "voices/human/male_hit3.wav";
-		const string SOUND_STRUCK4 = "weapons/cbar_hitbod2.wav";
-		const string SOUND_STRUCK5 = "weapons/cbar_hitbod1.wav";
-		const string SOUND_ATTACK1 = "none";
-		const string SOUND_ATTACK2 = "none";
-		const string SOUND_DEATH = "voices/human/male_die.wav";
-		const string SOUND_BOOM = "monsters/bear/giantbearstep2.wav";
-		const string SOUND_POISON = "x/x_laugh1.wav";
+		SOUND_STRUCK1 = "voices/human/male_hit2.wav";
+		SOUND_STRUCK2 = "voices/human/male_hit1.wav";
+		SOUND_STRUCK3 = "voices/human/male_hit3.wav";
+		SOUND_STRUCK4 = "weapons/cbar_hitbod2.wav";
+		SOUND_STRUCK5 = "weapons/cbar_hitbod1.wav";
+		SOUND_ATTACK1 = "none";
+		SOUND_ATTACK2 = "none";
+		SOUND_DEATH = "voices/human/male_die.wav";
+		SOUND_BOOM = "monsters/bear/giantbearstep2.wav";
+		SOUND_POISON = "x/x_laugh1.wav";
 		CAN_HUNT = 0;
 		CAN_ATTACK = 0;
 		NPC_MOVE_TARGET = "enemy";
 		RETALIATE_CHANCE = 0.85;
 		CAN_FLEE = 0;
 		LIGHTNING_SPRITE = "lgtning.spr";
-		const float SPELL_FREQ = 7.0;
+		SPELL_FREQ = 7.0;
 	}
 
 	void OnRepeatTimer()
@@ -312,16 +331,16 @@ class Keledros : CGameScript
 			int EXIT_SUB = 1;
 		}
 		if ((EXIT_SUB)) return;
-		string random = RandomInt(0, 3);
+		int random = RandomInt(0, 3);
 		if (random == 3)
 		{
 			if ((SPAWNED))
 			{
-				string random = RandomInt(0, 2);
+				int random = RandomInt(0, 2);
 			}
 			if (DEAD_GUARDS < TOTAL_GUARDS)
 			{
-				string random = RandomInt(0, 2);
+				int random = RandomInt(0, 2);
 			}
 		}
 		string pos = NEXT_TARGET;
@@ -403,7 +422,7 @@ class Keledros : CGameScript
 		{
 			SetSayTextRange(2048);
 			SayText("No use hiding up there!");
-			string ALT_SPELL_CHOICE = RandomInt(1, 2);
+			int ALT_SPELL_CHOICE = RandomInt(1, 2);
 			if (ALT_SPELL_CHOICE == 1)
 			{
 				string AIM_ANGLE = GetEntityDist(m_hLastSeen);
@@ -442,7 +461,7 @@ class Keledros : CGameScript
 			{
 				SayText("This isn't the end!");
 			}
-			string L_DEATHANIM = RandomInt(0, 1);
+			int L_DEATHANIM = RandomInt(0, 1);
 			ANIM_DEATH = "diesimple";
 			if (L_DEATHANIM == 1)
 			{
@@ -575,7 +594,7 @@ class Keledros : CGameScript
 
 	void attack_1()
 	{
-		string L_DMG = Random(ATTACK_DMG_LOW, ATTACK_DMG_HIGH);
+		float L_DMG = Random(ATTACK_DMG_LOW, ATTACK_DMG_HIGH);
 		DoDamage(m_hLastSeen, ATTACK_HITRANGE, L_DMG, ATTACK_HITCHANCE, "slash");
 	}
 
@@ -597,8 +616,8 @@ class Keledros : CGameScript
 
 	void attack_2()
 	{
-		string LCL_ATKDMG = Random(ATTACK_DMG_LOW, ATTACK_DMG_HIGH);
-		string ATTACK_TYPE = RandomInt(1, 2);
+		float LCL_ATKDMG = Random(ATTACK_DMG_LOW, ATTACK_DMG_HIGH);
+		int ATTACK_TYPE = RandomInt(1, 2);
 		if (ATTACK_TYPE == 1)
 		{
 			TossProjectile("proj_fire_dart", /* TODO: $relpos */ $relpos(0, 10, 35), "none", ATTACK_SPEED, LCL_ATKDMG, ATTACK_CONE_OF_FIRE, "none");
@@ -652,10 +671,10 @@ class Keledros : CGameScript
 	void rebuke_rebuker()
 	{
 		EmitSound(GetOwner(), CHAN_VOICE, SOUND_POISON, 10);
-		string ALT_SPELL_CHOICE = RandomInt(1, 2);
+		int ALT_SPELL_CHOICE = RandomInt(1, 2);
 		if (ALT_SPELL_CHOICE == 1)
 		{
-			string ALT_SPELL_CHOICE = RandomInt(1, 2);
+			int ALT_SPELL_CHOICE = RandomInt(1, 2);
 			string AIM_ANGLE = GetEntityDist(REBUKE_TARGET);
 			AIM_ANGLE /= AIM_RATIO;
 			SetAngles("add_view.x");

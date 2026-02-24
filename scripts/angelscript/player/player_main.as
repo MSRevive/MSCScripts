@@ -25,10 +25,14 @@ class PlayerMain : CGameScript
 	float FREQ_AFK_CHECK;
 	string GAVE_MAP_INTRO;
 	string HAD_FIRST_SPAWN;
+	int HBAR_FRAMES;
 	string HBAR_TARGET;
 	int IR_GLOWING;
 	string IS_AFK;
 	string LAST_STRUCK_FOR;
+	int LEAP_BACK_DRAIN;
+	int LEAP_SIDE_DRAIN;
+	string LEVELUP_SCRIPT;
 	string LEVEL_UP_SCRIPT;
 	string MOTD_TXT1;
 	string MOTD_TXT2;
@@ -52,6 +56,7 @@ class PlayerMain : CGameScript
 	int PLR_BRAVERY;
 	int PLR_CORRODE_DURATION;
 	string PLR_DARK_LEVEL;
+	int PLR_DARK_LEVEL_LOSS_RATE;
 	int PLR_DID_MOTD;
 	string PLR_DMG;
 	int PLR_DMG_ADJUST_FIRE;
@@ -62,6 +67,7 @@ class PlayerMain : CGameScript
 	int PLR_LESSER_LEADFOOT;
 	string PLR_LIGHTS_SYNCED;
 	int PLR_MANA_FONT;
+	int PLR_MAX_DARK_LEVEL;
 	int PLR_SPEED;
 	string PLR_STARTED_AFK_CHECKS;
 	int PLR_SWIFT_BLADE;
@@ -70,27 +76,31 @@ class PlayerMain : CGameScript
 	int SEND_DMG_DELAY;
 	string SHOW_HEALTH;
 	int SIZE_IDX;
+	string SOUND_BEAR_STRUCK1;
+	string SOUND_BEAR_STRUCK2;
+	string SOUND_BEAR_STRUCK3;
+	string SOUND_LEVELUP1;
 
 	PlayerMain()
 	{
 		FREQ_AFK_CHECK = 60.0;
 		PLR_2H_REDUCT = 1;
-		const int LEAP_SIDE_DRAIN = 30;
-		const int LEAP_BACK_DRAIN = 60;
-		const int HBAR_FRAMES = 12;
+		LEAP_SIDE_DRAIN = 30;
+		LEAP_BACK_DRAIN = 60;
+		HBAR_FRAMES = 12;
 		DISPLAY_TARG_HP = 1;
 		DISPLAY_PLAYER_HP = 1;
-		const string SOUND_LEVELUP1 = "magic/converted_EnchP01.wav";
-		const string LEVELUP_SCRIPT = "player/player_cl_effects_levelup";
-		const int PLR_DARK_LEVEL_LOSS_RATE = 50;
-		const int PLR_MAX_DARK_LEVEL = 50000;
+		SOUND_LEVELUP1 = "magic/converted_EnchP01.wav";
+		LEVELUP_SCRIPT = "player/player_cl_effects_levelup";
+		PLR_DARK_LEVEL_LOSS_RATE = 50;
+		PLR_MAX_DARK_LEVEL = 50000;
 		SetGlobalVar("PLR_DARK_UNHOLY_LEVEL", 20000);
 		Precache("health_bar.spr");
 		Precache("human/reference.mdl");
 		Precache("magic/converted_magic13.wav");
-		const string SOUND_BEAR_STRUCK1 = "monsters/bear/c_bear_hit1.wav";
-		const string SOUND_BEAR_STRUCK2 = "monsters/bear/c_bear_hit2.wav";
-		const string SOUND_BEAR_STRUCK3 = "monsters/bear/c_bear_no.wav";
+		SOUND_BEAR_STRUCK1 = "monsters/bear/c_bear_hit1.wav";
+		SOUND_BEAR_STRUCK2 = "monsters/bear/c_bear_hit2.wav";
+		SOUND_BEAR_STRUCK3 = "monsters/bear/c_bear_no.wav";
 		Precache("dwarf/reference.mdl");
 	}
 
@@ -361,8 +371,8 @@ class PlayerMain : CGameScript
 
 	void OnParry(CBaseEntity@ attacker) override
 	{
-		string PARRY_ROLL = int(param4);
-		string ACCU_ROLL = int(param5);
+		int PARRY_ROLL = int(param4);
+		int ACCU_ROLL = int(param5);
 		LogDebug("game_parry PARAM6");
 		SendPlayerMessage(GetOwner(), "You parry the attack! PARRY_ROLL vs. ACCU_ROLL");
 	}
@@ -390,15 +400,15 @@ class PlayerMain : CGameScript
 		if (!(SHOW_HEALTH)) return;
 		string MY_HP = GetEntityHealth(GetOwner());
 		string MY_MAXHP = GetEntityMaxHealth(GetOwner());
-		string MY_HP = int(MY_HP);
-		string MY_MAXHP = int(MY_MAXHP);
+		int MY_HP = int(MY_HP);
+		int MY_MAXHP = int(MY_MAXHP);
 		string PERCENT = MY_HP;
 		PERCENT /= MY_MAXHP;
 		PERCENT *= 100;
-		string PERCENT = int(PERCENT);
+		int PERCENT = int(PERCENT);
 		string FILL_POS = PERCENT;
 		FILL_POS /= 10;
-		string FILL_POS = int(FILL_POS);
+		int FILL_POS = int(FILL_POS);
 		BUILD_BAR_COUNT = 0;
 		BAR_STRING = "{";
 		for (int i = 0; i < 10; i++)
@@ -407,7 +417,7 @@ class PlayerMain : CGameScript
 		}
 		BAR_STRING += "}";
 		PERCENT += "%";
-		SendColoredMessage(GetOwner(), "HP: BAR_STRING PERCENT MY_HP / MY_MAXHP");
+		SendColoredMessage(GetOwner(), HP: + BAR_STRING + PERCENT + " MY_HP / MY_MAXHP");
 	}
 
 	void console_health_toggle()
@@ -477,15 +487,15 @@ class PlayerMain : CGameScript
 		if (!(SHOW_HEALTH)) return;
 		string MY_MP = GetEntityMP(GetOwner());
 		string MY_MAXMP = GetEntityProperty(GetOwner(), "maxmp");
-		string MY_MP = int(MY_MP);
-		string MY_MAXMP = int(MY_MAXMP);
+		int MY_MP = int(MY_MP);
+		int MY_MAXMP = int(MY_MAXMP);
 		string PERCENT = MY_MP;
 		PERCENT /= MY_MAXMP;
 		PERCENT *= 100;
-		string PERCENT = int(PERCENT);
+		int PERCENT = int(PERCENT);
 		string FILL_POS = PERCENT;
 		FILL_POS /= 10;
-		string FILL_POS = int(FILL_POS);
+		int FILL_POS = int(FILL_POS);
 		BUILD_BAR_COUNT = 0;
 		BAR_STRING = "{";
 		for (int i = 0; i < 10; i++)
@@ -494,7 +504,7 @@ class PlayerMain : CGameScript
 		}
 		BAR_STRING += "}";
 		PERCENT += "%";
-		SendColoredMessage(GetOwner(), "MANA: BAR_STRING PERCENT MY_MP / MY_MAXMP");
+		SendColoredMessage(GetOwner(), MANA: + BAR_STRING + PERCENT + " MY_MP / MY_MAXMP");
 	}
 
 	void build_bar()
@@ -512,7 +522,7 @@ class PlayerMain : CGameScript
 
 	void game_learnskill()
 	{
-		SendColoredMessage(GetOwner(), "Level awarded to PARAM1 PARAM2");
+		SendColoredMessage(GetOwner(), "Level awarded to " + param1 + param2);
 		if ((GetEntityProperty(GetOwner(), "isbot"))) return;
 		string TITLE_STRING = GetEntityName(GetOwner());
 		TITLE_STRING += " has gained a level!";
@@ -523,7 +533,7 @@ class PlayerMain : CGameScript
 			MESSAGE_STRING += " ";
 			MESSAGE_STRING += param2;
 		}
-		SendInfoMsg("all", "TITLE_STRING MESSAGE_STRING");
+		SendInfoMsg("all", TITLE_STRING + MESSAGE_STRING);
 		EmitSound(GetOwner(), 0, SOUND_LEVELUP1, 10);
 		ClientEvent("new", "all", "player/player_conartist", "levelup", GetEntityIndex(GetOwner()));
 		LEVEL_UP_SCRIPT = "game.script.last_sent_id";
@@ -540,13 +550,13 @@ class PlayerMain : CGameScript
 
 	void game_xpgain()
 	{
-		string XP_GAIN = int(param1);
-		SendColoredMessage(GetOwner(), "* XP_GAIN XP Awarded");
+		int XP_GAIN = int(param1);
+		SendColoredMessage(GetOwner(), "* " + XP_GAIN + XP + " Awarded");
 	}
 
 	void give_map_intro()
 	{
-		SendInfoMsg(GetOwner(), "G_MAP_NAME G_MAP_DESC");
+		SendInfoMsg(GetOwner(), G_MAP_NAME + G_MAP_DESC);
 		string L_PET_LIST = GetPlayerQuestData(GetOwner(), "pets");
 		if (L_PET_LIST != 0)
 		{
@@ -575,7 +585,7 @@ class PlayerMain : CGameScript
 	{
 		if (G_MAP_DIFF != "G_MAP_DIFF")
 		{
-			SendInfoMsg(GetOwner(), "Intended Difficulty G_MAP_DIFF");
+			SendInfoMsg(GetOwner(), "Intended Difficulty " + G_MAP_DIFF);
 		}
 		if (!(GetMonsterMaxHP() >= 5)) return;
 		if (GetMonsterMaxHP() < G_WARN_HP)
@@ -718,14 +728,14 @@ class PlayerMain : CGameScript
 		PERC_HP /= TARG_MAXHP;
 		string HBAR_FRAME = HBAR_FRAMES;
 		HBAR_FRAME *= PERC_HP;
-		string HBAR_FRAME = int(HBAR_FRAME);
+		int HBAR_FRAME = int(HBAR_FRAME);
 		string HBAR_HEIGHT = GetEntityHeight(TARG_HIT);
-		// TODO: capvar HBAR_HEIGHT 32 512
+		HBAR_HEIGHT = max(32, min(512, HBAR_HEIGHT));
 		string HBAR_POS = GetEntityOrigin(TARG_HIT);
 		HBAR_POS += "z";
 		string HBAR_SCALE = TARG_MAXHP;
 		HBAR_SCALE /= 4000;
-		// TODO: capvar HBAR_SCALE 0.05 0.75
+		HBAR_SCALE = max(0.05, min(0.75, HBAR_SCALE));
 		if (!(IsEntityAlive(TARG_HIT)))
 		{
 			int HBAR_FRAME = 0;
@@ -755,7 +765,7 @@ class PlayerMain : CGameScript
 		PERC_HP /= TARG_MAXHP;
 		string HBAR_FRAME = HBAR_FRAMES;
 		HBAR_FRAME *= PERC_HP;
-		string HBAR_FRAME = int(HBAR_FRAME);
+		int HBAR_FRAME = int(HBAR_FRAME);
 		string HBAR_HEIGHT = GetEntityHeight(TARG_HIT);
 		HBAR_HEIGHT -= 20;
 		string HBAR_POS = GetEntityOrigin(TARG_HIT);
@@ -803,7 +813,7 @@ class PlayerMain : CGameScript
 		string OUT_STR = GetEntityName(GetOwner());
 		OUT_STR += " has joined the party of ";
 		OUT_STR += param1;
-		SendInfoMessageToAll("green OUT_STR");
+		SendInfoMessageToAll("green " + OUT_STR);
 	}
 
 	void game_party_leave()
@@ -852,24 +862,24 @@ class PlayerMain : CGameScript
 			}
 			if ((G_DEVELOPER_MODE))
 			{
-				SendColoredMessage(GetOwner(), "report_item: REPORT_ITEM [ StringToLower(VENDOR_NAME) ] GetEntityProperty(param2, "scriptvar")");
+				SendColoredMessage(GetOwner(), "report_item: " + REPORT_ITEM + "[ " + StringToLower(VENDOR_NAME) + "] " + GetEntityProperty(param2, "scriptvar"));
 			}
 			if ((REPORT_ITEM))
 			{
 			}
 			string OUT_MSG = "";
 			OUT_MSG = GetEntityName(GetOwner()) + "recieved" + GetEntityName(param1) + "from" + VENDOR_NAME;
-			SendInfoMsg("all", "OUT_MSG  ");
+			SendInfoMsg("all", OUT_MSG + "  ");
 		}
 		if (!(G_DEVELOPER_MODE)) return;
-		SendInfoMessageToAll("green fromstore: GetEntityName(param1) GetEntityProperty(param1, "value")");
+		SendInfoMessageToAll("green fromstore: " + GetEntityName(param1) + GetEntityProperty(param1, "value"));
 	}
 
 	void hp_max_warn()
 	{
 		string MSG_TITLE = "HP LIMIT is ";
 		MSG_TITLE = int(CVAR_HP_LIMIT) + "hp";
-		SendInfoMsg(GetOwner(), "MSG_TITLE Your current character is too powerful for this server.");
+		SendInfoMsg(GetOwner(), MSG_TITLE + " Your current character is too powerful for this server.");
 		ScheduleDelayedEvent(2.0, "hp_max_warn2");
 	}
 
@@ -877,7 +887,7 @@ class PlayerMain : CGameScript
 	{
 		string MSG_TITLE = "HP LIMIT is ";
 		MSG_TITLE = int(CVAR_HP_LIMIT) + "hp";
-		SendInfoMsg(GetOwner(), "MSG_TITLE You will be disconnected in 10 seconds.");
+		SendInfoMsg(GetOwner(), MSG_TITLE + " You will be disconnected in 10 seconds.");
 		ScheduleDelayedEvent(5.0, "hp_max_warn3");
 	}
 
@@ -885,7 +895,7 @@ class PlayerMain : CGameScript
 	{
 		string MSG_TITLE = "HP LIMIT is ";
 		MSG_TITLE = int(CVAR_HP_LIMIT) + "hp";
-		SendInfoMsg(GetOwner(), "MSG_TITLE Your current character is too powerful for this server.");
+		SendInfoMsg(GetOwner(), MSG_TITLE + " Your current character is too powerful for this server.");
 		ScheduleDelayedEvent(1.0, "hp_max_warn4");
 	}
 
@@ -893,7 +903,7 @@ class PlayerMain : CGameScript
 	{
 		string MSG_TITLE = "HP LIMIT is ";
 		MSG_TITLE = int(CVAR_HP_LIMIT) + "hp";
-		SendInfoMsg(GetOwner(), "MSG_TITLE You will be disconnected in 5 seconds.");
+		SendInfoMsg(GetOwner(), MSG_TITLE + " You will be disconnected in 5 seconds.");
 		ScheduleDelayedEvent(4.0, "hp_max_warn5");
 	}
 
@@ -1004,7 +1014,7 @@ class PlayerMain : CGameScript
 		MOTD_TXT6 = "";
 		MOTD_TXT7 = "";
 		SIZE_IDX = 0;
-		LogMessage("ent_me game.cvar.hostname MESSAGE OF THE DAY == == == == == =");
+		LogMessage("ent_me game.cvar.hostname " + MESSAGE + OF + THE + DAY + " == == == == == =");
 		do_motd_loop();
 	}
 
@@ -1024,7 +1034,7 @@ class PlayerMain : CGameScript
 			ShowHelpTip(GetOwner(), "generic", "MESSAGE OF THE DAY", MOTD_TXT1, MOTD_TXT2, MOTD_TXT3);
 		}
 		if (!(MOTD_LINE != "[eof]")) return;
-		LogMessage("ent_me SIZE_IDX - MOTD_LINE");
+		LogMessage("ent_me " + SIZE_IDX + "- " + MOTD_LINE);
 		string NEW_LEN = (MOTD_LINE).length();
 		if (SIZE_IDX == 0)
 		{

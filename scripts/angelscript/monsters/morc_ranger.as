@@ -8,14 +8,19 @@ namespace MS
 
 class MorcRanger : CGameScript
 {
+	int AIM_RATIO;
 	string ANIM_ATTACK;
+	int ARROW_DAMAGE_HIGH;
+	int ARROW_DAMAGE_LOW;
 	int ARROW_TYPE;
+	int ATTACK_CONE_OF_FIRE;
 	int ATTACK_RANGE;
+	int ATTACK_SPEED;
 	float CONTAINER_DROP_CHANCE;
 	string CONTAINER_SCRIPT;
 	int DROPS_CONTAINER;
 	int DROP_GOLD;
-	string DROP_GOLD_AMT;
+	int DROP_GOLD_AMT;
 	string DROP_ITEM1;
 	float DROP_ITEM1_CHANCE;
 	float FLINCH_CHANCE;
@@ -34,13 +39,13 @@ class MorcRanger : CGameScript
 		CONTAINER_SCRIPT = "chests/quiver_of_frost_arrows";
 		ANIM_ATTACK = "shootorcbow";
 		FLINCH_CHANCE = 0.45;
-		const int AIM_RATIO = 50;
-		const int ARROW_DAMAGE_LOW = 40;
-		const int ARROW_DAMAGE_HIGH = 120;
+		AIM_RATIO = 50;
+		ARROW_DAMAGE_LOW = 40;
+		ARROW_DAMAGE_HIGH = 120;
 		MOVE_RANGE = 5000;
 		ATTACK_RANGE = 5500;
-		const int ATTACK_SPEED = 900;
-		const int ATTACK_CONE_OF_FIRE = 2;
+		ATTACK_SPEED = 900;
+		ATTACK_CONE_OF_FIRE = 2;
 		Precache("monsters/morc.mdl");
 	}
 
@@ -67,7 +72,7 @@ class MorcRanger : CGameScript
 		string AIM_ANGLE = GetEntityDist(m_hLastSeen);
 		AIM_ANGLE /= AIM_RATIO;
 		SetAngles("add_view.x");
-		string LCL_ATKDMG = Random(ARROW_DAMAGE_LOW, ARROW_DAMAGE_HIGH);
+		float LCL_ATKDMG = Random(ARROW_DAMAGE_LOW, ARROW_DAMAGE_HIGH);
 		if (ARROW_TYPE == 1)
 		{
 			string LAUNCH_ARROW = "proj_arrow_frost";

@@ -12,20 +12,22 @@ class Genstore : CGameScript
 	string ANIM_DEATH;
 	int CANCHAT;
 	int HELENA_SAVED;
+	int NO_CHAT;
 	float OVERCHARGE;
 	int SELL_WEAPON_LEVEL;
+	string SOUND_DEATH;
 	string STORE_NAME;
 	string STORE_TRIGGERTEXT;
 
 	Genstore()
 	{
-		const string SOUND_DEATH = "none";
+		SOUND_DEATH = "none";
 		STORE_TRIGGERTEXT = "store trade buy sell purchase sale offer";
 		STORE_NAME = "helena_general_store";
 		CANCHAT = 1;
 		OVERCHARGE = 1.5;
 		ANIM_DEATH = "dieforward";
-		const int NO_CHAT = 1;
+		NO_CHAT = 1;
 		SELL_WEAPON_LEVEL = 6;
 	}
 
@@ -127,7 +129,7 @@ class Genstore : CGameScript
 	void basevendor_offerstore()
 	{
 		if (!(HELENA_SAVED)) return;
-		SayText("Just for you , I ve these old galat storage notes you can use to trade gold with your friends.");
+		SayText("Just for you , " + I + " ve these old galat storage notes you can use to trade gold with your friends.");
 		bchat_mouth_move();
 	}
 

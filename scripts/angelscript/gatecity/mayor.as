@@ -220,7 +220,7 @@ class Mayor : CGameScript
 
 	void zombie_quest_desc6()
 	{
-		SayText("Kill me REQ_ZOMBIES zombies - and I'll reward you with the key to the city!");
+		SayText("Kill me " + REQ_ZOMBIES + " zombies - and I'll reward you with the key to the city!");
 		ScheduleDelayedEvent(4.0, "zombie_quest_desc7");
 	}
 
@@ -248,12 +248,12 @@ class Mayor : CGameScript
 		if (!(ZOMBIE_QUEST)) return;
 		if (ZOMBIE_COUNT < REQ_ZOMBIES)
 		{
-			string Z_COUNT = int(ZOMBIE_COUNT);
+			int Z_COUNT = int(ZOMBIE_COUNT);
 			string Z_TO_GO = REQ_ZOMBIES;
 			Z_TO_GO -= ZOMBIE_COUNT;
-			string Z_TO_GO = int(Z_TO_GO);
-			SayText("Well, countin' by the screams from down there, I think ya've killed about Z_COUNT of em.");
-			SayText("I guess that leaves ya about Z_TO_GO left to kill. Keep at it!");
+			int Z_TO_GO = int(Z_TO_GO);
+			SayText("Well, countin' by the screams from down there, I think ya've killed about " + Z_COUNT + " of em.");
+			SayText(I + "guess that leaves ya about " + Z_TO_GO + " left to kill. Keep at it!");
 			PlayAnim("once", "nod");
 		}
 		if (ZOMBIE_COUNT >= REQ_ZOMBIES)
@@ -328,7 +328,7 @@ class Mayor : CGameScript
 			int EXIT_SUB = 1;
 		}
 		if ((EXIT_SUB)) return;
-		SayText("Oh , my , I see ya broke it...");
+		SayText("Oh , my , " + I + " see ya broke it...");
 		ScheduleDelayedEvent(4.0, "say_axe2");
 	}
 

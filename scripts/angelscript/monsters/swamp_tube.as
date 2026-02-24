@@ -8,8 +8,13 @@ namespace MS
 class SwampTube : CGameScript
 {
 	int AM_SUMMONED;
+	string ANIM_ALERT;
 	string ANIM_ATTACK;
+	string ANIM_ATTACK_QUICK;
+	string ANIM_CUSTOM_FLINCH;
 	string ANIM_IDLE;
+	string ANIM_MORTAR;
+	string ANIM_MORTAR_READY;
 	string ANIM_RUN;
 	string ANIM_WALK;
 	int ATTACK_HITRANGE;
@@ -18,6 +23,9 @@ class SwampTube : CGameScript
 	string BLOB_ORG;
 	string DEATH_GOAL;
 	int DID_ALERT;
+	int DMG_GLOB;
+	int DMG_NEEDLE;
+	int DOT_GLOB;
 	float FREQ_MORTAR;
 	string HALF_HP;
 	int MORTAR_ACTIVE;
@@ -38,45 +46,61 @@ class SwampTube : CGameScript
 	int NPC_GIVE_EXP;
 	int NPC_IS_RANGED;
 	int RUN_STEP;
+	string SOUND_ALERT1;
+	string SOUND_ALERT2;
+	string SOUND_DEATH1;
+	string SOUND_DEATH2;
+	string SOUND_DEATH3;
+	string SOUND_IDLE1;
+	string SOUND_IDLE2;
+	string SOUND_IDLE3;
+	string SOUND_MOURN1;
+	string SOUND_MOURN2;
+	string SOUND_MOURN3;
+	string SOUND_PAIN;
+	string SOUND_SHOOT;
+	string SOUND_STRUCK1;
+	string SOUND_STRUCK2;
+	string SOUND_STRUCK3;
 	int SUSPEND_AI;
 
 	SwampTube()
 	{
-		const string ANIM_CUSTOM_FLINCH = "flinch";
-		const string ANIM_ALERT = "arming";
+		ANIM_CUSTOM_FLINCH = "flinch";
+		ANIM_ALERT = "arming";
 		ANIM_IDLE = "idle";
 		ANIM_WALK = "walk";
 		ANIM_RUN = "walk";
 		ANIM_ATTACK = "qkfire";
-		const string ANIM_ATTACK_QUICK = "qkfire";
-		const string ANIM_MORTAR_READY = "arming";
-		const string ANIM_MORTAR = "shoot";
+		ANIM_ATTACK_QUICK = "qkfire";
+		ANIM_MORTAR_READY = "arming";
+		ANIM_MORTAR = "shoot";
 		NPC_GIVE_EXP = 750;
 		FREQ_MORTAR = 10.0;
-		const int DMG_GLOB = 400;
-		const int DOT_GLOB = 100;
-		const int DMG_NEEDLE = 150;
+		DMG_GLOB = 400;
+		DOT_GLOB = 100;
+		DMG_NEEDLE = 150;
 		NPC_IS_RANGED = 1;
 		ATTACK_RANGE = 2048;
 		ATTACK_HITRANGE = 2048;
 		ATTACK_MOVERANGE = 768;
 		MOVE_RANGE = 768;
-		const string SOUND_SHOOT = "monsters/tube/tube_fire_new.wav";
-		const string SOUND_MOURN1 = "monsters/tube/tube_mourn1.wav";
-		const string SOUND_MOURN2 = "monsters/tube/tube_mourn2.wav";
-		const string SOUND_MOURN3 = "monsters/tube/tube_mourn3.wav";
-		const string SOUND_IDLE1 = "monsters/tube/Tube_Idle.wav";
-		const string SOUND_IDLE2 = "monsters/tube/Tube_Idle2.wav";
-		const string SOUND_IDLE3 = "monsters/tube/Tube_Idle3.wav";
-		const string SOUND_ALERT1 = "monsters/tube/tube_gtfo.wav";
-		const string SOUND_ALERT2 = "monsters/tube/Tube_SeePlayer.wav";
-		const string SOUND_STRUCK1 = "monsters/tube/TubeCritter_Hit1.wav";
-		const string SOUND_STRUCK2 = "monsters/tube/TuberCritter_Hit2.wav";
-		const string SOUND_STRUCK3 = "monsters/tube/TubeCritter_Hit3.wav";
-		const string SOUND_PAIN = "monstrs/tube/Tube_Flinch.wav";
-		const string SOUND_DEATH1 = "monsters/tube/die1.wav";
-		const string SOUND_DEATH2 = "monsters/tube/Tube_DieBack.wav";
-		const string SOUND_DEATH3 = "monsters/tube/Tube_DieSimple.wav";
+		SOUND_SHOOT = "monsters/tube/tube_fire_new.wav";
+		SOUND_MOURN1 = "monsters/tube/tube_mourn1.wav";
+		SOUND_MOURN2 = "monsters/tube/tube_mourn2.wav";
+		SOUND_MOURN3 = "monsters/tube/tube_mourn3.wav";
+		SOUND_IDLE1 = "monsters/tube/Tube_Idle.wav";
+		SOUND_IDLE2 = "monsters/tube/Tube_Idle2.wav";
+		SOUND_IDLE3 = "monsters/tube/Tube_Idle3.wav";
+		SOUND_ALERT1 = "monsters/tube/tube_gtfo.wav";
+		SOUND_ALERT2 = "monsters/tube/Tube_SeePlayer.wav";
+		SOUND_STRUCK1 = "monsters/tube/TubeCritter_Hit1.wav";
+		SOUND_STRUCK2 = "monsters/tube/TuberCritter_Hit2.wav";
+		SOUND_STRUCK3 = "monsters/tube/TubeCritter_Hit3.wav";
+		SOUND_PAIN = "monstrs/tube/Tube_Flinch.wav";
+		SOUND_DEATH1 = "monsters/tube/die1.wav";
+		SOUND_DEATH2 = "monsters/tube/Tube_DieBack.wav";
+		SOUND_DEATH3 = "monsters/tube/Tube_DieSimple.wav";
 		NPC_ALT_SOUND_DEATH = "monsters/tube/die1.wav";
 		Precache(SOUND_DEATH1);
 		Precache(SOUND_DEATH2);
@@ -117,7 +141,7 @@ class SwampTube : CGameScript
 			}
 			NEXT_IDLE = GetGameTime();
 			NEXT_IDLE += Random(5.0, 10.0);
-			string RND_IDLE = RandomInt(1, 4);
+			int RND_IDLE = RandomInt(1, 4);
 			if (RND_IDLE >= 1)
 			{
 				if (RND_IDLE <= 3)
@@ -320,7 +344,7 @@ class SwampTube : CGameScript
 
 	void OnDeath(CBaseEntity@ attacker) override
 	{
-		string RND_DEATH = RandomInt(1, 3);
+		int RND_DEATH = RandomInt(1, 3);
 		if (RND_DEATH == 1)
 		{
 			NPC_ALT_SOUND_DEATH = SOUND_DEATH1;
@@ -413,7 +437,7 @@ class SwampTube : CGameScript
 		if (!(param1)) return;
 		if (!(GetRelationship(param2) == "enemy")) return;
 		string TARG_ORG = GetEntityOrigin(param2);
-		string BLOB_DIST = Distance(BLOB_ORG, TARG_ORG);
+		float BLOB_DIST = Distance(BLOB_ORG, TARG_ORG);
 		BLOB_DIST /= 64;
 		int BLOB_DIST_RATIO = 1;
 		BLOB_DIST_RATIO -= BLOB_DIST;

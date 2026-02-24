@@ -7,27 +7,43 @@ namespace MS
 
 class ShieldsRune : CGameScript
 {
+	int BLOCK_CHANCE_DOWN;
+	int BLOCK_CHANCE_UP;
+	float DMG_BLOCK_UP;
+	int EFFECT_RANGE;
+	float MELEE_ACCURACY;
+	int MELEE_ENERGY;
+	int MODEL_BODY_OFS;
+	string MODEL_VIEW;
+	int MODEL_VIEW_IDX;
+	float NOPUSH_CHANCE;
+	float PARRY_MULTI;
+	int SHIELD_BASE_PARRY;
 	string SHIELD_HEALTH;
+	int SHIELD_IMMORTAL;
+	string SHIELD_MAXHEALTH;
+	int SHIELD_REPORT_HITS;
+	string SOUND_BLOCK;
 
 	ShieldsRune()
 	{
-		const float NOPUSH_CHANCE = 0.75;
-		const float PARRY_MULTI = 2.0;
-		const int SHIELD_BASE_PARRY = 25;
-		const string MODEL_VIEW = "viewmodels/v_shields.mdl";
-		const int MODEL_VIEW_IDX = 2;
-		const int SHIELD_REPORT_HITS = 1;
-		const int MODEL_BODY_OFS = 69;
-		const int MELEE_ENERGY = 15;
-		const float MELEE_ACCURACY = 0.9;
-		const int BLOCK_CHANCE_UP = 100;
-		const float DMG_BLOCK_UP = 0.35;
-		const int BLOCK_CHANCE_DOWN = 30;
-		const string SHIELD_MAXHEALTH = "infinite";
-		const int SHIELD_IMMORTAL = 1;
+		NOPUSH_CHANCE = 0.75;
+		PARRY_MULTI = 2.0;
+		SHIELD_BASE_PARRY = 25;
+		MODEL_VIEW = "viewmodels/v_shields.mdl";
+		MODEL_VIEW_IDX = 2;
+		SHIELD_REPORT_HITS = 1;
+		MODEL_BODY_OFS = 69;
+		MELEE_ENERGY = 15;
+		MELEE_ACCURACY = 0.9;
+		BLOCK_CHANCE_UP = 100;
+		DMG_BLOCK_UP = 0.35;
+		BLOCK_CHANCE_DOWN = 30;
+		SHIELD_MAXHEALTH = "infinite";
+		SHIELD_IMMORTAL = 1;
 		SHIELD_HEALTH = "infinite";
-		const string SOUND_BLOCK = "doors/doorstop5.wav";
-		const int EFFECT_RANGE = 150;
+		SOUND_BLOCK = "doors/doorstop5.wav";
+		EFFECT_RANGE = 150;
 		Precache(SOUND_BLOCK);
 	}
 
@@ -66,7 +82,7 @@ class ShieldsRune : CGameScript
 		{
 			int FROST_CHANCE = 5;
 		}
-		string FROST_ROLL = RandomInt(1, FROST_CHANCE);
+		int FROST_ROLL = RandomInt(1, FROST_CHANCE);
 		LogDebug("frost_roll FROST_ROLL / FROST_CHANCE");
 		if (FROST_ROLL == 1)
 		{

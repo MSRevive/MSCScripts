@@ -8,11 +8,13 @@ class SfxShockBurst : CGameScript
 	int CYCLE_ANGLE;
 	string FX_CENTER;
 	string FX_RADIUS;
+	string SEAL_MODEL;
+	string SOUND_BURST;
 
 	SfxShockBurst()
 	{
-		const string SOUND_BURST = "magic/lightning_strike2.wav";
-		const string SEAL_MODEL = "weapons/magic/seals.mdl";
+		SOUND_BURST = "magic/lightning_strike2.wav";
+		SEAL_MODEL = "weapons/magic/seals.mdl";
 		Precache(SEAL_MODEL);
 		Precache(SOUND_BURST);
 	}

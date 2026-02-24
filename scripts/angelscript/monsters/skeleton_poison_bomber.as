@@ -7,9 +7,11 @@ namespace MS
 
 class SkeletonPoisonBomber : CGameScript
 {
+	int POISON_TYPE;
+
 	SkeletonPoisonBomber()
 	{
-		const int POISON_TYPE = 3;
+		POISON_TYPE = 3;
 	}
 
 }

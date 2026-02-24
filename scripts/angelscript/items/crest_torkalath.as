@@ -7,10 +7,13 @@ namespace MS
 
 class CrestTorkalath : CGameScript
 {
+	int MODEL_CREST_OFS;
+	string MODEL_WEAR;
+
 	CrestTorkalath()
 	{
-		const int MODEL_CREST_OFS = 8;
-		const string MODEL_WEAR = "armor/p_gowns.mdl";
+		MODEL_CREST_OFS = 8;
+		MODEL_WEAR = "armor/p_gowns.mdl";
 	}
 
 	void crest_spawn()

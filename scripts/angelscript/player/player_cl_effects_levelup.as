@@ -39,12 +39,12 @@ class PlayerClEffectsLevelup : CGameScript
 
 	void levelup_createsprite()
 	{
-		string RND_LEFT = Random(-20, 20);
-		string RND_RIGHT = Random(-20, 20);
+		float RND_LEFT = Random(-20, 20);
+		float RND_RIGHT = Random(-20, 20);
 		Vector3 SPRITE_VEL = Vector3(RND_LEFT, RND_RIGHT, 0);
-		string COLOR_R = RandomInt(0, 255);
-		string COLOR_G = RandomInt(0, 255);
-		string COLOR_B = RandomInt(0, 255);
+		int COLOR_R = RandomInt(0, 255);
+		int COLOR_G = RandomInt(0, 255);
+		int COLOR_B = RandomInt(0, 255);
 		string COLOR_STRING = "(";
 		COLOR_STRING += COLOR_R;
 		COLOR_STRING += ",";
@@ -54,27 +54,27 @@ class PlayerClEffectsLevelup : CGameScript
 		COLOR_STRING += ")";
 		ClientEffect("light", THIS_LIGHT, /* TODO: $getcl */ $getcl(MY_OWNER, "origin"), 200, COLOR_STRING, 0.09);
 		string START_POS = /* TODO: $getcl */ $getcl(MY_OWNER, "origin");
-		string RND_RAD = RandomInt(0, 359);
+		int RND_RAD = RandomInt(0, 359);
 		START_POS += /* TODO: $relpos */ $relpos(Vector3(0, RND_RAD, 0), Vector3(0, DIST, -32));
 		ClientEffect("tempent", "sprite", "xflare1.spr", START_POS, "setup_levelup_sprite");
 		string START_POS = /* TODO: $getcl */ $getcl(MY_OWNER, "origin");
-		string RND_RAD = RandomInt(0, 359);
+		int RND_RAD = RandomInt(0, 359);
 		START_POS += /* TODO: $relpos */ $relpos(Vector3(0, RND_RAD, 0), Vector3(0, DIST, -32));
 		ClientEffect("tempent", "sprite", "xflare1.spr", START_POS, "setup_levelup_sprite");
 		string START_POS = /* TODO: $getcl */ $getcl(MY_OWNER, "origin");
-		string RND_RAD = RandomInt(0, 359);
+		int RND_RAD = RandomInt(0, 359);
 		START_POS += /* TODO: $relpos */ $relpos(Vector3(0, RND_RAD, 0), Vector3(0, DIST, -32));
 		ClientEffect("tempent", "sprite", "xflare1.spr", START_POS, "setup_levelup_sprite");
 	}
 
 	void setup_levelup_sprite()
 	{
-		string RND_LEFT = Random(-20, 20);
-		string RND_RIGHT = Random(-20, 20);
+		float RND_LEFT = Random(-20, 20);
+		float RND_RIGHT = Random(-20, 20);
 		Vector3 SPRITE_VEL = Vector3(RND_LEFT, RND_RIGHT, 0);
-		string COLOR_R = RandomInt(0, 255);
-		string COLOR_G = RandomInt(0, 255);
-		string COLOR_B = RandomInt(0, 255);
+		int COLOR_R = RandomInt(0, 255);
+		int COLOR_G = RandomInt(0, 255);
+		int COLOR_B = RandomInt(0, 255);
 		string COLOR_STRING = "(";
 		COLOR_STRING += COLOR_R;
 		COLOR_STRING += ",";

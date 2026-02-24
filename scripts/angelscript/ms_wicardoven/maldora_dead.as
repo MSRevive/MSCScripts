@@ -11,18 +11,21 @@ class MaldoraDead : CGameScript
 	string BARRIER_ID;
 	int DEATH_ACCEL;
 	int FLY_COUNT;
+	int I_AM_TURNABLE;
+	string MONSTER_MODEL;
 	string MY_Z;
 	int NO_SPAWN_STUCK_CHECK;
 	string ROOF_HEIGHT;
+	string SOUND_LAUGH;
 
 	MaldoraDead()
 	{
 		ANIM_IDLE = "idle";
-		const string SOUND_LAUGH = "monsters/skeleton/cal_laugh.wav";
-		const string MONSTER_MODEL = "monsters/maldora.mdl";
+		SOUND_LAUGH = "monsters/skeleton/cal_laugh.wav";
+		MONSTER_MODEL = "monsters/maldora.mdl";
 		Precache(MONSTER_MODEL);
 		NO_SPAWN_STUCK_CHECK = 1;
-		const int I_AM_TURNABLE = 0;
+		I_AM_TURNABLE = 0;
 		Precache("doors/aliendoor3.wav");
 		Precache("magic/spawn.wav");
 	}
@@ -125,13 +128,13 @@ class MaldoraDead : CGameScript
 	void say_gaveyou1()
 	{
 		PlayAnim("critical", "ref_shoot_squeak");
-		SayText("I ve empowered your shamans. I ve given your troops all the poison they could ever use...");
+		SayText(I + " ve empowered your shamans. I ve given your troops all the poison they could ever use...");
 		EmitSound(GetOwner(), 0, "voices/ms_wicardoven/fmaldora_2voldar1.wav", 10);
 	}
 
 	void say_gaveyou2()
 	{
-		SayText("...and I ve granted you your own magical powers... Just as we agreed.");
+		SayText("...and " + I + " ve granted you your own magical powers... Just as we agreed.");
 		EmitSound(GetOwner(), 0, "voices/ms_wicardoven/fmaldora_2voldar2.wav", 10);
 	}
 

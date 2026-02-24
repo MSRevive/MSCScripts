@@ -13,18 +13,27 @@ class SfxIceWave2 : CGameScript
 	string FX_ORIGIN;
 	string FX_WIDTH;
 	string FX_YAW;
+	string SOUND_BURST;
+	string SPRITE_COLOR;
+	int SPRITE_FRAMERATE;
+	string SPRITE_NAME;
+	int SPRITE_NFRAMES;
+	int SPRITE_RENDERAMT;
+	string SPRITE_RENDERMODE;
+	float SPRITE_SCALE;
+	int SPRITE_SPEED;
 
 	SfxIceWave2()
 	{
-		const string SPRITE_NAME = "fire1_fixed.spr";
-		const Vector3 SPRITE_COLOR = Vector3(64, 64, 255);
-		const int SPRITE_RENDERAMT = 200;
-		const string SPRITE_RENDERMODE = "add";
-		const int SPRITE_FRAMERATE = 30;
-		const int SPRITE_NFRAMES = 23;
-		const float SPRITE_SCALE = 1.5;
-		const int SPRITE_SPEED = 400;
-		const string SOUND_BURST = "magic/frost_reverse.wav";
+		SPRITE_NAME = "fire1_fixed.spr";
+		SPRITE_COLOR = Vector3(64, 64, 255);
+		SPRITE_RENDERAMT = 200;
+		SPRITE_RENDERMODE = "add";
+		SPRITE_FRAMERATE = 30;
+		SPRITE_NFRAMES = 23;
+		SPRITE_SCALE = 1.5;
+		SPRITE_SPEED = 400;
+		SOUND_BURST = "magic/frost_reverse.wav";
 		Precache(SOUND_BURST);
 	}
 

@@ -19,7 +19,7 @@ class TestAngelscriptIntegration : CGameScript
 		SetGravity(0);
 		SetInvincible(true);
 		SetInvisible(true);
-		// TODO: UNCONVERTED: infomessage all "Testing AngelScript Integration..."
+		SendInfoMsg("all", "Testing AngelScript Integration...");
 	}
 
 	void test_angelscript_init()
@@ -96,7 +96,7 @@ class TestAngelscriptIntegration : CGameScript
 	{
 		ServerCommand("echo === AngelScript Integration Test Complete ===");
 		ServerCommand("echo Test stages completed: AS_TEST_STAGE / 3");
-		// TODO: UNCONVERTED: infomessage all "AngelScript test complete - check server console for results"
+		SendInfoMsg("all", "AngelScript test complete - check server console for results");
 		ScheduleDelayedEvent(2.0, "removeme");
 	}
 

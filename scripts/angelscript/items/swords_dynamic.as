@@ -7,18 +7,22 @@ namespace MS
 
 class SwordsDynamic : CGameScript
 {
+	string ANIM_PREFIX;
 	string ANIM_USE;
 	int CUR_PROP;
+	int MODEL_BODY_OFS;
+	string MODEL_HANDS;
 	string MODEL_VIEW;
+	string MODEL_WORLD;
 	string PRESS_DELAY;
 
 	SwordsDynamic()
 	{
 		MODEL_VIEW = "weapons/1hbigsword_rview.mdl";
-		const string MODEL_HANDS = "weapons/p_weapons1.mdl";
-		const string MODEL_WORLD = "weapons/p_weapons1.mdl";
-		const int MODEL_BODY_OFS = 28;
-		const string ANIM_PREFIX = "shortsword";
+		MODEL_HANDS = "weapons/p_weapons1.mdl";
+		MODEL_WORLD = "weapons/p_weapons1.mdl";
+		MODEL_BODY_OFS = 28;
+		ANIM_PREFIX = "shortsword";
 	}
 
 	void weapon_spawn()
@@ -45,7 +49,7 @@ class SwordsDynamic : CGameScript
 	void ext_sub()
 	{
 		if (!(true)) return;
-		LogMessage("ent_owner setviewmodelprop ent_owner submodel 1 PARAM1");
+		LogMessage("ent_owner setviewmodelprop ent_owner submodel 1 " + param1);
 		// TODO: setviewmodelprop ent_owner submodel PARAM1
 		CUR_PROP = param1;
 		ANIM_USE = param2;
@@ -66,7 +70,7 @@ class SwordsDynamic : CGameScript
 		PRESS_DELAY += 0.25;
 		CUR_PROP += 1;
 		// TODO: setviewmodelprop ent_owner submodel CUR_PROP
-		LogMessage("ent_owner using CUR_PROP");
+		LogMessage("ent_owner using " + CUR_PROP);
 	}
 
 }

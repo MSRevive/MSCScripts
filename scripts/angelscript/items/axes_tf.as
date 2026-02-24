@@ -7,10 +7,13 @@ namespace MS
 
 class AxesTf : CGameScript
 {
+	string MELEE_DMG_TYPE;
+	int TOM_SKIN;
+
 	AxesTf()
 	{
-		const string MELEE_DMG_TYPE = "fire";
-		const int TOM_SKIN = 0;
+		MELEE_DMG_TYPE = "fire";
+		TOM_SKIN = 0;
 	}
 
 	void weapon_spawn()

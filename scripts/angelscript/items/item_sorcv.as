@@ -7,9 +7,11 @@ namespace MS
 
 class ItemSorcv : CGameScript
 {
+	string MEDAL_FX_SCRIPT;
+
 	ItemSorcv()
 	{
-		const string MEDAL_FX_SCRIPT = "items/item_sorcv_cl";
+		MEDAL_FX_SCRIPT = "items/item_sorcv_cl";
 		Precache("medals.spr");
 	}
 
@@ -52,7 +54,7 @@ class ItemSorcv : CGameScript
 		{
 			string OUT_MSG = "Has Achieved LORELDIAN Status in the Shadahar Village Challenge";
 		}
-		SendInfoMsg("all", "GetEntityName(GetOwner()) OUT_MSG");
+		SendInfoMsg("all", GetEntityName(GetOwner()) + OUT_MSG);
 		string SPAWN_POINT = GetEntityOrigin(GetOwner());
 		string MY_ANGLES = GetEntityAngles(GetOwner());
 		string MY_YAW = /* TODO: $vec.yaw */ $vec.yaw(MY_ANGLES);

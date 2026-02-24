@@ -8,24 +8,37 @@ namespace MS
 
 class ProjArrowFire : CGameScript
 {
+	int ARROW_BODY_OFS;
+	float ARROW_BREAK_CHANCE;
+	int ARROW_EXPIRE_DELAY;
+	int ARROW_SOLIDIFY_ON_WALL;
+	int ARROW_STICK_DURATION;
+	int LOOPSND_LENGTH;
+	string LOOPSND_NAME;
+	int LOOPSND_VOLUME;
+	int PROJ_DAMAGE;
+	string PROJ_DAMAGETYPE;
+	int PROJ_STICK_DURATION;
 	string SCRIPT_1_ID;
+	string SFX_SCRIPT;
+	string SPRITE_ARROW_TRADE;
 
 	ProjArrowFire()
 	{
-		const string SPRITE_ARROW_TRADE = "firearrow";
-		const int ARROW_BODY_OFS = 0;
-		const string PROJ_DAMAGE = RandomInt(100, 150);
-		const string PROJ_DAMAGETYPE = "fire";
-		const int ARROW_STICK_DURATION = 25;
-		const int PROJ_STICK_DURATION = 25;
-		const int ARROW_SOLIDIFY_ON_WALL = 0;
-		const float ARROW_BREAK_CHANCE = 0.0;
-		const int ARROW_EXPIRE_DELAY = 100;
-		const string SFX_SCRIPT = "items/proj_arrow_fire_cl";
+		SPRITE_ARROW_TRADE = "firearrow";
+		ARROW_BODY_OFS = 0;
+		PROJ_DAMAGE = RandomInt(100, 150);
+		PROJ_DAMAGETYPE = "fire";
+		ARROW_STICK_DURATION = 25;
+		PROJ_STICK_DURATION = 25;
+		ARROW_SOLIDIFY_ON_WALL = 0;
+		ARROW_BREAK_CHANCE = 0.0;
+		ARROW_EXPIRE_DELAY = 100;
+		SFX_SCRIPT = "items/proj_arrow_fire_cl";
 		Precache(SFX_SCRIPT);
-		const string LOOPSND_NAME = "items/torch1.wav";
-		const int LOOPSND_LENGTH = 6;
-		const int LOOPSND_VOLUME = 5;
+		LOOPSND_NAME = "items/torch1.wav";
+		LOOPSND_LENGTH = 6;
+		LOOPSND_VOLUME = 5;
 	}
 
 	void arrow_spawn()

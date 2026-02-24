@@ -12,7 +12,7 @@ class Guard : CGameScript
 	float ATTACK_HITCHANCE;
 	int ATTACK_HITRANGE;
 	int ATTACK_RANGE;
-	string DROP_GOLD;
+	int DROP_GOLD;
 	int DROP_GOLD_MAX;
 	int DROP_GOLD_MIN;
 	float FLEE_CHANCE;
@@ -23,6 +23,7 @@ class Guard : CGameScript
 	string SOUND_ATTACK1;
 	string SOUND_ATTACK2;
 	string SOUND_ATTACK3;
+	string SOUND_DEATH;
 	string SOUND_PAIN;
 	string SOUND_PAIN2;
 
@@ -33,7 +34,7 @@ class Guard : CGameScript
 		SOUND_ATTACK1 = "npc/prepdie1.wav";
 		SOUND_ATTACK2 = "monsters/sludge/null.wav";
 		SOUND_ATTACK3 = "monsters/sludge/null.wav";
-		const string SOUND_DEATH = "player/stomachhit1.wav";
+		SOUND_DEATH = "player/stomachhit1.wav";
 		ANIM_RUN = "run";
 		ANIM_WALK = "walk";
 		ATTACK_RANGE = 90;

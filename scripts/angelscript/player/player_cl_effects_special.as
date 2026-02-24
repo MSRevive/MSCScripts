@@ -12,6 +12,7 @@ class PlayerClEffectsSpecial : CGameScript
 	string CL_HBAR_INDEX;
 	string CL_HBAR_POS;
 	string CL_HBAR_SCALE;
+	string CL_HBAR_SPRITE;
 	string CL_TELE1_ORG;
 	string CORPSE_ANG;
 	string CORPSE_ANIM_IDX;
@@ -45,20 +46,24 @@ class PlayerClEffectsSpecial : CGameScript
 	string KH_DRAG_PAT16;
 	string KH_DRAG_POS;
 	string KH_DRAINER_ANGS;
+	int KH_DRAINER_SPEED;
 	int KH_FIRE_BREATH;
 	string KH_FLAME_SPRITE;
 	int KH_FLIGHT_SPRITES_ON;
 	string KH_FS_ANG_COUNT;
 	string KH_FS_ROT_COUNT;
+	string KH_GLOW_SPRITE;
 	int KH_HAND_SPRITES_ON;
 	string KH_HAND_SPRITE_COLOR;
 	string KH_SKEL;
+	string KH_SPRITE_DRAINER;
 	string KH_TEMP_ROW;
 	int KH_X_COUNT;
 	string KH_ZAP_NERF;
 	int KH_ZAP_ON;
 	string KH_ZAP_TARGET;
 	string LIGHTSYS_ANY_VALID;
+	int LIGHTSYS_N_LIGHTS;
 	string LIGHTSYS_TRACK_LIGHTS;
 	string L_INRENDER;
 	int MIRRORS_ON;
@@ -74,6 +79,7 @@ class PlayerClEffectsSpecial : CGameScript
 	int PHL_ON;
 	string PHL_OWNER;
 	string PHL_POS;
+	string PLAYER_MODEL;
 	int SB_CYCLE_ANGLE;
 	string SB_STUN_POS;
 	string SB_STUN_RADIUS;
@@ -95,15 +101,15 @@ class PlayerClEffectsSpecial : CGameScript
 
 	PlayerClEffectsSpecial()
 	{
-		const int LIGHTSYS_N_LIGHTS = 16;
-		const string PLAYER_MODEL = "human/reference.mdl";
-		const string CL_HBAR_SPRITE = "health_bar.spr";
+		LIGHTSYS_N_LIGHTS = 16;
+		PLAYER_MODEL = "human/reference.mdl";
+		CL_HBAR_SPRITE = "health_bar.spr";
 		array<string> ARRAY_LIGHT_COLOR;
 		array<string> ARRAY_LIGHT_RAD;
 		array<string> ARRAY_LIGHT_IDLIST;
-		const string KH_SPRITE_DRAINER = "fire1_fixed.spr";
-		const int KH_DRAINER_SPEED = 30;
-		const string KH_GLOW_SPRITE = "3dmflaora.spr";
+		KH_SPRITE_DRAINER = "fire1_fixed.spr";
+		KH_DRAINER_SPEED = 30;
+		KH_GLOW_SPRITE = "3dmflaora.spr";
 	}
 
 	void ext_cl_clientcmd()
@@ -129,7 +135,7 @@ class PlayerClEffectsSpecial : CGameScript
 
 	void cl_error()
 	{
-		LogError("PARAM1");
+		LogError(param1);
 	}
 
 	void kh_setup()
@@ -175,7 +181,7 @@ class PlayerClEffectsSpecial : CGameScript
 
 	void kh_setup_spark()
 	{
-		string L_RND_ANG = Random(0, 359);
+		float L_RND_ANG = Random(0, 359);
 		ClientEffect("tempent", "set_current_prop", "death_delay", 2.0);
 		ClientEffect("tempent", "set_current_prop", "fadeout", "lifetime");
 		ClientEffect("tempent", "set_current_prop", "velocity", /* TODO: $relvel */ $relvel(Vector3(0, L_RND_ANG, 0), Vector3(0, 120, 110)));
@@ -552,8 +558,8 @@ class PlayerClEffectsSpecial : CGameScript
 		ClientEffect("tempent", "set_current_prop", "rendercolor", KH_BREATH_COLOR);
 		ClientEffect("tempent", "set_current_prop", "gravity", ".005");
 		ClientEffect("tempent", "set_current_prop", "collide", "none");
-		string RND_RL = Random(-20, 20);
-		string RND_UD = Random(-20, 20);
+		float RND_RL = Random(-20, 20);
+		float RND_UD = Random(-20, 20);
 		string MY_ANG = /* TODO: $getcl */ $getcl(KH_SKEL, "angles");
 		string CLOUD_VEL = /* TODO: $relvel */ $relvel(MY_ANG, Vector3(RND_RL, Random(300, 400), RND_UD));
 		ClientEffect("tempent", "set_current_prop", "velocity", CLOUD_VEL);
@@ -574,17 +580,17 @@ class PlayerClEffectsSpecial : CGameScript
 		ScheduleDelayedEvent(0.1, "kh_zap_target_loop");
 		if (GetGameTime() > KH_ZAP_NERF)
 		{
-			string EXIT_SUB = RandomInt(0, 1);
+			int EXIT_SUB = RandomInt(0, 1);
 		}
 		if ((EXIT_SUB)) return;
 		string BEAM_START = /* TODO: $getcl */ $getcl(KH_SKEL, "origin");
 		string BEAM_END = /* TODO: $getcl */ $getcl(KH_SKEL, "origin");
 		BEAM_START += "z";
-		string RND_PITCH = Random(0, 359);
-		string RND_YAW = Random(0, 359);
+		float RND_PITCH = Random(0, 359);
+		float RND_YAW = Random(0, 359);
 		BEAM_START += /* TODO: $relpos */ $relpos(Vector3(RND_PITCH, RND_YAW, 0), Vector3(0, 32, 0));
-		string RND_PITCH = Random(0, 359);
-		string RND_YAW = Random(0, 359);
+		float RND_PITCH = Random(0, 359);
+		float RND_YAW = Random(0, 359);
 		BEAM_END += /* TODO: $relpos */ $relpos(Vector3(RND_PITCH, RND_YAW, 0), Vector3(0, 32, 0));
 		ClientEffect("beam_points", BEAM_START, BEAM_END, "lgtning.spr", 0.2, 2, 9, 0.3, 0.1, 30, Vector3(2, 1.5, 0.25));
 	}
@@ -1145,12 +1151,12 @@ class PlayerClEffectsSpecial : CGameScript
 
 	void lightsys_render_lights()
 	{
-		string L_CUR_LIGHT_COLOR = /* TODO: $get_array */ $get_array(ARRAY_LIGHT_COLOR, i);
+		string L_CUR_LIGHT_COLOR = ARRAY_LIGHT_COLOR[int(i)];
 		if (!(L_CUR_LIGHT_COLOR != -1)) return;
-		string L_CUR_LIGHT_OWNER = int(i);
-		string L_CUR_LIGHT_RAD = /* TODO: $get_array */ $get_array(ARRAY_LIGHT_RAD, i);
+		int L_CUR_LIGHT_OWNER = int(i);
+		string L_CUR_LIGHT_RAD = ARRAY_LIGHT_RAD[int(i)];
 		string L_CUR_LIGHT_POS = /* TODO: $getcl */ $getcl(L_CUR_LIGHT_OWNER, "origin");
-		string L_CUR_LIGHT_ID = /* TODO: $get_array */ $get_array(ARRAY_LIGHT_IDLIST, i);
+		string L_CUR_LIGHT_ID = ARRAY_LIGHT_IDLIST[int(i)];
 		ClientEffect("light", L_CUR_LIGHT_ID, L_CUR_LIGHT_POS, L_CUR_LIGHT_RAD, L_CUR_LIGHT_COLOR, 1.0);
 		if (GetGameTime() > NEXT_LIGHT_DEBUG)
 		{
@@ -1184,7 +1190,7 @@ class PlayerClEffectsSpecial : CGameScript
 				}
 				LIGHTSYS_INITIALIZED = 1;
 			}
-			if (/* TODO: $get_array */ $get_array(ARRAY_LIGHT_COLOR, L_PLAYER_IDX) == -1)
+			if (ARRAY_LIGHT_COLOR[int(L_PLAYER_IDX)] == -1)
 			{
 				ClientEffect("light", "new", /* TODO: $getcl */ $getcl(L_OWNER, "origin"), L_COLOR, L_RAD, 5.0);
 				string L_LIGHT_ID = "game.script.last_light_id";
@@ -1238,7 +1244,7 @@ class PlayerClEffectsSpecial : CGameScript
 	void lightsys_dumplights_loop()
 	{
 		string CUR_IDX = i;
-		LogDebug("int(CUR_IDX) /* TODO: $get_array */ $get_array(ARRAY_LIGHT_IDLIST, CUR_IDX) /* TODO: $get_array */ $get_array(ARRAY_LIGHT_COLOR, CUR_IDX) /* TODO: $get_array */ $get_array(ARRAY_LIGHT_RAD, CUR_IDX)");
+		LogDebug("int(CUR_IDX) ARRAY_LIGHT_IDLIST[int(CUR_IDX)] ARRAY_LIGHT_COLOR[int(CUR_IDX)] ARRAY_LIGHT_RAD[int(CUR_IDX)]");
 	}
 
 	void lightsys_make_lights()
@@ -1250,7 +1256,7 @@ class PlayerClEffectsSpecial : CGameScript
 
 	void lightsys_check_valid_lights()
 	{
-		string L_CUR_LIGHT = /* TODO: $get_array */ $get_array(ARRAY_LIGHT_COLOR, i);
+		string L_CUR_LIGHT = ARRAY_LIGHT_COLOR[int(i)];
 		if (!(L_CUR_LIGHT != -1)) return;
 		LIGHTSYS_ANY_VALID = 1;
 	}

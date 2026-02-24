@@ -11,6 +11,12 @@ class BearGiantBrown : CGameScript
 	string ANIM_IDLE;
 	string ANIM_RUN;
 	string ANIM_WALK;
+	float ATTACK_HITCHANCE;
+	int ATTACK_NORMAL_DAMAGE;
+	float ATTACK_STANDING_DAMAGE;
+	int ATTACK_STOMPDMG;
+	int ATTACK_STOMPRANGE;
+	int NPC_BASE_EXP;
 
 	BearGiantBrown()
 	{
@@ -18,12 +24,12 @@ class BearGiantBrown : CGameScript
 		ANIM_WALK = "walk";
 		ANIM_RUN = "run";
 		ANIM_ATTACK = "attack";
-		const int ATTACK_NORMAL_DAMAGE = 15;
-		const string ATTACK_STANDING_DAMAGE = Random(18, 23);
-		const int ATTACK_STOMPRANGE = 160;
-		const int ATTACK_STOMPDMG = 10;
-		const float ATTACK_HITCHANCE = 0.7;
-		const int NPC_BASE_EXP = 90;
+		ATTACK_NORMAL_DAMAGE = 15;
+		ATTACK_STANDING_DAMAGE = Random(18, 23);
+		ATTACK_STOMPRANGE = 160;
+		ATTACK_STOMPDMG = 10;
+		ATTACK_HITCHANCE = 0.7;
+		NPC_BASE_EXP = 90;
 	}
 
 	void OnSpawn() override

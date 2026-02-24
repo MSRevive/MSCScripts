@@ -7,43 +7,65 @@ namespace MS
 
 class BeetleVenomGiant : CGameScript
 {
+	string ANIM_SPECIAL;
 	string APOISON_TARGS;
+	int BBET_CAN_FLY;
+	int BBET_CAN_LEAP;
+	int BBET_CAN_SLAM;
+	int BBET_FAKE_DEATH;
+	int BBET_GORE_PUSH_STR;
+	int BBET_SIZE;
+	int DMG_BURST;
+	int DMG_GORE;
+	int DMG_SLAM;
+	int DMG_SLASH;
 	int DOING_SLIME;
+	int DOT_APOISON;
+	int DOT_POISON;
+	int DOT_SLIME;
+	float FREQ_SLIME;
 	string NEXT_SLIME;
 	int NPC_GIVE_EXP;
 	int NPC_MUST_SEE_TARGET;
 	string POISON_TARGS;
 	string SLAM_POS;
+	float SLIME_ATTACK_DURATION;
 	string SLIME_TARGETS;
+	string SOUND_ATTACK1;
+	string SOUND_ATTACK2;
+	string SOUND_ATTACK3;
+	string SOUND_POISON_BURST;
+	string SOUND_SLIME;
+	string SOUND_SLIME_LOOP;
 	string SPIN_ANG;
 	string STUN_TARGS;
 
 	BeetleVenomGiant()
 	{
 		NPC_GIVE_EXP = 3000;
-		const int BBET_SIZE = 2;
-		const int BBET_CAN_FLY = 0;
-		const int BBET_CAN_LEAP = 0;
-		const int BBET_CAN_SLAM = 1;
-		const int BBET_GORE_PUSH_STR = 800;
-		const int BBET_FAKE_DEATH = 0;
-		const int DMG_SLASH = 160;
-		const int DMG_GORE = 150;
-		const int DMG_SLAM = 600;
-		const int DOT_APOISON = 50;
-		const int DOT_POISON = 100;
-		const int DOT_SLIME = 50;
-		const int DMG_BURST = 800;
-		const string SOUND_SLIME = "monsters/gonome/gonome_eat.wav";
-		const string SOUND_SLIME_LOOP = "ambience/steamjet1.wav";
-		const string ANIM_SPECIAL = "bug_conjure";
-		const string FREQ_SLIME = Random(20.0, 30.0);
-		const float SLIME_ATTACK_DURATION = 4.0;
+		BBET_SIZE = 2;
+		BBET_CAN_FLY = 0;
+		BBET_CAN_LEAP = 0;
+		BBET_CAN_SLAM = 1;
+		BBET_GORE_PUSH_STR = 800;
+		BBET_FAKE_DEATH = 0;
+		DMG_SLASH = 160;
+		DMG_GORE = 150;
+		DMG_SLAM = 600;
+		DOT_APOISON = 50;
+		DOT_POISON = 100;
+		DOT_SLIME = 50;
+		DMG_BURST = 800;
+		SOUND_SLIME = "monsters/gonome/gonome_eat.wav";
+		SOUND_SLIME_LOOP = "ambience/steamjet1.wav";
+		ANIM_SPECIAL = "bug_conjure";
+		FREQ_SLIME = Random(20.0, 30.0);
+		SLIME_ATTACK_DURATION = 4.0;
 		NPC_MUST_SEE_TARGET = 0;
-		const string SOUND_ATTACK1 = "monsters/beetle/attack_double1.wav";
-		const string SOUND_ATTACK2 = "monsters/beetle/attack_double2.wav";
-		const string SOUND_ATTACK3 = "monsters/beetle/attack_double3.wav";
-		const string SOUND_POISON_BURST = "weapons/explode3.wav";
+		SOUND_ATTACK1 = "monsters/beetle/attack_double1.wav";
+		SOUND_ATTACK2 = "monsters/beetle/attack_double2.wav";
+		SOUND_ATTACK3 = "monsters/beetle/attack_double3.wav";
+		SOUND_POISON_BURST = "weapons/explode3.wav";
 	}
 
 	void OnRepeatTimer()

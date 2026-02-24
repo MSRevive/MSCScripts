@@ -9,25 +9,45 @@ namespace MS
 
 class DwarfBomber : CGameScript
 {
+	string ANIM_ALERT;
 	string ANIM_ATTACK;
 	string ANIM_DEATH;
+	string ANIM_DODGE;
+	string ANIM_EXPLODE;
+	string ANIM_FLINCH;
 	string ANIM_IDLE;
+	string ANIM_JUMP;
+	string ANIM_RELOAD_L;
+	string ANIM_RELOAD_R;
 	string ANIM_RUN;
+	string ANIM_THROW_L;
+	string ANIM_THROW_R;
 	string ANIM_WALK;
 	int ATTACK_HITRANGE;
 	int ATTACK_MOVERANGE;
 	int ATTACK_RANGE;
 	float BASE_MOVESPEED;
+	string CL_SCRIPT;
 	int CL_SCRIPT_IDX;
 	int DID_FAKE_DEATH;
 	int DID_FSUICIDE;
 	int DID_INTRO;
 	int DMG_BOMB;
+	int DMG_SUICIDE;
 	string DROP_TNT;
+	float FREQ_BOMB_DRAW;
+	float FREQ_CL_UPDATE;
+	float FREQ_DODGE;
+	float FREQ_LBOMB_BEAM;
+	float FREQ_LEAP_FORWARD;
+	float FREQ_RBOMB_BEAM;
 	int HL_ACTIVE;
 	int HL_ATTACH_IDX;
+	int HL_CHAN;
 	int HR_ACTIVE;
 	int HR_ATTACH_IDX;
+	int HR_CHAN;
+	string MODEL_TNT;
 	string NEXT_ALERT;
 	string NEXT_BOMB_DRAW;
 	string NEXT_CL_UPDATE;
@@ -35,54 +55,81 @@ class DwarfBomber : CGameScript
 	int NEXT_LBOMB_BEAM;
 	int NEXT_RBOMB_BEAM;
 	int NPC_GIVE_EXP;
+	string NPC_MATERIAL_TYPE;
 	string NPC_NEXT_FLINCH;
 	int NPC_RANGED;
+	int NPC_USE_FLINCH;
+	int NPC_USE_IDLE;
+	int NPC_USE_PAIN;
+	string PROJ_SCRIPT;
 	int ROLL_DIR;
+	string SOUND_ALERT;
+	string SOUND_DEATH;
+	string SOUND_EXPLODE;
+	string SOUND_FLINCH1;
+	string SOUND_FLINCH2;
+	string SOUND_FLINCH3;
+	string SOUND_FUSE_LIGHT;
+	string SOUND_FUSE_LOOP;
+	string SOUND_GIGGLE1;
+	string SOUND_GIGGLE2;
+	string SOUND_GIGGLE3;
+	string SOUND_GIGGLE4;
+	string SOUND_GIGGLE5;
+	string SOUND_GLOAT;
+	string SOUND_IDLE1;
+	string SOUND_IDLE2;
+	string SOUND_IDLE3;
+	string SOUND_PAIN1;
+	string SOUND_PAIN2;
+	string SOUND_PAIN3;
+	string SOUND_SUICIDE;
+	string SOUND_YELP;
 	string VEC_ENGLISH;
 
 	DwarfBomber()
 	{
-		const string ANIM_RELOAD_R = "anim_draw_r";
-		const string ANIM_RELOAD_L = "anim_draw_l";
-		const string ANIM_THROW_R = "anim_throw_r";
-		const string ANIM_THROW_L = "anim_throw_l";
-		const string ANIM_EXPLODE = "anim_explode";
-		const string ANIM_JUMP = "anim_jump_back";
-		const string ANIM_DODGE = "anim_roll_back";
-		const string FREQ_LEAP_FORWARD = Random(15.0, 20.0);
-		const string FREQ_DODGE = Random(10.0, 15.0);
-		const string ANIM_ALERT = "nod";
-		const string MODEL_TNT = "monsters/dwarf_bomber_tnt.mdl";
-		const string PROJ_SCRIPT = "monsters/summon/tnt_bomb";
-		const string CL_SCRIPT = "monsters/dwarf_bomber_cl";
-		const float FREQ_CL_UPDATE = 15.0;
+		ANIM_RELOAD_R = "anim_draw_r";
+		ANIM_RELOAD_L = "anim_draw_l";
+		ANIM_THROW_R = "anim_throw_r";
+		ANIM_THROW_L = "anim_throw_l";
+		ANIM_EXPLODE = "anim_explode";
+		ANIM_JUMP = "anim_jump_back";
+		ANIM_DODGE = "anim_roll_back";
+		FREQ_LEAP_FORWARD = Random(15.0, 20.0);
+		FREQ_DODGE = Random(10.0, 15.0);
+		ANIM_ALERT = "nod";
+		MODEL_TNT = "monsters/dwarf_bomber_tnt.mdl";
+		PROJ_SCRIPT = "monsters/summon/tnt_bomb";
+		CL_SCRIPT = "monsters/dwarf_bomber_cl";
+		FREQ_CL_UPDATE = 15.0;
 		CL_SCRIPT_IDX = -1;
 		HR_ACTIVE = 0;
 		HL_ACTIVE = 0;
 		HR_ATTACH_IDX = 1;
 		HL_ATTACH_IDX = 2;
-		const float FREQ_BOMB_DRAW = 5.0;
-		const int HR_CHAN = 1;
-		const int HL_CHAN = 3;
-		const float FREQ_RBOMB_BEAM = 5.0;
-		const float FREQ_LBOMB_BEAM = 5.0;
+		FREQ_BOMB_DRAW = 5.0;
+		HR_CHAN = 1;
+		HL_CHAN = 3;
+		FREQ_RBOMB_BEAM = 5.0;
+		FREQ_LBOMB_BEAM = 5.0;
 		NEXT_RBOMB_BEAM = 0;
 		NEXT_LBOMB_BEAM = 0;
 		VEC_ENGLISH = Vector3(0, 0, 0);
 		DMG_BOMB = 100;
-		const int DMG_SUICIDE = 300;
-		const string SOUND_FUSE_LOOP = "monsters/dwarf_bomber/fuse_loop.wav";
-		const string SOUND_FUSE_LIGHT = "monsters/dwarf_bomber/fuse_lit.wav";
-		const string SOUND_YELP = "monsters/dwarf_bomber/db_yelp.wav";
-		const string SOUND_GIGGLE1 = "monsters/dwarf_bomber/db_giggle1.wav";
-		const string SOUND_GIGGLE2 = "monsters/dwarf_bomber/db_giggle2.wav";
-		const string SOUND_GIGGLE3 = "monsters/dwarf_bomber/db_giggle3.wav";
-		const string SOUND_GIGGLE4 = "monsters/dwarf_bomber/db_giggle4.wav";
-		const string SOUND_GIGGLE5 = "monsters/dwarf_bomber/db_giggle5.wav";
-		const string SOUND_EXPLODE = "weapons/explode3.wav";
-		const string SOUND_GLOAT = "monsters/dwarf_bomber/db_gloat.wav";
-		const string SOUND_ALERT = "monsters/dwarf_bomber/db_alert1.wav";
-		const string SOUND_SUICIDE = "monsters/dwarf_bomber/db_suicide.wav";
+		DMG_SUICIDE = 300;
+		SOUND_FUSE_LOOP = "monsters/dwarf_bomber/fuse_loop.wav";
+		SOUND_FUSE_LIGHT = "monsters/dwarf_bomber/fuse_lit.wav";
+		SOUND_YELP = "monsters/dwarf_bomber/db_yelp.wav";
+		SOUND_GIGGLE1 = "monsters/dwarf_bomber/db_giggle1.wav";
+		SOUND_GIGGLE2 = "monsters/dwarf_bomber/db_giggle2.wav";
+		SOUND_GIGGLE3 = "monsters/dwarf_bomber/db_giggle3.wav";
+		SOUND_GIGGLE4 = "monsters/dwarf_bomber/db_giggle4.wav";
+		SOUND_GIGGLE5 = "monsters/dwarf_bomber/db_giggle5.wav";
+		SOUND_EXPLODE = "weapons/explode3.wav";
+		SOUND_GLOAT = "monsters/dwarf_bomber/db_gloat.wav";
+		SOUND_ALERT = "monsters/dwarf_bomber/db_alert1.wav";
+		SOUND_SUICIDE = "monsters/dwarf_bomber/db_suicide.wav";
 		NPC_GIVE_EXP = 300;
 		NPC_RANGED = 1;
 		ATTACK_RANGE = 640;
@@ -93,24 +140,24 @@ class DwarfBomber : CGameScript
 		ANIM_RUN = "run";
 		ANIM_IDLE = "idle";
 		ANIM_DEATH = "none";
-		const string SOUND_DEATH = "none";
+		SOUND_DEATH = "none";
 		BASE_MOVESPEED = 2.0;
 		SetMoveSpeed(BASE_MOVESPEED);
 		SetAnimMoveSpeed(BASE_MOVESPEED);
-		const string SOUND_IDLE1 = "monsters/dwarf_bomber/db_idle1.wav";
-		const string SOUND_IDLE2 = "monsters/dwarf_bomber/db_idle2.wav";
-		const string SOUND_IDLE3 = "monsters/dwarf_bomber/db_idle3.wav";
-		const string SOUND_PAIN1 = "monsters/dwarf_bomber/db_pain1.wav";
-		const string SOUND_PAIN2 = "monsters/dwarf_bomber/db_pain2.wav";
-		const string SOUND_PAIN3 = "monsters/dwarf_bomber/db_pain3.wav";
-		const string SOUND_FLINCH1 = "monsters/dwarf_bomber/db_flinch1.wav";
-		const string SOUND_FLINCH2 = "monsters/dwarf_bomber/db_flinch2.wav";
-		const string SOUND_FLINCH3 = "monsters/dwarf_bomber/db_flinch3.wav";
-		const string ANIM_FLINCH = "anim_xbow_flinch";
-		const string NPC_MATERIAL_TYPE = "flesh";
-		const int NPC_USE_PAIN = 1;
-		const int NPC_USE_IDLE = 1;
-		const int NPC_USE_FLINCH = 1;
+		SOUND_IDLE1 = "monsters/dwarf_bomber/db_idle1.wav";
+		SOUND_IDLE2 = "monsters/dwarf_bomber/db_idle2.wav";
+		SOUND_IDLE3 = "monsters/dwarf_bomber/db_idle3.wav";
+		SOUND_PAIN1 = "monsters/dwarf_bomber/db_pain1.wav";
+		SOUND_PAIN2 = "monsters/dwarf_bomber/db_pain2.wav";
+		SOUND_PAIN3 = "monsters/dwarf_bomber/db_pain3.wav";
+		SOUND_FLINCH1 = "monsters/dwarf_bomber/db_flinch1.wav";
+		SOUND_FLINCH2 = "monsters/dwarf_bomber/db_flinch2.wav";
+		SOUND_FLINCH3 = "monsters/dwarf_bomber/db_flinch3.wav";
+		ANIM_FLINCH = "anim_xbow_flinch";
+		NPC_MATERIAL_TYPE = "flesh";
+		NPC_USE_PAIN = 1;
+		NPC_USE_IDLE = 1;
+		NPC_USE_FLINCH = 1;
 	}
 
 	void game_precache()
@@ -208,9 +255,9 @@ class DwarfBomber : CGameScript
 	void draw_random_bomb()
 	{
 		if ((SUSPEND_AI)) return;
-		string L_N_ACTIVE = /* TODO: $math(add) */ HR_ACTIVE;
+		string L_N_ACTIVE = (HR_ACTIVE + HL_ACTIVE);
 		if (!(L_N_ACTIVE < 2)) return;
-		string L_RND_HAND = RandomInt(1, 2);
+		int L_RND_HAND = RandomInt(1, 2);
 		if (L_RND_HAND == 1)
 		{
 			if (!(HR_ACTIVE))
@@ -339,7 +386,7 @@ class DwarfBomber : CGameScript
 				}
 			}
 		}
-		string L_N_ACTIVE = /* TODO: $math(add) */ HR_ACTIVE;
+		string L_N_ACTIVE = (HR_ACTIVE + HL_ACTIVE);
 		if (L_N_ACTIVE == 2)
 		{
 			SetModelBody(1, 3);
@@ -367,7 +414,7 @@ class DwarfBomber : CGameScript
 
 	void OnHuntTarget(CBaseEntity@ target)
 	{
-		string L_GAME_TIME = GetGameTime();
+		float L_GAME_TIME = GetGameTime();
 		if (m_hAttackTarget != "unset")
 		{
 			if (!(SUSPEND_AI))
@@ -424,7 +471,7 @@ class DwarfBomber : CGameScript
 			}
 			if (L_GAME_TIME > NEXT_BOMB_DRAW)
 			{
-				string L_N_ACTIVE = /* TODO: $math(add) */ HR_ACTIVE;
+				string L_N_ACTIVE = (HR_ACTIVE + HL_ACTIVE);
 				if (L_N_ACTIVE < 2)
 				{
 				}
@@ -506,7 +553,7 @@ class DwarfBomber : CGameScript
 		L_TARG_DIR += /* TODO: $relpos */ $relpos(Vector3(0, 0, 0), Vector3(0, 0, 110));
 		if ((L_MY_ORG).z < (L_TARG_ORG).z)
 		{
-			string L_VADJ = /* TODO: $math(subtract) */ (L_TARG_ORG).z;
+			string L_VADJ = ((L_TARG_ORG).z - (L_MY_ORG).z);
 			L_VADJ *= 4.0;
 			L_VADJ += L_TARG_RANGE;
 			L_TARG_DIR += /* TODO: $relvel */ $relvel(Vector3(0, 0, 0), Vector3(0, 0, L_VADJ));
@@ -526,9 +573,9 @@ class DwarfBomber : CGameScript
 		L_TARG_DIR *= Vector3(L_TARG_RANGE, L_TARG_RANGE, L_TARG_RANGE);
 		if ((L_MY_ORG).z < (L_TARG_ORG).z)
 		{
-			string L_VADJ = /* TODO: $math(subtract) */ (L_TARG_ORG).z;
+			string L_VADJ = ((L_TARG_ORG).z - (L_MY_ORG).z);
 			L_VADJ *= 4.0;
-			LogDebug("vadj frame_release_l L_VADJ [ /* TODO: $math(subtract) */ (L_TARG_ORG).z ]");
+			LogDebug("vadj frame_release_l L_VADJ [ ((L_TARG_ORG).z - (L_MY_ORG).z) ]");
 			L_TARG_DIR += /* TODO: $relvel */ $relvel(Vector3(0, 0, 0), Vector3(0, 0, L_VADJ));
 		}
 		L_TARG_DIR += VEC_ENGLISH;
@@ -553,7 +600,7 @@ class DwarfBomber : CGameScript
 
 	void friendly_fire()
 	{
-		string RND_PITCH = Random(85.00, 115.00);
+		float RND_PITCH = Random(85.00, 115.00);
 		// svplaysound: svplaysound 2 10 SOUND_YELP 0.8 RND_PITCH
 		EmitSound(2, 10, SOUND_YELP, 0.8, RND_PITCH);
 		ROLL_DIR = 0;
@@ -618,7 +665,7 @@ class DwarfBomber : CGameScript
 		if ((DROP_TNT))
 		{
 			SpawnNPC("other/qitem", /* TODO: $relpos */ $relpos(0, 0, 0), ScriptMode::Legacy); // params: "tnt"
-			string RND_YAW = Random(0, 359.99);
+			float RND_YAW = Random(0, 359.99);
 			SetVelocity(m_hLastCreated, /* TODO: $relvel */ $relvel(Vector3(0, RND_YAW, 0), 0, ",", 800, ",", 120));
 			Effect("beam", "follow", "lgtning.spr", m_hLastCreated, 1, 1, 8.0, 200, Vector3(0, 255, 0));
 		}

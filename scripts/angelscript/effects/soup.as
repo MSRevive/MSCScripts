@@ -11,6 +11,7 @@ class Soup : CGameScript
 	int HP_AMT;
 	int MP_AMT;
 	int NERF_TICK;
+	float SOUP_TICKRATE;
 	string game.effect.id;
 	int game.effect.removeondeath;
 
@@ -22,7 +23,7 @@ class Soup : CGameScript
 		string reg.effect.script = currentscript;
 		game.effect.removeondeath = 1;
 		// TODO: registereffect
-		const float SOUP_TICKRATE = 0.5;
+		SOUP_TICKRATE = 0.5;
 	}
 
 	void OnRepeatTimer()
@@ -89,7 +90,7 @@ class Soup : CGameScript
 		HP_AMT = 38;
 		MP_AMT = 58;
 		NERF_TICK = 9;
-		FX_END_TIME = /* TODO: $math(add) */ GetGameTime();
+		FX_END_TIME = (GetGameTime() + FX_DURATION);
 	}
 
 }

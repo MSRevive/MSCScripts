@@ -8,9 +8,14 @@ namespace MS
 class SummonBlizzard : CGameScript
 {
 	string ACTIVE_SKILL;
+	float AOE_FREQ;
+	int AOE_RADIUS;
+	int BLIZZARD_RANGE;
 	string END_POS;
 	string FLAKE_HEIGHT;
+	float FREQ_NOISE;
 	string GAME_PVP;
+	int HEIGHT;
 	string MY_ANGLES;
 	string MY_BASE_DMG;
 	int MY_BASE_DURATION;
@@ -20,23 +25,25 @@ class SummonBlizzard : CGameScript
 	string ROOF_HEIGHT;
 	float SCAN_RATE;
 	string SHARD_HEIGHT;
+	string SHARD_MODEL;
 	int SNOWING;
 	string SNOW_CENTER;
 	string TIME_LIVE;
-	string vel;
+	int WIDTH;
+	int vel;
 
 	SummonBlizzard()
 	{
-		const float AOE_FREQ = 2.0;
-		const int AOE_RADIUS = 172;
-		const float FREQ_NOISE = 8.0;
-		const int BLIZZARD_RANGE = 172;
-		const string SHARD_MODEL = "glassgibs.mdl";
+		AOE_FREQ = 2.0;
+		AOE_RADIUS = 172;
+		FREQ_NOISE = 8.0;
+		BLIZZARD_RANGE = 172;
+		SHARD_MODEL = "glassgibs.mdl";
 		Precache("snow1.spr");
 		Precache(SHARD_MODEL);
 		SCAN_RATE = 2.0;
-		const int WIDTH = 100;
-		const int HEIGHT = 200;
+		WIDTH = 100;
+		HEIGHT = 200;
 	}
 
 	void OnRepeatTimer()
@@ -46,20 +53,20 @@ class SummonBlizzard : CGameScript
 		NEGWIDTH *= -1;
 		string NEGWIDTH = WIDTH;
 		NEGWIDTH *= -1;
-		string x = RandomInt(NEGWIDTH, WIDTH);
-		string y = RandomInt(NEGWIDTH, WIDTH);
+		int x = RandomInt(NEGWIDTH, WIDTH);
+		int y = RandomInt(NEGWIDTH, WIDTH);
 		END_POS += SNOW_CENTER;
 		ClientEffect("tempent", "sprite", "snow1.spr", END_POS, "setup_blizzardflake");
 		string NEGWIDTH = WIDTH;
 		NEGWIDTH *= -1;
-		string x = RandomInt(NEGWIDTH, WIDTH);
-		string y = RandomInt(NEGWIDTH, WIDTH);
+		int x = RandomInt(NEGWIDTH, WIDTH);
+		int y = RandomInt(NEGWIDTH, WIDTH);
 		END_POS += SNOW_CENTER;
 		ClientEffect("tempent", "sprite", SHARD_MODEL, END_POS, "setup_hailshard");
 		string NEGWIDTH = WIDTH;
 		NEGWIDTH *= -1;
-		string x = RandomInt(NEGWIDTH, WIDTH);
-		string y = RandomInt(NEGWIDTH, WIDTH);
+		int x = RandomInt(NEGWIDTH, WIDTH);
+		int y = RandomInt(NEGWIDTH, WIDTH);
 		END_POS += SNOW_CENTER;
 		ClientEffect("tempent", "sprite", SHARD_MODEL, END_POS, "setup_hailshard");
 	}
@@ -169,7 +176,7 @@ class SummonBlizzard : CGameScript
 	void setup_blizzardflake()
 	{
 		vel = RandomInt(-50, 50);
-		string FLAKE_GRAv = Random(0.2, 2.1);
+		float FLAKE_GRAv = Random(0.2, 2.1);
 		ClientEffect("tempent", "set_current_prop", "death_delay", 2);
 		ClientEffect("tempent", "set_current_prop", "bouncefactor", 0);
 		ClientEffect("tempent", "set_current_prop", "scale", 0.2);
@@ -180,7 +187,7 @@ class SummonBlizzard : CGameScript
 
 	void setup_hailshard()
 	{
-		string SHARD_SIZE = Random(1.0, 3.0);
+		float SHARD_SIZE = Random(1.0, 3.0);
 		ClientEffect("tempent", "set_current_prop", "death_delay", 2);
 		ClientEffect("tempent", "set_current_prop", "bouncefactor", 0);
 		ClientEffect("tempent", "set_current_prop", "scale", SHARD_SIZE);

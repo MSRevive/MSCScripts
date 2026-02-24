@@ -7,12 +7,17 @@ namespace MS
 
 class RminesBoss : CGameScript
 {
+	string ANIM_CLOSE;
+	string ANIM_IDLE;
+	string ANIM_OPEN;
+	string SOUND_OPEN;
+
 	RminesBoss()
 	{
-		const string ANIM_IDLE = "base";
-		const string ANIM_CLOSE = "base";
-		const string ANIM_OPEN = "base";
-		const string SOUND_OPEN = "debris/flesh5.wav";
+		ANIM_IDLE = "base";
+		ANIM_CLOSE = "base";
+		ANIM_OPEN = "base";
+		SOUND_OPEN = "debris/flesh5.wav";
 	}
 
 	void OnSpawn() override

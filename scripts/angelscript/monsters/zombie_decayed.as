@@ -14,28 +14,56 @@ class ZombieDecayed : CGameScript
 	string ANIM_DEATH3;
 	string ANIM_DEATH4;
 	string ANIM_DEATH5;
+	string ANIM_DISEASE;
 	string ANIM_FLINCH;
 	string ANIM_IDLE;
 	string ANIM_RUN;
+	string ANIM_SWIPE;
 	string ANIM_WALK;
+	float ATTACK_DAMAGE;
+	int ATTACK_HITCHANCE;
 	int ATTACK_HITRANGE;
 	int ATTACK_MOVERANGE;
 	int ATTACK_RANGE;
 	int CAN_FLINCH;
 	int DID_WARCRY;
 	int DISEASE_DELAY;
+	float DISEASE_DMG;
+	int DISEASE_DUR;
+	float DISEASE_FREQ;
 	int FLINCH_CHANCE;
 	int I_ATTACKING;
 	int I_DISEASE;
+	string MONSTER_MODEL;
 	int NPC_GIVE_EXP;
 	int PAIN_DELAY;
+	string SOUND_DEATH;
+	string SOUND_HIT1;
+	string SOUND_HIT2;
+	string SOUND_IDLE1;
+	string SOUND_IDLE2;
+	string SOUND_IDLE3;
+	string SOUND_IDLE4;
+	string SOUND_MISS1;
+	string SOUND_MISS2;
+	string SOUND_PAIN1;
+	string SOUND_PAIN2;
+	string SOUND_PAIN3;
+	string SOUND_RAGE1;
+	string SOUND_RAGE2;
+	string SOUND_STRUCK1;
+	string SOUND_STRUCK2;
+	string SOUND_STRUCK3;
+	string SOUND_WARCRY1;
+	string SOUND_WARCRY2;
+	string SOUND_WARCRY3;
 
 	ZombieDecayed()
 	{
 		ANIM_WALK = "walk";
 		ANIM_RUN = "walk";
-		const string ANIM_SWIPE = "attack1";
-		const string ANIM_DISEASE = "attack2";
+		ANIM_SWIPE = "attack1";
+		ANIM_DISEASE = "attack2";
 		ANIM_ATTACK = ANIM_SWIPE;
 		ANIM_IDLE = "idle1";
 		ANIM_DEATH1 = "diesimple";
@@ -47,37 +75,37 @@ class ZombieDecayed : CGameScript
 		ANIM_FLINCH = "llflinch";
 		CAN_FLINCH = 1;
 		FLINCH_CHANCE = 30;
-		const string SOUND_IDLE1 = "monsters/zombie1/zo_idle1.wav";
-		const string SOUND_IDLE2 = "monsters/zombie1/zo_idle2.wav";
-		const string SOUND_IDLE3 = "monsters/zombie1/zo_idle3.wav";
-		const string SOUND_IDLE4 = "monsters/zombie1/zo_idle4.wav";
-		const string SOUND_PAIN1 = "monsters/zombie1/zo_pain1.wav";
-		const string SOUND_PAIN2 = "monsters/zombie1/zo_pain2.wav";
-		const string SOUND_PAIN3 = "monsters/zombie1/zo_pain3.wav";
-		const string SOUND_STRUCK1 = "weapons/cbar_hitbod1.wav";
-		const string SOUND_STRUCK2 = "weapons/cbar_hitbod2.wav";
-		const string SOUND_STRUCK3 = "weapons/cbar_hitbod3.wav";
-		const string SOUND_WARCRY1 = "monsters/zombie1/zo_alert10.wav";
-		const string SOUND_WARCRY2 = "monsters/zombie1/zo_alert20.wav";
-		const string SOUND_WARCRY3 = "monsters/zombie1/zo_alert30.wav";
-		const string SOUND_RAGE1 = "monsters/zombie1/zo_attack1.wav";
-		const string SOUND_RAGE2 = "monsters/zombie1/zo_attack2.wav";
-		const string SOUND_DEATH = "monsters/zombie1/hitground.wav";
-		const string SOUND_MISS1 = "zombie/claw_miss1.wav";
-		const string SOUND_MISS2 = "zombie/claw_miss2.wav";
-		const string SOUND_HIT1 = "zombie/claw_strike1.wav";
-		const string SOUND_HIT2 = "zombie/claw_strike2.wav";
+		SOUND_IDLE1 = "monsters/zombie1/zo_idle1.wav";
+		SOUND_IDLE2 = "monsters/zombie1/zo_idle2.wav";
+		SOUND_IDLE3 = "monsters/zombie1/zo_idle3.wav";
+		SOUND_IDLE4 = "monsters/zombie1/zo_idle4.wav";
+		SOUND_PAIN1 = "monsters/zombie1/zo_pain1.wav";
+		SOUND_PAIN2 = "monsters/zombie1/zo_pain2.wav";
+		SOUND_PAIN3 = "monsters/zombie1/zo_pain3.wav";
+		SOUND_STRUCK1 = "weapons/cbar_hitbod1.wav";
+		SOUND_STRUCK2 = "weapons/cbar_hitbod2.wav";
+		SOUND_STRUCK3 = "weapons/cbar_hitbod3.wav";
+		SOUND_WARCRY1 = "monsters/zombie1/zo_alert10.wav";
+		SOUND_WARCRY2 = "monsters/zombie1/zo_alert20.wav";
+		SOUND_WARCRY3 = "monsters/zombie1/zo_alert30.wav";
+		SOUND_RAGE1 = "monsters/zombie1/zo_attack1.wav";
+		SOUND_RAGE2 = "monsters/zombie1/zo_attack2.wav";
+		SOUND_DEATH = "monsters/zombie1/hitground.wav";
+		SOUND_MISS1 = "zombie/claw_miss1.wav";
+		SOUND_MISS2 = "zombie/claw_miss2.wav";
+		SOUND_HIT1 = "zombie/claw_strike1.wav";
+		SOUND_HIT2 = "zombie/claw_strike2.wav";
 		Precache(SOUND_DEATH);
-		const string ATTACK_DAMAGE = Random(3, 5);
+		ATTACK_DAMAGE = Random(3, 5);
 		ATTACK_RANGE = 100;
 		ATTACK_HITRANGE = 130;
-		const int ATTACK_HITCHANCE = 60;
+		ATTACK_HITCHANCE = 60;
 		ATTACK_MOVERANGE = 40;
-		const float DISEASE_FREQ = 10.0;
-		const string DISEASE_DMG = Random(0.25, 2);
-		const string DISEASE_DUR = RandomInt(10, 20);
+		DISEASE_FREQ = 10.0;
+		DISEASE_DMG = Random(0.25, 2);
+		DISEASE_DUR = RandomInt(10, 20);
 		NPC_GIVE_EXP = 20;
-		const string MONSTER_MODEL = "monsters/decayed_zombie.mdl";
+		MONSTER_MODEL = "monsters/decayed_zombie.mdl";
 		Precache(MONSTER_MODEL);
 	}
 
@@ -85,7 +113,7 @@ class ZombieDecayed : CGameScript
 	{
 		SetName("Decayed Zombie");
 		SetModel(MONSTER_MODEL);
-		string MAX_HP = RandomInt(30, 100);
+		int MAX_HP = RandomInt(30, 100);
 		SetHealth(MAX_HP);
 		SetWidth(20);
 		SetHeight(60);
@@ -109,7 +137,7 @@ class ZombieDecayed : CGameScript
 		SetDamageResistance("pierce", 0.5);
 		SetDamageResistance("blunt", 1.0);
 		SetDamageResistance("slash", 1.25);
-		string PICK_DEATH = RandomInt(1, 5);
+		int PICK_DEATH = RandomInt(1, 5);
 		if (PICK_DEATH == 1)
 		{
 			ANIM_DEATH = ANIM_DEATH1;
@@ -136,7 +164,7 @@ class ZombieDecayed : CGameScript
 
 	void debug_props()
 	{
-		SayText("My Atkrange ATTACK_RANGE vs. MIN_ATTACK_RANGE against game.monster.height");
+		SayText("My Atkrange " + ATTACK_RANGE + "vs. " + MIN_ATTACK_RANGE + " against game.monster.height");
 	}
 
 	void npc_selectattack()
@@ -213,7 +241,7 @@ class ZombieDecayed : CGameScript
 			array<string> sounds = {SOUND_RAGE1, SOUND_RAGE2};
 			EmitSound(GetOwner(), 0, sounds[RandomInt(0, sounds.length() - 1)], 5);
 		}
-		string NEXT_SOUND = Random(4, 15);
+		float NEXT_SOUND = Random(4, 15);
 		NEXT_SOUND("idle_sounds");
 	}
 

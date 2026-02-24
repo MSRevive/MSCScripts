@@ -7,11 +7,15 @@ namespace MS
 
 class UndercliffsBoss1a : CGameScript
 {
+	int BC_GLOWSHELL;
+	string BC_GLOWSHELL_COLOR;
+	int BC_SPRITE_IN;
+
 	UndercliffsBoss1a()
 	{
-		const int BC_SPRITE_IN = 1;
-		const int BC_GLOWSHELL = 1;
-		const Vector3 BC_GLOWSHELL_COLOR = Vector3(128, 0, 128);
+		BC_SPRITE_IN = 1;
+		BC_GLOWSHELL = 1;
+		BC_GLOWSHELL_COLOR = Vector3(128, 0, 128);
 	}
 
 	void OnSpawn() override
@@ -43,7 +47,7 @@ class UndercliffsBoss1a : CGameScript
 
 	void add_items_self_adj()
 	{
-		string L_RAND = RandomInt(1, 5);
+		int L_RAND = RandomInt(1, 5);
 		if (L_RAND == 1)
 		{
 			add_great_pot();

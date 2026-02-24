@@ -5,9 +5,11 @@ namespace MS
 
 class MapStartup : CGameScript
 {
+	int MAP_ALLOWNIGHT;
+
 	MapStartup()
 	{
-		const int MAP_ALLOWNIGHT = 1;
+		MAP_ALLOWNIGHT = 1;
 		if (MAP_WEATHER != "MAP_WEATHER")
 		{
 			SetGlobalVar("global.map.weather", MAP_WEATHER);

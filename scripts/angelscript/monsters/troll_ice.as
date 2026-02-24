@@ -27,21 +27,33 @@ class TrollIce : CGameScript
 	int NPC_GIVE_EXP;
 	int NPC_MUST_SEE_TARGET;
 	string PUSH_VEL;
+	string SOUND_ATTACK1;
+	string SOUND_ATTACK2;
+	string SOUND_DEATH;
+	string SOUND_IDLE;
+	string SOUND_PAIN;
+	string SOUND_STRUCK1;
+	string SOUND_STRUCK2;
+	string SOUND_STRUCK3;
+	string SOUND_WALK;
+	string SOUND_WALK1;
+	string SOUND_WALK2;
+	int TOO_CLOSE;
 
 	TrollIce()
 	{
-		const int TOO_CLOSE = 100;
-		const string SOUND_STRUCK1 = "weapons/cbar_hitbod1.wav";
-		const string SOUND_STRUCK2 = "monsters/troll/trollpain.wav";
-		const string SOUND_STRUCK3 = "monsters/troll/trollpain.wav";
-		const string SOUND_PAIN = "monsters/troll/trollpain.wav";
-		const string SOUND_ATTACK1 = "monsters/troll/trollattack.wav";
-		const string SOUND_ATTACK2 = "monsters/troll/trollattack.wav";
-		const string SOUND_DEATH = "monsters/troll/trolldeath.wav";
-		const string SOUND_WALK = "monsters/troll/trollidle.wav";
-		const string SOUND_WALK1 = "monsters/troll/step1.wav";
-		const string SOUND_WALK2 = "monsters/troll/step2.wav";
-		const string SOUND_IDLE = "monsters/troll/trollidle.wav";
+		TOO_CLOSE = 100;
+		SOUND_STRUCK1 = "weapons/cbar_hitbod1.wav";
+		SOUND_STRUCK2 = "monsters/troll/trollpain.wav";
+		SOUND_STRUCK3 = "monsters/troll/trollpain.wav";
+		SOUND_PAIN = "monsters/troll/trollpain.wav";
+		SOUND_ATTACK1 = "monsters/troll/trollattack.wav";
+		SOUND_ATTACK2 = "monsters/troll/trollattack.wav";
+		SOUND_DEATH = "monsters/troll/trolldeath.wav";
+		SOUND_WALK = "monsters/troll/trollidle.wav";
+		SOUND_WALK1 = "monsters/troll/step1.wav";
+		SOUND_WALK2 = "monsters/troll/step2.wav";
+		SOUND_IDLE = "monsters/troll/trollidle.wav";
 		DROP_GOLD = 1;
 		DROP_GOLD_MIN = 10;
 		DROP_GOLD_MAX = 35;
@@ -160,7 +172,7 @@ class TrollIce : CGameScript
 	{
 		string MY_LOC = GetEntityOrigin(GetOwner());
 		string MY_MASTER_LOC = GetEntityOrigin(MY_MASTER);
-		string MASTER_DISTANCE = Distance(MY_LOC, MY_MASTER_LOC);
+		float MASTER_DISTANCE = Distance(MY_LOC, MY_MASTER_LOC);
 		if (MASTER_DISTANCE > 80)
 		{
 			SetSolid("box");

@@ -7,14 +7,17 @@ namespace MS
 
 class EaglePlague : CGameScript
 {
+	float DMG_ATTACK;
+	int DMG_DOT_BURN;
 	int MELEE_ATTACK;
+	int NO_DIVE;
 	int NPC_GIVE_EXP;
 
 	EaglePlague()
 	{
-		const int NO_DIVE = 1;
-		const string DMG_DOT_BURN = RandomInt(5, 20);
-		const string DMG_ATTACK = Random(10, 40);
+		NO_DIVE = 1;
+		DMG_DOT_BURN = RandomInt(5, 20);
+		DMG_ATTACK = Random(10, 40);
 		NPC_GIVE_EXP = 250;
 	}
 

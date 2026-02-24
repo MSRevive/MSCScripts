@@ -8,7 +8,10 @@ class BaseSelfAdjust : CGameScript
 	string BASE_FRAMERATE;
 	string BASE_MOVESPEED;
 	string NEW_NAME;
+	string NPC_ADJ_DMG_MUTLI_TOKENS;
+	string NPC_ADJ_HP_MUTLI_TOKENS;
 	int NPC_ADJ_LEVEL;
+	string NPC_ADJ_TIERS;
 	int NPC_ALL_XP_ADJ;
 	string NPC_CUSTOM_NAME;
 	string NPC_CUSTOM_NAME_STRING;
@@ -22,9 +25,9 @@ class BaseSelfAdjust : CGameScript
 
 	BaseSelfAdjust()
 	{
-		const string NPC_ADJ_TIERS = "0;500;1000;2000;3000;5000";
-		const string NPC_ADJ_DMG_MUTLI_TOKENS = "1.0;2.0;3.0;3.5;4.0;5.0;";
-		const string NPC_ADJ_HP_MUTLI_TOKENS = "1.0;2.0;3.0;3.5;4.0;5.0;";
+		NPC_ADJ_TIERS = "0;500;1000;2000;3000;5000";
+		NPC_ADJ_DMG_MUTLI_TOKENS = "1.0;2.0;3.0;3.5;4.0;5.0;";
+		NPC_ADJ_HP_MUTLI_TOKENS = "1.0;2.0;3.0;3.5;4.0;5.0;";
 	}
 
 	void game_postspawn()
@@ -105,24 +108,24 @@ class BaseSelfAdjust : CGameScript
 	{
 		string L_N_EVENTS = GetTokenCount(NPC_DO_EVENTS, ";");
 		L_N_EVENTS -= 1;
-		LogDebug("npcatk_do_events checking int(/* TODO: $math(add) */ NPC_EVENT_COUNTER) / int(/* TODO: $math(add) */ L_N_EVENTS)");
+		LogDebug("npcatk_do_events checking int((NPC_EVENT_COUNTER + 1)) / int((L_N_EVENTS + 1))");
 		string L_EVENT_NAME = GetToken(NPC_DO_EVENTS, NPC_EVENT_COUNTER, ";");
-		string L_NEXT_EVENT_IDX = /* TODO: $math(add) */ NPC_EVENT_COUNTER;
+		string L_NEXT_EVENT_IDX = (NPC_EVENT_COUNTER + 1);
 		if (L_NEXT_EVENT_IDX <= L_N_EVENTS)
 		{
 			string L_NEXT_EVENT = GetToken(NPC_DO_EVENTS, L_NEXT_EVENT_IDX, ";");
-			if (!(/* TODO: $func */ $func("npcatk_do_events_isnum", L_EVENT_NAME)))
+			if (!("npcatk_do_events_isnum"(L_EVENT_NAME)))
 			{
 			}
-			LogDebug("npcatk_do_events int(/* TODO: $math(add) */ NPC_EVENT_COUNTER) / int(/* TODO: $math(add) */ L_N_EVENTS) = L_EVENT_NAME L_NEXT_EVENT");
+			LogDebug("npcatk_do_events int((NPC_EVENT_COUNTER + 1)) / int((L_N_EVENTS + 1)) = L_EVENT_NAME L_NEXT_EVENT");
 			L_EVENT_NAME(L_NEXT_EVENT);
 		}
 		else
 		{
-			if (!(/* TODO: $func */ $func("npcatk_do_events_isnum", L_EVENT_NAME)))
+			if (!("npcatk_do_events_isnum"(L_EVENT_NAME)))
 			{
 			}
-			LogDebug("npcatk_do_events int(/* TODO: $math(add) */ NPC_EVENT_COUNTER) / int(/* TODO: $math(add) */ L_N_EVENTS) = L_EVENT_NAME");
+			LogDebug("npcatk_do_events int((NPC_EVENT_COUNTER + 1)) / int((L_N_EVENTS + 1)) = L_EVENT_NAME");
 			L_EVENT_NAME();
 		}
 		if (NPC_EVENT_COUNTER < L_N_EVENTS)
@@ -307,7 +310,7 @@ class BaseSelfAdjust : CGameScript
 				OUT_TITLE += F_NPC_ADJ_LEVEL;
 				string OUT_MSG = "Average=";
 				OUT_MSG += AVG_LEVELS;
-				SendInfoMsg("all", "OUT_TITLE OUT_MSG");
+				SendInfoMsg("all", OUT_TITLE + OUT_MSG);
 			}
 		}
 		if (G_TRACK_HP > 0)
@@ -394,7 +397,7 @@ class BaseSelfAdjust : CGameScript
 		{
 			string MSG_TITLE = "MAP ERROR: ";
 			MSG_TITLE += GetEntityName(GetOwner());
-			SendInfoMsg("all", "MSG_TITLE HP/DMG multipliers cannot be more than 4x one another, or XP will not be adjusted");
+			SendInfoMsg("all", MSG_TITLE + " HP/DMG multipliers cannot be more than 4x one another, or XP will not be adjusted");
 		}
 		if (!(L_OVER_ADJUST))
 		{
@@ -514,7 +517,7 @@ class BaseSelfAdjust : CGameScript
 					float L_TO_ADD = 0.25;
 					string L_TIMES_TO_ADD = NPC_MOVE_SPEED_ADJ;
 					L_TO_ADD *= L_TIMES_TO_ADD;
-					// TODO: capvar L_TO_ADD 0.25 2
+					L_TO_ADD = max(0.25, min(2, L_TO_ADD));
 					L_TO_ADD += 1;
 					LogDebug("expadj L_TO_ADD noscale mspeed+");
 					L_ADJ += L_TO_ADD;

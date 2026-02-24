@@ -13,10 +13,11 @@ class ShockBurstChild : CGameScript
 	string OWNER_ISPLAYER;
 	int PLAYING_DEAD;
 	string PVP_MODE;
+	string SOUND_SHOCK;
 
 	ShockBurstChild()
 	{
-		const string SOUND_SHOCK = "debris/zap1.wav";
+		SOUND_SHOCK = "debris/zap1.wav";
 	}
 
 	void game_dynamically_created()

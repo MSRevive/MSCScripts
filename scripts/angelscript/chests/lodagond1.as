@@ -17,7 +17,7 @@ class Lodagond1 : CGameScript
 	{
 		add_gold(100);
 		chest_add_hpot_mpot();
-		string SCROLL_TOME = RandomInt(1, 2);
+		int SCROLL_TOME = RandomInt(1, 2);
 		if (SCROLL_TOME == 1)
 		{
 			AddStoreItem(STORENAME, "scroll_ice_shield", 1, 0);

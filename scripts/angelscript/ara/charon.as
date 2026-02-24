@@ -7,6 +7,8 @@ namespace MS
 
 class Charon : CGameScript
 {
+	int NO_JOB;
+	int NO_RUMOR;
 	string ORC_TIME;
 	string SOUND_IDLE1;
 	string SOUND_IDLE2;
@@ -14,8 +16,8 @@ class Charon : CGameScript
 
 	Charon()
 	{
-		const int NO_RUMOR = 1;
-		const int NO_JOB = 1;
+		NO_RUMOR = 1;
+		NO_JOB = 1;
 	}
 
 	void OnSpawn() override
@@ -49,7 +51,7 @@ class Charon : CGameScript
 		if (GetGameTime() < ORC_TIME)
 		{
 			PlayAnim("critical", "pondering");
-			SayText("Oh , I don t like this. It s far too quiet... No one in sight. Something is up , something BAD.");
+			SayText("Oh , " + I + "don t like this. It s far too quiet... No one in sight. Something is up , something " + BAD.);
 		}
 		if (GetGameTime() >= ORC_TIME)
 		{
@@ -63,7 +65,7 @@ class Charon : CGameScript
 				face_speaker(GetEntityIndex("ent_lastspoke"));
 			}
 			SayText("Orcs!? Blast! Get in there and see if you can save any potential customers!");
-			SayText("I ll stay here and guard the ship.");
+			SayText(I + " ll stay here and guard the ship.");
 		}
 	}
 
@@ -86,9 +88,9 @@ class Charon : CGameScript
 
 	void vote_deralia()
 	{
-		SayText("I suppose this town is a bust - sorry for wasting your time.");
+		SayText(I + " suppose this town is a bust - sorry for wasting your time.");
 		UseTrigger("touch_trans_deralia");
-		SendColoredMessage(param1, "Starting AMX vote for Deralia...");
+		SendColoredMessage(param1, "Starting " + AMX + " vote for Deralia...");
 	}
 
 }

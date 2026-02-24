@@ -7,37 +7,64 @@ namespace MS
 
 class BluntAf : CGameScript
 {
+	int ANIM_ATTACK1;
+	int ANIM_ATTACK2;
+	int ANIM_IDLE1;
+	int ANIM_IDLE2;
+	int ANIM_IDLE_TOTAL;
+	int ANIM_LIFT1;
+	string ANIM_PREFIX;
+	int AOE_STUN_REQ;
+	int BASE_LEVEL_REQ;
+	float DEMON_ATK_DURATION;
+	float DEMON_DMG_DELAY;
+	float FREQ_SKULL;
+	int MANA_SKULL;
+	int MANA_STUN;
+	float MELEE_ACCURACY;
+	float MELEE_ATK_DURATION;
+	int MELEE_DMG;
+	float MELEE_DMG_DELAY;
+	int MELEE_DMG_RANGE;
+	string MELEE_DMG_TYPE;
+	int MELEE_ENERGY;
+	float MELEE_PARRY_AUGMENT;
+	int MELEE_RANGE;
+	int MODEL_BODY_OFS;
+	string MODEL_VIEW;
+	string MODEL_WORLD;
 	string NEXT_SKULL;
+	int SKULL_REQ;
 
 	BluntAf()
 	{
-		const int MANA_SKULL = 50;
-		const int MANA_STUN = 20;
-		const float FREQ_SKULL = 5.0;
-		const int ANIM_LIFT1 = 5;
-		const int ANIM_IDLE1 = 0;
-		const int ANIM_IDLE2 = 6;
-		const int ANIM_IDLE_TOTAL = 2;
-		const int ANIM_ATTACK1 = 1;
-		const int ANIM_ATTACK2 = 1;
-		const int BASE_LEVEL_REQ = 20;
-		const int AOE_STUN_REQ = 25;
-		const int SKULL_REQ = 20;
-		const string MODEL_VIEW = "viewmodels/v_2hblunts.mdl";
-		const string MODEL_WORLD = "weapons/p_weapons3.mdl";
-		const int MODEL_BODY_OFS = 10;
-		const string ANIM_PREFIX = "standard";
-		const int MELEE_RANGE = 80;
-		const float MELEE_DMG_DELAY = 0.5;
-		const float MELEE_ATK_DURATION = 1.1;
-		const float DEMON_DMG_DELAY = 0.25;
-		const float DEMON_ATK_DURATION = 0.7;
-		const int MELEE_ENERGY = 2;
-		const int MELEE_DMG = 400;
-		const int MELEE_DMG_RANGE = 40;
-		const float MELEE_ACCURACY = 0.75;
-		const float MELEE_PARRY_AUGMENT = 0.2;
-		const string MELEE_DMG_TYPE = "blunt";
+		MANA_SKULL = 50;
+		MANA_STUN = 20;
+		FREQ_SKULL = 5.0;
+		ANIM_LIFT1 = 5;
+		ANIM_IDLE1 = 0;
+		ANIM_IDLE2 = 6;
+		ANIM_IDLE_TOTAL = 2;
+		ANIM_ATTACK1 = 1;
+		ANIM_ATTACK2 = 1;
+		BASE_LEVEL_REQ = 20;
+		AOE_STUN_REQ = 25;
+		SKULL_REQ = 20;
+		MODEL_VIEW = "viewmodels/v_2hblunts.mdl";
+		MODEL_WORLD = "weapons/p_weapons3.mdl";
+		MODEL_BODY_OFS = 10;
+		ANIM_PREFIX = "standard";
+		MELEE_RANGE = 80;
+		MELEE_DMG_DELAY = 0.5;
+		MELEE_ATK_DURATION = 1.1;
+		DEMON_DMG_DELAY = 0.25;
+		DEMON_ATK_DURATION = 0.7;
+		MELEE_ENERGY = 2;
+		MELEE_DMG = 400;
+		MELEE_DMG_RANGE = 40;
+		MELEE_ACCURACY = 0.75;
+		MELEE_PARRY_AUGMENT = 0.2;
+		MELEE_DMG_TYPE = "blunt";
 	}
 
 	void weapon_spawn()

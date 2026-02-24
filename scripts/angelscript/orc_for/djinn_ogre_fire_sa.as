@@ -7,18 +7,25 @@ namespace MS
 
 class DjinnOgreFireSa : CGameScript
 {
+	string ANIM_WARCRY;
+	string NPC_ADJ_DMG_MUTLI_TOKENS;
+	string NPC_ADJ_HP_MUTLI_TOKENS;
+	string NPC_ADJ_TIERS;
+	int NPC_BASE_EXP;
 	int NPC_SELF_ADJUST;
+	string SOUND_WARCRY;
+	int START_SUSPEND;
 
 	DjinnOgreFireSa()
 	{
-		const int NPC_BASE_EXP = 4000;
+		NPC_BASE_EXP = 4000;
 		NPC_SELF_ADJUST = 1;
-		const string NPC_ADJ_TIERS = "0;500;1000;2000;3000;5000";
-		const string NPC_ADJ_DMG_MUTLI_TOKENS = "1.0;1.0;1.5;2.0;5.0;7.0;";
-		const string NPC_ADJ_HP_MUTLI_TOKENS = "1.0;1.0;1.25;2.0;5.0;7.0;";
-		const int START_SUSPEND = 1;
-		const string SOUND_WARCRY = "bullchicken/bc_attackgrowl3.wav";
-		const string ANIM_WARCRY = "warcry";
+		NPC_ADJ_TIERS = "0;500;1000;2000;3000;5000";
+		NPC_ADJ_DMG_MUTLI_TOKENS = "1.0;1.0;1.5;2.0;5.0;7.0;";
+		NPC_ADJ_HP_MUTLI_TOKENS = "1.0;1.0;1.25;2.0;5.0;7.0;";
+		START_SUSPEND = 1;
+		SOUND_WARCRY = "bullchicken/bc_attackgrowl3.wav";
+		ANIM_WARCRY = "warcry";
 	}
 
 	void game_precache()

@@ -7,32 +7,52 @@ namespace MS
 
 class SmallarmsVt : CGameScript
 {
+	int ANIM_ATTACK1;
+	int ANIM_ATTACK2;
+	int ANIM_IDLE1;
+	int ANIM_IDLE_TOTAL;
+	int ANIM_LIFT1;
+	int ANIM_UNWIELD;
+	int ANIM_WIELD;
+	int ANIM_WIELDEDIDLE1;
+	int BASE_LEVEL_REQ;
 	string BURST_DAMAGE;
+	int CUSTOM_REGISTER_SECONDARY;
+	int CUSTOM_SWING;
 	string GAME_PVP;
+	float MELEE_ATK_DURATION;
+	int MELEE_DMG;
+	float MELEE_DMG_DELAY;
+	string MELEE_VIEWANIM_ATK;
+	int MODEL_BODY_OFS;
+	string MODEL_HANDS;
+	string MODEL_VIEW;
+	int MODEL_VIEW_IDX;
+	string MODEL_WORLD;
 	string TARG_LIST;
 
 	SmallarmsVt()
 	{
-		const int BASE_LEVEL_REQ = 30;
-		const int CUSTOM_REGISTER_SECONDARY = 1;
-		const int CUSTOM_SWING = 1;
-		const int ANIM_LIFT1 = 0;
-		const int ANIM_IDLE1 = 1;
-		const int ANIM_IDLE_TOTAL = 1;
-		const int ANIM_WIELD = 2;
-		const int ANIM_UNWIELD = 3;
-		const int ANIM_WIELDEDIDLE1 = 4;
-		const int ANIM_ATTACK1 = 23;
-		const int ANIM_ATTACK2 = 6;
-		const string MELEE_VIEWANIM_ATK = ANIM_ATTACK1;
-		const string MODEL_VIEW = "viewmodels/v_smallarms.mdl";
-		const int MODEL_VIEW_IDX = 13;
-		const string MODEL_HANDS = "weapons/p_weapons3.mdl";
-		const string MODEL_WORLD = "weapons/p_weapons3.mdl";
-		const int MODEL_BODY_OFS = 66;
-		const int MELEE_DMG = 250;
-		const float MELEE_DMG_DELAY = 0.2;
-		const float MELEE_ATK_DURATION = 0.5;
+		BASE_LEVEL_REQ = 30;
+		CUSTOM_REGISTER_SECONDARY = 1;
+		CUSTOM_SWING = 1;
+		ANIM_LIFT1 = 0;
+		ANIM_IDLE1 = 1;
+		ANIM_IDLE_TOTAL = 1;
+		ANIM_WIELD = 2;
+		ANIM_UNWIELD = 3;
+		ANIM_WIELDEDIDLE1 = 4;
+		ANIM_ATTACK1 = 23;
+		ANIM_ATTACK2 = 6;
+		MELEE_VIEWANIM_ATK = ANIM_ATTACK1;
+		MODEL_VIEW = "viewmodels/v_smallarms.mdl";
+		MODEL_VIEW_IDX = 13;
+		MODEL_HANDS = "weapons/p_weapons3.mdl";
+		MODEL_WORLD = "weapons/p_weapons3.mdl";
+		MODEL_BODY_OFS = 66;
+		MELEE_DMG = 250;
+		MELEE_DMG_DELAY = 0.2;
+		MELEE_ATK_DURATION = 0.5;
 	}
 
 	void weapon_spawn()
@@ -116,7 +136,7 @@ class SmallarmsVt : CGameScript
 			int EXIT_SUB = 1;
 		}
 		if ((EXIT_SUB)) return;
-		string FREEZE_ON_CHANCE = RandomInt(1, 2);
+		int FREEZE_ON_CHANCE = RandomInt(1, 2);
 		if (FREEZE_ON_CHANCE == 1)
 		{
 			ApplyEffect(CUR_TARG, "effects/dot_cold", 10, GetEntityIndex(GetOwner()), RandomInt(10, BURST_DAMAGE), "smallarms");

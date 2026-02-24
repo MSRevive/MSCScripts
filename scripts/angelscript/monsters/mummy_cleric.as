@@ -11,11 +11,17 @@ class MummyCleric : CGameScript
 	string ANIM_IDLE;
 	string ANIM_RUN;
 	string ANIM_WALK;
+	int ATTACK_HITCHANCE;
 	int ATTACK_HITRANGE;
 	int ATTACK_MOVERANGE;
 	int ATTACK_RANGE;
+	string ATTACK_TYPE;
+	int DMG_STEELPIPE;
 	int FLINCH_DAMAGE_THRESHOLD;
 	float FLINCH_HEALTH_RATIO;
+	int MUMMY_IS_CLERIC;
+	string MUMMY_MELEE_DMG_TYPE;
+	int MUMMY_STARTING_LIVES;
 	float MUMMY_STUN_CHANCE;
 	int NPC_GIVE_EXP;
 
@@ -31,12 +37,12 @@ class MummyCleric : CGameScript
 		ANIM_ATTACK = "steelpipe";
 		FLINCH_DAMAGE_THRESHOLD = 50;
 		FLINCH_HEALTH_RATIO = 0.75;
-		const string ATTACK_TYPE = "melee";
-		const int ATTACK_HITCHANCE = 80;
-		const int DMG_STEELPIPE = 400;
-		const int MUMMY_STARTING_LIVES = 1;
-		const int MUMMY_IS_CLERIC = 1;
-		const string MUMMY_MELEE_DMG_TYPE = "blunt";
+		ATTACK_TYPE = "melee";
+		ATTACK_HITCHANCE = 80;
+		DMG_STEELPIPE = 400;
+		MUMMY_STARTING_LIVES = 1;
+		MUMMY_IS_CLERIC = 1;
+		MUMMY_MELEE_DMG_TYPE = "blunt";
 		MUMMY_STUN_CHANCE = 0.2;
 	}
 

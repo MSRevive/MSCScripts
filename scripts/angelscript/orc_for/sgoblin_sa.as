@@ -15,37 +15,47 @@ class SgoblinSa : CGameScript
 	int CAN_FIREBALL;
 	int CAN_STUN;
 	string CL_IDX;
+	string CL_SCRIPT;
+	int DMG_KNIFE;
 	int DROP_GOLD;
-	string DROP_GOLD_AMT;
+	int DROP_GOLD_AMT;
 	int FIRST_ALERT;
 	int FLINCH_HEALTH;
+	float FREQ_INVISIBLE;
 	int INVISIBLE_MODE;
 	string NEXT_INVISIBLE;
+	string NPC_ADJ_DMG_MUTLI_TOKENS;
+	string NPC_ADJ_HP_MUTLI_TOKENS;
+	string NPC_ADJ_TIERS;
+	int NPC_BASE_EXP;
 	int NPC_SELF_ADJUST;
+	int ORG_BODY;
 	int OVERHEAD_SMASH;
 	int SGOBLIN_TRAINEE;
+	string SOUND_APPEAR;
+	string SOUND_FADE;
 	int SWING_COUNT;
 
 	SgoblinSa()
 	{
 		NPC_SELF_ADJUST = 1;
-		const string NPC_ADJ_TIERS = "0;500;1000;2000;3000;5000";
-		const string NPC_ADJ_DMG_MUTLI_TOKENS = "1.0;1.5;2.0;5.0;7.5;10.0;";
-		const string NPC_ADJ_HP_MUTLI_TOKENS = "1.0;1.5;2.0;3.0;5.0;7.5;";
-		const int NPC_BASE_EXP = 150;
+		NPC_ADJ_TIERS = "0;500;1000;2000;3000;5000";
+		NPC_ADJ_DMG_MUTLI_TOKENS = "1.0;1.5;2.0;5.0;7.5;10.0;";
+		NPC_ADJ_HP_MUTLI_TOKENS = "1.0;1.5;2.0;3.0;5.0;7.5;";
+		NPC_BASE_EXP = 150;
 		CAN_FIREBALL = 0;
 		DROP_GOLD = 1;
 		DROP_GOLD_AMT = RandomInt(40, 50);
-		const string DMG_KNIFE = RandomInt(10, 30);
+		DMG_KNIFE = RandomInt(10, 30);
 		BASE_FRAMERATE = 2.0;
 		ATTACK_HITCHANCE = 80;
-		const string FREQ_INVISIBLE = Random(7.0, 10.0);
+		FREQ_INVISIBLE = Random(7.0, 10.0);
 		CAN_STUN = 0;
 		FLINCH_HEALTH = 200;
-		const string CL_SCRIPT = "monsters/sgoblin_cl";
-		const int ORG_BODY = 0;
-		const string SOUND_FADE = "monsters/gonome/gonome_melee2.wav";
-		const string SOUND_APPEAR = "ambience/alien_humongo.wav";
+		CL_SCRIPT = "monsters/sgoblin_cl";
+		ORG_BODY = 0;
+		SOUND_FADE = "monsters/gonome/gonome_melee2.wav";
+		SOUND_APPEAR = "ambience/alien_humongo.wav";
 	}
 
 	void game_precache()
@@ -129,7 +139,7 @@ class SgoblinSa : CGameScript
 	void gob_jump_check()
 	{
 		if (!(GOB_JUMP_SCANNING)) return;
-		string GOB_HOP_DELAY = Random(2, 4);
+		float GOB_HOP_DELAY = Random(2, 4);
 		GOB_HOP_DELAY("gob_jump_check");
 		if (!(GetEntityRange(m_hAttackTarget) > ATTACK_HITRANGE)) return;
 		if (!(m_hAttackTarget != "unset")) return;

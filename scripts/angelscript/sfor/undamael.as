@@ -15,27 +15,39 @@ class Undamael : CGameScript
 	int ATTACK_HITRANGE;
 	int ATTACK_RANGE;
 	int CAN_FLINCH;
+	int DAMAGE_ATTACK1;
+	int DAMAGE_ATTACK2;
 	int DID_WARCRY;
 	int FLINCH_DELAY;
 	int IGNORE_ENEMY;
+	string MONSTER_MODEL;
 	int MOVE_RANGE;
 	int NPC_GIVE_EXP;
 	string NPC_MOVE_TARGET;
 	int SEE_ENEMY;
+	string SOUND_ATTACK1;
+	string SOUND_ATTACK2;
+	string SOUND_DEATH;
+	string SOUND_IDLE;
+	string SOUND_PAIN;
 	string SOUND_PISSED;
+	string SOUND_STRUCK1;
+	string SOUND_STRUCK2;
+	string SOUND_STRUCK3;
+	string SOUND_TAUNT;
 	int SWIPES;
 
 	Undamael()
 	{
-		const string SOUND_STRUCK1 = "weapons/cbar_hitbod1.wav";
-		const string SOUND_STRUCK2 = "weapons/cbar_hitbod2.wav";
-		const string SOUND_STRUCK3 = "weapons/cbar_hitbod3.wav";
-		const string SOUND_PAIN = "controller/con_pain2.wav";
-		const string SOUND_ATTACK1 = "zombie/claw_miss1.wav";
-		const string SOUND_ATTACK2 = "zombie/claw_miss2.wav";
-		const string SOUND_TAUNT = "nihilanth/nil_die.wav";
-		const string SOUND_IDLE = "garg/gar_idle2.wav";
-		const string SOUND_DEATH = "nihilanth/nil_done.wav";
+		SOUND_STRUCK1 = "weapons/cbar_hitbod1.wav";
+		SOUND_STRUCK2 = "weapons/cbar_hitbod2.wav";
+		SOUND_STRUCK3 = "weapons/cbar_hitbod3.wav";
+		SOUND_PAIN = "controller/con_pain2.wav";
+		SOUND_ATTACK1 = "zombie/claw_miss1.wav";
+		SOUND_ATTACK2 = "zombie/claw_miss2.wav";
+		SOUND_TAUNT = "nihilanth/nil_die.wav";
+		SOUND_IDLE = "garg/gar_idle2.wav";
+		SOUND_DEATH = "nihilanth/nil_done.wav";
 		ANIM_RUN = "run";
 		ANIM_IDLE = "idle1";
 		ANIM_WALK = "walk";
@@ -43,8 +55,8 @@ class Undamael : CGameScript
 		ATTACK_RANGE = 120;
 		ANIM_ATTACK = "";
 		ATTACK_HITCHANCE = 0.9;
-		const string DAMAGE_ATTACK1 = RandomInt(40, 60);
-		const string DAMAGE_ATTACK2 = RandomInt(60, 100);
+		DAMAGE_ATTACK1 = RandomInt(40, 60);
+		DAMAGE_ATTACK2 = RandomInt(60, 100);
 		MOVE_RANGE = 100;
 		SEE_ENEMY = 0;
 		IGNORE_ENEMY = 0;
@@ -56,7 +68,7 @@ class Undamael : CGameScript
 		SOUND_PISSED = "garg/gar_die1.wav";
 		Precache(SOUND_PISSED);
 		Precache(SOUND_IDLE);
-		const string MONSTER_MODEL = "monsters/skeleton_boss2.mdl";
+		MONSTER_MODEL = "monsters/skeleton_boss2.mdl";
 		Precache(MONSTER_MODEL);
 		Precache("lgtning.spr");
 	}
@@ -146,7 +158,7 @@ class Undamael : CGameScript
 		SetAnimMoveSpeed(2.0);
 		SetAnimFrameRate(1.5);
 		CAN_FLINCH = 1;
-		SayText("Fools! I shall destroy you all!");
+		SayText("Fools! " + I + " shall destroy you all!");
 	}
 
 	void turn_undead()

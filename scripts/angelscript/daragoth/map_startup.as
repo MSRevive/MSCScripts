@@ -7,11 +7,15 @@ namespace MS
 
 class MapStartup : CGameScript
 {
+	int MAP_ALLOWNIGHT;
+	string MAP_NAME;
+	string MAP_WEATHER;
+
 	MapStartup()
 	{
-		const string MAP_NAME = "daragoth";
-		const string MAP_WEATHER = "clear;clear;clear;clear;clear;clear";
-		const int MAP_ALLOWNIGHT = 1;
+		MAP_NAME = "daragoth";
+		MAP_WEATHER = "clear;clear;clear;clear;clear;clear";
+		MAP_ALLOWNIGHT = 1;
 		SetGlobalVar("G_MAP_NAME", "The Plains of Daragoth");
 		SetGlobalVar("G_MAP_DESC", "These expansive plains are contested by orcish hordes.");
 		SetGlobalVar("G_MAP_DIFF", "Levels 15-20 / 150-250hp");

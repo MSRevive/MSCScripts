@@ -12,11 +12,12 @@ class ElementalPureCl : CGameScript
 	string FX_LIGHT;
 	string FX_OWNER;
 	string FX_TYPE;
+	int MAX_BONE;
 	int OWNER_DIED;
 
 	ElementalPureCl()
 	{
-		const int MAX_BONE = 17;
+		MAX_BONE = 17;
 	}
 
 	void client_activate()
@@ -89,8 +90,8 @@ class ElementalPureCl : CGameScript
 		ClientEffect("tempent", "set_current_prop", "gravity", 0);
 		ClientEffect("tempent", "set_current_prop", "collide", "none");
 		ClientEffect("tempent", "set_current_prop", "iuser1", BONE_IDX);
-		string L_CREATE_TIME = GetGameTime();
-		ClientEffect("tempent", "set_current_prop", "fuser1", /* TODO: $math(add) */ L_CREATE_TIME);
+		float L_CREATE_TIME = GetGameTime();
+		ClientEffect("tempent", "set_current_prop", "fuser1", (L_CREATE_TIME + 0.1));
 	}
 
 	void update_bone_sprite()
@@ -103,11 +104,11 @@ class ElementalPureCl : CGameScript
 				string L_POS = /* TODO: $getcl */ $getcl(FX_OWNER, "bonepos", L_IDX);
 				ClientEffect("tempent", "set_current_prop", "origin", L_POS);
 				string L_NEXT_UPDATE = "game.tempent.fuser1";
-				string L_TIME = GetGameTime();
+				float L_TIME = GetGameTime();
 				if (L_TIME > L_NEXT_UPDATE)
 				{
 				}
-				ClientEffect("tempent", "set_current_prop", "fuser1", /* TODO: $math(add) */ L_TIME);
+				ClientEffect("tempent", "set_current_prop", "fuser1", (L_TIME + 0.1));
 				ClientEffect("tempent", "sprite", "3dmflaora.spr", L_POS, "setup_drip_sprite");
 			}
 			else

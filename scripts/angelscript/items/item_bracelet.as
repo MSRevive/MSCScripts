@@ -7,12 +7,17 @@ namespace MS
 
 class ItemBracelet : CGameScript
 {
+	string ANIM_PREFIX;
+	int MODEL_BODY_OFS;
+	string MODEL_HOLD;
+	string MODEL_WORLD;
+
 	ItemBracelet()
 	{
-		const string MODEL_WORLD = "misc/p_misc.mdl";
-		const string MODEL_HOLD = "misc/p_misc.mdl";
-		const int MODEL_BODY_OFS = 28;
-		const string ANIM_PREFIX = "ring";
+		MODEL_WORLD = "misc/p_misc.mdl";
+		MODEL_HOLD = "misc/p_misc.mdl";
+		MODEL_BODY_OFS = 28;
+		ANIM_PREFIX = "ring";
 	}
 
 	void miscitem_spawn()

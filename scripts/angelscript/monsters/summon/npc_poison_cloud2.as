@@ -5,6 +5,7 @@ namespace MS
 
 class NpcPoisonCloud2 : CGameScript
 {
+	int CLOUD_RADIUS;
 	string CLOUD_TYPE;
 	string CL_ID;
 	string DOT_POISON;
@@ -16,7 +17,7 @@ class NpcPoisonCloud2 : CGameScript
 
 	NpcPoisonCloud2()
 	{
-		const int CLOUD_RADIUS = 256;
+		CLOUD_RADIUS = 256;
 		Precache("poison_cloud.spr");
 	}
 

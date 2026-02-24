@@ -14,14 +14,17 @@ class KHollowOneCl : CGameScript
 	string DRAINER_ANGS6;
 	string DRAINER_ANGS7;
 	string DRAINER_ANGS8;
+	int DRAINER_SPEED;
+	string GLOW_SPRITE;
 	string MY_OWNER;
+	string SPRITE_DRAINER;
 	string SPRITE_POPS;
 
 	KHollowOneCl()
 	{
-		const string SPRITE_DRAINER = "fire1_fixed.spr";
-		const int DRAINER_SPEED = 30;
-		const string GLOW_SPRITE = "glow01.spr";
+		SPRITE_DRAINER = "fire1_fixed.spr";
+		DRAINER_SPEED = 30;
+		GLOW_SPRITE = "glow01.spr";
 	}
 
 	void client_activate()

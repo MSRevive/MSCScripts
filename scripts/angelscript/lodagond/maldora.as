@@ -7,8 +7,10 @@ namespace MS
 
 class Maldora : CGameScript
 {
+	int AM_UBER;
 	string APPLIED_BEAM;
 	string AS_ATTACKING;
+	string BARRIER_COLOR;
 	string BARRIER_DELAY;
 	float BASE_MOVESPEED;
 	string BEAM_COUNT;
@@ -18,21 +20,43 @@ class Maldora : CGameScript
 	string CHAIN_ON;
 	string CUR_CHAIN_TARGET;
 	int DMG_BARRIER;
+	float DMG_CHAIN;
+	float DMG_PUSH_BEAM;
+	int DMG_ROCKS;
+	float DMG_SHOCK;
+	float DMG_WAND;
 	int EFFECT_DELAY;
+	int FIN_EXP;
+	float FREQ_SOUND;
 	string G_DEVELOPER;
 	int IMAGES_ALIVE;
 	int IS_UNHOLY;
 	string LAST_AXE_PICK;
+	string LIGHT_COLOR;
+	int LIGHT_RAD;
 	int ME_DEAD;
 	int MINIONS_ALIVE;
+	int MINION_LIMIT;
+	string MINION_SCRIPT;
+	int NOT_FRAGMENT;
+	int NO_INTRO;
 	int NO_MOVE;
+	float NPC_BOSS_REGEN_RATE;
+	float NPC_BOSS_RESTORATION;
 	string NPC_GIVE_EXP;
 	string NPC_IS_BOSS;
+	string NPC_PROXACT_EVENT;
+	int NPC_PROXACT_IFSEEN;
+	int NPC_PROXACT_RANGE;
+	int NPC_PROX_ACTIVATE;
+	int NUM_SPELLS;
 	string RND_AXE;
+	string SHADOW_SCRIPT;
 	int SORC_SPAWNED;
-	string SPELL_CHOICE;
+	int SPELL_CHOICE;
 	int SPELL_SUSPEND;
 	int WAND_ATK;
+	int WAND_DOT;
 	string WAND_TARGET;
 	string WAND_TYPE;
 
@@ -42,34 +66,34 @@ class Maldora : CGameScript
 		{
 			NPC_IS_BOSS = 1;
 		}
-		const Vector3 LIGHT_COLOR = Vector3(128, 128, 128);
-		const int LIGHT_RAD = 256;
-		const int WAND_DOT = 40;
-		const float NPC_BOSS_REGEN_RATE = 0.02;
-		const float NPC_BOSS_RESTORATION = 0.25;
+		LIGHT_COLOR = Vector3(128, 128, 128);
+		LIGHT_RAD = 256;
+		WAND_DOT = 40;
+		NPC_BOSS_REGEN_RATE = 0.02;
+		NPC_BOSS_RESTORATION = 0.25;
 		BASE_MOVESPEED = 2.0;
-		const int NUM_SPELLS = 8;
-		const int AM_UBER = 1;
+		NUM_SPELLS = 8;
+		AM_UBER = 1;
 		IS_UNHOLY = 1;
-		const string SHADOW_SCRIPT = "ms_wicardoven/maldora_image";
-		const string MINION_SCRIPT = "monsters/maldora_gminion_random";
-		const int MINION_LIMIT = 4;
-		const float FREQ_SOUND = 10.0;
-		const int NO_INTRO = 1;
-		const int NPC_PROX_ACTIVATE = 1;
-		const int NOT_FRAGMENT = 1;
-		const int FIN_EXP = 20000;
-		const int NPC_PROX_ACTIVATE = 1;
-		const int NPC_PROXACT_RANGE = 640;
-		const int NPC_PROXACT_IFSEEN = 1;
-		const string NPC_PROXACT_EVENT = "combat_go";
-		const string DMG_PUSH_BEAM = Random(20, 60);
-		const string DMG_CHAIN = Random(20, 60);
-		const float DMG_SHOCK = 100.0;
-		const string DMG_ROCKS = RandomInt(200, 800);
-		const string DMG_WAND = Random(200, 1000);
+		SHADOW_SCRIPT = "ms_wicardoven/maldora_image";
+		MINION_SCRIPT = "monsters/maldora_gminion_random";
+		MINION_LIMIT = 4;
+		FREQ_SOUND = 10.0;
+		NO_INTRO = 1;
+		NPC_PROX_ACTIVATE = 1;
+		NOT_FRAGMENT = 1;
+		FIN_EXP = 20000;
+		NPC_PROX_ACTIVATE = 1;
+		NPC_PROXACT_RANGE = 640;
+		NPC_PROXACT_IFSEEN = 1;
+		NPC_PROXACT_EVENT = "combat_go";
+		DMG_PUSH_BEAM = Random(20, 60);
+		DMG_CHAIN = Random(20, 60);
+		DMG_SHOCK = 100.0;
+		DMG_ROCKS = RandomInt(200, 800);
+		DMG_WAND = Random(200, 1000);
 		DMG_BARRIER = 400;
-		const Vector3 BARRIER_COLOR = Vector3(255, 0, 0);
+		BARRIER_COLOR = Vector3(255, 0, 0);
 	}
 
 	void game_precache()

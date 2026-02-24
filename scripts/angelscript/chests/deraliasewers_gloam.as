@@ -28,7 +28,7 @@ class DeraliasewersGloam : CGameScript
 
 	void add_potion()
 	{
-		string RND_POT = RandomInt(1, 4);
+		int RND_POT = RandomInt(1, 4);
 		if (RND_POT == 1)
 		{
 			AddStoreItem(STORENAME, "mana_immune_poison", 1, 0);

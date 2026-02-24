@@ -7,28 +7,39 @@ namespace MS
 
 class BluntGauntletsIc : CGameScript
 {
+	string ANIM_PREFIX;
+	int BASE_LEVEL_REQ;
+	int CUSTOM_CLAWS;
 	int DEMON_MODE;
+	float DEMON_STRIKE_RATIO;
+	int FIRE_WAVE_MP;
 	string FIRE_WAVE_SCAN_POS;
 	string FIRE_WAVE_START_POS;
 	string FIRE_WAVE_TARGS;
 	string FIRE_WAVE_YAW;
 	string GAME_PVP;
+	int MELEE_DMG;
+	int MODEL_BODY_OFS;
+	string MODEL_HANDS;
+	string MODEL_VIEW;
+	int MODEL_VIEW_IDX;
+	string MODEL_WORLD;
 	string OWNER_ANG;
 	string OWNER_ORG;
 
 	BluntGauntletsIc()
 	{
-		const int BASE_LEVEL_REQ = 25;
-		const int CUSTOM_CLAWS = 1;
-		const int FIRE_WAVE_MP = 20;
-		const int MELEE_DMG = 200;
-		const float DEMON_STRIKE_RATIO = 6.0;
-		const string MODEL_VIEW = "viewmodels/v_martialarts_claws.mdl";
-		const int MODEL_VIEW_IDX = 2;
-		const string MODEL_HANDS = "weapons/p_weapons3.mdl";
-		const string MODEL_WORLD = "weapons/p_weapons3.mdl";
-		const int MODEL_BODY_OFS = 69;
-		const string ANIM_PREFIX = "standard";
+		BASE_LEVEL_REQ = 25;
+		CUSTOM_CLAWS = 1;
+		FIRE_WAVE_MP = 20;
+		MELEE_DMG = 200;
+		DEMON_STRIKE_RATIO = 6.0;
+		MODEL_VIEW = "viewmodels/v_martialarts_claws.mdl";
+		MODEL_VIEW_IDX = 2;
+		MODEL_HANDS = "weapons/p_weapons3.mdl";
+		MODEL_WORLD = "weapons/p_weapons3.mdl";
+		MODEL_BODY_OFS = 69;
+		ANIM_PREFIX = "standard";
 	}
 
 	void weapon_spawn()

@@ -8,30 +8,53 @@ namespace MS
 
 class BluntStaffFOld : CGameScript
 {
+	string ANIM_PREFIX;
+	int BASE_LEVEL_REQ;
+	int ELM_AMT;
+	string ELM_NAME;
+	string ELM_TYPE;
+	int ELM_WEAPON;
+	float MELEE_ACCURACY;
+	float MELEE_ATK_DURATION;
+	int MELEE_DMG;
+	float MELEE_DMG_DELAY;
+	int MELEE_DMG_RANGE;
+	string MELEE_DMG_TYPE;
+	int MELEE_ENERGY;
+	float MELEE_PARRY_AUGMENT;
+	int MELEE_RANGE;
+	string MELEE_STAT;
+	int MODEL_BODY_OFS;
+	string MODEL_VIEW;
+	int MODEL_VIEW_IDX;
+	string MODEL_WORLD;
+	string PLAYERANIM_AIM;
+	string PLAYERANIM_SWING;
+
 	BluntStaffFOld()
 	{
-		const int BASE_LEVEL_REQ = 30;
-		const string ELM_NAME = "phlame";
-		const string ELM_TYPE = "cold";
-		const int ELM_AMT = 20;
-		const int ELM_WEAPON = 1;
-		const int MELEE_RANGE = 110;
-		const float MELEE_DMG_DELAY = 0.4;
-		const float MELEE_ATK_DURATION = 1.0;
-		const int MELEE_ENERGY = 2;
-		const int MELEE_DMG = 300;
-		const int MELEE_DMG_RANGE = 20;
-		const float MELEE_ACCURACY = 0.8;
-		const float MELEE_PARRY_AUGMENT = 0.2;
-		const string MELEE_DMG_TYPE = "fire";
-		const string MELEE_STAT = "spellcasting.fire";
-		const string MODEL_VIEW = "viewmodels/v_2hblunts.mdl";
-		const int MODEL_VIEW_IDX = 12;
-		const string MODEL_WORLD = "weapons/p_weapons4.mdl";
-		const int MODEL_BODY_OFS = 28;
-		const string ANIM_PREFIX = "standard";
-		const string PLAYERANIM_AIM = "sword_double_idle";
-		const string PLAYERANIM_SWING = "pole_swing";
+		BASE_LEVEL_REQ = 30;
+		ELM_NAME = "phlame";
+		ELM_TYPE = "cold";
+		ELM_AMT = 20;
+		ELM_WEAPON = 1;
+		MELEE_RANGE = 110;
+		MELEE_DMG_DELAY = 0.4;
+		MELEE_ATK_DURATION = 1.0;
+		MELEE_ENERGY = 2;
+		MELEE_DMG = 300;
+		MELEE_DMG_RANGE = 20;
+		MELEE_ACCURACY = 0.8;
+		MELEE_PARRY_AUGMENT = 0.2;
+		MELEE_DMG_TYPE = "fire";
+		MELEE_STAT = "spellcasting.fire";
+		MODEL_VIEW = "viewmodels/v_2hblunts.mdl";
+		MODEL_VIEW_IDX = 12;
+		MODEL_WORLD = "weapons/p_weapons4.mdl";
+		MODEL_BODY_OFS = 28;
+		ANIM_PREFIX = "standard";
+		PLAYERANIM_AIM = "sword_double_idle";
+		PLAYERANIM_SWING = "pole_swing";
 	}
 
 	void weapon_spawn()

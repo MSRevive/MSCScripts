@@ -7,21 +7,35 @@ namespace MS
 
 class ProjFireBomb : CGameScript
 {
+	string ITEM_NAME;
+	int MODEL_BODY_OFS;
+	string MODEL_HANDS;
+	string MODEL_WORLD;
+	string PROJ_ANIM_IDLE;
+	int PROJ_AOE_FALLOFF;
+	int PROJ_AOE_RANGE;
+	int PROJ_DAMAGE;
+	string PROJ_DAMAGE_TYPE;
+	int PROJ_IGNORENPC;
+	int PROJ_MOTIONBLUR;
+	int PROJ_SOLIDIFY_ON_WALL;
+	int PROJ_STICK_DURATION;
+
 	ProjFireBomb()
 	{
-		const string MODEL_HANDS = "none";
-		const string MODEL_WORLD = "weapons/projectiles.mdl";
-		const int MODEL_BODY_OFS = 41;
-		const string PROJ_ANIM_IDLE = "axis_spin";
-		const string ITEM_NAME = "firemana";
-		const string PROJ_DAMAGE_TYPE = "fire";
-		const int PROJ_MOTIONBLUR = 0;
-		const int PROJ_DAMAGE = 100;
-		const int PROJ_AOE_RANGE = 200;
-		const int PROJ_AOE_FALLOFF = 0;
-		const int PROJ_STICK_DURATION = 0;
-		const int PROJ_SOLIDIFY_ON_WALL = 0;
-		const int PROJ_IGNORENPC = 1;
+		MODEL_HANDS = "none";
+		MODEL_WORLD = "weapons/projectiles.mdl";
+		MODEL_BODY_OFS = 41;
+		PROJ_ANIM_IDLE = "axis_spin";
+		ITEM_NAME = "firemana";
+		PROJ_DAMAGE_TYPE = "fire";
+		PROJ_MOTIONBLUR = 0;
+		PROJ_DAMAGE = 100;
+		PROJ_AOE_RANGE = 200;
+		PROJ_AOE_FALLOFF = 0;
+		PROJ_STICK_DURATION = 0;
+		PROJ_SOLIDIFY_ON_WALL = 0;
+		PROJ_IGNORENPC = 1;
 	}
 
 	void projectile_spawn()

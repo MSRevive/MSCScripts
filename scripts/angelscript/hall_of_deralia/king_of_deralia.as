@@ -8,19 +8,25 @@ namespace MS
 class KingOfDeralia : CGameScript
 {
 	int BUSY_CHATTING;
+	float CHAT_DELAY;
 	string CURRENT_SPEAKER;
+	float FREQ_MOURN;
 	string GUARD1_ID;
 	string GUARD2_ID;
 	int IN_MOURNING;
+	string KING_MODEL;
+	int NO_HAIL;
+	int NO_JOB;
+	int NO_RUMOR;
 
 	KingOfDeralia()
 	{
-		const string FREQ_MOURN = Random(10, 30);
-		const int NO_RUMOR = 1;
-		const int NO_HAIL = 1;
-		const int NO_JOB = 1;
-		const float CHAT_DELAY = 5.0;
-		const string KING_MODEL = "npc/king.mdl";
+		FREQ_MOURN = Random(10, 30);
+		NO_RUMOR = 1;
+		NO_HAIL = 1;
+		NO_JOB = 1;
+		CHAT_DELAY = 5.0;
+		KING_MODEL = "npc/king.mdl";
 	}
 
 	void OnSpawn() override
@@ -54,7 +60,7 @@ class KingOfDeralia : CGameScript
 		if ((G_DAUGHTER_RESCUED)) return;
 		FREQ_MOURN("do_mourn");
 		if ((BUSY_CHATTING)) return;
-		string RND_MOURN = RandomInt(1, 3);
+		int RND_MOURN = RandomInt(1, 3);
 		if (RND_MOURN == 1)
 		{
 			SayText("Oh woe is me! My princess is lost!");
@@ -113,7 +119,7 @@ class KingOfDeralia : CGameScript
 
 	void say_daughter4()
 	{
-		SayText("...And I can t go down into the dungeons, why!?");
+		SayText("...And " + I + " can t go down into the dungeons, why!?");
 		PlayAnim("critical", ANIM_PLEADE);
 		CallExternal(GUARD2_ID, "ext_no_place_for");
 		SetMoveDest(GUARD2_ID);
@@ -124,7 +130,7 @@ class KingOfDeralia : CGameScript
 	{
 		PlayAnim("critical", ANIM_ANGRY);
 		face_speaker(CURRENT_SPEAKER);
-		SayText("See these useless fools I am surrounded by!?");
+		SayText("See these useless fools " + I + " am surrounded by!?");
 		CHAT_DELAY("say_daughter6");
 	}
 

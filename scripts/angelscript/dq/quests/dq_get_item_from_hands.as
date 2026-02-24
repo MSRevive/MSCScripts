@@ -9,32 +9,35 @@ class DqGetItemFromHands : CGameScript
 {
 	int DQ_AMMO_CUR;
 	string DQ_AMMO_REQUIREMENT;
+	string DQ_AMMO_STRINGS;
 	int DQ_IS_AMMO;
 	string DQ_ITEM_NAME;
+	string DQ_ITEM_REQUIREMENT;
+	string DQ_QUALITY_REQUIREMENT;
 	int FUNC_IS_AMMO;
 
 	DqGetItemFromHands()
 	{
-		const string DQ_ITEM_REQUIREMENT = GetToken(QUEST_DATA1, 0, ";");
+		DQ_ITEM_REQUIREMENT = GetToken(QUEST_DATA1, 0, ";");
 		DQ_ITEM_NAME = GetToken(QUEST_DATA1, 1, ";");
 		DQ_AMMO_REQUIREMENT = QUEST_DATA2;
-		const string DQ_QUALITY_REQUIREMENT = QUEST_DATA3;
-		const string DQ_AMMO_STRINGS = "proj_;item_lockpick";
+		DQ_QUALITY_REQUIREMENT = QUEST_DATA3;
+		DQ_AMMO_STRINGS = "proj_;item_lockpick";
 		DQ_AMMO_CUR = 0;
 		DQ_IS_AMMO = 0;
 	}
 
 	void game_menu_getoptions()
 	{
-		DQ_IS_AMMO = /* TODO: $func */ $func("func_check_ammo_strings", DQ_ITEM_REQUIREMENT);
+		DQ_IS_AMMO = func_check_ammo_strings(DQ_ITEM_REQUIREMENT);
 		string L_PLAYER = param1;
 		if (QUEST_MODE == QUEST_ACTIVE)
 		{
 			int L_ITEM = 0;
 			string L_HAND_LEFT = GetEntityProperty(L_PLAYER, "scriptvar");
 			string L_HAND_RIGHT = GetEntityProperty(L_PLAYER, "scriptvar");
-			string L_FAILURE_LEFT = /* TODO: $func */ $func("func_check_failure", L_PLAYER, L_HAND_LEFT);
-			string L_FAILURE_RIGHT = /* TODO: $func */ $func("func_check_failure", L_PLAYER, L_HAND_RIGHT);
+			string L_FAILURE_LEFT = func_check_failure(L_PLAYER, L_HAND_LEFT);
+			string L_FAILURE_RIGHT = func_check_failure(L_PLAYER, L_HAND_RIGHT);
 			string L_TITLE = DQ_ITEM_NAME;
 			if (DQ_AMMO_REQUIREMENT > 1)
 			{
@@ -87,23 +90,23 @@ class DqGetItemFromHands : CGameScript
 	{
 		string L_PLAYER = param1;
 		string L_ITEM = param2;
-		string L_FAILURE = /* TODO: $func */ $func("func_check_failure", L_PLAYER, L_ITEM);
+		string L_FAILURE = func_check_failure(L_PLAYER, L_ITEM);
 		if (!(L_FAILURE))
 		{
-			SayText("DQ_IS_AMMO");
+			SayText(DQ_IS_AMMO);
 			if (!(DQ_IS_AMMO))
 			{
-				DQ_AMMO_CUR = /* TODO: $math(add) */ DQ_AMMO_CUR;
+				DQ_AMMO_CUR = (DQ_AMMO_CUR + 1);
 				delete_item(L_ITEM);
 			}
 			else
 			{
 				string L_AMMO = GetEntityProperty(L_ITEM, "quantity");
-				SayText("L_AMMO");
-				string L_DIFF = /* TODO: $math(subtract) */ L_AMMO;
+				SayText(L_AMMO);
+				string L_DIFF = (L_AMMO - DQ_AMMO_REQUIREMENT);
 				if (L_DIFF <= 0)
 				{
-					DQ_AMMO_CUR = /* TODO: $math(add) */ DQ_AMMO_CUR;
+					DQ_AMMO_CUR = (DQ_AMMO_CUR + L_AMMO);
 					delete_item(L_ITEM);
 				}
 				else
@@ -246,3 +249,4 @@ class DqGetItemFromHands : CGameScript
 }
 
 }
+

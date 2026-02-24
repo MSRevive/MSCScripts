@@ -7,9 +7,11 @@ namespace MS
 
 class BurningOneLshieldCl : CGameScript
 {
+	string SHIELD_COLOR;
+
 	BurningOneLshieldCl()
 	{
-		const Vector3 SHIELD_COLOR = Vector3(2.0, 0.5, 0.0);
+		SHIELD_COLOR = Vector3(2.0, 0.5, 0.0);
 	}
 
 }

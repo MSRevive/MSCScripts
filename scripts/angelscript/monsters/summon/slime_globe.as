@@ -11,14 +11,17 @@ class SlimeGlobe : CGameScript
 	string MY_DMG;
 	string MY_OWNER;
 	string NEXT_ORBIT_SOUND;
+	string ORBIT_SOUND1;
+	string ORBIT_SOUND2;
 	int PLAYING_DEAD;
+	string SOUND_SHOOT;
 
 	SlimeGlobe()
 	{
 		Precache("xfireball3.spr");
-		const string ORBIT_SOUND1 = "tentacle/te_move1.wav";
-		const string ORBIT_SOUND2 = "tentacle/te_move2.wav";
-		const string SOUND_SHOOT = "magic/blackhole.wav";
+		ORBIT_SOUND1 = "tentacle/te_move1.wav";
+		ORBIT_SOUND2 = "tentacle/te_move2.wav";
+		SOUND_SHOOT = "magic/blackhole.wav";
 	}
 
 	void OnSpawn() override

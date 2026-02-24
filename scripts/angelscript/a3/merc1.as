@@ -12,7 +12,9 @@ class Merc1 : CGameScript
 	string ANIM_DEATH;
 	string ANIM_IDLE;
 	string ANIM_RUN;
+	string ANIM_SITIDLE;
 	string ANIM_WALK;
+	float ATTACK_HITCHANCE;
 	int ATTACK_HITRANGE;
 	int ATTACK_RANGE;
 	int CAN_ATTACK;
@@ -22,28 +24,47 @@ class Merc1 : CGameScript
 	int CAN_HUNT;
 	int CAN_RETALIATE;
 	int CONVERSE_PLAYER;
+	int DMG_MAX;
+	int DMG_MIN;
 	string FLINCH_ANIM;
 	float FLINCH_CHANCE;
-	string HIRE_PRICE;
+	int HIRE_PRICE;
 	int IS_HIRED;
 	string MASTER_NAME;
 	int MERC_RESTING;
 	int MOVE_RANGE;
 	int NO_STUCK_CHECKS;
+	float RETALIATE_CHANGETARGET_CHANCE;
 	int SEE_ENEMY;
 	int SEE_PLAYER_NOW;
+	string SOUND_ALERT1;
+	string SOUND_ATTACK1;
+	string SOUND_ATTACK2;
+	string SOUND_PAIN;
+	string SOUND_PAIN2;
+	string SOUND_STRUCK1;
+	string SOUND_STRUCK2;
+	string SOUND_STRUCK3;
 	string SUMMON_MASTER;
+	int SUMMON_VICINITY;
+	string SUM_REPORT_SUFFIX;
+	string SUM_SAY_ATTACK;
+	string SUM_SAY_COME;
+	string SUM_SAY_DEATH;
+	string SUM_SAY_DEFEND;
+	string SUM_SAY_HUNT;
+	int VOLUME;
 
 	Merc1()
 	{
-		const string SUM_SAY_COME = "On my way, sir.";
-		const string SUM_SAY_ATTACK = "On it!";
-		const string SUM_SAY_HUNT = "There'll be some good eatin's tonight!";
-		const string SUM_SAY_DEFEND = "Got yer back.";
-		const string SUM_SAY_DEATH = "I really need to charge more for this.";
-		const string SUM_REPORT_SUFFIX = ", sir.";
+		SUM_SAY_COME = "On my way, sir.";
+		SUM_SAY_ATTACK = "On it!";
+		SUM_SAY_HUNT = "There'll be some good eatin's tonight!";
+		SUM_SAY_DEFEND = "Got yer back.";
+		SUM_SAY_DEATH = "I really need to charge more for this.";
+		SUM_REPORT_SUFFIX = ", sir.";
 		ANIM_DEATH = "dieforward1";
-		const string ANIM_SITIDLE = "sitidle";
+		ANIM_SITIDLE = "sitidle";
 		ANIM_IDLE = "idle1";
 		ANIM_WALK = "walk";
 		ANIM_RUN = "run";
@@ -51,28 +72,28 @@ class Merc1 : CGameScript
 		MOVE_RANGE = 64;
 		ATTACK_RANGE = 72;
 		ATTACK_HITRANGE = 120;
-		const int DMG_MIN = 1;
-		const int DMG_MAX = 3;
-		const float ATTACK_HITCHANCE = 0.8;
-		const string SOUND_ALERT1 = "npc/prepdie.wav";
-		const string SOUND_ATTACK1 = "weapons/swingsmall.wav";
-		const string SOUND_ATTACK2 = "weapons/swingsmall.wav";
-		const string SOUND_STRUCK1 = "weapons/cbar_hitbod1.wav";
-		const string SOUND_STRUCK2 = "weapons/cbar_hitbod2.wav";
-		const string SOUND_STRUCK3 = "weapons/cbar_hitbod3.wav";
-		const string SOUND_PAIN = "player/chesthit1.wav";
-		const string SOUND_PAIN2 = "player/armhit1.wav";
-		const int VOLUME = 5;
+		DMG_MIN = 1;
+		DMG_MAX = 3;
+		ATTACK_HITCHANCE = 0.8;
+		SOUND_ALERT1 = "npc/prepdie.wav";
+		SOUND_ATTACK1 = "weapons/swingsmall.wav";
+		SOUND_ATTACK2 = "weapons/swingsmall.wav";
+		SOUND_STRUCK1 = "weapons/cbar_hitbod1.wav";
+		SOUND_STRUCK2 = "weapons/cbar_hitbod2.wav";
+		SOUND_STRUCK3 = "weapons/cbar_hitbod3.wav";
+		SOUND_PAIN = "player/chesthit1.wav";
+		SOUND_PAIN2 = "player/armhit1.wav";
+		VOLUME = 5;
 		CAN_RETALIATE = 1;
 		CAN_ATTACK = 0;
-		const float RETALIATE_CHANGETARGET_CHANCE = 0.75;
+		RETALIATE_CHANGETARGET_CHANCE = 0.75;
 		CAN_FLEE = 0;
 		CAN_HUNT = 0;
 		CAN_HEAR = 1;
 		CAN_FLINCH = 1;
 		FLINCH_ANIM = "raflinch";
 		FLINCH_CHANCE = 0.1;
-		const int SUMMON_VICINITY = 360;
+		SUMMON_VICINITY = 360;
 		NO_STUCK_CHECKS = 1;
 	}
 
@@ -133,7 +154,7 @@ class Merc1 : CGameScript
 		MASTER_NAME = GetEntityName(SUMMON_MASTER);
 		CAN_ATTACK = 1;
 		SetRace("human");
-		SayText("Lead on , MASTER_NAME");
+		SayText("Lead on , " + MASTER_NAME);
 		bs_set_defend_mode();
 		SetIdleAnim(ANIM_IDLE);
 		PlayAnim("once", "yes");
@@ -198,7 +219,7 @@ class Merc1 : CGameScript
 		string OFFER_TEXT = "I'll show you around these plains, if you pay me ";
 		OFFER_TEXT += int(HIRE_PRICE);
 		OFFER_TEXT += " gold.";
-		SayText("OFFER_TEXT");
+		SayText(OFFER_TEXT);
 		Say("[30] [30] [30] [30] [30] [30] [30] [30] [30]");
 		PlayAnim("once", "yes");
 		ScheduleDelayedEvent(5, "sitdown");
@@ -276,14 +297,14 @@ class Merc1 : CGameScript
 	void menu_recv_payment_failed()
 	{
 		ReceiveOffer("reject");
-		SayText("I will not be persuaded for a lower price! int(HIRE_PRICE) . Nothing more , nothing less.");
+		SayText(I + "will not be persuaded for a lower price! " + int(HIRE_PRICE) + " . Nothing more , nothing less.");
 		Say("[10] [10] [10] [6] [12] [4] [20] [10] [10]");
 		PlayAnim("once", "no");
 	}
 
 	void menu_disband()
 	{
-		SayText("I guess this is where we part ways. It was a pleasure working for you.");
+		SayText(I + " guess this is where we part ways. It was a pleasure working for you.");
 		PlayAnim("once", "yes");
 		MASTER_NAME = \/NULL\/;
 		SetRace("neutral");

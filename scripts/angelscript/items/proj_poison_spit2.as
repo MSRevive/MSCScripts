@@ -7,24 +7,41 @@ namespace MS
 
 class ProjPoisonSpit2 : CGameScript
 {
+	int ARROW_BODY_OFS;
+	float ARROW_BREAK_CHANCE;
+	int MODEL_BODY_OFS;
+	string MODEL_HANDS;
+	string MODEL_WORLD;
+	string PROJ_ANIM_IDLE;
+	int PROJ_AOE_FALLOFF;
+	int PROJ_AOE_RANGE;
+	int PROJ_COLLIDEHITBOX;
+	int PROJ_DAMAGE;
+	string PROJ_DAMAGE_TYPE;
+	int PROJ_SOLIDIFY_ON_WALL;
+	int PROJ_STICK_DURATION;
+	string SOUND_HITWALL1;
+	string SOUND_HITWALL2;
+	string SPRITE;
+
 	ProjPoisonSpit2()
 	{
-		const string MODEL_HANDS = "weapons/projectiles.mdl";
-		const string MODEL_WORLD = "weapons/projectiles.mdl";
-		const int ARROW_BODY_OFS = 6;
-		const string SOUND_HITWALL1 = "debris/bustflesh2.wav";
-		const string SOUND_HITWALL2 = "debris/bustflesh2.wav";
-		const int MODEL_BODY_OFS = 6;
-		const string SPRITE = "poison.spr";
-		const string PROJ_DAMAGE = RandomInt(10, 40);
-		const int PROJ_STICK_DURATION = 0;
-		const int PROJ_SOLIDIFY_ON_WALL = 0;
-		const int PROJ_COLLIDEHITBOX = 32;
-		const float ARROW_BREAK_CHANCE = 1.0;
-		const string PROJ_ANIM_IDLE = "spore_spinning";
-		const int PROJ_AOE_RANGE = 32;
-		const int PROJ_AOE_FALLOFF = 1;
-		const string PROJ_DAMAGE_TYPE = "poison";
+		MODEL_HANDS = "weapons/projectiles.mdl";
+		MODEL_WORLD = "weapons/projectiles.mdl";
+		ARROW_BODY_OFS = 6;
+		SOUND_HITWALL1 = "debris/bustflesh2.wav";
+		SOUND_HITWALL2 = "debris/bustflesh2.wav";
+		MODEL_BODY_OFS = 6;
+		SPRITE = "poison.spr";
+		PROJ_DAMAGE = RandomInt(10, 40);
+		PROJ_STICK_DURATION = 0;
+		PROJ_SOLIDIFY_ON_WALL = 0;
+		PROJ_COLLIDEHITBOX = 32;
+		ARROW_BREAK_CHANCE = 1.0;
+		PROJ_ANIM_IDLE = "spore_spinning";
+		PROJ_AOE_RANGE = 32;
+		PROJ_AOE_FALLOFF = 1;
+		PROJ_DAMAGE_TYPE = "poison";
 		Precache(SPRITE);
 	}
 

@@ -5,13 +5,14 @@ namespace MS
 
 class SfxStunringOld : CGameScript
 {
+	int TILT_SPEED;
 	int rheight;
 	string script.owner;
 	int script.tilt;
 
 	SfxStunringOld()
 	{
-		const int TILT_SPEED = 70;
+		TILT_SPEED = 70;
 	}
 
 	void OnRepeatTimer()

@@ -7,9 +7,11 @@ namespace MS
 
 class ERandArcher : CGameScript
 {
+	int WEAPON;
+
 	ERandArcher()
 	{
-		const int WEAPON = 0;
+		WEAPON = 0;
 	}
 
 }

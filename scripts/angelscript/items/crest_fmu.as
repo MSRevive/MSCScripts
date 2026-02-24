@@ -7,10 +7,13 @@ namespace MS
 
 class CrestFmu : CGameScript
 {
+	int MODEL_CREST_OFS;
+	string MODEL_WEAR;
+
 	CrestFmu()
 	{
-		const int MODEL_CREST_OFS = 14;
-		const string MODEL_WEAR = "armor/p_gowns.mdl";
+		MODEL_CREST_OFS = 14;
+		MODEL_WEAR = "armor/p_gowns.mdl";
 	}
 
 	void crest_spawn()

@@ -6,10 +6,12 @@ namespace MS
 class SfxFlames : CGameScript
 {
 	string DO_GLOW;
+	string FLAME_SPR;
 	int FX_ACTIVE;
 	string FX_DURATION;
 	string FX_MODEL;
 	string GLOW_COLOR;
+	int GLOW_RAD;
 	string IS_DARK;
 	string LIGHT_ID;
 	string MODEL_HEIGHT;
@@ -19,9 +21,9 @@ class SfxFlames : CGameScript
 
 	SfxFlames()
 	{
-		const int GLOW_RAD = 128;
+		GLOW_RAD = 128;
 		GLOW_COLOR = Vector3(255, 255, 128);
-		const string FLAME_SPR = "fire1_fixed.spr";
+		FLAME_SPR = "fire1_fixed.spr";
 	}
 
 	void client_activate()

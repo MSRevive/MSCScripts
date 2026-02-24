@@ -7,13 +7,16 @@ namespace MS
 
 class KeyholeRed : CGameScript
 {
+	string KEYHOLE_NAME;
+	string KEYHOLE_TITLE;
+	string KEY_NAME;
 	int RETURN_KEY;
 
 	KeyholeRed()
 	{
-		const string KEY_NAME = "key_red";
-		const string KEYHOLE_NAME = "Blood Stained Keyhole";
-		const string KEYHOLE_TITLE = "Use the crimson key";
+		KEY_NAME = "key_red";
+		KEYHOLE_NAME = "Blood Stained Keyhole";
+		KEYHOLE_TITLE = "Use the crimson key";
 		RETURN_KEY = 0;
 	}
 

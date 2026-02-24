@@ -6,16 +6,22 @@ namespace MS
 class BaseFlyerGrav : CGameScript
 {
 	int BFLY_AGRESSIVE;
+	int BFLY_AGRESSIVE_MAX_THRUST;
+	int BFLY_AGRESSIVE_MIN_RANGE;
+	float BFLY_MIN_REMOVE_DELAY;
+	int BFLY_VRANGE;
+	int BFLY_VSPEED_DOWN;
+	int BFLY_VSPEED_UP;
 
 	BaseFlyerGrav()
 	{
-		const int BFLY_VSPEED_UP = 25;
-		const int BFLY_VSPEED_DOWN = -25;
-		const int BFLY_VRANGE = 50;
-		const float BFLY_MIN_REMOVE_DELAY = 15.0;
+		BFLY_VSPEED_UP = 25;
+		BFLY_VSPEED_DOWN = -25;
+		BFLY_VRANGE = 50;
+		BFLY_MIN_REMOVE_DELAY = 15.0;
 		BFLY_AGRESSIVE = 0;
-		const int BFLY_AGRESSIVE_MAX_THRUST = 100;
-		const int BFLY_AGRESSIVE_MIN_RANGE = 128;
+		BFLY_AGRESSIVE_MAX_THRUST = 100;
+		BFLY_AGRESSIVE_MIN_RANGE = 128;
 	}
 
 	void OnSpawn() override

@@ -7,24 +7,33 @@ namespace MS
 
 class HealthMpotion : CGameScript
 {
+	int ANIM_DRINK;
+	int ANIM_IDLE;
+	string ANIM_PREFIX;
 	int DRINK_AMOUNT;
-	string DRINK_EFFECTAMT;
+	int DRINK_EFFECTAMT;
 	int DRINK_GULP_DELAY;
 	int DRINK_TIME;
 	string DRINK_TYPE;
+	int ITEM_MODEL_VIEW_IDX;
+	int MODEL_BODY_OFS;
+	string MODEL_HANDS;
+	string MODEL_VIEW;
+	string MODEL_WORLD;
 	float RESTORE_PERCENT;
+	string SOUND_DRINK;
 
 	HealthMpotion()
 	{
-		const int ANIM_IDLE = 0;
-		const int ANIM_DRINK = 1;
-		const string MODEL_HANDS = "misc/p_misc.mdl";
-		const string MODEL_WORLD = "misc/p_misc.mdl";
-		const string MODEL_VIEW = "viewmodels/v_misc.mdl";
-		const int ITEM_MODEL_VIEW_IDX = 1;
-		const string SOUND_DRINK = "items/drink.wav";
-		const int MODEL_BODY_OFS = 21;
-		const string ANIM_PREFIX = "mhealth";
+		ANIM_IDLE = 0;
+		ANIM_DRINK = 1;
+		MODEL_HANDS = "misc/p_misc.mdl";
+		MODEL_WORLD = "misc/p_misc.mdl";
+		MODEL_VIEW = "viewmodels/v_misc.mdl";
+		ITEM_MODEL_VIEW_IDX = 1;
+		SOUND_DRINK = "items/drink.wav";
+		MODEL_BODY_OFS = 21;
+		ANIM_PREFIX = "mhealth";
 		DRINK_TYPE = "givehealth";
 		RESTORE_PERCENT = 0.15;
 		DRINK_EFFECTAMT = RandomInt(13, 16);

@@ -60,8 +60,8 @@ class Qitem : CGameScript
 		EmitSound(GetOwner(), 0, "items/ammopickup1.wav", 10);
 		string OUT_MSG = "You find ";
 		OUT_MSG += GetEntityProperty(GetOwner(), "name.full");
-		SendColoredMessage(QUEST_PLAYER, "You acquire  GetEntityProperty(GetOwner(), "name.full")");
-		SendInfoMsg("all", "QUEST ITEM FOUND OUT_MSG");
+		SendColoredMessage(QUEST_PLAYER, "You acquire  " + GetEntityProperty(GetOwner(), "name.full"));
+		SendInfoMsg("all", "QUEST ITEM FOUND " + OUT_MSG);
 		ShowHelpTip(QUEST_PLAYER, "questitem", "QUEST ITEM", "This is a special quest item that will not appear in your inventory.");
 		CallExternal(GAME_MASTER, "ext_got_quest_item", ITEM_TYPE);
 		ScheduleDelayedEvent(0.5, "remove_me");
@@ -130,7 +130,7 @@ class Qitem : CGameScript
 		if ((L_DID_INIT)) return;
 		string OUT_MSG = "m2_quest/sylphiels_stuff cannot find type: ";
 		OUT_MSG += ITEM_TYPE;
-		SendInfoMsg("all", "MAPPING ERROR OUT_MSG");
+		SendInfoMsg("all", "MAPPING ERROR " + OUT_MSG);
 	}
 
 	void slow_down_loop()

@@ -5,31 +5,39 @@ namespace MS
 
 class NpcPoisonCloudOld : CGameScript
 {
+	string DAMAGE_TYPE;
+	string EFFECT_SCRIPT;
+	int HEIGHT;
 	string MY_BASE_DAMAGE;
 	string MY_DURATION;
 	string MY_OWNER;
 	string MY_OWNER_RACE;
 	int PLAYING_DEAD;
 	int POISONING;
+	string POISON_SPRITE;
+	int SCAN_RANGE;
+	string SMOKE_SPRITE;
+	string SPAWN_SOUND;
 	int STORMING;
 	string TARG_LIST;
+	int WIDTH;
 	string smoke_ANGLE;
 	string smoke_POSITION;
 
 	NpcPoisonCloudOld()
 	{
-		const string SMOKE_SPRITE = "poison_cloud.spr";
-		const string SPAWN_SOUND = "ambience/steamburst1.wav";
-		const string DAMAGE_TYPE = "poison";
-		const string EFFECT_SCRIPT = "effects/dot_poison";
+		SMOKE_SPRITE = "poison_cloud.spr";
+		SPAWN_SOUND = "ambience/steamburst1.wav";
+		DAMAGE_TYPE = "poison";
+		EFFECT_SCRIPT = "effects/dot_poison";
 		Precache(SMOKE_SPRITE);
 		POISONING = 1;
-		const int HEIGHT = 40;
-		const int WIDTH = 96;
-		const int SCAN_RANGE = 128;
-		const string POISON_SPRITE = "poison_cloud.spr";
-		const int HEIGHT = 40;
-		const int WIDTH = 96;
+		HEIGHT = 40;
+		WIDTH = 96;
+		SCAN_RANGE = 128;
+		POISON_SPRITE = "poison_cloud.spr";
+		HEIGHT = 40;
+		WIDTH = 96;
 	}
 
 	void OnRepeatTimer()
@@ -148,8 +156,8 @@ class NpcPoisonCloudOld : CGameScript
 	{
 		string NEGWIDTH = WIDTH;
 		NEGWIDTH *= -1;
-		string x = RandomInt(NEGWIDTH, WIDTH);
-		string y = RandomInt(NEGWIDTH, WIDTH);
+		int x = RandomInt(NEGWIDTH, WIDTH);
+		int y = RandomInt(NEGWIDTH, WIDTH);
 		string L_POS = /* TODO: $relpos */ $relpos(smoke_ANGLE, Vector3(x, y, HEIGHT));
 		L_POS += smoke_POSITION;
 		ClientEffect("tempent", "sprite", "poison_cloud.spr", L_POS, "setup_smokes");

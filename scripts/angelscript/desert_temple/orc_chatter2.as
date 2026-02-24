@@ -8,14 +8,17 @@ namespace MS
 
 class OrcChatter2 : CGameScript
 {
+	int CHAT_AUTO_FACE;
+	int CHAT_NO_CLOSE_MOUTH;
+	int CHAT_USE_CONV_ANIMS;
 	int IN_COMBAT;
 	string ORC_BUDDY_ID;
 
 	OrcChatter2()
 	{
-		const int CHAT_USE_CONV_ANIMS = 0;
-		const int CHAT_NO_CLOSE_MOUTH = 1;
-		const int CHAT_AUTO_FACE = 0;
+		CHAT_USE_CONV_ANIMS = 0;
+		CHAT_NO_CLOSE_MOUTH = 1;
+		CHAT_AUTO_FACE = 0;
 	}
 
 	void orc_spawn()
@@ -128,11 +131,11 @@ class OrcChatter2 : CGameScript
 		CallExternal(ORC_BUDDY_ID, "turn_mclip_on");
 		if (GetPlayerCount() > 1)
 		{
-			SayText("I don t know, but we better make short work of them and warn the others!");
+			SayText(I + " don t know, but we better make short work of them and warn the others!");
 		}
 		else
 		{
-			SayText("I don t know, but we better make short work of him and warn the others!");
+			SayText(I + " don t know, but we better make short work of him and warn the others!");
 		}
 		EmitSound(GetOwner(), 0, "voices/orc/help.wav", 10);
 	}

@@ -7,17 +7,23 @@ namespace MS
 
 class BaseCrest : CGameScript
 {
+	string ANIM_PREFIX;
 	int ARMOR_MODEL_BODY;
 	string FINAL_OFS;
+	int MODEL_BODY_OFS;
+	string MODEL_HOLD;
+	string MODEL_VIEW;
+	string MODEL_WEAR;
+	string MODEL_WORLD;
 
 	BaseCrest()
 	{
-		const string MODEL_WORLD = "misc/p_misc.mdl";
-		const string MODEL_HOLD = "misc/p_misc.mdl";
-		const string MODEL_VIEW = "none";
-		const string MODEL_WEAR = "armor/p_gowns.mdl";
-		const int MODEL_BODY_OFS = 16;
-		const string ANIM_PREFIX = "package";
+		MODEL_WORLD = "misc/p_misc.mdl";
+		MODEL_HOLD = "misc/p_misc.mdl";
+		MODEL_VIEW = "none";
+		MODEL_WEAR = "armor/p_gowns.mdl";
+		MODEL_BODY_OFS = 16;
+		ANIM_PREFIX = "package";
 	}
 
 	void OnSpawn() override

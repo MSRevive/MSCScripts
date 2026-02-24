@@ -10,35 +10,43 @@ class MaldoraImage : CGameScript
 	string ANIM_ATTACK;
 	string ANIM_DEATH;
 	string ANIM_IDLE;
+	string ANIM_LEAP;
 	string ANIM_RUN;
 	string ANIM_WALK;
+	string ANIM_WAND;
+	float DMG_WAND;
 	string FIRST_TARGET;
+	int I_AM_TURNABLE;
 	int LEAP_DELAY;
+	float LEAP_FREQ;
+	string MONSTER_MODEL;
 	string MY_MASTER;
 	int NO_SPAWN_STUCK_CHECK;
 	int NPC_FORCED_MOVEDEST;
 	int NPC_GIVE_EXP;
 	int SLIDE_COUNT;
 	string SLIDE_DIR;
+	string SOUND_DEATH;
+	float SPELL_FREQ;
 	string UBER_MODE;
 
 	MaldoraImage()
 	{
 		ANIM_IDLE = "idle";
 		ANIM_ATTACK = "treadwater";
-		const string ANIM_LEAP = "long_jump";
+		ANIM_LEAP = "long_jump";
 		ANIM_RUN = "run2";
 		ANIM_WALK = "walk2handed";
 		ANIM_DEATH = "die_backwards1";
-		const string ANIM_WAND = "ref_shoot_crowbar";
-		const float SPELL_FREQ = 7.0;
-		const string DMG_WAND = Random(10, 20);
-		const float LEAP_FREQ = 2.0;
-		const string SOUND_DEATH = "null.wav";
-		const string MONSTER_MODEL = "monsters/maldora.mdl";
+		ANIM_WAND = "ref_shoot_crowbar";
+		SPELL_FREQ = 7.0;
+		DMG_WAND = Random(10, 20);
+		LEAP_FREQ = 2.0;
+		SOUND_DEATH = "null.wav";
+		MONSTER_MODEL = "monsters/maldora.mdl";
 		Precache(MONSTER_MODEL);
 		NO_SPAWN_STUCK_CHECK = 1;
-		const int I_AM_TURNABLE = 0;
+		I_AM_TURNABLE = 0;
 	}
 
 	void OnSpawn() override
@@ -133,7 +141,7 @@ class MaldoraImage : CGameScript
 
 	void OnDeath(CBaseEntity@ attacker) override
 	{
-		string RAND_DEATH = RandomInt(1, 7);
+		int RAND_DEATH = RandomInt(1, 7);
 		if (RAND_DEATH == 1)
 		{
 			ANIM_DEATH = "die_simple";
@@ -216,7 +224,7 @@ class MaldoraImage : CGameScript
 		if (!(GetEntityRange(m_hAttackTarget) < ATTACK_RANGE)) return;
 		if (!(RandomInt(1, 2) == 1)) return;
 		string DEST_POS = GetEntityOrigin(m_hAttackTarget);
-		string RND_ANG = RandomInt(0, 359);
+		int RND_ANG = RandomInt(0, 359);
 		DEST_POS += /* TODO: $relpos */ $relpos(Vector3(0, RND_ANG, 0), Vector3(0, ATTACK_RANGE, 0));
 		leap_at(DEST_POS);
 	}

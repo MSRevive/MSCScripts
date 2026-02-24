@@ -39,13 +39,20 @@ class Olof : CGameScript
 	string HI_PLAYER;
 	int MENTIONED_CURSE;
 	string NEXT_STORE_CHATTER;
+	int NO_HAIL;
+	int NO_JOB;
+	int NO_RUMOR;
 	int NO_STUCK_CHECKS;
 	int NPC_NO_ATTACK;
 	int NPC_NO_PLAYER_DMG;
 	string QUEST_WINNER;
 	string SAW_FIRST_PLAYER;
 	string SHOPPER_ID;
+	string SND_SCREAM1;
+	string SND_SCREAM2;
+	string SND_SCREAM3;
 	int STORE_BUYMENU;
+	string STORE_NAME;
 	int STORE_SELLMENU;
 	int VENDOR_MENU_OFF;
 	int VENDOR_NOT_ON_USE;
@@ -62,17 +69,17 @@ class Olof : CGameScript
 		NO_STUCK_CHECKS = 1;
 		NPC_NO_ATTACK = 1;
 		CANT_TURN = 1;
-		const int NO_HAIL = 1;
-		const int NO_JOB = 1;
-		const int NO_RUMOR = 1;
-		const string STORE_NAME = "olof_shop";
+		NO_HAIL = 1;
+		NO_JOB = 1;
+		NO_RUMOR = 1;
+		STORE_NAME = "olof_shop";
 		VENDOR_MENU_OFF = 1;
 		VENDOR_NOT_ON_USE = 1;
 		STORE_SELLMENU = 1;
 		STORE_BUYMENU = 1;
-		const string SND_SCREAM1 = "scientist/scream7.wav";
-		const string SND_SCREAM2 = "scientist/scream17.wav";
-		const string SND_SCREAM3 = "scientist/scream07.wav";
+		SND_SCREAM1 = "scientist/scream7.wav";
+		SND_SCREAM2 = "scientist/scream17.wav";
+		SND_SCREAM3 = "scientist/scream07.wav";
 	}
 
 	void OnRepeatTimer()
@@ -174,7 +181,7 @@ class Olof : CGameScript
 		}
 		else
 		{
-			SayText("And you? ...are YOU one of the evil ones?");
+			SayText("And you? ...are " + YOU + " one of the evil ones?");
 			Say("[0.5] [0.2] [0.1] [0.1] [0.1] [0.1] [0.1]");
 		}
 		PlayAnim("once", "panic");
@@ -298,7 +305,7 @@ class Olof : CGameScript
 		}
 		VERIFY_TARGET = 0;
 		CallExternal(PLAYER_ID, "ext_olof_setstatus", "evil");
-		SayText("AAAAAAAAAAAAAAAAAAAAHHHHHHHHHHHHHHHHHHH!!!!!!!!");
+		SayText(AAAAAAAAAAAAAAAAAAAAHHHHHHHHHHHHHHHHHHH!!!!!!!!);
 		PlayAnim("once", "fear2");
 		Say("[2]");
 		AM_SCREAMING = 1;
@@ -339,7 +346,7 @@ class Olof : CGameScript
 	void do_screaming()
 	{
 		if (!(AM_SCREAMING)) return;
-		string RND_ANIM = RandomInt(1, 4);
+		int RND_ANIM = RandomInt(1, 4);
 		if (RND_ANIM == 1)
 		{
 			PlayAnim("once", "fear1");
@@ -378,7 +385,7 @@ class Olof : CGameScript
 		{
 			string L_NAME = GetEntityName(param2);
 			L_NAME += ",";
-			SayText("L_NAME have you found the ring yet?");
+			SayText(L_NAME + " have you found the ring yet?");
 			Say("[0.5] [0.1] [0.1] [0.1] [0.1] [0.1] [0.2]");
 			PlayAnim("once", "pondering3");
 		}
@@ -386,7 +393,7 @@ class Olof : CGameScript
 		{
 			string L_NAME = GetEntityName(param2);
 			L_NAME += ",";
-			SayText("Ah , L_NAME Thank you for the nice ring.");
+			SayText("Ah , " + L_NAME + " Thank you for the nice ring.");
 			Say("[0.5] [0.1] [0.1] [0.1] [0.1] [0.1] [0.2]");
 			PlayAnim("once", "yes");
 		}
@@ -397,7 +404,7 @@ class Olof : CGameScript
 		}
 		if (REASON_CALM == "said_no")
 		{
-			SayText("...Ok , I believe you... for now...");
+			SayText("...Ok , " + I + " believe you... for now...");
 			Say("[0.2] [0.2] [0.1] [0.2] [0.1] [0.1]");
 		}
 		if (REASON_CALM == "ring_percept")
@@ -511,7 +518,7 @@ class Olof : CGameScript
 
 	void say_curse3()
 	{
-		SayText("..H-A-U-N-T-E-D forest!");
+		SayText(..H-A-U-N-T-E-D + " forest!");
 		Say("[1] [0.2] [1] [0.2]");
 	}
 
@@ -522,7 +529,7 @@ class Olof : CGameScript
 		if (!(SHOPPER_ID == "none")) return;
 		if (GetGameTime() > NEXT_STORE_CHATTER)
 		{
-			string RND_CHAT = RandomInt(1, 5);
+			int RND_CHAT = RandomInt(1, 5);
 			if (RND_CHAT == 1)
 			{
 				SayText("Demons leave the most interesting stuff lying around...");
@@ -537,7 +544,7 @@ class Olof : CGameScript
 			}
 			if (RND_CHAT == 4)
 			{
-				SayText("I don t sell to demons, but I suppose you re ok.");
+				SayText(I + " don t sell to demons, but I suppose you re ok.");
 			}
 			if (RND_CHAT == 5)
 			{

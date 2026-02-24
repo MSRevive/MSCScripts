@@ -10,10 +10,13 @@ namespace MS
 class SorcBlacksmith : CGameScript
 {
 	int AM_HAMMERING;
+	string ANIM_HAMMER;
 	string ANIM_IDLE;
 	string ANIM_STEP3;
 	string ANIM_STEP4;
+	string ANIM_YES;
 	string BLACKSMITH_FX_ID;
+	string BUSY_COMMENT;
 	string CHAT_EVENT_STEP2;
 	string CHAT_EVENT_STEP4;
 	string CHAT_EVENT_STEP5;
@@ -25,35 +28,43 @@ class SorcBlacksmith : CGameScript
 	string CHAT_STEP5;
 	string CHAT_STEP6;
 	string CHAT_STEPS;
+	int CHAT_USE_CONV_ANIMS;
 	string DID_INTRO;
 	string FINAL_GOLD_REQ;
 	string FORGE_MENU_TARGET;
 	string HAMMER_YAW;
 	string LAST_PLAYER_FORGE_ID;
 	string MENU_TYPE;
+	int NO_CLOSE_MOUTH;
+	int NO_HAIL;
+	int NO_JOB;
+	int NO_RUMOR;
 	int PLAYING_DEAD;
 	string RESUME_HAMMERING;
 	string SMITH_CL_TYPE;
 	string SMITH_CUSTOMER;
+	int SMITH_GOLD_REQ;
 	string SMITH_REQ;
 	string SMITH_TYPE;
 	string STORE_NAME;
+	int VENDOR_MENU_OFF;
+	int VENDOR_NOT_ON_USE;
 
 	SorcBlacksmith()
 	{
-		const string ANIM_HAMMER = "hammering";
-		const string ANIM_YES = "nod_yes";
+		ANIM_HAMMER = "hammering";
+		ANIM_YES = "nod_yes";
 		ANIM_IDLE = "idle1";
-		const int SMITH_GOLD_REQ = 50000;
-		const int VENDOR_MENU_OFF = 1;
-		const int VENDOR_NOT_ON_USE = 1;
-		const int NO_JOB = 1;
-		const int NO_HAIL = 1;
-		const int NO_RUMOR = 1;
+		SMITH_GOLD_REQ = 50000;
+		VENDOR_MENU_OFF = 1;
+		VENDOR_NOT_ON_USE = 1;
+		NO_JOB = 1;
+		NO_HAIL = 1;
+		NO_RUMOR = 1;
 		STORE_NAME = "sorc_blacksmith";
-		const int CHAT_USE_CONV_ANIMS = 0;
-		const int NO_CLOSE_MOUTH = 1;
-		const string BUSY_COMMENT = "Patients little pink one... Busy with this other wee one right now.";
+		CHAT_USE_CONV_ANIMS = 0;
+		NO_CLOSE_MOUTH = 1;
+		BUSY_COMMENT = "Patients little pink one... Busy with this other wee one right now.";
 	}
 
 	void OnRepeatTimer()

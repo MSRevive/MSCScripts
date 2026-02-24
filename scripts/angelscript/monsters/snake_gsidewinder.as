@@ -12,14 +12,28 @@ class SnakeGsidewinder : CGameScript
 	string ANIM_IDLE;
 	string ANIM_RUN;
 	string ANIM_WALK;
+	float ATTACK_DAMAGE;
 	int ATTACK_DELAY;
+	float ATTACK_HITCHANCE;
 	int ATTACK_HITRANGE;
 	int ATTACK_MOVERANGE;
 	int ATTACK_RANGE;
 	int BITE_SOUND;
 	int DID_ALERT;
+	string MONSTER_MODEL;
+	string MONSTER_MODELT;
 	string NPC_DELAYING_UNSTUCK;
 	int NPC_GIVE_EXP;
+	float POISON_DAMAGE;
+	int POISON_DURATION;
+	string SOUND_ALERT;
+	string SOUND_ATTACK;
+	string SOUND_DEATH;
+	string SOUND_IDLE;
+	string SOUND_PAIN1;
+	string SOUND_PAIN2;
+	string SOUND_POISON;
+	string SOUND_STRUCK;
 
 	SnakeGsidewinder()
 	{
@@ -31,21 +45,21 @@ class SnakeGsidewinder : CGameScript
 		ATTACK_RANGE = 100;
 		ATTACK_HITRANGE = 180;
 		ATTACK_MOVERANGE = 30;
-		const float ATTACK_HITCHANCE = 0.8;
-		const string ATTACK_DAMAGE = "$randf(10,30)";
-		const string POISON_DAMAGE = "$randf(4,8)";
-		const string POISON_DURATION = "$rand(30,45)";
-		const string SOUND_ALERT = "monsters/gsnake_idle1.wav";
-		const string SOUND_IDLE = "monsters/gsnake_idle1.wav";
-		const string SOUND_ATTACK = "bullchicken/bc_bite2.wav";
-		const string SOUND_POISON = "monsters/snakeman/sm_alert1.wav";
-		const string SOUND_STRUCK = "debris/flesh3.wav";
-		const string SOUND_PAIN1 = "agrunt/ag_attack3.wav";
-		const string SOUND_PAIN2 = "agrunt/ag_idle2.wav";
-		const string SOUND_DEATH = "agrunt/ag_die2.wav";
+		ATTACK_HITCHANCE = 0.8;
+		ATTACK_DAMAGE = "$randf(10,30)";
+		POISON_DAMAGE = "$randf(4,8)";
+		POISON_DURATION = "$rand(30,45)";
+		SOUND_ALERT = "monsters/gsnake_idle1.wav";
+		SOUND_IDLE = "monsters/gsnake_idle1.wav";
+		SOUND_ATTACK = "bullchicken/bc_bite2.wav";
+		SOUND_POISON = "monsters/snakeman/sm_alert1.wav";
+		SOUND_STRUCK = "debris/flesh3.wav";
+		SOUND_PAIN1 = "agrunt/ag_attack3.wav";
+		SOUND_PAIN2 = "agrunt/ag_idle2.wav";
+		SOUND_DEATH = "agrunt/ag_die2.wav";
 		Precache(SOUND_DEATH);
-		const string MONSTER_MODEL = "monsters/gsidewinder.mdl";
-		const string MONSTER_MODELT = "monsters/gsidewinderT.mdl";
+		MONSTER_MODEL = "monsters/gsidewinder.mdl";
+		MONSTER_MODELT = "monsters/gsidewinderT.mdl";
 		Precache(MONSTER_MODEL);
 		Precache(MONSTER_MODELT);
 	}

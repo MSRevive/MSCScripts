@@ -9,7 +9,11 @@ class TelfWizardNovice : CGameScript
 {
 	int DROP_GOLD;
 	int DROP_GOLD_AMT;
-	string ELF_PALM_TYPE;
+	int ELF_CAN_GUIDED;
+	string ELF_GUIDED_DMG_TYPE;
+	int ELF_IS_NOVICE;
+	int ELF_PALM_ATTACK;
+	int ELF_PALM_TYPE;
 	int NPC_GIVE_EXP;
 
 	TelfWizardNovice()
@@ -17,10 +21,10 @@ class TelfWizardNovice : CGameScript
 		NPC_GIVE_EXP = 3000;
 		DROP_GOLD = 1;
 		DROP_GOLD_AMT = 300;
-		const int ELF_IS_NOVICE = 1;
-		const int ELF_PALM_ATTACK = 1;
-		const int ELF_CAN_GUIDED = 1;
-		const string ELF_GUIDED_DMG_TYPE = "magic";
+		ELF_IS_NOVICE = 1;
+		ELF_PALM_ATTACK = 1;
+		ELF_CAN_GUIDED = 1;
+		ELF_GUIDED_DMG_TYPE = "magic";
 		ELF_PALM_TYPE = RandomInt(1, 3);
 	}
 

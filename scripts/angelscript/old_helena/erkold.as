@@ -11,12 +11,15 @@ class Erkold : CGameScript
 {
 	int GAVE_REWARD;
 	int HELENA_SAVED;
+	int NO_HAIL;
+	int NO_JOB;
+	int NO_RUMOR;
 
 	Erkold()
 	{
-		const int NO_HAIL = 1;
-		const int NO_RUMOR = 1;
-		const int NO_JOB = 1;
+		NO_HAIL = 1;
+		NO_RUMOR = 1;
+		NO_JOB = 1;
 	}
 
 	void OnSpawn() override
@@ -54,7 +57,7 @@ class Erkold : CGameScript
 		{
 			PlayAnim("critical", "lean");
 			bchat_mouth_move();
-			SayText("I wish I had more to give , but most of my belongings went up with the flames.");
+			SayText(I + "wish " + I + " had more to give , but most of my belongings went up with the flames.");
 		}
 		if ((GAVE_REWARD)) return;
 		GAVE_REWARD = 1;

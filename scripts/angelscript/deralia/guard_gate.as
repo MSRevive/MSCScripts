@@ -20,7 +20,7 @@ class GuardGate : CGameScript
 				{
 					if (!(IsValidPlayer(L_ENT)))
 					{
-						string L_RAND = RandomInt(0, 3);
+						int L_RAND = RandomInt(0, 3);
 						if (L_RAND == 0)
 						{
 							string L_SPEAK = "G'day, sir";

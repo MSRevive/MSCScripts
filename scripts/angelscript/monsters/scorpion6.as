@@ -18,22 +18,39 @@ class Scorpion6 : CGameScript
 	float ATTACK_HITCHANCE;
 	int ATTACK_HITRANGE;
 	int ATTACK_RANGE;
+	int ATTACK_STINGRANGE;
 	float BASE_MOVESPEED;
+	string BURST_SCRIPT;
 	string BURST_TARGS;
+	int DMG_BURST;
+	float DOT_DMG;
+	float DOT_DURATION;
+	string DOT_EFFECT;
+	string DOT_EFFECT_BURST_TYPE;
+	string DOT_EFFECT_STING;
+	float FREQ_JUMP;
 	string MY_OWNER;
 	int NPC_GIVE_EXP;
 	int NPC_MUST_SEE_TARGET;
+	string SOUND_BIGSWING;
+	string SOUND_DEATH;
+	string SOUND_IDLE1;
+	string SOUND_PAIN;
+	string SOUND_STRUCK1;
+	string SOUND_STRUCK2;
+	string SOUND_STRUCK3;
+	string SOUND_SWING;
 
 	Scorpion6()
 	{
-		const float FREQ_JUMP = 30.0;
+		FREQ_JUMP = 30.0;
 		ANIM_IDLE = "idle_a";
-		const string SOUND_STRUCK1 = "body/flesh1.wav";
-		const string SOUND_STRUCK2 = "body/flesh2.wav";
-		const string SOUND_STRUCK3 = "body/flesh3.wav";
-		const string SOUND_PAIN = "monsters/spider/spiderhiss.wav";
-		const string SOUND_IDLE1 = "monsters/spider/spideridle.wav";
-		const string SOUND_DEATH = "monsters/spider/spiderdie.wav";
+		SOUND_STRUCK1 = "body/flesh1.wav";
+		SOUND_STRUCK2 = "body/flesh2.wav";
+		SOUND_STRUCK3 = "body/flesh3.wav";
+		SOUND_PAIN = "monsters/spider/spiderhiss.wav";
+		SOUND_IDLE1 = "monsters/spider/spideridle.wav";
+		SOUND_DEATH = "monsters/spider/spiderdie.wav";
 		ANIM_IDLE = "idle_b";
 		ANIM_RUN = "run";
 		ANIM_WALK = "walk";
@@ -42,18 +59,18 @@ class Scorpion6 : CGameScript
 		ANIM_POISON = "attacka";
 		ATTACK_RANGE = 165;
 		ATTACK_HITRANGE = 180;
-		const int ATTACK_STINGRANGE = 120;
+		ATTACK_STINGRANGE = 120;
 		ATTACK_HITCHANCE = 0.7;
 		ATTACK_DAMAGE = 200;
-		const string DOT_EFFECT = "effects/dot_poison";
-		const string DOT_EFFECT_STING = "effects/dot_poison";
-		const string DOT_EFFECT_BURST_TYPE = "stun";
-		const float DOT_DURATION = 10.0;
-		const float DOT_DMG = 50.0;
-		const string BURST_SCRIPT = "effects/sfx_stun_burst";
-		const int DMG_BURST = 200;
-		const string SOUND_SWING = "zombie/claw_miss1.wav";
-		const string SOUND_BIGSWING = "zombie/claw_miss2.wav";
+		DOT_EFFECT = "effects/dot_poison";
+		DOT_EFFECT_STING = "effects/dot_poison";
+		DOT_EFFECT_BURST_TYPE = "stun";
+		DOT_DURATION = 10.0;
+		DOT_DMG = 50.0;
+		BURST_SCRIPT = "effects/sfx_stun_burst";
+		DMG_BURST = 200;
+		SOUND_SWING = "zombie/claw_miss1.wav";
+		SOUND_BIGSWING = "zombie/claw_miss2.wav";
 		Precache(SOUND_DEATH);
 		Precache(SOUND_IDLE1);
 	}
@@ -135,8 +152,8 @@ class Scorpion6 : CGameScript
 			if (GetEntityRange(m_hAttackTarget) < ATTACK_HITRANGE)
 			{
 			}
-			string RND_LR = Random(-100, 100);
-			string RND_FB = Random(-350, 100);
+			float RND_LR = Random(-100, 100);
+			float RND_FB = Random(-350, 100);
 			AddVelocity(m_hAttackTarget, /* TODO: $relvel */ $relvel(RND_LR, RND_FB, 10));
 		}
 	}
@@ -152,8 +169,8 @@ class Scorpion6 : CGameScript
 		if (!(GetEntityRange(m_hAttackTarget) < ATTACK_STINGRANGE)) return;
 		ApplyEffect(m_hAttackTarget, DOT_EFFECT_STING, DOT_DURATION, GetEntityIndex(GetOwner()), DOT_DMG);
 		if (!(GetEntityRange(m_hAttackTarget) < ATTACK_STINGRANGE)) return;
-		string RND_LR = Random(-100, 100);
-		string RND_FB = Random(-300, 400);
+		float RND_LR = Random(-100, 100);
+		float RND_FB = Random(-300, 400);
 		AddVelocity(m_hAttackTarget, /* TODO: $relvel */ $relvel(RND_LR, RND_FB, 10));
 	}
 
@@ -173,7 +190,7 @@ class Scorpion6 : CGameScript
 		string N_BADS = /* TODO: $get_tbox */ $get_tbox("enemy", 640);
 		if (N_BADS == "none")
 		{
-			string DO_JUMP = RandomInt(0, 1);
+			int DO_JUMP = RandomInt(0, 1);
 		}
 		else
 		{
@@ -183,7 +200,7 @@ class Scorpion6 : CGameScript
 			}
 			else
 			{
-				string DO_JUMP = RandomInt(0, 1);
+				int DO_JUMP = RandomInt(0, 1);
 			}
 		}
 		if (!(DO_JUMP)) return;

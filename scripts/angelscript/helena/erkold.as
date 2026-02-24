@@ -12,12 +12,13 @@ class Erkold : CGameScript
 	int CAN_SCREAM;
 	int FLEE_DISTANCE;
 	int FRIGHTENED;
+	int NO_RUMOR;
 	int QUEST_3;
 	int SEE_ENEMY;
 
 	Erkold()
 	{
-		const int NO_RUMOR = 1;
+		NO_RUMOR = 1;
 	}
 
 	void OnSpawn() override
@@ -80,7 +81,7 @@ class Erkold : CGameScript
 		if (QUEST_3 == 0)
 		{
 			PlayAnim("once", "eye_wipe");
-			SayText("The orcs.. they took my wife and children.. I don t know if they are alive..");
+			SayText("The orcs.. they took my wife and children.. " + I + " don t know if they are alive..");
 			ScheduleDelayedEvent(5, "say_quest1");
 		}
 		if (QUEST_3 == 1)

@@ -5,16 +5,21 @@ namespace MS
 
 class WizardBase : CGameScript
 {
+	string CONV_ANIMS;
 	int DID_WARN;
 	int HAS_SYMBOL;
+	string SOUND_DEATH1;
+	string SOUND_DEATH2;
+	string SOUND_DEATH3;
+	string SOUND_DEATH4;
 
 	WizardBase()
 	{
-		const string CONV_ANIMS = "converse2;converse1;talkleft;talkright;lean;pondering;pondering2;pondering3;";
-		const string SOUND_DEATH1 = "scientist/scream1.wav";
-		const string SOUND_DEATH2 = "scientist/scream2.wav";
-		const string SOUND_DEATH3 = "scientist/scream3.wav";
-		const string SOUND_DEATH4 = "scientist/scream4.wav";
+		CONV_ANIMS = "converse2;converse1;talkleft;talkright;lean;pondering;pondering2;pondering3;";
+		SOUND_DEATH1 = "scientist/scream1.wav";
+		SOUND_DEATH2 = "scientist/scream2.wav";
+		SOUND_DEATH3 = "scientist/scream3.wav";
+		SOUND_DEATH4 = "scientist/scream4.wav";
 	}
 
 	void OnSpawn() override
@@ -37,10 +42,10 @@ class WizardBase : CGameScript
 		{
 			string N_ANIMS = GetTokenCount(CONV_ANIMS, ";");
 			N_ANIMS -= 1;
-			string RND_ANIM = RandomInt(0, N_ANIMS);
+			int RND_ANIM = RandomInt(0, N_ANIMS);
 			PlayAnim("critical", GetToken(CONV_ANIMS, RND_ANIM, ";"));
 		}
-		SayText("PARAM1");
+		SayText(param1);
 	}
 
 	void OnHitByAttack(CBaseEntity@ attacker, int damage) override
@@ -86,7 +91,7 @@ class WizardBase : CGameScript
 		}
 		else
 		{
-			SayText("SAYTEXT_GOT_SYMBOL");
+			SayText(SAYTEXT_GOT_SYMBOL);
 		}
 		SetIdleAnim("kneel_idle");
 		SetMoveAnim("kneel_idle");

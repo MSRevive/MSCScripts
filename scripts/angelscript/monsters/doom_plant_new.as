@@ -14,6 +14,16 @@ class DoomPlantNew : CGameScript
 	string ANIM_WALK;
 	string ATTACK_HITRANGE;
 	string ATTACK_RANGE;
+	float DMG_SLASH;
+	float DMG_SPORE;
+	float DMG_SPUR;
+	int DOT_POISON;
+	float FREQ_CL_REFRESH;
+	float FREQ_GROW;
+	float FREQ_IDLE;
+	float FREQ_SHOOT;
+	float FREQ_SPORE;
+	string GIB_MODEL;
 	string HALF_HP;
 	string LEVEL_PREFIX;
 	string NEXT_CL_REFRESH;
@@ -24,6 +34,13 @@ class DoomPlantNew : CGameScript
 	int NO_STUCK_CHECKS;
 	int NPC_GIVE_EXP;
 	int SLASH_ATTACK;
+	string SOUND_GIB;
+	string SOUND_GROW;
+	string SOUND_SCRATCH;
+	string SOUND_SLASH;
+	string SOUND_SPORE;
+	string SOUND_STRUCK1;
+	string SOUND_STRUCK2;
 	string SPORE_POISON_DMG;
 	string TREE_CL_INDEX;
 	int TREE_LEVEL;
@@ -32,23 +49,23 @@ class DoomPlantNew : CGameScript
 	{
 		NPC_GIVE_EXP = 200;
 		NO_STUCK_CHECKS = 1;
-		const float DMG_SPUR = 5.0;
-		const float DMG_SLASH = 8.0;
-		const float DMG_SPORE = 50.0;
-		const int DOT_POISON = 30;
-		const float FREQ_GROW = 40.0;
-		const float FREQ_SHOOT = 0.5;
-		const float FREQ_SPORE = 15.0;
-		const float FREQ_CL_REFRESH = 20.0;
-		const string FREQ_IDLE = Random(3.0, 6.0);
-		const string GIB_MODEL = "cactusgibs.mdl";
-		const string SOUND_GIB = "debris/bustflesh1.wav";
-		const string SOUND_SLASH = "zombie/claw_miss1.wav";
-		const string SOUND_SCRATCH = "headcrab/hc_attack1.wav";
-		const string SOUND_SPORE = "weapons/bow/crossbow.wav";
-		const string SOUND_GROW = "weapons/bow/stretch.wav";
-		const string SOUND_STRUCK1 = "weapons/xbow_hitbod1.wav";
-		const string SOUND_STRUCK2 = "weapons/xbow_hitbod2.wav";
+		DMG_SPUR = 5.0;
+		DMG_SLASH = 8.0;
+		DMG_SPORE = 50.0;
+		DOT_POISON = 30;
+		FREQ_GROW = 40.0;
+		FREQ_SHOOT = 0.5;
+		FREQ_SPORE = 15.0;
+		FREQ_CL_REFRESH = 20.0;
+		FREQ_IDLE = Random(3.0, 6.0);
+		GIB_MODEL = "cactusgibs.mdl";
+		SOUND_GIB = "debris/bustflesh1.wav";
+		SOUND_SLASH = "zombie/claw_miss1.wav";
+		SOUND_SCRATCH = "headcrab/hc_attack1.wav";
+		SOUND_SPORE = "weapons/bow/crossbow.wav";
+		SOUND_GROW = "weapons/bow/stretch.wav";
+		SOUND_STRUCK1 = "weapons/xbow_hitbod1.wav";
+		SOUND_STRUCK2 = "weapons/xbow_hitbod2.wav";
 		Precache(GIB_MODEL);
 	}
 
@@ -232,7 +249,7 @@ class DoomPlantNew : CGameScript
 		if (!(GetGameTime() > NEXT_IDLE)) return;
 		NEXT_IDLE = GetGameTime();
 		NEXT_IDLE += FREQ_IDLE;
-		string RND_ANIM = RandomInt(1, 5);
+		int RND_ANIM = RandomInt(1, 5);
 		PlayAnim("once", /* TODO: $stradd */ $stradd(LEVEL_PREFIX, "idle", RND_ANIM));
 	}
 

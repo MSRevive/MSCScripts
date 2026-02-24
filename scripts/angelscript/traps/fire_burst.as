@@ -55,11 +55,11 @@ class FireBurst : CGameScript
 		string L_BLAST_DMG = L_TARG_HP;
 		if (L_TARG_HP >= 100)
 		{
-			string L_BLAST_RATIO = /* TODO: $math(divide) */ 100;
+			string L_BLAST_RATIO = (100 / L_TARG_HP);
 		}
 		else
 		{
-			string L_BLAST_RATIO = /* TODO: $math(divide) */ L_TARG_HP;
+			string L_BLAST_RATIO = (L_TARG_HP / 100);
 		}
 		return;
 		string L_DOT = GetEntityMaxHealth(param2);

@@ -7,12 +7,13 @@ namespace MS
 
 class PsnRandomNm : CGameScript
 {
-	string WEAPON;
+	int ELEMENT;
+	int WEAPON;
 
 	PsnRandomNm()
 	{
 		WEAPON = RandomInt(0, 5);
-		const int ELEMENT = 1;
+		ELEMENT = 1;
 	}
 
 }

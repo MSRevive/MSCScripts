@@ -11,7 +11,9 @@ class DwarfZombieBloat : CGameScript
 	int AM_PUKING;
 	string ANIM_ATTACK;
 	string ANIM_DEATH;
+	string ANIM_EXPLODE;
 	string ANIM_IDLE;
+	string ANIM_PUKE;
 	string ANIM_RUN;
 	string ANIM_WALK;
 	string AS_ATTACKING;
@@ -20,8 +22,14 @@ class DwarfZombieBloat : CGameScript
 	int CAN_FLINCH;
 	int DID_FAKE_DEATH;
 	int DID_INTRO;
+	int DMG_EXPLODE;
+	int DMG_PROJECTILE;
+	int DMG_SWIPE;
+	int DOT_PUKE;
 	string DO_PROJECTILE;
 	string DRIFT_ANG;
+	float FREQ_PUKE;
+	float FREQ_SPIT;
 	int IS_BLOODLESS;
 	int I_AM_TURNABLE;
 	int LIGHT_SIZE;
@@ -38,8 +46,38 @@ class DwarfZombieBloat : CGameScript
 	string NEXT_PUKE;
 	string NEXT_SPIT;
 	int NPC_GIVE_EXP;
+	int PUKE_RANGE;
 	string PUKE_SCRIPT_IDX;
 	string PUKE_TARGS;
+	int RAD_EXPLODE;
+	string SOUND_ALERT;
+	string SOUND_ATTACK1;
+	string SOUND_ATTACK2;
+	string SOUND_ATTACKHIT1;
+	string SOUND_ATTACKHIT2;
+	string SOUND_ATTACKHIT3;
+	string SOUND_DEATH;
+	string SOUND_DEATH1;
+	string SOUND_DEATH2;
+	string SOUND_DEATH3;
+	string SOUND_HOLYPAIN1;
+	string SOUND_HOLYPAIN2;
+	string SOUND_IDLE1;
+	string SOUND_IDLE2;
+	string SOUND_IDLE3;
+	string SOUND_PAIN1;
+	string SOUND_PAIN2;
+	string SOUND_PAIN3;
+	string SOUND_PUKE;
+	string SOUND_SPIT1;
+	string SOUND_SPIT2;
+	string SOUND_STRUCK1;
+	string SOUND_STRUCK2;
+	string SOUND_STRUCK3;
+	string SOUND_TURNED1;
+	string SOUND_TURNED2;
+	string SOUND_TURNED3;
+	string SOUND_TURNED4;
 
 	DwarfZombieBloat()
 	{
@@ -47,49 +85,49 @@ class DwarfZombieBloat : CGameScript
 		ANIM_RUN = "walk";
 		ANIM_IDLE = "idle";
 		ANIM_DEATH = "none";
-		const string SOUND_DEATH = "none";
+		SOUND_DEATH = "none";
 		MSC_PUSH_RESIST = 0.25;
 		NPC_GIVE_EXP = 400;
 		ANIM_ATTACK = "attack";
-		const string ANIM_PUKE = "anim_puke";
-		const string ANIM_EXPLODE = "anim_death";
-		const string FREQ_PUKE = Random(10.0, 20.0);
-		const string FREQ_SPIT = Random(1.0, 5.0);
-		const int PUKE_RANGE = 256;
-		const int RAD_EXPLODE = 300;
-		const string SOUND_PUKE = "monsters/mummy/c_mummycom_bat1.wav";
-		const string SOUND_DEATH1 = "agrunt/ag_die5.wav";
-		const string SOUND_DEATH2 = "agrunt/ag_die4.wav";
-		const string SOUND_DEATH3 = "agrunt/ag_die3.wav";
+		ANIM_PUKE = "anim_puke";
+		ANIM_EXPLODE = "anim_death";
+		FREQ_PUKE = Random(10.0, 20.0);
+		FREQ_SPIT = Random(1.0, 5.0);
+		PUKE_RANGE = 256;
+		RAD_EXPLODE = 300;
+		SOUND_PUKE = "monsters/mummy/c_mummycom_bat1.wav";
+		SOUND_DEATH1 = "agrunt/ag_die5.wav";
+		SOUND_DEATH2 = "agrunt/ag_die4.wav";
+		SOUND_DEATH3 = "agrunt/ag_die3.wav";
 		ATTACK_RANGE = 90;
 		ATTACK_HITRANGE = 120;
-		const string SOUND_TURNED1 = "ambience/the_horror1.wav";
-		const string SOUND_TURNED2 = "ambience/the_horror2.wav";
-		const string SOUND_TURNED3 = "ambience/the_horror3.wav";
-		const string SOUND_TURNED4 = "ambience/the_horror4.wav";
-		const string SOUND_HOLYPAIN1 = "agrunt/ag_pain4.wav";
-		const string SOUND_HOLYPAIN2 = "agrunt/ag_die3.wav";
-		const int DMG_PROJECTILE = 300;
-		const int DOT_PUKE = 100;
-		const int DMG_SWIPE = 100;
-		const int DMG_EXPLODE = 2000;
-		const string SOUND_SPIT1 = "bullchicken/bc_attack2.wav";
-		const string SOUND_SPIT2 = "bullchicken/bc_attack3.wav";
-		const string SOUND_ATTACK1 = "zombie/claw_miss1.wav";
-		const string SOUND_ATTACK2 = "zombie/claw_miss2.wav";
-		const string SOUND_ATTACKHIT1 = "zombie/claw_strike1.wav";
-		const string SOUND_ATTACKHIT2 = "zombie/claw_strike2.wav";
-		const string SOUND_ATTACKHIT3 = "zombie/claw_strike3.wav";
-		const string SOUND_IDLE1 = "agrunt/ag_idle2.wav";
-		const string SOUND_IDLE2 = "agrunt/ag_alert3.wav";
-		const string SOUND_IDLE3 = "agrunt/ag_idle5.wav";
-		const string SOUND_STRUCK1 = "debris/flesh2.wav";
-		const string SOUND_STRUCK2 = "debris/flesh5.wav";
-		const string SOUND_STRUCK3 = "debris/flesh7.wav";
-		const string SOUND_PAIN1 = "agrunt/ag_pain2.wav";
-		const string SOUND_PAIN2 = "agrunt/ag_pain3.wav";
-		const string SOUND_PAIN3 = "agrunt/ag_pain5.wav";
-		const string SOUND_ALERT = "agrunt/ag_alert2.wav";
+		SOUND_TURNED1 = "ambience/the_horror1.wav";
+		SOUND_TURNED2 = "ambience/the_horror2.wav";
+		SOUND_TURNED3 = "ambience/the_horror3.wav";
+		SOUND_TURNED4 = "ambience/the_horror4.wav";
+		SOUND_HOLYPAIN1 = "agrunt/ag_pain4.wav";
+		SOUND_HOLYPAIN2 = "agrunt/ag_die3.wav";
+		DMG_PROJECTILE = 300;
+		DOT_PUKE = 100;
+		DMG_SWIPE = 100;
+		DMG_EXPLODE = 2000;
+		SOUND_SPIT1 = "bullchicken/bc_attack2.wav";
+		SOUND_SPIT2 = "bullchicken/bc_attack3.wav";
+		SOUND_ATTACK1 = "zombie/claw_miss1.wav";
+		SOUND_ATTACK2 = "zombie/claw_miss2.wav";
+		SOUND_ATTACKHIT1 = "zombie/claw_strike1.wav";
+		SOUND_ATTACKHIT2 = "zombie/claw_strike2.wav";
+		SOUND_ATTACKHIT3 = "zombie/claw_strike3.wav";
+		SOUND_IDLE1 = "agrunt/ag_idle2.wav";
+		SOUND_IDLE2 = "agrunt/ag_alert3.wav";
+		SOUND_IDLE3 = "agrunt/ag_idle5.wav";
+		SOUND_STRUCK1 = "debris/flesh2.wav";
+		SOUND_STRUCK2 = "debris/flesh5.wav";
+		SOUND_STRUCK3 = "debris/flesh7.wav";
+		SOUND_PAIN1 = "agrunt/ag_pain2.wav";
+		SOUND_PAIN2 = "agrunt/ag_pain3.wav";
+		SOUND_PAIN3 = "agrunt/ag_pain5.wav";
+		SOUND_ALERT = "agrunt/ag_alert2.wav";
 		I_AM_TURNABLE = 1;
 	}
 
@@ -176,7 +214,7 @@ class DwarfZombieBloat : CGameScript
 	{
 		if ((AM_EXPLODING)) return;
 		if (!(IsEntityAlive(GetOwner()))) return;
-		string L_GAME_TIME = GetGameTime();
+		float L_GAME_TIME = GetGameTime();
 		if (L_GAME_TIME > NEXT_LIGHT)
 		{
 			ClientEvent("new", "all", "monsters/dwarf_zombie_bloat_light_cl", GetEntityIndex(GetOwner()), Vector3(0, 255, 0), LIGHT_SIZE, 15.0);
@@ -190,7 +228,7 @@ class DwarfZombieBloat : CGameScript
 		{
 			NEXT_IDLE_SOUND = L_GAME_TIME;
 			NEXT_IDLE_SOUND += Random(5.0, 15.0);
-			string RND_SOUND = RandomInt(1, 3);
+			int RND_SOUND = RandomInt(1, 3);
 			if (RND_SOUND == 1)
 			{
 				EmitSound(GetOwner(), 0, SOUND_IDLE1, 10);
@@ -412,11 +450,11 @@ class DwarfZombieBloat : CGameScript
 	{
 		if ((param3).findFirst("effect") >= 0)
 		{
-			string L_DO_PAIN = RandomInt(1, 3);
+			int L_DO_PAIN = RandomInt(1, 3);
 		}
 		if (L_DO_PAIN == 1)
 		{
-			string L_RND_SND = Random(1, 3);
+			float L_RND_SND = Random(1, 3);
 			if (L_RND_SND == 1)
 			{
 				EmitSound(GetOwner(), 0, SOUND_PAIN1, 10);

@@ -8,12 +8,17 @@ namespace MS
 
 class ItemRingMana : CGameScript
 {
+	string ANIM_PREFIX;
+	int MODEL_BODY_OFS;
+	string MODEL_HANDS;
+	string MODEL_WORLD;
+
 	ItemRingMana()
 	{
-		const string MODEL_WORLD = "misc/p_misc.mdl";
-		const string MODEL_HANDS = "misc/p_misc.mdl";
-		const int MODEL_BODY_OFS = 28;
-		const string ANIM_PREFIX = "ring";
+		MODEL_WORLD = "misc/p_misc.mdl";
+		MODEL_HANDS = "misc/p_misc.mdl";
+		MODEL_BODY_OFS = 28;
+		ANIM_PREFIX = "ring";
 	}
 
 	void miscitem_spawn()

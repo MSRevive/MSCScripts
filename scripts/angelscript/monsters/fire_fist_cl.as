@@ -7,14 +7,17 @@ class FireFistCl : CGameScript
 {
 	string BONE_IDX;
 	int CUR_FRAME;
+	string GLOW_COLOR;
+	int GLOW_RAD;
 	string SKEL_ID;
 	string SKEL_LIGHT_ID;
+	string SPRITE_FIRE;
 
 	FireFistCl()
 	{
-		const string SPRITE_FIRE = "fire1_fixed.spr";
-		const int GLOW_RAD = 128;
-		const Vector3 GLOW_COLOR = Vector3(255, 255, 128);
+		SPRITE_FIRE = "fire1_fixed.spr";
+		GLOW_RAD = 128;
+		GLOW_COLOR = Vector3(255, 255, 128);
 	}
 
 	void client_activate()

@@ -5,9 +5,11 @@ namespace MS
 
 class BaseXmass : CGameScript
 {
+	string ANIM_XMASS_WAVE;
+
 	BaseXmass()
 	{
-		const string ANIM_XMASS_WAVE = "wave";
+		ANIM_XMASS_WAVE = "wave";
 	}
 
 	void OnSpawn() override
@@ -26,7 +28,7 @@ class BaseXmass : CGameScript
 	{
 		if (!(G_CHRISTMAS_MODE)) return;
 		PlayAnim("critical", ANIM_XMASS_WAVE);
-		SayText("A happy Hogswatch to you too!");
+		SayText(A + " happy Hogswatch to you too!");
 		if ((RandomInt(0, 1)))
 		{
 			// TODO: playmp3 all system xmass_annoy.mp3

@@ -11,7 +11,7 @@ class OrcforCaves : CGameScript
 
 	void chest_additems()
 	{
-		add_gold(/* TODO: $math(multiply) */ 100);
+		add_gold((100 * G_GAVE_ARTI1));
 		add_epic_item();
 	}
 
@@ -21,7 +21,7 @@ class OrcforCaves : CGameScript
 		SET_TRAP = 1;
 		string MSG_TITLE = GetEntityName(param1);
 		MSG_TITLE += " has triggered a trap!";
-		SendInfoMsg("all", "MSG_TITLE Oh noes!");
+		SendInfoMsg("all", MSG_TITLE + " Oh noes!");
 		UseTrigger("spawn_cave_trap");
 	}
 

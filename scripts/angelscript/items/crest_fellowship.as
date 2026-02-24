@@ -7,10 +7,13 @@ namespace MS
 
 class CrestFellowship : CGameScript
 {
+	int MODEL_CREST_OFS;
+	string MODEL_WEAR;
+
 	CrestFellowship()
 	{
-		const int MODEL_CREST_OFS = 27;
-		const string MODEL_WEAR = "armor/p_gowns.mdl";
+		MODEL_CREST_OFS = 27;
+		MODEL_WEAR = "armor/p_gowns.mdl";
 	}
 
 	void crest_spawn()

@@ -5,11 +5,12 @@ namespace MS
 
 class SfxGlassmaker : CGameScript
 {
+	int DO_NADDA;
 	int DO_NADDA2;
 
 	SfxGlassmaker()
 	{
-		const int DO_NADDA = 0;
+		DO_NADDA = 0;
 	}
 
 	void game_dynamically_created()

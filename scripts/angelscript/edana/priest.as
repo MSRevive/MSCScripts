@@ -93,7 +93,7 @@ class Priest : CGameScript
 
 	void say_rumour5()
 	{
-		SayText("I suppose you can keep the armor to yourself when you find it , seeing we don t have any temple fighters left.");
+		SayText(I + " suppose you can keep the armor to yourself when you find it , seeing we don t have any temple fighters left.");
 	}
 
 }

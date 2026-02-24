@@ -9,6 +9,10 @@ class ScriptAssistant : CGameScript
 {
 	string ADDED_SUMMON;
 	string CHAT_CURRENT_SPEAKER;
+	int CHAT_NO_CLOSE_MOUTH;
+	int CHAT_USE_CONV_ANIMS;
+	string CONTROLLER_HEAD_LR;
+	string CONTROLLER_HEAD_UD;
 	string CVAR_SCRIPTS;
 	string DEV_SCRIPTS;
 	int DID_INTRO;
@@ -19,15 +23,16 @@ class ScriptAssistant : CGameScript
 	string PLAYER_LIST;
 	string SCRIPT_POS;
 	int SUMMON_ANG;
+	int SUMMON_DIST;
 	int SUMMON_SCRIPT;
 	int WATER_OPEN;
 
 	ScriptAssistant()
 	{
-		const string CONTROLLER_HEAD_LR = "controller0";
-		const string CONTROLLER_HEAD_UD = "controller1";
-		const int CHAT_USE_CONV_ANIMS = 0;
-		const int CHAT_NO_CLOSE_MOUTH = 1;
+		CONTROLLER_HEAD_LR = "controller0";
+		CONTROLLER_HEAD_UD = "controller1";
+		CHAT_USE_CONV_ANIMS = 0;
+		CHAT_NO_CLOSE_MOUTH = 1;
 		array<string> PROBLEM_LIST;
 		array<string> ARRAY_SUMMONS;
 		SUMMON_SCRIPT = 0;
@@ -35,7 +40,7 @@ class ScriptAssistant : CGameScript
 		MAP_SHIELD_ON = 1;
 		WATER_OPEN = 0;
 		SUMMON_ANG = 90;
-		const int SUMMON_DIST = 256;
+		SUMMON_DIST = 256;
 		MENU_MODE = 0;
 	}
 
@@ -105,14 +110,14 @@ class ScriptAssistant : CGameScript
 
 	void do_intro()
 	{
-		if (/* TODO: $get_array_amt */ $get_array_amt(PROBLEM_LIST) > 0)
+		if (int(PROBLEM_LIST.length()) > 0)
 		{
 			chat_now("Master! Something is wrong!", 2.0, "none", "none", "add_to_que");
-			for (int i = 0; i < /* TODO: $get_array_amt */ $get_array_amt(PROBLEM_LIST); i++)
+			for (int i = 0; i < int(PROBLEM_LIST.length()); i++)
 			{
 				list_problems();
 			}
-			if (/* TODO: $get_array_amt */ $get_array_amt(PROBLEM_LIST) > 1)
+			if (int(PROBLEM_LIST.length()) > 1)
 			{
 				chat_now("I'm afraid this will have to be fixed before we can continue.", 4.0, "none", "none", "add_to_que");
 			}
@@ -129,7 +134,7 @@ class ScriptAssistant : CGameScript
 
 	void list_problems()
 	{
-		string CUR_PROB = /* TODO: $get_array */ $get_array(PROBLEM_LIST, i);
+		string CUR_PROB = PROBLEM_LIST[int(i)];
 		LogDebug("list_problems CUR_PROB");
 		if (i == 1)
 		{
@@ -179,7 +184,7 @@ class ScriptAssistant : CGameScript
 	{
 		if (MENU_MODE == 0)
 		{
-			if (/* TODO: $get_array_amt */ $get_array_amt(PROBLEM_LIST) == 0)
+			if (int(PROBLEM_LIST.length()) == 0)
 			{
 				if ((DEV_SCRIPTS).length() > 12)
 				{
@@ -221,7 +226,7 @@ class ScriptAssistant : CGameScript
 			}
 			string reg.mitem.type = "callback";
 			string reg.mitem.callback = "menu_toggle_shield";
-			if (/* TODO: $get_array_amt */ $get_array_amt(PROBLEM_LIST) == 0)
+			if (int(PROBLEM_LIST.length()) == 0)
 			{
 				show_help();
 			}
@@ -238,7 +243,7 @@ class ScriptAssistant : CGameScript
 		if (MENU_MODE == "remove_specific")
 		{
 			chat_now("Which of your creations shall I remove?", 4.0, "none", "none", "add_to_que", "clear_que");
-			for (int i = 0; i < /* TODO: $get_array_amt */ $get_array_amt(ARRAY_SUMMONS); i++)
+			for (int i = 0; i < int(ARRAY_SUMMONS.length()); i++)
 			{
 				list_summons_loop();
 			}
@@ -249,7 +254,7 @@ class ScriptAssistant : CGameScript
 	void list_summons_loop()
 	{
 		string CUR_IDX = i;
-		string CUR_SUM = /* TODO: $get_array */ $get_array(ARRAY_SUMMONS, CUR_IDX);
+		string CUR_SUM = ARRAY_SUMMONS[int(CUR_IDX)];
 		if (!(IsEntityAlive(CUR_SUM))) return;
 		string reg.mitem.title = GetEntityName(CUR_SUM);
 		string reg.mitem.type = "callback";
@@ -260,7 +265,7 @@ class ScriptAssistant : CGameScript
 	void menu_remove_by_idx()
 	{
 		PlayAnim("critical", "castspell");
-		string CUR_SUM = /* TODO: $get_array */ $get_array(ARRAY_SUMMONS, param2);
+		string CUR_SUM = ARRAY_SUMMONS[int(param2)];
 		SetMoveDest(GetEntityOrigin(CUR_SUM));
 		string L_CHAT_TEXT = GetEntityProperty(CUR_SUM, "name.full.capital");
 		L_CHAT_TEXT += " has been removed.";
@@ -278,7 +283,7 @@ class ScriptAssistant : CGameScript
 		string reg.mitem.title = "Who are you?";
 		string reg.mitem.type = "callback";
 		string reg.mitem.callback = "menu_whoami";
-		if (/* TODO: $get_array_amt */ $get_array_amt(PROBLEM_LIST) > 0)
+		if (int(PROBLEM_LIST.length()) > 0)
 		{
 			string reg.mitem.title = "What were the [problems] again?";
 			string reg.mitem.type = "callback";
@@ -298,7 +303,7 @@ class ScriptAssistant : CGameScript
 	void menu_list_problems()
 	{
 		chat_clear_que();
-		for (int i = 0; i < /* TODO: $get_array_amt */ $get_array_amt(PROBLEM_LIST); i++)
+		for (int i = 0; i < int(PROBLEM_LIST.length()); i++)
 		{
 			list_problems();
 		}
@@ -311,7 +316,7 @@ class ScriptAssistant : CGameScript
 		chat_now("Scripts you created in the test_scripts/ folder.", 3.0, "none", "none", "add_to_que");
 		chat_now("I can summon any such script here, and offer various tools to help you in their testing.", 5.0, "none", "none", "add_to_que");
 		explain_cvars();
-		if (/* TODO: $get_array_amt */ $get_array_amt(PROBLEM_LIST) > 0)
+		if (int(PROBLEM_LIST.length()) > 0)
 		{
 			chat_now("I could start summoning your creations right now, but alas, there are these [problems]...", 5.0, "none", "none", "add_to_que");
 		}
@@ -323,7 +328,7 @@ class ScriptAssistant : CGameScript
 		chat_now("It is my task to aid in the testing of your creations.", 4.0, "none", "none", "add_to_que");
 		chat_now("I can summon your creations, remove them, and provide aid in a few other methods of testing.", 4.0, "none", "none", "add_to_que");
 		explain_cvars();
-		if (/* TODO: $get_array_amt */ $get_array_amt(PROBLEM_LIST) > 0)
+		if (int(PROBLEM_LIST.length()) > 0)
 		{
 			chat_now("I could start assisiting you right now, but alas, there are these [problems]...", 5.0, "none", "none", "add_to_que");
 		}
@@ -395,10 +400,10 @@ class ScriptAssistant : CGameScript
 			ScheduleDelayedEvent(1.0, "dunk_it");
 		}
 		AddVelocity(m_hLastCreated, /* TODO: $relvel */ $relvel(Vector3(0, 0, 0), Vector3(0, 0, -1000)));
-		if (/* TODO: $get_array_amt */ $get_array_amt(ARRAY_SUMMONS) > 1)
+		if (int(ARRAY_SUMMONS.length()) > 1)
 		{
 			ADDED_SUMMON = 0;
-			for (int i = 0; i < /* TODO: $get_array_amt */ $get_array_amt(ARRAY_SUMMONS); i++)
+			for (int i = 0; i < int(ARRAY_SUMMONS.length()); i++)
 			{
 				add_summon_loop();
 			}
@@ -416,7 +421,7 @@ class ScriptAssistant : CGameScript
 	void add_summon_loop()
 	{
 		if ((ADDED_SUMMON)) return;
-		string CUR_SUM = /* TODO: $get_array */ $get_array(ARRAY_SUMMONS, i);
+		string CUR_SUM = ARRAY_SUMMONS[int(i)];
 		if ((IsEntityAlive(CUR_SUM))) return;
 		ARRAY_SUMMONS[i] = GetEntityIndex(m_hLastCreated);
 		ADDED_SUMMON = 1;
@@ -469,22 +474,22 @@ class ScriptAssistant : CGameScript
 		face_summon();
 		chat_now("All your creations have been removed...", 3.0, "none", "none", "add_to_que");
 		N_SUMMONS = 0;
-		if (/* TODO: $get_array_amt */ $get_array_amt(ARRAY_SUMMONS) > 1)
+		if (int(ARRAY_SUMMONS.length()) > 1)
 		{
-			for (int i = 0; i < /* TODO: $get_array_amt */ $get_array_amt(ARRAY_SUMMONS); i++)
+			for (int i = 0; i < int(ARRAY_SUMMONS.length()); i++)
 			{
 				remove_summons_loop();
 			}
 		}
 		else
 		{
-			if (/* TODO: $get_array */ $get_array(ARRAY_SUMMONS, 0) != 0)
+			if (ARRAY_SUMMONS[int(0)] != 0)
 			{
-				DeleteEntity(/* TODO: $get_array */ $get_array(ARRAY_SUMMONS, 0), true); // fade out
+				DeleteEntity(ARRAY_SUMMONS[int(0)], true); // fade out
 			}
-			if (/* TODO: $get_array */ $get_array(ARRAY_SUMMONS, 1) != 0)
+			if (ARRAY_SUMMONS[int(1)] != 0)
 			{
-				DeleteEntity(/* TODO: $get_array */ $get_array(ARRAY_SUMMONS, 1), true); // fade out
+				DeleteEntity(ARRAY_SUMMONS[int(1)], true); // fade out
 			}
 			ARRAY_SUMMONS[0] = 0;
 			ARRAY_SUMMONS[1] = 0;
@@ -493,7 +498,7 @@ class ScriptAssistant : CGameScript
 
 	void remove_summons_loop()
 	{
-		string CUR_SUM = /* TODO: $get_array */ $get_array(ARRAY_SUMMONS, i);
+		string CUR_SUM = ARRAY_SUMMONS[int(i)];
 		if (!(IsEntityAlive(CUR_SUM))) return;
 		DeleteEntity(CUR_SUM, true); // fade out
 		ARRAY_SUMMONS[i] = 0;

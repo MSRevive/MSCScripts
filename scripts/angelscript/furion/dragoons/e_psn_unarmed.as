@@ -7,10 +7,13 @@ namespace MS
 
 class EPsnUnarmed : CGameScript
 {
+	int ELEMENT;
+	int WEAPON;
+
 	EPsnUnarmed()
 	{
-		const int WEAPON = 2;
-		const int ELEMENT = 1;
+		WEAPON = 2;
+		ELEMENT = 1;
 	}
 
 }

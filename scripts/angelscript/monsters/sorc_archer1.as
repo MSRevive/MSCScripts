@@ -7,25 +7,28 @@ namespace MS
 
 class SorcArcher1 : CGameScript
 {
+	int AM_SORC;
+	string ARROW_TYPE;
 	int DOING_KICK;
-	string DROP_GOLD_AMT;
+	int DROP_GOLD_AMT;
 	string DROP_ITEM1;
 	float DROP_ITEM1_CHANCE;
 	string DROP_ITEM2;
 	float DROP_ITEM2_CHANCE;
+	int FIN_EXP;
 	int KICK_TYPE;
 
 	SorcArcher1()
 	{
-		const string ARROW_TYPE = "proj_arrow_npc";
-		const int FIN_EXP = 120;
+		ARROW_TYPE = "proj_arrow_npc";
+		FIN_EXP = 120;
 		DROP_GOLD_AMT = RandomInt(10, 40);
-		const int AM_SORC = 1;
+		AM_SORC = 1;
 		DROP_ITEM1 = "bows_longbow";
 		DROP_ITEM1_CHANCE = 0.05;
 		DROP_ITEM2 = "proj_arrow_jagged";
 		DROP_ITEM2_CHANCE = 0.1;
-		const int AM_SORC = 1;
+		AM_SORC = 1;
 	}
 
 	void orc_spawn()

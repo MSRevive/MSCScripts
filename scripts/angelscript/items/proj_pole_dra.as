@@ -7,33 +7,53 @@ namespace MS
 
 class ProjPoleDra : CGameScript
 {
+	int ARROW_BODY_OFS;
+	float ARROW_BREAK_CHANCE;
+	int ARROW_EXPIRE_DELAY;
+	int ARROW_SOLIDIFY_ON_WALL;
+	int ARROW_STICK_DURATION;
 	string BURN_TARGS;
 	int DID_FIREBURST;
 	string FIRE_DOT;
 	string GAME_PVP;
+	string ITEM_NAME;
+	int MODEL_BODY_OFS;
+	string MODEL_HANDS;
+	string MODEL_WORLD;
+	string PROJ_ANIM_IDLE;
+	int PROJ_AOE_FALLOFF;
+	int PROJ_AOE_RANGE;
+	int PROJ_COLLIDE;
+	int PROJ_DAMAGE;
+	string PROJ_DAMAGESTAT;
+	string PROJ_DAMAGE_TYPE;
+	int PROJ_MOTIONBLUR;
+	int PROJ_STICK_DURATION;
+	string SOUND_HITWALL1;
+	string SOUND_HITWALL2;
 
 	ProjPoleDra()
 	{
-		const string MODEL_HANDS = "none";
-		const string MODEL_WORLD = "weapons/projectiles.mdl";
-		const int MODEL_BODY_OFS = 66;
-		const int ARROW_BODY_OFS = 66;
-		const int ARROW_STICK_DURATION = 5;
-		const int ARROW_EXPIRE_DELAY = 2;
-		const string SOUND_HITWALL1 = "weapons/xbow_hit1.wav";
-		const string SOUND_HITWALL2 = "weapons/xbow_hit1.wav";
-		const int ARROW_SOLIDIFY_ON_WALL = 0;
-		const float ARROW_BREAK_CHANCE = 1.0;
-		const string ITEM_NAME = "watermana";
-		const string PROJ_DAMAGE_TYPE = "fire";
-		const string PROJ_DAMAGESTAT = "spellcasting.fire";
-		const string PROJ_ANIM_IDLE = "idle_icebolt";
-		const int PROJ_MOTIONBLUR = 1;
-		const int PROJ_DAMAGE = 0;
-		const int PROJ_AOE_RANGE = 0;
-		const int PROJ_AOE_FALLOFF = 0;
-		const int PROJ_STICK_DURATION = 0;
-		const int PROJ_COLLIDE = 1;
+		MODEL_HANDS = "none";
+		MODEL_WORLD = "weapons/projectiles.mdl";
+		MODEL_BODY_OFS = 66;
+		ARROW_BODY_OFS = 66;
+		ARROW_STICK_DURATION = 5;
+		ARROW_EXPIRE_DELAY = 2;
+		SOUND_HITWALL1 = "weapons/xbow_hit1.wav";
+		SOUND_HITWALL2 = "weapons/xbow_hit1.wav";
+		ARROW_SOLIDIFY_ON_WALL = 0;
+		ARROW_BREAK_CHANCE = 1.0;
+		ITEM_NAME = "watermana";
+		PROJ_DAMAGE_TYPE = "fire";
+		PROJ_DAMAGESTAT = "spellcasting.fire";
+		PROJ_ANIM_IDLE = "idle_icebolt";
+		PROJ_MOTIONBLUR = 1;
+		PROJ_DAMAGE = 0;
+		PROJ_AOE_RANGE = 0;
+		PROJ_AOE_FALLOFF = 0;
+		PROJ_STICK_DURATION = 0;
+		PROJ_COLLIDE = 1;
 	}
 
 	void arrow_spawn()

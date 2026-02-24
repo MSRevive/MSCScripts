@@ -22,12 +22,15 @@ class ShockBeam : CGameScript
 	string MY_SCRIPT;
 	string OWNER_ISPLAYER;
 	int PLAYING_DEAD;
+	string SOUND_LIGHTNING;
+	string SOUND_THUNDER;
+	string SOUND_WARNING;
 
 	ShockBeam()
 	{
-		const string SOUND_THUNDER = "weather/Storm_exclamation.wav";
-		const string SOUND_LIGHTNING = "magic/lightning_strike_replica.wav";
-		const string SOUND_WARNING = "magic/eraticlightfail.wav";
+		SOUND_THUNDER = "weather/Storm_exclamation.wav";
+		SOUND_LIGHTNING = "magic/lightning_strike_replica.wav";
+		SOUND_WARNING = "magic/eraticlightfail.wav";
 	}
 
 	void game_dynamically_created()

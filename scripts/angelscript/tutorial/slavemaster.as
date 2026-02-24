@@ -9,10 +9,11 @@ class Slavemaster : CGameScript
 {
 	int ATTACK1_DAMAGE;
 	int NPC_GIVE_EXP;
+	int WEAPON;
 
 	Slavemaster()
 	{
-		const int WEAPON = 3;
+		WEAPON = 3;
 	}
 
 	void swordey()

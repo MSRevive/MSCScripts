@@ -26,7 +26,7 @@ class CatacombsMummy : CGameScript
 		{
 			add_epic_arrows();
 		}
-		add_gold(/* TODO: $math(multiply) */ 100);
+		add_gold((100 * RandomInt(1, 3)));
 	}
 
 }

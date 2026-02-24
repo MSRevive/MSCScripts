@@ -7,9 +7,11 @@ namespace MS
 
 class BanditArcher : CGameScript
 {
+	int WEAPON;
+
 	BanditArcher()
 	{
-		const int WEAPON = 0;
+		WEAPON = 0;
 	}
 
 }

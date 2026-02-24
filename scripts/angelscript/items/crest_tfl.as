@@ -7,10 +7,13 @@ namespace MS
 
 class CrestTfl : CGameScript
 {
+	int MODEL_CREST_OFS;
+	string MODEL_WEAR;
+
 	CrestTfl()
 	{
-		const int MODEL_CREST_OFS = 21;
-		const string MODEL_WEAR = "armor/p_gowns.mdl";
+		MODEL_CREST_OFS = 21;
+		MODEL_WEAR = "armor/p_gowns.mdl";
 	}
 
 	void crest_spawn()

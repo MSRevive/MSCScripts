@@ -7,13 +7,16 @@ namespace MS
 
 class KeyholeCrystal : CGameScript
 {
+	string KEYHOLE_NAME;
+	string KEYHOLE_TITLE;
+	string KEY_NAME;
 	int RETURN_KEY;
 
 	KeyholeCrystal()
 	{
-		const string KEY_NAME = "key_crystal";
-		const string KEYHOLE_NAME = "Crystal Keyhole.";
-		const string KEYHOLE_TITLE = "Use the crystal key.";
+		KEY_NAME = "key_crystal";
+		KEYHOLE_NAME = "Crystal Keyhole.";
+		KEYHOLE_TITLE = "Use the crystal key.";
 		RETURN_KEY = 1;
 	}
 

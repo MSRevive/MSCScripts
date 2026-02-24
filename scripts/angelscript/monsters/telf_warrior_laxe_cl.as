@@ -28,8 +28,8 @@ class TelfWarriorLaxeCl : CGameScript
 		WEAPON_POS = /* TODO: $getcl */ $getcl(MY_OWNER, "attachment0");
 		string BEAM_START = WEAPON_POS;
 		string BEAM_END = BEAM_START;
-		string RND_ANG = Random(0.0, 359.99);
-		string RND_UD = Random(-20.0, 20.0);
+		float RND_ANG = Random(0.0, 359.99);
+		float RND_UD = Random(-20.0, 20.0);
 		BEAM_END += /* TODO: $relpos */ $relpos(Vector3(0, RND_ANG, 0), Vector3(0, 128, RND_UD));
 		ClientEffect("beam_points", BEAM_START, BEAM_END, "lgtning.spr", 0.1, 2, 0.1, 0.3, 0.1, 30, Vector3(2, 1.5, 0.25));
 	}

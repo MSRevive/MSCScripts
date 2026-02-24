@@ -8,33 +8,51 @@ namespace MS
 
 class Storage : CGameScript
 {
+	string ANIM_CHAT;
 	string ANIM_IDLE;
+	string ANIM_NO;
+	string ANIM_STORE;
+	string CHAT_CONV_ANIMS;
+	int CHAT_NEVER_INTERRUPT;
 	int DID_HELLO;
 	string DID_INTRO;
 	int DID_SNIDE;
+	string GALA_CHEST_POS;
 	string PLAYER_SPOTTED;
+	string SAYTEXT_GIVETICKET;
+	string SAYTEXT_HAND_WARN;
+	string SAYTEXT_ITEMS_HANDS;
+	string SAYTEXT_NOITEM;
+	string SAYTEXT_NOSTORABLES;
+	string SAYTEXT_NOTICKET;
+	string SAYTEXT_REDEEMTICKET;
+	string SAYTEXT_REFUND;
+	string SAYTEXT_SELECT_ITEM;
+	string SAYTEXT_SELECT_TICKET;
+	string SAYTEXT_wondrous_NOFUNDS;
+	string SAYTEXT_wondrous_PURCHASED;
 
 	Storage()
 	{
-		const string GALA_CHEST_POS = /* TODO: $relpos */ $relpos(0, 64, 0);
-		const int CHAT_NEVER_INTERRUPT = 1;
-		const string CHAT_CONV_ANIMS = "look_idle;deep_idle;ref_aim_egon;ref_aim_squeek";
-		const string ANIM_CHAT = "look_idle";
-		const string ANIM_NO = "look_idle";
-		const string ANIM_STORE = "ref_shoot_trip";
+		GALA_CHEST_POS = /* TODO: $relpos */ $relpos(0, 64, 0);
+		CHAT_NEVER_INTERRUPT = 1;
+		CHAT_CONV_ANIMS = "look_idle;deep_idle;ref_aim_egon;ref_aim_squeek";
+		ANIM_CHAT = "look_idle";
+		ANIM_NO = "look_idle";
+		ANIM_STORE = "ref_shoot_trip";
 		ANIM_IDLE = "idle";
-		const string SAYTEXT_REFUND = "Very well, I shall refund your fee then.";
-		const string SAYTEXT_SELECT_ITEM = "Which item would you like us to store?";
-		const string SAYTEXT_NOITEM = "I apologize, but I did not receive the item you wished to store.";
-		const string SAYTEXT_NOTICKET = "It seems that I did not receive your ticket.";
-		const string SAYTEXT_NOSTORABLES = "I fear that you have no items which we can store for you.";
-		const string SAYTEXT_GIVETICKET = "Very good then, here is your ticket. Remember, as always, you may redeem such tickets at any Galat outlet.";
-		const string SAYTEXT_SELECT_TICKET = "Very well then, which ticket would do you like to redeem?";
-		const string SAYTEXT_HAND_WARN = "Please, for the love of Felewyn, remember to place the tickets you wish to redeem in your in your hands.";
-		const string SAYTEXT_REDEEMTICKET = "We of Galat appreciate your business.";
-		const string SAYTEXT_ITEMS_HANDS = "Please hold forth any items you wish to store in your hands.";
-		const string SAYTEXT_wondrous_NOFUNDS = "I'm afraid you lack sufficient funds for this service.";
-		const string SAYTEXT_wondrous_PURCHASED = "One scroll it is. Please be careful as to its usage, as we cannot provide refunds should you be foolish enough to summon the chest into a wall.";
+		SAYTEXT_REFUND = "Very well, I shall refund your fee then.";
+		SAYTEXT_SELECT_ITEM = "Which item would you like us to store?";
+		SAYTEXT_NOITEM = "I apologize, but I did not receive the item you wished to store.";
+		SAYTEXT_NOTICKET = "It seems that I did not receive your ticket.";
+		SAYTEXT_NOSTORABLES = "I fear that you have no items which we can store for you.";
+		SAYTEXT_GIVETICKET = "Very good then, here is your ticket. Remember, as always, you may redeem such tickets at any Galat outlet.";
+		SAYTEXT_SELECT_TICKET = "Very well then, which ticket would do you like to redeem?";
+		SAYTEXT_HAND_WARN = "Please, for the love of Felewyn, remember to place the tickets you wish to redeem in your in your hands.";
+		SAYTEXT_REDEEMTICKET = "We of Galat appreciate your business.";
+		SAYTEXT_ITEMS_HANDS = "Please hold forth any items you wish to store in your hands.";
+		SAYTEXT_wondrous_NOFUNDS = "I'm afraid you lack sufficient funds for this service.";
+		SAYTEXT_wondrous_PURCHASED = "One scroll it is. Please be careful as to its usage, as we cannot provide refunds should you be foolish enough to summon the chest into a wall.";
 	}
 
 	void OnSpawn() override

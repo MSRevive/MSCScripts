@@ -14,13 +14,33 @@ class DjinnLightning : CGameScript
 	int BOUNCE_COUNT;
 	int CHAIN_COUNT;
 	int CHAIN_ON;
+	int CHANCE_SHOCK;
 	int CUR_BEAM;
 	int CYCLES_ON;
+	float DMG_CHAIN;
+	string FINGER_ADJ;
+	float FREQ_BIGJUMP;
+	float FREQ_CHAIN;
+	float FREQ_CRAZY;
+	int GOLD_BAGS;
+	int GOLD_BAGS_PPLAYER;
+	int GOLD_MAX_BAGS;
+	int GOLD_PER_BAG;
+	int GOLD_RADIUS;
+	float HEADBUTT_FREQ;
 	int IS_UNHOLY;
 	string NPC_BASE_EXP;
+	float NPC_BOSS_REGEN_RATE;
+	float NPC_BOSS_RESTORATION;
 	int NPC_FORCED_MOVEDEST;
 	string NPC_IS_BOSS;
 	int RUN_STEP;
+	string SOUND_BCHARGE;
+	string SOUND_BFIRE;
+	string SOUND_LOOP;
+	string SOUND_SHOCK1;
+	string SOUND_SHOCK2;
+	string SOUND_SHOCK3;
 	string SWIPE_ATTACK;
 
 	DjinnLightning()
@@ -34,27 +54,27 @@ class DjinnLightning : CGameScript
 		{
 			NPC_BASE_EXP = 1000;
 		}
-		const float NPC_BOSS_REGEN_RATE = 0.05;
-		const float NPC_BOSS_RESTORATION = 0.25;
+		NPC_BOSS_REGEN_RATE = 0.05;
+		NPC_BOSS_RESTORATION = 0.25;
 		IS_UNHOLY = 1;
-		const string FREQ_CRAZY = Random(20, 30);
-		const string FREQ_CHAIN = Random(10, 20);
-		const string FREQ_BIGJUMP = Random(10, 20);
-		const int CHANCE_SHOCK = 30;
-		const string DMG_CHAIN = Random(2, 6);
-		const string FINGER_ADJ = "$relpos($vec(0,MY_YAW,0),$vec(0,30,54))";
-		const string SOUND_BCHARGE = "magic/bolt_start.wav";
-		const string SOUND_LOOP = "magic/bolt_loop.wav";
-		const string SOUND_BFIRE = "magic/bolt_end.wav";
-		const string SOUND_SHOCK1 = "debris/zap8.wav";
-		const string SOUND_SHOCK2 = "debris/zap3.wav";
-		const string SOUND_SHOCK3 = "debris/zap4.wav";
-		const float HEADBUTT_FREQ = 20.0;
-		const int GOLD_BAGS = 1;
-		const int GOLD_BAGS_PPLAYER = 3;
-		const int GOLD_PER_BAG = 25;
-		const int GOLD_RADIUS = 128;
-		const int GOLD_MAX_BAGS = 20;
+		FREQ_CRAZY = Random(20, 30);
+		FREQ_CHAIN = Random(10, 20);
+		FREQ_BIGJUMP = Random(10, 20);
+		CHANCE_SHOCK = 30;
+		DMG_CHAIN = Random(2, 6);
+		FINGER_ADJ = "$relpos($vec(0,MY_YAW,0),$vec(0,30,54))";
+		SOUND_BCHARGE = "magic/bolt_start.wav";
+		SOUND_LOOP = "magic/bolt_loop.wav";
+		SOUND_BFIRE = "magic/bolt_end.wav";
+		SOUND_SHOCK1 = "debris/zap8.wav";
+		SOUND_SHOCK2 = "debris/zap3.wav";
+		SOUND_SHOCK3 = "debris/zap4.wav";
+		HEADBUTT_FREQ = 20.0;
+		GOLD_BAGS = 1;
+		GOLD_BAGS_PPLAYER = 3;
+		GOLD_PER_BAG = 25;
+		GOLD_RADIUS = 128;
+		GOLD_MAX_BAGS = 20;
 	}
 
 	void OnSpawn() override
@@ -144,9 +164,9 @@ class DjinnLightning : CGameScript
 		}
 		if (!(BOUNCE_COUNT < 20)) return;
 		ScheduleDelayedEvent(0.5, "bounce_loop");
-		string TOSS_DIR = RandomInt(-600, 600);
-		string TOSS_HOR = RandomInt(-600, 600);
-		string TOSS_VER = RandomInt(-600, 800);
+		int TOSS_DIR = RandomInt(-600, 600);
+		int TOSS_HOR = RandomInt(-600, 600);
+		int TOSS_VER = RandomInt(-600, 800);
 		SetVelocity(GetOwner(), /* TODO: $relvel */ $relvel(TOSS_DIR, TOSS_HOR, TOSS_VER));
 	}
 
@@ -262,8 +282,8 @@ class DjinnLightning : CGameScript
 		SetMoveDest(m_hAttackTarget);
 		PlayAnim("critical", ANIM_LEAP);
 		EmitSound(GetOwner(), 0, SOUND_LEAP, 10);
-		string JUMP_HEIGHT = RandomInt(550, 650);
-		string JUMP_DIST = RandomInt(800, 900);
+		int JUMP_HEIGHT = RandomInt(550, 650);
+		int JUMP_DIST = RandomInt(800, 900);
 		ScheduleDelayedEvent(0.1, "big_jump_boost");
 	}
 

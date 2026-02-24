@@ -7,10 +7,13 @@ namespace MS
 
 class ItemFstatue : CGameScript
 {
+	string MODEL_HANDS;
+	string MODEL_WORLD;
+
 	ItemFstatue()
 	{
-		const string MODEL_WORLD = "misc/p_misc.mdl";
-		const string MODEL_HANDS = "misc/p_misc.mdl";
+		MODEL_WORLD = "misc/p_misc.mdl";
+		MODEL_HANDS = "misc/p_misc.mdl";
 	}
 
 	void miscitem_spawn()

@@ -9,7 +9,13 @@ namespace MS
 class Sylphiel : CGameScript
 {
 	int ALL_QUESTS_DONE;
+	string ANIM_BLUSH;
+	string ANIM_COOK;
 	string ANIM_IDLE;
+	string ANIM_RAGE;
+	string ANIM_RAGE_WALK;
+	string ANIM_RANT;
+	string ANIM_VICTORY;
 	string ANIM_WALK;
 	string CHAT_CURRENT_SPEAKER;
 	int CHAT_TEMP_NO_AUTO_FACE;
@@ -29,12 +35,23 @@ class Sylphiel : CGameScript
 	int DO_THANK;
 	string LAST_GAVE_SOUP;
 	string LOCKED_PLAYER;
+	int MAX_APPLE;
+	int MAX_LADEL;
+	int MAX_MEAD;
+	int MAX_PEPPER;
+	int MAX_SALT;
 	int MENU_ENABLE_HELP;
 	string MY_ID;
 	string NEXT_ATTACK;
 	string NEXT_PACE;
 	string NPCATK_TARGET;
 	int NPC_NO_PLAYER_DMG;
+	string POS_SECOND_QUEST;
+	string QCODE_APPLE;
+	string QCODE_LADEL;
+	string QCODE_MEAD;
+	string QCODE_PEPPER;
+	string QCODE_SALT;
 	int QUEST_COMPLETE;
 	int QUEST_ENABLED;
 	string QUEST_PLAYER;
@@ -49,33 +66,33 @@ class Sylphiel : CGameScript
 	Sylphiel()
 	{
 		NPC_NO_PLAYER_DMG = 1;
-		const string ANIM_BLUSH = "anim_blush";
-		const string ANIM_RANT = "anim_rant";
+		ANIM_BLUSH = "anim_blush";
+		ANIM_RANT = "anim_rant";
 		QUEST_SOUP_COMPLETE = 0;
 		COUNT_APPLE = 0;
-		const int MAX_APPLE = 5;
+		MAX_APPLE = 5;
 		COUNT_SALT = 0;
-		const int MAX_SALT = 1;
+		MAX_SALT = 1;
 		COUNT_PEPPER = 0;
-		const int MAX_PEPPER = 1;
+		MAX_PEPPER = 1;
 		COUNT_MEAD = 0;
-		const int MAX_MEAD = 5;
+		MAX_MEAD = 5;
 		COUNT_LADEL = 0;
-		const int MAX_LADEL = 1;
-		const string QCODE_APPLE = "ap";
-		const string QCODE_SALT = "bs";
-		const string QCODE_PEPPER = "bp";
-		const string QCODE_MEAD = "km";
-		const string QCODE_LADEL = "la";
-		const string ANIM_BLUSH = "anim_blush";
-		const string ANIM_RAGE = "anim_rage";
-		const string ANIM_RAGE_WALK = "anim_rage_walk";
-		const string ANIM_VICTORY = "wave";
-		const string ANIM_COOK = "keypad";
+		MAX_LADEL = 1;
+		QCODE_APPLE = "ap";
+		QCODE_SALT = "bs";
+		QCODE_PEPPER = "bp";
+		QCODE_MEAD = "km";
+		QCODE_LADEL = "la";
+		ANIM_BLUSH = "anim_blush";
+		ANIM_RAGE = "anim_rage";
+		ANIM_RAGE_WALK = "anim_rage_walk";
+		ANIM_VICTORY = "wave";
+		ANIM_COOK = "keypad";
 		ANIM_WALK = "walk";
 		ANIM_IDLE = "idle1";
 		SOUP_LIST = "";
-		const Vector3 POS_SECOND_QUEST = Vector3(-888, -536, -544);
+		POS_SECOND_QUEST = Vector3(-888, -536, -544);
 	}
 
 	void OnRepeatTimer()
@@ -557,7 +574,7 @@ class Sylphiel : CGameScript
 		SetMoveDest(COOKING_POT_ID);
 		string POT_ORG = GetEntityOrigin(COOKING_POT_ID);
 		string MY_ORG = GetEntityOrigin(GetOwner());
-		string POT_DIST = Distance2D(MY_ORG, POT_ORG);
+		float POT_DIST = Distance2D(MY_ORG, POT_ORG);
 		LogDebug("do_cook_loop POT_DIST");
 		if (POT_DIST > 32)
 		{

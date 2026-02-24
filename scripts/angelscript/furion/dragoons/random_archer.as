@@ -7,9 +7,11 @@ namespace MS
 
 class RandomArcher : CGameScript
 {
+	int WEAPON;
+
 	RandomArcher()
 	{
-		const int WEAPON = 0;
+		WEAPON = 0;
 	}
 
 }

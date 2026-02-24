@@ -10,14 +10,21 @@ namespace MS
 class BatLarge2 : CGameScript
 {
 	string ANIM_ATTACK;
+	string ANIM_DEAD_GROUND;
 	string ANIM_DEATH;
+	string ANIM_HOVER;
 	string ANIM_IDLE;
+	string ANIM_IDLE_HANG;
 	string ANIM_RUN;
 	string ANIM_WALK;
+	int AS_CUSTOM_UNSTUCK;
 	int ATTACK_HITRANGE;
 	int ATTACK_MOVERANGE;
 	int ATTACK_RANGE;
+	int BFLY_NO_FAKE_DEATH;
 	int DID_ALERT;
+	int DMG_BITE;
+	int HORROR_BOOST_SPEED;
 	int IS_ACTIVE;
 	string MONSTER_WIDTH;
 	string NEXT_HORROR_BOOST;
@@ -28,38 +35,50 @@ class BatLarge2 : CGameScript
 	string NPC_ORG_HEIGHT;
 	string NPC_ORG_WIDTH;
 	int NPC_USES_HANDLE_EVENTS;
+	string SOUND_ALERT;
+	string SOUND_ATTACK1;
+	string SOUND_ATTACK2;
+	string SOUND_ATTACK3;
+	string SOUND_BOOST1;
+	string SOUND_BOOST2;
+	string SOUND_DEATH;
+	string SOUND_IDLE;
+	string SOUND_PAIN;
+	string SOUND_STRUCK1;
+	string SOUND_STRUCK2;
+	string SOUND_STRUCK3;
 
 	BatLarge2()
 	{
-		const int BFLY_NO_FAKE_DEATH = 1;
-		const int AS_CUSTOM_UNSTUCK = 1;
+		BFLY_NO_FAKE_DEATH = 1;
+		AS_CUSTOM_UNSTUCK = 1;
 		NPC_HACKED_MOVE_SPEED = 100;
 		ANIM_IDLE = "IdleFlyNormal";
 		ANIM_WALK = "IdleFlyFace";
 		ANIM_RUN = "IdleFlyNormal";
 		ANIM_ATTACK = "Bite";
 		ANIM_DEATH = "Deadground";
-		const string ANIM_DEAD_GROUND = "Deadground";
-		const string ANIM_HOVER = "IdleFlyFace";
-		const string ANIM_IDLE_HANG = "IdleHang";
+		ANIM_DEAD_GROUND = "Deadground";
+		ANIM_HOVER = "IdleFlyFace";
+		ANIM_IDLE_HANG = "IdleHang";
 		ATTACK_MOVERANGE = 15;
 		ATTACK_RANGE = 80;
 		ATTACK_HITRANGE = 150;
 		NPC_GIVE_EXP = 150;
-		const int DMG_BITE = 100;
-		const string SOUND_STRUCK1 = "weapons/cbar_hitbod1.wav";
-		const string SOUND_STRUCK2 = "weapons/cbar_hitbod2.wav";
-		const string SOUND_STRUCK3 = "weapons/cbar_hitbod3.wav";
-		const string SOUND_PAIN = "monsters/bat/c_bat_hit1.wav";
-		const string SOUND_IDLE = "monsters/bat/c_bat_hit2.wav";
-		const string SOUND_DEATH = "monsters/bat/c_bat_yes.wav";
-		const string SOUND_BOOST1 = "monsters/bat/c_bat_bat1.wav";
-		const string SOUND_BOOST2 = "monsters/bat/c_bat_bat2.wav";
-		const string SOUND_ATTACK1 = "monsters/bat/c_bat_atk1.wav";
-		const string SOUND_ATTACK2 = "monsters/bat/c_bat_atk2.wav";
-		const string SOUND_ATTACK3 = "monsters/bat/c_bat_atk3.wav";
-		const string SOUND_ALERT = "monsters/bat/death.wav";
-		const int HORROR_BOOST_SPEED = 300;
+		DMG_BITE = 100;
+		SOUND_STRUCK1 = "weapons/cbar_hitbod1.wav";
+		SOUND_STRUCK2 = "weapons/cbar_hitbod2.wav";
+		SOUND_STRUCK3 = "weapons/cbar_hitbod3.wav";
+		SOUND_PAIN = "monsters/bat/c_bat_hit1.wav";
+		SOUND_IDLE = "monsters/bat/c_bat_hit2.wav";
+		SOUND_DEATH = "monsters/bat/c_bat_yes.wav";
+		SOUND_BOOST1 = "monsters/bat/c_bat_bat1.wav";
+		SOUND_BOOST2 = "monsters/bat/c_bat_bat2.wav";
+		SOUND_ATTACK1 = "monsters/bat/c_bat_atk1.wav";
+		SOUND_ATTACK2 = "monsters/bat/c_bat_atk2.wav";
+		SOUND_ATTACK3 = "monsters/bat/c_bat_atk3.wav";
+		SOUND_ALERT = "monsters/bat/death.wav";
+		HORROR_BOOST_SPEED = 300;
 	}
 
 	void OnSpawn() override
@@ -190,8 +209,8 @@ class BatLarge2 : CGameScript
 		if (!(GetGameTime() > NEXT_RETREAT)) return;
 		NEXT_RETREAT = GetGameTime();
 		NEXT_RETREAT += Random(10.0, 20.0);
-		string RND_LR = Random(-300.0, 300.0);
-		string RND_FB = Random(-1500.0, 500.0);
+		float RND_LR = Random(-300.0, 300.0);
+		float RND_FB = Random(-1500.0, 500.0);
 		AddVelocity(GetOwner(), /* TODO: $relvel */ $relvel(RND_LR, RND_FB, 0));
 	}
 

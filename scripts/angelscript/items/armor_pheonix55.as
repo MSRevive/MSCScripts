@@ -8,23 +8,36 @@ namespace MS
 
 class ArmorPheonix55 : CGameScript
 {
+	int ARMOR_BODY;
+	int ARMOR_GROUP;
+	string ARMOR_MODEL;
+	int ARMOR_STR_REQ;
+	string ARMOR_TEXT;
+	float BARMOR_PROTECTION;
+	string BARMOR_PROTECTION_AREA;
+	string BARMOR_REPLACE_BODYPARTS;
+	string BARMOR_TYPE;
+	int ELM_AMT;
+	string ELM_NAME;
+	string ELM_TYPE;
+	int NEW_ARMOR_OFS;
 	int PHOENIX_ACTIVE;
 
 	ArmorPheonix55()
 	{
-		const string ARMOR_MODEL = "armor/p_armorvest2.mdl";
-		const int ARMOR_GROUP = 4;
-		const int ARMOR_BODY = 1;
-		const string ARMOR_TEXT = "You assemble the phoenix armor.";
-		const string BARMOR_TYPE = "platemail";
-		const float BARMOR_PROTECTION = 0.55;
-		const string BARMOR_PROTECTION_AREA = "chest;arms;legs";
-		const string BARMOR_REPLACE_BODYPARTS = BARMOR_PROTECTION_AREA;
-		const string ELM_NAME = "phonx";
-		const string ELM_TYPE = "fire";
-		const int ELM_AMT = 75;
-		const int ARMOR_STR_REQ = 40;
-		const int NEW_ARMOR_OFS = 11;
+		ARMOR_MODEL = "armor/p_armorvest2.mdl";
+		ARMOR_GROUP = 4;
+		ARMOR_BODY = 1;
+		ARMOR_TEXT = "You assemble the phoenix armor.";
+		BARMOR_TYPE = "platemail";
+		BARMOR_PROTECTION = 0.55;
+		BARMOR_PROTECTION_AREA = "chest;arms;legs";
+		BARMOR_REPLACE_BODYPARTS = BARMOR_PROTECTION_AREA;
+		ELM_NAME = "phonx";
+		ELM_TYPE = "fire";
+		ELM_AMT = 75;
+		ARMOR_STR_REQ = 40;
+		NEW_ARMOR_OFS = 11;
 	}
 
 	void OnSpawn() override
@@ -73,9 +86,9 @@ class ArmorPheonix55 : CGameScript
 		{
 			GiveMP(MP_TO_GIVE);
 			CallExternal(GetOwner(), "mana_drain");
-			string MP_TO_GIVE = int(MP_TO_GIVE);
+			int MP_TO_GIVE = int(MP_TO_GIVE);
 			MP_TO_GIVE += "mp";
-			SendColoredMessage(GetOwner(), "The phoenix armor regenerates your mana MP_TO_GIVE");
+			SendColoredMessage(GetOwner(), "The phoenix armor regenerates your mana " + MP_TO_GIVE);
 			Effect("glow", GetOwner(), Vector3(0, 255, 0), 64, 1, 1);
 			EmitSound(GetOwner(), 0, "player/heartbeat_noloop.wav", 10);
 		}

@@ -7,11 +7,15 @@ namespace MS
 
 class MapStartup : CGameScript
 {
+	int MAP_ALLOWNIGHT;
+	string MAP_NAME;
+	string MAP_WEATHER;
+
 	MapStartup()
 	{
-		const string MAP_NAME = "demontemple";
-		const string MAP_WEATHER = "clear;clear;clear;clear;clear;clear";
-		const int MAP_ALLOWNIGHT = 0;
+		MAP_NAME = "demontemple";
+		MAP_WEATHER = "clear;clear;clear;clear;clear;clear";
+		MAP_ALLOWNIGHT = 0;
 		SetGlobalVar("G_MAP_NAME", "The Demonic Temple by AmIAnnoyingNow");
 		SetGlobalVar("G_MAP_DESC", "You seem to have stumbled on a stronghold of the Kharaztorant cult.");
 		SetGlobalVar("G_MAP_DIFF", "Levels 20-25 / 350-600hp");

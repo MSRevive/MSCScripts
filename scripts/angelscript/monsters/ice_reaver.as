@@ -7,6 +7,7 @@ namespace MS
 
 class IceReaver : CGameScript
 {
+	string ANIM_ALERT;
 	string ANIM_ATTACK;
 	string ANIM_DEATH;
 	string ANIM_DEATH1;
@@ -14,59 +15,105 @@ class IceReaver : CGameScript
 	string ANIM_DEATH3;
 	string ANIM_FLINCH;
 	string ANIM_IDLE;
+	string ANIM_PROJECTILE;
 	string ANIM_RUN;
+	string ANIM_SEARCH;
+	string ANIM_SLASH;
+	string ANIM_SMASH;
 	string ANIM_VICTORY;
+	string ANIM_VICTORY1;
+	string ANIM_VICTORY2;
 	string ANIM_WALK;
 	string AS_ATTACKING;
 	int ATTACK_HITRANGE;
 	int ATTACK_MOVERANGE;
 	int ATTACK_RANGE;
+	int BEAM_DAMAGE;
 	float BEAM_FREQ;
 	string BEAM_TARGET;
 	int CAN_FLINCH;
 	int DID_WARCRY;
+	int DOSMASH_CHANCE;
 	int FIRST_ATTACK;
 	int FLINCH_CHANCE;
 	int FLINCH_HEALTH;
 	string HP_STORAGE;
+	string LIGHTNING_SPRITE;
+	int MAX_PROJECTILE_AMMO;
+	string MONSTER_MODEL;
+	int NEAR_DEATH_THRESHOLD;
 	string NEXT_PROJECTILE;
 	string NPC_DAMAGE_TYPE;
 	float NPC_DELAYING_UNSTUCK;
 	int NPC_GIVE_EXP;
 	string PROJECTILE_AMMO;
+	int PROJECTILE_RANGE;
 	string PUSH_VEL;
 	int SEARCH_ANIM_DELAY;
+	int SHOCK_DAMAGE;
+	int SHOCK_DURATION;
+	int SLASH_DAMAGE;
+	float SLASH_HITCHANCE;
+	int SMASH_DAMAGE;
+	float SMASH_HITCHANCE;
+	int SMASH_HITRANGE;
+	float SMASH_STUN_CHANCE;
 	string SOUND_ATTACK;
 	string SOUND_ATTACKHIT;
 	string SOUND_ATTACKMISS;
+	string SOUND_BEAMCHARGE;
+	string SOUND_BEAMFIRE;
+	string SOUND_DEATH;
+	string SOUND_PAIN_NEAR_DEATH;
+	string SOUND_PAIN_STRONG;
+	string SOUND_PAIN_WEAK;
+	string SOUND_RUN1;
+	string SOUND_RUN2;
+	string SOUND_RUN3;
+	string SOUND_SEARCH1;
+	string SOUND_SEARCH2;
+	string SOUND_SEARCH3;
+	string SOUND_SLASHHIT;
+	string SOUND_SLASHMISS;
+	string SOUND_SMASHHIT;
+	string SOUND_SMASHMISS;
+	string SOUND_STRUCK1;
+	string SOUND_STRUCK2;
+	string SOUND_WALK1;
+	string SOUND_WALK2;
+	string SOUND_WALK3;
+	string SOUND_WALK4;
+	string SOUND_WARCRY;
+	int STRONG_THRESHOLD;
 	int STUN_ATTACK;
 	int SUSPEND_AI;
+	int WEAK_THRESHOLD;
 
 	IceReaver()
 	{
-		const string SOUND_WALK1 = "common/npc_step1.wav";
-		const string SOUND_WALK2 = "common/npc_step2.wav";
-		const string SOUND_WALK3 = "common/npc_step3.wav";
-		const string SOUND_WALK4 = "common/npc_step4.wav";
-		const string SOUND_RUN1 = "gonarch/gon_step1.wav";
-		const string SOUND_RUN2 = "gonarch/gon_step2.wav";
-		const string SOUND_RUN3 = "gonarch/gon_step3.wav";
-		const string SOUND_DEATH = "gonarch/gon_die1.wav";
-		const string SOUND_WARCRY = "gonarch/gon_alert1.wav";
-		const string SOUND_STRUCK1 = "gonarch/gon_sack1.wav";
-		const string SOUND_STRUCK2 = "gonarch/gon_sack2.wav";
-		const string SOUND_PAIN_STRONG = "gonarch/gon_pain2.wav";
-		const string SOUND_PAIN_WEAK = "gonarch/gon_pain4.wav";
-		const string SOUND_PAIN_NEAR_DEATH = "gonarch/gon_pain5.wav";
-		const string SOUND_SLASHHIT = "zombie/claw_strike1.wav";
-		const string SOUND_SMASHHIT = "zombie/claw_strike2.wav";
-		const string SOUND_SLASHMISS = "zombie/claw_miss1.wav";
-		const string SOUND_SMASHMISS = "zombie/claw_miss2.wav";
-		const string SOUND_BEAMCHARGE = "debris/beamstart2.wav";
-		const string SOUND_BEAMFIRE = "debris/beamstart9.wav";
-		const string SOUND_SEARCH1 = "gonarch/gon_childdie3.wav";
-		const string SOUND_SEARCH2 = "gonarch/gon_childdie2.wav";
-		const string SOUND_SEARCH3 = "gonarch/gon_childdie1.wav";
+		SOUND_WALK1 = "common/npc_step1.wav";
+		SOUND_WALK2 = "common/npc_step2.wav";
+		SOUND_WALK3 = "common/npc_step3.wav";
+		SOUND_WALK4 = "common/npc_step4.wav";
+		SOUND_RUN1 = "gonarch/gon_step1.wav";
+		SOUND_RUN2 = "gonarch/gon_step2.wav";
+		SOUND_RUN3 = "gonarch/gon_step3.wav";
+		SOUND_DEATH = "gonarch/gon_die1.wav";
+		SOUND_WARCRY = "gonarch/gon_alert1.wav";
+		SOUND_STRUCK1 = "gonarch/gon_sack1.wav";
+		SOUND_STRUCK2 = "gonarch/gon_sack2.wav";
+		SOUND_PAIN_STRONG = "gonarch/gon_pain2.wav";
+		SOUND_PAIN_WEAK = "gonarch/gon_pain4.wav";
+		SOUND_PAIN_NEAR_DEATH = "gonarch/gon_pain5.wav";
+		SOUND_SLASHHIT = "zombie/claw_strike1.wav";
+		SOUND_SMASHHIT = "zombie/claw_strike2.wav";
+		SOUND_SLASHMISS = "zombie/claw_miss1.wav";
+		SOUND_SMASHMISS = "zombie/claw_miss2.wav";
+		SOUND_BEAMCHARGE = "debris/beamstart2.wav";
+		SOUND_BEAMFIRE = "debris/beamstart9.wav";
+		SOUND_SEARCH1 = "gonarch/gon_childdie3.wav";
+		SOUND_SEARCH2 = "gonarch/gon_childdie2.wav";
+		SOUND_SEARCH3 = "gonarch/gon_childdie1.wav";
 		SOUND_ATTACKHIT = "unset";
 		SOUND_ATTACKMISS = "unset";
 		Precache(SOUND_SLASHMISS);
@@ -79,44 +126,44 @@ class IceReaver : CGameScript
 		ATTACK_RANGE = 60;
 		ATTACK_HITRANGE = 160;
 		ATTACK_MOVERANGE = 38;
-		const int STRONG_THRESHOLD = 1500;
-		const int WEAK_THRESHOLD = 1000;
-		const int NEAR_DEATH_THRESHOLD = 500;
-		const int PROJECTILE_RANGE = 256;
-		const int MAX_PROJECTILE_AMMO = 1;
-		const string SLASH_DAMAGE = "$rand(50,100)";
-		const string SMASH_DAMAGE = "$rand(100,250)";
-		const float SLASH_HITCHANCE = 0.9;
-		const float SMASH_HITCHANCE = 1.0;
-		const int SMASH_HITRANGE = 200;
-		const float SMASH_STUN_CHANCE = 0.3;
+		STRONG_THRESHOLD = 1500;
+		WEAK_THRESHOLD = 1000;
+		NEAR_DEATH_THRESHOLD = 500;
+		PROJECTILE_RANGE = 256;
+		MAX_PROJECTILE_AMMO = 1;
+		SLASH_DAMAGE = "$rand(50,100)";
+		SMASH_DAMAGE = "$rand(100,250)";
+		SLASH_HITCHANCE = 0.9;
+		SMASH_HITCHANCE = 1.0;
+		SMASH_HITRANGE = 200;
+		SMASH_STUN_CHANCE = 0.3;
 		BEAM_FREQ = 45.0;
-		const int BEAM_DAMAGE = 150;
-		const int SHOCK_DAMAGE = 20;
-		const int SHOCK_DURATION = 5;
+		BEAM_DAMAGE = 150;
+		SHOCK_DAMAGE = 20;
+		SHOCK_DURATION = 5;
 		ANIM_WALK = "walk";
 		ANIM_RUN = "run";
 		ANIM_IDLE = "idle1";
-		const string ANIM_SEARCH = "idle2";
+		ANIM_SEARCH = "idle2";
 		ANIM_FLINCH = "turnl";
-		const string ANIM_SMASH = "mattack3";
-		const string ANIM_SLASH = "mattack2";
-		const string ANIM_PROJECTILE = "distanceattack";
-		const string ANIM_ALERT = "distanceattack";
+		ANIM_SMASH = "mattack3";
+		ANIM_SLASH = "mattack2";
+		ANIM_PROJECTILE = "distanceattack";
+		ANIM_ALERT = "distanceattack";
 		ANIM_DEATH1 = "dieforward";
 		ANIM_DEATH2 = "diesimple";
 		ANIM_DEATH3 = "diesideways";
-		const string ANIM_VICTORY1 = "victoryeat";
-		const string ANIM_VICTORY2 = "victorysniff";
+		ANIM_VICTORY1 = "victoryeat";
+		ANIM_VICTORY2 = "victorysniff";
 		ANIM_VICTORY = "victoryeat";
 		ANIM_DEATH = "dieforward";
 		ANIM_ATTACK = "mattack3";
 		CAN_FLINCH = 1;
 		FLINCH_HEALTH = 500;
 		FLINCH_CHANCE = 30;
-		const int DOSMASH_CHANCE = 30;
-		const string LIGHTNING_SPRITE = "lgtning.spr";
-		const string MONSTER_MODEL = "monsters/abominable.mdl";
+		DOSMASH_CHANCE = 30;
+		LIGHTNING_SPRITE = "lgtning.spr";
+		MONSTER_MODEL = "monsters/abominable.mdl";
 		Precache(LIGHTNING_SPRITE);
 		Precache(MONSTER_MODEL);
 		Precache(SOUND_DEATH);
@@ -177,7 +224,7 @@ class IceReaver : CGameScript
 		ice_reaver_beam_reload();
 		SetHealth(HP_STORAGE);
 		if ((false)) return;
-		string RAND_VICT = RandomInt(1, 2);
+		int RAND_VICT = RandomInt(1, 2);
 		if (RAND_VICT == 1)
 		{
 			ANIM_VICTORY = ANIM_VICTORY1;
@@ -249,7 +296,7 @@ class IceReaver : CGameScript
 
 	void npc_selectattack()
 	{
-		string RAND_ATK = RandomInt(1, 100);
+		int RAND_ATK = RandomInt(1, 100);
 		if (RAND_ATK <= DOSMASH_CHANCE)
 		{
 			ANIM_ATTACK = ANIM_SMASH;
@@ -273,7 +320,7 @@ class IceReaver : CGameScript
 	void slash_dodamage()
 	{
 		STUN_ATTACK = 0;
-		string RANDOM_PUSH = RandomInt(100, 175);
+		int RANDOM_PUSH = RandomInt(100, 175);
 		PUSH_VEL = /* TODO: $relvel */ $relvel(-100, RANDOM_PUSH, 120);
 		SOUND_ATTACKHIT = SOUND_SLASHHIT;
 		SOUND_ATTACKMISS = SOUND_SLASHMISS;
@@ -286,7 +333,7 @@ class IceReaver : CGameScript
 		STUN_ATTACK = 1;
 		SOUND_ATTACKHIT = SOUND_SMASHHIT;
 		SOUND_ATTACKMISS = SOUND_SMASHMISS;
-		string RANDOM_PUSH = RandomInt(200, 400);
+		int RANDOM_PUSH = RandomInt(200, 400);
 		PUSH_VEL = /* TODO: $relvel */ $relvel(-100, RANDOM_PUSH, 120);
 		string OUT_PAR1 = param1;
 		string OUT_PAR2 = param2;
@@ -382,7 +429,7 @@ class IceReaver : CGameScript
 
 	void OnDeath(CBaseEntity@ attacker) override
 	{
-		string RAND_DEATH = RandomInt(1, 3);
+		int RAND_DEATH = RandomInt(1, 3);
 		if (RAND_DEATH == 1)
 		{
 			ANIM_DEATH = ANIM_DEATH1;
@@ -405,7 +452,7 @@ class IceReaver : CGameScript
 		if (!(m_hAttackTarget == "unset")) return;
 		if (!(NPC_LOST_TARGET == "unset")) return;
 		if ((false)) return;
-		string RAND_VICT = RandomInt(1, 2);
+		int RAND_VICT = RandomInt(1, 2);
 		if (RAND_VICT == 1)
 		{
 			ANIM_VICTORY = ANIM_VICTORY1;

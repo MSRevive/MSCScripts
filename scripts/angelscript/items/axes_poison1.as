@@ -21,7 +21,7 @@ class AxesPoison1 : CGameScript
 	void game_dodamage()
 	{
 		if (!(param1)) return;
-		string L_RAND = RandomInt(0, 1);
+		int L_RAND = RandomInt(0, 1);
 		if (!(L_RAND)) return;
 		ApplyEffect(m_hLastStruckByMe, "effects/dot_poison", RandomInt(6, 12), GetEntityIndex(GetOwner()), Random(3.5, 5.5), "axehandling");
 	}

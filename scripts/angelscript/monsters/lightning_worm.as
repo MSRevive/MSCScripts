@@ -11,6 +11,7 @@ class LightningWorm : CGameScript
 	int ACTIVE_HORRORS;
 	string ANIM_ATTACK;
 	string ANIM_DEATH;
+	string ANIM_EGG;
 	string ANIM_IDLE;
 	string ANIM_RUN;
 	string ANIM_WALK;
@@ -18,13 +19,37 @@ class LightningWorm : CGameScript
 	int ATTACK_RANGE;
 	int BEAM_ATTACK;
 	string CENTER_POINT;
+	int DMG_SHOCK;
+	int DOT_SHOCK;
+	float FREQ_EGG;
+	float FREQ_REND;
+	float FREQ_SHOOT;
+	float FREQ_SOUND;
+	int FWD_SPEED;
 	int HORROR_LIMIT;
 	int IS_UNHOLY;
 	int MOVING_CENTER;
+	float NPC_BOSS_REGEN_RATE;
+	float NPC_BOSS_RESTORATION;
 	int NPC_GIVE_EXP;
 	string NPC_IS_BOSS;
 	string NPC_NOCLIP_DEST;
 	string QUARTER_HP;
+	int ROAM_RADIUS;
+	string SOUND_CHARGE1;
+	string SOUND_CHARGE2;
+	string SOUND_CHARGE3;
+	string SOUND_EGG;
+	string SOUND_LOOP1;
+	string SOUND_LOOP2;
+	string SOUND_SHOOT1;
+	string SOUND_SHOOT2;
+	string SOUND_SHOOT3;
+	string SOUND_STRUCK1;
+	string SOUND_STRUCK2;
+	string SOUND_STRUCK3;
+	float VERT_RANGE_FULL;
+	float VERT_RANGE_HALF;
 	string WORM_TARGET;
 
 	LightningWorm()
@@ -33,39 +58,39 @@ class LightningWorm : CGameScript
 		{
 			NPC_IS_BOSS = 1;
 		}
-		const float NPC_BOSS_REGEN_RATE = 0.05;
-		const float NPC_BOSS_RESTORATION = 0.5;
+		NPC_BOSS_REGEN_RATE = 0.05;
+		NPC_BOSS_RESTORATION = 0.5;
 		IS_UNHOLY = 1;
 		ANIM_ATTACK = "treadwater";
-		const string ANIM_EGG = "headshot";
+		ANIM_EGG = "headshot";
 		ANIM_DEATH = "die_simple";
 		ATTACK_MOVERANGE = 1;
 		ANIM_IDLE = "swim";
 		ANIM_RUN = "swim";
 		ANIM_WALK = "swim";
 		NPC_GIVE_EXP = 1500;
-		const string SOUND_LOOP1 = "ambience/alien_creeper.wav";
-		const string SOUND_LOOP2 = "ambience/alien_frantic.wav";
-		const string SOUND_STRUCK1 = "bullchicken/bc_bite1.wav";
-		const string SOUND_STRUCK2 = "bullchicken/bc_bite3.wav";
-		const string SOUND_STRUCK3 = "debris/bustflesh2.wav";
-		const string SOUND_EGG = "tentacle/te_roar1.wav";
-		const string SOUND_CHARGE1 = "houndeye/he_attack1.wav";
-		const string SOUND_CHARGE2 = "houndeye/he_attack2.wav";
-		const string SOUND_CHARGE3 = "houndeye/he_attack3.wav";
-		const string SOUND_SHOOT1 = "houndeye/he_blast1.wav";
-		const string SOUND_SHOOT2 = "houndeye/he_blast2.wav";
-		const string SOUND_SHOOT3 = "houndeye/he_blast3.wav";
-		const string DMG_SHOCK = RandomInt(100, 200);
-		const string DOT_SHOCK = RandomInt(20, 40);
-		const int ROAM_RADIUS = 256;
-		const string VERT_RANGE_FULL = Random(-196, 128);
-		const string VERT_RANGE_HALF = Random(-196, 0);
+		SOUND_LOOP1 = "ambience/alien_creeper.wav";
+		SOUND_LOOP2 = "ambience/alien_frantic.wav";
+		SOUND_STRUCK1 = "bullchicken/bc_bite1.wav";
+		SOUND_STRUCK2 = "bullchicken/bc_bite3.wav";
+		SOUND_STRUCK3 = "debris/bustflesh2.wav";
+		SOUND_EGG = "tentacle/te_roar1.wav";
+		SOUND_CHARGE1 = "houndeye/he_attack1.wav";
+		SOUND_CHARGE2 = "houndeye/he_attack2.wav";
+		SOUND_CHARGE3 = "houndeye/he_attack3.wav";
+		SOUND_SHOOT1 = "houndeye/he_blast1.wav";
+		SOUND_SHOOT2 = "houndeye/he_blast2.wav";
+		SOUND_SHOOT3 = "houndeye/he_blast3.wav";
+		DMG_SHOCK = RandomInt(100, 200);
+		DOT_SHOCK = RandomInt(20, 40);
+		ROAM_RADIUS = 256;
+		VERT_RANGE_FULL = Random(-196, 128);
+		VERT_RANGE_HALF = Random(-196, 0);
 		ATTACK_RANGE = 2048;
-		const string FREQ_SHOOT = Random(5, 10);
-		const string FREQ_EGG = Random(30, 60);
-		const float FREQ_SOUND = 10.0;
-		const float FREQ_REND = 0.5;
+		FREQ_SHOOT = Random(5, 10);
+		FREQ_EGG = Random(30, 60);
+		FREQ_SOUND = 10.0;
+		FREQ_REND = 0.5;
 		Precache("ambience/the_horror1.wav");
 		Precache("ambience/the_horror2.wav");
 		Precache("ambience/the_horror3.wav");
@@ -74,7 +99,7 @@ class LightningWorm : CGameScript
 		Precache("debris/bustflesh1.wav");
 		Precache("weapons/g_bounce1.wav");
 		Precache("player/pl_fallpain1.wav");
-		const int FWD_SPEED = 10;
+		FWD_SPEED = 10;
 	}
 
 	void OnRepeatTimer()
@@ -112,7 +137,7 @@ class LightningWorm : CGameScript
 		// PlayRandomSound from: SOUND_CHARGE1, SOUND_CHARGE2, SOUND_CHARGE3
 		array<string> sounds = {SOUND_CHARGE1, SOUND_CHARGE2, SOUND_CHARGE3};
 		EmitSound(GetOwner(), 0, sounds[RandomInt(0, sounds.length() - 1)], 10);
-		string SHOOT_DELAY = Random(1.5, 2);
+		float SHOOT_DELAY = Random(1.5, 2);
 		PlayAnim("critical", ANIM_ATTACK);
 		Effect("glow", GetOwner(), Vector3(255, 255, 0), 128, 5, 5);
 		SHOOT_DELAY("do_lightning");

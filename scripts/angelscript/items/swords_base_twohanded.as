@@ -7,24 +7,35 @@ namespace MS
 
 class SwordsBaseTwohanded : CGameScript
 {
+	int ANIM_PARRY;
+	int ANIM_UNPARRY;
+	float FREQ_MANUAL_PARRY;
 	int IS_DEPLOYED;
+	int IS_TWO_HANDED_SWORD;
 	string NEXT_MANUAL_PARRY;
+	int NO_IDLE;
+	string PLAYERANIM_AIM;
+	string PLAYERANIM_SWING;
+	string SOUND_HITWALL1;
+	string SOUND_HITWALL2;
+	string SOUND_PARRY;
 	int SWORD_CAN_PARRY;
 	int SWORD_MANUAL_PARRY_ON;
+	float SWORD_MANUAL_PARRY_RATIO;
 
 	SwordsBaseTwohanded()
 	{
-		const int IS_TWO_HANDED_SWORD = 1;
-		const int NO_IDLE = 1;
-		const string PLAYERANIM_AIM = "sword_idle";
-		const string PLAYERANIM_SWING = "sword_swing";
-		const string SOUND_PARRY = "weapons/cbar_hit1.wav";
-		const string SOUND_HITWALL1 = "weapons/cbar_hit1.wav";
-		const string SOUND_HITWALL2 = "weapons/cbar_hit2.wav";
-		const float FREQ_MANUAL_PARRY = 2.0;
-		const int ANIM_PARRY = 4;
-		const int ANIM_UNPARRY = 5;
-		const float SWORD_MANUAL_PARRY_RATIO = 0.5;
+		IS_TWO_HANDED_SWORD = 1;
+		NO_IDLE = 1;
+		PLAYERANIM_AIM = "sword_idle";
+		PLAYERANIM_SWING = "sword_swing";
+		SOUND_PARRY = "weapons/cbar_hit1.wav";
+		SOUND_HITWALL1 = "weapons/cbar_hit1.wav";
+		SOUND_HITWALL2 = "weapons/cbar_hit2.wav";
+		FREQ_MANUAL_PARRY = 2.0;
+		ANIM_PARRY = 4;
+		ANIM_UNPARRY = 5;
+		SWORD_MANUAL_PARRY_RATIO = 0.5;
 	}
 
 	void weapon_spawn()
@@ -91,7 +102,7 @@ class SwordsBaseTwohanded : CGameScript
 			DMG_TAKEN *= SWORD_MANUAL_PARRY_RATIO;
 			DMG_BLOCKED -= DMG_TAKEN;
 			EmitSound(GetOwner(), 2, SOUND_PARRY, 5);
-			SendPlayerMessage("Sword", "blocked DMG_BLOCKED hp");
+			SendPlayerMessage("Sword", "blocked " + DMG_BLOCKED + " hp");
 			SetDamage("dmg");
 			return;
 		}
@@ -108,7 +119,7 @@ class SwordsBaseTwohanded : CGameScript
 		EmitSound(GetOwner(), 0, SOUND_PARRY, 10);
 		if (!(GetEntityRange(m_hLastStruck) < MELEE_RANGE)) return;
 		string RIPOSTE_DAMAGE = GetSkillLevel(GetOwner(), "parry");
-		SendPlayerMessage("You", "ripost� the attack! RIPOSTE_DAMAGE");
+		SendPlayerMessage("You", "ripost� the attack! " + RIPOSTE_DAMAGE);
 		string L_MY_OWNER = GetEntityIndex(GetOwner());
 		XDoDamage(GetEntityIndex(m_hLastStruck), "direct", RIPOSTE_DAMAGE, 1.0, L_MY_OWNER, L_MY_OWNER, MELEE_STAT, MELEE_DMG_TYPE);
 	}

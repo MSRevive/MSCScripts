@@ -52,28 +52,28 @@ class Ferrin : CGameScript
 
 	void say_keep()
 	{
-		SayText("The Keledros Keep , of course. I m the last in a long line of [caretakers] for this bellhouse. We used to serve the Captain Marshall of Keledros.");
+		SayText("The Keledros Keep , of course. " + I + " m the last in a long line of [caretakers] for this bellhouse. We used to serve the Captain Marshall of Keledros.");
 	}
 
 	void say_homage()
 	{
-		SayText("I used to go into the keep every seventh day of the week...to pay my respects.");
+		SayText(I + " used to go into the keep every seventh day of the week...to pay my respects.");
 		ScheduleDelayedEvent(4, "say_homage2");
 	}
 
 	void say_homage2()
 	{
-		SayText("There is a picture of my Great Grandfather Luc where I would place flowers...");
+		SayText("There is a picture of my Great Grandfather Luc where " + I + " would place flowers...");
 	}
 
 	void say_homage3()
 	{
-		SayText("Now the place is so infested with evil I can t even get the [picture] out");
+		SayText("Now the place is so infested with evil " + I + " can t even get the [picture] out");
 	}
 
 	void say_picture()
 	{
-		SayText("Will you go into the keep and retrive my picture for me? I would be extremely grateful to you! Please say you will go [retrieve] it?");
+		SayText("Will you go into the keep and retrive my picture for me? " + I + " would be extremely grateful to you! Please say you will go [retrieve] it?");
 	}
 
 	void say_retrieve()
@@ -87,7 +87,7 @@ class Ferrin : CGameScript
 	void give_picture()
 	{
 		ReceiveOffer("accept");
-		SayText("A picture of my Great Grandfather Luc! Thank you so much adventurer! I regret I have little to offer , but take this!");
+		SayText(A + "picture of my Great Grandfather Luc! Thank you so much adventurer! " + I + "regret " + I + " have little to offer , but take this!");
 		// TODO: offer PARAM1 item_storageroomkey
 	}
 
@@ -95,7 +95,7 @@ class Ferrin : CGameScript
 	{
 		string reg.mitem.title = "Say Hello";
 		string reg.mitem.type = "say";
-		string l.say = RandomInt(2, 4);
+		int l.say = RandomInt(2, 4);
 		if (l.say == 1)
 		{
 			string reg.mitem.data = "Hello";

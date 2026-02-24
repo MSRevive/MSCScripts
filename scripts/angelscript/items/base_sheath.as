@@ -7,13 +7,19 @@ namespace MS
 
 class BaseSheath : CGameScript
 {
+	int IS_CONTAINER;
+	string MODEL_HANDS;
+	string MODEL_VIEW;
+	string MODEL_WEAR;
+	string MODEL_WORLD;
+
 	BaseSheath()
 	{
-		const int IS_CONTAINER = 1;
-		const string MODEL_VIEW = "none";
-		const string MODEL_HANDS = "misc/p_misc.mdl";
-		const string MODEL_WORLD = "misc/p_misc.mdl";
-		const string MODEL_WEAR = "armor/packs/sheathes_wear.mdl";
+		IS_CONTAINER = 1;
+		MODEL_VIEW = "none";
+		MODEL_HANDS = "misc/p_misc.mdl";
+		MODEL_WORLD = "misc/p_misc.mdl";
+		MODEL_WEAR = "armor/packs/sheathes_wear.mdl";
 	}
 
 	void OnSpawn() override

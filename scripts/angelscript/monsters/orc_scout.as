@@ -8,13 +8,18 @@ namespace MS
 
 class OrcScout : CGameScript
 {
+	int AIM_RATIO;
 	string ANIM_ATTACK;
+	int ARROW_DAMAGE_HIGH;
+	int ARROW_DAMAGE_LOW;
+	int ATTACK_CONE_OF_FIRE;
 	int ATTACK_RANGE;
+	int ATTACK_SPEED;
 	float CONTAINER_DROP_CHANCE;
 	string CONTAINER_SCRIPT;
 	int DROPS_CONTAINER;
-	string DROP_GOLD;
-	string DROP_GOLD_AMT;
+	int DROP_GOLD;
+	int DROP_GOLD_AMT;
 	string DROP_ITEM1;
 	float DROP_ITEM1_CHANCE;
 	string DROP_ITEM2;
@@ -34,13 +39,13 @@ class OrcScout : CGameScript
 		DROP_ITEM2_CHANCE = 0.8;
 		ANIM_ATTACK = "shootorcbow";
 		FLINCH_CHANCE = 0.7;
-		const int AIM_RATIO = 30;
-		const int ARROW_DAMAGE_LOW = 1;
-		const int ARROW_DAMAGE_HIGH = 2;
+		AIM_RATIO = 30;
+		ARROW_DAMAGE_LOW = 1;
+		ARROW_DAMAGE_HIGH = 2;
 		MOVE_RANGE = 300;
 		ATTACK_RANGE = 800;
-		const int ATTACK_SPEED = 800;
-		const int ATTACK_CONE_OF_FIRE = 2;
+		ATTACK_SPEED = 800;
+		ATTACK_CONE_OF_FIRE = 2;
 		DROPS_CONTAINER = 1;
 		CONTAINER_DROP_CHANCE = 0.1;
 		CONTAINER_SCRIPT = "chests/quiver_of_bluntwood";

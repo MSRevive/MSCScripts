@@ -7,10 +7,12 @@ namespace MS
 
 class TriggerFire : CGameScript
 {
+	string ELEMENT_TYPE;
+
 	TriggerFire()
 	{
 		SetGlobalVar("FIRE_TRIG", 0);
-		const string ELEMENT_TYPE = "fire";
+		ELEMENT_TYPE = "fire";
 	}
 
 	void trigger_spawn()

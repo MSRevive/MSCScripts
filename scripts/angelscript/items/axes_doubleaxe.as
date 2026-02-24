@@ -7,36 +7,64 @@ namespace MS
 
 class AxesDoubleaxe : CGameScript
 {
+	int ANIM_ATTACK1;
+	int ANIM_ATTACK2;
+	int ANIM_ATTACK3;
+	int ANIM_IDLE1;
+	int ANIM_LIFT1;
+	string ANIM_PREFIX;
+	int ANIM_SHEATH;
+	int BASE_LEVEL_REQ;
+	float MELEE_ACCURACY;
+	float MELEE_ATK_DURATION;
+	int MELEE_DMG;
+	float MELEE_DMG_DELAY;
+	int MELEE_DMG_RANGE;
+	string MELEE_DMG_TYPE;
+	float MELEE_ENERGY;
+	float MELEE_PARRY_CHANCE;
+	int MELEE_RANGE;
+	string MELEE_SOUND;
+	string MELEE_SOUND_DELAY;
+	string MELEE_STAT;
+	string MELEE_VIEWANIM_ATK;
+	int MODEL_BODY_OFS;
+	string MODEL_HANDS;
+	string MODEL_VIEW;
+	int MODEL_VIEW_IDX;
+	string MODEL_WORLD;
+	string SOUND_SWIPE;
+
 	AxesDoubleaxe()
 	{
-		const int BASE_LEVEL_REQ = 12;
-		const int BASE_LEVEL_REQ = 9;
-		const int ANIM_LIFT1 = 0;
-		const int ANIM_IDLE1 = 1;
-		const int ANIM_ATTACK1 = 2;
-		const int ANIM_ATTACK2 = 3;
-		const int ANIM_ATTACK3 = 4;
-		const int ANIM_SHEATH = 5;
-		const string MELEE_VIEWANIM_ATK = ANIM_ATTACK1;
-		const string MODEL_VIEW = "viewmodels/v_1haxes.mdl";
-		const int MODEL_VIEW_IDX = 3;
-		const string MODEL_HANDS = "weapons/p_weapons1.mdl";
-		const string MODEL_WORLD = "weapons/p_weapons1.mdl";
-		const string SOUND_SWIPE = "weapons/swingsmall.wav";
-		const int MODEL_BODY_OFS = 89;
-		const string ANIM_PREFIX = "smallaxe";
-		const int MELEE_RANGE = 35;
-		const float MELEE_DMG_DELAY = 0.6;
-		const float MELEE_ATK_DURATION = 0.9;
-		const float MELEE_ENERGY = 0.4;
-		const int MELEE_DMG = 140;
-		const int MELEE_DMG_RANGE = 75;
-		const string MELEE_DMG_TYPE = "slash";
-		const float MELEE_ACCURACY = 0.8;
-		const string MELEE_STAT = "axehandling";
-		const string MELEE_SOUND = SOUND_SWIPE;
-		const string MELEE_SOUND_DELAY = MELEE_DMG_DELAY;
-		const float MELEE_PARRY_CHANCE = 0.25;
+		BASE_LEVEL_REQ = 12;
+		BASE_LEVEL_REQ = 9;
+		ANIM_LIFT1 = 0;
+		ANIM_IDLE1 = 1;
+		ANIM_ATTACK1 = 2;
+		ANIM_ATTACK2 = 3;
+		ANIM_ATTACK3 = 4;
+		ANIM_SHEATH = 5;
+		MELEE_VIEWANIM_ATK = ANIM_ATTACK1;
+		MODEL_VIEW = "viewmodels/v_1haxes.mdl";
+		MODEL_VIEW_IDX = 3;
+		MODEL_HANDS = "weapons/p_weapons1.mdl";
+		MODEL_WORLD = "weapons/p_weapons1.mdl";
+		SOUND_SWIPE = "weapons/swingsmall.wav";
+		MODEL_BODY_OFS = 89;
+		ANIM_PREFIX = "smallaxe";
+		MELEE_RANGE = 35;
+		MELEE_DMG_DELAY = 0.6;
+		MELEE_ATK_DURATION = 0.9;
+		MELEE_ENERGY = 0.4;
+		MELEE_DMG = 140;
+		MELEE_DMG_RANGE = 75;
+		MELEE_DMG_TYPE = "slash";
+		MELEE_ACCURACY = 0.8;
+		MELEE_STAT = "axehandling";
+		MELEE_SOUND = SOUND_SWIPE;
+		MELEE_SOUND_DELAY = MELEE_DMG_DELAY;
+		MELEE_PARRY_CHANCE = 0.25;
 	}
 
 	void weapon_spawn()

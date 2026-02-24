@@ -7,30 +7,45 @@ namespace MS
 
 class AxesBaseOnehanded : CGameScript
 {
+	int ANIM_ATTACK1;
+	int ANIM_ATTACK2;
+	int ANIM_ATTACK3;
+	int ANIM_IDLE1;
+	int ANIM_IDLE_TOTAL;
+	int ANIM_LIFT1;
+	int ANIM_SHEATH;
+	int ATTACK_ANIMS;
+	string MELEE_VIEWANIM_ATK;
+	string MODEL_HANDS;
+	string MODEL_WORLD;
+	string PLAYERANIM_AIM;
+	string PLAYERANIM_SWING;
+	string SOUND_HITWALL1;
+	string SOUND_HITWALL2;
 	string SWING_ANIM;
 
 	AxesBaseOnehanded()
 	{
-		const int ANIM_LIFT1 = 0;
-		const int ANIM_IDLE1 = 1;
-		const int ANIM_IDLE_TOTAL = 1;
-		const int ANIM_ATTACK1 = 2;
-		const int ANIM_ATTACK2 = 3;
-		const int ANIM_ATTACK3 = 4;
-		const int ANIM_SHEATH = 5;
-		const int ATTACK_ANIMS = 3;
-		const string MELEE_VIEWANIM_ATK = ANIM_ATTACK1;
-		const string MODEL_WORLD = "weapons/p_weapons1.mdl";
-		const string MODEL_HANDS = MODEL_WORLD;
-		const string PLAYERANIM_AIM = "axe_onehand";
-		const string PLAYERANIM_SWING = "axe_onehand_swing";
-		const string SOUND_HITWALL1 = "weapons/axemetal1.wav";
-		const string SOUND_HITWALL2 = "weapons/axemetal2.wav";
+		ANIM_LIFT1 = 0;
+		ANIM_IDLE1 = 1;
+		ANIM_IDLE_TOTAL = 1;
+		ANIM_ATTACK1 = 2;
+		ANIM_ATTACK2 = 3;
+		ANIM_ATTACK3 = 4;
+		ANIM_SHEATH = 5;
+		ATTACK_ANIMS = 3;
+		MELEE_VIEWANIM_ATK = ANIM_ATTACK1;
+		MODEL_WORLD = "weapons/p_weapons1.mdl";
+		MODEL_HANDS = MODEL_WORLD;
+		PLAYERANIM_AIM = "axe_onehand";
+		PLAYERANIM_SWING = "axe_onehand_swing";
+		SOUND_HITWALL1 = "weapons/axemetal1.wav";
+		SOUND_HITWALL2 = "weapons/axemetal2.wav";
 	}
 
 	void melee_start()
 	{
-		string SWING = RandomInt(1, ATTACK_ANIMS);
+		int SWING = RandomInt(1, ATTACK_ANIMS);
 		string SWING_ANIM = ANIM_ATTACK1;
 		if (SWING == 2)
 		{

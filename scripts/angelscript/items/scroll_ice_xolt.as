@@ -7,12 +7,17 @@ namespace MS
 
 class ScrollIceXolt : CGameScript
 {
+	int BASE_REQUIRED_LEVEL;
+	string BASE_REQUIRED_SKILL;
+	string BASE_SPELL_SCRIPT;
+	string BASE_SUMMON_TEXT;
+
 	ScrollIceXolt()
 	{
-		const string BASE_SPELL_SCRIPT = "magic_hand_frost_bolt";
-		const string BASE_SUMMON_TEXT = "You learn to create ice shards.";
-		const string BASE_REQUIRED_SKILL = "skill.spellcasting.ice";
-		const int BASE_REQUIRED_LEVEL = 0;
+		BASE_SPELL_SCRIPT = "magic_hand_frost_bolt";
+		BASE_SUMMON_TEXT = "You learn to create ice shards.";
+		BASE_REQUIRED_SKILL = "skill.spellcasting.ice";
+		BASE_REQUIRED_LEVEL = 0;
 	}
 
 	void OnSpawn() override

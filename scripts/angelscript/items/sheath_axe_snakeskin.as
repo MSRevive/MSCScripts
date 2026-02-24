@@ -7,16 +7,25 @@ namespace MS
 
 class SheathAxeSnakeskin : CGameScript
 {
+	int CONTAINER_CANCLOSE;
+	string CONTAINER_ITEM_ACCEPT;
+	string CONTAINER_ITEM_REJECT;
+	int CONTAINER_LOCK_STRENGTH;
+	int CONTAINER_MAXITEMS;
+	int CONTAINER_SPACE;
+	string CONTAINER_TYPE;
+	int MODEL_BODY_OFS;
+
 	SheathAxeSnakeskin()
 	{
-		const string CONTAINER_TYPE = "sheath";
-		const int CONTAINER_SPACE = 50;
-		const int CONTAINER_MAXITEMS = 6;
-		const int CONTAINER_CANCLOSE = 0;
-		const int CONTAINER_LOCK_STRENGTH = 0;
-		const string CONTAINER_ITEM_ACCEPT = "axes";
-		const string CONTAINER_ITEM_REJECT = "item_tk_";
-		const int MODEL_BODY_OFS = 4;
+		CONTAINER_TYPE = "sheath";
+		CONTAINER_SPACE = 50;
+		CONTAINER_MAXITEMS = 6;
+		CONTAINER_CANCLOSE = 0;
+		CONTAINER_LOCK_STRENGTH = 0;
+		CONTAINER_ITEM_ACCEPT = "axes";
+		CONTAINER_ITEM_REJECT = "item_tk_";
+		MODEL_BODY_OFS = 4;
 	}
 
 	void sheath_spawn()

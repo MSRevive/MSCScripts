@@ -69,7 +69,7 @@ class LightningDisc : CGameScript
 			SEQ_IDX = 0;
 		}
 		string L_ANG = GetEntityAngles(GetOwner());
-		L_ANG += Vector3(/* TODO: $math(multiply) */ L_IDX, 7, 0);
+		L_ANG += Vector3((L_IDX * FX_WOBBLE_MULT), 7, 0);
 		SetAngles("face");
 		FX_WOBBLE_MULT += 0.03;
 		ScheduleDelayedEvent(0.05, "wobble");

@@ -10,45 +10,93 @@ class Bear1 : CGameScript
 	int AM_LEAPING;
 	int AM_STANDING;
 	string ANIM_ATTACK;
+	string ANIM_CLAW_NORM;
+	string ANIM_CLAW_STAND;
 	string ANIM_DEATH;
+	string ANIM_DEATH_NORM;
+	string ANIM_DEATH_STAND;
 	string ANIM_FLINCH;
+	string ANIM_HOP;
 	string ANIM_IDLE;
+	string ANIM_IDLE_NORM;
+	string ANIM_IDLE_STAND;
 	string ANIM_RUN;
+	string ANIM_RUN_BASE;
+	string ANIM_RUN_NORM;
+	string ANIM_STANDDOWN;
+	string ANIM_STANDUP;
 	string ANIM_WALK;
+	string ANIM_WALK_BASE;
+	string ANIM_WALK_NORM;
+	int ATTACK_HITCHANCE;
 	int ATTACK_HITRANGE;
 	int ATTACK_MOVERANGE;
 	int ATTACK_RANGE;
 	int CAN_FLINCH;
 	int DID_STUN;
 	string DMG_BASE;
+	float DMG_CLAW_NORM_ADJ;
+	float DMG_CLAW_STAND_ADJ;
 	int FLINCH_CHANCE;
 	int FLINCH_DELAY;
 	int FLINCH_HEALTH;
+	float FREQ_CHECK_STAND;
+	float FREQ_HOP;
+	float FREQ_STAND;
+	string HOVER_CLOSE;
+	string HOVER_FAR;
 	string HP_BASE;
 	string LAST_TIME_PLR_STRUCK;
 	int LEAP_DELAY;
+	int LEAP_RANGE;
+	int LEAP_RANGE_MAX;
 	string NEXT_STAND_CHECK;
 	int NO_STUCK_CHECKS;
+	int NPC_BASE_EXP;
 	int NPC_FORCED_MOVEDEST;
 	int NPC_MUST_SEE_TARGET;
 	string OWNER_SKILL;
 	string PLR_FRUSTRATED;
+	string SOUND_ATTACK1;
+	string SOUND_ATTACK2;
+	string SOUND_ATTACK3;
+	string SOUND_DEATH;
+	string SOUND_DEATH2;
+	string SOUND_DISAPOINT;
+	string SOUND_GETDOWN;
+	string SOUND_GETUP;
+	string SOUND_GETUP_GROWL;
+	string SOUND_STRUCK1;
+	string SOUND_STRUCK2;
+	string SOUND_STRUCK3;
+	string SOUND_STRUCK4;
+	string SOUND_STRUCK5;
+	string SOUND_SUMMON_ACKNOWLEDGE1;
+	string SOUND_SUMMON_ACKNOWLEDGE2;
+	string SOUND_SUMMON_ACKNOWLEDGE3;
+	string SOUND_UPSNARL;
+	string STAT_DMG_MAX;
+	string STAT_HP_MAX;
+	string SUMMON_CIRCLE_INDEX;
 	string SUMMON_DMG_BASE;
+	string SUMMON_UNIQUE;
+	string SUMMON_UNIQUE_TAG;
+	string SUM_NO_TALK;
 
 	Bear1()
 	{
-		const string ANIM_WALK_BASE = "bear_walk";
-		const string ANIM_RUN_BASE = "bear_run";
+		ANIM_WALK_BASE = "bear_walk";
+		ANIM_RUN_BASE = "bear_run";
 		if ((true))
 		{
-			const int HOVER_FAR = 138;
-			const int HOVER_CLOSE = 138;
-			const int SUMMON_CIRCLE_INDEX = 13;
-			const int STAT_HP_MAX = 12000;
-			const int STAT_DMG_MAX = 400;
-			const int SUMMON_UNIQUE = 1;
-			const string SUMMON_UNIQUE_TAG = "bear1";
-			const int SUM_NO_TALK = 1;
+			HOVER_FAR = 138;
+			HOVER_CLOSE = 138;
+			SUMMON_CIRCLE_INDEX = 13;
+			STAT_HP_MAX = 12000;
+			STAT_DMG_MAX = 400;
+			SUMMON_UNIQUE = 1;
+			SUMMON_UNIQUE_TAG = "bear1";
+			SUM_NO_TALK = 1;
 			PLR_FRUSTRATED = 0;
 		}
 		ANIM_WALK = "bear_walk";
@@ -57,19 +105,19 @@ class Bear1 : CGameScript
 		ANIM_FLINCH = "bear_flinch";
 		ANIM_ATTACK = "bear_claw02";
 		ANIM_DEATH = "bear_die02";
-		const string ANIM_RUN_NORM = "bear_run";
-		const string ANIM_WALK_NORM = "bear_walk";
-		const string ANIM_HOP = "bear_pounce";
-		const string ANIM_IDLE_NORM = "bear_idle01";
-		const string ANIM_IDLE_STAND = "bear_standingidle01";
-		const string ANIM_CLAW_STAND = "bear_claw";
-		const string ANIM_CLAW_NORM = "bear_claw02";
-		const string ANIM_DEATH_STAND = "bear_diestanding";
-		const string ANIM_DEATH_NORM = "bear_die02";
-		const string ANIM_STANDUP = "bear_standup";
-		const string ANIM_STANDDOWN = "bear_standdown";
-		const float DMG_CLAW_NORM_ADJ = 1.1;
-		const float DMG_CLAW_STAND_ADJ = 0.8;
+		ANIM_RUN_NORM = "bear_run";
+		ANIM_WALK_NORM = "bear_walk";
+		ANIM_HOP = "bear_pounce";
+		ANIM_IDLE_NORM = "bear_idle01";
+		ANIM_IDLE_STAND = "bear_standingidle01";
+		ANIM_CLAW_STAND = "bear_claw";
+		ANIM_CLAW_NORM = "bear_claw02";
+		ANIM_DEATH_STAND = "bear_diestanding";
+		ANIM_DEATH_NORM = "bear_die02";
+		ANIM_STANDUP = "bear_standup";
+		ANIM_STANDDOWN = "bear_standdown";
+		DMG_CLAW_NORM_ADJ = 1.1;
+		DMG_CLAW_STAND_ADJ = 0.8;
 		ATTACK_MOVERANGE = 140;
 		ATTACK_RANGE = 150;
 		ATTACK_HITRANGE = 200;
@@ -77,32 +125,32 @@ class Bear1 : CGameScript
 		FLINCH_CHANCE = 25;
 		FLINCH_HEALTH = 500;
 		FLINCH_DELAY = 10;
-		const int NPC_BASE_EXP = 0;
+		NPC_BASE_EXP = 0;
 		NPC_MUST_SEE_TARGET = 0;
-		const float FREQ_HOP = 5.0;
-		const float FREQ_CHECK_STAND = 1.0;
-		const string FREQ_STAND = Random(5, 10);
-		const int LEAP_RANGE = 256;
-		const int LEAP_RANGE_MAX = 512;
-		const int ATTACK_HITCHANCE = 90;
-		const string SOUND_SUMMON_ACKNOWLEDGE1 = "monsters/bear/c_bear_yes.wav";
-		const string SOUND_SUMMON_ACKNOWLEDGE2 = "monsters/bear/c_bear_no.wav";
-		const string SOUND_SUMMON_ACKNOWLEDGE3 = "monsters/bear/c_bear_slct.wav";
-		const string SOUND_DISAPOINT = "monsters/bear/c_bear_no.wav";
-		const string SOUND_DEATH = "monsters/bear/giantbeardeath.wav";
-		const string SOUND_DEATH2 = "monsters/bear/giantbeardeath2.wav";
-		const string SOUND_GETUP_GROWL = "monsters/bear/giantbeardeath2.wav";
-		const string SOUND_GETUP = "monsters/troll/step1.wav";
-		const string SOUND_GETDOWN = "monsters/troll/step2.wav";
-		const string SOUND_UPSNARL = "monsters/bear/giantbearupsnarl.wav";
-		const string SOUND_ATTACK1 = "monsters/bear/cubattack.wav";
-		const string SOUND_ATTACK2 = "zombie/claw_miss2.wav";
-		const string SOUND_ATTACK3 = "none";
-		const string SOUND_STRUCK1 = "weapons/cbar_hitbod1.wav";
-		const string SOUND_STRUCK2 = "weapons/cbar_hitbod2.wav";
-		const string SOUND_STRUCK3 = "weapons/cbar_hitbod3.wav";
-		const string SOUND_STRUCK4 = "monsters/bear/cubpain.wav";
-		const string SOUND_STRUCK5 = "none";
+		FREQ_HOP = 5.0;
+		FREQ_CHECK_STAND = 1.0;
+		FREQ_STAND = Random(5, 10);
+		LEAP_RANGE = 256;
+		LEAP_RANGE_MAX = 512;
+		ATTACK_HITCHANCE = 90;
+		SOUND_SUMMON_ACKNOWLEDGE1 = "monsters/bear/c_bear_yes.wav";
+		SOUND_SUMMON_ACKNOWLEDGE2 = "monsters/bear/c_bear_no.wav";
+		SOUND_SUMMON_ACKNOWLEDGE3 = "monsters/bear/c_bear_slct.wav";
+		SOUND_DISAPOINT = "monsters/bear/c_bear_no.wav";
+		SOUND_DEATH = "monsters/bear/giantbeardeath.wav";
+		SOUND_DEATH2 = "monsters/bear/giantbeardeath2.wav";
+		SOUND_GETUP_GROWL = "monsters/bear/giantbeardeath2.wav";
+		SOUND_GETUP = "monsters/troll/step1.wav";
+		SOUND_GETDOWN = "monsters/troll/step2.wav";
+		SOUND_UPSNARL = "monsters/bear/giantbearupsnarl.wav";
+		SOUND_ATTACK1 = "monsters/bear/cubattack.wav";
+		SOUND_ATTACK2 = "zombie/claw_miss2.wav";
+		SOUND_ATTACK3 = "none";
+		SOUND_STRUCK1 = "weapons/cbar_hitbod1.wav";
+		SOUND_STRUCK2 = "weapons/cbar_hitbod2.wav";
+		SOUND_STRUCK3 = "weapons/cbar_hitbod3.wav";
+		SOUND_STRUCK4 = "monsters/bear/cubpain.wav";
+		SOUND_STRUCK5 = "none";
 		Precache(SOUND_DEATH);
 	}
 
@@ -339,15 +387,15 @@ class Bear1 : CGameScript
 		}
 		if (param1 == "report")
 		{
-			string ME_STRENGTH = int(SUMMON_DMG_BASE);
+			int ME_STRENGTH = int(SUMMON_DMG_BASE);
 			ME_STREGTH += "/strike";
-			string ME_HEALTH = int(GetMonsterHP());
-			string ME_MAX_HEALTH = int(GetMonsterMaxHP());
+			int ME_HEALTH = int(GetMonsterHP());
+			int ME_MAX_HEALTH = int(GetMonsterMaxHP());
 			string HEALTH_STRING = ME_HEALTH;
 			HEALTH_STRING += "/";
 			HEALTH_STRING += ME_MAX_HEALTH;
 			SetSayTextRange(1024);
-			SayText("Health: HEALTH_STRING Attack: ME_STRENGTH");
+			SayText("Health: " + HEALTH_STRING + "Attack: " + ME_STRENGTH);
 		}
 		if ((AM_DISAPOINT))
 		{
@@ -378,7 +426,7 @@ class Bear1 : CGameScript
 			int EXIT_SUB = 1;
 		}
 		if ((EXIT_SUB)) return;
-		string FIVE_SECS_AGO = GetGameTime();
+		float FIVE_SECS_AGO = GetGameTime();
 		FIVE_SECS_AGO -= 10.0;
 		LogDebug("anti-troll FIVE_SECS_AGO vs. LAST_TIME_PLR_STRUCK");
 		if (LAST_TIME_PLR_STRUCK < FIVE_SECS_AGO)
@@ -391,7 +439,7 @@ class Bear1 : CGameScript
 		PLR_FRUSTRATED += 1;
 		LogDebug("anti-troll PLR_FRUSTRATED");
 		if (!(PLR_FRUSTRATED > 4)) return;
-		SendColoredMessage(param1, "You dismiss GetEntityProperty(GetOwner(), "name.full")");
+		SendColoredMessage(param1, "You dismiss " + GetEntityProperty(GetOwner(), "name.full"));
 		killme();
 	}
 

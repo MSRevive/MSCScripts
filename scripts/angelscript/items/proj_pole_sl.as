@@ -7,30 +7,50 @@ namespace MS
 
 class ProjPoleSl : CGameScript
 {
+	int ARROW_BODY_OFS;
+	float ARROW_BREAK_CHANCE;
+	int ARROW_EXPIRE_DELAY;
+	int ARROW_SOLIDIFY_ON_WALL;
+	int ARROW_STICK_DURATION;
+	string ITEM_NAME;
+	int MODEL_BODY_OFS;
+	string MODEL_HANDS;
+	string MODEL_WORLD;
 	string MY_LIGHT_IDX;
+	string PROJ_ANIM_IDLE;
+	int PROJ_AOE_FALLOFF;
+	int PROJ_AOE_RANGE;
+	int PROJ_COLLIDE;
+	int PROJ_DAMAGE;
+	string PROJ_DAMAGESTAT;
+	string PROJ_DAMAGE_TYPE;
+	int PROJ_MOTIONBLUR;
+	int PROJ_STICK_DURATION;
+	string SOUND_HITWALL1;
+	string SOUND_HITWALL2;
 
 	ProjPoleSl()
 	{
-		const string MODEL_HANDS = "none";
-		const string MODEL_WORLD = "weapons/projectiles.mdl";
-		const int MODEL_BODY_OFS = 73;
-		const int ARROW_BODY_OFS = 73;
-		const int ARROW_STICK_DURATION = 0;
-		const int ARROW_EXPIRE_DELAY = 0;
-		const string SOUND_HITWALL1 = "magic/dburst_sdr_blackout.wav";
-		const string SOUND_HITWALL2 = "magic/dburst_sdr_blackout.wav";
-		const int ARROW_SOLIDIFY_ON_WALL = 0;
-		const float ARROW_BREAK_CHANCE = 1.0;
-		const string ITEM_NAME = "watermana";
-		const string PROJ_DAMAGE_TYPE = "dark";
-		const string PROJ_DAMAGESTAT = "spellcasting.affliction";
-		const string PROJ_ANIM_IDLE = "idle_icebolt";
-		const int PROJ_MOTIONBLUR = 0;
-		const int PROJ_DAMAGE = 0;
-		const int PROJ_AOE_RANGE = 0;
-		const int PROJ_AOE_FALLOFF = 0;
-		const int PROJ_STICK_DURATION = 0;
-		const int PROJ_COLLIDE = 1;
+		MODEL_HANDS = "none";
+		MODEL_WORLD = "weapons/projectiles.mdl";
+		MODEL_BODY_OFS = 73;
+		ARROW_BODY_OFS = 73;
+		ARROW_STICK_DURATION = 0;
+		ARROW_EXPIRE_DELAY = 0;
+		SOUND_HITWALL1 = "magic/dburst_sdr_blackout.wav";
+		SOUND_HITWALL2 = "magic/dburst_sdr_blackout.wav";
+		ARROW_SOLIDIFY_ON_WALL = 0;
+		ARROW_BREAK_CHANCE = 1.0;
+		ITEM_NAME = "watermana";
+		PROJ_DAMAGE_TYPE = "dark";
+		PROJ_DAMAGESTAT = "spellcasting.affliction";
+		PROJ_ANIM_IDLE = "idle_icebolt";
+		PROJ_MOTIONBLUR = 0;
+		PROJ_DAMAGE = 0;
+		PROJ_AOE_RANGE = 0;
+		PROJ_AOE_FALLOFF = 0;
+		PROJ_STICK_DURATION = 0;
+		PROJ_COLLIDE = 1;
 	}
 
 	void game_precache()
@@ -61,9 +81,9 @@ class ProjPoleSl : CGameScript
 		string L_MY_ORG = GetEntityOrigin(GetOwner());
 		string L_MY_Z = (L_MY_ORG).z;
 		string L_MY_GROUND = /* TODO: $get_ground_height */ $get_ground_height(L_MY_ORG);
-		if (L_MY_GROUND > /* TODO: $math(subtract) */ L_MY_Z)
+		if (L_MY_GROUND > (L_MY_Z - 128))
 		{
-			if (L_MY_GROUND < /* TODO: $math(add) */ L_MY_Z)
+			if (L_MY_GROUND < (L_MY_Z + 128))
 			{
 			}
 			L_MY_ORG = "z";

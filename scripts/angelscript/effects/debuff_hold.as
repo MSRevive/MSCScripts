@@ -7,6 +7,9 @@ namespace MS
 
 class DebuffHold : CGameScript
 {
+	string EFFECT_FLAGS;
+	string EFFECT_ID;
+	string EFFECT_SCRIPT;
 	int game.effect.anim.framerate;
 	int game.effect.canduck;
 	int game.effect.canjump;
@@ -14,9 +17,9 @@ class DebuffHold : CGameScript
 
 	DebuffHold()
 	{
-		const string EFFECT_ID = "debuff_hold";
-		const string EFFECT_FLAGS = "nostack";
-		const string EFFECT_SCRIPT = currentscript;
+		EFFECT_ID = "debuff_hold";
+		EFFECT_FLAGS = "nostack";
+		EFFECT_SCRIPT = currentscript;
 	}
 
 	void debuff_start()

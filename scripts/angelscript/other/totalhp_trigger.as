@@ -18,7 +18,7 @@ class TotalhpTrigger : CGameScript
 		string HP_PRESENT = "game.players.totalhp";
 		if ((G_DEVELOPER_MODE))
 		{
-			SendInfoMessageToAll("green HP_PRESENT vs HP_MIN - HP_MAX");
+			SendInfoMessageToAll("green " + HP_PRESENT + "vs " + HP_MIN + "- " + HP_MAX);
 		}
 		if (HP_PRESENT >= HP_MIN)
 		{

@@ -7,27 +7,44 @@ namespace MS
 
 class ProjVolcanoSvr : CGameScript
 {
+	string ITEM_NAME;
+	string LIGHT_COLOR;
+	float LIGHT_DURATION;
+	int LIGHT_RADIUS;
+	string MODEL_HANDS;
+	string MODEL_WORLD;
 	string MY_LIGHT_IDX;
+	string PROJ_ANIM_IDLE;
+	int PROJ_AOE_FALLOFF;
+	int PROJ_AOE_RANGE;
+	int PROJ_DAMAGE;
+	string PROJ_DAMAGESTAT;
+	string PROJ_DAMAGE_TYPE;
+	int PROJ_MOTIONBLUR;
+	int PROJ_STICK_DURATION;
+	string SOUND_BURN;
+	string SOUND_HITWALL1;
+	string SOUND_HITWALL2;
 
 	ProjVolcanoSvr()
 	{
-		const string MODEL_HANDS = "none";
-		const string MODEL_WORLD = "weapons/projectiles.mdl";
-		const string SOUND_HITWALL1 = "weapons/bow/arrowhit1.wav";
-		const string SOUND_HITWALL2 = "weapons/bow/arrowhit1.wav";
-		const string SOUND_BURN = "items/torch1.wav";
-		const string ITEM_NAME = "firemana";
-		const string PROJ_ANIM_IDLE = "idle_standard";
-		const int PROJ_DAMAGE = 0;
-		const int PROJ_AOE_FALLOFF = 0;
-		const int PROJ_STICK_DURATION = 0;
-		const string PROJ_DAMAGESTAT = "spellcasting.fire";
-		const string PROJ_DAMAGE_TYPE = "fire";
-		const int PROJ_MOTIONBLUR = 0;
-		const int PROJ_AOE_RANGE = 128;
-		const int LIGHT_RADIUS = 64;
-		const Vector3 LIGHT_COLOR = Vector3(255, 0, 0);
-		const float LIGHT_DURATION = 0.8;
+		MODEL_HANDS = "none";
+		MODEL_WORLD = "weapons/projectiles.mdl";
+		SOUND_HITWALL1 = "weapons/bow/arrowhit1.wav";
+		SOUND_HITWALL2 = "weapons/bow/arrowhit1.wav";
+		SOUND_BURN = "items/torch1.wav";
+		ITEM_NAME = "firemana";
+		PROJ_ANIM_IDLE = "idle_standard";
+		PROJ_DAMAGE = 0;
+		PROJ_AOE_FALLOFF = 0;
+		PROJ_STICK_DURATION = 0;
+		PROJ_DAMAGESTAT = "spellcasting.fire";
+		PROJ_DAMAGE_TYPE = "fire";
+		PROJ_MOTIONBLUR = 0;
+		PROJ_AOE_RANGE = 128;
+		LIGHT_RADIUS = 64;
+		LIGHT_COLOR = Vector3(255, 0, 0);
+		LIGHT_DURATION = 0.8;
 	}
 
 	void projectile_spawn()
@@ -54,7 +71,7 @@ class ProjVolcanoSvr : CGameScript
 		string MY_TARGET = param2;
 		if ((G_DEVELOPER_MODE))
 		{
-			SendInfoMessageToAll("green proj_volcano struck GetEntityName(m_hLastStruckByMe)");
+			SendInfoMessageToAll("green proj_volcano struck " + GetEntityName(m_hLastStruckByMe));
 		}
 		string F_MY_OWNER = GetEntityIndex("ent_expowner");
 		string OWNER_ISPLAYER = IsValidPlayer(F_MY_OWNER);

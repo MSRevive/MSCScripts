@@ -7,10 +7,13 @@ namespace MS
 
 class Riddler3 : CGameScript
 {
+	string FAILED_MSG;
+	string RIDDLE_ANSWER;
+
 	Riddler3()
 	{
-		const string FAILED_MSG = "Your link, strong as the others it is not, goodbye.";
-		const string RIDDLE_ANSWER = "time";
+		FAILED_MSG = "Your link, strong as the others it is not, goodbye.";
+		RIDDLE_ANSWER = "time";
 	}
 
 	void riddle_question()

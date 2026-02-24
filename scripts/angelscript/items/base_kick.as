@@ -5,15 +5,20 @@ namespace MS
 
 class BaseKick : CGameScript
 {
+	string ANIM_FOOT_IDLE;
+	int ANIM_KICK;
 	int DOING_KICK;
+	string KICK_VIEW;
+	string OWNANIM_KICK;
+	string SOUND_KICKHIT;
 
 	BaseKick()
 	{
-		const int ANIM_KICK = 1;
-		const string ANIM_FOOT_IDLE = "idle";
-		const string OWNANIM_KICK = "stance_normal_highkick_r1";
-		const string KICK_VIEW = "weapons/martialarts/foot.mdl";
-		const string SOUND_KICKHIT = "";
+		ANIM_KICK = 1;
+		ANIM_FOOT_IDLE = "idle";
+		OWNANIM_KICK = "stance_normal_highkick_r1";
+		KICK_VIEW = "weapons/martialarts/foot.mdl";
+		SOUND_KICKHIT = "";
 	}
 
 	void register_charge1()
@@ -105,7 +110,7 @@ class BaseKick : CGameScript
 			{
 				int PUSH_STR_V = 100;
 			}
-			string L_R = RandomInt(50, PUSH_STR_LR);
+			int L_R = RandomInt(50, PUSH_STR_LR);
 			if (RandomInt(1, 2) == 1)
 			{
 				string L_R = /* TODO: $neg */ $neg(L_R);
@@ -124,7 +129,7 @@ class BaseKick : CGameScript
 			string TARG_HP = GetEntityHealth(param2);
 			if (TARG_HP > 1000)
 			{
-				string FAIL_RATIO = RandomInt(1, 9999);
+				int FAIL_RATIO = RandomInt(1, 9999);
 				if (FAIL_RATIO < TARG_HP)
 				{
 					int EXIT_SUB = 1;

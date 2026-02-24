@@ -9,11 +9,20 @@ namespace MS
 
 class AntFireFlyer : CGameScript
 {
+	string ANIM_2HOVER;
 	string ANIM_ATTACK;
+	string ANIM_ATTACK1;
+	string ANIM_ATTACK2;
 	string ANIM_DEATH;
+	string ANIM_HOVER;
+	string ANIM_HOVER_BITE;
+	string ANIM_HOVER_BREATH;
 	string ANIM_IDLE;
+	string ANIM_LAND;
 	string ANIM_RUN;
 	string ANIM_WALK;
+	string ANIM_WALK1;
+	string ANIM_WALK2;
 	int ANT_AM_FLYING;
 	int ATTACK_HITRANGE;
 	int ATTACK_MOVERANGE;
@@ -23,7 +32,12 @@ class AntFireFlyer : CGameScript
 	string BREATH_TARGETS;
 	string CL_BREATH_IDX;
 	int DID_INTRO;
+	int DMG_BITE;
 	string DODGE_IDX;
+	int DOT_FIRE;
+	float FREQ_BREATH;
+	float FREQ_BUZZ;
+	float FREQ_DODGE;
 	int MOVE_RANGE;
 	string NEXT_BREATH;
 	string NEXT_DODGE;
@@ -33,6 +47,18 @@ class AntFireFlyer : CGameScript
 	int NPC_JUMPER;
 	int NPC_PROPELL_SUSPEND;
 	string SCAN_POINT;
+	string SOUND_ATTACK1;
+	string SOUND_ATTACK2;
+	string SOUND_ATTACK3;
+	string SOUND_BREATH;
+	string SOUND_DEATH;
+	string SOUND_FLY_LOOP;
+	string SOUND_PAIN1;
+	string SOUND_PAIN2;
+	string SOUND_STRUCK1;
+	string SOUND_STRUCK2;
+	string SOUND_STRUCK3;
+	string SOUND_STRUCK4;
 
 	AntFireFlyer()
 	{
@@ -42,38 +68,38 @@ class AntFireFlyer : CGameScript
 		ANIM_RUN = "walk";
 		ANIM_DEATH = "anim_hover_death";
 		NPC_JUMPER = 1;
-		const string ANIM_HOVER = "anim_hover";
-		const string ANIM_2HOVER = "anim_2hover";
-		const string ANIM_LAND = "anim_land";
-		const string ANIM_HOVER_BREATH = "anim_hover_breath";
-		const string ANIM_HOVER_BITE = "anim_hover_shoot";
-		const string ANIM_WALK1 = "walk";
-		const string ANIM_WALK2 = "walk2";
-		const string ANIM_ATTACK1 = "attack";
-		const string ANIM_ATTACK2 = "attack2";
+		ANIM_HOVER = "anim_hover";
+		ANIM_2HOVER = "anim_2hover";
+		ANIM_LAND = "anim_land";
+		ANIM_HOVER_BREATH = "anim_hover_breath";
+		ANIM_HOVER_BITE = "anim_hover_shoot";
+		ANIM_WALK1 = "walk";
+		ANIM_WALK2 = "walk2";
+		ANIM_ATTACK1 = "attack";
+		ANIM_ATTACK2 = "attack2";
 		NPC_GIVE_EXP = 150;
 		NPC_ALLY_RESPONSE_RANGE = 1024;
-		const string FREQ_BREATH = Random(5.0, 10.0);
-		const float FREQ_BUZZ = 4.45;
-		const float FREQ_DODGE = 1.0;
-		const int DMG_BITE = 50;
-		const int DOT_FIRE = 10;
+		FREQ_BREATH = Random(5.0, 10.0);
+		FREQ_BUZZ = 4.45;
+		FREQ_DODGE = 1.0;
+		DMG_BITE = 50;
+		DOT_FIRE = 10;
 		ATTACK_MOVERANGE = 192;
 		MOVE_RANGE = 192;
 		ATTACK_RANGE = 75;
 		ATTACK_HITRANGE = 100;
-		const string SOUND_FLY_LOOP = "monsters/beetle/fly1_noloop.wav";
-		const string SOUND_PAIN1 = "monsters/beetle/pain1.wav";
-		const string SOUND_PAIN2 = "monsters/beetle/pain2.wav";
-		const string SOUND_STRUCK1 = "monsters/beetle/shell_impact1.wav";
-		const string SOUND_STRUCK2 = "monsters/beetle/shell_impact2.wav";
-		const string SOUND_STRUCK3 = "monsters/beetle/shell_impact3.wav";
-		const string SOUND_STRUCK4 = "monsters/beetle/shell_impact4.wav";
-		const string SOUND_ATTACK1 = "monsters/beetle/attack_single1.wav";
-		const string SOUND_ATTACK2 = "monsters/beetle/attack_single2.wav";
-		const string SOUND_ATTACK3 = "monsters/beetle/attack_single3.wav";
-		const string SOUND_BREATH = "monsters/goblin/sps_fogfire.wav";
-		const string SOUND_DEATH = "monsters/beetle/pain2.wav";
+		SOUND_FLY_LOOP = "monsters/beetle/fly1_noloop.wav";
+		SOUND_PAIN1 = "monsters/beetle/pain1.wav";
+		SOUND_PAIN2 = "monsters/beetle/pain2.wav";
+		SOUND_STRUCK1 = "monsters/beetle/shell_impact1.wav";
+		SOUND_STRUCK2 = "monsters/beetle/shell_impact2.wav";
+		SOUND_STRUCK3 = "monsters/beetle/shell_impact3.wav";
+		SOUND_STRUCK4 = "monsters/beetle/shell_impact4.wav";
+		SOUND_ATTACK1 = "monsters/beetle/attack_single1.wav";
+		SOUND_ATTACK2 = "monsters/beetle/attack_single2.wav";
+		SOUND_ATTACK3 = "monsters/beetle/attack_single3.wav";
+		SOUND_BREATH = "monsters/goblin/sps_fogfire.wav";
+		SOUND_DEATH = "monsters/beetle/pain2.wav";
 		NPC_HACKED_MOVE_SPEED = 0;
 	}
 

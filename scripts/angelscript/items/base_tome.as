@@ -7,18 +7,26 @@ namespace MS
 
 class BaseTome : CGameScript
 {
+	string BASE_CAN_SUMMON;
+	int BASE_REQUIRED_LEVEL;
+	string BASE_REQUIRED_SKILL;
+	string BASE_SPELL_SCRIPT;
+	string BASE_SUMMON_TEXT;
+	string BASE_SUMMON_TEXT_FAILED;
+	int MODEL_BODY;
+	string MODEL_WORLD;
 	int READING;
 
 	BaseTome()
 	{
-		const string BASE_SPELL_SCRIPT = "magic_hand_fire_dart";
-		const string BASE_SUMMON_TEXT = "You learn to cast a weak fireball.";
-		const string BASE_SUMMON_TEXT_FAILED = "Your spell casting skills are not yet sufficient to memorize this tome.";
-		const string BASE_REQUIRED_SKILL = "skill.spellcasting.fire";
-		const int BASE_REQUIRED_LEVEL = 0;
-		const string BASE_CAN_SUMMON = /* TODO: $func */ $func("func_base_can_wield");
-		const string MODEL_WORLD = "misc/p_misc.mdl";
-		const int MODEL_BODY = 5;
+		BASE_SPELL_SCRIPT = "magic_hand_fire_dart";
+		BASE_SUMMON_TEXT = "You learn to cast a weak fireball.";
+		BASE_SUMMON_TEXT_FAILED = "Your spell casting skills are not yet sufficient to memorize this tome.";
+		BASE_REQUIRED_SKILL = "skill.spellcasting.fire";
+		BASE_REQUIRED_LEVEL = 0;
+		BASE_CAN_SUMMON = "func_base_can_wield"();
+		MODEL_WORLD = "misc/p_misc.mdl";
+		MODEL_BODY = 5;
 		READING = 0;
 	}
 
@@ -35,7 +43,7 @@ class BaseTome : CGameScript
 	void OnDeploy() override
 	{
 		SetModel(MODEL_WORLD);
-		string L_SUB_MODEL = /* TODO: $math(subtract) */ MODEL_BODY;
+		string L_SUB_MODEL = (MODEL_BODY - 2);
 		L_SUB_MODEL += "game.item.hand_index";
 		SetModelBody(0, L_SUB_MODEL);
 		if (MODEL_BODY == 5)
@@ -85,12 +93,12 @@ class BaseTome : CGameScript
 
 	void game_learnspell_success()
 	{
-		SendPlayerMessage(GetOwner(), "BASE_SUMMON_TEXT");
+		SendPlayerMessage(GetOwner(), BASE_SUMMON_TEXT);
 	}
 
 	void game_learnspell_failed()
 	{
-		SendPlayerMessage(GetOwner(), "BASE_SUMMON_TEXT_FAILED");
+		SendPlayerMessage(GetOwner(), BASE_SUMMON_TEXT_FAILED);
 	}
 
 	void func_base_can_wield()

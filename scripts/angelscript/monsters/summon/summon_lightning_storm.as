@@ -8,10 +8,14 @@ namespace MS
 class SummonLightningStorm : CGameScript
 {
 	string ACTIVE_SKILL;
+	float AOE_FREQ;
 	string AOE_OWNER;
+	int AOE_RADIUS;
 	string BASE_DURATION;
 	string CAST_BY_PLAYER;
 	string GROUND_Z;
+	string LIGHTNING_SPRITE;
+	string LIGHTNING_SPRITE_SPARKS;
 	int LOOP_SOUND;
 	string MY_BASE_DAMAGE;
 	string MY_ITEM;
@@ -20,18 +24,21 @@ class SummonLightningStorm : CGameScript
 	int PLAYING_DEAD;
 	string SMOKE_ANGLE;
 	string SMOKE_POSITION;
+	string SMOKE_SPRITE;
 	string STORM_CLID;
 	string STORM_DURATION;
+	int STORM_HEIGHT;
+	int STORM_WIDTH;
 
 	SummonLightningStorm()
 	{
-		const int STORM_HEIGHT = 260;
-		const string SMOKE_SPRITE = "bigsmoke.spr";
-		const string LIGHTNING_SPRITE = "lgtning.spr";
-		const string LIGHTNING_SPRITE_SPARKS = "3dmflaora.spr";
-		const int STORM_WIDTH = 75;
-		const float AOE_FREQ = 1.0;
-		const int AOE_RADIUS = 150;
+		STORM_HEIGHT = 260;
+		SMOKE_SPRITE = "bigsmoke.spr";
+		LIGHTNING_SPRITE = "lgtning.spr";
+		LIGHTNING_SPRITE_SPARKS = "3dmflaora.spr";
+		STORM_WIDTH = 75;
+		AOE_FREQ = 1.0;
+		AOE_RADIUS = 150;
 	}
 
 	void game_precache()
@@ -66,7 +73,7 @@ class SummonLightningStorm : CGameScript
 		SetAngles("face.y");
 		MY_BASE_DAMAGE = param3;
 		BASE_DURATION = param4;
-		STORM_DURATION = /* TODO: $math(add) */ GetGameTime();
+		STORM_DURATION = (GetGameTime() + param4);
 		ACTIVE_SKILL = param5;
 		CAST_BY_PLAYER = GetEntityProperty(MY_ITEM, "is_item");
 		string F_GROUND_Z = /* TODO: $get_ground_height */ $get_ground_height(GetMonsterProperty("origin"));
@@ -106,7 +113,7 @@ class SummonLightningStorm : CGameScript
 		string L_POS = param1;
 		SetEntityOrigin(GetOwner(), L_POS);
 		ClientEvent("update", "all", STORM_CLID, "cl_pos_update", L_POS);
-		STORM_DURATION = /* TODO: $math(add) */ GetGameTime();
+		STORM_DURATION = (GetGameTime() + BASE_DURATION);
 	}
 
 	void check_death()
@@ -135,8 +142,8 @@ class SummonLightningStorm : CGameScript
 	void smokes_shoot()
 	{
 		SetRepeatDelay(0.25);
-		string x = RandomInt(-64, 64);
-		string y = RandomInt(-64, 64);
+		int x = RandomInt(-64, 64);
+		int y = RandomInt(-64, 64);
 		string L_POS = /* TODO: $relpos */ $relpos(SMOKE_ANGLE, Vector3(x, y, 250));
 		L_POS += SMOKE_POSITION;
 		cl_beam(L_POS);

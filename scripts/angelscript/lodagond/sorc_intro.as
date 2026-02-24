@@ -6,23 +6,29 @@ namespace MS
 class SorcIntro : CGameScript
 {
 	string BARRIER_ID;
+	float CONV_DELAY;
 	int DEAD_MAGES;
+	int DETECT_RADIUS;
 	string ID_MAGE1;
 	string ID_MAGE2;
 	string ID_MAGE3;
 	string ID_MAGE4;
 	string ID_SORC;
+	string IMG_ICE_MAGE;
+	string IMG_SORC;
 	int INTRO_COMPLETE;
+	int MAGE_RADIUS;
+	float SPAWN_DELAY;
 	int STARTED_INTRO;
 
 	SorcIntro()
 	{
-		const string IMG_SORC = "lodagond/sorc_image";
-		const string IMG_ICE_MAGE = "lodagond/ice_mage_image";
-		const int MAGE_RADIUS = 164;
-		const int DETECT_RADIUS = 256;
-		const float SPAWN_DELAY = 0.25;
-		const float CONV_DELAY = 3.0;
+		IMG_SORC = "lodagond/sorc_image";
+		IMG_ICE_MAGE = "lodagond/ice_mage_image";
+		MAGE_RADIUS = 164;
+		DETECT_RADIUS = 256;
+		SPAWN_DELAY = 0.25;
+		CONV_DELAY = 3.0;
 		Precache("doors/aliendoor3.wav");
 		Precache("magic/spawn.wav");
 	}

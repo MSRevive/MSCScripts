@@ -7,6 +7,8 @@ class DjinnLightningLesserCl : CGameScript
 {
 	string ASPRITE_ANG;
 	string FX_DURATION;
+	string GLOW_COLOR;
+	int GLOW_RAD;
 	int HAND_POWERUP;
 	string HAND_POWER_IDX;
 	float HAND_SCALE;
@@ -18,8 +20,8 @@ class DjinnLightningLesserCl : CGameScript
 
 	DjinnLightningLesserCl()
 	{
-		const int GLOW_RAD = 128;
-		const Vector3 GLOW_COLOR = Vector3(255, 255, 0);
+		GLOW_RAD = 128;
+		GLOW_COLOR = Vector3(255, 255, 0);
 	}
 
 	void OnRepeatTimer()

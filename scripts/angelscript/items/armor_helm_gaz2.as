@@ -8,19 +8,28 @@ namespace MS
 
 class ArmorHelmGaz2 : CGameScript
 {
+	int ARMOR_BODY;
+	string ARMOR_MODEL;
+	string ARMOR_TEXT;
+	float BARMOR_PROTECTION;
+	string BARMOR_TYPE;
 	string ELM_AMT;
+	string ELM_NAME;
+	string ELM_TYPE;
+	string SP_ATTRIB;
+	float STUN_PROTECTION;
 
 	ArmorHelmGaz2()
 	{
-		const string ARMOR_MODEL = "armor/p_helmets.mdl";
-		const int ARMOR_BODY = 6;
-		const string ARMOR_TEXT = "You equip the Helm of Cold Resistance.";
-		const string BARMOR_TYPE = "platemail";
-		const float BARMOR_PROTECTION = 0.6;
-		const float STUN_PROTECTION = 0.65;
-		const string SP_ATTRIB = "skill.spellcasting.ice.ratio";
-		const string ELM_NAME = "coldh";
-		const string ELM_TYPE = "cold";
+		ARMOR_MODEL = "armor/p_helmets.mdl";
+		ARMOR_BODY = 6;
+		ARMOR_TEXT = "You equip the Helm of Cold Resistance.";
+		BARMOR_TYPE = "platemail";
+		BARMOR_PROTECTION = 0.6;
+		STUN_PROTECTION = 0.65;
+		SP_ATTRIB = "skill.spellcasting.ice.ratio";
+		ELM_NAME = "coldh";
+		ELM_TYPE = "cold";
 	}
 
 	void OnSpawn() override

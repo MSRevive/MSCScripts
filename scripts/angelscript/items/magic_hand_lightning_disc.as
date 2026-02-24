@@ -7,21 +7,35 @@ namespace MS
 
 class MagicHandLightningDisc : CGameScript
 {
+	int ANIM_CAST;
+	int ANIM_PREPARE;
+	string SOUND_CHARGE;
+	string SOUND_SHOOT;
+	string SPELL_BASE_DMG;
+	int SPELL_BASE_SPEED;
+	string SPELL_DAMAGE_TYPE;
+	float SPELL_DMG_ADJ;
+	int SPELL_MPDRAIN;
+	int SPELL_NOISE;
+	float SPELL_PREPARE_TIME;
+	int SPELL_SPEED_ADJ;
+	string SPELL_STAT;
+
 	MagicHandLightningDisc()
 	{
-		const int ANIM_PREPARE = 7;
-		const int ANIM_CAST = 17;
-		const string SOUND_CHARGE = "none";
-		const string SOUND_SHOOT = "magic/ice_strike.wav";
-		const int SPELL_NOISE = 500;
-		const float SPELL_PREPARE_TIME = 1.5;
-		const string SPELL_DAMAGE_TYPE = "lightning";
-		const int SPELL_MPDRAIN = 20;
-		const string SPELL_STAT = "spellcasting.lightning";
-		const int SPELL_BASE_SPEED = 600;
-		const int SPELL_SPEED_ADJ = 450;
-		const string SPELL_BASE_DMG = /* TODO: $math(multiply) */ 1.5;
-		const float SPELL_DMG_ADJ = 0.5;
+		ANIM_PREPARE = 7;
+		ANIM_CAST = 17;
+		SOUND_CHARGE = "none";
+		SOUND_SHOOT = "magic/ice_strike.wav";
+		SPELL_NOISE = 500;
+		SPELL_PREPARE_TIME = 1.5;
+		SPELL_DAMAGE_TYPE = "lightning";
+		SPELL_MPDRAIN = 20;
+		SPELL_STAT = "spellcasting.lightning";
+		SPELL_BASE_SPEED = 600;
+		SPELL_SPEED_ADJ = 450;
+		SPELL_BASE_DMG = (1.5 * GetSkillLevel(GetOwner(), "spellcasting.lightning"));
+		SPELL_DMG_ADJ = 0.5;
 	}
 
 	void spell_spawn()
@@ -33,10 +47,10 @@ class MagicHandLightningDisc : CGameScript
 	void spell_casted()
 	{
 		string L_SPEED = SPELL_BASE_SPEED;
-		L_SPEED += /* TODO: $math(multiply) */ CHARGE_MULT;
-		string L_MULT = /* TODO: $math(multiply) */ CHARGE_MULT;
+		L_SPEED += (CHARGE_MULT * SPELL_SPEED_ADJ);
+		string L_MULT = (CHARGE_MULT * SPELL_DMG_ADJ);
 		L_MULT += 1;
-		string L_DMG = /* TODO: $math(multiply) */ SPELL_BASE_DMG;
+		string L_DMG = (SPELL_BASE_DMG * L_MULT);
 		string L_VEL = /* TODO: $relvel */ $relvel(GetEntityProperty(GetOwner(), "viewangles"), Vector3(0, L_SPEED, 0));
 		string L_POS = GetEntityProperty(GetOwner(), "eyepos");
 		L_POS += Vector3(0, 0, -2);

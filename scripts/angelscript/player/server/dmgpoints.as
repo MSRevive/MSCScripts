@@ -112,8 +112,8 @@ class Dmgpoints : CGameScript
 	{
 		PLR_TOTAL_DMG = GetPlayerQuestData(GetOwner(), "dp");
 		if (!(PLR_TOTAL_DMG > 0)) return;
-		string L_OUT_MSG = int(PLR_TOTAL_DMG);
-		SendColoredMessage(GetOwner(), "Restored L_OUT_MSG damage points.");
+		int L_OUT_MSG = int(PLR_TOTAL_DMG);
+		SendColoredMessage(GetOwner(), "Restored " + L_OUT_MSG + " damage points.");
 	}
 
 	void store_dmg_points()
@@ -126,7 +126,7 @@ class Dmgpoints : CGameScript
 		PLR_DMG += param1;
 		if (PLR_DMG >= 1000)
 		{
-			PLR_TOTAL_DMG += int(/* TODO: $math(divide) */ PLR_DMG);
+			PLR_TOTAL_DMG += int((PLR_DMG / 1000));
 			PLR_DMG %= 1000;
 			store_dmg_points();
 		}
@@ -139,13 +139,13 @@ class Dmgpoints : CGameScript
 		OUT_MSG += int(param1);
 		OUT_MSG += " damage points ";
 		OUT_MSG += param2;
-		SendColoredMessage(GetOwner(), "OUT_MSG");
+		SendColoredMessage(GetOwner(), OUT_MSG);
 	}
 
 	void ext_get_dmgpoints()
 	{
 		EXT_DMGPOINTS = PLR_TOTAL_DMG;
-		EXT_DMGPOINTS += /* TODO: $math(multiply) */ PLR_DMG;
+		EXT_DMGPOINTS += (PLR_DMG * 0.001);
 	}
 
 }

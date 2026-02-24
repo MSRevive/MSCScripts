@@ -5,13 +5,16 @@ namespace MS
 
 class Helena : CGameScript
 {
+	int FREQ_CHECK;
+	int HPREQ_MEDIUM_WAVE;
+	int HPREQ_STRONG_WAVE;
 	int PLAYING_DEAD;
 
 	Helena()
 	{
-		const string FREQ_CHECK = RandomInt(540, 1020);
-		const int HPREQ_MEDIUM_WAVE = 500;
-		const int HPREQ_STRONG_WAVE = 1250;
+		FREQ_CHECK = RandomInt(540, 1020);
+		HPREQ_MEDIUM_WAVE = 500;
+		HPREQ_STRONG_WAVE = 1250;
 	}
 
 	void OnSpawn() override
@@ -29,7 +32,7 @@ class Helena : CGameScript
 
 	void check_for_raid()
 	{
-		string RND_CHANCE = RandomInt(1, 5);
+		int RND_CHANCE = RandomInt(1, 5);
 		LogDebug("check_for_raid RND_CHANCE / 5");
 		if (RND_CHANCE != 1)
 		{

@@ -7,19 +7,31 @@ namespace MS
 
 class SmallarmsCref : CGameScript
 {
+	string ATK1_DMG_TYPE;
+	string BWEAPON_NAME;
+	float CRE_EFFECT_DURATION;
+	string CRE_EFFECT_NAME;
+	float CRE_EFFECT_RATIO;
+	string CRE_EFFECT_SCRIPT;
+	string CRE_EFFECT_SKILL;
+	string CRE_TYPE;
+	int PMODEL_IDX_FLOOR;
+	int PMODEL_IDX_HANDS;
+	int VMODEL_IDX;
+
 	SmallarmsCref()
 	{
-		const string BWEAPON_NAME = "Flaming Crescent Blade";
-		const string ATK1_DMG_TYPE = "fire";
-		const string CRE_TYPE = "fire";
-		const string CRE_EFFECT_SCRIPT = "effects/dot_fire";
-		const float CRE_EFFECT_DURATION = 5.0;
-		const string CRE_EFFECT_NAME = "DOT_fire";
-		const string CRE_EFFECT_SKILL = "skill.spellcasting.fire";
-		const float CRE_EFFECT_RATIO = 0.5;
-		const int VMODEL_IDX = 17;
-		const int PMODEL_IDX_FLOOR = 70;
-		const int PMODEL_IDX_HANDS = 72;
+		BWEAPON_NAME = "Flaming Crescent Blade";
+		ATK1_DMG_TYPE = "fire";
+		CRE_TYPE = "fire";
+		CRE_EFFECT_SCRIPT = "effects/dot_fire";
+		CRE_EFFECT_DURATION = 5.0;
+		CRE_EFFECT_NAME = "DOT_fire";
+		CRE_EFFECT_SKILL = "skill.spellcasting.fire";
+		CRE_EFFECT_RATIO = 0.5;
+		VMODEL_IDX = 17;
+		PMODEL_IDX_FLOOR = 70;
+		PMODEL_IDX_HANDS = 72;
 	}
 
 	void atk1_damaged_other()

@@ -8,25 +8,35 @@ namespace MS
 class TelfWarriorLaxe : CGameScript
 {
 	string ANIM_ATTACK;
+	string ATTACK_STANCE;
+	float CHANCE_DOT;
+	string DMG_TYPE;
+	int DOT_AMT;
+	float DOT_DURATION;
+	string DOT_SCRIPT;
 	int DROP_GOLD;
 	int DROP_GOLD_AMT;
 	int NPC_GIVE_EXP;
+	string SOUND_SHOCKAMB1;
+	string SOUND_SHOCKAMB2;
+	string SOUND_SHOCKAMB3;
+	int WEAPON_AURA;
 
 	TelfWarriorLaxe()
 	{
 		NPC_GIVE_EXP = 2500;
 		DROP_GOLD = 1;
 		DROP_GOLD_AMT = 500;
-		const string DMG_TYPE = "slash";
-		const string ATTACK_STANCE = "2haxe";
-		const float CHANCE_DOT = 1.0;
-		const string DOT_SCRIPT = "effects/dot_lightning";
-		const int DOT_AMT = 50;
-		const float DOT_DURATION = 5.0;
-		const int WEAPON_AURA = 1;
-		const string SOUND_SHOCKAMB1 = "debris/zap1.wav";
-		const string SOUND_SHOCKAMB2 = "debris/zap3.wav";
-		const string SOUND_SHOCKAMB3 = "debris/zap8.wav";
+		DMG_TYPE = "slash";
+		ATTACK_STANCE = "2haxe";
+		CHANCE_DOT = 1.0;
+		DOT_SCRIPT = "effects/dot_lightning";
+		DOT_AMT = 50;
+		DOT_DURATION = 5.0;
+		WEAPON_AURA = 1;
+		SOUND_SHOCKAMB1 = "debris/zap1.wav";
+		SOUND_SHOCKAMB2 = "debris/zap3.wav";
+		SOUND_SHOCKAMB3 = "debris/zap8.wav";
 	}
 
 	void OnRepeatTimer()

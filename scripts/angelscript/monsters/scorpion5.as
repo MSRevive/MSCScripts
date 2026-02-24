@@ -22,23 +22,32 @@ class Scorpion5 : CGameScript
 	float BASE_MOVESPEED;
 	int CAN_FLEE;
 	int CAN_HUNT;
+	int DELETE_ON_DEATH;
 	float FLEE_CHANCE;
 	int FLEE_HEALTH;
 	int HUNT_AGRO;
 	string MY_OWNER;
 	int NPC_GIVE_EXP;
 	string NPC_MOVE_TARGET;
+	string SOUND_BIGSWING;
+	string SOUND_DEATH;
+	string SOUND_IDLE1;
+	string SOUND_PAIN;
+	string SOUND_STRUCK1;
+	string SOUND_STRUCK2;
+	string SOUND_STRUCK3;
+	string SOUND_SWING;
 
 	Scorpion5()
 	{
-		const int DELETE_ON_DEATH = 1;
+		DELETE_ON_DEATH = 1;
 		ANIM_IDLE = "idle_a";
-		const string SOUND_STRUCK1 = "body/flesh1.wav";
-		const string SOUND_STRUCK2 = "body/flesh2.wav";
-		const string SOUND_STRUCK3 = "body/flesh3.wav";
-		const string SOUND_PAIN = "monsters/spider/spiderhiss.wav";
-		const string SOUND_IDLE1 = "monsters/spider/spideridle.wav";
-		const string SOUND_DEATH = "monsters/spider/spiderdie.wav";
+		SOUND_STRUCK1 = "body/flesh1.wav";
+		SOUND_STRUCK2 = "body/flesh2.wav";
+		SOUND_STRUCK3 = "body/flesh3.wav";
+		SOUND_PAIN = "monsters/spider/spiderhiss.wav";
+		SOUND_IDLE1 = "monsters/spider/spideridle.wav";
+		SOUND_DEATH = "monsters/spider/spiderdie.wav";
 		ANIM_IDLE = "idle_b";
 		ANIM_RUN = "run";
 		ANIM_WALK = "walk";
@@ -55,8 +64,8 @@ class Scorpion5 : CGameScript
 		CAN_HUNT = 1;
 		HUNT_AGRO = 1;
 		NPC_MOVE_TARGET = "enemy";
-		const string SOUND_SWING = "zombie/claw_miss1.wav";
-		const string SOUND_BIGSWING = "zombie/claw_miss2.wav";
+		SOUND_SWING = "zombie/claw_miss1.wav";
+		SOUND_BIGSWING = "zombie/claw_miss2.wav";
 		Precache(SOUND_DEATH);
 		Precache(SOUND_IDLE1);
 	}
@@ -126,8 +135,8 @@ class Scorpion5 : CGameScript
 			if (GetEntityRange(HUNT_LASTTARGET) < ATTACK_RANGE)
 			{
 			}
-			string RND_LR = Random(-100, 100);
-			string RND_FB = Random(-200, 200);
+			float RND_LR = Random(-100, 100);
+			float RND_FB = Random(-200, 200);
 			AddVelocity(HUNT_LASTTARGET, /* TODO: $relvel */ $relvel(RND_LR, RND_FB, 10));
 		}
 	}

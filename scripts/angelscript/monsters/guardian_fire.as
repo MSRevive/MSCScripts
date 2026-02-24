@@ -11,25 +11,37 @@ class GuardianFire : CGameScript
 	string CHARGER_ORG;
 	string CHARGE_LEVEL;
 	string CL_SCRIPT_IDX;
+	string DMG_ELEF_TYPE;
+	int DOT_DMG;
+	int GUARDIAN_BEAM_SWORD;
+	string GUARDIAN_CL_SCRIPT;
+	int GUARDIAN_TYPE;
 	int IMMUNE_VAMPIRE;
 	int IS_BLOODLESS;
 	string NEEDS_CHARGER;
 	string NEXT_SWBEAMS_REFRESH;
+	int PITCH_SWORD_OFF;
+	string SOUND_REACH;
+	string SOUND_RECHARGE_START;
+	string SOUND_SWING;
+	string SOUND_SWORD_DRAW;
+	string SOUND_SWORD_IDLE;
+	string SOUND_SWORD_OFF;
 
 	GuardianFire()
 	{
-		const int GUARDIAN_TYPE = 2;
-		const int GUARDIAN_BEAM_SWORD = 0;
-		const string DMG_ELEF_TYPE = "fire_effect";
-		const string SOUND_SWORD_IDLE = "none";
-		const string SOUND_SWORD_DRAW = "magic/dragon_fire.wav";
-		const string SOUND_SWORD_OFF = "weapons/swords/sworddraw.wav";
-		const int PITCH_SWORD_OFF = 50;
-		const string SOUND_RECHARGE_START = "magic/sff_explsonic.wav";
-		const string SOUND_REACH = "magic/dragon_fire.wav";
-		const string SOUND_SWING = "magic/fireball_large.wav";
-		const string GUARDIAN_CL_SCRIPT = "monsters/guardian_fire_cl";
-		const int DOT_DMG = 100;
+		GUARDIAN_TYPE = 2;
+		GUARDIAN_BEAM_SWORD = 0;
+		DMG_ELEF_TYPE = "fire_effect";
+		SOUND_SWORD_IDLE = "none";
+		SOUND_SWORD_DRAW = "magic/dragon_fire.wav";
+		SOUND_SWORD_OFF = "weapons/swords/sworddraw.wav";
+		PITCH_SWORD_OFF = 50;
+		SOUND_RECHARGE_START = "magic/sff_explsonic.wav";
+		SOUND_REACH = "magic/dragon_fire.wav";
+		SOUND_SWING = "magic/fireball_large.wav";
+		GUARDIAN_CL_SCRIPT = "monsters/guardian_fire_cl";
+		DOT_DMG = 100;
 	}
 
 	void game_precache()

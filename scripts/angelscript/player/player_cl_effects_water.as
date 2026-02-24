@@ -5,19 +5,26 @@ namespace MS
 
 class PlayerClEffectsWater : CGameScript
 {
+	string BIG_SPLASH_SND;
+	int BIG_SPLASH_SPEED;
+	int OFS_NEG;
+	int OFS_NEG2;
+	int OFS_POS;
+	int OFS_POS2;
+	string SPRITE_1;
 	string water.snd;
 	float water.splashscale;
 
 	PlayerClEffectsWater()
 	{
-		const string SPRITE_1 = "wsplash3.spr";
+		SPRITE_1 = "wsplash3.spr";
 		Precache(SPRITE_1);
-		const int OFS_POS = 5;
-		const int OFS_NEG = -5;
-		const int OFS_POS2 = 15;
-		const int OFS_NEG2 = -15;
-		const int BIG_SPLASH_SPEED = 300;
-		const string BIG_SPLASH_SND = "body/splash1.wav";
+		OFS_POS = 5;
+		OFS_NEG = -5;
+		OFS_POS2 = 15;
+		OFS_NEG2 = -15;
+		BIG_SPLASH_SPEED = 300;
+		BIG_SPLASH_SND = "body/splash1.wav";
 		Precache(BIG_SPLASH_SND);
 	}
 

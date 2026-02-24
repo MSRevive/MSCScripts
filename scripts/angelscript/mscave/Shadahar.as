@@ -7,27 +7,39 @@ namespace MS
 
 class Shadahar : CGameScript
 {
+	string ANIM_BLAST;
+	string ANIM_CIRCLE;
 	string AS_ATTACKING;
+	float ATTACK_DAMAGE_HIGH;
+	float ATTACK_DAMAGE_LOW;
+	float ATTACK_HITCHANCE;
+	float CIRCLE_FREQ;
 	int CIRCLE_ON;
 	string DID_WARCRY;
 	int NPC_GIVE_EXP;
 	int PURE_FLEE;
+	int SKEL_HP;
+	float SKEL_RESPAWN_CHANCE;
+	int SKEL_RESPAWN_LIVES;
+	string SOUND_BOLT;
+	string SOUND_LAUGH;
+	string SOUND_WARCRY;
 
 	Shadahar()
 	{
-		const int SKEL_HP = 1000;
-		const float ATTACK_HITCHANCE = 0.85;
-		const float ATTACK_DAMAGE_LOW = 15.5;
-		const float ATTACK_DAMAGE_HIGH = 25.5;
+		SKEL_HP = 1000;
+		ATTACK_HITCHANCE = 0.85;
+		ATTACK_DAMAGE_LOW = 15.5;
+		ATTACK_DAMAGE_HIGH = 25.5;
 		NPC_GIVE_EXP = 150;
-		const string ANIM_CIRCLE = "throw_scientist";
-		const float SKEL_RESPAWN_CHANCE = 0.0;
-		const int SKEL_RESPAWN_LIVES = 0;
-		const string ANIM_BLAST = "rlflinch";
-		const string SOUND_BOLT = "magic/ice_strike.wav";
-		const float CIRCLE_FREQ = 30.0;
-		const string SOUND_LAUGH = "monsters/skeleton/cal_laugh.wav";
-		const string SOUND_WARCRY = "monsters/skeleton/calrain3.wav";
+		ANIM_CIRCLE = "throw_scientist";
+		SKEL_RESPAWN_CHANCE = 0.0;
+		SKEL_RESPAWN_LIVES = 0;
+		ANIM_BLAST = "rlflinch";
+		SOUND_BOLT = "magic/ice_strike.wav";
+		CIRCLE_FREQ = 30.0;
+		SOUND_LAUGH = "monsters/skeleton/cal_laugh.wav";
+		SOUND_WARCRY = "monsters/skeleton/calrain3.wav";
 		Precache("weapons/magic/seals.mdl");
 		Precache("magic/temple.wav");
 		Precache("magic/pulsemachine_noloop.wav");
@@ -51,7 +63,7 @@ class Shadahar : CGameScript
 			SetGold(RandomInt(80, 150));
 			if (RandomInt(1, 100) == 1)
 			{
-				string PIC_THREE = RandomInt(1, 3);
+				int PIC_THREE = RandomInt(1, 3);
 				if (PIC_THREE == 1)
 				{
 					GiveItem(GetOwner(), "scroll2_poison_cloud");

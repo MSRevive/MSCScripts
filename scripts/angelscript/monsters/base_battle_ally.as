@@ -5,7 +5,10 @@ namespace MS
 
 class BaseBattleAlly : CGameScript
 {
+	string AI_NO_TARGET_STRING;
 	int ALLY_AS_UNSTUCK_ANG;
+	int ALLY_FOLLOW_CLOSE_DIST;
+	int ALLY_FOLLOW_NORM_DIST;
 	int ALLY_FOLLOW_ON;
 	int ALLY_FOLLOW_PLR_DIST;
 	string ALLY_FOLLOW_PLR_ID;
@@ -13,46 +16,55 @@ class BaseBattleAlly : CGameScript
 	string ALLY_FWD_JUMP_STR;
 	int ALLY_IS_LEADER;
 	string ALLY_JUMP_STR;
+	int ALLY_JUMP_THRESHOLD;
+	int ALLY_MAX_JUMP_RANGE;
+	int ALLY_MIN_DISTANCE;
+	int ALLY_MOVE_AWAY_DIST;
 	string ALLY_NEXT_FAS_CHECK;
 	string ALLY_NEXT_FOLLOW_CHECK;
 	string ALLY_NEXT_REGEN;
 	string ALLY_OLD_DIST;
+	float ALLY_REGEN_RATIO;
 	int ALLY_STUCK_COUNT;
+	string ANIM_ALLY_JUMP;
 	float CYCLE_TIME;
+	float FREQ_ALLYJUMP;
 	int NO_STUCK_CHECKS;
 	int NPC_ALLY_RESPONSE_RANGE;
 	int NPC_BATTLE_ALLY;
+	int NPC_FIGHTS_NPCS;
 	int NPC_NO_PLAYER_DMG;
+	string SOUND_ALLY_JUMP;
 
 	BaseBattleAlly()
 	{
 		NPC_NO_PLAYER_DMG = 1;
 		NPC_BATTLE_ALLY = 1;
-		const int NPC_FIGHTS_NPCS = 1;
+		NPC_FIGHTS_NPCS = 1;
 		SetSayTextRange(2048);
 		NO_STUCK_CHECKS = 1;
-		const string AI_NO_TARGET_STRING = "unset";
+		AI_NO_TARGET_STRING = "unset";
 		NPC_ALLY_RESPONSE_RANGE = 4096;
-		const int ALLY_MIN_DISTANCE = 42;
-		const int ALLY_FOLLOW_CLOSE_DIST = 60;
-		const int ALLY_FOLLOW_NORM_DIST = 128;
-		const int ALLY_MOVE_AWAY_DIST = 64;
+		ALLY_MIN_DISTANCE = 42;
+		ALLY_FOLLOW_CLOSE_DIST = 60;
+		ALLY_FOLLOW_NORM_DIST = 128;
+		ALLY_MOVE_AWAY_DIST = 64;
 		ALLY_FOLLOW_PLR_DIST = 128;
-		const float ALLY_REGEN_RATIO = 0.1;
-		const int ALLY_MAX_JUMP_RANGE = 600;
-		const string FREQ_ALLYJUMP = Random(4.0, 5.0);
+		ALLY_REGEN_RATIO = 0.1;
+		ALLY_MAX_JUMP_RANGE = 600;
+		FREQ_ALLYJUMP = Random(4.0, 5.0);
 		ALLY_STUCK_COUNT = 0;
 		ALLY_AS_UNSTUCK_ANG = 0;
-		const string ANIM_ALLY_JUMP = "jump";
-		const string SOUND_ALLY_JUMP = "monsters/orc/attack1.wav";
-		const int ALLY_JUMP_THRESHOLD = 150;
+		ANIM_ALLY_JUMP = "jump";
+		SOUND_ALLY_JUMP = "monsters/orc/attack1.wav";
+		ALLY_JUMP_THRESHOLD = 150;
 	}
 
 	void OnHuntTarget(CBaseEntity@ target)
 	{
 		if ((SUSPEND_AI)) return;
 		if (!(ALLY_FOLLOW_ON)) return;
-		string GAME_TIME = GetGameTime();
+		float GAME_TIME = GetGameTime();
 		CYCLE_TIME = 0.1;
 		if (!(m_hAttackTarget == AI_NO_TARGET_STRING)) return;
 		if (GAME_TIME > ALLY_NEXT_FAS_CHECK)
@@ -104,7 +116,7 @@ class BaseBattleAlly : CGameScript
 		if ((ALLY_IS_LEADER))
 		{
 			string L_ORG = GetEntityOrigin(GetOwner());
-			string L_ALLY_RANGE = Distance(L_ORG, ALLY_LEADER_DEST);
+			float L_ALLY_RANGE = Distance(L_ORG, ALLY_LEADER_DEST);
 			string L_ALLY_ORG = ALLY_LEADER_DEST;
 			int L_ALLY_RUN_RANGE = 64;
 		}
@@ -246,7 +258,7 @@ class BaseBattleAlly : CGameScript
 	{
 		string MY_ORG = GetEntityOrigin(GetOwner());
 		string MY_DEST = GetMonsterProperty("movedest.origin");
-		string CUR_DIST = Distance(MY_ORG, MY_DEST);
+		float CUR_DIST = Distance(MY_ORG, MY_DEST);
 		if (!(CUR_DIST >= GetMonsterProperty("movedest.prox"))) return;
 		if (CUR_DIST >= ALLY_OLD_DIST)
 		{

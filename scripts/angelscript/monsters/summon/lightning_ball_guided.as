@@ -7,18 +7,23 @@ namespace MS
 
 class LightningBallGuided : CGameScript
 {
+	int AM_LIGHTNING;
 	int IS_ACTIVE;
 	string MY_LIGHT_SCRIPT;
+	int MY_SPEED;
 	int PLAYING_DEAD;
 	string PUSH_LIST;
+	string SOUND_EXPLODE;
+	string SOUND_SPAWN;
+	string SPRITE_EXPLODE;
 
 	LightningBallGuided()
 	{
-		const string SOUND_SPAWN = "debris/beamstart4.wav";
-		const string SOUND_EXPLODE = "ambience/alienlaser1.wav";
-		const string SPRITE_EXPLODE = "xfire2.spr";
-		const int MY_SPEED = 100;
-		const int AM_LIGHTNING = 1;
+		SOUND_SPAWN = "debris/beamstart4.wav";
+		SOUND_EXPLODE = "ambience/alienlaser1.wav";
+		SPRITE_EXPLODE = "xfire2.spr";
+		MY_SPEED = 100;
+		AM_LIGHTNING = 1;
 	}
 
 	void OnSpawn() override

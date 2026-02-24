@@ -45,7 +45,7 @@ class BaseAimProj : CGameScript
 			HALF_HEIGHT /= 2;
 			TARGET_POS += "z";
 		}
-		string TARGET_DIST = Distance(TARGET_POS, GetMonsterProperty("origin"));
+		float TARGET_DIST = Distance(TARGET_POS, GetMonsterProperty("origin"));
 		TARGET_DIST /= ANGLE_ADJ_DIVIDER;
 		SetAngles("add_view.pitch");
 	}

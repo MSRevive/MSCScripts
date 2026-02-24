@@ -13,7 +13,7 @@ class IsleMaze : CGameScript
 		add_noob_item();
 		add_good_item();
 		add_great_item();
-		string RND_ARROW = RandomInt(1, 4);
+		int RND_ARROW = RandomInt(1, 4);
 		if (RND_ARROW == 1)
 		{
 			AddStoreItem(STORENAME, "proj_arrow_frost", 60, 0, 0, 60);

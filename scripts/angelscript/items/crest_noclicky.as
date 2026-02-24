@@ -7,10 +7,13 @@ namespace MS
 
 class CrestNoclicky : CGameScript
 {
+	int MODEL_CREST_OFS;
+	string MODEL_WEAR;
+
 	CrestNoclicky()
 	{
-		const int MODEL_CREST_OFS = 17;
-		const string MODEL_WEAR = "armor/p_gowns.mdl";
+		MODEL_CREST_OFS = 17;
+		MODEL_WEAR = "armor/p_gowns.mdl";
 	}
 
 	void crest_spawn()

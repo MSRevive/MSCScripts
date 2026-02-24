@@ -5,9 +5,11 @@ namespace MS
 
 class PlayerCorpse : CGameScript
 {
+	int DO_NADDA;
+
 	PlayerCorpse()
 	{
-		const int DO_NADDA = 1;
+		DO_NADDA = 1;
 	}
 
 }

@@ -8,8 +8,10 @@ class SfxWave : CGameScript
 	int CUR_JUMPS;
 	int FX_ACTIVE;
 	string FX_COLOR;
+	float FX_DURATION;
 	string FX_LEVEL;
 	string FX_LIGHT_ID;
+	int FX_LIGHT_OFS;
 	string FX_LIGHT_POS;
 	int FX_MODEL_BODY;
 	string FX_ORIGIN;
@@ -23,11 +25,11 @@ class SfxWave : CGameScript
 
 	SfxWave()
 	{
-		const float FX_DURATION = 20.0;
+		FX_DURATION = 20.0;
 		CUR_JUMPS = 0;
 		TIMES_HEALED = 1;
-		const float FX_DURATION = 20.0;
-		const int FX_LIGHT_OFS = -100;
+		FX_DURATION = 20.0;
+		FX_LIGHT_OFS = -100;
 	}
 
 	void OnSpawn() override
@@ -58,7 +60,7 @@ class SfxWave : CGameScript
 	void burst_fx()
 	{
 		string L_POS = FX_ORIGIN;
-		L_POS += /* TODO: $relpos */ $relpos(Vector3(0, FX_YAW, 0), Vector3(0, /* TODO: $math(divide) */ FX_SPEED, 0));
+		L_POS += /* TODO: $relpos */ $relpos(Vector3(0, FX_YAW, 0), Vector3(0, (FX_SPEED / 2), 0));
 		string L_TRACE = TraceLine(FX_ORIGIN, L_POS);
 		if (L_TRACE == L_POS)
 		{
@@ -128,15 +130,15 @@ class SfxWave : CGameScript
 			HealEntity(param1, L_DOT);
 			if ((L_IS_ME))
 			{
-				SendColoredMessage(FX_OWNER, "Your holy wave heals you for int(L_DOT) hp");
+				SendColoredMessage(FX_OWNER, "Your holy wave heals you for " + int(L_DOT) + " hp");
 			}
 			else
 			{
-				SendColoredMessage(FX_OWNER, "You heal GetEntityName(param1) for int(L_DOT) hp");
+				SendColoredMessage(FX_OWNER, "You heal " + GetEntityName(param1) + "for " + int(L_DOT) + " hp");
 				if ((IsValidPlayer(param1)))
 				{
 					int L_ADD_DMG_POINTS = 1;
-					SendColoredMessage(param1, "GetEntityName(FX_OWNER) heals you for int(L_DOT) hp");
+					SendColoredMessage(param1, GetEntityName(FX_OWNER) + "heals you for " + int(L_DOT) + " hp");
 				}
 				else
 				{
@@ -256,7 +258,7 @@ class SfxWave : CGameScript
 		ClientEffect("tempent", "set_current_prop", "framerate", 0.01);
 		ClientEffect("tempent", "set_current_prop", "frames", 99999);
 		ClientEffect("tempent", "set_current_prop", "sequence", 0);
-		string L_NEXT_UPDATE = GetGameTime();
+		float L_NEXT_UPDATE = GetGameTime();
 		L_NEXT_UPDATE += 0.5;
 		ClientEffect("tempent", "set_current_prop", "fuser1", L_NEXT_UPDATE);
 	}

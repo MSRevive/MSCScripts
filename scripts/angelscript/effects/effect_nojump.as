@@ -7,13 +7,16 @@ namespace MS
 
 class EffectNojump : CGameScript
 {
+	string EFFECT_FLAGS;
+	string EFFECT_ID;
+	string EFFECT_SCRIPT;
 	int game.effect.canjump;
 
 	EffectNojump()
 	{
-		const string EFFECT_ID = "effect_nojump";
-		const string EFFECT_FLAGS = "nostack";
-		const string EFFECT_SCRIPT = currentscript;
+		EFFECT_ID = "effect_nojump";
+		EFFECT_FLAGS = "nostack";
+		EFFECT_SCRIPT = currentscript;
 	}
 
 	void game_activate()

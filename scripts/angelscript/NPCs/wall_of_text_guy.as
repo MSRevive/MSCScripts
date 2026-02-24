@@ -65,19 +65,19 @@ class WallOfTextGuy : CGameScript
 	{
 		string PARAM_OUT = param2;
 		PlayAnim("once", "give_shot");
-		SayText("Take a look at wall of text: PARAM_OUT");
+		SayText("Take a look at wall of text: " + PARAM_OUT);
 		ClientEvent("update", param1, "const.localplayer.scriptID", "cl_show_text", PARAM_OUT);
 	}
 
 	void CB_TEST1()
 	{
-		SayText("CB_TEST1 PARAM1");
+		SayText(CB_TEST1 + param1);
 		// TODO: localmenu.close PARAM1
 	}
 
 	void CB_TEST2()
 	{
-		SayText("CB_TEST2 PARAM1");
+		SayText(CB_TEST2 + param1);
 	}
 
 }

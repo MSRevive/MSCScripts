@@ -10,10 +10,11 @@ namespace MS
 class Priest : CGameScript
 {
 	int CANCHAT;
+	int NO_RUMOR;
 
 	Priest()
 	{
-		const int NO_RUMOR = 1;
+		NO_RUMOR = 1;
 	}
 
 	void OnSpawn() override

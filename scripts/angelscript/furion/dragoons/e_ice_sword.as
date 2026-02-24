@@ -7,10 +7,13 @@ namespace MS
 
 class EIceSword : CGameScript
 {
+	int ELEMENT;
+	int WEAPON;
+
 	EIceSword()
 	{
-		const int WEAPON = 3;
-		const int ELEMENT = 0;
+		WEAPON = 3;
+		ELEMENT = 0;
 	}
 
 }

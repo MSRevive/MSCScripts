@@ -9,11 +9,13 @@ namespace MS
 class GraveWatcher : CGameScript
 {
 	int ITEM_FOUND;
+	int SCAN_RANGE;
+	string SEARCH_ITEM;
 
 	GraveWatcher()
 	{
-		const string SEARCH_ITEM = "item_fstatue";
-		const int SCAN_RANGE = 64;
+		SEARCH_ITEM = "item_fstatue";
+		SCAN_RANGE = 64;
 	}
 
 	void item_detected()

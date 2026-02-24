@@ -7,6 +7,14 @@ namespace MS
 
 class Boar2Weak : CGameScript
 {
+	float ATTACK_HITCHANCE;
+	string BOAR_MODEL;
+	int BOAR_SIZE;
+	int BOAR_SKIN;
+	int DMG_CHARGE;
+	float DMG_GORE_FORWARD;
+	float DMG_GORE_LEFT;
+	float DMG_GORE_RIGHT;
 	string DROP_ITEM1;
 	float DROP_ITEM1_CHANCE;
 	float FLEE_CHANCE;
@@ -14,15 +22,15 @@ class Boar2Weak : CGameScript
 
 	Boar2Weak()
 	{
-		const int BOAR_SIZE = 2;
-		const int BOAR_SKIN = 0;
-		const string BOAR_MODEL = "monsters/boar2.mdl";
+		BOAR_SIZE = 2;
+		BOAR_SKIN = 0;
+		BOAR_MODEL = "monsters/boar2.mdl";
 		NPC_GIVE_EXP = 75;
-		const string DMG_GORE_FORWARD = Random(10.0, 15.0);
-		const string DMG_GORE_LEFT = Random(10.0, 15.0);
-		const string DMG_GORE_RIGHT = Random(10.0, 15.0);
-		const string DMG_CHARGE = RandomInt(20, 50);
-		const float ATTACK_HITCHANCE = 0.7;
+		DMG_GORE_FORWARD = Random(10.0, 15.0);
+		DMG_GORE_LEFT = Random(10.0, 15.0);
+		DMG_GORE_RIGHT = Random(10.0, 15.0);
+		DMG_CHARGE = RandomInt(20, 50);
+		ATTACK_HITCHANCE = 0.7;
 		FLEE_CHANCE = 0.1;
 	}
 

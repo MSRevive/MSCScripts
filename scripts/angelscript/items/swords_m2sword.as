@@ -7,6 +7,15 @@ namespace MS
 
 class SwordsM2sword : CGameScript
 {
+	int ANIM_ATTACK1;
+	int ANIM_ATTACK2;
+	int ANIM_IDLE1;
+	int ANIM_LIFT;
+	int ANIM_PARRY1;
+	int ANIM_PARRY1_RETRACT;
+	string ANIM_PREFIX;
+	int ANIM_SHEATH;
+	int ANIM_UNSHEATH;
 	string ATTACK_ACCURACYDEFAULT;
 	string ATTACK_ACCURACYSTAT;
 	int ATTACK_ALIGN_BASE;
@@ -24,35 +33,52 @@ class SwordsM2sword : CGameScript
 	int ATTACK_PRIORITY;
 	int ATTACK_RANGE;
 	string ATTACK_TYPE;
+	int BASE_LEVEL_REQ;
+	string ITEM_NAME;
+	string MODEL_BLOCK;
+	int MODEL_BODY_OFS;
+	string MODEL_HANDS;
+	string MODEL_VIEW;
+	string MODEL_WORLD;
+	string SOUND_DRAW;
+	string SOUND_HITWALL1;
+	string SOUND_HITWALL2;
+	string SOUND_SHOUT;
+	string SOUND_SWIPE;
+	float SWING_ACCURACY;
+	int SWING_DAMAGE;
+	int SWING_DAMAGE_RANGE;
+	float SWING_DELAY;
+	float SWING_ENERGY;
 
 	SwordsM2sword()
 	{
-		const int BASE_LEVEL_REQ = 15;
-		const int ANIM_LIFT = 0;
-		const int ANIM_IDLE1 = 1;
-		const int ANIM_ATTACK1 = 2;
-		const int ANIM_ATTACK2 = 3;
-		const int ANIM_PARRY1 = 4;
-		const int ANIM_PARRY1_RETRACT = 5;
-		const int ANIM_UNSHEATH = 6;
-		const int ANIM_SHEATH = 7;
-		const string MODEL_VIEW = "weapons/swords/highsword_rview.mdl";
-		const string MODEL_HANDS = "weapons/swords/p_swords.mdl";
-		const string MODEL_WORLD = "weapons/swords/p_swords.mdl";
-		const string MODEL_BLOCK = "armor/shields/p_shields.mdl";
-		const string SOUND_SWIPE = "weapons/swingsmall.wav";
-		const string SOUND_HITWALL1 = "weapons/cbar_hit1.wav";
-		const string SOUND_HITWALL2 = "weapons/cbar_hit1.wav";
-		const string SOUND_DRAW = "weapons/swords/sworddraw.wav";
-		const string SOUND_SHOUT = GetEntityProperty(GetOwner(), "scriptvar");
-		const float SWING_DELAY = 1.1;
-		const float SWING_ENERGY = 1.5;
-		const float SWING_ACCURACY = 0.8;
-		const int SWING_DAMAGE = 300;
-		const int SWING_DAMAGE_RANGE = 180;
-		const string ITEM_NAME = "longsword";
-		const int MODEL_BODY_OFS = 4;
-		const string ANIM_PREFIX = "highsword";
+		BASE_LEVEL_REQ = 15;
+		ANIM_LIFT = 0;
+		ANIM_IDLE1 = 1;
+		ANIM_ATTACK1 = 2;
+		ANIM_ATTACK2 = 3;
+		ANIM_PARRY1 = 4;
+		ANIM_PARRY1_RETRACT = 5;
+		ANIM_UNSHEATH = 6;
+		ANIM_SHEATH = 7;
+		MODEL_VIEW = "weapons/swords/highsword_rview.mdl";
+		MODEL_HANDS = "weapons/swords/p_swords.mdl";
+		MODEL_WORLD = "weapons/swords/p_swords.mdl";
+		MODEL_BLOCK = "armor/shields/p_shields.mdl";
+		SOUND_SWIPE = "weapons/swingsmall.wav";
+		SOUND_HITWALL1 = "weapons/cbar_hit1.wav";
+		SOUND_HITWALL2 = "weapons/cbar_hit1.wav";
+		SOUND_DRAW = "weapons/swords/sworddraw.wav";
+		SOUND_SHOUT = GetEntityProperty(GetOwner(), "scriptvar");
+		SWING_DELAY = 1.1;
+		SWING_ENERGY = 1.5;
+		SWING_ACCURACY = 0.8;
+		SWING_DAMAGE = 300;
+		SWING_DAMAGE_RANGE = 180;
+		ITEM_NAME = "longsword";
+		MODEL_BODY_OFS = 4;
+		ANIM_PREFIX = "highsword";
 	}
 
 	void weapon_spawn()
@@ -134,7 +160,9 @@ class SwordsM2sword : CGameScript
 		PlayViewAnim(ANIM_ATTACK1);
 		PlayOwnerAnim("once", "longsword_swipe");
 		SetVolume(10);
-		// TODO: UNCONVERTED: playrandomsoundcl 0 SOUND_SWIPE
+		// PlayRandomSound from: SOUND_SWIPE
+		array<string> sounds = {SOUND_SWIPE};
+		EmitSound(GetOwner(), 0, sounds[RandomInt(0, sounds.length() - 1)], 10);
 		CallOwnerEvent("commenceattack");
 	}
 

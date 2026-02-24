@@ -5,8 +5,11 @@ namespace MS
 
 class GuidedSphereCl : CGameScript
 {
+	string EMITTER_SPRITE;
 	string FB_ORG;
 	string FB_SERVER_ORG;
+	int FIREBALL_SPEED;
+	string FIREBALL_SPRITE;
 	int IS_ACTIVE;
 	int IS_COLORED;
 	string IS_DESTROYED;
@@ -15,25 +18,34 @@ class GuidedSphereCl : CGameScript
 	string NEW_COLOR;
 	string OWNER_HANDPOS;
 	string OWNER_HAND_IDX;
+	string SOUND_UPDATE1;
+	string SOUND_UPDATE2;
+	string SOUND_UPDATE3;
+	int SPHERE_RADIUS;
 	string SPHERE_TYPE;
+	int SPRITE_FRAMES_LARGE;
+	int SPRITE_FRAMES_SMALL;
+	float SPRITE_SCALE_KABOOM;
+	float SPRITE_SCALE_LARGE;
+	float SPRITE_SCALE_SMALL;
 	string VEL_ANGLES;
 
 	GuidedSphereCl()
 	{
-		const int FIREBALL_SPEED = 120;
-		const string FIREBALL_SPRITE = "3dmflaora.spr";
-		const string EMITTER_SPRITE = "3dmflaora.spr";
+		FIREBALL_SPEED = 120;
+		FIREBALL_SPRITE = "3dmflaora.spr";
+		EMITTER_SPRITE = "3dmflaora.spr";
 		IS_COLORED = 0;
 		NEW_COLOR = Vector3(255, 255, 255);
-		const int SPRITE_FRAMES_SMALL = 1;
-		const int SPRITE_FRAMES_LARGE = 1;
-		const float SPRITE_SCALE_SMALL = 0.5;
-		const float SPRITE_SCALE_LARGE = 2.0;
-		const float SPRITE_SCALE_KABOOM = 3.0;
-		const string SOUND_UPDATE1 = "debris/zap1.wav";
-		const string SOUND_UPDATE2 = "debris/zap3.wav";
-		const string SOUND_UPDATE3 = "debris/zap3.wav";
-		const int SPHERE_RADIUS = 64;
+		SPRITE_FRAMES_SMALL = 1;
+		SPRITE_FRAMES_LARGE = 1;
+		SPRITE_SCALE_SMALL = 0.5;
+		SPRITE_SCALE_LARGE = 2.0;
+		SPRITE_SCALE_KABOOM = 3.0;
+		SOUND_UPDATE1 = "debris/zap1.wav";
+		SOUND_UPDATE2 = "debris/zap3.wav";
+		SOUND_UPDATE3 = "debris/zap3.wav";
+		SPHERE_RADIUS = 64;
 	}
 
 	void OnRepeatTimer()
@@ -45,7 +57,7 @@ class GuidedSphereCl : CGameScript
 		ClientEffect("tempent", "sprite", FIREBALL_SPRITE, FB_ORG, "setup_fireball", "update_fireball");
 		OWNER_HANDPOS = /* TODO: $getcl */ $getcl(MY_OWNER, OWNER_HAND_IDX);
 		ClientEffect("beam_points", OWNER_HANDPOS, FB_ORG, "lgtning.spr", 0.5, 3.0, 0.5, 255, 50, 30, Vector3(255, 255, 0));
-		string RND_SOUND = RandomInt(1, 3);
+		int RND_SOUND = RandomInt(1, 3);
 		if (RND_SOUND == 1)
 		{
 			EmitSound3D(SOUND_UPDATE1, 10, FB_ORG);
@@ -74,7 +86,7 @@ class GuidedSphereCl : CGameScript
 		{
 		}
 		string TARG_ORG = /* TODO: $getcl */ $getcl(MY_TARGET, "origin");
-		string TARG_DIST = Distance(FB_ORG, TARG_ORG);
+		float TARG_DIST = Distance(FB_ORG, TARG_ORG);
 		if (TARG_DIST > 0)
 		{
 		}
@@ -124,7 +136,7 @@ class GuidedSphereCl : CGameScript
 		string F_FIREBALL_SPEED = FIREBALL_SPEED;
 		FB_ORG = "game.tempent.origin";
 		string FB_ANGLES = "game.tempent.angles";
-		string SERVER_CLIENT_DIFFERENCE = Distance(FB_ORG, FB_SERVER_ORG);
+		float SERVER_CLIENT_DIFFERENCE = Distance(FB_ORG, FB_SERVER_ORG);
 		if (SERVER_CLIENT_DIFFERENCE > 128)
 		{
 			ClientEffect("tempent", "set_current_prop", "origin", FB_SERVER_ORG);
@@ -197,8 +209,8 @@ class GuidedSphereCl : CGameScript
 
 	void setup_kaboom()
 	{
-		string RND_YAW = Random(0, 359);
-		string RND_PITCH = Random(0, 359);
+		float RND_YAW = Random(0, 359);
+		float RND_PITCH = Random(0, 359);
 		ClientEffect("tempent", "set_current_prop", "death_delay", 0.5);
 		ClientEffect("tempent", "set_current_prop", "fadeout", 0.5);
 		ClientEffect("tempent", "set_current_prop", "velocity", /* TODO: $relvel */ $relvel(Vector3(RND_PITCH, RND_YAW, 0), Vector3(0, RND_FB, 0)));

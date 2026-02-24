@@ -5,6 +5,12 @@ namespace MS
 
 class SfxLightning : CGameScript
 {
+	string LIGHTNING_SOUND;
+	string LIGHTNING_SPRITE;
+	string LIGHTNING_SPRITE_SPARKS;
+	string LIGHT_COLOR;
+	string SHN;
+	int SPARK_HORIZONTAL_NOISE;
 	string l.grnd;
 	string sfx.amt;
 	string sfx.duration;
@@ -15,12 +21,12 @@ class SfxLightning : CGameScript
 
 	SfxLightning()
 	{
-		const string LIGHTNING_SPRITE = "lgtning.spr";
-		const string LIGHTNING_SPRITE_SPARKS = "3dmflaora.spr";
-		const Vector3 LIGHT_COLOR = Vector3(1, 0.5, 2);
-		const string LIGHTNING_SOUND = "weather/lightning.wav";
-		const int SPARK_HORIZONTAL_NOISE = 30;
-		const string SHN = SPARK_HORIZONTAL_NOISE;
+		LIGHTNING_SPRITE = "lgtning.spr";
+		LIGHTNING_SPRITE_SPARKS = "3dmflaora.spr";
+		LIGHT_COLOR = Vector3(1, 0.5, 2);
+		LIGHTNING_SOUND = "weather/lightning.wav";
+		SPARK_HORIZONTAL_NOISE = 30;
+		SHN = SPARK_HORIZONTAL_NOISE;
 		Precache(LIGHTNING_SPRITE);
 		Precache(LIGHTNING_SPRITE_SPARKS);
 	}
@@ -61,9 +67,9 @@ class SfxLightning : CGameScript
 	{
 		ClientEffect("tempent", "set_current_prop", "death_delay", Random(0.6, 1));
 		ClientEffect("tempent", "set_current_prop", "bouncefactor", 2);
-		string l.x = Random(/* TODO: $neg */ $neg(SHN), SHN);
-		string l.y = Random(/* TODO: $neg */ $neg(SHN), SHN);
-		string l.z = Random(-300, -30);
+		float l.x = Random(/* TODO: $neg */ $neg(SHN), SHN);
+		float l.y = Random(/* TODO: $neg */ $neg(SHN), SHN);
+		float l.z = Random(-300, -30);
 		Vector3 l.vel = Vector3(l.x, l.y, l.z);
 		ClientEffect("tempent", "set_current_prop", "velocity", l.vel);
 		ClientEffect("tempent", "set_current_prop", "collide", "world");

@@ -11,14 +11,20 @@ namespace MS
 
 class Weapstore : CGameScript
 {
-	string OVERCHARGE;
+	int NO_HAIL;
+	int NO_JOB;
+	int NO_RUMOR;
+	int OVERCHARGE;
 	float SELL_RATIO;
 	int SELL_WEAPON_LEVEL;
 	string SOUND_DEATH;
 	string STORE_NAME;
 	int STORE_SELLMENU;
 	string STORE_TRIGGERTEXT;
+	int VEND_ARMORER;
+	int VEND_CONTAINERS;
 	int VEND_NEWBIE;
+	int VEND_WEAPONS;
 
 	Weapstore()
 	{
@@ -27,13 +33,13 @@ class Weapstore : CGameScript
 		STORE_TRIGGERTEXT = "store trade buy sell purchase sale offer";
 		STORE_SELLMENU = 1;
 		SELL_RATIO = 0.8;
-		const int NO_HAIL = 1;
-		const int NO_RUMOR = 1;
-		const int NO_JOB = 1;
+		NO_HAIL = 1;
+		NO_RUMOR = 1;
+		NO_JOB = 1;
 		VEND_NEWBIE = 1;
-		const int VEND_WEAPONS = 1;
-		const int VEND_CONTAINERS = 1;
-		const int VEND_ARMORER = 0;
+		VEND_WEAPONS = 1;
+		VEND_CONTAINERS = 1;
+		VEND_ARMORER = 0;
 	}
 
 	void OnRepeatTimer()
@@ -76,7 +82,7 @@ class Weapstore : CGameScript
 
 	void say_job()
 	{
-		SayText("I am afraid that I do not give out jobs , I am a worker myself.");
+		SayText(I + "am afraid that " + I + "do not give out jobs , " + I + " am a worker myself.");
 	}
 
 	void vendor_addstoreitems()

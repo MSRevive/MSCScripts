@@ -7,11 +7,12 @@ namespace MS
 
 class Resume : CGameScript
 {
+	float DEATH_DELAY;
 	int PLAYING_DEAD;
 
 	Resume()
 	{
-		const float DEATH_DELAY = 10.0;
+		DEATH_DELAY = 10.0;
 		PLAYING_DEAD = 1;
 	}
 

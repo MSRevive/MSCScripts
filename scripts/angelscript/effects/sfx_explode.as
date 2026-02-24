@@ -9,18 +9,27 @@ class SfxExplode : CGameScript
 	string FX_CENTER;
 	float FX_DURATION;
 	string FX_RADIUS;
+	string SOUND_BURST;
+	string SPRITE_COLOR;
+	int SPRITE_FRAMERATE;
+	string SPRITE_NAME;
+	int SPRITE_NFRAMES;
+	int SPRITE_RENDERAMT;
+	string SPRITE_RENDERMODE;
+	float SPRITE_SCALE;
+	int SPRITE_VOF;
 
 	SfxExplode()
 	{
-		const string SPRITE_NAME = "explode1.spr";
-		const Vector3 SPRITE_COLOR = Vector3(255, 128, 64);
-		const int SPRITE_RENDERAMT = 200;
-		const string SPRITE_RENDERMODE = "add";
-		const int SPRITE_FRAMERATE = 30;
-		const int SPRITE_NFRAMES = 9;
-		const float SPRITE_SCALE = 1.0;
-		const int SPRITE_VOF = 32;
-		const string SOUND_BURST = "weapons/explode3.wav";
+		SPRITE_NAME = "explode1.spr";
+		SPRITE_COLOR = Vector3(255, 128, 64);
+		SPRITE_RENDERAMT = 200;
+		SPRITE_RENDERMODE = "add";
+		SPRITE_FRAMERATE = 30;
+		SPRITE_NFRAMES = 9;
+		SPRITE_SCALE = 1.0;
+		SPRITE_VOF = 32;
+		SOUND_BURST = "weapons/explode3.wav";
 	}
 
 	void client_activate()

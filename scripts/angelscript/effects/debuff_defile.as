@@ -7,10 +7,13 @@ namespace MS
 
 class DebuffDefile : CGameScript
 {
+	string EFFECT_ID;
+	string EFFECT_SCRIPT;
+
 	DebuffDefile()
 	{
-		const string EFFECT_ID = "debuff_defile";
-		const string EFFECT_SCRIPT = currentscript;
+		EFFECT_ID = "debuff_defile";
+		EFFECT_SCRIPT = currentscript;
 	}
 
 	void OnDamagedOther(CBaseEntity@ victim, int damage) override

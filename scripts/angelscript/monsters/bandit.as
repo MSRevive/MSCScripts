@@ -8,13 +8,16 @@ namespace MS
 class Bandit : CGameScript
 {
 	string ALLY_CHECK_ID;
+	string ANIM_AIM_SPELL;
 	string ANIM_ATTACK;
+	string ANIM_CAST_SPELL;
 	string ANIM_DEATH;
 	string ANIM_IDLE;
+	string ANIM_PREP_SPELL;
 	string ANIM_RUN;
 	string ANIM_WALK;
 	string AS_ATTACKING;
-	string ATTACK1_DAMAGE;
+	float ATTACK1_DAMAGE;
 	int ATTACK_COF;
 	string ATTACK_HITRANGE;
 	float ATTACK_PERCENTAGE;
@@ -32,6 +35,7 @@ class Bandit : CGameScript
 	string CONTAINER_SCRIPT;
 	int DROPS_CONTAINER;
 	string FIREBALL_DELAY;
+	float FIREBALL_FREQ;
 	int HUNT_AGRO;
 	string ICE_SHIELD_CHECK;
 	int IS_BUFFING;
@@ -39,6 +43,11 @@ class Bandit : CGameScript
 	int NO_STEP_ADJ;
 	int NO_STUCK_CHECKS;
 	int NPC_GIVE_EXP;
+	float RETALIATE_CHANGETARGET_CHANCE;
+	string SOUND_BOW;
+	string SOUND_PAIN;
+	string SOUND_PAIN2;
+	int SPELL_RANGE;
 	string SPELL_TARGET;
 	string WEAPON;
 
@@ -46,9 +55,9 @@ class Bandit : CGameScript
 	{
 		CONTAINER_DROP_CHANCE = 0.1;
 		CONTAINER_SCRIPT = "chests/quiver_of_random_lesser";
-		const string SOUND_PAIN = "player/chesthit1.wav";
-		const string SOUND_PAIN2 = "player/armhit1.wav";
-		const string SOUND_BOW = "weapons/bow/bow.wav";
+		SOUND_PAIN = "player/chesthit1.wav";
+		SOUND_PAIN2 = "player/armhit1.wav";
+		SOUND_BOW = "weapons/bow/bow.wav";
 		ANIM_IDLE = "idle";
 		ANIM_RUN = "run";
 		ANIM_WALK = "walk2";
@@ -57,7 +66,7 @@ class Bandit : CGameScript
 		HUNT_AGRO = 1;
 		CAN_ATTACK = 1;
 		CAN_RETALIATE = 1;
-		const float RETALIATE_CHANGETARGET_CHANCE = 0.75;
+		RETALIATE_CHANGETARGET_CHANCE = 0.75;
 		CAN_HEAR = 1;
 		NPC_GIVE_EXP = 60;
 		bowey();
@@ -70,11 +79,11 @@ class Bandit : CGameScript
 		ATTACK_HITRANGE = ATTACK_RANGE;
 		ATTACK_HITRANGE *= 1.5;
 		NO_STEP_ADJ = 1;
-		const float FIREBALL_FREQ = 5.0;
-		const int SPELL_RANGE = 700;
-		const string ANIM_PREP_SPELL = "prepare_fireball";
-		const string ANIM_AIM_SPELL = "aim_fireball_R";
-		const string ANIM_CAST_SPELL = "throw_fireball_R";
+		FIREBALL_FREQ = 5.0;
+		SPELL_RANGE = 700;
+		ANIM_PREP_SPELL = "prepare_fireball";
+		ANIM_AIM_SPELL = "aim_fireball_R";
+		ANIM_CAST_SPELL = "throw_fireball_R";
 	}
 
 	void OnRepeatTimer()
@@ -220,7 +229,7 @@ class Bandit : CGameScript
 	void debug_params()
 	{
 		SetSayTextRange(1024);
-		SayText("Mov MOVE_RANGE");
+		SayText("Mov " + MOVE_RANGE);
 	}
 
 	void attack()
@@ -258,7 +267,7 @@ class Bandit : CGameScript
 		// PlayRandomSound from: SOUND_PAIN, SOUND_PAIN2
 		array<string> sounds = {SOUND_PAIN, SOUND_PAIN2};
 		EmitSound(GetOwner(), 2, sounds[RandomInt(0, sounds.length() - 1)], 10);
-		string L_DEATHANIM = RandomInt(0, 6);
+		int L_DEATHANIM = RandomInt(0, 6);
 		if (L_DEATHANIM == 0)
 		{
 			ANIM_DEATH = "die_simple";

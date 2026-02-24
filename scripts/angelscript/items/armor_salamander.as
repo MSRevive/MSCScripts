@@ -8,19 +8,31 @@ namespace MS
 
 class ArmorSalamander : CGameScript
 {
+	int ARMOR_BODY;
+	string ARMOR_MODEL;
+	string ARMOR_TEXT;
+	float BARMOR_PROTECTION;
+	string BARMOR_PROTECTION_AREA;
+	string BARMOR_REPLACE_BODYPARTS;
+	string BARMOR_TYPE;
+	int ELM_AMT;
+	string ELM_NAME;
+	string ELM_TYPE;
+	int NEW_ARMOR_OFS;
+
 	ArmorSalamander()
 	{
-		const string ARMOR_MODEL = "armor/p_armorvest.mdl";
-		const int ARMOR_BODY = 8;
-		const string ARMOR_TEXT = "You slither into some cobra skin armor.";
-		const string BARMOR_TYPE = "leather";
-		const float BARMOR_PROTECTION = 0.35;
-		const string BARMOR_PROTECTION_AREA = "chest";
-		const string BARMOR_REPLACE_BODYPARTS = "chest";
-		const string ELM_NAME = "poisl";
-		const string ELM_TYPE = "poison";
-		const int ELM_AMT = 75;
-		const int NEW_ARMOR_OFS = 9;
+		ARMOR_MODEL = "armor/p_armorvest.mdl";
+		ARMOR_BODY = 8;
+		ARMOR_TEXT = "You slither into some cobra skin armor.";
+		BARMOR_TYPE = "leather";
+		BARMOR_PROTECTION = 0.35;
+		BARMOR_PROTECTION_AREA = "chest";
+		BARMOR_REPLACE_BODYPARTS = "chest";
+		ELM_NAME = "poisl";
+		ELM_TYPE = "poison";
+		ELM_AMT = 75;
+		NEW_ARMOR_OFS = 9;
 	}
 
 	void OnSpawn() override

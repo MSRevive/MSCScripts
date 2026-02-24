@@ -7,22 +7,37 @@ namespace MS
 
 class MagicHandIceLance : CGameScript
 {
+	int ANIM_CAST;
+	int ANIM_PREPARE;
+	float MELEE_ATK_DURATION;
+	float MELEE_DMG_DELAY;
+	int MELEE_RANGE;
+	int RANGED_FORCE;
+	string RANGED_PROJECTILE;
+	string SOUND_CHARGE;
+	string SOUND_SHOOT;
+	int SPELL_DAMAGE;
+	int SPELL_MPDRAIN;
+	int SPELL_NOISE;
+	float SPELL_PREPARE_TIME;
+	string SPELL_STAT;
+
 	MagicHandIceLance()
 	{
-		const int ANIM_PREPARE = 7;
-		const int ANIM_CAST = 17;
-		const string SOUND_CHARGE = "none";
-		const string SOUND_SHOOT = "magic/ice_strike.wav";
-		const int MELEE_RANGE = 0;
-		const float MELEE_DMG_DELAY = 0.5;
-		const float MELEE_ATK_DURATION = 1.0;
-		const int RANGED_FORCE = 800;
-		const string RANGED_PROJECTILE = "proj_icelance";
-		const int SPELL_DAMAGE = 400;
-		const int SPELL_NOISE = 500;
-		const float SPELL_PREPARE_TIME = 1.5;
-		const int SPELL_MPDRAIN = 15;
-		const string SPELL_STAT = "spellcasting.ice";
+		ANIM_PREPARE = 7;
+		ANIM_CAST = 17;
+		SOUND_CHARGE = "none";
+		SOUND_SHOOT = "magic/ice_strike.wav";
+		MELEE_RANGE = 0;
+		MELEE_DMG_DELAY = 0.5;
+		MELEE_ATK_DURATION = 1.0;
+		RANGED_FORCE = 800;
+		RANGED_PROJECTILE = "proj_icelance";
+		SPELL_DAMAGE = 400;
+		SPELL_NOISE = 500;
+		SPELL_PREPARE_TIME = 1.5;
+		SPELL_MPDRAIN = 15;
+		SPELL_STAT = "spellcasting.ice";
 	}
 
 	void spell_spawn()

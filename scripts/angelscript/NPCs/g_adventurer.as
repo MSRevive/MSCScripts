@@ -13,6 +13,8 @@ class GAdventurer : CGameScript
 	string ANIM_IDLE;
 	string ANIM_RUN;
 	string ANIM_WALK;
+	float ATTACK_DAMAGE;
+	float ATTACK_HITCHANCE;
 	int ATTACK_HITRANGE;
 	int ATTACK_RANGE;
 	int BATTLE_OVER;
@@ -32,12 +34,15 @@ class GAdventurer : CGameScript
 	string CURRENT_SPEAKER;
 	string DID_INTRO;
 	int FORCED_MOVE_DEST;
+	float FREQ_FF_WARN;
 	int IN_BATTLE;
 	int MAX_REWARDS_TOGIVE;
 	string MENU_TARGET;
 	int MOVE_RANGE;
 	string NEXT_FF_WARNING;
 	int NO_HAIL;
+	int NO_JOB;
+	int NO_RUMOR;
 	int NPC_FORCED_MOVEDEST;
 	int NPC_GIVE_EXP;
 	int NPC_NO_PLAYER_DMG;
@@ -46,16 +51,18 @@ class GAdventurer : CGameScript
 	string REWARD_LIST;
 	string REWARD_NAMES;
 	string SAID_REWARD;
+	string SOUND_DEATH;
+	string SOUND_STRUCK;
 
 	GAdventurer()
 	{
-		const float FREQ_FF_WARN = 10.0;
+		FREQ_FF_WARN = 10.0;
 		REWARD_LIST = "axes_poison1;swords_poison1;swords_liceblade;gauntlets_normal;mana_leadfoot;scroll2_summon_rat;bows_swiftbow;item_charm_w1";
 		REWARD_NAMES = "an Envenomed Axe;a Envenomed Shortsword;a Lesser Ice Blade;a set of Gauntlets;a Potion of Stability;a Summon Rat Scroll;an Elven Bow;a Wolf Charm";
 		N_REWARDS_GIVEN = 0;
 		MAX_REWARDS_TOGIVE = 0;
-		const string SOUND_STRUCK = "body/flesh1.wav";
-		const string SOUND_DEATH = "voices/human/male_die.wav";
+		SOUND_STRUCK = "body/flesh1.wav";
+		SOUND_DEATH = "voices/human/male_die.wav";
 		Precache(SOUND_DEATH);
 		ANIM_IDLE = "idle1";
 		ANIM_RUN = "run";
@@ -65,12 +72,12 @@ class GAdventurer : CGameScript
 		MOVE_RANGE = 32;
 		ATTACK_RANGE = 64;
 		ATTACK_HITRANGE = 120;
-		const float ATTACK_HITCHANCE = 0.85;
-		const string ATTACK_DAMAGE = "$randf(5.0,8.0)";
+		ATTACK_HITCHANCE = 0.85;
+		ATTACK_DAMAGE = "$randf(5.0,8.0)";
 		NPC_GIVE_EXP = 0;
 		NPC_NO_PLAYER_DMG = 1;
-		const int NO_JOB = 1;
-		const int NO_RUMOR = 1;
+		NO_JOB = 1;
+		NO_RUMOR = 1;
 		NO_HAIL = 0;
 	}
 
@@ -156,7 +163,7 @@ class GAdventurer : CGameScript
 		if ((IS_SPELL))
 		{
 			SayText("Watch where you cast your spells!");
-			string RND_SPELL = RandomInt(1, 2);
+			int RND_SPELL = RandomInt(1, 2);
 			if (RND_SPELL == 1)
 			{
 				EmitSound(GetOwner(), 0, "voices/jerdid/Jerdid_8.wav", 10);
@@ -311,7 +318,7 @@ class GAdventurer : CGameScript
 		CONVO_TYPE = "none";
 		QUEST_WINNER = param1;
 		PlayAnim("critical", "yes");
-		SayText("Your assistance is greatly appreciated! Now stand-fast and be ready... I m sure they ve caught our scent by now.");
+		SayText("Your assistance is greatly appreciated! Now stand-fast and be ready... " + I + " m sure they ve caught our scent by now.");
 		EmitSound(GetOwner(), 0, "voices/jerdid/Jerdid_5.wav", 10);
 		IN_BATTLE = 1;
 		UseTrigger("wolves_go");
@@ -324,7 +331,7 @@ class GAdventurer : CGameScript
 		NO_HAIL = 0;
 		CONVO_TYPE = "none";
 		PlayAnim("critical", "eye_wipe");
-		SayText("I... Undestand... A powerful warrior like yourself must be busy... Quite often , I suppose...");
+		SayText(I... + "Undestand... " + A + "powerful warrior like yourself must be busy... Quite often , " + I + " suppose...");
 		EmitSound(GetOwner(), 0, "voices/jerdid/Jerdid_4.wav", 10);
 		SetRoam(true);
 	}
@@ -366,7 +373,7 @@ class GAdventurer : CGameScript
 	{
 		if (N_REWARDS_GIVEN >= MAX_REWARDS_TOGIVE)
 		{
-			SayText("Sorry , I ve nothing left to offer.");
+			SayText("Sorry , " + I + " ve nothing left to offer.");
 			EmitSound(GetOwner(), 0, "voices/jerdid/Jerdid_7.wav", 10);
 			int EXIT_SUB = 1;
 		}

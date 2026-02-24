@@ -7,7 +7,7 @@ namespace MS
 
 class Feldagor : CGameScript
 {
-	string HIRE_PRICE;
+	int HIRE_PRICE;
 	int SAID_HI;
 
 	Feldagor()

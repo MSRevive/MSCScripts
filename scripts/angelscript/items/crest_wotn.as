@@ -7,10 +7,13 @@ namespace MS
 
 class CrestWotn : CGameScript
 {
+	int MODEL_CREST_OFS;
+	string MODEL_WEAR;
+
 	CrestWotn()
 	{
-		const int MODEL_CREST_OFS = 34;
-		const string MODEL_WEAR = "armor/p_gowns.mdl";
+		MODEL_CREST_OFS = 34;
+		MODEL_WEAR = "armor/p_gowns.mdl";
 	}
 
 	void crest_spawn()

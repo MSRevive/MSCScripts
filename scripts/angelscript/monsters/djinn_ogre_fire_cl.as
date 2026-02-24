@@ -6,20 +6,24 @@ namespace MS
 class DjinnOgreFireCl : CGameScript
 {
 	string CLOUD_ANG;
+	string FLAME_SPRITE;
 	int FX_ACTIVE;
 	string FX_DURATION;
 	string FX_OWNER;
 	int FX_STORM_ON;
+	string GLOW_COLOR;
+	int GLOW_RAD;
 	string LEFT_HAND_POS;
 	string MY_LIGHT_ID;
+	int N_FRAMES;
 	string RIGHT_HAND_POS;
 
 	DjinnOgreFireCl()
 	{
-		const int GLOW_RAD = 128;
-		const Vector3 GLOW_COLOR = Vector3(255, 128, 0);
-		const string FLAME_SPRITE = "explode1.spr";
-		const int N_FRAMES = 9;
+		GLOW_RAD = 128;
+		GLOW_COLOR = Vector3(255, 128, 0);
+		FLAME_SPRITE = "explode1.spr";
+		N_FRAMES = 9;
 	}
 
 	void OnRepeatTimer()
@@ -142,8 +146,8 @@ class DjinnOgreFireCl : CGameScript
 		ClientEffect("tempent", "set_current_prop", "collide", "none");
 		ClientEffect("tempent", "set_current_prop", "fuser1", 0.1);
 		ClientEffect("tempent", "set_current_prop", "angles", CLOUD_ANG);
-		string RND_RL = Random(-20, 20);
-		string RND_UD = Random(-20, 20);
+		float RND_RL = Random(-20, 20);
+		float RND_UD = Random(-20, 20);
 		string CLOUD_VEL = /* TODO: $relvel */ $relvel(CLOUD_ANG, Vector3(RND_RL, Random(300, 400), RND_UD));
 		ClientEffect("tempent", "set_current_prop", "velocity", CLOUD_VEL);
 	}

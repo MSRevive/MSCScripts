@@ -7,6 +7,10 @@ namespace MS
 
 class CrossbowHeavy : CGameScript
 {
+	int ANIM_FIRE;
+	int ANIM_IDLE1;
+	int ANIM_LIFT1;
+	int ANIM_STRETCH;
 	float ATTACK_ACCURACYDEFAULT;
 	string ATTACK_ACCURACYSTAT;
 	int ATTACK_ALIGN_BASE;
@@ -24,19 +28,25 @@ class CrossbowHeavy : CGameScript
 	float ATTACK_PROJMINHOLD;
 	int ATTACK_RANGE;
 	string ATTACK_TYPE;
+	string ITEM_NAME;
+	string MODEL_HANDS;
+	string MODEL_VIEW;
+	string MODEL_WEAR;
+	string MODEL_WORLD;
+	string SOUND_SHOOT;
 
 	CrossbowHeavy()
 	{
-		const int ANIM_IDLE1 = 0;
-		const int ANIM_LIFT1 = 4;
-		const int ANIM_STRETCH = 8;
-		const int ANIM_FIRE = 7;
-		const string MODEL_VIEW = "weapons/bows/v_crossbow.mdl";
-		const string MODEL_HANDS = "weapons/bows/p_crossbow.mdl";
-		const string MODEL_WORLD = "weapons/bows/w_crossbow.mdl";
-		const string MODEL_WEAR = "weapons/bows/crossbow_back.mdl";
-		const string SOUND_SHOOT = "weapons/bow/crossbow.wav";
-		const string ITEM_NAME = "xbow";
+		ANIM_IDLE1 = 0;
+		ANIM_LIFT1 = 4;
+		ANIM_STRETCH = 8;
+		ANIM_FIRE = 7;
+		MODEL_VIEW = "weapons/bows/v_crossbow.mdl";
+		MODEL_HANDS = "weapons/bows/p_crossbow.mdl";
+		MODEL_WORLD = "weapons/bows/w_crossbow.mdl";
+		MODEL_WEAR = "weapons/bows/crossbow_back.mdl";
+		SOUND_SHOOT = "weapons/bow/crossbow.wav";
+		ITEM_NAME = "xbow";
 	}
 
 	void weapon_spawn()

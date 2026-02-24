@@ -7,19 +7,35 @@ namespace MS
 
 class WolfIceAlpha : CGameScript
 {
+	int AM_ALPHA;
 	string ANIM_ATTACK;
 	int ATTACK_HITRANGE;
 	int ATTACK_MOVERANGE;
 	int ATTACK_RANGE;
 	string ATTACK_TYPE;
+	float CHANCE_BURN;
+	int CHANCE_CLAW;
 	string CHARGE_ATTACK;
+	int CUSTOM_WOLF;
 	int CYCLES_STARTED;
 	string DID_BOOST;
+	int DMG_BITE;
+	int DMG_CLAW;
+	float DMG_STORM;
 	string DOING_HOWL;
+	int DOT_BURN;
+	float FREQ_COMBAT_HOWL;
+	float FREQ_LEAP;
 	int LEAP_DELAY;
+	string MONSTER_MODEL;
 	int NEXT_HOWL;
+	float NPC_BOSS_REGEN_RATE;
+	float NPC_BOSS_RESTORATION;
 	string NPC_GIVE_EXP;
 	string NPC_IS_BOSS;
+	string SOUND_BURN;
+	float STORM_DUR;
+	int STORM_RAD;
 
 	WolfIceAlpha()
 	{
@@ -32,25 +48,25 @@ class WolfIceAlpha : CGameScript
 		{
 			NPC_GIVE_EXP = 2000;
 		}
-		const float NPC_BOSS_REGEN_RATE = 0.05;
-		const float NPC_BOSS_RESTORATION = 0.25;
-		const int CUSTOM_WOLF = 1;
-		const int AM_ALPHA = 1;
-		const int DOT_BURN = 70;
-		const string DMG_BITE = RandomInt(50, 200);
-		const string DMG_CLAW = RandomInt(50, 75);
-		const float FREQ_COMBAT_HOWL = 30.0;
-		const float CHANCE_BURN = 0.3;
-		const string SOUND_BURN = "magic/frost_reverse.wav";
-		const int CHANCE_CLAW = 5;
-		const string MONSTER_MODEL = "monsters/wolf_huge.mdl";
-		const float FREQ_LEAP = 15.0;
+		NPC_BOSS_REGEN_RATE = 0.05;
+		NPC_BOSS_RESTORATION = 0.25;
+		CUSTOM_WOLF = 1;
+		AM_ALPHA = 1;
+		DOT_BURN = 70;
+		DMG_BITE = RandomInt(50, 200);
+		DMG_CLAW = RandomInt(50, 75);
+		FREQ_COMBAT_HOWL = 30.0;
+		CHANCE_BURN = 0.3;
+		SOUND_BURN = "magic/frost_reverse.wav";
+		CHANCE_CLAW = 5;
+		MONSTER_MODEL = "monsters/wolf_huge.mdl";
+		FREQ_LEAP = 15.0;
 		ATTACK_RANGE = 92;
 		ATTACK_HITRANGE = 128;
 		ATTACK_MOVERANGE = 72;
-		const float DMG_STORM = 20.0;
-		const float STORM_DUR = 20.0;
-		const int STORM_RAD = 800;
+		DMG_STORM = 20.0;
+		STORM_DUR = 20.0;
+		STORM_RAD = 800;
 	}
 
 	void game_precache()

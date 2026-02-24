@@ -9,17 +9,24 @@ namespace MS
 
 class FishSharkAlt : CGameScript
 {
+	string ANIM_ATK_BIG;
+	string ANIM_ATK_LEFT;
+	string ANIM_ATK_RIGHT;
 	string ANIM_ATTACK;
 	string ANIM_DEATH;
 	string ANIM_FLINCH;
 	string ANIM_IDLE;
 	string ANIM_RUN;
 	string ANIM_WALK;
+	float ATK_DMG_HIGH;
+	float ATK_DMG_LOW;
+	float ATTACK_HITCHANCE;
 	int ATTACK_HITRANGE;
 	int ATTACK_MOVERANGE;
 	int ATTACK_RANGE;
 	int CAN_FLINCH;
 	int CAN_HEAR;
+	int DELETE_ON_DEATH;
 	float FLINCH_ANIM;
 	float FLINCH_CHANCE;
 	int FLINCH_DELAY;
@@ -27,32 +34,42 @@ class FishSharkAlt : CGameScript
 	int NPC_GIVE_EXP;
 	int NPC_HACKED_MOVE_SPEED;
 	string PUSH_VEL;
+	string SOUND_ATTACK1;
+	string SOUND_ATTACK2;
+	string SOUND_DEATH;
+	string SOUND_IDLE1;
+	string SOUND_IDLE2;
+	string SOUND_STRUCK1;
+	string SOUND_STRUCK2;
+	string SOUND_STRUCK3;
+	string SOUND_STRUCK4;
+	string SOUND_STRUCK5;
 
 	FishSharkAlt()
 	{
-		const int DELETE_ON_DEATH = 1;
+		DELETE_ON_DEATH = 1;
 		ANIM_IDLE = "idle";
 		ANIM_WALK = "swim";
 		ANIM_RUN = "thrust";
 		ANIM_DEATH = "die1";
-		const string ANIM_ATK_BIG = "srattack1";
-		const string ANIM_ATK_RIGHT = "bite_r";
-		const string ANIM_ATK_LEFT = "bite_l";
+		ANIM_ATK_BIG = "srattack1";
+		ANIM_ATK_RIGHT = "bite_r";
+		ANIM_ATK_LEFT = "bite_l";
 		ANIM_FLINCH = "bgflinch";
-		const string SOUND_IDLE1 = "ichy/ichy_idle1.wav";
-		const string SOUND_IDLE2 = "ichy/ichy_idle2.wav";
-		const string SOUND_ATTACK1 = "ichy/ichy_bite1.wav";
-		const string SOUND_ATTACK2 = "ichy/ichy_bite2.wav";
-		const string SOUND_STRUCK1 = "ichy/ichy_pain2.wav";
-		const string SOUND_STRUCK2 = "ichy/ichy_pain3.wav";
-		const string SOUND_STRUCK3 = "ichy/ichy_pain5.wav";
-		const string SOUND_STRUCK4 = "ichy/ichy_pain3.wav";
-		const string SOUND_STRUCK5 = "ichy/ichy_pain5.wav";
-		const string SOUND_DEATH = "ichy/ichy_die2.wav";
+		SOUND_IDLE1 = "ichy/ichy_idle1.wav";
+		SOUND_IDLE2 = "ichy/ichy_idle2.wav";
+		SOUND_ATTACK1 = "ichy/ichy_bite1.wav";
+		SOUND_ATTACK2 = "ichy/ichy_bite2.wav";
+		SOUND_STRUCK1 = "ichy/ichy_pain2.wav";
+		SOUND_STRUCK2 = "ichy/ichy_pain3.wav";
+		SOUND_STRUCK3 = "ichy/ichy_pain5.wav";
+		SOUND_STRUCK4 = "ichy/ichy_pain3.wav";
+		SOUND_STRUCK5 = "ichy/ichy_pain5.wav";
+		SOUND_DEATH = "ichy/ichy_die2.wav";
 		ATTACK_MOVERANGE = 32;
 		ATTACK_RANGE = 120;
 		ATTACK_HITRANGE = 150;
-		const float ATTACK_HITCHANCE = 0.75;
+		ATTACK_HITCHANCE = 0.75;
 		CAN_HEAR = 1;
 		HUNT_AGRO = 1;
 		CAN_FLINCH = 1;
@@ -61,8 +78,8 @@ class FishSharkAlt : CGameScript
 		FLINCH_DELAY = 4;
 		NPC_HACKED_MOVE_SPEED = 250;
 		NPC_GIVE_EXP = 12;
-		const float ATK_DMG_LOW = 5.0;
-		const float ATK_DMG_HIGH = 10.0;
+		ATK_DMG_LOW = 5.0;
+		ATK_DMG_HIGH = 10.0;
 	}
 
 	void OnSpawn() override
@@ -79,7 +96,7 @@ class FishSharkAlt : CGameScript
 
 	void npc_selectattack()
 	{
-		string NEXT_ATTACK = RandomInt(0, 2);
+		int NEXT_ATTACK = RandomInt(0, 2);
 		if (NEXT_ATTACK == 0)
 		{
 			ANIM_ATTACK = ANIM_ATK_BIG;

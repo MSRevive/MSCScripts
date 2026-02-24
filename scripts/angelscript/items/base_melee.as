@@ -9,19 +9,25 @@ class BaseMelee : CGameScript
 {
 	string BITEM_UNDERSKILLED;
 	string BWEAPON_CHARGE_PERCENT;
+	float BWEAPON_DBL_CHARGE_ADJ;
+	float FREQ_NUB;
+	string MELEE_CALLBACK;
+	string MELEE_CALLBACK_CHARGED;
+	int MELEE_NOISE;
 	string NOOB_LOOP;
 	string PARRY_MULTI_OUT;
 	string PARRY_VALUE;
+	string SPECIAL01_SND;
 	string WEAPON_PRIMARY_SKILL;
 
 	BaseMelee()
 	{
-		const int MELEE_NOISE = 650;
-		const string SPECIAL01_SND = GetEntityProperty(GetOwner(), "scriptvar");
-		const float FREQ_NUB = 30.0;
-		const string MELEE_CALLBACK = "melee";
-		const string MELEE_CALLBACK_CHARGED = "melee";
-		const float BWEAPON_DBL_CHARGE_ADJ = 2.0;
+		MELEE_NOISE = 650;
+		SPECIAL01_SND = GetEntityProperty(GetOwner(), "scriptvar");
+		FREQ_NUB = 30.0;
+		MELEE_CALLBACK = "melee";
+		MELEE_CALLBACK_CHARGED = "melee";
+		BWEAPON_DBL_CHARGE_ADJ = 2.0;
 	}
 
 	void weapon_spawn()
@@ -75,7 +81,7 @@ class BaseMelee : CGameScript
 			OUT_STR += " proficiency ";
 			OUT_STR += BASE_LEVEL_REQ;
 			OUT_STR += " )";
-			SendInfoMsg(GetOwner(), "Insufficient Skill OUT_STR");
+			SendInfoMsg(GetOwner(), "Insufficient Skill " + OUT_STR);
 			NOOB_LOOP = 1;
 		}
 	}
@@ -176,7 +182,7 @@ class BaseMelee : CGameScript
 		OUT_STR += " proficiency ";
 		OUT_STR += BASE_LEVEL_REQ;
 		OUT_STR += " )";
-		SendInfoMsg(GetOwner(), "Insufficient Skill OUT_STR");
+		SendInfoMsg(GetOwner(), "Insufficient Skill " + OUT_STR);
 		SendColoredMessage(GetOwner(), "You lack the skill to wield this weapon.");
 	}
 

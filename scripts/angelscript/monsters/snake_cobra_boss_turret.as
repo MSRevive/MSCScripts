@@ -7,9 +7,11 @@ namespace MS
 
 class SnakeCobraBossTurret : CGameScript
 {
+	int AM_TURRET;
+
 	SnakeCobraBossTurret()
 	{
-		const int AM_TURRET = 1;
+		AM_TURRET = 1;
 	}
 
 }

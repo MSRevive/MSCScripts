@@ -7,36 +7,54 @@ namespace MS
 
 class ProjFlameJet : CGameScript
 {
+	int ARROW_BODY_OFS;
+	int ARROW_SOLIDIFY_ON_WALL;
 	string DMG_AMT;
 	string DOT_AMT;
+	float FREQ_SCAN;
 	string GAME_PVP;
+	int HITWALL_VOL;
 	int IS_ACTIVE;
+	int MODEL_BODY_OFS;
+	string MODEL_HANDS;
+	string MODEL_WORLD;
 	string MY_CL_IDX;
 	string NEXT_SCAN;
+	string PROJ_ANIM_IDLE;
+	int PROJ_COLLIDEHITBOX;
+	int PROJ_DAMAGE;
+	int PROJ_DAMAGE_AOE_FALLOFF;
+	int PROJ_DAMAGE_AOE_RANGE;
+	string PROJ_DAMAGE_TYPE;
+	int PROJ_IGNORENPC;
+	int PROJ_MOTIONBLUR;
+	int PROJ_SOLIDIFY_ON_WALL;
+	int PROJ_STICK_DURATION;
+	int SCAN_RANGE;
 	string TARGET_LIST;
 	string USE_SKILL;
 
 	ProjFlameJet()
 	{
-		const string MODEL_HANDS = "weapons/projectiles.mdl";
-		const string MODEL_WORLD = "weapons/projectiles.mdl";
-		const int ARROW_BODY_OFS = 1;
-		const string PROJ_ANIM_IDLE = "idle_iceball";
-		const int ARROW_SOLIDIFY_ON_WALL = 0;
-		const int HITWALL_VOL = 2;
-		const int PROJ_MOTIONBLUR = 0;
-		const int MODEL_BODY_OFS = 1;
-		const int PROJ_DAMAGE = 0;
-		const int PROJ_STICK_DURATION = 0;
-		const int PROJ_SOLIDIFY_ON_WALL = 0;
-		const int PROJ_DAMAGE_AOE_RANGE = 0;
-		const int PROJ_DAMAGE_AOE_FALLOFF = 1;
-		const string PROJ_DAMAGE_TYPE = "cold";
-		const int PROJ_COLLIDEHITBOX = 1;
-		const int PROJ_IGNORENPC = 1;
-		const string PROJ_ANIM_IDLE = "none";
-		const int SCAN_RANGE = 64;
-		const float FREQ_SCAN = 0.5;
+		MODEL_HANDS = "weapons/projectiles.mdl";
+		MODEL_WORLD = "weapons/projectiles.mdl";
+		ARROW_BODY_OFS = 1;
+		PROJ_ANIM_IDLE = "idle_iceball";
+		ARROW_SOLIDIFY_ON_WALL = 0;
+		HITWALL_VOL = 2;
+		PROJ_MOTIONBLUR = 0;
+		MODEL_BODY_OFS = 1;
+		PROJ_DAMAGE = 0;
+		PROJ_STICK_DURATION = 0;
+		PROJ_SOLIDIFY_ON_WALL = 0;
+		PROJ_DAMAGE_AOE_RANGE = 0;
+		PROJ_DAMAGE_AOE_FALLOFF = 1;
+		PROJ_DAMAGE_TYPE = "cold";
+		PROJ_COLLIDEHITBOX = 1;
+		PROJ_IGNORENPC = 1;
+		PROJ_ANIM_IDLE = "none";
+		SCAN_RANGE = 64;
+		FREQ_SCAN = 0.5;
 	}
 
 	void arrow_spawn()

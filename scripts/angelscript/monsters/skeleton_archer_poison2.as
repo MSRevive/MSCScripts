@@ -7,31 +7,51 @@ namespace MS
 
 class SkeletonArcherPoison2 : CGameScript
 {
+	string ARROW_CL_SCRIPT;
+	int C_SKELE_ARROW_KNOCKBACK;
+	int C_SKELE_PUSH_STRENGTH;
+	int DMG_AOE;
+	int DMG_ARROW;
+	int DMG_SWIPE;
 	int NPC_GIVE_EXP;
+	int SKELE_ARROW_AOE;
+	int SKELE_ARROW_ARC;
+	string SKELE_ARROW_EFFECT;
+	int SKELE_ARROW_GLOW;
+	string SKELE_ARROW_GLOW_COLOR;
+	string SKELE_ARROW_SCRIPT;
+	int SKELE_ARROW_SPEED;
+	string SKELE_CONTAINER_SCRIPT;
+	int SKELE_DOT_DMG;
+	float SKELE_DOT_DUR;
+	int SKELE_DROPS_CONTAINER;
+	float SKELE_DROPS_CONTAINER_CHANCE;
+	int SKELE_GOLD;
+	int SKELE_START_LIVES;
 
 	SkeletonArcherPoison2()
 	{
 		NPC_GIVE_EXP = 1500;
-		const int DMG_ARROW = 400;
-		const int DMG_SWIPE = 80;
-		const int C_SKELE_PUSH_STRENGTH = 400;
-		const int SKELE_GOLD = 100;
-		const string SKELE_ARROW_EFFECT = "effects/dot_poison";
-		const int SKELE_ARROW_AOE = 128;
-		const int SKELE_DOT_DMG = 50;
-		const float SKELE_DOT_DUR = 10.0;
-		const int SKELE_ARROW_GLOW = 1;
-		const Vector3 SKELE_ARROW_GLOW_COLOR = Vector3(0, 255, 0);
-		const string SKELE_ARROW_SCRIPT = "proj_arrow_npc_dyn";
-		const int C_SKELE_ARROW_KNOCKBACK = 800;
-		const int SKELE_DROPS_CONTAINER = 1;
-		const string SKELE_CONTAINER_SCRIPT = "chests/quiver_of_gpoison";
-		const float SKELE_DROPS_CONTAINER_CHANCE = 1.0;
-		const int SKELE_START_LIVES = 1;
-		const int SKELE_ARROW_ARC = 1;
-		const int SKELE_ARROW_SPEED = 500;
-		const string ARROW_CL_SCRIPT = "effects/sfx_poison_burst";
-		const int DMG_AOE = 150;
+		DMG_ARROW = 400;
+		DMG_SWIPE = 80;
+		C_SKELE_PUSH_STRENGTH = 400;
+		SKELE_GOLD = 100;
+		SKELE_ARROW_EFFECT = "effects/dot_poison";
+		SKELE_ARROW_AOE = 128;
+		SKELE_DOT_DMG = 50;
+		SKELE_DOT_DUR = 10.0;
+		SKELE_ARROW_GLOW = 1;
+		SKELE_ARROW_GLOW_COLOR = Vector3(0, 255, 0);
+		SKELE_ARROW_SCRIPT = "proj_arrow_npc_dyn";
+		C_SKELE_ARROW_KNOCKBACK = 800;
+		SKELE_DROPS_CONTAINER = 1;
+		SKELE_CONTAINER_SCRIPT = "chests/quiver_of_gpoison";
+		SKELE_DROPS_CONTAINER_CHANCE = 1.0;
+		SKELE_START_LIVES = 1;
+		SKELE_ARROW_ARC = 1;
+		SKELE_ARROW_SPEED = 500;
+		ARROW_CL_SCRIPT = "effects/sfx_poison_burst";
+		DMG_AOE = 150;
 	}
 
 	void OnRepeatTimer()

@@ -5,12 +5,14 @@ namespace MS
 
 class SfxSplodie : CGameScript
 {
+	string SPLODIE_SOUND;
+	string SPLODIE_SPRITE;
 	string SPR_COLOR;
 
 	SfxSplodie()
 	{
-		const string SPLODIE_SPRITE = "bigsmoke.spr";
-		const string SPLODIE_SOUND = "weapons/explode3.wav";
+		SPLODIE_SPRITE = "bigsmoke.spr";
+		SPLODIE_SOUND = "weapons/explode3.wav";
 	}
 
 	void client_activate()

@@ -7,16 +7,21 @@ namespace MS
 
 class SkeletonArcher2 : CGameScript
 {
+	int C_SKELE_PUSH_STRENGTH;
+	int DMG_ARROW;
+	int DMG_SWIPE;
 	int NPC_GIVE_EXP;
+	int SKELE_GOLD;
+	int SKELE_START_LIVES;
 
 	SkeletonArcher2()
 	{
 		NPC_GIVE_EXP = 200;
-		const int DMG_ARROW = 75;
-		const int DMG_SWIPE = 30;
-		const int SKELE_GOLD = 25;
-		const string SKELE_START_LIVES = RandomInt(1, 2);
-		const int C_SKELE_PUSH_STRENGTH = 100;
+		DMG_ARROW = 75;
+		DMG_SWIPE = 30;
+		SKELE_GOLD = 25;
+		SKELE_START_LIVES = RandomInt(1, 2);
+		C_SKELE_PUSH_STRENGTH = 100;
 	}
 
 	void skele_spawn()

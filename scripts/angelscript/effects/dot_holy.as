@@ -7,14 +7,21 @@ namespace MS
 
 class DotHoly : CGameScript
 {
+	string DOT_HE_IMMUNE;
+	string DOT_IM_AFFECTED;
+	string DOT_IM_RESIST;
+	string DOT_TYPE;
+	string EFFECT_ID;
+	string EFFECT_SCRIPT;
+
 	DotHoly()
 	{
-		const string EFFECT_ID = "DOT_holy";
-		const string EFFECT_SCRIPT = currentscript;
-		const string DOT_TYPE = "holy_effect";
-		const string DOT_IM_AFFECTED = "You are being burned by divine magics!";
-		const string DOT_IM_RESIST = "The holy magic leaves you unharmed.";
-		const string DOT_HE_IMMUNE = "is not harmed by holy magic.";
+		EFFECT_ID = "DOT_holy";
+		EFFECT_SCRIPT = currentscript;
+		DOT_TYPE = "holy_effect";
+		DOT_IM_AFFECTED = "You are being burned by divine magics!";
+		DOT_IM_RESIST = "The holy magic leaves you unharmed.";
+		DOT_HE_IMMUNE = "is not harmed by holy magic.";
 	}
 
 	void dot_effect()

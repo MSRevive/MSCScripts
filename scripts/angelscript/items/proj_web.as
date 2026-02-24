@@ -7,24 +7,38 @@ namespace MS
 
 class ProjWeb : CGameScript
 {
+	int CLFX_ARROW;
+	int CLFX_ARROW_NOSTICK;
+	int MODEL_BODY_OFS;
+	string MODEL_HANDS;
+	string MODEL_WORLD;
+	string PROJ_ANIM_IDLE;
+	int PROJ_DAMAGE;
+	string PROJ_DAMAGE_TYPE;
+	int PROJ_MOTIONBLUR;
+	int PROJ_STICK_DURATION;
+	int PROJ_STICK_ON_NPC;
+	int PROJ_STICK_ON_WALL_NEW;
 	float SCALE_SIZE;
+	string SOUND_HITWALL1;
+	string SOUND_HITWALL2;
 
 	ProjWeb()
 	{
-		const string MODEL_HANDS = "none";
-		const string SOUND_HITWALL1 = "none";
-		const string SOUND_HITWALL2 = "none";
-		const string MODEL_WORLD = "weapons/projectiles.mdl";
-		const int MODEL_BODY_OFS = 62;
-		const string PROJ_ANIM_IDLE = "axis_spin";
-		const string PROJ_DAMAGE_TYPE = "magic";
-		const int PROJ_DAMAGE = 100;
-		const int CLFX_ARROW = 0;
-		const int CLFX_ARROW_NOSTICK = 1;
-		const int PROJ_STICK_ON_NPC = 0;
-		const int PROJ_STICK_DURATION = 0;
-		const int PROJ_MOTIONBLUR = 0;
-		const int PROJ_STICK_ON_WALL_NEW = 0;
+		MODEL_HANDS = "none";
+		SOUND_HITWALL1 = "none";
+		SOUND_HITWALL2 = "none";
+		MODEL_WORLD = "weapons/projectiles.mdl";
+		MODEL_BODY_OFS = 62;
+		PROJ_ANIM_IDLE = "axis_spin";
+		PROJ_DAMAGE_TYPE = "magic";
+		PROJ_DAMAGE = 100;
+		CLFX_ARROW = 0;
+		CLFX_ARROW_NOSTICK = 1;
+		PROJ_STICK_ON_NPC = 0;
+		PROJ_STICK_DURATION = 0;
+		PROJ_MOTIONBLUR = 0;
+		PROJ_STICK_ON_WALL_NEW = 0;
 	}
 
 	void OnSpawn() override
@@ -55,7 +69,7 @@ class ProjWeb : CGameScript
 		{
 			string L_DUR = GetSkillLevel("ent_expowner", "spellcasting.affliction");
 			L_DUR /= 30;
-			// TODO: capvar L_DUR 0 1
+			L_DUR = max(0, min(1, L_DUR));
 			string L_DUR = /* TODO: $ratio */ $ratio(L_DUR, 1.5, 2.5);
 			if ((IsValidPlayer(param1)))
 			{

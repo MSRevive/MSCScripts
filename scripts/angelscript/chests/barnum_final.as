@@ -15,7 +15,7 @@ class BarnumFinal : CGameScript
 
 	void chest_additems()
 	{
-		add_gold(/* TODO: $math(multiply) */ 50);
+		add_gold((50 * "game.playersnb"));
 		chest_add_hpot_mpot();
 		add_good_item();
 		add_good_item();

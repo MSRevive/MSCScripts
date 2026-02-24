@@ -22,7 +22,7 @@ class UberBlizzard : CGameScript
 	string SHARD_HEIGHT;
 	string SNOW_CENTER;
 	int SNOW_ON;
-	string vel;
+	int vel;
 
 	void OnRepeatTimer()
 	{
@@ -159,14 +159,14 @@ class UberBlizzard : CGameScript
 	{
 		string NEGBLIZ_WIDTH = BLIZ_WIDTH;
 		NEGBLIZ_WIDTH *= -1;
-		string x = RandomInt(NEGBLIZ_WIDTH, BLIZ_WIDTH);
-		string y = RandomInt(NEGBLIZ_WIDTH, BLIZ_WIDTH);
+		int x = RandomInt(NEGBLIZ_WIDTH, BLIZ_WIDTH);
+		int y = RandomInt(NEGBLIZ_WIDTH, BLIZ_WIDTH);
 		START_POS += SNOW_CENTER;
 		ClientEffect("tempent", "sprite", "snow1.spr", START_POS, "setup_blizzardflake");
 		string NEGBLIZ_WIDTH = BLIZ_WIDTH;
 		NEGBLIZ_WIDTH *= -1;
-		string x = RandomInt(NEGBLIZ_WIDTH, BLIZ_WIDTH);
-		string y = RandomInt(NEGBLIZ_WIDTH, BLIZ_WIDTH);
+		int x = RandomInt(NEGBLIZ_WIDTH, BLIZ_WIDTH);
+		int y = RandomInt(NEGBLIZ_WIDTH, BLIZ_WIDTH);
 		START_POS += SNOW_CENTER;
 		ClientEffect("tempent", "sprite", "glassgibs.mdl", START_POS, "setup_hailshard");
 	}
@@ -174,8 +174,8 @@ class UberBlizzard : CGameScript
 	void setup_blizzardflake()
 	{
 		vel = RandomInt(-50, 50);
-		string FLAKE_GRAv = Random(0.2, 2.1);
-		string FLAKE_SCALE = Random(1, 3);
+		float FLAKE_GRAv = Random(0.2, 2.1);
+		float FLAKE_SCALE = Random(1, 3);
 		ClientEffect("tempent", "set_current_prop", "death_delay", 2);
 		ClientEffect("tempent", "set_current_prop", "bouncefactor", 0);
 		ClientEffect("tempent", "set_current_prop", "scale", FLAKE_SCALE);
@@ -186,7 +186,7 @@ class UberBlizzard : CGameScript
 
 	void setup_hailshard()
 	{
-		string SHARD_SIZE = Random(1.0, 5.0);
+		float SHARD_SIZE = Random(1.0, 5.0);
 		ClientEffect("tempent", "set_current_prop", "death_delay", 2);
 		ClientEffect("tempent", "set_current_prop", "bouncefactor", 0);
 		ClientEffect("tempent", "set_current_prop", "scale", SHARD_SIZE);

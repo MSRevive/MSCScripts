@@ -7,10 +7,13 @@ namespace MS
 
 class ZapRandomNm : CGameScript
 {
+	int ELEMENT;
+	int WEAPON;
+
 	ZapRandomNm()
 	{
-		const string WEAPON = RandomInt(0, 5);
-		const int ELEMENT = 3;
+		WEAPON = RandomInt(0, 5);
+		ELEMENT = 3;
 	}
 
 }

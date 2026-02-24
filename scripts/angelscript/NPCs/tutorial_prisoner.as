@@ -8,18 +8,21 @@ namespace MS
 
 class TutorialPrisoner : CGameScript
 {
+	string ANIM_IDLE;
+	string ANIM_WALK;
 	int GET_YE_TORCH;
 	int GOT_YE_TORCH;
 	int NO_JOB;
 	int NO_RUMOR;
+	string NPC_MODEL;
 	int SAID_GREETING;
 	int WALL_BROKEN;
 
 	TutorialPrisoner()
 	{
-		const string NPC_MODEL = "npc/femhuman2.mdl";
-		const string ANIM_IDLE = "idle1";
-		const string ANIM_WALK = "idle1";
+		NPC_MODEL = "npc/femhuman2.mdl";
+		ANIM_IDLE = "idle1";
+		ANIM_WALK = "idle1";
 		Precache(NPC_MODEL);
 		NO_JOB = 1;
 		NO_RUMOR = 1;
@@ -96,14 +99,14 @@ class TutorialPrisoner : CGameScript
 	void say_torch3()
 	{
 		convo_anim();
-		SayText("I was feeling around the walls here");
+		SayText(I + " was feeling around the walls here");
 		ScheduleDelayedEvent(2, "say_torch4");
 	}
 
 	void say_torch4()
 	{
 		convo_anim();
-		SayText("One area felt cracked , and made a hollow noise when I knocked on it.");
+		SayText("One area felt cracked , and made a hollow noise when " + I + " knocked on it.");
 		ScheduleDelayedEvent(3, "say_torch5");
 	}
 
@@ -153,7 +156,7 @@ class TutorialPrisoner : CGameScript
 	void player_greeting2()
 	{
 		convo_anim();
-		SayText("I woke up a few minutes ago , with you on the other side of the cell.");
+		SayText(I + " woke up a few minutes ago , with you on the other side of the cell.");
 		ScheduleDelayedEvent(2, "player_greeting3");
 	}
 
@@ -174,7 +177,7 @@ class TutorialPrisoner : CGameScript
 	void player_greeting5()
 	{
 		convo_anim();
-		SayText("Last I saw were bandits before I was clocked on the head.");
+		SayText("Last " + I + "saw were bandits before " + I + " was clocked on the head.");
 		ScheduleDelayedEvent(10, "player_greeting6");
 	}
 
@@ -188,7 +191,7 @@ class TutorialPrisoner : CGameScript
 	void player_greeting7()
 	{
 		convo_anim();
-		SayText("I found this [torch] in a corner , but I can t seem to light it!");
+		SayText(I + "found this [torch] in a corner , but " + I + " can t seem to light it!");
 		SendInfoMessageToAll("green Press the use key (Default 'e') on Kyra to bring up her chat menu");
 	}
 
@@ -203,21 +206,21 @@ class TutorialPrisoner : CGameScript
 	void wall_broken2()
 	{
 		convo_anim();
-		SayText("Though I think I ll hold back for now");
+		SayText("Though " + I + "think " + I + " ll hold back for now");
 		ScheduleDelayedEvent(2, "wall_broken3");
 	}
 
 	void wall_broken3()
 	{
 		convo_anim();
-		SayText("I ll distract the guards should they return.");
+		SayText(I + " ll distract the guards should they return.");
 		ScheduleDelayedEvent(4, "wall_broken4");
 	}
 
 	void wall_broken4()
 	{
 		convo_anim();
-		SayText("Go on! I ll be fine!");
+		SayText("Go on! " + I + " ll be fine!");
 	}
 
 }

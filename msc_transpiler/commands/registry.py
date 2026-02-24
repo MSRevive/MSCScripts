@@ -148,15 +148,34 @@ def _infer_type_from_value(value: str) -> str:
 
 _REGISTRY: dict[str, CommandTranslator] = {}
 
+# Common legacy typos and alternate spellings.
+_COMMAND_ALIASES: dict[str, str] = {
+    "subract": "subtract",
+    "infomessage": "infomsg",
+    "clienteffect": "cleffect",
+    "usetrig": "usetrigger",
+    "cosnt": "const",
+    "setvarad": "setvard",
+    "removesetvard": "removesetvar",
+    "playrandomsoundcl": "playrandomsound",
+    "hearingsensetivity": "hearingsensitivity",
+    "hearingsensitivty": "hearingsensitivity",
+}
+
+
+def normalize_command_name(name: str) -> str:
+    lower = name.lower()
+    return _COMMAND_ALIASES.get(lower, lower)
+
 
 def register(name: str, translator: CommandTranslator):
     """Register a command translator."""
-    _REGISTRY[name.lower()] = translator
+    _REGISTRY[normalize_command_name(name)] = translator
 
 
 def get_translator(name: str) -> CommandTranslator | None:
     """Look up translator for a command name."""
-    return _REGISTRY.get(name.lower())
+    return _REGISTRY.get(normalize_command_name(name))
 
 
 def register_all():

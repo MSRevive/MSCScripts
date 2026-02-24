@@ -9,11 +9,18 @@ class Bludgeon : CGameScript
 {
 	string ANIM_ATTACK;
 	string ANIM_IDLE;
+	string ANIM_JUMP;
 	string ANIM_RUN;
 	string ANIM_WALK;
+	int ATTACK_DAMAGE;
 	int ATTACK_HITRANGE;
 	int ATTACK_RANGE;
+	int BASE_MOVESPEED;
+	int CHARGE_DAMAGE;
+	int CHARGE_HITRANGE;
+	int CHARGE_MOVESPEED;
 	string CHARGE_TARGET;
+	string CL_SCRIPT;
 	string CL_SCRIPT_ID;
 	int DROP_GOLD;
 	int DROP_GOLD_MAX;
@@ -23,8 +30,17 @@ class Bludgeon : CGameScript
 	int IS_JUMPING;
 	int IS_UNHOLY;
 	int MOVE_RANGE;
+	int NO_ADJ_RANGES;
 	string NPC_GIVE_EXP;
 	string PUSH_VEL;
+	string SOUND_CHARGE;
+	string SOUND_DEATH;
+	string SOUND_IDLE1;
+	string SOUND_IDLE2;
+	string SOUND_PAIN;
+	string SOUND_STRUCK1;
+	string SOUND_STRUCK2;
+	string SOUND_STRUCK3;
 
 	Bludgeon()
 	{
@@ -40,30 +56,30 @@ class Bludgeon : CGameScript
 		DROP_GOLD = 1;
 		DROP_GOLD_MIN = 10;
 		DROP_GOLD_MAX = 30;
-		const string SOUND_STRUCK1 = "monsters/bludgeon/bludgeonattack.wav";
-		const string SOUND_STRUCK2 = "monsters/bludgeon/bludgeonattack.wav";
-		const string SOUND_STRUCK3 = "monsters/bludgeon/bludgeonattack.wav";
-		const string SOUND_PAIN = "monsters/bludgeon/bludgeonpain.wav";
-		const string SOUND_IDLE1 = "monsters/bludgeon/bludgeonidle.wav";
-		const string SOUND_IDLE2 = "monsters/bludgeon/bludgeonidle.wav";
-		const string SOUND_CHARGE = "monsters/boar/boarsight.wav";
-		const string SOUND_DEATH = "monsters/bludgeon/bludgeonpain.wav";
-		const int BASE_MOVESPEED = 2;
-		const int CHARGE_MOVESPEED = 6;
+		SOUND_STRUCK1 = "monsters/bludgeon/bludgeonattack.wav";
+		SOUND_STRUCK2 = "monsters/bludgeon/bludgeonattack.wav";
+		SOUND_STRUCK3 = "monsters/bludgeon/bludgeonattack.wav";
+		SOUND_PAIN = "monsters/bludgeon/bludgeonpain.wav";
+		SOUND_IDLE1 = "monsters/bludgeon/bludgeonidle.wav";
+		SOUND_IDLE2 = "monsters/bludgeon/bludgeonidle.wav";
+		SOUND_CHARGE = "monsters/boar/boarsight.wav";
+		SOUND_DEATH = "monsters/bludgeon/bludgeonpain.wav";
+		BASE_MOVESPEED = 2;
+		CHARGE_MOVESPEED = 6;
 		Precache(SOUND_DEATH);
-		const int NO_ADJ_RANGES = 1;
+		NO_ADJ_RANGES = 1;
 		MOVE_RANGE = 32;
 		ATTACK_RANGE = 96;
 		ATTACK_HITRANGE = 120;
-		const string ATTACK_DAMAGE = "$rand(20,40)";
-		const string CHARGE_DAMAGE = "$rand(40,80)";
-		const int CHARGE_HITRANGE = 32;
+		ATTACK_DAMAGE = "$rand(20,40)";
+		CHARGE_DAMAGE = "$rand(40,80)";
+		CHARGE_HITRANGE = 32;
 		ANIM_IDLE = "stand";
 		ANIM_RUN = "run";
 		ANIM_WALK = "walk";
 		ANIM_ATTACK = "punch1";
-		const string ANIM_JUMP = "jump";
-		const string CL_SCRIPT = "monsters/boar_base_cl_charge";
+		ANIM_JUMP = "jump";
+		CL_SCRIPT = "monsters/boar_base_cl_charge";
 		Precache(CL_SCRIPT);
 	}
 
@@ -93,7 +109,7 @@ class Bludgeon : CGameScript
 	void debug_props()
 	{
 		SetSayTextRange(2048);
-		SayText("Range ATTACK_RANGE");
+		SayText("Range " + ATTACK_RANGE);
 	}
 
 	void my_target_died()
@@ -211,7 +227,7 @@ class Bludgeon : CGameScript
 
 	void OnDamagedOther(CBaseEntity@ victim, int damage) override
 	{
-		string L_R = RandomInt(50, 100);
+		int L_R = RandomInt(50, 100);
 		if (RandomInt(1, 2) == 1)
 		{
 			string L_R = /* TODO: $neg */ $neg(L_R);
@@ -238,7 +254,7 @@ class Bludgeon : CGameScript
 		ClientEvent("remove", "all", CL_SCRIPT);
 		if (RandomInt(1, 50) == 1)
 		{
-			SayText("No , little-G , I have failed you!");
+			SayText("No , little-G , " + I + " have failed you!");
 		}
 	}
 

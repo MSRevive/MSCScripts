@@ -7,9 +7,11 @@ namespace MS
 
 class RandomUnarmed : CGameScript
 {
+	int WEAPON;
+
 	RandomUnarmed()
 	{
-		const int WEAPON = 2;
+		WEAPON = 2;
 	}
 
 }

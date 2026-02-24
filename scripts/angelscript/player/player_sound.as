@@ -5,9 +5,11 @@ namespace MS
 
 class PlayerSound : CGameScript
 {
+	string SOUND_DEATH;
+
 	PlayerSound()
 	{
-		const string SOUND_DEATH = GetEntityProperty(GetOwner(), "scriptvar");
+		SOUND_DEATH = GetEntityProperty(GetOwner(), "scriptvar");
 	}
 
 }

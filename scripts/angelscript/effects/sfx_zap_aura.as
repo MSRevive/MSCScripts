@@ -30,15 +30,15 @@ class SfxZapAura : CGameScript
 			BEAM_START += "z";
 		}
 		string BEAM_END = BEAM_START;
-		string RND_ANG = Random(0, 359.99);
-		string V_ADJ = Random(-24.0, 24.0);
+		float RND_ANG = Random(0, 359.99);
+		float V_ADJ = Random(-24.0, 24.0);
 		BEAM_END += /* TODO: $relpos */ $relpos(Vector3(0, RND_ANG, 0), Vector3(0, FX_RADIUS, V_ADJ));
 		string L_BEAM_START = BEAM_START;
 		L_BEAM_START += /* TODO: $relpos */ $relpos(Vector3(0, RND_ANG, 0), Vector3(0, 16, 0));
 		ClientEffect("beam_points", L_BEAM_START, BEAM_END, "lgtning.spr", 1.0, 1, 1, 255, 255, 30, Vector3(255, 64, 0));
 		string BEAM_END = BEAM_START;
-		string RND_ANG = Random(0, 359.99);
-		string V_ADJ = Random(-24.0, 24.0);
+		float RND_ANG = Random(0, 359.99);
+		float V_ADJ = Random(-24.0, 24.0);
 		BEAM_END += /* TODO: $relpos */ $relpos(Vector3(0, RND_ANG, 0), Vector3(0, FX_RADIUS, V_ADJ));
 		string L_BEAM_START = BEAM_START;
 		L_BEAM_START += /* TODO: $relpos */ $relpos(Vector3(0, RND_ANG, 0), Vector3(0, 16, 0));

@@ -15,12 +15,22 @@ class DragonGuard : CGameScript
 	string ANIM_ATTACK_DEFAULT;
 	string ANIM_ATTACK_REACH;
 	string ANIM_BREATH;
+	string ANIM_BREATH_LOOP;
+	string ANIM_CAUTIOUS_APPROACH;
+	string ANIM_CAUTIOUS_RETREAT;
 	string ANIM_DEATH;
+	string ANIM_DRINK;
 	string ANIM_IDLE;
 	string ANIM_IDLE_COMBAT;
 	string ANIM_IDLE_DEEP;
+	string ANIM_KICK;
+	string ANIM_NPC_JUMP;
 	string ANIM_RUN;
+	string ANIM_SHOCK;
+	string ANIM_THROW;
 	string ANIM_WALK;
+	string ANIM_WALK_HEARDSOUND;
+	string ANIM_WALK_WOUNDED;
 	string ATTACK_HITRANGE;
 	string ATTACK_MOVERANGE;
 	string ATTACK_RANGE;
@@ -48,14 +58,20 @@ class DragonGuard : CGameScript
 	string DEFAULT_TAKDMG_LIGHTNING;
 	string DEFAULT_TAKDMG_POISON;
 	int DG_FAURA;
+	int DG_FAURA_AOE;
 	string DG_FAURA_CLIDX;
+	float DG_FAURA_CL_RATE;
+	int DG_FAURA_DOT;
 	string DG_FAURA_NEXT_CL;
 	string DG_FAURA_SCAN;
 	string DG_SUSPEND;
 	int DID_INIT;
 	int DMG_CRESCENT;
+	int DMG_KICK;
 	int DMG_MELEE;
 	string DMG_MELEE_TYPE;
+	int DMG_STUN_BURST;
+	int DMG_XBOW;
 	string DO_HEAL;
 	string ELF_AIM_ANGLES;
 	string ELF_BOLT_LAND;
@@ -64,12 +80,16 @@ class DragonGuard : CGameScript
 	int EXTEND_KICK_RANGE;
 	float EXT_DEMON_BLOOD_RATIO;
 	float FREQ_BREATH;
-	string FREQ_KICK;
+	float FREQ_KICK;
 	float FREQ_REACH_ATTACK;
+	float FREQ_SHIELD_BASH;
 	string HALF_HP;
 	int HAS_DOT;
 	int HAS_SHIELD;
+	float HEAL_DELAY;
 	string HEAL_READY;
+	int HITRANGE_MELEE_STANDARD;
+	int HITRANGE_POLE_SHORT;
 	int IS_ARMORED;
 	int IS_BLACK;
 	int IS_GREEN;
@@ -80,6 +100,7 @@ class DragonGuard : CGameScript
 	string MELEE_DOT_EFFECT;
 	int MELEE_VAMPIRE;
 	string MISS_COUNT;
+	int MOVERANGE_MELEE_STANDARD;
 	string MOVE_RANGE;
 	string NAME_PREF;
 	int NEVER_JUMPS;
@@ -110,6 +131,7 @@ class DragonGuard : CGameScript
 	string POT_TYPE;
 	string PROJECTILE_THROW;
 	string QUARTER_HP;
+	int RANGE_MELEE_STANDARD;
 	int RETREATS_NEAR_RANGE;
 	string RETREATS_NEAR_TYPE;
 	int RETREATS_WHEN_NEAR;
@@ -117,6 +139,46 @@ class DragonGuard : CGameScript
 	string SELECTED_RND_POT;
 	string SELECTED_RND_WEP;
 	int SKIN_SET;
+	string SOUNDA_ATTACK1;
+	string SOUNDA_ATTACK2;
+	string SOUNDA_ATTACK3;
+	string SOUNDA_DEATH1;
+	string SOUNDA_DEATH2;
+	string SOUNDA_HEAL;
+	string SOUNDA_HEARD_ALERT1;
+	string SOUNDA_HEARD_ALERT2;
+	string SOUNDA_INVESTIGATE;
+	string SOUNDA_NPC_JUMP;
+	string SOUNDA_PAIN1;
+	string SOUNDA_PAIN2;
+	string SOUNDA_PAIN3;
+	string SOUND_ATTACK1;
+	string SOUND_ATTACK2;
+	string SOUND_ATTACK3;
+	string SOUND_BOLT_HIT;
+	string SOUND_BREATH_ACID_BOLT;
+	string SOUND_BREATH_ACID_READY;
+	string SOUND_BREATH_LIGHTNING;
+	string SOUND_BREATH_LIGHTNING_READY;
+	string SOUND_BREATH_LOOP;
+	string SOUND_DEATH1;
+	string SOUND_DEATH2;
+	string SOUND_HEARD_ALERT1;
+	string SOUND_HEARD_ALERT2;
+	string SOUND_INVESTIGATE;
+	string SOUND_MELEE1;
+	string SOUND_MELEE2;
+	string SOUND_MELEE_LARGE;
+	string SOUND_NPC_JUMP;
+	string SOUND_PAIN1;
+	string SOUND_PAIN2;
+	string SOUND_STRUCK1;
+	string SOUND_STRUCK2;
+	string SOUND_STRUCK3;
+	string SOUND_STRUCK_ARMOR1;
+	string SOUND_STRUCK_ARMOR2;
+	string SOUND_XBOW_SHOOT;
+	string SOUND_XBOW_STRETCH;
 	int STUN_BURST;
 	float STUN_CHANCE;
 	int TAKEDMG_ADJ_ACID;
@@ -129,23 +191,23 @@ class DragonGuard : CGameScript
 
 	DragonGuard()
 	{
-		const string ANIM_CAUTIOUS_APPROACH = "cwalkf";
-		const string ANIM_CAUTIOUS_RETREAT = "cwalkb";
+		ANIM_CAUTIOUS_APPROACH = "cwalkf";
+		ANIM_CAUTIOUS_RETREAT = "cwalkb";
 		ANIM_DEATH = "death_long";
-		const string ANIM_KICK = "kick";
-		const string ANIM_SHOCK = "spasm";
-		const string ANIM_THROW = "throwr";
-		const string ANIM_DRINK = "drink";
-		const string ANIM_WALK_HEARDSOUND = "cwalkf";
-		const string ANIM_WALK_WOUNDED = "walkinj";
-		const string ANIM_NPC_JUMP = "kick";
-		const string ANIM_BREATH_LOOP = "breath_loop";
+		ANIM_KICK = "kick";
+		ANIM_SHOCK = "spasm";
+		ANIM_THROW = "throwr";
+		ANIM_DRINK = "drink";
+		ANIM_WALK_HEARDSOUND = "cwalkf";
+		ANIM_WALK_WOUNDED = "walkinj";
+		ANIM_NPC_JUMP = "kick";
+		ANIM_BREATH_LOOP = "breath_loop";
 		ANIM_WALK = "walk";
 		ANIM_IDLE = "deep_idle";
 		ANIM_RUN = "run";
-		const string SOUND_XBOW_STRETCH = "weapons/bow/stretch.wav";
-		const string SOUND_XBOW_SHOOT = "weapons/bow/crossbow.wav";
-		const string SOUND_BOLT_HIT = "weapons/bow/bolthit1.wav";
+		SOUND_XBOW_STRETCH = "weapons/bow/stretch.wav";
+		SOUND_XBOW_SHOOT = "weapons/bow/crossbow.wav";
+		SOUND_BOLT_HIT = "weapons/bow/bolthit1.wav";
 		TAKEDMG_ADJ_ACID = 0;
 		TAKEDMG_ADJ_COLD = 0;
 		TAKEDMG_ADJ_FIRE = 0;
@@ -154,58 +216,58 @@ class DragonGuard : CGameScript
 		SetGlobalVar("DEV_STRING", "Flags: ");
 		IS_GREEN = 1;
 		NPC_GIVE_EXP = 1500;
-		const int RANGE_MELEE_STANDARD = 64;
-		const int MOVERANGE_MELEE_STANDARD = 32;
-		const int HITRANGE_MELEE_STANDARD = 96;
-		const int HITRANGE_POLE_SHORT = 75;
+		RANGE_MELEE_STANDARD = 64;
+		MOVERANGE_MELEE_STANDARD = 32;
+		HITRANGE_MELEE_STANDARD = 96;
+		HITRANGE_POLE_SHORT = 75;
 		FREQ_KICK = Random(20.0, 30.0);
-		const string FREQ_SHIELD_BASH = Random(10.0, 20.0);
-		const float HEAL_DELAY = 15.0;
-		const int DMG_STUN_BURST = 300;
+		FREQ_SHIELD_BASH = Random(10.0, 20.0);
+		HEAL_DELAY = 15.0;
+		DMG_STUN_BURST = 300;
 		DMG_CRESCENT = 60;
-		const int DMG_KICK = 100;
-		const int DG_FAURA_DOT = 100;
-		const int DG_FAURA_AOE = 64;
-		const float DG_FAURA_CL_RATE = 15.0;
-		const int DMG_XBOW = 100;
+		DMG_KICK = 100;
+		DG_FAURA_DOT = 100;
+		DG_FAURA_AOE = 64;
+		DG_FAURA_CL_RATE = 15.0;
+		DMG_XBOW = 100;
 		XBOW_ACCURACY = 75;
-		const string SOUND_HEARD_ALERT1 = "monsters/dg/c_lizardm_bat1.wav";
-		const string SOUND_HEARD_ALERT2 = "monsters/dg/c_lizardm_bat2.wav";
-		const string SOUND_PAIN1 = "monsters/dg/c_lizardm_hit1.wav";
-		const string SOUND_PAIN2 = "monsters/dg/c_lizardm_hit2.wav";
-		const string SOUND_NPC_JUMP = "monsters/dg/c_lizardm_atk1.wav";
-		const string SOUND_DEATH1 = "monsters/dg/c_lizardm_dead.wav";
-		const string SOUND_DEATH2 = "monsters/dg/vs_nlizardm_bye.wav";
-		const string SOUND_INVESTIGATE = "monsters/dg/c_lizardmw_bat1.wav";
-		const string SOUND_ATTACK1 = "monsters/dg/c_lizardm_atk1.wav";
-		const string SOUND_ATTACK2 = "monsters/dg/c_lizardm_atk2.wav";
-		const string SOUND_ATTACK3 = "monsters/dg/c_lizardm_atk3.wav";
-		const string SOUNDA_HEARD_ALERT1 = "monsters/dg/c_lizardmc_bat1.wav";
-		const string SOUNDA_HEARD_ALERT2 = "monsters/dg/c_lizardmw_bat2.wav";
-		const string SOUNDA_PAIN1 = "monsters/dg/vs_nlizardm_hit1.wav";
-		const string SOUNDA_PAIN2 = "monsters/dg/vs_nlizardm_hit2.wav";
-		const string SOUNDA_PAIN3 = "monsters/dg/vs_nlizardm_hit3.wav";
-		const string SOUNDA_NPC_JUMP = "monsters/dg/vs_nlizardm_atk1.wav";
-		const string SOUNDA_DEATH1 = "monsters/dg/vs_nlizardm_dead.wav";
-		const string SOUNDA_DEATH2 = "monsters/dg/vs_nlizardm_bye.wav";
-		const string SOUNDA_INVESTIGATE = "monsters/dg/vs_nlizardm_bat2.wav";
-		const string SOUNDA_ATTACK1 = "monsters/dg/vs_nlizardm_atk1.wav";
-		const string SOUNDA_ATTACK2 = "monsters/dg/vs_nlizardm_atk2.wav";
-		const string SOUNDA_ATTACK3 = "monsters/dg/vs_nlizardm_atk3.wav";
-		const string SOUNDA_HEAL = "monsters/dg/vs_nlizardm_heal.wav";
-		const string SOUND_BREATH_LOOP = "monsters/goblin/sps_fogfire.wav";
-		const string SOUND_BREATH_ACID_READY = "bullchicken/bc_attack1.wav";
-		const string SOUND_BREATH_ACID_BOLT = "bullchicken/bc_attack2.wav";
-		const string SOUND_BREATH_LIGHTNING_READY = "debris/beamstart1.wav";
-		const string SOUND_BREATH_LIGHTNING = "debris/zap1.wav";
-		const string SOUND_MELEE1 = "zombie/claw_miss1.wav";
-		const string SOUND_MELEE2 = "zombie/claw_miss2.wav";
-		const string SOUND_MELEE_LARGE = "weapons/swinghuge.wav";
-		const string SOUND_STRUCK1 = "weapons/cbar_hitbod1.wav";
-		const string SOUND_STRUCK2 = "weapons/cbar_hitbod2.wav";
-		const string SOUND_STRUCK3 = "weapons/cbar_hitbod3.wav";
-		const string SOUND_STRUCK_ARMOR1 = "weapons/axemetal1.wav";
-		const string SOUND_STRUCK_ARMOR2 = "weapons/axemetal2.wav";
+		SOUND_HEARD_ALERT1 = "monsters/dg/c_lizardm_bat1.wav";
+		SOUND_HEARD_ALERT2 = "monsters/dg/c_lizardm_bat2.wav";
+		SOUND_PAIN1 = "monsters/dg/c_lizardm_hit1.wav";
+		SOUND_PAIN2 = "monsters/dg/c_lizardm_hit2.wav";
+		SOUND_NPC_JUMP = "monsters/dg/c_lizardm_atk1.wav";
+		SOUND_DEATH1 = "monsters/dg/c_lizardm_dead.wav";
+		SOUND_DEATH2 = "monsters/dg/vs_nlizardm_bye.wav";
+		SOUND_INVESTIGATE = "monsters/dg/c_lizardmw_bat1.wav";
+		SOUND_ATTACK1 = "monsters/dg/c_lizardm_atk1.wav";
+		SOUND_ATTACK2 = "monsters/dg/c_lizardm_atk2.wav";
+		SOUND_ATTACK3 = "monsters/dg/c_lizardm_atk3.wav";
+		SOUNDA_HEARD_ALERT1 = "monsters/dg/c_lizardmc_bat1.wav";
+		SOUNDA_HEARD_ALERT2 = "monsters/dg/c_lizardmw_bat2.wav";
+		SOUNDA_PAIN1 = "monsters/dg/vs_nlizardm_hit1.wav";
+		SOUNDA_PAIN2 = "monsters/dg/vs_nlizardm_hit2.wav";
+		SOUNDA_PAIN3 = "monsters/dg/vs_nlizardm_hit3.wav";
+		SOUNDA_NPC_JUMP = "monsters/dg/vs_nlizardm_atk1.wav";
+		SOUNDA_DEATH1 = "monsters/dg/vs_nlizardm_dead.wav";
+		SOUNDA_DEATH2 = "monsters/dg/vs_nlizardm_bye.wav";
+		SOUNDA_INVESTIGATE = "monsters/dg/vs_nlizardm_bat2.wav";
+		SOUNDA_ATTACK1 = "monsters/dg/vs_nlizardm_atk1.wav";
+		SOUNDA_ATTACK2 = "monsters/dg/vs_nlizardm_atk2.wav";
+		SOUNDA_ATTACK3 = "monsters/dg/vs_nlizardm_atk3.wav";
+		SOUNDA_HEAL = "monsters/dg/vs_nlizardm_heal.wav";
+		SOUND_BREATH_LOOP = "monsters/goblin/sps_fogfire.wav";
+		SOUND_BREATH_ACID_READY = "bullchicken/bc_attack1.wav";
+		SOUND_BREATH_ACID_BOLT = "bullchicken/bc_attack2.wav";
+		SOUND_BREATH_LIGHTNING_READY = "debris/beamstart1.wav";
+		SOUND_BREATH_LIGHTNING = "debris/zap1.wav";
+		SOUND_MELEE1 = "zombie/claw_miss1.wav";
+		SOUND_MELEE2 = "zombie/claw_miss2.wav";
+		SOUND_MELEE_LARGE = "weapons/swinghuge.wav";
+		SOUND_STRUCK1 = "weapons/cbar_hitbod1.wav";
+		SOUND_STRUCK2 = "weapons/cbar_hitbod2.wav";
+		SOUND_STRUCK3 = "weapons/cbar_hitbod3.wav";
+		SOUND_STRUCK_ARMOR1 = "weapons/axemetal1.wav";
+		SOUND_STRUCK_ARMOR2 = "weapons/axemetal2.wav";
 		NPC_JUMPER = 1;
 	}
 
@@ -271,7 +333,7 @@ class DragonGuard : CGameScript
 			if ((POT_SPECIAL))
 			{
 			}
-			string RND_POT = RandomInt(1, 4);
+			int RND_POT = RandomInt(1, 4);
 			if (RND_POT == 1)
 			{
 				dg_potd();
@@ -298,7 +360,7 @@ class DragonGuard : CGameScript
 			if (RandomInt(1, 4) == 1)
 			{
 			}
-			string RND_BREATH = RandomInt(1, 5);
+			int RND_BREATH = RandomInt(1, 5);
 			if (RND_BREATH == 1)
 			{
 				dg_bfir();
@@ -333,7 +395,7 @@ class DragonGuard : CGameScript
 		}
 		if (!(WEAPON_TYPE))
 		{
-			string RND_WEP = RandomInt(1, 8);
+			int RND_WEP = RandomInt(1, 8);
 			SELECTED_RND_WEP = 1;
 			if (StringToLower(GetMapName()) == "nashalrath")
 			{
@@ -542,9 +604,9 @@ class DragonGuard : CGameScript
 
 	void dev_text()
 	{
-		SayText("DEV_STRING");
-		SayText("Takedmg: acd: /* TODO: $get_takedmg */ $get_takedmg(GetOwner(), "acid") cld: /* TODO: $get_takedmg */ $get_takedmg(GetOwner(), "cold") fir: /* TODO: $get_takedmg */ $get_takedmg(GetOwner(), "fire") poi: /* TODO: $get_takedmg */ $get_takedmg(GetOwner(), "poison") lgt: /* TODO: $get_takedmg */ $get_takedmg(GetOwner(), "lightning") stun: IMMUNE_STUN");
-		SayText("hp: GetEntityMaxHealth(GetOwner()) exp: NPC_GIVE_EXP");
+		SayText(DEV_STRING);
+		SayText("Takedmg: acd: " + /* TODO: $get_takedmg */ $get_takedmg(GetOwner(), "acid") + "cld: " + /* TODO: $get_takedmg */ $get_takedmg(GetOwner(), "cold") + "fir: " + /* TODO: $get_takedmg */ $get_takedmg(GetOwner(), "fire") + "poi: " + /* TODO: $get_takedmg */ $get_takedmg(GetOwner(), "poison") + "lgt: " + /* TODO: $get_takedmg */ $get_takedmg(GetOwner(), "lightning") + "stun: " + IMMUNE_STUN);
+		SayText("hp: " + GetEntityMaxHealth(GetOwner()) + "exp: " + NPC_GIVE_EXP);
 		LogDebug("DEV_STRING");
 		LogDebug("Takedmg: acd: /* TODO: $get_takedmg */ $get_takedmg(GetOwner(), "acid") cld: /* TODO: $get_takedmg */ $get_takedmg(GetOwner(), "cold") fir: /* TODO: $get_takedmg */ $get_takedmg(GetOwner(), "fire") poi: /* TODO: $get_takedmg */ $get_takedmg(GetOwner(), "poison") lgt: /* TODO: $get_takedmg */ $get_takedmg(GetOwner(), "lightning") stun: IMMUNE_STUN");
 		LogDebug("hp: GetEntityMaxHealth(GetOwner()) exp: NPC_GIVE_EXP");
@@ -989,7 +1051,7 @@ class DragonGuard : CGameScript
 	{
 		if ((DID_INIT)) return;
 		DID_INIT = 1;
-		string GAME_TIME = GetGameTime();
+		float GAME_TIME = GetGameTime();
 		NEXT_ALERT_SOUND = GAME_TIME;
 		NEXT_ALERT_SOUND += 10.0;
 		NEXT_KICK = GAME_TIME;
@@ -1046,7 +1108,7 @@ class DragonGuard : CGameScript
 			ATTACK_HITRANGE = ATTACK_RANGE;
 			ATTACK_HITRANGE *= 1.25;
 		}
-		string GAME_TIME = GetGameTime();
+		float GAME_TIME = GetGameTime();
 		if (!(m_hAttackTarget != "unset")) return;
 		if ((HEAL_READY))
 		{
@@ -1189,7 +1251,7 @@ class DragonGuard : CGameScript
 		{
 			if (TARG_RANGE < 70)
 			{
-				string RND_ATK = RandomInt(1, 2);
+				int RND_ATK = RandomInt(1, 2);
 				if (RND_ATK == 1)
 				{
 					ANIM_ATTACK = "plparryl";
@@ -1699,7 +1761,7 @@ class DragonGuard : CGameScript
 	{
 		string CUR_PLAYER = GetToken(PLR_POT_ALERT_LIST, i, ";");
 		if (!(GetEntityRange(CUR_PLAYER) < 1024)) return;
-		SendInfoMsg(CUR_PLAYER, "GetEntityName(GetOwner()) POT_OUT_MSG");
+		SendInfoMsg(CUR_PLAYER, GetEntityName(GetOwner()) + POT_OUT_MSG);
 	}
 
 	void ext_fire_aura_activate()
@@ -1718,7 +1780,7 @@ class DragonGuard : CGameScript
 		if (!(DG_FAURA)) return;
 		if (!(IsEntityAlive(GetOwner()))) return;
 		ScheduleDelayedEvent(1.0, "fire_aura_loop");
-		string GAME_TIME = GetGameTime();
+		float GAME_TIME = GetGameTime();
 		if (GAME_TIME > DG_FAURA_NEXT_CL)
 		{
 			ClientEvent("new", "all", "items/armor_faura_cl", GetEntityIndex(GetOwner()), DG_FAURA_AOE, DG_FAURA_CL_RATE, 1);
@@ -1905,8 +1967,8 @@ class DragonGuard : CGameScript
 		if (RandomInt(1, 100) > XBOW_ACCURACY)
 		{
 			LogDebug("elf_shoot_xbow miss");
-			string RND_X = Random(-64.0, 64.0);
-			string RND_Y = Random(-64.0, 64.0);
+			float RND_X = Random(-64.0, 64.0);
+			float RND_Y = Random(-64.0, 64.0);
 			TARG_ORG += "x";
 			TARG_ORG += "y";
 			TARG_ORG = "z";
@@ -1945,7 +2007,7 @@ class DragonGuard : CGameScript
 		string CUR_TARG = param2;
 		string TARG_ORG = GetEntityOrigin(CUR_TARG);
 		string TARG_ANG = /* TODO: $angles */ $angles(ELF_BOLT_LAND, TARG_ORG);
-		string TARG_DIST = Distance(TARG_ORG, ELF_BOLT_LAND);
+		float TARG_DIST = Distance(TARG_ORG, ELF_BOLT_LAND);
 		TARG_DIST /= 128;
 		string PUSH_STR = /* TODO: $get_skill_ratio */ $get_skill_ratio(TARG_DIST, 600, 100);
 		LogDebug("game_dodamage str PUSH_STR ratio TARG_DIST");

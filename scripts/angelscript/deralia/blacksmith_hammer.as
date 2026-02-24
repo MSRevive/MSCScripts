@@ -9,6 +9,7 @@ class BlacksmithHammer : CGameScript
 {
 	int COUNT;
 	float DELAY;
+	int NO_CHAT;
 	int REST;
 
 	BlacksmithHammer()
@@ -18,7 +19,7 @@ class BlacksmithHammer : CGameScript
 		DELAY = 1.05;
 		Precache("3dmflaora.spr");
 		Precache("amb/fx_anvil.wav");
-		const int NO_CHAT = 1;
+		NO_CHAT = 1;
 	}
 
 	void OnRepeatTimer()

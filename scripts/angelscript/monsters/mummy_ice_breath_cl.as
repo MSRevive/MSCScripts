@@ -47,8 +47,8 @@ class MummyIceBreathCl : CGameScript
 		ClientEffect("tempent", "set_current_prop", "gravity", Random(-1, 1));
 		ClientEffect("tempent", "set_current_prop", "collide", "world;die");
 		string CLOUD_ANG = /* TODO: $getcl */ $getcl(MY_OWNER, "angles.yaw");
-		string RND_RL = Random(-30, 30);
-		string RND_SPEED = Random(350, 400);
+		float RND_RL = Random(-30, 30);
+		float RND_SPEED = Random(350, 400);
 		string CLOUD_VEL = /* TODO: $relvel */ $relvel(Vector3(0, CLOUD_ANG, 0), Vector3(RND_RL, RND_SPEED, 0));
 		ClientEffect("tempent", "set_current_prop", "velocity", CLOUD_VEL);
 	}

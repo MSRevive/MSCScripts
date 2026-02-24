@@ -9,25 +9,33 @@ namespace MS
 
 class SorcWarriorFriendly : CGameScript
 {
+	int CHAT_NEVER_INTERRUPT;
+	int CHAT_NO_CLOSE_MOUTH;
 	int CHAT_TEMP_NO_AUTO_FACE;
+	int CHAT_USE_CONV_ANIMS;
 	int DID_ASHINKAHR;
 	int DID_WAIT_COMMENT;
+	int DMG_KICK;
+	int DMG_SWORD;
+	float DOT_SHOCK;
+	float DOT_THROW_SHOCK;
 	int GAVE_REWARD;
 	string NPCATK_TARGET;
+	int NPC_EXTRA_VALIDATIONS;
 	string SECOND_ID;
 	string SHAMAN_ID;
 	string ZOMBIE_ID;
 
 	SorcWarriorFriendly()
 	{
-		const string DMG_SWORD = RandomInt(200, 300);
-		const float DOT_THROW_SHOCK = 120.0;
-		const float DOT_SHOCK = 60.0;
-		const string DMG_KICK = RandomInt(40, 100);
-		const int CHAT_USE_CONV_ANIMS = 0;
-		const int CHAT_NO_CLOSE_MOUTH = 1;
-		const int CHAT_NEVER_INTERRUPT = 1;
-		const int NPC_EXTRA_VALIDATIONS = 1;
+		DMG_SWORD = RandomInt(200, 300);
+		DOT_THROW_SHOCK = 120.0;
+		DOT_SHOCK = 60.0;
+		DMG_KICK = RandomInt(40, 100);
+		CHAT_USE_CONV_ANIMS = 0;
+		CHAT_NO_CLOSE_MOUTH = 1;
+		CHAT_NEVER_INTERRUPT = 1;
+		NPC_EXTRA_VALIDATIONS = 1;
 	}
 
 	void orc_spawn()

@@ -7,10 +7,13 @@ namespace MS
 
 class TrackGaxePickup : CGameScript
 {
+	string EFFECT_ID;
+	string EFFECT_SCRIPT;
+
 	TrackGaxePickup()
 	{
-		const string EFFECT_ID = "track_gaxe";
-		const string EFFECT_SCRIPT = currentscript;
+		EFFECT_ID = "track_gaxe";
+		EFFECT_SCRIPT = currentscript;
 	}
 
 	void game_removefromowner()

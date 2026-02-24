@@ -8,25 +8,84 @@ namespace MS
 class MummyBase : CGameScript
 {
 	string ANIM_ATTACK;
+	string ANIM_ATTACK_LONG;
+	string ANIM_ATTACK_SHORT;
+	string ANIM_BITE;
+	string ANIM_BREATH;
+	string ANIM_BREATH_PREP;
+	string ANIM_BREATH_START;
+	string ANIM_BREATH_WALK;
 	string ANIM_DEATH;
+	string ANIM_DEATH1;
+	string ANIM_DEATH2;
 	string ANIM_DEATH_IDLE;
+	string ANIM_DEATH_IDLE1;
+	string ANIM_DEATH_IDLE2;
+	string ANIM_EAT;
+	string ANIM_EAT_TO_STAND;
+	string ANIM_FLINCH1;
+	string ANIM_FLINCH2;
+	string ANIM_HEAL;
 	string ANIM_IDLE;
+	string ANIM_PIKE_HOLD;
+	string ANIM_PRE_REBIRTH1;
+	string ANIM_PRE_REBIRTH2;
+	string ANIM_REBIRTH1;
+	string ANIM_REBIRTH2;
 	string ANIM_RUN;
+	string ANIM_SQUAT;
+	string ANIM_SQUAT_TO_STAND;
+	string ANIM_STEELPIPE;
+	string ANIM_SUMMON;
+	string ANIM_UNARMED1;
+	string ANIM_UNARMED2;
+	string ANIM_UNARMED3;
 	string ANIM_WALK;
 	string AS_ATTACKING;
+	int ATTACK_HITCHANCE;
 	string ATTACK_HITRANGE;
+	int ATTACK_HITRANGE_BITE;
+	int ATTACK_HITRANGE_LONG;
+	int ATTACK_HITRANGE_SHORT;
 	string ATTACK_MOVERANGE;
 	string ATTACK_RANGE;
+	int ATTACK_RANGE_BITE;
+	int ATTACK_RANGE_LONG;
+	int ATTACK_RANGE_SHORT;
+	string ATTACK_TYPE;
+	int AURA_RANGE;
+	int AURA_TYPE;
 	int CAN_HEAR;
+	int DMG_BITE;
+	int DMG_LONGSLASH;
+	int DMG_PUSH_BEAM;
+	int DMG_SLASH;
+	int DMG_STAB;
+	int DMG_STEELPIPE;
 	string FLINCH_ANIM;
+	float FLINCH_CHANCE;
 	string FLINCH_HEALTH;
 	float FLINCH_HEALTH_RATIO;
+	float FREQ_MUMMY_BEAM_ATTACK;
+	float FREQ_MUMMY_BITE;
+	float FREQ_MUMMY_BREATH_ATTACK;
 	int MUMMY_BACKHAND;
 	int MUMMY_BEAMING;
 	string MUMMY_BEAM_ABORT_TIME;
+	int MUMMY_BEAM_ATTACK;
+	float MUMMY_BEAM_DUR;
 	string MUMMY_BEAM_ID;
 	string MUMMY_BEAM_TARGET;
 	int MUMMY_BREATHING;
+	int MUMMY_BREATH_ATTACK;
+	string MUMMY_BREATH_ATTACK_CLSCRIPT;
+	int MUMMY_BREATH_ATTACK_OFS;
+	int MUMMY_BREATH_ATTACK_RANGE;
+	string MUMMY_BREATH_ATTACK_TYPE;
+	int MUMMY_BREATH_CONE;
+	int MUMMY_BREATH_DOT;
+	float MUMMY_BREATH_DOT_DURATION;
+	float MUMMY_BREATH_DURATION;
 	string MUMMY_BREATH_TARGET;
 	string MUMMY_BREATH_TARGETS;
 	string MUMMY_CANT_GET_UP;
@@ -45,8 +104,11 @@ class MummyBase : CGameScript
 	string MUMMY_HEAL_TARGET;
 	int MUMMY_HIT_BY_HOLY;
 	string MUMMY_ICE_TARGETS;
+	int MUMMY_IS_CLERIC;
 	string MUMMY_LIVES;
+	string MUMMY_MELEE_DMG_TYPE;
 	string MUMMY_MELEE_DMG_TYPE_FINAL;
+	int MUMMY_MUNCHES;
 	string MUMMY_NAME;
 	string MUMMY_NEXT_BITE;
 	string MUMMY_NEXT_PIKE_TOSS;
@@ -56,6 +118,7 @@ class MummyBase : CGameScript
 	string MUMMY_REALLY_CANT_GET_UP;
 	string MUMMY_REBIRTH_SCAN;
 	string MUMMY_RESUME_MODE;
+	int MUMMY_STARTING_LIVES;
 	string MUMMY_START_EAT;
 	string MUMMY_START_SQUAT;
 	string MUMMY_STUN_ATTACK;
@@ -73,97 +136,117 @@ class MummyBase : CGameScript
 	int NPC_PROX_ACTIVATE;
 	int PLAYING_DEAD;
 	string REPULSE_TARGETS;
+	string SOUND_ATTACK1;
+	string SOUND_ATTACK2;
+	string SOUND_BEAM_LOOP;
+	string SOUND_BEAM_START;
+	string SOUND_BITE_HIT;
+	string SOUND_BITE_START;
+	string SOUND_BREATH_END;
+	string SOUND_BREATH_LOOP;
+	string SOUND_BREATH_PREP;
+	string SOUND_DEATH;
+	string SOUND_HEALED;
+	string SOUND_HEAL_OTHER;
+	string SOUND_LOOP_AURA1;
+	string SOUND_LOOP_AURA2;
+	string SOUND_MUMMY_BREATH;
+	string SOUND_PIKE_TOSS;
+	string SOUND_STRUCK1;
+	string SOUND_STRUCK2;
+	string SOUND_STRUCK3;
+	string SOUND_SUMMON;
 
 	MummyBase()
 	{
 		ANIM_DEATH = "dieforward";
-		const string ANIM_BREATH_START = "walkB";
-		const string ANIM_BREATH_WALK = "walkB1";
-		const string ANIM_EAT = "eat";
-		const string ANIM_SQUAT = "trauma";
-		const string ANIM_EAT_TO_STAND = "Egetup";
-		const string ANIM_SQUAT_TO_STAND = "Tgetup";
-		const string ANIM_BREATH_PREP = "walkB";
-		const string ANIM_BREATH = "walkB1";
-		const string ANIM_ATTACK_SHORT = "steelpipe";
-		const string ANIM_ATTACK_LONG = "longslash";
-		const string ANIM_HEAL = "stab";
-		const string ANIM_FLINCH1 = "flinch";
-		const string ANIM_FLINCH2 = "flinch1";
-		const string ANIM_DEATH1 = "dieforward";
-		const string ANIM_DEATH2 = "diebackward";
-		const string ANIM_DEATH1 = "dieforward";
-		const string ANIM_PRE_REBIRTH1 = "seizure";
-		const string ANIM_REBIRTH1 = "getupforw";
-		const string ANIM_DEATH_IDLE1 = "dieforward_idle";
-		const string ANIM_DEATH2 = "diebackward";
-		const string ANIM_PRE_REBIRTH2 = "seizure1";
-		const string ANIM_REBIRTH2 = "getupback";
-		const string ANIM_DEATH_IDLE2 = "diebackward_idle";
-		const string ANIM_UNARMED1 = "slash";
-		const string ANIM_UNARMED2 = "slash1";
-		const string ANIM_UNARMED3 = "stab1";
-		const string ANIM_BITE = "bite";
-		const string ANIM_STEELPIPE = "steelpipe";
-		const string ANIM_PIKE_HOLD = "pike_hold";
-		const string ANIM_SUMMON = "pike_hold";
-		const float FLINCH_CHANCE = 0.2;
+		ANIM_BREATH_START = "walkB";
+		ANIM_BREATH_WALK = "walkB1";
+		ANIM_EAT = "eat";
+		ANIM_SQUAT = "trauma";
+		ANIM_EAT_TO_STAND = "Egetup";
+		ANIM_SQUAT_TO_STAND = "Tgetup";
+		ANIM_BREATH_PREP = "walkB";
+		ANIM_BREATH = "walkB1";
+		ANIM_ATTACK_SHORT = "steelpipe";
+		ANIM_ATTACK_LONG = "longslash";
+		ANIM_HEAL = "stab";
+		ANIM_FLINCH1 = "flinch";
+		ANIM_FLINCH2 = "flinch1";
+		ANIM_DEATH1 = "dieforward";
+		ANIM_DEATH2 = "diebackward";
+		ANIM_DEATH1 = "dieforward";
+		ANIM_PRE_REBIRTH1 = "seizure";
+		ANIM_REBIRTH1 = "getupforw";
+		ANIM_DEATH_IDLE1 = "dieforward_idle";
+		ANIM_DEATH2 = "diebackward";
+		ANIM_PRE_REBIRTH2 = "seizure1";
+		ANIM_REBIRTH2 = "getupback";
+		ANIM_DEATH_IDLE2 = "diebackward_idle";
+		ANIM_UNARMED1 = "slash";
+		ANIM_UNARMED2 = "slash1";
+		ANIM_UNARMED3 = "stab1";
+		ANIM_BITE = "bite";
+		ANIM_STEELPIPE = "steelpipe";
+		ANIM_PIKE_HOLD = "pike_hold";
+		ANIM_SUMMON = "pike_hold";
+		FLINCH_CHANCE = 0.2;
 		FLINCH_HEALTH_RATIO = 0.25;
-		const string MUMMY_MELEE_DMG_TYPE = "slash";
-		const int MUMMY_MUNCHES = 0;
-		const float FREQ_MUMMY_BITE = 10.0;
+		MUMMY_MELEE_DMG_TYPE = "slash";
+		MUMMY_MUNCHES = 0;
+		FREQ_MUMMY_BITE = 10.0;
 		MUMMY_CLERIC_RANGE = 1024;
-		const int ATTACK_RANGE_SHORT = 64;
-		const int ATTACK_HITRANGE_SHORT = 96;
-		const int ATTACK_RANGE_LONG = 140;
-		const int ATTACK_HITRANGE_LONG = 175;
-		const int ATTACK_RANGE_BITE = 52;
-		const int ATTACK_HITRANGE_BITE = 53;
-		const int ATTACK_HITCHANCE = 80;
-		const string ATTACK_TYPE = "short";
-		const int MUMMY_STARTING_LIVES = 1;
-		const int AURA_TYPE = 0;
-		const int AURA_RANGE = 100;
-		const int DMG_SLASH = 200;
-		const int DMG_LONGSLASH = 400;
-		const int DMG_STAB = 400;
-		const int DMG_STEELPIPE = 200;
-		const int DMG_BITE = 1000;
-		const int MUMMY_IS_CLERIC = 0;
-		const int MUMMY_BREATH_ATTACK = 0;
-		const string MUMMY_BREATH_ATTACK_TYPE = "bile";
-		const int MUMMY_BREATH_DOT = 50;
-		const float MUMMY_BREATH_DOT_DURATION = 10.0;
-		const int MUMMY_BREATH_ATTACK_RANGE = 300;
-		const int MUMMY_BREATH_ATTACK_OFS = 150;
-		const int MUMMY_BREATH_CONE = 30;
-		const float FREQ_MUMMY_BREATH_ATTACK = 35.0;
-		const float MUMMY_BREATH_DURATION = 4.0;
-		const string MUMMY_BREATH_ATTACK_CLSCRIPT = "monsters/mummy_bile_attack_cl";
-		const int MUMMY_BEAM_ATTACK = 0;
-		const string FREQ_MUMMY_BEAM_ATTACK = Random(20.0, 30.0);
-		const int DMG_PUSH_BEAM = 50;
-		const float MUMMY_BEAM_DUR = 5.0;
-		const string SOUND_LOOP_AURA1 = "magic/chant_loop.wav";
-		const string SOUND_LOOP_AURA2 = "magic/haunted_loop.wav";
-		const string SOUND_STRUCK1 = "weapons/cbar_hitbod1.wav";
-		const string SOUND_STRUCK2 = "weapons/cbar_hitbod2.wav";
-		const string SOUND_STRUCK3 = "weapons/cbar_hitbod3.wav";
-		const string SOUND_ATTACK1 = "zombie/claw_miss1.wav";
-		const string SOUND_ATTACK2 = "zombie/claw_miss2.wav";
-		const string SOUND_DEATH = "agrunt/ag_die3.wav";
-		const string SOUND_BREATH_PREP = "monsters/mummy/c_mummycom_bat2.wav";
-		const string SOUND_MUMMY_BREATH = "monsters/mummy/c_mummycom_bat1.wav";
-		const string SOUND_BREATH_LOOP = "magic/bolt_loop.wav";
-		const string SOUND_BREATH_END = "magic/bolt_end.wav";
-		const string SOUND_HEALED = "magic/heal_strike.wav";
-		const string SOUND_HEAL_OTHER = "magic/cast.wav";
-		const string SOUND_BITE_START = "monsters/mummy/c_mummycom_bat2.wav";
-		const string SOUND_BITE_HIT = "bullchicken/bc_bite3.wav";
-		const string SOUND_PIKE_TOSS = "zombie/claw_miss2.wav";
-		const string SOUND_SUMMON = "magic/spawn_loud.wav";
-		const string SOUND_BEAM_START = "magic/bolt_end.wav";
-		const string SOUND_BEAM_LOOP = "magic/bolt_loop.wav";
+		ATTACK_RANGE_SHORT = 64;
+		ATTACK_HITRANGE_SHORT = 96;
+		ATTACK_RANGE_LONG = 140;
+		ATTACK_HITRANGE_LONG = 175;
+		ATTACK_RANGE_BITE = 52;
+		ATTACK_HITRANGE_BITE = 53;
+		ATTACK_HITCHANCE = 80;
+		ATTACK_TYPE = "short";
+		MUMMY_STARTING_LIVES = 1;
+		AURA_TYPE = 0;
+		AURA_RANGE = 100;
+		DMG_SLASH = 200;
+		DMG_LONGSLASH = 400;
+		DMG_STAB = 400;
+		DMG_STEELPIPE = 200;
+		DMG_BITE = 1000;
+		MUMMY_IS_CLERIC = 0;
+		MUMMY_BREATH_ATTACK = 0;
+		MUMMY_BREATH_ATTACK_TYPE = "bile";
+		MUMMY_BREATH_DOT = 50;
+		MUMMY_BREATH_DOT_DURATION = 10.0;
+		MUMMY_BREATH_ATTACK_RANGE = 300;
+		MUMMY_BREATH_ATTACK_OFS = 150;
+		MUMMY_BREATH_CONE = 30;
+		FREQ_MUMMY_BREATH_ATTACK = 35.0;
+		MUMMY_BREATH_DURATION = 4.0;
+		MUMMY_BREATH_ATTACK_CLSCRIPT = "monsters/mummy_bile_attack_cl";
+		MUMMY_BEAM_ATTACK = 0;
+		FREQ_MUMMY_BEAM_ATTACK = Random(20.0, 30.0);
+		DMG_PUSH_BEAM = 50;
+		MUMMY_BEAM_DUR = 5.0;
+		SOUND_LOOP_AURA1 = "magic/chant_loop.wav";
+		SOUND_LOOP_AURA2 = "magic/haunted_loop.wav";
+		SOUND_STRUCK1 = "weapons/cbar_hitbod1.wav";
+		SOUND_STRUCK2 = "weapons/cbar_hitbod2.wav";
+		SOUND_STRUCK3 = "weapons/cbar_hitbod3.wav";
+		SOUND_ATTACK1 = "zombie/claw_miss1.wav";
+		SOUND_ATTACK2 = "zombie/claw_miss2.wav";
+		SOUND_DEATH = "agrunt/ag_die3.wav";
+		SOUND_BREATH_PREP = "monsters/mummy/c_mummycom_bat2.wav";
+		SOUND_MUMMY_BREATH = "monsters/mummy/c_mummycom_bat1.wav";
+		SOUND_BREATH_LOOP = "magic/bolt_loop.wav";
+		SOUND_BREATH_END = "magic/bolt_end.wav";
+		SOUND_HEALED = "magic/heal_strike.wav";
+		SOUND_HEAL_OTHER = "magic/cast.wav";
+		SOUND_BITE_START = "monsters/mummy/c_mummycom_bat2.wav";
+		SOUND_BITE_HIT = "bullchicken/bc_bite3.wav";
+		SOUND_PIKE_TOSS = "zombie/claw_miss2.wav";
+		SOUND_SUMMON = "magic/spawn_loud.wav";
+		SOUND_BEAM_START = "magic/bolt_end.wav";
+		SOUND_BEAM_LOOP = "magic/bolt_loop.wav";
 	}
 
 	void OnSpawn() override
@@ -401,7 +484,7 @@ class MummyBase : CGameScript
 		if ((MUMMY_BACKHAND))
 		{
 			MUMMY_BACKHAND = 0;
-			string RND_LF = Random(-50, 50);
+			float RND_LF = Random(-50, 50);
 			AddVelocity(param2, /* TODO: $relvel */ $relvel(RND_LF, 300, 110));
 		}
 		if ((MUMMY_PUSH_ATTACK))
@@ -410,7 +493,7 @@ class MummyBase : CGameScript
 			if ((param1))
 			{
 			}
-			string RND_LF = Random(-50, 50);
+			float RND_LF = Random(-50, 50);
 			AddVelocity(param2, /* TODO: $relvel */ $relvel(RND_LF, 600, 110));
 		}
 	}
@@ -418,7 +501,7 @@ class MummyBase : CGameScript
 	void npc_selectattack()
 	{
 		if (!(ATTACK_TYPE == "unarmed")) return;
-		string RND_ATTACK = RandomInt(1, 3);
+		int RND_ATTACK = RandomInt(1, 3);
 		if (RND_ATTACK == 1)
 		{
 			ANIM_ATTACK = ANIM_UNARMED1;
@@ -689,7 +772,7 @@ class MummyBase : CGameScript
 			// svplaysound: if ( MUMMY_BREATH_ATTACK_TYPE equals ice ) svplaysound 3 0 SOUND_BREATH_LOOP
 			EmitSound(3, 0, SOUND_BREATH_LOOP);
 		}
-		string RND_DEATH = RandomInt(1, 2);
+		int RND_DEATH = RandomInt(1, 2);
 		if (RND_DEATH == 1)
 		{
 			ANIM_DEATH = ANIM_DEATH1;
@@ -938,7 +1021,7 @@ class MummyBase : CGameScript
 
 	void OnFlinch()
 	{
-		string RND_FLINCH = RandomInt(1, 2);
+		int RND_FLINCH = RandomInt(1, 2);
 		if (RND_FLINCH == 1)
 		{
 			FLINCH_ANIM = ANIM_FLINCH1;
@@ -1273,7 +1356,7 @@ class MummyBase : CGameScript
 			DoDamage(CUR_TARG, "direct", MUMMY_BREATH_DOT, 1.0, GetOwner());
 			ApplyEffect(CUR_TARG, "effects/dot_lightning", MUMMY_BREATH_DOT_DURATION, GetEntityIndex(GetOwner()), MUMMY_BREATH_DOT);
 			string ZAP_TARG_RESIST = /* TODO: $get_takedmg */ $get_takedmg(CUR_TARG, "lightning");
-			string ZAP_ROLL = Random(0.0, 2.0);
+			float ZAP_ROLL = Random(0.0, 2.0);
 			if (ZAP_ROLL < ZAP_TARG_RESIST)
 			{
 			}

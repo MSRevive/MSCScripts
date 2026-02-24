@@ -7,17 +7,21 @@ namespace MS
 
 class GauntletInvalid : CGameScript
 {
+	string EFFECT_FLAGS;
+	string EFFECT_ID;
+	string EFFECT_SCRIPT;
 	float game.effect.anim.framerate;
 	int game.effect.canattack;
 	int game.effect.canjump;
 	float game.effect.movespeed;
+	int game.effect.removeondeath;
 
 	GauntletInvalid()
 	{
-		const string EFFECT_ID = "effect_stun";
-		const string EFFECT_FLAGS = "nostack";
-		const string EFFECT_SCRIPT = currentscript;
-		const int game.effect.removeondeath = 0;
+		EFFECT_ID = "effect_stun";
+		EFFECT_FLAGS = "nostack";
+		EFFECT_SCRIPT = currentscript;
+		game.effect.removeondeath = 0;
 	}
 
 	void OnRepeatTimer()

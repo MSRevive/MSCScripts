@@ -7,10 +7,13 @@ namespace MS
 
 class DebuffLightning : CGameScript
 {
+	string EFFECT_ID;
+	string EFFECT_SCRIPT;
+
 	DebuffLightning()
 	{
-		const string EFFECT_ID = "debuff_lightning";
-		const string EFFECT_SCRIPT = currentscript;
+		EFFECT_ID = "debuff_lightning";
+		EFFECT_SCRIPT = currentscript;
 	}
 
 	void debuff_start()

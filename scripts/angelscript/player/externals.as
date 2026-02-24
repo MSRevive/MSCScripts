@@ -24,7 +24,7 @@ class Externals : CGameScript
 	string FISSURE_DIR;
 	string FISSURE_DMG;
 	string FISSURE_END;
-	string FISSURE_LENGTH;
+	float FISSURE_LENGTH;
 	string FISSURE_MAX_COUNT;
 	string FISSURE_ORG;
 	string FISSURE_START;
@@ -50,6 +50,10 @@ class Externals : CGameScript
 	string OWNER_POS;
 	string OWNER_YAW;
 	string PLAYING_DEAD;
+	float PLR_2HPEN_HEAVY;
+	float PLR_2HPEN_HEAVY_REPORT;
+	float PLR_2HPEN_LIGHT;
+	float PLR_2HPEN_LIGHT_REPORT;
 	string PLR_2H_REDUCT;
 	string PLR_ACTIVE_PETS;
 	string PLR_ACTIVE_PET_TYPES;
@@ -61,6 +65,7 @@ class Externals : CGameScript
 	int PLR_BEAR_MODE;
 	string PLR_BODY_TYPE;
 	int PLR_BRAVERY;
+	string PLR_COMBAT_ICON;
 	string PLR_CORRODE_DURATION;
 	string PLR_CRE_HAND;
 	string PLR_CRE_TYPE;
@@ -86,6 +91,7 @@ class Externals : CGameScript
 	int PLR_FAURA;
 	string PLR_FAURA_AOE;
 	string PLR_FAURA_CLIDX;
+	float PLR_FAURA_CL_RATE;
 	string PLR_FAURA_DOT;
 	string PLR_FAURA_NEXT_CL;
 	string PLR_FAURA_SCAN;
@@ -98,6 +104,7 @@ class Externals : CGameScript
 	string PLR_FISTS_ID;
 	string PLR_FOUND_PET;
 	int PLR_GCOD_ACTIVE;
+	int PLR_GCOD_AOE;
 	string PLR_GCOD_DMG;
 	string PLR_GCOD_DUR;
 	string PLR_GCOD_POS;
@@ -118,6 +125,7 @@ class Externals : CGameScript
 	string PLR_LAST_PROJECTILE;
 	string PLR_LAST_WORN_ARMOR;
 	int PLR_LCOD_ACTIVE;
+	int PLR_LCOD_AOE;
 	string PLR_LCOD_DMG;
 	string PLR_LCOD_DUR;
 	string PLR_LCOD_POS;
@@ -142,6 +150,7 @@ class Externals : CGameScript
 	int PLR_PAURA;
 	string PLR_PAURA_AOE;
 	string PLR_PAURA_CLIDX;
+	float PLR_PAURA_CL_RATE;
 	string PLR_PAURA_DOT;
 	string PLR_PAURA_NEXT_CL;
 	string PLR_PAURA_SCAN;
@@ -173,8 +182,11 @@ class Externals : CGameScript
 	int PLR_SFAURA_ACTIVE;
 	string PLR_SFAURA_CL_IDX;
 	string PLR_SFAURA_DOT;
+	int PLR_SFAURA_GROWTH_RATE;
 	string PLR_SFAURA_ITEM;
 	string PLR_SFAURA_MAXPUSH;
+	int PLR_SFAURA_MAXSIZE;
+	int PLR_SFAURA_MP_COST;
 	int PLR_SFAURA_SIZE;
 	string PLR_SFAURA_TARGS;
 	string PLR_SHIELD_UP;
@@ -211,6 +223,38 @@ class Externals : CGameScript
 	int REGEN_ON;
 	int REGEN_RATE;
 	int SCROLL_WARNING_LEVEL;
+	string SOUNDSET_HF_ARMHIT1;
+	string SOUNDSET_HF_BREATHFAST1;
+	string SOUNDSET_HF_BREATHFAST2;
+	string SOUNDSET_HF_BREATHFAST3;
+	string SOUNDSET_HF_CHESTHIT1;
+	string SOUNDSET_HF_DEATH;
+	string SOUNDSET_HF_FALLPAIN1;
+	string SOUNDSET_HF_FALLPAIN2;
+	string SOUNDSET_HF_FALLPAIN3;
+	string SOUNDSET_HF_FALLPAIN4;
+	string SOUNDSET_HF_JAB1;
+	string SOUNDSET_HF_JAB2;
+	string SOUNDSET_HF_LEGHIT1;
+	string SOUNDSET_HF_SHOUT1;
+	string SOUNDSET_HF_STOMACHHIT1;
+	string SOUNDSET_HF_SWORDREADY;
+	string SOUNDSET_HM_ARMHIT1;
+	string SOUNDSET_HM_BREATHFAST1;
+	string SOUNDSET_HM_BREATHFAST2;
+	string SOUNDSET_HM_BREATHFAST3;
+	string SOUNDSET_HM_CHESTHIT1;
+	string SOUNDSET_HM_DEATH;
+	string SOUNDSET_HM_FALLPAIN1;
+	string SOUNDSET_HM_FALLPAIN2;
+	string SOUNDSET_HM_FALLPAIN3;
+	string SOUNDSET_HM_FALLPAIN4;
+	string SOUNDSET_HM_JAB1;
+	string SOUNDSET_HM_JAB2;
+	string SOUNDSET_HM_LEGHIT1;
+	string SOUNDSET_HM_SHOUT1;
+	string SOUNDSET_HM_STOMACHHIT1;
+	string SOUNDSET_HM_SWORDREADY;
 	string SPIRAL_DMG;
 	string SPIRAL_DMG_TYPE;
 	string SPIRAL_GLOW_COLOR;
@@ -221,65 +265,66 @@ class Externals : CGameScript
 	string SPIRAL_SPRITE_SCALE;
 	string TARGET_PET_TYPE;
 	string T_SPHERE;
+	float VAMPIRE_MULTI;
 	int VAMPIRE_ON;
 	int VOTE_DISABLED;
 
 	Externals()
 	{
-		const string PLR_COMBAT_ICON = "hud/status/alpha_poison_immune";
+		PLR_COMBAT_ICON = "hud/status/alpha_poison_immune";
 		PLR_HAND_SET = 0;
 		PLR_UNIQUE_SUMMONS = "";
-		const int PLR_LCOD_AOE = 90;
-		const int PLR_GCOD_AOE = 180;
-		const float PLR_2HPEN_LIGHT = 0.7;
-		const float PLR_2HPEN_LIGHT_REPORT = 0.3;
-		const float PLR_2HPEN_HEAVY = 0.6;
-		const float PLR_2HPEN_HEAVY_REPORT = 0.4;
+		PLR_LCOD_AOE = 90;
+		PLR_GCOD_AOE = 180;
+		PLR_2HPEN_LIGHT = 0.7;
+		PLR_2HPEN_LIGHT_REPORT = 0.3;
+		PLR_2HPEN_HEAVY = 0.6;
+		PLR_2HPEN_HEAVY_REPORT = 0.4;
 		SCROLL_WARNING_LEVEL = 0;
 		PLR_PET_TYPES = "";
 		PLR_PET_IDS = "";
 		EXT_EFFECT_LIST = 0;
-		const float VAMPIRE_MULTI = 0.35;
-		const float PLR_FAURA_CL_RATE = 10.0;
-		const float PLR_PAURA_CL_RATE = 30.0;
-		const int PLR_SFAURA_MP_COST = 2;
-		const int PLR_SFAURA_MAXSIZE = 175;
-		const int PLR_SFAURA_GROWTH_RATE = 2;
+		VAMPIRE_MULTI = 0.35;
+		PLR_FAURA_CL_RATE = 10.0;
+		PLR_PAURA_CL_RATE = 30.0;
+		PLR_SFAURA_MP_COST = 2;
+		PLR_SFAURA_MAXSIZE = 175;
+		PLR_SFAURA_GROWTH_RATE = 2;
 		IAM_PLAYER = 1;
 		array<string> ARRAY_JUMP_BEAM_IDS;
 		array<string> ARRAY_JUMP_BEAM_TARGS;
-		const string SOUNDSET_HM_SWORDREADY = "player/swordready.wav";
-		const string SOUNDSET_HM_SHOUT1 = "player/shout1.wav";
-		const string SOUNDSET_HM_JAB1 = "player/jab1.wav";
-		const string SOUNDSET_HM_JAB2 = "player/jab2.wav";
-		const string SOUNDSET_HM_BREATHFAST1 = "player/breathe_fast1.wav";
-		const string SOUNDSET_HM_BREATHFAST2 = "player/breathe_fast2.wav";
-		const string SOUNDSET_HM_BREATHFAST3 = "player/breathe_fast3.wav";
-		const string SOUNDSET_HM_DEATH = "player/death.wav";
-		const string SOUNDSET_HM_CHESTHIT1 = "player/chesthit1.wav";
-		const string SOUNDSET_HM_STOMACHHIT1 = "player/stomachhit1.wav";
-		const string SOUNDSET_HM_ARMHIT1 = "player/armhit1.wav";
-		const string SOUNDSET_HM_LEGHIT1 = "player/leghit1.wav";
-		const string SOUNDSET_HM_FALLPAIN1 = "player/fallpain1.wav";
-		const string SOUNDSET_HM_FALLPAIN2 = "player/fallpain2.wav";
-		const string SOUNDSET_HM_FALLPAIN3 = "player/fallpain3.wav";
-		const string SOUNDSET_HM_FALLPAIN4 = "player/fallpain4.wav";
-		const string SOUNDSET_HF_SWORDREADY = "player/Femaleswordready.wav";
-		const string SOUNDSET_HF_SHOUT1 = "player/Femaleshout1.wav";
-		const string SOUNDSET_HF_JAB1 = "player/Femalejab1.wav";
-		const string SOUNDSET_HF_JAB2 = "player/Femalejab2.wav";
-		const string SOUNDSET_HF_BREATHFAST1 = "player/Femalebreathe_fast1.wav";
-		const string SOUNDSET_HF_BREATHFAST2 = "player/Femalebreathe_fast2.wav";
-		const string SOUNDSET_HF_BREATHFAST3 = "player/Femalebreathe_fast3.wav";
-		const string SOUNDSET_HF_DEATH = "player/FemaleDeath.wav";
-		const string SOUNDSET_HF_CHESTHIT1 = "player/Femalechesthit1.wav";
-		const string SOUNDSET_HF_STOMACHHIT1 = "player/Femalestomachhit1.wav";
-		const string SOUNDSET_HF_ARMHIT1 = "player/Femalearmhit1.wav";
-		const string SOUNDSET_HF_LEGHIT1 = "player/Femaleleghit1.wav";
-		const string SOUNDSET_HF_FALLPAIN1 = "player/Femalefallpain1.wav";
-		const string SOUNDSET_HF_FALLPAIN2 = "player/Femalefallpain2.wav";
-		const string SOUNDSET_HF_FALLPAIN3 = "player/Femalefallpain3.wav";
-		const string SOUNDSET_HF_FALLPAIN4 = "player/Femalefallpain4.wav";
+		SOUNDSET_HM_SWORDREADY = "player/swordready.wav";
+		SOUNDSET_HM_SHOUT1 = "player/shout1.wav";
+		SOUNDSET_HM_JAB1 = "player/jab1.wav";
+		SOUNDSET_HM_JAB2 = "player/jab2.wav";
+		SOUNDSET_HM_BREATHFAST1 = "player/breathe_fast1.wav";
+		SOUNDSET_HM_BREATHFAST2 = "player/breathe_fast2.wav";
+		SOUNDSET_HM_BREATHFAST3 = "player/breathe_fast3.wav";
+		SOUNDSET_HM_DEATH = "player/death.wav";
+		SOUNDSET_HM_CHESTHIT1 = "player/chesthit1.wav";
+		SOUNDSET_HM_STOMACHHIT1 = "player/stomachhit1.wav";
+		SOUNDSET_HM_ARMHIT1 = "player/armhit1.wav";
+		SOUNDSET_HM_LEGHIT1 = "player/leghit1.wav";
+		SOUNDSET_HM_FALLPAIN1 = "player/fallpain1.wav";
+		SOUNDSET_HM_FALLPAIN2 = "player/fallpain2.wav";
+		SOUNDSET_HM_FALLPAIN3 = "player/fallpain3.wav";
+		SOUNDSET_HM_FALLPAIN4 = "player/fallpain4.wav";
+		SOUNDSET_HF_SWORDREADY = "player/Femaleswordready.wav";
+		SOUNDSET_HF_SHOUT1 = "player/Femaleshout1.wav";
+		SOUNDSET_HF_JAB1 = "player/Femalejab1.wav";
+		SOUNDSET_HF_JAB2 = "player/Femalejab2.wav";
+		SOUNDSET_HF_BREATHFAST1 = "player/Femalebreathe_fast1.wav";
+		SOUNDSET_HF_BREATHFAST2 = "player/Femalebreathe_fast2.wav";
+		SOUNDSET_HF_BREATHFAST3 = "player/Femalebreathe_fast3.wav";
+		SOUNDSET_HF_DEATH = "player/FemaleDeath.wav";
+		SOUNDSET_HF_CHESTHIT1 = "player/Femalechesthit1.wav";
+		SOUNDSET_HF_STOMACHHIT1 = "player/Femalestomachhit1.wav";
+		SOUNDSET_HF_ARMHIT1 = "player/Femalearmhit1.wav";
+		SOUNDSET_HF_LEGHIT1 = "player/Femaleleghit1.wav";
+		SOUNDSET_HF_FALLPAIN1 = "player/Femalefallpain1.wav";
+		SOUNDSET_HF_FALLPAIN2 = "player/Femalefallpain2.wav";
+		SOUNDSET_HF_FALLPAIN3 = "player/Femalefallpain3.wav";
+		SOUNDSET_HF_FALLPAIN4 = "player/Femalefallpain4.wav";
 		Precache(SOUNDSET_HM_SWORDREADY);
 		Precache(SOUNDSET_HM_SHOUT1);
 		Precache(SOUNDSET_HM_JAB1);
@@ -823,7 +868,7 @@ class Externals : CGameScript
 		PLR_SPIDER_AMT = L_AMT;
 		L_DUR("spider_protect_end");
 		float_to_percent(PLR_SPIDER_AMT);
-		SendColoredMessage(GetOwner(), "You are now protected from spiders FLOAT_RETURN");
+		SendColoredMessage(GetOwner(), "You are now protected from spiders " + FLOAT_RETURN);
 		SetScriptFlags(GetOwner(), "add", L_TAG, "spider_resist", L_AMT, L_DUR);
 	}
 
@@ -849,7 +894,7 @@ class Externals : CGameScript
 		string INC_FLOAT = param1;
 		INC_FLOAT *= 100;
 		FLOAT_RETURN -= INC_FLOAT;
-		string FLOAT_RETURN = int(FLOAT_RETURN);
+		int FLOAT_RETURN = int(FLOAT_RETURN);
 		FLOAT_RETURN += "%";
 	}
 
@@ -980,12 +1025,12 @@ class Externals : CGameScript
 			string TOTAL_PARRY = GetSkillLevel(GetOwner(), "martialarts");
 		}
 		TOTAL_PARRY *= PARRY_MULTI;
-		string TOTAL_PARRY = int(TOTAL_PARRY);
+		int TOTAL_PARRY = int(TOTAL_PARRY);
 		string OLD_PARRY = PL_PARRY;
 		PL_PARRY = TOTAL_PARRY;
 		if (OLD_PARRY != PL_PARRY)
 		{
-			SendColoredMessage(GetOwner(), "Your Parry value is now TOTAL_PARRY");
+			SendColoredMessage(GetOwner(), "Your Parry value is now " + TOTAL_PARRY);
 		}
 		SetStat("parry", TOTAL_PARRY);
 	}
@@ -994,10 +1039,10 @@ class Externals : CGameScript
 	{
 		string PLR_LEFT_HAND_TYPE = GetEntityProperty(PLR_LEFT_HAND, "itemname");
 		string PLR_RIGHT_HAND_TYPE = GetEntityProperty(PLR_RIGHT_HAND, "itemname");
-		string L_NO_REDUCT = /* TODO: $func */ $func("func_get_dualwield_reduct", PLR_LEFT_HAND_TYPE);
+		string L_NO_REDUCT = "func_get_dualwield_reduct"(PLR_LEFT_HAND_TYPE);
 		if (!(L_NO_REDUCT))
 		{
-			string L_NO_REDUCT = /* TODO: $func */ $func("func_get_dualwield_reduct", PLR_RIGHT_HAND_TYPE);
+			string L_NO_REDUCT = "func_get_dualwield_reduct"(PLR_RIGHT_HAND_TYPE);
 		}
 		PLR_HAS_MATCHED_SET = 0;
 		if ((GetEntityProperty(PLR_RIGHT_HAND, "scriptvar")))
@@ -1029,7 +1074,7 @@ class Externals : CGameScript
 				PLR_2H_REDUCT = PLR_2HPEN_LIGHT;
 				if (OLD_REDUCT != PLR_2H_REDUCT)
 				{
-					SendColoredMessage(GetOwner(), "Dual-wield penalty: PLR_2HPEN_LIGHT_REPORT off-hand is light or matches");
+					SendColoredMessage(GetOwner(), "Dual-wield penalty: " + PLR_2HPEN_LIGHT_REPORT + " off-hand is light or matches");
 				}
 			}
 			else
@@ -1037,7 +1082,7 @@ class Externals : CGameScript
 				PLR_2H_REDUCT = PLR_2HPEN_HEAVY;
 				if (OLD_REDUCT != PLR_2H_REDUCT)
 				{
-					SendColoredMessage(GetOwner(), "Dual-wield penalty: PLR_2HPEN_HEAVY_REPORT");
+					SendColoredMessage(GetOwner(), "Dual-wield penalty: " + PLR_2HPEN_HEAVY_REPORT);
 				}
 			}
 		}
@@ -1240,7 +1285,7 @@ class Externals : CGameScript
 		SetEntityOrigin(GetEntityIndex(GetOwner()), param1);
 		if ((G_DEVELOPER_MODE))
 		{
-			SendColoredMessage(GetOwner(), "ext_send_tele_point PARAM1");
+			SendColoredMessage(GetOwner(), "ext_send_tele_point " + param1);
 		}
 		OWNER_POS = param1;
 		for (int i = 0; i < 18; i++)
@@ -1379,7 +1424,7 @@ class Externals : CGameScript
 	{
 		if (!(PLR_FAURA)) return;
 		ScheduleDelayedEvent(1.0, "fire_aura_loop");
-		string GAME_TIME = GetGameTime();
+		float GAME_TIME = GetGameTime();
 		if (GAME_TIME > PLR_FAURA_NEXT_CL)
 		{
 			ClientEvent("new", "all", "items/armor_faura_cl", GetEntityIndex(GetOwner()), PLR_FAURA_AOE, PLR_FAURA_CL_RATE);
@@ -1441,7 +1486,7 @@ class Externals : CGameScript
 	{
 		if (!(PLR_PAURA)) return;
 		ScheduleDelayedEvent(1.0, "poison_aura_loop");
-		string GAME_TIME = GetGameTime();
+		float GAME_TIME = GetGameTime();
 		if (GAME_TIME > PLR_PAURA_NEXT_CL)
 		{
 			ClientEvent("new", "all", "effects/sfx_poison_aura", GetEntityIndex(GetOwner()), PLR_PAURA_AOE, PLR_PAURA_CL_RATE);
@@ -1800,7 +1845,7 @@ class Externals : CGameScript
 	{
 		if (!(PLR_FEAURA)) return;
 		ScheduleDelayedEvent(1.0, "acid_feaura_loop");
-		string GAME_TIME = GetGameTime();
+		float GAME_TIME = GetGameTime();
 		if (GAME_TIME > PLR_FEAURA_NEXT_CL)
 		{
 			ClientEvent("new", "all", "effects/sfx_poison_aura", GetEntityIndex(GetOwner()), PLR_FEAURA_AOE, PLR_PAURA_CL_RATE);
@@ -2561,11 +2606,11 @@ class Externals : CGameScript
 			{
 				return;
 			}
-			if (L_TARG_HP > /* TODO: $math(multiply) */ L_MAXHP)
+			if (L_TARG_HP > (L_MAXHP * 0.5))
 			{
 			}
 			int L_RATIO = 1;
-			L_RATIO -= /* TODO: $math(divide) */ L_TARG_HP;
+			L_RATIO -= (L_TARG_HP / L_MAXHP);
 			L_PUSHVEL *= L_RATIO;
 		}
 		LogDebug("ext_repel fvel L_PUSHVEL");
@@ -2680,7 +2725,7 @@ class Externals : CGameScript
 		}
 		ClientEvent("new", "all", "effects/sfx_fissure", FISSURE_START, FISSURE_YAW, FISSURE_END, FISSURE_LENGTH, NO_ROCKS);
 		FISSURE_COUNT = 0;
-		FISSURE_MAX_COUNT = /* TODO: $math(divide) */ FISSURE_LENGTH;
+		FISSURE_MAX_COUNT = (FISSURE_LENGTH / 78);
 		if (FISSURE_MAX_COUNT < 1)
 		{
 			FISSURE_MAX_COUNT = 1;
@@ -2695,7 +2740,7 @@ class Externals : CGameScript
 		FISSURE_COUNT += 1;
 		string L_FISSURE_CHECK_POS = FISSURE_ORG;
 		string L_FISSURE_MOVEAMT = FISSURE_DIR;
-		L_FISSURE_MOVEAMT *= /* TODO: $math(multiply) */ 78;
+		L_FISSURE_MOVEAMT *= (78 * FISSURE_COUNT);
 		L_FISSURE_CHECK_POS += L_FISSURE_MOVEAMT;
 		L_FISSURE_CHECK_POS += "z";
 		L_FISSURE_CHECK_POS = "z";
@@ -2737,7 +2782,7 @@ class Externals : CGameScript
 			int MAX_HP_PUSH = 2000;
 		}
 		if (!(TARG_HP < MAX_HP_PUSH)) return;
-		string RND_RL = RandomInt(1, 2);
+		int RND_RL = RandomInt(1, 2);
 		if (RND_RL == 1)
 		{
 			int RND_RL = 400;
@@ -2904,11 +2949,11 @@ class Externals : CGameScript
 		SetDamageResistance("stun", param1);
 		PLR_LESSER_LEADFOOT = 1;
 		PLR_LESSER_LEADFOOT_STUN = param1;
-		string L_STR = /* TODO: $math(multiply) */ PLR_LESSER_LEADFOOT_STUN;
-		string L_STR = int(/* TODO: $math(subtract) */ 100);
+		string L_STR = (PLR_LESSER_LEADFOOT_STUN * 100);
+		int L_STR = int((100 - L_STR));
 		if (!(GetEntityProperty(GetOwner(), "nopush")))
 		{
-			SendColoredMessage(GetOwner(), "Your stun resistance is now L_STR");
+			SendColoredMessage(GetOwner(), "Your stun resistance is now " + L_STR);
 		}
 	}
 
@@ -2990,11 +3035,11 @@ class Externals : CGameScript
 			float L_SPR_DUR = 10.0;
 		}
 		string L_SCORE_SPRITE = L_POINTS_RED;
-		string L_SCORE_SPRITE = int(L_SCORE_SPRITE);
+		int L_SCORE_SPRITE = int(L_SCORE_SPRITE);
 		L_SCORE_SPRITE += "_red";
 		// TODO: hud.addimgicon ent_me L_SCORE_SPRITE sc1 20 10 20 30 L_SPR_DUR
 		string L_SCORE_SPRITE = L_POINTS_BLUE;
-		string L_SCORE_SPRITE = int(L_SCORE_SPRITE);
+		int L_SCORE_SPRITE = int(L_SCORE_SPRITE);
 		L_SCORE_SPRITE += "_blue";
 		// TODO: hud.addimgicon ent_me L_SCORE_SPRITE sc2 60 10 20 30 L_SPR_DUR
 		// TODO: hud.addimgicon ent_me red sc3 20 0 20 10 L_SPR_DUR
@@ -3149,7 +3194,7 @@ class Externals : CGameScript
 					int L_PROJ_TYPE = 0;
 					if (GetEntityMP(GetOwner()) >= L_FREEZE_MANA_COST)
 					{
-						string L_PROJ_TYPE = RandomInt(0, 1);
+						int L_PROJ_TYPE = RandomInt(0, 1);
 					}
 					if (!(L_PROJ_TYPE))
 					{
@@ -3206,7 +3251,7 @@ class Externals : CGameScript
 		PLR_RESET_BANK += 1;
 		if (PLR_RESET_BANK == 1)
 		{
-			LogMessage("ent_me WARNING: This will delete ALL items in your Galat chest and cannot be undone!");
+			LogMessage("ent_me " + WARNING: + "This will delete " + ALL + " items in your Galat chest and cannot be undone!");
 			LogMessage("ent_me Type resetbank again to confirm!");
 		}
 		else
@@ -3285,7 +3330,7 @@ class Externals : CGameScript
 		{
 			L_DESC += " Requires all active players be present.";
 		}
-		SendInfoMsg(GetOwner(), "L_TITLE L_DESC");
+		SendInfoMsg(GetOwner(), L_TITLE + L_DESC);
 		PLR_LOCAL_TRANS = param2;
 		PLR_LTRAN_ORG = GetEntityOrigin(GetOwner());
 		PLR_LTRAN_MINS = param4;
@@ -3347,13 +3392,13 @@ class Externals : CGameScript
 		PLR_PBOLT_ARRAY = /* TODO: $get_scriptflag */ $get_scriptflag(GetOwner(), "pbolt", "type_array");
 		if (PLR_PBOLT_ARRAY != "none")
 		{
-			string L_NBOLTS = /* TODO: $get_array_amt */ $get_array_amt(PLR_PBOLT_ARRAY);
+			int L_NBOLTS = int(PLR_PBOLT_ARRAY.length());
 			L_NBOLTS -= 1;
 			if (PLR_PBOLT_COUNTER > L_NBOLTS)
 			{
 				PLR_PBOLT_COUNTER = 0;
 			}
-			PLR_PBOLT_ORG = /* TODO: $get_array */ $get_array(PLR_PBOLT_ARRAY, PLR_PBOLT_COUNTER);
+			PLR_PBOLT_ORG = PLR_PBOLT_ARRAY[int(PLR_PBOLT_COUNTER)];
 			ext_poison_bolt_dmg();
 			float L_BOLT_SCAN_SPEED = 1.0;
 			if (L_NBOLTS > 0)
@@ -3401,7 +3446,7 @@ class Externals : CGameScript
 
 	void ext_speak()
 	{
-		SayText("PARAM1");
+		SayText(param1);
 	}
 
 	void ext_saytextrange()
@@ -3455,7 +3500,7 @@ class Externals : CGameScript
 
 	void ext_debug_que()
 	{
-		if (!(/* TODO: $get_array */ $get_array(ARRAY_DEBUG, "exists")))
+		if (!(ARRAY_DEBUG[int("exists")]))
 		{
 			array<string> ARRAY_DEBUG;
 		}
@@ -3468,15 +3513,15 @@ class Externals : CGameScript
 	void ext_debug_que_loop()
 	{
 		if (!(PLR_DEBUG_ARRAY_ACTIVE)) return;
-		string L_OUT = /* TODO: $get_array */ $get_array(ARRAY_DEBUG, 0);
+		string L_OUT = ARRAY_DEBUG[int(0)];
 		if ((L_OUT).length() > 100)
 		{
 			string L_LOUT = (L_OUT).substr(0, 100);
 			L_LOUT += "*";
 		}
-		LogMessage("ent_me L_OUT");
+		LogMessage("ent_me " + L_OUT);
 		ARRAY_DEBUG.removeAt(0);
-		if (/* TODO: $get_array_amt */ $get_array_amt(ARRAY_DEBUG) > 0)
+		if (int(ARRAY_DEBUG.length()) > 0)
 		{
 			ScheduleDelayedEvent(0.1, "ext_debug_que_loop");
 		}
@@ -3505,7 +3550,7 @@ class Externals : CGameScript
 
 	void ext_iexist_test()
 	{
-		LogMessage("ent_me item_exist_test ItemExists(GetOwner(), param1)");
+		LogMessage("ent_me item_exist_test " + ItemExists(GetOwner(), param1));
 	}
 
 	void ext_shield_up()
@@ -3567,13 +3612,13 @@ class Externals : CGameScript
 
 	void ext_environment_change()
 	{
-		ext_tod_lock(/* TODO: $pass */ $pass(param1));
-		ClientEvent("update", GetOwner(), "const.localplayer.scriptID", "environment_change", /* TODO: $pass */ $pass(param1));
+		ext_tod_lock(param1);
+		ClientEvent("update", GetOwner(), "const.localplayer.scriptID", "environment_change", param1);
 	}
 
 	void ext_change_sky()
 	{
-		ClientEvent("update", GetOwner(), "const.localplayer.scriptID", "change_sky", /* TODO: $pass */ $pass(param1));
+		ClientEvent("update", GetOwner(), "const.localplayer.scriptID", "change_sky", param1);
 	}
 
 }

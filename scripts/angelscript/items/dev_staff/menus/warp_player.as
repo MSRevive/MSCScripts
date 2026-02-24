@@ -34,7 +34,7 @@ class WarpPlayer : CGameScript
 	void menu_tele_player()
 	{
 		GetAllPlayers(A_PLAYERS);
-		for (int i = 0; i < /* TODO: $get_array_amt */ $get_array_amt(A_PLAYERS); i++)
+		for (int i = 0; i < int(A_PLAYERS.length()); i++)
 		{
 			add_player_to_menu();
 		}
@@ -42,7 +42,7 @@ class WarpPlayer : CGameScript
 
 	void add_player_to_menu()
 	{
-		string L_PLAYER = /* TODO: $get_array */ $get_array(A_PLAYERS, i);
+		string L_PLAYER = A_PLAYERS[int(i)];
 		if (L_PLAYER != MY_OWNER)
 		{
 			string reg.mitem.title = GetEntityName(L_PLAYER);

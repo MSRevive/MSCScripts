@@ -8,23 +8,36 @@ namespace MS
 
 class ArmorVenom : CGameScript
 {
+	int ARMOR_BODY;
+	int ARMOR_GROUP;
+	string ARMOR_MODEL;
+	int ARMOR_STR_REQ;
+	string ARMOR_TEXT;
+	float BARMOR_PROTECTION;
+	string BARMOR_PROTECTION_AREA;
+	string BARMOR_REPLACE_BODYPARTS;
+	string BARMOR_TYPE;
+	int ELM_AMT;
+	string ELM_NAME;
+	string ELM_TYPE;
+	int NEW_ARMOR_OFS;
 	int PHOENIX_ACTIVE;
 
 	ArmorVenom()
 	{
-		const string ARMOR_MODEL = "armor/p_armorvest2.mdl";
-		const int ARMOR_GROUP = 4;
-		const int ARMOR_BODY = 5;
-		const string ARMOR_TEXT = "You assemble the envenomed plate mail.";
-		const string BARMOR_TYPE = "platemail";
-		const float BARMOR_PROTECTION = 0.5;
-		const string BARMOR_PROTECTION_AREA = "chest;arms;legs";
-		const string BARMOR_REPLACE_BODYPARTS = BARMOR_PROTECTION_AREA;
-		const string ELM_NAME = "varmr";
-		const string ELM_TYPE = "poison";
-		const int ELM_AMT = 50;
-		const int ARMOR_STR_REQ = 25;
-		const int NEW_ARMOR_OFS = 15;
+		ARMOR_MODEL = "armor/p_armorvest2.mdl";
+		ARMOR_GROUP = 4;
+		ARMOR_BODY = 5;
+		ARMOR_TEXT = "You assemble the envenomed plate mail.";
+		BARMOR_TYPE = "platemail";
+		BARMOR_PROTECTION = 0.5;
+		BARMOR_PROTECTION_AREA = "chest;arms;legs";
+		BARMOR_REPLACE_BODYPARTS = BARMOR_PROTECTION_AREA;
+		ELM_NAME = "varmr";
+		ELM_TYPE = "poison";
+		ELM_AMT = 50;
+		ARMOR_STR_REQ = 25;
+		NEW_ARMOR_OFS = 15;
 	}
 
 	void OnSpawn() override
@@ -51,7 +64,7 @@ class ArmorVenom : CGameScript
 		POISON_DMG *= 0.5;
 		ApplyEffect(param1, "effects/dot_poison", 10.0, GetEntityIndex(GetOwner()), POISON_DMG, "spellcasting.poison");
 		EmitSound(GetOwner(), 0, "bullchicken/bc_bite2.wav", 10);
-		SendPlayerMessage("Your", "Venom Plate poisons GetEntityProperty(param1, "name.full")");
+		SendPlayerMessage("Your", "Venom Plate poisons " + GetEntityProperty(param1, "name.full"));
 	}
 
 	void elm_activate_effect()

@@ -14,6 +14,7 @@ class BaseSorcFriendly : CGameScript
 	string FOLLOW_PLR_ID;
 	string FPLAYER_LIST;
 	int FSORC_DMG_POINTS;
+	int FSORC_DMG_REQ;
 	string FSORC_HIT_BY_BOSS;
 	int FSORC_ON;
 	float FSORC_TELE_HOME_DELAY;
@@ -28,6 +29,8 @@ class BaseSorcFriendly : CGameScript
 	int NO_STUCK_CHECKS;
 	string NPCATK_TARGET;
 	int NPC_ALLY_RESPONSE_RANGE;
+	int NPC_BATTLE_ALLY;
+	int NPC_FIGHTS_NPCS;
 	int NPC_NO_PLAYER_DMG;
 	string OLD_DIST;
 	int REWARD_MODE;
@@ -37,6 +40,7 @@ class BaseSorcFriendly : CGameScript
 	string SORC_FINAL_TELEDEST;
 	string TC_HALF_AVG_DMG_PTS;
 	int TC_QUAL_PLAYERS;
+	string TO_SBOSS_TELE_POINT;
 	string T_LEADER_ID;
 	string T_SECOND_ID;
 	string T_SHAMAN_ID;
@@ -49,17 +53,17 @@ class BaseSorcFriendly : CGameScript
 	BaseSorcFriendly()
 	{
 		NPC_NO_PLAYER_DMG = 1;
-		const int NPC_BATTLE_ALLY = 1;
-		const int NPC_FIGHTS_NPCS = 1;
+		NPC_BATTLE_ALLY = 1;
+		NPC_FIGHTS_NPCS = 1;
 		FOLLOW_PLR_DIST = 128;
 		SetSayTextRange(4096);
 		NO_STUCK_CHECKS = 1;
 		FSORC_DMG_POINTS = 0;
 		NPC_ALLY_RESPONSE_RANGE = 4096;
-		const Vector3 TO_SBOSS_TELE_POINT = Vector3(512, 128, -16);
+		TO_SBOSS_TELE_POINT = Vector3(512, 128, -16);
 		F_STUCK_COUNT = 0;
 		F_AS_UNSTUCK_ANG = 0;
-		const int FSORC_DMG_REQ = 0;
+		FSORC_DMG_REQ = 0;
 	}
 
 	void ext_fsorc_init()
@@ -82,7 +86,7 @@ class BaseSorcFriendly : CGameScript
 	{
 		if ((SUSPEND_AI)) return;
 		if (!(FSORC_ON)) return;
-		string GAME_TIME = GetGameTime();
+		float GAME_TIME = GetGameTime();
 		CYCLE_TIME = 0.1;
 		if (m_hAttackTarget != "unset")
 		{
@@ -334,7 +338,7 @@ class BaseSorcFriendly : CGameScript
 	{
 		string MY_ORG = GetEntityOrigin(GetOwner());
 		string MY_DEST = GetMonsterProperty("movedest.origin");
-		string CUR_DIST = Distance(MY_ORG, MY_DEST);
+		float CUR_DIST = Distance(MY_ORG, MY_DEST);
 		if (!(CUR_DIST >= GetMonsterProperty("movedest.prox"))) return;
 		if (CUR_DIST >= OLD_DIST)
 		{

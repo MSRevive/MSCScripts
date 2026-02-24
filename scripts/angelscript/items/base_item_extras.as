@@ -7,6 +7,7 @@ namespace MS
 
 class BaseItemExtras : CGameScript
 {
+	float BWEAPON_BASE_ANIM_SPEED;
 	int IS_RESERVED;
 	string ITEM_BASE_SPEED;
 	string ITEM_BASE_STRIKE;
@@ -15,7 +16,7 @@ class BaseItemExtras : CGameScript
 
 	BaseItemExtras()
 	{
-		const float BWEAPON_BASE_ANIM_SPEED = 1.0;
+		BWEAPON_BASE_ANIM_SPEED = 1.0;
 		array<string> PICKUP_ALLOW_LIST;
 	}
 
@@ -57,15 +58,15 @@ class BaseItemExtras : CGameScript
 		if (!(ITEM_RESERVED)) return;
 		LogDebug("game_restricted");
 		string OUT_MSG = "This trophy is reserved for ";
-		string ITEM_RESERVER = /* TODO: $get_array */ $get_array(PICKUP_ALLOW_LIST, 0);
+		string ITEM_RESERVER = PICKUP_ALLOW_LIST[int(0)];
 		OUT_MSG += GetEntityName(ITEM_RESERVER);
-		SendInfoMsg(param1, "Item Damagepoint Restricted OUT_MSG");
+		SendInfoMsg(param1, "Item Damagepoint Restricted " + OUT_MSG);
 		if (!(IS_CONTAINER)) return;
 		if (!(IS_RESERVED)) return;
 		string OUT_MSG = "This container is reserved for ";
-		string ITEM_RESERVER = /* TODO: $get_array */ $get_array(PICKUP_ALLOW_LIST, 0);
+		string ITEM_RESERVER = PICKUP_ALLOW_LIST[int(0)];
 		OUT_MSG += GetEntityName(ITEM_RESERVER);
-		SendInfoMsg(param1, "Item Restricted OUT_MSG");
+		SendInfoMsg(param1, "Item Restricted " + OUT_MSG);
 	}
 
 	void bitem_reserve()

@@ -7,17 +7,27 @@ namespace MS
 
 class ArmorGolden : CGameScript
 {
+	int ARMOR_BODY;
+	string ARMOR_MODEL;
+	int ARMOR_STR_REQ;
+	string ARMOR_TEXT;
+	float BARMOR_PROTECTION;
+	string BARMOR_PROTECTION_AREA;
+	string BARMOR_REPLACE_BODYPARTS;
+	string BARMOR_TYPE;
+	int NEW_ARMOR_OFS;
+
 	ArmorGolden()
 	{
-		const string ARMOR_MODEL = "armor/p_armorvest.mdl";
-		const int ARMOR_BODY = 3;
-		const string ARMOR_TEXT = "It is as comforting putting this armor on as it is a beauty to the eye.";
-		const string BARMOR_TYPE = "platemail";
-		const float BARMOR_PROTECTION = 0.6;
-		const string BARMOR_PROTECTION_AREA = "chest;arms;legs";
-		const string BARMOR_REPLACE_BODYPARTS = BARMOR_PROTECTION_AREA;
-		const int ARMOR_STR_REQ = 25;
-		const int NEW_ARMOR_OFS = 4;
+		ARMOR_MODEL = "armor/p_armorvest.mdl";
+		ARMOR_BODY = 3;
+		ARMOR_TEXT = "It is as comforting putting this armor on as it is a beauty to the eye.";
+		BARMOR_TYPE = "platemail";
+		BARMOR_PROTECTION = 0.6;
+		BARMOR_PROTECTION_AREA = "chest;arms;legs";
+		BARMOR_REPLACE_BODYPARTS = BARMOR_PROTECTION_AREA;
+		ARMOR_STR_REQ = 25;
+		NEW_ARMOR_OFS = 4;
 	}
 
 	void OnSpawn() override

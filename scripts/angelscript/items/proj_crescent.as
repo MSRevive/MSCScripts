@@ -7,6 +7,9 @@ namespace MS
 
 class ProjCrescent : CGameScript
 {
+	int ARROW_BODY_OFS;
+	float ARROW_BREAK_CHANCE;
+	int ARROW_SOLIDIFY_ON_WALL;
 	string CL_IDX;
 	string CRE_EFFECT_DURATION;
 	string CRE_EFFECT_NAME;
@@ -16,14 +19,30 @@ class ProjCrescent : CGameScript
 	string CRE_TYPE;
 	int DID_LAND;
 	string DMG_AMT;
+	int FWD_SPEED;
 	string GAME_PVP;
 	int IS_ACTIVE;
+	string ITEM_NAME;
+	int MODEL_BODY_OFS;
+	string MODEL_HANDS;
+	string MODEL_WORLD;
 	string NEXT_ACQUIRE;
 	string NEXT_ANGLE_UPDATE;
 	string NEXT_DAMAGE;
 	string NPCATK_TARGET;
 	string OWNER_ISPLAYER;
 	string PLR_CRE_HAND;
+	string PROJ_ANIM_IDLE;
+	int PROJ_COLLIDEHITBOX;
+	int PROJ_DAMAGE;
+	string PROJ_DAMAGESTAT;
+	string PROJ_DAMAGE_TYPE;
+	int PROJ_IGNORENPC;
+	int PROJ_MOTIONBLUR;
+	int PROJ_STICK_DURATION;
+	string SOUND_HITWALL1;
+	string SOUND_HITWALL2;
+	string SOUND_SPIN;
 	string START_ANG;
 	string START_POS;
 	int SWIRVE_CYCLE;
@@ -31,25 +50,25 @@ class ProjCrescent : CGameScript
 
 	ProjCrescent()
 	{
-		const string MODEL_HANDS = "none";
-		const string MODEL_WORLD = "weapons/projectiles.mdl";
-		const int MODEL_BODY_OFS = 0;
-		const int ARROW_BODY_OFS = 0;
-		const string SOUND_HITWALL1 = "weapons/axemetal1.wav";
-		const string SOUND_HITWALL2 = "weapons/axemetal1.wav";
-		const int ARROW_SOLIDIFY_ON_WALL = 0;
-		const float ARROW_BREAK_CHANCE = 1.0;
-		const string ITEM_NAME = "watermana";
-		const string PROJ_DAMAGE_TYPE = "slash";
-		const string PROJ_DAMAGESTAT = "spellcasting.ice";
-		const string PROJ_ANIM_IDLE = "spin_vertical_fast";
-		const int PROJ_MOTIONBLUR = 0;
-		const int PROJ_DAMAGE = 0;
-		const int PROJ_STICK_DURATION = 0;
-		const int PROJ_COLLIDEHITBOX = 0;
-		const int PROJ_IGNORENPC = 1;
-		const int FWD_SPEED = 400;
-		const string SOUND_SPIN = "zombie/claw_miss2.wav";
+		MODEL_HANDS = "none";
+		MODEL_WORLD = "weapons/projectiles.mdl";
+		MODEL_BODY_OFS = 0;
+		ARROW_BODY_OFS = 0;
+		SOUND_HITWALL1 = "weapons/axemetal1.wav";
+		SOUND_HITWALL2 = "weapons/axemetal1.wav";
+		ARROW_SOLIDIFY_ON_WALL = 0;
+		ARROW_BREAK_CHANCE = 1.0;
+		ITEM_NAME = "watermana";
+		PROJ_DAMAGE_TYPE = "slash";
+		PROJ_DAMAGESTAT = "spellcasting.ice";
+		PROJ_ANIM_IDLE = "spin_vertical_fast";
+		PROJ_MOTIONBLUR = 0;
+		PROJ_DAMAGE = 0;
+		PROJ_STICK_DURATION = 0;
+		PROJ_COLLIDEHITBOX = 0;
+		PROJ_IGNORENPC = 1;
+		FWD_SPEED = 400;
+		SOUND_SPIN = "zombie/claw_miss2.wav";
 	}
 
 	void arrow_spawn()

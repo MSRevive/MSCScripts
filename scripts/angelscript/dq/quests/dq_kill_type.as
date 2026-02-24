@@ -9,11 +9,12 @@ class DqKillType : CGameScript
 {
 	int DQ_KILLED;
 	string DQ_KILL_NUM;
+	string DQ_KILL_WHO;
 
 	DqKillType()
 	{
 		DQ_KILL_NUM = GetToken(QUEST_DATA1, 0, ";");
-		const string DQ_KILL_WHO = StringToLower(GetToken(QUEST_DATA1, 1, ";"));
+		DQ_KILL_WHO = StringToLower(GetToken(QUEST_DATA1, 1, ";"));
 		DQ_KILLED = 0;
 	}
 
@@ -40,7 +41,7 @@ class DqKillType : CGameScript
 
 	void do_the_monster_killed_bit()
 	{
-		DQ_KILLED = /* TODO: $math(add) */ DQ_KILLED;
+		DQ_KILLED = (DQ_KILLED + 1);
 		if (DQ_KILLED >= DQ_KILL_NUM)
 		{
 			quest_finished();

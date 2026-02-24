@@ -8,13 +8,14 @@ namespace MS
 class Chest : CGameScript
 {
 	int DOOR_OPENED;
+	int NO_ORE;
 	int NPC_ECHO_ITEMS;
 	int WEPS_ATTAINED;
 
 	Chest()
 	{
 		WEPS_ATTAINED = 0;
-		const int NO_ORE = 1;
+		NO_ORE = 1;
 		NPC_ECHO_ITEMS = 1;
 	}
 

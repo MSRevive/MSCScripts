@@ -7,6 +7,10 @@ namespace MS
 
 class CircleOfHealing : CGameScript
 {
+	float AOE_FREQ;
+	string AOE_FRIEND_FOE;
+	int AOE_RADIUS;
+	int CIRCLE_RADIUS;
 	string DIV_SKILL;
 	string HEAL_AMT;
 	int IS_ACTIVE;
@@ -15,18 +19,22 @@ class CircleOfHealing : CGameScript
 	string NEAR_SEAL;
 	string OWNER_ISPLAYER;
 	int PLAYING_DEAD;
+	float PULSE_PLAYTIME;
+	string SEAL_MODEL;
+	int SEAL_OFS;
 	int SET_DELETE;
+	string SOUND_PULSE;
 
 	CircleOfHealing()
 	{
-		const string SEAL_MODEL = "weapons/magic/seals.mdl";
-		const int SEAL_OFS = 26;
-		const string SOUND_PULSE = "ambience/alien_zonerator.wav";
-		const int CIRCLE_RADIUS = 172;
-		const float PULSE_PLAYTIME = 10.0;
-		const int AOE_RADIUS = 172;
-		const float AOE_FREQ = 1.0;
-		const string AOE_FRIEND_FOE = "ally";
+		SEAL_MODEL = "weapons/magic/seals.mdl";
+		SEAL_OFS = 26;
+		SOUND_PULSE = "ambience/alien_zonerator.wav";
+		CIRCLE_RADIUS = 172;
+		PULSE_PLAYTIME = 10.0;
+		AOE_RADIUS = 172;
+		AOE_FREQ = 1.0;
+		AOE_FRIEND_FOE = "ally";
 	}
 
 	void game_dynamically_created()

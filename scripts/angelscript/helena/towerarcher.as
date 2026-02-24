@@ -10,10 +10,13 @@ class Towerarcher : CGameScript
 	string ANIM_ATTACK;
 	string ANIM_RUN;
 	string ANIM_WALK;
+	int ARROW_DAMAGE_HIGH;
+	int ARROW_DAMAGE_LOW;
 	int ATTACK_CONE_OF_FIRE;
 	int ATTACK_RANGE;
 	int ATTACK_SPEED;
 	int CAN_FLEE;
+	int CAN_FLINCH;
 	int CAN_HUNT;
 	int FLINCH_DELAY;
 	int HUNT_AGRO;
@@ -26,6 +29,7 @@ class Towerarcher : CGameScript
 	string SND_STRUCK1;
 	string SND_STRUCK2;
 	string SND_STRUCK3;
+	string SOUND_DEATH;
 	string SOUND_PAINYELL;
 	string SOUND_WARCRY1;
 	string SOUND_WARCRY2;
@@ -42,13 +46,13 @@ class Towerarcher : CGameScript
 		SND_ATTACK2 = "voices/human/male_hit2.wav";
 		SND_ATTACK3 = "voices/human/male_hit3.wav";
 		SND_BOW = "weapons/bow/bow.wav";
-		const string SOUND_DEATH = "voices/human/male_die.wav";
-		const int CAN_FLINCH = 1;
+		SOUND_DEATH = "voices/human/male_die.wav";
+		CAN_FLINCH = 1;
 		ANIM_RUN = "run";
 		ANIM_WALK = "walk";
 		ANIM_ATTACK = "shootorcbow";
-		const int ARROW_DAMAGE_LOW = 8;
-		const int ARROW_DAMAGE_HIGH = 12;
+		ARROW_DAMAGE_LOW = 8;
+		ARROW_DAMAGE_HIGH = 12;
 		MOVE_RANGE = 600;
 		ATTACK_RANGE = 1500;
 		ATTACK_SPEED = 900;
@@ -93,7 +97,7 @@ class Towerarcher : CGameScript
 		string AIM_ANGLE = GetEntityDist(m_hLastSeen);
 		AIM_ANGLE /= 50;
 		SetAngles("add_view.x");
-		string LCL_ATKDMG = RandomInt(ARROW_DAMAGE_LOW, ARROW_DAMAGE_HIGH);
+		int LCL_ATKDMG = RandomInt(ARROW_DAMAGE_LOW, ARROW_DAMAGE_HIGH);
 		TossProjectile("proj_arrow_npc", /* TODO: $relpos */ $relpos(0, 0, 5), "none", ATTACK_SPEED, LCL_ATKDMG, ATTACK_CONE_OF_FIRE, "none");
 		SetModelBody(3, 0);
 		EmitSound(GetOwner(), SND_BOW);

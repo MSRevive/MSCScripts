@@ -6,6 +6,7 @@ namespace MS
 class MegaIceWall : CGameScript
 {
 	string ANIM_DEATH;
+	int CANT_TURN;
 	int CAN_ATTACK;
 	int CAN_HUNT;
 
@@ -15,7 +16,7 @@ class MegaIceWall : CGameScript
 		ANIM_DEATH = "";
 		CAN_ATTACK = 0;
 		CAN_HUNT = 0;
-		const int CANT_TURN = 1;
+		CANT_TURN = 1;
 	}
 
 	void OnSpawn() override
@@ -91,7 +92,7 @@ class MegaIceWall : CGameScript
 	void stun_resist()
 	{
 		SetDamageResistance("stun", param2);
-		SendInfoMsg("all", "Stun takedmg /* TODO: $get_takedmg */ $get_takedmg(GetOwner(), "stun")");
+		SendInfoMsg("all", "Stun takedmg " + /* TODO: $get_takedmg */ $get_takedmg(GetOwner(), "stun"));
 	}
 
 }

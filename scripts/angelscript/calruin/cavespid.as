@@ -7,10 +7,13 @@ namespace MS
 
 class Cavespid : CGameScript
 {
+	int FIN_EXP;
+	string SPIDER_MODEL;
+
 	Cavespid()
 	{
-		const int FIN_EXP = 20;
-		const string SPIDER_MODEL = "monsters/fer_spider.mdl";
+		FIN_EXP = 20;
+		SPIDER_MODEL = "monsters/fer_spider.mdl";
 	}
 
 	void OnSpawn() override

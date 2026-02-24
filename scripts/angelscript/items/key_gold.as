@@ -7,12 +7,17 @@ namespace MS
 
 class KeyGold : CGameScript
 {
+	string ANIM_PREFIX;
+	int MODEL_BODY_OFS;
+	string MODEL_HANDS;
+	string MODEL_WORLD;
+
 	KeyGold()
 	{
-		const string MODEL_WORLD = "misc/p_misc.mdl";
-		const string MODEL_HANDS = "misc/p_misc.mdl";
-		const int MODEL_BODY_OFS = 13;
-		const string ANIM_PREFIX = "rustedkey";
+		MODEL_WORLD = "misc/p_misc.mdl";
+		MODEL_HANDS = "misc/p_misc.mdl";
+		MODEL_BODY_OFS = 13;
+		ANIM_PREFIX = "rustedkey";
 	}
 
 	void miscitem_spawn()

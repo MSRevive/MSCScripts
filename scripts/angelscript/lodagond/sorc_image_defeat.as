@@ -5,9 +5,11 @@ namespace MS
 
 class SorcImageDefeat : CGameScript
 {
+	string SOUND_TELE;
+
 	SorcImageDefeat()
 	{
-		const string SOUND_TELE = "magic/teleport.wav";
+		SOUND_TELE = "magic/teleport.wav";
 	}
 
 	void OnSpawn() override
@@ -87,7 +89,7 @@ class SorcImageDefeat : CGameScript
 	{
 		EmitSound(GetOwner(), 0, SOUND_TELE, 10);
 		SpawnNPC("monsters/summon/ibarrier", /* TODO: $relpos */ $relpos(0, 0, 0), ScriptMode::Legacy); // params: GetEntityIndex(GetOwner()), 64, 2, 0, 0, 0, 1
-		SayText("Very well. When the time comes , I will be there , and in exchange for your aid , I will give one of you this sword.");
+		SayText("Very well. When the time comes , " + I + "will be there , and in exchange for your aid , " + I + " will give one of you this sword.");
 		PlayAnim("critical", "warcry");
 		ScheduleDelayedEvent(1.0, "do_fadeout");
 		SetGlobalVar("G_SHAD_ORC", 1);

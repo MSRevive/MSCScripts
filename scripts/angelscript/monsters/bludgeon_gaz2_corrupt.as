@@ -7,10 +7,13 @@ namespace MS
 
 class BludgeonGaz2Corrupt : CGameScript
 {
+	int AM_CORRUPT;
+	int AM_HAMMER;
+
 	BludgeonGaz2Corrupt()
 	{
-		const int AM_CORRUPT = 1;
-		const int AM_HAMMER = 1;
+		AM_CORRUPT = 1;
+		AM_HAMMER = 1;
 	}
 
 }

@@ -8,17 +8,20 @@ namespace MS
 class EagleDemon : CGameScript
 {
 	int AM_PHLAMES;
+	float DMG_ATTACK;
+	int DMG_DOT_BURN;
 	int IS_UNHOLY;
 	int MELEE_ATTACK;
+	int NO_DIVE;
 	int NPC_GIVE_EXP;
 	int NPC_SUMMON;
 
 	EagleDemon()
 	{
 		IS_UNHOLY = 1;
-		const int NO_DIVE = 1;
-		const string DMG_DOT_BURN = RandomInt(20, 40);
-		const string DMG_ATTACK = Random(10, 40);
+		NO_DIVE = 1;
+		DMG_DOT_BURN = RandomInt(20, 40);
+		DMG_ATTACK = Random(10, 40);
 		NPC_GIVE_EXP = 250;
 	}
 

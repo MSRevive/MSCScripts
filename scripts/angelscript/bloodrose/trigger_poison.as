@@ -7,10 +7,12 @@ namespace MS
 
 class TriggerPoison : CGameScript
 {
+	string ELEMENT_TYPE;
+
 	TriggerPoison()
 	{
 		SetGlobalVar("POISON_TRIG", 0);
-		const string ELEMENT_TYPE = "poison";
+		ELEMENT_TYPE = "poison";
 	}
 
 	void trigger_spawn()

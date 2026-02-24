@@ -7,37 +7,54 @@ namespace MS
 
 class AxesDragon : CGameScript
 {
+	string ANIM_PREFIX;
+	int BASE_LEVEL_REQ;
 	string BURN_DAMAGE;
+	int BURN_LEVEL_REQ;
 	string BURN_LIST;
 	string CAN_BURN;
 	string CL_IDX;
+	string CL_SCRIPT;
 	string GAME_PVP;
+	int MELEE_ACCURACY;
+	int MELEE_DMG;
+	int MELEE_DMG_RANGE;
+	string MELEE_DMG_TYPE;
+	int MELEE_ENERGY;
+	int MODEL_BODY_OFS;
+	string MODEL_HANDS;
+	int MODEL_VIEW_IDX;
+	string MODEL_WORLD;
+	int MP_DRAIN_RATE;
 	string NEXT_FLAME;
 	string NEXT_MSG;
 	string NEXT_SCAN;
 	string OWNER_ANG;
 	string OWNER_ORG;
+	string SOUND_FLAME_ON;
+	string SOUND_HITWALL1;
+	string SOUND_HITWALL2;
 	string TRACE_START;
 
 	AxesDragon()
 	{
-		const int BASE_LEVEL_REQ = 20;
-		const int BURN_LEVEL_REQ = 20;
-		const int MP_DRAIN_RATE = -2;
-		const int MODEL_VIEW_IDX = 4;
-		const string MODEL_HANDS = "weapons/p_weapons3.mdl";
-		const string MODEL_WORLD = "weapons/p_weapons3.mdl";
-		const string ANIM_PREFIX = "standard";
-		const int MODEL_BODY_OFS = 34;
-		const int MELEE_ENERGY = 2;
-		const int MELEE_DMG = 400;
-		const int MELEE_DMG_RANGE = 25;
-		const string MELEE_DMG_TYPE = "fire";
-		const int MELEE_ACCURACY = 50;
-		const string SOUND_FLAME_ON = "monsters/goblin/sps_fogfire.wav";
-		const string CL_SCRIPT = "items/axes_dragon_cl";
-		const string SOUND_HITWALL1 = "weapons/axemetal1.wav";
-		const string SOUND_HITWALL2 = "weapons/axemetal2.wav";
+		BASE_LEVEL_REQ = 20;
+		BURN_LEVEL_REQ = 20;
+		MP_DRAIN_RATE = -2;
+		MODEL_VIEW_IDX = 4;
+		MODEL_HANDS = "weapons/p_weapons3.mdl";
+		MODEL_WORLD = "weapons/p_weapons3.mdl";
+		ANIM_PREFIX = "standard";
+		MODEL_BODY_OFS = 34;
+		MELEE_ENERGY = 2;
+		MELEE_DMG = 400;
+		MELEE_DMG_RANGE = 25;
+		MELEE_DMG_TYPE = "fire";
+		MELEE_ACCURACY = 50;
+		SOUND_FLAME_ON = "monsters/goblin/sps_fogfire.wav";
+		CL_SCRIPT = "items/axes_dragon_cl";
+		SOUND_HITWALL1 = "weapons/axemetal1.wav";
+		SOUND_HITWALL2 = "weapons/axemetal2.wav";
 	}
 
 	void game_precache()

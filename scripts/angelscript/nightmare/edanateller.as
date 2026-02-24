@@ -9,6 +9,9 @@ namespace MS
 
 class Edanateller : CGameScript
 {
+	string ANIM_CHAT;
+	string ANIM_NO;
+	string ANIM_STORE;
 	float CHAT_DELAY_STEP1;
 	float CHAT_DELAY_STEP2;
 	float CHAT_DELAY_STEP3;
@@ -22,39 +25,57 @@ class Edanateller : CGameScript
 	string CHAT_STEP3;
 	string CHAT_STEP4;
 	int CHAT_STEPS;
+	string CONV_ANIMS;
 	int DID_HELLO;
+	string GALA_CHEST_POS;
 	string NEXT_TALK;
 	int NO_HAIL;
 	int NO_JOB;
 	int NO_RUMOR;
+	int PLACEHOLDER;
 	int PLAYING_DEAD;
+	string SAYTEXT_BANKOPEN;
+	string SAYTEXT_BANK_NOTE;
+	string SAYTEXT_GIVETICKET;
+	string SAYTEXT_HAND_WARN;
+	string SAYTEXT_ITEMS_HANDS;
+	string SAYTEXT_NOITEM;
+	string SAYTEXT_NOSTORABLES;
+	string SAYTEXT_NOTICKET;
+	string SAYTEXT_REDEEMTICKET;
+	string SAYTEXT_REFUND;
+	string SAYTEXT_SELECT_CAT;
+	string SAYTEXT_SELECT_ITEM;
+	string SAYTEXT_SELECT_TICKET;
+	string SAYTEXT_wondrous_NOFUNDS;
+	string SAYTEXT_wondrous_PURCHASED;
 
 	Edanateller()
 	{
-		const int PLACEHOLDER = 0;
-		const string GALA_CHEST_POS = /* TODO: $relpos */ $relpos(55, 8, 0);
+		PLACEHOLDER = 0;
+		GALA_CHEST_POS = /* TODO: $relpos */ $relpos(55, 8, 0);
 		NO_HAIL = 1;
 		NO_JOB = 1;
 		NO_RUMOR = 0;
-		const string CONV_ANIMS = "idle1;flinch;laflinch;raflinch;llflinch;rlflinch";
-		const string SAYTEXT_wondrous_NOFUNDS = "Need, more, flesh. I mean gold... Need more golds...";
-		const string SAYTEXT_wondrous_PURCHASED = "One scroll... Use... Wisely.";
-		const string SAYTEXT_BANKOPEN = "Behold... Your shinies.";
-		const string SAYTEXT_REFUND = "Fee... Returned.";
-		const string SAYTEXT_SELECT_ITEM = "Choose... Item.";
-		const string SAYTEXT_SELECT_CAT = SAYTEXT_SELECT_ITEM;
-		const string SAYTEXT_NOITEM = "Item, not, received.";
-		const string SAYTEXT_NOTICKET = "Ticket, needs ticket.";
-		const string SAYTEXT_NOSTORABLES = "Cannot, store.";
-		const string SAYTEXT_GIVETICKET = "Ticket, I gives ticket to fleshling.";
-		const string SAYTEXT_SELECT_TICKET = "Please choose ticket, fleshling.";
-		const string SAYTEXT_HAND_WARN = "Tickets, in delicious meat hands, please.";
-		const string SAYTEXT_REDEEMTICKET = "Fleshling... Transaction, complete.";
-		const string SAYTEXT_ITEMS_HANDS = "Items to store, in delicious meat hands, please.";
-		const string SAYTEXT_BANK_NOTE = "Give note, in exchange, golds.";
-		const string ANIM_CHAT = "idle1";
-		const string ANIM_NO = "llflinch";
-		const string ANIM_STORE = "raflinch";
+		CONV_ANIMS = "idle1;flinch;laflinch;raflinch;llflinch;rlflinch";
+		SAYTEXT_wondrous_NOFUNDS = "Need, more, flesh. I mean gold... Need more golds...";
+		SAYTEXT_wondrous_PURCHASED = "One scroll... Use... Wisely.";
+		SAYTEXT_BANKOPEN = "Behold... Your shinies.";
+		SAYTEXT_REFUND = "Fee... Returned.";
+		SAYTEXT_SELECT_ITEM = "Choose... Item.";
+		SAYTEXT_SELECT_CAT = SAYTEXT_SELECT_ITEM;
+		SAYTEXT_NOITEM = "Item, not, received.";
+		SAYTEXT_NOTICKET = "Ticket, needs ticket.";
+		SAYTEXT_NOSTORABLES = "Cannot, store.";
+		SAYTEXT_GIVETICKET = "Ticket, I gives ticket to fleshling.";
+		SAYTEXT_SELECT_TICKET = "Please choose ticket, fleshling.";
+		SAYTEXT_HAND_WARN = "Tickets, in delicious meat hands, please.";
+		SAYTEXT_REDEEMTICKET = "Fleshling... Transaction, complete.";
+		SAYTEXT_ITEMS_HANDS = "Items to store, in delicious meat hands, please.";
+		SAYTEXT_BANK_NOTE = "Give note, in exchange, golds.";
+		ANIM_CHAT = "idle1";
+		ANIM_NO = "llflinch";
+		ANIM_STORE = "raflinch";
 	}
 
 	void OnSpawn() override

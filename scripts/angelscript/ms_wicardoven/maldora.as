@@ -7,15 +7,24 @@ namespace MS
 
 class Maldora : CGameScript
 {
+	string ANIM_BOLT;
+	string ANIM_CAST;
 	string ANIM_DEATH;
 	string ANIM_IDLE;
+	string ANIM_JUMP;
+	string ANIM_LEAP;
+	string ANIM_LOOK;
+	string ANIM_ROCK;
 	string ANIM_RUN;
 	string ANIM_RUN_NORM;
 	string ANIM_WALK;
 	string ANIM_WALK_NORM;
+	string ANIM_WAND;
 	string APPLIED_BEAM;
 	string AS_ATTACKING;
+	string BARRIER_COLOR;
 	int BARRIER_DELAY;
+	float BARRIER_FREQ;
 	string BARRIER_IDX;
 	int BARRIER_ON;
 	string BARRIER_TARGS;
@@ -23,82 +32,115 @@ class Maldora : CGameScript
 	string BEAM_ON;
 	string BEAM_TARGET;
 	string CHAIN_COUNT;
+	int CHAIN_COUNT_LIMIT;
 	string CHAIN_LIST;
 	string CHAIN_ON;
 	int COMBAT_ON;
 	int DMG_BARRIER;
+	float DMG_CHAIN;
+	float DMG_PUSH_BEAM;
+	int DMG_ROCKS;
+	float DMG_SHOCK;
+	float DMG_WAND;
+	string FINGER_ADJ;
 	int GAVE_WARNING;
 	string G_DEVELOPER;
 	int IMAGES_ALIVE;
 	int IMMUNE_VAMPIRE;
 	int IS_UNHOLY;
+	float LAVA_FREQ;
 	int MINIONS_ALIVE;
+	int MINION_LIMIT;
+	string MINION_SCRIPT;
+	string MONSTER_MODEL;
 	string NEXT_MINION;
 	int NO_MOVE;
 	int NO_SPAWN_STUCK_CHECK;
 	int NO_STUCK_CHECKS;
+	int NPC_BASE_EXP;
+	float NPC_BOSS_REGEN_RATE;
+	float NPC_BOSS_RESTORATION;
 	int NPC_FORCED_MOVEDEST;
 	string NPC_IS_BOSS;
+	string NPC_PROXACT_EVENT;
+	int NPC_PROXACT_IFSEEN;
+	int NPC_PROXACT_RANGE;
+	int NPC_PROX_ACTIVATE;
+	int NUM_SPELLS;
 	string ORC_A_ID;
 	string ORC_B_ID;
 	string PRO_NOUN;
 	string PUSH_BEAM_ID;
 	string PUSH_BEAM_VISIBLE;
 	int REPULSE_ON;
-	string SPELL_CHOICE;
+	string SHADOW_SCRIPT;
+	string SOUND_BEAM;
+	string SOUND_SHOCK1;
+	string SOUND_SHOCK2;
+	string SOUND_SHOCK3;
+	string SOUND_STRUCK1;
+	string SOUND_STRUCK2;
+	string SOUND_STRUCK3;
+	string SOUND_STRUCK4;
+	string SOUND_STRUCK5;
+	int SPELL_CHOICE;
+	float SPELL_FREQ;
 	string SPELL_TARGET;
 	string WAND_ATK;
 	string WAND_TARGET;
+	string XSOUND_LEVITATE;
+	string XSOUND_SPIN;
+	string XSOUND_SUMMON;
 
 	Maldora()
 	{
-		const int CHAIN_COUNT_LIMIT = 20;
+		CHAIN_COUNT_LIMIT = 20;
 		if (StringToLower(GetMapName()) == "ms_wicardoven")
 		{
 			NPC_IS_BOSS = 1;
 		}
-		const float NPC_BOSS_REGEN_RATE = 0.1;
-		const float NPC_BOSS_RESTORATION = 0.25;
+		NPC_BOSS_REGEN_RATE = 0.1;
+		NPC_BOSS_RESTORATION = 0.25;
 		IS_UNHOLY = 1;
-		const int NUM_SPELLS = 6;
-		const int MINION_LIMIT = 2;
-		const string FINGER_ADJ = "$relpos($vec(0,MY_YAW,0),$vec(0,30,54))";
-		const string SHADOW_SCRIPT = "ms_wicardoven/maldora_image";
-		const string MINION_SCRIPT = "monsters/maldora_minion_random";
-		const int NPC_BASE_EXP = 2000;
+		NUM_SPELLS = 6;
+		MINION_LIMIT = 2;
+		FINGER_ADJ = "$relpos($vec(0,MY_YAW,0),$vec(0,30,54))";
+		SHADOW_SCRIPT = "ms_wicardoven/maldora_image";
+		MINION_SCRIPT = "monsters/maldora_minion_random";
+		NPC_BASE_EXP = 2000;
 		ANIM_IDLE = "idle";
-		const string ANIM_LOOK = "look_idle";
+		ANIM_LOOK = "look_idle";
 		ANIM_RUN_NORM = "run2";
 		ANIM_WALK_NORM = "walk2handed";
-		const string ANIM_JUMP = "jump";
-		const string ANIM_LEAP = "long_jump";
+		ANIM_JUMP = "jump";
+		ANIM_LEAP = "long_jump";
 		ANIM_DEATH = "look_idle";
 		ANIM_RUN = "run2";
 		ANIM_WALK = "walk2handed";
-		const string ANIM_CAST = "ref_shoot_trip";
-		const string ANIM_ROCK = "ref_shoot_squeak";
-		const string ANIM_BOLT = "shoot_1";
-		const string ANIM_WAND = "ref_shoot_crowbar";
-		const string LAVA_FREQ = Random(20.0, 40.0);
-		const float SPELL_FREQ = 9.0;
-		const float BARRIER_FREQ = 30.0;
-		const string DMG_PUSH_BEAM = Random(2, 6);
-		const string DMG_CHAIN = Random(2, 6);
-		const float DMG_SHOCK = 10.0;
-		const string DMG_ROCKS = RandomInt(50, 200);
-		const string DMG_WAND = Random(10, 20);
-		const string SOUND_SHOCK1 = "debris/zap8.wav";
-		const string SOUND_SHOCK2 = "debris/zap3.wav";
-		const string SOUND_SHOCK3 = "debris/zap4.wav";
-		const string SOUND_BEAM = "weather/Storm_exclamation.wav";
-		const string SOUND_STRUCK1 = "voices/human/male_hit2.wav";
-		const string SOUND_STRUCK2 = "voices/human/male_hit1.wav";
-		const string SOUND_STRUCK3 = "voices/human/male_hit3.wav";
-		const string SOUND_STRUCK4 = "weapons/cbar_hitbod2.wav";
-		const string SOUND_STRUCK5 = "weapons/cbar_hitbod1.wav";
+		ANIM_CAST = "ref_shoot_trip";
+		ANIM_ROCK = "ref_shoot_squeak";
+		ANIM_BOLT = "shoot_1";
+		ANIM_WAND = "ref_shoot_crowbar";
+		LAVA_FREQ = Random(20.0, 40.0);
+		SPELL_FREQ = 9.0;
+		BARRIER_FREQ = 30.0;
+		DMG_PUSH_BEAM = Random(2, 6);
+		DMG_CHAIN = Random(2, 6);
+		DMG_SHOCK = 10.0;
+		DMG_ROCKS = RandomInt(50, 200);
+		DMG_WAND = Random(10, 20);
+		SOUND_SHOCK1 = "debris/zap8.wav";
+		SOUND_SHOCK2 = "debris/zap3.wav";
+		SOUND_SHOCK3 = "debris/zap4.wav";
+		SOUND_BEAM = "weather/Storm_exclamation.wav";
+		SOUND_STRUCK1 = "voices/human/male_hit2.wav";
+		SOUND_STRUCK2 = "voices/human/male_hit1.wav";
+		SOUND_STRUCK3 = "voices/human/male_hit3.wav";
+		SOUND_STRUCK4 = "weapons/cbar_hitbod2.wav";
+		SOUND_STRUCK5 = "weapons/cbar_hitbod1.wav";
 		NO_SPAWN_STUCK_CHECK = 1;
 		IMMUNE_VAMPIRE = 1;
-		const string MONSTER_MODEL = "monsters/maldora.mdl";
+		MONSTER_MODEL = "monsters/maldora.mdl";
 		Precache(MONSTER_MODEL);
 		Precache("ambience/the_horror1.wav");
 		Precache("ambience/the_horror2.wav");
@@ -123,18 +165,18 @@ class Maldora : CGameScript
 		Precache("magic/spawn.wav");
 		Precache("monsters/orc.mdl");
 		Precache("voices/orc/die.wav");
-		const string XSOUND_LEVITATE = "fans/fan4on.wav";
-		const string XSOUND_SPIN = "magic/fan4_noloop.wav";
-		const string XSOUND_SUMMON = "magic/volcano_start.wav";
+		XSOUND_LEVITATE = "fans/fan4on.wav";
+		XSOUND_SPIN = "magic/fan4_noloop.wav";
+		XSOUND_SUMMON = "magic/volcano_start.wav";
 		Precache(XSOUND_LEVITATE);
 		Precache(XSOUND_SPIN);
 		Precache(XSOUND_SUMMON);
 		Precache("ambience/alienvoices1.wav");
-		const int NPC_PROX_ACTIVATE = 1;
-		const int NPC_PROXACT_RANGE = 640;
-		const int NPC_PROXACT_IFSEEN = 1;
-		const string NPC_PROXACT_EVENT = "start_convo";
-		const Vector3 BARRIER_COLOR = Vector3(0, 0, 255);
+		NPC_PROX_ACTIVATE = 1;
+		NPC_PROXACT_RANGE = 640;
+		NPC_PROXACT_IFSEEN = 1;
+		NPC_PROXACT_EVENT = "start_convo";
+		BARRIER_COLOR = Vector3(0, 0, 255);
 		DMG_BARRIER = 0;
 	}
 
@@ -236,7 +278,7 @@ class Maldora : CGameScript
 		{
 			PRO_NOUN = "them";
 		}
-		SayText("You incompetent fools! How could you let PRO_NOUN get this far!?");
+		SayText("You incompetent fools! How could you let " + PRO_NOUN + " get this far!?");
 		EmitSound(GetOwner(), 0, "voices/ms_wicardoven/fmaldora_orc_convo1.wav", 10);
 		ScheduleDelayedEvent(4.6, "orc_talk1");
 		ScheduleDelayedEvent(7.0, "orc_talk2");
@@ -282,7 +324,7 @@ class Maldora : CGameScript
 
 	void say_deal_with()
 	{
-		SayText("Nevermind! I'll deal with PRO_NOUN myself!");
+		SayText("Nevermind! I'll deal with " + PRO_NOUN + " myself!");
 		EmitSound(GetOwner(), 0, "voices/ms_wicardoven/fmaldora_orc_convo4.wav", 10);
 		PlayAnim("critical", ANIM_BOLT);
 		EmitSound(GetOwner(), 0, "debris/beamstart14.wav", 10);
@@ -404,7 +446,7 @@ class Maldora : CGameScript
 		}
 		if (WAND_TARGET != "unset")
 		{
-			string DISENGAGE = RandomInt(1, 10);
+			int DISENGAGE = RandomInt(1, 10);
 			if (DISENGAGE == 1)
 			{
 				leap_away(WAND_TARGET);
@@ -420,7 +462,7 @@ class Maldora : CGameScript
 			if (RandomInt(1, 5) == 1)
 			{
 			}
-			string RAND_ANG = RandomInt(0, 359);
+			int RAND_ANG = RandomInt(0, 359);
 			string TRACE_START = GetMonsterProperty("origin");
 			string TRACE_END = TRACE_START;
 			TRACE_END += /* TODO: $relpos */ $relpos(Vector3(0, RAND_ANG, 0), Vector3(0, 1000, 0));

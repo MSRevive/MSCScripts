@@ -7,6 +7,8 @@ class BaseAntiStuck : CGameScript
 {
 	string AS_ATTACKING;
 	int AS_CAN_MOVE;
+	int AS_CRITICAL_THRESH;
+	int AS_DIST_THRESH;
 	string AS_FLEE_POINT;
 	int AS_HITBACK_FRUST;
 	string AS_HITBACK_FRUST_RUNS;
@@ -15,14 +17,18 @@ class BaseAntiStuck : CGameScript
 	string AS_LAST_POS;
 	string AS_LAST_POS_SET;
 	string AS_LAST_STRIKE;
+	float AS_MAX_ATTACK_TIME;
 	int AS_MISS_COUNT;
 	string AS_MOVEPROX;
 	string AS_NEXT_CHECK;
 	string AS_SPAWN_POINT;
 	string AS_STARTED;
+	float AS_STUCK_FREQ;
 	string AS_TELE_OUT;
 	string AS_TELE_POINT;
+	int AS_TELE_THRESH;
 	int AS_UNSTUCK_ANG;
+	float AS_WIGGLE_DURATION;
 	string BAST_DID_INIT;
 	string BAST_FIRST_TEST;
 	string BAST_FWD;
@@ -38,12 +44,12 @@ class BaseAntiStuck : CGameScript
 
 	BaseAntiStuck()
 	{
-		const float AS_MAX_ATTACK_TIME = 3.0;
-		const float AS_STUCK_FREQ = 0.25;
-		const float AS_WIGGLE_DURATION = 2.0;
-		const int AS_TELE_THRESH = 10;
-		const int AS_CRITICAL_THRESH = 40;
-		const int AS_DIST_THRESH = 1;
+		AS_MAX_ATTACK_TIME = 3.0;
+		AS_STUCK_FREQ = 0.25;
+		AS_WIGGLE_DURATION = 2.0;
+		AS_TELE_THRESH = 10;
+		AS_CRITICAL_THRESH = 40;
+		AS_DIST_THRESH = 1;
 	}
 
 	void OnSpawn() override
@@ -157,7 +163,7 @@ class BaseAntiStuck : CGameScript
 
 	void npcatk_anti_stuck()
 	{
-		string GAME_TIME = GetGameTime();
+		float GAME_TIME = GetGameTime();
 		if (!(GAME_TIME > AS_NEXT_CHECK)) return;
 		if ((NO_STUCK_CHECKS))
 		{
@@ -565,7 +571,7 @@ class BaseAntiStuck : CGameScript
 			if (!(EXIT_SUB))
 			{
 			}
-			string L_DIST = Random(384, 768);
+			float L_DIST = Random(384, 768);
 		}
 		string L_TELE_POINT = GetEntityOrigin(BAST_TEST_PLAYER);
 		L_TELE_POINT += /* TODO: $relpos */ $relpos(Vector3(0, BAST_ROT, 0), Vector3(0, L_DIST, BAST_MOB_HEIGHT_ADJ));

@@ -7,7 +7,9 @@ namespace MS
 
 class WizardIshmeea : CGameScript
 {
+	int CHAT_AUTO_HAIL;
 	string CHAT_MENU_ON;
+	int CHAT_NEVER_INTERRUPT;
 	int COLLECTED_ITEMS;
 	string IDEMARK_ID;
 	int MET_LEOFING;
@@ -16,8 +18,8 @@ class WizardIshmeea : CGameScript
 
 	WizardIshmeea()
 	{
-		const int CHAT_NEVER_INTERRUPT = 1;
-		const int CHAT_AUTO_HAIL = 1;
+		CHAT_NEVER_INTERRUPT = 1;
+		CHAT_AUTO_HAIL = 1;
 		COLLECTED_ITEMS = 0;
 	}
 

@@ -5,11 +5,18 @@ namespace MS
 
 class BasePatrolRadius : CGameScript
 {
+	float BPATROL_AGRO_RATIO;
+	float BPATROL_ATK_COOLDOWN;
 	string BPATROL_CENTER;
+	float BPATROL_COOL_DOWN;
+	int BPATROL_DEF_HEARING;
 	string BPATROL_LAST_ATK;
+	string BPATROL_MOVEPROX;
 	string BPATROL_NEXT_REGEN;
 	string BPATROL_OUTSIDE_RANGE;
 	int BPATROL_RAD;
+	float BPATROL_REGEN_AMT;
+	float BPATROL_REGEN_FREQ;
 	string BPATROL_ROT;
 	string BPATROL_STRUCK_DELAY;
 	int BPATROL_TARGET_VALIDATED;
@@ -19,14 +26,14 @@ class BasePatrolRadius : CGameScript
 	BasePatrolRadius()
 	{
 		BPATROL_RAD = 512;
-		const float BPATROL_AGRO_RATIO = 2.0;
-		const string BPATROL_COOL_DOWN = Random(10.0, 15.0);
-		const float BPATROL_ATK_COOLDOWN = 10.0;
-		const string BPATROL_MOVEPROX = GetMonsterProperty("moveprox");
-		const int BPATROL_DEF_HEARING = 10;
+		BPATROL_AGRO_RATIO = 2.0;
+		BPATROL_COOL_DOWN = Random(10.0, 15.0);
+		BPATROL_ATK_COOLDOWN = 10.0;
+		BPATROL_MOVEPROX = GetMonsterProperty("moveprox");
+		BPATROL_DEF_HEARING = 10;
 		NPC_EXTRA_VALIDATIONS = 1;
-		const float BPATROL_REGEN_FREQ = 10.0;
-		const float BPATROL_REGEN_AMT = 0.01;
+		BPATROL_REGEN_FREQ = 10.0;
+		BPATROL_REGEN_AMT = 0.01;
 	}
 
 	void OnSpawn() override
@@ -89,7 +96,7 @@ class BasePatrolRadius : CGameScript
 			}
 		}
 		string MY_POS = GetEntityOrigin(GetOwner());
-		string L_PATROL_DIST = Distance(MY_POS, BPATROL_CENTER);
+		float L_PATROL_DIST = Distance(MY_POS, BPATROL_CENTER);
 		string L_BPATROL_RAD = BPATROL_RAD;
 		if (m_hAttackTarget != "unset")
 		{
@@ -174,9 +181,9 @@ class BasePatrolRadius : CGameScript
 		if (GetGameTime() > BPATROL_STRUCK_DELAY)
 		{
 			string TARG_POS = GetEntityOrigin(m_hAttackTarget);
-			string L_TARG_DIST_FROM_PATROLPOINT = Distance(TARG_POS, BPATROL_CENTER);
+			float L_TARG_DIST_FROM_PATROLPOINT = Distance(TARG_POS, BPATROL_CENTER);
 			string MY_POS = GetEntityOrigin(GetOwner());
-			string L_MY_DIST_FROM_PATROLPOINT = Distance(MY_POS, BPATROL_CENTER);
+			float L_MY_DIST_FROM_PATROLPOINT = Distance(MY_POS, BPATROL_CENTER);
 			string L_BPATROL_RAD = BPATROL_RAD;
 			string L_BPATROL_LAST_ATK = BPATROL_LAST_ATK;
 			L_BPATROL_LAST_ATK += BPATROL_ATK_COOLDOWN;

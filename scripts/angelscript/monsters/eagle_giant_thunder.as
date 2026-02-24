@@ -10,18 +10,24 @@ class EagleGiantThunder : CGameScript
 	int BEAMS_ON;
 	string BEAM_LIST;
 	string BEAM_TARGETS;
+	int DOT_SHOCK;
+	float FREQ_STORM;
+	float FREQ_ZAP;
 	int NPC_FORCED_MOVEDEST;
 	int NPC_GIVE_EXP;
+	string SOUND_STORM;
+	string SOUND_ZAP;
+	string SOUND_ZAP_WARMUP;
 
 	EagleGiantThunder()
 	{
 		NPC_GIVE_EXP = 400;
-		const float FREQ_ZAP = 10.0;
-		const int DOT_SHOCK = 25;
-		const string FREQ_STORM = Random(30, 40);
-		const string SOUND_ZAP_WARMUP = "debris/beamstart2.wav";
-		const string SOUND_ZAP = "debris/beamstart9.wav";
-		const string SOUND_STORM = "weather/Storm_exclamation.wav";
+		FREQ_ZAP = 10.0;
+		DOT_SHOCK = 25;
+		FREQ_STORM = Random(30, 40);
+		SOUND_ZAP_WARMUP = "debris/beamstart2.wav";
+		SOUND_ZAP = "debris/beamstart9.wav";
+		SOUND_STORM = "weather/Storm_exclamation.wav";
 	}
 
 	void game_precache()

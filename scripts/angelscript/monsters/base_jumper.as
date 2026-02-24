@@ -6,17 +6,20 @@ namespace MS
 class BaseJumper : CGameScript
 {
 	string AS_ATTACKING;
+	int BJUMPER_FACTOR;
+	float FREQ_NPC_JUMP;
 	string FWD_NPC_JUMP_STR;
 	int NPC_JUMPER;
+	int NPC_JUMPER_MAX_RANGE;
 	string NPC_LAST_JUMP;
 	string NPC_NEXT_JUMP_CHECK;
 	string NPC_UP_JUMP_STR;
 
 	BaseJumper()
 	{
-		const int BJUMPER_FACTOR = 5;
-		const string FREQ_NPC_JUMP = Random(2.0, 5.0);
-		const int NPC_JUMPER_MAX_RANGE = 600;
+		BJUMPER_FACTOR = 5;
+		FREQ_NPC_JUMP = Random(2.0, 5.0);
+		NPC_JUMPER_MAX_RANGE = 600;
 	}
 
 	void OnHuntTarget(CBaseEntity@ target)

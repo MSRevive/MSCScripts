@@ -7,6 +7,7 @@ namespace MS
 
 class IceReaverMini : CGameScript
 {
+	string ANIM_ALERT;
 	string ANIM_ATTACK;
 	string ANIM_DEATH;
 	string ANIM_DEATH1;
@@ -14,12 +15,20 @@ class IceReaverMini : CGameScript
 	string ANIM_FLINCH;
 	string ANIM_IDLE;
 	string ANIM_RUN;
+	string ANIM_SEARCH;
+	string ANIM_SLASH;
+	string ANIM_SMASH;
+	string ANIM_VICTORY1;
+	string ANIM_VICTORY2;
 	string ANIM_WALK;
 	int ATTACK_HITRANGE;
 	int ATTACK_MOVERANGE;
 	int ATTACK_RANGE;
 	int CAN_FLINCH;
 	int DID_ALERT;
+	float DMG_SLASH;
+	float DMG_SMASH;
+	int DOT_FROST;
 	int FLINCH_CHANCE;
 	string FLINCH_HEALTH;
 	string HALF_HEALTH;
@@ -29,6 +38,29 @@ class IceReaverMini : CGameScript
 	int NPC_GIVE_EXP;
 	string PUSH_VEL;
 	string QUARTER_HEALTH;
+	float SLASH_HITCHANCE;
+	int SLASH_HITRANGE;
+	float SMASH_HITCHANCE;
+	int SMASH_HITRANGE;
+	string SOUND_ALERT;
+	string SOUND_DEATH;
+	string SOUND_PAIN1;
+	string SOUND_PAIN2;
+	string SOUND_PAIN3;
+	string SOUND_RUN1;
+	string SOUND_RUN2;
+	string SOUND_RUN3;
+	string SOUND_RUN4;
+	string SOUND_SEARCH1;
+	string SOUND_SEARCH2;
+	string SOUND_SEARCH3;
+	string SOUND_SLASHHIT;
+	string SOUND_SLASHMISS;
+	string SOUND_SMASHHIT;
+	string SOUND_SMASHMISS;
+	string SOUND_STRUCK1;
+	string SOUND_STRUCK2;
+	string SOUND_STRUCK3;
 
 	IceReaverMini()
 	{
@@ -38,46 +70,46 @@ class IceReaverMini : CGameScript
 		ANIM_FLINCH = "turnl";
 		ANIM_DEATH = "dieforward";
 		ANIM_ATTACK = "mattack3";
-		const string ANIM_SEARCH = "idle2";
-		const string ANIM_SMASH = "mattack3";
-		const string ANIM_SLASH = "mattack2";
-		const string ANIM_ALERT = "distanceattack";
-		const string ANIM_ALERT = "distanceattack";
+		ANIM_SEARCH = "idle2";
+		ANIM_SMASH = "mattack3";
+		ANIM_SLASH = "mattack2";
+		ANIM_ALERT = "distanceattack";
+		ANIM_ALERT = "distanceattack";
 		ANIM_DEATH1 = "diesimple";
 		ANIM_DEATH2 = "diesideways";
-		const string ANIM_VICTORY1 = "victoryeat";
-		const string ANIM_VICTORY2 = "victorysniff";
+		ANIM_VICTORY1 = "victoryeat";
+		ANIM_VICTORY2 = "victorysniff";
 		CAN_FLINCH = 1;
 		ATTACK_RANGE = 64;
 		ATTACK_HITRANGE = 75;
 		ATTACK_MOVERANGE = 40;
-		const string DMG_SLASH = Random(25, 50);
-		const string DMG_SMASH = Random(50, 100);
-		const int DOT_FROST = 25;
+		DMG_SLASH = Random(25, 50);
+		DMG_SMASH = Random(50, 100);
+		DOT_FROST = 25;
 		NPC_GIVE_EXP = 200;
-		const float SLASH_HITCHANCE = 0.8;
-		const float SMASH_HITCHANCE = 0.9;
-		const int SMASH_HITRANGE = 75;
-		const int SLASH_HITRANGE = 75;
-		const string SOUND_STRUCK1 = "body/flesh1.wav";
-		const string SOUND_STRUCK2 = "body/flesh2.wav";
-		const string SOUND_STRUCK3 = "body/flesh3.wav";
-		const string SOUND_PAIN1 = "monsters/ice_reaver_mini/gon_pain2.wav";
-		const string SOUND_PAIN2 = "monsters/ice_reaver_mini/gon_pain4.wav";
-		const string SOUND_PAIN3 = "monsters/ice_reaver_mini/gon_pain5.wav";
-		const string SOUND_DEATH = "monsters/ice_reaver_mini/gon_die1.wav";
-		const string SOUND_ALERT = "monsters/ice_reaver_mini/gon_alert1.wav";
-		const string SOUND_SEARCH1 = "monsters/ice_reaver_mini/gon_childdie3.wav";
-		const string SOUND_SEARCH2 = "monsters/ice_reaver_mini/gon_childdie2.wav";
-		const string SOUND_SEARCH3 = "monsters/ice_reaver_mini/gon_childdie1.wav";
-		const string SOUND_RUN1 = "common/npc_step1.wav";
-		const string SOUND_RUN2 = "common/npc_step2.wav";
-		const string SOUND_RUN3 = "common/npc_step3.wav";
-		const string SOUND_RUN4 = "common/npc_step4.wav";
-		const string SOUND_SLASHHIT = "zombie/claw_strike1.wav";
-		const string SOUND_SMASHHIT = "zombie/claw_strike2.wav";
-		const string SOUND_SLASHMISS = "zombie/claw_miss1.wav";
-		const string SOUND_SMASHMISS = "zombie/claw_miss2.wav";
+		SLASH_HITCHANCE = 0.8;
+		SMASH_HITCHANCE = 0.9;
+		SMASH_HITRANGE = 75;
+		SLASH_HITRANGE = 75;
+		SOUND_STRUCK1 = "body/flesh1.wav";
+		SOUND_STRUCK2 = "body/flesh2.wav";
+		SOUND_STRUCK3 = "body/flesh3.wav";
+		SOUND_PAIN1 = "monsters/ice_reaver_mini/gon_pain2.wav";
+		SOUND_PAIN2 = "monsters/ice_reaver_mini/gon_pain4.wav";
+		SOUND_PAIN3 = "monsters/ice_reaver_mini/gon_pain5.wav";
+		SOUND_DEATH = "monsters/ice_reaver_mini/gon_die1.wav";
+		SOUND_ALERT = "monsters/ice_reaver_mini/gon_alert1.wav";
+		SOUND_SEARCH1 = "monsters/ice_reaver_mini/gon_childdie3.wav";
+		SOUND_SEARCH2 = "monsters/ice_reaver_mini/gon_childdie2.wav";
+		SOUND_SEARCH3 = "monsters/ice_reaver_mini/gon_childdie1.wav";
+		SOUND_RUN1 = "common/npc_step1.wav";
+		SOUND_RUN2 = "common/npc_step2.wav";
+		SOUND_RUN3 = "common/npc_step3.wav";
+		SOUND_RUN4 = "common/npc_step4.wav";
+		SOUND_SLASHHIT = "zombie/claw_strike1.wav";
+		SOUND_SMASHHIT = "zombie/claw_strike2.wav";
+		SOUND_SLASHMISS = "zombie/claw_miss1.wav";
+		SOUND_SMASHMISS = "zombie/claw_miss2.wav";
 	}
 
 	void game_precache()
@@ -129,7 +161,7 @@ class IceReaverMini : CGameScript
 		if (!(GetGameTime() > NEXT_EAT)) return;
 		NEXT_EAT = GetGameTime();
 		NEXT_EAT += 20.0;
-		string RND_VICT = RandomInt(1, 2);
+		int RND_VICT = RandomInt(1, 2);
 		if (RND_VICT == 1)
 		{
 			PlayAnim("critical", ANIM_VICTORY1);

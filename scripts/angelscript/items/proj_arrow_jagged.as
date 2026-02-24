@@ -7,15 +7,23 @@ namespace MS
 
 class ProjArrowJagged : CGameScript
 {
+	float ARROW_BREAK_CHANCE;
+	int ARROW_SOLIDIFY_ON_WALL;
+	int CLFX_ARROW;
+	int MODEL_BODY_OFS;
+	int PROJ_DAMAGE;
+	int PROJ_STICK_DURATION;
+	string SPRITE_ARROW_TRADE;
+
 	ProjArrowJagged()
 	{
-		const int CLFX_ARROW = 1;
-		const int MODEL_BODY_OFS = 0;
-		const string SPRITE_ARROW_TRADE = "silverarrow";
-		const string PROJ_DAMAGE = RandomInt(275, 375);
-		const int PROJ_STICK_DURATION = 25;
-		const int ARROW_SOLIDIFY_ON_WALL = 1;
-		const float ARROW_BREAK_CHANCE = 0.2;
+		CLFX_ARROW = 1;
+		MODEL_BODY_OFS = 0;
+		SPRITE_ARROW_TRADE = "silverarrow";
+		PROJ_DAMAGE = RandomInt(275, 375);
+		PROJ_STICK_DURATION = 25;
+		ARROW_SOLIDIFY_ON_WALL = 1;
+		ARROW_BREAK_CHANCE = 0.2;
 	}
 
 	void arrow_spawn()

@@ -9,16 +9,24 @@ class BaseSummon : CGameScript
 {
 	string ACT_NAME;
 	string ANIM_RUN;
+	string ANIM_RUN_BASE;
 	string ANIM_WALK;
+	string ANIM_WALK_BASE;
 	string AS_LAST_ORIGIN;
 	int CAN_RETALIATE;
 	int CYCLED_UP;
 	string CYCLE_TIME;
+	float CYCLE_TIME_BATTLE;
+	float CYCLE_TIME_IDLE;
+	float CYCLE_TIME_NPC;
 	int DEFEND_MODE;
+	int DEFEND_RANGE;
 	int FOLLOW_MASTER;
 	int GUARD_MODE;
 	string GUARD_POS;
+	int HOVER_CLOSE;
 	string HOVER_DISTANCE;
+	int HOVER_FAR;
 	int IGNORE_TARGETS;
 	string IS_HIRED;
 	string I_R_PET;
@@ -31,32 +39,42 @@ class BaseSummon : CGameScript
 	string NPC_MOVE_TARGET;
 	string OWNER_TARGET;
 	int STUCK_CHECKING;
+	int SUMMON_CIRCLE_INDEX;
 	string SUMMON_LAST_TARG;
 	string SUMMON_LAST_TARG_NOTICE;
 	string SUMMON_MASTER;
+	int SUMMON_RUN_DIST;
+	int SUMMON_VICINITY;
+	string SUM_REPORT_SUFFIX;
+	string SUM_SAY_ATTACK;
+	string SUM_SAY_COME;
+	string SUM_SAY_DEATH;
+	string SUM_SAY_DEFEND;
+	string SUM_SAY_GUARD;
+	string SUM_SAY_HUNT;
 
 	BaseSummon()
 	{
-		const int SUMMON_CIRCLE_INDEX = 3;
-		const int SUMMON_RUN_DIST = 256;
-		const string SUM_SAY_COME = "Coming sir.";
-		const string SUM_SAY_ATTACK = "Attacking target.";
-		const string SUM_SAY_HUNT = "Hunting, sir.";
-		const string SUM_SAY_DEFEND = "Defending you.";
-		const string SUM_SAY_DEATH = "Arrrrrrrrgghh!";
-		const string SUM_SAY_GUARD = "I shall guard this position with my life.";
-		const string SUM_REPORT_SUFFIX = ", sir.";
-		const string ANIM_WALK_BASE = "walk";
-		const string ANIM_RUN_BASE = "run";
-		const int DEFEND_RANGE = 256;
+		SUMMON_CIRCLE_INDEX = 3;
+		SUMMON_RUN_DIST = 256;
+		SUM_SAY_COME = "Coming sir.";
+		SUM_SAY_ATTACK = "Attacking target.";
+		SUM_SAY_HUNT = "Hunting, sir.";
+		SUM_SAY_DEFEND = "Defending you.";
+		SUM_SAY_DEATH = "Arrrrrrrrgghh!";
+		SUM_SAY_GUARD = "I shall guard this position with my life.";
+		SUM_REPORT_SUFFIX = ", sir.";
+		ANIM_WALK_BASE = "walk";
+		ANIM_RUN_BASE = "run";
+		DEFEND_RANGE = 256;
 		CAN_RETALIATE = 0;
-		const int HOVER_FAR = 128;
-		const int HOVER_CLOSE = 64;
+		HOVER_FAR = 128;
+		HOVER_CLOSE = 64;
 		Precache("xflare1.spr");
-		const float CYCLE_TIME_BATTLE = 0.1;
-		const float CYCLE_TIME_IDLE = 0.1;
-		const float CYCLE_TIME_NPC = 0.1;
-		const int SUMMON_VICINITY = 400;
+		CYCLE_TIME_BATTLE = 0.1;
+		CYCLE_TIME_IDLE = 0.1;
+		CYCLE_TIME_NPC = 0.1;
+		SUMMON_VICINITY = 400;
 	}
 
 	void OnSpawn() override
@@ -158,15 +176,15 @@ class BaseSummon : CGameScript
 		SetSayTextRange(1024);
 		if (!(SUM_NO_TALK))
 		{
-			SayText("SUM_SAY_COME");
+			SayText(SUM_SAY_COME);
 		}
 		if ((IsEntityAlive(m_hAttackTarget)))
 		{
-			SendColoredMessage(SUMMON_MASTER, "ACT_NAME disengaging battle");
+			SendColoredMessage(SUMMON_MASTER, ACT_NAME + " disengaging battle");
 		}
 		else
 		{
-			SendColoredMessage(SUMMON_MASTER, "ACT_NAME following and non-agro");
+			SendColoredMessage(SUMMON_MASTER, ACT_NAME + " following and non-agro");
 		}
 		summon_acknowledge("follow");
 		npcatk_clear_targets();
@@ -202,9 +220,9 @@ class BaseSummon : CGameScript
 		SetSayTextRange(1024);
 		if (!(SUM_NO_TALK))
 		{
-			SayText("SUM_SAY_ATTACK");
+			SayText(SUM_SAY_ATTACK);
 		}
-		SendColoredMessage(SUMMON_MASTER, "ACT_NAME attacking target");
+		SendColoredMessage(SUMMON_MASTER, ACT_NAME + " attacking target");
 		summon_acknowledge("attack");
 		NPC_MOVE_TARGET = OWNER_TARGET;
 		NPC_ATTACK_TARGET = OWNER_TARGET;
@@ -224,9 +242,9 @@ class BaseSummon : CGameScript
 		SetSayTextRange(1024);
 		if (!(SUM_NO_TALK))
 		{
-			SayText("SUM_SAY_HUNT");
+			SayText(SUM_SAY_HUNT);
 		}
-		SendColoredMessage(SUMMON_MASTER, "ACT_NAME seeking enemies");
+		SendColoredMessage(SUMMON_MASTER, ACT_NAME + " seeking enemies");
 		summon_acknowledge("hunt");
 		PlayAnim("once", ANIM_WALK);
 		bs_set_hunt_mode();
@@ -248,9 +266,9 @@ class BaseSummon : CGameScript
 		SetSayTextRange(1024);
 		if (!(SUM_NO_TALK))
 		{
-			SayText("SUM_SAY_DEFEND");
+			SayText(SUM_SAY_DEFEND);
 		}
-		SendColoredMessage(SUMMON_MASTER, "ACT_NAME set defensive mode");
+		SendColoredMessage(SUMMON_MASTER, ACT_NAME + " set defensive mode");
 		summon_acknowledge("defend");
 		bs_set_defend_mode();
 	}
@@ -268,9 +286,9 @@ class BaseSummon : CGameScript
 		SetSayTextRange(1024);
 		if (!(SUM_NO_TALK))
 		{
-			SayText("SUM_SAY_GUARD");
+			SayText(SUM_SAY_GUARD);
 		}
-		SendColoredMessage(SUMMON_MASTER, "ACT_NAME holding location");
+		SendColoredMessage(SUMMON_MASTER, ACT_NAME + " holding location");
 		summon_acknowledge("stay");
 		bs_set_guard_mode();
 	}
@@ -364,10 +382,10 @@ class BaseSummon : CGameScript
 				if (SUM_SAY_DEATH != "none")
 				{
 				}
-				SayText("SUM_SAY_DEATH");
+				SayText(SUM_SAY_DEATH);
 			}
 		}
-		SendPlayerMessage(SUMMON_MASTER, "Your ACT_NAME has been slain!");
+		SendPlayerMessage(SUMMON_MASTER, "Your " + ACT_NAME + " has been slain!");
 		summon_death();
 		DeleteEntity(GetOwner(), true); // fade out
 	}
@@ -396,10 +414,10 @@ class BaseSummon : CGameScript
 			string ME_STRENGTH = ATK_MIN;
 			ME_STREGTH += "/strike";
 			SetSayTextRange(1024);
-			SayText("My health is HEALTH_STRING and my attack strength is ME_STRENGTH SUM_REPORT_SUFFIX");
+			SayText("My health is " + HEALTH_STRING + "and my attack strength is " + ME_STRENGTH + SUM_REPORT_SUFFIX);
 		}
 		summon_acknowledge("report");
-		SendColoredMessage(SUMMON_MASTER, "/* TODO: $stradd */ $stradd(ACT_NAME, ":") Health int(HEALTH_STRING) Attack int(SUMMON_DMG_BASE)");
+		SendColoredMessage(SUMMON_MASTER, /* TODO: $stradd */ $stradd(ACT_NAME, ":") + "Health " + int(HEALTH_STRING) + "Attack " + int(SUMMON_DMG_BASE));
 	}
 
 	void basesummon_say_dismiss()
@@ -606,14 +624,14 @@ class BaseSummon : CGameScript
 	void npc_found_new_target()
 	{
 		string TARG_NAME = GetEntityProperty(param1, "name.full");
-		string LASTN_DIFF = GetGameTime();
+		float LASTN_DIFF = GetGameTime();
 		LASTN_DIFF -= SUMMON_LAST_TARG_NOTICE;
 		if (!(LASTN_DIFF > 5)) return;
 		SUMMON_LAST_TARG_NOTICE = GetGameTime();
 		if (!(SUMMON_LAST_TARG != param1)) return;
 		if ((I_R_PET))
 		{
-			SendPlayerMessage(SUMMON_MASTER, "Your ACT_NAME has targeted TARG_NAME");
+			SendPlayerMessage(SUMMON_MASTER, "Your " + ACT_NAME + "has targeted " + TARG_NAME);
 		}
 		SUMMON_LAST_TARG = param1;
 	}

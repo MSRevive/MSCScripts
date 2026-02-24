@@ -13,12 +13,15 @@ class SfxSealFollow : CGameScript
 	string GLOW_COLOR;
 	string GLOW_RAD;
 	string LIGHT_ID;
+	string MODEL_NAME;
+	int V_OFS;
+	int V_OFS_DUCK;
 
 	SfxSealFollow()
 	{
-		const string MODEL_NAME = "weapons/magic/seals.mdl";
-		const int V_OFS = 0;
-		const int V_OFS_DUCK = 0;
+		MODEL_NAME = "weapons/magic/seals.mdl";
+		V_OFS = 0;
+		V_OFS_DUCK = 0;
 	}
 
 	void client_activate()

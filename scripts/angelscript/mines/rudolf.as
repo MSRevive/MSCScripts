@@ -14,13 +14,18 @@ class Rudolf : CGameScript
 	int CAN_FLEE;
 	int CAN_FLINCH;
 	int CAN_RETALIATE;
+	float FLEE_CHANCE;
 	int FLEE_DISTANCE;
+	int FLEE_HEALTH;
 	string FLINCH_ANIM;
 	float FLINCH_CHANCE;
 	int FLINCH_DELAY;
 	int I_GOT_MY_MACE;
+	int NO_JOB;
+	int NO_RUMOR;
 	string QUEST_WINNER;
 	int REQ_QUEST_NOTDONE;
+	string SOUND_DEATH;
 	int SPOKE;
 	int recievedit;
 
@@ -28,8 +33,8 @@ class Rudolf : CGameScript
 	{
 		CAN_ATTACK = 0;
 		CAN_FLEE = 1;
-		const int FLEE_HEALTH = 34;
-		const float FLEE_CHANCE = 1.0;
+		FLEE_HEALTH = 34;
+		FLEE_CHANCE = 1.0;
 		FLEE_DISTANCE = 1000;
 		CAN_RETALIATE = 0;
 		CAN_FLINCH = 1;
@@ -37,10 +42,10 @@ class Rudolf : CGameScript
 		FLINCH_CHANCE = 0.5;
 		FLINCH_DELAY = 1;
 		ANIM_DEATH = "dieforward";
-		const string SOUND_DEATH = "player/stomachhit1.wav";
+		SOUND_DEATH = "player/stomachhit1.wav";
 		ANIM_WALK = "run";
-		const int NO_RUMOR = 1;
-		const int NO_JOB = 1;
+		NO_RUMOR = 1;
+		NO_JOB = 1;
 	}
 
 	void OnSpawn() override
@@ -69,28 +74,28 @@ class Rudolf : CGameScript
 	{
 		if ((IS_FLEEING)) return;
 		if ((I_GOT_MY_MACE)) return;
-		SayText("Please help me , I lost my very valuable mace! Please recover it!");
+		SayText("Please help me , " + I + " lost my very valuable mace! Please recover it!");
 		ScheduleDelayedEvent(3, "say_hi2");
 		SPOKE = 1;
 	}
 
 	void say_hi2()
 	{
-		SayText(".....I was venturing in the caves...I think I remember where...");
+		SayText(.....I + "was venturing in the caves...I think " + I + " remember where...");
 		ScheduleDelayedEvent(4, "say_hi3");
 		PlayAnim("once", "panic");
 	}
 
 	void say_hi3()
 	{
-		SayText("All of a sudden , a bunch of things attacked me! I ran out as fast as I could...");
+		SayText("All of a sudden , a bunch of things attacked me! " + I + "ran out as fast as " + I + " could...");
 		ScheduleDelayedEvent(4, "say_hi4");
 		PlayAnim("once", "panic");
 	}
 
 	void say_hi4()
 	{
-		SayText("When I came back out , I realized my mace was gone!");
+		SayText("When " + I + "came back out , " + I + " realized my mace was gone!");
 		PlayAnim("once", "beatdoor");
 		ScheduleDelayedEvent(4, "say_hi5");
 	}
@@ -119,7 +124,7 @@ class Rudolf : CGameScript
 
 	void say_what()
 	{
-		SayText("Yes , I lost my mace , please help me find it. I think I remember where..");
+		SayText("Yes , " + I + "lost my mace , please help me find it. " + I + "think " + I + " remember where..");
 		ScheduleDelayedEvent(3, "say_what2");
 		PlayAnim("once", "eye_wipe");
 	}
@@ -153,7 +158,7 @@ class Rudolf : CGameScript
 	{
 		ReceiveOffer("accept");
 		PlayAnim("once", "eye_wipe");
-		SayText("THANK YOU!!!");
+		SayText(THANK + YOU!!!);
 		QUEST_WINNER = param1;
 		ScheduleDelayedEvent(2, "recvmace_2");
 	}
@@ -161,7 +166,7 @@ class Rudolf : CGameScript
 	void recvmace_2()
 	{
 		I_GOT_MY_MACE = 1;
-		SayText("As I promised you...");
+		SayText("As " + I + " promised you...");
 		// TODO: offer QUEST_WINNER bows_crossbow_light
 		ScheduleDelayedEvent(3, "recvmace_3");
 		if (!(ItemExists(QUEST_WINNER, "item_ring"))) return;
@@ -180,7 +185,7 @@ class Rudolf : CGameScript
 
 	void recvmace_3()
 	{
-		SayText("Goodbye now! I must hurry!");
+		SayText("Goodbye now! " + I + " must hurry!");
 		SetMoveDest(Vector3(-3101, 351, 64));
 		ScheduleDelayedEvent(5, "rudolfdelete");
 	}

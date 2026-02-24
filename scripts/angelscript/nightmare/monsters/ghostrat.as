@@ -21,6 +21,7 @@ class Ghostrat : CGameScript
 	float FLEE_CHANCE;
 	int FLEE_HEALTH;
 	int HUNT_AGRO;
+	int NO_EXP_MULTI;
 	int NPC_GIVE_EXP;
 	string SOUND_ATTACK1;
 	string SOUND_ATTACK2;
@@ -34,7 +35,7 @@ class Ghostrat : CGameScript
 
 	Ghostrat()
 	{
-		const int NO_EXP_MULTI = 1;
+		NO_EXP_MULTI = 1;
 		HUNT_AGRO = 0;
 		ANIM_DEATH = "die";
 		ANIM_RUN = "run";

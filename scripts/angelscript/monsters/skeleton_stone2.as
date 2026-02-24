@@ -10,12 +10,17 @@ class SkeletonStone2 : CGameScript
 	string ANIM_ATTACK;
 	string ANIM_RUN;
 	string AS_ATTACKING;
+	int ATTACK_DAMAGE_HIGH;
+	int ATTACK_DAMAGE_LOW;
+	float ATTACK_HITCHANCE;
 	int DROP_GOLD;
 	int DROP_GOLD_MAX;
 	int DROP_GOLD_MIN;
 	string MY_ROCK;
 	int NPC_GIVE_EXP;
+	int ROCK_DAMAGE;
 	string ROCK_DELAY;
+	float ROCK_FREQ;
 	int ROCK_ON;
 	string ROCK_POS;
 	int ROCK_RAISE_COUNT;
@@ -24,31 +29,41 @@ class SkeletonStone2 : CGameScript
 	string ROCK_Y;
 	string ROCK_Z;
 	string SET_GREEK;
+	int SKEL_HP;
+	float SKEL_RESPAWN_CHANCE;
+	int SKEL_RESPAWN_LIVES;
+	string SOUND_STRUCK1;
+	string SOUND_STRUCK2;
+	string SOUND_STRUCK3;
+	string SOUND_STUN;
+	string SOUND_SUMMON;
+	int STONE_SKELETON;
+	int STUN_ATK_CHANCE;
 	int STUN_ATTACK;
 	string WAS_SLEEPING;
 
 	SkeletonStone2()
 	{
 		ANIM_RUN = "run";
-		const int SKEL_HP = 1000;
-		const float ATTACK_HITCHANCE = 0.85;
-		const int ATTACK_DAMAGE_LOW = 16;
-		const int ATTACK_DAMAGE_HIGH = 26;
+		SKEL_HP = 1000;
+		ATTACK_HITCHANCE = 0.85;
+		ATTACK_DAMAGE_LOW = 16;
+		ATTACK_DAMAGE_HIGH = 26;
 		NPC_GIVE_EXP = 150;
 		DROP_GOLD = 1;
 		DROP_GOLD_MIN = 25;
 		DROP_GOLD_MAX = 55;
-		const float SKEL_RESPAWN_CHANCE = 0.0;
-		const int SKEL_RESPAWN_LIVES = 0;
-		const string SOUND_STRUCK1 = "weapons/axemetal1.wav";
-		const string SOUND_STRUCK2 = "weapons/axemetal2.wav";
-		const string SOUND_STRUCK3 = "debris/concrete1.wav";
-		const string SOUND_STUN = "zombie/claw_strike2.wav";
-		const string SOUND_SUMMON = "monsters/skeleton/calrain3.wav";
-		const string ROCK_DAMAGE = RandomInt(200, 400);
-		const int STUN_ATK_CHANCE = 10;
-		const int STONE_SKELETON = 1;
-		const float ROCK_FREQ = 15.0;
+		SKEL_RESPAWN_CHANCE = 0.0;
+		SKEL_RESPAWN_LIVES = 0;
+		SOUND_STRUCK1 = "weapons/axemetal1.wav";
+		SOUND_STRUCK2 = "weapons/axemetal2.wav";
+		SOUND_STRUCK3 = "debris/concrete1.wav";
+		SOUND_STUN = "zombie/claw_strike2.wav";
+		SOUND_SUMMON = "monsters/skeleton/calrain3.wav";
+		ROCK_DAMAGE = RandomInt(200, 400);
+		STUN_ATK_CHANCE = 10;
+		STONE_SKELETON = 1;
+		ROCK_FREQ = 15.0;
 		Precache("monsters/skeleton_boss1.mdl");
 	}
 

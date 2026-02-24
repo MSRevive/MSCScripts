@@ -7,32 +7,53 @@ namespace MS
 
 class BluntLrod11 : CGameScript
 {
+	string ANIM_PREFIX;
+	int BASE_LEVEL_REQ;
+	float MELEE_ACCURACY;
+	float MELEE_ATK_DURATION;
+	int MELEE_DMG;
+	float MELEE_DMG_DELAY;
+	int MELEE_DMG_RANGE;
+	string MELEE_DMG_TYPE;
+	int MELEE_ENERGY;
+	int MELEE_RANGE;
+	string MELEE_STAT;
+	int MODEL_BODY_OFS;
+	string MODEL_HANDS;
+	string MODEL_VIEW;
+	int MODEL_VIEW_IDX;
+	string MODEL_WORLD;
+	string SOUND_CHARGE;
+	string SOUND_SHOCK1;
+	string SOUND_SHOCK2;
+	string SOUND_SHOCK3;
+	string SOUND_THUNDER;
 	int SPEC_ATTACK;
 
 	BluntLrod11()
 	{
-		const int BASE_LEVEL_REQ = 20;
-		const string MODEL_VIEW = "viewmodels/v_1hblunts.mdl";
-		const int MODEL_VIEW_IDX = 5;
-		const string MODEL_HANDS = "weapons/p_weapons2.mdl";
-		const string MODEL_WORLD = "weapons/p_weapons2.mdl";
-		const int MODEL_BODY_OFS = 94;
-		const float MELEE_ATK_DURATION = 1.1;
-		const string MELEE_DMG_TYPE = "lightning";
-		const string SOUND_CHARGE = "magic/lightning_powerup.wav";
-		const string SOUND_THUNDER = "weather/Storm_exclamation.wav";
-		const string SOUND_SHOCK1 = "debris/zap8.wav";
-		const string SOUND_SHOCK2 = "debris/zap3.wav";
-		const string SOUND_SHOCK3 = "debris/zap4.wav";
-		const int MELEE_RANGE = 60;
-		const float MELEE_DMG_DELAY = 0.6;
-		const float MELEE_ATK_DURATION = 1.1;
-		const int MELEE_ENERGY = 8;
-		const int MELEE_DMG = 230;
-		const int MELEE_DMG_RANGE = 140;
-		const float MELEE_ACCURACY = 0.75;
-		const string MELEE_STAT = "bluntarms";
-		const string ANIM_PREFIX = "dagger";
+		BASE_LEVEL_REQ = 20;
+		MODEL_VIEW = "viewmodels/v_1hblunts.mdl";
+		MODEL_VIEW_IDX = 5;
+		MODEL_HANDS = "weapons/p_weapons2.mdl";
+		MODEL_WORLD = "weapons/p_weapons2.mdl";
+		MODEL_BODY_OFS = 94;
+		MELEE_ATK_DURATION = 1.1;
+		MELEE_DMG_TYPE = "lightning";
+		SOUND_CHARGE = "magic/lightning_powerup.wav";
+		SOUND_THUNDER = "weather/Storm_exclamation.wav";
+		SOUND_SHOCK1 = "debris/zap8.wav";
+		SOUND_SHOCK2 = "debris/zap3.wav";
+		SOUND_SHOCK3 = "debris/zap4.wav";
+		MELEE_RANGE = 60;
+		MELEE_DMG_DELAY = 0.6;
+		MELEE_ATK_DURATION = 1.1;
+		MELEE_ENERGY = 8;
+		MELEE_DMG = 230;
+		MELEE_DMG_RANGE = 140;
+		MELEE_ACCURACY = 0.75;
+		MELEE_STAT = "bluntarms";
+		ANIM_PREFIX = "dagger";
 	}
 
 	void weapon_spawn()

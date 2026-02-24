@@ -6,27 +6,34 @@ namespace MS
 class SfxJumpBeams : CGameScript
 {
 	string BEAM_TARG;
+	int BONE_BEAM_WIDTH;
 	int CUR_JUMPS;
 	int FX_ACTIVE;
 	string FX_OWNER;
 	string FX_SCRIPT_ID;
 	string FX_TARGET;
 	int GOT_NEW_TARG;
+	int JUMP_BEAM_WIDTH;
+	int MAX_JUMPS;
 	string OLD_TARG;
+	string SOUND_IDLEZAP1;
+	string SOUND_IDLEZAP2;
+	string SOUND_IDLEZAP3;
+	string SOUND_ZAP_TARG;
 	int STATIC_ACTIVE;
 	int SWIRL_ACTIVE;
 	int SWIRL_ROT;
 
 	SfxJumpBeams()
 	{
-		const int MAX_JUMPS = 6;
+		MAX_JUMPS = 6;
 		CUR_JUMPS = 0;
-		const int BONE_BEAM_WIDTH = 5;
-		const int JUMP_BEAM_WIDTH = 10;
-		const string SOUND_IDLEZAP1 = "debris/zap4.wav";
-		const string SOUND_IDLEZAP2 = "debris/zap2.wav";
-		const string SOUND_IDLEZAP3 = "debris/zap5.wav";
-		const string SOUND_ZAP_TARG = "magic/lightning_strike2.wav";
+		BONE_BEAM_WIDTH = 5;
+		JUMP_BEAM_WIDTH = 10;
+		SOUND_IDLEZAP1 = "debris/zap4.wav";
+		SOUND_IDLEZAP2 = "debris/zap2.wav";
+		SOUND_IDLEZAP3 = "debris/zap5.wav";
+		SOUND_ZAP_TARG = "magic/lightning_strike2.wav";
 	}
 
 	void OnSpawn() override
@@ -168,9 +175,9 @@ class SfxJumpBeams : CGameScript
 		if (!(FX_ACTIVE)) return;
 		if (!(STATIC_ACTIVE)) return;
 		if (!((BEAM_TARG).findFirst("(") == 0)) return;
-		string RND_BONE = RandomInt(1, 10);
+		int RND_BONE = RandomInt(1, 10);
 		string BONE1_ORG = /* TODO: $getcl */ $getcl(BEAM_TARG, "bonepos", RND_BONE);
-		string RND_BONE = RandomInt(1, 10);
+		int RND_BONE = RandomInt(1, 10);
 		string BONE2_ORG = /* TODO: $getcl */ $getcl(BEAM_TARG, "bonepos", RND_BONE);
 		if (BONE1_ORG == Vector3(0, 0, 0))
 		{
@@ -236,7 +243,7 @@ class SfxJumpBeams : CGameScript
 		}
 		if ((SWIRL_ACTIVE))
 		{
-			string RND_ZAP = RandomInt(1, 3);
+			int RND_ZAP = RandomInt(1, 3);
 			if (RND_ZAP == 1)
 			{
 				EmitSound3D(SOUND_IDLEZAP1, 10, SOUND_ORG);
@@ -252,7 +259,7 @@ class SfxJumpBeams : CGameScript
 		}
 		else
 		{
-			string RND_ZAP = RandomInt(1, 3);
+			int RND_ZAP = RandomInt(1, 3);
 			if (RND_ZAP == 1)
 			{
 				EmitSound3D(SOUND_ZAP_TARG, 10, SOUND_ORG);

@@ -13,6 +13,8 @@ class SkeletonMageCl : CGameScript
 	int FX_ACTIVE;
 	string FX_DURATION;
 	string FX_OWNER;
+	string GLOW_COLOR;
+	int GLOW_RAD;
 	string SEAL_COLOR;
 	string SEAL_GLOW_RAD;
 	int SEAL_LIGHT_ACTIVE;
@@ -26,8 +28,8 @@ class SkeletonMageCl : CGameScript
 
 	SkeletonMageCl()
 	{
-		const int GLOW_RAD = 128;
-		const Vector3 GLOW_COLOR = Vector3(255, 128, 64);
+		GLOW_RAD = 128;
+		GLOW_COLOR = Vector3(255, 128, 64);
 	}
 
 	void client_activate()

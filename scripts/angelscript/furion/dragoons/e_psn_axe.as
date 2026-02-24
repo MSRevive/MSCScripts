@@ -7,10 +7,13 @@ namespace MS
 
 class EPsnAxe : CGameScript
 {
+	int ELEMENT;
+	int WEAPON;
+
 	EPsnAxe()
 	{
-		const int WEAPON = 4;
-		const int ELEMENT = 1;
+		WEAPON = 4;
+		ELEMENT = 1;
 	}
 
 }

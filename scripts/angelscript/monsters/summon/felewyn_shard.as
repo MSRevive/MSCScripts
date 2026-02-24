@@ -5,20 +5,22 @@ namespace MS
 
 class FelewynShard : CGameScript
 {
+	float CHAT_DELAY;
 	int CUR_ANG;
 	int GAVE_SWORD;
 	string GLOW_COLOR;
 	string GLOW_RAD;
 	string MY_SCRIPT_IDX;
 	string MY_TARGET;
+	int NPC_FWD_SPEED;
 	string NPC_NOCLIP_DEST;
 	string SKEL_ID;
 	string SKEL_LIGHT_ID;
 
 	FelewynShard()
 	{
-		const int NPC_FWD_SPEED = 5;
-		const float CHAT_DELAY = 5.0;
+		NPC_FWD_SPEED = 5;
+		CHAT_DELAY = 5.0;
 	}
 
 	void game_dynamically_created()
@@ -50,7 +52,7 @@ class FelewynShard : CGameScript
 
 	void do_intro()
 	{
-		SayText("I am a shard of the original Felewyn Blade...");
+		SayText(I + " am a shard of the original Felewyn Blade...");
 		CHAT_DELAY("do_intro2");
 	}
 
@@ -74,7 +76,7 @@ class FelewynShard : CGameScript
 
 	void do_intro5()
 	{
-		SayText("Although you have all fought valiantly , I am but one shard. Thus , I offer myself to the warrior known as GetEntityName(MY_TARGET)");
+		SayText("Although you have all fought valiantly , " + I + "am but one shard. Thus , " + I + "offer myself to the warrior known as " + GetEntityName(MY_TARGET));
 		CHAT_DELAY("do_intro6");
 		SetMoveDest(MY_TARGET);
 		NPC_NOCLIP_DEST = MY_TARGET;
@@ -94,7 +96,7 @@ class FelewynShard : CGameScript
 		GAVE_SWORD = 1;
 		SetProp(GetOwner(), "renderamt", 0);
 		Effect("screenfade", MY_TARGET, 3, 1, Vector3(255, 255, 255), 255, "fadein");
-		string FRAG_ELM = RandomInt(1, 5);
+		int FRAG_ELM = RandomInt(1, 5);
 		if (FRAG_ELM == 1)
 		{
 			// TODO: offer MY_TARGET swords_fshard1
@@ -142,9 +144,9 @@ class FelewynShard : CGameScript
 	void game_prerender()
 	{
 		string L_POS = /* TODO: $getcl */ $getcl(SKEL_ID, "origin");
-		string RND_R = RandomInt(0, 255);
-		string RND_G = RandomInt(0, 255);
-		string RND_B = RandomInt(0, 255);
+		int RND_R = RandomInt(0, 255);
+		int RND_G = RandomInt(0, 255);
+		int RND_B = RandomInt(0, 255);
 		Vector3 RND_COLOR = Vector3(RND_R, RND_G, RND_B);
 		ClientEffect("light", SKEL_LIGHT_ID, L_POS, GLOW_RAD, RND_COLOR, 1.0);
 		CUR_ANG += 18;

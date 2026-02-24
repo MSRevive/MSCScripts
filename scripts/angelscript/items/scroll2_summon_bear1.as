@@ -7,13 +7,19 @@ namespace MS
 
 class Scroll2SummonBear1 : CGameScript
 {
+	int BASE_REQUIRED_LEVEL;
+	string BASE_REQUIRED_SKILL;
+	string BASE_SPELL_SCRIPT;
+	int SPELL_MAKER_HEIGHT;
+	string SPELL_MAKER_SCRIPT;
+
 	Scroll2SummonBear1()
 	{
-		const string BASE_SPELL_SCRIPT = "magic_hand_summon_bear1";
-		const string BASE_REQUIRED_SKILL = "skill.spellcasting";
-		const int BASE_REQUIRED_LEVEL = 20;
-		const string SPELL_MAKER_SCRIPT = "monsters/companion/spell_maker_summoning";
-		const int SPELL_MAKER_HEIGHT = 48;
+		BASE_SPELL_SCRIPT = "magic_hand_summon_bear1";
+		BASE_REQUIRED_SKILL = "skill.spellcasting";
+		BASE_REQUIRED_LEVEL = 20;
+		SPELL_MAKER_SCRIPT = "monsters/companion/spell_maker_summoning";
+		SPELL_MAKER_HEIGHT = 48;
 	}
 
 	void OnSpawn() override

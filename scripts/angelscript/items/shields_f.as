@@ -7,41 +7,61 @@ namespace MS
 
 class ShieldsF : CGameScript
 {
+	string ANIM_PREFIX;
+	int BLOCK_CHANCE_DOWN;
+	int BLOCK_CHANCE_UP;
 	int BREATH_ON;
 	string BURN_DAMAGE;
 	string BURN_LIST;
 	string CL_SCRIPT_DX;
+	float DMG_BLOCK_UP;
 	int EXIT_BLOCK;
 	string GAME_PVP;
+	float MELEE_ACCURACY;
+	int MELEE_ENERGY;
+	int MODEL_BODY_OFS;
+	string MODEL_HANDS;
+	string MODEL_VIEW;
+	int MODEL_VIEW_IDX;
+	string MODEL_WEAR;
+	string MODEL_WORLD;
+	int MP_DRAIN_RATE;
 	string NEXT_MP_WARN;
 	string NEXT_SCAN;
+	float NOPUSH_CHANCE;
 	string OWNER_ANG;
 	string OWNER_ORG;
+	float PARRY_MULTI;
 	int SCAN_KEYS;
+	int SHIELD_BASE_PARRY;
+	int SHIELD_IMMORTAL;
+	int SHIELD_PRE_BLOCK_EFFECT;
+	string SOUND_BLOCK;
+	string SOUND_BREATH_LOOP;
 	string TRACE_START;
 
 	ShieldsF()
 	{
-		const float NOPUSH_CHANCE = 1.0;
-		const int MP_DRAIN_RATE = 2;
-		const float PARRY_MULTI = 1.5;
-		const int SHIELD_BASE_PARRY = 35;
-		const string MODEL_VIEW = "viewmodels/v_shields.mdl";
-		const int MODEL_VIEW_IDX = 4;
-		const string MODEL_WORLD = "weapons/p_weapons4.mdl";
-		const string MODEL_HANDS = "weapons/p_weapons4.mdl";
-		const string MODEL_WEAR = "weapons/p_weapons4.mdl";
-		const int MODEL_BODY_OFS = 46;
-		const int MELEE_ENERGY = 15;
-		const float MELEE_ACCURACY = 0.9;
-		const int BLOCK_CHANCE_UP = 100;
-		const float DMG_BLOCK_UP = 0.5;
-		const int BLOCK_CHANCE_DOWN = 10;
-		const int SHIELD_IMMORTAL = 1;
-		const string SOUND_BLOCK = "debris/metal3.wav";
-		const string ANIM_PREFIX = "standard";
-		const int SHIELD_PRE_BLOCK_EFFECT = 1;
-		const string SOUND_BREATH_LOOP = "monsters/goblin/sps_fogfire.wav";
+		NOPUSH_CHANCE = 1.0;
+		MP_DRAIN_RATE = 2;
+		PARRY_MULTI = 1.5;
+		SHIELD_BASE_PARRY = 35;
+		MODEL_VIEW = "viewmodels/v_shields.mdl";
+		MODEL_VIEW_IDX = 4;
+		MODEL_WORLD = "weapons/p_weapons4.mdl";
+		MODEL_HANDS = "weapons/p_weapons4.mdl";
+		MODEL_WEAR = "weapons/p_weapons4.mdl";
+		MODEL_BODY_OFS = 46;
+		MELEE_ENERGY = 15;
+		MELEE_ACCURACY = 0.9;
+		BLOCK_CHANCE_UP = 100;
+		DMG_BLOCK_UP = 0.5;
+		BLOCK_CHANCE_DOWN = 10;
+		SHIELD_IMMORTAL = 1;
+		SOUND_BLOCK = "debris/metal3.wav";
+		ANIM_PREFIX = "standard";
+		SHIELD_PRE_BLOCK_EFFECT = 1;
+		SOUND_BREATH_LOOP = "monsters/goblin/sps_fogfire.wav";
 	}
 
 	void shield_spawn()

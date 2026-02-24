@@ -7,11 +7,15 @@ namespace MS
 
 class HpTrigger200 : CGameScript
 {
+	string EVENT_NAME;
+	int TRIGGER_RANGE;
+	int TRIGGER_REQ;
+
 	HpTrigger200()
 	{
-		const int TRIGGER_RANGE = 256;
-		const int TRIGGER_REQ = 200;
-		const string EVENT_NAME = "found_200";
+		TRIGGER_RANGE = 256;
+		TRIGGER_REQ = 200;
+		EVENT_NAME = "found_200";
 	}
 
 }

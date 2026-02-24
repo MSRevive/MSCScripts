@@ -12,47 +12,67 @@ class VgoblinShaman : CGameScript
 	float ATTACK_HITCHANCE;
 	int ATTACK_MOVERANGE;
 	int CAN_FIREBALL;
+	string CLOUD_SCRIPT;
+	string DEATH_SCRIPT;
+	int DMG_FIREBALL;
+	int DMG_FIREBALL_DOT;
+	int DMG_FIST;
+	int DMG_NOVA;
+	int DOT_FIST;
+	int DOT_POISON;
+	string FIST_SCRIPT;
+	float FREQ_CLOUD;
+	float FREQ_FIREBALL;
+	float FREQ_NOVA;
+	float FREQ_SUMMON;
+	int GOB_CHARGER;
+	int GOB_JUMPER;
 	int GOB_JUMP_SCANNING;
 	string LAST_EGG;
 	int MOVE_RANGE;
 	string MY_CL_SCRIPT_IDX;
+	int NEW_MODEL;
 	string NEXT_CLOUD;
 	string NEXT_FIREBALL;
 	string NEXT_NOVA;
 	string NEXT_SUMMON;
+	string NOVA_SCRIPT;
 	int NO_DEATH_HORROR;
+	int NPC_BASE_EXP;
 	int POISON_FIST;
+	string SOUND_FIREBALL;
 	int SUMMON_ALIVE;
+	string SUMMON_SCRIPT;
 	int TOSS_FIREBALL;
 
 	VgoblinShaman()
 	{
-		const int NEW_MODEL = 1;
-		const int NPC_BASE_EXP = 800;
-		const int GOB_JUMPER = 0;
-		const int GOB_CHARGER = 0;
-		const int DMG_FIST = 10;
-		const int DMG_FIREBALL = 75;
-		const string DOT_POISON = RandomInt(20, 40);
+		NEW_MODEL = 1;
+		NPC_BASE_EXP = 800;
+		GOB_JUMPER = 0;
+		GOB_CHARGER = 0;
+		DMG_FIST = 10;
+		DMG_FIREBALL = 75;
+		DOT_POISON = RandomInt(20, 40);
 		CAN_FIREBALL = 1;
-		const float FREQ_FIREBALL = 2.0;
-		const int DMG_FIREBALL = 150;
-		const int DMG_FIREBALL_DOT = 25;
-		const int DMG_NOVA = 200;
-		const int DOT_FIST = 50;
-		const float FREQ_NOVA = 10.0;
-		const string FREQ_CLOUD = Random(10.0, 20.0);
-		const string FREQ_SUMMON = Random(10.0, 20.0);
+		FREQ_FIREBALL = 2.0;
+		DMG_FIREBALL = 150;
+		DMG_FIREBALL_DOT = 25;
+		DMG_NOVA = 200;
+		DOT_FIST = 50;
+		FREQ_NOVA = 10.0;
+		FREQ_CLOUD = Random(10.0, 20.0);
+		FREQ_SUMMON = Random(10.0, 20.0);
 		ATTACK_MOVERANGE = 800;
 		MOVE_RANGE = 800;
 		ATTACK_HITCHANCE = 0.75;
 		ANIM_ATTACK = "swordswing1_L";
-		const string SOUND_FIREBALL = "bullchicken/bc_attack2.wav";
-		const string SUMMON_SCRIPT = "monsters/summon/horror_egg";
-		const string DEATH_SCRIPT = "monsters/horror2";
-		const string CLOUD_SCRIPT = "monsters/summon/npc_poison_cloud2";
-		const string NOVA_SCRIPT = "monsters/summon/poison_burst";
-		const string FIST_SCRIPT = "monsters/poison_fist_cl";
+		SOUND_FIREBALL = "bullchicken/bc_attack2.wav";
+		SUMMON_SCRIPT = "monsters/summon/horror_egg";
+		DEATH_SCRIPT = "monsters/horror2";
+		CLOUD_SCRIPT = "monsters/summon/npc_poison_cloud2";
+		NOVA_SCRIPT = "monsters/summon/poison_burst";
+		FIST_SCRIPT = "monsters/poison_fist_cl";
 	}
 
 	void game_precache()
@@ -236,7 +256,7 @@ class VgoblinShaman : CGameScript
 		}
 		if ((false))
 		{
-			string STRUCK_CHECK = GetGameTime();
+			float STRUCK_CHECK = GetGameTime();
 			STRUCK_CHECK -= 5.0;
 			if (STRUCK_CHECK > LAST_STRUCK)
 			{

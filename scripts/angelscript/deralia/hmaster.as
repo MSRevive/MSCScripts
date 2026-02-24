@@ -71,7 +71,7 @@ class Hmaster : CGameScript
 
 	void say_job2()
 	{
-		SayText("Business has been mighty slow , so the best I can offer for a wage is free passage.");
+		SayText("Business has been mighty slow , so the best " + I + " can offer for a wage is free passage.");
 	}
 
 	void say_ship()

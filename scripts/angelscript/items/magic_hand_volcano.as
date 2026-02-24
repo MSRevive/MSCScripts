@@ -8,26 +8,40 @@ namespace MS
 class MagicHandVolcano : CGameScript
 {
 	string EFFECT_DMG;
+	string EFFECT_DURATION;
+	string EFFECT_DURATION_STAT;
+	int EFFECT_MAXDURATION;
+	int EFFECT_MINDURATION;
+	string EFFECT_SCRIPT;
+	int MELEE_ATK_DURATION;
+	float MELEE_HITCHANCE;
+	int MELEE_RANGE;
+	string SOUND_SHOOT;
+	string SPELL_DAMAGE_TYPE;
+	int SPELL_ENERGYDRAIN;
+	int SPELL_MPDRAIN;
+	int SPELL_PREPARE_TIME;
 	int SPELL_SKILL_REQUIRED;
+	string SPELL_STAT;
 	int baseitem.canidle;
 
 	MagicHandVolcano()
 	{
-		const string SOUND_SHOOT = "magic/cast.wav";
-		const int MELEE_RANGE = 600;
-		const float MELEE_HITCHANCE = 1.0;
-		const int MELEE_ATK_DURATION = 4;
+		SOUND_SHOOT = "magic/cast.wav";
+		MELEE_RANGE = 600;
+		MELEE_HITCHANCE = 1.0;
+		MELEE_ATK_DURATION = 4;
 		SPELL_SKILL_REQUIRED = 15;
-		const int SPELL_PREPARE_TIME = 2;
-		const string SPELL_DAMAGE_TYPE = "fire";
-		const int SPELL_ENERGYDRAIN = 200;
-		const int SPELL_MPDRAIN = 80;
-		const string SPELL_STAT = "spellcasting.fire";
-		const int EFFECT_MAXDURATION = 30;
-		const int EFFECT_MINDURATION = 8;
-		const string EFFECT_DURATION_STAT = GetStat(GetOwner(), "concentration.ratio");
-		const string EFFECT_DURATION = /* TODO: $get_skill_ratio */ $get_skill_ratio(EFFECT_DURATION_STAT, EFFECT_MINDURATION, EFFECT_MAXDURATION);
-		const string EFFECT_SCRIPT = "monsters/summon/summon_volcano";
+		SPELL_PREPARE_TIME = 2;
+		SPELL_DAMAGE_TYPE = "fire";
+		SPELL_ENERGYDRAIN = 200;
+		SPELL_MPDRAIN = 80;
+		SPELL_STAT = "spellcasting.fire";
+		EFFECT_MAXDURATION = 30;
+		EFFECT_MINDURATION = 8;
+		EFFECT_DURATION_STAT = GetStat(GetOwner(), "concentration.ratio");
+		EFFECT_DURATION = /* TODO: $get_skill_ratio */ $get_skill_ratio(EFFECT_DURATION_STAT, EFFECT_MINDURATION, EFFECT_MAXDURATION);
+		EFFECT_SCRIPT = "monsters/summon/summon_volcano";
 		EFFECT_DMG = GetSkillLevel(GetOwner(), "spellcasting.fire");
 		EFFECT_DMG += 100;
 	}

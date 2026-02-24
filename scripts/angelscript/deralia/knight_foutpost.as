@@ -9,12 +9,14 @@ namespace MS
 class KnightFoutpost : CGameScript
 {
 	int FoutpostTrans;
+	int NO_JOB;
+	int NO_RUMOR;
 	int SAID_HI;
 
 	KnightFoutpost()
 	{
-		const int NO_JOB = 1;
-		const int NO_RUMOR = 1;
+		NO_JOB = 1;
+		NO_RUMOR = 1;
 	}
 
 	void OnSpawn() override

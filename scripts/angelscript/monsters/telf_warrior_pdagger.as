@@ -8,9 +8,19 @@ namespace MS
 class TelfWarriorPdagger : CGameScript
 {
 	string ANIM_ATTACK;
+	string ATTACK_STANCE;
 	float BASE_MOVESPEED;
+	int CAN_KICK;
+	int CAN_THROW;
+	float CHANCE_DOT;
+	int DMG_MELEE;
+	string DMG_TYPE;
+	int DOT_AMT;
+	float DOT_DURATION;
+	string DOT_SCRIPT;
 	int DROP_GOLD;
 	int DROP_GOLD_AMT;
+	int LEAP_AFTER_KICK;
 	int NPC_GIVE_EXP;
 
 	TelfWarriorPdagger()
@@ -18,16 +28,16 @@ class TelfWarriorPdagger : CGameScript
 		NPC_GIVE_EXP = 3000;
 		DROP_GOLD = 1;
 		DROP_GOLD_AMT = 500;
-		const string DMG_TYPE = "pierce";
-		const string ATTACK_STANCE = "assasin";
-		const float CHANCE_DOT = 1.0;
-		const string DOT_SCRIPT = "effects/dot_poison";
-		const int DOT_AMT = 40;
-		const float DOT_DURATION = 10.0;
-		const int CAN_KICK = 1;
-		const int LEAP_AFTER_KICK = 1;
-		const int CAN_THROW = 1;
-		const int DMG_MELEE = 200;
+		DMG_TYPE = "pierce";
+		ATTACK_STANCE = "assasin";
+		CHANCE_DOT = 1.0;
+		DOT_SCRIPT = "effects/dot_poison";
+		DOT_AMT = 40;
+		DOT_DURATION = 10.0;
+		CAN_KICK = 1;
+		LEAP_AFTER_KICK = 1;
+		CAN_THROW = 1;
+		DMG_MELEE = 200;
 	}
 
 	void elf_spawn()

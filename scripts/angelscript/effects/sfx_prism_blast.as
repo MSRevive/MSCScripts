@@ -15,6 +15,8 @@ class SfxPrismBlast : CGameScript
 	int CIRCLE_ROT;
 	string CUR_SIZE;
 	int DO_LIGHT;
+	string EFFECT_COLORS;
+	string EFFECT_ELEMENTS;
 	int FX_ACTIVE;
 	string FX_AOE;
 	string FX_COLOR;
@@ -24,8 +26,8 @@ class SfxPrismBlast : CGameScript
 
 	SfxPrismBlast()
 	{
-		const string EFFECT_ELEMENTS = "acid;fire;cold;poison;dark;lightning;holy";
-		const string EFFECT_COLORS = "(64,255,64);(255,64,0);(128,128,255);(0,255,0);(255,0,255);(255,255,0);(255,255,255)";
+		EFFECT_ELEMENTS = "acid;fire;cold;poison;dark;lightning;holy";
+		EFFECT_COLORS = "(64,255,64);(255,64,0);(128,128,255);(0,255,0);(255,0,255);(255,255,0);(255,255,255)";
 	}
 
 	void OnRepeatTimer()
@@ -55,7 +57,7 @@ class SfxPrismBlast : CGameScript
 		DO_LIGHT = 1;
 		if ((DO_LIGHT))
 		{
-			FX_LIGHT_RAD = /* TODO: $math(multiply) */ FX_AOE;
+			FX_LIGHT_RAD = (FX_AOE * 1.5);
 			SetCallback("render", "enable");
 			ClientEffect("light", "new", FX_ORIGIN, FX_LIGHT_RAD, FX_COLOR, 0.5);
 			FX_LIGHT_ID = "game.script.last_light_id";

@@ -8,30 +8,40 @@ namespace MS
 class ProjKKnife : CGameScript
 {
 	int ARROW_BODY_OFS;
+	float ARROW_BREAK_CHANCE;
+	int ARROW_EXPIRE_DELAY;
+	int ARROW_SOLIDIFY_ON_WALL;
 	string EFFECT_DMG;
 	string EFFECT_DUR;
 	string EFFECT_SCRIPT;
 	int MODEL_BODY_OFS;
+	string MODEL_WORLD;
 	string MY_OWNER;
 	string MY_WEAPON;
 	string OWNER_ISPLAYER;
 	string OWNER_TYPE;
+	string PROJ_ANIM_IDLE;
+	int PROJ_DAMAGE;
+	string PROJ_DAMAGE_TYPE;
+	int PROJ_STICK_DURATION;
+	string SOUND_HITWALL1;
+	string SOUND_HITWALL2;
 	string SPAWN_ITEM;
 
 	ProjKKnife()
 	{
-		const string MODEL_WORLD = "weapons/projectiles.mdl";
+		MODEL_WORLD = "weapons/projectiles.mdl";
 		ARROW_BODY_OFS = 26;
 		MODEL_BODY_OFS = 26;
-		const string PROJ_ANIM_IDLE = "idle_standard";
-		const int ARROW_EXPIRE_DELAY = 1;
-		const string PROJ_DAMAGE = RandomInt(60, 90);
-		const int PROJ_STICK_DURATION = 2;
-		const int ARROW_SOLIDIFY_ON_WALL = 1;
-		const float ARROW_BREAK_CHANCE = 1.0;
-		const string SOUND_HITWALL1 = "weapons/dagger/daggermetal1.wav";
-		const string SOUND_HITWALL2 = "weapons/dagger/daggermetal2.wav";
-		const string PROJ_DAMAGE_TYPE = "pierce";
+		PROJ_ANIM_IDLE = "idle_standard";
+		ARROW_EXPIRE_DELAY = 1;
+		PROJ_DAMAGE = RandomInt(60, 90);
+		PROJ_STICK_DURATION = 2;
+		ARROW_SOLIDIFY_ON_WALL = 1;
+		ARROW_BREAK_CHANCE = 1.0;
+		SOUND_HITWALL1 = "weapons/dagger/daggermetal1.wav";
+		SOUND_HITWALL2 = "weapons/dagger/daggermetal2.wav";
+		PROJ_DAMAGE_TYPE = "pierce";
 	}
 
 	void arrow_spawn()
@@ -116,7 +126,7 @@ class ProjKKnife : CGameScript
 		{
 			CallExternal(MY_WEAPON, "knife_return");
 		}
-		// TODO: UNCONVERTED: solidifyprojectile
+		SolidifyProjectile(GetOwner());
 		DeleteEntity(GetOwner(), true); // fade out
 	}
 

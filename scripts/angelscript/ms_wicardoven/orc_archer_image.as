@@ -30,7 +30,7 @@ class OrcArcherImage : CGameScript
 		{
 			string PRO_NOUN = "They were";
 		}
-		SayText("PRO_NOUN too powerful for us!");
+		SayText(PRO_NOUN + " too powerful for us!");
 		EmitSound(GetOwner(), 0, "voices/ms_wicardoven/orca_2fmaldora1.wav", 10);
 	}
 

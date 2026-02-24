@@ -7,12 +7,17 @@ namespace MS
 
 class ScrollRejuvenate : CGameScript
 {
+	int BASE_REQUIRED_LEVEL;
+	string BASE_REQUIRED_SKILL;
+	string BASE_SPELL_SCRIPT;
+	string BASE_SUMMON_TEXT;
+
 	ScrollRejuvenate()
 	{
-		const string BASE_SPELL_SCRIPT = "magic_hand_div_rejuvenate";
-		const string BASE_SUMMON_TEXT = "You learn how to replenish the mind, body, and soul.";
-		const string BASE_REQUIRED_SKILL = "skill.spellcasting.divination";
-		const int BASE_REQUIRED_LEVEL = 5;
+		BASE_SPELL_SCRIPT = "magic_hand_div_rejuvenate";
+		BASE_SUMMON_TEXT = "You learn how to replenish the mind, body, and soul.";
+		BASE_REQUIRED_SKILL = "skill.spellcasting.divination";
+		BASE_REQUIRED_LEVEL = 5;
 	}
 
 	void OnSpawn() override

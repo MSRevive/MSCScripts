@@ -7,20 +7,29 @@ namespace MS
 
 class BeetleHorned : CGameScript
 {
+	int BBET_CAN_FLY;
+	int BBET_CAN_LEAP;
+	int BBET_CAN_SLAM;
+	int BBET_FAKE_DEATH;
+	int BBET_GORE_PUSH_STR;
+	int BBET_SIZE;
+	int DMG_GORE;
+	int DMG_LEAP;
+	int DMG_SLASH;
 	int NPC_GIVE_EXP;
 
 	BeetleHorned()
 	{
 		NPC_GIVE_EXP = 300;
-		const int BBET_SIZE = 1;
-		const int BBET_CAN_FLY = 1;
-		const int BBET_CAN_LEAP = 1;
-		const int BBET_CAN_SLAM = 0;
-		const int BBET_GORE_PUSH_STR = 300;
-		const int BBET_FAKE_DEATH = 1;
-		const int DMG_SLASH = 20;
-		const int DMG_GORE = 30;
-		const int DMG_LEAP = 50;
+		BBET_SIZE = 1;
+		BBET_CAN_FLY = 1;
+		BBET_CAN_LEAP = 1;
+		BBET_CAN_SLAM = 0;
+		BBET_GORE_PUSH_STR = 300;
+		BBET_FAKE_DEATH = 1;
+		DMG_SLASH = 20;
+		DMG_GORE = 30;
+		DMG_LEAP = 50;
 	}
 
 	void game_precache()

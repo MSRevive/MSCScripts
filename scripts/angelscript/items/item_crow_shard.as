@@ -7,10 +7,13 @@ namespace MS
 
 class ItemCrowShard : CGameScript
 {
+	string MODEL_HANDS;
+	string MODEL_WORLD;
+
 	ItemCrowShard()
 	{
-		const string MODEL_WORLD = "misc/item_key_ice.mdl";
-		const string MODEL_HANDS = "misc/item_key_ice.mdl";
+		MODEL_WORLD = "misc/item_key_ice.mdl";
+		MODEL_HANDS = "misc/item_key_ice.mdl";
 	}
 
 	void miscitem_spawn()

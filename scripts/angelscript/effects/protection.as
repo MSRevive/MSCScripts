@@ -7,15 +7,19 @@ namespace MS
 
 class Protection : CGameScript
 {
+	string EFFECT_FLAGS;
+	string EFFECT_ID;
+	string EFFECT_SCRIPT;
+	string SOUND_CHARGE;
 	string local.effect.damage;
 
 	Protection()
 	{
-		const string SOUND_CHARGE = "turret/tu_die2.wav";
+		SOUND_CHARGE = "turret/tu_die2.wav";
 		Precache(SOUND_CHARGE);
-		const string EFFECT_ID = "effect_protect";
-		const string EFFECT_FLAGS = "nostack";
-		const string EFFECT_SCRIPT = currentscript;
+		EFFECT_ID = "effect_protect";
+		EFFECT_FLAGS = "nostack";
+		EFFECT_SCRIPT = currentscript;
 	}
 
 	void game_activate()

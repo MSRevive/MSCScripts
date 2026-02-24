@@ -8,23 +8,35 @@ namespace MS
 class MagicHandPoisonCloud : CGameScript
 {
 	int CLOUD_COUNT;
+	int RANGED_ATK_DURATION;
+	string RANGED_COF;
+	float RANGED_DMG_DELAY;
+	int RANGED_FORCE;
+	string RANGED_PROJECTILE;
+	string SOUND_CHARGE;
+	string SOUND_SHOOT;
+	string SPELL_DAMAGE_TYPE;
+	int SPELL_ENERGYDRAIN;
+	int SPELL_MPDRAIN;
+	int SPELL_PREPARE_TIME;
 	int SPELL_SKILL_REQUIRED;
+	string SPELL_STAT;
 
 	MagicHandPoisonCloud()
 	{
-		const string SOUND_CHARGE = "magic/fireball_powerup.wav";
-		const string SOUND_SHOOT = "magic/fireball_strike.wav";
-		const int RANGED_FORCE = 1500;
-		const string RANGED_COF = "1;1";
-		const int RANGED_ATK_DURATION = 1;
-		const string RANGED_PROJECTILE = "proj_poison_cloud";
-		const float RANGED_DMG_DELAY = 0.5;
+		SOUND_CHARGE = "magic/fireball_powerup.wav";
+		SOUND_SHOOT = "magic/fireball_strike.wav";
+		RANGED_FORCE = 1500;
+		RANGED_COF = "1;1";
+		RANGED_ATK_DURATION = 1;
+		RANGED_PROJECTILE = "proj_poison_cloud";
+		RANGED_DMG_DELAY = 0.5;
 		SPELL_SKILL_REQUIRED = 15;
-		const int SPELL_PREPARE_TIME = 2;
-		const string SPELL_DAMAGE_TYPE = "poison";
-		const int SPELL_ENERGYDRAIN = 5;
-		const int SPELL_MPDRAIN = 40;
-		const string SPELL_STAT = "spellcasting.affliction";
+		SPELL_PREPARE_TIME = 2;
+		SPELL_DAMAGE_TYPE = "poison";
+		SPELL_ENERGYDRAIN = 5;
+		SPELL_MPDRAIN = 40;
+		SPELL_STAT = "spellcasting.affliction";
 	}
 
 	void spell_spawn()

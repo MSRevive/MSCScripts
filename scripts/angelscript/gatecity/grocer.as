@@ -12,18 +12,23 @@ class Grocer : CGameScript
 {
 	int CANCHAT;
 	int JOB;
+	int NPC_REACTS;
+	float SELL_RATIO;
+	string SOUND_DEATH;
 	int STORE_CLOSED;
+	string STORE_NAME;
+	int STORE_SELLMENU;
 	string STORE_TRIGGERTEXT;
 
 	Grocer()
 	{
-		const string SOUND_DEATH = "none";
+		SOUND_DEATH = "none";
 		STORE_CLOSED = 0;
-		const string STORE_NAME = "gatecity_grocery";
+		STORE_NAME = "gatecity_grocery";
 		STORE_TRIGGERTEXT = "store trade buy sell purchase sale offer";
-		const int STORE_SELLMENU = 1;
-		const float SELL_RATIO = 0.75;
-		const int NPC_REACTS = 1;
+		STORE_SELLMENU = 1;
+		SELL_RATIO = 0.75;
+		NPC_REACTS = 1;
 	}
 
 	void OnSpawn() override
@@ -68,7 +73,7 @@ class Grocer : CGameScript
 		{
 			if (GetEntityDist("ent_lastspoke") <= 90)
 			{
-				SayText("Can I get you an apple?");
+				SayText("Can " + I + " get you an apple?");
 			}
 		}
 	}
@@ -104,7 +109,7 @@ class Grocer : CGameScript
 
 	void vendor_say_closed()
 	{
-		SayText("Sorry , I m closed. I will reopen at seven in the morning.");
+		SayText("Sorry , " + I + " m closed. I will reopen at seven in the morning.");
 	}
 
 }

@@ -7,16 +7,25 @@ namespace MS
 
 class ArmorLeather : CGameScript
 {
+	int ARMOR_BODY;
+	string ARMOR_MODEL;
+	string ARMOR_TEXT;
+	float BARMOR_PROTECTION;
+	string BARMOR_PROTECTION_AREA;
+	string BARMOR_REPLACE_BODYPARTS;
+	string BARMOR_TYPE;
+	int NEW_ARMOR_OFS;
+
 	ArmorLeather()
 	{
-		const string ARMOR_MODEL = "armor/p_armorvest.mdl";
-		const int ARMOR_BODY = 5;
-		const string ARMOR_TEXT = "You work your way into some leather armor.";
-		const string BARMOR_TYPE = "leather";
-		const float BARMOR_PROTECTION = 0.12;
-		const string BARMOR_PROTECTION_AREA = "chest";
-		const string BARMOR_REPLACE_BODYPARTS = "chest";
-		const int NEW_ARMOR_OFS = 6;
+		ARMOR_MODEL = "armor/p_armorvest.mdl";
+		ARMOR_BODY = 5;
+		ARMOR_TEXT = "You work your way into some leather armor.";
+		BARMOR_TYPE = "leather";
+		BARMOR_PROTECTION = 0.12;
+		BARMOR_PROTECTION_AREA = "chest";
+		BARMOR_REPLACE_BODYPARTS = "chest";
+		NEW_ARMOR_OFS = 6;
 	}
 
 	void OnSpawn() override

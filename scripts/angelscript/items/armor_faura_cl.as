@@ -5,20 +5,24 @@ namespace MS
 
 class ArmorFauraCl : CGameScript
 {
+	int FOOT_BONE;
 	int FX_ACTIVE;
 	string FX_DURATION;
 	string FX_RADIUS;
+	string GLOW_COLOR;
+	int GLOW_RAD;
 	string LIGHT_ID;
 	string MY_OWNER;
 	string OWNER_FEET;
 	string OWNER_NPC;
+	int V_OFS;
 
 	ArmorFauraCl()
 	{
-		const int GLOW_RAD = 128;
-		const Vector3 GLOW_COLOR = Vector3(255, 128, 64);
-		const int V_OFS = -26;
-		const int FOOT_BONE = 4;
+		GLOW_RAD = 128;
+		GLOW_COLOR = Vector3(255, 128, 64);
+		V_OFS = -26;
+		FOOT_BONE = 4;
 	}
 
 	void client_activate()

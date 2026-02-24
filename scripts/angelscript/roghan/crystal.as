@@ -8,14 +8,16 @@ namespace MS
 class Crystal : CGameScript
 {
 	int CAN_FLINCH;
+	string MONSTER_MODEL;
 	string PLAYER_LIST;
+	string SOUND_DEATH;
 
 	Crystal()
 	{
 		CAN_FLINCH = 0;
-		const string SOUND_DEATH = "monsters/abomination/die.wav";
+		SOUND_DEATH = "monsters/abomination/die.wav";
 		Precache(SOUND_DEATH);
-		const string MONSTER_MODEL = "nimble/crystal.mdl";
+		MONSTER_MODEL = "nimble/crystal.mdl";
 		Precache(MONSTER_MODEL);
 	}
 

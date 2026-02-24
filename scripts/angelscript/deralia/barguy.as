@@ -134,7 +134,7 @@ class Barguy : CGameScript
 	{
 		QUEST_WINNER = param1;
 		ReceiveOffer("accept");
-		SayText("MY HAT!");
+		SayText(MY + HAT!);
 		ScheduleDelayedEvent(5, "hat_2");
 	}
 

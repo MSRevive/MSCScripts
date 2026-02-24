@@ -9,10 +9,13 @@ namespace MS
 class OrcWeak : CGameScript
 {
 	string ANIM_ATTACK;
+	float ATTACK_ACCURACY;
+	float ATTACK_DMG_HIGH;
+	float ATTACK_DMG_LOW;
 	int ATTACK_HITRANGE;
 	int ATTACK_RANGE;
-	string DROP_GOLD;
-	string DROP_GOLD_AMT;
+	int DROP_GOLD;
+	int DROP_GOLD_AMT;
 	int MOVE_RANGE;
 	int NPC_GIVE_EXP;
 
@@ -25,9 +28,9 @@ class OrcWeak : CGameScript
 		MOVE_RANGE = 64;
 		ATTACK_RANGE = 72;
 		ATTACK_HITRANGE = 128;
-		const float ATTACK_ACCURACY = 0.3;
-		const float ATTACK_DMG_LOW = 0.5;
-		const float ATTACK_DMG_HIGH = 1.5;
+		ATTACK_ACCURACY = 0.3;
+		ATTACK_DMG_LOW = 0.5;
+		ATTACK_DMG_HIGH = 1.5;
 	}
 
 	void orc_spawn()

@@ -7,24 +7,36 @@ namespace MS
 
 class MagicHandAcidBolt : CGameScript
 {
+	int ANIM_CAST;
+	float RANGED_ATK_DURATION;
+	int RANGED_COF;
+	float RANGED_DMG_DELAY;
+	int RANGED_FORCE;
+	string RANGED_PROJECTILE;
+	string SOUND_CHARGE;
+	string SOUND_SHOOT;
+	string SPELL_DAMAGE_TYPE;
+	int SPELL_MPDRAIN;
+	float SPELL_PREPARE_TIME;
 	int SPELL_SKILL_REQUIRED;
+	string SPELL_STAT;
 	int baseitem.canidle;
 
 	MagicHandAcidBolt()
 	{
-		const int ANIM_CAST = 11;
-		const string SOUND_CHARGE = "bullchicken/bc_attack1.wav";
-		const string SOUND_SHOOT = "bullchicken/bc_attack3.wav";
-		const int RANGED_FORCE = 800;
-		const int RANGED_COF = 1;
-		const float RANGED_ATK_DURATION = 0.5;
-		const float RANGED_DMG_DELAY = 0.25;
-		const string RANGED_PROJECTILE = "proj_acid_bolt";
+		ANIM_CAST = 11;
+		SOUND_CHARGE = "bullchicken/bc_attack1.wav";
+		SOUND_SHOOT = "bullchicken/bc_attack3.wav";
+		RANGED_FORCE = 800;
+		RANGED_COF = 1;
+		RANGED_ATK_DURATION = 0.5;
+		RANGED_DMG_DELAY = 0.25;
+		RANGED_PROJECTILE = "proj_acid_bolt";
 		SPELL_SKILL_REQUIRED = 15;
-		const float SPELL_PREPARE_TIME = 0.5;
-		const string SPELL_DAMAGE_TYPE = "acid";
-		const int SPELL_MPDRAIN = 10;
-		const string SPELL_STAT = "spellcasting.affliction";
+		SPELL_PREPARE_TIME = 0.5;
+		SPELL_DAMAGE_TYPE = "acid";
+		SPELL_MPDRAIN = 10;
+		SPELL_STAT = "spellcasting.affliction";
 		Precache("items/magic_hand_base");
 	}
 
@@ -37,7 +49,7 @@ class MagicHandAcidBolt : CGameScript
 	void cast_start()
 	{
 		baseitem.canidle = 0;
-		/* TODO: $math(add) */ /* TODO: $math(add) */ RANGED_ATK_DURATION("start_spell_anim");
+		((RANGED_ATK_DURATION + RANGED_DMG_DELAY) + 0_75)("start_spell_anim");
 	}
 
 	void cast_toss()

@@ -7,11 +7,15 @@ namespace MS
 
 class BludgeonGaz1CorruptMini : CGameScript
 {
+	int AM_CORRUPT;
+	int AM_MINI;
+	string MONSTER_MODEL;
+
 	BludgeonGaz1CorruptMini()
 	{
-		const int AM_CORRUPT = 1;
-		const string MONSTER_MODEL = "monsters/bludgeon_gaz_mini.mdl";
-		const int AM_MINI = 1;
+		AM_CORRUPT = 1;
+		MONSTER_MODEL = "monsters/bludgeon_gaz_mini.mdl";
+		AM_MINI = 1;
 	}
 
 }

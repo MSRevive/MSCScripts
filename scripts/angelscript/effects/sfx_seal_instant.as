@@ -7,10 +7,12 @@ class SfxSealInstant : CGameScript
 {
 	int CYCLE_ANGLE;
 	int FX_ACTIVE;
+	float FX_DURATION;
 	string FX_ORIGIN;
 	string LIGHT_RADIUS;
 	string SEAL_BODY;
 	string SEAL_COLOR;
+	string SEAL_MODEL;
 	int SEAL_PITCH;
 	string SEAL_RAD;
 	string SEAL_SOUND;
@@ -25,8 +27,8 @@ class SfxSealInstant : CGameScript
 
 	SfxSealInstant()
 	{
-		const string SEAL_MODEL = "weapons/magic/seals.mdl";
-		const float FX_DURATION = 2.0;
+		SEAL_MODEL = "weapons/magic/seals.mdl";
+		FX_DURATION = 2.0;
 	}
 
 	void client_activate()

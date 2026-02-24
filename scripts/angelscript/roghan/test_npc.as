@@ -13,6 +13,7 @@ class TestNpc : CGameScript
 	int FIGHT_STARTED;
 	int KEEP_PLAYERS_WARM_ACTIVE;
 	string MY_LOC;
+	string NPC_MODEL;
 	string PLAYER_LIST;
 
 	TestNpc()
@@ -20,7 +21,7 @@ class TestNpc : CGameScript
 		ANIM_RUN = "run";
 		ANIM_WALK = "walk";
 		ANIM_IDLE = "idle1";
-		const string NPC_MODEL = "npc/balancepriest1.mdl";
+		NPC_MODEL = "npc/balancepriest1.mdl";
 		Precache(NPC_MODEL);
 	}
 
@@ -49,7 +50,7 @@ class TestNpc : CGameScript
 			CallExternal("ent_creationowner", "begin_float");
 			FIGHT_STARTED += 1;
 			keep_players_warm_loop();
-			SayText("Heroes! Stay near me and I will protect you from his ice!");
+			SayText("Heroes! Stay near me and " + I + " will protect you from his ice!");
 		}
 	}
 
@@ -79,12 +80,12 @@ class TestNpc : CGameScript
 		if (GetEntityRange(CUR_TARG) < 256)
 		{
 			CallExternal(CUR_TARG, "ext_register_element", "warm", "cold", 99);
-			SendColoredMessage(CUR_TARG, "You are now protected from ICE!");
+			SendColoredMessage(CUR_TARG, "You are now protected from " + ICE!);
 		}
 		else
 		{
 			CallExternal(CUR_TARG, "ext_register_element", "warm", "remove");
-			SendColoredMessage(CUR_TARG, "You are no longer protected from ICE!");
+			SendColoredMessage(CUR_TARG, "You are no longer protected from " + ICE!);
 		}
 	}
 

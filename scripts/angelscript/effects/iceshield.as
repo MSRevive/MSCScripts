@@ -9,13 +9,16 @@ class Iceshield : CGameScript
 {
 	string DAMAGE_MULTIPLIER;
 	string EFFECT_DURATION;
+	string EFFECT_FLAGS;
+	string EFFECT_ID;
+	string EFFECT_SCRIPT;
 	string LAST_SHIELDER;
 
 	Iceshield()
 	{
-		const string EFFECT_ID = "iceshield";
-		const string EFFECT_FLAGS = "nostack";
-		const string EFFECT_SCRIPT = currentscript;
+		EFFECT_ID = "iceshield";
+		EFFECT_FLAGS = "nostack";
+		EFFECT_SCRIPT = currentscript;
 	}
 
 	void game_activate()
@@ -24,10 +27,10 @@ class Iceshield : CGameScript
 		DAMAGE_MULTIPLIER = param3;
 		shield_me_baby();
 		SendColoredMessage(GetOwner(), "You are protected by a shield of ice.");
-		SendColoredMessage(GetOwner(), "Ice shield int(EFFECT_DURATION) seconds remain.");
+		SendColoredMessage(GetOwner(), "Ice shield " + int(EFFECT_DURATION) + " seconds remain.");
 		if (LAST_SHIELDER != GetEntityIndex(GetOwner()))
 		{
-			SendColoredMessage(LAST_SHIELDER, "You shield GetEntityName(GetOwner()) for EFFECT_DURATION seconds.");
+			SendColoredMessage(LAST_SHIELDER, "You shield " + GetEntityName(GetOwner()) + "for " + EFFECT_DURATION + " seconds.");
 		}
 		check_do_bonus(EFFECT_DURATION);
 	}
@@ -40,21 +43,21 @@ class Iceshield : CGameScript
 		}
 		LAST_SHIELDER = param2;
 		effect_get_timeleft();
-		string L_TIME_DIFF = /* TODO: $math(subtract) */ EFFECT_DURATION;
+		string L_TIME_DIFF = (EFFECT_DURATION - EFFECT_TIMELEFT);
 		effect_set_duration(EFFECT_DURATION);
 		shield_me_baby();
 		if (LAST_SHIELDER != GetEntityIndex(GetOwner()))
 		{
 			if ((IsValidPlayer(GetOwner())))
 			{
-				SendColoredMessage(GetOwner(), "GetEntityName(LAST_SHIELDER) has protected you with a shield of ice.");
-				SendColoredMessage(GetOwner(), "Added int(L_TIME_DIFF) seconds to Ice Shield.");
+				SendColoredMessage(GetOwner(), GetEntityName(LAST_SHIELDER) + " has protected you with a shield of ice.");
+				SendColoredMessage(GetOwner(), "Added " + int(L_TIME_DIFF) + " seconds to Ice Shield.");
 			}
-			SendColoredMessage(LAST_SHIELDER, "You shield GetEntityName(GetOwner()) for int(L_TIME_DIFF) more seconds.");
+			SendColoredMessage(LAST_SHIELDER, "You shield " + GetEntityName(GetOwner()) + "for " + int(L_TIME_DIFF) + " more seconds.");
 		}
 		else
 		{
-			SendColoredMessage(GetOwner(), "Added int(L_TIME_DIFF) seconds to Ice Shield.");
+			SendColoredMessage(GetOwner(), "Added " + int(L_TIME_DIFF) + " seconds to Ice Shield.");
 		}
 		check_do_bonus(L_TIME_DIFF);
 	}
@@ -83,7 +86,7 @@ class Iceshield : CGameScript
 		if (!(ADD_BONUS)) return;
 		string L_BONUS_MSG = "for shielding ";
 		L_BONUS_MSG += GetEntityName(GetOwner());
-		string L_DMGPOINT_ADD = /* TODO: $math(multiply) */ /* TODO: $math(divide) */ L_TIME_DIFF;
+		string L_DMGPOINT_ADD = ((L_TIME_DIFF / 412) * 1000);
 		CallExternal(LAST_SHIELDER, "ext_dmgpoint_bonus", L_DMGPOINT_ADD, L_BONUS_MSG);
 	}
 

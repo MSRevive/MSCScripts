@@ -18,11 +18,13 @@ class Scorpion2 : CGameScript
 	int ATTACK_RANGE;
 	int CAN_FLEE;
 	int CAN_HUNT;
+	int DELETE_ON_DEATH;
 	float FLEE_CHANCE;
 	int FLEE_HEALTH;
 	int HUNT_AGRO;
 	int NPC_GIVE_EXP;
 	string NPC_MOVE_TARGET;
+	string SOUND_DEATH;
 	string SOUND_IDLE1;
 	string SOUND_PAIN;
 	string SOUND_STRUCK1;
@@ -31,14 +33,14 @@ class Scorpion2 : CGameScript
 
 	Scorpion2()
 	{
-		const int DELETE_ON_DEATH = 1;
+		DELETE_ON_DEATH = 1;
 		ANIM_IDLE = "idle_b";
 		SOUND_STRUCK1 = "body/flesh1.wav";
 		SOUND_STRUCK2 = "body/flesh2.wav";
 		SOUND_STRUCK3 = "body/flesh3.wav";
 		SOUND_PAIN = "monsters/spider/spiderhiss.wav";
 		SOUND_IDLE1 = "monsters/spider/spideridle.wav";
-		const string SOUND_DEATH = "monsters/spider/spiderdie.wav";
+		SOUND_DEATH = "monsters/spider/spiderdie.wav";
 		ANIM_RUN = "run";
 		ANIM_WALK = "walk";
 		ANIM_ATTACK = "attackb";

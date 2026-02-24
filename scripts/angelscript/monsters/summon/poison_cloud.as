@@ -5,6 +5,7 @@ namespace MS
 
 class PoisonCloud : CGameScript
 {
+	int HEIGHT;
 	int IN_POISON_LOOP;
 	int LOOP_COUNT;
 	string MY_BASE_DAMAGE;
@@ -15,20 +16,23 @@ class PoisonCloud : CGameScript
 	string OWNER_ISPLAYER;
 	int PLAYING_DEAD;
 	int POISONING;
+	string POISON_SPRITE;
+	string SMOKE_SPRITE;
 	int STORMING;
+	int WIDTH;
 	string smoke_ANGLE;
 	string smoke_POSITION;
 
 	PoisonCloud()
 	{
-		const string SMOKE_SPRITE = "poison_cloud.spr";
+		SMOKE_SPRITE = "poison_cloud.spr";
 		Precache(SMOKE_SPRITE);
 		POISONING = 1;
-		const int HEIGHT = 40;
-		const int WIDTH = 96;
-		const string POISON_SPRITE = "poison_cloud.spr";
-		const int HEIGHT = 40;
-		const int WIDTH = 96;
+		HEIGHT = 40;
+		WIDTH = 96;
+		POISON_SPRITE = "poison_cloud.spr";
+		HEIGHT = 40;
+		WIDTH = 96;
 	}
 
 	void OnRepeatTimer()
@@ -203,8 +207,8 @@ class PoisonCloud : CGameScript
 	{
 		string NEGWIDTH = WIDTH;
 		NEGWIDTH *= -1;
-		string x = RandomInt(NEGWIDTH, WIDTH);
-		string y = RandomInt(NEGWIDTH, WIDTH);
+		int x = RandomInt(NEGWIDTH, WIDTH);
+		int y = RandomInt(NEGWIDTH, WIDTH);
 		string L_POS = /* TODO: $relpos */ $relpos(smoke_ANGLE, Vector3(x, y, HEIGHT));
 		L_POS += smoke_POSITION;
 		ClientEffect("tempent", "sprite", "poison_cloud.spr", L_POS, "setup_smokes");

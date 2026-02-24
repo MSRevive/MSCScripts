@@ -8,6 +8,14 @@ namespace MS
 class TelfWarriorIdagger : CGameScript
 {
 	string ANIM_ATTACK;
+	string ATTACK_STANCE;
+	int CAN_FREEZE_AURA;
+	float CHANCE_DOT;
+	int DMG_MELEE;
+	string DMG_TYPE;
+	int DOT_AMT;
+	float DOT_DURATION;
+	string DOT_SCRIPT;
 	int DROP_GOLD;
 	int DROP_GOLD_AMT;
 	int NPC_GIVE_EXP;
@@ -17,14 +25,14 @@ class TelfWarriorIdagger : CGameScript
 		NPC_GIVE_EXP = 3000;
 		DROP_GOLD = 1;
 		DROP_GOLD_AMT = 500;
-		const string DMG_TYPE = "pierce";
-		const string ATTACK_STANCE = "assasin";
-		const float CHANCE_DOT = 1.0;
-		const string DOT_SCRIPT = "effects/dot_cold";
-		const int DOT_AMT = 50;
-		const float DOT_DURATION = 5.0;
-		const int DMG_MELEE = 200;
-		const int CAN_FREEZE_AURA = 1;
+		DMG_TYPE = "pierce";
+		ATTACK_STANCE = "assasin";
+		CHANCE_DOT = 1.0;
+		DOT_SCRIPT = "effects/dot_cold";
+		DOT_AMT = 50;
+		DOT_DURATION = 5.0;
+		DMG_MELEE = 200;
+		CAN_FREEZE_AURA = 1;
 	}
 
 	void game_precache()

@@ -7,42 +7,62 @@ namespace MS
 
 class ProjMana : CGameScript
 {
+	int ARROW_BODY_OFS;
+	int ARROW_SOLIDIFY_ON_WALL;
 	string DAMAGE_LIST;
 	string F_BALL_DMG;
 	string F_BALL_SIZE;
 	string F_BALL_TYPE;
 	string GAME_PVP;
+	int HITWALL_VOL;
 	int LAST_TOUCHED;
+	int MODEL_BODY_OFS;
+	string MODEL_HANDS;
+	string MODEL_WORLD;
 	string MY_OWNER;
 	string NEXT_TOUCH;
 	string OWNER_ISPLAYER;
+	string PROJ_ANIM_IDLE;
+	int PROJ_COLLIDEHITBOX;
+	int PROJ_DAMAGE;
+	int PROJ_DAMAGE_AOE_FALLOFF;
+	int PROJ_DAMAGE_AOE_RANGE;
+	string PROJ_DAMAGE_TYPE;
+	int PROJ_IGNORENPC;
+	int PROJ_MOTIONBLUR;
+	int PROJ_SOLIDIFY_ON_WALL;
+	int PROJ_STICK_DURATION;
 	int SCAN_ON;
 	int SCAN_SIZE;
 	string SCAN_TARGS;
+	string SOUND_SHOOT;
+	string SOUND_ZAP1;
+	string SOUND_ZAP2;
+	string SOUND_ZAP3;
 	string TOKEN_TARGETS;
 
 	ProjMana()
 	{
-		const string MODEL_HANDS = "none";
-		const string MODEL_WORLD = "none";
-		const int ARROW_BODY_OFS = 6;
-		const string SOUND_SHOOT = "ambience/alienflyby1.wav";
-		const string SOUND_ZAP1 = "debris/beamstart14.wav";
-		const string SOUND_ZAP2 = "debris/beamstart14.wav";
-		const string SOUND_ZAP3 = "debris/zap1.wav";
-		const int ARROW_SOLIDIFY_ON_WALL = 0;
-		const int HITWALL_VOL = 2;
-		const int PROJ_MOTIONBLUR = 0;
-		const int MODEL_BODY_OFS = 0;
-		const int PROJ_DAMAGE = 0;
-		const int PROJ_STICK_DURATION = 0;
-		const int PROJ_SOLIDIFY_ON_WALL = 0;
-		const int PROJ_DAMAGE_AOE_RANGE = 0;
-		const int PROJ_DAMAGE_AOE_FALLOFF = 1;
-		const string PROJ_DAMAGE_TYPE = "magic";
-		const int PROJ_COLLIDEHITBOX = 1;
-		const int PROJ_IGNORENPC = 1;
-		const string PROJ_ANIM_IDLE = "none";
+		MODEL_HANDS = "none";
+		MODEL_WORLD = "none";
+		ARROW_BODY_OFS = 6;
+		SOUND_SHOOT = "ambience/alienflyby1.wav";
+		SOUND_ZAP1 = "debris/beamstart14.wav";
+		SOUND_ZAP2 = "debris/beamstart14.wav";
+		SOUND_ZAP3 = "debris/zap1.wav";
+		ARROW_SOLIDIFY_ON_WALL = 0;
+		HITWALL_VOL = 2;
+		PROJ_MOTIONBLUR = 0;
+		MODEL_BODY_OFS = 0;
+		PROJ_DAMAGE = 0;
+		PROJ_STICK_DURATION = 0;
+		PROJ_SOLIDIFY_ON_WALL = 0;
+		PROJ_DAMAGE_AOE_RANGE = 0;
+		PROJ_DAMAGE_AOE_FALLOFF = 1;
+		PROJ_DAMAGE_TYPE = "magic";
+		PROJ_COLLIDEHITBOX = 1;
+		PROJ_IGNORENPC = 1;
+		PROJ_ANIM_IDLE = "none";
 	}
 
 	void arrow_spawn()
@@ -106,8 +126,8 @@ class ProjMana : CGameScript
 		F_BALL_DMG = GetEntityProperty(MY_OWNER, "scriptvar");
 		F_BALL_TYPE = GetEntityProperty(MY_OWNER, "scriptvar");
 		DAMAGE_LIST = "";
-		string F_BALL_VOL = int(F_BALL_SIZE);
-		// TODO: capvar F_BALL_VOL 1 10
+		int F_BALL_VOL = int(F_BALL_SIZE);
+		F_BALL_VOL = max(1, min(10, F_BALL_VOL));
 		// svplaysound: svplaysound 4 F_BALL_VOL SOUND_SHOOT
 		EmitSound(4, F_BALL_VOL, SOUND_SHOOT);
 		LogDebug("game_tossprojectile F_BALL_SIZE F_BALL_DMG F_BALL_TYPE GetEntityName(MY_OWNER)");

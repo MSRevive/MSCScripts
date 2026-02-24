@@ -7,19 +7,31 @@ namespace MS
 
 class ProjCannonBall : CGameScript
 {
+	int ARROW_BODY_OFS;
+	float ARROW_BREAK_CHANCE;
+	int ARROW_SOLIDIFY_ON_WALL;
+	string MODEL_WORLD;
+	string PROJ_ANIM_IDLE;
+	int PROJ_AOE_FALLOFF;
+	int PROJ_AOE_RANGE;
+	int PROJ_DAMAGE;
+	string PROJ_DAMAGE_TYPE;
+	int PROJ_STICK_DURATION;
+	string SMOKE_SPRITE;
+
 	ProjCannonBall()
 	{
-		const string MODEL_WORLD = "weapons/projectiles.mdl";
-		const int ARROW_BODY_OFS = 42;
-		const string PROJ_ANIM_IDLE = "spin_horizontal_fast";
-		const string PROJ_DAMAGE = RandomInt(60, 90);
-		const int PROJ_STICK_DURATION = 0;
-		const int ARROW_SOLIDIFY_ON_WALL = 0;
-		const float ARROW_BREAK_CHANCE = 1.0;
-		const string PROJ_DAMAGE_TYPE = "siege";
-		const int PROJ_AOE_RANGE = 150;
-		const int PROJ_AOE_FALLOFF = 0;
-		const string SMOKE_SPRITE = "bigsmoke.spr";
+		MODEL_WORLD = "weapons/projectiles.mdl";
+		ARROW_BODY_OFS = 42;
+		PROJ_ANIM_IDLE = "spin_horizontal_fast";
+		PROJ_DAMAGE = RandomInt(60, 90);
+		PROJ_STICK_DURATION = 0;
+		ARROW_SOLIDIFY_ON_WALL = 0;
+		ARROW_BREAK_CHANCE = 1.0;
+		PROJ_DAMAGE_TYPE = "siege";
+		PROJ_AOE_RANGE = 150;
+		PROJ_AOE_FALLOFF = 0;
+		SMOKE_SPRITE = "bigsmoke.spr";
 	}
 
 	void arrow_spawn()

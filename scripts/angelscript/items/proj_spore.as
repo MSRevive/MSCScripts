@@ -7,28 +7,41 @@ namespace MS
 
 class ProjSpore : CGameScript
 {
+	int ARROW_BODY_OFS;
+	float ARROW_BREAK_CHANCE;
+	int ARROW_EXPIRE_DELAY;
+	int ARROW_SOLIDIFY_ON_WALL;
+	int ARROW_STICK_DURATION;
+	int MODEL_BODY_OFS;
+	string MODEL_WORLD;
 	string MY_OWNER;
+	string PROJ_ANIM_IDLE;
+	int PROJ_DAMAGE;
+	string PROJ_DAMAGETYPE;
 	string SOUND_BURN;
+	string SOUND_HITWALL1;
+	string SOUND_HITWALL2;
 	int SPAWNED_CLOUD;
 	string SPORE_STR;
+	string SPRITE_ARROW_TRADE;
 
 	ProjSpore()
 	{
-		const string PROJ_ANIM_IDLE = "idle_standard";
-		const string PROJ_DAMAGE = RandomInt(60, 90);
-		const int MODEL_BODY_OFS = 23;
-		const int ARROW_BODY_OFS = 23;
-		const string PROJ_ANIM_IDLE = "spore_spinning";
-		const string PROJ_DAMAGETYPE = "poison";
-		const string SOUND_HITWALL1 = "ambience/steamburst1.wav";
-		const string SOUND_HITWALL2 = "ambience/steamburst1.wav";
+		PROJ_ANIM_IDLE = "idle_standard";
+		PROJ_DAMAGE = RandomInt(60, 90);
+		MODEL_BODY_OFS = 23;
+		ARROW_BODY_OFS = 23;
+		PROJ_ANIM_IDLE = "spore_spinning";
+		PROJ_DAMAGETYPE = "poison";
+		SOUND_HITWALL1 = "ambience/steamburst1.wav";
+		SOUND_HITWALL2 = "ambience/steamburst1.wav";
 		SOUND_BURN = "ambience/steamburst1.wav";
-		const string SPRITE_ARROW_TRADE = "woodenarrow";
-		const int ARROW_STICK_DURATION = 10;
-		const int ARROW_SOLIDIFY_ON_WALL = 0;
-		const float ARROW_BREAK_CHANCE = 0.01;
-		const int ARROW_EXPIRE_DELAY = 5;
-		const string MODEL_WORLD = "weapons/projectiles.mdl";
+		SPRITE_ARROW_TRADE = "woodenarrow";
+		ARROW_STICK_DURATION = 10;
+		ARROW_SOLIDIFY_ON_WALL = 0;
+		ARROW_BREAK_CHANCE = 0.01;
+		ARROW_EXPIRE_DELAY = 5;
+		MODEL_WORLD = "weapons/projectiles.mdl";
 	}
 
 	void arrow_spawn()

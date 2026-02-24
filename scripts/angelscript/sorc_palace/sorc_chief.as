@@ -14,22 +14,32 @@ class SorcChief : CGameScript
 	string ANIM_ATTACK;
 	string ANIM_DEATH;
 	string ANIM_FLINCH;
+	string ANIM_HOP;
 	string ANIM_IDLE;
+	string ANIM_KICK;
+	string ANIM_PARRY;
 	string ANIM_RUN;
+	string ANIM_SIT;
+	string ANIM_SMASH;
+	string ANIM_SWIPE;
 	string ANIM_WALK;
+	string ANIM_WARCRY;
 	string AS_ATTACKING;
+	float ATTACK_HITCHANCE;
 	int ATTACK_HITRANGE;
 	int ATTACK_MOVERANGE;
 	int ATTACK_RANGE;
 	string BARRIER_IDX;
 	string BARRIER_NEXT_REFRESH;
 	int BARRIER_ON;
+	int BARRIER_RAD;
 	float BASE_FRAMERATE;
 	float BASE_MOVESPEED;
 	string BLOOD_DRINKER_ID;
 	string BURST_ORIGIN;
 	string BURST_OVERRIDE;
 	int CAN_FLINCH;
+	float CHAT_DELAY;
 	string CHAT_MODE;
 	string CHAT_STEP1;
 	string CHAT_STEP2;
@@ -41,12 +51,28 @@ class SorcChief : CGameScript
 	int CUR_SPECIAL;
 	int CYCLES_STARTED;
 	string DEFAULT_TELE_POINT;
+	int DMG_BARRIER;
+	float DMG_KICK;
+	int DMG_LBLAST;
+	int DMG_LSTORM;
+	int DMG_SLASH;
+	int DMG_SMACK;
+	int DMG_SMASH;
 	string DOUBLE_FOR;
 	string DOUBLE_UP;
+	int DUR_LSTORM;
 	int ESCORT_ACTIVE;
 	string FACE_PLAYERS;
 	string FOUND_NEAR_TARGET;
+	float FREQ_KICK;
+	int FREQ_LBLAST;
 	float FREQ_LEAP;
+	int FREQ_LSTORM;
+	int FREQ_SPECIAL;
+	int FREQ_TELEPORT;
+	int FREQ_TELEPORT_FAST;
+	int FREQ_THROW;
+	int FREQ_TORNADO;
 	int FRIEND_FOE_ANSWERED;
 	string HALF_HEALTH;
 	string ID_LSTORM1;
@@ -60,10 +86,15 @@ class SorcChief : CGameScript
 	int LOC_LSTORM2;
 	int LSTORM_LOOPCOUNT;
 	string LSTORM_TARGS;
+	float MIN_TELEPORT_DELAY;
 	int MOVE_RANGE;
 	string MOVE_TARG;
 	string MREPELL_LIST;
 	string NEW_TARGET;
+	int NO_CHAT;
+	int NO_CLOSE_MOUTH;
+	int NPC_BOSS_REGEN_RATE;
+	float NPC_BOSS_RESTORATION;
 	int NPC_FORCED_MOVEDEST;
 	string NPC_GIVE_EXP;
 	string NPC_IS_BOSS;
@@ -72,6 +103,7 @@ class SorcChief : CGameScript
 	string NPC_PROXACT_IFSEEN;
 	string NPC_PROXACT_RANGE;
 	int NPC_PROX_ACTIVATE;
+	int NPC_USES_LIGHTS;
 	int N_BLOOD_DRINKERS;
 	int N_STORMS;
 	int N_TELES;
@@ -82,6 +114,22 @@ class SorcChief : CGameScript
 	int RENDER_COUNT;
 	string REPULSE_LIST;
 	string SEARCH_RAD;
+	string SOUND_ATTACK1;
+	string SOUND_ATTACK2;
+	string SOUND_ATTACK3;
+	string SOUND_DEATH;
+	string SOUND_DRAW_WEAPON;
+	string SOUND_HELP;
+	string SOUND_HIT;
+	string SOUND_HIT2;
+	string SOUND_HIT3;
+	string SOUND_PAIN;
+	string SOUND_STRUCK1;
+	string SOUND_STRUCK2;
+	string SOUND_STRUCK3;
+	string SOUND_TELE;
+	string SOUND_WARCRY;
+	string SOUND_WARCRY1;
 	int SWORD_ATTACK;
 	string TELE_ANGS;
 	string TELE_DEST;
@@ -89,77 +137,78 @@ class SorcChief : CGameScript
 	string TELE_ID2;
 	string TELE_ID3;
 	string TELE_ID4;
+	float VAMPIRE_RATIO;
 
 	SorcChief()
 	{
-		const string ANIM_SIT = "on_chair";
-		const int NO_CLOSE_MOUTH = 1;
-		const float CHAT_DELAY = 6.0;
-		const int NO_CHAT = 1;
+		ANIM_SIT = "on_chair";
+		NO_CLOSE_MOUTH = 1;
+		CHAT_DELAY = 6.0;
+		NO_CHAT = 1;
 		COMBAT_MODE = 0;
-		const int BARRIER_RAD = 64;
-		const int DMG_BARRIER = 100;
-		const string SOUND_DRAW_WEAPON = "weapons/swords/sworddraw.wav";
+		BARRIER_RAD = 64;
+		DMG_BARRIER = 100;
+		SOUND_DRAW_WEAPON = "weapons/swords/sworddraw.wav";
 		NPC_PROX_ACTIVATE = 1;
-		const float MIN_TELEPORT_DELAY = 15.0;
-		const int NPC_BOSS_REGEN_RATE = 0;
-		const float NPC_BOSS_RESTORATION = 0.3;
-		const int NPC_USES_LIGHTS = 1;
+		MIN_TELEPORT_DELAY = 15.0;
+		NPC_BOSS_REGEN_RATE = 0;
+		NPC_BOSS_RESTORATION = 0.3;
+		NPC_USES_LIGHTS = 1;
 		if (StringToLower(GetMapName()) == "shad_palace")
 		{
 			NPC_GIVE_EXP = 10000;
 			NPC_IS_BOSS = 1;
 		}
-		const string ANIM_WARCRY = "warcry";
+		ANIM_WARCRY = "warcry";
 		ANIM_IDLE = "idle1";
 		ANIM_RUN = "run";
 		ANIM_WALK = "walk";
 		ANIM_FLINCH = "flinch";
 		ANIM_ATTACK = "swordswing1_L";
-		const string ANIM_SWIPE = "swordswing1_L";
-		const string ANIM_SMASH = "battleaxe_swing1_L";
-		const string ANIM_KICK = "kick";
-		const string ANIM_PARRY = "shielddeflect1";
+		ANIM_SWIPE = "swordswing1_L";
+		ANIM_SMASH = "battleaxe_swing1_L";
+		ANIM_KICK = "kick";
+		ANIM_PARRY = "shielddeflect1";
 		ANIM_DEATH = "die_fallback";
-		const string ANIM_HOP = "battleaxe_swing1_L";
+		ANIM_HOP = "battleaxe_swing1_L";
 		CAN_FLINCH = 1;
-		const float ATTACK_HITCHANCE = 0.9;
+		ATTACK_HITCHANCE = 0.9;
 		ATTACK_MOVERANGE = 32;
 		MOVE_RANGE = 32;
 		ATTACK_RANGE = 60;
 		ATTACK_HITRANGE = 120;
-		const string DMG_SLASH = RandomInt(100, 200);
-		const string DMG_SMACK = RandomInt(25, 50);
-		const string DMG_SMASH = RandomInt(150, 400);
-		const string DMG_KICK = Random(25, 100);
-		const int DMG_LBLAST = 100;
-		const int DMG_LSTORM = 100;
-		const int DUR_LSTORM = 30;
-		const string FREQ_TORNADO = RandomInt(15, 30);
-		const string FREQ_LSTORM = RandomInt(30, 45);
-		const string FREQ_LBLAST = RandomInt(15, 30);
-		const string FREQ_THROW = RandomInt(10, 30);
-		const string FREQ_SPECIAL = RandomInt(10, 15);
-		const string FREQ_TELEPORT = RandomInt(20, 140);
-		const string FREQ_TELEPORT_FAST = RandomInt(20, 40);
-		const float FREQ_KICK = 10.0;
+		DMG_SLASH = RandomInt(100, 200);
+		DMG_SMACK = RandomInt(25, 50);
+		DMG_SMASH = RandomInt(150, 400);
+		DMG_KICK = Random(25, 100);
+		DMG_LBLAST = 100;
+		DMG_LSTORM = 100;
+		DUR_LSTORM = 30;
+		FREQ_TORNADO = RandomInt(15, 30);
+		FREQ_LSTORM = RandomInt(30, 45);
+		FREQ_LBLAST = RandomInt(15, 30);
+		FREQ_THROW = RandomInt(10, 30);
+		FREQ_SPECIAL = RandomInt(10, 15);
+		FREQ_TELEPORT = RandomInt(20, 140);
+		FREQ_TELEPORT_FAST = RandomInt(20, 40);
+		FREQ_KICK = 10.0;
 		FREQ_LEAP = 5.0;
-		const string SOUND_WARCRY = "monsters/troll/trollidle.wav";
-		const string SOUND_STRUCK1 = "body/armour1.wav";
-		const string SOUND_STRUCK2 = "body/armour2.wav";
-		const string SOUND_STRUCK3 = "body/armour3.wav";
-		const string SOUND_HIT = "voices/orc/hit.wav";
-		const string SOUND_HIT2 = "voices/orc/hit2.wav";
-		const string SOUND_HIT3 = "voices/orc/hit3.wav";
-		const string SOUND_PAIN = "monsters/orc/pain.wav";
-		const string SOUND_WARCRY1 = "monsters/orc/battlecry.wav";
-		const string SOUND_ATTACK1 = "voices/orc/attack.wav";
-		const string SOUND_ATTACK2 = "voices/orc/attack2.wav";
-		const string SOUND_ATTACK3 = "voices/orc/attack3.wav";
-		const string SOUND_DEATH = "voices/orc/die.wav";
-		const string SOUND_HELP = "voices/orc/help.wav";
-		const string SOUND_TELE = "magic/teleport.wav";
-		const float VAMPIRE_RATIO = 0.1;
+		SOUND_WARCRY = "monsters/troll/trollidle.wav";
+		SOUND_STRUCK1 = "body/armour1.wav";
+		SOUND_STRUCK2 = "body/armour2.wav";
+		SOUND_STRUCK3 = "body/armour3.wav";
+		SOUND_HIT = "voices/orc/hit.wav";
+		SOUND_HIT2 = "voices/orc/hit2.wav";
+		SOUND_HIT3 = "voices/orc/hit3.wav";
+		SOUND_PAIN = "monsters/orc/pain.wav";
+		SOUND_WARCRY1 = "monsters/orc/battlecry.wav";
+		SOUND_ATTACK1 = "voices/orc/attack.wav";
+		SOUND_ATTACK2 = "voices/orc/attack2.wav";
+		SOUND_ATTACK3 = "voices/orc/attack3.wav";
+		SOUND_DEATH = "voices/orc/die.wav";
+		SOUND_HELP = "voices/orc/help.wav";
+		SOUND_TELE = "magic/teleport.wav";
+		VAMPIRE_RATIO = 0.1;
 		Precache(SOUND_DEATH);
 		Precache("weapons/magic/tornado.mdl");
 		Precache("magic/vent1.wav");
@@ -183,7 +232,7 @@ class SorcChief : CGameScript
 		if (m_hAttackTarget != "unset")
 		{
 		}
-		string LEAP_TYPE = RandomInt(1, 4);
+		int LEAP_TYPE = RandomInt(1, 4);
 		if (LEAP_TYPE < 4)
 		{
 			leap_at(m_hAttackTarget, "random");
@@ -212,12 +261,12 @@ class SorcChief : CGameScript
 		if (GetEntityRange(m_hAttackTarget) > 256)
 		{
 		}
-		string LAST_TELE_DIFF = GetGameTime();
+		float LAST_TELE_DIFF = GetGameTime();
 		LAST_TELE_DIFF -= LAST_TELE;
 		if (LAST_TELE_DIFF > 5.0)
 		{
 		}
-		string LAST_HIT_DIFF = GetGameTime();
+		float LAST_HIT_DIFF = GetGameTime();
 		LAST_HIT_DIFF -= LAST_SWORD_HIT;
 		if (LAST_HIT_DIFF > 20.0)
 		{
@@ -513,11 +562,11 @@ class SorcChief : CGameScript
 		if (!(N_BLOOD_DRINKERS > 0)) return;
 		if (GetPlayerCount() > 1)
 		{
-			SayText("Humans! Approach the throne of Runegahr. I wish to speak with thee.");
+			SayText("Humans! Approach the throne of Runegahr. " + I + " wish to speak with thee.");
 		}
 		else
 		{
-			SayText("Human! You may approach the throne of Runegahr. I wish to speak with thee.");
+			SayText("Human! You may approach the throne of Runegahr. " + I + " wish to speak with thee.");
 		}
 	}
 
@@ -832,11 +881,11 @@ class SorcChief : CGameScript
 		EmitSound(GetOwner(), 0, "monsters/orc/attack1.wav", 10);
 		if (GetMonsterHP() > HALF_HEALTH)
 		{
-			string JUMP_HEIGHT = RandomInt(350, 450);
+			int JUMP_HEIGHT = RandomInt(350, 450);
 		}
 		if (GetMonsterHP() <= HALF_HEALTH)
 		{
-			string JUMP_HEIGHT = RandomInt(350, 950);
+			int JUMP_HEIGHT = RandomInt(350, 950);
 		}
 		string L_JUMP_FWD_DIST = JUMP_FWD_DIST;
 		string L_JUMP_HEIGHT = JUMP_HEIGHT;
@@ -867,7 +916,7 @@ class SorcChief : CGameScript
 		AM_LEAPING = 1;
 		NPC_FORCED_MOVEDEST = 1;
 		npcatk_suspend_ai(1.0);
-		string RND_ROT = RandomInt(0, 359);
+		int RND_ROT = RandomInt(0, 359);
 		string LEAP_DEST = GetMonsterProperty("origin");
 		LEAP_DEST += /* TODO: $relpos */ $relpos(Vector3(0, RND_ROT, 0), Vector3(0, 400, 0));
 		SetMoveDest(LEAP_DEST);
@@ -1037,14 +1086,14 @@ class SorcChief : CGameScript
 				FREQ_TELEPORT_FAST("do_teleport");
 			}
 		}
-		string LAST_TELE_DIFF = GetGameTime();
+		float LAST_TELE_DIFF = GetGameTime();
 		LAST_TELE_DIFF -= LAST_TELE;
 		if (!(LAST_TELE_DIFF > MIN_TELEPORT_DELAY)) return;
 		LogDebug("game.time secs: do_teleport PARAM1 PARAM2");
 		LAST_TELE = GetGameTime();
 		string TOTAL_TELES = N_TELES;
 		TOTAL_TELES += 1;
-		string PICK_TELE = RandomInt(1, TOTAL_TELES);
+		int PICK_TELE = RandomInt(1, TOTAL_TELES);
 		if (param2 == "no_hits")
 		{
 			if ((G_DEVELOPER_MODE))
@@ -1064,7 +1113,7 @@ class SorcChief : CGameScript
 				npcatk_settarget(NEW_TARGET);
 				if ((G_DEVELOPER_MODE))
 				{
-					SendInfoMessageToAll("green SORC_CHIEF: found GetEntityName(NEW_TARGET) near FOUND_NEAR_TARGET");
+					SendInfoMessageToAll("green " + SORC_CHIEF: + "found " + GetEntityName(NEW_TARGET) + "near " + FOUND_NEAR_TARGET);
 				}
 				string PICK_TELE = FOUND_NEAR_TARGET;
 			}
@@ -1102,7 +1151,7 @@ class SorcChief : CGameScript
 		if (!(N_TELES >= 1)) return;
 		string TEST_TELE = TELE_ID1;
 		TEST_TELE = "z";
-		string TELE_DIST = Distance(PLAYER_ORG, TEST_TELE);
+		float TELE_DIST = Distance(PLAYER_ORG, TEST_TELE);
 		if (TELE_DIST < SEARCH_RAD)
 		{
 			FOUND_NEAR_TARGET = 1;
@@ -1112,7 +1161,7 @@ class SorcChief : CGameScript
 		string TEST_TELE = TELE_ID2;
 		TEST_TELE = "z";
 		string OLD_TELE_DIST = TELE_DIST;
-		string TELE_DIST = Distance(PLAYER_ORG, TEST_TELE);
+		float TELE_DIST = Distance(PLAYER_ORG, TEST_TELE);
 		if (TELE_DIST < SEARCH_RAD)
 		{
 			if (OLD_TELE_DIST > TELE_DIST)
@@ -1125,7 +1174,7 @@ class SorcChief : CGameScript
 		string TEST_TELE = TELE_ID3;
 		TEST_TELE = "z";
 		string OLD_TELE_DIST = TELE_DIST;
-		string TELE_DIST = Distance(PLAYER_ORG, TEST_TELE);
+		float TELE_DIST = Distance(PLAYER_ORG, TEST_TELE);
 		if (TELE_DIST < SEARCH_RAD)
 		{
 			if (OLD_TELE_DIST > TELE_DIST)
@@ -1138,7 +1187,7 @@ class SorcChief : CGameScript
 		string TEST_TELE = TELE_ID4;
 		TEST_TELE = "z";
 		string OLD_TELE_DIST = TELE_DIST;
-		string TELE_DIST = Distance(PLAYER_ORG, TEST_TELE);
+		float TELE_DIST = Distance(PLAYER_ORG, TEST_TELE);
 		if (TELE_DIST < SEARCH_RAD)
 		{
 			if (OLD_TELE_DIST > TELE_DIST)
@@ -1150,7 +1199,7 @@ class SorcChief : CGameScript
 		string TEST_TELE = NPC_SPAWN_LOC;
 		TEST_TELE = "z";
 		string OLD_TELE_DIST = TELE_DIST;
-		string TELE_DIST = Distance(PLAYER_ORG, TEST_TELE);
+		float TELE_DIST = Distance(PLAYER_ORG, TEST_TELE);
 		if (TELE_DIST < SEARCH_RAD)
 		{
 			if (OLD_TELE_DIST > TELE_DIST)

@@ -7,24 +7,33 @@ namespace MS
 
 class ManaResistCold : CGameScript
 {
+	int ANIM_DRINK;
+	int ANIM_IDLE;
+	string ANIM_PREFIX;
 	int DRINK_AMOUNT;
 	int DRINK_EFFECTAMT;
 	int DRINK_GULP_DELAY;
 	int DRINK_TIME;
 	string DRINK_TYPE;
+	int ITEM_MODEL_VIEW_IDX;
+	int MODEL_BODY_OFS;
+	string MODEL_HANDS;
+	string MODEL_VIEW;
+	string MODEL_WORLD;
 	float RESTORE_PERCENT;
+	string SOUND_DRINK;
 
 	ManaResistCold()
 	{
-		const int ANIM_IDLE = 0;
-		const int ANIM_DRINK = 1;
-		const string MODEL_HANDS = "misc/p_misc.mdl";
-		const string MODEL_WORLD = "misc/p_misc.mdl";
-		const string MODEL_VIEW = "viewmodels/v_misc.mdl";
-		const int ITEM_MODEL_VIEW_IDX = 2;
-		const string SOUND_DRINK = "items/drink.wav";
-		const int MODEL_BODY_OFS = 39;
-		const string ANIM_PREFIX = "mana";
+		ANIM_IDLE = 0;
+		ANIM_DRINK = 1;
+		MODEL_HANDS = "misc/p_misc.mdl";
+		MODEL_WORLD = "misc/p_misc.mdl";
+		MODEL_VIEW = "viewmodels/v_misc.mdl";
+		ITEM_MODEL_VIEW_IDX = 2;
+		SOUND_DRINK = "items/drink.wav";
+		MODEL_BODY_OFS = 39;
+		ANIM_PREFIX = "mana";
 		DRINK_TYPE = "givemana";
 		RESTORE_PERCENT = 0.9;
 		DRINK_EFFECTAMT = 300;

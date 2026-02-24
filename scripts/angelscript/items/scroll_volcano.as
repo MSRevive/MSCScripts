@@ -7,12 +7,17 @@ namespace MS
 
 class ScrollVolcano : CGameScript
 {
+	int BASE_REQUIRED_LEVEL;
+	string BASE_REQUIRED_SKILL;
+	string BASE_SPELL_SCRIPT;
+	string BASE_SUMMON_TEXT;
+
 	ScrollVolcano()
 	{
-		const string BASE_SPELL_SCRIPT = "magic_hand_volcano";
-		const string BASE_SUMMON_TEXT = "You learn to create a small volcano.";
-		const string BASE_REQUIRED_SKILL = "skill.spellcasting.fire";
-		const int BASE_REQUIRED_LEVEL = 15;
+		BASE_SPELL_SCRIPT = "magic_hand_volcano";
+		BASE_SUMMON_TEXT = "You learn to create a small volcano.";
+		BASE_REQUIRED_SKILL = "skill.spellcasting.fire";
+		BASE_REQUIRED_LEVEL = 15;
 	}
 
 	void OnSpawn() override

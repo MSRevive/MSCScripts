@@ -32,8 +32,8 @@ class SnakeCobraBossCl : CGameScript
 		ClientEffect("tempent", "set_current_prop", "rendercolor", Vector3(0, 0, 0));
 		ClientEffect("tempent", "set_current_prop", "gravity", ".005");
 		ClientEffect("tempent", "set_current_prop", "collide", "none");
-		string RND_RL = Random(-10, 10);
-		string RND_UD = Random(-220, -180);
+		float RND_RL = Random(-10, 10);
+		float RND_UD = Random(-220, -180);
 		string CLOUD_VEL = /* TODO: $relvel */ $relvel(Vector3(0, CLOUD_ANG, 0), Vector3(RND_RL, 400, RND_UD));
 		ClientEffect("tempent", "set_current_prop", "velocity", CLOUD_VEL);
 	}

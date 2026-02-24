@@ -8,11 +8,16 @@ namespace MS
 class SnakeCobraBoss : CGameScript
 {
 	string ANIM_ATTACK;
+	string ANIM_BREATH;
 	string ANIM_DEATH;
 	string ANIM_IDLE;
+	string ANIM_IDLE_NORM;
 	string ANIM_RUN;
+	string ANIM_SLEEP;
+	string ANIM_SPIT;
 	string ANIM_WALK;
 	string ATTACK_ANIMINDEX;
+	float ATTACK_HITCHANCE;
 	int ATTACK_HITRANGE;
 	int ATTACK_MOVERANGE;
 	int ATTACK_RANGE;
@@ -21,31 +26,49 @@ class SnakeCobraBoss : CGameScript
 	int CLOUD_COUNT;
 	string CLOUD_TARGS;
 	string CL_IDX;
+	string CL_SCRIPT;
 	string CUR_ANG;
 	int CYCLE_STARTED;
 	int DID_ALERT;
+	float DMG_BITE;
+	int DMG_GAS_DOT;
+	int DMG_POISON_DOT;
+	int DMG_SPIT;
 	int DOING_SPECIAL;
+	float GAS_DURATION;
+	int MONSTER_HP;
+	string MONSTER_MODEL;
 	string NEXT_SCAN;
 	string NEXT_SPIT;
 	int NO_STUCK_CHECKS;
 	int NPC_GIVE_EXP;
 	string NPC_IS_BOSS;
+	float POISON_DURATION;
 	int SLEEP_MODE;
+	string SOUND_ALERT;
+	string SOUND_ATTACK;
+	string SOUND_DEATH;
+	string SOUND_IDLE;
+	string SOUND_PAIN1;
+	string SOUND_PAIN2;
+	string SOUND_POISON;
+	string SOUND_SPIT;
+	string SOUND_STRUCK;
 	int SPIT_MODE;
 	string SPIT_TARGET;
 
 	SnakeCobraBoss()
 	{
-		const int MONSTER_HP = 12000;
-		const int DMG_SPIT = 400;
-		const string DMG_BITE = Random(100, 250);
-		const int DMG_POISON_DOT = 25;
-		const int DMG_GAS_DOT = 75;
-		const float POISON_DURATION = 5.0;
-		const float GAS_DURATION = 30.0;
-		const string MONSTER_MODEL = "monsters/gcobra_boss.mdl";
-		const string ANIM_SPIT = "spit";
-		const string SOUND_SPIT = "agrunt/ag_attack2.wav";
+		MONSTER_HP = 12000;
+		DMG_SPIT = 400;
+		DMG_BITE = Random(100, 250);
+		DMG_POISON_DOT = 25;
+		DMG_GAS_DOT = 75;
+		POISON_DURATION = 5.0;
+		GAS_DURATION = 30.0;
+		MONSTER_MODEL = "monsters/gcobra_boss.mdl";
+		ANIM_SPIT = "spit";
+		SOUND_SPIT = "agrunt/ag_attack2.wav";
 		NPC_GIVE_EXP = 200;
 		if (StringToLower(GetMapName()) == "gertenheld_cave")
 		{
@@ -56,30 +79,30 @@ class SnakeCobraBoss : CGameScript
 		{
 			NPC_GIVE_EXP = 400;
 		}
-		const string CL_SCRIPT = "monsters/snake_cobra_boss_cl";
-		const string ANIM_BREATH = "breath";
+		CL_SCRIPT = "monsters/snake_cobra_boss_cl";
+		ANIM_BREATH = "breath";
 		CAN_RETALIATE = 0;
 		ANIM_WALK = "walk";
 		ANIM_RUN = "walk";
 		ANIM_DEATH = "diesimple";
 		ANIM_IDLE = ANIM_SLEEP;
-		const string ANIM_IDLE_NORM = "idle1";
-		const string ANIM_SLEEP = "idle2";
+		ANIM_IDLE_NORM = "idle1";
+		ANIM_SLEEP = "idle2";
 		ANIM_ATTACK = "attack1";
 		ATTACK_RANGE = 350;
 		ATTACK_HITRANGE = 400;
 		ATTACK_MOVERANGE = 300;
-		const float ATTACK_HITCHANCE = 0.8;
-		const string SOUND_ALERT = "monsters/gsnake_idle1.wav";
-		const string SOUND_IDLE = "monsters/gsnake_idle1.wav";
-		const string SOUND_ATTACK = "agrunt/ag_attack2.wav";
-		const string SOUND_POISON = "monsters/snakeman/sm_alert1.wav";
-		const string SOUND_STRUCK = "debris/flesh3.wav";
-		const string SOUND_PAIN1 = "agrunt/ag_attack3.wav";
-		const string SOUND_PAIN2 = "agrunt/ag_idle2.wav";
-		const string SOUND_DEATH = "agrunt/ag_die2.wav";
+		ATTACK_HITCHANCE = 0.8;
+		SOUND_ALERT = "monsters/gsnake_idle1.wav";
+		SOUND_IDLE = "monsters/gsnake_idle1.wav";
+		SOUND_ATTACK = "agrunt/ag_attack2.wav";
+		SOUND_POISON = "monsters/snakeman/sm_alert1.wav";
+		SOUND_STRUCK = "debris/flesh3.wav";
+		SOUND_PAIN1 = "agrunt/ag_attack3.wav";
+		SOUND_PAIN2 = "agrunt/ag_idle2.wav";
+		SOUND_DEATH = "agrunt/ag_die2.wav";
 		Precache(SOUND_DEATH);
-		const string SOUND_ATTACK = "weapons/swinghuge.wav";
+		SOUND_ATTACK = "weapons/swinghuge.wav";
 	}
 
 	void OnSpawn() override
@@ -206,7 +229,7 @@ class SnakeCobraBoss : CGameScript
 			if (!(SUSPEND_AI))
 			{
 			}
-			string RND_SPECIAL = RandomInt(1, 2);
+			int RND_SPECIAL = RandomInt(1, 2);
 			if (RND_SPECIAL == 1)
 			{
 				float NEXT_SPECIAL = 40.0;

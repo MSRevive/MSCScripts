@@ -7,9 +7,11 @@ namespace MS
 
 class BanditEliteDagger : CGameScript
 {
+	int WEAPON;
+
 	BanditEliteDagger()
 	{
-		const int WEAPON = 1;
+		WEAPON = 1;
 	}
 
 }

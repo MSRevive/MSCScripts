@@ -7,17 +7,22 @@ namespace MS
 
 class EmoteYes : CGameScript
 {
+	string EFFECT_FLAGS;
+	string EFFECT_ID;
+	string EFFECT_SCRIPT;
+	string TEXT_NOD;
 	string game.effect.displayname;
+	int game.effect.removeondeath;
 	int local.idling;
 	string local.noding;
 
 	EmoteYes()
 	{
-		const string EFFECT_ID = "player_nodyes";
-		const string EFFECT_FLAGS = "player_action";
-		const string EFFECT_SCRIPT = currentscript;
-		const int game.effect.removeondeath = 0;
-		const string TEXT_NOD = #ACTION_NOD_YES;
+		EFFECT_ID = "player_nodyes";
+		EFFECT_FLAGS = "player_action";
+		EFFECT_SCRIPT = currentscript;
+		game.effect.removeondeath = 0;
+		TEXT_NOD = #ACTION_NOD_YES;
 		game.effect.displayname = TEXT_NOD;
 		local.idling = 0;
 	}

@@ -73,12 +73,12 @@ class Trigger : CGameScript
 			RECENT_TRIGGERS += param1;
 			SetPlayerQuestData(MY_OWNER, TRIG_QUEST);
 		}
-		use_trigger(MY_OWNER, /* TODO: $pass */ $pass(param1));
+		use_trigger(MY_OWNER, param1);
 	}
 
 	void stop_listening()
 	{
-		if (!(STARTED_LISTENING <= /* TODO: $math(subtract) */ GetGameTime())) return;
+		if (!(STARTED_LISTENING <= (GetGameTime() - 10))) return;
 		LISTENING_FOR_TRIGGER = 0;
 	}
 

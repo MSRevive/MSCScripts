@@ -7,15 +7,19 @@ namespace MS
 
 class MagicHandHealingWave : CGameScript
 {
+	int MELEE_ATK_DURATION;
+	int MELEE_RANGE;
+	int SPELL_MPDRAIN;
+	int SPELL_PREPARE_TIME;
 	int SPELL_SKILL_REQUIRED;
 
 	MagicHandHealingWave()
 	{
 		SPELL_SKILL_REQUIRED = 10;
-		const int MELEE_RANGE = 1;
-		const int MELEE_ATK_DURATION = 3;
-		const int SPELL_PREPARE_TIME = 1;
-		const int SPELL_MPDRAIN = 20;
+		MELEE_RANGE = 1;
+		MELEE_ATK_DURATION = 3;
+		SPELL_PREPARE_TIME = 1;
+		SPELL_MPDRAIN = 20;
 	}
 
 	void game_precache()

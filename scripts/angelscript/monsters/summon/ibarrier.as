@@ -19,13 +19,14 @@ class Ibarrier : CGameScript
 	string MY_RADIUS;
 	string NO_SOUND;
 	int PLAYING_DEAD;
+	string SOUND_PUSH;
 	string SPRITE_COLOR;
 	int TOTAL_OFS;
 	string sfx.npcid;
 
 	Ibarrier()
 	{
-		const string SOUND_PUSH = "doors/aliendoor3.wav";
+		SOUND_PUSH = "doors/aliendoor3.wav";
 	}
 
 	void game_dynamically_created()

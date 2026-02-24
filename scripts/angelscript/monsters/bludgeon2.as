@@ -7,8 +7,11 @@ namespace MS
 
 class Bludgeon2 : CGameScript
 {
+	int ATTACK_DAMAGE;
 	int ATTACK_HITRANGE;
 	int ATTACK_RANGE;
+	int CHARGE_DAMAGE;
+	string CL_SCRIPT;
 	int DROP_GOLD;
 	int DROP_GOLD_MAX;
 	int DROP_GOLD_MIN;
@@ -16,6 +19,14 @@ class Bludgeon2 : CGameScript
 	int IS_UNHOLY;
 	int MOVE_RANGE;
 	int NPC_GIVE_EXP;
+	string SOUND_CHARGE;
+	string SOUND_DEATH;
+	string SOUND_IDLE1;
+	string SOUND_IDLE2;
+	string SOUND_PAIN;
+	string SOUND_STRUCK1;
+	string SOUND_STRUCK2;
+	string SOUND_STRUCK3;
 
 	Bludgeon2()
 	{
@@ -24,21 +35,21 @@ class Bludgeon2 : CGameScript
 		DROP_GOLD = 1;
 		DROP_GOLD_MIN = 15;
 		DROP_GOLD_MAX = 50;
-		const string SOUND_STRUCK1 = "monsters/bludgeon/bludgeonattack2.wav";
-		const string SOUND_STRUCK2 = "monsters/bludgeon/bludgeonattack2.wav";
-		const string SOUND_STRUCK3 = "monsters/bludgeon/bludgeonattack2.wav";
-		const string SOUND_PAIN = "monsters/bludgeon/bludgeonpain2.wav";
-		const string SOUND_IDLE1 = "monsters/bludgeon/bludgeonidle2.wav";
-		const string SOUND_IDLE2 = "monsters/bludgeon/bludgeonidle2.wav";
-		const string SOUND_CHARGE = "monsters/boar/boarsight.wav";
-		const string SOUND_DEATH = "monsters/bludgeon/bludgeonpain2.wav";
+		SOUND_STRUCK1 = "monsters/bludgeon/bludgeonattack2.wav";
+		SOUND_STRUCK2 = "monsters/bludgeon/bludgeonattack2.wav";
+		SOUND_STRUCK3 = "monsters/bludgeon/bludgeonattack2.wav";
+		SOUND_PAIN = "monsters/bludgeon/bludgeonpain2.wav";
+		SOUND_IDLE1 = "monsters/bludgeon/bludgeonidle2.wav";
+		SOUND_IDLE2 = "monsters/bludgeon/bludgeonidle2.wav";
+		SOUND_CHARGE = "monsters/boar/boarsight.wav";
+		SOUND_DEATH = "monsters/bludgeon/bludgeonpain2.wav";
 		Precache(SOUND_DEATH);
 		MOVE_RANGE = 32;
 		ATTACK_RANGE = 96;
 		ATTACK_HITRANGE = 120;
-		const string ATTACK_DAMAGE = "$rand(40,80)";
-		const string CHARGE_DAMAGE = "$rand(80,160)";
-		const string CL_SCRIPT = "monsters/boar_base_cl_charge";
+		ATTACK_DAMAGE = "$rand(40,80)";
+		CHARGE_DAMAGE = "$rand(80,160)";
+		CL_SCRIPT = "monsters/boar_base_cl_charge";
 		Precache(CL_SCRIPT);
 	}
 

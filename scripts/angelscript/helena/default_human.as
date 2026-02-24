@@ -14,16 +14,20 @@ class DefaultHuman : CGameScript
 	string ANIM_IDLE;
 	string ANIM_RUN;
 	string ANIM_WALK;
+	int DEFAULT_HUMAN;
+	string FEMALE_MODEL;
+	string MALE_MODEL;
+	string MY_RAID_POS;
 	string MY_SEX;
 
 	DefaultHuman()
 	{
-		const string MALE_MODEL = "npc/human1.mdl";
-		const string FEMALE_MODEL = "npc/human2.mdl";
+		MALE_MODEL = "npc/human1.mdl";
+		FEMALE_MODEL = "npc/human2.mdl";
 		Precache("npc/human1.mdl");
 		Precache("npc/human2.mdl");
-		const string MY_RAID_POS = "$relpos(0,0,0)";
-		const int DEFAULT_HUMAN = 1;
+		MY_RAID_POS = "$relpos(0,0,0)";
+		DEFAULT_HUMAN = 1;
 		ANIM_IDLE = "idle1";
 		ANIM_RUN = "run";
 		ANIM_WALK = "walk";
@@ -62,7 +66,7 @@ class DefaultHuman : CGameScript
 			if (RandomInt(1, 2) == 1)
 			{
 			}
-			string RND_SAY = RandomInt(1, 2);
+			int RND_SAY = RandomInt(1, 2);
 			if (RND_SAY == 1)
 			{
 				SayText("Thank you for saving our little village.");
@@ -86,7 +90,7 @@ class DefaultHuman : CGameScript
 		SetSkillLevel(-10);
 		SetMoveAnim(ANIM_WALK);
 		SetIdleAnim(ANIM_IDLE);
-		string GENDER_BENDER = RandomInt(1, 2);
+		int GENDER_BENDER = RandomInt(1, 2);
 		if (GENDER_BENDER == 1)
 		{
 			MY_SEX = "male";

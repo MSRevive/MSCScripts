@@ -9,7 +9,7 @@ class BarnumJump : CGameScript
 {
 	void chest_additems()
 	{
-		SetGold(/* TODO: $math(multiply) */ 50);
+		SetGold((50 * "game.playersnb"));
 		chest_add_hpot_mpot();
 		add_good_item();
 		add_good_item();

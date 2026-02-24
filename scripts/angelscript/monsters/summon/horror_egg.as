@@ -7,18 +7,22 @@ namespace MS
 
 class HorrorEgg : CGameScript
 {
+	string EGG_SCRIPT;
 	int FAILED_HATCH;
+	string GLOW_SHELL;
 	int IS_UNHOLY;
 	string MY_OWNER;
 	string NPC_SPAWN_TIME;
+	int SCAN_SIZE;
+	string SOUND_HATCH;
 
 	HorrorEgg()
 	{
 		IS_UNHOLY = 1;
-		const int SCAN_SIZE = 100;
-		const Vector3 GLOW_SHELL = Vector3(255, 0, 0);
-		const string SOUND_HATCH = "debris/bustflesh1.wav";
-		const string EGG_SCRIPT = "monsters/horror";
+		SCAN_SIZE = 100;
+		GLOW_SHELL = Vector3(255, 0, 0);
+		SOUND_HATCH = "debris/bustflesh1.wav";
+		EGG_SCRIPT = "monsters/horror";
 		Precache("monsters/egg.mdl");
 		Precache("controller/con_idle1.wav");
 		Precache("controller/con_idle2.wav");
@@ -69,7 +73,7 @@ class HorrorEgg : CGameScript
 
 	void OnDamage(int damage) override
 	{
-		string SINCE_SPAWN = GetGameTime();
+		float SINCE_SPAWN = GetGameTime();
 		SINCE_SPAWN -= NPC_SPAWN_TIME;
 		if (SINCE_SPAWN < 1.0)
 		{
@@ -176,9 +180,9 @@ class HorrorEgg : CGameScript
 
 	void bounce_about()
 	{
-		string TOSS_DIR = RandomInt(-200, 200);
-		string TOSS_HOR = RandomInt(-200, 200);
-		string TOSS_VER = RandomInt(-400, 600);
+		int TOSS_DIR = RandomInt(-200, 200);
+		int TOSS_HOR = RandomInt(-200, 200);
+		int TOSS_VER = RandomInt(-400, 600);
 		SetVelocity(GetOwner(), /* TODO: $relvel */ $relvel(TOSS_DIR, TOSS_HOR, TOSS_VER));
 	}
 
@@ -233,7 +237,7 @@ class HorrorEgg : CGameScript
 		string MON_FULL = GetMonsterProperty("name.full");
 		string OUT_MSG = "You've slain ";
 		OUT_MSG += MON_FULL;
-		SendColoredMessage(GetEntityIndex(m_hLastStruck), "OUT_MSG");
+		SendColoredMessage(GetEntityIndex(m_hLastStruck), OUT_MSG);
 	}
 
 }

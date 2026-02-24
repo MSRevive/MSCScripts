@@ -7,14 +7,21 @@ namespace MS
 
 class ProjArrowWooden : CGameScript
 {
+	float ARROW_BREAK_CHANCE;
+	int ARROW_SOLIDIFY_ON_WALL;
+	int ARROW_STICK_DURATION;
+	int CLFX_ARROW;
+	int MODEL_BODY_OFS;
+	int PROJ_DAMAGE;
+
 	ProjArrowWooden()
 	{
-		const int CLFX_ARROW = 1;
-		const int MODEL_BODY_OFS = 0;
-		const string PROJ_DAMAGE = RandomInt(60, 90);
-		const int ARROW_STICK_DURATION = 10;
-		const int ARROW_SOLIDIFY_ON_WALL = 1;
-		const float ARROW_BREAK_CHANCE = 0.2;
+		CLFX_ARROW = 1;
+		MODEL_BODY_OFS = 0;
+		PROJ_DAMAGE = RandomInt(60, 90);
+		ARROW_STICK_DURATION = 10;
+		ARROW_SOLIDIFY_ON_WALL = 1;
+		ARROW_BREAK_CHANCE = 0.2;
 	}
 
 	void arrow_spawn()

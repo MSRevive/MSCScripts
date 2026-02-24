@@ -7,17 +7,27 @@ namespace MS
 
 class SfxFireWave2 : CGameScript
 {
+	string SOUND_BURST;
+	string SPRITE_COLOR;
+	int SPRITE_FRAMERATE;
+	string SPRITE_NAME;
+	int SPRITE_NFRAMES;
+	int SPRITE_RENDERAMT;
+	string SPRITE_RENDERMODE;
+	float SPRITE_SCALE;
+	int SPRITE_SPEED;
+
 	SfxFireWave2()
 	{
-		const string SPRITE_NAME = "fire1_fixed.spr";
-		const Vector3 SPRITE_COLOR = Vector3(255, 128, 64);
-		const int SPRITE_RENDERAMT = 200;
-		const string SPRITE_RENDERMODE = "add";
-		const int SPRITE_FRAMERATE = 30;
-		const int SPRITE_NFRAMES = 23;
-		const float SPRITE_SCALE = 1.75;
-		const int SPRITE_SPEED = 400;
-		const string SOUND_BURST = "ambience/steamburst1.wav";
+		SPRITE_NAME = "fire1_fixed.spr";
+		SPRITE_COLOR = Vector3(255, 128, 64);
+		SPRITE_RENDERAMT = 200;
+		SPRITE_RENDERMODE = "add";
+		SPRITE_FRAMERATE = 30;
+		SPRITE_NFRAMES = 23;
+		SPRITE_SCALE = 1.75;
+		SPRITE_SPEED = 400;
+		SOUND_BURST = "ambience/steamburst1.wav";
 		Precache(SOUND_BURST);
 	}
 

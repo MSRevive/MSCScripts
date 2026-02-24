@@ -8,17 +8,24 @@ namespace MS
 
 class ItemRingThunder22 : CGameScript
 {
+	string ANIM_PREFIX;
 	string ELM_AMT;
+	string ELM_NAME;
+	string ELM_TYPE;
+	int MODEL_BODY_OFS;
+	string MODEL_HANDS;
+	string MODEL_WORLD;
+	string SP_ATTRIB;
 
 	ItemRingThunder22()
 	{
-		const string MODEL_WORLD = "misc/p_misc.mdl";
-		const string MODEL_HANDS = "misc/p_misc.mdl";
-		const int MODEL_BODY_OFS = 27;
-		const string ANIM_PREFIX = "ring";
-		const string SP_ATTRIB = "skill.spellcasting.lightning.ratio";
-		const string ELM_NAME = "ringl";
-		const string ELM_TYPE = "lightning";
+		MODEL_WORLD = "misc/p_misc.mdl";
+		MODEL_HANDS = "misc/p_misc.mdl";
+		MODEL_BODY_OFS = 27;
+		ANIM_PREFIX = "ring";
+		SP_ATTRIB = "skill.spellcasting.lightning.ratio";
+		ELM_NAME = "ringl";
+		ELM_TYPE = "lightning";
 	}
 
 	void miscitem_spawn()

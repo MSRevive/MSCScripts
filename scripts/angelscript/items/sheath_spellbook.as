@@ -7,17 +7,27 @@ namespace MS
 
 class SheathSpellbook : CGameScript
 {
+	string ANIM_PREFIX;
+	int CONTAINER_CANCLOSE;
+	string CONTAINER_ITEM_ACCEPT;
+	string CONTAINER_ITEM_REJECT;
+	int CONTAINER_LOCK_STRENGTH;
+	int CONTAINER_MAXITEMS;
+	int CONTAINER_SPACE;
+	string CONTAINER_TYPE;
+	int MODEL_BODY_OFS;
+
 	SheathSpellbook()
 	{
-		const string CONTAINER_TYPE = "sheath";
-		const int CONTAINER_SPACE = 200;
-		const int CONTAINER_MAXITEMS = 40;
-		const int CONTAINER_CANCLOSE = 0;
-		const int CONTAINER_LOCK_STRENGTH = 0;
-		const string CONTAINER_ITEM_ACCEPT = "scroll2";
-		const string CONTAINER_ITEM_REJECT = "item_tk_";
-		const string ANIM_PREFIX = "evilbook";
-		const int MODEL_BODY_OFS = 6;
+		CONTAINER_TYPE = "sheath";
+		CONTAINER_SPACE = 200;
+		CONTAINER_MAXITEMS = 40;
+		CONTAINER_CANCLOSE = 0;
+		CONTAINER_LOCK_STRENGTH = 0;
+		CONTAINER_ITEM_ACCEPT = "scroll2";
+		CONTAINER_ITEM_REJECT = "item_tk_";
+		ANIM_PREFIX = "evilbook";
+		MODEL_BODY_OFS = 6;
 	}
 
 	void sheath_spawn()

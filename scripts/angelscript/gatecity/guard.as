@@ -13,9 +13,12 @@ class Guard : CGameScript
 	string ANIM_IDLE;
 	string ANIM_RUN;
 	string ANIM_WALK;
+	int ATTACK_DAMAGE;
+	float ATTACK_HITCHANCE;
 	int ATTACK_HITRANGE;
 	int ATTACK_MOVERANGE;
 	int ATTACK_RANGE;
+	int BG_MAX_HEAR_CIV;
 	string NO_STUCK_CHECKS;
 	string TRAVEL_HOME_TIME;
 
@@ -24,15 +27,15 @@ class Guard : CGameScript
 		ATTACK_MOVERANGE = 32;
 		ATTACK_RANGE = 64;
 		ATTACK_HITRANGE = 120;
-		const float ATTACK_HITCHANCE = 0.85;
+		ATTACK_HITCHANCE = 0.85;
 		ANIM_DEATH = "death";
-		const int ATTACK_DAMAGE = 50;
+		ATTACK_DAMAGE = 50;
 		ANIM_WALK = "walk";
 		ANIM_RUN = "run";
 		ANIM_ATTACK = "attack";
 		ANIM_IDLE = "idle";
-		const int BG_MAX_HEAR_CIV = 1024;
-		const float ATTACK_HITCHANCE = 0.85;
+		BG_MAX_HEAR_CIV = 1024;
+		ATTACK_HITCHANCE = 0.85;
 	}
 
 	void OnSpawn() override
@@ -72,7 +75,7 @@ class Guard : CGameScript
 
 	void say_job()
 	{
-		SayText("I have no work for you. However...");
+		SayText(I + " have no work for you. However...");
 		ScheduleDelayedEvent(3, "say_rumour");
 	}
 
@@ -126,14 +129,14 @@ class Guard : CGameScript
 		npcatk_settarget(param1);
 		if (!(false)) return;
 		SetSayTextRange(1024);
-		string RAND_HALT = RandomInt(1, 4);
+		int RAND_HALT = RandomInt(1, 4);
 		if (RAND_HALT == 1)
 		{
 			SayText("Hey you! Leave him alone!");
 		}
 		if (RAND_HALT == 2)
 		{
-			SayText("You there , leave him be I said!");
+			SayText("You there , leave him be " + I + " said!");
 		}
 		if (RAND_HALT == 3)
 		{

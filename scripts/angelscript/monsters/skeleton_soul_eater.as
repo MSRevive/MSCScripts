@@ -10,6 +10,8 @@ class SkeletonSoulEater : CGameScript
 	string ANIM_ATTACK;
 	string ANIM_RUN;
 	string ANIM_WALK;
+	int ATTACK_DAMAGE;
+	float ATTACK_HITCHANCE;
 	int ATTACK_HITRANGE;
 	int ATTACK_RANGE;
 	int CAN_FLEE;
@@ -20,28 +22,39 @@ class SkeletonSoulEater : CGameScript
 	string MY_ENEMY;
 	int NPC_GIVE_EXP;
 	float RETALIATE_CHANCE;
+	string SOUND_ATTACK1;
+	string SOUND_ATTACK2;
+	string SOUND_DEATH;
+	string SOUND_HEAL;
+	string SOUND_IDLE1;
+	string SOUND_PAIN;
+	string SOUND_PUSH;
+	string SOUND_SPAWN;
+	string SOUND_STRUCK1;
+	string SOUND_STRUCK2;
+	string SOUND_STRUCK3;
 
 	SkeletonSoulEater()
 	{
 		ANIM_RUN = "walk";
 		ANIM_WALK = "walk";
 		ANIM_ATTACK = "attack1";
-		const int ATTACK_DAMAGE = 30;
+		ATTACK_DAMAGE = 30;
 		ATTACK_RANGE = 150;
 		MOVE_RANGE = 125;
 		ATTACK_HITRANGE = 175;
-		const float ATTACK_HITCHANCE = 0.85;
-		const string SOUND_STRUCK1 = "controller/con_pain3.wav";
-		const string SOUND_STRUCK2 = "controller/con_pain3.wav";
-		const string SOUND_STRUCK3 = "none";
-		const string SOUND_PAIN = "zombie/zo_pain2.wav";
-		const string SOUND_ATTACK1 = "controller/con_attack1.wav";
-		const string SOUND_HEAL = "monsters/skeleton/calrian2.wav";
-		const string SOUND_ATTACK2 = "controller/con_attack2.wav";
-		const string SOUND_DEATH = "controller/con_die1.wav";
-		const string SOUND_IDLE1 = "controller/con_attack3.wav";
-		const string SOUND_SPAWN = "monsters/skeleton/calrian2.wav";
-		const string SOUND_PUSH = "monsters/skeleton/calrain3.wav";
+		ATTACK_HITCHANCE = 0.85;
+		SOUND_STRUCK1 = "controller/con_pain3.wav";
+		SOUND_STRUCK2 = "controller/con_pain3.wav";
+		SOUND_STRUCK3 = "none";
+		SOUND_PAIN = "zombie/zo_pain2.wav";
+		SOUND_ATTACK1 = "controller/con_attack1.wav";
+		SOUND_HEAL = "monsters/skeleton/calrian2.wav";
+		SOUND_ATTACK2 = "controller/con_attack2.wav";
+		SOUND_DEATH = "controller/con_die1.wav";
+		SOUND_IDLE1 = "controller/con_attack3.wav";
+		SOUND_SPAWN = "monsters/skeleton/calrian2.wav";
+		SOUND_PUSH = "monsters/skeleton/calrain3.wav";
 		MY_ENEMY = "enemy";
 		RETALIATE_CHANCE = 0.75;
 		CAN_FLEE = 0;
@@ -92,7 +105,7 @@ class SkeletonSoulEater : CGameScript
 				string ENEMY_MAXHP = GetEntityMaxHealth(m_hLastStruckByMe);
 				string ICE_CREAM_NAME = "Ice Wall";
 				string NME_NAME = GetEntityName(m_hLastStruckByMe);
-				SendInfoMsg(m_hLastStruckByMe, "SOUL_EATER Beware, soul eaters gain double their victim's health when they slay a living opponent.");
+				SendInfoMsg(m_hLastStruckByMe, SOUL_EATER + " Beware, soul eaters gain double their victim's health when they slay a living opponent.");
 				SetSayTextRange(1024);
 				if (NME_NAME == ICE_CREAM_NAME)
 				{
@@ -147,7 +160,7 @@ class SkeletonSoulEater : CGameScript
 			EmitSound(GetOwner(), SOUND_PUSH);
 			string MY_LOC = GetEntityOrigin(GetOwner());
 			string NME_LOC = GetEntityOrigin(m_hLastStruckByMe);
-			string NME_DISTANCE = Distance(MY_LOC, NME_LOC);
+			float NME_DISTANCE = Distance(MY_LOC, NME_LOC);
 			if (NME_DISTANCE < ATTACK_HITRANGE)
 			{
 				ApplyEffect(GetEntityIndex(m_hLastStruckByMe), "effects/effect_push", 3, /* TODO: $relvel */ $relvel(0, 400, 400), 0);

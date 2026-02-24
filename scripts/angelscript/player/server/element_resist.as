@@ -9,12 +9,13 @@ class ElementResist : CGameScript
 	string OLD_RESISTANCES;
 	int PLR_CHECK_WEAPON_RESIST;
 	string PLR_RESIST_ELEMENTS;
+	string PLR_RESIST_RESET;
 	int PLR_RESIST_UPDATE_FLAG;
 	string PLR_RESIST_VALUES;
 
 	ElementResist()
 	{
-		if (!(/* TODO: $get_array_exists */ $get_array_exists(PLR_RESIST_NAMES)))
+		if (!((PLR_RESIST_NAMES.length() >= 0)))
 		{
 			array<string> PLR_RESIST_NAMES;
 			array<string> PLR_RESIST_TYPES;
@@ -25,7 +26,7 @@ class ElementResist : CGameScript
 		PLR_RESIST_ELEMENTS = "fire;lightning;cold;earth;poison;acid;holy;dark;magic;slash;blunt;pierce;all";
 		PLR_RESIST_VALUES = "1.0;1.0;1.0;1.0;1.0;1.0;1.0;1.0;1.0;1.0;1.0;1.0;1.0";
 		PLR_CHECK_WEAPON_RESIST = 0;
-		const string PLR_RESIST_RESET = "1.0;1.0;1.0;1.0;1.0;1.0;1.0;1.0;1.0;1.0;1.0;1.0;1.0";
+		PLR_RESIST_RESET = "1.0;1.0;1.0;1.0;1.0;1.0;1.0;1.0;1.0;1.0;1.0;1.0;1.0";
 	}
 
 	void ext_register_element()
@@ -33,7 +34,7 @@ class ElementResist : CGameScript
 		string RESIST_NAME = param1;
 		string RESIST_TYPE = param2;
 		string RESIST_AMT = param3;
-		string FIND_NAME = /* TODO: $get_arrayfind */ $get_arrayfind(PLR_RESIST_NAMES, RESIST_NAME);
+		string FIND_NAME = ArrayFind(PLR_RESIST_NAMES, RESIST_NAME, 0);
 		if (RESIST_TYPE == "remove")
 		{
 			if (FIND_NAME != -1)
@@ -49,7 +50,7 @@ class ElementResist : CGameScript
 			RESIST_AMT *= 0.01;
 			if (FIND_NAME != -1)
 			{
-				string OLD_VALUE = /* TODO: $get_arrayfind */ $get_arrayfind(PLR_RESIST_AMTS, FIND_NAME);
+				string OLD_VALUE = ArrayFind(PLR_RESIST_AMTS, FIND_NAME, 0);
 				if (OLD_VALUE != RESIST_AMT)
 				{
 					PLR_RESIST_AMTS[FIND_NAME] = RESIST_AMT;
@@ -70,7 +71,7 @@ class ElementResist : CGameScript
 		PLR_RESIST_UPDATE_FLAG = 0;
 		OLD_RESISTANCES = PLR_RESIST_VALUES;
 		PLR_RESIST_VALUES = PLR_RESIST_RESET;
-		for (int i = 0; i < /* TODO: $get_array_amt */ $get_array_amt(PLR_RESIST_NAMES); i++)
+		for (int i = 0; i < int(PLR_RESIST_NAMES.length()); i++)
 		{
 			cat_resistances();
 		}
@@ -83,8 +84,8 @@ class ElementResist : CGameScript
 	void cat_resistances()
 	{
 		string CUR_IDX = i;
-		string ITEM_RESIST_TYPE = /* TODO: $get_array */ $get_array(PLR_RESIST_TYPES, CUR_IDX);
-		string ITEM_RESIST_AMT = /* TODO: $get_array */ $get_array(PLR_RESIST_AMTS, CUR_IDX);
+		string ITEM_RESIST_TYPE = PLR_RESIST_TYPES[int(CUR_IDX)];
+		string ITEM_RESIST_AMT = PLR_RESIST_AMTS[int(CUR_IDX)];
 		string ITEM_RESIST_AMT = /* TODO: $neg */ $neg(ITEM_RESIST_AMT);
 		string CUR_RESIST_IDX = FindToken(PLR_RESIST_ELEMENTS, ITEM_RESIST_TYPE, ";");
 		string CUR_RESIST_AMT = GetToken(PLR_RESIST_VALUES, CUR_RESIST_IDX, ";");
@@ -108,11 +109,11 @@ class ElementResist : CGameScript
 			CUR_RESIST_AMT *= 100;
 			CUR_RESIST_AMT -= 100;
 			string CUR_RESIST_AMT = /* TODO: $neg */ $neg(CUR_RESIST_AMT);
-			string CUR_RESIST_AMT = int(CUR_RESIST_AMT);
+			int CUR_RESIST_AMT = int(CUR_RESIST_AMT);
 			CUR_RESIST_AMT += "%";
 			if (!(ELM_REGISTER_SILENT))
 			{
-				SendColoredMessage(GetOwner(), "Your resistance to CUR_RESIST_TYPE is now CUR_RESIST_AMT");
+				SendColoredMessage(GetOwner(), "Your resistance to " + CUR_RESIST_TYPE + "is now " + CUR_RESIST_AMT);
 			}
 			ELM_REGISTER_SILENT = 0;
 		}
@@ -126,7 +127,7 @@ class ElementResist : CGameScript
 		string OUT_AMT = param4;
 		if (param3 != "remove")
 		{
-			if (/* TODO: $get_arrayfind */ $get_arrayfind(PLR_RESIST_WEAPON_IDS, param1) == -1)
+			if (ArrayFind(PLR_RESIST_WEAPON_IDS, param1, 0) == -1)
 			{
 				ext_register_element(OUT_TAG, OUT_ELM, OUT_AMT);
 				PLR_RESIST_WEAPON_IDS.insertLast(WEAPON_ID);
@@ -136,7 +137,7 @@ class ElementResist : CGameScript
 		else
 		{
 			ext_register_element(OUT_TAG, "remove");
-			string WEAPON_IDX = /* TODO: $get_arrayfind */ $get_arrayfind(PLR_RESIST_WEAPON_IDS, param1);
+			string WEAPON_IDX = ArrayFind(PLR_RESIST_WEAPON_IDS, param1, 0);
 			PLR_RESIST_WEAPON_IDS.removeAt(WEAPON_IDX);
 			PLR_RESIST_WEAPON_TAGS.removeAt(WEAPON_IDX);
 		}
@@ -160,10 +161,10 @@ class ElementResist : CGameScript
 		ScheduleDelayedEvent(5.0, "check_weapons_loop");
 		if (!(PLR_IN_WORLD)) return;
 		if (!(IsEntityAlive(GetOwner()))) return;
-		string N_RESIST_WEAPONS = /* TODO: $get_array_amt */ $get_array_amt(PLR_RESIST_WEAPON_IDS);
+		int N_RESIST_WEAPONS = int(PLR_RESIST_WEAPON_IDS.length());
 		if (N_RESIST_WEAPONS > 0)
 		{
-			for (int i = 0; i < /* TODO: $get_array_amt */ $get_array_amt(PLR_RESIST_WEAPON_IDS); i++)
+			for (int i = 0; i < int(PLR_RESIST_WEAPON_IDS.length()); i++)
 			{
 				check_weapons();
 			}
@@ -176,7 +177,7 @@ class ElementResist : CGameScript
 
 	void check_weapons()
 	{
-		string CUR_WEAPON = /* TODO: $get_array */ $get_array(PLR_RESIST_WEAPON_IDS, i);
+		string CUR_WEAPON = PLR_RESIST_WEAPON_IDS[int(i)];
 		if (CUR_WEAPON == PLR_LEFT_HAND)
 		{
 			int NO_REMOVE = 1;
@@ -186,7 +187,7 @@ class ElementResist : CGameScript
 			int NO_REMOVE = 1;
 		}
 		if ((NO_REMOVE)) return;
-		ext_register_element(/* TODO: $get_array */ $get_array(PLR_RESIST_WEAPON_TAGS, CUR_WEAPON), "remove");
+		ext_register_element(PLR_RESIST_WEAPON_TAGS[int(CUR_WEAPON)], "remove");
 		PLR_RESIST_WEAPON_IDS.removeAt(CUR_WEAPON);
 		PLR_RESIST_WEAPON_TAGS.removeAt(CUR_WEAPON);
 	}

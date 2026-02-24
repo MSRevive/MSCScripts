@@ -23,10 +23,11 @@ class Slave : CGameScript
 	int NO_HAIL;
 	int NO_JOB;
 	int NO_RUMOR;
+	string NPC_MODEL;
 
 	Slave()
 	{
-		const string NPC_MODEL = "npc/human1.mdl";
+		NPC_MODEL = "npc/human1.mdl";
 		ANIM_IDLE = "crouch_idle";
 		ANIM_WALK = "walk";
 		ANIM_RUN = "run";

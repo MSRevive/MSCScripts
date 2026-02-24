@@ -7,20 +7,33 @@ namespace MS
 
 class PackSack : CGameScript
 {
+	string ANIM_PREFIX;
+	int CONTAINER_CANCLOSE;
+	string CONTAINER_ITEM_REJECT;
+	int CONTAINER_LOCK_STRENGTH;
+	int CONTAINER_MAXITEMS;
+	int CONTAINER_SPACE;
+	string CONTAINER_TYPE;
+	int MODEL_BODY_OFS;
+	string MODEL_HANDS;
+	string MODEL_VIEW;
+	string MODEL_WEAR;
+	string MODEL_WORLD;
+
 	PackSack()
 	{
-		const string MODEL_VIEW = "none";
-		const string MODEL_HANDS = "misc/p_misc.mdl";
-		const string MODEL_WORLD = "armor/packs/p_packs.mdl";
-		const string MODEL_WEAR = "armor/packs/p_packs.mdl";
-		const string CONTAINER_TYPE = "generic";
-		const int CONTAINER_SPACE = 10;
-		const int CONTAINER_CANCLOSE = 0;
-		const int CONTAINER_LOCK_STRENGTH = 0;
-		const int CONTAINER_MAXITEMS = 8;
-		const string CONTAINER_ITEM_REJECT = "arrow;axes;blunt;bolts;swords;bows;armor;pack;polearms";
-		const int MODEL_BODY_OFS = 4;
-		const string ANIM_PREFIX = "sack";
+		MODEL_VIEW = "none";
+		MODEL_HANDS = "misc/p_misc.mdl";
+		MODEL_WORLD = "armor/packs/p_packs.mdl";
+		MODEL_WEAR = "armor/packs/p_packs.mdl";
+		CONTAINER_TYPE = "generic";
+		CONTAINER_SPACE = 10;
+		CONTAINER_CANCLOSE = 0;
+		CONTAINER_LOCK_STRENGTH = 0;
+		CONTAINER_MAXITEMS = 8;
+		CONTAINER_ITEM_REJECT = "arrow;axes;blunt;bolts;swords;bows;armor;pack;polearms";
+		MODEL_BODY_OFS = 4;
+		ANIM_PREFIX = "sack";
 	}
 
 	void pack_spawn()

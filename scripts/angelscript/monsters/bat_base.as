@@ -8,27 +8,31 @@ namespace MS
 
 class BatBase : CGameScript
 {
+	string ANIM_DEAD;
 	string ANIM_DEATH;
 	string ANIM_DEATH_NEW;
 	string ANIM_IDLE;
 	int AS_ATTACKING;
+	int BAT_DROPPING;
+	int BAT_FLYING;
+	int BAT_HANGING;
 	string BAT_STATUS;
 	int CAN_HEAR;
 	int CAN_HUNT;
 	string FLIGHT_STUCK;
 	int HUNT_AGRO;
 	string LAST_POS;
-	string LAST_PROG;
+	float LAST_PROG;
 	float RETALIATE_CHANCE;
 
 	BatBase()
 	{
-		const int BAT_FLYING = 0;
-		const int BAT_HANGING = 1;
-		const int BAT_DROPPING = 2;
+		BAT_FLYING = 0;
+		BAT_HANGING = 1;
+		BAT_DROPPING = 2;
 		ANIM_DEATH = "die";
 		ANIM_DEATH_NEW = "die";
-		const string ANIM_DEAD = "deadground";
+		ANIM_DEAD = "deadground";
 		ANIM_IDLE = "IdleFlyNormal";
 		HUNT_AGRO = 1;
 		RETALIATE_CHANCE = 0.75;
@@ -81,7 +85,7 @@ class BatBase : CGameScript
 		if (GetEntityRange(m_hAttackTarget) > ATTACK_RANGE)
 		{
 		}
-		string CUR_PROG = Distance(GetMonsterProperty("origin"), TARG_POS);
+		float CUR_PROG = Distance(GetMonsterProperty("origin"), TARG_POS);
 		if (LAST_PROG >= CUR_PROG)
 		{
 			FLIGHT_STUCK += 1;

@@ -5,15 +5,17 @@ namespace MS
 
 class GibExplode : CGameScript
 {
+	int EXPLODE_RADIUS;
 	string FX_BLOOD_COLOR;
 	string FX_DAMAGE;
 	string FX_OWNER;
 	string FX_SKILL;
+	string GIB_INFLICTER;
 
 	GibExplode()
 	{
-		const string GIB_INFLICTER = GetEntityIndex(GetOwner());
-		const int EXPLODE_RADIUS = 200;
+		GIB_INFLICTER = GetEntityIndex(GetOwner());
+		EXPLODE_RADIUS = 200;
 	}
 
 	void OnSpawn() override

@@ -7,22 +7,31 @@ namespace MS
 
 class TorchFlame : CGameScript
 {
+	string EFFECT_FLAGS;
+	string EFFECT_ID;
+	string EFFECT_SCRIPT;
+	string LIGHT_COLOR;
+	int LIGHT_RADIUS;
+	int OFSZ_NEG;
 	string OFSZ_POS;
+	int OFS_NEG;
+	int OFS_POS;
+	string SPRITE_1;
 	string effect.clientscript;
 	string sfx.npcid;
 
 	TorchFlame()
 	{
-		const int OFS_POS = 16;
-		const int OFS_NEG = -16;
-		const int OFSZ_NEG = 0;
-		const Vector3 LIGHT_COLOR = Vector3(255, 255, 128);
-		const int LIGHT_RADIUS = 128;
-		const string SPRITE_1 = "fire1_fixed.spr";
+		OFS_POS = 16;
+		OFS_NEG = -16;
+		OFSZ_NEG = 0;
+		LIGHT_COLOR = Vector3(255, 255, 128);
+		LIGHT_RADIUS = 128;
+		SPRITE_1 = "fire1_fixed.spr";
 		Precache(SPRITE_1);
-		const string EFFECT_ID = "effect_flames";
-		const string EFFECT_FLAGS = "nostack";
-		const string EFFECT_SCRIPT = currentscript;
+		EFFECT_ID = "effect_flames";
+		EFFECT_FLAGS = "nostack";
+		EFFECT_SCRIPT = currentscript;
 	}
 
 	void OnRepeatTimer()

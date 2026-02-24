@@ -7,9 +7,11 @@ namespace MS
 
 class BaseFirepit : CGameScript
 {
+	string TORCH_LIGHT_SCRIPT;
+
 	BaseFirepit()
 	{
-		const string TORCH_LIGHT_SCRIPT = "items/item_torch_light";
+		TORCH_LIGHT_SCRIPT = "items/item_torch_light";
 		Precache(TORCH_LIGHT_SCRIPT);
 	}
 

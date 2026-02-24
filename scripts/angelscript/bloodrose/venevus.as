@@ -7,13 +7,18 @@ namespace MS
 
 class Venevus : CGameScript
 {
+	int ACID_BOLT_DAMAGE;
 	int ACTIVE_VOLCANO;
+	int AIM_RATIO;
+	string ANIM_CAST;
+	string ANIM_DEAD;
 	string ANIM_DEATH;
 	string ANIM_IDLE;
 	string ANIM_RUN;
 	string ANIM_WALK;
 	string BEAM_ID;
 	int BEING_SPLOITED_DMG;
+	int BEING_SPLOITED_THRESHOLD;
 	int BOLT_DELAY;
 	int CASTING_SPELL_DELAY;
 	int CHANGE_RETURN_POINT;
@@ -28,22 +33,54 @@ class Venevus : CGameScript
 	string HOLY_OFFENDER;
 	int IR_DEADSKI;
 	int IS_UNHOLY;
+	int I_AM_TURNABLE;
 	int KILLED_A_PLAYER;
 	string LAST_STUCK_CHECK_POS;
+	int LIGHTNING_BOLT_DAMAGE;
+	string LIGHTNING_SPRITE;
+	int MAX_RANGE;
 	string MAX_TELE_RANGE;
+	string MONSTER_MODEL;
 	string MOVE_LASTPOS;
 	string MURDER_A_PLAYER;
 	string NEXT_SPELL;
 	int NO_STUCK_CHECKS;
+	float NPC_BOSS_REGEN_RATE;
+	float NPC_BOSS_RESTORATION;
 	string NPC_GIVE_EXP;
 	string NPC_IS_BOSS;
 	string NPC_SPAWN_LOC;
+	int OFFSET_FIRE;
+	int OFFSET_ICE;
+	int OFFSET_LIGHTNING;
+	int OFFSET_POISON;
 	string OUTSPELL;
 	string OUT_SPELL;
+	float POISON_ALL_FREQ;
+	float POISON_CLOUD_DAMAGE;
+	string POISON_CLOUD_DURATION;
 	int POISON_EM;
 	string POISON_SITE;
 	string PRESET_TARGET;
+	int SHOCK_DAMAGE;
+	int SHOCK_DURATION;
 	float SNOWBALL_DURATION;
+	string SOUND_ACID_CHARGE;
+	string SOUND_BOOM;
+	string SOUND_FIRE_WALL;
+	string SOUND_ICEBLAST;
+	string SOUND_LAUGH;
+	string SOUND_POWERUP;
+	string SOUND_SHOCK1;
+	string SOUND_SHOCK2;
+	string SOUND_SHOCK3;
+	string SOUND_SNOWBALL;
+	string SOUND_STEAM;
+	string SOUND_STRUCK1;
+	string SOUND_STRUCK2;
+	string SOUND_STRUCK3;
+	string SOUND_THROW;
+	float SPELL_FREQ;
 	int SPELL_SELECT;
 	string SPELL_TARGET;
 	int SPLOITED_CHECKED;
@@ -74,49 +111,49 @@ class Venevus : CGameScript
 				NPC_GIVE_EXP = 1000;
 			}
 		}
-		const float NPC_BOSS_REGEN_RATE = 0.1;
-		const float NPC_BOSS_RESTORATION = 0.5;
-		const int MAX_RANGE = 2048;
-		const string ANIM_CAST = "castspell";
+		NPC_BOSS_REGEN_RATE = 0.1;
+		NPC_BOSS_RESTORATION = 0.5;
+		MAX_RANGE = 2048;
+		ANIM_CAST = "castspell";
 		ANIM_RUN = "walk";
 		ANIM_WALK = "walk";
 		ANIM_IDLE = "idle1";
 		ANIM_DEATH = "castspell";
-		const string ANIM_DEAD = "lying_on_stomach";
+		ANIM_DEAD = "lying_on_stomach";
 		SNOWBALL_DURATION = 10.0;
-		const float SPELL_FREQ = 6.0;
-		const float POISON_ALL_FREQ = 200.0;
-		const string SOUND_LAUGH = "monsters/skeleton/cal_laugh.wav";
-		const string SOUND_POWERUP = "ambience/particle_suck2.wav";
-		const string SOUND_STEAM = "ambience/steamburst1.wav";
-		const string SOUND_BOOM = "ambience/flameburst1.wav";
-		const string SOUND_ACID_CHARGE = "bullchicken/bc_attack1.wav";
-		const string SOUND_STRUCK1 = "zombie/zo_pain2.wav";
-		const string SOUND_STRUCK2 = "zombie/zo_pain2.wav";
-		const string SOUND_STRUCK3 = "zombie/zo_pain2.wav";
-		const string SOUND_SHOCK1 = "debris/zap8.wav";
-		const string SOUND_SHOCK2 = "debris/zap3.wav";
-		const string SOUND_SHOCK3 = "debris/zap4.wav";
-		const string SOUND_SNOWBALL = "zombie/claw_miss1.wav";
-		const string SOUND_ICEBLAST = "magic/temple.wav";
-		const string SOUND_THROW = "debris/beamstart5.wav";
-		const string SOUND_FIRE_WALL = "magic/fireball_strike.wav";
-		const float POISON_CLOUD_DAMAGE = 40.0;
-		const string POISON_CLOUD_DURATION = SPELL_FREQ;
-		const int AIM_RATIO = 50;
-		const int OFFSET_LIGHTNING = 100;
-		const int OFFSET_POISON = 100;
-		const int OFFSET_ICE = 100;
-		const int OFFSET_FIRE = 100;
-		const int ACID_BOLT_DAMAGE = 600;
-		const int LIGHTNING_BOLT_DAMAGE = 40;
-		const int SHOCK_DAMAGE = 30;
-		const int SHOCK_DURATION = 1;
+		SPELL_FREQ = 6.0;
+		POISON_ALL_FREQ = 200.0;
+		SOUND_LAUGH = "monsters/skeleton/cal_laugh.wav";
+		SOUND_POWERUP = "ambience/particle_suck2.wav";
+		SOUND_STEAM = "ambience/steamburst1.wav";
+		SOUND_BOOM = "ambience/flameburst1.wav";
+		SOUND_ACID_CHARGE = "bullchicken/bc_attack1.wav";
+		SOUND_STRUCK1 = "zombie/zo_pain2.wav";
+		SOUND_STRUCK2 = "zombie/zo_pain2.wav";
+		SOUND_STRUCK3 = "zombie/zo_pain2.wav";
+		SOUND_SHOCK1 = "debris/zap8.wav";
+		SOUND_SHOCK2 = "debris/zap3.wav";
+		SOUND_SHOCK3 = "debris/zap4.wav";
+		SOUND_SNOWBALL = "zombie/claw_miss1.wav";
+		SOUND_ICEBLAST = "magic/temple.wav";
+		SOUND_THROW = "debris/beamstart5.wav";
+		SOUND_FIRE_WALL = "magic/fireball_strike.wav";
+		POISON_CLOUD_DAMAGE = 40.0;
+		POISON_CLOUD_DURATION = SPELL_FREQ;
+		AIM_RATIO = 50;
+		OFFSET_LIGHTNING = 100;
+		OFFSET_POISON = 100;
+		OFFSET_ICE = 100;
+		OFFSET_FIRE = 100;
+		ACID_BOLT_DAMAGE = 600;
+		LIGHTNING_BOLT_DAMAGE = 40;
+		SHOCK_DAMAGE = 30;
+		SHOCK_DURATION = 1;
 		NO_STUCK_CHECKS = 1;
-		const int BEING_SPLOITED_THRESHOLD = 500;
-		const int I_AM_TURNABLE = 0;
-		const string MONSTER_MODEL = "monsters/venevus.mdl";
-		const string LIGHTNING_SPRITE = "lgtning.spr";
+		BEING_SPLOITED_THRESHOLD = 500;
+		I_AM_TURNABLE = 0;
+		MONSTER_MODEL = "monsters/venevus.mdl";
+		LIGHTNING_SPRITE = "lgtning.spr";
 		Precache(MONSTER_MODEL);
 		Precache(LIGHTNING_SPRITE);
 	}
@@ -384,7 +421,7 @@ class Venevus : CGameScript
 			if (GetRelationship(m_hLastSeen) == "enemy")
 			{
 				string NME_POS = "get";
-				string NME_DIST = Distance(NME_POS, GetMonsterProperty("origin"));
+				float NME_DIST = Distance(NME_POS, GetMonsterProperty("origin"));
 				if (NME_DIST < MAX_RANGE)
 				{
 					string SPELL_TARG = GetEntityOrigin(m_hLastSeen);
@@ -411,7 +448,7 @@ class Venevus : CGameScript
 			{
 				string SPELL_TARG = /* TODO: $relpos */ $relpos(0, 640, 0);
 			}
-			string AIM_ANGLE = Distance(GetMonsterProperty("origin"), SPELL_TARG);
+			float AIM_ANGLE = Distance(GetMonsterProperty("origin"), SPELL_TARG);
 			AIM_ANGLE /= AIM_RATIO;
 			SetAngles("add_view.x");
 			EmitSound(GetOwner(), 0, SOUND_SNOWBALL, 10);
@@ -766,7 +803,7 @@ class Venevus : CGameScript
 		if ((DO_HOLY_MSG))
 		{
 			DO_HOLY_MSG = 0;
-			SendInfoMsg("all", "BEWARE! Venevus uses death magic to counter holy magic!");
+			SendInfoMsg("all", BEWARE! + " Venevus uses death magic to counter holy magic!");
 		}
 		EmitSound(GetOwner(), 0, SOUND_BOOM, 10);
 		Effect("screenfade", "all", 3, 1, Vector3(255, 255, 255), 255, "fadein");

@@ -9,15 +9,29 @@ namespace MS
 class Thuldahr : CGameScript
 {
 	string ANIM_ATTACK;
+	string ANIM_KICK;
 	string ANIM_KNEEL;
+	string ANIM_SWING;
+	int ATTACH_IDX_AXE;
 	int CYCLES_ON;
+	int DMG_SWING;
+	int DMG_ZAP;
+	int DOT_ZAP;
+	float FREQ_KICK;
+	float FREQ_SPECIAL;
 	int KICK_ATTACK;
 	string NEXT_KICK;
 	int NO_STUCK_CHECKS;
 	int NPC_BATTLE_ALLY;
+	int NPC_FIGHTS_NPCS;
 	int NPC_NO_PLAYER_DMG;
+	int N_SPECIALS;
 	string REPULSE_TARGETS;
+	float SORC_LRESIST;
 	int SORC_NO_TELE;
+	float SORC_PRESIST;
+	string SOUND_DRAW_WEAPON;
+	string SOUND_SWING;
 	string SPECIAL_DURATION;
 	string ZAP_INDEXES;
 	string ZAP_TARGETS;
@@ -26,23 +40,23 @@ class Thuldahr : CGameScript
 	{
 		NPC_NO_PLAYER_DMG = 1;
 		NPC_BATTLE_ALLY = 1;
-		const int NPC_FIGHTS_NPCS = 1;
+		NPC_FIGHTS_NPCS = 1;
 		ANIM_KNEEL = "kneel";
-		const string ANIM_SWING = "gglowswing";
-		const string ANIM_KICK = "kick";
+		ANIM_SWING = "gglowswing";
+		ANIM_KICK = "kick";
 		ANIM_ATTACK = "gglowswing";
 		SORC_NO_TELE = 1;
-		const string SOUND_DRAW_WEAPON = "weapons/swords/sworddraw.wav";
-		const string SOUND_SWING = "weapons/swinghuge.wav";
-		const int ATTACH_IDX_AXE = 2;
-		const string FREQ_SPECIAL = Random(10.0, 20.0);
-		const int N_SPECIALS = 3;
-		const string FREQ_KICK = Random(10.0, 20.0);
-		const int DMG_SWING = 400;
-		const int DMG_ZAP = 300;
-		const int DOT_ZAP = 100;
-		const float SORC_LRESIST = 0.0;
-		const float SORC_PRESIST = 1.25;
+		SOUND_DRAW_WEAPON = "weapons/swords/sworddraw.wav";
+		SOUND_SWING = "weapons/swinghuge.wav";
+		ATTACH_IDX_AXE = 2;
+		FREQ_SPECIAL = Random(10.0, 20.0);
+		N_SPECIALS = 3;
+		FREQ_KICK = Random(10.0, 20.0);
+		DMG_SWING = 400;
+		DMG_ZAP = 300;
+		DOT_ZAP = 100;
+		SORC_LRESIST = 0.0;
+		SORC_PRESIST = 1.25;
 	}
 
 	void game_precache()
@@ -77,7 +91,7 @@ class Thuldahr : CGameScript
 
 	void do_special()
 	{
-		string RND_SPECIAL = RandomInt(1, N_SPECIALS);
+		int RND_SPECIAL = RandomInt(1, N_SPECIALS);
 		if (RND_SPECIAL == 1)
 		{
 			lstrikes_go();

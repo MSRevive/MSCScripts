@@ -9,8 +9,11 @@ namespace MS
 class MorcWarrior : CGameScript
 {
 	string ANIM_ATTACK;
+	float ATTACK_ACCURACY;
+	int ATTACK_DMG_HIGH;
+	int ATTACK_DMG_LOW;
 	int DROP_GOLD;
-	string DROP_GOLD_AMT;
+	int DROP_GOLD_AMT;
 	string DROP_ITEM1;
 	float DROP_ITEM1_CHANCE;
 	int NPC_GIVE_EXP;
@@ -23,9 +26,9 @@ class MorcWarrior : CGameScript
 		DROP_ITEM1 = "axes_battleaxe";
 		DROP_ITEM1_CHANCE = 0.01;
 		ANIM_ATTACK = "battleaxe_swing1_L";
-		const float ATTACK_ACCURACY = 0.6;
-		const int ATTACK_DMG_LOW = 10;
-		const int ATTACK_DMG_HIGH = 35;
+		ATTACK_ACCURACY = 0.6;
+		ATTACK_DMG_LOW = 10;
+		ATTACK_DMG_HIGH = 35;
 		Precache("monsters/morc.mdl");
 	}
 

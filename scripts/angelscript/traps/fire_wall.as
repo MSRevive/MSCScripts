@@ -6,22 +6,26 @@ namespace MS
 class FireWall : CGameScript
 {
 	string ANIM_DEATH;
+	float FIRE_DURATION;
 	string FLAME_ANGLE;
 	string FLAME_ID;
 	string FLAME_POSITION;
 	int FLAMING;
+	int HEIGHT;
 	int MY_BASE_DMG;
 	string MY_OWNER;
 	int PLAYING_DEAD;
+	int TIME_LIVE;
+	int WIDTH;
 
 	FireWall()
 	{
 		ANIM_DEATH = "";
-		const int TIME_LIVE = 14;
-		const float FIRE_DURATION = 15.0;
+		TIME_LIVE = 14;
+		FIRE_DURATION = 15.0;
 		Precache("fire1_fixed.spr");
-		const int HEIGHT = 60;
-		const int WIDTH = 2;
+		HEIGHT = 60;
+		WIDTH = 2;
 	}
 
 	void OnRepeatTimer()
@@ -141,29 +145,29 @@ class FireWall : CGameScript
 	{
 		string NEGWIDTH = WIDTH;
 		NEGWIDTH *= -1;
-		string x = RandomInt(-30, 30);
-		string y = RandomInt(NEGWIDTH, WIDTH);
+		int x = RandomInt(-30, 30);
+		int y = RandomInt(NEGWIDTH, WIDTH);
 		string L_POS = /* TODO: $relpos */ $relpos(FLAME_ANGLE, Vector3(x, y, HEIGHT));
 		L_POS += FLAME_POSITION;
-		string yar = RandomInt(1, 0);
+		int yar = RandomInt(1, 0);
 		if ((yar))
 		{
 			ClientEffect("tempent", "sprite", "fire1_fixed.spr", L_POS, "setup_flames");
 		}
-		string x = RandomInt(-96, 96);
-		string y = RandomInt(NEGWIDTH, WIDTH);
+		int x = RandomInt(-96, 96);
+		int y = RandomInt(NEGWIDTH, WIDTH);
 		string L_POS = /* TODO: $relpos */ $relpos(FLAME_ANGLE, Vector3(x, y, HEIGHT));
 		L_POS += FLAME_POSITION;
-		string yar = RandomInt(1, 0);
+		int yar = RandomInt(1, 0);
 		if ((yar))
 		{
 			ClientEffect("tempent", "sprite", "fire1_fixed.spr", L_POS, "setup_flames");
 		}
-		string x = RandomInt(-192, 192);
-		string y = RandomInt(NEGWIDTH, WIDTH);
+		int x = RandomInt(-192, 192);
+		int y = RandomInt(NEGWIDTH, WIDTH);
 		string L_POS = /* TODO: $relpos */ $relpos(FLAME_ANGLE, Vector3(x, y, HEIGHT));
 		L_POS += FLAME_POSITION;
-		string yar = RandomInt(1, 0);
+		int yar = RandomInt(1, 0);
 		if ((yar))
 		{
 			ClientEffect("tempent", "sprite", "fire1_fixed.spr", L_POS, "setup_flames");

@@ -5,6 +5,12 @@ namespace MS
 
 class BaseStorage : CGameScript
 {
+	string ADDITIONAL_ITEMS_01;
+	string ADDITIONAL_ITEMS_02;
+	string ADDITIONAL_ITEMS_03;
+	string ANIM_CHAT;
+	string ANIM_NO;
+	string ANIM_STORE;
 	string ARMOR_STRING1;
 	string ARMOR_STRING2;
 	string ARMOR_TYPES;
@@ -20,17 +26,38 @@ class BaseStorage : CGameScript
 	string CUSTOMER_ID;
 	float FEE_HP_RATIO;
 	int FOUND_IN_HANDS;
+	string GALA_CHEST_POS;
 	int GALA_SCROLL_PRICE;
 	string GAUNTLET_STRING;
 	string GAUNTLET_TYPES;
 	int GAVE_HAND_WARNING;
 	int GAVE_SELECT_TICKET_TEXT;
+	int N_ADDITIONAL;
 	string REGISTER_ITEMS;
 	string REGISTER_TICKETS;
+	string SAYTEXT_BANKOPEN;
+	string SAYTEXT_BANK_NOTE;
+	string SAYTEXT_GIVETICKET;
+	string SAYTEXT_HAND_WARN;
+	string SAYTEXT_ITEMS_HANDS;
+	string SAYTEXT_NOITEM;
+	string SAYTEXT_NOSTORABLES;
+	string SAYTEXT_NOTICKET;
+	string SAYTEXT_REDEEMTICKET;
+	string SAYTEXT_REFUND;
+	string SAYTEXT_SELECT_CAT;
+	string SAYTEXT_SELECT_ITEM;
+	string SAYTEXT_SELECT_TICKET;
+	string SAYTEXT_wondrous_NOFUNDS;
+	string SAYTEXT_wondrous_PURCHASED;
 	string SMALLARM_STRING1;
 	string SMALLARM_STRING2;
 	string SMALLARM_TYPES;
+	int STORAGE_ACCOUNT_COST;
 	int STORAGE_ACTIVE;
+	string STORAGE_DISPLAYNAME;
+	float STORAGE_FEERATIO;
+	string STORAGE_NAME;
 	string STORAGE_TYPE;
 	string SWORD_STRING1;
 	string SWORD_STRING2;
@@ -42,15 +69,15 @@ class BaseStorage : CGameScript
 
 	BaseStorage()
 	{
-		const string GALA_CHEST_POS = /* TODO: $relpos */ $relpos(0, 64, 64);
+		GALA_CHEST_POS = /* TODO: $relpos */ $relpos(0, 64, 64);
 		GALA_SCROLL_PRICE = 5000;
-		const string SAYTEXT_wondrous_NOFUNDS = "We're sorry, but you seem to lack the funds to purchase Galat's Wondrous Scroll.";
-		const string SAYTEXT_wondrous_PURCHASED = "Here you go. It's only good for one use, so be sure you have room to use it.";
-		const string STORAGE_DISPLAYNAME = "Galat's Storage";
-		const string STORAGE_NAME = "main_bank";
-		const float STORAGE_FEERATIO = 0.01;
-		const int STORAGE_ACCOUNT_COST = 5;
-		const string SAYTEXT_BANKOPEN = "There, that should be your stuff.";
+		SAYTEXT_wondrous_NOFUNDS = "We're sorry, but you seem to lack the funds to purchase Galat's Wondrous Scroll.";
+		SAYTEXT_wondrous_PURCHASED = "Here you go. It's only good for one use, so be sure you have room to use it.";
+		STORAGE_DISPLAYNAME = "Galat's Storage";
+		STORAGE_NAME = "main_bank";
+		STORAGE_FEERATIO = 0.01;
+		STORAGE_ACCOUNT_COST = 5;
+		SAYTEXT_BANKOPEN = "There, that should be your stuff.";
 		FEE_HP_RATIO = 0.1;
 		AXE_STRING = "axes_2haxe;axes_axe;axes_battleaxe;axes_doubleaxe;axes_greataxe;axes_rsmallaxe;axes_runeaxe;axes_scythe;axes_smallaxe;axes_golden;axes_golden_ref;";
 		BLUNT_STRING = "blunt_calrianmace;blunt_club;blunt_darkmaul;blunt_granitemace;blunt_granitemaul;blunt_greatmaul;blunt_hammer_dorfgan;blunt_hammer1;blunt_hammer2;blunt_hammer3;blunt_mace;blunt_maul;blunt_ravenmace;blunt_rudolfsmace;blunt_rustyhammer2;blunt_warhammer;";
@@ -62,25 +89,25 @@ class BaseStorage : CGameScript
 		SMALLARM_STRING2 = "smallarms_huggerdagger3;smallarms_huggerdagger4;smallarms_knife;smallarms_rknife;smallarms_royaldagger;";
 		SWORD_STRING1 = "swords_bastardsword;swords_giceblade;swords_iceblade;swords_katana;swords_katana2;swords_katana3;swords_katana4;swords_liceblade;swords_longsword;swords_lostblade;swords_m2sword;swords_msword;swords_nkatana;swords_poison1;swords_rsword;swords_scimitar;";
 		SWORD_STRING2 = "swords_shortsword;swords_skullblade;swords_skullblade2;swords_skullblade3;swords_skullblade4;swords_spiderblade;swords_testskin;swords_testsub;swords_volcano;swords_rune_green;";
-		const int N_ADDITIONAL = 3;
-		const string ADDITIONAL_ITEMS_01 = "blunt_gauntlets_serpant;blunt_gauntlets_leather;blunt_gauntlets_demon;bows_orion1;swords_novablade12;armor_pheonix55;axes_poison1;axes_vaxe;axes_thunder11;axes_gthunder11;blunt_lrod11;bows_thornbow;bows_crossbow_heavy33;armor_helm_undead;";
-		const string ADDITIONAL_ITEMS_02 = "blunt_northmaul972;smallarms_frozentongueonflagpole;swords_frostblade55;armor_belmont;armor_belmont;blunt_mithral;armor_salamander;armor_fireliz;swords_wolvesbane;swords_blood_drinker;armor_leather_gaz1;axes_td;axes_tf;axes_ti;axes_tp;";
-		const string ADDITIONAL_ITEMS_03 = "axes_dragon;smallarms_nh;bows_firebird;bows_frost;armor_faura;armor_paura;armor_venom;smallarms_k_fire;axes_tl;";
-		const string SAYTEXT_REFUND = "No pressure, here's your fee back. Come back anytime.";
-		const string SAYTEXT_SELECT_ITEM = "Please select the specific item you would like to store.";
-		const string SAYTEXT_SELECT_CAT = SAYTEXT_SELECT_ITEM;
-		const string SAYTEXT_NOITEM = "Sorry, I did not recieve the item.";
-		const string SAYTEXT_NOTICKET = "Sorry, I did not recieve the ticket.";
-		const string SAYTEXT_NOSTORABLES = "I'm sorry, you've no items we can store for you.";
-		const string SAYTEXT_GIVETICKET = "Here's your ticket! Remember, you can redeem that at any Galat outlet.";
-		const string SAYTEXT_SELECT_TICKET = "Please select which ticket you wish to redeem.";
-		const string SAYTEXT_HAND_WARN = "Please place tickets in your hands before you attempt to redeem them.";
-		const string SAYTEXT_REDEEMTICKET = "There ya go! Thank you for using Galat Storage, please come again!";
-		const string SAYTEXT_ITEMS_HANDS = "Remember, I can only store items held forth in your hands.";
-		const string SAYTEXT_BANK_NOTE = "Ah, a you wish to cash a Galat bank note. Yes, we can do that here.";
-		const string ANIM_CHAT = "talkright";
-		const string ANIM_NO = "deskidle";
-		const string ANIM_STORE = "portal";
+		N_ADDITIONAL = 3;
+		ADDITIONAL_ITEMS_01 = "blunt_gauntlets_serpant;blunt_gauntlets_leather;blunt_gauntlets_demon;bows_orion1;swords_novablade12;armor_pheonix55;axes_poison1;axes_vaxe;axes_thunder11;axes_gthunder11;blunt_lrod11;bows_thornbow;bows_crossbow_heavy33;armor_helm_undead;";
+		ADDITIONAL_ITEMS_02 = "blunt_northmaul972;smallarms_frozentongueonflagpole;swords_frostblade55;armor_belmont;armor_belmont;blunt_mithral;armor_salamander;armor_fireliz;swords_wolvesbane;swords_blood_drinker;armor_leather_gaz1;axes_td;axes_tf;axes_ti;axes_tp;";
+		ADDITIONAL_ITEMS_03 = "axes_dragon;smallarms_nh;bows_firebird;bows_frost;armor_faura;armor_paura;armor_venom;smallarms_k_fire;axes_tl;";
+		SAYTEXT_REFUND = "No pressure, here's your fee back. Come back anytime.";
+		SAYTEXT_SELECT_ITEM = "Please select the specific item you would like to store.";
+		SAYTEXT_SELECT_CAT = SAYTEXT_SELECT_ITEM;
+		SAYTEXT_NOITEM = "Sorry, I did not recieve the item.";
+		SAYTEXT_NOTICKET = "Sorry, I did not recieve the ticket.";
+		SAYTEXT_NOSTORABLES = "I'm sorry, you've no items we can store for you.";
+		SAYTEXT_GIVETICKET = "Here's your ticket! Remember, you can redeem that at any Galat outlet.";
+		SAYTEXT_SELECT_TICKET = "Please select which ticket you wish to redeem.";
+		SAYTEXT_HAND_WARN = "Please place tickets in your hands before you attempt to redeem them.";
+		SAYTEXT_REDEEMTICKET = "There ya go! Thank you for using Galat Storage, please come again!";
+		SAYTEXT_ITEMS_HANDS = "Remember, I can only store items held forth in your hands.";
+		SAYTEXT_BANK_NOTE = "Ah, a you wish to cash a Galat bank note. Yes, we can do that here.";
+		ANIM_CHAT = "talkright";
+		ANIM_NO = "deskidle";
+		ANIM_STORE = "portal";
 	}
 
 	void OnSpawn() override
@@ -141,7 +168,7 @@ class BaseStorage : CGameScript
 			if (TOTAL_COUNT > 0)
 			{
 			}
-			SayText("SAYTEXT_ITEMS_HANDS");
+			SayText(SAYTEXT_ITEMS_HANDS);
 			bteller_hand_warn();
 		}
 		if ((TICKETS_ACTIVE))
@@ -169,7 +196,7 @@ class BaseStorage : CGameScript
 			if (TOTAL_COUNT == 0)
 			{
 				PlayAnim("critical", ANIM_NO);
-				SayText("SAYTEXT_NOSTORABLES");
+				SayText(SAYTEXT_NOSTORABLES);
 				bteller_store_error();
 				string reg.mitem.type = "disabled";
 				RemoveMenuItem("a_storage");
@@ -200,7 +227,7 @@ class BaseStorage : CGameScript
 		if (FOUND_IN_HANDS == 0)
 		{
 			bteller_hand_warn();
-			SayText("SAYTEXT_ITEMS_HANDS");
+			SayText(SAYTEXT_ITEMS_HANDS);
 		}
 		display_abort();
 	}
@@ -259,7 +286,7 @@ class BaseStorage : CGameScript
 				if (!(GAVE_HAND_WARNING))
 				{
 				}
-				SayText("SAYTEXT_HAND_WARN");
+				SayText(SAYTEXT_HAND_WARN);
 				bteller_ticket_warn();
 				GAVE_HAND_WARNING = 1;
 			}
@@ -268,7 +295,7 @@ class BaseStorage : CGameScript
 			}
 			if (!(GAVE_SELECT_TICKET_TEXT))
 			{
-				SayText("SAYTEXT_SELECT_TICKET");
+				SayText(SAYTEXT_SELECT_TICKET);
 				GAVE_SELECT_TICKET_TEXT = 1;
 				bteller_select_ticket();
 			}
@@ -292,7 +319,7 @@ class BaseStorage : CGameScript
 					if (!(GAVE_HAND_WARNING))
 					{
 					}
-					SayText("SAYTEXT_HAND_WARN");
+					SayText(SAYTEXT_HAND_WARN);
 					bteller_ticket_warn();
 					GAVE_HAND_WARNING = 1;
 				}
@@ -303,7 +330,7 @@ class BaseStorage : CGameScript
 
 	void activate_storage()
 	{
-		SayText("SAYTEXT_SELECT_CAT");
+		SayText(SAYTEXT_SELECT_CAT);
 		STORAGE_ACTIVE = 1;
 		ScheduleDelayedEvent(0.5, "open_menu", param1);
 	}
@@ -316,7 +343,7 @@ class BaseStorage : CGameScript
 
 	void say_select_item()
 	{
-		SayText("SAYTEXT_SELECT_ITEM");
+		SayText(SAYTEXT_SELECT_ITEM);
 	}
 
 	void return_ticket()
@@ -329,11 +356,11 @@ class BaseStorage : CGameScript
 			string METHOD_HACK = ItemExists(param1, ITEM_IN);
 			// TODO: offer PARAM1 TICKET_NAME
 			bteller_give_ticket();
-			SayText("SAYTEXT_GIVETICKET");
+			SayText(SAYTEXT_GIVETICKET);
 		}
 		else
 		{
-			SayText("SAYTEXT_NOITEM");
+			SayText(SAYTEXT_NOITEM);
 			PlayAnim("critical", ANIM_NO);
 			bteller_error_no_item();
 		}
@@ -360,7 +387,7 @@ class BaseStorage : CGameScript
 
 	void cancel_trade()
 	{
-		SayText("SAYTEXT_REFUND");
+		SayText(SAYTEXT_REFUND);
 		// TODO: offer PARAM1 gold USE_FEE
 		storage_reset();
 	}
@@ -383,12 +410,12 @@ class BaseStorage : CGameScript
 			PlayAnim("critical", ANIM_STORE);
 			string METHOD_HACK = ItemExists(param1, TICKET_NAME);
 			// TODO: offer PARAM1 ITEM_IN
-			SayText("SAYTEXT_REDEEMTICKET");
+			SayText(SAYTEXT_REDEEMTICKET);
 			bteller_ticket_redeemed();
 		}
 		else
 		{
-			SayText("SAYTEXT_NOTICKET");
+			SayText(SAYTEXT_NOTICKET);
 			PlayAnim("critical", ANIM_NO);
 			bteller_error_no_item();
 		}
@@ -501,14 +528,14 @@ class BaseStorage : CGameScript
 
 	void note_hundred()
 	{
-		SayText("SAYTEXT_BANK_NOTE");
+		SayText(SAYTEXT_BANK_NOTE);
 		PlayAnim("once", ANIM_CHAT);
 		// TODO: offer PARAM1 gold 100
 	}
 
 	void note_ten()
 	{
-		SayText("SAYTEXT_BANK_NOTE");
+		SayText(SAYTEXT_BANK_NOTE);
 		PlayAnim("once", ANIM_CHAT);
 		// TODO: offer PARAM1 gold 10
 	}
@@ -521,7 +548,7 @@ class BaseStorage : CGameScript
 
 	void betabank_success()
 	{
-		SayText("SAYTEXT_BANKOPEN");
+		SayText(SAYTEXT_BANKOPEN);
 		Storage("trade", STORAGE_NAME, BANK_USER, STORAGE_FEERATIO, STORAGE_DISPLAYNAME);
 	}
 
@@ -565,22 +592,22 @@ class BaseStorage : CGameScript
 	{
 		BC_TOTAL_MOUTH_TIME = 0;
 		string RND_SAY1 = "[";
-		string M_TIME = Random(0.1, 0.3);
+		float M_TIME = Random(0.1, 0.3);
 		BC_TOTAL_MOUTH_TIME += M_TIME;
 		RND_SAY1 += M_TIME;
 		RND_SAY1 += "]";
 		string RND_SAY2 = "[";
-		string M_TIME = Random(0.1, 0.3);
+		float M_TIME = Random(0.1, 0.3);
 		BC_TOTAL_MOUTH_TIME += M_TIME;
 		RND_SAY2 += M_TIME;
 		RND_SAY2 += "]";
 		string RND_SAY3 = "[";
-		string M_TIME = Random(0.1, 0.3);
+		float M_TIME = Random(0.1, 0.3);
 		BC_TOTAL_MOUTH_TIME += M_TIME;
 		RND_SAY3 += M_TIME;
 		RND_SAY3 += "]";
 		string RND_SAY4 = "[";
-		string M_TIME = Random(0.1, 0.3);
+		float M_TIME = Random(0.1, 0.3);
 		BC_TOTAL_MOUTH_TIME += M_TIME;
 		RND_SAY4 += M_TIME;
 		RND_SAY4 += "]";

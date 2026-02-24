@@ -21,6 +21,7 @@ class BaseSoccer : CGameScript
 	string NEXT_REGEN;
 	string NME_GOAL_LOC;
 	int NPC_CHASE_RANGE;
+	int NPC_EXTRA_VALIDATIONS;
 	int NPC_NO_MOVE;
 	int NPC_RANGED;
 	string OLD_BALL_ORG;
@@ -38,7 +39,7 @@ class BaseSoccer : CGameScript
 		{
 			SUSPEND_AI = 1;
 		}
-		const int NPC_EXTRA_VALIDATIONS = 1;
+		NPC_EXTRA_VALIDATIONS = 1;
 		GOAL_RAD = 124;
 		CHASE_RANGE = 8000;
 		NPC_CHASE_RANGE = 8000;
@@ -154,7 +155,7 @@ class BaseSoccer : CGameScript
 		string OUT_MSG = GetEntityName(param1);
 		OUT_MSG += " increased speed on a ";
 		OUT_MSG += GetEntityName(GetOwner());
-		SendInfoMsg("all", "ORC SPEED INCREASED OUT_MSG");
+		SendInfoMsg("all", "ORC SPEED INCREASED " + OUT_MSG);
 		make_faster();
 	}
 
@@ -164,7 +165,7 @@ class BaseSoccer : CGameScript
 		OUT_MSG += " increased speed on all ";
 		OUT_MSG += TEAM_NAME;
 		OUT_MSG += " Team orcs";
-		SendInfoMsg("all", "TEAM SPEED INCREASED OUT_MSG");
+		SendInfoMsg("all", "TEAM SPEED INCREASED " + OUT_MSG);
 		make_faster();
 		CallExternal("all", "extsorc_make_team_faster", AM_TEAM);
 	}
@@ -191,7 +192,7 @@ class BaseSoccer : CGameScript
 		string OUT_MSG = GetEntityName(param1);
 		OUT_MSG += " reduced speed on a ";
 		OUT_MSG += GetEntityName(GetOwner());
-		SendInfoMsg("all", "ORC SPEED DECREASED OUT_MSG");
+		SendInfoMsg("all", "ORC SPEED DECREASED " + OUT_MSG);
 		make_slower();
 	}
 
@@ -201,7 +202,7 @@ class BaseSoccer : CGameScript
 		OUT_MSG += " reduced speed on all ";
 		OUT_MSG += TEAM_NAME;
 		OUT_MSG += " Team orcs";
-		SendInfoMsg("all", "TEAM SPEED DECREASED OUT_MSG");
+		SendInfoMsg("all", "TEAM SPEED DECREASED " + OUT_MSG);
 		make_slower();
 		CallExternal("all", "extsorc_make_team_slower", AM_TEAM);
 	}
@@ -230,7 +231,7 @@ class BaseSoccer : CGameScript
 		OUT_MSG += " removed a ";
 		OUT_MSG += GetEntityName(GetOwner());
 		OUT_MSG += " from the field.";
-		SendInfoMsg("all", "ORC REMOVED FROM FIELD OUT_MSG");
+		SendInfoMsg("all", "ORC REMOVED FROM FIELD " + OUT_MSG);
 		ScheduleDelayedEvent(0.1, "npc_suicide");
 	}
 
@@ -239,7 +240,7 @@ class BaseSoccer : CGameScript
 		string OUT_MSG = GetEntityName(param1);
 		OUT_MSG += " restored normal speed on a ";
 		OUT_MSG += GetEntityName(GetOwner());
-		SendInfoMsg("all", "ORC SPEED DECREASED OUT_MSG");
+		SendInfoMsg("all", "ORC SPEED DECREASED " + OUT_MSG);
 		make_normal();
 	}
 
@@ -249,7 +250,7 @@ class BaseSoccer : CGameScript
 		OUT_MSG += " restored normal speed on all ";
 		OUT_MSG += TEAM_NAME;
 		OUT_MSG += " Team orcs";
-		SendInfoMsg("all", "TEAM SPEED DECREASED OUT_MSG");
+		SendInfoMsg("all", "TEAM SPEED DECREASED " + OUT_MSG);
 		make_normal();
 		CallExternal("all", "extsorc_make_team_normal", AM_TEAM);
 	}
@@ -452,8 +453,8 @@ class BaseSoccer : CGameScript
 		string MY_ORG = GetEntityOrigin(GetOwner());
 		if (!(AM_GOALIE))
 		{
-			string BALL_FROM_GOAL = Distance(BALL_ORG, TARG_ORG);
-			string MY_FROM_GOAL = Distance(MY_ORG, TARG_ORG);
+			float BALL_FROM_GOAL = Distance(BALL_ORG, TARG_ORG);
+			float MY_FROM_GOAL = Distance(MY_ORG, TARG_ORG);
 			if (MY_FROM_GOAL < BALL_FROM_GOAL)
 			{
 				if ((IsOnGround(BALL_ID)))
@@ -470,8 +471,8 @@ class BaseSoccer : CGameScript
 		}
 		else
 		{
-			string MY_FROM_MY_GOAL = Distance(MY_ORG, MY_GOAL_LOC);
-			string BALL_FROM_MY_GOAL = Distance(BALL_ORG, MY_GOAL_LOC);
+			float MY_FROM_MY_GOAL = Distance(MY_ORG, MY_GOAL_LOC);
+			float BALL_FROM_MY_GOAL = Distance(BALL_ORG, MY_GOAL_LOC);
 			if (BALL_FROM_MY_GOAL < MY_FROM_MY_GOAL)
 			{
 			}
@@ -503,8 +504,8 @@ class BaseSoccer : CGameScript
 				int DO_DRIBBLE = 1;
 			}
 		}
-		string RND_F = Random(200, 400);
-		string RND_V = Random(110, 200);
+		float RND_F = Random(200, 400);
+		float RND_V = Random(110, 200);
 		int RND_LR = 0;
 		if ((AM_LEADER))
 		{
@@ -516,11 +517,11 @@ class BaseSoccer : CGameScript
 			DRIBBLE_COUNT += 1;
 			if (DRIBBLE_COUNT == 1)
 			{
-				string RND_LR = Random(-300.0, -100.0);
+				float RND_LR = Random(-300.0, -100.0);
 			}
 			if (DRIBBLE_COUNT == 2)
 			{
-				string RND_LR = Random(100, 300);
+				float RND_LR = Random(100, 300);
 				DRIBBLE_COUNT = 0;
 			}
 			LogDebug("doing_dribble RND_LR");
@@ -575,8 +576,8 @@ class BaseSoccer : CGameScript
 		}
 		if ((AM_GOALIE))
 		{
-			string BALL_FROM_MY_GOAL = Distance(BALL_ORG, MY_GOAL_LOC);
-			string MY_FROM_MY_GOAL = Distance(MY_ORG, MY_GOAL_LOC);
+			float BALL_FROM_MY_GOAL = Distance(BALL_ORG, MY_GOAL_LOC);
+			float MY_FROM_MY_GOAL = Distance(MY_ORG, MY_GOAL_LOC);
 			if (BALL_FROM_MY_GOAL < MY_FROM_MY_GOAL)
 			{
 				if (Distance(NPC_HOME_LOC, MY_ORG) < GOAL_RAD)
@@ -602,8 +603,8 @@ class BaseSoccer : CGameScript
 		}
 		else
 		{
-			string BALL_FROM_GOAL = Distance(BALL_ORG, TARG_ORG);
-			string MY_FROM_GOAL = Distance(MY_ORG, TARG_ORG);
+			float BALL_FROM_GOAL = Distance(BALL_ORG, TARG_ORG);
+			float MY_FROM_GOAL = Distance(MY_ORG, TARG_ORG);
 			if (MY_FROM_GOAL < BALL_FROM_GOAL)
 			{
 				if ((IsOnGround(BALL_ID)))

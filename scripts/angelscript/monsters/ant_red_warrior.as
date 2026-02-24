@@ -8,17 +8,31 @@ namespace MS
 class AntRedWarrior : CGameScript
 {
 	string ANIM_ATTACK;
+	string ANIM_ATTACK1;
+	string ANIM_ATTACK2;
 	string ANIM_DEATH;
 	string ANIM_IDLE;
 	string ANIM_RUN;
 	string ANIM_WALK;
+	string ANIM_WALK1;
+	string ANIM_WALK2;
 	int ATTACK_HITRANGE;
 	int ATTACK_MOVERANGE;
 	int ATTACK_RANGE;
+	int DMG_BITE;
+	float FREQ_SWITCH_ANIM;
 	int MOVE_RANGE;
 	string NEXT_SWITCH_ANIM;
 	int NPC_ALLY_RESPONSE_RANGE;
 	int NPC_GIVE_EXP;
+	string SND_STRUCK1;
+	string SND_STRUCK2;
+	string SND_STRUCK3;
+	string SOUND_ATTACK1;
+	string SOUND_ATTACK2;
+	string SOUND_DEATH;
+	string SOUND_IDLE1;
+	string SOUND_PAIN;
 
 	AntRedWarrior()
 	{
@@ -27,26 +41,26 @@ class AntRedWarrior : CGameScript
 		ANIM_ATTACK = "attack";
 		ANIM_RUN = "walk";
 		ANIM_DEATH = "die";
-		const string ANIM_WALK1 = "walk";
-		const string ANIM_WALK2 = "walk2";
-		const string ANIM_ATTACK1 = "attack";
-		const string ANIM_ATTACK2 = "attack2";
+		ANIM_WALK1 = "walk";
+		ANIM_WALK2 = "walk2";
+		ANIM_ATTACK1 = "attack";
+		ANIM_ATTACK2 = "attack2";
 		NPC_GIVE_EXP = 100;
 		NPC_ALLY_RESPONSE_RANGE = 1024;
-		const string FREQ_SWITCH_ANIM = Random(5.0, 15.0);
-		const int DMG_BITE = 50;
+		FREQ_SWITCH_ANIM = Random(5.0, 15.0);
+		DMG_BITE = 50;
 		ATTACK_RANGE = 32;
 		MOVE_RANGE = 16;
 		ATTACK_MOVERANGE = 16;
 		ATTACK_HITRANGE = 64;
-		const string SOUND_PAIN = "monsters/spider/spiderhiss.wav";
-		const string SND_STRUCK1 = "body/flesh1.wav";
-		const string SND_STRUCK2 = "body/flesh2.wav";
-		const string SND_STRUCK3 = "body/flesh3.wav";
-		const string SOUND_IDLE1 = "monsters/spider/spideridle.wav";
-		const string SOUND_DEATH = "monsters/spider/spiderdie.wav";
-		const string SOUND_ATTACK1 = "monsters/spider/spiderhiss2.wav";
-		const string SOUND_ATTACK2 = "monsters/spider/spiderhiss.wav";
+		SOUND_PAIN = "monsters/spider/spiderhiss.wav";
+		SND_STRUCK1 = "body/flesh1.wav";
+		SND_STRUCK2 = "body/flesh2.wav";
+		SND_STRUCK3 = "body/flesh3.wav";
+		SOUND_IDLE1 = "monsters/spider/spideridle.wav";
+		SOUND_DEATH = "monsters/spider/spiderdie.wav";
+		SOUND_ATTACK1 = "monsters/spider/spiderhiss2.wav";
+		SOUND_ATTACK2 = "monsters/spider/spiderhiss.wav";
 	}
 
 	void OnRepeatTimer()

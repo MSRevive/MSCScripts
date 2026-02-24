@@ -7,30 +7,42 @@ namespace MS
 
 class DjinnFire : CGameScript
 {
+	int AIM_RATIO;
 	string ANIM_RUN;
 	string ANIM_WALK;
+	int ATTACK_CONE_OF_FIRE;
+	int ATTACK_SPEED;
+	int BURN_DAMAGE;
+	int CANT_FLEE;
 	int CAN_FLEE;
 	int DO_NADDA;
+	int FIRE_BALL_DAMAGE;
 	int FIRE_BALL_DELAY;
+	float FIRE_BALL_FREQ;
+	int FIRE_BALL_RANGE;
 	int IS_FLEEING;
 	int NO_STUCK_CHECKS;
 	int PURE_FLEE;
+	int PUSH_CHANCE;
+	string SOUND_FIRESHOOT;
+	string SOUND_WARCRY;
+	float WARCRY_FREQ;
 
 	DjinnFire()
 	{
-		const string SOUND_FIRESHOOT = "magic/fireball_strike.wav";
-		const float FIRE_BALL_FREQ = 2.5;
-		const int AIM_RATIO = 50;
-		const int ATTACK_SPEED = 500;
-		const int ATTACK_CONE_OF_FIRE = 2;
-		const int FIRE_BALL_DAMAGE = 400;
-		const int FIRE_BALL_RANGE = 4000;
-		const string SOUND_WARCRY = "monsters/troll/trollidle2.wav";
-		const float WARCRY_FREQ = 60.0;
-		const int PUSH_CHANCE = 5;
-		const string BURN_DAMAGE = "$rand(20,50)";
+		SOUND_FIRESHOOT = "magic/fireball_strike.wav";
+		FIRE_BALL_FREQ = 2.5;
+		AIM_RATIO = 50;
+		ATTACK_SPEED = 500;
+		ATTACK_CONE_OF_FIRE = 2;
+		FIRE_BALL_DAMAGE = 400;
+		FIRE_BALL_RANGE = 4000;
+		SOUND_WARCRY = "monsters/troll/trollidle2.wav";
+		WARCRY_FREQ = 60.0;
+		PUSH_CHANCE = 5;
+		BURN_DAMAGE = "$rand(20,50)";
 		CAN_FLEE = 0;
-		const int CANT_FLEE = 1;
+		CANT_FLEE = 1;
 		ANIM_WALK = "idle0";
 		ANIM_RUN = "idle1";
 		NO_STUCK_CHECKS = 1;

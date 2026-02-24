@@ -9,6 +9,7 @@ class SorcAxe : CGameScript
 {
 	string BASE_DOT;
 	string DMG_BASE;
+	string DMG_TYPE;
 	string GAME_PVP;
 	int IS_ACTIVE;
 	string ITEM_ID;
@@ -19,14 +20,17 @@ class SorcAxe : CGameScript
 	string OWNER_HALFHEIGHT;
 	string OWNER_ISPLAYER;
 	int PLAYING_DEAD;
+	string SOUND_SHOCK1;
+	string SOUND_SHOCK2;
+	string SOUND_SHOCK3;
 	string TARG_LIST;
 
 	SorcAxe()
 	{
-		const string DMG_TYPE = "lightning";
-		const string SOUND_SHOCK1 = "debris/zap8.wav";
-		const string SOUND_SHOCK2 = "debris/zap3.wav";
-		const string SOUND_SHOCK3 = "debris/zap4.wav";
+		DMG_TYPE = "lightning";
+		SOUND_SHOCK1 = "debris/zap8.wav";
+		SOUND_SHOCK2 = "debris/zap3.wav";
+		SOUND_SHOCK3 = "debris/zap4.wav";
 	}
 
 	void OnSpawn() override

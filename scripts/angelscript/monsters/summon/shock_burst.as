@@ -9,6 +9,7 @@ class ShockBurst : CGameScript
 	string BEAM_COLOR;
 	string BEAM_WIDTH;
 	int BOLTS_DEFINED;
+	int BOLT_HEIGHT;
 	int CUR_ANG;
 	int CUR_RAD;
 	string IS_ACTIVE;
@@ -19,11 +20,12 @@ class ShockBurst : CGameScript
 	string NUM_BOLTS;
 	string OWNER_ISPLAYER;
 	int PLAYING_DEAD;
+	string SOUND_THUNDER;
 
 	ShockBurst()
 	{
-		const string SOUND_THUNDER = "weather/Storm_exclamation.wav";
-		const int BOLT_HEIGHT = 512;
+		SOUND_THUNDER = "weather/Storm_exclamation.wav";
+		BOLT_HEIGHT = 512;
 	}
 
 	void game_dynamically_created()

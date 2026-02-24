@@ -6,21 +6,27 @@ namespace MS
 class ClientSideLball : CGameScript
 {
 	string BALL_DURATION;
+	string BALL_MODEL;
+	int BALL_MODEL_OFS;
+	int BALL_SPEED;
 	int CYCLE_ANGLE;
 	string FB_ORG;
+	float FREQ_LOOP_SOUND;
 	int IS_ACTIVE;
 	string IS_DESTROYED;
+	string SOUND_KABOOM;
+	string SOUND_LOOP;
 	string START_ANG;
 	string VEL_ANGLES;
 
 	ClientSideLball()
 	{
-		const int BALL_SPEED = 120;
-		const string BALL_MODEL = "weapons/projectiles.mdl";
-		const int BALL_MODEL_OFS = 18;
-		const string SOUND_KABOOM = "weapons/explode3.wav";
-		const string SOUND_LOOP = "items/torch1.wav";
-		const float FREQ_LOOP_SOUND = 6.1;
+		BALL_SPEED = 120;
+		BALL_MODEL = "weapons/projectiles.mdl";
+		BALL_MODEL_OFS = 18;
+		SOUND_KABOOM = "weapons/explode3.wav";
+		SOUND_LOOP = "items/torch1.wav";
+		FREQ_LOOP_SOUND = 6.1;
 	}
 
 	void OnRepeatTimer()
@@ -87,7 +93,7 @@ class ClientSideLball : CGameScript
 	{
 		string BEAM_START = FB_ORG;
 		string BEAM_END = BEAM_START;
-		string RND_UD = Random(-64.0, 64.0);
+		float RND_UD = Random(-64.0, 64.0);
 		BEAM_END += /* TODO: $relpos */ $relpos(Vector3(0, CYCLE_ANGLE, 0), Vector3(0, 128, RND_UD));
 		ClientEffect("beam_points", BEAM_START, BEAM_END, "lgtning.spr", 1.5, 2.5, 1.5, 255, 50, 30, Vector3(255, 255, 0));
 		CYCLE_ANGLE += 20;

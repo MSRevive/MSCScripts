@@ -11,13 +11,14 @@ namespace MS
 class Barkeep : CGameScript
 {
 	int CANCHAT;
+	string SOUND_DEATH;
 	string STORE_NAME;
 	string STORE_TRIGGERTEXT;
 	string TALK_TARGET;
 
 	Barkeep()
 	{
-		const string SOUND_DEATH = "none";
+		SOUND_DEATH = "none";
 		STORE_NAME = "deralia_bar";
 		STORE_TRIGGERTEXT = "store trade buy sell purchase sale offer";
 	}
@@ -133,7 +134,7 @@ class Barkeep : CGameScript
 	void say_rumour()
 	{
 		PlayAnim("once", "pondering");
-		SayText("I ve heard from travelers coming to this tavern, telling about places outside of this village.");
+		SayText(I + " ve heard from travelers coming to this tavern, telling about places outside of this village.");
 		ScheduleDelayedEvent(3, "say_rumour2");
 	}
 

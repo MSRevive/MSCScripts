@@ -8,58 +8,101 @@ namespace MS
 
 class BluntGauntletsDemon : CGameScript
 {
+	int ANIM_ATTACK1;
+	int ANIM_ATTACK2;
+	int ANIM_ATTACK3;
+	int ANIM_ATTACK4;
+	int ANIM_HANDS_DOWN;
+	int ANIM_IDLE1;
+	int ANIM_IDLE_TOTAL;
+	int ANIM_LIFT1;
+	int ANIM_LOWER;
+	string ANIM_PREFIX;
+	int ANIM_SHEATH;
+	int ANIM_SPEC_ATTACK;
 	int ATTACK_DELAY;
+	int BASE_LEVEL_REQ;
 	int DEBUG_ATTACK;
+	float DEMON_MELEE_ATK_DURATION;
+	float DEMON_MELEE_DMG_DELAY;
 	int DEMON_MODE;
+	float DEMON_STRIKE_RATIO;
 	string FISTS_LAST_ATTACK;
+	float MELEE_ACCURACY;
+	float MELEE_ATK_DURATION;
+	int MELEE_DMG;
+	float MELEE_DMG_DELAY;
+	int MELEE_DMG_RANGE;
+	string MELEE_DMG_TYPE;
+	int MELEE_ENERGY;
+	float MELEE_PARRY_CHANCE;
+	int MELEE_RANGE;
+	string MELEE_SOUND;
+	string MELEE_SOUND_DELAY;
+	string MELEE_STAT;
+	string MELEE_VIEWANIM_ATK;
+	int MODEL_BODY_OFS;
+	string MODEL_HANDS;
+	string MODEL_VIEW;
+	string MODEL_WORLD;
+	int NO_IDLE;
+	int NO_WORLD_MODEL;
+	string PLAYERANIM_AIM;
 	string PUNCH_ATTACK;
+	int REACH_MELEE_RANGE;
+	string SOUND_DEPLOY;
+	string SOUND_HITWALL1;
+	string SOUND_HITWALL2;
+	string SOUND_LUNGE;
+	string SOUND_SWING;
+	string SOUND_SWIPE;
 
 	BluntGauntletsDemon()
 	{
-		const int BASE_LEVEL_REQ = 15;
-		const float DEMON_STRIKE_RATIO = 3.0;
-		const int NO_IDLE = 1;
-		const int ANIM_HANDS_DOWN = 9;
-		const int ANIM_LIFT1 = 1;
-		const int ANIM_LOWER = 0;
-		const int ANIM_IDLE1 = 0;
-		const int ANIM_IDLE_TOTAL = 1;
-		const int ANIM_ATTACK1 = 5;
-		const int ANIM_ATTACK2 = 6;
-		const int ANIM_ATTACK3 = 7;
-		const int ANIM_ATTACK4 = 8;
-		const int ANIM_SPEC_ATTACK = 3;
-		const int ANIM_SHEATH = 5;
-		const string MODEL_VIEW = "viewmodels/v_martialarts_claws.mdl";
-		const string MODEL_HANDS = "weapons/p_weapons2.mdl";
-		const string MODEL_WORLD = "weapons/p_weapons2.mdl";
-		const int MODEL_BODY_OFS = 116;
-		const int MELEE_DMG = 180;
-		const int MELEE_DMG_RANGE = 0;
-		const string MELEE_DMG_TYPE = "slash";
-		const float MELEE_ACCURACY = 0.85;
-		const float MELEE_DMG_DELAY = 0.3;
-		const float MELEE_ATK_DURATION = 0.9;
-		const float DEMON_MELEE_DMG_DELAY = 0.1;
-		const float DEMON_MELEE_ATK_DURATION = 0.3;
-		const string SOUND_SWIPE = "zombie/claw_miss1.wav";
-		const string SOUND_HITWALL1 = "weapons/cbar_hit1.wav";
-		const string SOUND_HITWALL2 = "weapons/cbar_hit2.wav";
-		const string SOUND_SWING = "zombie/claw_miss2.wav";
-		const string SOUND_DEPLOY = "weapons/swords/sworddraw.wav";
-		const string SOUND_LUNGE = "zombie/claw_miss1.wav";
-		const string ANIM_PREFIX = "gauntlets";
-		const int NO_WORLD_MODEL = 1;
-		const int MELEE_RANGE = 50;
-		const int REACH_MELEE_RANGE = 100;
-		const int MELEE_ENERGY = 1;
-		const int MELEE_DMG_RANGE = 0;
-		const string MELEE_STAT = "martialarts";
-		const string MELEE_VIEWANIM_ATK = ANIM_ATTACK1;
-		const string MELEE_SOUND = SOUND_SWIPE;
-		const string MELEE_SOUND_DELAY = MELEE_DMG_DELAY;
-		const float MELEE_PARRY_CHANCE = 0.05;
-		const string PLAYERANIM_AIM = "axe_onehand";
+		BASE_LEVEL_REQ = 15;
+		DEMON_STRIKE_RATIO = 3.0;
+		NO_IDLE = 1;
+		ANIM_HANDS_DOWN = 9;
+		ANIM_LIFT1 = 1;
+		ANIM_LOWER = 0;
+		ANIM_IDLE1 = 0;
+		ANIM_IDLE_TOTAL = 1;
+		ANIM_ATTACK1 = 5;
+		ANIM_ATTACK2 = 6;
+		ANIM_ATTACK3 = 7;
+		ANIM_ATTACK4 = 8;
+		ANIM_SPEC_ATTACK = 3;
+		ANIM_SHEATH = 5;
+		MODEL_VIEW = "viewmodels/v_martialarts_claws.mdl";
+		MODEL_HANDS = "weapons/p_weapons2.mdl";
+		MODEL_WORLD = "weapons/p_weapons2.mdl";
+		MODEL_BODY_OFS = 116;
+		MELEE_DMG = 180;
+		MELEE_DMG_RANGE = 0;
+		MELEE_DMG_TYPE = "slash";
+		MELEE_ACCURACY = 0.85;
+		MELEE_DMG_DELAY = 0.3;
+		MELEE_ATK_DURATION = 0.9;
+		DEMON_MELEE_DMG_DELAY = 0.1;
+		DEMON_MELEE_ATK_DURATION = 0.3;
+		SOUND_SWIPE = "zombie/claw_miss1.wav";
+		SOUND_HITWALL1 = "weapons/cbar_hit1.wav";
+		SOUND_HITWALL2 = "weapons/cbar_hit2.wav";
+		SOUND_SWING = "zombie/claw_miss2.wav";
+		SOUND_DEPLOY = "weapons/swords/sworddraw.wav";
+		SOUND_LUNGE = "zombie/claw_miss1.wav";
+		ANIM_PREFIX = "gauntlets";
+		NO_WORLD_MODEL = 1;
+		MELEE_RANGE = 50;
+		REACH_MELEE_RANGE = 100;
+		MELEE_ENERGY = 1;
+		MELEE_DMG_RANGE = 0;
+		MELEE_STAT = "martialarts";
+		MELEE_VIEWANIM_ATK = ANIM_ATTACK1;
+		MELEE_SOUND = SOUND_SWIPE;
+		MELEE_SOUND_DELAY = MELEE_DMG_DELAY;
+		MELEE_PARRY_CHANCE = 0.05;
+		PLAYERANIM_AIM = "axe_onehand";
 	}
 
 	void weapon_spawn()
@@ -88,7 +131,7 @@ class BluntGauntletsDemon : CGameScript
 		// PlayRandomSound from: SOUND_SWING, SOUND_SWIPE
 		array<string> sounds = {SOUND_SWING, SOUND_SWIPE};
 		EmitSound(GetOwner(), "const.sound.item", sounds[RandomInt(0, sounds.length() - 1)], 10);
-		string RND_ATTACK = RandomInt(1, 4);
+		int RND_ATTACK = RandomInt(1, 4);
 		if (RND_ATTACK == 1)
 		{
 			PlayViewAnim(ANIM_ATTACK1);
@@ -127,7 +170,7 @@ class BluntGauntletsDemon : CGameScript
 	{
 		SetRepeatDelay(1);
 		if (!(FISTS_LAST_ATTACK)) return;
-		string l_elapsedtime = GetGameTime();
+		float l_elapsedtime = GetGameTime();
 		l_elapsedtime -= FISTS_LAST_ATTACK;
 		if (!(l_elapsedtime > 5)) return;
 		PlayViewAnim(ANIM_LOWER);
@@ -225,7 +268,7 @@ class BluntGauntletsDemon : CGameScript
 			if ((DO_ATTACK))
 			{
 			}
-			string RND_ATTACK = RandomInt(1, 4);
+			int RND_ATTACK = RandomInt(1, 4);
 			if (RND_ATTACK == 1)
 			{
 				// TODO: splayviewanim ent_me ANIM_ATTACK1

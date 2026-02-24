@@ -17,7 +17,9 @@ class SlimeBomber : CGameScript
 	int EXPLODED;
 	int MOVE_RANGE;
 	int NPC_GIVE_EXP;
+	string POISON_CLOUD;
 	string SLIME_TARGETS;
+	string SOUND_DEATH;
 
 	SlimeBomber()
 	{
@@ -30,9 +32,9 @@ class SlimeBomber : CGameScript
 		ATTACK_RANGE = 64;
 		ATTACK_HITRANGE = 64;
 		NPC_GIVE_EXP = 200;
-		const string SOUND_DEATH = "monsters/sludge/bio.wav";
+		SOUND_DEATH = "monsters/sludge/bio.wav";
 		Precache(SOUND_DEATH);
-		const string POISON_CLOUD = "monsters/summon/npc_poison_cloud2";
+		POISON_CLOUD = "monsters/summon/npc_poison_cloud2";
 	}
 
 	void OnSpawn() override

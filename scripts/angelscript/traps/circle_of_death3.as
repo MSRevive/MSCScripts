@@ -7,11 +7,15 @@ namespace MS
 
 class CircleOfDeath3 : CGameScript
 {
+	int CIRCLE_RAD;
+	int CL_BODY;
+	int CL_RAD;
+
 	CircleOfDeath3()
 	{
-		const int CIRCLE_RAD = 180;
-		const int CL_BODY = 5;
-		const int CL_RAD = 200;
+		CIRCLE_RAD = 180;
+		CL_BODY = 5;
+		CL_RAD = 200;
 	}
 
 }

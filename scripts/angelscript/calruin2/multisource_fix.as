@@ -18,7 +18,7 @@ class MultisourceFix : CGameScript
 	{
 		if ((ME_ACTIVE)) return;
 		if (!(IsValidPlayer(param1))) return;
-		string TIME_DIFF = GetGameTime();
+		float TIME_DIFF = GetGameTime();
 		TIME_DIFF -= LAST_TOUCHED;
 		if (!(TIME_DIFF > 2.0)) return;
 		LAST_TOUCHED = GetGameTime();

@@ -7,12 +7,17 @@ namespace MS
 
 class BaseDrink : CGameScript
 {
+	string ANIM_PREFIX;
+	string DONE_PHRASE;
+	string DRINK_WORD;
+	int MODEL_BODY_OFS;
+
 	BaseDrink()
 	{
-		const int MODEL_BODY_OFS = 21;
-		const string ANIM_PREFIX = "mhealth";
-		const string DRINK_WORD = "swig";
-		const string DONE_PHRASE = "You drink the last drop of the";
+		MODEL_BODY_OFS = 21;
+		ANIM_PREFIX = "mhealth";
+		DRINK_WORD = "swig";
+		DONE_PHRASE = "You drink the last drop of the";
 	}
 
 	void OnSpawn() override
@@ -111,15 +116,15 @@ class BaseDrink : CGameScript
 		{
 			string L_DRINK_WORD = DRINK_WORD;
 			L_DRINK_WORD += "s";
-			SendPlayerMessage("This", "MY_NAME has int(DRINK_REMAIN) L_DRINK_WORD left.");
+			SendPlayerMessage("This", MY_NAME + "has " + int(DRINK_REMAIN) + L_DRINK_WORD + " left.");
 		}
 		if (DRINK_REMAIN == 1)
 		{
-			SendPlayerMessage("This", "MY_NAME has one DRINK_WORD left.");
+			SendPlayerMessage("This", MY_NAME + "has one " + DRINK_WORD + " left.");
 		}
 		if (DRINK_REMAIN == 0)
 		{
-			SendColoredMessage(GetOwner(), "DONE_PHRASE MY_NAME_P");
+			SendColoredMessage(GetOwner(), DONE_PHRASE + MY_NAME_P);
 			ScheduleDelayedEvent(0.1, "drink_remove");
 		}
 	}

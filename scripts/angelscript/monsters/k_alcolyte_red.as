@@ -8,10 +8,11 @@ namespace MS
 class KAlcolyteRed : CGameScript
 {
 	int ALCO_TYPE;
+	int OVERRIDE_TYPE;
 
 	KAlcolyteRed()
 	{
-		const int OVERRIDE_TYPE = 1;
+		OVERRIDE_TYPE = 1;
 		ALCO_TYPE = 2;
 	}
 

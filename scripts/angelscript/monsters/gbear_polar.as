@@ -8,20 +8,53 @@ namespace MS
 class GbearPolar : CGameScript
 {
 	string ANIM_ATTACK;
+	string ANIM_ATTACK1;
+	string ANIM_ATTACK2;
+	string ANIM_ATTACK3;
+	string ANIM_BREATH_LOOP;
+	string ANIM_BREATH_START;
 	string ANIM_DEATH;
 	string ANIM_FLINCH;
 	string ANIM_IDLE;
+	string ANIM_IDLE_NORM;
+	string ANIM_LOOK1;
+	string ANIM_LOOK2;
+	string ANIM_LUNGE1;
+	string ANIM_LUNGE2;
+	string ANIM_LUNGE3;
+	string ANIM_PUSHL;
+	string ANIM_PUSHR;
 	string ANIM_RUN;
+	string ANIM_RUN_NORM;
+	string ANIM_SWIM;
 	string ANIM_WALK;
+	string ANIM_WALK_NORM;
+	string ANIM_WARCRY1;
+	string ANIM_WARCRY2;
 	string AS_ATTACKING;
 	int ATTACK_HITRANGE;
+	int ATTACK_HITRANGE_NORM;
+	int ATTACK_HITRANGE_SWIM;
 	int ATTACK_RANGE;
+	int ATTACK_RANGE_LUNGE_MAX;
+	int ATTACK_RANGE_LUNGE_MIN;
+	int ATTACK_RANGE_NORM;
+	float BREATH_DURATION;
 	int BREATH_ON;
 	string BREATH_TARGS;
 	string BURST_START;
 	string BURST_TARGS;
 	string CLIENT_FX_ID;
 	int DID_WARCRY;
+	int DMG_BURST;
+	float DMG_CLAW;
+	float FREQ_BREATH;
+	float FREQ_FLINCH;
+	float FREQ_FX_REFRESH;
+	float FREQ_LUNGE;
+	float FREQ_STOMP;
+	float FREQ_SWIM_SOUND;
+	string MONSTER_MODEL;
 	int MOVE_RANGE;
 	float MSC_PUSH_RESIST;
 	string NEXT_BREATH;
@@ -32,6 +65,25 @@ class GbearPolar : CGameScript
 	int NPC_GIVE_EXP;
 	string NPC_HALF_HEALTH;
 	int RUN_STEP;
+	string SOUND_ATTACK1;
+	string SOUND_ATTACK2;
+	string SOUND_ATTACK3;
+	string SOUND_DEATH;
+	string SOUND_DIVE;
+	string SOUND_PAIN1;
+	string SOUND_PAIN2;
+	string SOUND_PAIN3;
+	string SOUND_PAIN4;
+	string SOUND_RUNSTEP1;
+	string SOUND_RUNSTEP2;
+	string SOUND_STRUCK1;
+	string SOUND_STRUCK2;
+	string SOUND_STRUCK3;
+	string SOUND_SWIM1;
+	string SOUND_SWIM2;
+	string SOUND_SWIM3;
+	string SOUND_SWIM4;
+	string SOUND_WARCRY;
 	string SWIMMING_MODE;
 
 	GbearPolar()
@@ -41,64 +93,64 @@ class GbearPolar : CGameScript
 		ANIM_RUN = "run";
 		ANIM_ATTACK = "attack1";
 		ANIM_DEATH = "longdeath";
-		const string ANIM_RUN_NORM = "run";
-		const string ANIM_WALK_NORM = "walk";
-		const string ANIM_IDLE_NORM = "idle";
-		const string ANIM_ATTACK1 = "attack1";
-		const string ANIM_ATTACK2 = "attack2";
-		const string ANIM_ATTACK3 = "attack3";
-		const string ANIM_LUNGE1 = "long_attack1";
-		const string ANIM_LUNGE2 = "long_attack2";
-		const string ANIM_LUNGE3 = "long_attack_throw";
-		const string ANIM_BREATH_START = "breath_start";
-		const string ANIM_BREATH_LOOP = "breath_loop";
-		const string ANIM_WARCRY1 = "warcry";
-		const string ANIM_WARCRY2 = "alert";
-		const string ANIM_LOOK1 = "sniff_left";
-		const string ANIM_LOOK2 = "sniff_right";
-		const string ANIM_PUSHL = "attack_pushl";
-		const string ANIM_PUSHR = "attack_pushr";
-		const string ANIM_SWIM = "swim";
+		ANIM_RUN_NORM = "run";
+		ANIM_WALK_NORM = "walk";
+		ANIM_IDLE_NORM = "idle";
+		ANIM_ATTACK1 = "attack1";
+		ANIM_ATTACK2 = "attack2";
+		ANIM_ATTACK3 = "attack3";
+		ANIM_LUNGE1 = "long_attack1";
+		ANIM_LUNGE2 = "long_attack2";
+		ANIM_LUNGE3 = "long_attack_throw";
+		ANIM_BREATH_START = "breath_start";
+		ANIM_BREATH_LOOP = "breath_loop";
+		ANIM_WARCRY1 = "warcry";
+		ANIM_WARCRY2 = "alert";
+		ANIM_LOOK1 = "sniff_left";
+		ANIM_LOOK2 = "sniff_right";
+		ANIM_PUSHL = "attack_pushl";
+		ANIM_PUSHR = "attack_pushr";
+		ANIM_SWIM = "swim";
 		ANIM_FLINCH = "flinch";
-		const string SOUND_ATTACK1 = "monsters/bear/c_bear_atk1.wav";
-		const string SOUND_ATTACK2 = "monsters/bear/c_bear_atk2.wav";
-		const string SOUND_ATTACK3 = "monsters/bear/c_bear_atk3.wav";
-		const string SOUND_PAIN1 = "monsters/bear/c_bear_hit1.wav";
-		const string SOUND_PAIN2 = "monsters/bear/c_bear_hit2.wav";
-		const string SOUND_PAIN3 = "monsters/bear/c_bear_bat1.wav";
-		const string SOUND_PAIN4 = "monsters/bear/c_bear_bat2.wav";
-		const string SOUND_DEATH = "monsters/bear/c_bear_dead.wav";
-		const string SOUND_STRUCK1 = "weapons/cbar_hitbod1.wav";
-		const string SOUND_STRUCK2 = "weapons/cbar_hitbod2.wav";
-		const string SOUND_STRUCK3 = "weapons/cbar_hitbod3.wav";
-		const string SOUND_WARCRY = "monsters/bear/c_beardire_bat1.wav";
-		const string SOUND_RUNSTEP1 = "monsters/bear/giantbearstep1.wav";
-		const string SOUND_RUNSTEP2 = "monsters/bear/giantbearstep2.wav";
-		const string SOUND_SWIM1 = "player/pl_wade1.wav";
-		const string SOUND_SWIM2 = "player/pl_wade2.wav";
-		const string SOUND_SWIM3 = "player/pl_wade3.wav";
-		const string SOUND_SWIM4 = "player/pl_wade4.wav";
-		const string SOUND_DIVE = "body/splash1.wav";
+		SOUND_ATTACK1 = "monsters/bear/c_bear_atk1.wav";
+		SOUND_ATTACK2 = "monsters/bear/c_bear_atk2.wav";
+		SOUND_ATTACK3 = "monsters/bear/c_bear_atk3.wav";
+		SOUND_PAIN1 = "monsters/bear/c_bear_hit1.wav";
+		SOUND_PAIN2 = "monsters/bear/c_bear_hit2.wav";
+		SOUND_PAIN3 = "monsters/bear/c_bear_bat1.wav";
+		SOUND_PAIN4 = "monsters/bear/c_bear_bat2.wav";
+		SOUND_DEATH = "monsters/bear/c_bear_dead.wav";
+		SOUND_STRUCK1 = "weapons/cbar_hitbod1.wav";
+		SOUND_STRUCK2 = "weapons/cbar_hitbod2.wav";
+		SOUND_STRUCK3 = "weapons/cbar_hitbod3.wav";
+		SOUND_WARCRY = "monsters/bear/c_beardire_bat1.wav";
+		SOUND_RUNSTEP1 = "monsters/bear/giantbearstep1.wav";
+		SOUND_RUNSTEP2 = "monsters/bear/giantbearstep2.wav";
+		SOUND_SWIM1 = "player/pl_wade1.wav";
+		SOUND_SWIM2 = "player/pl_wade2.wav";
+		SOUND_SWIM3 = "player/pl_wade3.wav";
+		SOUND_SWIM4 = "player/pl_wade4.wav";
+		SOUND_DIVE = "body/splash1.wav";
 		MSC_PUSH_RESIST = 0.5;
 		NPC_GIVE_EXP = 500;
 		MOVE_RANGE = 150;
 		ATTACK_RANGE = 150;
 		ATTACK_HITRANGE = 200;
-		const int ATTACK_RANGE_NORM = 125;
-		const int ATTACK_HITRANGE_NORM = 150;
-		const int ATTACK_HITRANGE_SWIM = 300;
-		const int ATTACK_RANGE_LUNGE_MIN = 175;
-		const int ATTACK_RANGE_LUNGE_MAX = 250;
-		const string DMG_CLAW = Random(60, 100);
-		const int DMG_BURST = 200;
-		const float BREATH_DURATION = 4.0;
-		const float FREQ_LUNGE = 2.0;
-		const float FREQ_FLINCH = 20.0;
-		const string FREQ_STOMP = Random(30.0, 45.0);
-		const float FREQ_FX_REFRESH = 45.0;
-		const string FREQ_BREATH = Random(30.0, 45.0);
-		const float FREQ_SWIM_SOUND = 5.0;
-		const string MONSTER_MODEL = "monsters/bear_polar.mdl";
+		ATTACK_RANGE_NORM = 125;
+		ATTACK_HITRANGE_NORM = 150;
+		ATTACK_HITRANGE_SWIM = 300;
+		ATTACK_RANGE_LUNGE_MIN = 175;
+		ATTACK_RANGE_LUNGE_MAX = 250;
+		DMG_CLAW = Random(60, 100);
+		DMG_BURST = 200;
+		BREATH_DURATION = 4.0;
+		FREQ_LUNGE = 2.0;
+		FREQ_FLINCH = 20.0;
+		FREQ_STOMP = Random(30.0, 45.0);
+		FREQ_FX_REFRESH = 45.0;
+		FREQ_BREATH = Random(30.0, 45.0);
+		FREQ_SWIM_SOUND = 5.0;
+		MONSTER_MODEL = "monsters/bear_polar.mdl";
 	}
 
 	void OnSpawn() override
@@ -132,7 +184,7 @@ class GbearPolar : CGameScript
 	{
 		if ((DID_WARCRY)) return;
 		DID_WARCRY = 1;
-		string RND_WARCRY = RandomInt(1, 2);
+		int RND_WARCRY = RandomInt(1, 2);
 		AS_ATTACKING = GetGameTime();
 		AS_ATTACKING += 5.0;
 		SetRoam(false);
@@ -199,7 +251,7 @@ class GbearPolar : CGameScript
 			SetMoveAnim(ANIM_RUN_NORM);
 			SetIdleAnim(ANIM_IDLE_NORM);
 			ATTACK_HITRANGE = ATTACK_HITRANGE_NORM;
-			string TIME_PLUS5 = GetGameTime();
+			float TIME_PLUS5 = GetGameTime();
 			TIME_PLUS5 += 5.0;
 			if (TIME_PLUS5 > NEXT_STOMP)
 			{
@@ -268,7 +320,7 @@ class GbearPolar : CGameScript
 			if (GetGameTime() > NEXT_LUNGE)
 			{
 			}
-			string RND_LUNGE = RandomInt(1, 3);
+			int RND_LUNGE = RandomInt(1, 3);
 			ATTACK_RANGE = ATTACK_RANGE_LUNGE_MAX;
 			ATTACK_HITRANGE = ATTACK_RANGE_LUNGE_MAX;
 			if (RND_LUNGE == 1)
@@ -323,12 +375,12 @@ class GbearPolar : CGameScript
 	void frame_attack()
 	{
 		DoDamage(m_hAttackTarget, ATTACK_HITRANGE, DMG_CLAW, 0.9, "slash");
-		string RND_LR = Random(-100.0, 100.0);
+		float RND_LR = Random(-100.0, 100.0);
 		// PlayRandomSound from: SOUND_ATTACK1, SOUND_ATTACK2, SOUND_ATTACK3
 		array<string> sounds = {SOUND_ATTACK1, SOUND_ATTACK2, SOUND_ATTACK3};
 		EmitSound(GetOwner(), 0, sounds[RandomInt(0, sounds.length() - 1)], 5);
 		AddVelocity(m_hAttackTarget, /* TODO: $relvel */ $relvel(RND_LR, 110, 110));
-		string RND_ATK = RandomInt(1, 3);
+		int RND_ATK = RandomInt(1, 3);
 		if (RND_ATK == 1)
 		{
 			ANIM_ATTACK = "attack1";
@@ -363,7 +415,7 @@ class GbearPolar : CGameScript
 			ClientEvent("update", "all", CLIENT_FX_ID, "quick_breath");
 		}
 		DoDamage(m_hAttackTarget, ATTACK_RANGE_LUNGE_MAX, DMG_CLAW, 0.9, "slash");
-		string RND_LR = Random(-200.0, 200.0);
+		float RND_LR = Random(-200.0, 200.0);
 		AddVelocity(m_hAttackTarget, /* TODO: $relvel */ $relvel(RND_LR, 300, 110));
 	}
 
@@ -382,7 +434,7 @@ class GbearPolar : CGameScript
 			ClientEvent("update", "all", CLIENT_FX_ID, "quick_breath");
 		}
 		DoDamage(m_hAttackTarget, ATTACK_RANGE_LUNGE_MAX, DMG_CLAW, 0.9, "slash");
-		string RND_LR = Random(-200.0, 200.0);
+		float RND_LR = Random(-200.0, 200.0);
 		AddVelocity(m_hAttackTarget, /* TODO: $relvel */ $relvel(RND_LR, 1000, 200));
 	}
 

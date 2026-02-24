@@ -15,12 +15,15 @@ class LightningRepulse : CGameScript
 	string OWNER_DBLHP;
 	string OWNER_ISPLAYER;
 	int PLAYING_DEAD;
+	string SOUND_SHOCK1;
+	string SOUND_SHOCK2;
+	string SOUND_SHOCK3;
 
 	LightningRepulse()
 	{
-		const string SOUND_SHOCK1 = "debris/zap8.wav";
-		const string SOUND_SHOCK2 = "debris/zap3.wav";
-		const string SOUND_SHOCK3 = "debris/zap4.wav";
+		SOUND_SHOCK1 = "debris/zap8.wav";
+		SOUND_SHOCK2 = "debris/zap3.wav";
+		SOUND_SHOCK3 = "debris/zap4.wav";
 	}
 
 	void OnRepeatTimer()
@@ -93,7 +96,7 @@ class LightningRepulse : CGameScript
 				{
 				}
 				DID_MESSAGE = 1;
-				SendPlayerMessage(MY_OWNER, "GetEntityName(param2) is too strong to be affected.");
+				SendPlayerMessage(MY_OWNER, GetEntityName(param2) + " is too strong to be affected.");
 			}
 		}
 		if ((EXIT_SUB)) return;

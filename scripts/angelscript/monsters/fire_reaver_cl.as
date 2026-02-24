@@ -7,7 +7,12 @@ class FireReaverCl : CGameScript
 {
 	int FX_ACTIVE;
 	string FX_DURATION;
+	string LIGHT_COLOR;
+	float LIGHT_DURATION;
+	int LIGHT_RADIUS;
+	string MODEL_WORLD;
 	string MY_OWNER;
+	string SPRITE_BURN;
 	int VOLC_SOUND_DELAY;
 	string local.cl.gravity;
 	string local.cl.origin;
@@ -15,11 +20,11 @@ class FireReaverCl : CGameScript
 
 	FireReaverCl()
 	{
-		const string MODEL_WORLD = "weapons/projectiles.mdl";
-		const string SPRITE_BURN = "fire1_fixed.spr";
-		const int LIGHT_RADIUS = 64;
-		const Vector3 LIGHT_COLOR = Vector3(255, 0, 0);
-		const float LIGHT_DURATION = 0.8;
+		MODEL_WORLD = "weapons/projectiles.mdl";
+		SPRITE_BURN = "fire1_fixed.spr";
+		LIGHT_RADIUS = 64;
+		LIGHT_COLOR = Vector3(255, 0, 0);
+		LIGHT_DURATION = 0.8;
 		SetCallback("render", "enable");
 	}
 

@@ -9,35 +9,60 @@ namespace MS
 
 class SmallarmsBoneBlade : CGameScript
 {
+	int ANIM_ATTACK1;
+	int ANIM_ATTACK2;
+	int ANIM_IDLE1;
+	int ANIM_IDLE_TOTAL;
+	int ANIM_LIFT1;
+	string ANIM_PREFIX;
+	int ANIM_UNWIELD;
+	int ANIM_WIELD;
+	int ANIM_WIELDEDIDLE1;
+	int BASE_LEVEL_REQ;
+	float MELEE_ACCURACY;
+	int MELEE_ALIGN_BASE;
+	int MELEE_ALIGN_TIP;
+	float MELEE_ATK_DURATION;
+	int MELEE_DMG;
+	float MELEE_DMG_DELAY;
+	int MELEE_DMG_RANGE;
+	float MELEE_ENERGY;
+	float MELEE_PARRY_CHANCE;
+	int MELEE_RANGE;
+	int MODEL_BODY_OFS;
+	string MODEL_HANDS;
+	string MODEL_VIEW;
+	int MODEL_VIEW_IDX;
+	string MODEL_WORLD;
 	string SWING_ANIM;
 
 	SmallarmsBoneBlade()
 	{
-		const int BASE_LEVEL_REQ = 15;
-		const int MELEE_DMG = 180;
-		const int MELEE_DMG_RANGE = 70;
-		const int MELEE_RANGE = 35;
-		const float MELEE_ACCURACY = 0.77;
-		const string MODEL_VIEW = "viewmodels/v_1hswordssb.mdl";
-		const int MODEL_VIEW_IDX = 7;
-		const int ANIM_LIFT1 = 0;
-		const int ANIM_IDLE1 = 1;
-		const int ANIM_IDLE_TOTAL = 1;
-		const int ANIM_WIELD = 0;
-		const int ANIM_UNWIELD = 0;
-		const int ANIM_WIELDEDIDLE1 = 1;
-		const int ANIM_ATTACK1 = 2;
-		const int ANIM_ATTACK2 = 3;
-		const string MODEL_WORLD = "weapons/p_weapons2.mdl";
-		const string MODEL_HANDS = "weapons/p_weapons2.mdl";
-		const float MELEE_DMG_DELAY = 0.2;
-		const float MELEE_ATK_DURATION = 0.9;
-		const float MELEE_ENERGY = 0.6;
-		const int MELEE_ALIGN_BASE = 4;
-		const int MELEE_ALIGN_TIP = 0;
-		const float MELEE_PARRY_CHANCE = 0.3;
-		const int MODEL_BODY_OFS = 28;
-		const string ANIM_PREFIX = "khopesh";
+		BASE_LEVEL_REQ = 15;
+		MELEE_DMG = 180;
+		MELEE_DMG_RANGE = 70;
+		MELEE_RANGE = 35;
+		MELEE_ACCURACY = 0.77;
+		MODEL_VIEW = "viewmodels/v_1hswordssb.mdl";
+		MODEL_VIEW_IDX = 7;
+		ANIM_LIFT1 = 0;
+		ANIM_IDLE1 = 1;
+		ANIM_IDLE_TOTAL = 1;
+		ANIM_WIELD = 0;
+		ANIM_UNWIELD = 0;
+		ANIM_WIELDEDIDLE1 = 1;
+		ANIM_ATTACK1 = 2;
+		ANIM_ATTACK2 = 3;
+		MODEL_WORLD = "weapons/p_weapons2.mdl";
+		MODEL_HANDS = "weapons/p_weapons2.mdl";
+		MELEE_DMG_DELAY = 0.2;
+		MELEE_ATK_DURATION = 0.9;
+		MELEE_ENERGY = 0.6;
+		MELEE_ALIGN_BASE = 4;
+		MELEE_ALIGN_TIP = 0;
+		MELEE_PARRY_CHANCE = 0.3;
+		MODEL_BODY_OFS = 28;
+		ANIM_PREFIX = "khopesh";
 	}
 
 	void weapon_spawn()

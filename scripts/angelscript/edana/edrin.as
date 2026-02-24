@@ -12,15 +12,19 @@ class Edrin : CGameScript
 	string ANIM_ATTACK;
 	string ANIM_RUN;
 	string ANIM_WALK;
+	float CHAT_DELAY;
 	int GOT_HOME;
 	string HOME_LOC;
 	string HOME_YAW;
+	int NO_HAIL;
+	int NO_RUMOR;
 	int QUEST_1;
 	int QUEST_1_ACCEPTED;
 	int QUEST_1_ASKEDMAYOR;
 	string QUEST_1_WINNER;
 	int REQ_QUEST_NOTDONE;
 	int THIEF_1;
+	int XMASS_OLD_GUY;
 	string script.targetplayer;
 
 	Edrin()
@@ -28,10 +32,10 @@ class Edrin : CGameScript
 		ANIM_WALK = "walk";
 		ANIM_RUN = "run";
 		ANIM_ATTACK = "swordswing1_L";
-		const int NO_RUMOR = 1;
-		const int NO_HAIL = 1;
-		const float CHAT_DELAY = 6.0;
-		const int XMASS_OLD_GUY = 1;
+		NO_RUMOR = 1;
+		NO_HAIL = 1;
+		CHAT_DELAY = 6.0;
+		XMASS_OLD_GUY = 1;
 	}
 
 	void OnSpawn() override
@@ -97,14 +101,14 @@ class Edrin : CGameScript
 	{
 		if (!(QUEST_1 < 2)) return;
 		EmitSound(GetOwner(), CHAN_VOICE, "npc/edrin2.wav", "game.sound.maxvol");
-		SayText("I suspect the mayor is a traitor , working with the Orcs.");
+		SayText(I + " suspect the mayor is a traitor , working with the Orcs.");
 		script.targetplayer = GetEntityIndex("ent_lastspoke");
 		ScheduleDelayedEvent(5, "say_mayor_2");
 	}
 
 	void say_mayor_2()
 	{
-		SayText("If you find evidence of this , you will be well rewarded. I will brief you through it. Is that all right?");
+		SayText("If you find evidence of this , you will be well rewarded. " + I + " will brief you through it. Is that all right?");
 		QUEST_1 = 1;
 		OpenMenu(script.targetplayer);
 	}
@@ -248,7 +252,7 @@ class Edrin : CGameScript
 	void say_rumour()
 	{
 		PlayAnim("once", "pondering3");
-		SayText("Do I look like a gossiping mongrel? Be off!");
+		SayText("Do " + I + " look like a gossiping mongrel? Be off!");
 	}
 
 	void say_thief()
@@ -259,13 +263,13 @@ class Edrin : CGameScript
 		SayText("If you see anything suspicious around here , you let me know.");
 		if (!(THIEF_1 == 3)) return;
 		THIEF_1 = 4;
-		SayText("If you see any thieves , try bribing them for information , or give threats that I will lock them up for good.");
+		SayText("If you see any thieves , try bribing them for information , or give threats that " + I + " will lock them up for good.");
 		ScheduleDelayedEvent(4, "say_thief2");
 	}
 
 	void say_thief2()
 	{
-		SayText("Aye , I will have them thieves locked up , if not killed should I get my hands on them.");
+		SayText("Aye , " + I + "will have them thieves locked up , if not killed should " + I + " get my hands on them.");
 	}
 
 	void say_thiefloc()
@@ -309,7 +313,7 @@ class Edrin : CGameScript
 			{
 				string reg.mitem.title = "Say Hello";
 				string reg.mitem.type = "say";
-				string rnd = RandomInt(0, 3);
+				int rnd = RandomInt(0, 3);
 				if (rnd == 0)
 				{
 					string reg.mitem.data = "Hail!";
@@ -340,7 +344,7 @@ class Edrin : CGameScript
 			{
 				string reg.mitem.title = "Inquire About Mayor";
 				string reg.mitem.type = "say";
-				string rnd = RandomInt(0, 2);
+				int rnd = RandomInt(0, 2);
 				if (rnd == 0)
 				{
 					string reg.mitem.data = "Mayor?";
@@ -368,7 +372,7 @@ class Edrin : CGameScript
 				if (!(QUEST_1_ACCEPTED))
 				{
 					string reg.mitem.title = "Accept";
-					string rnd = RandomInt(0, 3);
+					int rnd = RandomInt(0, 3);
 					if (rnd == 0)
 					{
 						string reg.mitem.data = "Aye!";

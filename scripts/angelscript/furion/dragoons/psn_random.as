@@ -7,9 +7,11 @@ namespace MS
 
 class PsnRandom : CGameScript
 {
+	int ELEMENT;
+
 	PsnRandom()
 	{
-		const int ELEMENT = 1;
+		ELEMENT = 1;
 	}
 
 }

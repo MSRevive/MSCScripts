@@ -11,18 +11,24 @@ class BaseDot : CGameScript
 	string DOT_ATTACKER;
 	string DOT_DMG;
 	string DOT_FLAG_NAME;
+	string DOT_HE_IMMUNE;
+	string DOT_IM_AFFECTED;
+	string DOT_IM_RESIST;
 	int DOT_RESISTED;
 	string DOT_SKILL;
+	string DOT_TYPE;
+	string EFFECT_ID;
+	string EFFECT_SCRIPT;
 
 	BaseDot()
 	{
-		const string EFFECT_ID = "base_dot";
-		const string EFFECT_SCRIPT = currentscript;
-		const string DOT_TYPE = "fire_effect";
+		EFFECT_ID = "base_dot";
+		EFFECT_SCRIPT = currentscript;
+		DOT_TYPE = "fire_effect";
 		DOT_RESISTED = 0;
-		const string DOT_IM_AFFECTED = "You are on base_dot!";
-		const string DOT_IM_RESIST = "The base_dot leaves you unharmed.";
-		const string DOT_HE_IMMUNE = "is not harmed by the base_dot.";
+		DOT_IM_AFFECTED = "You are on base_dot!";
+		DOT_IM_RESIST = "The base_dot leaves you unharmed.";
+		DOT_HE_IMMUNE = "is not harmed by the base_dot.";
 	}
 
 	void game_activate()
@@ -34,7 +40,7 @@ class BaseDot : CGameScript
 		dot_check_canapply();
 		if (!(DOT_RESISTED))
 		{
-			SendPlayerMessage(GetOwner(), "DOT_IM_AFFECTED");
+			SendPlayerMessage(GetOwner(), DOT_IM_AFFECTED);
 			SetScriptFlags(GetOwner(), "add", DOT_FLAG_NAME, EFFECT_ID, DOT_DMG, EFFECT_DURATION);
 			dot_start();
 			ScheduleDelayedEvent(0.5, "dot_effect");
@@ -110,19 +116,19 @@ class BaseDot : CGameScript
 		string IMMUNE_RATIO = /* TODO: $get_takedmg */ $get_takedmg(GetOwner(), L_DOT_TYPE);
 		if (IMMUNE_RATIO == 0)
 		{
-			SendColoredMessage(GetOwner(), "DOT_IM_RESIST");
-			SendColoredMessage(DOT_ATTACKER, "GetEntityName(GetOwner()) DOT_HE_IMMUNE");
+			SendColoredMessage(GetOwner(), DOT_IM_RESIST);
+			SendColoredMessage(DOT_ATTACKER, GetEntityName(GetOwner()) + DOT_HE_IMMUNE);
 			DOT_RESISTED = 1;
 			return;
 		}
-		string L_ROLL = RandomInt(1, 100);
-		string L_RESISTANCE = int(/* TODO: $math(multiply) */ IMMUNE_RATIO);
-		// TODO: capvar L_RESISTANCE 0 100
+		int L_ROLL = RandomInt(1, 100);
+		int L_RESISTANCE = int((IMMUNE_RATIO * 100));
+		L_RESISTANCE = max(0, min(100, L_RESISTANCE));
 		BE_RESIST_STRING = " ( ";
 		if (L_ROLL > L_RESISTANCE)
 		{
-			SendColoredMessage(GetOwner(), "DOT_IM_RESIST BE_RESIST_STRING");
-			SendColoredMessage(DOT_ATTACKER, "GetEntityName(GetOwner()) resists the L_DOT_TYPE magic. BE_RESIST_STRING");
+			SendColoredMessage(GetOwner(), DOT_IM_RESIST + BE_RESIST_STRING);
+			SendColoredMessage(DOT_ATTACKER, GetEntityName(GetOwner()) + "resists the " + L_DOT_TYPE + "magic. " + BE_RESIST_STRING);
 			DOT_RESISTED = 1;
 			return;
 		}
@@ -158,13 +164,13 @@ class BaseDot : CGameScript
 		if ((DOT_RESISTED)) return;
 		if (!(param1 == "edit")) return;
 		if (!(param2 == DOT_FLAG_NAME)) return;
-		dot_scriptflag_update(/* TODO: $pass */ $pass(param4), /* TODO: $pass */ $pass(param5));
+		dot_scriptflag_update(param4, param5);
 	}
 
 	void dot_scriptflag_update()
 	{
 		DOT_DMG = param1;
-		effect_set_duration(/* TODO: $pass */ $pass(param2));
+		effect_set_duration(param2);
 		dot_start();
 	}
 

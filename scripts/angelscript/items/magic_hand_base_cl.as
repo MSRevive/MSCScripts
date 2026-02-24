@@ -8,14 +8,19 @@ class MagicHandBaseCl : CGameScript
 	string FX_DURATION;
 	int FX_FIRSTPERSON;
 	string FX_OWNER;
+	int GLOW_DURATION;
+	string LIGHT_COLOR;
+	int LIGHT_RADIUS;
+	int OFS_NEG;
+	int OFS_POS;
 
 	MagicHandBaseCl()
 	{
-		const int GLOW_DURATION = 1;
-		const int OFS_POS = 5;
-		const int OFS_NEG = -5;
-		const int LIGHT_RADIUS = 128;
-		const Vector3 LIGHT_COLOR = Vector3(255, 255, 128);
+		GLOW_DURATION = 1;
+		OFS_POS = 5;
+		OFS_NEG = -5;
+		LIGHT_RADIUS = 128;
+		LIGHT_COLOR = Vector3(255, 255, 128);
 	}
 
 	void OnRepeatTimer()
@@ -50,7 +55,7 @@ class MagicHandBaseCl : CGameScript
 	void client_activate()
 	{
 		FX_OWNER = param1;
-		FX_DURATION = /* TODO: $math(add) */ param2;
+		FX_DURATION = (param2 + 5);
 		SetCallback("render", "enable");
 		FX_DURATION("effect_die");
 		create_light(/* TODO: $getcl */ $getcl(FX_OWNER, "origin"));

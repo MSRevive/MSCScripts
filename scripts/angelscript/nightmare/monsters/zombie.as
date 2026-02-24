@@ -14,11 +14,18 @@ class Zombie : CGameScript
 	string ANIM_RUN;
 	string ANIM_SWIPE;
 	string ANIM_WALK;
+	float AS_STUCK_FREQ;
+	float ATTACK_DAMAGE;
+	int ATTACK_HITCHANCE;
 	int ATTACK_HITRANGE;
 	int ATTACK_MOVERANGE;
 	int ATTACK_RANGE;
 	int DISEASE_DELAY;
+	float DISEASE_DMG;
+	int DISEASE_DUR;
+	float DISEASE_FREQ;
 	float FLINCH_HEALTH_RATIO;
+	string MODEL;
 	int NPC_GIVE_EXP;
 
 	Zombie()
@@ -26,8 +33,8 @@ class Zombie : CGameScript
 		ANIM_WALK = "walkb1";
 		ANIM_RUN = "walkb1";
 		ANIM_IDLE = "idle1";
-		const string ANIM_SWIPE = "stab1";
-		const string ANIM_DISEASE = "slash";
+		ANIM_SWIPE = "stab1";
+		ANIM_DISEASE = "slash";
 		ANIM_ATTACK = ANIM_SWIPE;
 		NPC_GIVE_EXP = 75;
 		ANIM_WALK = "walkb1";
@@ -36,16 +43,16 @@ class Zombie : CGameScript
 		ANIM_SWIPE = "stab1";
 		ANIM_DISEASE = "slash";
 		FLINCH_HEALTH_RATIO = 0.3;
-		const float AS_STUCK_FREQ = 0.6;
-		const string ATTACK_DAMAGE = Random(12.5, 25.0);
-		const int ATTACK_HITCHANCE = 25;
+		AS_STUCK_FREQ = 0.6;
+		ATTACK_DAMAGE = Random(12.5, 25.0);
+		ATTACK_HITCHANCE = 25;
 		ATTACK_RANGE = 100;
 		ATTACK_HITRANGE = 130;
 		ATTACK_MOVERANGE = 50;
-		const float DISEASE_FREQ = 10.0;
-		const string DISEASE_DMG = Random(5, 8);
-		const string DISEASE_DUR = RandomInt(20, 25);
-		const string MODEL = "nightmare/monsters/fzombie.mdl";
+		DISEASE_FREQ = 10.0;
+		DISEASE_DMG = Random(5, 8);
+		DISEASE_DUR = RandomInt(20, 25);
+		MODEL = "nightmare/monsters/fzombie.mdl";
 		Precache(MODEL);
 	}
 
@@ -54,7 +61,7 @@ class Zombie : CGameScript
 		SetName("Zombified Commoner");
 		SetHealth(200);
 		SetModel(MODEL);
-		string RAND_EYES = RandomInt(0, 3);
+		int RAND_EYES = RandomInt(0, 3);
 		SetModelBody(0, RAND_EYES);
 		SetModelBody(1, 0);
 		SetModelBody(2, 0);
@@ -82,7 +89,7 @@ class Zombie : CGameScript
 		SetDamageResistance("blunt", 1.0);
 		SetDamageResistance("slash", 1.25);
 		ScheduleDelayedEvent(1.0, "idle_sounds");
-		string PICK_DEATH = RandomInt(1, 5);
+		int PICK_DEATH = RandomInt(1, 5);
 		if (PICK_DEATH == 1)
 		{
 			ANIM_DEATH = ANIM_DEATH1;

@@ -51,7 +51,7 @@ class PhlameBirdCl : CGameScript
 
 	void setup_fire_cloud()
 	{
-		string START_SCALE = Random(0.25, 0.5);
+		float START_SCALE = Random(0.25, 0.5);
 		ClientEffect("tempent", "set_current_prop", "death_delay", 1.0);
 		ClientEffect("tempent", "set_current_prop", "framerate", 10);
 		ClientEffect("tempent", "set_current_prop", "frames", 9);
@@ -67,8 +67,8 @@ class PhlameBirdCl : CGameScript
 		ClientEffect("tempent", "set_current_prop", "gravity", ".005");
 		ClientEffect("tempent", "set_current_prop", "collide", "none");
 		ClientEffect("tempent", "set_current_prop", "fuser1", START_SCALE);
-		string RND_RL = Random(-20, 20);
-		string RND_UD = Random(-50, -100);
+		float RND_RL = Random(-20, 20);
+		float RND_UD = Random(-50, -100);
 		string CLOUD_VEL = /* TODO: $relvel */ $relvel(Vector3(20, CLOUD_YAW, 0), Vector3(RND_RL, Random(300, 400), RND_UD));
 		ClientEffect("tempent", "set_current_prop", "velocity", CLOUD_VEL);
 	}

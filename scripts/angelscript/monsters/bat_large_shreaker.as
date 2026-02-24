@@ -9,49 +9,63 @@ class BatLargeShreaker : CGameScript
 {
 	string ANIM_ATTACK;
 	string ANIM_DEATH;
+	string ANIM_HOVER;
 	string ANIM_IDLE_FLY;
 	string ANIM_IDLE_HANG;
 	string ANIM_RUN;
+	string ANIM_SHREAK;
 	string ANIM_WALK;
 	string AS_ATTACKING;
+	int ATTACK_DAMAGE;
 	float ATTACK_HITCHANCE;
 	int ATTACK_HITRANGE;
 	int ATTACK_RANGE;
+	int BAT_NO_FAKE_DEATH;
 	string BAT_STATUS;
 	int CAN_HUNT;
+	int DMG_SHREAK;
+	float FREQ_SHREAK;
 	string MOVE_MODE;
 	int MOVE_RANGE;
 	string NEXT_RETREAT;
 	string NEXT_SHREAK;
 	int NPC_GIVE_EXP;
+	string SOUND_ALERT;
+	string SOUND_DEATH;
+	string SOUND_IDLE;
+	string SOUND_PAIN;
+	string SOUND_SHREAK;
+	string SOUND_STRUCK1;
+	string SOUND_STRUCK2;
+	string SOUND_STRUCK3;
 
 	BatLargeShreaker()
 	{
-		const int BAT_NO_FAKE_DEATH = 1;
-		const int DMG_SHREAK = 150;
-		const float FREQ_SHREAK = 5.0;
-		const string SOUND_SHREAK = "monsters/bat/zoobat.wav";
-		const string ANIM_SHREAK = "";
+		BAT_NO_FAKE_DEATH = 1;
+		DMG_SHREAK = 150;
+		FREQ_SHREAK = 5.0;
+		SOUND_SHREAK = "monsters/bat/zoobat.wav";
+		ANIM_SHREAK = "";
 		ANIM_WALK = "IdleFlyNormal";
 		ANIM_RUN = ANIM_WALK;
 		ANIM_ATTACK = "bite";
 		ANIM_IDLE_HANG = "IdleHang";
 		ANIM_IDLE_FLY = "IdleFlyNormal";
 		ANIM_DEATH = "IdleFlyNormal";
-		const string ANIM_HOVER = "IdleFlyFace";
-		const string SOUND_STRUCK1 = "weapons/cbar_hitbod1.wav";
-		const string SOUND_STRUCK2 = "weapons/cbar_hitbod2.wav";
-		const string SOUND_STRUCK3 = "weapons/cbar_hitbod3.wav";
-		const string SOUND_PAIN = "monsters/rat/squeak1.wav";
-		const string SOUND_IDLE = "monsters/rat/squeak2.wav";
-		const string SOUND_DEATH = "monsters/rat/squeak3.wav";
+		ANIM_HOVER = "IdleFlyFace";
+		SOUND_STRUCK1 = "weapons/cbar_hitbod1.wav";
+		SOUND_STRUCK2 = "weapons/cbar_hitbod2.wav";
+		SOUND_STRUCK3 = "weapons/cbar_hitbod3.wav";
+		SOUND_PAIN = "monsters/rat/squeak1.wav";
+		SOUND_IDLE = "monsters/rat/squeak2.wav";
+		SOUND_DEATH = "monsters/rat/squeak3.wav";
 		MOVE_RANGE = 128;
 		ATTACK_RANGE = 65;
 		ATTACK_HITRANGE = 100;
 		ATTACK_HITCHANCE = 0.8;
-		const int ATTACK_DAMAGE = 50;
+		ATTACK_DAMAGE = 50;
 		NPC_GIVE_EXP = 75;
-		const string SOUND_ALERT = "monsters/bat/alert.wav";
+		SOUND_ALERT = "monsters/bat/alert.wav";
 		Precache("monsters/zubat_sphere.mdl");
 	}
 
@@ -92,8 +106,8 @@ class BatLargeShreaker : CGameScript
 		if (!(GetGameTime() > NEXT_RETREAT)) return;
 		NEXT_RETREAT = GetGameTime();
 		NEXT_RETREAT += Random(3.0, 5.0);
-		string RND_LR = Random(-300.0, 300.0);
-		string RND_FB = Random(-1500.0, 500.0);
+		float RND_LR = Random(-300.0, 300.0);
+		float RND_FB = Random(-1500.0, 500.0);
 		AddVelocity(GetOwner(), /* TODO: $relvel */ $relvel(RND_LR, RND_FB, 0));
 	}
 

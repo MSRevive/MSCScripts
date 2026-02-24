@@ -7,13 +7,16 @@ namespace MS
 
 class ItemLog : CGameScript
 {
+	string MODEL_HANDS;
+	string MODEL_WORLD;
 	string SCRIPT_ID;
+	string TORCH_LIGHT_SCRIPT;
 
 	ItemLog()
 	{
-		const string MODEL_WORLD = "misc/item_log.mdl";
-		const string MODEL_HANDS = "misc/item_log.mdl";
-		const string TORCH_LIGHT_SCRIPT = "items/item_torch_light";
+		MODEL_WORLD = "misc/item_log.mdl";
+		MODEL_HANDS = "misc/item_log.mdl";
+		TORCH_LIGHT_SCRIPT = "items/item_torch_light";
 	}
 
 	void miscitem_spawn()

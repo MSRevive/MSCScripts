@@ -9,6 +9,7 @@ class OrcBaseRanged : CGameScript
 	string ATTACK_HITRANGE;
 	string ATTACK_RANGE;
 	string MOVE_RANGE;
+	string SOUND_BOW;
 
 	OrcBaseRanged()
 	{
@@ -24,7 +25,7 @@ class OrcBaseRanged : CGameScript
 		{
 			ATTACK_HITRANGE = 1000;
 		}
-		const string SOUND_BOW = "weapons/bow/bow.wav";
+		SOUND_BOW = "weapons/bow/bow.wav";
 	}
 
 	void orc_spawn()
@@ -49,7 +50,7 @@ class OrcBaseRanged : CGameScript
 		string AIM_ANGLE = GetEntityDist(m_hLastSeen);
 		AIM_ANGLE /= AIM_RATIO;
 		SetAngles("add_view.x");
-		string LCL_ATKDMG = Random(ARROW_DAMAGE_LOW, ARROW_DAMAGE_HIGH);
+		float LCL_ATKDMG = Random(ARROW_DAMAGE_LOW, ARROW_DAMAGE_HIGH);
 		TossProjectile("proj_arrow_npc", /* TODO: $relpos */ $relpos(0, 0, 18), "none", ATTACK_SPEED, LCL_ATKDMG, ATTACK_CONE_OF_FIRE, "none");
 		SetModelBody(3, 0);
 		EmitSound(GetOwner(), SOUND_BOW);

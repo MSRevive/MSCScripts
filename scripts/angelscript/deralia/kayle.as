@@ -8,16 +8,20 @@ namespace MS
 class Kayle : CGameScript
 {
 	int CANCHAT;
+	int CHAT_AUTO_HAIL;
+	int CHAT_AUTO_RUMOR;
 	int CHAT_MENU_ON;
+	int CHAT_NEVER_INTERRUPT;
 	int MENU_MODE;
 	string MENU_TO;
+	int SEE_RANGE;
 
 	Kayle()
 	{
-		const int CHAT_AUTO_HAIL = 1;
-		const int CHAT_AUTO_RUMOR = 1;
-		const int CHAT_NEVER_INTERRUPT = 1;
-		const int SEE_RANGE = 200;
+		CHAT_AUTO_HAIL = 1;
+		CHAT_AUTO_RUMOR = 1;
+		CHAT_NEVER_INTERRUPT = 1;
+		SEE_RANGE = 200;
 		MENU_MODE = 0;
 	}
 

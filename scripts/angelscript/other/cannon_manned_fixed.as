@@ -7,15 +7,19 @@ class CannonMannedFixed : CGameScript
 {
 	int AM_AIMING;
 	int AM_LOADED;
+	int DMG_CANNON;
 	int FIRE_DELAY;
+	float FREQ_FIRE;
+	string SOUND_CANNON;
+	string SPRITE_EXPLODE;
 	string SRC_YAW;
 
 	CannonMannedFixed()
 	{
-		const string SPRITE_EXPLODE = "bigsmoke.spr";
-		const string SOUND_CANNON = "weapons/explode3.wav";
-		const float FREQ_FIRE = 30.0;
-		const int DMG_CANNON = 1000;
+		SPRITE_EXPLODE = "bigsmoke.spr";
+		SOUND_CANNON = "weapons/explode3.wav";
+		FREQ_FIRE = 30.0;
+		DMG_CANNON = 1000;
 	}
 
 	void OnSpawn() override

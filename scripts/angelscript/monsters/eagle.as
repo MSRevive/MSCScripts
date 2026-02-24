@@ -7,11 +7,12 @@ namespace MS
 
 class Eagle : CGameScript
 {
+	int NO_DIVE;
 	int NPC_GIVE_EXP;
 
 	Eagle()
 	{
-		const int NO_DIVE = 1;
+		NO_DIVE = 1;
 		NPC_GIVE_EXP = 100;
 	}
 

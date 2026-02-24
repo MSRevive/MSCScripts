@@ -7,9 +7,11 @@ namespace MS
 
 class KeyChest : CGameScript
 {
+	int NO_ORE;
+
 	KeyChest()
 	{
-		const int NO_ORE = 1;
+		NO_ORE = 1;
 	}
 
 	void chest_additems()

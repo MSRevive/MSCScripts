@@ -8,22 +8,29 @@ namespace MS
 class ChainScanner : CGameScript
 {
 	string ACTIVE_SKILL;
+	int AOE_RADIUS;
+	float DAMAGE_ADJ;
 	int DAMAGE_DELAY;
 	int DEATH_DELAY;
+	string LIGHTNING_SPRITE;
 	string MY_BASE_DAMAGE;
 	string MY_OWNER;
 	string OWNER_ISPLAYER;
+	int SCAN_RANGE;
+	string SOUND_ZAP1;
+	string SOUND_ZAP2;
+	string SOUND_ZAP3;
 	string ZAP_SOUND_DELAY;
 
 	ChainScanner()
 	{
-		const string SOUND_ZAP1 = "debris/beamstart14.wav";
-		const string SOUND_ZAP2 = "debris/beamstart15.wav";
-		const string SOUND_ZAP3 = "debris/zap1.wav";
-		const int SCAN_RANGE = 400;
-		const float DAMAGE_ADJ = 0.75;
-		const string LIGHTNING_SPRITE = "lgtning.spr";
-		const int AOE_RADIUS = 400;
+		SOUND_ZAP1 = "debris/beamstart14.wav";
+		SOUND_ZAP2 = "debris/beamstart15.wav";
+		SOUND_ZAP3 = "debris/zap1.wav";
+		SCAN_RANGE = 400;
+		DAMAGE_ADJ = 0.75;
+		LIGHTNING_SPRITE = "lgtning.spr";
+		AOE_RADIUS = 400;
 	}
 
 	void game_dynamically_created()

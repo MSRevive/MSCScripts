@@ -15,6 +15,7 @@ class BaseMonsterShared : CGameScript
 	string AS_ATTACKING;
 	int BAST_TELEPORTING;
 	int BMS_RENDERAMT;
+	int DEF_STEP_SIZE;
 	int DID_HELP_TIP;
 	int FD_LOOP_COUNT;
 	string FD_MAX_RANGE;
@@ -32,6 +33,10 @@ class BaseMonsterShared : CGameScript
 	string NPC_BOSS_KILLS;
 	string NPC_BOSS_KNOWS;
 	string NPC_BOSS_KNOWS_AMTS;
+	float NPC_BOSS_REGEN_FREQ;
+	float NPC_BOSS_REGEN_RATE;
+	float NPC_BOSS_RESTORATION;
+	string NPC_CANT_PARRY_TYPES;
 	int NPC_FORCED_MOVEDEST;
 	string NPC_GOING_HOME;
 	string NPC_HALF_HEIGHT;
@@ -75,17 +80,18 @@ class BaseMonsterShared : CGameScript
 	string NPC_SPAWN_TIME;
 	string NPC_XPTR;
 	string OLD_NO_STUCK_CHECKS;
+	string PARRY_TYPE;
 	string SKEL_RESPAWN_TIMES;
 
 	BaseMonsterShared()
 	{
-		const float NPC_BOSS_REGEN_RATE = 0.1;
-		const float NPC_BOSS_REGEN_FREQ = 60.0;
-		const float NPC_BOSS_RESTORATION = 0.5;
+		NPC_BOSS_REGEN_RATE = 0.1;
+		NPC_BOSS_REGEN_FREQ = 60.0;
+		NPC_BOSS_RESTORATION = 0.5;
 		NPC_MAX_UNSEEN_TIME = 120.0;
-		const string NPC_CANT_PARRY_TYPES = "target;magic";
-		const int DEF_STEP_SIZE = 32;
-		const string PARRY_TYPE = "parried!";
+		NPC_CANT_PARRY_TYPES = "target;magic";
+		DEF_STEP_SIZE = 32;
+		PARRY_TYPE = "parried!";
 	}
 
 	void OnSpawn() override
@@ -184,7 +190,7 @@ class BaseMonsterShared : CGameScript
 		{
 			if (DROP_GOLD_MAX != 0)
 			{
-				string L_DROP_GOLD = RandomInt(DROP_GOLD_MIN, DROP_GOLD_MAX);
+				int L_DROP_GOLD = RandomInt(DROP_GOLD_MIN, DROP_GOLD_MAX);
 			}
 			if (DROP_GOLD_AMT != 0)
 			{
@@ -374,7 +380,7 @@ class BaseMonsterShared : CGameScript
 	void npcatk_flank()
 	{
 		string NEW_DEST = GetEntityOrigin(param1);
-		string R_ANG = RandomInt(0, 359);
+		int R_ANG = RandomInt(0, 359);
 		NEW_DEST += /* TODO: $relpos */ $relpos(Vector3(0, R_ANG, 0), Vector3(0, MONSTER_WIDTH, 0));
 		npcatk_suspend_attack(2.0);
 		MOVE_TARGET_IS_NPC = 0;
@@ -415,7 +421,7 @@ class BaseMonsterShared : CGameScript
 		}
 		string TARGET_HALFHEIGHT = GetEntityHeight(TARG);
 		TARGET_HALFHEIGHT /= 2;
-		// TODO: capvar TARGET_HALFHEIGHT 37 2000
+		TARGET_HALFHEIGHT = max(37, min(2000, TARGET_HALFHEIGHT));
 		ADJ_RANGE = ATTACK_RANGE;
 		if (!(ATTACK_RANGE < 256)) return;
 		string TARG_POS = GetEntityOrigin(TARG);
@@ -437,7 +443,7 @@ class BaseMonsterShared : CGameScript
 
 	void OnParry(CBaseEntity@ attacker) override
 	{
-		SendPlayerMessage(GetEntityIndex(param1), "Your attack was PARRY_TYPE");
+		SendPlayerMessage(GetEntityIndex(param1), "Your attack was " + PARRY_TYPE);
 	}
 
 	void npcatk_find_distant()
@@ -505,7 +511,7 @@ class BaseMonsterShared : CGameScript
 				}
 				if ((G_DEVELOPER_MODE))
 				{
-					SendInfoMessageToAll("green GetEntityName(GetOwner()) npcatk_prox_activated GetEntityName(param1) NPC_PROXACT_CONE WithinCone2D(TEST_ORIG, GetMonsterProperty("origin"), GetMonsterProperty("angles"))");
+					SendInfoMessageToAll("green " + GetEntityName(GetOwner()) + "npcatk_prox_activated " + GetEntityName(param1) + NPC_PROXACT_CONE + WithinCone2D(TEST_ORIG, GetMonsterProperty("origin"), GetMonsterProperty("angles")));
 				}
 				int EXIT_SUB = 1;
 				LogDebug("npcatk_prox_activated: Not in FOV!");
@@ -647,7 +653,7 @@ class BaseMonsterShared : CGameScript
 	void npcatk_resume_civi_hunt()
 	{
 		if ((NPC_IGNORE_PLAYERS)) return;
-		string TIME_SINCE_STRUCK = GetGameTime();
+		float TIME_SINCE_STRUCK = GetGameTime();
 		TIME_SINCE_STRUCK -= NPC_LAST_STRUCK_TIME;
 		if (!(TIME_SINCE_STRUCK > 8)) return;
 		npcatk_clear_targets("not_struck");
@@ -660,7 +666,7 @@ class BaseMonsterShared : CGameScript
 		if (!(NPC_IGNORE_PLAYERS)) return;
 		ScheduleDelayedEvent(5.0, "npcatk_npc_hunter_loop");
 		string N_CRITS = GetTokenCount(G_CRITICAL_NPCS, ";");
-		string RND_CRIT = RandomInt(0, N_CRITS);
+		int RND_CRIT = RandomInt(0, N_CRITS);
 		if ((IsEntityAlive(m_hAttackTarget))) return;
 		npcatk_settarget(GetToken(G_CRITICAL_NPCS, RND_CRIT, ";"));
 	}
@@ -673,7 +679,7 @@ class BaseMonsterShared : CGameScript
 			MUMMY_LIVES = 0;
 		}
 		NPC_LAST_DAMAGED_TIME = GetGameTime();
-		string SINCE_SPAWN = GetGameTime();
+		float SINCE_SPAWN = GetGameTime();
 		SINCE_SPAWN -= NPC_SPAWN_TIME;
 		if (SINCE_SPAWN < 2.0)
 		{
@@ -714,8 +720,8 @@ class BaseMonsterShared : CGameScript
 			int NO_PARRY = 1;
 		}
 		if ((NO_PARRY)) return;
-		string ACCU_ROLL = RandomInt(param4, 100);
-		string PARRY_ROLL = RandomInt(1, MONSTER_PARRY);
+		int ACCU_ROLL = RandomInt(param4, 100);
+		int PARRY_ROLL = RandomInt(1, MONSTER_PARRY);
 		if (PARRY_ROLL > 90)
 		{
 			int PARRY_ROLL = 90;
@@ -831,7 +837,7 @@ class BaseMonsterShared : CGameScript
 				RESIST_AMT *= 100;
 				MSG_TEXT += int(RESIST_AMT);
 				MSG_TEXT += "% effective against him.";
-				SendInfoMsg(param1, "MSG_TITLE MSG_TEXT");
+				SendInfoMsg(param1, MSG_TITLE + MSG_TEXT);
 			}
 			if (RESIST_AMT <= 0)
 			{
@@ -843,7 +849,7 @@ class BaseMonsterShared : CGameScript
 	void npcatk_boss_regen()
 	{
 		if (!(NPC_BOSS_REGEN_RATE > 0)) return;
-		string L_DIFF = /* TODO: $math(subtract) */ GetGameTime();
+		string L_DIFF = (GetGameTime() - NPC_LAST_DAMAGED_TIME);
 		if (L_DIFF > 240)
 		{
 			NPC_BOSS_REGEN_FREQ("npcatk_boss_regen");
@@ -1072,7 +1078,7 @@ class BaseMonsterShared : CGameScript
 		if (!(m_hAttackTarget == "unset")) return;
 		if ((NPC_RETURNING_HOME))
 		{
-			string HOME_DIST = Distance(NPC_HOME_LOC, GetMonsterProperty("origin"));
+			float HOME_DIST = Distance(NPC_HOME_LOC, GetMonsterProperty("origin"));
 			LogDebug("npcatk_go_home_loop dist HOME_DIST getdist GetEntityProperty(GetOwner(), "movedest.prox")");
 			if (HOME_DIST > 64)
 			{
@@ -1286,7 +1292,7 @@ class BaseMonsterShared : CGameScript
 			if (NPC_SAY_ON_DIE != "NPC_SAY_ON_DIE")
 			{
 				NPC_DO_ON_DIE -= 1;
-				SayText("NPC_SAY_ON_DIE");
+				SayText(NPC_SAY_ON_DIE);
 			}
 		}
 	}
@@ -1298,7 +1304,7 @@ class BaseMonsterShared : CGameScript
 			if (NPC_SAY_ON_SPOT != "NPC_SAY_ON_SPOT")
 			{
 				NPC_DO_ON_SPOT -= 1;
-				SayText("NPC_SAY_ON_SPOT");
+				SayText(NPC_SAY_ON_SPOT);
 			}
 		}
 		if ((NEW_AI))
@@ -1399,7 +1405,7 @@ class BaseMonsterShared : CGameScript
 			GetAllPlayers(TELEHUNT_PLR_LIST);
 			string L_NPLAYERS = GetTokenCount(TELEHUNT_PLR_LIST, ";");
 			L_NPLAYERS -= 1;
-			string RND_PLR = RandomInt(0, L_NPLAYERS);
+			int RND_PLR = RandomInt(0, L_NPLAYERS);
 			string L_TELE_TARG = GetToken(TELEHUNT_PLR_LIST, 0, ";");
 			LogDebug("npcatk_tele_hunter_loop random GetEntityName(L_TELE_TARG)");
 		}

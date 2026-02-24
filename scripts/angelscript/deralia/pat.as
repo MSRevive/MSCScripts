@@ -7,9 +7,11 @@ namespace MS
 
 class Pat : CGameScript
 {
+	int CAN_CHAT;
 	string CURRENT_ENEMY;
 	int FLEE_PLAYER;
 	int HAT_QUEST;
+	int NO_JOB;
 	int SEE_ENEMY;
 	string SOUND_IDLE1;
 	string SOUND_IDLE2;
@@ -22,8 +24,8 @@ class Pat : CGameScript
 		SOUND_IDLE1 = "voices/human/male_idle4.wav";
 		SOUND_IDLE2 = "voices/human/male_idle5.wav";
 		SOUND_IDLE3 = "voices/human/male_idle6.wav";
-		const int CAN_CHAT = 1;
-		const int NO_JOB = 1;
+		CAN_CHAT = 1;
+		NO_JOB = 1;
 	}
 
 	void OnRepeatTimer()
@@ -78,12 +80,12 @@ class Pat : CGameScript
 
 	void say_hi()
 	{
-		SayText("I didn t do it! I swear!");
+		SayText(I + " didn t do it! I swear!");
 	}
 
 	void gossip_1()
 	{
-		SayText("No thieves in the area! I know that!");
+		SayText("No thieves in the area! " + I + " know that!");
 	}
 
 	void say_hat()
@@ -97,14 +99,14 @@ class Pat : CGameScript
 		}
 		if (HAT_QUEST == 0)
 		{
-			SayText("What of MY hat?");
+			SayText("What of " + MY + " hat?");
 		}
 	}
 
 	void say_rumor()
 	{
 		PlayAnim("once", "pondering");
-		SayText("Rumours? What do I know of such things? What , huh!? It wasn t me who took those rings!");
+		SayText("Rumours? What do " + I + " know of such things? What , huh!? It wasn t me who took those rings!");
 	}
 
 	void OnHitByAttack(CBaseEntity@ attacker, int damage) override

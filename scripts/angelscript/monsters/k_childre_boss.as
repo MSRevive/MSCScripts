@@ -12,16 +12,22 @@ class KChildreBoss : CGameScript
 	string ANIM_FLINCH;
 	int CAN_FLINCH;
 	string DID_WARCRY;
+	int DMG_SWIPE;
 	int DOING_FADE;
+	int DOT_NOVA;
+	float DUR_NOVA;
 	string FADE_TARGET;
 	int FIREBALL_TOSS;
 	int FLINCH_CHANCE;
 	float FLINCH_DELAY;
 	int FLINCH_HEALTH;
+	float FREQ_NOVA;
+	float FREQ_RANDOM_JUMP;
 	string NEXT_NOVA;
 	string NOVA_LIST;
 	string NPC_GIVE_EXP;
 	int NPC_IS_BOSS;
+	string PROJECTILE_SCRIPT;
 	int SPORE_POISON_DMG;
 	int STARTED_CYCLES;
 	string STEP_SIZE_NORM;
@@ -29,14 +35,14 @@ class KChildreBoss : CGameScript
 
 	KChildreBoss()
 	{
-		const string PROJECTILE_SCRIPT = "proj_spore";
+		PROJECTILE_SCRIPT = "proj_spore";
 		SPORE_POISON_DMG = 100;
-		const string DMG_SWIPE = RandomInt(160, 300);
-		const float FREQ_NOVA = 30.0;
-		const float DUR_NOVA = 5.0;
-		const int DOT_NOVA = 50;
+		DMG_SWIPE = RandomInt(160, 300);
+		FREQ_NOVA = 30.0;
+		DUR_NOVA = 5.0;
+		DOT_NOVA = 50;
 		NPC_IS_BOSS = 1;
-		const string FREQ_RANDOM_JUMP = Random(10.0, 30.0);
+		FREQ_RANDOM_JUMP = Random(10.0, 30.0);
 	}
 
 	void OnRepeatTimer()

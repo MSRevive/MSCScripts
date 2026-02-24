@@ -8,15 +8,20 @@ namespace MS
 
 class RingLight2 : CGameScript
 {
+	string ANIM_PREFIX;
 	int LIGHT_ON;
+	int MODEL_BODY_OFS;
+	string MODEL_HANDS;
+	string MODEL_VIEW;
+	string MODEL_WORLD;
 
 	RingLight2()
 	{
-		const string MODEL_WORLD = "misc/p_misc.mdl";
-		const string MODEL_HANDS = "misc/p_misc.mdl";
-		const string MODEL_VIEW = "misc/p_misc.mdl";
-		const int MODEL_BODY_OFS = 28;
-		const string ANIM_PREFIX = "ring";
+		MODEL_WORLD = "misc/p_misc.mdl";
+		MODEL_HANDS = "misc/p_misc.mdl";
+		MODEL_VIEW = "misc/p_misc.mdl";
+		MODEL_BODY_OFS = 28;
+		ANIM_PREFIX = "ring";
 	}
 
 	void miscitem_spawn()

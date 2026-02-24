@@ -13,6 +13,7 @@ class SorcBase : CGameScript
 	string ANIM_IDLE;
 	string ANIM_KNEEL;
 	string ANIM_RUN;
+	string ANIM_SORCJUMP;
 	string ANIM_WALK;
 	int CALLED_HELP;
 	int CAN_FLEE;
@@ -22,6 +23,8 @@ class SorcBase : CGameScript
 	int DID_SPOT_SPEECH;
 	float FLINCH_CHANCE;
 	int FLINCH_DELAY;
+	float FREQ_SORCJUMP;
+	float FREQ_TELE;
 	string FWD_JUMP_STR;
 	int HUNT_AGRO;
 	string KNEEL_MODE;
@@ -30,22 +33,50 @@ class SorcBase : CGameScript
 	int NO_CLOSE_MOUTH;
 	int NPC_SILENT_DEATH;
 	string ORC_JUMPER;
+	int ORC_JUMP_CUTOFF;
+	int ORC_JUMP_POWER;
+	int ORC_JUMP_RANGE;
 	string PLAYER_LIST;
 	string SORC_CUR_TELE_IDX;
 	string SORC_FINAL_TELEDEST;
+	float SORC_LRESIST;
+	int SORC_MAX_JUMP_RANGE;
 	int SORC_NO_TELE;
+	float SORC_PRESIST;
 	string SORC_REPULSE_TARGETS;
 	string SORC_SCAN_BEST_DIST;
 	string SORC_SCAN_BEST_IDX;
 	int SORC_SCAN_BEST_SET;
 	int SORC_SCAN_IDX;
 	string SORC_SCAN_SET;
+	int SORC_TELEPORTS;
 	int SORC_TELE_CYCLE_ON;
 	string SORC_TELE_ORG;
 	string SORC_TELE_SET1;
 	string SORC_TELE_SET2;
 	string SORC_TELE_SET3;
 	string SORC_TELE_SETS;
+	string SOUND_ATTACK1;
+	string SOUND_ATTACK2;
+	string SOUND_ATTACK3;
+	string SOUND_HELP;
+	string SOUND_HIT;
+	string SOUND_HIT2;
+	string SOUND_HIT3;
+	string SOUND_PAIN;
+	string SOUND_STRUCK1;
+	string SOUND_STRUCK2;
+	string SOUND_STRUCK3;
+	string SOUND_WARCRY1;
+	string SOUND_ZOMB_ALERT1;
+	string SOUND_ZOMB_ALERT2;
+	string SOUND_ZOMB_ALERT3;
+	string SOUND_ZOMB_ATK1;
+	string SOUND_ZOMB_ATK2;
+	string SOUND_ZOMB_ATK3;
+	string SOUND_ZOMB_STRUCK1;
+	string SOUND_ZOMB_STRUCK2;
+	string SOUND_ZOMB_STRUCK3;
 	string SPAWN_SPEECH;
 	float SPAWN_SPEECH_DELAY;
 	string SPOT_SPEECH;
@@ -67,29 +98,29 @@ class SorcBase : CGameScript
 			ORC_JUMPER = 0;
 		}
 		ANIM_KNEEL = "kneel";
-		const string ANIM_SORCJUMP = "battleaxe_swing1_L";
-		const float FREQ_SORCJUMP = 5.0;
-		const int SORC_MAX_JUMP_RANGE = 600;
-		const int ORC_JUMP_RANGE = 512;
-		const int ORC_JUMP_CUTOFF = 400;
-		const string ORC_JUMP_POWER = RandomInt(550, 650);
-		const string FREQ_TELE = Random(5.0, 10.0);
-		const int SORC_TELEPORTS = 1;
-		const float SORC_LRESIST = 0.75;
-		const float SORC_PRESIST = 1.10;
-		const string SOUND_STRUCK1 = "body/armour1.wav";
-		const string SOUND_STRUCK2 = "body/armour2.wav";
-		const string SOUND_STRUCK3 = "body/armour3.wav";
-		const string SOUND_HIT = "voices/orc/hit.wav";
-		const string SOUND_HIT2 = "voices/orc/hit2.wav";
-		const string SOUND_HIT3 = "voices/orc/hit3.wav";
-		const string SOUND_PAIN = "monsters/orc/pain.wav";
-		const string SOUND_WARCRY1 = "monsters/orc/battlecry.wav";
-		const string SOUND_ATTACK1 = "voices/orc/attack.wav";
-		const string SOUND_ATTACK2 = "voices/orc/attack2.wav";
-		const string SOUND_ATTACK3 = "voices/orc/attack3.wav";
+		ANIM_SORCJUMP = "battleaxe_swing1_L";
+		FREQ_SORCJUMP = 5.0;
+		SORC_MAX_JUMP_RANGE = 600;
+		ORC_JUMP_RANGE = 512;
+		ORC_JUMP_CUTOFF = 400;
+		ORC_JUMP_POWER = RandomInt(550, 650);
+		FREQ_TELE = Random(5.0, 10.0);
+		SORC_TELEPORTS = 1;
+		SORC_LRESIST = 0.75;
+		SORC_PRESIST = 1.10;
+		SOUND_STRUCK1 = "body/armour1.wav";
+		SOUND_STRUCK2 = "body/armour2.wav";
+		SOUND_STRUCK3 = "body/armour3.wav";
+		SOUND_HIT = "voices/orc/hit.wav";
+		SOUND_HIT2 = "voices/orc/hit2.wav";
+		SOUND_HIT3 = "voices/orc/hit3.wav";
+		SOUND_PAIN = "monsters/orc/pain.wav";
+		SOUND_WARCRY1 = "monsters/orc/battlecry.wav";
+		SOUND_ATTACK1 = "voices/orc/attack.wav";
+		SOUND_ATTACK2 = "voices/orc/attack2.wav";
+		SOUND_ATTACK3 = "voices/orc/attack3.wav";
 		NPC_SILENT_DEATH = 1;
-		const string SOUND_HELP = "voices/orc/help.wav";
+		SOUND_HELP = "voices/orc/help.wav";
 		ANIM_RUN = "run";
 		ANIM_IDLE = "idle1";
 		ANIM_WALK = "walk";
@@ -102,15 +133,15 @@ class SorcBase : CGameScript
 		ANIM_FLINCH = "flinch";
 		FLINCH_DELAY = 4;
 		LAST_ENEMY = "NONE";
-		const string SOUND_ZOMB_STRUCK1 = "debris/flesh2.wav";
-		const string SOUND_ZOMB_STRUCK2 = "agrunt/ag_pain3.wav";
-		const string SOUND_ZOMB_STRUCK3 = "agrunt/ag_pain5.wav";
-		const string SOUND_ZOMB_ATK1 = "zombie/claw_miss1.wav";
-		const string SOUND_ZOMB_ATK2 = "zombie/claw_miss2.wav";
-		const string SOUND_ZOMB_ATK3 = "zombie/claw_strike1.wav";
-		const string SOUND_ZOMB_ALERT1 = "monsters/zombie1/orc_zo_alert10.wav";
-		const string SOUND_ZOMB_ALERT2 = "monsters/zombie1/orc_zo_alert20.wav";
-		const string SOUND_ZOMB_ALERT3 = "monsters/zombie1/orc_zo_alert30.wav";
+		SOUND_ZOMB_STRUCK1 = "debris/flesh2.wav";
+		SOUND_ZOMB_STRUCK2 = "agrunt/ag_pain3.wav";
+		SOUND_ZOMB_STRUCK3 = "agrunt/ag_pain5.wav";
+		SOUND_ZOMB_ATK1 = "zombie/claw_miss1.wav";
+		SOUND_ZOMB_ATK2 = "zombie/claw_miss2.wav";
+		SOUND_ZOMB_ATK3 = "zombie/claw_strike1.wav";
+		SOUND_ZOMB_ALERT1 = "monsters/zombie1/orc_zo_alert10.wav";
+		SOUND_ZOMB_ALERT2 = "monsters/zombie1/orc_zo_alert20.wav";
+		SOUND_ZOMB_ALERT3 = "monsters/zombie1/orc_zo_alert30.wav";
 		Precache("voices/orc/help.wav");
 	}
 
@@ -305,7 +336,7 @@ class SorcBase : CGameScript
 		string CUR_PLAYER = GetToken(PLAYER_LIST, i, ";");
 		if (!(IsEntityAlive(CUR_PLAYER))) return;
 		string CUR_PLAYER_ORG = GetEntityOrigin(CUR_PLAYER);
-		string DIST_FROM_POINT = Distance(SORC_TELE_ORG, CUR_PLAYER_ORG);
+		float DIST_FROM_POINT = Distance(SORC_TELE_ORG, CUR_PLAYER_ORG);
 		if (SORC_SCAN_BEST_SET == 0)
 		{
 			LogDebug("First: SORC_SCAN_BEST_IDX");
@@ -375,7 +406,7 @@ class SorcBase : CGameScript
 			if (!(BO_ZOMBIE_MODE))
 			{
 			}
-			string block = RandomInt(0, 99);
+			int block = RandomInt(0, 99);
 			if (block < 30)
 			{
 				if (block < 5)
@@ -385,7 +416,7 @@ class SorcBase : CGameScript
 				}
 				else
 				{
-					string rand = RandomInt(0, 1);
+					int rand = RandomInt(0, 1);
 					if (rand == 0)
 					{
 						PlayAnim("critical", "shielddeflect1");
@@ -451,7 +482,7 @@ class SorcBase : CGameScript
 	void OnHuntTarget(CBaseEntity@ target)
 	{
 		if (!(m_hAttackTarget != "unset")) return;
-		string GAME_TIME = GetGameTime();
+		float GAME_TIME = GetGameTime();
 		if (!(GAME_TIME > NEXT_SORCJUMP)) return;
 		if (!(GetEntityRange(m_hAttackTarget) < SORC_MAX_JUMP_RANGE)) return;
 		string MY_Z = GetEntityProperty(GetOwner(), "origin.z");
@@ -492,7 +523,7 @@ class SorcBase : CGameScript
 		if ((DID_SPOT_SPEECH)) return;
 		DID_SPOT_SPEECH = 1;
 		if (!(SPOT_SPEECH != "SPOT_SPEECH")) return;
-		SayText("SPOT_SPEECH");
+		SayText(SPOT_SPEECH);
 	}
 
 	void OnPostSpawn() override
@@ -507,7 +538,7 @@ class SorcBase : CGameScript
 
 	void say_spawn_speech()
 	{
-		SayText("SPAWN_SPEECH");
+		SayText(SPAWN_SPEECH);
 	}
 
 	void set_sorcpal_jailer1()

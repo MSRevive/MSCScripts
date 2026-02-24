@@ -8,34 +8,50 @@ namespace MS
 class PetWolfShadow : CGameScript
 {
 	string ACT_NAME;
+	int ATTACK_HITCHANCE;
+	int BASE_DMG;
+	int BASE_HP;
+	int CHANCE_CLAW;
+	int COMPANION_MAXHP;
 	string COMPANION_TYPE;
+	float DMG_BITE;
+	float DMG_CLAW;
+	int DOT_ICE;
 	string FREEZE_TARGS;
+	float FREQ_COMBAT_HOWL;
+	float FREQ_HOWL;
+	float FREQ_IDLE;
+	float FREQ_LOOK;
+	int LEAP_RANGE;
+	int MAX_DMG;
 	int MELEE_ATTACK;
 	string NEXT_COMBAT_HOWL;
 	int NEXT_HOWL;
 	string NPC_REVIVAL_SCRIPT;
+	int SUMMON_CIRCLE_INDEX;
+	float XPDMG_MULTI;
 
 	PetWolfShadow()
 	{
-		const int SUMMON_CIRCLE_INDEX = 1;
-		const int BASE_HP = 500;
-		const int COMPANION_MAXHP = 6000;
-		const int MAX_DMG = 80;
-		const float XPDMG_MULTI = 0.01;
-		const int BASE_DMG = 10;
+		SUMMON_CIRCLE_INDEX = 1;
+		BASE_HP = 500;
+		COMPANION_MAXHP = 6000;
+		MAX_DMG = 80;
+		XPDMG_MULTI = 0.01;
+		BASE_DMG = 10;
 		COMPANION_TYPE = "wolf";
 		ACT_NAME = "pet shadow wolf";
 		NPC_REVIVAL_SCRIPT = currentscript;
-		const int ATTACK_HITCHANCE = 90;
-		const int LEAP_RANGE = 256;
-		const string DMG_BITE = Random(5.0, 10.0);
-		const string DMG_CLAW = Random(5.0, 10.0);
-		const float FREQ_LOOK = 20.0;
-		const string FREQ_IDLE = Random(10, 30);
-		const string FREQ_HOWL = Random(30, 60);
-		const int CHANCE_CLAW = 50;
-		const int DOT_ICE = 5;
-		const float FREQ_COMBAT_HOWL = 30.0;
+		ATTACK_HITCHANCE = 90;
+		LEAP_RANGE = 256;
+		DMG_BITE = Random(5.0, 10.0);
+		DMG_CLAW = Random(5.0, 10.0);
+		FREQ_LOOK = 20.0;
+		FREQ_IDLE = Random(10, 30);
+		FREQ_HOWL = Random(30, 60);
+		CHANCE_CLAW = 50;
+		DOT_ICE = 5;
+		FREQ_COMBAT_HOWL = 30.0;
 	}
 
 	void pet_spawn()

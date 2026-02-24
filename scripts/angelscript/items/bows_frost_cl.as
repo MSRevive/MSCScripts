@@ -5,18 +5,22 @@ namespace MS
 
 class BowsFrostCl : CGameScript
 {
+	float CONTRACT_RATE;
 	string CUR_VOF;
 	int CYCLE_ANGLE;
 	string FX_OWNER;
 	int FX_RADIUS;
+	float RISE_RATE;
 	string SPRITE_MODE;
+	string SPRITE_NAME;
+	int VOF_START;
 
 	BowsFrostCl()
 	{
-		const int VOF_START = -24;
-		const string SPRITE_NAME = "char_breath.spr";
-		const float RISE_RATE = 0.06;
-		const float CONTRACT_RATE = 0.015;
+		VOF_START = -24;
+		SPRITE_NAME = "char_breath.spr";
+		RISE_RATE = 0.06;
+		CONTRACT_RATE = 0.015;
 	}
 
 	void client_activate()

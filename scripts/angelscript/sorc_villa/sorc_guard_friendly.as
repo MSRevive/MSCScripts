@@ -7,7 +7,11 @@ namespace MS
 
 class SorcGuardFriendly : CGameScript
 {
+	string ANIM_NO;
 	string ANIM_RAND_IDLE;
+	string ANIM_YES;
+	int CHAT_NO_CLOSE_MOUTH;
+	int CHAT_USE_CONV_ANIMS;
 	string CUR_SPEAKER;
 	int GOT_RING;
 	string NPC_DO_EVENTS;
@@ -20,10 +24,10 @@ class SorcGuardFriendly : CGameScript
 
 	SorcGuardFriendly()
 	{
-		const int CHAT_USE_CONV_ANIMS = 0;
-		const int CHAT_NO_CLOSE_MOUTH = 1;
-		const string ANIM_NO = "neigh";
-		const string ANIM_YES = "nod_yes";
+		CHAT_USE_CONV_ANIMS = 0;
+		CHAT_NO_CLOSE_MOUTH = 1;
+		ANIM_NO = "neigh";
+		ANIM_YES = "nod_yes";
 	}
 
 	void OnSpawn() override
@@ -187,7 +191,7 @@ class SorcGuardFriendly : CGameScript
 		if (!(CanSee("player", 256))) return;
 		SPOTTED_PLAYER = 1;
 		PlayAnim("once", "nod_yes");
-		SayText("SCAN_COMMENT");
+		SayText(SCAN_COMMENT);
 	}
 
 	void player_ogre_hole()

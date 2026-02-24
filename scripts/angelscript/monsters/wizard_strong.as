@@ -7,9 +7,11 @@ namespace MS
 
 class WizardStrong : CGameScript
 {
+	int AM_GENERIC;
+
 	WizardStrong()
 	{
-		const int AM_GENERIC = 1;
+		AM_GENERIC = 1;
 	}
 
 	void game_precache()

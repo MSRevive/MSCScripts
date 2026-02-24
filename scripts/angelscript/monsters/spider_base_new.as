@@ -38,7 +38,7 @@ class SpiderBaseNew : CGameScript
 
 	void frame_bite1()
 	{
-		string ATTACK_DAMAGE = Random(ATTACK_DAMAGE_LOW, ATTACK_DAMAGE_HIGH);
+		float ATTACK_DAMAGE = Random(ATTACK_DAMAGE_LOW, ATTACK_DAMAGE_HIGH);
 		npcatk_dodamage(m_hAttackTarget, ATTACK_HITRANGE, ATTACK_DAMAGE, ATTACK_ACCURACY);
 	}
 

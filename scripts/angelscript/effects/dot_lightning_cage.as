@@ -8,7 +8,13 @@ namespace MS
 class DotLightningCage : CGameScript
 {
 	string CL_CAGE;
+	string DOT_HE_IMMUNE;
+	string DOT_IM_AFFECTED;
+	string DOT_IM_RESIST;
 	string DOT_RESISTED;
+	string EFFECT_FLAGS;
+	string EFFECT_ID;
+	string EFFECT_SCRIPT;
 	string MAX_HP;
 	int game.effect.anim.framerate;
 	int game.effect.canduck;
@@ -17,12 +23,12 @@ class DotLightningCage : CGameScript
 
 	DotLightningCage()
 	{
-		const string EFFECT_ID = "dot_lightning_cage";
-		const string EFFECT_FLAGS = "nostack";
-		const string EFFECT_SCRIPT = currentscript;
-		const string DOT_IM_AFFECTED = "You are held in a lightning field!";
-		const string DOT_IM_RESIST = "You resist being held in a lightning field.";
-		const string DOT_HE_IMMUNE = "is immune to lightning magic!";
+		EFFECT_ID = "dot_lightning_cage";
+		EFFECT_FLAGS = "nostack";
+		EFFECT_SCRIPT = currentscript;
+		DOT_IM_AFFECTED = "You are held in a lightning field!";
+		DOT_IM_RESIST = "You resist being held in a lightning field.";
+		DOT_HE_IMMUNE = "is immune to lightning magic!";
 	}
 
 	void game_activate()
@@ -38,7 +44,7 @@ class DotLightningCage : CGameScript
 	{
 		if (GetEntityHealth(GetOwner()) > MAX_HP)
 		{
-			SendPlayerMessage(DOT_ATTACKER, "GetEntityName(GetOwner()) is too strong for a lightning field.");
+			SendPlayerMessage(DOT_ATTACKER, GetEntityName(GetOwner()) + " is too strong for a lightning field.");
 			DOT_RESISTED = 1;
 			RemoveScript();
 			return;

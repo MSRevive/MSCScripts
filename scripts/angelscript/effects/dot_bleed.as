@@ -7,16 +7,22 @@ namespace MS
 
 class DotBleed : CGameScript
 {
+	string DOT_HE_IMMUNE;
+	string DOT_IM_AFFECTED;
+	string DOT_IM_RESIST;
+	string DOT_TYPE;
+	string EFFECT_ID;
+	string EFFECT_SCRIPT;
 	string SFX_BLEED;
 
 	DotBleed()
 	{
-		const string EFFECT_ID = "DOT_pierce";
-		const string EFFECT_SCRIPT = currentscript;
-		const string DOT_TYPE = "pierce_effect";
-		const string DOT_IM_AFFECTED = "You are bleeding!";
-		const string DOT_IM_RESIST = "Your armor prevents the attack from piercing through your skin.";
-		const string DOT_HE_IMMUNE = "cannot bleed.";
+		EFFECT_ID = "DOT_pierce";
+		EFFECT_SCRIPT = currentscript;
+		DOT_TYPE = "pierce_effect";
+		DOT_IM_AFFECTED = "You are bleeding!";
+		DOT_IM_RESIST = "Your armor prevents the attack from piercing through your skin.";
+		DOT_HE_IMMUNE = "cannot bleed.";
 	}
 
 	void dot_start()

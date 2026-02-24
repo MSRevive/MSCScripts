@@ -10,6 +10,7 @@ class BaseNpcVendorConfirm : CGameScript
 	string CHAT_STEP3;
 	string CHAT_STEP4;
 	string CHAT_STEPS;
+	float FREQ_HINT_TEXT;
 	int HAS_INCLUDE_VENDOR_CONFIRM;
 	string NEXT_HINT_TEXT;
 	int NPC_CHECK_LEVEL;
@@ -40,7 +41,7 @@ class BaseNpcVendorConfirm : CGameScript
 				VEND_NEWBIE = 1;
 			}
 		}
-		const float FREQ_HINT_TEXT = 120.0;
+		FREQ_HINT_TEXT = 120.0;
 	}
 
 	void OnSpawn() override
@@ -91,7 +92,7 @@ class BaseNpcVendorConfirm : CGameScript
 			if (!(VEND_CONTAINERS))
 			{
 			}
-			SayText("I can tell you about the [weapons] I have for sale.");
+			SayText(I + "can tell you about the [weapons] " + I + " have for sale.");
 			bchat_mouth_move();
 		}
 		if ((VEND_CONTAINERS))
@@ -100,12 +101,12 @@ class BaseNpcVendorConfirm : CGameScript
 			bchat_mouth_move();
 			if (!(VEND_WEAPONS))
 			{
-				SayText("I can tell you about the [containers] I have for sale.");
+				SayText(I + "can tell you about the [containers] " + I + " have for sale.");
 			}
 			if ((VEND_WEAPONS))
 			{
 			}
-			SayText("I can tell you about the types [weapons] and [containers] I have for sale , if you like.");
+			SayText(I + "can tell you about the types [weapons] and [containers] " + I + " have for sale , if you like.");
 		}
 		if ((VEND_ARMORER))
 		{

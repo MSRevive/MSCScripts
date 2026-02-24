@@ -7,13 +7,19 @@ namespace MS
 
 class SmallarmsHuggerdagger2 : CGameScript
 {
+	int BASE_LEVEL_REQ;
+	float MELEE_ACCURACY;
+	int MELEE_DMG;
+	int MELEE_DMG_RANGE;
+	int MELEE_RANGE;
+
 	SmallarmsHuggerdagger2()
 	{
-		const int BASE_LEVEL_REQ = 6;
-		const int MELEE_DMG = 180;
-		const int MELEE_DMG_RANGE = 90;
-		const int MELEE_RANGE = 35;
-		const float MELEE_ACCURACY = 0.8;
+		BASE_LEVEL_REQ = 6;
+		MELEE_DMG = 180;
+		MELEE_DMG_RANGE = 90;
+		MELEE_RANGE = 35;
+		MELEE_ACCURACY = 0.8;
 	}
 
 	void weapon_spawn()

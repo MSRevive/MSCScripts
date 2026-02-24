@@ -8,32 +8,50 @@ namespace MS
 class MagicHandTurnUndead : CGameScript
 {
 	string HOLY_DMG;
+	string LIGHT_COLOR;
+	float MELEE_ATK_DURATION;
+	int MELEE_DMG;
+	float MELEE_DMG_DELAY;
+	int MELEE_DMG_RANGE;
+	float MELEE_HITCHANCE;
+	int MELEE_NOAUTOAIM;
+	int MELEE_RANGE;
+	string MELEE_TYPE;
+	string SCRIPT_SFX_CAST;
+	float SCRIPT_SFX_DURATION;
+	string SCRIPT_SFX_PREP;
+	string SOUND_SHOOT;
+	string SPELL_DAMAGE_TYPE;
+	int SPELL_ENERGYDRAIN;
+	int SPELL_MPDRAIN;
+	int SPELL_PREPARE_TIME;
 	int SPELL_SKILL_REQUIRED;
+	string SPELL_STAT;
 	string TARGET_NPC;
 	int TARGET_VALID;
 
 	MagicHandTurnUndead()
 	{
-		const string SOUND_SHOOT = "fvox/hiss.wav";
-		const int MELEE_RANGE = 500;
-		const float MELEE_HITCHANCE = 1.0;
-		const float MELEE_ATK_DURATION = 1.5;
-		const string MELEE_TYPE = "holy";
-		const int MELEE_DMG = 0;
-		const int MELEE_DMG_RANGE = 0;
-		const int MELEE_NOAUTOAIM = 1;
-		const float MELEE_DMG_DELAY = 0.4;
+		SOUND_SHOOT = "fvox/hiss.wav";
+		MELEE_RANGE = 500;
+		MELEE_HITCHANCE = 1.0;
+		MELEE_ATK_DURATION = 1.5;
+		MELEE_TYPE = "holy";
+		MELEE_DMG = 0;
+		MELEE_DMG_RANGE = 0;
+		MELEE_NOAUTOAIM = 1;
+		MELEE_DMG_DELAY = 0.4;
 		SPELL_SKILL_REQUIRED = 1;
-		const int SPELL_PREPARE_TIME = 2;
-		const string SPELL_DAMAGE_TYPE = "holy";
-		const int SPELL_ENERGYDRAIN = 10;
-		const int SPELL_MPDRAIN = 2;
-		const string SPELL_STAT = "spellcasting.divination";
-		const string SCRIPT_SFX_CAST = "effects/sfx_lightning";
+		SPELL_PREPARE_TIME = 2;
+		SPELL_DAMAGE_TYPE = "holy";
+		SPELL_ENERGYDRAIN = 10;
+		SPELL_MPDRAIN = 2;
+		SPELL_STAT = "spellcasting.divination";
+		SCRIPT_SFX_CAST = "effects/sfx_lightning";
 		Precache(SCRIPT_SFX_CAST);
-		const string SCRIPT_SFX_PREP = "items/magic_hand_lightning_weak_cl";
-		const float SCRIPT_SFX_DURATION = 0.5;
-		const Vector3 LIGHT_COLOR = Vector3(255, 255, 0);
+		SCRIPT_SFX_PREP = "items/magic_hand_lightning_weak_cl";
+		SCRIPT_SFX_DURATION = 0.5;
+		LIGHT_COLOR = Vector3(255, 255, 0);
 	}
 
 	void spell_spawn()

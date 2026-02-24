@@ -11,33 +11,39 @@ class Vendor : CGameScript
 {
 	string L_SERVICE;
 	int MAGIC_SHOP;
-	string OVERCHARGE;
-	string SELL_RATIO;
+	int NO_CHAT;
+	int NO_RUMOR;
+	int OVERCHARGE;
+	float SELL_RATIO;
 	int SELL_WEAPON_LEVEL;
+	string SOUND_DEATH;
 	int STORE_BUYMENU;
 	string STORE_NAME;
+	int STORE_RESTOCK;
+	int STORE_SELLMENU;
 	string STORE_TRADEEXT;
 	string STORE_TRIGGERTEXT;
-	string STORE_TYPE;
+	int STORE_TYPE;
 	string TEMP;
 	int VEND_ARMORER;
 	int VEND_CONTAINERS;
 	int VEND_NEWBIE;
 	string VEND_NO_GOODBYE;
+	int VEND_SPEC_SHEATHS;
 	int VEND_WEAPONS;
 
 	Vendor()
 	{
-		const string SOUND_DEATH = "none";
+		SOUND_DEATH = "none";
 		STORE_TRADEEXT = "trade";
 		STORE_TRIGGERTEXT = "store trade buy sell purchase sale offer";
-		const int STORE_SELLMENU = 1;
+		STORE_SELLMENU = 1;
 		STORE_BUYMENU = 1;
-		const int STORE_RESTOCK = 0;
-		const int NO_RUMOR = 1;
+		STORE_RESTOCK = 0;
+		NO_RUMOR = 1;
 		MAGIC_SHOP = 0;
-		const int NO_CHAT = 1;
-		const int VEND_SPEC_SHEATHS = 1;
+		NO_CHAT = 1;
+		VEND_SPEC_SHEATHS = 1;
 	}
 
 	void OnRepeatTimer()

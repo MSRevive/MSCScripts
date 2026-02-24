@@ -5,9 +5,17 @@ namespace MS
 
 class ItemDjinnLight : CGameScript
 {
+	int FRAMERATE;
+	int FRAMES;
+	string LIGHT_COLOR;
+	int LIGHT_DROPPED_SCALE;
+	float LIGHT_PLAYER_SCALE;
+	int LIGHT_RADIUS;
 	int L_ATTACH_BODY;
 	string L_ATTACH_MDL_ID;
 	string L_POS;
+	string SPRITE_FIRE;
+	string SPRITE_FIRE_FIXED;
 	string local.body;
 	string local.lightid;
 	int local.local3rdp_sprite;
@@ -17,14 +25,14 @@ class ItemDjinnLight : CGameScript
 
 	ItemDjinnLight()
 	{
-		const string SPRITE_FIRE = "bluejet1.spr";
-		const string SPRITE_FIRE_FIXED = "bluejet1.spr";
-		const int LIGHT_RADIUS = 300;
-		const Vector3 LIGHT_COLOR = Vector3(4, 50, 128);
-		const float LIGHT_PLAYER_SCALE = 0.3;
-		const int LIGHT_DROPPED_SCALE = 6;
-		const int FRAMES = 20;
-		const int FRAMERATE = 30;
+		SPRITE_FIRE = "bluejet1.spr";
+		SPRITE_FIRE_FIXED = "bluejet1.spr";
+		LIGHT_RADIUS = 300;
+		LIGHT_COLOR = Vector3(4, 50, 128);
+		LIGHT_PLAYER_SCALE = 0.3;
+		LIGHT_DROPPED_SCALE = 6;
+		FRAMES = 20;
+		FRAMERATE = 30;
 		local.modelid = -1;
 		local.local3rdp_sprite = 0;
 		SetCallback("render", "enable");
@@ -101,7 +109,7 @@ class ItemDjinnLight : CGameScript
 		ClientEffect("frameent", "set_current_prop", "movetype", 12);
 		ClientEffect("frameent", "set_current_prop", "body", L_ATTACH_BODY);
 		ClientEffect("frameent", "set_current_prop", "scale", local.scale);
-		string l.frame = GetGameTime();
+		float l.frame = GetGameTime();
 		l.frame -= START_BURNING;
 		l.frame *= FRAMERATE;
 		l.frame %= FRAMES;

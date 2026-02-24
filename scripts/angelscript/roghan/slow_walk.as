@@ -10,43 +10,55 @@ class SlowWalk : CGameScript
 	string ANIM_ATTACK;
 	string ANIM_DEATH;
 	string ANIM_IDLE;
+	string ANIM_KICK;
 	string ANIM_RUN;
 	string ANIM_WALK;
+	int ATTACK_HITCHANCE;
 	int ATTACK_HITRANGE;
 	int ATTACK_RANGE;
 	float BASE_FRAMERATE;
 	float BASE_MOVESPEED;
 	int CAN_FLINCH;
 	string CUR_PLAYERS;
+	int DMG_KICK;
 	int DROP_GOLD;
+	string MONSTER_MODEL;
 	int MOVE_RANGE;
+	string SOUND_ATTACK1;
+	string SOUND_ATTACK2;
+	string SOUND_ATTACK3;
+	string SOUND_DEATH;
+	string SOUND_PAIN;
+	string SOUND_STRUCK1;
+	string SOUND_STRUCK2;
+	string SOUND_STRUCK3;
 	int TIMES_HIT;
 
 	SlowWalk()
 	{
 		ANIM_WALK = "walk";
 		ANIM_RUN = "run";
-		const string ANIM_KICK = "kick";
+		ANIM_KICK = "kick";
 		ANIM_ATTACK = ANIM_KICK;
 		ANIM_DEATH = "die_fallback";
 		ANIM_IDLE = "idle1";
 		CAN_FLINCH = 0;
 		DROP_GOLD = 0;
-		const string SOUND_DEATH = "voices/orc/die.wav";
+		SOUND_DEATH = "voices/orc/die.wav";
 		Precache(SOUND_DEATH);
-		const string SOUND_ATTACK1 = "voices/orc/attack.wav";
-		const string SOUND_ATTACK2 = "voices/orc/attack2.wav";
-		const string SOUND_ATTACK3 = "voices/orc/attack3.wav";
-		const string SOUND_STRUCK1 = "body/armour1.wav";
-		const string SOUND_STRUCK2 = "body/armour2.wav";
-		const string SOUND_STRUCK3 = "body/armour3.wav";
-		const string SOUND_PAIN = "monsters/orc/pain.wav";
+		SOUND_ATTACK1 = "voices/orc/attack.wav";
+		SOUND_ATTACK2 = "voices/orc/attack2.wav";
+		SOUND_ATTACK3 = "voices/orc/attack3.wav";
+		SOUND_STRUCK1 = "body/armour1.wav";
+		SOUND_STRUCK2 = "body/armour2.wav";
+		SOUND_STRUCK3 = "body/armour3.wav";
+		SOUND_PAIN = "monsters/orc/pain.wav";
 		MOVE_RANGE = 64;
 		ATTACK_RANGE = 90;
 		ATTACK_HITRANGE = 120;
-		const int ATTACK_HITCHANCE = 100;
-		const string DMG_KICK = RandomInt(0, 1);
-		const string MONSTER_MODEL = "monsters/Orc.mdl";
+		ATTACK_HITCHANCE = 100;
+		DMG_KICK = RandomInt(0, 1);
+		MONSTER_MODEL = "monsters/Orc.mdl";
 		Precache(MONSTER_MODEL);
 	}
 
@@ -66,7 +78,7 @@ class SlowWalk : CGameScript
 		SetAnimFrameRate(0.5);
 		BASE_MOVESPEED = 0.5;
 		BASE_FRAMERATE = 0.5;
-		// TODO: UNCONVERTED: hearingsensetivity 15
+		SetHearingSensitivity(15);
 		// TODO: UNCONVERTED: hearingsensitivity
 	}
 

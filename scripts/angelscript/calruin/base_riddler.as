@@ -87,7 +87,7 @@ class BaseRiddler : CGameScript
 		if ((RIDDLE_ANSWERED)) return;
 		string MY_TARGET_POS = GetEntityOrigin(VICTIM);
 		MY_TARGET_POS += Vector3(0, 0, 16);
-		SayText("FAILED_MSG");
+		SayText(FAILED_MSG);
 		string l.sky = MY_TARGET_POS;
 		l.sky += Vector3(0, 0, 4096);
 		EmitSound3D("weather/Storm_exclamation.wav", 10, MY_TARGET_POS);

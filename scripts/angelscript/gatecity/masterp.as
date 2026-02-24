@@ -38,7 +38,7 @@ class Masterp : CGameScript
 
 	void say_job()
 	{
-		SayText("A job? I am afraid the temple has no specific jobs for you.");
+		SayText(A + "job? " + I + " am afraid the temple has no specific jobs for you.");
 		ScheduleDelayedEvent(3, "say_job2");
 	}
 

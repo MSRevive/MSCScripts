@@ -7,35 +7,56 @@ namespace MS
 
 class BluntDb : CGameScript
 {
+	string ANIM_PREFIX;
+	int BASE_LEVEL_REQ;
+	float DEMON_ATK_DURATION;
+	int DEMON_CHARGES;
+	int DEMON_DMG;
+	float DEMON_DMG_DELAY;
+	float DEMON_DURATION;
+	int FIRE_WAVE_MP;
 	string FIRE_WAVE_START_POS;
 	string FIRE_WAVE_TARGS;
 	string FIRE_WAVE_YAW;
 	string GAME_PVP;
+	float MELEE_ACCURACY;
+	float MELEE_ATK_DURATION;
+	int MELEE_DMG;
+	float MELEE_DMG_DELAY;
+	int MELEE_DMG_RANGE;
+	string MELEE_DMG_TYPE;
+	int MELEE_ENERGY;
+	float MELEE_PARRY_AUGMENT;
+	int MELEE_RANGE;
+	int MODEL_BODY_OFS;
+	string MODEL_VIEW;
+	int MODEL_VIEW_IDX;
+	string MODEL_WORLD;
 	int M_ATTACK;
 
 	BluntDb()
 	{
-		const int BASE_LEVEL_REQ = 30;
-		const int FIRE_WAVE_MP = 40;
-		const int DEMON_CHARGES = 6;
-		const float DEMON_DURATION = 40.0;
-		const int MELEE_RANGE = 90;
-		const float MELEE_DMG_DELAY = 0.5;
-		const float MELEE_ATK_DURATION = 1.1;
-		const float DEMON_DMG_DELAY = 0.25;
-		const float DEMON_ATK_DURATION = 0.7;
-		const int MELEE_ENERGY = 2;
-		const int MELEE_DMG = 450;
-		const int DEMON_DMG = 800;
-		const int MELEE_DMG_RANGE = 40;
-		const float MELEE_ACCURACY = 0.8;
-		const float MELEE_PARRY_AUGMENT = 0.2;
-		const string MELEE_DMG_TYPE = "dark";
-		const string MODEL_VIEW = "viewmodels/v_2hblunts.mdl";
-		const int MODEL_VIEW_IDX = 7;
-		const string MODEL_WORLD = "weapons/p_weapons3.mdl";
-		const int MODEL_BODY_OFS = 71;
-		const string ANIM_PREFIX = "standard";
+		BASE_LEVEL_REQ = 30;
+		FIRE_WAVE_MP = 40;
+		DEMON_CHARGES = 6;
+		DEMON_DURATION = 40.0;
+		MELEE_RANGE = 90;
+		MELEE_DMG_DELAY = 0.5;
+		MELEE_ATK_DURATION = 1.1;
+		DEMON_DMG_DELAY = 0.25;
+		DEMON_ATK_DURATION = 0.7;
+		MELEE_ENERGY = 2;
+		MELEE_DMG = 450;
+		DEMON_DMG = 800;
+		MELEE_DMG_RANGE = 40;
+		MELEE_ACCURACY = 0.8;
+		MELEE_PARRY_AUGMENT = 0.2;
+		MELEE_DMG_TYPE = "dark";
+		MODEL_VIEW = "viewmodels/v_2hblunts.mdl";
+		MODEL_VIEW_IDX = 7;
+		MODEL_WORLD = "weapons/p_weapons3.mdl";
+		MODEL_BODY_OFS = 71;
+		ANIM_PREFIX = "standard";
 	}
 
 	void weapon_spawn()
@@ -80,7 +101,7 @@ class BluntDb : CGameScript
 		if (!(GetSkillLevel(GetOwner(), "spellcasting.fire") >= 25)) return;
 		if (GetEntityMP(GetOwner()) < FIRE_WAVE_MP)
 		{
-			SendColoredMessage(GetOwner(), "Demon Bludgeon Hammer: Insufficient MP for Fire Wave");
+			SendColoredMessage(GetOwner(), "Demon Bludgeon Hammer: Insufficient " + MP + " for Fire Wave");
 		}
 		if (!(GetEntityMP(GetOwner()) >= FIRE_WAVE_MP)) return;
 		GiveMP(GetOwner());

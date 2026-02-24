@@ -7,8 +7,22 @@ class BaseScriptSkills : CGameScript
 {
 	string FOUND_EMPTY_SLOT;
 	string NPC_ADJUSTED_DMG;
+	int NPC_HITDATA_ARCHERY;
+	int NPC_HITDATA_AXEHANDLING;
 	string NPC_HITDATA_DMG;
 	string NPC_HITDATA_IDS;
+	string NPC_HITDATA_INIT_SKILLS;
+	int NPC_HITDATA_MARTIALARTS;
+	int NPC_HITDATA_SMALLARMS;
+	int NPC_HITDATA_SPELLS_AFFLICTION;
+	int NPC_HITDATA_SPELLS_DIVINATION;
+	int NPC_HITDATA_SPELLS_EARTH;
+	int NPC_HITDATA_SPELLS_FIRE;
+	int NPC_HITDATA_SPELLS_ICE;
+	int NPC_HITDATA_SPELLS_LIGHTNING;
+	int NPC_HITDATA_SPELLS_SUMMON;
+	int NPC_HITDATA_SWORDSMANSHIP;
+	string NPC_SKILLS_LIST;
 	string NPC_TOTAL_DAMAGE;
 	string OUT_IDX;
 	string PLAYER_HITDATA_SKILLS_0;
@@ -26,20 +40,20 @@ class BaseScriptSkills : CGameScript
 
 	BaseScriptSkills()
 	{
-		const int NPC_HITDATA_SWORDSMANSHIP = 0;
-		const int NPC_HITDATA_MARTIALARTS = 1;
-		const int NPC_HITDATA_AXEHANDLING = 2;
-		const int NPC_HITDATA_SMALLARMS = 3;
-		const int NPC_HITDATA_ARCHERY = 4;
-		const int NPC_HITDATA_SPELLS_FIRE = 5;
-		const int NPC_HITDATA_SPELLS_ICE = 6;
-		const int NPC_HITDATA_SPELLS_LIGHTNING = 7;
-		const int NPC_HITDATA_SPELLS_EARTH = 8;
-		const int NPC_HITDATA_SPELLS_SUMMON = 9;
-		const int NPC_HITDATA_SPELLS_DIVINATION = 10;
-		const int NPC_HITDATA_SPELLS_AFFLICTION = 11;
-		const string NPC_HITDATA_INIT_SKILLS = "0;0;0;0;0;0;0;0;0;0;0;0";
-		const string NPC_SKILLS_LIST = "swordsmanship;martialarts;axehandling;bluntarms;smallarms;archery;spellcasting.fire;spellcasting.ice;spellcasting.lightning;spellcasting.earth;spellcasting.summon;spellcasting.divination;spellcasting.affliction";
+		NPC_HITDATA_SWORDSMANSHIP = 0;
+		NPC_HITDATA_MARTIALARTS = 1;
+		NPC_HITDATA_AXEHANDLING = 2;
+		NPC_HITDATA_SMALLARMS = 3;
+		NPC_HITDATA_ARCHERY = 4;
+		NPC_HITDATA_SPELLS_FIRE = 5;
+		NPC_HITDATA_SPELLS_ICE = 6;
+		NPC_HITDATA_SPELLS_LIGHTNING = 7;
+		NPC_HITDATA_SPELLS_EARTH = 8;
+		NPC_HITDATA_SPELLS_SUMMON = 9;
+		NPC_HITDATA_SPELLS_DIVINATION = 10;
+		NPC_HITDATA_SPELLS_AFFLICTION = 11;
+		NPC_HITDATA_INIT_SKILLS = "0;0;0;0;0;0;0;0;0;0;0;0";
+		NPC_SKILLS_LIST = "swordsmanship;martialarts;axehandling;bluntarms;smallarms;archery;spellcasting.fire;spellcasting.ice;spellcasting.lightning;spellcasting.earth;spellcasting.summon;spellcasting.divination;spellcasting.affliction";
 	}
 
 	void OnSpawn() override
@@ -80,7 +94,7 @@ class BaseScriptSkills : CGameScript
 			}
 			if (PLAYER_HITDATA_IDX >= 10)
 			{
-				SendPlayerMessage(PLR_ATTACKER, "XP Sys Warning: GetEntityName(GetOwner()) cannot find anymore XP slots");
+				SendPlayerMessage(PLR_ATTACKER, "XP Sys Warning: " + GetEntityName(GetOwner()) + "cannot find anymore " + XP + " slots");
 			}
 			if (PLAYER_HITDATA_IDX < 10)
 			{

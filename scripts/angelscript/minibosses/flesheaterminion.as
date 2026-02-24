@@ -12,6 +12,8 @@ class Flesheaterminion : CGameScript
 	string ANIM_IDLE;
 	string ANIM_RUN;
 	string ANIM_WALK;
+	int ATTACK_DAMAGE;
+	float ATTACK_HITCHANCE;
 	int ATTACK_HITRANGE;
 	int ATTACK_RANGE;
 	int CAN_ATTACK;
@@ -27,6 +29,14 @@ class Flesheaterminion : CGameScript
 	int NPC_GIVE_EXP;
 	float RETALIATE_CHANCE;
 	string SET_GREEK;
+	string SOUND_ATTACK1;
+	string SOUND_ATTACK2;
+	string SOUND_DEATH;
+	string SOUND_IDLE1;
+	string SOUND_PAIN;
+	string SOUND_STRUCK1;
+	string SOUND_STRUCK2;
+	string SOUND_STRUCK3;
 
 	Flesheaterminion()
 	{
@@ -37,19 +47,19 @@ class Flesheaterminion : CGameScript
 		HUNT_AGRO = 1;
 		CAN_ATTACK = 1;
 		ANIM_ATTACK = "attack3";
-		const int ATTACK_DAMAGE = 10;
+		ATTACK_DAMAGE = 10;
 		ATTACK_RANGE = 100;
 		ATTACK_HITRANGE = 200;
 		MOVE_RANGE = 90;
-		const float ATTACK_HITCHANCE = 0.85;
-		const string SOUND_STRUCK1 = "controller/con_pain3.wav";
-		const string SOUND_STRUCK2 = "controller/con_pain3.wav";
-		const string SOUND_STRUCK3 = "none";
-		const string SOUND_PAIN = "zombie/zo_pain2.wav";
-		const string SOUND_ATTACK1 = "controller/con_attack1.wav";
-		const string SOUND_ATTACK2 = "controller/con_attack2.wav";
-		const string SOUND_DEATH = "controller/con_die2.wav";
-		const string SOUND_IDLE1 = "controller/con_attack3.wav";
+		ATTACK_HITCHANCE = 0.85;
+		SOUND_STRUCK1 = "controller/con_pain3.wav";
+		SOUND_STRUCK2 = "controller/con_pain3.wav";
+		SOUND_STRUCK3 = "none";
+		SOUND_PAIN = "zombie/zo_pain2.wav";
+		SOUND_ATTACK1 = "controller/con_attack1.wav";
+		SOUND_ATTACK2 = "controller/con_attack2.wav";
+		SOUND_DEATH = "controller/con_die2.wav";
+		SOUND_IDLE1 = "controller/con_attack3.wav";
 		MY_ENEMY = "enemy";
 		RETALIATE_CHANCE = 0.75;
 		CAN_FLEE = 0;

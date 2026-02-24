@@ -8,14 +8,18 @@ namespace MS
 class SpellMakerInvisible : CGameScript
 {
 	string ANIM_IDLE;
+	int NO_FADE;
+	float REMOVE_DELAY;
+	int SHOW_FX;
+	string SPAWNER_MODEL;
 
 	SpellMakerInvisible()
 	{
 		ANIM_IDLE = "";
-		const string SPAWNER_MODEL = "none";
-		const float REMOVE_DELAY = 5.0;
-		const int SHOW_FX = 0;
-		const int NO_FADE = 1;
+		SPAWNER_MODEL = "none";
+		REMOVE_DELAY = 5.0;
+		SHOW_FX = 0;
+		NO_FADE = 1;
 	}
 
 }

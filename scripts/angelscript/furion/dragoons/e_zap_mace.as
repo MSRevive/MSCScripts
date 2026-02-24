@@ -7,10 +7,13 @@ namespace MS
 
 class EZapMace : CGameScript
 {
+	int ELEMENT;
+	int WEAPON;
+
 	EZapMace()
 	{
-		const int WEAPON = 5;
-		const int ELEMENT = 3;
+		WEAPON = 5;
+		ELEMENT = 3;
 	}
 
 }

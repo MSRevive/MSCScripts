@@ -7,12 +7,17 @@ namespace MS
 
 class BluntGranitemaul : CGameScript
 {
+	int BASE_LEVEL_REQ;
+	int MELEE_DMG;
+	int MELEE_DMG_RANGE;
+	int MELEE_ENERGY;
+
 	BluntGranitemaul()
 	{
-		const int BASE_LEVEL_REQ = 12;
-		const int MELEE_DMG = 320;
-		const int MELEE_DMG_RANGE = 160;
-		const int MELEE_ENERGY = 20;
+		BASE_LEVEL_REQ = 12;
+		MELEE_DMG = 320;
+		MELEE_DMG_RANGE = 160;
+		MELEE_ENERGY = 20;
 	}
 
 	void weapon_spawn()

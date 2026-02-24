@@ -6,16 +6,21 @@ namespace MS
 class BaseAoe2 : CGameScript
 {
 	int AOE_ACTIVE;
+	int AOE_FRIENDLY;
 	string AOE_OWNER;
+	float AOE_SCAN_FREQ;
+	string AOE_SCAN_TYPE;
+	int AOE_VADJ;
+	int AOE_VULNERABLE;
 	int PLAYING_DEAD;
 
 	BaseAoe2()
 	{
-		const string AOE_SCAN_TYPE = "dodamage";
-		const float AOE_SCAN_FREQ = 0.5;
-		const int AOE_FRIENDLY = 0;
-		const int AOE_VULNERABLE = 0;
-		const int AOE_VADJ = 0;
+		AOE_SCAN_TYPE = "dodamage";
+		AOE_SCAN_FREQ = 0.5;
+		AOE_FRIENDLY = 0;
+		AOE_VULNERABLE = 0;
+		AOE_VADJ = 0;
 	}
 
 	void OnSpawn() override
@@ -81,7 +86,7 @@ class BaseAoe2 : CGameScript
 	{
 		string L_TARG = GetToken(AOE_TARGET_LIST, i, ";");
 		string L_TARG = /* TODO: $get_by_idx */ $get_by_idx(L_TARG, "id");
-		string L_DO_EFFECT = /* TODO: $func */ $func("func_filter_targs", L_TARG);
+		string L_DO_EFFECT = "func_filter_targs"(L_TARG);
 		if (!(L_DO_EFFECT)) return;
 		aoe_affect_target(L_TARG);
 	}
@@ -89,7 +94,7 @@ class BaseAoe2 : CGameScript
 	void game_dodamage()
 	{
 		string L_TARG = param2;
-		string L_DO_EFFECT = /* TODO: $func */ $func("func_filter_targs", L_TARG);
+		string L_DO_EFFECT = "func_filter_targs"(L_TARG);
 		if (!(L_DO_EFFECT)) return;
 		aoe_affect_target(L_TARG);
 	}

@@ -7,7 +7,14 @@ namespace MS
 
 class VineFire : CGameScript
 {
+	string ANIM_ATTACK;
 	string ANIM_DEATH;
+	string ANIM_GROW;
+	string ANIM_IDLE;
+	int ATTACK_HITRANGE;
+	int DMG_ATK;
+	int DOT_ATK;
+	float FREQ_SOUND_BURN;
 	int IMMUNE_VAMPIRE;
 	string MY_MASTER;
 	string NEXT_BURN_SOUND;
@@ -19,29 +26,38 @@ class VineFire : CGameScript
 	int QUIET_DEATH;
 	string SKEL_RESPAWN_TIMES;
 	string SKIN_CYCLE;
+	string SOUND_ATTACK1;
+	string SOUND_ATTACK2;
+	string SOUND_BURN;
+	string SOUND_DEATH;
+	string SOUND_PAIN1;
+	string SOUND_PAIN2;
+	string SOUND_STRUCK1;
+	string SOUND_STRUCK2;
+	string SOUND_STRUCK3;
 	int SWING_ATTACK;
 	int VINE_SUSPEND;
 
 	VineFire()
 	{
 		NPC_GIVE_EXP = 200;
-		const string ANIM_IDLE = "idle";
-		const string ANIM_ATTACK = "attack1";
-		const string ANIM_GROW = "raise";
+		ANIM_IDLE = "idle";
+		ANIM_ATTACK = "attack1";
+		ANIM_GROW = "raise";
 		ANIM_DEATH = "lower";
-		const int ATTACK_HITRANGE = 200;
-		const int DMG_ATK = 100;
-		const int DOT_ATK = 50;
-		const string SOUND_ATTACK1 = "tentacle/te_roar1.wav";
-		const string SOUND_ATTACK2 = "tentacle/te_roar1.wav";
-		const string SOUND_BURN = "ambience/burning1.wav";
-		const string SOUND_STRUCK1 = "debris/flesh1.wav";
-		const string SOUND_STRUCK2 = "debris/flesh2.wav";
-		const string SOUND_STRUCK3 = "debris/flesh3.wav";
-		const string SOUND_PAIN1 = "tentacle/te_alert1.wav";
-		const string SOUND_PAIN2 = "tentacle/te_alert2.wav";
-		const string SOUND_DEATH = "tentacle/te_move2.wav";
-		const float FREQ_SOUND_BURN = 30.0;
+		ATTACK_HITRANGE = 200;
+		DMG_ATK = 100;
+		DOT_ATK = 50;
+		SOUND_ATTACK1 = "tentacle/te_roar1.wav";
+		SOUND_ATTACK2 = "tentacle/te_roar1.wav";
+		SOUND_BURN = "ambience/burning1.wav";
+		SOUND_STRUCK1 = "debris/flesh1.wav";
+		SOUND_STRUCK2 = "debris/flesh2.wav";
+		SOUND_STRUCK3 = "debris/flesh3.wav";
+		SOUND_PAIN1 = "tentacle/te_alert1.wav";
+		SOUND_PAIN2 = "tentacle/te_alert2.wav";
+		SOUND_DEATH = "tentacle/te_move2.wav";
+		FREQ_SOUND_BURN = 30.0;
 	}
 
 	void OnRepeatTimer()

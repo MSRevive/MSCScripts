@@ -11,18 +11,43 @@ class GloamEther : CGameScript
 	string ANIM_ATTACK;
 	string ANIM_DEATH;
 	string ANIM_FLINCH;
+	string ANIM_GALLOP;
 	string ANIM_IDLE;
+	string ANIM_JUMP;
+	string ANIM_PROJECTILE;
 	string ANIM_RUN;
+	string ANIM_VICTORY;
 	string ANIM_WALK;
 	int ATTACK_HITRANGE;
 	int ATTACK_MOVERANGE;
 	int ATTACK_RANGE;
 	int CALLED_BY_DANGER;
 	int CYCLES_STARTED;
+	int DMG_SPITWAD;
+	int DMG_SPORE;
+	int DMG_SWIPE;
+	float DUR_CLOAK;
+	float FREQ_CLOAK;
+	float FREQ_SPITWAD;
+	float FREQ_SPORES;
 	string NEXT_VICTORY;
+	float NPC_BOSS_REGEN_RATE;
 	int NPC_GIVE_EXP;
 	int NPC_IS_BOSS;
 	string PUSH_TARG;
+	string SOUND_ATTACK1;
+	string SOUND_ATTACK2;
+	string SOUND_ATTACKHIT1;
+	string SOUND_ATTACKHIT2;
+	string SOUND_CLOAK;
+	string SOUND_DEATH;
+	string SOUND_JUMP;
+	string SOUND_PAIN1;
+	string SOUND_PAIN2;
+	string SOUND_SPITWAD;
+	string SOUND_SPORES;
+	string SOUND_STRUCK1;
+	string SOUND_STRUCK2;
 	int SPIT_WADS;
 	int SPORE_POISON_DMG;
 	int SWIPE_ATTACK;
@@ -31,42 +56,42 @@ class GloamEther : CGameScript
 	{
 		SetCallback("touch", "enable");
 		NPC_IS_BOSS = 1;
-		const float NPC_BOSS_REGEN_RATE = 0.05;
+		NPC_BOSS_REGEN_RATE = 0.05;
 		ANIM_RUN = "run";
 		ANIM_WALK = "walk";
 		ANIM_IDLE = "idle_1";
 		ANIM_FLINCH = "flinchb";
 		ANIM_ATTACK = "bite";
 		ANIM_DEATH = "die";
-		const string ANIM_GALLOP = "gallop";
-		const string ANIM_JUMP = "jump";
-		const string ANIM_PROJECTILE = "turnright";
-		const string ANIM_VICTORY = "eat";
+		ANIM_GALLOP = "gallop";
+		ANIM_JUMP = "jump";
+		ANIM_PROJECTILE = "turnright";
+		ANIM_VICTORY = "eat";
 		ATTACK_RANGE = 96;
 		ATTACK_HITRANGE = 128;
 		ATTACK_MOVERANGE = 34;
 		NPC_GIVE_EXP = 600;
-		const float FREQ_SPORES = 30.0;
-		const string FREQ_SPITWAD = Random(15, 20);
-		const string FREQ_CLOAK = Random(15, 30);
-		const float DUR_CLOAK = 10.0;
-		const string DMG_SWIPE = "$rand(80,150)";
+		FREQ_SPORES = 30.0;
+		FREQ_SPITWAD = Random(15, 20);
+		FREQ_CLOAK = Random(15, 30);
+		DUR_CLOAK = 10.0;
+		DMG_SWIPE = "$rand(80,150)";
 		SPORE_POISON_DMG = 50;
-		const int DMG_SPORE = 200;
-		const int DMG_SPITWAD = 80;
-		const string SOUND_STRUCK1 = "debris/flesh1.wav";
-		const string SOUND_STRUCK2 = "debris/flesh2.wav";
-		const string SOUND_ATTACK1 = "zombie/claw_miss1.wav";
-		const string SOUND_ATTACK2 = "zombie/claw_miss2.wav";
-		const string SOUND_ATTACKHIT1 = "zombie/claw_strike1.wav";
-		const string SOUND_ATTACKHIT2 = "zombie/claw_strike2.wav";
-		const string SOUND_CLOAK = "magic/spawn.wav";
-		const string SOUND_DEATH = "aslave/slv_die2.wav";
-		const string SOUND_PAIN1 = "aslave/slv_pain1.wav";
-		const string SOUND_PAIN2 = "aslave/slv_pain2.wav";
-		const string SOUND_SPORES = "bullchicken/bc_attack3.wav";
-		const string SOUND_SPITWAD = "headcrab/hc_attack1.wav";
-		const string SOUND_JUMP = "aslave/slv_alert3.wav";
+		DMG_SPORE = 200;
+		DMG_SPITWAD = 80;
+		SOUND_STRUCK1 = "debris/flesh1.wav";
+		SOUND_STRUCK2 = "debris/flesh2.wav";
+		SOUND_ATTACK1 = "zombie/claw_miss1.wav";
+		SOUND_ATTACK2 = "zombie/claw_miss2.wav";
+		SOUND_ATTACKHIT1 = "zombie/claw_strike1.wav";
+		SOUND_ATTACKHIT2 = "zombie/claw_strike2.wav";
+		SOUND_CLOAK = "magic/spawn.wav";
+		SOUND_DEATH = "aslave/slv_die2.wav";
+		SOUND_PAIN1 = "aslave/slv_pain1.wav";
+		SOUND_PAIN2 = "aslave/slv_pain2.wav";
+		SOUND_SPORES = "bullchicken/bc_attack3.wav";
+		SOUND_SPITWAD = "headcrab/hc_attack1.wav";
+		SOUND_JUMP = "aslave/slv_alert3.wav";
 	}
 
 	void OnRepeatTimer()
@@ -96,7 +121,7 @@ class GloamEther : CGameScript
 		if (PUSH_TARG != "unset")
 		{
 		}
-		string RND_RL = RandomInt(-1, 1);
+		int RND_RL = RandomInt(-1, 1);
 		RND_RL *= 400;
 		AddVelocity(PUSH_TARG, /* TODO: $relvel */ $relvel(RND_RL, 800, 400));
 		PUSH_TARG = "unset";
@@ -300,7 +325,7 @@ class GloamEther : CGameScript
 	void mdl_jump_boost()
 	{
 		EmitSound(GetOwner(), 0, SOUND_JUMP, 10);
-		string JUMP_HEIGHT = RandomInt(150, 250);
+		int JUMP_HEIGHT = RandomInt(150, 250);
 		JUMP_HEIGHT += JUMP_HEIGHT_FACTOR;
 		AddVelocity(GetOwner(), /* TODO: $relvel */ $relvel(0, 250, JUMP_HEIGHT));
 	}

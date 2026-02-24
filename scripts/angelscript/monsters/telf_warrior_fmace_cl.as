@@ -10,11 +10,13 @@ class TelfWarriorFmaceCl : CGameScript
 	string MY_OWNER;
 	int ROT_CYCLE;
 	int ROT_DISTANCE;
+	string SPRITE_NAME;
+	int SPRITE_NFRAMES;
 
 	TelfWarriorFmaceCl()
 	{
-		const string SPRITE_NAME = "xfireball3.spr";
-		const int SPRITE_NFRAMES = 19;
+		SPRITE_NAME = "xfireball3.spr";
+		SPRITE_NFRAMES = 19;
 		Precache("xfireball3.spr");
 	}
 

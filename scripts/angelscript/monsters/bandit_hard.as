@@ -8,13 +8,15 @@ namespace MS
 
 class BanditHard : CGameScript
 {
+	int AIM_RATIO;
 	string ANIM_ATTACK;
 	string ANIM_DEATH;
 	string ANIM_IDLE;
 	string ANIM_RUN;
 	string ANIM_WALK;
+	int ARROW_DAMAGE;
 	string AS_ATTACKING;
-	string ATTACK1_DAMAGE;
+	float ATTACK1_DAMAGE;
 	int ATTACK_COF;
 	float ATTACK_PERCENTAGE;
 	string ATTACK_RANGE;
@@ -35,6 +37,10 @@ class BanditHard : CGameScript
 	int NO_STUCK_CHECKS;
 	int NPC_GIVE_EXP;
 	string PURE_FLEE;
+	float RETALIATE_CHANGETARGET_CHANCE;
+	string SOUND_BOW;
+	string SOUND_PAIN;
+	string SOUND_PAIN2;
 	int TOO_CLOSE;
 	string WEAPON;
 
@@ -42,9 +48,9 @@ class BanditHard : CGameScript
 	{
 		CONTAINER_DROP_CHANCE = 0.1;
 		CONTAINER_SCRIPT = "chests/quiver_of_poison";
-		const string SOUND_PAIN = "player/chesthit1.wav";
-		const string SOUND_PAIN2 = "player/armhit1.wav";
-		const string SOUND_BOW = "weapons/bow/bow.wav";
+		SOUND_PAIN = "player/chesthit1.wav";
+		SOUND_PAIN2 = "player/armhit1.wav";
+		SOUND_BOW = "weapons/bow/bow.wav";
 		ANIM_IDLE = "idle";
 		ANIM_RUN = "run";
 		ANIM_WALK = "walk2";
@@ -53,11 +59,11 @@ class BanditHard : CGameScript
 		HUNT_AGRO = 1;
 		CAN_ATTACK = 1;
 		CAN_RETALIATE = 1;
-		const float RETALIATE_CHANGETARGET_CHANCE = 0.75;
+		RETALIATE_CHANGETARGET_CHANCE = 0.75;
 		CAN_HEAR = 1;
 		NPC_GIVE_EXP = 120;
-		const int AIM_RATIO = 50;
-		const string ARROW_DAMAGE = "$rand(15,40)";
+		AIM_RATIO = 50;
+		ARROW_DAMAGE = "$rand(15,40)";
 		bowey();
 		fistey();
 		daggerey();
@@ -235,7 +241,7 @@ class BanditHard : CGameScript
 
 	void OnDeath(CBaseEntity@ attacker) override
 	{
-		string L_DEATHANIM = RandomInt(0, 6);
+		int L_DEATHANIM = RandomInt(0, 6);
 		if (L_DEATHANIM == 0)
 		{
 			ANIM_DEATH = "die_simple";

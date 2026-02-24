@@ -7,12 +7,17 @@ namespace MS
 
 class ScrollFireBall : CGameScript
 {
+	int BASE_REQUIRED_LEVEL;
+	string BASE_REQUIRED_SKILL;
+	string BASE_SPELL_SCRIPT;
+	string BASE_SUMMON_TEXT;
+
 	ScrollFireBall()
 	{
-		const string BASE_SPELL_SCRIPT = "magic_hand_fire_ball";
-		const string BASE_SUMMON_TEXT = "You learn to cast a strong fire ball.";
-		const string BASE_REQUIRED_SKILL = "skill.spellcasting.fire";
-		const int BASE_REQUIRED_LEVEL = 7;
+		BASE_SPELL_SCRIPT = "magic_hand_fire_ball";
+		BASE_SUMMON_TEXT = "You learn to cast a strong fire ball.";
+		BASE_REQUIRED_SKILL = "skill.spellcasting.fire";
+		BASE_REQUIRED_LEVEL = 7;
 	}
 
 	void OnSpawn() override

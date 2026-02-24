@@ -13,21 +13,31 @@ class EagleBase : CGameScript
 	int AM_SUMMONED;
 	string ANIM_ATTACK;
 	string ANIM_DEATH;
+	string ANIM_DIVE;
+	string ANIM_FIGIT;
 	string ANIM_IDLE;
+	string ANIM_IDLE_FLIGHT;
+	string ANIM_PERCH1;
 	string ANIM_RUN;
 	string ANIM_WALK;
 	int ATTACK_HITRANGE;
 	int ATTACK_RANGE;
+	int ATTACK_RANGE_STANDARD;
 	int COUNT_ATK;
 	string DIVE_POS;
 	string DIVE_START;
+	float DMG_ATTACK;
+	int DMG_DIVE;
+	int FLEE_COUNT;
 	string FLIGHT_STUCK;
+	int FREQ_DIVE;
 	int IN_DIVE;
 	string LAST_POS;
-	string LAST_PROG;
+	float LAST_PROG;
 	int MELEE_ATTACK;
 	int MOVE_RANGE;
 	int NPC_HACKED_MOVE_SPEED;
+	int NPC_NO_END_FLY;
 	int NPC_PROXACT_CONE;
 	string NPC_PROXACT_EVENT;
 	int NPC_PROXACT_FOV;
@@ -35,6 +45,16 @@ class EagleBase : CGameScript
 	int NPC_PROXACT_RANGE;
 	string NPC_PROXACT_TRIPPED;
 	int NPC_PROX_ACTIVATE;
+	string SOUND_ATTACK;
+	string SOUND_DEATH;
+	string SOUND_FLAP;
+	string SOUND_PAIN;
+	string SOUND_PAIN2;
+	string SOUND_STRUCK;
+	string SOUND_VICTORY;
+	string SOUND_WARCRY;
+	int SPEED_DIVE;
+	int SPEED_STANDARD;
 
 	EagleBase()
 	{
@@ -47,26 +67,26 @@ class EagleBase : CGameScript
 		ATTACK_RANGE = 64;
 		ATTACK_HITRANGE = 72;
 		NPC_HACKED_MOVE_SPEED = 200;
-		const string ANIM_PERCH1 = "idle";
-		const string ANIM_FIGIT = "idle2";
-		const string ANIM_IDLE_FLIGHT = "flapping";
-		const string ANIM_DIVE = "dive";
-		const int NPC_NO_END_FLY = 1;
-		const string DMG_ATTACK = Random(5, 20);
-		const string DMG_DIVE = RandomInt(30, 100);
-		const string FREQ_DIVE = RandomInt(20, 30);
-		const int SPEED_STANDARD = 200;
-		const int SPEED_DIVE = 400;
-		const int FLEE_COUNT = 10;
-		const int ATTACK_RANGE_STANDARD = 64;
-		const string SOUND_FLAP = "monsters/birds/hawkidle.wav";
-		const string SOUND_WARCRY = "monsters/birds/bird.wav";
-		const string SOUND_DEATH = "monsters/birds/hawk.wav";
-		const string SOUND_ATTACK = "monsters/birds/flutter.wav";
-		const string SOUND_STRUCK = "debris/flesh2.wav";
-		const string SOUND_PAIN = "monsters/birds/vulture.wav";
-		const string SOUND_PAIN2 = "monsters/birds/cry.wav";
-		const string SOUND_VICTORY = "monsters/birds/hawkcaw.wav";
+		ANIM_PERCH1 = "idle";
+		ANIM_FIGIT = "idle2";
+		ANIM_IDLE_FLIGHT = "flapping";
+		ANIM_DIVE = "dive";
+		NPC_NO_END_FLY = 1;
+		DMG_ATTACK = Random(5, 20);
+		DMG_DIVE = RandomInt(30, 100);
+		FREQ_DIVE = RandomInt(20, 30);
+		SPEED_STANDARD = 200;
+		SPEED_DIVE = 400;
+		FLEE_COUNT = 10;
+		ATTACK_RANGE_STANDARD = 64;
+		SOUND_FLAP = "monsters/birds/hawkidle.wav";
+		SOUND_WARCRY = "monsters/birds/bird.wav";
+		SOUND_DEATH = "monsters/birds/hawk.wav";
+		SOUND_ATTACK = "monsters/birds/flutter.wav";
+		SOUND_STRUCK = "debris/flesh2.wav";
+		SOUND_PAIN = "monsters/birds/vulture.wav";
+		SOUND_PAIN2 = "monsters/birds/cry.wav";
+		SOUND_VICTORY = "monsters/birds/hawkcaw.wav";
 		Precache(SOUND_DEATH);
 	}
 
@@ -139,7 +159,7 @@ class EagleBase : CGameScript
 		if (GetEntityRange(m_hAttackTarget) > ATTACK_RANGE)
 		{
 		}
-		string CUR_PROG = Distance(GetMonsterProperty("origin"), TARG_POS);
+		float CUR_PROG = Distance(GetMonsterProperty("origin"), TARG_POS);
 		if (LAST_PROG >= CUR_PROG)
 		{
 			FLIGHT_STUCK += 1;
@@ -307,9 +327,9 @@ class EagleBase : CGameScript
 		array<string> sounds = {SOUND_STRUCK, SOUND_STRUCK, SOUND_STRUCK, SOUND_STRUCK, SOUND_STRUCK, SOUND_PAIN, SOUND_PAIN2};
 		EmitSound(GetOwner(), 0, sounds[RandomInt(0, sounds.length() - 1)], 10);
 		if (!(param1 > 30)) return;
-		string RND_RL = Random(-40, 40);
-		string RND_FB = Random(-40, 40);
-		string RND_UD = Random(-40, 40);
+		float RND_RL = Random(-40, 40);
+		float RND_FB = Random(-40, 40);
+		float RND_UD = Random(-40, 40);
 		AddVelocity(GetOwner(), Vector3(RND_RL, RND_FB, RND_UD));
 	}
 

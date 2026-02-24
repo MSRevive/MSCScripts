@@ -9,21 +9,32 @@ class ProjArrowBase : CGameScript
 {
 	string ANIM_DEPLOY;
 	string ANIM_DROPPED;
+	int ARROW_EXPIRE_DELAY;
 	int BARROW_HIT_NPC;
+	string BASE_MODEL_WORLD;
+	int HITWALL_VOL;
+	string MODEL_HANDS;
+	string MODEL_WORLD;
+	int PROJ_COLLIDEHITBOX;
+	string PROJ_DAMAGE_TYPE;
+	string SOUND_HITWALL1;
+	string SOUND_HITWALL2;
+	string SPRITE_ARROW_HAND;
+	string SPRITE_ARROW_TRADE;
 
 	ProjArrowBase()
 	{
-		const string MODEL_HANDS = "weapons/bows/arrows.mdl";
-		const string MODEL_WORLD = "weapons/bows/arrows.mdl";
-		const string BASE_MODEL_WORLD = "weapons/bows/arrows.mdl";
-		const string SOUND_HITWALL1 = "weapons/bow/arrowhit1.wav";
-		const string SOUND_HITWALL2 = "weapons/bow/arrowhit2.wav";
-		const string SPRITE_ARROW_TRADE = "woodenarrow";
-		const string SPRITE_ARROW_HAND = "arrows";
-		const int HITWALL_VOL = 5;
-		const int ARROW_EXPIRE_DELAY = 10;
-		const string PROJ_DAMAGE_TYPE = "pierce";
-		const int PROJ_COLLIDEHITBOX = 1;
+		MODEL_HANDS = "weapons/bows/arrows.mdl";
+		MODEL_WORLD = "weapons/bows/arrows.mdl";
+		BASE_MODEL_WORLD = "weapons/bows/arrows.mdl";
+		SOUND_HITWALL1 = "weapons/bow/arrowhit1.wav";
+		SOUND_HITWALL2 = "weapons/bow/arrowhit2.wav";
+		SPRITE_ARROW_TRADE = "woodenarrow";
+		SPRITE_ARROW_HAND = "arrows";
+		HITWALL_VOL = 5;
+		ARROW_EXPIRE_DELAY = 10;
+		PROJ_DAMAGE_TYPE = "pierce";
+		PROJ_COLLIDEHITBOX = 1;
 	}
 
 	void projectile_spawn()

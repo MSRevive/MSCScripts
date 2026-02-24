@@ -9,20 +9,24 @@ namespace MS
 class Mayorguard : CGameScript
 {
 	string ANIM_ATTACK;
+	int ATTACK1_DAMAGE;
 	int ATTACK_RANGE;
 	int BRIBED;
 	int EVIDENCE_FOUND;
+	int HEAR_RANGE;
+	int NO_RUMOR;
+	int NPC_REACTS;
 	int SHOW_APPLE;
 	int THIEF_1;
 
 	Mayorguard()
 	{
 		ANIM_ATTACK = "swordswing1_L";
-		const int ATTACK1_DAMAGE = 30;
+		ATTACK1_DAMAGE = 30;
 		ATTACK_RANGE = 128;
-		const int NO_RUMOR = 1;
-		const int HEAR_RANGE = 100;
-		const int NPC_REACTS = 1;
+		NO_RUMOR = 1;
+		HEAR_RANGE = 100;
+		NPC_REACTS = 1;
 	}
 
 	void OnSpawn() override
@@ -92,7 +96,7 @@ class Mayorguard : CGameScript
 	{
 		if (!(EVIDENCE_FOUND == 0)) return;
 		ReceiveOffer("accept");
-		SayText("A delicious treat , proceed traveller");
+		SayText(A + " delicious treat , proceed traveller");
 		UseTrigger("mayorsdoor");
 		BRIBED = 1;
 	}
@@ -117,7 +121,7 @@ class Mayorguard : CGameScript
 
 	void bribe_failed()
 	{
-		SayText("You call that a bribe? HA! If you offer 500 , give me 500!");
+		SayText("You call that a bribe? " + HA! + " If you offer 500 , give me 500!");
 		PlayAnim("once", "no");
 	}
 
@@ -129,7 +133,7 @@ class Mayorguard : CGameScript
 	void say_job()
 	{
 		if (!(GetEntityDist("ent_lastspoke") <= HEAR_RANGE)) return;
-		SayText("What , do I look like a tourguide? My job is to protect the mayor , now leave!");
+		SayText("What , do " + I + " look like a tourguide? My job is to protect the mayor , now leave!");
 		PlayAnim("once", "no");
 	}
 
@@ -141,13 +145,13 @@ class Mayorguard : CGameScript
 		SayText("If you see anything suspicious around here , you let me know.");
 		if (!(THIEF_1 == 6)) return;
 		THIEF_1 = 7;
-		SayText("If you see any thieves , try bribing them for information , or give threats that I will lock them up for good.");
+		SayText("If you see any thieves , try bribing them for information , or give threats that " + I + " will lock them up for good.");
 		ScheduleDelayedEvent(4, "say_thief2");
 	}
 
 	void say_thief2()
 	{
-		SayText("Aye , I will have them thieves locked up , if not killed should I get my hands on them.");
+		SayText("Aye , " + I + "will have them thieves locked up , if not killed should " + I + " get my hands on them.");
 	}
 
 	void say_thiefloc()

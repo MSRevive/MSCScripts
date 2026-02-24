@@ -7,20 +7,33 @@ namespace MS
 
 class BowsFirebird : CGameScript
 {
+	string ANIM_PREFIX;
+	int BASE_LEVEL_REQ;
+	int CUSTOM_ATTACK;
+	string ITEM_NAME;
+	int MODEL_BODY_OFS;
+	string MODEL_HANDS;
+	string MODEL_VIEW;
+	int MODEL_VIEW_IDX;
+	string MODEL_WEAR;
+	string MODEL_WORLD;
+	string RANGED_AIMANGLE;
+	string SOUND_SHOOT;
+
 	BowsFirebird()
 	{
-		const int BASE_LEVEL_REQ = 25;
-		const int MODEL_VIEW_IDX = 7;
-		const string MODEL_VIEW = "viewmodels/v_bows.mdl";
-		const string MODEL_HANDS = "weapons/p_weapons3.mdl";
-		const string MODEL_WORLD = "weapons/p_weapons3.mdl";
-		const string MODEL_WEAR = "weapons/p_weapons3.mdl";
-		const string SOUND_SHOOT = "weapons/bow/bow.wav";
-		const string ITEM_NAME = "longbow";
-		const string ANIM_PREFIX = "standard";
-		const int MODEL_BODY_OFS = 40;
-		const Vector3 RANGED_AIMANGLE = Vector3(0, 0, 0);
-		const int CUSTOM_ATTACK = 1;
+		BASE_LEVEL_REQ = 25;
+		MODEL_VIEW_IDX = 7;
+		MODEL_VIEW = "viewmodels/v_bows.mdl";
+		MODEL_HANDS = "weapons/p_weapons3.mdl";
+		MODEL_WORLD = "weapons/p_weapons3.mdl";
+		MODEL_WEAR = "weapons/p_weapons3.mdl";
+		SOUND_SHOOT = "weapons/bow/bow.wav";
+		ITEM_NAME = "longbow";
+		ANIM_PREFIX = "standard";
+		MODEL_BODY_OFS = 40;
+		RANGED_AIMANGLE = Vector3(0, 0, 0);
+		CUSTOM_ATTACK = 1;
 	}
 
 	void bow_spawn()

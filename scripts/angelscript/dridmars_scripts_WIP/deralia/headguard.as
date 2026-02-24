@@ -18,14 +18,16 @@ class Headguard : CGameScript
 	string GUARD_LOOP;
 	int GuardQuestFinished;
 	string LAST_SPOKE_TO;
+	int NO_JOB;
+	int NO_RUMOR;
 	string PLAYER_NEAR;
 	string PLAYER_SPLOTTED;
 	int StartGuardQuest;
 
 	Headguard()
 	{
-		const int NO_RUMOR = 1;
-		const int NO_JOB = 1;
+		NO_RUMOR = 1;
+		NO_JOB = 1;
 	}
 
 	void OnRepeatTimer()
@@ -48,7 +50,7 @@ class Headguard : CGameScript
 			}
 			SetMoveDest(PLAYER_SPLOTTED);
 			SetSayTextRange(512);
-			SayText("You there! STOP!");
+			SayText("You there! " + STOP!);
 			LAST_SPOKE_TO = PLAYER_SPLOTTED;
 		}
 	}

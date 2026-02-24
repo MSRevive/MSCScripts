@@ -8,14 +8,26 @@ namespace MS
 class Wizard1 : CGameScript
 {
 	string BEAM_SET;
+	float CHAT_DELAY;
+	float CHAT_DELAY_LONG;
+	float CHAT_DELAY_SHORT;
+	string CONV_ANIMS;
 	int DID_INTRO;
 	int DID_WARN;
 	int HAS_SYMBOL;
 	string MY_CL_IDX;
+	int NO_JOB;
+	int NO_RUMOR;
 	string N_PLAYERS;
 	int N_SYMBOLS;
 	int OMG_WTF;
 	float REMOVE_DELAY;
+	string SOUND_DEATH1;
+	string SOUND_DEATH2;
+	string SOUND_DEATH3;
+	string SOUND_DEATH4;
+	string SYMB_ITEM;
+	string SYM_QUEST_NAME;
 	int UNDI_SPAWN;
 	string WIZARD2_ID;
 	string WIZARD3_ID;
@@ -24,18 +36,18 @@ class Wizard1 : CGameScript
 
 	Wizard1()
 	{
-		const string CONV_ANIMS = "converse2;converse1;talkleft;talkright;lean;pondering;pondering2;pondering3;";
-		const string SYM_QUEST_NAME = "sym1";
-		const float CHAT_DELAY = 5.0;
-		const float CHAT_DELAY_SHORT = 3.0;
-		const float CHAT_DELAY_LONG = 7.0;
-		const int NO_RUMOR = 1;
-		const int NO_JOB = 1;
-		const string SYMB_ITEM = "item_s1";
-		const string SOUND_DEATH1 = "scientist/scream1.wav";
-		const string SOUND_DEATH2 = "scientist/scream2.wav";
-		const string SOUND_DEATH3 = "scientist/scream3.wav";
-		const string SOUND_DEATH4 = "scientist/scream4.wav";
+		CONV_ANIMS = "converse2;converse1;talkleft;talkright;lean;pondering;pondering2;pondering3;";
+		SYM_QUEST_NAME = "sym1";
+		CHAT_DELAY = 5.0;
+		CHAT_DELAY_SHORT = 3.0;
+		CHAT_DELAY_LONG = 7.0;
+		NO_RUMOR = 1;
+		NO_JOB = 1;
+		SYMB_ITEM = "item_s1";
+		SOUND_DEATH1 = "scientist/scream1.wav";
+		SOUND_DEATH2 = "scientist/scream2.wav";
+		SOUND_DEATH3 = "scientist/scream3.wav";
+		SOUND_DEATH4 = "scientist/scream4.wav";
 	}
 
 	void OnSpawn() override

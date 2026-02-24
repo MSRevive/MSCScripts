@@ -8,18 +8,24 @@ namespace MS
 
 class Snowboar1 : CGameScript
 {
+	int BOAR_CAN_CHARGE;
 	int CAN_FLEE;
+	float FLEE_CHANCE;
+	int FLEE_HEALTH;
+	float GORE_FORWARD_DAMAGE;
+	float GORE_SIDE_DAMAGE;
+	int NPC_BASE_EXP;
 	string PUSH_VEL;
 
 	Snowboar1()
 	{
 		CAN_FLEE = 1;
-		const int FLEE_HEALTH = 10;
-		const float FLEE_CHANCE = 0.25;
-		const int NPC_BASE_EXP = 12;
-		const float GORE_FORWARD_DAMAGE = 1.0;
-		const float GORE_SIDE_DAMAGE = 0.7;
-		const int BOAR_CAN_CHARGE = 0;
+		FLEE_HEALTH = 10;
+		FLEE_CHANCE = 0.25;
+		NPC_BASE_EXP = 12;
+		GORE_FORWARD_DAMAGE = 1.0;
+		GORE_SIDE_DAMAGE = 0.7;
+		BOAR_CAN_CHARGE = 0;
 	}
 
 	void OnSpawn() override

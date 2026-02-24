@@ -6,13 +6,17 @@ namespace MS
 class BaseBanker : CGameScript
 {
 	int CHECK_REASON;
+	int STORAGE_ACCOUNT_COST;
+	string STORAGE_DISPLAYNAME;
+	float STORAGE_FEERATIO;
+	string STORAGE_NAME;
 
 	BaseBanker()
 	{
-		const string STORAGE_DISPLAYNAME = "Edana Bank";
-		const string STORAGE_NAME = "edanastorage";
-		const float STORAGE_FEERATIO = 0.10;
-		const int STORAGE_ACCOUNT_COST = 20;
+		STORAGE_DISPLAYNAME = "Edana Bank";
+		STORAGE_NAME = "edanastorage";
+		STORAGE_FEERATIO = 0.10;
+		STORAGE_ACCOUNT_COST = 20;
 		DeleteEntity(GetOwner());
 	}
 
@@ -36,7 +40,7 @@ class BaseBanker : CGameScript
 
 	void speech_makeaccount()
 	{
-		SayText("You can create an account with this bank for STORAGE_ACCOUNT_COST gold");
+		SayText("You can create an account with this bank for " + STORAGE_ACCOUNT_COST + " gold");
 	}
 
 	void game_recvoffer_gold()
@@ -97,13 +101,13 @@ class BaseBanker : CGameScript
 	void bank_openaccount()
 	{
 		Storage("openaccount", STORAGE_NAME, param1);
-		SayText("Thank you! Your new account with STORAGE_DISPLAYNAME is open!");
+		SayText("Thank you! Your new account with " + STORAGE_DISPLAYNAME + " is open!");
 		PlayAnim("once", "yes");
 	}
 
 	void bank_openaccount_failed()
 	{
-		SayText("I m sorry, we have a business to run.  An Account costs STORAGE_ACCOUNT_COST gold.");
+		SayText(I + " m sorry, we have a business to run.  An Account costs STORAGE_ACCOUNT_COST gold.");
 		PlayAnim("once", "no");
 	}
 

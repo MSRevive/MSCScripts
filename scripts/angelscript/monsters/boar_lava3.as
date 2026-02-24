@@ -7,28 +7,41 @@ namespace MS
 
 class BoarLava3 : CGameScript
 {
+	float ATTACK_HITCHANCE;
+	string BOAR_MODEL;
+	int BOAR_SIZE;
+	int BOAR_SKIN;
 	string BURST_TARGS;
+	string CL_CHARGE_SCRIPT;
+	int DMG_CHARGE;
+	float DMG_GORE_FORWARD;
+	float DMG_GORE_LEFT;
+	float DMG_GORE_RIGHT;
+	int DOT_FIRE;
 	float DROP_ITEM1_CHANCE;
 	float FLEE_CHANCE;
 	int NPC_GIVE_EXP;
+	string SOUND_STRUCK1;
+	string SOUND_STRUCK2;
+	string SOUND_STRUCK3;
 
 	BoarLava3()
 	{
-		const int BOAR_SIZE = 3;
-		const int BOAR_SKIN = 2;
-		const string BOAR_MODEL = "monsters/boar3.mdl";
+		BOAR_SIZE = 3;
+		BOAR_SKIN = 2;
+		BOAR_MODEL = "monsters/boar3.mdl";
 		NPC_GIVE_EXP = 1000;
-		const string DMG_GORE_FORWARD = Random(60.0, 80.0);
-		const string DMG_GORE_LEFT = Random(60.0, 80.0);
-		const string DMG_GORE_RIGHT = Random(60.0, 80.0);
-		const string DMG_CHARGE = RandomInt(300, 500);
-		const int DOT_FIRE = 75;
-		const float ATTACK_HITCHANCE = 0.7;
+		DMG_GORE_FORWARD = Random(60.0, 80.0);
+		DMG_GORE_LEFT = Random(60.0, 80.0);
+		DMG_GORE_RIGHT = Random(60.0, 80.0);
+		DMG_CHARGE = RandomInt(300, 500);
+		DOT_FIRE = 75;
+		ATTACK_HITCHANCE = 0.7;
 		FLEE_CHANCE = 0.1;
-		const string SOUND_STRUCK1 = "weapons/axemetal1.wav";
-		const string SOUND_STRUCK2 = "weapons/axemetal2.wav";
-		const string SOUND_STRUCK3 = "debris/concrete1.wav";
-		const string CL_CHARGE_SCRIPT = "monsters/boar_lava_cl";
+		SOUND_STRUCK1 = "weapons/axemetal1.wav";
+		SOUND_STRUCK2 = "weapons/axemetal2.wav";
+		SOUND_STRUCK3 = "debris/concrete1.wav";
+		CL_CHARGE_SCRIPT = "monsters/boar_lava_cl";
 	}
 
 	void game_precache()

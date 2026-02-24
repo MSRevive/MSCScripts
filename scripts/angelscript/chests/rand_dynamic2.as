@@ -30,7 +30,7 @@ class RandDynamic2 : CGameScript
 				CHEST_FOUND = 1;
 				G_CHEST_TRACKER += 1;
 			}
-			string L_GMULTI = /* TODO: $math(multiply) */ G_CHEST_TRACKER;
+			string L_GMULTI = (G_CHEST_TRACKER * 2);
 		}
 		else
 		{
@@ -65,7 +65,7 @@ class RandDynamic2 : CGameScript
 		LogDebug("add_items_self_adj CHEST_TIER");
 		if (CHEST_TIER < 2)
 		{
-			string L_TYPE = /* TODO: $func */ $func("get_type", 30, 30, 30);
+			string L_TYPE = "get_type"(30, 30, 30);
 			if (L_TYPE == 1)
 			{
 				add_great_item(1.0);
@@ -90,7 +90,7 @@ class RandDynamic2 : CGameScript
 			if (CHEST_TIER < 3)
 			{
 			}
-			string L_TYPE = /* TODO: $func */ $func("get_type", 10, 25, 65);
+			string L_TYPE = "get_type"(10, 25, 65);
 			if (L_TYPE == 1)
 			{
 				add_good_pot(1.0);
@@ -115,7 +115,7 @@ class RandDynamic2 : CGameScript
 			if (CHEST_TIER < 4)
 			{
 			}
-			string L_TYPE = /* TODO: $func */ $func("get_type", 10, 35, 55);
+			string L_TYPE = "get_type"(10, 35, 55);
 			if (L_TYPE == 1)
 			{
 				add_great_pot(1.0);
@@ -140,7 +140,7 @@ class RandDynamic2 : CGameScript
 			if (CHEST_TIER < 5)
 			{
 			}
-			string L_TYPE = /* TODO: $func */ $func("get_type", 5, 40, 55);
+			string L_TYPE = "get_type"(5, 40, 55);
 			if (L_TYPE == 1)
 			{
 				add_epic_pot(1.0);
@@ -162,7 +162,7 @@ class RandDynamic2 : CGameScript
 		}
 		if (CHEST_TIER >= 5)
 		{
-			string L_TYPE = /* TODO: $func */ $func("get_type", 10, 40, 50);
+			string L_TYPE = "get_type"(10, 40, 50);
 			if (L_TYPE == 1)
 			{
 				add_epic_pot(1.0);
@@ -186,7 +186,7 @@ class RandDynamic2 : CGameScript
 
 	void get_type()
 	{
-		string L_ROLL = RandomInt(1, 100);
+		int L_ROLL = RandomInt(1, 100);
 		if (L_ROLL <= param1)
 		{
 			return;

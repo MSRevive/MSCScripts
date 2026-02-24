@@ -7,10 +7,13 @@ namespace MS
 
 class PsnMage : CGameScript
 {
+	int ELEMENT;
+	int WEAPON;
+
 	PsnMage()
 	{
-		const int WEAPON = 6;
-		const int ELEMENT = 1;
+		WEAPON = 6;
+		ELEMENT = 1;
 	}
 
 }

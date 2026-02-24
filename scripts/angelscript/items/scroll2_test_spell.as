@@ -7,13 +7,19 @@ namespace MS
 
 class Scroll2TestSpell : CGameScript
 {
+	int BASE_REQUIRED_LEVEL;
+	string BASE_REQUIRED_SKILL;
+	string BASE_SPELL_SCRIPT;
+	int SPELL_MAKER_HEIGHT;
+	string SPELL_MAKER_SCRIPT;
+
 	Scroll2TestSpell()
 	{
-		const string BASE_SPELL_SCRIPT = "magic_hand_test_spell";
-		const string BASE_REQUIRED_SKILL = "skill.spellcasting";
-		const int BASE_REQUIRED_LEVEL = 6;
-		const string SPELL_MAKER_SCRIPT = "monsters/companion/spell_maker_affliction";
-		const int SPELL_MAKER_HEIGHT = 48;
+		BASE_SPELL_SCRIPT = "magic_hand_test_spell";
+		BASE_REQUIRED_SKILL = "skill.spellcasting";
+		BASE_REQUIRED_LEVEL = 6;
+		SPELL_MAKER_SCRIPT = "monsters/companion/spell_maker_affliction";
+		SPELL_MAKER_HEIGHT = 48;
 	}
 
 	void OnSpawn() override

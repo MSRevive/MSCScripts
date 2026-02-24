@@ -8,23 +8,38 @@ namespace MS
 
 class ProjFireXolt : CGameScript
 {
+	int ARROW_BODY_OFS;
+	float ARROW_BREAK_CHANCE;
+	int ARROW_SOLIDIFY_ON_WALL;
+	string MODEL_WORLD;
+	string PROJ_ANIM_IDLE;
+	int PROJ_AOE_FALLOFF;
+	int PROJ_AOE_RANGE;
+	int PROJ_DAMAGE;
+	string PROJ_DAMAGE_TYPE;
+	int PROJ_MOTIONBLUR;
+	int PROJ_STICK_DURATION;
+	string SOUND_EXPLODE1;
+	string SOUND_EXPLODE2;
+	string SOUND_EXPLODE3;
+
 	ProjFireXolt()
 	{
-		const string MODEL_WORLD = "weapons/projectiles.mdl";
-		const int ARROW_BODY_OFS = 40;
-		const int ARROW_SOLIDIFY_ON_WALL = 0;
-		const float ARROW_BREAK_CHANCE = 1.0;
-		const string PROJ_ANIM_IDLE = "idle_icebolt";
-		const string PROJ_DAMAGE = RandomInt(60, 90);
-		const int PROJ_STICK_DURATION = 0;
-		const string PROJ_DAMAGE_TYPE = "siege";
-		const string PROJ_DAMAGE = RandomInt(400, 500);
-		const int PROJ_AOE_RANGE = 64;
-		const int PROJ_AOE_FALLOFF = 1;
-		const int PROJ_MOTIONBLUR = 0;
-		const string SOUND_EXPLODE1 = "weapons/explode3.wav";
-		const string SOUND_EXPLODE2 = "weapons/explode4.wav";
-		const string SOUND_EXPLODE3 = "weapons/explode5.wav";
+		MODEL_WORLD = "weapons/projectiles.mdl";
+		ARROW_BODY_OFS = 40;
+		ARROW_SOLIDIFY_ON_WALL = 0;
+		ARROW_BREAK_CHANCE = 1.0;
+		PROJ_ANIM_IDLE = "idle_icebolt";
+		PROJ_DAMAGE = RandomInt(60, 90);
+		PROJ_STICK_DURATION = 0;
+		PROJ_DAMAGE_TYPE = "siege";
+		PROJ_DAMAGE = RandomInt(400, 500);
+		PROJ_AOE_RANGE = 64;
+		PROJ_AOE_FALLOFF = 1;
+		PROJ_MOTIONBLUR = 0;
+		SOUND_EXPLODE1 = "weapons/explode3.wav";
+		SOUND_EXPLODE2 = "weapons/explode4.wav";
+		SOUND_EXPLODE3 = "weapons/explode5.wav";
 	}
 
 	void arrow_spawn()

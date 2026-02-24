@@ -9,6 +9,7 @@ namespace MS
 class Tao : CGameScript
 {
 	int BUSY_CHATTING;
+	float CHAT_DELAY;
 	string CHAT_STEP;
 	string CHAT_STEP1;
 	string CHAT_STEP2;
@@ -20,13 +21,15 @@ class Tao : CGameScript
 	string CHAT_STEPS;
 	int CONGRATS_MSG;
 	string DID_CONGRATS;
+	int NO_JOB;
+	int NO_RUMOR;
 	int SAID_HI;
 
 	Tao()
 	{
-		const int NO_JOB = 1;
-		const int NO_RUMOR = 1;
-		const float CHAT_DELAY = 3.0;
+		NO_JOB = 1;
+		NO_RUMOR = 1;
+		CHAT_DELAY = 3.0;
 	}
 
 	void OnSpawn() override

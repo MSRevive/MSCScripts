@@ -7,26 +7,37 @@ namespace MS
 
 class ProjArrowPhx : CGameScript
 {
+	int ARROW_BODY_OFS;
 	string BURN_DMG;
 	string GAME_PVP;
 	string IS_UNDERSKILLED;
+	int MAX_DIST;
+	int MAX_RADIUS;
+	int MIN_RADIUS;
+	int MODEL_BODY_OFS;
+	string MODEL_HANDS;
+	string MODEL_WORLD;
 	string MY_DAMAGE;
 	string MY_RADIUS;
+	string PROJ_ANIM_IDLE;
+	int PROJ_DAMAGE;
+	int PROJ_IGNORENPC;
+	string SOUND_PHOENIX;
 	string TARGET_LIST;
 
 	ProjArrowPhx()
 	{
-		const string MODEL_WORLD = "weapons/projectiles.mdl";
-		const string MODEL_HANDS = "weapons/projectiles.mdl";
-		const int MODEL_BODY_OFS = 48;
-		const int ARROW_BODY_OFS = 48;
-		const int PROJ_IGNORENPC = 1;
-		const string PROJ_ANIM_IDLE = "idle_standard";
-		const int MAX_DIST = 1024;
-		const int MIN_RADIUS = 32;
-		const int MAX_RADIUS = 256;
-		const int PROJ_DAMAGE = 1;
-		const string SOUND_PHOENIX = "monsters/birds/hawkcaw.wav";
+		MODEL_WORLD = "weapons/projectiles.mdl";
+		MODEL_HANDS = "weapons/projectiles.mdl";
+		MODEL_BODY_OFS = 48;
+		ARROW_BODY_OFS = 48;
+		PROJ_IGNORENPC = 1;
+		PROJ_ANIM_IDLE = "idle_standard";
+		MAX_DIST = 1024;
+		MIN_RADIUS = 32;
+		MAX_RADIUS = 256;
+		PROJ_DAMAGE = 1;
+		SOUND_PHOENIX = "monsters/birds/hawkcaw.wav";
 		Precache("ambience/steamburst1.wav");
 	}
 
@@ -52,7 +63,7 @@ class ProjArrowPhx : CGameScript
 		string USER_ORG = GetEntityOrigin("ent_expowner");
 		string MY_ORG = GetEntityOrigin(GetOwner());
 		MY_ORG = "z";
-		string DISTANCE_TRAVELED = Distance(USER_ORG, MY_ORG);
+		float DISTANCE_TRAVELED = Distance(USER_ORG, MY_ORG);
 		string DISTANCE_RATIO = DISTANCE_TRAVELED;
 		string OWNER_SKILL = GetSkillLevel("ent_expowner", "archery.power");
 		string MIN_DMG = OWNER_SKILL;

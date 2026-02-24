@@ -9,7 +9,7 @@ class OrcforGobtown1 : CGameScript
 {
 	void chest_additems()
 	{
-		add_gold(/* TODO: $math(multiply) */ 100);
+		add_gold((100 * G_GAVE_ARTI1));
 		if (G_GAVE_ARTI1 == 1)
 		{
 			add_noob_item();

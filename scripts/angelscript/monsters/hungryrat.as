@@ -22,6 +22,7 @@ class Hungryrat : CGameScript
 	string SOUND_ATTACK1;
 	string SOUND_ATTACK2;
 	string SOUND_ATTACK3;
+	string SOUND_DEATH;
 	string SOUND_IDLE1;
 	string SOUND_PAIN;
 	string SOUND_STRUCK1;
@@ -44,7 +45,7 @@ class Hungryrat : CGameScript
 		SOUND_ATTACK2 = "monsters/orc/attack2.wav";
 		SOUND_ATTACK3 = "monsters/orc/attack3.wav";
 		SOUND_IDLE1 = "monsters/rat/squeak2.wav";
-		const string SOUND_DEATH = "monsters/rat/squeak3.wav";
+		SOUND_DEATH = "monsters/rat/squeak3.wav";
 		CAN_FLEE = 1;
 		FLEE_HEALTH = 2;
 		FLEE_CHANCE = 0.1;

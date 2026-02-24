@@ -11,20 +11,24 @@ class SkeletonCrystal1 : CGameScript
 	int AM_FADING;
 	string ANIM_RUN;
 	string ANIM_WALK;
+	int ATTACK_DAMAGE_HIGH;
+	int ATTACK_DAMAGE_LOW;
+	float ATTACK_HITCHANCE;
 	int FADE_COUNT;
 	int NPC_GIVE_EXP;
 	int NPC_HACKED_MOVE_SPEED;
 	string SINK_ORIGIN;
+	int SKEL_HP;
 
 	SkeletonCrystal1()
 	{
 		ANIM_RUN = "idle1";
 		ANIM_WALK = "idle1";
 		NPC_HACKED_MOVE_SPEED = 150;
-		const int SKEL_HP = 1;
-		const float ATTACK_HITCHANCE = 0.8;
-		const int ATTACK_DAMAGE_LOW = 10;
-		const int ATTACK_DAMAGE_HIGH = 20;
+		SKEL_HP = 1;
+		ATTACK_HITCHANCE = 0.8;
+		ATTACK_DAMAGE_LOW = 10;
+		ATTACK_DAMAGE_HIGH = 20;
 		NPC_GIVE_EXP = 0;
 	}
 

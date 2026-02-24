@@ -7,19 +7,31 @@ namespace MS
 
 class PackQuiver : CGameScript
 {
+	int CONTAINER_CANCLOSE;
+	string CONTAINER_ITEM_ACCEPT;
+	string CONTAINER_ITEM_REJECT;
+	int CONTAINER_LOCK_STRENGTH;
+	int CONTAINER_MAXITEMS;
+	int CONTAINER_SPACE;
+	string CONTAINER_TYPE;
+	string MODEL_HANDS;
+	string MODEL_VIEW;
+	string MODEL_WEAR;
+	string MODEL_WORLD;
+
 	PackQuiver()
 	{
-		const string MODEL_VIEW = "none";
-		const string MODEL_HANDS = "weapons/bows/quiver_hands.mdl";
-		const string MODEL_WORLD = "weapons/bows/quiver_floor.mdl";
-		const string MODEL_WEAR = "weapons/bows/quiver_spine3.mdl";
-		const string CONTAINER_TYPE = "quiver";
-		const int CONTAINER_SPACE = 200;
-		const int CONTAINER_MAXITEMS = 8;
-		const int CONTAINER_CANCLOSE = 0;
-		const int CONTAINER_LOCK_STRENGTH = 0;
-		const string CONTAINER_ITEM_ACCEPT = "arrow";
-		const string CONTAINER_ITEM_REJECT = "item_tk_";
+		MODEL_VIEW = "none";
+		MODEL_HANDS = "weapons/bows/quiver_hands.mdl";
+		MODEL_WORLD = "weapons/bows/quiver_floor.mdl";
+		MODEL_WEAR = "weapons/bows/quiver_spine3.mdl";
+		CONTAINER_TYPE = "quiver";
+		CONTAINER_SPACE = 200;
+		CONTAINER_MAXITEMS = 8;
+		CONTAINER_CANCLOSE = 0;
+		CONTAINER_LOCK_STRENGTH = 0;
+		CONTAINER_ITEM_ACCEPT = "arrow";
+		CONTAINER_ITEM_REJECT = "item_tk_";
 	}
 
 	void pack_spawn()

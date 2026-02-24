@@ -5,29 +5,37 @@ namespace MS
 
 class FireBallGuided : CGameScript
 {
+	int COLLIDE_RANGE;
+	int DETECT_RANGE;
 	string FIRST_TARG;
+	float FREQ_HUNT;
+	float FREQ_MOVE;
 	int IS_ACTIVE;
 	string MY_AOE;
 	string MY_BASE_DMG;
 	string MY_DEST;
 	string MY_DURATION;
 	string MY_OWNER;
+	int MY_SPEED;
 	string MY_TARGET;
 	string OWNER_ISPLAYER;
 	int PLAYING_DEAD;
 	string PREV_POV;
 	string PUSH_LIST;
+	string SOUND_EXPLODE;
+	string SPRITE_EXPLODE;
+	string SPRITE_FIRE;
 
 	FireBallGuided()
 	{
-		const string SPRITE_EXPLODE = "bigsmoke.spr";
-		const string SOUND_EXPLODE = "weapons/explode3.wav";
-		const string SPRITE_FIRE = "firemagic.spr";
-		const int DETECT_RANGE = 64;
-		const int COLLIDE_RANGE = 16;
-		const int MY_SPEED = 300;
-		const float FREQ_HUNT = 1.0;
-		const float FREQ_MOVE = 0.5;
+		SPRITE_EXPLODE = "bigsmoke.spr";
+		SOUND_EXPLODE = "weapons/explode3.wav";
+		SPRITE_FIRE = "firemagic.spr";
+		DETECT_RANGE = 64;
+		COLLIDE_RANGE = 16;
+		MY_SPEED = 300;
+		FREQ_HUNT = 1.0;
+		FREQ_MOVE = 0.5;
 	}
 
 	void game_dynamically_created()
@@ -99,9 +107,9 @@ class FireBallGuided : CGameScript
 		{
 			MY_DEST = GetEntityOrigin(MY_TARGET);
 		}
-		string RND_FB = Random(0, 64);
-		string RND_RL = Random(-64, 64);
-		string RND_UD = Random(0, 64);
+		float RND_FB = Random(0, 64);
+		float RND_RL = Random(-64, 64);
+		float RND_UD = Random(0, 64);
 		MY_DEST += /* TODO: $relpos */ $relpos(Vector3(0, 0, 0), Vector3(RND_RL, RND_FB, RND_UD));
 		if (PREV_POV != "PREV_POV")
 		{

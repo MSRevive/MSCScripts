@@ -8,14 +8,17 @@ namespace MS
 class ItemLogMagic : CGameScript
 {
 	int IN_WORLD;
+	string MODEL_HANDS;
+	string MODEL_WORLD;
 	string PARTY_STARTED;
 	string SCRIPT_ID;
+	string TORCH_LIGHT_SCRIPT;
 
 	ItemLogMagic()
 	{
-		const string MODEL_WORLD = "misc/item_log.mdl";
-		const string MODEL_HANDS = "misc/item_log.mdl";
-		const string TORCH_LIGHT_SCRIPT = "player/player_conartist";
+		MODEL_WORLD = "misc/item_log.mdl";
+		MODEL_HANDS = "misc/item_log.mdl";
+		TORCH_LIGHT_SCRIPT = "player/player_conartist";
 	}
 
 	void miscitem_spawn()

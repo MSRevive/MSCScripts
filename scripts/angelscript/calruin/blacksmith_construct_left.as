@@ -9,6 +9,9 @@ class BlacksmithConstructLeft : CGameScript
 {
 	string ANIM_ATTACK;
 	string ANIM_RUN;
+	int ATTACK_DAMAGE_HIGH;
+	int ATTACK_DAMAGE_LOW;
+	float ATTACK_HITCHANCE;
 	int ATTACK_HITRANGE;
 	int ATTACK_RANGE;
 	int DROP_GOLD;
@@ -17,6 +20,17 @@ class BlacksmithConstructLeft : CGameScript
 	int NPC_ALLY_RESPONSE_RANGE;
 	int NPC_GIVE_EXP;
 	int NPC_IS_BOSS;
+	int SKEL_HEIGHT;
+	int SKEL_HP;
+	float SKEL_RESPAWN_CHANCE;
+	int SKEL_RESPAWN_LIVES;
+	int SKEL_WIDTH;
+	string SOUND_PUSH;
+	string SOUND_STRUCK1;
+	string SOUND_STRUCK2;
+	string SOUND_STRUCK3;
+	int STONE_SKELETON;
+	int STUN_ATK_CHANCE;
 	int STUN_ATTACK;
 
 	BlacksmithConstructLeft()
@@ -24,26 +38,26 @@ class BlacksmithConstructLeft : CGameScript
 		NPC_IS_BOSS = 1;
 		NPC_ALLY_RESPONSE_RANGE = 6000;
 		ANIM_RUN = "run";
-		const int SKEL_HP = 2000;
-		const int SKEL_WIDTH = 64;
-		const int SKEL_HEIGHT = 180;
+		SKEL_HP = 2000;
+		SKEL_WIDTH = 64;
+		SKEL_HEIGHT = 180;
 		ATTACK_RANGE = 150;
 		ATTACK_HITRANGE = 180;
-		const float ATTACK_HITCHANCE = 0.95;
-		const int ATTACK_DAMAGE_LOW = 40;
-		const int ATTACK_DAMAGE_HIGH = 60;
+		ATTACK_HITCHANCE = 0.95;
+		ATTACK_DAMAGE_LOW = 40;
+		ATTACK_DAMAGE_HIGH = 60;
 		NPC_GIVE_EXP = 1200;
 		DROP_GOLD = 1;
 		DROP_GOLD_MIN = 100;
 		DROP_GOLD_MAX = 250;
-		const float SKEL_RESPAWN_CHANCE = 0.0;
-		const int SKEL_RESPAWN_LIVES = 0;
-		const string SOUND_STRUCK1 = "weapons/axemetal1.wav";
-		const string SOUND_STRUCK2 = "weapons/axemetal2.wav";
-		const string SOUND_STRUCK3 = "debris/concrete1.wav";
-		const string SOUND_PUSH = "monsters/skeleton/calrain3.wav";
-		const int STUN_ATK_CHANCE = 10;
-		const int STONE_SKELETON = 1;
+		SKEL_RESPAWN_CHANCE = 0.0;
+		SKEL_RESPAWN_LIVES = 0;
+		SOUND_STRUCK1 = "weapons/axemetal1.wav";
+		SOUND_STRUCK2 = "weapons/axemetal2.wav";
+		SOUND_STRUCK3 = "debris/concrete1.wav";
+		SOUND_PUSH = "monsters/skeleton/calrain3.wav";
+		STUN_ATK_CHANCE = 10;
+		STONE_SKELETON = 1;
 		Precache("monsters/skeleton_boss1.mdl");
 	}
 

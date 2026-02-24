@@ -8,11 +8,28 @@ namespace MS
 class MummyWarrior2c : CGameScript
 {
 	string ANIM_ATTACK;
+	string ANIM_ATTACK_LONG;
+	string ANIM_ATTACK_SHORT;
 	string ANIM_IDLE;
 	string ANIM_RUN;
 	string ANIM_WALK;
+	int ATTACK_HITCHANCE;
+	int ATTACK_HITRANGE_LONG;
+	int ATTACK_HITRANGE_SHORT;
+	int ATTACK_RANGE_LONG;
+	int ATTACK_RANGE_SHORT;
+	string ATTACK_TYPE;
 	float BASE_FRAMERATE;
 	float BASE_MOVESPEED;
+	int DMG_PIKE;
+	int DMG_SLASH;
+	int DMG_STAB;
+	int DMG_STEELPIPE;
+	float FREQ_MUMMY_PIKE_TOSS;
+	int MUMMY_PIKE_SPEED;
+	string MUMMY_PROJ_NAME;
+	int MUMMY_STARTING_LIVES;
+	int MUMMY_THROWS_PIKE;
 	int NPC_GIVE_EXP;
 
 	MummyWarrior2c()
@@ -21,24 +38,24 @@ class MummyWarrior2c : CGameScript
 		ANIM_RUN = "walk2";
 		ANIM_IDLE = "idle1";
 		ANIM_ATTACK = "stab";
-		const string ANIM_ATTACK_SHORT = "steelpipe";
-		const string ANIM_ATTACK_LONG = "stab";
+		ANIM_ATTACK_SHORT = "steelpipe";
+		ANIM_ATTACK_LONG = "stab";
 		NPC_GIVE_EXP = 5000;
-		const string ATTACK_TYPE = "long";
-		const int DMG_SLASH = 600;
-		const int MUMMY_STARTING_LIVES = 1;
-		const int ATTACK_HITCHANCE = 90;
-		const int ATTACK_RANGE_SHORT = 64;
-		const int ATTACK_HITRANGE_SHORT = 96;
-		const int ATTACK_RANGE_LONG = 130;
-		const int ATTACK_HITRANGE_LONG = 150;
-		const int DMG_STEELPIPE = 200;
-		const int DMG_STAB = 600;
-		const int MUMMY_THROWS_PIKE = 1;
-		const float FREQ_MUMMY_PIKE_TOSS = 10.0;
-		const int DMG_PIKE = 400;
-		const int MUMMY_PIKE_SPEED = 400;
-		const string MUMMY_PROJ_NAME = "proj_mummy_pike";
+		ATTACK_TYPE = "long";
+		DMG_SLASH = 600;
+		MUMMY_STARTING_LIVES = 1;
+		ATTACK_HITCHANCE = 90;
+		ATTACK_RANGE_SHORT = 64;
+		ATTACK_HITRANGE_SHORT = 96;
+		ATTACK_RANGE_LONG = 130;
+		ATTACK_HITRANGE_LONG = 150;
+		DMG_STEELPIPE = 200;
+		DMG_STAB = 600;
+		MUMMY_THROWS_PIKE = 1;
+		FREQ_MUMMY_PIKE_TOSS = 10.0;
+		DMG_PIKE = 400;
+		MUMMY_PIKE_SPEED = 400;
+		MUMMY_PROJ_NAME = "proj_mummy_pike";
 	}
 
 	void mummy_spawn()

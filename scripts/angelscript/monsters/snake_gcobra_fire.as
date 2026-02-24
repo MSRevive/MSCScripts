@@ -7,17 +7,27 @@ namespace MS
 
 class SnakeGcobraFire : CGameScript
 {
+	string BREATH_EFFECT_SCRIPT;
+	string CL_SCRIPT;
+	string DMG_EFFECT_SCRIPT;
+	int FIRE_BREATH;
+	string MONSTER_MODEL;
+	int NPC_BASE_EXP;
+	float POISON_DAMAGE;
+	float POISON_DURATION;
+	int PUSH_BREATH;
+
 	SnakeGcobraFire()
 	{
-		const int NPC_BASE_EXP = 200;
-		const string MONSTER_MODEL = "monsters/gcobra_fire.mdl";
-		const string DMG_EFFECT_SCRIPT = "effects/dot_fire";
-		const string BREATH_EFFECT_SCRIPT = "effects/dot_fire";
-		const float POISON_DAMAGE = 30.0;
-		const float POISON_DURATION = 10.0;
-		const int PUSH_BREATH = 1;
-		const string CL_SCRIPT = "monsters/snake_gcobra_fire_cl";
-		const int FIRE_BREATH = 1;
+		NPC_BASE_EXP = 200;
+		MONSTER_MODEL = "monsters/gcobra_fire.mdl";
+		DMG_EFFECT_SCRIPT = "effects/dot_fire";
+		BREATH_EFFECT_SCRIPT = "effects/dot_fire";
+		POISON_DAMAGE = 30.0;
+		POISON_DURATION = 10.0;
+		PUSH_BREATH = 1;
+		CL_SCRIPT = "monsters/snake_gcobra_fire_cl";
+		FIRE_BREATH = 1;
 		Precache("explode1.spr");
 	}
 

@@ -7,10 +7,13 @@ namespace MS
 
 class HorrorEggLightning : CGameScript
 {
+	string EGG_SCRIPT;
+	string GLOW_SHELL;
+
 	HorrorEggLightning()
 	{
-		const string EGG_SCRIPT = "monsters/horror_lightning";
-		const Vector3 GLOW_SHELL = Vector3(255, 255, 0);
+		EGG_SCRIPT = "monsters/horror_lightning";
+		GLOW_SHELL = Vector3(255, 255, 0);
 	}
 
 }

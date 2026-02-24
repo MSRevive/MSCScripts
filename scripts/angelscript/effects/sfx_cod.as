@@ -8,15 +8,18 @@ class SfxCod : CGameScript
 	int FX_ACTIVE;
 	string FX_DURATION;
 	string FX_ORIGIN;
+	string GLOW_COLOR;
 	string GLOW_RAD;
 	string MODEL_OFS;
+	string SEAL_MODEL;
+	string SEAL_SOUND;
 	string SND_CHAN;
 
 	SfxCod()
 	{
-		const string SEAL_MODEL = "weapons/magic/seals.mdl";
-		const Vector3 GLOW_COLOR = Vector3(255, 0, 0);
-		const string SEAL_SOUND = "ambience/pulsemachine.wav";
+		SEAL_MODEL = "weapons/magic/seals.mdl";
+		GLOW_COLOR = Vector3(255, 0, 0);
+		SEAL_SOUND = "ambience/pulsemachine.wav";
 	}
 
 	void client_activate()

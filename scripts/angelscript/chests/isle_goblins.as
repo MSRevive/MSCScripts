@@ -30,7 +30,7 @@ class IsleGoblins : CGameScript
 		{
 			add_good_item();
 		}
-		string RND_ARROW = RandomInt(1, 4);
+		int RND_ARROW = RandomInt(1, 4);
 		if (RND_ARROW == 1)
 		{
 			AddStoreItem(STORENAME, "proj_arrow_broadhead", 60, 0, 0, 60);

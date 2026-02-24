@@ -8,30 +8,40 @@ namespace MS
 class SkeletonStone1 : CGameScript
 {
 	string ANIM_RUN;
+	int ATTACK_DAMAGE_HIGH;
+	int ATTACK_DAMAGE_LOW;
+	float ATTACK_HITCHANCE;
 	int DROP_GOLD;
 	int DROP_GOLD_MAX;
 	int DROP_GOLD_MIN;
 	int NPC_GIVE_EXP;
 	string SET_GREEK;
+	int SKEL_HP;
+	float SKEL_RESPAWN_CHANCE;
+	int SKEL_RESPAWN_LIVES;
+	string SOUND_STRUCK1;
+	string SOUND_STRUCK2;
+	string SOUND_STRUCK3;
+	int STONE_SKELETON;
 	string WAS_SLEEPING;
 
 	SkeletonStone1()
 	{
 		ANIM_RUN = "run";
-		const int SKEL_HP = 500;
-		const float ATTACK_HITCHANCE = 0.85;
-		const int ATTACK_DAMAGE_LOW = 8;
-		const int ATTACK_DAMAGE_HIGH = 13;
+		SKEL_HP = 500;
+		ATTACK_HITCHANCE = 0.85;
+		ATTACK_DAMAGE_LOW = 8;
+		ATTACK_DAMAGE_HIGH = 13;
 		NPC_GIVE_EXP = 100;
 		DROP_GOLD = 1;
 		DROP_GOLD_MIN = 25;
 		DROP_GOLD_MAX = 35;
-		const float SKEL_RESPAWN_CHANCE = 0.0;
-		const int SKEL_RESPAWN_LIVES = 0;
-		const string SOUND_STRUCK1 = "weapons/axemetal1.wav";
-		const string SOUND_STRUCK2 = "weapons/axemetal2.wav";
-		const string SOUND_STRUCK3 = "debris/concrete1.wav";
-		const int STONE_SKELETON = 1;
+		SKEL_RESPAWN_CHANCE = 0.0;
+		SKEL_RESPAWN_LIVES = 0;
+		SOUND_STRUCK1 = "weapons/axemetal1.wav";
+		SOUND_STRUCK2 = "weapons/axemetal2.wav";
+		SOUND_STRUCK3 = "debris/concrete1.wav";
+		STONE_SKELETON = 1;
 		Precache("monsters/skeleton_boss1.mdl");
 	}
 

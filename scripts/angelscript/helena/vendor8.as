@@ -14,8 +14,10 @@ class Vendor8 : CGameScript
 	string ANIM_DEATH;
 	string ARROW_AMT;
 	int CANCHAT;
+	int NO_CHAT;
 	float OVERCHARGE;
 	float SELL_RATIO;
+	string SOUND_DEATH;
 	string STORE_NAME;
 	string STORE_TRIGGERTEXT;
 	int VEND_ARMORER;
@@ -25,14 +27,14 @@ class Vendor8 : CGameScript
 
 	Vendor8()
 	{
-		const string SOUND_DEATH = "none";
+		SOUND_DEATH = "none";
 		STORE_TRIGGERTEXT = "store trade buy sell purchase sale offer";
 		STORE_NAME = "helena_general_store";
 		CANCHAT = 1;
 		OVERCHARGE = 1.5;
 		SELL_RATIO = 0.8;
 		ANIM_DEATH = "diesimple";
-		const int NO_CHAT = 1;
+		NO_CHAT = 1;
 		VEND_NEWBIE = 1;
 		VEND_WEAPONS = 1;
 		VEND_CONTAINERS = 1;

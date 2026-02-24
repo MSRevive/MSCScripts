@@ -13,6 +13,8 @@ namespace MS
 class Grocer : CGameScript
 {
 	int ASKED_APPLE;
+	int NO_JOB;
+	string SOUND_DEATH;
 	string SOUND_IDLE1;
 	string SOUND_IDLE2;
 	string SOUND_IDLE3;
@@ -24,10 +26,10 @@ class Grocer : CGameScript
 		SOUND_IDLE1 = "voices/human/male_idle4.wav";
 		SOUND_IDLE2 = "voices/human/male_idle5.wav";
 		SOUND_IDLE3 = "voices/human/male_idle6.wav";
-		const string SOUND_DEATH = "none";
+		SOUND_DEATH = "none";
 		STORE_NAME = "deralia_grocer";
 		STORE_TRIGGERTEXT = "store";
-		const int NO_JOB = 1;
+		NO_JOB = 1;
 	}
 
 	void OnRepeatTimer()
@@ -93,7 +95,7 @@ class Grocer : CGameScript
 	void say_rumour()
 	{
 		PlayAnim("once", "pondering");
-		SayText("Rumors? Well , I have heard about a rash of thievery!");
+		SayText("Rumors? Well , " + I + " have heard about a rash of thievery!");
 	}
 
 }

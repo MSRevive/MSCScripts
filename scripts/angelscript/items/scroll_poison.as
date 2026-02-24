@@ -7,12 +7,17 @@ namespace MS
 
 class ScrollPoison : CGameScript
 {
+	int BASE_REQUIRED_LEVEL;
+	string BASE_REQUIRED_SKILL;
+	string BASE_SPELL_SCRIPT;
+	string BASE_SUMMON_TEXT;
+
 	ScrollPoison()
 	{
-		const string BASE_SPELL_SCRIPT = "magic_hand_poison";
-		const string BASE_SUMMON_TEXT = "You learn how to afflict your enemies with debilitating poison.";
-		const string BASE_REQUIRED_SKILL = "skill.spellcasting.affliction";
-		const int BASE_REQUIRED_LEVEL = 0;
+		BASE_SPELL_SCRIPT = "magic_hand_poison";
+		BASE_SUMMON_TEXT = "You learn how to afflict your enemies with debilitating poison.";
+		BASE_REQUIRED_SKILL = "skill.spellcasting.affliction";
+		BASE_REQUIRED_LEVEL = 0;
 	}
 
 	void OnSpawn() override

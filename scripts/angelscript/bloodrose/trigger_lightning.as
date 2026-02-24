@@ -7,12 +7,16 @@ namespace MS
 
 class TriggerLightning : CGameScript
 {
+	string ELEMENT_TYPE;
+	int MAX_HP;
+	float RESET_DELAY;
+
 	TriggerLightning()
 	{
 		SetGlobalVar("LIGHTNING_TRIG", 0);
-		const int MAX_HP = 9999;
-		const string ELEMENT_TYPE = "lightning";
-		const float RESET_DELAY = 20.0;
+		MAX_HP = 9999;
+		ELEMENT_TYPE = "lightning";
+		RESET_DELAY = 20.0;
 	}
 
 	void trigger_spawn()

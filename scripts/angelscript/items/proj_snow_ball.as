@@ -8,23 +8,37 @@ namespace MS
 class ProjSnowBall : CGameScript
 {
 	string EFFECT_DURATION;
+	string ITEM_NAME;
+	int MODEL_BODY_OFS;
+	string MODEL_HANDS;
+	string MODEL_WORLD;
+	string PROJ_ANIM_IDLE;
+	int PROJ_AOE_FALLOFF;
+	int PROJ_AOE_RANGE;
+	int PROJ_COLLIDEHITBOX;
+	int PROJ_DAMAGE;
+	string PROJ_DAMAGE_TYPE;
+	int PROJ_SOLIDIFY_ON_WALL;
+	int PROJ_STICK_DURATION;
+	string SOUND_SMOOSH;
+	string SOUND_WOOSH;
 
 	ProjSnowBall()
 	{
-		const string MODEL_HANDS = "none";
-		const string MODEL_WORLD = "weapons/projectiles.mdl";
-		const int MODEL_BODY_OFS = 2;
-		const string PROJ_ANIM_IDLE = "idle_iceball";
-		const string ITEM_NAME = "firemana";
-		const string PROJ_DAMAGE_TYPE = "cold";
-		const int PROJ_DAMAGE = 100;
-		const int PROJ_AOE_RANGE = 256;
-		const int PROJ_AOE_FALLOFF = 0;
-		const int PROJ_STICK_DURATION = 0;
-		const int PROJ_SOLIDIFY_ON_WALL = 0;
-		const int PROJ_COLLIDEHITBOX = 16;
-		const string SOUND_WOOSH = "doors/aliendoor3.wav";
-		const string SOUND_SMOOSH = "debris/beamstart14.wav";
+		MODEL_HANDS = "none";
+		MODEL_WORLD = "weapons/projectiles.mdl";
+		MODEL_BODY_OFS = 2;
+		PROJ_ANIM_IDLE = "idle_iceball";
+		ITEM_NAME = "firemana";
+		PROJ_DAMAGE_TYPE = "cold";
+		PROJ_DAMAGE = 100;
+		PROJ_AOE_RANGE = 256;
+		PROJ_AOE_FALLOFF = 0;
+		PROJ_STICK_DURATION = 0;
+		PROJ_SOLIDIFY_ON_WALL = 0;
+		PROJ_COLLIDEHITBOX = 16;
+		SOUND_WOOSH = "doors/aliendoor3.wav";
+		SOUND_SMOOSH = "debris/beamstart14.wav";
 		Precache("xflare1.spr");
 	}
 

@@ -7,34 +7,61 @@ namespace MS
 
 class AxesSmallaxe : CGameScript
 {
+	int ANIM_ATTACK1;
+	int ANIM_ATTACK2;
+	int ANIM_ATTACK3;
+	int ANIM_IDLE1;
+	int ANIM_LIFT1;
+	string ANIM_PREFIX;
+	int ANIM_SHEATH;
+	int BASE_LEVEL_REQ;
+	float MELEE_ACCURACY;
+	float MELEE_ATK_DURATION;
+	int MELEE_DMG;
+	float MELEE_DMG_DELAY;
+	int MELEE_DMG_RANGE;
+	string MELEE_DMG_TYPE;
+	float MELEE_ENERGY;
+	float MELEE_PARRY_CHANCE;
+	int MELEE_RANGE;
+	string MELEE_SOUND;
+	string MELEE_SOUND_DELAY;
+	string MELEE_STAT;
+	int MODEL_BODY_OFS;
+	string MODEL_HANDS;
+	string MODEL_VIEW;
+	int MODEL_VIEW_IDX;
+	string MODEL_WORLD;
+	string SOUND_SWIPE;
+
 	AxesSmallaxe()
 	{
-		const int BASE_LEVEL_REQ = 3;
-		const int ANIM_LIFT1 = 0;
-		const int ANIM_IDLE1 = 1;
-		const int ANIM_ATTACK1 = 2;
-		const int ANIM_ATTACK2 = 3;
-		const int ANIM_ATTACK3 = 4;
-		const int ANIM_SHEATH = 5;
-		const string MODEL_VIEW = "viewmodels/v_1haxes.mdl";
-		const int MODEL_VIEW_IDX = 2;
-		const string MODEL_HANDS = "weapons/p_weapons1.mdl";
-		const string MODEL_WORLD = "weapons/p_weapons1.mdl";
-		const string SOUND_SWIPE = "weapons/swingsmall.wav";
-		const int MODEL_BODY_OFS = 104;
-		const string ANIM_PREFIX = "axe";
-		const int MELEE_RANGE = 60;
-		const float MELEE_DMG_DELAY = 0.6;
-		const float MELEE_ATK_DURATION = 1.1;
-		const float MELEE_ENERGY = 0.4;
-		const int MELEE_DMG = 120;
-		const int MELEE_DMG_RANGE = 90;
-		const string MELEE_DMG_TYPE = "slash";
-		const float MELEE_ACCURACY = 0.7;
-		const string MELEE_STAT = "axehandling";
-		const string MELEE_SOUND = SOUND_SWIPE;
-		const string MELEE_SOUND_DELAY = MELEE_DMG_DELAY;
-		const float MELEE_PARRY_CHANCE = 0.05;
+		BASE_LEVEL_REQ = 3;
+		ANIM_LIFT1 = 0;
+		ANIM_IDLE1 = 1;
+		ANIM_ATTACK1 = 2;
+		ANIM_ATTACK2 = 3;
+		ANIM_ATTACK3 = 4;
+		ANIM_SHEATH = 5;
+		MODEL_VIEW = "viewmodels/v_1haxes.mdl";
+		MODEL_VIEW_IDX = 2;
+		MODEL_HANDS = "weapons/p_weapons1.mdl";
+		MODEL_WORLD = "weapons/p_weapons1.mdl";
+		SOUND_SWIPE = "weapons/swingsmall.wav";
+		MODEL_BODY_OFS = 104;
+		ANIM_PREFIX = "axe";
+		MELEE_RANGE = 60;
+		MELEE_DMG_DELAY = 0.6;
+		MELEE_ATK_DURATION = 1.1;
+		MELEE_ENERGY = 0.4;
+		MELEE_DMG = 120;
+		MELEE_DMG_RANGE = 90;
+		MELEE_DMG_TYPE = "slash";
+		MELEE_ACCURACY = 0.7;
+		MELEE_STAT = "axehandling";
+		MELEE_SOUND = SOUND_SWIPE;
+		MELEE_SOUND_DELAY = MELEE_DMG_DELAY;
+		MELEE_PARRY_CHANCE = 0.05;
 	}
 
 	void weapon_spawn()

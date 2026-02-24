@@ -10,20 +10,24 @@ namespace MS
 class Harry : CGameScript
 {
 	string ANIM_DEATH;
+	string MY_RAID_POS;
+	int NO_JOB;
+	int NO_RUMOR;
 	int SAY_SO;
+	string SOUND_DEATH;
 	string STORE_NAME;
 	string STORE_TRIGGERTEXT;
 
 	Harry()
 	{
-		const string SOUND_DEATH = "none";
+		SOUND_DEATH = "none";
 		ANIM_DEATH = "diesimple";
 		STORE_NAME = "harrys_inn";
 		STORE_TRIGGERTEXT = "store trade buy sell purchase sale offer";
 		SAY_SO = 0;
-		const int NO_JOB = 1;
-		const int NO_RUMOR = 1;
-		const Vector3 MY_RAID_POS = Vector3(-592, 383, 36);
+		NO_JOB = 1;
+		NO_RUMOR = 1;
+		MY_RAID_POS = Vector3(-592, 383, 36);
 	}
 
 	void OnSpawn() override
@@ -56,7 +60,7 @@ class Harry : CGameScript
 	void say_hi2test()
 	{
 		if (!(SAY_SO == 0)) return;
-		SayText("I am Harry , your humble innkeeper.");
+		SayText(I + " am Harry , your humble innkeeper.");
 		setsayso();
 	}
 
@@ -95,7 +99,7 @@ class Harry : CGameScript
 
 	void say_inn()
 	{
-		SayText("Yes , I own the inn over there. It s free to anyone passing through, but donations are welcome.");
+		SayText("Yes , " + I + " own the inn over there. It s free to anyone passing through, but donations are welcome.");
 	}
 
 	void vendor_addstoreitems()
@@ -118,7 +122,7 @@ class Harry : CGameScript
 	void basevendor_offerstore()
 	{
 		if (!(HELENA_SAVED)) return;
-		SayText("For you , I ll break out the rare stock! I almost never sell this stuff.");
+		SayText("For you , " + I + " ll break out the rare stock! I almost never sell this stuff.");
 		PlayAnim("critical", "lean");
 		bchat_mouth_move();
 	}

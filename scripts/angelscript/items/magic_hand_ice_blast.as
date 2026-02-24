@@ -7,24 +7,35 @@ namespace MS
 
 class MagicHandIceBlast : CGameScript
 {
+	int ANIM_CAST;
+	string EFFECT_SCRIPT;
+	int MELEE_ATK_DURATION;
+	float MELEE_HITCHANCE;
+	int MELEE_RANGE;
+	string SOUND_SHOOT;
+	string SPELL_DAMAGE_TYPE;
+	int SPELL_ENERGYDRAIN;
+	int SPELL_MPDRAIN;
+	int SPELL_PREPARE_TIME;
 	int SPELL_SKILL_REQUIRED;
+	string SPELL_STAT;
 	int baseitem.canidle;
 
 	MagicHandIceBlast()
 	{
-		const int ANIM_CAST = 11;
-		const string SOUND_SHOOT = "magic/frost_pulse.wav";
-		const int MELEE_RANGE = 600;
-		const float MELEE_HITCHANCE = 1.0;
-		const int MELEE_ATK_DURATION = 1;
+		ANIM_CAST = 11;
+		SOUND_SHOOT = "magic/frost_pulse.wav";
+		MELEE_RANGE = 600;
+		MELEE_HITCHANCE = 1.0;
+		MELEE_ATK_DURATION = 1;
 		SPELL_SKILL_REQUIRED = 18;
-		const int SPELL_PREPARE_TIME = 1;
-		const string SPELL_DAMAGE_TYPE = "cold";
-		const int SPELL_ENERGYDRAIN = 1;
-		const int MELEE_ATK_DURATION = 2;
-		const int SPELL_MPDRAIN = 50;
-		const string SPELL_STAT = "none";
-		const string EFFECT_SCRIPT = "monsters/summon/ice_blast";
+		SPELL_PREPARE_TIME = 1;
+		SPELL_DAMAGE_TYPE = "cold";
+		SPELL_ENERGYDRAIN = 1;
+		MELEE_ATK_DURATION = 2;
+		SPELL_MPDRAIN = 50;
+		SPELL_STAT = "none";
+		EFFECT_SCRIPT = "monsters/summon/ice_blast";
 		Precache(EFFECT_SCRIPT);
 	}
 

@@ -21,17 +21,39 @@ class DjinnFire : CGameScript
 	int DID_ROAR_INTRO;
 	string DROP_ITEM1;
 	string DROP_ITEM1_CHANCE;
+	int FIRE_DAMAGE;
 	string FIRE_SCRIPT;
+	int FLEE_HEALTH;
+	int GOLD_BAGS;
+	int GOLD_BAGS_PPLAYER;
+	int GOLD_MAX_BAGS;
+	int GOLD_PER_BAG;
+	int GOLD_RADIUS;
 	int HUNT_AGRO;
 	int IS_UNHOLY;
 	int I_ATTACKED;
 	int MOVE_RANGE;
 	string MY_ICE_TROLL;
 	int NO_SUMMON;
+	float NPC_BOSS_REGEN_RATE;
+	float NPC_BOSS_RESTORATION;
 	string NPC_GIVE_EXP;
 	string NPC_IS_BOSS;
+	int PUSH_CHANCE;
 	string PUSH_VEL;
+	string SOUND_ATTACK1;
+	string SOUND_ATTACK2;
+	string SOUND_DEATH;
+	string SOUND_ROAR;
+	string SOUND_STRUCK1;
+	string SOUND_STRUCK2;
+	string SOUND_SUMMON;
+	string SOUND_WALK;
+	string SOUND_WALK1;
+	string SOUND_WALK2;
 	string SUMMON_NEXT_CHECK;
+	string SUMMON_SCRIPT;
+	string TORCH_LIGHT_SCRIPT;
 
 	DjinnFire()
 	{
@@ -41,26 +63,26 @@ class DjinnFire : CGameScript
 			NPC_GIVE_EXP = 3000;
 			if ((G_DEVELOPER_MODE))
 			{
-				SendInfoMessageToAll("green Djinn Var-sul set BOSS MODE");
+				SendInfoMessageToAll("green Djinn Var-sul set " + BOSS + MODE);
 			}
 		}
 		else
 		{
 			NPC_GIVE_EXP = 800;
 		}
-		const float NPC_BOSS_REGEN_RATE = 0.1;
-		const float NPC_BOSS_RESTORATION = 1.0;
+		NPC_BOSS_REGEN_RATE = 0.1;
+		NPC_BOSS_RESTORATION = 1.0;
 		IS_UNHOLY = 1;
-		const string SOUND_STRUCK1 = "weapons/cbar_hitbod1.wav";
-		const string SOUND_STRUCK2 = "monsters/troll/trollpain.wav";
-		const string SOUND_ATTACK1 = "monsters/troll/trollattack.wav";
-		const string SOUND_ATTACK2 = "monsters/troll/trollattack.wav";
-		const string SOUND_DEATH = "monsters/troll/trolldeath.wav";
-		const string SOUND_WALK = "monsters/troll/walk.wav";
-		const string SOUND_SUMMON = "ambience/particle_suck2.wav";
-		const string SOUND_ROAR = "monsters/troll/trollidle2.wav";
-		const string SOUND_WALK1 = "monsters/troll/step1.wav";
-		const string SOUND_WALK2 = "monsters/troll/step2.wav";
+		SOUND_STRUCK1 = "weapons/cbar_hitbod1.wav";
+		SOUND_STRUCK2 = "monsters/troll/trollpain.wav";
+		SOUND_ATTACK1 = "monsters/troll/trollattack.wav";
+		SOUND_ATTACK2 = "monsters/troll/trollattack.wav";
+		SOUND_DEATH = "monsters/troll/trolldeath.wav";
+		SOUND_WALK = "monsters/troll/walk.wav";
+		SOUND_SUMMON = "ambience/particle_suck2.wav";
+		SOUND_ROAR = "monsters/troll/trollidle2.wav";
+		SOUND_WALK1 = "monsters/troll/step1.wav";
+		SOUND_WALK2 = "monsters/troll/step2.wav";
 		Precache(SOUND_STRUCK1);
 		Precache(SOUND_STRUCK2);
 		Precache(SOUND_ATTACK1);
@@ -69,12 +91,12 @@ class DjinnFire : CGameScript
 		Precache(SOUND_DEATH);
 		Precache(SOUND_SUMMON);
 		Precache(SOUND_ROAR);
-		const int PUSH_CHANCE = 10;
-		const int GOLD_BAGS = 1;
-		const int GOLD_BAGS_PPLAYER = 3;
-		const int GOLD_PER_BAG = 50;
-		const int GOLD_RADIUS = 64;
-		const int GOLD_MAX_BAGS = 32;
+		PUSH_CHANCE = 10;
+		GOLD_BAGS = 1;
+		GOLD_BAGS_PPLAYER = 3;
+		GOLD_PER_BAG = 50;
+		GOLD_RADIUS = 64;
+		GOLD_MAX_BAGS = 32;
 		ANIM_IDLE = "idle0";
 		ANIM_RUN = "run";
 		ANIM_WALK = "walk";
@@ -87,10 +109,10 @@ class DjinnFire : CGameScript
 		CAN_HUNT = 1;
 		HUNT_AGRO = 1;
 		CAN_FLEE = 1;
-		const int FLEE_HEALTH = 1;
-		const string SUMMON_SCRIPT = "monsters/troll_fire";
-		const string TORCH_LIGHT_SCRIPT = "items/item_djinn_fire";
-		const string FIRE_DAMAGE = "$rand(50,150)";
+		FLEE_HEALTH = 1;
+		SUMMON_SCRIPT = "monsters/troll_fire";
+		TORCH_LIGHT_SCRIPT = "items/item_djinn_fire";
+		FIRE_DAMAGE = "$rand(50,150)";
 		Precache(TORCH_LIGHT_SCRIPT);
 	}
 
@@ -235,7 +257,7 @@ class DjinnFire : CGameScript
 	{
 		string MY_LOC = GetEntityOrigin(GetOwner());
 		string MY_PET_LOC = GetEntityOrigin(MY_ICE_TROLL);
-		string PET_DISTANCE = Distance(MY_LOC, MY_PET_LOC);
+		float PET_DISTANCE = Distance(MY_LOC, MY_PET_LOC);
 		if (PET_DISTANCE > 80)
 		{
 			SetSolid("box");

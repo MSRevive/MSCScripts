@@ -11,18 +11,20 @@ namespace MS
 class Healer : CGameScript
 {
 	int EVIDENCE_FOUND;
+	int NO_JOB;
+	string SOUND_DEATH;
 	string STORE_NAME;
 	int STORE_SELLMENU;
 	string STORE_TRIGGERTEXT;
 
 	Healer()
 	{
-		const string SOUND_DEATH = "none";
+		SOUND_DEATH = "none";
 		STORE_NAME = "edana_healer";
 		STORE_TRIGGERTEXT = "store trade buy sell purchase sale offer";
 		STORE_SELLMENU = 1;
 		EVIDENCE_FOUND = 0;
-		const int NO_JOB = 1;
+		NO_JOB = 1;
 	}
 
 	void OnRepeatTimer()
@@ -31,7 +33,7 @@ class Healer : CGameScript
 		if ((CanSee("player", 256)))
 		{
 		}
-		SayText("Puh-potions! I-I got potions!");
+		SayText("Puh-potions! " + I-I + " got potions!");
 	}
 
 	void OnSpawn() override
@@ -84,7 +86,7 @@ class Healer : CGameScript
 
 	void say_rumour2()
 	{
-		SayText("I h-hear the fletcher will buy hawk f-feathers at a very high price.");
+		SayText(I + " h-hear the fletcher will buy hawk f-feathers at a very high price.");
 		ScheduleDelayedEvent(3, "say_rumour3");
 	}
 

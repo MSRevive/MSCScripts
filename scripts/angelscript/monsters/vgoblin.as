@@ -12,22 +12,30 @@ class Vgoblin : CGameScript
 	string CAN_FIREBALL;
 	string CAN_POISON;
 	string CAN_STUN;
+	int DMG_AXE;
+	int DMG_CLUB;
+	int DMG_FIREBALL;
+	int DMG_SWORD;
+	int DOT_POISON;
 	string DROP_ITEM1;
 	string DROP_ITEM1_CHANCE;
 	string F_GOB_TYPE;
 	int GOB_TYPE_SET;
+	int NEW_MODEL;
+	int NPC_BASE_EXP;
+	string SOUND_FIREBALL;
 	int TOSS_FIREBALL;
 
 	Vgoblin()
 	{
-		const int NEW_MODEL = 1;
-		const int NPC_BASE_EXP = 180;
-		const string DMG_CLUB = RandomInt(30, 65);
-		const string DMG_AXE = RandomInt(40, 50);
-		const string DMG_SWORD = RandomInt(20, 45);
-		const int DMG_FIREBALL = 75;
-		const string DOT_POISON = RandomInt(5, 10);
-		const string SOUND_FIREBALL = "bullchicken/bc_attack2.wav";
+		NEW_MODEL = 1;
+		NPC_BASE_EXP = 180;
+		DMG_CLUB = RandomInt(30, 65);
+		DMG_AXE = RandomInt(40, 50);
+		DMG_SWORD = RandomInt(20, 45);
+		DMG_FIREBALL = 75;
+		DOT_POISON = RandomInt(5, 10);
+		SOUND_FIREBALL = "bullchicken/bc_attack2.wav";
 	}
 
 	void goblin_spawn()

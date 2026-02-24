@@ -9,11 +9,13 @@ class BaseBook : CGameScript
 {
 	int CUR_PAGE;
 	string MAX_PAGE;
+	string MODEL_HOLD;
+	string MODEL_WORLD;
 
 	BaseBook()
 	{
-		const string MODEL_WORLD = "misc/p_misc.mdl";
-		const string MODEL_HOLD = "misc/p_misc.mdl";
+		MODEL_WORLD = "misc/p_misc.mdl";
+		MODEL_HOLD = "misc/p_misc.mdl";
 	}
 
 	void OnSpawn() override

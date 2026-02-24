@@ -11,13 +11,16 @@ namespace MS
 class Weaponsmith : CGameScript
 {
 	int CIDER;
+	int NO_CHAT;
 	float SELL_RATIO;
 	int SELL_WEAPON_LEVEL;
 	string SOUND_DEATH;
 	string STORE_NAME;
 	int STORE_SELLMENU;
 	string STORE_TRIGGERTEXT;
+	int VEND_CONTAINERS;
 	int VEND_NEWBIE;
+	int VEND_WEAPONS;
 
 	Weaponsmith()
 	{
@@ -28,9 +31,9 @@ class Weaponsmith : CGameScript
 		SELL_RATIO = 0.75;
 		SELL_WEAPON_LEVEL = 3;
 		VEND_NEWBIE = 1;
-		const int VEND_WEAPONS = 1;
-		const int VEND_CONTAINERS = 1;
-		const int NO_CHAT = 1;
+		VEND_WEAPONS = 1;
+		VEND_CONTAINERS = 1;
+		NO_CHAT = 1;
 	}
 
 	void OnRepeatTimer()
@@ -39,7 +42,7 @@ class Weaponsmith : CGameScript
 		if ((CanSee("player", 128)))
 		{
 		}
-		SayText("WEAPONS FOR SAAAAALLLLLLLEEEEE!!!!!!");
+		SayText(WEAPONS + FOR + SAAAAALLLLLLLEEEEE!!!!!!);
 	}
 
 	void OnSpawn() override
@@ -64,13 +67,13 @@ class Weaponsmith : CGameScript
 
 	void say_hi()
 	{
-		SayText("Welcome to my humble shop , I sell all kinds of adventuring stuffs.");
+		SayText("Welcome to my humble shop , " + I + " sell all kinds of adventuring stuffs.");
 		ScheduleDelayedEvent(0.8, "say_hi2");
 	}
 
 	void say_hi2()
 	{
-		SayText("Can I interest you in anything?");
+		SayText("Can " + I + " interest you in anything?");
 	}
 
 	void say_job()

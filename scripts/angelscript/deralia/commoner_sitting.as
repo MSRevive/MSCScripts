@@ -7,9 +7,11 @@ namespace MS
 
 class CommonerSitting : CGameScript
 {
+	int NO_CHAT;
+
 	CommonerSitting()
 	{
-		const int NO_CHAT = 1;
+		NO_CHAT = 1;
 	}
 
 	void OnSpawn() override

@@ -7,17 +7,23 @@ namespace MS
 
 class BaseScroll : CGameScript
 {
+	int BASE_REQUIRED_LEVEL;
+	string BASE_REQUIRED_SKILL;
+	string BASE_SPELL_SCRIPT;
+	string BASE_SUMMON_TEXT;
+	string BASE_SUMMON_TEXT_FAILED;
 	int JUST_GOT;
+	int MODEL_BODY;
 	string SCROLL_TIME;
 
 	BaseScroll()
 	{
-		const string BASE_SPELL_SCRIPT = "magic_hand_fire_dart";
-		const string BASE_SUMMON_TEXT = "You conjure the Fire Dart spell.";
-		const string BASE_SUMMON_TEXT_FAILED = "You lack the arcane skills to control this scroll's magic.";
-		const string BASE_REQUIRED_SKILL = "skill.spellcasting.fire";
-		const int BASE_REQUIRED_LEVEL = 0;
-		const int MODEL_BODY = 8;
+		BASE_SPELL_SCRIPT = "magic_hand_fire_dart";
+		BASE_SUMMON_TEXT = "You conjure the Fire Dart spell.";
+		BASE_SUMMON_TEXT_FAILED = "You lack the arcane skills to control this scroll's magic.";
+		BASE_REQUIRED_SKILL = "skill.spellcasting.fire";
+		BASE_REQUIRED_LEVEL = 0;
+		MODEL_BODY = 8;
 	}
 
 	void game_precache()
@@ -65,7 +71,7 @@ class BaseScroll : CGameScript
 					ext_scroll_time();
 					if (!(BASE_CAN_SUMMON))
 					{
-						SendPlayerMessage(GetOwner(), "BASE_SUMMON_TEXT_FAILED");
+						SendPlayerMessage(GetOwner(), BASE_SUMMON_TEXT_FAILED);
 					}
 					else
 					{

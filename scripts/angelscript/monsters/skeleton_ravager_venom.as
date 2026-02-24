@@ -8,28 +8,42 @@ namespace MS
 class SkeletonRavagerVenom : CGameScript
 {
 	string BLOB_ORG;
+	string CLAWFX_COLOR;
+	string DMG_CLAW_EFFECT;
+	int DMG_CLAW_EFFECT_DOT;
+	float DMG_CLAW_EFFECT_DUR;
+	int DMG_PROJECTILE;
+	float FREQ_PROJECTILE;
 	string GLOB_TARG;
+	string MONSTER_MODEL;
+	int NPC_BASE_EXP;
 	int PASS_FREEZE_DMG;
 	float PASS_FREEZE_DUR;
+	string PROJECTILE_SCRIPT;
+	int PROJECTILE_SPEED;
+	string SOUND_ALERT1;
+	string SOUND_ALERT2;
+	string SOUND_PROJECTILE;
+	int USES_PROJECTILE;
 
 	SkeletonRavagerVenom()
 	{
-		const int NPC_BASE_EXP = 600;
-		const int USES_PROJECTILE = 1;
-		const string PROJECTILE_SCRIPT = "proj_glob_guided";
-		const string FREQ_PROJECTILE = Random(5.0, 10.0);
-		const int DMG_PROJECTILE = 200;
-		const int PROJECTILE_SPEED = 200;
-		const string SOUND_PROJECTILE = "bullchicken/bc_attack3.wav";
+		NPC_BASE_EXP = 600;
+		USES_PROJECTILE = 1;
+		PROJECTILE_SCRIPT = "proj_glob_guided";
+		FREQ_PROJECTILE = Random(5.0, 10.0);
+		DMG_PROJECTILE = 200;
+		PROJECTILE_SPEED = 200;
+		SOUND_PROJECTILE = "bullchicken/bc_attack3.wav";
 		PASS_FREEZE_DMG = 50;
 		PASS_FREEZE_DUR = 5.0;
-		const Vector3 CLAWFX_COLOR = Vector3(0, 255, 0);
-		const string DMG_CLAW_EFFECT = "effects/dot_poison";
-		const float DMG_CLAW_EFFECT_DUR = 10.0;
-		const int DMG_CLAW_EFFECT_DOT = 50;
-		const string MONSTER_MODEL = "monsters/skeleton_ravenous_ele.mdl";
-		const string SOUND_ALERT1 = "monsters/undeadz/c_skeltwar_bat1.wav";
-		const string SOUND_ALERT2 = "monsters/undeadz/c_skeltwar_bat1.wav";
+		CLAWFX_COLOR = Vector3(0, 255, 0);
+		DMG_CLAW_EFFECT = "effects/dot_poison";
+		DMG_CLAW_EFFECT_DUR = 10.0;
+		DMG_CLAW_EFFECT_DOT = 50;
+		MONSTER_MODEL = "monsters/skeleton_ravenous_ele.mdl";
+		SOUND_ALERT1 = "monsters/undeadz/c_skeltwar_bat1.wav";
+		SOUND_ALERT2 = "monsters/undeadz/c_skeltwar_bat1.wav";
 	}
 
 	void skele_spawn()
@@ -65,7 +79,7 @@ class SkeletonRavagerVenom : CGameScript
 		if (!(param1)) return;
 		if (!(GetRelationship(param2) == "enemy")) return;
 		string TARG_ORG = GetEntityOrigin(param2);
-		string BLOB_DIST = Distance(BLOB_ORG, TARG_ORG);
+		float BLOB_DIST = Distance(BLOB_ORG, TARG_ORG);
 		BLOB_DIST /= 64;
 		int BLOB_DIST_RATIO = 1;
 		BLOB_DIST_RATIO -= BLOB_DIST;

@@ -8,17 +8,22 @@ namespace MS
 class DwarfZombieHbow : CGameScript
 {
 	string AMMO_TYPE;
+	int DMG_XBOW;
 	int IMMUNE_VAMPIRE;
 	int IS_BLOODLESS;
 	int IS_UNHOLY;
+	string LANTERN_COLOR;
+	float PBOLT_DURATION;
+	string SOUND_XBOW_STRETCH;
+	int XBOW_TYPE;
 
 	DwarfZombieHbow()
 	{
-		const int XBOW_TYPE = 0;
-		const int DMG_XBOW = 60;
-		const float PBOLT_DURATION = 15.0;
-		const string SOUND_XBOW_STRETCH = "weapons/bow/stretch.wav";
-		const Vector3 LANTERN_COLOR = Vector3(32, 0, 16);
+		XBOW_TYPE = 0;
+		DMG_XBOW = 60;
+		PBOLT_DURATION = 15.0;
+		SOUND_XBOW_STRETCH = "weapons/bow/stretch.wav";
+		LANTERN_COLOR = Vector3(32, 0, 16);
 	}
 
 	void frame_reload_hxbow()
@@ -34,7 +39,7 @@ class DwarfZombieHbow : CGameScript
 	void select_ammo()
 	{
 		if (!(AMMO_TYPE == "unset")) return;
-		string L_RND_TYPE = RandomInt(1, 3);
+		int L_RND_TYPE = RandomInt(1, 3);
 		if (L_RND_TYPE == 1)
 		{
 			AMMO_TYPE = "poison";

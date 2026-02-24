@@ -7,30 +7,40 @@ namespace MS
 
 class WolfShadow : CGameScript
 {
+	int AM_ALPHA;
+	int CHANCE_BURN;
 	float CONTAINER_DROP_CHANCE;
 	string CONTAINER_SCRIPT;
+	int CUSTOM_WOLF;
 	int CYCLES_STARTED;
+	float DMG_BITE;
+	float DMG_CLAW;
 	int DOING_HOWL;
+	int DOT_BURN;
 	int DROPS_CONTAINER;
+	float FREQ_COMBAT_HOWL;
 	int IS_UNHOLY;
 	int NEXT_HOWL;
+	int NPC_BASE_EXP;
 	int NPC_GIVE_EXP;
+	string NPC_PET_SCRIPT;
 	string NPC_PET_TYPE;
+	string SOUND_BURN;
 
 	WolfShadow()
 	{
 		NPC_PET_TYPE = "wolf_shadow";
-		const string NPC_PET_SCRIPT = "monsters/companion/pet_wolf_shadow";
-		const int NPC_BASE_EXP = 300;
+		NPC_PET_SCRIPT = "monsters/companion/pet_wolf_shadow";
+		NPC_BASE_EXP = 300;
 		IS_UNHOLY = 1;
-		const int CUSTOM_WOLF = 1;
-		const int AM_ALPHA = 1;
-		const int DOT_BURN = 40;
-		const string DMG_BITE = Random(20, 50);
-		const string DMG_CLAW = Random(10, 30);
-		const string FREQ_COMBAT_HOWL = Random(15, 20);
-		const int CHANCE_BURN = 30;
-		const string SOUND_BURN = "ambience/steamburst1.wav";
+		CUSTOM_WOLF = 1;
+		AM_ALPHA = 1;
+		DOT_BURN = 40;
+		DMG_BITE = Random(20, 50);
+		DMG_CLAW = Random(10, 30);
+		FREQ_COMBAT_HOWL = Random(15, 20);
+		CHANCE_BURN = 30;
+		SOUND_BURN = "ambience/steamburst1.wav";
 		NPC_GIVE_EXP = 150;
 	}
 

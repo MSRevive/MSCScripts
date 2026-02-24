@@ -8,11 +8,15 @@ namespace MS
 
 class Guard : CGameScript
 {
+	int DERALIA_CHATTER;
+	int NO_JOB;
+	int NO_RUMOR;
+
 	Guard()
 	{
-		const int NO_RUMOR = 1;
-		const int NO_JOB = 1;
-		const int DERALIA_CHATTER = 1;
+		NO_RUMOR = 1;
+		NO_JOB = 1;
+		DERALIA_CHATTER = 1;
 	}
 
 	void OnSpawn() override
@@ -25,7 +29,7 @@ class Guard : CGameScript
 	{
 		if ((DERALIA_CHATTER))
 		{
-			string L_GREETING = RandomInt(0, 3);
+			int L_GREETING = RandomInt(0, 3);
 			if (L_GREETING == 0)
 			{
 				SayText("Thordac's shop produces most of the weapons here.");

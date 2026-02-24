@@ -5,9 +5,11 @@ namespace MS
 
 class SfxBlacksmith : CGameScript
 {
+	string SOUND_ANVIL;
+
 	SfxBlacksmith()
 	{
-		const string SOUND_ANVIL = "amb/fx_anvil.wav";
+		SOUND_ANVIL = "amb/fx_anvil.wav";
 	}
 
 	void OnSpawn() override

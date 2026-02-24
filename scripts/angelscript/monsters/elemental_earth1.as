@@ -9,11 +9,19 @@ namespace MS
 
 class ElementalEarth1 : CGameScript
 {
+	string ANIM_ALERT;
 	string ANIM_ATTACK;
+	string ANIM_CHARGEIDLE;
 	string ANIM_DEATH;
+	string ANIM_FIRE_BALL;
 	string ANIM_FLINCH;
+	string ANIM_FROMCHARGE;
 	string ANIM_IDLE;
+	string ANIM_QUICKBLOCK;
+	string ANIM_ROCK;
 	string ANIM_RUN;
+	string ANIM_SEARCH;
+	string ANIM_TOCHARGE;
 	string ANIM_WALK;
 	string AS_ATTACKING;
 	int AS_SUMMON_TELE_CHECK;
@@ -25,17 +33,34 @@ class ElementalEarth1 : CGameScript
 	string CL_SHIELD_IDX;
 	string DID_ALERT;
 	string DID_SPECIAL;
+	int DMG_FISSURE;
+	int DMG_ROCK;
+	int DMG_STORM;
+	int DMG_SWIPE;
+	int DOT_EARTHQUAKE;
 	int EARTHQUAKE_ACTIVE;
+	int EARTHQUAKE_AOE;
+	float EARTHQUAKE_DURATION;
 	string EARTHQUAKE_TARGS;
+	int ELEMENTAL_EXP;
+	int ELEMENTAL_LEVEL;
+	int ELEMENTAL_MOVERANGE;
 	string FISSURE_ANG;
 	string FISSURE_CHECK_POS;
 	int FISSURE_COUNT;
 	string FISSURE_DIR;
+	int FISSURE_LENGTH;
 	string FISSURE_MOVESTEP;
 	string FISSURE_ORG;
+	float FREQ_FISSURE;
+	float FREQ_LONG;
+	float FREQ_ROCK;
+	int HITCHANCE_SWIPE;
 	int IMMUNE_VAMPIRE;
 	int IS_BLOODLESS;
 	int IS_UNHOLY;
+	int MOVE_FAST;
+	int MOVE_NORMAL;
 	string NEXT_ACTION;
 	string NEXT_BEAM;
 	string NEXT_FISSURE;
@@ -45,11 +70,41 @@ class ElementalEarth1 : CGameScript
 	string NPCATK_TARGET;
 	string NPC_GIVE_EXP;
 	string NPC_HACKED_MOVE_SPEED;
+	string NPC_MATERIAL_TYPE;
 	int NPC_NO_ATTACK;
+	int NPC_PITCH_FLINCH;
+	int NPC_PITCH_IDLE;
+	int NPC_PITCH_PAIN;
+	int NPC_USE_FLINCH;
+	int NPC_USE_IDLE;
+	int NPC_USE_PAIN;
+	int NUM_LONGS;
+	int PITCH_LEVEL;
 	string ROCK_STRIKE_POS;
 	int SHIELD_ACTIVE;
+	float SHIELD_DURATION;
 	string SHIELD_TARGET;
+	string SOUND_ALERT;
+	string SOUND_DEATH;
+	string SOUND_EARTHQUAKE_LOOP;
+	string SOUND_EARTHQUAKE_START;
+	string SOUND_FLINCH1;
+	string SOUND_FLINCH2;
+	string SOUND_FLINCH3;
+	string SOUND_IDLE1;
+	string SOUND_IDLE2;
+	string SOUND_IDLE3;
+	string SOUND_PAIN1;
+	string SOUND_PAIN2;
+	string SOUND_PAIN3;
+	string SOUND_SHOCK1;
+	string SOUND_SHOCK2;
+	string SOUND_SHOCK3;
+	string SOUND_SWIPE_HIT;
+	string SOUND_SWIPE_MISS;
 	string SUSPEND_CYCLE;
+	int SWIPE_HITRANGE;
+	int SWIPE_RANGE;
 
 	ElementalEarth1()
 	{
@@ -60,67 +115,67 @@ class ElementalEarth1 : CGameScript
 		ANIM_ATTACK = "attack1";
 		ANIM_DEATH = "die1";
 		NPC_NO_ATTACK = 1;
-		const string ANIM_SEARCH = "dunno";
-		const int ELEMENTAL_EXP = 300;
+		ANIM_SEARCH = "dunno";
+		ELEMENTAL_EXP = 300;
 		NPC_GIVE_EXP = ELEMENTAL_EXP;
-		const int MOVE_FAST = 100;
-		const int MOVE_NORMAL = 50;
+		MOVE_FAST = 100;
+		MOVE_NORMAL = 50;
 		NPC_HACKED_MOVE_SPEED = MOVE_NORMAL;
-		const int ELEMENTAL_MOVERANGE = 2048;
+		ELEMENTAL_MOVERANGE = 2048;
 		ATTACK_RANGE = ELEMENTAL_MOVERANGE;
 		ATTACK_HITRANGE = ELEMENTAL_MOVERANGE;
 		ATTACK_MOVERANGE = ELEMENTAL_MOVERANGE;
-		const string SOUND_DEATH = "garg/gar_die1.wav";
-		const string NPC_MATERIAL_TYPE = "stone";
-		const int NPC_USE_FLINCH = 1;
+		SOUND_DEATH = "garg/gar_die1.wav";
+		NPC_MATERIAL_TYPE = "stone";
+		NPC_USE_FLINCH = 1;
 		ANIM_FLINCH = "flinch";
-		const int NPC_PITCH_FLINCH = 60;
-		const string SOUND_FLINCH1 = "debris/bustflesh2.wav";
-		const string SOUND_FLINCH2 = "agrunt/ag_pain1.wav";
-		const string SOUND_FLINCH3 = "agrunt/ag_pain4.wav";
-		const int NPC_USE_PAIN = 1;
-		const int NPC_PITCH_PAIN = 60;
-		const string SOUND_PAIN1 = "debris/bustflesh2.wav";
-		const string SOUND_PAIN2 = "agrunt/ag_pain1.wav";
-		const string SOUND_PAIN3 = "agrunt/ag_pain4.wav";
-		const int NPC_USE_IDLE = 1;
-		const int NPC_PITCH_IDLE = 60;
-		const string SOUND_IDLE1 = "agrunt/ag_alert1.wav";
-		const string SOUND_IDLE2 = "agrunt/ag_die1.wav";
-		const string SOUND_IDLE3 = "agrunt/ag_idle1.wav";
-		const int ELEMENTAL_LEVEL = 1;
-		const int SWIPE_RANGE = 100;
-		const int SWIPE_HITRANGE = 150;
-		const string SOUND_ALERT = "agrunt/ag_alert5.wav";
-		const int PITCH_LEVEL = 60;
-		const string SOUND_SWIPE_MISS = "weapons/debris1.wav";
-		const string SOUND_SWIPE_HIT = "weapons/cbar_hitbod1.wav";
-		const string SOUND_SHOCK1 = "debris/zap8.wav";
-		const string SOUND_SHOCK2 = "debris/zap3.wav";
-		const string SOUND_SHOCK3 = "debris/zap4.wav";
-		const string SOUND_EARTHQUAKE_START = "magic/volcano_start.wav";
-		const string SOUND_EARTHQUAKE_LOOP = "magic/volcano_loop.wav";
-		const float FREQ_ROCK = 3.0;
-		const string FREQ_FISSURE = Random(8.0, 12.0);
-		const string FREQ_LONG = Random(20.0, 30.0);
-		const int NUM_LONGS = 1;
-		const float SHIELD_DURATION = 10.0;
-		const float EARTHQUAKE_DURATION = 10.0;
-		const int EARTHQUAKE_AOE = 512;
-		const int HITCHANCE_SWIPE = 80;
-		const string DMG_SWIPE = RandomInt(60, 100);
-		const string DMG_ROCK = RandomInt(150, 200);
-		const string DMG_FISSURE = RandomInt(60, 100);
-		const string DMG_STORM = RandomInt(75, 150);
-		const int DOT_EARTHQUAKE = 100;
-		const int FISSURE_LENGTH = 768;
-		const string ANIM_TOCHARGE = "tocharge";
-		const string ANIM_CHARGEIDLE = "charging";
-		const string ANIM_FROMCHARGE = "fromcharge";
-		const string ANIM_ALERT = "yes";
-		const string ANIM_ROCK = "no";
-		const string ANIM_FIRE_BALL = "fireball";
-		const string ANIM_QUICKBLOCK = "block";
+		NPC_PITCH_FLINCH = 60;
+		SOUND_FLINCH1 = "debris/bustflesh2.wav";
+		SOUND_FLINCH2 = "agrunt/ag_pain1.wav";
+		SOUND_FLINCH3 = "agrunt/ag_pain4.wav";
+		NPC_USE_PAIN = 1;
+		NPC_PITCH_PAIN = 60;
+		SOUND_PAIN1 = "debris/bustflesh2.wav";
+		SOUND_PAIN2 = "agrunt/ag_pain1.wav";
+		SOUND_PAIN3 = "agrunt/ag_pain4.wav";
+		NPC_USE_IDLE = 1;
+		NPC_PITCH_IDLE = 60;
+		SOUND_IDLE1 = "agrunt/ag_alert1.wav";
+		SOUND_IDLE2 = "agrunt/ag_die1.wav";
+		SOUND_IDLE3 = "agrunt/ag_idle1.wav";
+		ELEMENTAL_LEVEL = 1;
+		SWIPE_RANGE = 100;
+		SWIPE_HITRANGE = 150;
+		SOUND_ALERT = "agrunt/ag_alert5.wav";
+		PITCH_LEVEL = 60;
+		SOUND_SWIPE_MISS = "weapons/debris1.wav";
+		SOUND_SWIPE_HIT = "weapons/cbar_hitbod1.wav";
+		SOUND_SHOCK1 = "debris/zap8.wav";
+		SOUND_SHOCK2 = "debris/zap3.wav";
+		SOUND_SHOCK3 = "debris/zap4.wav";
+		SOUND_EARTHQUAKE_START = "magic/volcano_start.wav";
+		SOUND_EARTHQUAKE_LOOP = "magic/volcano_loop.wav";
+		FREQ_ROCK = 3.0;
+		FREQ_FISSURE = Random(8.0, 12.0);
+		FREQ_LONG = Random(20.0, 30.0);
+		NUM_LONGS = 1;
+		SHIELD_DURATION = 10.0;
+		EARTHQUAKE_DURATION = 10.0;
+		EARTHQUAKE_AOE = 512;
+		HITCHANCE_SWIPE = 80;
+		DMG_SWIPE = RandomInt(60, 100);
+		DMG_ROCK = RandomInt(150, 200);
+		DMG_FISSURE = RandomInt(60, 100);
+		DMG_STORM = RandomInt(75, 150);
+		DOT_EARTHQUAKE = 100;
+		FISSURE_LENGTH = 768;
+		ANIM_TOCHARGE = "tocharge";
+		ANIM_CHARGEIDLE = "charging";
+		ANIM_FROMCHARGE = "fromcharge";
+		ANIM_ALERT = "yes";
+		ANIM_ROCK = "no";
+		ANIM_FIRE_BALL = "fireball";
+		ANIM_QUICKBLOCK = "block";
 	}
 
 	void game_precache()
@@ -175,7 +230,7 @@ class ElementalEarth1 : CGameScript
 
 	void npc_targetsighted()
 	{
-		string L_GAME_TIME = GetGameTime();
+		float L_GAME_TIME = GetGameTime();
 		if (!(L_GAME_TIME > NEXT_ACTION)) return;
 		if ((SUSPEND_AI)) return;
 		if (!(DID_ALERT))
@@ -317,12 +372,12 @@ class ElementalEarth1 : CGameScript
 		}
 		ClientEvent("new", "all", "monsters/elemental_earth_cl", GetEntityIndex(GetOwner()), "spawn_rock", L_POS);
 		string L_GROUND = /* TODO: $get_ground_height */ $get_ground_height(L_POS);
-		string L_DROP_DIST = /* TODO: $math(subtract) */ L_GROUND;
+		string L_DROP_DIST = (L_GROUND - (L_POS).z);
 		if (L_DROP_DIST < 0)
 		{
 			string L_DROP_DIST = /* TODO: $neg */ $neg(L_DROP_DIST);
 		}
-		string L_DROP_TIME = /* TODO: $math(divide) */ L_DROP_DIST;
+		string L_DROP_TIME = (L_DROP_DIST / 600);
 		L_DROP_TIME += 2;
 		ROCK_STRIKE_POS = Vector3((L_POS).x, (L_POS).y, L_GROUND);
 		L_DROP_TIME("ext_mob_clreturn");
@@ -367,7 +422,7 @@ class ElementalEarth1 : CGameScript
 			if (GetRelationship(param1) == "enemy")
 			{
 			}
-			string L_RND_SND = RandomInt(1, 3);
+			int L_RND_SND = RandomInt(1, 3);
 			if (L_RND_SND == 1)
 			{
 				EmitSound3D(SOUND_SHOCK1, 10, GetEntityOrigin(param1));
@@ -391,7 +446,7 @@ class ElementalEarth1 : CGameScript
 			EmitSound(GetOwner(), 2, sounds[RandomInt(0, sounds.length() - 1)], 10);
 			if (GetGameTime() > NEXT_SHOCK_MSG)
 			{
-				SendPlayerMessage(param1, "GetEntityName(GetOwner()) redirects your electrical attacks!");
+				SendPlayerMessage(param1, GetEntityName(GetOwner()) + " redirects your electrical attacks!");
 				NEXT_SHOCK_MSG = GetGameTime();
 				NEXT_SHOCK_MSG += 5.0;
 			}
@@ -428,7 +483,7 @@ class ElementalEarth1 : CGameScript
 			NEXT_SHIELD_HITFX += 0.1;
 			ClientEvent("update", "all", CL_SHIELD_IDX, "shield_hit");
 			EmitSound(GetOwner(), 2, "player/pl_metal2.wav", 10);
-			SendColoredMessage(param1, "GetEntityName(GetOwner()) blocks your attack.");
+			SendColoredMessage(param1, GetEntityName(GetOwner()) + " blocks your attack.");
 		}
 	}
 
@@ -457,7 +512,7 @@ class ElementalEarth1 : CGameScript
 		FISSURE_ORG = GetEntityOrigin(GetOwner());
 		FISSURE_ANG = GetEntityAngles(GetOwner());
 		FISSURE_DIR = (L_FISSURE_END - FISSURE_ORG).Normalize();
-		FISSURE_MOVESTEP = /* TODO: $math(multiply) */ FISSURE_LENGTH;
+		FISSURE_MOVESTEP = (FISSURE_LENGTH * 0.1);
 		FISSURE_COUNT = 0;
 		fissure_travel_loop();
 	}
@@ -467,7 +522,7 @@ class ElementalEarth1 : CGameScript
 		FISSURE_COUNT += 1;
 		string L_FISSURE_CHECK_POS = FISSURE_ORG;
 		string L_FISSURE_MOVEAMT = FISSURE_DIR;
-		L_FISSURE_MOVEAMT *= /* TODO: $math(multiply) */ FISSURE_MOVESTEP;
+		L_FISSURE_MOVEAMT *= (FISSURE_MOVESTEP * FISSURE_COUNT);
 		L_FISSURE_CHECK_POS += L_FISSURE_MOVEAMT;
 		L_FISSURE_CHECK_POS += "z";
 		L_FISSURE_CHECK_POS = "z";
@@ -492,7 +547,7 @@ class ElementalEarth1 : CGameScript
 		string CUR_TARG = param2;
 		string CUR_TARG_POS = GetEntityOrigin(CUR_TARG);
 		string L_MY_YAW = /* TODO: $vec.yaw */ $vec.yaw(FISSURE_ANG);
-		string L_RND_LR = RandomInt(0, 1);
+		int L_RND_LR = RandomInt(0, 1);
 		int L_LR = -400;
 		if (L_RND_LR == 1)
 		{
@@ -513,11 +568,11 @@ class ElementalEarth1 : CGameScript
 
 	void func_inrange()
 	{
-		if (param1 >= /* TODO: $math(subtract) */ param2)
+		if (param1 >= (param2 - param3))
 		{
 			int L_IN_RANGE = 1;
 		}
-		if (param1 <= /* TODO: $math(add) */ param2)
+		if (param1 <= (param2 + param3))
 		{
 			L_IN_RANGE += 1;
 		}
@@ -595,7 +650,7 @@ class ElementalEarth1 : CGameScript
 		EmitSound(3, 10, SOUND_EARTHQUAKE_LOOP, 0.8, PITCH_LEVEL);
 		EARTHQUAKE_DURATION("earthquake_end");
 		ScheduleDelayedEvent(0.1, "earthquake_loop");
-		Effect("screenshake", GetEntityOrigin(GetOwner()), 50, 10, EARTHQUAKE_DURATION, /* TODO: $math(multiply) */ EARTHQUAKE_AOE);
+		Effect("screenshake", GetEntityOrigin(GetOwner()), 50, 10, EARTHQUAKE_DURATION, (EARTHQUAKE_AOE * 1.5));
 		ClientEvent("new", "all", "effects/sfx_quake", GetEntityIndex(GetOwner()), 1, EARTHQUAKE_AOE, EARTHQUAKE_DURATION);
 	}
 

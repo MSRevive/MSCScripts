@@ -12,6 +12,12 @@ class BearGiantPolar : CGameScript
 	string ANIM_IDLE;
 	string ANIM_RUN;
 	string ANIM_WALK;
+	float ATTACK_HITCHANCE;
+	int ATTACK_NORMAL_DAMAGE;
+	int ATTACK_STANDING_DAMAGE;
+	int ATTACK_STOMPDMG;
+	int ATTACK_STOMPRANGE;
+	int NPC_BASE_EXP;
 
 	BearGiantPolar()
 	{
@@ -19,12 +25,12 @@ class BearGiantPolar : CGameScript
 		ANIM_WALK = "walk";
 		ANIM_RUN = "run";
 		ANIM_ATTACK = "attack";
-		const string ATTACK_NORMAL_DAMAGE = "$rand(40,80)";
-		const string ATTACK_STANDING_DAMAGE = "$rand(40,58)";
-		const int ATTACK_STOMPRANGE = 200;
-		const int ATTACK_STOMPDMG = 50;
-		const float ATTACK_HITCHANCE = 0.7;
-		const int NPC_BASE_EXP = 200;
+		ATTACK_NORMAL_DAMAGE = "$rand(40,80)";
+		ATTACK_STANDING_DAMAGE = "$rand(40,58)";
+		ATTACK_STOMPRANGE = 200;
+		ATTACK_STOMPDMG = 50;
+		ATTACK_HITCHANCE = 0.7;
+		NPC_BASE_EXP = 200;
 	}
 
 	void OnSpawn() override

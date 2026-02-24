@@ -7,11 +7,15 @@ namespace MS
 
 class MapStartup : CGameScript
 {
+	int MAP_ALLOWNIGHT;
+	string MAP_NAME;
+	string MAP_WEATHER;
+
 	MapStartup()
 	{
-		const string MAP_NAME = "deralia";
-		const string MAP_WEATHER = "clear;clear;clear;clear;clear;fog_blue";
-		const int MAP_ALLOWNIGHT = 0;
+		MAP_NAME = "deralia";
+		MAP_WEATHER = "clear;clear;clear;clear;clear;fog_blue";
+		MAP_ALLOWNIGHT = 0;
 		SetGlobalVar("G_MAP_NAME", "The City of Deralia");
 		SetGlobalVar("G_MAP_DESC", "The Human capital is known as the Jewel of Daragoth.");
 		SetGlobalVar("G_MAP_DIFF", "(Beginner/Safe Area)");

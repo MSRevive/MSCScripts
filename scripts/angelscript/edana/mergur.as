@@ -10,12 +10,13 @@ namespace MS
 class Mergur : CGameScript
 {
 	int CHAT_GREET;
-	string ENTRY_GOLD;
+	int ENTRY_GOLD;
+	int NPC_REACT_SEETARGET_RANGE;
 	int STORE_CLOSED;
 
 	Mergur()
 	{
-		const int NPC_REACT_SEETARGET_RANGE = 128;
+		NPC_REACT_SEETARGET_RANGE = 128;
 	}
 
 	void OnSpawn() override
@@ -71,7 +72,7 @@ class Mergur : CGameScript
 
 	void say_hi_2()
 	{
-		SayText("The entry fee is ENTRY_GOLD gold , you can stay as long as you want.");
+		SayText("The entry fee is " + ENTRY_GOLD + " gold , you can stay as long as you want.");
 	}
 
 	void reset_greet()
@@ -151,7 +152,7 @@ class Mergur : CGameScript
 
 	void say_job()
 	{
-		SayText("Well , I just recently hired a new guard so I m afraid we re fully staffed now.");
+		SayText("Well , " + I + "just recently hired a new guard so " + I + " m afraid we re fully staffed now.");
 		Say("[.4] [.2] [.2] [.1] [.1] [.1] [.2] [.05] [.05] [.2] [.1] [.3] [.2] [.3] [.1]");
 	}
 

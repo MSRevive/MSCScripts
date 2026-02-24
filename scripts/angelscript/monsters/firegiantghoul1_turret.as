@@ -7,10 +7,13 @@ namespace MS
 
 class Firegiantghoul1Turret : CGameScript
 {
+	int AM_TURRET;
+	int NO_ROAM;
+
 	Firegiantghoul1Turret()
 	{
-		const int AM_TURRET = 1;
-		const int NO_ROAM = 1;
+		AM_TURRET = 1;
+		NO_ROAM = 1;
 	}
 
 }

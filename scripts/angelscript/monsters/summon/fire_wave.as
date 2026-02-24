@@ -5,10 +5,12 @@ namespace MS
 
 class FireWave : CGameScript
 {
+	string CL_FLAME_SPRITE;
 	string FLAME_ANGLE;
 	string FLAME_OWNER;
 	string FLAME_POSITION;
 	int FLAMING;
+	int FWD_SPEED;
 	string HIT_TARGS;
 	int IS_ACTIVE;
 	string MY_CL_IDX;
@@ -16,17 +18,21 @@ class FireWave : CGameScript
 	string MY_DOT;
 	string MY_DURATION;
 	string MY_OWNER;
+	int MY_RADIUS;
 	string NPC_NOCLIP_DEST;
 	int PLAYING_DEAD;
+	string SOUND_BURN;
+	int WALL_HEIGHT;
+	int WALL_WIDTH;
 
 	FireWave()
 	{
-		const int FWD_SPEED = 10;
-		const int MY_RADIUS = 76;
-		const string SOUND_BURN = "ambience/burning2.wav";
-		const int WALL_HEIGHT = 32;
-		const int WALL_WIDTH = 2;
-		const string CL_FLAME_SPRITE = "fire1_fixed.spr";
+		FWD_SPEED = 10;
+		MY_RADIUS = 76;
+		SOUND_BURN = "ambience/burning2.wav";
+		WALL_HEIGHT = 32;
+		WALL_WIDTH = 2;
+		CL_FLAME_SPRITE = "fire1_fixed.spr";
 	}
 
 	void OnRepeatTimer()

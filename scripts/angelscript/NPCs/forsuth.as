@@ -13,6 +13,8 @@ class Forsuth : CGameScript
 	string ANIM_IDLE;
 	string ANIM_RUN;
 	string ANIM_WALK;
+	float ATTACK_ACCURACY;
+	int ATTACK_DAMAGE;
 	int ATTACK_HITRANGE;
 	int ATTACK_RANGE;
 	int CAN_CHAT;
@@ -34,27 +36,32 @@ class Forsuth : CGameScript
 	int NO_ROTATE;
 	int NO_STUCK_CHECKS;
 	int ORC_STEP;
+	string SOUND_SWING;
+	string STORE_NAME;
+	int STORE_RESTOCK;
+	int STORE_SELLMENU;
 	string STORE_TRIGGERTEXT;
+	int VENDOR_NOT_ON_USE;
 
 	Forsuth()
 	{
-		const string SOUND_SWING = "weapons/swingsmall.wav";
-		const int ATTACK_DAMAGE = 30;
+		SOUND_SWING = "weapons/swingsmall.wav";
+		ATTACK_DAMAGE = 30;
 		ATTACK_RANGE = 50;
 		ATTACK_HITRANGE = 100;
-		const float ATTACK_ACCURACY = 0.7;
+		ATTACK_ACCURACY = 0.7;
 		MONSTER_WIDTH = 32;
 		NO_STUCK_CHECKS = 1;
-		const int STORE_RESTOCK = 0;
+		STORE_RESTOCK = 0;
 		CHAT_SPEED = 5.0;
 		HUNT_AGRO = 0;
-		const int VENDOR_NOT_ON_USE = 1;
+		VENDOR_NOT_ON_USE = 1;
 		ANIM_IDLE = "idle";
 		ANIM_DEATH = "death";
 		ANIM_ATTACK = "attack";
-		const string STORE_NAME = "forsuths_store";
+		STORE_NAME = "forsuths_store";
 		STORE_TRIGGERTEXT = "drink shop store cold ale bitter";
-		const int STORE_SELLMENU = 1;
+		STORE_SELLMENU = 1;
 		CAN_HEAR = 0;
 	}
 
@@ -94,7 +101,7 @@ class Forsuth : CGameScript
 
 	void debug_props()
 	{
-		SayText("Izhunting IS_HUNTING");
+		SayText("Izhunting " + IS_HUNTING);
 	}
 
 	void OnHeardSound(CBaseEntity@ source, Vector3 origin) override
@@ -214,14 +221,14 @@ class Forsuth : CGameScript
 		EmitSound(GetOwner(), 0, "voices/ms_snow/forsuth/but_nevermind_that.wav", 10);
 		CHAT_SPEED = 3.8;
 		IN_CHAT = 0;
-		SayText("...but never mind ye that , I ve got some things  er that ll warm ya right up!");
+		SayText("...but never mind ye that , " + I + " ve got some things  er that ll warm ya right up!");
 	}
 
 	void say_rumor()
 	{
 		if ((IN_CHAT))
 		{
-			SayText("...Just a second , ask me about that when I m done... Anyways... Where was I? Oh yes...");
+			SayText("...Just a second , ask me about that when " + I + " m done... Anyways... Where was I? Oh yes...");
 			EmitSound(GetOwner(), 2, "voices/ms_snow/forsuth/just_a_second.wav", 10);
 		}
 		if ((IN_CHAT)) return;
@@ -245,7 +252,7 @@ class Forsuth : CGameScript
 		}
 		if (ICE_LORD_PLOT_STEP == 2)
 		{
-			SayText("Longer than me folks too , who be long gone , and let it be known that I am a might older than you...");
+			SayText("Longer than me folks too , who be long gone , and let it be known that " + I + " am a might older than you...");
 			EmitSound(GetOwner(), 0, "voices/ms_snow/forsuth/older_than_me_folks_too.wav", 10);
 			CHAT_SPEED = 6.3;
 		}
@@ -276,7 +283,7 @@ class Forsuth : CGameScript
 		}
 		if (ICE_LORD_PLOT_STEP == 7)
 		{
-			SayText("We call it the Ice Bone Lord , but truth be told I know not whether it be lord or lady.. or somethin  else.");
+			SayText("We call it the Ice Bone Lord , but truth be told " + I + " know not whether it be lord or lady.. or somethin  else.");
 			EmitSound(GetOwner(), 0, "voices/ms_snow/forsuth/we_call_it.wav", 10);
 			CHAT_SPEED = 7.5;
 		}
@@ -294,7 +301,7 @@ class Forsuth : CGameScript
 		}
 		if (ICE_LORD_PLOT_STEP == 10)
 		{
-			SayText("But I shant complain , that s why I keep this shop here...");
+			SayText("But " + I + " shant complain , that s why I keep this shop here...");
 			EmitSound(GetOwner(), 0, "voices/ms_snow/forsuth/but_i_shant_complain.wav", 10);
 			CHAT_SPEED = 3.3;
 		}
@@ -320,7 +327,7 @@ class Forsuth : CGameScript
 	{
 		if ((IN_CHAT))
 		{
-			SayText("...Just a second , ask me about that when I m done... Anyways... Where was I? Oh yes...");
+			SayText("...Just a second , ask me about that when " + I + " m done... Anyways... Where was I? Oh yes...");
 			EmitSound(GetOwner(), 2, "voices/ms_snow/forsuth/just_a_second.wav", 10);
 		}
 		if ((IN_CHAT)) return;
@@ -356,7 +363,7 @@ class Forsuth : CGameScript
 		}
 		if (JOB_PLOT_STEP == 4)
 		{
-			SayText("They aren t nuthin too fancy - I can t sell the really good ones...");
+			SayText("They aren t nuthin too fancy - " + I + " can t sell the really good ones...");
 			EmitSound(GetOwner(), 0, "voices/ms_snow/forsuth/they_aint.wav", 10);
 			CHAT_SPEED = 3.4;
 		}
@@ -368,7 +375,7 @@ class Forsuth : CGameScript
 		}
 		if (JOB_PLOT_STEP == 6)
 		{
-			SayText("Bring some to me , and I ll give you a fair shake for em.");
+			SayText("Bring some to me , and " + I + " ll give you a fair shake for em.");
 			PlayAnim("critical", ANIM_IDLE);
 			EmitSound(GetOwner(), 0, "voices/ms_snow/forsuth/bring_some_to_me.wav", 10);
 			CHAT_SPEED = 3.1;
@@ -388,7 +395,7 @@ class Forsuth : CGameScript
 	{
 		if ((IN_CHAT))
 		{
-			SayText("...Just a second , ask me about that when I m done... Anyways... Where was I? Oh yes...");
+			SayText("...Just a second , ask me about that when " + I + " m done... Anyways... Where was I? Oh yes...");
 			EmitSound(GetOwner(), 2, "voices/ms_snow/forsuth/just_a_second.wav", 10);
 		}
 		if ((IN_CHAT)) return;
@@ -474,11 +481,11 @@ class Forsuth : CGameScript
 	{
 		if ((IN_CHAT))
 		{
-			SayText("...Just a second , ask me about that when I m done... Anyways... Where was I? Oh yes...");
+			SayText("...Just a second , ask me about that when " + I + " m done... Anyways... Where was I? Oh yes...");
 			EmitSound(GetOwner(), 2, "voices/ms_snow/forsuth/just_a_second.wav", 10);
 		}
 		if ((IN_CHAT)) return;
-		SayText("Hmmm... Already said too much about that. Better to ask a priest , for all I know of gods and demons.");
+		SayText("Hmmm... Already said too much about that. Better to ask a priest , for all " + I + " know of gods and demons.");
 		EmitSound(GetOwner(), 0, "voices/ms_snow/forsuth/ive_already_said.wav", 10);
 	}
 
@@ -512,7 +519,7 @@ class Forsuth : CGameScript
 		{
 			DID_PLAYER = 1;
 			SetRace("hguard");
-			SayText("Argh! GetEntityName(m_hLastStruck) !Yer no better than the orcs!");
+			SayText("Argh! " + GetEntityName(m_hLastStruck) + " !Yer no better than the orcs!");
 			HUNT_LASTTARGET = GetEntityIndex(m_hLastStruck);
 			EmitSound(GetOwner(), 0, "voices/ms_snow/forsuth/gah_youre_no_better.wav", 10);
 		}
@@ -537,7 +544,7 @@ class Forsuth : CGameScript
 	{
 		if ((CLOSE_SHOP)) return;
 		if ((IN_CHAT)) return;
-		SayText("What can I do ye for?");
+		SayText("What can " + I + " do ye for?");
 		NO_ROTATE = 1;
 	}
 

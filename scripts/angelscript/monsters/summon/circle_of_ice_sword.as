@@ -7,18 +7,29 @@ namespace MS
 
 class CircleOfIceSword : CGameScript
 {
+	string APPLY_EFFECT;
+	int CIRCLE_RADIUS;
+	string FX_SPRITE;
+	int NO_RAIN_FX;
+	float PULSE_PLAYTIME;
+	string SEAL_MODEL;
+	int SEAL_OFS;
+	string SOUND_FADE;
+	string SOUND_MANIFEST;
+	string SOUND_PULSE;
+
 	CircleOfIceSword()
 	{
-		const string SEAL_MODEL = "weapons/magic/seals.mdl";
-		const int SEAL_OFS = 7;
-		const string SOUND_MANIFEST = "magic/spawn.wav";
-		const string SOUND_PULSE = "magic/frost_forward.wav";
-		const string SOUND_FADE = "magic/frost_reverse.wav";
-		const float PULSE_PLAYTIME = 1.0;
-		const string FX_SPRITE = "glassgibs.mdl";
-		const int CIRCLE_RADIUS = 110;
-		const int NO_RAIN_FX = 1;
-		const string APPLY_EFFECT = "effects/dot_cold";
+		SEAL_MODEL = "weapons/magic/seals.mdl";
+		SEAL_OFS = 7;
+		SOUND_MANIFEST = "magic/spawn.wav";
+		SOUND_PULSE = "magic/frost_forward.wav";
+		SOUND_FADE = "magic/frost_reverse.wav";
+		PULSE_PLAYTIME = 1.0;
+		FX_SPRITE = "glassgibs.mdl";
+		CIRCLE_RADIUS = 110;
+		NO_RAIN_FX = 1;
+		APPLY_EFFECT = "effects/dot_cold";
 	}
 
 }

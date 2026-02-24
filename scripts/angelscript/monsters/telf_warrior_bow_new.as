@@ -7,27 +7,38 @@ namespace MS
 
 class TelfWarriorBowNew : CGameScript
 {
+	int AM_ARCHER;
 	string ANIM_ATTACK;
 	string AOE_ARROW;
 	string ARROW_AOE;
 	string ARROW_CL_SCRIPT;
+	string ARROW_CL_SCRIPT_COLD;
+	string ARROW_CL_SCRIPT_FIRE;
+	int ARROW_CL_SPEED;
 	string ARROW_DMG_AOE;
 	string ARROW_DMG_TYPE;
 	string ARROW_DOT_DMG;
 	string ARROW_DOT_DUR;
 	string ARROW_EFFECT;
 	string ARROW_KNOCKBACK;
+	float ARROW_SV_SPEED;
 	string ARROW_TARGET_LIST;
 	string AS_ATTACKING;
+	string ATTACK_STANCE;
+	int CAN_KICK;
 	int DROP_GOLD;
 	int DROP_GOLD_AMT;
 	string FIRE_DELAY;
+	float FREQ_KICK;
+	int LEAP_AFTER_KICK;
 	string MAXRANGE_RATIO;
 	int MISS_COUNT;
 	string NEXT_FIRE;
 	int NPC_GIVE_EXP;
 	int NPC_RANGED;
 	string PROJ_TYPE;
+	string SOUND_BOW_SHOOT;
+	string SOUND_BOW_STRETCH;
 	string SPIRAL_DMG;
 	string SPIRAL_DMG_TYPE;
 	string SPIRAL_GLOW_COLOR;
@@ -48,21 +59,21 @@ class TelfWarriorBowNew : CGameScript
 		Precache("char_breath.spr");
 		Precache("firemagic.spr");
 		LogDebug("share_test - Server");
-		const int ARROW_CL_SPEED = 200;
-		const float ARROW_SV_SPEED = 42.5;
+		ARROW_CL_SPEED = 200;
+		ARROW_SV_SPEED = 42.5;
 		NPC_GIVE_EXP = 2500;
 		DROP_GOLD = 1;
 		DROP_GOLD_AMT = 500;
 		NPC_RANGED = 1;
-		const int AM_ARCHER = 1;
-		const string ATTACK_STANCE = "bow";
-		const int CAN_KICK = 1;
-		const float FREQ_KICK = 8.0;
-		const int LEAP_AFTER_KICK = 1;
-		const string SOUND_BOW_STRETCH = "monsters/archer/stretch.wav";
-		const string SOUND_BOW_SHOOT = "monsters/archer/bow.wav";
-		const string ARROW_CL_SCRIPT_FIRE = "effects/sfx_fire_burst";
-		const string ARROW_CL_SCRIPT_COLD = "effects/sfx_ice_burst";
+		AM_ARCHER = 1;
+		ATTACK_STANCE = "bow";
+		CAN_KICK = 1;
+		FREQ_KICK = 8.0;
+		LEAP_AFTER_KICK = 1;
+		SOUND_BOW_STRETCH = "monsters/archer/stretch.wav";
+		SOUND_BOW_SHOOT = "monsters/archer/bow.wav";
+		ARROW_CL_SCRIPT_FIRE = "effects/sfx_fire_burst";
+		ARROW_CL_SCRIPT_COLD = "effects/sfx_ice_burst";
 	}
 
 	void game_precache()
@@ -91,7 +102,7 @@ class TelfWarriorBowNew : CGameScript
 		EmitSound(GetOwner(), 0, SOUND_BOW_SHOOT, 10);
 		MISS_COUNT += 1;
 		int N_PROJECTILES = 3;
-		string RND_PROJECTILE = RandomInt(3, 5);
+		int RND_PROJECTILE = RandomInt(3, 5);
 		if (RND_PROJECTILE == 1)
 		{
 			PROJ_TYPE = "fire_aoe";
@@ -213,7 +224,7 @@ class TelfWarriorBowNew : CGameScript
 			{
 				TARG_ORG += "z";
 			}
-			string TARG_DIST = Distance(TARG_ORG, GetMonsterProperty("origin"));
+			float TARG_DIST = Distance(TARG_ORG, GetMonsterProperty("origin"));
 			TARG_DIST /= 25;
 			SetAngles("add_view.pitch");
 			TossProjectile(ARROW_SCRIPT, /* TODO: $relpos */ $relpos(10, 0, 28), "none", ARROW_SPEED, DMG_ARROW, 1, "none");

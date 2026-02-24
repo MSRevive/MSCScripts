@@ -7,6 +7,7 @@ namespace MS
 
 class FireReaverMini : CGameScript
 {
+	string ANIM_ALERT;
 	string ANIM_ATTACK;
 	string ANIM_DEATH;
 	string ANIM_DEATH1;
@@ -14,8 +15,14 @@ class FireReaverMini : CGameScript
 	string ANIM_DEATH3;
 	string ANIM_FLINCH;
 	string ANIM_IDLE;
+	string ANIM_PROJECTILE;
 	string ANIM_RUN;
+	string ANIM_SEARCH;
+	string ANIM_SLASH;
+	string ANIM_SMASH;
 	string ANIM_VICTORY;
+	string ANIM_VICTORY1;
+	string ANIM_VICTORY2;
 	string ANIM_WALK;
 	string AS_ATTACKING;
 	int ATTACK_HITRANGE;
@@ -23,59 +30,98 @@ class FireReaverMini : CGameScript
 	int ATTACK_RANGE;
 	int CAN_FLINCH;
 	int DID_WARCRY;
+	float DMG_BURST;
+	int DMG_MISSILE;
 	int DMG_VOLCANO;
+	int DMG_VOLCANO_DART;
 	int DMG_VOLCANO_DOT;
+	int DOSMASH_CHANCE;
+	float DOT_BURN;
 	int FIRST_ATTACK;
 	int FLINCH_CHANCE;
 	int FLINCH_HEALTH;
+	float FREQ_FIRE_BURST;
+	float FREQ_MISSILE;
+	float FREQ_SMASH;
+	float FREQ_VOLC;
+	float FREQ_VOLCANO;
+	float FREQ_VOLC_SOUND;
 	string HP_STORAGE;
 	int MOVE_RANGE;
+	int NEAR_DEATH_THRESHOLD;
 	string NEXT_FIRE_BURST;
 	float NPC_DELAYING_UNSTUCK;
 	int NPC_GIVE_EXP;
 	int PUSH_ATTACK;
 	string PUSH_VEL;
+	int ROCK_START_HEIGHT;
 	int SEARCH_ANIM_DELAY;
+	int SLASH_DAMAGE;
+	float SLASH_HITCHANCE;
+	int SMASH_DAMAGE;
 	int SMASH_DELAY;
 	string SOUND_ATTACKHIT;
 	string SOUND_ATTACKMISS;
+	string SOUND_DEATH;
+	string SOUND_PAIN_NEAR_DEATH;
+	string SOUND_PAIN_STRONG;
+	string SOUND_PAIN_WEAK;
+	string SOUND_RUN1;
+	string SOUND_RUN2;
+	string SOUND_RUN3;
+	string SOUND_SEARCH1;
+	string SOUND_SEARCH2;
+	string SOUND_SEARCH3;
+	string SOUND_SLASHHIT;
+	string SOUND_SLASHMISS;
+	string SOUND_SMASHHIT;
+	string SOUND_SMASHMISS;
+	string SOUND_STRUCK1;
+	string SOUND_STRUCK2;
+	string SOUND_WALK1;
+	string SOUND_WALK2;
+	string SOUND_WALK3;
+	string SOUND_WALK4;
+	string SOUND_WARCRY;
+	int STRONG_THRESHOLD;
 	int SUSPEND_AI;
 	int VOLCANO_ON;
+	int WEAK_THRESHOLD;
 
 	FireReaverMini()
 	{
-		const float DMG_BURST = 30.0;
-		const float DOT_BURN = 10.0;
-		const string FREQ_FIRE_BURST = Random(10.0, 20.0);
+		DMG_BURST = 30.0;
+		DOT_BURN = 10.0;
+		FREQ_FIRE_BURST = Random(10.0, 20.0);
 		NPC_GIVE_EXP = 250;
-		const int ROCK_START_HEIGHT = 96;
+		ROCK_START_HEIGHT = 96;
 		DMG_VOLCANO = 200;
 		DMG_VOLCANO_DOT = 1;
-		const int DMG_VOLCANO_DART = 25;
-		const float FREQ_VOLC_SOUND = 7.0;
-		const float FREQ_VOLCANO = 0.25;
-		const float FREQ_SMASH = 10.0;
-		const string SOUND_WALK1 = "common/npc_step1.wav";
-		const string SOUND_WALK2 = "common/npc_step2.wav";
-		const string SOUND_WALK3 = "common/npc_step3.wav";
-		const string SOUND_WALK4 = "common/npc_step4.wav";
-		const string SOUND_RUN1 = "gonarch/gon_step1.wav";
-		const string SOUND_RUN2 = "gonarch/gon_step2.wav";
-		const string SOUND_RUN3 = "gonarch/gon_step3.wav";
-		const string SOUND_DEATH = "gonarch/gon_die1.wav";
-		const string SOUND_WARCRY = "gonarch/gon_alert1.wav";
-		const string SOUND_STRUCK1 = "gonarch/gon_sack1.wav";
-		const string SOUND_STRUCK2 = "gonarch/gon_sack2.wav";
-		const string SOUND_PAIN_STRONG = "gonarch/gon_pain2.wav";
-		const string SOUND_PAIN_WEAK = "gonarch/gon_pain4.wav";
-		const string SOUND_PAIN_NEAR_DEATH = "gonarch/gon_pain5.wav";
-		const string SOUND_SLASHHIT = "zombie/claw_strike1.wav";
-		const string SOUND_SMASHHIT = "zombie/claw_strike2.wav";
-		const string SOUND_SLASHMISS = "zombie/claw_miss1.wav";
-		const string SOUND_SMASHMISS = "zombie/claw_miss2.wav";
-		const string SOUND_SEARCH1 = "gonarch/gon_childdie3.wav";
-		const string SOUND_SEARCH2 = "gonarch/gon_childdie2.wav";
-		const string SOUND_SEARCH3 = "gonarch/gon_childdie1.wav";
+		DMG_VOLCANO_DART = 25;
+		FREQ_VOLC_SOUND = 7.0;
+		FREQ_VOLCANO = 0.25;
+		FREQ_SMASH = 10.0;
+		SOUND_WALK1 = "common/npc_step1.wav";
+		SOUND_WALK2 = "common/npc_step2.wav";
+		SOUND_WALK3 = "common/npc_step3.wav";
+		SOUND_WALK4 = "common/npc_step4.wav";
+		SOUND_RUN1 = "gonarch/gon_step1.wav";
+		SOUND_RUN2 = "gonarch/gon_step2.wav";
+		SOUND_RUN3 = "gonarch/gon_step3.wav";
+		SOUND_DEATH = "gonarch/gon_die1.wav";
+		SOUND_WARCRY = "gonarch/gon_alert1.wav";
+		SOUND_STRUCK1 = "gonarch/gon_sack1.wav";
+		SOUND_STRUCK2 = "gonarch/gon_sack2.wav";
+		SOUND_PAIN_STRONG = "gonarch/gon_pain2.wav";
+		SOUND_PAIN_WEAK = "gonarch/gon_pain4.wav";
+		SOUND_PAIN_NEAR_DEATH = "gonarch/gon_pain5.wav";
+		SOUND_SLASHHIT = "zombie/claw_strike1.wav";
+		SOUND_SMASHHIT = "zombie/claw_strike2.wav";
+		SOUND_SLASHMISS = "zombie/claw_miss1.wav";
+		SOUND_SMASHMISS = "zombie/claw_miss2.wav";
+		SOUND_SEARCH1 = "gonarch/gon_childdie3.wav";
+		SOUND_SEARCH2 = "gonarch/gon_childdie2.wav";
+		SOUND_SEARCH3 = "gonarch/gon_childdie1.wav";
 		SOUND_ATTACKHIT = "unset";
 		SOUND_ATTACKMISS = "unset";
 		Precache(SOUND_SLASHMISS);
@@ -89,36 +135,36 @@ class FireReaverMini : CGameScript
 		ATTACK_HITRANGE = 150;
 		ATTACK_MOVERANGE = 50;
 		MOVE_RANGE = 50;
-		const int STRONG_THRESHOLD = 2500;
-		const int WEAK_THRESHOLD = 2000;
-		const int NEAR_DEATH_THRESHOLD = 750;
-		const string SLASH_DAMAGE = "$rand(100,200)";
-		const int SMASH_DAMAGE = 500;
-		const float SLASH_HITCHANCE = 0.9;
-		const float FREQ_MISSILE = 20.0;
-		const int DMG_MISSILE = 600;
-		const float FREQ_VOLC = 1.0;
+		STRONG_THRESHOLD = 2500;
+		WEAK_THRESHOLD = 2000;
+		NEAR_DEATH_THRESHOLD = 750;
+		SLASH_DAMAGE = "$rand(100,200)";
+		SMASH_DAMAGE = 500;
+		SLASH_HITCHANCE = 0.9;
+		FREQ_MISSILE = 20.0;
+		DMG_MISSILE = 600;
+		FREQ_VOLC = 1.0;
 		ANIM_WALK = "walk";
 		ANIM_RUN = "run";
 		ANIM_IDLE = "idle1";
-		const string ANIM_SEARCH = "idle2";
+		ANIM_SEARCH = "idle2";
 		ANIM_FLINCH = "turnl";
-		const string ANIM_SMASH = "mattack3";
-		const string ANIM_SLASH = "mattack2";
-		const string ANIM_PROJECTILE = "distanceattack";
-		const string ANIM_ALERT = "distanceattack";
+		ANIM_SMASH = "mattack3";
+		ANIM_SLASH = "mattack2";
+		ANIM_PROJECTILE = "distanceattack";
+		ANIM_ALERT = "distanceattack";
 		ANIM_DEATH1 = "dieforward";
 		ANIM_DEATH2 = "diesimple";
 		ANIM_DEATH3 = "diesideways";
-		const string ANIM_VICTORY1 = "victoryeat";
-		const string ANIM_VICTORY2 = "victorysniff";
+		ANIM_VICTORY1 = "victoryeat";
+		ANIM_VICTORY2 = "victorysniff";
 		ANIM_VICTORY = "victoryeat";
 		ANIM_DEATH = "dieforward";
 		ANIM_ATTACK = "mattack3";
 		CAN_FLINCH = 1;
 		FLINCH_HEALTH = 1000;
 		FLINCH_CHANCE = 30;
-		const int DOSMASH_CHANCE = 30;
+		DOSMASH_CHANCE = 30;
 		Precache(SOUND_DEATH);
 	}
 
@@ -151,7 +197,7 @@ class FireReaverMini : CGameScript
 	void my_target_died()
 	{
 		if ((false)) return;
-		string RAND_VICT = RandomInt(1, 2);
+		int RAND_VICT = RandomInt(1, 2);
 		if (RAND_VICT == 1)
 		{
 			ANIM_VICTORY = ANIM_VICTORY1;
@@ -192,7 +238,7 @@ class FireReaverMini : CGameScript
 
 	void attack_mele1()
 	{
-		string RANDOM_PUSH = RandomInt(90, 150);
+		int RANDOM_PUSH = RandomInt(90, 150);
 		PUSH_VEL = /* TODO: $relvel */ $relvel(-100, RANDOM_PUSH, 110);
 		SOUND_ATTACKHIT = SOUND_SLASHHIT;
 		SOUND_ATTACKMISS = SOUND_SLASHMISS;
@@ -293,7 +339,7 @@ class FireReaverMini : CGameScript
 
 	void OnDeath(CBaseEntity@ attacker) override
 	{
-		string RAND_DEATH = RandomInt(2, 3);
+		int RAND_DEATH = RandomInt(2, 3);
 		if (RAND_DEATH == 2)
 		{
 			ANIM_DEATH = ANIM_DEATH2;
@@ -312,7 +358,7 @@ class FireReaverMini : CGameScript
 		if (!(m_hAttackTarget == "unset")) return;
 		if (!(NPC_LOST_TARGET == "unset")) return;
 		if ((false)) return;
-		string RAND_VICT = RandomInt(1, 2);
+		int RAND_VICT = RandomInt(1, 2);
 		if (RAND_VICT == 1)
 		{
 			ANIM_VICTORY = ANIM_VICTORY1;

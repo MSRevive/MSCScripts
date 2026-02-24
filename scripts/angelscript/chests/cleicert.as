@@ -19,7 +19,7 @@ class Cleicert : CGameScript
 		add_gold(RandomInt(600, 1200));
 		chest_add_hpot_mpot();
 		AddStoreItem(STORENAME, "mana_immune_lightning", 1, 0);
-		string L_QUANTITY = RandomInt(15, 100);
+		int L_QUANTITY = RandomInt(15, 100);
 		AddStoreItem(STORENAME, "proj_arrow_lightning", L_QUANTITY, 0, 0, L_QUANTITY);
 		if (RandomInt(1, 3) == 1)
 		{

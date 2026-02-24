@@ -8,27 +8,58 @@ namespace MS
 class Titan : CGameScript
 {
 	string ANIM_ATTACK;
+	string ANIM_CAST;
 	string ANIM_DEATH;
+	string ANIM_GRAB;
 	string ANIM_IDLE;
+	string ANIM_KICK;
+	string ANIM_METEOR;
 	string ANIM_RUN;
+	string ANIM_SMASH;
+	string ANIM_SNAP;
+	string ANIM_SQUEEZE;
+	string ANIM_STOMP;
+	string ANIM_SWIPE;
+	string ANIM_THROW;
 	string ANIM_WALK;
 	int ATTACK_HITRANGE;
 	int ATTACK_MOVERANGE;
 	int ATTACK_RANGE;
 	string BALL_TARGETS;
+	int BIRD_COOLDOWN;
+	string BIRD_SCRIPT;
+	int CANT_FLEE;
 	int CAN_RETALIATE;
+	int CHANCE_KICK;
 	int CHANCE_STOMP;
+	string CL_GLOW_SPR;
 	string CL_IDX;
+	string CL_TELE_SPR;
+	int DMG_BALL;
+	int DMG_KICK;
+	int DMG_METEOR;
+	int DMG_SQUEEZE;
+	int DMG_STOMP;
+	int DMG_SWIPE;
+	int DMG_THROW;
 	int DO_GRAB;
 	string END_SQEEEZE_DMG_LOOP;
 	string FLINCH_ANIM;
+	int FLINCH_DAMAGE_THRESHOLD;
+	float FLINCH_DELAY;
 	int FLINCH_HEALTH;
+	float FREQ_GRAB;
+	float FREQ_KICK;
+	float FREQ_SMASH;
+	float FREQ_STOMP;
 	string GRAB_MODE;
 	int GRAB_TARG;
 	int IMMUNE_VAMPIRE;
 	int IS_UNHOLY;
 	int LAST_BIRD;
+	int L_ARM_ATT_IDX;
 	int METEOR_COUNT;
+	string MONSTER_MODEL;
 	int MOVE_RANGE;
 	int M_BIRD_ROT;
 	int M_SUMMON_BIRDS;
@@ -49,22 +80,46 @@ class Titan : CGameScript
 	int N_BIRDS;
 	int N_SCORPS;
 	string ROT_ANG;
+	int R_ARM_ATT_IDX;
+	int SCORP_RAD;
 	string SCORP_SCRIPT;
+	string SCORP_SCRIPT1;
+	string SCORP_SCRIPT2;
+	int SCORP_SPAWN_VADJ;
+	string SMASH_OFS;
+	int SMASH_RANGE;
 	string SMASH_SCAN_POINT;
 	string SMASH_TARGET;
+	string SOUND_DEATH;
+	string SOUND_GRAB;
+	string SOUND_KICK;
+	string SOUND_RAWR;
+	string SOUND_SQUEEZE;
+	string SOUND_STEP1;
+	string SOUND_STEP2;
+	string SOUND_SUMMON;
+	string SOUND_SWIPE;
+	string SOUND_THROW;
+	string SOUND_YAWN1;
+	string SOUND_YAWN2;
+	string SOUND_YAWN3;
 	string STUN_BURST_DMG;
 	string STUN_BURST_POS;
 	string STUN_BURST_RAD;
 	string STUN_BURST_REPEL;
 	string STUN_LIST;
 	string SUM_POINT;
+	int SUM_RAD;
+	int SUM_VADJ;
+	string SWIPE_OFS;
+	int SWIPE_RAD;
 	int TITAN_RNDAMT;
 	int T_SUM_ANG;
 	int WALK_COUNT;
 
 	Titan()
 	{
-		const int CANT_FLEE = 1;
+		CANT_FLEE = 1;
 		ANIM_WALK = "walk";
 		ANIM_IDLE = "idle";
 		ANIM_RUN = "walk";
@@ -72,19 +127,19 @@ class Titan : CGameScript
 		ANIM_DEATH = "death";
 		FLINCH_ANIM = "flinchheavy";
 		FLINCH_HEALTH = 2000;
-		const int FLINCH_DAMAGE_THRESHOLD = 50;
-		const float FLINCH_DELAY = 20.0;
+		FLINCH_DAMAGE_THRESHOLD = 50;
+		FLINCH_DELAY = 20.0;
 		NPC_MUST_SEE_TARGET = 0;
-		const string ANIM_SWIPE = "swipe2";
-		const string ANIM_METEOR = "roar2";
-		const string ANIM_STOMP = "stomp";
-		const string ANIM_SNAP = "bitehead";
-		const string ANIM_GRAB = "throw1";
-		const string ANIM_SQUEEZE = "throw2";
-		const string ANIM_THROW = "throw3";
-		const string ANIM_SMASH = "punch";
-		const string ANIM_KICK = "kick";
-		const string ANIM_CAST = "summon";
+		ANIM_SWIPE = "swipe2";
+		ANIM_METEOR = "roar2";
+		ANIM_STOMP = "stomp";
+		ANIM_SNAP = "bitehead";
+		ANIM_GRAB = "throw1";
+		ANIM_SQUEEZE = "throw2";
+		ANIM_THROW = "throw3";
+		ANIM_SMASH = "punch";
+		ANIM_KICK = "kick";
+		ANIM_CAST = "summon";
 		IS_UNHOLY = 1;
 		NO_STEP_ADJ = 1;
 		ATTACK_RANGE = 300;
@@ -93,50 +148,50 @@ class Titan : CGameScript
 		MOVE_RANGE = 250;
 		CAN_RETALIATE = 0;
 		IMMUNE_VAMPIRE = 1;
-		const string MONSTER_MODEL = "monsters/titan.mdl";
-		const int SCORP_SPAWN_VADJ = 650;
-		const int SCORP_RAD = 300;
-		const string SCORP_SCRIPT1 = "monsters/scorpion5_stone";
-		const string SCORP_SCRIPT2 = "monsters/scorpion6_stone";
-		const int CHANCE_KICK = 25;
-		const float FREQ_GRAB = 60.0;
-		const int DMG_THROW = 800;
-		const int SUM_RAD = 300;
-		const int SUM_VADJ = 650;
-		const int DMG_SWIPE = 150;
-		const int DMG_METEOR = 300;
-		const int DMG_KICK = 250;
-		const int DMG_STOMP = 100;
-		const int DMG_BALL = 200;
-		const int DMG_SQUEEZE = 30;
-		const string BIRD_SCRIPT = "monsters/eagle_stone";
-		const int BIRD_COOLDOWN = 55;
+		MONSTER_MODEL = "monsters/titan.mdl";
+		SCORP_SPAWN_VADJ = 650;
+		SCORP_RAD = 300;
+		SCORP_SCRIPT1 = "monsters/scorpion5_stone";
+		SCORP_SCRIPT2 = "monsters/scorpion6_stone";
+		CHANCE_KICK = 25;
+		FREQ_GRAB = 60.0;
+		DMG_THROW = 800;
+		SUM_RAD = 300;
+		SUM_VADJ = 650;
+		DMG_SWIPE = 150;
+		DMG_METEOR = 300;
+		DMG_KICK = 250;
+		DMG_STOMP = 100;
+		DMG_BALL = 200;
+		DMG_SQUEEZE = 30;
+		BIRD_SCRIPT = "monsters/eagle_stone";
+		BIRD_COOLDOWN = 55;
 		LAST_BIRD = 0;
-		const string SMASH_OFS = /* TODO: $relpos */ $relpos(0, 230, -300);
-		const int SMASH_RANGE = 128;
-		const string SWIPE_OFS = /* TODO: $relpos */ $relpos(0, 230, -280);
-		const int SWIPE_RAD = 200;
-		const int R_ARM_ATT_IDX = 2;
-		const int L_ARM_ATT_IDX = 3;
-		const float FREQ_KICK = 10.0;
-		const float FREQ_STOMP = 10.0;
-		const float FREQ_SMASH = 5.0;
-		const string SOUND_SUMMON = "debris/beamstart1.wav";
-		const string SOUND_YAWN1 = "garg/gar_breathe1.wav";
-		const string SOUND_YAWN2 = "garg/gar_breathe2.wav";
-		const string SOUND_YAWN3 = "garg/gar_breathe3.wav";
-		const string SOUND_RAWR = "garg/gar_alert2.wav";
-		const string SOUND_STEP1 = "garg/gar_step1.wav";
-		const string SOUND_STEP2 = "garg/gar_step2.wav";
-		const string SOUND_SWIPE = "weapons/swinghuge.wav";
-		const string SOUND_KICK = "weapons/swinghuge.wav";
-		const string SOUND_THROW = "weapons/swinghuge.wav";
-		const string SOUND_DEATH = "garg/gar_die1.wav";
-		const string SOUND_GRAB = "garg/gar_attack2.wav";
-		const string SOUND_SQUEEZE = "garg/gar_alert1.wav";
+		SMASH_OFS = /* TODO: $relpos */ $relpos(0, 230, -300);
+		SMASH_RANGE = 128;
+		SWIPE_OFS = /* TODO: $relpos */ $relpos(0, 230, -280);
+		SWIPE_RAD = 200;
+		R_ARM_ATT_IDX = 2;
+		L_ARM_ATT_IDX = 3;
+		FREQ_KICK = 10.0;
+		FREQ_STOMP = 10.0;
+		FREQ_SMASH = 5.0;
+		SOUND_SUMMON = "debris/beamstart1.wav";
+		SOUND_YAWN1 = "garg/gar_breathe1.wav";
+		SOUND_YAWN2 = "garg/gar_breathe2.wav";
+		SOUND_YAWN3 = "garg/gar_breathe3.wav";
+		SOUND_RAWR = "garg/gar_alert2.wav";
+		SOUND_STEP1 = "garg/gar_step1.wav";
+		SOUND_STEP2 = "garg/gar_step2.wav";
+		SOUND_SWIPE = "weapons/swinghuge.wav";
+		SOUND_KICK = "weapons/swinghuge.wav";
+		SOUND_THROW = "weapons/swinghuge.wav";
+		SOUND_DEATH = "garg/gar_die1.wav";
+		SOUND_GRAB = "garg/gar_attack2.wav";
+		SOUND_SQUEEZE = "garg/gar_alert1.wav";
 		Precache(SOUND_DEATH);
-		const string CL_GLOW_SPR = "3dmflaora.spr";
-		const string CL_TELE_SPR = "c-tele1.spr";
+		CL_GLOW_SPR = "3dmflaora.spr";
+		CL_TELE_SPR = "c-tele1.spr";
 		Precache(CL_GLOW_SPR);
 		Precache(CL_TELE_SPR);
 		if ((true))
@@ -246,7 +301,7 @@ class Titan : CGameScript
 		if ((IsEntityAlive(m_hAttackTarget)))
 		{
 			int N_SPECIALS = 4;
-			string RND_SPECIAL = RandomInt(1, N_SPECIALS);
+			int RND_SPECIAL = RandomInt(1, N_SPECIALS);
 			if (RND_SPECIAL == 1)
 			{
 				if (N_SCORPS < 2)
@@ -256,7 +311,7 @@ class Titan : CGameScript
 				}
 				else
 				{
-					string RND_SPECIAL = RandomInt(2, N_SPECIALS);
+					int RND_SPECIAL = RandomInt(2, N_SPECIALS);
 				}
 			}
 			if (RND_SPECIAL == 2)
@@ -432,7 +487,7 @@ class Titan : CGameScript
 
 	void do_birds()
 	{
-		string L_DIFF = /* TODO: $math(subtract) */ LAST_BIRD;
+		string L_DIFF = (LAST_BIRD - GetGameTime());
 		if (!(L_DIFF > BIRD_COOLDOWN)) return;
 		PlayAnim("critical", ANIM_CAST);
 		CallExternal("all", "summon_eagle_vanish");

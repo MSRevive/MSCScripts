@@ -7,9 +7,11 @@ namespace MS
 
 class ColdOneLshieldCl : CGameScript
 {
+	string SHIELD_COLOR;
+
 	ColdOneLshieldCl()
 	{
-		const Vector3 SHIELD_COLOR = Vector3(1.5, 1.5, 2.0);
+		SHIELD_COLOR = Vector3(1.5, 1.5, 2.0);
 	}
 
 }

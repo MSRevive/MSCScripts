@@ -8,30 +8,46 @@ namespace MS
 class BowsFrost : CGameScript
 {
 	string ABORT_PREP;
+	string ANIM_PREFIX;
+	int BASE_LEVEL_REQ;
 	int BOW_PREPPING;
 	string BOW_PREP_SCRIPT_ID;
+	int CUSTOM_ATTACK;
+	string ITEM_NAME;
+	int MODEL_BODY_OFS;
+	string MODEL_HANDS;
+	string MODEL_VIEW;
+	int MODEL_VIEW_IDX;
+	string MODEL_WEAR;
+	string MODEL_WORLD;
 	int NOT_BOGUS_SCRIPT;
+	string RANGED_AIMANGLE;
 	string REMOVE_LOOP_ACTIVE;
 	int RESIST_ACTIVE;
+	string SOUND_RESISTUP;
+	string SOUND_RESIST_LOCK;
+	string SOUND_RESIST_LOOP;
+	string SOUND_RESIST_PREP;
+	string SOUND_SHOOT;
 
 	BowsFrost()
 	{
-		const int BASE_LEVEL_REQ = 25;
-		const int MODEL_VIEW_IDX = 8;
-		const string MODEL_VIEW = "viewmodels/v_bows.mdl";
-		const string MODEL_HANDS = "weapons/p_weapons3.mdl";
-		const string MODEL_WORLD = "weapons/p_weapons3.mdl";
-		const string MODEL_WEAR = "weapons/p_weapons3.mdl";
-		const string SOUND_SHOOT = "weapons/bow/bow.wav";
-		const string ITEM_NAME = "longbow";
-		const string ANIM_PREFIX = "standard";
-		const int MODEL_BODY_OFS = 44;
-		const Vector3 RANGED_AIMANGLE = Vector3(0, 0, 0);
-		const string SOUND_RESISTUP = "magic/frost_reverse.wav";
-		const int CUSTOM_ATTACK = 1;
-		const string SOUND_RESIST_PREP = "magic/gaus_warmup.wav";
-		const string SOUND_RESIST_LOOP = "ambience/pulsemachine.wav";
-		const string SOUND_RESIST_LOCK = "weapons/egon_off1.wav";
+		BASE_LEVEL_REQ = 25;
+		MODEL_VIEW_IDX = 8;
+		MODEL_VIEW = "viewmodels/v_bows.mdl";
+		MODEL_HANDS = "weapons/p_weapons3.mdl";
+		MODEL_WORLD = "weapons/p_weapons3.mdl";
+		MODEL_WEAR = "weapons/p_weapons3.mdl";
+		SOUND_SHOOT = "weapons/bow/bow.wav";
+		ITEM_NAME = "longbow";
+		ANIM_PREFIX = "standard";
+		MODEL_BODY_OFS = 44;
+		RANGED_AIMANGLE = Vector3(0, 0, 0);
+		SOUND_RESISTUP = "magic/frost_reverse.wav";
+		CUSTOM_ATTACK = 1;
+		SOUND_RESIST_PREP = "magic/gaus_warmup.wav";
+		SOUND_RESIST_LOOP = "ambience/pulsemachine.wav";
+		SOUND_RESIST_LOCK = "weapons/egon_off1.wav";
 	}
 
 	void bow_spawn()

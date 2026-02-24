@@ -5,12 +5,13 @@ namespace MS
 
 class Time : CGameScript
 {
-	string local.lastupdatetime;
+	int TIME_UPDATE_INTERVAL;
+	int local.lastupdatetime;
 
 	Time()
 	{
 		SetGlobalVar("TIME_RATIO", 20);
-		const int TIME_UPDATE_INTERVAL = 30;
+		TIME_UPDATE_INTERVAL = 30;
 		if (CURRENT_TIME == "CURRENT_TIME")
 		{
 		}
@@ -52,7 +53,7 @@ class Time : CGameScript
 
 	void global_time_update()
 	{
-		string l.time_elapsed = GetGameTime();
+		float l.time_elapsed = GetGameTime();
 		l.time_elapsed -= "global.mstime.lastupdate";
 		string l.secs = l.time_elapsed;
 		l.secs *= TIME_RATIO;

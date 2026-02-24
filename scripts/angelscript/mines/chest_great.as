@@ -16,7 +16,7 @@ class ChestGreat : CGameScript
 		{
 			AddStoreItem(STORENAME, "blunt_hammer1", 1, 0);
 		}
-		string CHANCE = RandomInt(1, 100);
+		int CHANCE = RandomInt(1, 100);
 		if (CHANCE < 5)
 		{
 			AddStoreItem(STORENAME, "swords_katana4", 1, 0);

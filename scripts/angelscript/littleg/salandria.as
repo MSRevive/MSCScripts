@@ -8,12 +8,13 @@ namespace MS
 class Salandria : CGameScript
 {
 	string MEL_ID;
+	int NO_JOB;
 	int QUEST_DONE;
 	int SAID_MEL;
 
 	Salandria()
 	{
-		const int NO_JOB = 1;
+		NO_JOB = 1;
 		QUEST_DONE = 0;
 	}
 
@@ -117,7 +118,7 @@ class Salandria : CGameScript
 	void say_what()
 	{
 		if ((QUEST_DONE)) return;
-		SayText("I found her with a tragic look , and no documents.");
+		SayText(I + " found her with a tragic look , and no documents.");
 		ScheduleDelayedEvent(3, "say_what2");
 	}
 
@@ -153,7 +154,7 @@ class Salandria : CGameScript
 		}
 		if ((EXIT_SUB)) return;
 		PlayAnim("once", "pondering");
-		SayText("I heard Melanion s meeting has something to do with Eswen Sylen and about allowing humans inside.");
+		SayText(I + " heard Melanion s meeting has something to do with Eswen Sylen and about allowing humans inside.");
 	}
 
 	void game_menu_getoptions()

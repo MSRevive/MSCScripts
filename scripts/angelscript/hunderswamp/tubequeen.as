@@ -11,13 +11,26 @@ class Tubequeen : CGameScript
 	string ANIM_ATTACK;
 	string ANIM_IDLE;
 	string ANIM_RUN;
+	string ANIM_SPELL_LOOP;
+	string ANIM_SPELL_START;
 	string ANIM_WALK;
+	int ATTACH_LHAND;
+	int ATTACH_RHAND;
+	int CANT_FLEE;
 	int CUR_HURT_STAGE;
 	int DID_INTRO;
+	int DMG_GLOB;
+	int DMG_SLAM;
 	string DOING_SPELL;
+	int DOT_GLOB;
 	int ESCORT_CYCLE;
+	float ESCORT_SPAWN_FREQ_HIGH;
+	float ESCORT_SPAWN_FREQ_LOW;
+	float ESCORT_SPAWN_FREQ_MED;
+	float ESCORT_SPAWN_FREQ_PANIC;
 	int FIRST_ESCORT;
 	float FREQ_ESCORT_SPAWN;
+	float FREQ_SPELL;
 	string HURT_STAGE1;
 	string HURT_STAGE2;
 	string HURT_STAGE3;
@@ -31,58 +44,80 @@ class Tubequeen : CGameScript
 	string NEXT_SPELL;
 	string NEXT_TUBE;
 	string NPCATK_TARGET;
+	int NPC_BOSS_REGEN_FREQ;
+	float NPC_BOSS_REGEN_RATE;
 	int NPC_GIVE_EXP;
 	string NPC_HBAR_ADJ;
+	int NPC_HEARDSOUND_OVERRIDE;
 	int NPC_IS_BOSS;
 	int RIGHT_YAW;
 	string SLAM_ORG;
+	string SOUND_ATTACK_FORWARD;
+	string SOUND_ATTACK_LEFT;
+	string SOUND_ATTACK_RIGHT;
+	string SOUND_BIGFLINCH1;
+	string SOUND_BIGLLFLINCH2;
+	string SOUND_IDLE1;
+	string SOUND_IDLE2;
+	string SOUND_IDLE3;
+	string SOUND_RAWR;
+	string SOUND_SMALLFLINCH1;
+	string SOUND_SMALLFLINCH2;
+	string SOUND_SPELLPREP1;
+	string SOUND_SPELLPREP2;
+	string SOUND_SPELLPREP3;
+	string SOUND_STRUCK1;
+	string SOUND_STRUCK2;
+	string SOUND_STRUCK3;
+	string SOUND_SWOOP;
+	string SOUND_VIOLENTFLINCH;
 	string TIME_SPAWN_PLUS_20;
 	int TUBEQUEEN_ACTIVE;
 
 	Tubequeen()
 	{
-		const string ANIM_SPELL_START = "spell_start";
-		const string ANIM_SPELL_LOOP = "spell_loop";
+		ANIM_SPELL_START = "spell_start";
+		ANIM_SPELL_LOOP = "spell_loop";
 		ANIM_IDLE = "idle1";
 		ANIM_WALK = "idle1";
 		ANIM_RUN = "idle1";
-		const string ESCORT_SPAWN_FREQ_LOW = Random(80.0, 120.0);
-		const string ESCORT_SPAWN_FREQ_MED = Random(60.0, 100.0);
-		const string ESCORT_SPAWN_FREQ_HIGH = Random(45.0, 80.0);
-		const string ESCORT_SPAWN_FREQ_PANIC = Random(20.0, 60.0);
+		ESCORT_SPAWN_FREQ_LOW = Random(80.0, 120.0);
+		ESCORT_SPAWN_FREQ_MED = Random(60.0, 100.0);
+		ESCORT_SPAWN_FREQ_HIGH = Random(45.0, 80.0);
+		ESCORT_SPAWN_FREQ_PANIC = Random(20.0, 60.0);
 		FREQ_ESCORT_SPAWN = 30.0;
 		NPC_HBAR_ADJ = Vector3(0, 128, 0);
 		NPC_IS_BOSS = 1;
-		const float NPC_BOSS_REGEN_RATE = 0.05;
-		const int NPC_BOSS_REGEN_FREQ = 120;
+		NPC_BOSS_REGEN_RATE = 0.05;
+		NPC_BOSS_REGEN_FREQ = 120;
 		NPC_GIVE_EXP = 20000;
-		const int CANT_FLEE = 1;
-		const int NPC_HEARDSOUND_OVERRIDE = 1;
-		const string SOUND_RAWR = "monsters/tubequeen/tq_lavascream.wav";
-		const string SOUND_SMALLFLINCH1 = "monsters/tubequeen/tq_smallflinch.wav";
-		const string SOUND_SMALLFLINCH2 = "monsters/tubequeen/tq_smallflinch2.wav";
-		const string SOUND_BIGFLINCH1 = "monsters/tubequeen/tq_bigflinch.wav";
-		const string SOUND_BIGLLFLINCH2 = "monsters/tubequeen/tq_bigflinch2.wav";
-		const string SOUND_VIOLENTFLINCH = "monsters/tubequeen/tq_flinchviolent.wav";
-		const string SOUND_STRUCK1 = "monsters/tube/TubeCritter_Hit1.wav";
-		const string SOUND_STRUCK2 = "monsters/tube/TuberCritter_Hit2.wav";
-		const string SOUND_STRUCK3 = "monsters/tube/TubeCritter_Hit3.wav";
-		const string SOUND_IDLE1 = "monsters/tubequeen/tq_idle1.wav";
-		const string SOUND_IDLE2 = "monsters/tubequeen/tq_idle1a.wav";
-		const string SOUND_IDLE3 = "monsters/tubequeen/tq_idle2.wav";
-		const string SOUND_SWOOP = "weapons/swinghuge.wav";
-		const string SOUND_ATTACK_FORWARD = "monsters/tubequeen/tq_clawattack.wav";
-		const string SOUND_ATTACK_RIGHT = "monsters/tubequeen/tq_clawattack_right.wav";
-		const string SOUND_ATTACK_LEFT = "monsters/tubequeen/tq_clawattack_left.wav";
-		const string SOUND_SPELLPREP1 = "monsters/tubequeen/tq_mortarfire1.wav";
-		const string SOUND_SPELLPREP2 = "monsters/tubequeen/tq_mortarfire2.wav";
-		const string SOUND_SPELLPREP3 = "monsters/tubequeen/tq_mortarfire3.wav";
-		const int ATTACH_RHAND = 1;
-		const int ATTACH_LHAND = 2;
-		const int DMG_SLAM = 800;
-		const string FREQ_SPELL = Random(60.0, 100.0);
-		const int DMG_GLOB = 300;
-		const int DOT_GLOB = 100;
+		CANT_FLEE = 1;
+		NPC_HEARDSOUND_OVERRIDE = 1;
+		SOUND_RAWR = "monsters/tubequeen/tq_lavascream.wav";
+		SOUND_SMALLFLINCH1 = "monsters/tubequeen/tq_smallflinch.wav";
+		SOUND_SMALLFLINCH2 = "monsters/tubequeen/tq_smallflinch2.wav";
+		SOUND_BIGFLINCH1 = "monsters/tubequeen/tq_bigflinch.wav";
+		SOUND_BIGLLFLINCH2 = "monsters/tubequeen/tq_bigflinch2.wav";
+		SOUND_VIOLENTFLINCH = "monsters/tubequeen/tq_flinchviolent.wav";
+		SOUND_STRUCK1 = "monsters/tube/TubeCritter_Hit1.wav";
+		SOUND_STRUCK2 = "monsters/tube/TuberCritter_Hit2.wav";
+		SOUND_STRUCK3 = "monsters/tube/TubeCritter_Hit3.wav";
+		SOUND_IDLE1 = "monsters/tubequeen/tq_idle1.wav";
+		SOUND_IDLE2 = "monsters/tubequeen/tq_idle1a.wav";
+		SOUND_IDLE3 = "monsters/tubequeen/tq_idle2.wav";
+		SOUND_SWOOP = "weapons/swinghuge.wav";
+		SOUND_ATTACK_FORWARD = "monsters/tubequeen/tq_clawattack.wav";
+		SOUND_ATTACK_RIGHT = "monsters/tubequeen/tq_clawattack_right.wav";
+		SOUND_ATTACK_LEFT = "monsters/tubequeen/tq_clawattack_left.wav";
+		SOUND_SPELLPREP1 = "monsters/tubequeen/tq_mortarfire1.wav";
+		SOUND_SPELLPREP2 = "monsters/tubequeen/tq_mortarfire2.wav";
+		SOUND_SPELLPREP3 = "monsters/tubequeen/tq_mortarfire3.wav";
+		ATTACH_RHAND = 1;
+		ATTACH_LHAND = 2;
+		DMG_SLAM = 800;
+		FREQ_SPELL = Random(60.0, 100.0);
+		DMG_GLOB = 300;
+		DOT_GLOB = 100;
 	}
 
 	void game_precache()
@@ -226,7 +261,7 @@ class Tubequeen : CGameScript
 		{
 			int EXIT_SUB = 1;
 			delay_flinch();
-			string RND_FLINCH = RandomInt(1, 8);
+			int RND_FLINCH = RandomInt(1, 8);
 			if (RND_FLINCH >= 4)
 			{
 				PlayAnim("critical", "smallflinch");
@@ -292,7 +327,7 @@ class Tubequeen : CGameScript
 	{
 		if (!(IsEntityAlive(GetOwner()))) return;
 		ScheduleDelayedEvent(1.0, "npcatk_hunt");
-		string GAME_TIME = GetGameTime();
+		float GAME_TIME = GetGameTime();
 		if (GAME_TIME > INIT_DELAY)
 		{
 			if (m_hAttackTarget == "unset")
@@ -524,7 +559,7 @@ class Tubequeen : CGameScript
 
 	void delay_spell()
 	{
-		string CHECK_TIME = GetGameTime();
+		float CHECK_TIME = GetGameTime();
 		CHECK_TIME += param1;
 		if (CHECK_TIME > NEXT_SPELL)
 		{
@@ -570,9 +605,9 @@ class Tubequeen : CGameScript
 		SpawnNPC("monsters/swamp_tube", SPAWN_POS, ScriptMode::Legacy); // params: GetEntityIndex(GetOwner())
 		string RND_RL = GetEntityProperty(GetOwner(), "angles.yaw");
 		RND_RL += Random(-65, 65);
-		string RND_FD = Random(200, 800);
-		string RND_UP = Random(200, 900);
-		string RND_RL2 = Random(-1000, 1000);
+		float RND_FD = Random(200, 800);
+		float RND_UP = Random(200, 900);
+		float RND_RL2 = Random(-1000, 1000);
 		LogDebug("frame_sack_throw /* TODO: $relpos */ $relpos(Vector3(0, RND_RL, 0), Vector3(0, RND_FD, RND_UP))");
 		AddVelocity(m_hLastCreated, /* TODO: $relpos */ $relpos(Vector3(0, RND_RL, 0), Vector3(RND_RL2, RND_FD, RND_UP)));
 	}

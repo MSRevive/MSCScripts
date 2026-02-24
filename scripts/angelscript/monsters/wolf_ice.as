@@ -7,16 +7,25 @@ namespace MS
 
 class WolfIce : CGameScript
 {
+	int AM_ALPHA;
+	float CHANCE_BURN;
+	int CUSTOM_WOLF;
 	int CYCLES_STARTED;
+	int DMG_BITE;
+	int DMG_CLAW;
 	int DOING_HOWL;
+	int DOT_BURN;
+	float FREQ_COMBAT_HOWL;
 	int NEXT_HOWL;
 	string NPC_GIVE_EXP;
+	string NPC_PET_SCRIPT;
 	string NPC_PET_TYPE;
+	string SOUND_BURN;
 
 	WolfIce()
 	{
 		NPC_PET_TYPE = "wolf_ice";
-		const string NPC_PET_SCRIPT = "monsters/companion/pet_wolf_ice";
+		NPC_PET_SCRIPT = "monsters/companion/pet_wolf_ice";
 		if ((StringToLower(GetMapName())).findFirst("lodagond") >= 0)
 		{
 			NPC_GIVE_EXP = 800;
@@ -25,14 +34,14 @@ class WolfIce : CGameScript
 		{
 			NPC_GIVE_EXP = 400;
 		}
-		const int CUSTOM_WOLF = 1;
-		const int AM_ALPHA = 0;
-		const int DOT_BURN = 70;
-		const string DMG_BITE = RandomInt(50, 200);
-		const string DMG_CLAW = RandomInt(50, 75);
-		const string FREQ_COMBAT_HOWL = Random(15, 20);
-		const float CHANCE_BURN = 0.3;
-		const string SOUND_BURN = "magic/frost_reverse.wav";
+		CUSTOM_WOLF = 1;
+		AM_ALPHA = 0;
+		DOT_BURN = 70;
+		DMG_BITE = RandomInt(50, 200);
+		DMG_CLAW = RandomInt(50, 75);
+		FREQ_COMBAT_HOWL = Random(15, 20);
+		CHANCE_BURN = 0.3;
+		SOUND_BURN = "magic/frost_reverse.wav";
 	}
 
 	void OnSpawn() override

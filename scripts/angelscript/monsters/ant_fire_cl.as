@@ -6,15 +6,17 @@ namespace MS
 class AntFireCl : CGameScript
 {
 	string CLOUD_ANG;
+	string FLAME_SPRITE;
 	int FX_ACTIVE;
 	string FX_DEATH_DELAY;
 	string FX_DURATION;
 	string FX_OWNER;
+	int N_FRAMES;
 
 	AntFireCl()
 	{
-		const string FLAME_SPRITE = "explode1.spr";
-		const int N_FRAMES = 9;
+		FLAME_SPRITE = "explode1.spr";
+		N_FRAMES = 9;
 	}
 
 	void client_activate()
@@ -62,8 +64,8 @@ class AntFireCl : CGameScript
 		ClientEffect("tempent", "set_current_prop", "rendercolor", Vector3(0, 0, 0));
 		ClientEffect("tempent", "set_current_prop", "gravity", ".005");
 		ClientEffect("tempent", "set_current_prop", "collide", "none");
-		string RND_RL = Random(-20, 20);
-		string RND_UD = Random(-20, 20);
+		float RND_RL = Random(-20, 20);
+		float RND_UD = Random(-20, 20);
 		string CLOUD_VEL = /* TODO: $relvel */ $relvel(Vector3(0, CLOUD_ANG, 0), Vector3(RND_RL, Random(300, 400), RND_UD));
 		ClientEffect("tempent", "set_current_prop", "velocity", CLOUD_VEL);
 	}

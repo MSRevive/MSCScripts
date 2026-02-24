@@ -7,14 +7,21 @@ namespace MS
 
 class FiregiantghoulLesser : CGameScript
 {
+	int ATTACK_DAMAGE;
+	int FIN_EXP;
+	int FIREBALL_DAMAGE;
+	int MY_MAX_HP;
+	string MY_NAME;
+	int THROW_CHANCE;
+
 	FiregiantghoulLesser()
 	{
-		const int MY_MAX_HP = 400;
-		const string MY_NAME = "Decayed Undead Firegiant";
-		const int FIREBALL_DAMAGE = 25;
-		const int ATTACK_DAMAGE = 15;
-		const int THROW_CHANCE = 10;
-		const int FIN_EXP = 150;
+		MY_MAX_HP = 400;
+		MY_NAME = "Decayed Undead Firegiant";
+		FIREBALL_DAMAGE = 25;
+		ATTACK_DAMAGE = 15;
+		THROW_CHANCE = 10;
+		FIN_EXP = 150;
 	}
 
 }

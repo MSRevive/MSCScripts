@@ -8,14 +8,18 @@ class ManaringPortals : CGameScript
 	int CUR_PORTAL;
 	string NPC_SWAPS_PORTAL;
 	string PORTAL_POS;
-	string SND_CHANNEL;
+	int SND_CHANNEL;
+	string SPRITE_1;
+	string SPRITE_2;
+	string SPRITE_3;
+	string SPRITE_4;
 
 	ManaringPortals()
 	{
-		const string SPRITE_1 = "quests/manaring/vision1.spr";
-		const string SPRITE_2 = "quests/manaring/vision2.spr";
-		const string SPRITE_3 = "quests/manaring/vision3.spr";
-		const string SPRITE_4 = "quests/manaring/vision4.spr";
+		SPRITE_1 = "quests/manaring/vision1.spr";
+		SPRITE_2 = "quests/manaring/vision2.spr";
+		SPRITE_3 = "quests/manaring/vision3.spr";
+		SPRITE_4 = "quests/manaring/vision4.spr";
 		CUR_PORTAL = -1;
 	}
 

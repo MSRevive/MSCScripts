@@ -11,10 +11,11 @@ class SfxCloud : CGameScript
 	string FX_DURATION;
 	string FX_RADIUS;
 	string FX_SPRITE;
+	string SOUND_SPAWN;
 
 	SfxCloud()
 	{
-		const string SOUND_SPAWN = "ambience/steamburst1.wav";
+		SOUND_SPAWN = "ambience/steamburst1.wav";
 	}
 
 	void client_activate()
@@ -45,9 +46,9 @@ class SfxCloud : CGameScript
 		if (!(FX_ACTIVE)) return;
 		ScheduleDelayedEvent(0.25, "smokes_loop");
 		string SPRITE_POS = FX_CENTER;
-		string RND_ANG = Random(0, 359.99);
+		float RND_ANG = Random(0, 359.99);
 		string NEG_RAD = /* TODO: $neg */ $neg(FX_RADIUS);
-		string RND_OFS = Random(NEG_RAD, FX_RADIUS);
+		float RND_OFS = Random(NEG_RAD, FX_RADIUS);
 		SPRITE_POS += /* TODO: $relpos */ $relpos(Vector3(0, RND_ANG, 0), Vector3(0, RND_OFS, 0));
 		ClientEffect("tempent", "sprite", FX_SPRITE, SPRITE_POS, "setup_smoke");
 	}

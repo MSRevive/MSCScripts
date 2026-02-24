@@ -7,20 +7,33 @@ namespace MS
 
 class ProjArrowBlunt : CGameScript
 {
+	int ARROW_BODY_OFS;
+	float ARROW_BREAK_CHANCE;
+	int ARROW_EXPIRE_DELAY;
+	int ARROW_SOLIDIFY_ON_WALL;
+	int ARROW_STICK_DURATION;
+	int PROJ_DAMAGE;
+	string PROJ_DAMAGE_TYPE;
+	int PROJ_REMOVE_ON_USE;
+	int PROJ_STICK_DURATION;
+	int PROJ_STICK_ON_NPC;
+	int PROJ_STICK_ON_WALL_NEW;
+	string SPRITE_ARROW_TRADE;
+
 	ProjArrowBlunt()
 	{
-		const string SPRITE_ARROW_TRADE = "broadarrow";
-		const int ARROW_BODY_OFS = 3;
-		const int PROJ_STICK_ON_WALL_NEW = 1;
-		const int PROJ_REMOVE_ON_USE = 1;
-		const string PROJ_DAMAGE = RandomInt(150, 250);
-		const string PROJ_DAMAGE_TYPE = "blunt";
-		const int ARROW_STICK_DURATION = 25;
-		const int PROJ_STICK_DURATION = 25;
-		const int PROJ_STICK_ON_NPC = 1;
-		const int ARROW_SOLIDIFY_ON_WALL = 1;
-		const int ARROW_EXPIRE_DELAY = 120;
-		const float ARROW_BREAK_CHANCE = 0.2;
+		SPRITE_ARROW_TRADE = "broadarrow";
+		ARROW_BODY_OFS = 3;
+		PROJ_STICK_ON_WALL_NEW = 1;
+		PROJ_REMOVE_ON_USE = 1;
+		PROJ_DAMAGE = RandomInt(150, 250);
+		PROJ_DAMAGE_TYPE = "blunt";
+		ARROW_STICK_DURATION = 25;
+		PROJ_STICK_DURATION = 25;
+		PROJ_STICK_ON_NPC = 1;
+		ARROW_SOLIDIFY_ON_WALL = 1;
+		ARROW_EXPIRE_DELAY = 120;
+		ARROW_BREAK_CHANCE = 0.2;
 	}
 
 	void arrow_spawn()

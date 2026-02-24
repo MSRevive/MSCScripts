@@ -7,11 +7,15 @@ namespace MS
 
 class MapStartup : CGameScript
 {
+	int MAP_ALLOWNIGHT;
+	string MAP_NAME;
+	string MAP_WEATHER;
+
 	MapStartup()
 	{
-		const string MAP_NAME = "ms_wicardoven";
-		const string MAP_WEATHER = "clear;clear;clear;clear;clear;clear";
-		const int MAP_ALLOWNIGHT = 0;
+		MAP_NAME = "ms_wicardoven";
+		MAP_WEATHER = "clear;clear;clear;clear;clear;clear";
+		MAP_ALLOWNIGHT = 0;
 		SetGlobalVar("G_MAP_NAME", "Wicard Oven");
 		SetGlobalVar("G_MAP_DESC", "This ancient orc stronghold has recently seen its masters return.");
 		SetGlobalVar("G_MAP_DIFF", "Levels 20-30 / HP 300-600");

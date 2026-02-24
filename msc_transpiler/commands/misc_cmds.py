@@ -218,6 +218,36 @@ class NopTranslator(CommandTranslator):
         return True  # Silently consumed
 
 
+class SetLockTranslator(CommandTranslator):
+    def translate(self, cmd, ctx, w):
+        if len(cmd.args) >= 2:
+            target = ctx.translate_expr(cmd.args[0])
+            strength = ctx.translate_expr(cmd.args[1])
+            w.line(f"SetItemLockStrength({target}, {strength});")
+        elif cmd.args:
+            w.line(f"SetItemLockStrength(GetOwner(), {ctx.translate_expr(cmd.args[0])});")
+        else:
+            return False
+        return True
+
+
+class SolidifyProjectileTranslator(CommandTranslator):
+    def translate(self, cmd, ctx, w):
+        if cmd.args:
+            w.line(f"SolidifyProjectile({ctx.translate_expr(cmd.args[0])});")
+        else:
+            w.line("SolidifyProjectile(GetOwner());")
+        return True
+
+
+class LightGammaTranslator(CommandTranslator):
+    def translate(self, cmd, ctx, w):
+        if not cmd.args:
+            return False
+        w.line(f"SetWorldLightGamma({ctx.translate_expr(cmd.args[0])});")
+        return True
+
+
 def register_commands():
     register("precache", PrecacheTranslator())
     register("precachefile", PrecacheTranslator())
@@ -250,6 +280,9 @@ def register_commands():
     register("gagplayer", GagPlayerTranslator())
     register("setenv", SetEnvTranslator())
     register("setlights", SetLightsTranslator())
+    register("setlock", SetLockTranslator())
+    register("solidifyprojectile", SolidifyProjectileTranslator())
+    register("lightgamma", LightGammaTranslator())
     register("companion", CommandTranslator())
     register("endgame", CommandTranslator())
     register("resetglobals", CommandTranslator())

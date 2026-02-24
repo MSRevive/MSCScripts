@@ -26,11 +26,11 @@ class DqBaseMenus : CGameScript
 			string L_QT = QUEST_ACTIVE_TEXT;
 			if ((QUEST_ACTIVE_TEXT).findFirst("%n") >= 0)
 			{
-				string L_QT = /* TODO: $func */ $func("func_replace_string", L_QT, "%n", int(QITEMS_FOUND));
+				string L_QT = "func_replace_string"(L_QT, "%n", int(QITEMS_FOUND));
 			}
 			if ((QUEST_ACTIVE_TEXT).findFirst("%r") >= 0)
 			{
-				string L_QT = /* TODO: $func */ $func("func_replace_string", L_QT, "%r", int(QITEM_ORIGIN_AMT));
+				string L_QT = "func_replace_string"(L_QT, "%r", int(QITEM_ORIGIN_AMT));
 			}
 			string reg.mitem.title = L_QT;
 			string reg.mitem.type = "disabled";
@@ -49,9 +49,9 @@ class DqBaseMenus : CGameScript
 		{
 			if (QUEST_MODE == "complete")
 			{
-				if ((/* TODO: $get_array */ $get_array(A_QUEST_PARTICIPANTS, "exists")))
+				if ((A_QUEST_PARTICIPANTS[int("exists")]))
 				{
-					if (/* TODO: $get_arrayfind */ $get_arrayfind(A_QUEST_PARTICIPANTS, L_PLAYER_ID) != -1)
+					if (ArrayFind(A_QUEST_PARTICIPANTS, L_PLAYER_ID, 0) != -1)
 					{
 						build_quest_complete_menu(L_PLAYER_ID);
 					}

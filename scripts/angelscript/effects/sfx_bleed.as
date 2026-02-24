@@ -7,7 +7,7 @@ class SfxBleed : CGameScript
 {
 	string BLOOD_COL;
 	string BONE_AMT;
-	string BONE_IDX;
+	int BONE_IDX;
 	string RENDER_PROPS;
 	string SFX_OWNER;
 	int SPRITE_DURATION;
@@ -29,7 +29,7 @@ class SfxBleed : CGameScript
 		RENDER_PROPS += BLOOD_COL;
 		RENDER_PROPS += ";10;10";
 		SPRITE_DURATION = 5;
-		BONE_AMT = /* TODO: $math(subtract) */ /* TODO: $getcl */ $getcl(SFX_OWNER, "bonecount");
+		BONE_AMT = (/* TODO: $getcl */ $getcl(SFX_OWNER, "bonecount") - 1);
 		BONE_IDX = RandomInt(1, BONE_AMT);
 		ScheduleDelayedEvent(0.01, "spurt_blood");
 		SPRITE_DURATION("remove_me");

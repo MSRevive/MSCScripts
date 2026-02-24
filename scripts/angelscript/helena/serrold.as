@@ -12,11 +12,12 @@ class Serrold : CGameScript
 	int GAVE_GOLD;
 	int GAVE_MONEY;
 	int INN_CLOSED;
+	int NO_JOB;
 	int SEE_ENEMY;
 
 	Serrold()
 	{
-		const int NO_JOB = 1;
+		NO_JOB = 1;
 	}
 
 	void OnRepeatTimer()
@@ -103,19 +104,19 @@ class Serrold : CGameScript
 	void say_erkold()
 	{
 		PlayAnim("once", "yes");
-		SayText("The man at the burnt down house. He and his family used to supply the village with food , but I am not sure how it will go now when the family has been kidnapped..");
+		SayText("The man at the burnt down house. He and his family used to supply the village with food , but " + I + " am not sure how it will go now when the family has been kidnapped..");
 	}
 
 	void say_serrold()
 	{
 		PlayAnim("once", "yes");
-		SayText("I am Serrold , the town elder.");
+		SayText(I + " am Serrold , the town elder.");
 	}
 
 	void say_harry()
 	{
 		PlayAnim("once", "no");
-		SayText("That man is good for nothing. I closed down his Inn but I still get the feeling that something is going on in there..");
+		SayText("That man is good for nothing. " + I + "closed down his Inn but " + I + " still get the feeling that something is going on in there..");
 	}
 
 	void say_innopen()
@@ -123,7 +124,7 @@ class Serrold : CGameScript
 		INN_CLOSED = "equals";
 		if (!(GAVE_GOLD == 0)) return;
 		PlayAnim("once", "no");
-		SayText("What! He opened it up again! Well.. I guess I can t stop him. Here s some gold for telling me.");
+		SayText("What! He opened it up again! Well.. " + I + "guess " + I + " can t stop him. Here s some gold for telling me.");
 		GAVE_GOLD = 1;
 		// TODO: offer ent_lastspoke gold RandomInt(1, 3)
 	}
@@ -149,7 +150,7 @@ class Serrold : CGameScript
 	{
 		OFFER_AMT = ">=";
 		// TODO: DLLFunc recvoffer accept
-		SayText("I know Harry knows something...");
+		SayText(I + " know Harry knows something...");
 		PlayAnim("once", "yes");
 	}
 
@@ -157,7 +158,7 @@ class Serrold : CGameScript
 	{
 		OFFER_AMT = "<";
 		// TODO: DLLFunc recvoffer reject
-		SayText("I am quite well off without your charity.");
+		SayText(I + " am quite well off without your charity.");
 		PlayAnim("once", "no");
 	}
 

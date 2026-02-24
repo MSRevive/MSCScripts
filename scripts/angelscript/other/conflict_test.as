@@ -14,7 +14,7 @@ class ConflictTest : CGameScript
 	ConflictTest()
 	{
 		CHECK_CONFLICTS = 1;
-		const int NOTICE_THIS_CONFLICT = 1;
+		NOTICE_THIS_CONFLICT = 1;
 		NOTICE_THIS_CONFLICT = 2;
 	}
 

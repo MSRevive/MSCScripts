@@ -8,24 +8,36 @@ namespace MS
 class KAlcolyteGreenTurret : CGameScript
 {
 	int ALCO_TYPE;
+	int AM_TURRET;
+	string ANIM_ATTACK_CRAWL;
+	string ANIM_ATTACK_NORM;
+	string ANIM_CRAWL;
+	string ANIM_HOP;
+	string ANIM_IDLE_CRAWL;
+	string ANIM_IDLE_NORM;
+	string ANIM_JUMP;
+	string ANIM_RUN_NORM;
+	string ANIM_WALK_NORM;
 	string MOVE_TYPE;
+	int NO_JUMPS;
 	int NO_STUCK_CHECKS;
+	int OVERRIDE_TYPE;
 
 	KAlcolyteGreenTurret()
 	{
-		const int OVERRIDE_TYPE = 1;
+		OVERRIDE_TYPE = 1;
 		ALCO_TYPE = 3;
-		const string ANIM_WALK_NORM = "crouch_idle";
-		const string ANIM_RUN_NORM = "crouch_idle";
-		const string ANIM_IDLE_NORM = "crouch_idle";
-		const string ANIM_HOP = "crouch_idle";
-		const string ANIM_JUMP = "crouch_idle";
-		const string ANIM_CRAWL = "crouch_idle";
-		const string ANIM_IDLE_CRAWL = "crouch_idle";
-		const string ANIM_ATTACK_NORM = "crouch_shoot_knife";
-		const string ANIM_ATTACK_CRAWL = "crouch_shoot_knife";
-		const int AM_TURRET = 1;
-		const int NO_JUMPS = 1;
+		ANIM_WALK_NORM = "crouch_idle";
+		ANIM_RUN_NORM = "crouch_idle";
+		ANIM_IDLE_NORM = "crouch_idle";
+		ANIM_HOP = "crouch_idle";
+		ANIM_JUMP = "crouch_idle";
+		ANIM_CRAWL = "crouch_idle";
+		ANIM_IDLE_CRAWL = "crouch_idle";
+		ANIM_ATTACK_NORM = "crouch_shoot_knife";
+		ANIM_ATTACK_CRAWL = "crouch_shoot_knife";
+		AM_TURRET = 1;
+		NO_JUMPS = 1;
 		NO_STUCK_CHECKS = 1;
 	}
 

@@ -12,10 +12,11 @@ class Suliban : CGameScript
 	int BRIBED;
 	int CAN_BRIBE;
 	int EVIDENCE_FOUND;
+	int NO_RUMOR;
 
 	Suliban()
 	{
-		const int NO_RUMOR = 1;
+		NO_RUMOR = 1;
 		// TODO: UNCONVERTED: say_mayor2
 		SayText("Try not to kill him , will you? Would rather spare the bloodshed in town. He is human afterall. Try talking him out of it instead. ... That s all I know...");
 		PlayAnim("once", "talkright");
@@ -28,7 +29,7 @@ class Suliban : CGameScript
 		if (BRIBED == 0)
 		{
 		}
-		SayText("Stop pestering me. I ve got no time for the likes of you.");
+		SayText("Stop pestering me. " + I + " ve got no time for the likes of you.");
 	}
 
 	void OnSpawn() override
@@ -58,7 +59,7 @@ class Suliban : CGameScript
 	void say_name()
 	{
 		SetName("Suliban");
-		SayText("I guess I can let you know now; my name is Suliban.");
+		SayText(I + "guess " + I + " can let you know now; my name is Suliban.");
 		PlayAnim("once", "talkright");
 	}
 
@@ -76,13 +77,13 @@ class Suliban : CGameScript
 		SayText("Old fellow Erkold? What ye need from him? Did [edrin] send you?");
 		PlayAnim("once", "talkright");
 		if (!(BRIBED == 1)) return;
-		SayText("I already told you what I know.");
+		SayText(I + "already told you what " + I + " know.");
 		PlayAnim("once", "talkright");
 	}
 
 	void say_edrin()
 	{
-		SayText("I don t speak with just anyone, nor do I speak for free. If you can offer me enough, I ll tell you everything.");
+		SayText(I + " don t speak with just anyone, nor do I speak for free. If you can offer me enough, I ll tell you everything.");
 		CAN_BRIBE = 1;
 	}
 
@@ -116,14 +117,14 @@ class Suliban : CGameScript
 
 	void say_job()
 	{
-		SayText("I got nothing for you.");
+		SayText(I + " got nothing for you.");
 	}
 
 	void game_menu_getoptions()
 	{
 		string reg.mitem.title = "Say Hello";
 		string reg.mitem.type = "say";
-		string l.say = RandomInt(1, 4);
+		int l.say = RandomInt(1, 4);
 		if (l.say == 1)
 		{
 			string reg.mitem.data = "Hello";

@@ -5,6 +5,10 @@ namespace MS
 
 class IceMageImage : CGameScript
 {
+	string ANIM_TALK;
+	float BEAM_DURATION;
+	string FINGER_ADJ;
+	float FREQ_BEAM;
 	int IS_UNHOLY;
 	string MAGE_NAME;
 	string MY_OWNER;
@@ -12,10 +16,10 @@ class IceMageImage : CGameScript
 	IceMageImage()
 	{
 		IS_UNHOLY = 1;
-		const float FREQ_BEAM = 3.0;
-		const float BEAM_DURATION = 50.0;
-		const string ANIM_TALK = "ref_shoot_staff";
-		const string FINGER_ADJ = "$relpos($vec(0,MY_YAW,0),$vec(0,30,54))";
+		FREQ_BEAM = 3.0;
+		BEAM_DURATION = 50.0;
+		ANIM_TALK = "ref_shoot_staff";
+		FINGER_ADJ = "$relpos($vec(0,MY_YAW,0),$vec(0,30,54))";
 	}
 
 	void OnSpawn() override
@@ -72,7 +76,7 @@ class IceMageImage : CGameScript
 	void ext_convo2()
 	{
 		PlayAnim("critical", ANIM_TALK);
-		SayText("I m sorry, we were told to freeze you here forever.");
+		SayText(I + " m sorry, we were told to freeze you here forever.");
 		EmitSound(GetOwner(), 2, "voices/sc_convo2.wav", 10);
 	}
 
@@ -93,7 +97,7 @@ class IceMageImage : CGameScript
 	void ext_convo6()
 	{
 		PlayAnim("critical", ANIM_TALK);
-		SayText("Maldora IS Lor Malgoriand you insolent fool!");
+		SayText("Maldora " + IS + " Lor Malgoriand you insolent fool!");
 		EmitSound(GetOwner(), 2, "voices/sc_convo6.wav", 10);
 	}
 

@@ -9,7 +9,7 @@ class OrcforOrchuts1 : CGameScript
 {
 	void chest_additems()
 	{
-		add_gold(/* TODO: $math(multiply) */ 200);
+		add_gold((200 * G_GAVE_ARTI1));
 		if (G_GAVE_ARTI1 == 1)
 		{
 			add_noob_item();

@@ -8,50 +8,86 @@ namespace MS
 
 class BluntMithral : CGameScript
 {
+	int ANIM_ATTACK1;
+	int ANIM_ATTACK2;
+	int ANIM_ATTACK3;
+	int ANIM_IDLE1;
+	int ANIM_IDLE2;
+	int ANIM_IDLE_TOTAL;
+	int ANIM_LIFT1;
+	string ANIM_PREFIX;
+	int ANIM_RAGE;
+	int BASE_LEVEL_REQ;
+	float DEMON_ATK_DURATION;
+	int DEMON_CHARGES;
+	int DEMON_DMG;
+	float DEMON_DMG_DELAY;
+	float DEMON_DURATION;
 	int DEMON_RAGE_ON;
 	string LAST_ERR;
 	string LAST_RAGE;
+	float MELEE_ACCURACY;
+	float MELEE_ATK_DURATION;
+	int MELEE_DMG;
+	float MELEE_DMG_DELAY;
+	int MELEE_DMG_RANGE;
+	string MELEE_DMG_TYPE;
+	int MELEE_ENERGY;
+	float MELEE_PARRY_AUGMENT;
+	int MELEE_RANGE;
+	int MODEL_BODY_OFS;
+	string MODEL_VIEW;
+	int MODEL_VIEW_IDX;
+	string MODEL_WORLD;
 	int M_ATTACK;
 	int OUT_O_CHARGES;
+	float RAGE_DELAY;
+	string SOUND_DEATH;
+	string SOUND_RAGE;
+	string SOUND_RAGE1;
+	string SOUND_RAGE2;
+	string SOUND_RAGE3;
+	string SOUND_RAGE4;
+	float VAMPIRE_RATIO;
 
 	BluntMithral()
 	{
-		const int DEMON_CHARGES = 4;
-		const float VAMPIRE_RATIO = 0.75;
-		const int ANIM_LIFT1 = 15;
-		const int ANIM_IDLE1 = 16;
-		const int ANIM_IDLE2 = 17;
-		const int ANIM_IDLE_TOTAL = 2;
-		const int ANIM_ATTACK1 = 18;
-		const int ANIM_ATTACK2 = 19;
-		const int ANIM_ATTACK3 = 20;
-		const int ANIM_RAGE = 21;
-		const int BASE_LEVEL_REQ = 20;
-		const string MODEL_VIEW = "viewmodels/v_2hblunts.mdl";
-		const int MODEL_VIEW_IDX = 6;
-		const string MODEL_WORLD = "weapons/p_weapons3.mdl";
-		const int MODEL_BODY_OFS = 10;
-		const string ANIM_PREFIX = "standard";
-		const int MELEE_RANGE = 80;
-		const float MELEE_DMG_DELAY = 0.5;
-		const float MELEE_ATK_DURATION = 1.1;
-		const float DEMON_DMG_DELAY = 0.25;
-		const float DEMON_ATK_DURATION = 0.7;
-		const int MELEE_ENERGY = 2;
-		const int MELEE_DMG = 400;
-		const int DEMON_DMG = 750;
-		const int MELEE_DMG_RANGE = 40;
-		const float MELEE_ACCURACY = 0.75;
-		const float MELEE_PARRY_AUGMENT = 0.2;
-		const string SOUND_RAGE = "monsters/bludgeon/bludgeon_gaz_bat2.wav";
-		const string SOUND_RAGE1 = "monsters/bludgeon/bludgeon_gaz_bat1.wav";
-		const string SOUND_RAGE2 = "monsters/bludgeon/bludgeon_gaz_answer.wav";
-		const string SOUND_RAGE3 = "monsters/bludgeon/bludgeon_gaz_spell.wav";
-		const string SOUND_RAGE4 = "monsters/bludgeon/bludgeon_gaz_pain.wav";
-		const string SOUND_DEATH = "monsters/bludgeon/bludgeon_gaz_death.wav";
-		const float DEMON_DURATION = 20.0;
-		const float RAGE_DELAY = 40.0;
-		const string MELEE_DMG_TYPE = "blunt";
+		DEMON_CHARGES = 4;
+		VAMPIRE_RATIO = 0.75;
+		ANIM_LIFT1 = 15;
+		ANIM_IDLE1 = 16;
+		ANIM_IDLE2 = 17;
+		ANIM_IDLE_TOTAL = 2;
+		ANIM_ATTACK1 = 18;
+		ANIM_ATTACK2 = 19;
+		ANIM_ATTACK3 = 20;
+		ANIM_RAGE = 21;
+		BASE_LEVEL_REQ = 20;
+		MODEL_VIEW = "viewmodels/v_2hblunts.mdl";
+		MODEL_VIEW_IDX = 6;
+		MODEL_WORLD = "weapons/p_weapons3.mdl";
+		MODEL_BODY_OFS = 10;
+		ANIM_PREFIX = "standard";
+		MELEE_RANGE = 80;
+		MELEE_DMG_DELAY = 0.5;
+		MELEE_ATK_DURATION = 1.1;
+		DEMON_DMG_DELAY = 0.25;
+		DEMON_ATK_DURATION = 0.7;
+		MELEE_ENERGY = 2;
+		MELEE_DMG = 400;
+		DEMON_DMG = 750;
+		MELEE_DMG_RANGE = 40;
+		MELEE_ACCURACY = 0.75;
+		MELEE_PARRY_AUGMENT = 0.2;
+		SOUND_RAGE = "monsters/bludgeon/bludgeon_gaz_bat2.wav";
+		SOUND_RAGE1 = "monsters/bludgeon/bludgeon_gaz_bat1.wav";
+		SOUND_RAGE2 = "monsters/bludgeon/bludgeon_gaz_answer.wav";
+		SOUND_RAGE3 = "monsters/bludgeon/bludgeon_gaz_spell.wav";
+		SOUND_RAGE4 = "monsters/bludgeon/bludgeon_gaz_pain.wav";
+		SOUND_DEATH = "monsters/bludgeon/bludgeon_gaz_death.wav";
+		DEMON_DURATION = 20.0;
+		RAGE_DELAY = 40.0;
+		MELEE_DMG_TYPE = "blunt";
 	}
 
 	void weapon_spawn()
@@ -102,7 +138,7 @@ class BluntMithral : CGameScript
 
 	void demon_rage()
 	{
-		SendPlayerMessage("Bludgeon", "rage: int(param1) charges remaining");
+		SendPlayerMessage("Bludgeon", "rage: " + int(param1) + " charges remaining");
 		// TODO: splayviewanim ent_me ANIM_RAGE
 		EmitSound(GetOwner(), 0, SOUND_RAGE, 10);
 		SetAttackProp("ent_me", 0);
@@ -164,7 +200,7 @@ class BluntMithral : CGameScript
 		if (!(IsEntityAlive(param3))) return;
 		if (GetEntityMaxHealth(param3) < 3000)
 		{
-			string L_R = RandomInt(50, 200);
+			int L_R = RandomInt(50, 200);
 			if (RandomInt(1, 2) == 1)
 			{
 				string L_R = /* TODO: $neg */ $neg(L_R);
@@ -208,7 +244,7 @@ class BluntMithral : CGameScript
 		if (("game.item.attacking")) return;
 		if (!(GetEntityProperty(GetOwner(), "inhand"))) return;
 		if (!("baseitem.canidle")) return;
-		string l.anim = RandomInt(1, ANIM_IDLE_TOTAL);
+		int l.anim = RandomInt(1, ANIM_IDLE_TOTAL);
 		if (l.anim == 1)
 		{
 			PlayViewAnim(ANIM_IDLE1);

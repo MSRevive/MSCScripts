@@ -9,12 +9,13 @@ namespace MS
 
 class Willem : CGameScript
 {
+	int NO_JOB;
 	string QUEST_WINNER;
 
 	Willem()
 	{
-		const int NO_JOB = 1;
-		// TODO: UNCONVERTED: cosnt NO_RUMOR 1
+		NO_JOB = 1;
+		const int NO_RUMOR = 1;
 	}
 
 	void OnSpawn() override
@@ -55,7 +56,7 @@ class Willem : CGameScript
 
 	void say_letter2()
 	{
-		SayText("I hope this is enough for the trouble");
+		SayText(I + " hope this is enough for the trouble");
 		SetMoveDest("ent_lastgave");
 		// TODO: offer QUEST_WINNER health_mpotion
 		// TODO: offer QUEST_WINNER gold 8

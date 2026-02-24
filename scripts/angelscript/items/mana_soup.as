@@ -7,29 +7,45 @@ namespace MS
 
 class ManaSoup : CGameScript
 {
+	string ANIM_HAND_IDLE;
+	int ANIM_IDLE1;
+	int ANIM_LIFT1;
+	int ANIM_USE;
+	string ANIM_WORLD_IDLE;
 	string APPLY_LATER;
 	int DO_OWNER_IDLES;
+	int ITEM_MODEL_VIEW_IDX;
 	int ITEM_USED;
+	int MODEL_BODY_FLOOR;
+	int MODEL_BODY_OFS;
+	string MODEL_HANDS;
+	string MODEL_VIEW;
+	string MODEL_WORLD;
 	string NEXT_USE;
+	int NO_IDLE;
+	string OWNER_ANIM_IDLE;
+	string OWNER_ANIM_USE;
+	string SOUND_USE;
+	float USE_DELAY;
 
 	ManaSoup()
 	{
-		const int ANIM_LIFT1 = 21;
-		const int ANIM_IDLE1 = 21;
-		const string MODEL_VIEW = "viewmodels/v_martialarts.mdl";
-		const int ITEM_MODEL_VIEW_IDX = 8;
-		const string MODEL_HANDS = "misc/p_misc.mdl";
-		const string MODEL_WORLD = "misc/p_misc.mdl";
-		const int MODEL_BODY_OFS = 69;
-		const int MODEL_BODY_FLOOR = 71;
-		const string ANIM_WORLD_IDLE = "apple_floor_idle";
-		const string ANIM_HAND_IDLE = "idle";
-		const string OWNER_ANIM_IDLE = "aim_soup";
-		const string OWNER_ANIM_USE = "aim_soup";
-		const int ANIM_USE = 20;
-		const float USE_DELAY = 2.0;
-		const string SOUND_USE = "magic/slurp.wav";
-		const int NO_IDLE = 1;
+		ANIM_LIFT1 = 21;
+		ANIM_IDLE1 = 21;
+		MODEL_VIEW = "viewmodels/v_martialarts.mdl";
+		ITEM_MODEL_VIEW_IDX = 8;
+		MODEL_HANDS = "misc/p_misc.mdl";
+		MODEL_WORLD = "misc/p_misc.mdl";
+		MODEL_BODY_OFS = 69;
+		MODEL_BODY_FLOOR = 71;
+		ANIM_WORLD_IDLE = "apple_floor_idle";
+		ANIM_HAND_IDLE = "idle";
+		OWNER_ANIM_IDLE = "aim_soup";
+		OWNER_ANIM_USE = "aim_soup";
+		ANIM_USE = 20;
+		USE_DELAY = 2.0;
+		SOUND_USE = "magic/slurp.wav";
+		NO_IDLE = 1;
 	}
 
 	void OnSpawn() override
@@ -100,7 +116,7 @@ class ManaSoup : CGameScript
 			RemoveEffect(GetOwner(), "soup");
 			APPLY_LATER = 1;
 		}
-		HealEntity(GetOwner(), /* TODO: $math(subtract) */ GetEntityMaxHealth(GetOwner()));
+		HealEntity(GetOwner(), (GetEntityMaxHealth(GetOwner()) - GetEntityHealth(GetOwner())));
 		GiveMP(GetOwner());
 	}
 

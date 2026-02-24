@@ -27,9 +27,9 @@ class WraithCl : CGameScript
 		string MY_ORG = /* TODO: $getcl */ $getcl(MY_OWNER, "origin");
 		string TARG_ORG = /* TODO: $getcl */ $getcl(MY_TARGET, "origin");
 		if (!(Distance(MY_ORG, TARG_ORG) < MAX_RANGE)) return;
-		string RND_BONE = RandomInt(1, 15);
+		int RND_BONE = RandomInt(1, 15);
 		string BEAM1_END = /* TODO: $getcl */ $getcl(MY_TARGET, "bonepos", RND_BONE);
-		string RND_BONE = RandomInt(1, 15);
+		int RND_BONE = RandomInt(1, 15);
 		string BEAM2_END = /* TODO: $getcl */ $getcl(MY_TARGET, "bonepos", RND_BONE);
 		if ((BEAM1_END).x == 0)
 		{

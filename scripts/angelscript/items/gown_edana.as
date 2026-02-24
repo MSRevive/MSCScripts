@@ -7,9 +7,11 @@ namespace MS
 
 class GownEdana : CGameScript
 {
+	int MODEL_CREST_OFS;
+
 	GownEdana()
 	{
-		const int MODEL_CREST_OFS = 1;
+		MODEL_CREST_OFS = 1;
 	}
 
 	void crest_spawn()

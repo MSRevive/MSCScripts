@@ -7,12 +7,17 @@ namespace MS
 
 class ScrollSummonGuard : CGameScript
 {
+	int BASE_REQUIRED_LEVEL;
+	string BASE_REQUIRED_SKILL;
+	string BASE_SPELL_SCRIPT;
+	string BASE_SUMMON_TEXT;
+
 	ScrollSummonGuard()
 	{
-		const string BASE_SPELL_SCRIPT = "magic_hand_summon_guard";
-		const string BASE_SUMMON_TEXT = "You learn to summon undead guardians";
-		const string BASE_REQUIRED_SKILL = "skill.spellcasting";
-		const int BASE_REQUIRED_LEVEL = 13;
+		BASE_SPELL_SCRIPT = "magic_hand_summon_guard";
+		BASE_SUMMON_TEXT = "You learn to summon undead guardians";
+		BASE_REQUIRED_SKILL = "skill.spellcasting";
+		BASE_REQUIRED_LEVEL = 13;
 	}
 
 	void OnSpawn() override

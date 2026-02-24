@@ -9,6 +9,7 @@ namespace MS
 class TelfQuest : CGameScript
 {
 	string CHAT_CURRENT_SPEAKER;
+	int CHAT_USE_CONV_ANIMS;
 	int DID_INTRO;
 	string HALF_HP;
 	string HBAR_ADJ_POS;
@@ -17,15 +18,17 @@ class TelfQuest : CGameScript
 	int NPC_BATTLE_ALLY;
 	int NPC_NO_PLAYER_DMG;
 	string PLAYER_LIST;
+	string SOUND_PAIN1;
+	string SOUND_PAIN2;
 
 	TelfQuest()
 	{
 		HBAR_ADJ_POS = Vector3(0, 0, -32);
 		NPC_NO_PLAYER_DMG = 1;
 		NPC_BATTLE_ALLY = 1;
-		const int CHAT_USE_CONV_ANIMS = 0;
-		const string SOUND_PAIN1 = "scientist/getoutalive.wav";
-		const string SOUND_PAIN2 = "scientist/iwoundedbad.wav";
+		CHAT_USE_CONV_ANIMS = 0;
+		SOUND_PAIN1 = "scientist/getoutalive.wav";
+		SOUND_PAIN2 = "scientist/iwoundedbad.wav";
 	}
 
 	void OnSpawn() override

@@ -11,7 +11,13 @@ class MummySlave : CGameScript
 	string ANIM_IDLE;
 	string ANIM_RUN;
 	string ANIM_WALK;
+	float AS_STUCK_FREQ;
+	int ATTACK_HITCHANCE;
+	string ATTACK_TYPE;
+	int DMG_SLASH;
 	float FLINCH_HEALTH_RATIO;
+	int MUMMY_MUNCHES;
+	int MUMMY_STARTING_LIVES;
 	int NPC_GIVE_EXP;
 
 	MummySlave()
@@ -22,12 +28,12 @@ class MummySlave : CGameScript
 		NPC_GIVE_EXP = 300;
 		ANIM_ATTACK = "stab1";
 		FLINCH_HEALTH_RATIO = 0.5;
-		const float AS_STUCK_FREQ = 0.5;
-		const string ATTACK_TYPE = "unarmed";
-		const int ATTACK_HITCHANCE = 80;
-		const int DMG_SLASH = 100;
-		const string MUMMY_STARTING_LIVES = RandomInt(1, 4);
-		const int MUMMY_MUNCHES = 1;
+		AS_STUCK_FREQ = 0.5;
+		ATTACK_TYPE = "unarmed";
+		ATTACK_HITCHANCE = 80;
+		DMG_SLASH = 100;
+		MUMMY_STARTING_LIVES = RandomInt(1, 4);
+		MUMMY_MUNCHES = 1;
 	}
 
 	void mummy_spawn()

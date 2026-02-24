@@ -11,6 +11,7 @@ namespace MS
 
 class Dorfgan : CGameScript
 {
+	string ANIM_ATTACK;
 	int ATTACK1_DAMAGE;
 	int ATTACK_RANGE;
 	int CANCHAT;
@@ -35,12 +36,13 @@ class Dorfgan : CGameScript
 	int SEE_ENEMY;
 	string SOUND_PAIN;
 	string SOUND_PAIN2;
+	string STORE_NAME;
 
 	Dorfgan()
 	{
 		ATTACK_RANGE = 64;
-		const string ANIM_ATTACK = "beatdoor";
-		const string STORE_NAME = "dorfgans_blacksmith";
+		ANIM_ATTACK = "beatdoor";
+		STORE_NAME = "dorfgans_blacksmith";
 	}
 
 	void OnRepeatTimer()

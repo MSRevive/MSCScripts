@@ -7,70 +7,114 @@ namespace MS
 
 class SwordsSf : CGameScript
 {
+	int ANIM_ATTACK1;
+	int ANIM_ATTACK2;
+	int ANIM_ATTACK3;
+	int ANIM_IDLE1;
+	int ANIM_LIFT;
+	int ANIM_LUNGE;
+	int ANIM_PARRY1;
+	int ANIM_PARRY1_RETRACT;
+	string ANIM_PREFIX;
+	int ANIM_SHEATH;
+	int ANIM_UNSHEATH;
+	int ATTACK_ANIMS;
+	int BASE_LEVEL_REQ;
 	string BURST_DOT_BURN;
 	string BURST_POS;
 	string FAURA_ACTIVE;
 	string FAURA_RAD;
 	string FIRE_AURA_BEGIN;
+	int FIRE_BURST_MP;
 	string FIRE_BURST_TARGS;
+	int FIRE_WAVE_MP;
 	string FIRE_WAVE_START_POS;
 	string FIRE_WAVE_TARGS;
 	string FIRE_WAVE_YAW;
 	string GAME_PVP;
+	float MELEE_ACCURACY;
+	int MELEE_ALIGN_BASE;
+	int MELEE_ALIGN_TIP;
+	float MELEE_ATK_DURATION;
+	int MELEE_DMG;
+	float MELEE_DMG_DELAY;
+	int MELEE_DMG_RANGE;
+	string MELEE_DMG_TYPE;
+	int MELEE_ENERGY;
+	int MELEE_NEW_PARRY_CHANCE;
+	float MELEE_PARRY_CHANCE;
+	int MELEE_RANGE;
+	string MELEE_SOUND;
+	string MELEE_SOUND_DELAY;
+	string MELEE_STAT;
+	string MELEE_VIEWANIM_ATK;
+	int MODEL_BODY_OFS;
+	string MODEL_HANDS;
+	string MODEL_VIEW;
+	int MODEL_VIEW_IDX;
+	string MODEL_WORLD;
 	string NEXT_PARRY;
 	string OWNER_ANG;
 	string OWNER_FIRESKILL;
 	string OWNER_ORG;
 	string OWNER_SWORDSKILL;
 	string PARRY_ON;
+	string PLAYERANIM_AIM;
+	string PLAYERANIM_SWING;
+	string SOUND_DRAW;
+	string SOUND_HITWALL1;
+	string SOUND_HITWALL2;
+	string SOUND_SHOUT;
+	string SOUND_SWIPE;
+	string SPECIAL01_SND;
 	string WAVE_DOT_BURN;
 
 	SwordsSf()
 	{
-		const int BASE_LEVEL_REQ = 25;
-		const int FIRE_WAVE_MP = 20;
-		const int FIRE_BURST_MP = 30;
-		const int ANIM_LIFT = 0;
-		const int ANIM_IDLE1 = 1;
-		const int ANIM_ATTACK1 = 2;
-		const int ANIM_ATTACK2 = 2;
-		const int ANIM_ATTACK3 = 2;
-		const int ATTACK_ANIMS = 1;
-		const int ANIM_LUNGE = 3;
-		const int ANIM_PARRY1 = 4;
-		const int ANIM_PARRY1_RETRACT = 5;
-		const int ANIM_UNSHEATH = 6;
-		const int ANIM_SHEATH = 7;
-		const string MODEL_HANDS = "weapons/p_weapons3.mdl";
-		const string MODEL_WORLD = "weapons/p_weapons3.mdl";
-		const string MODEL_VIEW = "viewmodels/v_2hswords.mdl";
-		const int MODEL_VIEW_IDX = 11;
-		const int MODEL_BODY_OFS = 84;
-		const string ANIM_PREFIX = "standard";
-		const int MELEE_RANGE = 80;
-		const float MELEE_DMG_DELAY = 0.6;
-		const float MELEE_ATK_DURATION = 1.3;
-		const int MELEE_ENERGY = 1;
-		const int MELEE_DMG = 275;
-		const int MELEE_DMG_RANGE = 140;
-		const string MELEE_DMG_TYPE = "dark";
-		const float MELEE_ACCURACY = 0.75;
-		const string MELEE_STAT = "swordsmanship";
-		const int MELEE_ALIGN_BASE = 3;
-		const int MELEE_ALIGN_TIP = 0;
-		const string MELEE_VIEWANIM_ATK = ANIM_ATTACK1;
-		const string MELEE_SOUND = SOUND_SWIPE;
-		const string MELEE_SOUND_DELAY = MELEE_DMG_DELAY;
-		const float MELEE_PARRY_CHANCE = 0.6;
-		const int MELEE_NEW_PARRY_CHANCE = 50;
-		const string PLAYERANIM_AIM = "sword_double_idle";
-		const string PLAYERANIM_SWING = "sword_double_swing";
-		const string SOUND_SWIPE = "weapons/swingsmall.wav";
-		const string SOUND_HITWALL1 = "weapons/cbar_hit1.wav";
-		const string SOUND_HITWALL2 = "weapons/cbar_hit2.wav";
-		const string SOUND_DRAW = "weapons/swords/sworddraw.wav";
-		const string SOUND_SHOUT = GetEntityProperty(GetOwner(), "scriptvar");
-		const string SPECIAL01_SND = GetEntityProperty(GetOwner(), "scriptvar");
+		BASE_LEVEL_REQ = 25;
+		FIRE_WAVE_MP = 20;
+		FIRE_BURST_MP = 30;
+		ANIM_LIFT = 0;
+		ANIM_IDLE1 = 1;
+		ANIM_ATTACK1 = 2;
+		ANIM_ATTACK2 = 2;
+		ANIM_ATTACK3 = 2;
+		ATTACK_ANIMS = 1;
+		ANIM_LUNGE = 3;
+		ANIM_PARRY1 = 4;
+		ANIM_PARRY1_RETRACT = 5;
+		ANIM_UNSHEATH = 6;
+		ANIM_SHEATH = 7;
+		MODEL_HANDS = "weapons/p_weapons3.mdl";
+		MODEL_WORLD = "weapons/p_weapons3.mdl";
+		MODEL_VIEW = "viewmodels/v_2hswords.mdl";
+		MODEL_VIEW_IDX = 11;
+		MODEL_BODY_OFS = 84;
+		ANIM_PREFIX = "standard";
+		MELEE_RANGE = 80;
+		MELEE_DMG_DELAY = 0.6;
+		MELEE_ATK_DURATION = 1.3;
+		MELEE_ENERGY = 1;
+		MELEE_DMG = 275;
+		MELEE_DMG_RANGE = 140;
+		MELEE_DMG_TYPE = "dark";
+		MELEE_ACCURACY = 0.75;
+		MELEE_STAT = "swordsmanship";
+		MELEE_ALIGN_BASE = 3;
+		MELEE_ALIGN_TIP = 0;
+		MELEE_VIEWANIM_ATK = ANIM_ATTACK1;
+		MELEE_SOUND = SOUND_SWIPE;
+		MELEE_SOUND_DELAY = MELEE_DMG_DELAY;
+		MELEE_PARRY_CHANCE = 0.6;
+		MELEE_NEW_PARRY_CHANCE = 50;
+		PLAYERANIM_AIM = "sword_double_idle";
+		PLAYERANIM_SWING = "sword_double_swing";
+		SOUND_SWIPE = "weapons/swingsmall.wav";
+		SOUND_HITWALL1 = "weapons/cbar_hit1.wav";
+		SOUND_HITWALL2 = "weapons/cbar_hit2.wav";
+		SOUND_DRAW = "weapons/swords/sworddraw.wav";
+		SOUND_SHOUT = GetEntityProperty(GetOwner(), "scriptvar");
+		SPECIAL01_SND = GetEntityProperty(GetOwner(), "scriptvar");
 	}
 
 	void weapon_spawn()
@@ -123,7 +167,7 @@ class SwordsSf : CGameScript
 		{
 			exit_parry("melee_start");
 		}
-		string R_SWING = RandomInt(1, 3);
+		int R_SWING = RandomInt(1, 3);
 		if (R_SWING == 1)
 		{
 			string SWING_ANIM = ANIM_ATTACK1;
@@ -183,7 +227,7 @@ class SwordsSf : CGameScript
 		if (!(GetSkillLevel(GetOwner(), "spellcasting.fire") >= 25)) return;
 		if (GetEntityMP(GetOwner()) < FIRE_WAVE_MP)
 		{
-			SendColoredMessage(GetOwner(), "Shadowfire Blade: Insufficient MP for Fire Wave");
+			SendColoredMessage(GetOwner(), "Shadowfire Blade: Insufficient " + MP + " for Fire Wave");
 			int EXIT_SUB = 1;
 		}
 		if ((EXIT_SUB)) return;

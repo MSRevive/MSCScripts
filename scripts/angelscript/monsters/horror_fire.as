@@ -9,10 +9,12 @@ class HorrorFire : CGameScript
 {
 	int AM_SUMMONED;
 	string ANIM_ATTACK;
+	string BREATH_SPRITE;
 	int FLIGHT_SCANNING;
 	int I_FLY;
 	string MY_OWNER;
 	int NO_STUCK_CHECKS;
+	int NPC_BASE_EXP;
 	int NPC_GIVE_EXP;
 	string SPAWNED_ORG;
 	string SPITTING;
@@ -20,8 +22,8 @@ class HorrorFire : CGameScript
 
 	HorrorFire()
 	{
-		const int NPC_BASE_EXP = 200;
-		const string BREATH_SPRITE = "3dmflaora.spr";
+		NPC_BASE_EXP = 200;
+		BREATH_SPRITE = "3dmflaora.spr";
 	}
 
 	void OnSpawn() override

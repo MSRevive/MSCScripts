@@ -7,17 +7,21 @@ namespace MS
 
 class LivingdeadOnce : CGameScript
 {
-	string DROP_GOLD;
+	int ATTACK_DAMAGE_HIGH;
+	int ATTACK_DAMAGE_LOW;
+	float ATTACK_HITCHANCE;
+	int DROP_GOLD;
 	int DROP_GOLD_MAX;
 	int DROP_GOLD_MIN;
 	int NPC_GIVE_EXP;
+	int SKEL_HP;
 
 	LivingdeadOnce()
 	{
-		const int SKEL_HP = 120;
-		const float ATTACK_HITCHANCE = 0.7;
-		const int ATTACK_DAMAGE_LOW = 4;
-		const int ATTACK_DAMAGE_HIGH = 7;
+		SKEL_HP = 120;
+		ATTACK_HITCHANCE = 0.7;
+		ATTACK_DAMAGE_LOW = 4;
+		ATTACK_DAMAGE_HIGH = 7;
 		NPC_GIVE_EXP = 40;
 		DROP_GOLD = RandomInt(0, 1);
 		DROP_GOLD_MIN = 3;

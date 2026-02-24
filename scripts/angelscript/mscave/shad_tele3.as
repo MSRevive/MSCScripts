@@ -7,9 +7,11 @@ namespace MS
 
 class ShadTele3 : CGameScript
 {
+	int MY_INDEX;
+
 	ShadTele3()
 	{
-		const int MY_INDEX = 3;
+		MY_INDEX = 3;
 	}
 
 }

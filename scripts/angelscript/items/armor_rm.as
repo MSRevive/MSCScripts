@@ -7,14 +7,21 @@ namespace MS
 
 class ArmorRm : CGameScript
 {
+	string ARMOR_TEXT;
+	float BARMOR_PROTECTION;
+	string BARMOR_PROTECTION_AREA;
+	string BARMOR_REPLACE_BODYPARTS;
+	string BARMOR_TYPE;
+	int NEW_ARMOR_OFS;
+
 	ArmorRm()
 	{
-		const string ARMOR_TEXT = "Just testing...";
-		const string BARMOR_TYPE = "platemail";
-		const float BARMOR_PROTECTION = 0.0;
-		const string BARMOR_PROTECTION_AREA = "chest;arms;legs";
-		const string BARMOR_REPLACE_BODYPARTS = BARMOR_PROTECTION_AREA;
-		const int NEW_ARMOR_OFS = 18;
+		ARMOR_TEXT = "Just testing...";
+		BARMOR_TYPE = "platemail";
+		BARMOR_PROTECTION = 0.0;
+		BARMOR_PROTECTION_AREA = "chest;arms;legs";
+		BARMOR_REPLACE_BODYPARTS = BARMOR_PROTECTION_AREA;
+		NEW_ARMOR_OFS = 18;
 	}
 
 	void OnSpawn() override

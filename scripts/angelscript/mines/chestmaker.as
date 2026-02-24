@@ -16,7 +16,7 @@ class Chestmaker : CGameScript
 
 	void make_chest()
 	{
-		string ROLL = RandomInt(1, 6);
+		int ROLL = RandomInt(1, 6);
 		if (ROLL == 1)
 		{
 			LogDebug("spawning chest_great");

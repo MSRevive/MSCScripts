@@ -8,52 +8,92 @@ namespace MS
 
 class SwordsIceblade : CGameScript
 {
+	int ANIM_ATTACK1;
+	int ANIM_ATTACK2;
+	int ANIM_ATTACK3;
+	int ANIM_ATTACK4;
+	int ANIM_ATTACK5;
+	int ANIM_IDLE1;
+	int ANIM_IDLE_DELAY_HIGH;
+	int ANIM_IDLE_DELAY_LOW;
+	int ANIM_IDLE_TOTAL;
+	int ANIM_LIFT1;
+	int ANIM_LUNGE;
+	string ANIM_PREFIX;
+	int ANIM_SHEATH;
+	int ATTACK_ANIMS;
+	int BASE_LEVEL_REQ;
+	int FREEZE_CHANCE;
 	string GAME_PVP;
+	float MELEE_ACCURACY;
+	int MELEE_ALIGN_BASE;
+	int MELEE_ALIGN_TIP;
+	float MELEE_ATK_DURATION;
+	int MELEE_DMG;
+	float MELEE_DMG_DELAY;
+	int MELEE_DMG_RANGE;
+	string MELEE_DMG_TYPE;
+	int MELEE_ENERGY;
+	float MELEE_PARRY_CHANCE;
+	int MELEE_RANGE;
+	string MELEE_SOUND;
+	string MELEE_SOUND_DELAY;
+	string MELEE_STAT;
+	string MELEE_VIEWANIM_ATK;
+	int MODEL_BODY_OFS;
+	string MODEL_HANDS;
+	string MODEL_VIEW;
+	int MODEL_VIEW_IDX;
+	string MODEL_WORLD;
+	string SOUND_HITWALL1;
+	string SOUND_HITWALL2;
+	string SOUND_SHOUT;
+	string SOUND_SWIPE;
 	int SPEC_ATTACK;
 	string SWING_ANIM;
 
 	SwordsIceblade()
 	{
-		const int BASE_LEVEL_REQ = 12;
-		const int FREEZE_CHANCE = 75;
-		const int ANIM_LIFT1 = 0;
-		const int ANIM_IDLE1 = 1;
-		const int ANIM_IDLE_TOTAL = 1;
-		const int ANIM_IDLE_DELAY_LOW = 1;
-		const int ANIM_IDLE_DELAY_HIGH = 3;
-		const int ANIM_ATTACK1 = 2;
-		const int ANIM_ATTACK2 = 3;
-		const int ANIM_ATTACK3 = 4;
-		const int ANIM_ATTACK4 = 5;
-		const int ANIM_ATTACK5 = 6;
-		const int ANIM_LUNGE = 6;
-		const int ATTACK_ANIMS = 4;
-		const int ANIM_SHEATH = 7;
-		const string MODEL_VIEW = "viewmodels/v_1hswordssb.mdl";
-		const int MODEL_VIEW_IDX = 2;
-		const string MODEL_HANDS = "weapons/p_weapons1.mdl";
-		const string MODEL_WORLD = "weapons/p_weapons1.mdl";
-		const string SOUND_SWIPE = "weapons/swingsmall.wav";
-		const string SOUND_SHOUT = GetEntityProperty(GetOwner(), "scriptvar");
-		const int MODEL_BODY_OFS = 8;
-		const string ANIM_PREFIX = "iceblade";
-		const int MELEE_RANGE = 64;
-		const float MELEE_DMG_DELAY = 0.6;
-		const float MELEE_ATK_DURATION = 1.4;
-		const int MELEE_ENERGY = 2;
-		const int MELEE_DMG = 315;
-		const int MELEE_DMG_RANGE = 10;
-		const string MELEE_DMG_TYPE = "cold";
-		const float MELEE_ACCURACY = 0.7;
-		const string MELEE_STAT = "swordsmanship";
-		const int MELEE_ALIGN_BASE = 4;
-		const int MELEE_ALIGN_TIP = 0;
-		const string MELEE_VIEWANIM_ATK = ANIM_ATTACK1;
-		const string MELEE_SOUND = SOUND_SWIPE;
-		const string MELEE_SOUND_DELAY = MELEE_DMG_DELAY;
-		const float MELEE_PARRY_CHANCE = 0.05;
-		const string SOUND_HITWALL1 = "debris/glass1.wav";
-		const string SOUND_HITWALL2 = "debris/glass2.wav";
+		BASE_LEVEL_REQ = 12;
+		FREEZE_CHANCE = 75;
+		ANIM_LIFT1 = 0;
+		ANIM_IDLE1 = 1;
+		ANIM_IDLE_TOTAL = 1;
+		ANIM_IDLE_DELAY_LOW = 1;
+		ANIM_IDLE_DELAY_HIGH = 3;
+		ANIM_ATTACK1 = 2;
+		ANIM_ATTACK2 = 3;
+		ANIM_ATTACK3 = 4;
+		ANIM_ATTACK4 = 5;
+		ANIM_ATTACK5 = 6;
+		ANIM_LUNGE = 6;
+		ATTACK_ANIMS = 4;
+		ANIM_SHEATH = 7;
+		MODEL_VIEW = "viewmodels/v_1hswordssb.mdl";
+		MODEL_VIEW_IDX = 2;
+		MODEL_HANDS = "weapons/p_weapons1.mdl";
+		MODEL_WORLD = "weapons/p_weapons1.mdl";
+		SOUND_SWIPE = "weapons/swingsmall.wav";
+		SOUND_SHOUT = GetEntityProperty(GetOwner(), "scriptvar");
+		MODEL_BODY_OFS = 8;
+		ANIM_PREFIX = "iceblade";
+		MELEE_RANGE = 64;
+		MELEE_DMG_DELAY = 0.6;
+		MELEE_ATK_DURATION = 1.4;
+		MELEE_ENERGY = 2;
+		MELEE_DMG = 315;
+		MELEE_DMG_RANGE = 10;
+		MELEE_DMG_TYPE = "cold";
+		MELEE_ACCURACY = 0.7;
+		MELEE_STAT = "swordsmanship";
+		MELEE_ALIGN_BASE = 4;
+		MELEE_ALIGN_TIP = 0;
+		MELEE_VIEWANIM_ATK = ANIM_ATTACK1;
+		MELEE_SOUND = SOUND_SWIPE;
+		MELEE_SOUND_DELAY = MELEE_DMG_DELAY;
+		MELEE_PARRY_CHANCE = 0.05;
+		SOUND_HITWALL1 = "debris/glass1.wav";
+		SOUND_HITWALL2 = "debris/glass2.wav";
 	}
 
 	void weapon_spawn()
@@ -108,7 +148,7 @@ class SwordsIceblade : CGameScript
 		if ((EXIT_SUB)) return;
 		if (SPEC_ATTACK == 1)
 		{
-			string FREEZE_ROLL = RandomInt(1, 100);
+			int FREEZE_ROLL = RandomInt(1, 100);
 			if (FREEZE_ROLL > FREEZE_CHANCE)
 			{
 				SendPlayerMessage("Freeze", "attack failed.");

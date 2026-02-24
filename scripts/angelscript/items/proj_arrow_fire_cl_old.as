@@ -6,6 +6,15 @@ namespace MS
 class ProjArrowFireClOld : CGameScript
 {
 	string EFFECT_SET_TO_DIE;
+	string LIGHT_COLOR;
+	int LIGHT_RADIUS;
+	int OFS_NEG;
+	int OFS_POS;
+	float SMOKE_DURATION;
+	int SPD_NEG;
+	int SPD_POS;
+	string SPR_FIRE;
+	string SPR_SMOKE1;
 	string p.scale;
 	int sfx.duration;
 	string sfx.lightid;
@@ -13,15 +22,15 @@ class ProjArrowFireClOld : CGameScript
 
 	ProjArrowFireClOld()
 	{
-		const string SPR_FIRE = "fire1_fixed.spr";
-		const string SPR_SMOKE1 = "xsmoke3.spr";
-		const string SMOKE_DURATION = "$randf(1,2)";
-		const int OFS_POS = 5;
-		const int OFS_NEG = -5;
-		const int SPD_POS = 60;
-		const int SPD_NEG = -60;
-		const int LIGHT_RADIUS = 256;
-		const Vector3 LIGHT_COLOR = Vector3(255, 200, 64);
+		SPR_FIRE = "fire1_fixed.spr";
+		SPR_SMOKE1 = "xsmoke3.spr";
+		SMOKE_DURATION = "$randf(1,2)";
+		OFS_POS = 5;
+		OFS_NEG = -5;
+		SPD_POS = 60;
+		SPD_NEG = -60;
+		LIGHT_RADIUS = 256;
+		LIGHT_COLOR = Vector3(255, 200, 64);
 	}
 
 	void OnRepeatTimer()

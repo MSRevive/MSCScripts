@@ -13,26 +13,35 @@ class Hobgoblin : CGameScript
 	int ATTACK_MOVERANGE;
 	int ATTACK_RANGE;
 	int CAN_STUN;
+	int DMG_AXE;
+	int DMG_CHARGE;
 	int DROP_GOLD;
-	string DROP_GOLD_AMT;
+	int DROP_GOLD_AMT;
 	int MOVE_RANGE;
+	int NPC_BASE_EXP;
+	string SOUND_ATTACK1;
+	string SOUND_ATTACK2;
+	string SOUND_ATTACK3;
+	string SOUND_BREATH;
+	string SOUND_DEATH;
+	int STEP_SIZE_NORM;
 
 	Hobgoblin()
 	{
-		const int NPC_BASE_EXP = 150;
-		const string SOUND_ATTACK1 = "monsters/goblin/c_gargoyle_atk1.wav";
-		const string SOUND_ATTACK2 = "monsters/goblin/c_gargoyle_atk2.wav";
-		const string SOUND_ATTACK3 = "monsters/goblin/c_gargoyle_atk3.wav";
-		const string SOUND_BREATH = "monsters/goblin/sps_fogfire.wav";
-		const int STEP_SIZE_NORM = 36;
+		NPC_BASE_EXP = 150;
+		SOUND_ATTACK1 = "monsters/goblin/c_gargoyle_atk1.wav";
+		SOUND_ATTACK2 = "monsters/goblin/c_gargoyle_atk2.wav";
+		SOUND_ATTACK3 = "monsters/goblin/c_gargoyle_atk3.wav";
+		SOUND_BREATH = "monsters/goblin/sps_fogfire.wav";
+		STEP_SIZE_NORM = 36;
 		CAN_STUN = 1;
 		DROP_GOLD = 1;
 		DROP_GOLD_AMT = RandomInt(20, 40);
 		ANIM_ATTACK = "swordswing1_L";
-		const string DMG_AXE = RandomInt(40, 75);
-		const int DMG_CHARGE = 50;
+		DMG_AXE = RandomInt(40, 75);
+		DMG_CHARGE = 50;
 		ATTACK_HITCHANCE = 0.8;
-		const string SOUND_DEATH = "monsters/goblin/c_goblin_dead.wav";
+		SOUND_DEATH = "monsters/goblin/c_goblin_dead.wav";
 		Precache(SOUND_DEATH);
 	}
 
@@ -63,7 +72,7 @@ class Hobgoblin : CGameScript
 	{
 		if (!(GOB_JUMPER)) return;
 		if (!(GOB_JUMP_SCANNING)) return;
-		string GOB_HOP_DELAY = Random(2, 4);
+		float GOB_HOP_DELAY = Random(2, 4);
 		GOB_HOP_DELAY("gob_jump_check");
 		if (!(m_hAttackTarget != "unset")) return;
 		if ((IS_FLEEING)) return;

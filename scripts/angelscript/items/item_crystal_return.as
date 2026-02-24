@@ -7,10 +7,13 @@ namespace MS
 
 class ItemCrystalReturn : CGameScript
 {
+	int SKILL_LEVEL_REQ;
+	string SKILL_TYPE;
+
 	ItemCrystalReturn()
 	{
-		const int SKILL_LEVEL_REQ = 0;
-		const string SKILL_TYPE = "skill.spellcasting";
+		SKILL_LEVEL_REQ = 0;
+		SKILL_TYPE = "skill.spellcasting";
 	}
 
 	void crystal_spawn()

@@ -8,16 +8,25 @@ namespace MS
 
 class AxesVaxe : CGameScript
 {
+	int BASE_LEVEL_REQ;
+	float MELEE_ACCURACY;
+	int MELEE_DMG;
+	int MELEE_DMG_RANGE;
+	int MODEL_BODY_OFS;
+	string MODEL_HANDS;
+	int MODEL_VIEW_IDX;
+	string MODEL_WORLD;
+
 	AxesVaxe()
 	{
-		const int BASE_LEVEL_REQ = 15;
-		const int MODEL_VIEW_IDX = 3;
-		const string MODEL_HANDS = "weapons/p_weapons2.mdl";
-		const string MODEL_WORLD = "weapons/p_weapons2.mdl";
-		const int MODEL_BODY_OFS = 118;
-		const int MELEE_DMG = 280;
-		const int MELEE_DMG_RANGE = 100;
-		const float MELEE_ACCURACY = 0.3;
+		BASE_LEVEL_REQ = 15;
+		MODEL_VIEW_IDX = 3;
+		MODEL_HANDS = "weapons/p_weapons2.mdl";
+		MODEL_WORLD = "weapons/p_weapons2.mdl";
+		MODEL_BODY_OFS = 118;
+		MELEE_DMG = 280;
+		MELEE_DMG_RANGE = 100;
+		MELEE_ACCURACY = 0.3;
 	}
 
 	void weapon_spawn()

@@ -8,9 +8,11 @@ namespace MS
 
 class Storage : CGameScript
 {
+	int PLACEHOLDER;
+
 	Storage()
 	{
-		const int PLACEHOLDER = 0;
+		PLACEHOLDER = 0;
 	}
 
 	void OnSpawn() override
@@ -61,7 +63,7 @@ class Storage : CGameScript
 
 	void heard_rurmor()
 	{
-		SayText("Look , I just work here , I don t live here. You got an item to store, or what?");
+		SayText("Look , " + I + "just work here , " + I + " don t live here. You got an item to store, or what?");
 	}
 
 	void heard_store()

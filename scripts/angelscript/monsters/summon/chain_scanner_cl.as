@@ -17,7 +17,7 @@ class ChainScannerCl : CGameScript
 			if ("game.localplayer.index" == param1)
 			{
 			}
-			string RND_FINGER = RandomInt(1, 10);
+			int RND_FINGER = RandomInt(1, 10);
 			if (RND_FINGER == 1)
 			{
 				string CL_FINGER = /* TODO: $getcl */ $getcl("game.localplayer.viewmodel.active.id", "bonepos", 16);

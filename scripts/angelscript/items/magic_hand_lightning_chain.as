@@ -10,32 +10,52 @@ class MagicHandLightningChain : CGameScript
 	string CLIENT_SCRIPT_IDX;
 	string GAME_PVP;
 	string IDX_LIST;
+	string LIGHT_COLOR;
+	float MELEE_ATK_DURATION;
+	int MELEE_DMG;
+	float MELEE_DMG_DELAY;
+	int MELEE_DMG_RANGE;
+	float MELEE_HITCHANCE;
+	int MELEE_NOAUTOAIM;
+	int MELEE_RANGE;
+	string MELEE_TYPE;
+	int SCAN_RANGE;
+	float SCRIPT_SFX_DURATION;
+	string SCRIPT_SFX_PREP;
+	string SOUND_SHOOT;
+	string SOUND_ZAP1;
+	string SOUND_ZAP2;
+	string SOUND_ZAP3;
+	string SPELL_DAMAGE_TYPE;
+	int SPELL_ENERGYDRAIN;
+	int SPELL_MPDRAIN;
 	int SPELL_SKILL_REQUIRED;
+	string SPELL_STAT;
 	string TARGET_LIST;
 
 	MagicHandLightningChain()
 	{
-		const string SOUND_SHOOT = "weather/Storm_exclamation.wav";
-		const int MELEE_RANGE = 2000;
-		const float MELEE_HITCHANCE = 1.0;
-		const float MELEE_ATK_DURATION = 1.0;
-		const string MELEE_TYPE = "strike-land";
-		const int MELEE_DMG = 0;
-		const int MELEE_DMG_RANGE = 0;
-		const int MELEE_NOAUTOAIM = 1;
-		const float MELEE_DMG_DELAY = 0.4;
+		SOUND_SHOOT = "weather/Storm_exclamation.wav";
+		MELEE_RANGE = 2000;
+		MELEE_HITCHANCE = 1.0;
+		MELEE_ATK_DURATION = 1.0;
+		MELEE_TYPE = "strike-land";
+		MELEE_DMG = 0;
+		MELEE_DMG_RANGE = 0;
+		MELEE_NOAUTOAIM = 1;
+		MELEE_DMG_DELAY = 0.4;
 		SPELL_SKILL_REQUIRED = 1;
-		const string SPELL_DAMAGE_TYPE = "lightning";
-		const int SPELL_ENERGYDRAIN = 10;
-		const int SPELL_MPDRAIN = 5;
-		const string SPELL_STAT = "spellcasting.lightning";
-		const string SOUND_ZAP1 = "debris/beamstart14.wav";
-		const string SOUND_ZAP2 = "debris/beamstart15.wav";
-		const string SOUND_ZAP3 = "debris/zap1.wav";
-		const string SCRIPT_SFX_PREP = "items/magic_hand_lightning_weak_cl";
-		const float SCRIPT_SFX_DURATION = 0.5;
-		const Vector3 LIGHT_COLOR = Vector3(30, 30, 253);
-		const int SCAN_RANGE = 400;
+		SPELL_DAMAGE_TYPE = "lightning";
+		SPELL_ENERGYDRAIN = 10;
+		SPELL_MPDRAIN = 5;
+		SPELL_STAT = "spellcasting.lightning";
+		SOUND_ZAP1 = "debris/beamstart14.wav";
+		SOUND_ZAP2 = "debris/beamstart15.wav";
+		SOUND_ZAP3 = "debris/zap1.wav";
+		SCRIPT_SFX_PREP = "items/magic_hand_lightning_weak_cl";
+		SCRIPT_SFX_DURATION = 0.5;
+		LIGHT_COLOR = Vector3(30, 30, 253);
+		SCAN_RANGE = 400;
 	}
 
 	void spell_spawn()

@@ -13,30 +13,49 @@ class Voldar : CGameScript
 	string ANIM_ATTACK;
 	string ANIM_ATTACK2;
 	string ANIM_FLINCH;
+	string ANIM_HOP;
+	string ANIM_KICK;
+	string ANIM_WARCRY;
 	string AS_ATTACKING;
+	float ATTACK_ACCURACY;
+	int ATTACK_SPEED;
+	int CLOUD_FREQ;
 	int DID_INTRO;
+	float DMG_KICK;
+	int DMG_SLASH;
+	int DMG_SPIT;
 	int DO_STUN;
 	int DROP_GOLD;
-	string DROP_GOLD_AMT;
+	int DROP_GOLD_AMT;
+	int EGG_FREQ;
 	float FLINCH_CHANCE;
 	int FLINCH_HEALTH;
+	int HORNET_FREQ;
 	int MAKE_ACLOUD;
 	string MALDORA_ID;
 	int MOVE_RANGE;
 	int NO_SPAWN_STUCK_CHECK;
+	float NPC_BOSS_REGEN_RATE;
+	float NPC_BOSS_RESTORATION;
 	int NPC_FORCED_MOVEDEST;
 	int NPC_GIVE_EXP;
 	string NPC_IS_BOSS;
+	string NPC_PROXACT_EVENT;
+	int NPC_PROXACT_IFSEEN;
+	int NPC_PROXACT_RANGE;
 	string NPC_PROX_ACTIVATE;
 	string OLD_Z;
 	int ORC_JUMPER;
+	string SOUND_DEATH;
+	string SOUND_WARCRY;
 	int SPIT_DELAY;
+	float SPIT_FREQ;
 	int SUMMON_HORROR;
 
 	Voldar()
 	{
-		const float NPC_BOSS_REGEN_RATE = 0.05;
-		const float NPC_BOSS_RESTORATION = 0.25;
+		NPC_BOSS_REGEN_RATE = 0.05;
+		NPC_BOSS_RESTORATION = 0.25;
 		NO_SPAWN_STUCK_CHECK = 1;
 		NPC_GIVE_EXP = 2000;
 		if (StringToLower(GetMapName()) == "ms_wicardoven")
@@ -50,29 +69,29 @@ class Voldar : CGameScript
 				NPC_GIVE_EXP = 1000;
 			}
 		}
-		const string ANIM_HOP = "battleaxe_swing1_L";
+		ANIM_HOP = "battleaxe_swing1_L";
 		ANIM_ATTACK2 = "battleaxe_swing1_L";
-		const string ANIM_WARCRY = "warcry";
+		ANIM_WARCRY = "warcry";
 		ANIM_FLINCH = "flinch";
-		const float SPIT_FREQ = 3.0;
-		const string CLOUD_FREQ = RandomInt(20, 60);
-		const string HORNET_FREQ = RandomInt(10, 30);
-		const string EGG_FREQ = RandomInt(20, 40);
-		const int ATTACK_SPEED = 300;
+		SPIT_FREQ = 3.0;
+		CLOUD_FREQ = RandomInt(20, 60);
+		HORNET_FREQ = RandomInt(10, 30);
+		EGG_FREQ = RandomInt(20, 40);
+		ATTACK_SPEED = 300;
 		MOVE_RANGE = 300;
-		const string ANIM_KICK = "kick";
-		const string DMG_SPIT = RandomInt(200, 300);
-		const string DMG_KICK = Random(20, 50);
-		const string DMG_SLASH = RandomInt(20, 60);
-		const string SOUND_WARCRY = "monsters/orc/zo_alert10.wav";
-		const string SOUND_DEATH = "voices/orc/die2.wav";
+		ANIM_KICK = "kick";
+		DMG_SPIT = RandomInt(200, 300);
+		DMG_KICK = Random(20, 50);
+		DMG_SLASH = RandomInt(20, 60);
+		SOUND_WARCRY = "monsters/orc/zo_alert10.wav";
+		SOUND_DEATH = "voices/orc/die2.wav";
 		Precache(SOUND_DEATH);
 		DROP_GOLD = 1;
 		DROP_GOLD_AMT = RandomInt(100, 300);
 		ANIM_ATTACK = "swordswing1_L";
 		FLINCH_CHANCE = 0.35;
 		FLINCH_HEALTH = 1000;
-		const float ATTACK_ACCURACY = 0.9;
+		ATTACK_ACCURACY = 0.9;
 		Precache("controller/con_idle1.wav");
 		Precache("controller/con_idle2.wav");
 		Precache("controller/con_idle3.wav");
@@ -103,9 +122,9 @@ class Voldar : CGameScript
 		Precache("magic/spawn.wav");
 		Precache("magic/boom.wav");
 		Precache("misc/gold.wav");
-		const int NPC_PROXACT_RANGE = 640;
-		const int NPC_PROXACT_IFSEEN = 1;
-		const string NPC_PROXACT_EVENT = "start_intro";
+		NPC_PROXACT_RANGE = 640;
+		NPC_PROXACT_IFSEEN = 1;
+		NPC_PROXACT_EVENT = "start_intro";
 	}
 
 	void orc_spawn()
@@ -198,7 +217,7 @@ class Voldar : CGameScript
 	void do_intro5()
 	{
 		CallExternal(MALDORA_ID, "fly_out");
-		SayText("WAAAIIIT!!!!!");
+		SayText(WAAAIIIT!!!!!);
 		EmitSound(GetOwner(), 0, "voices/ms_wicardoven/voldor_2fmaldora2.wav", 10);
 		PlayAnim("critical", ANIM_WARCRY);
 		ScheduleDelayedEvent(1.8, "do_intro6");
@@ -207,7 +226,7 @@ class Voldar : CGameScript
 	void do_intro6()
 	{
 		PlayAnim("critical", ANIM_ATTACK);
-		SayText("Fine! Have to prove my worth , do I?");
+		SayText("Fine! Have to prove my worth , do " + I?);
 		EmitSound(GetOwner(), 0, "voices/ms_wicardoven/voldor_2fmaldora3.wav", 10);
 		SetMoveDest(FIRST_TARGET);
 		AS_ATTACKING = GetGameTime();
@@ -216,7 +235,7 @@ class Voldar : CGameScript
 
 	void debug_params()
 	{
-		SayText("horrors ACTIVE_HORRORS leaping AM_LEAPING");
+		SayText("horrors " + ACTIVE_HORRORS + "leaping " + AM_LEAPING);
 	}
 
 	void combat_go()
@@ -342,10 +361,10 @@ class Voldar : CGameScript
 		{
 			int THRESH = 25;
 		}
-		string ESCAPE_CHANCE = RandomInt(THRESH, 100);
+		int ESCAPE_CHANCE = RandomInt(THRESH, 100);
 		if (param1 > ESCAPE_CHANCE)
 		{
-			string ESCAPE_CHOICE = RandomInt(1, 2);
+			int ESCAPE_CHOICE = RandomInt(1, 2);
 			if (ESCAPE_CHOICE == 1)
 			{
 				leap_away(GetEntityIndex(m_hLastStruck), "struck_hard");

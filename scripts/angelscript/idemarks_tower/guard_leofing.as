@@ -8,7 +8,11 @@ namespace MS
 
 class GuardLeofing : CGameScript
 {
+	int ATTACK_DAMAGE_HIGH;
+	int ATTACK_DAMAGE_LOW;
+	float ATTACK_HITCHANCE;
 	int BECOME_HOSTILE;
+	int CHAT_AUTO_HAIL;
 	int CHAT_MENU_ON;
 	int DROP_GOLD;
 	int DROP_GOLD_MAX;
@@ -16,19 +20,22 @@ class GuardLeofing : CGameScript
 	int MET_ISHMEEA;
 	int NPC_GIVE_EXP;
 	int SKELE_TURNED;
+	int SKEL_HP;
+	float SKEL_RESPAWN_CHANCE;
+	int SKEL_RESPAWN_LIVES;
 	int SKEL_RESPAWN_TIMES;
 	int STRUCK_HOLY;
 
 	GuardLeofing()
 	{
-		const int CHAT_AUTO_HAIL = 1;
-		const int SKEL_HP = 1600;
-		const float ATTACK_HITCHANCE = 0.8;
-		const int ATTACK_DAMAGE_LOW = 10;
-		const int ATTACK_DAMAGE_HIGH = 25;
+		CHAT_AUTO_HAIL = 1;
+		SKEL_HP = 1600;
+		ATTACK_HITCHANCE = 0.8;
+		ATTACK_DAMAGE_LOW = 10;
+		ATTACK_DAMAGE_HIGH = 25;
 		NPC_GIVE_EXP = 680;
-		const float SKEL_RESPAWN_CHANCE = 1.0;
-		const int SKEL_RESPAWN_LIVES = 1;
+		SKEL_RESPAWN_CHANCE = 1.0;
+		SKEL_RESPAWN_LIVES = 1;
 		DROP_GOLD = 1;
 		DROP_GOLD_MIN = 30;
 		DROP_GOLD_MAX = 65;

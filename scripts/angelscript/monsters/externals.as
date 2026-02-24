@@ -77,6 +77,7 @@ class Externals : CGameScript
 	string NPC_EXP_REDUCT;
 	string NPC_FADEIN_RATE;
 	int NPC_FADEIN_SET;
+	float NPC_FADE_IN_SPEED;
 	int NPC_FORCED_MOVEDEST;
 	string NPC_FORCE_ROAM;
 	int NPC_GHOST;
@@ -133,7 +134,7 @@ class Externals : CGameScript
 
 	Externals()
 	{
-		const float NPC_FADE_IN_SPEED = 0.1;
+		NPC_FADE_IN_SPEED = 0.1;
 		EXT_DEMON_BLOOD_RATIO = 5.0;
 	}
 
@@ -365,7 +366,7 @@ class Externals : CGameScript
 	{
 		if (!(IsEntityAlive(GetOwner()))) return;
 		if ((I_R_COMPANION)) return;
-		string SINCE_SPAWN = GetGameTime();
+		float SINCE_SPAWN = GetGameTime();
 		SINCE_SPAWN -= NPC_SPAWN_TIME;
 		if (SINCE_SPAWN < 2.0)
 		{
@@ -657,12 +658,12 @@ class Externals : CGameScript
 		if (!(TURN_STRENGTH > MY_CURRENT_HP)) return;
 		string TURN_RESISTANCE = MY_MAX_HP;
 		TURN_RESISTANCE /= 25;
-		string TURN_RESISTANCE = int(TURN_RESISTANCE);
+		int TURN_RESISTANCE = int(TURN_RESISTANCE);
 		if (TURN_RESISTANCE < 2)
 		{
 			int TURN_RESISTANCE = 2;
 		}
-		string TURNCHANCE = RandomInt(1, TURN_RESISTANCE);
+		int TURNCHANCE = RandomInt(1, TURN_RESISTANCE);
 		if (!(TURNCHANCE == 1)) return;
 		string TURN_DURATION = GetSkillLevel(THE_EXCORCIST, "spellcasting.divination");
 		if (TURN_DURATION < 5)
@@ -685,7 +686,7 @@ class Externals : CGameScript
 	void ext_speak()
 	{
 		SetSayTextRange(2048);
-		SayText("PARAM1");
+		SayText(param1);
 	}
 
 	void give_hp()
@@ -987,7 +988,7 @@ class Externals : CGameScript
 
 	void ext_report_armor()
 	{
-		LogMessage("PARAM2 GetEntityName(GetOwner()) Armor: MSC_ARMOR_ALL PARAM1 : /* TODO: $get_takedmg */ $get_takedmg(GetOwner(), param1)");
+		LogMessage(param2 + GetEntityName(GetOwner()) + "Armor: " + MSC_ARMOR_ALL + param1 + ": " + /* TODO: $get_takedmg */ $get_takedmg(GetOwner(), param1));
 	}
 
 	void ext_set_parry()
@@ -1714,7 +1715,7 @@ class Externals : CGameScript
 	{
 		if (!(NPC_XPTR)) return;
 		ScheduleDelayedEvent(60.0, "set_xp_timeramp_loop");
-		string L_TIME_RATIO = GetGameTime();
+		float L_TIME_RATIO = GetGameTime();
 		L_TIME_RATIO /= NPC_XPTR_TIME;
 		if (L_TIME_RATIO > 1)
 		{
@@ -1854,18 +1855,18 @@ class Externals : CGameScript
 				int L_NO_SUICIDE = 1;
 			}
 		}
-		string L_GAME_TIME = GetGameTime();
-		string L_LAST = /* TODO: $math(add) */ NPC_LASTSEEN_ENEMY_TIME;
+		float L_GAME_TIME = GetGameTime();
+		string L_LAST = (NPC_LASTSEEN_ENEMY_TIME + NPC_DIE_NT_BASE);
 		if (L_GAME_TIME < L_LAST)
 		{
 			int L_NO_SUICIDE = 1;
 		}
-		string L_LAST = /* TODO: $math(add) */ NPC_LAST_DAMAGED_TIME;
+		string L_LAST = (NPC_LAST_DAMAGED_TIME + NPC_DIE_NT_BASE);
 		if (L_GAME_TIME < L_LAST)
 		{
 			int L_NO_SUICIDE = 1;
 		}
-		string L_LAST = /* TODO: $math(add) */ NPC_LAST_DAMAGED_OTHER_TIME;
+		string L_LAST = (NPC_LAST_DAMAGED_OTHER_TIME + NPC_DIE_NT_BASE);
 		if (L_GAME_TIME < L_LAST)
 		{
 			int L_NO_SUICIDE = 1;
@@ -2013,7 +2014,7 @@ class Externals : CGameScript
 	{
 		if (!((param1).findFirst(PARAM) == 0)) return;
 		SetSayTextRange(2048);
-		SayText("PARAM1");
+		SayText(param1);
 	}
 
 	void set_say_spot()
@@ -2041,8 +2042,8 @@ class Externals : CGameScript
 	void OnDeath(CBaseEntity@ attacker) override
 	{
 		if (!(NPC_DUMP_XP)) return;
-		LogDebug("dumping xp... [ /* TODO: $get_array_amt */ $get_array_amt(ARRAY_XP_PLAYERS) ]");
-		for (int i = 0; i < /* TODO: $get_array_amt */ $get_array_amt(ARRAY_XP_PLAYERS); i++)
+		LogDebug("dumping xp... [ int(ARRAY_XP_PLAYERS.length()) ]");
+		for (int i = 0; i < int(ARRAY_XP_PLAYERS.length()); i++)
 		{
 			dbg_dump_xp();
 		}
@@ -2051,10 +2052,10 @@ class Externals : CGameScript
 	void dbg_dump_xp()
 	{
 		string CUR_HIT = i;
-		string CUR_PLR = /* TODO: $get_array */ $get_array(ARRAY_XP_PLAYERS, CUR_HIT);
+		string CUR_PLR = ARRAY_XP_PLAYERS[int(CUR_HIT)];
 		string CUR_PLR = GetEntityName(CUR_PLR);
-		string CUR_SKL = /* TODO: $get_array */ $get_array(ARRAY_XP_SKILLS, CUR_HIT);
-		string CUR_EXP = /* TODO: $get_array */ $get_array(ARRAY_XP_AMTS, CUR_HIT);
+		string CUR_SKL = ARRAY_XP_SKILLS[int(CUR_HIT)];
+		string CUR_EXP = ARRAY_XP_AMTS[int(CUR_HIT)];
 		LogDebug("dbg_dump_xp CUR_PLR CUR_SKL CUR_EXP");
 	}
 

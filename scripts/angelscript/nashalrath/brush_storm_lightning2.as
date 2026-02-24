@@ -7,11 +7,14 @@ namespace MS
 
 class BrushStormLightning2 : CGameScript
 {
+	int BASE_RENDERAMT;
+	int BASE_RENDERMODE;
+
 	BrushStormLightning2()
 	{
 		SetName("brush_storm_lightning2");
-		const int BASE_RENDERMODE = 5;
-		const int BASE_RENDERAMT = 255;
+		BASE_RENDERMODE = 5;
+		BASE_RENDERAMT = 255;
 	}
 
 	void do_flicker()

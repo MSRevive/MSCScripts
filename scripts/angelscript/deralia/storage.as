@@ -10,8 +10,11 @@ namespace MS
 
 class Storage : CGameScript
 {
+	string ANIM_CHAT;
 	string ANIM_IDLE;
+	string ANIM_NO;
 	string ANIM_RUN;
+	string ANIM_STORE;
 	string ANIM_WALK;
 	int CHATTING;
 	string CHAT_STEP1;
@@ -22,31 +25,45 @@ class Storage : CGameScript
 	string CHAT_STEP6;
 	int CHAT_STEPS;
 	int DID_HELLO;
+	string GALA_CHEST_POS;
 	int IS_FLEEING;
 	string MY_HOME;
+	int NO_HAIL;
+	int NO_JOB;
+	int NO_RUMOR;
+	string SAYTEXT_GIVETICKET;
+	string SAYTEXT_HAND_WARN;
+	string SAYTEXT_ITEMS_HANDS;
+	string SAYTEXT_NOITEM;
+	string SAYTEXT_NOSTORABLES;
+	string SAYTEXT_NOTICKET;
+	string SAYTEXT_REDEEMTICKET;
+	string SAYTEXT_REFUND;
+	string SAYTEXT_SELECT_ITEM;
+	string SAYTEXT_SELECT_TICKET;
 
 	Storage()
 	{
-		const string GALA_CHEST_POS = /* TODO: $relpos */ $relpos(0, 48, 64);
-		const string ANIM_CHAT = "pondering3";
-		const string ANIM_NO = "no";
-		const string ANIM_STORE = "return_needle";
+		GALA_CHEST_POS = /* TODO: $relpos */ $relpos(0, 48, 64);
+		ANIM_CHAT = "pondering3";
+		ANIM_NO = "no";
+		ANIM_STORE = "return_needle";
 		ANIM_IDLE = "idle1";
 		ANIM_RUN = "run";
 		ANIM_WALK = "walk_scared";
-		const string SAYTEXT_REFUND = "Here's your fee back. Such as it is.";
-		const string SAYTEXT_SELECT_ITEM = "What do you wish to store?";
-		const string SAYTEXT_NOITEM = "I did not recieve your item.";
-		const string SAYTEXT_NOTICKET = "I did not recieve your ticket.";
-		const string SAYTEXT_NOSTORABLES = "Sorry, I'm afraid you have nothing we can store for you.";
-		const string SAYTEXT_GIVETICKET = "Here is your ticket! You can redeem that at any Galat outlet.";
-		const string SAYTEXT_SELECT_TICKET = "Which ticket would do you like to redeem?";
-		const string SAYTEXT_HAND_WARN = "Please place your tickets in your hands.";
-		const string SAYTEXT_REDEEMTICKET = "Thank you for using Galat Storage.";
-		const string SAYTEXT_ITEMS_HANDS = "Please hold forth any items you wish to store in your hands.";
-		const int NO_HAIL = 1;
-		const int NO_JOB = 1;
-		const int NO_RUMOR = 1;
+		SAYTEXT_REFUND = "Here's your fee back. Such as it is.";
+		SAYTEXT_SELECT_ITEM = "What do you wish to store?";
+		SAYTEXT_NOITEM = "I did not recieve your item.";
+		SAYTEXT_NOTICKET = "I did not recieve your ticket.";
+		SAYTEXT_NOSTORABLES = "Sorry, I'm afraid you have nothing we can store for you.";
+		SAYTEXT_GIVETICKET = "Here is your ticket! You can redeem that at any Galat outlet.";
+		SAYTEXT_SELECT_TICKET = "Which ticket would do you like to redeem?";
+		SAYTEXT_HAND_WARN = "Please place your tickets in your hands.";
+		SAYTEXT_REDEEMTICKET = "Thank you for using Galat Storage.";
+		SAYTEXT_ITEMS_HANDS = "Please hold forth any items you wish to store in your hands.";
+		NO_HAIL = 1;
+		NO_JOB = 1;
+		NO_RUMOR = 1;
 	}
 
 	void OnSpawn() override

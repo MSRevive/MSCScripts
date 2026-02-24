@@ -7,35 +7,54 @@ namespace MS
 
 class BowsSxbow : CGameScript
 {
+	int BASE_LEVEL_REQ;
 	int BOW_CHAMBER;
 	string HITSCAN_DMG_MULTI;
+	int ITEM_NEVER_DELETE;
+	int MODEL_BODY_OFS;
+	string MODEL_HANDS;
+	string MODEL_VIEW;
+	string MODEL_WORLD;
 	string NEXT_ATTACK;
+	string PMODEL_FILE;
+	int PMODEL_IDX_FLOOR;
+	int PMODEL_IDX_HANDS;
+	float RANGED_DMG_MULTI;
+	string RANGED_STAT;
 	string RELOAD_DONE_AT;
 	string UNDER_SKILLED;
+	int VANIM_DRAW;
+	int VANIM_FIRE;
+	int VANIM_IDLE0;
+	int VANIM_RELOAD1;
+	int VANIM_RELOAD2;
+	string VMODEL_FILE;
+	string WANIM_FLOOR;
+	string WANIM_HAND;
 	string WEAPON_PRIMARY_SKILL;
 
 	BowsSxbow()
 	{
-		const int ITEM_NEVER_DELETE = 1;
-		const int BASE_LEVEL_REQ = 35;
-		const string RANGED_STAT = "archery";
-		const float RANGED_DMG_MULTI = 1.5;
+		ITEM_NEVER_DELETE = 1;
+		BASE_LEVEL_REQ = 35;
+		RANGED_STAT = "archery";
+		RANGED_DMG_MULTI = 1.5;
 		WEAPON_PRIMARY_SKILL = RANGED_STAT;
-		const string MODEL_VIEW = "viewmodels/v_steambow.mdl";
-		const string MODEL_HANDS = "weapons/p_weapons3.mdl";
-		const string MODEL_WORLD = "weapons/p_weapons3.mdl";
-		const int MODEL_BODY_OFS = 80;
-		const string VMODEL_FILE = "viewmodels/v_steambow.mdl";
-		const string PMODEL_FILE = "weapons/p_weapons3.mdl";
-		const int PMODEL_IDX_HANDS = 80;
-		const int PMODEL_IDX_FLOOR = 82;
-		const int VANIM_IDLE0 = 1;
-		const int VANIM_FIRE = 7;
-		const int VANIM_RELOAD1 = 14;
-		const int VANIM_RELOAD2 = 15;
-		const int VANIM_DRAW = 0;
-		const string WANIM_HAND = "standard_idle";
-		const string WANIM_FLOOR = "standard_floor_idle";
+		MODEL_VIEW = "viewmodels/v_steambow.mdl";
+		MODEL_HANDS = "weapons/p_weapons3.mdl";
+		MODEL_WORLD = "weapons/p_weapons3.mdl";
+		MODEL_BODY_OFS = 80;
+		VMODEL_FILE = "viewmodels/v_steambow.mdl";
+		PMODEL_FILE = "weapons/p_weapons3.mdl";
+		PMODEL_IDX_HANDS = 80;
+		PMODEL_IDX_FLOOR = 82;
+		VANIM_IDLE0 = 1;
+		VANIM_FIRE = 7;
+		VANIM_RELOAD1 = 14;
+		VANIM_RELOAD2 = 15;
+		VANIM_DRAW = 0;
+		WANIM_HAND = "standard_idle";
+		WANIM_FLOOR = "standard_floor_idle";
 		BOW_CHAMBER = 0;
 		Precache("weapons/reload1.wav");
 		Precache("weapons/reload2.wav");
@@ -110,7 +129,7 @@ class BowsSxbow : CGameScript
 			{
 				int L_COF = 20;
 				int L_SPEED = 300;
-				string RND_LOCK = RandomInt(1, 3);
+				int RND_LOCK = RandomInt(1, 3);
 			}
 			if (RND_LOCK == 1)
 			{
@@ -283,7 +302,7 @@ class BowsSxbow : CGameScript
 			OUT_STR += " proficiency ";
 			OUT_STR += BASE_LEVEL_REQ;
 			OUT_STR += " )";
-			SendInfoMsg(GetOwner(), "Insufficient Skill OUT_STR");
+			SendInfoMsg(GetOwner(), "Insufficient Skill " + OUT_STR);
 			UNDER_SKILLED = 1;
 		}
 		else

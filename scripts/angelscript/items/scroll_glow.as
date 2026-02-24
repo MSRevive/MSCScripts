@@ -7,12 +7,17 @@ namespace MS
 
 class ScrollGlow : CGameScript
 {
+	int BASE_REQUIRED_LEVEL;
+	string BASE_REQUIRED_SKILL;
+	string BASE_SPELL_SCRIPT;
+	string BASE_SUMMON_TEXT;
+
 	ScrollGlow()
 	{
-		const string BASE_SPELL_SCRIPT = "magic_hand_div_glow";
-		const string BASE_SUMMON_TEXT = "You learn to create artificial light.";
-		const string BASE_REQUIRED_SKILL = "skill.spellcasting.divination";
-		const int BASE_REQUIRED_LEVEL = 0;
+		BASE_SPELL_SCRIPT = "magic_hand_div_glow";
+		BASE_SUMMON_TEXT = "You learn to create artificial light.";
+		BASE_REQUIRED_SKILL = "skill.spellcasting.divination";
+		BASE_REQUIRED_LEVEL = 0;
 	}
 
 	void OnSpawn() override

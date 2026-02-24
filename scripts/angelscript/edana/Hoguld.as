@@ -11,10 +11,11 @@ class Hoguld : CGameScript
 {
 	int ACCEPTED;
 	int ASKED;
+	int NO_RUMOR;
 
 	Hoguld()
 	{
-		const int NO_RUMOR = 1;
+		NO_RUMOR = 1;
 	}
 
 	void OnRepeatTimer()
@@ -72,7 +73,7 @@ class Hoguld : CGameScript
 	void say_job()
 	{
 		if (!(ASKED == 1)) return;
-		SayText("Excellent! I was wondering if you d be so kind as to deliver this letter for me?");
+		SayText("Excellent! " + I + " was wondering if you d be so kind as to deliver this letter for me?");
 		SetMoveDest("ent_lastspoke");
 		// TODO: offer ent_lastspoke item_letter
 		ScheduleDelayedEvent(3, "say_letter2");

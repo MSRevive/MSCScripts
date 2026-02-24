@@ -7,9 +7,11 @@ namespace MS
 
 class GoblinPouncer : CGameScript
 {
+	int GOBLIN_SELF_ADJUST;
+
 	GoblinPouncer()
 	{
-		const int GOBLIN_SELF_ADJUST = 0;
+		GOBLIN_SELF_ADJUST = 0;
 	}
 
 }

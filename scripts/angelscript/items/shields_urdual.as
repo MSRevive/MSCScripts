@@ -7,26 +7,41 @@ namespace MS
 
 class ShieldsUrdual : CGameScript
 {
+	int BLOCK_CHANCE_DOWN;
+	int BLOCK_CHANCE_UP;
+	float DMG_BLOCK_UP;
+	int EFFECT_RANGE;
+	float MELEE_ACCURACY;
+	int MELEE_ENERGY;
+	int MODEL_BODY_OFS;
+	string MODEL_VIEW;
+	int MODEL_VIEW_IDX;
+	float NOPUSH_CHANCE;
+	float PARRY_MULTI;
+	int SHIELD_BASE_PARRY;
 	string SHIELD_HEALTH;
+	int SHIELD_IMMORTAL;
+	string SHIELD_MAXHEALTH;
+	string SOUND_BLOCK;
 
 	ShieldsUrdual()
 	{
-		const float NOPUSH_CHANCE = 0.75;
-		const float PARRY_MULTI = 3.0;
-		const int SHIELD_BASE_PARRY = 40;
-		const string MODEL_VIEW = "viewmodels/v_shields.mdl";
-		const int MODEL_VIEW_IDX = 3;
-		const int MODEL_BODY_OFS = 73;
-		const int MELEE_ENERGY = 1;
-		const float MELEE_ACCURACY = 1.5;
-		const int BLOCK_CHANCE_UP = 100;
-		const float DMG_BLOCK_UP = 0.05;
-		const int BLOCK_CHANCE_DOWN = 50;
-		const string SHIELD_MAXHEALTH = "infinite";
-		const int SHIELD_IMMORTAL = 1;
+		NOPUSH_CHANCE = 0.75;
+		PARRY_MULTI = 3.0;
+		SHIELD_BASE_PARRY = 40;
+		MODEL_VIEW = "viewmodels/v_shields.mdl";
+		MODEL_VIEW_IDX = 3;
+		MODEL_BODY_OFS = 73;
+		MELEE_ENERGY = 1;
+		MELEE_ACCURACY = 1.5;
+		BLOCK_CHANCE_UP = 100;
+		DMG_BLOCK_UP = 0.05;
+		BLOCK_CHANCE_DOWN = 50;
+		SHIELD_MAXHEALTH = "infinite";
+		SHIELD_IMMORTAL = 1;
 		SHIELD_HEALTH = "infinite";
-		const string SOUND_BLOCK = "doors/doorstop5.wav";
-		const int EFFECT_RANGE = 150;
+		SOUND_BLOCK = "doors/doorstop5.wav";
+		EFFECT_RANGE = 150;
 	}
 
 	void game_precache()

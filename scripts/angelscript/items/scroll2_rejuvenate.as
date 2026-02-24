@@ -7,13 +7,19 @@ namespace MS
 
 class Scroll2Rejuvenate : CGameScript
 {
+	int BASE_REQUIRED_LEVEL;
+	string BASE_REQUIRED_SKILL;
+	string BASE_SPELL_SCRIPT;
+	int SPELL_MAKER_HEIGHT;
+	string SPELL_MAKER_SCRIPT;
+
 	Scroll2Rejuvenate()
 	{
-		const string BASE_SPELL_SCRIPT = "magic_hand_div_rejuvenate";
-		const string BASE_REQUIRED_SKILL = "skill.spellcasting.divination";
-		const int BASE_REQUIRED_LEVEL = 5;
-		const string SPELL_MAKER_SCRIPT = "monsters/companion/spell_maker_divination";
-		const int SPELL_MAKER_HEIGHT = 64;
+		BASE_SPELL_SCRIPT = "magic_hand_div_rejuvenate";
+		BASE_REQUIRED_SKILL = "skill.spellcasting.divination";
+		BASE_REQUIRED_LEVEL = 5;
+		SPELL_MAKER_SCRIPT = "monsters/companion/spell_maker_divination";
+		SPELL_MAKER_HEIGHT = 64;
 	}
 
 	void OnSpawn() override

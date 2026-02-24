@@ -9,17 +9,28 @@ class GbatHunter : CGameScript
 {
 	string ANIM_ATTACK;
 	string ANIM_DEATH;
+	string ANIM_DROP;
 	string ANIM_IDLE_FLY;
 	string ANIM_IDLE_HANG;
 	string ANIM_RUN;
 	string ANIM_WALK;
+	int ATTACK_DAMAGE;
+	float ATTACK_HITCHANCE;
 	int ATTACK_HITRANGE;
 	int ATTACK_RANGE;
 	string BAT_STATUS;
 	int BAT_SUMMONING;
+	int BAT_SUMMON_AMT;
 	int BAT_SUMMON_BLOCKED;
+	float BAT_SUMMON_CHANCE;
+	int BAT_SUMMON_DMG;
+	int BAT_SUMMON_HEIGHT;
+	int BAT_SUMMON_LIFETIME;
 	string BAT_SUMMON_NUM;
 	int BAT_SUMMON_RISING;
+	string BAT_SUMMON_SCRIPT;
+	string BAT_SUMMON_SND_RETREAT;
+	string BAT_SUMMON_SND_SUMMON;
 	int CAN_ATTACK;
 	int CAN_HEAR;
 	int CAN_HUNT;
@@ -29,6 +40,18 @@ class GbatHunter : CGameScript
 	int MOVE_RANGE;
 	int NPC_GIVE_EXP;
 	string NPC_MOVE_TARGET;
+	string SOUND_ALERT;
+	string SOUND_ATTACK1;
+	string SOUND_ATTACK2;
+	string SOUND_ATTACK3;
+	string SOUND_DEATH;
+	string SOUND_FLAP1;
+	string SOUND_FLAP2;
+	string SOUND_PAIN1;
+	string SOUND_PAIN2;
+	string SOUND_STRUCK1;
+	string SOUND_STRUCK2;
+	string SOUND_STRUCK3;
 
 	GbatHunter()
 	{
@@ -37,35 +60,35 @@ class GbatHunter : CGameScript
 		ANIM_ATTACK = "attack2";
 		ANIM_IDLE_HANG = "idlehang";
 		ANIM_IDLE_FLY = "idle";
-		const string ANIM_DROP = "hangtofly";
+		ANIM_DROP = "hangtofly";
 		ANIM_DEATH = "die";
 		MOVE_RANGE = 70;
-		const int ATTACK_DAMAGE = 15;
+		ATTACK_DAMAGE = 15;
 		ATTACK_RANGE = 120;
 		ATTACK_HITRANGE = 180;
-		const float ATTACK_HITCHANCE = 0.85;
+		ATTACK_HITCHANCE = 0.85;
 		NPC_GIVE_EXP = 150;
-		const string SOUND_STRUCK1 = "weapons/cbar_hitbod1.wav";
-		const string SOUND_STRUCK2 = "weapons/cbar_hitbod2.wav";
-		const string SOUND_STRUCK3 = "weapons/cbar_hitbod3.wav";
-		const string SOUND_PAIN1 = "monsters/bat/pain1.wav";
-		const string SOUND_PAIN2 = "monsters/bat/pain2.wav";
-		const string SOUND_ATTACK1 = "monsters/skeleton/claw_miss1.wav";
-		const string SOUND_ATTACK2 = "monsters/skeleton/claw_miss2.wav";
-		const string SOUND_ATTACK3 = "monsters/orc/attack3.wav";
-		const string SOUND_ALERT = "monsters/bat/alert.wav";
-		const string SOUND_FLAP1 = "monsters/bat/flap_big1.wav";
-		const string SOUND_FLAP2 = "monsters/bat/flap_big2.wav";
-		const string SOUND_DEATH = "monsters/bat/death.wav";
+		SOUND_STRUCK1 = "weapons/cbar_hitbod1.wav";
+		SOUND_STRUCK2 = "weapons/cbar_hitbod2.wav";
+		SOUND_STRUCK3 = "weapons/cbar_hitbod3.wav";
+		SOUND_PAIN1 = "monsters/bat/pain1.wav";
+		SOUND_PAIN2 = "monsters/bat/pain2.wav";
+		SOUND_ATTACK1 = "monsters/skeleton/claw_miss1.wav";
+		SOUND_ATTACK2 = "monsters/skeleton/claw_miss2.wav";
+		SOUND_ATTACK3 = "monsters/orc/attack3.wav";
+		SOUND_ALERT = "monsters/bat/alert.wav";
+		SOUND_FLAP1 = "monsters/bat/flap_big1.wav";
+		SOUND_FLAP2 = "monsters/bat/flap_big2.wav";
+		SOUND_DEATH = "monsters/bat/death.wav";
 		Precache("monsters/bat.mdl");
-		const string BAT_SUMMON_SCRIPT = "monsters/bat_summon";
-		const int BAT_SUMMON_AMT = 5;
-		const int BAT_SUMMON_LIFETIME = 15;
-		const int BAT_SUMMON_DMG = 4;
-		const int BAT_SUMMON_HEIGHT = 300;
-		const float BAT_SUMMON_CHANCE = 0.6;
-		const string BAT_SUMMON_SND_RETREAT = "monsters/bat/pain1.wav";
-		const string BAT_SUMMON_SND_SUMMON = "monsters/bat/death.wav";
+		BAT_SUMMON_SCRIPT = "monsters/bat_summon";
+		BAT_SUMMON_AMT = 5;
+		BAT_SUMMON_LIFETIME = 15;
+		BAT_SUMMON_DMG = 4;
+		BAT_SUMMON_HEIGHT = 300;
+		BAT_SUMMON_CHANCE = 0.6;
+		BAT_SUMMON_SND_RETREAT = "monsters/bat/pain1.wav";
+		BAT_SUMMON_SND_SUMMON = "monsters/bat/death.wav";
 		Precache("monsters/bat_summon");
 	}
 
@@ -194,8 +217,8 @@ class GbatHunter : CGameScript
 		if (!(BAT_SUMMON_NUM)) return;
 		BAT_SUMMON_NUM -= 1;
 		string L_TARGETPOS = GetEntityOrigin(GetOwner());
-		string L_OFS_X = RandomInt(-100, 100);
-		string L_OFS_Y = RandomInt(-100, 100);
+		int L_OFS_X = RandomInt(-100, 100);
+		int L_OFS_Y = RandomInt(-100, 100);
 		L_TARGETPOS += Vector3(L_OFS_X, L_OFS_Y, -64);
 		SpawnNPC(BAT_SUMMON_SCRIPT, L_TARGETPOS, ScriptMode::Legacy); // params: BAT_SUMMON_LIFETIME, BAT_SUMMON_DMG, HUNT_LASTTARGET
 		ScheduleDelayedEvent(0.001, "bat_summon_loop");

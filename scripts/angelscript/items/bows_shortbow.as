@@ -7,21 +7,35 @@ namespace MS
 
 class BowsShortbow : CGameScript
 {
+	string ANIM_PREFIX;
+	string ITEM_NAME;
+	int MODEL_BODY_OFS;
+	string MODEL_HANDS;
+	string MODEL_VIEW;
+	int MODEL_VIEW_IDX;
+	string MODEL_WEAR;
+	string MODEL_WORLD;
+	string RANGED_ACCURACY;
+	int RANGED_ENERGY;
+	int RANGED_FORCE;
+	float RANGED_POSTFIRE_DELAY;
+	string SOUND_SHOOT;
+
 	BowsShortbow()
 	{
-		const string MODEL_VIEW = "viewmodels/v_bows.mdl";
-		const int MODEL_VIEW_IDX = 2;
-		const string MODEL_HANDS = "weapons/p_weapons2.mdl";
-		const string MODEL_WORLD = "weapons/p_weapons2.mdl";
-		const string MODEL_WEAR = "weapons/p_weapons2.mdl";
-		const string SOUND_SHOOT = "weapons/bow/bow.wav";
-		const string ITEM_NAME = "orcbow";
-		const string ANIM_PREFIX = "orcbow";
-		const int MODEL_BODY_OFS = 40;
-		const int RANGED_FORCE = 1000;
-		const int RANGED_ENERGY = 3;
-		const string RANGED_ACCURACY = "4;2";
-		const float RANGED_POSTFIRE_DELAY = 0.1;
+		MODEL_VIEW = "viewmodels/v_bows.mdl";
+		MODEL_VIEW_IDX = 2;
+		MODEL_HANDS = "weapons/p_weapons2.mdl";
+		MODEL_WORLD = "weapons/p_weapons2.mdl";
+		MODEL_WEAR = "weapons/p_weapons2.mdl";
+		SOUND_SHOOT = "weapons/bow/bow.wav";
+		ITEM_NAME = "orcbow";
+		ANIM_PREFIX = "orcbow";
+		MODEL_BODY_OFS = 40;
+		RANGED_FORCE = 1000;
+		RANGED_ENERGY = 3;
+		RANGED_ACCURACY = "4;2";
+		RANGED_POSTFIRE_DELAY = 0.1;
 	}
 
 	void bow_spawn()

@@ -47,8 +47,8 @@ class PlayerVote : CGameScript
 			if (!(ALLOW_MAPVOTE))
 			{
 				string OUT_MSG = "VOTEMAP: This server does not allow map votes.";
-				LogMessage("ent_currentplayer OUT_MSG");
-				SendColoredMessage("ent_currentplayer", "OUT_MSG");
+				LogMessage("ent_currentplayer " + OUT_MSG);
+				SendColoredMessage("ent_currentplayer", OUT_MSG);
 			}
 			if ((ALLOW_MAPVOTE))
 			{
@@ -62,8 +62,8 @@ class PlayerVote : CGameScript
 			if (!(ALLOW_PVPVOTE))
 			{
 				string OUT_MSG = "VOTEPVP: This server does not allow PVP votes.";
-				LogMessage("ent_currentplayer OUT_MSG");
-				SendColoredMessage("ent_currentplayer", "OUT_MSG");
+				LogMessage("ent_currentplayer " + OUT_MSG);
+				SendColoredMessage("ent_currentplayer", OUT_MSG);
 			}
 			if ((ALLOW_PVPVOTE))
 			{
@@ -74,8 +74,8 @@ class PlayerVote : CGameScript
 				{
 				}
 				string OUT_MSG = "VOTEPVP: Requires at least 2 players to vote for PVP.";
-				LogMessage("ent_currentplayer OUT_MSG");
-				SendColoredMessage("ent_currentplayer", "OUT_MSG");
+				LogMessage("ent_currentplayer " + OUT_MSG);
+				SendColoredMessage("ent_currentplayer", OUT_MSG);
 				int EXIT_SUB = 1;
 			}
 			if (!(EXIT_SUB))
@@ -127,7 +127,7 @@ class PlayerVote : CGameScript
 		string L_VOTE_BUSY = GetEntityProperty(GAME_MASTER, "scriptvar");
 		if ((L_VOTE_BUSY))
 		{
-			LogMessage("L_VOTE_CALLER Votemap: Vote system is busy.");
+			LogMessage(L_VOTE_CALLER + " Votemap: Vote system is busy.");
 			SendColoredMessage(L_VOTE_CALLER, "Votemap: Vote system is busy.");
 			int EXIT_SUB = 1;
 		}
@@ -137,8 +137,8 @@ class PlayerVote : CGameScript
 			if (!(G_DEVELOPER_MODE))
 			{
 			}
-			SendColoredMessage(L_VOTE_CALLER, "Votemap: You cannot start a map vote for the first int(MAP_VOTE_DELAY) seconds, except by transition.");
-			LogMessage("L_VOTE_CALLER Votemap: You cannot start a map vote for the first int(MAP_VOTE_DELAY) seconds, except by transition.");
+			SendColoredMessage(L_VOTE_CALLER, "Votemap: You cannot start a map vote for the first " + int(MAP_VOTE_DELAY) + " seconds, except by transition.");
+			LogMessage(L_VOTE_CALLER + "Votemap: You cannot start a map vote for the first " + int(MAP_VOTE_DELAY) + " seconds, except by transition.");
 			int EXIT_SUB = 1;
 		}
 		if ((EXIT_SUB)) return;
@@ -146,10 +146,10 @@ class PlayerVote : CGameScript
 		{
 			SendColoredMessage(L_VOTE_CALLER, "Votemap: You can vote for specific maps by typing votemap [mapname] in main chat.");
 			SendColoredMessage(L_VOTE_CALLER, "Check your console (~) for a list of maps not connected to the world.");
-			LogMessage("L_VOTE_CALLER Votemap: You can vote for specific maps by typing votemap [mapname] in main chat.");
-			LogMessage("L_VOTE_CALLER Here's a list of maps you may vote for that are not otherwise reachable:");
+			LogMessage(L_VOTE_CALLER + " Votemap: You can vote for specific maps by typing votemap [mapname] in main chat.");
+			LogMessage(L_VOTE_CALLER + " Here's a list of maps you may vote for that are not otherwise reachable:");
 			CUSTOM_COUNT = 0;
-			LogMessage("L_VOTE_CALLER =========== DISCONNECTED MAPS ===========");
+			LogMessage(L_VOTE_CALLER + " =========== DISCONNECTED MAPS ===========");
 			ScheduleDelayedEvent(0.1, "list_custom_maps");
 			int EXIT_SUB = 1;
 		}
@@ -197,8 +197,8 @@ class PlayerVote : CGameScript
 			{
 			}
 			int LEGAL_FN_MAP = 0;
-			SendColoredMessage(L_VOTE_CALLER, "Votemap: L_MAP_TO_VOTE is a special utility map that cannot be used on [FN]");
-			LogMessage("L_VOTE_CALLER Votemap: L_MAP_TO_VOTE is a special utility map that cannot be used on [FN]");
+			SendColoredMessage(L_VOTE_CALLER, "Votemap: " + L_MAP_TO_VOTE + " is a special utility map that cannot be used on [FN]");
+			LogMessage(L_VOTE_CALLER + "Votemap: " + L_MAP_TO_VOTE + " is a special utility map that cannot be used on [FN]");
 			int EXIT_SUB = 1;
 		}
 		if ((EXIT_SUB)) return;
@@ -225,7 +225,7 @@ class PlayerVote : CGameScript
 			{
 			}
 			SendColoredMessage(L_VOTE_CALLER, "Votemap: You may only vote for root towns (edana, deralia, helena) and disconnected maps on this server.");
-			LogMessage("L_VOTE_CALLER You may only vote for root towns (edana, deralia, helena) and disconnected maps on this server.");
+			LogMessage(L_VOTE_CALLER + " You may only vote for root towns (edana, deralia, helena) and disconnected maps on this server.");
 			int EXIT_SUB = 1;
 		}
 		if ((EXIT_SUB)) return;
@@ -234,8 +234,8 @@ class PlayerVote : CGameScript
 			if (StringToLower(GetMapName()) != StringToLower(L_MAP_TO_VOTE))
 			{
 			}
-			SendColoredMessage(L_VOTE_CALLER, "Votemap: L_MAP_TO_VOTE is a hidden map, you must find the entrance.");
-			LogMessage("L_VOTE_CALLER L_MAP_TO_VOTE is a hidden map, you must find the entrance.");
+			SendColoredMessage(L_VOTE_CALLER, "Votemap: " + L_MAP_TO_VOTE + " is a hidden map, you must find the entrance.");
+			LogMessage(L_VOTE_CALLER + L_MAP_TO_VOTE + " is a hidden map, you must find the entrance.");
 			int EXIT_SUB = 1;
 		}
 		if ((EXIT_SUB)) return;
@@ -248,8 +248,8 @@ class PlayerVote : CGameScript
 			}
 			else
 			{
-				SendColoredMessage(L_VOTE_CALLER, "Votemap: L_MAP_TO_VOTE is hidden within a maze, you must navigate the maze to find its entrance.");
-				LogMessage("L_VOTE_CALLER L_MAP_TO_VOTE is hidden within a maze, you must navigate the maze to find its entrance.");
+				SendColoredMessage(L_VOTE_CALLER, "Votemap: " + L_MAP_TO_VOTE + " is hidden within a maze, you must navigate the maze to find its entrance.");
+				LogMessage(L_VOTE_CALLER + L_MAP_TO_VOTE + " is hidden within a maze, you must navigate the maze to find its entrance.");
 				int EXIT_SUB = 1;
 			}
 		}
@@ -268,16 +268,16 @@ class PlayerVote : CGameScript
 			}
 			else
 			{
-				SendColoredMessage(L_VOTE_CALLER, "Votemap: L_MAP_TO_VOTE is part of a gauntlet series, you must begin at the start of the series.");
-				LogMessage("L_VOTE_CALLER Votemap: L_MAP_TO_VOTE is part of a gauntlet series, you must begin at the start of the series.");
+				SendColoredMessage(L_VOTE_CALLER, "Votemap: " + L_MAP_TO_VOTE + " is part of a gauntlet series, you must begin at the start of the series.");
+				LogMessage(L_VOTE_CALLER + "Votemap: " + L_MAP_TO_VOTE + " is part of a gauntlet series, you must begin at the start of the series.");
 				int EXIT_SUB = 1;
 			}
 		}
 		if ((EXIT_SUB)) return;
 		if (!(ValidateMapName(L_MAP_TO_VOTE)))
 		{
-			SendColoredMessage(L_VOTE_CALLER, "Votemap: L_MAP_TO_VOTE is not found on this server.");
-			LogMessage("L_VOTE_CALLER L_MAP_TO_VOTE is not found on this server.");
+			SendColoredMessage(L_VOTE_CALLER, "Votemap: " + L_MAP_TO_VOTE + " is not found on this server.");
+			LogMessage(L_VOTE_CALLER + L_MAP_TO_VOTE + " is not found on this server.");
 			int EXIT_SUB = 1;
 		}
 		if ((EXIT_SUB)) return;
@@ -287,7 +287,7 @@ class PlayerVote : CGameScript
 			{
 			}
 			SendColoredMessage(L_VOTE_CALLER, "Votemap: You cannot vote for the map you are currently on.");
-			LogMessage("L_VOTE_CALLER You cannot vote for the map you are currently on.");
+			LogMessage(L_VOTE_CALLER + " You cannot vote for the map you are currently on.");
 			int EXIT_SUB = 1;
 		}
 		if ((EXIT_SUB)) return;
@@ -316,7 +316,7 @@ class PlayerVote : CGameScript
 		string CUST_MAP = GetToken(MAPS_UNCONNECTED1, CUSTOM_COUNT, ";");
 		if ((ValidateMapName(CUST_MAP)))
 		{
-			LogMessage("L_VOTE_CALLER CUST_MAP");
+			LogMessage(L_VOTE_CALLER + CUST_MAP);
 		}
 		CUSTOM_COUNT += 1;
 		ScheduleDelayedEvent(0.1, "list_custom_maps");
@@ -326,7 +326,7 @@ class PlayerVote : CGameScript
 	{
 		if ((GetEntityProperty(GAME_MASTER, "scriptvar")))
 		{
-			LogMessage("PARAM1 votepvp - Vote system is busy.");
+			LogMessage(param1 + " votepvp - Vote system is busy.");
 			SendColoredMessage(param1, "votepvp - Vote system is busy.");
 			int EXIT_SUB = 1;
 		}
@@ -352,15 +352,15 @@ class PlayerVote : CGameScript
 		if ("game.playersnb" < 3)
 		{
 			string L_MSG = "Votelock not allowed with less than 3 players on the server!";
-			LogMessage("PARAM1 L_MSG");
-			SendColoredMessage(param1, "L_MSG");
+			LogMessage(param1 + L_MSG);
+			SendColoredMessage(param1, L_MSG);
 			return;
 		}
 		if ((GetEntityProperty(GAME_MASTER, "scriptvar")))
 		{
 			string L_MSG = "Vote system is busy.";
-			LogMessage("PARAM1 L_MSG");
-			SendColoredMessage(param1, "L_MSG");
+			LogMessage(param1 + L_MSG);
+			SendColoredMessage(param1, L_MSG);
 			return;
 		}
 		string L_LOCKER = param1;

@@ -6,11 +6,12 @@ namespace MS
 class SfxSummonCircle : CGameScript
 {
 	string FX_ORIGIN;
+	string SEAL_MODEL;
 	string SEAL_OFS;
 
 	SfxSummonCircle()
 	{
-		const string SEAL_MODEL = "weapons/magic/seals.mdl";
+		SEAL_MODEL = "weapons/magic/seals.mdl";
 	}
 
 	void client_activate()

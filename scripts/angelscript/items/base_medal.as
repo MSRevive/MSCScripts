@@ -8,14 +8,17 @@ namespace MS
 class BaseMedal : CGameScript
 {
 	int BM_OWNER_SET;
+	float FREQ_EFFECT;
 	string MEDAL_DEPLOY_TIME;
 	string MEDAL_NEXT_EFFECT;
+	string MODEL_HANDS;
+	string MODEL_WORLD;
 
 	BaseMedal()
 	{
-		const string MODEL_WORLD = "misc/p_misc.mdl";
-		const string MODEL_HANDS = "misc/p_misc.mdl";
-		const float FREQ_EFFECT = 21.0;
+		MODEL_WORLD = "misc/p_misc.mdl";
+		MODEL_HANDS = "misc/p_misc.mdl";
+		FREQ_EFFECT = 21.0;
 	}
 
 	void OnSpawn() override
@@ -36,9 +39,9 @@ class BaseMedal : CGameScript
 	void game_restricted()
 	{
 		string OUT_MSG = "This trophy is reserved for ";
-		string ITEM_OWNER = /* TODO: $get_array */ $get_array(PICKUP_ALLOW_LIST, 0);
+		string ITEM_OWNER = PICKUP_ALLOW_LIST[int(0)];
 		OUT_MSG += GetEntityName(ITEM_OWNER);
-		SendInfoMsg(param1, "Item Damagepoint Restricted OUT_MSG");
+		SendInfoMsg(param1, "Item Damagepoint Restricted " + OUT_MSG);
 	}
 
 	void ext_set_owner()

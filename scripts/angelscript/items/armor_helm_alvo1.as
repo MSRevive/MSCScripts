@@ -8,15 +8,23 @@ namespace MS
 
 class ArmorHelmAlvo1 : CGameScript
 {
+	int ARMOR_BODY;
+	int ARMOR_BODY_HUMAN_FEMALE;
+	string ARMOR_MODEL;
+	string ARMOR_TEXT;
+	float BARMOR_PROTECTION;
+	string BARMOR_TYPE;
+	float STUN_PROTECTION;
+
 	ArmorHelmAlvo1()
 	{
-		const string ARMOR_MODEL = "armor/p_helmets.mdl";
-		const int ARMOR_BODY = 30;
-		const int ARMOR_BODY_HUMAN_FEMALE = 31;
-		const string ARMOR_TEXT = "You equip the Corrodinator.";
-		const string BARMOR_TYPE = "platemail";
-		const float BARMOR_PROTECTION = 0.6;
-		const float STUN_PROTECTION = 0.5;
+		ARMOR_MODEL = "armor/p_helmets.mdl";
+		ARMOR_BODY = 30;
+		ARMOR_BODY_HUMAN_FEMALE = 31;
+		ARMOR_TEXT = "You equip the Corrodinator.";
+		BARMOR_TYPE = "platemail";
+		BARMOR_PROTECTION = 0.6;
+		STUN_PROTECTION = 0.5;
 	}
 
 	void OnSpawn() override

@@ -28,21 +28,27 @@ class Troll : CGameScript
 	int NPC_GIVE_EXP;
 	int NPC_MUST_SEE_TARGET;
 	string PUSH_VEL;
+	string SOUND_ATTACK;
+	string SOUND_DEATH;
+	string SOUND_IDLE;
+	string SOUND_PAIN;
 	string SOUND_STRUCK1;
 	string SOUND_STRUCK2;
 	string SOUND_STRUCK3;
+	string SOUND_WALK1;
+	string SOUND_WALK2;
 
 	Troll()
 	{
 		SOUND_STRUCK1 = "weapons/cbar_hitbod1.wav";
 		SOUND_STRUCK2 = "weapons/cbar_hitbod1.wav";
 		SOUND_STRUCK3 = "weapons/cbar_hitbod1.wav";
-		const string SOUND_PAIN = "monsters/troll/trollpain.wav";
-		const string SOUND_ATTACK = "monsters/troll/trollattack.wav";
-		const string SOUND_DEATH = "monsters/troll/trolldeath.wav";
-		const string SOUND_WALK1 = "monsters/troll/step1.wav";
-		const string SOUND_WALK2 = "monsters/troll/step2.wav";
-		const string SOUND_IDLE = "monsters/troll/trollidle2.wav";
+		SOUND_PAIN = "monsters/troll/trollpain.wav";
+		SOUND_ATTACK = "monsters/troll/trollattack.wav";
+		SOUND_DEATH = "monsters/troll/trolldeath.wav";
+		SOUND_WALK1 = "monsters/troll/step1.wav";
+		SOUND_WALK2 = "monsters/troll/step2.wav";
+		SOUND_IDLE = "monsters/troll/trollidle2.wav";
 		DROP_GOLD = 1;
 		DROP_GOLD_MIN = 10;
 		DROP_GOLD_MAX = 35;
@@ -173,7 +179,7 @@ class Troll : CGameScript
 		if ((IS_HUNTING)) return;
 		if ((false)) return;
 		if ((IS_FLEEING)) return;
-		string ANIM_SELECT = RandomInt(0, 3);
+		int ANIM_SELECT = RandomInt(0, 3);
 		if (ANIM_SELECT == 0)
 		{
 			ANIM_IDLE = "idle0";

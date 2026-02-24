@@ -7,12 +7,17 @@ namespace MS
 
 class GbearBrownLpoly : CGameScript
 {
+	string MONSTER_MODEL;
+	int NO_BREATH_ATTACK;
+	int NO_FROSTY_BREATH;
+	int NPC_BASE_EXP;
+
 	GbearBrownLpoly()
 	{
-		const int NPC_BASE_EXP = 350;
-		const string MONSTER_MODEL = "monsters/gbear_lpoly.mdl";
-		const int NO_BREATH_ATTACK = 1;
-		const int NO_FROSTY_BREATH = 1;
+		NPC_BASE_EXP = 350;
+		MONSTER_MODEL = "monsters/gbear_lpoly.mdl";
+		NO_BREATH_ATTACK = 1;
+		NO_FROSTY_BREATH = 1;
 	}
 
 	void OnSpawn() override

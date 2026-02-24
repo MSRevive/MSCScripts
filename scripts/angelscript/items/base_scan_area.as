@@ -5,11 +5,12 @@ namespace MS
 
 class BaseScanArea : CGameScript
 {
+	string BSCAN_CENTER;
 	string BSCAN_OWNER;
 
 	BaseScanArea()
 	{
-		const string BSCAN_CENTER = /* TODO: $relpos */ $relpos(0, 0, 0);
+		BSCAN_CENTER = /* TODO: $relpos */ $relpos(0, 0, 0);
 	}
 
 	void game_dynamically_Created()

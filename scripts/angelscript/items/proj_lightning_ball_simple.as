@@ -7,31 +7,47 @@ namespace MS
 
 class ProjLightningBallSimple : CGameScript
 {
+	int ARROW_BODY_OFS;
 	string F_BALL_DMG;
 	string F_BALL_SIZE;
 	string F_BALL_TYPE;
+	int MODEL_BODY_OFS;
+	string MODEL_HANDS;
+	string MODEL_WORLD;
 	string MY_OWNER;
 	string OWNER_ISPLAYER;
+	string PROJ_ANIM_IDLE;
+	int PROJ_DAMAGE;
+	int PROJ_DAMAGE_AOE_FALLOFF;
+	int PROJ_DAMAGE_AOE_RANGE;
+	string PROJ_DAMAGE_TYPE;
+	int PROJ_MOTIONBLUR;
+	int PROJ_SOLIDIFY_ON_WALL;
+	int PROJ_STICK_DURATION;
 	int SCAN_SIZE;
+	string SOUND_SHOOT;
+	string SOUND_ZAP1;
+	string SOUND_ZAP2;
+	string SOUND_ZAP3;
 
 	ProjLightningBallSimple()
 	{
-		const string MODEL_HANDS = "none";
-		const string MODEL_WORLD = "none";
-		const int ARROW_BODY_OFS = 6;
-		const string SOUND_SHOOT = "ambience/alienflyby1.wav";
-		const string SOUND_ZAP1 = "debris/beamstart14.wav";
-		const string SOUND_ZAP2 = "debris/beamstart14.wav";
-		const string SOUND_ZAP3 = "debris/zap1.wav";
-		const int PROJ_MOTIONBLUR = 0;
-		const string PROJ_ANIM_IDLE = "spin_horizontal_slow";
-		const int MODEL_BODY_OFS = 0;
-		const int PROJ_DAMAGE = 200;
-		const int PROJ_STICK_DURATION = 0;
-		const int PROJ_SOLIDIFY_ON_WALL = 0;
-		const int PROJ_DAMAGE_AOE_RANGE = 32;
-		const int PROJ_DAMAGE_AOE_FALLOFF = 1;
-		const string PROJ_DAMAGE_TYPE = "lightning";
+		MODEL_HANDS = "none";
+		MODEL_WORLD = "none";
+		ARROW_BODY_OFS = 6;
+		SOUND_SHOOT = "ambience/alienflyby1.wav";
+		SOUND_ZAP1 = "debris/beamstart14.wav";
+		SOUND_ZAP2 = "debris/beamstart14.wav";
+		SOUND_ZAP3 = "debris/zap1.wav";
+		PROJ_MOTIONBLUR = 0;
+		PROJ_ANIM_IDLE = "spin_horizontal_slow";
+		MODEL_BODY_OFS = 0;
+		PROJ_DAMAGE = 200;
+		PROJ_STICK_DURATION = 0;
+		PROJ_SOLIDIFY_ON_WALL = 0;
+		PROJ_DAMAGE_AOE_RANGE = 32;
+		PROJ_DAMAGE_AOE_FALLOFF = 1;
+		PROJ_DAMAGE_TYPE = "lightning";
 	}
 
 	void arrow_spawn()
@@ -79,9 +95,9 @@ class ProjLightningBallSimple : CGameScript
 		}
 		if (!(F_BALL_SIZE > 0)) return;
 		SetModel("weapons/projectiles.mdl");
-		string SUB_MODEL = int(F_BALL_SIZE);
+		int SUB_MODEL = int(F_BALL_SIZE);
 		SUB_MODEL += 12;
-		string SUB_MODEL = int(SUB_MODEL);
+		int SUB_MODEL = int(SUB_MODEL);
 		SetModelBody(0, SUB_MODEL);
 		EmitSound(GetOwner(), 0, SOUND_SHOOT, F_BALL_SIZE);
 	}

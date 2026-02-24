@@ -6,19 +6,25 @@ namespace MS
 class VgoblinChiefCl : CGameScript
 {
 	int CYCLE_ANGLE;
+	string GLOW_COLOR;
+	int GLOW_RAD;
+	int N_SPR_FRAMES;
 	string SKEL_ID;
 	string SKEL_LIGHT_ID;
+	int SMOKE_RAD;
+	string SPRITE_FIRE;
 	string STUN_POS;
 	string STUN_RADIUS;
+	string STUN_SPRITE;
 
 	VgoblinChiefCl()
 	{
-		const int GLOW_RAD = 128;
-		const Vector3 GLOW_COLOR = Vector3(0, 255, 0);
-		const string SPRITE_FIRE = "poison_cloud.spr";
-		const int N_SPR_FRAMES = 17;
-		const int SMOKE_RAD = 128;
-		const string STUN_SPRITE = "fire1_fixed.spr";
+		GLOW_RAD = 128;
+		GLOW_COLOR = Vector3(0, 255, 0);
+		SPRITE_FIRE = "poison_cloud.spr";
+		N_SPR_FRAMES = 17;
+		SMOKE_RAD = 128;
+		STUN_SPRITE = "fire1_fixed.spr";
 	}
 
 	void OnRepeatTimer()

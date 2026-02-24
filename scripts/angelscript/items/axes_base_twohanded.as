@@ -7,14 +7,21 @@ namespace MS
 
 class AxesBaseTwohanded : CGameScript
 {
+	float BWEAPON_DBL_CHARGE_ADJ;
+	int CUSTOM_REGISTER_CHARGE1;
+	string PLAYERANIM_AIM;
+	string PLAYERANIM_SWING;
+	string SOUND_HITWALL1;
+	string SOUND_HITWALL2;
+
 	AxesBaseTwohanded()
 	{
-		const string PLAYERANIM_AIM = "axe_twohand";
-		const string PLAYERANIM_SWING = "axe_twohand_swing";
-		const string SOUND_HITWALL1 = "weapons/cbar_hit1.wav";
-		const string SOUND_HITWALL2 = "weapons/cbar_hit2.wav";
-		const int CUSTOM_REGISTER_CHARGE1 = 1;
-		const float BWEAPON_DBL_CHARGE_ADJ = 2.5;
+		PLAYERANIM_AIM = "axe_twohand";
+		PLAYERANIM_SWING = "axe_twohand_swing";
+		SOUND_HITWALL1 = "weapons/cbar_hit1.wav";
+		SOUND_HITWALL2 = "weapons/cbar_hit2.wav";
+		CUSTOM_REGISTER_CHARGE1 = 1;
+		BWEAPON_DBL_CHARGE_ADJ = 2.5;
 	}
 
 	void OnSpawn() override

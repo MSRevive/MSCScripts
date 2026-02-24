@@ -10,6 +10,9 @@ class Spidqueen : CGameScript
 	string ANIM_ATTACK;
 	string ANIM_RUN;
 	string ANIM_WALK;
+	int ATTACK_ACCURACY;
+	float ATTACK_DAMAGE;
+	float ATTACK_HITCHANCE;
 	int ATTACK_HITRANGE;
 	int ATTACK_RANGE;
 	int CAN_FLEE;
@@ -17,8 +20,18 @@ class Spidqueen : CGameScript
 	int DROP_GOLD_MAX;
 	int DROP_GOLD_MIN;
 	int MOVE_RANGE;
+	float NPC_BOSS_REGEN_RATE;
+	float NPC_BOSS_RESTORATION;
 	string NPC_GIVE_EXP;
 	string NPC_IS_BOSS;
+	string SOUND_ATTACK1;
+	string SOUND_ATTACK2;
+	string SOUND_DEATH;
+	string SOUND_IDLE1;
+	string SOUND_PAIN;
+	string SOUND_STRUCK1;
+	string SOUND_STRUCK2;
+	string SOUND_STRUCK3;
 
 	Spidqueen()
 	{
@@ -31,25 +44,25 @@ class Spidqueen : CGameScript
 		{
 			NPC_GIVE_EXP = 200;
 		}
-		const float NPC_BOSS_REGEN_RATE = 0.1;
-		const float NPC_BOSS_RESTORATION = 1.0;
+		NPC_BOSS_REGEN_RATE = 0.1;
+		NPC_BOSS_RESTORATION = 1.0;
 		ANIM_RUN = "run";
 		ANIM_WALK = "walk";
 		ANIM_ATTACK = "attack";
-		const string ATTACK_DAMAGE = Random(8.5, 10.0);
+		ATTACK_DAMAGE = Random(8.5, 10.0);
 		ATTACK_RANGE = 250;
 		ATTACK_HITRANGE = 350;
 		MOVE_RANGE = 50;
-		const int ATTACK_ACCURACY = 0;
-		const float ATTACK_HITCHANCE = 1.0;
-		const string SOUND_STRUCK1 = "body/flesh1.wav";
-		const string SOUND_STRUCK2 = "body/flesh2.wav";
-		const string SOUND_STRUCK3 = "body/flesh3.wav";
-		const string SOUND_PAIN = "monsters/spider/spiderhiss.wav";
-		const string SOUND_IDLE1 = "monsters/spider/spideridle.wav";
-		const string SOUND_DEATH = "monsters/spider/spiderdie.wav";
-		const string SOUND_ATTACK1 = "zombie/claw_miss1.wav";
-		const string SOUND_ATTACK2 = "zombie/claw_miss2.wav";
+		ATTACK_ACCURACY = 0;
+		ATTACK_HITCHANCE = 1.0;
+		SOUND_STRUCK1 = "body/flesh1.wav";
+		SOUND_STRUCK2 = "body/flesh2.wav";
+		SOUND_STRUCK3 = "body/flesh3.wav";
+		SOUND_PAIN = "monsters/spider/spiderhiss.wav";
+		SOUND_IDLE1 = "monsters/spider/spideridle.wav";
+		SOUND_DEATH = "monsters/spider/spiderdie.wav";
+		SOUND_ATTACK1 = "zombie/claw_miss1.wav";
+		SOUND_ATTACK2 = "zombie/claw_miss2.wav";
 		CAN_FLEE = 0;
 		DROP_GOLD = 1;
 		DROP_GOLD_MIN = 25;

@@ -5,11 +5,12 @@ namespace MS
 
 class BaseTemporary : CGameScript
 {
+	float DEATH_DELAY;
 	int PLAYING_DEAD;
 
 	BaseTemporary()
 	{
-		const float DEATH_DELAY = 0.5;
+		DEATH_DELAY = 0.5;
 	}
 
 	void OnSpawn() override

@@ -8,6 +8,7 @@ class FlameSkull : CGameScript
 	string ACTIVE_SKILL;
 	string DMG_BASE;
 	int FLY_COUNT;
+	float FREQ_SOUND;
 	string GAME_PVP;
 	int IS_FLYING;
 	string LAST_BURNED;
@@ -20,16 +21,20 @@ class FlameSkull : CGameScript
 	string SKEL_LIGHT_ID;
 	string SKULL_IDX;
 	int SOUND_DELAY;
+	string SOUND_FIRE;
+	string SOUND_LOOP;
+	string SOUND_SCREAM;
+	string SOUND_START;
 	string START_POS;
 
 	FlameSkull()
 	{
 		SetCallback("touch", "enable");
-		const string SOUND_SCREAM = "magic/spookie1.wav";
-		const string SOUND_FIRE = "magic/fireball_strike.wav";
-		const string SOUND_START = "magic/volcano_start.wav";
-		const string SOUND_LOOP = "magic/volcano_loop.wav";
-		const float FREQ_SOUND = 3.0;
+		SOUND_SCREAM = "magic/spookie1.wav";
+		SOUND_FIRE = "magic/fireball_strike.wav";
+		SOUND_START = "magic/volcano_start.wav";
+		SOUND_LOOP = "magic/volcano_loop.wav";
+		FREQ_SOUND = 3.0;
 	}
 
 	void OnRepeatTimer()
@@ -162,7 +167,7 @@ class FlameSkull : CGameScript
 	void spit_fire()
 	{
 		SetRepeatDelay(0.25);
-		string RAND_ANG = RandomInt(0, 359);
+		int RAND_ANG = RandomInt(0, 359);
 		string SKULL_POS = /* TODO: $getcl */ $getcl(SKULL_IDX, "origin");
 		SKULL_POS += /* TODO: $relpos */ $relpos(Vector3(0, RAND_ANG, 0), Vector3(0, 30, 0));
 		ClientEffect("tempent", "sprite", "rjet1.spr", SKULL_POS, "spit_fire_sprites");

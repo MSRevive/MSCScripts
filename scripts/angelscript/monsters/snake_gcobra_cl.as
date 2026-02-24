@@ -5,14 +5,16 @@ namespace MS
 
 class SnakeGcobraCl : CGameScript
 {
+	string BREATH_SPRITE;
 	string CLOUD_ANG;
 	int FX_ACTIVE;
 	string FX_OWNER;
+	int N_FRAMES;
 
 	SnakeGcobraCl()
 	{
-		const string BREATH_SPRITE = "poison_cloud.spr";
-		const int N_FRAMES = 17;
+		BREATH_SPRITE = "poison_cloud.spr";
+		N_FRAMES = 17;
 	}
 
 	void client_activate()
@@ -57,8 +59,8 @@ class SnakeGcobraCl : CGameScript
 		ClientEffect("tempent", "set_current_prop", "rendercolor", Vector3(0, 0, 0));
 		ClientEffect("tempent", "set_current_prop", "gravity", ".005");
 		ClientEffect("tempent", "set_current_prop", "collide", "none");
-		string RND_RL = Random(-10, 10);
-		string RND_UD = Random(-30, 30);
+		float RND_RL = Random(-10, 10);
+		float RND_UD = Random(-30, 30);
 		string CLOUD_VEL = /* TODO: $relvel */ $relvel(Vector3(0, CLOUD_ANG, 0), Vector3(RND_RL, 400, RND_UD));
 		ClientEffect("tempent", "set_current_prop", "velocity", CLOUD_VEL);
 	}

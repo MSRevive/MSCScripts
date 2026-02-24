@@ -7,10 +7,13 @@ namespace MS
 
 class ZapAxe : CGameScript
 {
+	int ELEMENT;
+	int WEAPON;
+
 	ZapAxe()
 	{
-		const int WEAPON = 4;
-		const int ELEMENT = 3;
+		WEAPON = 4;
+		ELEMENT = 3;
 	}
 
 }

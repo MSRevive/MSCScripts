@@ -11,22 +11,28 @@ class Tornado : CGameScript
 	string DMG_BASE;
 	string GAME_PVP;
 	int IS_ACTIVE;
+	string MONSTER_MODEL;
 	string MOVE_TARG;
 	string MY_DURATION;
 	string MY_OWNER;
 	int NPC_HACKED_MOVE_SPEED;
 	int N_VICTIMS;
 	string OWNER_ISPLAYER;
+	string SOUND_ATTACK1;
+	string SOUND_ATTACK2;
+	string SOUND_WIND1;
+	string SOUND_WIND2;
+	string SOUND_WIND3;
 
 	Tornado()
 	{
 		NPC_HACKED_MOVE_SPEED = 200;
-		const string MONSTER_MODEL = "weapons/magic/tornado.mdl";
-		const string SOUND_WIND1 = "magic/vent1.wav";
-		const string SOUND_WIND2 = "magic/vent2.wav";
-		const string SOUND_WIND3 = "magic/vent3.wav";
-		const string SOUND_ATTACK1 = "magic/gusts1.wav";
-		const string SOUND_ATTACK2 = "magic/gusts2.wav";
+		MONSTER_MODEL = "weapons/magic/tornado.mdl";
+		SOUND_WIND1 = "magic/vent1.wav";
+		SOUND_WIND2 = "magic/vent2.wav";
+		SOUND_WIND3 = "magic/vent3.wav";
+		SOUND_ATTACK1 = "magic/gusts1.wav";
+		SOUND_ATTACK2 = "magic/gusts2.wav";
 		Precache(MONSTER_MODEL);
 	}
 
@@ -36,7 +42,7 @@ class Tornado : CGameScript
 		if ((IS_ACTIVE))
 		{
 		}
-		string RND_MOVE = RandomInt(1, 2);
+		int RND_MOVE = RandomInt(1, 2);
 		if (RND_MOVE == 1)
 		{
 			if (MOVE_TARG != "unset")
@@ -50,7 +56,7 @@ class Tornado : CGameScript
 		}
 		if (RND_MOVE == 2)
 		{
-			string RND_ANG = RandomInt(0, 359);
+			int RND_ANG = RandomInt(0, 359);
 			string MOVE_DEST = GetMonsterProperty("origin");
 			MOVE_DEST += /* TODO: $relpos */ $relpos(Vector3(0, RND_ANG, 0), Vector3(0, 1000, 0));
 			SetMoveDest(MOVE_DEST);
@@ -136,7 +142,7 @@ class Tornado : CGameScript
 		array<string> sounds = {SOUND_ATTACK1, SOUND_ATTACK2};
 		EmitSound(GetOwner(), 0, sounds[RandomInt(0, sounds.length() - 1)], 10);
 		CallExternal(MY_OWNER, "ext_dodamage", param2, "direct", DMG_BASE, 1.0, MY_OWNER, "magic");
-		string RND_DIR = RandomInt(1, 2);
+		int RND_DIR = RandomInt(1, 2);
 		if (RND_DIR == 1)
 		{
 			int RND_DIR = 1000;
@@ -145,7 +151,7 @@ class Tornado : CGameScript
 		{
 			int RND_DIR = -1000;
 		}
-		string RND_FBDIR = RandomInt(1, 2);
+		int RND_FBDIR = RandomInt(1, 2);
 		if (RND_FBDIR == 1)
 		{
 			int RND_FBDIR = 1000;
@@ -154,7 +160,7 @@ class Tornado : CGameScript
 		{
 			int RND_FBDIR = -1000;
 		}
-		string RND_LIFT = RandomInt(300, 1000);
+		int RND_LIFT = RandomInt(300, 1000);
 		LogDebug("temp RND_DIR RND_LIFT");
 		SetVelocity(param2, /* TODO: $relvel */ $relvel(RND_DIR, RND_FBDIR, RND_LIFT));
 	}

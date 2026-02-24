@@ -9,27 +9,33 @@ class Ryza : CGameScript
 {
 	int ASKED_ATHOLO;
 	int ATHOLO_DEAD;
+	float CHAT_DELAY;
 	int CHAT_TEMP_NO_AUTO_FACE;
 	string CL_FX;
 	string DID_INTRO;
 	int EMOTES_ENABLED;
 	int EMOTE_COUNT;
 	string EMOTE_DELAY;
+	float EMOTE_FREQ;
 	int FADE_COUNT;
 	int FLICK_COUNT;
 	int GAVE_CRYSTALS;
 	string JUST_MENTION_LOCATION;
+	string MONSTER_MODEL;
+	int NO_JOB;
+	int NO_RUMOR;
+	string PORTAL_FX_POS;
 	int TRIGGER_RANGE;
 
 	Ryza()
 	{
-		const string MONSTER_MODEL = "npc/femhuman2.mdl";
-		const int NO_RUMOR = 1;
-		const int NO_JOB = 1;
-		const float CHAT_DELAY = 3.5;
-		const float EMOTE_FREQ = 20.0;
+		MONSTER_MODEL = "npc/femhuman2.mdl";
+		NO_RUMOR = 1;
+		NO_JOB = 1;
+		CHAT_DELAY = 3.5;
+		EMOTE_FREQ = 20.0;
 		Precache(MONSTER_MODEL);
-		const string PORTAL_FX_POS = "(175,-605,-3503)";
+		PORTAL_FX_POS = "(175,-605,-3503)";
 	}
 
 	void OnSpawn() override
@@ -160,7 +166,7 @@ class Ryza : CGameScript
 
 	void say_emote()
 	{
-		string L_RAND = RandomInt(1, 10);
+		int L_RAND = RandomInt(1, 10);
 		if (L_RAND == 9)
 		{
 			if (GAVE_CRYSTALS >= 4)
@@ -287,7 +293,7 @@ class Ryza : CGameScript
 		FLICK_COUNT += 1;
 		if (FLICK_COUNT < 20)
 		{
-			string FLICKER_AMT = RandomInt(10, 180);
+			int FLICKER_AMT = RandomInt(10, 180);
 			SetProp(GetOwner(), "renderamt", FLICKER_AMT);
 			ScheduleDelayedEvent(0.1, "do_flicker");
 		}

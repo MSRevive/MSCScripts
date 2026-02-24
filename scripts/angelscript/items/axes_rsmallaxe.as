@@ -7,25 +7,43 @@ namespace MS
 
 class AxesRsmallaxe : CGameScript
 {
+	string ANIM_PREFIX;
+	float MELEE_ACCURACY;
+	float MELEE_ATK_DURATION;
+	int MELEE_DMG;
+	float MELEE_DMG_DELAY;
+	int MELEE_DMG_RANGE;
+	string MELEE_DMG_TYPE;
+	float MELEE_ENERGY;
+	float MELEE_PARRY_CHANCE;
+	int MELEE_RANGE;
+	string MELEE_SOUND;
+	string MELEE_SOUND_DELAY;
+	string MELEE_STAT;
+	int MODEL_BODY_OFS;
+	string MODEL_VIEW;
+	int MODEL_VIEW_IDX;
+	string SOUND_SWIPE;
+
 	AxesRsmallaxe()
 	{
-		const string MODEL_VIEW = "viewmodels/v_1haxes.mdl";
-		const int MODEL_VIEW_IDX = 1;
-		const string SOUND_SWIPE = "weapons/swingsmall.wav";
-		const int MODEL_BODY_OFS = 98;
-		const string ANIM_PREFIX = "rustedaxe";
-		const int MELEE_RANGE = 60;
-		const float MELEE_DMG_DELAY = 0.6;
-		const float MELEE_ATK_DURATION = 1.1;
-		const float MELEE_ENERGY = 0.3;
-		const int MELEE_DMG = 100;
-		const int MELEE_DMG_RANGE = 80;
-		const string MELEE_DMG_TYPE = "slash";
-		const float MELEE_ACCURACY = 0.7;
-		const string MELEE_STAT = "axehandling";
-		const string MELEE_SOUND = SOUND_SWIPE;
-		const string MELEE_SOUND_DELAY = MELEE_DMG_DELAY;
-		const float MELEE_PARRY_CHANCE = 0.05;
+		MODEL_VIEW = "viewmodels/v_1haxes.mdl";
+		MODEL_VIEW_IDX = 1;
+		SOUND_SWIPE = "weapons/swingsmall.wav";
+		MODEL_BODY_OFS = 98;
+		ANIM_PREFIX = "rustedaxe";
+		MELEE_RANGE = 60;
+		MELEE_DMG_DELAY = 0.6;
+		MELEE_ATK_DURATION = 1.1;
+		MELEE_ENERGY = 0.3;
+		MELEE_DMG = 100;
+		MELEE_DMG_RANGE = 80;
+		MELEE_DMG_TYPE = "slash";
+		MELEE_ACCURACY = 0.7;
+		MELEE_STAT = "axehandling";
+		MELEE_SOUND = SOUND_SWIPE;
+		MELEE_SOUND_DELAY = MELEE_DMG_DELAY;
+		MELEE_PARRY_CHANCE = 0.05;
 	}
 
 	void weapon_spawn()

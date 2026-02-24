@@ -7,29 +7,49 @@ namespace MS
 
 class ProjFireBolt : CGameScript
 {
+	int ARROW_BODY_OFS;
+	float ARROW_BREAK_CHANCE;
+	int ARROW_SOLIDIFY_ON_WALL;
+	string ITEM_NAME;
+	int MODEL_BODY_OFS;
+	string MODEL_HANDS;
+	string MODEL_WORLD;
+	string PROJ_ANIM_IDLE;
+	int PROJ_AOE_FALLOFF;
+	int PROJ_AOE_RANGE;
+	int PROJ_COLLIDEHITBOX;
+	int PROJ_DAMAGE;
+	string PROJ_DAMAGESTAT;
+	string PROJ_DAMAGE_TYPE;
+	int PROJ_MOTIONBLUR;
+	int PROJ_STICK_DURATION;
+	string SOUND_BURN;
+	string SOUND_EXPLODE;
+	string SOUND_LAUNCH;
+
 	ProjFireBolt()
 	{
-		const string MODEL_HANDS = "none";
-		const string MODEL_WORLD = "weapons/projectiles.mdl";
-		const int MODEL_BODY_OFS = 40;
-		const int ARROW_BODY_OFS = 40;
-		const string SOUND_EXPLODE = "weapons/explode3.wav";
-		const string SOUND_EXPLODE = "weapons/explode3.wav";
-		const string SOUND_BURN = "magic/ice_powerup.wav";
-		const int ARROW_SOLIDIFY_ON_WALL = 0;
-		const float ARROW_BREAK_CHANCE = 1.0;
-		const string ITEM_NAME = "watermana";
-		const string PROJ_DAMAGE_TYPE = "fire";
-		const string PROJ_DAMAGESTAT = "spellcasting.ice";
-		const string PROJ_ANIM_IDLE = "idle_icebolt";
-		const int PROJ_MOTIONBLUR = 0;
-		const int PROJ_DAMAGE = 50;
-		const int PROJ_AOE_RANGE = 80;
-		const int PROJ_AOE_FALLOFF = 0;
-		const int PROJ_STICK_DURATION = 0;
-		const int PROJ_COLLIDEHITBOX = 32;
-		const string SOUND_LAUNCH = "weapons/rocketfire1.wav";
-		const string SOUND_EXPLODE = "weapons/explode3.wav";
+		MODEL_HANDS = "none";
+		MODEL_WORLD = "weapons/projectiles.mdl";
+		MODEL_BODY_OFS = 40;
+		ARROW_BODY_OFS = 40;
+		SOUND_EXPLODE = "weapons/explode3.wav";
+		SOUND_EXPLODE = "weapons/explode3.wav";
+		SOUND_BURN = "magic/ice_powerup.wav";
+		ARROW_SOLIDIFY_ON_WALL = 0;
+		ARROW_BREAK_CHANCE = 1.0;
+		ITEM_NAME = "watermana";
+		PROJ_DAMAGE_TYPE = "fire";
+		PROJ_DAMAGESTAT = "spellcasting.ice";
+		PROJ_ANIM_IDLE = "idle_icebolt";
+		PROJ_MOTIONBLUR = 0;
+		PROJ_DAMAGE = 50;
+		PROJ_AOE_RANGE = 80;
+		PROJ_AOE_FALLOFF = 0;
+		PROJ_STICK_DURATION = 0;
+		PROJ_COLLIDEHITBOX = 32;
+		SOUND_LAUNCH = "weapons/rocketfire1.wav";
+		SOUND_EXPLODE = "weapons/explode3.wav";
 	}
 
 	void arrow_spawn()

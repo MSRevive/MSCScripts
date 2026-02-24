@@ -87,7 +87,7 @@ class Highpriest : CGameScript
 
 	void say_rumour5()
 	{
-		SayText("I believe the elf s name was Geric.");
+		SayText(I + " believe the elf s name was Geric.");
 	}
 
 	void say_heal()

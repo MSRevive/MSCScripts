@@ -7,17 +7,19 @@ namespace MS
 
 class Prisoner : CGameScript
 {
+	int NO_JOB;
+	int NO_RUMOR;
 	string NPC;
 	string NPC_O;
 	string PLAYER;
 	string PLAYER_O;
 	int QUEST_GOBLINPRISONER;
-	string distance;
+	float distance;
 
 	Prisoner()
 	{
-		const int NO_JOB = 1;
-		const int NO_RUMOR = 1;
+		NO_JOB = 1;
+		NO_RUMOR = 1;
 	}
 
 	void game_precache()
@@ -56,7 +58,7 @@ class Prisoner : CGameScript
 			}
 			if (QUEST_GOBLINPRISONER == 1)
 			{
-				SayText("I can find my way home now");
+				SayText(I + " can find my way home now");
 			}
 		}
 	}
@@ -68,11 +70,11 @@ class Prisoner : CGameScript
 		{
 			if (QUEST_GOBLINPRISONER == 0)
 			{
-				SayText("I guess I am doomed to rot in this cage...");
+				SayText(I + "guess " + I + " am doomed to rot in this cage...");
 			}
 			if (QUEST_GOBLINPRISONER == 1)
 			{
-				SayText("I can find my way home now");
+				SayText(I + " can find my way home now");
 			}
 		}
 	}

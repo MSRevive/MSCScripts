@@ -13,10 +13,26 @@ class DefaultDwarf : CGameScript
 	string ANIM_DEATH;
 	string ANIM_RUN;
 	string ANIM_WALK;
+	int ATTACK1_DAMAGE;
 	int ATTACK_HITRANGE;
 	int ATTACK_RANGE;
+	int CAN_ATTACK;
 	int CAN_FLEE;
+	int CAN_FLINCH;
+	int CAN_HEAR;
+	int CAN_HUNT;
+	int CAN_RETALIATE;
+	float FLEE_CHANCE;
+	int FLEE_HEALTH;
+	string FLINCH_ANIM;
+	float FLINCH_CHANCE;
+	int FLINCH_DELAY;
+	int HUNT_AGRO;
 	int MOVE_RANGE;
+	int NO_HAIL;
+	int NO_JOB;
+	int NO_RUMOR;
+	float RETALIATE_CHANGETARGET_CHANCE;
 
 	DefaultDwarf()
 	{
@@ -24,26 +40,26 @@ class DefaultDwarf : CGameScript
 		ANIM_WALK = "walk";
 		ANIM_RUN = "run";
 		ANIM_ATTACK = "attack";
-		const int ATTACK1_DAMAGE = 1;
+		ATTACK1_DAMAGE = 1;
 		ANIM_DEATH = "diesimple";
-		const int CAN_HUNT = 0;
-		const int HUNT_AGRO = 0;
-		const int CAN_ATTACK = 0;
+		CAN_HUNT = 0;
+		HUNT_AGRO = 0;
+		CAN_ATTACK = 0;
 		ATTACK_RANGE = 48;
 		ATTACK_HITRANGE = 80;
 		CAN_FLEE = 1;
-		const int FLEE_HEALTH = 25;
-		const float FLEE_CHANCE = 1.0;
-		const int CAN_HEAR = 1;
-		const int CAN_RETALIATE = 1;
-		const float RETALIATE_CHANGETARGET_CHANCE = 0.75;
-		const int CAN_FLINCH = 1;
-		const string FLINCH_ANIM = "flinch1";
-		const float FLINCH_CHANCE = 0.5;
-		const int FLINCH_DELAY = 1;
-		const int NO_JOB = 1;
-		const int NO_HAIL = 1;
-		const int NO_RUMOR = 1;
+		FLEE_HEALTH = 25;
+		FLEE_CHANCE = 1.0;
+		CAN_HEAR = 1;
+		CAN_RETALIATE = 1;
+		RETALIATE_CHANGETARGET_CHANCE = 0.75;
+		CAN_FLINCH = 1;
+		FLINCH_ANIM = "flinch1";
+		FLINCH_CHANCE = 0.5;
+		FLINCH_DELAY = 1;
+		NO_JOB = 1;
+		NO_HAIL = 1;
+		NO_RUMOR = 1;
 	}
 
 	void OnRepeatTimer()

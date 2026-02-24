@@ -92,8 +92,8 @@ class LightningStrikeCl : CGameScript
 		ClientEffect("tempent", "set_current_prop", "frames", 1);
 		ClientEffect("tempent", "set_current_prop", "rendermode", "add");
 		ClientEffect("tempent", "set_current_prop", "renderamt", 255);
-		string RND_ANG = Random(0, 359.99);
-		string RND_VEL = Random(100, 200);
+		float RND_ANG = Random(0, 359.99);
+		float RND_VEL = Random(100, 200);
 		ClientEffect("tempent", "set_current_prop", "velocity", /* TODO: $relpos */ $relpos(Vector3(0, RND_ANG, 0), Vector3(0, RND_VEL, RND_VEL)));
 	}
 

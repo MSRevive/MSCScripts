@@ -16,11 +16,13 @@ class ReaversCl : CGameScript
 	string ERRUPT_TYPE;
 	int FX_ACTIVE;
 	string FX_OWNER;
+	string PUKE_SPRITE;
+	int PUKE_SPRITE_FRAMES;
 
 	ReaversCl()
 	{
-		const string PUKE_SPRITE = "bloodspray.spr";
-		const int PUKE_SPRITE_FRAMES = 10;
+		PUKE_SPRITE = "bloodspray.spr";
+		PUKE_SPRITE_FRAMES = 10;
 		Precache(PUKE_SPRITE);
 	}
 
@@ -221,9 +223,9 @@ class ReaversCl : CGameScript
 		ClientEffect("tempent", "set_current_prop", "gravity", ".005");
 		ClientEffect("tempent", "set_current_prop", "collide", "none");
 		ClientEffect("tempent", "set_current_prop", "fuser1", 0.1);
-		string RND_RL = Random(-10, 10);
-		string RND_UD = Random(-30, 30);
-		string RND_FD = Random(300, 400);
+		float RND_RL = Random(-10, 10);
+		float RND_UD = Random(-30, 30);
+		float RND_FD = Random(300, 400);
 		string CLOUD_VEL = /* TODO: $relvel */ $relvel(Vector3(0, CLOUD_ANG, 0), Vector3(RND_RL, RND_FD, RND_UD));
 		ClientEffect("tempent", "set_current_prop", "velocity", CLOUD_VEL);
 	}
@@ -245,8 +247,8 @@ class ReaversCl : CGameScript
 		ClientEffect("tempent", "set_current_prop", "gravity", ".005");
 		ClientEffect("tempent", "set_current_prop", "collide", "none");
 		ClientEffect("tempent", "set_current_prop", "fuser1", 0.1);
-		string RND_RL = Random(-20, 20);
-		string RND_UD = Random(-20, 20);
+		float RND_RL = Random(-20, 20);
+		float RND_UD = Random(-20, 20);
 		string CLOUD_VEL = /* TODO: $relvel */ $relvel(Vector3(0, CLOUD_ANG, 0), Vector3(RND_RL, Random(300, 400), RND_UD));
 		ClientEffect("tempent", "set_current_prop", "velocity", CLOUD_VEL);
 	}

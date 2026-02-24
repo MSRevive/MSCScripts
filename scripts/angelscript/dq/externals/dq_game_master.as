@@ -26,7 +26,7 @@ class DqGameMaster : CGameScript
 
 	void gm_dq_perish_counter()
 	{
-		string L_DEL_IDX = /* TODO: $get_arrayfind */ $get_arrayfind(DQ_DEATH_CALLBACK_IDS, param1);
+		string L_DEL_IDX = ArrayFind(DQ_DEATH_CALLBACK_IDS, param1, 0);
 		if (L_DEL_IDX != -1)
 		{
 			DQ_DEATH_CALLBACK_IDS.removeAt(L_DEL_IDX);
@@ -37,7 +37,7 @@ class DqGameMaster : CGameScript
 	{
 		DQ_MONSTER_KILLED_NAME = param1;
 		DQ_MONSTER_KILLED_ORIGIN = param2;
-		for (int i = 0; i < /* TODO: $get_array_amt */ $get_array_amt(DQ_DEATH_CALLBACK_IDS); i++)
+		for (int i = 0; i < int(DQ_DEATH_CALLBACK_IDS.length()); i++)
 		{
 			gm_dq_monster_death_callbacks();
 		}
@@ -45,7 +45,7 @@ class DqGameMaster : CGameScript
 
 	void gm_dq_monster_death_callbacks()
 	{
-		CallExternal(/* TODO: $get_array */ $get_array(DQ_DEATH_CALLBACK_IDS, i), "ext_quest_monster_killed");
+		CallExternal(DQ_DEATH_CALLBACK_IDS[int(i)], "ext_quest_monster_killed");
 	}
 
 }

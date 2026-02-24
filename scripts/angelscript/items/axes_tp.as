@@ -7,10 +7,13 @@ namespace MS
 
 class AxesTp : CGameScript
 {
+	string MELEE_DMG_TYPE;
+	int TOM_SKIN;
+
 	AxesTp()
 	{
-		const string MELEE_DMG_TYPE = "poison";
-		const int TOM_SKIN = 3;
+		MELEE_DMG_TYPE = "poison";
+		TOM_SKIN = 3;
 	}
 
 	void weapon_spawn()

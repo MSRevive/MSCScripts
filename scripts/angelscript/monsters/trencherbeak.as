@@ -8,10 +8,17 @@ namespace MS
 
 class Trencherbeak : CGameScript
 {
+	string ANIM_ALERT1;
+	string ANIM_ALERT2;
 	string ANIM_ATTACK;
+	string ANIM_CUSTOM_FLINCH1;
+	string ANIM_CUSTOM_FLINCH2;
 	string ANIM_DEATH;
 	string ANIM_IDLE;
+	string ANIM_JUMP;
+	string ANIM_NPC_JUMP;
 	string ANIM_RUN;
+	string ANIM_SEARCH;
 	string ANIM_WALK;
 	int ATTACK_HITRANGE;
 	int ATTACK_MOVERANGE;
@@ -19,6 +26,8 @@ class Trencherbeak : CGameScript
 	int COMBAT_JUMP;
 	string DEATH_GOAL;
 	int DID_ALERT;
+	int DMG_BITE;
+	float FREQ_JUMP;
 	string HALF_HP;
 	int MOMMY_ESCORT;
 	int MOVE_RANGE;
@@ -30,6 +39,22 @@ class Trencherbeak : CGameScript
 	string NEXT_VICTORY;
 	int NPC_GIVE_EXP;
 	int NPC_JUMPER;
+	string SOUND_ALERT1;
+	string SOUND_ALERT2;
+	string SOUND_ALERT3;
+	string SOUND_ALERT4;
+	string SOUND_ALERT5;
+	string SOUND_ATTACK1;
+	string SOUND_ATTACK2;
+	string SOUND_DEATH;
+	string SOUND_IDLE;
+	string SOUND_JUMP;
+	string SOUND_PAIN1;
+	string SOUND_PAIN2;
+	string SOUND_PAIN3;
+	string SOUND_STRUCK1;
+	string SOUND_STRUCK2;
+	string SOUND_STRUCK3;
 	int SUSPEND_AI;
 
 	Trencherbeak()
@@ -38,37 +63,37 @@ class Trencherbeak : CGameScript
 		ANIM_WALK = "walk";
 		ANIM_IDLE = "idle";
 		ANIM_RUN = "run";
-		const string ANIM_SEARCH = "idlelookout";
-		const string ANIM_ALERT1 = "roarangry";
-		const string ANIM_ALERT2 = "hiss";
-		const string ANIM_CUSTOM_FLINCH1 = "bigflinch";
-		const string ANIM_CUSTOM_FLINCH2 = "smallflinch";
-		const string ANIM_JUMP = "jumpscrape";
+		ANIM_SEARCH = "idlelookout";
+		ANIM_ALERT1 = "roarangry";
+		ANIM_ALERT2 = "hiss";
+		ANIM_CUSTOM_FLINCH1 = "bigflinch";
+		ANIM_CUSTOM_FLINCH2 = "smallflinch";
+		ANIM_JUMP = "jumpscrape";
 		ANIM_DEATH = "dietwitch";
 		NPC_GIVE_EXP = 400;
 		ATTACK_MOVERANGE = 40;
 		MOVE_RANGE = 40;
 		ATTACK_RANGE = 60;
 		ATTACK_HITRANGE = 90;
-		const int DMG_BITE = 200;
-		const string FREQ_JUMP = Random(5.0, 8.0);
-		const string SOUND_ATTACK1 = "monsters/beak/attack1.wav";
-		const string SOUND_ATTACK2 = "monsters/beak/attack2.wav";
-		const string SOUND_STRUCK1 = "monsters/tube/TubeCritter_Hit1.wav";
-		const string SOUND_STRUCK2 = "monsters/tube/TuberCritter_Hit2.wav";
-		const string SOUND_STRUCK3 = "monsters/tube/TubeCritter_Hit3.wav";
-		const string SOUND_PAIN1 = "monsters/beak/pain1.wav";
-		const string SOUND_PAIN2 = "monsters/beak/pain2.wav";
-		const string SOUND_PAIN3 = "monsters/beak/suffer.wav";
-		const string SOUND_IDLE = "monsters/beak/roar.wav";
-		const string SOUND_ALERT1 = "monsters/beak/screech2.wav";
-		const string SOUND_ALERT2 = "monsters/beak/screech6.wav";
-		const string SOUND_ALERT3 = "monsters/beak/beakhiss.wav";
-		const string SOUND_ALERT4 = "monsters/beak/alert1.wav";
-		const string SOUND_ALERT5 = "monsters/beak/alert2.wav";
-		const string SOUND_DEATH = "monsters/beak/die1.wav";
-		const string SOUND_JUMP = "monsters/birds/flap_small.wav";
-		const string ANIM_NPC_JUMP = "jumpscrape";
+		DMG_BITE = 200;
+		FREQ_JUMP = Random(5.0, 8.0);
+		SOUND_ATTACK1 = "monsters/beak/attack1.wav";
+		SOUND_ATTACK2 = "monsters/beak/attack2.wav";
+		SOUND_STRUCK1 = "monsters/tube/TubeCritter_Hit1.wav";
+		SOUND_STRUCK2 = "monsters/tube/TuberCritter_Hit2.wav";
+		SOUND_STRUCK3 = "monsters/tube/TubeCritter_Hit3.wav";
+		SOUND_PAIN1 = "monsters/beak/pain1.wav";
+		SOUND_PAIN2 = "monsters/beak/pain2.wav";
+		SOUND_PAIN3 = "monsters/beak/suffer.wav";
+		SOUND_IDLE = "monsters/beak/roar.wav";
+		SOUND_ALERT1 = "monsters/beak/screech2.wav";
+		SOUND_ALERT2 = "monsters/beak/screech6.wav";
+		SOUND_ALERT3 = "monsters/beak/beakhiss.wav";
+		SOUND_ALERT4 = "monsters/beak/alert1.wav";
+		SOUND_ALERT5 = "monsters/beak/alert2.wav";
+		SOUND_DEATH = "monsters/beak/die1.wav";
+		SOUND_JUMP = "monsters/birds/flap_small.wav";
+		ANIM_NPC_JUMP = "jumpscrape";
 		NPC_JUMPER = 1;
 	}
 
@@ -112,7 +137,7 @@ class Trencherbeak : CGameScript
 		DID_ALERT = 1;
 		NEXT_JUMP = GetGameTime();
 		NEXT_JUMP += FREQ_JUMP;
-		string RND_ALERT = RandomInt(1, 2);
+		int RND_ALERT = RandomInt(1, 2);
 		if (RND_ALERT == 1)
 		{
 			PlayAnim("critical", ANIM_ALERT1);
@@ -163,7 +188,7 @@ class Trencherbeak : CGameScript
 	{
 		EmitSound(GetOwner(), 0, SOUND_JUMP, 10);
 		if (!(COMBAT_JUMP)) return;
-		string RND_LR = RandomInt(1, 2);
+		int RND_LR = RandomInt(1, 2);
 		if (RND_LR == 1)
 		{
 			int RND_LR = -200;
@@ -172,7 +197,7 @@ class Trencherbeak : CGameScript
 		{
 			int RND_LR = 200;
 		}
-		string RND_VADJ = Random(200.0, 300.0);
+		float RND_VADJ = Random(200.0, 300.0);
 		AddVelocity(GetOwner(), /* TODO: $relvel */ $relvel(RND_LR, 150, RND_VADJ));
 		COMBAT_JUMP = 0;
 	}
@@ -204,7 +229,7 @@ class Trencherbeak : CGameScript
 	{
 		if (!(param1)) return;
 		if (!(GetRelationship(param2) == "enemy")) return;
-		string RND_RL = Random(-200, 200);
+		float RND_RL = Random(-200, 200);
 		AddVelocity(param2, /* TODO: $relvel */ $relvel(RND_RL, 110, 120));
 	}
 

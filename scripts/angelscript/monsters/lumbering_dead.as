@@ -8,16 +8,37 @@ namespace MS
 class LumberingDead : CGameScript
 {
 	string ANIM_ATTACK;
+	string ANIM_CHEW;
+	string ANIM_DANCE;
 	string ANIM_DEATH;
+	string ANIM_DEATH1;
+	string ANIM_DEATH2;
+	string ANIM_DEATH3;
+	string ANIM_DEATH4;
+	string ANIM_EAT_LOOP;
+	string ANIM_FLINCH_CUSTOM;
 	string ANIM_IDLE;
+	string ANIM_IDLE_DEF;
+	string ANIM_JUMP;
+	string ANIM_LOOK;
 	string ANIM_RUN;
+	string ANIM_RUN1;
+	string ANIM_RUN2;
+	string ANIM_SLASH;
+	string ANIM_THROW;
+	string ANIM_VICTORY;
 	string ANIM_WALK;
 	string AS_ATTACKING;
 	int ATTACK_MOVERANGE;
 	int ATTACK_RANGE;
 	int DID_ALERT;
+	int DMG_CHEW;
+	int DMG_GLOB;
+	int DMG_SLASH;
 	string EAT_MODE;
 	string FLINCH_CUSTOM_HEALTH;
+	float FREQ_CHEW;
+	float FREQ_THROW;
 	int GLOB_EFFECT_DOT;
 	float GLOB_EFFECT_DUR;
 	string GLOB_EFFECT_TYPE;
@@ -34,26 +55,47 @@ class LumberingDead : CGameScript
 	string NPC_TARG_POS;
 	string NPC_TARG_RANGE;
 	int SLASH_ATTACK;
+	string SOUND_ALERT1;
+	string SOUND_ALERT2;
+	string SOUND_ALERT3;
+	string SOUND_ATTACK_START;
+	string SOUND_CHEW1;
+	string SOUND_CHEW2;
+	string SOUND_CHEW3;
+	string SOUND_CHEW_START;
+	string SOUND_DEATH1;
+	string SOUND_DEATH2;
+	string SOUND_FLINCH1;
+	string SOUND_FLINCH2;
+	string SOUND_IDLE;
+	string SOUND_SLASH_HIT1;
+	string SOUND_SLASH_HIT2;
+	string SOUND_SLASH_HIT3;
+	string SOUND_SLASH_MISS1;
+	string SOUND_SLASH_MISS2;
+	string SOUND_STEP1;
+	string SOUND_STEP2;
+	string SOUND_THROW;
 
 	LumberingDead()
 	{
-		const string ANIM_SLASH = "attack1";
-		const string ANIM_CHEW = "attack2";
-		const string ANIM_THROW = "attack3";
-		const string ANIM_JUMP = "jump1";
+		ANIM_SLASH = "attack1";
+		ANIM_CHEW = "attack2";
+		ANIM_THROW = "attack3";
+		ANIM_JUMP = "jump1";
 		ANIM_DEATH = "diebackward";
-		const string ANIM_DEATH1 = "diebackward";
-		const string ANIM_DEATH2 = "dieforward";
-		const string ANIM_DEATH3 = "dieheadshot_1";
-		const string ANIM_DEATH4 = "dieheadshot_2";
-		const string ANIM_FLINCH_CUSTOM = "big_flinch";
-		const string ANIM_DANCE = "sohappy";
-		const string ANIM_RUN1 = "runlong";
-		const string ANIM_RUN2 = "runshort";
-		const string ANIM_LOOK = "idle1";
-		const string ANIM_IDLE_DEF = "idle2";
-		const string ANIM_EAT_LOOP = "eat_loop";
-		const string ANIM_VICTORY = "victoryeat1";
+		ANIM_DEATH1 = "diebackward";
+		ANIM_DEATH2 = "dieforward";
+		ANIM_DEATH3 = "dieheadshot_1";
+		ANIM_DEATH4 = "dieheadshot_2";
+		ANIM_FLINCH_CUSTOM = "big_flinch";
+		ANIM_DANCE = "sohappy";
+		ANIM_RUN1 = "runlong";
+		ANIM_RUN2 = "runshort";
+		ANIM_LOOK = "idle1";
+		ANIM_IDLE_DEF = "idle2";
+		ANIM_EAT_LOOP = "eat_loop";
+		ANIM_VICTORY = "victoryeat1";
 		ANIM_WALK = "walk";
 		ANIM_RUN = "runlong";
 		ANIM_IDLE = "idle2";
@@ -62,36 +104,36 @@ class LumberingDead : CGameScript
 		MOVE_RANGE = 48;
 		ATTACK_MOVERANGE = 48;
 		ANIM_ATTACK = "attack1";
-		const int DMG_SLASH = 200;
-		const int DMG_CHEW = 100;
-		const int DMG_GLOB = 400;
+		DMG_SLASH = 200;
+		DMG_CHEW = 100;
+		DMG_GLOB = 400;
 		GLOB_EFFECT_TYPE = "effects/dot_acid";
 		GLOB_EFFECT_DOT = 50;
 		GLOB_EFFECT_DUR = 5.0;
-		const string FREQ_CHEW = Random(20.0, 30.0);
-		const string FREQ_THROW = Random(10.0, 20.0);
-		const string SOUND_ATTACK_START = "monsters/undeadz/c_golmbone_atk1.wav";
-		const string SOUND_SLASH_MISS1 = "zombie/claw_miss1.wav";
-		const string SOUND_SLASH_MISS2 = "zombie/claw_miss2.wav";
-		const string SOUND_SLASH_HIT1 = "zombie/claw_strike1.wav";
-		const string SOUND_SLASH_HIT2 = "zombie/claw_strike2.wav";
-		const string SOUND_SLASH_HIT3 = "zombie/claw_strike3.wav";
-		const string SOUND_THROW = "zombie/claw_miss1.wav";
-		const string SOUND_STEP1 = "common/npc_step1.wav";
-		const string SOUND_STEP2 = "common/npc_step2.wav";
-		const string SOUND_IDLE = "monsters/undeadz/c_skeltchf_bat1.wav";
-		const string SOUND_THROW = "monsters/undeadz/c_hookhorr_atk1.wav";
-		const string SOUND_ALERT1 = "monsters/undeadz/c_golmbone_bat1.wav";
-		const string SOUND_ALERT2 = "monsters/undeadz/c_golmbone_slct.wav";
-		const string SOUND_ALERT3 = "monsters/undeadz/c_hookhorr_bat1.wav";
-		const string SOUND_FLINCH1 = "monsters/undeadz/c_golmbone_hit1.wav";
-		const string SOUND_FLINCH2 = "monsters/undeadz/c_hookhorr_slct.wav";
-		const string SOUND_CHEW_START = "monsters/undeadz/c_hookhorr_atk1.wav";
-		const string SOUND_CHEW1 = "monsters/undeadz/c_skeleton_atk1.wav";
-		const string SOUND_CHEW2 = "monsters/undeadz/c_skeleton_atk2.wav";
-		const string SOUND_CHEW3 = "monsters/undeadz/c_skeleton_atk3.wav";
-		const string SOUND_DEATH1 = "monsters/undeadz/c_golmbone_dead.wav";
-		const string SOUND_DEATH2 = "monsters/undeadz/c_hookhorr_dead.wav";
+		FREQ_CHEW = Random(20.0, 30.0);
+		FREQ_THROW = Random(10.0, 20.0);
+		SOUND_ATTACK_START = "monsters/undeadz/c_golmbone_atk1.wav";
+		SOUND_SLASH_MISS1 = "zombie/claw_miss1.wav";
+		SOUND_SLASH_MISS2 = "zombie/claw_miss2.wav";
+		SOUND_SLASH_HIT1 = "zombie/claw_strike1.wav";
+		SOUND_SLASH_HIT2 = "zombie/claw_strike2.wav";
+		SOUND_SLASH_HIT3 = "zombie/claw_strike3.wav";
+		SOUND_THROW = "zombie/claw_miss1.wav";
+		SOUND_STEP1 = "common/npc_step1.wav";
+		SOUND_STEP2 = "common/npc_step2.wav";
+		SOUND_IDLE = "monsters/undeadz/c_skeltchf_bat1.wav";
+		SOUND_THROW = "monsters/undeadz/c_hookhorr_atk1.wav";
+		SOUND_ALERT1 = "monsters/undeadz/c_golmbone_bat1.wav";
+		SOUND_ALERT2 = "monsters/undeadz/c_golmbone_slct.wav";
+		SOUND_ALERT3 = "monsters/undeadz/c_hookhorr_bat1.wav";
+		SOUND_FLINCH1 = "monsters/undeadz/c_golmbone_hit1.wav";
+		SOUND_FLINCH2 = "monsters/undeadz/c_hookhorr_slct.wav";
+		SOUND_CHEW_START = "monsters/undeadz/c_hookhorr_atk1.wav";
+		SOUND_CHEW1 = "monsters/undeadz/c_skeleton_atk1.wav";
+		SOUND_CHEW2 = "monsters/undeadz/c_skeleton_atk2.wav";
+		SOUND_CHEW3 = "monsters/undeadz/c_skeleton_atk3.wav";
+		SOUND_DEATH1 = "monsters/undeadz/c_golmbone_dead.wav";
+		SOUND_DEATH2 = "monsters/undeadz/c_hookhorr_dead.wav";
 		NPC_ALT_SOUND_DEATH = SOUND_DEATH1;
 	}
 
@@ -134,7 +176,7 @@ class LumberingDead : CGameScript
 
 	void npc_targetsighted()
 	{
-		string GAME_TIME = GetGameTime();
+		float GAME_TIME = GetGameTime();
 		if ((EAT_MODE))
 		{
 			EAT_MODE = 0;
@@ -171,7 +213,7 @@ class LumberingDead : CGameScript
 
 	void OnHuntTarget(CBaseEntity@ target)
 	{
-		string GAME_TIME = GetGameTime();
+		float GAME_TIME = GetGameTime();
 		if (m_hAttackTarget == "unset")
 		{
 			if (GAME_TIME > NEXT_IDLE_SOUND)
@@ -231,8 +273,8 @@ class LumberingDead : CGameScript
 
 	void OnDeath(CBaseEntity@ attacker) override
 	{
-		string RND_DEATH_SND = RandomInt(1, 2);
-		string RND_DEATH_ANIM = RandomInt(1, 3);
+		int RND_DEATH_SND = RandomInt(1, 2);
+		int RND_DEATH_ANIM = RandomInt(1, 3);
 		if (RND_DEATH_SND == 1)
 		{
 			NPC_ALT_SOUND_DEATH = SOUND_DEATH1;
@@ -373,7 +415,7 @@ class LumberingDead : CGameScript
 			{
 				TARG_ORG += "z";
 			}
-			string TARG_DIST = Distance(TARG_ORG, GetMonsterProperty("origin"));
+			float TARG_DIST = Distance(TARG_ORG, GetMonsterProperty("origin"));
 			TARG_DIST /= 35;
 			SetAngles("add_view.pitch");
 			int BOMB_SPEED = 600;

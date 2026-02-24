@@ -12,13 +12,16 @@ class CircleOfDeath : CGameScript
 	string AOE_DURATION;
 	string AOE_OWNER;
 	string AOE_RADIUS;
+	int AOE_SCAN_FREQ;
+	string AOE_SCAN_TYPE;
 	string DMG_BASE;
+	string SOUND_PULSE;
 
 	CircleOfDeath()
 	{
-		const string SOUND_PULSE = "ambience/pulsemachine.wav";
-		const string AOE_SCAN_TYPE = "rsphere";
-		const int AOE_SCAN_FREQ = 1;
+		SOUND_PULSE = "ambience/pulsemachine.wav";
+		AOE_SCAN_TYPE = "rsphere";
+		AOE_SCAN_FREQ = 1;
 	}
 
 	void game_precache()

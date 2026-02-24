@@ -7,9 +7,11 @@ namespace MS
 
 class GuardWarehouse : CGameScript
 {
+	int DERALIA_CHATTER;
+
 	GuardWarehouse()
 	{
-		const int DERALIA_CHATTER = 0;
+		DERALIA_CHATTER = 0;
 	}
 
 	void OnSpawn() override
@@ -20,7 +22,7 @@ class GuardWarehouse : CGameScript
 
 	void say_hi()
 	{
-		string L_GREETING = RandomInt(0, 2);
+		int L_GREETING = RandomInt(0, 2);
 		if (L_GREETING == 0)
 		{
 			SayText("We were expecting a shipment from Ara- should have been in weeks ago...");

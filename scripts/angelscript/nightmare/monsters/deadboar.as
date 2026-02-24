@@ -7,6 +7,13 @@ namespace MS
 
 class Deadboar : CGameScript
 {
+	float ATTACK_HITCHANCE;
+	string BOAR_MODEL;
+	int BOAR_SIZE;
+	int DMG_CHARGE;
+	float DMG_GORE_FORWARD;
+	float DMG_GORE_LEFT;
+	float DMG_GORE_RIGHT;
 	string DROP_ITEM1;
 	float DROP_ITEM1_CHANCE;
 	float FLEE_CHANCE;
@@ -14,14 +21,14 @@ class Deadboar : CGameScript
 
 	Deadboar()
 	{
-		const int BOAR_SIZE = 1;
-		const string BOAR_MODEL = "nightmare/monsters/skeleboar.mdl";
+		BOAR_SIZE = 1;
+		BOAR_MODEL = "nightmare/monsters/skeleboar.mdl";
 		NPC_GIVE_EXP = 35;
-		const string DMG_GORE_FORWARD = Random(4.0, 6.0);
-		const string DMG_GORE_LEFT = Random(5.0, 7.0);
-		const string DMG_GORE_RIGHT = Random(5.0, 7.0);
-		const string DMG_CHARGE = RandomInt(5, 8);
-		const float ATTACK_HITCHANCE = 0.7;
+		DMG_GORE_FORWARD = Random(4.0, 6.0);
+		DMG_GORE_LEFT = Random(5.0, 7.0);
+		DMG_GORE_RIGHT = Random(5.0, 7.0);
+		DMG_CHARGE = RandomInt(5, 8);
+		ATTACK_HITCHANCE = 0.7;
 		FLEE_CHANCE = 0.1;
 	}
 

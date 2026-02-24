@@ -7,27 +7,43 @@ namespace MS
 
 class MagicHandTrollcano : CGameScript
 {
+	int EFFECT_DURATION;
+	int EFFECT_DURATION_STAT;
+	int EFFECT_MAXDURATION;
+	int EFFECT_MAX_DMG;
+	int EFFECT_MINDURATION;
+	int EFFECT_MIN_DMG;
+	string EFFECT_SCRIPT;
+	int MELEE_ATK_DURATION;
+	float MELEE_HITCHANCE;
+	int MELEE_RANGE;
+	string SOUND_SHOOT;
+	string SPELL_DAMAGE_TYPE;
+	int SPELL_ENERGYDRAIN;
+	int SPELL_MPDRAIN;
+	int SPELL_PREPARE_TIME;
 	int SPELL_SKILL_REQUIRED;
+	string SPELL_STAT;
 
 	MagicHandTrollcano()
 	{
-		const string SOUND_SHOOT = "magic/cast.wav";
-		const int MELEE_RANGE = 600;
-		const float MELEE_HITCHANCE = 1.0;
-		const int MELEE_ATK_DURATION = 1;
+		SOUND_SHOOT = "magic/cast.wav";
+		MELEE_RANGE = 600;
+		MELEE_HITCHANCE = 1.0;
+		MELEE_ATK_DURATION = 1;
 		SPELL_SKILL_REQUIRED = 1;
-		const int SPELL_PREPARE_TIME = 2;
-		const string SPELL_DAMAGE_TYPE = "fire";
-		const int SPELL_ENERGYDRAIN = 200;
-		const int SPELL_MPDRAIN = 1;
-		const string SPELL_STAT = "spellcasting.fire";
-		const int EFFECT_MAXDURATION = 30;
-		const int EFFECT_MINDURATION = 8;
-		const int EFFECT_DURATION_STAT = 1;
-		const int EFFECT_DURATION = 20;
-		const int EFFECT_MAX_DMG = 10;
-		const int EFFECT_MIN_DMG = 3;
-		const string EFFECT_SCRIPT = "monsters/summon/volcano_troll";
+		SPELL_PREPARE_TIME = 2;
+		SPELL_DAMAGE_TYPE = "fire";
+		SPELL_ENERGYDRAIN = 200;
+		SPELL_MPDRAIN = 1;
+		SPELL_STAT = "spellcasting.fire";
+		EFFECT_MAXDURATION = 30;
+		EFFECT_MINDURATION = 8;
+		EFFECT_DURATION_STAT = 1;
+		EFFECT_DURATION = 20;
+		EFFECT_MAX_DMG = 10;
+		EFFECT_MIN_DMG = 3;
+		EFFECT_SCRIPT = "monsters/summon/volcano_troll";
 		Precache(EFFECT_SCRIPT);
 	}
 

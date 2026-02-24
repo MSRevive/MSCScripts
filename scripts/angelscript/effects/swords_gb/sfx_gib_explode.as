@@ -6,13 +6,17 @@ namespace MS
 class SfxGibExplode : CGameScript
 {
 	string FX_RENDER_PROPS;
+	float SPR_DEATH_DELAY;
+	string SPR_RENDER_PROPS;
+	int SPR_SCALE;
+	string SPR_SPRITE;
 
 	SfxGibExplode()
 	{
-		const string SPR_SPRITE = "char_breath.spr";
-		const float SPR_DEATH_DELAY = 0.5;
-		const string SPR_RENDER_PROPS = FX_RENDER_PROPS;
-		const int SPR_SCALE = 3;
+		SPR_SPRITE = "char_breath.spr";
+		SPR_DEATH_DELAY = 0.5;
+		SPR_RENDER_PROPS = FX_RENDER_PROPS;
+		SPR_SCALE = 3;
 	}
 
 	void client_activate()

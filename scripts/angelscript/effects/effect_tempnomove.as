@@ -7,15 +7,18 @@ namespace MS
 
 class EffectTempnomove : CGameScript
 {
+	string EFFECT_FLAGS;
+	string EFFECT_ID;
+	string EFFECT_SCRIPT;
 	int game.effect.canjump;
 	int game.effect.canmove;
 	int game.effect.movespeed;
 
 	EffectTempnomove()
 	{
-		const string EFFECT_ID = "effect_tempnomove";
-		const string EFFECT_FLAGS = "nostack";
-		const string EFFECT_SCRIPT = currentscript;
+		EFFECT_ID = "effect_tempnomove";
+		EFFECT_FLAGS = "nostack";
+		EFFECT_SCRIPT = currentscript;
 	}
 
 	void game_activate()

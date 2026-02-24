@@ -7,13 +7,16 @@ namespace MS
 
 class TelfWin : CGameScript
 {
+	int ATTACH_LHAND;
+	int ATTACH_RHAND;
+	int CHAT_USE_CONV_ANIMS;
 	int MENTIONED_SEEKERS;
 
 	TelfWin()
 	{
-		const int CHAT_USE_CONV_ANIMS = 0;
-		const int ATTACH_LHAND = 3;
-		const int ATTACH_RHAND = 0;
+		CHAT_USE_CONV_ANIMS = 0;
+		ATTACH_LHAND = 3;
+		ATTACH_RHAND = 0;
 	}
 
 	void OnRepeatTimer()

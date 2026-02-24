@@ -5,12 +5,14 @@ namespace MS
 
 class GoldPouchBase : CGameScript
 {
+	int GOLD_AMT;
 	string GOLD_VALUE;
+	string SOUND_GOLD;
 
 	GoldPouchBase()
 	{
-		const int GOLD_AMT = 10;
-		const string SOUND_GOLD = "misc/gold.wav";
+		GOLD_AMT = 10;
+		SOUND_GOLD = "misc/gold.wav";
 	}
 
 	void OnSpawn() override

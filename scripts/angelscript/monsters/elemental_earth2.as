@@ -7,23 +7,34 @@ namespace MS
 
 class ElementalEarth2 : CGameScript
 {
+	int DMG_FISSURE;
+	int DMG_ROCK;
+	int DMG_STORM;
+	int DMG_SWIPE;
+	int DOT_EARTHQUAKE;
+	int ELEMENTAL_EXP;
+	int ELEMENTAL_LEVEL;
+	int ELEMENTAL_MOVERANGE;
+	int HITCHANCE_SWIPE;
 	int IMMUNE_VAMPIRE;
 	int IS_BLOODLESS;
 	int IS_UNHOLY;
+	int NUM_LONGS;
+	float SHIELD_DURATION;
 
 	ElementalEarth2()
 	{
-		const int ELEMENTAL_LEVEL = 2;
-		const int NUM_LONGS = 3;
-		const int ELEMENTAL_EXP = 1000;
-		const int HITCHANCE_SWIPE = 90;
-		const string DMG_SWIPE = RandomInt(200, 400);
-		const string DMG_ROCK = RandomInt(250, 800);
-		const string DMG_FISSURE = RandomInt(200, 400);
-		const string DMG_STORM = RandomInt(400, 800);
-		const int DOT_EARTHQUAKE = 100;
-		const float SHIELD_DURATION = 20.0;
-		const int ELEMENTAL_MOVERANGE = 256;
+		ELEMENTAL_LEVEL = 2;
+		NUM_LONGS = 3;
+		ELEMENTAL_EXP = 1000;
+		HITCHANCE_SWIPE = 90;
+		DMG_SWIPE = RandomInt(200, 400);
+		DMG_ROCK = RandomInt(250, 800);
+		DMG_FISSURE = RandomInt(200, 400);
+		DMG_STORM = RandomInt(400, 800);
+		DOT_EARTHQUAKE = 100;
+		SHIELD_DURATION = 20.0;
+		ELEMENTAL_MOVERANGE = 256;
 	}
 
 	void elemental_spawn()

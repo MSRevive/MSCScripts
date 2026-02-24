@@ -9,10 +9,11 @@ class SkelsNormal : CGameScript
 {
 	string ANIM_DEATH;
 	string ANIM_IDLE;
+	float DEATH_DELAY;
 
 	SkelsNormal()
 	{
-		const float DEATH_DELAY = 1.0;
+		DEATH_DELAY = 1.0;
 		ANIM_IDLE = "";
 		ANIM_DEATH = "";
 	}

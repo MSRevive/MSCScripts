@@ -7,23 +7,35 @@ namespace MS
 
 class PackBohLesser : CGameScript
 {
+	string ANIM_PREFIX;
 	int CONTAINER_BOH;
+	int CONTAINER_CANCLOSE;
+	string CONTAINER_ITEM_REJECT;
+	int CONTAINER_LOCK_STRENGTH;
+	int CONTAINER_MAXITEMS;
+	int CONTAINER_SPACE;
+	string CONTAINER_TYPE;
+	int MODEL_BODY_OFS;
+	string MODEL_HANDS;
+	string MODEL_VIEW;
+	string MODEL_WEAR;
+	string MODEL_WORLD;
 
 	PackBohLesser()
 	{
-		const string MODEL_VIEW = "none";
-		const string MODEL_HANDS = "misc/p_misc.mdl";
-		const string MODEL_WORLD = "armor/packs/p_packs.mdl";
-		const string MODEL_WEAR = "armor/packs/p_packs.mdl";
+		MODEL_VIEW = "none";
+		MODEL_HANDS = "misc/p_misc.mdl";
+		MODEL_WORLD = "armor/packs/p_packs.mdl";
+		MODEL_WEAR = "armor/packs/p_packs.mdl";
 		CONTAINER_BOH = 1;
-		const string CONTAINER_TYPE = "generic";
-		const int CONTAINER_SPACE = 200;
-		const int CONTAINER_MAXITEMS = 500;
-		const int CONTAINER_CANCLOSE = 0;
-		const int CONTAINER_LOCK_STRENGTH = 0;
-		const string CONTAINER_ITEM_REJECT = "arrow;scroll2;bolt;pack";
-		const int MODEL_BODY_OFS = 6;
-		const string ANIM_PREFIX = "bigsack";
+		CONTAINER_TYPE = "generic";
+		CONTAINER_SPACE = 200;
+		CONTAINER_MAXITEMS = 500;
+		CONTAINER_CANCLOSE = 0;
+		CONTAINER_LOCK_STRENGTH = 0;
+		CONTAINER_ITEM_REJECT = "arrow;scroll2;bolt;pack";
+		MODEL_BODY_OFS = 6;
+		ANIM_PREFIX = "bigsack";
 	}
 
 	void pack_spawn()

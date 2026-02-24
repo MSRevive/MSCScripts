@@ -8,6 +8,7 @@ namespace MS
 class Scorpion6Stone : CGameScript
 {
 	float BASE_MOVESPEED;
+	float FREQ_JUMP;
 	int IS_UNHOLY;
 	int NPC_GIVE_EXP;
 	string SOUND_IDLE1;
@@ -24,7 +25,7 @@ class Scorpion6Stone : CGameScript
 		SOUND_STRUCK3 = "debris/concrete1.wav";
 		SOUND_PAIN = "monsters/spider/spiderhiss.wav";
 		SOUND_IDLE1 = "monsters/spider/spideridle.wav";
-		const float FREQ_JUMP = 30.0;
+		FREQ_JUMP = 30.0;
 	}
 
 	void scorpion_spawn()

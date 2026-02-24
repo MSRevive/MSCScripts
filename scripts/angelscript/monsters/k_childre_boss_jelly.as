@@ -9,17 +9,32 @@ class KChildreBossJelly : CGameScript
 {
 	int AM_CRAWLING;
 	string ANIM_ATTACK;
+	string ANIM_CRAWL;
 	string ANIM_DEATH;
+	string ANIM_DEATH_BACK1;
+	string ANIM_DEATH_BACK2;
+	string ANIM_DEATH_CROUCH;
+	string ANIM_DEATH_FORWARD1;
 	string ANIM_FLINCH;
 	string ANIM_IDLE;
+	string ANIM_IDLE_CROUCH;
+	string ANIM_IDLE_NORM;
+	string ANIM_JUMP;
 	string ANIM_RUN;
+	string ANIM_RUN_NORM;
 	string ANIM_WALK;
+	string ANIM_WALK_NORM;
 	float ATTACK_HITCHANCE;
 	int ATTACK_HITRANGE;
 	int ATTACK_MOVERANGE;
 	int ATTACK_RANGE;
+	float CLOUD_DMG;
+	float CLOUD_DURATION;
 	string DID_WARCRY;
+	float DMG_SWIPE;
 	int DOING_FADE;
+	float DOT1_DMG;
+	float DOT1_DURATION;
 	int DROP_GOLD;
 	int FADE_DELAY;
 	int FADE_STEP;
@@ -27,13 +42,45 @@ class KChildreBossJelly : CGameScript
 	string FLINCH_ANIM;
 	int IS_UNHOLY;
 	string I_HAS_ORIGIN;
+	string MONSTER_MODEL;
 	string MY_SUMMON;
 	int NOT_FIRST_TIME;
+	string NOVA_COLOUR;
+	float NOVA_DMG;
+	float NOVA_DOT_DMG;
+	float NOVA_DOT_DURATION;
 	string NOVA_LIST;
 	int NPC_GIVE_EXP;
 	int NPC_IS_BOSS;
+	string SOUND_DEATH;
+	string SOUND_FADE;
+	string SOUND_FLINCH;
+	string SOUND_IDLE1;
+	string SOUND_IDLE2;
+	string SOUND_IDLE3;
+	string SOUND_PAIN1;
+	string SOUND_PAIN2;
+	string SOUND_PARRY;
+	string SOUND_SPAWN;
+	string SOUND_STEP1;
+	string SOUND_STEP2;
+	string SOUND_STRUCK1;
+	string SOUND_STRUCK2;
+	string SOUND_SWING_HIT1;
+	string SOUND_SWING_HIT2;
+	string SOUND_SWING_MISS1;
+	string SOUND_SWING_MISS2;
+	string SOUND_UNFADE;
+	string SOUND_WARCRY;
 	int STARTED_CYCLES;
+	int SUMMON_FREQ;
 	string SUMMON_ORIGIN;
+	int SUMMON_RATE_1;
+	int SUMMON_RATE_2;
+	int SUMMON_RATE_3;
+	string SUMMON_SCRIPT_1;
+	string SUMMON_SCRIPT_2;
+	string SUMMON_SCRIPT_3;
 	int SWIPE_ATTACK;
 	int WAS_STRUCK;
 
@@ -46,65 +93,65 @@ class KChildreBossJelly : CGameScript
 		ANIM_IDLE = "idle1";
 		ANIM_ATTACK = "ability1_alien";
 		ANIM_DEATH = "death1_die";
-		const string ANIM_IDLE_NORM = "idle1";
-		const string ANIM_IDLE_CROUCH = "crouch_idle";
-		const string ANIM_WALK_NORM = "walk";
-		const string ANIM_RUN_NORM = "run";
-		const string ANIM_CRAWL = "crawl";
+		ANIM_IDLE_NORM = "idle1";
+		ANIM_IDLE_CROUCH = "crouch_idle";
+		ANIM_WALK_NORM = "walk";
+		ANIM_RUN_NORM = "run";
+		ANIM_CRAWL = "crawl";
 		ANIM_FLINCH = "new_flinch";
-		const string ANIM_JUMP = "jump";
-		const string ANIM_DEATH_BACK1 = "death1_die";
-		const string ANIM_DEATH_BACK2 = "back_die";
-		const string ANIM_DEATH_FORWARD1 = "forward_die";
-		const string ANIM_DEATH_CROUCH = "crouch_die";
+		ANIM_JUMP = "jump";
+		ANIM_DEATH_BACK1 = "death1_die";
+		ANIM_DEATH_BACK2 = "back_die";
+		ANIM_DEATH_FORWARD1 = "forward_die";
+		ANIM_DEATH_CROUCH = "crouch_die";
 		ATTACK_RANGE = 150;
 		ATTACK_HITRANGE = 250;
 		ATTACK_MOVERANGE = 130;
 		ATTACK_HITCHANCE = 0.75;
 		DROP_GOLD = 0;
 		NPC_GIVE_EXP = 4000;
-		const string DMG_SWIPE = Random(50, 70);
-		const float DOT1_DMG = 10.0;
-		const float DOT1_DURATION = 15.0;
-		const float CLOUD_DMG = 20.0;
-		const float CLOUD_DURATION = 10.0;
-		const float NOVA_DMG = 100.0;
-		const float NOVA_DOT_DMG = 10.0;
-		const float NOVA_DOT_DURATION = 5.0;
-		const Vector3 NOVA_COLOUR = Vector3(0, 254, 0);
-		const int SUMMON_FREQ = 180;
-		const int SUMMON_RATE_1 = 60;
-		const int SUMMON_RATE_2 = 90;
-		const int SUMMON_RATE_3 = 100;
-		const string SUMMON_SCRIPT_1 = "monsters/k_larva_black";
-		const string SUMMON_SCRIPT_2 = "monsters/horror";
-		const string SUMMON_SCRIPT_3 = "monsters/k_childre_black";
+		DMG_SWIPE = Random(50, 70);
+		DOT1_DMG = 10.0;
+		DOT1_DURATION = 15.0;
+		CLOUD_DMG = 20.0;
+		CLOUD_DURATION = 10.0;
+		NOVA_DMG = 100.0;
+		NOVA_DOT_DMG = 10.0;
+		NOVA_DOT_DURATION = 5.0;
+		NOVA_COLOUR = Vector3(0, 254, 0);
+		SUMMON_FREQ = 180;
+		SUMMON_RATE_1 = 60;
+		SUMMON_RATE_2 = 90;
+		SUMMON_RATE_3 = 100;
+		SUMMON_SCRIPT_1 = "monsters/k_larva_black";
+		SUMMON_SCRIPT_2 = "monsters/horror";
+		SUMMON_SCRIPT_3 = "monsters/k_childre_black";
 		Precache(SUMMON_SCRIPT_1);
 		Precache(SUMMON_SCRIPT_2);
 		Precache(SUMMON_SCRIPT_3);
-		const string SOUND_SPAWN = "magic/spawn.wav";
-		const string SOUND_FLINCH = "monsters/gonome/gonome_pain3.wav";
-		const string SOUND_WARCRY = "monsters/gonome/gonome_melee1.wav";
-		const string SOUND_FADE = "monsters/gonome/gonome_melee2.wav";
-		const string SOUND_UNFADE = "monsters/gonome/gonome_death3.wav";
-		const string SOUND_STRUCK1 = "debris/flesh1.wav";
-		const string SOUND_STRUCK2 = "debris/flesh2.wav";
-		const string SOUND_PAIN1 = "monsters/gonome/gonome_jumpattack.wav";
-		const string SOUND_PAIN2 = "monsters/gonome/gonome_melee1.wav";
-		const string SOUND_SWING_MISS1 = "zombie/claw_miss1.wav";
-		const string SOUND_SWING_MISS2 = "zombie/claw_miss2.wav";
-		const string SOUND_SWING_HIT1 = "zombie/claw_strike1.wav";
-		const string SOUND_SWING_HIT2 = "zombie/claw_strike2.wav";
-		const string SOUND_STEP1 = "common/npc_step1.wav";
-		const string SOUND_STEP2 = "common/npc_step2.wav";
-		const string SOUND_IDLE1 = "monsters/gonome/gonome_idle1.wav";
-		const string SOUND_IDLE2 = "monsters/gonome/gonome_idle2.wav";
-		const string SOUND_IDLE3 = "monsters/gonome/gonome_idle3.wav";
-		const string SOUND_PARRY = "weapons/axemetal1.wav";
-		const string SOUND_DEATH = "bullchicken/bc_die2.wav";
+		SOUND_SPAWN = "magic/spawn.wav";
+		SOUND_FLINCH = "monsters/gonome/gonome_pain3.wav";
+		SOUND_WARCRY = "monsters/gonome/gonome_melee1.wav";
+		SOUND_FADE = "monsters/gonome/gonome_melee2.wav";
+		SOUND_UNFADE = "monsters/gonome/gonome_death3.wav";
+		SOUND_STRUCK1 = "debris/flesh1.wav";
+		SOUND_STRUCK2 = "debris/flesh2.wav";
+		SOUND_PAIN1 = "monsters/gonome/gonome_jumpattack.wav";
+		SOUND_PAIN2 = "monsters/gonome/gonome_melee1.wav";
+		SOUND_SWING_MISS1 = "zombie/claw_miss1.wav";
+		SOUND_SWING_MISS2 = "zombie/claw_miss2.wav";
+		SOUND_SWING_HIT1 = "zombie/claw_strike1.wav";
+		SOUND_SWING_HIT2 = "zombie/claw_strike2.wav";
+		SOUND_STEP1 = "common/npc_step1.wav";
+		SOUND_STEP2 = "common/npc_step2.wav";
+		SOUND_IDLE1 = "monsters/gonome/gonome_idle1.wav";
+		SOUND_IDLE2 = "monsters/gonome/gonome_idle2.wav";
+		SOUND_IDLE3 = "monsters/gonome/gonome_idle3.wav";
+		SOUND_PARRY = "weapons/axemetal1.wav";
+		SOUND_DEATH = "bullchicken/bc_die2.wav";
 		Precache(SOUND_DEATH);
 		Precache("magic/spookie1.wav");
-		const string MONSTER_MODEL = "monsters/k_childre_black.mdl";
+		MONSTER_MODEL = "monsters/k_childre_black.mdl";
 		Precache(MONSTER_MODEL);
 		NOT_FIRST_TIME = 0;
 	}
@@ -178,7 +225,7 @@ class KChildreBossJelly : CGameScript
 				CallExternal(MY_SUMMON, "npc_fade_away");
 			}
 		}
-		string THE_NUM = RandomInt(1, 100);
+		int THE_NUM = RandomInt(1, 100);
 		if (THE_NUM >= SUMMON_RATE_1)
 		{
 			SpawnNPC(SUMMON_SCRIPT_1, /* TODO: $relpos */ $relpos(0, 48, 5), ScriptMode::Legacy); // params: GetEntityIndex(GetOwner())
@@ -348,7 +395,7 @@ class KChildreBossJelly : CGameScript
 
 	void OnFlinch()
 	{
-		string RND_FLINCH = RandomInt(1, 2);
+		int RND_FLINCH = RandomInt(1, 2);
 		if (RND_FLINCH == 1)
 		{
 			FLINCH_ANIM = ANIM_FLINCH1;
@@ -374,7 +421,7 @@ class KChildreBossJelly : CGameScript
 		}
 		if (GetEntityRange(m_hLastStruck) <= 256)
 		{
-			string RND_DEATH = RandomInt(1, 2);
+			int RND_DEATH = RandomInt(1, 2);
 			if (RND_DEATH == 1)
 			{
 				ANIM_DEATH = ANIM_DEATH_BACK1;

@@ -8,13 +8,21 @@ namespace MS
 class BoarBaseRemake : CGameScript
 {
 	string ANIM_ATTACK;
+	string ANIM_ATTACK1_LARGE;
+	string ANIM_ATTACK1_NORM;
 	string ANIM_ATTACK_DEF;
+	string ANIM_ATTACK_GORE_LEFT;
+	string ANIM_ATTACK_GORE_RIGHT;
+	string ANIM_BACKUP;
+	string ANIM_CHARGE;
 	string ANIM_DEATH;
 	string ANIM_IDLE;
 	string ANIM_IDLE2;
 	string ANIM_RUN;
+	string ANIM_STOMP;
 	string ANIM_WALK;
 	string AS_ATTACKING;
+	float ATTACK_HITCHANCE;
 	string ATTACK_HITRANGE;
 	string ATTACK_MOVERANGE;
 	string ATTACK_RANGE;
@@ -22,11 +30,36 @@ class BoarBaseRemake : CGameScript
 	string BOAR_CHARGE_TARGET;
 	string BOAR_CHARGING;
 	string BOAR_HEIGHT;
+	int BOAR_HEIGHT1;
+	int BOAR_HEIGHT2;
+	int BOAR_HEIGHT3;
+	string BOAR_LEFT_PUSH;
+	string BOAR_MODEL;
+	string BOAR_RIGHT_PUSH;
+	int BOAR_SIZE;
+	int BOAR_SKIN;
 	string BOAR_WIDTH;
+	int BOAR_WIDTH1;
+	int BOAR_WIDTH2;
+	int BOAR_WIDTH3;
+	string CL_CHARGE_SCRIPT;
 	string DMG_ATTACK;
+	float FREQ_BACKUP;
+	float FREQ_CHARGE;
 	string NEXT_BACKUP;
 	string NEXT_CHARGE;
 	string PUSH_VEL;
+	string SOUND_CHARGE;
+	string SOUND_DEATH;
+	string SOUND_GORE;
+	string SOUND_IDLE1;
+	string SOUND_IDLE2;
+	string SOUND_PAIN;
+	string SOUND_STRUCK1;
+	string SOUND_STRUCK2;
+	string SOUND_STRUCK3;
+	string SOUND_SWIPE1;
+	string SOUND_SWIPE2;
 
 	BoarBaseRemake()
 	{
@@ -35,40 +68,40 @@ class BoarBaseRemake : CGameScript
 		ANIM_RUN = "run";
 		ANIM_WALK = "walk";
 		ANIM_ATTACK = "gore_forward";
-		const string ANIM_ATTACK1_NORM = "gore_forward";
-		const string ANIM_ATTACK1_LARGE = "gore_forward2";
-		const string ANIM_ATTACK_GORE_RIGHT = "gore_right";
-		const string ANIM_ATTACK_GORE_LEFT = "gore_left";
-		const string ANIM_STOMP = "stompsnort";
-		const string ANIM_CHARGE = "charge";
+		ANIM_ATTACK1_NORM = "gore_forward";
+		ANIM_ATTACK1_LARGE = "gore_forward2";
+		ANIM_ATTACK_GORE_RIGHT = "gore_right";
+		ANIM_ATTACK_GORE_LEFT = "gore_left";
+		ANIM_STOMP = "stompsnort";
+		ANIM_CHARGE = "charge";
 		ANIM_DEATH = "die1";
-		const string ANIM_BACKUP = "back_off";
-		const float ATTACK_HITCHANCE = 0.5;
-		const int BOAR_WIDTH1 = 50;
-		const int BOAR_HEIGHT1 = 50;
-		const int BOAR_WIDTH2 = 75;
-		const int BOAR_HEIGHT2 = 75;
-		const int BOAR_WIDTH3 = 96;
-		const int BOAR_HEIGHT3 = 96;
-		const string BOAR_RIGHT_PUSH = /* TODO: $relvel */ $relvel(-50, 50, 10);
-		const string BOAR_LEFT_PUSH = /* TODO: $relvel */ $relvel(-100, 50, 10);
-		const int BOAR_SIZE = 1;
-		const int BOAR_SKIN = 0;
-		const string BOAR_MODEL = "monsters/boar1.mdl";
-		const float FREQ_CHARGE = 20.0;
-		const float FREQ_BACKUP = 10.0;
-		const string CL_CHARGE_SCRIPT = "monsters/boar_base_cl_charge";
-		const string SOUND_STRUCK1 = "weapons/cbar_hitbod1.wav";
-		const string SOUND_STRUCK2 = "weapons/cbar_hitbod2.wav";
-		const string SOUND_STRUCK3 = "weapons/cbar_hitbod3.wav";
-		const string SOUND_PAIN = "monsters/boar/boarpain.wav";
-		const string SOUND_IDLE1 = "monsters/boar/boaridle.wav";
-		const string SOUND_IDLE2 = "monsters/boar/boarsight2.wav";
-		const string SOUND_CHARGE = "monsters/boar/boarsight.wav";
-		const string SOUND_DEATH = "monsters/boar/boardeath.wav";
-		const string SOUND_SWIPE1 = "zombie/claw_miss1.wav";
-		const string SOUND_SWIPE2 = "zombie/claw_miss2.wav";
-		const string SOUND_GORE = "zombie/claw_strike3.wav";
+		ANIM_BACKUP = "back_off";
+		ATTACK_HITCHANCE = 0.5;
+		BOAR_WIDTH1 = 50;
+		BOAR_HEIGHT1 = 50;
+		BOAR_WIDTH2 = 75;
+		BOAR_HEIGHT2 = 75;
+		BOAR_WIDTH3 = 96;
+		BOAR_HEIGHT3 = 96;
+		BOAR_RIGHT_PUSH = /* TODO: $relvel */ $relvel(-50, 50, 10);
+		BOAR_LEFT_PUSH = /* TODO: $relvel */ $relvel(-100, 50, 10);
+		BOAR_SIZE = 1;
+		BOAR_SKIN = 0;
+		BOAR_MODEL = "monsters/boar1.mdl";
+		FREQ_CHARGE = 20.0;
+		FREQ_BACKUP = 10.0;
+		CL_CHARGE_SCRIPT = "monsters/boar_base_cl_charge";
+		SOUND_STRUCK1 = "weapons/cbar_hitbod1.wav";
+		SOUND_STRUCK2 = "weapons/cbar_hitbod2.wav";
+		SOUND_STRUCK3 = "weapons/cbar_hitbod3.wav";
+		SOUND_PAIN = "monsters/boar/boarpain.wav";
+		SOUND_IDLE1 = "monsters/boar/boaridle.wav";
+		SOUND_IDLE2 = "monsters/boar/boarsight2.wav";
+		SOUND_CHARGE = "monsters/boar/boarsight.wav";
+		SOUND_DEATH = "monsters/boar/boardeath.wav";
+		SOUND_SWIPE1 = "zombie/claw_miss1.wav";
+		SOUND_SWIPE2 = "zombie/claw_miss2.wav";
+		SOUND_GORE = "zombie/claw_strike3.wav";
 	}
 
 	void game_precache()
@@ -250,7 +283,7 @@ class BoarBaseRemake : CGameScript
 
 	void npc_selectattack()
 	{
-		string NEXT_ATTACK = RandomInt(0, 2);
+		int NEXT_ATTACK = RandomInt(0, 2);
 		if (NEXT_ATTACK == 0)
 		{
 			ANIM_ATTACK = ANIM_ATTACK_DEF;

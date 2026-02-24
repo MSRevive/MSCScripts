@@ -7,12 +7,17 @@ namespace MS
 
 class ScrollConjureVenomClaws : CGameScript
 {
+	int BASE_REQUIRED_LEVEL;
+	string BASE_REQUIRED_SKILL;
+	string BASE_SPELL_SCRIPT;
+	string BASE_SUMMON_TEXT;
+
 	ScrollConjureVenomClaws()
 	{
-		const string BASE_SPELL_SCRIPT = "magic_hand_conjure_venom_claws";
-		const string BASE_SUMMON_TEXT = "You learn to conjure Venom Claws.";
-		const string BASE_REQUIRED_SKILL = "skill.spellcasting.affliction";
-		const int BASE_REQUIRED_LEVEL = 20;
+		BASE_SPELL_SCRIPT = "magic_hand_conjure_venom_claws";
+		BASE_SUMMON_TEXT = "You learn to conjure Venom Claws.";
+		BASE_REQUIRED_SKILL = "skill.spellcasting.affliction";
+		BASE_REQUIRED_LEVEL = 20;
 	}
 
 	void OnSpawn() override

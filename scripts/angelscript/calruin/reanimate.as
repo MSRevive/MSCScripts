@@ -9,10 +9,16 @@ class Reanimate : CGameScript
 {
 	string ANIM_ATTACK;
 	string ANIM_FLINCH;
+	string ANIM_GETUP;
 	string ANIM_IDLE;
 	string ANIM_IDLE_NORM;
 	string ANIM_RUN;
+	string ANIM_SIT;
+	string ANIM_SWING;
+	string ANIM_THROW;
 	string ANIM_WALK;
+	int ATTACK_DAMAGE;
+	float ATTACK_HITCHANCE;
 	int ATTACK_HITRANGE;
 	int ATTACK_RANGE;
 	string CYCLE_TIME;
@@ -20,11 +26,24 @@ class Reanimate : CGameScript
 	int I_AM_TURNABLE;
 	int LAST_STOLE_HP;
 	int LEGIT_MAP;
+	string MONSTER_MODEL;
 	int MOVE_RANGE;
+	int NPC_BOSS_REGEN_RATE;
 	string NPC_EXP_MULTI;
 	int NPC_GIVE_EXP;
 	string NPC_IS_BOSS;
 	int NPC_NO_MOVE;
+	string SOUND_ATTACK1;
+	string SOUND_ATTACK2;
+	string SOUND_BROTHER;
+	string SOUND_HEAL;
+	string SOUND_IDLE1;
+	string SOUND_PAIN;
+	string SOUND_PUSH;
+	string SOUND_SPAWN;
+	string SOUND_STRUCK1;
+	string SOUND_STRUCK2;
+	string SOUND_STRUCK3;
 	int THROW_CHANCE;
 
 	Reanimate()
@@ -37,37 +56,37 @@ class Reanimate : CGameScript
 		{
 			NPC_EXP_MULTI = 0.25;
 		}
-		const int NPC_BOSS_REGEN_RATE = 0;
+		NPC_BOSS_REGEN_RATE = 0;
 		ANIM_RUN = "run";
 		ANIM_WALK = "walk";
-		const string ANIM_SIT = "sitidle";
+		ANIM_SIT = "sitidle";
 		ANIM_IDLE_NORM = "idle1";
-		const string ANIM_GETUP = "sitstand";
-		const string ANIM_SWING = "attack3";
-		const string ANIM_THROW = "attack2";
+		ANIM_GETUP = "sitstand";
+		ANIM_SWING = "attack3";
+		ANIM_THROW = "attack2";
 		ANIM_ATTACK = ANIM_SWING;
-		const int ATTACK_DAMAGE = 30;
+		ATTACK_DAMAGE = 30;
 		ATTACK_RANGE = 140;
 		MOVE_RANGE = 65;
 		ATTACK_HITRANGE = 175;
-		const float ATTACK_HITCHANCE = 0.85;
+		ATTACK_HITCHANCE = 0.85;
 		ANIM_IDLE = ANIM_IDLE_NORM;
-		const string SOUND_STRUCK1 = "controller/con_pain3.wav";
-		const string SOUND_STRUCK2 = "controller/con_pain3.wav";
-		const string SOUND_STRUCK3 = "none";
-		const string SOUND_PAIN = "zombie/zo_pain2.wav";
-		const string SOUND_ATTACK1 = "controller/con_attack1.wav";
-		const string SOUND_HEAL = "monsters/skeleton/calrian2.wav";
-		const string SOUND_ATTACK2 = "controller/con_attack2.wav";
-		const string SOUND_BROTHER = "monsters/skeleton/calrian.wav";
-		const string SOUND_IDLE1 = "controller/con_attack3.wav";
-		const string SOUND_SPAWN = "monsters/skeleton/calrian2.wav";
-		const string SOUND_PUSH = "monsters/skeleton/calrain3.wav";
+		SOUND_STRUCK1 = "controller/con_pain3.wav";
+		SOUND_STRUCK2 = "controller/con_pain3.wav";
+		SOUND_STRUCK3 = "none";
+		SOUND_PAIN = "zombie/zo_pain2.wav";
+		SOUND_ATTACK1 = "controller/con_attack1.wav";
+		SOUND_HEAL = "monsters/skeleton/calrian2.wav";
+		SOUND_ATTACK2 = "controller/con_attack2.wav";
+		SOUND_BROTHER = "monsters/skeleton/calrian.wav";
+		SOUND_IDLE1 = "controller/con_attack3.wav";
+		SOUND_SPAWN = "monsters/skeleton/calrian2.wav";
+		SOUND_PUSH = "monsters/skeleton/calrain3.wav";
 		ANIM_FLINCH = "laflinch";
 		THROW_CHANCE = 30;
 		Precache(SOUND_DEATH);
 		Precache(SOUND_SPAWN);
-		const string MONSTER_MODEL = "monsters/skeleton_boss1.mdl";
+		MONSTER_MODEL = "monsters/skeleton_boss1.mdl";
 		Precache(MONSTER_MODEL);
 	}
 
@@ -105,7 +124,7 @@ class Reanimate : CGameScript
 		}
 		if ((LEGIT_MAP))
 		{
-			string CHANCE = RandomInt(1, 3);
+			int CHANCE = RandomInt(1, 3);
 			if (CHANCE == 1)
 			{
 				GiveItem(GetOwner(), "scroll_summon_undead");
@@ -203,7 +222,7 @@ class Reanimate : CGameScript
 			EmitSound(GetOwner(), 2, SOUND_PUSH, 10);
 			string MY_LOC = GetMonsterProperty("origin");
 			string NME_LOC = GetEntityOrigin(m_hLastStruckByMe);
-			string NME_DISTANCE = Distance(MY_LOC, NME_LOC);
+			float NME_DISTANCE = Distance(MY_LOC, NME_LOC);
 			if (NME_DISTANCE < ATTACK_HITRANGE)
 			{
 				ApplyEffect(param2, "effects/effect_push", 3, /* TODO: $relvel */ $relvel(0, 400, 400), 0);

@@ -7,10 +7,13 @@ namespace MS
 
 class EZapArcher : CGameScript
 {
+	int ELEMENT;
+	int WEAPON;
+
 	EZapArcher()
 	{
-		const int WEAPON = 0;
-		const int ELEMENT = 3;
+		WEAPON = 0;
+		ELEMENT = 3;
 	}
 
 }

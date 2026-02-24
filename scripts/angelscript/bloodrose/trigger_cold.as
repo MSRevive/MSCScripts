@@ -7,12 +7,13 @@ namespace MS
 
 class TriggerCold : CGameScript
 {
+	string ELEMENT_TYPE;
 	int TRIG_DELAY;
 
 	TriggerCold()
 	{
 		SetGlobalVar("COLD_TRIG", 0);
-		const string ELEMENT_TYPE = "cold";
+		ELEMENT_TYPE = "cold";
 	}
 
 	void trigger_spawn()

@@ -8,13 +8,15 @@ namespace MS
 class TelfLeader2 : CGameScript
 {
 	int DID_INTRO;
+	int NPC_BASE_EXP;
 	int NPC_IS_BOSS;
+	int OVR_DROP_GOLD_AMT;
 
 	TelfLeader2()
 	{
 		NPC_IS_BOSS = 1;
-		const int OVR_DROP_GOLD_AMT = 5000;
-		const int NPC_BASE_EXP = 5000;
+		OVR_DROP_GOLD_AMT = 5000;
+		NPC_BASE_EXP = 5000;
 		SetGlobalVar("G_DID_ESCORT_ALERT", 0);
 		SetGlobalVar("G_ORC_ALERT", 1);
 		SetGlobalVar("G_ESCORT_ALERT_SAYTEXT", "Humans! Those fiends sent humans in after us!");
@@ -37,7 +39,7 @@ class TelfLeader2 : CGameScript
 	{
 		if (G_TELF_ESCORTS > 1)
 		{
-			SayText("Lies! Kill them! KILL THEM NOW!");
+			SayText("Lies! Kill them! " + KILL + THEM + NOW!);
 		}
 		else
 		{

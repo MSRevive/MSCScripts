@@ -5,6 +5,7 @@ namespace MS
 
 class GuidedLballAlt : CGameScript
 {
+	string DMG_TYPE;
 	string DOT_DMG;
 	string EXPIRE_TIME;
 	string GAME_PVP;
@@ -18,12 +19,14 @@ class GuidedLballAlt : CGameScript
 	int PLAYING_DEAD;
 	string SCAN_TOKENS;
 	string SKILL_TYPE;
+	string SOUND_LOOP;
+	int SPHERE_SPEED;
 
 	GuidedLballAlt()
 	{
-		const int SPHERE_SPEED = 30;
-		const string DMG_TYPE = "lightning";
-		const string SOUND_LOOP = "magic/bolt_loop.wav";
+		SPHERE_SPEED = 30;
+		DMG_TYPE = "lightning";
+		SOUND_LOOP = "magic/bolt_loop.wav";
 	}
 
 	void OnRepeatTimer()

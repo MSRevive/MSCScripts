@@ -49,7 +49,7 @@ class Lure : CGameScript
 		string INFO_TITLE = "A CRITICAL OBJECT HAS BEEN DESTROYED!";
 		string INFO_MSG = GetEntityName(GetOwner());
 		INFO_MSG += " has been destroyed! ";
-		SendInfoMsg("all", "INFO_TITLE INFO_MSG");
+		SendInfoMsg("all", INFO_TITLE + INFO_MSG);
 		CallExternal(GAME_MASTER, "gm_crit_npc_died", GetEntityIndex(GetOwner()), GetEntityIndex(m_hLastStruck));
 	}
 
@@ -67,7 +67,7 @@ class Lure : CGameScript
 				string INFO_TITLE = "Critical Object Under Attack!";
 				string INFO_MSG = GetEntityName(GetOwner());
 				INFO_MSG += " is under attack!";
-				SendInfoMsg("all", "INFO_TITLE INFO_MSG");
+				SendInfoMsg("all", INFO_TITLE + INFO_MSG);
 			}
 		}
 	}

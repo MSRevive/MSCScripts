@@ -17,14 +17,25 @@ class WraithSummoned : CGameScript
 	int ATTACK_HITRANGE;
 	int ATTACK_MOVERANGE;
 	int ATTACK_RANGE;
+	int BASENOCLIP_NO_SETMOVEDEST;
+	string CL_SCRIPT;
 	int DMG_DRAIN;
+	float FREQ_ROAM;
 	int FWD_SPEED;
+	int FWD_SPEED_STANDARD;
 	string INITIAL_ORIGIN;
 	int MP_DRAIN_AMT;
 	int MY_CL_IDX;
 	string MY_OWNER;
 	int NPC_GIVE_EXP;
 	string NPC_NOCLIP_DEST;
+	string SOUND_DEATH;
+	string SOUND_DRAIN_LOOP;
+	string SOUND_DRAIN_START;
+	string SOUND_HOVER_LOOP;
+	string SOUND_KILL;
+	string SOUND_MOAN;
+	string SOUND_TELE;
 
 	WraithSummoned()
 	{
@@ -37,20 +48,20 @@ class WraithSummoned : CGameScript
 		ATTACK_MOVERANGE = 100;
 		ATTACK_HITRANGE = 150;
 		NPC_GIVE_EXP = 400;
-		const int BASENOCLIP_NO_SETMOVEDEST = 1;
-		const int FWD_SPEED_STANDARD = 20;
+		BASENOCLIP_NO_SETMOVEDEST = 1;
+		FWD_SPEED_STANDARD = 20;
 		FWD_SPEED = 20;
 		DMG_DRAIN = 20;
 		MP_DRAIN_AMT = 1;
-		const string CL_SCRIPT = "monsters/wraith_cl";
-		const string FREQ_ROAM = Random(5.0, 10.0);
-		const string SOUND_MOAN = "crow/ghostwail.wav";
-		const string SOUND_DEATH = "ichy/ichy_die2.wav";
-		const string SOUND_DRAIN_START = "crow/Triggered/tomb5.wav";
-		const string SOUND_DRAIN_LOOP = "x/x_teleattack1.wav";
-		const string SOUND_HOVER_LOOP = "ambience/labdrone2.wav";
-		const string SOUND_KILL = "houndeye/he_blast3.wav";
-		const string SOUND_TELE = "magic/teleport.wav";
+		CL_SCRIPT = "monsters/wraith_cl";
+		FREQ_ROAM = Random(5.0, 10.0);
+		SOUND_MOAN = "crow/ghostwail.wav";
+		SOUND_DEATH = "ichy/ichy_die2.wav";
+		SOUND_DRAIN_START = "crow/Triggered/tomb5.wav";
+		SOUND_DRAIN_LOOP = "x/x_teleattack1.wav";
+		SOUND_HOVER_LOOP = "ambience/labdrone2.wav";
+		SOUND_KILL = "houndeye/he_blast3.wav";
+		SOUND_TELE = "magic/teleport.wav";
 		Precache(SOUND_KILL);
 		Precache(SOUND_DEATH);
 	}
@@ -117,7 +128,7 @@ class WraithSummoned : CGameScript
 			SetEntityOrigin(GetOwner(), MY_ORG);
 			if (GetEntityRange(m_hAttackTarget) < 55)
 			{
-				string RND_ANG = Random(0, 359.99);
+				float RND_ANG = Random(0, 359.99);
 				NPC_NOCLIP_DEST += /* TODO: $relpos */ $relpos(Vector3(0, RND_ANG, 0), Vector3(0, 80, 0));
 				NPC_NOCLIP_DEST = "z";
 				SetEntityOrigin(GetOwner(), NPC_NOCLIP_DEST);
@@ -155,7 +166,7 @@ class WraithSummoned : CGameScript
 		FREQ_ROAM("do_manual_roam");
 		if (!(m_hAttackTarget == "unset")) return;
 		NPC_NOCLIP_DEST = NPC_HOME_LOC;
-		string RND_ANG = Random(0, 359.99);
+		float RND_ANG = Random(0, 359.99);
 		NPC_NOCLIP_DEST += /* TODO: $relpos */ $relpos(Vector3(0, RND_ANG, 0), Vector3(0, 512, 0));
 	}
 

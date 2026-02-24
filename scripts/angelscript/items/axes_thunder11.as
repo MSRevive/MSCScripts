@@ -8,18 +8,26 @@ namespace MS
 class AxesThunder11 : CGameScript
 {
 	int AXE_RESTORED;
+	int BASE_LEVEL_REQ;
+	int MELEE_DMG;
+	int MODEL_BODY_OFS;
+	string MODEL_HANDS;
+	string MODEL_VIEW;
+	int MODEL_VIEW_IDX;
+	string MODEL_WORLD;
+	string SOUND_SWIPE;
 	int THROWING_AXE;
 
 	AxesThunder11()
 	{
-		const int BASE_LEVEL_REQ = 15;
-		const int MELEE_DMG = 260;
-		const string MODEL_VIEW = "viewmodels/v_2haxes.mdl";
-		const int MODEL_VIEW_IDX = 3;
-		const string MODEL_HANDS = "weapons/p_weapons2.mdl";
-		const string MODEL_WORLD = "weapons/p_weapons2.mdl";
-		const string SOUND_SWIPE = "weapons/swingsmall.wav";
-		const int MODEL_BODY_OFS = 121;
+		BASE_LEVEL_REQ = 15;
+		MELEE_DMG = 260;
+		MODEL_VIEW = "viewmodels/v_2haxes.mdl";
+		MODEL_VIEW_IDX = 3;
+		MODEL_HANDS = "weapons/p_weapons2.mdl";
+		MODEL_WORLD = "weapons/p_weapons2.mdl";
+		SOUND_SWIPE = "weapons/swingsmall.wav";
+		MODEL_BODY_OFS = 121;
 	}
 
 	void weapon_spawn()

@@ -9,12 +9,13 @@ class SlimeBlackLargeNr : CGameScript
 {
 	int HEAR_RANGE_MAX;
 	int HEAR_RANGE_PLAYER;
+	int ME_NO_WANDER;
 
 	SlimeBlackLargeNr()
 	{
 		HEAR_RANGE_MAX = 400;
 		HEAR_RANGE_PLAYER = 300;
-		const int ME_NO_WANDER = 1;
+		ME_NO_WANDER = 1;
 	}
 
 }

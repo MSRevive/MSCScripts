@@ -7,14 +7,21 @@ namespace MS
 
 class DotPoison : CGameScript
 {
+	string DOT_HE_IMMUNE;
+	string DOT_IM_AFFECTED;
+	string DOT_IM_RESIST;
+	string DOT_TYPE;
+	string EFFECT_ID;
+	string EFFECT_SCRIPT;
+
 	DotPoison()
 	{
-		const string EFFECT_ID = "DOT_poison";
-		const string EFFECT_SCRIPT = currentscript;
-		const string DOT_TYPE = "poison_effect";
-		const string DOT_IM_AFFECTED = "You have been poisoned!";
-		const string DOT_IM_RESIST = "You resist the poison.";
-		const string DOT_HE_IMMUNE = "is immune to poison!";
+		EFFECT_ID = "DOT_poison";
+		EFFECT_SCRIPT = currentscript;
+		DOT_TYPE = "poison_effect";
+		DOT_IM_AFFECTED = "You have been poisoned!";
+		DOT_IM_RESIST = "You resist the poison.";
+		DOT_HE_IMMUNE = "is immune to poison!";
 	}
 
 	void dot_start()

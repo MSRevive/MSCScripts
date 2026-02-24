@@ -7,13 +7,15 @@ namespace MS
 
 class DebuffCold : CGameScript
 {
+	string EFFECT_ID;
+	string EFFECT_SCRIPT;
 	float game.effect.anim.framerate;
 	int game.effect.movespeed;
 
 	DebuffCold()
 	{
-		const string EFFECT_ID = "debuff_cold";
-		const string EFFECT_SCRIPT = currentscript;
+		EFFECT_ID = "debuff_cold";
+		EFFECT_SCRIPT = currentscript;
 	}
 
 	void debuff_start()

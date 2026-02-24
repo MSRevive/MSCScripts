@@ -10,11 +10,13 @@ class BaseDebuff : CGameScript
 	int DEBUFF_INTENSITY;
 	int DEBUFF_SCRIPTFLAG;
 	int DEBUFF_STARTED;
+	string EFFECT_ID;
+	string EFFECT_SCRIPT;
 
 	BaseDebuff()
 	{
-		const string EFFECT_ID = "base_debuff";
-		const string EFFECT_SCRIPT = currentscript;
+		EFFECT_ID = "base_debuff";
+		EFFECT_SCRIPT = currentscript;
 		DEBUFF_INTENSITY = 1;
 		DEBUFF_SCRIPTFLAG = 0;
 		DEBUFF_STARTED = 0;
@@ -63,7 +65,7 @@ class BaseDebuff : CGameScript
 		if ((DEBUFF_SCRIPTFLAG)) return;
 		if (!(param1 == "edit")) return;
 		if (!(param2 == EFFECT_ID)) return;
-		debuff_scriptflag_update(/* TODO: $pass */ $pass(param4), /* TODO: $pass */ $pass(param5));
+		debuff_scriptflag_update(param4, param5);
 	}
 
 	void debuff_scriptflag_update()
@@ -72,7 +74,7 @@ class BaseDebuff : CGameScript
 		{
 			DEBUFF_INTENSITY = param1;
 		}
-		effect_set_duration(/* TODO: $pass */ $pass(param2));
+		effect_set_duration(param2);
 	}
 
 }

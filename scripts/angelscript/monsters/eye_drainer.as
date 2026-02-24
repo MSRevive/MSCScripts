@@ -15,6 +15,7 @@ class EyeDrainer : CGameScript
 	string ANIM_DEATH;
 	string ANIM_IDLE;
 	string ANIM_RUN;
+	string ANIM_SPIN;
 	string ANIM_WALK;
 	int ATTACK_HITRANGE;
 	int ATTACK_RANGE;
@@ -30,11 +31,19 @@ class EyeDrainer : CGameScript
 	string NEXT_RENDER_CHECK;
 	int NPC_GIVE_EXP;
 	int NPC_HACKED_MOVE_SPEED;
+	int NPC_NO_END_FLY;
+	string SOUND_BEAM_LOOP;
+	string SOUND_DEATH;
+	string SOUND_HOVER_LOOP;
+	string SOUND_KILL;
+	string SOUND_PAIN1;
+	string SOUND_PAIN2;
+	string SOUND_STRUCK;
 
 	EyeDrainer()
 	{
 		NPC_GIVE_EXP = 200;
-		const int NPC_NO_END_FLY = 1;
+		NPC_NO_END_FLY = 1;
 		NPC_HACKED_MOVE_SPEED = 100;
 		MOVE_RANGE = 128;
 		ATTACK_RANGE = 128;
@@ -44,15 +53,15 @@ class EyeDrainer : CGameScript
 		ANIM_RUN = "idle_standard";
 		ANIM_IDLE = "spin_horizontal_slow";
 		ANIM_DEATH = "spin_horizontal_fast";
-		const string ANIM_SPIN = "spin_horizontal_slow";
+		ANIM_SPIN = "spin_horizontal_slow";
 		IS_UNHOLY = 1;
-		const string SOUND_BEAM_LOOP = "x/x_teleattack1.wav";
-		const string SOUND_STRUCK = "weapons/cbar_hitbod1.wav";
-		const string SOUND_PAIN1 = "houndeye/he_pain2.wav";
-		const string SOUND_PAIN2 = "houndeye/he_pain5.wav";
-		const string SOUND_KILL = "houndeye/he_blast3.wav";
-		const string SOUND_DEATH = "turret/tu_die2.wav";
-		const string SOUND_HOVER_LOOP = "ambience/labdrone2.wav";
+		SOUND_BEAM_LOOP = "x/x_teleattack1.wav";
+		SOUND_STRUCK = "weapons/cbar_hitbod1.wav";
+		SOUND_PAIN1 = "houndeye/he_pain2.wav";
+		SOUND_PAIN2 = "houndeye/he_pain5.wav";
+		SOUND_KILL = "houndeye/he_blast3.wav";
+		SOUND_DEATH = "turret/tu_die2.wav";
+		SOUND_HOVER_LOOP = "ambience/labdrone2.wav";
 		Precache(SOUND_DEATH);
 	}
 
@@ -302,9 +311,9 @@ class EyeDrainer : CGameScript
 		if ((DOING_FS_DODGE)) return;
 		if (!(IsEntityAlive(GetOwner()))) return;
 		DOING_DODGE = 1;
-		string RND_FB = Random(0, -120);
-		string RND_RL = Random(-120, 120);
-		string RND_UD = Random(-120, 120);
+		float RND_FB = Random(0, -120);
+		float RND_RL = Random(-120, 120);
+		float RND_UD = Random(-120, 120);
 		AddVelocity(GetOwner(), /* TODO: $relvel */ $relvel(RND_RL, RND_FB, RND_UD));
 		ScheduleDelayedEvent(1.0, "reset_dodge");
 	}

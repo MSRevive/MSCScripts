@@ -7,14 +7,21 @@ namespace MS
 
 class ProjBoltIron : CGameScript
 {
+	float ARROW_BREAK_CHANCE;
+	int ARROW_SOLIDIFY_ON_WALL;
+	int HITSCAN_BOLT;
+	int MODEL_BODY_OFS;
+	int PROJ_DAMAGE;
+	int PROJ_STICK_DURATION;
+
 	ProjBoltIron()
 	{
-		const int HITSCAN_BOLT = 1;
-		const int MODEL_BODY_OFS = 0;
-		const int PROJ_DAMAGE = 300;
-		const int PROJ_STICK_DURATION = 25;
-		const int ARROW_SOLIDIFY_ON_WALL = 1;
-		const float ARROW_BREAK_CHANCE = 0.2;
+		HITSCAN_BOLT = 1;
+		MODEL_BODY_OFS = 0;
+		PROJ_DAMAGE = 300;
+		PROJ_STICK_DURATION = 25;
+		ARROW_SOLIDIFY_ON_WALL = 1;
+		ARROW_BREAK_CHANCE = 0.2;
 	}
 
 	void arrow_spawn()

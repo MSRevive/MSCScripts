@@ -8,28 +8,52 @@ namespace MS
 
 class ElementalFire1 : CGameScript
 {
+	int AIM_RATIO;
 	int AM_SUMMONED;
+	string ANIM_ALERT;
 	string ANIM_ATTACK;
+	string ANIM_CHARGEIDLE;
 	string ANIM_DEATH;
+	string ANIM_FIRE_BALL;
 	string ANIM_FLINCH;
+	string ANIM_FROMCHARGE;
+	string ANIM_GLOAT;
 	string ANIM_IDLE;
 	string ANIM_RUN;
+	string ANIM_SEARCH;
+	string ANIM_SWIPE;
+	string ANIM_TOCHARGE;
 	string ANIM_WALK;
 	int AS_SUMMON_TELE_CHECK;
+	int ATTACK_CONE_OF_FIRE;
 	float ATTACK_HITCHANCE;
 	int ATTACK_HITRANGE;
 	int ATTACK_MOVERANGE;
 	int ATTACK_RANGE;
+	int ATTACK_SPEED;
 	int CAN_FLINCH;
+	float CIRCLE_DURATION;
+	int CIRCLE_RANGE;
 	int COF_ACTIVE;
+	int DMG_FIRE_BALL;
+	int DMG_SEAL;
+	int DMG_SWIPE;
+	int DOT_FIRE;
 	int FIREBALL_PREPPED;
 	string FIRE_BALL_AMMO;
+	int FIRE_BALL_RANGE;
 	string FLINCH_ANIM;
 	int FLINCH_CHANCE;
 	int FLINCH_DELAY;
 	int FLINCH_DMG_REQ;
+	float FREQ_CIRCLE;
+	float FREQ_FIRE_BALL;
+	int FULL_FIRE_BALL_AMMO;
 	int IMMUNE_VAMPIRE;
 	int IS_UNHOLY;
+	int LIGHT_RAD;
+	int MOVE_FAST;
+	int MOVE_NORMAL;
 	string MY_HURT_STAGE;
 	string MY_OWNER;
 	string NEXT_CIRCLE;
@@ -37,7 +61,25 @@ class ElementalFire1 : CGameScript
 	int NO_SPAWN_STUCK_CHECK;
 	int NPC_GIVE_EXP;
 	string NPC_HACKED_MOVE_SPEED;
+	string PROJ_SCRIPT;
+	string RAND_IDLE_ANIMS;
+	string SOUND_ALERT;
+	string SOUND_CIRCLE_READY;
+	string SOUND_DEATH;
+	string SOUND_FIRECHARGE;
+	string SOUND_FIRESHOOT;
+	string SOUND_GLOAT;
+	string SOUND_HOVER;
+	string SOUND_IDLE1;
+	string SOUND_IDLE2;
+	string SOUND_IDLE3;
+	string SOUND_PAIN0;
+	string SOUND_PAIN1;
+	string SOUND_PAIN2;
+	string SOUND_SWIPE;
+	string SOUND_SWIPEHIT;
 	int SWIPE_ATTACK;
+	int SWIPE_MOVERANGE;
 
 	ElementalFire1()
 	{
@@ -48,14 +90,14 @@ class ElementalFire1 : CGameScript
 		ANIM_ATTACK = "attack1";
 		ANIM_FLINCH = "flinch";
 		ANIM_DEATH = "die1";
-		const string ANIM_TOCHARGE = "tocharge";
-		const string ANIM_CHARGEIDLE = "charging";
-		const string ANIM_FROMCHARGE = "fromcharge";
-		const string ANIM_FIRE_BALL = "fireball";
-		const string ANIM_SWIPE = "attack1";
-		const string ANIM_ALERT = "yes";
-		const string ANIM_GLOAT = "no";
-		const string ANIM_SEARCH = "dunno";
+		ANIM_TOCHARGE = "tocharge";
+		ANIM_CHARGEIDLE = "charging";
+		ANIM_FROMCHARGE = "fromcharge";
+		ANIM_FIRE_BALL = "fireball";
+		ANIM_SWIPE = "attack1";
+		ANIM_ALERT = "yes";
+		ANIM_GLOAT = "no";
+		ANIM_SEARCH = "dunno";
 		NPC_GIVE_EXP = 200;
 		CAN_FLINCH = 1;
 		FLINCH_CHANCE = 10;
@@ -65,42 +107,42 @@ class ElementalFire1 : CGameScript
 		ATTACK_RANGE = 100;
 		ATTACK_HITRANGE = 150;
 		ATTACK_MOVERANGE = 65;
-		const int MOVE_FAST = 200;
-		const int MOVE_NORMAL = 100;
+		MOVE_FAST = 200;
+		MOVE_NORMAL = 100;
 		NPC_HACKED_MOVE_SPEED = MOVE_NORMAL;
-		const int SWIPE_MOVERANGE = 65;
-		const string RAND_IDLE_ANIMS = "idle1;idle2;dunno";
-		const int LIGHT_RAD = 196;
-		const int CIRCLE_RANGE = 128;
-		const float FREQ_CIRCLE = 15.0;
-		const float CIRCLE_DURATION = 8.0;
+		SWIPE_MOVERANGE = 65;
+		RAND_IDLE_ANIMS = "idle1;idle2;dunno";
+		LIGHT_RAD = 196;
+		CIRCLE_RANGE = 128;
+		FREQ_CIRCLE = 15.0;
+		CIRCLE_DURATION = 8.0;
 		ATTACK_HITCHANCE = 0.8;
-		const string PROJ_SCRIPT = "proj_fire_ball";
-		const int FIRE_BALL_RANGE = 2000;
-		const int FULL_FIRE_BALL_AMMO = 3;
-		const int AIM_RATIO = 50;
-		const int ATTACK_CONE_OF_FIRE = 2;
-		const int ATTACK_SPEED = 500;
-		const string DOT_FIRE = RandomInt(10, 30);
-		const int DMG_SEAL = 200;
-		const string DMG_FIRE_BALL = RandomInt(50, 100);
-		const string DMG_SWIPE = RandomInt(20, 50);
-		const float FREQ_FIRE_BALL = 0.5;
-		const string SOUND_ALERT = "agrunt/ag_alert5.wav";
-		const string SOUND_IDLE1 = "agrunt/ag_alert1.wav";
-		const string SOUND_IDLE2 = "agrunt/ag_die1.wav";
-		const string SOUND_IDLE3 = "agrunt/ag_idle1.wav";
-		const string SOUND_SWIPE = "weapons/debris1.wav";
-		const string SOUND_SWIPEHIT = "ambience/steamburst1.wav";
-		const string SOUND_DEATH = "garg/gar_die1.wav";
-		const string SOUND_PAIN0 = "debris/bustflesh2.wav";
-		const string SOUND_PAIN1 = "agrunt/ag_pain1.wav";
-		const string SOUND_PAIN2 = "agrunt/ag_pain4.wav";
-		const string SOUND_GLOAT = "x/x_laugh1.wav";
-		const string SOUND_FIRECHARGE = "magic/fireball_powerup.wav";
-		const string SOUND_FIRESHOOT = "magic/fireball_strike.wav";
-		const string SOUND_CIRCLE_READY = "debris/beamstart1.wav";
-		const string SOUND_HOVER = "fans/fan4on.wav";
+		PROJ_SCRIPT = "proj_fire_ball";
+		FIRE_BALL_RANGE = 2000;
+		FULL_FIRE_BALL_AMMO = 3;
+		AIM_RATIO = 50;
+		ATTACK_CONE_OF_FIRE = 2;
+		ATTACK_SPEED = 500;
+		DOT_FIRE = RandomInt(10, 30);
+		DMG_SEAL = 200;
+		DMG_FIRE_BALL = RandomInt(50, 100);
+		DMG_SWIPE = RandomInt(20, 50);
+		FREQ_FIRE_BALL = 0.5;
+		SOUND_ALERT = "agrunt/ag_alert5.wav";
+		SOUND_IDLE1 = "agrunt/ag_alert1.wav";
+		SOUND_IDLE2 = "agrunt/ag_die1.wav";
+		SOUND_IDLE3 = "agrunt/ag_idle1.wav";
+		SOUND_SWIPE = "weapons/debris1.wav";
+		SOUND_SWIPEHIT = "ambience/steamburst1.wav";
+		SOUND_DEATH = "garg/gar_die1.wav";
+		SOUND_PAIN0 = "debris/bustflesh2.wav";
+		SOUND_PAIN1 = "agrunt/ag_pain1.wav";
+		SOUND_PAIN2 = "agrunt/ag_pain4.wav";
+		SOUND_GLOAT = "x/x_laugh1.wav";
+		SOUND_FIRECHARGE = "magic/fireball_powerup.wav";
+		SOUND_FIRESHOOT = "magic/fireball_strike.wav";
+		SOUND_CIRCLE_READY = "debris/beamstart1.wav";
+		SOUND_HOVER = "fans/fan4on.wav";
 		if ((IsEntityAlive(GetOwner())))
 		{
 		}
@@ -120,7 +162,7 @@ class ElementalFire1 : CGameScript
 		if ((m_hAttackTarget).findFirst("unset") >= 0)
 		{
 		}
-		string RND_PICK = RandomInt(0, 2);
+		int RND_PICK = RandomInt(0, 2);
 		string RND_ANIM = GetToken(RAND_IDLE_ANIMS, RND_PICK, ";");
 		PlayAnim("critical", RND_ANIM);
 	}

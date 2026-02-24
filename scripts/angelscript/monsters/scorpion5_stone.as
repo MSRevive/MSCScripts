@@ -11,15 +11,20 @@ class Scorpion5Stone : CGameScript
 	float BASE_MOVESPEED;
 	int IS_UNHOLY;
 	int NPC_GIVE_EXP;
+	string SOUND_IDLE1;
+	string SOUND_PAIN;
+	string SOUND_STRUCK1;
+	string SOUND_STRUCK2;
+	string SOUND_STRUCK3;
 
 	Scorpion5Stone()
 	{
 		IS_UNHOLY = 1;
-		const string SOUND_STRUCK1 = "weapons/axemetal1.wav";
-		const string SOUND_STRUCK2 = "weapons/axemetal2.wav";
-		const string SOUND_STRUCK3 = "debris/concrete1.wav";
-		const string SOUND_PAIN = "monsters/spider/spiderhiss.wav";
-		const string SOUND_IDLE1 = "monsters/spider/spideridle.wav";
+		SOUND_STRUCK1 = "weapons/axemetal1.wav";
+		SOUND_STRUCK2 = "weapons/axemetal2.wav";
+		SOUND_STRUCK3 = "debris/concrete1.wav";
+		SOUND_PAIN = "monsters/spider/spiderhiss.wav";
+		SOUND_IDLE1 = "monsters/spider/spideridle.wav";
 	}
 
 	void scorpion_spawn()

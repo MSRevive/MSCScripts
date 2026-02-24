@@ -7,9 +7,11 @@ namespace MS
 
 class ConstTest : CGameScript
 {
+	int TOP_CONST;
+
 	ConstTest()
 	{
-		const int TOP_CONST = 1;
+		TOP_CONST = 1;
 		Precache("dwarf/male1.mdl");
 	}
 
@@ -21,15 +23,15 @@ class ConstTest : CGameScript
 
 	void say_const()
 	{
-		SayText("The constants are top TOP_CONST and bottom BOTTOM_CONST");
+		SayText("The constants are top " + TOP_CONST + "and bottom " + BOTTOM_CONST);
 	}
 
 	void ext_change_const()
 	{
 		// TODO: UNCONVERTED: const_ovrd TOP_CONST A
 		// TODO: UNCONVERTED: const_ovrd BOTTOM_CONST B
-		SayText("The changed to top TOP_CONST and bottom BOTTOM_CONST");
-		SayText("Scriptvar top GetEntityProperty(GetOwner(), "scriptvar") and bottom GetEntityProperty(GetOwner(), "scriptvar")");
+		SayText("The changed to top " + TOP_CONST + "and bottom " + BOTTOM_CONST);
+		SayText("Scriptvar top " + GetEntityProperty(GetOwner(), "scriptvar") + "and bottom " + GetEntityProperty(GetOwner(), "scriptvar"));
 	}
 
 }

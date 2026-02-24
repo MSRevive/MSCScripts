@@ -7,15 +7,23 @@ namespace MS
 
 class ProjArrowBroadhead : CGameScript
 {
+	float ARROW_BREAK_CHANCE;
+	int ARROW_SOLIDIFY_ON_WALL;
+	int CLFX_ARROW;
+	int MODEL_BODY_OFS;
+	int PROJ_DAMAGE;
+	int PROJ_STICK_DURATION;
+	string SPRITE_ARROW_TRADE;
+
 	ProjArrowBroadhead()
 	{
-		const int CLFX_ARROW = 1;
-		const string SPRITE_ARROW_TRADE = "broadarrow";
-		const int MODEL_BODY_OFS = 0;
-		const string PROJ_DAMAGE = RandomInt(200, 300);
-		const int PROJ_STICK_DURATION = 25;
-		const int ARROW_SOLIDIFY_ON_WALL = 0;
-		const float ARROW_BREAK_CHANCE = 0.2;
+		CLFX_ARROW = 1;
+		SPRITE_ARROW_TRADE = "broadarrow";
+		MODEL_BODY_OFS = 0;
+		PROJ_DAMAGE = RandomInt(200, 300);
+		PROJ_STICK_DURATION = 25;
+		ARROW_SOLIDIFY_ON_WALL = 0;
+		ARROW_BREAK_CHANCE = 0.2;
 	}
 
 	void arrow_spawn()

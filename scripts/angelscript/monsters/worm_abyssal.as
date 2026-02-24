@@ -9,19 +9,49 @@ namespace MS
 class WormAbyssal : CGameScript
 {
 	string ANIM_ATTACK;
+	string ANIM_ATTACK_BITE_CLOSE;
+	string ANIM_ATTACK_BITE_MED;
+	string ANIM_ATTACK_LONG;
+	string ANIM_ATTACK_MULTI;
+	string ANIM_ATTACK_SHORT;
+	string ANIM_ATTACK_STRONG;
+	string ANIM_BEAM;
 	string ANIM_DEATH;
 	string ANIM_FLINCH;
+	string ANIM_FLINCH1;
+	string ANIM_FLINCH2;
+	string ANIM_HIDE;
 	string ANIM_IDLE;
+	string ANIM_IDLE_UP;
+	string ANIM_LOWER;
+	string ANIM_RAWR;
+	string ANIM_RISE;
 	string ANIM_RUN;
 	string ANIM_WALK;
+	int AOE_BEAM;
+	int AOE_CLAW;
+	int AOE_STRONG;
+	int ATTACH_CLAW;
+	int ATTACH_EYE;
 	int ATTACK_HITRANGE;
 	int ATTACK_MOVERANGE;
 	int ATTACK_RANGE;
 	string BEAM_DEST;
 	int CL_IDX;
+	string CL_SCRIPT;
 	float CUR_HIDE_THRESH;
 	int CUR_RAWR;
+	int DMG_BITE;
+	int DMG_CLAW;
+	int DMG_MULTI;
+	int DMG_STRONG;
 	string DOING_IDLE_SOUND;
+	int DOT_DMG;
+	string DOT_EFFECT_SCRIPT;
+	float FREQ_CL_REFRESH;
+	float FREQ_EYEBEAM;
+	float FREQ_IDLE_SOUND;
+	float FREQ_TELEPORT;
 	string GIBBER_ACTIVE;
 	string GIBBER_COUNT;
 	string GIBBER_DELAY;
@@ -46,11 +76,41 @@ class WormAbyssal : CGameScript
 	string NPC_HBAR_ADJ;
 	int NPC_IS_BOSS;
 	int NPC_IS_TURRET;
+	string NPC_MATERIAL_TYPE;
 	int NPC_MUST_SEE_TARGET;
 	int NPC_NO_ATTACK;
+	int NPC_NO_VADJ;
+	int NPC_PITCH_FLINCH;
+	int NPC_PITCH_PAIN;
 	int NPC_RANGED;
+	string NPC_RANGE_TYPE;
+	int NPC_STRUCK_CHANNEL;
+	string NPC_STRUCK_SOUND_EVENT;
+	int NPC_USE_FLINCH;
+	int NPC_USE_PAIN;
 	string REPEL_POINT;
 	string REPEL_TARGS;
+	string SOUND_BEAM_CHARGE;
+	string SOUND_BEAM_FIRE;
+	string SOUND_BITE;
+	string SOUND_DEATH;
+	string SOUND_FLINCH1;
+	string SOUND_FLINCH2;
+	string SOUND_FLINCH3;
+	string SOUND_GIBBER1;
+	string SOUND_GIBBER2;
+	string SOUND_IDLE1;
+	string SOUND_IDLE2;
+	string SOUND_IDLE3;
+	string SOUND_IDLE4;
+	string SOUND_IDLE5;
+	string SOUND_MULTI;
+	string SOUND_PAIN1;
+	string SOUND_PAIN2;
+	string SOUND_PAIN3;
+	string SOUND_RAWR1;
+	string SOUND_RAWR2;
+	string SOUND_RAWR3;
 	string WORM_REPEL;
 	int WORM_TELE_IDX;
 	string WORM_UNHIDING;
@@ -72,29 +132,29 @@ class WormAbyssal : CGameScript
 		NPC_MUST_SEE_TARGET = 0;
 		NPC_RANGED = 1;
 		NPC_IS_TURRET = 1;
-		const string NPC_RANGE_TYPE = "range2D";
-		const int NPC_NO_VADJ = 1;
-		const string SOUND_DEATH = "monsters/aby_worm/death.wav";
-		const string ANIM_FLINCH = "flinch1";
-		const string ANIM_RISE = "rise";
-		const string ANIM_LOWER = "lower";
-		const string ANIM_IDLE_UP = "idle2";
-		const string ANIM_FLINCH1 = "flinch1";
-		const string ANIM_FLINCH2 = "flinch2";
-		const string ANIM_RAWR = "scream";
-		const string ANIM_HIDE = "hide_idle";
-		const string ANIM_ATTACK_LONG = "attacklow";
-		const string ANIM_ATTACK_SHORT = "attack";
-		const string ANIM_ATTACK_STRONG = "attack_strong_close";
-		const string ANIM_ATTACK_BITE_MED = "attack_bite_med";
-		const string ANIM_ATTACK_MULTI = "attack_multi_close";
-		const string ANIM_ATTACK_BITE_CLOSE = "attack_bite_close";
-		const string ANIM_BEAM = "eyeblast";
-		const int ATTACH_EYE = 0;
-		const int ATTACH_CLAW = 2;
+		NPC_RANGE_TYPE = "range2D";
+		NPC_NO_VADJ = 1;
+		SOUND_DEATH = "monsters/aby_worm/death.wav";
+		ANIM_FLINCH = "flinch1";
+		ANIM_RISE = "rise";
+		ANIM_LOWER = "lower";
+		ANIM_IDLE_UP = "idle2";
+		ANIM_FLINCH1 = "flinch1";
+		ANIM_FLINCH2 = "flinch2";
+		ANIM_RAWR = "scream";
+		ANIM_HIDE = "hide_idle";
+		ANIM_ATTACK_LONG = "attacklow";
+		ANIM_ATTACK_SHORT = "attack";
+		ANIM_ATTACK_STRONG = "attack_strong_close";
+		ANIM_ATTACK_BITE_MED = "attack_bite_med";
+		ANIM_ATTACK_MULTI = "attack_multi_close";
+		ANIM_ATTACK_BITE_CLOSE = "attack_bite_close";
+		ANIM_BEAM = "eyeblast";
+		ATTACH_EYE = 0;
+		ATTACH_CLAW = 2;
 		HIDE_MODE = 1;
-		const float FREQ_TELEPORT = 60.0;
-		const string FREQ_EYEBEAM = Random(30.0, 60.0);
+		FREQ_TELEPORT = 60.0;
+		FREQ_EYEBEAM = Random(30.0, 60.0);
 		CUR_HIDE_THRESH = 0.75;
 		array<string> ARRAY_WORM_TELES;
 		ARRAY_WORM_TELES.insertLast("worm_telepoint1");
@@ -102,47 +162,47 @@ class WormAbyssal : CGameScript
 		ARRAY_WORM_TELES.insertLast("worm_telepoint3");
 		ARRAY_WORM_TELES.insertLast("worm_telepoint4");
 		WORM_TELE_IDX = 1;
-		const int DMG_CLAW = 100;
-		const int DMG_STRONG = 200;
-		const int DMG_BITE = 300;
-		const int DMG_MULTI = 250;
-		const int DOT_DMG = 30;
-		const string DOT_EFFECT_SCRIPT = "effects/dot_dark";
-		const int AOE_CLAW = 200;
-		const int AOE_STRONG = 128;
-		const int AOE_BEAM = 256;
+		DMG_CLAW = 100;
+		DMG_STRONG = 200;
+		DMG_BITE = 300;
+		DMG_MULTI = 250;
+		DOT_DMG = 30;
+		DOT_EFFECT_SCRIPT = "effects/dot_dark";
+		AOE_CLAW = 200;
+		AOE_STRONG = 128;
+		AOE_BEAM = 256;
 		CL_IDX = -1;
-		const string CL_SCRIPT = "monsters/worm_abyssal_cl";
-		const float FREQ_CL_REFRESH = 30.0;
-		const string SOUND_RAWR1 = "gonarch/gon_alert1.wav";
-		const string SOUND_RAWR2 = "gonarch/gon_alert2.wav";
-		const string SOUND_RAWR3 = "gonarch/gon_alert3.wav";
+		CL_SCRIPT = "monsters/worm_abyssal_cl";
+		FREQ_CL_REFRESH = 30.0;
+		SOUND_RAWR1 = "gonarch/gon_alert1.wav";
+		SOUND_RAWR2 = "gonarch/gon_alert2.wav";
+		SOUND_RAWR3 = "gonarch/gon_alert3.wav";
 		CUR_RAWR = 0;
-		const string SOUND_MULTI = "monsters/aby_worm/multi_attack.wav";
-		const string SOUND_BITE = "monsters/aby_worm/bite.wav";
-		const string SOUND_BEAM_CHARGE = "monsters/aby_worm/beam_charge.wav";
-		const string SOUND_BEAM_FIRE = "monsters/aby_worm/beam_fire.wav";
-		const string SOUND_GIBBER1 = "monsters/aby_worm/gibber1.wav";
-		const string SOUND_GIBBER2 = "monsters/aby_worm/gibber2.wav";
-		const string SOUND_IDLE1 = "bullchicken/bc_idle1.wav";
-		const string SOUND_IDLE2 = "bullchicken/bc_idle2.wav";
-		const string SOUND_IDLE3 = "bullchicken/bc_idle3.wav";
-		const string SOUND_IDLE4 = "bullchicken/bc_idle4.wav";
-		const string SOUND_IDLE5 = "bullchicken/bc_idle5.wav";
-		const string FREQ_IDLE_SOUND = Random(5.0, 10.0);
-		const string NPC_MATERIAL_TYPE = "carapace";
-		const int NPC_USE_PAIN = 1;
-		const int NPC_USE_FLINCH = 1;
-		const string SOUND_PAIN1 = "gonarch/gon_pain2.wav";
-		const string SOUND_PAIN2 = "gonarch/gon_pain4.wav";
-		const string SOUND_PAIN3 = "gonarch/gon_pain5.wav";
-		const string SOUND_FLINCH1 = "gonarch/gon_childdie1.wav";
-		const string SOUND_FLINCH2 = "gonarch/gon_childdie2.wav";
-		const string SOUND_FLINCH3 = "gonarch/gon_childdie3.wav";
-		const string NPC_PITCH_PAIN = RandomInt(75, 90);
-		const string NPC_PITCH_FLINCH = RandomInt(75, 90);
-		const int NPC_STRUCK_CHANNEL = 0;
-		const string NPC_STRUCK_SOUND_EVENT = "do_playsound";
+		SOUND_MULTI = "monsters/aby_worm/multi_attack.wav";
+		SOUND_BITE = "monsters/aby_worm/bite.wav";
+		SOUND_BEAM_CHARGE = "monsters/aby_worm/beam_charge.wav";
+		SOUND_BEAM_FIRE = "monsters/aby_worm/beam_fire.wav";
+		SOUND_GIBBER1 = "monsters/aby_worm/gibber1.wav";
+		SOUND_GIBBER2 = "monsters/aby_worm/gibber2.wav";
+		SOUND_IDLE1 = "bullchicken/bc_idle1.wav";
+		SOUND_IDLE2 = "bullchicken/bc_idle2.wav";
+		SOUND_IDLE3 = "bullchicken/bc_idle3.wav";
+		SOUND_IDLE4 = "bullchicken/bc_idle4.wav";
+		SOUND_IDLE5 = "bullchicken/bc_idle5.wav";
+		FREQ_IDLE_SOUND = Random(5.0, 10.0);
+		NPC_MATERIAL_TYPE = "carapace";
+		NPC_USE_PAIN = 1;
+		NPC_USE_FLINCH = 1;
+		SOUND_PAIN1 = "gonarch/gon_pain2.wav";
+		SOUND_PAIN2 = "gonarch/gon_pain4.wav";
+		SOUND_PAIN3 = "gonarch/gon_pain5.wav";
+		SOUND_FLINCH1 = "gonarch/gon_childdie1.wav";
+		SOUND_FLINCH2 = "gonarch/gon_childdie2.wav";
+		SOUND_FLINCH3 = "gonarch/gon_childdie3.wav";
+		NPC_PITCH_PAIN = RandomInt(75, 90);
+		NPC_PITCH_FLINCH = RandomInt(75, 90);
+		NPC_STRUCK_CHANNEL = 0;
+		NPC_STRUCK_SOUND_EVENT = "do_playsound";
 	}
 
 	void game_precache()
@@ -273,7 +333,7 @@ class WormAbyssal : CGameScript
 		{
 			if ((IsValidPlayer(param5)))
 			{
-				SendColoredMessage(param5, "GetEntityProperty(GetOwner(), "name.full") is too large to be encased in ice.");
+				SendColoredMessage(param5, GetEntityProperty(GetOwner(), "name.full") + " is too large to be encased in ice.");
 			}
 			ReturnData("abort");
 		}
@@ -393,7 +453,7 @@ class WormAbyssal : CGameScript
 			NEXT_IDLE_SOUND = GetGameTime();
 			DOING_IDLE_SOUND = 1;
 			NEXT_IDLE_SOUND += FREQ_IDLE_SOUND;
-			string L_RND_IDLE = RandomInt(1, 5);
+			int L_RND_IDLE = RandomInt(1, 5);
 			if (L_RND_IDLE == 1)
 			{
 				do_playsound(0, 10, SOUND_IDLE1, 0.8, Random(50, 70));
@@ -610,7 +670,7 @@ class WormAbyssal : CGameScript
 		}
 		string L_NPATKS = GetTokenCount(L_POSSIBLE_ATTACKS, ";");
 		L_NPATKS -= 1;
-		string L_RND_ATTACK = RandomInt(0, L_NPATKS);
+		int L_RND_ATTACK = RandomInt(0, L_NPATKS);
 		ANIM_ATTACK = GetToken(L_POSSIBLE_ATTACKS, L_RND_ATTACK, ";");
 	}
 
@@ -743,8 +803,8 @@ class WormAbyssal : CGameScript
 		string L_END = L_START;
 		L_END += "z";
 		Effect("beam", "point", "lgtning.spr", 30, L_START, L_END, Vector3(255, 0, 255), 200, 0, 120.0);
-		string L_OFS = /* TODO: $math(divide) */ GetEntityWidth(GetOwner());
-		string L_NEG_OFS = /* TODO: $neg */ $neg(/* TODO: $math(divide) */ GetEntityWidth(GetOwner()));
+		string L_OFS = (GetEntityWidth(GetOwner()) / 2);
+		string L_NEG_OFS = /* TODO: $neg */ $neg((GetEntityWidth(GetOwner()) / 2));
 		LogDebug("check_porters ofs Vector3(L_NEG_OFS, L_NEG_OFS, 0) - Vector3(L_OFS, L_OFS, 0)");
 		string L_START = GetEntityOrigin(GetOwner());
 		L_START += Vector3(L_OFS, L_OFS, 0);
@@ -785,7 +845,7 @@ class WormAbyssal : CGameScript
 		PlayAnim("critical", ANIM_LOWER);
 		NEXT_TELEPORT = GetGameTime();
 		NEXT_TELEPORT += FREQ_TELEPORT;
-		string L_RND_SOUND = RandomInt(1, 3);
+		int L_RND_SOUND = RandomInt(1, 3);
 		if (L_RND_SOUND == 1)
 		{
 			do_playsound(0, 10, SOUND_FLINCH1, 0.8, Random(40, 60));
@@ -817,7 +877,7 @@ class WormAbyssal : CGameScript
 		NPC_NO_ATTACK = 1;
 		if (!(FINAL_TELEPORT))
 		{
-			string L_TELE_NAME = /* TODO: $get_array */ $get_array(ARRAY_WORM_TELES, WORM_TELE_IDX);
+			string L_TELE_NAME = ARRAY_WORM_TELES[int(WORM_TELE_IDX)];
 		}
 		else
 		{
@@ -832,7 +892,7 @@ class WormAbyssal : CGameScript
 		string L_TELE_YAW = GetEntityProperty(L_TELE_ID, "angles.yaw");
 		SetAngles("face");
 		WORM_TELE_IDX += 1;
-		string L_NTELES = /* TODO: $get_array_amt */ $get_array_amt(ARRAY_WORM_TELES);
+		int L_NTELES = int(ARRAY_WORM_TELES.length());
 		L_NTELES -= 1;
 		if (WORM_TELE_IDX > L_NTELES)
 		{

@@ -5,12 +5,13 @@ namespace MS
 
 class BowsOrion1Cl : CGameScript
 {
+	string BALL_OFS;
 	int FX_ACTIVE;
 	string FX_OWNER;
 
 	BowsOrion1Cl()
 	{
-		const Vector3 BALL_OFS = Vector3(0, 20, 0);
+		BALL_OFS = Vector3(0, 20, 0);
 	}
 
 	void client_activate()

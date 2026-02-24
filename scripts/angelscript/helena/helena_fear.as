@@ -7,9 +7,11 @@ namespace MS
 
 class HelenaFear : CGameScript
 {
+	float DEATH_DELAY;
+
 	HelenaFear()
 	{
-		const float DEATH_DELAY = 5.0;
+		DEATH_DELAY = 5.0;
 	}
 
 	void OnSpawn() override

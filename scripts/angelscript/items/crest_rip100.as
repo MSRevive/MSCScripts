@@ -7,10 +7,13 @@ namespace MS
 
 class CrestRip100 : CGameScript
 {
+	int MODEL_CREST_OFS;
+	string MODEL_WEAR;
+
 	CrestRip100()
 	{
-		const int MODEL_CREST_OFS = 16;
-		const string MODEL_WEAR = "armor/p_gowns.mdl";
+		MODEL_CREST_OFS = 16;
+		MODEL_WEAR = "armor/p_gowns.mdl";
 	}
 
 	void crest_spawn()

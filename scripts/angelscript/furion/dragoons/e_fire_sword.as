@@ -7,10 +7,13 @@ namespace MS
 
 class EFireSword : CGameScript
 {
+	int ELEMENT;
+	int WEAPON;
+
 	EFireSword()
 	{
-		const int WEAPON = 3;
-		const int ELEMENT = 2;
+		WEAPON = 3;
+		ELEMENT = 2;
 	}
 
 }

@@ -7,10 +7,13 @@ namespace MS
 
 class SkeletonGoldenGuard : CGameScript
 {
+	int FORCE_GERIC;
+	int NPC_BASE_EXP;
+
 	SkeletonGoldenGuard()
 	{
-		const int FORCE_GERIC = 1;
-		const int NPC_BASE_EXP = 1000;
+		FORCE_GERIC = 1;
+		NPC_BASE_EXP = 1000;
 	}
 
 	void OnPostSpawn() override

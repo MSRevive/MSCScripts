@@ -7,13 +7,16 @@ namespace MS
 
 class ItemLightCrystal : CGameScript
 {
-	string ACTIVE_DELAY;
+	float ACTIVE_DELAY;
+	int SILENT_DELAY;
+	int SKILL_LEVEL_REQ;
+	string SKILL_TYPE;
 
 	ItemLightCrystal()
 	{
-		const int SKILL_LEVEL_REQ = 0;
-		const string SKILL_TYPE = "skill.spellcasting";
-		const int SILENT_DELAY = 1;
+		SKILL_LEVEL_REQ = 0;
+		SKILL_TYPE = "skill.spellcasting";
+		SILENT_DELAY = 1;
 	}
 
 	void crystal_spawn()

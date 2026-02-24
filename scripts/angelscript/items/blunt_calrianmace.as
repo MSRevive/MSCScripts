@@ -7,26 +7,45 @@ namespace MS
 
 class BluntCalrianmace : CGameScript
 {
+	string ANIM_PREFIX;
+	int BASE_LEVEL_REQ;
+	float MELEE_ACCURACY;
+	float MELEE_ATK_DURATION;
+	int MELEE_DMG;
+	float MELEE_DMG_DELAY;
+	int MELEE_DMG_RANGE;
+	string MELEE_DMG_TYPE;
+	int MELEE_ENERGY;
+	float MELEE_PARRY_AUGMENT;
+	int MELEE_RANGE;
+	string MELEE_SOUND;
+	string MELEE_SOUND_DELAY;
+	string MELEE_STAT;
+	int MODEL_BODY_OFS;
+	string MODEL_VIEW;
+	int MODEL_VIEW_IDX;
+	string SOUND_SWIPE;
+
 	BluntCalrianmace()
 	{
-		const int BASE_LEVEL_REQ = 15;
-		const string MODEL_VIEW = "viewmodels/v_1hblunts.mdl";
-		const int MODEL_VIEW_IDX = 3;
-		const string SOUND_SWIPE = "weapons/swingsmall.wav";
-		const int MODEL_BODY_OFS = 56;
-		const string ANIM_PREFIX = "warhammer";
-		const int MELEE_RANGE = 60;
-		const float MELEE_DMG_DELAY = 0.6;
-		const float MELEE_ATK_DURATION = 1.1;
-		const int MELEE_ENERGY = 8;
-		const int MELEE_DMG = 230;
-		const int MELEE_DMG_RANGE = 140;
-		const string MELEE_DMG_TYPE = "blunt";
-		const float MELEE_ACCURACY = 0.75;
-		const string MELEE_STAT = "bluntarms";
-		const string MELEE_SOUND = SOUND_SWIPE;
-		const string MELEE_SOUND_DELAY = MELEE_DMG_DELAY;
-		const float MELEE_PARRY_AUGMENT = 0.0;
+		BASE_LEVEL_REQ = 15;
+		MODEL_VIEW = "viewmodels/v_1hblunts.mdl";
+		MODEL_VIEW_IDX = 3;
+		SOUND_SWIPE = "weapons/swingsmall.wav";
+		MODEL_BODY_OFS = 56;
+		ANIM_PREFIX = "warhammer";
+		MELEE_RANGE = 60;
+		MELEE_DMG_DELAY = 0.6;
+		MELEE_ATK_DURATION = 1.1;
+		MELEE_ENERGY = 8;
+		MELEE_DMG = 230;
+		MELEE_DMG_RANGE = 140;
+		MELEE_DMG_TYPE = "blunt";
+		MELEE_ACCURACY = 0.75;
+		MELEE_STAT = "bluntarms";
+		MELEE_SOUND = SOUND_SWIPE;
+		MELEE_SOUND_DELAY = MELEE_DMG_DELAY;
+		MELEE_PARRY_AUGMENT = 0.0;
 	}
 
 	void weapon_spawn()

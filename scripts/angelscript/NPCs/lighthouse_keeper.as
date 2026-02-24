@@ -8,8 +8,11 @@ namespace MS
 
 class LighthouseKeeper : CGameScript
 {
+	string ANIM_IDLE_CHAT;
 	string APPLE_QUEST_ACTIVE;
+	string BASIC_REWARDS;
 	string BUSY_CHATTING;
+	float CHAT_DELAY;
 	string CHAT_STEP;
 	string CHAT_STEP1;
 	string CHAT_STEP2;
@@ -31,19 +34,23 @@ class LighthouseKeeper : CGameScript
 	string MENU_QUEST;
 	string MENU_TARGET;
 	string MY_YAW;
+	int NO_HAIL;
+	int NO_JOB;
+	int NO_RUMOR;
 	string TASK_STRING;
 	int TENDING_HOUSE;
+	string TEND_ANIMS;
 	string WAS_STARTLED;
 
 	LighthouseKeeper()
 	{
-		const string TEND_ANIMS = "console;dryhands;writeboard;studycart;lean;pondering;pondering2;pondering3;buysoda;console;console;console;console;console;";
-		const string BASIC_REWARDS = "smallarms_huggerdagger3;smallarms_craftedknife3;smallarms_stiletto;swords_katana;axes_scythe;axes_doubleaxe;blunt_greatmaul;blunt_mace;bows_longbow;scroll_summon_rat;armor_leather_studded;armor_helm_knight;";
-		const int NO_HAIL = 1;
-		const int NO_JOB = 1;
-		const int NO_RUMOR = 1;
-		const float CHAT_DELAY = 4.5;
-		const string ANIM_IDLE_CHAT = "idle1";
+		TEND_ANIMS = "console;dryhands;writeboard;studycart;lean;pondering;pondering2;pondering3;buysoda;console;console;console;console;console;";
+		BASIC_REWARDS = "smallarms_huggerdagger3;smallarms_craftedknife3;smallarms_stiletto;swords_katana;axes_scythe;axes_doubleaxe;blunt_greatmaul;blunt_mace;bows_longbow;scroll_summon_rat;armor_leather_studded;armor_helm_knight;";
+		NO_HAIL = 1;
+		NO_JOB = 1;
+		NO_RUMOR = 1;
+		CHAT_DELAY = 4.5;
+		ANIM_IDLE_CHAT = "idle1";
 	}
 
 	void OnRepeatTimer()
@@ -54,7 +61,7 @@ class LighthouseKeeper : CGameScript
 		}
 		SetAngles("face");
 		string N_IDLES = GetTokenCount(TEND_ANIMS, ";");
-		string RND_IDLE = RandomInt(1, N_IDLES);
+		int RND_IDLE = RandomInt(1, N_IDLES);
 		RND_IDLE -= 1;
 		string IDLE_ANIM = GetToken(TEND_ANIMS, RND_IDLE, ";");
 		SetIdleAnim(IDLE_ANIM);
@@ -210,7 +217,7 @@ class LighthouseKeeper : CGameScript
 		if ((EXIT_SUB)) return;
 		if ((IsEntityAlive(HIRED_SPIDER)))
 		{
-			SayText("GetEntityName(HIRED_SPIDER) is already working on that for me.");
+			SayText(GetEntityName(HIRED_SPIDER) + " is already working on that for me.");
 			int EXIT_SUB = 1;
 			TENDING_HOUSE = 1;
 			bchat_mouth_move();
@@ -260,7 +267,7 @@ class LighthouseKeeper : CGameScript
 		if ((EXIT_SUB)) return;
 		if ((IsEntityAlive(HIRED_GRAVE)))
 		{
-			SayText("GetEntityName(HIRED_GRAVE) is already working on that for me.");
+			SayText(GetEntityName(HIRED_GRAVE) + " is already working on that for me.");
 			int EXIT_SUB = 1;
 			bchat_mouth_move();
 			TENDING_HOUSE = 1;
@@ -309,7 +316,7 @@ class LighthouseKeeper : CGameScript
 		if ((EXIT_SUB)) return;
 		if ((IsEntityAlive(HIRED_CRYSTAL)))
 		{
-			SayText("GetEntityName(HIRED_CRYSTAL) is already working on that for me.");
+			SayText(GetEntityName(HIRED_CRYSTAL) + " is already working on that for me.");
 			int EXIT_SUB = 1;
 			bchat_mouth_move();
 			TENDING_HOUSE = 1;
@@ -357,7 +364,7 @@ class LighthouseKeeper : CGameScript
 		if ((EXIT_SUB)) return;
 		if ((IsEntityAlive(HIRED_FOOD)))
 		{
-			SayText("GetEntityName(HIRED_FOOD) is already working on that for me.");
+			SayText(GetEntityName(HIRED_FOOD) + " is already working on that for me.");
 			int EXIT_SUB = 1;
 			bchat_mouth_move();
 		}
@@ -581,10 +588,10 @@ class LighthouseKeeper : CGameScript
 		// TODO: offer PARAM1 gold RandomInt(10, 20)
 		string BASIC_WINNER = param1;
 		offer_basic_reward(BASIC_WINNER);
-		string SCROLL_CHANCE = RandomInt(1, 2);
+		int SCROLL_CHANCE = RandomInt(1, 2);
 		if (SCROLL_CHANCE == 1)
 		{
-			string SCROLL_TOME = RandomInt(1, 2);
+			int SCROLL_TOME = RandomInt(1, 2);
 			if (SCROLL_TOME == 1)
 			{
 				// TODO: offer PARAM1 scroll2_ice_shield_lesser
@@ -711,7 +718,7 @@ class LighthouseKeeper : CGameScript
 	void offer_basic_reward()
 	{
 		string N_REWARDS = GetTokenCount(BASIC_REWARDS, ";");
-		string RND_REWARD = RandomInt(0, N_REWARDS);
+		int RND_REWARD = RandomInt(0, N_REWARDS);
 		// TODO: offer PARAM1 GetToken(BASIC_REWARDS, RND_REWARD, ";")
 	}
 

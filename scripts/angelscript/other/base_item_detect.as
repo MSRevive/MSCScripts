@@ -7,11 +7,13 @@ class BaseItemDetect : CGameScript
 {
 	string HOME_LOC;
 	int PLAYING_DEAD;
+	int SCAN_RANGE;
+	string SEARCH_ITEM;
 
 	BaseItemDetect()
 	{
-		const string SEARCH_ITEM = "health_apple";
-		const int SCAN_RANGE = 64;
+		SEARCH_ITEM = "health_apple";
+		SCAN_RANGE = 64;
 	}
 
 	void OnRepeatTimer()

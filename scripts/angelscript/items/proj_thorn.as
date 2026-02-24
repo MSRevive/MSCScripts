@@ -7,19 +7,29 @@ namespace MS
 
 class ProjThorn : CGameScript
 {
+	int ARROW_BODY_OFS;
+	float ARROW_BREAK_CHANCE;
+	int ARROW_SOLIDIFY_ON_WALL;
+	int MODEL_BODY_OFS;
+	string MODEL_WORLD;
+	string PROJ_ANIM_IDLE;
+	int PROJ_DAMAGE;
+	int PROJ_STICK_DURATION;
+	string ROJ_DAMAGETYPE;
+
 	ProjThorn()
 	{
-		const string PROJ_ANIM_IDLE = "idle_standard";
-		const string PROJ_DAMAGE = RandomInt(60, 90);
-		const int PROJ_STICK_DURATION = 0;
-		const int ARROW_SOLIDIFY_ON_WALL = 0;
-		const float ARROW_BREAK_CHANCE = 1.0;
-		const int MODEL_BODY_OFS = 24;
-		const int ARROW_BODY_OFS = 24;
-		const string PROJ_ANIM_IDLE = "idle_icebolt";
-		const string ROJ_DAMAGETYPE = "pierce";
-		const string PROJ_DAMAGE = Random(4, 8);
-		const string MODEL_WORLD = "weapons/projectiles.mdl";
+		PROJ_ANIM_IDLE = "idle_standard";
+		PROJ_DAMAGE = RandomInt(60, 90);
+		PROJ_STICK_DURATION = 0;
+		ARROW_SOLIDIFY_ON_WALL = 0;
+		ARROW_BREAK_CHANCE = 1.0;
+		MODEL_BODY_OFS = 24;
+		ARROW_BODY_OFS = 24;
+		PROJ_ANIM_IDLE = "idle_icebolt";
+		ROJ_DAMAGETYPE = "pierce";
+		PROJ_DAMAGE = Random(4, 8);
+		MODEL_WORLD = "weapons/projectiles.mdl";
 	}
 
 	void arrow_spawn()

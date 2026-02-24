@@ -14,13 +14,15 @@ class SpikedBall : CGameScript
 	string OLD_SPEED;
 	int PLAYING_DEAD;
 	string PUSH_LIST;
+	string SOUND_EXPLODE;
+	string SPRITE_EXPLODE;
 	string START_VEL;
 	string TOUCH_TARG;
 
 	SpikedBall()
 	{
-		const string SPRITE_EXPLODE = "bigsmoke.spr";
-		const string SOUND_EXPLODE = "weapons/explode3.wav";
+		SPRITE_EXPLODE = "bigsmoke.spr";
+		SOUND_EXPLODE = "weapons/explode3.wav";
 	}
 
 	void game_dynamically_created()

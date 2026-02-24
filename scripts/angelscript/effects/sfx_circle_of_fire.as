@@ -10,13 +10,16 @@ class SfxCircleOfFire : CGameScript
 	string FX_DURATION;
 	string FX_ORIGIN;
 	string FX_RAD;
+	string SEAL_MODEL;
 	string SEAL_OFS;
+	string SPRITE_NAME;
+	int SPRITE_NFRAMES;
 
 	SfxCircleOfFire()
 	{
-		const string SEAL_MODEL = "weapons/magic/seals.mdl";
-		const string SPRITE_NAME = "Fire2.spr";
-		const int SPRITE_NFRAMES = 8;
+		SEAL_MODEL = "weapons/magic/seals.mdl";
+		SPRITE_NAME = "Fire2.spr";
+		SPRITE_NFRAMES = 8;
 	}
 
 	void client_activate()

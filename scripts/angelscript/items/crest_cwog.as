@@ -7,10 +7,13 @@ namespace MS
 
 class CrestCwog : CGameScript
 {
+	int MODEL_CREST_OFS;
+	string MODEL_WEAR;
+
 	CrestCwog()
 	{
-		const int MODEL_CREST_OFS = 3;
-		const string MODEL_WEAR = "armor/p_gowns.mdl";
+		MODEL_CREST_OFS = 3;
+		MODEL_WEAR = "armor/p_gowns.mdl";
 	}
 
 	void crest_spawn()

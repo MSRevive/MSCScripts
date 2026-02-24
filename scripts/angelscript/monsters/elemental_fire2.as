@@ -8,10 +8,12 @@ namespace MS
 
 class ElementalFire2 : CGameScript
 {
+	float ACCURACY_STRIKE;
 	string ANIM_ATTACK;
 	string ANIM_DEATH;
 	string ANIM_FLINCH;
 	string ANIM_IDLE;
+	string ANIM_PROJECTILE;
 	string ANIM_RUN;
 	string ANIM_WALK;
 	string AS_ATTACKING;
@@ -22,12 +24,20 @@ class ElementalFire2 : CGameScript
 	int CAN_FLINCH;
 	int CUR_SPELL;
 	int CYCLES_ON;
+	int DMG_AMB_BURN;
+	int DMG_FIRE_BALL;
+	int DMG_FIRE_BOLT;
+	int DMG_STRIKE;
+	int DOT_STRIKE;
 	string FLINCH_ANIM;
 	int FLINCH_CHANCE;
 	float FREQ_SPECIAL;
 	string HOVER_LOOP_DELAY;
+	float HURT_THRESHOLD;
 	int IMMUNE_VAMPIRE;
 	int IS_UNHOLY;
+	int MOVESPEED_FAST;
+	int MOVESPEED_SLOW;
 	int MOVE_RANGE;
 	string MY_HURT_STAGE;
 	string NEXT_GLOAT;
@@ -35,6 +45,20 @@ class ElementalFire2 : CGameScript
 	int NPC_GIVE_EXP;
 	int NPC_HACKED_MOVE_SPEED;
 	string NPC_MOVE_DEST;
+	float PLAYTIME_HOVER;
+	string SOUND_DEATH;
+	string SOUND_FIRECHARGE;
+	string SOUND_FIRESHOOT;
+	string SOUND_GLOAT;
+	string SOUND_HOVER;
+	string SOUND_IDLE1;
+	string SOUND_IDLE2;
+	string SOUND_IDLE3;
+	string SOUND_PAIN0;
+	string SOUND_PAIN1;
+	string SOUND_PAIN2;
+	string SOUND_SWIPE;
+	string SOUND_SWIPEHIT;
 	int STRIKE_ATTACK;
 
 	ElementalFire2()
@@ -50,37 +74,37 @@ class ElementalFire2 : CGameScript
 		FLINCH_CHANCE = 10;
 		FLINCH_ANIM = "flinch";
 		ANIM_ATTACK = "attack1";
-		const string ANIM_PROJECTILE = "fireball";
+		ANIM_PROJECTILE = "fireball";
 		IS_UNHOLY = 1;
 		ATTACK_RANGE = 100;
 		ATTACK_HITRANGE = 150;
 		MOVE_RANGE = 65;
 		NPC_HACKED_MOVE_SPEED = 100;
-		const int MOVESPEED_SLOW = 100;
-		const int MOVESPEED_FAST = 200;
-		const string DMG_STRIKE = RandomInt(175, 250);
-		const string DOT_STRIKE = RandomInt(60, 80);
-		const float ACCURACY_STRIKE = 0.8;
-		const string DMG_AMB_BURN = RandomInt(30, 60);
+		MOVESPEED_SLOW = 100;
+		MOVESPEED_FAST = 200;
+		DMG_STRIKE = RandomInt(175, 250);
+		DOT_STRIKE = RandomInt(60, 80);
+		ACCURACY_STRIKE = 0.8;
+		DMG_AMB_BURN = RandomInt(30, 60);
 		FREQ_SPECIAL = 5.0;
-		const int DMG_FIRE_BALL = 100;
-		const int DMG_FIRE_BOLT = 20;
+		DMG_FIRE_BALL = 100;
+		DMG_FIRE_BOLT = 20;
 		IMMUNE_VAMPIRE = 1;
-		const string SOUND_FIRECHARGE = "magic/fireball_powerup.wav";
-		const string SOUND_FIRESHOOT = "magic/fireball_strike.wav";
-		const string SOUND_IDLE1 = "agrunt/ag_alert1.wav";
-		const string SOUND_IDLE2 = "agrunt/ag_die1.wav";
-		const string SOUND_IDLE3 = "agrunt/ag_idle1.wav";
-		const string SOUND_SWIPE = "weapons/debris1.wav";
-		const string SOUND_SWIPEHIT = "ambience/steamburst1.wav";
-		const string SOUND_DEATH = "garg/gar_die1.wav";
-		const string SOUND_PAIN0 = "debris/bustflesh2.wav";
-		const string SOUND_PAIN1 = "agrunt/ag_pain1.wav";
-		const string SOUND_PAIN2 = "agrunt/ag_pain4.wav";
-		const string SOUND_GLOAT = "x/x_laugh1.wav";
-		const string SOUND_HOVER = "fans/fan4on.wav";
-		const float HURT_THRESHOLD = 0.5;
-		const float PLAYTIME_HOVER = 3.0;
+		SOUND_FIRECHARGE = "magic/fireball_powerup.wav";
+		SOUND_FIRESHOOT = "magic/fireball_strike.wav";
+		SOUND_IDLE1 = "agrunt/ag_alert1.wav";
+		SOUND_IDLE2 = "agrunt/ag_die1.wav";
+		SOUND_IDLE3 = "agrunt/ag_idle1.wav";
+		SOUND_SWIPE = "weapons/debris1.wav";
+		SOUND_SWIPEHIT = "ambience/steamburst1.wav";
+		SOUND_DEATH = "garg/gar_die1.wav";
+		SOUND_PAIN0 = "debris/bustflesh2.wav";
+		SOUND_PAIN1 = "agrunt/ag_pain1.wav";
+		SOUND_PAIN2 = "agrunt/ag_pain4.wav";
+		SOUND_GLOAT = "x/x_laugh1.wav";
+		SOUND_HOVER = "fans/fan4on.wav";
+		HURT_THRESHOLD = 0.5;
+		PLAYTIME_HOVER = 3.0;
 	}
 
 	void OnRepeatTimer()
@@ -231,7 +255,7 @@ class ElementalFire2 : CGameScript
 
 	void idle_sounds()
 	{
-		string NEXT_SOUND = Random(5, 15);
+		float NEXT_SOUND = Random(5, 15);
 		NEXT_SOUND("idle_sounds");
 		if (!(m_hAttackTarget == "unset")) return;
 		// PlayRandomSound from: SOUND_IDLE1, SOUND_IDLE2, SOUND_IDLE3

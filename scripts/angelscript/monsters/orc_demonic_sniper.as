@@ -8,26 +8,36 @@ namespace MS
 class OrcDemonicSniper : CGameScript
 {
 	string ARROW_ORG;
+	string ARROW_TYPE;
+	string CONTAINER_BASE;
+	int DMG_AOE;
+	int DMG_BOW;
+	int DMG_KICK;
+	int DMG_SMASH;
+	int DMG_SWIPE;
+	int DOT_DMG;
 	int DROPS_CONTAINER;
 	int DROP_GOLD;
-	string DROP_GOLD_AMT;
+	int DROP_GOLD_AMT;
 	string DROP_ITEM1;
 	float DROP_ITEM1_CHANCE;
+	string DROP_ITEM_BASE1;
+	int FIN_EXP;
 	int IS_UNHOLY;
 
 	OrcDemonicSniper()
 	{
-		const string ARROW_TYPE = "proj_arrow_npc_dyn";
-		const string DMG_SMASH = "$rand(50,100)";
-		const string DMG_SWIPE = "$rand(20,50)";
-		const string DMG_KICK = "$rand(20,50)";
-		const string DMG_BOW = RandomInt(100, 200);
-		const int DMG_AOE = 400;
-		const int DOT_DMG = 30;
-		const string DROP_ITEM_BASE1 = "none";
+		ARROW_TYPE = "proj_arrow_npc_dyn";
+		DMG_SMASH = "$rand(50,100)";
+		DMG_SWIPE = "$rand(20,50)";
+		DMG_KICK = "$rand(20,50)";
+		DMG_BOW = RandomInt(100, 200);
+		DMG_AOE = 400;
+		DOT_DMG = 30;
+		DROP_ITEM_BASE1 = "none";
 		DROPS_CONTAINER = 1;
-		const string CONTAINER_BASE = "chests/quiver_of_fire";
-		const int FIN_EXP = 200;
+		CONTAINER_BASE = "chests/quiver_of_fire";
+		FIN_EXP = 200;
 	}
 
 	void orc_spawn()

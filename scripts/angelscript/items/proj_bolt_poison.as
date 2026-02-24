@@ -7,15 +7,23 @@ namespace MS
 
 class ProjBoltPoison : CGameScript
 {
+	float ARROW_BREAK_CHANCE;
+	int ARROW_SOLIDIFY_ON_WALL;
+	int HITSCAN_BOLT;
+	int MODEL_BODY_OFS;
+	int PROJ_DAMAGE;
+	string PROJ_DAMAGE_TYPE;
+	int PROJ_STICK_DURATION;
+
 	ProjBoltPoison()
 	{
-		const int HITSCAN_BOLT = 1;
-		const int MODEL_BODY_OFS = 0;
-		const int PROJ_DAMAGE = 150;
-		const int PROJ_STICK_DURATION = 25;
-		const int ARROW_SOLIDIFY_ON_WALL = 0;
-		const float ARROW_BREAK_CHANCE = 0.01;
-		const string PROJ_DAMAGE_TYPE = "poison";
+		HITSCAN_BOLT = 1;
+		MODEL_BODY_OFS = 0;
+		PROJ_DAMAGE = 150;
+		PROJ_STICK_DURATION = 25;
+		ARROW_SOLIDIFY_ON_WALL = 0;
+		ARROW_BREAK_CHANCE = 0.01;
+		PROJ_DAMAGE_TYPE = "poison";
 	}
 
 	void arrow_spawn()

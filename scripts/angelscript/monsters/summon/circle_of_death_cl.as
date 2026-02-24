@@ -8,14 +8,19 @@ class CircleOfDeathCl : CGameScript
 	int FX_ACTIVE;
 	string FX_DURATION;
 	string FX_ORIGIN;
+	string FX_SPRITE;
+	string GLOW_COLOR;
+	int GLOW_RAD;
+	string SEAL_MODEL;
+	int SEAL_OFS;
 
 	CircleOfDeathCl()
 	{
-		const string SEAL_MODEL = "weapons/magic/seals.mdl";
-		const int SEAL_OFS = 4;
-		const string FX_SPRITE = "skull.spr";
-		const Vector3 GLOW_COLOR = Vector3(255, 0, 0);
-		const int GLOW_RAD = 196;
+		SEAL_MODEL = "weapons/magic/seals.mdl";
+		SEAL_OFS = 4;
+		FX_SPRITE = "skull.spr";
+		GLOW_COLOR = Vector3(255, 0, 0);
+		GLOW_RAD = 196;
 	}
 
 	void client_activate()

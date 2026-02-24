@@ -10,22 +10,25 @@ class KChildreBlack : CGameScript
 	int AM_INVISIBLE;
 	string ANIM_FLINCH;
 	int CAN_FLINCH;
+	int DMG_SWIPE;
 	int DOING_FADE;
 	string FADE_TARGET;
 	int FIREBALL_TOSS;
 	int FLINCH_CHANCE;
 	float FLINCH_DELAY;
 	int FLINCH_HEALTH;
+	int NPC_BASE_EXP;
+	string PROJECTILE_SCRIPT;
 	int SPORE_POISON_DMG;
 	string STEP_SIZE_NORM;
 	int WAS_STRUCK;
 
 	KChildreBlack()
 	{
-		const string PROJECTILE_SCRIPT = "proj_spore";
+		PROJECTILE_SCRIPT = "proj_spore";
 		SPORE_POISON_DMG = 60;
-		const string DMG_SWIPE = RandomInt(80, 200);
-		const int NPC_BASE_EXP = 800;
+		DMG_SWIPE = RandomInt(80, 200);
+		NPC_BASE_EXP = 800;
 	}
 
 	void game_precache()

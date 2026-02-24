@@ -7,21 +7,26 @@ namespace MS
 
 class CircleOfDeath1 : CGameScript
 {
+	string CIRCLE_DMG_TYPE;
 	string CIRCLE_END;
+	int CIRCLE_RAD;
+	int CL_BODY;
 	string CL_DUR;
+	int CL_RAD;
 	string DMG_PULSE;
 	int IS_ACTIVE;
 	int NPC_DIE_ON_SPAWN_REMOVAL;
 	int PLAYING_DEAD;
 	int SKEL_RESPAWN_TIMES;
+	string SOUND_LOOP;
 
 	CircleOfDeath1()
 	{
-		const int CIRCLE_RAD = 90;
-		const int CL_BODY = 3;
-		const int CL_RAD = 98;
-		const string CIRCLE_DMG_TYPE = "dark_effect";
-		const string SOUND_LOOP = "ambience/pulsemachine.wav";
+		CIRCLE_RAD = 90;
+		CL_BODY = 3;
+		CL_RAD = 98;
+		CIRCLE_DMG_TYPE = "dark_effect";
+		SOUND_LOOP = "ambience/pulsemachine.wav";
 	}
 
 	void OnSpawn() override
@@ -124,7 +129,7 @@ class CircleOfDeath1 : CGameScript
 	{
 		if (!(IsEntityAlive(GetOwner()))) return;
 		if ((I_R_COMPANION)) return;
-		string SINCE_SPAWN = GetGameTime();
+		float SINCE_SPAWN = GetGameTime();
 		SINCE_SPAWN -= NPC_SPAWN_TIME;
 		if (SINCE_SPAWN < 2.0)
 		{

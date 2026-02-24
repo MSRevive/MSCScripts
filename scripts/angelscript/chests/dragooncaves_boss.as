@@ -14,7 +14,7 @@ class DragooncavesBoss : CGameScript
 
 	void chest_additems()
 	{
-		add_gold(/* TODO: $math(multiply) */ 500);
+		add_gold((500 * "game.playersnb"));
 		add_great_item();
 		add_great_item();
 		add_great_item();

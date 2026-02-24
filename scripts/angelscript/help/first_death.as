@@ -17,7 +17,7 @@ class FirstDeath : CGameScript
 		if (!(MY_HP < 700)) return;
 		if (OPPONENT_HP > MY_HP_TEN)
 		{
-			SendInfoMsg(GetOwner(), "OVERPOWERED! Your opponent has more than TEN TIMES your HP! You should probably retreat!");
+			SendInfoMsg(GetOwner(), OVERPOWERED! + "Your opponent has more than " + TEN + TIMES + "your " + HP! + " You should probably retreat!");
 		}
 		string REGEN_WARN = GetMonsterMaxHP();
 		REGEN_WARN *= 2.0;

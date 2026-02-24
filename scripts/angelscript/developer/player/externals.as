@@ -7,7 +7,7 @@ class Externals : CGameScript
 {
 	void ext_setstat()
 	{
-		LogMessage("ent_me Stat PARAM1 set to PARAM2");
+		LogMessage("ent_me Stat " + param1 + "set to " + param2);
 		SetStat("PARAM1", param2);
 	}
 

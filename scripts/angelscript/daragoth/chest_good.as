@@ -22,7 +22,7 @@ class ChestGood : CGameScript
 		{
 			AddStoreItem(STORENAME, "bows_longbow", 1, 0);
 		}
-		string CHANCE = RandomInt(1, 100);
+		int CHANCE = RandomInt(1, 100);
 		if (CHANCE < 17)
 		{
 			AddStoreItem(STORENAME, "proj_bolt_silver", 25, 0, 0, 25);

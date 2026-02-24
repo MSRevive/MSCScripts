@@ -6,12 +6,13 @@ namespace MS
 class GuidedBallCl : CGameScript
 {
 	string GLOW_COLOR;
+	int GLOW_RAD;
 	string SKEL_ID;
 	string SKEL_LIGHT_ID;
 
 	GuidedBallCl()
 	{
-		const int GLOW_RAD = 128;
+		GLOW_RAD = 128;
 	}
 
 	void client_activate()

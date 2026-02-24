@@ -7,9 +7,11 @@ namespace MS
 
 class IceRandom : CGameScript
 {
+	int ELEMENT;
+
 	IceRandom()
 	{
-		const int ELEMENT = 0;
+		ELEMENT = 0;
 	}
 
 }

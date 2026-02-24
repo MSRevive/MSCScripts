@@ -9,28 +9,43 @@ class SpellMakerSummoning : CGameScript
 {
 	string ANIM_IDLE;
 	string CYCLE_ANGLE;
+	float DEATH_DELAY;
+	string FX_SCRIPT;
+	float LIGHT_DROPPED_SCALE;
+	float LIGHT_PLAYER_SCALE;
+	int MODEL_OFSET;
+	int NO_FADE;
+	int OFSZ_NEG;
+	int OFSZ_POS;
+	int OFS_NEG;
+	int OFS_POS;
+	float REMOVE_DELAY;
+	int SHOW_FX;
+	string SOUND_SPAWN;
+	string SPAWNER_MODEL;
+	string SPRITE_1;
 	int TOTAL_OFS;
 	string sfx.npcid;
 
 	SpellMakerSummoning()
 	{
-		const string FX_SCRIPT = "monsters/companion/spell_maker_summoning";
+		FX_SCRIPT = "monsters/companion/spell_maker_summoning";
 		ANIM_IDLE = "";
-		const string SPAWNER_MODEL = "none";
-		const int MODEL_OFSET = 0;
-		const string SOUND_SPAWN = "magic/heal_powerup.wav";
-		const float REMOVE_DELAY = 10.0;
-		const int SHOW_FX = 1;
-		const int NO_FADE = 1;
+		SPAWNER_MODEL = "none";
+		MODEL_OFSET = 0;
+		SOUND_SPAWN = "magic/heal_powerup.wav";
+		REMOVE_DELAY = 10.0;
+		SHOW_FX = 1;
+		NO_FADE = 1;
 		Precache(SOUND_SPAWN);
-		const float DEATH_DELAY = 9.0;
-		const int OFS_POS = 16;
-		const int OFS_NEG = -16;
-		const int OFSZ_POS = 32;
-		const int OFSZ_NEG = -10;
-		const float LIGHT_PLAYER_SCALE = 0.3;
-		const float LIGHT_DROPPED_SCALE = 0.5;
-		const string SPRITE_1 = "blueflare1.spr";
+		DEATH_DELAY = 9.0;
+		OFS_POS = 16;
+		OFS_NEG = -16;
+		OFSZ_POS = 32;
+		OFSZ_NEG = -10;
+		LIGHT_PLAYER_SCALE = 0.3;
+		LIGHT_DROPPED_SCALE = 0.5;
+		SPRITE_1 = "blueflare1.spr";
 	}
 
 	void client_activate()

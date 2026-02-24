@@ -7,13 +7,19 @@ namespace MS
 
 class ItemCannonBall : CGameScript
 {
+	string ANIM_PREFIX;
+	int MODEL_BODY_OFS;
+	string MODEL_HANDS;
+	string MODEL_VIEW;
+	string MODEL_WORLD;
+
 	ItemCannonBall()
 	{
-		const string MODEL_WORLD = "misc/p_misc.mdl";
-		const string MODEL_HANDS = "misc/p_misc.mdl";
-		const string MODEL_VIEW = "none";
-		const int MODEL_BODY_OFS = 66;
-		const string ANIM_PREFIX = "boar";
+		MODEL_WORLD = "misc/p_misc.mdl";
+		MODEL_HANDS = "misc/p_misc.mdl";
+		MODEL_VIEW = "none";
+		MODEL_BODY_OFS = 66;
+		ANIM_PREFIX = "boar";
 	}
 
 	void miscitem_spawn()

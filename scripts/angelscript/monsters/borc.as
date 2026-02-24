@@ -9,14 +9,25 @@ namespace MS
 class Borc : CGameScript
 {
 	string ANIM_ATTACK;
+	string ANIM_DASH_ATTACK;
 	string ANIM_DEATH;
 	string ANIM_IDLE;
+	string ANIM_LOOK;
+	string ANIM_MIGHTY_BLOW;
+	string ANIM_NPC_JUMP;
 	string ANIM_RUN;
 	string ANIM_WALK;
 	int ATTACK_HITRANGE;
 	int ATTACK_MOVERANGE;
 	int ATTACK_RANGE;
+	int ATTACK_REACH;
+	int BJUMPER_CUSTOM_BOOST;
+	int BJUMPER_FACTOR;
+	int BJUMPER_NO_FORWARD;
 	int DID_ALERT;
+	int DMG_PUNCH_STRONG;
+	int DMG_PUNCH_WEAK;
+	float FREQ_MIGHTY_BLOW;
 	string HALF_HEALTH;
 	int HUNDERSWAMP_BORC;
 	int MOVE_RANGE;
@@ -24,7 +35,21 @@ class Borc : CGameScript
 	string NEXT_LOOK;
 	string NEXT_MIGHTY_BLOW;
 	int NPC_GIVE_EXP;
+	int NPC_JUMPER;
 	string QUART_HEALTH;
+	string SOUND_ALERT;
+	string SOUND_ATTACK;
+	string SOUND_DEATH;
+	string SOUND_MIGHTY1;
+	string SOUND_MIGHTY2;
+	string SOUND_NPC_JUMP;
+	string SOUND_PAIN1;
+	string SOUND_PAIN2;
+	string SOUND_PAIN3;
+	string SOUND_PAIN4;
+	string SOUND_STRUCK1;
+	string SOUND_STRUCK2;
+	string SOUND_STRUCK3;
 
 	Borc()
 	{
@@ -33,37 +58,37 @@ class Borc : CGameScript
 		ANIM_RUN = "anim_borsh_run";
 		ANIM_ATTACK = "anim_borsh_dashattack2";
 		ANIM_DEATH = "anim_borsh_death";
-		const string ANIM_LOOK = "anim_borsh_idle_look";
-		const string ANIM_NPC_JUMP = "anim_borsh_jump";
-		const string ANIM_MIGHTY_BLOW = "anim_borsh_dashattack1";
-		const string ANIM_DASH_ATTACK = "anim_borsh_dashattack2";
-		const int NPC_JUMPER = 1;
+		ANIM_LOOK = "anim_borsh_idle_look";
+		ANIM_NPC_JUMP = "anim_borsh_jump";
+		ANIM_MIGHTY_BLOW = "anim_borsh_dashattack1";
+		ANIM_DASH_ATTACK = "anim_borsh_dashattack2";
+		NPC_JUMPER = 1;
 		MSC_PUSH_RESIST = 0.75;
-		const int BJUMPER_CUSTOM_BOOST = 1;
-		const int BJUMPER_NO_FORWARD = 1;
-		const int BJUMPER_FACTOR = 4;
+		BJUMPER_CUSTOM_BOOST = 1;
+		BJUMPER_NO_FORWARD = 1;
+		BJUMPER_FACTOR = 4;
 		NPC_GIVE_EXP = 1000;
-		const int DMG_PUNCH_STRONG = 500;
-		const int DMG_PUNCH_WEAK = 200;
+		DMG_PUNCH_STRONG = 500;
+		DMG_PUNCH_WEAK = 200;
 		ATTACK_RANGE = 96;
 		ATTACK_HITRANGE = 128;
-		const int ATTACK_REACH = 64;
+		ATTACK_REACH = 64;
 		ATTACK_MOVERANGE = 80;
 		MOVE_RANGE = 80;
-		const string FREQ_MIGHTY_BLOW = Random(5.0, 10.0);
-		const string SOUND_MIGHTY1 = "monsters/orc/attack1.wav";
-		const string SOUND_MIGHTY2 = "monsters/orc/attack3.wav";
-		const string SOUND_ATTACK = "monsters/orc/attack2.wav";
-		const string SOUND_ALERT = "monsters/orc/battlecry.wav";
-		const string SOUND_STRUCK1 = "weapons/cbar_hitbod1.wav";
-		const string SOUND_STRUCK2 = "weapons/cbar_hitbod2.wav";
-		const string SOUND_STRUCK3 = "weapons/cbar_hitbod3.wav";
-		const string SOUND_PAIN1 = "monsters/orc/zo_alert10.wav";
-		const string SOUND_PAIN2 = "voices/orc/hit2.wav";
-		const string SOUND_PAIN3 = "voices/orc/hit3.wav";
-		const string SOUND_PAIN4 = "voices/orc/hit.wav";
-		const string SOUND_DEATH = "voices/orc/die2.wav";
-		const string SOUND_NPC_JUMP = "monsters/orc/attack1.wav";
+		FREQ_MIGHTY_BLOW = Random(5.0, 10.0);
+		SOUND_MIGHTY1 = "monsters/orc/attack1.wav";
+		SOUND_MIGHTY2 = "monsters/orc/attack3.wav";
+		SOUND_ATTACK = "monsters/orc/attack2.wav";
+		SOUND_ALERT = "monsters/orc/battlecry.wav";
+		SOUND_STRUCK1 = "weapons/cbar_hitbod1.wav";
+		SOUND_STRUCK2 = "weapons/cbar_hitbod2.wav";
+		SOUND_STRUCK3 = "weapons/cbar_hitbod3.wav";
+		SOUND_PAIN1 = "monsters/orc/zo_alert10.wav";
+		SOUND_PAIN2 = "voices/orc/hit2.wav";
+		SOUND_PAIN3 = "voices/orc/hit3.wav";
+		SOUND_PAIN4 = "voices/orc/hit.wav";
+		SOUND_DEATH = "voices/orc/die2.wav";
+		SOUND_NPC_JUMP = "monsters/orc/attack1.wav";
 	}
 
 	void OnSpawn() override

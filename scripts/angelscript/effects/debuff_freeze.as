@@ -8,6 +8,10 @@ namespace MS
 class DebuffFreeze : CGameScript
 {
 	string CAGE_SCRIPT_IDX;
+	string EFFECT_FLAGS;
+	string EFFECT_ID;
+	string EFFECT_SCRIPT;
+	string SOUND_FREEZE;
 	float game.effect.anim.framerate;
 	int game.effect.canattack;
 	int game.effect.canduck;
@@ -16,10 +20,10 @@ class DebuffFreeze : CGameScript
 
 	DebuffFreeze()
 	{
-		const string EFFECT_ID = "debuff_frozen";
-		const string EFFECT_FLAGS = "nostack";
-		const string EFFECT_SCRIPT = currentscript;
-		const string SOUND_FREEZE = "magic/freeze.wav";
+		EFFECT_ID = "debuff_frozen";
+		EFFECT_FLAGS = "nostack";
+		EFFECT_SCRIPT = currentscript;
+		SOUND_FREEZE = "magic/freeze.wav";
 	}
 
 	void debuff_start()

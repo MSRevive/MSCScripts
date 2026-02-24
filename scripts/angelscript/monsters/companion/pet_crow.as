@@ -12,6 +12,9 @@ class PetCrow : CGameScript
 	string ANIM_IDLE;
 	string ANIM_RUN;
 	string ANIM_WALK;
+	int ATK_MAX;
+	int ATK_MIN;
+	float ATTACK_HITCHANCE;
 	int ATTACK_HITRANGE;
 	int ATTACK_RANGE;
 	int CAN_FLEE;
@@ -20,6 +23,13 @@ class PetCrow : CGameScript
 	int CAN_HUNT;
 	int MOVE_RANGE;
 	float RETALIATE_CHANCE;
+	string SOUND_ATTACK1;
+	string SOUND_DEATH;
+	string SOUND_IDLE1;
+	string SOUND_PAIN;
+	string SOUND_STRUCK1;
+	string SOUND_STRUCK2;
+	string SOUND_STRUCK3;
 	string SUMMON_MASTER;
 
 	PetCrow()
@@ -30,17 +40,17 @@ class PetCrow : CGameScript
 		ANIM_ATTACK = "fly";
 		MOVE_RANGE = 48;
 		ATTACK_RANGE = 64;
-		const int ATK_MIN = 2;
-		const int ATK_MAX = 4;
+		ATK_MIN = 2;
+		ATK_MAX = 4;
 		ATTACK_HITRANGE = 100;
-		const float ATTACK_HITCHANCE = 0.9;
-		const string SOUND_STRUCK1 = "weapons/cbar_hitbod1.wav";
-		const string SOUND_STRUCK2 = "weapons/cbar_hitbod1.wav";
-		const string SOUND_STRUCK3 = "weapons/cbar_hitbod1.wav";
-		const string SOUND_PAIN = "none";
-		const string SOUND_ATTACK1 = "monsters/rat/squeak2.wav";
-		const string SOUND_IDLE1 = "monsters/rat/squeak2.wav";
-		const string SOUND_DEATH = "monsters/rat/squeak3.wav";
+		ATTACK_HITCHANCE = 0.9;
+		SOUND_STRUCK1 = "weapons/cbar_hitbod1.wav";
+		SOUND_STRUCK2 = "weapons/cbar_hitbod1.wav";
+		SOUND_STRUCK3 = "weapons/cbar_hitbod1.wav";
+		SOUND_PAIN = "none";
+		SOUND_ATTACK1 = "monsters/rat/squeak2.wav";
+		SOUND_IDLE1 = "monsters/rat/squeak2.wav";
+		SOUND_DEATH = "monsters/rat/squeak3.wav";
 		RETALIATE_CHANCE = 0.75;
 		CAN_FLEE = 0;
 		CAN_HUNT = 1;

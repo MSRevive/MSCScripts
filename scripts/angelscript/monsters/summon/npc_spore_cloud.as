@@ -7,10 +7,13 @@ namespace MS
 
 class NpcSporeCloud : CGameScript
 {
+	string CHECK_EFFECT;
+	string EFFECT_SCRIPT;
+
 	NpcSporeCloud()
 	{
-		const string EFFECT_SCRIPT = "effects/poison_spore";
-		const string CHECK_EFFECT = "DOT_gpoison";
+		EFFECT_SCRIPT = "effects/poison_spore";
+		CHECK_EFFECT = "DOT_gpoison";
 	}
 
 }

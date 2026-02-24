@@ -12,7 +12,16 @@ class Magicshop : CGameScript
 {
 	int CANCHAT;
 	int JOB;
+	int NO_HAIL;
+	int NO_JOB;
+	int NO_RUMOR;
+	int NPC_REACTS;
+	float SELL_RATIO;
+	string SOUND_DEATH;
 	int STORE_CLOSED;
+	string STORE_NAME;
+	int STORE_SELLMENU;
+	string STORE_TRIGGERTEXT;
 	int VEND_ARMORER;
 	int VEND_CONTAINERS;
 	int VEND_NEWBIE;
@@ -20,20 +29,20 @@ class Magicshop : CGameScript
 
 	Magicshop()
 	{
-		const string SOUND_DEATH = "none";
+		SOUND_DEATH = "none";
 		STORE_CLOSED = 0;
-		const string STORE_NAME = "gatecity_magicshop";
-		const string STORE_TRIGGERTEXT = "store trade buy sell purchase sale offer";
-		const int STORE_SELLMENU = 1;
-		const float SELL_RATIO = 0.75;
-		const int NO_JOB = 1;
-		const int NO_RUMOR = 1;
-		const int NO_HAIL = 1;
+		STORE_NAME = "gatecity_magicshop";
+		STORE_TRIGGERTEXT = "store trade buy sell purchase sale offer";
+		STORE_SELLMENU = 1;
+		SELL_RATIO = 0.75;
+		NO_JOB = 1;
+		NO_RUMOR = 1;
+		NO_HAIL = 1;
 		VEND_NEWBIE = 1;
 		VEND_WEAPONS = 1;
 		VEND_CONTAINERS = 1;
 		VEND_ARMORER = 0;
-		const int NPC_REACTS = 1;
+		NPC_REACTS = 1;
 	}
 
 	void OnSpawn() override
@@ -64,7 +73,7 @@ class Magicshop : CGameScript
 		{
 			if (GetEntityDist(param1) <= 90)
 			{
-				SayText("Can I get you some potions?");
+				SayText("Can " + I + " get you some potions?");
 			}
 		}
 	}
@@ -82,7 +91,7 @@ class Magicshop : CGameScript
 
 	void say_job()
 	{
-		SayText("Until the Undermountains is open again , I have no need to hire you.");
+		SayText("Until the Undermountains is open again , " + I + " have no need to hire you.");
 	}
 
 	void say_rumor()
@@ -135,7 +144,7 @@ class Magicshop : CGameScript
 
 	void vendor_say_closed()
 	{
-		SayText("Sorry , I m closed. I will reopen at seven in the morning.");
+		SayText("Sorry , " + I + " m closed. I will reopen at seven in the morning.");
 	}
 
 }

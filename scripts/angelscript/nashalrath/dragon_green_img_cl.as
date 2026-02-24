@@ -83,7 +83,7 @@ class DragonGreenImgCl : CGameScript
 		ClientEffect("tempent", "set_current_prop", "death_delay", 6.0);
 		string L_BREATH_YAW = BREATH_YAW;
 		L_BREATH_YAW += Random(-30.00, 30.00);
-		string RND_F = Random(100.00, 300.00);
+		float RND_F = Random(100.00, 300.00);
 		ClientEffect("tempent", "set_current_prop", "velocity", /* TODO: $relpos */ $relpos(Vector3(0, L_BREATH_YAW, 0), Vector3(0, RND_F, 0)));
 		ClientEffect("tempent", "set_current_prop", "bouncefactor", 2);
 		ClientEffect("tempent", "set_current_prop", "scale", 1);

@@ -7,22 +7,31 @@ namespace MS
 
 class ProjHitWall : CGameScript
 {
-	string DISTANCE;
+	float DISTANCE;
 	string END_POS;
 	int HIT_NPC;
+	string MODEL_HANDS;
+	string MODEL_WORLD;
+	string PROJ_ANIM_IDLE;
+	int PROJ_AOE_FALLOFF;
+	int PROJ_AOE_RANGE;
+	int PROJ_COLLIDEHITBOX;
+	int PROJ_DAMAGE;
+	string PROJ_DAMAGE_TYPE;
+	int PROJ_STICK_DURATION;
 	string START_POS;
 
 	ProjHitWall()
 	{
-		const string MODEL_HANDS = "none";
-		const string MODEL_WORLD = "none";
-		const string PROJ_DAMAGE_TYPE = "none";
-		const string PROJ_ANIM_IDLE = "idle";
-		const int PROJ_DAMAGE = 0;
-		const int PROJ_AOE_RANGE = 0;
-		const int PROJ_AOE_FALLOFF = 0;
-		const int PROJ_STICK_DURATION = 0;
-		const int PROJ_COLLIDEHITBOX = 32;
+		MODEL_HANDS = "none";
+		MODEL_WORLD = "none";
+		PROJ_DAMAGE_TYPE = "none";
+		PROJ_ANIM_IDLE = "idle";
+		PROJ_DAMAGE = 0;
+		PROJ_AOE_RANGE = 0;
+		PROJ_AOE_FALLOFF = 0;
+		PROJ_STICK_DURATION = 0;
+		PROJ_COLLIDEHITBOX = 32;
 	}
 
 	void projectile_spawn()

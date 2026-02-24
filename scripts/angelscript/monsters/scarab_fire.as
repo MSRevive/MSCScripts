@@ -9,44 +9,67 @@ namespace MS
 class ScarabFire : CGameScript
 {
 	string ANIM_DEATH;
+	string ANIM_IDLE;
+	string ANIM_MOVE;
+	int DMG_BURN_DOT;
+	int DMG_CHEW;
+	float EFFECT_DURATION;
+	string EFFECT_SCRIPT;
+	float FREQ_CHITTER;
+	int FREQ_LEAP;
 	int JUMP_SCAN_ACTIVE;
 	int LATCHED_ON;
+	float LATCH_DURATION;
 	string LATCH_TARGET;
 	string NEXT_LEAP;
 	string NPCATK_TARGET;
 	int NPC_GIVE_EXP;
 	int NPC_HACKED_MOVE_SPEED;
+	int NPC_PROPELLED;
 	string NPC_SPAWN_TIME;
+	int RANGE_LEAP_LONG;
+	int RANGE_LEAP_MAX;
+	int RANGE_LEAP_SHORT;
 	int RUN_AWAY;
 	int SKEL_RESPAWN_TIMES;
+	string SOUND_CHITTER;
+	string SOUND_DEATH;
+	string SOUND_LATCH_HISS;
+	string SOUND_LATCH_JUMP;
+	string SOUND_LATCH_PLYR;
+	string SOUND_PAIN1;
+	string SOUND_PAIN2;
+	string SOUND_STRUCK1;
+	string SOUND_STRUCK2;
+	string SOUND_STRUCK3;
 
 	ScarabFire()
 	{
-		const string ANIM_MOVE = "walk";
+		ANIM_MOVE = "walk";
 		ANIM_DEATH = "die";
-		const string ANIM_IDLE = "idle";
-		const int RANGE_LEAP_MAX = 512;
-		const int RANGE_LEAP_LONG = 256;
-		const int RANGE_LEAP_SHORT = 64;
-		const int FREQ_LEAP = 15;
+		ANIM_IDLE = "idle";
+		RANGE_LEAP_MAX = 512;
+		RANGE_LEAP_LONG = 256;
+		RANGE_LEAP_SHORT = 64;
+		FREQ_LEAP = 15;
 		NPC_GIVE_EXP = 100;
-		const float FREQ_CHITTER = 3.6;
-		const int DMG_BURN_DOT = 50;
-		const int DMG_CHEW = 25;
-		const string EFFECT_SCRIPT = "effects/dot_fire";
-		const float EFFECT_DURATION = 5.0;
-		const float LATCH_DURATION = 10.0;
-		const string SOUND_CHITTER = "monsters/spider/spideridle.wav";
-		const string SOUND_STRUCK1 = "body/flesh1.wav";
-		const string SOUND_STRUCK2 = "body/flesh2.wav";
-		const string SOUND_STRUCK3 = "body/flesh3.wav";
-		const string SOUND_PAIN1 = "monsters/spider/spiderhiss.wav";
-		const string SOUND_PAIN2 = "monsters/spider/spiderhiss.wav";
-		const string SOUND_DEATH = "monsters/spider/spiderdie.wav";
-		const string SOUND_LATCH_HISS = "monsters/spider/spiderhiss2.wav";
-		const string SOUND_LATCH_JUMP = "monsters/spider/spiderjump.wav";
-		const string SOUND_LATCH_PLYR = "monsters/spider/spiderlatch.wav";
-		const int NPC_PROPELLED = 1;
+		FREQ_CHITTER = 3.6;
+		DMG_BURN_DOT = 50;
+		DMG_CHEW = 25;
+		EFFECT_SCRIPT = "effects/dot_fire";
+		EFFECT_DURATION = 5.0;
+		LATCH_DURATION = 10.0;
+		SOUND_CHITTER = "monsters/spider/spideridle.wav";
+		SOUND_STRUCK1 = "body/flesh1.wav";
+		SOUND_STRUCK2 = "body/flesh2.wav";
+		SOUND_STRUCK3 = "body/flesh3.wav";
+		SOUND_PAIN1 = "monsters/spider/spiderhiss.wav";
+		SOUND_PAIN2 = "monsters/spider/spiderhiss.wav";
+		SOUND_DEATH = "monsters/spider/spiderdie.wav";
+		SOUND_LATCH_HISS = "monsters/spider/spiderhiss2.wav";
+		SOUND_LATCH_JUMP = "monsters/spider/spiderjump.wav";
+		SOUND_LATCH_PLYR = "monsters/spider/spiderlatch.wav";
+		NPC_PROPELLED = 1;
 		NPC_HACKED_MOVE_SPEED = 25;
 	}
 
@@ -190,7 +213,7 @@ class ScarabFire : CGameScript
 
 	void OnDamage(int damage) override
 	{
-		string SINCE_SPAWN = GetGameTime();
+		float SINCE_SPAWN = GetGameTime();
 		SINCE_SPAWN -= NPC_SPAWN_TIME;
 		if (SINCE_SPAWN < 2.0)
 		{
@@ -346,7 +369,7 @@ class ScarabFire : CGameScript
 			string TARG_HEIGHT = GetEntityHeight(LATCH_TARGET);
 			TARG_ORG += "z";
 		}
-		string RND_V_POS = RandomInt(-64, 0);
+		int RND_V_POS = RandomInt(-64, 0);
 		string TARG_YAW = GetEntityProperty(LATCH_TARGET, "angles.yaw");
 		TARG_ORG += /* TODO: $relpos */ $relpos(Vector3(0, TARG_YAW, 0), Vector3(0, 5, RND_V_POS));
 		string TARG_GROUND = /* TODO: $get_ground_height */ $get_ground_height(TARG_ORG);

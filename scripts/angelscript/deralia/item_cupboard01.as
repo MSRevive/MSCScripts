@@ -7,11 +7,15 @@ namespace MS
 
 class ItemCupboard01 : CGameScript
 {
+	string ANIM_CLOSE;
+	string ANIM_IDLE;
+	string ANIM_OPEN;
+
 	ItemCupboard01()
 	{
-		const string ANIM_OPEN = "seq-name";
-		const string ANIM_CLOSE = "seq-name";
-		const string ANIM_IDLE = "seq-name";
+		ANIM_OPEN = "seq-name";
+		ANIM_CLOSE = "seq-name";
+		ANIM_IDLE = "seq-name";
 	}
 
 	void OnSpawn() override

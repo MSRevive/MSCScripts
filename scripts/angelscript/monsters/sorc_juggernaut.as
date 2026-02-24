@@ -11,21 +11,34 @@ class SorcJuggernaut : CGameScript
 	string ANIM_ATTACK;
 	string ANIM_ATTACK1;
 	string ANIM_ATTACK2;
+	float AS_MAX_ATTACK_TIME;
+	float ATTACK_ACCURACY;
 	int ATTACK_HITRANGE;
 	int ATTACK_MOVERANGE;
 	int ATTACK_RANGE;
 	int DID_LEAPSTUN;
+	float DMG_KICK;
+	int DMG_SWORD;
 	int DROP_GOLD;
-	string DROP_GOLD_AMT;
+	int DROP_GOLD_AMT;
 	float FLINCH_CHANCE;
+	float FREQ_LUNGE;
 	string LAST_SWORD_HIT;
 	int LEAPING;
 	string LEAP_END;
 	string LEAP_TARGET;
 	int LUNGE_DELAY;
+	int LUNGE_RANGE;
 	string MY_SCRIPT_IDX;
 	int NPC_FORCED_MOVEDEST;
 	int NPC_GIVE_EXP;
+	float SORC_LRESIST;
+	float SORC_PRESIST;
+	string SOUND_SWINGHIT;
+	string SOUND_SWINGMISS;
+	string SOUND_UPSWING;
+	string SOUND_WALK1;
+	string SOUND_WALK2;
 
 	SorcJuggernaut()
 	{
@@ -35,20 +48,20 @@ class SorcJuggernaut : CGameScript
 		ANIM_ATTACK1 = "battleaxe_swing1_L";
 		ANIM_ATTACK2 = "swordswing1_L";
 		FLINCH_CHANCE = 0.25;
-		const string DMG_KICK = Random(25, 100);
+		DMG_KICK = Random(25, 100);
 		ANIM_ATTACK = ANIM_ATTACK1;
-		const float ATTACK_ACCURACY = 0.7;
-		const string DMG_SWORD = RandomInt(400, 800);
-		const float FREQ_LUNGE = 10.0;
-		const int LUNGE_RANGE = 256;
-		const string SOUND_WALK1 = "monsters/troll/step1.wav";
-		const string SOUND_WALK2 = "monsters/troll/step2.wav";
-		const string SOUND_UPSWING = "monsters/orc/attack1.wav";
-		const string SOUND_SWINGHIT = "monsters/orc/pain.wav";
-		const string SOUND_SWINGMISS = "debris/bustmetal2.wav";
-		const float AS_MAX_ATTACK_TIME = 10.0;
-		const float SORC_LRESIST = 0.6;
-		const float SORC_PRESIST = 1.2;
+		ATTACK_ACCURACY = 0.7;
+		DMG_SWORD = RandomInt(400, 800);
+		FREQ_LUNGE = 10.0;
+		LUNGE_RANGE = 256;
+		SOUND_WALK1 = "monsters/troll/step1.wav";
+		SOUND_WALK2 = "monsters/troll/step2.wav";
+		SOUND_UPSWING = "monsters/orc/attack1.wav";
+		SOUND_SWINGHIT = "monsters/orc/pain.wav";
+		SOUND_SWINGMISS = "debris/bustmetal2.wav";
+		AS_MAX_ATTACK_TIME = 10.0;
+		SORC_LRESIST = 0.6;
+		SORC_PRESIST = 1.2;
 	}
 
 	void orc_spawn()

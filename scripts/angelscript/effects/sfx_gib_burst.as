@@ -12,14 +12,19 @@ class SfxGibBurst : CGameScript
 	string FX_ORIGIN;
 	string FX_RENDER_PROPS;
 	string FX_SUBMODELS;
+	float GIB_BOUNCE_FACTOR;
+	string GIB_COLLISION;
+	int GIB_DIE_ON_COLLIDE;
+	float GIB_GRAV;
+	string GIB_RENDER_FX;
 
 	SfxGibBurst()
 	{
-		const float GIB_BOUNCE_FACTOR = 1.3;
-		const float GIB_GRAV = 0.7;
-		const string GIB_COLLISION = "world";
-		const int GIB_DIE_ON_COLLIDE = 0;
-		const string GIB_RENDER_FX = "normal";
+		GIB_BOUNCE_FACTOR = 1.3;
+		GIB_GRAV = 0.7;
+		GIB_COLLISION = "world";
+		GIB_DIE_ON_COLLIDE = 0;
+		GIB_RENDER_FX = "normal";
 	}
 
 	void client_activate()
@@ -50,9 +55,9 @@ class SfxGibBurst : CGameScript
 
 	void setup_gib()
 	{
-		string L_PITCH = RandomInt(0, 359);
-		string L_YAW = RandomInt(0, 359);
-		string L_ROLL = RandomInt(0, 359);
+		int L_PITCH = RandomInt(0, 359);
+		int L_YAW = RandomInt(0, 359);
+		int L_ROLL = RandomInt(0, 359);
 		Vector3 L_ANG = Vector3(L_PITCH, L_YAW, 0);
 		ClientEffect("tempent", "set_current_prop", "body", GetRandomToken(FX_SUBMODELS, ";"));
 		ClientEffect("tempent", "set_current_prop", "death_delay", FX_DURATION);

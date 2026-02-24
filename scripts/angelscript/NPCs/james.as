@@ -9,6 +9,7 @@ namespace MS
 class James : CGameScript
 {
 	int BUSY_CHATTING;
+	float CHAT_DELAY;
 	int CHAT_STEP;
 	string CHAT_STEP1;
 	string CHAT_STEP2;
@@ -18,13 +19,15 @@ class James : CGameScript
 	int CHAT_STEPS;
 	int CONGRATS_MSG;
 	string DID_CONGRATS;
+	int NO_JOB;
+	int NO_RUMOR;
 	int SAID_HI;
 
 	James()
 	{
-		const int NO_JOB = 1;
-		const int NO_RUMOR = 1;
-		const float CHAT_DELAY = 3.0;
+		NO_JOB = 1;
+		NO_RUMOR = 1;
+		CHAT_DELAY = 3.0;
 	}
 
 	void OnSpawn() override
@@ -80,7 +83,7 @@ class James : CGameScript
 			DID_CONGRATS = 1;
 			PlayAnim("critical", "eye_wipe");
 			bchat_mouth_move();
-			SayText("Thank you for driving the orcs away! I hope our people will return soon...");
+			SayText("Thank you for driving the orcs away! " + I + " hope our people will return soon...");
 			ScheduleDelayedEvent(2.0, "fix_anims");
 		}
 		if ((CONGRATS_MSG)) return;

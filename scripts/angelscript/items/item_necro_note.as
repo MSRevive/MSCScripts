@@ -7,11 +7,15 @@ namespace MS
 
 class ItemNecroNote : CGameScript
 {
+	string MODEL_HANDS;
+	string MODEL_VIEW;
+	string MODEL_WORLD;
+
 	ItemNecroNote()
 	{
-		const string MODEL_WORLD = "garbagegibs.mdl";
-		const string MODEL_HANDS = "garbagegibs.mdl";
-		const string MODEL_VIEW = "viewmodels/v_2hblunts.mdl";
+		MODEL_WORLD = "garbagegibs.mdl";
+		MODEL_HANDS = "garbagegibs.mdl";
+		MODEL_VIEW = "viewmodels/v_2hblunts.mdl";
 	}
 
 	void miscitem_spawn()

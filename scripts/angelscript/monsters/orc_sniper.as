@@ -8,71 +8,90 @@ namespace MS
 
 class OrcSniper : CGameScript
 {
+	int ALT_ATTACKS;
 	int AM_TURRET;
 	string ANIM_ATTACK;
+	string ANIM_BOW;
+	string ANIM_KICK;
 	string ANIM_RUN;
+	string ANIM_SMASH;
+	string ANIM_SWIPE;
 	string ANIM_WALK;
 	int ARROW_MISSED;
+	string ARROW_TYPE;
 	int ATTACK_CONE_OF_FIRE;
 	int ATTACK_HITRANGE;
 	int ATTACK_MOVERANGE;
 	string ATTACK_PUSH;
 	int ATTACK_RANGE;
+	int ATTACK_SPEED;
+	string CONTAINER_BASE;
 	float CONTAINER_DROP_CHANCE;
 	string CONTAINER_SCRIPT;
 	int DID_SPOT_SPEECH;
+	int DMG_BOW;
+	int DMG_KICK;
+	int DMG_SMASH;
+	int DMG_SWIPE;
 	int DROPS_CONTAINER;
 	int DROP_GOLD;
-	string DROP_GOLD_AMT;
+	int DROP_GOLD_AMT;
 	string DROP_ITEM1;
 	float DROP_ITEM1_CHANCE;
+	string DROP_ITEM_BASE1;
+	int FIN_EXP;
 	float FLINCH_CHANCE;
+	float FREQ_KICK;
 	int IS_ARROW;
+	int KICK_HITCHANCE;
+	int KICK_HITRANGE;
+	int KICK_RANGE;
 	int MELEE_ATK;
 	int MOVE_RANGE;
 	string NEXT_KICK;
 	int NO_STUCK_CHECKS;
 	string NPC_GIVE_EXP;
+	string SOUND_KICK;
 	string SPAWN_SPEECH;
 	float SPAWN_SPEECH_DELAY;
 	string SPOT_SPEECH;
 
 	OrcSniper()
 	{
-		const string ARROW_TYPE = "proj_arrow_npc";
-		const int ATTACK_SPEED = 900;
+		ARROW_TYPE = "proj_arrow_npc";
+		ATTACK_SPEED = 900;
 		ATTACK_CONE_OF_FIRE = 2;
-		const string DMG_BOW = RandomInt(50, 100);
-		const int KICK_RANGE = 96;
-		const int KICK_HITRANGE = 128;
-		const int KICK_HITCHANCE = 90;
-		const string ANIM_SMASH = "battleaxe_swing1_L";
-		const string ANIM_SWIPE = "swordswing1_L";
-		const string ANIM_BOW = "shootorcbow";
-		const string ANIM_KICK = "kick";
-		const string DMG_SMASH = "$rand(30,75)";
-		const string DMG_SWIPE = "$rand(10,30)";
-		const string DMG_KICK = "$rand(10,30)";
-		const int ALT_ATTACKS = 1;
-		const float FREQ_KICK = 10.0;
+		DMG_BOW = RandomInt(50, 100);
+		KICK_RANGE = 96;
+		KICK_HITRANGE = 128;
+		KICK_HITCHANCE = 90;
+		ANIM_SMASH = "battleaxe_swing1_L";
+		ANIM_SWIPE = "swordswing1_L";
+		ANIM_BOW = "shootorcbow";
+		ANIM_KICK = "kick";
+		DMG_SMASH = "$rand(30,75)";
+		DMG_SWIPE = "$rand(10,30)";
+		DMG_KICK = "$rand(10,30)";
+		ALT_ATTACKS = 1;
+		FREQ_KICK = 10.0;
 		DROP_GOLD = 1;
 		DROP_GOLD_AMT = RandomInt(10, 20);
-		const string DROP_ITEM_BASE1 = "bows_longbow";
+		DROP_ITEM_BASE1 = "bows_longbow";
 		DROP_ITEM1 = DROP_ITEM_BASE1;
 		DROP_ITEM1_CHANCE = 0.05;
 		DROPS_CONTAINER = 1;
-		const string CONTAINER_BASE = "chests/quiver_of_jagged";
+		CONTAINER_BASE = "chests/quiver_of_jagged";
 		CONTAINER_DROP_CHANCE = 0.3;
 		CONTAINER_SCRIPT = CONTAINER_BASE;
 		ANIM_ATTACK = "shootorcbow";
 		FLINCH_CHANCE = 0.45;
-		const int FIN_EXP = 100;
+		FIN_EXP = 100;
 		NPC_GIVE_EXP = FIN_EXP;
 		MOVE_RANGE = 2000;
 		ATTACK_RANGE = 2000;
 		ATTACK_HITRANGE = 2000;
 		ATTACK_MOVERANGE = 2000;
-		const string SOUND_KICK = "zombie/claw_miss1.wav";
+		SOUND_KICK = "zombie/claw_miss1.wav";
 	}
 
 	void orc_spawn()
@@ -257,12 +276,12 @@ class OrcSniper : CGameScript
 		if ((DID_SPOT_SPEECH)) return;
 		DID_SPOT_SPEECH = 1;
 		if (!(SPOT_SPEECH != "SPOT_SPEECH")) return;
-		SayText("SPOT_SPEECH");
+		SayText(SPOT_SPEECH);
 	}
 
 	void say_spawn_speech()
 	{
-		SayText("SPAWN_SPEECH");
+		SayText(SPAWN_SPEECH);
 	}
 
 	void set_sorcpal_getem1()

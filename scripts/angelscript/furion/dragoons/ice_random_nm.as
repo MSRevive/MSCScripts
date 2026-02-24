@@ -7,12 +7,13 @@ namespace MS
 
 class IceRandomNm : CGameScript
 {
-	string WEAPON;
+	int ELEMENT;
+	int WEAPON;
 
 	IceRandomNm()
 	{
 		WEAPON = RandomInt(0, 5);
-		const int ELEMENT = 0;
+		ELEMENT = 0;
 	}
 
 }

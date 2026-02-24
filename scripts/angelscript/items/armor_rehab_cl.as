@@ -68,28 +68,28 @@ class ArmorRehabCl : CGameScript
 
 	void create_element_sprites()
 	{
-		string RND_LEFT = Random(-20, 20);
-		string RND_RIGHT = Random(-20, 20);
+		float RND_LEFT = Random(-20, 20);
+		float RND_RIGHT = Random(-20, 20);
 		Vector3 SPRITE_VEL = Vector3(RND_LEFT, RND_RIGHT, 0);
 		ClientEffect("light", THIS_LIGHT, /* TODO: $getcl */ $getcl(MY_OWNER, "origin"), 200, SPR_COLOR, 0.09);
 		string START_POS = /* TODO: $getcl */ $getcl(MY_OWNER, "origin");
-		string RND_RAD = RandomInt(0, 359);
+		int RND_RAD = RandomInt(0, 359);
 		START_POS += /* TODO: $relpos */ $relpos(Vector3(0, RND_RAD, 0), Vector3(0, SPR_RAD, -30));
 		ClientEffect("tempent", "sprite", "xflare1.spr", START_POS, "setup_element_sprite");
 		string START_POS = /* TODO: $getcl */ $getcl(MY_OWNER, "origin");
-		string RND_RAD = RandomInt(0, 359);
+		int RND_RAD = RandomInt(0, 359);
 		START_POS += /* TODO: $relpos */ $relpos(Vector3(0, RND_RAD, 0), Vector3(0, SPR_RAD, -30));
 		ClientEffect("tempent", "sprite", "xflare1.spr", START_POS, "setup_element_sprite");
 		string START_POS = /* TODO: $getcl */ $getcl(MY_OWNER, "origin");
-		string RND_RAD = RandomInt(0, 359);
+		int RND_RAD = RandomInt(0, 359);
 		START_POS += /* TODO: $relpos */ $relpos(Vector3(0, RND_RAD, 0), Vector3(0, SPR_RAD, -30));
 		ClientEffect("tempent", "sprite", "xflare1.spr", START_POS, "setup_element_sprite");
 	}
 
 	void setup_element_sprite()
 	{
-		string RND_LEFT = Random(-20, 20);
-		string RND_RIGHT = Random(-20, 20);
+		float RND_LEFT = Random(-20, 20);
+		float RND_RIGHT = Random(-20, 20);
 		Vector3 SPRITE_VEL = Vector3(RND_LEFT, RND_RIGHT, 0);
 		ClientEffect("tempent", "set_current_prop", "death_delay", 1.0);
 		ClientEffect("tempent", "set_current_prop", "framerate", 30);

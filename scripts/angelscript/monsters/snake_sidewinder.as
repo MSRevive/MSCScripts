@@ -12,14 +12,26 @@ class SnakeSidewinder : CGameScript
 	string ANIM_IDLE;
 	string ANIM_RUN;
 	string ANIM_WALK;
+	float ATTACK_DAMAGE;
 	int ATTACK_DELAY;
+	float ATTACK_HITCHANCE;
 	int ATTACK_HITRANGE;
 	int ATTACK_MOVERANGE;
 	int ATTACK_RANGE;
 	int BITE_SOUND;
 	int DID_ALERT;
+	string MONSTER_MODEL;
 	string NPC_DELAYING_UNSTUCK;
 	int NPC_GIVE_EXP;
+	float POISON_DAMAGE;
+	int POISON_DURATION;
+	string SOUND_ALERT;
+	string SOUND_ATTACK;
+	string SOUND_IDLE;
+	string SOUND_PAIN1;
+	string SOUND_PAIN2;
+	string SOUND_POISON;
+	string SOUND_STRUCK;
 
 	SnakeSidewinder()
 	{
@@ -31,19 +43,19 @@ class SnakeSidewinder : CGameScript
 		ATTACK_RANGE = 80;
 		ATTACK_HITRANGE = 120;
 		ATTACK_MOVERANGE = 35;
-		const float ATTACK_HITCHANCE = 0.8;
-		const string ATTACK_DAMAGE = "$randf(3,8)";
-		const string POISON_DAMAGE = "$randf(1,5)";
-		const string POISON_DURATION = "$rand(30,45)";
-		const string SOUND_ALERT = "monsters/snake_idle1.wav";
-		const string SOUND_IDLE = "monsters/snake_idle2.wav";
-		const string SOUND_ATTACK = "bullchicken/bc_bite2.wav";
-		const string SOUND_PAIN1 = "monsters/snake_pain1.wav";
-		const string SOUND_PAIN2 = "monsters/snake_pain2.wav";
-		const string SOUND_POISON = "monsters/snakeman/sm_alert1.wav";
-		const string SOUND_STRUCK = "debris/flesh2.wav";
-		const string MONSTER_MODEL = "monsters/sidewinder.mdl";
-		const string MONSTER_MODEL = "monsters/sidewinderT.mdl";
+		ATTACK_HITCHANCE = 0.8;
+		ATTACK_DAMAGE = "$randf(3,8)";
+		POISON_DAMAGE = "$randf(1,5)";
+		POISON_DURATION = "$rand(30,45)";
+		SOUND_ALERT = "monsters/snake_idle1.wav";
+		SOUND_IDLE = "monsters/snake_idle2.wav";
+		SOUND_ATTACK = "bullchicken/bc_bite2.wav";
+		SOUND_PAIN1 = "monsters/snake_pain1.wav";
+		SOUND_PAIN2 = "monsters/snake_pain2.wav";
+		SOUND_POISON = "monsters/snakeman/sm_alert1.wav";
+		SOUND_STRUCK = "debris/flesh2.wav";
+		MONSTER_MODEL = "monsters/sidewinder.mdl";
+		MONSTER_MODEL = "monsters/sidewinderT.mdl";
 		Precache(MONSTER_MODEL);
 	}
 

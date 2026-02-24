@@ -9,10 +9,11 @@ class ProjArrowPhxCl : CGameScript
 	string FX_CENTER;
 	string FX_RADIUS;
 	string SCALE_RATIO;
+	string SOUND_BURST;
 
 	ProjArrowPhxCl()
 	{
-		const string SOUND_BURST = "ambience/steamburst1.wav";
+		SOUND_BURST = "ambience/steamburst1.wav";
 		Precache(SOUND_BURST);
 	}
 

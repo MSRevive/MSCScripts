@@ -10,36 +10,82 @@ namespace MS
 
 class ElementalPureFire : CGameScript
 {
+	float ACCURACY_STRIKE;
 	string ANIM_ATTACK;
 	string ANIM_DEATH;
 	string ANIM_FLINCH;
 	string ANIM_IDLE;
+	string ANIM_PROJECTILE;
 	string ANIM_RUN;
 	string ANIM_WALK;
 	string ARCH_COUNT_GUIDED;
 	int AS_SUMMON_TELE_CHECK;
 	int ATTACK_HITRANGE;
 	int ATTACK_RANGE;
+	string CL_FX_SCRIPT;
 	string CL_IDX;
 	string DID_INTRO;
+	int DMG_AMB_BURN;
+	int DMG_BASE;
+	int DMG_FIRE_BALL;
+	int DMG_FIRE_BOLT;
+	string DMG_PROJ;
+	int DMG_STRIKE;
+	string DOT1_DMG;
+	float DOT1_DURATION;
+	string DOT1_ID;
+	string DOT1_SCRIPT;
+	string DOT2_DMG;
+	float DOT2_DURATION;
+	string DOT2_ID;
+	string DOT2_SCRIPT;
 	int DOT_STACK;
+	int DOT_STRIKE;
 	int EFFECT_NO_GLOW_SHELLS;
+	int ELEMENTAL_EXP;
 	string ELEMENT_SEAL_IDX;
+	string ELM_COLOR;
+	string ELM_TYPE;
+	float FREQ_CL_REFRESH;
 	float FREQ_SPECIAL;
 	int GAME_NO_CORPSE;
 	int IMMUNE_VAMPIRE;
 	int IS_BLOODLESS;
 	int IS_UNHOLY;
+	int MELEE_RANGE;
+	int MOVESPEED_FAST;
+	int MOVESPEED_SLOW;
 	int MOVE_RANGE;
 	string NEXT_CL_REFRESH;
 	string NEXT_LOOP_SOUND;
 	string NEXT_SEAL;
+	float NPC_FLINCH_HEALTH_RATIO;
 	string NPC_GIVE_EXP;
 	int NPC_HACKED_MOVE_SPEED;
 	int NPC_NO_ATTACK;
+	int NPC_PITCH_PAIN;
+	int NPC_USE_FLINCH;
+	string PROJECTILE1_SCRIPT;
+	string PROJECTILE2_SCRIPT;
 	int PROJ_GUIDED;
 	int PROJ_NO_SPRITES;
 	string SEAL_POS;
+	string SOUND_DEATH;
+	string SOUND_FIRECHARGE;
+	string SOUND_FIRESHOOT;
+	string SOUND_FIRESHOOT2;
+	string SOUND_GLOAT;
+	string SOUND_IDLE1;
+	string SOUND_IDLE2;
+	string SOUND_IDLE3;
+	string SOUND_PAIN1;
+	string SOUND_PAIN2;
+	string SOUND_PAIN3;
+	string SOUND_STRUCK1;
+	string SOUND_STRUCK2;
+	string SOUND_STRUCK3;
+	string SOUND_SWIPE;
+	string SOUND_SWIPEHIT;
 
 	ElementalPureFire()
 	{
@@ -52,7 +98,7 @@ class ElementalPureFire : CGameScript
 		ANIM_FLINCH = "flinch";
 		ANIM_DEATH = "die1";
 		ANIM_ATTACK = "attack1";
-		const string ANIM_PROJECTILE = "fireball";
+		ANIM_PROJECTILE = "fireball";
 		IS_UNHOLY = 1;
 		IS_BLOODLESS = 1;
 		IMMUNE_VAMPIRE = 1;
@@ -60,55 +106,55 @@ class ElementalPureFire : CGameScript
 		ATTACK_HITRANGE = 1024;
 		MOVE_RANGE = 512;
 		NPC_HACKED_MOVE_SPEED = 100;
-		const int MOVESPEED_SLOW = 100;
-		const int MOVESPEED_FAST = 200;
-		const string DMG_STRIKE = RandomInt(175, 250);
-		const string DOT_STRIKE = RandomInt(60, 80);
-		const float ACCURACY_STRIKE = 0.8;
-		const string DMG_AMB_BURN = RandomInt(30, 60);
+		MOVESPEED_SLOW = 100;
+		MOVESPEED_FAST = 200;
+		DMG_STRIKE = RandomInt(175, 250);
+		DOT_STRIKE = RandomInt(60, 80);
+		ACCURACY_STRIKE = 0.8;
+		DMG_AMB_BURN = RandomInt(30, 60);
 		FREQ_SPECIAL = 5.0;
-		const int DMG_FIRE_BALL = 100;
-		const int DMG_FIRE_BOLT = 20;
-		const string SOUND_FIRECHARGE = "magic/fireball_powerup.wav";
-		const string SOUND_FIRESHOOT = "magic/fireball_strike.wav";
-		const string SOUND_FIRESHOOT2 = "weapons/rocketfire1.wav";
-		const string SOUND_IDLE1 = "agrunt/ag_alert1.wav";
-		const string SOUND_IDLE2 = "agrunt/ag_die1.wav";
-		const string SOUND_IDLE3 = "agrunt/ag_idle1.wav";
-		const string SOUND_SWIPE = "weapons/debris1.wav";
-		const string SOUND_SWIPEHIT = "ambience/steamburst1.wav";
-		const string SOUND_DEATH = "garg/gar_die1.wav";
-		const string SOUND_PAIN1 = "debris/bustflesh2.wav";
-		const string SOUND_PAIN2 = "agrunt/ag_pain1.wav";
-		const string SOUND_PAIN3 = "agrunt/ag_pain4.wav";
-		const string SOUND_GLOAT = "x/x_laugh1.wav";
-		const int NPC_PITCH_PAIN = 1;
-		const string SOUND_STRUCK1 = "bullchicken/bc_acid1.wav";
-		const string SOUND_STRUCK2 = "bullchicken/bc_acid1.wav";
-		const string SOUND_STRUCK3 = "ambience/flameburst1.wav";
-		const int NPC_USE_FLINCH = 1;
-		const float NPC_FLINCH_HEALTH_RATIO = 0.5;
+		DMG_FIRE_BALL = 100;
+		DMG_FIRE_BOLT = 20;
+		SOUND_FIRECHARGE = "magic/fireball_powerup.wav";
+		SOUND_FIRESHOOT = "magic/fireball_strike.wav";
+		SOUND_FIRESHOOT2 = "weapons/rocketfire1.wav";
+		SOUND_IDLE1 = "agrunt/ag_alert1.wav";
+		SOUND_IDLE2 = "agrunt/ag_die1.wav";
+		SOUND_IDLE3 = "agrunt/ag_idle1.wav";
+		SOUND_SWIPE = "weapons/debris1.wav";
+		SOUND_SWIPEHIT = "ambience/steamburst1.wav";
+		SOUND_DEATH = "garg/gar_die1.wav";
+		SOUND_PAIN1 = "debris/bustflesh2.wav";
+		SOUND_PAIN2 = "agrunt/ag_pain1.wav";
+		SOUND_PAIN3 = "agrunt/ag_pain4.wav";
+		SOUND_GLOAT = "x/x_laugh1.wav";
+		NPC_PITCH_PAIN = 1;
+		SOUND_STRUCK1 = "bullchicken/bc_acid1.wav";
+		SOUND_STRUCK2 = "bullchicken/bc_acid1.wav";
+		SOUND_STRUCK3 = "ambience/flameburst1.wav";
+		NPC_USE_FLINCH = 1;
+		NPC_FLINCH_HEALTH_RATIO = 0.5;
 		ANIM_FLINCH = "flinch";
-		const float FREQ_CL_REFRESH = 5.0;
-		const Vector3 ELM_COLOR = Vector3(255, 128, 0);
-		const string ELM_TYPE = "fire";
-		const int MELEE_RANGE = 96;
-		const string CL_FX_SCRIPT = "monsters/elemental_pure_cl";
-		const int ELEMENTAL_EXP = 500;
+		FREQ_CL_REFRESH = 5.0;
+		ELM_COLOR = Vector3(255, 128, 0);
+		ELM_TYPE = "fire";
+		MELEE_RANGE = 96;
+		CL_FX_SCRIPT = "monsters/elemental_pure_cl";
+		ELEMENTAL_EXP = 500;
 		NPC_GIVE_EXP = ELEMENTAL_EXP;
-		const int DMG_BASE = 100;
-		const string DOT1_SCRIPT = "effects/dot_fire";
-		const string DOT1_ID = "DOT_fire";
-		const float DOT1_DURATION = 5.0;
-		const string DOT1_DMG = /* TODO: $math(multiply) */ DMG_BASE;
-		const string DOT2_SCRIPT = "effects/dot_fire";
-		const string DOT2_ID = "DOT_fire";
-		const float DOT2_DURATION = 5.0;
-		const string DOT2_DMG = /* TODO: $math(multiply) */ DMG_BASE;
+		DMG_BASE = 100;
+		DOT1_SCRIPT = "effects/dot_fire";
+		DOT1_ID = "DOT_fire";
+		DOT1_DURATION = 5.0;
+		DOT1_DMG = (DMG_BASE * 0.15);
+		DOT2_SCRIPT = "effects/dot_fire";
+		DOT2_ID = "DOT_fire";
+		DOT2_DURATION = 5.0;
+		DOT2_DMG = (DMG_BASE * 0.15);
 		DOT_STACK = 0;
-		const string PROJECTILE1_SCRIPT = "proj_fire_ball";
-		const string PROJECTILE2_SCRIPT = "proj_fire_xolt";
-		const string DMG_PROJ = DMG_BASE;
+		PROJECTILE1_SCRIPT = "proj_fire_ball";
+		PROJECTILE2_SCRIPT = "proj_fire_xolt";
+		DMG_PROJ = DMG_BASE;
 		PROJ_GUIDED = 1;
 		PROJ_NO_SPRITES = 1;
 		GAME_NO_CORPSE = 1;
@@ -184,7 +230,7 @@ class ElementalPureFire : CGameScript
 
 	void OnHuntTarget(CBaseEntity@ target)
 	{
-		string L_GAME_TIME = GetGameTime();
+		float L_GAME_TIME = GetGameTime();
 		if ((IsEntityAlive(GetOwner())))
 		{
 			SetProp(GetOwner(), "rendermode", 5);
@@ -329,7 +375,7 @@ class ElementalPureFire : CGameScript
 		ReturnData(0.0);
 		if ((IsValidPlayer(param1)))
 		{
-			SendColoredMessage(param1, "GetEntityName(GetOwner()) is immune to physical attacks!");
+			SendColoredMessage(param1, GetEntityName(GetOwner()) + " is immune to physical attacks!");
 		}
 	}
 

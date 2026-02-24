@@ -7,21 +7,38 @@ namespace MS
 
 class MaldoraFragment : CGameScript
 {
+	string ANIM_BOLT;
+	string ANIM_CAST;
 	string ANIM_DEATH;
 	string ANIM_IDLE;
+	string ANIM_JUMP;
+	string ANIM_LEAP;
+	string ANIM_LOOK;
+	string ANIM_ROCK;
 	string ANIM_RUN;
 	string ANIM_RUN_NORM;
 	string ANIM_WALK;
 	string ANIM_WALK_NORM;
+	string ANIM_WAND;
 	string APPLIED_BEAM;
 	string AS_ATTACKING;
+	int AXESKIN_COLD;
+	int AXESKIN_DARK;
+	int AXESKIN_FIRE;
+	int AXESKIN_LIGHTNING;
+	int AXESKIN_NULL;
+	int AXESKIN_POISON;
+	int AXESKIN_WHITE;
+	string BARRIER_COLOR;
 	int BARRIER_DELAY;
+	float BARRIER_FREQ;
 	int BARRIER_ON;
 	string BARRIER_TARGS;
 	string BEAM_COUNT;
 	string BEAM_ON;
 	string BEAM_TARGET;
 	string CHAIN_COUNT;
+	int CHAIN_COUNT_LIMIT;
 	string CHAIN_LIST;
 	string CHAIN_ON;
 	string CL_BEAM_IDX;
@@ -31,7 +48,15 @@ class MaldoraFragment : CGameScript
 	int DEBUG_DID_POSTSPAWN;
 	int DEBUG_START_CONVO;
 	int DMG_BARRIER;
+	float DMG_CHAIN;
+	float DMG_PUSH_BEAM;
+	int DMG_ROCKS;
+	float DMG_SHOCK;
+	float DMG_WAND;
 	string FELLOW_FRAG_NEARBY;
+	string FINGER_ADJ;
+	int FIN_EXP;
+	int FREQ_SPAM;
 	int GAVE_WARNING;
 	string G_DEVELOPER;
 	int G_MALDORA_SPELLING;
@@ -39,10 +64,16 @@ class MaldoraFragment : CGameScript
 	int IMAGES_ALIVE;
 	int IMMUNE_VAMPIRE;
 	int IS_UNHOLY;
+	float LAVA_FREQ;
 	string MALDORA_IDX;
 	string MALDORA_LIST;
 	int MINIONS_ALIVE;
+	int MINION_LIMIT;
+	string MINION_SCRIPT;
+	string MONSTER_MODEL;
 	string NEXT_MINION;
+	string NME_LIST;
+	int NO_INTRO;
 	int NO_MOVE;
 	int NO_SPAWN_STUCK_CHECK;
 	int NO_STUCK_CHECKS;
@@ -56,73 +87,93 @@ class MaldoraFragment : CGameScript
 	int NPC_PROXACT_TRIPPED;
 	string NPC_PROX_ACTIVATE;
 	int NPC_PROX_LOOP;
+	int NUM_SPELLS;
 	string PUSH_BEAM_ID;
 	string PUSH_BEAM_VISIBLE;
 	string READY_TO_WAIT;
 	int REPULSE_ON;
-	string SPELL_CHOICE;
+	string SHADOW_SCRIPT;
+	string SOUND_BEAM;
+	string SOUND_SHOCK1;
+	string SOUND_SHOCK2;
+	string SOUND_SHOCK3;
+	string SOUND_STRUCK1;
+	string SOUND_STRUCK2;
+	string SOUND_STRUCK3;
+	string SOUND_STRUCK4;
+	string SOUND_STRUCK5;
+	int SPELL_CHOICE;
+	float SPELL_FREQ;
 	string SPELL_TARGET;
 	string WAND_ATK;
+	string WAND_COLD_EFFECT;
+	string WAND_DARK_EFFECT;
+	string WAND_FIRE_EFFECT;
+	string WAND_LIGHTNING_EFFECT;
+	string WAND_POISON_EFFECT;
 	string WAND_TARGET;
+	string XSOUND_LEVITATE;
+	string XSOUND_SPIN;
+	string XSOUND_SUMMON;
 
 	MaldoraFragment()
 	{
-		const int CHAIN_COUNT_LIMIT = 20;
-		const int AXESKIN_WHITE = 6;
-		const int AXESKIN_NULL = 5;
-		const int AXESKIN_LIGHTNING = 4;
-		const int AXESKIN_POISON = 3;
-		const int AXESKIN_COLD = 2;
-		const int AXESKIN_DARK = 1;
-		const int AXESKIN_FIRE = 0;
-		const string WAND_LIGHTNING_EFFECT = "effects/dot_lightning";
-		const string WAND_COLD_EFFECT = "effects/dot_cold";
-		const string WAND_POISON_EFFECT = "effects/dot_poison";
-		const string WAND_FIRE_EFFECT = "effects/dot_fire";
-		const string WAND_DARK_EFFECT = "effects/debuff_stun";
-		const string NME_LIST = "human;hguard;wildanimal;";
-		const int FREQ_SPAM = 10;
-		const int NO_INTRO = 1;
+		CHAIN_COUNT_LIMIT = 20;
+		AXESKIN_WHITE = 6;
+		AXESKIN_NULL = 5;
+		AXESKIN_LIGHTNING = 4;
+		AXESKIN_POISON = 3;
+		AXESKIN_COLD = 2;
+		AXESKIN_DARK = 1;
+		AXESKIN_FIRE = 0;
+		WAND_LIGHTNING_EFFECT = "effects/dot_lightning";
+		WAND_COLD_EFFECT = "effects/dot_cold";
+		WAND_POISON_EFFECT = "effects/dot_poison";
+		WAND_FIRE_EFFECT = "effects/dot_fire";
+		WAND_DARK_EFFECT = "effects/debuff_stun";
+		NME_LIST = "human;hguard;wildanimal;";
+		FREQ_SPAM = 10;
+		NO_INTRO = 1;
 		IS_UNHOLY = 1;
-		const int NUM_SPELLS = 6;
-		const int MINION_LIMIT = 1;
-		const string FINGER_ADJ = "$relpos($vec(0,MY_YAW,0),$vec(0,30,54))";
-		const string SHADOW_SCRIPT = "ms_wicardoven/maldora_image";
-		const string MINION_SCRIPT = "monsters/maldora_minion_random";
-		const int FIN_EXP = 2000;
+		NUM_SPELLS = 6;
+		MINION_LIMIT = 1;
+		FINGER_ADJ = "$relpos($vec(0,MY_YAW,0),$vec(0,30,54))";
+		SHADOW_SCRIPT = "ms_wicardoven/maldora_image";
+		MINION_SCRIPT = "monsters/maldora_minion_random";
+		FIN_EXP = 2000;
 		ANIM_IDLE = "idle";
-		const string ANIM_LOOK = "look_idle";
+		ANIM_LOOK = "look_idle";
 		ANIM_RUN_NORM = "run2";
 		ANIM_WALK_NORM = "walk2handed";
-		const string ANIM_JUMP = "jump";
-		const string ANIM_LEAP = "long_jump";
+		ANIM_JUMP = "jump";
+		ANIM_LEAP = "long_jump";
 		ANIM_DEATH = "look_idle";
 		ANIM_RUN = "run2";
 		ANIM_WALK = "walk2handed";
-		const string ANIM_CAST = "ref_shoot_trip";
-		const string ANIM_ROCK = "ref_shoot_squeak";
-		const string ANIM_BOLT = "shoot_1";
-		const string ANIM_WAND = "ref_shoot_crowbar";
-		const string LAVA_FREQ = Random(20.0, 40.0);
-		const float SPELL_FREQ = 9.0;
-		const float BARRIER_FREQ = 30.0;
-		const string DMG_PUSH_BEAM = Random(2, 6);
-		const string DMG_CHAIN = Random(15, 25);
-		const float DMG_SHOCK = 10.0;
-		const string DMG_ROCKS = RandomInt(50, 200);
-		const string DMG_WAND = Random(10, 20);
-		const string SOUND_SHOCK1 = "debris/zap8.wav";
-		const string SOUND_SHOCK2 = "debris/zap3.wav";
-		const string SOUND_SHOCK3 = "debris/zap4.wav";
-		const string SOUND_BEAM = "weather/Storm_exclamation.wav";
-		const string SOUND_STRUCK1 = "voices/human/male_hit2.wav";
-		const string SOUND_STRUCK2 = "voices/human/male_hit1.wav";
-		const string SOUND_STRUCK3 = "voices/human/male_hit3.wav";
-		const string SOUND_STRUCK4 = "weapons/cbar_hitbod2.wav";
-		const string SOUND_STRUCK5 = "weapons/cbar_hitbod1.wav";
+		ANIM_CAST = "ref_shoot_trip";
+		ANIM_ROCK = "ref_shoot_squeak";
+		ANIM_BOLT = "shoot_1";
+		ANIM_WAND = "ref_shoot_crowbar";
+		LAVA_FREQ = Random(20.0, 40.0);
+		SPELL_FREQ = 9.0;
+		BARRIER_FREQ = 30.0;
+		DMG_PUSH_BEAM = Random(2, 6);
+		DMG_CHAIN = Random(15, 25);
+		DMG_SHOCK = 10.0;
+		DMG_ROCKS = RandomInt(50, 200);
+		DMG_WAND = Random(10, 20);
+		SOUND_SHOCK1 = "debris/zap8.wav";
+		SOUND_SHOCK2 = "debris/zap3.wav";
+		SOUND_SHOCK3 = "debris/zap4.wav";
+		SOUND_BEAM = "weather/Storm_exclamation.wav";
+		SOUND_STRUCK1 = "voices/human/male_hit2.wav";
+		SOUND_STRUCK2 = "voices/human/male_hit1.wav";
+		SOUND_STRUCK3 = "voices/human/male_hit3.wav";
+		SOUND_STRUCK4 = "weapons/cbar_hitbod2.wav";
+		SOUND_STRUCK5 = "weapons/cbar_hitbod1.wav";
 		NO_SPAWN_STUCK_CHECK = 1;
 		IMMUNE_VAMPIRE = 1;
-		const string MONSTER_MODEL = "monsters/maldora.mdl";
+		MONSTER_MODEL = "monsters/maldora.mdl";
 		Precache(MONSTER_MODEL);
 		Precache("ambience/the_horror1.wav");
 		Precache("ambience/the_horror2.wav");
@@ -143,14 +194,14 @@ class MaldoraFragment : CGameScript
 		Precache("debris/bustconcrete2.wav");
 		Precache("debris/concrete3.wav");
 		Precache("rockgibs.mdl");
-		const string XSOUND_LEVITATE = "fans/fan4on.wav";
-		const string XSOUND_SPIN = "magic/fan4_noloop.wav";
-		const string XSOUND_SUMMON = "magic/volcano_start.wav";
+		XSOUND_LEVITATE = "fans/fan4on.wav";
+		XSOUND_SPIN = "magic/fan4_noloop.wav";
+		XSOUND_SUMMON = "magic/volcano_start.wav";
 		Precache(XSOUND_LEVITATE);
 		Precache(XSOUND_SPIN);
 		Precache(XSOUND_SUMMON);
 		Precache("ambience/alienvoices1.wav");
-		const Vector3 BARRIER_COLOR = Vector3(255, 0, 0);
+		BARRIER_COLOR = Vector3(255, 0, 0);
 		DMG_BARRIER = 400;
 	}
 
@@ -256,7 +307,7 @@ class MaldoraFragment : CGameScript
 			}
 			if ((G_DEVELOPER_MODE))
 			{
-				SendInfoMessageToAll("green GetEntityName(GetOwner()) npcatk_prox_activated GetEntityName(param1) NPC_PROXACT_CONE WithinCone2D(TEST_ORIG, GetMonsterProperty("origin"), GetMonsterProperty("angles"))");
+				SendInfoMessageToAll("green " + GetEntityName(GetOwner()) + "npcatk_prox_activated " + GetEntityName(param1) + NPC_PROXACT_CONE + WithinCone2D(TEST_ORIG, GetMonsterProperty("origin"), GetMonsterProperty("angles")));
 			}
 			int EXIT_SUB = 1;
 		}
@@ -409,7 +460,7 @@ class MaldoraFragment : CGameScript
 		}
 		if (WAND_TARGET != "unset")
 		{
-			string DISENGAGE = RandomInt(1, 10);
+			int DISENGAGE = RandomInt(1, 10);
 			if (DISENGAGE == 1)
 			{
 				leap_away(WAND_TARGET);
@@ -425,7 +476,7 @@ class MaldoraFragment : CGameScript
 			if (RandomInt(1, 5) == 1)
 			{
 			}
-			string RAND_ANG = RandomInt(0, 359);
+			int RAND_ANG = RandomInt(0, 359);
 			string TRACE_START = GetMonsterProperty("origin");
 			string TRACE_END = TRACE_START;
 			TRACE_END += /* TODO: $relpos */ $relpos(Vector3(0, RAND_ANG, 0), Vector3(0, 1000, 0));
@@ -451,7 +502,7 @@ class MaldoraFragment : CGameScript
 		SPELL_CHOICE = RandomInt(1, NUM_SPELLS);
 		if ((G_MALDORA_SPELLING))
 		{
-			string RND_DELAY = Random(1, 5);
+			float RND_DELAY = Random(1, 5);
 			RND_DELAY("pick_spell");
 			int EXIT_SUB = 1;
 			string TIME_DIFF = G_MALDORA_SPELLTIME;

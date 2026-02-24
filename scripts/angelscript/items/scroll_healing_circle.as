@@ -7,12 +7,17 @@ namespace MS
 
 class ScrollHealingCircle : CGameScript
 {
+	int BASE_REQUIRED_LEVEL;
+	string BASE_REQUIRED_SKILL;
+	string BASE_SPELL_SCRIPT;
+	string BASE_SUMMON_TEXT;
+
 	ScrollHealingCircle()
 	{
-		const string BASE_SPELL_SCRIPT = "magic_hand_healing_circle";
-		const string BASE_SUMMON_TEXT = "You learn to create healing circles.";
-		const string BASE_REQUIRED_SKILL = "skill.spellcasting.divination";
-		const int BASE_REQUIRED_LEVEL = 18;
+		BASE_SPELL_SCRIPT = "magic_hand_healing_circle";
+		BASE_SUMMON_TEXT = "You learn to create healing circles.";
+		BASE_REQUIRED_SKILL = "skill.spellcasting.divination";
+		BASE_REQUIRED_LEVEL = 18;
 	}
 
 	void OnSpawn() override

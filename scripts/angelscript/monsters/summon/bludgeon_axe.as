@@ -10,7 +10,10 @@ class BludgeonAxe : CGameScript
 	string AM_RETURNING;
 	int ATTACK_MOVERANGE;
 	string DMG_BASE;
+	string DMG_TYPE;
 	string END_FLIGHT_TIME;
+	float FREQ_SOUND;
+	int FWD_SPEED;
 	string GAME_PVP;
 	string IS_ACTIVE;
 	string ITEM_ID;
@@ -20,15 +23,17 @@ class BludgeonAxe : CGameScript
 	string OWNER_HALFHEIGHT;
 	string OWNER_ISPLAYER;
 	int PLAYING_DEAD;
+	int SCAN_RAD;
+	string SOUND_SPIN;
 
 	BludgeonAxe()
 	{
-		const int FWD_SPEED = 50;
+		FWD_SPEED = 50;
 		ATTACK_MOVERANGE = 80;
-		const string SOUND_SPIN = "zombie/claw_miss2.wav";
-		const float FREQ_SOUND = 0.3;
-		const string DMG_TYPE = "slash";
-		const int SCAN_RAD = 72;
+		SOUND_SPIN = "zombie/claw_miss2.wav";
+		FREQ_SOUND = 0.3;
+		DMG_TYPE = "slash";
+		SCAN_RAD = 72;
 	}
 
 	void OnRepeatTimer()

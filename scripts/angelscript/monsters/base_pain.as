@@ -6,22 +6,33 @@ namespace MS
 class BasePain : CGameScript
 {
 	string BPAIN_CAN_FLINCH;
+	float BPAIN_FLINCH_HEALTH;
 	string BPAIN_FLINCH_HP;
+	string BPAIN_FLINCH_TOKENS;
+	float BPAIN_FREQ_FLINCH;
+	float BPAIN_PAIN_HEALTH;
 	string BPAIN_PAIN_HP;
+	int BPAIN_USE_FLINCH;
+	int BPAIN_USE_PAIN;
+	string SOUND_PAIN1;
+	string SOUND_PAIN2;
+	string SOUND_STRUCK1;
+	string SOUND_STRUCK2;
+	string SOUND_STRUCK3;
 
 	BasePain()
 	{
-		const int BPAIN_USE_PAIN = 1;
-		const int BPAIN_USE_FLINCH = 1;
-		const string BPAIN_FREQ_FLINCH = Random(10.0, 20.0);
-		const float BPAIN_FLINCH_HEALTH = 0.75;
-		const float BPAIN_PAIN_HEALTH = 0.5;
-		const string BPAIN_FLINCH_TOKENS = "flinchsmall;flinch;bigflinch;laflinch;raflinch;llflinch;rlflinch";
-		const string SOUND_STRUCK1 = "weapons/cbar_hitbod1.wav";
-		const string SOUND_STRUCK2 = "weapons/cbar_hitbod2.wav";
-		const string SOUND_STRUCK3 = "weapons/cbar_hitbod3.wav";
-		const string SOUND_PAIN1 = "garg/gar_pain1.wav";
-		const string SOUND_PAIN2 = "garg/gar_pain2.wav";
+		BPAIN_USE_PAIN = 1;
+		BPAIN_USE_FLINCH = 1;
+		BPAIN_FREQ_FLINCH = Random(10.0, 20.0);
+		BPAIN_FLINCH_HEALTH = 0.75;
+		BPAIN_PAIN_HEALTH = 0.5;
+		BPAIN_FLINCH_TOKENS = "flinchsmall;flinch;bigflinch;laflinch;raflinch;llflinch;rlflinch";
+		SOUND_STRUCK1 = "weapons/cbar_hitbod1.wav";
+		SOUND_STRUCK2 = "weapons/cbar_hitbod2.wav";
+		SOUND_STRUCK3 = "weapons/cbar_hitbod3.wav";
+		SOUND_PAIN1 = "garg/gar_pain1.wav";
+		SOUND_PAIN2 = "garg/gar_pain2.wav";
 	}
 
 	void OnSpawn() override
@@ -61,7 +72,7 @@ class BasePain : CGameScript
 				npc_flinch();
 				string L_NFLINCH_ANIMS = GetTokenCount(BPAIN_FLINCH_TOKENS, ";");
 				L_NFLINCH_ANIMS -= 1;
-				string L_RND_FLINCH = RandomInt(0, L_NFLINCH_ANIMS);
+				int L_RND_FLINCH = RandomInt(0, L_NFLINCH_ANIMS);
 				PlayAnim("critical", GetToken(BPAIN_FLINCH_TOKENS, L_NFLINCH_ANIMS, ";"));
 				// PlayRandomSound from: SOUND_PAIN1, SOUND_PAIN2
 				array<string> sounds = {SOUND_PAIN1, SOUND_PAIN2};

@@ -9,7 +9,10 @@ namespace MS
 
 class RalionAlly : CGameScript
 {
+	string AI_NO_TARGET_STRING;
 	int ALLY_FOLLOW_ON;
+	int ALLY_JUMP_THRESHOLD;
+	string ANIM_ALLY_JUMP;
 	string ANIM_ATTACK;
 	string ANIM_IDLE;
 	int ATTACK_COF;
@@ -17,39 +20,50 @@ class RalionAlly : CGameScript
 	int ATTACK_SPEED;
 	string BANDIT_TYPE;
 	string CHAT_CURRENT_SPEAKER;
+	int CHAT_MOVE_MOUTH;
 	int CHAT_TEMP_NO_AUTO_FACE;
 	int DROPS_CONTAINER;
 	int HOSTILE_MODE;
 	int MADE_DEAL;
 	string MOVE_RANGE;
+	string MY_SKILL;
 	int NO_STUCK_CHECKS;
 	int NPC_BATTLE_ALLY;
 	string NPC_HBAR_ADJ;
 	int NPC_NO_PLAYER_DMG;
+	int NPC_PROXACT_DELAY;
+	string NPC_PROXACT_EVENT;
+	int NPC_PROXACT_FOV;
+	int NPC_PROXACT_IFSEEN;
+	int NPC_PROXACT_RANGE;
+	int NPC_PROX_ACTIVATE;
+	int OVERRIDE_BANDIT_SPAWN;
 	int REWARD_MODE;
+	string SOUND_ALLY_JUMP;
 	int TC_AVG_DMG_PTS;
 	string TC_HALF_AVG_DMG_PTS;
 	int TC_QUAL_PLAYERS;
 	int TOO_CLOSE;
 	int USER_QUALIFIES;
+	int WEAPON;
 
 	RalionAlly()
 	{
-		const string MY_SKILL = "archery";
+		MY_SKILL = "archery";
 		NPC_HBAR_ADJ = Vector3(0, 0, 32);
-		const int WEAPON = 0;
-		const int OVERRIDE_BANDIT_SPAWN = 1;
-		const string AI_NO_TARGET_STRING = �NONE�;
-		const string ANIM_ALLY_JUMP = "long_jump";
-		const string SOUND_ALLY_JUMP = "player/shout1.wav";
-		const int ALLY_JUMP_THRESHOLD = 150;
-		const int NPC_PROX_ACTIVATE = 1;
-		const int NPC_PROXACT_RANGE = 512;
-		const string NPC_PROXACT_EVENT = "do_intro";
-		const int NPC_PROXACT_DELAY = 0;
-		const int NPC_PROXACT_IFSEEN = 0;
-		const int NPC_PROXACT_FOV = 0;
-		const int CHAT_MOVE_MOUTH = 0;
+		WEAPON = 0;
+		OVERRIDE_BANDIT_SPAWN = 1;
+		AI_NO_TARGET_STRING = �NONE�;
+		ANIM_ALLY_JUMP = "long_jump";
+		SOUND_ALLY_JUMP = "player/shout1.wav";
+		ALLY_JUMP_THRESHOLD = 150;
+		NPC_PROX_ACTIVATE = 1;
+		NPC_PROXACT_RANGE = 512;
+		NPC_PROXACT_EVENT = "do_intro";
+		NPC_PROXACT_DELAY = 0;
+		NPC_PROXACT_IFSEEN = 0;
+		NPC_PROXACT_FOV = 0;
+		CHAT_MOVE_MOUTH = 0;
 	}
 
 	void game_precache()
@@ -288,7 +302,7 @@ class RalionAlly : CGameScript
 		}
 		string OUT_TITLE = GetEntityName(GetOwner());
 		OUT_TITLE += " has quaffed a potion of fire resistance.";
-		SendInfoMsg("all", "OUT_TITLE  ");
+		SendInfoMsg("all", OUT_TITLE + "  ");
 		SetDamageResistance("fire", 0.25);
 		SetDamageResistance("all", 0.4);
 		EmitSound(GetOwner(), 0, "items/drink.wav", 10);
@@ -337,7 +351,7 @@ class RalionAlly : CGameScript
 		if (!(USER_QUALIFIES))
 		{
 			PlayAnim("critical", "look_idle");
-			SayText("Judging by your performance out there , or rather the lack there of , I don t think you re ready for what I could teach you.");
+			SayText("Judging by your performance out there , or rather the lack there of , " + I + "don t think you re ready for what " + I + " could teach you.");
 		}
 		if (!(USER_QUALIFIES)) return;
 		string USER_STEAM = GetPlayerAuthId(param1);
@@ -358,14 +372,14 @@ class RalionAlly : CGameScript
 		PLR_ADJ += 1;
 		XP_GAIN *= PLR_ADJ;
 		GiveExp(param1, MY_SKILL, int(XP_GAIN));
-		SendColoredMessage(param1, "* int(XP_GAIN) XP Awarded MY_SKILL");
+		SendColoredMessage(param1, "* " + int(XP_GAIN) + XP + "Awarded " + MY_SKILL);
 		if (G_REWARD_LIST.length() > 0) G_REWARD_LIST += ";";
 		G_REWARD_LIST += USER_STEAM;
 		string OUT_MSG = "You recieve ";
 		OUT_MSG += MY_SKILL;
 		OUT_MSG += " from ";
 		OUT_MSG += GetEntityName(GetOwner());
-		SendInfoMsg(param1, "Training Recieved OUT_MSG");
+		SendInfoMsg(param1, "Training Recieved " + OUT_MSG);
 	}
 
 	void bandit_ally_lights()

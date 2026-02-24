@@ -13,11 +13,24 @@ class ShadowForm : CGameScript
 	string ANIM_IDLE;
 	string ANIM_RUN;
 	string ANIM_WALK;
+	int AS_CUSTOM_UNSTUCK;
+	int AS_DIST_THRESH;
 	int ATTACK_MOVERANGE;
 	int ATTACK_RANGE;
 	string CL_SCRIPT_IDX;
 	int CYCLE_IDLE_SOUND;
 	int DID_ALERT;
+	int DMG_MAIN_ZAP;
+	int DMG_MINOR_STRIKE;
+	int DOT_MAIN_ZAP;
+	int DOT_MINOR_STRIKE;
+	float FREQ_ATTACK;
+	float FREQ_CL_UPDATE;
+	float FREQ_IDLE_SOUND;
+	float FREQ_IDLE_ZAP;
+	float FREQ_MINOR_STRIKE;
+	float FREQ_PAIN;
+	float FREQ_SHOCK_SCAN;
 	int IMMUNE_ALL_BUT_HOLY;
 	int IMMUNE_VAMPIRE;
 	int IS_UNHOLY;
@@ -31,15 +44,29 @@ class ShadowForm : CGameScript
 	string NPC_GIVE_EXP;
 	int NPC_HACKED_MOVE_SPEED;
 	int NPC_MUST_SEE_TARGET;
+	int RANGE_MINOR_STRIKE;
 	string SCAN_TARGS;
 	int SHADOW_CL_ON;
+	string SOUND_ALERT;
+	string SOUND_DEATH;
+	string SOUND_IDLE1;
+	string SOUND_IDLE2;
+	string SOUND_IDLE3;
+	string SOUND_PAIN1;
+	string SOUND_PAIN2;
+	string SOUND_PAIN3;
+	string SOUND_ZAP1;
+	string SOUND_ZAP2;
+	string SOUND_ZAP3;
+	string SOUND_ZAP_IDLE;
+	string SOUND_ZAP_READY;
 
 	ShadowForm()
 	{
 		IMMUNE_ALL_BUT_HOLY = 1;
 		IS_UNHOLY = 1;
 		NPC_HACKED_MOVE_SPEED = 10;
-		const int AS_CUSTOM_UNSTUCK = 1;
+		AS_CUSTOM_UNSTUCK = 1;
 		IMMUNE_VAMPIRE = 1;
 		NPC_MUST_SEE_TARGET = 0;
 		ANIM_ATTACK = "walk";
@@ -49,32 +76,32 @@ class ShadowForm : CGameScript
 		ANIM_DEATH = "walk";
 		ATTACK_MOVERANGE = 64;
 		ATTACK_RANGE = 512;
-		const float FREQ_CL_UPDATE = 15.0;
-		const string FREQ_IDLE_SOUND = Random(3.0, 6.0);
-		const string FREQ_IDLE_ZAP = Random(2.0, 3.0);
-		const float FREQ_PAIN = 1.0;
-		const float FREQ_ATTACK = 5.0;
-		const float FREQ_MINOR_STRIKE = 3.0;
-		const int DMG_MAIN_ZAP = 1100;
-		const int DOT_MAIN_ZAP = 50;
-		const int DMG_MINOR_STRIKE = 300;
-		const int DOT_MINOR_STRIKE = 30;
-		const int RANGE_MINOR_STRIKE = 768;
-		const string SOUND_ALERT = "monsters/shadow/shadow_alert.wav";
-		const string SOUND_IDLE1 = "monsters/shadow/shadow_idle1.wav";
-		const string SOUND_IDLE2 = "monsters/shadow/shadow_idle2.wav";
-		const string SOUND_IDLE3 = "monsters/shadow/shadow_idle3.wav";
-		const string SOUND_PAIN1 = "monsters/shadow/shadow_pain1.wav";
-		const string SOUND_PAIN2 = "monsters/shadow/shadow_pain2.wav";
-		const string SOUND_PAIN3 = "monsters/shadow/shadow_pain3.wav";
-		const string SOUND_DEATH = "monsters/shadow/shadow_death.wav";
-		const string SOUND_ZAP_READY = "magic/lightprep.wav";
-		const string SOUND_ZAP_IDLE = "magic/elecidle.wav";
-		const string SOUND_ZAP1 = "debris/zap1.wav";
-		const string SOUND_ZAP2 = "debris/zap3.wav";
-		const string SOUND_ZAP3 = "debris/zap8.wav";
-		const string FREQ_SHOCK_SCAN = Random(3.0, 5.0);
-		const int AS_DIST_THRESH = 5;
+		FREQ_CL_UPDATE = 15.0;
+		FREQ_IDLE_SOUND = Random(3.0, 6.0);
+		FREQ_IDLE_ZAP = Random(2.0, 3.0);
+		FREQ_PAIN = 1.0;
+		FREQ_ATTACK = 5.0;
+		FREQ_MINOR_STRIKE = 3.0;
+		DMG_MAIN_ZAP = 1100;
+		DOT_MAIN_ZAP = 50;
+		DMG_MINOR_STRIKE = 300;
+		DOT_MINOR_STRIKE = 30;
+		RANGE_MINOR_STRIKE = 768;
+		SOUND_ALERT = "monsters/shadow/shadow_alert.wav";
+		SOUND_IDLE1 = "monsters/shadow/shadow_idle1.wav";
+		SOUND_IDLE2 = "monsters/shadow/shadow_idle2.wav";
+		SOUND_IDLE3 = "monsters/shadow/shadow_idle3.wav";
+		SOUND_PAIN1 = "monsters/shadow/shadow_pain1.wav";
+		SOUND_PAIN2 = "monsters/shadow/shadow_pain2.wav";
+		SOUND_PAIN3 = "monsters/shadow/shadow_pain3.wav";
+		SOUND_DEATH = "monsters/shadow/shadow_death.wav";
+		SOUND_ZAP_READY = "magic/lightprep.wav";
+		SOUND_ZAP_IDLE = "magic/elecidle.wav";
+		SOUND_ZAP1 = "debris/zap1.wav";
+		SOUND_ZAP2 = "debris/zap3.wav";
+		SOUND_ZAP3 = "debris/zap8.wav";
+		FREQ_SHOCK_SCAN = Random(3.0, 5.0);
+		AS_DIST_THRESH = 5;
 		if ((StringToLower(GetMapName())).findFirst("lodagond") >= 0)
 		{
 			NPC_GIVE_EXP = 2000;
@@ -195,7 +222,7 @@ class ShadowForm : CGameScript
 		{
 			DID_ALERT = 1;
 			EmitSound(GetOwner(), 0, SOUND_ALERT, 10);
-			string GAME_TIME = GetGameTime();
+			float GAME_TIME = GetGameTime();
 			NEXT_IDLE_ZAP = GAME_TIME;
 			NEXT_IDLE_ZAP += FREQ_IDLE_ZAP;
 			NEXT_IDLE_SOUND = GAME_TIME;
@@ -232,7 +259,7 @@ class ShadowForm : CGameScript
 		if (!(IsEntityAlive(GetOwner()))) return;
 		if (!(SHADOW_CL_ON)) return;
 		if (!(m_hAttackTarget != "none")) return;
-		string GAME_TIME = GetGameTime();
+		float GAME_TIME = GetGameTime();
 		if (GAME_TIME > NEXT_IDLE_ZAP)
 		{
 			EmitSound(GetOwner(), 2, SOUND_ZAP_IDLE, 5);
@@ -268,7 +295,7 @@ class ShadowForm : CGameScript
 			NEXT_SHOCK_SCAN += FREQ_SHOCK_SCAN;
 			shock_scan();
 		}
-		if (/* TODO: $get_array_amt */ $get_array_amt(ARRAY_MINOR_STRIKE) > 0)
+		if (int(ARRAY_MINOR_STRIKE.length()) > 0)
 		{
 			if (GAME_TIME > NEXT_MINOR_STRIKE)
 			{
@@ -365,9 +392,9 @@ class ShadowForm : CGameScript
 
 	void npc_stuck()
 	{
-		string RND_P = Random(-359.0, 359.0);
-		string RND_Y = Random(-359.0, 359.0);
-		string RND_R = Random(-359.0, 359.0);
+		float RND_P = Random(-359.0, 359.0);
+		float RND_Y = Random(-359.0, 359.0);
+		float RND_R = Random(-359.0, 359.0);
 		SetVelocity(GetOwner(), /* TODO: $relpos */ $relpos(Vector3(RND_P, RND_Y, RND_Y), Vector3(0, 400, 0)));
 	}
 
@@ -386,13 +413,13 @@ class ShadowForm : CGameScript
 
 	void minor_strike()
 	{
-		string MINOR_STRIKE_TARG = /* TODO: $get_array */ $get_array(ARRAY_MINOR_STRIKE, 0);
+		string MINOR_STRIKE_TARG = ARRAY_MINOR_STRIKE[int(0)];
 		ARRAY_MINOR_STRIKE.removeAt(0);
 		if (!(GetEntityRange(MINOR_STRIKE_TARG) < RANGE_MINOR_STRIKE)) return;
 		string MY_ORG = GetEntityOrigin(GetOwner());
 		string TARG_ORG = GetEntityOrigin(MINOR_STRIKE_TARG);
 		string TRACE_LINE = TraceLine(MY_ORG, TARG_ORG);
-		string RND_ATCH = RandomInt(1, 3);
+		int RND_ATCH = RandomInt(1, 3);
 		if (TRACE_LINE == TARG_ORG)
 		{
 			Effect("beam", "end", "lgtning.spr", 10, TRACE_LINE, GetOwner(), RND_ATCH, Vector3(128, 128, 255), 200, 255, 2.0);

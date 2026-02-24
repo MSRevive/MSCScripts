@@ -7,21 +7,28 @@ namespace MS
 
 class SorcArcher2 : CGameScript
 {
+	int AM_SORC;
+	int ARROW_DAMAGE_HIGH;
+	int ARROW_DAMAGE_LOW;
+	string ARROW_TYPE;
+	string CONTAINER_BASE;
 	int DOING_KICK;
-	string DROP_GOLD_AMT;
+	int DROP_GOLD_AMT;
+	string DROP_ITEM_BASE1;
+	int FIN_EXP;
 	int KICK_TYPE;
 
 	SorcArcher2()
 	{
-		const string ARROW_TYPE = "proj_arrow_lightning";
-		const int FIN_EXP = 200;
+		ARROW_TYPE = "proj_arrow_lightning";
+		FIN_EXP = 200;
 		DROP_GOLD_AMT = RandomInt(20, 60);
-		const string DROP_ITEM_BASE1 = "bows_swiftbow";
-		const string CONTAINER_BASE = "chests/quiver_of_lightning";
-		const int AM_SORC = 1;
-		const int ARROW_DAMAGE_LOW = 75;
-		const int ARROW_DAMAGE_HIGH = 150;
-		const int AM_SORC = 1;
+		DROP_ITEM_BASE1 = "bows_swiftbow";
+		CONTAINER_BASE = "chests/quiver_of_lightning";
+		AM_SORC = 1;
+		ARROW_DAMAGE_LOW = 75;
+		ARROW_DAMAGE_HIGH = 150;
+		AM_SORC = 1;
 	}
 
 	void orc_spawn()

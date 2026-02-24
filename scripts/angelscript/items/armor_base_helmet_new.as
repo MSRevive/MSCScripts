@@ -9,11 +9,13 @@ namespace MS
 class ArmorBaseHelmetNew : CGameScript
 {
 	string CUR_STUN_PROT;
+	int HELM_HIDES_HEAD;
+	int IS_HELM;
 
 	ArmorBaseHelmetNew()
 	{
-		const int IS_HELM = 1;
-		const int HELM_HIDES_HEAD = 0;
+		IS_HELM = 1;
+		HELM_HIDES_HEAD = 0;
 	}
 
 	void OnSpawn() override
@@ -33,11 +35,11 @@ class ArmorBaseHelmetNew : CGameScript
 
 	void display_stun_info()
 	{
-		string L_STR = /* TODO: $math(multiply) */ CUR_STUN_PROT;
-		string L_STR = int(/* TODO: $math(subtract) */ 100);
+		string L_STR = (CUR_STUN_PROT * 100);
+		int L_STR = int((100 - L_STR));
 		if (CUR_STUN_PROT > 0)
 		{
-			SendColoredMessage(GetOwner(), "Your stun resistance is now L_STR");
+			SendColoredMessage(GetOwner(), "Your stun resistance is now " + L_STR);
 		}
 		if (CUR_STUN_PROT == 0)
 		{

@@ -7,35 +7,59 @@ namespace MS
 
 class SmallarmsBase : CGameScript
 {
+	int ANIM_ATTACK1;
+	int ANIM_ATTACK2;
+	int ANIM_IDLE1;
+	int ANIM_IDLE_DELAY_HIGH;
+	int ANIM_IDLE_DELAY_LOW;
+	int ANIM_IDLE_TOTAL;
+	int ANIM_LIFT1;
+	int ANIM_UNWIELD;
+	int ANIM_WIELD;
+	int ANIM_WIELDEDIDLE1;
+	string MELEE_DMG_TYPE;
+	float MELEE_ENERGY;
+	string MELEE_SOUND;
+	string MELEE_SOUND_DELAY;
+	string MELEE_STAT;
+	int MELEE_VIEWANIM_ATK;
+	string PLAYERANIM_AIM;
+	string PLAYERANIM_SWING;
 	int SMALLARMS_TURBO_ON;
+	string SOUND_DRAW;
+	string SOUND_HITWALL1;
+	string SOUND_HITWALL2;
+	string SOUND_SHOUT1;
+	string SOUND_SHOUT2;
+	string SOUND_SWIPE;
 
 	SmallarmsBase()
 	{
-		const int ANIM_LIFT1 = 9;
-		const int ANIM_IDLE1 = 10;
-		const int ANIM_IDLE_TOTAL = 1;
-		const int ANIM_WIELD = 11;
-		const int ANIM_UNWIELD = 12;
-		const int ANIM_WIELDEDIDLE1 = 13;
-		const int ANIM_ATTACK1 = 14;
-		const int ANIM_ATTACK2 = 15;
-		const int ANIM_IDLE_DELAY_LOW = 0;
-		const int ANIM_IDLE_DELAY_HIGH = 0;
-		const string MELEE_VIEWANIM_ATK = RandomInt(ANIM_ATTACK1, ANIM_ATTACK2);
-		const string SOUND_SWIPE = "weapons/swingsmall.wav";
-		const string SOUND_HITWALL1 = "weapons/dagger/daggermetal1.wav";
-		const string SOUND_HITWALL2 = "weapons/dagger/daggermetal2.wav";
-		const string SOUND_DRAW = "weapons/dagger/dagger2.wav";
-		const string SOUND_SHOUT1 = GetEntityProperty(GetOwner(), "scriptvar");
-		const string SOUND_SHOUT2 = GetEntityProperty(GetOwner(), "scriptvar");
-		const string MELEE_DMG_TYPE = "pierce";
-		const string MELEE_STAT = "smallarms";
-		const string MELEE_SOUND = SOUND_SWIPE;
-		const string MELEE_SOUND_DELAY = MELEE_DMG_DELAY;
-		const string MELEE_VIEWANIM_ATK = ANIM_ATTACK1;
-		const string PLAYERANIM_AIM = "knife";
-		const string PLAYERANIM_SWING = "swing_knife";
-		const float MELEE_ENERGY = 0.1;
+		ANIM_LIFT1 = 9;
+		ANIM_IDLE1 = 10;
+		ANIM_IDLE_TOTAL = 1;
+		ANIM_WIELD = 11;
+		ANIM_UNWIELD = 12;
+		ANIM_WIELDEDIDLE1 = 13;
+		ANIM_ATTACK1 = 14;
+		ANIM_ATTACK2 = 15;
+		ANIM_IDLE_DELAY_LOW = 0;
+		ANIM_IDLE_DELAY_HIGH = 0;
+		MELEE_VIEWANIM_ATK = RandomInt(ANIM_ATTACK1, ANIM_ATTACK2);
+		SOUND_SWIPE = "weapons/swingsmall.wav";
+		SOUND_HITWALL1 = "weapons/dagger/daggermetal1.wav";
+		SOUND_HITWALL2 = "weapons/dagger/daggermetal2.wav";
+		SOUND_DRAW = "weapons/dagger/dagger2.wav";
+		SOUND_SHOUT1 = GetEntityProperty(GetOwner(), "scriptvar");
+		SOUND_SHOUT2 = GetEntityProperty(GetOwner(), "scriptvar");
+		MELEE_DMG_TYPE = "pierce";
+		MELEE_STAT = "smallarms";
+		MELEE_SOUND = SOUND_SWIPE;
+		MELEE_SOUND_DELAY = MELEE_DMG_DELAY;
+		MELEE_VIEWANIM_ATK = ANIM_ATTACK1;
+		PLAYERANIM_AIM = "knife";
+		PLAYERANIM_SWING = "swing_knife";
+		MELEE_ENERGY = 0.1;
 	}
 
 	void weapon_spawn()
@@ -72,8 +96,8 @@ class SmallarmsBase : CGameScript
 		{
 			string HASTE_DELAY = NEXT_HASTE;
 			HASTE_DELAY -= GetGameTime();
-			string HASTE_DELAY = int(HASTE_DELAY);
-			SendColoredMessage(GetOwner(), "Cannot repeat haste attack yet. HASTE_DELAY");
+			int HASTE_DELAY = int(HASTE_DELAY);
+			SendColoredMessage(GetOwner(), "Cannot repeat haste attack yet. " + HASTE_DELAY);
 			return;
 		}
 		string URDUAL_CHECK = GetEntityProperty(GetOwner(), "scriptvar");
@@ -81,7 +105,7 @@ class SmallarmsBase : CGameScript
 		string SPEC_DURATION = /* TODO: $get_skill_ratio */ $get_skill_ratio(GetSkillLevel(GetOwner(), "smallarms.prof.ratio"), 15, 30);
 		ApplyEffect(GetOwner(), "effects/specialattack_haste", SPEC_DURATION, GetEntityIndex(GetOwner()));
 		turbo_on();
-		CallExternal(GetOwner(), "ext_haste_cooldown", /* TODO: $math(add) */ SPEC_DURATION);
+		CallExternal(GetOwner(), "ext_haste_cooldown", (SPEC_DURATION + 35));
 	}
 
 	void turbo_on()

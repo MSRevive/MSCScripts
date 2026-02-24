@@ -15,18 +15,33 @@ class BearBaseGiant : CGameScript
 	string AS_ATTACKING;
 	string ATTACK_DAMAGE;
 	int ATTACK_HITRANGE;
+	int ATTACK_NORMAL_DAMAGE;
 	int ATTACK_RANGE;
+	float ATTACK_STANDING_DAMAGE;
+	int ATTACK_STOMPDMG;
+	int ATTACK_STOMPRANGE;
 	int BEAR_CANSTAND;
 	int BEAR_ISDDEAD;
 	int BEAR_ISDEAD;
 	int BEAR_ISSTOMPATK;
 	int BEAR_STANDING;
+	string BEAR_VOLUME;
 	int CAN_ATTACK;
 	string DROP_ITEM1_CHANCE;
 	string FORWARDPUSH;
 	int MOVE_RANGE;
 	float MSC_PUSH_RESIST;
+	int NPC_AUTO_DEATH;
+	int NPC_BASE_EXP;
 	string SIDEPUSH;
+	string SOUND_DEATH;
+	string SOUND_DEATH2;
+	string SOUND_GETDOWN;
+	string SOUND_GETUP;
+	string SOUND_GETUP_GROWL;
+	string SOUND_UPSNARL;
+	string SOUND_UPSTEP1;
+	string SOUND_UPSTEP2;
 	string STAND_HEALTH;
 	string UPPUSH;
 
@@ -37,29 +52,29 @@ class BearBaseGiant : CGameScript
 		ANIM_RUN = ANIM_RUN;
 		ANIM_ATTACK = ANIM_ATTACK;
 		MSC_PUSH_RESIST = 0.75;
-		const int ATTACK_NORMAL_DAMAGE = 10;
-		const string ATTACK_STANDING_DAMAGE = Random(15, 20);
+		ATTACK_NORMAL_DAMAGE = 10;
+		ATTACK_STANDING_DAMAGE = Random(15, 20);
 		ATTACK_DAMAGE = ATTACK_NORMAL_DAMAGE;
 		MOVE_RANGE = 108;
 		ATTACK_RANGE = 128;
 		ATTACK_HITRANGE = 160;
-		const int ATTACK_STOMPRANGE = 160;
-		const int ATTACK_STOMPDMG = 5;
-		const int NPC_BASE_EXP = 90;
-		const string BEAR_VOLUME = "game.sound.maxvol";
-		const string SOUND_DEATH = "monsters/bear/giantbeardeath.wav";
-		const string SOUND_DEATH2 = "monsters/bear/giantbeardeath2.wav";
-		const string SOUND_GETUP_GROWL = "monsters/bear/giantbeardeath2.wav";
-		const string SOUND_GETUP = "monsters/troll/step1.wav";
-		const string SOUND_GETDOWN = "monsters/troll/step2.wav";
-		const string SOUND_UPSNARL = "monsters/bear/giantbearupsnarl.wav";
-		const string SOUND_UPSTEP1 = "monsters/bear/giantbearstep1.wav";
-		const string SOUND_UPSTEP2 = "monsters/bear/giantbearstep2.wav";
-		const int NPC_AUTO_DEATH = 0;
+		ATTACK_STOMPRANGE = 160;
+		ATTACK_STOMPDMG = 5;
+		NPC_BASE_EXP = 90;
+		BEAR_VOLUME = "game.sound.maxvol";
+		SOUND_DEATH = "monsters/bear/giantbeardeath.wav";
+		SOUND_DEATH2 = "monsters/bear/giantbeardeath2.wav";
+		SOUND_GETUP_GROWL = "monsters/bear/giantbeardeath2.wav";
+		SOUND_GETUP = "monsters/troll/step1.wav";
+		SOUND_GETDOWN = "monsters/troll/step2.wav";
+		SOUND_UPSNARL = "monsters/bear/giantbearupsnarl.wav";
+		SOUND_UPSTEP1 = "monsters/bear/giantbearstep1.wav";
+		SOUND_UPSTEP2 = "monsters/bear/giantbearstep2.wav";
+		NPC_AUTO_DEATH = 0;
 		// TODO: removesetvar ANIM_IDLE
 		// TODO: removesetvar ANIM_RUN
 		// TODO: removesetvar ANIM_WALK
-		// TODO: UNCONVERTED: removesetvard ANIM_ATTACK
+		// TODO: removesetvard ANIM_ATTACK
 	}
 
 	void OnRepeatTimer()
@@ -152,7 +167,7 @@ class BearBaseGiant : CGameScript
 		}
 		if (!(SHOULD_PUSH_ENTITY)) return;
 		int FORWARDPUSH = 190;
-		string SIDEPUSH = Random(-60, 0);
+		float SIDEPUSH = Random(-60, 0);
 		int UPPUSH = 10;
 		if ((BEAR_ISDEAD))
 		{

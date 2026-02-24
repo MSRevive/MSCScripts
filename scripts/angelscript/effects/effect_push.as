@@ -7,15 +7,18 @@ namespace MS
 
 class EffectPush : CGameScript
 {
+	string EFFECT_FLAGS;
+	string EFFECT_ID;
+	string EFFECT_SCRIPT;
 	string local.effect.duration;
 	string local.effect.force;
 	string local.effect.scrnshake;
 
 	EffectPush()
 	{
-		const string EFFECT_ID = "effect_push";
-		const string EFFECT_FLAGS = "nostack";
-		const string EFFECT_SCRIPT = currentscript;
+		EFFECT_ID = "effect_push";
+		EFFECT_FLAGS = "nostack";
+		EFFECT_SCRIPT = currentscript;
 	}
 
 	void game_activate()

@@ -7,15 +7,18 @@ namespace MS
 
 class EffectStop : CGameScript
 {
+	string EFFECT_FLAGS;
+	string EFFECT_ID;
+	string EFFECT_SCRIPT;
 	int game.effect.anim.framerate;
 	int game.effect.canjump;
 	int game.effect.movespeed;
 
 	EffectStop()
 	{
-		const string EFFECT_ID = "effect_stop";
-		const string EFFECT_FLAGS = "nostack";
-		const string EFFECT_SCRIPT = currentscript;
+		EFFECT_ID = "effect_stop";
+		EFFECT_FLAGS = "nostack";
+		EFFECT_SCRIPT = currentscript;
 	}
 
 	void game_activate()

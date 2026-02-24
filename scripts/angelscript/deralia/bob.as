@@ -7,9 +7,11 @@ namespace MS
 
 class Bob : CGameScript
 {
+	int DERALIA_CHATTER;
+
 	Bob()
 	{
-		const int DERALIA_CHATTER = 0;
+		DERALIA_CHATTER = 0;
 	}
 
 	void OnSpawn() override
@@ -20,7 +22,7 @@ class Bob : CGameScript
 
 	void say_hi()
 	{
-		string L_GREETING = RandomInt(0, 2);
+		int L_GREETING = RandomInt(0, 2);
 		if (L_GREETING == 0)
 		{
 			SayText("Gerald wants me to take care of his rat problem. That's not what I get paid for.");

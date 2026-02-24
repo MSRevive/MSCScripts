@@ -8,31 +8,49 @@ namespace MS
 class MagicHandDivRejuvenate : CGameScript
 {
 	int BITCH_SLAPPED;
+	string EFFECT_DURATION_FORMULA;
+	string EFFECT_DURATION_STAT;
+	int EFFECT_MAXDURATION;
+	int EFFECT_MINDURATION;
 	int FAN_LOOP;
+	int HEAL_MAX;
+	int HEAL_MIN;
+	string HEAL_SKILL;
+	string LOOP_CHANNEL;
+	string LOOP_SOUND;
+	int MELEE_ATK_DURATION;
+	float MELEE_HITCHANCE;
+	int MELEE_RANGE;
 	string REGEN_DELAY;
+	string SOUND_SHOOT;
+	string SPELL_DAMAGE_TYPE;
+	int SPELL_ENERGYDRAIN;
+	int SPELL_MPDRAIN;
+	int SPELL_PREPARE_TIME;
 	int SPELL_SKILL_REQUIRED;
+	string SPELL_STAT;
 
 	MagicHandDivRejuvenate()
 	{
-		const string SOUND_SHOOT = "magic/heal_strike.wav";
-		const int MELEE_RANGE = 384;
-		const float MELEE_HITCHANCE = 1.0;
-		const int MELEE_ATK_DURATION = 1;
+		SOUND_SHOOT = "magic/heal_strike.wav";
+		MELEE_RANGE = 384;
+		MELEE_HITCHANCE = 1.0;
+		MELEE_ATK_DURATION = 1;
 		SPELL_SKILL_REQUIRED = 5;
-		const int SPELL_PREPARE_TIME = 2;
-		const string SPELL_DAMAGE_TYPE = "divination";
-		const int SPELL_ENERGYDRAIN = 10;
-		const int SPELL_MPDRAIN = 5;
-		const string SPELL_STAT = "spellcasting.divination";
-		const int EFFECT_MAXDURATION = 20;
-		const int EFFECT_MINDURATION = 10;
-		const string EFFECT_DURATION_STAT = GetStat(GetOwner(), "concentration.ratio");
-		const string EFFECT_DURATION_FORMULA = /* TODO: $get_skill_ratio */ $get_skill_ratio(EFFECT_DURATION_STAT, EFFECT_MINDURATION, EFFECT_MAXDURATION, "inversed");
-		const int HEAL_MAX = 75;
-		const int HEAL_MIN = 30;
-		const string HEAL_SKILL = GetSkillLevel(GetOwner(), "spellcasting.divination.ratio");
-		const string LOOP_SOUND = "player/heartbeat_noloop.wav";
-		const string LOOP_CHANNEL = "const.sound.item";
+		SPELL_PREPARE_TIME = 2;
+		SPELL_DAMAGE_TYPE = "divination";
+		SPELL_ENERGYDRAIN = 10;
+		SPELL_MPDRAIN = 5;
+		SPELL_STAT = "spellcasting.divination";
+		EFFECT_MAXDURATION = 20;
+		EFFECT_MINDURATION = 10;
+		EFFECT_DURATION_STAT = GetStat(GetOwner(), "concentration.ratio");
+		EFFECT_DURATION_FORMULA = /* TODO: $get_skill_ratio */ $get_skill_ratio(EFFECT_DURATION_STAT, EFFECT_MINDURATION, EFFECT_MAXDURATION, "inversed");
+		HEAL_MAX = 75;
+		HEAL_MIN = 30;
+		HEAL_SKILL = GetSkillLevel(GetOwner(), "spellcasting.divination.ratio");
+		LOOP_SOUND = "player/heartbeat_noloop.wav";
+		LOOP_CHANNEL = "const.sound.item";
 		Precache(LOOP_SOUND);
 	}
 
@@ -89,7 +107,7 @@ class MagicHandDivRejuvenate : CGameScript
 			string L_TEN_PERCENT = GetEntityMaxHealth(L_SPELL_TARGET);
 			L_TEN_PERCENT *= 0.1;
 			L_HEAL_AMT += L_TEN_PERCENT;
-			string L_HEAL_AMT = int(L_HEAL_AMT);
+			int L_HEAL_AMT = int(L_HEAL_AMT);
 			if ((IsValidPlayer(L_SPELL_TARGET)))
 			{
 				int L_ADD_BONUS = 1;
@@ -103,7 +121,7 @@ class MagicHandDivRejuvenate : CGameScript
 				if (GetEntityHealth(L_SPELL_TARGET) < GetEntityMaxHealth(L_SPELL_TARGET))
 				{
 				}
-				CallExternal(GetOwner(), "add_dmg_points", /* TODO: $math(multiply) */ L_HEAL_AMT);
+				CallExternal(GetOwner(), "add_dmg_points", (L_HEAL_AMT * 5));
 				int L_GAVE_DMG_POINTS = 1;
 			}
 		}
@@ -138,8 +156,8 @@ class MagicHandDivRejuvenate : CGameScript
 			int L_HEALED = 1;
 			if ((L_HEALING_OTHER))
 			{
-				SendColoredMessage(L_CASTER_ID, "You heal GetEntityName(L_HEAL_TGT) for int(L_HEAL_AMT) hp");
-				SendColoredMessage(L_HEAL_TGT, "GetEntityName(L_CASTER_ID) heals you for int(L_HEAL_AMT) hp");
+				SendColoredMessage(L_CASTER_ID, "You heal " + GetEntityName(L_HEAL_TGT) + "for " + int(L_HEAL_AMT) + " hp");
+				SendColoredMessage(L_HEAL_TGT, GetEntityName(L_CASTER_ID) + "heals you for " + int(L_HEAL_AMT) + " hp");
 				if ((L_DP))
 				{
 					if (GetPlayerCount() > 1)
@@ -150,14 +168,14 @@ class MagicHandDivRejuvenate : CGameScript
 			}
 			else
 			{
-				SendColoredMessage(L_CASTER_ID, "You heal yourself for int(L_HEAL_AMT) hp");
+				SendColoredMessage(L_CASTER_ID, "You heal yourself for " + int(L_HEAL_AMT) + " hp");
 			}
 		}
 		else
 		{
 			if ((L_HEALING_OTHER))
 			{
-				SendColoredMessage(L_CASTER_ID, "GetEntityName(L_HEAL_TGT) is at maximum health");
+				SendColoredMessage(L_CASTER_ID, GetEntityName(L_HEAL_TGT) + " is at maximum health");
 			}
 			else
 			{

@@ -7,19 +7,26 @@ namespace MS
 
 class AnimArcher : CGameScript
 {
+	int AIM_RATIO;
 	string ANIM_ATTACK;
 	string ANIM_DEATH;
 	string ANIM_IDLE;
 	string ANIM_RUN;
 	string ANIM_WALK;
+	int ARROW_DAMAGE_HIGH;
+	int ARROW_DAMAGE_LOW;
 	string AS_ATTACKING;
+	int ATTACK_CONE_OF_FIRE;
 	int ATTACK_DELAY;
 	int ATTACK_RANGE;
+	int ATTACK_SPEED;
 	float CONTAINER_DROP_CHANCE;
 	string CONTAINER_SCRIPT;
 	int DROPS_CONTAINER;
 	int DROP_GOLD;
-	string DROP_GOLD_AMT;
+	int DROP_GOLD_AMT;
+	int FIN_EXP;
+	float FREQ_BOW;
 	int IMMUNE_VAMPIRE;
 	int IS_UNHOLY;
 	int I_AM_FOUR;
@@ -31,31 +38,43 @@ class AnimArcher : CGameScript
 	int MOVE_RANGE;
 	string NPC_GIVE_EXP;
 	int NPC_MUST_SEE_TARGET;
+	string SOUND_ATTACK1;
+	string SOUND_ATTACK2;
+	string SOUND_ATTACK3;
+	string SOUND_BOW;
+	string SOUND_DEATH;
+	string SOUND_HIT;
+	string SOUND_HIT2;
+	string SOUND_HIT3;
+	string SOUND_PAIN;
+	string SOUND_STRUCK1;
+	string SOUND_STRUCK2;
+	string SOUND_STRUCK3;
 	string SPAWNER;
 
 	AnimArcher()
 	{
 		IS_UNHOLY = 1;
 		IMMUNE_VAMPIRE = 1;
-		const float FREQ_BOW = 2.0;
-		const int FIN_EXP = 45;
+		FREQ_BOW = 2.0;
+		FIN_EXP = 45;
 		NPC_MUST_SEE_TARGET = 1;
-		const string SOUND_STRUCK1 = "body/armour1.wav";
-		const string SOUND_STRUCK2 = "body/armour2.wav";
-		const string SOUND_STRUCK3 = "body/armour3.wav";
-		const string SOUND_HIT = "body/armour3.wav";
-		const string SOUND_HIT2 = "body/armour2.wav";
-		const string SOUND_HIT3 = "body/armour1.wav";
-		const string SOUND_PAIN = "body/armour1.wav";
-		const string SOUND_ATTACK1 = "none";
-		const string SOUND_ATTACK2 = "none";
-		const string SOUND_ATTACK3 = "none";
-		const string SOUND_DEATH = "none";
+		SOUND_STRUCK1 = "body/armour1.wav";
+		SOUND_STRUCK2 = "body/armour2.wav";
+		SOUND_STRUCK3 = "body/armour3.wav";
+		SOUND_HIT = "body/armour3.wav";
+		SOUND_HIT2 = "body/armour2.wav";
+		SOUND_HIT3 = "body/armour1.wav";
+		SOUND_PAIN = "body/armour1.wav";
+		SOUND_ATTACK1 = "none";
+		SOUND_ATTACK2 = "none";
+		SOUND_ATTACK3 = "none";
+		SOUND_DEATH = "none";
 		ANIM_RUN = "run";
 		ANIM_IDLE = "idle1";
 		ANIM_WALK = "walk";
 		ANIM_DEATH = "die";
-		const string SOUND_BOW = "weapons/bow/bow.wav";
+		SOUND_BOW = "weapons/bow/bow.wav";
 		DROP_GOLD = 1;
 		DROP_GOLD_AMT = RandomInt(15, 25);
 		NPC_GIVE_EXP = FIN_EXP;
@@ -63,13 +82,13 @@ class AnimArcher : CGameScript
 		CONTAINER_DROP_CHANCE = 0.1;
 		CONTAINER_SCRIPT = "chests/quiver_of_silver";
 		ANIM_ATTACK = "shootorcbow";
-		const int AIM_RATIO = 50;
-		const int ARROW_DAMAGE_LOW = 12;
-		const int ARROW_DAMAGE_HIGH = 15;
+		AIM_RATIO = 50;
+		ARROW_DAMAGE_LOW = 12;
+		ARROW_DAMAGE_HIGH = 15;
 		MOVE_RANGE = 400;
 		ATTACK_RANGE = 60;
-		const int ATTACK_SPEED = 1000;
-		const int ATTACK_CONE_OF_FIRE = 2;
+		ATTACK_SPEED = 1000;
+		ATTACK_CONE_OF_FIRE = 2;
 		I_AM_TURNABLE = 0;
 	}
 
@@ -151,7 +170,7 @@ class AnimArcher : CGameScript
 		string AIM_ANGLE = GetEntityDist(m_hLastSeen);
 		AIM_ANGLE /= AIM_RATIO;
 		SetAngles("add_view.x");
-		string LCL_ATKDMG = Random(ARROW_DAMAGE_LOW, ARROW_DAMAGE_HIGH);
+		float LCL_ATKDMG = Random(ARROW_DAMAGE_LOW, ARROW_DAMAGE_HIGH);
 		TossProjectile("proj_arrow_npc", /* TODO: $relpos */ $relpos(0, 0, 3), "none", ATTACK_SPEED, LCL_ATKDMG, ATTACK_CONE_OF_FIRE, "none");
 		SetModelBody(3, 0);
 		EmitSound(GetOwner(), 2, SOUND_BOW, 10);

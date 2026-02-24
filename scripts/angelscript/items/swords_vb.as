@@ -8,7 +8,43 @@ namespace MS
 
 class SwordsVb : CGameScript
 {
+	float ATK1_ACCURACY;
+	int ATK1_ANG;
+	string ATK1_CALLBACK;
+	float ATK1_DELAY_STRIKE;
+	int ATK1_DMG;
+	int ATK1_DMG_MULTI;
+	int ATK1_DMG_RANGE;
+	string ATK1_DMG_TYPE;
+	float ATK1_DURATION;
+	string ATK1_KEYS;
+	int ATK1_MPDRAIN;
+	int ATK1_NOISE;
+	int ATK1_NO_AUTOAIM;
+	int ATK1_OFS;
+	string ATK1_PANIM;
+	int ATK1_RANGE;
+	string ATK1_SKILL;
+	string ATK1_SKILL_LEVEL;
+	float ATK1_STAMINA;
+	string ATK1_TYPE;
+	int ATK1_VANIM;
+	float ATK2_DELAY_STRIKE;
+	int ATK2_DMG_MULTI;
+	float ATK2_DURATION;
+	int ATK2_RANGE;
+	int BASE_LEVEL_REQ;
+	int BITEM_CUSTOM_ATK1_EVENT;
+	int BITEM_CUSTOM_ATK2_EVENT;
 	int BLOCK_ON;
+	int BWEAPON_CUSTOM_DRAW;
+	int BWEAPON_CUSTOM_SWITCHHANDS;
+	string BWEAPON_DESC;
+	string BWEAPON_HANDS;
+	int BWEAPON_INV_SPRITE_IDX;
+	string BWEAPON_NAME;
+	int BWEAPON_VALUE;
+	int BWEAPON_WEIGHT;
 	int C_VANIM_DRAW;
 	int C_VANIM_IDLE;
 	string GAVE_MATCH_SET_MSG;
@@ -19,73 +55,97 @@ class SwordsVb : CGameScript
 	string MATCHED_SET_TYPE;
 	string NEXT_BLOCK;
 	string OTHER_HAND;
+	string PANIM_EXT;
+	string PANIM_IDLE;
+	float PITCH_ATK1;
+	float PITCH_ATK2;
+	string PMODEL_FILE;
+	int PMODEL_IDX_FLOOR;
+	int PMODEL_IDX_HANDS;
+	int PMODEL_IDX_HAND_LEFT;
+	int PMODEL_IDX_HAND_RIGHT;
+	string SOUND_ATK1;
+	string SOUND_ATK2;
+	string SOUND_BLOCK1;
+	string SOUND_HITWALL1;
+	string SOUND_HITWALL2;
+	int VANIM_BLOCK;
+	int VANIM_BLOCK_OFH;
+	int VANIM_DRAW;
+	int VANIM_DRAW_SNG;
+	int VANIM_IDLE;
+	int VANIM_IDLE_SNG;
+	string VMODEL_FILE;
+	int VMODEL_IDX;
+	string WANIM_FLOOR;
+	string WANIM_HAND;
 
 	SwordsVb()
 	{
 		MATCHED_SET = 1;
 		MATCHED_SET_TYPE = "vsword";
-		const string BWEAPON_NAME = "Blood Blade";
-		const string BWEAPON_DESC = "A sinuous blade of dark steel (matched set)";
-		const int BWEAPON_WEIGHT = 1;
-		const int BWEAPON_VALUE = 3000;
-		const int BWEAPON_INV_SPRITE_IDX = 190;
-		const string BWEAPON_HANDS = "right";
-		const int BASE_LEVEL_REQ = 30;
-		const int BWEAPON_CUSTOM_DRAW = 1;
-		const int BWEAPON_CUSTOM_SWITCHHANDS = 1;
-		const int BITEM_CUSTOM_ATK2_EVENT = 1;
-		const int BITEM_CUSTOM_ATK1_EVENT = 1;
-		const string VMODEL_FILE = "viewmodels/v_1hswords.mdl";
-		const int VMODEL_IDX = 7;
-		const string PMODEL_FILE = "weapons/p_weapons4.mdl";
-		const int PMODEL_IDX_FLOOR = 45;
-		const int PMODEL_IDX_HAND_RIGHT = 43;
-		const int PMODEL_IDX_HAND_LEFT = 44;
-		const int PMODEL_IDX_HANDS = 43;
-		const string PANIM_IDLE = "aim_axe_onehand";
-		const string PANIM_EXT = "axe_onehand";
-		const int VANIM_DRAW = 0;
-		const int VANIM_IDLE = 20;
+		BWEAPON_NAME = "Blood Blade";
+		BWEAPON_DESC = "A sinuous blade of dark steel (matched set)";
+		BWEAPON_WEIGHT = 1;
+		BWEAPON_VALUE = 3000;
+		BWEAPON_INV_SPRITE_IDX = 190;
+		BWEAPON_HANDS = "right";
+		BASE_LEVEL_REQ = 30;
+		BWEAPON_CUSTOM_DRAW = 1;
+		BWEAPON_CUSTOM_SWITCHHANDS = 1;
+		BITEM_CUSTOM_ATK2_EVENT = 1;
+		BITEM_CUSTOM_ATK1_EVENT = 1;
+		VMODEL_FILE = "viewmodels/v_1hswords.mdl";
+		VMODEL_IDX = 7;
+		PMODEL_FILE = "weapons/p_weapons4.mdl";
+		PMODEL_IDX_FLOOR = 45;
+		PMODEL_IDX_HAND_RIGHT = 43;
+		PMODEL_IDX_HAND_LEFT = 44;
+		PMODEL_IDX_HANDS = 43;
+		PANIM_IDLE = "aim_axe_onehand";
+		PANIM_EXT = "axe_onehand";
+		VANIM_DRAW = 0;
+		VANIM_IDLE = 20;
 		C_VANIM_DRAW = 0;
 		C_VANIM_IDLE = 20;
-		const int VANIM_DRAW_SNG = 6;
-		const int VANIM_IDLE_SNG = 7;
-		const int VANIM_BLOCK = 16;
-		const int VANIM_BLOCK_OFH = 18;
-		const string WANIM_FLOOR = "standard_floor_idle";
-		const string WANIM_HAND = "standard_idle";
-		const string ATK1_TYPE = "strike-land";
-		const string ATK1_KEYS = "+attack1";
-		const int ATK1_RANGE = 80;
-		const int ATK1_DMG = 250;
-		const int ATK1_DMG_RANGE = 10;
-		const string ATK1_DMG_TYPE = "dark";
-		const float ATK1_STAMINA = 0.1;
-		const string ATK1_SKILL = "swordsmanship";
-		const float ATK1_ACCURACY = 0.85;
-		const float ATK1_DELAY_STRIKE = 0.2;
-		const float ATK1_DURATION = 0.7;
-		const int ATK1_OFS = 0;
-		const int ATK1_ANG = 0;
-		const string ATK1_CALLBACK = "atk1";
-		const int ATK1_NOISE = 650;
-		const string ATK1_SKILL_LEVEL = BASE_LEVEL_REQ;
-		const int ATK1_MPDRAIN = 0;
-		const int ATK1_DMG_MULTI = 0;
-		const int ATK1_NO_AUTOAIM = 0;
-		const string ATK1_PANIM = "axe_onehand_swing";
-		const int ATK1_VANIM = 2;
-		const string SOUND_ATK1 = "weapons/cbar_miss1.wav";
-		const string PITCH_ATK1 = Random(100, 125);
-		const string SOUND_HITWALL1 = "weapons/cbar_hit1.wav";
-		const string SOUND_HITWALL2 = "weapons/cbar_hit2.wav";
-		const int ATK2_RANGE = 110;
-		const int ATK2_DMG_MULTI = 2;
-		const float ATK2_DELAY_STRIKE = 0.4;
-		const float ATK2_DURATION = 0.8;
-		const string SOUND_ATK2 = SOUND_ATK1;
-		const string PITCH_ATK2 = Random(80, 100);
-		const string SOUND_BLOCK1 = "weapons/cbar_hit2.wav";
+		VANIM_DRAW_SNG = 6;
+		VANIM_IDLE_SNG = 7;
+		VANIM_BLOCK = 16;
+		VANIM_BLOCK_OFH = 18;
+		WANIM_FLOOR = "standard_floor_idle";
+		WANIM_HAND = "standard_idle";
+		ATK1_TYPE = "strike-land";
+		ATK1_KEYS = "+attack1";
+		ATK1_RANGE = 80;
+		ATK1_DMG = 250;
+		ATK1_DMG_RANGE = 10;
+		ATK1_DMG_TYPE = "dark";
+		ATK1_STAMINA = 0.1;
+		ATK1_SKILL = "swordsmanship";
+		ATK1_ACCURACY = 0.85;
+		ATK1_DELAY_STRIKE = 0.2;
+		ATK1_DURATION = 0.7;
+		ATK1_OFS = 0;
+		ATK1_ANG = 0;
+		ATK1_CALLBACK = "atk1";
+		ATK1_NOISE = 650;
+		ATK1_SKILL_LEVEL = BASE_LEVEL_REQ;
+		ATK1_MPDRAIN = 0;
+		ATK1_DMG_MULTI = 0;
+		ATK1_NO_AUTOAIM = 0;
+		ATK1_PANIM = "axe_onehand_swing";
+		ATK1_VANIM = 2;
+		SOUND_ATK1 = "weapons/cbar_miss1.wav";
+		PITCH_ATK1 = Random(100, 125);
+		SOUND_HITWALL1 = "weapons/cbar_hit1.wav";
+		SOUND_HITWALL2 = "weapons/cbar_hit2.wav";
+		ATK2_RANGE = 110;
+		ATK2_DMG_MULTI = 2;
+		ATK2_DELAY_STRIKE = 0.4;
+		ATK2_DURATION = 0.8;
+		SOUND_ATK2 = SOUND_ATK1;
+		PITCH_ATK2 = Random(80, 100);
+		SOUND_BLOCK1 = "weapons/cbar_hit2.wav";
 	}
 
 	void bitem_draw()
@@ -304,10 +364,10 @@ class SwordsVb : CGameScript
 		AMT_BLOCKED -= OUT_DMG;
 		if (AMT_BLOCKED > 1)
 		{
-			string AMT_BLOCKED = int(AMT_BLOCKED);
+			int AMT_BLOCKED = int(AMT_BLOCKED);
 		}
 		EmitSound(GetOwner(), 4, SOUND_BLOCK1, 10);
-		SendColoredMessage(GetOwner(), "Vampyric Swords blocked AMT_BLOCKED hp");
+		SendColoredMessage(GetOwner(), "Vampyric Swords blocked " + AMT_BLOCKED + " hp");
 	}
 
 	void match_block_anim()
@@ -394,7 +454,7 @@ class SwordsVb : CGameScript
 		}
 		else
 		{
-			string L_VANIM = RandomInt(8, 11);
+			int L_VANIM = RandomInt(8, 11);
 		}
 		PlayViewAnim(L_VANIM);
 		PlayOwnerAnim("critical", ATK1_PANIM);

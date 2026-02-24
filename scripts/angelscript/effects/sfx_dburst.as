@@ -13,11 +13,13 @@ class SfxDburst : CGameScript
 	string FX_ORIGIN;
 	string MAX_SIZE;
 	float MIN_SIZE;
+	string MODEL_NAME;
+	int MODEL_OFS;
 
 	SfxDburst()
 	{
-		const string MODEL_NAME = "weapons/projectiles.mdl";
-		const int MODEL_OFS = 74;
+		MODEL_NAME = "weapons/projectiles.mdl";
+		MODEL_OFS = 74;
 	}
 
 	void OnRepeatTimer()
@@ -56,7 +58,7 @@ class SfxDburst : CGameScript
 		MIN_SIZE = 0.1;
 		MAX_SIZE = FX_AOE;
 		MAX_SIZE /= 90;
-		FX_LIGHT_RAD = /* TODO: $math(multiply) */ FX_AOE;
+		FX_LIGHT_RAD = (FX_AOE * 1.5);
 		SetCallback("render", "enable");
 		ClientEffect("light", "new", FX_ORIGIN, FX_LIGHT_RAD, Vector3(255, 0, 255), 0.1);
 		FX_LIGHT_ID = "game.script.last_light_id";

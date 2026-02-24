@@ -13,7 +13,9 @@ namespace MS
 class FminesMerchant : CGameScript
 {
 	int ASKED_APPLE;
+	int NO_JOB;
 	int NPC_NO_PLAYER_DMG;
+	string SOUND_DEATH;
 	string SOUND_IDLE1;
 	string SOUND_IDLE2;
 	string SOUND_IDLE3;
@@ -25,10 +27,10 @@ class FminesMerchant : CGameScript
 		SOUND_IDLE1 = "voices/human/male_idle4.wav";
 		SOUND_IDLE2 = "voices/human/male_idle5.wav";
 		SOUND_IDLE3 = "voices/human/male_idle6.wav";
-		const string SOUND_DEATH = "none";
+		SOUND_DEATH = "none";
 		STORE_NAME = "deralia_grocer";
 		STORE_TRIGGERTEXT = "store";
-		const int NO_JOB = 1;
+		NO_JOB = 1;
 		NPC_NO_PLAYER_DMG = 1;
 	}
 
@@ -73,13 +75,13 @@ class FminesMerchant : CGameScript
 
 	void say_hi()
 	{
-		SayText("Hey there buddy , I got something to help take the edge off.");
+		SayText("Hey there buddy , " + I + " got something to help take the edge off.");
 		ASKED_APPLE = 1;
 	}
 
 	void gossip_1()
 	{
-		SayText("I heard that there are going to be more variety of apples coming soon.");
+		SayText(I + " heard that there are going to be more variety of apples coming soon.");
 	}
 
 	void trade_done()
@@ -95,7 +97,7 @@ class FminesMerchant : CGameScript
 	void say_rumour()
 	{
 		PlayAnim("once", "pondering");
-		SayText("Regorty loves us this I know , for the apples tell me so.");
+		SayText("Regorty loves us this " + I + " know , for the apples tell me so.");
 	}
 
 	void OnDamage(int damage) override

@@ -7,19 +7,31 @@ namespace MS
 
 class SmallarmsCrep : CGameScript
 {
+	string ATK1_DMG_TYPE;
+	string BWEAPON_NAME;
+	float CRE_EFFECT_DURATION;
+	string CRE_EFFECT_NAME;
+	float CRE_EFFECT_RATIO;
+	string CRE_EFFECT_SCRIPT;
+	string CRE_EFFECT_SKILL;
+	string CRE_TYPE;
+	int PMODEL_IDX_FLOOR;
+	int PMODEL_IDX_HANDS;
+	int VMODEL_IDX;
+
 	SmallarmsCrep()
 	{
-		const string BWEAPON_NAME = "Envenomed Crescent Blade";
-		const string ATK1_DMG_TYPE = "poison";
-		const string CRE_TYPE = "poison";
-		const string CRE_EFFECT_SCRIPT = "effects/dot_poison";
-		const float CRE_EFFECT_DURATION = 10.0;
-		const string CRE_EFFECT_NAME = "DOT_poison";
-		const string CRE_EFFECT_SKILL = "skill.spellcasting.affliction";
-		const float CRE_EFFECT_RATIO = 0.3;
-		const int VMODEL_IDX = 20;
-		const int PMODEL_IDX_FLOOR = 73;
-		const int PMODEL_IDX_HANDS = 75;
+		BWEAPON_NAME = "Envenomed Crescent Blade";
+		ATK1_DMG_TYPE = "poison";
+		CRE_TYPE = "poison";
+		CRE_EFFECT_SCRIPT = "effects/dot_poison";
+		CRE_EFFECT_DURATION = 10.0;
+		CRE_EFFECT_NAME = "DOT_poison";
+		CRE_EFFECT_SKILL = "skill.spellcasting.affliction";
+		CRE_EFFECT_RATIO = 0.3;
+		VMODEL_IDX = 20;
+		PMODEL_IDX_FLOOR = 73;
+		PMODEL_IDX_HANDS = 75;
 	}
 
 	void atk1_damaged_other()

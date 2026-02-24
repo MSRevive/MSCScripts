@@ -12,8 +12,12 @@ class SlimeMudLarge : CGameScript
 	string ANIM_IDLE;
 	string ANIM_RUN;
 	string ANIM_WALK;
+	float ATTACK_DAMAGE;
+	float ATTACK_HITCHANCE;
 	int ATTACK_HITRANGE;
 	int ATTACK_RANGE;
+	int CHILD_DIST;
+	string CHILD_SCRIPT;
 	string MOMMY_KILLER;
 	int MOVE_RANGE;
 	int NO_SPAWN_STUCK_CHECK;
@@ -22,14 +26,19 @@ class SlimeMudLarge : CGameScript
 	int NPC_GIVE_EXP;
 	string NPC_HP_MULTI;
 	int NPC_MUST_SEE_TARGET;
+	string SOUND_ATTACK1;
+	string SOUND_ATTACK2;
+	string SOUND_DEATH;
+	string SOUND_STRUCK1;
+	string SOUND_STRUCK2;
 
 	SlimeMudLarge()
 	{
-		const string SOUND_DEATH = "player/hitground2.wav";
-		const string SOUND_STRUCK1 = "player/hitground2.wav";
-		const string SOUND_STRUCK2 = "player/hitground2.wav";
-		const string SOUND_ATTACK1 = "player/hitground1.wav";
-		const string SOUND_ATTACK2 = "player/hitground1.wav";
+		SOUND_DEATH = "player/hitground2.wav";
+		SOUND_STRUCK1 = "player/hitground2.wav";
+		SOUND_STRUCK2 = "player/hitground2.wav";
+		SOUND_ATTACK1 = "player/hitground1.wav";
+		SOUND_ATTACK2 = "player/hitground1.wav";
 		Precache(SOUND_DEATH);
 		ANIM_IDLE = "walk";
 		ANIM_RUN = "run";
@@ -39,11 +48,11 @@ class SlimeMudLarge : CGameScript
 		MOVE_RANGE = 30;
 		ATTACK_RANGE = 100;
 		ATTACK_HITRANGE = 120;
-		const float ATTACK_HITCHANCE = 0.7;
-		const string ATTACK_DAMAGE = Random(40, 80);
+		ATTACK_HITCHANCE = 0.7;
+		ATTACK_DAMAGE = Random(40, 80);
 		NPC_MUST_SEE_TARGET = 0;
-		const string CHILD_SCRIPT = "test_scripts/example_scripts/monsters/slime_mud_small";
-		const int CHILD_DIST = 20;
+		CHILD_SCRIPT = "test_scripts/example_scripts/monsters/slime_mud_small";
+		CHILD_DIST = 20;
 		Precache("dwarvencave/slime_ecave.mdl");
 		NO_SPAWN_STUCK_CHECK = 1;
 	}
@@ -146,7 +155,7 @@ class SlimeMudLarge : CGameScript
 			string DEST_POS = GetEntityOrigin(m_hAttackTarget);
 			npcatk_suspend_ai(1.0, "combat_reposition");
 			NPC_FORCED_MOVEDEST = 1;
-			string RND_ANG = RandomInt(0, 359);
+			int RND_ANG = RandomInt(0, 359);
 			DEST_POS += /* TODO: $relpos */ $relpos(Vector3(0, RND_ANG, 0), Vector3(0, ATTACK_RANGE, 0));
 			SetMoveDest(DEST_POS);
 		}

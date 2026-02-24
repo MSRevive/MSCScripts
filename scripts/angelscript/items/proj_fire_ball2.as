@@ -7,32 +7,50 @@ namespace MS
 
 class ProjFireBall2 : CGameScript
 {
+	int ARROW_BODY_OFS;
 	string FB_SCRIPT_INDEX;
+	string ITEM_NAME;
 	string LOCK_BURN_DAMAGE;
+	string MODEL_HANDS;
+	string MODEL_WORLD;
 	string MY_OWNER;
+	int PROJ_AOE_FALLOFF;
+	int PROJ_AOE_RANGE;
+	int PROJ_COLLIDEHITBOX;
+	int PROJ_DAMAGE;
+	string PROJ_DAMAGESTAT;
+	string PROJ_DAMAGE_TYPE;
+	int PROJ_SOLIDIFY_ON_WALL;
+	int PROJ_STICK_DURATION;
+	string SCRIPT_1;
+	string SOUND_BURN;
+	string SOUND_LOOP;
 	int SOUND_ON;
+	string SOUND_START;
+	string SPRITE_BURN;
+	string SPRITE_FIRE;
 
 	ProjFireBall2()
 	{
-		const string MODEL_HANDS = "none";
-		const string MODEL_WORLD = "weapons/projectiles.mdl";
-		const string SOUND_BURN = "items/torch1.wav";
-		const string SPRITE_FIRE = "3dmflaora.spr";
-		const string SPRITE_BURN = "fire1_fixed.spr";
-		const string ITEM_NAME = "firemana";
-		const string PROJ_DAMAGE_TYPE = "fire";
-		const string PROJ_DAMAGESTAT = "spellcasting";
-		const int ARROW_BODY_OFS = 4;
-		const string PROJ_DAMAGE = RandomInt(400, 500);
-		const int PROJ_AOE_RANGE = 250;
-		const int PROJ_AOE_FALLOFF = 0;
-		const int PROJ_STICK_DURATION = 0;
-		const int PROJ_SOLIDIFY_ON_WALL = 0;
-		const int PROJ_COLLIDEHITBOX = 64;
-		const string SOUND_START = "magic/volcano_start.wav";
-		const string SOUND_LOOP = "magic/volcano_loop.wav";
+		MODEL_HANDS = "none";
+		MODEL_WORLD = "weapons/projectiles.mdl";
+		SOUND_BURN = "items/torch1.wav";
+		SPRITE_FIRE = "3dmflaora.spr";
+		SPRITE_BURN = "fire1_fixed.spr";
+		ITEM_NAME = "firemana";
+		PROJ_DAMAGE_TYPE = "fire";
+		PROJ_DAMAGESTAT = "spellcasting";
+		ARROW_BODY_OFS = 4;
+		PROJ_DAMAGE = RandomInt(400, 500);
+		PROJ_AOE_RANGE = 250;
+		PROJ_AOE_FALLOFF = 0;
+		PROJ_STICK_DURATION = 0;
+		PROJ_SOLIDIFY_ON_WALL = 0;
+		PROJ_COLLIDEHITBOX = 64;
+		SOUND_START = "magic/volcano_start.wav";
+		SOUND_LOOP = "magic/volcano_loop.wav";
 		Precache(SPRITE_BURN);
-		const string SCRIPT_1 = "items/proj_fire_dart_cl";
+		SCRIPT_1 = "items/proj_fire_dart_cl";
 		Precache(SCRIPT_1);
 		Precache("rjet1.spr");
 		Precache(MODEL_WORLD);
@@ -57,7 +75,7 @@ class ProjFireBall2 : CGameScript
 	void pulsate_loop()
 	{
 		SetProp(GetOwner(), "rendermode", 5);
-		string PULSE_VALUE = RandomInt(100, 255);
+		int PULSE_VALUE = RandomInt(100, 255);
 		SetProp(GetOwner(), "renderamt", PULSE_VALUE);
 		ScheduleDelayedEvent(0.1, "pulsate_loop");
 	}

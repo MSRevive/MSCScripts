@@ -13,13 +13,16 @@ class Boss1 : CGameScript
 	string BEAM_ID2;
 	string BEAM_TARG;
 	string BEAM_TARGET;
+	float DUR_CLOAK;
+	int FREQ_CLOAK;
+	float FREQ_PROJECTILE;
 	int NPC_GIVE_EXP;
 
 	Boss1()
 	{
-		const float FREQ_PROJECTILE = 5.0;
-		const string FREQ_CLOAK = RandomInt(15, 30);
-		const float DUR_CLOAK = 10.0;
+		FREQ_PROJECTILE = 5.0;
+		FREQ_CLOAK = RandomInt(15, 30);
+		DUR_CLOAK = 10.0;
 	}
 
 	void rabid_skele_spawn()

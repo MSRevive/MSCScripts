@@ -8,22 +8,34 @@ namespace MS
 
 class ArmorBelmont : CGameScript
 {
+	int ARMOR_BODY;
+	int ARMOR_GROUP;
+	string ARMOR_MODEL;
+	int ARMOR_STR_REQ;
+	string ARMOR_TEXT;
+	float BARMOR_PROTECTION;
+	string BARMOR_PROTECTION_AREA;
+	string BARMOR_REPLACE_BODYPARTS;
+	string BARMOR_TYPE;
+	int BER_ACTIVATE_WHILE_WORN;
 	int EFFECT_ACTIVE;
+	int NEW_ARMOR_OFS;
+	int REG_SPECIAL_EFFECT;
 
 	ArmorBelmont()
 	{
-		const string ARMOR_MODEL = "armor/p_armorvest2.mdl";
-		const int ARMOR_GROUP = 4;
-		const int ARMOR_BODY = 0;
-		const string ARMOR_TEXT = "You don the Armor of Bravery.";
-		const string BARMOR_TYPE = "platemail";
-		const float BARMOR_PROTECTION = 0.4;
-		const string BARMOR_PROTECTION_AREA = "chest;arms;legs";
-		const string BARMOR_REPLACE_BODYPARTS = BARMOR_PROTECTION_AREA;
-		const int REG_SPECIAL_EFFECT = 1;
-		const int BER_ACTIVATE_WHILE_WORN = 1;
-		const int ARMOR_STR_REQ = 40;
-		const int NEW_ARMOR_OFS = 10;
+		ARMOR_MODEL = "armor/p_armorvest2.mdl";
+		ARMOR_GROUP = 4;
+		ARMOR_BODY = 0;
+		ARMOR_TEXT = "You don the Armor of Bravery.";
+		BARMOR_TYPE = "platemail";
+		BARMOR_PROTECTION = 0.4;
+		BARMOR_PROTECTION_AREA = "chest;arms;legs";
+		BARMOR_REPLACE_BODYPARTS = BARMOR_PROTECTION_AREA;
+		REG_SPECIAL_EFFECT = 1;
+		BER_ACTIVATE_WHILE_WORN = 1;
+		ARMOR_STR_REQ = 40;
+		NEW_ARMOR_OFS = 10;
 	}
 
 	void OnSpawn() override

@@ -17,14 +17,16 @@ class Edanateller : CGameScript
 	string CHAT_STEP6;
 	int CHAT_STEPS;
 	int DID_HELLO;
+	string GALA_CHEST_POS;
 	int NO_HAIL;
 	int NO_JOB;
 	int NO_RUMOR;
+	int PLACEHOLDER;
 
 	Edanateller()
 	{
-		const int PLACEHOLDER = 0;
-		const string GALA_CHEST_POS = /* TODO: $relpos */ $relpos(55, 8, 0);
+		PLACEHOLDER = 0;
+		GALA_CHEST_POS = /* TODO: $relpos */ $relpos(55, 8, 0);
 		NO_HAIL = 1;
 		NO_JOB = 1;
 		NO_RUMOR = 1;
@@ -80,7 +82,7 @@ class Edanateller : CGameScript
 
 	void heard_rumor()
 	{
-		SayText("Look , I just work here , I don t live here. You got an item to store, or what?");
+		SayText("Look , " + I + "just work here , " + I + " don t live here. You got an item to store, or what?");
 	}
 
 	void heard_store()

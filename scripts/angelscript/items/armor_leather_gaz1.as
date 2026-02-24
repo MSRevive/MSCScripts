@@ -7,17 +7,27 @@ namespace MS
 
 class ArmorLeatherGaz1 : CGameScript
 {
+	int ARMOR_BODY;
+	int ARMOR_GROUP;
+	string ARMOR_MODEL;
+	string ARMOR_TEXT;
+	float BARMOR_PROTECTION;
+	string BARMOR_PROTECTION_AREA;
+	string BARMOR_REPLACE_BODYPARTS;
+	string BARMOR_TYPE;
+	int NEW_ARMOR_OFS;
+
 	ArmorLeatherGaz1()
 	{
-		const string ARMOR_MODEL = "armor/p_armorvest2.mdl";
-		const int ARMOR_GROUP = 4;
-		const int ARMOR_BODY = 4;
-		const string ARMOR_TEXT = "You don the gladiator armor.";
-		const string BARMOR_TYPE = "leather";
-		const float BARMOR_PROTECTION = 0.45;
-		const string BARMOR_PROTECTION_AREA = "chest";
-		const string BARMOR_REPLACE_BODYPARTS = BARMOR_PROTECTION_AREA;
-		const int NEW_ARMOR_OFS = 14;
+		ARMOR_MODEL = "armor/p_armorvest2.mdl";
+		ARMOR_GROUP = 4;
+		ARMOR_BODY = 4;
+		ARMOR_TEXT = "You don the gladiator armor.";
+		BARMOR_TYPE = "leather";
+		BARMOR_PROTECTION = 0.45;
+		BARMOR_PROTECTION_AREA = "chest";
+		BARMOR_REPLACE_BODYPARTS = BARMOR_PROTECTION_AREA;
+		NEW_ARMOR_OFS = 14;
 	}
 
 	void OnSpawn() override

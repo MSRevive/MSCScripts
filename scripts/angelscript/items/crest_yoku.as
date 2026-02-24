@@ -7,10 +7,13 @@ namespace MS
 
 class CrestYoku : CGameScript
 {
+	int MODEL_CREST_OFS;
+	string MODEL_WEAR;
+
 	CrestYoku()
 	{
-		const int MODEL_CREST_OFS = 15;
-		const string MODEL_WEAR = "armor/p_gowns.mdl";
+		MODEL_CREST_OFS = 15;
+		MODEL_WEAR = "armor/p_gowns.mdl";
 	}
 
 	void crest_spawn()

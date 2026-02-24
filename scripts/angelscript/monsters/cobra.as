@@ -16,20 +16,25 @@ class Cobra : CGameScript
 	float ATTACK_HITCHANCE;
 	int ATTACK_HITRANGE;
 	int ATTACK_RANGE;
+	float DMG_POISON;
 	int MOVE_RANGE;
 	int NPC_GIVE_EXP;
+	string SND_STRUCK4;
+	string SND_STRUCK5;
 	string SOUND_ATTACK1;
 	string SOUND_ATTACK2;
+	string SOUND_DEATH;
+	string SOUND_PAIN;
 	string SOUND_WALK;
 
 	Cobra()
 	{
-		const string SOUND_PAIN = "monsters/spider/spiderhiss.wav";
-		const string SND_STRUCK4 = SOUND_PAIN;
-		const string SND_STRUCK5 = SOUND_PAIN;
+		SOUND_PAIN = "monsters/spider/spiderhiss.wav";
+		SND_STRUCK4 = SOUND_PAIN;
+		SND_STRUCK5 = SOUND_PAIN;
 		SOUND_ATTACK1 = "monsters/spider/spiderhiss.wav";
 		SOUND_ATTACK2 = "monsters/spider/spiderhiss.wav";
-		const string SOUND_DEATH = "monsters/troll/trolldeath.wav";
+		SOUND_DEATH = "monsters/troll/trolldeath.wav";
 		SOUND_WALK = "monsters/troll/trollidle.wav";
 		ATTACK_HITCHANCE = 0.95;
 		ANIM_RUN = "walk";
@@ -41,7 +46,7 @@ class Cobra : CGameScript
 		ATTACK_RANGE = 230;
 		ATTACK_HITRANGE = 230;
 		MOVE_RANGE = 64;
-		const string DMG_POISON = Random(10, 15);
+		DMG_POISON = Random(10, 15);
 	}
 
 	void OnSpawn() override

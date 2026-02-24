@@ -8,18 +8,22 @@ namespace MS
 class Urdauf : CGameScript
 {
 	int B_QUEST_DONE;
+	int CHAT_AUTO_HAIL;
+	int CHAT_USE_CONV_ANIMS;
+	int NO_JOB;
+	int NO_RUMOR;
 	string QUEST_COMPLETER;
 	int TALKED_SUMDALE;
 	int TOLD_STORY;
 
 	Urdauf()
 	{
-		const int NO_JOB = 1;
-		const int NO_RUMOR = 1;
-		const int CHAT_AUTO_HAIL = 1;
+		NO_JOB = 1;
+		NO_RUMOR = 1;
+		CHAT_AUTO_HAIL = 1;
 		B_QUEST_DONE = 0;
 		TALKED_SUMDALE = 0;
-		const int CHAT_USE_CONV_ANIMS = 0;
+		CHAT_USE_CONV_ANIMS = 0;
 	}
 
 	void OnSpawn() override

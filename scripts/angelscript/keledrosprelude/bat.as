@@ -13,14 +13,23 @@ class Bat : CGameScript
 	string ANIM_IDLE_HANG;
 	string ANIM_RUN;
 	string ANIM_WALK;
+	int ATTACK_DAMAGE;
 	float ATTACK_HITCHANCE;
 	int ATTACK_HITRANGE;
 	int ATTACK_RANGE;
 	string BAT_STATUS;
 	int CAN_FLEE;
 	int CAN_HUNT;
+	float FLEE_CHANCE;
+	int FLEE_HEALTH;
 	int MOVE_RANGE;
 	int NPC_GIVE_EXP;
+	string SOUND_DEATH;
+	string SOUND_IDLE1;
+	string SOUND_PAIN;
+	string SOUND_STRUCK1;
+	string SOUND_STRUCK2;
+	string SOUND_STRUCK3;
 
 	Bat()
 	{
@@ -30,20 +39,20 @@ class Bat : CGameScript
 		ANIM_IDLE_HANG = "IdleHang";
 		ANIM_IDLE_FLY = "IdleFlyNormal";
 		ANIM_DEATH = "die";
-		const string SOUND_STRUCK1 = "weapons/cbar_hitbod1.wav";
-		const string SOUND_STRUCK2 = "weapons/cbar_hitbod2.wav";
-		const string SOUND_STRUCK3 = "weapons/cbar_hitbod3.wav";
-		const string SOUND_PAIN = "monsters/rat/squeak1.wav";
-		const string SOUND_IDLE1 = "monsters/rat/squeak2.wav";
-		const string SOUND_DEATH = "monsters/rat/squeak3.wav";
+		SOUND_STRUCK1 = "weapons/cbar_hitbod1.wav";
+		SOUND_STRUCK2 = "weapons/cbar_hitbod2.wav";
+		SOUND_STRUCK3 = "weapons/cbar_hitbod3.wav";
+		SOUND_PAIN = "monsters/rat/squeak1.wav";
+		SOUND_IDLE1 = "monsters/rat/squeak2.wav";
+		SOUND_DEATH = "monsters/rat/squeak3.wav";
 		MOVE_RANGE = 54;
 		ATTACK_RANGE = 64;
 		ATTACK_HITRANGE = 100;
-		const int ATTACK_DAMAGE = 5;
+		ATTACK_DAMAGE = 5;
 		NPC_GIVE_EXP = 20;
 		CAN_FLEE = 1;
-		const int FLEE_HEALTH = 1;
-		const float FLEE_CHANCE = 1.0;
+		FLEE_HEALTH = 1;
+		FLEE_CHANCE = 1.0;
 	}
 
 	void bat_spawn()

@@ -8,11 +8,12 @@ namespace MS
 class Towncrier : CGameScript
 {
 	int EVIDENCE_FOUND;
+	int NO_JOB;
 	int TALKING;
 
 	Towncrier()
 	{
-		const int NO_JOB = 1;
+		NO_JOB = 1;
 	}
 
 	void OnRepeatTimer()
@@ -47,7 +48,7 @@ class Towncrier : CGameScript
 	void say_hi()
 	{
 		TALKING = 1;
-		SayText("Hello! What can I help you with? Looking for [adventure] ? Or perhaps you d like to hear about the [news] that goes around?");
+		SayText("Hello! What can " + I + " help you with? Looking for [adventure] ? Or perhaps you d like to hear about the [news] that goes around?");
 		if (!(GetEntityProperty("ent_lastspoke", "player") == 1)) return;
 		SetMoveDest(9999);
 		SetRoam(false);
@@ -81,7 +82,7 @@ class Towncrier : CGameScript
 
 	void say_rumour3()
 	{
-		SayText("I have been hearing reports of repeated attacks. Things could get quite messy if you go out there.");
+		SayText(I + " have been hearing reports of repeated attacks. Things could get quite messy if you go out there.");
 	}
 
 	void say_mayor()

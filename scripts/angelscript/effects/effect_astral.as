@@ -9,8 +9,12 @@ class EffectAstral : CGameScript
 {
 	string CL_IDX;
 	int EFFECT_ACTIVE;
+	string EFFECT_ID;
 	int FB_ACCEL;
 	int FX_ACTIVE;
+	float FX_DEC;
+	int FX_KEYINC;
+	int FX_MAXSPEED;
 	string FX_POS;
 	string FX_VIEWANGLES;
 	int RL_ACCEL;
@@ -24,10 +28,10 @@ class EffectAstral : CGameScript
 
 	EffectAstral()
 	{
-		const string EFFECT_ID = "astral_project";
-		const int FX_MAXSPEED = 30;
-		const int FX_KEYINC = 1;
-		const float FX_DEC = 0.1;
+		EFFECT_ID = "astral_project";
+		FX_MAXSPEED = 30;
+		FX_KEYINC = 1;
+		FX_DEC = 0.1;
 	}
 
 	void game_activate()
@@ -74,7 +78,7 @@ class EffectAstral : CGameScript
 	void client_activate()
 	{
 		string L_FX_OWNERPOS = /* TODO: $getcl */ $getcl(param1, "origin");
-		string L_ZDIST = Distance(L_FX_OWNERPOS, Vector3(0, 0, 0));
+		float L_ZDIST = Distance(L_FX_OWNERPOS, Vector3(0, 0, 0));
 		string L_ZDIR = (Vector3(0, 0, 0) - L_FX_OWNERPOS).Normalize();
 		FX_POS = L_FX_OWNERPOS;
 		L_ZDIR *= L_ZDIST;

@@ -18,6 +18,7 @@ class BaseChat : CGameScript
 	string BC_END_AUTO_MOUTH_MOVE;
 	int BC_TOTAL_MOUTH_TIME;
 	string BUSY_CHATTING;
+	float CHAT_DELAY;
 	string CHAT_DELAY_STEP1;
 	string CHAT_DELAY_STEP10;
 	string CHAT_DELAY_STEP2;
@@ -60,15 +61,17 @@ class BaseChat : CGameScript
 	string CHAT_STEP8;
 	string CHAT_STEP9;
 	string CHAT_STEPS;
+	string CONV_ANIMS;
 	int HAS_BASE_CHAT_INCLUDE;
+	string RQUEST_NAMES;
 	string TRADE_RING;
 
 	BaseChat()
 	{
 		HAS_BASE_CHAT_INCLUDE = 1;
-		const string CONV_ANIMS = "converse2;converse1;talkleft;talkright;lean;pondering;pondering2;pondering3;";
-		const float CHAT_DELAY = 3.0;
-		const string RQUEST_NAMES = "0;Galan;Narad;Darrelin;Rudolf;Vadrel;Edrin;Thordac;Slinker;Slinker;Gerald;Mosor;Cathain;";
+		CONV_ANIMS = "converse2;converse1;talkleft;talkright;lean;pondering;pondering2;pondering3;";
+		CHAT_DELAY = 3.0;
+		RQUEST_NAMES = "0;Galan;Narad;Darrelin;Rudolf;Vadrel;Edrin;Thordac;Slinker;Slinker;Gerald;Mosor;Cathain;";
 	}
 
 	void OnSpawn() override
@@ -301,7 +304,7 @@ class BaseChat : CGameScript
 		{
 			PlayAnim("critical", L_ANIM);
 		}
-		SayText("L_CHAT_TEXT");
+		SayText(L_CHAT_TEXT);
 		if ((L_CHAT_DELAY).findFirst("CHAT_DELAY_STEP") == 0)
 		{
 			string L_CHAT_DELAY = CHAT_DELAY;
@@ -337,22 +340,22 @@ class BaseChat : CGameScript
 	{
 		BC_TOTAL_MOUTH_TIME = 0;
 		string RND_SAY1 = "[";
-		string M_TIME = Random(0.1, 0.3);
+		float M_TIME = Random(0.1, 0.3);
 		BC_TOTAL_MOUTH_TIME += M_TIME;
 		RND_SAY1 += M_TIME;
 		RND_SAY1 += "]";
 		string RND_SAY2 = "[";
-		string M_TIME = Random(0.1, 0.3);
+		float M_TIME = Random(0.1, 0.3);
 		BC_TOTAL_MOUTH_TIME += M_TIME;
 		RND_SAY2 += M_TIME;
 		RND_SAY2 += "]";
 		string RND_SAY3 = "[";
-		string M_TIME = Random(0.1, 0.3);
+		float M_TIME = Random(0.1, 0.3);
 		BC_TOTAL_MOUTH_TIME += M_TIME;
 		RND_SAY3 += M_TIME;
 		RND_SAY3 += "]";
 		string RND_SAY4 = "[";
-		string M_TIME = Random(0.1, 0.3);
+		float M_TIME = Random(0.1, 0.3);
 		BC_TOTAL_MOUTH_TIME += M_TIME;
 		RND_SAY4 += M_TIME;
 		RND_SAY4 += "]";
@@ -375,7 +378,7 @@ class BaseChat : CGameScript
 		if (GetGameTime() < BC_END_AUTO_MOUTH_MOVE)
 		{
 			string RND_SAY = "[";
-			string M_TIME = Random(0.1, 0.3);
+			float M_TIME = Random(0.1, 0.3);
 			RND_SAY += M_TIME;
 			RND_SAY += "]";
 			Say("RND_SAY");
@@ -388,7 +391,7 @@ class BaseChat : CGameScript
 
 	void bchat_mouth_twitch()
 	{
-		string RND_DIST = Random(-1.0, 0.0);
+		float RND_DIST = Random(-1.0, 0.0);
 		LogDebug("bchat_mouth_twitch RND_DIST");
 		SetProp(GetOwner(), "controller1", RND_DIST);
 	}
@@ -527,14 +530,14 @@ class BaseChat : CGameScript
 	void rquest_rub_my_back_first()
 	{
 		ScheduleDelayedEvent(3.0, "say_job");
-		SayText("Oh , I know a little something about that... If you could just help me with my little problem first.");
+		SayText("Oh , " + I + " know a little something about that... If you could just help me with my little problem first.");
 	}
 
 	void convo_anim()
 	{
 		string N_ANIMS = GetTokenCount(CONV_ANIMS, ";");
 		N_ANIMS -= 1;
-		string RND_ANIM = RandomInt(0, N_ANIMS);
+		int RND_ANIM = RandomInt(0, N_ANIMS);
 		PlayAnim("critical", GetToken(CONV_ANIMS, RND_ANIM, ";"));
 	}
 

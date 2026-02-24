@@ -31,7 +31,7 @@ class IceMain : CGameScript
 		{
 			AddStoreItem(STORENAME, "scroll2_ice_blast", 1, 0);
 		}
-		string SCROLL_TOME = RandomInt(1, 2);
+		int SCROLL_TOME = RandomInt(1, 2);
 		if (SCROLL_TOME == 1)
 		{
 			AddStoreItem(STORENAME, "scroll_ice_shield", 1, 0);
@@ -42,7 +42,7 @@ class IceMain : CGameScript
 		}
 		if (RandomInt(1, 100) <= 10)
 		{
-			string SCROLL_TOME = RandomInt(1, 2);
+			int SCROLL_TOME = RandomInt(1, 2);
 			if (SCROLL_TOME == 1)
 			{
 				AddStoreItem(STORENAME, "scroll_blizzard", 1, 0);

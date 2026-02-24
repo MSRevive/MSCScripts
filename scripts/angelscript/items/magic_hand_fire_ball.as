@@ -7,27 +7,42 @@ namespace MS
 
 class MagicHandFireBall : CGameScript
 {
+	int ANIM_CAST;
+	string MAX_BURN_DAMAGE;
+	int MIN_BURN_DAMAGE;
+	int RANGED_ATK_DURATION;
+	string RANGED_COF;
+	float RANGED_DMG_DELAY;
+	int RANGED_FORCE;
+	string RANGED_PROJECTILE;
+	string SOUND_CHARGE;
+	string SOUND_SHOOT;
+	string SPELL_DAMAGE_TYPE;
+	int SPELL_ENERGYDRAIN;
+	int SPELL_MPDRAIN;
+	int SPELL_PREPARE_TIME;
 	int SPELL_SKILL_REQUIRED;
+	string SPELL_STAT;
 	int baseitem.canidle;
 
 	MagicHandFireBall()
 	{
-		const int ANIM_CAST = 11;
-		const string SOUND_CHARGE = "magic/fireball_powerup.wav";
-		const string SOUND_SHOOT = "magic/fireball_large.wav";
-		const int RANGED_FORCE = 1500;
-		const string RANGED_COF = "15;1";
-		const int RANGED_ATK_DURATION = 1;
-		const string RANGED_PROJECTILE = "proj_fire_ball";
-		const float RANGED_DMG_DELAY = 0.5;
+		ANIM_CAST = 11;
+		SOUND_CHARGE = "magic/fireball_powerup.wav";
+		SOUND_SHOOT = "magic/fireball_large.wav";
+		RANGED_FORCE = 1500;
+		RANGED_COF = "15;1";
+		RANGED_ATK_DURATION = 1;
+		RANGED_PROJECTILE = "proj_fire_ball";
+		RANGED_DMG_DELAY = 0.5;
 		SPELL_SKILL_REQUIRED = 7;
-		const int SPELL_PREPARE_TIME = 2;
-		const string SPELL_DAMAGE_TYPE = "fire";
-		const int SPELL_ENERGYDRAIN = 5;
-		const int SPELL_MPDRAIN = 5;
-		const string SPELL_STAT = "spellcasting.fire";
-		const int MIN_BURN_DAMAGE = 3;
-		const string MAX_BURN_DAMAGE = GetSkillLevel(GetOwner(), "spellcasting.fire.ratio");
+		SPELL_PREPARE_TIME = 2;
+		SPELL_DAMAGE_TYPE = "fire";
+		SPELL_ENERGYDRAIN = 5;
+		SPELL_MPDRAIN = 5;
+		SPELL_STAT = "spellcasting.fire";
+		MIN_BURN_DAMAGE = 3;
+		MAX_BURN_DAMAGE = GetSkillLevel(GetOwner(), "spellcasting.fire.ratio");
 	}
 
 	void spell_spawn()

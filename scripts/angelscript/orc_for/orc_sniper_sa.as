@@ -8,9 +8,11 @@ namespace MS
 
 class OrcSniperSa : CGameScript
 {
+	string ARROW_PUSH_VEL;
+
 	OrcSniperSa()
 	{
-		const string ARROW_PUSH_VEL = /* TODO: $relvel */ $relvel(0, 400, 110);
+		ARROW_PUSH_VEL = /* TODO: $relvel */ $relvel(0, 400, 110);
 	}
 
 }

@@ -5,9 +5,11 @@ namespace MS
 
 class ConstTestInc : CGameScript
 {
+	int BOTTOM_CONST;
+
 	ConstTestInc()
 	{
-		const int BOTTOM_CONST = 2;
+		BOTTOM_CONST = 2;
 	}
 
 }

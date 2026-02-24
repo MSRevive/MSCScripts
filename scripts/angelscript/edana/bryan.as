@@ -18,21 +18,27 @@ class Bryan : CGameScript
 	int CIDER;
 	int EVIDENCE_FOUND;
 	string GOSSIP_LINE;
+	int NO_JOB;
 	int RATTING;
 	int SAY_MAYOR_SENTENCE;
-	string SPEECH_LINE;
+	string SOUND_DEATH;
+	string SOUND_IDLE;
+	string SOUND_IDLE2;
+	string SOUND_IDLE3;
+	int SPEECH_LINE;
+	string STORE_NAME;
 	string STORE_TRIGGERTEXT;
 	string WEATHER;
 
 	Bryan()
 	{
-		const string SOUND_IDLE = "voices/human/male_idle4.wav";
-		const string SOUND_IDLE2 = "voices/human/male_idle5.wav";
-		const string SOUND_IDLE3 = "voices/human/male_idle6.wav";
-		const string SOUND_DEATH = "none";
-		const string STORE_NAME = "edana_merchant_3";
+		SOUND_IDLE = "voices/human/male_idle4.wav";
+		SOUND_IDLE2 = "voices/human/male_idle5.wav";
+		SOUND_IDLE3 = "voices/human/male_idle6.wav";
+		SOUND_DEATH = "none";
+		STORE_NAME = "edana_merchant_3";
 		STORE_TRIGGERTEXT = "store";
-		const int NO_JOB = 1;
+		NO_JOB = 1;
 	}
 
 	void OnRepeatTimer()
@@ -150,20 +156,20 @@ class Bryan : CGameScript
 			{
 				if (GOSSIP_LINE == 2)
 				{
-					SayText("I hear Edrin s got a pretty colourful past.");
+					SayText(I + " hear Edrin s got a pretty colourful past.");
 				}
 				else
 				{
 					if (GOSSIP_LINE == 3)
 					{
-						SayText("Maybe... with the proper incentive... I d tell ya more.");
+						SayText("Maybe... with the proper incentive... " + I + " d tell ya more.");
 					}
 				}
 			}
 		}
 		else
 		{
-			SayText("I heard the mayor s been caught, and will be spendin a good amount of time locked up.");
+			SayText(I + " heard the mayor s been caught, and will be spendin a good amount of time locked up.");
 			PlayAnim("once", "yes");
 		}
 		RATTING = 0;
@@ -202,7 +208,7 @@ class Bryan : CGameScript
 		else
 		{
 			ReceiveOffer("reject");
-			SayText("A lowly begger wouldn t take that offer.");
+			SayText(A + " lowly begger wouldn t take that offer.");
 			PlayAnim("once", "no");
 		}
 	}
@@ -215,21 +221,21 @@ class Bryan : CGameScript
 
 	void give_mayor_info_2()
 	{
-		SayText("I been seeing some unusual mail coming in to the mayor.");
+		SayText(I + " been seeing some unusual mail coming in to the mayor.");
 		PlayAnim("once", "pondering3");
 		ScheduleDelayedEvent(4, "give_mayor_info_3");
 	}
 
 	void give_mayor_info_3()
 	{
-		SayText("I been thinkin maybe him and the Orcs communicatin by letter.");
+		SayText(I + " been thinkin maybe him and the Orcs communicatin by letter.");
 		PlayAnim("once", "converse2");
 		ScheduleDelayedEvent(3, "give_mayor_info_4");
 	}
 
 	void give_mayor_info_4()
 	{
-		SayText("But I never had the gall to go check it out.");
+		SayText("But " + I + " never had the gall to go check it out.");
 		ScheduleDelayedEvent(4, "give_mayor_info_5");
 	}
 
@@ -253,7 +259,7 @@ class Bryan : CGameScript
 
 	void give_mayor_info_8()
 	{
-		SayText("I m sure Edrin, the guard over there, will help us. Show him any evidence you find.");
+		SayText(I + " m sure Edrin, the guard over there, will help us. Show him any evidence you find.");
 		RATTING = 0;
 	}
 

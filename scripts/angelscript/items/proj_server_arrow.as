@@ -8,26 +8,44 @@ namespace MS
 
 class ProjServerArrow : CGameScript
 {
+	string ANIM_DEPLOY;
+	string ANIM_DROPPED;
+	int ARROW_BODY_OFS;
+	float ARROW_BREAK_CHANCE;
+	int ARROW_EXPIRE_DELAY;
+	int ARROW_SOLIDIFY_ON_WALL;
+	int ARROW_STICK_DURATION;
+	string MODEL_HANDS;
+	string MODEL_WORLD;
+	int PROJ_COLLIDEHITBOX;
+	int PROJ_DAMAGE;
+	string PROJ_DAMAGETYPE;
+	int PROJ_MOTIONBLUR;
+	string SOUND_HITWALL1;
+	string SOUND_HITWALL2;
+	string SPRITE_ARROW_HAND;
+	string SPRITE_ARROW_TRADE;
+
 	ProjServerArrow()
 	{
-		const int ARROW_BODY_OFS = 0;
-		const string SPRITE_ARROW_TRADE = "woodenarrow";
-		const string PROJ_DAMAGE = RandomInt(30, 60);
-		const int ARROW_STICK_DURATION = 10;
-		const int ARROW_SOLIDIFY_ON_WALL = 0;
-		const float ARROW_BREAK_CHANCE = 0.2;
-		const int PROJ_MOTIONBLUR = 1;
-		const string MODEL_HANDS = "weapons/bows/arrows.mdl";
-		const string MODEL_WORLD = "weapons/bows/arrows.mdl";
-		const string SOUND_HITWALL1 = "weapons/bow/arrowhit1.wav";
-		const string SOUND_HITWALL2 = "weapons/bow/arrowhit1.wav";
-		const string SPRITE_ARROW_TRADE = "woodenarrow";
-		const string SPRITE_ARROW_HAND = "arrows";
-		const string ANIM_DEPLOY = "idle2";
-		const string ANIM_DROPPED = "idle1";
-		const int ARROW_EXPIRE_DELAY = 10;
-		const string PROJ_DAMAGETYPE = "pierce";
-		const int PROJ_COLLIDEHITBOX = 1;
+		ARROW_BODY_OFS = 0;
+		SPRITE_ARROW_TRADE = "woodenarrow";
+		PROJ_DAMAGE = RandomInt(30, 60);
+		ARROW_STICK_DURATION = 10;
+		ARROW_SOLIDIFY_ON_WALL = 0;
+		ARROW_BREAK_CHANCE = 0.2;
+		PROJ_MOTIONBLUR = 1;
+		MODEL_HANDS = "weapons/bows/arrows.mdl";
+		MODEL_WORLD = "weapons/bows/arrows.mdl";
+		SOUND_HITWALL1 = "weapons/bow/arrowhit1.wav";
+		SOUND_HITWALL2 = "weapons/bow/arrowhit1.wav";
+		SPRITE_ARROW_TRADE = "woodenarrow";
+		SPRITE_ARROW_HAND = "arrows";
+		ANIM_DEPLOY = "idle2";
+		ANIM_DROPPED = "idle1";
+		ARROW_EXPIRE_DELAY = 10;
+		PROJ_DAMAGETYPE = "pierce";
+		PROJ_COLLIDEHITBOX = 1;
 	}
 
 	void OnSpawn() override

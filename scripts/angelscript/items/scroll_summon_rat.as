@@ -7,12 +7,17 @@ namespace MS
 
 class ScrollSummonRat : CGameScript
 {
+	int BASE_REQUIRED_LEVEL;
+	string BASE_REQUIRED_SKILL;
+	string BASE_SPELL_SCRIPT;
+	string BASE_SUMMON_TEXT;
+
 	ScrollSummonRat()
 	{
-		const string BASE_SPELL_SCRIPT = "magic_hand_summon_rat";
-		const string BASE_SUMMON_TEXT = "You learn to summon a rat.";
-		const string BASE_REQUIRED_SKILL = "skill.spellcasting";
-		const int BASE_REQUIRED_LEVEL = 3;
+		BASE_SPELL_SCRIPT = "magic_hand_summon_rat";
+		BASE_SUMMON_TEXT = "You learn to summon a rat.";
+		BASE_REQUIRED_SKILL = "skill.spellcasting";
+		BASE_REQUIRED_LEVEL = 3;
 	}
 
 	void OnSpawn() override

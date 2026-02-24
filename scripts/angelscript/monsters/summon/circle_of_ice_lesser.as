@@ -8,18 +8,35 @@ namespace MS
 class CircleOfIceLesser : CGameScript
 {
 	string ACTIVE_SKILL;
+	float AOE_FREQ;
+	int AOE_RADIUS;
+	string APPLY_EFFECT;
 	int CIRCLE_ON;
+	int CIRCLE_RADIUS;
 	string CIRCLE_UP;
 	string DID_WINDUP;
 	string FROST_DURATION;
+	string FX_SPRITE;
+	float LIGHT_DROPPED_SCALE;
+	float LIGHT_PLAYER_SCALE;
 	string MY_BASE_DAMAGE;
 	string MY_DURATION;
 	string MY_OWNER;
 	string MY_OWNER_RACE;
+	int OFSZ_NEG;
+	int OFSZ_POS;
+	int OFS_NEG;
+	int OFS_POS;
 	string OWNER_ISPLAYER;
+	float PULSE_PLAYTIME;
 	int RAIN_SPRITES;
 	int ROT_COUNT;
 	int SEAL_DROP_COUNTER;
+	string SEAL_MODEL;
+	int SEAL_OFS;
+	string SOUND_FADE;
+	string SOUND_MANIFEST;
+	string SOUND_PULSE;
 	string THIS_SCRIPT_CLIENT_ID;
 	string sfx.duration;
 	string sfx.npcid;
@@ -27,24 +44,24 @@ class CircleOfIceLesser : CGameScript
 
 	CircleOfIceLesser()
 	{
-		const string SEAL_MODEL = "weapons/magic/seals.mdl";
-		const int SEAL_OFS = 7;
-		const string SOUND_MANIFEST = "magic/spawn.wav";
-		const string SOUND_PULSE = "magic/frost_forward.wav";
-		const string SOUND_FADE = "magic/frost_reverse.wav";
-		const float PULSE_PLAYTIME = 1.0;
-		const string FX_SPRITE = "teleporter_blue_sprites.mdl";
-		const int CIRCLE_RADIUS = 110;
-		const string APPLY_EFFECT = "effects/dot_cold";
+		SEAL_MODEL = "weapons/magic/seals.mdl";
+		SEAL_OFS = 7;
+		SOUND_MANIFEST = "magic/spawn.wav";
+		SOUND_PULSE = "magic/frost_forward.wav";
+		SOUND_FADE = "magic/frost_reverse.wav";
+		PULSE_PLAYTIME = 1.0;
+		FX_SPRITE = "teleporter_blue_sprites.mdl";
+		CIRCLE_RADIUS = 110;
+		APPLY_EFFECT = "effects/dot_cold";
 		Precache(FX_SPRITE);
-		const float AOE_FREQ = 1.0;
-		const int AOE_RADIUS = 110;
-		const int OFS_POS = 128;
-		const int OFS_NEG = -128;
-		const int OFSZ_POS = 256;
-		const int OFSZ_NEG = -10;
-		const float LIGHT_PLAYER_SCALE = 0.3;
-		const float LIGHT_DROPPED_SCALE = 0.5;
+		AOE_FREQ = 1.0;
+		AOE_RADIUS = 110;
+		OFS_POS = 128;
+		OFS_NEG = -128;
+		OFSZ_POS = 256;
+		OFSZ_NEG = -10;
+		LIGHT_PLAYER_SCALE = 0.3;
+		LIGHT_DROPPED_SCALE = 0.5;
 	}
 
 	void game_dynamically_created()

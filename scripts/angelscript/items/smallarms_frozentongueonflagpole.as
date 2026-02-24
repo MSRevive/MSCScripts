@@ -7,47 +7,84 @@ namespace MS
 
 class SmallarmsFrozentongueonflagpole : CGameScript
 {
+	int ANIM_ATTACK1;
+	int ANIM_ATTACK2;
+	int ANIM_ATTACK3;
+	int ANIM_ATTACK4;
+	int ANIM_ATTACK5;
+	int ANIM_IDLE1;
+	int ANIM_IDLE_TOTAL;
+	int ANIM_LIFT1;
+	string ANIM_PREFIX;
+	int ANIM_UNWIELD;
+	int ANIM_WIELD;
+	int ANIM_WIELDEDIDLE1;
+	int BASE_LEVEL_REQ;
+	int CUSTOM_REGISTER_CHARGE1;
+	int CUSTOM_REGISTER_SECONDARY;
+	float MELEE_ACCURACY;
+	float MELEE_ALIGN_BASE;
+	int MELEE_ALIGN_TIP;
+	float MELEE_ATK_DURATION;
+	int MELEE_DMG;
+	float MELEE_DMG_DELAY;
+	int MELEE_DMG_RANGE;
+	string MELEE_DMG_TYPE;
+	float MELEE_ENERGY;
+	float MELEE_PARRY_CHANCE;
+	int MELEE_RANGE;
+	string MELEE_SOUND_DELAY;
+	int MELEE_VIEWANIM_ATK;
+	int MODEL_BODY_OFS;
+	string MODEL_HANDS;
+	string MODEL_VIEW;
+	int MODEL_VIEW_IDX;
+	string MODEL_WORLD;
+	string PLAYERANIM_AIM;
+	string PLAYERANIM_SWING;
+	string SOUND_HITWALL1;
+	string SOUND_HITWALL2;
 	string TARG_LIST;
 
 	SmallarmsFrozentongueonflagpole()
 	{
-		const int BASE_LEVEL_REQ = 23;
-		const int CUSTOM_REGISTER_SECONDARY = 1;
-		const string MODEL_VIEW = "viewmodels/v_smallarms.mdl";
-		const int MODEL_VIEW_IDX = 6;
-		const int ANIM_LIFT1 = 31;
-		const int ANIM_IDLE1 = 32;
-		const int ANIM_IDLE_TOTAL = 1;
-		const int ANIM_WIELD = 31;
-		const int ANIM_UNWIELD = 38;
-		const int ANIM_WIELDEDIDLE1 = 32;
-		const int ANIM_ATTACK1 = 33;
-		const int ANIM_ATTACK2 = 34;
-		const int ANIM_ATTACK3 = 35;
-		const int ANIM_ATTACK4 = 36;
-		const int ANIM_ATTACK5 = 37;
-		const string MELEE_VIEWANIM_ATK = RandomInt(ANIM_ATTACK1, ANIM_ATTACK5);
-		const string MODEL_HANDS = "weapons/p_weapons3.mdl";
-		const string MODEL_WORLD = "weapons/p_weapons3.mdl";
-		const string MELEE_DMG_TYPE = "cold";
-		const int MELEE_RANGE = 50;
-		const float MELEE_DMG_DELAY = 0.2;
-		const float MELEE_ATK_DURATION = 0.9;
-		const float MELEE_ENERGY = 0.6;
-		const int MELEE_DMG = 275;
-		const int MELEE_DMG_RANGE = 20;
-		const float MELEE_ACCURACY = 1.0;
-		const float MELEE_ALIGN_BASE = 3.6;
-		const int MELEE_ALIGN_TIP = 0;
-		const string MELEE_SOUND_DELAY = MELEE_DMG_DELAY;
-		const float MELEE_PARRY_CHANCE = 0.25;
-		const string PLAYERANIM_AIM = "knife";
-		const string PLAYERANIM_SWING = "swing_knife";
-		const string SOUND_HITWALL1 = "debris/glass1.wav";
-		const string SOUND_HITWALL2 = "debris/glass2.wav";
-		const int MODEL_BODY_OFS = 17;
-		const string ANIM_PREFIX = "standard";
-		const int CUSTOM_REGISTER_CHARGE1 = 1;
+		BASE_LEVEL_REQ = 23;
+		CUSTOM_REGISTER_SECONDARY = 1;
+		MODEL_VIEW = "viewmodels/v_smallarms.mdl";
+		MODEL_VIEW_IDX = 6;
+		ANIM_LIFT1 = 31;
+		ANIM_IDLE1 = 32;
+		ANIM_IDLE_TOTAL = 1;
+		ANIM_WIELD = 31;
+		ANIM_UNWIELD = 38;
+		ANIM_WIELDEDIDLE1 = 32;
+		ANIM_ATTACK1 = 33;
+		ANIM_ATTACK2 = 34;
+		ANIM_ATTACK3 = 35;
+		ANIM_ATTACK4 = 36;
+		ANIM_ATTACK5 = 37;
+		MELEE_VIEWANIM_ATK = RandomInt(ANIM_ATTACK1, ANIM_ATTACK5);
+		MODEL_HANDS = "weapons/p_weapons3.mdl";
+		MODEL_WORLD = "weapons/p_weapons3.mdl";
+		MELEE_DMG_TYPE = "cold";
+		MELEE_RANGE = 50;
+		MELEE_DMG_DELAY = 0.2;
+		MELEE_ATK_DURATION = 0.9;
+		MELEE_ENERGY = 0.6;
+		MELEE_DMG = 275;
+		MELEE_DMG_RANGE = 20;
+		MELEE_ACCURACY = 1.0;
+		MELEE_ALIGN_BASE = 3.6;
+		MELEE_ALIGN_TIP = 0;
+		MELEE_SOUND_DELAY = MELEE_DMG_DELAY;
+		MELEE_PARRY_CHANCE = 0.25;
+		PLAYERANIM_AIM = "knife";
+		PLAYERANIM_SWING = "swing_knife";
+		SOUND_HITWALL1 = "debris/glass1.wav";
+		SOUND_HITWALL2 = "debris/glass2.wav";
+		MODEL_BODY_OFS = 17;
+		ANIM_PREFIX = "standard";
+		CUSTOM_REGISTER_CHARGE1 = 1;
 	}
 
 	void weapon_spawn()
@@ -66,8 +103,8 @@ class SmallarmsFrozentongueonflagpole : CGameScript
 		if (!(param1)) return;
 		if (!(RandomInt(1, 5) == 1)) return;
 		if ((BITEM_UNDERSKILLED)) return;
-		string FREEZE_DAMAGE = /* TODO: $math(multiply) */ /* TODO: $math(add) */ /* TODO: $math(multiply) */ GetSkillLevel(GetOwner(), "smallarms");
-		FREEZE_DAMAGE += Random(1, /* TODO: $math(divide) */ GetSkillLevel(GetOwner(), "spellcasting.ice"));
+		string FREEZE_DAMAGE = (((GetSkillLevel(GetOwner(), "smallarms") * 0.66) + (GetSkillLevel(GetOwner(), "spellcasting.ice") * 0.34)) * 2);
+		FREEZE_DAMAGE += Random(1, (GetSkillLevel(GetOwner(), "spellcasting.ice") / 4));
 		if (FREEZE_DAMAGE < 5)
 		{
 			int FREEZE_DAMAGE = 5;

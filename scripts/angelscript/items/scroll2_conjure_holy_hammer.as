@@ -7,13 +7,19 @@ namespace MS
 
 class Scroll2ConjureHolyHammer : CGameScript
 {
+	int BASE_REQUIRED_LEVEL;
+	string BASE_REQUIRED_SKILL;
+	string BASE_SPELL_SCRIPT;
+	int SPELL_MAKER_HEIGHT;
+	string SPELL_MAKER_SCRIPT;
+
 	Scroll2ConjureHolyHammer()
 	{
-		const string BASE_SPELL_SCRIPT = "magic_hand_holy_hammer";
-		const string BASE_REQUIRED_SKILL = "skill.spellcasting.divination";
-		const int BASE_REQUIRED_LEVEL = 0;
-		const string SPELL_MAKER_SCRIPT = "monsters/companion/spell_maker_lightning";
-		const int SPELL_MAKER_HEIGHT = 48;
+		BASE_SPELL_SCRIPT = "magic_hand_holy_hammer";
+		BASE_REQUIRED_SKILL = "skill.spellcasting.divination";
+		BASE_REQUIRED_LEVEL = 0;
+		SPELL_MAKER_SCRIPT = "monsters/companion/spell_maker_lightning";
+		SPELL_MAKER_HEIGHT = 48;
 	}
 
 	void OnSpawn() override

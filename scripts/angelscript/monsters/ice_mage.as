@@ -8,11 +8,25 @@ namespace MS
 class IceMage : CGameScript
 {
 	string ANIM_ATTACK;
+	string ANIM_CAST;
 	string ANIM_DEATH;
+	string ANIM_DEATH1;
+	string ANIM_DEATH2;
+	string ANIM_DEATH3;
+	string ANIM_DEATH4;
+	string ANIM_DEATH5;
+	string ANIM_DEATH6;
+	string ANIM_DEATH7;
+	string ANIM_FLY;
+	string ANIM_FREEZE_RAY;
 	string ANIM_IDLE;
+	string ANIM_IDLE_ALERT;
+	string ANIM_JUMP;
+	string ANIM_LOOK;
 	string ANIM_RUN;
 	string ANIM_WALK;
 	string AS_ATTACKING;
+	float ATTACK_HITCHANCE;
 	int ATTACK_HITRANGE;
 	int ATTACK_MOVERANGE;
 	int ATTACK_RANGE;
@@ -23,17 +37,32 @@ class IceMage : CGameScript
 	string BEAM_TRACE_END;
 	string BEAM_TRACE_START;
 	string BOLT_DELAY;
+	int BOLT_SPEED;
 	string BUGGER_ID;
 	int BUGGER_IN_WAY;
 	int BUGGER_IN_WAY_COUNT;
+	int DMG_BEAM;
+	int DMG_BOLT;
+	int DMG_DOT_BOLT;
+	int DMG_SOLID;
+	int DMG_STAFF;
+	int DMG_SWIPE;
 	int DROP_GOLD;
-	string DROP_GOLD_AMT;
+	int DROP_GOLD_AMT;
 	int FBEAM_ATTACK;
+	int FBEAM_RANGE;
+	string FINGER_ADJ;
 	int FOUND_NEAR_TARGET;
 	string FREEZE_SOUND_DELAY;
+	float FREQ_BOLT;
+	float FREQ_FREEZE;
+	float FREQ_FREEZE_SOUND;
+	float FREQ_TELE;
 	int ICE_SUMMONED;
 	int IS_UNHOLY;
 	string LAST_TELE;
+	string LIGHT_COLOR;
+	int LIGHT_RAD;
 	string MY_LIGHT_SCRIPT;
 	string NEAR_DEST;
 	string NEW_FREEZE_TARGET;
@@ -45,6 +74,14 @@ class IceMage : CGameScript
 	float PROJSET_DURATION;
 	int RENDER_COUNT;
 	int SEARCH_RAD;
+	string SOUND_BLIZZARD;
+	string SOUND_DEATH;
+	string SOUND_FREEZE_BEAM;
+	string SOUND_FROSTBOLT;
+	string SOUND_STUCK1;
+	string SOUND_STUCK2;
+	string SOUND_SWIPE;
+	string SOUND_TELE;
 	string TELE_ANG;
 	string TELE_ANGS;
 	string TELE_DEST;
@@ -55,55 +92,55 @@ class IceMage : CGameScript
 
 	IceMage()
 	{
-		const string FREQ_TELE = Random(5, 10);
+		FREQ_TELE = Random(5, 10);
 		IS_UNHOLY = 1;
 		ANIM_IDLE = "idle";
 		ANIM_RUN = "run";
 		ANIM_WALK = "walk";
 		ANIM_ATTACK = "ref_shoot_staff";
 		ANIM_DEATH = "die_simple";
-		const string ANIM_IDLE_ALERT = "alert_idle";
-		const string ANIM_JUMP = "long_jump";
-		const string ANIM_FREEZE_RAY = "ref_shoot_rayspell";
-		const string ANIM_CAST = "cast";
-		const string ANIM_FLY = "jump";
-		const string ANIM_LOOK = "look";
-		const string ANIM_DEATH1 = "die_simple";
-		const string ANIM_DEATH2 = "die_backwards1";
-		const string ANIM_DEATH3 = "die_backwards";
-		const string ANIM_DEATH4 = "die_forwards";
-		const string ANIM_DEATH5 = "headshot";
-		const string ANIM_DEATH6 = "die_spin";
-		const string ANIM_DEATH7 = "gutshot";
+		ANIM_IDLE_ALERT = "alert_idle";
+		ANIM_JUMP = "long_jump";
+		ANIM_FREEZE_RAY = "ref_shoot_rayspell";
+		ANIM_CAST = "cast";
+		ANIM_FLY = "jump";
+		ANIM_LOOK = "look";
+		ANIM_DEATH1 = "die_simple";
+		ANIM_DEATH2 = "die_backwards1";
+		ANIM_DEATH3 = "die_backwards";
+		ANIM_DEATH4 = "die_forwards";
+		ANIM_DEATH5 = "headshot";
+		ANIM_DEATH6 = "die_spin";
+		ANIM_DEATH7 = "gutshot";
 		ATTACK_RANGE = 100;
 		ATTACK_HITRANGE = 170;
 		ATTACK_MOVERANGE = 300;
 		DROP_GOLD = 1;
 		DROP_GOLD_AMT = RandomInt(10, 20);
 		NPC_GIVE_EXP = 350;
-		const Vector3 LIGHT_COLOR = Vector3(200, 200, 255);
-		const int LIGHT_RAD = 96;
-		const string FINGER_ADJ = "$relpos($vec(0,MY_YAW,0),$vec(0,30,54))";
-		const string DMG_SWIPE = RandomInt(20, 50);
-		const string DMG_STAFF = RandomInt(100, 200);
-		const string DMG_BOLT = RandomInt(100, 200);
-		const string DMG_DOT_BOLT = RandomInt(30, 50);
-		const string DMG_SOLID = RandomInt(20, 30);
-		const int DMG_BEAM = 3;
-		const int FBEAM_RANGE = 1024;
-		const float ATTACK_HITCHANCE = 0.95;
-		const float FREQ_BOLT = 2.0;
-		const float FREQ_FREEZE = 1.0;
-		const float FREQ_FREEZE_SOUND = 1.6;
-		const int BOLT_SPEED = 300;
-		const string SOUND_SWIPE = "weapons/swingsmall.wav";
-		const string SOUND_DEATH = "voices/kcult_pain1.wav";
-		const string SOUND_FROSTBOLT = "magic/frost_pulse.wav";
-		const string SOUND_FREEZE_BEAM = "magic/freezeray_loop.wav";
-		const string SOUND_BLIZZARD = "doors/aliendoor3.wav";
-		const string SOUND_STUCK1 = "debris/glass1.wav";
-		const string SOUND_STUCK2 = "debris/glass2.wav";
-		const string SOUND_TELE = "magic/teleport.wav";
+		LIGHT_COLOR = Vector3(200, 200, 255);
+		LIGHT_RAD = 96;
+		FINGER_ADJ = "$relpos($vec(0,MY_YAW,0),$vec(0,30,54))";
+		DMG_SWIPE = RandomInt(20, 50);
+		DMG_STAFF = RandomInt(100, 200);
+		DMG_BOLT = RandomInt(100, 200);
+		DMG_DOT_BOLT = RandomInt(30, 50);
+		DMG_SOLID = RandomInt(20, 30);
+		DMG_BEAM = 3;
+		FBEAM_RANGE = 1024;
+		ATTACK_HITCHANCE = 0.95;
+		FREQ_BOLT = 2.0;
+		FREQ_FREEZE = 1.0;
+		FREQ_FREEZE_SOUND = 1.6;
+		BOLT_SPEED = 300;
+		SOUND_SWIPE = "weapons/swingsmall.wav";
+		SOUND_DEATH = "voices/kcult_pain1.wav";
+		SOUND_FROSTBOLT = "magic/frost_pulse.wav";
+		SOUND_FREEZE_BEAM = "magic/freezeray_loop.wav";
+		SOUND_BLIZZARD = "doors/aliendoor3.wav";
+		SOUND_STUCK1 = "debris/glass1.wav";
+		SOUND_STUCK2 = "debris/glass2.wav";
+		SOUND_TELE = "magic/teleport.wav";
 		Precache(SOUND_DEATH);
 	}
 
@@ -113,7 +150,7 @@ class IceMage : CGameScript
 		if (N_TELES > 0)
 		{
 		}
-		string LAST_TELE_DIFF = GetGameTime();
+		float LAST_TELE_DIFF = GetGameTime();
 		LAST_TELE_DIFF -= G_ICE_TELE;
 		if (LAST_TELE_DIFF > 5)
 		{
@@ -136,7 +173,7 @@ class IceMage : CGameScript
 		npcatk_settarget(NEW_TARGET);
 		if ((G_DEVELOPER_MODE))
 		{
-			SendInfoMessageToAll("green ICE_MAGE: found GetEntityName(NEW_TARGET) near FOUND_NEAR_TARGET");
+			SendInfoMessageToAll("green " + ICE_MAGE: + "found " + GetEntityName(NEW_TARGET) + "near " + FOUND_NEAR_TARGET);
 		}
 		string PICK_TELE = FOUND_NEAR_TARGET;
 		if (PICK_TELE == 1)
@@ -234,7 +271,7 @@ class IceMage : CGameScript
 			CallExternal(OWNER_ID, "ext_ice_mage_died");
 		}
 		Effect("beam", "update", BEAM_ID, "remove", 0.1);
-		string RND_DEATH = RandomInt(1, 7);
+		int RND_DEATH = RandomInt(1, 7);
 		if (RND_DEATH == 1)
 		{
 			ANIM_DEATH = ANIM_DEATH1;

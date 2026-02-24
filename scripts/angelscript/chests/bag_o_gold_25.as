@@ -7,7 +7,7 @@ namespace MS
 
 class BagOGold25 : CGameScript
 {
-	string GOLD_AMT;
+	int GOLD_AMT;
 
 	BagOGold25()
 	{

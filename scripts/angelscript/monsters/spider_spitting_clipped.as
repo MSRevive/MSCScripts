@@ -7,9 +7,11 @@ namespace MS
 
 class SpiderSpittingClipped : CGameScript
 {
+	int AM_CLIPPED;
+
 	SpiderSpittingClipped()
 	{
-		const int AM_CLIPPED = 1;
+		AM_CLIPPED = 1;
 	}
 
 }

@@ -8,16 +8,23 @@ namespace MS
 class ItemCharmW1 : CGameScript
 {
 	string CRYSTAL_ABORT_USE;
+	string PET_FAIL_MESSAGE;
+	int PET_MAXHP;
+	string PET_SEARCH;
+	string PET_TYPE;
+	string PET_YAY_MESSAGE;
+	int SKILL_LEVEL_REQ;
+	string SKILL_TYPE;
 
 	ItemCharmW1()
 	{
-		const int SKILL_LEVEL_REQ = 0;
-		const string SKILL_TYPE = "skill.spellcasting";
-		const string PET_TYPE = "wolf";
-		const string PET_SEARCH = "wolf";
-		const int PET_MAXHP = 100;
-		const string PET_FAIL_MESSAGE = "No wolves in range.";
-		const string PET_YAY_MESSAGE = "You now have a new pet wolf!";
+		SKILL_LEVEL_REQ = 0;
+		SKILL_TYPE = "skill.spellcasting";
+		PET_TYPE = "wolf";
+		PET_SEARCH = "wolf";
+		PET_MAXHP = 100;
+		PET_FAIL_MESSAGE = "No wolves in range.";
+		PET_YAY_MESSAGE = "You now have a new pet wolf!";
 	}
 
 	void crystal_spawn()
@@ -47,7 +54,7 @@ class ItemCharmW1 : CGameScript
 			if (GetEntityHealth(FOUND_PET) > PET_MAXHP)
 			{
 				CRYSTAL_ABORT_USE = 1;
-				SendColoredMessage(GetOwner(), "GetEntityName(FOUND_PET) is too strong to be charmed! It must be weakened first!");
+				SendColoredMessage(GetOwner(), GetEntityName(FOUND_PET) + " is too strong to be charmed! It must be weakened first!");
 				int EXIT_SUB = 1;
 			}
 			if (!(EXIT_SUB))
@@ -58,7 +65,7 @@ class ItemCharmW1 : CGameScript
 		else
 		{
 			CRYSTAL_ABORT_USE = 1;
-			SendColoredMessage(GetOwner(), "PET_FAIL_MESSAGE");
+			SendColoredMessage(GetOwner(), PET_FAIL_MESSAGE);
 		}
 	}
 
@@ -66,7 +73,7 @@ class ItemCharmW1 : CGameScript
 	{
 		CallExternal(GetEntityIndex(GetOwner()), "set_spawn_point", NEW_SPAWN_POS);
 		Effect("screenfade", GetOwner(), 0.5, 1, Vector3(255, 255, 255), 255, "fadein");
-		SendInfoMsg(GetOwner(), "PET PET_YAY_MESSAGE");
+		SendInfoMsg(GetOwner(), PET + PET_YAY_MESSAGE);
 		EmitSound(GetOwner(), 0, "magic/spawn.wav", 10);
 	}
 

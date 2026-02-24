@@ -5,13 +5,16 @@ namespace MS
 
 class BaseVariedAttacks : CGameScript
 {
+	int BV_EXTRA_ANIM_STAB;
+	int BV_EXTRA_ANIM_SWIPE;
+	int BV_REGULAR_ATTACK_ANIM;
 	string CUR_ATTACK_ANIM;
 
 	BaseVariedAttacks()
 	{
-		const int BV_EXTRA_ANIM_STAB = 6;
-		const int BV_EXTRA_ANIM_SWIPE = 5;
-		const int BV_REGULAR_ATTACK_ANIM = 2;
+		BV_EXTRA_ANIM_STAB = 6;
+		BV_EXTRA_ANIM_SWIPE = 5;
+		BV_REGULAR_ATTACK_ANIM = 2;
 	}
 
 	void check_attack_anim()

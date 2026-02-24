@@ -10,11 +10,21 @@ class KChildre : CGameScript
 	int AM_CRAWLING;
 	int AM_INVISIBLE;
 	string ANIM_ATTACK;
+	string ANIM_CRAWL;
 	string ANIM_DEATH;
+	string ANIM_DEATH_BACK1;
+	string ANIM_DEATH_BACK2;
+	string ANIM_DEATH_CROUCH;
+	string ANIM_DEATH_FORWARD1;
 	string ANIM_FLINCH;
 	string ANIM_IDLE;
+	string ANIM_IDLE_CROUCH;
+	string ANIM_IDLE_NORM;
+	string ANIM_JUMP;
 	string ANIM_RUN;
+	string ANIM_RUN_NORM;
 	string ANIM_WALK;
+	string ANIM_WALK_NORM;
 	string AS_ATTACKING;
 	int ATTACK_HITCHANCE;
 	int ATTACK_HITRANGE;
@@ -22,9 +32,10 @@ class KChildre : CGameScript
 	int ATTACK_RANGE;
 	int CAN_FLINCH;
 	string DID_WARCRY;
+	int DMG_SWIPE;
 	int DOING_FADE;
 	int DROP_GOLD;
-	string DROP_GOLD_AMT;
+	int DROP_GOLD_AMT;
 	int FADE_STEP;
 	string FADE_TARGET;
 	int FIREBALL_AMMO;
@@ -34,10 +45,36 @@ class KChildre : CGameScript
 	int FLINCH_CHANCE;
 	float FLINCH_DELAY;
 	int FLINCH_HEALTH;
+	float FREQ_FADE;
+	int FREQ_FIREBALL;
+	float FREQ_IDLE;
+	float FREQ_JUMP;
+	float FREQ_RELOAD;
 	int IS_UNHOLY;
 	string NEXT_FADE;
 	int NO_STEP_ADJ;
 	int NPC_GIVE_EXP;
+	string PROJECTILE_SCRIPT;
+	string SOUND_DEATH;
+	string SOUND_FADE;
+	string SOUND_FIREBALL;
+	string SOUND_FLINCH;
+	string SOUND_IDLE1;
+	string SOUND_IDLE2;
+	string SOUND_IDLE3;
+	string SOUND_PAIN1;
+	string SOUND_PAIN2;
+	string SOUND_PARRY;
+	string SOUND_STEP1;
+	string SOUND_STEP2;
+	string SOUND_STRUCK1;
+	string SOUND_STRUCK2;
+	string SOUND_SWING_HIT1;
+	string SOUND_SWING_HIT2;
+	string SOUND_SWING_MISS1;
+	string SOUND_SWING_MISS2;
+	string SOUND_UNFADE;
+	string SOUND_WARCRY;
 	int STARTED_CYCLES;
 	int STEP_SIZE_NORM;
 	int SWIPE_ATTACK;
@@ -51,53 +88,53 @@ class KChildre : CGameScript
 		ANIM_IDLE = "idle1";
 		ANIM_ATTACK = "ability1_alien";
 		ANIM_DEATH = "death1_die";
-		const string ANIM_IDLE_NORM = "idle1";
-		const string ANIM_IDLE_CROUCH = "crouch_idle";
-		const string ANIM_WALK_NORM = "walk";
-		const string ANIM_RUN_NORM = "run";
-		const string ANIM_CRAWL = "crawl";
+		ANIM_IDLE_NORM = "idle1";
+		ANIM_IDLE_CROUCH = "crouch_idle";
+		ANIM_WALK_NORM = "walk";
+		ANIM_RUN_NORM = "run";
+		ANIM_CRAWL = "crawl";
 		ANIM_FLINCH = "new_flinch";
-		const string ANIM_JUMP = "jump";
-		const string ANIM_DEATH_BACK1 = "death1_die";
-		const string ANIM_DEATH_BACK2 = "back_die";
-		const string ANIM_DEATH_FORWARD1 = "forward_die";
-		const string ANIM_DEATH_CROUCH = "crouch_die";
+		ANIM_JUMP = "jump";
+		ANIM_DEATH_BACK1 = "death1_die";
+		ANIM_DEATH_BACK2 = "back_die";
+		ANIM_DEATH_FORWARD1 = "forward_die";
+		ANIM_DEATH_CROUCH = "crouch_die";
 		ATTACK_RANGE = 125;
 		ATTACK_HITRANGE = 200;
 		ATTACK_MOVERANGE = 100;
 		DROP_GOLD = 1;
 		DROP_GOLD_AMT = RandomInt(10, 40);
 		NO_STEP_ADJ = 1;
-		const string PROJECTILE_SCRIPT = "proj_fire_ball";
+		PROJECTILE_SCRIPT = "proj_fire_ball";
 		ATTACK_HITCHANCE = 90;
-		const string FREQ_FADE = Random(5.0, 20.0);
-		const string FREQ_FIREBALL = RandomInt(2, 8);
-		const float FREQ_RELOAD = 30.0;
+		FREQ_FADE = Random(5.0, 20.0);
+		FREQ_FIREBALL = RandomInt(2, 8);
+		FREQ_RELOAD = 30.0;
 		FIREBALL_AMMO = 3;
-		const string DMG_SWIPE = RandomInt(40, 100);
-		const string FREQ_IDLE = Random(5, 10);
-		const string FREQ_JUMP = Random(2, 5);
+		DMG_SWIPE = RandomInt(40, 100);
+		FREQ_IDLE = Random(5, 10);
+		FREQ_JUMP = Random(2, 5);
 		STEP_SIZE_NORM = 64;
-		const string SOUND_FIREBALL = "magic/fireball_strike.wav";
-		const string SOUND_FLINCH = "monsters/gonome/gonome_pain3.wav";
-		const string SOUND_WARCRY = "monsters/gonome/gonome_melee1.wav";
-		const string SOUND_FADE = "monsters/gonome/gonome_melee2.wav";
-		const string SOUND_UNFADE = "monsters/gonome/gonome_death3.wav";
-		const string SOUND_STRUCK1 = "debris/flesh1.wav";
-		const string SOUND_STRUCK2 = "debris/flesh2.wav";
-		const string SOUND_PAIN1 = "monsters/gonome/gonome_jumpattack.wav";
-		const string SOUND_PAIN2 = "monsters/gonome/gonome_melee1.wav";
-		const string SOUND_SWING_MISS1 = "zombie/claw_miss1.wav";
-		const string SOUND_SWING_MISS2 = "zombie/claw_miss2.wav";
-		const string SOUND_SWING_HIT1 = "zombie/claw_strike1.wav";
-		const string SOUND_SWING_HIT2 = "zombie/claw_strike2.wav";
-		const string SOUND_STEP1 = "common/npc_step1.wav";
-		const string SOUND_STEP2 = "common/npc_step2.wav";
-		const string SOUND_IDLE1 = "monsters/gonome/gonome_idle1.wav";
-		const string SOUND_IDLE2 = "monsters/gonome/gonome_idle2.wav";
-		const string SOUND_IDLE3 = "monsters/gonome/gonome_idle3.wav";
-		const string SOUND_PARRY = "weapons/axemetal1.wav";
-		const string SOUND_DEATH = "bullchicken/bc_die2.wav";
+		SOUND_FIREBALL = "magic/fireball_strike.wav";
+		SOUND_FLINCH = "monsters/gonome/gonome_pain3.wav";
+		SOUND_WARCRY = "monsters/gonome/gonome_melee1.wav";
+		SOUND_FADE = "monsters/gonome/gonome_melee2.wav";
+		SOUND_UNFADE = "monsters/gonome/gonome_death3.wav";
+		SOUND_STRUCK1 = "debris/flesh1.wav";
+		SOUND_STRUCK2 = "debris/flesh2.wav";
+		SOUND_PAIN1 = "monsters/gonome/gonome_jumpattack.wav";
+		SOUND_PAIN2 = "monsters/gonome/gonome_melee1.wav";
+		SOUND_SWING_MISS1 = "zombie/claw_miss1.wav";
+		SOUND_SWING_MISS2 = "zombie/claw_miss2.wav";
+		SOUND_SWING_HIT1 = "zombie/claw_strike1.wav";
+		SOUND_SWING_HIT2 = "zombie/claw_strike2.wav";
+		SOUND_STEP1 = "common/npc_step1.wav";
+		SOUND_STEP2 = "common/npc_step2.wav";
+		SOUND_IDLE1 = "monsters/gonome/gonome_idle1.wav";
+		SOUND_IDLE2 = "monsters/gonome/gonome_idle2.wav";
+		SOUND_IDLE3 = "monsters/gonome/gonome_idle3.wav";
+		SOUND_PARRY = "weapons/axemetal1.wav";
+		SOUND_DEATH = "bullchicken/bc_die2.wav";
 		Precache(SOUND_DEATH);
 	}
 
@@ -351,7 +388,7 @@ class KChildre : CGameScript
 
 	void OnFlinch()
 	{
-		string RND_FLINCH = RandomInt(1, 2);
+		int RND_FLINCH = RandomInt(1, 2);
 		if (RND_FLINCH == 1)
 		{
 			FLINCH_ANIM = ANIM_FLINCH1;
@@ -377,7 +414,7 @@ class KChildre : CGameScript
 		}
 		if (GetEntityRange(m_hLastStruck) <= 256)
 		{
-			string RND_DEATH = RandomInt(1, 2);
+			int RND_DEATH = RandomInt(1, 2);
 			if (RND_DEATH == 1)
 			{
 				ANIM_DEATH = ANIM_DEATH_BACK1;

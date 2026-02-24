@@ -34,7 +34,7 @@ class Beams : CGameScript
 
 	void set_beam_type()
 	{
-		CallExternal(MY_ITEM, "set_beam_type", /* TODO: $pass */ $pass(param2));
+		CallExternal(MY_ITEM, "set_beam_type", param2);
 		if (param2 == 2)
 		{
 			MENU_TYPE = 2;
@@ -192,7 +192,7 @@ class Beams : CGameScript
 
 	void set_damager()
 	{
-		CallExternal(MY_ITEM, "set_damager", /* TODO: $pass */ $pass(param2));
+		CallExternal(MY_ITEM, "set_damager", param2);
 	}
 
 }

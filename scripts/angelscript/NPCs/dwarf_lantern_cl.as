@@ -10,14 +10,18 @@ class DwarfLanternCl : CGameScript
 	string FX_DURATION;
 	string FX_HAND;
 	string FX_OWNER;
+	int GLOW_RAD;
+	string LEFT_HAND;
 	string LIGHT_ID;
+	string RIGHT_HAND;
+	string SPRITE_NAME;
 
 	DwarfLanternCl()
 	{
-		const string RIGHT_HAND = /* TODO: $getcl */ $getcl(FX_OWNER, "attachment0");
-		const string LEFT_HAND = /* TODO: $getcl */ $getcl(FX_OWNER, "attachment1");
-		const int GLOW_RAD = 128;
-		const string SPRITE_NAME = "3dmflagry.spr";
+		RIGHT_HAND = /* TODO: $getcl */ $getcl(FX_OWNER, "attachment0");
+		LEFT_HAND = /* TODO: $getcl */ $getcl(FX_OWNER, "attachment1");
+		GLOW_RAD = 128;
+		SPRITE_NAME = "3dmflagry.spr";
 	}
 
 	void client_activate()

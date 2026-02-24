@@ -16,13 +16,15 @@ class Quake : CGameScript
 	string QUAKE_END_TIME;
 	int QUAKE_GLOBAL;
 	string QUAKE_TARGS;
+	string SOUND_QUAKE_LOOP;
+	string SOUND_QUAKE_START;
 
 	Quake()
 	{
 		QUAKE_AOE = 512;
 		QUAKE_DURATION = 10.0;
-		const string SOUND_QUAKE_START = "magic/volcano_start.wav";
-		const string SOUND_QUAKE_LOOP = "magic/volcano_loop.wav";
+		SOUND_QUAKE_START = "magic/volcano_start.wav";
+		SOUND_QUAKE_LOOP = "magic/volcano_loop.wav";
 	}
 
 	void game_precache()
@@ -102,9 +104,9 @@ class Quake : CGameScript
 	{
 		string CUR_IDX = i;
 		string CUR_EVENT = GetToken(DO_EVENTS, CUR_IDX, ";");
-		if (CUR_IDX < /* TODO: $math(subtract) */ GetTokenCount(DO_EVENTS, ";"))
+		if (CUR_IDX < (GetTokenCount(DO_EVENTS, ";") - 1))
 		{
-			string PARAM_OUT = GetToken(DO_EVENTS, /* TODO: $math(add) */ CUR_IDX, ";");
+			string PARAM_OUT = GetToken(DO_EVENTS, (CUR_IDX + 1), ";");
 		}
 		CUR_EVENT(PARAM_OUT);
 	}
@@ -157,7 +159,7 @@ class Quake : CGameScript
 		if (!(QUAKE_GLOBAL))
 		{
 			ScheduleDelayedEvent(0.1, "quake_loop");
-			Effect("screenshake", GetEntityOrigin(GetOwner()), 50, 10, QUAKE_DURATION, /* TODO: $math(multiply) */ QUAKE_AOE);
+			Effect("screenshake", GetEntityOrigin(GetOwner()), 50, 10, QUAKE_DURATION, (QUAKE_AOE * 1.5));
 			ClientEvent("new", "all", "effects/sfx_quake", GetEntityIndex(GetOwner()), 1, QUAKE_AOE, QUAKE_DURATION);
 		}
 		else

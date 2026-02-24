@@ -5,12 +5,13 @@ namespace MS
 
 class BoomBlock : CGameScript
 {
+	int EFFECT_DIST;
 	string NPC_HOME_LOC;
 	int PLAYING_DEAD;
 
 	BoomBlock()
 	{
-		const int EFFECT_DIST = 1024;
+		EFFECT_DIST = 1024;
 	}
 
 	void OnSpawn() override

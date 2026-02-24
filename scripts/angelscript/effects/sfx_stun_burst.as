@@ -7,10 +7,13 @@ namespace MS
 
 class SfxStunBurst : CGameScript
 {
+	string SOUND_BURST;
+	string SPRITE_COLOR;
+
 	SfxStunBurst()
 	{
-		const Vector3 SPRITE_COLOR = Vector3(0, 0, 255);
-		const string SOUND_BURST = "magic/boom.wav";
+		SPRITE_COLOR = Vector3(0, 0, 255);
+		SOUND_BURST = "magic/boom.wav";
 		Precache(SOUND_BURST);
 	}
 

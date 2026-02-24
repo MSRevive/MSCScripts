@@ -7,10 +7,13 @@ namespace MS
 
 class ItemSewernote : CGameScript
 {
+	string MODEL_HANDS;
+	string MODEL_WORLD;
+
 	ItemSewernote()
 	{
-		const string MODEL_WORLD = "garbagegibs.mdl";
-		const string MODEL_HANDS = "misc/p_misc.mdl";
+		MODEL_WORLD = "garbagegibs.mdl";
+		MODEL_HANDS = "misc/p_misc.mdl";
 	}
 
 	void miscitem_spawn()

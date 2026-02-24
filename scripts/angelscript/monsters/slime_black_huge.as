@@ -8,9 +8,15 @@ namespace MS
 class SlimeBlackHuge : CGameScript
 {
 	string ANIM_RUN;
+	float ATTACK_DAMAGE;
+	float ATTACK_HITCHANCE;
 	int ATTACK_HITRANGE;
 	int ATTACK_RANGE;
+	int CHILD_DIST;
+	string CHILD_SCRIPT;
 	int MOVE_RANGE;
+	int NO_COMBAT_REPOS;
+	int NPC_BASE_EXP;
 	int NPC_GIVE_EXP;
 
 	SlimeBlackHuge()
@@ -18,13 +24,13 @@ class SlimeBlackHuge : CGameScript
 		MOVE_RANGE = 50;
 		ATTACK_RANGE = 100;
 		ATTACK_HITRANGE = 150;
-		const float ATTACK_HITCHANCE = 0.8;
-		const string ATTACK_DAMAGE = Random(20, 50);
+		ATTACK_HITCHANCE = 0.8;
+		ATTACK_DAMAGE = Random(20, 50);
 		ANIM_RUN = "walk";
-		const string CHILD_SCRIPT = "monsters/slime_black_large2";
-		const int CHILD_DIST = 30;
-		const int NO_COMBAT_REPOS = 1;
-		const int NPC_BASE_EXP = 150;
+		CHILD_SCRIPT = "monsters/slime_black_large2";
+		CHILD_DIST = 30;
+		NO_COMBAT_REPOS = 1;
+		NPC_BASE_EXP = 150;
 		Precache("monsters/slime_large.mdl");
 	}
 

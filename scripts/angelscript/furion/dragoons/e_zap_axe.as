@@ -7,10 +7,13 @@ namespace MS
 
 class EZapAxe : CGameScript
 {
+	int ELEMENT;
+	int WEAPON;
+
 	EZapAxe()
 	{
-		const int WEAPON = 4;
-		const int ELEMENT = 3;
+		WEAPON = 4;
+		ELEMENT = 3;
 	}
 
 }

@@ -10,18 +10,22 @@ namespace MS
 class Drunk : CGameScript
 {
 	int CAUGHT;
+	int CHAT_AUTO_FACE;
+	int CHAT_AUTO_HAIL;
+	int CHAT_FACE_ON_USE;
+	int CHAT_USE_CONV_ANIMS;
 	int DRUNKARD_QUEST;
 	int QUEST_DONE;
-	string ROB_ATTEMPT;
+	int ROB_ATTEMPT;
 	int SAID_HI;
 	string Thief;
 
 	Drunk()
 	{
-		const int CHAT_AUTO_HAIL = 1;
-		const int CHAT_USE_CONV_ANIMS = 0;
-		const int CHAT_AUTO_FACE = 0;
-		const int CHAT_FACE_ON_USE = 0;
+		CHAT_AUTO_HAIL = 1;
+		CHAT_USE_CONV_ANIMS = 0;
+		CHAT_AUTO_FACE = 0;
+		CHAT_FACE_ON_USE = 0;
 	}
 
 	void OnSpawn() override

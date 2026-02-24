@@ -7,10 +7,13 @@ namespace MS
 
 class ZapSword : CGameScript
 {
+	int ELEMENT;
+	int WEAPON;
+
 	ZapSword()
 	{
-		const int WEAPON = 3;
-		const int ELEMENT = 3;
+		WEAPON = 3;
+		ELEMENT = 3;
 	}
 
 }

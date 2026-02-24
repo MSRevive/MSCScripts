@@ -9,6 +9,8 @@ class Rogue : CGameScript
 {
 	string ANIM_RUN;
 	string ANIM_WALK;
+	int ATTACK1_DAMAGE;
+	float ATTACK_ACCURACY;
 	int ATTACK_HITRANGE;
 	int ATTACK_RANGE;
 	int CAN_HUNT;
@@ -16,27 +18,35 @@ class Rogue : CGameScript
 	int HUNT_AGRO;
 	int MOVE_RANGE;
 	int NPC_GIVE_EXP;
+	float RETALIATE_CHANGETARGET_CHANCE;
+	string SOUND_ATTACK1;
+	string SOUND_ATTACK2;
+	string SOUND_DEATH;
+	string SOUND_PAIN;
+	string SOUND_STRUCK1;
+	string SOUND_STRUCK2;
+	string SOUND_STRUCK3;
 
 	Rogue()
 	{
-		const string SOUND_STRUCK1 = "weapons/cbar_hitbod1.wav";
-		const string SOUND_STRUCK2 = "player/armhit1.wav";
-		const string SOUND_STRUCK3 = "player/leghit1.wav";
-		const string SOUND_PAIN = "player/chesthit1.wav";
-		const string SOUND_ATTACK1 = "player/jab1.wav";
-		const string SOUND_ATTACK2 = "player/jab2.wav";
-		const string SOUND_DEATH = "player/stomachhit1.wav";
+		SOUND_STRUCK1 = "weapons/cbar_hitbod1.wav";
+		SOUND_STRUCK2 = "player/armhit1.wav";
+		SOUND_STRUCK3 = "player/leghit1.wav";
+		SOUND_PAIN = "player/chesthit1.wav";
+		SOUND_ATTACK1 = "player/jab1.wav";
+		SOUND_ATTACK2 = "player/jab2.wav";
+		SOUND_DEATH = "player/stomachhit1.wav";
 		ANIM_RUN = "run";
 		ANIM_WALK = "walk";
-		const int ATTACK1_DAMAGE = 4;
+		ATTACK1_DAMAGE = 4;
 		MOVE_RANGE = 64;
 		ATTACK_RANGE = 100;
 		ATTACK_HITRANGE = 130;
-		const float ATTACK_ACCURACY = 0.6;
+		ATTACK_ACCURACY = 0.6;
 		CAN_HUNT = 1;
 		HUNT_AGRO = 1;
 		FLINCH_CHANCE = 12;
-		const float RETALIATE_CHANGETARGET_CHANCE = 0.25;
+		RETALIATE_CHANGETARGET_CHANCE = 0.25;
 	}
 
 	void OnSpawn() override

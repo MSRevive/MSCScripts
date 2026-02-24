@@ -7,20 +7,29 @@ namespace MS
 
 class BaseItem : CGameScript
 {
+	int ANIM_IDLE1;
+	int ANIM_IDLE2;
+	int ANIM_IDLE3;
+	int ANIM_IDLE4;
+	int ANIM_IDLE5;
+	int ANIM_IDLE_DELAY_HIGH;
+	int ANIM_IDLE_DELAY_LOW;
+	int ANIM_LIFT1;
+	string PLAYERANIM_AIM;
 	int baseitem.canidle;
 
 	BaseItem()
 	{
-		const int ANIM_LIFT1 = 0;
-		const int ANIM_IDLE1 = 0;
-		const int ANIM_IDLE2 = 0;
-		const int ANIM_IDLE3 = 0;
-		const int ANIM_IDLE4 = 0;
-		const int ANIM_IDLE5 = 0;
-		const int ANIM_IDLE_DELAY_LOW = 2;
-		const int ANIM_IDLE_DELAY_HIGH = 5;
+		ANIM_LIFT1 = 0;
+		ANIM_IDLE1 = 0;
+		ANIM_IDLE2 = 0;
+		ANIM_IDLE3 = 0;
+		ANIM_IDLE4 = 0;
+		ANIM_IDLE5 = 0;
+		ANIM_IDLE_DELAY_LOW = 2;
+		ANIM_IDLE_DELAY_HIGH = 5;
 		baseitem.canidle = 1;
-		const string PLAYERANIM_AIM = "blunt";
+		PLAYERANIM_AIM = "blunt";
 	}
 
 	void OnSpawn() override
@@ -81,7 +90,7 @@ class BaseItem : CGameScript
 		if (("game.item.attacking")) return;
 		if (!("game.item.inhand")) return;
 		if (!(baseitem.canidle)) return;
-		string l.anim = RandomInt(1, ANIM_IDLE_TOTAL);
+		int l.anim = RandomInt(1, ANIM_IDLE_TOTAL);
 		if (l.anim == 1)
 		{
 			PlayViewAnim(ANIM_IDLE1);

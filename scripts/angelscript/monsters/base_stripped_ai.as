@@ -81,7 +81,7 @@ class BaseStrippedAi : CGameScript
 			string INFO_TITLE = "A CRITICAL NPC HAS DIED!";
 			string INFO_MSG = GetEntityName(GetOwner());
 			INFO_MSG += " has been slain! ";
-			SendInfoMsg("all", "INFO_TITLE INFO_MSG");
+			SendInfoMsg("all", INFO_TITLE + INFO_MSG);
 			CallExternal(GAME_MASTER, "gm_crit_npc_died", GetEntityIndex(GetOwner()), GetEntityIndex(m_hLastStruck));
 		}
 		npc_death();
@@ -122,7 +122,7 @@ class BaseStrippedAi : CGameScript
 			{
 				string OUT_MSG = NPC_DEATH_MSG;
 			}
-			SendColoredMessage(GetEntityIndex(m_hLastStruck), "OUT_MSG");
+			SendColoredMessage(GetEntityIndex(m_hLastStruck), OUT_MSG);
 		}
 		ClearFX();
 	}

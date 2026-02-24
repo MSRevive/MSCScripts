@@ -171,7 +171,7 @@ class Msqguard : CGameScript
 	void game_recvoffer_gold()
 	{
 		ReceiveOffer("reject");
-		SayText("A bribe?? I should expect more upstanding behavior than that , citizen.");
+		SayText(A + "bribe?? " + I + " should expect more upstanding behavior than that , citizen.");
 		PlayAnim("once", "no");
 	}
 
@@ -189,13 +189,13 @@ class Msqguard : CGameScript
 		SayText("If you see anything suspicious around here , you let me know.");
 		if (!(THIEF_QUEST == 3)) return;
 		THIEF_QUEST = 6;
-		SayText("If you see any thieves , try bribing them for information , or give threats that I will lock them up for good.");
+		SayText("If you see any thieves , try bribing them for information , or give threats that " + I + " will lock them up for good.");
 		ScheduleDelayedEvent(4, "say_thief2");
 	}
 
 	void say_thief2()
 	{
-		SayText("Aye , I will have them thieves locked up , if not killed should I get my hands on them.");
+		SayText("Aye , " + I + "will have them thieves locked up , if not killed should " + I + " get my hands on them.");
 	}
 
 	void say_thiefloc()
@@ -222,7 +222,7 @@ class Msqguard : CGameScript
 		Say("guardwarn");
 		string QUEST_WINNER_NAME = GetEntityName(QUEST_WINNER);
 		QUEST_WINNER_NAME += ",";
-		SayText("Here's some incentive. Be wary, QUEST_WINNER_NAME it is dangerous outside.");
+		SayText("Here's some incentive. Be wary, " + QUEST_WINNER_NAME + " it is dangerous outside.");
 		// TODO: offer QUEST_WINNER gold 30
 	}
 

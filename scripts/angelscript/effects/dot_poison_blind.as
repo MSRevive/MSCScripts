@@ -7,12 +7,17 @@ namespace MS
 
 class DotPoisonBlind : CGameScript
 {
+	string DOT_HE_IMMUNE;
+	string DOT_IM_AFFECTED;
+	string DOT_IM_RESIST;
+	string EFFECT_SCRIPT;
+
 	DotPoisonBlind()
 	{
-		const string EFFECT_SCRIPT = currentscript;
-		const string DOT_IM_AFFECTED = "The poison blinds you!";
-		const string DOT_IM_RESIST = "You resist the poison.";
-		const string DOT_HE_IMMUNE = "is immune to poison!";
+		EFFECT_SCRIPT = currentscript;
+		DOT_IM_AFFECTED = "The poison blinds you!";
+		DOT_IM_RESIST = "You resist the poison.";
+		DOT_HE_IMMUNE = "is immune to poison!";
 	}
 
 	void dot_effect()

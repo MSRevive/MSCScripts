@@ -8,23 +8,30 @@ namespace MS
 
 class SurvivorAlfgar : CGameScript
 {
+	int ATTACK_DAMAGE_HIGH;
+	int ATTACK_DAMAGE_LOW;
+	float ATTACK_HITCHANCE;
+	int CHAT_AUTO_HAIL;
 	int CHAT_MENU_ON;
 	int DROP_GOLD;
 	int DROP_GOLD_MAX;
 	int DROP_GOLD_MIN;
 	int NPC_GIVE_EXP;
+	int SKEL_HP;
+	int SKEL_RESPAWN_CHANCE;
+	int SKEL_RESPAWN_LIVES;
 	int ZOMBIFIED;
 
 	SurvivorAlfgar()
 	{
-		const int CHAT_AUTO_HAIL = 1;
-		const int SKEL_HP = 1000;
-		const float ATTACK_HITCHANCE = 0.8;
-		const int ATTACK_DAMAGE_LOW = 20;
-		const int ATTACK_DAMAGE_HIGH = 50;
+		CHAT_AUTO_HAIL = 1;
+		SKEL_HP = 1000;
+		ATTACK_HITCHANCE = 0.8;
+		ATTACK_DAMAGE_LOW = 20;
+		ATTACK_DAMAGE_HIGH = 50;
 		NPC_GIVE_EXP = 400;
-		const int SKEL_RESPAWN_CHANCE = 0;
-		const int SKEL_RESPAWN_LIVES = 0;
+		SKEL_RESPAWN_CHANCE = 0;
+		SKEL_RESPAWN_LIVES = 0;
 		DROP_GOLD = 1;
 		DROP_GOLD_MIN = 10;
 		DROP_GOLD_MAX = 15;

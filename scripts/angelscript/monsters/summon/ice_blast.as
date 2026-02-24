@@ -7,31 +7,44 @@ namespace MS
 
 class IceBlast : CGameScript
 {
+	int ATTACK_RADIUS;
+	int BALL_SPEED;
+	string BLAST_MODEL;
 	string FINAL_DEST;
 	string FREEZE_DURATION;
 	int FREEZING;
+	int FWD_SPEED;
+	float HUM_LENGTH;
 	string ICE_OLD_POS;
 	string IGNORE_TARGET;
+	string LIGHTNING_SPRITE;
+	int MODEL_BODY_OFS;
 	string MY_OWNER;
 	string NPC_NOCLIP_DEST;
 	string OWNER_ANGLES;
 	string PLAYER_SPAWNED;
+	string PROJ_ANIM_IDLE;
+	string SOUND_HUM;
+	string SOUND_ZAP1;
+	string SOUND_ZAP2;
+	string SOUND_ZAP3;
+	float STUCKCHECK_FREQ;
 
 	IceBlast()
 	{
-		const string SOUND_HUM = "magic/pulsemachine_noloop.wav";
-		const float HUM_LENGTH = 1.7;
-		const float STUCKCHECK_FREQ = 0.5;
-		const string BLAST_MODEL = "weapons/projectiles.mdl";
-		const int MODEL_BODY_OFS = 1;
-		const string PROJ_ANIM_IDLE = "idle_iceball";
-		const string SOUND_ZAP1 = "debris/beamstart14.wav";
-		const string SOUND_ZAP2 = "debris/beamstart14.wav";
-		const string SOUND_ZAP3 = "debris/zap1.wav";
-		const int BALL_SPEED = 100;
-		const string LIGHTNING_SPRITE = "lgtning.spr";
-		const int ATTACK_RADIUS = 196;
-		const int FWD_SPEED = 10;
+		SOUND_HUM = "magic/pulsemachine_noloop.wav";
+		HUM_LENGTH = 1.7;
+		STUCKCHECK_FREQ = 0.5;
+		BLAST_MODEL = "weapons/projectiles.mdl";
+		MODEL_BODY_OFS = 1;
+		PROJ_ANIM_IDLE = "idle_iceball";
+		SOUND_ZAP1 = "debris/beamstart14.wav";
+		SOUND_ZAP2 = "debris/beamstart14.wav";
+		SOUND_ZAP3 = "debris/zap1.wav";
+		BALL_SPEED = 100;
+		LIGHTNING_SPRITE = "lgtning.spr";
+		ATTACK_RADIUS = 196;
+		FWD_SPEED = 10;
 	}
 
 	void game_dynamically_created()
@@ -109,7 +122,7 @@ class IceBlast : CGameScript
 			{
 			}
 			string TARG_NAME = GetEntityName(m_hLastSeen);
-			SendPlayerMessage(MY_OWNER, "TARG_NAME is too strong to be affected.");
+			SendPlayerMessage(MY_OWNER, TARG_NAME + " is too strong to be affected.");
 		}
 		IGNORE_TARGET = GetEntityIndex(m_hLastSeen);
 	}

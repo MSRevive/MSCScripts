@@ -7,10 +7,13 @@ namespace MS
 
 class CrestWildfire : CGameScript
 {
+	int MODEL_CREST_OFS;
+	string MODEL_WEAR;
+
 	CrestWildfire()
 	{
-		const int MODEL_CREST_OFS = 5;
-		const string MODEL_WEAR = "armor/p_gowns.mdl";
+		MODEL_CREST_OFS = 5;
+		MODEL_WEAR = "armor/p_gowns.mdl";
 	}
 
 	void crest_spawn()

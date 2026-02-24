@@ -37,7 +37,7 @@ class BaseCrystal : CGameScript
 			string S_REQ = "(";
 			S_REQ += SKILL_LEVEL_REQ;
 			S_REQ += ")";
-			SendColoredMessage(GetOwner(), "You lack the arcane skills to activate this crystal's magic. S_REQ");
+			SendColoredMessage(GetOwner(), "You lack the arcane skills to activate this crystal's magic. " + S_REQ);
 		}
 		else
 		{

@@ -5,11 +5,15 @@ namespace MS
 
 class MetaPerks : CGameScript
 {
+	string PLR_DEVELOPER;
+	string PLR_DONATOR;
+	string PLR_HAS_TROLLCANO;
+
 	MetaPerks()
 	{
-		const string PLR_DONATOR = /* TODO: $func */ $func("func_donator");
-		const string PLR_DEVELOPER = /* TODO: $func */ $func("func_developer");
-		const string PLR_HAS_TROLLCANO = /* TODO: $func */ $func("func_troll");
+		PLR_DONATOR = "func_donator"();
+		PLR_DEVELOPER = "func_developer"();
+		PLR_HAS_TROLLCANO = "func_troll"();
 	}
 
 	void list_cheaters()
@@ -67,7 +71,7 @@ class MetaPerks : CGameScript
 	{
 		int L_DONATED = 0;
 		string L_STEAM = GetPlayerAuthId(GetOwner());
-		if (/* TODO: $g_get_arrayfind */ $g_get_arrayfind(G_ARRAY_DONATORS, L_STEAM) > -1)
+		if (FindInGlobalArray(G_ARRAY_DONATORS, L_STEAM, 0) > -1)
 		{
 			int L_DONATED = 1;
 		}
@@ -79,7 +83,7 @@ class MetaPerks : CGameScript
 	{
 		int L_DEV = 0;
 		string L_STEAM = GetPlayerAuthId(GetOwner());
-		if (/* TODO: $g_get_arrayfind */ $g_get_arrayfind(G_ARRAY_DEVELOPERS, L_STEAM) > -1)
+		if (FindInGlobalArray(G_ARRAY_DEVELOPERS, L_STEAM, 0) > -1)
 		{
 			int L_DEV = 1;
 		}

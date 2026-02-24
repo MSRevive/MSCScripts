@@ -9,12 +9,13 @@ class Mayor : CGameScript
 {
 	int ASKED_GUILD;
 	string IMPOSTER;
+	int NO_RUMOR;
 	int OVER;
 	string SOUND_HELP;
 
 	Mayor()
 	{
-		const int NO_RUMOR = 1;
+		NO_RUMOR = 1;
 	}
 
 	void OnSpawn() override

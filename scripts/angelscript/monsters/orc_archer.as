@@ -8,13 +8,18 @@ namespace MS
 
 class OrcArcher : CGameScript
 {
+	int AIM_RATIO;
 	string ANIM_ATTACK;
+	int ARROW_DAMAGE_HIGH;
+	int ARROW_DAMAGE_LOW;
+	int ATTACK_CONE_OF_FIRE;
 	int ATTACK_RANGE;
+	int ATTACK_SPEED;
 	float CONTAINER_DROP_CHANCE;
 	string CONTAINER_SCRIPT;
 	int DROPS_CONTAINER;
 	int DROP_GOLD;
-	string DROP_GOLD_AMT;
+	int DROP_GOLD_AMT;
 	string DROP_ITEM1;
 	float DROP_ITEM1_CHANCE;
 	string DROP_ITEM2;
@@ -28,13 +33,13 @@ class OrcArcher : CGameScript
 		DROP_GOLD_AMT = RandomInt(2, 8);
 		NPC_GIVE_EXP = 25;
 		ANIM_ATTACK = "shootorcbow";
-		const int AIM_RATIO = 30;
-		const int ARROW_DAMAGE_LOW = 3;
-		const int ARROW_DAMAGE_HIGH = 5;
+		AIM_RATIO = 30;
+		ARROW_DAMAGE_LOW = 3;
+		ARROW_DAMAGE_HIGH = 5;
 		MOVE_RANGE = 400;
 		ATTACK_RANGE = 800;
-		const int ATTACK_SPEED = 700;
-		const int ATTACK_CONE_OF_FIRE = 3;
+		ATTACK_SPEED = 700;
+		ATTACK_CONE_OF_FIRE = 3;
 		DROP_ITEM1 = "bows_orcbow";
 		DROP_ITEM1_CHANCE = 0.2;
 		DROP_ITEM2 = "proj_arrow_wooden";

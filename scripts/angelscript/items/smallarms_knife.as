@@ -7,25 +7,43 @@ namespace MS
 
 class SmallarmsKnife : CGameScript
 {
+	string ANIM_PREFIX;
+	int BASE_LEVEL_REQ;
+	float MELEE_ACCURACY;
+	float MELEE_ALIGN_BASE;
+	int MELEE_ALIGN_TIP;
+	float MELEE_ATK_DURATION;
+	int MELEE_DMG;
+	float MELEE_DMG_DELAY;
+	int MELEE_DMG_RANGE;
+	float MELEE_ENERGY;
+	float MELEE_PARRY_CHANCE;
+	int MELEE_RANGE;
+	int MODEL_BODY_OFS;
+	string MODEL_HANDS;
+	string MODEL_VIEW;
+	int MODEL_VIEW_IDX;
+	string MODEL_WORLD;
+
 	SmallarmsKnife()
 	{
-		const int BASE_LEVEL_REQ = 3;
-		const string MODEL_VIEW = "viewmodels/v_smallarms.mdl";
-		const int MODEL_VIEW_IDX = 2;
-		const string MODEL_HANDS = "weapons/p_weapons2.mdl";
-		const string MODEL_WORLD = "weapons/p_weapons2.mdl";
-		const int MELEE_RANGE = 40;
-		const float MELEE_DMG_DELAY = 0.2;
-		const float MELEE_ATK_DURATION = 0.9;
-		const float MELEE_ENERGY = 0.4;
-		const int MELEE_DMG = 80;
-		const int MELEE_DMG_RANGE = 60;
-		const float MELEE_ACCURACY = 0.75;
-		const float MELEE_ALIGN_BASE = 3.6;
-		const int MELEE_ALIGN_TIP = 0;
-		const float MELEE_PARRY_CHANCE = 0.2;
-		const int MODEL_BODY_OFS = 0;
-		const string ANIM_PREFIX = "craftedknife";
+		BASE_LEVEL_REQ = 3;
+		MODEL_VIEW = "viewmodels/v_smallarms.mdl";
+		MODEL_VIEW_IDX = 2;
+		MODEL_HANDS = "weapons/p_weapons2.mdl";
+		MODEL_WORLD = "weapons/p_weapons2.mdl";
+		MELEE_RANGE = 40;
+		MELEE_DMG_DELAY = 0.2;
+		MELEE_ATK_DURATION = 0.9;
+		MELEE_ENERGY = 0.4;
+		MELEE_DMG = 80;
+		MELEE_DMG_RANGE = 60;
+		MELEE_ACCURACY = 0.75;
+		MELEE_ALIGN_BASE = 3.6;
+		MELEE_ALIGN_TIP = 0;
+		MELEE_PARRY_CHANCE = 0.2;
+		MODEL_BODY_OFS = 0;
+		ANIM_PREFIX = "craftedknife";
 	}
 
 	void weapon_spawn()

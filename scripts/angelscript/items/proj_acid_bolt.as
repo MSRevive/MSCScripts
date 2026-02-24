@@ -7,23 +7,39 @@ namespace MS
 
 class ProjAcidBolt : CGameScript
 {
+	int ARROW_BODY_OFS;
+	string ITEM_NAME;
+	int MODEL_BODY_OFS;
+	string MODEL_HANDS;
+	string MODEL_WORLD;
+	string POISON_SPRITE1;
+	string PROJ_ANIM_IDLE;
+	float PROJ_AOE_FALLOFF;
+	int PROJ_AOE_RANGE;
+	int PROJ_COLLIDEHITBOX;
+	int PROJ_DAMAGE;
+	string PROJ_DAMAGESTAT;
+	string PROJ_DAMAGE_TYPE;
+	int PROJ_STICK_DURATION;
+	string TRAIL_SPRITE;
+
 	ProjAcidBolt()
 	{
-		const string POISON_SPRITE1 = "poison.spr";
-		const string TRAIL_SPRITE = "blood.spr";
-		const string MODEL_HANDS = "weapons/projectiles.mdl";
-		const string MODEL_WORLD = "weapons/projectiles.mdl";
-		const int ARROW_BODY_OFS = 6;
-		const int MODEL_BODY_OFS = 6;
-		const string ITEM_NAME = "watermana";
-		const string PROJ_DAMAGE_TYPE = "acid";
-		const string PROJ_DAMAGESTAT = "spellcasting.affliction";
-		const string PROJ_ANIM_IDLE = "idle_icebolt";
-		const int PROJ_DAMAGE = 600;
-		const int PROJ_AOE_RANGE = 40;
-		const float PROJ_AOE_FALLOFF = 0.1;
-		const int PROJ_STICK_DURATION = 0;
-		const int PROJ_COLLIDEHITBOX = 32;
+		POISON_SPRITE1 = "poison.spr";
+		TRAIL_SPRITE = "blood.spr";
+		MODEL_HANDS = "weapons/projectiles.mdl";
+		MODEL_WORLD = "weapons/projectiles.mdl";
+		ARROW_BODY_OFS = 6;
+		MODEL_BODY_OFS = 6;
+		ITEM_NAME = "watermana";
+		PROJ_DAMAGE_TYPE = "acid";
+		PROJ_DAMAGESTAT = "spellcasting.affliction";
+		PROJ_ANIM_IDLE = "idle_icebolt";
+		PROJ_DAMAGE = 600;
+		PROJ_AOE_RANGE = 40;
+		PROJ_AOE_FALLOFF = 0.1;
+		PROJ_STICK_DURATION = 0;
+		PROJ_COLLIDEHITBOX = 32;
 	}
 
 	void projectile_spawn()

@@ -9,21 +9,32 @@ namespace MS
 class Thuldahr : CGameScript
 {
 	string ANIM_ATTACK;
+	string ANIM_KICK;
 	string ANIM_KNEEL;
+	string ANIM_SWING;
+	int ATTACH_IDX_AXE;
 	int ATTACK_HITRANGE;
 	int ATTACK_MOVERANGE;
 	int ATTACK_RANGE;
 	string CHIEF_ID;
 	int CONFIRMED_ORDER;
 	int CYCLES_ON;
+	int DMG_SWING;
+	int DMG_ZAP;
+	int DOT_ZAP;
 	int DOUBLE_REDUNDANT;
+	float FREQ_KICK;
+	float FREQ_SPECIAL;
 	int KICK_ATTACK;
 	string KNEEL_MODE;
 	string NEXT_KICK;
 	string NPC_GIVE_EXP;
 	string NPC_IS_BOSS;
+	int N_SPECIALS;
 	string REPULSE_TARGETS;
 	int SORC_NO_TELE;
+	string SOUND_DRAW_WEAPON;
+	string SOUND_SWING;
 	string SPECIAL_DURATION;
 	string ZAP_INDEXES;
 	string ZAP_TARGETS;
@@ -31,17 +42,17 @@ class Thuldahr : CGameScript
 	Thuldahr()
 	{
 		ANIM_KNEEL = "kneel";
-		const string ANIM_SWING = "gglowswing";
-		const string ANIM_KICK = "kick";
+		ANIM_SWING = "gglowswing";
+		ANIM_KICK = "kick";
 		ANIM_ATTACK = "gglowswing";
 		Precache("weather/lightning.wav");
-		const int ATTACH_IDX_AXE = 2;
-		const string FREQ_SPECIAL = Random(10.0, 20.0);
-		const int N_SPECIALS = 3;
-		const string FREQ_KICK = Random(10.0, 20.0);
-		const int DMG_SWING = 400;
-		const int DMG_ZAP = 300;
-		const int DOT_ZAP = 100;
+		ATTACH_IDX_AXE = 2;
+		FREQ_SPECIAL = Random(10.0, 20.0);
+		N_SPECIALS = 3;
+		FREQ_KICK = Random(10.0, 20.0);
+		DMG_SWING = 400;
+		DMG_ZAP = 300;
+		DOT_ZAP = 100;
 		if (StringToLower(GetMapName()) == "shad_palace")
 		{
 			NPC_IS_BOSS = 1;
@@ -53,8 +64,8 @@ class Thuldahr : CGameScript
 			NPC_GIVE_EXP = 1000;
 		}
 		SORC_NO_TELE = 1;
-		const string SOUND_DRAW_WEAPON = "weapons/swords/sworddraw.wav";
-		const string SOUND_SWING = "weapons/swinghuge.wav";
+		SOUND_DRAW_WEAPON = "weapons/swords/sworddraw.wav";
+		SOUND_SWING = "weapons/swinghuge.wav";
 	}
 
 	void orc_spawn()
@@ -131,7 +142,7 @@ class Thuldahr : CGameScript
 
 	void do_special()
 	{
-		string RND_SPECIAL = RandomInt(1, N_SPECIALS);
+		int RND_SPECIAL = RandomInt(1, N_SPECIALS);
 		if (RND_SPECIAL == 1)
 		{
 			lstrikes_go();

@@ -246,6 +246,20 @@ class SetAnimExtTranslator(CommandTranslator):
         return True
 
 
+class SetAnimLegsTranslator(CommandTranslator):
+    def translate(self, cmd, ctx, w):
+        if cmd.args:
+            w.line(f"SetAnimLegs(GetOwner(), {ctx.translate_expr(cmd.args[0])});")
+        return True
+
+
+class GaitFramerateTranslator(CommandTranslator):
+    def translate(self, cmd, ctx, w):
+        if cmd.args:
+            w.line(f"SetGaitFrameRate(GetOwner(), {ctx.translate_expr(cmd.args[0])});")
+        return True
+
+
 class ReturnDataTranslator(CommandTranslator):
     def translate(self, cmd, ctx, w):
         args = ", ".join(ctx.translate_expr(a) for a in cmd.args)
@@ -414,6 +428,8 @@ def register_commands():
     register("fov", FovTranslator())
     register("giveitem", GiveItemTranslator())
     register("setanimext", SetAnimExtTranslator())
+    register("setanimlegs", SetAnimLegsTranslator())
+    register("gaitframerate", GaitFramerateTranslator())
     register("returndata", ReturnDataTranslator())
     register("registerdrink", RegisterDrinkTranslator())
     register("storeentity", StoreEntityTranslator())

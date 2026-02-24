@@ -7,12 +7,17 @@ namespace MS
 
 class ScrollHealingWave : CGameScript
 {
+	int BASE_REQUIRED_LEVEL;
+	string BASE_REQUIRED_SKILL;
+	string BASE_SPELL_SCRIPT;
+	string BASE_SUMMON_TEXT;
+
 	ScrollHealingWave()
 	{
-		const string BASE_SPELL_SCRIPT = "magic_hand_healing_wave";
-		const string BASE_SUMMON_TEXT = "You learn to create healing waves.";
-		const string BASE_REQUIRED_SKILL = "skill.spellcasting.divination";
-		const int BASE_REQUIRED_LEVEL = 10;
+		BASE_SPELL_SCRIPT = "magic_hand_healing_wave";
+		BASE_SUMMON_TEXT = "You learn to create healing waves.";
+		BASE_REQUIRED_SKILL = "skill.spellcasting.divination";
+		BASE_REQUIRED_LEVEL = 10;
 	}
 
 	void OnSpawn() override

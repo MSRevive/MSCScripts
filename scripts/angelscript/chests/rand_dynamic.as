@@ -7,10 +7,13 @@ namespace MS
 
 class RandDynamic : CGameScript
 {
+	int HP_REQ;
+	int MAX_GOLD_AMT;
+
 	RandDynamic()
 	{
-		const int HP_REQ = 500;
-		const int MAX_GOLD_AMT = 200;
+		HP_REQ = 500;
+		MAX_GOLD_AMT = 200;
 	}
 
 	void chest_additems()

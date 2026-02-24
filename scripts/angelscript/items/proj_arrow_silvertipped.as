@@ -7,16 +7,25 @@ namespace MS
 
 class ProjArrowSilvertipped : CGameScript
 {
+	float ARROW_BREAK_CHANCE;
+	int ARROW_EXPIRE_DELAY;
+	int ARROW_SOLIDIFY_ON_WALL;
+	int CLFX_ARROW;
+	int MODEL_BODY_OFS;
+	int PROJ_DAMAGE;
+	int PROJ_STICK_DURATION;
+	string SPRITE_ARROW_TRADE;
+
 	ProjArrowSilvertipped()
 	{
-		const int CLFX_ARROW = 1;
-		const int ARROW_EXPIRE_DELAY = 5;
-		const string SPRITE_ARROW_TRADE = "silverarrow";
-		const int MODEL_BODY_OFS = 6;
-		const string PROJ_DAMAGE = RandomInt(120, 140);
-		const int PROJ_STICK_DURATION = 45;
-		const int ARROW_SOLIDIFY_ON_WALL = 0;
-		const float ARROW_BREAK_CHANCE = 0.2;
+		CLFX_ARROW = 1;
+		ARROW_EXPIRE_DELAY = 5;
+		SPRITE_ARROW_TRADE = "silverarrow";
+		MODEL_BODY_OFS = 6;
+		PROJ_DAMAGE = RandomInt(120, 140);
+		PROJ_STICK_DURATION = 45;
+		ARROW_SOLIDIFY_ON_WALL = 0;
+		ARROW_BREAK_CHANCE = 0.2;
 	}
 
 	void arrow_spawn()

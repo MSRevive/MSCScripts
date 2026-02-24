@@ -48,6 +48,7 @@ class GameMaster : CGameScript
 	string CNPCD_PAR6;
 	string CNPCD_PAR7;
 	string CNPCD_PAR8;
+	int CONST_SPAWNS_PER_SET;
 	string DEMON_RAGE_USERS;
 	string DEMON_RAGE_USES;
 	string DEV_ID;
@@ -78,7 +79,7 @@ class GameMaster : CGameScript
 	string GM_SCRAMBLE_COUNT;
 	string GM_SPAWN_POINT;
 	string GM_SXBOW_RECIEVE;
-	string GM_TEMP_COUNT;
+	int GM_TEMP_COUNT;
 	string GM_TOTAL_HP;
 	int GM_TOTAL_TRIGGERED;
 	string GM_TRIGGER_PREFIX;
@@ -93,6 +94,10 @@ class GameMaster : CGameScript
 	string HOLLOW_ONE_POS;
 	string ITEM_NAME;
 	string ITEM_POS;
+	int LIGHTSYS_N_LIGHTS;
+	string MAGIC_HAND_NAMES1;
+	string MAGIC_HAND_NAMES2;
+	string MAGIC_HAND_NAMES3;
 	string MAGIC_HAND_SCRIPTS1;
 	string MAGIC_HAND_SCRIPTS2;
 	string MAGIC_HAND_SCRIPTS3;
@@ -146,15 +151,15 @@ class GameMaster : CGameScript
 		MAGIC_HAND_SCRIPTS1 = "magic_hand_acid_bolt;magic_hand_blizzard;magic_hand_div_glow;magic_hand_div_rejuvenate;magic_hand_fire_ball;magic_hand_fire_dart;magic_hand_fire_wall;magic_hand_frost_bolt;magic_hand_healing_circle;magic_hand_ice_blast;magic_hand_ice_shield;magic_hand_healing_wave;";
 		MAGIC_HAND_SCRIPTS2 = "magic_hand_ice_shield_lesser;magic_hand_ice_wall;magic_hand_lightning_chain;magic_hand_lightning_storm;magic_hand_lightning_weak;magic_hand_poison;magic_hand_poison_cloud;magic_hand_summon_fangtooth;magic_hand_summon_guard;magic_hand_summon_rat;";
 		MAGIC_HAND_SCRIPTS3 = "magic_hand_summon_undead;magic_hand_turn_undead;magic_hand_volcano;";
-		const string MAGIC_HAND_NAMES1 = "Acidic Bolt;Blizzard;Glow;Rejuvenate;Fire Ball;Fire Dart;Fire Wall;Frost Bolt;Healing Circle;Ice Blast;Ice Shield;Healing Wave;";
-		const string MAGIC_HAND_NAMES2 = "Lesser Ice Shield;Ice Wall;Chain Lighting;Lightning Storm;Erratic Lightning;Poison Dart;Poison Cloud;Summon Fangtooth;Summon Guardian;Summon Rat;";
-		const string MAGIC_HAND_NAMES3 = "Summon Undead;Rebuke Undead;Volcano;";
-		const int CONST_SPAWNS_PER_SET = 8;
+		MAGIC_HAND_NAMES1 = "Acidic Bolt;Blizzard;Glow;Rejuvenate;Fire Ball;Fire Dart;Fire Wall;Frost Bolt;Healing Circle;Ice Blast;Ice Shield;Healing Wave;";
+		MAGIC_HAND_NAMES2 = "Lesser Ice Shield;Ice Wall;Chain Lighting;Lightning Storm;Erratic Lightning;Poison Dart;Poison Cloud;Summon Fangtooth;Summon Guardian;Summon Rat;";
+		MAGIC_HAND_NAMES3 = "Summon Undead;Rebuke Undead;Volcano;";
+		CONST_SPAWNS_PER_SET = 8;
 		N_MALDORAS = 0;
 		MALDORA_LIST = "";
 		DEMON_RAGE_USERS = "";
 		DEMON_RAGE_USES = "";
-		const int LIGHTSYS_N_LIGHTS = 16;
+		LIGHTSYS_N_LIGHTS = 16;
 		array<string> ARRAY_LIGHT_OWNERLIST;
 		array<string> ARRAY_LIGHT_COLOR;
 		array<string> ARRAY_LIGHT_RAD;
@@ -191,7 +196,7 @@ class GameMaster : CGameScript
 		G_NGAME_MASTERS += 1;
 		if (G_NGAME_MASTERS > 1)
 		{
-			LogError("Multiple Game Masters! GetEntityName("ent_creationowner")");
+			LogError("Multiple Game Masters! " + GetEntityName("ent_creationowner"));
 		}
 		SetName("game_master");
 		TRIGGER_COUNT = 0;
@@ -409,7 +414,7 @@ class GameMaster : CGameScript
 
 	void gm_say()
 	{
-		SendInfoMsg("all", "The Game Master Says... PARAM1");
+		SendInfoMsg("all", "The Game Master Says... " + param1);
 	}
 
 	void gm_fade_in()
@@ -524,7 +529,7 @@ class GameMaster : CGameScript
 		if (!(TIME_HOUR != 20)) return;
 		string N_WEATHER_TYPES = GetTokenCount("global.map.weather", ";");
 		N_WEATHER_TYPES -= 1;
-		string RND_WEATHER = RandomInt(0, N_WEATHER_TYPES);
+		int RND_WEATHER = RandomInt(0, N_WEATHER_TYPES);
 		SetGlobalVar("G_CURRENT_WEATHER", GetToken("global.map.weather", RND_WEATHER, ";"));
 		LogDebug("worldevent_time G_CURRENT_WEATHER RND_WEATHER of global.map.weather [ GetToken("global.map.weather", RND_WEATHER, ";") ]");
 		gm_start_weather(G_CURRENT_WEATHER);
@@ -554,7 +559,7 @@ class GameMaster : CGameScript
 	void crit_count_remaining()
 	{
 		string N_NPCS = GetTokenCount(G_CRITICAL_NPCS, ";");
-		string N_NPCS = int(N_NPCS);
+		int N_NPCS = int(N_NPCS);
 		if (N_NPCS >= 0)
 		{
 			if (N_NPCS > 1)
@@ -577,7 +582,7 @@ class GameMaster : CGameScript
 				MSG_REASON += GetEntityName(BY_ID);
 				MSG_REASON += " )!";
 			}
-			SendInfoMsg("all", "N_NPCS MSG_REASON");
+			SendInfoMsg("all", N_NPCS + MSG_REASON);
 		}
 	}
 
@@ -594,7 +599,7 @@ class GameMaster : CGameScript
 
 	void gm_dodamage()
 	{
-		string TIME_DIFF = GetGameTime();
+		float TIME_DIFF = GetGameTime();
 		TIME_DIFF -= LAST_GM_DAMAGE;
 		if (TIME_DIFF > 0.1)
 		{
@@ -620,7 +625,7 @@ class GameMaster : CGameScript
 	{
 		if ((G_DEVELOPER_MODE))
 		{
-			LogMessage("PARAM1 You said [ PARAM2 ] PARAM3");
+			LogMessage(param1 + "You said [ " + param2 + "] " + param3);
 		}
 		if (!(GetCvar("ms_chatlog"))) return;
 		string WRITE_LOG = GetTimestamp();
@@ -728,12 +733,12 @@ class GameMaster : CGameScript
 			string L_SPELL_NAME = SPELL_SCRIPT;
 			if ((G_DEVELOPER_MODE))
 			{
-				LogMessage("SPELL_CASTER was not found , using L_SPELL_NAME");
+				LogMessage(SPELL_CASTER + "was not found , using " + L_SPELL_NAME);
 			}
 		}
 		if ((G_DEVELOPER_MODE))
 		{
-			LogMessage("SPELL_CASTER SPELL_SCRIPT is L_SPELL_NAME CHECK_SET1 CHECK_SET2 CHECK_SET3");
+			LogMessage(SPELL_CASTER + SPELL_SCRIPT + "is " + L_SPELL_NAME + " CHECK_SET1 CHECK_SET2 CHECK_SET3");
 		}
 		string reg.mitem.title = L_SPELL_NAME;
 		string reg.mitem.type = "callback";
@@ -802,8 +807,8 @@ class GameMaster : CGameScript
 		// TODO: wipespell PARAM1 SPELL_TO_FORGET_IDX
 		string OUT_MSG = "You ";
 		OUT_MSG = "have" + "forgotten" + "the" + "spell" + SPELL_NAME;
-		SendColoredMessage(MENU_TARGET, "OUT_MSG");
-		SendInfoMsg(MENU_TARGET, "Potion of Forgetfulness OUT_MSG");
+		SendColoredMessage(MENU_TARGET, OUT_MSG);
+		SendInfoMsg(MENU_TARGET, "Potion of Forgetfulness " + OUT_MSG);
 		SPELL_ERASE_CONFIRM = 0;
 		SPELL_ERASE = 0;
 		FORGET_SPELL = 0;
@@ -817,7 +822,7 @@ class GameMaster : CGameScript
 		{
 			int WAVE_STEP = 10;
 			WAVE_STEP -= GM_COUNT_DOWN_TO;
-			SendInfoMessageToAll("green int(GM_COUNT_DOWN_TO) GM_COUNT_MESSAGE");
+			SendInfoMessageToAll("green " + int(GM_COUNT_DOWN_TO) + GM_COUNT_MESSAGE);
 		}
 		if (GM_COUNT_DOWN_TO > 10)
 		{
@@ -825,7 +830,7 @@ class GameMaster : CGameScript
 			DIV_TEN /= 10;
 			if (DIV_TEN == int(GM_COUNT_DOWN))
 			{
-				SendInfoMessageToAll("green int(GM_COUNT_DOWN_TO) GM_COUNT_MESSAGE");
+				SendInfoMessageToAll("green " + int(GM_COUNT_DOWN_TO) + GM_COUNT_MESSAGE);
 			}
 		}
 		if (GM_COUNT_DOWN_TO == 0)
@@ -949,13 +954,13 @@ class GameMaster : CGameScript
 		if (!(N_SPAWN_POINTS > 0)) return;
 		string MINUS_ONE = N_SPAWN_POINTS;
 		MINUS_ONE -= 1;
-		string RND_POINT = RandomInt(0, MINUS_ONE);
+		int RND_POINT = RandomInt(0, MINUS_ONE);
 		string O_SPAWN_POINT = RND_POINT;
 		string RND_POINT_SET_IDX = RND_POINT;
 		if (RND_POINT > CONST_SPAWNS_PER_SET)
 		{
 			RND_POINT_SET_IDX /= CONST_SPAWNS_PER_SET;
-			string RND_POINT_SET_IDX = int(RND_POINT_SET_IDX);
+			int RND_POINT_SET_IDX = int(RND_POINT_SET_IDX);
 			string MULTI_IDX = RND_POINT_SET_IDX;
 			MULTI_IDX *= CONST_SPAWNS_PER_SET;
 			RND_POINT -= MULTI_IDX;
@@ -1004,7 +1009,7 @@ class GameMaster : CGameScript
 		}
 		if ((G_DEVELOPER_MODE))
 		{
-			SendInfoMessageToAll("green find_spawn_point: GM_SPAWN_POINT pt# O_SPAWN_POINT - idx# RND_POINT of N_SPAWN_POINTS set RND_POINT_SET_IDX");
+			SendInfoMessageToAll("green find_spawn_point: " + GM_SPAWN_POINT + " pt# O_SPAWN_POINT - idx# RND_POINT of N_SPAWN_POINTS set RND_POINT_SET_IDX");
 		}
 		CallExternal(param1, "ext_send_tele_point", GM_SPAWN_POINT);
 	}
@@ -1017,7 +1022,7 @@ class GameMaster : CGameScript
 		// TODO: chatlog SPAWN_POINTS3
 		// TODO: chatlog SPAWN_POINTS4
 		DEV_ID = param1;
-		SendInfoMessageToAll("green dev_cat_points to GetEntityName(DEV_ID)");
+		SendInfoMessageToAll("green dev_cat_points to " + GetEntityName(DEV_ID));
 		for (int i = 0; i < N_SPAWN_POINTS; i++)
 		{
 			dev_cat_point_loop();
@@ -1032,7 +1037,7 @@ class GameMaster : CGameScript
 		if (RND_POINT > CONST_SPAWNS_PER_SET)
 		{
 			RND_POINT_SET_IDX /= CONST_SPAWNS_PER_SET;
-			string RND_POINT_SET_IDX = int(RND_POINT_SET_IDX);
+			int RND_POINT_SET_IDX = int(RND_POINT_SET_IDX);
 			string MULTI_IDX = RND_POINT_SET_IDX;
 			MULTI_IDX *= CONST_SPAWNS_PER_SET;
 			RND_POINT -= MULTI_IDX;
@@ -1078,8 +1083,8 @@ class GameMaster : CGameScript
 		{
 			GM_SPAWN_POINT = GetToken(SPAWN_POINTS9, RND_POINT, ";");
 		}
-		LogMessage("DEV_ID pt# O_SPAWN_POINT is idx# RND_POINT of N_SPAWN_POINTS set RND_POINT_SET_IDX = GM_SPAWN_POINT");
-		SendInfoMessageToAll("green pt# O_SPAWN_POINT is idx# RND_POINT of N_SPAWN_POINTS set RND_POINT_SET_IDX = GM_SPAWN_POINT");
+		LogMessage(DEV_ID + "pt# " + O_SPAWN_POINT + "is idx# " + RND_POINT + "of " + N_SPAWN_POINTS + "set " + RND_POINT_SET_IDX + "= " + GM_SPAWN_POINT);
+		SendInfoMessageToAll("green pt# " + O_SPAWN_POINT + "is idx# " + RND_POINT + "of " + N_SPAWN_POINTS + "set " + RND_POINT_SET_IDX + "= " + GM_SPAWN_POINT);
 	}
 
 	void dev_test_spawn()
@@ -1091,7 +1096,7 @@ class GameMaster : CGameScript
 		if (RND_POINT > CONST_SPAWNS_PER_SET)
 		{
 			RND_POINT_SET_IDX /= CONST_SPAWNS_PER_SET;
-			string RND_POINT_SET_IDX = int(RND_POINT_SET_IDX);
+			int RND_POINT_SET_IDX = int(RND_POINT_SET_IDX);
 			string MULTI_IDX = RND_POINT_SET_IDX;
 			MULTI_IDX *= CONST_SPAWNS_PER_SET;
 			RND_POINT -= MULTI_IDX;
@@ -1140,7 +1145,7 @@ class GameMaster : CGameScript
 		}
 		if ((G_DEVELOPER_MODE))
 		{
-			SendInfoMessageToAll("green find_spawn_point: GM_SPAWN_POINT pt# O_SPAWN_POINT - idx# RND_POINT of N_SPAWN_POINTS set RND_POINT_SET_IDX");
+			SendInfoMessageToAll("green find_spawn_point: " + GM_SPAWN_POINT + " pt# O_SPAWN_POINT - idx# RND_POINT of N_SPAWN_POINTS set RND_POINT_SET_IDX");
 		}
 		CallExternal(param1, "ext_send_tele_point", GM_SPAWN_POINT);
 	}
@@ -1411,7 +1416,7 @@ class GameMaster : CGameScript
 	void gm_add_del_que()
 	{
 		string ID_TO_DEL = param1;
-		if ((/* TODO: $get_array */ $get_array(ARRAY_GM_DEL_QUE)).findFirst("[ERROR_NO_ARRAY]") >= 0)
+		if (("").findFirst("[ERROR_NO_ARRAY]") >= 0)
 		{
 			array<string> ARRAY_GM_DEL_QUE;
 		}
@@ -1428,10 +1433,10 @@ class GameMaster : CGameScript
 
 	void gm_del_que_loop()
 	{
-		LogDebug("gm_del_que_loop /* TODO: $get_array_amt */ $get_array_amt(ARRAY_GM_DEL_QUE)");
-		if (/* TODO: $get_array_amt */ $get_array_amt(ARRAY_GM_DEL_QUE) > 0)
+		LogDebug("gm_del_que_loop int(ARRAY_GM_DEL_QUE.length())");
+		if (int(ARRAY_GM_DEL_QUE.length()) > 0)
 		{
-			DeleteEntity(/* TODO: $get_array */ $get_array(ARRAY_GM_DEL_QUE, 0), true); // fade out
+			DeleteEntity(ARRAY_GM_DEL_QUE[int(0)], true); // fade out
 			ARRAY_GM_DEL_QUE.removeAt(0);
 			ScheduleDelayedEvent(2.0, "gm_del_que_loop");
 		}
@@ -1444,7 +1449,7 @@ class GameMaster : CGameScript
 	void gm_vanish_que()
 	{
 		string ID_TO_VANISH = param1;
-		if ((/* TODO: $get_array */ $get_array(ARRAY_GM_VANISH_QUE)).findFirst("[ERROR_NO_ARRAY]") >= 0)
+		if (("").findFirst("[ERROR_NO_ARRAY]") >= 0)
 		{
 			array<string> ARRAY_GM_VANISH_QUE;
 		}
@@ -1457,11 +1462,11 @@ class GameMaster : CGameScript
 
 	void gm_vanish_que_loop()
 	{
-		LogDebug("gm_vanish_que_loop /* TODO: $get_array_amt */ $get_array_amt(ARRAY_GM_VANISH_QUE)");
-		if (/* TODO: $get_array_amt */ $get_array_amt(ARRAY_GM_VANISH_QUE) > 0)
+		LogDebug("gm_vanish_que_loop int(ARRAY_GM_VANISH_QUE.length())");
+		if (int(ARRAY_GM_VANISH_QUE.length()) > 0)
 		{
-			SetProp(/* TODO: $get_array */ $get_array(ARRAY_GM_VANISH_QUE, 0), "rendermode", 5);
-			SetProp(/* TODO: $get_array */ $get_array(ARRAY_GM_VANISH_QUE, 0), "renderamt", 0);
+			SetProp(ARRAY_GM_VANISH_QUE[int(0)], "rendermode", 5);
+			SetProp(ARRAY_GM_VANISH_QUE[int(0)], "renderamt", 0);
 			ARRAY_GM_VANISH_QUE.removeAt(0);
 			ScheduleDelayedEvent(0.1, "gm_vanish_que_loop");
 		}
@@ -1516,7 +1521,7 @@ class GameMaster : CGameScript
 	void gm_test_trig()
 	{
 		string OUT_MSG = /* TODO: $stradd */ $stradd(param2, "|", param3, "|", param4, "|", param5);
-		SendInfoMsg("all", "GetEntityName(param1) OUT_MSG");
+		SendInfoMsg("all", GetEntityName(param1) + OUT_MSG);
 	}
 
 	void gm_trig_filter()
@@ -1765,8 +1770,8 @@ class GameMaster : CGameScript
 
 	void gm_recieve_client_info()
 	{
-		SendInfoMsg("all", "Returned PARAM1");
-		LogMessage("GM_PLAYER_REQ CLIENT_INFO_RETURNED: PARAM1");
+		SendInfoMsg("all", "Returned " + param1);
+		LogMessage(GM_PLAYER_REQ + CLIENT_INFO_RETURNED: + param1);
 	}
 
 	void gm_newweather_string()
@@ -1870,7 +1875,7 @@ class GameMaster : CGameScript
 	void gm_lights_sync()
 	{
 		LogDebug("gm_lights_sync");
-		string L_N_LIGHTS = /* TODO: $get_array_amt */ $get_array_amt(ARRAY_LIGHT_OWNERLIST);
+		int L_N_LIGHTS = int(ARRAY_LIGHT_OWNERLIST.length());
 		GM_LIGHT_PLAYER = param1;
 		if (!(L_N_LIGHTS > 0)) return;
 		for (int i = 0; i < L_N_LIGHTS; i++)
@@ -1881,9 +1886,9 @@ class GameMaster : CGameScript
 
 	void gm_lights_sync_loop()
 	{
-		string CUR_OWNER = /* TODO: $get_array */ $get_array(ARRAY_LIGHT_OWNERLIST, i);
-		string CUR_COLOR = /* TODO: $get_array */ $get_array(ARRAY_LIGHT_COLOR, i);
-		string CUR_RAD = /* TODO: $get_array */ $get_array(ARRAY_LIGHT_RAD, i);
+		string CUR_OWNER = ARRAY_LIGHT_OWNERLIST[int(i)];
+		string CUR_COLOR = ARRAY_LIGHT_COLOR[int(i)];
+		string CUR_RAD = ARRAY_LIGHT_RAD[int(i)];
 		LogDebug("gm_lights_sync_loop sending CUR_OWNER CUR_COLOR CUR_RAD");
 		ClientEvent("update", GM_LIGHT_PLAYER, "const.localplayer.scriptID", "cl_light_update", "new", CUR_OWNER, CUR_COLOR, CUR_RAD);
 	}
@@ -1899,7 +1904,7 @@ class GameMaster : CGameScript
 	void gm_dumplights_loop()
 	{
 		string CUR_IDX = i;
-		LogDebug("int(CUR_IDX) /* TODO: $get_array */ $get_array(ARRAY_LIGHT_OWNERLIST, CUR_IDX) /* TODO: $get_array */ $get_array(ARRAY_LIGHT_COLOR, CUR_IDX) /* TODO: $get_array */ $get_array(ARRAY_LIGHT_RAD, CUR_IDX)");
+		LogDebug("int(CUR_IDX) ARRAY_LIGHT_OWNERLIST[int(CUR_IDX)] ARRAY_LIGHT_COLOR[int(CUR_IDX)] ARRAY_LIGHT_RAD[int(CUR_IDX)]");
 	}
 
 	void gm_light_update()
@@ -1955,8 +1960,8 @@ class GameMaster : CGameScript
 		ScrambleTokens(G_GOOD_ARROWS, ";");
 		ScrambleTokens(G_GREAT_ARROWS, ";");
 		ScrambleTokens(G_EPIC_ARROWS, ";");
-		GM_N_EPICS = /* TODO: $g_get_array_amt */ $g_get_array_amt(G_ARRAY_EPIC);
-		if (/* TODO: $get_array_amt */ $get_array_amt(ARRAY_TEMP) == -1)
+		GM_N_EPICS = GetGlobalArrayLength(G_ARRAY_EPIC);
+		if (int(ARRAY_TEMP.length()) == -1)
 		{
 			array<string> ARRAY_TEMP;
 			for (int i = 0; i < GM_N_EPICS; i++)
@@ -1985,7 +1990,7 @@ class GameMaster : CGameScript
 	void gm_epic_to_temp_loop()
 	{
 		string CUR_EPIC = i;
-		ARRAY_TEMP[GM_TEMP_COUNT] = /* TODO: $g_get_array */ $g_get_array(G_ARRAY_EPIC, CUR_EPIC);
+		ARRAY_TEMP[GM_TEMP_COUNT] = GetGlobalArray(G_ARRAY_EPIC, int(CUR_EPIC));
 		GM_TEMP_COUNT += 1;
 		if (GM_TEMP_COUNT >= GM_N_EPICS)
 		{
@@ -1996,12 +2001,12 @@ class GameMaster : CGameScript
 	void gm_temp_to_epic_loop()
 	{
 		string CUR_EPIC = i;
-		GlobalArraySet("G_ARRAY_EPIC", CUR_EPIC, /* TODO: $get_array */ $get_array(ARRAY_TEMP, CUR_EPIC));
+		GlobalArraySet("G_ARRAY_EPIC", CUR_EPIC, ARRAY_TEMP[int(CUR_EPIC)]);
 	}
 
 	void gm_dump_epics()
 	{
-		for (int i = 0; i < /* TODO: $g_get_array_amt */ $g_get_array_amt(G_ARRAY_EPIC); i++)
+		for (int i = 0; i < GetGlobalArrayLength(G_ARRAY_EPIC); i++)
 		{
 			gm_dump_epics_loop();
 		}
@@ -2010,7 +2015,7 @@ class GameMaster : CGameScript
 	void gm_dump_epics_loop()
 	{
 		string CUR_EPIC = i;
-		LogDebug("# CUR_EPIC /* TODO: $g_get_array */ $g_get_array(G_ARRAY_EPIC, CUR_EPIC)");
+		LogDebug("# CUR_EPIC GetGlobalArray(G_ARRAY_EPIC, int(CUR_EPIC))");
 	}
 
 	void gm_ms_text()
@@ -2019,7 +2024,7 @@ class GameMaster : CGameScript
 		string L_NAME = param1;
 		string L_TEXT = param2;
 		SetName(L_NAME);
-		SayText("L_TEXT");
+		SayText(L_TEXT);
 	}
 
 	void gm_suspend_mob_spawns()
@@ -2099,7 +2104,7 @@ class GameMaster : CGameScript
 
 	void ext_got_quest_item()
 	{
-		if (/* TODO: $get_array_amt */ $get_array_amt(ARRAY_QUEST_ITEMS) == -1)
+		if (int(ARRAY_QUEST_ITEMS.length()) == -1)
 		{
 			array<string> ARRAY_QUEST_ITEMS;
 		}
@@ -2118,14 +2123,14 @@ class GameMaster : CGameScript
 	{
 		QITEM_NAME = param1;
 		QITEM_CALLER = param2;
-		string L_FIND_ITEM = /* TODO: $get_arrayfind */ $get_arrayfind(ARRAY_QUEST_ITEMS, QITEM_NAME);
+		string L_FIND_ITEM = ArrayFind(ARRAY_QUEST_ITEMS, QITEM_NAME, 0);
 		if (L_FIND_ITEM == "[ERROR_NO_ARRAY]")
 		{
 			return;
 		}
 		if (L_FIND_ITEM > -1)
 		{
-			for (int i = 0; i < /* TODO: $get_array_amt */ $get_array_amt(ARRAY_QUEST_ITEMS); i++)
+			for (int i = 0; i < int(ARRAY_QUEST_ITEMS.length()); i++)
 			{
 				find_all_qitems();
 			}
@@ -2135,7 +2140,7 @@ class GameMaster : CGameScript
 	void find_all_qitems()
 	{
 		string L_IDX = i;
-		string L_FIND_ITEM = /* TODO: $get_arrayfind */ $get_arrayfind(ARRAY_QUEST_ITEMS, QITEM_NAME);
+		string L_FIND_ITEM = ArrayFind(ARRAY_QUEST_ITEMS, QITEM_NAME, 0);
 		if (L_FIND_ITEM > -1)
 		{
 			ARRAY_QUEST_ITEMS.removeAt(L_FIND_ITEM);
@@ -2149,7 +2154,7 @@ class GameMaster : CGameScript
 
 	void ext_dump_quest_items()
 	{
-		for (int i = 0; i < /* TODO: $get_array_amt */ $get_array_amt(ARRAY_QUEST_ITEMS); i++)
+		for (int i = 0; i < int(ARRAY_QUEST_ITEMS.length()); i++)
 		{
 			ext_dump_quest_items_loop();
 		}
@@ -2157,7 +2162,7 @@ class GameMaster : CGameScript
 
 	void ext_dump_quest_items_loop()
 	{
-		LogDebug("/* TODO: $get_array */ $get_array(ARRAY_QUEST_ITEMS, i)");
+		LogDebug("ARRAY_QUEST_ITEMS[int(i)]");
 	}
 
 }

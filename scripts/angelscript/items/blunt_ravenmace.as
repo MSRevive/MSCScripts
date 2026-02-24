@@ -7,48 +7,83 @@ namespace MS
 
 class BluntRavenmace : CGameScript
 {
+	int ANIM_ATTACK1;
+	int ANIM_ATTACK2;
+	int ANIM_ATTACK3;
+	int ANIM_ATTACK4;
+	int ANIM_CHARGE;
+	int ANIM_IDLE1;
+	int ANIM_IDLE_TOTAL;
+	int ANIM_LIFT1;
+	string ANIM_PREFIX;
+	int ANIM_SHEATH;
+	int BASE_LEVEL_REQ;
+	string EFFECT_SCRIPT;
+	int FIRST_ATK_ANIM;
 	string HASTE_FX_ID;
 	int IN_HASTE;
+	int LAST_ATK_ANIM;
+	float MELEE_ACCURACY;
+	float MELEE_ATK_DURATION;
+	int MELEE_DMG;
+	float MELEE_DMG_DELAY;
+	int MELEE_DMG_RANGE;
+	string MELEE_DMG_TYPE;
+	int MELEE_ENERGY;
+	float MELEE_PARRY_AUGMENT;
+	int MELEE_RANGE;
+	string MELEE_SOUND;
+	string MELEE_SOUND_DELAY;
+	string MELEE_STAT;
 	string MELEE_VIEWANIM_ATK;
+	int MODEL_BODY_OFS;
+	string MODEL_HANDS;
+	string MODEL_VIEW;
+	int MODEL_VIEW_IDX;
+	string MODEL_WORLD;
+	string PLAYERANIM_AIM;
+	string PLAYERANIM_SWING;
+	string SOUND_HEARTBEAT;
+	string SOUND_SWIPE;
 
 	BluntRavenmace()
 	{
-		const int BASE_LEVEL_REQ = 15;
-		const int ANIM_LIFT1 = 0;
-		const int ANIM_IDLE1 = 1;
-		const int ANIM_IDLE_TOTAL = 1;
-		const int ANIM_ATTACK1 = 2;
-		const int ANIM_ATTACK2 = 3;
-		const int ANIM_ATTACK3 = 4;
-		const int ANIM_ATTACK4 = 5;
-		const int FIRST_ATK_ANIM = 2;
-		const int LAST_ATK_ANIM = 5;
-		const int ANIM_CHARGE = 6;
-		const int ANIM_SHEATH = 7;
-		const string MELEE_STAT = "bluntarms";
-		const string MELEE_DMG_TYPE = "blunt";
-		const string MELEE_SOUND = SOUND_SWIPE;
-		const string SOUND_SWIPE = "weapons/swingsmall.wav";
+		BASE_LEVEL_REQ = 15;
+		ANIM_LIFT1 = 0;
+		ANIM_IDLE1 = 1;
+		ANIM_IDLE_TOTAL = 1;
+		ANIM_ATTACK1 = 2;
+		ANIM_ATTACK2 = 3;
+		ANIM_ATTACK3 = 4;
+		ANIM_ATTACK4 = 5;
+		FIRST_ATK_ANIM = 2;
+		LAST_ATK_ANIM = 5;
+		ANIM_CHARGE = 6;
+		ANIM_SHEATH = 7;
+		MELEE_STAT = "bluntarms";
+		MELEE_DMG_TYPE = "blunt";
+		MELEE_SOUND = SOUND_SWIPE;
+		SOUND_SWIPE = "weapons/swingsmall.wav";
 		MELEE_VIEWANIM_ATK = ANIM_ATTACK1;
-		const string PLAYERANIM_AIM = "bluntdouble";
-		const string PLAYERANIM_SWING = "swing_bluntdouble";
-		const int MELEE_DMG = 140;
-		const int MELEE_DMG_RANGE = 140;
-		const int MELEE_ENERGY = 1;
-		const int MELEE_RANGE = 70;
-		const float MELEE_DMG_DELAY = 0.8;
-		const string MELEE_SOUND_DELAY = MELEE_DMG_DELAY;
-		const float MELEE_ATK_DURATION = 1.1;
-		const float MELEE_ACCURACY = 0.6;
-		const float MELEE_PARRY_AUGMENT = 0.0;
-		const string EFFECT_SCRIPT = "effects/debuff_stun";
-		const string MODEL_VIEW = "viewmodels/v_2hblunts.mdl";
-		const int MODEL_VIEW_IDX = 3;
-		const string MODEL_WORLD = "weapons/p_weapons1.mdl";
-		const string MODEL_HANDS = "weapons/p_weapons1.mdl";
-		const int MODEL_BODY_OFS = 74;
-		const string ANIM_PREFIX = "ravenmace";
-		const string SOUND_HEARTBEAT = "amb/wind.wav";
+		PLAYERANIM_AIM = "bluntdouble";
+		PLAYERANIM_SWING = "swing_bluntdouble";
+		MELEE_DMG = 140;
+		MELEE_DMG_RANGE = 140;
+		MELEE_ENERGY = 1;
+		MELEE_RANGE = 70;
+		MELEE_DMG_DELAY = 0.8;
+		MELEE_SOUND_DELAY = MELEE_DMG_DELAY;
+		MELEE_ATK_DURATION = 1.1;
+		MELEE_ACCURACY = 0.6;
+		MELEE_PARRY_AUGMENT = 0.0;
+		EFFECT_SCRIPT = "effects/debuff_stun";
+		MODEL_VIEW = "viewmodels/v_2hblunts.mdl";
+		MODEL_VIEW_IDX = 3;
+		MODEL_WORLD = "weapons/p_weapons1.mdl";
+		MODEL_HANDS = "weapons/p_weapons1.mdl";
+		MODEL_BODY_OFS = 74;
+		ANIM_PREFIX = "ravenmace";
+		SOUND_HEARTBEAT = "amb/wind.wav";
 		IN_HASTE = 0;
 	}
 
@@ -156,8 +191,8 @@ class BluntRavenmace : CGameScript
 	{
 		string maxstun = GetSkillLevel(GetOwner(), "bluntarms.prof");
 		maxstun += 1;
-		// TODO: capvar maxstun 1 35
-		string stuntime = Random(1, GetSkillLevel(GetOwner(), "bluntarms.prof"));
+		maxstun = max(1, min(35, maxstun));
+		float stuntime = Random(1, GetSkillLevel(GetOwner(), "bluntarms.prof"));
 		ApplyEffect(param1, EFFECT_SCRIPT, stuntime, 0, 0, GetEntityIndex(GetOwner()));
 	}
 

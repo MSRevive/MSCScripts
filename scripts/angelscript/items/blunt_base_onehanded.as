@@ -7,34 +7,61 @@ namespace MS
 
 class BluntBaseOnehanded : CGameScript
 {
+	int ANIM_ATTACK1;
+	int ANIM_ATTACK2;
+	int ANIM_ATTACK3;
+	int ANIM_IDLE1;
+	int ANIM_IDLE_TOTAL;
+	int ANIM_LIFT1;
+	string ANIM_PREFIX;
+	int ANIM_SHEATH;
+	string EFFECT_SCRIPT;
+	string MELEE_DMG_TYPE;
+	float MELEE_PARRY_AUGMENT;
+	string MELEE_SOUND;
+	string MELEE_SOUND_DELAY;
+	string MELEE_STAT;
+	string MELEE_VIEWANIM_ATK;
+	string MODEL_HANDS;
+	string MODEL_WORLD;
+	string PLAYERANIM_AIM;
+	string PLAYERANIM_SWING;
+	string SOUND_HITWALL1;
+	string SOUND_HITWALL2;
+	string SOUND_SWIPE;
+	string SPECIAL_02_CALLBACK;
+	float SPECIAL_02_DELAY_END;
+	float SPECIAL_02_DELAY_STRIKE;
+	string SPECIAL_02_RANGE;
+
 	BluntBaseOnehanded()
 	{
-		const int ANIM_LIFT1 = 0;
-		const int ANIM_IDLE1 = 1;
-		const int ANIM_IDLE_TOTAL = 1;
-		const int ANIM_ATTACK1 = 2;
-		const int ANIM_ATTACK2 = 3;
-		const int ANIM_ATTACK3 = 4;
-		const int ANIM_SHEATH = 5;
-		const string MELEE_VIEWANIM_ATK = ANIM_ATTACK1;
-		const string MELEE_STAT = "bluntarms";
-		const string MELEE_DMG_TYPE = "blunt";
-		const string MELEE_SOUND = SOUND_SWIPE;
-		const string SOUND_SWIPE = "weapons/swingsmall.wav";
-		const string PLAYERANIM_AIM = "blunt";
-		const string PLAYERANIM_SWING = "swing_blunt";
-		const string MELEE_SOUND_DELAY = MELEE_DMG_DELAY;
-		const float MELEE_PARRY_AUGMENT = 0.0;
-		const string ANIM_PREFIX = "rustedaxe";
-		const string MODEL_WORLD = "weapons/p_weapons1.mdl";
-		const string MODEL_HANDS = MODEL_WORLD;
-		const string EFFECT_SCRIPT = "effects/debuff_stun";
-		const string SPECIAL_02_CALLBACK = "special_02";
-		const float SPECIAL_02_DELAY_STRIKE = 1.5;
-		const float SPECIAL_02_DELAY_END = 2.0;
-		const string SPECIAL_02_RANGE = MELEE_RANGE;
-		const string SOUND_HITWALL1 = "weapons/xbow_hitbod1.wav";
-		const string SOUND_HITWALL2 = "weapons/cbar_hitbod2.wav";
+		ANIM_LIFT1 = 0;
+		ANIM_IDLE1 = 1;
+		ANIM_IDLE_TOTAL = 1;
+		ANIM_ATTACK1 = 2;
+		ANIM_ATTACK2 = 3;
+		ANIM_ATTACK3 = 4;
+		ANIM_SHEATH = 5;
+		MELEE_VIEWANIM_ATK = ANIM_ATTACK1;
+		MELEE_STAT = "bluntarms";
+		MELEE_DMG_TYPE = "blunt";
+		MELEE_SOUND = SOUND_SWIPE;
+		SOUND_SWIPE = "weapons/swingsmall.wav";
+		PLAYERANIM_AIM = "blunt";
+		PLAYERANIM_SWING = "swing_blunt";
+		MELEE_SOUND_DELAY = MELEE_DMG_DELAY;
+		MELEE_PARRY_AUGMENT = 0.0;
+		ANIM_PREFIX = "rustedaxe";
+		MODEL_WORLD = "weapons/p_weapons1.mdl";
+		MODEL_HANDS = MODEL_WORLD;
+		EFFECT_SCRIPT = "effects/debuff_stun";
+		SPECIAL_02_CALLBACK = "special_02";
+		SPECIAL_02_DELAY_STRIKE = 1.5;
+		SPECIAL_02_DELAY_END = 2.0;
+		SPECIAL_02_RANGE = MELEE_RANGE;
+		SOUND_HITWALL1 = "weapons/xbow_hitbod1.wav";
+		SOUND_HITWALL2 = "weapons/cbar_hitbod2.wav";
 	}
 
 	void weapon_spawn()
@@ -99,8 +126,8 @@ class BluntBaseOnehanded : CGameScript
 		if ((BLUNT_NO_STUN)) return;
 		string maxstun = GetSkillLevel(GetOwner(), "bluntarms.prof");
 		maxstun += 1;
-		// TODO: capvar maxstun 1 45
-		string stuntime = Random(1, maxstun);
+		maxstun = max(1, min(45, maxstun));
+		float stuntime = Random(1, maxstun);
 		ApplyEffect(param1, EFFECT_SCRIPT, stuntime, GetEntityIndex(GetOwner()));
 	}
 

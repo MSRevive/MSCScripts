@@ -7,12 +7,17 @@ namespace MS
 
 class ScrollSummonFangtooth : CGameScript
 {
+	int BASE_REQUIRED_LEVEL;
+	string BASE_REQUIRED_SKILL;
+	string BASE_SPELL_SCRIPT;
+	string BASE_SUMMON_TEXT;
+
 	ScrollSummonFangtooth()
 	{
-		const string BASE_SPELL_SCRIPT = "magic_hand_summon_fangtooth";
-		const string BASE_SUMMON_TEXT = "You learn to summon a fangtooth.";
-		const string BASE_REQUIRED_SKILL = "skill.spellcasting";
-		const int BASE_REQUIRED_LEVEL = 10;
+		BASE_SPELL_SCRIPT = "magic_hand_summon_fangtooth";
+		BASE_SUMMON_TEXT = "You learn to summon a fangtooth.";
+		BASE_REQUIRED_SKILL = "skill.spellcasting";
+		BASE_REQUIRED_LEVEL = 10;
 	}
 
 	void OnSpawn() override

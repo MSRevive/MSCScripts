@@ -13,15 +13,24 @@ class BatLarge : CGameScript
 	string ANIM_IDLE_HANG;
 	string ANIM_RUN;
 	string ANIM_WALK;
+	int ATTACK_DAMAGE;
 	float ATTACK_HITCHANCE;
 	int ATTACK_HITRANGE;
 	int ATTACK_RANGE;
 	string BAT_STATUS;
 	int CAN_FLEE;
 	int CAN_HUNT;
+	float FLEE_CHANCE;
+	int FLEE_HEALTH;
 	int MOVE_RANGE;
 	string NEXT_DODGE;
 	int NPC_GIVE_EXP;
+	string SOUND_DEATH;
+	string SOUND_IDLE;
+	string SOUND_PAIN;
+	string SOUND_STRUCK1;
+	string SOUND_STRUCK2;
+	string SOUND_STRUCK3;
 
 	BatLarge()
 	{
@@ -31,12 +40,12 @@ class BatLarge : CGameScript
 		ANIM_IDLE_HANG = "IdleHang";
 		ANIM_IDLE_FLY = "IdleFlyNormal";
 		ANIM_DEATH = "IdleFlyNormal";
-		const string SOUND_STRUCK1 = "weapons/cbar_hitbod1.wav";
-		const string SOUND_STRUCK2 = "weapons/cbar_hitbod2.wav";
-		const string SOUND_STRUCK3 = "weapons/cbar_hitbod3.wav";
-		const string SOUND_PAIN = "monsters/rat/squeak1.wav";
-		const string SOUND_IDLE = "monsters/rat/squeak2.wav";
-		const string SOUND_DEATH = "monsters/rat/squeak3.wav";
+		SOUND_STRUCK1 = "weapons/cbar_hitbod1.wav";
+		SOUND_STRUCK2 = "weapons/cbar_hitbod2.wav";
+		SOUND_STRUCK3 = "weapons/cbar_hitbod3.wav";
+		SOUND_PAIN = "monsters/rat/squeak1.wav";
+		SOUND_IDLE = "monsters/rat/squeak2.wav";
+		SOUND_DEATH = "monsters/rat/squeak3.wav";
 		MOVE_RANGE = 30;
 		ATTACK_RANGE = 65;
 		ATTACK_HITRANGE = 100;
@@ -45,11 +54,11 @@ class BatLarge : CGameScript
 		{
 			ATTACK_HITCHANCE = 0.8;
 		}
-		const int ATTACK_DAMAGE = 20;
+		ATTACK_DAMAGE = 20;
 		NPC_GIVE_EXP = 25;
 		CAN_FLEE = 1;
-		const int FLEE_HEALTH = 0;
-		const float FLEE_CHANCE = 1.0;
+		FLEE_HEALTH = 0;
+		FLEE_CHANCE = 1.0;
 		Precache(SOUND_IDLE);
 	}
 
@@ -97,9 +106,9 @@ class BatLarge : CGameScript
 		if (!(GetGameTime() > NEXT_DODGE)) return;
 		NEXT_DODGE = GetGameTime();
 		NEXT_DODGE += Random(1.0, 3.0);
-		string RND_LF = Random(-300, 300);
-		string RND_FB = Random(-1000, 0);
-		string RND_UP = Random(0, 300);
+		float RND_LF = Random(-300, 300);
+		float RND_FB = Random(-1000, 0);
+		float RND_UP = Random(0, 300);
 		AddVelocity(GetOwner(), /* TODO: $relvel */ $relvel(RND_LF, RND_FB, RND_UP));
 	}
 

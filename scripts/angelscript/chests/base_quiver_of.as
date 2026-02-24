@@ -8,12 +8,13 @@ class BaseQuiverOf : CGameScript
 	string BQ_BUNDLE_SIZE;
 	int BQ_CUSTOM;
 	string BQ_QUIVER_TYPE;
+	int IS_QUIVER;
 	string NEW_NAME;
 	string NPC_DO_EVENTS;
 
 	BaseQuiverOf()
 	{
-		const int IS_QUIVER = 1;
+		IS_QUIVER = 1;
 	}
 
 	void OnSpawn() override
@@ -43,7 +44,7 @@ class BaseQuiverOf : CGameScript
 			string OUT_MSG = "Quiver type invalid or not set (";
 			OUT_MSG += BQ_QUIVER_TYPE;
 			OUT_MSG += ")";
-			SendInfoMsg(param1, "QUIVER ERROR OUT_MSG");
+			SendInfoMsg(param1, "QUIVER ERROR " + OUT_MSG);
 		}
 		// TODO: offer PARAM1 BQ_QUIVER_TYPE BQ_BUNDLE_SIZE
 		DeleteEntity(GetOwner());

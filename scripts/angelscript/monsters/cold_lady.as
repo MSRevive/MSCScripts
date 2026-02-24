@@ -19,8 +19,14 @@ class ColdLady : CGameScript
 	int BEAM_ATTACK;
 	int DEST_ROT;
 	string DID_INTRO;
+	int DMG_ICE;
+	int DOT_FREEZE;
+	float FREQ_PICK;
 	int FWD_SPEED;
+	int FWD_SPEED_FAST;
+	int FWD_SPEED_NORM;
 	int IS_UNHOLY;
+	int MAX_ROAM_RANGE;
 	int MOVE_STEP;
 	string MOVE_TARGET;
 	int MOVING_IN;
@@ -28,14 +34,29 @@ class ColdLady : CGameScript
 	string NPC_NOCLIP_DEST;
 	int N_VALID;
 	string PICK_PLAYER_DELAY;
+	int ROAM_RANGE;
+	string SOUND_ALERT;
+	string SOUND_ATTACK1;
+	string SOUND_ATTACK2;
+	string SOUND_ATTACK3;
+	string SOUND_DEATH;
+	string SOUND_FREEZE;
+	string SOUND_INTRO1;
+	string SOUND_INTRO2;
+	string SOUND_PAIN1;
+	string SOUND_PAIN2;
+	string SOUND_STRUCK1;
+	string SOUND_STRUCK2;
 	string VALID_PLAYERS;
+	float VERT_WOBBLE_ACTIVE;
+	int VERT_WOBBLE_IDLE;
 
 	ColdLady()
 	{
 		IS_UNHOLY = 1;
-		const float FREQ_PICK = 5.0;
-		const string DMG_ICE = RandomInt(100, 200);
-		const string DOT_FREEZE = RandomInt(40, 80);
+		FREQ_PICK = 5.0;
+		DMG_ICE = RandomInt(100, 200);
+		DOT_FREEZE = RandomInt(40, 80);
 		ANIM_WALK = "treadwater";
 		ANIM_RUN = "swim";
 		ANIM_IDLE = "treadwater";
@@ -44,25 +65,25 @@ class ColdLady : CGameScript
 		ATTACK_MOVERANGE = 100;
 		ATTACK_HITRANGE = 200;
 		NPC_GIVE_EXP = 400;
-		const int FWD_SPEED_NORM = 10;
-		const int FWD_SPEED_FAST = 30;
-		const string VERT_WOBBLE_ACTIVE = Random(-128, 128);
-		const int VERT_WOBBLE_IDLE = 0;
+		FWD_SPEED_NORM = 10;
+		FWD_SPEED_FAST = 30;
+		VERT_WOBBLE_ACTIVE = Random(-128, 128);
+		VERT_WOBBLE_IDLE = 0;
 		FWD_SPEED = 10;
-		const int ROAM_RANGE = 512;
-		const int MAX_ROAM_RANGE = 4096;
-		const string SOUND_FREEZE = "debris/beamstart14.wav";
-		const string SOUND_ATTACK1 = "voices/icelady_giggle1.wav";
-		const string SOUND_ATTACK2 = "voices/icelady_giggle2.wav";
-		const string SOUND_ATTACK3 = "voices/icelady_giggle3.wav";
-		const string SOUND_ALERT = "voices/icelady_taunt1.wav";
-		const string SOUND_INTRO1 = "voices/icelady_taunt2.wav";
-		const string SOUND_INTRO2 = "voices/icelady_taunt2b.wav";
-		const string SOUND_PAIN1 = "voices/icelady_pain1.wav";
-		const string SOUND_PAIN2 = "voices/icelady_pain2.wav";
-		const string SOUND_STRUCK1 = "debris/glass1.wav";
-		const string SOUND_STRUCK2 = "debris/glass2.wav";
-		const string SOUND_DEATH = "voices/icelady_pain2.wav";
+		ROAM_RANGE = 512;
+		MAX_ROAM_RANGE = 4096;
+		SOUND_FREEZE = "debris/beamstart14.wav";
+		SOUND_ATTACK1 = "voices/icelady_giggle1.wav";
+		SOUND_ATTACK2 = "voices/icelady_giggle2.wav";
+		SOUND_ATTACK3 = "voices/icelady_giggle3.wav";
+		SOUND_ALERT = "voices/icelady_taunt1.wav";
+		SOUND_INTRO1 = "voices/icelady_taunt2.wav";
+		SOUND_INTRO2 = "voices/icelady_taunt2b.wav";
+		SOUND_PAIN1 = "voices/icelady_pain1.wav";
+		SOUND_PAIN2 = "voices/icelady_pain2.wav";
+		SOUND_STRUCK1 = "debris/glass1.wav";
+		SOUND_STRUCK2 = "debris/glass2.wav";
+		SOUND_DEATH = "voices/icelady_pain2.wav";
 		ANIM_DEATH = "die_simple";
 	}
 
@@ -217,7 +238,7 @@ class ColdLady : CGameScript
 
 	void do_intro()
 	{
-		string INTRO_DIFF = GetGameTime();
+		float INTRO_DIFF = GetGameTime();
 		INTRO_DIFF -= G_ICELADY_INTRO;
 		if (!(INTRO_DIFF > 10)) return;
 		SetGlobalVar("G_ICELADY_INTRO", GetGameTime());
@@ -251,7 +272,7 @@ class ColdLady : CGameScript
 		}
 		if (!(N_VALID > 1)) return;
 		N_VALID -= 1;
-		string RND_VALID = RandomInt(0, N_VALID);
+		int RND_VALID = RandomInt(0, N_VALID);
 		move_in("new_target_multi");
 		MOVE_TARGET = GetToken(PLAYER_LIST, RND_VALID, ";");
 	}

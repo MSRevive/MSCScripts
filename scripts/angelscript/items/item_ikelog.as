@@ -7,10 +7,13 @@ namespace MS
 
 class ItemIkelog : CGameScript
 {
+	string MODEL_HANDS;
+	string MODEL_WORLD;
+
 	ItemIkelog()
 	{
-		const string MODEL_WORLD = "misc/item_log.mdl";
-		const string MODEL_HANDS = "misc/p_misc.mdl";
+		MODEL_WORLD = "misc/item_log.mdl";
+		MODEL_HANDS = "misc/p_misc.mdl";
 	}
 
 	void miscitem_spawn()

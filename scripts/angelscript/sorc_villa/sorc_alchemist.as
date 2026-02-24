@@ -9,22 +9,27 @@ namespace MS
 
 class SorcAlchemist : CGameScript
 {
+	string BUSY_COMMENT;
+	int CHAT_NEVER_INTERRUPT;
+	int CHAT_NO_CLOSE_MOUTH;
 	int CHAT_TEMP_NO_AUTO_FACE;
+	int CHAT_USE_CONV_ANIMS;
 	int CHIEF_GONE;
 	int DID_INTRO;
 	int PLAYING_DEAD;
 	string PLR_INTRO;
 	string SORC_CHIEF_ID;
 	string STORE_NAME;
+	int VEND_INDIVIDUAL;
 
 	SorcAlchemist()
 	{
-		const int CHAT_USE_CONV_ANIMS = 0;
-		const int CHAT_NO_CLOSE_MOUTH = 1;
-		const int CHAT_NEVER_INTERRUPT = 1;
+		CHAT_USE_CONV_ANIMS = 0;
+		CHAT_NO_CLOSE_MOUTH = 1;
+		CHAT_NEVER_INTERRUPT = 1;
 		STORE_NAME = "sorc_pots";
-		const int VEND_INDIVIDUAL = 1;
-		const string BUSY_COMMENT = "Stupid impatient humans... One at a time!";
+		VEND_INDIVIDUAL = 1;
+		BUSY_COMMENT = "Stupid impatient humans... One at a time!";
 	}
 
 	void OnSpawn() override

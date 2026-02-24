@@ -12,22 +12,31 @@ class SlimeBlackSmall : CGameScript
 	string ANIM_IDLE;
 	string ANIM_RUN;
 	string ANIM_WALK;
+	float ATTACK_DAMAGE;
+	float ATTACK_HITCHANCE;
 	int ATTACK_HITRANGE;
 	int ATTACK_RANGE;
 	string MOMMY_KILLER;
 	int MOVE_RANGE;
 	int NO_SPAWN_STUCK_CHECK;
+	int NPC_BASE_EXP;
 	int NPC_GIVE_EXP;
 	int NPC_MUST_SEE_TARGET;
+	string SOUND_ATTACK1;
+	string SOUND_ATTACK2;
+	string SOUND_DEATH;
+	string SOUND_IDLE;
+	string SOUND_STRUCK1;
+	string SOUND_STRUCK2;
 
 	SlimeBlackSmall()
 	{
-		const string SOUND_DEATH = "monsters/sludge/bio.wav";
-		const string SOUND_STRUCK1 = "barnacle/bcl_bite3.wav";
-		const string SOUND_STRUCK2 = "barnacle/bcl_die3.wav";
-		const string SOUND_IDLE = "barnacle/bcl_alert2.wav";
-		const string SOUND_ATTACK1 = "barnacle/bcl_tongue1.wav";
-		const string SOUND_ATTACK2 = "barnacle/bcl_chew3.wav";
+		SOUND_DEATH = "monsters/sludge/bio.wav";
+		SOUND_STRUCK1 = "barnacle/bcl_bite3.wav";
+		SOUND_STRUCK2 = "barnacle/bcl_die3.wav";
+		SOUND_IDLE = "barnacle/bcl_alert2.wav";
+		SOUND_ATTACK1 = "barnacle/bcl_tongue1.wav";
+		SOUND_ATTACK2 = "barnacle/bcl_chew3.wav";
 		Precache(SOUND_DEATH);
 		ANIM_IDLE = "walk";
 		ANIM_RUN = "run";
@@ -37,11 +46,11 @@ class SlimeBlackSmall : CGameScript
 		MOVE_RANGE = 10;
 		ATTACK_RANGE = 80;
 		ATTACK_HITRANGE = 120;
-		const float ATTACK_HITCHANCE = 0.75;
-		const string ATTACK_DAMAGE = Random(1, 3);
+		ATTACK_HITCHANCE = 0.75;
+		ATTACK_DAMAGE = Random(1, 3);
 		NPC_MUST_SEE_TARGET = 0;
 		NO_SPAWN_STUCK_CHECK = 1;
-		const int NPC_BASE_EXP = 10;
+		NPC_BASE_EXP = 10;
 	}
 
 	void OnSpawn() override

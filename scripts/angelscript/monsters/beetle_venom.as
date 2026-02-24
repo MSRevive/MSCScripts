@@ -7,25 +7,37 @@ namespace MS
 
 class BeetleVenom : CGameScript
 {
+	int BBET_CAN_FLY;
+	int BBET_CAN_LEAP;
+	int BBET_CAN_SLAM;
+	int BBET_FAKE_DEATH;
+	int BBET_GORE_PUSH_STR;
+	int BBET_SIZE;
+	int DMG_BURST;
+	int DMG_GORE;
+	int DMG_LEAP;
+	int DMG_SLASH;
+	float DOT_POISON;
 	string FART_CL_IDX;
 	int NPC_GIVE_EXP;
 	string POISON_TARGS;
+	string SOUND_POISON_BURST;
 
 	BeetleVenom()
 	{
 		NPC_GIVE_EXP = 600;
-		const int BBET_SIZE = 1;
-		const int BBET_CAN_FLY = 1;
-		const int BBET_CAN_LEAP = 1;
-		const int BBET_CAN_SLAM = 0;
-		const int BBET_GORE_PUSH_STR = 300;
-		const int BBET_FAKE_DEATH = 1;
-		const int DMG_SLASH = 40;
-		const int DMG_GORE = 60;
-		const int DMG_LEAP = 100;
-		const float DOT_POISON = 50.0;
-		const int DMG_BURST = 200;
-		const string SOUND_POISON_BURST = "weapons/explode3.wav";
+		BBET_SIZE = 1;
+		BBET_CAN_FLY = 1;
+		BBET_CAN_LEAP = 1;
+		BBET_CAN_SLAM = 0;
+		BBET_GORE_PUSH_STR = 300;
+		BBET_FAKE_DEATH = 1;
+		DMG_SLASH = 40;
+		DMG_GORE = 60;
+		DMG_LEAP = 100;
+		DOT_POISON = 50.0;
+		DMG_BURST = 200;
+		SOUND_POISON_BURST = "weapons/explode3.wav";
 	}
 
 	void game_precache()

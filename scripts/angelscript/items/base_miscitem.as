@@ -7,14 +7,21 @@ namespace MS
 
 class BaseMiscitem : CGameScript
 {
+	string ANIM_PREFIX;
+	int MODEL_BODY_OFS;
+	string MODEL_HANDS;
+	string MODEL_VIEW;
+	string MODEL_WORLD;
+	string PLAYERANIM_AIM;
+
 	BaseMiscitem()
 	{
-		const string MODEL_WORLD = "misc/p_misc.mdl";
-		const string MODEL_HANDS = "misc/p_misc.mdl";
-		const string MODEL_VIEW = "none";
-		const int MODEL_BODY_OFS = 16;
-		const string ANIM_PREFIX = "package";
-		const string PLAYERANIM_AIM = "holditem";
+		MODEL_WORLD = "misc/p_misc.mdl";
+		MODEL_HANDS = "misc/p_misc.mdl";
+		MODEL_VIEW = "none";
+		MODEL_BODY_OFS = 16;
+		ANIM_PREFIX = "package";
+		PLAYERANIM_AIM = "holditem";
 	}
 
 	void OnSpawn() override

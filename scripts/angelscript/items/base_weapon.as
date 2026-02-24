@@ -8,10 +8,11 @@ namespace MS
 class BaseWeapon : CGameScript
 {
 	int IS_WEAPON;
+	string PLAYERANIM_AIM;
 
 	BaseWeapon()
 	{
-		const string PLAYERANIM_AIM = "blunt";
+		PLAYERANIM_AIM = "blunt";
 		IS_WEAPON = 1;
 	}
 

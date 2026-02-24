@@ -7,24 +7,52 @@ namespace MS
 
 class KAlcolyte : CGameScript
 {
-	string ALCO_TYPE;
+	int ALCO_TYPE;
 	string ANIM_ATTACK;
+	string ANIM_ATTACK_CRAWL;
+	string ANIM_ATTACK_NORM;
+	string ANIM_CAST_CRAWL;
+	string ANIM_CAST_NORM;
+	string ANIM_CRAWL;
 	string ANIM_DEATH;
+	string ANIM_DEATH1;
+	string ANIM_DEATH2;
+	string ANIM_DEATH3;
+	string ANIM_DEATH4;
+	string ANIM_DEATH5;
+	string ANIM_DEATH6;
+	string ANIM_DEATH7;
+	string ANIM_HOP;
 	string ANIM_IDLE;
+	string ANIM_IDLE_CRAWL;
+	string ANIM_IDLE_NORM;
+	string ANIM_JUMP;
 	string ANIM_RUN;
+	string ANIM_RUN_NORM;
+	string ANIM_SEARCH;
 	string ANIM_WALK;
+	string ANIM_WALK_NORM;
 	string AS_ATTACKING;
 	string ATTACK_HITCHANCE;
 	int ATTACK_HITRANGE;
 	int ATTACK_MOVERANGE;
 	int ATTACK_RANGE;
+	float CHANCE_EFFECT;
 	string DID_WARCRY;
+	int DMG_KNIFE;
+	int DMG_TOSS;
 	int DROP_GOLD;
-	string DROP_GOLD_AMT;
+	int DROP_GOLD_AMT;
 	string EFFECT_DMG;
 	string EFFECT_DUR;
 	string EFFECT_SCRIPT;
 	string FREQ_COMBAT;
+	float FREQ_IDLE;
+	float FREQ_LEAP;
+	float FREQ_LOOK;
+	float FREQ_LOTS;
+	float FREQ_NORM;
+	float FREQ_RARE;
 	string FREQ_THROW;
 	int JUMP_CHANCE;
 	string K_MOVE_TYPE;
@@ -34,9 +62,29 @@ class KAlcolyte : CGameScript
 	int NPC_FORCED_MOVEDEST;
 	int NPC_GIVE_EXP;
 	string ORIG_WEAPON;
+	int PROJ_SPEED;
 	int SEARCH_DELAY;
+	string SOUND_ALERT1;
+	string SOUND_ALERT2;
+	string SOUND_BURN;
+	string SOUND_DEATH1;
+	string SOUND_DEATH2;
+	string SOUND_DRAW;
 	string SOUND_EFFECT;
 	string SOUND_EFFECT_DELAY;
+	string SOUND_FREEZE;
+	string SOUND_IDLE;
+	string SOUND_JUMP;
+	string SOUND_PAIN1;
+	string SOUND_PAIN2;
+	string SOUND_PARRY;
+	string SOUND_POISON;
+	string SOUND_STRUCK1;
+	string SOUND_STRUCK2;
+	string SOUND_SWING;
+	string SOUND_THROW;
+	string SOUND_WARCRY1;
+	string SOUND_WARCRY2;
 	int STARTED_CYCLES;
 	string THROW_DELAY;
 
@@ -47,60 +95,60 @@ class KAlcolyte : CGameScript
 		ANIM_IDLE = "idle";
 		ANIM_ATTACK = "ref_shoot_knife";
 		ANIM_DEATH = "die_simple";
-		const string ANIM_WALK_NORM = "walk2handed";
-		const string ANIM_RUN_NORM = "run2";
-		const string ANIM_IDLE_NORM = "idle";
-		const string ANIM_HOP = "jump";
-		const string ANIM_JUMP = "long_jump";
-		const string ANIM_CRAWL = "crawl";
-		const string ANIM_IDLE_CRAWL = "crouch_idle";
-		const string ANIM_ATTACK_NORM = "ref_shoot_knife";
-		const string ANIM_ATTACK_CRAWL = "crouch_shoot_knife";
-		const string ANIM_SEARCH = "look_idle";
-		const string ANIM_CAST_NORM = "ref_shoot_onehanded";
-		const string ANIM_CAST_CRAWL = "crouch_shoot_onehanded";
-		const string ANIM_DEATH1 = "die_simple";
-		const string ANIM_DEATH2 = "die_backwards1";
-		const string ANIM_DEATH3 = "die_backwards";
-		const string ANIM_DEATH4 = "die_forwards";
-		const string ANIM_DEATH5 = "headshot";
-		const string ANIM_DEATH6 = "die_spin";
-		const string ANIM_DEATH7 = "gutshot";
+		ANIM_WALK_NORM = "walk2handed";
+		ANIM_RUN_NORM = "run2";
+		ANIM_IDLE_NORM = "idle";
+		ANIM_HOP = "jump";
+		ANIM_JUMP = "long_jump";
+		ANIM_CRAWL = "crawl";
+		ANIM_IDLE_CRAWL = "crouch_idle";
+		ANIM_ATTACK_NORM = "ref_shoot_knife";
+		ANIM_ATTACK_CRAWL = "crouch_shoot_knife";
+		ANIM_SEARCH = "look_idle";
+		ANIM_CAST_NORM = "ref_shoot_onehanded";
+		ANIM_CAST_CRAWL = "crouch_shoot_onehanded";
+		ANIM_DEATH1 = "die_simple";
+		ANIM_DEATH2 = "die_backwards1";
+		ANIM_DEATH3 = "die_backwards";
+		ANIM_DEATH4 = "die_forwards";
+		ANIM_DEATH5 = "headshot";
+		ANIM_DEATH6 = "die_spin";
+		ANIM_DEATH7 = "gutshot";
 		ATTACK_RANGE = 100;
 		ATTACK_HITRANGE = 170;
 		ATTACK_MOVERANGE = 80;
 		DROP_GOLD = 1;
 		DROP_GOLD_AMT = RandomInt(10, 20);
 		NPC_GIVE_EXP = 100;
-		const string DMG_KNIFE = RandomInt(10, 20);
-		const float CHANCE_EFFECT = 0.3;
-		const string FREQ_IDLE = Random(5.0, 10.0);
-		const string DMG_TOSS = RandomInt(20, 30);
-		const int PROJ_SPEED = 600;
-		const float FREQ_LOOK = 10.0;
-		const string FREQ_LOTS = Random(3, 10);
-		const string FREQ_RARE = Random(20, 30);
-		const string FREQ_NORM = Random(10, 15);
-		const float FREQ_LEAP = 5.0;
-		const string SOUND_JUMP = "voices/kcult_jump.wav";
-		const string SOUND_SWING = "weapons/swingsmall.wav";
-		const string SOUND_THROW = "zombie/claw_miss1.wav";
-		const string SOUND_DRAW = "weapons/dagger/dagger2.wav";
-		const string SOUND_PARRY = "weapons/dagger/daggermetal2.wav";
-		const string SOUND_PAIN1 = "voices/kcult_pain3.wav";
-		const string SOUND_PAIN2 = "voices/kcult_pain2.wav";
-		const string SOUND_DEATH1 = "voices/kcult_pain1.wav";
-		const string SOUND_DEATH2 = "voices/kcult_die1.wav";
-		const string SOUND_ALERT1 = "voices/kcult_ally_alert1.wav";
-		const string SOUND_ALERT2 = "voices/kcult_ally_alert2.wav";
-		const string SOUND_IDLE = "voices/kcult_idle.wav";
-		const string SOUND_WARCRY1 = "voices/kcult_alert1.wav";
-		const string SOUND_WARCRY2 = "voices/kcult_alert2.wav";
-		const string SOUND_STRUCK1 = "debris/flesh1.wav";
-		const string SOUND_STRUCK2 = "debris/flesh2.wav";
-		const string SOUND_BURN = "ambience/steamburst1.wav";
-		const string SOUND_POISON = "bullchicken/bc_bite2.wav";
-		const string SOUND_FREEZE = "magic/frost_forward.wav";
+		DMG_KNIFE = RandomInt(10, 20);
+		CHANCE_EFFECT = 0.3;
+		FREQ_IDLE = Random(5.0, 10.0);
+		DMG_TOSS = RandomInt(20, 30);
+		PROJ_SPEED = 600;
+		FREQ_LOOK = 10.0;
+		FREQ_LOTS = Random(3, 10);
+		FREQ_RARE = Random(20, 30);
+		FREQ_NORM = Random(10, 15);
+		FREQ_LEAP = 5.0;
+		SOUND_JUMP = "voices/kcult_jump.wav";
+		SOUND_SWING = "weapons/swingsmall.wav";
+		SOUND_THROW = "zombie/claw_miss1.wav";
+		SOUND_DRAW = "weapons/dagger/dagger2.wav";
+		SOUND_PARRY = "weapons/dagger/daggermetal2.wav";
+		SOUND_PAIN1 = "voices/kcult_pain3.wav";
+		SOUND_PAIN2 = "voices/kcult_pain2.wav";
+		SOUND_DEATH1 = "voices/kcult_pain1.wav";
+		SOUND_DEATH2 = "voices/kcult_die1.wav";
+		SOUND_ALERT1 = "voices/kcult_ally_alert1.wav";
+		SOUND_ALERT2 = "voices/kcult_ally_alert2.wav";
+		SOUND_IDLE = "voices/kcult_idle.wav";
+		SOUND_WARCRY1 = "voices/kcult_alert1.wav";
+		SOUND_WARCRY2 = "voices/kcult_alert2.wav";
+		SOUND_STRUCK1 = "debris/flesh1.wav";
+		SOUND_STRUCK2 = "debris/flesh2.wav";
+		SOUND_BURN = "ambience/steamburst1.wav";
+		SOUND_POISON = "bullchicken/bc_bite2.wav";
+		SOUND_FREEZE = "magic/frost_forward.wav";
 		Precache(SOUND_FREEZE);
 	}
 
@@ -129,7 +177,7 @@ class KAlcolyte : CGameScript
 		SetModel("monsters/k_alcolyte.mdl");
 		if ((true))
 		{
-			string BASE_HP = RandomInt(200, 300);
+			int BASE_HP = RandomInt(200, 300);
 			SetHealth(BASE_HP);
 		}
 		SetRace("demon");
@@ -172,7 +220,7 @@ class KAlcolyte : CGameScript
 		{
 			ALCO_TYPE = "cold";
 		}
-		string RND_FACE = RandomInt(1, 2);
+		int RND_FACE = RandomInt(1, 2);
 		if (RND_FACE == 1)
 		{
 			SetModelBody(1, 0);
@@ -285,7 +333,7 @@ class KAlcolyte : CGameScript
 
 	void OnDeath(CBaseEntity@ attacker) override
 	{
-		string RND_DEATH = RandomInt(1, 7);
+		int RND_DEATH = RandomInt(1, 7);
 		if (RND_DEATH == 1)
 		{
 			ANIM_DEATH = ANIM_DEATH1;
@@ -486,7 +534,7 @@ class KAlcolyte : CGameScript
 		if ((AM_TURRET)) return;
 		FREQ_COMBAT("do_combat_move");
 		if (!(m_hAttackTarget != "unset")) return;
-		string RND_MOVE = RandomInt(1, 5);
+		int RND_MOVE = RandomInt(1, 5);
 		if (RND_MOVE > JUMP_CHANCE)
 		{
 			toggle_stance();

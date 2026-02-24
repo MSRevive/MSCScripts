@@ -7,27 +7,44 @@ namespace MS
 
 class ProjStaffIcelance : CGameScript
 {
+	int ARROW_BODY_OFS;
+	float ARROW_BREAK_CHANCE;
+	int ARROW_SOLIDIFY_ON_WALL;
 	string EFFECT_DURATION;
+	string ITEM_NAME;
+	int MODEL_BODY_OFS;
+	string MODEL_HANDS;
+	string MODEL_WORLD;
+	string PROJ_ANIM_IDLE;
+	int PROJ_COLLIDEHITBOX;
+	int PROJ_DAMAGE;
+	string PROJ_DAMAGESTAT;
+	string PROJ_DAMAGE_TYPE;
+	int PROJ_MOTIONBLUR;
+	int PROJ_STICK_DURATION;
+	string SOUND_BURN;
+	string SOUND_HITWALL1;
+	string SOUND_HITWALL2;
 
 	ProjStaffIcelance()
 	{
-		const string MODEL_HANDS = "none";
-		const string MODEL_WORLD = "weapons/projectiles.mdl";
-		const int MODEL_BODY_OFS = 38;
-		const int ARROW_BODY_OFS = 38;
-		const string SOUND_HITWALL1 = "weapons/axemetal1.wav";
-		const string SOUND_HITWALL2 = "weapons/axemetal1.wav";
-		const string SOUND_BURN = "magic/ice_powerup.wav";
-		const int ARROW_SOLIDIFY_ON_WALL = 0;
-		const float ARROW_BREAK_CHANCE = 1.0;
-		const string ITEM_NAME = "watermana";
-		const string PROJ_DAMAGE_TYPE = "cold";
-		const string PROJ_DAMAGESTAT = "spellcasting.ice";
-		const string PROJ_ANIM_IDLE = "idle_icelance";
-		const int PROJ_MOTIONBLUR = 0;
-		const int PROJ_DAMAGE = 0;
-		const int PROJ_STICK_DURATION = 0;
-		const int PROJ_COLLIDEHITBOX = 0;
+		MODEL_HANDS = "none";
+		MODEL_WORLD = "weapons/projectiles.mdl";
+		MODEL_BODY_OFS = 38;
+		ARROW_BODY_OFS = 38;
+		SOUND_HITWALL1 = "weapons/axemetal1.wav";
+		SOUND_HITWALL2 = "weapons/axemetal1.wav";
+		SOUND_BURN = "magic/ice_powerup.wav";
+		ARROW_SOLIDIFY_ON_WALL = 0;
+		ARROW_BREAK_CHANCE = 1.0;
+		ITEM_NAME = "watermana";
+		PROJ_DAMAGE_TYPE = "cold";
+		PROJ_DAMAGESTAT = "spellcasting.ice";
+		PROJ_ANIM_IDLE = "idle_icelance";
+		PROJ_MOTIONBLUR = 0;
+		PROJ_DAMAGE = 0;
+		PROJ_STICK_DURATION = 0;
+		PROJ_COLLIDEHITBOX = 0;
 	}
 
 	void arrow_spawn()
@@ -69,8 +86,8 @@ class ProjStaffIcelance : CGameScript
 		XDoDamage(ENEMY_HIT, "direct", DIR_DMG, 1.0, MY_OWNER, GetOwner(), "spellcasting.ice", "cold");
 		EFFECT_DURATION = GetSkillLevel(MY_OWNER, "spellcasting.ice");
 		EFFECT_DURATION *= 0.25;
-		// TODO: capvar EFFECT_DURATION 3 5
-		string RND_EFFECT = RandomInt(1, 2);
+		EFFECT_DURATION = max(3, min(5, EFFECT_DURATION));
+		int RND_EFFECT = RandomInt(1, 2);
 		string FROST_DMG = GetSkillLevel(MY_OWNER, "spellcasting.ice");
 		FROST_DMG *= 0.5;
 		ApplyEffect(ENEMY_HIT, "effects/dot_cold", EFFECT_DURATION, MY_OWNER, FROST_DMG, "spellcasting.ice");

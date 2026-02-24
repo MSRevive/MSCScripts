@@ -5,10 +5,13 @@ namespace MS
 
 class KeyholeForged : CGameScript
 {
+	string KEYHOLE_TITLE;
+	string KEY_NAME;
+
 	KeyholeForged()
 	{
-		const string KEY_NAME = "key_forged";
-		const string KEYHOLE_TITLE = "Use the forged key";
+		KEY_NAME = "key_forged";
+		KEYHOLE_TITLE = "Use the forged key";
 	}
 
 	void OnSpawn() override

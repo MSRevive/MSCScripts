@@ -6,13 +6,17 @@ namespace MS
 class SfxBlueFlames : CGameScript
 {
 	string FX_IDX;
+	int OFSZ_NEG;
+	int OFS_NEG;
+	int OFS_POS;
+	string SPRITE_1;
 
 	SfxBlueFlames()
 	{
-		const int OFS_POS = 16;
-		const int OFS_NEG = -16;
-		const int OFSZ_NEG = 0;
-		const string SPRITE_1 = "xsmoke3.spr";
+		OFS_POS = 16;
+		OFS_NEG = -16;
+		OFSZ_NEG = 0;
+		SPRITE_1 = "xsmoke3.spr";
 	}
 
 	void OnRepeatTimer()

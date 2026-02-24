@@ -12,10 +12,11 @@ class SfxBeamSparks : CGameScript
 	string FX_DURATION;
 	string FX_OWNER;
 	string FX_TARGET;
+	string SPRITE_NAME;
 
 	SfxBeamSparks()
 	{
-		const string SPRITE_NAME = "3dmflaora.spr";
+		SPRITE_NAME = "3dmflaora.spr";
 	}
 
 	void client_activate()
@@ -94,9 +95,9 @@ class SfxBeamSparks : CGameScript
 		ClientEffect("tempent", "set_current_prop", "collide", "world;die");
 		ClientEffect("tempent", "set_current_prop", "framerate", 30);
 		ClientEffect("tempent", "set_current_prop", "frames", 1);
-		string RND_ANG = Random(0, 359);
-		string RND_SPEED = Random(200, 500);
-		string RND_V = Random(0, 300);
+		float RND_ANG = Random(0, 359);
+		float RND_SPEED = Random(200, 500);
+		float RND_V = Random(0, 300);
 		ClientEffect("tempent", "set_current_prop", "velocity", /* TODO: $relvel */ $relvel(Vector3(0, RND_ANG, 0), Vector3(0, RND_SPEED, RND_V)));
 	}
 

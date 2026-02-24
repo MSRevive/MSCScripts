@@ -7,14 +7,21 @@ namespace MS
 
 class FiregiantghoulGreater : CGameScript
 {
+	int ATTACK_DAMAGE;
+	int FIN_EXP;
+	int FIREBALL_DAMAGE;
+	int MY_MAX_HP;
+	string MY_NAME;
+	int THROW_CHANCE;
+
 	FiregiantghoulGreater()
 	{
-		const int MY_MAX_HP = 4000;
-		const string MY_NAME = "Greater Undead Firegiant";
-		const int FIREBALL_DAMAGE = 100;
-		const int ATTACK_DAMAGE = 60;
-		const int THROW_CHANCE = 30;
-		const int FIN_EXP = 400;
+		MY_MAX_HP = 4000;
+		MY_NAME = "Greater Undead Firegiant";
+		FIREBALL_DAMAGE = 100;
+		ATTACK_DAMAGE = 60;
+		THROW_CHANCE = 30;
+		FIN_EXP = 400;
 	}
 
 	void OnSpawn() override

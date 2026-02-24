@@ -13,6 +13,7 @@ class BaseCompanion : CGameScript
 	string COMPANION_HP;
 	int COMPANION_LR;
 	string COMPANION_NAME;
+	int COMPANION_NEW_TYPE;
 	string COMPANION_NEXT_REGEN;
 	string COMPANION_XP;
 	int CONVERTING_COMPANION;
@@ -32,7 +33,7 @@ class BaseCompanion : CGameScript
 		I_R_PET = 1;
 		COMPANION_LR = 0;
 		NO_SPAWN_STUCK_CHECK = 1;
-		const int COMPANION_NEW_TYPE = 1;
+		COMPANION_NEW_TYPE = 1;
 	}
 
 	void OnRepeatTimer()
@@ -369,13 +370,13 @@ class BaseCompanion : CGameScript
 		{
 			if (GetEntityRange(SUMMON_MASTER) > 512)
 			{
-				SendPlayerMessage(SUMMON_MASTER, "COMPANION_NAME is under attack!");
+				SendPlayerMessage(SUMMON_MASTER, COMPANION_NAME + " is under attack!");
 			}
 			string QUART_HEALTH = GetEntityMaxHealth(GetOwner());
 			QUART_HEALTH *= 0.25;
 			if (GetEntityHealth(GetOwner()) < QUART_HEALTH)
 			{
-				SendPlayerMessage(SUMMON_MASTER, "COMPANION_NAME is low on health! int(GetEntityHealth(GetOwner())) hp");
+				SendPlayerMessage(SUMMON_MASTER, COMPANION_NAME + " is low on health! int(GetEntityHealth(GetOwner())) hp");
 			}
 			COMPANION_NEXT_REGEN = GetGameTime();
 			COMPANION_NEXT_REGEN += 30.0;

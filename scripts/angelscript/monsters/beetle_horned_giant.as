@@ -7,27 +7,39 @@ namespace MS
 
 class BeetleHornedGiant : CGameScript
 {
+	int BBET_CAN_FLY;
+	int BBET_CAN_LEAP;
+	int BBET_CAN_SLAM;
+	int BBET_FAKE_DEATH;
+	int BBET_GORE_PUSH_STR;
+	int BBET_SIZE;
+	int DMG_GORE;
+	int DMG_SLAM;
+	int DMG_SLASH;
 	int NPC_GIVE_EXP;
 	int NPC_MUST_SEE_TARGET;
 	string SLAM_POS;
+	string SOUND_ATTACK1;
+	string SOUND_ATTACK2;
+	string SOUND_ATTACK3;
 	string STUN_TARGS;
 
 	BeetleHornedGiant()
 	{
 		NPC_GIVE_EXP = 600;
-		const int BBET_SIZE = 2;
-		const int BBET_CAN_FLY = 0;
-		const int BBET_CAN_LEAP = 0;
-		const int BBET_CAN_SLAM = 1;
-		const int BBET_GORE_PUSH_STR = 800;
-		const int BBET_FAKE_DEATH = 0;
-		const int DMG_SLASH = 80;
-		const int DMG_GORE = 100;
-		const int DMG_SLAM = 300;
+		BBET_SIZE = 2;
+		BBET_CAN_FLY = 0;
+		BBET_CAN_LEAP = 0;
+		BBET_CAN_SLAM = 1;
+		BBET_GORE_PUSH_STR = 800;
+		BBET_FAKE_DEATH = 0;
+		DMG_SLASH = 80;
+		DMG_GORE = 100;
+		DMG_SLAM = 300;
 		NPC_MUST_SEE_TARGET = 0;
-		const string SOUND_ATTACK1 = "monsters/beetle/attack_double1.wav";
-		const string SOUND_ATTACK2 = "monsters/beetle/attack_double2.wav";
-		const string SOUND_ATTACK3 = "monsters/beetle/attack_double3.wav";
+		SOUND_ATTACK1 = "monsters/beetle/attack_double1.wav";
+		SOUND_ATTACK2 = "monsters/beetle/attack_double2.wav";
+		SOUND_ATTACK3 = "monsters/beetle/attack_double3.wav";
 	}
 
 	void game_precache()

@@ -41,8 +41,8 @@ const DAMAGE 10
 const SOUND monsters/hit.wav
 }"""
     output, errors = transpile_source(source)
-    assert "const int DAMAGE = 10;" in output
-    assert 'const string SOUND = "monsters/hit.wav";' in output
+    assert "DAMAGE = 10;" in output
+    assert 'SOUND = "monsters/hit.wav";' in output
 
 
 def test_local_variable():
@@ -154,3 +154,61 @@ setorigin ent_me (100,200,300)
 }"""
     output, errors = transpile_source(source)
     assert "Vector3(100, 200, 300)" in output
+
+
+
+def test_command_aliases():
+    source = """\
+{ game_spawn
+subract COUNT 2
+infomessage all test
+clienteffect remove all 7
+usetrig foo
+cosnt TEST_CONST 1
+setvarad FOO 1
+removesetvard BAR
+playrandomsoundcl 0 sound/a.wav
+hearingsensetivity 10
+hearingsensitivty 11
+}"""
+    output, _ = transpile_source(source)
+    assert "COUNT -= 2;" in output
+    assert 'SendInfoMsg("all", "test")' in output
+    assert "ClientEffect(" in output
+    assert 'UseTrigger("foo")' in output
+    assert "const int TEST_CONST = 1;" in output
+    assert "FOO = 1;" in output
+    assert "TODO: removesetvard BAR" in output
+    assert "EmitSound(GetOwner(), 0," in output
+    assert "SetHearingSensitivity(10);" in output
+    assert "SetHearingSensitivity(11);" in output
+
+
+def test_new_top_frequency_translators():
+    source = """\
+{ game_spawn
+setlock ent_me 1
+solidifyprojectile
+setskin 3
+setmodelskin 4
+setanimlegs run
+gaitframerate 0.5
+lightgamma 2
+}"""
+    output, _ = transpile_source(source)
+    assert "SetItemLockStrength(GetOwner(), 1);" in output
+    assert "SolidifyProjectile(GetOwner());" in output
+    assert "SetEntitySkin(GetOwner(), 3);" in output
+    assert "SetEntityModelSkin(GetOwner(), 4);" in output
+    assert 'SetAnimLegs(GetOwner(), "run");' in output
+    assert "SetGaitFrameRate(GetOwner(), 0.5);" in output
+    assert "SetWorldLightGamma(2);" in output
+
+def test_dollar_func_unquotes_function_name():
+    source = """\
+{
+setvard RESULT $func(func_check_ammo_strings,DQ_ITEM_REQUIREMENT)
+}"""
+    output, _ = transpile_source(source)
+    assert 'RESULT = func_check_ammo_strings(DQ_ITEM_REQUIREMENT);' in output
+    assert '"func_check_ammo_strings"(' not in output

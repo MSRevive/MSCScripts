@@ -7,9 +7,11 @@ namespace MS
 
 class SkeletonPoisonGuarder : CGameScript
 {
+	int POISON_TYPE;
+
 	SkeletonPoisonGuarder()
 	{
-		const int POISON_TYPE = 6;
+		POISON_TYPE = 6;
 	}
 
 	void OnSpawn() override

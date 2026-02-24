@@ -27,6 +27,7 @@ class Fangtooth : CGameScript
 	string SOUND_ATTACK1;
 	string SOUND_ATTACK2;
 	string SOUND_ATTACK3;
+	string SOUND_DEATH;
 	string SOUND_IDLE1;
 	string SOUND_PAIN;
 	string SOUND_STRUCK1;
@@ -51,7 +52,7 @@ class Fangtooth : CGameScript
 		SOUND_ATTACK2 = "monsters/orc/attack2.wav";
 		SOUND_ATTACK3 = "monsters/orc/attack3.wav";
 		SOUND_IDLE1 = "monsters/rat/squeak2.wav";
-		const string SOUND_DEATH = "monsters/rat/squeak3.wav";
+		SOUND_DEATH = "monsters/rat/squeak3.wav";
 		NPC_MOVE_TARGET = "enemy";
 		CAN_FLEE = 1;
 		FLEE_HEALTH = 2;
@@ -84,7 +85,7 @@ class Fangtooth : CGameScript
 	void bite1()
 	{
 		DoDamage(m_hLastSeen, ATTACK_RANGE, Random(4.5, 6.0), ATTACK_HITCHANCE, "slash");
-		string random = RandomInt(1, 3);
+		int random = RandomInt(1, 3);
 		if (random == 1)
 		{
 			ApplyEffect(m_hLastStruckByMe, "effects/dot_poison", 5, GetEntityIndex(GetOwner()), RandomInt(3, 5));

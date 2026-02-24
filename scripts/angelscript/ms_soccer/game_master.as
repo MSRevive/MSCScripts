@@ -17,7 +17,7 @@ class GameMaster : CGameScript
 			GMSOC_BLUE_TEAM_ACTIVE = 1;
 			string OUT_MSG = GetEntityName(param1);
 			OUT_MSG += " added blue team orcs";
-			SendInfoMsg("all", "BLUE TEAM ACTIVE OUT_MSG");
+			SendInfoMsg("all", "BLUE TEAM ACTIVE " + OUT_MSG);
 			UseTrigger("spawn_blue_team");
 		}
 		else
@@ -25,7 +25,7 @@ class GameMaster : CGameScript
 			GMSOC_BLUE_TEAM_ACTIVE = 0;
 			string OUT_MSG = GetEntityName(param1);
 			OUT_MSG += " removed blue team orcs";
-			SendInfoMsg("all", "BLUE TEAM REMOVED OUT_MSG");
+			SendInfoMsg("all", "BLUE TEAM REMOVED " + OUT_MSG);
 			CallExternal("all", "ext_soc_blue_remove");
 		}
 	}
@@ -39,7 +39,7 @@ class GameMaster : CGameScript
 			GMSOC_RED_TEAM_ACTIVE = 1;
 			string OUT_MSG = GetEntityName(param1);
 			OUT_MSG += " added red team orcs";
-			SendInfoMsg("all", "RED TEAM ACTIVE OUT_MSG");
+			SendInfoMsg("all", "RED TEAM ACTIVE " + OUT_MSG);
 			UseTrigger("spawn_red_team");
 		}
 		else
@@ -47,7 +47,7 @@ class GameMaster : CGameScript
 			GMSOC_RED_TEAM_ACTIVE = 0;
 			string OUT_MSG = GetEntityName(param1);
 			OUT_MSG += " removed red team orcs";
-			SendInfoMsg("all", "BLUE TEAM REMOVED OUT_MSG");
+			SendInfoMsg("all", "BLUE TEAM REMOVED " + OUT_MSG);
 			CallExternal("all", "ext_soc_red_remove");
 		}
 	}

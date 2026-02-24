@@ -14,29 +14,41 @@ class Armorer : CGameScript
 	int GAVE_AXE2;
 	string GOLD_TARGET;
 	int JOB;
+	int NO_RUMOR;
+	int NPC_REACTS;
 	int OFFER_SET;
 	string ORE_TARGET;
+	float OVER_CHARGE;
+	float SELL_RATIO;
 	int SELL_WEAPON_LEVEL;
+	string SOUND_DEATH;
 	int STORE_CLOSED;
+	string STORE_NAME;
+	int STORE_SELLMENU;
+	string STORE_TRIGGERTEXT;
+	int VEND_ARMORER;
+	int VEND_CONTAINERS;
 	int VEND_NEWBIE;
+	int VEND_SPEC_SHEATHS;
+	int VEND_WEAPONS;
 
 	Armorer()
 	{
-		const string SOUND_DEATH = "none";
+		SOUND_DEATH = "none";
 		STORE_CLOSED = 0;
-		const string STORE_NAME = "gatecity_armory";
-		const string STORE_TRIGGERTEXT = "store trade buy sell purchase sale offer";
-		const int STORE_SELLMENU = 1;
-		const float SELL_RATIO = 0.75;
-		const float OVER_CHARGE = 1.5;
-		const int NO_RUMOR = 1;
+		STORE_NAME = "gatecity_armory";
+		STORE_TRIGGERTEXT = "store trade buy sell purchase sale offer";
+		STORE_SELLMENU = 1;
+		SELL_RATIO = 0.75;
+		OVER_CHARGE = 1.5;
+		NO_RUMOR = 1;
 		SELL_WEAPON_LEVEL = 3;
-		const int VEND_ARMORER = 1;
+		VEND_ARMORER = 1;
 		VEND_NEWBIE = 1;
-		const int VEND_CONTAINERS = 1;
-		const int VEND_WEAPONS = 1;
-		const int VEND_SPEC_SHEATHS = 1;
-		const int NPC_REACTS = 1;
+		VEND_CONTAINERS = 1;
+		VEND_WEAPONS = 1;
+		VEND_SPEC_SHEATHS = 1;
+		NPC_REACTS = 1;
 	}
 
 	void OnSpawn() override
@@ -89,12 +101,12 @@ class Armorer : CGameScript
 
 	void say_job()
 	{
-		SayText("Sorry , but with the Undermountains closed , I have no work to be done.");
+		SayText("Sorry , but with the Undermountains closed , " + I + " have no work to be done.");
 	}
 
 	void say_rumor()
 	{
-		SayText("I hear the mayor is looking for some help.");
+		SayText(I + " hear the mayor is looking for some help.");
 	}
 
 	void vendor_addstoreitems()

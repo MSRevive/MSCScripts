@@ -12,31 +12,42 @@ class VgoblinGuard : CGameScript
 	int AXE_SWING;
 	int CAN_FIREBALL;
 	int CAN_STUN;
+	int CHARGE_SPEED;
+	int DMG_AXE;
+	int DMG_SWORD;
+	int DOT_FIRE;
 	int DROP_GOLD;
-	string DROP_GOLD_AMT;
+	int DROP_GOLD_AMT;
 	string FLINCH_ANIM;
 	int FLINCH_HEALTH;
+	float FREQ_CHARGE;
 	string F_GOB_TYPE;
+	int GOB_CHARGE_MAX_DIST;
+	int GOB_CHARGE_MIN_DIST;
+	int GOB_JUMPER;
+	int GOB_TYPE;
+	int NEW_MODEL;
+	int NPC_BASE_EXP;
 
 	VgoblinGuard()
 	{
-		const int NEW_MODEL = 1;
-		const int NPC_BASE_EXP = 500;
-		const int DOT_FIRE = 40;
+		NEW_MODEL = 1;
+		NPC_BASE_EXP = 500;
+		DOT_FIRE = 40;
 		CAN_FIREBALL = 0;
 		CAN_FIREBALL = 0;
 		DROP_GOLD = 1;
 		DROP_GOLD_AMT = RandomInt(25, 50);
 		ATTACK_HITCHANCE = 80;
 		CAN_STUN = 1;
-		const string GOB_TYPE = RandomInt(1, 2);
-		const string DMG_AXE = RandomInt(60, 150);
-		const string DMG_SWORD = RandomInt(50, 80);
-		const int GOB_JUMPER = 0;
-		const int CHARGE_SPEED = 300;
-		const float FREQ_CHARGE = 10.0;
-		const int GOB_CHARGE_MIN_DIST = 96;
-		const int GOB_CHARGE_MAX_DIST = 128;
+		GOB_TYPE = RandomInt(1, 2);
+		DMG_AXE = RandomInt(60, 150);
+		DMG_SWORD = RandomInt(50, 80);
+		GOB_JUMPER = 0;
+		CHARGE_SPEED = 300;
+		FREQ_CHARGE = 10.0;
+		GOB_CHARGE_MIN_DIST = 96;
+		GOB_CHARGE_MAX_DIST = 128;
 		FLINCH_HEALTH = 300;
 	}
 

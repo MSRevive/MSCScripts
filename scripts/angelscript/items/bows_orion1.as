@@ -8,34 +8,51 @@ namespace MS
 class BowsOrion1 : CGameScript
 {
 	int AM_CHARGING;
+	string ANIM_PREFIX;
 	string BALL_DMG;
 	int BALL_SIZE;
 	string BALOON_ON;
+	int BASE_LEVEL_REQ;
+	string BOLT_SPRITE;
 	string BOW_CL_IDX;
+	float CHARGE_RATE;
+	int CUSTOM_ATTACK;
+	int DMG_MULTI;
+	string ITEM_NAME;
 	string MAX_LEVEL;
+	int MODEL_BODY_OFS;
+	string MODEL_HANDS;
+	string MODEL_VIEW;
+	int MODEL_VIEW_IDX;
+	string MODEL_WEAR;
+	string MODEL_WORLD;
+	int MP_DRAIN;
 	string NEXT_ATTACK;
 	string NEXT_CHARGE;
+	int NOT_WEARABLE;
+	string RANGED_AIMANGLE;
+	string SOUND_SHOOT;
 	int TALLY_ACTIVE;
 
 	BowsOrion1()
 	{
-		const int MODEL_VIEW_IDX = 3;
-		const string MODEL_VIEW = "viewmodels/v_bows.mdl";
-		const string MODEL_HANDS = "weapons/p_weapons2.mdl";
-		const string MODEL_WORLD = "weapons/p_weapons2.mdl";
-		const string MODEL_WEAR = "weapons/p_weapons2.mdl";
-		const string SOUND_SHOOT = "weapons/bow/bow.wav";
-		const string ITEM_NAME = "longbow";
-		const string ANIM_PREFIX = "longbow";
-		const int BASE_LEVEL_REQ = 15;
-		const int MODEL_BODY_OFS = 48;
-		const string BOLT_SPRITE = "nhth1.spr";
-		const int CUSTOM_ATTACK = 1;
-		const Vector3 RANGED_AIMANGLE = Vector3(0, 3, 0);
-		const int MP_DRAIN = 4;
-		const float CHARGE_RATE = 0.3;
-		const int DMG_MULTI = 10;
-		const int NOT_WEARABLE = 1;
+		MODEL_VIEW_IDX = 3;
+		MODEL_VIEW = "viewmodels/v_bows.mdl";
+		MODEL_HANDS = "weapons/p_weapons2.mdl";
+		MODEL_WORLD = "weapons/p_weapons2.mdl";
+		MODEL_WEAR = "weapons/p_weapons2.mdl";
+		SOUND_SHOOT = "weapons/bow/bow.wav";
+		ITEM_NAME = "longbow";
+		ANIM_PREFIX = "longbow";
+		BASE_LEVEL_REQ = 15;
+		MODEL_BODY_OFS = 48;
+		BOLT_SPRITE = "nhth1.spr";
+		CUSTOM_ATTACK = 1;
+		RANGED_AIMANGLE = Vector3(0, 3, 0);
+		MP_DRAIN = 4;
+		CHARGE_RATE = 0.3;
+		DMG_MULTI = 10;
+		NOT_WEARABLE = 1;
 	}
 
 	void game_precache()

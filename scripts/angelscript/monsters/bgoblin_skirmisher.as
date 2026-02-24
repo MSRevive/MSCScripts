@@ -12,22 +12,28 @@ class BgoblinSkirmisher : CGameScript
 	float BASE_FRAMERATE;
 	int CAN_FIREBALL;
 	int CAN_STUN;
+	int DMG_FIREBALL;
+	int DMG_FIREBALL_DOT;
+	int DMG_KNIFE;
 	int DROP_GOLD;
-	string DROP_GOLD_AMT;
+	int DROP_GOLD_AMT;
 	int FLINCH_HEALTH;
+	float FREQ_FIREBALL;
+	int NEW_MODEL;
+	int NPC_BASE_EXP;
 	string TOSS_FIREBALL;
 
 	BgoblinSkirmisher()
 	{
-		const int NEW_MODEL = 1;
-		const int NPC_BASE_EXP = 350;
+		NEW_MODEL = 1;
+		NPC_BASE_EXP = 350;
 		CAN_FIREBALL = 1;
-		const int DMG_FIREBALL = 100;
-		const int DMG_FIREBALL_DOT = 25;
-		const float FREQ_FIREBALL = 20.0;
+		DMG_FIREBALL = 100;
+		DMG_FIREBALL_DOT = 25;
+		FREQ_FIREBALL = 20.0;
 		DROP_GOLD = 1;
 		DROP_GOLD_AMT = RandomInt(25, 50);
-		const string DMG_KNIFE = RandomInt(40, 60);
+		DMG_KNIFE = RandomInt(40, 60);
 		BASE_FRAMERATE = 2.0;
 		ATTACK_HITCHANCE = 80;
 		CAN_STUN = 0;
@@ -99,7 +105,7 @@ class BgoblinSkirmisher : CGameScript
 	void gob_jump_check()
 	{
 		if (!(GOB_JUMP_SCANNING)) return;
-		string GOB_HOP_DELAY = Random(2, 4);
+		float GOB_HOP_DELAY = Random(2, 4);
 		GOB_HOP_DELAY("gob_jump_check");
 		if (!(GetEntityRange(m_hAttackTarget) > ATTACK_HITRANGE)) return;
 		if (!(m_hAttackTarget != "unset")) return;

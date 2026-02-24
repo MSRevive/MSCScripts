@@ -9,26 +9,42 @@ namespace MS
 
 class ArmorFaura : CGameScript
 {
+	int ARMOR_BODY;
+	int ARMOR_GROUP;
+	string ARMOR_MODEL;
+	int ARMOR_STR_REQ;
+	string ARMOR_TEXT;
+	float BARMOR_PROTECTION;
+	string BARMOR_PROTECTION_AREA;
+	string BARMOR_REPLACE_BODYPARTS;
+	string BARMOR_TYPE;
+	int ELM_AMT;
+	string ELM_NAME;
+	string ELM_TYPE;
+	int LOOPSND_LENGTH;
+	string LOOPSND_NAME;
+	float LOOPSND_VOLUME;
+	int NEW_ARMOR_OFS;
 	int PHOENIX_ACTIVE;
 
 	ArmorFaura()
 	{
-		const string ARMOR_MODEL = "armor/p_armorvest2.mdl";
-		const int ARMOR_GROUP = 4;
-		const int ARMOR_BODY = 6;
-		const string ARMOR_TEXT = "You assemble the Aura of Fire.";
-		const string BARMOR_TYPE = "platemail";
-		const float BARMOR_PROTECTION = 0.55;
-		const string BARMOR_PROTECTION_AREA = "chest;arms;legs";
-		const string BARMOR_REPLACE_BODYPARTS = BARMOR_PROTECTION_AREA;
-		const string ELM_NAME = "farmr";
-		const string ELM_TYPE = "fire";
-		const int ELM_AMT = 30;
-		const int ARMOR_STR_REQ = 30;
-		const string LOOPSND_NAME = "items/torch1.wav";
-		const int LOOPSND_LENGTH = 6;
-		const float LOOPSND_VOLUME = 2.5;
-		const int NEW_ARMOR_OFS = 16;
+		ARMOR_MODEL = "armor/p_armorvest2.mdl";
+		ARMOR_GROUP = 4;
+		ARMOR_BODY = 6;
+		ARMOR_TEXT = "You assemble the Aura of Fire.";
+		BARMOR_TYPE = "platemail";
+		BARMOR_PROTECTION = 0.55;
+		BARMOR_PROTECTION_AREA = "chest;arms;legs";
+		BARMOR_REPLACE_BODYPARTS = BARMOR_PROTECTION_AREA;
+		ELM_NAME = "farmr";
+		ELM_TYPE = "fire";
+		ELM_AMT = 30;
+		ARMOR_STR_REQ = 30;
+		LOOPSND_NAME = "items/torch1.wav";
+		LOOPSND_LENGTH = 6;
+		LOOPSND_VOLUME = 2.5;
+		NEW_ARMOR_OFS = 16;
 	}
 
 	void OnSpawn() override

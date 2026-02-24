@@ -8,16 +8,20 @@ namespace MS
 class OrcwarbossGhost : CGameScript
 {
 	string ANIM_ATTACK;
+	float ATTACK_ACCURACY;
+	int ATTACK_DMG_HIGH;
+	int ATTACK_DMG_LOW;
 	int ATTACK_HITRANGE;
 	int ATTACK_RANGE;
 	int DROP_GOLD;
-	string DROP_GOLD_AMT;
+	int DROP_GOLD_AMT;
 	string DROP_ITEM1;
 	float DROP_ITEM1_CHANCE;
 	float FLINCH_CHANCE;
 	int INFERNAL;
 	int MOVE_RANGE;
 	int NPC_GIVE_EXP;
+	int ORC_SHIELD;
 
 	OrcwarbossGhost()
 	{
@@ -29,19 +33,19 @@ class OrcwarbossGhost : CGameScript
 		DROP_ITEM1 = "axes_greataxe";
 		DROP_ITEM1_CHANCE = 1.0;
 		INFERNAL = 0;
-		const float ATTACK_ACCURACY = 0.8;
-		const int ATTACK_DMG_LOW = 5;
-		const int ATTACK_DMG_HIGH = 150;
+		ATTACK_ACCURACY = 0.8;
+		ATTACK_DMG_LOW = 5;
+		ATTACK_DMG_HIGH = 150;
 		MOVE_RANGE = 64;
 		ATTACK_RANGE = 150;
 		ATTACK_HITRANGE = 225;
-		const int ORC_SHIELD = 0;
+		ORC_SHIELD = 0;
 	}
 
 	void swing_axe()
 	{
 		baseorc_yell();
-		string L_DMG = Random(ATTACK_DMG_LOW, ATTACK_DMG_HIGH);
+		float L_DMG = Random(ATTACK_DMG_LOW, ATTACK_DMG_HIGH);
 		DoDamage(m_hLastSeen, ATTACK_HITRANGE, L_DMG, ATTACK_ACCURACY, "slash");
 		if (INFERNAL == 1)
 		{

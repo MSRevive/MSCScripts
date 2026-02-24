@@ -9,13 +9,14 @@ class SfxPoisonAura : CGameScript
 	string FX_DURATION;
 	string FX_RAD;
 	string FX_RAD_NEG;
+	string GLOW_COLOR;
 	string GLOW_RAD;
 	string LIGHT_ID;
 	string MY_OWNER;
 
 	SfxPoisonAura()
 	{
-		const Vector3 GLOW_COLOR = Vector3(0, 255, 0);
+		GLOW_COLOR = Vector3(0, 255, 0);
 	}
 
 	void client_activate()

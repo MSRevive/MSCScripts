@@ -40,7 +40,7 @@ class Pillar : CGameScript
 
 	void say_release()
 	{
-		SayText("The name is not what I require , but the light of the ring , this is what I desire!");
+		SayText("The name is not what " + I + "require , but the light of the ring , this is what " + I + " desire!");
 	}
 
 	void say_hail()
@@ -97,7 +97,7 @@ class Pillar : CGameScript
 		GOT_RING = 1;
 		UseTrigger("mm_shad");
 		ScheduleDelayedEvent(4, "spawnage");
-		SayText("At last! I shall be freed! ...and upon you , first shall I feed!");
+		SayText("At last! " + I + "shall be freed! ...and upon you , first shall " + I + " feed!");
 	}
 
 	void spawnage()

@@ -5,17 +5,23 @@ namespace MS
 
 class SorcIdle : CGameScript
 {
+	string ANIM_ACHE;
+	string ANIM_DRINK;
+	string ANIM_EAT;
+	string ANIM_RECLINE_IDLE;
+	string ANIM_SIT_IDLE;
+	string ANIM_WAVE;
 	string NPC_DO_EVENTS;
 	string SORC_TYPE;
 
 	SorcIdle()
 	{
-		const string ANIM_RECLINE_IDLE = "on_chair2";
-		const string ANIM_SIT_IDLE = "on_chair";
-		const string ANIM_DRINK = "drink";
-		const string ANIM_EAT = "eat";
-		const string ANIM_ACHE = "sit_ground";
-		const string ANIM_WAVE = "waving";
+		ANIM_RECLINE_IDLE = "on_chair2";
+		ANIM_SIT_IDLE = "on_chair";
+		ANIM_DRINK = "drink";
+		ANIM_EAT = "eat";
+		ANIM_ACHE = "sit_ground";
+		ANIM_WAVE = "waving";
 	}
 
 	void OnSpawn() override

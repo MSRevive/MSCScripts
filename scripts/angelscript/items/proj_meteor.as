@@ -7,19 +7,31 @@ namespace MS
 
 class ProjMeteor : CGameScript
 {
+	int ARROW_BODY_OFS;
+	float ARROW_BREAK_CHANCE;
+	int ARROW_SOLIDIFY_ON_WALL;
+	string MODEL_WORLD;
+	string PROJ_ANIM_IDLE;
+	float PROJ_AOE_FALLOFF;
+	int PROJ_AOE_RANGE;
+	int PROJ_DAMAGE;
+	string PROJ_DAMAGESTAT;
+	string PROJ_DAMAGE_TYPE;
+	int PROJ_STICK_DURATION;
+
 	ProjMeteor()
 	{
-		const string MODEL_WORLD = "weapons/projectiles.mdl";
-		const int ARROW_BODY_OFS = 41;
-		const string PROJ_ANIM_IDLE = "idle_icebolt";
-		const int PROJ_STICK_DURATION = 0;
-		const int ARROW_SOLIDIFY_ON_WALL = 0;
-		const float ARROW_BREAK_CHANCE = 1.0;
-		const string PROJ_DAMAGE_TYPE = "fire";
-		const string PROJ_DAMAGESTAT = "spellcasting.fire";
-		const string PROJ_DAMAGE = RandomInt(400, 500);
-		const int PROJ_AOE_RANGE = 512;
-		const float PROJ_AOE_FALLOFF = 0.4;
+		MODEL_WORLD = "weapons/projectiles.mdl";
+		ARROW_BODY_OFS = 41;
+		PROJ_ANIM_IDLE = "idle_icebolt";
+		PROJ_STICK_DURATION = 0;
+		ARROW_SOLIDIFY_ON_WALL = 0;
+		ARROW_BREAK_CHANCE = 1.0;
+		PROJ_DAMAGE_TYPE = "fire";
+		PROJ_DAMAGESTAT = "spellcasting.fire";
+		PROJ_DAMAGE = RandomInt(400, 500);
+		PROJ_AOE_RANGE = 512;
+		PROJ_AOE_FALLOFF = 0.4;
 	}
 
 	void projectile_spawn()

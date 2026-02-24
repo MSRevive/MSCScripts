@@ -57,7 +57,7 @@ class FirstTransition : CGameScript
 		OUT_TITLE += "(";
 		OUT_TITLE += StringToLower(S_DESTNAME);
 		OUT_TITLE += ")";
-		SendInfoMsg(GetOwner(), "OUT_TITLE OUT_MSG");
+		SendInfoMsg(GetOwner(), OUT_TITLE + OUT_MSG);
 	}
 
 	void game_transition_exited()

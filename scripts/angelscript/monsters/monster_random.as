@@ -48,7 +48,7 @@ class MonsterRandom : CGameScript
 		}
 		string N_MOBS = GetTokenCount(FINAL_MOBS, ";");
 		N_MOBS -= 1;
-		string RND_MOB = RandomInt(0, N_MOBS);
+		int RND_MOB = RandomInt(0, N_MOBS);
 		string RND_MOB = GetToken(FINAL_MOBS, RND_MOB, ";");
 		spawn_mob(RND_MOB);
 	}

@@ -7,14 +7,21 @@ namespace MS
 
 class DotAcid : CGameScript
 {
+	string DOT_HE_IMMUNE;
+	string DOT_IM_AFFECTED;
+	string DOT_IM_RESIST;
+	string DOT_TYPE;
+	string EFFECT_ID;
+	string EFFECT_SCRIPT;
+
 	DotAcid()
 	{
-		const string EFFECT_ID = "DOT_acid";
-		const string EFFECT_SCRIPT = currentscript;
-		const string DOT_TYPE = "acid_effect";
-		const string DOT_IM_AFFECTED = "You have been acid burned!";
-		const string DOT_IM_RESIST = "You resist the acid attack.";
-		const string DOT_HE_IMMUNE = "is immune to acid!";
+		EFFECT_ID = "DOT_acid";
+		EFFECT_SCRIPT = currentscript;
+		DOT_TYPE = "acid_effect";
+		DOT_IM_AFFECTED = "You have been acid burned!";
+		DOT_IM_RESIST = "You resist the acid attack.";
+		DOT_HE_IMMUNE = "is immune to acid!";
 	}
 
 	void dot_start()

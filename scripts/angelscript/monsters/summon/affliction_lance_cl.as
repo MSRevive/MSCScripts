@@ -18,7 +18,7 @@ class AfflictionLanceCl : CGameScript
 		FX_DURATION = param2;
 		FX_ACTIVE = 1;
 		FX_ANGS = 0;
-		END_TIME = /* TODO: $math(add) */ GetGameTime();
+		END_TIME = (GetGameTime() + FX_DURATION);
 		fx_loop();
 	}
 
@@ -80,7 +80,7 @@ class AfflictionLanceCl : CGameScript
 
 	void keep_on()
 	{
-		END_TIME = /* TODO: $math(add) */ GetGameTime();
+		END_TIME = (GetGameTime() + FX_DURATION);
 	}
 
 }

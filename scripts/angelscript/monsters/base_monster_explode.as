@@ -5,13 +5,19 @@ namespace MS
 
 class BaseMonsterExplode : CGameScript
 {
+	int EXPLOSION_DAMAGE;
+	float EXPLOSION_DAMAGE_FALLOFF;
+	int EXPLOSION_DISTANCE;
+	int EXPLOSION_FORCE;
+	string EXPLOSION_TYPE;
+
 	BaseMonsterExplode()
 	{
-		const int EXPLOSION_DISTANCE = 120;
-		const int EXPLOSION_DAMAGE = 300;
-		const float EXPLOSION_DAMAGE_FALLOFF = 0.2;
-		const int EXPLOSION_FORCE = 300;
-		const string EXPLOSION_TYPE = "blunt_effect";
+		EXPLOSION_DISTANCE = 120;
+		EXPLOSION_DAMAGE = 300;
+		EXPLOSION_DAMAGE_FALLOFF = 0.2;
+		EXPLOSION_FORCE = 300;
+		EXPLOSION_TYPE = "blunt_effect";
 	}
 
 	void do_explode()
@@ -32,7 +38,7 @@ class BaseMonsterExplode : CGameScript
 				if (EXPLOSION_FORCE != 0)
 				{
 					string L_YAW = /* TODO: $angles */ $angles(GetEntityOrigin(GetOwner()), GetEntityOrigin(L_TARGET));
-					AddVelocity(L_TARGET, /* TODO: $relvel */ $relvel(Vector3(0, L_YAW, 0), Vector3(0, EXPLOSION_FORCE, /* TODO: $math(divide) */ EXPLOSION_FORCE)));
+					AddVelocity(L_TARGET, /* TODO: $relvel */ $relvel(Vector3(0, L_YAW, 0), Vector3(0, EXPLOSION_FORCE, (EXPLOSION_FORCE / 1.3))));
 				}
 			}
 		}

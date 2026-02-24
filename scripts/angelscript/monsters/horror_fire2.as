@@ -9,26 +9,42 @@ class HorrorFire2 : CGameScript
 {
 	float BASE_MOVESPEED;
 	int BREATH_AMMO;
+	string BURST_ELEMENT;
+	int DMG_BITE;
+	int DMG_BLAST;
+	int DMG_DOT;
+	int DMG_PROJECTILE;
+	float DUR_DOT;
+	string EFFECT_DOT;
+	string ELEMENT_COLOR;
+	string FX_BURST_SCRIPT;
+	float PROJ_FOV;
+	string PROJ_SCRIPT;
+	int PROJ_SPEED;
+	string SOUND_SHOCK1;
+	string SOUND_SHOCK2;
+	string SOUND_SHOCK3;
+	string SOUND_SPRAY;
 	int SPIT_AMMO;
 
 	HorrorFire2()
 	{
-		const int DMG_PROJECTILE = 100;
-		const string PROJ_SCRIPT = "proj_fire_ball";
-		const int PROJ_SPEED = 1000;
-		const float PROJ_FOV = 0.5;
-		const string FX_BURST_SCRIPT = "effects/sfx_fire_burst";
-		const string EFFECT_DOT = "effects/dot_fire";
-		const float DUR_DOT = 5.0;
-		const int DMG_DOT = 30;
-		const int DMG_BITE = 100;
-		const int DMG_BLAST = 200;
-		const Vector3 ELEMENT_COLOR = Vector3(255, 0, 0);
-		const string BURST_ELEMENT = "fire_effect";
-		const string SOUND_SPRAY = "magic/volcano_start.wav";
-		const string SOUND_SHOCK1 = "magic/fireball_strike.wav";
-		const string SOUND_SHOCK2 = "magic/fireball_strike.wav";
-		const string SOUND_SHOCK3 = "magic/fireball_strike.wav";
+		DMG_PROJECTILE = 100;
+		PROJ_SCRIPT = "proj_fire_ball";
+		PROJ_SPEED = 1000;
+		PROJ_FOV = 0.5;
+		FX_BURST_SCRIPT = "effects/sfx_fire_burst";
+		EFFECT_DOT = "effects/dot_fire";
+		DUR_DOT = 5.0;
+		DMG_DOT = 30;
+		DMG_BITE = 100;
+		DMG_BLAST = 200;
+		ELEMENT_COLOR = Vector3(255, 0, 0);
+		BURST_ELEMENT = "fire_effect";
+		SOUND_SPRAY = "magic/volcano_start.wav";
+		SOUND_SHOCK1 = "magic/fireball_strike.wav";
+		SOUND_SHOCK2 = "magic/fireball_strike.wav";
+		SOUND_SHOCK3 = "magic/fireball_strike.wav";
 	}
 
 	void horror_spawn()

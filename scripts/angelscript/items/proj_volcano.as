@@ -7,24 +7,41 @@ namespace MS
 
 class ProjVolcano : CGameScript
 {
+	int CLFX_ARROW;
+	int CLFX_ARROW_NOSTICK;
+	int CLFX_ARROW_UPDATE_RATE;
+	string MODEL_HANDS;
+	string MODEL_WORLD;
+	int PROJ_ANIM_IDLE;
+	float PROJ_AOE_FALLOFF;
+	int PROJ_AOE_RANGE;
+	int PROJ_DAMAGE;
+	string PROJ_DAMAGE_TYPE;
+	int PROJ_MOTIONBLUR;
+	int PROJ_STICK_DURATION;
+	int PROJ_STICK_ON_NPC;
+	int PROJ_STICK_ON_WALL_NEW;
+	string SOUND_HITWALL1;
+	string SOUND_HITWALL2;
+
 	ProjVolcano()
 	{
-		const string MODEL_HANDS = "none";
-		const string SOUND_HITWALL1 = "none";
-		const string SOUND_HITWALL2 = "none";
-		const string MODEL_WORLD = "weapons/projectiles.mdl";
-		const int PROJ_ANIM_IDLE = 1;
-		const int CLFX_ARROW_NOSTICK = 1;
-		const int PROJ_STICK_ON_NPC = 0;
-		const int PROJ_STICK_DURATION = 0;
-		const int PROJ_MOTIONBLUR = 0;
-		const int PROJ_STICK_ON_WALL_NEW = 0;
-		const int PROJ_DAMAGE = 80;
-		const string PROJ_DAMAGE_TYPE = "fire";
-		const int PROJ_AOE_RANGE = 110;
-		const float PROJ_AOE_FALLOFF = 0.01;
-		const int CLFX_ARROW = 1;
-		const int CLFX_ARROW_UPDATE_RATE = 20;
+		MODEL_HANDS = "none";
+		SOUND_HITWALL1 = "none";
+		SOUND_HITWALL2 = "none";
+		MODEL_WORLD = "weapons/projectiles.mdl";
+		PROJ_ANIM_IDLE = 1;
+		CLFX_ARROW_NOSTICK = 1;
+		PROJ_STICK_ON_NPC = 0;
+		PROJ_STICK_DURATION = 0;
+		PROJ_MOTIONBLUR = 0;
+		PROJ_STICK_ON_WALL_NEW = 0;
+		PROJ_DAMAGE = 80;
+		PROJ_DAMAGE_TYPE = "fire";
+		PROJ_AOE_RANGE = 110;
+		PROJ_AOE_FALLOFF = 0.01;
+		CLFX_ARROW = 1;
+		CLFX_ARROW_UPDATE_RATE = 20;
 	}
 
 	void projectile_spawn()

@@ -7,20 +7,23 @@ namespace MS
 
 class BearCubBrown : CGameScript
 {
+	int ATTACK_DAMAGE;
+	float ATTACK_HITCHANCE;
 	int ATTACK_HITRANGE;
 	int ATTACK_RANGE;
 	string DROP_ITEM1;
 	float DROP_ITEM1_CHANCE;
 	int MOVE_RANGE;
+	int NPC_BASE_EXP;
 
 	BearCubBrown()
 	{
 		MOVE_RANGE = 60;
 		ATTACK_RANGE = 70;
 		ATTACK_HITRANGE = 120;
-		const string ATTACK_DAMAGE = "$rand(2.5,6)";
-		const float ATTACK_HITCHANCE = 0.6;
-		const int NPC_BASE_EXP = 20;
+		ATTACK_DAMAGE = "$rand(2.5,6)";
+		ATTACK_HITCHANCE = 0.6;
+		NPC_BASE_EXP = 20;
 		DROP_ITEM1 = "skin_bear";
 		DROP_ITEM1_CHANCE = 0.5;
 	}

@@ -7,23 +7,36 @@ namespace MS
 
 class SkeletonGuard : CGameScript
 {
+	string ANIM_RUN_BASE;
+	string ANIM_WALK_BASE;
 	float BASE_FRAMERATE;
+	string GUARD_STRUCK1;
+	string GUARD_STRUCK2;
+	string GUARD_STRUCK3;
+	int SUMMON_CIRCLE_INDEX;
+	string SUM_REPORT_SUFFIX;
+	string SUM_SAY_ATTACK;
+	string SUM_SAY_COME;
+	string SUM_SAY_DEATH;
+	string SUM_SAY_DEFEND;
+	string SUM_SAY_GUARD;
+	string SUM_SAY_HUNT;
 
 	SkeletonGuard()
 	{
-		const int SUMMON_CIRCLE_INDEX = 30;
-		const string SUM_SAY_COME = "Yes... my maaaster.";
-		const string SUM_SAY_ATTACK = "Death... Approaches...";
-		const string SUM_SAY_HUNT = "I am... Hunt...ing...";
-		const string SUM_SAY_DEFEND = "Your... Defense... Is all.";
-		const string SUM_SAY_DEATH = "No longer... Can I... Hold.";
-		const string SUM_SAY_GUARD = "I... Shall hold.";
-		const string SUM_REPORT_SUFFIX = ", master.";
-		const string ANIM_WALK_BASE = "walk";
-		const string ANIM_RUN_BASE = "walk";
-		const string GUARD_STRUCK1 = "body/armour1.wav";
-		const string GUARD_STRUCK2 = "body/armour2.wav";
-		const string GUARD_STRUCK3 = "body/armour3.wav";
+		SUMMON_CIRCLE_INDEX = 30;
+		SUM_SAY_COME = "Yes... my maaaster.";
+		SUM_SAY_ATTACK = "Death... Approaches...";
+		SUM_SAY_HUNT = "I am... Hunt...ing...";
+		SUM_SAY_DEFEND = "Your... Defense... Is all.";
+		SUM_SAY_DEATH = "No longer... Can I... Hold.";
+		SUM_SAY_GUARD = "I... Shall hold.";
+		SUM_REPORT_SUFFIX = ", master.";
+		ANIM_WALK_BASE = "walk";
+		ANIM_RUN_BASE = "walk";
+		GUARD_STRUCK1 = "body/armour1.wav";
+		GUARD_STRUCK2 = "body/armour2.wav";
+		GUARD_STRUCK3 = "body/armour3.wav";
 	}
 
 	void pre_name_set()

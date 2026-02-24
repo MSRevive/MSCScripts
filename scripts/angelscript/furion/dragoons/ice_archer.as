@@ -7,10 +7,13 @@ namespace MS
 
 class IceArcher : CGameScript
 {
+	int ELEMENT;
+	int WEAPON;
+
 	IceArcher()
 	{
-		const int WEAPON = 0;
-		const int ELEMENT = 0;
+		WEAPON = 0;
+		ELEMENT = 0;
 	}
 
 }

@@ -9,8 +9,13 @@ namespace MS
 class OrcUnarmed : CGameScript
 {
 	string ANIM_ATTACK;
+	float ATTACK_ACCURACY;
+	int ATTACK_DMG_HIGH;
+	int ATTACK_DMG_LOW;
 	int CAN_FLEE;
 	int DROP_GOLD;
+	float FLEE_CHANCE;
+	int FLEE_HEALTH;
 	string LIGHT_COLOR;
 	int NPC_GIVE_EXP;
 
@@ -19,12 +24,12 @@ class OrcUnarmed : CGameScript
 		DROP_GOLD = 0;
 		NPC_GIVE_EXP = 1;
 		CAN_FLEE = 1;
-		const int FLEE_HEALTH = 19;
-		const float FLEE_CHANCE = 0.99;
+		FLEE_HEALTH = 19;
+		FLEE_CHANCE = 0.99;
 		ANIM_ATTACK = "swordswing1_L";
-		const float ATTACK_ACCURACY = 0.5;
-		const int ATTACK_DMG_LOW = 1;
-		const int ATTACK_DMG_HIGH = 2;
+		ATTACK_ACCURACY = 0.5;
+		ATTACK_DMG_LOW = 1;
+		ATTACK_DMG_HIGH = 2;
 	}
 
 	void orc_spawn()
@@ -47,7 +52,7 @@ class OrcUnarmed : CGameScript
 		LIGHT_COLOR = Vector3(255, 255, 255);
 		Effect("glow", GetOwner(), LIGHT_COLOR, 255, 255, 5);
 		SetSayTextRange(1024);
-		SayText("W00t! I r invlnerable!");
+		SayText("W00t! " + I + " r invlnerable!");
 	}
 
 	void godoff()
@@ -57,7 +62,7 @@ class OrcUnarmed : CGameScript
 		LIGHT_COLOR = Vector3(1, 1, 1);
 		Effect("glow", GetOwner(), LIGHT_COLOR, 255, 5, 5);
 		SetSayTextRange(1024);
-		SayText("OMG WTF h4x!");
+		SayText(OMG + WTF + " h4x!");
 	}
 
 }

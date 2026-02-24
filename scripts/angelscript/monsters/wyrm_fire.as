@@ -8,14 +8,31 @@ namespace MS
 
 class WyrmFire : CGameScript
 {
+	string ANIM_APPEAR;
 	string ANIM_ATTACK;
+	string ANIM_BITE1;
+	string ANIM_BITE2;
 	string ANIM_DEATH;
 	string ANIM_FLINCH;
+	string ANIM_FLINCH1;
+	string ANIM_FLINCH2;
+	string ANIM_HEADBUTT;
+	string ANIM_HIDDEN;
 	string ANIM_IDLE;
+	string ANIM_RAWR;
+	string ANIM_RETRACT;
 	string ANIM_RUN;
+	string ANIM_SPIT;
+	string ANIM_SWIPE;
 	string ANIM_WALK;
+	int AOE_HBUTT;
+	int AOE_SWIPE;
 	int ATTACK_HITRANGE;
 	int ATTACK_RANGE;
+	int ATTACK_RANGE_BITE;
+	int ATTACK_RANGE_SPIT;
+	int ATT_MOUTH;
+	int CANT_FLEE;
 	int CANT_TURN;
 	int CAN_SPIT;
 	int CUR_PASSIVE;
@@ -24,11 +41,30 @@ class WyrmFire : CGameScript
 	string DID_FLEE2;
 	string DID_FLEE3;
 	string DID_INTRO;
+	int DMG_BITE;
+	int DMG_FROCK;
+	int DMG_HBUTT;
+	int DMG_SWIPE;
+	int DOT_DMG;
+	int DOT_DMG2;
+	float DOT_DUR;
+	float DOT_DUR2;
+	string DOT_EFFECTNAME;
+	string DOT_EFFECTNAME2;
+	string DOT_SCRIPT;
+	string DOT_SCRIPT2;
 	int DO_QUAKE;
+	float DUR_QUAKE;
 	string FIRE_BOMB_POS;
+	float FREQ_MODE_SWITCH;
+	float FREQ_PASSIVE;
+	float FREQ_PIT_SEARCH;
+	float FREQ_SPIT;
+	float FREQ_SWIPE;
 	float GAME_PUSH_RATIO;
 	int INTRO_STAGE;
 	int LAVA_VOLUME;
+	string MONSTER_MODEL;
 	string MOVE_TO_PIT;
 	string MOVE_TO_PIT_IDX;
 	string NEXT_GIVEUP;
@@ -45,13 +81,45 @@ class WyrmFire : CGameScript
 	int NO_STUCK_CHECKS;
 	string NPCATK_TARGET;
 	int NPC_FLINCH_DISABLE;
+	float NPC_FLINCH_HEALTH_RATIO;
 	int NPC_GIVE_EXP;
+	string NPC_MATERIAL_TYPE;
 	int NPC_NO_ATTACK;
+	int NPC_NO_MOVE;
+	int NPC_USE_FLINCH;
+	int NPC_USE_IDLE;
+	int NPC_USE_PAIN;
 	string N_EDGE_POINTS;
 	string N_PIT_POINTS;
+	int PROJ_COF;
+	int PROJ_DMG;
 	string PROJ_LOOP_SOUND;
+	string PROJ_SCRIPT;
+	int PROJ_SPEED;
 	string PROJ_TARGET;
 	string REPELL_POS;
+	string SOUND_ALERT1;
+	string SOUND_ALERT2;
+	string SOUND_BITE;
+	string SOUND_DEATH;
+	string SOUND_FLINCH1;
+	string SOUND_FLINCH2;
+	string SOUND_FLINCH3;
+	string SOUND_HBUTT;
+	string SOUND_LAVA_LOOP;
+	string SOUND_PAIN1;
+	string SOUND_PAIN2;
+	string SOUND_PAIN3;
+	string SOUND_PASSIVE1;
+	string SOUND_PASSIVE2;
+	string SOUND_PASSIVE3;
+	string SOUND_PASSIVE4;
+	string SOUND_SPIT_PREP;
+	string SOUND_SPIT_STRIKE;
+	string SOUND_SPLASH_DOWN;
+	string SOUND_SPLASH_UP;
+	string SOUND_SWIPE;
+	string SOUND_SWIPE_LARGE;
 	string T_LEAST_DIST;
 	string T_NEAREST;
 	string T_SPHERE;
@@ -60,6 +128,7 @@ class WyrmFire : CGameScript
 	int WYRM_CUR_PIT_IDX;
 	string WYRM_EDGE_PREFIX;
 	int WYRM_FINALIZED;
+	string WYRM_GLOW_COLOR;
 	string WYRM_GOT_ALL_EDGE_POINTS;
 	string WYRM_GOT_ALL_PIT_POINTS;
 	int WYRM_HIDE_MODE;
@@ -73,11 +142,14 @@ class WyrmFire : CGameScript
 	int WYRM_PITHUNTER;
 	string WYRM_PIT_PREFIX;
 	string WYRM_PORTING_TO;
+	int WYRM_SIZE;
+	int WYRM_SKIN;
 	int WYRM_SPEED;
 	int WYRM_SUBMERGE_GOT_ENDFRAME;
 	int WYRM_SUBMERGING;
 	int WYRM_TELEPORTING;
 	int WYRM_TELE_STAGE2;
+	string WYRM_TYPE;
 	int WYRM_UNHIDE_RANGE;
 	string WYRM_UNHIDE_TIME;
 	string WYRM_USE_BOTH;
@@ -88,96 +160,96 @@ class WyrmFire : CGameScript
 	{
 		WYRM_EDGE_PREFIX = "wyrm_edge";
 		WYRM_PIT_PREFIX = "wyrm_pit";
-		const string WYRM_TYPE = "fire";
-		const int WYRM_SKIN = 0;
-		const int WYRM_SIZE = 1;
-		const string MONSTER_MODEL = "monsters/wyrms_medium.mdl";
+		WYRM_TYPE = "fire";
+		WYRM_SKIN = 0;
+		WYRM_SIZE = 1;
+		MONSTER_MODEL = "monsters/wyrms_medium.mdl";
 		WYRM_SPEED = 100;
 		WYRM_MOVEDEST = "unset";
-		const string ANIM_APPEAR = "anim_appear";
-		const string ANIM_RETRACT = "anim_retract";
-		const string ANIM_RAWR = "anim_blong";
-		const string ANIM_BITE1 = "anim_bite1";
-		const string ANIM_BITE2 = "anim_bite2";
-		const string ANIM_SPIT = "anim_spit";
-		const string ANIM_SWIPE = "anim_swipe";
-		const string ANIM_HEADBUTT = "anim_hbutt";
-		const string ANIM_FLINCH1 = "anim_flinch1";
-		const string ANIM_FLINCH2 = "anim_flinch2";
-		const string ANIM_HIDDEN = "anim_hidden";
-		const int ATTACK_RANGE_BITE = 245;
-		const int ATTACK_RANGE_SPIT = 4096;
+		ANIM_APPEAR = "anim_appear";
+		ANIM_RETRACT = "anim_retract";
+		ANIM_RAWR = "anim_blong";
+		ANIM_BITE1 = "anim_bite1";
+		ANIM_BITE2 = "anim_bite2";
+		ANIM_SPIT = "anim_spit";
+		ANIM_SWIPE = "anim_swipe";
+		ANIM_HEADBUTT = "anim_hbutt";
+		ANIM_FLINCH1 = "anim_flinch1";
+		ANIM_FLINCH2 = "anim_flinch2";
+		ANIM_HIDDEN = "anim_hidden";
+		ATTACK_RANGE_BITE = 245;
+		ATTACK_RANGE_SPIT = 4096;
 		NPC_NO_ATTACK = 1;
-		const string FREQ_SWIPE = Random(3.0, 5.0);
-		const string FREQ_MODE_SWITCH = Random(20.0, 30.0);
-		const string FREQ_PIT_SEARCH = Random(10.0, 20.0);
-		const int PROJ_SPEED = 300;
-		const int PROJ_DMG = 50;
-		const int PROJ_COF = 5;
-		const string PROJ_SCRIPT = "proj_fire_bomb_sm";
+		FREQ_SWIPE = Random(3.0, 5.0);
+		FREQ_MODE_SWITCH = Random(20.0, 30.0);
+		FREQ_PIT_SEARCH = Random(10.0, 20.0);
+		PROJ_SPEED = 300;
+		PROJ_DMG = 50;
+		PROJ_COF = 5;
+		PROJ_SCRIPT = "proj_fire_bomb_sm";
 		PROJ_LOOP_SOUND = "ambient/animals/rattle_long.wav";
-		const string FREQ_SPIT = Random(2.0, 3.0);
-		const int ATT_MOUTH = 0;
-		const string SOUND_SPIT_PREP = "magic/fireball_large.wav";
-		const string SOUND_SPIT_STRIKE = "weapons/rocketfire1.wav";
-		const string SOUND_ALERT1 = "monsters/wyrm/c_x0stgwar_bat1.wav";
-		const string SOUND_ALERT2 = "monsters/wyrm/c_x0stgwar_bat2.wav";
-		const string SOUND_BITE = "monsters/wyrm/8bit/c_x0stgwar_atk1.wav";
-		const string SOUND_HBUTT = "monsters/wyrm/c_x0stgwar_atk2.wav";
-		const string SOUND_SWIPE = "monsters/wyrm/c_x0stgwar_atk3.wav";
-		const string SOUND_SWIPE_LARGE = "weapons/swinghuge.wav";
-		const string SOUND_SPLASH_DOWN = "monsters/wyrm/lava_splash_rev.wav";
-		const string SOUND_SPLASH_UP = "amb/lava_splash.wav";
-		const string SOUND_LAVA_LOOP = "amb/lava_loop.wav";
-		const string SOUND_PASSIVE1 = "monsters/wyrm/idle1.wav";
-		const string SOUND_PASSIVE2 = "monsters/wyrm/idle2.wav";
-		const string SOUND_PASSIVE3 = "monsters/wyrm/idle3.wav";
-		const string SOUND_PASSIVE4 = "monsters/wyrm/idle4.wav";
-		const string FREQ_PASSIVE = Random(7.0, 10.0);
+		FREQ_SPIT = Random(2.0, 3.0);
+		ATT_MOUTH = 0;
+		SOUND_SPIT_PREP = "magic/fireball_large.wav";
+		SOUND_SPIT_STRIKE = "weapons/rocketfire1.wav";
+		SOUND_ALERT1 = "monsters/wyrm/c_x0stgwar_bat1.wav";
+		SOUND_ALERT2 = "monsters/wyrm/c_x0stgwar_bat2.wav";
+		SOUND_BITE = "monsters/wyrm/8bit/c_x0stgwar_atk1.wav";
+		SOUND_HBUTT = "monsters/wyrm/c_x0stgwar_atk2.wav";
+		SOUND_SWIPE = "monsters/wyrm/c_x0stgwar_atk3.wav";
+		SOUND_SWIPE_LARGE = "weapons/swinghuge.wav";
+		SOUND_SPLASH_DOWN = "monsters/wyrm/lava_splash_rev.wav";
+		SOUND_SPLASH_UP = "amb/lava_splash.wav";
+		SOUND_LAVA_LOOP = "amb/lava_loop.wav";
+		SOUND_PASSIVE1 = "monsters/wyrm/idle1.wav";
+		SOUND_PASSIVE2 = "monsters/wyrm/idle2.wav";
+		SOUND_PASSIVE3 = "monsters/wyrm/idle3.wav";
+		SOUND_PASSIVE4 = "monsters/wyrm/idle4.wav";
+		FREQ_PASSIVE = Random(7.0, 10.0);
 		CUR_PASSIVE = 0;
-		const float DUR_QUAKE = 7.0;
-		const int AOE_HBUTT = 80;
-		const int AOE_SWIPE = 128;
-		const int DMG_HBUTT = 75;
-		const int DMG_BITE = 65;
-		const int DMG_FROCK = 100;
-		const int DMG_SWIPE = 50;
-		const float FREQ_SWIPE = 20.0;
-		const string DOT_SCRIPT = "effects/dot_fire";
-		const string DOT_EFFECTNAME = "DOT_fire";
-		const int DOT_DMG = 25;
-		const float DOT_DUR = 5.0;
-		const string DOT_SCRIPT2 = "effects/dot_fire";
-		const string DOT_EFFECTNAME2 = "DOT_fire";
-		const int DOT_DMG2 = 25;
-		const float DOT_DUR2 = 5.0;
-		const Vector3 WYRM_GLOW_COLOR = Vector3(64, 32, 0);
+		DUR_QUAKE = 7.0;
+		AOE_HBUTT = 80;
+		AOE_SWIPE = 128;
+		DMG_HBUTT = 75;
+		DMG_BITE = 65;
+		DMG_FROCK = 100;
+		DMG_SWIPE = 50;
+		FREQ_SWIPE = 20.0;
+		DOT_SCRIPT = "effects/dot_fire";
+		DOT_EFFECTNAME = "DOT_fire";
+		DOT_DMG = 25;
+		DOT_DUR = 5.0;
+		DOT_SCRIPT2 = "effects/dot_fire";
+		DOT_EFFECTNAME2 = "DOT_fire";
+		DOT_DMG2 = 25;
+		DOT_DUR2 = 5.0;
+		WYRM_GLOW_COLOR = Vector3(64, 32, 0);
 		WYRM_CUR_PIT_IDX = 0;
 		ANIM_IDLE = "anim_idle";
 		ANIM_WALK = "anim_idle";
 		ANIM_RUN = "anim_idle";
 		ANIM_ATTACK = ANIM_BITE1;
 		ANIM_DEATH = "anim_death";
-		const int NPC_NO_MOVE = 1;
+		NPC_NO_MOVE = 1;
 		CANT_TURN = 1;
-		const int CANT_FLEE = 1;
+		CANT_FLEE = 1;
 		NPC_GIVE_EXP = 1000;
 		NO_STUCK_CHECKS = 1;
 		ATTACK_RANGE = 256;
 		ATTACK_HITRANGE = 256;
-		const string SOUND_DEATH = "monsters/wyrm/c_x0stgwar_dead.wav";
-		const int NPC_USE_FLINCH = 1;
-		const int NPC_USE_PAIN = 1;
-		const int NPC_USE_IDLE = 0;
-		const float NPC_FLINCH_HEALTH_RATIO = 0.5;
+		SOUND_DEATH = "monsters/wyrm/c_x0stgwar_dead.wav";
+		NPC_USE_FLINCH = 1;
+		NPC_USE_PAIN = 1;
+		NPC_USE_IDLE = 0;
+		NPC_FLINCH_HEALTH_RATIO = 0.5;
 		ANIM_FLINCH = "anim_flinch1";
-		const string NPC_MATERIAL_TYPE = "carapace";
-		const string SOUND_PAIN1 = "monsters/wyrm/c_x0stgwar_hit1.wav";
-		const string SOUND_PAIN2 = "monsters/wyrm/c_x0stgwar_hit2.wav";
-		const string SOUND_PAIN3 = "monsters/wyrm/c_x0stgwar_hit2.wav";
-		const string SOUND_FLINCH1 = "monsters/wyrm/c_x0stgwar_hit1.wav";
-		const string SOUND_FLINCH2 = "monsters/wyrm/c_x0stgwar_hit2.wav";
-		const string SOUND_FLINCH3 = "monsters/wyrm/c_x0stgwar_hit2.wav";
+		NPC_MATERIAL_TYPE = "carapace";
+		SOUND_PAIN1 = "monsters/wyrm/c_x0stgwar_hit1.wav";
+		SOUND_PAIN2 = "monsters/wyrm/c_x0stgwar_hit2.wav";
+		SOUND_PAIN3 = "monsters/wyrm/c_x0stgwar_hit2.wav";
+		SOUND_FLINCH1 = "monsters/wyrm/c_x0stgwar_hit1.wav";
+		SOUND_FLINCH2 = "monsters/wyrm/c_x0stgwar_hit2.wav";
+		SOUND_FLINCH3 = "monsters/wyrm/c_x0stgwar_hit2.wav";
 	}
 
 	void fake_precache()
@@ -273,7 +345,7 @@ class WyrmFire : CGameScript
 		if ((WYRM_USE_EDGES))
 		{
 			WYRM_CUR_PIT_IDX = 0;
-			WYRM_CUR_PIT = /* TODO: $get_array */ $get_array(ARRAY_PIT_POINTS, WYRM_CUR_PIT_IDX);
+			WYRM_CUR_PIT = ARRAY_PIT_POINTS[int(WYRM_CUR_PIT_IDX)];
 			if ((WYRM_USE_PITS))
 			{
 			}
@@ -375,7 +447,7 @@ class WyrmFire : CGameScript
 	void wyrm_appear()
 	{
 		LogDebug("wyrm_appear PARAM2");
-		string L_GAME_TIME = GetGameTime();
+		float L_GAME_TIME = GetGameTime();
 		NEXT_GIVEUP = L_GAME_TIME;
 		NEXT_GIVEUP += 20.0;
 		WYRM_TELEPORTING = 0;
@@ -431,7 +503,7 @@ class WyrmFire : CGameScript
 
 	void OnHuntTarget(CBaseEntity@ target)
 	{
-		string L_GAME_TIME = GetGameTime();
+		float L_GAME_TIME = GetGameTime();
 		if (L_GAME_TIME > NEXT_PASSIVE)
 		{
 			CUR_PASSIVE += 1;
@@ -555,7 +627,7 @@ class WyrmFire : CGameScript
 		}
 		if (WYRM_MMODE == "edges")
 		{
-			string L_EDGE_ORG = /* TODO: $get_array */ $get_array(ARRAY_EDGE_POINTS, WYRM_NEXT_EDGE_IDX);
+			string L_EDGE_ORG = ARRAY_EDGE_POINTS[int(WYRM_NEXT_EDGE_IDX)];
 			WYRM_MOVEDEST = GetEntityOrigin(L_EDGE_ORG);
 			string L_MY_POS = GetEntityOrigin(GetOwner());
 			if (Distance(L_MY_POS, WYRM_MOVEDEST) < 16)
@@ -565,7 +637,7 @@ class WyrmFire : CGameScript
 		}
 		if (WYRM_MMODE == "pits")
 		{
-			string L_PIT_ORG = /* TODO: $get_array */ $get_array(ARRAY_PIT_POINTS, WYRM_CUR_PIT);
+			string L_PIT_ORG = ARRAY_PIT_POINTS[int(WYRM_CUR_PIT)];
 			WYRM_MOVEDEST = GetEntityOrigin(L_PIT_ORG);
 		}
 		if (WYRM_MMODE == "none")
@@ -574,7 +646,7 @@ class WyrmFire : CGameScript
 			{
 				NEXT_WYRM_FLOAT = L_GAME_TIME;
 				NEXT_WYRM_FLOAT += Random(3.0, 7.0);
-				string L_MOVE_YAW = Random(0, 359.99);
+				float L_MOVE_YAW = Random(0, 359.99);
 				string L_MOVE_TO = GetEntityOrigin(GetOwner());
 				L_MOVE_TO += /* TODO: $relpos */ $relpos(Vector3(0, L_MOVE_YAW, 0), Vector3(0, 256, 0));
 				WYRM_SPEED = 20;
@@ -613,7 +685,7 @@ class WyrmFire : CGameScript
 			ScheduleDelayedEvent(3.0, "intro_done");
 		}
 		if (!(INTRO_STAGE > 1)) return;
-		string L_GAME_TIME = GetGameTime();
+		float L_GAME_TIME = GetGameTime();
 		if (GetEntityRange(m_hAttackTarget) <= ATTACK_RANGE_BITE)
 		{
 			PlayAnim("once", ANIM_ATTACK);
@@ -670,12 +742,12 @@ class WyrmFire : CGameScript
 		{
 			WYRM_EDGE_INIT += 1;
 			T_NEAREST = 9999;
-			for (int i = 0; i < /* TODO: $get_array_amt */ $get_array_amt(ARRAY_EDGE_POINTS); i++)
+			for (int i = 0; i < int(ARRAY_EDGE_POINTS.length()); i++)
 			{
 				find_nearest_edge();
 			}
 			LogDebug("nearest edge WYRM_NEXT_EDGE_IDX");
-			string L_EDGE_ORG = /* TODO: $get_array */ $get_array(ARRAY_EDGE_POINTS, WYRM_NEXT_EDGE_IDX);
+			string L_EDGE_ORG = ARRAY_EDGE_POINTS[int(WYRM_NEXT_EDGE_IDX)];
 			string L_EDGE_ORG = GetEntityOrigin(L_EDGE_ORG);
 			LogDebug("find_next_edge init");
 			SetEntityOrigin(GetOwner(), L_EDGE_ORG);
@@ -683,7 +755,7 @@ class WyrmFire : CGameScript
 		else
 		{
 			WYRM_NEXT_EDGE_IDX += 1;
-			if (WYRM_NEXT_EDGE_IDX >= /* TODO: $math(subtract) */ /* TODO: $get_array_amt */ $get_array_amt(ARRAY_EDGE_POINTS))
+			if (WYRM_NEXT_EDGE_IDX >= (int(ARRAY_EDGE_POINTS.length()) - 1))
 			{
 				LogDebug("find_next_edge hit last edge");
 				WYRM_NEXT_EDGE_IDX = 0;
@@ -693,10 +765,10 @@ class WyrmFire : CGameScript
 
 	void find_nearest_edge()
 	{
-		string L_CUR_EDGE = /* TODO: $get_array */ $get_array(ARRAY_EDGE_POINTS, i);
+		string L_CUR_EDGE = ARRAY_EDGE_POINTS[int(i)];
 		string L_CUR_EDGE_ORG = GetEntityOrigin(L_CUR_EDGE);
 		string L_MY_POS = GetEntityOrigin(GetOwner());
-		string L_DIST = Distance(L_MY_POS, L_CUR_EDGE_ORG);
+		float L_DIST = Distance(L_MY_POS, L_CUR_EDGE_ORG);
 		LogDebug("find_nearest_edge # game.script.iteration @ L_DIST vs T_NEAREST");
 		if (!(L_DIST < T_NEAREST)) return;
 		WYRM_NEXT_EDGE_IDX = i;
@@ -721,7 +793,7 @@ class WyrmFire : CGameScript
 					if (param2 == "randomtarg")
 					{
 						LogDebug("find_next_pit PARAM2 picking random...");
-						PIT_TARGET = GetToken(PIT_TARGET, RandomInt(0, /* TODO: $math(subtract) */ GetTokenCount(PIT_TARGET, ";")), ";");
+						PIT_TARGET = GetToken(PIT_TARGET, RandomInt(0, (GetTokenCount(PIT_TARGET, ";") - 1)), ";");
 					}
 					else
 					{
@@ -760,16 +832,16 @@ class WyrmFire : CGameScript
 		if ((L_PICK_RANDOM))
 		{
 			LogDebug("find_next_pit picking random...");
-			MOVE_TO_PIT_IDX = RandomInt(0, /* TODO: $math(subtract) */ /* TODO: $get_array_amt */ $get_array_amt(ARRAY_PIT_POINTS));
-			MOVE_TO_PIT = /* TODO: $get_array */ $get_array(ARRAY_PIT_POINTS, MOVE_TO_PIT_IDX);
+			MOVE_TO_PIT_IDX = RandomInt(0, (int(ARRAY_PIT_POINTS.length()) - 1));
+			MOVE_TO_PIT = ARRAY_PIT_POINTS[int(MOVE_TO_PIT_IDX)];
 			if (MOVE_TO_PIT_IDX == WYRM_CUR_PIT_IDX)
 			{
 				MOVE_TO_PIT_IDX += 1;
-				if (MOVE_TO_PIT_IDX >= /* TODO: $math(subtract) */ /* TODO: $get_array_amt */ $get_array_amt(ARRAY_PIT_POINTS))
+				if (MOVE_TO_PIT_IDX >= (int(ARRAY_PIT_POINTS.length()) - 1))
 				{
 					MOVE_TO_PIT_IDX = 0;
 				}
-				MOVE_TO_PIT = /* TODO: $get_array */ $get_array(ARRAY_PIT_POINTS, MOVE_TO_PIT_IDX);
+				MOVE_TO_PIT = ARRAY_PIT_POINTS[int(MOVE_TO_PIT_IDX)];
 			}
 			WYRM_CUR_PIT_IDX = MOVE_TO_PIT_IDX;
 			LogDebug("find_next_pit random WYRM_CUR_PIT_IDX [ MOVE_TO_PIT ]");
@@ -777,7 +849,7 @@ class WyrmFire : CGameScript
 		else
 		{
 			T_LEAST_DIST = 9999;
-			for (int i = 0; i < /* TODO: $get_array_amt */ $get_array_amt(ARRAY_PIT_POINTS); i++)
+			for (int i = 0; i < int(ARRAY_PIT_POINTS.length()); i++)
 			{
 				find_pit_nearest_target();
 			}
@@ -787,15 +859,15 @@ class WyrmFire : CGameScript
 
 	void find_pit_nearest_target()
 	{
-		string L_CUR_PIT = /* TODO: $get_array */ $get_array(ARRAY_PIT_POINTS, i);
+		string L_CUR_PIT = ARRAY_PIT_POINTS[int(i)];
 		string L_CUT_PIT_ORG = GetEntityOrigin(L_CUR_PIT);
 		string L_PIT_TARG_ORG = GetEntityOrigin(PIT_TARGET);
-		string L_PIT_DIST_FROM_TARG = Distance(L_CUT_PIT_ORG, L_PIT_TARG_ORG);
+		float L_PIT_DIST_FROM_TARG = Distance(L_CUT_PIT_ORG, L_PIT_TARG_ORG);
 		LogDebug("find_pit_nearest_target # game.script.iteration dist L_PIT_DIST_FROM_TARG");
 		if (!(L_PIT_DIST_FROM_TARG < T_LEAST_DIST)) return;
 		T_LEAST_DIST = L_PIT_DIST_FROM_TARG;
 		MOVE_TO_PIT_IDX = i;
-		MOVE_TO_PIT = /* TODO: $get_array */ $get_array(ARRAY_PIT_POINTS, MOVE_TO_PIT_IDX);
+		MOVE_TO_PIT = ARRAY_PIT_POINTS[int(MOVE_TO_PIT_IDX)];
 	}
 
 	void wyrm_teleport()
@@ -827,7 +899,7 @@ class WyrmFire : CGameScript
 		}
 		if (WYRM_PORTING_TO == "edge")
 		{
-			string L_EDGE_ORG = /* TODO: $get_array */ $get_array(ARRAY_EDGE_POINTS, WYRM_NEXT_EDGE_IDX);
+			string L_EDGE_ORG = ARRAY_EDGE_POINTS[int(WYRM_NEXT_EDGE_IDX)];
 			REPELL_POS = GetEntityOrigin(L_EDGE_ORG);
 		}
 		LogDebug("wyrm_teleport2 repellpos REPELL_POS");
@@ -872,7 +944,7 @@ class WyrmFire : CGameScript
 		}
 		if (WYRM_PORTING_TO == "edge")
 		{
-			string L_EDGE_ORG = /* TODO: $get_array */ $get_array(ARRAY_EDGE_POINTS, WYRM_NEXT_EDGE_IDX);
+			string L_EDGE_ORG = ARRAY_EDGE_POINTS[int(WYRM_NEXT_EDGE_IDX)];
 			string L_EDGE_ORG = GetEntityOrigin(L_EDGE_ORG);
 			LogDebug("wyrm_teleport3 WYRM_PORTING_TO WYRM_NEXT_EDGE_IDX L_EDGE_ORG");
 			SetEntityOrigin(GetOwner(), L_EDGE_ORG);
@@ -943,7 +1015,7 @@ class WyrmFire : CGameScript
 		EmitSound(GetOwner(), 0, SOUND_SWIPE_LARGE, 10);
 		string L_YAW = GetEntityProperty(GetOwner(), "angles.yaw");
 		string L_BURST_POS = GetEntityOrigin(GetOwner());
-		L_BURST_POS += /* TODO: $relpos */ $relpos(Vector3(0, L_YAW, 0), Vector3(0, /* TODO: $math(multiply) */ AOE_HBUTT, 0));
+		L_BURST_POS += /* TODO: $relpos */ $relpos(Vector3(0, L_YAW, 0), Vector3(0, (AOE_HBUTT * 0.95), 0));
 		L_BURST_POS = "z";
 		L_BURST_POS += "z";
 		XDoDamage(L_BURST_POS, AOE_HBUTT, DMG_HBUTT, 0.1, GetOwner(), GetOwner(), "none", "blunt_effect", "dmgevent:hbutt");
@@ -962,7 +1034,7 @@ class WyrmFire : CGameScript
 		EmitSound(GetOwner(), 0, SOUND_SWIPE_LARGE, 10);
 		string L_YAW = GetEntityProperty(GetOwner(), "angles.yaw");
 		string L_BURST_POS = GetEntityOrigin(GetOwner());
-		L_BURST_POS += /* TODO: $relpos */ $relpos(Vector3(0, L_YAW, 0), Vector3(0, /* TODO: $math(multiply) */ AOE_SWIPE, 0));
+		L_BURST_POS += /* TODO: $relpos */ $relpos(Vector3(0, L_YAW, 0), Vector3(0, (AOE_SWIPE * 0.5), 0));
 		L_BURST_POS = "z";
 		L_BURST_POS += "z";
 		XDoDamage(L_BURST_POS, AOE_SWIPE, DMG_SWIPE, 0.1, GetOwner(), GetOwner(), "none", "blunt_effect", "dmgevent:bigswipe");
@@ -1009,7 +1081,7 @@ class WyrmFire : CGameScript
 	{
 		string L_YAW = GetEntityProperty(GetOwner(), "angles.yaw");
 		string L_BURST_POS = GetEntityOrigin(GetOwner());
-		L_BURST_POS += /* TODO: $relpos */ $relpos(Vector3(0, L_YAW, 0), Vector3(0, /* TODO: $math(multiply) */ AOE_HBUTT, 0));
+		L_BURST_POS += /* TODO: $relpos */ $relpos(Vector3(0, L_YAW, 0), Vector3(0, (AOE_HBUTT * 0.95), 0));
 		L_BURST_POS = "z";
 		L_BURST_POS += "z";
 		XDoDamage(L_BURST_POS, AOE_HBUTT, DMG_BITE, 0.1, GetOwner(), GetOwner(), "none", "pierce", "dmgevent:bite1");
@@ -1020,7 +1092,7 @@ class WyrmFire : CGameScript
 	{
 		string L_YAW = GetEntityProperty(GetOwner(), "angles.yaw");
 		string L_BURST_POS = GetEntityOrigin(GetOwner());
-		L_BURST_POS += /* TODO: $relpos */ $relpos(Vector3(0, L_YAW, 0), Vector3(0, /* TODO: $math(multiply) */ AOE_HBUTT, 0));
+		L_BURST_POS += /* TODO: $relpos */ $relpos(Vector3(0, L_YAW, 0), Vector3(0, (AOE_HBUTT * 0.95), 0));
 		L_BURST_POS = "z";
 		L_BURST_POS += "z";
 		XDoDamage(L_BURST_POS, AOE_HBUTT, DMG_BITE, 0.1, GetOwner(), GetOwner(), "none", "pierce", "dmgevent:bite2");
@@ -1148,7 +1220,7 @@ class WyrmFire : CGameScript
 			{
 				NEXT_PUSH_ALERT = 10.0;
 				NEXT_PUSH_ALERT += GetGameTime();
-				SendColoredMessage(param1, "Your push immunity causes you to absorb the GetEntityName(GetOwner()) 's sheer strength as extra damage!");
+				SendColoredMessage(param1, "Your push immunity causes you to absorb the " + GetEntityName(GetOwner()) + " 's sheer strength as extra damage!");
 			}
 		}
 	}
@@ -1157,20 +1229,20 @@ class WyrmFire : CGameScript
 	{
 		if ((WYRM_PITHUNTER))
 		{
-			if (GetEntityHealth(GetOwner()) >= /* TODO: $math(multiply) */ GetEntityMaxHealth(GetOwner()))
+			if (GetEntityHealth(GetOwner()) >= (GetEntityMaxHealth(GetOwner()) * 0.75))
 			{
 				DID_FLEE1 = 0;
 			}
-			if (GetEntityHealth(GetOwner()) >= /* TODO: $math(multiply) */ GetEntityMaxHealth(GetOwner()))
+			if (GetEntityHealth(GetOwner()) >= (GetEntityMaxHealth(GetOwner()) * 0.50))
 			{
 				DID_FLEE2 = 0;
 			}
-			if (GetEntityHealth(GetOwner()) >= /* TODO: $math(multiply) */ GetEntityMaxHealth(GetOwner()))
+			if (GetEntityHealth(GetOwner()) >= (GetEntityMaxHealth(GetOwner()) * 0.25))
 			{
 				DID_FLEE3 = 0;
 			}
 		}
-		if (GetEntityHealth(GetOwner()) < /* TODO: $math(multiply) */ GetEntityMaxHealth(GetOwner()))
+		if (GetEntityHealth(GetOwner()) < (GetEntityMaxHealth(GetOwner()) * 0.75))
 		{
 			if (!(DID_FLEE1))
 			{
@@ -1180,7 +1252,7 @@ class WyrmFire : CGameScript
 			NEXT_PITHUNT += 20.0;
 			do_flee();
 		}
-		if (GetEntityHealth(GetOwner()) < /* TODO: $math(multiply) */ GetEntityMaxHealth(GetOwner()))
+		if (GetEntityHealth(GetOwner()) < (GetEntityMaxHealth(GetOwner()) * 0.5))
 		{
 			if (!(DID_FLEE2))
 			{
@@ -1190,7 +1262,7 @@ class WyrmFire : CGameScript
 			NEXT_PITHUNT += 20.0;
 			do_flee();
 		}
-		if (GetEntityHealth(GetOwner()) < /* TODO: $math(multiply) */ GetEntityMaxHealth(GetOwner()))
+		if (GetEntityHealth(GetOwner()) < (GetEntityMaxHealth(GetOwner()) * 0.25))
 		{
 			if (!(DID_FLEE3))
 			{
@@ -1328,7 +1400,7 @@ class WyrmFire : CGameScript
 		}
 		if (WYRM_MMODE == "edges")
 		{
-			WYRM_NEXT_EDGE_IDX = RandomInt(0, /* TODO: $math(subtract) */ /* TODO: $get_array_amt */ $get_array_amt(ARRAY_EDGE_POINTS));
+			WYRM_NEXT_EDGE_IDX = RandomInt(0, (int(ARRAY_EDGE_POINTS.length()) - 1));
 			WYRM_PORTING_TO = "edge";
 			do_submerge(0, "flee");
 		}
@@ -1362,7 +1434,7 @@ class WyrmFire : CGameScript
 		if ((L_PARAM_CORRECT)) return;
 		string L_OUTSG = GetEntityProperty(GetOwner(), "itemname");
 		L_OUTSG += ": addparam set_mmode - must be pits, edges, or none";
-		SendInfoMsg("all", "MAP ERROR L_OUTSG");
+		SendInfoMsg("all", "MAP ERROR " + L_OUTSG);
 		// TODO: chatlog GetTimestamp() MAP ERROR: L_OUTSG
 	}
 

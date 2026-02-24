@@ -8,13 +8,17 @@ class SfxRaura : CGameScript
 	int FX_ACTIVE;
 	string FX_DURATION;
 	string FX_OWNER;
+	string MODEL_NAME;
+	int MODEL_OFS;
+	int V_OFS;
+	int V_OFS_DUCK;
 
 	SfxRaura()
 	{
-		const string MODEL_NAME = "weapons/projectiles.mdl";
-		const int MODEL_OFS = 54;
-		const int V_OFS = -34;
-		const int V_OFS_DUCK = 24;
+		MODEL_NAME = "weapons/projectiles.mdl";
+		MODEL_OFS = 54;
+		V_OFS = -34;
+		V_OFS_DUCK = 24;
 	}
 
 	void client_activate()

@@ -10,8 +10,11 @@ class SpiderSnow : CGameScript
 	int AM_BURROWED;
 	int AM_FLIPPED;
 	string ANIM_ATTACK;
+	string ANIM_BURROW_IN;
+	string ANIM_BURROW_OUT;
 	string ANIM_DEATH;
 	string ANIM_IDLE;
+	string ANIM_JUMP;
 	string ANIM_RUN;
 	string ANIM_WALK;
 	string AS_ATTACKING;
@@ -20,6 +23,10 @@ class SpiderSnow : CGameScript
 	int ATTACK_RANGE;
 	string BITE_ATTACK;
 	int CAN_FLIP;
+	int DMG_BITE;
+	int DOT_POISON;
+	float FREQ_FLIP;
+	float HITCHANCE_BITE;
 	string NEXT_FLIP;
 	string NEXT_QUICK_SPIT;
 	int NPC_GIVE_EXP;
@@ -32,6 +39,7 @@ class SpiderSnow : CGameScript
 	int NPC_PROX_ACTIVATE;
 	int PROJECTILE_RANGE;
 	int SILENT_BURROW;
+	string SOUND_SHOOT;
 	string START_BURROWED;
 	int WEB_STRENGTH;
 
@@ -42,19 +50,19 @@ class SpiderSnow : CGameScript
 		ANIM_RUN = "walk";
 		ANIM_DEATH = "death";
 		ANIM_ATTACK = "spit";
-		const string ANIM_JUMP = "latch_jump";
-		const string ANIM_BURROW_IN = "BurrowIn";
-		const string ANIM_BURROW_OUT = "BurrowOut";
+		ANIM_JUMP = "latch_jump";
+		ANIM_BURROW_IN = "BurrowIn";
+		ANIM_BURROW_OUT = "BurrowOut";
 		WEB_STRENGTH = 1;
 		ATTACK_MOVERANGE = 250;
 		PROJECTILE_RANGE = 400;
 		ATTACK_HITRANGE = 90;
 		ATTACK_RANGE = 70;
-		const float HITCHANCE_BITE = 0.8;
-		const int DMG_BITE = 10;
-		const int DOT_POISON = 5;
-		const string FREQ_FLIP = Random(15.0, 30.0);
-		const string SOUND_SHOOT = "bullchicken/bc_attack3.wav";
+		HITCHANCE_BITE = 0.8;
+		DMG_BITE = 10;
+		DOT_POISON = 5;
+		FREQ_FLIP = Random(15.0, 30.0);
+		SOUND_SHOOT = "bullchicken/bc_attack3.wav";
 		NPC_GIVE_EXP = 200;
 	}
 
@@ -314,7 +322,7 @@ class SpiderSnow : CGameScript
 		if (NPC_ADJ_LEVEL > 0)
 		{
 			string ADD_TO_WS = NPC_ADJ_LEVEL;
-			// TODO: capvar ADD_TO_WS 1 7
+			ADD_TO_WS = max(1, min(7, ADD_TO_WS));
 			WEB_STRENGTH += ADD_TO_WS;
 		}
 	}

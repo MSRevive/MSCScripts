@@ -9,23 +9,30 @@ class ZorcArcher1 : CGameScript
 {
 	string ANIM_RUN;
 	string ANIM_WALK;
+	string ARROW_TYPE;
 	float BASE_FRAMERATE;
 	float BASE_MOVESPEED;
 	int BO_ZOMBIE_MODE;
+	int DMG_BOW;
+	int DMG_KICK;
+	int DMG_SMASH;
+	int DMG_SWIPE;
 	int DOING_KICK;
 	int KICK_TYPE;
 	int NO_STUCK_CHECKS;
+	int NPC_BASE_EXP;
+	string SOUND_BOW;
 
 	ZorcArcher1()
 	{
-		const int NPC_BASE_EXP = 200;
-		const int DMG_BOW = 400;
-		const int DMG_SMASH = 200;
-		const int DMG_SWIPE = 100;
-		const int DMG_KICK = 100;
+		NPC_BASE_EXP = 200;
+		DMG_BOW = 400;
+		DMG_SMASH = 200;
+		DMG_SWIPE = 100;
+		DMG_KICK = 100;
 		BO_ZOMBIE_MODE = 1;
-		const string ARROW_TYPE = "proj_arrow_npc_dyn";
-		const string SOUND_BOW = "monsters/archer/bow.wav";
+		ARROW_TYPE = "proj_arrow_npc_dyn";
+		SOUND_BOW = "monsters/archer/bow.wav";
 	}
 
 	void orc_spawn()

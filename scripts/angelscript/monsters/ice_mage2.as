@@ -8,8 +8,13 @@ namespace MS
 class IceMage2 : CGameScript
 {
 	string ANIM_ATTACK;
+	string ANIM_BURST;
 	string ANIM_DEATH;
+	string ANIM_FLY;
+	string ANIM_FREEZE_RAY;
 	string ANIM_IDLE;
+	string ANIM_IDLE_ALERT;
+	string ANIM_LOOK;
 	string ANIM_RUN;
 	string ANIM_WALK;
 	int ATTACK_HITRANGE;
@@ -21,9 +26,17 @@ class IceMage2 : CGameScript
 	string CL_LIGHT_IDX;
 	int DOING_BEAM;
 	int DOING_BURST;
+	float DOT_FREEZE;
 	int FOUND_NEAR_TARGET;
+	float FREEZE_RAY_BASEDOT;
+	int FREEZE_RAY_SLOW_AMT;
+	float FREQ_BURST;
+	float FREQ_BURST_SHORT;
+	float FREQ_DODGE;
 	string LAST_BEAM;
 	string LAST_TELE;
+	string LIGHT_COLOR;
+	int LIGHT_RAD;
 	int MOVE_RANGE;
 	string NEAR_DEST;
 	string NEW_TARGET;
@@ -36,6 +49,9 @@ class IceMage2 : CGameScript
 	int N_TELES;
 	int RENDER_COUNT;
 	int SEARCH_RAD;
+	string SOUND_BURST;
+	string SOUND_BURST_CHARGE;
+	string SOUND_FREEZE_RAY;
 	string TELE_ANG;
 	string TELE_ANGS;
 	string TELE_DEST;
@@ -50,29 +66,29 @@ class IceMage2 : CGameScript
 		ANIM_RUN = "run";
 		ANIM_WALK = "walk";
 		ANIM_DEATH = "die_simple";
-		const string ANIM_BURST = "crouch_idle";
+		ANIM_BURST = "crouch_idle";
 		MOVE_RANGE = 512;
 		ATTACK_MOVERANGE = 512;
 		ATTACK_RANGE = 1024;
 		ATTACK_HITRANGE = 1024;
-		const string ANIM_IDLE_ALERT = "alert_idle";
+		ANIM_IDLE_ALERT = "alert_idle";
 		ANIM_ATTACK = "ref_shoot_staff";
-		const string ANIM_FREEZE_RAY = "ref_shoot_rayspell";
-		const string ANIM_FLY = "jump";
-		const string ANIM_LOOK = "look";
+		ANIM_FREEZE_RAY = "ref_shoot_rayspell";
+		ANIM_FLY = "jump";
+		ANIM_LOOK = "look";
 		NPC_GIVE_EXP = 1000;
 		NPC_RANGED = 1;
-		const float FREQ_DODGE = 5.0;
-		const Vector3 LIGHT_COLOR = Vector3(200, 200, 255);
-		const int LIGHT_RAD = 96;
-		const string FREQ_BURST = Random(30.0, 60.0);
-		const float FREQ_BURST_SHORT = 10.0;
-		const float DOT_FREEZE = 100.0;
-		const float FREEZE_RAY_BASEDOT = 25.0;
-		const int FREEZE_RAY_SLOW_AMT = 1;
-		const string SOUND_FREEZE_RAY = "magic/freezeray_loop.wav";
-		const string SOUND_BURST_CHARGE = "weapons/magic/ice_powerup.wav";
-		const string SOUND_BURST = "weapons/magic/frost_reverse.wav";
+		FREQ_DODGE = 5.0;
+		LIGHT_COLOR = Vector3(200, 200, 255);
+		LIGHT_RAD = 96;
+		FREQ_BURST = Random(30.0, 60.0);
+		FREQ_BURST_SHORT = 10.0;
+		DOT_FREEZE = 100.0;
+		FREEZE_RAY_BASEDOT = 25.0;
+		FREEZE_RAY_SLOW_AMT = 1;
+		SOUND_FREEZE_RAY = "magic/freezeray_loop.wav";
+		SOUND_BURST_CHARGE = "weapons/magic/ice_powerup.wav";
+		SOUND_BURST = "weapons/magic/frost_reverse.wav";
 	}
 
 	void OnRepeatTimer()
@@ -81,7 +97,7 @@ class IceMage2 : CGameScript
 		if (N_TELES > 0)
 		{
 		}
-		string LAST_TELE_DIFF = GetGameTime();
+		float LAST_TELE_DIFF = GetGameTime();
 		LAST_TELE_DIFF -= G_ICE_TELE;
 		if (LAST_TELE_DIFF > 5)
 		{
@@ -104,7 +120,7 @@ class IceMage2 : CGameScript
 		npcatk_settarget(NEW_TARGET);
 		if ((G_DEVELOPER_MODE))
 		{
-			SendInfoMessageToAll("green ICE_MAGE: found GetEntityName(NEW_TARGET) near FOUND_NEAR_TARGET");
+			SendInfoMessageToAll("green " + ICE_MAGE: + "found " + GetEntityName(NEW_TARGET) + "near " + FOUND_NEAR_TARGET);
 		}
 		string PICK_TELE = FOUND_NEAR_TARGET;
 		if (PICK_TELE == 1)
@@ -281,7 +297,7 @@ class IceMage2 : CGameScript
 	void shadow_shift()
 	{
 		ClientEvent("persist", "all", "effects/sfx_motionblur_temp", GetEntityIndex(GetOwner()), 0, 1, 3.0);
-		string RND_ANG = Random(0, 359);
+		float RND_ANG = Random(0, 359);
 		AddVelocity(GetOwner(), /* TODO: $relvel */ $relvel(Vector3(0, RND_ANG, 0), Vector3(0, 1000, 0)));
 		EmitSound(GetOwner(), 0, SOUND_DODGE, 10);
 		ScheduleDelayedEvent(0.25, "stop_shadow_shift");

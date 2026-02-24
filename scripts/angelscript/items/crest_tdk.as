@@ -7,10 +7,13 @@ namespace MS
 
 class CrestTdk : CGameScript
 {
+	int MODEL_CREST_OFS;
+	string MODEL_WEAR;
+
 	CrestTdk()
 	{
-		const int MODEL_CREST_OFS = 29;
-		const string MODEL_WEAR = "armor/p_gowns.mdl";
+		MODEL_CREST_OFS = 29;
+		MODEL_WEAR = "armor/p_gowns.mdl";
 	}
 
 	void crest_spawn()

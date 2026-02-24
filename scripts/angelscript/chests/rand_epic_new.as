@@ -7,11 +7,15 @@ namespace MS
 
 class RandEpicNew : CGameScript
 {
+	int HP_REQ;
+	string ITEM_EVENT;
+	int MAX_GOLD_AMT;
+
 	RandEpicNew()
 	{
-		const string ITEM_EVENT = "add_epic_item";
-		const int HP_REQ = 500;
-		const int MAX_GOLD_AMT = 200;
+		ITEM_EVENT = "add_epic_item";
+		HP_REQ = 500;
+		MAX_GOLD_AMT = 200;
 	}
 
 	void chest_additems()
@@ -20,7 +24,7 @@ class RandEpicNew : CGameScript
 		ITEM_EVENT(100, HP_REQ);
 		if ((G_DEVELOPER_MODE))
 		{
-			SayText("ITEM_EVENT HP_REQ");
+			SayText(ITEM_EVENT + HP_REQ);
 		}
 	}
 

@@ -7,10 +7,13 @@ namespace MS
 
 class AxesTl : CGameScript
 {
+	string MELEE_DMG_TYPE;
+	int TOM_SKIN;
+
 	AxesTl()
 	{
-		const string MELEE_DMG_TYPE = "lightning";
-		const int TOM_SKIN = 2;
+		MELEE_DMG_TYPE = "lightning";
+		TOM_SKIN = 2;
 	}
 
 	void weapon_spawn()

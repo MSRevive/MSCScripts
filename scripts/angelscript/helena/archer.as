@@ -7,11 +7,12 @@ namespace MS
 
 class Archer : CGameScript
 {
+	int NO_CHAT;
 	string NPC_NO_PLAYER_DMG;
 
 	Archer()
 	{
-		const int NO_CHAT = 1;
+		NO_CHAT = 1;
 	}
 
 	void OnSpawn() override
@@ -29,7 +30,7 @@ class Archer : CGameScript
 
 	void LightAttack()
 	{
-		string RAND = RandomInt(1, 100);
+		int RAND = RandomInt(1, 100);
 		if (RAND > 60)
 		{
 			SetSayTextRange(500);
@@ -46,7 +47,7 @@ class Archer : CGameScript
 
 	void MediumAttack()
 	{
-		string RAND = RandomInt(1, 100);
+		int RAND = RandomInt(1, 100);
 		if (RAND > 60)
 		{
 			SetSayTextRange(500);
@@ -63,7 +64,7 @@ class Archer : CGameScript
 
 	void HeavyAttack()
 	{
-		string RAND = RandomInt(1, 100);
+		int RAND = RandomInt(1, 100);
 		if (RAND > 60)
 		{
 			SetSayTextRange(500);
@@ -73,14 +74,14 @@ class Archer : CGameScript
 			}
 			else
 			{
-				SayText("We need everyone at the gates! NOW!");
+				SayText("We need everyone at the gates! " + NOW!);
 			}
 		}
 	}
 
 	void CatapaultsIncoming()
 	{
-		string RAND = RandomInt(1, 100);
+		int RAND = RandomInt(1, 100);
 		if (RAND > 60)
 		{
 			SetSayTextRange(500);

@@ -7,31 +7,45 @@ namespace MS
 
 class ProjBoltFire : CGameScript
 {
+	int ARROW_BODY_OFS;
+	float ARROW_BREAK_CHANCE;
+	int ARROW_SOLIDIFY_ON_WALL;
 	string BOLT_DAMAGE;
 	int DID_SPLODIE;
 	string DIRECT_HIT;
+	int HITSCAN_BOLT;
+	int MODEL_BODY_OFS;
+	string MODEL_WORLD;
 	string MY_OWNER;
 	string MY_START_ANG;
 	string MY_XBOW;
+	string PROJ_ANIM_IDLE;
+	int PROJ_DAMAGE;
+	int PROJ_DAMAGE_AOE_RANGE;
+	string PROJ_DAMAGE_TYPE;
+	int PROJ_IGNORENPC;
+	int PROJ_STICK_DURATION;
+	string SOUND_HITWALL1;
+	string SOUND_HITWALL2;
 	string START_TRACE;
 	string TRACE_END;
 
 	ProjBoltFire()
 	{
-		const int HITSCAN_BOLT = 1;
-		const string MODEL_WORLD = "weapons/projectiles.mdl";
-		const string SOUND_HITWALL1 = "weapons/bow/arrowhit1.wav";
-		const string SOUND_HITWALL2 = "weapons/bow/arrowhit1.wav";
-		const int MODEL_BODY_OFS = 49;
-		const int ARROW_BODY_OFS = 49;
-		const int PROJ_DAMAGE_AOE_RANGE = 250;
-		const string PROJ_DAMAGE_TYPE = "fire";
-		const string PROJ_ANIM_IDLE = "none";
-		const int PROJ_IGNORENPC = 1;
-		const string PROJ_DAMAGE = RandomInt(400, 500);
-		const int PROJ_STICK_DURATION = 1;
-		const int ARROW_SOLIDIFY_ON_WALL = 1;
-		const float ARROW_BREAK_CHANCE = 1.0;
+		HITSCAN_BOLT = 1;
+		MODEL_WORLD = "weapons/projectiles.mdl";
+		SOUND_HITWALL1 = "weapons/bow/arrowhit1.wav";
+		SOUND_HITWALL2 = "weapons/bow/arrowhit1.wav";
+		MODEL_BODY_OFS = 49;
+		ARROW_BODY_OFS = 49;
+		PROJ_DAMAGE_AOE_RANGE = 250;
+		PROJ_DAMAGE_TYPE = "fire";
+		PROJ_ANIM_IDLE = "none";
+		PROJ_IGNORENPC = 1;
+		PROJ_DAMAGE = RandomInt(400, 500);
+		PROJ_STICK_DURATION = 1;
+		ARROW_SOLIDIFY_ON_WALL = 1;
+		ARROW_BREAK_CHANCE = 1.0;
 	}
 
 	void arrow_spawn()

@@ -7,10 +7,13 @@ namespace MS
 
 class PsnUnarmed : CGameScript
 {
+	int ELEMENT;
+	int WEAPON;
+
 	PsnUnarmed()
 	{
-		const int WEAPON = 2;
-		const int ELEMENT = 1;
+		WEAPON = 2;
+		ELEMENT = 1;
 	}
 
 }

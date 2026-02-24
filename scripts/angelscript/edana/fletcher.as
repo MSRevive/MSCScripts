@@ -11,29 +11,37 @@ namespace MS
 
 class Fletcher : CGameScript
 {
+	string ANIM_CHAT;
+	string ANIM_NO;
+	string ANIM_YES;
 	string ARROW_AMT;
 	int CANCHAT;
 	string HELENA_MODE;
 	int NO_HAIL;
 	int NO_JOB;
 	int NO_RUMOR;
+	string SOUND_DEATH;
+	string STORE_NAME;
+	int STORE_SELLMENU;
 	string STORE_TRIGGERTEXT;
 	string THIS_MAP;
+	int VEND_CONTAINERS;
 	int VEND_NEWBIE;
+	int VEND_WEAPONS;
 
 	Fletcher()
 	{
-		const string SOUND_DEATH = "none";
-		const string STORE_NAME = "edana_fletcher";
+		SOUND_DEATH = "none";
+		STORE_NAME = "edana_fletcher";
 		STORE_TRIGGERTEXT = "store trade buy sell purchase sale offer";
-		const int STORE_SELLMENU = 1;
-		const int NO_HAIL = 1;
-		const string ANIM_CHAT = "pondering";
-		const string ANIM_YES = "yes";
-		const string ANIM_NO = "no";
+		STORE_SELLMENU = 1;
+		NO_HAIL = 1;
+		ANIM_CHAT = "pondering";
+		ANIM_YES = "yes";
+		ANIM_NO = "no";
 		VEND_NEWBIE = 1;
-		const int VEND_WEAPONS = 1;
-		const int VEND_CONTAINERS = 1;
+		VEND_WEAPONS = 1;
+		VEND_CONTAINERS = 1;
 	}
 
 	void OnSpawn() override
@@ -124,7 +132,7 @@ class Fletcher : CGameScript
 	void say_job()
 	{
 		if ((HELENA_MODE)) return;
-		SayText("Sorry lad I do all my work at home and have no need for an aide , maybe the armourer could find a place for you?");
+		SayText("Sorry lad " + I + " do all my work at home and have no need for an aide , maybe the armourer could find a place for you?");
 	}
 
 	void say_rumor()

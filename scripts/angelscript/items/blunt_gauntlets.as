@@ -7,9 +7,11 @@ namespace MS
 
 class BluntGauntlets : CGameScript
 {
+	int BASE_LEVEL_REQ;
+
 	BluntGauntlets()
 	{
-		const int BASE_LEVEL_REQ = 6;
+		BASE_LEVEL_REQ = 6;
 	}
 
 }

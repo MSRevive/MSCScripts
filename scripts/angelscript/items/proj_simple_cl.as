@@ -316,7 +316,7 @@ class ProjSimpleCl : CGameScript
 		string L_CUR_BONE = i;
 		if (!(L_CUR_BONE > 0)) return;
 		string L_CUR_BONE_POS = /* TODO: $getcl */ $getcl(FX_STICK_TARGET, "bonepos", L_CUR_BONE);
-		string L_CUR_BONE_DIST = Distance(FX_PROJ_POS, L_CUR_BONE_POS);
+		float L_CUR_BONE_DIST = Distance(FX_PROJ_POS, L_CUR_BONE_POS);
 		if (L_CUR_BONE_DIST < BEST_BONE_DIST)
 		{
 			FX_USE_BONE = L_CUR_BONE;

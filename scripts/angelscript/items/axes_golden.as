@@ -7,11 +7,15 @@ namespace MS
 
 class AxesGolden : CGameScript
 {
+	int BREAK_CHANCE;
+	int FINAL_VALUE;
+	int THIS_NO_BREAK;
+
 	AxesGolden()
 	{
-		const int THIS_NO_BREAK = 0;
-		const int FINAL_VALUE = 4000;
-		const int BREAK_CHANCE = 2;
+		THIS_NO_BREAK = 0;
+		FINAL_VALUE = 4000;
+		BREAK_CHANCE = 2;
 	}
 
 	void weapon_spawn()

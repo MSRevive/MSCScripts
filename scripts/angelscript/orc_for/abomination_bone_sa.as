@@ -7,27 +7,39 @@ namespace MS
 
 class AbominationBoneSa : CGameScript
 {
+	int DMG_BITE_LONG;
+	int DMG_BITE_SHORT;
+	int DMG_LSHIELD;
+	int DOT_BREATH;
 	string FLING_IDX;
 	int INTRO_DONE;
+	int MONSTER_HP;
 	int NO_SPAWN_STUCK_CHECK;
+	string NPC_ADJ_DMG_MUTLI_TOKENS;
+	string NPC_ADJ_HP_MUTLI_TOKENS;
+	string NPC_ADJ_TIERS;
+	int NPC_BASE_EXP;
+	float NPC_BOSS_REGEN_RATE;
+	float NPC_BOSS_RESTORATION;
 	int NPC_SELF_ADJUST;
+	int START_SUSPEND;
 
 	AbominationBoneSa()
 	{
-		const int MONSTER_HP = 20000;
-		const int NPC_BASE_EXP = 7000;
-		const int DOT_BREATH = 100;
-		const int DMG_BITE_SHORT = 150;
-		const int DMG_BITE_LONG = 350;
-		const int DMG_LSHIELD = 150;
+		MONSTER_HP = 20000;
+		NPC_BASE_EXP = 7000;
+		DOT_BREATH = 100;
+		DMG_BITE_SHORT = 150;
+		DMG_BITE_LONG = 350;
+		DMG_LSHIELD = 150;
 		NPC_SELF_ADJUST = 1;
-		const string NPC_ADJ_TIERS = "0;500;1000;2000;3000;5000";
-		const string NPC_ADJ_DMG_MUTLI_TOKENS = "1.0;1.0;1.0;1.0;1.25;2.0;";
-		const string NPC_ADJ_HP_MUTLI_TOKENS = "1.0;1.0;1.0;1.0;1.5;2.0;";
-		const int START_SUSPEND = 1;
+		NPC_ADJ_TIERS = "0;500;1000;2000;3000;5000";
+		NPC_ADJ_DMG_MUTLI_TOKENS = "1.0;1.0;1.0;1.0;1.25;2.0;";
+		NPC_ADJ_HP_MUTLI_TOKENS = "1.0;1.0;1.0;1.0;1.5;2.0;";
+		START_SUSPEND = 1;
 		NO_SPAWN_STUCK_CHECK = 1;
-		const float NPC_BOSS_REGEN_RATE = 0.03;
-		const float NPC_BOSS_RESTORATION = 0.25;
+		NPC_BOSS_REGEN_RATE = 0.03;
+		NPC_BOSS_RESTORATION = 0.25;
 	}
 
 	void game_precache()

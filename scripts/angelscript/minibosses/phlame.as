@@ -8,20 +8,50 @@ namespace MS
 class Phlame : CGameScript
 {
 	string ANIM_ATTACK;
+	string ANIM_BEAM;
+	string ANIM_BOULDERS;
+	string ANIM_DODGE;
+	string ANIM_FIRE_BREATH;
+	string ANIM_GUIDED_BURST;
 	string ANIM_IDLE;
+	string ANIM_IDLE_DEF;
+	string ANIM_LOOK;
+	string ANIM_METEOR;
+	string ANIM_REPULSE;
 	string ANIM_RUN;
+	string ANIM_RUN_DEF;
+	string ANIM_SUMMON;
 	string ANIM_WALK;
+	string ANIM_WALK_DEF;
 	int ATTACK_HITRANGE;
 	int ATTACK_MOVERANGE;
 	int ATTACK_RANGE;
+	float FREQ_GLOAT;
+	float FREQ_PAIN;
 	int IS_UNHOLY;
 	string IS_WEAK;
 	string NEXT_GLOBAL_GLOAT;
 	string NEXT_LEAP_AWAY;
 	string NEXT_PAIN;
 	int NO_STUCK_CHECKS;
+	float NPC_BOSS_REGEN_RATE;
 	int NPC_GIVE_EXP;
 	int NPC_IS_BOSS;
+	string SOUND_DEATH;
+	string SOUND_GLOAT1;
+	string SOUND_GLOAT2;
+	string SOUND_GLOAT3;
+	string SOUND_GLOAT4;
+	string SOUND_PAIN1;
+	string SOUND_PAIN_HEALTHY;
+	string SOUND_PAIN_WEAK;
+	string SOUND_STRONG_SWING1;
+	string SOUND_STRONG_SWING2;
+	string SOUND_STRUCK1;
+	string SOUND_STRUCK2;
+	string SOUND_SUMMON;
+	string SOUND_SWING1;
+	string SOUND_SWING2;
 	string STAFF_STRIKE;
 
 	Phlame()
@@ -30,41 +60,41 @@ class Phlame : CGameScript
 		ANIM_WALK = "walk2handed";
 		ANIM_RUN = "run2";
 		ANIM_ATTACK = "staff_strike";
-		const string ANIM_RUN_DEF = "run2";
-		const string ANIM_WALK_DEF = "walk2handed";
-		const string ANIM_IDLE_DEF = "idle";
-		const string ANIM_LOOK = "idle_look";
-		const string ANIM_SUMMON = "summon";
-		const string ANIM_METEOR = "cieling_strike";
-		const string ANIM_BOULDERS = "cieling_strike";
-		const string ANIM_REPULSE = "fdeploy_strike";
-		const string ANIM_DODGE = "staff_aim";
-		const string ANIM_BEAM = "staff_aim";
-		const string ANIM_FIRE_BREATH = "aim_1";
-		const string ANIM_GUIDED_BURST = "shoot_1";
+		ANIM_RUN_DEF = "run2";
+		ANIM_WALK_DEF = "walk2handed";
+		ANIM_IDLE_DEF = "idle";
+		ANIM_LOOK = "idle_look";
+		ANIM_SUMMON = "summon";
+		ANIM_METEOR = "cieling_strike";
+		ANIM_BOULDERS = "cieling_strike";
+		ANIM_REPULSE = "fdeploy_strike";
+		ANIM_DODGE = "staff_aim";
+		ANIM_BEAM = "staff_aim";
+		ANIM_FIRE_BREATH = "aim_1";
+		ANIM_GUIDED_BURST = "shoot_1";
 		NPC_IS_BOSS = 1;
-		const float NPC_BOSS_REGEN_RATE = 0.05;
+		NPC_BOSS_REGEN_RATE = 0.05;
 		NPC_GIVE_EXP = 15000;
 		ATTACK_MOVERANGE = 768;
 		ATTACK_RANGE = 200;
 		ATTACK_HITRANGE = 250;
-		const string FREQ_GLOAT = Random(30.0, 60.0);
-		const string FREQ_PAIN = Random(30.0, 40.0);
-		const string SOUND_GLOAT1 = "voices/phlame/vs_nx0headm_haha.wav";
-		const string SOUND_GLOAT2 = "voices/phlame/vs_nx0headm_attk.wav";
-		const string SOUND_GLOAT3 = "voices/phlame/vs_nx0headm_bat1.wav";
-		const string SOUND_GLOAT4 = "voices/phlame/vs_nx0headm_bat3.wav";
-		const string SOUND_SUMMON = "voices/phlame/vs_nx0headm_bat2.wav";
-		const string SOUND_PAIN1 = "voices/phlame/vs_nx0headm_atk1.wav";
-		const string SOUND_PAIN_HEALTHY = "voices/phlame/vs_nx0headm_yes.wav";
-		const string SOUND_PAIN_WEAK = "voices/phlame/vs_nx0headm_no.wav";
-		const string SOUND_STRUCK1 = "debris/flesh1.wav";
-		const string SOUND_STRUCK2 = "debris/flesh2.wav";
-		const string SOUND_SWING1 = "zombie/claw_miss1.wav";
-		const string SOUND_SWING2 = "zombie/claw_miss2.wav";
-		const string SOUND_STRONG_SWING1 = "zombie/claw_strike1.wav";
-		const string SOUND_STRONG_SWING2 = "zombie/claw_strike2.wav";
-		const string SOUND_DEATH = "none";
+		FREQ_GLOAT = Random(30.0, 60.0);
+		FREQ_PAIN = Random(30.0, 40.0);
+		SOUND_GLOAT1 = "voices/phlame/vs_nx0headm_haha.wav";
+		SOUND_GLOAT2 = "voices/phlame/vs_nx0headm_attk.wav";
+		SOUND_GLOAT3 = "voices/phlame/vs_nx0headm_bat1.wav";
+		SOUND_GLOAT4 = "voices/phlame/vs_nx0headm_bat3.wav";
+		SOUND_SUMMON = "voices/phlame/vs_nx0headm_bat2.wav";
+		SOUND_PAIN1 = "voices/phlame/vs_nx0headm_atk1.wav";
+		SOUND_PAIN_HEALTHY = "voices/phlame/vs_nx0headm_yes.wav";
+		SOUND_PAIN_WEAK = "voices/phlame/vs_nx0headm_no.wav";
+		SOUND_STRUCK1 = "debris/flesh1.wav";
+		SOUND_STRUCK2 = "debris/flesh2.wav";
+		SOUND_SWING1 = "zombie/claw_miss1.wav";
+		SOUND_SWING2 = "zombie/claw_miss2.wav";
+		SOUND_STRONG_SWING1 = "zombie/claw_strike1.wav";
+		SOUND_STRONG_SWING2 = "zombie/claw_strike2.wav";
+		SOUND_DEATH = "none";
 	}
 
 	void game_precache()
@@ -120,7 +150,7 @@ class Phlame : CGameScript
 		if (!(GetGameTime() > NEXT_GLOBAL_GLOAT)) return;
 		NEXT_GLOBAL_GLOAT = GetGameTime();
 		NEXT_GLOBAL_GLOAT += 15.0;
-		string RND_GLOAT = RandomInt(1, 4);
+		int RND_GLOAT = RandomInt(1, 4);
 		if (RND_GLOAT == 1)
 		{
 			UseTrigger("snd_gloat1");
@@ -212,7 +242,7 @@ class Phlame : CGameScript
 
 	void frame_staff_strike()
 	{
-		string RND_STRENGTH = RandomInt(1, 2);
+		int RND_STRENGTH = RandomInt(1, 2);
 		if (RND_STRENGTH == 1)
 		{
 			// PlayRandomSound from: SOUND_SWING1, SOUND_SWING2

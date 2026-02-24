@@ -29,7 +29,7 @@ class Treasure : CGameScript
 		SetGlobalVar("G_GOOD_ARROWS", "proj_arrow_blunt;proj_arrow_broadhead;proj_arrow_silvertipped;proj_arrow_jagged;proj_arrow_fire;proj_bolt_iron");
 		SetGlobalVar("G_GREAT_ARROWS", "proj_arrow_blunt;proj_arrow_jagged;proj_arrow_poison;proj_arrow_frost;proj_arrow_holy;proj_bolt_steel");
 		SetGlobalVar("G_EPIC_ARROWS", "proj_arrow_blunt;proj_arrow_poison;proj_arrow_frost;proj_arrow_holy;proj_arrow_gholy;proj_arrow_gpoison;proj_arrow_lightning;proj_bolt_fire;proj_bolt_fire;proj_bolt_steel;proj_bolt_steel;proj_bolt_silver");
-		if (/* TODO: $g_get_array_amt */ $g_get_array_amt(G_ARRAY_EPIC) == -1)
+		if (GetGlobalArrayLength(G_ARRAY_EPIC) == -1)
 		{
 			CreateGlobalArray("G_ARRAY_EPIC");
 			LOAD_ITEMS = "smallarms_huggerdagger3;6;scroll_fire_wall;5;smallarms_huggerdagger4;10;scroll_rejuvenate;10;smallarms_craftedknife4;10;mana_demon_blood;1";

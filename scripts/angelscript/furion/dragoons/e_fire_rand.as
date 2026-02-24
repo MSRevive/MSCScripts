@@ -7,9 +7,11 @@ namespace MS
 
 class EFireRand : CGameScript
 {
+	int ELEMENT;
+
 	EFireRand()
 	{
-		const int ELEMENT = 2;
+		ELEMENT = 2;
 	}
 
 }

@@ -17,10 +17,14 @@ class LesserWraith : CGameScript
 	int ATTACK_HITRANGE;
 	int ATTACK_MOVERANGE;
 	int ATTACK_RANGE;
+	int BASENOCLIP_NO_SETMOVEDEST;
+	string CL_SCRIPT;
 	float CYCLE_TIME;
 	int DMG_DRAIN;
 	string FOLLOW_MODE;
+	float FREQ_ROAM;
 	int FWD_SPEED;
+	int FWD_SPEED_STANDARD;
 	string HOLD_POS;
 	int IMMUNE_VAMPIRE;
 	string INITIAL_ORIGIN;
@@ -35,12 +39,20 @@ class LesserWraith : CGameScript
 	string NEXT_SCAN;
 	string NPCATK_TARGET;
 	int NPC_BATTLE_ALLY;
+	int NPC_EXTRA_VALIDATIONS;
 	int NPC_GIVE_EXP;
 	string NPC_NOCLIP_DEST;
 	int NPC_NO_PLAYER_DMG;
 	string NPC_PROPELL_SUSPEND;
 	string OLD_WRAITH_TARG;
 	string OWNER_OLD_POS;
+	string SOUND_DEATH;
+	string SOUND_DRAIN_LOOP;
+	string SOUND_DRAIN_START;
+	string SOUND_HOVER_LOOP;
+	string SOUND_KILL;
+	string SOUND_MOAN;
+	string SOUND_TELE;
 	string WRAITH_OLD_TARG;
 
 	LesserWraith()
@@ -48,7 +60,7 @@ class LesserWraith : CGameScript
 		ANIM_RUN = "wraith_idle";
 		ANIM_IDLE = "wraith_idle";
 		ANIM_WALK = "wraith_idle";
-		const int NPC_EXTRA_VALIDATIONS = 1;
+		NPC_EXTRA_VALIDATIONS = 1;
 		I_R_PET = 1;
 		NPC_NO_PLAYER_DMG = 1;
 		NPC_BATTLE_ALLY = 1;
@@ -58,20 +70,20 @@ class LesserWraith : CGameScript
 		ATTACK_MOVERANGE = 100;
 		ATTACK_HITRANGE = 150;
 		NPC_GIVE_EXP = 0;
-		const int BASENOCLIP_NO_SETMOVEDEST = 1;
-		const int FWD_SPEED_STANDARD = 20;
+		BASENOCLIP_NO_SETMOVEDEST = 1;
+		FWD_SPEED_STANDARD = 20;
 		FWD_SPEED = 20;
 		DMG_DRAIN = 10;
 		MP_DRAIN_AMT = 1;
-		const string CL_SCRIPT = "monsters/summon/lesser_wraith_cl";
-		const string FREQ_ROAM = Random(5.0, 10.0);
-		const string SOUND_MOAN = "crow/ghostwail.wav";
-		const string SOUND_DEATH = "ichy/ichy_die2.wav";
-		const string SOUND_DRAIN_START = "crow/Triggered/tomb5.wav";
-		const string SOUND_DRAIN_LOOP = "x/x_teleattack1.wav";
-		const string SOUND_HOVER_LOOP = "ambience/labdrone2.wav";
-		const string SOUND_KILL = "houndeye/he_blast3.wav";
-		const string SOUND_TELE = "magic/teleport.wav";
+		CL_SCRIPT = "monsters/summon/lesser_wraith_cl";
+		FREQ_ROAM = Random(5.0, 10.0);
+		SOUND_MOAN = "crow/ghostwail.wav";
+		SOUND_DEATH = "ichy/ichy_die2.wav";
+		SOUND_DRAIN_START = "crow/Triggered/tomb5.wav";
+		SOUND_DRAIN_LOOP = "x/x_teleattack1.wav";
+		SOUND_HOVER_LOOP = "ambience/labdrone2.wav";
+		SOUND_KILL = "houndeye/he_blast3.wav";
+		SOUND_TELE = "magic/teleport.wav";
 		Precache(SOUND_KILL);
 		Precache(SOUND_DEATH);
 	}
@@ -342,7 +354,7 @@ class LesserWraith : CGameScript
 		{
 			if (m_hAttackTarget != WRAITH_OLD_TARG)
 			{
-				SendPlayerMessage(MY_OWNER, "Your Lesser Wraith has targeted GetEntityProperty(m_hAttackTarget, "name.full")");
+				SendPlayerMessage(MY_OWNER, "Your Lesser Wraith has targeted " + GetEntityProperty(m_hAttackTarget, "name.full"));
 			}
 			WRAITH_OLD_TARG = m_hAttackTarget;
 			NPC_PROPELL_SUSPEND = 0;
@@ -374,7 +386,7 @@ class LesserWraith : CGameScript
 			SetEntityOrigin(GetOwner(), MY_ORG);
 			if (GetEntityRange(m_hAttackTarget) < 55)
 			{
-				string RND_ANG = Random(0, 359.99);
+				float RND_ANG = Random(0, 359.99);
 				NPC_NOCLIP_DEST += /* TODO: $relpos */ $relpos(Vector3(0, RND_ANG, 0), Vector3(0, 80, 0));
 				NPC_NOCLIP_DEST = "z";
 				SetEntityOrigin(GetOwner(), NPC_NOCLIP_DEST);
@@ -535,11 +547,11 @@ class LesserWraith : CGameScript
 		}
 		if (param2 == "report")
 		{
-			string HEALTH_STRING = int(GetEntityHealth(GetOwner()));
+			int HEALTH_STRING = int(GetEntityHealth(GetOwner()));
 			HEALTH_STRING += "/";
 			HEALTH_STRING += int(GetEntityMaxHealth(GetOwner()));
 			HEALTH_STRING += "hp";
-			SendColoredMessage(MY_OWNER, "Lesser Wraith Reports: HEALTH_STRING");
+			SendColoredMessage(MY_OWNER, "Lesser Wraith Reports: " + HEALTH_STRING);
 		}
 	}
 

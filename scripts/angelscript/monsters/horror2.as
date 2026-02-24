@@ -7,25 +7,31 @@ namespace MS
 
 class Horror2 : CGameScript
 {
+	int ATTACK_BLIND_RANGE;
+	int ATTACK_DAMAGE;
+	int BREATH_DAMAGE_MAX;
+	int BREATH_DAMAGE_MIN;
 	int DROP_GOLD;
 	int DROP_GOLD_MAX;
 	int DROP_GOLD_MIN;
 	int FLIGHT_SCANNING;
 	int IS_UNHOLY;
 	int I_FLY;
+	int NPC_BASE_EXP;
 	int NPC_GIVE_EXP;
+	int SPIT_DAMAGE;
 	int SPORE_CLOUD_AMMO;
 	string SPORE_DELAY;
 
 	Horror2()
 	{
-		const int NPC_BASE_EXP = 400;
+		NPC_BASE_EXP = 400;
 		IS_UNHOLY = 1;
-		const int ATTACK_BLIND_RANGE = 200;
-		const int ATTACK_DAMAGE = 200;
-		const int SPIT_DAMAGE = 100;
-		const int BREATH_DAMAGE_MIN = 100;
-		const int BREATH_DAMAGE_MAX = 200;
+		ATTACK_BLIND_RANGE = 200;
+		ATTACK_DAMAGE = 200;
+		SPIT_DAMAGE = 100;
+		BREATH_DAMAGE_MIN = 100;
+		BREATH_DAMAGE_MAX = 200;
 		DROP_GOLD = 1;
 		DROP_GOLD_MIN = 30;
 		DROP_GOLD_MAX = 60;

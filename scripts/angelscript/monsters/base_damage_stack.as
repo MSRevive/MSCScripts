@@ -7,16 +7,21 @@ class BaseDamageStack : CGameScript
 {
 	int CALLING_DMGSTK;
 	int STACK_ADJUST_DMG;
+	int STACK_EXPIRE;
+	string STACK_FLAG_NAME;
+	string STACK_ID;
+	float STACK_MULT_ADD;
+	int STACK_MULT_MAX;
 	int STACK_RETURNDATA;
 	int STACK_SETDMG;
 
 	BaseDamageStack()
 	{
-		const string STACK_FLAG_NAME = "stackdmg_generic";
-		const float STACK_MULT_ADD = 0.1;
-		const int STACK_MULT_MAX = 10;
-		const int STACK_EXPIRE = 5;
-		const string STACK_ID = "stackdmg";
+		STACK_FLAG_NAME = "stackdmg_generic";
+		STACK_MULT_ADD = 0.1;
+		STACK_MULT_MAX = 10;
+		STACK_EXPIRE = 5;
+		STACK_ID = "stackdmg";
 		CALLING_DMGSTK = 0;
 		STACK_ADJUST_DMG = 0;
 		STACK_SETDMG = 0;
@@ -75,8 +80,8 @@ class BaseDamageStack : CGameScript
 			SetScriptFlags(L_TARGET, "add", STACK_FLAG_NAME, STACK_ID, 1, STACK_EXPIRE, "none");
 		}
 		string L_CUR_MULT = /* TODO: $get_scriptflag */ $get_scriptflag(L_TARGET, STACK_FLAG_NAME, "name_value");
-		// TODO: capvar L_CUR_MULT 1 STACK_MULT_MAX
-		STACK_SETDMG = /* TODO: $math(multiply) */ L_DMG;
+		L_CUR_MULT = max(1, min(STACK_MULT_MAX, L_CUR_MULT));
+		STACK_SETDMG = (L_DMG * L_CUR_MULT);
 		STACK_RETURNDATA = L_CUR_MULT;
 		LogDebug("do_stack STACK_RETURNDATA");
 		L_CUR_MULT += STACK_MULT_ADD;

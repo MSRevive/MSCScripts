@@ -11,20 +11,37 @@ class Goblinchief : CGameScript
 	string ANIM_DEATH;
 	string ANIM_RUN;
 	string ANIM_WALK;
-	string ATTACK_DAMAGE;
+	float ATTACK_DAMAGE;
+	float ATTACK_HITCHANCE;
 	int ATTACK_HITRANGE;
 	int ATTACK_RANGE;
 	int CAN_FLEE;
 	int CAN_HUNT;
-	string DROP_GOLD;
+	int DROP_GOLD;
 	int DROP_GOLD_MAX;
 	int DROP_GOLD_MIN;
 	int HUNT_AGRO;
 	string LAST_ENEMY;
 	int MOVE_RANGE;
+	float NPC_BOSS_REGEN_RATE;
+	float NPC_BOSS_RESTORATION;
 	string NPC_GIVE_EXP;
 	string NPC_IS_BOSS;
 	float RETALIATE_CHANCE;
+	string SOUND_ATTACK1;
+	string SOUND_ATTACK2;
+	string SOUND_ATTACK3;
+	string SOUND_DEATH;
+	string SOUND_DEATH2;
+	string SOUND_HELP;
+	string SOUND_HIT;
+	string SOUND_HIT1;
+	string SOUND_HIT2;
+	string SOUND_PAINYELL;
+	string SOUND_STRUCK1;
+	string SOUND_STRUCK2;
+	string SOUND_STRUCK3;
+	string SOUND_WARCRY1;
 
 	Goblinchief()
 	{
@@ -44,8 +61,8 @@ class Goblinchief : CGameScript
 				NPC_GIVE_EXP = 150;
 			}
 		}
-		const float NPC_BOSS_REGEN_RATE = 0.1;
-		const float NPC_BOSS_RESTORATION = 1.0;
+		NPC_BOSS_REGEN_RATE = 0.1;
+		NPC_BOSS_RESTORATION = 1.0;
 		ANIM_RUN = "run";
 		ANIM_WALK = "walk";
 		ANIM_ATTACK = "battleaxe_swing1_L";
@@ -53,21 +70,21 @@ class Goblinchief : CGameScript
 		ATTACK_RANGE = 100;
 		ATTACK_HITRANGE = 130;
 		MOVE_RANGE = 50;
-		const float ATTACK_HITCHANCE = 0.6;
-		const string SOUND_STRUCK1 = "body/flesh1.wav";
-		const string SOUND_STRUCK2 = "body/flesh2.wav";
-		const string SOUND_STRUCK3 = "body/flesh3.wav";
-		const string SOUND_HIT = "monsters/goblin/c_gargoyle_hit1.wav";
-		const string SOUND_HIT1 = "monsters/goblin/c_gargoyle_hit1.wav";
-		const string SOUND_HIT2 = "monsters/goblin/c_gargoyle_hit2.wav";
-		const string SOUND_PAINYELL = "monsters/orc/pain.wav";
-		const string SOUND_WARCRY1 = "monsters/goblin/c_goblin_bat1.wav";
-		const string SOUND_ATTACK1 = "monsters/goblin/c_goblin_atk1.wav";
-		const string SOUND_ATTACK2 = "monsters/goblin/c_goblin_atk2.wav";
-		const string SOUND_ATTACK3 = "monsters/goblin/c_goblin_atk3.wav";
-		const string SOUND_DEATH = "monsters/goblin/c_goblin_dead.wav";
-		const string SOUND_DEATH2 = "monsters/goblin/c_goblin_dead.wav";
-		const string SOUND_HELP = "monsters/goblin/c_goblin_bat2.wav";
+		ATTACK_HITCHANCE = 0.6;
+		SOUND_STRUCK1 = "body/flesh1.wav";
+		SOUND_STRUCK2 = "body/flesh2.wav";
+		SOUND_STRUCK3 = "body/flesh3.wav";
+		SOUND_HIT = "monsters/goblin/c_gargoyle_hit1.wav";
+		SOUND_HIT1 = "monsters/goblin/c_gargoyle_hit1.wav";
+		SOUND_HIT2 = "monsters/goblin/c_gargoyle_hit2.wav";
+		SOUND_PAINYELL = "monsters/orc/pain.wav";
+		SOUND_WARCRY1 = "monsters/goblin/c_goblin_bat1.wav";
+		SOUND_ATTACK1 = "monsters/goblin/c_goblin_atk1.wav";
+		SOUND_ATTACK2 = "monsters/goblin/c_goblin_atk2.wav";
+		SOUND_ATTACK3 = "monsters/goblin/c_goblin_atk3.wav";
+		SOUND_DEATH = "monsters/goblin/c_goblin_dead.wav";
+		SOUND_DEATH2 = "monsters/goblin/c_goblin_dead.wav";
+		SOUND_HELP = "monsters/goblin/c_goblin_bat2.wav";
 		CAN_HUNT = 1;
 		HUNT_AGRO = 1;
 		RETALIATE_CHANCE = 0.75;

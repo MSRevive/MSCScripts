@@ -8,6 +8,7 @@ namespace MS
 class QitemBarrel : CGameScript
 {
 	int AM_SUMMONED;
+	int BARREL_CLOSED_IDX;
 	string BARREL_DONE;
 	string BARREL_EVENT;
 	string BARREL_EXPLODES;
@@ -24,12 +25,14 @@ class QitemBarrel : CGameScript
 	string MAIN_NAME;
 	string MENU_ADD;
 	int PLAYING_DEAD;
+	string SOUND_EXPLODE;
+	string SPRITE_EXPLODE;
 
 	QitemBarrel()
 	{
-		const string SPRITE_EXPLODE = "bigsmoke.spr";
-		const string SOUND_EXPLODE = "weapons/explode3.wav";
-		const int BARREL_CLOSED_IDX = 6;
+		SPRITE_EXPLODE = "bigsmoke.spr";
+		SOUND_EXPLODE = "weapons/explode3.wav";
+		BARREL_CLOSED_IDX = 6;
 		ITEMS_TO_TURN_IN = 0;
 	}
 
@@ -135,7 +138,7 @@ class QitemBarrel : CGameScript
 			L_OUT_MSG += ITEM_NAME;
 			L_OUT_MSG += " to add to the ";
 			L_OUT_MSG += MAIN_NAME;
-			SendInfoMsg(param1, "Quest item required L_OUT_MSG");
+			SendInfoMsg(param1, "Quest item required " + L_OUT_MSG);
 			string reg.mitem.title = MENU_ADD;
 			string reg.mitem.type = "disabled";
 		}
@@ -159,7 +162,7 @@ class QitemBarrel : CGameScript
 			string L_FULL_RATIO = ITEM_COUNT;
 			L_FULL_RATIO /= ITEM_REQ;
 			string L_BODY = /* TODO: $ratio */ $ratio(L_FULL_RATIO, BARREL_SUBMODEL_IDX_MIN, BARREL_SUBMODEL_IDX_MAX);
-			string L_BODY = int(L_BODY);
+			int L_BODY = int(L_BODY);
 			SetModelBody(BARREL_SUBMODEL_GROUP, L_BODY);
 		}
 		if ((IsValidPlayer(param1)))

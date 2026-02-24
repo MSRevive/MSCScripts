@@ -102,7 +102,7 @@ class HelenaNpc : CGameScript
 		if ((EXIT_SUB)) return;
 		if (!(GetGameTime() < HELENA_TELE_HOME_TIME)) return;
 		if ((HELENA_RETURNED_HOME)) return;
-		string RND_DELAY = Random(4, 9);
+		float RND_DELAY = Random(4, 9);
 		RND_DELAY("helena_return_home");
 	}
 
@@ -137,10 +137,10 @@ class HelenaNpc : CGameScript
 	void basevendor_offerstore()
 	{
 		if (!(HELENA_SAVED)) return;
-		string RND_SAY = RandomInt(1, 3);
+		int RND_SAY = RandomInt(1, 3);
 		if (RND_SAY == 1)
 		{
-			SayText("Thank you for saving our little town. For you , I ll offer a discount rate.");
+			SayText("Thank you for saving our little town. For you , " + I + " ll offer a discount rate.");
 		}
 		if (RND_SAY == 2)
 		{
@@ -156,7 +156,7 @@ class HelenaNpc : CGameScript
 	void call_for_help()
 	{
 		SetSayTextRange(1024);
-		string RAND_SCREAM = RandomInt(1, 4);
+		int RAND_SCREAM = RandomInt(1, 4);
 		if (RAND_SCREAM == 1)
 		{
 			SayText("Help! Help!");
@@ -171,7 +171,7 @@ class HelenaNpc : CGameScript
 		}
 		if (RAND_SCREAM == 4)
 		{
-			SayText("Help! Help! I m being repressed!");
+			SayText("Help! Help! " + I + " m being repressed!");
 		}
 		CallExternal("all", "civilian_attacked", param1, IsValidPlayer(param1));
 	}

@@ -107,9 +107,9 @@ class SfxIcecage : CGameScript
 		ClientEffect("tempent", "set_current_prop", "gravity", 1);
 		ClientEffect("tempent", "set_current_prop", "bouncefactor", 1);
 		ClientEffect("tempent", "set_current_prop", "angles", Vector3(RandomInt(0, 359), RandomInt(0, 359), 0));
-		string RND_ANG = Random(0, 359.99);
-		string RND_SPRING = Random(150, 350);
-		string RND_SWING = Random(-100, 100);
+		float RND_ANG = Random(0, 359.99);
+		float RND_SPRING = Random(150, 350);
+		float RND_SWING = Random(-100, 100);
 		ClientEffect("tempent", "set_current_prop", "velocity", /* TODO: $relvel */ $relvel(Vector3(0, RND_ANG, 0), Vector3(RND_SWING, 0, RND_SPRING)));
 	}
 

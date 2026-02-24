@@ -7,9 +7,11 @@ namespace MS
 
 class ERandSword : CGameScript
 {
+	int WEAPON;
+
 	ERandSword()
 	{
-		const int WEAPON = 3;
+		WEAPON = 3;
 	}
 
 }

@@ -7,16 +7,25 @@ namespace MS
 
 class SheathBeltHolster : CGameScript
 {
+	int CONTAINER_CANCLOSE;
+	string CONTAINER_ITEM_ACCEPT;
+	string CONTAINER_ITEM_REJECT;
+	int CONTAINER_LOCK_STRENGTH;
+	int CONTAINER_MAXITEMS;
+	int CONTAINER_SPACE;
+	string CONTAINER_TYPE;
+	int MODEL_BODY_OFS;
+
 	SheathBeltHolster()
 	{
-		const string CONTAINER_TYPE = "sheath";
-		const int CONTAINER_SPACE = 30;
-		const int CONTAINER_MAXITEMS = 2;
-		const int CONTAINER_CANCLOSE = 0;
-		const int CONTAINER_LOCK_STRENGTH = 0;
-		const string CONTAINER_ITEM_ACCEPT = "axes;blunt";
-		const int MODEL_BODY_OFS = 1;
-		const string CONTAINER_ITEM_REJECT = "item_tk_";
+		CONTAINER_TYPE = "sheath";
+		CONTAINER_SPACE = 30;
+		CONTAINER_MAXITEMS = 2;
+		CONTAINER_CANCLOSE = 0;
+		CONTAINER_LOCK_STRENGTH = 0;
+		CONTAINER_ITEM_ACCEPT = "axes;blunt";
+		MODEL_BODY_OFS = 1;
+		CONTAINER_ITEM_REJECT = "item_tk_";
 	}
 
 	void sheath_spawn()

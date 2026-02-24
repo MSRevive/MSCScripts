@@ -9,28 +9,43 @@ class MagicHandLightningStorm : CGameScript
 {
 	int DRAIN_COUNT;
 	string EFFECT_DMG;
+	int MELEE_ATK_DURATION;
+	int MELEE_HITCHANCE;
+	int MELEE_NOAUTOAIM;
+	int MELEE_RANGE;
+	string MELEE_TYPE;
+	string SCRIPT_SFX_CAST;
+	string SCRIPT_SFX_PREP;
+	string SOUND_LOOP;
+	string SOUND_SHOOT;
+	string SOUND_SHOOT1;
+	string SOUND_SHOOT2;
+	string SOUND_SHOOT3;
+	string SPELL_DAMAGE_TYPE;
+	int SPELL_MPDRAIN;
 	int SPELL_SKILL_REQUIRED;
+	string SPELL_STAT;
 	string STORM_ID;
 	string STORM_UP;
 
 	MagicHandLightningStorm()
 	{
-		const string MELEE_TYPE = "strike-land";
-		const int MELEE_RANGE = 1000;
-		const int MELEE_HITCHANCE = 100;
-		const int MELEE_ATK_DURATION = 1;
-		const int MELEE_NOAUTOAIM = 1;
+		MELEE_TYPE = "strike-land";
+		MELEE_RANGE = 1000;
+		MELEE_HITCHANCE = 100;
+		MELEE_ATK_DURATION = 1;
+		MELEE_NOAUTOAIM = 1;
 		SPELL_SKILL_REQUIRED = 10;
-		const string SCRIPT_SFX_PREP = "items/magic_hand_lightning_weak_cl";
-		const string SPELL_DAMAGE_TYPE = "lightning";
-		const int SPELL_MPDRAIN = 30;
-		const string SPELL_STAT = "spellcasting.lightning";
-		const string SOUND_LOOP = "magic/shock_noloop.wav";
-		const string SOUND_SHOOT = "debris/beamstart14.wav";
-		const string SOUND_SHOOT1 = "debris/zap1.wav";
-		const string SOUND_SHOOT2 = "debris/zap2.wav";
-		const string SOUND_SHOOT3 = "debris/zap3.wav";
-		const string SCRIPT_SFX_CAST = "effects/sfx_lightning";
+		SCRIPT_SFX_PREP = "items/magic_hand_lightning_weak_cl";
+		SPELL_DAMAGE_TYPE = "lightning";
+		SPELL_MPDRAIN = 30;
+		SPELL_STAT = "spellcasting.lightning";
+		SOUND_LOOP = "magic/shock_noloop.wav";
+		SOUND_SHOOT = "debris/beamstart14.wav";
+		SOUND_SHOOT1 = "debris/zap1.wav";
+		SOUND_SHOOT2 = "debris/zap2.wav";
+		SOUND_SHOOT3 = "debris/zap3.wav";
+		SCRIPT_SFX_CAST = "effects/sfx_lightning";
 		DRAIN_COUNT = 0;
 		EmitSound(GetOwner(), 0, SOUND_LOOP, 5);
 	}

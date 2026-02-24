@@ -153,7 +153,7 @@ class GameMaster : CGameScript
 		GM_ACHIEVE_LEVEL = 1;
 		GM_ACHIEVE_NAMES = "null;Tin;Bronze;Silver;Gold;Platinum;Diamond;LORELDIAN";
 		SORCV_PLAYER_NAMES = "Participating Players:|";
-		for (int i = 0; i < /* TODO: $get_array_amt */ $get_array_amt(SORCV_PLAYERS); i++)
+		for (int i = 0; i < int(SORCV_PLAYERS.length()); i++)
 		{
 			gm_sorcv_make_player_list();
 		}
@@ -162,19 +162,19 @@ class GameMaster : CGameScript
 
 	void gm_sorcv_make_player_list()
 	{
-		string CUR_PLAYER = /* TODO: $get_array */ $get_array(SORCV_PLAYERS, i);
+		string CUR_PLAYER = SORCV_PLAYERS[int(i)];
 		SORCV_PLAYER_NAMES += GetEntityName(CUR_PLAYER);
 		SORCV_PLAYER_NAMES += "|";
 	}
 
 	void gm_sorcv_handle_medals()
 	{
-		string CUR_PLAYER = /* TODO: $get_array */ $get_array(SORCV_PLAYERS, GM_MEDAL_COUNT);
+		string CUR_PLAYER = SORCV_PLAYERS[int(GM_MEDAL_COUNT)];
 		LogDebug("gm_sorcv_handle_medals GetEntityName(CUR_PLAYER)");
 		SORCV_PLAYER_NAMES += "Player list is now locked!";
 		gm_sorcv_give_medal(CUR_PLAYER);
 		GM_MEDAL_COUNT += 1;
-		if (GM_MEDAL_COUNT < /* TODO: $get_array_amt */ $get_array_amt(SORCV_PLAYERS))
+		if (GM_MEDAL_COUNT < int(SORCV_PLAYERS.length()))
 		{
 			ScheduleDelayedEvent(1.0, "gm_sorcv_handle_medals");
 		}
@@ -192,7 +192,7 @@ class GameMaster : CGameScript
 			SetGlobalVar("G_TRACK_DEATHS", 0);
 			ScheduleDelayedEvent(10.0, "gm_sorcv_end_challenge");
 		}
-		for (int i = 0; i < /* TODO: $get_array_amt */ $get_array_amt(SORCV_PLAYERS); i++)
+		for (int i = 0; i < int(SORCV_PLAYERS.length()); i++)
 		{
 			gm_sorcv_update_achievements();
 		}
@@ -200,7 +200,7 @@ class GameMaster : CGameScript
 
 	void gm_sorcv_update_achievements()
 	{
-		string CUR_PLAYER = /* TODO: $get_array */ $get_array(SORCV_PLAYERS, i);
+		string CUR_PLAYER = SORCV_PLAYERS[int(i)];
 		if (!(GetPlayerClientAddress(CUR_PLAYER) != 0)) return;
 		string CUR_ACHIEVEMENTS = GetPlayerQuestData(CUR_PLAYER, "a");
 		string CUR_ALEVEL = GetToken(CUR_ACHIEVEMENTS, 0, ";");
@@ -210,7 +210,7 @@ class GameMaster : CGameScript
 			SetPlayerQuestData(CUR_PLAYER, "a");
 			string MSG_OUT = "You now have achieved ";
 			MSG_OUT = GetToken(GM_ACHIEVE_NAMES, GM_ACHIEVE_LEVEL, ";") + "Status for the Shadahar Village Challenge";
-			SendInfoMsg(CUR_PLAYER, "ACHIEVEMENT LEVEL INCREASED! MSG_OUT");
+			SendInfoMsg(CUR_PLAYER, "ACHIEVEMENT LEVEL INCREASED! " + MSG_OUT);
 		}
 		else
 		{
@@ -224,7 +224,7 @@ class GameMaster : CGameScript
 				string MSG_REASON = "You have already gone beyond this level.";
 			}
 			MSG_OUT = GetToken(GM_ACHIEVE_NAMES, GM_ACHIEVE_LEVEL, ";") + "Status for the Shadahar Village Challenge." + MSG_REASON;
-			SendInfoMsg(CUR_PLAYER, "ACHIEVEMENT PROGRESS! MSG_OUT");
+			SendInfoMsg(CUR_PLAYER, "ACHIEVEMENT PROGRESS! " + MSG_OUT);
 		}
 	}
 

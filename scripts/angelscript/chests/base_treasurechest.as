@@ -5,9 +5,13 @@ namespace MS
 
 class BaseTreasurechest : CGameScript
 {
+	string ANIM_CLOSE;
+	string ANIM_IDLE;
+	string ANIM_OPEN;
 	int BC_GAVE_PICK;
 	string BC_HAS_PICK_CHANCE;
 	string BC_TRAPPED;
+	string BC_TRAP_LIST;
 	string BC_TRAP_TYPE;
 	string BC_USE_TRACKER;
 	int BS_DID_NAME;
@@ -21,20 +25,22 @@ class BaseTreasurechest : CGameScript
 	int NPC_NO_TRADE_REPORT;
 	string NUM_REMOVED;
 	int PLAYING_DEAD;
+	string SOUND_CHEST_LOCKED;
+	string SOUND_OPEN;
 	string STORENAME;
-	string STORE_SUFFIX;
+	float STORE_SUFFIX;
 	int TC_ALL_DMGPOINTS;
 	string TC_HIGHEST_DMGPOINTS;
 
 	BaseTreasurechest()
 	{
 		NPC_NO_TRADE_REPORT = 1;
-		const string SOUND_OPEN = "Items/creak.wav";
-		const string SOUND_CHEST_LOCKED = "buttons/latchlocked1.wav";
-		const string BC_TRAP_LIST = "explode;gas";
-		const string ANIM_IDLE = "idle";
-		const string ANIM_CLOSE = "close";
-		const string ANIM_OPEN = "open";
+		SOUND_OPEN = "Items/creak.wav";
+		SOUND_CHEST_LOCKED = "buttons/latchlocked1.wav";
+		BC_TRAP_LIST = "explode;gas";
+		ANIM_IDLE = "idle";
+		ANIM_CLOSE = "close";
+		ANIM_OPEN = "open";
 	}
 
 	void OnSpawn() override
@@ -86,27 +92,27 @@ class BaseTreasurechest : CGameScript
 			return;
 		}
 		tc_artifacts();
-		tc_open(/* TODO: $pass */ $pass(param1));
+		tc_open(param1);
 	}
 
 	void tc_open()
 	{
 		CHEST_USER = param1;
-		STORENAME = /* TODO: $func */ $func("func_make_store_string", CHEST_USER);
-		string STORE_STATE = /* TODO: $get_arrayfind */ $get_arrayfind(TC_STORE_ARRAY, STORENAME);
+		STORENAME = "func_make_store_string"(CHEST_USER);
+		string STORE_STATE = ArrayFind(TC_STORE_ARRAY, STORENAME, 0);
 		if (STORE_STATE == -1)
 		{
 			tc_make_and_populate_store();
 		}
-		string L_GOLD_STORE_IDX = /* TODO: $get_arrayfind */ $get_arrayfind(TC_STORE_ARRAY, STORENAME);
-		SetGold(/* TODO: $get_array */ $get_array(TC_STORE_GOLDS, L_GOLD_STORE_IDX));
+		string L_GOLD_STORE_IDX = ArrayFind(TC_STORE_ARRAY, STORENAME, 0);
+		SetGold(TC_STORE_GOLDS[int(L_GOLD_STORE_IDX)]);
 		// TODO: offerstore STORENAME CHEST_USER inv trade
 	}
 
 	void add_gold()
 	{
-		string L_GOLD_STORE_IDX = /* TODO: $get_arrayfind */ $get_arrayfind(TC_STORE_ARRAY, STORENAME);
-		string L_GOLD = /* TODO: $get_array */ $get_array(TC_STORE_GOLDS, L_GOLD_STORE_IDX);
+		string L_GOLD_STORE_IDX = ArrayFind(TC_STORE_ARRAY, STORENAME, 0);
+		string L_GOLD = TC_STORE_GOLDS[int(L_GOLD_STORE_IDX)];
 		L_GOLD += param1;
 		TC_STORE_GOLDS[L_GOLD_STORE_IDX] = int(L_GOLD);
 	}
@@ -114,8 +120,8 @@ class BaseTreasurechest : CGameScript
 	void game_gave_gold()
 	{
 		string L_PLAYER_ID = param1;
-		string L_STORE_STR = /* TODO: $func */ $func("func_make_store_string", L_PLAYER_ID);
-		string L_GOLD_STORE_IDX = /* TODO: $get_arrayfind */ $get_arrayfind(TC_STORE_ARRAY, L_STORE_STR);
+		string L_STORE_STR = "func_make_store_string"(L_PLAYER_ID);
+		string L_GOLD_STORE_IDX = ArrayFind(TC_STORE_ARRAY, L_STORE_STR, 0);
 		TC_STORE_GOLDS[L_GOLD_STORE_IDX] = 0;
 	}
 
@@ -128,7 +134,7 @@ class BaseTreasurechest : CGameScript
 		string L_HIGHEST_DMGPOINTS = GetEntityProperty(GAME_MASTER, "scriptvar");
 		CallExternal(CHEST_USER, "ext_get_dmgpoints");
 		string L_MY_PTS = GetEntityProperty(CHEST_USER, "scriptvar");
-		if (/* TODO: $math(divide) */ L_HIGHEST_DMGPOINTS <= L_MY_PTS)
+		if ((L_HIGHEST_DMGPOINTS / 10) <= L_MY_PTS)
 		{
 			chest_additems();
 		}
@@ -206,16 +212,16 @@ class BaseTreasurechest : CGameScript
 	{
 		if ((GAVE_ARTIFACTS)) return;
 		GAVE_ARTIFACTS = 1;
-		if (!(/* TODO: $get_array_amt */ $get_array_amt(TC_ARTIFACT) > 0)) return;
+		if (!(int(TC_ARTIFACT.length()) > 0)) return;
 		GetAllPlayers(TC_ARTIFACT_WINNERS);
 		CallExternal(GAME_MASTER, "gm_find_strongest_reset");
 		TC_HIGHEST_DMGPOINTS = GetEntityProperty(GAME_MASTER, "scriptvar");
 		TC_ALL_DMGPOINTS = 0;
-		for (int i = 0; i < /* TODO: $get_array_amt */ $get_array_amt(TC_ARTIFACT_WINNERS); i++)
+		for (int i = 0; i < int(TC_ARTIFACT_WINNERS.length()); i++)
 		{
 			tc_filter_winner_by_pts();
 		}
-		for (int i = 0; i < /* TODO: $get_array_amt */ $get_array_amt(TC_ARTIFACT_WINNERS); i++)
+		for (int i = 0; i < int(TC_ARTIFACT_WINNERS.length()); i++)
 		{
 			tc_filter_winner_by_roll();
 		}
@@ -227,11 +233,11 @@ class BaseTreasurechest : CGameScript
 		{
 			NUM_REMOVED = 0;
 		}
-		string L_IDX = /* TODO: $math(subtract) */ i;
-		string L_PLAYER_ID = /* TODO: $get_array */ $get_array(TC_ARTIFACT_WINNERS, L_IDX);
+		string L_IDX = (i - NUM_REMOVED);
+		string L_PLAYER_ID = TC_ARTIFACT_WINNERS[int(L_IDX)];
 		CallExternal(L_PLAYER_ID, "ext_get_dmgpoints");
 		string L_MY_PTS = GetEntityProperty(L_PLAYER_ID, "scriptvar");
-		if (/* TODO: $math(divide) */ TC_HIGHEST_DMGPOINTS <= L_MY_PTS)
+		if ((TC_HIGHEST_DMGPOINTS / 100) <= L_MY_PTS)
 		{
 			TC_ALL_DMGPOINTS += L_MY_PTS;
 		}
@@ -245,14 +251,14 @@ class BaseTreasurechest : CGameScript
 	void tc_filter_winner_by_roll()
 	{
 		string L_IDX = i;
-		string L_PLAYER_ID = /* TODO: $get_array */ $get_array(TC_ARTIFACT_WINNERS, L_IDX);
+		string L_PLAYER_ID = TC_ARTIFACT_WINNERS[int(L_IDX)];
 		CallExternal(L_PLAYER_ID, "ext_get_dmgpoints");
 		string L_ROLL_MULTIPLIER = GetEntityProperty(L_PLAYER_ID, "scriptvar");
 		L_ROLL_MULTIPLIER /= TC_ALL_DMGPOINTS;
-		string L_RAND_IDX = /* TODO: $get_array_amt */ $get_array_amt(TC_ARTIFACT);
+		int L_RAND_IDX = int(TC_ARTIFACT.length());
 		L_RAND_IDX -= 1;
-		string L_RAND_IDX = RandomInt(0, L_RAND_IDX);
-		string L_CHANCE = /* TODO: $get_array */ $get_array(TC_ARTIFACT_CHANCE, L_RAND_IDX);
+		int L_RAND_IDX = RandomInt(0, L_RAND_IDX);
+		string L_CHANCE = TC_ARTIFACT_CHANCE[int(L_RAND_IDX)];
 		if (TC_ALL_DMGPOINTS != 0)
 		{
 			if (L_CHANCE != 100)
@@ -262,16 +268,16 @@ class BaseTreasurechest : CGameScript
 		}
 		if (Random(0, 100) <= L_CHANCE)
 		{
-			STORENAME = /* TODO: $func */ $func("func_make_store_string", L_PLAYER_ID);
+			STORENAME = "func_make_store_string"(L_PLAYER_ID);
 			CHEST_USER = L_PLAYER_ID;
 			tc_make_and_populate_store();
-			AddStoreItem(STORENAME, /* TODO: $get_array */ $get_array(TC_ARTIFACT, L_RAND_IDX), 1, 0);
+			AddStoreItem(STORENAME, TC_ARTIFACT[int(L_RAND_IDX)], 1, 0);
 		}
 	}
 
 	void add_noob_item()
 	{
-		string RND_LIST = RandomInt(1, G_NOOB_SETS);
+		int RND_LIST = RandomInt(1, G_NOOB_SETS);
 		if (RND_LIST == 1)
 		{
 			string ITEM_LIST = G_NOOB_ITEMS1;
@@ -310,14 +316,14 @@ class BaseTreasurechest : CGameScript
 		}
 		string N_ITEMS = GetTokenCount(ITEM_LIST, ";");
 		N_ITEMS -= 1;
-		string R_ITEM = RandomInt(0, N_ITEMS);
+		int R_ITEM = RandomInt(0, N_ITEMS);
 		string P_ITEM = GetToken(ITEM_LIST, R_ITEM, ";");
 		AddStoreItem(STORENAME, P_ITEM, 1, 0);
 	}
 
 	void add_good_item()
 	{
-		string RND_LIST = RandomInt(1, G_GOOD_SETS);
+		int RND_LIST = RandomInt(1, G_GOOD_SETS);
 		if (RND_LIST == 1)
 		{
 			string ITEM_LIST = G_GOOD_ITEMS1;
@@ -356,14 +362,14 @@ class BaseTreasurechest : CGameScript
 		}
 		string N_ITEMS = GetTokenCount(ITEM_LIST, ";");
 		N_ITEMS -= 1;
-		string R_ITEM = RandomInt(0, N_ITEMS);
+		int R_ITEM = RandomInt(0, N_ITEMS);
 		string P_ITEM = GetToken(ITEM_LIST, R_ITEM, ";");
 		AddStoreItem(STORENAME, P_ITEM, 1, 0);
 	}
 
 	void add_great_item()
 	{
-		string RND_LIST = RandomInt(1, G_GREAT_SETS);
+		int RND_LIST = RandomInt(1, G_GREAT_SETS);
 		if (RND_LIST == 1)
 		{
 			string ITEM_LIST = G_GREAT_ITEMS1;
@@ -384,17 +390,17 @@ class BaseTreasurechest : CGameScript
 		}
 		string N_ITEMS = GetTokenCount(ITEM_LIST, ";");
 		N_ITEMS -= 1;
-		string R_ITEM = RandomInt(0, N_ITEMS);
+		int R_ITEM = RandomInt(0, N_ITEMS);
 		string P_ITEM = GetToken(ITEM_LIST, R_ITEM, ";");
 		AddStoreItem(STORENAME, P_ITEM, 1, 0);
 	}
 
 	void add_epic_item()
 	{
-		string N_EPICS = /* TODO: $g_get_array_amt */ $g_get_array_amt(G_ARRAY_EPIC);
+		string N_EPICS = GetGlobalArrayLength(G_ARRAY_EPIC);
 		N_EPICS -= 1;
-		string RND_PICK = RandomInt(0, N_EPICS);
-		string RND_ITEM = /* TODO: $g_get_array */ $g_get_array(G_ARRAY_EPIC, RND_PICK);
+		int RND_PICK = RandomInt(0, N_EPICS);
+		string RND_ITEM = GetGlobalArray(G_ARRAY_EPIC, int(RND_PICK));
 		AddStoreItem(STORENAME, RND_ITEM, 1, 0);
 	}
 
@@ -404,7 +410,7 @@ class BaseTreasurechest : CGameScript
 		string BUNDLE_SIZE = param1;
 		if (BUNDLE_SIZE == "PARAM1")
 		{
-			string BUNDLE_SIZE = /* TODO: $math(multiply) */ 15;
+			string BUNDLE_SIZE = (15 * RandomInt(1, 3));
 		}
 		string N_ARROW_NAMES = GetTokenCount(ARROW_LIST, ";");
 		N_ARROW_NAMES -= 1;
@@ -418,7 +424,7 @@ class BaseTreasurechest : CGameScript
 		string BUNDLE_SIZE = param1;
 		if (BUNDLE_SIZE == "PARAM1")
 		{
-			string BUNDLE_SIZE = /* TODO: $math(multiply) */ 15;
+			string BUNDLE_SIZE = (15 * RandomInt(1, 3));
 		}
 		string N_ARROW_NAMES = GetTokenCount(ARROW_LIST, ";");
 		N_ARROW_NAMES -= 1;
@@ -432,7 +438,7 @@ class BaseTreasurechest : CGameScript
 		string BUNDLE_SIZE = param1;
 		if (BUNDLE_SIZE == "PARAM1")
 		{
-			string BUNDLE_SIZE = /* TODO: $math(multiply) */ 15;
+			string BUNDLE_SIZE = (15 * RandomInt(1, 3));
 		}
 		string N_ARROW_NAMES = GetTokenCount(ARROW_LIST, ";");
 		N_ARROW_NAMES -= 1;
@@ -446,7 +452,7 @@ class BaseTreasurechest : CGameScript
 		string BUNDLE_SIZE = param1;
 		if (BUNDLE_SIZE == "PARAM1")
 		{
-			string BUNDLE_SIZE = /* TODO: $math(multiply) */ 15;
+			string BUNDLE_SIZE = (15 * RandomInt(1, 3));
 		}
 		string N_ARROW_NAMES = GetTokenCount(ARROW_LIST, ";");
 		N_ARROW_NAMES -= 1;
@@ -458,7 +464,7 @@ class BaseTreasurechest : CGameScript
 	{
 		string N_ITEMS = GetTokenCount(G_NOOB_POTS, ";");
 		N_ITEMS -= 1;
-		string R_ITEM = RandomInt(0, N_ITEMS);
+		int R_ITEM = RandomInt(0, N_ITEMS);
 		string P_ITEM = GetToken(G_NOOB_POTS, R_ITEM, ";");
 		AddStoreItem(STORENAME, P_ITEM, 1, 0);
 	}
@@ -467,7 +473,7 @@ class BaseTreasurechest : CGameScript
 	{
 		string N_ITEMS = GetTokenCount(G_GOOD_POTS, ";");
 		N_ITEMS -= 1;
-		string R_ITEM = RandomInt(0, N_ITEMS);
+		int R_ITEM = RandomInt(0, N_ITEMS);
 		string P_ITEM = GetToken(G_GOOD_POTS, R_ITEM, ";");
 		AddStoreItem(STORENAME, P_ITEM, 1, 0);
 	}
@@ -476,7 +482,7 @@ class BaseTreasurechest : CGameScript
 	{
 		string N_ITEMS = GetTokenCount(G_GREAT_POTS, ";");
 		N_ITEMS -= 1;
-		string R_ITEM = RandomInt(0, N_ITEMS);
+		int R_ITEM = RandomInt(0, N_ITEMS);
 		string P_ITEM = GetToken(G_GREAT_POTS, R_ITEM, ";");
 		AddStoreItem(STORENAME, P_ITEM, 1, 0);
 	}
@@ -485,7 +491,7 @@ class BaseTreasurechest : CGameScript
 	{
 		string N_ITEMS = GetTokenCount(G_EPIC_POTS, ";");
 		N_ITEMS -= 1;
-		string R_ITEM = RandomInt(0, N_ITEMS);
+		int R_ITEM = RandomInt(0, N_ITEMS);
 		string P_ITEM = GetToken(G_EPIC_POTS, R_ITEM, ";");
 		AddStoreItem(STORENAME, P_ITEM, 1, 0);
 	}
@@ -652,11 +658,11 @@ class BaseTreasurechest : CGameScript
 	{
 		string CUR_IDX = i;
 		string CUR_PARAM = GetToken(CHEST_DO_EVENTS, CUR_IDX, ";");
-		LogDebug("bc_do_events CUR_PARAM /* TODO: $func */ $func("func_param_isnum", CUR_PARAM)");
-		if ((/* TODO: $func */ $func("func_param_isnum", CUR_PARAM))) return;
-		if (CUR_IDX < /* TODO: $math(subtract) */ GetTokenCount(CHEST_DO_EVENTS, ";"))
+		LogDebug("bc_do_events CUR_PARAM "func_param_isnum"(CUR_PARAM)");
+		if (("func_param_isnum"(CUR_PARAM))) return;
+		if (CUR_IDX < (GetTokenCount(CHEST_DO_EVENTS, ";") - 1))
 		{
-			string PARAM_NEXT = GetToken(CHEST_DO_EVENTS, /* TODO: $math(add) */ CUR_IDX, ";");
+			string PARAM_NEXT = GetToken(CHEST_DO_EVENTS, (CUR_IDX + 1), ";");
 			CUR_PARAM(PARAM_NEXT);
 		}
 		else
@@ -698,7 +704,7 @@ class BaseTreasurechest : CGameScript
 		{
 			string L_N_TRAPS = GetTokenCount(BC_TRAP_LIST, ";");
 			L_N_TRAPS -= 1;
-			string L_RND_TRAP = RandomInt(0, L_N_TRAPS);
+			int L_RND_TRAP = RandomInt(0, L_N_TRAPS);
 			BC_TRAP_TYPE = GetToken(BC_TRAP_LIST, L_RND_TRAP, ";");
 		}
 	}

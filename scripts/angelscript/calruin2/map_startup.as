@@ -7,11 +7,15 @@ namespace MS
 
 class MapStartup : CGameScript
 {
+	int MAP_ALLOWNIGHT;
+	string MAP_NAME;
+	string MAP_WEATHER;
+
 	MapStartup()
 	{
-		const string MAP_NAME = "calruin2";
-		const string MAP_WEATHER = "clear;clear;clear;clear;clear;clear";
-		const int MAP_ALLOWNIGHT = 0;
+		MAP_NAME = "calruin2";
+		MAP_WEATHER = "clear;clear;clear;clear;clear;clear";
+		MAP_ALLOWNIGHT = 0;
 		SetGlobalVar("global.map.allownight", 0);
 		SetGlobalVar("G_MAP_NAME", "The Calrian Ruins");
 		SetGlobalVar("G_MAP_DESC", "This ruined temple is host to a great evil.");

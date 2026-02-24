@@ -8,14 +8,24 @@ namespace MS
 class SwampKeeper : CGameScript
 {
 	string ANIM_ATTACK;
+	string ANIM_ATTACK1;
+	string ANIM_ATTACK2;
+	string ANIM_ATTACK3;
+	string ANIM_CUST_FLINCH;
 	string ANIM_DEATH;
 	string ANIM_IDLE;
+	string ANIM_POINT;
+	string ANIM_RALLY;
+	string ANIM_RAWR;
 	string ANIM_RUN;
+	string ANIM_THROW;
 	string ANIM_WALK;
 	int ATTACK_HITRANGE;
 	int ATTACK_MOVERANGE;
 	int ATTACK_RANGE;
 	int DID_ALERT;
+	int DMG_GLOB;
+	int DMG_SLASH;
 	float FREQ_THROW;
 	int GLOB_EFFECT_DOT;
 	float GLOB_EFFECT_DUR;
@@ -29,44 +39,58 @@ class SwampKeeper : CGameScript
 	string NEXT_THROW;
 	int NPC_BASE_EXP;
 	int RUN_STEP;
+	string SOUND_ALERT1;
+	string SOUND_ALERT2;
+	string SOUND_ALERT3;
+	string SOUND_ATTACK1;
+	string SOUND_ATTACK2;
+	string SOUND_ATTACK3;
+	string SOUND_DEATH;
+	string SOUND_PAIN1;
+	string SOUND_PAIN2;
+	string SOUND_STRUCK1;
+	string SOUND_STRUCK2;
+	string SOUND_STRUCK3;
+	string SOUND_SWING1;
+	string SOUND_SWING2;
 
 	SwampKeeper()
 	{
-		const string ANIM_POINT = "point";
-		const string ANIM_RALLY = "rally";
-		const string ANIM_RAWR = "idle_scream";
+		ANIM_POINT = "point";
+		ANIM_RALLY = "rally";
+		ANIM_RAWR = "idle_scream";
 		ANIM_WALK = "walk_lx";
 		ANIM_IDLE = "idle_base";
 		ANIM_RUN = "run_lx";
 		ANIM_ATTACK = "melee1";
-		const string ANIM_ATTACK1 = "melee1";
-		const string ANIM_ATTACK2 = "melee1b";
-		const string ANIM_ATTACK3 = "melee2";
-		const string ANIM_THROW = "throw_rock";
-		const string ANIM_CUST_FLINCH = "duck";
+		ANIM_ATTACK1 = "melee1";
+		ANIM_ATTACK2 = "melee1b";
+		ANIM_ATTACK3 = "melee2";
+		ANIM_THROW = "throw_rock";
+		ANIM_CUST_FLINCH = "duck";
 		ANIM_DEATH = "death";
 		NPC_BASE_EXP = 1500;
-		const int DMG_SLASH = 400;
-		const int DMG_GLOB = 400;
+		DMG_SLASH = 400;
+		DMG_GLOB = 400;
 		FREQ_THROW = 8.0;
 		ATTACK_MOVERANGE = 45;
 		MOVE_RANGE = 45;
 		ATTACK_RANGE = 80;
 		ATTACK_HITRANGE = 100;
-		const string SOUND_STRUCK1 = "weapons/cbar_hitbod1.wav";
-		const string SOUND_STRUCK2 = "weapons/cbar_hitbod2.wav";
-		const string SOUND_STRUCK3 = "weapons/cbar_hitbod3.wav";
-		const string SOUND_PAIN1 = "monsters/keeper/c_troll_hit1.wav";
-		const string SOUND_PAIN2 = "monsters/keeper/c_troll_hit2.wav";
-		const string SOUND_ALERT1 = "monsters/keeper/c_troll_bat1.wav";
-		const string SOUND_ALERT2 = "monsters/keeper/c_troll_bat2.wav";
-		const string SOUND_ALERT3 = "monsters/keeper/c_troll_bat2_rev.wav";
-		const string SOUND_ATTACK1 = "monsters/keeper/c_troll_atk1.wav";
-		const string SOUND_ATTACK2 = "monsters/keeper/c_troll_atk2.wav";
-		const string SOUND_ATTACK3 = "monsters/keeper/c_troll_atk3.wav";
-		const string SOUND_SWING1 = "zombie/claw_miss1.wav";
-		const string SOUND_SWING2 = "zombie/claw_miss2.wav";
-		const string SOUND_DEATH = "monsters/keeper/c_troll_dead.wav";
+		SOUND_STRUCK1 = "weapons/cbar_hitbod1.wav";
+		SOUND_STRUCK2 = "weapons/cbar_hitbod2.wav";
+		SOUND_STRUCK3 = "weapons/cbar_hitbod3.wav";
+		SOUND_PAIN1 = "monsters/keeper/c_troll_hit1.wav";
+		SOUND_PAIN2 = "monsters/keeper/c_troll_hit2.wav";
+		SOUND_ALERT1 = "monsters/keeper/c_troll_bat1.wav";
+		SOUND_ALERT2 = "monsters/keeper/c_troll_bat2.wav";
+		SOUND_ALERT3 = "monsters/keeper/c_troll_bat2_rev.wav";
+		SOUND_ATTACK1 = "monsters/keeper/c_troll_atk1.wav";
+		SOUND_ATTACK2 = "monsters/keeper/c_troll_atk2.wav";
+		SOUND_ATTACK3 = "monsters/keeper/c_troll_atk3.wav";
+		SOUND_SWING1 = "zombie/claw_miss1.wav";
+		SOUND_SWING2 = "zombie/claw_miss2.wav";
+		SOUND_DEATH = "monsters/keeper/c_troll_dead.wav";
 		GLOB_EFFECT_TYPE = "effects/dot_poison_blind";
 		GLOB_EFFECT_DOT = 150;
 		GLOB_EFFECT_DUR = 3.0;
@@ -196,7 +220,7 @@ class SwampKeeper : CGameScript
 			}
 			else
 			{
-				string RND_ATK = RandomInt(1, 2);
+				int RND_ATK = RandomInt(1, 2);
 				if (RND_ATK == 1)
 				{
 					ANIM_ATTACK = ANIM_ATTACK1;
@@ -282,13 +306,13 @@ class SwampKeeper : CGameScript
 		{
 			TARG_ORG += "z";
 		}
-		string TARG_DIST = Distance(TARG_ORG, GetMonsterProperty("origin"));
+		float TARG_DIST = Distance(TARG_ORG, GetMonsterProperty("origin"));
 		TARG_DIST /= 35;
 		SetAngles("add_view.pitch");
-		string BOMB_SPEED = Random(400, 600);
+		float BOMB_SPEED = Random(400, 600);
 		if (GetEntityRange(m_hAttackTarget) > 800)
 		{
-			string BOMB_SPEED = Random(700, 1000);
+			float BOMB_SPEED = Random(700, 1000);
 		}
 		NEXT_THROW = GetGameTime();
 		NEXT_THROW += 5.0;

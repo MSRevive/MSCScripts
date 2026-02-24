@@ -54,7 +54,7 @@ class BanditExtortionist : CGameScript
 	void start_scene()
 	{
 		SetMoveDest(BAR_ID);
-		SayText("Helga , your payment is late , again. I warned you this this would be the last time.");
+		SayText("Helga , your payment is late , again. " + I + " warned you this this would be the last time.");
 		ScheduleDelayedEvent(3.0, "helga_respond1");
 	}
 

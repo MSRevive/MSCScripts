@@ -5,6 +5,8 @@ namespace MS
 
 class BaseGlow : CGameScript
 {
+	string GLOW_COLOR;
+	int GLOW_RAD;
 	string MY_LIGHT;
 	string MY_LIGHT_SCRIPT;
 	string SKEL_ID;
@@ -12,8 +14,8 @@ class BaseGlow : CGameScript
 
 	BaseGlow()
 	{
-		const Vector3 GLOW_COLOR = Vector3(255, 255, 128);
-		const int GLOW_RAD = 200;
+		GLOW_COLOR = Vector3(255, 255, 128);
+		GLOW_RAD = 200;
 	}
 
 	void OnSpawn() override

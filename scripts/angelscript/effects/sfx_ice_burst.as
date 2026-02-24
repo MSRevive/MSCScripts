@@ -7,10 +7,13 @@ namespace MS
 
 class SfxIceBurst : CGameScript
 {
+	string SOUND_BURST;
+	string SPRITE_COLOR;
+
 	SfxIceBurst()
 	{
-		const Vector3 SPRITE_COLOR = Vector3(64, 64, 255);
-		const string SOUND_BURST = "magic/frost_reverse.wav";
+		SPRITE_COLOR = Vector3(64, 64, 255);
+		SOUND_BURST = "magic/frost_reverse.wav";
 		Precache(SOUND_BURST);
 	}
 

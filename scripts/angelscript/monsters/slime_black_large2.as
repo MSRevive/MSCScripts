@@ -7,15 +7,20 @@ namespace MS
 
 class SlimeBlackLarge2 : CGameScript
 {
+	float ATTACK_DAMAGE;
+	float ATTACK_HITCHANCE;
+	int CHILD_DIST;
+	string CHILD_SCRIPT;
+	int NPC_BASE_EXP;
 	int NPC_GIVE_EXP;
 
 	SlimeBlackLarge2()
 	{
-		const float ATTACK_HITCHANCE = 0.75;
-		const string ATTACK_DAMAGE = Random(10, 25);
-		const string CHILD_SCRIPT = "monsters/slime_black_small2";
-		const int CHILD_DIST = 20;
-		const int NPC_BASE_EXP = 80;
+		ATTACK_HITCHANCE = 0.75;
+		ATTACK_DAMAGE = Random(10, 25);
+		CHILD_SCRIPT = "monsters/slime_black_small2";
+		CHILD_DIST = 20;
+		NPC_BASE_EXP = 80;
 		SetName("Large Black Pudding");
 		SetHealth(200);
 		SetRace("demon");

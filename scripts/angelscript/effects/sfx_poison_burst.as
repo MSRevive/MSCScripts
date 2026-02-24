@@ -8,17 +8,25 @@ class SfxPoisonBurst : CGameScript
 	int CYCLE_ANGLE;
 	string FX_CENTER;
 	string FX_RADIUS;
+	string SOUND_BURST;
+	string SPRITE_COLOR;
+	int SPRITE_FRAMERATE;
+	string SPRITE_NAME;
+	int SPRITE_NFRAMES;
+	int SPRITE_RENDERAMT;
+	string SPRITE_RENDERMODE;
+	float SPRITE_SCALE;
 
 	SfxPoisonBurst()
 	{
-		const string SPRITE_NAME = "poison_cloud.spr";
-		const Vector3 SPRITE_COLOR = Vector3(0, 255, 0);
-		const int SPRITE_RENDERAMT = 200;
-		const string SPRITE_RENDERMODE = "add";
-		const int SPRITE_FRAMERATE = 30;
-		const int SPRITE_NFRAMES = 17;
-		const float SPRITE_SCALE = 1.0;
-		const string SOUND_BURST = "ambience/steamburst1.wav";
+		SPRITE_NAME = "poison_cloud.spr";
+		SPRITE_COLOR = Vector3(0, 255, 0);
+		SPRITE_RENDERAMT = 200;
+		SPRITE_RENDERMODE = "add";
+		SPRITE_FRAMERATE = 30;
+		SPRITE_NFRAMES = 17;
+		SPRITE_SCALE = 1.0;
+		SOUND_BURST = "ambience/steamburst1.wav";
 		Precache(SOUND_BURST);
 	}
 

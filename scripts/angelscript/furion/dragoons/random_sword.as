@@ -7,9 +7,11 @@ namespace MS
 
 class RandomSword : CGameScript
 {
+	int WEAPON;
+
 	RandomSword()
 	{
-		const int WEAPON = 3;
+		WEAPON = 3;
 	}
 
 }

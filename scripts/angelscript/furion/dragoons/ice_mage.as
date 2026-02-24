@@ -7,10 +7,13 @@ namespace MS
 
 class IceMage : CGameScript
 {
+	int ELEMENT;
+	int WEAPON;
+
 	IceMage()
 	{
-		const int WEAPON = 6;
-		const int ELEMENT = 0;
+		WEAPON = 6;
+		ELEMENT = 0;
 	}
 
 }

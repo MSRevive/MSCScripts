@@ -6,24 +6,33 @@ namespace MS
 class Dridje : CGameScript
 {
 	int CUR_ROT;
+	float FREQ_ROTATE;
+	float FREQ_ZAP;
+	string GLOW_COLOR;
+	int GLOW_RAD;
 	string MY_LIGHT_SCRIPT;
 	string MY_OWNER;
 	int PLAYING_DEAD;
+	int ROAM_DISTANCE;
+	int ROAM_HEIGHT;
 	string SKEL_ID;
 	string SKEL_LIGHT_ID;
+	string SOUND_ZAP1;
+	string SOUND_ZAP2;
+	string SOUND_ZAP3;
 	int SPAWN_ZAP;
 
 	Dridje()
 	{
-		const float FREQ_ROTATE = 0.1;
-		const string FREQ_ZAP = Random(10, 60);
-		const int ROAM_DISTANCE = 28;
-		const int ROAM_HEIGHT = 0;
-		const string SOUND_ZAP1 = "debris/beamstart14.wav";
-		const string SOUND_ZAP2 = "debris/beamstart15.wav";
-		const string SOUND_ZAP3 = "debris/zap1.wav";
-		const Vector3 GLOW_COLOR = Vector3(255, 255, 0);
-		const int GLOW_RAD = 64;
+		FREQ_ROTATE = 0.1;
+		FREQ_ZAP = Random(10, 60);
+		ROAM_DISTANCE = 28;
+		ROAM_HEIGHT = 0;
+		SOUND_ZAP1 = "debris/beamstart14.wav";
+		SOUND_ZAP2 = "debris/beamstart15.wav";
+		SOUND_ZAP3 = "debris/zap1.wav";
+		GLOW_COLOR = Vector3(255, 255, 0);
+		GLOW_RAD = 64;
 	}
 
 	void OnRepeatTimer()

@@ -13,27 +13,44 @@ class KnightLord : CGameScript
 	string ANIM_IDLE;
 	string ANIM_RUN;
 	string ANIM_WALK;
+	int ATTACK_DAMAGE;
+	float ATTACK_HITCHANCE;
 	int ATTACK_HITRANGE;
 	int ATTACK_MOVERANGE;
 	int ATTACK_RANGE;
-	string DROP_GOLD;
+	float ATTACK_STUNCHANCE;
+	int BG_MAX_HEAR_CIV;
+	int BG_NO_GO_HOME;
+	int BG_ROAM;
+	int DROP_GOLD;
+	float FLEE_CHANCE;
+	int FLEE_HEALTH;
 	int GAVE_RING;
 	int JOBS_DONE;
 	int NORMAL_MENU;
+	int NO_CHAT;
 	int NO_STEP_ADJ;
 	int NPC_GIVE_EXP;
+	string SOUND_ATTACK;
+	string SOUND_DEATH;
+	string SOUND_IDLE;
+	string SOUND_PAIN;
+	string SOUND_STRUCK1;
+	string SOUND_STRUCK2;
+	string SOUND_STRUCK3;
+	string SOUND_WARCRY;
 
 	KnightLord()
 	{
 		DROP_GOLD = RandomInt(10, 50);
-		const string SOUND_STRUCK1 = "body/armour1.wav";
-		const string SOUND_STRUCK2 = "body/armour2.wav";
-		const string SOUND_STRUCK3 = "body/armour3.wav";
-		const string SOUND_WARCRY = "voices/human/male_guard_dismiss.wav";
-		const string SOUND_ATTACK = "weapons/swingsmall.wav";
-		const string SOUND_PAIN = "voices/human/male_hit1.wav";
-		const string SOUND_IDLE = "voices/human/male_idle2.wav";
-		const string SOUND_DEATH = "voices/human/male_die.wav";
+		SOUND_STRUCK1 = "body/armour1.wav";
+		SOUND_STRUCK2 = "body/armour2.wav";
+		SOUND_STRUCK3 = "body/armour3.wav";
+		SOUND_WARCRY = "voices/human/male_guard_dismiss.wav";
+		SOUND_ATTACK = "weapons/swingsmall.wav";
+		SOUND_PAIN = "voices/human/male_hit1.wav";
+		SOUND_IDLE = "voices/human/male_idle2.wav";
+		SOUND_DEATH = "voices/human/male_die.wav";
 		ANIM_IDLE = "idle1";
 		ANIM_RUN = "run";
 		ANIM_WALK = "walk";
@@ -42,18 +59,18 @@ class KnightLord : CGameScript
 		ATTACK_MOVERANGE = 45;
 		ATTACK_RANGE = 65;
 		ATTACK_HITRANGE = 150;
-		const float ATTACK_HITCHANCE = 0.9;
-		const int ATTACK_DAMAGE = 45;
-		const float ATTACK_STUNCHANCE = 0.5;
-		const int FLEE_HEALTH = 15;
-		const float FLEE_CHANCE = 0.05;
+		ATTACK_HITCHANCE = 0.9;
+		ATTACK_DAMAGE = 45;
+		ATTACK_STUNCHANCE = 0.5;
+		FLEE_HEALTH = 15;
+		FLEE_CHANCE = 0.05;
 		NORMAL_MENU = 1;
 		JOBS_DONE = 0;
-		const int BG_NO_GO_HOME = 1;
-		const int BG_ROAM = 1;
-		const int BG_MAX_HEAR_CIV = 32000;
+		BG_NO_GO_HOME = 1;
+		BG_ROAM = 1;
+		BG_MAX_HEAR_CIV = 32000;
 		NO_STEP_ADJ = 1;
-		const int NO_CHAT = 1;
+		NO_CHAT = 1;
 		Precache(SOUND_DEATH);
 		CatchSpeech("say_hi", "hail");
 		CatchSpeech("say_job", "job");
@@ -95,7 +112,7 @@ class KnightLord : CGameScript
 
 	void say_hail()
 	{
-		string L_RAND = RandomInt(0, 1);
+		int L_RAND = RandomInt(0, 1);
 		if (L_RAND == 0)
 		{
 			SayText("Well met, adventurer.");
@@ -111,7 +128,7 @@ class KnightLord : CGameScript
 
 	void say_rumor()
 	{
-		string L_RAND = RandomInt(0, 2);
+		int L_RAND = RandomInt(0, 2);
 		if (L_RAND == 0)
 		{
 			SayText("Cathlain seems to be losing guards in the sewers... perhaps he could use some help.");
@@ -152,7 +169,7 @@ class KnightLord : CGameScript
 		SetMoveAnim(ANIM_IDLE);
 		SayText("You shall be taken away and locked behind bars, thief!");
 		string QUEST_COMPLETER = GetEntityName(APPREHENDER);
-		SayText("QUEST_COMPLETER , you have done well.");
+		SayText(QUEST_COMPLETER + " , you have done well.");
 		SayText("Please accept this ring as a token of my gratitude.");
 		SayText("May it bring light in even the darkest of dungeons and caves.");
 		CallExternal(FindEntityByName("thief"), "quest_done");
@@ -171,7 +188,7 @@ class KnightLord : CGameScript
 
 	void game_menu_cancel()
 	{
-		string L_RAND = RandomInt(0, 1);
+		int L_RAND = RandomInt(0, 1);
 		if (L_RAND == 0)
 		{
 			SayText("Very well then.");

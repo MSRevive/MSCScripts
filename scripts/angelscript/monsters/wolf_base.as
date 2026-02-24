@@ -7,26 +7,61 @@ namespace MS
 
 class WolfBase : CGameScript
 {
+	string ANIM_ALERT;
 	string ANIM_ATTACK;
+	string ANIM_BITE;
+	string ANIM_CLAW;
 	string ANIM_DEATH;
+	string ANIM_EAT;
 	string ANIM_FLINCH;
+	string ANIM_FLINCH1;
+	string ANIM_FLINCH2;
+	string ANIM_FLINCH3;
+	string ANIM_HOWL;
 	string ANIM_IDLE;
+	string ANIM_IDLE_SIT;
+	string ANIM_IDLE_SIT2;
+	string ANIM_IDLE_STAND;
+	string ANIM_IDLE_STAND2;
+	string ANIM_IDLE_STAND3;
+	string ANIM_LEAP;
 	string ANIM_RUN;
+	string ANIM_TOSTAND;
 	string ANIM_WALK;
+	int ATTACK_HITCHANCE;
 	int ATTACK_HITRANGE;
 	int ATTACK_MOVERANGE;
 	int ATTACK_RANGE;
 	string ATTACK_TYPE;
 	int CAN_FLEE;
+	int CHANCE_CLAW;
 	int DID_ALLY_ALERT;
+	float DMG_BITE;
+	float DMG_CLAW;
 	int FLEE_CHANCE;
 	int FLEE_HEALTH;
 	string FLINCH_ANIM;
+	float FREQ_HOWL;
+	float FREQ_IDLE;
+	float FREQ_LOOK;
+	int LEAP_RANGE;
+	string MONSTER_MODEL;
 	string MY_ALPHA;
 	string NEXT_HOWL;
 	int NPC_ALLY_RESPONSE_RANGE;
 	int SEARCH_DELAY;
 	int SIT_MODE;
+	string SOUND_ATK1;
+	string SOUND_ATK2;
+	string SOUND_ATK3;
+	string SOUND_DEATH;
+	string SOUND_GROWL;
+	string SOUND_HOWL1;
+	string SOUND_HOWL2;
+	string SOUND_PAIN;
+	string SOUND_STRUCK1;
+	string SOUND_STRUCK2;
+	string SOUND_YELP;
 
 	WolfBase()
 	{
@@ -37,48 +72,48 @@ class WolfBase : CGameScript
 		ANIM_ATTACK = "attack1";
 		NPC_ALLY_RESPONSE_RANGE = 2048;
 		ANIM_FLINCH = "hopback";
-		const string ANIM_LEAP = "attack2";
-		const string ANIM_CLAW = "attack2";
-		const string ANIM_HOWL = "howl";
-		const string ANIM_ALERT = "threat";
-		const string ANIM_IDLE_SIT = "sit_idle1";
-		const string ANIM_IDLE_SIT2 = "sit_idle2";
-		const string ANIM_IDLE_STAND = "standidle1";
-		const string ANIM_IDLE_STAND2 = "standidle2";
-		const string ANIM_IDLE_STAND3 = "guard";
-		const string ANIM_TOSTAND = "standup";
-		const string ANIM_BITE = "attack1";
-		const string ANIM_CLAW = "attack2";
-		const string ANIM_EAT = "eat";
-		const string ANIM_FLINCH1 = "hopback";
-		const string ANIM_FLINCH2 = "pain1";
-		const string ANIM_FLINCH3 = "pain2";
+		ANIM_LEAP = "attack2";
+		ANIM_CLAW = "attack2";
+		ANIM_HOWL = "howl";
+		ANIM_ALERT = "threat";
+		ANIM_IDLE_SIT = "sit_idle1";
+		ANIM_IDLE_SIT2 = "sit_idle2";
+		ANIM_IDLE_STAND = "standidle1";
+		ANIM_IDLE_STAND2 = "standidle2";
+		ANIM_IDLE_STAND3 = "guard";
+		ANIM_TOSTAND = "standup";
+		ANIM_BITE = "attack1";
+		ANIM_CLAW = "attack2";
+		ANIM_EAT = "eat";
+		ANIM_FLINCH1 = "hopback";
+		ANIM_FLINCH2 = "pain1";
+		ANIM_FLINCH3 = "pain2";
 		ATTACK_RANGE = 92;
 		ATTACK_HITRANGE = 128;
 		ATTACK_MOVERANGE = 72;
 		CAN_FLEE = 1;
 		FLEE_HEALTH = 25;
 		FLEE_CHANCE = 25;
-		const int ATTACK_HITCHANCE = 70;
-		const int LEAP_RANGE = 256;
-		const string DMG_BITE = Random(2, 5);
-		const string DMG_CLAW = Random(1, 3);
-		const float FREQ_LOOK = 20.0;
-		const string FREQ_IDLE = Random(3, 20);
-		const string FREQ_HOWL = Random(20, 30);
-		const int CHANCE_CLAW = 50;
-		const string SOUND_HOWL1 = "monsters/wolves/wolf_howl1.wav";
-		const string SOUND_HOWL2 = "monsters/wolves/wolf_howl2.wav";
-		const string SOUND_GROWL = "monsters/wolves/wolf_alert.wav";
-		const string SOUND_ATK1 = "monsters/wolves/wolf_atk1.wav";
-		const string SOUND_ATK2 = "monsters/wolves/wolf_atk2.wav";
-		const string SOUND_ATK3 = "monsters/wolves/wolf_atk3.wav";
-		const string SOUND_PAIN = "monsters/wolves/wolf_yelp1.wav";
-		const string SOUND_STRUCK1 = "weapons/cbar_hitbod1.wav";
-		const string SOUND_STRUCK2 = "weapons/cbar_hitbod2.wav";
-		const string SOUND_YELP = "monsters/wolves/wolf_yelp2.wav";
-		const string SOUND_DEATH = "monsters/wolves/wolf_death.wav";
-		const string MONSTER_MODEL = "monsters/normal_wolf.mdl";
+		ATTACK_HITCHANCE = 70;
+		LEAP_RANGE = 256;
+		DMG_BITE = Random(2, 5);
+		DMG_CLAW = Random(1, 3);
+		FREQ_LOOK = 20.0;
+		FREQ_IDLE = Random(3, 20);
+		FREQ_HOWL = Random(20, 30);
+		CHANCE_CLAW = 50;
+		SOUND_HOWL1 = "monsters/wolves/wolf_howl1.wav";
+		SOUND_HOWL2 = "monsters/wolves/wolf_howl2.wav";
+		SOUND_GROWL = "monsters/wolves/wolf_alert.wav";
+		SOUND_ATK1 = "monsters/wolves/wolf_atk1.wav";
+		SOUND_ATK2 = "monsters/wolves/wolf_atk2.wav";
+		SOUND_ATK3 = "monsters/wolves/wolf_atk3.wav";
+		SOUND_PAIN = "monsters/wolves/wolf_yelp1.wav";
+		SOUND_STRUCK1 = "weapons/cbar_hitbod1.wav";
+		SOUND_STRUCK2 = "weapons/cbar_hitbod2.wav";
+		SOUND_YELP = "monsters/wolves/wolf_yelp2.wav";
+		SOUND_DEATH = "monsters/wolves/wolf_death.wav";
+		MONSTER_MODEL = "monsters/normal_wolf.mdl";
 		Precache("monsters/normal_wolf.mdl");
 		Precache(SOUND_DEATH);
 	}
@@ -113,7 +148,7 @@ class WolfBase : CGameScript
 		}
 		if (!(SIT_MODE))
 		{
-			string RND_IDLE = RandomInt(1, 2);
+			int RND_IDLE = RandomInt(1, 2);
 			if (RND_IDLE == 1)
 			{
 				atk_sound();
@@ -301,7 +336,7 @@ class WolfBase : CGameScript
 
 	void OnFlinch()
 	{
-		string RND_FLINCH = RandomInt(1, 5);
+		int RND_FLINCH = RandomInt(1, 5);
 		if (RND_FLINCH == 1)
 		{
 			FLINCH_ANIM = ANIM_FLINCH2;
@@ -355,7 +390,7 @@ class WolfBase : CGameScript
 
 	void OnDeath(CBaseEntity@ attacker) override
 	{
-		string RND_DEATH = RandomInt(1, 2);
+		int RND_DEATH = RandomInt(1, 2);
 		if (RND_DEATH == 1)
 		{
 			ANIM_DEATH = "die1";

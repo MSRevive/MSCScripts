@@ -7,11 +7,14 @@ namespace MS
 
 class BrushStormLightning1 : CGameScript
 {
+	int BASE_RENDERAMT;
+	int BASE_RENDERMODE;
+
 	BrushStormLightning1()
 	{
 		SetName("brush_storm_lightning1");
-		const int BASE_RENDERMODE = 5;
-		const int BASE_RENDERAMT = 180;
+		BASE_RENDERMODE = 5;
+		BASE_RENDERAMT = 180;
 	}
 
 }

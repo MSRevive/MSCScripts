@@ -12,22 +12,30 @@ class VgoblinWeak : CGameScript
 	string CAN_FIREBALL;
 	string CAN_POISON;
 	string CAN_STUN;
+	int DMG_AXE;
+	int DMG_CLUB;
+	int DMG_FIREBALL;
+	int DMG_SWORD;
+	int DOT_POISON;
 	string DROP_ITEM1;
 	string DROP_ITEM1_CHANCE;
 	string F_GOB_TYPE;
 	int GOB_TYPE_SET;
+	int NEW_MODEL;
+	int NPC_BASE_EXP;
+	string SOUND_FIREBALL;
 	int TOSS_FIREBALL;
 
 	VgoblinWeak()
 	{
-		const int NEW_MODEL = 1;
-		const int NPC_BASE_EXP = 150;
-		const string DMG_CLUB = RandomInt(10, 20);
-		const string DMG_AXE = RandomInt(10, 25);
-		const string DMG_SWORD = RandomInt(5, 25);
-		const int DMG_FIREBALL = 20;
-		const string DOT_POISON = RandomInt(1, 5);
-		const string SOUND_FIREBALL = "bullchicken/bc_attack2.wav";
+		NEW_MODEL = 1;
+		NPC_BASE_EXP = 150;
+		DMG_CLUB = RandomInt(10, 20);
+		DMG_AXE = RandomInt(10, 25);
+		DMG_SWORD = RandomInt(5, 25);
+		DMG_FIREBALL = 20;
+		DOT_POISON = RandomInt(1, 5);
+		SOUND_FIREBALL = "bullchicken/bc_attack2.wav";
 	}
 
 	void goblin_spawn()

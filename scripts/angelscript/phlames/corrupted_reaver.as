@@ -14,23 +14,35 @@ class CorruptedReaver : CGameScript
 	string DOT_EFFECT;
 	string EFFECT_ACID_BOMB;
 	string ERRUPT_TYPE;
+	float FIREBALL1_DURATION;
+	string FIREBALL1_SCRIPT;
+	float FIREBALL2_DURATION;
+	string FIREBALL2_SCRIPT;
+	int MIXED_REAVER;
 	string MIX_COUNT;
 	string PROJECTILE_SCRIPT;
+	int REAVER_HEIGHT;
+	int REAVER_MAXHP;
+	string REAVER_MODEL;
+	string REAVER_NAME;
+	int REAVER_SKIN;
+	int REAVER_WIDTH;
+	int REAVER_XP;
 
 	CorruptedReaver()
 	{
-		const string REAVER_NAME = "Corrupted Reaver";
-		const int REAVER_MAXHP = 5000;
-		const int REAVER_XP = 3750;
-		const int REAVER_SKIN = 2;
-		const string REAVER_MODEL = "monsters/firereaver2.mdl";
-		const int REAVER_WIDTH = 90;
-		const int REAVER_HEIGHT = 72;
-		const string FIREBALL1_SCRIPT = "monsters/summon/fire_ball_guided";
-		const string FIREBALL2_SCRIPT = "monsters/summon/acid_ball_guided";
-		const float FIREBALL1_DURATION = 15.0;
-		const float FIREBALL2_DURATION = 8.0;
-		const int MIXED_REAVER = 1;
+		REAVER_NAME = "Corrupted Reaver";
+		REAVER_MAXHP = 5000;
+		REAVER_XP = 3750;
+		REAVER_SKIN = 2;
+		REAVER_MODEL = "monsters/firereaver2.mdl";
+		REAVER_WIDTH = 90;
+		REAVER_HEIGHT = 72;
+		FIREBALL1_SCRIPT = "monsters/summon/fire_ball_guided";
+		FIREBALL2_SCRIPT = "monsters/summon/acid_ball_guided";
+		FIREBALL1_DURATION = 15.0;
+		FIREBALL2_DURATION = 8.0;
+		MIXED_REAVER = 1;
 	}
 
 	void game_precache()

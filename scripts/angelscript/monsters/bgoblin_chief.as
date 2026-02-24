@@ -15,13 +15,27 @@ class BgoblinChief : CGameScript
 	int AXE_SWING;
 	string BREATH_ANG;
 	int BREATH_COUNT;
+	int CAN_STUN;
 	string CLOUD_TARGS;
 	string CL_IDX;
+	int DMG_AXE;
+	int DMG_CHARGE;
+	int DOT_FIRE;
 	int DROP_GOLD;
 	int FIRE_BREATH_ON;
+	string FIRE_BREATH_SCRIPT;
+	float FREQ_BREATH;
 	int MOVE_RANGE;
+	int NEW_MODEL;
 	string NEXT_SCAN;
+	int NPC_BASE_EXP;
+	string SOUND_ATTACK1;
+	string SOUND_ATTACK2;
+	string SOUND_ATTACK3;
+	string SOUND_BREATH;
+	string SOUND_REPEL;
 	int STARTED_CYCLES;
+	int STEP_SIZE_NORM;
 	string STUN_BURST_DMG;
 	string STUN_BURST_POS;
 	string STUN_BURST_RAD;
@@ -30,22 +44,22 @@ class BgoblinChief : CGameScript
 
 	BgoblinChief()
 	{
-		const int NEW_MODEL = 1;
-		const int NPC_BASE_EXP = 3000;
-		const string SOUND_ATTACK1 = "monsters/goblin/c_gargoyle_atk1.wav";
-		const string SOUND_ATTACK2 = "monsters/goblin/c_gargoyle_atk2.wav";
-		const string SOUND_ATTACK3 = "monsters/goblin/c_gargoyle_atk3.wav";
-		const string SOUND_BREATH = "monsters/goblin/sps_fogfire.wav";
-		const int STEP_SIZE_NORM = 36;
-		const int CAN_STUN = 1;
+		NEW_MODEL = 1;
+		NPC_BASE_EXP = 3000;
+		SOUND_ATTACK1 = "monsters/goblin/c_gargoyle_atk1.wav";
+		SOUND_ATTACK2 = "monsters/goblin/c_gargoyle_atk2.wav";
+		SOUND_ATTACK3 = "monsters/goblin/c_gargoyle_atk3.wav";
+		SOUND_BREATH = "monsters/goblin/sps_fogfire.wav";
+		STEP_SIZE_NORM = 36;
+		CAN_STUN = 1;
 		DROP_GOLD = 0;
 		ANIM_ATTACK = "battleaxe_swing1_L";
-		const string DMG_AXE = RandomInt(100, 300);
-		const int DOT_FIRE = 75;
-		const int DMG_CHARGE = 50;
-		const string FREQ_BREATH = Random(10.0, 30.0);
-		const string FIRE_BREATH_SCRIPT = "monsters/bgoblin_chief_cl";
-		const string SOUND_REPEL = "ambience/alien_humongo.wav";
+		DMG_AXE = RandomInt(100, 300);
+		DOT_FIRE = 75;
+		DMG_CHARGE = 50;
+		FREQ_BREATH = Random(10.0, 30.0);
+		FIRE_BREATH_SCRIPT = "monsters/bgoblin_chief_cl";
+		SOUND_REPEL = "ambience/alien_humongo.wav";
 		ATTACK_HITCHANCE = 0.9;
 	}
 
@@ -234,7 +248,7 @@ class BgoblinChief : CGameScript
 	{
 		if (!(GOB_JUMPER)) return;
 		if (!(GOB_JUMP_SCANNING)) return;
-		string GOB_HOP_DELAY = Random(2, 4);
+		float GOB_HOP_DELAY = Random(2, 4);
 		GOB_HOP_DELAY("gob_jump_check");
 		if (!(m_hAttackTarget != "unset")) return;
 		if ((IS_FLEEING)) return;

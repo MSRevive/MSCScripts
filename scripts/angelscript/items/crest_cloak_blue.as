@@ -7,16 +7,25 @@ namespace MS
 
 class CrestCloakBlue : CGameScript
 {
+	int ARMOR_BODY;
+	string ARMOR_MODEL;
+	string ARMOR_TEXT;
+	float BARMOR_PROTECTION;
+	string BARMOR_PROTECTION_AREA;
+	string BARMOR_REPLACE_BODYPARTS;
+	string BARMOR_TYPE;
+	int NEW_ARMOR_OFS;
+
 	CrestCloakBlue()
 	{
-		const string ARMOR_MODEL = "armor/p_armorvest.mdl";
-		const int ARMOR_BODY = 13;
-		const string ARMOR_TEXT = "You feel the Orochiness.";
-		const string BARMOR_TYPE = "leather";
-		const float BARMOR_PROTECTION = 0.0;
-		const string BARMOR_PROTECTION_AREA = "chest";
-		const string BARMOR_REPLACE_BODYPARTS = BARMOR_PROTECTION_AREA;
-		const int NEW_ARMOR_OFS = 13;
+		ARMOR_MODEL = "armor/p_armorvest.mdl";
+		ARMOR_BODY = 13;
+		ARMOR_TEXT = "You feel the Orochiness.";
+		BARMOR_TYPE = "leather";
+		BARMOR_PROTECTION = 0.0;
+		BARMOR_PROTECTION_AREA = "chest";
+		BARMOR_REPLACE_BODYPARTS = BARMOR_PROTECTION_AREA;
+		NEW_ARMOR_OFS = 13;
 	}
 
 	void OnSpawn() override

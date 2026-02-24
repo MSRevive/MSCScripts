@@ -6,14 +6,17 @@ namespace MS
 class KChildreBossCl : CGameScript
 {
 	string CYCLE_ANGLE;
+	int NOVA_RADIUS;
+	string SPRITE_NAME;
+	int SPRITE_VELOCITY;
 	string START_POS;
 
 	KChildreBossCl()
 	{
-		const string SPRITE_NAME = "3dmflaora.spr";
+		SPRITE_NAME = "3dmflaora.spr";
 		Precache(SPRITE_NAME);
-		const int SPRITE_VELOCITY = 2000;
-		const int NOVA_RADIUS = 80;
+		SPRITE_VELOCITY = 2000;
+		NOVA_RADIUS = 80;
 	}
 
 	void spriteify()

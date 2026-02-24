@@ -8,8 +8,12 @@ namespace MS
 class AfflictionLance : CGameScript
 {
 	string AOE_ACTIVE;
+	int AOE_AFFECTS_WARY;
 	string AOE_DURATION;
 	string AOE_OWNER;
+	int AOE_RADIUS;
+	float AOE_SCAN_FREQ;
+	int AOE_VADJ;
 	string CUR_PITCH;
 	string DOT_POISON;
 	string MY_END_TIME;
@@ -19,10 +23,10 @@ class AfflictionLance : CGameScript
 
 	AfflictionLance()
 	{
-		const int AOE_RADIUS = 255;
-		const float AOE_SCAN_FREQ = 1.0;
-		const int AOE_VADJ = 32;
-		const int AOE_AFFECTS_WARY = 1;
+		AOE_RADIUS = 255;
+		AOE_SCAN_FREQ = 1.0;
+		AOE_VADJ = 32;
+		AOE_AFFECTS_WARY = 1;
 	}
 
 	void OnSpawn() override
@@ -61,7 +65,7 @@ class AfflictionLance : CGameScript
 		EmitSound(1, 10, "ambience/steamjet1.wav");
 		ClientEvent("new", "all", "monsters/summon/affliction_lance_cl", GetEntityIndex(GetOwner()), 19.0);
 		MY_FX = "game.script.last_sent_id";
-		MY_END_TIME = /* TODO: $math(add) */ GetGameTime();
+		MY_END_TIME = (GetGameTime() + AOE_DURATION);
 	}
 
 	void fix_pitch_loop()
@@ -112,7 +116,7 @@ class AfflictionLance : CGameScript
 	void transfer_location()
 	{
 		string L_NEW_POS = param1;
-		MY_END_TIME = /* TODO: $math(add) */ GetGameTime();
+		MY_END_TIME = (GetGameTime() + AOE_DURATION);
 		ClientEvent("update", "all", MY_FX, "keep_on");
 		L_NEW_POS += "z";
 		SetEntityOrigin(GetOwner(), L_NEW_POS);

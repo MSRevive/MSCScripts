@@ -7,40 +7,73 @@ namespace MS
 
 class PolearmsQs : CGameScript
 {
+	int BASE_LEVEL_REQ;
+	float MELEE_ACCURACY;
+	int MELEE_DMG;
+	string MELEE_DMG_TYPE;
+	int MELEE_RANGE;
+	string PMODEL_FILE;
+	int PMODEL_IDX_FLOOR;
+	int PMODEL_IDX_HANDS;
+	float POLE_BACKHAND_ACCURACY;
+	int POLE_BACKHAND_DMG;
+	int POLE_BACKHAND_DMG_RANGE;
+	string POLE_BACKHAND_DMG_TYPE;
+	int POLE_BACKHAND_RANGE;
+	int POLE_BACKHAND_REPEL;
+	int POLE_BACKHAND_STUN;
+	float POLE_BACKHAND_STUN_CHANCE;
+	int POLE_CAN_BACKHAND;
+	int POLE_CAN_BLOCK;
+	int POLE_CAN_POKE1;
+	int POLE_CAN_POKE2;
+	int POLE_CAN_REPEL;
+	int POLE_CAN_SPIN;
+	int POLE_CAN_SWIPE;
+	float POLE_MAX_DMG_MULTI;
+	float POLE_MIN_DMG_MULTI;
+	int POLE_MIN_RANGE;
+	float POLE_SWIPE_ACCURACY;
+	int POLE_SWIPE_DMG;
+	int POLE_SWIPE_DMG_RANGE;
+	string POLE_SWIPE_DMG_TYPE;
+	int POLE_SWIPE_RANGE;
+	int VMODEL_IDX;
+
 	PolearmsQs()
 	{
-		const int BASE_LEVEL_REQ = 0;
-		const int VMODEL_IDX = 1;
-		const string PMODEL_FILE = "weapons/p_weapons3.mdl";
-		const int PMODEL_IDX_FLOOR = 61;
-		const int PMODEL_IDX_HANDS = 62;
-		const int MELEE_DMG = 120;
-		const int MELEE_RANGE = 90;
-		const string MELEE_DMG_TYPE = "blunt";
-		const float MELEE_ACCURACY = 0.85;
-		const int POLE_MIN_RANGE = 60;
-		const float POLE_MIN_DMG_MULTI = 0.5;
-		const float POLE_MAX_DMG_MULTI = 1.5;
-		const int POLE_CAN_POKE1 = 1;
-		const int POLE_CAN_POKE2 = 1;
-		const int POLE_CAN_SWIPE = 1;
-		const int POLE_CAN_BLOCK = 1;
-		const int POLE_CAN_SPIN = 1;
-		const int POLE_CAN_REPEL = 1;
-		const int POLE_CAN_BACKHAND = 1;
-		const int POLE_SWIPE_DMG = 60;
-		const int POLE_SWIPE_DMG_RANGE = 20;
-		const string POLE_SWIPE_DMG_TYPE = "blunt";
-		const int POLE_SWIPE_RANGE = 60;
-		const float POLE_SWIPE_ACCURACY = 0.6;
-		const int POLE_BACKHAND_DMG = 90;
-		const int POLE_BACKHAND_DMG_RANGE = 10;
-		const string POLE_BACKHAND_DMG_TYPE = "blunt";
-		const int POLE_BACKHAND_RANGE = 40;
-		const float POLE_BACKHAND_ACCURACY = 0.7;
-		const int POLE_BACKHAND_REPEL = 100;
-		const int POLE_BACKHAND_STUN = 1;
-		const float POLE_BACKHAND_STUN_CHANCE = 0.35;
+		BASE_LEVEL_REQ = 0;
+		VMODEL_IDX = 1;
+		PMODEL_FILE = "weapons/p_weapons3.mdl";
+		PMODEL_IDX_FLOOR = 61;
+		PMODEL_IDX_HANDS = 62;
+		MELEE_DMG = 120;
+		MELEE_RANGE = 90;
+		MELEE_DMG_TYPE = "blunt";
+		MELEE_ACCURACY = 0.85;
+		POLE_MIN_RANGE = 60;
+		POLE_MIN_DMG_MULTI = 0.5;
+		POLE_MAX_DMG_MULTI = 1.5;
+		POLE_CAN_POKE1 = 1;
+		POLE_CAN_POKE2 = 1;
+		POLE_CAN_SWIPE = 1;
+		POLE_CAN_BLOCK = 1;
+		POLE_CAN_SPIN = 1;
+		POLE_CAN_REPEL = 1;
+		POLE_CAN_BACKHAND = 1;
+		POLE_SWIPE_DMG = 60;
+		POLE_SWIPE_DMG_RANGE = 20;
+		POLE_SWIPE_DMG_TYPE = "blunt";
+		POLE_SWIPE_RANGE = 60;
+		POLE_SWIPE_ACCURACY = 0.6;
+		POLE_BACKHAND_DMG = 90;
+		POLE_BACKHAND_DMG_RANGE = 10;
+		POLE_BACKHAND_DMG_TYPE = "blunt";
+		POLE_BACKHAND_RANGE = 40;
+		POLE_BACKHAND_ACCURACY = 0.7;
+		POLE_BACKHAND_REPEL = 100;
+		POLE_BACKHAND_STUN = 1;
+		POLE_BACKHAND_STUN_CHANCE = 0.35;
 	}
 
 	void polearm_spawn()

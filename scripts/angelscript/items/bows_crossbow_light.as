@@ -7,40 +7,67 @@ namespace MS
 
 class BowsCrossbowLight : CGameScript
 {
+	int ANIM_DEPLOY;
+	int ANIM_FIRE;
+	int ANIM_IDLE;
+	string ANIM_PREFIX;
+	int ANIM_RELOAD;
+	string ITEM_NAME;
+	int MODEL_BODY_OFS;
+	string MODEL_HANDS;
+	string MODEL_VIEW;
+	string MODEL_WEAR;
+	string MODEL_WORLD;
+	int NO_PARRY;
+	int NO_WORLD_MODEL;
+	string RANGED_ACCURACY;
+	string RANGED_AIMANGLE;
+	float RANGED_ATK_DURATION;
+	float RANGED_DMG_DELAY;
+	string RANGED_DMG_TYPE;
+	int RANGED_ENERGY;
+	int RANGED_FORCE;
+	string RANGED_HOLD_MINMAX;
+	int RANGED_NOISE;
+	string RANGED_PROJECTILE;
+	string RANGED_STARTPOS;
+	string RANGED_STAT;
+	string SOUND_SHOOT;
 	int STRETCHED;
 	string WEAPON_PRIMARY_SKILL;
 	int XBOW_RELOADING;
+	float XBOW_RELOAD_TIME;
 
 	BowsCrossbowLight()
 	{
-		const int NO_PARRY = 1;
-		const int ANIM_IDLE = 0;
-		const int ANIM_DEPLOY = 8;
-		const int ANIM_RELOAD = 7;
-		const int ANIM_FIRE = 4;
-		const string MODEL_VIEW = "viewmodels/v_xbows.mdl";
-		const string MODEL_HANDS = "weapons/p_weapons2.mdl";
-		const string MODEL_WORLD = "weapons/p_weapons2.mdl";
-		const string MODEL_WEAR = "weapons/p_weapons2.mdl";
-		const string SOUND_SHOOT = "weapons/bow/crossbow.wav";
-		const string ITEM_NAME = "xbow";
-		const int MODEL_BODY_OFS = 52;
-		const int NO_WORLD_MODEL = 1;
-		const float XBOW_RELOAD_TIME = 2.0;
-		const string ANIM_PREFIX = "orcbow";
-		const string RANGED_PROJECTILE = "bolt";
-		const string RANGED_HOLD_MINMAX = "0;0";
-		const float RANGED_ATK_DURATION = 0.0;
-		const string RANGED_DMG_TYPE = "pierce";
-		const string RANGED_STAT = "archery";
-		const Vector3 RANGED_AIMANGLE = Vector3(0, 0, 0);
-		const float RANGED_DMG_DELAY = 0.0;
-		const int RANGED_NOISE = 10;
-		const int RANGED_ENERGY = 20;
+		NO_PARRY = 1;
+		ANIM_IDLE = 0;
+		ANIM_DEPLOY = 8;
+		ANIM_RELOAD = 7;
+		ANIM_FIRE = 4;
+		MODEL_VIEW = "viewmodels/v_xbows.mdl";
+		MODEL_HANDS = "weapons/p_weapons2.mdl";
+		MODEL_WORLD = "weapons/p_weapons2.mdl";
+		MODEL_WEAR = "weapons/p_weapons2.mdl";
+		SOUND_SHOOT = "weapons/bow/crossbow.wav";
+		ITEM_NAME = "xbow";
+		MODEL_BODY_OFS = 52;
+		NO_WORLD_MODEL = 1;
+		XBOW_RELOAD_TIME = 2.0;
+		ANIM_PREFIX = "orcbow";
+		RANGED_PROJECTILE = "bolt";
+		RANGED_HOLD_MINMAX = "0;0";
+		RANGED_ATK_DURATION = 0.0;
+		RANGED_DMG_TYPE = "pierce";
+		RANGED_STAT = "archery";
+		RANGED_AIMANGLE = Vector3(0, 0, 0);
+		RANGED_DMG_DELAY = 0.0;
+		RANGED_NOISE = 10;
+		RANGED_ENERGY = 20;
 		WEAPON_PRIMARY_SKILL = RANGED_STAT;
-		const Vector3 RANGED_STARTPOS = Vector3(2, 12, -8);
-		const string RANGED_ACCURACY = "0;0";
-		const int RANGED_FORCE = 1000;
+		RANGED_STARTPOS = Vector3(2, 12, -8);
+		RANGED_ACCURACY = "0;0";
+		RANGED_FORCE = 1000;
 	}
 
 	void weapon_spawn()

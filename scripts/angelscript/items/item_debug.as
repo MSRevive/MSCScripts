@@ -25,7 +25,7 @@ class ItemDebug : CGameScript
 			L_OUT_MSG += "#";
 			L_OUT_MSG += param4;
 			L_OUT_MSG += " is ";
-			L_OUT_MSG += /* TODO: $get_array */ $get_array(param3, param4);
+			L_OUT_MSG += param3[int(param4)];
 			int L_PROCESSED = 1;
 		}
 		if (L_DEBUG_TYPE == "var")
@@ -72,7 +72,7 @@ class ItemDebug : CGameScript
 			BITEM_DEBUG_OUT = L_OUT_MSG;
 			BITEM_DEBUG_CALLER = L_DEBUG_CALLER;
 			G_NEXT_IDEBUG_CALL += 0.1;
-			/* TODO: $math(subtract) */ G_NEXT_IDEBUG_CALL("item_debug_delay");
+			(G_NEXT_IDEBUG_CALL _ GetGameTime())("item_debug_delay");
 		}
 		else
 		{
@@ -103,7 +103,7 @@ class ItemDebug : CGameScript
 			L_OUT_MSG += "#";
 			L_OUT_MSG += param4;
 			L_OUT_MSG += " is ";
-			L_OUT_MSG += /* TODO: $get_array */ $get_array(param3, param4);
+			L_OUT_MSG += param3[int(param4)];
 			int L_PROCESSED = 1;
 		}
 		if (L_DEBUG_TYPE == "var")

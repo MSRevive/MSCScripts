@@ -9,6 +9,7 @@ class SnakeLord : CGameScript
 {
 	string ANIM_RUN;
 	int CYCLES_ON;
+	int GENERIC_LORD;
 	int LOOKING_FOR_PLAYERS;
 	int NPC_GIVE_EXP;
 	int SNAKE_SLOT;
@@ -16,7 +17,7 @@ class SnakeLord : CGameScript
 
 	SnakeLord()
 	{
-		const int GENERIC_LORD = 1;
+		GENERIC_LORD = 1;
 		NPC_GIVE_EXP = 400;
 	}
 

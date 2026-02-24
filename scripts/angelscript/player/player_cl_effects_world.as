@@ -7,29 +7,41 @@ namespace MS
 
 class PlayerClEffectsWorld : CGameScript
 {
+	string AFT_SKYNAME;
+	string AFT_SOUND;
+	int AFT_START_HOUR;
+	string AFT_STATE;
 	int AM_FADING;
 	string CLPLR_TOD_STATE;
 	string CL_TOD_LOCK;
 	string CURRENT_TOD_STATE;
+	string DAY_SKYNAME;
+	string DAY_SOUND;
+	int DAY_START_HOUR;
+	string DAY_STATE;
 	int DUSK_FADE_COUNT;
 	int FADE_COUNT;
 	int NIGHT_FADE_COUNT;
+	string NIGHT_SKYNAME;
+	string NIGHT_SOUND;
+	int NIGHT_START_HOUR;
+	string NIGHT_STATE;
 	string PREV_STATE;
 
 	PlayerClEffectsWorld()
 	{
-		const string DAY_SKYNAME = "game.map.skyname";
-		const string DAY_SOUND = "amb/birds01.wav";
-		const int DAY_START_HOUR = 6;
-		const string DAY_STATE = "day";
-		const string AFT_SKYNAME = DAY_SKYNAME;
-		const string AFT_SOUND = "none";
-		const int AFT_START_HOUR = 17;
-		const string AFT_STATE = "aft";
-		const string NIGHT_SKYNAME = "space";
-		const string NIGHT_SOUND = "amb/wolf01.wav";
-		const int NIGHT_START_HOUR = 20;
-		const string NIGHT_STATE = "night";
+		DAY_SKYNAME = "game.map.skyname";
+		DAY_SOUND = "amb/birds01.wav";
+		DAY_START_HOUR = 6;
+		DAY_STATE = "day";
+		AFT_SKYNAME = DAY_SKYNAME;
+		AFT_SOUND = "none";
+		AFT_START_HOUR = 17;
+		AFT_STATE = "aft";
+		NIGHT_SKYNAME = "space";
+		NIGHT_SOUND = "amb/wolf01.wav";
+		NIGHT_START_HOUR = 20;
+		NIGHT_STATE = "night";
 		SetGlobalVar("clglobal.daystate", DAY_STATE);
 	}
 
@@ -264,7 +276,7 @@ class PlayerClEffectsWorld : CGameScript
 		TINT_STR += ",0.1)";
 		SetEnvironment("fog.start", FOG_START);
 		SetEnvironment("fog.end", FOG_END);
-		// TODO: UNCONVERTED: lightgamma LIGHT_GAMMA
+		SetWorldLightGamma(LIGHT_GAMMA);
 		SetEnvironment("screen.tint", TINT_STR);
 	}
 
@@ -287,7 +299,7 @@ class PlayerClEffectsWorld : CGameScript
 		SCREEN_STR += TINT_ALPHA;
 		SCREEN_STR += ")";
 		SetEnvironment("screen.tint", SCREEN_STR);
-		// TODO: UNCONVERTED: lightgamma LIGHT_GAMMA
+		SetWorldLightGamma(LIGHT_GAMMA);
 	}
 
 	void fade_to_day()
@@ -315,7 +327,7 @@ class PlayerClEffectsWorld : CGameScript
 		SetEnvironment("fog.start", FOG_START);
 		SetEnvironment("fog.end", FOG_END);
 		SetEnvironment("screen.tint", SCREEN_STR);
-		// TODO: UNCONVERTED: lightgamma LIGHT_GAMMA
+		SetWorldLightGamma(LIGHT_GAMMA);
 	}
 
 	void time_change()
@@ -372,8 +384,8 @@ class PlayerClEffectsWorld : CGameScript
 
 	void change_sky()
 	{
-		SetEnvironment("sky.texture", /* TODO: $pass */ $pass(param1));
-		SendInfoMsg("all", "PARAM1 game.map.skyname");
+		SetEnvironment("sky.texture", param1);
+		SendInfoMsg("all", param1 + " game.map.skyname");
 	}
 
 }

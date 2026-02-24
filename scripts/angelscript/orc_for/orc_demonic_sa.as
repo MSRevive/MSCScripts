@@ -9,25 +9,33 @@ namespace MS
 class OrcDemonicSa : CGameScript
 {
 	string AS_ATTACKING;
+	float ATTACK_ACCURACY;
+	float DOT_FIRE;
 	string DROP_ITEM1;
 	float DROP_ITEM1_CHANCE;
 	string FIRE_BALL_DAMAGE;
+	int FIRE_BALL_DAMAGE_ALT;
+	int FIRE_BALL_DAMAGE_NORM;
+	float FREQ_FIREBALL;
 	int IS_UNHOLY;
 	int MELEE_ATTACK;
 	string NEXT_FIREBALL;
+	int NPC_BASE_EXP;
 	int ORC_JUMPER;
 	string SAY_SUMMONER;
+	string SOUND_FIRECHARGE;
+	string SOUND_FIRESHOOT;
 
 	OrcDemonicSa()
 	{
-		const int NPC_BASE_EXP = 200;
-		const float ATTACK_ACCURACY = 0.8;
-		const string FREQ_FIREBALL = Random(5.0, 10.0);
-		const string FIRE_BALL_DAMAGE_NORM = "$rand(75,100)";
-		const string FIRE_BALL_DAMAGE_ALT = "$rand(25,50)";
-		const float DOT_FIRE = 10.0;
-		const string SOUND_FIRECHARGE = "magic/fireball_powerup.wav";
-		const string SOUND_FIRESHOOT = "magic/fireball_strike.wav";
+		NPC_BASE_EXP = 200;
+		ATTACK_ACCURACY = 0.8;
+		FREQ_FIREBALL = Random(5.0, 10.0);
+		FIRE_BALL_DAMAGE_NORM = "$rand(75,100)";
+		FIRE_BALL_DAMAGE_ALT = "$rand(25,50)";
+		DOT_FIRE = 10.0;
+		SOUND_FIRECHARGE = "magic/fireball_powerup.wav";
+		SOUND_FIRESHOOT = "magic/fireball_strike.wav";
 		ORC_JUMPER = 1;
 		IS_UNHOLY = 1;
 	}

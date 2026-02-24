@@ -7,32 +7,52 @@ namespace MS
 
 class BluntFs : CGameScript
 {
+	string ANIM_PREFIX;
+	int BASE_LEVEL_REQ;
 	string BURST_DOT_BURN;
 	string BURST_POS;
+	int FIRE_BURST_MP;
 	string FIRE_BURST_TARGS;
+	float MELEE_ACCURACY;
+	float MELEE_ATK_DURATION;
+	int MELEE_DMG;
+	float MELEE_DMG_DELAY;
+	int MELEE_DMG_RANGE;
+	string MELEE_DMG_TYPE;
+	int MELEE_ENERGY;
+	float MELEE_PARRY_AUGMENT;
+	int MELEE_RANGE;
+	string MELEE_SOUND;
+	string MELEE_SOUND_DELAY;
+	string MELEE_STAT;
+	int MODEL_BODY_OFS;
+	string MODEL_VIEW;
+	int MODEL_VIEW_IDX;
+	string MODEL_WORLD;
+	string SOUND_SWIPE;
 
 	BluntFs()
 	{
-		const int BASE_LEVEL_REQ = 20;
-		const int FIRE_BURST_MP = 30;
-		const string MODEL_VIEW = "viewmodels/v_1hblunts.mdl";
-		const int MODEL_VIEW_IDX = 8;
-		const string SOUND_SWIPE = "weapons/swingsmall.wav";
-		const string MODEL_WORLD = "weapons/p_weapons3.mdl";
-		const int MODEL_BODY_OFS = 90;
-		const string ANIM_PREFIX = "standard";
-		const int MELEE_RANGE = 60;
-		const float MELEE_DMG_DELAY = 0.6;
-		const float MELEE_ATK_DURATION = 1.1;
-		const int MELEE_ENERGY = 8;
-		const int MELEE_DMG = 250;
-		const int MELEE_DMG_RANGE = 140;
-		const string MELEE_DMG_TYPE = "fire";
-		const float MELEE_ACCURACY = 0.8;
-		const string MELEE_STAT = "bluntarms";
-		const string MELEE_SOUND = SOUND_SWIPE;
-		const string MELEE_SOUND_DELAY = MELEE_DMG_DELAY;
-		const float MELEE_PARRY_AUGMENT = 0.0;
+		BASE_LEVEL_REQ = 20;
+		FIRE_BURST_MP = 30;
+		MODEL_VIEW = "viewmodels/v_1hblunts.mdl";
+		MODEL_VIEW_IDX = 8;
+		SOUND_SWIPE = "weapons/swingsmall.wav";
+		MODEL_WORLD = "weapons/p_weapons3.mdl";
+		MODEL_BODY_OFS = 90;
+		ANIM_PREFIX = "standard";
+		MELEE_RANGE = 60;
+		MELEE_DMG_DELAY = 0.6;
+		MELEE_ATK_DURATION = 1.1;
+		MELEE_ENERGY = 8;
+		MELEE_DMG = 250;
+		MELEE_DMG_RANGE = 140;
+		MELEE_DMG_TYPE = "fire";
+		MELEE_ACCURACY = 0.8;
+		MELEE_STAT = "bluntarms";
+		MELEE_SOUND = SOUND_SWIPE;
+		MELEE_SOUND_DELAY = MELEE_DMG_DELAY;
+		MELEE_PARRY_AUGMENT = 0.0;
 	}
 
 	void weapon_spawn()
@@ -82,7 +102,7 @@ class BluntFs : CGameScript
 		}
 		if (NO_GO_MSG != "NO_GO_MSG")
 		{
-			SendColoredMessage(GetOwner(), "NO_GO_MSG");
+			SendColoredMessage(GetOwner(), NO_GO_MSG);
 		}
 		if (!(NO_GO_MSG == "NO_GO_MSG")) return;
 		EmitSound(GetOwner(), 0, "ambience/steamburst1.wav", 10);

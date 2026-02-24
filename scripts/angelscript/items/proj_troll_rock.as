@@ -7,22 +7,36 @@ namespace MS
 
 class ProjTrollRock : CGameScript
 {
+	int ARROW_BODY_OFS;
+	float ARROW_BREAK_CHANCE;
+	int ARROW_SOLIDIFY_ON_WALL;
+	int MODEL_BODY_OFS;
+	string MODEL_WORLD;
+	string PROJ_ANIM_IDLE;
+	int PROJ_AOE_FALLOFF;
+	int PROJ_AOE_RANGE;
+	int PROJ_DAMAGE;
+	string PROJ_DAMAGE_TYPE;
+	int PROJ_STICK_DURATION;
+	string SOUND_HITWALL1;
+	string SOUND_HITWALL2;
+
 	ProjTrollRock()
 	{
-		const string MODEL_WORLD = "weapons/projectiles.mdl";
-		const int ARROW_BODY_OFS = 5;
-		const int MODEL_BODY_OFS = 5;
-		const string PROJ_ANIM_IDLE = "idle_standard";
-		const string PROJ_DAMAGE = RandomInt(60, 90);
-		const int PROJ_STICK_DURATION = 0;
-		const int ARROW_SOLIDIFY_ON_WALL = 0;
-		const float ARROW_BREAK_CHANCE = 1.0;
-		const string SOUND_HITWALL1 = "fire.wav";
-		const string SOUND_HITWALL2 = "fire.wav";
-		const string PROJ_DAMAGE_TYPE = "siege";
-		const string PROJ_DAMAGE = RandomInt(200, 300);
-		const int PROJ_AOE_RANGE = 200;
-		const int PROJ_AOE_FALLOFF = 1;
+		MODEL_WORLD = "weapons/projectiles.mdl";
+		ARROW_BODY_OFS = 5;
+		MODEL_BODY_OFS = 5;
+		PROJ_ANIM_IDLE = "idle_standard";
+		PROJ_DAMAGE = RandomInt(60, 90);
+		PROJ_STICK_DURATION = 0;
+		ARROW_SOLIDIFY_ON_WALL = 0;
+		ARROW_BREAK_CHANCE = 1.0;
+		SOUND_HITWALL1 = "fire.wav";
+		SOUND_HITWALL2 = "fire.wav";
+		PROJ_DAMAGE_TYPE = "siege";
+		PROJ_DAMAGE = RandomInt(200, 300);
+		PROJ_AOE_RANGE = 200;
+		PROJ_AOE_FALLOFF = 1;
 		Precache("rockgibs.mdl");
 	}
 

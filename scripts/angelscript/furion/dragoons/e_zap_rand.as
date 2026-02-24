@@ -7,9 +7,11 @@ namespace MS
 
 class EZapRand : CGameScript
 {
+	int ELEMENT;
+
 	EZapRand()
 	{
-		const int ELEMENT = 3;
+		ELEMENT = 3;
 	}
 
 }

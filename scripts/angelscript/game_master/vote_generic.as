@@ -10,7 +10,7 @@ class VoteGeneric : CGameScript
 	string GM_COUNT_MESSAGE;
 	string GM_SKIP_VOTE_ID;
 	string L_SV_LOCK_PASSWORD;
-	string TOTAL_BALLOTS;
+	int TOTAL_BALLOTS;
 	int VOTES_CASTED;
 	int VOTES_REMOVED;
 	string VOTE_BUSY;
@@ -58,10 +58,10 @@ class VoteGeneric : CGameScript
 	void gm_send_vote()
 	{
 		SetName(VOTE!);
-		SendInfoMsg("all", "VOTE_TITLE VOTE_DESC");
+		SendInfoMsg("all", VOTE_TITLE + VOTE_DESC);
 		get_voters();
 		VOTES_CASTED = 0;
-		TOTAL_BALLOTS = /* TODO: $get_array_amt */ $get_array_amt(A_VOTERS);
+		TOTAL_BALLOTS = int(A_VOTERS.length());
 		ScheduleDelayedEvent(0.1, "gm_send_ballots");
 		ScheduleDelayedEvent(5.1, "gm_send_ballots");
 		ScheduleDelayedEvent(20.0, "gm_tally_votes");
@@ -72,7 +72,7 @@ class VoteGeneric : CGameScript
 		A_VOTERS.resize(0);
 		GetAllPlayers(A_VOTERS);
 		VOTES_REMOVED = 0;
-		for (int i = 0; i < /* TODO: $get_array_amt */ $get_array_amt(A_VOTERS); i++)
+		for (int i = 0; i < int(A_VOTERS.length()); i++)
 		{
 			get_voters_filter();
 		}
@@ -80,11 +80,14 @@ class VoteGeneric : CGameScript
 
 	void get_voters_filter()
 	{
-		string L_ARRAY_INDEX = /* TODO: $math(subtract) */ i;
-		string L_PLAYER = /* TODO: $get_array */ $get_array(A_VOTERS, L_ARRAY_INDEX);
+		string L_ARRAY_INDEX = (i - VOTES_REMOVED);
+		string L_PLAYER = A_VOTERS[int(L_ARRAY_INDEX)];
 		if (!(GetEntityProperty(L_PLAYER, "scriptvar")))
 		{
-			// TODO: UNCONVERTED: array.remove A_VOTERS L_ARRAY_INDEX
+			{
+			    int _rmIdx = ArrayFind(A_VOTERS, L_ARRAY_INDEX, 0);
+			    if (_rmIdx >= 0) A_VOTERS.removeAt(_rmIdx);
+			}
 			VOTES_REMOVED += 1;
 		}
 	}
@@ -92,7 +95,7 @@ class VoteGeneric : CGameScript
 	void gm_send_ballots()
 	{
 		if (!(VOTE_BUSY)) return;
-		for (int i = 0; i < /* TODO: $get_array_amt */ $get_array_amt(A_VOTERS); i++)
+		for (int i = 0; i < int(A_VOTERS.length()); i++)
 		{
 			send_menus();
 		}
@@ -100,7 +103,7 @@ class VoteGeneric : CGameScript
 
 	void send_menus()
 	{
-		OpenMenu(/* TODO: $get_array */ $get_array(A_VOTERS, i));
+		OpenMenu(A_VOTERS[int(i)]);
 	}
 
 	void game_menu_getoptions()
@@ -130,10 +133,13 @@ class VoteGeneric : CGameScript
 	void game_menu_cancel()
 	{
 		string L_VOTER = param1;
-		string L_IDX = /* TODO: $get_arrayfind */ $get_arrayfind(A_VOTERS, param1);
+		string L_IDX = ArrayFind(A_VOTERS, param1, 0);
 		if (!(VOTE_BUSY)) return;
 		if (!(L_IDX != -1)) return;
-		// TODO: UNCONVERTED: array.remove A_VOTERS L_IDX
+		{
+		    int _rmIdx = ArrayFind(A_VOTERS, L_IDX, 0);
+		    if (_rmIdx >= 0) A_VOTERS.removeAt(_rmIdx);
+		}
 		VOTES_CASTED += 1;
 		if (VOTES_CASTED == TOTAL_BALLOTS)
 		{
@@ -144,7 +150,7 @@ class VoteGeneric : CGameScript
 	void gm_gvote_count()
 	{
 		string L_VOTER = param1;
-		string L_IDX = /* TODO: $get_arrayfind */ $get_arrayfind(A_VOTERS, param1);
+		string L_IDX = ArrayFind(A_VOTERS, param1, 0);
 		if (!(VOTE_BUSY)) return;
 		if (!(L_IDX != -1)) return;
 		A_VOTERS.removeAt(L_IDX);
@@ -157,7 +163,7 @@ class VoteGeneric : CGameScript
 		if (!(VOTE_SILENT))
 		{
 			string L_STR = GetEntityName(param1);
-			SendInfoMessageToAll("green L_STR");
+			SendInfoMessageToAll("green " + L_STR);
 		}
 		if (VOTES_CASTED == TOTAL_BALLOTS)
 		{
@@ -170,10 +176,10 @@ class VoteGeneric : CGameScript
 		if (!(VOTE_BUSY)) return;
 		VOTE_BUSY = 0;
 		string L_TITLE = "The people have spoken!";
-		string L_WINNER = /* TODO: $func */ $func("func_get_vote_winner");
+		string L_WINNER = "func_get_vote_winner"();
 		string L_VOTE_TITLE = /* TODO: $string_upto */ $string_upto(L_WINNER, ":");
 		string L_VOTE_DATA = /* TODO: $string_from */ $string_from(L_WINNER, ":");
-		SendInfoMsg("all", "L_TITLE L_VOTE_TITLE");
+		SendInfoMsg("all", L_TITLE + L_VOTE_TITLE);
 		VOTE_EVENT(L_VOTE_TITLE, L_VOTE_DATA);
 	}
 
@@ -200,11 +206,11 @@ class VoteGeneric : CGameScript
 		}
 		if ((L_CHOOSE_LAST))
 		{
-			VOTE_WINNERS = int(/* TODO: $math(subtract) */ L_OPTION_AMT);
+			VOTE_WINNERS = int((L_OPTION_AMT - 1));
 		}
 		if (L_WINNER_AMT > 1)
 		{
-			VOTE_WINNERS = GetToken(VOTE_WINNERS, RandomInt(0, /* TODO: $math(subtract) */ L_WINNER_AMT), ";");
+			VOTE_WINNERS = GetToken(VOTE_WINNERS, RandomInt(0, (L_WINNER_AMT - 1)), ";");
 		}
 		return;
 		return;
@@ -290,7 +296,7 @@ class VoteGeneric : CGameScript
 			ClientCommand("all", CL_CMD_STR);
 			string MSG_DESC = "Password is: ";
 			MSG_DESC += L_SV_LOCK_PASSWORD;
-			LogMessage("all MSG_DESC");
+			LogMessage("all " + MSG_DESC);
 			MSG_DESC += "|This has been sent to your console (copy it).";
 			MSG_DESC += "|Server will remain locked until enough";
 			MSG_DESC += "|people disconnect or map changes.";
@@ -300,7 +306,7 @@ class VoteGeneric : CGameScript
 		{
 			string MSG_TITLE = "Vote Lock has failed.";
 			string MSG_DESC = " ";
-			SendInfoMsg("all", "MSG_TITLE MSG_DESC");
+			SendInfoMsg("all", MSG_TITLE + MSG_DESC);
 		}
 	}
 
@@ -312,7 +318,7 @@ class VoteGeneric : CGameScript
 		L_VOTE_TITLE += GetEntityName(GM_SKIP_VOTE_ID);
 		string L_VOTE_DESC = GetEntityName(VOTE_STARTER);
 		L_VOTE_DESC = " " + "has" + "started" + "a" + "kick" + "vote" + "against" + GetEntityName(GM_SKIP_VOTE_ID);
-		SendInfoMsg("all", "L_VOTE_TITLE L_VOTE_DESC");
+		SendInfoMsg("all", L_VOTE_TITLE + L_VOTE_DESC);
 		gm_ynvote(GetEntityIndex(VOTE_STARTER), 1.01);
 	}
 
@@ -340,11 +346,11 @@ class VoteGeneric : CGameScript
 		MSG_STRING += " votes yes.";
 		if (!(VOTE_QUIET_MODE))
 		{
-			SendInfoMsg("all", "MSG_STRING  ");
+			SendInfoMsg("all", MSG_STRING + "  ");
 		}
 		if ((VOTE_QUIET_MODE))
 		{
-			SendInfoMessageToAll("green MSG_STRING");
+			SendInfoMessageToAll("green " + MSG_STRING);
 		}
 	}
 
@@ -361,11 +367,11 @@ class VoteGeneric : CGameScript
 		MSG_STRING += " votes no.";
 		if (!(VOTE_QUIET_MODE))
 		{
-			SendInfoMsg("all", "MSG_STRING  ");
+			SendInfoMsg("all", MSG_STRING + "  ");
 		}
 		if ((VOTE_QUIET_MODE))
 		{
-			SendInfoMessageToAll("green MSG_STRING");
+			SendInfoMessageToAll("green " + MSG_STRING);
 		}
 	}
 
@@ -379,7 +385,7 @@ class VoteGeneric : CGameScript
 			SetGlobalVar("G_SERVER_LOCKED", 0);
 			string MSG_DESC = GetEntityName(param1);
 			MSG_DESC += " has left the server.";
-			SendInfoMsg("all", "SERVER IS NO LONGER LOCKED MSG_DESC");
+			SendInfoMsg("all", "SERVER IS NO LONGER LOCKED " + MSG_DESC);
 			string SV_CMD = "sv_password ";
 			SV_CMD += /* TODO: $quote */ $quote();
 			SV_CMD += /* TODO: $quote */ $quote();

@@ -8,15 +8,18 @@ namespace MS
 class DqFetchDrop : CGameScript
 {
 	string DQ_FIND_NUM;
+	string DQ_KILL_WHO;
 	int QITEMS_DROPPED;
 	int QITEMS_FOUND;
+	string QITEM_CODE;
+	string QITEM_NAME;
 
 	DqFetchDrop()
 	{
 		DQ_FIND_NUM = GetToken(QUEST_DATA1, 0, ";");
-		const string DQ_KILL_WHO = StringToLower(GetToken(QUEST_DATA1, 1, ";"));
-		const string QITEM_CODE = GetToken(QUEST_DATA2, 0, ";");
-		const string QITEM_NAME = GetToken(QUEST_DATA2, 1, ";");
+		DQ_KILL_WHO = StringToLower(GetToken(QUEST_DATA1, 1, ";"));
+		QITEM_CODE = GetToken(QUEST_DATA2, 0, ";");
+		QITEM_NAME = GetToken(QUEST_DATA2, 1, ";");
 		QITEMS_FOUND = 0;
 		QITEMS_DROPPED = 0;
 	}
@@ -69,7 +72,7 @@ class DqFetchDrop : CGameScript
 		{
 			string L_QITEM_ORIGIN = GetEntityProperty(GAME_MASTER, "scriptvar");
 			SpawnNPC("other/qitem", L_QITEM_ORIGIN, ScriptMode::Legacy); // params: QITEM_CODE, QITEM_NAME
-			QITEMS_DROPPED = /* TODO: $math(add) */ QITEMS_DROPPED;
+			QITEMS_DROPPED = (QITEMS_DROPPED + 1);
 		}
 	}
 
@@ -77,7 +80,7 @@ class DqFetchDrop : CGameScript
 	{
 		if (QUEST_MODE == "active")
 		{
-			QITEMS_FOUND = /* TODO: $math(add) */ QITEMS_FOUND;
+			QITEMS_FOUND = (QITEMS_FOUND + 1);
 			if (QITEMS_FOUND >= DQ_FIND_NUM)
 			{
 				quest_finished();

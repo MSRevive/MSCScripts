@@ -7,45 +7,61 @@ class BaseChatArray : CGameScript
 {
 	int CHAT_ABORT;
 	string CHAT_ANIMS_ANAME;
+	int CHAT_AUTO_FACE;
+	int CHAT_AUTO_HAIL;
+	int CHAT_AUTO_JOB;
+	int CHAT_AUTO_RUMOR;
 	string CHAT_BUSY;
+	string CHAT_CONV_ANIMS;
 	string CHAT_CURRENT_SPEAKER;
+	float CHAT_DELAY;
 	string CHAT_DELAYS_ANAME;
 	string CHAT_END_MOVE_MOUTH;
 	string CHAT_END_TIME;
 	string CHAT_EVENTS_ANAME;
+	int CHAT_FACE_ON_USE;
 	int CHAT_IGNORE_WHILE_BUSY;
 	string CHAT_LAST_USED_MENU;
 	string CHAT_LINES_ANAME;
+	int CHAT_MAX_LINE_LEN;
+	int CHAT_MENU_ENABLE;
 	int CHAT_MENU_ON;
+	int CHAT_MOVE_MOUTH;
+	int CHAT_NEVER_INTERRUPT;
+	int CHAT_NO_CLOSE_MOUTH;
+	string CHAT_PLAYANIM_STYLE;
 	string CHAT_QUE_ACTIVE;
+	int CHAT_RESET_ON_NEW;
 	string CHAT_SEQUENCE;
 	string CHAT_SOUNDS_ANAME;
-	string CHAT_SPOOL_OUT_ALL_COUNT;
+	int CHAT_SPOOL_OUT_ALL_COUNT;
 	int CHAT_SPOOL_OUT_COUNT;
+	int CHAT_USE_BUSY_MESSAGE;
+	int CHAT_USE_CONV_ANIMS;
 	string DUMP_CONVO;
 	int HAS_BASE_CHAT_ARRAY_INCLUDE;
 
 	BaseChatArray()
 	{
-		const string CHAT_CONV_ANIMS = "converse2;converse1;talkleft;talkright;lean;pondering;pondering2;pondering3;";
+		CHAT_CONV_ANIMS = "converse2;converse1;talkleft;talkright;lean;pondering;pondering2;pondering3;";
 		HAS_BASE_CHAT_ARRAY_INCLUDE = 1;
-		const int CHAT_NEVER_INTERRUPT = 0;
-		const int CHAT_USE_BUSY_MESSAGE = 1;
-		const int CHAT_USE_CONV_ANIMS = 1;
-		const int CHAT_MOVE_MOUTH = 1;
-		const int CHAT_NO_CLOSE_MOUTH = 0;
-		const int CHAT_AUTO_FACE = 1;
-		const int CHAT_FACE_ON_USE = 1;
-		const int CHAT_MENU_ENABLE = 1;
-		const int CHAT_RESET_ON_NEW = 0;
+		CHAT_NEVER_INTERRUPT = 0;
+		CHAT_USE_BUSY_MESSAGE = 1;
+		CHAT_USE_CONV_ANIMS = 1;
+		CHAT_MOVE_MOUTH = 1;
+		CHAT_NO_CLOSE_MOUTH = 0;
+		CHAT_AUTO_FACE = 1;
+		CHAT_FACE_ON_USE = 1;
+		CHAT_MENU_ENABLE = 1;
+		CHAT_RESET_ON_NEW = 0;
 		CHAT_IGNORE_WHILE_BUSY = 0;
-		const string CHAT_PLAYANIM_STYLE = "critical";
+		CHAT_PLAYANIM_STYLE = "critical";
 		CHAT_MENU_ON = 1;
-		const int CHAT_AUTO_HAIL = 0;
-		const int CHAT_AUTO_JOB = 0;
-		const int CHAT_AUTO_RUMOR = 0;
-		const int CHAT_MAX_LINE_LEN = 192;
-		const float CHAT_DELAY = 4.0;
+		CHAT_AUTO_HAIL = 0;
+		CHAT_AUTO_JOB = 0;
+		CHAT_AUTO_RUMOR = 0;
+		CHAT_MAX_LINE_LEN = 192;
+		CHAT_DELAY = 4.0;
 		CHAT_CURRENT_SPEAKER = "none";
 	}
 
@@ -111,7 +127,7 @@ class BaseChatArray : CGameScript
 		CONVO_EVENTS += "_EVENTS";
 		string CONVO_SOUNDS = CONVO_NAME;
 		CONVO_SOUNDS += "_SOUNDS";
-		string CONV_ARRAY_EXISTS = /* TODO: $get_array */ $get_array(param1, 0);
+		string CONV_ARRAY_EXISTS = param1[int(0)];
 		if ((CONV_ARRAY_EXISTS).findFirst("[ERROR_NO_ARRAY]") >= 0)
 		{
 			LogDebug("chat_add_text creating new array for CONVO_NAME");
@@ -174,10 +190,10 @@ class BaseChatArray : CGameScript
 		CONVO_ANIMS.insertLast(L_CHAT_ANIM);
 		CONVO_EVENTS.insertLast(L_CHAT_EVENT);
 		CONVO_SOUNDS.insertLast(L_CHAT_SOUND);
-		string ARRAY_IDX = /* TODO: $get_array_amt */ $get_array_amt(CONVO_NAME);
+		int ARRAY_IDX = int(CONVO_NAME.length());
 		ARRAY_IDX -= 1;
-		string DBG_TXT = /* TODO: $get_array */ $get_array(CONVO_NAME, ARRAY_IDX);
-		LogDebug("chat_add_text final PARAM1 step ARRAY_IDX txt[ (DBG_TXT).substr(0, 11) ] del /* TODO: $get_array */ $get_array(CONVO_DELAYS, ARRAY_IDX) anim /* TODO: $get_array */ $get_array(CONVO_ANIMS, ARRAY_IDX) event /* TODO: $get_array */ $get_array(CONVO_EVENTS, ARRAY_IDX)");
+		string DBG_TXT = CONVO_NAME[int(ARRAY_IDX)];
+		LogDebug("chat_add_text final PARAM1 step ARRAY_IDX txt[ (DBG_TXT).substr(0, 11) ] del CONVO_DELAYS[int(ARRAY_IDX)] anim CONVO_ANIMS[int(ARRAY_IDX)] event CONVO_EVENTS[int(ARRAY_IDX)]");
 	}
 
 	void chat_start_sequence()
@@ -220,10 +236,10 @@ class BaseChatArray : CGameScript
 		}
 		CHAT_ABORT = 0;
 		string CONVO_NAME = param1;
-		string CONV_ARRAY_EXISTS = /* TODO: $get_array */ $get_array(param1, 0);
+		string CONV_ARRAY_EXISTS = param1[int(0)];
 		if ((CONV_ARRAY_EXISTS).findFirst("[ERROR_NO_ARRAY]") >= 0)
 		{
-			SayText("[error] conversation CONVO_NAME does not exist!");
+			SayText("[error] conversation " + CONVO_NAME + " does not exist!");
 			int EXIT_SUB = 1;
 		}
 		if ((EXIT_SUB)) return;
@@ -281,8 +297,8 @@ class BaseChatArray : CGameScript
 		CHAT_EVENTS_ANAME += "_EVENTS";
 		CHAT_SOUNDS_ANAME = CONVO_NAME;
 		CHAT_SOUNDS_ANAME += "_SOUNDS";
-		LogDebug("requesting_que /* TODO: $get_array_amt */ $get_array_amt(CHAT_LINES_ANAME) lines");
-		for (int i = 0; i < /* TODO: $get_array_amt */ $get_array_amt(CHAT_LINES_ANAME); i++)
+		LogDebug("requesting_que int(CHAT_LINES_ANAME.length()) lines");
+		for (int i = 0; i < int(CHAT_LINES_ANAME.length()); i++)
 		{
 			chat_add_to_que();
 		}
@@ -297,7 +313,7 @@ class BaseChatArray : CGameScript
 	{
 		string N_ANIMS = GetTokenCount(CHAT_CONV_ANIMS, ";");
 		N_ANIMS -= 1;
-		string RND_ANIM = RandomInt(0, N_ANIMS);
+		int RND_ANIM = RandomInt(0, N_ANIMS);
 		PlayAnim("CHAT_PLAYANIM_STYLE", GetToken(CHAT_CONV_ANIMS, RND_ANIM, ";"));
 	}
 
@@ -317,7 +333,7 @@ class BaseChatArray : CGameScript
 		if (GetGameTime() < CHAT_END_MOVE_MOUTH)
 		{
 			string RND_SAY = "[";
-			string M_TIME = Random(0.1, 0.3);
+			float M_TIME = Random(0.1, 0.3);
 			RND_SAY += M_TIME;
 			RND_SAY += "]";
 			Say("RND_SAY");
@@ -573,7 +589,7 @@ class BaseChatArray : CGameScript
 	void ext_dump_chat()
 	{
 		DUMP_CONVO = param1;
-		for (int i = 0; i < /* TODO: $get_array_amt */ $get_array_amt(DUMP_CONVO); i++)
+		for (int i = 0; i < int(DUMP_CONVO.length()); i++)
 		{
 			dump_chat();
 		}
@@ -591,22 +607,22 @@ class BaseChatArray : CGameScript
 		CUR_EVENTS += "_EVENTS";
 		string CUR_SOUNDS = DUMP_CONVO;
 		CUR_SOUNDS += "_SOUNDS";
-		string CUR_TEXT = /* TODO: $get_array */ $get_array(CUR_LINES_ANAME, CUR_IDX);
-		string CUR_DELAY = /* TODO: $get_array */ $get_array(CUR_DELAYS, CUR_IDX);
-		string CUR_ANIM = /* TODO: $get_array */ $get_array(CUR_ANIMS, CUR_IDX);
-		string CUR_EVENT = /* TODO: $get_array */ $get_array(CUR_EVENTS, CUR_IDX);
-		string CUR_SOUND = /* TODO: $get_array */ $get_array(CUR_SOUNDS, CUR_IDX);
+		string CUR_TEXT = CUR_LINES_ANAME[int(CUR_IDX)];
+		string CUR_DELAY = CUR_DELAYS[int(CUR_IDX)];
+		string CUR_ANIM = CUR_ANIMS[int(CUR_IDX)];
+		string CUR_EVENT = CUR_EVENTS[int(CUR_IDX)];
+		string CUR_SOUND = CUR_SOUNDS[int(CUR_IDX)];
 		LogDebug("dump DUMP_CONVO # CUR_IDX txt[ (CUR_TEXT).substr(0, 11) ] del CUR_DELAY anim CUR_ANIM evt CUR_EVENT snd CUR_SOUND");
 	}
 
 	void chat_add_to_que()
 	{
 		string CUR_IDX = i;
-		string CUR_LINE = /* TODO: $get_array */ $get_array(CHAT_LINES_ANAME, CUR_IDX);
-		string CUR_DELAY = /* TODO: $get_array */ $get_array(CHAT_DELAYS_ANAME, CUR_IDX);
-		string CUR_ANIM = /* TODO: $get_array */ $get_array(CHAT_ANIMS_ANAME, CUR_IDX);
-		string CUR_EVENT = /* TODO: $get_array */ $get_array(CHAT_EVENTS_ANAME, CUR_IDX);
-		string CUR_SOUND = /* TODO: $get_array */ $get_array(CHAT_SOUNDS_ANAME, CUR_IDX);
+		string CUR_LINE = CHAT_LINES_ANAME[int(CUR_IDX)];
+		string CUR_DELAY = CHAT_DELAYS_ANAME[int(CUR_IDX)];
+		string CUR_ANIM = CHAT_ANIMS_ANAME[int(CUR_IDX)];
+		string CUR_EVENT = CHAT_EVENTS_ANAME[int(CUR_IDX)];
+		string CUR_SOUND = CHAT_SOUNDS_ANAME[int(CUR_IDX)];
 		LogDebug("chat_add_to_que: CUR_IDX [ (CUR_LINE).substr(0, 20) ... ]");
 		CONVO_QUE_LINES.insertLast(CUR_LINE);
 		CONVO_QUE_DELAYS.insertLast(CUR_DELAY);
@@ -618,7 +634,7 @@ class BaseChatArray : CGameScript
 	void chat_clear_que()
 	{
 		LogDebug("chat_clear_que called from PARAM1");
-		CHAT_SPOOL_OUT_ALL_COUNT = /* TODO: $get_array_amt */ $get_array_amt(CONVO_QUE_LINES);
+		CHAT_SPOOL_OUT_ALL_COUNT = int(CONVO_QUE_LINES.length());
 		chat_clear_que_loop();
 	}
 
@@ -634,7 +650,7 @@ class BaseChatArray : CGameScript
 	void chat_cycle_que()
 	{
 		if (!(CHAT_QUE_ACTIVE)) return;
-		if (/* TODO: $get_array_amt */ $get_array_amt(CONVO_QUE_LINES) == 0)
+		if (int(CONVO_QUE_LINES.length()) == 0)
 		{
 			CHAT_BUSY = 0;
 			CHAT_QUE_ACTIVE = 0;
@@ -643,7 +659,7 @@ class BaseChatArray : CGameScript
 		}
 		else
 		{
-			string CUR_DELAY = /* TODO: $get_array */ $get_array(CONVO_QUE_DELAYS, 0);
+			string CUR_DELAY = CONVO_QUE_DELAYS[int(0)];
 			CHAT_END_TIME = GetGameTime();
 			CHAT_END_TIME += CUR_DELAY;
 			string L_CHAT_END_PLUS = CUR_DELAY;
@@ -655,32 +671,32 @@ class BaseChatArray : CGameScript
 			L_CHAT_END_PLUS("chat_cycle_que");
 		}
 		if ((EXIT_SUB)) return;
-		string CUR_DELAY = /* TODO: $get_array */ $get_array(CONVO_QUE_DELAYS, 0);
+		string CUR_DELAY = CONVO_QUE_DELAYS[int(0)];
 		CHAT_END_TIME = GetGameTime();
 		CHAT_END_TIME += CUR_DELAY;
 		if ((G_DEVELOPER_MODE))
 		{
-			string L_CUR_TEXT = /* TODO: $get_array */ $get_array(CONVO_QUE_LINES, 0);
-			string L_CUR_DELAY = /* TODO: $get_array */ $get_array(CONVO_QUE_DELAYS, 0);
-			string L_CUR_ANIM = /* TODO: $get_array */ $get_array(CONVO_QUE_ANIMS, 0);
-			string L_CUR_EVENT = /* TODO: $get_array */ $get_array(CONVO_QUE_EVENTS, 0);
-			string L_CUR_SOUND = /* TODO: $get_array */ $get_array(CONVO_QUE_SOUNDS, 0);
-			LogDebug("chat_cycle_que line# /* TODO: $get_array_amt */ $get_array_amt(CONVO_QUE_LINES) txt [ (L_CUR_TEXT).substr(0, 11) ] delay L_CUR_DELAY anim L_CUR_ANIM evnt L_CUR_EVENT snd L_CUR_SOUND");
+			string L_CUR_TEXT = CONVO_QUE_LINES[int(0)];
+			string L_CUR_DELAY = CONVO_QUE_DELAYS[int(0)];
+			string L_CUR_ANIM = CONVO_QUE_ANIMS[int(0)];
+			string L_CUR_EVENT = CONVO_QUE_EVENTS[int(0)];
+			string L_CUR_SOUND = CONVO_QUE_SOUNDS[int(0)];
+			LogDebug("chat_cycle_que line# int(CONVO_QUE_LINES.length()) txt [ (L_CUR_TEXT).substr(0, 11) ] delay L_CUR_DELAY anim L_CUR_ANIM evnt L_CUR_EVENT snd L_CUR_SOUND");
 		}
-		string CUR_LINE = /* TODO: $get_array */ $get_array(CONVO_QUE_LINES, 0);
+		string CUR_LINE = CONVO_QUE_LINES[int(0)];
 		string CUR_LEN = (CUR_LINE).length();
 		CUR_LEN += (GetMonsterProperty("name")).length();
 		CUR_LEN += 6;
 		if (CUR_LEN < CHAT_MAX_LINE_LEN)
 		{
-			SayText("CUR_LINE");
+			SayText(CUR_LINE);
 		}
 		else
 		{
-			SayText("[ERROR: LINE TOO LONG!] [ CHAT_LINES_ANAME int(CUR_LEN) / int(CHAT_MAX_LINE_LEN) ]");
+			SayText([ERROR: + LINE + TOO + LONG!] + "[ " + CHAT_LINES_ANAME + int(CUR_LEN) + "/ " + int(CHAT_MAX_LINE_LEN) + " ]");
 		}
 		CHAT_BUSY = 1;
-		string CUR_ANIM = /* TODO: $get_array */ $get_array(CONVO_QUE_ANIMS, 0);
+		string CUR_ANIM = CONVO_QUE_ANIMS[int(0)];
 		if (CUR_ANIM != "none")
 		{
 			if (CUR_ANIM != "no_convo")
@@ -695,12 +711,12 @@ class BaseChatArray : CGameScript
 			}
 			chat_convo_anim();
 		}
-		string CUR_SOUND = /* TODO: $get_array */ $get_array(CONVO_QUE_SOUNDS, 0);
+		string CUR_SOUND = CONVO_QUE_SOUNDS[int(0)];
 		if (CUR_SOUND != "none")
 		{
 			EmitSound(GetOwner(), 0, CUR_SOUND, 10);
 		}
-		string CUR_EVENT = /* TODO: $get_array */ $get_array(CONVO_QUE_EVENTS, 0);
+		string CUR_EVENT = CONVO_QUE_EVENTS[int(0)];
 		if (CUR_EVENT != "none")
 		{
 			LogDebug("calling chat_event CUR_EVENT");
@@ -765,7 +781,7 @@ class BaseChatArray : CGameScript
 		{
 			chat_find_speaker_id();
 		}
-		SendColoredMessage(CHAT_CURRENT_SPEAKER, "It would be polite to wait until GetEntityName(GetOwner()) has finished speaking.");
+		SendColoredMessage(CHAT_CURRENT_SPEAKER, "It would be polite to wait until " + GetEntityName(GetOwner()) + " has finished speaking.");
 	}
 
 }

@@ -22,7 +22,7 @@ class OrcforBase : CGameScript
 			ORCFOR_CHEST_FOUND = 1;
 			G_GAVE_ARTI1 += 1;
 		}
-		ARTI_CHANCE = /* TODO: $math(multiply) */ ARTI_CHANCE;
+		ARTI_CHANCE = (ARTI_CHANCE * G_GAVE_ARTI1);
 		tc_add_artifact("bows_sxbow", ARTI_CHANCE);
 	}
 

@@ -7,23 +7,35 @@ namespace MS
 
 class MagicHandFrostBolt : CGameScript
 {
+	int RANGED_ATK_DURATION;
+	int RANGED_COF;
+	float RANGED_DMG_DELAY;
+	int RANGED_FORCE;
+	string RANGED_PROJECTILE;
+	string SOUND_CHARGE;
+	string SOUND_SHOOT;
+	string SPELL_DAMAGE_TYPE;
+	int SPELL_ENERGYDRAIN;
+	int SPELL_MPDRAIN;
+	int SPELL_PREPARE_TIME;
 	int SPELL_SKILL_REQUIRED;
+	string SPELL_STAT;
 
 	MagicHandFrostBolt()
 	{
-		const string SOUND_CHARGE = "magic/lightprep.wav";
-		const string SOUND_SHOOT = "magic/ice_strike.wav";
-		const int RANGED_FORCE = 600;
-		const int RANGED_COF = 1;
-		const int RANGED_ATK_DURATION = 1;
-		const string RANGED_PROJECTILE = "proj_ice_bolt";
-		const float RANGED_DMG_DELAY = 0.25;
+		SOUND_CHARGE = "magic/lightprep.wav";
+		SOUND_SHOOT = "magic/ice_strike.wav";
+		RANGED_FORCE = 600;
+		RANGED_COF = 1;
+		RANGED_ATK_DURATION = 1;
+		RANGED_PROJECTILE = "proj_ice_bolt";
+		RANGED_DMG_DELAY = 0.25;
 		SPELL_SKILL_REQUIRED = 0;
-		const int SPELL_PREPARE_TIME = 1;
-		const string SPELL_DAMAGE_TYPE = "cold";
-		const int SPELL_ENERGYDRAIN = 10;
-		const int SPELL_MPDRAIN = 2;
-		const string SPELL_STAT = "spellcasting.ice";
+		SPELL_PREPARE_TIME = 1;
+		SPELL_DAMAGE_TYPE = "cold";
+		SPELL_ENERGYDRAIN = 10;
+		SPELL_MPDRAIN = 2;
+		SPELL_STAT = "spellcasting.ice";
 		Precache("items/magic_hand_base");
 	}
 

@@ -11,12 +11,22 @@ class MummyNecro : CGameScript
 	string ANIM_IDLE;
 	string ANIM_RUN;
 	string ANIM_WALK;
+	int ATTACK_HITCHANCE;
 	int ATTACK_HITRANGE;
 	int ATTACK_MOVERANGE;
 	int ATTACK_RANGE;
+	string ATTACK_TYPE;
+	int AURA_TYPE;
+	int DMG_AURA;
+	int DMG_STEELPIPE;
 	int FLINCH_DAMAGE_THRESHOLD;
 	float FLINCH_HEALTH_RATIO;
+	float FREQ_MUMMY_SUMMON;
+	int MUMMY_IS_NECRO;
+	string MUMMY_MELEE_DMG_TYPE;
+	int MUMMY_STARTING_LIVES;
 	float MUMMY_STUN_CHANCE;
+	string MUMMY_SUMMON_SCRIPT;
 	int NPC_GIVE_EXP;
 
 	MummyNecro()
@@ -31,17 +41,17 @@ class MummyNecro : CGameScript
 		ANIM_ATTACK = "steelpipe";
 		FLINCH_DAMAGE_THRESHOLD = 50;
 		FLINCH_HEALTH_RATIO = 0.75;
-		const int AURA_TYPE = 3;
-		const string ATTACK_TYPE = "melee";
-		const int ATTACK_HITCHANCE = 80;
-		const int DMG_STEELPIPE = 400;
-		const int MUMMY_STARTING_LIVES = 1;
-		const string MUMMY_MELEE_DMG_TYPE = "blunt";
-		const int MUMMY_IS_NECRO = 1;
+		AURA_TYPE = 3;
+		ATTACK_TYPE = "melee";
+		ATTACK_HITCHANCE = 80;
+		DMG_STEELPIPE = 400;
+		MUMMY_STARTING_LIVES = 1;
+		MUMMY_MELEE_DMG_TYPE = "blunt";
+		MUMMY_IS_NECRO = 1;
 		MUMMY_STUN_CHANCE = 0.2;
-		const int DMG_AURA = 100;
-		const float FREQ_MUMMY_SUMMON = 15.0;
-		const string MUMMY_SUMMON_SCRIPT = "monsters/wraith_summoned";
+		DMG_AURA = 100;
+		FREQ_MUMMY_SUMMON = 15.0;
+		MUMMY_SUMMON_SCRIPT = "monsters/wraith_summoned";
 	}
 
 	void game_precache()

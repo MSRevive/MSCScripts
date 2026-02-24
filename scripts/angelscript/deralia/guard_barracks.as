@@ -8,18 +8,20 @@ namespace MS
 
 class GuardBarracks : CGameScript
 {
+	int BG_ROAM;
+	float BG_SPEED;
 	int BUSY_TALKING_JOB;
 	string JOB_TARGET;
 	string MENU_MODE;
 	int NO_CHAT;
 	string QUEST_WIN;
-	string TALK;
+	int TALK;
 	int TOOK_JOB;
 
 	GuardBarracks()
 	{
-		const int BG_ROAM = 1;
-		const float BG_SPEED = 1.0;
+		BG_ROAM = 1;
+		BG_SPEED = 1.0;
 	}
 
 	void OnRepeatTimer()
@@ -62,7 +64,7 @@ class GuardBarracks : CGameScript
 	void respond1()
 	{
 		if (!(TALK == 1)) return;
-		SayText("I should ve joined the army...");
+		SayText(I + " should ve joined the army...");
 	}
 
 	void respond2()

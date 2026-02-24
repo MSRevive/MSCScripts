@@ -7,52 +7,93 @@ namespace MS
 
 class SwordsBastardsword : CGameScript
 {
+	int ANIM_ATTACK1;
+	int ANIM_ATTACK2;
+	int ANIM_ATTACK3;
+	int ANIM_IDLE1;
+	int ANIM_LIFT;
+	int ANIM_LUNGE;
+	int ANIM_PARRY1;
+	int ANIM_PARRY1_RETRACT;
+	string ANIM_PREFIX;
+	int ANIM_SHEATH;
+	int ANIM_UNSHEATH;
+	int BASE_LEVEL_REQ;
+	float MELEE_ACCURACY;
+	int MELEE_ALIGN_BASE;
+	int MELEE_ALIGN_TIP;
+	float MELEE_ATK_DURATION;
+	int MELEE_DMG;
+	float MELEE_DMG_DELAY;
+	int MELEE_DMG_RANGE;
+	string MELEE_DMG_TYPE;
+	int MELEE_ENERGY;
+	float MELEE_NEW_PARRY_CHANCE;
+	float MELEE_PARRY_CHANCE;
+	int MELEE_RANGE;
+	string MELEE_SOUND;
+	string MELEE_SOUND_DELAY;
+	string MELEE_STAT;
+	string MELEE_VIEWANIM_ATK;
+	int MODEL_BODY_OFS;
+	string MODEL_HANDS;
+	string MODEL_VIEW;
+	int MODEL_VIEW_IDX;
+	string MODEL_WORLD;
 	int PARRY_ON;
+	string PLAYERANIM_AIM;
+	string PLAYERANIM_SWING;
+	string SOUND_DRAW;
+	string SOUND_HITWALL1;
+	string SOUND_HITWALL2;
+	string SOUND_SHOUT;
+	string SOUND_SWIPE;
 	string SWING_ANIM;
+	int SWORD_MANUAL_PARRY;
 
 	SwordsBastardsword()
 	{
-		const int BASE_LEVEL_REQ = 12;
-		const int SWORD_MANUAL_PARRY = 1;
-		const int ANIM_LIFT = 0;
-		const int ANIM_IDLE1 = 1;
-		const int ANIM_ATTACK1 = 2;
-		const int ANIM_ATTACK2 = 2;
-		const int ANIM_ATTACK3 = 2;
-		const int ANIM_LUNGE = 3;
-		const int ANIM_PARRY1 = 4;
-		const int ANIM_PARRY1_RETRACT = 5;
-		const int ANIM_UNSHEATH = 6;
-		const int ANIM_SHEATH = 7;
-		const string MODEL_VIEW = "viewmodels/v_2hswords.mdl";
-		const int MODEL_VIEW_IDX = 1;
-		const string MODEL_HANDS = "weapons/p_weapons1.mdl";
-		const string MODEL_WORLD = "weapons/p_weapons1.mdl";
-		const int MODEL_BODY_OFS = 4;
-		const string SOUND_SWIPE = "weapons/swingsmall.wav";
-		const string SOUND_HITWALL1 = "weapons/cbar_hit1.wav";
-		const string SOUND_HITWALL2 = "weapons/cbar_hit2.wav";
-		const string SOUND_DRAW = "weapons/swords/sworddraw.wav";
-		const string SOUND_SHOUT = GetEntityProperty(GetOwner(), "scriptvar");
-		const string ANIM_PREFIX = "highsword";
-		const int MELEE_RANGE = 80;
-		const float MELEE_DMG_DELAY = 0.6;
-		const float MELEE_ATK_DURATION = 1.0;
-		const int MELEE_ENERGY = 2;
-		const int MELEE_DMG = 190;
-		const int MELEE_DMG_RANGE = 100;
-		const string MELEE_DMG_TYPE = "slash";
-		const float MELEE_ACCURACY = 0.65;
-		const string MELEE_STAT = "swordsmanship";
-		const int MELEE_ALIGN_BASE = 3;
-		const int MELEE_ALIGN_TIP = 0;
-		const string MELEE_VIEWANIM_ATK = ANIM_ATTACK1;
-		const string MELEE_SOUND = SOUND_SWIPE;
-		const string MELEE_SOUND_DELAY = MELEE_DMG_DELAY;
-		const float MELEE_PARRY_CHANCE = 0.3;
-		const float MELEE_NEW_PARRY_CHANCE = 0.3;
-		const string PLAYERANIM_AIM = "sword_double_idle";
-		const string PLAYERANIM_SWING = "sword_double_swing";
+		BASE_LEVEL_REQ = 12;
+		SWORD_MANUAL_PARRY = 1;
+		ANIM_LIFT = 0;
+		ANIM_IDLE1 = 1;
+		ANIM_ATTACK1 = 2;
+		ANIM_ATTACK2 = 2;
+		ANIM_ATTACK3 = 2;
+		ANIM_LUNGE = 3;
+		ANIM_PARRY1 = 4;
+		ANIM_PARRY1_RETRACT = 5;
+		ANIM_UNSHEATH = 6;
+		ANIM_SHEATH = 7;
+		MODEL_VIEW = "viewmodels/v_2hswords.mdl";
+		MODEL_VIEW_IDX = 1;
+		MODEL_HANDS = "weapons/p_weapons1.mdl";
+		MODEL_WORLD = "weapons/p_weapons1.mdl";
+		MODEL_BODY_OFS = 4;
+		SOUND_SWIPE = "weapons/swingsmall.wav";
+		SOUND_HITWALL1 = "weapons/cbar_hit1.wav";
+		SOUND_HITWALL2 = "weapons/cbar_hit2.wav";
+		SOUND_DRAW = "weapons/swords/sworddraw.wav";
+		SOUND_SHOUT = GetEntityProperty(GetOwner(), "scriptvar");
+		ANIM_PREFIX = "highsword";
+		MELEE_RANGE = 80;
+		MELEE_DMG_DELAY = 0.6;
+		MELEE_ATK_DURATION = 1.0;
+		MELEE_ENERGY = 2;
+		MELEE_DMG = 190;
+		MELEE_DMG_RANGE = 100;
+		MELEE_DMG_TYPE = "slash";
+		MELEE_ACCURACY = 0.65;
+		MELEE_STAT = "swordsmanship";
+		MELEE_ALIGN_BASE = 3;
+		MELEE_ALIGN_TIP = 0;
+		MELEE_VIEWANIM_ATK = ANIM_ATTACK1;
+		MELEE_SOUND = SOUND_SWIPE;
+		MELEE_SOUND_DELAY = MELEE_DMG_DELAY;
+		MELEE_PARRY_CHANCE = 0.3;
+		MELEE_NEW_PARRY_CHANCE = 0.3;
+		PLAYERANIM_AIM = "sword_double_idle";
+		PLAYERANIM_SWING = "sword_double_swing";
 	}
 
 	void weapon_spawn()
@@ -68,7 +109,7 @@ class SwordsBastardsword : CGameScript
 
 	void melee_start()
 	{
-		string SWING = RandomInt(1, 3);
+		int SWING = RandomInt(1, 3);
 		if (SWING == 1)
 		{
 			SWING_ANIM = ANIM_ATTACK1;

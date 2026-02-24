@@ -6,13 +6,14 @@ namespace MS
 class SummonIceWall : CGameScript
 {
 	string ANIM_DEATH;
+	int CANT_TURN;
 	int CAN_ATTACK;
 	int CAN_HUNT;
 	string SCANNING;
-	string f1;
-	string f2;
-	string r1;
-	string r2;
+	int f1;
+	int f2;
+	int r1;
+	int r2;
 	string rotate;
 
 	SummonIceWall()
@@ -21,7 +22,7 @@ class SummonIceWall : CGameScript
 		ANIM_DEATH = "";
 		CAN_ATTACK = 0;
 		CAN_HUNT = 0;
-		const int CANT_TURN = 1;
+		CANT_TURN = 1;
 		SetCallback("touch", "enable");
 	}
 

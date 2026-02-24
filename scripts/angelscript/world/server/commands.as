@@ -9,33 +9,41 @@ class Commands : CGameScript
 {
 	int CAN_VOTE;
 	string CREST_SELECTION;
+	float FREQ_WEATHER;
 	int HIGH_IDX;
 	int HIGH_SCORE;
 	int LEADING_GUILDS;
+	string LTNG_SND;
 	string POINTS_NLIST;
 	string POINTS_PLIST;
 	string POINTS_TNLIST;
 	string POINTS_TPLIST;
 	string RESIST_NAMES;
 	string RESIST_VALUES;
+	string SCRIPT_SFX1;
+	string SOUND_RAIN;
+	string SPRITE_MIST;
+	string SPRITE_RIPPLE;
+	string SPRITE_SPLASH;
 	string TEST_PLR;
 	int TIMESET_DELAY;
 	string TIP_TEXT;
 	int WEATHERSET_DELAY;
-	string l.daystart.secs;
+	string WEATHER_SPRITE;
+	int l.daystart.secs;
 
 	Commands()
 	{
 		TIMESET_DELAY = 0;
 		WEATHERSET_DELAY = 0;
-		const float FREQ_WEATHER = 10.0;
-		const string WEATHER_SPRITE = "rain.spr";
-		const string SPRITE_SPLASH = "rain_splash.spr";
-		const string SPRITE_MIST = "rain_mist.spr";
-		const string SPRITE_RIPPLE = "rain_ripple.spr";
-		const string SOUND_RAIN = "weather/rain.wav";
-		const string SCRIPT_SFX1 = "effects/sfx_lightning";
-		const string LTNG_SND = "weather/Storm_exclamation.wav";
+		FREQ_WEATHER = 10.0;
+		WEATHER_SPRITE = "rain.spr";
+		SPRITE_SPLASH = "rain_splash.spr";
+		SPRITE_MIST = "rain_mist.spr";
+		SPRITE_RIPPLE = "rain_ripple.spr";
+		SOUND_RAIN = "weather/rain.wav";
+		SCRIPT_SFX1 = "effects/sfx_lightning";
+		LTNG_SND = "weather/Storm_exclamation.wav";
 		Precache(SCRIPT_SFX1);
 		Precache(LTNG_SND);
 		Precache(WEATHER_SPRITE);
@@ -135,7 +143,7 @@ class Commands : CGameScript
 					string PET_TYPES = GetPlayerQuestData("ent_currentplayer", "pets");
 					if (PET_TYPES == 0)
 					{
-						LogMessage("ent_currentplayer PETNAME: You have no pets.");
+						LogMessage("ent_currentplayer " + PETNAME: + " You have no pets.");
 						int EXIT_SUB = 1;
 					}
 					if (!(EXIT_SUB))
@@ -143,11 +151,11 @@ class Commands : CGameScript
 					}
 					if ((param2).findFirst("PARAM") == 0)
 					{
-						LogMessage("ent_currentplayer PETNAME: Usage1: petname < name>");
-						LogMessage("ent_currentplayer PETNAME: Usage2: petname < pet_type> < name>");
-						LogMessage("ent_currentplayer PETNAME: Available Pet Types: PET_TYPES");
-						LogMessage("ent_currentplayer PETNAME: - Use alphanumerics only!");
-						LogMessage("ent_currentplayer PETNAME: - If desired name requires spaces , use /* TODO: $quote */ $quote("quotes")");
+						LogMessage("ent_currentplayer " + PETNAME: + " Usage1: petname < name>");
+						LogMessage("ent_currentplayer " + PETNAME: + " Usage2: petname < pet_type> < name>");
+						LogMessage("ent_currentplayer " + PETNAME: + "Available Pet Types: " + PET_TYPES);
+						LogMessage("ent_currentplayer " + PETNAME: + " - Use alphanumerics only!");
+						LogMessage("ent_currentplayer " + PETNAME: + "- If desired name requires spaces , use " + /* TODO: $quote */ $quote("quotes"));
 						int EXIT_SUB = 1;
 					}
 					if (!(EXIT_SUB))
@@ -169,8 +177,8 @@ class Commands : CGameScript
 					}
 					if (!(L_TYPE_VALID))
 					{
-						LogMessage("ent_currentplayer PETNAME: You have no pets of this type. PET_TYPE_TO_NAME");
-						LogMessage("ent_currentplayer PETNAME: Available Pet Types: PET_TYPES");
+						LogMessage("ent_currentplayer " + PETNAME: + "You have no pets of this type. " + PET_TYPE_TO_NAME);
+						LogMessage("ent_currentplayer " + PETNAME: + "Available Pet Types: " + PET_TYPES);
 						int EXIT_SUB = 1;
 					}
 					if (!(EXIT_SUB))
@@ -190,7 +198,7 @@ class Commands : CGameScript
 					}
 					if ((L_INVALID_NAME))
 					{
-						LogMessage("ent_currentplayer PETNAME: Inavalid name - alphanumerics and spaces only , please");
+						LogMessage("ent_currentplayer " + PETNAME: + " Inavalid name - alphanumerics and spaces only , please");
 					}
 					if (!(L_INVALID_NAME))
 					{
@@ -198,7 +206,7 @@ class Commands : CGameScript
 					string Q_NAME = PET_TYPE_TO_NAME;
 					Q_NAME += "_name";
 					SetPlayerQuestData("ent_currentplayer", Q_NAME);
-					LogMessage("ent_currentplayer PETNAME: PET_TYPE_TO_NAME new name is: L_NEW_NAME");
+					LogMessage("ent_currentplayer " + PETNAME: + PET_TYPE_TO_NAME + "new name is: " + L_NEW_NAME);
 					CallExternal("all", "ext_companion_update_name");
 				}
 				else
@@ -221,16 +229,16 @@ class Commands : CGameScript
 							{
 								string MY_NAME = GetEntityName("ent_currentplayer");
 								MY_NAME += " Flips a Gold Piece";
-								string DIE_ROLL = RandomInt(1, 2);
+								int DIE_ROLL = RandomInt(1, 2);
 								if (DIE_ROLL == 1)
 								{
-									SendInfoMsg("all", "MY_NAME It comes up HEADS");
-									LogMessage("ent_currentplayer Your coin comes up HEADS");
+									SendInfoMsg("all", MY_NAME + " It comes up HEADS");
+									LogMessage("ent_currentplayer Your coin comes up " + HEADS);
 								}
 								if (DIE_ROLL == 2)
 								{
-									SendInfoMsg("all", "MY_NAME It comes up TAILS");
-									LogMessage("ent_currentplayer Your coin comes up TAILS");
+									SendInfoMsg("all", MY_NAME + " It comes up TAILS");
+									LogMessage("ent_currentplayer Your coin comes up " + TAILS);
 								}
 							}
 							else
@@ -310,8 +318,8 @@ class Commands : CGameScript
 														{
 															if (param1 == "time")
 															{
-																LogMessage("ent_currentplayer == TIME: CURRENT_TIME ==");
-																SendPlayerMessage("ent_currentplayer", "== TIME: CURRENT_TIME ==");
+																LogMessage("ent_currentplayer == " + TIME: + CURRENT_TIME + " ==");
+																SendPlayerMessage("ent_currentplayer", "== " + TIME: + CURRENT_TIME + " ==");
 																if ((G_DEVELOPER_MODE))
 																{
 																	int L_DO_FN_TIME = 1;
@@ -338,7 +346,7 @@ class Commands : CGameScript
 																L_OUT_MSG += ":";
 																L_OUT_MSG += L_MIN;
 																L_OUT_MSG += ")";
-																LogMessage("ent_currentplayer L_OUT_MSG");
+																LogMessage("ent_currentplayer " + L_OUT_MSG);
 															}
 															else
 															{
@@ -348,18 +356,18 @@ class Commands : CGameScript
 																	string P_X = (P_LOC).x;
 																	string P_Y = (P_LOC).y;
 																	string P_TZ = (P_LOC).z;
-																	string P_TZ = int(P_TZ);
+																	int P_TZ = int(P_TZ);
 																	string P_Z = /* TODO: $get_ground_height */ $get_ground_height(P_LOC);
 																	string P_ANG = GetEntityAngles("ent_currentplayer");
 																	string P_PITCH = /* TODO: $vec.pitch */ $vec.pitch(P_ANG);
 																	string P_YAW = /* TODO: $vec.yaw */ $vec.yaw(P_ANG);
 																	string P_ROLL = /* TODO: $vec.roll */ $vec.roll(P_ANG);
-																	string P_X = int(P_X);
-																	string P_Y = int(P_Y);
-																	string P_Z = int(P_Z);
-																	string P_PITCH = int(P_PITCH);
-																	string P_YAW = int(P_YAW);
-																	string P_ROLL = int(P_ROLL);
+																	int P_X = int(P_X);
+																	int P_Y = int(P_Y);
+																	int P_Z = int(P_Z);
+																	int P_PITCH = int(P_PITCH);
+																	int P_YAW = int(P_YAW);
+																	int P_ROLL = int(P_ROLL);
 																	LogMessage("ent_currentplayer Floor: P_X P_Y P_Z Center: P_X P_Y P_TZ angles: P_PITCH P_YAW P_ROLL");
 																	SendPlayerMessage("ent_currentplayer", "Floor: P_X P_Y P_Z Center: P_X P_Y P_TZ angles: P_PITCH P_YAW P_ROLL");
 																}
@@ -486,7 +494,7 @@ class Commands : CGameScript
 				else
 				{
 					WARNED_DRIDJE = 0;
-					LogMessage("ent_currentplayer I said... ONE at a TIME.");
+					LogMessage("ent_currentplayer " + I + "said... " + ONE + "at a " + TIME.);
 					XDoDamage("ent_currentplayer", "direct", 42069, 100, GAME_MASTER, GAME_MASTER, "none", "apostle_effect");
 					return;
 				}
@@ -501,7 +509,7 @@ class Commands : CGameScript
 		{
 			if (param1 == "msversion")
 			{
-				LogMessage("ent_currentplayer MS.DLL reports version game.revision central game.central");
+				LogMessage("ent_currentplayer " + MS.DLL + " reports version game.revision central game.central");
 			}
 		}
 		if (param1 == "gimmecrest")
@@ -549,8 +557,8 @@ class Commands : CGameScript
 
 	void give_timestamp()
 	{
-		LogMessage("ent_currentplayer SC.DLL date BETA_TIMESTAMP MS.DLL version game.revision");
-		SendPlayerMessage("ent_currentplayer", "SC.DLL timestamp is BETA_TIMESTAMP MS.DLL version game.revision");
+		LogMessage("ent_currentplayer " + SC.DLL + "date " + BETA_TIMESTAMP + MS.DLL + " version game.revision");
+		SendPlayerMessage("ent_currentplayer", SC.DLL + "timestamp is " + BETA_TIMESTAMP + MS.DLL + " version game.revision");
 	}
 
 	void set_time()
@@ -560,9 +568,9 @@ class Commands : CGameScript
 		PARAM2 %= 60;
 		time_getseconds();
 		string local.mstime.secs = "global.mstime.secs";
-		string l.secs = int(param1);
+		int l.secs = int(param1);
 		l.secs *= 3600;
-		string l.mins_to_secs = int(param2);
+		int l.mins_to_secs = int(param2);
 		l.mins_to_secs *= 60;
 		l.secs += l.mins_to_secs;
 		string l.daystart.secs = "global.mstime.secs";
@@ -588,11 +596,11 @@ class Commands : CGameScript
 		MY_NAME += " Rolls a ";
 		MY_NAME += N_SIDES;
 		MY_NAME += " Sided Die!";
-		string DIE_ROLL = RandomInt(1, N_SIDES);
+		int DIE_ROLL = RandomInt(1, N_SIDES);
 		string MSG_STRING = "It comes up ";
 		MSG_STRING += DIE_ROLL;
-		SendInfoMsg("all", "MY_NAME MSG_STRING");
-		LogMessage("ent_currentplayer You rolled DIE_ROLL on your N_SIDES sided die.");
+		SendInfoMsg("all", MY_NAME + MSG_STRING);
+		LogMessage("ent_currentplayer You rolled " + DIE_ROLL + "on your " + N_SIDES + " sided die.");
 	}
 
 	void check_can_vote()
@@ -600,8 +608,8 @@ class Commands : CGameScript
 		string VOTE_DELAY = GetEntityProperty(param1, "scriptvar");
 		if ((VOTE_DELAY))
 		{
-			SendColoredMessage(param1, "VOTE SYSTEM: You cannot start another vote so soon.");
-			LogMessage("PARAM1 You cannot start another vote so soon.");
+			SendColoredMessage(param1, VOTE + SYSTEM: + " You cannot start another vote so soon.");
+			LogMessage(param1 + " You cannot start another vote so soon.");
 			int EXIT_SUB = 1;
 		}
 		if ((EXIT_SUB)) return;
@@ -659,8 +667,8 @@ class Commands : CGameScript
 		CUR_P *= 1000;
 		string OUT_MSG = CUR_N;
 		OUT_MSG = " has" + int(CUR_P) + "damage" + "points";
-		LogMessage("CALLING_PLAYER OUT_MSG");
-		SendColoredMessage(CALLING_PLAYER, "OUT_MSG");
+		LogMessage(CALLING_PLAYER + OUT_MSG);
+		SendColoredMessage(CALLING_PLAYER, OUT_MSG);
 		TIP_TEXT = OUT_MSG + "|";
 	}
 
@@ -679,15 +687,15 @@ class Commands : CGameScript
 		{
 			loop_sort_points();
 		}
-		LogMessage("CALLING_PLAYER Damage Point Listings:");
+		LogMessage(CALLING_PLAYER + " Damage Point Listings:");
 		SendColoredMessage(CALLING_PLAYER, "Damage Point Listings:");
 		TIP_TEXT = "";
 		for (int i = 0; i < GetTokenCount(POINTS_NLIST, ";"); i++)
 		{
 			loop_show_points();
 		}
-		LogMessage("CALLING_PLAYER Damage points are acquire by harming monsters and aiding allies");
-		LogMessage("CALLING_PLAYER The player with the highest dmg point score has contributed the most to your victory");
+		LogMessage(CALLING_PLAYER + " Damage points are acquire by harming monsters and aiding allies");
+		LogMessage(CALLING_PLAYER + " The player with the highest dmg point score has contributed the most to your victory");
 		ShowHelpTip(CALLING_PLAYER, "generic", "Damage Point Listings", TIP_TEXT);
 	}
 
@@ -695,7 +703,7 @@ class Commands : CGameScript
 	{
 		RESIST_NAMES = GetEntityProperty(CALLING_PLAYER, "scriptvar");
 		RESIST_VALUES = GetEntityProperty(CALLING_PLAYER, "scriptvar");
-		LogMessage("CALLING_PLAYER Resistance ratios (lower = more resistant, 1.0 = normal, 0.0 = immune)");
+		LogMessage(CALLING_PLAYER + " Resistance ratios (lower = more resistant, 1.0 = normal, 0.0 = immune)");
 		TIP_TEXT = "";
 		for (int i = 0; i < GetTokenCount(RESIST_NAMES, ";"); i++)
 		{
@@ -703,7 +711,7 @@ class Commands : CGameScript
 		}
 		string STUN_VALUE = /* TODO: $get_takedmg */ $get_takedmg(CALLING_PLAYER, "stun");
 		STUN_VALUE *= 100;
-		string STUN_VALUE = int(/* TODO: $math(subtract) */ 100);
+		int STUN_VALUE = int((100 - STUN_VALUE));
 		STUN_VALUE += "%";
 		TIP_TEXT = "Stun" + "=" + STUN_VALUE + "||";
 		string DARK_LEVEL = GetEntityProperty(CALLING_PLAYER, "scriptvar");
@@ -714,19 +722,19 @@ class Commands : CGameScript
 	void list_resist_loop()
 	{
 		string CUR_IDX = i;
-		LogMessage("CALLING_PLAYER GetToken(RESIST_NAMES, CUR_IDX, ";") = GetToken(RESIST_VALUES, CUR_IDX, ";")");
+		LogMessage(CALLING_PLAYER + GetToken(RESIST_NAMES, CUR_IDX, ";") + "= " + GetToken(RESIST_VALUES, CUR_IDX, ";"));
 		string RESIST_VAL = GetToken(RESIST_VALUES, CUR_IDX, ";");
 		RESIST_VAL *= 100;
 		int OUT_VAL = 100;
 		OUT_VAL -= RESIST_VAL;
-		string OUT_VAL = int(OUT_VAL);
+		int OUT_VAL = int(OUT_VAL);
 		OUT_VAL += "%";
 		TIP_TEXT = GetToken(RESIST_NAMES, CUR_IDX, ";") + "=" + OUT_VAL + "|";
 	}
 
 	void do_crest()
 	{
-		CREST_SELECTION = /* TODO: $func */ $func("func_guilds_leading", GetEntityIndex(param1));
+		CREST_SELECTION = "func_guilds_leading"(GetEntityIndex(param1));
 		if (CREST_SELECTION != "0")
 		{
 			SpawnNPC("crest_dealer", Vector3(10000, 10000, 10000), ScriptMode::Legacy); // params: GetEntityIndex(param1), CREST_SELECTION
@@ -737,7 +745,7 @@ class Commands : CGameScript
 	{
 		LEADING_GUILDS = 0;
 		string L_STEAM_ID = GetPlayerAuthId(param1);
-		for (int i = 0; i < /* TODO: $g_get_array_amt */ $g_get_array_amt(ARRAY_CRESTS); i++)
+		for (int i = 0; i < GetGlobalArrayLength(ARRAY_CRESTS); i++)
 		{
 			loop_guilds_leading(L_STEAM_ID);
 		}
@@ -747,17 +755,17 @@ class Commands : CGameScript
 
 	void loop_guilds_leading()
 	{
-		string L_LEADERS = /* TODO: $g_get_array */ $g_get_array(ARRAY_CREST_OWNERS, i);
+		string L_LEADERS = GetGlobalArray(ARRAY_CREST_OWNERS, int(i));
 		if ((L_LEADERS).findFirst(param1) >= 0)
 		{
 			if (LEADING_GUILDS == "0")
 			{
-				LEADING_GUILDS = /* TODO: $g_get_array */ $g_get_array(ARRAY_CRESTS, i);
+				LEADING_GUILDS = GetGlobalArray(ARRAY_CRESTS, int(i));
 			}
 			else
 			{
 				if (LEADING_GUILDS.length() > 0) LEADING_GUILDS += ";";
-				LEADING_GUILDS += /* TODO: $g_get_array */ $g_get_array(ARRAY_CRESTS, i);
+				LEADING_GUILDS += GetGlobalArray(ARRAY_CRESTS, int(i));
 			}
 		}
 	}

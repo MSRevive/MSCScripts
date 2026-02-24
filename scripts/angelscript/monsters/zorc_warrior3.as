@@ -9,6 +9,9 @@ namespace MS
 class ZorcWarrior3 : CGameScript
 {
 	string ANIM_ATTACK;
+	float ATTACK_ACCURACY;
+	int ATTACK_DMG_HIGH;
+	int ATTACK_DMG_LOW;
 	float BASE_FRAMERATE;
 	int BO_ZOMBIE_MODE;
 	int DROP_GOLD;
@@ -21,9 +24,9 @@ class ZorcWarrior3 : CGameScript
 		DROP_GOLD_AMT = 75;
 		NPC_GIVE_EXP = 600;
 		ANIM_ATTACK = "battleaxe_swing1_L";
-		const float ATTACK_ACCURACY = 0.8;
-		const int ATTACK_DMG_LOW = 200;
-		const int ATTACK_DMG_HIGH = 500;
+		ATTACK_ACCURACY = 0.8;
+		ATTACK_DMG_LOW = 200;
+		ATTACK_DMG_HIGH = 500;
 		BO_ZOMBIE_MODE = 1;
 	}
 

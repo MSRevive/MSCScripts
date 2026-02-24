@@ -11,9 +11,13 @@ class MummyWarrior2 : CGameScript
 	string ANIM_IDLE;
 	string ANIM_RUN;
 	string ANIM_WALK;
+	int ATTACK_HITCHANCE;
+	string ATTACK_TYPE;
 	float BASE_MOVESPEED;
+	int DMG_SLASH;
 	int MUMMY_DMG_STEELPIPE;
 	string MUMMY_MELEE_DMG_TYPE_FINAL;
+	int MUMMY_STARTING_LIVES;
 	float MUMMY_STUN_CHANCE;
 	int NPC_GIVE_EXP;
 
@@ -23,10 +27,10 @@ class MummyWarrior2 : CGameScript
 		ANIM_RUN = "walk2";
 		ANIM_IDLE = "idle1";
 		ANIM_ATTACK = "steelpipe";
-		const string ATTACK_TYPE = "melee";
-		const int DMG_SLASH = 400;
-		const int MUMMY_STARTING_LIVES = 1;
-		const int ATTACK_HITCHANCE = 90;
+		ATTACK_TYPE = "melee";
+		DMG_SLASH = 400;
+		MUMMY_STARTING_LIVES = 1;
+		ATTACK_HITCHANCE = 90;
 	}
 
 	void mummy_spawn()
@@ -36,7 +40,7 @@ class MummyWarrior2 : CGameScript
 		SetDamageResistance("holy", 1.0);
 		if (!(MUMMY_WEAPON_OVERRIDE))
 		{
-			string RND_WEAPON = RandomInt(1, 3);
+			int RND_WEAPON = RandomInt(1, 3);
 		}
 		else
 		{

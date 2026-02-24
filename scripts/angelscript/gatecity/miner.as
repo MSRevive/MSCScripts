@@ -32,17 +32,17 @@ class Miner : CGameScript
 
 	void say_hi()
 	{
-		SayText("Hail , Adventurer. I hope the [underkeep] would open soon.");
+		SayText("Hail , Adventurer. " + I + " hope the [underkeep] would open soon.");
 	}
 
 	void say_job()
 	{
-		SayText("You too? I need to find work as well.");
+		SayText("You too? " + I + " need to find work as well.");
 	}
 
 	void say_rumor()
 	{
-		SayText("A miner friend of mine says undead creatures lie below the city.");
+		SayText(A + " miner friend of mine says undead creatures lie below the city.");
 	}
 
 	void say_undermountains()

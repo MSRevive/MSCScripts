@@ -5,9 +5,11 @@ namespace MS
 
 class SorcImageFinal : CGameScript
 {
+	string SOUND_TELE;
+
 	SorcImageFinal()
 	{
-		const string SOUND_TELE = "magic/teleport.wav";
+		SOUND_TELE = "magic/teleport.wav";
 	}
 
 	void OnSpawn() override
@@ -29,7 +31,7 @@ class SorcImageFinal : CGameScript
 
 	void say_hi()
 	{
-		SayText("I got something you want , human?");
+		SayText(I + " got something you want , human?");
 		OpenMenu(GetEntityIndex("ent_lastspoke"));
 	}
 
@@ -50,7 +52,7 @@ class SorcImageFinal : CGameScript
 
 	void say_sword2()
 	{
-		SayText("Worry not , I have a spare back at the Palace... A couple spares , actually.");
+		SayText("Worry not , " + I + "have a spare back at the Palace... " + A + " couple spares , actually.");
 		ScheduleDelayedEvent(4.0, "say_sword3");
 	}
 
@@ -74,7 +76,7 @@ class SorcImageFinal : CGameScript
 
 	void say_sword5()
 	{
-		SayText("That having been said , I must leave before this citidel comes crashing down - I suggest you do the same.");
+		SayText("That having been said , " + I + "must leave before this citidel comes crashing down - " + I + " suggest you do the same.");
 		ScheduleDelayedEvent(4.0, "tele_out");
 	}
 

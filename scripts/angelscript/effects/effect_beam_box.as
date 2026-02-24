@@ -6,9 +6,15 @@ namespace MS
 class EffectBeamBox : CGameScript
 {
 	string BEAM_TIME;
+	int BOX_AMPLITUDE;
+	int BOX_BRIGHTNESS;
+	string BOX_COLOR;
+	int BOX_FRAMRATE;
 	string BOX_HALF_SIZE;
 	string BOX_ORIGIN;
 	string BOX_SIZE;
+	string BOX_SPRITE;
+	int BOX_WIDTH;
 	string POINT_10_1;
 	string POINT_10_2;
 	string POINT_11_1;
@@ -37,18 +43,18 @@ class EffectBeamBox : CGameScript
 
 	EffectBeamBox()
 	{
-		const string BOX_COLOR = /* TODO: $clcol */ $clcol(186, 85, 211);
-		const int BOX_WIDTH = 1;
-		const int BOX_AMPLITUDE = 0;
-		const int BOX_FRAMRATE = 0;
-		const int BOX_BRIGHTNESS = 1;
-		const string BOX_SPRITE = "rain.spr";
+		BOX_COLOR = /* TODO: $clcol */ $clcol(186, 85, 211);
+		BOX_WIDTH = 1;
+		BOX_AMPLITUDE = 0;
+		BOX_FRAMRATE = 0;
+		BOX_BRIGHTNESS = 1;
+		BOX_SPRITE = "rain.spr";
 	}
 
 	void client_activate()
 	{
 		BOX_ORIGIN = param1;
-		BOX_SIZE = /* TODO: $math(multiply) */ param2;
+		BOX_SIZE = (param2 * 2);
 		BOX_HALF_SIZE = param2;
 		if ((param3).findFirst("PARAM") == 0)
 		{

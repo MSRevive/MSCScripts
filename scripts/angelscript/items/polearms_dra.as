@@ -7,44 +7,76 @@ namespace MS
 
 class PolearmsDra : CGameScript
 {
+	int BASE_LEVEL_REQ;
+	int FIRE_BURST_MP;
 	int FREEZE_COUNT;
 	string FREEZE_TARGS;
 	string ICE_WAVE_YAW;
+	int MELEE_DMG;
+	string MELEE_DMG_TYPE;
+	int MELEE_RANGE;
+	string PMODEL_FILE;
+	int PMODEL_IDX_FLOOR;
+	int PMODEL_IDX_HANDS;
+	float POLE_BACKHAND_ACCURACY;
+	int POLE_BACKHAND_DMG;
+	int POLE_BACKHAND_DMG_RANGE;
+	string POLE_BACKHAND_DMG_TYPE;
+	int POLE_BACKHAND_RANGE;
+	int POLE_BACKHAND_REPEL;
+	int POLE_BACKHAND_STUN;
+	float POLE_BACKHAND_STUN_CHANCE;
+	int POLE_CAN_BACKHAND;
+	int POLE_CAN_BLOCK;
+	int POLE_CAN_POKE1;
+	int POLE_CAN_POKE2;
+	int POLE_CAN_POWER_THROW;
+	int POLE_CAN_REPEL;
+	int POLE_CAN_SPIN;
+	int POLE_CAN_SWIPE;
+	float POLE_MAX_DMG_MULTI;
+	float POLE_MIN_DMG_MULTI;
+	int POLE_MIN_RANGE;
+	int POLE_POKE1_ENHANCED;
+	string POLE_THOW_PROJECTILE;
+	int POLE_THROW_MP;
+	int POLE_THROW_POWER;
+	int VMODEL_IDX;
 
 	PolearmsDra()
 	{
-		const int BASE_LEVEL_REQ = 15;
-		const int FIRE_BURST_MP = 25;
-		const int VMODEL_IDX = 12;
-		const string PMODEL_FILE = "weapons/p_weapons4.mdl";
-		const int PMODEL_IDX_FLOOR = 21;
-		const int PMODEL_IDX_HANDS = 20;
-		const int MELEE_DMG = 210;
-		const int MELEE_RANGE = 110;
-		const string MELEE_DMG_TYPE = "fire";
-		const int POLE_MIN_RANGE = 60;
-		const float POLE_MIN_DMG_MULTI = 0.5;
-		const float POLE_MAX_DMG_MULTI = 1.75;
-		const int POLE_CAN_POKE1 = 1;
-		const int POLE_CAN_POKE2 = 1;
-		const int POLE_CAN_SWIPE = 0;
-		const int POLE_CAN_BLOCK = 1;
-		const int POLE_CAN_SPIN = 0;
-		const int POLE_CAN_REPEL = 1;
-		const int POLE_CAN_BACKHAND = 1;
-		const int POLE_BACKHAND_DMG = 300;
-		const int POLE_BACKHAND_DMG_RANGE = 10;
-		const string POLE_BACKHAND_DMG_TYPE = "blunt";
-		const int POLE_BACKHAND_RANGE = 40;
-		const float POLE_BACKHAND_ACCURACY = 0.9;
-		const int POLE_BACKHAND_REPEL = 400;
-		const int POLE_BACKHAND_STUN = 1;
-		const float POLE_BACKHAND_STUN_CHANCE = 0.9;
-		const int POLE_CAN_POWER_THROW = 1;
-		const int POLE_THROW_MP = 0;
-		const int POLE_THROW_POWER = 1000;
-		const string POLE_THOW_PROJECTILE = "proj_pole_dra";
-		const int POLE_POKE1_ENHANCED = 1;
+		BASE_LEVEL_REQ = 15;
+		FIRE_BURST_MP = 25;
+		VMODEL_IDX = 12;
+		PMODEL_FILE = "weapons/p_weapons4.mdl";
+		PMODEL_IDX_FLOOR = 21;
+		PMODEL_IDX_HANDS = 20;
+		MELEE_DMG = 210;
+		MELEE_RANGE = 110;
+		MELEE_DMG_TYPE = "fire";
+		POLE_MIN_RANGE = 60;
+		POLE_MIN_DMG_MULTI = 0.5;
+		POLE_MAX_DMG_MULTI = 1.75;
+		POLE_CAN_POKE1 = 1;
+		POLE_CAN_POKE2 = 1;
+		POLE_CAN_SWIPE = 0;
+		POLE_CAN_BLOCK = 1;
+		POLE_CAN_SPIN = 0;
+		POLE_CAN_REPEL = 1;
+		POLE_CAN_BACKHAND = 1;
+		POLE_BACKHAND_DMG = 300;
+		POLE_BACKHAND_DMG_RANGE = 10;
+		POLE_BACKHAND_DMG_TYPE = "blunt";
+		POLE_BACKHAND_RANGE = 40;
+		POLE_BACKHAND_ACCURACY = 0.9;
+		POLE_BACKHAND_REPEL = 400;
+		POLE_BACKHAND_STUN = 1;
+		POLE_BACKHAND_STUN_CHANCE = 0.9;
+		POLE_CAN_POWER_THROW = 1;
+		POLE_THROW_MP = 0;
+		POLE_THROW_POWER = 1000;
+		POLE_THOW_PROJECTILE = "proj_pole_dra";
+		POLE_POKE1_ENHANCED = 1;
 	}
 
 	void polearm_spawn()

@@ -16,21 +16,27 @@ class SfxFissure : CGameScript
 	string FISSURE_YAW;
 	int FLIP_SPRITE;
 	int FX_ACTIVE;
+	float LEFT_ADJ_LARGE;
+	float LEFT_ADJ_SMALL;
 	string NO_FIRE;
 	string NO_ROCKS;
 	string ORG_FISSURE_START;
+	float RIGHT_ADJ_LARGE;
+	float RIGHT_ADJ_SMALL;
 	string ROCK_BODY;
 	string ROCK_SCALE;
 	string ROCK_VELOCITY;
+	float SCALE_ROCK_LARGE;
+	float SCALE_ROCK_SMALL;
 
 	SfxFissure()
 	{
-		const string SCALE_ROCK_LARGE = Random(5.5, 7.5);
-		const string RIGHT_ADJ_LARGE = Random(20, 22);
-		const string LEFT_ADJ_LARGE = Random(-20, -22);
-		const string SCALE_ROCK_SMALL = Random(5.5, 7.5);
-		const string RIGHT_ADJ_SMALL = Random(35, 50);
-		const string LEFT_ADJ_SMALL = Random(-35, -50);
+		SCALE_ROCK_LARGE = Random(5.5, 7.5);
+		RIGHT_ADJ_LARGE = Random(20, 22);
+		LEFT_ADJ_LARGE = Random(-20, -22);
+		SCALE_ROCK_SMALL = Random(5.5, 7.5);
+		RIGHT_ADJ_SMALL = Random(35, 50);
+		LEFT_ADJ_SMALL = Random(-35, -50);
 	}
 
 	void client_activate()
@@ -95,7 +101,7 @@ class SfxFissure : CGameScript
 		{
 			string LINE_CENTER = DEF_LINE_CENTER;
 			string RND_LR = RIGHT_ADJ_LARGE;
-			string RND_FB = Random(-8.0, 8.0);
+			float RND_FB = Random(-8.0, 8.0);
 			ROCK_SCALE = SCALE_ROCK_LARGE;
 			ROCK_BODY = 0;
 			ROCK_VELOCITY = Vector3(0, 0, 0);
@@ -104,7 +110,7 @@ class SfxFissure : CGameScript
 			ClientEffect("tempent", "model", "rockgibs.mdl", LINE_CENTER, "setup_rock", "update_rock");
 			string LINE_CENTER = DEF_LINE_CENTER;
 			string RND_LR = LEFT_ADJ_LARGE;
-			string RND_FB = Random(-8.0, 8.0);
+			float RND_FB = Random(-8.0, 8.0);
 			ROCK_SCALE = SCALE_ROCK_LARGE;
 			ROCK_BODY = 0;
 			ROCK_VELOCITY = Vector3(0, 0, 0);
@@ -113,7 +119,7 @@ class SfxFissure : CGameScript
 			ClientEffect("tempent", "model", "rockgibs.mdl", LINE_CENTER, "setup_rock", "update_rock");
 			string LINE_CENTER = DEF_LINE_CENTER;
 			string RND_LR = RIGHT_ADJ_SMALL;
-			string RND_FB = Random(-16.0, 16.0);
+			float RND_FB = Random(-16.0, 16.0);
 			ROCK_SCALE = SCALE_ROCK_SMALL;
 			ROCK_BODY = RandomInt(1, 2);
 			ROCK_VELOCITY = /* TODO: $relvel */ $relvel(Vector3(0, FISSURE_YAW, 0), RND_LR, ",", RND_FB, ",", 120);
@@ -122,7 +128,7 @@ class SfxFissure : CGameScript
 			ClientEffect("tempent", "model", "rockgibs.mdl", LINE_CENTER, "setup_rock", "update_rock");
 			string LINE_CENTER = DEF_LINE_CENTER;
 			string RND_LR = LEFT_ADJ_SMALL;
-			string RND_FB = Random(-16.0, 16.0);
+			float RND_FB = Random(-16.0, 16.0);
 			ROCK_SCALE = SCALE_ROCK_SMALL;
 			ROCK_BODY = RandomInt(1, 2);
 			ROCK_VELOCITY = /* TODO: $relvel */ $relvel(Vector3(0, FISSURE_YAW, 0), RND_LR, ",", RND_FB, ",", 120);
@@ -131,7 +137,7 @@ class SfxFissure : CGameScript
 			ClientEffect("tempent", "model", "rockgibs.mdl", LINE_CENTER, "setup_rock", "update_rock");
 			string LINE_CENTER = DEF_LINE_CENTER;
 			string RND_LR = RIGHT_ADJ_SMALL;
-			string RND_FB = Random(-16.0, 16.0);
+			float RND_FB = Random(-16.0, 16.0);
 			ROCK_SCALE = SCALE_ROCK_SMALL;
 			ROCK_BODY = RandomInt(1, 2);
 			ROCK_VELOCITY = /* TODO: $relvel */ $relvel(Vector3(0, FISSURE_YAW, 0), RND_LR, ",", RND_FB, ",", 120);
@@ -140,7 +146,7 @@ class SfxFissure : CGameScript
 			ClientEffect("tempent", "model", "rockgibs.mdl", LINE_CENTER, "setup_rock", "update_rock");
 			string LINE_CENTER = DEF_LINE_CENTER;
 			string RND_LR = LEFT_ADJ_SMALL;
-			string RND_FB = Random(-16.0, 16.0);
+			float RND_FB = Random(-16.0, 16.0);
 			ROCK_SCALE = SCALE_ROCK_SMALL;
 			ROCK_BODY = RandomInt(1, 2);
 			ROCK_VELOCITY = /* TODO: $relvel */ $relvel(Vector3(0, FISSURE_YAW, 0), RND_LR, ",", RND_FB, ",", 120);
@@ -180,10 +186,10 @@ class SfxFissure : CGameScript
 		ClientEffect("tempent", "set_current_prop", "frames", 50);
 		ClientEffect("tempent", "set_current_prop", "body", ROCK_BODY);
 		ClientEffect("tempent", "set_current_prop", "sequence", 0);
-		string RND_YAW = Random(0.0, 359.99);
+		float RND_YAW = Random(0.0, 359.99);
 		ClientEffect("tempent", "set_current_prop", "angles", Vector3(0, RND_YAW, 0));
 		ClientEffect("tempent", "set_current_prop", "fuser1", 255);
-		string FADE_START = GetGameTime();
+		float FADE_START = GetGameTime();
 		FADE_START += 3.0;
 		ClientEffect("tempent", "set_current_prop", "fuser2", FADE_START);
 	}

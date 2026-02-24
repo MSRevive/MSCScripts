@@ -113,8 +113,8 @@ class OrcSummonerSlaughterCl : CGameScript
 		ClientEffect("tempent", "set_current_prop", "gravity", 1);
 		ClientEffect("tempent", "set_current_prop", "collide", "world;die");
 		ClientEffect("tempent", "set_current_prop", "scale", Random(0.1, 1.0));
-		string RND_UP = Random(50, 100);
-		string RND_ANG = Random(0, 359.99);
+		float RND_UP = Random(50, 100);
+		float RND_ANG = Random(0, 359.99);
 		ClientEffect("tempent", "set_current_prop", "velocity", /* TODO: $relpos */ $relpos(Vector3(0, RND_ANG, 0), Vector3(0, 0, RND_UP)));
 	}
 

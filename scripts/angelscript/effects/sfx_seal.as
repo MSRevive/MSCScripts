@@ -14,12 +14,14 @@ class SfxSeal : CGameScript
 	string FX_RAD;
 	string NEXT_SOUND;
 	int RENDER_AMT;
+	string SEAL_MODEL;
 	string SEAL_OFS;
+	string SNOW_SPRITE;
 
 	SfxSeal()
 	{
-		const string SEAL_MODEL = "weapons/magic/seals.mdl";
-		const string SNOW_SPRITE = "firemagic_8bit.spr";
+		SEAL_MODEL = "weapons/magic/seals.mdl";
+		SNOW_SPRITE = "firemagic_8bit.spr";
 	}
 
 	void client_activate()

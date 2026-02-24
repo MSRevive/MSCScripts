@@ -7,14 +7,21 @@ namespace MS
 
 class ProjBoltWooden : CGameScript
 {
+	float ARROW_BREAK_CHANCE;
+	int ARROW_SOLIDIFY_ON_WALL;
+	int HITSCAN_BOLT;
+	int MODEL_BODY_OFS;
+	int PROJ_DAMAGE;
+	int PROJ_STICK_DURATION;
+
 	ProjBoltWooden()
 	{
-		const int HITSCAN_BOLT = 1;
-		const int MODEL_BODY_OFS = 0;
-		const int PROJ_DAMAGE = 110;
-		const int PROJ_STICK_DURATION = 25;
-		const int ARROW_SOLIDIFY_ON_WALL = 1;
-		const float ARROW_BREAK_CHANCE = 0.01;
+		HITSCAN_BOLT = 1;
+		MODEL_BODY_OFS = 0;
+		PROJ_DAMAGE = 110;
+		PROJ_STICK_DURATION = 25;
+		ARROW_SOLIDIFY_ON_WALL = 1;
+		ARROW_BREAK_CHANCE = 0.01;
 	}
 
 	void arrow_spawn()

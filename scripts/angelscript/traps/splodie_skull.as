@@ -8,21 +8,26 @@ namespace MS
 class SplodieSkull : CGameScript
 {
 	string DEATH_TIME;
+	int DMG_POISON;
+	int DMG_SPLODE;
+	string GLOW_SHELL;
 	int IMMUNE_VAMPIRE;
 	int IS_UNHOLY;
 	int MONSTER_HP;
 	string MY_OWNER;
 	string NPC_DO_EVENTS;
 	int NPC_GIVE_EXP;
+	int SCAN_SIZE;
+	string SOUND_HATCH;
 
 	SplodieSkull()
 	{
 		IS_UNHOLY = 1;
-		const int SCAN_SIZE = 100;
-		const Vector3 GLOW_SHELL = Vector3(0, 255, 0);
-		const string SOUND_HATCH = "debris/bustflesh1.wav";
-		const int DMG_SPLODE = 200;
-		const int DMG_POISON = 75;
+		SCAN_SIZE = 100;
+		GLOW_SHELL = Vector3(0, 255, 0);
+		SOUND_HATCH = "debris/bustflesh1.wav";
+		DMG_SPLODE = 200;
+		DMG_POISON = 75;
 		MONSTER_HP = 50;
 		NPC_GIVE_EXP = 30;
 		Precache("bonegibs.mdl");
@@ -124,9 +129,9 @@ class SplodieSkull : CGameScript
 
 	void bounce_about()
 	{
-		string TOSS_DIR = RandomInt(-200, 200);
-		string TOSS_HOR = RandomInt(-200, 200);
-		string TOSS_VER = RandomInt(-400, 600);
+		int TOSS_DIR = RandomInt(-200, 200);
+		int TOSS_HOR = RandomInt(-200, 200);
+		int TOSS_VER = RandomInt(-400, 600);
 		SetVelocity(GetOwner(), /* TODO: $relvel */ $relvel(TOSS_DIR, TOSS_HOR, TOSS_VER));
 	}
 
@@ -161,7 +166,7 @@ class SplodieSkull : CGameScript
 		string MON_FULL = GetMonsterProperty("name.full");
 		string OUT_MSG = "You've slain ";
 		OUT_MSG += MON_FULL;
-		SendColoredMessage(GetEntityIndex(m_hLastStruck), "OUT_MSG");
+		SendColoredMessage(GetEntityIndex(m_hLastStruck), OUT_MSG);
 	}
 
 	void game_dodamage()

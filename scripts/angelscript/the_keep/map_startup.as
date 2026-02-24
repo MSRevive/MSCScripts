@@ -7,11 +7,15 @@ namespace MS
 
 class MapStartup : CGameScript
 {
+	int MAP_ALLOWNIGHT;
+	string MAP_NAME;
+	string MAP_WEATHER;
+
 	MapStartup()
 	{
-		const string MAP_NAME = "the_keep";
-		const string MAP_WEATHER = "clear";
-		const int MAP_ALLOWNIGHT = 0;
+		MAP_NAME = "the_keep";
+		MAP_WEATHER = "clear";
+		MAP_ALLOWNIGHT = 0;
 		SetGlobalVar("G_MAP_NAME", "The Keep");
 		SetGlobalVar("G_MAP_DESC", "The stronghold has been taken over by hearty adventurers that now terrorize the countryside as bandits.");
 		SetGlobalVar("G_MAP_DIFF", "Levels 25-30 / HP 400-600");

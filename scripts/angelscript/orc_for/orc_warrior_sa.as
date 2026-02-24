@@ -8,9 +8,11 @@ namespace MS
 
 class OrcWarriorSa : CGameScript
 {
+	float ATTACK_ACCURACY;
+
 	OrcWarriorSa()
 	{
-		const float ATTACK_ACCURACY = 0.8;
+		ATTACK_ACCURACY = 0.8;
 	}
 
 }

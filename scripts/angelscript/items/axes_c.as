@@ -7,6 +7,14 @@ namespace MS
 
 class AxesC : CGameScript
 {
+	int ANIM_ATTACK1;
+	int ANIM_ATTACK2;
+	int ANIM_ATTACK3;
+	int ANIM_IDLE1;
+	int ANIM_LIFT1;
+	string ANIM_PREFIX;
+	int ANIM_SHEATH;
+	int BASE_LEVEL_REQ;
 	string CAXE_EFFECT;
 	string CAXE_EFFECT_COUNT;
 	string CAXE_EFFECT_DOT;
@@ -14,6 +22,7 @@ class AxesC : CGameScript
 	string CAXE_EFFECT_SKILL;
 	string CAXE_ELEMENT;
 	int CAXE_SKILLED;
+	int ECHAOS_AOE;
 	string EFFECT_DOTS;
 	string EFFECT_DURATIONS;
 	string EFFECT_ELEMENTS;
@@ -22,41 +31,61 @@ class AxesC : CGameScript
 	string EFFECT_TARGET;
 	int ELEMENT_LOOP;
 	string GAME_PVP;
+	int MELEE_ACCURACY;
+	float MELEE_ATK_DURATION;
+	int MELEE_DMG;
+	float MELEE_DMG_DELAY;
+	int MELEE_DMG_RANGE;
+	string MELEE_DMG_TYPE;
+	int MELEE_ENERGY;
+	int MELEE_PARRY_CHANCE;
+	int MELEE_RANGE;
+	string MELEE_SOUND;
+	string MELEE_SOUND_DELAY;
+	string MELEE_STAT;
+	string MELEE_VIEWANIM_ATK;
+	int MODEL_BODY_OFS;
+	string MODEL_HANDS;
+	string MODEL_VIEW;
+	int MODEL_VIEW_IDX;
+	string MODEL_WORLD;
+	int MP_ELEMENT_BLAST;
 	string MY_CL_IDX;
 	string NEXT_ELEMENT_BLAST;
 	string NEXT_RANDOM_ELEMENT;
+	string SOUND_SWIPE;
 
 	AxesC()
 	{
-		const int MP_ELEMENT_BLAST = 50;
-		const int ECHAOS_AOE = 200;
-		const int BASE_LEVEL_REQ = 25;
-		const int ANIM_LIFT1 = 0;
-		const int ANIM_IDLE1 = 1;
-		const int ANIM_ATTACK1 = 2;
-		const int ANIM_ATTACK2 = 3;
-		const int ANIM_ATTACK3 = 4;
-		const int ANIM_SHEATH = 5;
-		const string MELEE_VIEWANIM_ATK = ANIM_ATTACK1;
-		const string MODEL_VIEW = "viewmodels/v_2haxesgreat.mdl";
-		const int MODEL_VIEW_IDX = 8;
-		const string MODEL_HANDS = "weapons/p_weapons4.mdl";
-		const string MODEL_WORLD = "weapons/p_weapons4.mdl";
-		const string SOUND_SWIPE = "weapons/swingsmall.wav";
-		const int MODEL_BODY_OFS = 54;
-		const string ANIM_PREFIX = "standard";
-		const int MELEE_RANGE = 100;
-		const float MELEE_DMG_DELAY = 0.6;
-		const float MELEE_ATK_DURATION = 1.5;
-		const int MELEE_ENERGY = 3;
-		const int MELEE_DMG = 450;
-		const int MELEE_DMG_RANGE = 200;
-		const string MELEE_DMG_TYPE = "slash";
-		const int MELEE_ACCURACY = 50;
-		const string MELEE_STAT = "axehandling";
-		const string MELEE_SOUND = SOUND_SWIPE;
-		const string MELEE_SOUND_DELAY = MELEE_DMG_DELAY;
-		const int MELEE_PARRY_CHANCE = 25;
+		MP_ELEMENT_BLAST = 50;
+		ECHAOS_AOE = 200;
+		BASE_LEVEL_REQ = 25;
+		ANIM_LIFT1 = 0;
+		ANIM_IDLE1 = 1;
+		ANIM_ATTACK1 = 2;
+		ANIM_ATTACK2 = 3;
+		ANIM_ATTACK3 = 4;
+		ANIM_SHEATH = 5;
+		MELEE_VIEWANIM_ATK = ANIM_ATTACK1;
+		MODEL_VIEW = "viewmodels/v_2haxesgreat.mdl";
+		MODEL_VIEW_IDX = 8;
+		MODEL_HANDS = "weapons/p_weapons4.mdl";
+		MODEL_WORLD = "weapons/p_weapons4.mdl";
+		SOUND_SWIPE = "weapons/swingsmall.wav";
+		MODEL_BODY_OFS = 54;
+		ANIM_PREFIX = "standard";
+		MELEE_RANGE = 100;
+		MELEE_DMG_DELAY = 0.6;
+		MELEE_ATK_DURATION = 1.5;
+		MELEE_ENERGY = 3;
+		MELEE_DMG = 450;
+		MELEE_DMG_RANGE = 200;
+		MELEE_DMG_TYPE = "slash";
+		MELEE_ACCURACY = 50;
+		MELEE_STAT = "axehandling";
+		MELEE_SOUND = SOUND_SWIPE;
+		MELEE_SOUND_DELAY = MELEE_DMG_DELAY;
+		MELEE_PARRY_CHANCE = 25;
 		Precache("3dmflagry.spr");
 	}
 
@@ -198,7 +227,7 @@ class AxesC : CGameScript
 		}
 		if (!(L_N_EFFECTS > 0)) return;
 		L_N_EFFECTS -= 1;
-		string L_RND_IDX = RandomInt(0, L_N_EFFECTS);
+		int L_RND_IDX = RandomInt(0, L_N_EFFECTS);
 		string L_EFFECT = "effects/";
 		L_EFFECT += GetToken(EFFECT_LIST, L_RND_IDX, ";");
 		string L_DUR = GetToken(EFFECT_DURATIONS, L_RND_IDX, ";");
@@ -283,7 +312,7 @@ class AxesC : CGameScript
 		if (GetEntityMP(GetOwner()) < MP_ELEMENT_BLAST)
 		{
 			string L_MSG = "Chaos Axe: Not enough mana for elemental chaos. (";
-			SendColoredMessage(GetOwner(), "L_MSG");
+			SendColoredMessage(GetOwner(), L_MSG);
 			int EXIT_SUB = 1;
 		}
 		if (!(CAXE_SKILLED))
@@ -312,7 +341,7 @@ class AxesC : CGameScript
 
 	void do_chaos2()
 	{
-		string L_DMG = /* TODO: $math(multiply) */ CAXE_EFFECT_DOT;
+		string L_DMG = (CAXE_EFFECT_DOT * 3);
 		XDoDamage(GetEntityOrigin(GetOwner()), ECHAOS_AOE, L_DMG, 0, GetOwner(), GetOwner(), "axehandling", CAXE_ELEMENT, "dmgevent:*chaos");
 		ScheduleDelayedEvent(0.5, "update_cl");
 	}

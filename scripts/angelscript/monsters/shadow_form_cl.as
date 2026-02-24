@@ -8,17 +8,19 @@ class ShadowFormCl : CGameScript
 	int DEATH_MODE;
 	int FX_ACTIVE;
 	string FX_DURATION;
+	int FX_HEIGHT;
 	string FX_OWNER;
+	int FX_WIDTH;
 	string NEG_FX_HEIGHT;
 	string NEG_FX_WIDTH;
-	string SHADOW_X_OFF;
-	string SHADOW_Y_OFF;
-	string SHADOW_Z_OFF;
+	float SHADOW_X_OFF;
+	float SHADOW_Y_OFF;
+	float SHADOW_Z_OFF;
 
 	ShadowFormCl()
 	{
-		const int FX_WIDTH = 48;
-		const int FX_HEIGHT = 48;
+		FX_WIDTH = 48;
+		FX_HEIGHT = 48;
 	}
 
 	void client_activate()
@@ -106,7 +108,7 @@ class ShadowFormCl : CGameScript
 			string CUR_YAW = "game.tempent.fuser1";
 			if (CUR_YAW != 999)
 			{
-				string CUR_YAW = Random(0, 359.0);
+				float CUR_YAW = Random(0, 359.0);
 				ClientEffect("tempent", "set_current_prop", "angles.yaw", CUR_YAW);
 				ClientEffect("tempent", "set_current_prop", "velocity.y", Random(-100, 100));
 				ClientEffect("tempent", "set_current_prop", "fuser1", 999);
@@ -125,7 +127,7 @@ class ShadowFormCl : CGameScript
 
 	void setup_shadows()
 	{
-		string RND_SCALE = Random(0.4, 0.6);
+		float RND_SCALE = Random(0.4, 0.6);
 		ClientEffect("tempent", "set_current_prop", "death_delay", "last_frame");
 		ClientEffect("tempent", "set_current_prop", "framerate", 30);
 		ClientEffect("tempent", "set_current_prop", "frames", 40);

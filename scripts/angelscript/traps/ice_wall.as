@@ -11,10 +11,10 @@ class IceWall : CGameScript
 	string ANIM_DEATH;
 	int CAN_ATTACK;
 	int CAN_HUNT;
-	string f1;
-	string f2;
-	string r1;
-	string r2;
+	int f1;
+	int f2;
+	int r1;
+	int r2;
 	string rotate;
 
 	IceWall()

@@ -5,13 +5,16 @@ namespace MS
 
 class BaseMagic : CGameScript
 {
+	int B_OVERCHARGE;
+	float B_SELL_RATIO;
 	string MAGIC_SHOP;
+	float MICRO_RATIO;
 
 	BaseMagic()
 	{
-		const float MICRO_RATIO = 0.01;
-		const float B_SELL_RATIO = 0.25;
-		const int B_OVERCHARGE = 200;
+		MICRO_RATIO = 0.01;
+		B_SELL_RATIO = 0.25;
+		B_OVERCHARGE = 200;
 	}
 
 	void vendor_addstoreitems()

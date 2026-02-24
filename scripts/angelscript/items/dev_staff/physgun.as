@@ -26,7 +26,7 @@ class Physgun : CGameScript
 				{
 					PHYSGUN_ON = 1;
 					PHYS_KEEP_DIST = Distance(GetEntityOrigin(GetOwner()), GetEntityOrigin(BEAM_TARGET));
-					SendColoredMessage(GetOwner(), "Linked physgun to GetEntityName(BEAM_TARGET)");
+					SendColoredMessage(GetOwner(), "Linked physgun to " + GetEntityName(BEAM_TARGET));
 					update_physgun_target();
 				}
 			}

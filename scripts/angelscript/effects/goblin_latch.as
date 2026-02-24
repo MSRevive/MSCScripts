@@ -8,14 +8,17 @@ namespace MS
 class GoblinLatch : CGameScript
 {
 	string CL_FX;
+	string EFFECT_FLAGS;
+	string EFFECT_ID;
+	string EFFECT_SCRIPT;
 	string GOBLIN_ID;
 	int game.effect.movespeed;
 
 	GoblinLatch()
 	{
-		const string EFFECT_ID = "goblin_latch";
-		const string EFFECT_FLAGS = "nostack";
-		const string EFFECT_SCRIPT = currentscript;
+		EFFECT_ID = "goblin_latch";
+		EFFECT_FLAGS = "nostack";
+		EFFECT_SCRIPT = currentscript;
 	}
 
 	void game_activate()

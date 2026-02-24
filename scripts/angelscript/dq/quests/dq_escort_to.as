@@ -8,11 +8,12 @@ namespace MS
 class DqEscortTo : CGameScript
 {
 	string DQ_ARRIVAL_POINT;
+	float DQ_CHECK_POS_INTERVAL;
 
 	DqEscortTo()
 	{
 		DQ_ARRIVAL_POINT = QUEST_DATA1;
-		const float DQ_CHECK_POS_INTERVAL = 2.0;
+		DQ_CHECK_POS_INTERVAL = 2.0;
 	}
 
 	void quest_activate()

@@ -9,10 +9,11 @@ class LslimeNr : CGameScript
 {
 	int HEAR_RANGE_MAX;
 	int HEAR_RANGE_PLAYER;
+	int ME_NO_WANDER;
 
 	LslimeNr()
 	{
-		const int ME_NO_WANDER = 1;
+		ME_NO_WANDER = 1;
 		HEAR_RANGE_PLAYER = 200;
 		HEAR_RANGE_MAX = 200;
 	}

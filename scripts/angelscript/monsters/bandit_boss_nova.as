@@ -7,10 +7,13 @@ namespace MS
 
 class BanditBossNova : CGameScript
 {
+	int BOSS_TYPE;
+	int BOSS_TYPE_OVERRIDE;
+
 	BanditBossNova()
 	{
-		const int BOSS_TYPE = 6;
-		const int BOSS_TYPE_OVERRIDE = 1;
+		BOSS_TYPE = 6;
+		BOSS_TYPE_OVERRIDE = 1;
 	}
 
 }

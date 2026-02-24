@@ -9,10 +9,12 @@ class UndamaelMsc : CGameScript
 {
 	int AM_EATING;
 	string ANIM_ATTACK;
+	string ANIM_BREATH;
 	int ATTACK_HITRANGE;
 	int ATTACK_RANGE;
+	int ATTACK_ZRANGE;
 	int BEAM2_ON;
-	string BEAM_ATT1;
+	int BEAM_ATT1;
 	int BEAM_COUNT;
 	string BEAM_ENT;
 	string BEAM_EYE1;
@@ -28,11 +30,17 @@ class UndamaelMsc : CGameScript
 	string BURN_BOX;
 	string CUR_SPEED;
 	int CYCLES_STARTED;
+	int DETECT_RANGE;
+	int DMG_BEAM1;
+	int DMG_BEAM2;
+	int DMG_BITE;
+	int DMG_NUKE;
+	int DOT_BREATH;
 	int DOT_NUKE;
 	string EAT_TARGET;
 	int FB_COUNT;
 	string FIRE_ANG;
-	string FIRE_VEL;
+	float FIRE_VEL;
 	float FREQ_SPECIAL;
 	string HEAD_ID;
 	int HORRORS_UP;
@@ -50,11 +58,24 @@ class UndamaelMsc : CGameScript
 	int NPC_IS_BOSS;
 	string NPC_START_Z;
 	int RAISED_LEVEL;
+	string SMOKE_SPRITE;
+	string SOUND_BEAM1_FIRE;
+	string SOUND_BEAM1_WARMUP;
+	string SOUND_BEAM2_FIRE;
+	string SOUND_BEAM2_WARMUP;
 	string SOUND_BITE_HIT1;
 	string SOUND_BITE_HIT2;
+	string SOUND_BREATH_LOOP;
+	string SOUND_BREATH_START;
 	string SOUND_HITEDGE1;
 	string SOUND_HITEDGE2;
 	string SOUND_HITEDGE3;
+	string SOUND_IDLE1;
+	string SOUND_IDLE2;
+	string SOUND_NUKE_WARMUP;
+	string SOUND_PRE_BITE1;
+	string SOUND_PRE_BITE2;
+	int SPEED_NORMAL;
 	string UNDI_ATTACK_TARGET;
 	int UNDI_MAX_HEIGHT;
 	string UNDI_MOVE_DEST;
@@ -62,19 +83,19 @@ class UndamaelMsc : CGameScript
 	UndamaelMsc()
 	{
 		NPC_IS_BOSS = 1;
-		const int DMG_NUKE = 800;
-		const int DOT_BREATH = 40;
+		DMG_NUKE = 800;
+		DOT_BREATH = 40;
 		DOT_NUKE = 80;
-		const int DMG_BEAM1 = 1000;
-		const int DMG_BEAM2 = 100;
-		const int DMG_BITE = 80;
-		const int SPEED_NORMAL = 10;
+		DMG_BEAM1 = 1000;
+		DMG_BEAM2 = 100;
+		DMG_BITE = 80;
+		SPEED_NORMAL = 10;
 		FREQ_SPECIAL = 20.0;
-		const string SMOKE_SPRITE = "bigsmoke.spr";
-		const string ANIM_BREATH = "Floor_Fidget_Pissed";
-		const int DETECT_RANGE = 1024;
+		SMOKE_SPRITE = "bigsmoke.spr";
+		ANIM_BREATH = "Floor_Fidget_Pissed";
+		DETECT_RANGE = 1024;
 		ATTACK_RANGE = 360;
-		const int ATTACK_ZRANGE = 80;
+		ATTACK_ZRANGE = 80;
 		ATTACK_HITRANGE = 390;
 		MOVE_RANGE = 300;
 		ANIM_ATTACK = "Floor_Strike";
@@ -83,17 +104,17 @@ class UndamaelMsc : CGameScript
 		SOUND_HITEDGE3 = "doors/doorstop5.wav";
 		SOUND_BITE_HIT1 = "tentacle/te_strike1.wav";
 		SOUND_BITE_HIT2 = "tentacle/te_strike2.wav";
-		const string SOUND_BEAM1_WARMUP = "ambience/alienfazzle1.wav";
-		const string SOUND_BEAM2_WARMUP = "x/x_teleattack1.wav";
-		const string SOUND_PRE_BITE1 = "x/x_recharge1.wav";
-		const string SOUND_PRE_BITE2 = "x/x_recharge2.wav";
-		const string SOUND_IDLE1 = "tentacle/te_move1.wav";
-		const string SOUND_IDLE2 = "tentacle/te_move2.wav";
-		const string SOUND_BEAM1_FIRE = "x/x_ballattack1.wav";
-		const string SOUND_BEAM2_FIRE = "debris/beamstart1.wav";
-		const string SOUND_NUKE_WARMUP = "magic/spookie1.wav";
-		const string SOUND_BREATH_LOOP = "magic/flame_loop.wav";
-		const string SOUND_BREATH_START = "magic/flame_loop_start.wav";
+		SOUND_BEAM1_WARMUP = "ambience/alienfazzle1.wav";
+		SOUND_BEAM2_WARMUP = "x/x_teleattack1.wav";
+		SOUND_PRE_BITE1 = "x/x_recharge1.wav";
+		SOUND_PRE_BITE2 = "x/x_recharge2.wav";
+		SOUND_IDLE1 = "tentacle/te_move1.wav";
+		SOUND_IDLE2 = "tentacle/te_move2.wav";
+		SOUND_BEAM1_FIRE = "x/x_ballattack1.wav";
+		SOUND_BEAM2_FIRE = "debris/beamstart1.wav";
+		SOUND_NUKE_WARMUP = "magic/spookie1.wav";
+		SOUND_BREATH_LOOP = "magic/flame_loop.wav";
+		SOUND_BREATH_START = "magic/flame_loop_start.wav";
 		Precache("debris/pushbox1.wav");
 		Precache("debris/pushbox2.wav");
 		Precache("debris/pushbox3.wav");
@@ -215,7 +236,7 @@ class UndamaelMsc : CGameScript
 		string DEST_LOC = MY_ORG;
 		string MY_FOOT_ORG = MY_ORG;
 		MY_FOOT_ORG = "z";
-		string MY_DIST_2D = Distance(MY_FOOT_ORG, NPC_HOME_LOC);
+		float MY_DIST_2D = Distance(MY_FOOT_ORG, NPC_HOME_LOC);
 		string MY_YAW = GetMonsterProperty("angles.yaw");
 		if ((MY_ORG).z > UNDI_MAX_HEIGHT)
 		{
@@ -236,7 +257,7 @@ class UndamaelMsc : CGameScript
 		}
 		string TARGET_ORG_XY = TARGET_ORG;
 		TARGET_ORG_XY = "z";
-		string TARG_DIST = Distance(MY_FOOT_ORG, TARGET_ORG_XY);
+		float TARG_DIST = Distance(MY_FOOT_ORG, TARGET_ORG_XY);
 		if (TARG_DIST > MOVE_RANGE)
 		{
 			NPC_FWD_SPEED = CUR_SPEED;
@@ -493,7 +514,7 @@ class UndamaelMsc : CGameScript
 		string NEAR_FOLK = FindEntitiesInSphere("enemy", 2048);
 		string N_FOLK = GetTokenCount(NEAR_FOLK, ";");
 		N_FOLK -= 1;
-		string RND_TARG = RandomInt(0, N_FOLK);
+		int RND_TARG = RandomInt(0, N_FOLK);
 		string NEW_TARG = GetToken(NEAR_FOLK, RND_TARG, ";");
 		Effect("beam", "update", BEAM_ENT, "start_target", NEW_TARG);
 	}
@@ -510,8 +531,8 @@ class UndamaelMsc : CGameScript
 
 	void ext_beam_att2()
 	{
-		string BEAM_ATT2 = RandomInt(1, 3);
-		LogMessage("BEAM_TARGET ext_beam_att BEAM_ATT1 BEAM_ATT2");
+		int BEAM_ATT2 = RandomInt(1, 3);
+		LogMessage(BEAM_TARGET + "ext_beam_att " + BEAM_ATT1 + BEAM_ATT2);
 		Effect("beam", "update", BEAM_EYE2, "brightness", 200);
 		Effect("beam", "update", BEAM_EYE2, "start_target", GetOwner(), BEAM_ATT2);
 		Effect("beam", "update", BEAM_EYE2, "end_target", BEAM_TARGET, 0);
@@ -735,7 +756,7 @@ class UndamaelMsc : CGameScript
 
 	void do_special()
 	{
-		string RND_SPECIAL = RandomInt(2, 6);
+		int RND_SPECIAL = RandomInt(2, 6);
 		if (UNDI_ATTACK_TARGET == "unset")
 		{
 			int RND_SPECIAL = 0;

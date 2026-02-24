@@ -11,19 +11,22 @@ namespace MS
 
 class Amaex : CGameScript
 {
+	int NO_HAIL;
+	int NO_JOB;
 	int SPOKE;
 	string STORE_NAME;
 	int STORE_SELLMENU;
 	string STORE_TRIGGERTEXT;
+	int XMASS_OLD_GUY;
 
 	Amaex()
 	{
 		STORE_NAME = "healer2";
 		STORE_TRIGGERTEXT = "store trade buy sell purchase sale offer";
 		STORE_SELLMENU = 1;
-		const int NO_JOB = 1;
-		const int NO_HAIL = 1;
-		const int XMASS_OLD_GUY = 1;
+		NO_JOB = 1;
+		NO_HAIL = 1;
+		XMASS_OLD_GUY = 1;
 	}
 
 	void OnRepeatTimer()

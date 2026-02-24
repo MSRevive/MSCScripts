@@ -11,19 +11,23 @@ class ColdOneCl : CGameScript
 	string FX_ORIGIN;
 	string FX_RADIUS;
 	string FX_TYPE;
+	string GLOW_SPRITE;
 	string HAND_SPRITES_ON;
+	string ICE_BREATH_COLOR;
 	string ICE_BREATH_ON;
+	string ICE_BREATH_SPRITE;
 	string MODEL_IDX;
 	string PALPATINE_ON;
 	string REMOVE_DELAY;
 	string SPR_COLOR;
+	int TOTAL_OFS;
 
 	ColdOneCl()
 	{
-		const string GLOW_SPRITE = "3dmflaora.spr";
-		const string ICE_BREATH_SPRITE = "explode1.spr";
-		const Vector3 ICE_BREATH_COLOR = Vector3(64, 64, 255);
-		const int TOTAL_OFS = 10;
+		GLOW_SPRITE = "3dmflaora.spr";
+		ICE_BREATH_SPRITE = "explode1.spr";
+		ICE_BREATH_COLOR = Vector3(64, 64, 255);
+		TOTAL_OFS = 10;
 	}
 
 	void client_activate()
@@ -152,8 +156,8 @@ class ColdOneCl : CGameScript
 		ClientEffect("tempent", "set_current_prop", "rendercolor", ICE_BREATH_COLOR);
 		ClientEffect("tempent", "set_current_prop", "gravity", ".005");
 		ClientEffect("tempent", "set_current_prop", "collide", "none");
-		string RND_RL = Random(-20, 20);
-		string RND_UD = Random(-20, 20);
+		float RND_RL = Random(-20, 20);
+		float RND_UD = Random(-20, 20);
 		string MY_ANG = /* TODO: $getcl */ $getcl(MODEL_IDX, "angles");
 		string CLOUD_VEL = /* TODO: $relvel */ $relvel(MY_ANG, Vector3(RND_RL, Random(300, 400), RND_UD));
 		ClientEffect("tempent", "set_current_prop", "velocity", CLOUD_VEL);
@@ -166,14 +170,14 @@ class ColdOneCl : CGameScript
 		string OWNER_YAW = /* TODO: $getcl */ $getcl(MODEL_IDX, "angles.yaw");
 		string BEAM_START = /* TODO: $getcl */ $getcl(MODEL_IDX, "bonepos", 20);
 		string BEAM_END = BEAM_START;
-		string RND_LR = Random(-128, 128);
-		string RND_UD = Random(-10, 10);
+		float RND_LR = Random(-128, 128);
+		float RND_UD = Random(-10, 10);
 		BEAM_END += /* TODO: $relpos */ $relpos(Vector3(0, OWNER_YAW, 0), Vector3(RND_LR, 256, RND_UD));
 		ClientEffect("beam_points", BEAM_START, BEAM_END, "lgtning.spr", 0.25, 5.0, 0.5, 255, 50, 30, Vector3(255, 255, 255));
 		string BEAM_START = /* TODO: $getcl */ $getcl(MODEL_IDX, "bonepos", 16);
 		string BEAM_END = BEAM_START;
-		string RND_LR = Random(-128, 128);
-		string RND_UD = Random(-10, 10);
+		float RND_LR = Random(-128, 128);
+		float RND_UD = Random(-10, 10);
 		BEAM_END += /* TODO: $relpos */ $relpos(Vector3(0, OWNER_YAW, 0), Vector3(RND_LR, 256, RND_UD));
 		ClientEffect("beam_points", BEAM_START, BEAM_END, "lgtning.spr", 0.25, 5.0, 0.5, 255, 50, 30, Vector3(255, 255, 255));
 	}

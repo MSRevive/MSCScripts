@@ -9,25 +9,35 @@ class NpcPoisonCloud : CGameScript
 {
 	string AOE_DURATION;
 	string AOE_OWNER;
+	int AOE_RADIUS;
+	string AOE_SCAN_TYPE;
+	string CHECK_EFFECT;
+	int CLOUD_HEIGHT;
+	int CLOUD_NEGWIDTH;
+	int CLOUD_WIDTH;
+	string EFFECT_SCRIPT;
 	int FX_ACTIVE;
 	string FX_ORIGIN;
 	string FX_SPRITE_COLOR;
 	string MY_BASE_DAMAGE;
 	string MY_DURATION;
 	string MY_OWNER;
+	string SMOKE_SPRITE;
+	string SPAWN_SOUND;
+	string SPRITE_COLOR;
 
 	NpcPoisonCloud()
 	{
-		const string SMOKE_SPRITE = "poison_cloud.spr";
-		const string SPAWN_SOUND = "ambience/steamburst1.wav";
-		const string EFFECT_SCRIPT = "effects/dot_poison";
-		const int AOE_RADIUS = 128;
-		const string AOE_SCAN_TYPE = "tsphere";
-		const Vector3 SPRITE_COLOR = Vector3(0, 0, 0);
-		const string CHECK_EFFECT = "DOT_poison";
-		const int CLOUD_HEIGHT = 40;
-		const int CLOUD_WIDTH = 96;
-		const int CLOUD_NEGWIDTH = -96;
+		SMOKE_SPRITE = "poison_cloud.spr";
+		SPAWN_SOUND = "ambience/steamburst1.wav";
+		EFFECT_SCRIPT = "effects/dot_poison";
+		AOE_RADIUS = 128;
+		AOE_SCAN_TYPE = "tsphere";
+		SPRITE_COLOR = Vector3(0, 0, 0);
+		CHECK_EFFECT = "DOT_poison";
+		CLOUD_HEIGHT = 40;
+		CLOUD_WIDTH = 96;
+		CLOUD_NEGWIDTH = -96;
 	}
 
 	void game_dynamically_created()
@@ -100,8 +110,8 @@ class NpcPoisonCloud : CGameScript
 
 	void smokes_shoot()
 	{
-		string x = Random(CLOUD_NEGWIDTH, CLOUD_WIDTH);
-		string y = Random(CLOUD_NEGWIDTH, CLOUD_WIDTH);
+		float x = Random(CLOUD_NEGWIDTH, CLOUD_WIDTH);
+		float y = Random(CLOUD_NEGWIDTH, CLOUD_WIDTH);
 		string SPR_POS = /* TODO: $relpos */ $relpos(Vector3(0, 0, 0), Vector3(x, y, 0));
 		string SPR_GROUND = /* TODO: $get_ground_height */ $get_ground_height(SPR_POS);
 		string L_POS = /* TODO: $relpos */ $relpos(Vector3(0, 0, 0), Vector3(x, y, 32));

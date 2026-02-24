@@ -8,17 +8,21 @@ namespace MS
 class FragmentIdemark : CGameScript
 {
 	string CHAPEL_WALK_POINT;
+	int CHAT_AUTO_FACE;
+	int CHAT_AUTO_HAIL;
+	int CHAT_FACE_ON_USE;
 	int CHAT_MENU_ON;
+	int CHAT_USE_CONV_ANIMS;
 	string ISHMEEA_ID;
 	string MANARING_TARGET;
 	int RING_STEP;
 
 	FragmentIdemark()
 	{
-		const int CHAT_AUTO_HAIL = 1;
-		const int CHAT_USE_CONV_ANIMS = 0;
-		const int CHAT_FACE_ON_USE = 0;
-		const int CHAT_AUTO_FACE = 0;
+		CHAT_AUTO_HAIL = 1;
+		CHAT_USE_CONV_ANIMS = 0;
+		CHAT_FACE_ON_USE = 0;
+		CHAT_AUTO_FACE = 0;
 		RING_STEP = 0;
 	}
 

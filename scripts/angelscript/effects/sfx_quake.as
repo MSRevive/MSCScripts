@@ -18,7 +18,7 @@ class SfxQuake : CGameScript
 	string FX_ROCKS_PER_CIRC;
 	string FX_SRC;
 	string FX_VOLCANIC;
-	string ROT_COUNT;
+	float ROT_COUNT;
 	string ROT_STEP;
 
 	SfxQuake()
@@ -45,7 +45,7 @@ class SfxQuake : CGameScript
 			}
 			RandomInt(0_5, 1_0)("flaming_rocks_loop");
 		}
-		FX_RATIO = /* TODO: $math(divide) */ FX_AOE;
+		FX_RATIO = (FX_AOE / 1024);
 		FX_ROCKS_PER_CIRC = /* TODO: $ratio */ $ratio(FX_RATIO, 4, 16);
 		FX_ROCKS_PER_CIRC = int(FX_ROCKS_PER_CIRC);
 		FX_N_CIRCS = /* TODO: $ratio */ $ratio(FX_RATIO, 2, 8);
@@ -66,8 +66,8 @@ class SfxQuake : CGameScript
 		{
 			FX_ORIGIN = FX_SRC;
 		}
-		string L_DROP_YAW = Random(0, 359.99);
-		string L_DROP_DIST = Random(0, FX_AOE);
+		float L_DROP_YAW = Random(0, 359.99);
+		float L_DROP_DIST = Random(0, FX_AOE);
 		string L_DROP_POINT = FX_ORIGIN;
 		L_DROP_POINT += /* TODO: $relpos */ $relpos(Vector3(0, L_DROP_YAW, 0), Vector3(0, L_DROP_DIST, 256));
 		ClientEffect("tempent", "model", "rockgibs.mdl", L_DROP_POINT, "setup_frock", "update_frock");
@@ -100,13 +100,13 @@ class SfxQuake : CGameScript
 		ClientEffect("tempent", "set_current_prop", "angles", Vector3(90, RND_YAW, 0));
 		ClientEffect("tempent", "set_current_prop", "rendermode", "texture");
 		ClientEffect("tempent", "set_current_prop", "renderamt", 255);
-		ClientEffect("tempent", "set_current_prop", "fuser1", /* TODO: $math(add) */ GetGameTime());
+		ClientEffect("tempent", "set_current_prop", "fuser1", (GetGameTime() + 0.1));
 	}
 
 	void update_frock()
 	{
 		if (!(GetGameTime() > "game.tempent.fuser1")) return;
-		ClientEffect("tempent", "set_current_prop", "fuser1", /* TODO: $math(add) */ GetGameTime());
+		ClientEffect("tempent", "set_current_prop", "fuser1", (GetGameTime() + 0.1));
 		ClientEffect("tempent", "sprite", "xfireball3.spr", "game.tempent.origin", "setup_frock_trail");
 	}
 
@@ -151,7 +151,7 @@ class SfxQuake : CGameScript
 		}
 		FX_ORIGIN = "z";
 		CIRC_COUNT = 0;
-		CIRC_STEP = /* TODO: $math(divide) */ FX_AOE;
+		CIRC_STEP = (FX_AOE / FX_N_CIRCS);
 		for (int i = 0; i < FX_N_CIRCS; i++)
 		{
 			do_circles();
@@ -161,13 +161,13 @@ class SfxQuake : CGameScript
 	void do_circles()
 	{
 		string CUR_CIRC = i;
-		CIRC_RAD = /* TODO: $math(multiply) */ CIRC_STEP;
+		CIRC_RAD = (CIRC_STEP * CUR_CIRC);
 		CIRC_RAD += CIRC_STEP;
 		ROT_COUNT = Random(0, 359.99);
-		string L_NROCKS = /* TODO: $math(divide) */ CUR_CIRC;
+		string L_NROCKS = (CUR_CIRC / FX_N_CIRCS);
 		string L_NROCKS = /* TODO: $ratio */ $ratio(L_NROCKS, 4, FX_ROCKS_PER_CIRC);
-		string L_NROCKS = int(L_NROCKS);
-		ROT_STEP = /* TODO: $math(divide) */ 359.99;
+		int L_NROCKS = int(L_NROCKS);
+		ROT_STEP = (359.99 / L_NROCKS);
 		for (int i = 0; i < L_NROCKS; i++)
 		{
 			do_rocks();
@@ -226,9 +226,9 @@ class SfxQuake : CGameScript
 			L_YAW -= 359.99;
 		}
 		ClientEffect("tempent", "set_current_prop", "angles", Vector3(0, L_YAW, 0));
-		string CUR_REND = GetGameTime();
+		float CUR_REND = GetGameTime();
 		CUR_REND -= "game.tempent.fuser1";
-		string CUR_REND = /* TODO: $math(divide) */ CUR_REND;
+		string CUR_REND = (CUR_REND / 3);
 		string CUR_REND = /* TODO: $ratio */ $ratio(CUR_REND, 512, 0);
 		if (CUR_REND > 255)
 		{

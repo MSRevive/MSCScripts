@@ -9,9 +9,18 @@ namespace MS
 
 class Bank1 : CGameScript
 {
+	string ANIM_CLOSE;
+	string ANIM_IDLE;
+	string ANIM_OPEN;
 	string BANK_HAS;
+	int BANK_MAX;
+	string BANK_PREFIX;
 	string BANK_STRINGS;
 	string FREE_BANK;
+	int MAX_AMMO_IN_ONE_SLOT;
+	int MAX_BANK_STRING;
+	int MAX_IN_ONE_TRANSACTION;
+	int MAX_SWIGS_IN_ONE_SLOT;
 	int NPC_ECHO_ITEMS;
 	int NPC_NO_REPORT_ITEMS;
 	int PLAYER_WITHDRAWING;
@@ -20,15 +29,15 @@ class Bank1 : CGameScript
 
 	Bank1()
 	{
-		const string ANIM_IDLE = "idle";
-		const string ANIM_CLOSE = "close";
-		const string ANIM_OPEN = "open";
-		const string BANK_PREFIX = "b";
-		const int BANK_MAX = 10;
-		const int MAX_BANK_STRING = 255;
-		const int MAX_IN_ONE_TRANSACTION = 100;
-		const int MAX_AMMO_IN_ONE_SLOT = 9999;
-		const int MAX_SWIGS_IN_ONE_SLOT = 20;
+		ANIM_IDLE = "idle";
+		ANIM_CLOSE = "close";
+		ANIM_OPEN = "open";
+		BANK_PREFIX = "b";
+		BANK_MAX = 10;
+		MAX_BANK_STRING = 255;
+		MAX_IN_ONE_TRANSACTION = 100;
+		MAX_AMMO_IN_ONE_SLOT = 9999;
+		MAX_SWIGS_IN_ONE_SLOT = 20;
 		NPC_ECHO_ITEMS = 1;
 		NPC_NO_REPORT_ITEMS = 1;
 		PLAYER_WITHDRAWING = 0;
@@ -73,7 +82,7 @@ class Bank1 : CGameScript
 		string L_ITEMS = GetEntityProperty(L_PLAYER, "scriptvar");
 		if (L_ITEMS.length() > 0) L_ITEMS += ";";
 		L_ITEMS += GetEntityProperty(L_PLAYER, "scriptvar");
-		string L_ITEMS = /* TODO: $func */ $func("func_filter_items", L_PLAYER, L_ITEMS);
+		string L_ITEMS = "func_filter_items"(L_PLAYER, L_ITEMS);
 		if (L_ITEMS == "0")
 		{
 			SendInfoMsg(L_PLAYER, "Galat's wondrous Chest of Storage Be sure to place any items you wish to store in your hands.");
@@ -90,7 +99,7 @@ class Bank1 : CGameScript
 				add_deposit_options(L_ITEMS);
 			}
 		}
-		if ((/* TODO: $func */ $func("func_check_bank_has", L_PLAYER)))
+		if (("func_check_bank_has"(L_PLAYER)))
 		{
 			if (GetEntityProperty(L_PLAYER, "numitems") >= G_MAX_ITEMS)
 			{
@@ -109,7 +118,7 @@ class Bank1 : CGameScript
 				else
 				{
 					string L_MSG = GetEntityName(GetOwner());
-					SendColoredMessage(GetEntityIndex(L_PLAYER), "L_MSG");
+					SendColoredMessage(GetEntityIndex(L_PLAYER), L_MSG);
 					string reg.mitem.title = "Withdraw Items";
 					string reg.mitem.type = "disabled";
 				}
@@ -121,7 +130,7 @@ class Bank1 : CGameScript
 	{
 		string L_ITEM = GetToken(param1, i, ";");
 		string L_ITEM_TITLE = "Deposit ";
-		string L_SCRIPTNAME_STRING = /* TODO: $func */ $func("func_make_string", L_ITEM);
+		string L_SCRIPTNAME_STRING = "func_make_string"(L_ITEM);
 		string L_DEPOSIT_AMT = GetToken(L_SCRIPTNAME_STRING, 1, ";");
 		if (L_DEPOSIT_AMT > 0)
 		{
@@ -239,10 +248,10 @@ class Bank1 : CGameScript
 		string L_PLAYER = param1;
 		string L_ITEM = param2;
 		string L_ITEM_SCRIPTNAME = GetEntityProperty(param2, "itemname");
-		string L_ITEM_STRING = /* TODO: $func */ $func("func_make_string", L_ITEM);
+		string L_ITEM_STRING = "func_make_string"(L_ITEM);
 		string L_BANK = GetToken(BANK_STRINGS, i, ";");
 		string L_BANK_CONTENTS = GetPlayerQuestData(L_PLAYER, L_BANK);
-		string L_NEW_BANK_CONTENTS = /* TODO: $func */ $func("func_stack_quantity", L_BANK_CONTENTS, L_ITEM_STRING);
+		string L_NEW_BANK_CONTENTS = "func_stack_quantity"(L_BANK_CONTENTS, L_ITEM_STRING);
 		if (L_NEW_BANK_CONTENTS != L_BANK_CONTENTS)
 		{
 			FREE_BANK = L_BANK;
@@ -250,7 +259,7 @@ class Bank1 : CGameScript
 		}
 		else
 		{
-			string L_RESULT = /* TODO: $math(add) */ (L_BANK_CONTENTS).length();
+			string L_RESULT = ((L_BANK_CONTENTS).length() + (L_ITEM_STRING).length());
 			L_RESULT += 1;
 			if (L_RESULT <= MAX_BANK_STRING)
 			{
@@ -340,7 +349,7 @@ class Bank1 : CGameScript
 			string L_EXISTING_IDX = FindToken(L_BANK_CONTENTS, L_ITEM_SCRIPTNAME, ";");
 			if (L_EXISTING_IDX != -1)
 			{
-				string L_EXISTING_QUANTITY = /* TODO: $func */ $func("func_get_stored_quantity", L_BANK_CONTENTS, L_EXISTING_IDX);
+				string L_EXISTING_QUANTITY = "func_get_stored_quantity"(L_BANK_CONTENTS, L_EXISTING_IDX);
 				if (L_EXISTING_QUANTITY < L_MAX_QUANTITY)
 				{
 					int L_INSERT_QUANTITY = 1;
@@ -349,13 +358,13 @@ class Bank1 : CGameScript
 					{
 						int L_INSERT_QUANTITY = 0;
 						if (L_EXISTING_SCRIPTNAME_STRING.length() > 0) L_EXISTING_SCRIPTNAME_STRING += ";";
-						L_EXISTING_SCRIPTNAME_STRING += GetToken(L_BANK_CONTENTS, /* TODO: $math(add) */ L_EXISTING_IDX, ";");
+						L_EXISTING_SCRIPTNAME_STRING += GetToken(L_BANK_CONTENTS, (L_EXISTING_IDX + 1), ";");
 					}
 					L_EXISTING_QUANTITY += STACK_REMAINDER;
 					int L_REMAINDER = 0;
 					if (L_EXISTING_QUANTITY > L_MAX_QUANTITY)
 					{
-						string L_REMAINDER = /* TODO: $math(subtract) */ L_EXISTING_QUANTITY;
+						string L_REMAINDER = (L_EXISTING_QUANTITY - L_MAX_QUANTITY);
 						string L_EXISTING_QUANTITY = L_MAX_QUANTITY;
 					}
 					string L_NEW_SCRIPTNAME_STRING = L_ITEM_SCRIPTNAME;
@@ -370,7 +379,7 @@ class Bank1 : CGameScript
 						}
 						else
 						{
-							SetToken(L_BANK_CONTENTS, /* TODO: $math(add) */ L_EXISTING_IDX, int(L_EXISTING_QUANTITY), ";");
+							SetToken(L_BANK_CONTENTS, (L_EXISTING_IDX + 1), int(L_EXISTING_QUANTITY), ";");
 						}
 						STACK_REMAINDER = L_REMAINDER;
 					}
@@ -413,7 +422,7 @@ class Bank1 : CGameScript
 	void func_get_stored_quantity()
 	{
 		string L_BANK_CONTENTS = param1;
-		string L_QUANTITY = /* TODO: $math(add) */ param2;
+		string L_QUANTITY = (param2 + 1);
 		string L_QUANTITY = GetToken(L_BANK_CONTENTS, L_QUANTITY, ";");
 		if (L_QUANTITY == /* TODO: $num */ $num(L_QUANTITY))
 		{

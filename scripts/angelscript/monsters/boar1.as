@@ -31,7 +31,7 @@ class Boar1 : CGameScript
 		SetIdleAnim("idle1");
 		SetMoveAnim("walk");
 		SetActionAnim("gore_forward");
-		// TODO: UNCONVERTED: setskin SKIN_NAME
+		SetEntitySkin(GetOwner(), SKIN_NAME);
 	}
 
 	void npc_enemysighted()

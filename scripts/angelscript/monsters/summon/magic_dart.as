@@ -20,15 +20,19 @@ class MagicDart : CGameScript
 	string PROJ_DMG;
 	string PROJ_SIZE;
 	int PROJ_SPEED;
+	string SOUND_SHOOT;
+	string SOUND_ZAP1;
+	string SOUND_ZAP2;
+	string SOUND_ZAP3;
 	int STUCK_COUNT;
 	string WORLD_SIZE;
 
 	MagicDart()
 	{
-		const string SOUND_SHOOT = "ambience/alienflyby1.wav";
-		const string SOUND_ZAP1 = "debris/beamstart14.wav";
-		const string SOUND_ZAP2 = "debris/beamstart14.wav";
-		const string SOUND_ZAP3 = "debris/zap1.wav";
+		SOUND_SHOOT = "ambience/alienflyby1.wav";
+		SOUND_ZAP1 = "debris/beamstart14.wav";
+		SOUND_ZAP2 = "debris/beamstart14.wav";
+		SOUND_ZAP3 = "debris/zap1.wav";
 	}
 
 	void game_dynamically_created()
@@ -85,7 +89,7 @@ class MagicDart : CGameScript
 		STUCK_COUNT = 0;
 		OLD_POS = GetMonsterProperty("origin");
 		ScheduleDelayedEvent(0.1, "move_dart");
-		string SHOOT_VOLUME = int(PROJ_SIZE);
+		int SHOOT_VOLUME = int(PROJ_SIZE);
 		SetMoveDest(PROJ_DEST);
 		EmitSound(GetOwner(), 0, SOUND_SHOOT, SHOOT_VOLUME);
 	}

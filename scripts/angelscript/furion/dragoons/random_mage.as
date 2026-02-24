@@ -7,9 +7,11 @@ namespace MS
 
 class RandomMage : CGameScript
 {
+	int WEAPON;
+
 	RandomMage()
 	{
-		const int WEAPON = 6;
+		WEAPON = 6;
 	}
 
 }

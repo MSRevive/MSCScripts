@@ -14,7 +14,7 @@ class BloodshrineFinal : CGameScript
 
 	void chest_additems()
 	{
-		add_gold(/* TODO: $math(multiply) */ 1000);
+		add_gold((1000 * "game.playersnb"));
 		AddStoreItem(STORENAME, "proj_arrow_holy", 30, 0, 0, 30);
 		AddStoreItem(STORENAME, "proj_arrow_gholy", 30, 0, 0, 30);
 		AddStoreItem(STORENAME, "proj_bolt_silver", 30, 0, 0, 30);

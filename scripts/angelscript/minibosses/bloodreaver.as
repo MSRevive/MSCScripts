@@ -11,6 +11,8 @@ class Bloodreaver : CGameScript
 	string ANIM_IDLE;
 	string ANIM_RUN;
 	string ANIM_WALK;
+	int ATTACK_DAMAGE;
+	float ATTACK_HITCHANCE;
 	int ATTACK_HITRANGE;
 	int ATTACK_RANGE;
 	int CAN_FLEE;
@@ -24,6 +26,15 @@ class Bloodreaver : CGameScript
 	string MY_ENEMY;
 	int NPC_GIVE_EXP;
 	float RETALIATE_CHANCE;
+	string SOUND_ATTACK1;
+	string SOUND_ATTACK2;
+	string SOUND_DEATH;
+	string SOUND_IDLE1;
+	string SOUND_PAIN;
+	string SOUND_SPAWN;
+	string SOUND_STRUCK1;
+	string SOUND_STRUCK2;
+	string SOUND_STRUCK3;
 
 	Bloodreaver()
 	{
@@ -34,19 +45,19 @@ class Bloodreaver : CGameScript
 		HUNT_AGRO = 0;
 		ANIM_ATTACK = "attack1";
 		MOVE_RANGE = 40;
-		const int ATTACK_DAMAGE = 30;
+		ATTACK_DAMAGE = 30;
 		ATTACK_RANGE = 100;
 		ATTACK_HITRANGE = 200;
-		const float ATTACK_HITCHANCE = 0.85;
-		const string SOUND_STRUCK1 = "garg/gar_pain1.wav";
-		const string SOUND_STRUCK2 = "garg/gar_pain2.wav";
-		const string SOUND_STRUCK3 = "garg/gar_pain3.wav";
-		const string SOUND_PAIN = "garg/gar_pain3.wav";
-		const string SOUND_ATTACK1 = "controller/con_attack1.wav";
-		const string SOUND_ATTACK2 = "controller/con_attack2.wav";
-		const string SOUND_DEATH = "garg/gar_die1.wav";
-		const string SOUND_IDLE1 = "controller/con_attack3.wav";
-		const string SOUND_SPAWN = "monsters/skeleton/calrian2.wav";
+		ATTACK_HITCHANCE = 0.85;
+		SOUND_STRUCK1 = "garg/gar_pain1.wav";
+		SOUND_STRUCK2 = "garg/gar_pain2.wav";
+		SOUND_STRUCK3 = "garg/gar_pain3.wav";
+		SOUND_PAIN = "garg/gar_pain3.wav";
+		SOUND_ATTACK1 = "controller/con_attack1.wav";
+		SOUND_ATTACK2 = "controller/con_attack2.wav";
+		SOUND_DEATH = "garg/gar_die1.wav";
+		SOUND_IDLE1 = "controller/con_attack3.wav";
+		SOUND_SPAWN = "monsters/skeleton/calrian2.wav";
 		MY_ENEMY = "enemy";
 		RETALIATE_CHANCE = 0.75;
 		CAN_FLEE = 0;
@@ -116,7 +127,7 @@ class Bloodreaver : CGameScript
 		EmitSound(GetOwner(), SND_DEATH2);
 		UseTrigger("bloodreaver_die");
 		SetSayTextRange(1024);
-		SayText("After all this time , alas... I can rest.");
+		SayText("After all this time , alas... " + I + " can rest.");
 	}
 
 }

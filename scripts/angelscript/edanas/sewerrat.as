@@ -7,13 +7,15 @@ namespace MS
 
 class Sewerrat : CGameScript
 {
+	float ATTACK_DAMAGE;
+	float ATTACK_HITCHANCE;
 	int ATTACK_RANGE;
 
 	Sewerrat()
 	{
-		const float ATTACK_DAMAGE = 0.9;
+		ATTACK_DAMAGE = 0.9;
 		ATTACK_RANGE = 70;
-		const float ATTACK_HITCHANCE = 0.55;
+		ATTACK_HITCHANCE = 0.55;
 	}
 
 	void OnSpawn() override

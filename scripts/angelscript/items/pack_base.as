@@ -7,12 +7,14 @@ namespace MS
 
 class PackBase : CGameScript
 {
+	int BLAH;
+	int IS_CONTAINER;
 	string TRUE_ACCEPT;
 
 	PackBase()
 	{
-		const int IS_CONTAINER = 1;
-		const int BLAH = 0;
+		IS_CONTAINER = 1;
+		BLAH = 0;
 	}
 
 	void OnSpawn() override
@@ -105,34 +107,34 @@ class PackBase : CGameScript
 	{
 		if (!(G_DEVELOPER_MODE)) return;
 		if (!(IsOnGround(GetOwner()))) return;
-		SendInfoMessageToAll("green GetEntityName(GetOwner()) additem GetEntityName(param1)");
+		SendInfoMessageToAll("green " + GetEntityName(GetOwner()) + "additem " + GetEntityName(param1));
 	}
 
 	void game_container_gaveitem()
 	{
 		if (!(G_DEVELOPER_MODE)) return;
 		if (!(IsOnGround(GetOwner()))) return;
-		SendInfoMessageToAll("green GetEntityName(GetOwner()) gaveitem GetEntityName(param1)");
+		SendInfoMessageToAll("green " + GetEntityName(GetOwner()) + "gaveitem " + GetEntityName(param1));
 	}
 
 	void game_attempt_unlock()
 	{
 		if (!(G_DEVELOPER_MODE)) return;
-		SendInfoMessageToAll("green GetEntityName(GetOwner()) openby GetEntityName(param1)");
+		SendInfoMessageToAll("green " + GetEntityName(GetOwner()) + "openby " + GetEntityName(param1));
 	}
 
 	void ext_lock()
 	{
-		// TODO: UNCONVERTED: setlock ent_me 1
+		SetItemLockStrength(GetOwner(), 1);
 		if (!(G_DEVELOPER_MODE)) return;
-		SendInfoMessageToAll("green GetEntityName(GetOwner()) locked.");
+		SendInfoMessageToAll("green " + GetEntityName(GetOwner()) + " locked.");
 	}
 
 	void ext_unlock()
 	{
-		// TODO: UNCONVERTED: setlock ent_me 0
+		SetItemLockStrength(GetOwner(), 0);
 		if (!(G_DEVELOPER_MODE)) return;
-		SendInfoMessageToAll("green GetEntityName(GetOwner()) unlocked.");
+		SendInfoMessageToAll("green " + GetEntityName(GetOwner()) + " unlocked.");
 	}
 
 }

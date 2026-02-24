@@ -8,34 +8,50 @@ namespace MS
 class PetWolfIce : CGameScript
 {
 	string ACT_NAME;
+	int ATTACK_HITCHANCE;
+	int BASE_DMG;
+	int BASE_HP;
+	int CHANCE_CLAW;
+	int COMPANION_MAXHP;
 	string COMPANION_TYPE;
+	float DMG_BITE;
+	float DMG_CLAW;
+	int DOT_ICE;
 	string FREEZE_TARGS;
+	float FREQ_COMBAT_HOWL;
+	float FREQ_HOWL;
+	float FREQ_IDLE;
+	float FREQ_LOOK;
+	int LEAP_RANGE;
+	int MAX_DMG;
 	int MELEE_ATTACK;
 	string NEXT_COMBAT_HOWL;
 	int NEXT_HOWL;
 	string NPC_REVIVAL_SCRIPT;
+	int SUMMON_CIRCLE_INDEX;
+	float XPDMG_MULTI;
 
 	PetWolfIce()
 	{
-		const int SUMMON_CIRCLE_INDEX = 7;
-		const int BASE_HP = 1000;
-		const int COMPANION_MAXHP = 8000;
-		const int MAX_DMG = 125;
-		const float XPDMG_MULTI = 0.02;
-		const int BASE_DMG = 20;
+		SUMMON_CIRCLE_INDEX = 7;
+		BASE_HP = 1000;
+		COMPANION_MAXHP = 8000;
+		MAX_DMG = 125;
+		XPDMG_MULTI = 0.02;
+		BASE_DMG = 20;
 		COMPANION_TYPE = "wolf";
 		ACT_NAME = "pet winter wolf";
 		NPC_REVIVAL_SCRIPT = currentscript;
-		const int ATTACK_HITCHANCE = 90;
-		const int LEAP_RANGE = 256;
-		const string DMG_BITE = Random(10.0, 15.0);
-		const string DMG_CLAW = Random(10.0, 20.0);
-		const float FREQ_LOOK = 20.0;
-		const string FREQ_IDLE = Random(10, 30);
-		const string FREQ_HOWL = Random(30, 60);
-		const int CHANCE_CLAW = 50;
-		const int DOT_ICE = 5;
-		const float FREQ_COMBAT_HOWL = 30.0;
+		ATTACK_HITCHANCE = 90;
+		LEAP_RANGE = 256;
+		DMG_BITE = Random(10.0, 15.0);
+		DMG_CLAW = Random(10.0, 20.0);
+		FREQ_LOOK = 20.0;
+		FREQ_IDLE = Random(10, 30);
+		FREQ_HOWL = Random(30, 60);
+		CHANCE_CLAW = 50;
+		DOT_ICE = 5;
+		FREQ_COMBAT_HOWL = 30.0;
 	}
 
 	void pet_spawn()
@@ -115,7 +131,7 @@ class PetWolfIce : CGameScript
 		int FREEZE_CHANCE = 1;
 		if (GetEntityMaxHealth(GetOwner()) > 3000)
 		{
-			string FREEZE_CHANCE = RandomInt(1, 2);
+			int FREEZE_CHANCE = RandomInt(1, 2);
 		}
 		if (FREEZE_CHANCE == 1)
 		{

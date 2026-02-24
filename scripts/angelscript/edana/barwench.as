@@ -19,10 +19,14 @@ class Barwench : CGameScript
 	string GAVE_SOUP_LIST;
 	string GAVE_SOUP_LIST2;
 	string NEXT_THANK_YOU;
+	int NO_HAIL;
+	string SOUND_DEATH;
 	string STORE_NAME;
 	string STORE_SOUND;
 	string STORE_TRIGGERTEXT;
+	float VENDOR_DELAY;
 	int VENDOR_NOT_ON_USE;
+	int VEND_INDIVIDUAL;
 	int cider_1;
 	int cider_2;
 	int cider_3;
@@ -31,13 +35,13 @@ class Barwench : CGameScript
 	{
 		GAVE_SOUP_LIST = "";
 		GAVE_SOUP_LIST2 = "";
-		const string SOUND_DEATH = "none";
-		const float VENDOR_DELAY = 0.5;
+		SOUND_DEATH = "none";
+		VENDOR_DELAY = 0.5;
 		STORE_NAME = "edana_barwench";
 		STORE_SOUND = "voices/female_vendor2";
 		STORE_TRIGGERTEXT = "store trade buy sell purchase sale offer";
-		const int NO_HAIL = 1;
-		const int VEND_INDIVIDUAL = 1;
+		NO_HAIL = 1;
+		VEND_INDIVIDUAL = 1;
 		VENDOR_NOT_ON_USE = 1;
 	}
 
@@ -95,7 +99,7 @@ class Barwench : CGameScript
 		if (GAVE_SOUP_LIST.length() > 0) GAVE_SOUP_LIST += ";";
 		GAVE_SOUP_LIST += L_PLR_STEAMID;
 		bchat_mouth_move(4.0);
-		SayText("Oh hi there. I remember you. Come for some of Sylphee s soup? It s not cheap - no more free samples!");
+		SayText("Oh hi there. " + I + " remember you. Come for some of Sylphee s soup? It s not cheap - no more free samples!");
 	}
 
 	void vendor_addstoreitems()
@@ -131,7 +135,7 @@ class Barwench : CGameScript
 		if (!(cider_1 == 0)) return;
 		if (!(CanSee("player", 128))) return;
 		SetMoveDest(m_hLastSeen);
-		SayText("I have a task for you , now that you ask. Head across the way to Bryan and check on my cider shipment.");
+		SayText(I + " have a task for you , now that you ask. Head across the way to Bryan and check on my cider shipment.");
 		PlayAnim("once", "pondering3");
 		CallExternal(FindEntityByName("bryan"), "cider");
 		stoproam();
@@ -160,7 +164,7 @@ class Barwench : CGameScript
 		if (!(cider_1 == 3)) return;
 		SetMoveDest("ent_lastspoke");
 		PlayAnim("once", "converse1");
-		SayText("Look , I still haven t gotten that cider shipment, maybe you should check with Bryan again.");
+		SayText("Look , " + I + " still haven t gotten that cider shipment, maybe you should check with Bryan again.");
 		cider_1 = 1;
 		CallExternal(FindEntityByName("bryan"), "cider3");
 		stoproam();
@@ -211,7 +215,7 @@ class Barwench : CGameScript
 
 	void say_reward2()
 	{
-		SayText("Come back in a bit and I ll have some cider for ya.  Just ask when you come in next.");
+		SayText("Come back in a bit and " + I + " ll have some cider for ya.  Just ask when you come in next.");
 		ScheduleDelayedEvent(3, "say_reward3");
 	}
 
@@ -254,7 +258,7 @@ class Barwench : CGameScript
 		}
 		if ((EXIT_SUB)) return;
 		PlayAnim("once", "pondering");
-		SayText("I ve heard from travelers coming to this tavern, telling about places outside of this village.");
+		SayText(I + " ve heard from travelers coming to this tavern, telling about places outside of this village.");
 		ScheduleDelayedEvent(3, "say_rumour2");
 	}
 

@@ -75,7 +75,7 @@ class SorcMerc : CGameScript
 	{
 		if (LAST_PLAYER_USED != param1)
 		{
-			string RND_COMMENT = RandomInt(1, 4);
+			int RND_COMMENT = RandomInt(1, 4);
 			if (RND_COMMENT == 1)
 			{
 				SayText("Runegahr says we sells to you, so we sells to you.");

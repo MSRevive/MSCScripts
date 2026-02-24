@@ -10,14 +10,16 @@ class OldHarry : CGameScript
 	int CAN_RUN;
 	int CAN_SCREAM;
 	int FRIGHTENED;
+	int NO_JOB;
+	int NO_RUMOR;
 	int SAY_SO;
 	int SEE_ENEMY;
 	string STORENAME;
 
 	OldHarry()
 	{
-		const int NO_RUMOR = 1;
-		const int NO_JOB = 1;
+		NO_RUMOR = 1;
+		NO_JOB = 1;
 	}
 
 	void OnRepeatTimer()
@@ -74,7 +76,7 @@ class OldHarry : CGameScript
 	void say_hi2test()
 	{
 		SAY_SO = "equals";
-		SayText("I am Harry , your humble innkeeper. If you want to stay here you will have to be [quiet] .");
+		SayText(I + " am Harry , your humble innkeeper. If you want to stay here you will have to be [quiet] .");
 		setsayso();
 	}
 
@@ -86,14 +88,14 @@ class OldHarry : CGameScript
 	void say_quiet()
 	{
 		PlayAnim("once", "pondering2");
-		SayText("I m not really allowed to give booze to the adventurers.. Serrold said it would "deterioate their performance" and then he gave order to barricade the door..");
+		SayText(I + " m not really allowed to give booze to the adventurers.. Serrold said it would "deterioate their performance" and then he gave order to barricade the door..");
 		ScheduleDelayedEvent(4, "say_quiet2");
 	}
 
 	void say_quiet2()
 	{
 		PlayAnim("once", "pondering1");
-		SayText("If would have stopped as he said , i would be ruined by now! So I made a small hole in the wall.. you probably saw it on your way in!");
+		SayText("If would have stopped as he said , i would be ruined by now! So " + I + " made a small hole in the wall.. you probably saw it on your way in!");
 	}
 
 	void say_orcs()
@@ -110,7 +112,7 @@ class OldHarry : CGameScript
 	void say_erkold()
 	{
 		PlayAnim("once", "yes");
-		SayText("Poor man.. Lost everything..Except his armor , which he sent to Dorfgan for repairs , if I recall him correctly.");
+		SayText("Poor man.. Lost everything..Except his armor , which he sent to Dorfgan for repairs , if " + I + " recall him correctly.");
 	}
 
 	void say_serrold()
@@ -137,7 +139,7 @@ class OldHarry : CGameScript
 	{
 		OFFER_AMT = "<";
 		// TODO: DLLFunc recvoffer reject
-		SayText("I am quite well off without your charity.");
+		SayText(I + " am quite well off without your charity.");
 		PlayAnim("once", "no");
 	}
 

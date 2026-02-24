@@ -15,12 +15,14 @@ class CommonerHandrail : CGameScript
 	string CHAT_STEP3;
 	int CHAT_STEPS;
 	int MENTIONED_BOAT;
-	string RND_TALK;
+	int NO_JOB;
+	int NO_RUMOR;
+	int RND_TALK;
 
 	CommonerHandrail()
 	{
-		const int NO_JOB = 1;
-		const int NO_RUMOR = 1;
+		NO_JOB = 1;
+		NO_RUMOR = 1;
 	}
 
 	void OnSpawn() override
@@ -59,7 +61,7 @@ class CommonerHandrail : CGameScript
 
 	void respond1()
 	{
-		SayText("Sometimes I just come here and look up at the stars.");
+		SayText("Sometimes " + I + " just come here and look up at the stars.");
 	}
 
 	void respond2()

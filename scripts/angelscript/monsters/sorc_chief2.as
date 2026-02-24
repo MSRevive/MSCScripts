@@ -12,9 +12,16 @@ class SorcChief2 : CGameScript
 	string ANIM_ATTACK;
 	string ANIM_DEATH;
 	string ANIM_FLINCH;
+	string ANIM_HOP;
 	string ANIM_IDLE;
+	string ANIM_KICK;
+	string ANIM_PARRY;
 	string ANIM_RUN;
+	string ANIM_SMASH;
+	string ANIM_SWIPE;
 	string ANIM_WALK;
+	string ANIM_WARCRY;
+	float ATTACK_HITCHANCE;
 	int ATTACK_HITRANGE;
 	int ATTACK_MOVERANGE;
 	int ATTACK_RANGE;
@@ -22,9 +29,15 @@ class SorcChief2 : CGameScript
 	int CAN_FLINCH;
 	int CUR_SPECIAL;
 	int CYCLES_STARTED;
+	float DMG_KICK;
+	int DMG_SLASH;
+	int DMG_SMACK;
+	int DMG_SMASH;
 	string DOUBLE_FOR;
 	string DOUBLE_UP;
+	float FREQ_KICK;
 	float FREQ_LEAP;
+	int FREQ_SPECIAL;
 	int GAVE_SWORD;
 	int JUMP_FWD_DIST;
 	int KICK_DELAY;
@@ -34,63 +47,81 @@ class SorcChief2 : CGameScript
 	int MALDORA_DEAD;
 	string MALDORA_ID;
 	string MINION_TO_ZAP;
+	float MIN_TELEPORT_DELAY;
 	int MOVE_RANGE;
 	int NPC_FORCED_MOVEDEST;
 	int NPC_GIVE_EXP;
+	int NPC_USES_LIGHTS;
 	int RENDER_COUNT;
 	string RETURN_POINT;
+	string SOUND_ATTACK1;
+	string SOUND_ATTACK2;
+	string SOUND_ATTACK3;
+	string SOUND_DEATH;
+	string SOUND_HELP;
+	string SOUND_HIT;
+	string SOUND_HIT2;
+	string SOUND_HIT3;
+	string SOUND_PAIN;
+	string SOUND_STRUCK1;
+	string SOUND_STRUCK2;
+	string SOUND_STRUCK3;
+	string SOUND_TELE;
+	string SOUND_WARCRY;
+	string SOUND_WARCRY1;
 	int STUCK_TELE;
 	int SWORD_ATTACK;
 	string TALK_TARGET;
 	string T_BOX;
+	float VAMPIRE_RATIO;
 	int ZAPPED_MINION;
 
 	SorcChief2()
 	{
-		const float MIN_TELEPORT_DELAY = 15.0;
-		const int NPC_USES_LIGHTS = 1;
+		MIN_TELEPORT_DELAY = 15.0;
+		NPC_USES_LIGHTS = 1;
 		NPC_GIVE_EXP = 0;
-		const string ANIM_WARCRY = "warcry";
+		ANIM_WARCRY = "warcry";
 		ANIM_IDLE = "idle1";
 		ANIM_RUN = "run";
 		ANIM_WALK = "walk";
 		ANIM_FLINCH = "flinch";
 		ANIM_ATTACK = "swordswing1_L";
-		const string ANIM_SWIPE = "swordswing1_L";
-		const string ANIM_SMASH = "battleaxe_swing1_L";
-		const string ANIM_KICK = "kick";
-		const string ANIM_PARRY = "shielddeflect1";
+		ANIM_SWIPE = "swordswing1_L";
+		ANIM_SMASH = "battleaxe_swing1_L";
+		ANIM_KICK = "kick";
+		ANIM_PARRY = "shielddeflect1";
 		ANIM_DEATH = "die_fallback";
-		const string ANIM_HOP = "battleaxe_swing1_L";
+		ANIM_HOP = "battleaxe_swing1_L";
 		CAN_FLINCH = 1;
-		const float ATTACK_HITCHANCE = 0.9;
+		ATTACK_HITCHANCE = 0.9;
 		ATTACK_MOVERANGE = 32;
 		MOVE_RANGE = 32;
 		ATTACK_RANGE = 60;
 		ATTACK_HITRANGE = 120;
-		const string DMG_SLASH = RandomInt(100, 200);
-		const string DMG_SMACK = RandomInt(25, 50);
-		const string DMG_SMASH = RandomInt(150, 400);
-		const string DMG_KICK = Random(25, 100);
-		const string FREQ_SPECIAL = RandomInt(20, 40);
-		const float FREQ_KICK = 10.0;
+		DMG_SLASH = RandomInt(100, 200);
+		DMG_SMACK = RandomInt(25, 50);
+		DMG_SMASH = RandomInt(150, 400);
+		DMG_KICK = Random(25, 100);
+		FREQ_SPECIAL = RandomInt(20, 40);
+		FREQ_KICK = 10.0;
 		FREQ_LEAP = 5.0;
-		const string SOUND_WARCRY = "monsters/troll/trollidle.wav";
-		const string SOUND_STRUCK1 = "body/armour1.wav";
-		const string SOUND_STRUCK2 = "body/armour2.wav";
-		const string SOUND_STRUCK3 = "body/armour3.wav";
-		const string SOUND_HIT = "voices/orc/hit.wav";
-		const string SOUND_HIT2 = "voices/orc/hit2.wav";
-		const string SOUND_HIT3 = "voices/orc/hit3.wav";
-		const string SOUND_PAIN = "monsters/orc/pain.wav";
-		const string SOUND_WARCRY1 = "monsters/orc/battlecry.wav";
-		const string SOUND_ATTACK1 = "voices/orc/attack.wav";
-		const string SOUND_ATTACK2 = "voices/orc/attack2.wav";
-		const string SOUND_ATTACK3 = "voices/orc/attack3.wav";
-		const string SOUND_DEATH = "voices/orc/die.wav";
-		const string SOUND_HELP = "voices/orc/help.wav";
-		const string SOUND_TELE = "magic/teleport.wav";
-		const float VAMPIRE_RATIO = 0.1;
+		SOUND_WARCRY = "monsters/troll/trollidle.wav";
+		SOUND_STRUCK1 = "body/armour1.wav";
+		SOUND_STRUCK2 = "body/armour2.wav";
+		SOUND_STRUCK3 = "body/armour3.wav";
+		SOUND_HIT = "voices/orc/hit.wav";
+		SOUND_HIT2 = "voices/orc/hit2.wav";
+		SOUND_HIT3 = "voices/orc/hit3.wav";
+		SOUND_PAIN = "monsters/orc/pain.wav";
+		SOUND_WARCRY1 = "monsters/orc/battlecry.wav";
+		SOUND_ATTACK1 = "voices/orc/attack.wav";
+		SOUND_ATTACK2 = "voices/orc/attack2.wav";
+		SOUND_ATTACK3 = "voices/orc/attack3.wav";
+		SOUND_DEATH = "voices/orc/die.wav";
+		SOUND_HELP = "voices/orc/help.wav";
+		SOUND_TELE = "magic/teleport.wav";
+		VAMPIRE_RATIO = 0.1;
 		Precache(SOUND_DEATH);
 		Precache("doors/aliendoor3.wav");
 		Precache("magic/spawn.wav");
@@ -123,7 +154,7 @@ class SorcChief2 : CGameScript
 		if (m_hAttackTarget != "unset")
 		{
 		}
-		string LEAP_TYPE = RandomInt(1, 4);
+		int LEAP_TYPE = RandomInt(1, 4);
 		if (LEAP_TYPE < 4)
 		{
 			leap_at(m_hAttackTarget, "random");
@@ -188,7 +219,7 @@ class SorcChief2 : CGameScript
 		FREQ_SPECIAL("do_special");
 		ScheduleDelayedEvent(60.0, "do_teleport");
 		SetRoam(true);
-		SayText("Now , Maldora! With these allies I shall defeat you!");
+		SayText("Now , Maldora! With these allies " + I + " shall defeat you!");
 		EmitSound(GetOwner(), 0, SOUND_ATTACK2, 10);
 	}
 
@@ -320,11 +351,11 @@ class SorcChief2 : CGameScript
 		EmitSound(GetOwner(), 0, "monsters/orc/attack1.wav", 10);
 		if (GetMonsterHP() > HALF_HEALTH)
 		{
-			string JUMP_HEIGHT = RandomInt(350, 450);
+			int JUMP_HEIGHT = RandomInt(350, 450);
 		}
 		if (GetMonsterHP() <= HALF_HEALTH)
 		{
-			string JUMP_HEIGHT = RandomInt(350, 950);
+			int JUMP_HEIGHT = RandomInt(350, 950);
 		}
 		string L_JUMP_FWD_DIST = JUMP_FWD_DIST;
 		string L_JUMP_HEIGHT = JUMP_HEIGHT;
@@ -355,7 +386,7 @@ class SorcChief2 : CGameScript
 		AM_LEAPING = 1;
 		NPC_FORCED_MOVEDEST = 1;
 		npcatk_suspend_ai(1.0);
-		string RND_ROT = RandomInt(0, 359);
+		int RND_ROT = RandomInt(0, 359);
 		string LEAP_DEST = GetMonsterProperty("origin");
 		LEAP_DEST += /* TODO: $relpos */ $relpos(Vector3(0, RND_ROT, 0), Vector3(0, 400, 0));
 		SetMoveDest(LEAP_DEST);
@@ -604,7 +635,7 @@ class SorcChief2 : CGameScript
 	void say_hi()
 	{
 		SetMoveDest(GetEntityIndex("ent_lastspoke"));
-		SayText("I got something you want , human?");
+		SayText(I + " got something you want , human?");
 		OpenMenu(GetEntityIndex("ent_lastspoke"));
 	}
 
@@ -625,7 +656,7 @@ class SorcChief2 : CGameScript
 	void say_sword2()
 	{
 		SetMoveDest(TALK_TARGET);
-		SayText("Worry not , I have a spare back at the palace... A couple spares , actually.");
+		SayText("Worry not , " + I + "have a spare back at the palace... " + A + " couple spares , actually.");
 		ScheduleDelayedEvent(4.0, "say_sword3");
 	}
 
@@ -653,7 +684,7 @@ class SorcChief2 : CGameScript
 	void say_sword5()
 	{
 		SetMoveDest(TALK_TARGET);
-		SayText("That having been said , I must leave before this citidel comes crashing down - I suggest you do the same.");
+		SayText("That having been said , " + I + "must leave before this citidel comes crashing down - " + I + " suggest you do the same.");
 		PlayAnim("critical", "warcry");
 		ScheduleDelayedEvent(3.0, "final_tele_out");
 	}
@@ -661,7 +692,7 @@ class SorcChief2 : CGameScript
 	void final_tele_out()
 	{
 		SetMoveDest(TALK_TARGET);
-		SayText("Sorry I can t take you with me...");
+		SayText("Sorry " + I + " can t take you with me...");
 		EmitSound(GetOwner(), 0, SOUND_TELE, 10);
 		SpawnNPC("monsters/summon/ibarrier", /* TODO: $relpos */ $relpos(0, 0, 0), ScriptMode::Legacy); // params: GetEntityIndex(GetOwner()), 64, 2, 0, 0, 0, 1
 		ScheduleDelayedEvent(0.1, "fade_away");

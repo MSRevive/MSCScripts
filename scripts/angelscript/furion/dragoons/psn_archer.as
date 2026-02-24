@@ -7,10 +7,13 @@ namespace MS
 
 class PsnArcher : CGameScript
 {
+	int ELEMENT;
+	int WEAPON;
+
 	PsnArcher()
 	{
-		const int WEAPON = 0;
-		const int ELEMENT = 1;
+		WEAPON = 0;
+		ELEMENT = 1;
 	}
 
 }

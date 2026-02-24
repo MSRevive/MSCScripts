@@ -73,7 +73,7 @@ class CatacombsFinal : CGameScript
 			add_epic_item();
 			add_epic_arrows();
 		}
-		add_gold(/* TODO: $math(multiply) */ 500);
+		add_gold((500 * RandomInt(1, 3)));
 	}
 
 }

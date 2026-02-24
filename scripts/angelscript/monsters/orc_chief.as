@@ -9,30 +9,37 @@ namespace MS
 class OrcChief : CGameScript
 {
 	string ANIM_ATTACK;
+	float ATTACK_ACCURACY;
+	int ATTACK_DMG_HIGH;
+	int ATTACK_DMG_LOW;
 	int ATTACK_HITRANGE;
 	int ATTACK_RANGE;
+	int ATTAKC_MOVERANGE;
 	string DROP_ITEM1;
 	string DROP_ITEM1_CHANCE;
 	float FLINCH_CHANCE;
 	int INFERNAL;
 	int MOVE_RANGE;
+	float NPC_BOSS_REGEN_RATE;
+	float NPC_BOSS_RESTORATION;
 	int NPC_GIVE_EXP;
 	string NPC_IS_BOSS;
+	int OVERRIDE_NODROP;
 	string WARBOSS_VALID_MAP;
 
 	OrcChief()
 	{
-		const int OVERRIDE_NODROP = 1;
-		const float NPC_BOSS_REGEN_RATE = 0.1;
-		const float NPC_BOSS_RESTORATION = 0.5;
+		OVERRIDE_NODROP = 1;
+		NPC_BOSS_REGEN_RATE = 0.1;
+		NPC_BOSS_RESTORATION = 0.5;
 		ANIM_ATTACK = "battleaxe_swing1_L";
 		FLINCH_CHANCE = 0.35;
 		INFERNAL = 0;
-		const float ATTACK_ACCURACY = 0.8;
-		const int ATTACK_DMG_LOW = 75;
-		const int ATTACK_DMG_HIGH = 650;
+		ATTACK_ACCURACY = 0.8;
+		ATTACK_DMG_LOW = 75;
+		ATTACK_DMG_HIGH = 650;
 		MOVE_RANGE = 64;
-		const int ATTAKC_MOVERANGE = 64;
+		ATTAKC_MOVERANGE = 64;
 		ATTACK_RANGE = 150;
 		ATTACK_HITRANGE = 225;
 	}

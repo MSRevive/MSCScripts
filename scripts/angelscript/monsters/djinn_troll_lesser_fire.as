@@ -7,20 +7,33 @@ namespace MS
 
 class DjinnTrollLesserFire : CGameScript
 {
+	string BURST_ELEMENT;
+	int DMG_AOE;
+	int DOT_DMG;
+	float DOT_DUR;
+	string EFFECT_DOT;
+	string ELEMENT_COLOR;
+	string FX_BURST_SCRIPT;
+	string PROJ_SCRIPT;
+	int ROCK_DAMAGE;
+	int TROLL_EXP;
+	string TROLL_MODEL;
+	string TROLL_NAME;
+
 	DjinnTrollLesserFire()
 	{
-		const int TROLL_EXP = 200;
-		const string PROJ_SCRIPT = "proj_troll_rock_fire";
-		const string TROLL_MODEL = "monsters/troll_fire.mdl";
-		const string TROLL_NAME = "Lesser Fire Djinn";
-		const int ROCK_DAMAGE = 0;
-		const string DMG_AOE = RandomInt(300, 500);
-		const string DOT_DMG = RandomInt(40, 60);
-		const float DOT_DUR = 5.0;
-		const string FX_BURST_SCRIPT = "effects/sfx_fire_burst";
-		const string EFFECT_DOT = "effects/dot_fire";
-		const Vector3 ELEMENT_COLOR = Vector3(255, 0, 0);
-		const string BURST_ELEMENT = "fire_effect";
+		TROLL_EXP = 200;
+		PROJ_SCRIPT = "proj_troll_rock_fire";
+		TROLL_MODEL = "monsters/troll_fire.mdl";
+		TROLL_NAME = "Lesser Fire Djinn";
+		ROCK_DAMAGE = 0;
+		DMG_AOE = RandomInt(300, 500);
+		DOT_DMG = RandomInt(40, 60);
+		DOT_DUR = 5.0;
+		FX_BURST_SCRIPT = "effects/sfx_fire_burst";
+		EFFECT_DOT = "effects/dot_fire";
+		ELEMENT_COLOR = Vector3(255, 0, 0);
+		BURST_ELEMENT = "fire_effect";
 	}
 
 	void game_precache()

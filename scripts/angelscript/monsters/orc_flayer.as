@@ -9,8 +9,11 @@ namespace MS
 class OrcFlayer : CGameScript
 {
 	string ANIM_ATTACK;
+	float ATTACK_ACCURACY;
+	int ATTACK_DMG_HIGH;
+	int ATTACK_DMG_LOW;
 	int DROP_GOLD;
-	string DROP_GOLD_AMT;
+	int DROP_GOLD_AMT;
 	string DROP_ITEM1;
 	float DROP_ITEM1_CHANCE;
 	float FLINCH_CHANCE;
@@ -25,9 +28,9 @@ class OrcFlayer : CGameScript
 		DROP_ITEM1_CHANCE = 0.2;
 		ANIM_ATTACK = "swordswing1_L";
 		FLINCH_CHANCE = 0.45;
-		const float ATTACK_ACCURACY = 0.8;
-		const int ATTACK_DMG_LOW = 18;
-		const int ATTACK_DMG_HIGH = 25;
+		ATTACK_ACCURACY = 0.8;
+		ATTACK_DMG_LOW = 18;
+		ATTACK_DMG_HIGH = 25;
 	}
 
 	void orc_spawn()

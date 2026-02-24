@@ -15,6 +15,10 @@ class HorrorLightningOld : CGameScript
 	int IS_UNHOLY;
 	int I_FLY;
 	int NPC_GIVE_EXP;
+	string SOUND_SHOCK1;
+	string SOUND_SHOCK2;
+	string SOUND_SHOCK3;
+	string SOUND_SPRAY;
 	string SPITTING;
 	int SPRAYING_GAS;
 
@@ -24,10 +28,10 @@ class HorrorLightningOld : CGameScript
 		IS_UNHOLY = 1;
 		BALL_SIZE = 5;
 		BALL_DMG = 50;
-		const string SOUND_SPRAY = "debris/beamstart1.wav";
-		const string SOUND_SHOCK1 = "debris/zap8.wav";
-		const string SOUND_SHOCK2 = "debris/zap3.wav";
-		const string SOUND_SHOCK3 = "debris/zap4.wav";
+		SOUND_SPRAY = "debris/beamstart1.wav";
+		SOUND_SHOCK1 = "debris/zap8.wav";
+		SOUND_SHOCK2 = "debris/zap3.wav";
+		SOUND_SHOCK3 = "debris/zap4.wav";
 	}
 
 	void game_precache()

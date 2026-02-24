@@ -6,26 +6,40 @@ namespace MS
 class BaseOldHelenaNpc : CGameScript
 {
 	string ANIM_DEATH;
+	float FREQ_WARN;
 	string LAST_STRUCK_TIME;
 	int NPC_REPORT_ITEMS;
+	string SOUND_DEATH1;
+	string SOUND_DEATH2;
+	string SOUND_DEATH3;
+	string SOUND_DEATH4;
+	string SOUND_HELP1;
+	string SOUND_HELP2;
+	string SOUND_HELP3;
+	string SOUND_HELP4;
+	string SOUND_HELP5;
+	string SOUND_HELP6;
+	string SOUND_HELP7;
+	string SOUND_HELP8;
+	string SOUND_HELP9;
 	int WARN_DELAY;
 
 	BaseOldHelenaNpc()
 	{
-		const string SOUND_HELP1 = "scientist/sci_fear1.wav";
-		const string SOUND_HELP2 = "scientist/sci_fear2.wav";
-		const string SOUND_HELP3 = "scientist/sci_fear3.wav";
-		const string SOUND_HELP4 = "scientist/sci_fear4.wav";
-		const string SOUND_HELP5 = "scientist/sci_pain1.wav";
-		const string SOUND_HELP6 = "scientist/sci_pain2.wav";
-		const string SOUND_HELP7 = "scientist/sci_pain3.wav";
-		const string SOUND_HELP8 = "scientist/sci_pain4.wav";
-		const string SOUND_HELP9 = "scientist/sci_pain5.wav";
-		const string SOUND_DEATH1 = "scientist/scream1.wav";
-		const string SOUND_DEATH2 = "scientist/scream2.wav";
-		const string SOUND_DEATH3 = "scientist/scream3.wav";
-		const string SOUND_DEATH4 = "scientist/scream4.wav";
-		const float FREQ_WARN = 5.0;
+		SOUND_HELP1 = "scientist/sci_fear1.wav";
+		SOUND_HELP2 = "scientist/sci_fear2.wav";
+		SOUND_HELP3 = "scientist/sci_fear3.wav";
+		SOUND_HELP4 = "scientist/sci_fear4.wav";
+		SOUND_HELP5 = "scientist/sci_pain1.wav";
+		SOUND_HELP6 = "scientist/sci_pain2.wav";
+		SOUND_HELP7 = "scientist/sci_pain3.wav";
+		SOUND_HELP8 = "scientist/sci_pain4.wav";
+		SOUND_HELP9 = "scientist/sci_pain5.wav";
+		SOUND_DEATH1 = "scientist/scream1.wav";
+		SOUND_DEATH2 = "scientist/scream2.wav";
+		SOUND_DEATH3 = "scientist/scream3.wav";
+		SOUND_DEATH4 = "scientist/scream4.wav";
+		FREQ_WARN = 5.0;
 		ANIM_DEATH = "death";
 	}
 
@@ -51,7 +65,7 @@ class BaseOldHelenaNpc : CGameScript
 		// PlayRandomSound from: SOUND_HELP1, SOUND_HELP2, SOUND_HELP3, SOUND_HELP4, SOUND_HELP5, SOUND_HELP6, SOUND_HELP7, SOUND_HELP8, SOUND_HELP9
 		array<string> sounds = {SOUND_HELP1, SOUND_HELP2, SOUND_HELP3, SOUND_HELP4, SOUND_HELP5, SOUND_HELP6, SOUND_HELP7, SOUND_HELP8, SOUND_HELP9};
 		EmitSound(GetOwner(), 0, sounds[RandomInt(0, sounds.length() - 1)], 10);
-		string RAND_SCREAM = RandomInt(1, 4);
+		int RAND_SCREAM = RandomInt(1, 4);
 		if (RAND_SCREAM == 1)
 		{
 			SayText("Help! Help!");

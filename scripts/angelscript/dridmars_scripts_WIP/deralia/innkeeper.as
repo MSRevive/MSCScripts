@@ -23,13 +23,14 @@ class Innkeeper : CGameScript
 	string CHAT_STEP4;
 	int CHAT_STEPS;
 	int SAID_WELCOME;
+	string SOUND_HELLO;
 	string STORE_NAME;
 	string STORE_TRIGGERTEXT;
 	string TALK_TARGET;
 
 	Innkeeper()
 	{
-		const string SOUND_HELLO = "npc/hello1.wav";
+		SOUND_HELLO = "npc/hello1.wav";
 		STORE_NAME = "deralia_bar";
 		STORE_TRIGGERTEXT = "store trade buy sell purchase sale offer";
 	}
@@ -153,7 +154,7 @@ class Innkeeper : CGameScript
 
 	void say_job()
 	{
-		SayText("I ve got Bob the door guard, but he s a little afraid of rats. And my basement is full of them.");
+		SayText(I + " ve got Bob the door guard, but he s a little afraid of rats. And my basement is full of them.");
 		SayText("If you could clear the place up , it would be greatly appreciated and you can stay the night.");
 	}
 
@@ -162,7 +163,7 @@ class Innkeeper : CGameScript
 		PlayAnim("once", "pondering");
 		SayText("Rumour has it that this place has rooms real cheap , get my drift?");
 		PlayAnim("once", "pondering");
-		SayText("I ve heard from travelers coming to this tavern, telling about places outside of this village.");
+		SayText(I + " ve heard from travelers coming to this tavern, telling about places outside of this village.");
 		ScheduleDelayedEvent(3, "say_rumour2");
 	}
 

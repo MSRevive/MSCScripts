@@ -7,10 +7,13 @@ namespace MS
 
 class IceUnarmed : CGameScript
 {
+	int ELEMENT;
+	int WEAPON;
+
 	IceUnarmed()
 	{
-		const int WEAPON = 2;
-		const int ELEMENT = 0;
+		WEAPON = 2;
+		ELEMENT = 0;
 	}
 
 }

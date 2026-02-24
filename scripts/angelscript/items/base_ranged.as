@@ -7,15 +7,18 @@ namespace MS
 
 class BaseRanged : CGameScript
 {
+	int NO_PARRY;
+	string RANGED_DMG_TYPE;
+	int RANGED_NOISE;
 	string UNDER_SKILLED;
 	string WEAPON_DMG_MULTI;
 	string WEAPON_PRIMARY_SKILL;
 
 	BaseRanged()
 	{
-		const int NO_PARRY = 1;
-		const int RANGED_NOISE = 650;
-		const string RANGED_DMG_TYPE = "pierce";
+		NO_PARRY = 1;
+		RANGED_NOISE = 650;
+		RANGED_DMG_TYPE = "pierce";
 	}
 
 	void weapon_spawn()
@@ -67,7 +70,7 @@ class BaseRanged : CGameScript
 			OUT_STR += " proficiency ";
 			OUT_STR += BASE_LEVEL_REQ;
 			OUT_STR += " )";
-			SendInfoMsg(GetOwner(), "Insufficient Skill OUT_STR");
+			SendInfoMsg(GetOwner(), "Insufficient Skill " + OUT_STR);
 			SetAttackProp("ent_me", 0);
 			SetAttackProp("ent_me", 0);
 			SetAttackProp("ent_me", 0);

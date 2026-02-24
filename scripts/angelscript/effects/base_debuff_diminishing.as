@@ -8,15 +8,19 @@ namespace MS
 class BaseDebuffDiminishing : CGameScript
 {
 	string DEBUFF_SCRIPTFLAG;
+	string EFFECT_ID;
+	string EFFECT_SCRIPT;
+	int POOL_CAP;
 	string POOL_FLAG_NAME;
+	int POOL_REGEN;
 	string POOL_REMAINING;
 
 	BaseDebuffDiminishing()
 	{
-		const string EFFECT_ID = "base_debuff";
-		const string EFFECT_SCRIPT = currentscript;
-		const int POOL_CAP = 10;
-		const int POOL_REGEN = 4;
+		EFFECT_ID = "base_debuff";
+		EFFECT_SCRIPT = currentscript;
+		POOL_CAP = 10;
+		POOL_REGEN = 4;
 		POOL_REMAINING = POOL_CAP;
 		POOL_FLAG_NAME = EFFECT_ID;
 	}
@@ -31,18 +35,18 @@ class BaseDebuffDiminishing : CGameScript
 			pool_get_available();
 			string L_ACTION = "edit";
 		}
-		// TODO: capvar L_TIME_USED 0 POOL_REMAINING
+		L_TIME_USED = max(0, min(POOL_REMAINING, L_TIME_USED));
 		if (L_TIME_USED == 0)
 		{
 			DEBUFF_SCRIPTFLAG = 1;
 			return;
 		}
 		effect_set_duration(L_TIME_USED);
-		string L_POOL_USED = /* TODO: $math(subtract) */ POOL_CAP;
+		string L_POOL_USED = (POOL_CAP - POOL_REMAINING);
 		string L_REGEN_TIME = L_TIME_USED;
 		L_REGEN_TIME += L_POOL_USED;
 		L_REGEN_TIME *= POOL_REGEN;
-		string L_TYPE = /* TODO: $math(add) */ GetGameTime();
+		string L_TYPE = (GetGameTime() + L_TIME_USED);
 		SetScriptFlags(GetOwner(), L_ACTION, POOL_FLAG_NAME, L_TYPE, L_REGEN_TIME, L_REGEN_TIME);
 	}
 
@@ -56,11 +60,11 @@ class BaseDebuffDiminishing : CGameScript
 			return;
 		}
 		string L_END_TIME = GetToken(L_VALUE, 0, ";");
-		string L_REMAINING = /* TODO: $math(subtract) */ POOL_CAP;
-		string L_RECOVERED = /* TODO: $math(subtract) */ GetGameTime();
+		string L_REMAINING = (POOL_CAP - GetToken(L_VALUE, 1, ";"));
+		string L_RECOVERED = (GetGameTime() - L_END_TIME);
 		L_RECOVERED /= POOL_REGEN;
-		// TODO: capvar L_RECOVERED 0 999
-		string L_RECOVERED = int(L_RECOVERED);
+		L_RECOVERED = max(0, min(999, L_RECOVERED));
+		int L_RECOVERED = int(L_RECOVERED);
 		L_REMAINING += L_RECOVERED;
 		POOL_REMAINING = L_REMAINING;
 	}

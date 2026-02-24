@@ -32,7 +32,7 @@ class Lodagond2 : CGameScript
 		}
 		if (RandomInt(1, 12) == 1)
 		{
-			string SCROLL_TOME = RandomInt(1, 2);
+			int SCROLL_TOME = RandomInt(1, 2);
 			if (SCROLL_TOME == 1)
 			{
 				AddStoreItem(STORENAME, "scroll_lightning_storm", 1, 0);

@@ -45,16 +45,16 @@ class FxManabolt : CGameScript
 			DeleteEntity(GetOwner());
 		}
 		if (!(F_BALL_SIZE > 0)) return;
-		string SUB_MODEL = int(F_BALL_SIZE);
+		int SUB_MODEL = int(F_BALL_SIZE);
 		SUB_MODEL += 12;
-		string SUB_MODEL = int(SUB_MODEL);
+		int SUB_MODEL = int(SUB_MODEL);
 		SetModelBody(0, SUB_MODEL);
 	}
 
 	void set_size()
 	{
 		string IN_SIZE = param1;
-		string SUB_MODEL = int(IN_SIZE);
+		int SUB_MODEL = int(IN_SIZE);
 		SUB_MODEL += 13;
 		SetModelBody(0, SUB_MODEL);
 	}

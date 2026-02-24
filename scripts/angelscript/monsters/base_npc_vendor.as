@@ -7,9 +7,13 @@ namespace MS
 
 class BaseNpcVendor : CGameScript
 {
+	string BUSY_COMMENT;
 	int HAS_INCLUDE_VENDOR;
 	string L_SERVICE;
 	string STORE_BUYMENU;
+	int STORE_RESTOCK;
+	int STORE_RESTOCK_TIME_HI;
+	int STORE_RESTOCK_TIME_LO;
 	string STORE_TRADEEXT;
 	int VENDOR_STORE_ACTIVE;
 	string VENDOR_TARGET;
@@ -18,10 +22,10 @@ class BaseNpcVendor : CGameScript
 	BaseNpcVendor()
 	{
 		HAS_INCLUDE_VENDOR = 1;
-		const int STORE_RESTOCK = 1;
-		const int STORE_RESTOCK_TIME_LO = 300;
-		const int STORE_RESTOCK_TIME_HI = 600;
-		const string BUSY_COMMENT = "One at a time, please.";
+		STORE_RESTOCK = 1;
+		STORE_RESTOCK_TIME_LO = 300;
+		STORE_RESTOCK_TIME_HI = 600;
+		BUSY_COMMENT = "One at a time, please.";
 		if (STORE_TRADEEXT == "STORE_TRADEEXT")
 		{
 			STORE_TRADEEXT = "trade";
@@ -137,7 +141,7 @@ class BaseNpcVendor : CGameScript
 		}
 		if (SELL_WEAPON_LEVEL > 0)
 		{
-			SendColoredMessage(VENDOR_TARGET, "This vendor's weapons require proficiency level  SELL_WEAPON_LEVEL");
+			SendColoredMessage(VENDOR_TARGET, "This vendor's weapons require proficiency level  " + SELL_WEAPON_LEVEL);
 		}
 		if (!(VEND_INDIVIDUAL))
 		{
@@ -153,7 +157,7 @@ class BaseNpcVendor : CGameScript
 			}
 			string L_TARGET_STORE = VEND_PREFIX;
 			L_TARGET_STORE += GetPlayerAuthId(VENDOR_TARGET);
-			if (/* TODO: $get_arrayfind */ $get_arrayfind(ARRAY_STORES, L_TARGET_STORE) > -1)
+			if (ArrayFind(ARRAY_STORES, L_TARGET_STORE, 0) > -1)
 			{
 				LogDebug("basevendor_offerstore setupstore L_TARGET_STORE");
 				NpcStoreOffer(L_TARGET_STORE, VENDOR_TARGET, L_SERVICE, "trade");
@@ -174,7 +178,7 @@ class BaseNpcVendor : CGameScript
 	{
 		if (!(IsEntityAlive(param1))) return;
 		if (!(GetEntityRange(param1) < 256)) return;
-		SayText("BUSY_COMMENT");
+		SayText(BUSY_COMMENT);
 	}
 
 	void trade_success()
@@ -202,8 +206,8 @@ class BaseNpcVendor : CGameScript
 		string ITEM_TYPE = param4;
 		string ITEM_STAT = "skill.";
 		ITEM_STAT += param4;
-		SayText("I do not think you yet have the skill to use a ITEM_NAME properly.");
-		SayText("You might consider buying one of my other ITEM_TYPE items instead.");
+		SayText(I + "do not think you yet have the skill to use a " + ITEM_NAME + " properly.");
+		SayText("You might consider buying one of my other " + ITEM_TYPE + " items instead.");
 		VEND_NO_GOODBYE = 1;
 		if (SELL_WEAPON_LEVEL > 0)
 		{

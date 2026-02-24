@@ -5,11 +5,12 @@ namespace MS
 
 class SfxMultiLightning : CGameScript
 {
+	string SOUND_THUNDER;
 	string ZAP_LIST;
 
 	SfxMultiLightning()
 	{
-		const string SOUND_THUNDER = "weather/lightning.wav";
+		SOUND_THUNDER = "weather/lightning.wav";
 	}
 
 	void client_activate()

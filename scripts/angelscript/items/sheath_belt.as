@@ -9,10 +9,12 @@ class SheathBelt : CGameScript
 {
 	int CONTAINER_CANCLOSE;
 	string CONTAINER_ITEM_ACCEPT;
+	string CONTAINER_ITEM_REJECT;
 	int CONTAINER_LOCK_STRENGTH;
 	int CONTAINER_MAXITEMS;
 	int CONTAINER_SPACE;
 	string CONTAINER_TYPE;
+	int MODEL_BODY_OFS;
 
 	SheathBelt()
 	{
@@ -22,8 +24,8 @@ class SheathBelt : CGameScript
 		CONTAINER_CANCLOSE = 0;
 		CONTAINER_LOCK_STRENGTH = 0;
 		CONTAINER_ITEM_ACCEPT = "swords";
-		const int MODEL_BODY_OFS = 1;
-		const string CONTAINER_ITEM_REJECT = "item_tk_";
+		MODEL_BODY_OFS = 1;
+		CONTAINER_ITEM_REJECT = "item_tk_";
 	}
 
 	void sheath_spawn()

@@ -7,44 +7,76 @@ namespace MS
 
 class AxesGoldenRef : CGameScript
 {
+	int ANIM_ATTACK1;
+	int ANIM_ATTACK2;
+	int ANIM_ATTACK3;
+	int ANIM_IDLE1;
+	int ANIM_LIFT1;
+	string ANIM_PREFIX;
+	int ANIM_SHEATH;
+	int BASE_LEVEL_REQ;
+	int BREAK_CHANCE;
+	string BREAK_SOUND;
 	int BROKEN;
+	int CUSTOM_AXE_SECONDARY;
+	int FINAL_VALUE;
 	string HOLY_DMG;
+	float MELEE_ACCURACY;
+	float MELEE_ATK_DURATION;
+	int MELEE_DMG;
+	float MELEE_DMG_DELAY;
+	int MELEE_DMG_RANGE;
+	string MELEE_DMG_TYPE;
+	int MELEE_ENERGY;
+	float MELEE_PARRY_CHANCE;
+	int MELEE_RANGE;
+	string MELEE_SOUND;
+	string MELEE_SOUND_DELAY;
+	string MELEE_STAT;
+	string MELEE_VIEWANIM_ATK;
+	int MODEL_BODY_OFS;
+	string MODEL_HANDS;
+	string MODEL_VIEW;
+	int MODEL_VIEW_IDX;
+	string MODEL_WORLD;
+	string SOUND_SWIPE;
 	int SPEC_ATTACK;
+	int THIS_NO_BREAK;
 
 	AxesGoldenRef()
 	{
-		const int THIS_NO_BREAK = 1;
-		const int BASE_LEVEL_REQ = 15;
-		const int CUSTOM_AXE_SECONDARY = 1;
-		const int FINAL_VALUE = 5000;
-		const string BREAK_SOUND = "debris/bustmetal1.wav";
-		const int ANIM_LIFT1 = 0;
-		const int ANIM_IDLE1 = 1;
-		const int ANIM_ATTACK1 = 2;
-		const int ANIM_ATTACK2 = 3;
-		const int ANIM_ATTACK3 = 4;
-		const int ANIM_SHEATH = 5;
-		const string MELEE_VIEWANIM_ATK = ANIM_ATTACK1;
-		const string MODEL_VIEW = "viewmodels/v_2haxesgreat.mdl";
-		const int MODEL_VIEW_IDX = 1;
-		const string MODEL_HANDS = "weapons/p_weapons2.mdl";
-		const string MODEL_WORLD = "weapons/p_weapons2.mdl";
-		const string SOUND_SWIPE = "magic/energy4.wav";
-		const int MODEL_BODY_OFS = 80;
-		const string ANIM_PREFIX = "khopesh";
-		const int BREAK_CHANCE = 2;
-		const int MELEE_RANGE = 100;
-		const float MELEE_DMG_DELAY = 0.6;
-		const float MELEE_ATK_DURATION = 1.5;
-		const int MELEE_ENERGY = 3;
-		const int MELEE_DMG = 400;
-		const int MELEE_DMG_RANGE = 100;
-		const string MELEE_DMG_TYPE = "holy";
-		const float MELEE_ACCURACY = 0.24;
-		const string MELEE_STAT = "axehandling";
-		const string MELEE_SOUND = SOUND_SWIPE;
-		const string MELEE_SOUND_DELAY = MELEE_DMG_DELAY;
-		const float MELEE_PARRY_CHANCE = 0.25;
+		THIS_NO_BREAK = 1;
+		BASE_LEVEL_REQ = 15;
+		CUSTOM_AXE_SECONDARY = 1;
+		FINAL_VALUE = 5000;
+		BREAK_SOUND = "debris/bustmetal1.wav";
+		ANIM_LIFT1 = 0;
+		ANIM_IDLE1 = 1;
+		ANIM_ATTACK1 = 2;
+		ANIM_ATTACK2 = 3;
+		ANIM_ATTACK3 = 4;
+		ANIM_SHEATH = 5;
+		MELEE_VIEWANIM_ATK = ANIM_ATTACK1;
+		MODEL_VIEW = "viewmodels/v_2haxesgreat.mdl";
+		MODEL_VIEW_IDX = 1;
+		MODEL_HANDS = "weapons/p_weapons2.mdl";
+		MODEL_WORLD = "weapons/p_weapons2.mdl";
+		SOUND_SWIPE = "magic/energy4.wav";
+		MODEL_BODY_OFS = 80;
+		ANIM_PREFIX = "khopesh";
+		BREAK_CHANCE = 2;
+		MELEE_RANGE = 100;
+		MELEE_DMG_DELAY = 0.6;
+		MELEE_ATK_DURATION = 1.5;
+		MELEE_ENERGY = 3;
+		MELEE_DMG = 400;
+		MELEE_DMG_RANGE = 100;
+		MELEE_DMG_TYPE = "holy";
+		MELEE_ACCURACY = 0.24;
+		MELEE_STAT = "axehandling";
+		MELEE_SOUND = SOUND_SWIPE;
+		MELEE_SOUND_DELAY = MELEE_DMG_DELAY;
+		MELEE_PARRY_CHANCE = 0.25;
 	}
 
 	void weapon_spawn()
@@ -132,7 +164,7 @@ class AxesGoldenRef : CGameScript
 		SetViewModel("none");
 		EmitSound(GetOwner(), 0, BREAK_SOUND, 10);
 		Effect("tempent", "gibs", "glassgibs.mdl", /* TODO: $relpos */ $relpos(0, 0, 0), 0.3, 30, 10, 5, 1.0);
-		SendPlayerMessage(YOUR, "GOLDEN AXE HAS BROKEN!");
+		SendPlayerMessage(YOUR, GOLDEN + AXE + HAS + BROKEN!);
 		ScheduleDelayedEvent(0.2, "break_msg2");
 	}
 

@@ -7,9 +7,11 @@ namespace MS
 
 class Memorialguard : CGameScript
 {
+	int NO_CHAT;
+
 	Memorialguard()
 	{
-		const int NO_CHAT = 1;
+		NO_CHAT = 1;
 	}
 
 	void OnSpawn() override

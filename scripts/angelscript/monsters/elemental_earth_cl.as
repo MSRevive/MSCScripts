@@ -8,18 +8,24 @@ class ElementalEarthCl : CGameScript
 	string FX_ACTIVE;
 	string FX_OWNER;
 	string FX_POS;
+	string FX_SHIELD_COLOR;
+	float FX_SHIELD_DURATION;
+	float FX_SHIELD_SCALE;
+	string FX_SHIELD_SPRITE;
+	int FX_SHIELD_SPRITE_FRAMES;
 	string FX_SHIELD_YAW;
 	string ROCK_FALLING;
 	string ROCK_START;
+	string SOUND_SPAWN;
 
 	ElementalEarthCl()
 	{
-		const string SOUND_SPAWN = "magic/energy1_loud.wav";
-		const string FX_SHIELD_SPRITE = "rain_ripple.spr";
-		const int FX_SHIELD_SPRITE_FRAMES = 15;
-		const Vector3 FX_SHIELD_COLOR = Vector3(255, 255, 255);
-		const float FX_SHIELD_SCALE = 2.5;
-		const float FX_SHIELD_DURATION = 1.0;
+		SOUND_SPAWN = "magic/energy1_loud.wav";
+		FX_SHIELD_SPRITE = "rain_ripple.spr";
+		FX_SHIELD_SPRITE_FRAMES = 15;
+		FX_SHIELD_COLOR = Vector3(255, 255, 255);
+		FX_SHIELD_SCALE = 2.5;
+		FX_SHIELD_DURATION = 1.0;
 	}
 
 	void client_activate()
@@ -58,14 +64,14 @@ class ElementalEarthCl : CGameScript
 		ClientEffect("tempent", "set_current_prop", "color", Vector3(0, 64, 255));
 		ClientEffect("tempent", "set_current_prop", "renderamt", 255);
 		ClientEffect("tempent", "set_current_prop", "angles", Vector3(180, 0, 0));
-		string L_ROCK_START = /* TODO: $math(add) */ ROCK_START;
+		string L_ROCK_START = (ROCK_START + 1);
 		ClientEffect("tempent", "set_current_prop", "fuser1", L_ROCK_START);
 	}
 
 	void update_burst()
 	{
 		if (!(FX_ACTIVE)) return;
-		string CUR_STEP = GetGameTime();
+		float CUR_STEP = GetGameTime();
 		CUR_STEP -= "game.tempent.fuser1";
 		if (CUR_STEP < 0.5)
 		{
@@ -96,7 +102,7 @@ class ElementalEarthCl : CGameScript
 		ClientEffect("tempent", "set_current_prop", "rendermode", "texture");
 		ClientEffect("tempent", "set_current_prop", "renderamt", 0);
 		ClientEffect("tempent", "set_current_prop", "bounce", 0);
-		string L_ROCK_START = /* TODO: $math(add) */ ROCK_START;
+		string L_ROCK_START = (ROCK_START + 1);
 		ClientEffect("tempent", "set_current_prop", "fuser1", L_ROCK_START);
 	}
 
@@ -104,12 +110,12 @@ class ElementalEarthCl : CGameScript
 	{
 		if (!(FX_ACTIVE)) return;
 		if ((ROCK_FALLING)) return;
-		string CUR_STEP = GetGameTime();
+		float CUR_STEP = GetGameTime();
 		CUR_STEP -= "game.tempent.fuser1";
 		if (CUR_STEP < 1.0)
 		{
 			string CUR_REND = /* TODO: $ratio */ $ratio(CUR_STEP, 0, 255);
-			string CUR_REND = int(CUR_REND);
+			int CUR_REND = int(CUR_REND);
 			ClientEffect("tempent", "set_current_prop", "renderamt", CUR_REND);
 		}
 		else

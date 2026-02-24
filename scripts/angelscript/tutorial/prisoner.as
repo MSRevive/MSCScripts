@@ -25,20 +25,23 @@ class Prisoner : CGameScript
 	int NO_HAIL;
 	int NO_JOB;
 	int NO_RUMOR;
+	string NPC_MODEL;
 	string PLAYER_ID;
 	int PLAYING_DEAD;
 	int SAID_GREETING;
 	int SAID_WALL;
+	string SOUND_BECKON;
+	string SOUND_HI;
 	int WALL_BROKEN;
 
 	Prisoner()
 	{
-		const string NPC_MODEL = "npc/femhuman2.mdl";
+		NPC_MODEL = "npc/femhuman2.mdl";
 		NO_JOB = 1;
 		NO_RUMOR = 1;
 		NO_HAIL = 1;
-		const string SOUND_BECKON = "npc/vs_nwncomf4_say.wav";
-		const string SOUND_HI = "npc/vs_nwncomf4_hi.wav";
+		SOUND_BECKON = "npc/vs_nwncomf4_say.wav";
+		SOUND_HI = "npc/vs_nwncomf4_hi.wav";
 	}
 
 	void OnRepeatTimer()

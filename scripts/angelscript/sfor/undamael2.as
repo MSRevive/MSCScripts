@@ -24,7 +24,10 @@ class Undamael2 : CGameScript
 	int SEE_ENEMY;
 	string SOUND_ATTACK1;
 	string SOUND_ATTACK2;
+	string SOUND_DEATH;
 	string SOUND_PAIN;
+	string SOUND_PISSED;
+	string SOUND_REGEN;
 	string SOUND_SPAWN;
 	string SOUND_STRUCK1;
 	string SOUND_STRUCK2;
@@ -38,7 +41,7 @@ class Undamael2 : CGameScript
 		SOUND_PAIN = "controller/con_pain2.wav";
 		SOUND_ATTACK1 = "zombie/claw_miss1.wav";
 		SOUND_ATTACK2 = "zombie/claw_miss2.wav";
-		const string SOUND_DEATH = "npc/undamael2.wav";
+		SOUND_DEATH = "npc/undamael2.wav";
 		SOUND_SPAWN = "npc/undamael1.wav";
 		ANIM_RUN = "walk";
 		ANIM_IDLE = "idle1";
@@ -56,8 +59,8 @@ class Undamael2 : CGameScript
 		EmitSound(GetOwner(), SOUND_SPAWN);
 		Precache(SOUND_DEATH);
 		Precache("lgtning.spr");
-		const string SOUND_PISSED = "nihilanth/nil_done.wav";
-		const string SOUND_REGEN = "x/x_laugh1.wav";
+		SOUND_PISSED = "nihilanth/nil_done.wav";
+		SOUND_REGEN = "x/x_laugh1.wav";
 		I_AM_TURNABLE = 0;
 	}
 

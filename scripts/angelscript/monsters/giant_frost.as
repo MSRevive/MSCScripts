@@ -9,18 +9,32 @@ namespace MS
 class GiantFrost : CGameScript
 {
 	string ANIM_ATTACK;
+	string ANIM_ATTACK_FAR;
+	string ANIM_ATTACK_NEAR;
+	string ANIM_ATTACK_NORM;
+	string ANIM_ATTACK_STOMP;
 	string ANIM_DEATH;
 	string ANIM_IDLE;
+	string ANIM_IDLE_AGRO;
+	string ANIM_IDLE_NORM;
 	string ANIM_RUN;
 	string ANIM_WALK;
+	string ANIM_WARCRY;
+	int ATK_RAD;
 	int ATTACK_HITRANGE;
 	int ATTACK_MOVERANGE;
 	int ATTACK_RANGE;
 	int BPATROL_ACTIVE;
+	int BPATROL_MOVEPROX;
 	string BPATROL_RAD;
+	string CUSTOM_ANIM_FLINCH;
 	int DID_INTRO;
+	int DMG_STOMP;
+	int DMG_SWING;
 	string DOING_REACH_SWING;
 	int DOING_STOMP;
+	float FREQ_REACH_SWING;
+	float FREQ_STOMP;
 	string HALF_HP;
 	int MOVE_RANGE;
 	string NEXT_CUSTOM_FLINCH;
@@ -29,7 +43,25 @@ class GiantFrost : CGameScript
 	string NEXT_STOMP;
 	int NPC_GIVE_EXP;
 	int NPC_MUST_SEE_TARGET;
+	int NPC_NO_VADJ;
+	int RANGE_FAR;
+	int RANGE_MAX;
+	int RANGE_NEAR;
+	int RANGE_NORM;
 	int RUN_STEP_COUNT;
+	string SOUND_ATTACK1;
+	string SOUND_ATTACK2;
+	string SOUND_ATTACK3;
+	string SOUND_DEATH;
+	string SOUND_PAIN1;
+	string SOUND_PAIN2;
+	string SOUND_STOMP;
+	string SOUND_STRUCK1;
+	string SOUND_STRUCK2;
+	string SOUND_STRUCK3;
+	string SOUND_SWING;
+	string SOUND_WARCRY1;
+	string SOUND_WARCRY2;
 	string STOMP_POINT;
 
 	GiantFrost()
@@ -39,44 +71,44 @@ class GiantFrost : CGameScript
 		ANIM_RUN = "crun";
 		ANIM_ATTACK = "ca1slashl";
 		ANIM_DEATH = "ckdbck_death_p1";
-		const string ANIM_IDLE_AGRO = "creadyl_idle2";
-		const string ANIM_IDLE_NORM = "creadyr_idle1";
-		const string ANIM_WARCRY = "ctaunt_alert";
-		const string ANIM_ATTACK_NORM = "ca1slashl";
-		const string ANIM_ATTACK_NEAR = "ccloseh_attack";
-		const string ANIM_ATTACK_FAR = "creach";
-		const string ANIM_ATTACK_STOMP = "cclosel_stomp";
-		const string CUSTOM_ANIM_FLINCH = "cdamagel_flinch1";
+		ANIM_IDLE_AGRO = "creadyl_idle2";
+		ANIM_IDLE_NORM = "creadyr_idle1";
+		ANIM_WARCRY = "ctaunt_alert";
+		ANIM_ATTACK_NORM = "ca1slashl";
+		ANIM_ATTACK_NEAR = "ccloseh_attack";
+		ANIM_ATTACK_FAR = "creach";
+		ANIM_ATTACK_STOMP = "cclosel_stomp";
+		CUSTOM_ANIM_FLINCH = "cdamagel_flinch1";
 		ATTACK_MOVERANGE = 80;
 		MOVE_RANGE = 80;
-		const int BPATROL_MOVEPROX = 90;
+		BPATROL_MOVEPROX = 90;
 		NPC_GIVE_EXP = 1500;
-		const string FREQ_STOMP = Random(10.0, 15.0);
-		const string FREQ_REACH_SWING = Random(2.0, 5.0);
-		const int RANGE_NEAR = 80;
-		const int RANGE_NORM = 100;
-		const int RANGE_FAR = 160;
-		const int RANGE_MAX = 245;
-		const int ATK_RAD = 128;
+		FREQ_STOMP = Random(10.0, 15.0);
+		FREQ_REACH_SWING = Random(2.0, 5.0);
+		RANGE_NEAR = 80;
+		RANGE_NORM = 100;
+		RANGE_FAR = 160;
+		RANGE_MAX = 245;
+		ATK_RAD = 128;
 		ATTACK_RANGE = 80;
 		ATTACK_HITRANGE = 320;
 		NPC_MUST_SEE_TARGET = 0;
-		const int NPC_NO_VADJ = 1;
-		const int DMG_SWING = 100;
-		const int DMG_STOMP = 200;
-		const string SOUND_WARCRY1 = "monsters/earth/c_elemerth_bat1.wav";
-		const string SOUND_WARCRY2 = "monsters/earth/c_elemerth_bat2.wav";
-		const string SOUND_ATTACK1 = "monsters/earth/c_elemerth_atk1.wav";
-		const string SOUND_ATTACK2 = "monsters/earth/c_elemerth_atk2.wav";
-		const string SOUND_ATTACK3 = "monsters/earth/c_elemerth_atk3.wav";
-		const string SOUND_SWING = "weapons/swinghuge.wav";
-		const string SOUND_STOMP = "monsters/earth/c_elemerth_slct.wav";
-		const string SOUND_STRUCK1 = "weapons/axemetal1.wav";
-		const string SOUND_STRUCK2 = "weapons/axemetal2.wav";
-		const string SOUND_STRUCK3 = "debris/concrete1.wav";
-		const string SOUND_PAIN1 = "monsters/earth/c_elemerth_hit1.wav";
-		const string SOUND_PAIN2 = "monsters/earth/c_elemerth_hit2.wav";
-		const string SOUND_DEATH = "monsters/earth/c_elemerth_dead.wav";
+		NPC_NO_VADJ = 1;
+		DMG_SWING = 100;
+		DMG_STOMP = 200;
+		SOUND_WARCRY1 = "monsters/earth/c_elemerth_bat1.wav";
+		SOUND_WARCRY2 = "monsters/earth/c_elemerth_bat2.wav";
+		SOUND_ATTACK1 = "monsters/earth/c_elemerth_atk1.wav";
+		SOUND_ATTACK2 = "monsters/earth/c_elemerth_atk2.wav";
+		SOUND_ATTACK3 = "monsters/earth/c_elemerth_atk3.wav";
+		SOUND_SWING = "weapons/swinghuge.wav";
+		SOUND_STOMP = "monsters/earth/c_elemerth_slct.wav";
+		SOUND_STRUCK1 = "weapons/axemetal1.wav";
+		SOUND_STRUCK2 = "weapons/axemetal2.wav";
+		SOUND_STRUCK3 = "debris/concrete1.wav";
+		SOUND_PAIN1 = "monsters/earth/c_elemerth_hit1.wav";
+		SOUND_PAIN2 = "monsters/earth/c_elemerth_hit2.wav";
+		SOUND_DEATH = "monsters/earth/c_elemerth_dead.wav";
 		Precache(SOUND_DEATH);
 	}
 
@@ -244,8 +276,8 @@ class GiantFrost : CGameScript
 	void normswing_dodamage()
 	{
 		if (!(param1)) return;
-		string RND_LR = Random(-50.0, -10.0);
-		string RND_FB = Random(0.0, 100.0);
+		float RND_LR = Random(-50.0, -10.0);
+		float RND_FB = Random(0.0, 100.0);
 		string PUSH_VEL = /* TODO: $relvel */ $relvel(RND_LR, RND_FB, 10);
 		AddVelocity(param2, PUSH_VEL);
 	}
@@ -265,8 +297,8 @@ class GiantFrost : CGameScript
 	void closeswing_dodamage()
 	{
 		if (!(param1)) return;
-		string RND_LR = Random(-50.0, 50.0);
-		string RND_FB = Random(0.0, 50.0);
+		float RND_LR = Random(-50.0, 50.0);
+		float RND_FB = Random(0.0, 50.0);
 		string PUSH_VEL = /* TODO: $relvel */ $relvel(RND_LR, RND_FB, 10);
 		AddVelocity(param2, PUSH_VEL);
 	}
@@ -326,7 +358,7 @@ class GiantFrost : CGameScript
 	void reachswing_dodamage()
 	{
 		if (!(param1)) return;
-		string RND_FB = Random(0.0, -150.0);
+		float RND_FB = Random(0.0, -150.0);
 		string PUSH_VEL = /* TODO: $relvel */ $relvel(0, RND_FB, 110);
 		AddVelocity(param2, PUSH_VEL);
 	}

@@ -11,13 +11,17 @@ class OrcBerserkerBlackhand : CGameScript
 	string ANIM_ATTACK;
 	string ANIM_ATTACK1;
 	string ANIM_ATTACK2;
+	float ATTACK_ACCURACY;
+	int ATTACK_DMG_HIGH;
+	int ATTACK_DMG_LOW;
 	string ATTACK_PUSH;
 	int DROP_GOLD;
-	string DROP_GOLD_AMT;
+	int DROP_GOLD_AMT;
 	string DROP_ITEM1;
 	float DROP_ITEM1_CHANCE;
 	float FLINCH_CHANCE;
 	int NPC_GIVE_EXP;
+	int ORC_SHIELD;
 
 	OrcBerserkerBlackhand()
 	{
@@ -29,10 +33,10 @@ class OrcBerserkerBlackhand : CGameScript
 		ANIM_ATTACK1 = "battleaxe_swing1_L";
 		ANIM_ATTACK2 = "swordswing1_L";
 		FLINCH_CHANCE = 0.45;
-		const float ATTACK_ACCURACY = 0.7;
-		const int ATTACK_DMG_LOW = 10;
-		const int ATTACK_DMG_HIGH = 20;
-		const string ORC_SHIELD = RandomInt(0, 1);
+		ATTACK_ACCURACY = 0.7;
+		ATTACK_DMG_LOW = 10;
+		ATTACK_DMG_HIGH = 20;
+		ORC_SHIELD = RandomInt(0, 1);
 	}
 
 	void swing_sword()

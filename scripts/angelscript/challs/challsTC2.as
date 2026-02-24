@@ -25,7 +25,7 @@ class Challstc2 : CGameScript
 		AddStoreItem(STORENAME, "proj_bolt_iron", 25, 0, 0, 25);
 		if (RandomInt(1, 8) == 1)
 		{
-			string SCROLL_TOME = RandomInt(1, 2);
+			int SCROLL_TOME = RandomInt(1, 2);
 			if (SCROLL_TIME == 1)
 			{
 				AddStoreItem(STORENAME, "scroll2_volcano", 1, 0);

@@ -10,8 +10,16 @@ class OrcBrawler : CGameScript
 {
 	string ANIM_ATTACK;
 	string ANIM_ATTACK1;
+	string ANIM_KICK;
+	string ANIM_SLAP;
+	string ANIM_SMASH;
+	string ANIM_SWIPE1;
+	string ANIM_WARCRY;
 	int ATTACKING;
-	string ATTACK_DAMAGE;
+	float ATTACK_ACCURACY;
+	int ATTACK_DAMAGE;
+	int ATTACK_DMG_HIGH;
+	int ATTACK_DMG_LOW;
 	int ATTACK_HITRANGE;
 	int ATTACK_MOVERANGE;
 	string ATTACK_PUSH;
@@ -20,13 +28,24 @@ class OrcBrawler : CGameScript
 	int CHARGE_DELAY;
 	int DONE_WARCRY;
 	int DROP_GOLD;
-	string DROP_GOLD_AMT;
+	int DROP_GOLD_AMT;
 	string DROP_ITEM1;
 	float DROP_ITEM1_CHANCE;
 	float FLINCH_CHANCE;
+	float KICK_DMG_DELAY;
 	int MOVE_RANGE;
 	string NEXT_ATTACK;
 	int NPC_GIVE_EXP;
+	float SLAP_DMG_DELAY;
+	string SOUND_CHARGE;
+	string SOUND_KICK;
+	string SOUND_KICKHIT;
+	string SOUND_SLAP;
+	string SOUND_SLAPHIT;
+	string SOUND_WARCRY;
+	float STUCK_CHECK_FREQUENCY;
+	float ZORC_DMG_MULTI;
+	float ZORC_HP_MULTI;
 
 	OrcBrawler()
 	{
@@ -36,31 +55,31 @@ class OrcBrawler : CGameScript
 		DROP_ITEM1 = "blunt_gauntlets";
 		DROP_ITEM1_CHANCE = 0.2;
 		ANIM_ATTACK1 = "swordswing1_L";
-		const string ANIM_SMASH = "battleaxe_swing1_L";
-		const string ANIM_SWIPE1 = "swordswing1_L";
-		const string ANIM_SLAP = "deflectcounter";
-		const string ANIM_KICK = "kick";
-		const string ANIM_WARCRY = "warcry";
-		const float KICK_DMG_DELAY = 0.5;
-		const float SLAP_DMG_DELAY = 0.5;
+		ANIM_SMASH = "battleaxe_swing1_L";
+		ANIM_SWIPE1 = "swordswing1_L";
+		ANIM_SLAP = "deflectcounter";
+		ANIM_KICK = "kick";
+		ANIM_WARCRY = "warcry";
+		KICK_DMG_DELAY = 0.5;
+		SLAP_DMG_DELAY = 0.5;
 		FLINCH_CHANCE = 0.45;
-		const float ATTACK_ACCURACY = 0.7;
+		ATTACK_ACCURACY = 0.7;
 		ATTACK_DAMAGE = RandomInt(50, 100);
-		const int ATTACK_DMG_LOW = 10;
-		const int ATTACK_DMG_HIGH = 20;
+		ATTACK_DMG_LOW = 10;
+		ATTACK_DMG_HIGH = 20;
 		ATTACK_RANGE = 100;
 		ATTACK_HITRANGE = 150;
 		ATTACK_MOVERANGE = 50;
 		MOVE_RANGE = 50;
-		const string SOUND_KICK = "zombie/claw_miss1.wav";
-		const string SOUND_SLAP = "zombie/claw_miss2.wav";
-		const string SOUND_KICKHIT = "zombie/claw_strike2.wav";
-		const string SOUND_SLAPHIT = "zombie/claw_strike3.wav";
-		const string SOUND_WARCRY = "monsters/troll/trollidle.wav";
-		const string SOUND_CHARGE = "garg/gar_alert3.wav";
-		const float STUCK_CHECK_FREQUENCY = 2.0;
-		const float ZORC_DMG_MULTI = 4.0;
-		const float ZORC_HP_MULTI = 3.0;
+		SOUND_KICK = "zombie/claw_miss1.wav";
+		SOUND_SLAP = "zombie/claw_miss2.wav";
+		SOUND_KICKHIT = "zombie/claw_strike2.wav";
+		SOUND_SLAPHIT = "zombie/claw_strike3.wav";
+		SOUND_WARCRY = "monsters/troll/trollidle.wav";
+		SOUND_CHARGE = "garg/gar_alert3.wav";
+		STUCK_CHECK_FREQUENCY = 2.0;
+		ZORC_DMG_MULTI = 4.0;
+		ZORC_HP_MULTI = 3.0;
 	}
 
 	void orc_spawn()

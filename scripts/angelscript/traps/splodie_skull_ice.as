@@ -7,13 +7,15 @@ namespace MS
 
 class SplodieSkullIce : CGameScript
 {
+	int CUSTOM_DEATH;
 	string DEATH_TIME;
 	int IMMUNE_VAMPIRE;
+	string SOUND_HATCH;
 
 	SplodieSkullIce()
 	{
-		const int CUSTOM_DEATH = 1;
-		const string SOUND_HATCH = "debris/bustflesh1.wav";
+		CUSTOM_DEATH = 1;
+		SOUND_HATCH = "debris/bustflesh1.wav";
 	}
 
 	void skull_spawn()

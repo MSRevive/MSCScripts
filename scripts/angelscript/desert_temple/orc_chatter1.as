@@ -8,6 +8,9 @@ namespace MS
 
 class OrcChatter1 : CGameScript
 {
+	int CHAT_AUTO_FACE;
+	int CHAT_NO_CLOSE_MOUTH;
+	int CHAT_USE_CONV_ANIMS;
 	int IN_COMBAT;
 	int NEXT_RESPONSE_INDEX;
 	string ORC_BUDDY_ID;
@@ -15,9 +18,9 @@ class OrcChatter1 : CGameScript
 
 	OrcChatter1()
 	{
-		const int CHAT_USE_CONV_ANIMS = 0;
-		const int CHAT_NO_CLOSE_MOUTH = 1;
-		const int CHAT_AUTO_FACE = 0;
+		CHAT_USE_CONV_ANIMS = 0;
+		CHAT_NO_CLOSE_MOUTH = 1;
+		CHAT_AUTO_FACE = 0;
 	}
 
 	void orc_spawn()
@@ -137,7 +140,7 @@ class OrcChatter1 : CGameScript
 		{
 			L_SAYTEXT_STR += "What the... Where'd this guy come from!?";
 		}
-		SayText("L_SAYTEXT_STR");
+		SayText(L_SAYTEXT_STR);
 		if (!(GetEntityProperty(ORC_BUDDY_ID, "scriptvar")))
 		{
 			CallExternal(ORC_BUDDY_ID, "start_combat", m_hAttackTarget);
@@ -148,7 +151,7 @@ class OrcChatter1 : CGameScript
 	{
 		if (!(GetPlayerCount() == 1)) return;
 		if (!(GetGender(m_hAttackTarget) == "female")) return;
-		SayText("I think *he* might be a *she*...");
+		SayText(I + " think *he* might be a *she*...");
 		ScheduleDelayedEvent(2.0, "gender_gag");
 		ScheduleDelayedEvent(4.0, "gender_gag2");
 		ScheduleDelayedEvent(6.0, "gender_gag3");
@@ -177,7 +180,7 @@ class OrcChatter1 : CGameScript
 	void gender_gag4()
 	{
 		if (!(IsEntityAlive(GetOwner()))) return;
-		SayText("I m just saying...");
+		SayText(I + " m just saying...");
 	}
 
 	void gender_gag5()

@@ -7,6 +7,7 @@ namespace MS
 
 class Sumdale : CGameScript
 {
+	int CHAT_AUTO_HAIL;
 	int QUEST_DONE;
 	int SAID_URD;
 	string URD_ID;
@@ -14,7 +15,7 @@ class Sumdale : CGameScript
 	Sumdale()
 	{
 		QUEST_DONE = 0;
-		const int CHAT_AUTO_HAIL = 1;
+		CHAT_AUTO_HAIL = 1;
 	}
 
 	void OnSpawn() override

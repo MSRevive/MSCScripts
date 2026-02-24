@@ -10,16 +10,44 @@ class SpiderCrystal : CGameScript
 	string ANIM_ATTACK;
 	string ANIM_DEATH;
 	string ANIM_IDLE;
+	string ANIM_JUMP;
 	string ANIM_PREFIX;
 	string ANIM_RUN;
+	string ANIM_TOGROUND;
 	string ANIM_WALK;
+	int ATTACH_CLAW1;
+	int ATTACH_CLAW2;
+	int ATTACH_MAW;
 	int ATTACK_HITRANGE;
 	int ATTACK_MOVERANGE;
 	int ATTACK_RANGE;
+	string BANIM_BITE;
+	string BANIM_CLOSEATK;
+	string BANIM_DODGEL;
+	string BANIM_DODGER;
+	string BANIM_DOUBLEATK;
+	string BANIM_FLINCH;
+	string BANIM_FLING;
+	string BANIM_IDLE;
+	string BANIM_PROJ;
+	string BANIM_REEL;
+	string BANIM_RUN;
+	string BANIM_SPELL;
+	string BANIM_WALK;
 	int BITE_ATTACK;
+	string C_PREFIX;
 	string DELAY_V_PUSH;
 	string DID_INTRO;
+	float DMG_BITE;
+	float DMG_PROJ;
+	float DMG_SWIPE;
+	float DOT_POISON;
+	float DOT_SHOCK;
+	float FREQ_BITE;
+	float FREQ_SIDESTEP;
+	float FREQ_TELEPORT;
 	int GROUND_MODE;
+	string G_PREFIX;
 	int HITRANGE_CLOSE;
 	int HITRANGE_NORM;
 	int IMMUNE_VAMPIRE;
@@ -36,9 +64,24 @@ class SpiderCrystal : CGameScript
 	int NPC_RENDER_AMT;
 	int NPC_RENDER_MODE;
 	string PROJ_SPRITE;
+	int RANGE_CHASE;
 	int RANGE_CLOSE;
 	int RANGE_NORM;
 	int RANGE_PROJ;
+	string SOUND_ALERT1;
+	string SOUND_ALERT2;
+	string SOUND_ALERT3;
+	string SOUND_ALERT4;
+	string SOUND_ATTACK1;
+	string SOUND_ATTACK2;
+	string SOUND_ATTACK3;
+	string SOUND_DEATH;
+	string SOUND_MANIFEST;
+	string SOUND_PAIN1;
+	string SOUND_PAIN2;
+	string SOUND_QUICK1;
+	string SOUND_QUICK2;
+	string SOUND_SEARCH;
 	int STAY_ON_GROUND;
 	string TELE_TYPE;
 	int V_ADJ;
@@ -50,23 +93,23 @@ class SpiderCrystal : CGameScript
 		ANIM_RUN = "c_run";
 		ANIM_ATTACK = "c_project";
 		ANIM_PREFIX = "c_";
-		const string BANIM_IDLE = "idle";
-		const string BANIM_WALK = "walk";
-		const string BANIM_RUN = "run";
-		const string BANIM_DODGEL = "walkl";
-		const string BANIM_DODGER = "walkr";
-		const string BANIM_BITE = "bite";
-		const string BANIM_SPELL = "spell";
-		const string BANIM_DOUBLEATK = "dblslash";
-		const string BANIM_CLOSEATK = "close";
-		const string BANIM_FLING = "fling";
-		const string BANIM_PROJ = "project";
-		const string BANIM_REEL = "real";
-		const string BANIM_FLINCH = "flinch";
-		const string C_PREFIX = "c_";
-		const string G_PREFIX = "g_";
-		const string ANIM_JUMP = "g_jump";
-		const string ANIM_TOGROUND = "toground";
+		BANIM_IDLE = "idle";
+		BANIM_WALK = "walk";
+		BANIM_RUN = "run";
+		BANIM_DODGEL = "walkl";
+		BANIM_DODGER = "walkr";
+		BANIM_BITE = "bite";
+		BANIM_SPELL = "spell";
+		BANIM_DOUBLEATK = "dblslash";
+		BANIM_CLOSEATK = "close";
+		BANIM_FLING = "fling";
+		BANIM_PROJ = "project";
+		BANIM_REEL = "real";
+		BANIM_FLINCH = "flinch";
+		C_PREFIX = "c_";
+		G_PREFIX = "g_";
+		ANIM_JUMP = "g_jump";
+		ANIM_TOGROUND = "toground";
 		ANIM_DEATH = "death";
 		NPC_GIVE_EXP = 600;
 		ATTACK_RANGE = 9999;
@@ -78,35 +121,35 @@ class SpiderCrystal : CGameScript
 		HITRANGE_NORM = 175;
 		RANGE_CLOSE = 70;
 		HITRANGE_CLOSE = 100;
-		const int RANGE_CHASE = 300;
+		RANGE_CHASE = 300;
 		RANGE_PROJ = 9999;
 		MOVERANGE_PROJ = 9999;
 		NPC_RANGED = 1;
-		const string FREQ_BITE = Random(10.0, 15.0);
-		const string FREQ_TELEPORT = Random(10.0, 20.0);
-		const string FREQ_SIDESTEP = Random(10.0, 20.0);
-		const float DOT_POISON = 30.0;
-		const float DMG_SWIPE = 75.0;
-		const float DMG_BITE = 100.0;
-		const float DMG_PROJ = 60.0;
-		const float DOT_SHOCK = 20.0;
-		const int ATTACH_MAW = 0;
-		const int ATTACH_CLAW1 = 1;
-		const int ATTACH_CLAW2 = 2;
-		const string SOUND_ALERT1 = "monsters/spider/c_pspidhas_bat1.wav";
-		const string SOUND_ALERT2 = "monsters/spider/c_pspidire_bat1.wav";
-		const string SOUND_ALERT3 = "monsters/spider/c_pspidr_bat1.wav";
-		const string SOUND_ALERT4 = "monsters/spider/c_pspidr_bat2.wav";
-		const string SOUND_PAIN1 = "monsters/spider/c_pspidr_hit1.wav";
-		const string SOUND_PAIN2 = "monsters/spider/c_pspidr_hit2.wav";
-		const string SOUND_ATTACK1 = "monsters/spider/c_pspidr_atk1.wav";
-		const string SOUND_ATTACK2 = "monsters/spider/c_pspidr_atk2.wav";
-		const string SOUND_ATTACK3 = "monsters/spider/c_pspidr_atk3.wav";
-		const string SOUND_MANIFEST = "monsters/spider/c_pspidrth_bat1.wav";
-		const string SOUND_QUICK1 = "monsters/spider/c_pspidr_no.wav";
-		const string SOUND_QUICK2 = "monsters/spider/c_pspidr_yes.wav";
-		const string SOUND_SEARCH = "monsters/spider/c_pspidr_slct.wav";
-		const string SOUND_DEATH = "monsters/spider/c_pspidr_dead.wav";
+		FREQ_BITE = Random(10.0, 15.0);
+		FREQ_TELEPORT = Random(10.0, 20.0);
+		FREQ_SIDESTEP = Random(10.0, 20.0);
+		DOT_POISON = 30.0;
+		DMG_SWIPE = 75.0;
+		DMG_BITE = 100.0;
+		DMG_PROJ = 60.0;
+		DOT_SHOCK = 20.0;
+		ATTACH_MAW = 0;
+		ATTACH_CLAW1 = 1;
+		ATTACH_CLAW2 = 2;
+		SOUND_ALERT1 = "monsters/spider/c_pspidhas_bat1.wav";
+		SOUND_ALERT2 = "monsters/spider/c_pspidire_bat1.wav";
+		SOUND_ALERT3 = "monsters/spider/c_pspidr_bat1.wav";
+		SOUND_ALERT4 = "monsters/spider/c_pspidr_bat2.wav";
+		SOUND_PAIN1 = "monsters/spider/c_pspidr_hit1.wav";
+		SOUND_PAIN2 = "monsters/spider/c_pspidr_hit2.wav";
+		SOUND_ATTACK1 = "monsters/spider/c_pspidr_atk1.wav";
+		SOUND_ATTACK2 = "monsters/spider/c_pspidr_atk2.wav";
+		SOUND_ATTACK3 = "monsters/spider/c_pspidr_atk3.wav";
+		SOUND_MANIFEST = "monsters/spider/c_pspidrth_bat1.wav";
+		SOUND_QUICK1 = "monsters/spider/c_pspidr_no.wav";
+		SOUND_QUICK2 = "monsters/spider/c_pspidr_yes.wav";
+		SOUND_SEARCH = "monsters/spider/c_pspidr_slct.wav";
+		SOUND_DEATH = "monsters/spider/c_pspidr_dead.wav";
 		PROJ_SPRITE = "nhth1.spr";
 	}
 
@@ -252,7 +295,7 @@ class SpiderCrystal : CGameScript
 
 	void OnHuntTarget(CBaseEntity@ target)
 	{
-		string GAME_TIME = GetGameTime();
+		float GAME_TIME = GetGameTime();
 		if (!(GROUND_MODE))
 		{
 			SetGravity(-1.0);
@@ -329,7 +372,7 @@ class SpiderCrystal : CGameScript
 				L_FREQ_SIDESTEP *= 0.5;
 			}
 			NEXT_SIDESTEP += L_FREQ_SIDESTEP;
-			string SIDESTEP_DIR = RandomInt(1, 2);
+			int SIDESTEP_DIR = RandomInt(1, 2);
 			if (SIDESTEP_DIR == 1)
 			{
 				PlayAnim("critical", /* TODO: $stradd */ $stradd(ANIM_PREFIX, BANIM_DODGEL));
@@ -415,7 +458,7 @@ class SpiderCrystal : CGameScript
 			if ((false))
 			{
 				string TELE_POINT = GetEntityOrigin(m_hAttackTarget);
-				string RND_ANG = Random(0, 359.99);
+				float RND_ANG = Random(0, 359.99);
 				TELE_POINT += /* TODO: $relpos */ $relpos(Vector3(0, RND_ANG, 0), Vector3(0, MOVERANGE_NORM, 0));
 				TELE_POINT = "z";
 				if (!(GROUND_MODE))
@@ -445,8 +488,8 @@ class SpiderCrystal : CGameScript
 		SetEntityOrigin(GetOwner(), TELE_POINT);
 		string L_POS = TELE_POINT;
 		string reg.npcmove.endpos = L_POS;
-		string L_WIGGLE_RL = Random(-8, 8);
-		string L_WIGGLE_FB = Random(-8, 8);
+		float L_WIGGLE_RL = Random(-8, 8);
+		float L_WIGGLE_FB = Random(-8, 8);
 		reg.npcmove.endpos += /* TODO: $relpos */ $relpos(Vector3(0, GetMonsterProperty("angles.yaw"), 0), Vector3(L_WIGGLE_RL, L_WIGGLE_FB, 0));
 		int reg.npcmove.testonly = 1;
 		NpcMove(GetOwner(), m_hAttackTarget);

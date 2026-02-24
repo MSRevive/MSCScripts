@@ -7,11 +7,13 @@ class MummyBileAttackCl : CGameScript
 {
 	int DO_PUKE;
 	string MY_OWNER;
+	string PUKE_SPRITE;
+	int PUKE_SPRITE_FRAMES;
 
 	MummyBileAttackCl()
 	{
-		const string PUKE_SPRITE = "bloodspray.spr";
-		const int PUKE_SPRITE_FRAMES = 10;
+		PUKE_SPRITE = "bloodspray.spr";
+		PUKE_SPRITE_FRAMES = 10;
 		Precache(PUKE_SPRITE);
 	}
 
@@ -54,8 +56,8 @@ class MummyBileAttackCl : CGameScript
 		ClientEffect("tempent", "set_current_prop", "gravity", Random(2, 4));
 		ClientEffect("tempent", "set_current_prop", "collide", "world;die");
 		string CLOUD_ANG = /* TODO: $getcl */ $getcl(MY_OWNER, "angles.yaw");
-		string RND_RL = Random(-10, 10);
-		string RND_UD = Random(-220, -180);
+		float RND_RL = Random(-10, 10);
+		float RND_UD = Random(-220, -180);
 		string CLOUD_VEL = /* TODO: $relvel */ $relvel(Vector3(-75, CLOUD_ANG, 0), Vector3(RND_RL, 400, RND_UD));
 		ClientEffect("tempent", "set_current_prop", "velocity", CLOUD_VEL);
 	}

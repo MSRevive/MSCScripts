@@ -7,19 +7,24 @@ class KayrathCl : CGameScript
 {
 	string ATTACH_LHAND;
 	string ATTACH_RHAND;
+	string FIRE_SPRITE;
+	int FIRE_SPRITE_NFRAMES;
 	int FX_ACTIVE;
 	string FX_DURATION;
 	string MY_OWNER;
 	string OWNER_ANGLES;
+	string POISON_SPRITE;
+	int POISON_SPRITE_NFRAMES;
+	string SOURCE_SPRITE;
 	string SPRAY_TYPE;
 
 	KayrathCl()
 	{
-		const string POISON_SPRITE = "poison_cloud.spr";
-		const string FIRE_SPRITE = "explode1.spr";
-		const int FIRE_SPRITE_NFRAMES = 9;
-		const int POISON_SPRITE_NFRAMES = 17;
-		const string SOURCE_SPRITE = "3dmflaora.spr";
+		POISON_SPRITE = "poison_cloud.spr";
+		FIRE_SPRITE = "explode1.spr";
+		FIRE_SPRITE_NFRAMES = 9;
+		POISON_SPRITE_NFRAMES = 17;
+		SOURCE_SPRITE = "3dmflaora.spr";
 	}
 
 	void OnRepeatTimer()

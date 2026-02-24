@@ -11,8 +11,13 @@ class MummyWarrior2b : CGameScript
 	string ANIM_IDLE;
 	string ANIM_RUN;
 	string ANIM_WALK;
+	int ATTACK_HITCHANCE;
+	string ATTACK_TYPE;
 	float BASE_FRAMERATE;
 	float BASE_MOVESPEED;
+	int DMG_FIRE_DOT;
+	int DMG_STEELPIPE;
+	int MUMMY_STARTING_LIVES;
 	int NPC_GIVE_EXP;
 
 	MummyWarrior2b()
@@ -21,11 +26,11 @@ class MummyWarrior2b : CGameScript
 		ANIM_RUN = "walk2";
 		ANIM_IDLE = "idle1";
 		ANIM_ATTACK = "steelpipe";
-		const string ATTACK_TYPE = "melee";
-		const int DMG_STEELPIPE = 200;
-		const int MUMMY_STARTING_LIVES = 1;
-		const int ATTACK_HITCHANCE = 90;
-		const int DMG_FIRE_DOT = 50;
+		ATTACK_TYPE = "melee";
+		DMG_STEELPIPE = 200;
+		MUMMY_STARTING_LIVES = 1;
+		ATTACK_HITCHANCE = 90;
+		DMG_FIRE_DOT = 50;
 		NPC_GIVE_EXP = 3500;
 	}
 

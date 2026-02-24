@@ -25,7 +25,7 @@ class Debug : CGameScript
 			L_OUT_MSG += "#";
 			L_OUT_MSG += param4;
 			L_OUT_MSG += " is ";
-			L_OUT_MSG += /* TODO: $get_array */ $get_array(param3, param4);
+			L_OUT_MSG += param3[int(param4)];
 			int L_PROCESSED = 1;
 		}
 		if (L_DEBUG_TYPE == "garray")
@@ -35,7 +35,7 @@ class Debug : CGameScript
 			L_OUT_MSG += "#";
 			L_OUT_MSG += param4;
 			L_OUT_MSG += " is ";
-			L_OUT_MSG += /* TODO: $g_get_array */ $g_get_array(param3, param4);
+			L_OUT_MSG += GetGlobalArray(param3, int(param4));
 			int L_PROCESSED = 1;
 		}
 		if (L_DEBUG_TYPE == "darray")
@@ -106,11 +106,11 @@ class Debug : CGameScript
 	{
 		if ((DUMP_ARRAY_GLOBAL))
 		{
-			string L_N_ELEMENTS = /* TODO: $g_get_array_amt */ $g_get_array_amt(DUMP_ARRAY_NAME);
+			string L_N_ELEMENTS = GetGlobalArrayLength(DUMP_ARRAY_NAME);
 		}
 		else
 		{
-			string L_N_ELEMENTS = /* TODO: $get_array_amt */ $get_array_amt(DUMP_ARRAY_NAME);
+			int L_N_ELEMENTS = int(DUMP_ARRAY_NAME.length());
 		}
 		LogDebug("dbg_dump_array L_N_ELEMENTS of DUMP_ARRAY_NAME to GetEntityName(DUMP_ARRAY_CALLER)");
 		for (int i = 0; i < L_N_ELEMENTS; i++)
@@ -124,11 +124,11 @@ class Debug : CGameScript
 		string CUR_IDX = i;
 		if ((DUMP_ARRAY_GLOBAL))
 		{
-			string L_ELEMENT = /* TODO: $g_get_array */ $g_get_array(DUMP_ARRAY_NAME, CUR_IDX);
+			string L_ELEMENT = GetGlobalArray(DUMP_ARRAY_NAME, int(CUR_IDX));
 		}
 		else
 		{
-			string L_ELEMENT = /* TODO: $get_array */ $get_array(DUMP_ARRAY_NAME, CUR_IDX);
+			string L_ELEMENT = DUMP_ARRAY_NAME[int(CUR_IDX)];
 		}
 		string L_OUT_MSG = "#";
 		L_OUT_MSG += int(CUR_IDX);

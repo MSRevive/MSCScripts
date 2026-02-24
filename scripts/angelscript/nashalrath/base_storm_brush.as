@@ -5,12 +5,14 @@ namespace MS
 
 class BaseStormBrush : CGameScript
 {
+	int BASE_RENDERAMT;
+	int BASE_RENDERMODE;
 	int RND_AMT;
 
 	BaseStormBrush()
 	{
-		const int BASE_RENDERAMT = 255;
-		const int BASE_RENDERMODE = 5;
+		BASE_RENDERAMT = 255;
+		BASE_RENDERMODE = 5;
 	}
 
 	void OnSpawn() override

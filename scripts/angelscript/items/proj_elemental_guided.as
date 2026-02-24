@@ -19,7 +19,16 @@ class ProjElementalGuided : CGameScript
 	string GAME_PVP;
 	int IS_ACTIVE;
 	float MAX_DURATION;
+	string MODEL_HANDS;
+	string MODEL_WORLD;
 	string NPCATK_TARGET;
+	int PROJ_AOE_FALLOFF;
+	int PROJ_AOE_RANGE;
+	int PROJ_COLLIDEHITBOX;
+	int PROJ_DAMAGE;
+	int PROJ_MOTIONBLUR;
+	int PROJ_SOLIDIFY_ON_WALL;
+	int PROJ_STICK_DURATION;
 	string SOUND_EXPLODE;
 	string SOUND_LOOP;
 	int SOUND_VOL;
@@ -27,15 +36,15 @@ class ProjElementalGuided : CGameScript
 
 	ProjElementalGuided()
 	{
-		const string MODEL_HANDS = "none";
-		const string MODEL_WORLD = "weapons/projectiles.mdl";
-		const int PROJ_DAMAGE = 0;
-		const int PROJ_AOE_RANGE = 128;
-		const int PROJ_AOE_FALLOFF = 0;
-		const int PROJ_STICK_DURATION = 0;
-		const int PROJ_SOLIDIFY_ON_WALL = 0;
-		const int PROJ_COLLIDEHITBOX = 1;
-		const int PROJ_MOTIONBLUR = 0;
+		MODEL_HANDS = "none";
+		MODEL_WORLD = "weapons/projectiles.mdl";
+		PROJ_DAMAGE = 0;
+		PROJ_AOE_RANGE = 128;
+		PROJ_AOE_FALLOFF = 0;
+		PROJ_STICK_DURATION = 0;
+		PROJ_SOLIDIFY_ON_WALL = 0;
+		PROJ_COLLIDEHITBOX = 1;
+		PROJ_MOTIONBLUR = 0;
 		FWD_SPEED = 200;
 		MAX_DURATION = 10.0;
 	}

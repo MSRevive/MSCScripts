@@ -9,18 +9,23 @@ class ZombieBile : CGameScript
 {
 	string ANIM_ATTACK;
 	string AS_ATTACKING;
+	int DMG_PROJECTILE;
 	int DOING_PROJECTILE;
 	int I_ATTACKING;
 	string I_DISEASE;
 	string NEXT_BILE;
+	int NPC_BASE_EXP;
+	string SOUND_SHOOT1;
+	string SOUND_SHOOT2;
+	string ZOMBIE_NAME;
 
 	ZombieBile()
 	{
-		const int DMG_PROJECTILE = 20;
-		const int NPC_BASE_EXP = 80;
-		const string ZOMBIE_NAME = "Byle Zombie";
-		const string SOUND_SHOOT1 = "bullchicken/bc_attack2.wav";
-		const string SOUND_SHOOT2 = "bullchicken/bc_attack3.wav";
+		DMG_PROJECTILE = 20;
+		NPC_BASE_EXP = 80;
+		ZOMBIE_NAME = "Byle Zombie";
+		SOUND_SHOOT1 = "bullchicken/bc_attack2.wav";
+		SOUND_SHOOT2 = "bullchicken/bc_attack3.wav";
 	}
 
 	void npc_targetsighted()

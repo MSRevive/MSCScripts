@@ -7,42 +7,63 @@ namespace MS
 
 class OrcCataWinder : CGameScript
 {
+	string ANIM_ATTACK;
 	string ANIM_DEATH;
 	string ANIM_FLINCH;
+	string ANIM_IDLE;
+	string ANIM_WIND;
+	int ATTACK_HITCHANCE;
+	int DMG_KICK;
 	string FINAL_KICK_TARG;
+	int FLINCH_CHANCE;
+	float FREQ_KICK;
 	int KICK_DELAY;
+	int KICK_RANGE;
 	string MY_YAW;
 	string NEW_NAME;
 	int NPC_DMG_MULTI;
 	int NPC_HP_MULTI;
+	string SOUND_ATTACK1;
+	string SOUND_ATTACK2;
+	string SOUND_ATTACK3;
+	string SOUND_DEATH;
+	string SOUND_HELP;
+	string SOUND_HIT;
+	string SOUND_HIT2;
+	string SOUND_HIT3;
+	string SOUND_PAIN;
+	string SOUND_STRUCK1;
+	string SOUND_STRUCK2;
+	string SOUND_STRUCK3;
+	string SOUND_WARCRY1;
 	string TRIG_PREFIX;
 	int WIND_ON;
 
 	OrcCataWinder()
 	{
-		const string ANIM_IDLE = "idle1";
-		const string ANIM_ATTACK = "kick";
-		const string ANIM_WIND = "turn_valve";
+		ANIM_IDLE = "idle1";
+		ANIM_ATTACK = "kick";
+		ANIM_WIND = "turn_valve";
 		ANIM_FLINCH = "flinch";
 		ANIM_DEATH = "die_fallback";
-		const int FLINCH_CHANCE = 50;
-		const int KICK_RANGE = 180;
-		const int DMG_KICK = 80;
-		const int ATTACK_HITCHANCE = 90;
-		const float FREQ_KICK = 7.0;
-		const string SOUND_ATTACK1 = "voices/orc/attack.wav";
-		const string SOUND_ATTACK2 = "voices/orc/attack2.wav";
-		const string SOUND_ATTACK3 = "voices/orc/attack3.wav";
-		const string SOUND_HIT = "voices/orc/hit.wav";
-		const string SOUND_HIT2 = "voices/orc/hit2.wav";
-		const string SOUND_HIT3 = "voices/orc/hit3.wav";
-		const string SOUND_PAIN = "monsters/orc/pain.wav";
-		const string SOUND_WARCRY1 = "monsters/orc/battlecry.wav";
-		const string SOUND_DEATH = "voices/orc/die.wav";
-		const string SOUND_HELP = "voices/orc/help.wav";
-		const string SOUND_STRUCK1 = "body/armour1.wav";
-		const string SOUND_STRUCK2 = "body/armour2.wav";
-		const string SOUND_STRUCK3 = "body/armour3.wav";
+		FLINCH_CHANCE = 50;
+		KICK_RANGE = 180;
+		DMG_KICK = 80;
+		ATTACK_HITCHANCE = 90;
+		FREQ_KICK = 7.0;
+		SOUND_ATTACK1 = "voices/orc/attack.wav";
+		SOUND_ATTACK2 = "voices/orc/attack2.wav";
+		SOUND_ATTACK3 = "voices/orc/attack3.wav";
+		SOUND_HIT = "voices/orc/hit.wav";
+		SOUND_HIT2 = "voices/orc/hit2.wav";
+		SOUND_HIT3 = "voices/orc/hit3.wav";
+		SOUND_PAIN = "monsters/orc/pain.wav";
+		SOUND_WARCRY1 = "monsters/orc/battlecry.wav";
+		SOUND_DEATH = "voices/orc/die.wav";
+		SOUND_HELP = "voices/orc/help.wav";
+		SOUND_STRUCK1 = "body/armour1.wav";
+		SOUND_STRUCK2 = "body/armour2.wav";
+		SOUND_STRUCK3 = "body/armour3.wav";
 	}
 
 	void OnRepeatTimer()

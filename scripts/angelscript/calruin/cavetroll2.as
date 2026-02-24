@@ -13,12 +13,13 @@ class Cavetroll2 : CGameScript
 	int DROP_GOLD_MAX;
 	int DROP_GOLD_MIN;
 	int MOVE_RANGE;
+	int NPC_BASE_EXP;
 	int NPC_GIVE_EXP;
 	string PUSH_VEL;
 
 	Cavetroll2()
 	{
-		const int NPC_BASE_EXP = 200;
+		NPC_BASE_EXP = 200;
 		DROP_GOLD_MIN = 50;
 		DROP_GOLD_MAX = 85;
 		ATTACK_RANGE = 130;

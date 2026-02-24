@@ -12,23 +12,32 @@ class SlimeFoolsGoldSmall : CGameScript
 	string ANIM_IDLE;
 	string ANIM_RUN;
 	string ANIM_WALK;
+	float ATTACK_DAMAGE;
+	float ATTACK_HITCHANCE;
 	int ATTACK_HITRANGE;
 	int ATTACK_RANGE;
 	int IS_BLOODLESS;
 	string MOMMY_KILLER;
 	int MOVE_RANGE;
 	int NO_SPAWN_STUCK_CHECK;
+	int NPC_BASE_EXP;
 	int NPC_GIVE_EXP;
 	int NPC_MUST_SEE_TARGET;
+	string SOUND_ATTACK1;
+	string SOUND_ATTACK2;
+	string SOUND_DEATH;
+	string SOUND_IDLE;
+	string SOUND_STRUCK1;
+	string SOUND_STRUCK2;
 
 	SlimeFoolsGoldSmall()
 	{
-		const string SOUND_DEATH = "misc/gold.wav";
-		const string SOUND_STRUCK1 = "misc/gold.wav";
-		const string SOUND_STRUCK2 = "misc/gold.wav";
-		const string SOUND_IDLE = "misc/gold.wav";
-		const string SOUND_ATTACK1 = "misc/goldold.wav";
-		const string SOUND_ATTACK2 = "misc/goldold.wav";
+		SOUND_DEATH = "misc/gold.wav";
+		SOUND_STRUCK1 = "misc/gold.wav";
+		SOUND_STRUCK2 = "misc/gold.wav";
+		SOUND_IDLE = "misc/gold.wav";
+		SOUND_ATTACK1 = "misc/goldold.wav";
+		SOUND_ATTACK2 = "misc/goldold.wav";
 		Precache(SOUND_DEATH);
 		ANIM_IDLE = "walk";
 		ANIM_RUN = "run";
@@ -38,11 +47,11 @@ class SlimeFoolsGoldSmall : CGameScript
 		MOVE_RANGE = 10;
 		ATTACK_RANGE = 80;
 		ATTACK_HITRANGE = 120;
-		const float ATTACK_HITCHANCE = 0.77;
-		const string ATTACK_DAMAGE = Random(7, 77);
+		ATTACK_HITCHANCE = 0.77;
+		ATTACK_DAMAGE = Random(7, 77);
 		NPC_MUST_SEE_TARGET = 0;
 		NO_SPAWN_STUCK_CHECK = 1;
-		const int NPC_BASE_EXP = 10;
+		NPC_BASE_EXP = 10;
 	}
 
 	void OnSpawn() override

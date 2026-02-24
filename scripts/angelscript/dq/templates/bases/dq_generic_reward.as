@@ -30,7 +30,7 @@ class DqGenericReward : CGameScript
 	{
 		if (!(QUEST_REWARD_ALL))
 		{
-			string L_ARRAY_AMT = /* TODO: $get_array_amt */ $get_array_amt(A_QUEST_PARTICIPANTS);
+			int L_ARRAY_AMT = int(A_QUEST_PARTICIPANTS.length());
 			if (L_ARRAY_AMT > 0)
 			{
 				for (int i = 0; i < L_ARRAY_AMT; i++)
@@ -45,7 +45,7 @@ class DqGenericReward : CGameScript
 	void quest_complete()
 	{
 		string L_PLAYER = param1;
-		string L_PLAYER_IDX = /* TODO: $get_arrayfind */ $get_arrayfind(A_QUEST_PARTICIPANTS, L_PLAYER);
+		string L_PLAYER_IDX = ArrayFind(A_QUEST_PARTICIPANTS, L_PLAYER, 0);
 		if (L_PLAYER_IDX != -1)
 		{
 			A_QUEST_PARTICIPANTS.removeAt(L_PLAYER_IDX);
@@ -85,7 +85,7 @@ class DqGenericReward : CGameScript
 				}
 			}
 		}
-		if (/* TODO: $get_array_amt */ $get_array_amt(A_QUEST_PARTICIPANTS) == 0)
+		if (int(A_QUEST_PARTICIPANTS.length()) == 0)
 		{
 			SetMenuAutoOpen(0);
 			delete_fade_me();
@@ -109,7 +109,7 @@ class DqGenericReward : CGameScript
 			}
 			else
 			{
-				if (/* TODO: $get_arrayfind */ $get_arrayfind(A_QUEST_PARTICIPANTS, L_PLAYER_ID) != -1)
+				if (ArrayFind(A_QUEST_PARTICIPANTS, L_PLAYER_ID, 0) != -1)
 				{
 					build_quest_complete_menu(L_PLAYER);
 				}

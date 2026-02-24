@@ -8,12 +8,19 @@ namespace MS
 class BoarBase : CGameScript
 {
 	string ANIM_ATTACK;
+	string ANIM_BOAR_RUN;
+	string ANIM_CHARGE;
 	string ANIM_DEATH;
+	string ANIM_FORWARD;
 	string ANIM_IDLE;
 	string ANIM_IDLE_EATGRASS;
+	string ANIM_LEFT;
+	string ANIM_RIGHT;
 	string ANIM_RUN;
+	string ANIM_STOMP;
 	string ANIM_WALK;
 	string AS_ATTACKING;
+	float ATTACK_HITCHANCE;
 	int ATTACK_HITRANGE;
 	int ATTACK_RANGE;
 	string BOAR_CAN_FLEE;
@@ -23,22 +30,32 @@ class BoarBase : CGameScript
 	int CAN_FLEE;
 	int CAN_HEAR;
 	int CAN_RETALIATE;
+	string CL_SCRIPT;
 	string CL_SCRIPT_ID;
 	string DROP_ITEM1;
 	float DROP_ITEM1_CHANCE;
 	int HUNT_AGRO;
 	int MOVE_RANGE;
+	float RETALIATE_CHANGETARGET_CHANCE;
+	string SOUND_CHARGE;
+	string SOUND_DEATH;
+	string SOUND_IDLE1;
+	string SOUND_IDLE2;
+	string SOUND_PAIN;
+	string SOUND_STRUCK1;
+	string SOUND_STRUCK2;
+	string SOUND_STRUCK3;
 
 	BoarBase()
 	{
-		const string SOUND_STRUCK1 = "weapons/cbar_hitbod1.wav";
-		const string SOUND_STRUCK2 = "weapons/cbar_hitbod2.wav";
-		const string SOUND_STRUCK3 = "weapons/cbar_hitbod3.wav";
-		const string SOUND_PAIN = "monsters/boar/boarpain.wav";
-		const string SOUND_IDLE1 = "monsters/boar/boaridle.wav";
-		const string SOUND_IDLE2 = "monsters/boar/boarsight2.wav";
-		const string SOUND_CHARGE = "monsters/boar/boarsight.wav";
-		const string SOUND_DEATH = "monsters/boar/boardeath.wav";
+		SOUND_STRUCK1 = "weapons/cbar_hitbod1.wav";
+		SOUND_STRUCK2 = "weapons/cbar_hitbod2.wav";
+		SOUND_STRUCK3 = "weapons/cbar_hitbod3.wav";
+		SOUND_PAIN = "monsters/boar/boarpain.wav";
+		SOUND_IDLE1 = "monsters/boar/boaridle.wav";
+		SOUND_IDLE2 = "monsters/boar/boarsight2.wav";
+		SOUND_CHARGE = "monsters/boar/boarsight.wav";
+		SOUND_DEATH = "monsters/boar/boardeath.wav";
 		HUNT_AGRO = 0;
 		Precache(SOUND_IDLE1);
 		Precache(SOUND_IDLE2);
@@ -47,26 +64,26 @@ class BoarBase : CGameScript
 		ANIM_IDLE = "idle1";
 		ANIM_IDLE_EATGRASS = "idle2";
 		ANIM_RUN = "run";
-		const string ANIM_BOAR_RUN = "run";
+		ANIM_BOAR_RUN = "run";
 		ANIM_WALK = "walk";
-		const string ANIM_FORWARD = "gore_forward";
-		const string ANIM_RIGHT = "gore_right";
-		const string ANIM_LEFT = "gore_left";
-		const string ANIM_STOMP = "stompsnort";
-		const string ANIM_CHARGE = "charge";
+		ANIM_FORWARD = "gore_forward";
+		ANIM_RIGHT = "gore_right";
+		ANIM_LEFT = "gore_left";
+		ANIM_STOMP = "stompsnort";
+		ANIM_CHARGE = "charge";
 		ANIM_DEATH = "die1";
 		MOVE_RANGE = 64;
 		ATTACK_RANGE = 96;
 		ATTACK_HITRANGE = 120;
-		const float ATTACK_HITCHANCE = 0.5;
+		ATTACK_HITCHANCE = 0.5;
 		DROP_ITEM1 = "skin_boar";
 		DROP_ITEM1_CHANCE = 0.2;
 		CAN_RETALIATE = 1;
-		const float RETALIATE_CHANGETARGET_CHANCE = 0.75;
+		RETALIATE_CHANGETARGET_CHANCE = 0.75;
 		BOAR_IS_CHARGING = 0;
 		BOAR_CHARGE_TARGET = �PNONE�P;
 		ANIM_ATTACK = ANIM_FORWARD;
-		const string CL_SCRIPT = "monsters/boar_base_cl_charge";
+		CL_SCRIPT = "monsters/boar_base_cl_charge";
 		Precache(CL_SCRIPT);
 	}
 
@@ -123,7 +140,7 @@ class BoarBase : CGameScript
 		SetHearingSensitivity(0);
 		SetIdleAnim(ANIM_IDLE);
 		SetMoveAnim(ANIM_WALK);
-		// TODO: UNCONVERTED: setskin SKIN_NAME
+		SetEntitySkin(GetOwner(), SKIN_NAME);
 		SetModel("monsters/boar.mdl");
 		if (StringToLower(GetMapName()) == "nightmare_thornlands")
 		{
@@ -153,7 +170,7 @@ class BoarBase : CGameScript
 
 	void npc_attack()
 	{
-		string NEXT_ATTACK = RandomInt(0, 2);
+		int NEXT_ATTACK = RandomInt(0, 2);
 		if (NEXT_ATTACK == 0)
 		{
 			ANIM_ATTACK = ANIM_FORWARD;
@@ -244,7 +261,7 @@ class BoarBase : CGameScript
 		string PUSH_STR = /* TODO: $get_skill_ratio */ $get_skill_ratio(RANGE_PERCENT, 400, 110);
 		if ((G_DEVELOPER_MODE))
 		{
-			SendColoredMessage(HUNT_LASTTARGET, "gore - PUSH str PUSH_STR per RANGE_PERCENT rng TARG_RANGE");
+			SendColoredMessage(HUNT_LASTTARGET, "gore - " + PUSH + "str " + PUSH_STR + "per " + RANGE_PERCENT + "rng " + TARG_RANGE);
 		}
 		AddVelocity(HUNT_LASTTARGET, /* TODO: $relvel */ $relvel(0, PUSH_STR, 110));
 	}

@@ -7,6 +7,14 @@ namespace MS
 
 class MagicHandLightningWeakCl : CGameScript
 {
+	int GLOW_DURATION;
+	string LIGHT_COLOR;
+	int LIGHT_RADIUS;
+	int OFS_NEG;
+	int OFS_POS;
+	int SKYLTNG_OFS;
+	string SPRITE_GLOW;
+	string SPRITE_LIGHTNING;
 	string handmagic.anim;
 	string handmagic.event;
 	string handmagic.handid;
@@ -15,14 +23,14 @@ class MagicHandLightningWeakCl : CGameScript
 
 	MagicHandLightningWeakCl()
 	{
-		const string SPRITE_LIGHTNING = "lgtning.spr";
-		const string SPRITE_GLOW = "3dmflaora.spr";
-		const int GLOW_DURATION = 3;
-		const int OFS_POS = 5;
-		const int OFS_NEG = -5;
-		const int LIGHT_RADIUS = 128;
-		const Vector3 LIGHT_COLOR = Vector3(100, 33, 253);
-		const int SKYLTNG_OFS = 256;
+		SPRITE_LIGHTNING = "lgtning.spr";
+		SPRITE_GLOW = "3dmflaora.spr";
+		GLOW_DURATION = 3;
+		OFS_POS = 5;
+		OFS_NEG = -5;
+		LIGHT_RADIUS = 128;
+		LIGHT_COLOR = Vector3(100, 33, 253);
+		SKYLTNG_OFS = 256;
 	}
 
 	void game_precache()
@@ -124,8 +132,8 @@ class MagicHandLightningWeakCl : CGameScript
 		if (!(RandomInt(0, 100) < 10)) return;
 		string l.pos.finger = /* TODO: $getcl */ $getcl(handmagic.handid, "bonepos", param1);
 		string l.pos.sky = l.pos.finger;
-		string l.ofs.x = Random(/* TODO: $neg */ $neg(SKYLTNG_OFS), SKYLTNG_OFS);
-		string l.ofs.y = Random(/* TODO: $neg */ $neg(SKYLTNG_OFS), SKYLTNG_OFS);
+		float l.ofs.x = Random(/* TODO: $neg */ $neg(SKYLTNG_OFS), SKYLTNG_OFS);
+		float l.ofs.y = Random(/* TODO: $neg */ $neg(SKYLTNG_OFS), SKYLTNG_OFS);
 		l.pos.sky += Vector3(l.ofs.x, l.ofs.y, 1024);
 		ClientEffect("beam_points", l.pos.finger, l.pos.sky, SPRITE_LIGHTNING, 0.1, 1, 0.1, 0.3, 0.1, 30, Vector3(1, 0.5, 2));
 	}

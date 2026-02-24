@@ -7,18 +7,23 @@ namespace MS
 
 class EagleStone : CGameScript
 {
+	float DMG_ATTACK;
 	int IS_UNHOLY;
+	int NO_DIVE;
 	int NPC_GIVE_EXP;
+	string SOUND_PAIN;
+	string SOUND_PAIN2;
+	string SOUND_STRUCK;
 
 	EagleStone()
 	{
 		IS_UNHOLY = 1;
-		const int NO_DIVE = 1;
-		const string DMG_ATTACK = Random(20, 60);
+		NO_DIVE = 1;
+		DMG_ATTACK = Random(20, 60);
 		NPC_GIVE_EXP = 300;
-		const string SOUND_STRUCK = "weapons/axemetal1.wav";
-		const string SOUND_PAIN = "weapons/axemetal2.wav";
-		const string SOUND_PAIN2 = "debris/concrete1.wav";
+		SOUND_STRUCK = "weapons/axemetal1.wav";
+		SOUND_PAIN = "weapons/axemetal2.wav";
+		SOUND_PAIN2 = "debris/concrete1.wav";
 	}
 
 	void OnSpawn() override

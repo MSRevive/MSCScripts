@@ -34,7 +34,7 @@ class Devcmds : CGameScript
 	{
 		if (("game.central")) return;
 		if (!(G_DEVELOPER_MODE)) return;
-		/* TODO: $pass */ $pass(param1)(/* TODO: $pass */ $pass(param2), /* TODO: $pass */ $pass(param3), /* TODO: $pass */ $pass(param4), /* TODO: $pass */ $pass(param5), /* TODO: $pass */ $pass(param6), /* TODO: $pass */ $pass(param7), /* TODO: $pass */ $pass(param8));
+		param1(param2, param3, param4, param5, param6, param7, param8);
 	}
 
 	void mp3()
@@ -48,7 +48,7 @@ class Devcmds : CGameScript
 		string Y_DEST = param2;
 		string Z_DEST = param3;
 		string L_STR = "Teleportion to:";
-		LogMessage("ent_currentplayer L_STR");
+		LogMessage("ent_currentplayer " + L_STR);
 		SetEntityOrigin("ent_currentplayer", Vector3(X_DEST, Y_DEST, Z_DEST));
 	}
 
@@ -78,14 +78,14 @@ class Devcmds : CGameScript
 
 	void usetrig()
 	{
-		LogMessage("ent_currentplayer Fire map event: PARAM1");
+		LogMessage("ent_currentplayer Fire map event: " + param1);
 		UseTrigger(param1);
 	}
 
 	void dumpquest()
 	{
 		string L_QUEST = param1;
-		LogMessage("ent_currentplayer Quest L_QUEST is: GetPlayerQuestData("ent_currentplayer", L_QUEST)");
+		LogMessage("ent_currentplayer Quest " + L_QUEST + "is: " + GetPlayerQuestData("ent_currentplayer", L_QUEST));
 	}
 
 	void newnpc()
@@ -107,7 +107,7 @@ class Devcmds : CGameScript
 			int L_IDX = 0;
 		}
 		string L_SCRIPT = GetToken(GetCvar("ms_dynamicnpc"), L_IDX, ";");
-		newnpc(L_SCRIPT, /* TODO: $pass */ $pass(param2), /* TODO: $pass */ $pass(param3), /* TODO: $pass */ $pass(param4), /* TODO: $pass */ $pass(param5), /* TODO: $pass */ $pass(param6), /* TODO: $pass */ $pass(param7), /* TODO: $pass */ $pass(param8));
+		newnpc(L_SCRIPT, param2, param3, param4, param5, param6, param7, param8);
 	}
 
 	void newitem()
@@ -122,27 +122,27 @@ class Devcmds : CGameScript
 
 	void eventtarg()
 	{
-		CallExternal(GetEntityProperty("ent_currentplayer", "target"), "PARAM1", /* TODO: $pass */ $pass(param2), /* TODO: $pass */ $pass(param3), /* TODO: $pass */ $pass(param4), /* TODO: $pass */ $pass(param5), /* TODO: $pass */ $pass(param6), /* TODO: $pass */ $pass(param7), /* TODO: $pass */ $pass(param8));
+		CallExternal(GetEntityProperty("ent_currentplayer", "target"), "PARAM1", param2, param3, param4, param5, param6, param7, param8);
 	}
 
 	void eventme()
 	{
-		CallExternal("ent_currentplayer", "PARAM1", /* TODO: $pass */ $pass(param2), /* TODO: $pass */ $pass(param3), /* TODO: $pass */ $pass(param4), /* TODO: $pass */ $pass(param5), /* TODO: $pass */ $pass(param6), /* TODO: $pass */ $pass(param7), /* TODO: $pass */ $pass(param8));
+		CallExternal("ent_currentplayer", "PARAM1", param2, param3, param4, param5, param6, param7, param8);
 	}
 
 	void eventplayers()
 	{
-		CallExternal("players", "PARAM1", /* TODO: $pass */ $pass(param2), /* TODO: $pass */ $pass(param3), /* TODO: $pass */ $pass(param4), /* TODO: $pass */ $pass(param5), /* TODO: $pass */ $pass(param6), /* TODO: $pass */ $pass(param7), /* TODO: $pass */ $pass(param8));
+		CallExternal("players", "PARAM1", param2, param3, param4, param5, param6, param7, param8);
 	}
 
 	void eventgm()
 	{
-		CallExternal(GAME_MASTER, "PARAM1", /* TODO: $pass */ $pass(param2), /* TODO: $pass */ $pass(param3), /* TODO: $pass */ $pass(param4), /* TODO: $pass */ $pass(param5), /* TODO: $pass */ $pass(param6), /* TODO: $pass */ $pass(param7), /* TODO: $pass */ $pass(param8));
+		CallExternal(GAME_MASTER, "PARAM1", param2, param3, param4, param5, param6, param7, param8);
 	}
 
 	void eventall()
 	{
-		CallExternal("all", "PARAM1", /* TODO: $pass */ $pass(param2), /* TODO: $pass */ $pass(param3), /* TODO: $pass */ $pass(param4), /* TODO: $pass */ $pass(param5), /* TODO: $pass */ $pass(param6), /* TODO: $pass */ $pass(param7), /* TODO: $pass */ $pass(param8));
+		CallExternal("all", "PARAM1", param2, param3, param4, param5, param6, param7, param8);
 	}
 
 	void blamb()
@@ -162,7 +162,7 @@ class Devcmds : CGameScript
 		{
 			string L_TYPE = param3;
 		}
-		LogMessage("ent_currentplayer Blamb! AOE: L_RADIUS DMG: L_DMG Type: L_TYPE");
+		LogMessage("ent_currentplayer Blamb! " + AOE: + L_RADIUS + DMG: + L_DMG + "Type: " + L_TYPE);
 		XDoDamage(GetEntityOrigin("ent_currentplayer"), L_RADIUS, L_DMG, 0, GetEntityIndex("ent_currentplayer"), GetEntityIndex("ent_currentplayer"), "none", L_TYPE, "none");
 	}
 
@@ -170,29 +170,29 @@ class Devcmds : CGameScript
 	{
 		string L_QUEST = param1;
 		string L_DATA = param2;
-		LogMessage("ent_currentplayer Setting Quest: L_QUEST to L_DATA");
+		LogMessage("ent_currentplayer Setting Quest: " + L_QUEST + "to " + L_DATA);
 		SetPlayerQuestData(GetEntityIndex("ent_currentplayer"), L_QUEST);
 	}
 
 	void getquest()
 	{
 		string L_QUEST_DATA = GetPlayerQuestData("ent_currentplayer", param1);
-		LogMessage("ent_currentplayer L_QUEST_DATA");
+		LogMessage("ent_currentplayer " + L_QUEST_DATA);
 	}
 
 	void setgold()
 	{
-		CallExternal("ent_currentplayer", "ext_setgold", /* TODO: $pass */ $pass(param1));
+		CallExternal("ent_currentplayer", "ext_setgold", param1);
 	}
 
 	void addhp()
 	{
-		CallExternal("ent_currentplayer", "give_hp", /* TODO: $pass */ $pass(param1));
+		CallExternal("ent_currentplayer", "give_hp", param1);
 	}
 
 	void addmp()
 	{
-		CallExternal("ent_currentplayer", "give_mp", /* TODO: $pass */ $pass(param1));
+		CallExternal("ent_currentplayer", "give_mp", param1);
 	}
 
 	void rat()
@@ -218,7 +218,7 @@ class Devcmds : CGameScript
 	void teleforward()
 	{
 		string DIST_FORWARD = param1;
-		LogMessage("ent_currentplayer Teleporting Forward DIST_FORWARD units");
+		LogMessage("ent_currentplayer Teleporting Forward " + DIST_FORWARD + " units");
 		string MY_POS = GetEntityOrigin("ent_currentplayer");
 		string MY_ANG = GetEntityProperty("ent_currentplayer", "viewangles");
 		MY_POS += /* TODO: $relpos */ $relpos(MY_ANG, Vector3(0, DIST_FORWARD, 0));
@@ -227,31 +227,31 @@ class Devcmds : CGameScript
 
 	void effectme()
 	{
-		LogMessage("ent_currentplayer Applying effect, PARAM1 to self.");
+		LogMessage("ent_currentplayer Applying effect, " + param1 + " to self.");
 		ApplyEffect("ent_currentplayer", param1, param2, param3, param4, param5, param6);
 	}
 
 	void effectmestack()
 	{
-		LogMessage("ent_currentplayer Applying stacking effect, PARAM1 to self.");
+		LogMessage("ent_currentplayer Applying stacking effect, " + param1 + " to self.");
 		ApplyEffect("ent_currentplayer", param1, param2, param3, param4, param5, param6);
 	}
 
 	void effecttarg()
 	{
-		LogMessage("ent_currentplayer Applying effect, PARAM1 to target, GetEntityName(GetEntityProperty("ent_currentplayer", "target"))");
+		LogMessage("ent_currentplayer Applying effect, " + param1 + "to target, " + GetEntityName(GetEntityProperty("ent_currentplayer", "target")));
 		ApplyEffect(GetEntityProperty("ent_currentplayer", "target"), param1, param2, param3, param4, param5, param6);
 	}
 
 	void effecttargstack()
 	{
-		LogMessage("ent_currentplayer Applying effect, PARAM1 to target, GetEntityName(GetEntityProperty("ent_currentplayer", "target"))");
+		LogMessage("ent_currentplayer Applying effect, " + param1 + "to target, " + GetEntityName(GetEntityProperty("ent_currentplayer", "target")));
 		ApplyEffect(GetEntityProperty("ent_currentplayer", "target"), param1, param2, param3, param4, param5, param6);
 	}
 
 	void testdmg()
 	{
-		LogMessage("ent_currentplayer Damage mult for PARAM1 is /* TODO: $get_takedmg */ $get_takedmg("ent_currentplayer", param1)");
+		LogMessage("ent_currentplayer Damage mult for " + param1 + "is " + /* TODO: $get_takedmg */ $get_takedmg("ent_currentplayer", param1));
 	}
 
 	void throw()

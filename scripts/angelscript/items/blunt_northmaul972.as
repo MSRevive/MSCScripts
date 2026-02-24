@@ -7,43 +7,74 @@ namespace MS
 
 class BluntNorthmaul972 : CGameScript
 {
+	int ANIM_BLIZZARD;
+	int ANIM_GROUND_SMASH_NORM;
+	int ANIM_GROUND_SMASH_PIERCE;
+	int ANIM_PIERCE_IDLE;
+	int ANIM_PIERCE_SWING1;
+	int ANIM_PIERCE_SWING2;
+	string ANIM_PREFIX;
+	int ANIM_SWITCH;
 	string ATTACK_MODE;
+	int BASE_LEVEL_REQ;
+	int BLIZZARD_MPDRAIN;
+	int CUSTOM_REGISTER_BLUNT;
+	int ICEWAVE_MPDRAIN;
 	int IN_PACK;
 	string LAST_SWIVEL;
+	float MELEE_ACCURACY;
+	float MELEE_ATK_DURATION;
+	int MELEE_DMG;
+	float MELEE_DMG_DELAY;
+	int MELEE_DMG_RANGE;
+	string MELEE_DMG_TYPE;
+	int MELEE_ENERGY;
+	float MELEE_PARRY_AUGMENT;
+	int MELEE_RANGE;
+	int MODEL_BODY_OFS;
+	string MODEL_VIEW;
+	int MODEL_VIEW_IDX;
+	string MODEL_WORLD;
+	string SOUND_COLD_HITWALL1;
+	string SOUND_COLD_HITWALL2;
+	string SOUND_PIERCE_HITWALL1;
+	string SOUND_PIERCE_HITWALL2;
+	float SWIVEL_DELAY;
+	float SWIVEL_TIME;
 
 	BluntNorthmaul972()
 	{
-		const int CUSTOM_REGISTER_BLUNT = 1;
-		const int BASE_LEVEL_REQ = 20;
-		const int ICEWAVE_MPDRAIN = 60;
-		const int BLIZZARD_MPDRAIN = 30;
-		const string MODEL_VIEW = "viewmodels/v_2hblunts.mdl";
-		const int MODEL_VIEW_IDX = 5;
-		const string MODEL_WORLD = "weapons/p_weapons3.mdl";
-		const int MODEL_BODY_OFS = 7;
-		const string ANIM_PREFIX = "standard";
-		const int MELEE_RANGE = 80;
-		const float MELEE_DMG_DELAY = 0.5;
-		const float MELEE_ATK_DURATION = 1.5;
-		const int MELEE_ENERGY = 2;
-		const int MELEE_DMG = 400;
-		const int MELEE_DMG_RANGE = 20;
-		const float MELEE_ACCURACY = 0.65;
-		const float MELEE_PARRY_AUGMENT = 0.1;
-		const int ANIM_SWITCH = 11;
-		const int ANIM_PIERCE_IDLE = 12;
-		const int ANIM_PIERCE_SWING1 = 4;
-		const int ANIM_PIERCE_SWING2 = 5;
-		const int ANIM_GROUND_SMASH_NORM = 10;
-		const int ANIM_GROUND_SMASH_PIERCE = 13;
-		const int ANIM_BLIZZARD = 14;
-		const float SWIVEL_DELAY = 3.0;
-		const float SWIVEL_TIME = 1.0;
-		const string SOUND_COLD_HITWALL1 = "debris/glass1.wav";
-		const string SOUND_COLD_HITWALL2 = "debris/glass2.wav";
-		const string SOUND_PIERCE_HITWALL1 = "weapons/axemetal1.wav";
-		const string SOUND_PIERCE_HITWALL2 = "weapons/axemetal2.wav";
-		const string MELEE_DMG_TYPE = "cold";
+		CUSTOM_REGISTER_BLUNT = 1;
+		BASE_LEVEL_REQ = 20;
+		ICEWAVE_MPDRAIN = 60;
+		BLIZZARD_MPDRAIN = 30;
+		MODEL_VIEW = "viewmodels/v_2hblunts.mdl";
+		MODEL_VIEW_IDX = 5;
+		MODEL_WORLD = "weapons/p_weapons3.mdl";
+		MODEL_BODY_OFS = 7;
+		ANIM_PREFIX = "standard";
+		MELEE_RANGE = 80;
+		MELEE_DMG_DELAY = 0.5;
+		MELEE_ATK_DURATION = 1.5;
+		MELEE_ENERGY = 2;
+		MELEE_DMG = 400;
+		MELEE_DMG_RANGE = 20;
+		MELEE_ACCURACY = 0.65;
+		MELEE_PARRY_AUGMENT = 0.1;
+		ANIM_SWITCH = 11;
+		ANIM_PIERCE_IDLE = 12;
+		ANIM_PIERCE_SWING1 = 4;
+		ANIM_PIERCE_SWING2 = 5;
+		ANIM_GROUND_SMASH_NORM = 10;
+		ANIM_GROUND_SMASH_PIERCE = 13;
+		ANIM_BLIZZARD = 14;
+		SWIVEL_DELAY = 3.0;
+		SWIVEL_TIME = 1.0;
+		SOUND_COLD_HITWALL1 = "debris/glass1.wav";
+		SOUND_COLD_HITWALL2 = "debris/glass2.wav";
+		SOUND_PIERCE_HITWALL1 = "weapons/axemetal1.wav";
+		SOUND_PIERCE_HITWALL2 = "weapons/axemetal2.wav";
+		MELEE_DMG_TYPE = "cold";
 	}
 
 	void weapon_spawn()
@@ -67,7 +98,7 @@ class BluntNorthmaul972 : CGameScript
 	{
 		if (!(true)) return;
 		if (!(CanAttack(GetOwner()))) return;
-		string TIME_DIFF = GetGameTime();
+		float TIME_DIFF = GetGameTime();
 		TIME_DIFF -= LAST_SWIVEL;
 		if (!(TIME_DIFF > SWIVEL_DELAY)) return;
 		LAST_SWIVEL = GetGameTime();
@@ -239,7 +270,7 @@ class BluntNorthmaul972 : CGameScript
 	void melee_start()
 	{
 		if (!(true)) return;
-		string RND_ANIM = RandomInt(1, 2);
+		int RND_ANIM = RandomInt(1, 2);
 		if (ATTACK_MODE == "cold")
 		{
 			if (RND_ANIM == 1)

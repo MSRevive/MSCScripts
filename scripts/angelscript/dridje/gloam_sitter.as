@@ -24,7 +24,7 @@ class GloamSitter : CGameScript
 		if ((IsEntityAlive(ENEMY_ID)))
 		{
 		}
-		string RND_ANIM = RandomInt(1, 2);
+		int RND_ANIM = RandomInt(1, 2);
 		if (RND_ANIM == 1)
 		{
 			PlayAnim("once", "sstruggleidle");
@@ -68,7 +68,7 @@ class GloamSitter : CGameScript
 	void say_hi()
 	{
 		PlayAnim("once", "cowering_in_corner");
-		SayText("Have you seen those things!? I m not going in there again!");
+		SayText("Have you seen those things!? " + I + " m not going in there again!");
 	}
 
 	void game_menu_getoptions()

@@ -96,8 +96,8 @@ class Player : CGameScript
 
 	void setlevels()
 	{
-		CallExternal(MY_OWNER, "ext_setstats", /* TODO: $pass */ $pass(param2));
-		SendColoredMessage(MY_OWNER, "Set all levels to: PARAM2");
+		CallExternal(MY_OWNER, "ext_setstats", param2);
+		SendColoredMessage(MY_OWNER, "Set all levels to: " + param2);
 		HealEntity(MY_OWNER, 10000);
 		GiveMP(MY_OWNER);
 	}

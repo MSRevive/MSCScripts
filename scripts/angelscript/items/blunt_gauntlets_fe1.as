@@ -8,62 +8,111 @@ namespace MS
 
 class BluntGauntletsFe1 : CGameScript
 {
+	int ANIM_ATTACK1;
+	int ANIM_ATTACK2;
+	int ANIM_ATTACK3;
+	int ANIM_ATTACK4;
+	int ANIM_HANDS_DOWN;
+	int ANIM_IDLE1;
+	int ANIM_IDLE_TOTAL;
+	int ANIM_LIFT1;
+	int ANIM_LOWER;
+	string ANIM_PREFIX;
+	int ANIM_SHEATH;
+	int ANIM_SPEC_ATTACK;
+	float AURA_DOT_RATIO;
+	int AURA_RADIUS;
+	int BASE_LEVEL_REQ;
 	int CAN_VAMPIRE_TARGET;
+	float GOUGE_LIFESTEAL_RATIO;
+	int GOUGE_MPDRAIN;
+	int GOUGE_MPSTEAL;
+	int MELEE_ACCURACY;
+	int MELEE_AFFLICDMG_MIN;
+	float MELEE_AFFLIC_RATIO;
+	float MELEE_ATK_DURATION;
+	int MELEE_DMG;
+	float MELEE_DMG_DELAY;
+	int MELEE_DMG_RANGE;
+	string MELEE_DMG_TYPE;
+	int MELEE_ENERGY;
+	float MELEE_PARRY_CHANCE;
+	int MELEE_RANGE;
+	string MELEE_SOUND;
+	string MELEE_SOUND_DELAY;
+	string MELEE_STAT;
+	string MELEE_VIEWANIM_ATK;
+	int MODEL_BODY_OFS;
+	string MODEL_HANDS;
+	string MODEL_VIEW;
+	int MODEL_VIEW_IDX;
+	string MODEL_WORLD;
 	int NO_BANK;
+	int NO_WORLD_MODEL;
+	string PLAYERANIM_AIM;
 	string PUNCH_ATTACK;
+	int REACH_MELEE_RANGE;
+	string SOUND_DEPLOY;
+	string SOUND_GAS_ON;
+	string SOUND_GOUGE;
+	string SOUND_HITWALL1;
+	string SOUND_HITWALL2;
+	string SOUND_SWING;
+	string SOUND_SWIPE;
+	int SPELL_SKILL_REQUIRED;
 
 	BluntGauntletsFe1()
 	{
 		NO_BANK = 1;
-		const int SPELL_SKILL_REQUIRED = 20;
-		const int BASE_LEVEL_REQ = 20;
-		const int ANIM_HANDS_DOWN = 20;
-		const int ANIM_LIFT1 = 12;
-		const int ANIM_LOWER = 11;
-		const int ANIM_IDLE1 = 11;
-		const int ANIM_IDLE_TOTAL = 12;
-		const int ANIM_ATTACK1 = 16;
-		const int ANIM_ATTACK2 = 17;
-		const int ANIM_ATTACK3 = 18;
-		const int ANIM_ATTACK4 = 19;
-		const int ANIM_SPEC_ATTACK = 14;
-		const int ANIM_SHEATH = 16;
-		const string MODEL_VIEW = "viewmodels/v_martialarts_claws.mdl";
-		const int MODEL_VIEW_IDX = 1;
-		const string MODEL_HANDS = "weapons/p_weapons3.mdl";
-		const string MODEL_WORLD = "weapons/p_weapons3.mdl";
-		const int MODEL_BODY_OFS = 60;
-		const int MELEE_DMG = 200;
-		const int MELEE_DMG_RANGE = 0;
-		const string MELEE_DMG_TYPE = "acid";
-		const int MELEE_ACCURACY = 100;
-		const float MELEE_DMG_DELAY = 0.35;
-		const float MELEE_ATK_DURATION = 0.45;
-		const float MELEE_AFFLIC_RATIO = 0.5;
-		const int MELEE_AFFLICDMG_MIN = 10;
-		const int GOUGE_MPDRAIN = 15;
-		const int GOUGE_MPSTEAL = 10;
-		const float GOUGE_LIFESTEAL_RATIO = 0.10;
-		const float AURA_DOT_RATIO = 0.3;
-		const int AURA_RADIUS = 80;
-		const string SOUND_SWIPE = "zombie/claw_miss1.wav";
-		const string SOUND_HITWALL1 = "weapons/cbar_hit1.wav";
-		const string SOUND_HITWALL2 = "weapons/cbar_hit2.wav";
-		const string SOUND_SWING = "zombie/claw_miss2.wav";
-		const string SOUND_DEPLOY = "monsters/skeleton/calrain3.wav";
-		const string SOUND_GOUGE = "monsters/gonome/gonome_jumpattack.wav";
-		const string ANIM_PREFIX = "gauntlets";
-		const int NO_WORLD_MODEL = 1;
-		const int MELEE_RANGE = 50;
-		const int REACH_MELEE_RANGE = 100;
-		const int MELEE_ENERGY = 1;
-		const string MELEE_STAT = "spellcasting.affliction";
-		const string MELEE_VIEWANIM_ATK = ANIM_ATTACK1;
-		const string MELEE_SOUND = SOUND_SWIPE;
-		const string MELEE_SOUND_DELAY = MELEE_DMG_DELAY;
-		const float MELEE_PARRY_CHANCE = 0.05;
-		const string PLAYERANIM_AIM = "axe_onehand";
-		const string SOUND_GAS_ON = "ambience/steamburst1.wav";
+		SPELL_SKILL_REQUIRED = 20;
+		BASE_LEVEL_REQ = 20;
+		ANIM_HANDS_DOWN = 20;
+		ANIM_LIFT1 = 12;
+		ANIM_LOWER = 11;
+		ANIM_IDLE1 = 11;
+		ANIM_IDLE_TOTAL = 12;
+		ANIM_ATTACK1 = 16;
+		ANIM_ATTACK2 = 17;
+		ANIM_ATTACK3 = 18;
+		ANIM_ATTACK4 = 19;
+		ANIM_SPEC_ATTACK = 14;
+		ANIM_SHEATH = 16;
+		MODEL_VIEW = "viewmodels/v_martialarts_claws.mdl";
+		MODEL_VIEW_IDX = 1;
+		MODEL_HANDS = "weapons/p_weapons3.mdl";
+		MODEL_WORLD = "weapons/p_weapons3.mdl";
+		MODEL_BODY_OFS = 60;
+		MELEE_DMG = 200;
+		MELEE_DMG_RANGE = 0;
+		MELEE_DMG_TYPE = "acid";
+		MELEE_ACCURACY = 100;
+		MELEE_DMG_DELAY = 0.35;
+		MELEE_ATK_DURATION = 0.45;
+		MELEE_AFFLIC_RATIO = 0.5;
+		MELEE_AFFLICDMG_MIN = 10;
+		GOUGE_MPDRAIN = 15;
+		GOUGE_MPSTEAL = 10;
+		GOUGE_LIFESTEAL_RATIO = 0.10;
+		AURA_DOT_RATIO = 0.3;
+		AURA_RADIUS = 80;
+		SOUND_SWIPE = "zombie/claw_miss1.wav";
+		SOUND_HITWALL1 = "weapons/cbar_hit1.wav";
+		SOUND_HITWALL2 = "weapons/cbar_hit2.wav";
+		SOUND_SWING = "zombie/claw_miss2.wav";
+		SOUND_DEPLOY = "monsters/skeleton/calrain3.wav";
+		SOUND_GOUGE = "monsters/gonome/gonome_jumpattack.wav";
+		ANIM_PREFIX = "gauntlets";
+		NO_WORLD_MODEL = 1;
+		MELEE_RANGE = 50;
+		REACH_MELEE_RANGE = 100;
+		MELEE_ENERGY = 1;
+		MELEE_STAT = "spellcasting.affliction";
+		MELEE_VIEWANIM_ATK = ANIM_ATTACK1;
+		MELEE_SOUND = SOUND_SWIPE;
+		MELEE_SOUND_DELAY = MELEE_DMG_DELAY;
+		MELEE_PARRY_CHANCE = 0.05;
+		PLAYERANIM_AIM = "axe_onehand";
+		SOUND_GAS_ON = "ambience/steamburst1.wav";
 	}
 
 	void game_precache()
@@ -119,7 +168,7 @@ class BluntGauntletsFe1 : CGameScript
 		// PlayRandomSound from: SOUND_SWING, SOUND_SWIPE
 		array<string> sounds = {SOUND_SWING, SOUND_SWIPE};
 		EmitSound(GetOwner(), "const.sound.item", sounds[RandomInt(0, sounds.length() - 1)], 10);
-		string RND_ATTACK = RandomInt(1, 4);
+		int RND_ATTACK = RandomInt(1, 4);
 		if (RND_ATTACK == 1)
 		{
 			PlayViewAnim(ANIM_ATTACK1);
@@ -216,7 +265,7 @@ class BluntGauntletsFe1 : CGameScript
 		string OWNER_TARG = param3;
 		XDoDamage(OWNER_TARG, REACH_MELEE_RANGE, DMG_SET, 1.0, GetEntityIndex(GetOwner()), GetEntityIndex(GetOwner()), "spellcasting.affliction", "acid");
 		CAN_VAMPIRE_TARGET = 0;
-		check_can_vampire(GetEntityIndex(GetOwner()), /* TODO: $pass */ $pass(param3));
+		check_can_vampire(GetEntityIndex(GetOwner()), param3);
 		if ((CAN_VAMPIRE_TARGET))
 		{
 			string LIFE_STOLEN = DMG_SET;

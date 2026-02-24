@@ -7,25 +7,39 @@ namespace MS
 
 class ShieldsIronshield : CGameScript
 {
+	int BLOCK_CHANCE_DOWN;
+	int BLOCK_CHANCE_UP;
+	float DMG_BLOCK_UP;
+	float MELEE_ACCURACY;
+	int MELEE_ENERGY;
+	int MODEL_BODY_OFS;
+	string MODEL_VIEW;
+	int MODEL_VIEW_IDX;
+	float NOPUSH_CHANCE;
+	float PARRY_MULTI;
+	int SHIELD_BASE_PARRY;
 	int SHIELD_HEALTH;
+	int SHIELD_IMMORTAL;
+	int SHIELD_MAXHEALTH;
+	string SOUND_BLOCK;
 
 	ShieldsIronshield()
 	{
-		const float NOPUSH_CHANCE = 0.5;
-		const float PARRY_MULTI = 1.75;
-		const int SHIELD_BASE_PARRY = 20;
-		const string MODEL_VIEW = "viewmodels/v_shields.mdl";
-		const int MODEL_VIEW_IDX = 0;
-		const int MODEL_BODY_OFS = 65;
-		const int MELEE_ENERGY = 4;
-		const float MELEE_ACCURACY = 0.5;
-		const int BLOCK_CHANCE_UP = 100;
-		const float DMG_BLOCK_UP = 0.35;
-		const int BLOCK_CHANCE_DOWN = 20;
-		const int SHIELD_MAXHEALTH = 1000;
-		const int SHIELD_IMMORTAL = 0;
+		NOPUSH_CHANCE = 0.5;
+		PARRY_MULTI = 1.75;
+		SHIELD_BASE_PARRY = 20;
+		MODEL_VIEW = "viewmodels/v_shields.mdl";
+		MODEL_VIEW_IDX = 0;
+		MODEL_BODY_OFS = 65;
+		MELEE_ENERGY = 4;
+		MELEE_ACCURACY = 0.5;
+		BLOCK_CHANCE_UP = 100;
+		DMG_BLOCK_UP = 0.35;
+		BLOCK_CHANCE_DOWN = 20;
+		SHIELD_MAXHEALTH = 1000;
+		SHIELD_IMMORTAL = 0;
 		SHIELD_HEALTH = 1000;
-		const string SOUND_BLOCK = "body/armour2.wav";
+		SOUND_BLOCK = "body/armour2.wav";
 		Precache(SOUND_BLOCK);
 	}
 

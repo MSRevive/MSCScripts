@@ -7,8 +7,13 @@ namespace MS
 
 class TelfWizardXbow : CGameScript
 {
+	int ATTACK_HITRANGE_MELEE;
+	int DMG_MELEE;
 	int DROP_GOLD;
 	int DROP_GOLD_AMT;
+	int ELF_EXPLOSIVE_BOLTS;
+	int ELF_IS_ARCHER;
+	string ELF_MELEE_PUSH_VEL;
 	int NPC_GIVE_EXP;
 
 	TelfWizardXbow()
@@ -16,11 +21,11 @@ class TelfWizardXbow : CGameScript
 		NPC_GIVE_EXP = 1500;
 		DROP_GOLD = 1;
 		DROP_GOLD_AMT = 300;
-		const int ELF_IS_ARCHER = 1;
-		const int ELF_EXPLOSIVE_BOLTS = 1;
-		const string ELF_MELEE_PUSH_VEL = /* TODO: $relvel */ $relvel(10, 400, 110);
-		const int DMG_MELEE = 25;
-		const int ATTACK_HITRANGE_MELEE = 64;
+		ELF_IS_ARCHER = 1;
+		ELF_EXPLOSIVE_BOLTS = 1;
+		ELF_MELEE_PUSH_VEL = /* TODO: $relvel */ $relvel(10, 400, 110);
+		DMG_MELEE = 25;
+		ATTACK_HITRANGE_MELEE = 64;
 	}
 
 	void elf_spawn()

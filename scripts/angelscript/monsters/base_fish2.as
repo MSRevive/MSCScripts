@@ -5,14 +5,18 @@ namespace MS
 
 class BaseFish2 : CGameScript
 {
+	int BF_STAY_IN_WATER;
+	int FISH_VRANGE;
+	int FISH_VSPEED_DOWN;
+	int FISH_VSPEED_UP;
 	int NPC_IS_FISH;
 
 	BaseFish2()
 	{
-		const int FISH_VSPEED_UP = 25;
-		const int FISH_VSPEED_DOWN = -25;
-		const int FISH_VRANGE = 50;
-		const int BF_STAY_IN_WATER = 1;
+		FISH_VSPEED_UP = 25;
+		FISH_VSPEED_DOWN = -25;
+		FISH_VRANGE = 50;
+		BF_STAY_IN_WATER = 1;
 		NPC_IS_FISH = 1;
 	}
 

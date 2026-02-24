@@ -8,12 +8,19 @@ namespace MS
 class EmoteSit&stand : CGameScript
 {
 	int AM_SITTING;
+	string EFFECT_FLAGS;
+	string EFFECT_ID;
+	string EFFECT_SCRIPT;
 	int FULL_ALERT;
 	string L_HEIGHTOFS;
 	float PLR_SPEED_SPEED_RATIO;
 	string SCRIPT_ID;
 	string STRUCK_TIME;
+	string TEXT_SIT;
+	string TEXT_STAND;
 	string VIEW_DIRECTION;
+	int VIEW_LOWERTIME;
+	int VIEW_RAISETIME;
 	string VIEW_STARTTIME;
 	string game.cleffect.move_scale.forward;
 	string game.cleffect.move_scale.right;
@@ -27,23 +34,24 @@ class EmoteSit&stand : CGameScript
 	string game.effect.canrun;
 	string game.effect.displayname;
 	string game.effect.movespeed;
+	int game.effect.removeondeath;
 	string game.effect.updateplayer;
 	int regen.hp.amt;
 
 	EmoteSit&stand()
 	{
-		const string EFFECT_ID = "player_sitstand";
-		const string EFFECT_FLAGS = "player_action";
-		const string EFFECT_SCRIPT = currentscript;
-		const int game.effect.removeondeath = 0;
-		const string TEXT_SIT = #ACTION_SIT;
-		const string TEXT_STAND = #ACTION_STAND;
+		EFFECT_ID = "player_sitstand";
+		EFFECT_FLAGS = "player_action";
+		EFFECT_SCRIPT = currentscript;
+		game.effect.removeondeath = 0;
+		TEXT_SIT = #ACTION_SIT;
+		TEXT_STAND = #ACTION_STAND;
 		game.effect.displayname = TEXT_SIT;
 		AM_SITTING = 0;
 		FULL_ALERT = 0;
 		PLR_SPEED_SPEED_RATIO = 1.0;
-		const int VIEW_LOWERTIME = 1;
-		const int VIEW_RAISETIME = 1;
+		VIEW_LOWERTIME = 1;
+		VIEW_RAISETIME = 1;
 	}
 
 	void OnRepeatTimer()
@@ -82,8 +90,8 @@ class EmoteSit&stand : CGameScript
 				}
 				string MY_HP = GetEntityHealth(GetOwner());
 				string MY_MAXHP = GetEntityMaxHealth(GetOwner());
-				string MY_HP = int(MY_HP);
-				string MY_MAXHP = int(MY_MAXHP);
+				int MY_HP = int(MY_HP);
+				int MY_MAXHP = int(MY_MAXHP);
 			}
 			else
 			{
@@ -106,8 +114,8 @@ class EmoteSit&stand : CGameScript
 				}
 				string MY_MP = GetEntityMP(GetOwner());
 				string MY_MAXMP = GetEntityProperty(GetOwner(), "maxmp");
-				string MY_MP = int(MY_MP);
-				string MY_MAXMP = int(MY_MAXMP);
+				int MY_MP = int(MY_MP);
+				int MY_MAXMP = int(MY_MAXMP);
 				FULL_ALERT += 1;
 				if (GetEntityMP(GetOwner()) == GetEntityProperty(GetOwner(), "maxmp"))
 				{
@@ -131,7 +139,7 @@ class EmoteSit&stand : CGameScript
 				}
 				if (FULL_ALERT == 0)
 				{
-					SendColoredMessage(GetOwner(), "Resting... HP: MY_HP / MY_MAXHP MANA: MY_MP / MY_MAXMP");
+					SendColoredMessage(GetOwner(), "Resting... " + HP: + "MY_HP / MY_MAXHP " + MANA: + " MY_MP / MY_MAXMP");
 				}
 			}
 			else
@@ -218,11 +226,11 @@ class EmoteSit&stand : CGameScript
 
 	void view_update()
 	{
-		string L_TIMEDELTA = GetGameTime();
+		float L_TIMEDELTA = GetGameTime();
 		L_TIMEDELTA -= VIEW_STARTTIME;
 		string L_RATIO = L_TIMEDELTA;
 		L_RATIO /= VIEW_LOWERTIME;
-		// TODO: capvar L_RATIO 0 1
+		L_RATIO = max(0, min(1, L_RATIO));
 		string L_HEIGHTOFS = L_RATIO;
 		if (!(VIEW_DIRECTION))
 		{
@@ -244,7 +252,7 @@ class EmoteSit&stand : CGameScript
 		{
 			PLR_SPEED_SPEED_RATIO = 1.0;
 			ClientEvent("update", GetOwner(), SCRIPT_ID, "plr_update_speed_client", PLR_SPEED_SPEED_RATIO);
-			game.effect.movespeed = /* TODO: $math(multiply) */ PLR_SPEED_SPEED_RATIO;
+			game.effect.movespeed = (PLR_SPEED_SPEED_RATIO * 100);
 			game.effect.anim.framerate = PLR_SPEED_SPEED_RATIO;
 			SetScriptFlags(GetOwner(), "cleartype", "speed");
 			return;
@@ -295,10 +303,10 @@ class EmoteSit&stand : CGameScript
 		}
 		string L_SPEED_FLAG_TOTAL = /* TODO: $get_scriptflag */ $get_scriptflag(GetOwner(), "speed", "type_value");
 		string L_SPEED_FLAG_COUNT = /* TODO: $get_scriptflag */ $get_scriptflag(GetOwner(), "speed", "type_count");
-		string L_NEW_SPEED = /* TODO: $math(divide) */ L_SPEED_FLAG_TOTAL;
+		string L_NEW_SPEED = (L_SPEED_FLAG_TOTAL / L_SPEED_FLAG_COUNT);
 		PLR_SPEED_SPEED_RATIO = L_NEW_SPEED;
 		plr_apply_speed();
-		LogDebug("$currentscript plr_get_total_speed - tot L_SPEED_FLAG_TOTAL count L_SPEED_FLAG_COUNT new PLR_SPEED_SPEED_RATIO / /* TODO: $math(multiply) */ PLR_SPEED_SPEED_RATIO");
+		LogDebug("$currentscript plr_get_total_speed - tot L_SPEED_FLAG_TOTAL count L_SPEED_FLAG_COUNT new PLR_SPEED_SPEED_RATIO / (PLR_SPEED_SPEED_RATIO * 100)");
 	}
 
 	void plr_apply_speed()
@@ -310,7 +318,7 @@ class EmoteSit&stand : CGameScript
 		}
 		ClientEvent("update", GetOwner(), SCRIPT_ID, "plr_update_speed_client", PLR_SPEED_SPEED_RATIO);
 		game.effect.anim.framerate = PLR_SPEED_SPEED_RATIO;
-		game.effect.movespeed = /* TODO: $math(multiply) */ PLR_SPEED_SPEED_RATIO;
+		game.effect.movespeed = (PLR_SPEED_SPEED_RATIO * 100);
 	}
 
 }

@@ -31,22 +31,45 @@ class OrcBase : CGameScript
 	int NO_STEP_ADJ;
 	int NPC_SILENT_DEATH;
 	int ORC_JUMPER;
+	string SOUND_ATTACK1;
+	string SOUND_ATTACK2;
+	string SOUND_ATTACK3;
+	string SOUND_HELP;
+	string SOUND_HIT;
+	string SOUND_HIT2;
+	string SOUND_HIT3;
+	string SOUND_PAIN;
+	string SOUND_STRUCK1;
+	string SOUND_STRUCK2;
+	string SOUND_STRUCK3;
+	string SOUND_WARCRY1;
+	string SOUND_ZOMB_ALERT1;
+	string SOUND_ZOMB_ALERT2;
+	string SOUND_ZOMB_ALERT3;
+	string SOUND_ZOMB_ATK1;
+	string SOUND_ZOMB_ATK2;
+	string SOUND_ZOMB_ATK3;
+	string SOUND_ZOMB_STRUCK1;
+	string SOUND_ZOMB_STRUCK2;
+	string SOUND_ZOMB_STRUCK3;
+	float ZORC_DMG_MULTI;
+	float ZORC_HP_MULTI;
 
 	OrcBase()
 	{
-		const string SOUND_STRUCK1 = "body/armour1.wav";
-		const string SOUND_STRUCK2 = "body/armour2.wav";
-		const string SOUND_STRUCK3 = "body/armour3.wav";
-		const string SOUND_HIT = "voices/orc/hit.wav";
-		const string SOUND_HIT2 = "voices/orc/hit2.wav";
-		const string SOUND_HIT3 = "voices/orc/hit3.wav";
-		const string SOUND_PAIN = "monsters/orc/pain.wav";
-		const string SOUND_WARCRY1 = "monsters/orc/battlecry.wav";
-		const string SOUND_ATTACK1 = "voices/orc/attack.wav";
-		const string SOUND_ATTACK2 = "voices/orc/attack2.wav";
-		const string SOUND_ATTACK3 = "voices/orc/attack3.wav";
+		SOUND_STRUCK1 = "body/armour1.wav";
+		SOUND_STRUCK2 = "body/armour2.wav";
+		SOUND_STRUCK3 = "body/armour3.wav";
+		SOUND_HIT = "voices/orc/hit.wav";
+		SOUND_HIT2 = "voices/orc/hit2.wav";
+		SOUND_HIT3 = "voices/orc/hit3.wav";
+		SOUND_PAIN = "monsters/orc/pain.wav";
+		SOUND_WARCRY1 = "monsters/orc/battlecry.wav";
+		SOUND_ATTACK1 = "voices/orc/attack.wav";
+		SOUND_ATTACK2 = "voices/orc/attack2.wav";
+		SOUND_ATTACK3 = "voices/orc/attack3.wav";
 		NPC_SILENT_DEATH = 1;
-		const string SOUND_HELP = "voices/orc/help.wav";
+		SOUND_HELP = "voices/orc/help.wav";
 		ANIM_RUN = "run";
 		ANIM_IDLE = "idle1";
 		ANIM_WALK = "walk";
@@ -59,17 +82,17 @@ class OrcBase : CGameScript
 		ANIM_FLINCH = "flinch";
 		FLINCH_DELAY = 4;
 		LAST_ENEMY = "NONE";
-		const float ZORC_DMG_MULTI = 5.0;
-		const float ZORC_HP_MULTI = 6.0;
-		const string SOUND_ZOMB_STRUCK1 = "debris/flesh2.wav";
-		const string SOUND_ZOMB_STRUCK2 = "agrunt/ag_pain3.wav";
-		const string SOUND_ZOMB_STRUCK3 = "agrunt/ag_pain5.wav";
-		const string SOUND_ZOMB_ATK1 = "zombie/claw_miss1.wav";
-		const string SOUND_ZOMB_ATK2 = "zombie/claw_miss2.wav";
-		const string SOUND_ZOMB_ATK3 = "zombie/claw_strike1.wav";
-		const string SOUND_ZOMB_ALERT1 = "monsters/zombie1/orc_zo_alert10.wav";
-		const string SOUND_ZOMB_ALERT2 = "monsters/zombie1/orc_zo_alert20.wav";
-		const string SOUND_ZOMB_ALERT3 = "monsters/zombie1/orc_zo_alert30.wav";
+		ZORC_DMG_MULTI = 5.0;
+		ZORC_HP_MULTI = 6.0;
+		SOUND_ZOMB_STRUCK1 = "debris/flesh2.wav";
+		SOUND_ZOMB_STRUCK2 = "agrunt/ag_pain3.wav";
+		SOUND_ZOMB_STRUCK3 = "agrunt/ag_pain5.wav";
+		SOUND_ZOMB_ATK1 = "zombie/claw_miss1.wav";
+		SOUND_ZOMB_ATK2 = "zombie/claw_miss2.wav";
+		SOUND_ZOMB_ATK3 = "zombie/claw_strike1.wav";
+		SOUND_ZOMB_ALERT1 = "monsters/zombie1/orc_zo_alert10.wav";
+		SOUND_ZOMB_ALERT2 = "monsters/zombie1/orc_zo_alert20.wav";
+		SOUND_ZOMB_ALERT3 = "monsters/zombie1/orc_zo_alert30.wav";
 	}
 
 	void OnSpawn() override
@@ -140,7 +163,7 @@ class OrcBase : CGameScript
 			if (!(BO_ZOMBIE_MODE))
 			{
 			}
-			string block = RandomInt(0, 99);
+			int block = RandomInt(0, 99);
 			if (block < 30)
 			{
 				if (block < 5)
@@ -150,7 +173,7 @@ class OrcBase : CGameScript
 				}
 				else
 				{
-					string rand = RandomInt(0, 1);
+					int rand = RandomInt(0, 1);
 					if (rand == 0)
 					{
 						PlayAnim("critical", "shielddeflect1");

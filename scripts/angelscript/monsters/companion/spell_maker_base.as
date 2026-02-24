@@ -7,17 +7,20 @@ class SpellMakerBase : CGameScript
 {
 	string FADE_LEVEL;
 	string FADE_RATE;
+	int GLOW_AMT;
 	string ITEM_CREATED_ME;
 	string ITEM_TO_REMOVE;
 	string MY_OWNER;
 	string MY_SPAWN_HEIGHT;
+	string SPAWNER_MODEL;
+	int SPELL_MAKER_HEIGHT;
 	string SPELL_TO_GRANT;
 
 	SpellMakerBase()
 	{
-		const int SPELL_MAKER_HEIGHT = 64;
-		const int GLOW_AMT = 50;
-		const string SPAWNER_MODEL = "null.mdl";
+		SPELL_MAKER_HEIGHT = 64;
+		GLOW_AMT = 50;
+		SPAWNER_MODEL = "null.mdl";
 	}
 
 	void OnSpawn() override

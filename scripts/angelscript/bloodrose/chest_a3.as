@@ -7,9 +7,11 @@ namespace MS
 
 class ChestA3 : CGameScript
 {
+	int FOAMY_CHEST_TYPE;
+
 	ChestA3()
 	{
-		const int FOAMY_CHEST_TYPE = 3;
+		FOAMY_CHEST_TYPE = 3;
 	}
 
 }

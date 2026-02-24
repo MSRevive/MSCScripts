@@ -9,12 +9,15 @@ namespace MS
 class DragoonElite : CGameScript
 {
 	string ADJ_RANGE;
+	int AIM_RATIO;
 	int AM_LEAPING;
 	string ANIM_ATTACK;
 	string ANIM_DEATH;
+	string ANIM_HOP;
 	string ANIM_IDLE;
 	string ANIM_RUN;
 	string ANIM_WALK;
+	int ARROW_DAMAGE;
 	string AS_ATTACKING;
 	string ATK_TYPE;
 	string ATTACK1_DAMAGE;
@@ -32,17 +35,31 @@ class DragoonElite : CGameScript
 	string CHANGE_POSITION;
 	float CONTAINER_DROP_CHANCE;
 	string CONTAINER_SCRIPT;
+	float DMG_AXE;
+	float DMG_DAGGER;
+	int DMG_MA;
+	float DMG_MACE;
+	float DMG_SPEAR;
+	float DMG_SWORD;
 	int DO_STUN;
 	int DROPS_CONTAINER;
 	string DROP_ITEM1;
 	float DROP_ITEM1_CHANCE;
 	string ELEMENT;
 	string FINAL_DAMAGE;
+	float FREQ_AXE;
+	float FREQ_BOW;
+	float FREQ_DAGGER;
+	float FREQ_MA;
+	float FREQ_MACE;
+	float FREQ_SPEAR;
 	string FREQ_SPEC_ATTACK;
+	float FREQ_SWORD;
 	int HUNT_AGRO;
 	string LEAP_TARGET;
 	int LEAP_UP_DELAY;
 	string MELEE_ATTACK;
+	string MONSTER_MODEL;
 	string MOVE_RANGE;
 	int NO_STUCK_CHECKS;
 	int NPC_FORCED_MOVEDEST;
@@ -51,7 +68,11 @@ class DragoonElite : CGameScript
 	string ORIG_ATTACK;
 	string POWER_ATTACK;
 	string PURE_FLEE;
-	string SPECIAL_EFFECT_CHANCE;
+	float RETALIATE_CHANGETARGET_CHANCE;
+	string SOUND_BOW;
+	string SOUND_PAIN;
+	string SOUND_PAIN2;
+	int SPECIAL_EFFECT_CHANCE;
 	int SPEC_LOOP;
 	int TOO_CLOSE;
 	string WEAPON;
@@ -61,25 +82,25 @@ class DragoonElite : CGameScript
 		Precache("magic/boom.wav");
 		CONTAINER_DROP_CHANCE = 0.1;
 		CONTAINER_SCRIPT = "chests/quiver_of_frost_arrows";
-		const string MONSTER_MODEL = "fur/npcs/dragoon_elite.mdl";
+		MONSTER_MODEL = "fur/npcs/dragoon_elite.mdl";
 		Precache(MONSTER_MODEL);
-		const string ANIM_HOP = "long_jump";
-		const string FREQ_BOW = Random(15, 30);
-		const string FREQ_DAGGER = Random(20, 30);
-		const string FREQ_MA = Random(10, 15);
-		const string FREQ_SWORD = Random(15, 30);
-		const string FREQ_AXE = Random(15, 30);
-		const string FREQ_MACE = Random(15, 30);
-		const string FREQ_SPEAR = Random(15, 30);
-		const string DMG_DAGGER = Random(20, 30);
-		const int DMG_MA = 25;
-		const string DMG_SWORD = Random(20, 30);
-		const string DMG_AXE = Random(30, 60);
-		const string DMG_MACE = Random(60, 75);
-		const string DMG_SPEAR = Random(30, 60);
-		const string SOUND_PAIN = "player/chesthit1.wav";
-		const string SOUND_PAIN2 = "player/armhit1.wav";
-		const string SOUND_BOW = "weapons/bow/bow.wav";
+		ANIM_HOP = "long_jump";
+		FREQ_BOW = Random(15, 30);
+		FREQ_DAGGER = Random(20, 30);
+		FREQ_MA = Random(10, 15);
+		FREQ_SWORD = Random(15, 30);
+		FREQ_AXE = Random(15, 30);
+		FREQ_MACE = Random(15, 30);
+		FREQ_SPEAR = Random(15, 30);
+		DMG_DAGGER = Random(20, 30);
+		DMG_MA = 25;
+		DMG_SWORD = Random(20, 30);
+		DMG_AXE = Random(30, 60);
+		DMG_MACE = Random(60, 75);
+		DMG_SPEAR = Random(30, 60);
+		SOUND_PAIN = "player/chesthit1.wav";
+		SOUND_PAIN2 = "player/armhit1.wav";
+		SOUND_BOW = "weapons/bow/bow.wav";
 		ANIM_IDLE = "idle";
 		ANIM_RUN = "run";
 		ANIM_WALK = "walk2";
@@ -88,11 +109,11 @@ class DragoonElite : CGameScript
 		HUNT_AGRO = 1;
 		CAN_ATTACK = 1;
 		CAN_RETALIATE = 1;
-		const float RETALIATE_CHANGETARGET_CHANCE = 0.75;
+		RETALIATE_CHANGETARGET_CHANCE = 0.75;
 		CAN_HEAR = 1;
 		NPC_GIVE_EXP = 400;
-		const int AIM_RATIO = 50;
-		const string ARROW_DAMAGE = "$rand(50,120)";
+		AIM_RATIO = 50;
+		ARROW_DAMAGE = "$rand(50,120)";
 		bowey();
 		fistey();
 		daggerey();
@@ -339,7 +360,7 @@ class DragoonElite : CGameScript
 
 	void OnDeath(CBaseEntity@ attacker) override
 	{
-		string L_DEATHANIM = RandomInt(0, 6);
+		int L_DEATHANIM = RandomInt(0, 6);
 		if (L_DEATHANIM == 0)
 		{
 			ANIM_DEATH = "die_simple";
@@ -683,7 +704,7 @@ class DragoonElite : CGameScript
 
 	void bandit_hop()
 	{
-		string JUMP_HEIGHT = RandomInt(350, 450);
+		int JUMP_HEIGHT = RandomInt(350, 450);
 		AddVelocity(GetOwner(), /* TODO: $relvel */ $relvel(0, 250, JUMP_HEIGHT));
 	}
 
@@ -948,7 +969,7 @@ class DragoonElite : CGameScript
 	{
 		if (!(BANDIT_TYPE == "ma")) return;
 		if ((I_R_FROZEN)) return;
-		string LEAP_CHANCE = RandomInt(1, 10);
+		int LEAP_CHANCE = RandomInt(1, 10);
 		if (param1 > 100)
 		{
 			int LEAP_CHANCE = 1;

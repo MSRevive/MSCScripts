@@ -7,16 +7,21 @@ namespace MS
 
 class BaseBook : CGameScript
 {
+	string CHAT_ARRAY_EVENT;
+	int CHAT_AUTO_FACE;
+	int CHAT_AUTO_HAIL;
+	int CHAT_FACE_ON_USE;
+	int CHAT_USE_CONV_ANIMS;
 	int CUR_PAGE;
 	int NUM_PAGES;
 
 	BaseBook()
 	{
-		const int CHAT_AUTO_HAIL = 0;
-		const int CHAT_USE_CONV_ANIMS = 0;
-		const int CHAT_FACE_ON_USE = 0;
-		const int CHAT_AUTO_FACE = 0;
-		const string CHAT_ARRAY_EVENT = "page";
+		CHAT_AUTO_HAIL = 0;
+		CHAT_USE_CONV_ANIMS = 0;
+		CHAT_FACE_ON_USE = 0;
+		CHAT_AUTO_FACE = 0;
+		CHAT_ARRAY_EVENT = "page";
 		CUR_PAGE = 0;
 		NUM_PAGES = 0;
 	}
@@ -39,7 +44,7 @@ class BaseBook : CGameScript
 
 	void add_page()
 	{
-		chat_add_text(CHAT_ARRAY_EVENT, /* TODO: $pass */ $pass(param1), 0.1, "none", "none", "sound:magic/pageflip.wav");
+		chat_add_text(CHAT_ARRAY_EVENT, param1, 0.1, "none", "none", "sound:magic/pageflip.wav");
 		NUM_PAGES += 1;
 	}
 

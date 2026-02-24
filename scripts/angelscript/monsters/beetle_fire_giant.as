@@ -7,13 +7,28 @@ namespace MS
 
 class BeetleFireGiant : CGameScript
 {
+	string ANIM_SPECIAL;
 	string AS_ATTACKING;
+	int BBET_CAN_FLY;
+	int BBET_CAN_LEAP;
+	int BBET_CAN_SLAM;
+	int BBET_FAKE_DEATH;
+	int BBET_GORE_PUSH_STR;
+	int BBET_HORN;
+	int BBET_SIZE;
+	int DMG_BURST;
+	int DMG_GORE;
+	int DMG_SLAM;
+	int DMG_SLASH;
+	float DOT_POISON;
 	int FLAME_JET_DMG;
 	int FLAME_JET_DOT;
+	float FREQ_SPIT;
 	string NEXT_SPIT;
 	int NPC_GIVE_EXP;
 	string POISON_TARGS;
 	string SLAM_POS;
+	string SOUND_POISON_BURST;
 	string SPIT_LIST;
 	int SPIT_TARG_IDX;
 	string STUN_TARGS;
@@ -21,21 +36,21 @@ class BeetleFireGiant : CGameScript
 	BeetleFireGiant()
 	{
 		NPC_GIVE_EXP = 5000;
-		const int BBET_SIZE = 2;
-		const int BBET_CAN_FLY = 0;
-		const int BBET_CAN_LEAP = 0;
-		const int BBET_CAN_SLAM = 1;
-		const int BBET_GORE_PUSH_STR = 300;
-		const int BBET_FAKE_DEATH = 0;
-		const int DMG_SLASH = 160;
-		const int DMG_GORE = 240;
-		const float DOT_POISON = 100.0;
-		const int DMG_BURST = 2000;
-		const int DMG_SLAM = 1000;
-		const int BBET_HORN = 1;
-		const string ANIM_SPECIAL = "bug_conjure";
-		const string FREQ_SPIT = Random(10.0, 20.0);
-		const string SOUND_POISON_BURST = "weapons/explode3.wav";
+		BBET_SIZE = 2;
+		BBET_CAN_FLY = 0;
+		BBET_CAN_LEAP = 0;
+		BBET_CAN_SLAM = 1;
+		BBET_GORE_PUSH_STR = 300;
+		BBET_FAKE_DEATH = 0;
+		DMG_SLASH = 160;
+		DMG_GORE = 240;
+		DOT_POISON = 100.0;
+		DMG_BURST = 2000;
+		DMG_SLAM = 1000;
+		BBET_HORN = 1;
+		ANIM_SPECIAL = "bug_conjure";
+		FREQ_SPIT = Random(10.0, 20.0);
+		SOUND_POISON_BURST = "weapons/explode3.wav";
 		FLAME_JET_DMG = 200;
 		FLAME_JET_DOT = 200;
 	}

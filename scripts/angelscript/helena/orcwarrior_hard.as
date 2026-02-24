@@ -9,8 +9,11 @@ namespace MS
 class OrcwarriorHard : CGameScript
 {
 	string ANIM_ATTACK;
+	float ATTACK_ACCURACY;
+	int ATTACK_DMG_HIGH;
+	int ATTACK_DMG_LOW;
 	int DROP_GOLD;
-	string DROP_GOLD_AMT;
+	int DROP_GOLD_AMT;
 	float FLINCH_CHANCE;
 	int NPC_GIVE_EXP;
 
@@ -21,9 +24,9 @@ class OrcwarriorHard : CGameScript
 		NPC_GIVE_EXP = 80;
 		ANIM_ATTACK = "battleaxe_swing1_L";
 		FLINCH_CHANCE = 0.45;
-		const float ATTACK_ACCURACY = 0.7;
-		const int ATTACK_DMG_LOW = 16;
-		const int ATTACK_DMG_HIGH = 32;
+		ATTACK_ACCURACY = 0.7;
+		ATTACK_DMG_LOW = 16;
+		ATTACK_DMG_HIGH = 32;
 	}
 
 	void orc_spawn()

@@ -75,6 +75,24 @@ class DescTranslator(CommandTranslator):
         return True
 
 
+class SetSkinTranslator(CommandTranslator):
+    def translate(self, cmd, ctx, w):
+        if not cmd.args:
+            return False
+        val = ctx.translate_expr(cmd.args[0])
+        w.line(f"SetEntitySkin(GetOwner(), {val});")
+        return True
+
+
+class SetModelSkinTranslator(CommandTranslator):
+    def translate(self, cmd, ctx, w):
+        if not cmd.args:
+            return False
+        val = ctx.translate_expr(cmd.args[0])
+        w.line(f"SetEntityModelSkin(GetOwner(), {val});")
+        return True
+
+
 class BoolPropertyTranslator(CommandTranslator):
     """Translates boolean property commands like invincible, invisible, etc."""
     def __init__(self, func_name: str):
@@ -116,6 +134,8 @@ def register_commands():
     register("race", RaceTranslator())
     register("setmodel", SetModelTranslator())
     register("setmodelbody", SetModelBodyTranslator())
+    register("setskin", SetSkinTranslator())
+    register("setmodelskin", SetModelSkinTranslator())
     register("desc", DescTranslator())
     register("width", NumericPropertyTranslator("SetWidth"))
     register("height", NumericPropertyTranslator("SetHeight"))

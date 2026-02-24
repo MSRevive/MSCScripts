@@ -8,10 +8,13 @@ namespace MS
 
 class Idlesoldier : CGameScript
 {
+	int NO_JOB;
+	int NO_RUMOR;
+
 	Idlesoldier()
 	{
-		const int NO_RUMOR = 1;
-		const int NO_JOB = 1;
+		NO_RUMOR = 1;
+		NO_JOB = 1;
 	}
 
 	void OnSpawn() override

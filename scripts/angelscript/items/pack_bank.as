@@ -5,21 +5,32 @@ namespace MS
 
 class PackBank : CGameScript
 {
+	string ANIM_PREFIX;
+	string BANK_NAME;
+	string CONTAINER_ITEM_REJECT;
+	int CONTAINER_MAXITEMS;
+	int CONTAINER_SPACE;
+	string CONTAINER_TYPE;
+	int MODEL_BODY_OFS;
+	string MODEL_HANDS;
+	string MODEL_VIEW;
+	string MODEL_WEAR;
+	string MODEL_WORLD;
 	string TRUE_ACCEPT;
 
 	PackBank()
 	{
-		const string MODEL_VIEW = "none";
-		const string MODEL_HANDS = "misc/p_misc.mdl";
-		const string MODEL_WORLD = "armor/packs/p_packs.mdl";
-		const string MODEL_WEAR = "armor/packs/p_packs.mdl";
-		const string BANK_NAME = "Edana";
-		const string CONTAINER_TYPE = "generic";
-		const int CONTAINER_SPACE = 200;
-		const int CONTAINER_MAXITEMS = 32;
-		const string CONTAINER_ITEM_REJECT = "sheath;pack;bolt;arrow;health;mana_mpotion";
-		const int MODEL_BODY_OFS = 6;
-		const string ANIM_PREFIX = "none";
+		MODEL_VIEW = "none";
+		MODEL_HANDS = "misc/p_misc.mdl";
+		MODEL_WORLD = "armor/packs/p_packs.mdl";
+		MODEL_WEAR = "armor/packs/p_packs.mdl";
+		BANK_NAME = "Edana";
+		CONTAINER_TYPE = "generic";
+		CONTAINER_SPACE = 200;
+		CONTAINER_MAXITEMS = 32;
+		CONTAINER_ITEM_REJECT = "sheath;pack;bolt;arrow;health;mana_mpotion";
+		MODEL_BODY_OFS = 6;
+		ANIM_PREFIX = "none";
 	}
 
 	void pack_spawn()
@@ -40,7 +51,7 @@ class PackBank : CGameScript
 
 	void pack_wear()
 	{
-		SendPlayerMessage("You", "put on your BANK_NAME bank signet ring.");
+		SendPlayerMessage("You", "put on your " + BANK_NAME + " bank signet ring.");
 	}
 
 	void OnSpawn() override
@@ -135,14 +146,14 @@ class PackBank : CGameScript
 
 	void game_container_addeditem()
 	{
-		SendPlayerMessage("Added", "PARAM1 to BANK_NAME bank");
+		SendPlayerMessage("Added", param1 + "to " + BANK_NAME + " bank");
 		string IN_ITEM_WEIGHT = GetEntityProperty(param1, "weight");
 		SetWeight(/* TODO: $neg */ $neg(IN_ITEM_WEIGHT));
 	}
 
 	void game_container_removeditem()
 	{
-		SendPlayerMessage("Removed", "PARAM1 from BANK_NAME bank");
+		SendPlayerMessage("Removed", param1 + "from " + BANK_NAME + " bank");
 		string OUT_ITEM_WEIGHT = GetEntityProperty(param1, "weight");
 		SetWeight(OUT_ITEM_WEIGHT);
 	}

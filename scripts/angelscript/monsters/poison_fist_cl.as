@@ -7,15 +7,19 @@ class PoisonFistCl : CGameScript
 {
 	string BONE_IDX;
 	int CUR_FRAME;
+	string GLOW_COLOR;
+	int GLOW_RAD;
+	int N_SPR_FRAMES;
 	string SKEL_ID;
 	string SKEL_LIGHT_ID;
+	string SPRITE_FIRE;
 
 	PoisonFistCl()
 	{
-		const string SPRITE_FIRE = "poison_cloud.spr";
-		const int GLOW_RAD = 128;
-		const Vector3 GLOW_COLOR = Vector3(0, 255, 0);
-		const int N_SPR_FRAMES = 17;
+		SPRITE_FIRE = "poison_cloud.spr";
+		GLOW_RAD = 128;
+		GLOW_COLOR = Vector3(0, 255, 0);
+		N_SPR_FRAMES = 17;
 	}
 
 	void client_activate()

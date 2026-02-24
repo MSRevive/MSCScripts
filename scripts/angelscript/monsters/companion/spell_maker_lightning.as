@@ -9,29 +9,40 @@ class SpellMakerLightning : CGameScript
 {
 	string ANIM_IDLE;
 	int BEAMS_SETUP;
+	string BEAM_COLOR;
 	int BEAM_ROT;
 	string BOTTOM_MID;
 	int B_BRIGHT;
 	int B_COUNT;
+	string C_FX_SPRITE;
+	float DEATH_DELAY;
+	string EFFECTS_SPRITE;
 	string FLOOR;
+	string FX_SCRIPT;
+	int LIGHTING_RADIUS;
+	int MODEL_OFSET;
 	string OWNER_IDX;
+	float REMOVE_DELAY;
 	string ROOF;
+	int SHOW_FX;
+	string SOUND_SPAWN;
+	string SPAWNER_MODEL;
 	int SPR_RENDER;
 
 	SpellMakerLightning()
 	{
-		const string FX_SCRIPT = "monsters/companion/spell_maker_lightning";
+		FX_SCRIPT = "monsters/companion/spell_maker_lightning";
 		ANIM_IDLE = "";
-		const string SPAWNER_MODEL = "none";
-		const int MODEL_OFSET = 0;
-		const string SOUND_SPAWN = "weather/Storm_exclamation.wav";
-		const float REMOVE_DELAY = 10.0;
-		const int SHOW_FX = 1;
-		const string EFFECTS_SPRITE = "lgtning.spr";
-		const string C_FX_SPRITE = "lgtning.spr";
-		const int LIGHTING_RADIUS = 32;
-		const float DEATH_DELAY = 5.0;
-		const Vector3 BEAM_COLOR = Vector3(20, 20, 255);
+		SPAWNER_MODEL = "none";
+		MODEL_OFSET = 0;
+		SOUND_SPAWN = "weather/Storm_exclamation.wav";
+		REMOVE_DELAY = 10.0;
+		SHOW_FX = 1;
+		EFFECTS_SPRITE = "lgtning.spr";
+		C_FX_SPRITE = "lgtning.spr";
+		LIGHTING_RADIUS = 32;
+		DEATH_DELAY = 5.0;
+		BEAM_COLOR = Vector3(20, 20, 255);
 	}
 
 	void OnSpawn() override
@@ -152,7 +163,7 @@ class SpellMakerLightning : CGameScript
 	void svr_show_fx()
 	{
 		string BEAM_WIDTH = GetSkillLevel(MY_OWNER, "spellcasting.lightning");
-		string BEAM_WIDTH = int(BEAM_WIDTH);
+		int BEAM_WIDTH = int(BEAM_WIDTH);
 		int x = -64;
 		int y = -64;
 		string z = (/* TODO: $relpos */ $relpos(0, 0, 0)).z;
@@ -203,7 +214,7 @@ class SpellMakerLightning : CGameScript
 	void beam_silent()
 	{
 		string BEAM_WIDTH = GetSkillLevel(MY_OWNER, "spellcasting.lightning");
-		string BEAM_WIDTH = int(BEAM_WIDTH);
+		int BEAM_WIDTH = int(BEAM_WIDTH);
 		BEAM_WIDTH *= 8;
 		int GROUND_LEVEL = -1000;
 		int HEIGHT = 1000;

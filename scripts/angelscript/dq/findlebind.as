@@ -8,7 +8,9 @@ namespace MS
 
 class Findlebind : CGameScript
 {
+	string ANIM_DEAD;
 	string ANIM_DEATH_SPEECH;
+	string ANIM_DIEING;
 	int BEAR_DEAD;
 	float BRAP_DELAY;
 	int CANCHAT;
@@ -24,15 +26,17 @@ class Findlebind : CGameScript
 	string QUEST_WINNER;
 	int RECIEVED_CLAW;
 	int SAYSTEP_ELF;
+	string SOUND_COUGH;
+	string SOUND_DEATH;
 	string TARGET_PLAYER;
 
 	Findlebind()
 	{
-		const string ANIM_DIEING = "c1a4_wounded_idle";
+		ANIM_DIEING = "c1a4_wounded_idle";
 		ANIM_DEATH_SPEECH = "c1a4_dying_speech";
-		const string ANIM_DEAD = "dead_sitting";
-		const string SOUND_COUGH = "scientist/cough.wav";
-		const string SOUND_DEATH = "scientist/sci_die1.wav";
+		ANIM_DEAD = "dead_sitting";
+		SOUND_COUGH = "scientist/cough.wav";
+		SOUND_DEATH = "scientist/sci_die1.wav";
 		Precache(SOUND_DEATH);
 		BRAP_DELAY = 3.5;
 		NO_JOB = 1;
@@ -95,7 +99,7 @@ class Findlebind : CGameScript
 	void say_hi3()
 	{
 		PlayAnim("once", "fear1");
-		SayText("Aye! A kodiak , believe it or not! Bring me proof of its death , and I shall reward ye!");
+		SayText("Aye! " + A + "kodiak , believe it or not! Bring me proof of its death , and " + I + " shall reward ye!");
 		Say("[.3] [.3] [.3] [.2] [.1] [.3]");
 		EmitSound(GetOwner(), 0, "voices/bloodrose/findlebind/aye_a_kodiak.wav", 10);
 		GAVE_JOB = 1;
@@ -202,7 +206,7 @@ class Findlebind : CGameScript
 		}
 		if ((ItemExists(QUEST_PLAYER, "key_red")))
 		{
-			SayText("Ah , I see you have the key , now you just have to find his lair!");
+			SayText("Ah , " + I + " see you have the key , now you just have to find his lair!");
 			Say("[.3] [.1] [.3] [.2] [.1] [.3]");
 			EmitSound(GetOwner(), 0, "voices/bloodrose/findlebind/ah_you_have_the_key.wav", 10);
 			BRAP_DELAY = 3.5;
@@ -253,7 +257,7 @@ class Findlebind : CGameScript
 			PlayAnim("once", "give_shot");
 			UseTrigger("key_chest");
 			MENTIONED_PRIESTESS = 1;
-			SayText("I once had a key that , if what the [priestess] said was true , would get you into his lair.");
+			SayText(I + " once had a key that , if what the [priestess] said was true , would get you into his lair.");
 			Say("[.1] [.2] [.3] [.1] [.1] [.3]");
 			EmitSound(GetOwner(), 0, "voices/bloodrose/findlebind/i_once_had_a_key.wav", 10);
 			BRAP_DELAY = 5.3;
@@ -270,7 +274,7 @@ class Findlebind : CGameScript
 
 	void say_key1()
 	{
-		SayText("Sadly , I left it behind in a wardrobe , when I had to make a hasty move from the old village.");
+		SayText("Sadly , " + I + "left it behind in a wardrobe , when " + I + " had to make a hasty move from the old village.");
 		Say("[.3] [.2] [.1] [.1] [.2] [.3]");
 		EmitSound(GetOwner(), 0, "voices/bloodrose/findlebind/sadly_i_left_it_behind.wav", 10);
 		BRAP_DELAY = 4.7;
@@ -318,7 +322,7 @@ class Findlebind : CGameScript
 			SetMoveDest(GetEntityOrigin("ent_lastspoke"));
 		}
 		PlayAnim("once", "yes");
-		SayText("A priestess of Felewyn came here a few years back...");
+		SayText(A + " priestess of Felewyn came here a few years back...");
 		Say("[.1] [.1] [.3]");
 		EmitSound(GetOwner(), 0, "voices/bloodrose/findlebind/a_priestess_of_felewyn.wav", 10);
 		BRAP_DELAY = 3.2;
@@ -336,7 +340,7 @@ class Findlebind : CGameScript
 
 	void say_priest3()
 	{
-		SayText("She also said that I should give that red key to anyone I thought strong enough to try.");
+		SayText("She also said that " + I + "should give that red key to anyone " + I + " thought strong enough to try.");
 		Say("[.1] [.1] [.3] [.1] [.1] [.3]");
 		EmitSound(GetOwner(), 0, "voices/bloodrose/findlebind/she_said_i_should_give.wav", 10);
 	}
@@ -395,7 +399,7 @@ class Findlebind : CGameScript
 			FOUND_WORTHY = 1;
 			UseTrigger("findlebind_died");
 			SetSayTextRange(2048);
-			SayText("*cough* Good! I see you defeated the snake lord! *gasp*");
+			SayText("*cough* Good! " + I + " see you defeated the snake lord! *gasp*");
 			Say("[.1] [.1] [.3]");
 			EmitSound(GetOwner(), 0, "voices/bloodrose/findlebind/you_killed_the_snake_lord.wav", 10);
 			BRAP_DELAY = 6.8;
@@ -460,7 +464,7 @@ class Findlebind : CGameScript
 		}
 		if (SAYSTEP_ELF == 3)
 		{
-			SayText("Bad magic , I say.");
+			SayText("Bad magic , " + I + " say.");
 			EmitSound(GetOwner(), 0, "voices/bloodrose/findlebind/bad_magic_i_say.wav", 10);
 			BRAP_DELAY = 1.7;
 		}

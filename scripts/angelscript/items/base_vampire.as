@@ -10,7 +10,7 @@ class BaseVampire : CGameScript
 	void try_vampire_target()
 	{
 		CAN_VAMPIRE_TARGET = 0;
-		check_can_vampire(/* TODO: $pass */ $pass(param1), /* TODO: $pass */ $pass(param2));
+		check_can_vampire(param1, param2);
 		if (!(CAN_VAMPIRE_TARGET)) return;
 		HealEntity(param1, param3);
 		EmitSound(GetOwner(), 0, "player/heartbeat_noloop.wav", 5);

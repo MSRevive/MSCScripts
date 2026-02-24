@@ -7,21 +7,35 @@ namespace MS
 
 class BowsLongbow : CGameScript
 {
+	string ANIM_PREFIX;
+	string ITEM_NAME;
+	int MODEL_BODY_OFS;
+	string MODEL_HANDS;
+	string MODEL_VIEW;
+	string MODEL_WEAR;
+	string MODEL_WORLD;
+	string RANGED_ACCURACY;
+	string RANGED_AIMANGLE;
+	int RANGED_ENERGY;
+	int RANGED_FORCE;
+	float RANGED_POSTFIRE_DELAY;
+	string SOUND_SHOOT;
+
 	BowsLongbow()
 	{
-		const string MODEL_VIEW = "viewmodels/v_bows.mdl";
-		const string MODEL_HANDS = "weapons/p_weapons2.mdl";
-		const string MODEL_WORLD = "weapons/p_weapons2.mdl";
-		const string MODEL_WEAR = "weapons/p_weapons2.mdl";
-		const string SOUND_SHOOT = "weapons/bow/bow.wav";
-		const string ITEM_NAME = "longbow";
-		const string ANIM_PREFIX = "longbow";
-		const int MODEL_BODY_OFS = 44;
-		const int RANGED_FORCE = 2100;
-		const int RANGED_ENERGY = 4;
-		const string RANGED_ACCURACY = "3;0";
-		const float RANGED_POSTFIRE_DELAY = 0.3;
-		const Vector3 RANGED_AIMANGLE = Vector3(0, 3, 0);
+		MODEL_VIEW = "viewmodels/v_bows.mdl";
+		MODEL_HANDS = "weapons/p_weapons2.mdl";
+		MODEL_WORLD = "weapons/p_weapons2.mdl";
+		MODEL_WEAR = "weapons/p_weapons2.mdl";
+		SOUND_SHOOT = "weapons/bow/bow.wav";
+		ITEM_NAME = "longbow";
+		ANIM_PREFIX = "longbow";
+		MODEL_BODY_OFS = 44;
+		RANGED_FORCE = 2100;
+		RANGED_ENERGY = 4;
+		RANGED_ACCURACY = "3;0";
+		RANGED_POSTFIRE_DELAY = 0.3;
+		RANGED_AIMANGLE = Vector3(0, 3, 0);
 	}
 
 	void bow_spawn()

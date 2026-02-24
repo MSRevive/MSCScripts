@@ -7,9 +7,11 @@ namespace MS
 
 class Commoner01 : CGameScript
 {
+	int NO_CHAT;
+
 	Commoner01()
 	{
-		const int NO_CHAT = 1;
+		NO_CHAT = 1;
 	}
 
 	void OnRepeatTimer()

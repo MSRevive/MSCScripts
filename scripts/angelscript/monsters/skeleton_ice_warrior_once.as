@@ -7,10 +7,13 @@ namespace MS
 
 class SkeletonIceWarriorOnce : CGameScript
 {
+	float SKEL_RESPAWN_CHANCE;
+	int SKEL_RESPAWN_LIVES;
+
 	SkeletonIceWarriorOnce()
 	{
-		const float SKEL_RESPAWN_CHANCE = 0.0;
-		const int SKEL_RESPAWN_LIVES = 0;
+		SKEL_RESPAWN_CHANCE = 0.0;
+		SKEL_RESPAWN_LIVES = 0;
 	}
 
 }

@@ -8,20 +8,30 @@ namespace MS
 
 class ArmorHelmGaz1 : CGameScript
 {
+	int ARMOR_BODY;
+	string ARMOR_MODEL;
+	string ARMOR_TEXT;
+	float BARMOR_PROTECTION;
+	string BARMOR_TYPE;
 	string ELM_AMT;
+	string ELM_NAME;
+	string ELM_TYPE;
+	int REG_SPECIAL_EFFECT;
+	string SP_ATTRIB;
+	float STUN_PROTECTION;
 
 	ArmorHelmGaz1()
 	{
-		const string ARMOR_MODEL = "armor/p_helmets.mdl";
-		const int ARMOR_BODY = 7;
-		const string ARMOR_TEXT = "You equip the Helm of Fire Reistance.";
-		const string BARMOR_TYPE = "platemail";
-		const float BARMOR_PROTECTION = 0.6;
-		const float STUN_PROTECTION = 0.6;
-		const int REG_SPECIAL_EFFECT = 1;
-		const string SP_ATTRIB = "skill.spellcasting.fire.ratio";
-		const string ELM_NAME = "fireh";
-		const string ELM_TYPE = "fire";
+		ARMOR_MODEL = "armor/p_helmets.mdl";
+		ARMOR_BODY = 7;
+		ARMOR_TEXT = "You equip the Helm of Fire Reistance.";
+		BARMOR_TYPE = "platemail";
+		BARMOR_PROTECTION = 0.6;
+		STUN_PROTECTION = 0.6;
+		REG_SPECIAL_EFFECT = 1;
+		SP_ATTRIB = "skill.spellcasting.fire.ratio";
+		ELM_NAME = "fireh";
+		ELM_TYPE = "fire";
 	}
 
 	void OnSpawn() override

@@ -7,10 +7,13 @@ namespace MS
 
 class FireArcher : CGameScript
 {
+	int ELEMENT;
+	int WEAPON;
+
 	FireArcher()
 	{
-		const int WEAPON = 0;
-		const int ELEMENT = 2;
+		WEAPON = 0;
+		ELEMENT = 2;
 	}
 
 }

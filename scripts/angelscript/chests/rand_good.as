@@ -7,9 +7,11 @@ namespace MS
 
 class RandGood : CGameScript
 {
+	string ITEM_EVENT;
+
 	RandGood()
 	{
-		const string ITEM_EVENT = "add_good_item";
+		ITEM_EVENT = "add_good_item";
 	}
 
 	void chest_additems()

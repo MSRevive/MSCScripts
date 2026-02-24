@@ -9,20 +9,30 @@ class SwampReaver : CGameScript
 {
 	int ACID_BOMB_ATTACK;
 	string ACID_BOMB_POS;
+	string ANIM_ALERT;
 	string ANIM_ATTACK;
+	string ANIM_BOMB;
+	string ANIM_BREATH;
 	string ANIM_DEATH;
 	string ANIM_DEATH1;
 	string ANIM_DEATH2;
 	string ANIM_DEATH3;
 	string ANIM_FLINCH;
 	string ANIM_IDLE;
+	string ANIM_PROJECTILE;
 	string ANIM_RUN;
+	string ANIM_SEARCH;
+	string ANIM_SLASH;
+	string ANIM_SMASH;
 	string ANIM_VICTORY;
+	string ANIM_VICTORY1;
+	string ANIM_VICTORY2;
 	string ANIM_WALK;
 	string AS_ATTACKING;
 	int ATTACK_HITRANGE;
 	int ATTACK_MOVERANGE;
 	int ATTACK_RANGE;
+	string BOMB_DMG_TYPE;
 	string BREATH_ANG;
 	int BREATH_COUNT;
 	string BREATH_TYPE;
@@ -30,6 +40,9 @@ class SwampReaver : CGameScript
 	string CL_EFFECT_ID;
 	int CYCLES_ON;
 	int DID_WARCRY;
+	int DMG_ACID_BOMB;
+	int DMG_FIRE_BALL;
+	int DOES_ACID_BOMB;
 	int DOING_ACID_BOMB;
 	int DOING_BREATH;
 	int DOING_ERRUPT;
@@ -41,7 +54,15 @@ class SwampReaver : CGameScript
 	string EFFECT_ACID_BOMB;
 	string ERRUPT_TARGS;
 	string ERRUPT_TYPE;
+	float FIREBALL1_DURATION;
+	string FIREBALL1_SCRIPT;
+	float FIREBALL2_DURATION;
+	string FIREBALL2_SCRIPT;
 	int FIRST_ATTACK;
+	float FREQ_ACID_BOMB;
+	float FREQ_BREATH;
+	float FREQ_ERRUPT;
+	float FREQ_FIRE_BALL;
 	string HP_STORAGE;
 	int IS_FIRE_BOMB;
 	int MIX_COUNT;
@@ -56,67 +77,108 @@ class SwampReaver : CGameScript
 	string PROJECTILE_SCRIPT;
 	int PUSH_ATTACK;
 	string PUSH_VEL;
+	int REAVER_HEIGHT;
 	string REAVER_LAST_FIRE_BALL;
+	int REAVER_MAXHP;
+	string REAVER_MODEL;
+	string REAVER_NAME;
+	int REAVER_SKIN;
+	int REAVER_WIDTH;
+	int REAVER_XP;
 	int SLASH_ATTACK;
 	int SLASH_COUNT;
+	int SLASH_DAMAGE;
+	float SLASH_HITCHANCE;
 	int SMASH_ATTACK;
+	int SMASH_DAMAGE;
+	string SOUND_ACID_BOMB_FIRE;
+	string SOUND_ACID_BOMB_PREP;
 	string SOUND_ATTACKHIT;
 	string SOUND_ATTACKMISS;
+	string SOUND_DEATH;
+	string SOUND_FIRE_BREATH_LOOP;
+	string SOUND_FIRE_BREATH_START;
+	string SOUND_FIRE_ERRUPT_LOOP;
+	string SOUND_FIRE_ERRUPT_START;
+	string SOUND_PAIN_NEAR_DEATH;
+	string SOUND_PAIN_STRONG;
+	string SOUND_PAIN_WEAK;
+	string SOUND_POISON_BREATH_LOOP;
+	string SOUND_POISON_BREATH_START;
+	string SOUND_POISON_ERRUPT_LOOP;
+	string SOUND_POISON_ERRUPT_START;
+	string SOUND_RUN1;
+	string SOUND_RUN2;
+	string SOUND_RUN3;
+	string SOUND_SEARCH1;
+	string SOUND_SEARCH2;
+	string SOUND_SEARCH3;
+	string SOUND_SLASHHIT;
+	string SOUND_SLASHMISS;
+	string SOUND_SMASHHIT;
+	string SOUND_SMASHMISS;
+	string SOUND_STRUCK1;
+	string SOUND_STRUCK2;
+	string SOUND_WALK1;
+	string SOUND_WALK2;
+	string SOUND_WALK3;
+	string SOUND_WALK4;
+	string SOUND_WARCRY;
 	int STUN_BURST;
 	string STUN_POS;
 	int VOLCANO_ON;
 
 	SwampReaver()
 	{
-		const string REAVER_NAME = "Vitriolic Reaver";
-		const int REAVER_MAXHP = 4000;
-		const int REAVER_XP = 2750;
-		const int REAVER_SKIN = 1;
-		const string REAVER_MODEL = "monsters/firereaver.mdl";
-		const int REAVER_WIDTH = 72;
-		const int REAVER_HEIGHT = 64;
+		REAVER_NAME = "Vitriolic Reaver";
+		REAVER_MAXHP = 4000;
+		REAVER_XP = 2750;
+		REAVER_SKIN = 1;
+		REAVER_MODEL = "monsters/firereaver.mdl";
+		REAVER_WIDTH = 72;
+		REAVER_HEIGHT = 64;
 		ANIM_WALK = "walk";
 		ANIM_RUN = "run";
 		ANIM_IDLE = "idle1";
-		const string ANIM_SEARCH = "idle2";
+		ANIM_SEARCH = "idle2";
 		ANIM_FLINCH = "turnl";
-		const string ANIM_SMASH = "mattack3";
-		const string ANIM_SLASH = "mattack2";
-		const string ANIM_PROJECTILE = "distanceattack";
-		const string ANIM_BOMB = "bomb_attack";
-		const string ANIM_ALERT = "distanceattack";
-		const string ANIM_BREATH = "breath";
+		ANIM_SMASH = "mattack3";
+		ANIM_SLASH = "mattack2";
+		ANIM_PROJECTILE = "distanceattack";
+		ANIM_BOMB = "bomb_attack";
+		ANIM_ALERT = "distanceattack";
+		ANIM_BREATH = "breath";
 		ANIM_DEATH1 = "dieforward";
 		ANIM_DEATH2 = "diesimple";
 		ANIM_DEATH3 = "diesideways";
-		const string ANIM_VICTORY1 = "victoryeat";
-		const string ANIM_VICTORY2 = "victorysniff";
+		ANIM_VICTORY1 = "victoryeat";
+		ANIM_VICTORY2 = "victorysniff";
 		ANIM_VICTORY = "victoryeat";
 		ANIM_DEATH = "dieforward";
 		ANIM_ATTACK = "mattack3";
-		const float FREQ_FIRE_BALL = 10.0;
-		const int DMG_FIRE_BALL = 100;
-		const string SOUND_WALK1 = "common/npc_step1.wav";
-		const string SOUND_WALK2 = "common/npc_step2.wav";
-		const string SOUND_WALK3 = "common/npc_step3.wav";
-		const string SOUND_WALK4 = "common/npc_step4.wav";
-		const string SOUND_RUN1 = "gonarch/gon_step1.wav";
-		const string SOUND_RUN2 = "gonarch/gon_step2.wav";
-		const string SOUND_RUN3 = "gonarch/gon_step3.wav";
-		const string SOUND_DEATH = "gonarch/gon_die1.wav";
-		const string SOUND_WARCRY = "gonarch/gon_alert1.wav";
-		const string SOUND_STRUCK1 = "gonarch/gon_sack1.wav";
-		const string SOUND_STRUCK2 = "gonarch/gon_sack2.wav";
-		const string SOUND_PAIN_STRONG = "gonarch/gon_pain2.wav";
-		const string SOUND_PAIN_WEAK = "gonarch/gon_pain4.wav";
-		const string SOUND_PAIN_NEAR_DEATH = "gonarch/gon_pain5.wav";
-		const string SOUND_SLASHHIT = "zombie/claw_strike1.wav";
-		const string SOUND_SMASHHIT = "zombie/claw_strike2.wav";
-		const string SOUND_SLASHMISS = "zombie/claw_miss1.wav";
-		const string SOUND_SMASHMISS = "zombie/claw_miss2.wav";
-		const string SOUND_SEARCH1 = "gonarch/gon_childdie3.wav";
-		const string SOUND_SEARCH2 = "gonarch/gon_childdie2.wav";
-		const string SOUND_SEARCH3 = "gonarch/gon_childdie1.wav";
+		FREQ_FIRE_BALL = 10.0;
+		DMG_FIRE_BALL = 100;
+		SOUND_WALK1 = "common/npc_step1.wav";
+		SOUND_WALK2 = "common/npc_step2.wav";
+		SOUND_WALK3 = "common/npc_step3.wav";
+		SOUND_WALK4 = "common/npc_step4.wav";
+		SOUND_RUN1 = "gonarch/gon_step1.wav";
+		SOUND_RUN2 = "gonarch/gon_step2.wav";
+		SOUND_RUN3 = "gonarch/gon_step3.wav";
+		SOUND_DEATH = "gonarch/gon_die1.wav";
+		SOUND_WARCRY = "gonarch/gon_alert1.wav";
+		SOUND_STRUCK1 = "gonarch/gon_sack1.wav";
+		SOUND_STRUCK2 = "gonarch/gon_sack2.wav";
+		SOUND_PAIN_STRONG = "gonarch/gon_pain2.wav";
+		SOUND_PAIN_WEAK = "gonarch/gon_pain4.wav";
+		SOUND_PAIN_NEAR_DEATH = "gonarch/gon_pain5.wav";
+		SOUND_SLASHHIT = "zombie/claw_strike1.wav";
+		SOUND_SMASHHIT = "zombie/claw_strike2.wav";
+		SOUND_SLASHMISS = "zombie/claw_miss1.wav";
+		SOUND_SMASHMISS = "zombie/claw_miss2.wav";
+		SOUND_SEARCH1 = "gonarch/gon_childdie3.wav";
+		SOUND_SEARCH2 = "gonarch/gon_childdie2.wav";
+		SOUND_SEARCH3 = "gonarch/gon_childdie1.wav";
 		SOUND_ATTACKHIT = "unset";
 		SOUND_ATTACKMISS = "unset";
 		Precache(SOUND_SLASHMISS);
@@ -130,38 +192,38 @@ class SwampReaver : CGameScript
 		ATTACK_HITRANGE = 200;
 		ATTACK_MOVERANGE = 100;
 		MOVE_RANGE = 100;
-		const string SLASH_DAMAGE = "$rand(100,200)";
-		const int SMASH_DAMAGE = 500;
-		const float SLASH_HITCHANCE = 0.9;
+		SLASH_DAMAGE = "$rand(100,200)";
+		SMASH_DAMAGE = 500;
+		SLASH_HITCHANCE = 0.9;
 		Precache(SOUND_DEATH);
 		DOT_EFFECT = "effects/dot_poison";
 		DOT_DURATION = 10.0;
 		DOT_DMG = 30.0;
-		const float FREQ_ERRUPT = 30.0;
+		FREQ_ERRUPT = 30.0;
 		ERRUPT_TYPE = "poison";
-		const string FREQ_BREATH = Random(20.0, 30.0);
+		FREQ_BREATH = Random(20.0, 30.0);
 		BREATH_TYPE = "poison";
-		const string FREQ_ACID_BOMB = Random(5.0, 15.0);
-		const int DOES_ACID_BOMB = 1;
-		const string FIREBALL1_SCRIPT = "monsters/summon/acid_ball_guided";
-		const string FIREBALL2_SCRIPT = "monsters/summon/acid_ball_guided";
-		const float FIREBALL1_DURATION = 5.0;
-		const float FIREBALL2_DURATION = 5.0;
+		FREQ_ACID_BOMB = Random(5.0, 15.0);
+		DOES_ACID_BOMB = 1;
+		FIREBALL1_SCRIPT = "monsters/summon/acid_ball_guided";
+		FIREBALL2_SCRIPT = "monsters/summon/acid_ball_guided";
+		FIREBALL1_DURATION = 5.0;
+		FIREBALL2_DURATION = 5.0;
 		PROJECTILE_SCRIPT = "proj_acid_bomb";
-		const int DMG_ACID_BOMB = 400;
+		DMG_ACID_BOMB = 400;
 		DOT_ACID_BOMB = 150;
 		EFFECT_ACID_BOMB = "effects/dot_acid";
-		const string SOUND_ACID_BOMB_PREP = "gonarch/gon_birth3.wav";
-		const string SOUND_ACID_BOMB_FIRE = "gonarch/gon_birth1.wav";
-		const string SOUND_POISON_ERRUPT_START = "monsters/mummy/c_mummycom_bat1.wav";
-		const string SOUND_POISON_ERRUPT_LOOP = "amb/amb_spa2.wav";
-		const string SOUND_POISON_BREATH_START = "monsters/mummy/c_mummycom_bat2.wav";
-		const string SOUND_POISON_BREATH_LOOP = "magic/volcano_loop.wav";
-		const string SOUND_FIRE_ERRUPT_START = "magic/volcano_start.wav";
-		const string SOUND_FIRE_ERRUPT_LOOP = "magic/volcano_loop.wav";
-		const string SOUND_FIRE_BREATH_START = "ambience/steamburst1.wav";
-		const string SOUND_FIRE_BREATH_LOOP = "monsters/goblin/sps_fogfire.wav";
-		const string BOMB_DMG_TYPE = "acid";
+		SOUND_ACID_BOMB_PREP = "gonarch/gon_birth3.wav";
+		SOUND_ACID_BOMB_FIRE = "gonarch/gon_birth1.wav";
+		SOUND_POISON_ERRUPT_START = "monsters/mummy/c_mummycom_bat1.wav";
+		SOUND_POISON_ERRUPT_LOOP = "amb/amb_spa2.wav";
+		SOUND_POISON_BREATH_START = "monsters/mummy/c_mummycom_bat2.wav";
+		SOUND_POISON_BREATH_LOOP = "magic/volcano_loop.wav";
+		SOUND_FIRE_ERRUPT_START = "magic/volcano_start.wav";
+		SOUND_FIRE_ERRUPT_LOOP = "magic/volcano_loop.wav";
+		SOUND_FIRE_BREATH_START = "ambience/steamburst1.wav";
+		SOUND_FIRE_BREATH_LOOP = "monsters/goblin/sps_fogfire.wav";
+		BOMB_DMG_TYPE = "acid";
 	}
 
 	void game_precache()
@@ -206,7 +268,7 @@ class SwampReaver : CGameScript
 		PlayAnim("once", ANIM_ALERT);
 		if ((CYCLES_ON)) return;
 		CYCLES_ON = 1;
-		string GAME_TIME = GetGameTime();
+		float GAME_TIME = GetGameTime();
 		NEXT_ERRUPT = GAME_TIME;
 		NEXT_ERRUPT += FREQ_ERRUPT;
 		NEXT_BREATH = GAME_TIME;
@@ -237,7 +299,7 @@ class SwampReaver : CGameScript
 	void my_target_died()
 	{
 		if ((false)) return;
-		string RAND_VICT = RandomInt(1, 2);
+		int RAND_VICT = RandomInt(1, 2);
 		if (RAND_VICT == 1)
 		{
 			ANIM_VICTORY = ANIM_VICTORY1;
@@ -255,7 +317,7 @@ class SwampReaver : CGameScript
 	void attack_mele1()
 	{
 		SLASH_ATTACK = 1;
-		string RANDOM_PUSH = RandomInt(100, 175);
+		int RANDOM_PUSH = RandomInt(100, 175);
 		PUSH_VEL = /* TODO: $relvel */ $relvel(-200, RANDOM_PUSH, 120);
 		SOUND_ATTACKHIT = SOUND_SLASHHIT;
 		SOUND_ATTACKMISS = SOUND_SLASHMISS;
@@ -393,7 +455,7 @@ class SwampReaver : CGameScript
 
 	void OnDeath(CBaseEntity@ attacker) override
 	{
-		string RAND_DEATH = RandomInt(2, 3);
+		int RAND_DEATH = RandomInt(2, 3);
 		if (RAND_DEATH == 2)
 		{
 			ANIM_DEATH = ANIM_DEATH2;
@@ -438,7 +500,7 @@ class SwampReaver : CGameScript
 
 	void OnHuntTarget(CBaseEntity@ target)
 	{
-		string GAME_TIME = GetGameTime();
+		float GAME_TIME = GetGameTime();
 		if ((CYCLES_ON))
 		{
 			if (GAME_TIME > NEXT_FX_REFRESH)
@@ -742,7 +804,7 @@ class SwampReaver : CGameScript
 		{
 			TARG_ORG += "z";
 		}
-		string TARG_DIST = Distance(TARG_ORG, GetMonsterProperty("origin"));
+		float TARG_DIST = Distance(TARG_ORG, GetMonsterProperty("origin"));
 		TARG_DIST /= 35;
 		SetAngles("add_view.pitch");
 		LogDebug("attack_bomb GetEntityRange(m_hAttackTarget)");

@@ -8,17 +8,23 @@ namespace MS
 class Skullcrab : CGameScript
 {
 	int AM_SUMMONED;
+	string ANIM_ATT1;
+	string ANIM_ATT2;
 	string ANIM_ATTACK;
 	string ANIM_FLINCH;
 	string ANIM_IDLE;
 	string ANIM_RUN;
 	string ANIM_WALK;
+	int ATTACK_HITCHANCE;
 	int ATTACK_HITRANGE;
 	int ATTACK_RANGE;
 	string CHEW_TARGET;
+	int DMG_ATT1;
+	int DMG_CHEW;
 	int FLINCH_CHANCE;
 	int FLINCH_DAMAGE_THRESHOLD;
 	float FLINCH_DELAY;
+	float FREQ_JUMP;
 	int IMMUNE_VAMPIRE;
 	int JUMP_SCAN_ACTIVE;
 	int MOVE_RANGE;
@@ -30,6 +36,22 @@ class Skullcrab : CGameScript
 	string NPCATK_TARGET;
 	int NPC_GIVE_EXP;
 	int NPC_NO_ATTACK;
+	string SOUND_ALERT1;
+	string SOUND_ALERT2;
+	string SOUND_ATTACK1;
+	string SOUND_ATTACK2;
+	string SOUND_CHEW;
+	string SOUND_DEATH;
+	string SOUND_DEATH1;
+	string SOUND_DEATH2;
+	string SOUND_IDLE1;
+	string SOUND_IDLE2;
+	string SOUND_IDLE3;
+	string SOUND_IDLE4;
+	string SOUND_IDLE5;
+	string SOUND_PAIN1;
+	string SOUND_PAIN2;
+	string SOUND_PAIN3;
 	string STUCK_ON_FACE;
 	int TOSS_JUMP;
 	string UNSUMMON_TIME;
@@ -48,29 +70,29 @@ class Skullcrab : CGameScript
 		FLINCH_DAMAGE_THRESHOLD = 25;
 		FLINCH_CHANCE = 5;
 		FLINCH_DELAY = 10.0;
-		const string SOUND_DEATH = "monsters/skeleton/skeldie.wav";
+		SOUND_DEATH = "monsters/skeleton/skeldie.wav";
 		Precache(SOUND_DEATH);
-		const string ANIM_ATT1 = "jump";
-		const string ANIM_ATT2 = "jump_variation1";
-		const string DMG_ATT1 = RandomInt(10, 30);
-		const string DMG_CHEW = RandomInt(50, 100);
-		const int ATTACK_HITCHANCE = 75;
-		const string SOUND_ALERT1 = "headcrab/hc_alert1.wav";
-		const string SOUND_ALERT2 = "headcrab/hc_alert2.wav";
-		const string SOUND_ATTACK1 = "headcrab/hc_attack2.wav";
-		const string SOUND_ATTACK2 = "headcrab/hc_attack3.wav";
-		const string SOUND_DEATH1 = "headcrab/hc_die1.wav";
-		const string SOUND_DEATH2 = "headcrab/hc_die2.wav";
-		const string SOUND_PAIN1 = "headcrab/hc_pain1.wav";
-		const string SOUND_PAIN2 = "headcrab/hc_pain2.wav";
-		const string SOUND_PAIN3 = "headcrab/hc_pain3.wav";
-		const string SOUND_IDLE1 = "headcrab/hc_idle1.wav";
-		const string SOUND_IDLE2 = "headcrab/hc_idle2.wav";
-		const string SOUND_IDLE3 = "headcrab/hc_idle3.wav";
-		const string SOUND_IDLE4 = "headcrab/hc_idle4.wav";
-		const string SOUND_IDLE5 = "headcrab/hc_idle5.wav";
-		const string SOUND_CHEW = "headcrab/hc_attack1.wav";
-		const string FREQ_JUMP = Random(3.0, 5.0);
+		ANIM_ATT1 = "jump";
+		ANIM_ATT2 = "jump_variation1";
+		DMG_ATT1 = RandomInt(10, 30);
+		DMG_CHEW = RandomInt(50, 100);
+		ATTACK_HITCHANCE = 75;
+		SOUND_ALERT1 = "headcrab/hc_alert1.wav";
+		SOUND_ALERT2 = "headcrab/hc_alert2.wav";
+		SOUND_ATTACK1 = "headcrab/hc_attack2.wav";
+		SOUND_ATTACK2 = "headcrab/hc_attack3.wav";
+		SOUND_DEATH1 = "headcrab/hc_die1.wav";
+		SOUND_DEATH2 = "headcrab/hc_die2.wav";
+		SOUND_PAIN1 = "headcrab/hc_pain1.wav";
+		SOUND_PAIN2 = "headcrab/hc_pain2.wav";
+		SOUND_PAIN3 = "headcrab/hc_pain3.wav";
+		SOUND_IDLE1 = "headcrab/hc_idle1.wav";
+		SOUND_IDLE2 = "headcrab/hc_idle2.wav";
+		SOUND_IDLE3 = "headcrab/hc_idle3.wav";
+		SOUND_IDLE4 = "headcrab/hc_idle4.wav";
+		SOUND_IDLE5 = "headcrab/hc_idle5.wav";
+		SOUND_CHEW = "headcrab/hc_attack1.wav";
+		FREQ_JUMP = Random(3.0, 5.0);
 		Precache(SOUND_DEATH1);
 		Precache(SOUND_DEATH2);
 	}
@@ -233,7 +255,7 @@ class Skullcrab : CGameScript
 
 	void npc_selectattack()
 	{
-		string RND_ATTACK = RandomInt(1, 2);
+		int RND_ATTACK = RandomInt(1, 2);
 		if (RND_ATTACK == 1)
 		{
 			ANIM_ATTACK = ANIM_ATT1;

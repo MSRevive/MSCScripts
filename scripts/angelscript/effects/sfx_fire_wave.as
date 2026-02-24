@@ -7,19 +7,27 @@ class SfxFireWave : CGameScript
 {
 	string FX_ORG;
 	string FX_YAW;
+	string GLOW_COLOR;
+	string SPRITE_COLOR;
+	int SPRITE_FRAMERATE;
+	string SPRITE_NAME;
+	int SPRITE_NFRAMES;
 	string SPRITE_OFS;
+	int SPRITE_RENDERAMT;
+	string SPRITE_RENDERMODE;
+	float SPRITE_SCALE;
 	int SPRITE_STEP;
 
 	SfxFireWave()
 	{
-		const string SPRITE_NAME = "fire1_fixed.spr";
-		const Vector3 SPRITE_COLOR = Vector3(255, 255, 255);
-		const int SPRITE_RENDERAMT = 200;
-		const string SPRITE_RENDERMODE = "add";
-		const int SPRITE_FRAMERATE = 30;
-		const int SPRITE_NFRAMES = 23;
-		const float SPRITE_SCALE = 2.0;
-		const Vector3 GLOW_COLOR = Vector3(255, 128, 0);
+		SPRITE_NAME = "fire1_fixed.spr";
+		SPRITE_COLOR = Vector3(255, 255, 255);
+		SPRITE_RENDERAMT = 200;
+		SPRITE_RENDERMODE = "add";
+		SPRITE_FRAMERATE = 30;
+		SPRITE_NFRAMES = 23;
+		SPRITE_SCALE = 2.0;
+		GLOW_COLOR = Vector3(255, 128, 0);
 	}
 
 	void client_activate()

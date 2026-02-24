@@ -7,9 +7,11 @@ namespace MS
 
 class RandomAxe : CGameScript
 {
+	int WEAPON;
+
 	RandomAxe()
 	{
-		const int WEAPON = 4;
+		WEAPON = 4;
 	}
 
 }

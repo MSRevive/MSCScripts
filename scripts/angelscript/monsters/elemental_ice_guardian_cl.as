@@ -6,6 +6,8 @@ namespace MS
 class ElementalIceGuardianCl : CGameScript
 {
 	int DEATH_MODE;
+	string DRESS_SPRITE;
+	int DRESS_SPRITE_NFRAMES;
 	int FX_ACTIVE;
 	string FX_OWNER;
 	string OWNER_VEL;
@@ -19,8 +21,8 @@ class ElementalIceGuardianCl : CGameScript
 
 	ElementalIceGuardianCl()
 	{
-		const string DRESS_SPRITE = "char_breath.spr";
-		const int DRESS_SPRITE_NFRAMES = 30;
+		DRESS_SPRITE = "char_breath.spr";
+		DRESS_SPRITE_NFRAMES = 30;
 	}
 
 	void client_activate()
@@ -197,8 +199,8 @@ class ElementalIceGuardianCl : CGameScript
 		ClientEffect("tempent", "set_current_prop", "fuser1", 0.05);
 		if (!(DEATH_MODE))
 		{
-			string RND_PITCH = Random(70, 110);
-			string RND_ANG = Random(0, 359.99);
+			float RND_PITCH = Random(70, 110);
+			float RND_ANG = Random(0, 359.99);
 			ClientEffect("tempent", "set_current_prop", "angles", Vector3(RND_PITCH, RND_ANG, 0));
 			string CLOUD_VEL = OWNER_VEL;
 			CLOUD_VEL += /* TODO: $relvel */ $relvel(Vector3(RND_PITCH, RND_ANG, 0), Vector3(0, 10, 0));
@@ -206,8 +208,8 @@ class ElementalIceGuardianCl : CGameScript
 		}
 		else
 		{
-			string RND_ANG = Random(0, 359.99);
-			string RND_PITCH = Random(0, 359.99);
+			float RND_ANG = Random(0, 359.99);
+			float RND_PITCH = Random(0, 359.99);
 			ClientEffect("tempent", "set_current_prop", "angles", Vector3(RND_PITCH, RND_ANG, 0));
 			string CLOUD_VEL = OWNER_VEL;
 			CLOUD_VEL += /* TODO: $relvel */ $relvel(Vector3(RND_PITCH, RND_ANG, 0), Vector3(0, 50, 0));

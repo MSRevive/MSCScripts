@@ -7,9 +7,11 @@ namespace MS
 
 class BludgeonGaz2 : CGameScript
 {
+	int AM_HAMMER;
+
 	BludgeonGaz2()
 	{
-		const int AM_HAMMER = 1;
+		AM_HAMMER = 1;
 	}
 
 }

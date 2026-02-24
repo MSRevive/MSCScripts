@@ -10,13 +10,19 @@ class ShadowFormBoss : CGameScript
 	int AM_VISIBLE;
 	string ANIM_DEATH;
 	string BEAM_FX_ID;
+	int BEAM_RANGE;
 	string BEAM_TARGET;
 	string CAGE_ACTIVE;
 	string CAGE_BEAM_ID;
 	int CAN_CAGE;
 	string CL_FX_ID;
+	int DMG_BEAM;
+	int DOT_CAGE;
+	int DOT_SHOCK;
 	int FADEOUT_STEP;
 	int FADE_STEP;
+	float FREQ_BEAM;
+	float FREQ_MANIFEST;
 	int IMMUNE_VAMPIRE;
 	string NEXT_BEAM;
 	string NEXT_CAGE;
@@ -26,32 +32,44 @@ class ShadowFormBoss : CGameScript
 	string NPCATK_TARGET;
 	int NPC_GIVE_EXP;
 	int NPC_IS_BOSS;
+	string SOUND_ATTACK1;
+	string SOUND_ATTACK2;
+	string SOUND_ATTACK3;
+	string SOUND_CAGE_LOOP;
+	string SOUND_DEATH;
+	string SOUND_IDLE_LOOP;
+	string SOUND_MANIFEST1;
+	string SOUND_MANIFEST2;
+	string SOUND_PAIN;
+	string SOUND_ZAP1;
+	string SOUND_ZAP2;
+	string SOUND_ZAP3;
 	string TOTAL_INVIS;
 
 	ShadowFormBoss()
 	{
 		NPC_GIVE_EXP = 10000;
 		NPC_IS_BOSS = 1;
-		const float FREQ_MANIFEST = 15.0;
-		const string FREQ_BEAM = Random(3.0, 8.0);
-		const int DOT_SHOCK = 200;
-		const int DOT_CAGE = 100;
-		const int DMG_BEAM = 200;
-		const int BEAM_RANGE = 700;
-		const string SOUND_ZAP1 = "debris/zap1.wav";
-		const string SOUND_ZAP2 = "debris/zap3.wav";
-		const string SOUND_ZAP3 = "debris/zap8.wav";
-		const string SOUND_ATTACK1 = "monsters/undeadz/c_shadow_atk1.wav";
-		const string SOUND_ATTACK2 = "monsters/undeadz/c_shadow_atk2.wav";
-		const string SOUND_ATTACK3 = "monsters/undeadz/c_shadow_atk3.wav";
-		const string SOUND_MANIFEST1 = "monsters/undeadz/c_shadow_bat1.wav";
-		const string SOUND_MANIFEST2 = "monsters/undeadz/c_shadow_bat2.wav";
-		const string SOUND_PAIN = "monsters/undeadz/c_shadow_hit1.wav";
-		const string SOUND_PAIN = "monsters/undeadz/c_shadow_hit2.wav";
-		const string SOUND_PAIN = "monsters/undeadz/c_shadow_slct.wav";
-		const string SOUND_CAGE_LOOP = "weapons/egon_run3.wav";
-		const string SOUND_DEATH = "monsters/undeadz/c_shadow_dead.wav";
-		const string SOUND_IDLE_LOOP = "magic/chant_loop.wav";
+		FREQ_MANIFEST = 15.0;
+		FREQ_BEAM = Random(3.0, 8.0);
+		DOT_SHOCK = 200;
+		DOT_CAGE = 100;
+		DMG_BEAM = 200;
+		BEAM_RANGE = 700;
+		SOUND_ZAP1 = "debris/zap1.wav";
+		SOUND_ZAP2 = "debris/zap3.wav";
+		SOUND_ZAP3 = "debris/zap8.wav";
+		SOUND_ATTACK1 = "monsters/undeadz/c_shadow_atk1.wav";
+		SOUND_ATTACK2 = "monsters/undeadz/c_shadow_atk2.wav";
+		SOUND_ATTACK3 = "monsters/undeadz/c_shadow_atk3.wav";
+		SOUND_MANIFEST1 = "monsters/undeadz/c_shadow_bat1.wav";
+		SOUND_MANIFEST2 = "monsters/undeadz/c_shadow_bat2.wav";
+		SOUND_PAIN = "monsters/undeadz/c_shadow_hit1.wav";
+		SOUND_PAIN = "monsters/undeadz/c_shadow_hit2.wav";
+		SOUND_PAIN = "monsters/undeadz/c_shadow_slct.wav";
+		SOUND_CAGE_LOOP = "weapons/egon_run3.wav";
+		SOUND_DEATH = "monsters/undeadz/c_shadow_dead.wav";
+		SOUND_IDLE_LOOP = "magic/chant_loop.wav";
 		ANIM_DEATH = "idle";
 	}
 
@@ -134,7 +152,7 @@ class ShadowFormBoss : CGameScript
 	{
 		if (!(IsEntityAlive(GetOwner()))) return;
 		ScheduleDelayedEvent(0.1, "npcatk_hunt");
-		string GAME_TIME = GetGameTime();
+		float GAME_TIME = GetGameTime();
 		if (!(AM_VISIBLE))
 		{
 			if (GAME_TIME > NEXT_MANIFEST)
@@ -330,14 +348,14 @@ class ShadowFormBoss : CGameScript
 	void do_beam()
 	{
 		string TRACE_START = GetEntityOrigin(GetOwner());
-		string RND_ANG = Random(0, 359.99);
-		string RND_DIST = Random(64, 150);
+		float RND_ANG = Random(0, 359.99);
+		float RND_DIST = Random(64, 150);
 		TRACE_START += /* TODO: $relpos */ $relpos(Vector3(0, RND_ANG, 0), Vector3(0, RND_DIST, 0));
 		string TRACE_END = GetEntityOrigin(BEAM_TARGET);
 		string TRACE_LINE = TraceLine(TRACE_START, TRACE_END);
 		if (TRACE_LINE == TRACE_END)
 		{
-			string BEAM_TYPE = RandomInt(1, 2);
+			int BEAM_TYPE = RandomInt(1, 2);
 			if (BEAM_TYPE == 1)
 			{
 				Vector3 BEAM_COLOR = Vector3(64, 128, 255);

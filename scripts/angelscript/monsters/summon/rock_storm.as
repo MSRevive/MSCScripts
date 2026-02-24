@@ -6,6 +6,7 @@ namespace MS
 class RockStorm : CGameScript
 {
 	string CURRENT_TARGET;
+	float DUR_SPIN;
 	int FIRE_ROCK;
 	string MY_BASE_DAMAGE;
 	string MY_DISTANCE;
@@ -19,33 +20,42 @@ class RockStorm : CGameScript
 	string OWNER_ISPLAYER;
 	int PLAYING_DEAD;
 	int RAISE_COUNT;
+	int RAISE_MAX;
 	string ROCKA_ID;
+	int ROCKA_OFS;
 	string ROCKA_START;
 	string ROCKB_ID;
+	int ROCKB_OFS;
 	string ROCKB_START;
 	string ROCKC_ID;
+	int ROCKC_OFS;
 	string ROCKC_START;
 	string ROCKD_ID;
+	int ROCKD_OFS;
 	string ROCKD_START;
 	string ROCKS_CENTER;
 	string ROCKS_CV;
 	string ROCKS_THROWN;
+	string ROCK_SCRIPT;
 	string ROCK_TARGETS;
 	string ROT_ADJ;
+	string SOUND_LEVITATE;
+	string SOUND_SPIN;
+	string SOUND_SUMMON;
 	string SPIN_COUNT;
 
 	RockStorm()
 	{
-		const string ROCK_SCRIPT = "monsters/summon/rock";
-		const string SOUND_LEVITATE = "fans/fan4on.wav";
-		const string SOUND_SPIN = "magic/fan4_noloop.wav";
-		const float DUR_SPIN = 1.74;
-		const string SOUND_SUMMON = "magic/volcano_start.wav";
-		const int ROCKA_OFS = 0;
-		const int ROCKB_OFS = 90;
-		const int ROCKC_OFS = 180;
-		const int ROCKD_OFS = 270;
-		const int RAISE_MAX = 20;
+		ROCK_SCRIPT = "monsters/summon/rock";
+		SOUND_LEVITATE = "fans/fan4on.wav";
+		SOUND_SPIN = "magic/fan4_noloop.wav";
+		DUR_SPIN = 1.74;
+		SOUND_SUMMON = "magic/volcano_start.wav";
+		ROCKA_OFS = 0;
+		ROCKB_OFS = 90;
+		ROCKC_OFS = 180;
+		ROCKD_OFS = 270;
+		RAISE_MAX = 20;
 	}
 
 	void OnSpawn() override
@@ -89,7 +99,7 @@ class RockStorm : CGameScript
 			Vector3 TRACE_END = Vector3(OWNER_X, OWNER_Y, MY_VERTICAL);
 		}
 		Vector3 MY_OWNER_GPOS = Vector3(OWNER_X, OWNER_Y, OWNER_GROUND);
-		string DIST_TO_HOVER = Distance(MY_OWNER_GPOS, TRACE_END);
+		float DIST_TO_HOVER = Distance(MY_OWNER_GPOS, TRACE_END);
 		MY_JUMP_SIZE = DIST_TO_HOVER;
 		MY_JUMP_SIZE /= 20;
 		ROCKS_CENTER = MY_OWNER_GPOS;

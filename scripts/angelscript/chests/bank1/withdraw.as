@@ -24,7 +24,7 @@ class Withdraw : CGameScript
 		else
 		{
 			string L_MSG = GetEntityName(GetOwner());
-			SendColoredMessage(GetEntityIndex(param1), "L_MSG");
+			SendColoredMessage(GetEntityIndex(param1), L_MSG);
 		}
 	}
 
@@ -45,7 +45,7 @@ class Withdraw : CGameScript
 	{
 		string L_BANK_CONTENTS = param1;
 		string L_ITEM_SCRIPTNAME = GetToken(L_BANK_CONTENTS, i, ";");
-		string L_QUANTITY = /* TODO: $func */ $func("func_get_stored_quantity", L_BANK_CONTENTS, /* TODO: $pass */ $pass(i));
+		string L_QUANTITY = "func_get_stored_quantity"(L_BANK_CONTENTS, i);
 		if (L_QUANTITY > 1)
 		{
 			if ((/* TODO: $get_item_table */ $get_item_table(L_ITEM_SCRIPTNAME, "is_projectile")))
@@ -56,7 +56,7 @@ class Withdraw : CGameScript
 			{
 				string L_MAX_STACK = /* TODO: $get_item_table */ $get_item_table(L_ITEM_SCRIPTNAME, "quality");
 			}
-			string L_STACKS = /* TODO: $math(divide) */ L_QUANTITY;
+			string L_STACKS = (L_QUANTITY / L_MAX_STACK);
 			if (L_STACKS > int(L_STACKS))
 			{
 				L_QUANTITY %= L_MAX_STACK;
@@ -83,13 +83,13 @@ class Withdraw : CGameScript
 		string L_ITEM = param1;
 		string L_ITEM_SCRIPTNAME = GetEntityProperty(L_ITEM, "itemname");
 		string L_PLAYER = param2;
-		string L_ITEM_FOUND = /* TODO: $func */ $func("func_check_bank_has", L_PLAYER, L_ITEM_SCRIPTNAME);
+		string L_ITEM_FOUND = "func_check_bank_has"(L_PLAYER, L_ITEM_SCRIPTNAME);
 		if (L_ITEM_FOUND != "0")
 		{
 			string L_BANK = GetToken(L_ITEM_FOUND, 0, ";");
 			string L_BANK_STR = GetPlayerQuestData(L_PLAYER, L_BANK);
 			string L_ITEM_IDX = GetToken(L_ITEM_FOUND, 1, ";");
-			string L_QUANTITY_STORED = /* TODO: $func */ $func("func_get_stored_quantity", L_BANK_STR, L_ITEM_IDX);
+			string L_QUANTITY_STORED = "func_get_stored_quantity"(L_BANK_STR, L_ITEM_IDX);
 			string L_QUANTITY_WITHDRAWING = L_QUANTITY_STORED;
 			if (L_QUANTITY_STORED > 1)
 			{
@@ -105,13 +105,13 @@ class Withdraw : CGameScript
 				L_QUANTITY_STORED -= L_QUANTITY_WITHDRAWING;
 				if (L_QUANTITY_STORED > 1)
 				{
-					SetToken(L_BANK_STR, /* TODO: $math(add) */ L_ITEM_IDX, int(L_QUANTITY_STORED), ";");
+					SetToken(L_BANK_STR, (L_ITEM_IDX + 1), int(L_QUANTITY_STORED), ";");
 				}
 				else
 				{
 					if (L_QUANTITY_STORED == 1)
 					{
-						RemoveToken(L_BANK_STR, /* TODO: $math(add) */ L_ITEM_IDX, ";");
+						RemoveToken(L_BANK_STR, (L_ITEM_IDX + 1), ";");
 					}
 					else
 					{

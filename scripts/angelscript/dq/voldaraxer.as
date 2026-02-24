@@ -9,15 +9,20 @@ class Voldaraxer : CGameScript
 {
 	string ANIM_ATTACK;
 	string ANIM_ATTACK2;
+	float ATTACK_ACCURACY;
+	int ATTACK_DMG_HIGH;
+	int ATTACK_DMG_LOW;
 	int ATTACK_HITRANGE;
 	int ATTACK_RANGE;
 	int DROP_GOLD;
-	string DROP_GOLD_AMT;
+	int DROP_GOLD_AMT;
 	string DROP_ITEM1;
 	float DROP_ITEM1_CHANCE;
 	float FLINCH_CHANCE;
 	int MOVE_RANGE;
+	string NPC_DEATH_MSG;
 	int NPC_GIVE_EXP;
+	int ORC_SHIELD;
 
 	Voldaraxer()
 	{
@@ -29,14 +34,14 @@ class Voldaraxer : CGameScript
 		ANIM_ATTACK = "battleaxe_swing1_L";
 		ANIM_ATTACK2 = "swordswing1_L";
 		FLINCH_CHANCE = 0.55;
-		const string NPC_DEATH_MSG = "You have slain one of Voldar's henchmen";
-		const float ATTACK_ACCURACY = 0.85;
-		const int ATTACK_DMG_LOW = 20;
-		const int ATTACK_DMG_HIGH = 40;
+		NPC_DEATH_MSG = "You have slain one of Voldar's henchmen";
+		ATTACK_ACCURACY = 0.85;
+		ATTACK_DMG_LOW = 20;
+		ATTACK_DMG_HIGH = 40;
 		MOVE_RANGE = 64;
 		ATTACK_RANGE = 72;
 		ATTACK_HITRANGE = 128;
-		const int ORC_SHIELD = 0;
+		ORC_SHIELD = 0;
 	}
 
 	void orc_spawn()
@@ -61,7 +66,7 @@ class Voldaraxer : CGameScript
 	void swing_axe()
 	{
 		baseorc_yell();
-		string L_DMG = Random(ATTACK_DMG_LOW, ATTACK_DMG_HIGH);
+		float L_DMG = Random(ATTACK_DMG_LOW, ATTACK_DMG_HIGH);
 		XDoDamage(m_hLastSeen, ATTACK_HITRANGE, L_DMG, ATTACK_ACCURACY, GetOwner(), GetOwner(), "none", "slash", "dmgevent:swing");
 	}
 

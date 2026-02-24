@@ -8,30 +8,48 @@ namespace MS
 class ItemLockpick : CGameScript
 {
 	int AM_LOCKPICKING;
+	int ANIM_FAIL;
+	int ANIM_IDLE;
+	int ANIM_IDLE1;
+	int ANIM_IDLE2;
+	int ANIM_IDLE3;
+	int ANIM_IDLE4;
+	int ANIM_IDLE5;
+	int ANIM_IDLE_DELAY_HIGH;
+	int ANIM_IDLE_DELAY_LOW;
+	int ANIM_LIFT1;
+	string ANIM_PREFIX;
+	int ANIM_USE;
+	string ICO_LOCKPICK_STATUS;
+	int ITEM_MODEL_VIEW_IDX;
 	int LOCKPICK_FAIL;
 	string LOCK_TARGET;
+	int MODEL_BODY_OFS;
+	string MODEL_HANDS;
+	string MODEL_VIEW;
+	string MODEL_WORLD;
 	string NEXT_USE;
 
 	ItemLockpick()
 	{
-		const int ANIM_LIFT1 = 18;
-		const int ANIM_IDLE = 18;
-		const int ANIM_IDLE1 = 18;
-		const int ANIM_IDLE2 = 18;
-		const int ANIM_IDLE3 = 18;
-		const int ANIM_IDLE4 = 18;
-		const int ANIM_IDLE5 = 18;
-		const int ANIM_IDLE_DELAY_LOW = 2;
-		const int ANIM_IDLE_DELAY_HIGH = 5;
-		const int ANIM_USE = 19;
-		const int ANIM_FAIL = 16;
-		const string MODEL_WORLD = "misc/p_misc.mdl";
-		const string MODEL_HANDS = "misc/p_misc.mdl";
-		const int MODEL_BODY_OFS = 13;
-		const string MODEL_VIEW = "viewmodels/v_martialarts.mdl";
-		const int ITEM_MODEL_VIEW_IDX = 9;
-		const string ANIM_PREFIX = "rustedkey";
-		const string ICO_LOCKPICK_STATUS = "hud/status/alpha_lockpick";
+		ANIM_LIFT1 = 18;
+		ANIM_IDLE = 18;
+		ANIM_IDLE1 = 18;
+		ANIM_IDLE2 = 18;
+		ANIM_IDLE3 = 18;
+		ANIM_IDLE4 = 18;
+		ANIM_IDLE5 = 18;
+		ANIM_IDLE_DELAY_LOW = 2;
+		ANIM_IDLE_DELAY_HIGH = 5;
+		ANIM_USE = 19;
+		ANIM_FAIL = 16;
+		MODEL_WORLD = "misc/p_misc.mdl";
+		MODEL_HANDS = "misc/p_misc.mdl";
+		MODEL_BODY_OFS = 13;
+		MODEL_VIEW = "viewmodels/v_martialarts.mdl";
+		ITEM_MODEL_VIEW_IDX = 9;
+		ANIM_PREFIX = "rustedkey";
+		ICO_LOCKPICK_STATUS = "hud/status/alpha_lockpick";
 	}
 
 	void miscitem_spawn()
@@ -175,7 +193,7 @@ class ItemLockpick : CGameScript
 					string L_MSG = "Lockpick: This chest is neither locked nor trapped.";
 				}
 			}
-			SendColoredMessage(GetOwner(), "L_MSG");
+			SendColoredMessage(GetOwner(), L_MSG);
 		}
 	}
 

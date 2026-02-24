@@ -11,13 +11,16 @@ class SpellMakerProtection : CGameScript
 	string ANIM_IDLE;
 	int CAN_ATTACK;
 	int CAN_HUNT;
+	int MODEL_OFSET;
+	string SOUND_SPAWN;
+	string SPAWNER_MODEL;
 
 	SpellMakerProtection()
 	{
 		ANIM_IDLE = "idle1";
-		const string SPAWNER_MODEL = "weapons/p_weapons2.mdl";
-		const int MODEL_OFSET = 5;
-		const string SOUND_SPAWN = "magic/heal_powerup.wav";
+		SPAWNER_MODEL = "weapons/p_weapons2.mdl";
+		MODEL_OFSET = 5;
+		SOUND_SPAWN = "magic/heal_powerup.wav";
 		CAN_ATTACK = 0;
 		CAN_HUNT = 0;
 		Precache("monsters/companion/spell_maker_base");

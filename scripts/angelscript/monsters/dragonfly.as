@@ -17,20 +17,37 @@ class Dragonfly : CGameScript
 	string ANIM_WALK;
 	int AS_ATTACKING;
 	int ATTACK_DAMAGE;
+	int ATTACK_FREQUENCY;
+	float ATTACK_HITCHANCE;
 	int ATTACK_HITRANGE;
 	int ATTACK_RANGE;
 	int CAN_FLEE;
 	int CAN_HUNT;
+	int DELETE_ON_DEATH;
+	float FLEE_CHANCE;
+	int FLEE_HEALTH;
 	string FLIGHT_STUCK;
+	float FREQ_SOUND_HOVER;
 	int HUNT_AGRO;
 	string LAST_POS;
-	string LAST_PROG;
+	float LAST_PROG;
 	int NPC_GIVE_EXP;
+	int NPC_NO_END_FLY;
+	string SOUND_ATTACK1;
+	string SOUND_ATTACK2;
+	string SOUND_ATTACK3;
+	string SOUND_DEATH;
+	string SOUND_HOVER;
+	string SOUND_IDLE;
+	string SOUND_PAIN;
+	string SOUND_STRUCK1;
+	string SOUND_STRUCK2;
+	string SOUND_STRUCK3;
 
 	Dragonfly()
 	{
-		const int NPC_NO_END_FLY = 1;
-		const int DELETE_ON_DEATH = 1;
+		NPC_NO_END_FLY = 1;
+		DELETE_ON_DEATH = 1;
 		ANIM_IDLE_HANG = "flapping";
 		ANIM_IDLE_FLY = "fly";
 		ANIM_RUN = "fly";
@@ -40,24 +57,24 @@ class Dragonfly : CGameScript
 		ATTACK_DAMAGE = 2;
 		ATTACK_RANGE = 100;
 		ATTACK_HITRANGE = 80;
-		const float ATTACK_HITCHANCE = 0.3;
-		const int ATTACK_FREQUENCY = 10;
-		const string SOUND_STRUCK1 = "weapons/cbar_hitbod1.wav";
-		const string SOUND_STRUCK2 = "weapons/cbar_hitbod2.wav";
-		const string SOUND_STRUCK3 = "weapons/cbar_hitbod3.wav";
-		const string SOUND_PAIN = "monsters/sludge/null.wav";
-		const string SOUND_ATTACK1 = "monsters/sludge/null.wav";
-		const string SOUND_ATTACK2 = "monsters/sludge/null.wav";
-		const string SOUND_ATTACK3 = "monsters/sludge/null.wav";
-		const string SOUND_IDLE = "monsters/sludge/null.wav";
-		const string SOUND_DEATH = "monsters/sludge/null.wav";
+		ATTACK_HITCHANCE = 0.3;
+		ATTACK_FREQUENCY = 10;
+		SOUND_STRUCK1 = "weapons/cbar_hitbod1.wav";
+		SOUND_STRUCK2 = "weapons/cbar_hitbod2.wav";
+		SOUND_STRUCK3 = "weapons/cbar_hitbod3.wav";
+		SOUND_PAIN = "monsters/sludge/null.wav";
+		SOUND_ATTACK1 = "monsters/sludge/null.wav";
+		SOUND_ATTACK2 = "monsters/sludge/null.wav";
+		SOUND_ATTACK3 = "monsters/sludge/null.wav";
+		SOUND_IDLE = "monsters/sludge/null.wav";
+		SOUND_DEATH = "monsters/sludge/null.wav";
 		HUNT_AGRO = 1;
 		CAN_HUNT = 1;
 		CAN_FLEE = 1;
-		const int FLEE_HEALTH = 5;
-		const float FLEE_CHANCE = 0.5;
-		const string SOUND_HOVER = "monsters/dragonfly.wav";
-		const float FREQ_SOUND_HOVER = 5.9;
+		FLEE_HEALTH = 5;
+		FLEE_CHANCE = 0.5;
+		SOUND_HOVER = "monsters/dragonfly.wav";
+		FREQ_SOUND_HOVER = 5.9;
 	}
 
 	void OnRepeatTimer()
@@ -118,7 +135,7 @@ class Dragonfly : CGameScript
 		if (GetEntityRange(m_hAttackTarget) > ATTACK_RANGE)
 		{
 		}
-		string CUR_PROG = Distance(GetMonsterProperty("origin"), TARG_POS);
+		float CUR_PROG = Distance(GetMonsterProperty("origin"), TARG_POS);
 		if (LAST_PROG >= CUR_PROG)
 		{
 			FLIGHT_STUCK += 1;

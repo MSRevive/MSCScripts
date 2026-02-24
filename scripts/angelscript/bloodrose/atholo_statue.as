@@ -5,11 +5,14 @@ namespace MS
 
 class AtholoStatue : CGameScript
 {
+	string MONSTER_MODEL;
 	string PASS_TARGET;
+	string SOUND_ROCKS;
+	string SOUND_SPAWN;
 
 	AtholoStatue()
 	{
-		const string MONSTER_MODEL = "props/atholo_statue.mdl";
+		MONSTER_MODEL = "props/atholo_statue.mdl";
 		Precache(MONSTER_MODEL);
 		Precache("rockgibs.mdl");
 		Precache("weapons/cbar_hitbod1.wav");
@@ -24,8 +27,8 @@ class AtholoStatue : CGameScript
 		Precache("garg/gar_idle2.wav");
 		Precache("magic/fireball_strike.wav");
 		Precache("monsters/skeleton_boss2.mdl");
-		const string SOUND_SPAWN = "magic/spawn_loud.wav";
-		const string SOUND_ROCKS = "debris/bustconcrete2.wav";
+		SOUND_SPAWN = "magic/spawn_loud.wav";
+		SOUND_ROCKS = "debris/bustconcrete2.wav";
 	}
 
 	void OnSpawn() override

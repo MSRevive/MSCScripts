@@ -5,7 +5,7 @@ namespace MS
 
 class TntBomb : CGameScript
 {
-	string BOMB_DURATION;
+	float BOMB_DURATION;
 	string CL_INDEX;
 	int GROUND_PULSE;
 	int IS_ACTIVE;
@@ -14,14 +14,17 @@ class TntBomb : CGameScript
 	int N_DMG_TIMES;
 	string OLD_SPEED;
 	int PLAYING_DEAD;
+	string SOUND_EXPLODE;
+	string SOUND_FUSE_LOOP;
+	string SPRITE_EXPLODE;
 	string START_VEL;
 	string TOUCH_TARG;
 
 	TntBomb()
 	{
-		const string SPRITE_EXPLODE = "bigsmoke.spr";
-		const string SOUND_EXPLODE = "weapons/explode3.wav";
-		const string SOUND_FUSE_LOOP = "monsters/dwarf_bomber/fuse_loop.wav";
+		SPRITE_EXPLODE = "bigsmoke.spr";
+		SOUND_EXPLODE = "weapons/explode3.wav";
+		SOUND_FUSE_LOOP = "monsters/dwarf_bomber/fuse_loop.wav";
 	}
 
 	void game_dynamically_created()

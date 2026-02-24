@@ -11,6 +11,7 @@ class DjinnIce : CGameScript
 	string ANIM_DEATH;
 	string ANIM_IDLE;
 	string ANIM_RUN;
+	string ANIM_SUMMON;
 	string ANIM_WALK;
 	int ATTACK_HITRANGE;
 	int ATTACK_RANGE;
@@ -18,6 +19,7 @@ class DjinnIce : CGameScript
 	int CAN_FLINCH;
 	int CUR_SUMMON_POS;
 	int DID_ROAR_INTRO;
+	int FLEE_HEALTH;
 	int I_ATTACKED;
 	int LOOP_COUNT;
 	int MELEE_ATTACK;
@@ -25,10 +27,20 @@ class DjinnIce : CGameScript
 	string MY_ICE_TROLL;
 	string MY_PET_CLOC_NEW;
 	int NO_STEP_ADJ;
+	float NPC_BOSS_REGEN_RATE;
+	float NPC_BOSS_RESTORATION;
 	string NPC_GIVE_EXP;
 	string NPC_IS_BOSS;
 	int N_SUMMON_POS;
 	string PUSH_VEL;
+	string SOUND_ATTACK1;
+	string SOUND_ATTACK2;
+	string SOUND_DEATH;
+	string SOUND_ROAR;
+	string SOUND_STRUCK1;
+	string SOUND_STRUCK2;
+	string SOUND_SUMMON;
+	string SOUND_WALK;
 	string SUMMON_NEXT_CHECK;
 	string SUMMON_POS;
 	string SUMMON_POS1;
@@ -36,11 +48,13 @@ class DjinnIce : CGameScript
 	string SUMMON_POS3;
 	string SUMMON_POS4;
 	string SUMMON_POS5;
+	int TOO_CLOSE;
+	string TORCH_LIGHT_SCRIPT;
 	string WIN_PRIZE;
 
 	DjinnIce()
 	{
-		const int TOO_CLOSE = 100;
+		TOO_CLOSE = 100;
 		if ((StringToLower(GetMapName())).findFirst("keledrosprelude") == 0)
 		{
 			NPC_IS_BOSS = 1;
@@ -54,16 +68,16 @@ class DjinnIce : CGameScript
 		{
 			NPC_GIVE_EXP = 500;
 		}
-		const float NPC_BOSS_REGEN_RATE = 0.1;
-		const float NPC_BOSS_RESTORATION = 1.0;
-		const string SOUND_STRUCK1 = "weapons/cbar_hitbod1.wav";
-		const string SOUND_STRUCK2 = "monsters/troll/trollpain.wav";
-		const string SOUND_ATTACK1 = "monsters/troll/trollattack.wav";
-		const string SOUND_ATTACK2 = "monsters/troll/trollattack.wav";
-		const string SOUND_DEATH = "monsters/troll/trolldeath.wav";
-		const string SOUND_WALK = "monsters/troll/walk.wav";
-		const string SOUND_SUMMON = "ambience/particle_suck2.wav";
-		const string SOUND_ROAR = "monsters/troll/trollidle2.wav";
+		NPC_BOSS_REGEN_RATE = 0.1;
+		NPC_BOSS_RESTORATION = 1.0;
+		SOUND_STRUCK1 = "weapons/cbar_hitbod1.wav";
+		SOUND_STRUCK2 = "monsters/troll/trollpain.wav";
+		SOUND_ATTACK1 = "monsters/troll/trollattack.wav";
+		SOUND_ATTACK2 = "monsters/troll/trollattack.wav";
+		SOUND_DEATH = "monsters/troll/trolldeath.wav";
+		SOUND_WALK = "monsters/troll/walk.wav";
+		SOUND_SUMMON = "ambience/particle_suck2.wav";
+		SOUND_ROAR = "monsters/troll/trollidle2.wav";
 		Precache(SOUND_STRUCK1);
 		Precache(SOUND_STRUCK2);
 		Precache(SOUND_ATTACK1);
@@ -72,7 +86,7 @@ class DjinnIce : CGameScript
 		Precache(SOUND_DEATH);
 		Precache(SOUND_SUMMON);
 		Precache(SOUND_ROAR);
-		const string ANIM_SUMMON = "throw_rock";
+		ANIM_SUMMON = "throw_rock";
 		ANIM_IDLE = "idle0";
 		ANIM_RUN = "run";
 		ANIM_WALK = "walk";
@@ -83,9 +97,9 @@ class DjinnIce : CGameScript
 		CAN_FLINCH = 0;
 		MOVE_RANGE = 70;
 		CAN_FLEE = 1;
-		const int FLEE_HEALTH = 1;
+		FLEE_HEALTH = 1;
 		NO_STEP_ADJ = 1;
-		const string TORCH_LIGHT_SCRIPT = "items/item_djinn_light";
+		TORCH_LIGHT_SCRIPT = "items/item_djinn_light";
 		Precache("weapons/cbar_hitbod1.wav");
 		Precache("monsters/troll/trollpain.wav");
 		Precache("monsters/troll/trollpain.wav");
@@ -302,7 +316,7 @@ class DjinnIce : CGameScript
 	{
 		string MY_LOC = GetEntityOrigin(GetOwner());
 		string MY_PET_LOC = GetEntityOrigin(MY_ICE_TROLL);
-		string PET_DISTANCE = Distance(MY_LOC, MY_PET_LOC);
+		float PET_DISTANCE = Distance(MY_LOC, MY_PET_LOC);
 		if (PET_DISTANCE > 80)
 		{
 			SetSolid("box");

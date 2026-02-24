@@ -10,18 +10,23 @@ class GoblinSa : CGameScript
 {
 	string ANIM_ATTACK;
 	string ATTACK_HITCHANCE;
+	int DMG_AXE;
+	int DMG_CLUB;
+	int DMG_SWORD;
 	string F_GOB_TYPE;
 	int GOB_TYPE_SET;
+	int NPC_BASE_EXP;
+	int NPC_CAP_EXP;
 	string STUN_ATTACK;
 	string STUN_CHANCE;
 
 	GoblinSa()
 	{
-		const int NPC_BASE_EXP = 75;
-		const int NPC_CAP_EXP = 750;
-		const int DMG_CLUB = 20;
-		const int DMG_AXE = 30;
-		const int DMG_SWORD = 15;
+		NPC_BASE_EXP = 75;
+		NPC_CAP_EXP = 750;
+		DMG_CLUB = 20;
+		DMG_AXE = 30;
+		DMG_SWORD = 15;
 	}
 
 	void goblin_spawn()

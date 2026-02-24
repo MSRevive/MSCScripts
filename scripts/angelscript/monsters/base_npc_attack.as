@@ -26,7 +26,7 @@ class BaseNpcAttack : CGameScript
 	float CYCLE_TIME_BATTLE;
 	float CYCLE_TIME_IDLE;
 	string ENTITY_ENEMY;
-	string FLEE_DIR;
+	int FLEE_DIR;
 	string FLEE_DISTANCE;
 	string FLINCH_DELAY;
 	string FLINCH_DMG_REQ;
@@ -39,7 +39,7 @@ class BaseNpcAttack : CGameScript
 	string HUNT_LASTTARGET;
 	int IS_FLEEING;
 	string IS_HUNTING;
-	string MONSTER_ID;
+	int MONSTER_ID;
 	string MOVE_RANGE;
 	string M_ATTACK_HITRANGE;
 	string NPCATK_FLEE_RESTORETARGET;
@@ -128,7 +128,7 @@ class BaseNpcAttack : CGameScript
 		}
 		if ((IS_HUNTING))
 		{
-			string L_GAME_TIME = GetGameTime();
+			float L_GAME_TIME = GetGameTime();
 			NPC_CANSEE_TARGET = false;
 			if (!(CANT_TRACK))
 			{
@@ -514,7 +514,7 @@ class BaseNpcAttack : CGameScript
 		IS_HUNTING = 1;
 		NPC_TARG_HALFHEIGHT = GetEntityHeight(HUNT_LASTTARGET);
 		NPC_TARG_HALFHEIGHT /= 2;
-		// TODO: capvar NPC_TARG_HALFHEIGHT 37 2000
+		NPC_TARG_HALFHEIGHT = max(37, min(2000, NPC_TARG_HALFHEIGHT));
 	}
 
 	void my_target_died()
@@ -614,7 +614,7 @@ class BaseNpcAttack : CGameScript
 	{
 		if (!(CHICKEN_RUN)) return;
 		string CKN_MY_POS = GetEntityOrigin(GetOwner());
-		string CKN_MOVE_DIST = Distance(CKN_MY_POS, CKN_MY_OLD_POS);
+		float CKN_MOVE_DIST = Distance(CKN_MY_POS, CKN_MY_OLD_POS);
 		if (CKN_MOVE_DIST == 0)
 		{
 			SetMoveAnim(ANIM_RUN);
@@ -796,7 +796,7 @@ class BaseNpcAttack : CGameScript
 		{
 			NPC_ALLY_RESPONSE_RANGE = GetMonsterMaxHP();
 			NPC_ALLY_RESPONSE_RANGE *= 10;
-			// TODO: capvar NPC_ALLY_RESPONSE_RANGE 96 1024
+			NPC_ALLY_RESPONSE_RANGE = max(96, min(1024, NPC_ALLY_RESPONSE_RANGE));
 		}
 		if (FLINCH_DMG_REQ == "FLINCH_DMG_REQ")
 		{

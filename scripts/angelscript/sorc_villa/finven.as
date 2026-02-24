@@ -9,6 +9,8 @@ namespace MS
 class Finven : CGameScript
 {
 	string ARCHER_ID;
+	int CHAT_AUTO_HAIL;
+	int CHAT_NEVER_INTERRUPT;
 	int DID_INTRO;
 	int NPC_CHECK_LEVEL;
 	string PLAYER_ID;
@@ -21,9 +23,9 @@ class Finven : CGameScript
 	{
 		STORE_NAME = "finven";
 		STORE_TRIGGERTEXT = "store trade buy sell purchase sale offer";
-		const int CHAT_AUTO_HAIL = 1;
+		CHAT_AUTO_HAIL = 1;
 		NPC_CHECK_LEVEL = 1;
-		const int CHAT_NEVER_INTERRUPT = 1;
+		CHAT_NEVER_INTERRUPT = 1;
 	}
 
 	void OnSpawn() override

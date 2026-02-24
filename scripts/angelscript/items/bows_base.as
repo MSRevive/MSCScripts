@@ -7,25 +7,37 @@ namespace MS
 
 class BowsBase : CGameScript
 {
+	int ANIM_DEPLOY;
+	int ANIM_FIRE;
+	int ANIM_IDLE1;
+	string ANIM_PREFIX;
+	int ANIM_STRETCH;
 	int IS_BOW;
+	string RANGED_AIMANGLE;
+	string RANGED_ATK_DURATION;
+	string RANGED_DMG_TYPE;
+	string RANGED_HOLD_MINMAX;
+	string RANGED_PROJECTILE;
+	float RANGED_PULLTIME;
+	string RANGED_STAT;
 	int STRETCHED;
 
 	BowsBase()
 	{
 		STRETCHED = 0;
 		IS_BOW = 1;
-		const int ANIM_IDLE1 = 0;
-		const int ANIM_DEPLOY = 1;
-		const int ANIM_STRETCH = 2;
-		const int ANIM_FIRE = 3;
-		const string ANIM_PREFIX = "bow";
-		const string RANGED_HOLD_MINMAX = "1.1;1.3";
-		const string RANGED_ATK_DURATION = RANGED_POSTFIRE_DELAY;
-		const string RANGED_DMG_TYPE = "pierce";
-		const string RANGED_STAT = "archery";
-		const string RANGED_PROJECTILE = "arrow";
-		const Vector3 RANGED_AIMANGLE = Vector3(0, 9, 0);
-		const float RANGED_PULLTIME = 0.8;
+		ANIM_IDLE1 = 0;
+		ANIM_DEPLOY = 1;
+		ANIM_STRETCH = 2;
+		ANIM_FIRE = 3;
+		ANIM_PREFIX = "bow";
+		RANGED_HOLD_MINMAX = "1.1;1.3";
+		RANGED_ATK_DURATION = RANGED_POSTFIRE_DELAY;
+		RANGED_DMG_TYPE = "pierce";
+		RANGED_STAT = "archery";
+		RANGED_PROJECTILE = "arrow";
+		RANGED_AIMANGLE = Vector3(0, 9, 0);
+		RANGED_PULLTIME = 0.8;
 	}
 
 	void OnRepeatTimer()

@@ -23,24 +23,32 @@ class Armourer : CGameScript
 	string KEY_INTRO_DELAY;
 	string KEY_STEP;
 	string NO_JOB;
+	int NO_RUMOR;
+	int NPC_REACTS;
 	string QUEST_WINNER;
+	float SELL_RATIO;
+	string SOUND_DEATH;
 	int STORE_CLOSED;
+	string STORE_NAME;
+	int STORE_SELLMENU;
+	string STORE_TRIGGERTEXT;
 	int VENDOR_NOT_ON_USE;
+	int VEND_ARMORER;
 	string questboar.angle;
 	string questboar.target;
 	string script.questlog.target;
 
 	Armourer()
 	{
-		const string SOUND_DEATH = "none";
+		SOUND_DEATH = "none";
 		STORE_CLOSED = 0;
-		const string STORE_NAME = "edana_armory";
-		const string STORE_TRIGGERTEXT = "store trade buy sell purchase sale offer";
-		const int STORE_SELLMENU = 1;
-		const float SELL_RATIO = 0.75;
-		const int NO_RUMOR = 1;
-		const int VEND_ARMORER = 1;
-		const int NPC_REACTS = 1;
+		STORE_NAME = "edana_armory";
+		STORE_TRIGGERTEXT = "store trade buy sell purchase sale offer";
+		STORE_SELLMENU = 1;
+		SELL_RATIO = 0.75;
+		NO_RUMOR = 1;
+		VEND_ARMORER = 1;
+		NPC_REACTS = 1;
 		VENDOR_NOT_ON_USE = 1;
 	}
 
@@ -84,7 +92,7 @@ class Armourer : CGameScript
 		}
 		else
 		{
-			SayText("Howdy /* TODO: $stradd */ $stradd(GetEntityName(JOB.WINNER), "!") What can I do for you?");
+			SayText("Howdy " + /* TODO: $stradd */ $stradd(GetEntityName(JOB.WINNER), "!") + "What can " + I + " do for you?");
 		}
 	}
 
@@ -142,7 +150,7 @@ class Armourer : CGameScript
 				{
 				}
 				PlayAnim("once", "no");
-				SayText("Sorry, Ive already got me an errand boy. If you see GetEntityName(JOB.TARGET) tell him to hurry it up!");
+				SayText("Sorry, Ive already got me an errand boy. If you see " + GetEntityName(JOB.TARGET) + " tell him to hurry it up!");
 			}
 		}
 		if (JOB >= 3)
@@ -162,7 +170,7 @@ class Armourer : CGameScript
 		if ((JOB.SPEECH1)) return;
 		JOB.SPEECH1 = 1;
 		JOB.TARGET = GetEntityIndex("ent_lastspoke");
-		SayText("Excellent! I need you to go to Abulurd , give him this letter.");
+		SayText("Excellent! " + I + " need you to go to Abulurd , give him this letter.");
 		// TODO: offer ent_lastspoke item_ikeletter
 		CallExternal(FindEntityByName("abulurd"), "global_quest_letter");
 	}
@@ -196,7 +204,7 @@ class Armourer : CGameScript
 
 	void quest_ledger_done()
 	{
-		SayText("Yep, this is it. Thanks for your help GetEntityName(param1)");
+		SayText("Yep, this is it. Thanks for your help " + GetEntityName(param1));
 		// TODO: offer PARAM1 gold 6
 		JOB = 3;
 		JOB.TARGET = "";
@@ -267,7 +275,7 @@ class Armourer : CGameScript
 			{
 				string reg.mitem.title = "Accept Job";
 				string reg.mitem.type = "say";
-				string l.say = RandomInt(1, 6);
+				int l.say = RandomInt(1, 6);
 				if (l.say == 1)
 				{
 					string reg.mitem.data = "Yes";
@@ -402,7 +410,7 @@ class Armourer : CGameScript
 	{
 		string reg.mitem.title = "I can't find Abulurd";
 		string reg.mitem.type = "say";
-		string l.say = RandomInt(1, 2);
+		int l.say = RandomInt(1, 2);
 		if (l.say == 1)
 		{
 			string reg.mitem.data = "Where is abulurd?";

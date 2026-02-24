@@ -7,18 +7,24 @@ namespace MS
 
 class EmoteIdle : CGameScript
 {
+	string EFFECT_FLAGS;
+	string EFFECT_ID;
+	string EFFECT_SCRIPT;
+	string TEXT_IDLE;
+	string TEXT_NORMAL;
 	string game.effect.displayname;
+	int game.effect.removeondeath;
 	string game.effect.updateplayer;
 	int local.idling;
 
 	EmoteIdle()
 	{
-		const string EFFECT_ID = "player_standidle";
-		const string EFFECT_FLAGS = "player_action";
-		const string EFFECT_SCRIPT = currentscript;
-		const int game.effect.removeondeath = 0;
-		const string TEXT_IDLE = #ACTION_STAND_IDLE;
-		const string TEXT_NORMAL = #ACTION_STAND_NORMAL;
+		EFFECT_ID = "player_standidle";
+		EFFECT_FLAGS = "player_action";
+		EFFECT_SCRIPT = currentscript;
+		game.effect.removeondeath = 0;
+		TEXT_IDLE = #ACTION_STAND_IDLE;
+		TEXT_NORMAL = #ACTION_STAND_NORMAL;
 		game.effect.displayname = TEXT_IDLE;
 		local.idling = 0;
 	}

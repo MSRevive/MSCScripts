@@ -7,13 +7,16 @@ namespace MS
 
 class Keyhole : CGameScript
 {
+	string KEYHOLE_NAME;
+	string KEYHOLE_TITLE;
+	string KEY_NAME;
 	int RETURN_KEY;
 
 	Keyhole()
 	{
-		const string KEY_NAME = "tutorial_key";
-		const string KEYHOLE_NAME = "keyhole";
-		const string KEYHOLE_TITLE = "Use Key";
+		KEY_NAME = "tutorial_key";
+		KEYHOLE_NAME = "keyhole";
+		KEYHOLE_TITLE = "Use Key";
 		RETURN_KEY = 0;
 	}
 

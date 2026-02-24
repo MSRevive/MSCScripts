@@ -15,22 +15,29 @@ class Packmerc : CGameScript
 	int CANCHAT;
 	int CHAT_GOODS;
 	int CHAT_JOB;
+	int NO_CHAT;
+	float SELL_RATIO;
 	int SELL_WEAPON_LEVEL;
+	string SOUND_DEATH;
+	string STORE_NAME;
+	int STORE_SELLMENU;
 	string STORE_TRIGGERTEXT;
+	int VEND_CONTAINERS;
 	int VEND_NEWBIE;
+	int VEND_WEAPONS;
 
 	Packmerc()
 	{
-		const string SOUND_DEATH = "none";
-		const string STORE_NAME = "foglund_shop";
+		SOUND_DEATH = "none";
+		STORE_NAME = "foglund_shop";
 		STORE_TRIGGERTEXT = "store trade buy sell purchase sale offer";
-		const int STORE_SELLMENU = 1;
-		const float SELL_RATIO = 0.75;
+		STORE_SELLMENU = 1;
+		SELL_RATIO = 0.75;
 		SELL_WEAPON_LEVEL = 0;
 		VEND_NEWBIE = 1;
-		const int VEND_WEAPONS = 1;
-		const int VEND_CONTAINERS = 1;
-		const int NO_CHAT = 1;
+		VEND_WEAPONS = 1;
+		VEND_CONTAINERS = 1;
+		NO_CHAT = 1;
 	}
 
 	void OnRepeatTimer()
@@ -42,7 +49,7 @@ class Packmerc : CGameScript
 		if ((CanSee("player", 128)))
 		{
 		}
-		SayText("AD_TEXT");
+		SayText(AD_TEXT);
 		Say("[.6] [.6] [.6]");
 		no_chat();
 		ScheduleDelayedEvent(90, "reset_chat");
@@ -121,7 +128,7 @@ class Packmerc : CGameScript
 
 	void say_hi()
 	{
-		SayText("Hello , I have many things that you will need!");
+		SayText("Hello , " + I + " have many things that you will need!");
 		ScheduleDelayedEvent(2, "say_store");
 		no_chat();
 	}

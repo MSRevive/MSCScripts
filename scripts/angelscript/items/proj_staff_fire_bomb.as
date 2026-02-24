@@ -7,25 +7,43 @@ namespace MS
 
 class ProjStaffFireBomb : CGameScript
 {
+	int ARROW_BODY_OFS;
+	int CLFX_ARROW_NOSTICK;
+	string ITEM_NAME;
+	int MODEL_BODY_OFS;
+	string MODEL_HANDS;
+	string MODEL_WORLD;
+	string PROJ_ANIM_IDLE;
+	float PROJ_AOE_FALLOFF;
+	int PROJ_AOE_RANGE;
+	int PROJ_DAMAGE;
+	string PROJ_DAMAGE_TYPE;
+	int PROJ_IGNORENPC;
+	int PROJ_MOTIONBLUR;
+	int PROJ_STICK_DURATION;
+	int PROJ_STICK_ON_NPC;
+	int PROJ_STICK_ON_WALL_NEW;
+	string SPRITE_ARROW_TRADE;
+
 	ProjStaffFireBomb()
 	{
-		const string MODEL_HANDS = "none";
-		const string MODEL_WORLD = "weapons/projectiles.mdl";
-		const int MODEL_BODY_OFS = 41;
-		const string PROJ_ANIM_IDLE = "axis_spin";
-		const string ITEM_NAME = "firemana";
-		const string PROJ_DAMAGE_TYPE = "fire";
-		const int PROJ_DAMAGE = 100;
-		const int CLFX_ARROW_NOSTICK = 1;
-		const int PROJ_STICK_ON_NPC = 0;
-		const int PROJ_STICK_DURATION = 0;
-		const int PROJ_MOTIONBLUR = 0;
-		const int PROJ_STICK_ON_WALL_NEW = 0;
-		const int PROJ_AOE_RANGE = 200;
-		const float PROJ_AOE_FALLOFF = 0.01;
-		const int PROJ_IGNORENPC = 0;
-		const int ARROW_BODY_OFS = 41;
-		const string SPRITE_ARROW_TRADE = "silverarrow";
+		MODEL_HANDS = "none";
+		MODEL_WORLD = "weapons/projectiles.mdl";
+		MODEL_BODY_OFS = 41;
+		PROJ_ANIM_IDLE = "axis_spin";
+		ITEM_NAME = "firemana";
+		PROJ_DAMAGE_TYPE = "fire";
+		PROJ_DAMAGE = 100;
+		CLFX_ARROW_NOSTICK = 1;
+		PROJ_STICK_ON_NPC = 0;
+		PROJ_STICK_DURATION = 0;
+		PROJ_MOTIONBLUR = 0;
+		PROJ_STICK_ON_WALL_NEW = 0;
+		PROJ_AOE_RANGE = 200;
+		PROJ_AOE_FALLOFF = 0.01;
+		PROJ_IGNORENPC = 0;
+		ARROW_BODY_OFS = 41;
+		SPRITE_ARROW_TRADE = "silverarrow";
 	}
 
 	void projectile_spawn()

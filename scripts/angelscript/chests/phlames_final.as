@@ -7,9 +7,11 @@ namespace MS
 
 class PhlamesFinal : CGameScript
 {
+	string SOME_POTS;
+
 	PhlamesFinal()
 	{
-		const string SOME_POTS = "mana_paura;mana_faura;mana_fbrand;mana_font;mana_immune_cold;mana_resist_cold;mana_immune_lightning";
+		SOME_POTS = "mana_paura;mana_faura;mana_fbrand;mana_font;mana_immune_cold;mana_resist_cold;mana_immune_lightning";
 	}
 
 	void OnSpawn() override
@@ -79,7 +81,7 @@ class PhlamesFinal : CGameScript
 	{
 		string N_POTS = GetTokenCount(SOME_POTS, ";");
 		N_POTS -= 1;
-		string RND_POT_IDX = RandomInt(SOME_POTS, N_POTS);
+		int RND_POT_IDX = RandomInt(SOME_POTS, N_POTS);
 		string RND_POT = GetToken(SOME_POTS, RND_POT_IDX, ";");
 		AddStoreItem(STORENAME, RND_POT, 1, 0);
 	}

@@ -11,7 +11,13 @@ class Kodiak : CGameScript
 	string ANIM_IDLE;
 	string ANIM_RUN;
 	string ANIM_WALK;
+	float ATTACK_HITCHANCE;
+	int ATTACK_NORMAL_DAMAGE;
+	float ATTACK_STANDING_DAMAGE;
+	int ATTACK_STOMPDMG;
+	int ATTACK_STOMPRANGE;
 	int CAN_FLEE;
+	int NPC_BASE_EXP;
 
 	Kodiak()
 	{
@@ -19,12 +25,12 @@ class Kodiak : CGameScript
 		ANIM_WALK = "walk";
 		ANIM_RUN = "run";
 		ANIM_ATTACK = "attack";
-		const int ATTACK_NORMAL_DAMAGE = 50;
-		const string ATTACK_STANDING_DAMAGE = Random(18, 33);
-		const int ATTACK_STOMPRANGE = 225;
-		const int ATTACK_STOMPDMG = 60;
-		const float ATTACK_HITCHANCE = 0.7;
-		const int NPC_BASE_EXP = 500;
+		ATTACK_NORMAL_DAMAGE = 50;
+		ATTACK_STANDING_DAMAGE = Random(18, 33);
+		ATTACK_STOMPRANGE = 225;
+		ATTACK_STOMPDMG = 60;
+		ATTACK_HITCHANCE = 0.7;
+		NPC_BASE_EXP = 500;
 		CAN_FLEE = 0;
 	}
 

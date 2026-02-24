@@ -6,15 +6,19 @@ namespace MS
 class MagicHandTestSpell : CGameScript
 {
 	string CYCLE_ANGLE;
+	float FX_DURATION;
+	int REPULSE_RADIUS;
+	string SPRITE_NAME;
+	int SPRITE_VELOCITY;
 	string START_POS;
 
 	MagicHandTestSpell()
 	{
-		const string SPRITE_NAME = "3dmflaora.spr";
+		SPRITE_NAME = "3dmflaora.spr";
 		Precache(SPRITE_NAME);
-		const float FX_DURATION = 1.5;
-		const int SPRITE_VELOCITY = 10;
-		const int REPULSE_RADIUS = 256;
+		FX_DURATION = 1.5;
+		SPRITE_VELOCITY = 10;
+		REPULSE_RADIUS = 256;
 	}
 
 	void spriteify()

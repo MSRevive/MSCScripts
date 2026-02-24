@@ -23,7 +23,9 @@ class Thief : CGameScript
 	string CAN_HUNT;
 	int CAN_RETALIATE;
 	int CAN_STTACK;
+	float FLEE_CHANCE;
 	int FLEE_DISTANCE;
+	int FLEE_HEALTH;
 	string FLINCH_ANIM;
 	float FLINCH_CHANCE;
 	int FLINCH_DELAY;
@@ -32,16 +34,17 @@ class Thief : CGameScript
 	int OFFER_GIVEN;
 	int QUEST_DONE;
 	int REWARD_NAO_PLZ;
+	string SOUND_DEATH;
 	int STEAL;
-	string STEALING;
+	int STEALING;
 	int THIEF;
 
 	Thief()
 	{
 		CAN_STTACK = 0;
 		CAN_FLEE = 1;
-		const int FLEE_HEALTH = 34;
-		const float FLEE_CHANCE = 1.0;
+		FLEE_HEALTH = 34;
+		FLEE_CHANCE = 1.0;
 		FLEE_DISTANCE = 1000;
 		CAN_RETALIATE = 0;
 		CAN_FLINCH = 1;
@@ -49,7 +52,7 @@ class Thief : CGameScript
 		FLINCH_CHANCE = 0.5;
 		FLINCH_DELAY = 1;
 		ANIM_DEATH = "dieforward";
-		const string SOUND_DEATH = "player/stomachhit1.wav";
+		SOUND_DEATH = "player/stomachhit1.wav";
 		ANIM_WALK = "walk";
 		GOLD = 10;
 		ATTACK_DAMAGE = 7;
@@ -144,7 +147,7 @@ class Thief : CGameScript
 		OFFER_GIVEN = 1;
 		if (REWARD_NAO_PLZ != 1)
 		{
-			SayText("Thank you good Sir! I shall follow you to the Lord of the Land.");
+			SayText("Thank you good Sir! " + I + " shall follow you to the Lord of the Land.");
 			SetGlobalVar("APPREHENDER", param1);
 			SetRace("beloved");
 			SetMoveAnim(ANIM_RUN);
@@ -160,8 +163,8 @@ class Thief : CGameScript
 	void turn_in_now()
 	{
 		SetMoveDest(FindEntityByName("knight_lord"));
-		SayText("Sir , I am turning myself in for I have commited crime.");
-		SayText("I have stolen from people.");
+		SayText("Sir , " + I + "am turning myself in for " + I + " have commited crime.");
+		SayText(I + " have stolen from people.");
 		CallExternal(FindEntityByName("knight_lord"), "2", "say_jail");
 		PlayAnim("once", "kneel");
 	}
@@ -177,7 +180,7 @@ class Thief : CGameScript
 	{
 		if (REWARD_NAO_PLZ != 1)
 		{
-			SayText("Then I shall fight you!");
+			SayText("Then " + I + " shall fight you!");
 			SetRace("orc");
 			SetName("A Thief!");
 			ANIM_RUN = "run";
@@ -202,8 +205,8 @@ class Thief : CGameScript
 		if (OFFER_GIVEN == 0)
 		{
 			SetName("Thief");
-			SayText("Please spare me , good Sir , for I am but a petty thief.");
-			SayText("I shall turn myself in if you would be so kind as to let me live.");
+			SayText("Please spare me , good Sir , for " + I + " am but a petty thief.");
+			SayText(I + " shall turn myself in if you would be so kind as to let me live.");
 			PlayAnim("critical", "crouch");
 			OpenMenu(GetEntityIndex(m_hLastStruck));
 			STEAL = 1;
@@ -227,7 +230,7 @@ class Thief : CGameScript
 	void dbg_find_thief()
 	{
 		SetSayTextRange(4096);
-		SayText("OVER HERE!");
+		SayText(OVER + HERE!);
 		LogDebug("thief present");
 	}
 

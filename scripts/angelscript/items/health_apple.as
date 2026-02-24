@@ -7,30 +7,41 @@ namespace MS
 
 class HealthApple : CGameScript
 {
+	int ANIM_DRINK;
+	int ANIM_IDLE;
+	string ANIM_PREFIX;
+	string DONE_PHRASE;
 	int DRINK_AMOUNT;
-	string DRINK_EFFECTAMT;
+	int DRINK_EFFECTAMT;
 	int DRINK_GULP_DELAY;
 	int DRINK_TIME;
 	string DRINK_TYPE;
+	string DRINK_WORD;
+	int ITEM_MODEL_VIEW_IDX;
+	int MODEL_BODY_OFS;
+	string MODEL_HANDS;
+	string MODEL_VIEW;
+	string MODEL_WORLD;
+	string SOUND_APPLE;
 
 	HealthApple()
 	{
-		const int ANIM_IDLE = 0;
-		const int ANIM_DRINK = 1;
-		const string MODEL_VIEW = "viewmodels/v_misc.mdl";
-		const int ITEM_MODEL_VIEW_IDX = 3;
-		const string MODEL_HANDS = "misc/p_misc.mdl";
-		const string MODEL_WORLD = "misc/p_misc.mdl";
-		const string SOUND_APPLE = "items/bite.wav";
-		const int MODEL_BODY_OFS = 1;
-		const string ANIM_PREFIX = "apple";
+		ANIM_IDLE = 0;
+		ANIM_DRINK = 1;
+		MODEL_VIEW = "viewmodels/v_misc.mdl";
+		ITEM_MODEL_VIEW_IDX = 3;
+		MODEL_HANDS = "misc/p_misc.mdl";
+		MODEL_WORLD = "misc/p_misc.mdl";
+		SOUND_APPLE = "items/bite.wav";
+		MODEL_BODY_OFS = 1;
+		ANIM_PREFIX = "apple";
 		DRINK_TYPE = "givehealth";
 		DRINK_EFFECTAMT = RandomInt(1, 3);
 		DRINK_AMOUNT = 4;
 		DRINK_GULP_DELAY = 1;
 		DRINK_TIME = 1;
-		const string DRINK_WORD = "bite";
-		const string DONE_PHRASE = "You devour the last bite of the juicy";
+		DRINK_WORD = "bite";
+		DONE_PHRASE = "You devour the last bite of the juicy";
 	}
 
 	void drink_spawn()

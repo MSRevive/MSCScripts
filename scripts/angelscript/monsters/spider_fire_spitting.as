@@ -9,11 +9,13 @@ class SpiderFireSpitting : CGameScript
 {
 	int DOT_FIRE;
 	int NPC_GIVE_EXP;
+	string PROJ_OFS;
+	string PROJ_TYPE;
 
 	SpiderFireSpitting()
 	{
-		const string PROJ_TYPE = "proj_fire_xolt";
-		const Vector3 PROJ_OFS = Vector3(0, 0, 32);
+		PROJ_TYPE = "proj_fire_xolt";
+		PROJ_OFS = Vector3(0, 0, 32);
 		DOT_FIRE = 3;
 	}
 

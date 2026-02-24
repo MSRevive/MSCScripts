@@ -9,12 +9,13 @@ class ProjMana2Cl : CGameScript
 	int FX_ACTIVE;
 	string FX_ANG;
 	string FX_CUR_ORG;
+	string FX_MODEL;
 	string FX_ORIGIN;
 	string FX_VEL;
 
 	ProjMana2Cl()
 	{
-		const string FX_MODEL = "weapons/projectiles.mdl";
+		FX_MODEL = "weapons/projectiles.mdl";
 	}
 
 	void client_activate()
@@ -51,7 +52,7 @@ class ProjMana2Cl : CGameScript
 
 	void update_arrow()
 	{
-		ClientEffect("tempent", "set_current_prop", "scale", /* TODO: $math(multiply) */ BALL_SIZE);
+		ClientEffect("tempent", "set_current_prop", "scale", (BALL_SIZE * 0.75));
 		if ((FX_ACTIVE))
 		{
 			FX_CUR_ORG = "game.tempent.origin";
@@ -67,7 +68,7 @@ class ProjMana2Cl : CGameScript
 		ClientEffect("tempent", "set_current_prop", "origin", FX_ORIGIN);
 		ClientEffect("tempent", "set_current_prop", "bouncefactor", 0);
 		ClientEffect("tempent", "set_current_prop", "death_delay", 10.0);
-		ClientEffect("tempent", "set_current_prop", "scale", /* TODO: $math(multiply) */ BALL_SIZE);
+		ClientEffect("tempent", "set_current_prop", "scale", (BALL_SIZE * 0.75));
 		ClientEffect("tempent", "set_current_prop", "gravity", 0);
 		ClientEffect("tempent", "set_current_prop", "angles", FX_ANG);
 		ClientEffect("tempent", "set_current_prop", "velocity", FX_VEL);

@@ -7,15 +7,19 @@ namespace MS
 
 class DqFetchItems : CGameScript
 {
+	string INFO_TARGET_PREFIX;
+	string ITEM_DROP_MODE;
 	int QITEMS_FOUND;
+	string QITEM_CODE;
+	string QITEM_NAME;
 	int QITEM_ORIGIN_AMT;
 
 	DqFetchItems()
 	{
-		const string INFO_TARGET_PREFIX = QUEST_DATA1;
-		const string QITEM_CODE = GetToken(QUEST_DATA2, 0, ";");
-		const string QITEM_NAME = GetToken(QUEST_DATA2, 1, ";");
-		const string ITEM_DROP_MODE = QUEST_DATA3;
+		INFO_TARGET_PREFIX = QUEST_DATA1;
+		QITEM_CODE = GetToken(QUEST_DATA2, 0, ";");
+		QITEM_NAME = GetToken(QUEST_DATA2, 1, ";");
+		ITEM_DROP_MODE = QUEST_DATA3;
 		QITEM_ORIGIN_AMT = 0;
 		QITEMS_FOUND = 0;
 	}
@@ -45,7 +49,7 @@ class DqFetchItems : CGameScript
 		{
 			if (QUEST_MODE == "active")
 			{
-				QITEMS_FOUND = /* TODO: $math(add) */ QITEMS_FOUND;
+				QITEMS_FOUND = (QITEMS_FOUND + 1);
 				if (QITEMS_FOUND == QITEM_ORIGIN_AMT)
 				{
 					quest_finished();
@@ -85,13 +89,13 @@ class DqFetchItems : CGameScript
 	{
 		string L_INFO_TARGET_NAME = INFO_TARGET_PREFIX;
 		string L_QITEM_ORIGIN_AMT = QITEM_ORIGIN_AMT;
-		string L_QITEM_ORIGIN_AMT = int(/* TODO: $math(add) */ L_QITEM_ORIGIN_AMT);
+		int L_QITEM_ORIGIN_AMT = int((L_QITEM_ORIGIN_AMT + 1));
 		L_INFO_TARGET_NAME += L_QITEM_ORIGIN_AMT;
 		string L_INFO_TARGET_ID = FindEntityByName(L_INFO_TARGET_NAME);
 		if (((L_INFO_TARGET_ID !is null)))
 		{
 			QITEM_SPAWN_ORIGINS.insertLast(GetEntityOrigin(L_INFO_TARGET_ID));
-			QITEM_ORIGIN_AMT = /* TODO: $math(add) */ QITEM_ORIGIN_AMT;
+			QITEM_ORIGIN_AMT = (QITEM_ORIGIN_AMT + 1);
 			ScheduleDelayedEvent(0.1, "quest_handle_info_targets");
 		}
 		else
@@ -103,7 +107,7 @@ class DqFetchItems : CGameScript
 	void quest_handle_vectors()
 	{
 		QITEM_SPAWN_ORIGINS.insertLast(GetToken(QUEST_DATA1, i, ";"));
-		if (/* TODO: $math(add) */ i == QITEM_ORIGIN_AMT)
+		if ((i + 1) == QITEM_ORIGIN_AMT)
 		{
 			quest_populate_origins();
 		}
@@ -113,7 +117,7 @@ class DqFetchItems : CGameScript
 	{
 		if (ITEM_DROP_MODE == 1)
 		{
-			string L_ORIGIN = RandomInt(0, /* TODO: $math(subtract) */ QITEM_ORIGIN_AMT);
+			int L_ORIGIN = RandomInt(0, (QITEM_ORIGIN_AMT - 1));
 			SpawnNPC("other/qitem", L_ORIGIN, ScriptMode::Legacy); // params: QITEM_CODE, QITEM_NAME
 			QITEM_ORIGIN_AMT = 1;
 		}
@@ -131,7 +135,7 @@ class DqFetchItems : CGameScript
 
 	void quest_populate_origins_loop()
 	{
-		string L_ORIGIN = /* TODO: $get_array */ $get_array(QITEM_SPAWN_ORIGINS, i);
+		string L_ORIGIN = QITEM_SPAWN_ORIGINS[int(i)];
 		SpawnNPC("other/qitem", L_ORIGIN, ScriptMode::Legacy); // params: QITEM_CODE, QITEM_NAME
 	}
 

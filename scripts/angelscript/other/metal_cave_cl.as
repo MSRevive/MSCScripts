@@ -5,13 +5,13 @@ namespace MS
 
 class MetalCaveCl : CGameScript
 {
-	string B_CYCLE;
+	int B_CYCLE;
 	float B_CYCLE_PM;
 	string GLOW_COLOR;
 	string GLOW_RAD;
-	string G_CYCLE;
+	int G_CYCLE;
 	float G_CYCLE_PM;
-	string R_CYCLE;
+	int R_CYCLE;
 	float R_CYCLE_PM;
 	string SKEL_ID;
 	string SKEL_LIGHT_ID;

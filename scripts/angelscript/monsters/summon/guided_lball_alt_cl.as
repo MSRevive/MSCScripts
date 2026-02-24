@@ -8,10 +8,11 @@ class GuidedLballAltCl : CGameScript
 	int CYCLE_ANGLE;
 	string MY_ORG;
 	string MY_RADIUS;
+	string SOUND_KABOOM;
 
 	GuidedLballAltCl()
 	{
-		const string SOUND_KABOOM = "weapons/explode3.wav";
+		SOUND_KABOOM = "weapons/explode3.wav";
 	}
 
 	void client_activate()
@@ -38,7 +39,7 @@ class GuidedLballAltCl : CGameScript
 	{
 		string BEAM_START = MY_ORG;
 		string BEAM_END = BEAM_START;
-		string RND_UD = Random(-64.0, 64.0);
+		float RND_UD = Random(-64.0, 64.0);
 		BEAM_END += /* TODO: $relpos */ $relpos(Vector3(0, CYCLE_ANGLE, 0), Vector3(0, MY_RADIUS, RND_UD));
 		ClientEffect("beam_points", BEAM_START, BEAM_END, "lgtning.spr", 1.5, 2.5, 1.5, 255, 50, 30, Vector3(255, 255, 0));
 		CYCLE_ANGLE += 20;

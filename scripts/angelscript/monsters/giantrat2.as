@@ -13,18 +13,32 @@ class Giantrat2 : CGameScript
 	string ANIM_IDLE2;
 	string ANIM_RUN;
 	string ANIM_WALK;
+	float ATTACK_DAMAGE;
+	float ATTACK_HITCHANCE;
 	int ATTACK_HITRANGE;
 	int ATTACK_RANGE;
 	int CAN_FLEE;
 	string DROP_ITEM1;
 	float DROP_ITEM1_CHANCE;
+	float FLEE_CHANCE;
+	int FLEE_HEALTH;
 	int HUNT_AGRO;
 	int MOVE_RANGE;
+	int NO_EXP_MULTI;
 	int NPC_GIVE_EXP;
+	string SOUND_ATTACK1;
+	string SOUND_ATTACK2;
+	string SOUND_ATTACK3;
+	string SOUND_DEATH;
+	string SOUND_IDLE1;
+	string SOUND_PAIN;
+	string SOUND_STRUCK1;
+	string SOUND_STRUCK2;
+	string SOUND_STRUCK3;
 
 	Giantrat2()
 	{
-		const int NO_EXP_MULTI = 1;
+		NO_EXP_MULTI = 1;
 		ANIM_IDLE = "idle1";
 		ANIM_IDLE2 = "idle1";
 		ANIM_RUN = "run";
@@ -32,22 +46,22 @@ class Giantrat2 : CGameScript
 		ANIM_ATTACK = "attack";
 		ANIM_DEATH = "die";
 		MOVE_RANGE = 10;
-		const float ATTACK_DAMAGE = 0.4;
+		ATTACK_DAMAGE = 0.4;
 		ATTACK_RANGE = 48;
 		ATTACK_HITRANGE = 100;
-		const float ATTACK_HITCHANCE = 0.3;
-		const string SOUND_STRUCK1 = "weapons/cbar_hitbod1.wav";
-		const string SOUND_STRUCK2 = "weapons/cbar_hitbod2.wav";
-		const string SOUND_STRUCK3 = "weapons/cbar_hitbod3.wav";
-		const string SOUND_PAIN = "monsters/rat/squeak1.wav";
-		const string SOUND_ATTACK1 = "monsters/rat/squeak2.wav";
-		const string SOUND_ATTACK2 = "monsters/orc/attack2.wav";
-		const string SOUND_ATTACK3 = "monsters/orc/attack3.wav";
-		const string SOUND_IDLE1 = "monsters/rat/squeak2.wav";
-		const string SOUND_DEATH = "monsters/rat/squeak3.wav";
+		ATTACK_HITCHANCE = 0.3;
+		SOUND_STRUCK1 = "weapons/cbar_hitbod1.wav";
+		SOUND_STRUCK2 = "weapons/cbar_hitbod2.wav";
+		SOUND_STRUCK3 = "weapons/cbar_hitbod3.wav";
+		SOUND_PAIN = "monsters/rat/squeak1.wav";
+		SOUND_ATTACK1 = "monsters/rat/squeak2.wav";
+		SOUND_ATTACK2 = "monsters/orc/attack2.wav";
+		SOUND_ATTACK3 = "monsters/orc/attack3.wav";
+		SOUND_IDLE1 = "monsters/rat/squeak2.wav";
+		SOUND_DEATH = "monsters/rat/squeak3.wav";
 		CAN_FLEE = 1;
-		const int FLEE_HEALTH = 2;
-		const float FLEE_CHANCE = 0.0;
+		FLEE_HEALTH = 2;
+		FLEE_CHANCE = 0.0;
 		DROP_ITEM1 = "skin_ratpelt";
 		DROP_ITEM1_CHANCE = 0.5;
 		HUNT_AGRO = 0;
@@ -61,7 +75,7 @@ class Giantrat2 : CGameScript
 		if (!(IS_HUNTING))
 		{
 		}
-		string STAND_UP = RandomInt(0, 5);
+		int STAND_UP = RandomInt(0, 5);
 		if (STAND_UP == 0)
 		{
 			PlayAnim("once", ANIM_IDLE2);

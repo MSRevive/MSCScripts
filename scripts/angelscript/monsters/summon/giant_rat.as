@@ -12,7 +12,9 @@ class GiantRat : CGameScript
 	string ANIM_DEATH;
 	string ANIM_IDLE;
 	string ANIM_RUN;
+	string ANIM_RUN_BASE;
 	string ANIM_WALK;
+	string ANIM_WALK_BASE;
 	float ATTACK_HITCHANCE;
 	int ATTACK_HITRANGE;
 	int ATTACK_RANGE;
@@ -24,26 +26,35 @@ class GiantRat : CGameScript
 	int MOVE_RANGE;
 	float RETALIATE_CHANCE;
 	string SOUND_ATTACK1;
+	string SOUND_DEATH;
 	string SOUND_IDLE1;
 	string SOUND_PAIN;
 	string SOUND_STRUCK1;
 	string SOUND_STRUCK2;
 	string SOUND_STRUCK3;
+	int SUMMON_CIRCLE_INDEX;
+	string SUM_REPORT_SUFFIX;
+	string SUM_SAY_ATTACK;
+	string SUM_SAY_COME;
+	string SUM_SAY_DEATH;
+	string SUM_SAY_DEFEND;
+	string SUM_SAY_GUARD;
+	string SUM_SAY_HUNT;
 	string TRICK_ANIM;
 
 	GiantRat()
 	{
 		I_R_PET = 1;
-		const int SUMMON_CIRCLE_INDEX = 12;
-		const string SUM_SAY_COME = "*squeek!*";
-		const string SUM_SAY_ATTACK = "*squeek!* *squeek!*";
-		const string SUM_SAY_HUNT = "*squeek...*";
-		const string SUM_SAY_DEFEND = "*squeekie!*";
-		const string SUM_SAY_DEATH = "*SQUEEK!*";
-		const string SUM_SAY_GUARD = "*squeek!*";
-		const string SUM_REPORT_SUFFIX = "..er, I mean, *squeek*!?";
-		const string ANIM_WALK_BASE = "walk";
-		const string ANIM_RUN_BASE = "run";
+		SUMMON_CIRCLE_INDEX = 12;
+		SUM_SAY_COME = "*squeek!*";
+		SUM_SAY_ATTACK = "*squeek!* *squeek!*";
+		SUM_SAY_HUNT = "*squeek...*";
+		SUM_SAY_DEFEND = "*squeekie!*";
+		SUM_SAY_DEATH = "*SQUEEK!*";
+		SUM_SAY_GUARD = "*squeek!*";
+		SUM_REPORT_SUFFIX = "..er, I mean, *squeek*!?";
+		ANIM_WALK_BASE = "walk";
+		ANIM_RUN_BASE = "run";
 		ANIM_IDLE = "idle1";
 		ANIM_WALK = "walk";
 		ANIM_RUN = "run";
@@ -60,7 +71,7 @@ class GiantRat : CGameScript
 		SOUND_PAIN = "monsters/rat/squeak1.wav";
 		SOUND_ATTACK1 = "monsters/rat/squeak2.wav";
 		SOUND_IDLE1 = "monsters/rat/squeak2.wav";
-		const string SOUND_DEATH = "monsters/rat/squeak3.wav";
+		SOUND_DEATH = "monsters/rat/squeak3.wav";
 		RETALIATE_CHANCE = 0.75;
 		CAN_FLEE = 0;
 		CAN_HUNT = 1;

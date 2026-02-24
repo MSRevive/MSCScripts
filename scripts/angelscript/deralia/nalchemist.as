@@ -10,6 +10,8 @@ namespace MS
 
 class Nalchemist : CGameScript
 {
+	int NO_HAIL;
+	int NO_JOB;
 	string STORE_NAME;
 	int STORE_SELLMENU;
 	string STORE_TRIGGERTEXT;
@@ -19,8 +21,8 @@ class Nalchemist : CGameScript
 		STORE_NAME = "Alchemy";
 		STORE_TRIGGERTEXT = "store buy purchase";
 		STORE_SELLMENU = 0;
-		const int NO_JOB = 1;
-		const int NO_HAIL = 1;
+		NO_JOB = 1;
+		NO_HAIL = 1;
 	}
 
 	void OnSpawn() override

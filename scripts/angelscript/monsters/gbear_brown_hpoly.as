@@ -7,9 +7,11 @@ namespace MS
 
 class GbearBrownHpoly : CGameScript
 {
+	string MONSTER_MODEL;
+
 	GbearBrownHpoly()
 	{
-		const string MONSTER_MODEL = "monsters/gbear_hipoly.mdl";
+		MONSTER_MODEL = "monsters/gbear_hipoly.mdl";
 	}
 
 }

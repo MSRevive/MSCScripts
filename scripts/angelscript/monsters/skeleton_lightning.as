@@ -7,41 +7,64 @@ namespace MS
 
 class SkeletonLightning : CGameScript
 {
+	string ANIM_CAST;
 	string ANIM_RUN;
+	int ATTACH_WAND;
+	float ATTACK_DAMAGE_HIGH;
+	float ATTACK_DAMAGE_LOW;
+	float ATTACK_HITCHANCE;
 	string BARRIER_ID;
+	int BARRIER_RAD;
 	string DID_WARCRY;
+	float DMG_BARRIER;
+	float DMG_ZAP;
+	float DOT_ZAP;
+	float DUR_ZAP;
+	float FREQ_ZAP;
+	int GOLD_BAGS;
+	int GOLD_BAGS_PPLAYER;
+	int GOLD_MAX_BAGS;
+	int GOLD_PER_BAG;
+	int GOLD_RADIUS;
 	int NPC_GIVE_EXP;
 	string SET_GREEK;
+	int SKEL_HP;
+	string SOUND_BARRIER_REPELL;
+	string SOUND_BARRIER_SPAWN;
+	string SOUND_LAUGH;
+	string SOUND_WARCRY;
 	int ZAP_ACTIVE;
+	float ZAP_FREQ;
 	string ZAP_LIST;
+	int ZAP_RANGE;
 
 	SkeletonLightning()
 	{
 		ANIM_RUN = "run";
-		const string ANIM_CAST = "castspell";
-		const int GOLD_BAGS = 1;
-		const int GOLD_BAGS_PPLAYER = 1;
-		const int GOLD_PER_BAG = 50;
-		const int GOLD_RADIUS = 64;
-		const int GOLD_MAX_BAGS = 4;
-		const string SOUND_LAUGH = "monsters/skeleton/cal_laugh.wav";
-		const string SOUND_WARCRY = "monsters/skeleton/calrain3.wav";
-		const int SKEL_HP = 1000;
-		const float ATTACK_HITCHANCE = 0.85;
-		const float ATTACK_DAMAGE_LOW = 15.5;
-		const float ATTACK_DAMAGE_HIGH = 25.5;
+		ANIM_CAST = "castspell";
+		GOLD_BAGS = 1;
+		GOLD_BAGS_PPLAYER = 1;
+		GOLD_PER_BAG = 50;
+		GOLD_RADIUS = 64;
+		GOLD_MAX_BAGS = 4;
+		SOUND_LAUGH = "monsters/skeleton/cal_laugh.wav";
+		SOUND_WARCRY = "monsters/skeleton/calrain3.wav";
+		SKEL_HP = 1000;
+		ATTACK_HITCHANCE = 0.85;
+		ATTACK_DAMAGE_LOW = 15.5;
+		ATTACK_DAMAGE_HIGH = 25.5;
 		NPC_GIVE_EXP = 400;
-		const string DMG_ZAP = Random(40, 60);
-		const float DOT_ZAP = 10.0;
-		const float DUR_ZAP = 5.0;
-		const float DMG_BARRIER = 10.0;
-		const int BARRIER_RAD = 96;
-		const string ZAP_FREQ = Random(10, 15);
-		const int ZAP_RANGE = 1024;
-		const int ATTACH_WAND = 0;
-		const float FREQ_ZAP = 30.0;
-		const string SOUND_BARRIER_REPELL = "doors/aliendoor3.wav";
-		const string SOUND_BARRIER_SPAWN = "magic/spawn.wav";
+		DMG_ZAP = Random(40, 60);
+		DOT_ZAP = 10.0;
+		DUR_ZAP = 5.0;
+		DMG_BARRIER = 10.0;
+		BARRIER_RAD = 96;
+		ZAP_FREQ = Random(10, 15);
+		ZAP_RANGE = 1024;
+		ATTACH_WAND = 0;
+		FREQ_ZAP = 30.0;
+		SOUND_BARRIER_REPELL = "doors/aliendoor3.wav";
+		SOUND_BARRIER_SPAWN = "magic/spawn.wav";
 	}
 
 	void skeleton_spawn()

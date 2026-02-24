@@ -8,30 +8,35 @@ namespace MS
 class AnimArcherHardRandom : CGameScript
 {
 	string ARMOR_TYPE;
+	int ARROW_DAMAGE_HIGH;
+	int ARROW_DAMAGE_LOW;
 	int ARROW_MISS_COUNT;
 	string AS_ATTACKING;
 	string CONTAINER_DROP_CHANCE;
 	string CONTAINER_SCRIPT;
 	string DAMAGE_TYPE;
 	string DROPS_CONTAINER;
+	int FIN_EXP;
 	int FLIGHT_STUCK;
 	int IMMUNE_VAMPIRE;
 	int IS_UNHOLY;
 	string LIGHT_COLOR;
+	int LIGHT_RAD;
 	int MOVE_RANGE;
 	string MY_LIGHT_SCRIPT;
+	int STUCK_SENSITIVITY;
 
 	AnimArcherHardRandom()
 	{
 		IS_UNHOLY = 1;
 		IMMUNE_VAMPIRE = 1;
-		const int LIGHT_RAD = 64;
-		const int STUCK_SENSITIVITY = 10;
+		LIGHT_RAD = 64;
+		STUCK_SENSITIVITY = 10;
 		MOVE_RANGE = 300;
-		const int FIN_EXP = 320;
+		FIN_EXP = 320;
 		Precache("monsters/animarmor_fly.mdl");
-		const int ARROW_DAMAGE_LOW = 30;
-		const int ARROW_DAMAGE_HIGH = 45;
+		ARROW_DAMAGE_LOW = 30;
+		ARROW_DAMAGE_HIGH = 45;
 	}
 
 	void OnRepeatTimer()

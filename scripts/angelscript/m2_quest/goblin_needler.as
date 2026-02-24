@@ -8,36 +8,47 @@ namespace MS
 class GoblinNeedler : CGameScript
 {
 	string ANIM_ATTACK;
+	string ARROW_SCRIPT;
 	int ATTACK_HITRANGE;
 	int ATTACK_RANGE;
 	int CAN_FIREBALL;
 	float CONTAINER_DROP_CHANCE;
 	string CONTAINER_SCRIPT;
+	int DMG_BOW;
+	int DMG_KICK;
 	int DROPS_CONTAINER;
-	string DROP_GOLD_AMT;
+	int DROP_GOLD_AMT;
+	float FREQ_KICK;
+	int GOB_CHARGER;
+	int GOB_JUMPER;
 	int KICK_ATTACK;
+	int KICK_HITCHANCE;
+	int KICK_RANGE;
 	int MOVE_RANGE;
+	int NEW_MODEL;
 	string NEXT_KICK;
+	int NPC_BASE_EXP;
 	int NPC_RANGED;
+	string SOUND_BOW;
 
 	GoblinNeedler()
 	{
-		const int NEW_MODEL = 1;
-		const int NPC_BASE_EXP = 50;
-		const string SOUND_BOW = "weapons/bow/bow.wav";
-		const int GOB_JUMPER = 0;
-		const int GOB_CHARGER = 0;
-		const string DMG_BOW = RandomInt(15, 25);
-		const string DMG_KICK = RandomInt(5, 10);
-		const int KICK_RANGE = 64;
-		const int KICK_HITCHANCE = 90;
-		const float FREQ_KICK = 10.0;
+		NEW_MODEL = 1;
+		NPC_BASE_EXP = 50;
+		SOUND_BOW = "weapons/bow/bow.wav";
+		GOB_JUMPER = 0;
+		GOB_CHARGER = 0;
+		DMG_BOW = RandomInt(15, 25);
+		DMG_KICK = RandomInt(5, 10);
+		KICK_RANGE = 64;
+		KICK_HITCHANCE = 90;
+		FREQ_KICK = 10.0;
 		CAN_FIREBALL = 0;
 		NPC_RANGED = 1;
 		DROPS_CONTAINER = 1;
 		CONTAINER_DROP_CHANCE = 0.1;
 		CONTAINER_SCRIPT = "chests/quiver_of_gpoison";
-		const string ARROW_SCRIPT = "proj_arrow_npc";
+		ARROW_SCRIPT = "proj_arrow_npc";
 		ANIM_ATTACK = "shootorcbow";
 	}
 

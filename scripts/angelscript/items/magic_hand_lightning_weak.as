@@ -8,31 +8,49 @@ namespace MS
 class MagicHandLightningWeak : CGameScript
 {
 	string LAST_CAST;
+	string LIGHT_COLOR;
+	int MELEE_ATK_DURATION;
+	int MELEE_DMG;
+	float MELEE_DMG_DELAY;
+	int MELEE_DMG_RANGE;
+	float MELEE_HITCHANCE;
+	int MELEE_NOAUTOAIM;
+	int MELEE_RANGE;
+	string MELEE_TYPE;
+	string SCRIPT_SFX_CAST;
+	float SCRIPT_SFX_DURATION;
+	string SCRIPT_SFX_PREP;
+	string SOUND_SHOOT;
+	string SPELL_DAMAGE_TYPE;
+	int SPELL_ENERGYDRAIN;
+	int SPELL_MPDRAIN;
+	int SPELL_PREPARE_TIME;
 	int SPELL_SKILL_REQUIRED;
+	string SPELL_STAT;
 	string script.npc;
 	int script.ramp;
 
 	MagicHandLightningWeak()
 	{
-		const string SOUND_SHOOT = "magic/cast.wav";
-		const int MELEE_RANGE = 500;
-		const float MELEE_HITCHANCE = 1.0;
-		const int MELEE_ATK_DURATION = 1;
-		const string MELEE_TYPE = "strike-land";
-		const int MELEE_DMG = 25;
-		const int MELEE_DMG_RANGE = 15;
-		const int MELEE_NOAUTOAIM = 1;
-		const float MELEE_DMG_DELAY = 0.4;
+		SOUND_SHOOT = "magic/cast.wav";
+		MELEE_RANGE = 500;
+		MELEE_HITCHANCE = 1.0;
+		MELEE_ATK_DURATION = 1;
+		MELEE_TYPE = "strike-land";
+		MELEE_DMG = 25;
+		MELEE_DMG_RANGE = 15;
+		MELEE_NOAUTOAIM = 1;
+		MELEE_DMG_DELAY = 0.4;
 		SPELL_SKILL_REQUIRED = 0;
-		const int SPELL_PREPARE_TIME = 2;
-		const string SPELL_DAMAGE_TYPE = "lightning_effect";
-		const int SPELL_ENERGYDRAIN = 10;
-		const int SPELL_MPDRAIN = 1;
-		const string SPELL_STAT = "spellcasting.lightning";
-		const string SCRIPT_SFX_CAST = "effects/sfx_lightning";
-		const string SCRIPT_SFX_PREP = "items/magic_hand_lightning_weak_cl";
-		const float SCRIPT_SFX_DURATION = 0.5;
-		const Vector3 LIGHT_COLOR = Vector3(30, 30, 253);
+		SPELL_PREPARE_TIME = 2;
+		SPELL_DAMAGE_TYPE = "lightning_effect";
+		SPELL_ENERGYDRAIN = 10;
+		SPELL_MPDRAIN = 1;
+		SPELL_STAT = "spellcasting.lightning";
+		SCRIPT_SFX_CAST = "effects/sfx_lightning";
+		SCRIPT_SFX_PREP = "items/magic_hand_lightning_weak_cl";
+		SCRIPT_SFX_DURATION = 0.5;
+		LIGHT_COLOR = Vector3(30, 30, 253);
 	}
 
 	void OnRepeatTimer()
@@ -72,7 +90,7 @@ class MagicHandLightningWeak : CGameScript
 		l.end += Vector3(0, 0, 4096);
 		string l.widthratio = GetSkillLevel(GetOwner(), "spellcasting.lightning.ratio");
 		l.widthratio *= 3;
-		// TODO: capvar l.widthratio 0 1
+		l.widthratio = max(0, min(1, l.widthratio));
 		ClientEvent("new", "all_in_sight", SCRIPT_SFX_CAST, param2, l.end, SCRIPT_SFX_DURATION, l.widthratio);
 		if (param1 == "npc")
 		{

@@ -5,19 +5,25 @@ namespace MS
 
 class BaseAoe : CGameScript
 {
+	int AOE_DMG;
+	int AOE_DMG_FREQ;
+	string AOE_DMG_TYPE;
+	int AOE_FREQ;
+	string AOE_FRIEND_FOE;
 	string AOE_ISPLAYER;
+	int AOE_RADIUS;
 	string AOE_TOKENS;
 	string GAME_PVP;
 	int IS_ACTIVE;
 
 	BaseAoe()
 	{
-		const int AOE_RADIUS = 256;
-		const int AOE_DMG_FREQ = 0;
-		const int AOE_DMG = 10;
-		const string AOE_DMG_TYPE = "fire";
-		const int AOE_FREQ = 0;
-		const string AOE_FRIEND_FOE = "enemy";
+		AOE_RADIUS = 256;
+		AOE_DMG_FREQ = 0;
+		AOE_DMG = 10;
+		AOE_DMG_TYPE = "fire";
+		AOE_FREQ = 0;
+		AOE_FRIEND_FOE = "enemy";
 	}
 
 	void OnSpawn() override

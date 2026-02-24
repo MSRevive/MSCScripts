@@ -14,12 +14,32 @@ class VgoblinChief : CGameScript
 	int ATTACK_RANGE;
 	int AXE_SWING;
 	int CAN_STUN;
+	string CHEW_SKULL_SCRIPT;
+	float CHEW_SKULL_STR;
+	string CL_SCRIPT;
+	int DMG_AXE;
+	int DMG_CHARGE;
+	int DMG_CLOUD;
+	int DOT_POISON;
 	int DROP_GOLD;
+	float FREQ_CLOUD;
+	float FREQ_SPECIAL;
 	int MOVE_RANGE;
 	string MY_CL_SCRIPT_IDX;
+	int NEW_MODEL;
+	int NPC_BASE_EXP;
+	string PLANT_SCRIPT;
+	int PLANT_STR;
 	string POISON_LIST;
-	string RND_SPECIAL;
+	int RND_SPECIAL;
+	float SKULL_DURATION;
+	string SOUND_ATTACK1;
+	string SOUND_ATTACK2;
+	string SOUND_ATTACK3;
+	string SPLODIE_SKULL_SCRIPT;
+	float SPLODIE_SKULL_STR;
 	int STARTED_CYCLES;
+	int STEP_SIZE_NORM;
 	string STUN_BURST_DMG;
 	string STUN_BURST_POS;
 	string STUN_BURST_RAD;
@@ -29,30 +49,30 @@ class VgoblinChief : CGameScript
 
 	VgoblinChief()
 	{
-		const int NEW_MODEL = 1;
-		const int NPC_BASE_EXP = 3000;
-		const string SOUND_ATTACK1 = "monsters/goblin/c_gargoyle_atk1.wav";
-		const string SOUND_ATTACK2 = "monsters/goblin/c_gargoyle_atk2.wav";
-		const string SOUND_ATTACK3 = "monsters/goblin/c_gargoyle_atk3.wav";
-		const int STEP_SIZE_NORM = 36;
-		const float FREQ_CLOUD = 1.5;
-		const int DMG_CLOUD = 20;
-		const string CL_SCRIPT = "monsters/vgoblin_chief_cl";
-		const string FREQ_SPECIAL = Random(10.0, 30.0);
+		NEW_MODEL = 1;
+		NPC_BASE_EXP = 3000;
+		SOUND_ATTACK1 = "monsters/goblin/c_gargoyle_atk1.wav";
+		SOUND_ATTACK2 = "monsters/goblin/c_gargoyle_atk2.wav";
+		SOUND_ATTACK3 = "monsters/goblin/c_gargoyle_atk3.wav";
+		STEP_SIZE_NORM = 36;
+		FREQ_CLOUD = 1.5;
+		DMG_CLOUD = 20;
+		CL_SCRIPT = "monsters/vgoblin_chief_cl";
+		FREQ_SPECIAL = Random(10.0, 30.0);
 		CAN_STUN = 1;
 		DROP_GOLD = 0;
 		ANIM_ATTACK = "battleaxe_swing1_L";
-		const string DMG_AXE = RandomInt(100, 300);
-		const int DOT_POISON = 50;
-		const int DMG_CHARGE = 50;
+		DMG_AXE = RandomInt(100, 300);
+		DOT_POISON = 50;
+		DMG_CHARGE = 50;
 		ATTACK_HITCHANCE = 0.9;
-		const string PLANT_SCRIPT = "monsters/summon/doom_plant";
-		const string CHEW_SKULL_SCRIPT = "monsters/lost_soul";
-		const string SPLODIE_SKULL_SCRIPT = "traps/splodie_skull";
-		const float SPLODIE_SKULL_STR = 1.0;
-		const float CHEW_SKULL_STR = 1.0;
-		const int PLANT_STR = 30;
-		const string SKULL_DURATION = Random(60.0, 120.0);
+		PLANT_SCRIPT = "monsters/summon/doom_plant";
+		CHEW_SKULL_SCRIPT = "monsters/lost_soul";
+		SPLODIE_SKULL_SCRIPT = "traps/splodie_skull";
+		SPLODIE_SKULL_STR = 1.0;
+		CHEW_SKULL_STR = 1.0;
+		PLANT_STR = 30;
+		SKULL_DURATION = Random(60.0, 120.0);
 	}
 
 	void game_precache()
@@ -161,7 +181,7 @@ class VgoblinChief : CGameScript
 	{
 		if (!(GOB_JUMPER)) return;
 		if (!(GOB_JUMP_SCANNING)) return;
-		string GOB_HOP_DELAY = Random(2, 4);
+		float GOB_HOP_DELAY = Random(2, 4);
 		GOB_HOP_DELAY("gob_jump_check");
 		if (!(m_hAttackTarget != "unset")) return;
 		if ((IS_FLEEING)) return;

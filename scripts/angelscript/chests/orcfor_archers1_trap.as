@@ -11,7 +11,7 @@ class OrcforArchers1Trap : CGameScript
 
 	void chest_additems()
 	{
-		add_gold(/* TODO: $math(multiply) */ 100);
+		add_gold((100 * G_GAVE_ARTI1));
 		if (G_GAVE_ARTI1 == 1)
 		{
 			add_good_item();
@@ -53,7 +53,7 @@ class OrcforArchers1Trap : CGameScript
 		SET_TRAP = 1;
 		string MSG_TITLE = GetEntityName(param1);
 		MSG_TITLE += " has triggered a trap!";
-		SendInfoMsg("all", "MSG_TITLE Oh noes!");
+		SendInfoMsg("all", MSG_TITLE + " Oh noes!");
 		UseTrigger("spawn_archers1_trap");
 	}
 

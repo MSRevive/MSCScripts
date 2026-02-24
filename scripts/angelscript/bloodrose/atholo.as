@@ -22,14 +22,14 @@ class Atholo : CGameScript
 	float BURST_FREQ;
 	int CAN_FLINCH;
 	string CHOSEN_ONE;
-	string DAMAGE_ATTACK1;
-	string DAMAGE_ATTACK2;
+	int DAMAGE_ATTACK1;
+	int DAMAGE_ATTACK2;
 	int FIREBALL_DELAY;
 	string FIREBALL_TARGET;
 	int FIRE_ATTACK;
-	string FIRE_DAMAGE;
+	int FIRE_DAMAGE;
 	float FIRE_DURATION;
-	string FREEZE_DAMAGE;
+	int FREEZE_DAMAGE;
 	float FREEZE_DURATION;
 	string GLOW_COLOR;
 	int GLOW_RAD;
@@ -39,8 +39,11 @@ class Atholo : CGameScript
 	string MONSTER_MODEL;
 	int MOVE_RANGE;
 	string MY_LIGHT_SCRIPT;
+	int NO_LOOP_DETECT;
 	int NO_STEP_ADJ;
 	int NPC_ALLY_RESPONSE_RANGE;
+	int NPC_BOSS_REGEN_RATE;
+	int NPC_BOSS_RESTORATION;
 	string NPC_GIVE_EXP;
 	string NPC_IS_BOSS;
 	int NPC_MUST_SEE_TARGET;
@@ -51,6 +54,7 @@ class Atholo : CGameScript
 	string SKEL_LIGHT_ID;
 	string SOUND_ATTACK1;
 	string SOUND_ATTACK2;
+	string SOUND_DEATH;
 	string SOUND_IDLE;
 	string SOUND_PAIN;
 	string SOUND_PISSED;
@@ -72,11 +76,11 @@ class Atholo : CGameScript
 		{
 			NPC_GIVE_EXP = 1500;
 		}
-		const int NPC_BOSS_REGEN_RATE = 0;
-		const int NPC_BOSS_RESTORATION = 0;
+		NPC_BOSS_REGEN_RATE = 0;
+		NPC_BOSS_RESTORATION = 0;
 		REGEN_AMT = 60;
 		REGEN_RATE = 5.0;
-		const int NPC_BOSS_REGEN_RATE = 0;
+		NPC_BOSS_REGEN_RATE = 0;
 		NPC_ALLY_RESPONSE_RANGE = 6000;
 		SOUND_STRUCK1 = "weapons/cbar_hitbod1.wav";
 		SOUND_STRUCK2 = "weapons/cbar_hitbod2.wav";
@@ -85,7 +89,7 @@ class Atholo : CGameScript
 		SOUND_ATTACK1 = "zombie/claw_miss1.wav";
 		SOUND_ATTACK2 = "zombie/claw_miss2.wav";
 		SOUND_PISSED = "garg/gar_die1.wav";
-		const string SOUND_DEATH = "garg/gar_die2.wav";
+		SOUND_DEATH = "garg/gar_die2.wav";
 		SOUND_TAUNT = "nihilanth/nil_die.wav";
 		SOUND_IDLE = "garg/gar_idle2.wav";
 		ATTACK_HITRANGE = 240;
@@ -116,7 +120,7 @@ class Atholo : CGameScript
 		NPC_MUST_SEE_TARGET = 0;
 		GLOW_COLOR = Vector3(255, 255, 128);
 		GLOW_RAD = 200;
-		const int NO_LOOP_DETECT = 1;
+		NO_LOOP_DETECT = 1;
 	}
 
 	void OnRepeatTimer()
@@ -313,7 +317,7 @@ class Atholo : CGameScript
 		EmitSound(GetOwner(), 0, SOUND_PISSED, 10);
 		SetSayTextRange(1024);
 		CAN_FLINCH = 1;
-		SayText("Fools! I shall destroy you all!");
+		SayText("Fools! " + I + " shall destroy you all!");
 	}
 
 	void my_target_died()

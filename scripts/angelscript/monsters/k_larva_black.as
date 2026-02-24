@@ -9,24 +9,35 @@ class KLarvaBlack : CGameScript
 {
 	int AM_BARFING;
 	int AM_EATING;
+	string ANIM_BARF;
 	string AS_ATTACKING;
+	int BARF_BONE;
+	int BARF_DUR;
 	string BARF_TARGETS;
+	string CL_SCRIPT;
 	int DID_WARCRY;
+	int DMG_CLAW1;
+	int DMG_CLAW2;
+	int DMG_LICK;
+	int DOT_BARF;
+	float FREQ_BARF;
+	int NPC_BASE_EXP;
+	string SOUND_BARF;
 	int STARTED_CYCLES;
 
 	KLarvaBlack()
 	{
-		const int NPC_BASE_EXP = 400;
-		const string DMG_LICK = RandomInt(40, 80);
-		const string DMG_CLAW1 = RandomInt(60, 120);
-		const string DMG_CLAW2 = RandomInt(60, 120);
-		const string FREQ_BARF = Random(10, 20);
-		const int BARF_BONE = 25;
-		const int BARF_DUR = 10;
-		const int DOT_BARF = 50;
-		const string ANIM_BARF = "idle2";
-		const string SOUND_BARF = "monsters/gonome/gonome_eat.wav";
-		const string CL_SCRIPT = "monsters/k_larva_black_cl";
+		NPC_BASE_EXP = 400;
+		DMG_LICK = RandomInt(40, 80);
+		DMG_CLAW1 = RandomInt(60, 120);
+		DMG_CLAW2 = RandomInt(60, 120);
+		FREQ_BARF = Random(10, 20);
+		BARF_BONE = 25;
+		BARF_DUR = 10;
+		DOT_BARF = 50;
+		ANIM_BARF = "idle2";
+		SOUND_BARF = "monsters/gonome/gonome_eat.wav";
+		CL_SCRIPT = "monsters/k_larva_black_cl";
 	}
 
 	void game_precache()

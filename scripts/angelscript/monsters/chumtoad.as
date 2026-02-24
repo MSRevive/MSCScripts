@@ -10,24 +10,57 @@ namespace MS
 class Chumtoad : CGameScript
 {
 	string ANIM_ATTACK;
+	string ANIM_CHARGE;
 	string ANIM_IDLE;
 	int ANIM_IDLE3_CHANCE;
 	string ANIM_RUN;
+	string ANIM_SUICIDE;
 	string ANIM_WALK;
+	int ATTACK_HITCHANCE;
 	int ATTACK_HITRANGE;
 	int ATTACK_MOVERANGE;
 	int ATTACK_RANGE;
 	int BLINK_CYCLE;
+	float BLINK_DUR;
+	int BLINK_FREQ;
+	int BLINK_MAX;
 	int BLINK_STEP;
 	int CANT_FLEE;
 	int CAN_FLINCH;
 	int CAN_RETALIATE;
+	string DEATH_SOUND1;
+	string DEATH_SOUND2;
+	string DEATH_SOUND3;
+	string DEATH_SOUND4;
 	int DO_IDLE_NOISES;
+	int EXPLOSION_DAMAGE;
+	string EXPLOSION_SFX;
+	string EXPLOSION_SFX_SOUND;
+	string EXPLOSION_SPRITE;
+	int FLEE_CHANCE;
+	int FLEE_HEALTH;
+	int GIB_BURSTER_FORCE;
+	string GIB_BURSTER_SCRIPT;
 	int HACKING_ATK_DIST;
+	string HIT_SOUNDS;
+	int IDLE_NOISE_FREQ;
+	string IDLE_SOUND1;
+	string IDLE_SOUND2;
+	string IDLE_SOUND3;
+	int LONG_ATTACK;
+	string MONSTER_HEALTH;
 	int NPC_GIVE_EXP;
 	int NPC_NO_ATTACK;
+	string PAIN_SOUND1;
+	string PAIN_SOUND2;
+	string PAIN_SOUND3;
+	int PITCH_MAX;
+	int PITCH_MIN;
+	int SHORT_ATTACK;
 	string SOUND_CHANNEL;
 	int SUICIDE_CHANCE;
+	int SUICIDE_DISTANCE;
+	float SUICIDE_THRESHOLD;
 	int SUICIDING;
 	int TRIED_SUICIDE;
 
@@ -41,50 +74,50 @@ class Chumtoad : CGameScript
 		ATTACK_MOVERANGE = 10;
 		ATTACK_RANGE = 50;
 		ATTACK_HITRANGE = 70;
-		const int ATTACK_HITCHANCE = 80;
-		const int FLEE_HEALTH = 0;
-		const int FLEE_CHANCE = 0;
+		ATTACK_HITCHANCE = 80;
+		FLEE_HEALTH = 0;
+		FLEE_CHANCE = 0;
 		CANT_FLEE = 1;
 		CAN_RETALIATE = 1;
 		CAN_FLINCH = 0;
-		const int EXPLOSION_DAMAGE = 65;
-		const string ANIM_CHARGE = "idle2";
-		const string ANIM_SUICIDE = "flinch1";
+		EXPLOSION_DAMAGE = 65;
+		ANIM_CHARGE = "idle2";
+		ANIM_SUICIDE = "flinch1";
 		ANIM_IDLE3_CHANCE = 5;
-		const int LONG_ATTACK = 35;
-		const int SHORT_ATTACK = 15;
-		const string MONSTER_HEALTH = GetEntityMaxHealth(GetOwner());
-		const string GIB_BURSTER_SCRIPT = "effects/sfx_gib_burst";
-		const int GIB_BURSTER_FORCE = 200;
-		const string EXPLOSION_SFX = "effects/sfx_sprite";
-		const string EXPLOSION_SPRITE = "oculus/exp_green.spr";
-		const string EXPLOSION_SFX_SOUND = "monsters/tube/Tube_ExplodingDeath.wav";
-		const string IDLE_SOUND1 = "monsters/ogre_welp/bc_idle2.wav";
-		const string IDLE_SOUND2 = "monsters/ogre_welp/bc_idle3.wav";
-		const string IDLE_SOUND3 = "monsters/ogre_welp/bc_idle4.wav";
-		const string DEATH_SOUND1 = "monsters/bat/pain1.wav";
-		const string DEATH_SOUND2 = "monsters/bat/pain2.wav";
-		const string DEATH_SOUND3 = "monsters/beetle/idle.wav2";
-		const string DEATH_SOUND4 = "monsters/beetle/idle3.wav";
-		const string PAIN_SOUND1 = "monsters/ogre_welp/bc_pain1.wav";
-		const string PAIN_SOUND2 = "monsters/ogre_welp/bc_pain2.wav";
-		const string PAIN_SOUND3 = "monsters/ogre_welp/bc_pain3.wav";
-		const string HIT_SOUNDS = "monsters/tube/TubeCritter_Hit1.wav;monsters/tube/TuberCritter_Hit2.wav;monsters/tube/TubeCritter_Hit3.wav";
-		const int PITCH_MIN = 30;
-		const int PITCH_MAX = 200;
+		LONG_ATTACK = 35;
+		SHORT_ATTACK = 15;
+		MONSTER_HEALTH = GetEntityMaxHealth(GetOwner());
+		GIB_BURSTER_SCRIPT = "effects/sfx_gib_burst";
+		GIB_BURSTER_FORCE = 200;
+		EXPLOSION_SFX = "effects/sfx_sprite";
+		EXPLOSION_SPRITE = "oculus/exp_green.spr";
+		EXPLOSION_SFX_SOUND = "monsters/tube/Tube_ExplodingDeath.wav";
+		IDLE_SOUND1 = "monsters/ogre_welp/bc_idle2.wav";
+		IDLE_SOUND2 = "monsters/ogre_welp/bc_idle3.wav";
+		IDLE_SOUND3 = "monsters/ogre_welp/bc_idle4.wav";
+		DEATH_SOUND1 = "monsters/bat/pain1.wav";
+		DEATH_SOUND2 = "monsters/bat/pain2.wav";
+		DEATH_SOUND3 = "monsters/beetle/idle.wav2";
+		DEATH_SOUND4 = "monsters/beetle/idle3.wav";
+		PAIN_SOUND1 = "monsters/ogre_welp/bc_pain1.wav";
+		PAIN_SOUND2 = "monsters/ogre_welp/bc_pain2.wav";
+		PAIN_SOUND3 = "monsters/ogre_welp/bc_pain3.wav";
+		HIT_SOUNDS = "monsters/tube/TubeCritter_Hit1.wav;monsters/tube/TuberCritter_Hit2.wav;monsters/tube/TubeCritter_Hit3.wav";
+		PITCH_MIN = 30;
+		PITCH_MAX = 200;
 		SUICIDE_CHANCE = 5;
-		const float SUICIDE_THRESHOLD = 0.7;
-		const int SUICIDE_DISTANCE = 100;
+		SUICIDE_THRESHOLD = 0.7;
+		SUICIDE_DISTANCE = 100;
 		SUICIDING = 0;
 		TRIED_SUICIDE = 0;
-		const int BLINK_FREQ = 5;
-		const float BLINK_DUR = 0.2;
+		BLINK_FREQ = 5;
+		BLINK_DUR = 0.2;
 		BLINK_STEP = 0;
-		const int BLINK_MAX = 2;
+		BLINK_MAX = 2;
 		BLINK_CYCLE = 1;
 		HACKING_ATK_DIST = 0;
 		DO_IDLE_NOISES = 1;
-		const int IDLE_NOISE_FREQ = 5;
+		IDLE_NOISE_FREQ = 5;
 		NPC_GIVE_EXP = 200;
 	}
 
@@ -128,7 +161,7 @@ class Chumtoad : CGameScript
 	{
 		string L_PROPS = GetEntityProperty(GetOwner(), "renderprops");
 		string L_SKIN = GetToken(L_PROPS, 4, ";");
-		BLINK_STEP = /* TODO: $math(add) */ BLINK_STEP;
+		BLINK_STEP = (BLINK_STEP + BLINK_CYCLE);
 		if (BLINK_STEP >= BLINK_MAX)
 		{
 			BLINK_CYCLE = -1;
@@ -157,7 +190,7 @@ class Chumtoad : CGameScript
 	void OnDamage(int damage) override
 	{
 		string L_HP = GetEntityHealth(GetOwner());
-		if (L_HP <= /* TODO: $math(multiply) */ MONSTER_HEALTH)
+		if (L_HP <= (MONSTER_HEALTH * SUICIDE_THRESHOLD))
 		{
 			if (!(TRIED_SUICIDE))
 			{
@@ -181,7 +214,7 @@ class Chumtoad : CGameScript
 			HACKING_ATK_DIST = 1;
 			string L_MULT = /* TODO: $get_scriptflag */ $get_scriptflag(L_TARGET, STACK_FLAG_NAME, "name_value");
 			L_MULT -= 0.1;
-			string L_PITCH = /* TODO: $ratio */ $ratio(/* TODO: $math(divide) */ L_MULT, PITCH_MIN, PITCH_MAX);
+			string L_PITCH = /* TODO: $ratio */ $ratio((L_MULT / STACK_MULT_MAX), PITCH_MIN, PITCH_MAX);
 			EmitSound(GetOwner(), SOUND_CHANNEL, GetRandomToken(HIT_SOUNDS, ";"), 10);
 		}
 	}
@@ -194,10 +227,10 @@ class Chumtoad : CGameScript
 			string L_HACK_START = GetEntityOrigin(GetOwner());
 			string L_HACK_END = GetEntityOrigin(param1);
 			string L_HACK_HITRANGE = ATTACK_HITRANGE;
-			L_HACK_HITRANGE += /* TODO: $math(divide) */ GetEntityWidth(param1);
+			L_HACK_HITRANGE += (GetEntityWidth(param1) / 2);
 			if ((IsValidPlayer(param1)))
 			{
-				L_HACK_HITRANGE += /* TODO: $math(divide) */ GetEntityHeight(param1);
+				L_HACK_HITRANGE += (GetEntityHeight(param1) / 2);
 			}
 			if (Distance(L_HACK_START, L_HACK_END) >= L_HACK_HITRANGE)
 			{

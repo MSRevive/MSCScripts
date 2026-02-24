@@ -8,12 +8,14 @@ class TntBombCl : CGameScript
 	int FX_ACTIVE;
 	string FX_DURATION;
 	string FX_OWNER;
+	string GLOW_COLOR;
+	int GLOW_RAD;
 	string LIGHT_IDX;
 
 	TntBombCl()
 	{
-		const int GLOW_RAD = 64;
-		const Vector3 GLOW_COLOR = Vector3(255, 64, 0);
+		GLOW_RAD = 64;
+		GLOW_COLOR = Vector3(255, 64, 0);
 	}
 
 	void client_activate()

@@ -7,27 +7,41 @@ namespace MS
 
 class SkeletonRavagerIce : CGameScript
 {
+	string CLAWFX_COLOR;
+	string DMG_CLAW_EFFECT;
+	int DMG_CLAW_EFFECT_DOT;
+	float DMG_CLAW_EFFECT_DUR;
+	int DMG_PROJECTILE;
+	float FREQ_PROJECTILE;
+	string MONSTER_MODEL;
+	int NPC_BASE_EXP;
 	int PASS_FREEZE_DMG;
 	float PASS_FREEZE_DUR;
+	string PROJECTILE_SCRIPT;
+	int PROJECTILE_SPEED;
+	string SOUND_ALERT1;
+	string SOUND_ALERT2;
+	string SOUND_PROJECTILE;
+	int USES_PROJECTILE;
 
 	SkeletonRavagerIce()
 	{
-		const int NPC_BASE_EXP = 600;
-		const int USES_PROJECTILE = 1;
-		const string PROJECTILE_SCRIPT = "proj_freezing_sphere";
-		const string FREQ_PROJECTILE = Random(5.0, 10.0);
-		const int DMG_PROJECTILE = 200;
-		const int PROJECTILE_SPEED = 150;
-		const string SOUND_PROJECTILE = "none";
+		NPC_BASE_EXP = 600;
+		USES_PROJECTILE = 1;
+		PROJECTILE_SCRIPT = "proj_freezing_sphere";
+		FREQ_PROJECTILE = Random(5.0, 10.0);
+		DMG_PROJECTILE = 200;
+		PROJECTILE_SPEED = 150;
+		SOUND_PROJECTILE = "none";
 		PASS_FREEZE_DMG = 50;
 		PASS_FREEZE_DUR = 5.0;
-		const Vector3 CLAWFX_COLOR = Vector3(128, 128, 255);
-		const string DMG_CLAW_EFFECT = "effects/dot_cold";
-		const float DMG_CLAW_EFFECT_DUR = 5.0;
-		const int DMG_CLAW_EFFECT_DOT = 75;
-		const string MONSTER_MODEL = "monsters/skeleton_ravenous_ele.mdl";
-		const string SOUND_ALERT1 = "monsters/undeadz/c_skeltwar_bat1.wav";
-		const string SOUND_ALERT2 = "monsters/undeadz/c_skeltwar_bat1.wav";
+		CLAWFX_COLOR = Vector3(128, 128, 255);
+		DMG_CLAW_EFFECT = "effects/dot_cold";
+		DMG_CLAW_EFFECT_DUR = 5.0;
+		DMG_CLAW_EFFECT_DOT = 75;
+		MONSTER_MODEL = "monsters/skeleton_ravenous_ele.mdl";
+		SOUND_ALERT1 = "monsters/undeadz/c_skeltwar_bat1.wav";
+		SOUND_ALERT2 = "monsters/undeadz/c_skeltwar_bat1.wav";
 	}
 
 	void skele_spawn()

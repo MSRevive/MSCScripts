@@ -7,14 +7,21 @@ namespace MS
 
 class ArmorHelmBarnum : CGameScript
 {
+	int ARMOR_BODY;
+	string ARMOR_MODEL;
+	string ARMOR_TEXT;
+	float BARMOR_PROTECTION;
+	string BARMOR_TYPE;
+	float STUN_PROTECTION;
+
 	ArmorHelmBarnum()
 	{
-		const string ARMOR_MODEL = "armor/p_helmets.mdl";
-		const int ARMOR_BODY = 6;
-		const string ARMOR_TEXT = "You equip the Helm of Darkness.";
-		const string BARMOR_TYPE = "platemail";
-		const float BARMOR_PROTECTION = 0.6;
-		const float STUN_PROTECTION = 0.75;
+		ARMOR_MODEL = "armor/p_helmets.mdl";
+		ARMOR_BODY = 6;
+		ARMOR_TEXT = "You equip the Helm of Darkness.";
+		BARMOR_TYPE = "platemail";
+		BARMOR_PROTECTION = 0.6;
+		STUN_PROTECTION = 0.75;
 	}
 
 	void OnSpawn() override

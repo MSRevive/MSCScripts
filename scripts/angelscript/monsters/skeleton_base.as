@@ -10,6 +10,8 @@ class SkeletonBase : CGameScript
 	int AM_SKELETON;
 	string ANIM_ATTACK;
 	string ANIM_DEATH;
+	string ANIM_DEATH_FAKE;
+	string ANIM_GETUP;
 	string ANIM_IDLE;
 	string ANIM_RESPAWN_DEADIDLE;
 	string ANIM_RUN;
@@ -21,17 +23,37 @@ class SkeletonBase : CGameScript
 	string MOVE_RANGE;
 	string MY_NAME;
 	int NO_STUCK_CHECKS;
+	int NPC_HANDLES_SUMMON_CIRCLES;
 	string NPC_PREV_TARGET;
 	int PLAYING_DEAD;
 	int SET_GREEK;
 	int SKELE_TEMP_DEATH;
 	int SKELE_TURNED;
+	int SKEL_ATTACK_HITRANGE;
+	int SKEL_ATTACK_RANGE;
+	int SKEL_HEIGHT;
+	string SKEL_MODEL;
+	int SKEL_MOVE_RANGE;
 	int SKEL_RESPAWN_TIMES;
 	string SKEL_SLAYER;
+	int SKEL_WIDTH;
 	string SK_BASE_ANIM_IDLE;
 	string SK_BASE_ANIM_RUN;
 	string SK_BASE_ANIM_WALK;
 	string SLEEPER;
+	string SOUND_ATTACK1;
+	string SOUND_ATTACK2;
+	string SOUND_DEATH;
+	string SOUND_HOLY_STRIKE;
+	string SOUND_STRUCK1;
+	string SOUND_STRUCK2;
+	string SOUND_STRUCK3;
+	string SOUND_STRUCK4;
+	string SOUND_STRUCK5;
+	string SOUND_TURNED1;
+	string SOUND_TURNED2;
+	string SOUND_TURNED3;
+	string SOUND_TURNED4;
 	int STRUCK_HOLY;
 
 	SkeletonBase()
@@ -40,30 +62,30 @@ class SkeletonBase : CGameScript
 		ANIM_IDLE = "idle1";
 		ANIM_ATTACK = "attack1";
 		ANIM_DEATH = "dieheadshot";
-		const string ANIM_DEATH_FAKE = "diesimple";
-		const string ANIM_GETUP = "getup";
-		const string SKEL_MODEL = "monsters/skeleton.mdl";
-		const int SKEL_WIDTH = 32;
-		const int SKEL_HEIGHT = 80;
-		const int SKEL_MOVE_RANGE = 32;
-		const int SKEL_ATTACK_RANGE = 64;
-		const int SKEL_ATTACK_HITRANGE = 127;
+		ANIM_DEATH_FAKE = "diesimple";
+		ANIM_GETUP = "getup";
+		SKEL_MODEL = "monsters/skeleton.mdl";
+		SKEL_WIDTH = 32;
+		SKEL_HEIGHT = 80;
+		SKEL_MOVE_RANGE = 32;
+		SKEL_ATTACK_RANGE = 64;
+		SKEL_ATTACK_HITRANGE = 127;
 		AM_SKELETON = 1;
-		const int NPC_HANDLES_SUMMON_CIRCLES = 1;
+		NPC_HANDLES_SUMMON_CIRCLES = 1;
 		I_AM_TURNABLE = 1;
-		const string SOUND_STRUCK1 = "weapons/cbar_hitbod1.wav";
-		const string SOUND_STRUCK2 = "weapons/cbar_hitbod2.wav";
-		const string SOUND_STRUCK3 = "weapons/cbar_hitbod3.wav";
-		const string SOUND_STRUCK4 = "zombie/zo_pain2.wav";
-		const string SOUND_STRUCK5 = "zombie/zo_pain2.wav";
-		const string SOUND_ATTACK1 = "zombie/claw_miss1.wav";
-		const string SOUND_ATTACK2 = "zombie/claw_miss2.wav";
-		const string SOUND_DEATH = "zombie/zo_pain1.wav";
-		const string SOUND_TURNED1 = "ambience/the_horror1.wav";
-		const string SOUND_TURNED2 = "ambience/the_horror2.wav";
-		const string SOUND_TURNED3 = "ambience/the_horror3.wav";
-		const string SOUND_TURNED4 = "ambience/the_horror4.wav";
-		const string SOUND_HOLY_STRIKE = "doors/aliendoor1.wav";
+		SOUND_STRUCK1 = "weapons/cbar_hitbod1.wav";
+		SOUND_STRUCK2 = "weapons/cbar_hitbod2.wav";
+		SOUND_STRUCK3 = "weapons/cbar_hitbod3.wav";
+		SOUND_STRUCK4 = "zombie/zo_pain2.wav";
+		SOUND_STRUCK5 = "zombie/zo_pain2.wav";
+		SOUND_ATTACK1 = "zombie/claw_miss1.wav";
+		SOUND_ATTACK2 = "zombie/claw_miss2.wav";
+		SOUND_DEATH = "zombie/zo_pain1.wav";
+		SOUND_TURNED1 = "ambience/the_horror1.wav";
+		SOUND_TURNED2 = "ambience/the_horror2.wav";
+		SOUND_TURNED3 = "ambience/the_horror3.wav";
+		SOUND_TURNED4 = "ambience/the_horror4.wav";
+		SOUND_HOLY_STRIKE = "doors/aliendoor1.wav";
 		Precache(SOUND_DEATH);
 		Precache(SOUND_TURNED1);
 		Precache(SOUND_TURNED2);
@@ -392,7 +414,7 @@ class SkeletonBase : CGameScript
 			int NO_REBIRTH = 1;
 			CallExternal(GAME_MASTER, "gm_fade", GetEntityIndex(GetOwner()));
 		}
-		string RND_DEATH = RandomInt(1, 4);
+		int RND_DEATH = RandomInt(1, 4);
 		if (RND_DEATH == 1)
 		{
 			ANIM_DEATH = "dieheadshot2";
@@ -440,8 +462,8 @@ class SkeletonBase : CGameScript
 		npcatk_suspend_movement(ANIM_RESPAWN_DEADIDLE);
 		NO_STUCK_CHECKS = 1;
 		PLAYING_DEAD = 1;
-		string L_REBIRTH_TIME = RandomInt(3.0, 5.0);
-		string L_GLOW_TIME = /* TODO: $math(add) */ L_REBIRTH_TIME;
+		int L_REBIRTH_TIME = RandomInt(3.0, 5.0);
+		string L_GLOW_TIME = (L_REBIRTH_TIME + 1);
 		Effect("glow", GetOwner(), Vector3(0, 0, 0), 72, L_GLOW_TIME, L_GLOW_TIME);
 		L_REBIRTH_TIME("skel_rebirth");
 	}
@@ -449,8 +471,8 @@ class SkeletonBase : CGameScript
 	void skel_rebirth()
 	{
 		ScheduleDelayedEvent(1.0, "skel_rebirth2");
-		SetHealth();
-		SetMaxHealth(* TODO: $math(divide) *);
+		SetHealth((GetEntityMaxHealth(GetOwner()) );
+		SetMaxHealth( 2));
 		NPC_GIVE_EXP /= 2;
 		SetSkillLevel(NPC_GIVE_EXP);
 		SKELE_TEMP_DEATH = 0;

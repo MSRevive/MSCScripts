@@ -20,7 +20,7 @@ class TriggerAvghp : CGameScript
 		LogDebug("HP_PRESENT vs HP_MIN to HP_MAX");
 		if ((G_DEVELOPER_MODE))
 		{
-			SendInfoMessageToAll("green HP_PRESENT vs HP_MIN - HP_MAX");
+			SendInfoMessageToAll("green " + HP_PRESENT + "vs " + HP_MIN + "- " + HP_MAX);
 		}
 		if (HP_PRESENT >= HP_MIN)
 		{

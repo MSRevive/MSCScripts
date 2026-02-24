@@ -7,16 +7,25 @@ namespace MS
 
 class ProjArrowLightning : CGameScript
 {
+	float ARROW_BREAK_CHANCE;
+	int ARROW_EXPIRE_DELAY;
+	int ARROW_SOLIDIFY_ON_WALL;
+	int ARROW_STICK_DURATION;
+	int CLFX_ARROW;
+	int MODEL_BODY_OFS;
+	int PROJ_DAMAGE;
+	string SPRITE_ARROW_TRADE;
+
 	ProjArrowLightning()
 	{
-		const int CLFX_ARROW = 1;
-		const string SPRITE_ARROW_TRADE = "firearrow";
-		const int MODEL_BODY_OFS = 0;
-		const string PROJ_DAMAGE = RandomInt(40, 80);
-		const int ARROW_STICK_DURATION = 25;
-		const int ARROW_SOLIDIFY_ON_WALL = 0;
-		const float ARROW_BREAK_CHANCE = 0.5;
-		const int ARROW_EXPIRE_DELAY = 10;
+		CLFX_ARROW = 1;
+		SPRITE_ARROW_TRADE = "firearrow";
+		MODEL_BODY_OFS = 0;
+		PROJ_DAMAGE = RandomInt(40, 80);
+		ARROW_STICK_DURATION = 25;
+		ARROW_SOLIDIFY_ON_WALL = 0;
+		ARROW_BREAK_CHANCE = 0.5;
+		ARROW_EXPIRE_DELAY = 10;
 	}
 
 	void arrow_spawn()

@@ -9,10 +9,13 @@ class Ron : CGameScript
 {
 	string ANIM_DEATH;
 	int MENU_OPEN;
+	int NO_JOB;
+	int NO_RUMOR;
 	int NO_SPAWN_STUCK_CHECK;
 	int NPC_NO_PLAYER_DMG;
 	int SAY_SO;
 	int SET_DESTINATION;
+	string SOUND_DEATH;
 	string STORE_NAME;
 	string STORE_TRIGGERTEXT;
 	string TRIGGER_OUT;
@@ -20,13 +23,13 @@ class Ron : CGameScript
 
 	Ron()
 	{
-		const string SOUND_DEATH = "none";
+		SOUND_DEATH = "none";
 		ANIM_DEATH = "diesimple";
 		STORE_NAME = "rons_shop";
 		STORE_TRIGGERTEXT = "store trade buy sell purchase sale offer";
 		SAY_SO = 0;
-		const int NO_JOB = 1;
-		const int NO_RUMOR = 1;
+		NO_JOB = 1;
+		NO_RUMOR = 1;
 		NO_SPAWN_STUCK_CHECK = 1;
 		VENDOR_NOT_ON_USE = 1;
 		NPC_NO_PLAYER_DMG = 1;

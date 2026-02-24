@@ -7,14 +7,21 @@ namespace MS
 
 class ItemHat : CGameScript
 {
+	int ARMOR_BODY;
+	string ARMOR_MODEL;
+	string ARMOR_TEXT;
+	float BARMOR_PROTECTION;
+	string BARMOR_TYPE;
+	int STUN_PROTECTION;
+
 	ItemHat()
 	{
-		const string ARMOR_MODEL = "armor/p_helmets.mdl";
-		const int ARMOR_BODY = 11;
-		const string ARMOR_TEXT = "You put on the funny hat.";
-		const string BARMOR_TYPE = "platemail";
-		const float BARMOR_PROTECTION = 0.0;
-		const int STUN_PROTECTION = 1;
+		ARMOR_MODEL = "armor/p_helmets.mdl";
+		ARMOR_BODY = 11;
+		ARMOR_TEXT = "You put on the funny hat.";
+		BARMOR_TYPE = "platemail";
+		BARMOR_PROTECTION = 0.0;
+		STUN_PROTECTION = 1;
 	}
 
 	void OnSpawn() override

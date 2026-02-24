@@ -5,12 +5,13 @@ namespace MS
 
 class SfxSpriteIn : CGameScript
 {
+	string SOUND_SPAWN;
 	string SPRITE_FRAMES;
 	string SPRITE_SCALE;
 
 	SfxSpriteIn()
 	{
-		const string SOUND_SPAWN = "magic/spawn_loud.wav";
+		SOUND_SPAWN = "magic/spawn_loud.wav";
 	}
 
 	void client_activate()

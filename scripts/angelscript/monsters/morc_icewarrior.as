@@ -9,12 +9,16 @@ namespace MS
 class MorcIcewarrior : CGameScript
 {
 	string ANIM_ATTACK;
+	float ATTACK_ACCURACY;
+	int ATTACK_DMG_HIGH;
+	int ATTACK_DMG_LOW;
 	int DROP_GOLD;
-	string DROP_GOLD_AMT;
+	int DROP_GOLD_AMT;
 	string DROP_ITEM1;
 	float DROP_ITEM1_CHANCE;
 	int FX_ATK;
 	int NPC_GIVE_EXP;
+	string SOUND_ICEATK;
 
 	MorcIcewarrior()
 	{
@@ -24,10 +28,10 @@ class MorcIcewarrior : CGameScript
 		DROP_ITEM1 = "swords_liceblade";
 		DROP_ITEM1_CHANCE = 0.05;
 		ANIM_ATTACK = "battleaxe_swing1_L";
-		const float ATTACK_ACCURACY = 0.75;
-		const int ATTACK_DMG_LOW = 30;
-		const int ATTACK_DMG_HIGH = 120;
-		const string SOUND_ICEATK = "debris/beamstart14.wav";
+		ATTACK_ACCURACY = 0.75;
+		ATTACK_DMG_LOW = 30;
+		ATTACK_DMG_HIGH = 120;
+		SOUND_ICEATK = "debris/beamstart14.wav";
 		Precache("monsters/morc.mdl");
 	}
 

@@ -11,6 +11,7 @@ class Fpriest : CGameScript
 	int ALREADYTALKING;
 	int BREAK_FADE;
 	int BUSY_CHATTING;
+	float CHAT_DELAY;
 	int CHAT_STEP;
 	string CHAT_STEP1;
 	string CHAT_STEP10;
@@ -29,14 +30,16 @@ class Fpriest : CGameScript
 	int IS_ACTIVE;
 	string MY_LIGHT_SCRIPT;
 	string MY_YAW;
+	int NO_JOB;
+	int NO_RUMOR;
 	string PLAYER_DETECT;
 	int USED_TRIGGER;
 
 	Fpriest()
 	{
-		const int NO_JOB = 1;
-		const int NO_RUMOR = 1;
-		const float CHAT_DELAY = 5.75;
+		NO_JOB = 1;
+		NO_RUMOR = 1;
+		CHAT_DELAY = 5.75;
 	}
 
 	void OnSpawn() override
@@ -248,7 +251,7 @@ class Fpriest : CGameScript
 
 	void greet2()
 	{
-		SayText("I am unsure as to who their master is or what their master plan is , but I think I know why they re here.");
+		SayText(I + "am unsure as to who their master is or what their master plan is , but " + I + "think " + I + " know why they re here.");
 		ScheduleDelayedEvent(5, "greet3");
 	}
 
@@ -281,7 +284,7 @@ class Fpriest : CGameScript
 
 	void greet8()
 	{
-		SayText("The process drained them so much that they died in the process. I fear that these orcs are intending");
+		SayText("The process drained them so much that they died in the process. " + I + " fear that these orcs are intending");
 	}
 
 	void greet9()
@@ -292,7 +295,7 @@ class Fpriest : CGameScript
 
 	void greet10()
 	{
-		SayText("I fear that the orcs may continue to try to release him if something isn t done...");
+		SayText(I + " fear that the orcs may continue to try to release him if something isn t done...");
 		ALREADYTALKING = 0;
 	}
 
@@ -308,7 +311,7 @@ class Fpriest : CGameScript
 
 	void crystal1()
 	{
-		SayText("I fear the orcs may be attempting to gather them to release the monster. When the crystals have");
+		SayText(I + " fear the orcs may be attempting to gather them to release the monster. When the crystals have");
 		ScheduleDelayedEvent(5, "crystal2");
 	}
 

@@ -6,18 +6,23 @@ namespace MS
 class BaseEffect : CGameScript
 {
 	string EFFECT_DURATION;
+	string EFFECT_FLAGS;
+	string EFFECT_ID;
+	string EFFECT_SCRIPT;
 	string EFFECT_STARTED;
 	string EFFECT_TIMELEFT;
+	string game.effect.flags;
 	string game.effect.id;
+	int game.effect.removeondeath;
 
 	BaseEffect()
 	{
-		const string EFFECT_ID = "base_effect";
-		const string EFFECT_FLAGS = "EFFECT_FLAGS";
-		const string EFFECT_SCRIPT = currentscript;
-		const int game.effect.removeondeath = 1;
+		EFFECT_ID = "base_effect";
+		EFFECT_FLAGS = "EFFECT_FLAGS";
+		EFFECT_SCRIPT = currentscript;
+		game.effect.removeondeath = 1;
 		game.effect.id = EFFECT_ID;
-		const string game.effect.flags = EFFECT_FLAGS;
+		game.effect.flags = EFFECT_FLAGS;
 	}
 
 	void game_precache()
@@ -39,14 +44,14 @@ class BaseEffect : CGameScript
 
 	void effect_duration_ended()
 	{
-		string L_END_TIME = /* TODO: $math(add) */ EFFECT_STARTED;
+		string L_END_TIME = (EFFECT_STARTED + EFFECT_DURATION);
 		if (GetGameTime() >= L_END_TIME)
 		{
 			RemoveScript();
 		}
 		else
 		{
-			string L_TIME_REMAINING = /* TODO: $math(subtract) */ L_END_TIME;
+			string L_TIME_REMAINING = (L_END_TIME - GetGameTime());
 			L_TIME_REMAINING("effect_duration_ended");
 		}
 	}
@@ -69,8 +74,8 @@ class BaseEffect : CGameScript
 
 	void effect_get_timeleft()
 	{
-		EFFECT_TIMELEFT = /* TODO: $math(subtract) */ GetGameTime();
-		EFFECT_TIMELEFT = /* TODO: $math(subtract) */ EFFECT_DURATION;
+		EFFECT_TIMELEFT = (GetGameTime() - EFFECT_STARTED);
+		EFFECT_TIMELEFT = (EFFECT_DURATION - EFFECT_TIMELEFT);
 	}
 
 	void effect_die()

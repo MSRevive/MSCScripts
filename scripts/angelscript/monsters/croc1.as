@@ -8,52 +8,70 @@ namespace MS
 class Croc1 : CGameScript
 {
 	string ANIM_ATTACK;
+	string ANIM_CUSTOM_FLINCH;
 	string ANIM_DEATH;
 	string ANIM_IDLE;
 	string ANIM_RUN;
+	string ANIM_RUN_NORMAL;
+	string ANIM_SWIM;
 	string ANIM_WALK;
 	int ATTACK_HITRANGE;
 	int ATTACK_MOVERANGE;
 	int ATTACK_RANGE;
 	int DID_INTRO;
+	int DMG_BITE;
+	int FISH_VRANGE;
+	int FISH_VSPEED_DOWN;
+	int FISH_VSPEED_UP;
 	string HALF_HP;
 	int MOVE_RANGE;
 	string NEXT_FLINCH;
 	string NEXT_IDLE_SOUND;
 	string NEXT_VICTORY;
 	int NPC_GIVE_EXP;
+	string SOUND_ATTACK1;
+	string SOUND_ATTACK2;
+	string SOUND_ATTACK3;
+	string SOUND_DEATH;
+	string SOUND_IDLE1;
+	string SOUND_IDLE2;
+	string SOUND_STEP1;
+	string SOUND_STEP2;
+	string SOUND_STRUCK1;
+	string SOUND_STRUCK2;
+	string SOUND_STRUCK3;
 	int STEP_COUNT;
 
 	Croc1()
 	{
-		const string ANIM_SWIM = "swim";
-		const string ANIM_RUN_NORMAL = "Run";
+		ANIM_SWIM = "swim";
+		ANIM_RUN_NORMAL = "Run";
 		ANIM_RUN = "Run";
 		ANIM_WALK = "Walk";
 		ANIM_IDLE = "idle";
 		ANIM_DEATH = "diesimple";
-		const string ANIM_CUSTOM_FLINCH = "Sflinch";
+		ANIM_CUSTOM_FLINCH = "Sflinch";
 		ANIM_ATTACK = "biteattack";
-		const int DMG_BITE = 300;
+		DMG_BITE = 300;
 		NPC_GIVE_EXP = 600;
 		MOVE_RANGE = 50;
 		ATTACK_MOVERANGE = 50;
 		ATTACK_RANGE = 80;
 		ATTACK_HITRANGE = 90;
-		const int FISH_VSPEED_UP = 25;
-		const int FISH_VSPEED_DOWN = -25;
-		const int FISH_VRANGE = 50;
-		const string SOUND_STEP1 = "monsters/gator/Gator_Footstep1.wav";
-		const string SOUND_STEP2 = "monsters/gator/Gator_Footstep2.wav";
-		const string SOUND_IDLE1 = "monsters/gator/Gator_IdleNormal_F0.wav";
-		const string SOUND_IDLE2 = "monsters/gator/Gator_IdleRoarLow_F0.wav";
-		const string SOUND_ATTACK1 = "monsters/gator/Gator_BiteAttack.wav";
-		const string SOUND_ATTACK2 = "monsters/gator/Gator_BiteAttack_1.wav";
-		const string SOUND_ATTACK3 = "monsters/gator/Gator_BiteAttack_2_f0.wav";
-		const string SOUND_STRUCK1 = "weapons/cbar_hitbod1.wav";
-		const string SOUND_STRUCK2 = "weapons/cbar_hitbod2.wav";
-		const string SOUND_STRUCK3 = "weapons/cbar_hitbod3.wav";
-		const string SOUND_DEATH = "monsters/Gator_DieSimple.wav";
+		FISH_VSPEED_UP = 25;
+		FISH_VSPEED_DOWN = -25;
+		FISH_VRANGE = 50;
+		SOUND_STEP1 = "monsters/gator/Gator_Footstep1.wav";
+		SOUND_STEP2 = "monsters/gator/Gator_Footstep2.wav";
+		SOUND_IDLE1 = "monsters/gator/Gator_IdleNormal_F0.wav";
+		SOUND_IDLE2 = "monsters/gator/Gator_IdleRoarLow_F0.wav";
+		SOUND_ATTACK1 = "monsters/gator/Gator_BiteAttack.wav";
+		SOUND_ATTACK2 = "monsters/gator/Gator_BiteAttack_1.wav";
+		SOUND_ATTACK3 = "monsters/gator/Gator_BiteAttack_2_f0.wav";
+		SOUND_STRUCK1 = "weapons/cbar_hitbod1.wav";
+		SOUND_STRUCK2 = "weapons/cbar_hitbod2.wav";
+		SOUND_STRUCK3 = "weapons/cbar_hitbod3.wav";
+		SOUND_DEATH = "monsters/Gator_DieSimple.wav";
 	}
 
 	void OnSpawn() override

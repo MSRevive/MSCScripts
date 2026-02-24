@@ -7,9 +7,11 @@ namespace MS
 
 class DwarfLanternStill : CGameScript
 {
+	int NO_WANDER;
+
 	DwarfLanternStill()
 	{
-		const int NO_WANDER = 1;
+		NO_WANDER = 1;
 	}
 
 	void dwarf_spawn()

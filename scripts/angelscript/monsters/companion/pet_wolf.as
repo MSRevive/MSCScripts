@@ -9,96 +9,144 @@ namespace MS
 class PetWolf : CGameScript
 {
 	string ACT_NAME;
+	string ANIM_ALERT;
 	string ANIM_ATTACK;
+	string ANIM_BITE;
+	string ANIM_CLAW;
 	string ANIM_DEATH;
+	string ANIM_EAT;
 	string ANIM_FLINCH;
+	string ANIM_FLINCH1;
+	string ANIM_FLINCH2;
+	string ANIM_FLINCH3;
+	string ANIM_HOWL;
 	string ANIM_IDLE;
+	string ANIM_IDLE_SIT;
+	string ANIM_IDLE_SIT2;
+	string ANIM_IDLE_STAND;
+	string ANIM_IDLE_STAND2;
+	string ANIM_IDLE_STAND3;
+	string ANIM_LEAP;
 	string ANIM_RUN;
+	string ANIM_RUN_BASE;
+	string ANIM_TOSTAND;
 	string ANIM_WALK;
+	string ANIM_WALK_BASE;
+	int ATTACK_HITCHANCE;
 	int ATTACK_HITRANGE;
 	int ATTACK_MOVERANGE;
 	int ATTACK_RANGE;
 	string ATTACK_TYPE;
+	int BASE_DMG;
+	int BASE_HP;
+	int CHANCE_CLAW;
+	int COMPANION_MAXHP;
 	string COMPANION_TYPE;
+	float DMG_BITE;
+	float DMG_CLAW;
 	string FLINCH_ANIM;
+	float FREQ_HOWL;
+	float FREQ_IDLE;
+	float FREQ_LOOK;
+	int HOVER_CLOSE;
+	int HOVER_FAR;
 	int IS_COMPANION;
 	int IS_HIRED;
+	int LEAP_RANGE;
+	int MAX_DMG;
 	int MELEE_ATTACK;
 	string NEXT_HOWL;
 	string NEXT_REFACE;
 	string NO_STUCK_CHECKS;
+	int NPC_BATTLE_ALLY;
 	int NPC_NO_PLAYER_DMG;
 	string NPC_REVIVAL_SCRIPT;
 	string PET_LAST_ATTACK;
 	int SEARCH_DELAY;
 	int SIT_MODE;
+	string SOUND_ATK1;
+	string SOUND_ATK2;
+	string SOUND_ATK3;
+	string SOUND_DEATH;
+	string SOUND_GROWL;
+	string SOUND_HOWL1;
+	string SOUND_HOWL2;
+	string SOUND_PAIN;
+	string SOUND_STRUCK1;
+	string SOUND_STRUCK2;
+	string SOUND_TELE;
+	string SOUND_YELP;
+	int SUMMON_CIRCLE_INDEX;
+	int SUMMON_RUN_DIST;
+	int SUM_NO_TALK;
+	float XPDMG_MULTI;
 
 	PetWolf()
 	{
 		IS_COMPANION = 1;
-		const int SUMMON_CIRCLE_INDEX = 13;
-		const int SUMMON_RUN_DIST = 160;
-		const string ANIM_WALK_BASE = "walk_wolf";
-		const string ANIM_RUN_BASE = "run_wolf";
-		const int BASE_HP = 150;
+		SUMMON_CIRCLE_INDEX = 13;
+		SUMMON_RUN_DIST = 160;
+		ANIM_WALK_BASE = "walk_wolf";
+		ANIM_RUN_BASE = "run_wolf";
+		BASE_HP = 150;
 		IS_HIRED = 1;
-		const int SUM_NO_TALK = 1;
-		const int COMPANION_MAXHP = 3000;
-		const int MAX_DMG = 50;
-		const float XPDMG_MULTI = 0.01;
-		const int BASE_DMG = 4;
+		SUM_NO_TALK = 1;
+		COMPANION_MAXHP = 3000;
+		MAX_DMG = 50;
+		XPDMG_MULTI = 0.01;
+		BASE_DMG = 4;
 		COMPANION_TYPE = "wolf";
 		ACT_NAME = "pet wolf";
 		NPC_REVIVAL_SCRIPT = currentscript;
-		const string SOUND_TELE = "monsters/wolves/wolf_atk2.wav";
-		const int HOVER_FAR = 256;
-		const int HOVER_CLOSE = 128;
+		SOUND_TELE = "monsters/wolves/wolf_atk2.wav";
+		HOVER_FAR = 256;
+		HOVER_CLOSE = 128;
 		ANIM_WALK = "walk_wolf";
 		ANIM_RUN = "run_wolf";
 		ANIM_IDLE = "standidle1";
 		ANIM_DEATH = "die1";
 		ANIM_ATTACK = "attack1";
 		ANIM_FLINCH = "hopback";
-		const string ANIM_LEAP = "attack2";
-		const string ANIM_CLAW = "attack2";
-		const string ANIM_HOWL = "howl";
-		const string ANIM_ALERT = "threat";
-		const string ANIM_IDLE_SIT = "sit_idle1";
-		const string ANIM_IDLE_SIT2 = "sit_idle2";
-		const string ANIM_IDLE_STAND = "standidle1";
-		const string ANIM_IDLE_STAND2 = "standidle2";
-		const string ANIM_IDLE_STAND3 = "guard";
-		const string ANIM_TOSTAND = "standup";
-		const string ANIM_BITE = "attack1";
-		const string ANIM_CLAW = "attack2";
-		const string ANIM_EAT = "eat";
-		const string ANIM_FLINCH1 = "hopback";
-		const string ANIM_FLINCH2 = "pain1";
-		const string ANIM_FLINCH3 = "pain2";
+		ANIM_LEAP = "attack2";
+		ANIM_CLAW = "attack2";
+		ANIM_HOWL = "howl";
+		ANIM_ALERT = "threat";
+		ANIM_IDLE_SIT = "sit_idle1";
+		ANIM_IDLE_SIT2 = "sit_idle2";
+		ANIM_IDLE_STAND = "standidle1";
+		ANIM_IDLE_STAND2 = "standidle2";
+		ANIM_IDLE_STAND3 = "guard";
+		ANIM_TOSTAND = "standup";
+		ANIM_BITE = "attack1";
+		ANIM_CLAW = "attack2";
+		ANIM_EAT = "eat";
+		ANIM_FLINCH1 = "hopback";
+		ANIM_FLINCH2 = "pain1";
+		ANIM_FLINCH3 = "pain2";
 		ATTACK_RANGE = 92;
 		ATTACK_HITRANGE = 128;
 		ATTACK_MOVERANGE = 72;
-		const int NPC_BATTLE_ALLY = 1;
+		NPC_BATTLE_ALLY = 1;
 		NPC_NO_PLAYER_DMG = 1;
-		const int ATTACK_HITCHANCE = 70;
-		const int LEAP_RANGE = 256;
-		const string DMG_BITE = Random(3.0, 6.0);
-		const string DMG_CLAW = Random(4.0, 5.0);
-		const float FREQ_LOOK = 20.0;
-		const string FREQ_IDLE = Random(10, 30);
-		const string FREQ_HOWL = Random(30, 60);
-		const int CHANCE_CLAW = 50;
-		const string SOUND_HOWL1 = "monsters/wolves/wolf_howl1.wav";
-		const string SOUND_HOWL2 = "monsters/wolves/wolf_howl2.wav";
-		const string SOUND_GROWL = "monsters/wolves/wolf_alert.wav";
-		const string SOUND_ATK1 = "monsters/wolves/wolf_atk1.wav";
-		const string SOUND_ATK2 = "monsters/wolves/wolf_atk2.wav";
-		const string SOUND_ATK3 = "monsters/wolves/wolf_atk3.wav";
-		const string SOUND_PAIN = "monsters/wolves/wolf_yelp1.wav";
-		const string SOUND_STRUCK1 = "weapons/cbar_hitbod1.wav";
-		const string SOUND_STRUCK2 = "weapons/cbar_hitbod2.wav";
-		const string SOUND_YELP = "monsters/wolves/wolf_yelp2.wav";
-		const string SOUND_DEATH = "monsters/wolves/wolf_death.wav";
+		ATTACK_HITCHANCE = 70;
+		LEAP_RANGE = 256;
+		DMG_BITE = Random(3.0, 6.0);
+		DMG_CLAW = Random(4.0, 5.0);
+		FREQ_LOOK = 20.0;
+		FREQ_IDLE = Random(10, 30);
+		FREQ_HOWL = Random(30, 60);
+		CHANCE_CLAW = 50;
+		SOUND_HOWL1 = "monsters/wolves/wolf_howl1.wav";
+		SOUND_HOWL2 = "monsters/wolves/wolf_howl2.wav";
+		SOUND_GROWL = "monsters/wolves/wolf_alert.wav";
+		SOUND_ATK1 = "monsters/wolves/wolf_atk1.wav";
+		SOUND_ATK2 = "monsters/wolves/wolf_atk2.wav";
+		SOUND_ATK3 = "monsters/wolves/wolf_atk3.wav";
+		SOUND_PAIN = "monsters/wolves/wolf_yelp1.wav";
+		SOUND_STRUCK1 = "weapons/cbar_hitbod1.wav";
+		SOUND_STRUCK2 = "weapons/cbar_hitbod2.wav";
+		SOUND_YELP = "monsters/wolves/wolf_yelp2.wav";
+		SOUND_DEATH = "monsters/wolves/wolf_death.wav";
 	}
 
 	void OnRepeatTimer()
@@ -136,7 +184,7 @@ class PetWolf : CGameScript
 		else
 		{
 			NO_STUCK_CHECKS = 0;
-			string RND_IDLE = RandomInt(1, 2);
+			int RND_IDLE = RandomInt(1, 2);
 			if (RND_IDLE == 1)
 			{
 				atk_sound();
@@ -293,7 +341,7 @@ class PetWolf : CGameScript
 
 	void OnFlinch()
 	{
-		string RND_FLINCH = RandomInt(1, 5);
+		int RND_FLINCH = RandomInt(1, 5);
 		if (RND_FLINCH == 1)
 		{
 			FLINCH_ANIM = ANIM_FLINCH2;
@@ -368,7 +416,7 @@ class PetWolf : CGameScript
 
 	void OnDeath(CBaseEntity@ attacker) override
 	{
-		string RND_DEATH = RandomInt(1, 2);
+		int RND_DEATH = RandomInt(1, 2);
 		if (RND_DEATH == 1)
 		{
 			ANIM_DEATH = "die1";
@@ -387,7 +435,7 @@ class PetWolf : CGameScript
 
 	void OnDeath(CBaseEntity@ attacker) override
 	{
-		SendInfoMsg(SUMMON_MASTER, "YOUR PET HAS BEEN SLAIN! COMPANION_NAME has been slain!");
+		SendInfoMsg(SUMMON_MASTER, "YOUR PET HAS BEEN SLAIN! " + COMPANION_NAME + " has been slain!");
 		summon_death();
 		bcompanion_un_regme();
 	}
@@ -448,7 +496,7 @@ class PetWolf : CGameScript
 		}
 		string ME_STRENGTH = DMG_FINAL;
 		SetSayTextRange(1024);
-		SayText("[status] HP HEALTH_STRING DMG/ATK: ME_STRENGTH XP: int(COMPANION_XP)");
+		SayText("[status] " + HP + HEALTH_STRING + DMG/ATK: + ME_STRENGTH + XP: + int(COMPANION_XP));
 	}
 
 	void OnHuntTarget(CBaseEntity@ target)

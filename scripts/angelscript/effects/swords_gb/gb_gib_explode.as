@@ -8,11 +8,12 @@ namespace MS
 class GbGibExplode : CGameScript
 {
 	string FX_DAMAGE;
+	string GIB_INFLICTER;
 	string SWORD_ID;
 
 	GbGibExplode()
 	{
-		const string GIB_INFLICTER = SWORD_ID;
+		GIB_INFLICTER = SWORD_ID;
 	}
 
 	void game_dynamically_created()

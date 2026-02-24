@@ -11,6 +11,7 @@ class BearBase : CGameScript
 	string ANIM_IDLE;
 	string ANIM_RUN;
 	string ANIM_WALK;
+	string BEAR_VOLUME;
 	int CAN_FLEE;
 	int CAN_HEAR;
 	int CAN_RETALIATE;
@@ -18,6 +19,16 @@ class BearBase : CGameScript
 	float DROP_ITEM1_CHANCE;
 	int HUNT_AGRO;
 	string NPC_HEAR_TARGET;
+	float RETALIATE_CHANGETARGET_CHANCE;
+	string SOUND_ATTACK1;
+	string SOUND_ATTACK2;
+	string SOUND_ATTACK3;
+	string SOUND_DEATH;
+	string SOUND_STRUCK1;
+	string SOUND_STRUCK2;
+	string SOUND_STRUCK3;
+	string SOUND_STRUCK4;
+	string SOUND_STRUCK5;
 
 	BearBase()
 	{
@@ -25,24 +36,24 @@ class BearBase : CGameScript
 		ANIM_RUN = "run";
 		ANIM_WALK = "walk";
 		ANIM_ATTACK = "attack";
-		const string SOUND_ATTACK1 = "monsters/bear/cubattack.wav";
-		const string SOUND_ATTACK2 = "zombie/claw_miss2.wav";
-		const string SOUND_ATTACK3 = "none";
-		const string SOUND_STRUCK1 = "weapons/cbar_hitbod1.wav";
-		const string SOUND_STRUCK2 = "weapons/cbar_hitbod2.wav";
-		const string SOUND_STRUCK3 = "weapons/cbar_hitbod3.wav";
-		const string SOUND_STRUCK4 = "monsters/bear/cubpain.wav";
-		const string SOUND_STRUCK5 = "none";
-		const string SOUND_DEATH = "monsters/bear/cubdeath.wav";
+		SOUND_ATTACK1 = "monsters/bear/cubattack.wav";
+		SOUND_ATTACK2 = "zombie/claw_miss2.wav";
+		SOUND_ATTACK3 = "none";
+		SOUND_STRUCK1 = "weapons/cbar_hitbod1.wav";
+		SOUND_STRUCK2 = "weapons/cbar_hitbod2.wav";
+		SOUND_STRUCK3 = "weapons/cbar_hitbod3.wav";
+		SOUND_STRUCK4 = "monsters/bear/cubpain.wav";
+		SOUND_STRUCK5 = "none";
+		SOUND_DEATH = "monsters/bear/cubdeath.wav";
 		HUNT_AGRO = 1;
 		CAN_FLEE = 0;
 		CAN_RETALIATE = 1;
-		const float RETALIATE_CHANGETARGET_CHANCE = 0.2;
+		RETALIATE_CHANGETARGET_CHANCE = 0.2;
 		CAN_HEAR = 1;
 		NPC_HEAR_TARGET = "enemy";
 		DROP_ITEM1 = "skin_bear";
 		DROP_ITEM1_CHANCE = 0.5;
-		const string BEAR_VOLUME = "game.sound.maxvol";
+		BEAR_VOLUME = "game.sound.maxvol";
 	}
 
 	void OnSpawn() override

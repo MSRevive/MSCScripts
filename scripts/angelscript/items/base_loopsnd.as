@@ -5,14 +5,18 @@ namespace MS
 
 class BaseLoopsnd : CGameScript
 {
+	string LOOPSND_CHANNEL;
+	int LOOPSND_LENGTH;
+	string LOOPSND_NAME;
 	int LOOPSND_ON;
+	string LOOPSND_VOLUME;
 
 	BaseLoopsnd()
 	{
-		const string LOOPSND_NAME = "none";
-		const int LOOPSND_LENGTH = 5;
-		const string LOOPSND_VOLUME = "const.snd.maxvol";
-		const string LOOPSND_CHANNEL = "const.sound.item";
+		LOOPSND_NAME = "none";
+		LOOPSND_LENGTH = 5;
+		LOOPSND_VOLUME = "const.snd.maxvol";
+		LOOPSND_CHANNEL = "const.sound.item";
 		Precache(LOOPSND_NAME);
 	}
 

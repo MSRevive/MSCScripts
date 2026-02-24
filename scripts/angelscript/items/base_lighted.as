@@ -5,10 +5,17 @@ namespace MS
 
 class BaseLighted : CGameScript
 {
+	int FRAMERATE;
+	int FRAMES;
+	string LIGHT_COLOR;
+	float LIGHT_DROPPED_SCALE;
+	float LIGHT_PLAYER_SCALE;
 	int LIGHT_RADIUS;
 	int L_ATTACH_BODY;
 	string L_ATTACH_MDL_ID;
 	string L_POS;
+	string SPRITE_FIRE;
+	string SPRITE_FIRE_FIXED;
 	string local.body;
 	string local.lightid;
 	int local.local3rdp_sprite;
@@ -18,16 +25,16 @@ class BaseLighted : CGameScript
 
 	BaseLighted()
 	{
-		const string SPRITE_FIRE = "fire1_fixed.spr";
-		const string SPRITE_FIRE_FIXED = "fire1_fixed.spr";
+		SPRITE_FIRE = "fire1_fixed.spr";
+		SPRITE_FIRE_FIXED = "fire1_fixed.spr";
 		LIGHT_RADIUS = 192;
-		const Vector3 LIGHT_COLOR = Vector3(255, 255, 128);
-		const float LIGHT_PLAYER_SCALE = 0.3;
-		const float LIGHT_DROPPED_SCALE = 0.5;
+		LIGHT_COLOR = Vector3(255, 255, 128);
+		LIGHT_PLAYER_SCALE = 0.3;
+		LIGHT_DROPPED_SCALE = 0.5;
 		Precache(SPRITE_FIRE);
 		Precache(SPRITE_FIRE_FIXED);
-		const int FRAMES = 23;
-		const int FRAMERATE = 30;
+		FRAMES = 23;
+		FRAMERATE = 30;
 		local.modelid = -1;
 		local.local3rdp_sprite = 0;
 		SetCallback("render", "enable");
@@ -118,7 +125,7 @@ class BaseLighted : CGameScript
 		ClientEffect("frameent", "set_current_prop", "movetype", 12);
 		ClientEffect("frameent", "set_current_prop", "body", L_ATTACH_BODY);
 		ClientEffect("frameent", "set_current_prop", "scale", local.scale);
-		string l.frame = GetGameTime();
+		float l.frame = GetGameTime();
 		l.frame -= START_BURNING;
 		l.frame *= FRAMERATE;
 		l.frame %= FRAMES;

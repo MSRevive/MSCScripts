@@ -8,19 +8,24 @@ class NhAppear : CGameScript
 	int ANG_COUNT;
 	int ANG_SPEED;
 	string F_SPRITE_SPEED;
+	string GLOW_COLOR;
+	int GLOW_RAD;
 	string MY_POS;
+	int ROT_RATE;
 	int SPRITES_ON;
+	int SPRITE_SPEED;
+	int START_DIST;
 	int X_ANG;
 	int Y_ANG;
 	int Z_ANG;
 
 	NhAppear()
 	{
-		const int GLOW_RAD = 512;
-		const Vector3 GLOW_COLOR = Vector3(256, 128, 64);
-		const int START_DIST = 256;
-		const int SPRITE_SPEED = 120;
-		const int ROT_RATE = 36;
+		GLOW_RAD = 512;
+		GLOW_COLOR = Vector3(256, 128, 64);
+		START_DIST = 256;
+		SPRITE_SPEED = 120;
+		ROT_RATE = 36;
 	}
 
 	void client_activate()

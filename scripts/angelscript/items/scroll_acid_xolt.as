@@ -7,12 +7,17 @@ namespace MS
 
 class ScrollAcidXolt : CGameScript
 {
+	int BASE_REQUIRED_LEVEL;
+	string BASE_REQUIRED_SKILL;
+	string BASE_SPELL_SCRIPT;
+	string BASE_SUMMON_TEXT;
+
 	ScrollAcidXolt()
 	{
-		const string BASE_SPELL_SCRIPT = "magic_hand_acid_bolt";
-		const string BASE_SUMMON_TEXT = "You learn to create acidic bolts.";
-		const string BASE_REQUIRED_SKILL = "skill.spellcasting.affliction";
-		const int BASE_REQUIRED_LEVEL = 15;
+		BASE_SPELL_SCRIPT = "magic_hand_acid_bolt";
+		BASE_SUMMON_TEXT = "You learn to create acidic bolts.";
+		BASE_REQUIRED_SKILL = "skill.spellcasting.affliction";
+		BASE_REQUIRED_LEVEL = 15;
 	}
 
 	void OnSpawn() override

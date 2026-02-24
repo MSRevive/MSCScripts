@@ -12,15 +12,17 @@ class SfxPoisonCloud : CGameScript
 	string FX_DURATION;
 	string FX_ORIGIN;
 	string FX_SOUND;
+	string SOUND_BURST;
 	float SPITE_GRAVITY;
-	string SPRITE_SCALE;
+	string SPRITE_NAME;
+	float SPRITE_SCALE;
 	int SPRITE_SCALE_MAX;
 	int SPRITE_SCALE_MIN;
 
 	SfxPoisonCloud()
 	{
-		const string SPRITE_NAME = "poison_cloud.spr";
-		const string SOUND_BURST = "ambience/steamburst1.wav";
+		SPRITE_NAME = "poison_cloud.spr";
+		SOUND_BURST = "ambience/steamburst1.wav";
 	}
 
 	void client_activate()
@@ -72,8 +74,8 @@ class SfxPoisonCloud : CGameScript
 	{
 		if (!(FX_ACTIVE)) return;
 		ScheduleDelayedEvent(0.25, "do_smokes");
-		string RND_DIST = Random(0, FX_AOE);
-		string RND_ANG = Random(0, 359.99);
+		float RND_DIST = Random(0, FX_AOE);
+		float RND_ANG = Random(0, 359.99);
 		int L_OFS_Z = 0;
 		string L_POS = FX_ORIGIN;
 		L_POS += /* TODO: $relpos */ $relpos(Vector3(0, RND_ANG, 0), Vector3(0, RND_DIST, L_OFS_Z));

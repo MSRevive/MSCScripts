@@ -6,6 +6,8 @@ namespace MS
 class Lstrike : CGameScript
 {
 	string CENTER_POINT;
+	float DUR_CENTER;
+	float DUR_SECONDARY;
 	int IS_ACTIVE;
 	int LBLAST_CUR_TARG;
 	string LBLAST_LOOPCOUNT;
@@ -29,8 +31,8 @@ class Lstrike : CGameScript
 
 	Lstrike()
 	{
-		const float DUR_CENTER = 15.0;
-		const float DUR_SECONDARY = 13.0;
+		DUR_CENTER = 15.0;
+		DUR_SECONDARY = 13.0;
 	}
 
 	void OnRepeatTimer()

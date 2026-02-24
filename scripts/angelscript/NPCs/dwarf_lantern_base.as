@@ -6,18 +6,22 @@ namespace MS
 class DwarfLanternBase : CGameScript
 {
 	string CUSTOM_LANTERN_COLOR;
+	float FREQ_LANTERNCL_REFRESH;
 	string LANTERN_ACTIVE;
 	string LANTERN_CL_IDX;
+	string LANTERN_COLOR;
+	int LANTERN_HAND_INDEX;
+	int LANTERN_HAND_SUBMODEL;
 	int LANTERN_ON;
 	int LANTERN_SET;
 	string NEXT_LANTERNCL_REFRESH;
 
 	DwarfLanternBase()
 	{
-		const float FREQ_LANTERNCL_REFRESH = 30.0;
-		const int LANTERN_HAND_SUBMODEL = 1;
-		const int LANTERN_HAND_INDEX = 1;
-		const Vector3 LANTERN_COLOR = Vector3(128, 64, 0);
+		FREQ_LANTERNCL_REFRESH = 30.0;
+		LANTERN_HAND_SUBMODEL = 1;
+		LANTERN_HAND_INDEX = 1;
+		LANTERN_COLOR = Vector3(128, 64, 0);
 	}
 
 	void game_precache()

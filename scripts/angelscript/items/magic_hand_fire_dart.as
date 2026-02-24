@@ -7,25 +7,38 @@ namespace MS
 
 class MagicHandFireDart : CGameScript
 {
+	int ANIM_CAST;
+	int RANGED_ATK_DURATION;
+	string RANGED_COF;
+	float RANGED_DMG_DELAY;
+	int RANGED_FORCE;
+	string RANGED_PROJECTILE;
+	string SOUND_CHARGE;
+	string SOUND_SHOOT;
+	string SPELL_DAMAGE_TYPE;
+	int SPELL_ENERGYDRAIN;
+	int SPELL_MPDRAIN;
+	int SPELL_PREPARE_TIME;
 	int SPELL_SKILL_REQUIRED;
+	string SPELL_STAT;
 	int baseitem.canidle;
 
 	MagicHandFireDart()
 	{
-		const int ANIM_CAST = 11;
-		const string SOUND_CHARGE = "magic/fireball_powerup.wav";
-		const string SOUND_SHOOT = "magic/fireball_strike.wav";
-		const int RANGED_FORCE = 1000;
-		const string RANGED_COF = "10;1";
-		const int RANGED_ATK_DURATION = 1;
-		const string RANGED_PROJECTILE = "proj_fire_dart";
-		const float RANGED_DMG_DELAY = 0.5;
+		ANIM_CAST = 11;
+		SOUND_CHARGE = "magic/fireball_powerup.wav";
+		SOUND_SHOOT = "magic/fireball_strike.wav";
+		RANGED_FORCE = 1000;
+		RANGED_COF = "10;1";
+		RANGED_ATK_DURATION = 1;
+		RANGED_PROJECTILE = "proj_fire_dart";
+		RANGED_DMG_DELAY = 0.5;
 		SPELL_SKILL_REQUIRED = 0;
-		const int SPELL_PREPARE_TIME = 4;
-		const string SPELL_DAMAGE_TYPE = "fire";
-		const int SPELL_ENERGYDRAIN = 5;
-		const int SPELL_MPDRAIN = 1;
-		const string SPELL_STAT = "spellcasting.fire";
+		SPELL_PREPARE_TIME = 4;
+		SPELL_DAMAGE_TYPE = "fire";
+		SPELL_ENERGYDRAIN = 5;
+		SPELL_MPDRAIN = 1;
+		SPELL_STAT = "spellcasting.fire";
 	}
 
 	void spell_spawn()

@@ -7,12 +7,17 @@ namespace MS
 
 class ScrollBlizzard : CGameScript
 {
+	int BASE_REQUIRED_LEVEL;
+	string BASE_REQUIRED_SKILL;
+	string BASE_SPELL_SCRIPT;
+	string BASE_SUMMON_TEXT;
+
 	ScrollBlizzard()
 	{
-		const string BASE_SPELL_SCRIPT = "magic_hand_blizzard";
-		const string BASE_SUMMON_TEXT = "You learn to create blizzards.";
-		const string BASE_REQUIRED_SKILL = "skill.spellcasting.ice";
-		const int BASE_REQUIRED_LEVEL = 8;
+		BASE_SPELL_SCRIPT = "magic_hand_blizzard";
+		BASE_SUMMON_TEXT = "You learn to create blizzards.";
+		BASE_REQUIRED_SKILL = "skill.spellcasting.ice";
+		BASE_REQUIRED_LEVEL = 8;
 	}
 
 	void OnSpawn() override
