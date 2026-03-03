@@ -48,6 +48,14 @@
 	array.create TC_ARTIFACT_CHANCE
 	array.create TC_STORE_GOLDS
 
+	array.create TC_ARTIFACT_GUARANTEED
+
+	array.create DROP_CHANCE_SCALING //base drop chance will be multiplied by these numbers
+	array.add DROP_CHANCE_SCALING 1.5 //if 4 players, check idx 0
+	array.add DROP_CHANCE_SCALING 1 //please always use 1 as base <3
+	array.add DROP_CHANCE_SCALING 0.5 //if 3-2 players, check idx 2 and 3
+	array.add DROP_CHANCE_SCALING 0.25 //if only 1 player, just use base
+
 	//set self adj level on spawn
 	//callevent theeventforselfadj
 }
@@ -130,7 +138,8 @@
 	//Must have at least 1% of highest player to qualify for regular loot
 	//Anything less and they get noob loot
 	
-	callexternal GAME_MASTER gm_find_strongest_reset
+	//callexternal GAME_MASTER gm_find_strongest_reset
+	callexternal GAME_MASTER gm_top_players_reset 1//Redundant? 
 	local L_HIGHEST_DMGPOINTS $get(GAME_MASTER,scriptvar,'STRONGEST_STAT_LEVEL')
 	
 	callexternal CHEST_USER ext_get_dmgpoints
@@ -203,8 +212,14 @@
 { tc_add_artifact //<scriptname> <%chance to drop 1-100>
 
 	setmodelbody 0 1 //using black treasure model
-	array.add TC_ARTIFACT PARAM1
-	array.add TC_ARTIFACT_CHANCE PARAM2
+	if ( PARAM2 >= 100 ) {
+		array.add TC_ARTIFACT_GUARANTEED PARAM1
+	}
+	else 
+	{
+		array.add TC_ARTIFACT PARAM1
+		array.add TC_ARTIFACT_CHANCE PARAM2
+	}
 }
 
 { tc_artifacts //rolls and gives artifacts to winners
@@ -213,69 +228,107 @@
 	setvard GAVE_ARTIFACTS 1
 	if $get_array_amt(TC_ARTIFACT) > 0
 	
-	getplayersarray TC_ARTIFACT_WINNERS
+	//getplayersarray TC_ARTIFACT_WINNERS
 	
-	callexternal GAME_MASTER gm_find_strongest_reset
+	//callexternal GAME_MASTER gm_find_strongest_reset
+	callexternal GAME_MASTER gm_top_players_reset 4
+	
+	setvard TC_ARTIFACT_WINNERS $get(GAME_MASTER,scriptvar,'SORTED_TOP_PLAYERS')
+	
 	setvard TC_HIGHEST_DMGPOINTS $get(GAME_MASTER,scriptvar,'STRONGEST_STAT_LEVEL')
 	setvard TC_ALL_DMGPOINTS 0
 	
-	calleventloop $get_array_amt(TC_ARTIFACT_WINNERS) tc_filter_winner_by_pts
-	
-	calleventloop $get_array_amt(TC_ARTIFACT_WINNERS) tc_filter_winner_by_roll
+	//calleventloop $get_array_amt(TC_ARTIFACT_WINNERS) tc_filter_winner_by_pts
+	calleventloop $get_token_amt(TC_ARTIFACT_WINNERS) tc_filter_winner_by_roll
 }
 
-{ tc_filter_winner_by_pts
+//{ tc_filter_winner_by_pts
+//
+//	if ( game.script.iteration == 0 ) setvard NUM_REMOVED 0
+//		
+//	local L_IDX $math(subtract,game.script.iteration,NUM_REMOVED)
+//	local L_PLAYER_ID $get_token(TC_ARTIFACT_WINNERS,L_IDX)
+//	
+//	callexternal L_PLAYER_ID ext_get_dmgpoints
+//	local L_MY_PTS $get(L_PLAYER_ID,scriptvar,'EXT_DMGPOINTS')
+//	
+//	if ( $math(divide,TC_HIGHEST_DMGPOINTS,100) <= L_MY_PTS )
+//	{
+//		add TC_ALL_DMGPOINTS L_MY_PTS //yayy i can roll
+//	}
+//	else //boo not enough pts...
+//	{
+//		array.del TC_ARTIFACT_WINNERS L_IDX
+//		add NUM_REMOVED 1
+//	}
+//}
 
-	if ( game.script.iteration == 0 ) setvard NUM_REMOVED 0
-		
-	local L_IDX $math(subtract,game.script.iteration,NUM_REMOVED)
-	local L_PLAYER_ID $get_array(TC_ARTIFACT_WINNERS,L_IDX)
+{ give_each_guaranteed_loop
+
+	local L_IDX game.script.iteration
 	
-	callexternal L_PLAYER_ID ext_get_dmgpoints
-	local L_MY_PTS $get(L_PLAYER_ID,scriptvar,'EXT_DMGPOINTS')
-	
-	if ( $math(divide,TC_HIGHEST_DMGPOINTS,100) <= L_MY_PTS )
-	{
-		add TC_ALL_DMGPOINTS L_MY_PTS //yayy i can roll
-	}
-	else //boo not enough pts...
-	{
-		array.del TC_ARTIFACT_WINNERS L_IDX
-		add NUM_REMOVED 1
-	}
+	local L_GUAR_ITEM $get_array(TC_ARTIFACT_GUARANTEED,L_IDX)
+	addstoreitem STORENAME L_GUAR_ITEM 1 0
 }
 
 { tc_filter_winner_by_roll //instantly rolls all artifact chances to avoid roll chance manipulation
-
+	
 	//if ( game.script.iteration == 0 ) setvard NUM_REMOVED 0
 	
 	local L_IDX game.script.iteration //$math(subtract,game.script.iteration,NUM_REMOVED)
-	local L_PLAYER_ID $get_array(TC_ARTIFACT_WINNERS,L_IDX)
+	local L_PLAYER_ID $get_token(TC_ARTIFACT_WINNERS,L_IDX)
+	setvard STORENAME $func(func_make_store_string,L_PLAYER_ID)
+	
+	add TC_ALL_DMGPOINTS $get(L_PLAYER_ID,scriptvar,'EXT_DMGPOINTS')
 	
 	callexternal L_PLAYER_ID ext_get_dmgpoints
-	local L_ROLL_MULTIPLIER $get(L_PLAYER_ID,scriptvar,'EXT_DMGPOINTS') 
-	divide L_ROLL_MULTIPLIER TC_ALL_DMGPOINTS
+
+	local L_POINTS $get(L_PLAYER_ID,scriptvar,'EXT_DMGPOINTS')
+	
+	if L_POINTS >= 1  //Require more than 1k dmgpoints
+	
+	setvard CHEST_USER L_PLAYER_ID
+	callevent tc_make_and_populate_store
+	calleventloop $get_array_amt(TC_ARTIFACT_GUARANTEED) give_each_guaranteed_loop
+	
+	if ( $get_array_amt(TC_ARTIFACT) < 1 )
+	{
+		breakloop
+	}
+	setvard DROP_SCALING_IDX 0
+	
+	if ( $get_token_amt(TC_ARTIFACT_WINNERS) < 4 ) //Less than 4 players, don't give bonus to highest damage scorer
+	{
+		add DROP_SCALING_IDX 1
+	}
+	
+	add DROP_SCALING_IDX L_IDX
+	
+	if ( DROP_SCALING_IDX > $get_array_amt(DROP_CHANCE_SCALING) )
+	{
+		breakloop
+	}
+	
+	local L_ROLL_MULTIPLIER $get_array(DROP_CHANCE_SCALING,DROP_SCALING_IDX)
+	
+	//divide L_ROLL_MULTIPLIER TC_ALL_DMGPOINTS
 	
 	local L_RAND_IDX $get_array_amt(TC_ARTIFACT)
 	subtract L_RAND_IDX 1
 	local L_RAND_IDX $rand(0,L_RAND_IDX)
 	
 	local L_CHANCE $get_array(TC_ARTIFACT_CHANCE,L_RAND_IDX)
-	if ( TC_ALL_DMGPOINTS != 0 )
+	if ( L_CHANCE != 100 ) //100% chance does not get split among players. Everyone gets one.
 	{
-		if ( L_CHANCE != 100 ) //100% chance does not get split among players. Everyone gets one.
-		{
-			multiply L_CHANCE L_ROLL_MULTIPLIER
-		}
+		multiply L_CHANCE L_ROLL_MULTIPLIER
 	}
+	
 	
 	if ( $randf(0,100) <= L_CHANCE ) //winnar! put this item in the chest.
 	{
-		setvard STORENAME $func(func_make_store_string,L_PLAYER_ID)
-		setvard CHEST_USER L_PLAYER_ID
-		callevent tc_make_and_populate_store
-		
 		addstoreitem STORENAME $get_array(TC_ARTIFACT,L_RAND_IDX) 1 0
+		array.del TC_ARTIFACT L_RAND_IDX //Remove the artifact
+		array.del TC_ARTIFACT_CHANCE L_RAND_IDX //Remove associated drop chance
 	}
 }
 

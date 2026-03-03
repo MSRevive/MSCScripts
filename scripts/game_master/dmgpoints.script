@@ -14,6 +14,11 @@
 		}
 	}
 	
+	//setvard POINTS_ILIST '' //create and then empty
+	//token.del POINTS_ILIST 0
+	
+	setvard SORTED_TOP_PLAYERS 'SORTED_TOP_PLAYERS' //same
+	token.del SORTED_TOP_PLAYERS 0
 	//First rand does not include a zero so that the code can never evaluate to 0
 	if ( L_GENERATE_CODE ) setvarg G_DM_CODE $rand(1,9) $rand(0,9) $rand(0,9) $rand(0,9) $rand(0,9) $rand(0,9)
 }
@@ -25,8 +30,7 @@
 	setvard STRONGEST_IDX 0
 	setvard STRONGEST_STAT_LEVEL 0
 	if ( STRONGEST_PLAYER_LIST equals 'STRONGEST_PLAYER_LIST' ) getplayersnb STRONGEST_PLAYER_LIST
-	calleventloop $get_token_amt(STRONGEST_PLAYER_LIST) find_strongest_player_loop
-	setvard THE_CHOSEN_ONE $get_token(STRONGEST_PLAYER_LIST,STRONGEST_IDX)
+	//calleventloop $get_token_amt(STRONGEST_PLAYER_LIST) find_strongest_player_loop
 	setvard THE_CHOSEN_ONE_IDX STRONGEST_IDX
 	token.del PLAYER_LIST STRONGEST_IDX
 	//callevent inform_player //SEP2009 event not used (probably hold over from arti-chest)
@@ -40,7 +44,7 @@
 { find_strongest_player_loop
 
 	local CUR_IDX game.script.iteration
-	local CUR_PLAYER $get_token(STRONGEST_PLAYER_LIST,CUR_IDX)
+	local CUR_PLAYER $get_token(POINTS_ILIST,CUR_IDX)
 	
 	callexternal CUR_PLAYER ext_get_dmgpoints
 	local PLAYER_STAT $get(CUR_PLAYER,scriptvar,'EXT_DMGPOINTS') 
@@ -50,4 +54,51 @@
 		setvard STRONGEST_STAT_LEVEL PLAYER_STAT
 		setvard STRONGEST_IDX CUR_IDX
 	}
+}
+
+{ gm_top_players_reset //PARAM1 loop limit
+	setvard SORTED_TOP_PLAYERS 'SORTED_TOP_PLAYERS'
+	token.del SORTED_TOP_PLAYERS 0
+	callevent gm_find_top_players PARAM1
+}
+
+{ gm_find_top_players //PARAM1 max num of players to return
+
+	setvard STRONGEST_PLAYER_LIST 'STRONGEST_PLAYER_LIST'
+	getplayersnb POINTS_ILIST //Temp until gm_add_map_player works properly
+	
+	setvard LOOP_LIMIT PARAM1
+	local L_DMG_PLAYERS_AMT $get_token_amt(POINTS_ILIST)
+
+	if ( L_DMG_PLAYERS_AMT < LOOP_LIMIT )
+	{
+		setvard LOOP_LIMIT L_DMG_PLAYERS_AMT
+	}
+	if ( STRONGEST_PLAYER_LIST equals 'STRONGEST_PLAYER_LIST' ) getplayersnb STRONGEST_PLAYER_LIST
+	calleventloop LOOP_LIMIT find_top_players_loop
+	setvard THE_CHOSEN_ONE $get_token(STRONGEST_PLAYER_LIST,THE_CHOSEN_ONE_IDX)
+}
+
+{ find_top_players_loop // heavily influenced by the points command of world/server/commands (Sorry!)
+
+	local L_CUR_TOP_IDX game.script.iteration
+	setvard STRONGEST_IDX 0
+	setvard STRONGEST_STAT_LEVEL 0
+
+	//setvard CUR_PLR_ID $get_token(POINTS_ILIST,L_CUR_TOP_IDX)  //Player id
+
+	calleventloop LOOP_LIMIT find_strongest_player_loop 
+	
+	token.add SORTED_TOP_PLAYERS $get_token(POINTS_ILIST,STRONGEST_IDX) //Hopefully a concise enough name
+	
+	token.del POINTS_ILIST STRONGEST_IDX 
+}
+
+{ gm_add_map_player
+	
+	if PARAM1 isnot 'PARAM1'
+	if $get_find_token(POINTS_ILIST,PARAM1) < 0
+
+	//token.add POINTS_ILIST PARAM1 //Figure out why this is broken in future
+
 }
