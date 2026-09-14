@@ -51,6 +51,20 @@
 	const FREQ_SUMMON 17.0
 
 	precache monsters/bat.mdl
+
+	//Box is built at spawn from width/height. bat_base delays bat_spawn 0.1, so
+	//setting them down there is too late, they were never being read.
+	width 72
+	height 48
+
+	const BBOX_WIDE 36
+	const BBOX_LOW 26
+	const BBOX_HIGH 26
+	const BBOX_REAPPLY 1
+	const BBOX_REPORT 0
+
+	const MAX_HOVER 40 //max height above his target
+	const SINK_STEP 8 //units pulled down per check
 }
 
 #include monsters/bat_base
@@ -60,15 +74,40 @@
    name Giant Bat
    hp 500
    //fov 359
-   width 70
-   height 70
-	//setbbox npcsize
+   //width/height live up top now, too late to matter here
+
+   setbbox $vec(-BBOX_WIDE,-BBOX_WIDE,-BBOX_LOW) $vec(BBOX_WIDE,BBOX_WIDE,BBOX_HIGH)
    hearingsensitivity 10
    setmodel monsters/giant_bat.mdl
    volume 10
    
    race demon
 
+}
+
+{
+	repeatdelay 0.2
+
+	//re-applied here - on a slower timer it kept reverting between checks
+	if ( BBOX_REAPPLY ) setbbox $vec(-BBOX_WIDE,-BBOX_WIDE,-BBOX_LOW) $vec(BBOX_WIDE,BBOX_WIDE,BBOX_HIGH)
+	if ( BBOX_REPORT ) messageall green giant bat box $get(ent_me,mins) to $get(ent_me,maxs)
+
+	//keep him low enough to swing at
+	if IS_HUNTING
+	local L_TARG $get(NPCATK_TARGET,origin)
+	local L_CEIL $vec.z(L_TARG)
+	add L_CEIL MAX_HOVER
+
+	local L_ORG $get(ent_me,origin)
+	local L_MYZ $vec.z(L_ORG)
+	if ( L_MYZ > L_CEIL )
+	{
+		local L_NEWZ L_MYZ
+		subtract L_NEWZ SINK_STEP
+		if ( L_NEWZ < L_CEIL ) local L_NEWZ L_CEIL
+		vectorset L_ORG z L_NEWZ
+		setorigin ent_me L_ORG
+	}
 }
 
 { bat_hang

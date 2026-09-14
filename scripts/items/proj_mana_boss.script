@@ -1,0 +1,198 @@
+//Manabolt for npc bosses, off items/proj_mana2 - Dravus
+//Tighter scan than the player version so fast bolts don't slip/blink between checks,
+//and the radius isn't capped to the player value
+
+{
+	const SOUND_SHOOT ambience/alienflyby1.wav
+	const SOUND_ZAP debris/zap1.wav
+
+	const CLFX_ARROW_SCRIPT items/proj_mana2_cl
+
+	const SCAN_RATE 0.1 //player version uses 0.3
+	const RETICK_DELAY 0.55
+	const SCAN_PER_SIZE 10 //proj_mana 16, player 24, both read too wide
+	const SCAN_MIN 55
+	const SCAN_MAX 140
+	const MIN_TRAVEL 16 //less than this in a scan and it's stuck on something
+	const BLOCK_LIMIT 3 //blocked scans in a row before it dies, lets it clip corners
+	const FOLLOW_FLOOR 1 //ride the floor instead of dying on it
+	const FLOOR_OFS 24 //how high off the floor it rides
+	const SINK_RATE 0 //drop per scan toward FLOOR_OFS, 0 = no forced descent
+}
+
+{ game_spawn
+
+	name Manabolt
+	desc Manabolt
+	width 0
+	height 0
+	weight 	0
+	gravity	0
+	setmonsterclip 0
+	invincible 1
+	race beloved
+	
+	setmodel none
+	
+	callevent 10.0 remove_projectile
+}
+
+{ game_dynamically_created //<owner> <vec> <ballSize> <damage> <skill to level> [mode]
+
+	setvard FX_OWNER PARAM1
+	setvard FX_VEL PARAM2
+	setvard FX_SIZE PARAM3
+	setvard FX_DAMAGE PARAM4
+	setvard FX_SKILL PARAM5
+
+	setvard FX_MODE PARAM6
+	if ( FX_MODE startswith 'PARAM' ) setvard FX_MODE shrink
+	
+	setvard SCAN_SIZE $func(func_get_scan_size)
+
+	setvelocity ent_me FX_VEL
+	svsound.play3d SOUND_SHOOT 2.5 $get(ent_me,origin) 0 4
+
+	setvard DAMAGE_LIST ''
+	setvard BLOCK_COUNT 0
+	setvard NEXT_RETICK 0
+
+	setvard FX_SIZE_START FX_SIZE
+	setvard FX_DAMAGE_START FX_DAMAGE
+
+	setvard PREV_SCAN $get(ent_me,origin)
+	callevent SCAN_RATE scan_cycle
+
+	callevent create_clfx
+	
+	setprop ent_me movetype 11
+	setprop ent_me friction 10000
+	setprop ent_me solid 0
+}
+
+{ create_clfx
+	if ( !CLFX_ARROW_INIT )
+	{
+		setvard CLFX_ARROW_INIT 1
+		setvard CLFX_ARROW_IN_FLIGHT 1
+
+		clientevent new all CLFX_ARROW_SCRIPT $get(ent_me,origin) $get(ent_me,angles) $get(ent_me,velocity) FX_SIZE
+		setvard CLFX_ARROW_IDX game.script.last_sent_id
+	}
+}
+
+{ scan_cycle
+
+	local L_ORG $get(ent_me,origin)
+
+	if ( FOLLOW_FLOOR )
+	{
+		local L_GROUND $get_ground_height(L_ORG)
+		local L_RIDEZ L_GROUND
+		add L_RIDEZ FLOOR_OFS
+		local L_MYZ $vec.z(L_ORG)
+
+		if ( L_MYZ < L_RIDEZ )
+		{
+			vectorset L_ORG z L_RIDEZ
+			setorigin ent_me L_ORG
+		}
+		if ( L_MYZ > L_RIDEZ )
+		{
+			local L_DROP L_MYZ
+			subtract L_DROP SINK_RATE
+			if ( L_DROP < L_RIDEZ ) local L_DROP L_RIDEZ
+			vectorset L_ORG z L_DROP
+			setorigin ent_me L_ORG
+		}
+	}
+
+	local L_FLAT L_ORG
+	vectorset L_FLAT z $vec.z(PREV_SCAN)
+	local L_TRACE $get_traceline(PREV_SCAN,L_FLAT,worldonly)
+	if ( L_TRACE isnot L_FLAT )
+	{
+		add BLOCK_COUNT 1
+		if ( BLOCK_COUNT >= BLOCK_LIMIT )
+		{
+			callevent remove_projectile
+			local EXIT_SUB 1
+		}
+	}
+	else setvard BLOCK_COUNT 0
+	if !EXIT_SUB
+
+	if ( $dist(L_ORG,PREV_SCAN) > MIN_TRAVEL )
+	{
+		setvard PREV_SCAN L_ORG
+
+		if ( game.time > NEXT_RETICK )
+		{
+			setvard DAMAGE_LIST ''
+			setvard NEXT_RETICK game.time
+			add NEXT_RETICK RETICK_DELAY
+		}
+
+		setvard SCAN_TARGS $get_tsphere(any,SCAN_SIZE,$get(ent_me,origin))
+		if ( SCAN_TARGS isnot none ) calleventloop $get_token_amt(SCAN_TARGS) damage_targets
+
+		callevent SCAN_RATE scan_cycle
+	}
+	else
+	{
+		callevent remove_projectile
+	}
+}
+
+{ damage_targets
+
+	local CUR_TARG $get_token(SCAN_TARGS,game.script.iteration)
+
+	if ( DAMAGE_LIST contains CUR_TARG ) local EXIT_SUB 1
+	if !EXIT_SUB
+	if $get(CUR_TARG,relationship,FX_OWNER) equals enemy
+
+	xdodamage $get(ent_me,origin) $get(CUR_TARG,origin) FX_DAMAGE 100% FX_OWNER ent_me FX_SKILL magic
+
+	token.add DAMAGE_LIST CUR_TARG
+
+	if ( FX_MODE isnot persist ) callevent shrink_ball
+}
+
+{ shrink_ball
+
+	subtract FX_SIZE 1
+	if ( FX_SIZE > 0 )
+	{
+		setvard SCAN_SIZE $func(func_get_scan_size)
+
+		local L_DMG FX_DAMAGE_START
+		multiply L_DMG FX_SIZE
+		divide L_DMG FX_SIZE_START
+		setvard FX_DAMAGE L_DMG
+
+		clientevent update all CLFX_ARROW_IDX reduce_size
+	}
+	else callevent remove_projectile
+}
+
+{ remove_projectile 
+
+	svsound.play3d SOUND_ZAP 4 $get(ent_me,origin) 0 4
+	clientevent update all CLFX_ARROW_IDX end_fx
+	deleteme
+}
+
+{ fake_precache
+
+	svplaysound 4 0 SOUND_ZAP
+}
+
+{ func_get_scan_size
+
+	local L_SCAN_SIZE SCAN_PER_SIZE
+	multiply L_SCAN_SIZE FX_SIZE
+	capvar L_SCAN_SIZE SCAN_MIN SCAN_MAX
+	return **clear
+	return L_SCAN_SIZE
+}
