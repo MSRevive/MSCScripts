@@ -52,7 +52,7 @@
 	const ANIM_MOVE_SLOW run_squatwalk1_R
 	setvar ANIM_WALK walk2
 	setvar ANIM_RUN run //bad thing here, can't setvar run for some reason
-	const ANIM_HOP jump
+	const ANIM_HOP long_jump //what bandit_elite hops with, 'jump' barely moves
 	const ANIM_LEAP long_jump
 	setvard ANIM_DEATH die_backwards1
 
@@ -83,7 +83,15 @@
 	const FREQ_SPECIAL $randf(15,30) //flameburst (1), aoe stun (2), charge (3), freeze/blizz(4), scattershot (5)  fireball/skull/wall(6) flame burst (6)
 	const FREQ_INVIS $rand(30,120) //type (1 & 5)
 	const FREQ_FLANK 5.0 //minimum time between flanks for dagger
-	const FREQ_AVOID 10.0 //time between avoids for type 5
+	const FREQ_AVOID $randf(9,14) //time between avoids for type 5
+	const FREQ_SPACING 1.5 //how often type 5 checks for melee in his face
+	const SPACING_RANGE 110 //closer than this, he makes room
+	const KICK_HOLD 3.0 //no charge after a kick, the stun combo was brutal
+
+	//leaping
+	const HOP_DIST 330 //was 250
+	const LEAP_SUSPEND 1.8 //ai was grabbing him midair
+	const LEAP_CLEAR_DELAY 1.5 //drop the flee flags after he lands
 
 	//combat
 	setvard CAN_FLINCH 1
@@ -110,7 +118,7 @@
 	const DMG_DAGGER $rand(30,80)
 	const DMG_NOVA_SLOW $rand(100,300)
 	const DMG_NOVA_FAST $rand(50,100)
-	const DMG_NOVA_STAB $rand(100,200)
+	const DMG_SWORD_STAB $rand(100,200)
 	const DMG_BURN_DAGGER $rand(10,20)
 	const DMG_BURN_MACE $rand(30,60)
 	const DMG_FLAME_BURST 400
@@ -123,6 +131,38 @@
 	const ELEMENT_LIMIT 5 //how many times to be struck by element before using potion
 	const ELEMENT_DMG_THRESH 30 //how much damage must be struck for to consider using potion
 	const ARROW_SPEED 1200
+
+	//orion bow stuff (type 5)
+	const CHARGE_TIME 1.3 //windup
+	const CHARGE_FIRE_DELAY 0.4 //hold at full so the orb catches up
+	const CHARGE_EXPIRE 4.0 //failsafe, the anim needs room
+	const CHARGE_TICK_MAX 10 //matches player bow max
+	const CHARGE_TICK_RATE 0.08 //all ticks in well before CHARGE_TIME is up
+	const SOUND_CHARGE ambience/alien_humongo.wav //the player bow hum
+
+	//these roll per cycle - $randf in a const only fires once at spawn and he
+	//ends up running on a metronome
+	const CHARGE_GAP_MIN 8
+	const CHARGE_GAP_MAX 14
+	const VOLLEY_GAP_MIN 20
+	const VOLLEY_GAP_MAX 34
+
+	const CHARGED_BALL_SIZE 10
+	const CHARGED_BALL_SPEED 200 //as the player bow
+	const DMG_BALL_MULTI 30
+	const BOLT_OFS_Z 28 //muzzle height off origin
+	const BOLT_AIM_Z 16 //0 = dead centre
+	const CHARGED_FLAT 0 //1 = level shot, 0 = angled at target
+
+	const FILLER_BALL_MIN 1
+	const FILLER_BALL_MAX 1
+	const FILLER_BALL_SPEED 450
+	const FILLER_DMG_MULTI 45 //not tied to ball size
+	const FILLER_HOLD 1.2 //no filler this long after a charged shot
+
+	const ARROW_COF 2
+	const SCATTER_COF 5
+	const ARROW_GRAVITY 0.1 //long shots were falling short
 
 	//anti-stuck
 	const AS_ATK_VALUE 10
@@ -156,6 +196,8 @@
 	precachefile monsters/summon/npc_volcano
 	precachefile monsters/summon/flame_skull 
 	precachefile helena/bandit_boss_chest
+	precachefile items/proj_mana_boss
+	precachefile items/proj_arrow_npc
 }
 
 #include monsters/base_monster_new
@@ -188,6 +230,13 @@
 	setvard NEXT_ATTACK unset
 	setvard BD_COUNT 0
 	setvard NOVA_PICK_ATK 0
+	setvard CHARGING_SHOT 0
+	setvard CHARGED_SHOT 0
+	setvard BOW_CL_IDX unset
+	setvard POT_COUNT 0
+	setvard NO_FILLER_UNTIL 0
+	setvard NO_CHARGE_UNTIL 0
+	setvard FLEE_COUNT 0
 
 	setvar ANIM_RUN run
 	setvar ANIM_WALK walk2
@@ -316,6 +365,7 @@
 		{
 			if !SWEEP_KICK_DELAY
 			if !DRINKING_POT
+			if !CHARGING_SHOT
 			if BOSS_TYPE != 5
 			setvard SWEEP_KICK_DELAY 1
 			callevent FREQ_KICK reset_sweep_kick_delay
@@ -332,6 +382,7 @@
 		if $get(PARAM1,range) < 120
 		if !AVOID_DELAY	
 		if !DRINKING_POT
+		if !CHARGING_SHOT
 		setvard AVOID_DELAY 1
 		callevent FREQ_AVOID reset_avoid_delay
 		local AVOID_TYPE $rand(1,3)
@@ -339,6 +390,7 @@
 		if ( AVOID_TYPE == 1 ) callevent leap_away $get(PARAM1,id)
 		if ( AVOID_TYPE == 2 ) playanim critical ANIM_KICK_HIGH
 		if ( AVOID_TYPE == 3 ) playanim critical ANIM_KICK_LOW
+		if ( AVOID_TYPE > 1 ) callevent 1.0 reset_attack_anim
 	}
 
 	//drink health pot when low on health
@@ -454,6 +506,8 @@
 	if game.monster.isalive
 
 	if !DRINKING_POT //don't try to change pots
+	if !CHARGING_SHOT
+	if !CHARGED_SHOT
 	setvard DRINKING_POT 1
 
 	if ( PARAM1 isnot health ) setmodelbody 1 8 //green pot
@@ -624,6 +678,8 @@
 
 { game_parry
 
+	if !CHARGING_SHOT
+	if !CHARGED_SHOT
 	setvard AS_ATTACKING game.time
 	playanim critical ANIM_PARRY
 	playsound 0 10 SOUND_PARRY
@@ -841,6 +897,8 @@
 	{
 		callevent FREQ_SPECIAL do_special
 		callevent FREQ_INVIS do_invis
+		callevent $randf(CHARGE_GAP_MIN,CHARGE_GAP_MAX) do_charge_shot
+		callevent FREQ_SPACING do_keep_spacing
 	}
 
 	if ( BOSS_TYPE == 6 )
@@ -853,6 +911,7 @@
 { do_special
 
 	local L_FREQ_SPECIAL FREQ_SPECIAL
+	if ( BOSS_TYPE == 5 ) local L_FREQ_SPECIAL $randf(VOLLEY_GAP_MIN,VOLLEY_GAP_MAX)
 
 	callevent check_legal_act
 	if ( !LEGAL_ACT ) local L_FREQ_SPECIAL 5
@@ -1012,7 +1071,7 @@
 	playanim critical ANIM_JAB
 	effect glow ent_me (128,128,255) 128 3 3
 	local BLIZZ_POS $get(BLIZZ_TARGET,origin)
-	createnpc monsters/summon/summon_blizzard BLIZZ_POS $get(ent_me,id) $get(ent_me,angles) DMG_BLIZZ 20.0
+	createnpc monsters/summon/summon_blizzard BLIZZ_POS $get(ent_me,id) $get(ent_me,angles) DMG_BLIZ 20.0
 	callevent npcatk_resume_ai
 }
 
@@ -1049,6 +1108,176 @@
 	playanim critical ANIM_SPELL
 }
 
+{ reset_attack_anim
+
+	//ANIM_ATTACK sticks, and check_legal_act calls a kick value illegal, so
+	//leaving it set kills every timed ability for the rest of the fight
+	setvard ANIM_ATTACK ORIG_ATTACK
+}
+
+{ do_keep_spacing
+
+	//type 5 wants range - react to anyone crowding him, not just to being hit
+	callevent FREQ_SPACING do_keep_spacing
+
+	if BOSS_TYPE == 5
+	if !AVOID_DELAY
+	if !DRINKING_POT
+	if !CHARGING_SHOT
+	if !CHARGED_SHOT
+	if !AM_LEAPING
+
+	callevent check_legal_act
+	if LEGAL_ACT
+
+	getents player SPACING_RANGE
+	if ( GET_COUNT > 0 )
+	{
+		setvard AVOID_DELAY 1
+		callevent FREQ_AVOID reset_avoid_delay
+		setvard AS_ATTACKING game.time
+
+		//weighted to back off rather than kick, kick into charge chained too hard
+		local AVOID_TYPE $rand(1,4)
+		if ( AVOID_TYPE < 4 ) callevent leap_away $get(GET_ENT1,id)
+		if ( AVOID_TYPE == 4 )
+		{
+			playanim critical ANIM_KICK_HIGH
+			setvard NO_CHARGE_UNTIL game.time
+			add NO_CHARGE_UNTIL KICK_HOLD
+			callevent 1.0 reset_attack_anim
+		}
+	}
+}
+
+{ do_charge_shot
+
+	local L_FREQ_CHARGE $randf(CHARGE_GAP_MIN,CHARGE_GAP_MAX)
+
+	callevent check_legal_act
+	if ( !LEGAL_ACT ) local L_FREQ_CHARGE 3.0
+
+	local CAN_SEE_NME $cansee(enemy)
+	if ( !CAN_SEE_NME ) local L_FREQ_CHARGE 3.0
+	if ( SCATTER_SHOT ) local L_FREQ_CHARGE 3.0
+
+	callevent L_FREQ_CHARGE do_charge_shot
+
+	if CAN_SEE_NME
+	if LEGAL_ACT
+	if !SCATTER_SHOT
+	if game.time > NO_CHARGE_UNTIL //don't chain a charge straight off a kick
+	if !CHARGING_SHOT
+	if !CHARGED_SHOT //one at a time or the orbs orphan
+
+
+	setvard CHARGING_SHOT 1
+	setvard NPC_NO_ATTACK 1 //no swinging mid-charge
+	setvard CAN_FLINCH 0
+	setvard CHARGE_TICKS 0
+	playsound 0 10 SOUND_POWERUP
+	svplaysound 2 5 SOUND_CHARGE
+	effect glow ent_me (0,128,255) 160 CHARGE_TIME CHARGE_TIME
+
+	clientevent new all $currentscript $get(ent_me,index)
+	setvard BOW_CL_IDX game.script.last_sent_id
+
+	callevent charge_tick
+	callevent CHARGE_TIME finish_charge_shot
+}
+
+{ charge_tick
+
+	if CHARGING_SHOT
+
+	add CHARGE_TICKS 1
+	clientevent update all BOW_CL_IDX add_charge
+
+	if ( CHARGE_TICKS < CHARGE_TICK_MAX ) callevent CHARGE_TICK_RATE charge_tick
+}
+
+{ expire_charged_shot
+
+	//never fired - died, stunned, potioned, whatever
+	if CHARGED_SHOT
+	setvard CHARGED_SHOT 0
+	setvard CAN_FLINCH 1
+	setvard NPC_NO_ATTACK 0
+	callevent release_charge_fx
+}
+
+{ abort_charge
+
+	//death only, nothing else breaks the charge
+	setvard CHARGING_SHOT 0
+	setvard CHARGED_SHOT 0
+	setvard NPC_NO_ATTACK 0
+	setvard CAN_FLINCH 1
+	callevent release_charge_fx
+}
+
+{ release_charge_fx
+
+	if ( BOW_CL_IDX isnot unset )
+	{
+		clientevent update all BOW_CL_IDX charge_release
+		setvard BOW_CL_IDX unset
+	}
+}
+
+{ finish_charge_shot
+
+	setvard CHARGING_SHOT 0
+	setvard CHARGED_SHOT 1
+	clientevent update all BOW_CL_IDX hold_orb
+	callevent CHARGE_EXPIRE expire_charged_shot
+
+	//flash at full charge
+	effect glow ent_me (0,255,255) 220 1 1
+	playsound 0 10 SOUND_BOW_STRETCH
+
+	//fire here, not on the next attack cycle - a flinch or parry eats the bow
+	//anim and the shot never happens
+	setvard NPC_NO_ATTACK 0
+	if !DRINKING_POT //stomping the drink anim means drink_done never fires
+	setvard ANIM_ATTACK ANIM_BOW
+	setvard AS_ATTACKING game.time
+	playanim critical ANIM_BOW
+	callevent CHARGE_FIRE_DELAY fire_charged_bolt
+}
+
+{ fire_charged_bolt
+
+	if CHARGED_SHOT
+	setvard CHARGED_SHOT 0
+	setvard CAN_FLINCH 1
+	//forced anim reaches bow_shoot, so can the attack cycle. Timer, not a flag.
+	setvard NO_FILLER_UNTIL game.time
+	add NO_FILLER_UNTIL FILLER_HOLD
+	callevent release_charge_fx
+	playsound 0 10 SOUND_SATTACK
+
+	setvard BALL_SIZE CHARGED_BALL_SIZE
+	setvard BALL_DMG BALL_SIZE
+	multiply BALL_DMG DMG_BALL_MULTI
+
+	local OFS_ADJ $relpos(0,28,BOLT_OFS_Z)
+	if ( $get(NPCATK_TARGET,range) < 100 ) local OFS_ADJ $relpos(0,28,-28)
+
+	//target x/y, muzzle height. $relvel inherits his pitch and fires at the sky
+	//when he's on a ledge.
+	local L_TARG $get(NPCATK_TARGET,origin)
+	if ( CHARGED_FLAT ) vectorset L_TARG z $vec.z(OFS_ADJ)
+	if ( !CHARGED_FLAT ) vectoradd L_TARG z BOLT_AIM_Z
+
+	local L_VEL $dir(OFS_ADJ,L_TARG)
+	vectormultiply L_VEL CHARGED_BALL_SPEED
+
+	//no 'persist' - keeps ticking anyone riding it, losing size and dmg per hit
+	//<owner> <vec> <ballSize> <damage> <skill to level> [mode]
+	createnpc items/proj_mana_boss OFS_ADJ $get(ent_me,id) L_VEL BALL_SIZE BALL_DMG none
+}
+
 { do_scatter_shot
 	add SCATTER_COUNT 1
 	if ( SCATTER_COUNT < 10 ) callevent 0.1 do_scatter_shot
@@ -1064,7 +1293,7 @@
 	}
 	
 	//<projectile scriptname> <"view"|(src_origin)> <target|(targ_origin)|none> <speed> <damage> <cof> <skill|none> //Converted to use new tossprojectile //greatguys1@FEB2022
-	tossprojectile ARROW_TYPE $relpos(0,32,32) none ARROW_SPEED FIN_DMG 10 none
+	tossprojectile ARROW_TYPE $relpos(0,32,32) NPCATK_TARGET ARROW_SPEED FIN_DMG SCATTER_COF none
 	callexternal ent_lastprojectile ext_lighten 0.1
 }
 
@@ -1350,43 +1579,45 @@
 { bow_shoot
 	setvard BB_IN_ATTACK 0
 
+	if !CHARGING_SHOT //nothing leaves the bow while the orb is building
+
 	if ( NEXT_ATTACK isnot unset )
 	{
 		setvard ANIM_ATTACK NEXT_ATTACK
 		setvard NEXT_ATTACK unset
 	}
 
-	playsound 0 10 SOUND_BOW_SHOOT
-
-	if ( !SCATTER_SHOT )
-	{
-		//fires magic darts of various size, larger do more damage, but are slower
-		setvard BALL_SIZE $randf(1,9)
-		setvard BALL_SPEED 1000
-		local BALL_SADJ 90
-		multiply BALL_SADJ BALL_SIZE
-		subtract BALL_SPEED BALL_SADJ
-		setvard BALL_DMG BALL_SIZE
-		multiply BALL_DMG 30
-	
-		//local BALL_TARG $get(NPCATK_TARGET,origin)
-		////dbg temp magic_dart size BALL_SIZE spd BALL_SPEED dmg BALL_DMG
-		//createnpc monsters/summon/magic_dart $relpos(0,BALL_OFS,92) $get(ent_me,id) BALL_TARG BALL_SIZE BALL_SPEED BALL_DMG 
-
-		local OFS_ADJ (0,28,36)
-		if ( $get(NPCATK_TARGET,range) < 100 ) local OFS_ADJ (0,28,-28)
-
-		//<projectile scriptname> <"view"|(src_origin)> <target|(targ_origin)|none> <speed> <damage> <cof> <skill|none> //Converted to use new tossprojectile //greatguys1@FEB2022
-		tossprojectile "proj_mana" $relpos(OFS_ADJ) none BALL_SPEED BALL_DMG 1 none
-	}
-
 	if ( SCATTER_SHOT )
 	{
+		playsound 0 10 SOUND_BOW_SHOOT
 		playsound 0 10 SOUND_SATTACK
 		setvard SCATTER_SHOT 0
 		setvard SCATTER_COUNT 0
 		callevent do_scatter_shot
+		local EXIT_SUB 1
 	}
+	if !EXIT_SUB
+
+	if ( game.time < NO_FILLER_UNTIL ) local EXIT_SUB 1
+	if !EXIT_SUB
+
+	//filler - plain orion bolt, small and fast
+	playsound 0 10 SOUND_BOW_SHOOT
+
+	setvard BALL_SIZE $rand(FILLER_BALL_MIN,FILLER_BALL_MAX)
+	setvard BALL_DMG BALL_SIZE
+	multiply BALL_DMG FILLER_DMG_MULTI
+
+	local OFS_ADJ $relpos(0,28,BOLT_OFS_Z)
+	if ( $get(NPCATK_TARGET,range) < 100 ) local OFS_ADJ $relpos(0,28,-28)
+
+	local L_TARG $get(NPCATK_TARGET,origin)
+	vectoradd L_TARG z BOLT_AIM_Z
+	local L_VEL $dir(OFS_ADJ,L_TARG)
+	vectormultiply L_VEL FILLER_BALL_SPEED
+
+	//<owner> <vec> <ballSize> <damage> <skill to level>
+	createnpc items/proj_mana_boss OFS_ADJ $get(ent_me,id) L_VEL BALL_SIZE BALL_DMG none
 }
 
 { bow_stretch
@@ -1471,6 +1702,17 @@
 { reset_leaping
 
 	setvard AM_LEAPING 0
+
+	//leap_away sets the flee flags and nothing clears them, which locks up
+	//check_legal_act for good. Delayed, clearing them here cuts the hop short.
+	callevent LEAP_CLEAR_DELAY clear_leap_flee
+}
+
+{ clear_leap_flee
+
+	setvard IS_FLEEING 0
+	setvard NPC_FORCED_MOVEDEST 0
+	setvard PURE_FLEE 0
 }
 
 { bullrush_stun
@@ -1482,7 +1724,7 @@
 	//dbg leap_away PARAM2
 	setvard AM_LEAPING 1
 	setvard NPC_FORCED_MOVEDEST 1
-	callevent npcatk_suspend_ai 1.0
+	callevent npcatk_suspend_ai LEAP_SUSPEND
 	setmovedest PARAM1 800 flee
 	callevent 0.1 leap_away2
 }
@@ -1492,13 +1734,13 @@
 	setvard AS_ATTACKING game.time
 	playanim critical ANIM_HOP
 	callevent 0.1 bandit_hop
-	callevent 1.0 reset_leaping
+	callevent LEAP_SUSPEND reset_leaping
 }
 
 { bandit_hop
 
 	local JUMP_HEIGHT $rand(350,450)
-	addvelocity ent_me $relvel(0,250,JUMP_HEIGHT)
+	addvelocity ent_me $relvel(0,HOP_DIST,JUMP_HEIGHT)
 }
 //=================================== LEAP/CHARGE SEQUENCE - END
 
@@ -1521,6 +1763,9 @@
 }
 
 { game_death
+
+	callevent abort_charge
+	callevent release_charge_fx
 
 	local L_MAP_NAME $lcase(game.map.name)
 	if ( L_MAP_NAME equals helena )
@@ -1550,6 +1795,7 @@
 	if ( BOSS_TYPE == 5 )
 	{
 		if !IS_FLEEING
+		if !CHARGING_SHOT //this skips npcatk_attack, so check here too
 		if $cansee(PARAM1)
 		setvard AS_ATTACKING game.time
 		playanim once ANIM_BOW
@@ -1569,6 +1815,7 @@
 	setvard LEGAL_ACT 1
 
 	if ( I_R_FROZEN ) setvard LEGAL_ACT 0
+	if ( CHARGING_SHOT ) setvard LEGAL_ACT 0 //charge can't be broken off
 	if ( ANIM_ATTACK equals ANIM_KICK_HIGH ) setvard LEGAL_ACT 0
 	if ( ANIM_ATTACK equals ANIM_KICK_LOW ) setvard LEGAL_ACT 0
 	if ( IS_FLEEING ) setvard LEGAL_ACT 0
@@ -1585,6 +1832,30 @@ repeatdelay 2.0
 	if ( SUSPEND_AI ) add BD_COUNT 1
 	if ( !SUSPEND_AI ) setvard BD_COUNT 0
 	if ( BD_COUNT > 20 ) callevent npcatk_resume_ai
+
+	//ANIM_ATTACK sticking on a kick makes check_legal_act refuse everything
+	if ( ANIM_ATTACK equals ANIM_KICK_HIGH ) callevent reset_attack_anim
+	if ( ANIM_ATTACK equals ANIM_KICK_LOW ) callevent reset_attack_anim
+
+	if ( IS_FLEEING ) add FLEE_COUNT 1
+	if ( !IS_FLEEING ) setvard FLEE_COUNT 0
+	if ( FLEE_COUNT > 4 )
+	{
+		setvard IS_FLEEING 0
+		setvard NPC_FORCED_MOVEDEST 0
+		setvard FLEE_COUNT 0
+	}
+
+	//drink_done is an anim event - clobber the drink anim and this stays set,
+	//then check_legal_act blocks everything
+	if ( DRINKING_POT ) add POT_COUNT 1
+	if ( !DRINKING_POT ) setvard POT_COUNT 0
+	if ( POT_COUNT > 3 )
+	{
+		setvard DRINKING_POT 0
+		setvard POT_COUNT 0
+		setmodelbody 1 ORIG_WEAPON
+	}
 }
 
 //JUN2007b
@@ -1614,4 +1885,107 @@ repeatdelay 2.0
 	if ATTACK_ANIMINDEX != $get(ent_me,anim.index)
 	setvard ATTACK_MOVERANGE ORIG_MOVE_RANGE 
 	setvard NPC_NO_MOVE 0
+}
+
+
+//===========
+//Client-side - type 5 charge orb
+//===========
+
+{ [client]
+	const ATTACH_NAME attachment0 //left hand, sits on the bow
+	const BALL_GROW 0.6 //shorter draw than the player bow
+	const FALLBACK_Z 56 //only used if the model has no attachments
+	const MAX_LIFE 6.0 //hard stop if he dies mid-charge
+}
+
+{ [client] client_activate //<owner>
+
+	setvard FX_OWNER PARAM1
+	setvard FX_ACTIVE 1
+	setvard FX_TRACK 1
+
+	setcallback render enable
+
+	//can't get attachmentX pos from update events, so cache it here
+	callevent track_attach
+
+	callevent MAX_LIFE charge_release
+
+	cleffect tempent model weapons/projectiles.mdl ATTACH_LOC setup_ball update_ball
+}
+
+{ [client] track_attach
+
+	if FX_ACTIVE
+	callevent 0.01 track_attach
+
+	if FX_TRACK //stop at full charge, the draw anim slings it around
+
+	local L_POS $getcl(FX_OWNER,ATTACH_NAME)
+
+	//no attachment, fall back to a height off origin
+	if ( L_POS equals $vec(0,0,0) )
+	{
+		local L_POS $getcl(FX_OWNER,origin)
+		vectoradd L_POS z FALLBACK_Z
+
+		//origin gone too, owner is dead or out of scope
+		if ( L_POS equals $vec(0,0,FALLBACK_Z) )
+		{
+			callevent charge_release
+			local EXIT_SUB 1
+		}
+	}
+	if !EXIT_SUB
+
+	setvard ATTACH_LOC L_POS
+}
+
+{ [client] update_ball
+
+	if ( FX_ACTIVE )
+	{
+		cleffect tempent set_current_prop origin ATTACH_LOC
+		local CUR_SCALE game.tempent.fuser1
+		if CUR_SCALE < ACT_SCALE
+		add CUR_SCALE BALL_GROW
+		cleffect tempent set_current_prop scale CUR_SCALE
+		cleffect tempent set_current_prop fuser1 CUR_SCALE
+	}
+	else
+	{
+		cleffect tempent set_current_prop origin $vec(20000,20000,20000)
+	}
+}
+
+{ [client] add_charge
+	add ACT_SCALE 0.75
+}
+
+{ [client] hold_orb
+	setvard FX_TRACK 0
+}
+
+{ [client] charge_release
+	setvard FX_ACTIVE 0
+	callevent 1.0 remove_fx
+}
+
+{ [client] remove_fx
+	removescript
+}
+
+{ [client] setup_ball
+	cleffect tempent set_current_prop death_delay 100
+	cleffect tempent set_current_prop body 13
+	cleffect tempent set_current_prop bouncefactor 	0
+	cleffect tempent set_current_prop scale 	0.1
+	cleffect tempent set_current_prop framerate	1.0
+	cleffect tempent set_current_prop frames	500
+	cleffect tempent set_current_prop gravity 	0
+	cleffect tempent set_current_prop rendermode add
+	cleffect tempent set_current_prop renderamt 20
+	cleffect tempent set_current_prop collide 	none
+	cleffect tempent set_current_prop fuser1 0.1
 }
