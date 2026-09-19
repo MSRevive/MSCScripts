@@ -1,0 +1,105 @@
+#pragma context server
+
+#include "items/base_item.as"
+
+namespace MS
+{
+
+class ManaProtSpiders : CGameScript
+{
+	int ANIM_DRINK;
+	int ANIM_IDLE;
+	string ANIM_PREFIX;
+	int DRINK_AMOUNT;
+	int DRINK_EFFECTAMT;
+	int DRINK_GULP_DELAY;
+	int DRINK_TIME;
+	string DRINK_TYPE;
+	int ITEM_MODEL_VIEW_IDX;
+	int MODEL_BODY_OFS;
+	string MODEL_HANDS;
+	string MODEL_VIEW;
+	string MODEL_WORLD;
+	float RESTORE_PERCENT;
+	string SOUND_DRINK;
+
+	ManaProtSpiders()
+	{
+		ANIM_IDLE = 0;
+		ANIM_DRINK = 1;
+		MODEL_HANDS = "misc/p_misc.mdl";
+		MODEL_WORLD = "misc/p_misc.mdl";
+		MODEL_VIEW = "viewmodels/v_misc.mdl";
+		ITEM_MODEL_VIEW_IDX = 2;
+		SOUND_DRINK = "items/drink.wav";
+		MODEL_BODY_OFS = 39;
+		ANIM_PREFIX = "mana";
+		DRINK_TYPE = "givemana";
+		RESTORE_PERCENT = 0.9;
+		DRINK_EFFECTAMT = 300;
+		DRINK_AMOUNT = 1;
+		DRINK_GULP_DELAY = 3;
+		DRINK_TIME = 3;
+	}
+
+	void drink_spawn()
+	{
+		SetName("Spider Protection Potion");
+		SetDescription("This bottle seems to be full of small dead spider bits");
+		SetWeight(1);
+		SetSize(1);
+		SetValue(800);
+		SetHUDSprite("hand", "item");
+		SetHUDSprite("trade", "gpot");
+	}
+
+	void OnSpawn() override
+	{
+		SetHand("any");
+		SetAnimExt("holditem");
+		drink_spawn();
+		RegisterDrink();
+	}
+
+	void game_start_drink()
+	{
+		PlayViewAnim(ANIM_DRINK);
+		drink_start();
+	}
+
+	void game_drink()
+	{
+		drink_now();
+		CallExternal(GetOwner(), "ext_spider_protect", 900.0, 0.1, "pspidpot");
+		// TODO: hud.addstatusicon ent_owner hud/status/alpha_spiderprot status_ps 900
+	}
+
+	void game_drink_done()
+	{
+		PlayViewAnim(ANIM_IDLE);
+		DeleteEntity(GetOwner());
+	}
+
+	void OnDeploy() override
+	{
+		SetViewModel(MODEL_VIEW);
+		SetModel(MODEL_HANDS);
+		string L_SUBMODEL = MODEL_BODY_OFS;
+		L_SUBMODEL += "game.item.hand_index";
+		SetModelBody(0, L_SUBMODEL);
+		drink_deploy();
+	}
+
+	void game_fall()
+	{
+		string L_SUBMODEL = MODEL_BODY_OFS;
+		L_SUBMODEL += 2;
+		SetModelBody(0, L_SUBMODEL);
+		string L_ANIM = ANIM_PREFIX;
+		L_ANIM += "_floor_idle";
+		PlayAnim("once", L_ANIM);
+	}
+
+}
+
+}
