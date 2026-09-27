@@ -23,12 +23,23 @@
 	const VANIM_FIRE 7 //1-6
 	const VANIM_RELOAD1 14
 	const VANIM_RELOAD2 15
+	const VANIM_RL_LOWER 16
+	const VANIM_RL_LOADBOLT 17 //17 and 18, 19 not used
+	const VANIM_RL_PRIME 20 //20-25 is 1-6 bolts
 	const VANIM_DRAW 0
 
 	const WANIM_HAND standard_idle
 	const WANIM_FLOOR standard_floor_idle
 
 	setvard BOW_CHAMBER 0
+	setvard BOW_RELOADING 0
+	setvard NEXT_BOLT 0
+	setvard BOLT_ANIM 0
+
+	const BOLT_LOAD_TIME 0.56
+	const RELOAD_LOWER_TIME 0.8
+	const RELOAD_RAISE_TIME 1.83
+	const RELOAD_CANCEL_RAISE_TIME 1.83
 
 	precache weapons/reload1.wav
 	precache weapons/reload2.wav
@@ -96,13 +107,19 @@
 		setvard NEXT_ATTACK L_ARROW_MENU_TIME
 	}
 
+	//got bolts in it, stop reloading and shoot
+	if ( BOW_RELOADING )
+	{
+		if ( BOW_CHAMBER < 6 ) callevent reload_cancel
+	}
+
 	if game.time > NEXT_ATTACK
 
 	if $get(ent_owner,canattack)
 
-	if game.time > RELOAD_DONE_AT
+	if !BOW_RELOADING
 
-	if ( BOW_CHAMBER < 7 )
+	if ( BOW_CHAMBER < 6 )
 	{
 		local L_COF 0
 		local L_SPEED 1000
@@ -141,7 +158,26 @@
 //			local PLR_ARROW proj_bolt_generic
 //		}
 
-		local PLR_ARROW $get(ent_owner,findbolt,remove)
+		local PLR_ARROW proj_bolt_generic
+		local L_AMMO_ID $get(ent_owner,scriptvar,'PLR_ARROW_ID')
+		local L_AMMO_NAME $get(L_AMMO_ID,itemname)
+		local L_AMMO_LEFT $get(L_AMMO_ID,quantity)
+		if ( $get(L_AMMO_ID,owner) isnot $get(ent_owner,id) ) local L_AMMO_NAME none
+
+		if ( L_AMMO_NAME startswith proj_bolt )
+		{
+			if ( L_AMMO_NAME equals proj_bolt_generic )
+			{
+				local PLR_ARROW proj_bolt_generic
+			}
+			else if ( L_AMMO_LEFT > 0 )
+			{
+				local PLR_ARROW L_AMMO_NAME
+				subtract L_AMMO_LEFT 1
+				if ( L_AMMO_LEFT > 0 ) setquantity L_AMMO_ID L_AMMO_LEFT
+				else local L_GONE $item_exists(ent_owner,L_AMMO_NAME,remove)
+			}
+		}
 
 		dbg arrowtype: PLR_ARROW
 
@@ -173,7 +209,7 @@
 	if $get(ent_owner,canattack)
 	if $get(ent_owner,scriptvar,'PLR_ACTIVE_WEAPON') equals $get(ent_me,id)
 	if game.time > NEXT_ATTACK
-	if ( BOW_CHAMBER == 0 ) splayviewanim ent_me IDLE_ANIM
+	if ( BOW_CHAMBER == 0 ) callevent show_chamber
 	if BOW_CHAMBER > 0
 	callevent do_reload
 }
@@ -181,36 +217,106 @@
 { do_reload
 
 	if $get(ent_owner,scriptvar,'PLR_ACTIVE_WEAPON') equals $get(ent_me,id)
+	if !BOW_RELOADING
+	if BOW_CHAMBER > 0
 
-	if game.time > RELOAD_DONE_AT 	//not if already in reload
+	setvard BOW_RELOADING 1
 
 	playowneranim once xbow_reload global.anim.combatwalk
-
 	playsound 0 10 weapons/357_reload1.wav
 
-	setvard BOW_CHAMBER 7
-	setvard NEXT_ATTACK game.time
-	add NEXT_ATTACK 5.0
-	splayviewanim ent_me VANIM_RELOAD1
-	setvard RELOAD_DONE_AT game.time
-	add RELOAD_DONE_AT 3.35
-	add RELOAD_DONE_AT 2.515
+	setviewmodelprop ent_me animspeed $math(divide,0.68,RELOAD_LOWER_TIME)
+	splayviewanim ent_me VANIM_RL_LOWER
 
-	callevent 3.35 do_reload2 
+	setvard NEXT_BOLT game.time
+	add NEXT_BOLT RELOAD_LOWER_TIME
+	subtract NEXT_BOLT 0.05
+	callevent RELOAD_LOWER_TIME reload_bolt
+}
+
+{ reload_bolt
+
+	if BOW_RELOADING
+	if game.time >= NEXT_BOLT
+	if $get(ent_owner,scriptvar,'PLR_ACTIVE_WEAPON') equals $get(ent_me,id)
+
+	local BOLT_IDX VANIM_RL_LOADBOLT
+	add BOLT_IDX BOLT_ANIM
+	add BOLT_ANIM 1
+	if ( BOLT_ANIM > 1 ) setvard BOLT_ANIM 0
+	setviewmodelprop ent_me animspeed $math(divide,0.62,BOLT_LOAD_TIME)
+	splayviewanim ent_me BOLT_IDX
+
+	setvard NEXT_BOLT game.time
+	add NEXT_BOLT BOLT_LOAD_TIME
+	subtract NEXT_BOLT 0.05
+	callevent BOLT_LOAD_TIME reload_bolt2
+}
+
+{ reload_bolt2
+
+	if BOW_RELOADING
+	if game.time >= NEXT_BOLT
+	if $get(ent_owner,scriptvar,'PLR_ACTIVE_WEAPON') equals $get(ent_me,id)
+
+	subtract BOW_CHAMBER 1
+	dbg bolt loaded BOW_CHAMBER
+
+	if ( BOW_CHAMBER > 0 )
+	{
+		callevent reload_bolt
+	}
+	else
+	{
+		callevent do_reload2
+	}
 }
 
 { do_reload2
 
-	if $get(ent_owner,scriptvar,'PLR_ACTIVE_WEAPON') equals $get(ent_me,id)
+	setvard BOW_RELOADING 0
+	callevent do_raise RELOAD_RAISE_TIME
+	callevent RELOAD_RAISE_TIME pilot_light
+}
 
-	playowneranim once xbow_reload global.anim.combatwalk
+{ reload_cancel
+
+	setvard BOW_RELOADING 0
+	setvard NEXT_BOLT 0
+	callevent do_raise RELOAD_CANCEL_RAISE_TIME
+}
+
+{ do_raise //PARAM1 = time
+
+	setviewmodelprop ent_me animspeed $math(divide,1.83,PARAM1)
+	//prime anim for however many bolts are in
+	local PRIME_IDX VANIM_RL_PRIME
+	add PRIME_IDX 5
+	subtract PRIME_IDX BOW_CHAMBER
+	splayviewanim ent_me PRIME_IDX
 
 	setvard NEXT_ATTACK game.time
-	add NEXT_ATTACK 2.515
-	splayviewanim ent_me VANIM_RELOAD2
-	setvard BOW_CHAMBER 0
+	add NEXT_ATTACK PARAM1
 
-	callevent 2.0 pilot_light
+	setvard RAISE_END NEXT_ATTACK
+	subtract RAISE_END 0.05
+	callevent PARAM1 raise_done
+}
+
+{ raise_done
+
+	if !BOW_RELOADING
+	if game.time >= RAISE_END
+
+	setviewmodelprop ent_me animspeed 1
+	callevent show_chamber
+}
+
+{ show_chamber
+
+	local IDLE_ANIM BOW_CHAMBER
+	add IDLE_ANIM VANIM_IDLE0
+	splayviewanim ent_me IDLE_ANIM
 }
 
 { pilot_light
@@ -222,16 +328,8 @@
 { do_idle
 
 	if $get(ent_owner,scriptvar,'PLR_ACTIVE_WEAPON') equals $get(ent_me,id)
-
-	local IDLE_ANIM BOW_CHAMBER
-	add IDLE_ANIM VANIM_IDLE0
-
-	if ( game.time < RELOAD_DONE_AT ) local IDLE_ANIM 7
-	if ( BOW_CHAMBER == 7 ) local IDLE_ANIM 7
-
-	splayviewanim ent_me IDLE_ANIM
-
-	//playowneranim once bow_aim_to_stand global.anim.combatwalk
+	if !BOW_RELOADING
+	callevent show_chamber
 }
 
 //============== from polearms
@@ -250,6 +348,11 @@
 
 	if game.serverside
 	callevent check_skill
+
+	setvard BOW_RELOADING 0
+	setvard NEXT_BOLT 0
+	setviewmodelprop ent_me animspeed 1
+
 	if ( BOW_CHAMBER > 0 )
 	{
 		callevent 0.1 redeploy_idle
@@ -262,10 +365,7 @@
 }
 
 { redeploy_idle //case we slotted this during reload
-	local IDLE_ANIM BOW_CHAMBER
-	add IDLE_ANIM VANIM_IDLE0
-	if ( game.time < RELOAD_DONE_AT ) local IDLE_ANIM 7
-	splayviewanim ent_me IDLE_ANIM
+	callevent show_chamber
 }
 
 //{ arrow_check
