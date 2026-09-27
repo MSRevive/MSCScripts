@@ -1,0 +1,32 @@
+#pragma context server
+
+#include "items/base_tome.as"
+
+namespace MS
+{
+
+class ScrollIceShield : CGameScript
+{
+	int BASE_REQUIRED_LEVEL;
+	string BASE_REQUIRED_SKILL;
+	string BASE_SPELL_SCRIPT;
+	string BASE_SUMMON_TEXT;
+
+	ScrollIceShield()
+	{
+		BASE_SPELL_SCRIPT = "magic_hand_ice_shield";
+		BASE_SUMMON_TEXT = "You learn to create protective shields of ice.";
+		BASE_REQUIRED_SKILL = "skill.spellcasting.ice";
+		BASE_REQUIRED_LEVEL = 5;
+	}
+
+	void OnSpawn() override
+	{
+		SetName("Ice Shield Tome ");
+		SetDescription("The method to create protective layer of ice is written here.");
+		SetValue(380);
+	}
+
+}
+
+}
