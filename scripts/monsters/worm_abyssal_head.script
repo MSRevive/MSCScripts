@@ -13,6 +13,11 @@
 {
 	//setcallback touch enable
 	setvard NPC_NO_HEALTH_BAR 1
+	setvard PASS_ATK ''
+	setvard PASS_DMG ''
+	setvard PASS_CHANCE ''
+	setvard PASS_TYPE ''
+	setvard PASS_PENDING 0
 }
 
 { game_dynamically_created //owner
@@ -71,6 +76,7 @@
 		deleteent ent_me
 	}
 	if IS_ACTIVE
+	hp $get(MY_OWNER,hp) $get(MY_OWNER,maxhp)
 	callevent 0.01 snap_loop
 }
 
@@ -83,20 +89,41 @@
 //}
 
 { game_damaged 	//PARAM1=attacker PARAM2=dmg PARAM3=dmg_type PARAM4=accuracy_roll PARAM5=skill PARAM6=inflictor
+	setdmg dmg 0.0
+	setdmg hit 0.0
+	return 0
 	if $get(PARAM1,relationship,ent_me) equals enemy
 
 	bleed ent_me yellow $rand(100,10000)
 
-	local L_HIT_CHANCE PARAM4
+	local L_HIT_CHANCE 100%
 	if ( $get(PARAM6,itemname) startswith proj )
 	{
 		//make sure projectiles don't pass their skill hitchance
 		local L_HIT_CHANCE 100% 
 	}
-	xdodamage MY_OWNER direct PARAM2 L_HIT_CHANCE PARAM1 PARAM1 none PARAM3
-	setdmg dmg 0.0
-	setdmg hit 0.0
-	returndata 0
+	token.add PASS_ATK PARAM1
+	token.add PASS_DMG PARAM2
+	token.add PASS_CHANCE L_HIT_CHANCE
+	token.add PASS_TYPE PARAM3
+	if !PASS_PENDING
+	setvard PASS_PENDING 1
+	callevent 0.01 pass_damage
+}
+
+{ pass_damage
+	setvard PASS_PENDING 0
+	calleventloop $get_token_amt(PASS_DMG) pass_damage_one
+	setvard PASS_ATK ''
+	setvard PASS_DMG ''
+	setvard PASS_CHANCE ''
+	setvard PASS_TYPE ''
+}
+
+{ pass_damage_one
+	local L_IDX game.script.iteration
+	local L_ATK $get_token(PASS_ATK,L_IDX)
+	xdodamage MY_OWNER direct $get_token(PASS_DMG,L_IDX) $get_token(PASS_CHANCE,L_IDX) L_ATK L_ATK none $get_token(PASS_TYPE,L_IDX)
 }
 
 { game_applyeffect //<applyeffect|applyeffect> <target> <effectscript> [params...]
@@ -104,7 +131,7 @@
 	dbg test game.event.params
 	local L_RETURN redirect
 	token.add L_RETURN MY_OWNER
-	returndata L_RETURN
+	return L_RETURN
 }
 
 { ext_playsound
