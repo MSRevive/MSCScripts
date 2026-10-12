@@ -1,0 +1,246 @@
+//This is a special chest that gives players access to their storage.
+//The items are kept on the character by the game (see the "storage" command), not by this script.
+//
+//The chest used to keep ammo and potions itself, in the quests b0-b9.
+//Whatever a player still has in there is moved into their storage when they use the chest.
+//All hail the almighty MSSCRIPT and SUSPEND_AI
+
+#scope server
+
+{
+	const ANIM_IDLE "idle"
+	const ANIM_CLOSE "close"
+	const ANIM_OPEN "open"
+
+	//The quests the old chest kept items in: b0;b1;b2;b3;b4;b5;b6;b7;b8;b9
+	const BANK_PREFIX "b"
+	const BANK_MAX 10
+
+	setvard CHEST_USERS 0 //Number of players that have their storage open through this chest
+}
+
+{ game_spawn
+
+	name "Galat's Wondrous Chest of Storage"
+	hp 1
+	invincible 1
+	width 20
+	height 30
+	setmodel "misc/treasure.mdl"
+	setmodelbody 0 2 //new gold submodel
+
+	setidleanim ANIM_IDLE
+	gravity 0.1 //float down to ground
+
+	nopush 1
+}
+
+{ game_playerused //<player>
+
+	//Move anything the player still has in the old chest into their storage
+	callevent bank_convert PARAM1
+
+	//Opens the player's storage. The player has to stay near the chest to keep using it.
+	//Calls bank_success right away, and bank_done when the player is finished.
+	storage trade PARAM1 "Galat's Wondrous Chest of Storage" bank
+}
+
+{ bank_success //<player>
+
+	add CHEST_USERS 1
+	if CHEST_USERS == 1
+	callevent open_chest
+}
+
+{ bank_done //<player>
+
+	subtract CHEST_USERS 1
+	if CHEST_USERS <= 0
+	setvard CHEST_USERS 0
+	callevent close_chest
+}
+
+{ bank_convert //<player> - Moves what the player has in the old chest (quests b0-b9) into their storage
+
+	setvard CONV_PLAYER PARAM1
+	setvard CONV_MOVED 0 //Set if anything was moved into storage
+	setvard CONV_KEPT 0 //Set if anything had to stay in the old chest
+
+	calleventloop BANK_MAX bank_convert_slot
+
+	if ( CONV_KEPT )
+	{
+		helptip CONV_PLAYER generic "Galat's Wondrous Chest of Storage" "Some of your old items could not be moved into your storage yet| Make room and use the chest again."
+	}
+	else if ( CONV_MOVED )
+	{
+		helptip CONV_PLAYER generic "Galat's Wondrous Chest of Storage" "The items you kept in this chest have been moved into your storage."
+	}
+}
+
+{ bank_convert_slot
+
+	setvard CONV_SLOT $stradd(BANK_PREFIX,game.script.iteration)
+	setvard CONV_CONTENTS $get_quest_data(CONV_PLAYER,CONV_SLOT)
+
+	//A slot with nothing in it is 0
+	if $len(CONV_CONTENTS) > 1
+
+	setvard CONV_KEEP 0 //What stays in this slot
+	setvard CONV_SLOT_MOVED 0 //Set if anything left this slot
+	setvard CONV_IDX 0
+	calleventloop $get_token_amt(CONV_CONTENTS) bank_convert_item
+
+	//Only write the slot if something left it
+	if CONV_SLOT_MOVED
+	quest set CONV_PLAYER CONV_SLOT CONV_KEEP
+}
+
+{ bank_convert_item
+
+	//Each item is its name, followed by a number if there is more than 1 of it.
+	//An item can take up two tokens, so there may be less items than loops
+	if CONV_IDX < $get_token_amt(CONV_CONTENTS)
+
+	local L_NAME $get_token(CONV_CONTENTS,CONV_IDX)
+	add CONV_IDX 1
+
+	//A name is never just a number, so a token that is one is this item's number.
+	//$get_token gives 0 past the end of the slot
+	local L_QUANTITY $get_token(CONV_CONTENTS,CONV_IDX)
+	if ( L_QUANTITY equals $num(L_QUANTITY) )
+	{
+		if ( L_QUANTITY > 0 )
+		{
+			add CONV_IDX 1
+		}
+		else
+		{
+			local L_QUANTITY 1
+		}
+	}
+	else
+	{
+		local L_QUANTITY 1
+	}
+
+	local L_LEFT L_QUANTITY //How much of it couldn't go into storage
+
+	if ( $get_item_table(L_NAME,is_drinkable) )
+	{
+		//For a potion the number is how many drinks are left.
+		//They become full potions, and one partly used potion for the remainder
+		local L_FULL $get_item_table(L_NAME,quality) //Drinks in a full potion
+		if ( L_FULL < 1 ) local L_FULL 1
+		local L_POTIONS $int($math(divide,L_QUANTITY,L_FULL))
+		local L_PARTIAL $math(subtract,L_QUANTITY,$math(multiply,L_POTIONS,L_FULL))
+
+		if ( L_POTIONS > 0 )
+		{
+			storage add CONV_PLAYER L_NAME L_POTIONS L_FULL
+			local L_ADDED game.ret.storage.added
+			subtract L_LEFT $math(multiply,L_ADDED,L_FULL)
+		}
+		if ( L_PARTIAL > 0 )
+		{
+			storage add CONV_PLAYER L_NAME 1 L_PARTIAL
+			local L_ADDED game.ret.storage.added
+			subtract L_LEFT $math(multiply,L_ADDED,L_PARTIAL)
+		}
+	}
+	else
+	{
+		//For anything else the number is how many there are
+		storage add CONV_PLAYER L_NAME L_QUANTITY
+		local L_ADDED game.ret.storage.added
+		subtract L_LEFT L_ADDED
+	}
+
+	if ( L_LEFT < L_QUANTITY )
+	{
+		setvard CONV_MOVED 1
+		setvard CONV_SLOT_MOVED 1
+	}
+
+	if ( L_LEFT > 0 ) callevent bank_convert_keep L_NAME $int(L_LEFT)
+}
+
+{ bank_convert_keep //<itemname> <number> - This couldn't go into storage, so it stays in the old chest
+
+	setvard CONV_KEPT 1
+
+	if ( CONV_KEEP equals '0' )
+	{
+		setvard CONV_KEEP PARAM1
+	}
+	else
+	{
+		token.add CONV_KEEP PARAM1
+	}
+
+	if ( PARAM2 > 1 ) token.add CONV_KEEP PARAM2
+}
+
+{ game_dynamically_created //<summoner>
+
+	local L_YAW $get(PARAM1,angles.yaw)
+	setsolid none //don't let players use their scrolls to stick monsters
+
+	if ( !$get(PARAM1,isplayer) )
+	{
+		callevent spawn_in L_YAW
+	}
+	else
+	{
+		local OTHER_CHEST $get_by_name(galat_bank1)
+		if ( $get(OTHER_CHEST,exists) )
+		{
+			setorigin OTHER_CHEST $get(ent_me,origin)
+			callexternal OTHER_CHEST spawn_in $neg(L_YAW)
+			deleteent ent_me
+		}
+		else
+		{
+			name_unique galat_bank1
+			callevent spawn_in $neg(L_YAW)
+		}
+	}
+}
+
+{ spawn_in
+
+	local L_YAW PARAM1
+
+	playsound 0 7 magic/spawn.wav
+	setangle face $vec(0,L_YAW,0)
+	callexternal GAME_MASTER gm_fade_in $get(ent_me,id) 5
+	
+	setvard SCAN_AREA $get_tsphere(any,64)
+	if SCAN_AREA isnot none
+	calleventloop $get_token_amt(SCAN_AREA) move_monsters 
+}
+
+{ move_monsters
+	local CUR_TARG $get_token(SCAN_AREA,game.script.iteration)
+	if !$get(CUR_TARG,isplayer)
+	if !$get(CUR_TARG,scriptvar,'GALAT_CHEST')
+	local TARG_ORG $get(CUR_TARG,origin)
+	local TARG_ANG $angles(game.monster.origin,TARG_ORG)
+	setvelocity CUR_TARG $relvel($vec(0,TARG_ANG,0),$vec(10,1000,110)) override
+}
+
+{ fade_in_done //from gm
+	setprop ent_me rendermode 0
+	setprop ent_me renderamt 255
+}
+
+{ open_chest
+
+	playsound 2 10 Items/creak.wav
+	playanim hold ANIM_OPEN
+}
+
+{ close_chest
+
+	playanim once ANIM_CLOSE
+}
