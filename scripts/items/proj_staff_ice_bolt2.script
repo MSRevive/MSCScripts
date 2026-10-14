@@ -18,6 +18,9 @@
 	const PROJ_DAMAGE		0
 	const PROJ_STICK_DURATION	0  //Don't stick in enemies
 	const PROJ_COLLIDEHITBOX	0
+
+	const HOMING_TURN 4 //max degrees it can turn per 0.1 sec keeps it from turning on a dime
+	const HOMING_CONE 0.7 //angle at which is can lock-on to targets
 }
 
 #include items/proj_arrow_base
@@ -31,6 +34,8 @@
 	value		0
 	gravity		0.0
 	groupable    	25
+	setprop ent_me rendermode 5 
+	setprop ent_me renderamt 255
 }
 
 { game_tossprojectile
@@ -39,15 +44,22 @@
 }
 
 { pick_target
+	if !BOLT_DONE
 	dbg pick_target
 	//race human
 	//local TARG_LIST $get_insphere(enemy,1024,game.monster.origin)
-	callexternal ent_expowner ext_sphere_token_byrange enemy 768 $get(ent_me,origin)
+	setvard MY_TARG none
+	local L_SCAN enemy
+	if ( game.pvp ) local L_SCAN any
+	callexternal ent_expowner ext_sphere_token_byrange L_SCAN 768 $get(ent_me,origin)
 	setvard TARG_LIST $get(ent_expowner,scriptvar,'PLR_SCAN_TOKEN')
 	dbg pick_target list TARG_LIST
-	if TARG_LIST isnot none
-	
-	calleventloop $get_token_amt(TARG_LIST) pick_target_loop
+	if ( TARG_LIST isnot none ) calleventloop $get_token_amt(TARG_LIST) pick_target_loop
+	if ( MY_TARG equals none )
+	{
+		callevent 0.25 pick_target 
+		exitevent
+	}
 
 	dbg pick_target $get(MY_TARG,name)
 	if ( !$get(MY_TARG,isplayer) )
@@ -69,15 +81,26 @@
 	local L_POS $get(L_TARG,origin)
 	
 	if $get_traceline($get(ent_me,origin),L_POS,worldonly) equals L_POS
+	if $get(L_TARG,isalive)
+	if $get_takedmg(L_TARG,cold)
 	if ( $get(L_TARG,isplayer) )
 	{
-		if ( $get(ent_owner,isplayer) )
-		{
-			if ( !game.pvp ) exitevent
-		}
+		if ( !game.pvp ) exitevent //players only in pvp
 	}
-	if $get(L_TARG,isalive)
-	if $get_takedmg(L_TARG,cold) //Can take damage from cold
+	else
+	{
+		if ( $get(ent_expowner,relationship,L_TARG) isnot enemy ) exitevent
+	}
+
+	//Bolt finds targets in front of you
+	local L_CENTER L_POS
+	vectoradd L_CENTER z $math(multiply,$get(L_TARG,height),0.5)
+	local L_TO_TARG $dir($get(ent_me,origin),L_CENTER)
+	local L_FWD $dir($vec(0,0,0),$get(ent_me,velocity))
+	local L_DOT $math(multiply,$vec.x(L_TO_TARG),$vec.x(L_FWD))
+	add L_DOT $math(multiply,$vec.y(L_TO_TARG),$vec.y(L_FWD))
+	add L_DOT $math(multiply,$vec.z(L_TO_TARG),$vec.z(L_FWD))
+	if L_DOT >= HOMING_CONE
 	
 	setvard MY_TARG L_TARG
 	breakloop
@@ -86,12 +109,27 @@
 { orient_on_target
 	if IS_ACTIVE
 	if $get(MY_TARG,isalive)
-	callevent 0.25 orient_on_target
+	callevent 0.1 orient_on_target
 	local TARG_ORG $get(MY_TARG,origin)
 	vectoradd TARG_ORG z TARG_HALF_HEIGHT
 	local MY_ORG $get(ent_me,origin)
 	local ANG_TO_TARG $angles3d(MY_ORG,TARG_ORG)
 	vectorset ANG_TO_TARG x $neg($vec.x(ANG_TO_TARG))
+
+	//turn toward the target a bit at a time instead of snapping to it
+	local L_CUR_ANG $angles3d($vec(0,0,0),$get(ent_me,velocity))
+	vectorset L_CUR_ANG x $neg($vec.x(L_CUR_ANG))
+	local L_TURN_PITCH $math(subtract,$vec.x(ANG_TO_TARG),$vec.x(L_CUR_ANG))
+	if ( L_TURN_PITCH > 180 ) subtract L_TURN_PITCH 360
+	if ( L_TURN_PITCH < -180 ) add L_TURN_PITCH 360
+	local L_TURN_YAW $math(subtract,$vec.y(ANG_TO_TARG),$vec.y(L_CUR_ANG))
+	if ( L_TURN_YAW > 180 ) subtract L_TURN_YAW 360
+	if ( L_TURN_YAW < -180 ) add L_TURN_YAW 360
+	capvar L_TURN_PITCH $neg(HOMING_TURN) HOMING_TURN
+	capvar L_TURN_YAW $neg(HOMING_TURN) HOMING_TURN
+	vectorset ANG_TO_TARG x $math(add,$vec.x(L_CUR_ANG),L_TURN_PITCH)
+	vectorset ANG_TO_TARG y $math(add,$vec.y(L_CUR_ANG),L_TURN_YAW)
+
 	//dbg orient_on_target ANG_TO_TARG
 	setprop ent_me velocity $relvel(ANG_TO_TARG,$vec(0,300,0))
 	setprop ent_me movedir ANG_TO_TARG
@@ -99,11 +137,13 @@
 
 { game_projectile_landed
 	setvard IS_ACTIVE 0
+	setvard BOLT_DONE 1
 }
 
 { game_projectile_hitnpc
 
 	setvard IS_ACTIVE 0
+	setvard BOLT_DONE 1
 
 	local MY_OWNER $get(ent_expowner,id)
 	local OWNER_ISPLAYER $get(MY_OWNER,isplayer)

@@ -1,13 +1,27 @@
 {
 	const BEAM_WIDTH 10.0
 	const BEAM_AMP 0.01
+	const STAFF_HAND_BONE 22
+	const STAFF_FINGER1_BONE 41
+	const STAFF_FINGER4_BONE 50
+	const STAFF_HEAD_U 14.06
+	const STAFF_HEAD_V 1.12
+	const STAFF_HEAD_W -0.0644
+	const STAFF_HAND_SPAN 5.33
 }
 
 { client_activate
 	setvard FX_OWNER PARAM1
+	setvard AIM_ANG PARAM2
+	setvard SMOOTH_PITCH $vec.x(AIM_ANG)
+	setvard LAST_FRAME game.time
 	setcallback render enable
 	setvard FX_ACTIVE 1
 	callevent fx_loop
+}
+
+{ ext_aim
+	setvard AIM_ANG PARAM1
 }
 
 { fx_loop
@@ -17,31 +31,14 @@
 	{
 		setvard NEXT_SPARK game.time
 		add NEXT_SPARK $randf(0.25,1.0)
-		local BEAM_START $getcl(FX_OWNER,attachment2)
-		local BEAM_END $getcl(FX_OWNER,center)
-		vectoradd BEAM_END z 16 
-		local OWNER_VIEWANGS $getcl(FX_OWNER,viewangles)
-		vectoradd BEAM_END $relpos(OWNER_VIEWANGS,$vec(0,1280,0))
-		local TRACE_LINE $get_traceline(BEAM_START,BEAM_END,worldonly)
-		if TRACE_LINE isnot BEAM_END
-		cleffect spark TRACE_LINE
+		if BEAM_HIT_WALL
+		cleffect spark BEAM_HIT
 		local RND_SPARK $rand(1,3)
-		if ( RND_SPARK == 1 ) sound.play3d buttons/spark1.wav 5 TRACE_LINE
-		if ( RND_SPARK == 2 ) sound.play3d buttons/spark2.wav 5 TRACE_LINE
-		if ( RND_SPARK == 3 ) sound.play3d buttons/spark4.wav 5 TRACE_LINE
+		if ( RND_SPARK == 1 ) sound.play3d buttons/spark1.wav 5 BEAM_HIT
+		if ( RND_SPARK == 2 ) sound.play3d buttons/spark2.wav 5 BEAM_HIT
+		if ( RND_SPARK == 3 ) sound.play3d buttons/spark4.wav 5 BEAM_HIT
 		//spark sound, if needed sound.play3d magic/freeze.wav 10 PARAM1
 	}
-
-	if ( game.localplayer.index equals FX_OWNER )
-	{
-		if ( !game.localplayer.thirdperson ) local EXIT_SUB 1
-	}
-	if !EXIT_SUB
-	local BEAM_START $getcl(FX_OWNER,attachment2)
-	local BEAM_END BEAM_START
-	local OWNER_VIEWANGS $getcl(FX_OWNER,viewangles)
-	vectoradd BEAM_END $relpos(OWNER_VIEWANGS,$vec(0,1280,0))
-	cleffect beam_end FX_OWNER 1 BEAM_END lgtning.spr 0.25 BEAM_WIDTH BEAM_AMP 0.3 0.1 30 (2,0,0)
 }
 
 { end_fx
@@ -55,16 +52,85 @@
 
 { game_prerender
 	if FX_ACTIVE
-	if game.localplayer.index equals FX_OWNER
-	if !game.localplayer.thirdperson
+	setvard BEAM_HIT_WALL 0
 
+	if ( game.localplayer.index equals FX_OWNER )
+	{
+		if ( !game.localplayer.thirdperson )
+		{
+			callevent draw_first_person
+			exitevent
+		}
+		local L_AIM game.pmove.angles
+	}
+	else
+	{
+		local L_DT game.time
+		subtract L_DT LAST_FRAME
+		local L_EASE $math(multiply,L_DT,8)
+		capvar L_EASE 0 1
+		local L_DIFF $math(subtract,$vec.x(AIM_ANG),SMOOTH_PITCH)
+		add SMOOTH_PITCH $math(multiply,L_DIFF,L_EASE)
+		local L_AIM $vec(SMOOTH_PITCH,$vec.y($getcl(FX_OWNER,angles)),0)
+	}
+	setvard LAST_FRAME game.time
+
+	callevent get_staff_head
+	local BEAM_START STAFF_HEAD
+	if $dist(BEAM_START,$getcl(FX_OWNER,origin)) < 128
+	local BEAM_END BEAM_START
+	vectoradd BEAM_END $relpos(L_AIM,$vec(0,1280,0))
+	local TRACE_LINE $get_traceline(BEAM_START,BEAM_END,worldonly)
+	setvard BEAM_HIT TRACE_LINE
+	if ( TRACE_LINE isnot BEAM_END ) setvard BEAM_HIT_WALL 1
+	cleffect beam_points BEAM_START TRACE_LINE lgtning.spr 0.001 BEAM_WIDTH BEAM_AMP 0.3 0.1 30 (2,0,0)
+}
+
+{ get_staff_head
+	local L_HAND $getcl(FX_OWNER,bonepos,STAFF_HAND_BONE)
+	setvard STAFF_HEAD L_HAND
+	local L_F1 $getcl(FX_OWNER,bonepos,STAFF_FINGER1_BONE)
+	local L_F4 $getcl(FX_OWNER,bonepos,STAFF_FINGER4_BONE)
+	local L_SCALE $dist(L_HAND,L_F1)
+	if L_SCALE > 1
+	divide L_SCALE STAFF_HAND_SPAN
+
+	local UX $math(subtract,$vec.x(L_F1),$vec.x(L_F4))
+	local UY $math(subtract,$vec.y(L_F1),$vec.y(L_F4))
+	local UZ $math(subtract,$vec.z(L_F1),$vec.z(L_F4))
+	local VX $math(subtract,$vec.x(L_F1),$vec.x(L_HAND))
+	local VY $math(subtract,$vec.y(L_F1),$vec.y(L_HAND))
+	local VZ $math(subtract,$vec.z(L_F1),$vec.z(L_HAND))
+	local WX $math(subtract,$math(multiply,UY,VZ),$math(multiply,UZ,VY))
+	local WY $math(subtract,$math(multiply,UZ,VX),$math(multiply,UX,VZ))
+	local WZ $math(subtract,$math(multiply,UX,VY),$math(multiply,UY,VX))
+	local L_WC $math(divide,STAFF_HEAD_W,L_SCALE)
+
+	local HX $math(multiply,STAFF_HEAD_U,UX)
+	add HX $math(multiply,STAFF_HEAD_V,VX)
+	add HX $math(multiply,L_WC,WX)
+	local HY $math(multiply,STAFF_HEAD_U,UY)
+	add HY $math(multiply,STAFF_HEAD_V,VY)
+	add HY $math(multiply,L_WC,WY)
+	local HZ $math(multiply,STAFF_HEAD_U,UZ)
+	add HZ $math(multiply,STAFF_HEAD_V,VZ)
+	add HZ $math(multiply,L_WC,WZ)
+
+	local L_HEAD L_HAND
+	vectoradd L_HEAD $vec(HX,HY,HZ)
+	setvard STAFF_HEAD L_HEAD
+}
+
+{ draw_first_person
 	local BEAM_START $getcl(game.localplayer.viewmodel.active.id,attachment2)
 	local BEAM_END $getcl(FX_OWNER,center)
 	vectoradd BEAM_END z 16 
-	local OWNER_VIEWANGS $getcl(FX_OWNER,viewangles)
+	local OWNER_VIEWANGS game.pmove.angles
 	vectoradd BEAM_END $relpos(OWNER_VIEWANGS,$vec(0,1280,0))
 	
 	local TRACE_LINE $get_traceline(BEAM_START,BEAM_END,worldonly)
+	setvard BEAM_HIT TRACE_LINE
+	if ( TRACE_LINE isnot BEAM_END ) setvard BEAM_HIT_WALL 1
 
 	//dbg viewang OWNER_VIEWANGS
 
