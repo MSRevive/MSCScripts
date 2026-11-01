@@ -1,0 +1,86 @@
+#pragma context server
+
+#include "monsters/orc_base.as"
+
+namespace MS
+{
+
+class Voldaraxer : CGameScript
+{
+	string ANIM_ATTACK;
+	string ANIM_ATTACK2;
+	float ATTACK_ACCURACY;
+	int ATTACK_DMG_HIGH;
+	int ATTACK_DMG_LOW;
+	int ATTACK_HITRANGE;
+	int ATTACK_RANGE;
+	int DROP_GOLD;
+	int DROP_GOLD_AMT;
+	string DROP_ITEM1;
+	float DROP_ITEM1_CHANCE;
+	float FLINCH_CHANCE;
+	int MOVE_RANGE;
+	string NPC_DEATH_MSG;
+	int NPC_GIVE_EXP;
+	int ORC_SHIELD;
+
+	Voldaraxer()
+	{
+		DROP_GOLD = 1;
+		DROP_GOLD_AMT = RandomInt(15, 35);
+		NPC_GIVE_EXP = 110;
+		DROP_ITEM1 = "axes_poison1";
+		DROP_ITEM1_CHANCE = 0.05;
+		ANIM_ATTACK = "battleaxe_swing1_L";
+		ANIM_ATTACK2 = "swordswing1_L";
+		FLINCH_CHANCE = 0.55;
+		NPC_DEATH_MSG = "You have slain one of Voldar's henchmen";
+		ATTACK_ACCURACY = 0.85;
+		ATTACK_DMG_LOW = 20;
+		ATTACK_DMG_HIGH = 40;
+		MOVE_RANGE = 64;
+		ATTACK_RANGE = 72;
+		ATTACK_HITRANGE = 128;
+		ORC_SHIELD = 0;
+	}
+
+	void orc_spawn()
+	{
+		SetWidth(40);
+		SetHeight(90);
+		SetProp(GetOwner(), "skin", 3);
+		SetHealth(400);
+		SetWidth(32);
+		SetHeight(60);
+		SetName("one of|Voldar's Henchman");
+		SetHearingSensitivity(8);
+		SetStat("parry", 15);
+		SetStat("swordsmanship", 10);
+		SetDamageResistance("all", ".8");
+		SetRoam(false);
+		SetModelBody(0, 0);
+		SetModelBody(1, 4);
+		SetModelBody(2, 1);
+	}
+
+	void swing_axe()
+	{
+		baseorc_yell();
+		float L_DMG = Random(ATTACK_DMG_LOW, ATTACK_DMG_HIGH);
+		XDoDamage(m_hLastSeen, ATTACK_HITRANGE, L_DMG, ATTACK_ACCURACY, GetOwner(), GetOwner(), "none", "slash", "dmgevent:swing");
+	}
+
+	void swing_sword()
+	{
+		swing_axe();
+	}
+
+	void swing_dodamage()
+	{
+		if (!(param1)) return;
+		ApplyEffect(param2, "effects/dot_poison", 5, GetEntityIndex(GetOwner()), RandomInt(10, 15));
+	}
+
+}
+
+}
